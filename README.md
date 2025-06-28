@@ -64,12 +64,6 @@ That means gr33n will never require a permanent internet connection, forced logi
 
 ---
 
-## 🧬 Got DNA?
-
-Yeah, we talked about that too. If our genes are data, and our farms are extensions of that data, then gr33n is just the next step in reclaiming the means of biological production. Sovereignty begins with seeds—and schemas.
-
----
-
 ## 🤝 Contribute
 
 - Fork this repo
