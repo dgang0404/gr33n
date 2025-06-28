@@ -81,4 +81,4 @@ Use it. Fork it. Share it. Just don’t try to put a toll booth on it.
 ---
 
 Built by farmers, hackers, and friends.  
-👩🏽‍🌾🧑‍💻🌍 With sunlight and rage.
+👩🏽‍🌾🧑‍💻🌍 With sunlight and vibes.
