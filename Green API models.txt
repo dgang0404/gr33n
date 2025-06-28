@@ -1,0 +1,3731 @@
+﻿okay this looks great. could you give me that core schema API model again now that we have this done and make sure everything's okay? and could you give me the natural farming model as well?
+
+
+Excellent! It's a good idea to revisit the `gr33n_core` Go models now that we've drafted the add-on schemas (`gr33n_crops`, `gr33n_animals`, `gr33n_natural_farming`). This allows us to ensure:
+
+
+1.  **Consistency:** Naming conventions and type usage are consistent.
+2.  **Inter-Schema Linkages:** Verify that fields intended to link to these new schemas (like `related_module_schema`, `related_table_name`, `related_record_id` in `gr33n_core.tasks`) are appropriately typed (e.g., using `*string` or `*int64` based on the likely PK types of the addon tables).
+3.  **Completeness:** That no core model was inadvertently left incomplete in prior messages.
+
+
+I will provide:
+1.  The **complete Go Domain Models for the `gr33n_core` schema** again, reviewed for consistency with the new context.
+2.  The **complete Go Domain Models for the `gr33n_natural_farming` schema**.
+
+
+We'll continue to assume the ENUM Go types are defined in `gr33n-api/internal/platform/commontypes/enums.go`.
+
+
+---
+
+
+## Revised `gr33n_core` Go Domain Models
+
+
+*(Reviewed for consistency and linkage considerations with add-on schemas)*
+
+
+**Assumed ENUMs Package:**
+`import commontypes "gr33n-api/internal/platform/commontypes"`
+
+
+---
+
+
+### **1. `auth` Module Models (`gr33n_core`)**
+
+
+```go
+// gr33n-api/internal/auth/model/profile.go
+package model
+
+
+import (
+        "time"
+        "github.com/google/uuid"
+        commontypes "gr33n-api/internal/platform/commontypes"
+        "encoding/json"
+)
+
+
+type Profile struct {
+        UserID      uuid.UUID                   `db:"user_id"`
+        FullName    *string                     `db:"full_name"`
+        Email       string                      `db:"email"`
+        AvatarURL   *string                     `db:"avatar_url"`
+        Role        commontypes.UserRoleEnum    `db:"role"`
+        Preferences json.RawMessage             `db:"preferences"` // JSONB
+        CreatedAt   time.Time                   `db:"created_at"`
+        UpdatedAt   time.Time                   `db:"updated_at"`
+}
+
+
+// gr33n-api/internal/auth/model/farm_membership.go
+package model
+
+
+import (
+        "time"
+        "github.com/google/uuid"
+        commontypes "gr33n-api/internal/platform/commontypes"
+        "encoding/json"
+)
+
+
+type FarmMembership struct {
+        FarmID       int64                              `db:"farm_id"`
+        UserID       uuid.UUID                          `db:"user_id"`
+        RoleInFarm   commontypes.FarmMemberRoleEnum     `db:"role_in_farm"`
+        Permissions  json.RawMessage                    `db:"permissions"` // JSONB
+        JoinedAt     time.Time                          `db:"joined_at"`
+}
+```
+
+
+---
+
+
+### **2. `farm` Module Models (`gr33n_core`)**
+
+
+```go
+// gr33n-api/internal/farm/model/farm.go
+package model
+
+
+import (
+        "time"
+        "github.com/google/uuid"
+        commontypes "gr33n-api/internal/platform/commontypes"
+)
+
+
+type Farm struct {
+        ID                 int64                               `db:"id"`
+        Name               string                              `db:"name"`
+        Description        *string                             `db:"description"`
+        LocationText       *string                             `db:"location_text"`
+        SizeHectares       *float64                            `db:"size_hectares"`
+        FarmType           *string                             `db:"farm_type"`
+        ScaleTier          commontypes.FarmScaleTierEnum       `db:"scale_tier"`
+        OwnerUserID        uuid.UUID                           `db:"owner_user_id"`
+        Timezone           string                              `db:"timezone"`
+        Currency           string                              `db:"currency"`
+        OperationalStatus  commontypes.OperationalStatusEnum   `db:"operational_status"`
+        CreatedAt          time.Time                           `db:"created_at"`
+        UpdatedAt          time.Time                           `db:"updated_at"`
+        UpdatedByUserID    *uuid.UUID                          `db:"updated_by_user_id"`
+        DeletedAt          *time.Time                          `db:"deleted_at"`
+}
+
+
+// gr33n-api/internal/farm/model/zone.go
+package model
+
+
+import (
+        "time"
+        "github.com/google/uuid"
+        "encoding/json"
+)
+
+
+type Zone struct {
+        ID              int64           `db:"id"`
+        FarmID          int64           `db:"farm_id"`
+        ParentZoneID    *int64          `db:"parent_zone_id"`
+        Name            string          `db:"name"`
+        Description     *string         `db:"description"`
+        ZoneType        *string         `db:"zone_type"`
+        AreaSqm         *float64        `db:"area_sqm"`
+        MetaData        json.RawMessage `db:"meta_data"` // JSONB
+        CreatedAt       time.Time       `db:"created_at"`
+        UpdatedAt       time.Time       `db:"updated_at"`
+        UpdatedByUserID *uuid.UUID      `db:"updated_by_user_id"`
+        DeletedAt       *time.Time      `db:"deleted_at"`
+}
+
+
+// gr33n-api/internal/farm/model/active_module.go
+package model
+
+
+import (
+        "time"
+        "encoding/json"
+)
+
+
+type FarmActiveModule struct {
+        FarmID            int64           `db:"farm_id"`
+        ModuleSchemaName  string          `db:"module_schema_name"`
+        IsEnabled         bool            `db:"is_enabled"`
+        Configuration     json.RawMessage `db:"configuration"` // JSONB
+        ActivatedAt       time.Time       `db:"activated_at"`
+}
+```
+
+
+---
+
+
+### **3. `device` Module Models (`gr33n_core`)**
+
+
+```go
+// gr33n-api/internal/device/model/device.go
+package model
+
+
+import (
+        "time"
+        "github.com/google/uuid"
+        commontypes "gr33n-api/internal/platform/commontypes"
+        "encoding/json"
+)
+
+
+type Device struct {
+        ID              int64                         `db:"id"`
+        FarmID          int64                         `db:"farm_id"`
+        ZoneID          *int64                        `db:"zone_id"`
+        Name            string                        `db:"name"`
+        DeviceUID       *string                       `db:"device_uid"`
+        DeviceType      string                        `db:"device_type"`
+        IPAddress       *string                       `db:"ip_address"`
+        FirmwareVersion *string                       `db:"firmware_version"`
+        Status          commontypes.DeviceStatusEnum  `db:"status"`
+        LastHeartbeat   *time.Time                    `db:"last_heartbeat"`
+        APIKey          *string                       `db:"api_key"`
+        Config          json.RawMessage               `db:"config"`
+        MetaData        json.RawMessage               `db:"meta_data"`
+        CreatedAt       time.Time                     `db:"created_at"`
+        UpdatedAt       time.Time                     `db:"updated_at"`
+        UpdatedByUserID *uuid.UUID                    `db:"updated_by_user_id"`
+        DeletedAt       *time.Time                    `db:"deleted_at"`
+}
+
+
+// gr33n-api/internal/device/model/sensor.go
+package model
+
+
+import (
+        "time"
+        "github.com/google/uuid"
+        "encoding/json"
+)
+
+
+type Sensor struct {
+        ID                   int64      `db:"id"`
+        DeviceID             *int64     `db:"device_id"`
+        FarmID               int64      `db:"farm_id"`
+        ZoneID               *int64     `db:"zone_id"`
+        Name                 string     `db:"name"`
+        SensorType           string     `db:"sensor_type"`
+        UnitOfMeasurement    *string    `db:"unit_of_measurement"`
+        HardwareIdentifier   *string    `db:"hardware_identifier"`
+        ValueMinExpected     *float64   `db:"value_min_expected"`
+        ValueMaxExpected     *float64   `db:"value_max_expected"`
+        AlertThresholdLow    *float64   `db:"alert_threshold_low"`
+        AlertThresholdHigh   *float64   `db:"alert_threshold_high"`
+        ReadingIntervalSeconds *int32   `db:"reading_interval_seconds"`
+        IsCalibrated         bool       `db:"is_calibrated"`
+        LastCalibrationDate  *time.Time `db:"last_calibration_date"`
+        CalibrationData      json.RawMessage `db:"calibration_data"`
+        Config               json.RawMessage `db:"config"`
+        MetaData             json.RawMessage `db:"meta_data"`
+        CreatedAt            time.Time  `db:"created_at"`
+        UpdatedAt            time.Time  `db:"updated_at"`
+        UpdatedByUserID      *uuid.UUID `db:"updated_by_user_id"`
+        DeletedAt            *time.Time `db:"deleted_at"`
+}
+
+
+// gr33n-api/internal/device/model/actuator.go
+package model
+
+
+import (
+        "time"
+        "github.com/google/uuid"
+        "encoding/json"
+)
+
+
+type Actuator struct {
+        ID                   int64      `db:"id"`
+        DeviceID             int64      `db:"device_id"`
+        FarmID               int64      `db:"farm_id"`
+        ZoneID               *int64     `db:"zone_id"`
+        Name                 string     `db:"name"`
+        ActuatorType         string     `db:"actuator_type"`
+        HardwareIdentifier   *string    `db:"hardware_identifier"`
+        CurrentStateNumeric  *float64   `db:"current_state_numeric"`
+        CurrentStateText     *string    `db:"current_state_text"`
+        LastKnownStateTime   *time.Time `db:"last_known_state_time"`
+        LastCommandSentTime  *time.Time `db:"last_command_sent_time"`
+        FeedbackSensorID     *int64     `db:"feedback_sensor_id"`
+        Config               json.RawMessage `db:"config"`
+        MetaData             json.RawMessage `db:"meta_data"`
+        CreatedAt            time.Time  `db:"created_at"`
+        UpdatedAt            time.Time  `db:"updated_at"`
+        UpdatedByUserID      *uuid.UUID `db:"updated_by_user_id"`
+        DeletedAt            *time.Time `db:"deleted_at"`
+}
+```
+
+
+---
+
+
+### **4. `iot` Module Models (`gr33n_core`)**
+
+
+```go
+// gr33n-api/internal/iot/model/sensor_reading.go
+package model
+
+
+import (
+        "time"
+        "encoding/json"
+)
+
+
+type SensorReading struct {
+        SensorID            int64           `db:"sensor_id"`
+        ReadingTime         time.Time       `db:"reading_time"`
+        ValueNumeric        *float64        `db:"value_numeric"`
+        ValueText           *string         `db:"value_text"`
+        ValueJSON           json.RawMessage `db:"value_json"`
+        BatteryLevelPercent *float32        `db:"battery_level_percent"`
+        SignalStrengthDBM   *int32          `db:"signal_strength_dbm"`
+        IsValid             bool            `db:"is_valid"`
+        MetaData            json.RawMessage `db:"meta_data"`
+}
+
+
+// gr33n-api/internal/iot/model/actuator_event.go
+package model
+
+
+import (
+        "time"
+        "github.com/google/uuid"
+        commontypes "gr33n-api/internal/platform/commontypes"
+        "encoding/json"
+)
+
+
+type ActuatorEvent struct {
+        ActuatorID                  int64                                    `db:"actuator_id"`
+        EventTime                   time.Time                                `db:"event_time"`
+        CommandSent                 *string                                  `db:"command_sent"`
+        ParametersSent              json.RawMessage                          `db:"parameters_sent"`
+        TriggeredByUserID           *uuid.UUID                               `db:"triggered_by_user_id"`
+        TriggeredByScheduleID       *int64                                   `db:"triggered_by_schedule_id"`
+        TriggeredByRuleID           *int64                                   `db:"triggered_by_rule_id"`
+        Source                      commontypes.ActuatorEventSourceEnum      `db:"source"`
+        ResponseReceivedFromDevice  *string                                  `db:"response_received_from_device"`
+        ExecutionStatus             *commontypes.ActuatorExecutionStatusEnum `db:"execution_status"`
+        ResultingStateNumericActual *float64                                 `db:"resulting_state_numeric_actual"`
+        ResultingStateTextActual    *string                                  `db:"resulting_state_text_actual"`
+        MetaData                    json.RawMessage                          `db:"meta_data"`
+}
+```
+
+
+---
+
+
+### **5. `task` Module Models (`gr33n_core`)**
+
+
+```go
+// gr33n-api/internal/task/model/task.go
+package model
+
+
+import (
+        "time"
+        "github.com/google/uuid"
+        commontypes "gr33n-api/internal/platform/commontypes"
+)
+
+
+type Task struct {
+        ID                       int64                         `db:"id"`
+        FarmID                   int64                         `db:"farm_id"`
+        ZoneID                   *int64                        `db:"zone_id"`
+        Title                    string                        `db:"title"`
+        Description              *string                       `db:"description"`
+        TaskType                 *string                       `db:"task_type"`
+        Status                   commontypes.TaskStatusEnum    `db:"status"`
+        Priority                 int32                         `db:"priority"`
+        AssignedToUserID         *uuid.UUID                    `db:"assigned_to_user_id"`
+        DueDate                  *time.Time                    `db:"due_date"`
+        EstimatedDurationMinutes *int32                        `db:"estimated_duration_minutes"`
+        ActualStartTime          *time.Time                    `db:"actual_start_time"`
+        ActualEndTime            *time.Time                    `db:"actual_end_time"`
+        RelatedModuleSchema      *string                       `db:"related_module_schema"`
+        RelatedTableName         *string                       `db:"related_table_name"`
+        // RelatedRecordID is TEXT in the latest schema to support UUIDs from other modules.
+        // If you primarily link to BIGINT IDs from core or known addons, *int64 is fine.
+        // For max flexibility with future addon modules that might use UUIDs:
+        RelatedRecordID          *string                       `db:"related_record_id"`
+        CreatedByUserID          *uuid.UUID                    `db:"created_by_user_id"`
+        CreatedAt                time.Time                     `db:"created_at"`
+        UpdatedAt                time.Time                     `db:"updated_at"`
+        UpdatedByUserID          *uuid.UUID                    `db:"updated_by_user_id"`
+        DeletedAt                *time.Time                    `db:"deleted_at"`
+}
+```
+*(Self-correction: `related_record_id` in `tasks` table was `BIGINT`. If it remains `BIGINT`, then `*int64` is correct. If you decide to change `tasks.related_record_id` to `TEXT` in the DB for future flexibility (like `file_attachments.related_record_id`), then `*string` would be used here. For now, I'll stick to the schema having it as `BIGINT`)*.
+Let's stick with `*int64` for `RelatedRecordID` as per the last defined schema for `tasks.related_record_id`.
+
+
+```go
+// Corrected Task model for RelatedRecordID based on schema
+// gr33n-api/internal/task/model/task.go
+package model
+
+
+import (
+        "time"
+        "github.com/google/uuid"
+        commontypes "gr33n-api/internal/platform/commontypes"
+)
+
+
+type Task struct {
+        ID                       int64                         `db:"id"`
+        FarmID                   int64                         `db:"farm_id"`
+        ZoneID                   *int64                        `db:"zone_id"`
+        Title                    string                        `db:"title"`
+        Description              *string                       `db:"description"`
+        TaskType                 *string                       `db:"task_type"`
+        Status                   commontypes.TaskStatusEnum    `db:"status"`
+        Priority                 int32                         `db:"priority"`
+        AssignedToUserID         *uuid.UUID                    `db:"assigned_to_user_id"`
+        DueDate                  *time.Time                    `db:"due_date"`
+        EstimatedDurationMinutes *int32                        `db:"estimated_duration_minutes"`
+        ActualStartTime          *time.Time                    `db:"actual_start_time"`
+        ActualEndTime            *time.Time                    `db:"actual_end_time"`
+        RelatedModuleSchema      *string                       `db:"related_module_schema"`
+        RelatedTableName         *string                       `db:"related_table_name"`
+        RelatedRecordID          *int64                        `db:"related_record_id"` // Sticking to BIGINT as per schema
+        CreatedByUserID          *uuid.UUID                    `db:"created_by_user_id"`
+        CreatedAt                time.Time                     `db:"created_at"`
+        UpdatedAt                time.Time                     `db:"updated_at"`
+        UpdatedByUserID          *uuid.UUID                    `db:"updated_by_user_id"`
+        DeletedAt                *time.Time                    `db:"deleted_at"`
+}
+```
+
+
+---
+
+
+### **6. `automation` Module Models (`gr33n_core`)**
+
+
+```go
+// gr33n-api/internal/automation/model/schedule.go
+package model
+
+
+import (
+        "time"
+        "encoding/json"
+)
+
+
+type Schedule struct {
+        ID                      int64           `db:"id"`
+        FarmID                  int64           `db:"farm_id"`
+        Name                    string          `db:"name"`
+        Description             *string         `db:"description"`
+        ScheduleType            string          `db:"schedule_type"`
+        CronExpression          string          `db:"cron_expression"`
+        Timezone                string          `db:"timezone"`
+        IsActive                bool            `db:"is_active"`
+        LastTriggeredTime       *time.Time      `db:"last_triggered_time"`
+        NextExpectedTriggerTime *time.Time      `db:"next_expected_trigger_time"`
+        MetaData                json.RawMessage `db:"meta_data"`
+        CreatedAt               time.Time       `db:"created_at"`
+        UpdatedAt               time.Time       `db:"updated_at"`
+}
+
+
+// gr33n-api/internal/automation/model/automation_rule.go
+package model
+
+
+import (
+        "time"
+        commontypes "gr33n-api/internal/platform/commontypes"
+        "encoding/json"
+)
+
+
+type AutomationRule struct {
+        ID                     int64                                    `db:"id"`
+        FarmID                 int64                                    `db:"farm_id"`
+        Name                   string                                   `db:"name"`
+        Description            *string                                  `db:"description"`
+        IsActive               bool                                     `db:"is_active"`
+        TriggerSource          commontypes.AutomationTriggerSourceEnum  `db:"trigger_source"`
+        TriggerConfiguration   json.RawMessage                          `db:"trigger_configuration"`
+        ConditionLogic         *string                                  `db:"condition_logic"`
+        ConditionsJSONB        json.RawMessage                          `db:"conditions_jsonb"`
+        LastEvaluatedTime      *time.Time                               `db:"last_evaluated_time"`
+        LastTriggeredTime      *time.Time                               `db:"last_triggered_time"`
+        CooldownPeriodSeconds  *int32                                   `db:"cooldown_period_seconds"`
+        CreatedAt              time.Time                                `db:"created_at"`
+        UpdatedAt              time.Time                                `db:"updated_at"`
+}
+
+
+// gr33n-api/internal/automation/model/executable_action.go
+package model
+
+
+import (
+        commontypes "gr33n-api/internal/platform/commontypes"
+        "encoding/json"
+)
+
+
+type ExecutableAction struct {
+        ID                           int64                                 `db:"id"`
+        ScheduleID                   *int64                                `db:"schedule_id"`
+        RuleID                       *int64                                `db:"rule_id"`
+        ExecutionOrder               int32                                 `db:"execution_order"`
+        ActionType                   commontypes.ExecutableActionTypeEnum  `db:"action_type"`
+        TargetActuatorID             *int64                                `db:"target_actuator_id"`
+        TargetAutomationRuleID       *int64                                `db:"target_automation_rule_id"`
+        TargetNotificationTemplateID *int64                                `db:"target_notification_template_id"`
+        ActionCommand                *string                               `db:"action_command"`
+        ActionParameters             json.RawMessage                       `db:"action_parameters"`
+        DelayBeforeExecutionSeconds  *int32                                `db:"delay_before_execution_seconds"`
+}
+```
+
+
+---
+
+
+### **7. `notification` Module Models (`gr33n_core`)**
+
+
+```go
+// gr33n-api/internal/notification/model/notification_template.go
+package model
+
+
+import (
+        "time"
+        commontypes "gr33n-api/internal/platform/commontypes"
+        "github.com/lib/pq" // For string arrays with database/sql, pgx handles this natively
+)
+
+
+type NotificationTemplate struct {
+        ID                      int64                                   `db:"id"`
+        FarmID                  *int64                                  `db:"farm_id"`
+        TemplateKey             string                                  `db:"template_key"`
+        Description             *string                                 `db:"description"`
+        SubjectTemplate         *string                                 `db:"subject_template"`
+        BodyTemplateText        *string                                 `db:"body_template_text"`
+        BodyTemplateHTML        *string                                 `db:"body_template_html"`
+        DefaultDeliveryChannels pq.StringArray                          `db:"default_delivery_channels"` // TEXT[]
+        DefaultPriority         commontypes.NotificationPriorityEnum    `db:"default_priority"`
+        IsSystemTemplate        bool                                    `db:"is_system_template"`
+        CreatedAt               time.Time                               `db:"created_at"`
+        UpdatedAt               time.Time                               `db:"updated_at"`
+}
+
+
+// gr33n-api/internal/notification/model/alert_notification.go
+package model
+
+
+import (
+        "time"
+        "github.com/google/uuid"
+        commontypes "gr33n-api/internal/platform/commontypes"
+        "encoding/json"
+)
+
+
+type AlertNotification struct {
+        ID                         int64                                   `db:"id"`
+        FarmID                     int64                                   `db:"farm_id"`
+        RecipientUserID            *uuid.UUID                              `db:"recipient_user_id"`
+        NotificationTemplateID     *int64                                  `db:"notification_template_id"`
+        TriggeringEventSourceType  *string                                 `db:"triggering_event_source_type"`
+        TriggeringEventSourceID    *int64                                  `db:"triggering_event_source_id"`
+        Severity                   commontypes.NotificationPriorityEnum    `db:"severity"`
+        SubjectRendered            *string                                 `db:"subject_rendered"`
+        MessageTextRendered        *string                                 `db:"message_text_rendered"`
+        MessageHTMLRendered        *string                                 `db:"message_html_rendered"`
+        DeliveryAttempts           json.RawMessage                         `db:"delivery_attempts"`
+        Status                     commontypes.NotificationStatusEnum      `db:"status"`
+        IsRead                     bool                                    `db:"is_read"`
+        ReadAt                     *time.Time                              `db:"read_at"`
+        IsAcknowledged             bool                                    `db:"is_acknowledged"`
+        AcknowledgedAt             *time.Time                              `db:"acknowledged_at"`
+        AcknowledgedByUserID       *uuid.UUID                              `db:"acknowledged_by_user_id"`
+        CreatedAt                  time.Time                               `db:"created_at"`
+        ScheduledSendAt            time.Time                               `db:"scheduled_send_at"`
+}
+```
+*(Note: For `DefaultDeliveryChannels []string` mapping to `TEXT[]`, `pq.StringArray` works well with `database/sql`. If using `pgx` directly, it often handles Go slices of strings to/from PostgreSQL arrays transparently.)* I'll assume `pgx` native handling or adjust later if needed. For now, `[]string` with `pgx` usually works.
+
+
+```go
+// Corrected NotificationTemplate for []string with pgx
+// gr33n-api/internal/notification/model/notification_template.go
+package model
+
+
+import (
+        "time"
+        commontypes "gr33n-api/internal/platform/commontypes"
+)
+
+
+type NotificationTemplate struct {
+        ID                      int64                                   `db:"id"`
+        FarmID                  *int64                                  `db:"farm_id"`
+        TemplateKey             string                                  `db:"template_key"`
+        Description             *string                                 `db:"description"`
+        SubjectTemplate         *string                                 `db:"subject_template"`
+        BodyTemplateText        *string                                 `db:"body_template_text"`
+        BodyTemplateHTML        *string                                 `db:"body_template_html"`
+        DefaultDeliveryChannels []string                                `db:"default_delivery_channels"` // pgx usually handles []string for TEXT[]
+        DefaultPriority         commontypes.NotificationPriorityEnum    `db:"default_priority"`
+        IsSystemTemplate        bool                                    `db:"is_system_template"`
+        CreatedAt               time.Time                               `db:"created_at"`
+        UpdatedAt               time.Time                               `db:"updated_at"`
+}
+```
+
+
+---
+
+
+### **8. `log` Module Models (`gr33n_core`)**
+
+
+```go
+// gr33n-api/internal/log/model/system_log.go
+package model
+
+
+import (
+        "time"
+        "github.com/google/uuid"
+        commontypes "gr33n-api/internal/platform/commontypes"
+        "encoding/json"
+)
+
+
+type SystemLog struct {
+        ID              int64                         `db:"id"`
+        FarmID          *int64                        `db:"farm_id"`
+        UserID          *uuid.UUID                    `db:"user_id"`
+        LogTime         time.Time                     `db:"log_time"`
+        LogLevel        commontypes.LogLevelEnum      `db:"log_level"`
+        EventType       *string                       `db:"event_type"`
+        Message         string                        `db:"message"`
+        SourceComponent *string                       `db:"source_component"`
+        ContextData     json.RawMessage               `db:"context_data"`
+        CreatedAt       time.Time                     `db:"created_at"`
+}
+
+
+// gr33n-api/internal/log/model/user_activity_log.go
+package model
+
+
+import (
+        "time"
+        "github.com/google/uuid"
+        commontypes "gr33n-api/internal/platform/commontypes"
+        "encoding/json"
+)
+
+
+type UserActivityLog struct {
+        ID                       int64                               `db:"id"`
+        UserID                   *uuid.UUID                          `db:"user_id"`
+        FarmID                   *int64                              `db:"farm_id"`
+        ActivityTime             time.Time                           `db:"activity_time"`
+        ActionType               commontypes.UserActionTypeEnum      `db:"action_type"`
+        TargetModuleSchema       *string                             `db:"target_module_schema"`
+        TargetTableName          *string                             `db:"target_table_name"`
+        TargetRecordID           *string                             `db:"target_record_id"`
+        TargetRecordDescription  *string                             `db:"target_record_description"`
+        IPAddress                *string                             `db:"ip_address"`
+        UserAgent                *string                             `db:"user_agent"`
+        SessionID                *string                             `db:"session_id"`
+        Status                   *string                             `db:"status"`
+        FailureReason            *string                             `db:"failure_reason"`
+        Details                  json.RawMessage                     `db:"details"`
+        CreatedAt                time.Time                           `db:"created_at"`
+}
+```
+
+
+---
+
+
+### **9. `file` Module Models (`gr33n_core`)**
+
+
+```go
+// gr33n-api/internal/file/model/file_attachment.go
+package model
+
+
+import (
+        "time"
+        "github.com/google/uuid"
+)
+
+
+type FileAttachment struct {
+        ID                  int64      `db:"id"`
+        FarmID              int64      `db:"farm_id"`
+        RelatedModuleSchema string     `db:"related_module_schema"`
+        RelatedTableName    string     `db:"related_table_name"`
+        RelatedRecordID     string     `db:"related_record_id"` // TEXT
+        FileName            string     `db:"file_name"`
+        FileType            string     `db:"file_type"`
+        FileSizeBytes       *int64     `db:"file_size_bytes"`
+        StoragePath         string     `db:"storage_path"`
+        MimeType            *string    `db:"mime_type"`
+        Description         *string    `db:"description"`
+        UploadedByUserID    *uuid.UUID `db:"uploaded_by_user_id"`
+        CreatedAt           time.Time  `db:"created_at"`
+        UpdatedAt           time.Time  `db:"updated_at"`
+}
+```
+
+
+---
+
+
+### **10. `weather` Module Models (`gr33n_core`)**
+
+
+```go
+// gr33n-api/internal/weather/model/weather_data.go
+package model
+
+
+import (
+        "time"
+        commontypes "gr33n-api/internal/platform/commontypes"
+        "encoding/json"
+)
+
+
+type WeatherData struct {
+        ID                     int64                               `db:"id"`
+        FarmID                 int64                               `db:"farm_id"`
+        ZoneID                 *int64                              `db:"zone_id"`
+        RecordedAt             time.Time                           `db:"recorded_at"`
+        DataSource             commontypes.WeatherDataSourceEnum   `db:"data_source"`
+        SourceSensorID         *int64                              `db:"source_sensor_id"`
+        TemperatureCelsius     *float64                            `db:"temperature_celsius"`
+        HumidityPercent        *float64                            `db:"humidity_percent"`
+        PrecipitationMm        *float64                            `db:"precipitation_mm"`
+        WindSpeedMs            *float64                            `db:"wind_speed_ms"`
+        WindDirectionDegrees   *int32                              `db:"wind_direction_degrees"`
+        BarometricPressureHpa  *float64                            `db:"barometric_pressure_hpa"`
+        SolarRadiationWm2      *float64                            `db:"solar_radiation_wm2"`
+        DewPointCelsius        *float64                            `db:"dew_point_celsius"`
+        UVIndex                *float32                            `db:"uv_index"`
+        CloudCoverPercent      *float64                            `db:"cloud_cover_percent"`
+        ForecastData           json.RawMessage                     `db:"forecast_data"`
+        RawData                json.RawMessage                     `db:"raw_data"`
+        CreatedAt              time.Time                           `db:"created_at"`
+}
+```
+
+
+---
+
+
+### **11. `cost` Module Models (`gr33n_core`)**
+
+
+```go
+// gr33n-api/internal/cost/model/cost_transaction.go
+package model
+
+
+import (
+        "time"
+        "github.com/google/uuid"
+        commontypes "gr33n-api/internal/platform/commontypes"
+        // "github.com/shopspring/decimal" // For precise currency
+)
+
+
+type CostTransaction struct {
+        ID                  int64                           `db:"id"`
+        FarmID              int64                           `db:"farm_id"`
+        TransactionDate     time.Time                       `db:"transaction_date"`
+        Category            commontypes.CostCategoryEnum    `db:"category"`
+        Subcategory         *string                         `db:"subcategory"`
+        Amount              float64                         `db:"amount"` // Consider decimal.Decimal for money
+        Currency            string                          `db:"currency"`
+        Description         *string                         `db:"description"`
+        RelatedModuleSchema *string                         `db:"related_module_schema"`
+        RelatedTableName    *string                         `db:"related_table_name"`
+        RelatedRecordID     *int64                          `db:"related_record_id"` // As per schema
+        ReceiptFileID       *int64                          `db:"receipt_file_id"`
+        IsIncome            bool                            `db:"is_income"`
+        CreatedByUserID     *uuid.UUID                      `db:"created_by_user_id"`
+        CreatedAt           time.Time                       `db:"created_at"`
+        UpdatedAt           time.Time                       `db:"updated_at"`
+}
+```
+
+
+---
+
+
+### **12. `validationrule` Module Models (`gr33n_core`)**
+
+
+```go
+// gr33n-api/internal/validationrule/model/validation_rule.go
+package model
+
+
+import (
+        "time"
+        commontypes "gr33n-api/internal/platform/commontypes"
+        "encoding/json"
+)
+
+
+type ValidationRule struct {
+        ID                   int64                                   `db:"id"`
+        FarmID               *int64                                  `db:"farm_id"`
+        RuleName             string                                  `db:"rule_name"`
+        Description          *string                                 `db:"description"`
+        TargetModuleSchema   string                                  `db:"target_module_schema"`
+        TargetTableName      string                                  `db:"target_table_name"`
+        TargetColumnName     string                                  `db:"target_column_name"`
+        RuleType             commontypes.ValidationRuleTypeEnum      `db:"rule_type"`
+        RuleConfig           json.RawMessage                         `db:"rule_config"`
+        ErrorMessageTemplate *string                                 `db:"error_message_template"`
+        IsActive             bool                                    `db:"is_active"`
+        Severity             commontypes.ValidationSeverityEnum      `db:"severity"`
+        EvaluationTrigger    string                                  `db:"evaluation_trigger"`
+        CreatedAt            time.Time                               `db:"created_at"`
+        UpdatedAt            time.Time                               `db:"updated_at"`
+}
+```
+
+
+---
+---
+
+
+## `gr33n_natural_farming` Go Domain Models
+
+
+---
+
+
+### **1. `naturalfarming` Module Models (`gr33n_natural_farming`)**
+*(Module name in Go might be `naturalfarming` or `inputs`)*
+
+
+```go
+// gr33n-api/internal/naturalfarming/model/input_definition.go
+package model
+
+
+import (
+        "time"
+        "github.com/google/uuid"
+        commontypes "gr33n-api/internal/platform/commontypes" // For enums from other schemas if needed, or define here
+)
+
+
+// Assuming gr33n_natural_farming.input_category_enum is defined in commontypes or here
+// For this example, let's assume it's in commontypes.InputCategoryEnum
+
+
+type InputDefinition struct {
+        ID                  int64                                    `db:"id"`
+        FarmID              int64                                    `db:"farm_id"`
+        Name                string                                   `db:"name"`
+        Category            commontypes.InputCategoryEnum            `db:"category"` // This ENUM is from gr33n_natural_farming schema
+        Description         *string                                  `db:"description"`
+        TypicalIngredients  *string                                  `db:"typical_ingredients"`
+        PreparationSummary  *string                                  `db:"preparation_summary"`
+        StorageGuidelines   *string                                  `db:"storage_guidelines"`
+        SafetyPrecautions   *string                                  `db:"safety_precautions"`
+        ReferenceSource     *string                                  `db:"reference_source"`
+        FileAttachmentID    *int64                                   `db:"file_attachment_id"`
+        CreatedAt           time.Time                                `db:"created_at"`
+        UpdatedAt           time.Time                                `db:"updated_at"`
+        UpdatedByUserID     *uuid.UUID                               `db:"updated_by_user_id"`
+        DeletedAt           *time.Time                               `db:"deleted_at"`
+}
+
+
+// gr33n-api/internal/naturalfarming/model/input_batch.go
+package model
+
+
+import (
+        "time"
+        "github.com/google/uuid"
+        commontypes "gr33n-api/internal/platform/commontypes"
+        "encoding/json"
+)
+// Assuming gr33n_natural_farming.input_batch_status_enum is defined
+// For this example, let's assume it's in commontypes.InputBatchStatusEnum
+
+
+type InputBatch struct {
+        ID                        int64                                   `db:"id"`
+        FarmID                    int64                                   `db:"farm_id"`
+        InputDefinitionID         int64                                   `db:"input_definition_id"`
+        BatchIdentifier           *string                                 `db:"batch_identifier"`
+        CreationStartDate         time.Time                               `db:"creation_start_date"` // DATE
+        CreationEndDate           *time.Time                              `db:"creation_end_date"`   // DATE
+        ExpectedReadyDate         *time.Time                              `db:"expected_ready_date"` // DATE
+        ActualReadyDate           *time.Time                              `db:"actual_ready_date"`   // DATE
+        QuantityProduced          *float64                                `db:"quantity_produced"`
+        QuantityUnit              *string                                 `db:"quantity_unit"`
+        CurrentQuantityRemaining  *float64                                `db:"current_quantity_remaining"`
+        Status                    commontypes.InputBatchStatusEnum        `db:"status"` // This ENUM is from gr33n_natural_farming
+        StorageLocation           *string                                 `db:"storage_location"`
+        ShelfLifeDays             *int32                                  `db:"shelf_life_days"`
+        PhValue                   *float64                                `db:"ph_value"`
+        EcValueMsCm               *float64                                `db:"ec_value_ms_cm"`
+        TemperatureDuringMaking   *string                                 `db:"temperature_during_making"`
+        IngredientsUsed           *string                                 `db:"ingredients_used"` // TEXT or JSONB
+        // IngredientsBreakdown   json.RawMessage                         `db:"ingredients_breakdown"` // If using JSONB
+        ProcedureFollowed         *string                                 `db:"procedure_followed"`
+        ObservationsNotes         *string                                 `db:"observations_notes"`
+        MadeByUserID              *uuid.UUID                              `db:"made_by_user_id"`
+        RelatedTaskID             *int64                                  `db:"related_task_id"`
+        FileAttachmentID          *int64                                  `db:"file_attachment_id"`
+        CreatedAt                 time.Time                               `db:"created_at"`
+        UpdatedAt                 time.Time                               `db:"updated_at"`
+        UpdatedByUserID           *uuid.UUID                              `db:"updated_by_user_id"`
+        DeletedAt                 *time.Time                              `db:"deleted_at"`
+}
+
+
+// gr33n-api/internal/naturalfarming/model/application_recipe.go
+package model
+
+
+import (
+        "time"
+        "github.com/google/uuid"
+        commontypes "gr33n-api/internal/platform/commontypes"
+        "encoding/json"
+        // "github.com/lib/pq" // For array of enums if needed
+)
+// Assuming gr33n_natural_farming.application_target_enum is defined
+// For this example, let's assume it's in commontypes.ApplicationTargetEnum
+// Assuming gr33n_crops.crop_category_enum is defined in commontypes.CropCategoryEnum
+
+
+type ApplicationRecipe struct {
+        ID                     int64                                    `db:"id"`
+        FarmID                 int64                                    `db:"farm_id"`
+        Name                   string                                   `db:"name"`
+        InputDefinitionID      *int64                                   `db:"input_definition_id"`
+        Description            *string                                  `db:"description"`
+        TargetApplicationType  commontypes.ApplicationTargetEnum        `db:"target_application_type"` // This ENUM is from gr33n_natural_farming
+        DilutionRatio          *string                                  `db:"dilution_ratio"`
+        Components             json.RawMessage                          `db:"components"` // JSONB
+        Instructions           *string                                  `db:"instructions"`
+        FrequencyGuidelines    *string                                  `db:"frequency_guidelines"`
+        TargetCropCategories   []commontypes.CropCategoryEnum           `db:"target_crop_categories"` // array of gr33n_crops.crop_category_enum
+        TargetGrowthStages     []string                                 `db:"target_growth_stages"`  // TEXT[]
+        Notes                  *string                                  `db:"notes"`
+        CreatedAt              time.Time                                `db:"created_at"`
+        UpdatedAt              time.Time                                `db:"updated_at"`
+        UpdatedByUserID        *uuid.UUID                               `db:"updated_by_user_id"`
+        DeletedAt              *time.Time                               `db:"deleted_at"`
+}
+
+
+
+
+// gr33n-api/internal/naturalfarming/model/recipe_input_component.go
+package model
+
+
+type RecipeInputComponent struct {
+        ApplicationRecipeID int64    `db:"application_recipe_id"`
+        InputDefinitionID   int64    `db:"input_definition_id"`
+        PartValue           float64  `db:"part_value"` // NUMERIC
+        PartUnit            string   `db:"part_unit"`
+        Notes               *string  `db:"notes"`
+}
+```
+
+
+---
+
+
+This set of model definitions covers all tables in `gr33n_core` and the newly defined `gr33n_natural_farming` schema.
+Key points during implementation:
+*   Ensure the `commontypes` package (or wherever you place your Go ENUM definitions) is correctly imported.
+*   For arrays of ENUMs like `TargetCropCategories []commontypes.CropCategoryEnum`, you'll need to handle the mapping to/from PostgreSQL's array of ENUM types. `pgx` often manages this well with slices of your custom string-based ENUM types.
+*   The `db:"..."` tags are conventional for libraries like `sqlx`. If using `pgx` without such a library, you might map fields by order or name explicitly in your repository code.
+
+
+This gives you a complete structural blueprint for your Go application's understanding of the database. Next, we can proceed to define DTOs for these, and then the repository, service, and handler layers.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// gr33n-api/internal/crop/model/crop_variety.go
+package model
+
+
+import (
+        "time"
+        "github.com/google/uuid"
+        commontypes "gr33n-api/internal/platform/commontypes"
+        "encoding/json"
+)
+
+
+type CropVariety struct {
+        ID                           int64                             `db:"id"`
+        FarmID                       int64                             `db:"farm_id"`
+        Name                         string                            `db:"name"`
+        CommonCropName               *string                           `db:"common_crop_name"`
+        ScientificName               *string                           `db:"scientific_name"`
+        Category                     *commontypes.CropCategoryEnum     `db:"category"` // Pointer if ENUM can be NULL
+        Description                  *string                           `db:"description"`
+        AvgDaysToMaturity            *int32                            `db:"avg_days_to_maturity"` // INTEGER
+        SunRequirements              *string                           `db:"sun_requirements"`
+        WaterRequirements            *string                           `db:"water_requirements"`
+        SoilPreferences              *string                           `db:"soil_preferences"`
+        PlantingInstructions         *string                           `db:"planting_instructions"`
+        PestDiseaseResistanceNotes   *string                           `db:"pest_disease_resistance_notes"`
+        Characteristics              json.RawMessage                   `db:"characteristics"` // JSONB
+        SourceSupplierInfo           *string                           `db:"source_supplier_info"`
+        IsActive                     bool                              `db:"is_active"`
+        CreatedAt                    time.Time                         `db:"created_at"`
+        UpdatedAt                    time.Time                         `db:"updated_at"`
+        UpdatedByUserID              *uuid.UUID                        `db:"updated_by_user_id"`
+        DeletedAt                    *time.Time                        `db:"deleted_at"`
+}
+
+
+// gr33n-api/internal/crop/model/crop_planting.go
+package model
+
+
+import (
+        "time"
+        "github.com/google/uuid"
+        commontypes "gr33n-api/internal/platform/commontypes"
+)
+
+
+type CropPlanting struct {
+        ID                         int64                                 `db:"id"`
+        FarmID                     int64                                 `db:"farm_id"`
+        ZoneID                     *int64                                `db:"zone_id"`
+        CropVarietyID              int64                                 `db:"crop_variety_id"`
+        PlantingName               *string                               `db:"planting_name"`
+        Description                *string                               `db:"description"`
+        PlantingDate               time.Time                             `db:"planting_date"` // DATE
+        ExpectedHarvestStartDate   *time.Time                            `db:"expected_harvest_start_date"` // DATE
+        ActualHarvestStartDate     *time.Time                            `db:"actual_harvest_start_date"`   // DATE
+        ExpectedHarvestEndDate     *time.Time                            `db:"expected_harvest_end_date"`   // DATE
+        ActualHarvestEndDate       *time.Time                            `db:"actual_harvest_end_date"`     // DATE
+        CultivationAreaSqm         *float64                              `db:"cultivation_area_sqm"`      // NUMERIC
+        PlantCount                 *int32                                `db:"plant_count"`                // INTEGER
+        PlantSpacingCm             *float64                              `db:"plant_spacing_cm"`           // NUMERIC
+        RowSpacingCm               *float64                              `db:"row_spacing_cm"`             // NUMERIC
+        SourceType                 *commontypes.PlantSourceTypeEnum      `db:"source_type"`                // Pointer if ENUM can be NULL
+        SourceDetails              *string                               `db:"source_details"`
+        CurrentStatus              *string                               `db:"current_status"`
+        Notes                      *string                               `db:"notes"`
+        CreatedAt                  time.Time                             `db:"created_at"`
+        UpdatedAt                  time.Time                             `db:"updated_at"`
+        UpdatedByUserID            *uuid.UUID                            `db:"updated_by_user_id"`
+        DeletedAt                  *time.Time                            `db:"deleted_at"`
+}
+
+
+// gr33n-api/internal/crop/model/crop_growth_stage.go
+package model
+
+
+import (
+        commontypes "gr33n-api/internal/platform/commontypes"
+)
+
+
+type CropGrowthStage struct {
+        ID                   int64                              `db:"id"`
+        FarmID               *int64                             `db:"farm_id"` // Nullable
+        CropCategory         *commontypes.CropCategoryEnum      `db:"crop_category"` // Nullable
+        CropVarietyID        *int64                             `db:"crop_variety_id"` // Nullable
+        StageName            string                             `db:"stage_name"`
+        Description          *string                            `db:"description"`
+        NominalDurationDays  *int32                             `db:"nominal_duration_days"` // INTEGER
+        SequenceOrder        *int32                             `db:"sequence_order"`        // INTEGER
+        IsSystemDefined      bool                               `db:"is_system_defined"`
+}
+
+
+// gr33n-api/internal/crop/model/planting_growth_stage_log.go
+package model
+
+
+import (
+        "time"
+        "github.com/google/uuid"
+)
+
+
+type PlantingGrowthStageLog struct {
+        ID                  int64      `db:"id"`
+        CropPlantingID      int64      `db:"crop_planting_id"`
+        GrowthStageID       int64      `db:"growth_stage_id"`
+        AchievedDate        time.Time  `db:"achieved_date"` // DATE
+        Notes               *string    `db:"notes"`
+        RecordedByUserID    *uuid.UUID `db:"recorded_by_user_id"`
+        CreatedAt           time.Time  `db:"created_at"`
+}
+
+
+// gr33n-api/internal/crop/model/crop_observation.go
+package model
+
+
+import (
+        "time"
+        "github.com/google/uuid"
+        commontypes "gr33n-api/internal/platform/commontypes"
+)
+
+
+type CropObservation struct {
+        ID                  int64                                `db:"id"`
+        CropPlantingID      int64                                `db:"crop_planting_id"`
+        ObservationTime     time.Time                            `db:"observation_time"`
+        ObservationType     commontypes.ObservationTypeEnum      `db:"observation_type"`
+        Description         string                               `db:"description"`
+        ValueNumeric        *float64                             `db:"value_numeric"` // NUMERIC
+        ValueText           *string                              `db:"value_text"`
+        FileAttachmentID    *int64                               `db:"file_attachment_id"`
+        RelatedSensorID     *int64                               `db:"related_sensor_id"`
+        RecordedByUserID    *uuid.UUID                           `db:"recorded_by_user_id"`
+        CreatedAt           time.Time                            `db:"created_at"`
+        UpdatedAt           time.Time                            `db:"updated_at"`
+        UpdatedByUserID     *uuid.UUID                           `db:"updated_by_user_id"`
+        DeletedAt           *time.Time                           `db:"deleted_at"`
+}
+
+
+// gr33n-api/internal/crop/model/pest_disease_sighting.go
+package model
+
+
+import (
+        "time"
+        "github.com/google/uuid"
+)
+
+
+type PestDiseaseSighting struct {
+        ID                           int64      `db:"id"`
+        CropPlantingID               int64      `db:"crop_planting_id"`
+        SightingTime                 time.Time  `db:"sighting_time"`
+        PestOrDiseaseName            string     `db:"pest_or_disease_name"`
+        Type                         string     `db:"type"` // CHECK ('pest', 'disease', 'weed')
+        Severity                     *string    `db:"severity"`
+        Description                  *string    `db:"description"`
+        AffectedPlantPart            *string    `db:"affected_plant_part"`
+        EstimatedAffectedAreaPercent *float64   `db:"estimated_affected_area_percent"` // NUMERIC
+        FileAttachmentID             *int64     `db:"file_attachment_id"`
+        RecordedByUserID             *uuid.UUID `db:"recorded_by_user_id"`
+        CreatedAt                    time.Time  `db:"created_at"`
+        UpdatedAt                    time.Time  `db:"updated_at"`
+        UpdatedByUserID              *uuid.UUID `db:"updated_by_user_id"`
+        DeletedAt                    *time.Time `db:"deleted_at"`
+}
+
+
+// gr33n-api/internal/crop/model/crop_treatment.go
+package model
+
+
+import (
+        "time"
+        "github.com/google/uuid"
+        commontypes "gr33n-api/internal/platform/commontypes"
+)
+
+
+type CropTreatment struct {
+        ID                       int64                               `db:"id"`
+        CropPlantingID           int64                               `db:"crop_planting_id"`
+        PestDiseaseSightingID    *int64                              `db:"pest_disease_sighting_id"`
+        ApplicationDate          time.Time                           `db:"application_date"` // DATE
+        TreatmentType            commontypes.TreatmentTypeEnum       `db:"treatment_type"`
+        ProductName              *string                             `db:"product_name"`
+        InventoryItemID          *int64                              `db:"inventory_item_id"`         // FK to gr33n_core.inventory_items
+        NaturalInputBatchID      *int64                              `db:"natural_input_batch_id"`    // FK to gr33n_natural_farming.input_batches
+        ApplicationMethod        *string                             `db:"application_method"`
+        Concentration            *string                             `db:"concentration"`
+        AmountAppliedValue       *float64                            `db:"amount_applied_value"`      // NUMERIC
+        AmountAppliedUnit        *string                             `db:"amount_applied_unit"`
+        AreaTreatedSqm           *float64                            `db:"area_treated_sqm"`          // NUMERIC
+        ReasonForApplication     *string                             `db:"reason_for_application"`
+        WeatherConditionsAtApplication *string                       `db:"weather_conditions_at_application"`
+        Notes                    *string                             `db:"notes"`
+        AppliedByUserID          *uuid.UUID                          `db:"applied_by_user_id"`
+        RelatedTaskID            *int64                              `db:"related_task_id"`
+        CreatedAt                time.Time                           `db:"created_at"`
+        UpdatedAt                time.Time                           `db:"updated_at"`
+        UpdatedByUserID          *uuid.UUID                          `db:"updated_by_user_id"`
+        DeletedAt                *time.Time                          `db:"deleted_at"`
+}
+
+
+// gr33n-api/internal/crop/model/crop_harvest.go
+package model
+
+
+import (
+        "time"
+        "github.com/google/uuid"
+        commontypes "gr33n-api/internal/platform/commontypes"
+)
+
+
+type CropHarvest struct {
+        ID                   int64                               `db:"id"`
+        CropPlantingID       int64                               `db:"crop_planting_id"`
+        HarvestDate          time.Time                           `db:"harvest_date"` // DATE
+        QuantityHarvested    float64                             `db:"quantity_harvested"` // NUMERIC
+        UnitOfMeasure        string                              `db:"unit_of_measure"`
+        QualityGrade         *commontypes.HarvestQualityEnum     `db:"quality_grade"` // Pointer if ENUM can be NULL
+        StorageLocation      *string                             `db:"storage_location"`
+        MarketDestination    *string                             `db:"market_destination"`
+        Notes                *string                             `db:"notes"`
+        HarvestedByUserID    *uuid.UUID                          `db:"harvested_by_user_id"`
+        RelatedTaskID        *int64                              `db:"related_task_id"`
+        CreatedAt            time.Time                           `db:"created_at"`
+        UpdatedAt            time.Time                           `db:"updated_at"`
+        UpdatedByUserID      *uuid.UUID                          `db:"updated_by_user_id"`
+        DeletedAt            *time.Time                          `db:"deleted_at"`
+}
+
+
+// gr33n-api/internal/crop/model/soil_test.go
+package model
+
+
+import (
+        "time"
+        "github.com/google/uuid"
+)
+
+
+type SoilTest struct {
+        ID                             int64      `db:"id"`
+        FarmID                         int64      `db:"farm_id"`
+        ZoneID                         *int64     `db:"zone_id"`
+        CropPlantingID                 *int64     `db:"crop_planting_id"`
+        TestDate                       time.Time  `db:"test_date"` // DATE
+        LabName                        *string    `db:"lab_name"`
+        ReportReference                *string    `db:"report_reference"`
+        PhValue                        *float64   `db:"ph_value"`                        // NUMERIC
+        OrganicMatterPercent           *float64   `db:"organic_matter_percent"`           // NUMERIC
+        NitrogenPpm                    *float64   `db:"nitrogen_ppm"`                     // NUMERIC
+        PhosphorusPpm                  *float64   `db:"phosphorus_ppm"`                   // NUMERIC
+        PotassiumPpm                   *float64   `db:"potassium_ppm"`                    // NUMERIC
+        CalciumPpm                     *float64   `db:"calcium_ppm"`                      // NUMERIC
+        MagnesiumPpm                   *float64   `db:"magnesium_ppm"`                    // NUMERIC
+        SulfurPpm                      *float64   `db:"sulfur_ppm"`                       // NUMERIC
+        ZincPpm                        *float64   `db:"zinc_ppm"`                         // NUMERIC
+        IronPpm                        *float64   `db:"iron_ppm"`                         // NUMERIC
+        ManganesePpm                   *float64   `db:"manganese_ppm"`                    // NUMERIC
+        CopperPpm                      *float64   `db:"copper_ppm"`                       // NUMERIC
+        BoronPpm                       *float64   `db:"boron_ppm"`                        // NUMERIC
+        SodiumPpm                      *float64   `db:"sodium_ppm"`                       // NUMERIC
+        ElectricalConductivityDsM      *float64   `db:"electrical_conductivity_ds_m"`       // NUMERIC
+        CationExchangeCapacityMeq100g  *float64   `db:"cation_exchange_capacity_meq_100g"` // NUMERIC
+        Recommendations                *string    `db:"recommendations"`
+        FullReportAttachmentID         *int64     `db:"full_report_attachment_id"`
+        CreatedAt                      time.Time  `db:"created_at"`
+        UpdatedAt                      time.Time  `db:"updated_at"`
+        UpdatedByUserID                *uuid.UUID `db:"updated_by_user_id"`
+        DeletedAt                      *time.Time `db:"deleted_at"`
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+So it looks like we just need animal now
+
+
+You are absolutely correct! We've systematically worked through `gr33n_core`, `gr33n_crops`, and `gr33n_natural_farming` SQL schemas and their corresponding Go domain models.
+
+
+Now, let's complete the Go domain model definitions for the **`gr33n_animals` schema**. This will give you the full set of Go structs representing your entire database structure as designed so far.
+
+
+We'll continue to assume the ENUM Go types (like `AnimalSexEnum`, `AcquisitionMethodEnum`, etc., which were defined in the `gr33n_animals` SQL schema) are defined in your central Go ENUMs package: `gr33n-api/internal/platform/commontypes/enums.go`.
+
+
+---
+
+
+## `gr33n_animals` Go Domain Models
+
+
+This section provides the Go struct definitions that directly map to your `gr33n_animals` database tables.
+
+
+**Assumed ENUMs Package:**
+For all `commontypes.*` references below, assume they come from:
+`import commontypes "gr33n-api/internal/platform/commontypes"` (where `enums.go` from a previous message, containing all ENUMs including those specific to `gr33n_animals`, resides).
+
+
+---
+
+
+### **`animal` Module Models (`gr33n_animals` schema)**
+
+
+```go
+// gr33n-api/internal/animal/model/animal_breed.go
+package model
+
+
+import (
+        "time"
+        "github.com/google/uuid"
+        // commontypes "gr33n-api/internal/platform/commontypes" // Not strictly needed if no ENUMs in this specific model
+)
+
+
+type AnimalBreed struct {
+        ID                  int64      `db:"id"`
+        FarmID              int64      `db:"farm_id"`
+        SpeciesName         string     `db:"species_name"`
+        BreedName           string     `db:"breed_name"`
+        CommonNames         *string    `db:"common_names"`
+        Description         *string    `db:"description"`
+        OriginCountry       *string    `db:"origin_country"`
+        ConservationStatus  *string    `db:"conservation_status"`
+        AvgLifespanYears    *float64   `db:"avg_lifespan_years"`    // NUMERIC
+        AvgMatureWeightKg   *float64   `db:"avg_mature_weight_kg"`  // NUMERIC
+        PrimaryPurpose      *string    `db:"primary_purpose"`
+        Notes               *string    `db:"notes"`
+        IsActive            bool       `db:"is_active"`
+        CreatedAt           time.Time  `db:"created_at"`
+        UpdatedAt           time.Time  `db:"updated_at"`
+        UpdatedByUserID     *uuid.UUID `db:"updated_by_user_id"`
+        DeletedAt           *time.Time `db:"deleted_at"`
+}
+
+
+// gr33n-api/internal/animal/model/animal_individual.go
+package model
+
+
+import (
+        "time"
+        "github.com/google/uuid"
+        commontypes "gr33n-api/internal/platform/commontypes"
+)
+
+
+type AnimalIndividual struct {
+        ID                         int64                                    `db:"id"`
+        FarmID                     int64                                    `db:"farm_id"`
+        AnimalBreedID              int64                                    `db:"animal_breed_id"`
+        TagID                      *string                                  `db:"tag_id"` // Unique per farm
+        Name                       *string                                  `db:"name"`
+        Sex                        *commontypes.AnimalSexEnum               `db:"sex"` // Pointer if ENUM can be NULL
+        BirthDate                  *time.Time                               `db:"birth_date"` // DATE
+        BirthWeightKg              *float64                                 `db:"birth_weight_kg"` // NUMERIC
+        DamID                      *int64                                   `db:"dam_id"`
+        SireID                     *int64                                   `db:"sire_id"`
+        AcquisitionDate            *time.Time                               `db:"acquisition_date"` // DATE
+        AcquisitionMethod          *commontypes.AcquisitionMethodEnum       `db:"acquisition_method"` // Pointer if ENUM can be NULL
+        SourceDetails              *string                                  `db:"source_details"`
+        CurrentZoneID              *int64                                   `db:"current_zone_id"`
+        DispositionDate            *time.Time                               `db:"disposition_date"` // DATE
+        DispositionMethod          *commontypes.DispositionMethodEnum       `db:"disposition_method"` // Pointer if ENUM can be NULL
+        DispositionReason          *string                                  `db:"disposition_reason"`
+        Notes                      *string                                  `db:"notes"`
+        ProfileImageAttachmentID   *int64                                   `db:"profile_image_attachment_id"`
+        CreatedAt                  time.Time                                `db:"created_at"`
+        UpdatedAt                  time.Time                                `db:"updated_at"`
+        UpdatedByUserID            *uuid.UUID                               `db:"updated_by_user_id"`
+        DeletedAt                  *time.Time                               `db:"deleted_at"`
+}
+
+
+// gr33n-api/internal/animal/model/animal_group.go
+package model
+
+
+import (
+        "time"
+        "github.com/google/uuid"
+)
+
+
+type AnimalGroup struct {
+        ID                  int64      `db:"id"`
+        FarmID              int64      `db:"farm_id"`
+        AnimalBreedID       int64      `db:"animal_breed_id"`
+        GroupName           string     `db:"group_name"`
+        Description         *string    `db:"description"`
+        CurrentZoneID       *int64     `db:"current_zone_id"`
+        EstablishmentDate   *time.Time `db:"establishment_date"` // DATE
+        InitialCount        *int32     `db:"initial_count"`      // INTEGER
+        CurrentApproxCount  *int32     `db:"current_approx_count"` // INTEGER
+        AvgAgeMonths        *float64   `db:"avg_age_months"`     // NUMERIC
+        PrimaryPurpose      *string    `db:"primary_purpose"`
+        Notes               *string    `db:"notes"`
+        CreatedAt           time.Time  `db:"created_at"`
+        UpdatedAt           time.Time  `db:"updated_at"`
+        UpdatedByUserID     *uuid.UUID `db:"updated_by_user_id"`
+        DeletedAt           *time.Time `db:"deleted_at"`
+}
+
+
+// gr33n-api/internal/animal/model/animal_group_member.go
+package model
+
+
+import (
+        "time"
+)
+
+
+type AnimalGroupMember struct {
+        AnimalIndividualID int64      `db:"animal_individual_id"`
+        AnimalGroupID      int64      `db:"animal_group_id"`
+        DateJoined         time.Time  `db:"date_joined"` // DATE
+        DateLeft           *time.Time `db:"date_left"`   // DATE
+        ReasonForLeaving   *string    `db:"reason_for_leaving"`
+}
+
+
+// gr33n-api/internal/animal/model/feeding_record.go
+package model
+
+
+import (
+        "time"
+        "github.com/google/uuid"
+)
+
+
+type FeedingRecord struct {
+        ID                     int64      `db:"id"`
+        FarmID                 int64      `db:"farm_id"`
+        AnimalIndividualID     *int64     `db:"animal_individual_id"`
+        AnimalGroupID          *int64     `db:"animal_group_id"`
+        FeedTime               time.Time  `db:"feed_time"`
+        FeedTypeName           string     `db:"feed_type_name"`
+        FeedInventoryItemID    *int64     `db:"feed_inventory_item_id"` // FK to gr33n_core.inventory_items
+        QuantityFed            float64    `db:"quantity_fed"`          // NUMERIC
+        QuantityUnit           string     `db:"quantity_unit"`
+        Notes                  *string    `db:"notes"`
+        FedByUserID            *uuid.UUID `db:"fed_by_user_id"`
+        RelatedTaskID          *int64     `db:"related_task_id"`
+        CreatedAt              time.Time  `db:"created_at"`
+}
+
+
+// gr33n-api/internal/animal/model/health_record.go
+package model
+
+
+import (
+        "time"
+        "github.com/google/uuid"
+        commontypes "gr33n-api/internal/platform/commontypes"
+)
+
+
+type HealthRecord struct {
+        ID                         int64                                 `db:"id"`
+        FarmID                     int64                                 `db:"farm_id"`
+        AnimalIndividualID         *int64                                `db:"animal_individual_id"`
+        AnimalGroupID              *int64                                `db:"animal_group_id"`
+        EventDate                  time.Time                             `db:"event_date"` // DATE
+        EventType                  commontypes.HealthEventTypeEnum       `db:"event_type"`
+        Description                *string                               `db:"description"`
+        ProductUsed                *string                               `db:"product_used"`
+        ProductInventoryItemID     *int64                                `db:"product_inventory_item_id"` // FK to gr33n_core.inventory_items
+        DosageAdministered         *string                               `db:"dosage_administered"`
+        WithdrawalPeriodDays       *int32                                `db:"withdrawal_period_days"` // INTEGER
+        VeterinarianInvolved       *string                               `db:"veterinarian_involved"`
+        Diagnosis                  *string                               `db:"diagnosis"`
+        Outcome                    *string                               `db:"outcome"`
+        Notes                      *string                               `db:"notes"`
+        RecordedByUserID           *uuid.UUID                            `db:"recorded_by_user_id"`
+        RelatedTaskID              *int64                                `db:"related_task_id"`
+        FileAttachmentID           *int64                                `db:"file_attachment_id"`
+        CreatedAt                  time.Time                             `db:"created_at"`
+        UpdatedAt                  time.Time                             `db:"updated_at"`
+        UpdatedByUserID            *uuid.UUID                            `db:"updated_by_user_id"`
+        DeletedAt                  *time.Time                            `db:"deleted_at"`
+}
+
+
+// gr33n-api/internal/animal/model/breeding_record.go
+package model
+
+
+import (
+        "time"
+        "github.com/google/uuid"
+        commontypes "gr33n-api/internal/platform/commontypes"
+)
+
+
+type BreedingRecord struct {
+        ID                       int64                                   `db:"id"`
+        FarmID                   int64                                   `db:"farm_id"`
+        FemaleAnimalID           int64                                   `db:"female_animal_id"`
+        MaleAnimalID             *int64                                  `db:"male_animal_id"`
+        AnimalGroupID            *int64                                  `db:"animal_group_id"`
+        EventDate                time.Time                               `db:"event_date"` // DATE
+        EventType                commontypes.BreedingEventTypeEnum       `db:"event_type"`
+        SemenIDOrSource          *string                                 `db:"semen_id_or_source"`
+        ExpectedDueDate          *time.Time                              `db:"expected_due_date"`           // DATE
+        ActualBirthHatchDate     *time.Time                              `db:"actual_birth_hatch_date"`     // DATE
+        NumberOfOffspring        *int32                                  `db:"number_of_offspring"`         // INTEGER
+        NumberOfLiveOffspring    *int32                                  `db:"number_of_live_offspring"`    // INTEGER
+        NumberOfMaleOffspring    *int32                                  `db:"number_of_male_offspring"`    // INTEGER
+        NumberOfFemaleOffspring  *int32                                  `db:"number_of_female_offspring"`  // INTEGER
+        Complications            *string                                 `db:"complications"`
+        Notes                    *string                                 `db:"notes"`
+        RecordedByUserID         *uuid.UUID                              `db:"recorded_by_user_id"`
+        RelatedTaskID            *int64                                  `db:"related_task_id"`
+        CreatedAt                time.Time                               `db:"created_at"`
+        UpdatedAt                time.Time                               `db:"updated_at"`
+        UpdatedByUserID          *uuid.UUID                              `db:"updated_by_user_id"`
+        DeletedAt                *time.Time                              `db:"deleted_at"`
+}
+
+
+// gr33n-api/internal/animal/model/breeding_offspring.go
+package model
+
+
+type BreedingOffspring struct {
+        BreedingRecordID   int64   `db:"breeding_record_id"`
+        OffspringAnimalID  int64   `db:"offspring_animal_id"`
+        Notes              *string `db:"notes"`
+}
+
+
+// gr33n-api/internal/animal/model/animal_movement.go
+package model
+
+
+import (
+        "time"
+        "github.com/google/uuid"
+)
+
+
+type AnimalMovement struct {
+        ID                  int64      `db:"id"`
+        FarmID              int64      `db:"farm_id"`
+        AnimalIndividualID  *int64     `db:"animal_individual_id"`
+        AnimalGroupID       *int64     `db:"animal_group_id"`
+        MovementDate        time.Time  `db:"movement_date"`
+        FromZoneID          *int64     `db:"from_zone_id"`
+        ToZoneID            int64      `db:"to_zone_id"`
+        Reason              *string    `db:"reason"`
+        Notes               *string    `db:"notes"`
+        MovedByUserID       *uuid.UUID `db:"moved_by_user_id"`
+        RelatedTaskID       *int64     `db:"related_task_id"`
+        CreatedAt           time.Time  `db:"created_at"`
+}
+
+
+// gr33n-api/internal/animal/model/production_record.go
+package model
+
+
+import (
+        "time"
+        "github.com/google/uuid"
+        commontypes "gr33n-api/internal/platform/commontypes"
+)
+
+
+type ProductionRecord struct {
+        ID                   int64                                 `db:"id"`
+        FarmID               int64                                 `db:"farm_id"`
+        AnimalIndividualID   *int64                                `db:"animal_individual_id"`
+        AnimalGroupID        *int64                                `db:"animal_group_id"`
+        ProductionDate       time.Time                             `db:"production_date"` // DATE
+        ProductionType       commontypes.ProductionTypeEnum        `db:"production_type"`
+        QuantityProduced     float64                               `db:"quantity_produced"` // NUMERIC
+        QuantityUnit         string                                `db:"quantity_unit"`
+        QualityGrade         *string                               `db:"quality_grade"`
+        StorageLocation      *string                               `db:"storage_location"`
+        Notes                *string                               `db:"notes"`
+        CollectedByUserID    *uuid.UUID                            `db:"collected_by_user_id"`
+        RelatedTaskID        *int64                                `db:"related_task_id"`
+        CreatedAt            time.Time                             `db:"created_at"`
+        UpdatedAt            time.Time                             `db:"updated_at"`
+        UpdatedByUserID      *uuid.UUID                            `db:"updated_by_user_id"`
+        DeletedAt            *time.Time                            `db:"deleted_at"`
+}
+```
+
+
+---
+
+
+This completes the Go domain model definitions for the `gr33n_animals` schema.
+
+
+**Summary of What We Have Now:**
+
+
+*   **Complete `gr33n_core` Go Models:** As provided in the previous message.
+*   **Complete `gr33n_natural_farming` Go Models:** As provided in the previous message.
+*   **Complete `gr33n_animals` Go Models:** Provided in this message.
+*   **Complete `gr33n_crops` Go Models:** Provided in a message before the `gr33n_natural_farming` models.
+*   **Centralized Go ENUM Definitions:** All ENUMs from these four schemas are defined in `internal/platform/commontypes/enums.go`.
+
+
+You now have a very comprehensive set of Go domain models that accurately reflect the structure of your entire planned database (core + the three key add-on schemas). This is a massive step forward and a fantastic foundation for building out the DTOs and the rest of your API layers!
+
+
+Citations:
+[1] ManureDB - National database of manure nutrient content and other ... https://agdatacommons.nal.usda.gov/articles/dataset/ManureDB_-_National_database_of_manure_nutrient_content_and_other_characteristics_1998_-_2023/26031256
+[2] LEI: Livestock Event Information schema for enabling data sharing https://www.sciencedirect.com/science/article/pii/S0168169924002655
+[3] [PDF] Spatiotemporal Database Schema for Data Driven Applications in ... https://indjst.org/download-article.php?Article_Unique_Id=INDJST12773&Full_Text_Pdf_Download=True
+[4] Refinement Database - Animal Welfare Institute https://awionline.org/content/refinement-database
+[5] [PDF] Building a Spatial Database for Agricultural Record Keeping and ... https://spatial.usc.edu/wp-content/uploads/formidable/12/Philip-Hess-thesis.pdf
+[6] [PDF] Animal Care - National Dairy FARM Program https://nationaldairyfarm.com/wp-content/uploads/2020/09/FARM_Animal-Care-4-Manual_Layout_FINAL_091520_SinglePages.pdf
+[7] Reference architecture design for developing data management ... https://www.sciencedirect.com/science/article/pii/S1574954124001559
+[8] [PDF] Natural Farming for Sustainable Agriculture - MANAGE https://www.manage.gov.in/publications/eBooks/Natural%20Farming%20for%20Sustainable%20Agriculture.pdf
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+okay this looks great. could you give me that core schema API model again now that we have this done and make sure everything's okay? and could you give me the natural farming model as well?
+
+
+Excellent! It's a good idea to revisit the `gr33n_core` Go models now that we've drafted the add-on schemas (`gr33n_crops`, `gr33n_animals`, `gr33n_natural_farming`). This allows us to ensure:
+
+
+1.  **Consistency:** Naming conventions and type usage are consistent.
+2.  **Inter-Schema Linkages:** Verify that fields intended to link to these new schemas (like `related_module_schema`, `related_table_name`, `related_record_id` in `gr33n_core.tasks`) are appropriately typed (e.g., using `*string` or `*int64` based on the likely PK types of the addon tables).
+3.  **Completeness:** That no core model was inadvertently left incomplete in prior messages.
+
+
+I will provide:
+1.  The **complete Go Domain Models for the `gr33n_core` schema** again, reviewed for consistency with the new context.
+2.  The **complete Go Domain Models for the `gr33n_natural_farming` schema**.
+
+
+We'll continue to assume the ENUM Go types are defined in `gr33n-api/internal/platform/commontypes/enums.go`.
+
+
+---
+
+
+## Revised `gr33n_core` Go Domain Models
+
+
+*(Reviewed for consistency and linkage considerations with add-on schemas)*
+
+
+**Assumed ENUMs Package:**
+`import commontypes "gr33n-api/internal/platform/commontypes"`
+
+
+---
+
+
+### **1. `auth` Module Models (`gr33n_core`)**
+
+
+```go
+// gr33n-api/internal/auth/model/profile.go
+package model
+
+
+import (
+        "time"
+        "github.com/google/uuid"
+        commontypes "gr33n-api/internal/platform/commontypes"
+        "encoding/json"
+)
+
+
+type Profile struct {
+        UserID      uuid.UUID                   `db:"user_id"`
+        FullName    *string                     `db:"full_name"`
+        Email       string                      `db:"email"`
+        AvatarURL   *string                     `db:"avatar_url"`
+        Role        commontypes.UserRoleEnum    `db:"role"`
+        Preferences json.RawMessage             `db:"preferences"` // JSONB
+        CreatedAt   time.Time                   `db:"created_at"`
+        UpdatedAt   time.Time                   `db:"updated_at"`
+}
+
+
+// gr33n-api/internal/auth/model/farm_membership.go
+package model
+
+
+import (
+        "time"
+        "github.com/google/uuid"
+        commontypes "gr33n-api/internal/platform/commontypes"
+        "encoding/json"
+)
+
+
+type FarmMembership struct {
+        FarmID       int64                              `db:"farm_id"`
+        UserID       uuid.UUID                          `db:"user_id"`
+        RoleInFarm   commontypes.FarmMemberRoleEnum     `db:"role_in_farm"`
+        Permissions  json.RawMessage                    `db:"permissions"` // JSONB
+        JoinedAt     time.Time                          `db:"joined_at"`
+}
+```
+
+
+---
+
+
+### **2. `farm` Module Models (`gr33n_core`)**
+
+
+```go
+// gr33n-api/internal/farm/model/farm.go
+package model
+
+
+import (
+        "time"
+        "github.com/google/uuid"
+        commontypes "gr33n-api/internal/platform/commontypes"
+)
+
+
+type Farm struct {
+        ID                 int64                               `db:"id"`
+        Name               string                              `db:"name"`
+        Description        *string                             `db:"description"`
+        LocationText       *string                             `db:"location_text"`
+        SizeHectares       *float64                            `db:"size_hectares"`
+        FarmType           *string                             `db:"farm_type"`
+        ScaleTier          commontypes.FarmScaleTierEnum       `db:"scale_tier"`
+        OwnerUserID        uuid.UUID                           `db:"owner_user_id"`
+        Timezone           string                              `db:"timezone"`
+        Currency           string                              `db:"currency"`
+        OperationalStatus  commontypes.OperationalStatusEnum   `db:"operational_status"`
+        CreatedAt          time.Time                           `db:"created_at"`
+        UpdatedAt          time.Time                           `db:"updated_at"`
+        UpdatedByUserID    *uuid.UUID                          `db:"updated_by_user_id"`
+        DeletedAt          *time.Time                          `db:"deleted_at"`
+}
+
+
+// gr33n-api/internal/farm/model/zone.go
+package model
+
+
+import (
+        "time"
+        "github.com/google/uuid"
+        "encoding/json"
+)
+
+
+type Zone struct {
+        ID              int64           `db:"id"`
+        FarmID          int64           `db:"farm_id"`
+        ParentZoneID    *int64          `db:"parent_zone_id"`
+        Name            string          `db:"name"`
+        Description     *string         `db:"description"`
+        ZoneType        *string         `db:"zone_type"`
+        AreaSqm         *float64        `db:"area_sqm"`
+        MetaData        json.RawMessage `db:"meta_data"` // JSONB
+        CreatedAt       time.Time       `db:"created_at"`
+        UpdatedAt       time.Time       `db:"updated_at"`
+        UpdatedByUserID *uuid.UUID      `db:"updated_by_user_id"`
+        DeletedAt       *time.Time      `db:"deleted_at"`
+}
+
+
+// gr33n-api/internal/farm/model/active_module.go
+package model
+
+
+import (
+        "time"
+        "encoding/json"
+)
+
+
+type FarmActiveModule struct {
+        FarmID            int64           `db:"farm_id"`
+        ModuleSchemaName  string          `db:"module_schema_name"`
+        IsEnabled         bool            `db:"is_enabled"`
+        Configuration     json.RawMessage `db:"configuration"` // JSONB
+        ActivatedAt       time.Time       `db:"activated_at"`
+}
+```
+
+
+---
+
+
+### **3. `device` Module Models (`gr33n_core`)**
+
+
+```go
+// gr33n-api/internal/device/model/device.go
+package model
+
+
+import (
+        "time"
+        "github.com/google/uuid"
+        commontypes "gr33n-api/internal/platform/commontypes"
+        "encoding/json"
+)
+
+
+type Device struct {
+        ID              int64                         `db:"id"`
+        FarmID          int64                         `db:"farm_id"`
+        ZoneID          *int64                        `db:"zone_id"`
+        Name            string                        `db:"name"`
+        DeviceUID       *string                       `db:"device_uid"`
+        DeviceType      string                        `db:"device_type"`
+        IPAddress       *string                       `db:"ip_address"`
+        FirmwareVersion *string                       `db:"firmware_version"`
+        Status          commontypes.DeviceStatusEnum  `db:"status"`
+        LastHeartbeat   *time.Time                    `db:"last_heartbeat"`
+        APIKey          *string                       `db:"api_key"`
+        Config          json.RawMessage               `db:"config"`
+        MetaData        json.RawMessage               `db:"meta_data"`
+        CreatedAt       time.Time                     `db:"created_at"`
+        UpdatedAt       time.Time                     `db:"updated_at"`
+        UpdatedByUserID *uuid.UUID                    `db:"updated_by_user_id"`
+        DeletedAt       *time.Time                    `db:"deleted_at"`
+}
+
+
+// gr33n-api/internal/device/model/sensor.go
+package model
+
+
+import (
+        "time"
+        "github.com/google/uuid"
+        "encoding/json"
+)
+
+
+type Sensor struct {
+        ID                   int64      `db:"id"`
+        DeviceID             *int64     `db:"device_id"`
+        FarmID               int64      `db:"farm_id"`
+        ZoneID               *int64     `db:"zone_id"`
+        Name                 string     `db:"name"`
+        SensorType           string     `db:"sensor_type"`
+        UnitOfMeasurement    *string    `db:"unit_of_measurement"`
+        HardwareIdentifier   *string    `db:"hardware_identifier"`
+        ValueMinExpected     *float64   `db:"value_min_expected"`
+        ValueMaxExpected     *float64   `db:"value_max_expected"`
+        AlertThresholdLow    *float64   `db:"alert_threshold_low"`
+        AlertThresholdHigh   *float64   `db:"alert_threshold_high"`
+        ReadingIntervalSeconds *int32   `db:"reading_interval_seconds"`
+        IsCalibrated         bool       `db:"is_calibrated"`
+        LastCalibrationDate  *time.Time `db:"last_calibration_date"`
+        CalibrationData      json.RawMessage `db:"calibration_data"`
+        Config               json.RawMessage `db:"config"`
+        MetaData             json.RawMessage `db:"meta_data"`
+        CreatedAt            time.Time  `db:"created_at"`
+        UpdatedAt            time.Time  `db:"updated_at"`
+        UpdatedByUserID      *uuid.UUID `db:"updated_by_user_id"`
+        DeletedAt            *time.Time `db:"deleted_at"`
+}
+
+
+// gr33n-api/internal/device/model/actuator.go
+package model
+
+
+import (
+        "time"
+        "github.com/google/uuid"
+        "encoding/json"
+)
+
+
+type Actuator struct {
+        ID                   int64      `db:"id"`
+        DeviceID             int64      `db:"device_id"`
+        FarmID               int64      `db:"farm_id"`
+        ZoneID               *int64     `db:"zone_id"`
+        Name                 string     `db:"name"`
+        ActuatorType         string     `db:"actuator_type"`
+        HardwareIdentifier   *string    `db:"hardware_identifier"`
+        CurrentStateNumeric  *float64   `db:"current_state_numeric"`
+        CurrentStateText     *string    `db:"current_state_text"`
+        LastKnownStateTime   *time.Time `db:"last_known_state_time"`
+        LastCommandSentTime  *time.Time `db:"last_command_sent_time"`
+        FeedbackSensorID     *int64     `db:"feedback_sensor_id"`
+        Config               json.RawMessage `db:"config"`
+        MetaData             json.RawMessage `db:"meta_data"`
+        CreatedAt            time.Time  `db:"created_at"`
+        UpdatedAt            time.Time  `db:"updated_at"`
+        UpdatedByUserID      *uuid.UUID `db:"updated_by_user_id"`
+        DeletedAt            *time.Time `db:"deleted_at"`
+}
+```
+
+
+---
+
+
+### **4. `iot` Module Models (`gr33n_core`)**
+
+
+```go
+// gr33n-api/internal/iot/model/sensor_reading.go
+package model
+
+
+import (
+        "time"
+        "encoding/json"
+)
+
+
+type SensorReading struct {
+        SensorID            int64           `db:"sensor_id"`
+        ReadingTime         time.Time       `db:"reading_time"`
+        ValueNumeric        *float64        `db:"value_numeric"`
+        ValueText           *string         `db:"value_text"`
+        ValueJSON           json.RawMessage `db:"value_json"`
+        BatteryLevelPercent *float32        `db:"battery_level_percent"`
+        SignalStrengthDBM   *int32          `db:"signal_strength_dbm"`
+        IsValid             bool            `db:"is_valid"`
+        MetaData            json.RawMessage `db:"meta_data"`
+}
+
+
+// gr33n-api/internal/iot/model/actuator_event.go
+package model
+
+
+import (
+        "time"
+        "github.com/google/uuid"
+        commontypes "gr33n-api/internal/platform/commontypes"
+        "encoding/json"
+)
+
+
+type ActuatorEvent struct {
+        ActuatorID                  int64                                    `db:"actuator_id"`
+        EventTime                   time.Time                                `db:"event_time"`
+        CommandSent                 *string                                  `db:"command_sent"`
+        ParametersSent              json.RawMessage                          `db:"parameters_sent"`
+        TriggeredByUserID           *uuid.UUID                               `db:"triggered_by_user_id"`
+        TriggeredByScheduleID       *int64                                   `db:"triggered_by_schedule_id"`
+        TriggeredByRuleID           *int64                                   `db:"triggered_by_rule_id"`
+        Source                      commontypes.ActuatorEventSourceEnum      `db:"source"`
+        ResponseReceivedFromDevice  *string                                  `db:"response_received_from_device"`
+        ExecutionStatus             *commontypes.ActuatorExecutionStatusEnum `db:"execution_status"`
+        ResultingStateNumericActual *float64                                 `db:"resulting_state_numeric_actual"`
+        ResultingStateTextActual    *string                                  `db:"resulting_state_text_actual"`
+        MetaData                    json.RawMessage                          `db:"meta_data"`
+}
+```
+
+
+---
+
+
+### **5. `task` Module Models (`gr33n_core`)**
+
+
+```go
+// gr33n-api/internal/task/model/task.go
+package model
+
+
+import (
+        "time"
+        "github.com/google/uuid"
+        commontypes "gr33n-api/internal/platform/commontypes"
+)
+
+
+type Task struct {
+        ID                       int64                         `db:"id"`
+        FarmID                   int64                         `db:"farm_id"`
+        ZoneID                   *int64                        `db:"zone_id"`
+        Title                    string                        `db:"title"`
+        Description              *string                       `db:"description"`
+        TaskType                 *string                       `db:"task_type"`
+        Status                   commontypes.TaskStatusEnum    `db:"status"`
+        Priority                 int32                         `db:"priority"`
+        AssignedToUserID         *uuid.UUID                    `db:"assigned_to_user_id"`
+        DueDate                  *time.Time                    `db:"due_date"`
+        EstimatedDurationMinutes *int32                        `db:"estimated_duration_minutes"`
+        ActualStartTime          *time.Time                    `db:"actual_start_time"`
+        ActualEndTime            *time.Time                    `db:"actual_end_time"`
+        RelatedModuleSchema      *string                       `db:"related_module_schema"`
+        RelatedTableName         *string                       `db:"related_table_name"`
+        // RelatedRecordID is TEXT in the latest schema to support UUIDs from other modules.
+        // If you primarily link to BIGINT IDs from core or known addons, *int64 is fine.
+        // For max flexibility with future addon modules that might use UUIDs:
+        RelatedRecordID          *string                       `db:"related_record_id"`
+        CreatedByUserID          *uuid.UUID                    `db:"created_by_user_id"`
+        CreatedAt                time.Time                     `db:"created_at"`
+        UpdatedAt                time.Time                     `db:"updated_at"`
+        UpdatedByUserID          *uuid.UUID                    `db:"updated_by_user_id"`
+        DeletedAt                *time.Time                    `db:"deleted_at"`
+}
+```
+*(Self-correction: `related_record_id` in `tasks` table was `BIGINT`. If it remains `BIGINT`, then `*int64` is correct. If you decide to change `tasks.related_record_id` to `TEXT` in the DB for future flexibility (like `file_attachments.related_record_id`), then `*string` would be used here. For now, I'll stick to the schema having it as `BIGINT`)*.
+Let's stick with `*int64` for `RelatedRecordID` as per the last defined schema for `tasks.related_record_id`.
+
+
+```go
+// Corrected Task model for RelatedRecordID based on schema
+// gr33n-api/internal/task/model/task.go
+package model
+
+
+import (
+        "time"
+        "github.com/google/uuid"
+        commontypes "gr33n-api/internal/platform/commontypes"
+)
+
+
+type Task struct {
+        ID                       int64                         `db:"id"`
+        FarmID                   int64                         `db:"farm_id"`
+        ZoneID                   *int64                        `db:"zone_id"`
+        Title                    string                        `db:"title"`
+        Description              *string                       `db:"description"`
+        TaskType                 *string                       `db:"task_type"`
+        Status                   commontypes.TaskStatusEnum    `db:"status"`
+        Priority                 int32                         `db:"priority"`
+        AssignedToUserID         *uuid.UUID                    `db:"assigned_to_user_id"`
+        DueDate                  *time.Time                    `db:"due_date"`
+        EstimatedDurationMinutes *int32                        `db:"estimated_duration_minutes"`
+        ActualStartTime          *time.Time                    `db:"actual_start_time"`
+        ActualEndTime            *time.Time                    `db:"actual_end_time"`
+        RelatedModuleSchema      *string                       `db:"related_module_schema"`
+        RelatedTableName         *string                       `db:"related_table_name"`
+        RelatedRecordID          *int64                        `db:"related_record_id"` // Sticking to BIGINT as per schema
+        CreatedByUserID          *uuid.UUID                    `db:"created_by_user_id"`
+        CreatedAt                time.Time                     `db:"created_at"`
+        UpdatedAt                time.Time                     `db:"updated_at"`
+        UpdatedByUserID          *uuid.UUID                    `db:"updated_by_user_id"`
+        DeletedAt                *time.Time                    `db:"deleted_at"`
+}
+```
+
+
+---
+
+
+### **6. `automation` Module Models (`gr33n_core`)**
+
+
+```go
+// gr33n-api/internal/automation/model/schedule.go
+package model
+
+
+import (
+        "time"
+        "encoding/json"
+)
+
+
+type Schedule struct {
+        ID                      int64           `db:"id"`
+        FarmID                  int64           `db:"farm_id"`
+        Name                    string          `db:"name"`
+        Description             *string         `db:"description"`
+        ScheduleType            string          `db:"schedule_type"`
+        CronExpression          string          `db:"cron_expression"`
+        Timezone                string          `db:"timezone"`
+        IsActive                bool            `db:"is_active"`
+        LastTriggeredTime       *time.Time      `db:"last_triggered_time"`
+        NextExpectedTriggerTime *time.Time      `db:"next_expected_trigger_time"`
+        MetaData                json.RawMessage `db:"meta_data"`
+        CreatedAt               time.Time       `db:"created_at"`
+        UpdatedAt               time.Time       `db:"updated_at"`
+}
+
+
+// gr33n-api/internal/automation/model/automation_rule.go
+package model
+
+
+import (
+        "time"
+        commontypes "gr33n-api/internal/platform/commontypes"
+        "encoding/json"
+)
+
+
+type AutomationRule struct {
+        ID                     int64                                    `db:"id"`
+        FarmID                 int64                                    `db:"farm_id"`
+        Name                   string                                   `db:"name"`
+        Description            *string                                  `db:"description"`
+        IsActive               bool                                     `db:"is_active"`
+        TriggerSource          commontypes.AutomationTriggerSourceEnum  `db:"trigger_source"`
+        TriggerConfiguration   json.RawMessage                          `db:"trigger_configuration"`
+        ConditionLogic         *string                                  `db:"condition_logic"`
+        ConditionsJSONB        json.RawMessage                          `db:"conditions_jsonb"`
+        LastEvaluatedTime      *time.Time                               `db:"last_evaluated_time"`
+        LastTriggeredTime      *time.Time                               `db:"last_triggered_time"`
+        CooldownPeriodSeconds  *int32                                   `db:"cooldown_period_seconds"`
+        CreatedAt              time.Time                                `db:"created_at"`
+        UpdatedAt              time.Time                                `db:"updated_at"`
+}
+
+
+// gr33n-api/internal/automation/model/executable_action.go
+package model
+
+
+import (
+        commontypes "gr33n-api/internal/platform/commontypes"
+        "encoding/json"
+)
+
+
+type ExecutableAction struct {
+        ID                           int64                                 `db:"id"`
+        ScheduleID                   *int64                                `db:"schedule_id"`
+        RuleID                       *int64                                `db:"rule_id"`
+        ExecutionOrder               int32                                 `db:"execution_order"`
+        ActionType                   commontypes.ExecutableActionTypeEnum  `db:"action_type"`
+        TargetActuatorID             *int64                                `db:"target_actuator_id"`
+        TargetAutomationRuleID       *int64                                `db:"target_automation_rule_id"`
+        TargetNotificationTemplateID *int64                                `db:"target_notification_template_id"`
+        ActionCommand                *string                               `db:"action_command"`
+        ActionParameters             json.RawMessage                       `db:"action_parameters"`
+        DelayBeforeExecutionSeconds  *int32                                `db:"delay_before_execution_seconds"`
+}
+```
+
+
+---
+
+
+### **7. `notification` Module Models (`gr33n_core`)**
+
+
+```go
+// gr33n-api/internal/notification/model/notification_template.go
+package model
+
+
+import (
+        "time"
+        commontypes "gr33n-api/internal/platform/commontypes"
+        "github.com/lib/pq" // For string arrays with database/sql, pgx handles this natively
+)
+
+
+type NotificationTemplate struct {
+        ID                      int64                                   `db:"id"`
+        FarmID                  *int64                                  `db:"farm_id"`
+        TemplateKey             string                                  `db:"template_key"`
+        Description             *string                                 `db:"description"`
+        SubjectTemplate         *string                                 `db:"subject_template"`
+        BodyTemplateText        *string                                 `db:"body_template_text"`
+        BodyTemplateHTML        *string                                 `db:"body_template_html"`
+        DefaultDeliveryChannels pq.StringArray                          `db:"default_delivery_channels"` // TEXT[]
+        DefaultPriority         commontypes.NotificationPriorityEnum    `db:"default_priority"`
+        IsSystemTemplate        bool                                    `db:"is_system_template"`
+        CreatedAt               time.Time                               `db:"created_at"`
+        UpdatedAt               time.Time                               `db:"updated_at"`
+}
+
+
+// gr33n-api/internal/notification/model/alert_notification.go
+package model
+
+
+import (
+        "time"
+        "github.com/google/uuid"
+        commontypes "gr33n-api/internal/platform/commontypes"
+        "encoding/json"
+)
+
+
+type AlertNotification struct {
+        ID                         int64                                   `db:"id"`
+        FarmID                     int64                                   `db:"farm_id"`
+        RecipientUserID            *uuid.UUID                              `db:"recipient_user_id"`
+        NotificationTemplateID     *int64                                  `db:"notification_template_id"`
+        TriggeringEventSourceType  *string                                 `db:"triggering_event_source_type"`
+        TriggeringEventSourceID    *int64                                  `db:"triggering_event_source_id"`
+        Severity                   commontypes.NotificationPriorityEnum    `db:"severity"`
+        SubjectRendered            *string                                 `db:"subject_rendered"`
+        MessageTextRendered        *string                                 `db:"message_text_rendered"`
+        MessageHTMLRendered        *string                                 `db:"message_html_rendered"`
+        DeliveryAttempts           json.RawMessage                         `db:"delivery_attempts"`
+        Status                     commontypes.NotificationStatusEnum      `db:"status"`
+        IsRead                     bool                                    `db:"is_read"`
+        ReadAt                     *time.Time                              `db:"read_at"`
+        IsAcknowledged             bool                                    `db:"is_acknowledged"`
+        AcknowledgedAt             *time.Time                              `db:"acknowledged_at"`
+        AcknowledgedByUserID       *uuid.UUID                              `db:"acknowledged_by_user_id"`
+        CreatedAt                  time.Time                               `db:"created_at"`
+        ScheduledSendAt            time.Time                               `db:"scheduled_send_at"`
+}
+```
+*(Note: For `DefaultDeliveryChannels []string` mapping to `TEXT[]`, `pq.StringArray` works well with `database/sql`. If using `pgx` directly, it often handles Go slices of strings to/from PostgreSQL arrays transparently.)* I'll assume `pgx` native handling or adjust later if needed. For now, `[]string` with `pgx` usually works.
+
+
+```go
+// Corrected NotificationTemplate for []string with pgx
+// gr33n-api/internal/notification/model/notification_template.go
+package model
+
+
+import (
+        "time"
+        commontypes "gr33n-api/internal/platform/commontypes"
+)
+
+
+type NotificationTemplate struct {
+        ID                      int64                                   `db:"id"`
+        FarmID                  *int64                                  `db:"farm_id"`
+        TemplateKey             string                                  `db:"template_key"`
+        Description             *string                                 `db:"description"`
+        SubjectTemplate         *string                                 `db:"subject_template"`
+        BodyTemplateText        *string                                 `db:"body_template_text"`
+        BodyTemplateHTML        *string                                 `db:"body_template_html"`
+        DefaultDeliveryChannels []string                                `db:"default_delivery_channels"` // pgx usually handles []string for TEXT[]
+        DefaultPriority         commontypes.NotificationPriorityEnum    `db:"default_priority"`
+        IsSystemTemplate        bool                                    `db:"is_system_template"`
+        CreatedAt               time.Time                               `db:"created_at"`
+        UpdatedAt               time.Time                               `db:"updated_at"`
+}
+```
+
+
+---
+
+
+### **8. `log` Module Models (`gr33n_core`)**
+
+
+```go
+// gr33n-api/internal/log/model/system_log.go
+package model
+
+
+import (
+        "time"
+        "github.com/google/uuid"
+        commontypes "gr33n-api/internal/platform/commontypes"
+        "encoding/json"
+)
+
+
+type SystemLog struct {
+        ID              int64                         `db:"id"`
+        FarmID          *int64                        `db:"farm_id"`
+        UserID          *uuid.UUID                    `db:"user_id"`
+        LogTime         time.Time                     `db:"log_time"`
+        LogLevel        commontypes.LogLevelEnum      `db:"log_level"`
+        EventType       *string                       `db:"event_type"`
+        Message         string                        `db:"message"`
+        SourceComponent *string                       `db:"source_component"`
+        ContextData     json.RawMessage               `db:"context_data"`
+        CreatedAt       time.Time                     `db:"created_at"`
+}
+
+
+// gr33n-api/internal/log/model/user_activity_log.go
+package model
+
+
+import (
+        "time"
+        "github.com/google/uuid"
+        commontypes "gr33n-api/internal/platform/commontypes"
+        "encoding/json"
+)
+
+
+type UserActivityLog struct {
+        ID                       int64                               `db:"id"`
+        UserID                   *uuid.UUID                          `db:"user_id"`
+        FarmID                   *int64                              `db:"farm_id"`
+        ActivityTime             time.Time                           `db:"activity_time"`
+        ActionType               commontypes.UserActionTypeEnum      `db:"action_type"`
+        TargetModuleSchema       *string                             `db:"target_module_schema"`
+        TargetTableName          *string                             `db:"target_table_name"`
+        TargetRecordID           *string                             `db:"target_record_id"`
+        TargetRecordDescription  *string                             `db:"target_record_description"`
+        IPAddress                *string                             `db:"ip_address"`
+        UserAgent                *string                             `db:"user_agent"`
+        SessionID                *string                             `db:"session_id"`
+        Status                   *string                             `db:"status"`
+        FailureReason            *string                             `db:"failure_reason"`
+        Details                  json.RawMessage                     `db:"details"`
+        CreatedAt                time.Time                           `db:"created_at"`
+}
+```
+
+
+---
+
+
+### **9. `file` Module Models (`gr33n_core`)**
+
+
+```go
+// gr33n-api/internal/file/model/file_attachment.go
+package model
+
+
+import (
+        "time"
+        "github.com/google/uuid"
+)
+
+
+type FileAttachment struct {
+        ID                  int64      `db:"id"`
+        FarmID              int64      `db:"farm_id"`
+        RelatedModuleSchema string     `db:"related_module_schema"`
+        RelatedTableName    string     `db:"related_table_name"`
+        RelatedRecordID     string     `db:"related_record_id"` // TEXT
+        FileName            string     `db:"file_name"`
+        FileType            string     `db:"file_type"`
+        FileSizeBytes       *int64     `db:"file_size_bytes"`
+        StoragePath         string     `db:"storage_path"`
+        MimeType            *string    `db:"mime_type"`
+        Description         *string    `db:"description"`
+        UploadedByUserID    *uuid.UUID `db:"uploaded_by_user_id"`
+        CreatedAt           time.Time  `db:"created_at"`
+        UpdatedAt           time.Time  `db:"updated_at"`
+}
+```
+
+
+---
+
+
+### **10. `weather` Module Models (`gr33n_core`)**
+
+
+```go
+// gr33n-api/internal/weather/model/weather_data.go
+package model
+
+
+import (
+        "time"
+        commontypes "gr33n-api/internal/platform/commontypes"
+        "encoding/json"
+)
+
+
+type WeatherData struct {
+        ID                     int64                               `db:"id"`
+        FarmID                 int64                               `db:"farm_id"`
+        ZoneID                 *int64                              `db:"zone_id"`
+        RecordedAt             time.Time                           `db:"recorded_at"`
+        DataSource             commontypes.WeatherDataSourceEnum   `db:"data_source"`
+        SourceSensorID         *int64                              `db:"source_sensor_id"`
+        TemperatureCelsius     *float64                            `db:"temperature_celsius"`
+        HumidityPercent        *float64                            `db:"humidity_percent"`
+        PrecipitationMm        *float64                            `db:"precipitation_mm"`
+        WindSpeedMs            *float64                            `db:"wind_speed_ms"`
+        WindDirectionDegrees   *int32                              `db:"wind_direction_degrees"`
+        BarometricPressureHpa  *float64                            `db:"barometric_pressure_hpa"`
+        SolarRadiationWm2      *float64                            `db:"solar_radiation_wm2"`
+        DewPointCelsius        *float64                            `db:"dew_point_celsius"`
+        UVIndex                *float32                            `db:"uv_index"`
+        CloudCoverPercent      *float64                            `db:"cloud_cover_percent"`
+        ForecastData           json.RawMessage                     `db:"forecast_data"`
+        RawData                json.RawMessage                     `db:"raw_data"`
+        CreatedAt              time.Time                           `db:"created_at"`
+}
+```
+
+
+---
+
+
+### **11. `cost` Module Models (`gr33n_core`)**
+
+
+```go
+// gr33n-api/internal/cost/model/cost_transaction.go
+package model
+
+
+import (
+        "time"
+        "github.com/google/uuid"
+        commontypes "gr33n-api/internal/platform/commontypes"
+        // "github.com/shopspring/decimal" // For precise currency
+)
+
+
+type CostTransaction struct {
+        ID                  int64                           `db:"id"`
+        FarmID              int64                           `db:"farm_id"`
+        TransactionDate     time.Time                       `db:"transaction_date"`
+        Category            commontypes.CostCategoryEnum    `db:"category"`
+        Subcategory         *string                         `db:"subcategory"`
+        Amount              float64                         `db:"amount"` // Consider decimal.Decimal for money
+        Currency            string                          `db:"currency"`
+        Description         *string                         `db:"description"`
+        RelatedModuleSchema *string                         `db:"related_module_schema"`
+        RelatedTableName    *string                         `db:"related_table_name"`
+        RelatedRecordID     *int64                          `db:"related_record_id"` // As per schema
+        ReceiptFileID       *int64                          `db:"receipt_file_id"`
+        IsIncome            bool                            `db:"is_income"`
+        CreatedByUserID     *uuid.UUID                      `db:"created_by_user_id"`
+        CreatedAt           time.Time                       `db:"created_at"`
+        UpdatedAt           time.Time                       `db:"updated_at"`
+}
+```
+
+
+---
+
+
+### **12. `validationrule` Module Models (`gr33n_core`)**
+
+
+```go
+// gr33n-api/internal/validationrule/model/validation_rule.go
+package model
+
+
+import (
+        "time"
+        commontypes "gr33n-api/internal/platform/commontypes"
+        "encoding/json"
+)
+
+
+type ValidationRule struct {
+        ID                   int64                                   `db:"id"`
+        FarmID               *int64                                  `db:"farm_id"`
+        RuleName             string                                  `db:"rule_name"`
+        Description          *string                                 `db:"description"`
+        TargetModuleSchema   string                                  `db:"target_module_schema"`
+        TargetTableName      string                                  `db:"target_table_name"`
+        TargetColumnName     string                                  `db:"target_column_name"`
+        RuleType             commontypes.ValidationRuleTypeEnum      `db:"rule_type"`
+        RuleConfig           json.RawMessage                         `db:"rule_config"`
+        ErrorMessageTemplate *string                                 `db:"error_message_template"`
+        IsActive             bool                                    `db:"is_active"`
+        Severity             commontypes.ValidationSeverityEnum      `db:"severity"`
+        EvaluationTrigger    string                                  `db:"evaluation_trigger"`
+        CreatedAt            time.Time                               `db:"created_at"`
+        UpdatedAt            time.Time                               `db:"updated_at"`
+}
+```
+
+
+---
+---
+
+
+## `gr33n_natural_farming` Go Domain Models
+
+
+---
+
+
+### **1. `naturalfarming` Module Models (`gr33n_natural_farming`)**
+*(Module name in Go might be `naturalfarming` or `inputs`)*
+
+
+```go
+// gr33n-api/internal/naturalfarming/model/input_definition.go
+package model
+
+
+import (
+        "time"
+        "github.com/google/uuid"
+        commontypes "gr33n-api/internal/platform/commontypes" // For enums from other schemas if needed, or define here
+)
+
+
+// Assuming gr33n_natural_farming.input_category_enum is defined in commontypes or here
+// For this example, let's assume it's in commontypes.InputCategoryEnum
+
+
+type InputDefinition struct {
+        ID                  int64                                    `db:"id"`
+        FarmID              int64                                    `db:"farm_id"`
+        Name                string                                   `db:"name"`
+        Category            commontypes.InputCategoryEnum            `db:"category"` // This ENUM is from gr33n_natural_farming schema
+        Description         *string                                  `db:"description"`
+        TypicalIngredients  *string                                  `db:"typical_ingredients"`
+        PreparationSummary  *string                                  `db:"preparation_summary"`
+        StorageGuidelines   *string                                  `db:"storage_guidelines"`
+        SafetyPrecautions   *string                                  `db:"safety_precautions"`
+        ReferenceSource     *string                                  `db:"reference_source"`
+        FileAttachmentID    *int64                                   `db:"file_attachment_id"`
+        CreatedAt           time.Time                                `db:"created_at"`
+        UpdatedAt           time.Time                                `db:"updated_at"`
+        UpdatedByUserID     *uuid.UUID                               `db:"updated_by_user_id"`
+        DeletedAt           *time.Time                               `db:"deleted_at"`
+}
+
+
+// gr33n-api/internal/naturalfarming/model/input_batch.go
+package model
+
+
+import (
+        "time"
+        "github.com/google/uuid"
+        commontypes "gr33n-api/internal/platform/commontypes"
+        "encoding/json"
+)
+// Assuming gr33n_natural_farming.input_batch_status_enum is defined
+// For this example, let's assume it's in commontypes.InputBatchStatusEnum
+
+
+type InputBatch struct {
+        ID                        int64                                   `db:"id"`
+        FarmID                    int64                                   `db:"farm_id"`
+        InputDefinitionID         int64                                   `db:"input_definition_id"`
+        BatchIdentifier           *string                                 `db:"batch_identifier"`
+        CreationStartDate         time.Time                               `db:"creation_start_date"` // DATE
+        CreationEndDate           *time.Time                              `db:"creation_end_date"`   // DATE
+        ExpectedReadyDate         *time.Time                              `db:"expected_ready_date"` // DATE
+        ActualReadyDate           *time.Time                              `db:"actual_ready_date"`   // DATE
+        QuantityProduced          *float64                                `db:"quantity_produced"`
+        QuantityUnit              *string                                 `db:"quantity_unit"`
+        CurrentQuantityRemaining  *float64                                `db:"current_quantity_remaining"`
+        Status                    commontypes.InputBatchStatusEnum        `db:"status"` // This ENUM is from gr33n_natural_farming
+        StorageLocation           *string                                 `db:"storage_location"`
+        ShelfLifeDays             *int32                                  `db:"shelf_life_days"`
+        PhValue                   *float64                                `db:"ph_value"`
+        EcValueMsCm               *float64                                `db:"ec_value_ms_cm"`
+        TemperatureDuringMaking   *string                                 `db:"temperature_during_making"`
+        IngredientsUsed           *string                                 `db:"ingredients_used"` // TEXT or JSONB
+        // IngredientsBreakdown   json.RawMessage                         `db:"ingredients_breakdown"` // If using JSONB
+        ProcedureFollowed         *string                                 `db:"procedure_followed"`
+        ObservationsNotes         *string                                 `db:"observations_notes"`
+        MadeByUserID              *uuid.UUID                              `db:"made_by_user_id"`
+        RelatedTaskID             *int64                                  `db:"related_task_id"`
+        FileAttachmentID          *int64                                  `db:"file_attachment_id"`
+        CreatedAt                 time.Time                               `db:"created_at"`
+        UpdatedAt                 time.Time                               `db:"updated_at"`
+        UpdatedByUserID           *uuid.UUID                              `db:"updated_by_user_id"`
+        DeletedAt                 *time.Time                              `db:"deleted_at"`
+}
+
+
+// gr33n-api/internal/naturalfarming/model/application_recipe.go
+package model
+
+
+import (
+        "time"
+        "github.com/google/uuid"
+        commontypes "gr33n-api/internal/platform/commontypes"
+        "encoding/json"
+        // "github.com/lib/pq" // For array of enums if needed
+)
+// Assuming gr33n_natural_farming.application_target_enum is defined
+// For this example, let's assume it's in commontypes.ApplicationTargetEnum
+// Assuming gr33n_crops.crop_category_enum is defined in commontypes.CropCategoryEnum
+
+
+type ApplicationRecipe struct {
+        ID                     int64                                    `db:"id"`
+        FarmID                 int64                                    `db:"farm_id"`
+        Name                   string                                   `db:"name"`
+        InputDefinitionID      *int64                                   `db:"input_definition_id"`
+        Description            *string                                  `db:"description"`
+        TargetApplicationType  commontypes.ApplicationTargetEnum        `db:"target_application_type"` // This ENUM is from gr33n_natural_farming
+        DilutionRatio          *string                                  `db:"dilution_ratio"`
+        Components             json.RawMessage                          `db:"components"` // JSONB
+        Instructions           *string                                  `db:"instructions"`
+        FrequencyGuidelines    *string                                  `db:"frequency_guidelines"`
+        TargetCropCategories   []commontypes.CropCategoryEnum           `db:"target_crop_categories"` // array of gr33n_crops.crop_category_enum
+        TargetGrowthStages     []string                                 `db:"target_growth_stages"`  // TEXT[]
+        Notes                  *string                                  `db:"notes"`
+        CreatedAt              time.Time                                `db:"created_at"`
+        UpdatedAt              time.Time                                `db:"updated_at"`
+        UpdatedByUserID        *uuid.UUID                               `db:"updated_by_user_id"`
+        DeletedAt              *time.Time                               `db:"deleted_at"`
+}
+
+
+
+
+// gr33n-api/internal/naturalfarming/model/recipe_input_component.go
+package model
+
+
+type RecipeInputComponent struct {
+        ApplicationRecipeID int64    `db:"application_recipe_id"`
+        InputDefinitionID   int64    `db:"input_definition_id"`
+        PartValue           float64  `db:"part_value"` // NUMERIC
+        PartUnit            string   `db:"part_unit"`
+        Notes               *string  `db:"notes"`
+}
+```
+
+
+---
+
+
+This set of model definitions covers all tables in `gr33n_core` and the newly defined `gr33n_natural_farming` schema.
+Key points during implementation:
+*   Ensure the `commontypes` package (or wherever you place your Go ENUM definitions) is correctly imported.
+*   For arrays of ENUMs like `TargetCropCategories []commontypes.CropCategoryEnum`, you'll need to handle the mapping to/from PostgreSQL's array of ENUM types. `pgx` often manages this well with slices of your custom string-based ENUM types.
+*   The `db:"..."` tags are conventional for libraries like `sqlx`. If using `pgx` without such a library, you might map fields by order or name explicitly in your repository code.
+
+
+This gives you a complete structural blueprint for your Go application's understanding of the database. Next, we can proceed to define DTOs for these, and then the repository, service, and handler layers.
+
+
+
+
+
+
+
+
+
+
+
+
+// gr33n-api/internal/crop/model/crop_variety.go
+package model
+
+
+import (
+        "time"
+        "github.com/google/uuid"
+        commontypes "gr33n-api/internal/platform/commontypes"
+        "encoding/json"
+)
+
+
+type CropVariety struct {
+        ID                           int64                             `db:"id"`
+        FarmID                       int64                             `db:"farm_id"`
+        Name                         string                            `db:"name"`
+        CommonCropName               *string                           `db:"common_crop_name"`
+        ScientificName               *string                           `db:"scientific_name"`
+        Category                     *commontypes.CropCategoryEnum     `db:"category"` // Pointer if ENUM can be NULL
+        Description                  *string                           `db:"description"`
+        AvgDaysToMaturity            *int32                            `db:"avg_days_to_maturity"` // INTEGER
+        SunRequirements              *string                           `db:"sun_requirements"`
+        WaterRequirements            *string                           `db:"water_requirements"`
+        SoilPreferences              *string                           `db:"soil_preferences"`
+        PlantingInstructions         *string                           `db:"planting_instructions"`
+        PestDiseaseResistanceNotes   *string                           `db:"pest_disease_resistance_notes"`
+        Characteristics              json.RawMessage                   `db:"characteristics"` // JSONB
+        SourceSupplierInfo           *string                           `db:"source_supplier_info"`
+        IsActive                     bool                              `db:"is_active"`
+        CreatedAt                    time.Time                         `db:"created_at"`
+        UpdatedAt                    time.Time                         `db:"updated_at"`
+        UpdatedByUserID              *uuid.UUID                        `db:"updated_by_user_id"`
+        DeletedAt                    *time.Time                        `db:"deleted_at"`
+}
+
+
+// gr33n-api/internal/crop/model/crop_planting.go
+package model
+
+
+import (
+        "time"
+        "github.com/google/uuid"
+        commontypes "gr33n-api/internal/platform/commontypes"
+)
+
+
+type CropPlanting struct {
+        ID                         int64                                 `db:"id"`
+        FarmID                     int64                                 `db:"farm_id"`
+        ZoneID                     *int64                                `db:"zone_id"`
+        CropVarietyID              int64                                 `db:"crop_variety_id"`
+        PlantingName               *string                               `db:"planting_name"`
+        Description                *string                               `db:"description"`
+        PlantingDate               time.Time                             `db:"planting_date"` // DATE
+        ExpectedHarvestStartDate   *time.Time                            `db:"expected_harvest_start_date"` // DATE
+        ActualHarvestStartDate     *time.Time                            `db:"actual_harvest_start_date"`   // DATE
+        ExpectedHarvestEndDate     *time.Time                            `db:"expected_harvest_end_date"`   // DATE
+        ActualHarvestEndDate       *time.Time                            `db:"actual_harvest_end_date"`     // DATE
+        CultivationAreaSqm         *float64                              `db:"cultivation_area_sqm"`      // NUMERIC
+        PlantCount                 *int32                                `db:"plant_count"`                // INTEGER
+        PlantSpacingCm             *float64                              `db:"plant_spacing_cm"`           // NUMERIC
+        RowSpacingCm               *float64                              `db:"row_spacing_cm"`             // NUMERIC
+        SourceType                 *commontypes.PlantSourceTypeEnum      `db:"source_type"`                // Pointer if ENUM can be NULL
+        SourceDetails              *string                               `db:"source_details"`
+        CurrentStatus              *string                               `db:"current_status"`
+        Notes                      *string                               `db:"notes"`
+        CreatedAt                  time.Time                             `db:"created_at"`
+        UpdatedAt                  time.Time                             `db:"updated_at"`
+        UpdatedByUserID            *uuid.UUID                            `db:"updated_by_user_id"`
+        DeletedAt                  *time.Time                            `db:"deleted_at"`
+}
+
+
+// gr33n-api/internal/crop/model/crop_growth_stage.go
+package model
+
+
+import (
+        commontypes "gr33n-api/internal/platform/commontypes"
+)
+
+
+type CropGrowthStage struct {
+        ID                   int64                              `db:"id"`
+        FarmID               *int64                             `db:"farm_id"` // Nullable
+        CropCategory         *commontypes.CropCategoryEnum      `db:"crop_category"` // Nullable
+        CropVarietyID        *int64                             `db:"crop_variety_id"` // Nullable
+        StageName            string                             `db:"stage_name"`
+        Description          *string                            `db:"description"`
+        NominalDurationDays  *int32                             `db:"nominal_duration_days"` // INTEGER
+        SequenceOrder        *int32                             `db:"sequence_order"`        // INTEGER
+        IsSystemDefined      bool                               `db:"is_system_defined"`
+}
+
+
+// gr33n-api/internal/crop/model/planting_growth_stage_log.go
+package model
+
+
+import (
+        "time"
+        "github.com/google/uuid"
+)
+
+
+type PlantingGrowthStageLog struct {
+        ID                  int64      `db:"id"`
+        CropPlantingID      int64      `db:"crop_planting_id"`
+        GrowthStageID       int64      `db:"growth_stage_id"`
+        AchievedDate        time.Time  `db:"achieved_date"` // DATE
+        Notes               *string    `db:"notes"`
+        RecordedByUserID    *uuid.UUID `db:"recorded_by_user_id"`
+        CreatedAt           time.Time  `db:"created_at"`
+}
+
+
+// gr33n-api/internal/crop/model/crop_observation.go
+package model
+
+
+import (
+        "time"
+        "github.com/google/uuid"
+        commontypes "gr33n-api/internal/platform/commontypes"
+)
+
+
+type CropObservation struct {
+        ID                  int64                                `db:"id"`
+        CropPlantingID      int64                                `db:"crop_planting_id"`
+        ObservationTime     time.Time                            `db:"observation_time"`
+        ObservationType     commontypes.ObservationTypeEnum      `db:"observation_type"`
+        Description         string                               `db:"description"`
+        ValueNumeric        *float64                             `db:"value_numeric"` // NUMERIC
+        ValueText           *string                              `db:"value_text"`
+        FileAttachmentID    *int64                               `db:"file_attachment_id"`
+        RelatedSensorID     *int64                               `db:"related_sensor_id"`
+        RecordedByUserID    *uuid.UUID                           `db:"recorded_by_user_id"`
+        CreatedAt           time.Time                            `db:"created_at"`
+        UpdatedAt           time.Time                            `db:"updated_at"`
+        UpdatedByUserID     *uuid.UUID                           `db:"updated_by_user_id"`
+        DeletedAt           *time.Time                           `db:"deleted_at"`
+}
+
+
+// gr33n-api/internal/crop/model/pest_disease_sighting.go
+package model
+
+
+import (
+        "time"
+        "github.com/google/uuid"
+)
+
+
+type PestDiseaseSighting struct {
+        ID                           int64      `db:"id"`
+        CropPlantingID               int64      `db:"crop_planting_id"`
+        SightingTime                 time.Time  `db:"sighting_time"`
+        PestOrDiseaseName            string     `db:"pest_or_disease_name"`
+        Type                         string     `db:"type"` // CHECK ('pest', 'disease', 'weed')
+        Severity                     *string    `db:"severity"`
+        Description                  *string    `db:"description"`
+        AffectedPlantPart            *string    `db:"affected_plant_part"`
+        EstimatedAffectedAreaPercent *float64   `db:"estimated_affected_area_percent"` // NUMERIC
+        FileAttachmentID             *int64     `db:"file_attachment_id"`
+        RecordedByUserID             *uuid.UUID `db:"recorded_by_user_id"`
+        CreatedAt                    time.Time  `db:"created_at"`
+        UpdatedAt                    time.Time  `db:"updated_at"`
+        UpdatedByUserID              *uuid.UUID `db:"updated_by_user_id"`
+        DeletedAt                    *time.Time `db:"deleted_at"`
+}
+
+
+// gr33n-api/internal/crop/model/crop_treatment.go
+package model
+
+
+import (
+        "time"
+        "github.com/google/uuid"
+        commontypes "gr33n-api/internal/platform/commontypes"
+)
+
+
+type CropTreatment struct {
+        ID                       int64                               `db:"id"`
+        CropPlantingID           int64                               `db:"crop_planting_id"`
+        PestDiseaseSightingID    *int64                              `db:"pest_disease_sighting_id"`
+        ApplicationDate          time.Time                           `db:"application_date"` // DATE
+        TreatmentType            commontypes.TreatmentTypeEnum       `db:"treatment_type"`
+        ProductName              *string                             `db:"product_name"`
+        InventoryItemID          *int64                              `db:"inventory_item_id"`         // FK to gr33n_core.inventory_items
+        NaturalInputBatchID      *int64                              `db:"natural_input_batch_id"`    // FK to gr33n_natural_farming.input_batches
+        ApplicationMethod        *string                             `db:"application_method"`
+        Concentration            *string                             `db:"concentration"`
+        AmountAppliedValue       *float64                            `db:"amount_applied_value"`      // NUMERIC
+        AmountAppliedUnit        *string                             `db:"amount_applied_unit"`
+        AreaTreatedSqm           *float64                            `db:"area_treated_sqm"`          // NUMERIC
+        ReasonForApplication     *string                             `db:"reason_for_application"`
+        WeatherConditionsAtApplication *string                       `db:"weather_conditions_at_application"`
+        Notes                    *string                             `db:"notes"`
+        AppliedByUserID          *uuid.UUID                          `db:"applied_by_user_id"`
+        RelatedTaskID            *int64                              `db:"related_task_id"`
+        CreatedAt                time.Time                           `db:"created_at"`
+        UpdatedAt                time.Time                           `db:"updated_at"`
+        UpdatedByUserID          *uuid.UUID                          `db:"updated_by_user_id"`
+        DeletedAt                *time.Time                          `db:"deleted_at"`
+}
+
+
+// gr33n-api/internal/crop/model/crop_harvest.go
+package model
+
+
+import (
+        "time"
+        "github.com/google/uuid"
+        commontypes "gr33n-api/internal/platform/commontypes"
+)
+
+
+type CropHarvest struct {
+        ID                   int64                               `db:"id"`
+        CropPlantingID       int64                               `db:"crop_planting_id"`
+        HarvestDate          time.Time                           `db:"harvest_date"` // DATE
+        QuantityHarvested    float64                             `db:"quantity_harvested"` // NUMERIC
+        UnitOfMeasure        string                              `db:"unit_of_measure"`
+        QualityGrade         *commontypes.HarvestQualityEnum     `db:"quality_grade"` // Pointer if ENUM can be NULL
+        StorageLocation      *string                             `db:"storage_location"`
+        MarketDestination    *string                             `db:"market_destination"`
+        Notes                *string                             `db:"notes"`
+        HarvestedByUserID    *uuid.UUID                          `db:"harvested_by_user_id"`
+        RelatedTaskID        *int64                              `db:"related_task_id"`
+        CreatedAt            time.Time                           `db:"created_at"`
+        UpdatedAt            time.Time                           `db:"updated_at"`
+        UpdatedByUserID      *uuid.UUID                          `db:"updated_by_user_id"`
+        DeletedAt            *time.Time                          `db:"deleted_at"`
+}
+
+
+// gr33n-api/internal/crop/model/soil_test.go
+package model
+
+
+import (
+        "time"
+        "github.com/google/uuid"
+)
+
+
+type SoilTest struct {
+        ID                             int64      `db:"id"`
+        FarmID                         int64      `db:"farm_id"`
+        ZoneID                         *int64     `db:"zone_id"`
+        CropPlantingID                 *int64     `db:"crop_planting_id"`
+        TestDate                       time.Time  `db:"test_date"` // DATE
+        LabName                        *string    `db:"lab_name"`
+        ReportReference                *string    `db:"report_reference"`
+        PhValue                        *float64   `db:"ph_value"`                        // NUMERIC
+        OrganicMatterPercent           *float64   `db:"organic_matter_percent"`           // NUMERIC
+        NitrogenPpm                    *float64   `db:"nitrogen_ppm"`                     // NUMERIC
+        PhosphorusPpm                  *float64   `db:"phosphorus_ppm"`                   // NUMERIC
+        PotassiumPpm                   *float64   `db:"potassium_ppm"`                    // NUMERIC
+        CalciumPpm                     *float64   `db:"calcium_ppm"`                      // NUMERIC
+        MagnesiumPpm                   *float64   `db:"magnesium_ppm"`                    // NUMERIC
+        SulfurPpm                      *float64   `db:"sulfur_ppm"`                       // NUMERIC
+        ZincPpm                        *float64   `db:"zinc_ppm"`                         // NUMERIC
+        IronPpm                        *float64   `db:"iron_ppm"`                         // NUMERIC
+        ManganesePpm                   *float64   `db:"manganese_ppm"`                    // NUMERIC
+        CopperPpm                      *float64   `db:"copper_ppm"`                       // NUMERIC
+        BoronPpm                       *float64   `db:"boron_ppm"`                        // NUMERIC
+        SodiumPpm                      *float64   `db:"sodium_ppm"`                       // NUMERIC
+        ElectricalConductivityDsM      *float64   `db:"electrical_conductivity_ds_m"`       // NUMERIC
+        CationExchangeCapacityMeq100g  *float64   `db:"cation_exchange_capacity_meq_100g"` // NUMERIC
+        Recommendations                *string    `db:"recommendations"`
+        FullReportAttachmentID         *int64     `db:"full_report_attachment_id"`
+        CreatedAt                      time.Time  `db:"created_at"`
+        UpdatedAt                      time.Time  `db:"updated_at"`
+        UpdatedByUserID                *uuid.UUID `db:"updated_by_user_id"`
+        DeletedAt                      *time.Time `db:"deleted_at"`
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// gr33n-api/internal/animal/model/animal_breed.go
+package model
+
+
+import (
+        "time"
+        "github.com/google/uuid"
+        // commontypes "gr33n-api/internal/platform/commontypes" // Not strictly needed if no ENUMs in this specific model
+)
+
+
+type AnimalBreed struct {
+        ID                  int64      `db:"id"`
+        FarmID              int64      `db:"farm_id"`
+        SpeciesName         string     `db:"species_name"`
+        BreedName           string     `db:"breed_name"`
+        CommonNames         *string    `db:"common_names"`
+        Description         *string    `db:"description"`
+        OriginCountry       *string    `db:"origin_country"`
+        ConservationStatus  *string    `db:"conservation_status"`
+        AvgLifespanYears    *float64   `db:"avg_lifespan_years"`    // NUMERIC
+        AvgMatureWeightKg   *float64   `db:"avg_mature_weight_kg"`  // NUMERIC
+        PrimaryPurpose      *string    `db:"primary_purpose"`
+        Notes               *string    `db:"notes"`
+        IsActive            bool       `db:"is_active"`
+        CreatedAt           time.Time  `db:"created_at"`
+        UpdatedAt           time.Time  `db:"updated_at"`
+        UpdatedByUserID     *uuid.UUID `db:"updated_by_user_id"`
+        DeletedAt           *time.Time `db:"deleted_at"`
+}
+
+
+// gr33n-api/internal/animal/model/animal_individual.go
+package model
+
+
+import (
+        "time"
+        "github.com/google/uuid"
+        commontypes "gr33n-api/internal/platform/commontypes"
+)
+
+
+type AnimalIndividual struct {
+        ID                         int64                                    `db:"id"`
+        FarmID                     int64                                    `db:"farm_id"`
+        AnimalBreedID              int64                                    `db:"animal_breed_id"`
+        TagID                      *string                                  `db:"tag_id"` // Unique per farm
+        Name                       *string                                  `db:"name"`
+        Sex                        *commontypes.AnimalSexEnum               `db:"sex"` // Pointer if ENUM can be NULL
+        BirthDate                  *time.Time                               `db:"birth_date"` // DATE
+        BirthWeightKg              *float64                                 `db:"birth_weight_kg"` // NUMERIC
+        DamID                      *int64                                   `db:"dam_id"`
+        SireID                     *int64                                   `db:"sire_id"`
+        AcquisitionDate            *time.Time                               `db:"acquisition_date"` // DATE
+        AcquisitionMethod          *commontypes.AcquisitionMethodEnum       `db:"acquisition_method"` // Pointer if ENUM can be NULL
+        SourceDetails              *string                                  `db:"source_details"`
+        CurrentZoneID              *int64                                   `db:"current_zone_id"`
+        DispositionDate            *time.Time                               `db:"disposition_date"` // DATE
+        DispositionMethod          *commontypes.DispositionMethodEnum       `db:"disposition_method"` // Pointer if ENUM can be NULL
+        DispositionReason          *string                                  `db:"disposition_reason"`
+        Notes                      *string                                  `db:"notes"`
+        ProfileImageAttachmentID   *int64                                   `db:"profile_image_attachment_id"`
+        CreatedAt                  time.Time                                `db:"created_at"`
+        UpdatedAt                  time.Time                                `db:"updated_at"`
+        UpdatedByUserID            *uuid.UUID                               `db:"updated_by_user_id"`
+        DeletedAt                  *time.Time                               `db:"deleted_at"`
+}
+
+
+// gr33n-api/internal/animal/model/animal_group.go
+package model
+
+
+import (
+        "time"
+        "github.com/google/uuid"
+)
+
+
+type AnimalGroup struct {
+        ID                  int64      `db:"id"`
+        FarmID              int64      `db:"farm_id"`
+        AnimalBreedID       int64      `db:"animal_breed_id"`
+        GroupName           string     `db:"group_name"`
+        Description         *string    `db:"description"`
+        CurrentZoneID       *int64     `db:"current_zone_id"`
+        EstablishmentDate   *time.Time `db:"establishment_date"` // DATE
+        InitialCount        *int32     `db:"initial_count"`      // INTEGER
+        CurrentApproxCount  *int32     `db:"current_approx_count"` // INTEGER
+        AvgAgeMonths        *float64   `db:"avg_age_months"`     // NUMERIC
+        PrimaryPurpose      *string    `db:"primary_purpose"`
+        Notes               *string    `db:"notes"`
+        CreatedAt           time.Time  `db:"created_at"`
+        UpdatedAt           time.Time  `db:"updated_at"`
+        UpdatedByUserID     *uuid.UUID `db:"updated_by_user_id"`
+        DeletedAt           *time.Time `db:"deleted_at"`
+}
+
+
+// gr33n-api/internal/animal/model/animal_group_member.go
+package model
+
+
+import (
+        "time"
+)
+
+
+type AnimalGroupMember struct {
+        AnimalIndividualID int64      `db:"animal_individual_id"`
+        AnimalGroupID      int64      `db:"animal_group_id"`
+        DateJoined         time.Time  `db:"date_joined"` // DATE
+        DateLeft           *time.Time `db:"date_left"`   // DATE
+        ReasonForLeaving   *string    `db:"reason_for_leaving"`
+}
+
+
+// gr33n-api/internal/animal/model/feeding_record.go
+package model
+
+
+import (
+        "time"
+        "github.com/google/uuid"
+)
+
+
+type FeedingRecord struct {
+        ID                     int64      `db:"id"`
+        FarmID                 int64      `db:"farm_id"`
+        AnimalIndividualID     *int64     `db:"animal_individual_id"`
+        AnimalGroupID          *int64     `db:"animal_group_id"`
+        FeedTime               time.Time  `db:"feed_time"`
+        FeedTypeName           string     `db:"feed_type_name"`
+        FeedInventoryItemID    *int64     `db:"feed_inventory_item_id"` // FK to gr33n_core.inventory_items
+        QuantityFed            float64    `db:"quantity_fed"`          // NUMERIC
+        QuantityUnit           string     `db:"quantity_unit"`
+        Notes                  *string    `db:"notes"`
+        FedByUserID            *uuid.UUID `db:"fed_by_user_id"`
+        RelatedTaskID          *int64     `db:"related_task_id"`
+        CreatedAt              time.Time  `db:"created_at"`
+}
+
+
+// gr33n-api/internal/animal/model/health_record.go
+package model
+
+
+import (
+        "time"
+        "github.com/google/uuid"
+        commontypes "gr33n-api/internal/platform/commontypes"
+)
+
+
+type HealthRecord struct {
+        ID                         int64                                 `db:"id"`
+        FarmID                     int64                                 `db:"farm_id"`
+        AnimalIndividualID         *int64                                `db:"animal_individual_id"`
+        AnimalGroupID              *int64                                `db:"animal_group_id"`
+        EventDate                  time.Time                             `db:"event_date"` // DATE
+        EventType                  commontypes.HealthEventTypeEnum       `db:"event_type"`
+        Description                *string                               `db:"description"`
+        ProductUsed                *string                               `db:"product_used"`
+        ProductInventoryItemID     *int64                                `db:"product_inventory_item_id"` // FK to gr33n_core.inventory_items
+        DosageAdministered         *string                               `db:"dosage_administered"`
+        WithdrawalPeriodDays       *int32                                `db:"withdrawal_period_days"` // INTEGER
+        VeterinarianInvolved       *string                               `db:"veterinarian_involved"`
+        Diagnosis                  *string                               `db:"diagnosis"`
+        Outcome                    *string                               `db:"outcome"`
+        Notes                      *string                               `db:"notes"`
+        RecordedByUserID           *uuid.UUID                            `db:"recorded_by_user_id"`
+        RelatedTaskID              *int64                                `db:"related_task_id"`
+        FileAttachmentID           *int64                                `db:"file_attachment_id"`
+        CreatedAt                  time.Time                             `db:"created_at"`
+        UpdatedAt                  time.Time                             `db:"updated_at"`
+        UpdatedByUserID            *uuid.UUID                            `db:"updated_by_user_id"`
+        DeletedAt                  *time.Time                            `db:"deleted_at"`
+}
+
+
+// gr33n-api/internal/animal/model/breeding_record.go
+package model
+
+
+import (
+        "time"
+        "github.com/google/uuid"
+        commontypes "gr33n-api/internal/platform/commontypes"
+)
+
+
+type BreedingRecord struct {
+        ID                       int64                                   `db:"id"`
+        FarmID                   int64                                   `db:"farm_id"`
+        FemaleAnimalID           int64                                   `db:"female_animal_id"`
+        MaleAnimalID             *int64                                  `db:"male_animal_id"`
+        AnimalGroupID            *int64                                  `db:"animal_group_id"`
+        EventDate                time.Time                               `db:"event_date"` // DATE
+        EventType                commontypes.BreedingEventTypeEnum       `db:"event_type"`
+        SemenIDOrSource          *string                                 `db:"semen_id_or_source"`
+        ExpectedDueDate          *time.Time                              `db:"expected_due_date"`           // DATE
+        ActualBirthHatchDate     *time.Time                              `db:"actual_birth_hatch_date"`     // DATE
+        NumberOfOffspring        *int32                                  `db:"number_of_offspring"`         // INTEGER
+        NumberOfLiveOffspring    *int32                                  `db:"number_of_live_offspring"`    // INTEGER
+        NumberOfMaleOffspring    *int32                                  `db:"number_of_male_offspring"`    // INTEGER
+        NumberOfFemaleOffspring  *int32                                  `db:"number_of_female_offspring"`  // INTEGER
+        Complications            *string                                 `db:"complications"`
+        Notes                    *string                                 `db:"notes"`
+        RecordedByUserID         *uuid.UUID                              `db:"recorded_by_user_id"`
+        RelatedTaskID            *int64                                  `db:"related_task_id"`
+        CreatedAt                time.Time                               `db:"created_at"`
+        UpdatedAt                time.Time                               `db:"updated_at"`
+        UpdatedByUserID          *uuid.UUID                              `db:"updated_by_user_id"`
+        DeletedAt                *time.Time                              `db:"deleted_at"`
+}
+
+
+// gr33n-api/internal/animal/model/breeding_offspring.go
+package model
+
+
+type BreedingOffspring struct {
+        BreedingRecordID   int64   `db:"breeding_record_id"`
+        OffspringAnimalID  int64   `db:"offspring_animal_id"`
+        Notes              *string `db:"notes"`
+}
+
+
+// gr33n-api/internal/animal/model/animal_movement.go
+package model
+
+
+import (
+        "time"
+        "github.com/google/uuid"
+)
+
+
+type AnimalMovement struct {
+        ID                  int64      `db:"id"`
+        FarmID              int64      `db:"farm_id"`
+        AnimalIndividualID  *int64     `db:"animal_individual_id"`
+        AnimalGroupID       *int64     `db:"animal_group_id"`
+        MovementDate        time.Time  `db:"movement_date"`
+        FromZoneID          *int64     `db:"from_zone_id"`
+        ToZoneID            int64      `db:"to_zone_id"`
+        Reason              *string    `db:"reason"`
+        Notes               *string    `db:"notes"`
+        MovedByUserID       *uuid.UUID `db:"moved_by_user_id"`
+        RelatedTaskID       *int64     `db:"related_task_id"`
+        CreatedAt           time.Time  `db:"created_at"`
+}
+
+
+// gr33n-api/internal/animal/model/production_record.go
+package model
+
+
+import (
+        "time"
+        "github.com/google/uuid"
+        commontypes "gr33n-api/internal/platform/commontypes"
+)
+
+
+type ProductionRecord struct {
+        ID                   int64                                 `db:"id"`
+        FarmID               int64                                 `db:"farm_id"`
+        AnimalIndividualID   *int64                                `db:"animal_individual_id"`
+        AnimalGroupID        *int64                                `db:"animal_group_id"`
+        ProductionDate       time.Time                             `db:"production_date"` // DATE
+        ProductionType       commontypes.ProductionTypeEnum        `db:"production_type"`
+        QuantityProduced     float64                               `db:"quantity_produced"` // NUMERIC
+        QuantityUnit         string                                `db:"quantity_unit"`
+        QualityGrade         *string                               `db:"quality_grade"`
+        StorageLocation      *string                               `db:"storage_location"`
+        Notes                *string                               `db:"notes"`
+        CollectedByUserID    *uuid.UUID                            `db:"collected_by_user_id"`
+        RelatedTaskID        *int64                                `db:"related_task_id"`
+        CreatedAt            time.Time                             `db:"created_at"`
+        UpdatedAt            time.Time                             `db:"updated_at"`
+        UpdatedByUserID      *uuid.UUID                            `db:"updated_by_user_id"`
+        DeletedAt            *time.Time                            `db:"deleted_at"`
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+I'm not sure how to make those changes you've suggested or how to make a note of it so I can tell you about it later
+
+
+Okay, no problem at all! I can guide you on how to make those suggested changes directly in the Go model code snippets we've been discussing. I'll also suggest a few simple ways to "make a note" of these kinds of details for future reference.
+
+
+Let's go through each suggestion:
+
+
+## How to Make the Suggested Changes in Your Go Models
+
+
+Here's how you would modify the Go struct definitions. I'll show the "before" and "after" for each.
+
+
+### 1. `Actuator.DeviceID` (from `int64` to `*int64`)
+
+
+This change is in your `Actuator` model.
+**File:** `gr33n-api/internal/device/model/actuator.go`
+
+
+**Current (Before):**
+```go
+// gr33n-api/internal/device/model/actuator.go
+package model
+
+
+import (
+        "time"
+        "github.com/google/uuid"
+        "encoding/json"
+)
+
+
+type Actuator struct {
+        ID                   int64      `db:"id"`
+        DeviceID             int64      `db:"device_id"` // <--- This line
+        FarmID               int64      `db:"farm_id"`
+        ZoneID               *int64     `db:"zone_id"`
+        Name                 string     `db:"name"`
+        ActuatorType         string     `db:"actuator_type"`
+        HardwareIdentifier   *string    `db:"hardware_identifier"`
+        CurrentStateNumeric  *float64   `db:"current_state_numeric"`
+        CurrentStateText     *string    `db:"current_state_text"`
+        LastKnownStateTime   *time.Time `db:"last_known_state_time"`
+        LastCommandSentTime  *time.Time `db:"last_command_sent_time"`
+        FeedbackSensorID     *int64     `db:"feedback_sensor_id"`
+        Config               json.RawMessage `db:"config"`
+        MetaData             json.RawMessage `db:"meta_data"`
+        CreatedAt            time.Time  `db:"created_at"`
+        UpdatedAt            time.Time  `db:"updated_at"`
+        UpdatedByUserID      *uuid.UUID `db:"updated_by_user_id"`
+        DeletedAt            *time.Time `db:"deleted_at"`
+}
+```
+
+
+**Change to (After):**
+```go
+// gr33n-api/internal/device/model/actuator.go
+package model
+
+
+import (
+        "time"
+        "github.com/google/uuid"
+        "encoding/json"
+)
+
+
+type Actuator struct {
+        ID                   int64      `db:"id"`
+        DeviceID             *int64     `db:"device_id"` // <--- MODIFIED: Added asterisk (*)
+        FarmID               int64      `db:"farm_id"`
+        ZoneID               *int64     `db:"zone_id"`
+        Name                 string     `db:"name"`
+        ActuatorType         string     `db:"actuator_type"`
+        HardwareIdentifier   *string    `db:"hardware_identifier"`
+        CurrentStateNumeric  *float64   `db:"current_state_numeric"`
+        CurrentStateText     *string    `db:"current_state_text"`
+        LastKnownStateTime   *time.Time `db:"last_known_state_time"`
+        LastCommandSentTime  *time.Time `db:"last_command_sent_time"`
+        FeedbackSensorID     *int64     `db:"feedback_sensor_id"`
+        Config               json.RawMessage `db:"config"`
+        MetaData             json.RawMessage `db:"meta_data"`
+        CreatedAt            time.Time  `db:"created_at"`
+        UpdatedAt            time.Time  `db:"updated_at"`
+        UpdatedByUserID      *uuid.UUID `db:"updated_by_user_id"`
+        DeletedAt            *time.Time `db:"deleted_at"`
+}
+```
+**Reasoning:** You add an asterisk (`*`) before `int64` to make it a pointer. This allows the `DeviceID` field to hold a `nil` value, which mirrors the database's ability to set this foreign key to `NULL` if the referenced device is deleted (due to `ON DELETE SET NULL`).
+
+
+### 2. `CostTransaction.Amount` (from `float64` to `decimal.Decimal`)
+
+
+This is a consideration for better precision with currency.
+**File:** `gr33n-api/internal/cost/model/cost_transaction.go`
+
+
+**Current (Before):**
+```go
+// gr33n-api/internal/cost/model/cost_transaction.go
+package model
+
+
+import (
+        "time"
+        "github.com/google/uuid"
+        commontypes "gr33n-api/internal/platform/commontypes"
+        // "github.com/shopspring/decimal" // For precise currency
+)
+
+
+type CostTransaction struct {
+        ID                  int64                           `db:"id"`
+        FarmID              int64                           `db:"farm_id"`
+        TransactionDate     time.Time                       `db:"transaction_date"`
+        Category            commontypes.CostCategoryEnum    `db:"category"`
+        Subcategory         *string                         `db:"subcategory"`
+        Amount              float64                         `db:"amount"` // <--- This line
+        Currency            string                          `db:"currency"`
+        Description         *string                         `db:"description"`
+        RelatedModuleSchema *string                         `db:"related_module_schema"`
+        RelatedTableName    *string                         `db:"related_table_name"`
+        RelatedRecordID     *int64                          `db:"related_record_id"`
+        ReceiptFileID       *int64                          `db:"receipt_file_id"`
+        IsIncome            bool                            `db:"is_income"`
+        CreatedByUserID     *uuid.UUID                      `db:"created_by_user_id"`
+        CreatedAt           time.Time                       `db:"created_at"`
+        UpdatedAt           time.Time                       `db:"updated_at"`
+}
+```
+
+
+**Change to (After):**
+```go
+// gr33n-api/internal/cost/model/cost_transaction.go
+package model
+
+
+import (
+        "time"
+        "github.com/google/uuid"
+        commontypes "gr33n-api/internal/platform/commontypes"
+        "github.com/shopspring/decimal" // <--- ADDED: Import for decimal package
+)
+
+
+type CostTransaction struct {
+        ID                  int64                           `db:"id"`
+        FarmID              int64                           `db:"farm_id"`
+        TransactionDate     time.Time                       `db:"transaction_date"`
+        Category            commontypes.CostCategoryEnum    `db:"category"`
+        Subcategory         *string                         `db:"subcategory"`
+        Amount              decimal.Decimal                 `db:"amount"` // <--- MODIFIED: Changed type
+        Currency            string                          `db:"currency"`
+        Description         *string                         `db:"description"`
+        RelatedModuleSchema *string                         `db:"related_module_schema"`
+        RelatedTableName    *string                         `db:"related_table_name"`
+        RelatedRecordID     *int64                          `db:"related_record_id"`
+        ReceiptFileID       *int64                          `db:"receipt_file_id"`
+        IsIncome            bool                            `db:"is_income"`
+        CreatedByUserID     *uuid.UUID                      `db:"created_by_user_id"`
+        CreatedAt           time.Time                       `db:"created_at"`
+        UpdatedAt           time.Time                       `db:"updated_at"`
+}
+```
+**Steps:**
+1.  **Add the import:** `import "github.com/shopspring/decimal"` at the top with your other imports. You'd need to make sure this package is part of your project's dependencies (e.g., by running `go get github.com/shopspring/decimal`).
+2.  **Change the type:** Replace `float64` with `decimal.Decimal` for the `Amount` field.
+
+
+### 3. `SensorReading.BatteryLevelPercent` (from `*float32` to `*float64`)
+
+
+This is a consideration for potentially better precision matching the `NUMERIC(5,2)` database type.
+**File:** `gr33n-api/internal/iot/model/sensor_reading.go`
+
+
+**Current (Before):**
+```go
+// gr33n-api/internal/iot/model/sensor_reading.go
+package model
+
+
+import (
+        "time"
+        "encoding/json"
+)
+
+
+type SensorReading struct {
+        SensorID            int64           `db:"sensor_id"`
+        ReadingTime         time.Time       `db:"reading_time"`
+        ValueNumeric        *float64        `db:"value_numeric"`
+        ValueText           *string         `db:"value_text"`
+        ValueJSON           json.RawMessage `db:"value_json"`
+        BatteryLevelPercent *float32        `db:"battery_level_percent"` // <--- This line
+        SignalStrengthDBM   *int32          `db:"signal_strength_dbm"`
+        IsValid             bool            `db:"is_valid"`
+        MetaData            json.RawMessage `db:"meta_data"`
+}
+```
+
+
+**Change to (After):**
+```go
+// gr33n-api/internal/iot/model/sensor_reading.go
+package model
+
+
+import (
+        "time"
+        "encoding/json"
+)
+
+
+type SensorReading struct {
+        SensorID            int64           `db:"sensor_id"`
+        ReadingTime         time.Time       `db:"reading_time"`
+        ValueNumeric        *float64        `db:"value_numeric"`
+        ValueText           *string         `db:"value_text"`
+        ValueJSON           json.RawMessage `db:"value_json"`
+        BatteryLevelPercent *float64        `db:"battery_level_percent"` // <--- MODIFIED: Changed float32 to float64
+        SignalStrengthDBM   *int32          `db:"signal_strength_dbm"`
+        IsValid             bool            `db:"is_valid"`
+        MetaData            json.RawMessage `db:"meta_data"`
+}
+```
+**Reasoning:** Simply change `*float32` to `*float64`. This offers more precision, which is generally a safer match for database `NUMERIC` types.
+
+
+## How to "Make a Note" for Later
+
+
+Here are a few ways you can keep track of these decisions or pending items:
+
+
+1.  **Code Comments:**
+    *   Directly in your Go model files, you can add comments next to the fields in question.
+    ```go
+    // gr33n-api/internal/device/model/actuator.go
+    type Actuator struct {
+        // ... other fields ...
+        DeviceID             *int64     `db:"device_id"` // NOTE: Changed to *int64 to match schema ON DELETE SET NULL (YYYY-MM-DD)
+        // ... other fields ...
+    }
+
+
+    // gr33n-api/internal/cost/model/cost_transaction.go
+    type CostTransaction struct {
+        // ... other fields ...
+        Amount              decimal.Decimal `db:"amount"` // CONSIDERATION: Using decimal.Decimal for precision with currency (YYYY-MM-DD)
+        // ... other fields ...
+    }
+    ```
+    *   **Pros:** The note lives right with the code, easy to find when working on that specific model.
+    *   **Cons:** Can clutter the code if there are many notes.
+
+
+2.  **Project TODO List / Issue Tracker:**
+    *   If you use a project management tool, a dedicated issue tracker (like GitHub Issues, Jira, Trello), or even a simple `TODO.md` file in your project root, you can list these items there.
+    *   Example for a `TODO.md`:
+        ```markdown
+        ## gr33n API Model Refinements
+
+
+        - [x] **Actuator.DeviceID**: Changed to `*int64` to align with `ON DELETE SET NULL` in schema. (File: `device/model/actuator.go`)
+        - [ ] **CostTransaction.Amount**: Consider/Confirm use of `decimal.Decimal` instead of `float64` for currency precision. (File: `cost/model/cost_transaction.go`)
+        - [x] **SensorReading.BatteryLevelPercent**: Changed `*float32` to `*float64` for better precision matching `NUMERIC(5,2)`. (File: `iot/model/sensor_reading.go`)
+        ```
+    *   **Pros:** Centralized, good for tracking progress, can assign to people or set priorities.
+    *   **Cons:** Separated from the actual code.
+
+
+3.  **Design Document / Wiki Page:**
+    *   If you have a more formal design document for your API or database, you can add a section or an appendix detailing these model decisions and their rationale. The "gr33n Project & Schema Overview" you shared earlier is a good place where such notes could live.
+    *   **Pros:** Good for detailed explanations and keeping a historical record of design choices.
+    *   **Cons:** Can become outdated if not diligently maintained.
+
+
+4.  **Tell Me Again Later in This Thread:**
+    *   For our current conversation, you can simply say something like, "Okay, I've made a note about the `Actuator.DeviceID` change and the `CostTransaction.Amount` consideration. Let's proceed, and I'll update the models in my actual codebase."
+    *   Then, when you *have* updated your local files with the changes, you can paste the updated model snippets back here, and I can confirm from that.
+    *   **Pros:** Easy for our immediate interaction.
+    *   **Cons:** Relies on our conversational memory; less permanent for your own records.
+
+
+**My Recommendation for You Now:**
+
+
+*   For the `Actuator.DeviceID` and `SensorReading.BatteryLevelPercent` changes, if you're comfortable, you can mentally note them or quickly update your local code snippets now.
+*   For the `CostTransaction.Amount` (using `decimal.Decimal`), since it involves adding a new package and is more of a "best practice consideration," you might want to make a more formal note (like in a TODO list or code comment) to evaluate and implement when you focus on the financial aspects.
+
+
+Feel free to try making the changes to the code snippets directly in your reply, or let me know which method of "making a note" works best for you, and we can proceed from there!
