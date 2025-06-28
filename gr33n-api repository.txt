@@ -1,0 +1,146 @@
+﻿gr33n-api repository
+
+
+
+
+// gr33n-api/internal/auth/repository/profile_repository.go
+package repository
+
+
+import (
+        "context"
+        "fmt"
+        "time"
+
+
+        "gr33n-api/internal/auth/model" // Your Profile model
+        commontypes "gr33n-api/internal/platform/commontypes"
+        "github.com/google/uuid"
+        "github.com/jackc/pgx/v5"
+        "github.com/jackc/pgx/v5/pgxpool"
+)
+
+
+type ProfileRepository interface {
+        Create(ctx context.Context, profile *model.Profile) error
+        GetByUserID(ctx context.Context, userID uuid.UUID) (*model.Profile, error)
+        GetByEmail(ctx context.Context, email string) (*model.Profile, error)
+        Update(ctx context.Context, profile *model.Profile) error
+        // Delete (usually handled by Supabase auth or a soft delete/anonymization process)
+
+
+        // FarmMembership related methods
+        AddFarmMember(ctx context.Context, membership *model.FarmMembership) error
+        GetFarmMembership(ctx context.Context, farmID int64, userID uuid.UUID) (*model.FarmMembership, error)
+        GetFarmMembers(ctx context.Context, farmID int64) ([]*model.FarmMembership, error) // Consider joining with profiles for user details
+        UpdateFarmMemberRole(ctx context.Context, farmID int64, userID uuid.UUID, newRole commontypes.FarmMemberRoleEnum) error
+        RemoveFarmMember(ctx context.Context, farmID int64, userID uuid.UUID) error
+}
+
+
+type pgProfileRepository struct {
+        db *pgxpool.Pool
+}
+
+
+func NewProfileRepository(db *pgxpool.Pool) ProfileRepository {
+        return &pgProfileRepository{db: db}
+}
+
+
+func (r *pgProfileRepository) Create(ctx context.Context, profile *model.Profile) error {
+        query := `INSERT INTO gr33n_core.profiles (user_id, full_name, email, avatar_url, role, preferences, created_at, updated_at)
+                  VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`
+        _, err := r.db.Exec(ctx, query,
+                profile.UserID, profile.FullName, profile.Email, profile.AvatarURL, profile.Role, profile.Preferences,
+                profile.CreatedAt, profile.UpdatedAt)
+        if err != nil {
+                return fmt.Errorf("pgProfileRepository.Create: %w", err)
+        }
+        return nil
+}
+
+
+func (r *pgProfileRepository) GetByUserID(ctx context.Context, userID uuid.UUID) (*model.Profile, error) {
+        query := `SELECT user_id, full_name, email, avatar_url, role, preferences, created_at, updated_at
+                  FROM gr33n_core.profiles WHERE user_id = $1`
+        profile := &model.Profile{}
+        err := r.db.QueryRow(ctx, query, userID).Scan(
+                &profile.UserID, &profile.FullName, &profile.Email, &profile.AvatarURL, &profile.Role,
+                &profile.Preferences, &profile.CreatedAt, &profile.UpdatedAt,
+        )
+        if err != nil {
+                if err == pgx.ErrNoRows {
+                        return nil, fmt.Errorf("profile not found: %w", err) // Or custom ErrNotFound
+                }
+                return nil, fmt.Errorf("pgProfileRepository.GetByUserID: %w", err)
+        }
+        return profile, nil
+}
+
+
+func (r *pgProfileRepository) GetByEmail(ctx context.Context, email string) (*model.Profile, error) {
+        query := `SELECT user_id, full_name, email, avatar_url, role, preferences, created_at, updated_at
+                  FROM gr33n_core.profiles WHERE email = $1`
+        profile := &model.Profile{}
+        err := r.db.QueryRow(ctx, query, email).Scan(
+                &profile.UserID, &profile.FullName, &profile.Email, &profile.AvatarURL, &profile.Role,
+                &profile.Preferences, &profile.CreatedAt, &profile.UpdatedAt,
+        )
+        if err != nil {
+                if err == pgx.ErrNoRows {
+                        return nil, fmt.Errorf("profile not found with email %s: %w", email, err)
+                }
+                return nil, fmt.Errorf("pgProfileRepository.GetByEmail: %w", err)
+        }
+        return profile, nil
+}
+
+
+func (r *pgProfileRepository) Update(ctx context.Context, profile *model.Profile) error {
+        profile.UpdatedAt = time.Now().UTC()
+        query := `UPDATE gr33n_core.profiles
+                  SET full_name = $1, avatar_url = $2, role = $3, preferences = $4, updated_at = $5
+                  WHERE user_id = $6`
+        _, err := r.db.Exec(ctx, query,
+                profile.FullName, profile.AvatarURL, profile.Role, profile.Preferences, profile.UpdatedAt, profile.UserID)
+        if err != nil {
+                return fmt.Errorf("pgProfileRepository.Update: %w", err)
+        }
+        return nil
+}
+
+
+
+
+// FarmMembership methods
+func (r *pgProfileRepository) AddFarmMember(ctx context.Context, membership *model.FarmMembership) error {
+    query := `INSERT INTO gr33n_core.farm_memberships (farm_id, user_id, role_in_farm, permissions, joined_at)
+              VALUES ($1, $2, $3, $4, $5)`
+    _, err := r.db.Exec(ctx, query,
+        membership.FarmID, membership.UserID, membership.RoleInFarm, membership.Permissions, membership.JoinedAt)
+    if err != nil {
+        return fmt.Errorf("pgProfileRepository.AddFarmMember: %w", err)
+    }
+    return nil
+}
+
+
+func (r *pgProfileRepository) GetFarmMembership(ctx context.Context, farmID int64, userID uuid.UUID) (*model.FarmMembership, error) {
+    query := `SELECT farm_id, user_id, role_in_farm, permissions, joined_at
+              FROM gr33n_core.farm_memberships WHERE farm_id = $1 AND user_id = $2`
+    m := &model.FarmMembership{}
+    err := r.db.QueryRow(ctx, query, farmID, userID).Scan(
+        &m.FarmID, &m.UserID, &m.RoleInFarm, &m.Permissions, &m.JoinedAt)
+    if err != nil {
+        if err == pgx.ErrNoRows {
+            return nil, fmt.Errorf("farm membership not found: %w", err)
+        }
+        return nil, fmt.Errorf("pgProfileRepository.GetFarmMembership: %w", err)
+    }
+    return m, nil
+}
+// Implement GetFarmMembers, UpdateFarmMemberRole, RemoveFarmMember similarly...
+func (r *pgProfileRepository) GetFarmMembers(ctx context.Context, farmID int64) ([]*model.FarmMembership, error) { panic("implement me") }
+func (r *pgProfileRepository) UpdateFarmMemberRole(ctx context.Context, farmID int64, userID uuid.UUID, newRole commontypes.FarmMemberRoleEnum) error { panic("implement me") }
+func (r *pgProfileRepository) RemoveFarmMember(ctx context.Context, farmID int64, userID uuid.UUID) error { panic("implement me") }
