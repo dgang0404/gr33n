@@ -1,0 +1,1699 @@
+﻿-- OPTIONAL BUT RECOMMENDED EXTENSIONS
+-- CREATE EXTENSION IF NOT EXISTS postgis;
+-- CREATE EXTENSION IF NOT EXISTS timescaledb CASCADE;
+
+
+--------------------------------------------------------------------------------
+-- SCHEMA: gr33n_core - Essential entities and logic for all gr33n instances
+--------------------------------------------------------------------------------
+CREATE SCHEMA IF NOT EXISTS gr33n_core;
+COMMENT ON SCHEMA gr33n_core IS 'Core entities shared across all gr33n farm instances, including users, farms, zones, devices, sensors, actuators, tasks, schedules, automation rules, notifications, system logging, file attachments, weather data, cost tracking, validation rules, and user activity. This schema forms the backbone of the gr33n platform.';
+
+
+--------------------------------------------------------------------------------
+-- ENUMERATED TYPES
+--------------------------------------------------------------------------------
+CREATE TYPE gr33n_core.farm_scale_tier_enum AS ENUM ('small', 'medium', 'large', 'enterprise');
+COMMENT ON TYPE gr33n_core.farm_scale_tier_enum IS 'Defines the scale categories for a farm, influencing UI/API behavior and default configurations.';
+
+
+CREATE TYPE gr33n_core.operational_status_enum AS ENUM ('active', 'maintenance', 'planning', 'archived', 'decommissioned');
+COMMENT ON TYPE gr33n_core.operational_status_enum IS 'Defines the current operational state of a farm.';
+
+
+CREATE TYPE gr33n_core.log_level_enum AS ENUM ('DEBUG', 'INFO', 'NOTICE', 'WARNING', 'ERROR', 'CRITICAL', 'ALERT', 'EMERGENCY');
+COMMENT ON TYPE gr33n_core.log_level_enum IS 'Defines severity levels for system log entries.';
+
+
+CREATE TYPE gr33n_core.user_role_enum AS ENUM ('user', 'farm_manager', 'farm_worker', 'gr33n_system_admin');
+COMMENT ON TYPE gr33n_core.user_role_enum IS 'Defines system-wide roles for users in the gr33n platform.';
+
+
+CREATE TYPE gr33n_core.farm_member_role_enum AS ENUM ('owner', 'manager', 'agronomist', 'worker', 'viewer', 'custom_role');
+COMMENT ON TYPE gr33n_core.farm_member_role_enum IS 'Defines roles for users specifically within a farm.';
+
+
+CREATE TYPE gr33n_core.device_status_enum AS ENUM ('online', 'offline', 'error_comms', 'error_hardware', 'maintenance_mode', 'initializing', 'unknown', 'decommissioned', 'pending_activation');
+COMMENT ON TYPE gr33n_core.device_status_enum IS 'Defines the operational status of a device.';
+
+
+CREATE TYPE gr33n_core.task_status_enum AS ENUM ('todo', 'in_progress', 'on_hold', 'completed', 'cancelled', 'blocked_requires_input', 'pending_review');
+COMMENT ON TYPE gr33n_core.task_status_enum IS 'Defines the status of a task.';
+
+
+CREATE TYPE gr33n_core.automation_trigger_source_enum AS ENUM ('sensor_reading_threshold', 'specific_time_cron', 'actuator_state_changed', 'manual_api_trigger', 'task_status_updated', 'new_system_log_event', 'external_webhook_received');
+COMMENT ON TYPE gr33n_core.automation_trigger_source_enum IS 'Defines the types of triggers for automation rules.';
+
+
+CREATE TYPE gr33n_core.executable_action_type_enum AS ENUM ('control_actuator', 'trigger_another_automation_rule', 'send_notification', 'create_task', 'log_custom_event', 'http_webhook_call', 'update_record_in_gr33n');
+COMMENT ON TYPE gr33n_core.executable_action_type_enum IS 'Defines the types of actions that can be executed by schedules or automation rules.';
+
+
+CREATE TYPE gr33n_core.notification_priority_enum AS ENUM ('low', 'medium', 'high', 'critical');
+COMMENT ON TYPE gr33n_core.notification_priority_enum IS 'Defines priority levels for notifications.';
+
+
+CREATE TYPE gr33n_core.notification_status_enum AS ENUM ('pending', 'queued', 'sent', 'delivered', 'failed_to_send', 'read_by_user', 'acknowledged_by_user', 'archived_by_user', 'system_cleared');
+COMMENT ON TYPE gr33n_core.notification_status_enum IS 'Defines the status of a notification instance.';
+
+
+CREATE TYPE gr33n_core.actuator_event_source_enum AS ENUM ('manual_ui_input', 'manual_api_call', 'schedule_trigger', 'automation_rule_trigger', 'device_internal_feedback_loop', 'system_initialization_routine', 'emergency_stop_signal');
+COMMENT ON TYPE gr33n_core.actuator_event_source_enum IS 'Defines the source of an actuator event command.';
+
+
+CREATE TYPE gr33n_core.actuator_execution_status_enum AS ENUM ('command_sent_to_device', 'acknowledged_by_device', 'execution_started_on_device', 'execution_completed_success_on_device', 'execution_completed_with_error_on_device', 'execution_failed_to_start_on_device', 'pending_confirmation_from_feedback', 'timeout_waiting_for_acknowledgement', 'cancelled_by_user_or_system');
+COMMENT ON TYPE gr33n_core.actuator_execution_status_enum IS 'Defines the execution status of an actuator command.';
+
+
+CREATE TYPE gr33n_core.weather_data_source_enum AS ENUM ('farm_weather_station', 'api_openweather', 'api_visualcrossing', 'manual_entry', 'iot_sensor_reading');
+COMMENT ON TYPE gr33n_core.weather_data_source_enum IS 'Defines the origin of the weather data.';
+
+
+CREATE TYPE gr33n_core.cost_category_enum AS ENUM (
+    'seeds_plants', 'fertilizers_soil_amendments', 'pest_disease_control', 'water_irrigation',
+    'labor_wages', 'equipment_purchase_rental', 'equipment_maintenance_fuel', 'utilities_electricity_gas',
+    'land_rent_mortgage', 'insurance', 'licenses_permits', 'feed_livestock', 'veterinary_services',
+    'packaging_supplies', 'transportation_logistics', 'marketing_sales', 'training_consultancy', 'miscellaneous'
+);
+COMMENT ON TYPE gr33n_core.cost_category_enum IS 'Defines categories for financial cost tracking in farm operations.';
+
+
+CREATE TYPE gr33n_core.validation_rule_type_enum AS ENUM ('range_check', 'required_field', 'format_validation', 'regex_match', 'lookup_in_list', 'cross_field_comparison', 'custom_function_check');
+COMMENT ON TYPE gr33n_core.validation_rule_type_enum IS 'Defines types of data validation rules that can be applied.';
+
+
+CREATE TYPE gr33n_core.validation_severity_enum AS ENUM ('warning', 'error', 'critical_stop');
+COMMENT ON TYPE gr33n_core.validation_severity_enum IS 'Defines the severity of a validation rule failure.';
+
+
+CREATE TYPE gr33n_core.user_action_type_enum AS ENUM (
+    'login_success', 'login_failure', 'logout',
+    'create_record', 'view_record', 'update_record', 'delete_record', 'list_records',
+    'execute_action', 'change_setting', 'system_event', 'export_data', 'import_data'
+);
+COMMENT ON TYPE gr33n_core.user_action_type_enum IS 'Defines types of user actions for activity logging.';
+
+
+--------------------------------------------------------------------------------
+-- TABLES
+--------------------------------------------------------------------------------
+
+
+-- User Profiles (linked to Supabase auth.users table if used)
+CREATE TABLE gr33n_core.profiles (
+    user_id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+    full_name TEXT,
+    email TEXT UNIQUE NOT NULL,
+    avatar_url TEXT,
+    role gr33n_core.user_role_enum DEFAULT 'user' NOT NULL,
+    preferences JSONB DEFAULT '{}'::jsonb,
+    created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
+    -- Note: 'updated_by_user_id' usually not needed here as profile updates are self-initiated or by admin (logged in activity log)
+    -- Note: 'deleted_at' for users is complex due to auth.users; usually means deactivation/anonymization.
+);
+COMMENT ON TABLE gr33n_core.profiles IS 'Stores user-specific information, application preferences, and extends Supabase''s auth.users table.';
+
+
+-- Farms
+CREATE TABLE gr33n_core.farms (
+    id BIGSERIAL PRIMARY KEY,
+    name TEXT NOT NULL,
+    description TEXT,
+    location_text TEXT,
+    -- location_gis GEOMETRY(Point, 4326),
+    size_hectares NUMERIC(10,2),
+    farm_type TEXT,
+    scale_tier gr33n_core.farm_scale_tier_enum DEFAULT 'small' NOT NULL,
+    owner_user_id UUID NOT NULL REFERENCES gr33n_core.profiles(user_id),
+    timezone TEXT DEFAULT 'UTC' NOT NULL,
+    currency CHAR(3) DEFAULT 'USD' NOT NULL,
+    operational_status gr33n_core.operational_status_enum DEFAULT 'active' NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    updated_by_user_id UUID REFERENCES gr33n_core.profiles(user_id) ON DELETE SET NULL, -- ADDED
+    deleted_at TIMESTAMPTZ DEFAULT NULL -- ADDED for soft delete
+);
+COMMENT ON TABLE gr33n_core.farms IS 'Represents a distinct agricultural operation. Includes soft delete and last updater.';
+
+
+-- Farm Memberships
+CREATE TABLE gr33n_core.farm_memberships (
+    farm_id BIGINT NOT NULL REFERENCES gr33n_core.farms(id) ON DELETE CASCADE,
+    user_id UUID NOT NULL REFERENCES gr33n_core.profiles(user_id) ON DELETE CASCADE,
+    role_in_farm gr33n_core.farm_member_role_enum NOT NULL,
+    permissions JSONB DEFAULT '{}'::jsonb,
+    joined_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
+    -- No updated_at/by here as changes are essentially new states or deletions.
+    -- No deleted_at here; removing a membership is a hard delete of the relationship.
+    PRIMARY KEY (farm_id, user_id)
+);
+COMMENT ON TABLE gr33n_core.farm_memberships IS 'Manages user access rights and their specific roles within a particular farm.';
+
+
+-- Farm Active Modules
+CREATE TABLE gr33n_core.farm_active_modules (
+    farm_id BIGINT NOT NULL REFERENCES gr33n_core.farms(id) ON DELETE CASCADE,
+    module_schema_name TEXT NOT NULL,
+    is_enabled BOOLEAN DEFAULT TRUE NOT NULL,
+    configuration JSONB DEFAULT '{}'::jsonb,
+    activated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    -- updated_at/by managed by application logic if module config changes
+    PRIMARY KEY (farm_id, module_schema_name)
+);
+COMMENT ON TABLE gr33n_core.farm_active_modules IS 'Defines which gr33n modules are enabled and configured for a specific farm.';
+
+
+-- Zones
+CREATE TABLE gr33n_core.zones (
+    id BIGSERIAL PRIMARY KEY,
+    farm_id BIGINT NOT NULL REFERENCES gr33n_core.farms(id) ON DELETE CASCADE,
+    parent_zone_id BIGINT REFERENCES gr33n_core.zones(id) ON DELETE SET NULL,
+    name TEXT NOT NULL,
+    description TEXT,
+    zone_type TEXT,
+    area_sqm NUMERIC(12,2),
+    -- boundary_gis GEOMETRY(Polygon, 4326),
+    meta_data JSONB DEFAULT '{}'::jsonb,
+    created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    updated_by_user_id UUID REFERENCES gr33n_core.profiles(user_id) ON DELETE SET NULL, -- ADDED
+    deleted_at TIMESTAMPTZ DEFAULT NULL -- ADDED for soft delete
+);
+COMMENT ON TABLE gr33n_core.zones IS 'Defines distinct areas within a farm. Includes soft delete and last updater.';
+
+
+-- Devices
+CREATE TABLE gr33n_core.devices (
+    id BIGSERIAL PRIMARY KEY,
+    farm_id BIGINT NOT NULL REFERENCES gr33n_core.farms(id) ON DELETE CASCADE,
+    zone_id BIGINT REFERENCES gr33n_core.zones(id) ON DELETE SET NULL, -- Zone can be soft-deleted
+    name TEXT NOT NULL,
+    device_uid TEXT UNIQUE,
+    device_type TEXT NOT NULL,
+    ip_address INET,
+    firmware_version TEXT,
+    status gr33n_core.device_status_enum DEFAULT 'unknown' NOT NULL,
+    last_heartbeat TIMESTAMPTZ,
+    api_key TEXT UNIQUE,
+    config JSONB DEFAULT '{}'::jsonb,
+    meta_data JSONB DEFAULT '{}'::jsonb,
+    created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    updated_by_user_id UUID REFERENCES gr33n_core.profiles(user_id) ON DELETE SET NULL, -- ADDED
+    deleted_at TIMESTAMPTZ DEFAULT NULL -- ADDED for soft delete
+);
+COMMENT ON TABLE gr33n_core.devices IS 'Physical hardware controllers. Includes soft delete and last updater.';
+
+
+-- Sensors
+CREATE TABLE gr33n_core.sensors (
+    id BIGSERIAL PRIMARY KEY,
+    device_id BIGINT REFERENCES gr33n_core.devices(id) ON DELETE SET NULL, -- Device can be soft-deleted
+    farm_id BIGINT NOT NULL REFERENCES gr33n_core.farms(id) ON DELETE CASCADE,
+    zone_id BIGINT REFERENCES gr33n_core.zones(id) ON DELETE SET NULL, -- Zone can be soft-deleted
+    name TEXT NOT NULL,
+    sensor_type TEXT NOT NULL,
+    unit_of_measurement TEXT,
+    hardware_identifier TEXT,
+    value_min_expected NUMERIC,
+    value_max_expected NUMERIC,
+    alert_threshold_low NUMERIC,
+    alert_threshold_high NUMERIC,
+    reading_interval_seconds INTEGER,
+    is_calibrated BOOLEAN DEFAULT FALSE,
+    last_calibration_date DATE,
+    calibration_data JSONB,
+    config JSONB DEFAULT '{}'::jsonb,
+    meta_data JSONB DEFAULT '{}'::jsonb,
+    created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    updated_by_user_id UUID REFERENCES gr33n_core.profiles(user_id) ON DELETE SET NULL, -- ADDED
+    deleted_at TIMESTAMPTZ DEFAULT NULL, -- ADDED for soft delete
+    CONSTRAINT chk_sensor_farm_context CHECK (device_id IS NOT NULL OR farm_id IS NOT NULL)
+);
+COMMENT ON TABLE gr33n_core.sensors IS 'Individual sensors collecting data. Includes soft delete and last updater.';
+
+
+-- Sensor Readings (Time-series, less likely to be soft-deleted individually, usually archived/purged by policy)
+CREATE TABLE gr33n_core.sensor_readings (
+    sensor_id BIGINT NOT NULL REFERENCES gr33n_core.sensors(id) ON DELETE CASCADE, -- If sensor is hard deleted, readings go. If soft, they remain.
+    reading_time TIMESTAMPTZ NOT NULL,
+    value_numeric NUMERIC,
+    value_text TEXT,
+    value_json JSONB,
+    battery_level_percent NUMERIC(5,2) CHECK (battery_level_percent IS NULL OR (battery_level_percent >= 0 AND battery_level_percent <= 100)),
+    signal_strength_dbm INTEGER,
+    is_valid BOOLEAN DEFAULT TRUE,
+    meta_data JSONB DEFAULT '{}'::jsonb,
+    PRIMARY KEY (sensor_id, reading_time)
+);
+COMMENT ON TABLE gr33n_core.sensor_readings IS 'Stores time-series data from sensors. Recommended for TimescaleDB hypertable conversion.';
+
+
+-- Actuators
+CREATE TABLE gr33n_core.actuators (
+    id BIGSERIAL PRIMARY KEY,
+    device_id BIGINT NOT NULL REFERENCES gr33n_core.devices(id) ON DELETE SET NULL, -- Device can be soft-deleted
+    farm_id BIGINT NOT NULL REFERENCES gr33n_core.farms(id) ON DELETE CASCADE,
+    zone_id BIGINT REFERENCES gr33n_core.zones(id) ON DELETE SET NULL, -- Zone can be soft-deleted
+    name TEXT NOT NULL,
+    actuator_type TEXT NOT NULL,
+    hardware_identifier TEXT,
+    current_state_numeric NUMERIC,
+    current_state_text TEXT,
+    last_known_state_time TIMESTAMPTZ,
+    last_command_sent_time TIMESTAMPTZ,
+    feedback_sensor_id BIGINT REFERENCES gr33n_core.sensors(id) ON DELETE SET NULL, -- Sensor can be soft-deleted
+    config JSONB DEFAULT '{}'::jsonb,
+    meta_data JSONB DEFAULT '{}'::jsonb,
+    created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    updated_by_user_id UUID REFERENCES gr33n_core.profiles(user_id) ON DELETE SET NULL, -- ADDED
+    deleted_at TIMESTAMPTZ DEFAULT NULL -- ADDED for soft delete
+);
+COMMENT ON TABLE gr33n_core.actuators IS 'Represents physical devices that perform controllable actions. Includes soft delete and last updater.';
+
+
+-- Actuator Events (Time-series, less likely to be soft-deleted individually)
+CREATE TABLE gr33n_core.actuator_events (
+    actuator_id BIGINT NOT NULL REFERENCES gr33n_core.actuators(id) ON DELETE CASCADE, -- If actuator is hard deleted, events go.
+    event_time TIMESTAMPTZ NOT NULL,
+    command_sent TEXT,
+    parameters_sent JSONB,
+    triggered_by_user_id UUID REFERENCES gr33n_core.profiles(user_id),
+    triggered_by_schedule_id BIGINT, -- FK added later
+    triggered_by_rule_id BIGINT,     -- FK added later
+    source gr33n_core.actuator_event_source_enum NOT NULL,
+    response_received_from_device TEXT,
+    execution_status gr33n_core.actuator_execution_status_enum,
+    resulting_state_numeric_actual NUMERIC,
+    resulting_state_text_actual TEXT,
+    meta_data JSONB DEFAULT '{}'::jsonb,
+    PRIMARY KEY (actuator_id, event_time)
+);
+COMMENT ON TABLE gr33n_core.actuator_events IS 'Logs commands issued to actuators and their outcomes. Recommended for TimescaleDB.';
+
+
+-- Tasks
+CREATE TABLE gr33n_core.tasks (
+    id BIGSERIAL PRIMARY KEY,
+    farm_id BIGINT NOT NULL REFERENCES gr33n_core.farms(id) ON DELETE CASCADE,
+    zone_id BIGINT REFERENCES gr33n_core.zones(id) ON DELETE SET NULL, -- Zone can be soft-deleted
+    title TEXT NOT NULL,
+    description TEXT,
+    task_type TEXT,
+    status gr33n_core.task_status_enum DEFAULT 'todo' NOT NULL,
+    priority INTEGER DEFAULT 1 CHECK (priority BETWEEN 0 AND 3),
+    assigned_to_user_id UUID REFERENCES gr33n_core.profiles(user_id),
+    due_date DATE,
+    estimated_duration_minutes INTEGER,
+    actual_start_time TIMESTAMPTZ,
+    actual_end_time TIMESTAMPTZ,
+    related_module_schema TEXT,
+    related_table_name TEXT,
+    related_record_id BIGINT, -- Assuming related records (e.g. plant_batch) might have BIGINT PKs. If mixed, this also might need to be TEXT.
+    created_by_user_id UUID REFERENCES gr33n_core.profiles(user_id),
+    created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    updated_by_user_id UUID REFERENCES gr33n_core.profiles(user_id) ON DELETE SET NULL, -- ADDED
+    deleted_at TIMESTAMPTZ DEFAULT NULL -- ADDED for soft delete
+);
+COMMENT ON TABLE gr33n_core.tasks IS 'Manages farm tasks. Includes soft delete, creator, and last updater.';
+
+
+-- Schedules
+CREATE TABLE gr33n_core.schedules (
+    id BIGSERIAL PRIMARY KEY,
+    farm_id BIGINT NOT NULL REFERENCES gr33n_core.farms(id) ON DELETE CASCADE,
+    name TEXT NOT NULL,
+    description TEXT,
+    schedule_type TEXT NOT NULL,
+    cron_expression TEXT NOT NULL,
+    timezone TEXT DEFAULT 'UTC' NOT NULL,
+    is_active BOOLEAN DEFAULT TRUE NOT NULL,
+    last_triggered_time TIMESTAMPTZ,
+    next_expected_trigger_time TIMESTAMPTZ,
+    meta_data JSONB DEFAULT '{}'::jsonb,
+    created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
+    -- updated_by_user_id could be added
+    -- deleted_at could be added (for deactivating vs removing schedule history)
+);
+COMMENT ON TABLE gr33n_core.schedules IS 'Defines recurring schedules for automated farm actions or system task generation.';
+
+
+-- Automation Rules
+CREATE TABLE gr33n_core.automation_rules (
+    id BIGSERIAL PRIMARY KEY,
+    farm_id BIGINT NOT NULL REFERENCES gr33n_core.farms(id) ON DELETE CASCADE,
+    name TEXT NOT NULL,
+    description TEXT,
+    is_active BOOLEAN DEFAULT TRUE NOT NULL,
+    trigger_source gr33n_core.automation_trigger_source_enum NOT NULL,
+    trigger_configuration JSONB NOT NULL,
+    condition_logic TEXT DEFAULT 'ALL' CHECK (condition_logic IN ('ALL', 'ANY')),
+    conditions_jsonb JSONB DEFAULT '[]'::jsonb,
+    last_evaluated_time TIMESTAMPTZ,
+    last_triggered_time TIMESTAMPTZ,
+    cooldown_period_seconds INTEGER DEFAULT 0,
+    created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
+    -- updated_by_user_id could be added
+    -- deleted_at could be added
+);
+COMMENT ON TABLE gr33n_core.automation_rules IS 'Defines complex "if-this-then-that" (IFTTT) automation logic.';
+
+
+-- Executable Actions
+CREATE TABLE gr33n_core.executable_actions (
+    id BIGSERIAL PRIMARY KEY,
+    schedule_id BIGINT REFERENCES gr33n_core.schedules(id) ON DELETE CASCADE,
+    rule_id BIGINT REFERENCES gr33n_core.automation_rules(id) ON DELETE CASCADE,
+    execution_order INTEGER DEFAULT 0 NOT NULL,
+    action_type gr33n_core.executable_action_type_enum NOT NULL,
+    target_actuator_id BIGINT REFERENCES gr33n_core.actuators(id) ON DELETE SET NULL, -- Actuator can be soft-deleted
+    target_automation_rule_id BIGINT REFERENCES gr33n_core.automation_rules(id) ON DELETE CASCADE, -- Chained rule
+    target_notification_template_id BIGINT, -- FK to notification_templates, added later
+    action_command TEXT,
+    action_parameters JSONB,
+    delay_before_execution_seconds INTEGER DEFAULT 0,
+    CONSTRAINT chk_executable_source CHECK (schedule_id IS NOT NULL OR rule_id IS NOT NULL),
+    CONSTRAINT chk_executable_action_details CHECK (
+        (action_type = 'control_actuator' AND target_actuator_id IS NOT NULL AND action_command IS NOT NULL) OR
+        (action_type = 'trigger_another_automation_rule' AND target_automation_rule_id IS NOT NULL) OR
+        (action_type = 'send_notification' AND target_notification_template_id IS NOT NULL) OR
+        (action_type = 'create_task' AND action_parameters IS NOT NULL) OR
+        (action_type = 'log_custom_event' AND action_parameters IS NOT NULL) OR
+        (action_type = 'http_webhook_call' AND action_parameters->>'url' IS NOT NULL) OR
+        (action_type = 'update_record_in_gr33n' AND action_parameters->>'target_module_schema' IS NOT NULL AND action_parameters->>'target_table_name' IS NOT NULL AND action_parameters->'fields_to_update' IS NOT NULL)
+    )
+);
+COMMENT ON TABLE gr33n_core.executable_actions IS 'Specifies actions for schedules or automation rules.';
+
+
+-- Add FKs from actuator_events to schedules and automation_rules (now that these tables are defined)
+ALTER TABLE gr33n_core.actuator_events ADD CONSTRAINT fk_actuator_event_schedule FOREIGN KEY (triggered_by_schedule_id) REFERENCES gr33n_core.schedules(id) ON DELETE SET NULL;
+ALTER TABLE gr33n_core.actuator_events ADD CONSTRAINT fk_actuator_event_rule FOREIGN KEY (triggered_by_rule_id) REFERENCES gr33n_core.automation_rules(id) ON DELETE SET NULL;
+
+
+-- Notification Templates
+CREATE TABLE gr33n_core.notification_templates (
+    id BIGSERIAL PRIMARY KEY,
+    farm_id BIGINT REFERENCES gr33n_core.farms(id) ON DELETE CASCADE,
+    template_key TEXT NOT NULL,
+    description TEXT,
+    subject_template TEXT,
+    body_template_text TEXT,
+    body_template_html TEXT,
+    default_delivery_channels TEXT[] DEFAULT ARRAY['in_app', 'email']::TEXT[],
+    default_priority gr33n_core.notification_priority_enum DEFAULT 'medium',
+    is_system_template BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    -- updated_by_user_id could be added for farm-specific templates
+    -- deleted_at could be added for farm-specific templates
+    CONSTRAINT uq_notification_template_key UNIQUE (farm_id, template_key),
+    CONSTRAINT uq_system_notification_template_key UNIQUE (template_key) WHERE farm_id IS NULL
+);
+COMMENT ON TABLE gr33n_core.notification_templates IS 'Reusable templates for generating standardized notifications and alerts.';
+ALTER TABLE gr33n_core.executable_actions ADD CONSTRAINT fk_action_notification_template FOREIGN KEY (target_notification_template_id) REFERENCES gr33n_core.notification_templates(id) ON DELETE SET NULL;
+
+
+-- Alerts & Notifications (Log of sent/pending notifications)
+CREATE TABLE gr33n_core.alerts_notifications (
+    id BIGSERIAL PRIMARY KEY,
+    farm_id BIGINT NOT NULL REFERENCES gr33n_core.farms(id) ON DELETE CASCADE,
+    recipient_user_id UUID REFERENCES gr33n_core.profiles(user_id),
+    notification_template_id BIGINT REFERENCES gr33n_core.notification_templates(id) ON DELETE SET NULL,
+    triggering_event_source_type TEXT,
+    triggering_event_source_id BIGINT,
+    severity gr33n_core.notification_priority_enum DEFAULT 'medium',
+    subject_rendered TEXT,
+    message_text_rendered TEXT,
+    message_html_rendered TEXT,
+    delivery_attempts JSONB DEFAULT '{}'::jsonb,
+    status gr33n_core.notification_status_enum DEFAULT 'pending',
+    is_read BOOLEAN DEFAULT FALSE,
+    read_at TIMESTAMPTZ,
+    is_acknowledged BOOLEAN DEFAULT FALSE,
+    acknowledged_at TIMESTAMPTZ,
+    acknowledged_by_user_id UUID REFERENCES gr33n_core.profiles(user_id),
+    created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    scheduled_send_at TIMESTAMPTZ DEFAULT NOW()
+);
+COMMENT ON TABLE gr33n_core.alerts_notifications IS 'Records generated alerts and notifications, their delivery status, and user interactions.';
+
+
+-- System Logs
+CREATE TABLE gr33n_core.system_logs (
+    id BIGSERIAL PRIMARY KEY,
+    farm_id BIGINT REFERENCES gr33n_core.farms(id) ON DELETE SET NULL, -- Farm can be soft-deleted
+    user_id UUID REFERENCES gr33n_core.profiles(user_id) ON DELETE SET NULL,
+    log_time TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    log_level gr33n_core.log_level_enum NOT NULL,
+    event_type TEXT,
+    message TEXT NOT NULL,
+    source_component TEXT,
+    context_data JSONB DEFAULT '{}'::jsonb,
+    created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL -- For table metadata, log_time is the event time
+);
+COMMENT ON TABLE gr33n_core.system_logs IS 'Stores application-level logs for system events, errors, audit trails, and operational monitoring.';
+
+
+-- File Attachments
+CREATE TABLE gr33n_core.file_attachments (
+    id BIGSERIAL PRIMARY KEY,
+    farm_id BIGINT NOT NULL REFERENCES gr33n_core.farms(id) ON DELETE CASCADE,
+    related_module_schema TEXT NOT NULL,
+    related_table_name TEXT NOT NULL,
+    related_record_id TEXT NOT NULL,   -- MODIFIED to TEXT for flexibility (can store BIGINT or UUID as string)
+    file_name TEXT NOT NULL,
+    file_type TEXT NOT NULL,
+    file_size_bytes BIGINT,
+    storage_path TEXT NOT NULL,
+    mime_type TEXT,
+    description TEXT,
+    uploaded_by_user_id UUID REFERENCES gr33n_core.profiles(user_id),
+    created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
+    -- deleted_at could be added for soft-deleting attachment records (file itself might remain in storage or be cleaned up by a process)
+);
+COMMENT ON TABLE gr33n_core.file_attachments IS 'Manages file uploads. related_record_id is TEXT for flexibility with different PK types.';
+
+
+-- Weather Data
+CREATE TABLE gr33n_core.weather_data (
+    id BIGSERIAL PRIMARY KEY,
+    farm_id BIGINT NOT NULL REFERENCES gr33n_core.farms(id) ON DELETE CASCADE,
+    zone_id BIGINT REFERENCES gr33n_core.zones(id) ON DELETE SET NULL, -- Zone can be soft-deleted
+    recorded_at TIMESTAMPTZ NOT NULL,
+    data_source gr33n_core.weather_data_source_enum NOT NULL,
+    source_sensor_id BIGINT REFERENCES gr33n_core.sensors(id) ON DELETE SET NULL, -- Sensor can be soft-deleted
+    temperature_celsius NUMERIC(5,2),
+    humidity_percent NUMERIC(5,2) CHECK (humidity_percent IS NULL OR (humidity_percent >= 0 AND humidity_percent <= 100)),
+    precipitation_mm NUMERIC(6,2),
+    wind_speed_ms NUMERIC(5,2),
+    wind_direction_degrees INTEGER CHECK (wind_direction_degrees IS NULL OR (wind_direction_degrees >= 0 AND wind_direction_degrees <= 360)),
+    barometric_pressure_hpa NUMERIC(7,2),
+    solar_radiation_wm2 NUMERIC(8,2),
+    dew_point_celsius NUMERIC(5,2),
+    uv_index NUMERIC(4,1) CHECK (uv_index IS NULL OR (uv_index >=0)),
+    cloud_cover_percent NUMERIC(5,2) CHECK (cloud_cover_percent IS NULL OR (cloud_cover_percent >= 0 AND cloud_cover_percent <= 100)),
+    forecast_data JSONB,
+    raw_data JSONB,
+    created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    CONSTRAINT uq_weather_data_key UNIQUE (farm_id, zone_id, recorded_at, data_source, source_sensor_id)
+);
+COMMENT ON TABLE gr33n_core.weather_data IS 'Stores historical and potentially forecasted weather data. Recommended for TimescaleDB.';
+
+
+-- Cost Transactions
+CREATE TABLE gr33n_core.cost_transactions (
+    id BIGSERIAL PRIMARY KEY,
+    farm_id BIGINT NOT NULL REFERENCES gr33n_core.farms(id) ON DELETE CASCADE,
+    transaction_date DATE NOT NULL,
+    category gr33n_core.cost_category_enum NOT NULL,
+    subcategory TEXT,
+    amount NUMERIC(12,2) NOT NULL,
+    currency CHAR(3) NOT NULL, -- App ensures this aligns with farm's currency preference
+    description TEXT,
+    related_module_schema TEXT,
+    related_table_name TEXT,
+    related_record_id BIGINT, -- Assuming costs usually link to entities with BIGINT PKs. If mixed, could be TEXT.
+    receipt_file_id BIGINT REFERENCES gr33n_core.file_attachments(id) ON DELETE SET NULL,
+    is_income BOOLEAN DEFAULT FALSE NOT NULL,
+    created_by_user_id UUID REFERENCES gr33n_core.profiles(user_id),
+    created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
+    -- updated_by_user_id could be added
+    -- deleted_at could be added
+);
+COMMENT ON TABLE gr33n_core.cost_transactions IS 'Tracks financial costs and income. Currency should align with farm settings via application logic.';
+
+
+-- Validation Rules
+CREATE TABLE gr33n_core.validation_rules (
+    id BIGSERIAL PRIMARY KEY,
+    farm_id BIGINT REFERENCES gr33n_core.farms(id) ON DELETE CASCADE,
+    rule_name TEXT NOT NULL, -- Should be unique per farm or globally if farm_id is NULL
+    description TEXT,
+    target_module_schema TEXT NOT NULL,
+    target_table_name TEXT NOT NULL,
+    target_column_name TEXT NOT NULL,
+    rule_type gr33n_core.validation_rule_type_enum NOT NULL,
+    rule_config JSONB NOT NULL,
+    error_message_template TEXT,
+    is_active BOOLEAN DEFAULT TRUE NOT NULL,
+    severity gr33n_core.validation_severity_enum DEFAULT 'error' NOT NULL,
+    evaluation_trigger TEXT DEFAULT 'on_save' NOT NULL CHECK (evaluation_trigger IN ('on_save', 'on_change', 'manual_batch')),
+    created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    -- updated_by_user_id could be added
+    -- deleted_at could be added
+    CONSTRAINT uq_validation_rule_name_farm UNIQUE (farm_id, rule_name),
+    CONSTRAINT uq_validation_rule_name_global UNIQUE (rule_name) WHERE farm_id IS NULL
+);
+COMMENT ON TABLE gr33n_core.validation_rules IS 'Defines data validation rules. rule_name is unique per farm or globally.';
+
+
+-- User Activity Log
+CREATE TABLE gr33n_core.user_activity_log (
+    id BIGSERIAL PRIMARY KEY,
+    user_id UUID REFERENCES gr33n_core.profiles(user_id) ON DELETE SET NULL,
+    farm_id BIGINT REFERENCES gr33n_core.farms(id) ON DELETE SET NULL, -- Farm can be soft-deleted
+    activity_time TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    action_type gr33n_core.user_action_type_enum NOT NULL,
+    target_module_schema TEXT,
+    target_table_name TEXT,
+    target_record_id TEXT, -- Flexible for various PK types
+    target_record_description TEXT,
+    ip_address INET,
+    user_agent TEXT,
+    session_id TEXT,
+    status TEXT CHECK (status IN ('success', 'failure', 'pending')),
+    failure_reason TEXT,
+    details JSONB DEFAULT '{}'::jsonb,
+    created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
+);
+COMMENT ON TABLE gr33n_core.user_activity_log IS 'Logs user actions and significant system events. Recommended for TimescaleDB.';
+
+
+--------------------------------------------------------------------------------
+-- INDEXING STRATEGY
+--------------------------------------------------------------------------------
+-- Existing Indexes (Primary Keys are automatically indexed)
+
+
+-- Indexes for soft deletes (example for farms, apply similarly to other tables with deleted_at)
+CREATE INDEX IF NOT EXISTS idx_farms_deleted_at ON gr33n_core.farms(deleted_at NULLS FIRST) WHERE deleted_at IS NULL;
+CREATE INDEX IF NOT EXISTS idx_zones_deleted_at ON gr33n_core.zones(deleted_at NULLS FIRST) WHERE deleted_at IS NULL;
+CREATE INDEX IF NOT EXISTS idx_devices_deleted_at ON gr33n_core.devices(deleted_at NULLS FIRST) WHERE deleted_at IS NULL;
+CREATE INDEX IF NOT EXISTS idx_sensors_deleted_at ON gr33n_core.sensors(deleted_at NULLS FIRST) WHERE deleted_at IS NULL;
+CREATE INDEX IF NOT EXISTS idx_actuators_deleted_at ON gr33n_core.actuators(deleted_at NULLS FIRST) WHERE deleted_at IS NULL;
+CREATE INDEX IF NOT EXISTS idx_tasks_deleted_at ON gr33n_core.tasks(deleted_at NULLS FIRST) WHERE deleted_at IS NULL;
+
+
+-- Indexes for Sensor Readings
+CREATE INDEX IF NOT EXISTS idx_sensor_readings_time_desc ON gr33n_core.sensor_readings(reading_time DESC);
+CREATE INDEX IF NOT EXISTS idx_sensor_readings_value_numeric ON gr33n_core.sensor_readings(value_numeric) WHERE value_numeric IS NOT NULL;
+
+
+-- Indexes for Actuator Events
+CREATE INDEX IF NOT EXISTS idx_actuator_events_time_desc ON gr33n_core.actuator_events(event_time DESC);
+
+
+-- Indexes for Farms
+CREATE INDEX IF NOT EXISTS idx_farms_owner_lookup ON gr33n_core.farms(owner_user_id);
+CREATE INDEX IF NOT EXISTS idx_farms_name ON gr33n_core.farms(name text_pattern_ops);
+CREATE INDEX IF NOT EXISTS idx_farms_updated_by ON gr33n_core.farms(updated_by_user_id);
+
+
+-- Indexes for Zones
+CREATE INDEX IF NOT EXISTS idx_zones_farm_id ON gr33n_core.zones(farm_id);
+CREATE INDEX IF NOT EXISTS idx_zones_parent_id ON gr33n_core.zones(parent_zone_id);
+CREATE INDEX IF NOT EXISTS idx_zones_updated_by ON gr33n_core.zones(updated_by_user_id);
+
+
+-- Indexes for Devices
+CREATE INDEX IF NOT EXISTS idx_devices_farm_zone ON gr33n_core.devices(farm_id, zone_id);
+CREATE INDEX IF NOT EXISTS idx_devices_status ON gr33n_core.devices(farm_id, status);
+CREATE INDEX IF NOT EXISTS idx_devices_type ON gr33n_core.devices(farm_id, device_type);
+CREATE INDEX IF NOT EXISTS idx_devices_updated_by ON gr33n_core.devices(updated_by_user_id);
+
+
+-- Indexes for Sensors
+CREATE INDEX IF NOT EXISTS idx_sensors_farm_type ON gr33n_core.sensors(farm_id, sensor_type);
+CREATE INDEX IF NOT EXISTS idx_sensors_farm_zone ON gr33n_core.sensors(farm_id, zone_id);
+CREATE INDEX IF NOT EXISTS idx_sensors_device_id ON gr33n_core.sensors(device_id);
+CREATE INDEX IF NOT EXISTS idx_sensors_updated_by ON gr33n_core.sensors(updated_by_user_id);
+
+
+-- Indexes for Actuators
+CREATE INDEX IF NOT EXISTS idx_actuators_farm_id ON gr33n_core.actuators(farm_id);
+CREATE INDEX IF NOT EXISTS idx_actuators_device_id ON gr33n_core.actuators(device_id);
+CREATE INDEX IF NOT EXISTS idx_actuators_updated_by ON gr33n_core.actuators(updated_by_user_id);
+
+
+-- Indexes for Tasks
+CREATE INDEX IF NOT EXISTS idx_tasks_assignment ON gr33n_core.tasks(farm_id, assigned_to_user_id, status);
+CREATE INDEX IF NOT EXISTS idx_tasks_status_due_date ON gr33n_core.tasks(farm_id, status, due_date);
+CREATE INDEX IF NOT EXISTS idx_tasks_related_entity ON gr33n_core.tasks(related_module_schema, related_table_name, related_record_id);
+CREATE INDEX IF NOT EXISTS idx_tasks_created_by ON gr33n_core.tasks(created_by_user_id);
+CREATE INDEX IF NOT EXISTS idx_tasks_updated_by ON gr33n_core.tasks(updated_by_user_id);
+
+
+-- Indexes for Alerts & Notifications
+CREATE INDEX IF NOT EXISTS idx_alerts_user_status ON gr33n_core.alerts_notifications(recipient_user_id, status, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_alerts_farm_status ON gr33n_core.alerts_notifications(farm_id, status, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_alerts_template_id ON gr33n_core.alerts_notifications(notification_template_id);
+
+
+-- Indexes for System Logs
+CREATE INDEX IF NOT EXISTS idx_system_logs_farm_time ON gr33n_core.system_logs(farm_id, log_time DESC);
+CREATE INDEX IF NOT EXISTS idx_system_logs_level_time ON gr33n_core.system_logs(log_level, log_time DESC);
+CREATE INDEX IF NOT EXISTS idx_system_logs_event_type_time ON gr33n_core.system_logs(event_type, log_time DESC);
+CREATE INDEX IF NOT EXISTS idx_system_logs_user_id ON gr33n_core.system_logs(user_id);
+
+
+-- Indexes for File Attachments
+CREATE INDEX IF NOT EXISTS idx_file_attachments_related_entity ON gr33n_core.file_attachments(related_module_schema, related_table_name, related_record_id);
+CREATE INDEX IF NOT EXISTS idx_file_attachments_farm_id ON gr33n_core.file_attachments(farm_id);
+CREATE INDEX IF NOT EXISTS idx_file_attachments_uploader ON gr33n_core.file_attachments(uploaded_by_user_id);
+
+
+-- Indexes for Weather Data
+CREATE INDEX IF NOT EXISTS idx_weather_data_farm_zone_time ON gr33n_core.weather_data(farm_id, zone_id, recorded_at DESC);
+CREATE INDEX IF NOT EXISTS idx_weather_data_recorded_at ON gr33n_core.weather_data(recorded_at DESC);
+
+
+-- Indexes for Cost Transactions
+CREATE INDEX IF NOT EXISTS idx_cost_transactions_farm_date ON gr33n_core.cost_transactions(farm_id, transaction_date DESC);
+CREATE INDEX IF NOT EXISTS idx_cost_transactions_category ON gr33n_core.cost_transactions(farm_id, category, subcategory);
+CREATE INDEX IF NOT EXISTS idx_cost_transactions_related_entity ON gr33n_core.cost_transactions(related_module_schema, related_table_name, related_record_id);
+CREATE INDEX IF NOT EXISTS idx_cost_transactions_receipt ON gr33n_core.cost_transactions(receipt_file_id);
+CREATE INDEX IF NOT EXISTS idx_cost_transactions_created_by ON gr33n_core.cost_transactions(created_by_user_id);
+
+
+
+
+-- Indexes for Validation Rules
+CREATE INDEX IF NOT EXISTS idx_validation_rules_target ON gr33n_core.validation_rules(target_module_schema, target_table_name, target_column_name);
+CREATE INDEX IF NOT EXISTS idx_validation_rules_farm_id ON gr33n_core.validation_rules(farm_id);
+
+
+-- Indexes for User Activity Log
+CREATE INDEX IF NOT EXISTS idx_user_activity_log_user_time ON gr33n_core.user_activity_log(user_id, activity_time DESC);
+CREATE INDEX IF NOT EXISTS idx_user_activity_log_farm_time ON gr33n_core.user_activity_log(farm_id, activity_time DESC);
+CREATE INDEX IF NOT EXISTS idx_user_activity_log_action_type ON gr33n_core.user_activity_log(action_type, activity_time DESC);
+CREATE INDEX IF NOT EXISTS idx_user_activity_log_target ON gr33n_core.user_activity_log(target_module_schema, target_table_name, target_record_id);
+
+
+--------------------------------------------------------------------------------
+-- TIMESCALEDB HYPERTABLE CONVERSIONS (Example commands, run after extension enabled and tables created)
+--------------------------------------------------------------------------------
+-- SELECT create_hypertable('gr33n_core.sensor_readings', 'reading_time', if_not_exists => TRUE, chunk_time_interval => INTERVAL '1 day');
+-- SELECT create_hypertable('gr33n_core.actuator_events', 'event_time', if_not_exists => TRUE, chunk_time_interval => INTERVAL '1 day');
+-- SELECT create_hypertable('gr33n_core.weather_data', 'recorded_at', if_not_exists => TRUE, chunk_time_interval => INTERVAL '7 days');
+-- SELECT create_hypertable('gr33n_core.user_activity_log', 'activity_time', if_not_exists => TRUE, chunk_time_interval => INTERVAL '7 days');
+-- SELECT create_hypertable('gr33n_core.system_logs', 'log_time', if_not_exists => TRUE, chunk_time_interval => INTERVAL '7 days');
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+--------------------------------------------------------------------------------
+-- SCHEMA: gr33n_natural_farming - Natural farming inputs, recipes, and batches
+--------------------------------------------------------------------------------
+CREATE SCHEMA IF NOT EXISTS gr33n_natural_farming;
+COMMENT ON SCHEMA gr33n_natural_farming IS 'Manages definitions, recipes, batches, and usage guidelines for natural farming inputs (e.g., JADAM, KNF style ferments, microbial cultures).';
+
+
+--------------------------------------------------------------------------------
+-- ENUMERATED TYPES for gr33n_natural_farming
+--------------------------------------------------------------------------------
+
+
+CREATE TYPE gr33n_natural_farming.input_category_enum AS ENUM (
+    'microbial_inoculant',   -- e.g., IMO (Indigenous Microorganisms), LAB (Lactic Acid Bacteria)
+    'fermented_plant_juice', -- e.g., FPJ, JADAM JLF (Leaf Mold Fertilizer)
+    'water_soluble_nutrient',-- e.g., WCA (Water Soluble Calcium), WCP (Water Soluble Phosphorus)
+    'oriental_herbal_nutrient',-- e.g., OHN
+    'fish_amino_acid',       -- e.g., FAA
+    'insect_attractant_repellent', -- e.g., JADAM JS (Jadam Sulfur), JADAM JWA (Jadam Wetting Agent)
+    'soil_conditioner',
+    'compost_tea_extract',
+    'biochar_preparation',
+    'other_ferment',
+    'other_extract'
+);
+COMMENT ON TYPE gr33n_natural_farming.input_category_enum IS 'Categorization of natural farming inputs.';
+
+
+CREATE TYPE gr33n_natural_farming.input_batch_status_enum AS ENUM (
+    'planning', 'ingredients_gathered', 'mixing_in_progress', 'fermenting_brewing',
+    'maturing_aging', 'ready_for_use', 'partially_used', 'fully_used', 'expired_discarded', 'failed_production'
+);
+COMMENT ON TYPE gr33n_natural_farming.input_batch_status_enum IS 'Lifecycle status of a specific batch of natural farming input.';
+
+
+CREATE TYPE gr33n_natural_farming.application_target_enum AS ENUM (
+    'soil_drench', 'foliar_spray', 'seed_treatment', 'compost_pile_inoculant', 'livestock_water_supplement', 'other'
+);
+COMMENT ON TYPE gr33n_natural_farming.application_target_enum IS 'Intended application method/target for an input or recipe.';
+
+
+--------------------------------------------------------------------------------
+-- TABLES for gr33n_natural_farming
+--------------------------------------------------------------------------------
+
+
+-- Input Definitions: Master list of natural farming inputs the farm uses or knows about.
+CREATE TABLE gr33n_natural_farming.input_definitions (
+    id BIGSERIAL PRIMARY KEY,
+    farm_id BIGINT NOT NULL REFERENCES gr33n_core.farms(id) ON DELETE CASCADE,
+    name TEXT NOT NULL, -- e.g., "JADAM Leaf Mold Fertilizer (JLF)", "Indigenous Microorganisms Level 3 (IMO3)"
+    category gr33n_natural_farming.input_category_enum NOT NULL,
+    description TEXT, -- Purpose, benefits, general characteristics
+    typical_ingredients TEXT, -- General list of ingredients often used
+    preparation_summary TEXT, -- Brief overview of the making process
+    storage_guidelines TEXT,
+    safety_precautions TEXT,
+    reference_source TEXT, -- e.g., "JADAM Organic Farming book page X", "KNF Manual Chapter Y"
+    file_attachment_id BIGINT REFERENCES gr33n_core.file_attachments(id) ON DELETE SET NULL, -- For detailed recipe documents or photos
+    created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    updated_by_user_id UUID REFERENCES gr33n_core.profiles(user_id) ON DELETE SET NULL,
+    deleted_at TIMESTAMPTZ DEFAULT NULL,
+    CONSTRAINT uq_input_definition_farm_name UNIQUE (farm_id, name, deleted_at)
+);
+COMMENT ON TABLE gr33n_natural_farming.input_definitions IS 'Catalog of natural farming input types used or referenced by the farm, with general information.';
+
+
+-- Input Batches: Specific batches of natural farming inputs that have been made or are in progress.
+CREATE TABLE gr33n_natural_farming.input_batches (
+    id BIGSERIAL PRIMARY KEY,
+    farm_id BIGINT NOT NULL REFERENCES gr33n_core.farms(id) ON DELETE CASCADE,
+    input_definition_id BIGINT NOT NULL REFERENCES gr33n_natural_farming.input_definitions(id) ON DELETE RESTRICT,
+    batch_identifier TEXT, -- User-defined or system-generated ID for this specific batch, e.g., "JLF-Lettuce-20240528"
+    creation_start_date DATE NOT NULL,
+    creation_end_date DATE, -- Date fermentation/preparation is considered complete
+    expected_ready_date DATE,
+    actual_ready_date DATE,
+    quantity_produced NUMERIC(10,2),
+    quantity_unit TEXT, -- e.g., "liters", "gallons", "kg", "grams"
+    current_quantity_remaining NUMERIC(10,2), -- For tracking usage
+    status gr33n_natural_farming.input_batch_status_enum DEFAULT 'planning' NOT NULL,
+    storage_location TEXT,
+    shelf_life_days INTEGER, -- Estimated shelf life after being ready
+    ph_value NUMERIC(4,2), -- If measured
+    ec_value_ms_cm NUMERIC(6,2), -- Electrical conductivity if measured
+    temperature_during_making TEXT, -- e.g., "Ambient room temp", "Controlled 25C"
+    ingredients_used TEXT, -- Specific ingredients and quantities for THIS batch (can be free text or structured JSONB)
+    -- OR, for more structured ingredients:
+    -- ingredients_breakdown JSONB DEFAULT '{}'::jsonb, -- e.g., [{"ingredient_name": "Leaf Mold", "quantity": "5kg"}, {"item_id_from_inventory": 123, "quantity_used": "2kg"}]
+    procedure_followed TEXT, -- Notes on the specific steps taken for this batch
+    observations_notes TEXT, -- Any observations during making (smell, color, activity)
+    made_by_user_id UUID REFERENCES gr33n_core.profiles(user_id) ON DELETE SET NULL,
+    related_task_id BIGINT REFERENCES gr33n_core.tasks(id) ON DELETE SET NULL, -- Task for making this batch
+    file_attachment_id BIGINT REFERENCES gr33n_core.file_attachments(id) ON DELETE SET NULL, -- Photos of the batch
+    created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    updated_by_user_id UUID REFERENCES gr33n_core.profiles(user_id) ON DELETE SET NULL,
+    deleted_at TIMESTAMPTZ DEFAULT NULL,
+    CONSTRAINT uq_input_batch_farm_identifier UNIQUE (farm_id, batch_identifier, deleted_at)
+);
+COMMENT ON TABLE gr33n_natural_farming.input_batches IS 'Tracks specific instances (batches) of natural farming inputs being made, their status, and properties.';
+
+
+-- Dilution/Application Recipes: How to dilute/mix input batches for application.
+CREATE TABLE gr33n_natural_farming.application_recipes (
+    id BIGSERIAL PRIMARY KEY,
+    farm_id BIGINT NOT NULL REFERENCES gr33n_core.farms(id) ON DELETE CASCADE,
+    name TEXT NOT NULL, -- e.g., "JLF Vegetative Growth Foliar Spray", "IMO4 Soil Inoculation Mix"
+    input_definition_id BIGINT REFERENCES gr33n_natural_farming.input_definitions(id) ON DELETE SET NULL, -- General input type this recipe is for
+    -- OR, if recipe uses specific batches (less common for a general recipe definition, more for a specific application event)
+    -- input_batch_id BIGINT REFERENCES gr33n_natural_farming.input_batches(id) ON DELETE SET NULL,
+    description TEXT, -- Purpose of this recipe, e.g., "Boost vegetative growth", "Improve soil microbial activity"
+    target_application_type gr33n_natural_farming.application_target_enum NOT NULL,
+    dilution_ratio TEXT, -- e.g., "1:500 (Input:Water)", "2 tbsp per gallon"
+    components JSONB DEFAULT '{}'::jsonb, -- For multi-input recipes, e.g., [{"input_definition_id": 1, "ratio_part": 1}, {"input_definition_id": 5, "ratio_part": 0.5}, {"carrier": "water", "ratio_part": 500}]
+    instructions TEXT, -- Mixing and application instructions
+    frequency_guidelines TEXT, -- e.g., "Weekly during vegetative stage", "Once before planting"
+    target_crop_categories gr33n_crops.crop_category_enum[], -- Optional: categories this recipe is good for
+    target_growth_stages TEXT[], -- Optional: text array of growth stages this is good for (e.g., "Seedling", "Fruiting")
+    notes TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    updated_by_user_id UUID REFERENCES gr33n_core.profiles(user_id) ON DELETE SET NULL,
+    deleted_at TIMESTAMPTZ DEFAULT NULL,
+    CONSTRAINT uq_application_recipe_farm_name UNIQUE (farm_id, name, deleted_at)
+);
+COMMENT ON TABLE gr33n_natural_farming.application_recipes IS 'Defines standard recipes for diluting and applying natural farming inputs for various purposes.';
+
+
+-- Link Application Recipes to specific Input Definitions (Many-to-Many if a recipe uses multiple defined inputs)
+CREATE TABLE gr33n_natural_farming.recipe_input_components (
+    application_recipe_id BIGINT NOT NULL REFERENCES gr33n_natural_farming.application_recipes(id) ON DELETE CASCADE,
+    input_definition_id BIGINT NOT NULL REFERENCES gr33n_natural_farming.input_definitions(id) ON DELETE CASCADE,
+    -- Or input_batch_id if a recipe variant uses a specific batch
+    -- input_batch_id BIGINT REFERENCES gr33n_natural_farming.input_batches(id) ON DELETE CASCADE,
+    part_value NUMERIC(10,3) NOT NULL, -- e.g., 1 part of this input
+    part_unit TEXT DEFAULT 'unitless_ratio_part' NOT NULL, -- e.g., 'ml', 'gram', 'unitless_ratio_part'
+    notes TEXT,
+    PRIMARY KEY (application_recipe_id, input_definition_id) -- Or include batch_id if used
+    -- CONSTRAINT chk_recipe_component_source CHECK (input_definition_id IS NOT NULL OR input_batch_id IS NOT NULL)
+);
+COMMENT ON TABLE gr33n_natural_farming.recipe_input_components IS 'Details the specific natural farming inputs and their proportions within an application recipe.';
+
+
+-- This table already exists in gr33n_crops, but we need to ensure it can link to input_batches from this schema.
+-- The `crop_treatments` table has `natural_input_batch_id BIGINT`. We will add the FK constraint later.
+-- ALTER TABLE gr33n_crops.crop_treatments
+--   ADD CONSTRAINT fk_crop_treatment_natural_input_batch
+--   FOREIGN KEY (natural_input_batch_id)
+--   REFERENCES gr33n_natural_farming.input_batches(id) ON DELETE SET NULL;
+--
+-- Also, `crop_treatments` has `inventory_item_id`. If base ingredients for natural inputs are in inventory:
+-- ALTER TABLE gr33n_natural_farming.input_batches
+--  ADD COLUMN base_ingredient_inventory_item_id BIGINT REFERENCES gr33n_core.inventory_items(id) ON DELETE SET NULL;
+-- (This is if you track say, 50kg bags of rice bran as an inventory item, then use some for an IMO batch)
+
+
+--------------------------------------------------------------------------------
+-- INDEXES for gr33n_natural_farming
+--------------------------------------------------------------------------------
+-- input_definitions
+CREATE INDEX IF NOT EXISTS idx_input_definitions_farm_category ON gr33n_natural_farming.input_definitions(farm_id, category);
+CREATE INDEX IF NOT EXISTS idx_input_definitions_deleted_at ON gr33n_natural_farming.input_definitions(deleted_at NULLS FIRST) WHERE deleted_at IS NULL;
+
+
+-- input_batches
+CREATE INDEX IF NOT EXISTS idx_input_batches_farm_definition ON gr33n_natural_farming.input_batches(farm_id, input_definition_id);
+CREATE INDEX IF NOT EXISTS idx_input_batches_farm_status ON gr33n_natural_farming.input_batches(farm_id, status);
+CREATE INDEX IF NOT EXISTS idx_input_batches_ready_date ON gr33n_natural_farming.input_batches(actual_ready_date);
+CREATE INDEX IF NOT EXISTS idx_input_batches_deleted_at ON gr33n_natural_farming.input_batches(deleted_at NULLS FIRST) WHERE deleted_at IS NULL;
+
+
+-- application_recipes
+CREATE INDEX IF NOT EXISTS idx_application_recipes_farm_input ON gr33n_natural_farming.application_recipes(farm_id, input_definition_id);
+CREATE INDEX IF NOT EXISTS idx_application_recipes_farm_target_type ON gr33n_natural_farming.application_recipes(farm_id, target_application_type);
+CREATE INDEX IF NOT EXISTS idx_application_recipes_deleted_at ON gr33n_natural_farming.application_recipes(deleted_at NULLS FIRST) WHERE deleted_at IS NULL;
+
+
+-- recipe_input_components
+CREATE INDEX IF NOT EXISTS idx_recipe_input_components_definition ON gr33n_natural_farming.recipe_input_components(input_definition_id);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+--------------------------------------------------------------------------------
+-- SCHEMA: gr33n_crops - Crop cultivation, monitoring, and harvesting
+--------------------------------------------------------------------------------
+CREATE SCHEMA IF NOT EXISTS gr33n_crops;
+COMMENT ON SCHEMA gr33n_crops IS 'Manages detailed information about crop varieties, specific plantings/cycles, growth monitoring, pest/disease control, treatments, and harvests. Links to gr33n_core for farm, zone, user context, and tasks.';
+
+
+--------------------------------------------------------------------------------
+-- ENUMERATED TYPES for gr33n_crops
+--------------------------------------------------------------------------------
+
+
+CREATE TYPE gr33n_crops.crop_category_enum AS ENUM (
+    'vegetable_fruit', 'vegetable_leafy', 'vegetable_root', 'vegetable_legume',
+    'grain_cereal', 'grain_pulse',
+    'herb_culinary', 'herb_medicinal',
+    'flower_ornamental', 'flower_edible',
+    'cover_crop', 'fodder_crop', 'fiber_crop', 'oilseed_crop',
+    'tree_fruit', 'tree_nut', 'vine_fruit',
+    'mushroom', 'other'
+);
+COMMENT ON TYPE gr33n_crops.crop_category_enum IS 'Broad categorization of crop types.';
+
+
+CREATE TYPE gr33n_crops.plant_source_type_enum AS ENUM (
+    'seed_direct_sown', 'seed_started_indoor', 'transplant_purchased',
+    'cutting', 'graft', 'bulb_tuber_rhizome', 'spore', 'tissue_culture', 'volunteer'
+);
+COMMENT ON TYPE gr33n_crops.plant_source_type_enum IS 'Origin of the plant material for a planting.';
+
+
+CREATE TYPE gr33n_crops.observation_type_enum AS ENUM (
+    'general_note', 'growth_measurement', 'phenology_event', -- (e.g., flowering, fruiting)
+    'water_stress', 'nutrient_deficiency', 'pest_damage_symptom', 'disease_symptom',
+    'environmental_stress', 'photo_log', 'soil_condition_note', 'pollination_activity'
+);
+COMMENT ON TYPE gr33n_crops.observation_type_enum IS 'Type of observation recorded for a crop planting.';
+
+
+CREATE TYPE gr33n_crops.treatment_type_enum AS ENUM (
+    'fertilizer_organic', 'fertilizer_synthetic', 'soil_amendment',
+    'pesticide_organic', 'pesticide_synthetic', 'fungicide_organic', 'fungicide_synthetic',
+    'herbicide_organic', 'herbicide_synthetic', 'biological_control_agent',
+    'natural_farming_input', -- (e.g., JLF, OHN from gr33n_natural_farming)
+    'growth_regulator', 'physical_control', -- (e.g., row covers, traps)
+    'water_application_foliar', 'other'
+);
+COMMENT ON TYPE gr33n_crops.treatment_type_enum IS 'Type of treatment applied to a crop planting.';
+
+
+CREATE TYPE gr33n_crops.harvest_quality_enum AS ENUM (
+    'premium_grade_a', 'good_grade_b', 'fair_grade_c', 'processing_grade', 'cull_unmarketable', 'feed_grade'
+);
+COMMENT ON TYPE gr33n_crops.harvest_quality_enum IS 'Quality assessment of harvested produce.';
+
+
+--------------------------------------------------------------------------------
+-- TABLES for gr33n_crops
+--------------------------------------------------------------------------------
+
+
+-- Crop Varieties: Master list of crops and their specific varieties a farm might grow.
+CREATE TABLE gr33n_crops.crop_varieties (
+    id BIGSERIAL PRIMARY KEY,
+    farm_id BIGINT NOT NULL REFERENCES gr33n_core.farms(id) ON DELETE CASCADE,
+    name TEXT NOT NULL, -- e.g., "Tomato Roma VF", "Carrot Nantes 2"
+    common_crop_name TEXT, -- e.g., "Tomato", "Carrot"
+    scientific_name TEXT, -- e.g., "Solanum lycopersicum", "Daucus carota"
+    category gr33n_crops.crop_category_enum,
+    description TEXT,
+    avg_days_to_maturity INTEGER, -- Average days from planting to first harvest
+    sun_requirements TEXT, -- e.g., "Full Sun", "Partial Shade"
+    water_requirements TEXT, -- e.g., "Moderate", "Drought Tolerant"
+    soil_preferences TEXT, -- e.g., "Well-drained loamy", "pH 6.0-6.8"
+    planting_instructions TEXT,
+    pest_disease_resistance_notes TEXT,
+    characteristics JSONB DEFAULT '{}'::jsonb, -- e.g., {"color": "red", "shape": "plum", "height_cm": 150, "fruit_size_grams": 80}
+    source_supplier_info TEXT, -- Where seeds/starts are typically obtained
+    is_active BOOLEAN DEFAULT TRUE NOT NULL, -- If this variety is currently actively used/planned by the farm
+    created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    updated_by_user_id UUID REFERENCES gr33n_core.profiles(user_id) ON DELETE SET NULL,
+    deleted_at TIMESTAMPTZ DEFAULT NULL,
+    CONSTRAINT uq_crop_variety_farm_name UNIQUE (farm_id, name, deleted_at) -- Name should be unique per farm unless soft-deleted
+);
+COMMENT ON TABLE gr33n_crops.crop_varieties IS 'Stores details about specific crop varieties grown or planned by a farm. Allows farms to build their own catalog.';
+
+
+-- Crop Plantings (or Crop Cycles / Batches): Represents a specific instance of a crop being cultivated.
+CREATE TABLE gr33n_crops.crop_plantings (
+    id BIGSERIAL PRIMARY KEY,
+    farm_id BIGINT NOT NULL REFERENCES gr33n_core.farms(id) ON DELETE CASCADE,
+    zone_id BIGINT REFERENCES gr33n_core.zones(id) ON DELETE SET NULL, -- Zone where planted. SET NULL if zone is deleted.
+    crop_variety_id BIGINT NOT NULL REFERENCES gr33n_crops.crop_varieties(id) ON DELETE RESTRICT, -- Don't delete variety if plantings exist
+    planting_name TEXT, -- User-defined name for this specific planting, e.g., "Spring Tomatoes GH1 Bed A", "Field C - Corn 2024"
+    description TEXT,
+    planting_date DATE NOT NULL, -- Date seeds sown or transplants planted
+    expected_harvest_start_date DATE,
+    actual_harvest_start_date DATE,
+    expected_harvest_end_date DATE,
+    actual_harvest_end_date DATE,
+    cultivation_area_sqm NUMERIC(10,2), -- Area dedicated to this specific planting if different from zone area
+    plant_count INTEGER, -- Number of individual plants
+    plant_spacing_cm NUMERIC(6,2),
+    row_spacing_cm NUMERIC(6,2),
+    source_type gr33n_crops.plant_source_type_enum,
+    source_details TEXT, -- e.g., "Johnny's Selected Seeds Lot #123", "Local Nursery Batch A"
+    current_status TEXT, -- e.g., "Seeding", "Germination", "Vegetative Growth", "Flowering", "Fruiting", "Harvesting", "Completed", "Failed", "Terminated"
+    notes TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    updated_by_user_id UUID REFERENCES gr33n_core.profiles(user_id) ON DELETE SET NULL,
+    deleted_at TIMESTAMPTZ DEFAULT NULL
+);
+COMMENT ON TABLE gr33n_crops.crop_plantings IS 'Tracks a specific instance of a crop variety being cultivated, from planting to final harvest or termination.';
+
+
+-- Standardized Growth Stages (Master list, potentially pre-populated or farm-customizable)
+CREATE TABLE gr33n_crops.crop_growth_stages (
+    id BIGSERIAL PRIMARY KEY,
+    farm_id BIGINT REFERENCES gr33n_core.farms(id) ON DELETE CASCADE, -- Farm can define custom stages
+    crop_category gr33n_crops.crop_category_enum, -- Optional: for general stages per category
+    crop_variety_id BIGINT REFERENCES gr33n_crops.crop_varieties(id) ON DELETE CASCADE, -- Optional: for variety-specific stages
+    stage_name TEXT NOT NULL, -- e.g., "Seedling (2 true leaves)", "V3 (3 collared leaves)", "Full Bloom", "Fruit Set"
+    description TEXT,
+    nominal_duration_days INTEGER, -- Typical duration of this stage
+    sequence_order INTEGER, -- Order of this stage in the lifecycle
+    is_system_defined BOOLEAN DEFAULT FALSE, -- True if a globally predefined stage
+    CONSTRAINT uq_growth_stage_farm_name UNIQUE (farm_id, stage_name) WHERE farm_id IS NOT NULL,
+    CONSTRAINT uq_growth_stage_system_name UNIQUE (stage_name) WHERE farm_id IS NULL AND crop_variety_id IS NULL AND crop_category IS NULL
+);
+COMMENT ON TABLE gr33n_crops.crop_growth_stages IS 'Defines standardized or custom growth stages for crops, aiding in consistent tracking.';
+
+
+-- Planting Growth Stage Log: Tracks when a specific planting enters a growth stage.
+CREATE TABLE gr33n_crops.planting_growth_stage_log (
+    id BIGSERIAL PRIMARY KEY,
+    crop_planting_id BIGINT NOT NULL REFERENCES gr33n_crops.crop_plantings(id) ON DELETE CASCADE,
+    growth_stage_id BIGINT NOT NULL REFERENCES gr33n_crops.crop_growth_stages(id) ON DELETE RESTRICT,
+    achieved_date DATE NOT NULL,
+    notes TEXT,
+    recorded_by_user_id UUID REFERENCES gr33n_core.profiles(user_id) ON DELETE SET NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
+);
+COMMENT ON TABLE gr33n_crops.planting_growth_stage_log IS 'Logs when a specific crop planting achieves a defined growth stage.';
+
+
+-- Crop Observations: General observations, measurements, or photo logs for a planting.
+CREATE TABLE gr33n_crops.crop_observations (
+    id BIGSERIAL PRIMARY KEY,
+    crop_planting_id BIGINT NOT NULL REFERENCES gr33n_crops.crop_plantings(id) ON DELETE CASCADE,
+    observation_time TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    observation_type gr33n_crops.observation_type_enum NOT NULL,
+    description TEXT NOT NULL,
+    value_numeric NUMERIC(10,2), -- For quantitative observations like height, count
+    value_text TEXT, -- For qualitative data
+    file_attachment_id BIGINT REFERENCES gr33n_core.file_attachments(id) ON DELETE SET NULL, -- For linking photos
+    related_sensor_id BIGINT REFERENCES gr33n_core.sensors(id) ON DELETE SET NULL, -- If observation is related to a sensor reading
+    recorded_by_user_id UUID REFERENCES gr33n_core.profiles(user_id) ON DELETE SET NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    updated_by_user_id UUID REFERENCES gr33n_core.profiles(user_id) ON DELETE SET NULL,
+    deleted_at TIMESTAMPTZ DEFAULT NULL
+);
+COMMENT ON TABLE gr33n_crops.crop_observations IS 'Records various observations, measurements, or media related to a crop planting over time.';
+
+
+-- Pest & Disease Sightings: Logging specific pest or disease events.
+CREATE TABLE gr33n_crops.pest_disease_sightings (
+    id BIGSERIAL PRIMARY KEY,
+    crop_planting_id BIGINT NOT NULL REFERENCES gr33n_crops.crop_plantings(id) ON DELETE CASCADE,
+    sighting_time TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    pest_or_disease_name TEXT NOT NULL, -- e.g., "Aphids", "Powdery Mildew", "Tomato Hornworm"
+    type TEXT NOT NULL CHECK (type IN ('pest', 'disease', 'weed')),
+    severity TEXT, -- e.g., "Low", "Medium", "High", "Localized", "Widespread"
+    description TEXT, -- Symptoms observed, extent of infestation/infection
+    affected_plant_part TEXT, -- e.g., "Leaves", "Fruit", "Stem", "Roots"
+    estimated_affected_area_percent NUMERIC(5,2),
+    file_attachment_id BIGINT REFERENCES gr33n_core.file_attachments(id) ON DELETE SET NULL, -- Photo of the issue
+    recorded_by_user_id UUID REFERENCES gr33n_core.profiles(user_id) ON DELETE SET NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    updated_by_user_id UUID REFERENCES gr33n_core.profiles(user_id) ON DELETE SET NULL,
+    deleted_at TIMESTAMPTZ DEFAULT NULL
+);
+COMMENT ON TABLE gr33n_crops.pest_disease_sightings IS 'Logs occurrences and details of pests, diseases, or significant weed pressure affecting a crop planting.';
+
+
+-- Crop Treatments/Applications: Records of fertilizers, pesticides, amendments applied.
+CREATE TABLE gr33n_crops.crop_treatments (
+    id BIGSERIAL PRIMARY KEY,
+    crop_planting_id BIGINT NOT NULL REFERENCES gr33n_crops.crop_plantings(id) ON DELETE CASCADE,
+    pest_disease_sighting_id BIGINT REFERENCES gr33n_crops.pest_disease_sightings(id) ON DELETE SET NULL, -- If treatment is in response to a specific sighting
+    application_date DATE NOT NULL,
+    treatment_type gr33n_crops.treatment_type_enum NOT NULL,
+    product_name TEXT, -- Specific product used, e.g., "Neem Oil Extract", "Roundup", "Miracle-Gro All Purpose"
+    -- Link to inventory item for product from gr33n_core.inventory_items
+    inventory_item_id BIGINT, -- FK to gr33n_core.inventory_items (add later if inventory schema is defined)
+    -- Link to natural farming input batch from gr33n_natural_farming.input_batches
+    natural_input_batch_id BIGINT, -- FK to gr33n_natural_farming.input_batches (add later)
+    application_method TEXT, -- e.g., "Foliar Spray", "Soil Drench", "Broadcast Spreading", "Injection"
+    concentration TEXT, -- e.g., "10ml/gallon", "As directed"
+    amount_applied_value NUMERIC(10,2),
+    amount_applied_unit TEXT, -- e.g., "gallons", "lbs", "liters", "kg"
+    area_treated_sqm NUMERIC(10,2),
+    reason_for_application TEXT, -- e.g., "Preventative", "Aphid control", "Nutrient boost"
+    weather_conditions_at_application TEXT, -- e.g., "Cloudy, 15C, light wind"
+    notes TEXT,
+    applied_by_user_id UUID REFERENCES gr33n_core.profiles(user_id) ON DELETE SET NULL,
+    related_task_id BIGINT REFERENCES gr33n_core.tasks(id) ON DELETE SET NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    updated_by_user_id UUID REFERENCES gr33n_core.profiles(user_id) ON DELETE SET NULL,
+    deleted_at TIMESTAMPTZ DEFAULT NULL
+);
+COMMENT ON TABLE gr33n_crops.crop_treatments IS 'Records applications of fertilizers, pesticides, soil amendments, or other treatments to a crop planting.';
+-- TODO: Add FK constraints for inventory_item_id and natural_input_batch_id once those schemas/tables are defined.
+
+
+-- Crop Harvests: Logging harvest events and yields for a planting.
+CREATE TABLE gr33n_crops.crop_harvests (
+    id BIGSERIAL PRIMARY KEY,
+    crop_planting_id BIGINT NOT NULL REFERENCES gr33n_crops.crop_plantings(id) ON DELETE CASCADE,
+    harvest_date DATE NOT NULL,
+    quantity_harvested NUMERIC(12,2) NOT NULL,
+    unit_of_measure TEXT NOT NULL, -- e.g., "kg", "lbs", "bushels", "bunches", "pieces"
+    quality_grade gr33n_crops.harvest_quality_enum,
+    storage_location TEXT, -- Where the harvested produce is stored
+    market_destination TEXT, -- e.g., "Farmers Market", "CSA Share", "Wholesale", "On-farm consumption"
+    notes TEXT,
+    harvested_by_user_id UUID REFERENCES gr33n_core.profiles(user_id) ON DELETE SET NULL,
+    related_task_id BIGINT REFERENCES gr33n_core.tasks(id) ON DELETE SET NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    updated_by_user_id UUID REFERENCES gr33n_core.profiles(user_id) ON DELETE SET NULL,
+    deleted_at TIMESTAMPTZ DEFAULT NULL
+);
+COMMENT ON TABLE gr33n_crops.crop_harvests IS 'Records details of each harvest event from a crop planting, including yield and quality.';
+
+
+-- Soil Tests: Records of soil analysis results.
+CREATE TABLE gr33n_crops.soil_tests (
+    id BIGSERIAL PRIMARY KEY,
+    farm_id BIGINT NOT NULL REFERENCES gr33n_core.farms(id) ON DELETE CASCADE,
+    zone_id BIGINT REFERENCES gr33n_core.zones(id) ON DELETE SET NULL, -- Soil test might be for a specific zone
+    crop_planting_id BIGINT REFERENCES gr33n_crops.crop_plantings(id) ON DELETE SET NULL, -- Or related to a specific planting
+    test_date DATE NOT NULL,
+    lab_name TEXT, -- Name of the laboratory that performed the test
+    report_reference TEXT, -- Lab report number or identifier
+    ph_value NUMERIC(4,2),
+    organic_matter_percent NUMERIC(5,2),
+    nitrogen_ppm NUMERIC(7,2), -- Or other unit like lbs/acre
+    phosphorus_ppm NUMERIC(7,2),
+    potassium_ppm NUMERIC(7,2),
+    calcium_ppm NUMERIC(7,2),
+    magnesium_ppm NUMERIC(7,2),
+    sulfur_ppm NUMERIC(7,2),
+    zinc_ppm NUMERIC(7,2),
+    iron_ppm NUMERIC(7,2),
+    manganese_ppm NUMERIC(7,2),
+    copper_ppm NUMERIC(7,2),
+    boron_ppm NUMERIC(7,2),
+    sodium_ppm NUMERIC(7,2),
+    electrical_conductivity_ds_m NUMERIC(6,2), -- dS/m
+    cation_exchange_capacity_meq_100g NUMERIC(6,2), -- meq/100g
+    recommendations TEXT, -- Recommendations from the lab or agronomist
+    full_report_attachment_id BIGINT REFERENCES gr33n_core.file_attachments(id) ON DELETE SET NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    updated_by_user_id UUID REFERENCES gr33n_core.profiles(user_id) ON DELETE SET NULL,
+    deleted_at TIMESTAMPTZ DEFAULT NULL,
+    CONSTRAINT chk_soil_test_location CHECK (zone_id IS NOT NULL OR crop_planting_id IS NOT NULL) -- Must be linked to at least one
+);
+COMMENT ON TABLE gr33n_crops.soil_tests IS 'Stores results of soil analysis tests, linked to zones or specific crop plantings.';
+
+
+--------------------------------------------------------------------------------
+-- Linking Tables (if needed, many-to-many relationships not immediately obvious here)
+--------------------------------------------------------------------------------
+-- Example: If a single treatment application could target multiple pest/disease sightings
+-- CREATE TABLE gr33n_crops.treatment_sighting_links (
+--    crop_treatment_id BIGINT NOT NULL REFERENCES gr33n_crops.crop_treatments(id) ON DELETE CASCADE,
+--    pest_disease_sighting_id BIGINT NOT NULL REFERENCES gr33n_crops.pest_disease_sightings(id) ON DELETE CASCADE,
+--    PRIMARY KEY (crop_treatment_id, pest_disease_sighting_id)
+-- );
+-- COMMENT ON TABLE gr33n_crops.treatment_sighting_links IS 'Links a single treatment application to multiple pest/disease sightings it addresses.';
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+--------------------------------------------------------------------------------
+-- SCHEMA: gr33n_animals - Livestock and animal husbandry management
+--------------------------------------------------------------------------------
+CREATE SCHEMA IF NOT EXISTS gr33n_animals;
+COMMENT ON SCHEMA gr33n_animals IS 'Manages information about individual animals, animal groups, breeds, feeding, health records, breeding, movements, and animal-related productions (e.g., eggs, milk, wool).';
+
+
+--------------------------------------------------------------------------------
+-- ENUMERATED TYPES for gr33n_animals
+--------------------------------------------------------------------------------
+
+
+CREATE TYPE gr33n_animals.animal_sex_enum AS ENUM (
+    'male', 'female', 'castrated_male', 'spayed_female', 'unknown', 'hermaphrodite', 'other'
+);
+COMMENT ON TYPE gr33n_animals.animal_sex_enum IS 'Sex of an animal.';
+
+
+CREATE TYPE gr33n_animals.acquisition_method_enum AS ENUM (
+    'born_on_farm', 'purchased', 'hatched_on_farm', 'gift_trade', 'leased_borrowed', 'other'
+);
+COMMENT ON TYPE gr33n_animals.acquisition_method_enum IS 'How an animal was acquired by the farm.';
+
+
+CREATE TYPE gr33n_animals.disposition_method_enum AS ENUM (
+    'sold_live', 'sold_meat', 'processed_on_farm', 'culled', 'died_natural_causes', 'died_predation_accident',
+    'transferred_off_farm', 'leased_out', 'gifted_traded_off', 'escaped_lost', 'other'
+);
+COMMENT ON TYPE gr33n_animals.disposition_method_enum IS 'How an animal left the farm or its current status if deceased/gone.';
+
+
+CREATE TYPE gr33n_animals.health_event_type_enum AS ENUM (
+    'vaccination', 'deworming', 'medication_treatment', 'injury', 'illness_symptom',
+    'routine_checkup', 'parasite_control', 'quarantine', 'hoof_trimming', 'grooming',
+    'diagnostic_test', 'surgery', 'other'
+);
+COMMENT ON TYPE gr33n_animals.health_event_type_enum IS 'Type of health-related event or treatment.';
+
+
+CREATE TYPE gr33n_animals.breeding_event_type_enum AS ENUM (
+    'heat_observed', 'artificial_insemination', 'natural_mating', 'pregnancy_check_positive',
+    'pregnancy_check_negative', 'birthing_hatching', 'weaning', 'abortion_stillbirth', 'other'
+);
+COMMENT ON TYPE gr33n_animals.breeding_event_type_enum IS 'Type of breeding-related event.';
+
+
+CREATE TYPE gr33n_animals.production_type_enum AS ENUM (
+    'milk', 'eggs', 'wool_fiber', 'honey', 'meat_carcass', 'manure', 'offspring_live', 'other'
+);
+COMMENT ON TYPE gr33n_animals.production_type_enum IS 'Type of production harvested or collected from animals.';
+
+
+--------------------------------------------------------------------------------
+-- TABLES for gr33n_animals
+--------------------------------------------------------------------------------
+
+
+-- Animal Species & Breeds: Catalog of animal species and their specific breeds relevant to the farm.
+CREATE TABLE gr33n_animals.animal_breeds (
+    id BIGSERIAL PRIMARY KEY,
+    farm_id BIGINT NOT NULL REFERENCES gr33n_core.farms(id) ON DELETE CASCADE,
+    species_name TEXT NOT NULL, -- e.g., "Chicken", "Cow", "Goat", "Sheep", "Pig", "Bee"
+    breed_name TEXT NOT NULL,   -- e.g., "Rhode Island Red", "Holstein", "Nubian", "Dorper", "Yorkshire", "Italian Honey Bee"
+    common_names TEXT, -- Other common names for the breed/species
+    description TEXT, -- Characteristics of the breed
+    origin_country TEXT,
+    conservation_status TEXT, -- e.g., "Common", "At Risk", "Endangered"
+    avg_lifespan_years NUMERIC(5,1),
+    avg_mature_weight_kg NUMERIC(7,2),
+    primary_purpose TEXT, -- e.g., "Eggs", "Milk", "Meat", "Fiber", "Pollination", "Draft"
+    notes TEXT,
+    is_active BOOLEAN DEFAULT TRUE NOT NULL, -- If this breed is actively managed by the farm
+    created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    updated_by_user_id UUID REFERENCES gr33n_core.profiles(user_id) ON DELETE SET NULL,
+    deleted_at TIMESTAMPTZ DEFAULT NULL,
+    CONSTRAINT uq_animal_breed_farm_species_name UNIQUE (farm_id, species_name, breed_name, deleted_at)
+);
+COMMENT ON TABLE gr33n_animals.animal_breeds IS 'Stores information about animal species and specific breeds relevant to the farm.';
+
+
+-- Animal Individuals: Detailed records for each individually managed animal.
+CREATE TABLE gr33n_animals.animal_individuals (
+    id BIGSERIAL PRIMARY KEY,
+    farm_id BIGINT NOT NULL REFERENCES gr33n_core.farms(id) ON DELETE CASCADE,
+    animal_breed_id BIGINT NOT NULL REFERENCES gr33n_animals.animal_breeds(id) ON DELETE RESTRICT,
+    tag_id TEXT UNIQUE, -- Ear tag, leg band, RFID, microchip ID. Could be unique per farm instead of globally.
+    name TEXT, -- Common name given to the animal
+    sex gr33n_animals.animal_sex_enum,
+    birth_date DATE,
+    birth_weight_kg NUMERIC(7,2),
+    dam_id BIGINT REFERENCES gr33n_animals.animal_individuals(id) ON DELETE SET NULL, -- Mother
+    sire_id BIGINT REFERENCES gr33n_animals.animal_individuals(id) ON DELETE SET NULL, -- Father
+    acquisition_date DATE,
+    acquisition_method gr33n_animals.acquisition_method_enum,
+    source_details TEXT, -- e.g., "Purchased from Smith Farms", "Hatchery Batch #456"
+    current_zone_id BIGINT REFERENCES gr33n_core.zones(id) ON DELETE SET NULL, -- Current pasture, pen, barn
+    disposition_date DATE,
+    disposition_method gr33n_animals.disposition_method_enum,
+    disposition_reason TEXT,
+    notes TEXT,
+    profile_image_attachment_id BIGINT REFERENCES gr33n_core.file_attachments(id) ON DELETE SET NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    updated_by_user_id UUID REFERENCES gr33n_core.profiles(user_id) ON DELETE SET NULL,
+    deleted_at TIMESTAMPTZ DEFAULT NULL,
+    CONSTRAINT uq_animal_farm_tag_id UNIQUE (farm_id, tag_id, deleted_at) WHERE tag_id IS NOT NULL -- Tag ID unique per farm
+);
+COMMENT ON TABLE gr33n_animals.animal_individuals IS 'Tracks individual animals with unique identifiers, parentage, and lifecycle events.';
+
+
+-- Animal Groups: For managing groups or herds of animals where individual tracking isn't primary (e.g., flock of chickens, beehive colony).
+CREATE TABLE gr33n_animals.animal_groups (
+    id BIGSERIAL PRIMARY KEY,
+    farm_id BIGINT NOT NULL REFERENCES gr33n_core.farms(id) ON DELETE CASCADE,
+    animal_breed_id BIGINT NOT NULL REFERENCES gr33n_animals.animal_breeds(id) ON DELETE RESTRICT,
+    group_name TEXT NOT NULL, -- e.g., "Layer Flock A", "Main Pasture Beef Herd", "Apiary Hive #3"
+    description TEXT,
+    current_zone_id BIGINT REFERENCES gr33n_core.zones(id) ON DELETE SET NULL,
+    establishment_date DATE,
+    initial_count INTEGER,
+    current_approx_count INTEGER,
+    avg_age_months NUMERIC(5,1),
+    primary_purpose TEXT, -- e.g., "Egg Production", "Grazing", "Pollination"
+    notes TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    updated_by_user_id UUID REFERENCES gr33n_core.profiles(user_id) ON DELETE SET NULL,
+    deleted_at TIMESTAMPTZ DEFAULT NULL,
+    CONSTRAINT uq_animal_group_farm_name UNIQUE (farm_id, group_name, deleted_at)
+);
+COMMENT ON TABLE gr33n_animals.animal_groups IS 'Manages groups, flocks, herds, or colonies of animals, especially where individual tracking is not primary.';
+
+
+-- Link table for individuals within groups (an animal can be in one group at a time for simplicity here, or this can be time-bound)
+CREATE TABLE gr33n_animals.animal_group_members (
+    animal_individual_id BIGINT NOT NULL REFERENCES gr33n_animals.animal_individuals(id) ON DELETE CASCADE,
+    animal_group_id BIGINT NOT NULL REFERENCES gr33n_animals.animal_groups(id) ON DELETE CASCADE,
+    date_joined DATE DEFAULT CURRENT_DATE NOT NULL,
+    date_left DATE,
+    reason_for_leaving TEXT,
+    PRIMARY KEY (animal_individual_id, animal_group_id, date_joined) -- An animal could rejoin a group later
+    -- Could add a constraint: an animal can only be in one ACTIVE group at a time if date_left IS NULL.
+);
+COMMENT ON TABLE gr33n_animals.animal_group_members IS 'Associates individual animals with specific animal groups over time.';
+
+
+-- Feeding Records: Logs feeding events for individuals or groups.
+CREATE TABLE gr33n_animals.feeding_records (
+    id BIGSERIAL PRIMARY KEY,
+    farm_id BIGINT NOT NULL REFERENCES gr33n_core.farms(id) ON DELETE CASCADE,
+    animal_individual_id BIGINT REFERENCES gr33n_animals.animal_individuals(id) ON DELETE CASCADE,
+    animal_group_id BIGINT REFERENCES gr33n_animals.animal_groups(id) ON DELETE CASCADE,
+    feed_time TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    feed_type_name TEXT NOT NULL, -- e.g., "Layer Pellets", "Pasture Grass", "Hay", "Custom Grain Mix"
+    -- Link to inventory item for feed from gr33n_core.inventory_items
+    feed_inventory_item_id BIGINT, -- FK to gr33n_core.inventory_items (add later)
+    quantity_fed NUMERIC(10,2) NOT NULL,
+    quantity_unit TEXT NOT NULL, -- e.g., "kg", "lbs", "scoops", "bales"
+    notes TEXT,
+    fed_by_user_id UUID REFERENCES gr33n_core.profiles(user_id) ON DELETE SET NULL,
+    related_task_id BIGINT REFERENCES gr33n_core.tasks(id) ON DELETE SET NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    -- No updated_at/deleted_at for simple log records usually. Updated if editable.
+    CONSTRAINT chk_feeding_target CHECK (animal_individual_id IS NOT NULL OR animal_group_id IS NOT NULL)
+);
+COMMENT ON TABLE gr33n_animals.feeding_records IS 'Logs feeding events, detailing feed type and quantity for individual animals or groups.';
+-- TODO: Add FK constraint for feed_inventory_item_id once gr33n_core.inventory_items is finalized.
+
+
+-- Health Records: Tracks health events, treatments, vaccinations.
+CREATE TABLE gr33n_animals.health_records (
+    id BIGSERIAL PRIMARY KEY,
+    farm_id BIGINT NOT NULL REFERENCES gr33n_core.farms(id) ON DELETE CASCADE,
+    animal_individual_id BIGINT REFERENCES gr33n_animals.animal_individuals(id) ON DELETE CASCADE,
+    animal_group_id BIGINT REFERENCES gr33n_animals.animal_groups(id) ON DELETE CASCADE, -- For flock/herd treatments
+    event_date DATE NOT NULL,
+    event_type gr33n_animals.health_event_type_enum NOT NULL,
+    description TEXT, -- Specific illness, injury details, medication name, vaccine batch
+    product_used TEXT, -- e.g., "Ivermectin Pour-On", "Penicillin G", "Bovishield Gold FP5"
+    -- Link to inventory item for medication/product from gr33n_core.inventory_items
+    product_inventory_item_id BIGINT, -- FK to gr33n_core.inventory_items (add later)
+    dosage_administered TEXT, -- e.g., "10ml", "1 pill", "0.5cc/10lbs"
+    withdrawal_period_days INTEGER, -- If applicable for meat/milk/eggs
+    veterinarian_involved TEXT,
+    diagnosis TEXT,
+    outcome TEXT, -- e.g., "Recovered", "Ongoing", "Died", "Culled"
+    notes TEXT,
+    recorded_by_user_id UUID REFERENCES gr33n_core.profiles(user_id) ON DELETE SET NULL,
+    related_task_id BIGINT REFERENCES gr33n_core.tasks(id) ON DELETE SET NULL,
+    file_attachment_id BIGINT REFERENCES gr33n_core.file_attachments(id) ON DELETE SET NULL, -- Vet reports, lab results
+    created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    updated_by_user_id UUID REFERENCES gr33n_core.profiles(user_id) ON DELETE SET NULL,
+    deleted_at TIMESTAMPTZ DEFAULT NULL,
+    CONSTRAINT chk_health_record_target CHECK (animal_individual_id IS NOT NULL OR animal_group_id IS NOT NULL)
+);
+COMMENT ON TABLE gr33n_animals.health_records IS 'Tracks health-related events, treatments, and diagnoses for individual animals or groups.';
+-- TODO: Add FK constraint for product_inventory_item_id.
+
+
+-- Breeding Records: Tracks mating, pregnancy, birthing/hatching events.
+CREATE TABLE gr33n_animals.breeding_records (
+    id BIGSERIAL PRIMARY KEY,
+    farm_id BIGINT NOT NULL REFERENCES gr33n_core.farms(id) ON DELETE CASCADE,
+    female_animal_id BIGINT NOT NULL REFERENCES gr33n_animals.animal_individuals(id) ON DELETE CASCADE, -- Dam
+    male_animal_id BIGINT REFERENCES gr33n_animals.animal_individuals(id) ON DELETE SET NULL, -- Sire (can be null for AI or unknown sire in a group)
+    animal_group_id BIGINT REFERENCES gr33n_animals.animal_groups(id) ON DELETE SET NULL, -- If mating occurred within a group
+    event_date DATE NOT NULL,
+    event_type gr33n_animals.breeding_event_type_enum NOT NULL,
+    semen_id_or_source TEXT, -- For AI, e.g., bull ID, semen batch #
+    expected_due_date DATE,
+    actual_birth_hatch_date DATE,
+    number_of_offspring INTEGER,
+    number_of_live_offspring INTEGER,
+    number_of_male_offspring INTEGER,
+    number_of_female_offspring INTEGER,
+    complications TEXT,
+    notes TEXT,
+    recorded_by_user_id UUID REFERENCES gr33n_core.profiles(user_id) ON DELETE SET NULL,
+    related_task_id BIGINT REFERENCES gr33n_core.tasks(id) ON DELETE SET NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    updated_by_user_id UUID REFERENCES gr33n_core.profiles(user_id) ON DELETE SET NULL,
+    deleted_at TIMESTAMPTZ DEFAULT NULL
+);
+COMMENT ON TABLE gr33n_animals.breeding_records IS 'Tracks breeding events, pregnancies, and birthing/hatching outcomes.';
+
+
+-- Offspring Links: Links offspring recorded in animal_individuals back to a specific breeding_record.
+CREATE TABLE gr33n_animals.breeding_offspring (
+    breeding_record_id BIGINT NOT NULL REFERENCES gr33n_animals.breeding_records(id) ON DELETE CASCADE,
+    offspring_animal_id BIGINT NOT NULL REFERENCES gr33n_animals.animal_individuals(id) ON DELETE CASCADE,
+    notes TEXT,
+    PRIMARY KEY (breeding_record_id, offspring_animal_id)
+);
+COMMENT ON TABLE gr33n_animals.breeding_offspring IS 'Links individual offspring records to their parent breeding event record.';
+
+
+-- Animal Movements: Tracks movement of individuals or groups between zones.
+CREATE TABLE gr33n_animals.animal_movements (
+    id BIGSERIAL PRIMARY KEY,
+    farm_id BIGINT NOT NULL REFERENCES gr33n_core.farms(id) ON DELETE CASCADE,
+    animal_individual_id BIGINT REFERENCES gr33n_animals.animal_individuals(id) ON DELETE CASCADE,
+    animal_group_id BIGINT REFERENCES gr33n_animals.animal_groups(id) ON DELETE CASCADE,
+    movement_date TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    from_zone_id BIGINT REFERENCES gr33n_core.zones(id) ON DELETE SET NULL,
+    to_zone_id BIGINT NOT NULL REFERENCES gr33n_core.zones(id) ON DELETE RESTRICT,
+    reason TEXT,
+    notes TEXT,
+    moved_by_user_id UUID REFERENCES gr33n_core.profiles(user_id) ON DELETE SET NULL,
+    related_task_id BIGINT REFERENCES gr33n_core.tasks(id) ON DELETE SET NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    -- No updated_at/deleted_at for simple log records.
+    CONSTRAINT chk_movement_target CHECK (animal_individual_id IS NOT NULL OR animal_group_id IS NOT NULL)
+);
+COMMENT ON TABLE gr33n_animals.animal_movements IS 'Logs the movement of animals or groups between different zones on the farm.';
+
+
+-- Production Records: Logs collection of milk, eggs, wool, honey, etc.
+CREATE TABLE gr33n_animals.production_records (
+    id BIGSERIAL PRIMARY KEY,
+    farm_id BIGINT NOT NULL REFERENCES gr33n_core.farms(id) ON DELETE CASCADE,
+    animal_individual_id BIGINT REFERENCES gr33n_animals.animal_individuals(id) ON DELETE CASCADE,
+    animal_group_id BIGINT REFERENCES gr33n_animals.animal_groups(id) ON DELETE CASCADE, -- e.g., for egg collection from a flock
+    production_date DATE NOT NULL,
+    production_type gr33n_animals.production_type_enum NOT NULL,
+    quantity_produced NUMERIC(10,2) NOT NULL,
+    quantity_unit TEXT NOT NULL, -- e.g., "liters", "gallons", "dozen", "pieces", "kg", "lbs"
+    quality_grade TEXT, -- e.g., "Grade A Large", "Extra Fancy"
+    storage_location TEXT,
+    notes TEXT,
+    collected_by_user_id UUID REFERENCES gr33n_core.profiles(user_id) ON DELETE SET NULL,
+    related_task_id BIGINT REFERENCES gr33n_core.tasks(id) ON DELETE SET NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    updated_by_user_id UUID REFERENCES gr33n_core.profiles(user_id) ON DELETE SET NULL,
+    deleted_at TIMESTAMPTZ DEFAULT NULL,
+    CONSTRAINT chk_production_target CHECK (animal_individual_id IS NOT NULL OR animal_group_id IS NOT NULL)
+);
+COMMENT ON TABLE gr33n_animals.production_records IS 'Records collection of animal products like milk, eggs, wool, honey.';
+
+
+--------------------------------------------------------------------------------
+-- INDEXES for gr33n_animals
+--------------------------------------------------------------------------------
+-- animal_breeds
+CREATE INDEX IF NOT EXISTS idx_animal_breeds_farm_species ON gr33n_animals.animal_breeds(farm_id, species_name);
+CREATE INDEX IF NOT EXISTS idx_animal_breeds_deleted_at ON gr33n_animals.animal_breeds(deleted_at NULLS FIRST) WHERE deleted_at IS NULL;
+
+
+-- animal_individuals
+CREATE INDEX IF NOT EXISTS idx_animal_individuals_farm_breed ON gr33n_animals.animal_individuals(farm_id, animal_breed_id);
+CREATE INDEX IF NOT EXISTS idx_animal_individuals_farm_sex ON gr33n_animals.animal_individuals(farm_id, sex);
+CREATE INDEX IF NOT EXISTS idx_animal_individuals_current_zone ON gr33n_animals.animal_individuals(current_zone_id);
+CREATE INDEX IF NOT EXISTS idx_animal_individuals_dam_id ON gr33n_animals.animal_individuals(dam_id);
+CREATE INDEX IF NOT EXISTS idx_animal_individuals_sire_id ON gr33n_animals.animal_individuals(sire_id);
+CREATE INDEX IF NOT EXISTS idx_animal_individuals_deleted_at ON gr33n_animals.animal_individuals(deleted_at NULLS FIRST) WHERE deleted_at IS NULL;
+
+
+-- animal_groups
+CREATE INDEX IF NOT EXISTS idx_animal_groups_farm_breed ON gr33n_animals.animal_groups(farm_id, animal_breed_id);
+CREATE INDEX IF NOT EXISTS idx_animal_groups_current_zone ON gr33n_animals.animal_groups(current_zone_id);
+CREATE INDEX IF NOT EXISTS idx_animal_groups_deleted_at ON gr33n_animals.animal_groups(deleted_at NULLS FIRST) WHERE deleted_at IS NULL;
+
+
+-- animal_group_members
+CREATE INDEX IF NOT EXISTS idx_animal_group_members_group_id ON gr33n_animals.animal_group_members(animal_group_id);
+
+
+-- feeding_records
+CREATE INDEX IF NOT EXISTS idx_feeding_records_farm_individual ON gr33n_animals.feeding_records(farm_id, animal_individual_id, feed_time DESC);
+CREATE INDEX IF NOT EXISTS idx_feeding_records_farm_group ON gr33n_animals.feeding_records(farm_id, animal_group_id, feed_time DESC);
+CREATE INDEX IF NOT EXISTS idx_feeding_records_feed_type ON gr33n_animals.feeding_records(farm_id, feed_type_name);
+
+
+-- health_records
+CREATE INDEX IF NOT EXISTS idx_health_records_farm_individual ON gr33n_animals.health_records(farm_id, animal_individual_id, event_date DESC);
+CREATE INDEX IF NOT EXISTS idx_health_records_farm_group ON gr33n_animals.health_records(farm_id, animal_group_id, event_date DESC);
+CREATE INDEX IF NOT EXISTS idx_health_records_event_type ON gr33n_animals.health_records(farm_id, event_type);
+CREATE INDEX IF NOT EXISTS idx_health_records_deleted_at ON gr33n_animals.health_records(deleted_at NULLS FIRST) WHERE deleted_at IS NULL;
+
+
+-- breeding_records
+CREATE INDEX IF NOT EXISTS idx_breeding_records_farm_female ON gr33n_animals.breeding_records(farm_id, female_animal_id, event_date DESC);
+CREATE INDEX IF NOT EXISTS idx_breeding_records_farm_male ON gr33n_animals.breeding_records(farm_id, male_animal_id);
+CREATE INDEX IF NOT EXISTS idx_breeding_records_event_type ON gr33n_animals.breeding_records(farm_id, event_type);
+CREATE INDEX IF NOT EXISTS idx_breeding_records_deleted_at ON gr33n_animals.breeding_records(deleted_at NULLS FIRST) WHERE deleted_at IS NULL;
+
+
+-- breeding_offspring
+CREATE INDEX IF NOT EXISTS idx_breeding_offspring_offspring_id ON gr33n_animals.breeding_offspring(offspring_animal_id);
+
+
+-- animal_movements
+CREATE INDEX IF NOT EXISTS idx_animal_movements_farm_individual ON gr33n_animals.animal_movements(farm_id, animal_individual_id, movement_date DESC);
+CREATE INDEX IF NOT EXISTS idx_animal_movements_farm_group ON gr33n_animals.animal_movements(farm_id, animal_group_id, movement_date DESC);
+CREATE INDEX IF NOT EXISTS idx_animal_movements_to_zone ON gr33n_animals.animal_movements(to_zone_id);
+
+
+-- production_records
+CREATE INDEX IF NOT EXISTS idx_production_records_farm_individual ON gr33n_animals.production_records(farm_id, animal_individual_id, production_date DESC);
+CREATE INDEX IF NOT EXISTS idx_production_records_farm_group ON gr33n_animals.production_records(farm_id, animal_group_id, production_date DESC);
+CREATE INDEX IF NOT EXISTS idx_production_records_type ON gr33n_animals.production_records(farm_id, production_type);
+CREATE INDEX IF NOT EXISTS idx_production_records_deleted_at ON gr33n_animals.production_records(deleted_at NULLS FIRST) WHERE deleted_at IS NULL;
