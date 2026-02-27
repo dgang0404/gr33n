@@ -1,0 +1,36 @@
+-- ============================================================
+-- Queries: gr33ncore.tasks
+-- ============================================================
+
+-- name: CreateTask :one
+INSERT INTO gr33ncore.tasks (
+    farm_id, zone_id, title, description, task_type, status, priority,
+    assigned_to_user_id, due_date, estimated_duration_minutes,
+    created_by_user_id, created_at, updated_at
+) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW(), NOW())
+RETURNING *;
+
+-- name: GetTaskByID :one
+SELECT * FROM gr33ncore.tasks
+WHERE id = $1 AND deleted_at IS NULL;
+
+-- name: ListTasksByFarm :many
+SELECT * FROM gr33ncore.tasks
+WHERE farm_id = $1 AND deleted_at IS NULL
+ORDER BY due_date ASC NULLS LAST, priority DESC;
+
+-- name: ListTasksByAssignee :many
+SELECT * FROM gr33ncore.tasks
+WHERE assigned_to_user_id = $1 AND farm_id = $2 AND deleted_at IS NULL
+ORDER BY due_date ASC NULLS LAST;
+
+-- name: UpdateTaskStatus :one
+UPDATE gr33ncore.tasks
+SET status = $2, updated_by_user_id = $3, updated_at = NOW()
+WHERE id = $1 AND deleted_at IS NULL
+RETURNING *;
+
+-- name: SoftDeleteTask :exec
+UPDATE gr33ncore.tasks
+SET deleted_at = NOW(), updated_at = NOW(), updated_by_user_id = $2
+WHERE id = $1;

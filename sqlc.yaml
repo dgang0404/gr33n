@@ -1,0 +1,76 @@
+version: "2"
+sql:
+  - schema: "db/schema/gr33n-schema-v2-FINAL.sql"
+    queries: "db/queries"
+    engine: "postgresql"
+    gen:
+      go:
+        package: "db"
+        out: "internal/db"
+        sql_package: "pgx/v5"
+        emit_json_tags: true
+        emit_db_tags: true
+        emit_prepared_queries: false
+        emit_interface: true
+        emit_exact_table_names: false
+        emit_empty_slices: true
+        emit_pointers_for_null_types: true
+        overrides:
+          - db_type: "uuid"
+            go_type: "github.com/google/uuid.UUID"
+          - db_type: "timestamptz"
+            go_type: "time.Time"
+          - db_type: "inet"
+            go_type: "net.IP"
+          - db_type: "gr33ncore.user_role_enum"
+            go_type:
+              import: "gr33n-api/internal/platform/commontypes"
+              type: "UserRoleEnum"
+          - db_type: "gr33ncore.farm_member_role_enum"
+            go_type:
+              import: "gr33n-api/internal/platform/commontypes"
+              type: "FarmMemberRoleEnum"
+          - db_type: "gr33ncore.device_status_enum"
+            go_type:
+              import: "gr33n-api/internal/platform/commontypes"
+              type: "DeviceStatusEnum"
+          - db_type: "gr33ncore.task_status_enum"
+            go_type:
+              import: "gr33n-api/internal/platform/commontypes"
+              type: "TaskStatusEnum"
+          - db_type: "gr33ncore.notification_priority_enum"
+            go_type:
+              import: "gr33n-api/internal/platform/commontypes"
+              type: "NotificationPriorityEnum"
+          - db_type: "gr33ncore.notification_status_enum"
+            go_type:
+              import: "gr33n-api/internal/platform/commontypes"
+              type: "NotificationStatusEnum"
+          - db_type: "gr33ncore.log_level_enum"
+            go_type:
+              import: "gr33n-api/internal/platform/commontypes"
+              type: "LogLevelEnum"
+          - db_type: "gr33ncore.operational_status_enum"
+            go_type:
+              import: "gr33n-api/internal/platform/commontypes"
+              type: "OperationalStatusEnum"
+          - db_type: "gr33ncore.automation_trigger_source_enum"
+            go_type:
+              import: "gr33n-api/internal/platform/commontypes"
+              type: "AutomationTriggerSourceEnum"
+          - db_type: "gr33ncore.executable_action_type_enum"
+            go_type:
+              import: "gr33n-api/internal/platform/commontypes"
+              type: "ExecutableActionTypeEnum"
+          - db_type: "gr33ncore.weather_data_source_enum"
+            go_type:
+              import: "gr33n-api/internal/platform/commontypes"
+              type: "WeatherDataSourceEnum"
+          - db_type: "gr33ncore.cost_category_enum"
+            go_type:
+              import: "gr33n-api/internal/platform/commontypes"
+              type: "CostCategoryEnum"
+          - db_type: "gr33ncore.farm_scale_tier_enum"
+            go_type:
+              import: "gr33n-api/internal/platform/commontypes"
+              type: "FarmScaleTierEnum"
