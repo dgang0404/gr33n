@@ -114,7 +114,7 @@ class OfflineQueue:
                 '    value_raw    REAL    NOT NULL,'
                 '    reading_time TEXT    NOT NULL,'
                 '    attempts     INTEGER DEFAULT 0,'
-                '    created_at   TEXT    DEFAULT (datetime("now"))'
+                '    created_at   TEXT    DEFAULT CURRENT_TIMESTAMP'
                 ')'
             )
 
