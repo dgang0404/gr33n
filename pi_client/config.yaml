@@ -1,0 +1,71 @@
+# gr33n Pi Client - config.yaml
+# Edit per Pi node. Defaults are applied automatically for any omitted key.
+
+api:
+  base_url: "http://192.168.1.100:8080"   # IP of your gr33n Go server
+  timeout_seconds: 5
+  api_key: ""                              # set if API requires X-Api-Key
+
+farm:
+  farm_id: 1                               # gr33n Demo Farm (from master_seed.sql)
+
+# sensor_id values come from gr33ncore.sensors (auto-inserted by master_seed.sql)
+# Zones seeded: Seedling Room, Veg Room, Flower Room, Outdoor Beds
+sensors:
+  - sensor_id: 1
+    sensor_type: temperature
+    source: dht22
+    pin: 4                    # BCM GPIO pin for DHT22 data line
+    interval_seconds: 60
+
+  - sensor_id: 2
+    sensor_type: humidity
+    source: dht22
+    pin: 4
+    interval_seconds: 60
+
+  - sensor_id: 3
+    sensor_type: soil_moisture
+    source: ads1115
+    channel: 0                # ADS1115 channel A0
+    interval_seconds: 300
+
+  - sensor_id: 4
+    sensor_type: co2
+    source: mhz19
+    port: "/dev/ttyS0"
+    interval_seconds: 60
+
+  - sensor_id: 5
+    sensor_type: ec
+    source: ads1115
+    channel: 1
+    interval_seconds: 60
+
+  - sensor_id: 6
+    sensor_type: ph
+    source: ads1115
+    channel: 2
+    interval_seconds: 60
+
+  - sensor_id: 7
+    sensor_type: par
+    source: bh1750             # BH1750 I2C lux sensor, converted to PAR
+    interval_seconds: 60
+
+actuators:
+  - actuator_id: 1
+    device_type: light
+    gpio_pin: 17
+
+  - actuator_id: 2
+    device_type: irrigation
+    gpio_pin: 27
+
+  - actuator_id: 3
+    device_type: fan
+    gpio_pin: 22
+
+schedule_poll_interval_seconds: 30
+offline_queue_path: "/var/lib/gr33n/queue.db"
+offline_flush_interval_seconds: 60

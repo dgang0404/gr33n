@@ -90,7 +90,7 @@ func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()
 
-	err = h.q.SoftDeleteSensor(ctx, id)
+	err = h.q.SoftDeleteSensor(ctx, db.SoftDeleteSensorParams{ID: id})
 	if err != nil {
 		httputil.WriteError(w, http.StatusInternalServerError, "failed to delete sensor")
 		return

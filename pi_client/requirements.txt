@@ -1,0 +1,9 @@
+requests>=2.31.0
+PyYAML>=6.0
+gpiozero>=2.0
+RPi.GPIO>=0.7.1
+adafruit-circuitpython-dht>=3.7
+adafruit-circuitpython-ads1x15>=2.3
+adafruit-blinka>=8.0
+smbus2>=0.4
+pyserial>=3.5

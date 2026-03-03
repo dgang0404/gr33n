@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	db "gr33n-api/internal/db"
@@ -120,7 +121,7 @@ func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
 
 	err = h.q.SoftDeleteFarm(ctx, db.SoftDeleteFarmParams{
 		ID:              id,
-		UpdatedByUserID: &body.UpdatedByUserID,
+		UpdatedByUserID: pgtype.UUID{Bytes: body.UpdatedByUserID, Valid: true},
 	})
 	if err != nil {
 		httputil.WriteError(w, http.StatusInternalServerError, "failed to delete farm")

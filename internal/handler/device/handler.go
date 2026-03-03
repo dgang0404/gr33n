@@ -119,7 +119,7 @@ func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()
 
-	err = h.q.SoftDeleteDevice(ctx, id)
+	err = h.q.SoftDeleteDevice(ctx, db.SoftDeleteDeviceParams{ID: id})
 	if err != nil {
 		httputil.WriteError(w, http.StatusInternalServerError, "failed to delete device")
 		return

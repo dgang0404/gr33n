@@ -1,0 +1,19 @@
+[Unit]
+Description=gr33n Pi Sensor/Actuator Client
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=pi
+WorkingDirectory=/home/pi/gr33n_pi
+ExecStart=/home/pi/gr33n_pi/venv/bin/python gr33n_client.py --config config.yaml
+Restart=on-failure
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=gr33n-client
+StateDirectory=gr33n
+
+[Install]
+WantedBy=multi-user.target

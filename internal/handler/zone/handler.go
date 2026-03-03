@@ -114,7 +114,7 @@ func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()
 
-	err = h.q.SoftDeleteZone(ctx, id)
+	err = h.q.SoftDeleteZone(ctx, db.SoftDeleteZoneParams{ID: id})
 	if err != nil {
 		httputil.WriteError(w, http.StatusInternalServerError, "failed to delete zone")
 		return
