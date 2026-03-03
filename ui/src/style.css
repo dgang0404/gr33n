@@ -1,0 +1,18 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  @apply bg-gray-950 text-gray-100 font-sans;
+}
+
+.card {
+  @apply bg-gray-900 border border-gray-800 rounded-xl p-4;
+}
+
+.badge-ok      { @apply bg-green-600 text-white text-xs font-semibold px-2 py-0.5 rounded-full; }
+.badge-warn    { @apply bg-amber-500 text-gray-900 text-xs font-semibold px-2 py-0.5 rounded-full; }
+.badge-danger  { @apply bg-red-500 text-white text-xs font-semibold px-2 py-0.5 rounded-full; }
+.badge-off     { @apply bg-gray-700 text-gray-400 text-xs font-semibold px-2 py-0.5 rounded-full; }

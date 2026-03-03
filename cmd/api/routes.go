@@ -1,101 +1,63 @@
 package main
 
 import (
-	"encoding/json"
 	"net/http"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+
+	devicehandler "gr33n-api/internal/handler/device"
+	farmhandler   "gr33n-api/internal/handler/farm"
+	sensorhandler "gr33n-api/internal/handler/sensor"
+	zonehandler   "gr33n-api/internal/handler/zone"
+	"gr33n-api/internal/httputil"
 	db "gr33n-api/internal/db"
 )
 
 func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool) {
-	queries := db.New(pool)
+	farm   := farmhandler.NewHandler(pool)
+	zone   := zonehandler.NewHandler(pool)
+	device := devicehandler.NewHandler(pool)
+	sensor := sensorhandler.NewHandler(pool)
 
-	// ── Health check ───────────────────────────────────────────────────────────
-	mux.HandleFunc("GET /health", handleHealth(pool))
-
-	// ── Units (reference data) ─────────────────────────────────────────────────
-	mux.HandleFunc("GET /units", handleListUnits(queries))
-
-	// ── Farms ──────────────────────────────────────────────────────────────────
-	mux.HandleFunc("GET /farms/{id}", handleGetFarm(queries))
-
-	// ── Zones ──────────────────────────────────────────────────────────────────
-	mux.HandleFunc("GET /farms/{id}/zones", handleListZones(queries))
-
-	// ── Devices ────────────────────────────────────────────────────────────────
-	mux.HandleFunc("GET /farms/{id}/devices", handleListDevices(queries))
-
-	// ── Sensors ────────────────────────────────────────────────────────────────
-	mux.HandleFunc("GET /farms/{id}/sensors", handleListSensors(queries))
-
-	// ── Sensor readings ────────────────────────────────────────────────────────
-	mux.HandleFunc("GET /sensors/{id}/readings/latest", handleLatestReading(queries))
-}
-
-// ── Handlers ──────────────────────────────────────────────────────────────────
-
-func handleHealth(pool *pgxpool.Pool) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
+	// Health
+	mux.HandleFunc("GET /health", func(w http.ResponseWriter, r *http.Request) {
 		if err := pool.Ping(r.Context()); err != nil {
-			writeJSON(w, http.StatusServiceUnavailable, map[string]string{
-				"status": "unhealthy", "error": err.Error(),
-			})
+			httputil.WriteJSON(w, http.StatusServiceUnavailable, map[string]string{"status": "unhealthy", "error": err.Error()})
 			return
 		}
-		writeJSON(w, http.StatusOK, map[string]string{"status": "ok", "service": "gr33n-api"})
-	}
-}
+		httputil.WriteJSON(w, http.StatusOK, map[string]string{"status": "ok", "service": "gr33n-api"})
+	})
 
-func handleListUnits(q *db.Queries) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
+	// Units
+	mux.HandleFunc("GET /units", func(w http.ResponseWriter, r *http.Request) {
+		q := db.New(pool)
 		units, err := q.ListAllUnits(r.Context())
 		if err != nil {
-			writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+			httputil.WriteError(w, http.StatusInternalServerError, err.Error())
 			return
 		}
-		writeJSON(w, http.StatusOK, units)
-	}
-}
+		httputil.WriteJSON(w, http.StatusOK, units)
+	})
 
-func handleGetFarm(q *db.Queries) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		id := r.PathValue("id")
-		writeJSON(w, http.StatusOK, map[string]string{"farm_id": id, "status": "handler ready"})
-	}
-}
+	// Farms
+	mux.HandleFunc("GET /farms/{id}",          farm.Get)
+	mux.HandleFunc("GET /farms/{id}/zones",    zone.ListByFarm)
+	mux.HandleFunc("GET /farms/{id}/devices",  device.ListByFarm)
+	mux.HandleFunc("GET /farms/{id}/sensors",  sensor.ListByFarm)
 
-func handleListZones(q *db.Queries) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		id := r.PathValue("id")
-		writeJSON(w, http.StatusOK, map[string]string{"farm_id": id, "status": "handler ready"})
-	}
-}
+	// Sensors
+	mux.HandleFunc("GET /sensors/{id}",                 sensor.Get)
+	mux.HandleFunc("POST /farms/{id}/sensors",          sensor.Create)
+	mux.HandleFunc("DELETE /sensors/{id}",              sensor.Delete)
 
-func handleListDevices(q *db.Queries) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		id := r.PathValue("id")
-		writeJSON(w, http.StatusOK, map[string]string{"farm_id": id, "status": "handler ready"})
-	}
-}
+	// Devices
+	mux.HandleFunc("GET /devices/{id}",          device.Get)
+	mux.HandleFunc("POST /farms/{id}/devices",   device.Create)
+	mux.HandleFunc("PATCH /devices/{id}/status", device.UpdateStatus)
+	mux.HandleFunc("DELETE /devices/{id}",       device.Delete)
 
-func handleListSensors(q *db.Queries) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		id := r.PathValue("id")
-		writeJSON(w, http.StatusOK, map[string]string{"farm_id": id, "status": "handler ready"})
-	}
-}
-
-func handleLatestReading(q *db.Queries) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		id := r.PathValue("id")
-		writeJSON(w, http.StatusOK, map[string]string{"sensor_id": id, "status": "handler ready"})
-	}
-}
-
-// ── Helper ────────────────────────────────────────────────────────────────────
-func writeJSON(w http.ResponseWriter, status int, v any) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(status)
-	json.NewEncoder(w).Encode(v)
+	// Zones
+	mux.HandleFunc("GET /zones/{id}",          zone.Get)
+	mux.HandleFunc("POST /farms/{id}/zones",   zone.Create)
+	mux.HandleFunc("DELETE /zones/{id}",       zone.Delete)
 }

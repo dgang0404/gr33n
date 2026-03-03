@@ -27,7 +27,7 @@ func main() {
 
 	addr := fmt.Sprintf(":%s", port)
 	log.Printf("🌱 gr33n API running on http://localhost%s", addr)
-	if err := http.ListenAndServe(addr, mux); err != nil {
+	if err := http.ListenAndServe(addr, corsMiddleware(mux)); err != nil {
 		log.Fatalf("❌ Server error: %v", err)
 	}
 }
