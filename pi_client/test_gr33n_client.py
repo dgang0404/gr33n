@@ -334,3 +334,102 @@ class TestOfflineQueueIntegration(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# EDGE CASE TESTS — invalid readings, correct sensor routing, server errors
+# Added 2026-03-05. Matches gr33n_client.py actual class signatures.
+# ─────────────────────────────────────────────────────────────────────────────
+
+class TestEdgeCases(unittest.TestCase):
+
+    # ── Test 1: SensorReader.read() returns None for bad hardware ─────────────
+    def test_invalid_sensor_value_raises_exception(self):
+        """SensorReader.read() must raise when hardware faults — sensor loop catches it."""
+        cfg = {
+            "sensor_id": 1,
+            "sensor_type": "temperature",
+            "hardware_identifier": "GPIO4",
+            "interval_seconds": 60,
+        }
+        reader = client.SensorReader(cfg)
+        with patch.object(client.SensorReader, '_mock', side_effect=Exception("hardware fault")):
+            with patch.object(client.SensorReader, '_init_hardware', return_value=None):
+                with self.assertRaises(Exception) as ctx:
+                    reader.read()
+        self.assertIn(
+            "hardware fault", str(ctx.exception),
+            "Exception message should propagate so the sensor loop can log and queue offline"
+        )
+
+    # ── Test 2: POST hits the correct sensor ID URL ───────────────────────────
+    def test_reading_posts_to_correct_sensor_id(self):
+        """Gr33nApiClient.post_reading(sensor_id=3) must POST to /sensors/3/readings."""
+        posted_paths = []
+
+        class CapturingHandler(BaseHTTPRequestHandler):
+            def log_message(self, *args): pass
+            def do_POST(self):
+                length = int(self.headers.get("Content-Length", 0))
+                self.rfile.read(length)
+                posted_paths.append(self.path)
+                self.send_response(201)
+                self.send_header("Content-Type", "application/json")
+                self.end_headers()
+                self.wfile.write(b'{"id":1}')
+
+        server = HTTPServer(("127.0.0.1", 0), CapturingHandler)
+        port = server.server_address[1]
+        thread = threading.Thread(target=server.handle_request)
+        thread.start()
+
+        api = client.Gr33nApiClient(
+            base_url=f"http://127.0.0.1:{port}",
+            farm_id=1
+        )
+        api.post_reading(sensor_id=3, value_raw=21.0)
+        thread.join(timeout=2)
+        server.server_close()
+
+        self.assertTrue(
+            any("/sensors/3/readings" in p for p in posted_paths),
+            f"Expected POST to /sensors/3/readings, got: {posted_paths}"
+        )
+
+    # ── Test 3: API 500 → post_reading returns False ──────────────────────────
+    def test_api_500_returns_false(self):
+        """Gr33nApiClient.post_reading must return False on a 500 so the
+        caller (Gr33nPiClient sensor loop) can queue the reading offline."""
+
+        class ServerErrorHandler(BaseHTTPRequestHandler):
+            def log_message(self, *args): pass
+            def do_POST(self):
+                length = int(self.headers.get("Content-Length", 0))
+                self.rfile.read(length)
+                self.send_response(500)
+                self.send_header("Content-Type", "application/json")
+                self.end_headers()
+                self.wfile.write(b'{"error":"internal server error"}')
+
+        server = HTTPServer(("127.0.0.1", 0), ServerErrorHandler)
+        port = server.server_address[1]
+        thread = threading.Thread(target=server.handle_request)
+        thread.daemon = True
+        thread.start()
+
+        api = client.Gr33nApiClient(
+            base_url=f"http://127.0.0.1:{port}",
+            farm_id=1
+        )
+        result = api.post_reading(sensor_id=1, value_raw=22.5)
+        thread.join(timeout=2)
+        server.server_close()
+
+        self.assertFalse(
+            result,
+            "post_reading must return False on HTTP 500 so the sensor loop queues offline"
+        )
+
+
+if __name__ == "__main__":
+    unittest.main()
