@@ -1,0 +1,532 @@
+openapi: "3.0.3"
+info:
+  title: gr33n API
+  version: "0.1.0"
+  description: |
+    Local-first automated agriculture platform API.
+    All endpoints run on localhost:8080 by default.
+    No authentication required in local dev mode.
+  license:
+    name: AGPL-3.0
+    url: https://www.gnu.org/licenses/agpl-3.0
+
+servers:
+  - url: http://localhost:8080
+    description: Local development
+
+tags:
+  - name: health
+    description: API and database health
+  - name: units
+    description: Units of measure reference
+  - name: farms
+    description: Farm management
+  - name: zones
+    description: Zone management
+  - name: sensors
+    description: Sensor registry and readings
+  - name: devices
+    description: Device management and control
+  - name: tasks
+    description: Task scheduling
+
+paths:
+
+  /health:
+    get:
+      tags: [health]
+      summary: Health check
+      description: Returns API status and confirms database connectivity.
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, example: ok }
+                  service: { type: string, example: gr33n-api }
+        "503":
+          description: Database unreachable
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+
+  /units:
+    get:
+      tags: [units]
+      summary: List all units of measure
+      description: Returns all units including temperature, volume, mass, EC, pH, PAR, etc.
+      responses:
+        "200":
+          description: List of units
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Unit" }
+
+  /farms/{id}:
+    get:
+      tags: [farms]
+      summary: Get farm by ID
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      responses:
+        "200":
+          description: Farm object
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Farm" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /farms/{id}/zones:
+    get:
+      tags: [zones]
+      summary: List zones for a farm
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      responses:
+        "200":
+          description: List of zones
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Zone" }
+    post:
+      tags: [zones]
+      summary: Create a zone
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ZoneCreate" }
+      responses:
+        "201":
+          description: Created zone
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Zone" }
+
+  /zones/{id}:
+    get:
+      tags: [zones]
+      summary: Get zone by ID
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      responses:
+        "200":
+          description: Zone object
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Zone" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    delete:
+      tags: [zones]
+      summary: Soft-delete a zone
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      responses:
+        "204": { description: Deleted }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /farms/{id}/sensors:
+    get:
+      tags: [sensors]
+      summary: List sensors for a farm
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      responses:
+        "200":
+          description: List of sensors
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Sensor" }
+    post:
+      tags: [sensors]
+      summary: Register a new sensor
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SensorCreate" }
+      responses:
+        "201":
+          description: Created sensor
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Sensor" }
+
+  /sensors/{id}:
+    get:
+      tags: [sensors]
+      summary: Get sensor by ID
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      responses:
+        "200":
+          description: Sensor object
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Sensor" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    delete:
+      tags: [sensors]
+      summary: Soft-delete a sensor
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      responses:
+        "204": { description: Deleted }
+
+  /sensors/{id}/readings/latest:
+    get:
+      tags: [sensors]
+      summary: Get latest reading for a sensor
+      description: Returns 404 if the sensor has no readings yet (normal before Pi connects).
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      responses:
+        "200":
+          description: Latest sensor reading
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SensorReading" }
+        "404":
+          description: No readings yet
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+
+  /sensors/{id}/readings:
+    post:
+      tags: [sensors]
+      summary: Post a sensor reading
+      description: |
+        Called by the Raspberry Pi client daemon.
+        The database trigger automatically normalizes value_raw to the base unit.
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SensorReadingCreate" }
+            example:
+              value_raw: 22.5
+              is_valid: true
+              battery_level_percent: 87.0
+      responses:
+        "201":
+          description: Reading stored and normalized
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SensorReading" }
+
+  /farms/{id}/devices:
+    get:
+      tags: [devices]
+      summary: List devices for a farm
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      responses:
+        "200":
+          description: List of devices
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Device" }
+    post:
+      tags: [devices]
+      summary: Register a new device
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/DeviceCreate" }
+      responses:
+        "201":
+          description: Created device
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Device" }
+
+  /devices/{id}:
+    get:
+      tags: [devices]
+      summary: Get device by ID
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      responses:
+        "200":
+          description: Device object
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Device" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    delete:
+      tags: [devices]
+      summary: Soft-delete a device
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      responses:
+        "204": { description: Deleted }
+
+  /devices/{id}/status:
+    patch:
+      tags: [devices]
+      summary: Update device status (ON/OFF toggle)
+      description: |
+        Used by the Actuators UI toggle and the Pi heartbeat loop.
+        Also updates last_heartbeat timestamp.
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status:
+                  type: string
+                  enum: [online, offline, error_comms, error_hardware,
+                         maintenance_mode, initializing, unknown,
+                         decommissioned, pending_activation]
+            example:
+              status: online
+      responses:
+        "200":
+          description: Updated device
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Device" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /farms/{id}/tasks:
+    get:
+      tags: [tasks]
+      summary: List tasks for a farm
+      description: Ordered by due_date ASC, priority DESC.
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      responses:
+        "200":
+          description: List of tasks
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Task" }
+
+  /tasks/{id}/status:
+    patch:
+      tags: [tasks]
+      summary: Update task status
+      description: |
+        Drives the Schedules Kanban board.
+        Scheduled column = todo / on_hold / blocked_requires_input / pending_review
+        Running column   = in_progress
+        Done column      = completed / cancelled
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status:
+                  type: string
+                  enum: [todo, in_progress, on_hold, completed, cancelled,
+                         blocked_requires_input, pending_review]
+            example:
+              status: in_progress
+      responses:
+        "200":
+          description: Updated task
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Task" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+components:
+
+  parameters:
+    ID:
+      name: id
+      in: path
+      required: true
+      schema: { type: integer, format: int64 }
+
+  responses:
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+
+  schemas:
+
+    Error:
+      type: object
+      properties:
+        error: { type: string }
+
+    Unit:
+      type: object
+      properties:
+        id: { type: integer }
+        name: { type: string, example: celsius }
+        unit_type: { type: string, example: temperature }
+        symbol: { type: string, example: "C" }
+        base_unit_name: { type: string }
+        conversion_to_base: { type: number }
+        is_base_unit: { type: boolean }
+
+    Farm:
+      type: object
+      properties:
+        id: { type: integer }
+        name: { type: string, example: gr33n Demo Farm }
+        description: { type: string }
+        location_text: { type: string }
+        farm_type: { type: string }
+        scale_tier: { type: string, enum: [small, medium, large, enterprise] }
+        operational_status: { type: string }
+        timezone: { type: string, example: UTC }
+        currency: { type: string, example: USD }
+        created_at: { type: string, format: date-time }
+
+    Zone:
+      type: object
+      properties:
+        id: { type: integer }
+        farm_id: { type: integer }
+        name: { type: string, example: Veg Room }
+        description: { type: string }
+        zone_type: { type: string, example: indoor }
+        area_sqm: { type: number }
+        created_at: { type: string, format: date-time }
+
+    ZoneCreate:
+      type: object
+      required: [name]
+      properties:
+        name: { type: string }
+        description: { type: string }
+        zone_type: { type: string }
+        area_sqm: { type: number }
+
+    Sensor:
+      type: object
+      properties:
+        id: { type: integer }
+        farm_id: { type: integer }
+        zone_id: { type: integer, nullable: true }
+        device_id: { type: integer, nullable: true }
+        name: { type: string, example: Air Temp Indoor }
+        sensor_type: { type: string, example: temperature }
+        unit_id: { type: integer }
+        hardware_identifier: { type: string, nullable: true }
+        value_min_expected: { type: number, nullable: true }
+        value_max_expected: { type: number, nullable: true }
+        alert_threshold_low: { type: number, nullable: true }
+        alert_threshold_high: { type: number, nullable: true }
+        reading_interval_seconds: { type: integer, nullable: true }
+        created_at: { type: string, format: date-time }
+
+    SensorCreate:
+      type: object
+      required: [name, sensor_type, unit_id]
+      properties:
+        name: { type: string }
+        sensor_type: { type: string }
+        unit_id: { type: integer }
+        zone_id: { type: integer }
+        device_id: { type: integer }
+        hardware_identifier: { type: string }
+        reading_interval_seconds: { type: integer }
+
+    SensorReading:
+      type: object
+      properties:
+        reading_time: { type: string, format: date-time }
+        sensor_id: { type: integer }
+        value_raw: { type: number, example: 22.5 }
+        value_normalized: { type: number, example: 22.5 }
+        normalized_unit_id: { type: integer, nullable: true }
+        value_text: { type: string, nullable: true }
+        battery_level_percent: { type: number, nullable: true }
+        signal_strength_dbm: { type: integer, nullable: true }
+        is_valid: { type: boolean }
+
+    SensorReadingCreate:
+      type: object
+      required: [value_raw]
+      properties:
+        value_raw: { type: number, example: 22.5 }
+        reading_time: { type: string, format: date-time, description: "Defaults to now() if omitted" }
+        value_text: { type: string }
+        battery_level_percent: { type: number }
+        signal_strength_dbm: { type: integer }
+        is_valid: { type: boolean, default: true }
+
+    Device:
+      type: object
+      properties:
+        id: { type: integer }
+        farm_id: { type: integer }
+        zone_id: { type: integer, nullable: true }
+        name: { type: string, example: Veg Room Fan }
+        device_uid: { type: string, nullable: true }
+        device_type: { type: string, example: fan }
+        ip_address: { type: string, nullable: true }
+        firmware_version: { type: string, nullable: true }
+        status:
+          type: string
+          enum: [online, offline, error_comms, error_hardware,
+                 maintenance_mode, initializing, unknown,
+                 decommissioned, pending_activation]
+        last_heartbeat: { type: string, format: date-time, nullable: true }
+        created_at: { type: string, format: date-time }
+
+    DeviceCreate:
+      type: object
+      required: [name, device_type]
+      properties:
+        name: { type: string }
+        device_type: { type: string }
+        zone_id: { type: integer }
+        device_uid: { type: string }
+        ip_address: { type: string }
+
+    Task:
+      type: object
+      properties:
+        id: { type: integer }
+        farm_id: { type: integer }
+        zone_id: { type: integer, nullable: true }
+        title: { type: string, example: Check EC levels in Veg Room }
+        description: { type: string, nullable: true }
+        task_type: { type: string, nullable: true }
+        status:
+          type: string
+          enum: [todo, in_progress, on_hold, completed, cancelled,
+                 blocked_requires_input, pending_review]
+        priority: { type: integer, minimum: 0, maximum: 3, description: "0=low 1=normal 2=high 3=urgent" }
+        due_date: { type: string, format: date, nullable: true }
+        created_at: { type: string, format: date-time }
