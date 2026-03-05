@@ -3,13 +3,14 @@ import api from '../api'
 
 export const useFarmStore = defineStore('farm', {
   state: () => ({
-    farm:     null,
-    zones:    [],
-    sensors:  [],
-    devices:  [],
-    readings: {},   // sensor_id -> latest reading
-    loading:  false,
-    error:    null,
+    farm: null,
+    zones: [],
+    sensors: [],
+    devices: [],
+    tasks: [],
+    readings: {},
+    loading: false,
+    error: null,
   }),
 
   getters: {
@@ -19,9 +20,9 @@ export const useFarmStore = defineStore('farm', {
       if (!r.is_valid) return 'danger'
       return r.status ?? 'ok'
     },
-    activeDevices: (state) => state.devices.filter(d => d.status === 'online'),
-    devicesByZone: (state) => (zoneId) => state.devices.filter(d => d.zone_id === zoneId),
-    sensorsByZone: (state) => (zoneId) => state.sensors.filter(s => s.zone_id === zoneId),
+    activeDevices:  (state) => state.devices.filter(d => d.status === 'online'),
+    devicesByZone:  (state) => (zoneId) => state.devices.filter(d => d.zone_id === zoneId),
+    sensorsByZone:  (state) => (zoneId) => state.sensors.filter(s => s.zone_id === zoneId),
   },
 
   actions: {
@@ -45,12 +46,24 @@ export const useFarmStore = defineStore('farm', {
       }
     },
 
+    async loadTasks(farmId = 1) {
+      const r = await api.get(`/farms/${farmId}/tasks`)
+      this.tasks = Array.isArray(r.data) ? r.data : []
+      return this.tasks
+    },
+
+    async updateTaskStatus(taskId, status) {
+      await api.patch(`/tasks/${taskId}/status`, { status })
+      const t = this.tasks.find(t => t.id === taskId)
+      if (t) t.status = status
+    },
+
     async refreshReadings() {
       for (const s of this.sensors) {
         try {
           const r = await api.get(`/sensors/${s.id}/readings/latest`)
           this.readings[s.id] = r.data
-        } catch { /* sensor may have no readings yet */ }
+        } catch { /* no readings yet */ }
       }
     },
 

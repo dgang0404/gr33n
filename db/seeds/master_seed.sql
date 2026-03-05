@@ -587,3 +587,16 @@ SELECT 'schedules',                         count(*)         FROM gr33ncore.sche
 SELECT 'automation_rules',                  count(*)         FROM gr33ncore.automation_rules                   UNION ALL
 SELECT 'sensor_templates',                  count(*)         FROM gr33ncore.sensors
 ORDER BY 1;
+
+-- ── Sensor → Zone assignments ─────────────────────────────────────────────
+-- Assigned 2026-03-05. Zone IDs match gr33n Demo Farm (farm_id = 1).
+UPDATE gr33ncore.sensors SET zone_id = (SELECT id FROM gr33ncore.zones WHERE farm_id = 1 AND name = 'Veg Room')      WHERE farm_id = 1 AND name = 'Root Zone Temp';
+UPDATE gr33ncore.sensors SET zone_id = (SELECT id FROM gr33ncore.zones WHERE farm_id = 1 AND name = 'Veg Room')      WHERE farm_id = 1 AND name = 'Air Temp Indoor';
+UPDATE gr33ncore.sensors SET zone_id = (SELECT id FROM gr33ncore.zones WHERE farm_id = 1 AND name = 'Veg Room')      WHERE farm_id = 1 AND name = 'Media Moisture Indoor';
+UPDATE gr33ncore.sensors SET zone_id = (SELECT id FROM gr33ncore.zones WHERE farm_id = 1 AND name = 'Outdoor Beds')  WHERE farm_id = 1 AND name = 'Soil Moisture Outdoor';
+UPDATE gr33ncore.sensors SET zone_id = (SELECT id FROM gr33ncore.zones WHERE farm_id = 1 AND name = 'Flower Room')   WHERE farm_id = 1 AND name = 'Air Humidity Indoor';
+UPDATE gr33ncore.sensors SET zone_id = (SELECT id FROM gr33ncore.zones WHERE farm_id = 1 AND name = 'Veg Room')      WHERE farm_id = 1 AND name = 'CO2 Sensor Indoor';
+UPDATE gr33ncore.sensors SET zone_id = (SELECT id FROM gr33ncore.zones WHERE farm_id = 1 AND name = 'Seedling Room') WHERE farm_id = 1 AND name = 'Lux Sensor Indoor';
+UPDATE gr33ncore.sensors SET zone_id = (SELECT id FROM gr33ncore.zones WHERE farm_id = 1 AND name = 'Flower Room')   WHERE farm_id = 1 AND name = 'PAR Sensor Indoor';
+UPDATE gr33ncore.sensors SET zone_id = (SELECT id FROM gr33ncore.zones WHERE farm_id = 1 AND name = 'Veg Room')      WHERE farm_id = 1 AND name = 'EC Sensor';
+UPDATE gr33ncore.sensors SET zone_id = (SELECT id FROM gr33ncore.zones WHERE farm_id = 1 AND name = 'Veg Room')      WHERE farm_id = 1 AND name = 'pH Sensor';

@@ -8,9 +8,10 @@ import (
 	devicehandler "gr33n-api/internal/handler/device"
 	farmhandler   "gr33n-api/internal/handler/farm"
 	sensorhandler "gr33n-api/internal/handler/sensor"
+	taskhandler   "gr33n-api/internal/handler/task"
 	zonehandler   "gr33n-api/internal/handler/zone"
+	db            "gr33n-api/internal/db"
 	"gr33n-api/internal/httputil"
-	db "gr33n-api/internal/db"
 )
 
 func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool) {
@@ -18,14 +19,17 @@ func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool) {
 	zone   := zonehandler.NewHandler(pool)
 	device := devicehandler.NewHandler(pool)
 	sensor := sensorhandler.NewHandler(pool)
+	task   := taskhandler.NewHandler(pool)
 
 	// Health
 	mux.HandleFunc("GET /health", func(w http.ResponseWriter, r *http.Request) {
 		if err := pool.Ping(r.Context()); err != nil {
-			httputil.WriteJSON(w, http.StatusServiceUnavailable, map[string]string{"status": "unhealthy", "error": err.Error()})
+			httputil.WriteJSON(w, http.StatusServiceUnavailable,
+				map[string]string{"status": "unhealthy", "error": err.Error()})
 			return
 		}
-		httputil.WriteJSON(w, http.StatusOK, map[string]string{"status": "ok", "service": "gr33n-api"})
+		httputil.WriteJSON(w, http.StatusOK,
+			map[string]string{"status": "ok", "service": "gr33n-api"})
 	})
 
 	// Units
@@ -44,11 +48,14 @@ func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool) {
 	mux.HandleFunc("GET /farms/{id}/zones",    zone.ListByFarm)
 	mux.HandleFunc("GET /farms/{id}/devices",  device.ListByFarm)
 	mux.HandleFunc("GET /farms/{id}/sensors",  sensor.ListByFarm)
+	mux.HandleFunc("GET /farms/{id}/tasks",    task.ListByFarm)
 
 	// Sensors
 	mux.HandleFunc("GET /sensors/{id}",                 sensor.Get)
 	mux.HandleFunc("POST /farms/{id}/sensors",          sensor.Create)
 	mux.HandleFunc("DELETE /sensors/{id}",              sensor.Delete)
+	mux.HandleFunc("GET /sensors/{id}/readings/latest", sensor.LatestReading)
+	mux.HandleFunc("POST /sensors/{id}/readings",       sensor.PostReading)
 
 	// Devices
 	mux.HandleFunc("GET /devices/{id}",          device.Get)
@@ -57,7 +64,10 @@ func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool) {
 	mux.HandleFunc("DELETE /devices/{id}",       device.Delete)
 
 	// Zones
-	mux.HandleFunc("GET /zones/{id}",          zone.Get)
-	mux.HandleFunc("POST /farms/{id}/zones",   zone.Create)
-	mux.HandleFunc("DELETE /zones/{id}",       zone.Delete)
+	mux.HandleFunc("GET /zones/{id}",        zone.Get)
+	mux.HandleFunc("POST /farms/{id}/zones", zone.Create)
+	mux.HandleFunc("DELETE /zones/{id}",     zone.Delete)
+
+	// Tasks
+	mux.HandleFunc("PATCH /tasks/{id}/status", task.UpdateStatus)
 }
