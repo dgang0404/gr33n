@@ -222,14 +222,6 @@ For users who choose to integrate local AI, gr33n offers schema-guided intellige
 
 ---
 
-## Got DNA?
-
-Yeah, we talked about that too.
-If our genes are data, and our farms are extensions of that data, then gr33n is just the next step in reclaiming the means of biological production.
-Sovereignty begins with seeds — and schemas.
-
----
-
 ## Contribute
 
 - Fork this repo
