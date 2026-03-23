@@ -600,3 +600,28 @@ UPDATE gr33ncore.sensors SET zone_id = (SELECT id FROM gr33ncore.zones WHERE far
 UPDATE gr33ncore.sensors SET zone_id = (SELECT id FROM gr33ncore.zones WHERE farm_id = 1 AND name = 'Flower Room')   WHERE farm_id = 1 AND name = 'PAR Sensor Indoor';
 UPDATE gr33ncore.sensors SET zone_id = (SELECT id FROM gr33ncore.zones WHERE farm_id = 1 AND name = 'Veg Room')      WHERE farm_id = 1 AND name = 'EC Sensor';
 UPDATE gr33ncore.sensors SET zone_id = (SELECT id FROM gr33ncore.zones WHERE farm_id = 1 AND name = 'Veg Room')      WHERE farm_id = 1 AND name = 'pH Sensor';
+
+-- pre seed scedual
+INSERT INTO gr33ncore.tasks
+  (farm_id, zone_id, title, description, task_type, status, priority, due_date)
+SELECT
+  1,
+  (SELECT id FROM gr33ncore.zones WHERE farm_id=1 AND name = z),
+  title, description, task_type,
+  status::gr33ncore.task_status_enum,
+  priority,
+  due_date::date
+FROM (VALUES
+  ('Veg Room',     'Mix JMS batch',              'Brew 20L JMS from forest leaf mold. Needs 3–7 days ferment.',  'jadam_prep',    'todo',        2, CURRENT_DATE + 1),
+  ('Veg Room',     'Check EC levels',             'Target 1.2–2.0 mS/cm for veg stage. Adjust JLF drench ratio.','monitoring',    'todo',        2, CURRENT_DATE),
+  ('Flower Room',  'Apply FFJ + WCA foliar',      'FFJ 1:500 + WCA 1:1000. Morning spray before lights peak.',   'jadam_apply',   'in_progress', 3, CURRENT_DATE),
+  ('Flower Room',  'Inspect for powdery mildew',  'Check leaf undersides in flower room. Prep JS spray if found.','scouting',     'in_progress', 2, CURRENT_DATE),
+  ('Seedling Room','Transplant seedlings to veg', 'Move ready seedlings from tray to Veg Room. JLF seedling drench first.','transplant','todo', 1, CURRENT_DATE + 3),
+  ('Outdoor Beds', 'Apply JLF general drench',    '1:20 dilution. 3L per sqm. Combine with JMS 1:500.',          'jadam_apply',   'todo',        1, CURRENT_DATE + 2),
+  ('Veg Room',     'Calibrate pH sensor',         'pH drifting — recalibrate with 6.86 and 4.01 buffer solution.','maintenance',  'on_hold',     2, CURRENT_DATE + 1),
+  ('Flower Room',  'Harvest Flower Room A',        'Week 9 photoperiod crop. Flush complete. Check trichomes.',   'harvest',       'completed',   3, CURRENT_DATE - 2),
+  ('Outdoor Beds', 'Turn compost pile',            'Aerate pile. Check temp 55–65C. Moisture should clump not drip.','soil_prep',  'completed',   1, CURRENT_DATE - 5),
+  (NULL,           'Order OHN ingredients',        'Garlic, ginger, angelica root, cinnamon bark, soju.',         'procurement',   'pending_review',1, CURRENT_DATE + 7)
+) AS t(z, title, description, task_type, status, priority, due_date)
+ON CONFLICT DO NOTHING;
+

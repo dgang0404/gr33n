@@ -6,6 +6,8 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -14,60 +16,50 @@ import (
 func main() {
 	dbURL := getEnv("DATABASE_URL", "postgres://davidg@/gr33n?host=/var/run/postgresql")
 	port  := getEnv("PORT", "8080")
-
+	jwtSecret = []byte(getEnv("JWT_SECRET", ""))
+	piAPIKey  = getEnv("PI_API_KEY", "")
+	adminUser    := getEnv("ADMIN_USERNAME", "admin")
+	hashFilePath := filepath.Join(os.Getenv("HOME"), ".gr33n", "admin.hash")
+	adminHash    := loadPasswordHash(hashFilePath)
 	pool, err := connectDB(dbURL)
-	if err != nil {
-		log.Fatalf("❌ Could not connect to database: %v", err)
-	}
+	if err != nil { log.Fatalf("❌ Could not connect to database: %v", err) }
 	defer pool.Close()
 	log.Println("✅ Connected to gr33n database")
-
+	if len(jwtSecret) == 0 { log.Println("⚠️  JWT_SECRET not set — JWT auth disabled (dev mode)") } else { log.Println("🔐 JWT auth enabled") }
+	if piAPIKey == "" { log.Println("⚠️  PI_API_KEY not set — Pi API key auth disabled (dev mode)") } else { log.Println("🔑 Pi API key auth enabled") }
 	mux := http.NewServeMux()
-	registerRoutes(mux, pool)
-
+	registerRoutes(mux, pool, adminUser, adminHash, hashFilePath)
 	addr := fmt.Sprintf(":%s", port)
 	log.Printf("🌱 gr33n API running on http://localhost%s", addr)
-	if err := http.ListenAndServe(addr, corsMiddleware(mux)); err != nil {
-		log.Fatalf("❌ Server error: %v", err)
+	if err := http.ListenAndServe(addr, corsMiddleware(mux)); err != nil { log.Fatalf("❌ Server error: %v", err) }
+}
+
+func loadPasswordHash(filePath string) []byte {
+	if data, err := os.ReadFile(filePath); err == nil {
+		hash := []byte(strings.TrimSpace(string(data)))
+		if len(hash) > 0 { log.Printf("🔒 Loaded password hash from %s", filePath); return hash }
 	}
+	if h := getEnv("ADMIN_PASSWORD_HASH", ""); h != "" { log.Println("🔒 Loaded password hash from env"); return []byte(h) }
+	return nil
 }
 
 func connectDB(dbURL string) (*pgxpool.Pool, error) {
 	config, err := pgxpool.ParseConfig(dbURL)
-	if err != nil {
-		return nil, fmt.Errorf("invalid DATABASE_URL: %w", err)
-	}
-
-	config.MaxConns        = 20
-	config.MinConns        = 2
-	config.MaxConnLifetime = 1 * time.Hour
-	config.MaxConnIdleTime = 30 * time.Minute
-
-	var pool *pgxpool.Pool
-	var lastErr error
+	if err != nil { return nil, fmt.Errorf("invalid DATABASE_URL: %w", err) }
+	config.MaxConns = 20; config.MinConns = 2
+	config.MaxConnLifetime = 1 * time.Hour; config.MaxConnIdleTime = 30 * time.Minute
+	var pool *pgxpool.Pool; var lastErr error
 	for i := range 5 {
 		log.Printf("⏳ Waiting for database... attempt %d/5", i+1)
 		pool, err = pgxpool.NewWithConfig(context.Background(), config)
-		if err != nil {
-			lastErr = err
-			log.Printf("   ↳ Pool create failed: %v", err)
-			time.Sleep(2 * time.Second)
-			continue
-		}
-		if pingErr := pool.Ping(context.Background()); pingErr != nil {
-			lastErr = pingErr
-			log.Printf("   ↳ Ping failed: %v", pingErr)
-			time.Sleep(2 * time.Second)
-			continue
-		}
+		if err != nil { lastErr = err; time.Sleep(2 * time.Second); continue }
+		if pingErr := pool.Ping(context.Background()); pingErr != nil { lastErr = pingErr; time.Sleep(2 * time.Second); continue }
 		return pool, nil
 	}
 	return nil, fmt.Errorf("could not reach database after 5 attempts: %w", lastErr)
 }
 
 func getEnv(key, fallback string) string {
-	if val, ok := os.LookupEnv(key); ok {
-		return val
-	}
+	if val, ok := os.LookupEnv(key); ok { return val }
 	return fallback
 }

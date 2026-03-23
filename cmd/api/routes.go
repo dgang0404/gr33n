@@ -5,6 +5,7 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	authhandler   "gr33n-api/internal/handler/auth"
 	devicehandler "gr33n-api/internal/handler/device"
 	farmhandler   "gr33n-api/internal/handler/farm"
 	sensorhandler "gr33n-api/internal/handler/sensor"
@@ -14,14 +15,15 @@ import (
 	"gr33n-api/internal/httputil"
 )
 
-func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool) {
+func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, adminUser string, adminHash []byte, hashFilePath string) {
 	farm   := farmhandler.NewHandler(pool)
 	zone   := zonehandler.NewHandler(pool)
 	device := devicehandler.NewHandler(pool)
 	sensor := sensorhandler.NewHandler(pool)
 	task   := taskhandler.NewHandler(pool)
+	auth   := authhandler.NewHandler(adminUser, adminHash, hashFilePath, IssueToken)
 
-	// Health
+	// ── Public ───────────────────────────────────────────────────────────────
 	mux.HandleFunc("GET /health", func(w http.ResponseWriter, r *http.Request) {
 		if err := pool.Ping(r.Context()); err != nil {
 			httputil.WriteJSON(w, http.StatusServiceUnavailable,
@@ -31,11 +33,21 @@ func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool) {
 		httputil.WriteJSON(w, http.StatusOK,
 			map[string]string{"status": "ok", "service": "gr33n-api"})
 	})
+	mux.HandleFunc("POST /auth/login", auth.Login)
+
+	// ── Pi routes — API key required ─────────────────────────────────────────
+	mux.Handle("POST /sensors/{id}/readings", requireAPIKey(http.HandlerFunc(sensor.PostReading)))
+	mux.Handle("PATCH /devices/{id}/status",  requireAPIKey(http.HandlerFunc(device.UpdateStatus)))
+
+	// ── Dashboard routes — JWT required ──────────────────────────────────────
+	jwt := requireJWT
+
+	// Auth — password change (JWT protected so you must be logged in)
+	mux.Handle("PATCH /auth/password", jwt(http.HandlerFunc(auth.ChangePassword)))
 
 	// Units
 	mux.HandleFunc("GET /units", func(w http.ResponseWriter, r *http.Request) {
-		q := db.New(pool)
-		units, err := q.ListAllUnits(r.Context())
+		units, err := db.New(pool).ListAllUnits(r.Context())
 		if err != nil {
 			httputil.WriteError(w, http.StatusInternalServerError, err.Error())
 			return
@@ -44,30 +56,28 @@ func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool) {
 	})
 
 	// Farms
-	mux.HandleFunc("GET /farms/{id}",          farm.Get)
-	mux.HandleFunc("GET /farms/{id}/zones",    zone.ListByFarm)
-	mux.HandleFunc("GET /farms/{id}/devices",  device.ListByFarm)
-	mux.HandleFunc("GET /farms/{id}/sensors",  sensor.ListByFarm)
-	mux.HandleFunc("GET /farms/{id}/tasks",    task.ListByFarm)
+	mux.Handle("GET /farms/{id}",          jwt(http.HandlerFunc(farm.Get)))
+	mux.Handle("GET /farms/{id}/zones",    jwt(http.HandlerFunc(zone.ListByFarm)))
+	mux.Handle("GET /farms/{id}/devices",  jwt(http.HandlerFunc(device.ListByFarm)))
+	mux.Handle("GET /farms/{id}/sensors",  jwt(http.HandlerFunc(sensor.ListByFarm)))
+	mux.Handle("GET /farms/{id}/tasks",    jwt(http.HandlerFunc(task.ListByFarm)))
 
 	// Sensors
-	mux.HandleFunc("GET /sensors/{id}",                 sensor.Get)
-	mux.HandleFunc("POST /farms/{id}/sensors",          sensor.Create)
-	mux.HandleFunc("DELETE /sensors/{id}",              sensor.Delete)
-	mux.HandleFunc("GET /sensors/{id}/readings/latest", sensor.LatestReading)
-	mux.HandleFunc("POST /sensors/{id}/readings",       sensor.PostReading)
+	mux.Handle("GET /sensors/{id}",                 jwt(http.HandlerFunc(sensor.Get)))
+	mux.Handle("POST /farms/{id}/sensors",           jwt(http.HandlerFunc(sensor.Create)))
+	mux.Handle("DELETE /sensors/{id}",              jwt(http.HandlerFunc(sensor.Delete)))
+	mux.Handle("GET /sensors/{id}/readings/latest", jwt(http.HandlerFunc(sensor.LatestReading)))
 
 	// Devices
-	mux.HandleFunc("GET /devices/{id}",          device.Get)
-	mux.HandleFunc("POST /farms/{id}/devices",   device.Create)
-	mux.HandleFunc("PATCH /devices/{id}/status", device.UpdateStatus)
-	mux.HandleFunc("DELETE /devices/{id}",       device.Delete)
+	mux.Handle("GET /devices/{id}",        jwt(http.HandlerFunc(device.Get)))
+	mux.Handle("POST /farms/{id}/devices", jwt(http.HandlerFunc(device.Create)))
+	mux.Handle("DELETE /devices/{id}",     jwt(http.HandlerFunc(device.Delete)))
 
 	// Zones
-	mux.HandleFunc("GET /zones/{id}",        zone.Get)
-	mux.HandleFunc("POST /farms/{id}/zones", zone.Create)
-	mux.HandleFunc("DELETE /zones/{id}",     zone.Delete)
+	mux.Handle("GET /zones/{id}",          jwt(http.HandlerFunc(zone.Get)))
+	mux.Handle("POST /farms/{id}/zones",   jwt(http.HandlerFunc(zone.Create)))
+	mux.Handle("DELETE /zones/{id}",       jwt(http.HandlerFunc(zone.Delete)))
 
 	// Tasks
-	mux.HandleFunc("PATCH /tasks/{id}/status", task.UpdateStatus)
+	mux.Handle("PATCH /tasks/{id}/status", jwt(http.HandlerFunc(task.UpdateStatus)))
 }
