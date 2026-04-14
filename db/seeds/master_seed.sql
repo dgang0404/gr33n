@@ -469,6 +469,120 @@ VALUES
 ON CONFLICT DO NOTHING;
 
 -- ===========================================================================
+-- SECTION 4B: FERTIGATION BASELINE DATA
+-- ===========================================================================
+
+INSERT INTO gr33nfertigation.reservoirs
+    (farm_id, zone_id, name, description, capacity_liters, current_volume_liters, status)
+SELECT
+    1,
+    (SELECT id FROM gr33ncore.zones WHERE farm_id = 1 AND name = 'Veg Room'),
+    'Main Nutrient Reservoir',
+    'Primary fertigation reservoir for demo farm programs.',
+    500.00,
+    320.00,
+    'ready'::gr33nfertigation.reservoir_status_enum
+ON CONFLICT (farm_id, name) DO NOTHING;
+
+INSERT INTO gr33nfertigation.ec_targets
+    (farm_id, zone_id, growth_stage, ec_min_mscm, ec_max_mscm, ph_min, ph_max, rationale)
+SELECT
+    1,
+    z.id,
+    gs.stage::gr33nfertigation.growth_stage_enum,
+    gs.ec_min,
+    gs.ec_max,
+    gs.ph_min,
+    gs.ph_max,
+    'Demo baseline target for fertigation MVP'
+FROM gr33ncore.zones z
+JOIN (
+    VALUES
+        ('seedling',     0.5::numeric, 1.2::numeric, 5.8::numeric, 6.6::numeric),
+        ('early_veg',    1.0::numeric, 1.8::numeric, 5.8::numeric, 6.6::numeric),
+        ('late_veg',     1.4::numeric, 2.2::numeric, 5.8::numeric, 6.6::numeric),
+        ('transition',   1.6::numeric, 2.4::numeric, 5.8::numeric, 6.6::numeric),
+        ('early_flower', 1.6::numeric, 2.4::numeric, 5.8::numeric, 6.6::numeric),
+        ('mid_flower',   1.8::numeric, 2.6::numeric, 5.8::numeric, 6.6::numeric),
+        ('late_flower',  1.6::numeric, 2.4::numeric, 5.8::numeric, 6.6::numeric),
+        ('flush',        0.0::numeric, 0.5::numeric, 5.8::numeric, 6.8::numeric)
+) AS gs(stage, ec_min, ec_max, ph_min, ph_max) ON TRUE
+WHERE z.farm_id = 1
+  AND z.name IN ('Seedling Room', 'Veg Room', 'Flower Room')
+ON CONFLICT (farm_id, zone_id, growth_stage) DO NOTHING;
+
+INSERT INTO gr33nfertigation.programs
+    (farm_id, name, description, application_recipe_id, reservoir_id, target_zone_id, schedule_id,
+     ec_target_id, total_volume_liters, run_duration_seconds, ec_trigger_low, ph_trigger_low, ph_trigger_high, is_active)
+SELECT
+    1,
+    'Veg Daily JLF Program',
+    'Daily veg-room fertigation run based on JLF + JMS soil drench recipe.',
+    r.id,
+    rv.id,
+    z.id,
+    s.id,
+    et.id,
+    120.000,
+    900,
+    1.200,
+    5.8,
+    6.8,
+    TRUE
+FROM gr33ncore.zones z
+LEFT JOIN gr33nnaturalfarming.application_recipes r
+    ON r.farm_id = 1 AND r.name = 'JLF and JMS Combined Drench'
+LEFT JOIN gr33ncore.schedules s
+    ON s.farm_id = 1 AND s.name = 'Water Late Veg Daily'
+LEFT JOIN gr33nfertigation.reservoirs rv
+    ON rv.farm_id = 1 AND rv.name = 'Main Nutrient Reservoir'
+LEFT JOIN gr33nfertigation.ec_targets et
+    ON et.farm_id = 1 AND et.zone_id = z.id
+   AND et.growth_stage = 'late_veg'::gr33nfertigation.growth_stage_enum
+WHERE z.farm_id = 1
+  AND z.name = 'Veg Room'
+  AND NOT EXISTS (
+      SELECT 1
+      FROM gr33nfertigation.programs p
+      WHERE p.farm_id = 1
+        AND p.name = 'Veg Daily JLF Program'
+        AND p.deleted_at IS NULL
+  );
+
+INSERT INTO gr33nfertigation.fertigation_events
+    (farm_id, program_id, reservoir_id, zone_id, applied_at, growth_stage,
+     volume_applied_liters, run_duration_seconds, ec_before_mscm, ec_after_mscm,
+     ph_before, ph_after, trigger_source, notes)
+SELECT
+    1,
+    p.id,
+    rv.id,
+    z.id,
+    TIMESTAMPTZ '2026-03-01 08:00:00+00',
+    'late_veg'::gr33nfertigation.growth_stage_enum,
+    112.500,
+    860,
+    1.150,
+    1.720,
+    6.05,
+    6.22,
+    'schedule_cron'::gr33nfertigation.program_trigger_enum,
+    'Seeded historical fertigation event for API/UI demo baseline.'
+FROM gr33ncore.zones z
+LEFT JOIN gr33nfertigation.programs p
+    ON p.farm_id = 1 AND p.name = 'Veg Daily JLF Program' AND p.deleted_at IS NULL
+LEFT JOIN gr33nfertigation.reservoirs rv
+    ON rv.farm_id = 1 AND rv.name = 'Main Nutrient Reservoir'
+WHERE z.farm_id = 1
+  AND z.name = 'Veg Room'
+  AND NOT EXISTS (
+      SELECT 1
+      FROM gr33nfertigation.fertigation_events fe
+      WHERE fe.farm_id = 1
+        AND fe.applied_at = TIMESTAMPTZ '2026-03-01 08:00:00+00'
+  );
+
+-- ===========================================================================
 -- SECTION 5: AUTOMATION RULES
 -- ===========================================================================
 

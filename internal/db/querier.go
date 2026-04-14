@@ -20,11 +20,15 @@ type Querier interface {
 	// Queries: gr33ncore.devices
 	// ============================================================
 	CreateDevice(ctx context.Context, arg CreateDeviceParams) (Gr33ncoreDevice, error)
+	CreateEcTarget(ctx context.Context, arg CreateEcTargetParams) (Gr33nfertigationEcTarget, error)
 	// ============================================================
 	// Queries: gr33ncore.farms
 	// ============================================================
 	CreateFarm(ctx context.Context, arg CreateFarmParams) (Gr33ncoreFarm, error)
+	CreateFertigationEvent(ctx context.Context, arg CreateFertigationEventParams) (Gr33nfertigationFertigationEvent, error)
 	CreateProfile(ctx context.Context, arg CreateProfileParams) (Gr33ncoreProfile, error)
+	CreateProgram(ctx context.Context, arg CreateProgramParams) (Gr33nfertigationProgram, error)
+	CreateReservoir(ctx context.Context, arg CreateReservoirParams) (Gr33nfertigationReservoir, error)
 	// ============================================================
 	// Queries: gr33ncore.sensors
 	// ============================================================
@@ -69,10 +73,17 @@ type Querier interface {
 	ListAllUnits(ctx context.Context) ([]Gr33ncoreUnit, error)
 	ListDevicesByFarm(ctx context.Context, farmID int64) ([]Gr33ncoreDevice, error)
 	ListDevicesByZone(ctx context.Context, zoneID *int64) ([]Gr33ncoreDevice, error)
+	ListEcTargetsByFarm(ctx context.Context, farmID int64) ([]Gr33nfertigationEcTarget, error)
 	ListFarmsByOwner(ctx context.Context, ownerUserID uuid.UUID) ([]Gr33ncoreFarm, error)
 	ListFarmsForUser(ctx context.Context, userID uuid.UUID) ([]Gr33ncoreFarm, error)
+	ListFertigationEventsByFarm(ctx context.Context, farmID int64) ([]Gr33nfertigationFertigationEvent, error)
 	ListLatestReadingsByFarm(ctx context.Context, farmID int64) ([]ListLatestReadingsByFarmRow, error)
+	ListProgramsByFarm(ctx context.Context, farmID int64) ([]Gr33nfertigationProgram, error)
 	ListReadingsBySensorAndTimeRange(ctx context.Context, arg ListReadingsBySensorAndTimeRangeParams) ([]Gr33ncoreSensorReading, error)
+	// ============================================================
+	// Queries: gr33nfertigation core resources
+	// ============================================================
+	ListReservoirsByFarm(ctx context.Context, farmID int64) ([]Gr33nfertigationReservoir, error)
 	ListSensorsByDevice(ctx context.Context, deviceID *int64) ([]Gr33ncoreSensor, error)
 	ListSensorsByFarm(ctx context.Context, farmID int64) ([]Gr33ncoreSensor, error)
 	ListSensorsByZone(ctx context.Context, zoneID *int64) ([]Gr33ncoreSensor, error)

@@ -8,6 +8,7 @@ import (
 	authhandler   "gr33n-api/internal/handler/auth"
 	devicehandler "gr33n-api/internal/handler/device"
 	farmhandler   "gr33n-api/internal/handler/farm"
+	fertigationhandler "gr33n-api/internal/handler/fertigation"
 	sensorhandler "gr33n-api/internal/handler/sensor"
 	taskhandler   "gr33n-api/internal/handler/task"
 	zonehandler   "gr33n-api/internal/handler/zone"
@@ -21,6 +22,7 @@ func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, adminUser string, ad
 	device := devicehandler.NewHandler(pool)
 	sensor := sensorhandler.NewHandler(pool)
 	task   := taskhandler.NewHandler(pool)
+	fertigation := fertigationhandler.NewHandler(pool)
 	auth   := authhandler.NewHandler(adminUser, adminHash, hashFilePath, IssueToken)
 
 	// ── Public ───────────────────────────────────────────────────────────────
@@ -80,4 +82,14 @@ func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, adminUser string, ad
 
 	// Tasks
 	mux.Handle("PATCH /tasks/{id}/status", jwt(http.HandlerFunc(task.UpdateStatus)))
+
+	// Fertigation
+	mux.Handle("GET /farms/{id}/fertigation/reservoirs", jwt(http.HandlerFunc(fertigation.ListReservoirsByFarm)))
+	mux.Handle("POST /farms/{id}/fertigation/reservoirs", jwt(http.HandlerFunc(fertigation.CreateReservoir)))
+	mux.Handle("GET /farms/{id}/fertigation/ec-targets", jwt(http.HandlerFunc(fertigation.ListEcTargetsByFarm)))
+	mux.Handle("POST /farms/{id}/fertigation/ec-targets", jwt(http.HandlerFunc(fertigation.CreateEcTarget)))
+	mux.Handle("GET /farms/{id}/fertigation/programs", jwt(http.HandlerFunc(fertigation.ListProgramsByFarm)))
+	mux.Handle("POST /farms/{id}/fertigation/programs", jwt(http.HandlerFunc(fertigation.CreateProgram)))
+	mux.Handle("GET /farms/{id}/fertigation/events", jwt(http.HandlerFunc(fertigation.ListEventsByFarm)))
+	mux.Handle("POST /farms/{id}/fertigation/events", jwt(http.HandlerFunc(fertigation.CreateEvent)))
 }

@@ -994,6 +994,207 @@ CREATE INDEX IF NOT EXISTS idx_input_definitions_farm
     ON gr33nnaturalfarming.input_definitions(farm_id) WHERE deleted_at IS NULL;
 
 -- ============================================================
+-- SCHEMA: gr33n_fertigation
+-- ============================================================
+CREATE SCHEMA IF NOT EXISTS gr33nfertigation;
+
+CREATE TYPE gr33nfertigation.growth_stage_enum AS ENUM (
+    'clone', 'seedling', 'early_veg', 'late_veg',
+    'transition', 'early_flower', 'mid_flower', 'late_flower',
+    'flush', 'harvest', 'dry_cure'
+);
+CREATE TYPE gr33nfertigation.program_trigger_enum AS ENUM (
+    'manual',
+    'schedule_cron',
+    'ec_threshold_low',
+    'ph_out_of_range',
+    'automation_rule',
+    'pi_client_local'
+);
+CREATE TYPE gr33nfertigation.reservoir_status_enum AS ENUM (
+    'ready', 'mixing', 'needs_top_up', 'needs_flush',
+    'flushing', 'offline', 'empty'
+);
+
+CREATE TABLE IF NOT EXISTS gr33nfertigation.reservoirs (
+    id                      BIGSERIAL PRIMARY KEY,
+    farm_id                 BIGINT NOT NULL REFERENCES gr33ncore.farms(id) ON DELETE CASCADE,
+    zone_id                 BIGINT REFERENCES gr33ncore.zones(id) ON DELETE SET NULL,
+    name                    TEXT NOT NULL,
+    description             TEXT,
+    capacity_liters         NUMERIC(10,2) NOT NULL CHECK (capacity_liters > 0),
+    current_volume_liters   NUMERIC(10,2) CHECK (current_volume_liters >= 0 AND current_volume_liters <= capacity_liters),
+    status                  gr33nfertigation.reservoir_status_enum DEFAULT 'ready' NOT NULL,
+    ec_sensor_id            BIGINT REFERENCES gr33ncore.sensors(id) ON DELETE SET NULL,
+    ph_sensor_id            BIGINT REFERENCES gr33ncore.sensors(id) ON DELETE SET NULL,
+    temp_sensor_id          BIGINT REFERENCES gr33ncore.sensors(id) ON DELETE SET NULL,
+    water_level_sensor_id   BIGINT REFERENCES gr33ncore.sensors(id) ON DELETE SET NULL,
+    delivery_actuator_id    BIGINT REFERENCES gr33ncore.actuators(id) ON DELETE SET NULL,
+    last_ec_mscm            NUMERIC(6,3) CHECK (last_ec_mscm >= 0),
+    last_ph                 NUMERIC(4,2) CHECK (last_ph >= 0 AND last_ph <= 14),
+    last_reading_time       TIMESTAMPTZ,
+    metadata                JSONB DEFAULT '{}',
+    created_at              TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    updated_at              TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    deleted_at              TIMESTAMPTZ DEFAULT NULL,
+    CONSTRAINT uq_reservoir_farm_name UNIQUE (farm_id, name)
+);
+CREATE TRIGGER trg_reservoirs_updated_at
+    BEFORE UPDATE ON gr33nfertigation.reservoirs
+    FOR EACH ROW EXECUTE FUNCTION gr33ncore.set_updated_at();
+
+CREATE TABLE IF NOT EXISTS gr33nfertigation.ec_targets (
+    id                  BIGSERIAL PRIMARY KEY,
+    farm_id             BIGINT NOT NULL REFERENCES gr33ncore.farms(id) ON DELETE CASCADE,
+    zone_id             BIGINT REFERENCES gr33ncore.zones(id) ON DELETE CASCADE,
+    growth_stage        gr33nfertigation.growth_stage_enum NOT NULL,
+    ec_min_mscm         NUMERIC(5,3) NOT NULL CHECK (ec_min_mscm >= 0),
+    ec_max_mscm         NUMERIC(5,3) NOT NULL CHECK (ec_max_mscm >= 0),
+    ph_min              NUMERIC(4,2) DEFAULT 5.8 CHECK (ph_min >= 0 AND ph_min <= 14),
+    ph_max              NUMERIC(4,2) DEFAULT 6.8 CHECK (ph_max >= 0 AND ph_max <= 14),
+    notes               TEXT,
+    rationale           TEXT,
+    created_at          TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    updated_at          TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    CONSTRAINT uq_ec_target_zone_stage UNIQUE (farm_id, zone_id, growth_stage),
+    CONSTRAINT chk_ec_range CHECK (ec_min_mscm < ec_max_mscm),
+    CONSTRAINT chk_ph_range CHECK (ph_min < ph_max)
+);
+CREATE TRIGGER trg_ec_targets_updated_at
+    BEFORE UPDATE ON gr33nfertigation.ec_targets
+    FOR EACH ROW EXECUTE FUNCTION gr33ncore.set_updated_at();
+
+CREATE TABLE IF NOT EXISTS gr33nfertigation.crop_cycles (
+    id                          BIGSERIAL PRIMARY KEY,
+    farm_id                     BIGINT NOT NULL REFERENCES gr33ncore.farms(id) ON DELETE CASCADE,
+    zone_id                     BIGINT NOT NULL REFERENCES gr33ncore.zones(id) ON DELETE RESTRICT,
+    name                        TEXT NOT NULL,
+    strain_or_variety           TEXT,
+    current_stage               gr33nfertigation.growth_stage_enum DEFAULT 'seedling',
+    is_active                   BOOLEAN DEFAULT TRUE NOT NULL,
+    started_at                  DATE NOT NULL,
+    harvested_at                DATE,
+    yield_grams                 NUMERIC(10,2) CHECK (yield_grams >= 0),
+    yield_notes                 TEXT,
+    cycle_notes                 TEXT,
+    created_at                  TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    updated_at                  TIMESTAMPTZ DEFAULT NOW() NOT NULL
+);
+CREATE UNIQUE INDEX uq_active_crop_cycle
+    ON gr33nfertigation.crop_cycles(zone_id) WHERE is_active = TRUE;
+CREATE TRIGGER trg_crop_cycles_updated_at
+    BEFORE UPDATE ON gr33nfertigation.crop_cycles
+    FOR EACH ROW EXECUTE FUNCTION gr33ncore.set_updated_at();
+
+CREATE TABLE IF NOT EXISTS gr33nfertigation.programs (
+    id                          BIGSERIAL PRIMARY KEY,
+    farm_id                     BIGINT NOT NULL REFERENCES gr33ncore.farms(id) ON DELETE CASCADE,
+    name                        TEXT NOT NULL,
+    description                 TEXT,
+    application_recipe_id       BIGINT REFERENCES gr33nnaturalfarming.application_recipes(id) ON DELETE SET NULL,
+    reservoir_id                BIGINT REFERENCES gr33nfertigation.reservoirs(id) ON DELETE SET NULL,
+    target_zone_id              BIGINT REFERENCES gr33ncore.zones(id) ON DELETE SET NULL,
+    schedule_id                 BIGINT REFERENCES gr33ncore.schedules(id) ON DELETE SET NULL,
+    ec_target_id                BIGINT REFERENCES gr33nfertigation.ec_targets(id) ON DELETE SET NULL,
+    volume_liters_per_sqm       NUMERIC(8,3) CHECK (volume_liters_per_sqm >= 0),
+    total_volume_liters         NUMERIC(10,3) CHECK (total_volume_liters >= 0),
+    dilution_ratio              TEXT,
+    run_duration_seconds        INTEGER CHECK (run_duration_seconds >= 0),
+    ec_trigger_low              NUMERIC(5,3) CHECK (ec_trigger_low >= 0),
+    ph_trigger_low              NUMERIC(4,2) CHECK (ph_trigger_low >= 0 AND ph_trigger_low <= 14),
+    ph_trigger_high             NUMERIC(4,2) CHECK (ph_trigger_high >= 0 AND ph_trigger_high <= 14),
+    is_active                   BOOLEAN DEFAULT TRUE NOT NULL,
+    metadata                    JSONB DEFAULT '{}',
+    created_at                  TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    updated_at                  TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    deleted_at                  TIMESTAMPTZ DEFAULT NULL
+);
+CREATE TRIGGER trg_programs_updated_at
+    BEFORE UPDATE ON gr33nfertigation.programs
+    FOR EACH ROW EXECUTE FUNCTION gr33ncore.set_updated_at();
+ALTER TABLE gr33nfertigation.crop_cycles
+    ADD COLUMN primary_program_id BIGINT REFERENCES gr33nfertigation.programs(id) ON DELETE SET NULL;
+
+CREATE TABLE IF NOT EXISTS gr33nfertigation.mixing_events (
+    id                      BIGSERIAL PRIMARY KEY,
+    farm_id                 BIGINT NOT NULL REFERENCES gr33ncore.farms(id) ON DELETE CASCADE,
+    reservoir_id            BIGINT NOT NULL REFERENCES gr33nfertigation.reservoirs(id) ON DELETE RESTRICT,
+    program_id              BIGINT REFERENCES gr33nfertigation.programs(id) ON DELETE SET NULL,
+    mixed_by_user_id        UUID REFERENCES gr33ncore.profiles(user_id) ON DELETE SET NULL,
+    mixed_at                TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    water_volume_liters     NUMERIC(10,3) NOT NULL CHECK (water_volume_liters >= 0),
+    water_source            TEXT,
+    water_ec_mscm           NUMERIC(5,3) CHECK (water_ec_mscm >= 0),
+    water_ph                NUMERIC(4,2) CHECK (water_ph >= 0 AND water_ph <= 14),
+    final_ec_mscm           NUMERIC(5,3) CHECK (final_ec_mscm >= 0),
+    final_ph                NUMERIC(4,2) CHECK (final_ph >= 0 AND final_ph <= 14),
+    final_temp_celsius      NUMERIC(5,2),
+    ec_target_id            BIGINT REFERENCES gr33nfertigation.ec_targets(id) ON DELETE SET NULL,
+    ec_target_met           BOOLEAN,
+    notes                   TEXT,
+    observations            TEXT,
+    created_at              TIMESTAMPTZ DEFAULT NOW() NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS gr33nfertigation.mixing_event_components (
+    id                      BIGSERIAL PRIMARY KEY,
+    mixing_event_id         BIGINT NOT NULL REFERENCES gr33nfertigation.mixing_events(id) ON DELETE CASCADE,
+    input_definition_id     BIGINT NOT NULL REFERENCES gr33nnaturalfarming.input_definitions(id) ON DELETE RESTRICT,
+    input_batch_id          BIGINT REFERENCES gr33nnaturalfarming.input_batches(id) ON DELETE SET NULL,
+    volume_added_ml         NUMERIC(10,3) NOT NULL CHECK (volume_added_ml > 0),
+    dilution_ratio          TEXT,
+    notes                   TEXT
+);
+
+CREATE TABLE IF NOT EXISTS gr33nfertigation.fertigation_events (
+    id                          BIGSERIAL PRIMARY KEY,
+    farm_id                     BIGINT NOT NULL REFERENCES gr33ncore.farms(id) ON DELETE CASCADE,
+    program_id                  BIGINT REFERENCES gr33nfertigation.programs(id) ON DELETE SET NULL,
+    reservoir_id                BIGINT REFERENCES gr33nfertigation.reservoirs(id) ON DELETE SET NULL,
+    zone_id                     BIGINT NOT NULL REFERENCES gr33ncore.zones(id) ON DELETE RESTRICT,
+    actuator_id                 BIGINT REFERENCES gr33ncore.actuators(id) ON DELETE SET NULL,
+    mixing_event_id             BIGINT REFERENCES gr33nfertigation.mixing_events(id) ON DELETE SET NULL,
+    crop_cycle_id               BIGINT REFERENCES gr33nfertigation.crop_cycles(id) ON DELETE SET NULL,
+    applied_at                  TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    growth_stage                gr33nfertigation.growth_stage_enum,
+    volume_applied_liters       NUMERIC(10,3) CHECK (volume_applied_liters >= 0),
+    run_duration_seconds        INTEGER CHECK (run_duration_seconds >= 0),
+    ec_before_mscm              NUMERIC(5,3) CHECK (ec_before_mscm >= 0),
+    ec_after_mscm               NUMERIC(5,3) CHECK (ec_after_mscm >= 0),
+    ph_before                   NUMERIC(4,2) CHECK (ph_before >= 0 AND ph_before <= 14),
+    ph_after                    NUMERIC(4,2) CHECK (ph_after >= 0 AND ph_after <= 14),
+    runoff_ec_mscm              NUMERIC(5,3) CHECK (runoff_ec_mscm >= 0),
+    runoff_ph                   NUMERIC(4,2) CHECK (runoff_ph >= 0 AND runoff_ph <= 14),
+    trigger_source              gr33nfertigation.program_trigger_enum DEFAULT 'manual',
+    triggered_by_rule_id        BIGINT REFERENCES gr33ncore.automation_rules(id) ON DELETE SET NULL,
+    triggered_by_schedule_id    BIGINT REFERENCES gr33ncore.schedules(id) ON DELETE SET NULL,
+    triggered_by_user_id        UUID REFERENCES gr33ncore.profiles(user_id) ON DELETE SET NULL,
+    plant_response              TEXT,
+    notes                       TEXT,
+    metadata                    JSONB DEFAULT '{}',
+    created_at                  TIMESTAMPTZ DEFAULT NOW() NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_reservoirs_farm
+    ON gr33nfertigation.reservoirs(farm_id) WHERE deleted_at IS NULL;
+CREATE INDEX IF NOT EXISTS idx_ec_targets_zone_stage
+    ON gr33nfertigation.ec_targets(zone_id, growth_stage);
+CREATE INDEX IF NOT EXISTS idx_programs_farm_active
+    ON gr33nfertigation.programs(farm_id, is_active) WHERE deleted_at IS NULL;
+CREATE INDEX IF NOT EXISTS idx_mixing_events_farm
+    ON gr33nfertigation.mixing_events(farm_id, mixed_at DESC);
+CREATE INDEX IF NOT EXISTS idx_mixing_events_res
+    ON gr33nfertigation.mixing_events(reservoir_id, mixed_at DESC);
+CREATE INDEX IF NOT EXISTS idx_fert_events_farm_time
+    ON gr33nfertigation.fertigation_events(farm_id, applied_at DESC);
+CREATE INDEX IF NOT EXISTS idx_fert_events_zone_time
+    ON gr33nfertigation.fertigation_events(zone_id, applied_at DESC);
+CREATE INDEX IF NOT EXISTS idx_fert_events_cycle
+    ON gr33nfertigation.fertigation_events(crop_cycle_id, applied_at DESC);
+CREATE INDEX IF NOT EXISTS idx_crop_cycles_zone
+    ON gr33nfertigation.crop_cycles(zone_id, started_at DESC);
+
+-- ============================================================
 -- MIGRATION NOTES (read before running)
 -- ============================================================
 -- 1. auth schema bootstrap at the top is for LOCAL DEV ONLY.

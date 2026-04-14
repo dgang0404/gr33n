@@ -867,6 +867,150 @@ func (ns NullGr33ncoreWeatherDataSourceEnum) Value() (driver.Value, error) {
 	return string(ns.Gr33ncoreWeatherDataSourceEnum), nil
 }
 
+type Gr33nfertigationGrowthStageEnum string
+
+const (
+	Gr33nfertigationGrowthStageEnumClone       Gr33nfertigationGrowthStageEnum = "clone"
+	Gr33nfertigationGrowthStageEnumSeedling    Gr33nfertigationGrowthStageEnum = "seedling"
+	Gr33nfertigationGrowthStageEnumEarlyVeg    Gr33nfertigationGrowthStageEnum = "early_veg"
+	Gr33nfertigationGrowthStageEnumLateVeg     Gr33nfertigationGrowthStageEnum = "late_veg"
+	Gr33nfertigationGrowthStageEnumTransition  Gr33nfertigationGrowthStageEnum = "transition"
+	Gr33nfertigationGrowthStageEnumEarlyFlower Gr33nfertigationGrowthStageEnum = "early_flower"
+	Gr33nfertigationGrowthStageEnumMidFlower   Gr33nfertigationGrowthStageEnum = "mid_flower"
+	Gr33nfertigationGrowthStageEnumLateFlower  Gr33nfertigationGrowthStageEnum = "late_flower"
+	Gr33nfertigationGrowthStageEnumFlush       Gr33nfertigationGrowthStageEnum = "flush"
+	Gr33nfertigationGrowthStageEnumHarvest     Gr33nfertigationGrowthStageEnum = "harvest"
+	Gr33nfertigationGrowthStageEnumDryCure     Gr33nfertigationGrowthStageEnum = "dry_cure"
+)
+
+func (e *Gr33nfertigationGrowthStageEnum) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = Gr33nfertigationGrowthStageEnum(s)
+	case string:
+		*e = Gr33nfertigationGrowthStageEnum(s)
+	default:
+		return fmt.Errorf("unsupported scan type for Gr33nfertigationGrowthStageEnum: %T", src)
+	}
+	return nil
+}
+
+type NullGr33nfertigationGrowthStageEnum struct {
+	Gr33nfertigationGrowthStageEnum Gr33nfertigationGrowthStageEnum `json:"gr33nfertigation_growth_stage_enum"`
+	Valid                           bool                            `json:"valid"` // Valid is true if Gr33nfertigationGrowthStageEnum is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullGr33nfertigationGrowthStageEnum) Scan(value interface{}) error {
+	if value == nil {
+		ns.Gr33nfertigationGrowthStageEnum, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.Gr33nfertigationGrowthStageEnum.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullGr33nfertigationGrowthStageEnum) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.Gr33nfertigationGrowthStageEnum), nil
+}
+
+type Gr33nfertigationProgramTriggerEnum string
+
+const (
+	Gr33nfertigationProgramTriggerEnumManual         Gr33nfertigationProgramTriggerEnum = "manual"
+	Gr33nfertigationProgramTriggerEnumScheduleCron   Gr33nfertigationProgramTriggerEnum = "schedule_cron"
+	Gr33nfertigationProgramTriggerEnumEcThresholdLow Gr33nfertigationProgramTriggerEnum = "ec_threshold_low"
+	Gr33nfertigationProgramTriggerEnumPhOutOfRange   Gr33nfertigationProgramTriggerEnum = "ph_out_of_range"
+	Gr33nfertigationProgramTriggerEnumAutomationRule Gr33nfertigationProgramTriggerEnum = "automation_rule"
+	Gr33nfertigationProgramTriggerEnumPiClientLocal  Gr33nfertigationProgramTriggerEnum = "pi_client_local"
+)
+
+func (e *Gr33nfertigationProgramTriggerEnum) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = Gr33nfertigationProgramTriggerEnum(s)
+	case string:
+		*e = Gr33nfertigationProgramTriggerEnum(s)
+	default:
+		return fmt.Errorf("unsupported scan type for Gr33nfertigationProgramTriggerEnum: %T", src)
+	}
+	return nil
+}
+
+type NullGr33nfertigationProgramTriggerEnum struct {
+	Gr33nfertigationProgramTriggerEnum Gr33nfertigationProgramTriggerEnum `json:"gr33nfertigation_program_trigger_enum"`
+	Valid                              bool                               `json:"valid"` // Valid is true if Gr33nfertigationProgramTriggerEnum is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullGr33nfertigationProgramTriggerEnum) Scan(value interface{}) error {
+	if value == nil {
+		ns.Gr33nfertigationProgramTriggerEnum, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.Gr33nfertigationProgramTriggerEnum.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullGr33nfertigationProgramTriggerEnum) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.Gr33nfertigationProgramTriggerEnum), nil
+}
+
+type Gr33nfertigationReservoirStatusEnum string
+
+const (
+	Gr33nfertigationReservoirStatusEnumReady      Gr33nfertigationReservoirStatusEnum = "ready"
+	Gr33nfertigationReservoirStatusEnumMixing     Gr33nfertigationReservoirStatusEnum = "mixing"
+	Gr33nfertigationReservoirStatusEnumNeedsTopUp Gr33nfertigationReservoirStatusEnum = "needs_top_up"
+	Gr33nfertigationReservoirStatusEnumNeedsFlush Gr33nfertigationReservoirStatusEnum = "needs_flush"
+	Gr33nfertigationReservoirStatusEnumFlushing   Gr33nfertigationReservoirStatusEnum = "flushing"
+	Gr33nfertigationReservoirStatusEnumOffline    Gr33nfertigationReservoirStatusEnum = "offline"
+	Gr33nfertigationReservoirStatusEnumEmpty      Gr33nfertigationReservoirStatusEnum = "empty"
+)
+
+func (e *Gr33nfertigationReservoirStatusEnum) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = Gr33nfertigationReservoirStatusEnum(s)
+	case string:
+		*e = Gr33nfertigationReservoirStatusEnum(s)
+	default:
+		return fmt.Errorf("unsupported scan type for Gr33nfertigationReservoirStatusEnum: %T", src)
+	}
+	return nil
+}
+
+type NullGr33nfertigationReservoirStatusEnum struct {
+	Gr33nfertigationReservoirStatusEnum Gr33nfertigationReservoirStatusEnum `json:"gr33nfertigation_reservoir_status_enum"`
+	Valid                               bool                                `json:"valid"` // Valid is true if Gr33nfertigationReservoirStatusEnum is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullGr33nfertigationReservoirStatusEnum) Scan(value interface{}) error {
+	if value == nil {
+		ns.Gr33nfertigationReservoirStatusEnum, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.Gr33nfertigationReservoirStatusEnum.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullGr33nfertigationReservoirStatusEnum) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.Gr33nfertigationReservoirStatusEnum), nil
+}
+
 type Gr33nnaturalfarmingApplicationTargetEnum string
 
 const (
@@ -1405,6 +1549,146 @@ type Gr33ncoreZone struct {
 	UpdatedAt       time.Time          `db:"updated_at" json:"updated_at"`
 	UpdatedByUserID pgtype.UUID        `db:"updated_by_user_id" json:"updated_by_user_id"`
 	DeletedAt       pgtype.Timestamptz `db:"deleted_at" json:"deleted_at"`
+}
+
+type Gr33nfertigationCropCycle struct {
+	ID               int64                               `db:"id" json:"id"`
+	FarmID           int64                               `db:"farm_id" json:"farm_id"`
+	ZoneID           int64                               `db:"zone_id" json:"zone_id"`
+	Name             string                              `db:"name" json:"name"`
+	StrainOrVariety  *string                             `db:"strain_or_variety" json:"strain_or_variety"`
+	CurrentStage     NullGr33nfertigationGrowthStageEnum `db:"current_stage" json:"current_stage"`
+	IsActive         bool                                `db:"is_active" json:"is_active"`
+	StartedAt        pgtype.Date                         `db:"started_at" json:"started_at"`
+	HarvestedAt      pgtype.Date                         `db:"harvested_at" json:"harvested_at"`
+	YieldGrams       pgtype.Numeric                      `db:"yield_grams" json:"yield_grams"`
+	YieldNotes       *string                             `db:"yield_notes" json:"yield_notes"`
+	CycleNotes       *string                             `db:"cycle_notes" json:"cycle_notes"`
+	CreatedAt        time.Time                           `db:"created_at" json:"created_at"`
+	UpdatedAt        time.Time                           `db:"updated_at" json:"updated_at"`
+	PrimaryProgramID *int64                              `db:"primary_program_id" json:"primary_program_id"`
+}
+
+type Gr33nfertigationEcTarget struct {
+	ID          int64                           `db:"id" json:"id"`
+	FarmID      int64                           `db:"farm_id" json:"farm_id"`
+	ZoneID      *int64                          `db:"zone_id" json:"zone_id"`
+	GrowthStage Gr33nfertigationGrowthStageEnum `db:"growth_stage" json:"growth_stage"`
+	EcMinMscm   pgtype.Numeric                  `db:"ec_min_mscm" json:"ec_min_mscm"`
+	EcMaxMscm   pgtype.Numeric                  `db:"ec_max_mscm" json:"ec_max_mscm"`
+	PhMin       pgtype.Numeric                  `db:"ph_min" json:"ph_min"`
+	PhMax       pgtype.Numeric                  `db:"ph_max" json:"ph_max"`
+	Notes       *string                         `db:"notes" json:"notes"`
+	Rationale   *string                         `db:"rationale" json:"rationale"`
+	CreatedAt   time.Time                       `db:"created_at" json:"created_at"`
+	UpdatedAt   time.Time                       `db:"updated_at" json:"updated_at"`
+}
+
+type Gr33nfertigationFertigationEvent struct {
+	ID                    int64                                  `db:"id" json:"id"`
+	FarmID                int64                                  `db:"farm_id" json:"farm_id"`
+	ProgramID             *int64                                 `db:"program_id" json:"program_id"`
+	ReservoirID           *int64                                 `db:"reservoir_id" json:"reservoir_id"`
+	ZoneID                int64                                  `db:"zone_id" json:"zone_id"`
+	ActuatorID            *int64                                 `db:"actuator_id" json:"actuator_id"`
+	MixingEventID         *int64                                 `db:"mixing_event_id" json:"mixing_event_id"`
+	CropCycleID           *int64                                 `db:"crop_cycle_id" json:"crop_cycle_id"`
+	AppliedAt             time.Time                              `db:"applied_at" json:"applied_at"`
+	GrowthStage           NullGr33nfertigationGrowthStageEnum    `db:"growth_stage" json:"growth_stage"`
+	VolumeAppliedLiters   pgtype.Numeric                         `db:"volume_applied_liters" json:"volume_applied_liters"`
+	RunDurationSeconds    *int32                                 `db:"run_duration_seconds" json:"run_duration_seconds"`
+	EcBeforeMscm          pgtype.Numeric                         `db:"ec_before_mscm" json:"ec_before_mscm"`
+	EcAfterMscm           pgtype.Numeric                         `db:"ec_after_mscm" json:"ec_after_mscm"`
+	PhBefore              pgtype.Numeric                         `db:"ph_before" json:"ph_before"`
+	PhAfter               pgtype.Numeric                         `db:"ph_after" json:"ph_after"`
+	RunoffEcMscm          pgtype.Numeric                         `db:"runoff_ec_mscm" json:"runoff_ec_mscm"`
+	RunoffPh              pgtype.Numeric                         `db:"runoff_ph" json:"runoff_ph"`
+	TriggerSource         NullGr33nfertigationProgramTriggerEnum `db:"trigger_source" json:"trigger_source"`
+	TriggeredByRuleID     *int64                                 `db:"triggered_by_rule_id" json:"triggered_by_rule_id"`
+	TriggeredByScheduleID *int64                                 `db:"triggered_by_schedule_id" json:"triggered_by_schedule_id"`
+	TriggeredByUserID     pgtype.UUID                            `db:"triggered_by_user_id" json:"triggered_by_user_id"`
+	PlantResponse         *string                                `db:"plant_response" json:"plant_response"`
+	Notes                 *string                                `db:"notes" json:"notes"`
+	Metadata              []byte                                 `db:"metadata" json:"metadata"`
+	CreatedAt             time.Time                              `db:"created_at" json:"created_at"`
+}
+
+type Gr33nfertigationMixingEvent struct {
+	ID                int64          `db:"id" json:"id"`
+	FarmID            int64          `db:"farm_id" json:"farm_id"`
+	ReservoirID       int64          `db:"reservoir_id" json:"reservoir_id"`
+	ProgramID         *int64         `db:"program_id" json:"program_id"`
+	MixedByUserID     pgtype.UUID    `db:"mixed_by_user_id" json:"mixed_by_user_id"`
+	MixedAt           time.Time      `db:"mixed_at" json:"mixed_at"`
+	WaterVolumeLiters pgtype.Numeric `db:"water_volume_liters" json:"water_volume_liters"`
+	WaterSource       *string        `db:"water_source" json:"water_source"`
+	WaterEcMscm       pgtype.Numeric `db:"water_ec_mscm" json:"water_ec_mscm"`
+	WaterPh           pgtype.Numeric `db:"water_ph" json:"water_ph"`
+	FinalEcMscm       pgtype.Numeric `db:"final_ec_mscm" json:"final_ec_mscm"`
+	FinalPh           pgtype.Numeric `db:"final_ph" json:"final_ph"`
+	FinalTempCelsius  pgtype.Numeric `db:"final_temp_celsius" json:"final_temp_celsius"`
+	EcTargetID        *int64         `db:"ec_target_id" json:"ec_target_id"`
+	EcTargetMet       *bool          `db:"ec_target_met" json:"ec_target_met"`
+	Notes             *string        `db:"notes" json:"notes"`
+	Observations      *string        `db:"observations" json:"observations"`
+	CreatedAt         time.Time      `db:"created_at" json:"created_at"`
+}
+
+type Gr33nfertigationMixingEventComponent struct {
+	ID                int64          `db:"id" json:"id"`
+	MixingEventID     int64          `db:"mixing_event_id" json:"mixing_event_id"`
+	InputDefinitionID int64          `db:"input_definition_id" json:"input_definition_id"`
+	InputBatchID      *int64         `db:"input_batch_id" json:"input_batch_id"`
+	VolumeAddedMl     pgtype.Numeric `db:"volume_added_ml" json:"volume_added_ml"`
+	DilutionRatio     *string        `db:"dilution_ratio" json:"dilution_ratio"`
+	Notes             *string        `db:"notes" json:"notes"`
+}
+
+type Gr33nfertigationProgram struct {
+	ID                  int64              `db:"id" json:"id"`
+	FarmID              int64              `db:"farm_id" json:"farm_id"`
+	Name                string             `db:"name" json:"name"`
+	Description         *string            `db:"description" json:"description"`
+	ApplicationRecipeID *int64             `db:"application_recipe_id" json:"application_recipe_id"`
+	ReservoirID         *int64             `db:"reservoir_id" json:"reservoir_id"`
+	TargetZoneID        *int64             `db:"target_zone_id" json:"target_zone_id"`
+	ScheduleID          *int64             `db:"schedule_id" json:"schedule_id"`
+	EcTargetID          *int64             `db:"ec_target_id" json:"ec_target_id"`
+	VolumeLitersPerSqm  pgtype.Numeric     `db:"volume_liters_per_sqm" json:"volume_liters_per_sqm"`
+	TotalVolumeLiters   pgtype.Numeric     `db:"total_volume_liters" json:"total_volume_liters"`
+	DilutionRatio       *string            `db:"dilution_ratio" json:"dilution_ratio"`
+	RunDurationSeconds  *int32             `db:"run_duration_seconds" json:"run_duration_seconds"`
+	EcTriggerLow        pgtype.Numeric     `db:"ec_trigger_low" json:"ec_trigger_low"`
+	PhTriggerLow        pgtype.Numeric     `db:"ph_trigger_low" json:"ph_trigger_low"`
+	PhTriggerHigh       pgtype.Numeric     `db:"ph_trigger_high" json:"ph_trigger_high"`
+	IsActive            bool               `db:"is_active" json:"is_active"`
+	Metadata            []byte             `db:"metadata" json:"metadata"`
+	CreatedAt           time.Time          `db:"created_at" json:"created_at"`
+	UpdatedAt           time.Time          `db:"updated_at" json:"updated_at"`
+	DeletedAt           pgtype.Timestamptz `db:"deleted_at" json:"deleted_at"`
+}
+
+type Gr33nfertigationReservoir struct {
+	ID                  int64                               `db:"id" json:"id"`
+	FarmID              int64                               `db:"farm_id" json:"farm_id"`
+	ZoneID              *int64                              `db:"zone_id" json:"zone_id"`
+	Name                string                              `db:"name" json:"name"`
+	Description         *string                             `db:"description" json:"description"`
+	CapacityLiters      pgtype.Numeric                      `db:"capacity_liters" json:"capacity_liters"`
+	CurrentVolumeLiters pgtype.Numeric                      `db:"current_volume_liters" json:"current_volume_liters"`
+	Status              Gr33nfertigationReservoirStatusEnum `db:"status" json:"status"`
+	EcSensorID          *int64                              `db:"ec_sensor_id" json:"ec_sensor_id"`
+	PhSensorID          *int64                              `db:"ph_sensor_id" json:"ph_sensor_id"`
+	TempSensorID        *int64                              `db:"temp_sensor_id" json:"temp_sensor_id"`
+	WaterLevelSensorID  *int64                              `db:"water_level_sensor_id" json:"water_level_sensor_id"`
+	DeliveryActuatorID  *int64                              `db:"delivery_actuator_id" json:"delivery_actuator_id"`
+	LastEcMscm          pgtype.Numeric                      `db:"last_ec_mscm" json:"last_ec_mscm"`
+	LastPh              pgtype.Numeric                      `db:"last_ph" json:"last_ph"`
+	LastReadingTime     pgtype.Timestamptz                  `db:"last_reading_time" json:"last_reading_time"`
+	Metadata            []byte                              `db:"metadata" json:"metadata"`
+	CreatedAt           time.Time                           `db:"created_at" json:"created_at"`
+	UpdatedAt           time.Time                           `db:"updated_at" json:"updated_at"`
+	DeletedAt           pgtype.Timestamptz                  `db:"deleted_at" json:"deleted_at"`
 }
 
 type Gr33nnaturalfarmingApplicationRecipe struct {
