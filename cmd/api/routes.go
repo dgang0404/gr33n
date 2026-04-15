@@ -12,7 +12,9 @@ import (
 	devicehandler "gr33n-api/internal/handler/device"
 	farmhandler   "gr33n-api/internal/handler/farm"
 	fertigationhandler "gr33n-api/internal/handler/fertigation"
+	nfhandler     "gr33n-api/internal/handler/naturalfarming"
 	sensorhandler "gr33n-api/internal/handler/sensor"
+	ssehandler    "gr33n-api/internal/handler/sse"
 	taskhandler   "gr33n-api/internal/handler/task"
 	zonehandler   "gr33n-api/internal/handler/zone"
 	db            "gr33n-api/internal/db"
@@ -25,9 +27,11 @@ func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationwo
 	device := devicehandler.NewHandler(pool)
 	actuator := actuatorhandler.NewHandler(pool)
 	automation := automationhandler.NewHandler(pool, worker)
-	sensor := sensorhandler.NewHandler(pool)
+	sse    := ssehandler.NewHandler(pool)
+	sensor := sensorhandler.NewHandler(pool, sse)
 	task   := taskhandler.NewHandler(pool)
 	fertigation := fertigationhandler.NewHandler(pool)
+	nf     := nfhandler.NewHandler(pool)
 	auth   := authhandler.NewHandler(adminUser, adminHash, hashFilePath, IssueToken)
 
 	// ── Public ───────────────────────────────────────────────────────────────
@@ -46,8 +50,10 @@ func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationwo
 	})
 
 	// ── Pi routes — API key required ─────────────────────────────────────────
-	mux.Handle("POST /sensors/{id}/readings", requireAPIKey(http.HandlerFunc(sensor.PostReading)))
-	mux.Handle("PATCH /devices/{id}/status",  requireAPIKey(http.HandlerFunc(device.UpdateStatus)))
+	mux.Handle("POST /sensors/{id}/readings",   requireAPIKey(http.HandlerFunc(sensor.PostReading)))
+	mux.Handle("PATCH /devices/{id}/status",    requireAPIKey(http.HandlerFunc(device.UpdateStatus)))
+	mux.Handle("POST /actuators/{id}/events",   requireAPIKey(http.HandlerFunc(actuator.RecordEvent)))
+	mux.Handle("DELETE /devices/{id}/pending-command", requireAPIKey(http.HandlerFunc(device.ClearPendingCommand)))
 
 	// ── Dashboard routes — JWT required ──────────────────────────────────────
 	jwt := requireJWT
@@ -101,10 +107,24 @@ func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationwo
 	// Fertigation
 	mux.Handle("GET /farms/{id}/fertigation/reservoirs", jwt(http.HandlerFunc(fertigation.ListReservoirsByFarm)))
 	mux.Handle("POST /farms/{id}/fertigation/reservoirs", jwt(http.HandlerFunc(fertigation.CreateReservoir)))
+	mux.Handle("PATCH /fertigation/reservoirs/{rid}", jwt(http.HandlerFunc(fertigation.UpdateReservoir)))
+	mux.Handle("DELETE /fertigation/reservoirs/{rid}", jwt(http.HandlerFunc(fertigation.DeleteReservoir)))
 	mux.Handle("GET /farms/{id}/fertigation/ec-targets", jwt(http.HandlerFunc(fertigation.ListEcTargetsByFarm)))
 	mux.Handle("POST /farms/{id}/fertigation/ec-targets", jwt(http.HandlerFunc(fertigation.CreateEcTarget)))
 	mux.Handle("GET /farms/{id}/fertigation/programs", jwt(http.HandlerFunc(fertigation.ListProgramsByFarm)))
 	mux.Handle("POST /farms/{id}/fertigation/programs", jwt(http.HandlerFunc(fertigation.CreateProgram)))
+	mux.Handle("PATCH /fertigation/programs/{rid}", jwt(http.HandlerFunc(fertigation.UpdateProgram)))
+	mux.Handle("DELETE /fertigation/programs/{rid}", jwt(http.HandlerFunc(fertigation.DeleteProgram)))
 	mux.Handle("GET /farms/{id}/fertigation/events", jwt(http.HandlerFunc(fertigation.ListEventsByFarm)))
 	mux.Handle("POST /farms/{id}/fertigation/events", jwt(http.HandlerFunc(fertigation.CreateEvent)))
+
+	// Natural farming
+	mux.Handle("GET /farms/{id}/naturalfarming/inputs",  jwt(http.HandlerFunc(nf.ListInputs)))
+	mux.Handle("GET /farms/{id}/naturalfarming/batches", jwt(http.HandlerFunc(nf.ListBatches)))
+
+	// Actuator events by schedule (for Schedules page event history)
+	mux.Handle("GET /schedules/{id}/actuator-events", jwt(http.HandlerFunc(actuator.ListEventsBySchedule)))
+
+	// SSE — live sensor readings push
+	mux.Handle("GET /farms/{id}/sensors/stream", jwt(http.HandlerFunc(sse.Stream)))
 }

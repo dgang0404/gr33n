@@ -275,6 +275,28 @@ func (q *Queries) CreateReservoir(ctx context.Context, arg CreateReservoirParams
 	return i, err
 }
 
+const deleteProgram = `-- name: DeleteProgram :exec
+UPDATE gr33nfertigation.programs
+SET deleted_at = NOW()
+WHERE id = $1 AND deleted_at IS NULL
+`
+
+func (q *Queries) DeleteProgram(ctx context.Context, id int64) error {
+	_, err := q.db.Exec(ctx, deleteProgram, id)
+	return err
+}
+
+const deleteReservoir = `-- name: DeleteReservoir :exec
+UPDATE gr33nfertigation.reservoirs
+SET deleted_at = NOW()
+WHERE id = $1 AND deleted_at IS NULL
+`
+
+func (q *Queries) DeleteReservoir(ctx context.Context, id int64) error {
+	_, err := q.db.Exec(ctx, deleteReservoir, id)
+	return err
+}
+
 const listEcTargetsByFarm = `-- name: ListEcTargetsByFarm :many
 SELECT id, farm_id, zone_id, growth_stage, ec_min_mscm, ec_max_mscm, ph_min, ph_max, notes, rationale, created_at, updated_at FROM gr33nfertigation.ec_targets
 WHERE farm_id = $1
@@ -464,4 +486,114 @@ func (q *Queries) ListReservoirsByFarm(ctx context.Context, farmID int64) ([]Gr3
 		return nil, err
 	}
 	return items, nil
+}
+
+const updateProgram = `-- name: UpdateProgram :one
+UPDATE gr33nfertigation.programs
+SET name = $2, description = $3, reservoir_id = $4,
+    target_zone_id = $5, ec_target_id = $6,
+    total_volume_liters = $7, is_active = $8, updated_at = NOW()
+WHERE id = $1 AND deleted_at IS NULL
+RETURNING id, farm_id, name, description, application_recipe_id, reservoir_id, target_zone_id, schedule_id, ec_target_id, volume_liters_per_sqm, total_volume_liters, dilution_ratio, run_duration_seconds, ec_trigger_low, ph_trigger_low, ph_trigger_high, is_active, metadata, created_at, updated_at, deleted_at
+`
+
+type UpdateProgramParams struct {
+	ID                int64          `db:"id" json:"id"`
+	Name              string         `db:"name" json:"name"`
+	Description       *string        `db:"description" json:"description"`
+	ReservoirID       *int64         `db:"reservoir_id" json:"reservoir_id"`
+	TargetZoneID      *int64         `db:"target_zone_id" json:"target_zone_id"`
+	EcTargetID        *int64         `db:"ec_target_id" json:"ec_target_id"`
+	TotalVolumeLiters pgtype.Numeric `db:"total_volume_liters" json:"total_volume_liters"`
+	IsActive          bool           `db:"is_active" json:"is_active"`
+}
+
+func (q *Queries) UpdateProgram(ctx context.Context, arg UpdateProgramParams) (Gr33nfertigationProgram, error) {
+	row := q.db.QueryRow(ctx, updateProgram,
+		arg.ID,
+		arg.Name,
+		arg.Description,
+		arg.ReservoirID,
+		arg.TargetZoneID,
+		arg.EcTargetID,
+		arg.TotalVolumeLiters,
+		arg.IsActive,
+	)
+	var i Gr33nfertigationProgram
+	err := row.Scan(
+		&i.ID,
+		&i.FarmID,
+		&i.Name,
+		&i.Description,
+		&i.ApplicationRecipeID,
+		&i.ReservoirID,
+		&i.TargetZoneID,
+		&i.ScheduleID,
+		&i.EcTargetID,
+		&i.VolumeLitersPerSqm,
+		&i.TotalVolumeLiters,
+		&i.DilutionRatio,
+		&i.RunDurationSeconds,
+		&i.EcTriggerLow,
+		&i.PhTriggerLow,
+		&i.PhTriggerHigh,
+		&i.IsActive,
+		&i.Metadata,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.DeletedAt,
+	)
+	return i, err
+}
+
+const updateReservoir = `-- name: UpdateReservoir :one
+UPDATE gr33nfertigation.reservoirs
+SET name = $2, description = $3, capacity_liters = $4,
+    current_volume_liters = $5, status = $6, updated_at = NOW()
+WHERE id = $1 AND deleted_at IS NULL
+RETURNING id, farm_id, zone_id, name, description, capacity_liters, current_volume_liters, status, ec_sensor_id, ph_sensor_id, temp_sensor_id, water_level_sensor_id, delivery_actuator_id, last_ec_mscm, last_ph, last_reading_time, metadata, created_at, updated_at, deleted_at
+`
+
+type UpdateReservoirParams struct {
+	ID                  int64                               `db:"id" json:"id"`
+	Name                string                              `db:"name" json:"name"`
+	Description         *string                             `db:"description" json:"description"`
+	CapacityLiters      pgtype.Numeric                      `db:"capacity_liters" json:"capacity_liters"`
+	CurrentVolumeLiters pgtype.Numeric                      `db:"current_volume_liters" json:"current_volume_liters"`
+	Status              Gr33nfertigationReservoirStatusEnum `db:"status" json:"status"`
+}
+
+func (q *Queries) UpdateReservoir(ctx context.Context, arg UpdateReservoirParams) (Gr33nfertigationReservoir, error) {
+	row := q.db.QueryRow(ctx, updateReservoir,
+		arg.ID,
+		arg.Name,
+		arg.Description,
+		arg.CapacityLiters,
+		arg.CurrentVolumeLiters,
+		arg.Status,
+	)
+	var i Gr33nfertigationReservoir
+	err := row.Scan(
+		&i.ID,
+		&i.FarmID,
+		&i.ZoneID,
+		&i.Name,
+		&i.Description,
+		&i.CapacityLiters,
+		&i.CurrentVolumeLiters,
+		&i.Status,
+		&i.EcSensorID,
+		&i.PhSensorID,
+		&i.TempSensorID,
+		&i.WaterLevelSensorID,
+		&i.DeliveryActuatorID,
+		&i.LastEcMscm,
+		&i.LastPh,
+		&i.LastReadingTime,
+		&i.Metadata,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.DeletedAt,
+	)
+	return i, err
 }

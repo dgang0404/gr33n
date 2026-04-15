@@ -109,6 +109,23 @@ func (h *Handler) UpdateStatus(w http.ResponseWriter, r *http.Request) {
 	httputil.WriteJSON(w, http.StatusOK, device)
 }
 
+// DELETE /devices/{id}/pending-command
+func (h *Handler) ClearPendingCommand(w http.ResponseWriter, r *http.Request) {
+	id, err := httputil.PathID(r.URL.Path, 2)
+	if err != nil {
+		httputil.WriteError(w, http.StatusBadRequest, "invalid device id")
+		return
+	}
+	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+	defer cancel()
+
+	if err := h.q.ClearDevicePendingCommand(ctx, id); err != nil {
+		httputil.WriteError(w, http.StatusInternalServerError, "failed to clear pending command")
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
 // DELETE /devices/{id}
 func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
 	id, err := httputil.PathID(r.URL.Path, 2)

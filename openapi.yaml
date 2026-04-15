@@ -1,11 +1,16 @@
 openapi: "3.0.3"
 info:
   title: gr33n API
-  version: "0.1.0"
+  version: "0.2.0"
   description: |
     Local-first automated agriculture platform API.
     All endpoints run on localhost:8080 by default.
-    No authentication required in local dev mode.
+
+    **Authentication:**
+    - Public routes require no auth.
+    - Pi routes require `X-API-Key` header.
+    - Dashboard routes require `Authorization: Bearer <JWT>`.
+    - In `AUTH_MODE=dev`, auth is bypassed.
   license:
     name: AGPL-3.0
     url: https://www.gnu.org/licenses/agpl-3.0
@@ -17,6 +22,8 @@ servers:
 tags:
   - name: health
     description: API and database health
+  - name: auth
+    description: Authentication and password management
   - name: units
     description: Units of measure reference
   - name: farms
@@ -24,13 +31,21 @@ tags:
   - name: zones
     description: Zone management
   - name: sensors
-    description: Sensor registry and readings
+    description: Sensor registry, readings, and live streams
   - name: devices
     description: Device management and control
+  - name: actuators
+    description: Actuator state and event history
+  - name: automation
+    description: Schedules, runs, and worker health
   - name: tasks
-    description: Task scheduling
+    description: Task management
+  - name: fertigation
+    description: Fertigation reservoirs, programs, EC targets, and events
 
 paths:
+
+  # ── Public ──────────────────────────────────────────────────
 
   /health:
     get:
@@ -53,165 +68,82 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/Error" }
 
-  /units:
-    get:
-      tags: [units]
-      summary: List all units of measure
-      description: Returns all units including temperature, volume, mass, EC, pH, PAR, etc.
-      responses:
-        "200":
-          description: List of units
-          content:
-            application/json:
-              schema:
-                type: array
-                items: { $ref: "#/components/schemas/Unit" }
-
-  /farms/{id}:
-    get:
-      tags: [farms]
-      summary: Get farm by ID
-      parameters:
-        - { $ref: "#/components/parameters/ID" }
-      responses:
-        "200":
-          description: Farm object
-          content:
-            application/json:
-              schema: { $ref: "#/components/schemas/Farm" }
-        "404": { $ref: "#/components/responses/NotFound" }
-
-  /farms/{id}/zones:
-    get:
-      tags: [zones]
-      summary: List zones for a farm
-      parameters:
-        - { $ref: "#/components/parameters/ID" }
-      responses:
-        "200":
-          description: List of zones
-          content:
-            application/json:
-              schema:
-                type: array
-                items: { $ref: "#/components/schemas/Zone" }
+  /auth/login:
     post:
-      tags: [zones]
-      summary: Create a zone
-      parameters:
-        - { $ref: "#/components/parameters/ID" }
+      tags: [auth]
+      summary: Login
+      description: Authenticate with username/password. Returns a JWT token.
       requestBody:
         required: true
         content:
           application/json:
-            schema: { $ref: "#/components/schemas/ZoneCreate" }
-      responses:
-        "201":
-          description: Created zone
-          content:
-            application/json:
-              schema: { $ref: "#/components/schemas/Zone" }
-
-  /zones/{id}:
-    get:
-      tags: [zones]
-      summary: Get zone by ID
-      parameters:
-        - { $ref: "#/components/parameters/ID" }
+            schema:
+              type: object
+              required: [username, password]
+              properties:
+                username: { type: string }
+                password: { type: string, format: password }
       responses:
         "200":
-          description: Zone object
-          content:
-            application/json:
-              schema: { $ref: "#/components/schemas/Zone" }
-        "404": { $ref: "#/components/responses/NotFound" }
-    delete:
-      tags: [zones]
-      summary: Soft-delete a zone
-      parameters:
-        - { $ref: "#/components/parameters/ID" }
-      responses:
-        "204": { description: Deleted }
-        "404": { $ref: "#/components/responses/NotFound" }
-
-  /farms/{id}/sensors:
-    get:
-      tags: [sensors]
-      summary: List sensors for a farm
-      parameters:
-        - { $ref: "#/components/parameters/ID" }
-      responses:
-        "200":
-          description: List of sensors
+          description: Login successful
           content:
             application/json:
               schema:
-                type: array
-                items: { $ref: "#/components/schemas/Sensor" }
-    post:
-      tags: [sensors]
-      summary: Register a new sensor
-      parameters:
-        - { $ref: "#/components/parameters/ID" }
+                type: object
+                properties:
+                  token: { type: string }
+                  user: { type: string }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /auth/mode:
+    get:
+      tags: [auth]
+      summary: Get authentication mode
+      description: Returns current auth mode (dev or production).
+      responses:
+        "200":
+          description: Auth mode
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  mode: { type: string, enum: [dev, production] }
+
+  /auth/password:
+    patch:
+      tags: [auth]
+      summary: Change password
+      security: [{ bearerAuth: [] }]
       requestBody:
         required: true
         content:
           application/json:
-            schema: { $ref: "#/components/schemas/SensorCreate" }
-      responses:
-        "201":
-          description: Created sensor
-          content:
-            application/json:
-              schema: { $ref: "#/components/schemas/Sensor" }
-
-  /sensors/{id}:
-    get:
-      tags: [sensors]
-      summary: Get sensor by ID
-      parameters:
-        - { $ref: "#/components/parameters/ID" }
+            schema:
+              type: object
+              required: [current_password, new_password]
+              properties:
+                current_password: { type: string, format: password }
+                new_password: { type: string, format: password }
       responses:
         "200":
-          description: Sensor object
+          description: Password changed
           content:
             application/json:
-              schema: { $ref: "#/components/schemas/Sensor" }
-        "404": { $ref: "#/components/responses/NotFound" }
-    delete:
-      tags: [sensors]
-      summary: Soft-delete a sensor
-      parameters:
-        - { $ref: "#/components/parameters/ID" }
-      responses:
-        "204": { description: Deleted }
+              schema:
+                type: object
+                properties:
+                  message: { type: string }
+        "401": { $ref: "#/components/responses/Unauthorized" }
 
-  /sensors/{id}/readings/latest:
-    get:
-      tags: [sensors]
-      summary: Get latest reading for a sensor
-      description: Returns 404 if the sensor has no readings yet (normal before Pi connects).
-      parameters:
-        - { $ref: "#/components/parameters/ID" }
-      responses:
-        "200":
-          description: Latest sensor reading
-          content:
-            application/json:
-              schema: { $ref: "#/components/schemas/SensorReading" }
-        "404":
-          description: No readings yet
-          content:
-            application/json:
-              schema: { $ref: "#/components/schemas/Error" }
+  # ── Pi routes (API key) ────────────────────────────────────
 
   /sensors/{id}/readings:
     post:
       tags: [sensors]
-      summary: Post a sensor reading
-      description: |
-        Called by the Raspberry Pi client daemon.
-        The database trigger automatically normalizes value_raw to the base unit.
+      summary: Post a sensor reading (Pi client)
+      description: Called by the Raspberry Pi client daemon. Triggers SSE push to connected dashboards.
+      security: [{ apiKeyAuth: [] }]
       parameters:
         - { $ref: "#/components/parameters/ID" }
       requestBody:
@@ -230,10 +162,224 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/SensorReading" }
 
+  /devices/{id}/status:
+    patch:
+      tags: [devices]
+      summary: Update device status (Pi heartbeat)
+      security: [{ apiKeyAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status: { $ref: "#/components/schemas/DeviceStatusEnum" }
+            example: { status: online }
+      responses:
+        "200":
+          description: Updated device
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Device" }
+
+  # ── Units ──────────────────────────────────────────────────
+
+  /units:
+    get:
+      tags: [units]
+      summary: List all units of measure
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          description: List of units
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Unit" }
+
+  # ── Farms ──────────────────────────────────────────────────
+
+  /farms/{id}:
+    get:
+      tags: [farms]
+      summary: Get farm by ID
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      responses:
+        "200":
+          description: Farm object
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Farm" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /farms/{id}/zones:
+    get:
+      tags: [zones]
+      summary: List zones for a farm
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      responses:
+        "200":
+          description: List of zones
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Zone" }
+    post:
+      tags: [zones]
+      summary: Create a zone
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ZoneCreate" }
+      responses:
+        "201":
+          description: Created zone
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Zone" }
+
+  /zones/{id}:
+    get:
+      tags: [zones]
+      summary: Get zone by ID
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      responses:
+        "200":
+          description: Zone object
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Zone" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    delete:
+      tags: [zones]
+      summary: Soft-delete a zone
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      responses:
+        "204": { description: Deleted }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  # ── Sensors ────────────────────────────────────────────────
+
+  /farms/{id}/sensors:
+    get:
+      tags: [sensors]
+      summary: List sensors for a farm
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      responses:
+        "200":
+          description: List of sensors
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Sensor" }
+    post:
+      tags: [sensors]
+      summary: Register a new sensor
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SensorCreate" }
+      responses:
+        "201":
+          description: Created sensor
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Sensor" }
+
+  /sensors/{id}:
+    get:
+      tags: [sensors]
+      summary: Get sensor by ID
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      responses:
+        "200":
+          description: Sensor object
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Sensor" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    delete:
+      tags: [sensors]
+      summary: Soft-delete a sensor
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      responses:
+        "204": { description: Deleted }
+
+  /sensors/{id}/readings/latest:
+    get:
+      tags: [sensors]
+      summary: Get latest reading for a sensor
+      description: Returns 404 if the sensor has no readings yet.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      responses:
+        "200":
+          description: Latest sensor reading
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SensorReading" }
+        "404":
+          description: No readings yet
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+
+  /farms/{id}/sensors/stream:
+    get:
+      tags: [sensors]
+      summary: SSE stream of live sensor readings
+      description: |
+        Server-Sent Events endpoint. Pushes `readings` events containing a map
+        of sensor_id → latest reading. Fires on new data ingestion and every 10s.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      responses:
+        "200":
+          description: SSE event stream
+          content:
+            text/event-stream:
+              schema:
+                type: string
+                description: "event: readings\\ndata: {sensor_id: reading, ...}"
+
+  # ── Devices ────────────────────────────────────────────────
+
   /farms/{id}/devices:
     get:
       tags: [devices]
       summary: List devices for a farm
+      security: [{ bearerAuth: [] }]
       parameters:
         - { $ref: "#/components/parameters/ID" }
       responses:
@@ -247,6 +393,7 @@ paths:
     post:
       tags: [devices]
       summary: Register a new device
+      security: [{ bearerAuth: [] }]
       parameters:
         - { $ref: "#/components/parameters/ID" }
       requestBody:
@@ -265,6 +412,7 @@ paths:
     get:
       tags: [devices]
       summary: Get device by ID
+      security: [{ bearerAuth: [] }]
       parameters:
         - { $ref: "#/components/parameters/ID" }
       responses:
@@ -277,18 +425,35 @@ paths:
     delete:
       tags: [devices]
       summary: Soft-delete a device
+      security: [{ bearerAuth: [] }]
       parameters:
         - { $ref: "#/components/parameters/ID" }
       responses:
         "204": { description: Deleted }
 
-  /devices/{id}/status:
+  # ── Actuators ──────────────────────────────────────────────
+
+  /farms/{id}/actuators:
+    get:
+      tags: [actuators]
+      summary: List actuators for a farm
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      responses:
+        "200":
+          description: List of actuators
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Actuator" }
+
+  /actuators/{id}/state:
     patch:
-      tags: [devices]
-      summary: Update device status (ON/OFF toggle)
-      description: |
-        Used by the Actuators UI toggle and the Pi heartbeat loop.
-        Also updates last_heartbeat timestamp.
+      tags: [actuators]
+      summary: Update actuator state
+      security: [{ bearerAuth: [] }]
       parameters:
         - { $ref: "#/components/parameters/ID" }
       requestBody:
@@ -297,28 +462,146 @@ paths:
           application/json:
             schema:
               type: object
-              required: [status]
               properties:
-                status:
-                  type: string
-                  enum: [online, offline, error_comms, error_hardware,
-                         maintenance_mode, initializing, unknown,
-                         decommissioned, pending_activation]
-            example:
-              status: online
+                state_text: { type: string }
+                state_numeric: { type: number, nullable: true }
       responses:
         "200":
-          description: Updated device
+          description: Updated actuator
           content:
             application/json:
-              schema: { $ref: "#/components/schemas/Device" }
-        "404": { $ref: "#/components/responses/NotFound" }
+              schema: { $ref: "#/components/schemas/Actuator" }
+
+  /actuators/{id}/events:
+    get:
+      tags: [actuators]
+      summary: List actuator events
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+        - name: since
+          in: query
+          schema: { type: string, format: date-time }
+          description: Only events after this time (default 24h ago)
+        - name: limit
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 200, default: 50 }
+      responses:
+        "200":
+          description: List of actuator events
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/ActuatorEvent" }
+
+  # ── Automation ─────────────────────────────────────────────
+
+  /farms/{id}/schedules:
+    get:
+      tags: [automation]
+      summary: List schedules for a farm
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      responses:
+        "200":
+          description: List of schedules
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Schedule" }
+
+  /schedules/{id}/active:
+    patch:
+      tags: [automation]
+      summary: Toggle schedule active/inactive
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [is_active]
+              properties:
+                is_active: { type: boolean }
+      responses:
+        "200":
+          description: Updated schedule
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Schedule" }
+
+  /schedules/{id}/actuator-events:
+    get:
+      tags: [automation]
+      summary: List actuator events triggered by a schedule
+      description: Shows what each automation run actually did at the hardware level.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+        - name: since
+          in: query
+          schema: { type: string, format: date-time }
+          description: Only events after this time (default 7 days ago)
+        - name: limit
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 500, default: 100 }
+      responses:
+        "200":
+          description: List of actuator events for this schedule
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/ActuatorEvent" }
+
+  /farms/{id}/automation/runs:
+    get:
+      tags: [automation]
+      summary: List automation runs for a farm
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      responses:
+        "200":
+          description: List of automation runs (most recent first, limit 100)
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/AutomationRun" }
+
+  /automation/worker/health:
+    get:
+      tags: [automation]
+      summary: Automation worker health
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          description: Worker status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  running: { type: boolean }
+                  simulation_mode: { type: boolean }
+                  last_tick_at: { type: string, format: date-time, nullable: true }
+                  last_error: { type: string }
+                  status: { type: string, enum: [ok, disabled] }
+
+  # ── Tasks ──────────────────────────────────────────────────
 
   /farms/{id}/tasks:
     get:
       tags: [tasks]
       summary: List tasks for a farm
-      description: Ordered by due_date ASC, priority DESC.
+      security: [{ bearerAuth: [] }]
       parameters:
         - { $ref: "#/components/parameters/ID" }
       responses:
@@ -334,11 +617,7 @@ paths:
     patch:
       tags: [tasks]
       summary: Update task status
-      description: |
-        Drives the Schedules Kanban board.
-        Scheduled column = todo / on_hold / blocked_requires_input / pending_review
-        Running column   = in_progress
-        Done column      = completed / cancelled
+      security: [{ bearerAuth: [] }]
       parameters:
         - { $ref: "#/components/parameters/ID" }
       requestBody:
@@ -349,21 +628,213 @@ paths:
               type: object
               required: [status]
               properties:
-                status:
-                  type: string
-                  enum: [todo, in_progress, on_hold, completed, cancelled,
-                         blocked_requires_input, pending_review]
-            example:
-              status: in_progress
+                status: { $ref: "#/components/schemas/TaskStatusEnum" }
       responses:
         "200":
           description: Updated task
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Task" }
-        "404": { $ref: "#/components/responses/NotFound" }
+
+  # ── Fertigation ────────────────────────────────────────────
+
+  /farms/{id}/fertigation/reservoirs:
+    get:
+      tags: [fertigation]
+      summary: List reservoirs for a farm
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      responses:
+        "200":
+          description: List of reservoirs
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Reservoir" }
+    post:
+      tags: [fertigation]
+      summary: Create a reservoir
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ReservoirCreate" }
+      responses:
+        "201":
+          description: Created reservoir
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Reservoir" }
+
+  /fertigation/reservoirs/{rid}:
+    patch:
+      tags: [fertigation]
+      summary: Update a reservoir
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ResourceID" }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ReservoirUpdate" }
+      responses:
+        "200":
+          description: Updated reservoir
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Reservoir" }
+    delete:
+      tags: [fertigation]
+      summary: Soft-delete a reservoir
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ResourceID" }
+      responses:
+        "204": { description: Deleted }
+
+  /farms/{id}/fertigation/ec-targets:
+    get:
+      tags: [fertigation]
+      summary: List EC targets for a farm
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      responses:
+        "200":
+          description: List of EC targets
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/EcTarget" }
+    post:
+      tags: [fertigation]
+      summary: Create an EC target
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/EcTargetCreate" }
+      responses:
+        "201":
+          description: Created EC target
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/EcTarget" }
+
+  /farms/{id}/fertigation/programs:
+    get:
+      tags: [fertigation]
+      summary: List fertigation programs for a farm
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      responses:
+        "200":
+          description: List of programs
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/FertigationProgram" }
+    post:
+      tags: [fertigation]
+      summary: Create a fertigation program
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/FertigationProgramCreate" }
+      responses:
+        "201":
+          description: Created program
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/FertigationProgram" }
+
+  /fertigation/programs/{rid}:
+    patch:
+      tags: [fertigation]
+      summary: Update a fertigation program
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ResourceID" }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/FertigationProgramUpdate" }
+      responses:
+        "200":
+          description: Updated program
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/FertigationProgram" }
+    delete:
+      tags: [fertigation]
+      summary: Soft-delete a fertigation program
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ResourceID" }
+      responses:
+        "204": { description: Deleted }
+
+  /farms/{id}/fertigation/events:
+    get:
+      tags: [fertigation]
+      summary: List fertigation events for a farm
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      responses:
+        "200":
+          description: List of fertigation events
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/FertigationEvent" }
+    post:
+      tags: [fertigation]
+      summary: Record a fertigation event
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/FertigationEventCreate" }
+      responses:
+        "201":
+          description: Created event
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/FertigationEvent" }
 
 components:
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    apiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
 
   parameters:
     ID:
@@ -371,10 +842,20 @@ components:
       in: path
       required: true
       schema: { type: integer, format: int64 }
+    ResourceID:
+      name: rid
+      in: path
+      required: true
+      schema: { type: integer, format: int64 }
 
   responses:
     NotFound:
       description: Resource not found
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    Unauthorized:
+      description: Authentication required
       content:
         application/json:
           schema: { $ref: "#/components/schemas/Error" }
@@ -418,7 +899,7 @@ components:
         farm_id: { type: integer }
         name: { type: string, example: Veg Room }
         description: { type: string }
-        zone_type: { type: string, example: indoor }
+        zone_type: { type: string }
         area_sqm: { type: number }
         created_at: { type: string, format: date-time }
 
@@ -467,7 +948,7 @@ components:
         reading_time: { type: string, format: date-time }
         sensor_id: { type: integer }
         value_raw: { type: number, example: 22.5 }
-        value_normalized: { type: number, example: 22.5 }
+        value_normalized: { type: number }
         normalized_unit_id: { type: integer, nullable: true }
         value_text: { type: string, nullable: true }
         battery_level_percent: { type: number, nullable: true }
@@ -478,8 +959,8 @@ components:
       type: object
       required: [value_raw]
       properties:
-        value_raw: { type: number, example: 22.5 }
-        reading_time: { type: string, format: date-time, description: "Defaults to now() if omitted" }
+        value_raw: { type: number }
+        reading_time: { type: string, format: date-time }
         value_text: { type: string }
         battery_level_percent: { type: number }
         signal_strength_dbm: { type: integer }
@@ -493,14 +974,10 @@ components:
         zone_id: { type: integer, nullable: true }
         name: { type: string, example: Veg Room Fan }
         device_uid: { type: string, nullable: true }
-        device_type: { type: string, example: fan }
+        device_type: { type: string }
         ip_address: { type: string, nullable: true }
         firmware_version: { type: string, nullable: true }
-        status:
-          type: string
-          enum: [online, offline, error_comms, error_hardware,
-                 maintenance_mode, initializing, unknown,
-                 decommissioned, pending_activation]
+        status: { $ref: "#/components/schemas/DeviceStatusEnum" }
         last_heartbeat: { type: string, format: date-time, nullable: true }
         created_at: { type: string, format: date-time }
 
@@ -514,19 +991,243 @@ components:
         device_uid: { type: string }
         ip_address: { type: string }
 
+    DeviceStatusEnum:
+      type: string
+      enum: [online, offline, error_comms, error_hardware,
+             maintenance_mode, initializing, unknown,
+             decommissioned, pending_activation]
+
+    Actuator:
+      type: object
+      properties:
+        id: { type: integer }
+        device_id: { type: integer, nullable: true }
+        farm_id: { type: integer }
+        zone_id: { type: integer, nullable: true }
+        name: { type: string }
+        actuator_type: { type: string }
+        hardware_identifier: { type: string, nullable: true }
+        current_state_numeric: { type: number, nullable: true }
+        current_state_text: { type: string, nullable: true }
+        last_known_state_time: { type: string, format: date-time, nullable: true }
+        feedback_sensor_id: { type: integer, nullable: true }
+        created_at: { type: string, format: date-time }
+
+    ActuatorEvent:
+      type: object
+      properties:
+        event_time: { type: string, format: date-time }
+        actuator_id: { type: integer }
+        command_sent: { type: string, nullable: true }
+        parameters_sent: { type: object, nullable: true }
+        triggered_by_schedule_id: { type: integer, nullable: true }
+        triggered_by_rule_id: { type: integer, nullable: true }
+        source: { type: string }
+        execution_status:
+          type: object
+          nullable: true
+          properties:
+            gr33ncore_actuator_execution_status_enum: { type: string }
+            valid: { type: boolean }
+
+    Schedule:
+      type: object
+      properties:
+        id: { type: integer }
+        farm_id: { type: integer }
+        name: { type: string }
+        description: { type: string, nullable: true }
+        schedule_type: { type: string }
+        cron_expression: { type: string }
+        timezone: { type: string }
+        is_active: { type: boolean }
+        last_triggered_time: { type: string, format: date-time, nullable: true }
+        next_expected_trigger_time: { type: string, format: date-time, nullable: true }
+        created_at: { type: string, format: date-time }
+
+    AutomationRun:
+      type: object
+      properties:
+        id: { type: integer }
+        farm_id: { type: integer }
+        schedule_id: { type: integer, nullable: true }
+        rule_id: { type: integer, nullable: true }
+        status: { type: string, enum: [success, partial_success, failed, skipped] }
+        message: { type: string, nullable: true }
+        details: { type: object, nullable: true }
+        executed_at: { type: string, format: date-time }
+
     Task:
       type: object
       properties:
         id: { type: integer }
         farm_id: { type: integer }
         zone_id: { type: integer, nullable: true }
-        title: { type: string, example: Check EC levels in Veg Room }
+        title: { type: string }
         description: { type: string, nullable: true }
         task_type: { type: string, nullable: true }
-        status:
-          type: string
-          enum: [todo, in_progress, on_hold, completed, cancelled,
-                 blocked_requires_input, pending_review]
-        priority: { type: integer, minimum: 0, maximum: 3, description: "0=low 1=normal 2=high 3=urgent" }
+        status: { $ref: "#/components/schemas/TaskStatusEnum" }
+        priority: { type: integer, minimum: 0, maximum: 3 }
         due_date: { type: string, format: date, nullable: true }
         created_at: { type: string, format: date-time }
+
+    TaskStatusEnum:
+      type: string
+      enum: [todo, in_progress, on_hold, completed, cancelled,
+             blocked_requires_input, pending_review]
+
+    Reservoir:
+      type: object
+      properties:
+        id: { type: integer }
+        farm_id: { type: integer }
+        zone_id: { type: integer, nullable: true }
+        name: { type: string }
+        description: { type: string, nullable: true }
+        capacity_liters: { type: number }
+        current_volume_liters: { type: number }
+        status: { $ref: "#/components/schemas/ReservoirStatusEnum" }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+
+    ReservoirCreate:
+      type: object
+      required: [name, capacity_liters, current_volume_liters, status]
+      properties:
+        zone_id: { type: integer }
+        name: { type: string }
+        description: { type: string }
+        capacity_liters: { type: number }
+        current_volume_liters: { type: number }
+        status: { $ref: "#/components/schemas/ReservoirStatusEnum" }
+
+    ReservoirUpdate:
+      type: object
+      required: [name, capacity_liters, current_volume_liters, status]
+      properties:
+        name: { type: string }
+        description: { type: string }
+        capacity_liters: { type: number }
+        current_volume_liters: { type: number }
+        status: { $ref: "#/components/schemas/ReservoirStatusEnum" }
+
+    ReservoirStatusEnum:
+      type: string
+      enum: [ready, mixing, needs_top_up, needs_flush, flushing, offline, empty]
+
+    EcTarget:
+      type: object
+      properties:
+        id: { type: integer }
+        farm_id: { type: integer }
+        zone_id: { type: integer, nullable: true }
+        growth_stage: { type: string }
+        ec_min_mscm: { type: number }
+        ec_max_mscm: { type: number }
+        ph_min: { type: number }
+        ph_max: { type: number }
+        notes: { type: string, nullable: true }
+        rationale: { type: string, nullable: true }
+        created_at: { type: string, format: date-time }
+
+    EcTargetCreate:
+      type: object
+      required: [growth_stage, ec_min_mscm, ec_max_mscm, ph_min, ph_max]
+      properties:
+        zone_id: { type: integer }
+        growth_stage: { type: string }
+        ec_min_mscm: { type: number }
+        ec_max_mscm: { type: number }
+        ph_min: { type: number }
+        ph_max: { type: number }
+        notes: { type: string }
+        rationale: { type: string }
+
+    FertigationProgram:
+      type: object
+      properties:
+        id: { type: integer }
+        farm_id: { type: integer }
+        name: { type: string }
+        description: { type: string, nullable: true }
+        reservoir_id: { type: integer, nullable: true }
+        target_zone_id: { type: integer, nullable: true }
+        schedule_id: { type: integer, nullable: true }
+        ec_target_id: { type: integer, nullable: true }
+        total_volume_liters: { type: number }
+        run_duration_seconds: { type: integer, nullable: true }
+        ec_trigger_low: { type: number }
+        ph_trigger_low: { type: number }
+        ph_trigger_high: { type: number }
+        is_active: { type: boolean }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+
+    FertigationProgramCreate:
+      type: object
+      required: [name, total_volume_liters, ec_trigger_low, ph_trigger_low, ph_trigger_high]
+      properties:
+        name: { type: string }
+        description: { type: string }
+        application_recipe_id: { type: integer }
+        reservoir_id: { type: integer }
+        target_zone_id: { type: integer }
+        schedule_id: { type: integer }
+        ec_target_id: { type: integer }
+        total_volume_liters: { type: number }
+        run_duration_seconds: { type: integer }
+        ec_trigger_low: { type: number }
+        ph_trigger_low: { type: number }
+        ph_trigger_high: { type: number }
+        is_active: { type: boolean }
+
+    FertigationProgramUpdate:
+      type: object
+      required: [name, total_volume_liters, is_active]
+      properties:
+        name: { type: string }
+        description: { type: string }
+        reservoir_id: { type: integer }
+        target_zone_id: { type: integer }
+        ec_target_id: { type: integer }
+        total_volume_liters: { type: number }
+        is_active: { type: boolean }
+
+    FertigationEvent:
+      type: object
+      properties:
+        id: { type: integer }
+        farm_id: { type: integer }
+        program_id: { type: integer, nullable: true }
+        reservoir_id: { type: integer, nullable: true }
+        zone_id: { type: integer }
+        applied_at: { type: string, format: date-time }
+        growth_stage: { type: string, nullable: true }
+        volume_applied_liters: { type: number }
+        run_duration_seconds: { type: integer, nullable: true }
+        ec_before_mscm: { type: number }
+        ec_after_mscm: { type: number }
+        ph_before: { type: number }
+        ph_after: { type: number }
+        trigger_source: { type: string, nullable: true }
+        notes: { type: string, nullable: true }
+        created_at: { type: string, format: date-time }
+
+    FertigationEventCreate:
+      type: object
+      required: [zone_id, volume_applied_liters, ec_before_mscm, ec_after_mscm, ph_before, ph_after]
+      properties:
+        program_id: { type: integer }
+        reservoir_id: { type: integer }
+        zone_id: { type: integer }
+        applied_at: { type: string, format: date-time }
+        growth_stage: { type: string }
+        volume_applied_liters: { type: number }
+        run_duration_seconds: { type: integer }
+        ec_before_mscm: { type: number }
+        ec_after_mscm: { type: number }
+        ph_before: { type: number }
+        ph_after: { type: number }
+        trigger_source: { type: string }
+        notes: { type: string }
+        metadata: { type: object }

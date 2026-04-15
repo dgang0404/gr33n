@@ -55,14 +55,17 @@ sensors:
 
 actuators:
   - actuator_id: 1
+    device_id: 1
     device_type: light
     gpio_pin: 17
 
   - actuator_id: 2
+    device_id: 2
     device_type: irrigation
     gpio_pin: 27
 
   - actuator_id: 3
+    device_id: 3
     device_type: fan
     gpio_pin: 22
 

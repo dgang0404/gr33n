@@ -80,6 +80,101 @@ func (h *Handler) UpdateState(w http.ResponseWriter, r *http.Request) {
 	httputil.WriteJSON(w, http.StatusOK, row)
 }
 
+// GET /schedules/{id}/actuator-events?since=RFC3339&limit=N
+func (h *Handler) ListEventsBySchedule(w http.ResponseWriter, r *http.Request) {
+	scheduleID, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	if err != nil {
+		httputil.WriteError(w, http.StatusBadRequest, "invalid schedule id")
+		return
+	}
+
+	since := time.Now().UTC().Add(-7 * 24 * time.Hour)
+	if s := r.URL.Query().Get("since"); s != "" {
+		if t, err := time.Parse(time.RFC3339, s); err == nil {
+			since = t
+		}
+	}
+
+	limit := int32(100)
+	if l := r.URL.Query().Get("limit"); l != "" {
+		if n, err := strconv.ParseInt(l, 10, 32); err == nil && n > 0 && n <= 500 {
+			limit = int32(n)
+		}
+	}
+
+	rows, err := h.q.ListActuatorEventsBySchedule(r.Context(), db.ListActuatorEventsByScheduleParams{
+		TriggeredByScheduleID: &scheduleID,
+		EventTime:             since,
+		Limit:                 limit,
+	})
+	if err != nil {
+		httputil.WriteError(w, http.StatusInternalServerError, "failed to list actuator events by schedule")
+		return
+	}
+	if rows == nil {
+		rows = []db.Gr33ncoreActuatorEvent{}
+	}
+	httputil.WriteJSON(w, http.StatusOK, rows)
+}
+
+// POST /actuators/{id}/events — Pi reports an executed command
+func (h *Handler) RecordEvent(w http.ResponseWriter, r *http.Request) {
+	actuatorID, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	if err != nil {
+		httputil.WriteError(w, http.StatusBadRequest, "invalid actuator id")
+		return
+	}
+
+	var body struct {
+		CommandSent           string  `json:"command_sent"`
+		Source                string  `json:"source"`
+		EventTime             string  `json:"event_time"`
+		ExecutionStatus       string  `json:"execution_status"`
+		TriggeredByScheduleID *int64  `json:"triggered_by_schedule_id"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		httputil.WriteError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	evtTime := time.Now().UTC()
+	if body.EventTime != "" {
+		if t, err := time.Parse(time.RFC3339, body.EventTime); err == nil {
+			evtTime = t
+		}
+	}
+
+	src := db.Gr33ncoreActuatorEventSourceEnum(body.Source)
+	if src == "" {
+		src = db.Gr33ncoreActuatorEventSourceEnumManualApiCall
+	}
+	status := db.Gr33ncoreActuatorExecutionStatusEnum(body.ExecutionStatus)
+	if status == "" {
+		status = db.Gr33ncoreActuatorExecutionStatusEnumCommandSentToDevice
+	}
+
+	row, err := h.q.InsertActuatorEvent(r.Context(), db.InsertActuatorEventParams{
+		EventTime:             evtTime,
+		ActuatorID:            actuatorID,
+		CommandSent:           &body.CommandSent,
+		ParametersSent:        []byte(`{}`),
+		TriggeredByUserID:     pgtype.UUID{},
+		TriggeredByScheduleID: body.TriggeredByScheduleID,
+		TriggeredByRuleID:     nil,
+		Source:                src,
+		ExecutionStatus: db.NullGr33ncoreActuatorExecutionStatusEnum{
+			Gr33ncoreActuatorExecutionStatusEnum: status,
+			Valid:                                true,
+		},
+		MetaData: []byte(`{}`),
+	})
+	if err != nil {
+		httputil.WriteError(w, http.StatusInternalServerError, "failed to record actuator event")
+		return
+	}
+	httputil.WriteJSON(w, http.StatusCreated, row)
+}
+
 // GET /actuators/{id}/events?since=RFC3339&limit=N
 func (h *Handler) ListEvents(w http.ResponseWriter, r *http.Request) {
 	actuatorID, err := strconv.ParseInt(r.PathValue("id"), 10, 64)

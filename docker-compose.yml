@@ -1,0 +1,55 @@
+services:
+  db:
+    image: timescale/timescaledb:latest-pg16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: gr33n
+      POSTGRES_PASSWORD: gr33n
+      POSTGRES_DB: gr33n
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/home/postgres/pgdata/data
+      - ./db/schema/gr33n-schema-v2-FINAL.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+      - ./db/seeds/master_seed.sql:/docker-entrypoint-initdb.d/02-seed.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U gr33n"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://gr33n:gr33n@db:5432/gr33n?sslmode=disable
+      PORT: "8080"
+      AUTH_MODE: dev
+      CORS_ORIGIN: http://localhost:5173
+      AUTOMATION_SIMULATION_MODE: "true"
+    ports:
+      - "8080:8080"
+
+  ui:
+    image: node:22-alpine
+    working_dir: /app
+    command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
+    restart: unless-stopped
+    depends_on:
+      - api
+    environment:
+      VITE_API_URL: http://localhost:8080
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./ui:/app
+      - ui_modules:/app/node_modules
+
+volumes:
+  pgdata:
+  ui_modules:

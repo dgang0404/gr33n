@@ -1,17 +1,23 @@
-# Go
+# Go binaries and build artifacts
 api
+gr33n-api
 *.exe
 *.test
 *.out
+/bin/
+/tmp/
 
 # Node / UI
+node_modules/
 ui/node_modules/
 ui/dist/
+dist/
 
 # Environment
 .env
 .env.local
 .env.*.local
+.env.production
 
 # IDE
 .vscode/
@@ -19,6 +25,7 @@ ui/dist/
 *.swp
 *.swo
 *~
+*.code-workspace
 
 # OS
 .DS_Store
@@ -28,6 +35,17 @@ Thumbs.db
 __pycache__/
 *.pyc
 .pytest_cache/
+*.egg-info/
+venv/
+.venv/
+
+# Docker
+docker-compose.override.yml
+
+# Coverage
+coverage/
+*.cover
+*.prof
 
 # gr33n local
 .gr33n/

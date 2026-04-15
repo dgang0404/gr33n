@@ -222,6 +222,36 @@ func (q *Queries) ListDevicesByZone(ctx context.Context, zoneID *int64) ([]Gr33n
 	return items, nil
 }
 
+const setDevicePendingCommand = `-- name: SetDevicePendingCommand :exec
+UPDATE gr33ncore.devices
+SET config = jsonb_set(
+      coalesce(config, '{}'),
+      '{pending_command}', $2::jsonb
+    ), updated_at = NOW()
+WHERE id = $1
+`
+
+type SetDevicePendingCommandParams struct {
+	ID      int64  `db:"id" json:"id"`
+	Column2 []byte `db:"column_2" json:"column_2"`
+}
+
+func (q *Queries) SetDevicePendingCommand(ctx context.Context, arg SetDevicePendingCommandParams) error {
+	_, err := q.db.Exec(ctx, setDevicePendingCommand, arg.ID, arg.Column2)
+	return err
+}
+
+const clearDevicePendingCommand = `-- name: ClearDevicePendingCommand :exec
+UPDATE gr33ncore.devices
+SET config = config - 'pending_command', updated_at = NOW()
+WHERE id = $1
+`
+
+func (q *Queries) ClearDevicePendingCommand(ctx context.Context, id int64) error {
+	_, err := q.db.Exec(ctx, clearDevicePendingCommand, id)
+	return err
+}
+
 const softDeleteDevice = `-- name: SoftDeleteDevice :exec
 UPDATE gr33ncore.devices
 SET deleted_at = NOW(), updated_at = NOW(), updated_by_user_id = $2

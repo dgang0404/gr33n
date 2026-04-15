@@ -102,6 +102,15 @@ export const useFarmStore = defineStore('farm', {
       return Array.isArray(r.data) ? r.data : []
     },
 
+    async loadActuatorEventsBySchedule(scheduleId, { since, limit } = {}) {
+      const params = new URLSearchParams()
+      if (since) params.set('since', since)
+      if (limit) params.set('limit', String(limit))
+      const qs = params.toString()
+      const r = await api.get(`/schedules/${scheduleId}/actuator-events${qs ? '?' + qs : ''}`)
+      return Array.isArray(r.data) ? r.data : []
+    },
+
     async loadFertigationPrograms(farmId = 1) {
       const r = await api.get(`/farms/${farmId}/fertigation/programs`)
       return Array.isArray(r.data) ? r.data : []
@@ -140,6 +149,34 @@ export const useFarmStore = defineStore('farm', {
     async createFertigationEvent(farmId, data) {
       const r = await api.post(`/farms/${farmId}/fertigation/events`, data)
       return r.data
+    },
+
+    async updateReservoir(id, data) {
+      const r = await api.patch(`/fertigation/reservoirs/${id}`, data)
+      return r.data
+    },
+
+    async deleteReservoir(id) {
+      await api.delete(`/fertigation/reservoirs/${id}`)
+    },
+
+    async updateProgram(id, data) {
+      const r = await api.patch(`/fertigation/programs/${id}`, data)
+      return r.data
+    },
+
+    async deleteProgram(id) {
+      await api.delete(`/fertigation/programs/${id}`)
+    },
+
+    async loadNfInputs(farmId = 1) {
+      const r = await api.get(`/farms/${farmId}/naturalfarming/inputs`)
+      return Array.isArray(r.data) ? r.data : []
+    },
+
+    async loadNfBatches(farmId = 1) {
+      const r = await api.get(`/farms/${farmId}/naturalfarming/batches`)
+      return Array.isArray(r.data) ? r.data : []
     },
 
     async toggleDevice(deviceId, currentStatus) {

@@ -384,7 +384,24 @@ func (w *Worker) executeAction(ctx context.Context, schedule db.Gr33ncoreSchedul
 			},
 			MetaData: []byte(`{}`),
 		})
-		return err
+		if err != nil {
+			return err
+		}
+
+		if !w.simulation {
+			actuator, lookupErr := w.q.GetActuatorByID(ctx, *action.TargetActuatorID)
+			if lookupErr == nil && actuator.DeviceID != nil {
+				pendingJSON, _ := json.Marshal(map[string]any{
+					"command":     command,
+					"schedule_id": schedule.ID,
+				})
+				_ = w.q.SetDevicePendingCommand(ctx, db.SetDevicePendingCommandParams{
+					ID:      *actuator.DeviceID,
+					Column2: pendingJSON,
+				})
+			}
+		}
+		return nil
 
 	case "update_record_in_gr33n":
 		if len(action.ActionParameters) == 0 {

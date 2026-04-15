@@ -39,3 +39,10 @@ WHERE actuator_id = $1
   AND event_time >= $2
 ORDER BY event_time DESC
 LIMIT $3;
+
+-- name: ListActuatorEventsBySchedule :many
+SELECT * FROM gr33ncore.actuator_events
+WHERE triggered_by_schedule_id = $1
+  AND event_time >= $2
+ORDER BY event_time DESC
+LIMIT $3;

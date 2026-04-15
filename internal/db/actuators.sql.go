@@ -205,6 +205,54 @@ func (q *Queries) ListActuatorEventsByActuator(ctx context.Context, arg ListActu
 	return items, nil
 }
 
+const listActuatorEventsBySchedule = `-- name: ListActuatorEventsBySchedule :many
+SELECT event_time, actuator_id, command_sent, parameters_sent, triggered_by_user_id, triggered_by_schedule_id, triggered_by_rule_id, source, response_received_from_device, execution_status, resulting_state_numeric_actual, resulting_state_text_actual, meta_data FROM gr33ncore.actuator_events
+WHERE triggered_by_schedule_id = $1
+  AND event_time >= $2
+ORDER BY event_time DESC
+LIMIT $3
+`
+
+type ListActuatorEventsByScheduleParams struct {
+	TriggeredByScheduleID *int64    `db:"triggered_by_schedule_id" json:"triggered_by_schedule_id"`
+	EventTime             time.Time `db:"event_time" json:"event_time"`
+	Limit                 int32     `db:"limit" json:"limit"`
+}
+
+func (q *Queries) ListActuatorEventsBySchedule(ctx context.Context, arg ListActuatorEventsByScheduleParams) ([]Gr33ncoreActuatorEvent, error) {
+	rows, err := q.db.Query(ctx, listActuatorEventsBySchedule, arg.TriggeredByScheduleID, arg.EventTime, arg.Limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Gr33ncoreActuatorEvent{}
+	for rows.Next() {
+		var i Gr33ncoreActuatorEvent
+		if err := rows.Scan(
+			&i.EventTime,
+			&i.ActuatorID,
+			&i.CommandSent,
+			&i.ParametersSent,
+			&i.TriggeredByUserID,
+			&i.TriggeredByScheduleID,
+			&i.TriggeredByRuleID,
+			&i.Source,
+			&i.ResponseReceivedFromDevice,
+			&i.ExecutionStatus,
+			&i.ResultingStateNumericActual,
+			&i.ResultingStateTextActual,
+			&i.MetaData,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listActuatorsByFarm = `-- name: ListActuatorsByFarm :many
 SELECT id, device_id, farm_id, zone_id, name, actuator_type, hardware_identifier, current_state_numeric, current_state_text, last_known_state_time, last_command_sent_time, feedback_sensor_id, config, meta_data, created_at, updated_at, updated_by_user_id, deleted_at FROM gr33ncore.actuators
 WHERE farm_id = $1 AND deleted_at IS NULL

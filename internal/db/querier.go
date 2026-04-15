@@ -17,6 +17,7 @@ type Querier interface {
 	// ============================================================
 	CreateActuator(ctx context.Context, arg CreateActuatorParams) (Gr33ncoreActuator, error)
 	CreateAutomationRun(ctx context.Context, arg CreateAutomationRunParams) (Gr33ncoreAutomationRun, error)
+	ClearDevicePendingCommand(ctx context.Context, id int64) error
 	// ============================================================
 	// Queries: gr33ncore.devices
 	// ============================================================
@@ -42,6 +43,8 @@ type Querier interface {
 	// Queries: gr33ncore.zones
 	// ============================================================
 	CreateZone(ctx context.Context, arg CreateZoneParams) (Gr33ncoreZone, error)
+	DeleteProgram(ctx context.Context, id int64) error
+	DeleteReservoir(ctx context.Context, id int64) error
 	GetActuatorByID(ctx context.Context, id int64) (Gr33ncoreActuator, error)
 	GetAutomationRunByDetails(ctx context.Context, arg GetAutomationRunByDetailsParams) (Gr33ncoreAutomationRun, error)
 	GetBaseUnitForType(ctx context.Context, unitType string) (Gr33ncoreUnit, error)
@@ -73,6 +76,7 @@ type Querier interface {
 	InsertSensorReading(ctx context.Context, arg InsertSensorReadingParams) (Gr33ncoreSensorReading, error)
 	ListActiveSchedules(ctx context.Context) ([]Gr33ncoreSchedule, error)
 	ListActuatorEventsByActuator(ctx context.Context, arg ListActuatorEventsByActuatorParams) ([]Gr33ncoreActuatorEvent, error)
+	ListActuatorEventsBySchedule(ctx context.Context, arg ListActuatorEventsByScheduleParams) ([]Gr33ncoreActuatorEvent, error)
 	ListActuatorsByFarm(ctx context.Context, farmID int64) ([]Gr33ncoreActuator, error)
 	ListAllUnits(ctx context.Context) ([]Gr33ncoreUnit, error)
 	ListAutomationRunsByFarm(ctx context.Context, arg ListAutomationRunsByFarmParams) ([]Gr33ncoreAutomationRun, error)
@@ -83,6 +87,8 @@ type Querier interface {
 	ListFarmsByOwner(ctx context.Context, ownerUserID uuid.UUID) ([]Gr33ncoreFarm, error)
 	ListFarmsForUser(ctx context.Context, userID uuid.UUID) ([]Gr33ncoreFarm, error)
 	ListFertigationEventsByFarm(ctx context.Context, farmID int64) ([]Gr33nfertigationFertigationEvent, error)
+	ListInputBatchesByFarm(ctx context.Context, farmID int64) ([]Gr33nnaturalfarmingInputBatch, error)
+	ListInputDefinitionsByFarm(ctx context.Context, farmID int64) ([]Gr33nnaturalfarmingInputDefinition, error)
 	ListLatestReadingsByFarm(ctx context.Context, farmID int64) ([]ListLatestReadingsByFarmRow, error)
 	ListProgramsByFarm(ctx context.Context, farmID int64) ([]Gr33nfertigationProgram, error)
 	ListReadingsBySensorAndTimeRange(ctx context.Context, arg ListReadingsBySensorAndTimeRangeParams) ([]Gr33ncoreSensorReading, error)
@@ -104,6 +110,7 @@ type Querier interface {
 	ListZonesByParent(ctx context.Context, parentZoneID *int64) ([]Gr33ncoreZone, error)
 	MarkScheduleTriggered(ctx context.Context, arg MarkScheduleTriggeredParams) (Gr33ncoreSchedule, error)
 	RemoveFarmMember(ctx context.Context, arg RemoveFarmMemberParams) error
+	SetDevicePendingCommand(ctx context.Context, arg SetDevicePendingCommandParams) error
 	SoftDeleteDevice(ctx context.Context, arg SoftDeleteDeviceParams) error
 	SoftDeleteFarm(ctx context.Context, arg SoftDeleteFarmParams) error
 	SoftDeleteSensor(ctx context.Context, arg SoftDeleteSensorParams) error
@@ -114,6 +121,8 @@ type Querier interface {
 	UpdateFarm(ctx context.Context, arg UpdateFarmParams) (Gr33ncoreFarm, error)
 	UpdateFarmMemberRole(ctx context.Context, arg UpdateFarmMemberRoleParams) (Gr33ncoreFarmMembership, error)
 	UpdateProfile(ctx context.Context, arg UpdateProfileParams) (Gr33ncoreProfile, error)
+	UpdateProgram(ctx context.Context, arg UpdateProgramParams) (Gr33nfertigationProgram, error)
+	UpdateReservoir(ctx context.Context, arg UpdateReservoirParams) (Gr33nfertigationReservoir, error)
 	UpdateScheduleActive(ctx context.Context, arg UpdateScheduleActiveParams) (Gr33ncoreSchedule, error)
 	UpdateTaskStatus(ctx context.Context, arg UpdateTaskStatusParams) (Gr33ncoreTask, error)
 	UpdateZone(ctx context.Context, arg UpdateZoneParams) (Gr33ncoreZone, error)

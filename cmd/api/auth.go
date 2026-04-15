@@ -56,12 +56,16 @@ func requireJWT(next http.Handler) http.Handler {
 			return
 		}
 
+		var tokenStr string
 		header := r.Header.Get("Authorization")
-		if !strings.HasPrefix(header, "Bearer ") {
+		if strings.HasPrefix(header, "Bearer ") {
+			tokenStr = strings.TrimPrefix(header, "Bearer ")
+		} else if q := r.URL.Query().Get("token"); q != "" {
+			tokenStr = q
+		} else {
 			httputil.WriteError(w, http.StatusUnauthorized, "Authorization: Bearer <token> required")
 			return
 		}
-		tokenStr := strings.TrimPrefix(header, "Bearer ")
 
 		token, err := jwt.Parse(tokenStr, func(t *jwt.Token) (any, error) {
 			if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {

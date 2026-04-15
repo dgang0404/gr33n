@@ -17,12 +17,33 @@ import { useFarmStore } from './stores/farm'
 import { onMounted, onUnmounted } from 'vue'
 
 const store = useFarmStore()
-let interval
+let evtSource = null
+
+function connectSSE() {
+  const base = import.meta.env.VITE_API_URL ?? 'http://localhost:8080'
+  const token = localStorage.getItem('gr33n_token')
+  const url = `${base}/farms/1/sensors/stream${token ? '?token=' + token : ''}`
+  evtSource = new EventSource(url)
+  evtSource.addEventListener('readings', (e) => {
+    try {
+      const data = JSON.parse(e.data)
+      for (const [id, reading] of Object.entries(data)) {
+        store.readings[Number(id)] = reading
+      }
+    } catch { /* ignore parse errors */ }
+  })
+  evtSource.onerror = () => {
+    evtSource.close()
+    setTimeout(connectSSE, 5000)
+  }
+}
 
 onMounted(async () => {
   await store.loadAll(1)
   await store.refreshReadings()
-  interval = setInterval(() => store.refreshReadings(), 30_000)
+  connectSSE()
 })
-onUnmounted(() => clearInterval(interval))
+onUnmounted(() => {
+  if (evtSource) evtSource.close()
+})
 </script>

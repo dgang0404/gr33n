@@ -73,9 +73,9 @@ DEFAULT_CONFIG = {
         {'sensor_id': 7, 'sensor_type': 'par',           'source': 'bh1750',  'interval_seconds': 60},
     ],
     'actuators': [
-        {'actuator_id': 1, 'device_type': 'light',      'gpio_pin': 17},
-        {'actuator_id': 2, 'device_type': 'irrigation', 'gpio_pin': 27},
-        {'actuator_id': 3, 'device_type': 'fan',        'gpio_pin': 22},
+        {'actuator_id': 1, 'device_id': 1, 'device_type': 'light',      'gpio_pin': 17},
+        {'actuator_id': 2, 'device_id': 2, 'device_type': 'irrigation', 'gpio_pin': 27},
+        {'actuator_id': 3, 'device_id': 3, 'device_type': 'fan',        'gpio_pin': 22},
     ],
     'schedule_poll_interval_seconds': 30,
     'offline_queue_path': '/var/lib/gr33n/queue.db',
@@ -205,10 +205,6 @@ class Gr33nApiClient:
     def post_actuator_event(self, actuator_id: int, command: str,
                              source: str = 'schedule_trigger',
                              schedule_id: Optional[int] = None) -> bool:
-        # Body mirrors gr33ncore.actuator_events columns
-        # source enum: manual_api_call | schedule_trigger | automation_rule_trigger |
-        #   device_internal_feedback_loop | system_initialization_routine | emergency_stop_signal
-        # execution_status: command_sent_to_device (initial state)
         payload = {
             'actuator_id':              actuator_id,
             'command_sent':             command,
@@ -221,6 +217,14 @@ class Gr33nApiClient:
             r = self._s.post(f'{self.base_url}/actuators/{actuator_id}/events',
                              json=payload, timeout=self.timeout)
             return r.status_code in (200, 201)
+        except requests.RequestException:
+            return False
+
+    def clear_pending_command(self, device_id: int) -> bool:
+        try:
+            r = self._s.delete(f'{self.base_url}/devices/{device_id}/pending-command',
+                               timeout=self.timeout)
+            return r.status_code in (200, 204)
         except requests.RequestException:
             return False
 
@@ -303,6 +307,7 @@ class SensorReader:
 class ActuatorController:
     def __init__(self, cfg: dict):
         self.actuator_id = cfg['actuator_id']
+        self.device_id   = cfg.get('device_id', cfg['actuator_id'])
         self.device_type = cfg['device_type']
         self.gpio_pin    = cfg['gpio_pin']
         # active_high=False for common optocoupler relay boards (LOW = ON)
@@ -389,41 +394,58 @@ class Gr33nPiClient:
             if acked:
                 log.info('Flushed %d queued readings to API', len(acked))
 
+    def _heartbeat_loop(self):
+        device_ids = {a.device_id for a in self._actuators.values()}
+        while not self._stop.is_set():
+            time.sleep(30)
+            if not self.api.is_reachable():
+                continue
+            for did in device_ids:
+                self.api.patch_device_status(did, 'online')
+            log.debug('Heartbeat sent for %d device(s)', len(device_ids))
+
     def _schedule_loop(self):
-        # Poll GET /farms/{id}/devices. The API embeds pending_command in each
-        # device's config JSONB when an automation_rule or schedule fires.
-        # Expected config keys: pending_command (str), pending_schedule_id (int|null)
         poll_interval = self.cfg.get('schedule_poll_interval_seconds', 30)
+        actuator_by_device = {a.device_id: a for a in self._actuators.values()}
         while not self._stop.is_set():
             time.sleep(poll_interval)
             if not self.api.is_reachable():
                 continue
             for device in self.api.get_devices():
-                did      = device.get('id')
-                config   = device.get('config') or {}
-                cmd      = config.get('pending_command')
-                sched_id = config.get('pending_schedule_id')
+                did    = device.get('id')
+                config = device.get('config') or {}
+                pending = config.get('pending_command')
+                if not pending:
+                    continue
+                if isinstance(pending, dict):
+                    cmd      = pending.get('command', '')
+                    sched_id = pending.get('schedule_id')
+                else:
+                    cmd      = str(pending)
+                    sched_id = config.get('pending_schedule_id')
                 if not cmd:
                     continue
-                actuator = self._actuators.get(did)
+                actuator = actuator_by_device.get(did)
                 if not actuator:
                     log.debug('No local actuator for device_id=%s', did)
                     continue
                 log.info('Executing scheduled command %r for device_id=%s', cmd, did)
                 actuator.execute(cmd)
                 self.api.post_actuator_event(
-                    actuator_id=did, command=cmd,
+                    actuator_id=actuator.actuator_id, command=cmd,
                     source='schedule_trigger', schedule_id=sched_id,
                 )
+                self.api.clear_pending_command(did)
                 self.api.patch_device_status(did, 'online')
 
     def run(self):
         log.info('gr33n Pi Client starting - farm_id=%s  api=%s',
                  self.cfg['farm']['farm_id'], self.cfg['api']['base_url'])
         threads = [
-            threading.Thread(target=self._sensor_loop,   name='sensor-loop',   daemon=True),
-            threading.Thread(target=self._flush_loop,    name='flush-loop',    daemon=True),
-            threading.Thread(target=self._schedule_loop, name='schedule-loop', daemon=True),
+            threading.Thread(target=self._sensor_loop,    name='sensor-loop',    daemon=True),
+            threading.Thread(target=self._flush_loop,     name='flush-loop',     daemon=True),
+            threading.Thread(target=self._schedule_loop,  name='schedule-loop',  daemon=True),
+            threading.Thread(target=self._heartbeat_loop, name='heartbeat-loop', daemon=True),
         ]
         for t in threads:
             t.start()

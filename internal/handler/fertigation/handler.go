@@ -31,6 +31,123 @@ func farmIDFromPath(r *http.Request) (int64, error) {
 	return strconv.ParseInt(r.PathValue("id"), 10, 64)
 }
 
+func resourceIDFromPath(r *http.Request) (int64, error) {
+	return strconv.ParseInt(r.PathValue("rid"), 10, 64)
+}
+
+// PATCH /fertigation/reservoirs/{rid}
+func (h *Handler) UpdateReservoir(w http.ResponseWriter, r *http.Request) {
+	id, err := resourceIDFromPath(r)
+	if err != nil {
+		httputil.WriteError(w, http.StatusBadRequest, "invalid reservoir id")
+		return
+	}
+	var req struct {
+		Name                string  `json:"name"`
+		Description         *string `json:"description"`
+		CapacityLiters      float64 `json:"capacity_liters"`
+		CurrentVolumeLiters float64 `json:"current_volume_liters"`
+		Status              string  `json:"status"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		httputil.WriteError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+	capacity, err := numericFromFloat64(req.CapacityLiters)
+	if err != nil {
+		httputil.WriteError(w, http.StatusBadRequest, "invalid capacity_liters")
+		return
+	}
+	current, err := numericFromFloat64(req.CurrentVolumeLiters)
+	if err != nil {
+		httputil.WriteError(w, http.StatusBadRequest, "invalid current_volume_liters")
+		return
+	}
+	row, err := h.q.UpdateReservoir(r.Context(), db.UpdateReservoirParams{
+		ID:                  id,
+		Name:                req.Name,
+		Description:         req.Description,
+		CapacityLiters:      capacity,
+		CurrentVolumeLiters: current,
+		Status:              db.Gr33nfertigationReservoirStatusEnum(req.Status),
+	})
+	if err != nil {
+		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	httputil.WriteJSON(w, http.StatusOK, row)
+}
+
+// DELETE /fertigation/reservoirs/{rid}
+func (h *Handler) DeleteReservoir(w http.ResponseWriter, r *http.Request) {
+	id, err := resourceIDFromPath(r)
+	if err != nil {
+		httputil.WriteError(w, http.StatusBadRequest, "invalid reservoir id")
+		return
+	}
+	if err := h.q.DeleteReservoir(r.Context(), id); err != nil {
+		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
+// PATCH /fertigation/programs/{rid}
+func (h *Handler) UpdateProgram(w http.ResponseWriter, r *http.Request) {
+	id, err := resourceIDFromPath(r)
+	if err != nil {
+		httputil.WriteError(w, http.StatusBadRequest, "invalid program id")
+		return
+	}
+	var req struct {
+		Name              string  `json:"name"`
+		Description       *string `json:"description"`
+		ReservoirID       *int64  `json:"reservoir_id"`
+		TargetZoneID      *int64  `json:"target_zone_id"`
+		EcTargetID        *int64  `json:"ec_target_id"`
+		TotalVolumeLiters float64 `json:"total_volume_liters"`
+		IsActive          bool    `json:"is_active"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		httputil.WriteError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+	totalVol, err := numericFromFloat64(req.TotalVolumeLiters)
+	if err != nil {
+		httputil.WriteError(w, http.StatusBadRequest, "invalid total_volume_liters")
+		return
+	}
+	row, err := h.q.UpdateProgram(r.Context(), db.UpdateProgramParams{
+		ID:                id,
+		Name:              req.Name,
+		Description:       req.Description,
+		ReservoirID:       req.ReservoirID,
+		TargetZoneID:      req.TargetZoneID,
+		EcTargetID:        req.EcTargetID,
+		TotalVolumeLiters: totalVol,
+		IsActive:          req.IsActive,
+	})
+	if err != nil {
+		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	httputil.WriteJSON(w, http.StatusOK, row)
+}
+
+// DELETE /fertigation/programs/{rid}
+func (h *Handler) DeleteProgram(w http.ResponseWriter, r *http.Request) {
+	id, err := resourceIDFromPath(r)
+	if err != nil {
+		httputil.WriteError(w, http.StatusBadRequest, "invalid program id")
+		return
+	}
+	if err := h.q.DeleteProgram(r.Context(), id); err != nil {
+		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
 // GET /farms/{id}/fertigation/reservoirs
 func (h *Handler) ListReservoirsByFarm(w http.ResponseWriter, r *http.Request) {
 	farmID, err := farmIDFromPath(r)

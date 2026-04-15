@@ -33,6 +33,19 @@ SET status = $2, last_heartbeat = NOW(), updated_at = NOW()
 WHERE id = $1
 RETURNING *;
 
+-- name: SetDevicePendingCommand :exec
+UPDATE gr33ncore.devices
+SET config = jsonb_set(
+      coalesce(config, '{}'),
+      '{pending_command}', $2::jsonb
+    ), updated_at = NOW()
+WHERE id = $1;
+
+-- name: ClearDevicePendingCommand :exec
+UPDATE gr33ncore.devices
+SET config = config - 'pending_command', updated_at = NOW()
+WHERE id = $1;
+
 -- name: SoftDeleteDevice :exec
 UPDATE gr33ncore.devices
 SET deleted_at = NOW(), updated_at = NOW(), updated_by_user_id = $2

@@ -63,3 +63,28 @@ INSERT INTO gr33nfertigation.fertigation_events (
     $13, $14, $15
 )
 RETURNING *;
+
+-- name: UpdateReservoir :one
+UPDATE gr33nfertigation.reservoirs
+SET name = $2, description = $3, capacity_liters = $4,
+    current_volume_liters = $5, status = $6, updated_at = NOW()
+WHERE id = $1 AND deleted_at IS NULL
+RETURNING *;
+
+-- name: DeleteReservoir :exec
+UPDATE gr33nfertigation.reservoirs
+SET deleted_at = NOW()
+WHERE id = $1 AND deleted_at IS NULL;
+
+-- name: UpdateProgram :one
+UPDATE gr33nfertigation.programs
+SET name = $2, description = $3, reservoir_id = $4,
+    target_zone_id = $5, ec_target_id = $6,
+    total_volume_liters = $7, is_active = $8, updated_at = NOW()
+WHERE id = $1 AND deleted_at IS NULL
+RETURNING *;
+
+-- name: DeleteProgram :exec
+UPDATE gr33nfertigation.programs
+SET deleted_at = NOW()
+WHERE id = $1 AND deleted_at IS NULL;

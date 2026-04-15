@@ -15,9 +15,18 @@ import (
 	"gr33n-api/internal/httputil"
 )
 
-type Handler struct{ pool *pgxpool.Pool }
+type SSENotifier interface {
+	Notify()
+}
 
-func NewHandler(pool *pgxpool.Pool) *Handler { return &Handler{pool: pool} }
+type Handler struct {
+	pool *pgxpool.Pool
+	sse  SSENotifier
+}
+
+func NewHandler(pool *pgxpool.Pool, sse SSENotifier) *Handler {
+	return &Handler{pool: pool, sse: sse}
+}
 
 func (h *Handler) ListByFarm(w http.ResponseWriter, r *http.Request) {
 	farmID, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
@@ -204,6 +213,9 @@ func (h *Handler) PostReading(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
 		return
+	}
+	if h.sse != nil {
+		h.sse.Notify()
 	}
 	httputil.WriteJSON(w, http.StatusCreated, reading)
 }

@@ -141,18 +141,68 @@ UI  → `http://localhost:5173`
 
 Base URL: `http://localhost:8080` — full spec in [openapi.yaml](openapi.yaml).
 
+### Public
+
 | Method | Path | Description |
 |--------|------|-------------|
 | GET | `/health` | API + DB health check |
+| POST | `/auth/login` | Authenticate & receive JWT |
+| GET | `/auth/mode` | Current auth mode (dev/production) |
+
+### Pi Routes (API key)
+
+| Method | Path | Description |
+|--------|------|-------------|
+| POST | `/sensors/:id/readings` | Pi posts a sensor reading |
+| PATCH | `/devices/:id/status` | Pi heartbeat / status update |
+| POST | `/actuators/:id/events` | Pi reports executed command |
+| DELETE | `/devices/:id/pending-command` | Pi clears pending command after execution |
+
+### Dashboard Routes (JWT)
+
+| Method | Path | Description |
+|--------|------|-------------|
+| PATCH | `/auth/password` | Change password |
+| GET | `/units` | List all measurement units |
 | GET | `/farms/:id` | Farm detail |
 | GET | `/farms/:id/zones` | List zones |
-| GET | `/farms/:id/sensors` | List sensors |
 | GET | `/farms/:id/devices` | List devices |
+| GET | `/farms/:id/sensors` | List sensors |
+| GET | `/farms/:id/actuators` | List actuators |
+| GET | `/farms/:id/schedules` | List schedules |
 | GET | `/farms/:id/tasks` | List tasks |
-| GET | `/sensors/:id/readings/latest` | Latest reading for a sensor |
-| POST | `/sensors/:id/readings` | Pi client posts a reading |
-| PATCH | `/devices/:id/status` | Toggle actuator ON/OFF |
-| PATCH | `/tasks/:id/status` | Advance task on Kanban board |
+| GET | `/farms/:id/automation/runs` | List automation runs |
+| GET | `/farms/:id/sensors/stream` | SSE live sensor readings |
+| GET | `/sensors/:id` | Sensor detail |
+| POST | `/farms/:id/sensors` | Create sensor |
+| DELETE | `/sensors/:id` | Delete sensor |
+| GET | `/sensors/:id/readings/latest` | Latest reading |
+| GET | `/devices/:id` | Device detail |
+| POST | `/farms/:id/devices` | Create device |
+| DELETE | `/devices/:id` | Delete device |
+| PATCH | `/actuators/:id/state` | Update actuator state |
+| GET | `/actuators/:id/events` | Actuator event history |
+| PATCH | `/schedules/:id/active` | Toggle schedule active |
+| GET | `/automation/worker/health` | Automation worker status |
+| GET | `/zones/:id` | Zone detail |
+| POST | `/farms/:id/zones` | Create zone |
+| DELETE | `/zones/:id` | Delete zone |
+| PATCH | `/tasks/:id/status` | Update task status |
+| GET | `/schedules/:id/actuator-events` | Events by schedule |
+| GET | `/farms/:id/fertigation/reservoirs` | List reservoirs |
+| POST | `/farms/:id/fertigation/reservoirs` | Create reservoir |
+| PATCH | `/fertigation/reservoirs/:rid` | Update reservoir |
+| DELETE | `/fertigation/reservoirs/:rid` | Delete reservoir |
+| GET | `/farms/:id/fertigation/ec-targets` | List EC targets |
+| POST | `/farms/:id/fertigation/ec-targets` | Create EC target |
+| GET | `/farms/:id/fertigation/programs` | List programs |
+| POST | `/farms/:id/fertigation/programs` | Create program |
+| PATCH | `/fertigation/programs/:rid` | Update program |
+| DELETE | `/fertigation/programs/:rid` | Delete program |
+| GET | `/farms/:id/fertigation/events` | List fertigation events |
+| POST | `/farms/:id/fertigation/events` | Create fertigation event |
+| GET | `/farms/:id/naturalfarming/inputs` | List NF input definitions |
+| GET | `/farms/:id/naturalfarming/batches` | List NF input batches |
 
 ---
 
@@ -173,15 +223,38 @@ The master seed loads a complete JADAM natural farming demo dataset — verified
 
 ---
 
+## Make Commands
+
+```bash
+make help       # Show all targets
+make run        # Run the API server
+make dev        # Run API + UI dev server in parallel
+make ui         # Run the Vue dev server
+make build      # Build the Go binary
+make build-ui   # Build the Vue frontend for production
+make test       # Run Go tests
+make lint       # Run go vet
+make sqlc       # Regenerate sqlc Go code from SQL queries
+make seed       # Apply seed data to the database
+make schema     # Apply the schema to the database
+make up         # Start Docker Compose services
+make down       # Stop Docker Compose services
+make logs       # Tail Docker Compose logs
+make clean      # Remove build artifacts
+```
+
+---
+
 ## Raspberry Pi Client
 
-The Pi daemon runs three threads concurrently:
+The Pi daemon runs four threads concurrently:
 
 - **sensor-loop** — reads each GPIO/I2C sensor at its configured interval, POSTs to `POST /sensors/:id/readings`
 - **heartbeat-loop** — PATCHes device status every 30s so the dashboard shows "online"
-- **command-poll** — polls for pending actuator commands and triggers GPIO output
+- **schedule-loop** — polls `GET /farms/:id/devices` for `pending_command` in device config JSONB, executes via GPIO, reports via `POST /actuators/:id/events`, then clears via `DELETE /devices/:id/pending-command`
+- **flush-loop** — drains the offline SQLite queue when API becomes reachable
 
-Configure sensors and GPIO pins in `pi_client/config.yaml`. Install as a systemd service with `pi_client/setup.sh` so it starts automatically on boot.
+Configure sensors, actuators (with `device_id`), and GPIO pins in `pi_client/config.yaml`. Install as a systemd service with `pi_client/setup.sh` so it starts automatically on boot.
 
 ---
 
@@ -210,10 +283,15 @@ For users who choose to integrate local AI, gr33n offers schema-guided intellige
 - [x] Go REST API — farms, zones, devices, sensors, tasks, readings
 - [x] JADAM natural farming seed data — 15 inputs, 14 recipes, full automation
 - [x] sqlc query layer + enum types
-- [x] Vue 3 frontend — Dashboard, Zones, Sensors, Actuators, Schedules
+- [x] Vue 3 frontend — Dashboard, Zones, Sensors, Actuators, Schedules, Settings, Inventory
 - [x] Raspberry Pi sensor client with systemd daemon
 - [x] OpenAPI spec (openapi.yaml)
-- [ ] Sensor readings live on dashboard (Pi connection)
+- [x] Sensor readings live on dashboard (SSE stream with JWT query param auth)
+- [x] Actuator control pipeline (automation worker → pending_command → Pi poll → execute → report)
+- [x] Fertigation module — reservoirs, EC targets, programs, events
+- [x] Natural farming inventory UI — input definitions & batch tracking
+- [x] Pi heartbeat loop — devices show online/offline in real time
+- [x] Docker Compose + Dockerfile for containerized deployment
 - [ ] Microcontroller integrations (MQTT + field tasking)
 - [ ] Data insert pipeline (scrubbing, approval, federation-ready)
 - [ ] LM Studio integration and AI scaffolds for insert-sharing
