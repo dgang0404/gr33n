@@ -35,6 +35,9 @@ func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid farm id")
 		return
 	}
+	if !farmauthz.RequireFarmMember(w, r, h.q, farmID) {
+		return
+	}
 	rows, err := h.q.ListRecipesByFarm(r.Context(), farmID)
 	if err != nil {
 		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
@@ -62,6 +65,9 @@ func (h *Handler) Get(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
+	if !farmauthz.RequireFarmMember(w, r, h.q, row.FarmID) {
+		return
+	}
 	httputil.WriteJSON(w, http.StatusOK, row)
 }
 
@@ -72,7 +78,7 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid farm id")
 		return
 	}
-	if !farmauthz.RequireFarmMember(w, r, h.q, farmID) {
+	if !farmauthz.RequireFarmOperate(w, r, h.q, farmID) {
 		return
 	}
 	var body struct {
@@ -147,7 +153,7 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-	if !farmauthz.RequireFarmMember(w, r, h.q, rec.FarmID) {
+	if !farmauthz.RequireFarmOperate(w, r, h.q, rec.FarmID) {
 		return
 	}
 	row, err := h.q.UpdateRecipe(r.Context(), db.UpdateRecipeParams{
@@ -188,7 +194,7 @@ func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-	if !farmauthz.RequireFarmMember(w, r, h.q, rec.FarmID) {
+	if !farmauthz.RequireFarmOperate(w, r, h.q, rec.FarmID) {
 		return
 	}
 	if err := h.q.SoftDeleteRecipe(r.Context(), id); err != nil {
@@ -205,12 +211,16 @@ func (h *Handler) ListComponents(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid recipe id")
 		return
 	}
-	if _, err := h.q.GetRecipeByID(r.Context(), id); err != nil {
+	rec, err := h.q.GetRecipeByID(r.Context(), id)
+	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			httputil.WriteError(w, http.StatusNotFound, "recipe not found")
 			return
 		}
 		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	if !farmauthz.RequireFarmMember(w, r, h.q, rec.FarmID) {
 		return
 	}
 	rows, err := h.q.ListRecipeComponents(r.Context(), id)
@@ -254,7 +264,7 @@ func (h *Handler) AddComponent(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-	if !farmauthz.RequireFarmMember(w, r, h.q, rec.FarmID) {
+	if !farmauthz.RequireFarmOperate(w, r, h.q, rec.FarmID) {
 		return
 	}
 	pv, err := numericFromFloat64(body.PartValue)
@@ -296,7 +306,7 @@ func (h *Handler) RemoveComponent(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-	if !farmauthz.RequireFarmMember(w, r, h.q, rec.FarmID) {
+	if !farmauthz.RequireFarmOperate(w, r, h.q, rec.FarmID) {
 		return
 	}
 	if err := h.q.RemoveRecipeComponent(r.Context(), db.RemoveRecipeComponentParams{

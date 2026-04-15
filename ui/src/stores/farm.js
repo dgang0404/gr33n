@@ -335,6 +335,31 @@ export const useFarmStore = defineStore('farm', {
       await api.delete(`/costs/${id}`)
     },
 
+    async uploadCostReceipt(farmId, file, costTransactionId) {
+      const fd = new FormData()
+      fd.append('file', file)
+      if (costTransactionId != null) {
+        fd.append('cost_transaction_id', String(costTransactionId))
+      }
+      const r = await api.post(`/farms/${farmId}/cost-receipts`, fd)
+      return r.data
+    },
+
+    async setInsertCommonsOptIn(farmId, insertCommonsOptIn) {
+      const r = await api.patch(`/farms/${farmId}/insert-commons/opt-in`, {
+        insert_commons_opt_in: insertCommonsOptIn,
+      })
+      if (this.farm && this.farm.id === farmId) {
+        this.farm = r.data
+      }
+      return r.data
+    },
+
+    async insertCommonsSync(farmId) {
+      const r = await api.post(`/farms/${farmId}/insert-commons/sync`, {})
+      return r.data
+    },
+
     // Alerts
     async loadAlerts(farmId, { limit = 50, offset = 0 } = {}) {
       const r = await api.get(`/farms/${farmId}/alerts?limit=${limit}&offset=${offset}`)

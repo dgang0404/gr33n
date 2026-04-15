@@ -5,8 +5,8 @@
 -- name: CreateCostTransaction :one
 INSERT INTO gr33ncore.cost_transactions (
     farm_id, transaction_date, category, subcategory, amount, currency,
-    description, is_income, created_by_user_id
-) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+    description, is_income, created_by_user_id, receipt_file_id
+) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
 RETURNING *;
 
 -- name: ListCostTransactionsByFarm :many
@@ -42,6 +42,7 @@ UPDATE gr33ncore.cost_transactions SET
     currency = $6,
     description = $7,
     is_income = $8,
+    receipt_file_id = $9,
     updated_at = NOW()
 WHERE id = $1
 RETURNING *;

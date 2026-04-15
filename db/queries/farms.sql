@@ -55,3 +55,15 @@ SELECT (
 UPDATE gr33ncore.farms
 SET deleted_at = NOW(), updated_at = NOW(), updated_by_user_id = $2
 WHERE id = $1;
+
+-- name: SetFarmInsertCommonsOptIn :one
+UPDATE gr33ncore.farms
+SET insert_commons_opt_in = $2, updated_at = NOW()
+WHERE id = $1 AND deleted_at IS NULL
+RETURNING *;
+
+-- name: TouchFarmInsertCommonsSync :one
+UPDATE gr33ncore.farms
+SET insert_commons_last_sync_at = NOW(), updated_at = NOW()
+WHERE id = $1 AND deleted_at IS NULL AND insert_commons_opt_in = TRUE
+RETURNING *;

@@ -43,6 +43,10 @@ type Querier interface {
 	// ============================================================
 	CreateFarm(ctx context.Context, arg CreateFarmParams) (Gr33ncoreFarm, error)
 	CreateFertigationEvent(ctx context.Context, arg CreateFertigationEventParams) (Gr33nfertigationFertigationEvent, error)
+	// ============================================================
+	// Queries: gr33ncore.file_attachments
+	// ============================================================
+	CreateFileAttachment(ctx context.Context, arg CreateFileAttachmentParams) (Gr33ncoreFileAttachment, error)
 	CreateInputBatch(ctx context.Context, arg CreateInputBatchParams) (Gr33nnaturalfarmingInputBatch, error)
 	CreateInputDefinition(ctx context.Context, arg CreateInputDefinitionParams) (Gr33nnaturalfarmingInputDefinition, error)
 	CreateProfile(ctx context.Context, arg CreateProfileParams) (Gr33ncoreProfile, error)
@@ -85,6 +89,7 @@ type Querier interface {
 	GetFarmMembership(ctx context.Context, arg GetFarmMembershipParams) (Gr33ncoreFarmMembership, error)
 	GetFertigationProgramByID(ctx context.Context, id int64) (Gr33nfertigationProgram, error)
 	GetFertigationReservoirByID(ctx context.Context, id int64) (Gr33nfertigationReservoir, error)
+	GetFileAttachmentByID(ctx context.Context, id int64) (Gr33ncoreFileAttachment, error)
 	GetInputBatchByID(ctx context.Context, id int64) (Gr33nnaturalfarmingInputBatch, error)
 	// ============================================================
 	// Queries: gr33nnaturalfarming
@@ -163,6 +168,7 @@ type Querier interface {
 	RemoveFarmMember(ctx context.Context, arg RemoveFarmMemberParams) error
 	RemoveRecipeComponent(ctx context.Context, arg RemoveRecipeComponentParams) error
 	SetDevicePendingCommand(ctx context.Context, arg SetDevicePendingCommandParams) error
+	SetFarmInsertCommonsOptIn(ctx context.Context, arg SetFarmInsertCommonsOptInParams) (Gr33ncoreFarm, error)
 	SoftDeleteCropCycle(ctx context.Context, id int64) error
 	SoftDeleteDevice(ctx context.Context, arg SoftDeleteDeviceParams) error
 	SoftDeleteFarm(ctx context.Context, arg SoftDeleteFarmParams) error
@@ -172,6 +178,7 @@ type Querier interface {
 	SoftDeleteSensor(ctx context.Context, arg SoftDeleteSensorParams) error
 	SoftDeleteTask(ctx context.Context, arg SoftDeleteTaskParams) error
 	SoftDeleteZone(ctx context.Context, arg SoftDeleteZoneParams) error
+	TouchFarmInsertCommonsSync(ctx context.Context, id int64) (Gr33ncoreFarm, error)
 	UpdateActuatorState(ctx context.Context, arg UpdateActuatorStateParams) (Gr33ncoreActuator, error)
 	UpdateAuthUserPasswordHash(ctx context.Context, arg UpdateAuthUserPasswordHashParams) error
 	UpdateCostTransaction(ctx context.Context, arg UpdateCostTransactionParams) (Gr33ncoreCostTransaction, error)

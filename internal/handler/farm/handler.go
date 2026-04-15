@@ -3,10 +3,12 @@ package farm
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 
@@ -59,6 +61,9 @@ func (h *Handler) Get(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid farm id")
 		return
 	}
+	if !farmauthz.RequireFarmMember(w, r, h.q, id) {
+		return
+	}
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()
 
@@ -101,7 +106,7 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	params.ID = id
-	if !farmauthz.RequireFarmMember(w, r, h.q, id) {
+	if !farmauthz.RequireFarmAdmin(w, r, h.q, id) {
 		return
 	}
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
@@ -126,7 +131,7 @@ func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
 		UpdatedByUserID uuid.UUID `json:"updated_by_user_id"`
 	}
 	json.NewDecoder(r.Body).Decode(&body)
-	if !farmauthz.RequireFarmMember(w, r, h.q, id) {
+	if !farmauthz.RequireFarmAdmin(w, r, h.q, id) {
 		return
 	}
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
@@ -141,4 +146,81 @@ func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
+}
+
+// SetInsertCommonsOptIn — PATCH /farms/{id}/insert-commons/opt-in
+func (h *Handler) SetInsertCommonsOptIn(w http.ResponseWriter, r *http.Request) {
+	id, err := httputil.PathID(r.URL.Path, 2)
+	if err != nil {
+		httputil.WriteError(w, http.StatusBadRequest, "invalid farm id")
+		return
+	}
+	if !farmauthz.RequireFarmAdmin(w, r, h.q, id) {
+		return
+	}
+	var body struct {
+		InsertCommonsOptIn bool `json:"insert_commons_opt_in"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		httputil.WriteError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+	defer cancel()
+	row, err := h.q.SetFarmInsertCommonsOptIn(ctx, db.SetFarmInsertCommonsOptInParams{
+		ID:                 id,
+		InsertCommonsOptIn: body.InsertCommonsOptIn,
+	})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			httputil.WriteError(w, http.StatusNotFound, "farm not found")
+			return
+		}
+		httputil.WriteError(w, http.StatusInternalServerError, "failed to update farm")
+		return
+	}
+	httputil.WriteJSON(w, http.StatusOK, row)
+}
+
+// InsertCommonsSync — POST /farms/{id}/insert-commons/sync (MVP stub; records sync time when opt-in is on)
+func (h *Handler) InsertCommonsSync(w http.ResponseWriter, r *http.Request) {
+	id, err := httputil.PathID(r.URL.Path, 2)
+	if err != nil {
+		httputil.WriteError(w, http.StatusBadRequest, "invalid farm id")
+		return
+	}
+	if !farmauthz.RequireFarmMember(w, r, h.q, id) {
+		return
+	}
+	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+	defer cancel()
+	farm, err := h.q.GetFarmByID(ctx, id)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			httputil.WriteError(w, http.StatusNotFound, "farm not found")
+			return
+		}
+		httputil.WriteError(w, http.StatusInternalServerError, "failed to load farm")
+		return
+	}
+	if !farm.InsertCommonsOptIn {
+		httputil.WriteError(w, http.StatusForbidden, "Insert Commons sharing is disabled for this farm")
+		return
+	}
+	row, err := h.q.TouchFarmInsertCommonsSync(ctx, id)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			httputil.WriteError(w, http.StatusForbidden, "Insert Commons sharing is disabled for this farm")
+			return
+		}
+		httputil.WriteError(w, http.StatusInternalServerError, "sync failed")
+		return
+	}
+	httputil.WriteJSON(w, http.StatusOK, map[string]any{
+		"ok":             true,
+		"farm_id":        id,
+		"last_sync_at":   row.InsertCommonsLastSyncAt,
+		"aggregates":     map[string]any{},
+		"privacy_notice": "Only anonymized aggregates leave the farm; revoke anytime by turning sharing off.",
+	})
 }

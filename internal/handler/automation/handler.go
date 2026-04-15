@@ -33,6 +33,9 @@ func (h *Handler) ListSchedulesByFarm(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid farm id")
 		return
 	}
+	if !farmauthz.RequireFarmMember(w, r, h.q, farmID) {
+		return
+	}
 	rows, err := h.q.ListSchedulesByFarm(r.Context(), farmID)
 	if err != nil {
 		httputil.WriteError(w, http.StatusInternalServerError, "failed to list schedules")
@@ -67,7 +70,7 @@ func (h *Handler) UpdateScheduleActive(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusInternalServerError, "failed to load schedule")
 		return
 	}
-	if !farmauthz.RequireFarmMember(w, r, h.q, sch.FarmID) {
+	if !farmauthz.RequireFarmOperate(w, r, h.q, sch.FarmID) {
 		return
 	}
 	row, err := h.q.UpdateScheduleActive(r.Context(), db.UpdateScheduleActiveParams{
@@ -86,6 +89,9 @@ func (h *Handler) ListRunsByFarm(w http.ResponseWriter, r *http.Request) {
 	farmID, err := httputil.PathID(r.URL.Path, 2)
 	if err != nil {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid farm id")
+		return
+	}
+	if !farmauthz.RequireFarmMember(w, r, h.q, farmID) {
 		return
 	}
 	rows, err := h.q.ListAutomationRunsByFarm(r.Context(), db.ListAutomationRunsByFarmParams{

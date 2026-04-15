@@ -15,10 +15,14 @@ const (
 type FarmMemberRoleEnum string
 
 const (
-	FarmMemberOwner    FarmMemberRoleEnum = "owner"
-	FarmMemberManager  FarmMemberRoleEnum = "manager"
-	FarmMemberOperator FarmMemberRoleEnum = "operator"
-	FarmMemberViewer   FarmMemberRoleEnum = "viewer"
+	FarmMemberOwner      FarmMemberRoleEnum = "owner"
+	FarmMemberManager    FarmMemberRoleEnum = "manager"
+	FarmMemberAgronomist FarmMemberRoleEnum = "agronomist"
+	FarmMemberWorker     FarmMemberRoleEnum = "worker"
+	FarmMemberOperator   FarmMemberRoleEnum = "operator"
+	FarmMemberFinance    FarmMemberRoleEnum = "finance"
+	FarmMemberViewer     FarmMemberRoleEnum = "viewer"
+	FarmMemberCustomRole FarmMemberRoleEnum = "custom_role"
 )
 
 // ── Device & Operational status ───────────────────────────────────────────────

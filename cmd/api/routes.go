@@ -1,12 +1,14 @@
 package main
 
 import (
+	"log"
 	"net/http"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	automationworker "gr33n-api/internal/automation"
 	db "gr33n-api/internal/db"
+	"gr33n-api/internal/filestorage"
 	actuatorhandler "gr33n-api/internal/handler/actuator"
 	alerthandler "gr33n-api/internal/handler/alert"
 	authhandler "gr33n-api/internal/handler/auth"
@@ -16,6 +18,7 @@ import (
 	devicehandler "gr33n-api/internal/handler/device"
 	farmhandler "gr33n-api/internal/handler/farm"
 	fertigationhandler "gr33n-api/internal/handler/fertigation"
+	fileattachhandler "gr33n-api/internal/handler/fileattach"
 	nfhandler "gr33n-api/internal/handler/naturalfarming"
 	profilehandler "gr33n-api/internal/handler/profile"
 	recipehandler "gr33n-api/internal/handler/recipe"
@@ -26,7 +29,7 @@ import (
 	"gr33n-api/internal/httputil"
 )
 
-func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationworker.Worker, adminUser string, adminHash []byte, hashFilePath string) {
+func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationworker.Worker, adminUser string, adminHash []byte, hashFilePath string, fileStorageRoot string) {
 	farm := farmhandler.NewHandler(pool)
 	zone := zonehandler.NewHandler(pool)
 	device := devicehandler.NewHandler(pool)
@@ -43,6 +46,12 @@ func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationwo
 	alert := alerthandler.NewHandler(pool)
 	prof := profilehandler.NewHandler(pool)
 	auth := authhandler.NewHandler(adminUser, adminHash, hashFilePath, IssueToken, pool)
+
+	store, err := filestorage.NewLocal(fileStorageRoot)
+	if err != nil {
+		log.Fatalf("file storage (%s): %v", fileStorageRoot, err)
+	}
+	files := fileattachhandler.NewHandler(pool, store)
 
 	// ── Public ───────────────────────────────────────────────────────────────
 	mux.HandleFunc("GET /health", func(w http.ResponseWriter, r *http.Request) {
@@ -88,6 +97,8 @@ func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationwo
 	mux.Handle("PUT /farms/{id}", jwt(http.HandlerFunc(farm.Update)))
 	mux.Handle("DELETE /farms/{id}", jwt(http.HandlerFunc(farm.Delete)))
 	mux.Handle("GET /farms/{id}", jwt(http.HandlerFunc(farm.Get)))
+	mux.Handle("PATCH /farms/{id}/insert-commons/opt-in", jwt(http.HandlerFunc(farm.SetInsertCommonsOptIn)))
+	mux.Handle("POST /farms/{id}/insert-commons/sync", jwt(http.HandlerFunc(farm.InsertCommonsSync)))
 	mux.Handle("GET /farms/{id}/zones", jwt(http.HandlerFunc(zone.ListByFarm)))
 	mux.Handle("GET /farms/{id}/devices", jwt(http.HandlerFunc(device.ListByFarm)))
 	mux.Handle("GET /farms/{id}/actuators", jwt(http.HandlerFunc(actuator.ListByFarm)))
@@ -150,6 +161,8 @@ func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationwo
 	mux.Handle("POST /farms/{id}/costs", jwt(http.HandlerFunc(cost.Create)))
 	mux.Handle("PUT /costs/{id}", jwt(http.HandlerFunc(cost.Update)))
 	mux.Handle("DELETE /costs/{id}", jwt(http.HandlerFunc(cost.Delete)))
+	mux.Handle("POST /farms/{id}/cost-receipts", jwt(http.HandlerFunc(files.UploadCostReceipt)))
+	mux.Handle("GET /file-attachments/{id}/content", jwt(http.HandlerFunc(files.Download)))
 
 	// Natural farming
 	mux.Handle("GET /farms/{id}/naturalfarming/inputs", jwt(http.HandlerFunc(nf.ListInputs)))

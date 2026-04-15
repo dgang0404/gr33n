@@ -59,7 +59,7 @@ func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid farm id")
 		return
 	}
-	if !farmauthz.RequireFarmMember(w, r, h.q, farmID) {
+	if !farmauthz.RequireCostRead(w, r, h.q, farmID) {
 		return
 	}
 	limit := int32(50)
@@ -105,7 +105,7 @@ func (h *Handler) Summary(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid farm id")
 		return
 	}
-	if !farmauthz.RequireFarmMember(w, r, h.q, farmID) {
+	if !farmauthz.RequireCostRead(w, r, h.q, farmID) {
 		return
 	}
 	row, err := h.q.GetCostSummaryByFarm(r.Context(), farmID)
@@ -127,7 +127,7 @@ func (h *Handler) Export(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid farm id")
 		return
 	}
-	if !farmauthz.RequireFarmMember(w, r, h.q, farmID) {
+	if !farmauthz.RequireCostRead(w, r, h.q, farmID) {
 		return
 	}
 	format := strings.ToLower(strings.TrimSpace(r.URL.Query().Get("format")))
@@ -188,7 +188,7 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid farm id")
 		return
 	}
-	if !farmauthz.RequireFarmMember(w, r, h.q, farmID) {
+	if !farmauthz.RequireCostWrite(w, r, h.q, farmID) {
 		return
 	}
 	var body struct {
@@ -199,6 +199,7 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		Currency        string  `json:"currency"`
 		Description     *string `json:"description"`
 		IsIncome        bool    `json:"is_income"`
+		ReceiptFileID   *int64  `json:"receipt_file_id"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid body")
@@ -223,6 +224,21 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid amount")
 		return
 	}
+	if body.ReceiptFileID != nil {
+		att, err := h.q.GetFileAttachmentByID(r.Context(), *body.ReceiptFileID)
+		if err != nil {
+			if errors.Is(err, pgx.ErrNoRows) {
+				httputil.WriteError(w, http.StatusBadRequest, "receipt_file_id not found")
+				return
+			}
+			httputil.WriteError(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+		if att.FarmID != farmID || att.RelatedTableName != "cost_transactions" {
+			httputil.WriteError(w, http.StatusBadRequest, "invalid receipt_file_id")
+			return
+		}
+	}
 	var createdBy pgtype.UUID
 	if uid, ok := authctx.UserID(r.Context()); ok {
 		createdBy = pgtype.UUID{Bytes: uid, Valid: true}
@@ -237,6 +253,7 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		Description:     body.Description,
 		IsIncome:        body.IsIncome,
 		CreatedByUserID: createdBy,
+		ReceiptFileID:   body.ReceiptFileID,
 	})
 	if err != nil {
 		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
@@ -260,6 +277,7 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 		Currency        string  `json:"currency"`
 		Description     *string `json:"description"`
 		IsIncome        bool    `json:"is_income"`
+		ReceiptFileID   *int64  `json:"receipt_file_id"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid body")
@@ -274,7 +292,7 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-	if !farmauthz.RequireFarmMember(w, r, h.q, existing.FarmID) {
+	if !farmauthz.RequireCostWrite(w, r, h.q, existing.FarmID) {
 		return
 	}
 	td, err := parseDate(body.TransactionDate)
@@ -296,6 +314,23 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid amount")
 		return
 	}
+	receiptID := existing.ReceiptFileID
+	if body.ReceiptFileID != nil {
+		att, err := h.q.GetFileAttachmentByID(r.Context(), *body.ReceiptFileID)
+		if err != nil {
+			if errors.Is(err, pgx.ErrNoRows) {
+				httputil.WriteError(w, http.StatusBadRequest, "receipt_file_id not found")
+				return
+			}
+			httputil.WriteError(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+		if att.FarmID != existing.FarmID || att.RelatedTableName != "cost_transactions" {
+			httputil.WriteError(w, http.StatusBadRequest, "invalid receipt_file_id")
+			return
+		}
+		receiptID = body.ReceiptFileID
+	}
 	row, err := h.q.UpdateCostTransaction(r.Context(), db.UpdateCostTransactionParams{
 		ID:              id,
 		TransactionDate: td,
@@ -305,6 +340,7 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 		Currency:        cur,
 		Description:     body.Description,
 		IsIncome:        body.IsIncome,
+		ReceiptFileID:   receiptID,
 	})
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -333,7 +369,7 @@ func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-	if !farmauthz.RequireFarmMember(w, r, h.q, existing.FarmID) {
+	if !farmauthz.RequireCostWrite(w, r, h.q, existing.FarmID) {
 		return
 	}
 	if err := h.q.DeleteCostTransaction(r.Context(), id); err != nil {

@@ -43,6 +43,9 @@ func (h *Handler) ListByFarm(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid farm id")
 		return
 	}
+	if !farmauthz.RequireFarmMember(w, r, h.q, farmID) {
+		return
+	}
 	rows, err := h.q.ListSensorsByFarm(r.Context(), farmID)
 	if err != nil {
 		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
@@ -69,6 +72,9 @@ func (h *Handler) Get(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
+	if !farmauthz.RequireFarmMember(w, r, h.q, s.FarmID) {
+		return
+	}
 	httputil.WriteJSON(w, http.StatusOK, s)
 }
 
@@ -78,7 +84,7 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid farm id")
 		return
 	}
-	if !farmauthz.RequireFarmMember(w, r, h.q, farmID) {
+	if !farmauthz.RequireFarmOperate(w, r, h.q, farmID) {
 		return
 	}
 	var body struct {
@@ -145,7 +151,7 @@ func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-	if !farmauthz.RequireFarmMember(w, r, h.q, s0.FarmID) {
+	if !farmauthz.RequireFarmOperate(w, r, h.q, s0.FarmID) {
 		return
 	}
 	if err := h.q.SoftDeleteSensor(r.Context(), db.SoftDeleteSensorParams{
@@ -163,6 +169,18 @@ func (h *Handler) LatestReading(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid sensor id")
+		return
+	}
+	s, err := h.q.GetSensorByID(r.Context(), id)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			httputil.WriteError(w, http.StatusNotFound, "sensor not found")
+			return
+		}
+		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	if !farmauthz.RequireFarmMember(w, r, h.q, s.FarmID) {
 		return
 	}
 	reading, err := h.q.GetLatestReadingBySensor(r.Context(), id)
@@ -247,12 +265,16 @@ func (h *Handler) ListReadings(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid sensor id")
 		return
 	}
-	if _, err := h.q.GetSensorByID(r.Context(), id); err != nil {
+	s, err := h.q.GetSensorByID(r.Context(), id)
+	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			httputil.WriteError(w, http.StatusNotFound, "sensor not found")
 			return
 		}
 		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	if !farmauthz.RequireFarmMember(w, r, h.q, s.FarmID) {
 		return
 	}
 	since, until, err := readingTimeRange(r)
@@ -353,12 +375,16 @@ func (h *Handler) ReadingStats(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid sensor id")
 		return
 	}
-	if _, err := h.q.GetSensorByID(r.Context(), id); err != nil {
+	s, err := h.q.GetSensorByID(r.Context(), id)
+	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			httputil.WriteError(w, http.StatusNotFound, "sensor not found")
 			return
 		}
 		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	if !farmauthz.RequireFarmMember(w, r, h.q, s.FarmID) {
 		return
 	}
 	since, until, err := readingTimeRange(r)

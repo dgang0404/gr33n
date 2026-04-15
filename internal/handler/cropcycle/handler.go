@@ -62,6 +62,9 @@ func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid farm id")
 		return
 	}
+	if !farmauthz.RequireFarmMember(w, r, h.q, farmID) {
+		return
+	}
 	rows, err := h.q.ListCropCyclesByFarm(r.Context(), farmID)
 	if err != nil {
 		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
@@ -89,6 +92,9 @@ func (h *Handler) Get(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
+	if !farmauthz.RequireFarmMember(w, r, h.q, row.FarmID) {
+		return
+	}
 	httputil.WriteJSON(w, http.StatusOK, row)
 }
 
@@ -99,7 +105,7 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid farm id")
 		return
 	}
-	if !farmauthz.RequireFarmMember(w, r, h.q, farmID) {
+	if !farmauthz.RequireFarmOperate(w, r, h.q, farmID) {
 		return
 	}
 	var body struct {
@@ -202,7 +208,7 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-	if !farmauthz.RequireFarmMember(w, r, h.q, existing.FarmID) {
+	if !farmauthz.RequireFarmOperate(w, r, h.q, existing.FarmID) {
 		return
 	}
 	z, err := h.q.GetZoneByID(r.Context(), body.ZoneID)
@@ -289,7 +295,7 @@ func (h *Handler) UpdateStage(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-	if !farmauthz.RequireFarmMember(w, r, h.q, cc.FarmID) {
+	if !farmauthz.RequireFarmOperate(w, r, h.q, cc.FarmID) {
 		return
 	}
 	row, err := h.q.UpdateCropCycleStage(r.Context(), db.UpdateCropCycleStageParams{
@@ -319,7 +325,7 @@ func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-	if !farmauthz.RequireFarmMember(w, r, h.q, cc.FarmID) {
+	if !farmauthz.RequireFarmOperate(w, r, h.q, cc.FarmID) {
 		return
 	}
 	if err := h.q.SoftDeleteCropCycle(r.Context(), id); err != nil {

@@ -46,6 +46,12 @@
             <input v-model="createForm.is_income" type="checkbox" class="rounded bg-zinc-800 border-zinc-700" />
             Income
           </label>
+          <label class="flex flex-col gap-1 text-zinc-400 text-xs sm:col-span-2">
+            <span>Receipt (PDF or image, max 5 MB)</span>
+            <input type="file" accept="application/pdf,image/jpeg,image/png,image/webp,.pdf"
+              class="text-zinc-300 file:mr-2 file:rounded file:border-0 file:bg-zinc-800 file:px-2 file:py-1 file:text-xs"
+              @change="onCreateReceiptPick" />
+          </label>
           <button type="submit" :disabled="saving" class="px-4 py-2 bg-green-700 text-white text-sm rounded-lg disabled:opacity-50">
             {{ saving ? 'Saving…' : 'Add' }}
           </button>
@@ -61,6 +67,7 @@
               <th class="text-left px-4 py-3">Category</th>
               <th class="text-left px-4 py-3">Description</th>
               <th class="text-right px-4 py-3">Amount</th>
+              <th class="text-left px-4 py-3">Receipt</th>
               <th class="text-left px-4 py-3">Actions</th>
             </tr>
           </thead>
@@ -76,12 +83,20 @@
                 {{ t.is_income ? '+' : '−' }}{{ fmtMoney(Number(t.amount)) }} {{ t.currency }}
               </td>
               <td class="px-4 py-2">
+                <button v-if="t.receipt_file_id" type="button"
+                  class="text-xs text-green-500 hover:text-green-400"
+                  @click="openReceipt(t.receipt_file_id)">
+                  View
+                </button>
+                <span v-else class="text-zinc-600">—</span>
+              </td>
+              <td class="px-4 py-2">
                 <button type="button" class="text-xs text-zinc-500 hover:text-zinc-300 mr-2" @click="startEdit(t)">Edit</button>
                 <button type="button" class="text-xs text-red-500 hover:text-red-400" @click="removeTx(t)">Delete</button>
               </td>
             </tr>
             <tr v-if="!transactions.length">
-              <td colspan="5" class="px-4 py-8 text-center text-zinc-500">No transactions yet.</td>
+              <td colspan="6" class="px-4 py-8 text-center text-zinc-500">No transactions yet.</td>
             </tr>
           </tbody>
         </table>
@@ -101,6 +116,12 @@
           <label class="flex items-center gap-2 text-zinc-300 text-sm">
             <input v-model="editForm.is_income" type="checkbox" class="rounded bg-zinc-800 border-zinc-700" />
             Income
+          </label>
+          <label class="flex flex-col gap-1 text-zinc-400 text-xs">
+            <span>Replace receipt (optional)</span>
+            <input type="file" accept="application/pdf,image/jpeg,image/png,image/webp,.pdf"
+              class="text-zinc-300 file:mr-2 file:rounded file:border-0 file:bg-zinc-800 file:px-2 file:py-1 file:text-xs"
+              @change="onEditReceiptPick" />
           </label>
           <div class="flex gap-2 justify-end">
             <button type="button" class="text-sm text-zinc-500" @click="editRow = null">Cancel</button>
@@ -126,6 +147,8 @@ const formError = ref('')
 const summary = reactive({ total_income: 0, total_expenses: 0, net: 0 })
 const transactions = ref([])
 const editRow = ref(null)
+const createReceiptFile = ref(null)
+const editReceiptFile = ref(null)
 const editForm = reactive({
   transaction_date: '',
   category: 'miscellaneous',
@@ -169,6 +192,25 @@ function formatCat(c) {
   return c ? c.replace(/_/g, ' ') : ''
 }
 
+function onCreateReceiptPick(e) {
+  createReceiptFile.value = e.target.files?.[0] ?? null
+}
+
+function onEditReceiptPick(e) {
+  editReceiptFile.value = e.target.files?.[0] ?? null
+}
+
+async function openReceipt(fileId) {
+  try {
+    const r = await api.get(`/file-attachments/${fileId}/content`, { responseType: 'blob' })
+    const url = URL.createObjectURL(r.data)
+    window.open(url, '_blank', 'noopener')
+    setTimeout(() => URL.revokeObjectURL(url), 120_000)
+  } catch (e) {
+    formError.value = e.response?.data?.error || e.message || 'Could not open receipt'
+  }
+}
+
 async function downloadCsv() {
   const fid = farmContext.farmId
   if (!fid) return
@@ -210,7 +252,8 @@ async function submitCreate() {
   formError.value = ''
   saving.value = true
   try {
-    await store.createCost(farmContext.farmId, {
+    const fid = farmContext.farmId
+    const row = await store.createCost(fid, {
       transaction_date: createForm.transaction_date,
       category: createForm.category,
       subcategory: createForm.subcategory.trim() || undefined,
@@ -219,6 +262,10 @@ async function submitCreate() {
       description: createForm.description.trim() || undefined,
       is_income: createForm.is_income,
     })
+    if (createReceiptFile.value) {
+      await store.uploadCostReceipt(fid, createReceiptFile.value, row.id)
+      createReceiptFile.value = null
+    }
     createForm.amount = 0
     createForm.description = ''
     createForm.subcategory = ''
@@ -232,6 +279,7 @@ async function submitCreate() {
 
 function startEdit(t) {
   editRow.value = t
+  editReceiptFile.value = null
   editForm.transaction_date = isoDate(t.transaction_date)
   editForm.category = t.category
   editForm.subcategory = t.subcategory || ''
@@ -244,6 +292,7 @@ function startEdit(t) {
 async function submitEdit() {
   saving.value = true
   try {
+    const fid = farmContext.farmId
     await store.updateCost(editRow.value.id, {
       transaction_date: editForm.transaction_date,
       category: editForm.category,
@@ -253,6 +302,10 @@ async function submitEdit() {
       description: editForm.description.trim() || undefined,
       is_income: editForm.is_income,
     })
+    if (editReceiptFile.value) {
+      await store.uploadCostReceipt(fid, editReceiptFile.value, editRow.value.id)
+      editReceiptFile.value = null
+    }
     editRow.value = null
     await reload()
   } finally {

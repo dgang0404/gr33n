@@ -101,7 +101,9 @@ func main() {
 	worker := automationworker.NewWorker(pool, simulationMode, workerOpts...)
 	go worker.Start(context.Background())
 	log.Printf("🧠 Automation worker started (simulation_mode=%v)", simulationMode)
-	registerRoutes(mux, pool, worker, adminUser, adminHash, hashFilePath)
+	fileRoot := getEnv("FILE_STORAGE_DIR", "./data/files")
+	registerRoutes(mux, pool, worker, adminUser, adminHash, hashFilePath, fileRoot)
+	log.Printf("FILE_STORAGE_DIR=%s", fileRoot)
 	addr := fmt.Sprintf(":%s", port)
 	log.Printf("🌱 gr33n API running on http://localhost%s", addr)
 	if err := http.ListenAndServe(addr, corsMiddleware(mux)); err != nil { log.Fatalf("❌ Server error: %v", err) }

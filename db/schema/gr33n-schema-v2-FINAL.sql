@@ -193,7 +193,7 @@ CREATE TYPE gr33ncore.farm_scale_tier_enum       AS ENUM ('small','medium','larg
 CREATE TYPE gr33ncore.operational_status_enum    AS ENUM ('active','maintenance','planning','archived','decommissioned');
 CREATE TYPE gr33ncore.log_level_enum             AS ENUM ('DEBUG','INFO','NOTICE','WARNING','ERROR','CRITICAL','ALERT','EMERGENCY');
 CREATE TYPE gr33ncore.user_role_enum             AS ENUM ('user','farm_manager','farm_worker','gr33n_system_admin');
-CREATE TYPE gr33ncore.farm_member_role_enum      AS ENUM ('owner','manager','agronomist','worker','viewer','custom_role');
+CREATE TYPE gr33ncore.farm_member_role_enum      AS ENUM ('owner','manager','agronomist','worker','viewer','custom_role','operator','finance');
 CREATE TYPE gr33ncore.device_status_enum         AS ENUM ('online','offline','error_comms','error_hardware','maintenance_mode','initializing','unknown','decommissioned','pending_activation');
 CREATE TYPE gr33ncore.task_status_enum           AS ENUM ('todo','in_progress','on_hold','completed','cancelled','blocked_requires_input','pending_review');
 CREATE TYPE gr33ncore.automation_trigger_source_enum AS ENUM ('sensor_reading_threshold','specific_time_cron','actuator_state_changed','manual_api_trigger','task_status_updated','new_system_log_event','external_webhook_received');
@@ -250,7 +250,9 @@ CREATE TABLE IF NOT EXISTS gr33ncore.farms (
     created_at         TIMESTAMPTZ DEFAULT NOW() NOT NULL,
     updated_at         TIMESTAMPTZ DEFAULT NOW() NOT NULL,
     updated_by_user_id UUID        REFERENCES gr33ncore.profiles(user_id) ON DELETE SET NULL,
-    deleted_at         TIMESTAMPTZ DEFAULT NULL
+    deleted_at         TIMESTAMPTZ DEFAULT NULL,
+    insert_commons_opt_in BOOLEAN NOT NULL DEFAULT FALSE,
+    insert_commons_last_sync_at TIMESTAMPTZ
 );
 CREATE TRIGGER trg_farms_updated_at
     BEFORE UPDATE ON gr33ncore.farms

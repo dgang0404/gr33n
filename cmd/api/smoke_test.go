@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 	"testing"
@@ -57,6 +58,33 @@ VALUES ($1, $2, 'owner', '{}'::jsonb, NOW())
 ON CONFLICT (farm_id, user_id) DO NOTHING`, int64(1), uid); err != nil {
 		return err
 	}
+	// Phase 11 columns / enum values (no-op if already applied)
+	if _, err := pool.Exec(ctx, `
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_enum e
+    JOIN pg_type t ON e.enumtypid = t.oid
+    JOIN pg_namespace n ON n.oid = t.typnamespace
+    WHERE n.nspname = 'gr33ncore' AND t.typname = 'farm_member_role_enum' AND e.enumlabel = 'operator'
+  ) THEN
+    ALTER TYPE gr33ncore.farm_member_role_enum ADD VALUE 'operator';
+  END IF;
+END $$;
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_enum e
+    JOIN pg_type t ON e.enumtypid = t.oid
+    JOIN pg_namespace n ON n.oid = t.typnamespace
+    WHERE n.nspname = 'gr33ncore' AND t.typname = 'farm_member_role_enum' AND e.enumlabel = 'finance'
+  ) THEN
+    ALTER TYPE gr33ncore.farm_member_role_enum ADD VALUE 'finance';
+  END IF;
+END $$;
+ALTER TABLE gr33ncore.farms ADD COLUMN IF NOT EXISTS insert_commons_opt_in BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE gr33ncore.farms ADD COLUMN IF NOT EXISTS insert_commons_last_sync_at TIMESTAMPTZ;
+`); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -85,14 +113,21 @@ func TestMain(m *testing.M) {
 	authMode = "auth_test"
 	corsOrigin = "*"
 
+	smokeFiles, err := os.MkdirTemp("", "gr33n-smoke-files")
+	if err != nil {
+		pool.Close()
+		fmt.Fprintf(os.Stderr, "smoke_test mkdir temp files: %v\n", err)
+		os.Exit(1)
+	}
 	mux := http.NewServeMux()
 	worker := automationworker.NewWorker(pool, true)
-	registerRoutes(mux, pool, worker, "admin", nil, "")
+	registerRoutes(mux, pool, worker, "admin", nil, "", filepath.Join(smokeFiles, "blobs"))
 	testServer = httptest.NewServer(corsMiddleware(mux))
 
 	code := m.Run()
 	testServer.Close()
 	pool.Close()
+	_ = os.RemoveAll(smokeFiles)
 	os.Exit(code)
 }
 

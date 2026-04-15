@@ -1523,6 +1523,92 @@ paths:
       responses:
         "204": { description: Deleted }
 
+  /farms/{id}/cost-receipts:
+    post:
+      tags: [costs]
+      summary: Upload a cost receipt (multipart); optional cost_transaction_id links to existing row
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      requestBody:
+        required: true
+        content:
+            multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+                cost_transaction_id:
+                  type: integer
+                  description: When set, attaches receipt to this cost (same farm)
+      responses:
+        "201":
+          description: File attachment created (and cost updated when cost_transaction_id sent)
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+
+  /file-attachments/{id}/content:
+    get:
+      tags: [costs]
+      summary: Download receipt bytes (requires cost read role on attachment farm)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      responses:
+        "200":
+          description: File stream
+          content:
+            application/octet-stream:
+              schema: { type: string, format: binary }
+
+  /farms/{id}/insert-commons/opt-in:
+    patch:
+      tags: [farms]
+      summary: Enable or disable Insert Commons anonymized sharing (farm admin)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [insert_commons_opt_in]
+              properties:
+                insert_commons_opt_in: { type: boolean }
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Farm" }
+
+  /farms/{id}/insert-commons/sync:
+    post:
+      tags: [farms]
+      summary: MVP sync stub — records last sync time when opt-in is enabled
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean }
+                  farm_id: { type: integer }
+                  last_sync_at: { type: string, format: date-time, nullable: true }
+                  aggregates: { type: object }
+                  privacy_notice: { type: string }
+
   # ── Alerts ──────────────────────────────────────────────────
 
   /farms/{id}/alerts:
@@ -1771,6 +1857,8 @@ components:
         timezone: { type: string, example: UTC }
         currency: { type: string, example: USD }
         created_at: { type: string, format: date-time }
+        insert_commons_opt_in: { type: boolean }
+        insert_commons_last_sync_at: { type: string, format: date-time, nullable: true }
 
     Zone:
       type: object
@@ -2168,6 +2256,7 @@ components:
         currency: { type: string }
         description: { type: string, nullable: true }
         is_income: { type: boolean }
+        receipt_file_id: { type: integer, nullable: true, description: Linked cost receipt attachment id }
         created_at: { type: string, format: date-time }
         updated_at: { type: string, format: date-time }
 
@@ -2189,6 +2278,7 @@ components:
         currency: { type: string, description: ISO 4217 uppercase }
         description: { type: string }
         is_income: { type: boolean }
+        receipt_file_id: { type: integer, description: Optional link to uploaded receipt }
 
     CostTransactionUpdate:
       type: object
@@ -2201,6 +2291,7 @@ components:
         currency: { type: string }
         description: { type: string }
         is_income: { type: boolean }
+        receipt_file_id: { type: integer, nullable: true }
 
     Reservoir:
       type: object

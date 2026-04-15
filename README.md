@@ -44,7 +44,7 @@ gr33n will never require a permanent internet connection, forced login, or hidde
 
 - **Automation-Ready** — Schedule tasks, trigger actuators, run AI models — or run it all manually. Your tech, your tempo.
 
-- **Insert Commons (Coming Soon)** — A sibling repo for community-contributed data (pest trials, IMO recipes, soil logs) with scrubbers and staging.
+- **Insert Commons (MVP)** — Per-farm opt-in in Settings; `POST /farms/{id}/insert-commons/sync` records a sync timestamp (full outbound adapters are still future work). Apply `db/migrations/20260415_phase11_rbac_receipts_commons.sql` on existing databases.
 
 ---
 
@@ -310,6 +310,7 @@ For users who choose to integrate local AI, gr33n offers schema-guided intellige
 - [x] OpenAPI spec (openapi.yaml)
 - [x] Sensor readings live on dashboard (SSE stream with JWT query param auth)
 - [x] Phase 10 — JWT smoke tests (`AUTH_MODE=auth_test`), farm-scoped write authorization, fertigation ↔ crop cycle link, costs CSV export, SensorDetail export UX
+- [x] Phase 11 — Farm RBAC (viewer / operator / finance / manager / owner), cost receipts + local `FILE_STORAGE_DIR` storage, **PWA-first** installable shell (manifest + SW in production builds; Capacitor still an option for store-distributed apps), Insert Commons opt-in + sync stub, OpenAPI updates
 - [x] Actuator control pipeline (automation worker → pending_command → Pi poll → execute → report)
 - [x] Fertigation module — reservoirs, EC targets, programs, events
 - [x] Natural farming inventory UI — input definitions & batch tracking

@@ -94,7 +94,7 @@ func (h *Handler) GetFarmMembers(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	q := db.New(h.pool)
-	if !farmauthz.RequireFarmMember(w, r, q, farmID) {
+	if !farmauthz.RequireFarmAdmin(w, r, q, farmID) {
 		return
 	}
 	rows, err := q.GetFarmMembers(r.Context(), farmID)
@@ -132,7 +132,7 @@ func (h *Handler) AddFarmMember(w http.ResponseWriter, r *http.Request) {
 	}
 
 	q := db.New(h.pool)
-	if !farmauthz.RequireFarmMember(w, r, q, farmID) {
+	if !farmauthz.RequireFarmAdmin(w, r, q, farmID) {
 		return
 	}
 
@@ -199,7 +199,7 @@ func (h *Handler) UpdateMemberRole(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	q := db.New(h.pool)
-	if !farmauthz.RequireFarmMember(w, r, q, farmID) {
+	if !farmauthz.RequireFarmAdmin(w, r, q, farmID) {
 		return
 	}
 	m, err := q.UpdateFarmMemberRole(r.Context(), db.UpdateFarmMemberRoleParams{
@@ -226,7 +226,7 @@ func (h *Handler) RemoveMember(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	q := db.New(h.pool)
-	if !farmauthz.RequireFarmMember(w, r, q, farmID) {
+	if !farmauthz.RequireFarmAdmin(w, r, q, farmID) {
 		return
 	}
 	if err := q.RemoveFarmMember(r.Context(), db.RemoveFarmMemberParams{

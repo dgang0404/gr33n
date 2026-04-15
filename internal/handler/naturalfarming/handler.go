@@ -30,6 +30,9 @@ func (h *Handler) ListInputs(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid farm id")
 		return
 	}
+	if !farmauthz.RequireFarmMember(w, r, h.q, farmID) {
+		return
+	}
 	rows, err := h.q.ListInputDefinitionsByFarm(r.Context(), farmID)
 	if err != nil {
 		httputil.WriteError(w, http.StatusInternalServerError, "failed to list input definitions")
@@ -46,6 +49,9 @@ func (h *Handler) ListBatches(w http.ResponseWriter, r *http.Request) {
 	farmID, err := httputil.PathID(r.URL.Path, 2)
 	if err != nil {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid farm id")
+		return
+	}
+	if !farmauthz.RequireFarmMember(w, r, h.q, farmID) {
 		return
 	}
 	rows, err := h.q.ListInputBatchesByFarm(r.Context(), farmID)
@@ -74,7 +80,7 @@ func (h *Handler) CreateInputDefinition(w http.ResponseWriter, r *http.Request) 
 		httputil.WriteError(w, http.StatusBadRequest, "invalid farm id")
 		return
 	}
-	if !farmauthz.RequireFarmMember(w, r, h.q, farmID) {
+	if !farmauthz.RequireFarmOperate(w, r, h.q, farmID) {
 		return
 	}
 	var req struct {
@@ -139,7 +145,7 @@ func (h *Handler) UpdateInputDefinition(w http.ResponseWriter, r *http.Request) 
 		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-	if !farmauthz.RequireFarmMember(w, r, h.q, def.FarmID) {
+	if !farmauthz.RequireFarmOperate(w, r, h.q, def.FarmID) {
 		return
 	}
 	row, err := h.q.UpdateInputDefinition(r.Context(), db.UpdateInputDefinitionParams{
@@ -176,7 +182,7 @@ func (h *Handler) DeleteInputDefinition(w http.ResponseWriter, r *http.Request) 
 		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-	if !farmauthz.RequireFarmMember(w, r, h.q, def.FarmID) {
+	if !farmauthz.RequireFarmOperate(w, r, h.q, def.FarmID) {
 		return
 	}
 	if err := h.q.SoftDeleteInputDefinition(r.Context(), db.SoftDeleteInputDefinitionParams{
@@ -196,7 +202,7 @@ func (h *Handler) CreateInputBatch(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid farm id")
 		return
 	}
-	if !farmauthz.RequireFarmMember(w, r, h.q, farmID) {
+	if !farmauthz.RequireFarmOperate(w, r, h.q, farmID) {
 		return
 	}
 	var params db.CreateInputBatchParams
@@ -235,7 +241,7 @@ func (h *Handler) UpdateInputBatch(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-	if !farmauthz.RequireFarmMember(w, r, h.q, b0.FarmID) {
+	if !farmauthz.RequireFarmOperate(w, r, h.q, b0.FarmID) {
 		return
 	}
 	row, err := h.q.UpdateInputBatch(r.Context(), params)
@@ -262,7 +268,7 @@ func (h *Handler) DeleteInputBatch(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-	if !farmauthz.RequireFarmMember(w, r, h.q, b0.FarmID) {
+	if !farmauthz.RequireFarmOperate(w, r, h.q, b0.FarmID) {
 		return
 	}
 	if err := h.q.SoftDeleteInputBatch(r.Context(), db.SoftDeleteInputBatchParams{

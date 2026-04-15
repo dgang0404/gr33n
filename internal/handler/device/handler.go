@@ -33,6 +33,9 @@ func (h *Handler) ListByFarm(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid farm id")
 		return
 	}
+	if !farmauthz.RequireFarmMember(w, r, h.q, farmID) {
+		return
+	}
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()
 
@@ -59,6 +62,9 @@ func (h *Handler) Get(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusNotFound, "device not found")
 		return
 	}
+	if !farmauthz.RequireFarmMember(w, r, h.q, device.FarmID) {
+		return
+	}
 	httputil.WriteJSON(w, http.StatusOK, device)
 }
 
@@ -75,7 +81,7 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	params.FarmID = farmID
-	if !farmauthz.RequireFarmMember(w, r, h.q, farmID) {
+	if !farmauthz.RequireFarmOperate(w, r, h.q, farmID) {
 		return
 	}
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
@@ -149,7 +155,7 @@ func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusNotFound, "device not found")
 		return
 	}
-	if !farmauthz.RequireFarmMember(w, r, h.q, d0.FarmID) {
+	if !farmauthz.RequireFarmOperate(w, r, h.q, d0.FarmID) {
 		return
 	}
 

@@ -12,6 +12,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	db "gr33n-api/internal/db"
+	"gr33n-api/internal/farmauthz"
 )
 
 type Handler struct {
@@ -73,6 +74,9 @@ func (h *Handler) Stream(w http.ResponseWriter, r *http.Request) {
 	}
 
 	q := db.New(h.pool)
+	if !farmauthz.RequireFarmMember(w, r, q, farmID) {
+		return
+	}
 	sendReadings := func() {
 		sensors, err := q.ListSensorsByFarm(r.Context(), farmID)
 		if err != nil {

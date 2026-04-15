@@ -32,6 +32,9 @@ func (h *Handler) ListByFarm(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	q := db.New(h.pool)
+	if !farmauthz.RequireFarmMember(w, r, q, farmID) {
+		return
+	}
 	rows, err := q.ListTasksByFarm(r.Context(), farmID)
 	if err != nil {
 		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
@@ -51,7 +54,7 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	q := db.New(h.pool)
-	if !farmauthz.RequireFarmMember(w, r, q, farmID) {
+	if !farmauthz.RequireFarmOperate(w, r, q, farmID) {
 		return
 	}
 	var body struct {
@@ -143,7 +146,7 @@ func (h *Handler) UpdateStatus(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-	if !farmauthz.RequireFarmMember(w, r, q, t0.FarmID) {
+	if !farmauthz.RequireFarmOperate(w, r, q, t0.FarmID) {
 		return
 	}
 	task, err := q.UpdateTaskStatus(r.Context(), db.UpdateTaskStatusParams{

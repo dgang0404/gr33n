@@ -31,6 +31,9 @@ func (h *Handler) ListByFarm(w http.ResponseWriter, r *http.Request) {
 	}
 
 	q := db.New(h.pool)
+	if !farmauthz.RequireFarmMember(w, r, q, farmID) {
+		return
+	}
 	rows, err := q.ListAlertsByFarm(r.Context(), db.ListAlertsByFarmParams{
 		FarmID: farmID,
 		Limit:  int32(limit),
@@ -53,6 +56,9 @@ func (h *Handler) CountUnread(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	q := db.New(h.pool)
+	if !farmauthz.RequireFarmMember(w, r, q, farmID) {
+		return
+	}
 	count, err := q.CountUnreadAlertsByFarm(r.Context(), farmID)
 	if err != nil {
 		httputil.WriteError(w, http.StatusInternalServerError, err.Error())

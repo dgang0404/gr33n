@@ -117,6 +117,7 @@
               <option value="owner">Owner</option>
               <option value="manager">Manager</option>
               <option value="operator">Operator</option>
+              <option value="finance">Finance</option>
               <option value="viewer">Viewer</option>
             </select>
             <button @click="removeMember(m.user_id)"
@@ -134,6 +135,7 @@
         <select v-model="inviteRole" class="bg-zinc-900 border border-zinc-700 text-zinc-300 text-xs rounded-lg px-2 py-2 focus:outline-none">
           <option value="viewer">Viewer</option>
           <option value="operator">Operator</option>
+          <option value="finance">Finance</option>
           <option value="manager">Manager</option>
           <option value="owner">Owner</option>
         </select>
@@ -144,6 +146,28 @@
       </form>
       <p v-if="inviteError" class="text-red-400 text-xs mt-2">{{ inviteError }}</p>
       <p v-if="inviteSuccess" class="text-green-400 text-xs mt-2">Member invited successfully.</p>
+    </section>
+
+    <!-- Insert Commons (benchmark sharing) -->
+    <section v-if="farmContext.farmId" class="bg-zinc-800 border border-zinc-700 rounded-xl p-5 mb-5">
+      <h2 class="text-white font-semibold mb-3">Insert Commons</h2>
+      <p class="text-zinc-400 text-sm mb-3">
+        Optional community benchmarks. Only anonymized aggregates are intended to leave your farm; you can revoke at any time.
+        Retention follows the platform operator’s policy once sync adapters are enabled.
+      </p>
+      <label class="flex items-center gap-2 text-zinc-300 text-sm mb-3">
+        <input v-model="insertOptIn" type="checkbox" class="rounded bg-zinc-800 border-zinc-700"
+          @change="onInsertOptInChange" />
+        Share anonymized aggregates with Insert Commons
+      </label>
+      <div class="flex flex-wrap items-center gap-2">
+        <button type="button" :disabled="!insertOptIn || insertSyncing"
+          class="bg-zinc-700 hover:bg-zinc-600 disabled:opacity-40 text-white text-xs font-semibold px-4 py-2 rounded-lg"
+          @click="runInsertSync">
+          {{ insertSyncing ? 'Syncing…' : 'Run sync (stub)' }}
+        </button>
+        <span v-if="insertSyncMsg" class="text-zinc-500 text-xs">{{ insertSyncMsg }}</span>
+      </div>
     </section>
 
     <!-- Pi connection info -->
@@ -240,6 +264,43 @@ const inviting = ref(false)
 const inviteError = ref(null)
 const inviteSuccess = ref(false)
 
+const insertOptIn = ref(false)
+const insertSyncing = ref(false)
+const insertSyncMsg = ref('')
+
+async function loadFarmSharing() {
+  if (!farmContext.farmId) return
+  try {
+    await farmStore.loadAll(farmContext.farmId)
+    insertOptIn.value = !!farmStore.farm?.insert_commons_opt_in
+  } catch { /* ignore */ }
+}
+
+async function onInsertOptInChange() {
+  if (!farmContext.farmId) return
+  insertSyncMsg.value = ''
+  try {
+    await farmStore.setInsertCommonsOptIn(farmContext.farmId, insertOptIn.value)
+    insertSyncMsg.value = insertOptIn.value ? 'Sharing enabled.' : 'Sharing disabled.'
+  } catch (e) {
+    insertSyncMsg.value = e.response?.data?.error ?? 'Could not update setting'
+  }
+}
+
+async function runInsertSync() {
+  if (!farmContext.farmId || !insertOptIn.value) return
+  insertSyncing.value = true
+  insertSyncMsg.value = ''
+  try {
+    const r = await farmStore.insertCommonsSync(farmContext.farmId)
+    insertSyncMsg.value = r.privacy_notice || r.note || 'Sync recorded.'
+  } catch (e) {
+    insertSyncMsg.value = e.response?.data?.error ?? 'Sync failed'
+  } finally {
+    insertSyncing.value = false
+  }
+}
+
 async function loadMembers() {
   if (!farmContext.farmId) return
   membersLoading.value = true
@@ -283,8 +344,14 @@ async function removeMember(userId) {
   } catch {}
 }
 
-onMounted(loadMembers)
-watch(() => farmContext.farmId, loadMembers)
+onMounted(() => {
+  loadMembers()
+  loadFarmSharing()
+})
+watch(() => farmContext.farmId, () => {
+  loadMembers()
+  loadFarmSharing()
+})
 
 // ── Pi API key display ───────────────────────────────────────────────────────
 const showKey  = ref(false)

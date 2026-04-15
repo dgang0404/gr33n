@@ -31,6 +31,9 @@ func (h *Handler) ListByFarm(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid farm id")
 		return
 	}
+	if !farmauthz.RequireFarmMember(w, r, h.q, farmID) {
+		return
+	}
 	rows, err := h.q.ListActuatorsByFarm(r.Context(), farmID)
 	if err != nil {
 		httputil.WriteError(w, http.StatusInternalServerError, "failed to list actuators")
@@ -67,7 +70,7 @@ func (h *Handler) UpdateState(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusInternalServerError, "failed to load actuator")
 		return
 	}
-	if !farmauthz.RequireFarmMember(w, r, h.q, a0.FarmID) {
+	if !farmauthz.RequireFarmOperate(w, r, h.q, a0.FarmID) {
 		return
 	}
 
@@ -115,6 +118,19 @@ func (h *Handler) ListEventsBySchedule(w http.ResponseWriter, r *http.Request) {
 		if n, err := strconv.ParseInt(l, 10, 32); err == nil && n > 0 && n <= 500 {
 			limit = int32(n)
 		}
+	}
+
+	sch, err := h.q.GetScheduleByID(r.Context(), scheduleID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			httputil.WriteError(w, http.StatusNotFound, "schedule not found")
+			return
+		}
+		httputil.WriteError(w, http.StatusInternalServerError, "failed to load schedule")
+		return
+	}
+	if !farmauthz.RequireFarmMember(w, r, h.q, sch.FarmID) {
+		return
 	}
 
 	rows, err := h.q.ListActuatorEventsBySchedule(r.Context(), db.ListActuatorEventsByScheduleParams{
@@ -210,6 +226,19 @@ func (h *Handler) ListEvents(w http.ResponseWriter, r *http.Request) {
 		if n, err := strconv.ParseInt(l, 10, 32); err == nil && n > 0 && n <= 200 {
 			limit = int32(n)
 		}
+	}
+
+	a0, err := h.q.GetActuatorByID(r.Context(), actuatorID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			httputil.WriteError(w, http.StatusNotFound, "actuator not found")
+			return
+		}
+		httputil.WriteError(w, http.StatusInternalServerError, "failed to load actuator")
+		return
+	}
+	if !farmauthz.RequireFarmMember(w, r, h.q, a0.FarmID) {
+		return
 	}
 
 	rows, err := h.q.ListActuatorEventsByActuator(r.Context(), db.ListActuatorEventsByActuatorParams{

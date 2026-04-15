@@ -16,8 +16,8 @@ const createCostTransaction = `-- name: CreateCostTransaction :one
 
 INSERT INTO gr33ncore.cost_transactions (
     farm_id, transaction_date, category, subcategory, amount, currency,
-    description, is_income, created_by_user_id
-) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+    description, is_income, created_by_user_id, receipt_file_id
+) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
 RETURNING id, farm_id, transaction_date, category, subcategory, amount, currency, description, related_module_schema, related_table_name, related_record_id, receipt_file_id, is_income, created_by_user_id, created_at, updated_at
 `
 
@@ -31,6 +31,7 @@ type CreateCostTransactionParams struct {
 	Description     *string                      `db:"description" json:"description"`
 	IsIncome        bool                         `db:"is_income" json:"is_income"`
 	CreatedByUserID pgtype.UUID                  `db:"created_by_user_id" json:"created_by_user_id"`
+	ReceiptFileID   *int64                       `db:"receipt_file_id" json:"receipt_file_id"`
 }
 
 // ============================================================
@@ -47,6 +48,7 @@ func (q *Queries) CreateCostTransaction(ctx context.Context, arg CreateCostTrans
 		arg.Description,
 		arg.IsIncome,
 		arg.CreatedByUserID,
+		arg.ReceiptFileID,
 	)
 	var i Gr33ncoreCostTransaction
 	err := row.Scan(
@@ -238,6 +240,7 @@ UPDATE gr33ncore.cost_transactions SET
     currency = $6,
     description = $7,
     is_income = $8,
+    receipt_file_id = $9,
     updated_at = NOW()
 WHERE id = $1
 RETURNING id, farm_id, transaction_date, category, subcategory, amount, currency, description, related_module_schema, related_table_name, related_record_id, receipt_file_id, is_income, created_by_user_id, created_at, updated_at
@@ -252,6 +255,7 @@ type UpdateCostTransactionParams struct {
 	Currency        string                       `db:"currency" json:"currency"`
 	Description     *string                      `db:"description" json:"description"`
 	IsIncome        bool                         `db:"is_income" json:"is_income"`
+	ReceiptFileID   *int64                       `db:"receipt_file_id" json:"receipt_file_id"`
 }
 
 func (q *Queries) UpdateCostTransaction(ctx context.Context, arg UpdateCostTransactionParams) (Gr33ncoreCostTransaction, error) {
@@ -264,6 +268,7 @@ func (q *Queries) UpdateCostTransaction(ctx context.Context, arg UpdateCostTrans
 		arg.Currency,
 		arg.Description,
 		arg.IsIncome,
+		arg.ReceiptFileID,
 	)
 	var i Gr33ncoreCostTransaction
 	err := row.Scan(

@@ -321,6 +321,8 @@ const (
 	Gr33ncoreFarmMemberRoleEnumWorker     Gr33ncoreFarmMemberRoleEnum = "worker"
 	Gr33ncoreFarmMemberRoleEnumViewer     Gr33ncoreFarmMemberRoleEnum = "viewer"
 	Gr33ncoreFarmMemberRoleEnumCustomRole Gr33ncoreFarmMemberRoleEnum = "custom_role"
+	Gr33ncoreFarmMemberRoleEnumOperator   Gr33ncoreFarmMemberRoleEnum = "operator"
+	Gr33ncoreFarmMemberRoleEnumFinance    Gr33ncoreFarmMemberRoleEnum = "finance"
 )
 
 func (e *Gr33ncoreFarmMemberRoleEnum) Scan(src interface{}) error {
@@ -1306,22 +1308,24 @@ type Gr33ncoreExecutableAction struct {
 }
 
 type Gr33ncoreFarm struct {
-	ID                int64                             `db:"id" json:"id"`
-	Name              string                            `db:"name" json:"name"`
-	Description       *string                           `db:"description" json:"description"`
-	LocationText      *string                           `db:"location_text" json:"location_text"`
-	LocationGis       interface{}                       `db:"location_gis" json:"location_gis"`
-	SizeHectares      pgtype.Numeric                    `db:"size_hectares" json:"size_hectares"`
-	FarmType          *string                           `db:"farm_type" json:"farm_type"`
-	ScaleTier         commontypes.FarmScaleTierEnum     `db:"scale_tier" json:"scale_tier"`
-	OwnerUserID       uuid.UUID                         `db:"owner_user_id" json:"owner_user_id"`
-	Timezone          string                            `db:"timezone" json:"timezone"`
-	Currency          string                            `db:"currency" json:"currency"`
-	OperationalStatus commontypes.OperationalStatusEnum `db:"operational_status" json:"operational_status"`
-	CreatedAt         time.Time                         `db:"created_at" json:"created_at"`
-	UpdatedAt         time.Time                         `db:"updated_at" json:"updated_at"`
-	UpdatedByUserID   pgtype.UUID                       `db:"updated_by_user_id" json:"updated_by_user_id"`
-	DeletedAt         pgtype.Timestamptz                `db:"deleted_at" json:"deleted_at"`
+	ID                      int64                             `db:"id" json:"id"`
+	Name                    string                            `db:"name" json:"name"`
+	Description             *string                           `db:"description" json:"description"`
+	LocationText            *string                           `db:"location_text" json:"location_text"`
+	LocationGis             interface{}                       `db:"location_gis" json:"location_gis"`
+	SizeHectares            pgtype.Numeric                    `db:"size_hectares" json:"size_hectares"`
+	FarmType                *string                           `db:"farm_type" json:"farm_type"`
+	ScaleTier               commontypes.FarmScaleTierEnum     `db:"scale_tier" json:"scale_tier"`
+	OwnerUserID             uuid.UUID                         `db:"owner_user_id" json:"owner_user_id"`
+	Timezone                string                            `db:"timezone" json:"timezone"`
+	Currency                string                            `db:"currency" json:"currency"`
+	OperationalStatus       commontypes.OperationalStatusEnum `db:"operational_status" json:"operational_status"`
+	CreatedAt               time.Time                         `db:"created_at" json:"created_at"`
+	UpdatedAt               time.Time                         `db:"updated_at" json:"updated_at"`
+	UpdatedByUserID         pgtype.UUID                       `db:"updated_by_user_id" json:"updated_by_user_id"`
+	DeletedAt               pgtype.Timestamptz                `db:"deleted_at" json:"deleted_at"`
+	InsertCommonsOptIn      bool                              `db:"insert_commons_opt_in" json:"insert_commons_opt_in"`
+	InsertCommonsLastSyncAt pgtype.Timestamptz                `db:"insert_commons_last_sync_at" json:"insert_commons_last_sync_at"`
 }
 
 type Gr33ncoreFarmActiveModule struct {

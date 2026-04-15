@@ -54,7 +54,7 @@ func (h *Handler) UpdateReservoir(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-	if !farmauthz.RequireFarmMember(w, r, h.q, res.FarmID) {
+	if !farmauthz.RequireFarmOperate(w, r, h.q, res.FarmID) {
 		return
 	}
 	var req struct {
@@ -109,7 +109,7 @@ func (h *Handler) DeleteReservoir(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-	if !farmauthz.RequireFarmMember(w, r, h.q, res.FarmID) {
+	if !farmauthz.RequireFarmOperate(w, r, h.q, res.FarmID) {
 		return
 	}
 	if err := h.q.DeleteReservoir(r.Context(), id); err != nil {
@@ -135,7 +135,7 @@ func (h *Handler) UpdateProgram(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-	if !farmauthz.RequireFarmMember(w, r, h.q, prog.FarmID) {
+	if !farmauthz.RequireFarmOperate(w, r, h.q, prog.FarmID) {
 		return
 	}
 	var req struct {
@@ -189,7 +189,7 @@ func (h *Handler) DeleteProgram(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-	if !farmauthz.RequireFarmMember(w, r, h.q, prog.FarmID) {
+	if !farmauthz.RequireFarmOperate(w, r, h.q, prog.FarmID) {
 		return
 	}
 	if err := h.q.DeleteProgram(r.Context(), id); err != nil {
@@ -204,6 +204,9 @@ func (h *Handler) ListReservoirsByFarm(w http.ResponseWriter, r *http.Request) {
 	farmID, err := farmIDFromPath(r)
 	if err != nil {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid farm id")
+		return
+	}
+	if !farmauthz.RequireFarmMember(w, r, h.q, farmID) {
 		return
 	}
 	rows, err := h.q.ListReservoirsByFarm(r.Context(), farmID)
@@ -224,7 +227,7 @@ func (h *Handler) CreateReservoir(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid farm id")
 		return
 	}
-	if !farmauthz.RequireFarmMember(w, r, h.q, farmID) {
+	if !farmauthz.RequireFarmOperate(w, r, h.q, farmID) {
 		return
 	}
 
@@ -275,6 +278,9 @@ func (h *Handler) ListEcTargetsByFarm(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid farm id")
 		return
 	}
+	if !farmauthz.RequireFarmMember(w, r, h.q, farmID) {
+		return
+	}
 	rows, err := h.q.ListEcTargetsByFarm(r.Context(), farmID)
 	if err != nil {
 		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
@@ -293,7 +299,7 @@ func (h *Handler) CreateEcTarget(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid farm id")
 		return
 	}
-	if !farmauthz.RequireFarmMember(w, r, h.q, farmID) {
+	if !farmauthz.RequireFarmOperate(w, r, h.q, farmID) {
 		return
 	}
 
@@ -358,6 +364,9 @@ func (h *Handler) ListProgramsByFarm(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid farm id")
 		return
 	}
+	if !farmauthz.RequireFarmMember(w, r, h.q, farmID) {
+		return
+	}
 	rows, err := h.q.ListProgramsByFarm(r.Context(), farmID)
 	if err != nil {
 		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
@@ -376,7 +385,7 @@ func (h *Handler) CreateProgram(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid farm id")
 		return
 	}
-	if !farmauthz.RequireFarmMember(w, r, h.q, farmID) {
+	if !farmauthz.RequireFarmOperate(w, r, h.q, farmID) {
 		return
 	}
 
@@ -451,6 +460,9 @@ func (h *Handler) ListEventsByFarm(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid farm id")
 		return
 	}
+	if !farmauthz.RequireFarmMember(w, r, h.q, farmID) {
+		return
+	}
 	var rows []db.Gr33nfertigationFertigationEvent
 	if v := r.URL.Query().Get("crop_cycle_id"); v != "" {
 		ccID, err := strconv.ParseInt(v, 10, 64)
@@ -483,7 +495,7 @@ func (h *Handler) CreateEvent(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid farm id")
 		return
 	}
-	if !farmauthz.RequireFarmMember(w, r, h.q, farmID) {
+	if !farmauthz.RequireFarmOperate(w, r, h.q, farmID) {
 		return
 	}
 

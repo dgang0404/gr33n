@@ -1,0 +1,17 @@
+{
+  "name": "gr33n Platform",
+  "short_name": "gr33n",
+  "description": "Farm operations dashboard (Phase 11 PWA shell)",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#09090b",
+  "theme_color": "#166534",
+  "icons": [
+    {
+      "src": "/vite.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
