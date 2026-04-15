@@ -35,9 +35,13 @@
         <input v-model="resForm.name" placeholder="Name" required
           class="input-field" />
         <select v-model="resForm.status" class="input-field">
-          <option value="active">Active</option>
-          <option value="inactive">Inactive</option>
-          <option value="maintenance">Maintenance</option>
+          <option value="ready">Ready</option>
+          <option value="mixing">Mixing</option>
+          <option value="needs_top_up">Needs Top-Up</option>
+          <option value="needs_flush">Needs Flush</option>
+          <option value="flushing">Flushing</option>
+          <option value="offline">Offline</option>
+          <option value="empty">Empty</option>
         </select>
         <input v-model.number="resForm.capacity_liters" type="number" step="0.1" min="0"
           placeholder="Capacity (L)" required class="input-field" />
@@ -60,8 +64,8 @@
           <div class="flex items-center justify-between">
             <p class="text-white text-sm font-medium">{{ r.name }}</p>
             <span class="text-xs px-2 py-0.5 rounded-full capitalize"
-              :class="r.status === 'active' ? 'bg-green-900/50 text-green-300' : 'bg-zinc-800 text-zinc-400'">
-              {{ r.status }}
+              :class="r.status === 'ready' ? 'bg-green-900/50 text-green-300' : r.status === 'offline' || r.status === 'empty' ? 'bg-red-900/50 text-red-300' : 'bg-yellow-900/50 text-yellow-300'">
+              {{ r.status?.replace(/_/g, ' ') }}
             </span>
           </div>
           <div class="flex items-end gap-1">
@@ -276,7 +280,7 @@ const tabs = [
   { id: 'events', label: 'Events' },
 ]
 
-const growthStages = ['seedling', 'vegetative', 'transition', 'flowering', 'fruiting', 'flush']
+const growthStages = ['clone', 'seedling', 'early_veg', 'late_veg', 'transition', 'early_flower', 'mid_flower', 'late_flower', 'flush', 'harvest', 'dry_cure']
 
 const zones = computed(() => store.zones)
 const farmId = computed(() => store.farm?.id || 1)
@@ -295,10 +299,10 @@ const showEcForm = ref(false)
 const showProgramForm = ref(false)
 const showEventForm = ref(false)
 
-const resForm = ref({ name: '', status: 'active', capacity_liters: 0, current_volume_liters: 0, zone_id: null })
+const resForm = ref({ name: '', status: 'ready', capacity_liters: 0, current_volume_liters: 0, zone_id: null })
 const ecForm = ref({ growth_stage: '', zone_id: null, ec_min_mscm: 0, ec_max_mscm: 0, ph_min: 0, ph_max: 0, notes: '' })
 const progForm = ref({ name: '', target_zone_id: null, reservoir_id: null, ec_target_id: null, total_volume_liters: 0, is_active: false, ec_trigger_low: 0, ph_trigger_low: 0, ph_trigger_high: 0 })
-const evForm = ref({ zone_id: '', program_id: null, volume_applied_liters: 0, ec_before_mscm: 0, ec_after_mscm: 0, ph_before: 0, ph_after: 0, notes: '', trigger_source: 'manual_operator' })
+const evForm = ref({ zone_id: '', program_id: null, volume_applied_liters: 0, ec_before_mscm: 0, ec_after_mscm: 0, ph_before: 0, ph_after: 0, notes: '', trigger_source: 'manual' })
 
 async function refresh() {
   loading.value = true
@@ -325,7 +329,7 @@ async function submitReservoir() {
   try {
     await store.createReservoir(farmId.value, resForm.value)
     showReservoirForm.value = false
-    resForm.value = { name: '', status: 'active', capacity_liters: 0, current_volume_liters: 0, zone_id: null }
+    resForm.value = { name: '', status: 'ready', capacity_liters: 0, current_volume_liters: 0, zone_id: null }
     reservoirs.value = await store.loadReservoirs(farmId.value)
   } finally { saving.value = false }
 }
@@ -355,7 +359,7 @@ async function submitEvent() {
   try {
     await store.createFertigationEvent(farmId.value, evForm.value)
     showEventForm.value = false
-    evForm.value = { zone_id: '', program_id: null, volume_applied_liters: 0, ec_before_mscm: 0, ec_after_mscm: 0, ph_before: 0, ph_after: 0, notes: '', trigger_source: 'manual_operator' }
+    evForm.value = { zone_id: '', program_id: null, volume_applied_liters: 0, ec_before_mscm: 0, ec_after_mscm: 0, ph_before: 0, ph_after: 0, notes: '', trigger_source: 'manual' }
     fertigationEvents.value = await store.loadFertigationEvents(farmId.value)
   } finally { saving.value = false }
 }
