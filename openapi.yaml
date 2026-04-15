@@ -42,6 +42,8 @@ tags:
     description: Task management
   - name: fertigation
     description: Fertigation reservoirs, programs, EC targets, and events
+  - name: naturalfarming
+    description: Korean Natural Farming (KNF) input definitions and batches
 
 paths:
 
@@ -364,6 +366,11 @@ paths:
       security: [{ bearerAuth: [] }]
       parameters:
         - { $ref: "#/components/parameters/ID" }
+        - name: token
+          in: query
+          required: false
+          schema: { type: string }
+          description: JWT fallback for EventSource clients that cannot set Authorization headers.
       responses:
         "200":
           description: SSE event stream
@@ -431,6 +438,17 @@ paths:
       responses:
         "204": { description: Deleted }
 
+  /devices/{id}/pending-command:
+    delete:
+      tags: [devices]
+      summary: Clear pending command for a device (Pi)
+      security: [{ apiKeyAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      responses:
+        "204": { description: Pending command cleared }
+        "400": { $ref: "#/components/responses/BadRequest" }
+
   # ── Actuators ──────────────────────────────────────────────
 
   /farms/{id}/actuators:
@@ -494,6 +512,88 @@ paths:
               schema:
                 type: array
                 items: { $ref: "#/components/schemas/ActuatorEvent" }
+    post:
+      tags: [actuators]
+      summary: Record an actuator event (Pi)
+      security: [{ apiKeyAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [command_sent]
+              properties:
+                command_sent: { type: string }
+                source:
+                  type: string
+                  enum:
+                    - manual_ui_input
+                    - manual_api_call
+                    - schedule_trigger
+                    - automation_rule_trigger
+                    - device_internal_feedback_loop
+                    - system_initialization_routine
+                    - emergency_stop_signal
+                  default: manual_api_call
+                event_time: { type: string, format: date-time }
+                execution_status:
+                  type: string
+                  enum:
+                    - command_sent_to_device
+                    - acknowledged_by_device
+                    - execution_started_on_device
+                    - execution_completed_success_on_device
+                    - execution_completed_with_error_on_device
+                    - execution_failed_to_start_on_device
+                    - pending_confirmation_from_feedback
+                    - timeout_waiting_for_acknowledgement
+                    - cancelled_by_user_or_system
+                  default: command_sent_to_device
+                triggered_by_schedule_id: { type: integer, nullable: true }
+      responses:
+        "201":
+          description: Created actuator event
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ActuatorEvent" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+
+  # ── Natural Farming ───────────────────────────────────────
+
+  /farms/{id}/naturalfarming/inputs:
+    get:
+      tags: [naturalfarming]
+      summary: List natural farming input definitions for a farm
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      responses:
+        "200":
+          description: List of input definitions
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/NaturalFarmingInputDefinition" }
+
+  /farms/{id}/naturalfarming/batches:
+    get:
+      tags: [naturalfarming]
+      summary: List natural farming input batches for a farm
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      responses:
+        "200":
+          description: List of input batches
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/NaturalFarmingInputBatch" }
 
   # ── Automation ─────────────────────────────────────────────
 
@@ -849,6 +949,11 @@ components:
       schema: { type: integer, format: int64 }
 
   responses:
+    BadRequest:
+      description: Invalid request
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
     NotFound:
       description: Resource not found
       content:
@@ -1231,3 +1336,78 @@ components:
         trigger_source: { type: string }
         notes: { type: string }
         metadata: { type: object }
+
+    NaturalFarmingInputDefinition:
+      type: object
+      properties:
+        id: { type: integer }
+        farm_id: { type: integer }
+        name: { type: string }
+        category:
+          type: string
+          enum:
+            - microbial_inoculant
+            - fermented_plant_juice
+            - water_soluble_nutrient
+            - oriental_herbal_nutrient
+            - fish_amino_acid
+            - insect_attractant_repellent
+            - soil_conditioner
+            - compost_tea_extract
+            - biochar_preparation
+            - other_ferment
+            - other_extract
+        description: { type: string, nullable: true }
+        typical_ingredients: { type: string, nullable: true }
+        preparation_summary: { type: string, nullable: true }
+        storage_guidelines: { type: string, nullable: true }
+        safety_precautions: { type: string, nullable: true }
+        reference_source: { type: string, nullable: true }
+        file_attachment_id: { type: integer, nullable: true }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+        updated_by_user_id: { type: string, format: uuid, nullable: true }
+        deleted_at: { type: string, format: date-time, nullable: true }
+
+    NaturalFarmingInputBatch:
+      type: object
+      properties:
+        id: { type: integer }
+        farm_id: { type: integer }
+        input_definition_id: { type: integer }
+        batch_identifier: { type: string, nullable: true }
+        creation_start_date: { type: string, format: date, nullable: true }
+        creation_end_date: { type: string, format: date, nullable: true }
+        expected_ready_date: { type: string, format: date, nullable: true }
+        actual_ready_date: { type: string, format: date, nullable: true }
+        quantity_produced: { type: number, nullable: true }
+        quantity_unit_id: { type: integer, nullable: true }
+        current_quantity_remaining: { type: number, nullable: true }
+        status:
+          type: string
+          enum:
+            - planning
+            - ingredients_gathered
+            - mixing_in_progress
+            - fermenting_brewing
+            - maturing_aging
+            - ready_for_use
+            - partially_used
+            - fully_used
+            - expired_discarded
+            - failed_production
+        storage_location: { type: string, nullable: true }
+        shelf_life_days: { type: integer, nullable: true }
+        ph_value: { type: number, nullable: true }
+        ec_value_ms_cm: { type: number, nullable: true }
+        temperature_during_making: { type: string, nullable: true }
+        ingredients_used: { type: string, nullable: true }
+        procedure_followed: { type: string, nullable: true }
+        observations_notes: { type: string, nullable: true }
+        made_by_user_id: { type: string, format: uuid, nullable: true }
+        related_task_id: { type: integer, nullable: true }
+        file_attachment_id: { type: integer, nullable: true }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+        updated_by_user_id: { type: string, format: uuid, nullable: true }
+        deleted_at: { type: string, format: date-time, nullable: true }

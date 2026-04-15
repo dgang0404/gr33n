@@ -64,6 +64,11 @@ class FakeAPIHandler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(b'{"id":1}')
 
+    def do_DELETE(self):
+        received_requests.append({"method": "DELETE", "path": self.path})
+        self.send_response(204)
+        self.end_headers()
+
 
 def start_fake_server(port=18080):
     server = HTTPServer(("127.0.0.1", port), FakeAPIHandler)
@@ -171,6 +176,9 @@ class TestApiClient(unittest.TestCase):
         ok = self.api.post_actuator_event(1, "actuator_on", "schedule_trigger", 1)
         self.assertTrue(ok)
 
+    def test_clear_pending_command(self):
+        self.assertTrue(self.api.clear_pending_command(device_id=1))
+
     def test_unreachable_api_returns_false(self):
         bad_api = client.Gr33nApiClient("http://127.0.0.1:19999", 1, timeout=1)
         self.assertFalse(bad_api.is_reachable())
@@ -277,6 +285,14 @@ class TestActuatorController(unittest.TestCase):
         self.actuator.execute("explode")  # should log warning, not raise
         self.assertEqual(self.actuator.state, "off")
 
+    def test_device_id_defaults_to_actuator_id(self):
+        a = client.ActuatorController({"actuator_id": 5, "device_type": "pump", "gpio_pin": 18})
+        self.assertEqual(a.device_id, 5)
+
+    def test_device_id_from_config(self):
+        a = client.ActuatorController({"actuator_id": 5, "device_id": 42, "device_type": "pump", "gpio_pin": 18})
+        self.assertEqual(a.device_id, 42)
+
 
 class TestScheduleLoop(unittest.TestCase):
     """Test that pending_command on a device triggers the right actuator."""
@@ -296,6 +312,109 @@ class TestScheduleLoop(unittest.TestCase):
                     actuators[did].execute(cmd)
             self.assertEqual(actuator1.state, "on")
             self.assertEqual(actuator3.state, "off")
+        finally:
+            server.shutdown()
+
+
+class TestScheduleLoopDictCommand(unittest.TestCase):
+    """Test _schedule_loop logic with dict-shaped pending_command."""
+
+    def test_dict_pending_command_extracts_command_and_schedule_id(self):
+        class DictCommandHandler(BaseHTTPRequestHandler):
+            def log_message(self, *args): pass
+            def do_GET(self):
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json")
+                self.end_headers()
+                if self.path == "/health":
+                    self.wfile.write(b'{"status":"ok","service":"gr33n-api"}')
+                elif "/devices" in self.path:
+                    self.wfile.write(json.dumps([
+                        {"id": 1, "config": {"pending_command": {"command": "on", "schedule_id": 1}}},
+                        {"id": 2, "config": {}},
+                        {"id": 3, "config": {"pending_command": {"command": "off", "schedule_id": 5}}},
+                    ]).encode())
+                else:
+                    self.wfile.write(b'[]')
+            def do_POST(self):
+                length = int(self.headers.get("Content-Length", 0))
+                self.rfile.read(length)
+                self.send_response(201)
+                self.send_header("Content-Type", "application/json")
+                self.end_headers()
+                self.wfile.write(b'{"id":1}')
+            def do_PATCH(self):
+                length = int(self.headers.get("Content-Length", 0))
+                self.rfile.read(length)
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json")
+                self.end_headers()
+                self.wfile.write(b'{"id":1}')
+            def do_DELETE(self):
+                self.send_response(204)
+                self.end_headers()
+
+        server = HTTPServer(("127.0.0.1", 18083), DictCommandHandler)
+        t = threading.Thread(target=server.serve_forever, daemon=True)
+        t.start()
+        try:
+            api = client.Gr33nApiClient("http://127.0.0.1:18083", 1, timeout=3)
+            actuator1 = client.ActuatorController({"actuator_id": 1, "device_id": 1, "device_type": "light", "gpio_pin": 17})
+            actuator3 = client.ActuatorController({"actuator_id": 3, "device_id": 3, "device_type": "fan",   "gpio_pin": 22})
+            actuator_by_device = {a.device_id: a for a in [actuator1, actuator3]}
+
+            captured_schedule_ids = []
+            for device in api.get_devices():
+                did = device.get("id")
+                config = device.get("config") or {}
+                pending = config.get("pending_command")
+                if not pending:
+                    continue
+                if isinstance(pending, dict):
+                    cmd = pending.get("command", "")
+                    sched_id = pending.get("schedule_id")
+                else:
+                    cmd = str(pending)
+                    sched_id = config.get("pending_schedule_id")
+                if not cmd:
+                    continue
+                actuator = actuator_by_device.get(did)
+                if actuator:
+                    actuator.execute(cmd)
+                    captured_schedule_ids.append(sched_id)
+                    api.post_actuator_event(actuator.actuator_id, cmd, "schedule_trigger", sched_id)
+                    api.clear_pending_command(did)
+
+            self.assertEqual(actuator1.state, "on")
+            self.assertEqual(actuator3.state, "off")
+            self.assertIn(1, captured_schedule_ids)
+            self.assertIn(5, captured_schedule_ids)
+        finally:
+            server.shutdown()
+
+
+class TestHeartbeat(unittest.TestCase):
+    """Test that heartbeat logic patches status for every configured device."""
+
+    def test_heartbeat_patches_all_devices(self):
+        server = start_fake_server(18084)
+        try:
+            api = client.Gr33nApiClient("http://127.0.0.1:18084", 1, timeout=3)
+            a1 = client.ActuatorController({"actuator_id": 1, "device_id": 10, "device_type": "light", "gpio_pin": 17})
+            a2 = client.ActuatorController({"actuator_id": 2, "device_id": 20, "device_type": "fan",   "gpio_pin": 22})
+            device_ids = {a.device_id for a in [a1, a2]}
+
+            received_requests.clear()
+            for did in device_ids:
+                api.patch_device_status(did, "online")
+
+            patches = [r for r in received_requests if r["method"] == "PATCH"]
+            patched_paths = {r["path"] for r in patches}
+            self.assertIn("/devices/10/status", patched_paths)
+            self.assertIn("/devices/20/status", patched_paths)
+            self.assertEqual(len(patches), 2)
+            for p in patches:
+                self.assertEqual(p["body"]["status"], "online")
         finally:
             server.shutdown()
 
