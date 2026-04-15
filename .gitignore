@@ -1,0 +1,33 @@
+# Go
+api
+*.exe
+*.test
+*.out
+
+# Node / UI
+ui/node_modules/
+ui/dist/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# gr33n local
+.gr33n/

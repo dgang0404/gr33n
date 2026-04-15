@@ -47,7 +47,7 @@ cmd/api/
 
 internal/
   db/          — sqlc output: Queries struct, all param/row types, models
-  handler/     — one package per resource (farm, zone, sensor, device, task)
+  handler/     — one package per resource (farm, zone, sensor, device, actuator, task, automation, auth, fertigation)
   httputil/    — WriteJSON(w, status, v) and WriteError(w, status, msg)
   platform/
     commontypes/ — enums (TaskStatusEnum, DeviceStatusEnum, etc.)
@@ -161,19 +161,28 @@ All API state lives in one store: `ui/src/stores/farm.js`
 
 ```
 state:
-  farm        — current farm object
-  zones[]     — all zones for farm
-  sensors[]   — all sensors for farm
-  devices[]   — all devices for farm
-  tasks[]     — all tasks for farm
-  readings{}  — map: sensor_id → latest Gr33ncoreSensorReading
+  farm             — current farm object
+  zones[]          — all zones for farm
+  sensors[]        — all sensors for farm
+  devices[]        — all devices for farm
+  actuators[]      — all actuators for farm
+  schedules[]      — automation schedules
+  automationRuns[] — execution history
+  tasks[]          — all tasks for farm
+  readings{}       — map: sensor_id → latest reading
 
 actions:
-  loadAll(farmId)          — parallel fetch: farm + zones + sensors + devices
-  loadTasks(farmId)        — fetch tasks
-  refreshReadings()        — loop sensors, GET /sensors/:id/readings/latest
-  toggleDevice(id, status) — PATCH /devices/:id/status
-  updateTaskStatus(id, s)  — PATCH /tasks/:id/status
+  loadAll(farmId)                    — parallel fetch: farm + zones + sensors + devices + actuators
+  loadTasks / loadSchedules          — fetch tasks or schedules
+  loadAutomationRuns                 — fetch automation run history
+  refreshReadings()                  — loop sensors, GET /sensors/:id/readings/latest
+  toggleDevice(id, status)           — PATCH /devices/:id/status
+  toggleActuator(id, stateText)      — PATCH /actuators/:id/state
+  updateTaskStatus(id, s)            — PATCH /tasks/:id/status
+  loadReservoirs / createReservoir   — fertigation CRUD
+  loadEcTargets / createEcTarget     — fertigation CRUD
+  loadFertigationPrograms / Events   — fertigation CRUD
+  loadActuatorEvents(id, opts)       — GET /actuators/:id/events
 ```
 
 ### Views
@@ -189,6 +198,8 @@ actions:
 | Tasks | `/tasks` | store.tasks (kanban-style status columns) |
 | Fertigation | `/fertigation` | Tabbed: reservoirs, EC targets, programs, events with create forms |
 | Inventory | `/inventory` | hardcoded JADAM inputs (stub) |
+| Login | `/login` | Auth store login action (public route) |
+| Settings | `/settings` | Account info, password change, sign out |
 
 ---
 
@@ -267,6 +278,8 @@ gr33n supports two explicit modes controlled by `AUTH_MODE`:
 
 | Variable | Default | Purpose |
 |----------|---------|---------|
+| `DATABASE_URL` | `postgres://<user>@/gr33n?host=/var/run/postgresql` | PostgreSQL connection string |
+| `PORT` | `8080` | API listen port |
 | `AUTH_MODE` | `dev` | `dev` or `production` |
 | `JWT_SECRET` | (empty) | HMAC-SHA256 signing key for dashboard JWTs |
 | `PI_API_KEY` | (empty) | Shared secret for Pi client `X-API-Key` header |

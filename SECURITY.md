@@ -21,7 +21,7 @@ Whether deployed in a cabin, co-op greenhouse, or airgapped industrial farm, gr3
 | Auth Modes | ✅ Explicit | `AUTH_MODE=dev` (bypass) or `AUTH_MODE=production` (enforce). Production fatals if secrets missing |
 | JWT Auth | ✅ Supported | HS256 via `JWT_SECRET`. Dashboard routes require Bearer token when enabled |
 | Pi API Key | ✅ Supported | `PI_API_KEY` env var. Pi sends `X-API-Key` header on sensor/device routes |
-| Row-Level Security (RLS) | ✅ Schema-ready | Enforced on all user-specific tables across `gr33ncore` |
+| Row-Level Security (RLS) | ⚙️ Schema-ready | Tables support RLS policies; enable per-table for Supabase or multi-user deployments |
 | Role Separation | ⚙️ Recommended | Use `gr33n_admin`, `gr33n_operator`, `gr33n_guest_inserter` with minimal permissions |
 | TLS / HTTPS | ✅ Local-ready | Use Caddy or nginx to terminate HTTPS on your LAN |
 | At-rest Encryption | ⚙️ Optional | Use LUKS disk encryption for sensitive deployments |
@@ -47,7 +47,7 @@ gr33n **never phones home.** There are no hardcoded cloud services, telemetry pi
 The Pi client (`pi_client/gr33n_client.py`) communicates only with your local API:
 
 - All requests go to the `api_base_url` defined in your `config.yaml` — point it at a local IP
-- No credentials are stored on the Pi beyond the API base URL
+- Optional `api_key` in config is sent as `X-API-Key` header when `PI_API_KEY` is enabled on the server
 - The systemd service runs as the `pi` user, not root
 - GPIO access uses the `gpiozero` library — no kernel module hacks
 
