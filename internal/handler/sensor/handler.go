@@ -161,6 +161,220 @@ func (h *Handler) LatestReading(w http.ResponseWriter, r *http.Request) {
 	httputil.WriteJSON(w, http.StatusOK, reading)
 }
 
+const (
+	defaultReadingListLimit = 500
+	maxReadingListLimit     = 5000
+	defaultReadingRange     = 24 * time.Hour
+)
+
+func parseRFC3339OrNano(s string) (time.Time, error) {
+	if s == "" {
+		return time.Time{}, errors.New("empty time")
+	}
+	if t, err := time.Parse(time.RFC3339Nano, s); err == nil {
+		return t.UTC(), nil
+	}
+	t, err := time.Parse(time.RFC3339, s)
+	if err != nil {
+		return time.Time{}, err
+	}
+	return t.UTC(), nil
+}
+
+func readingTimeRange(r *http.Request) (since, until time.Time, err error) {
+	q := r.URL.Query()
+	until = time.Now().UTC()
+	if u := q.Get("until"); u != "" {
+		until, err = parseRFC3339OrNano(u)
+		if err != nil {
+			return
+		}
+	}
+	since = until.Add(-defaultReadingRange)
+	if s := q.Get("since"); s != "" {
+		since, err = parseRFC3339OrNano(s)
+		if err != nil {
+			return
+		}
+	}
+	if since.After(until) {
+		err = errors.New("since must be before or equal to until")
+	}
+	return since, until, err
+}
+
+func parseReadingListLimit(r *http.Request) (int, error) {
+	ls := r.URL.Query().Get("limit")
+	if ls == "" {
+		return defaultReadingListLimit, nil
+	}
+	n, err := strconv.Atoi(ls)
+	if err != nil || n < 1 {
+		return 0, errors.New("invalid limit")
+	}
+	if n > maxReadingListLimit {
+		n = maxReadingListLimit
+	}
+	return n, nil
+}
+
+func reverseReadingsInPlace(s []db.Gr33ncoreSensorReading) {
+	for i, j := 0, len(s)-1; i < j; i, j = i+1, j-1 {
+		s[i], s[j] = s[j], s[i]
+	}
+}
+
+// ListReadings — GET /sensors/{id}/readings?since=&until=&limit=
+func (h *Handler) ListReadings(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	if err != nil {
+		httputil.WriteError(w, http.StatusBadRequest, "invalid sensor id")
+		return
+	}
+	if _, err := h.q.GetSensorByID(r.Context(), id); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			httputil.WriteError(w, http.StatusNotFound, "sensor not found")
+			return
+		}
+		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	since, until, err := readingTimeRange(r)
+	if err != nil {
+		httputil.WriteError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	limit, err := parseReadingListLimit(r)
+	if err != nil {
+		httputil.WriteError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	rows, err := h.q.ListReadingsBySensorAndTimeRange(r.Context(), db.ListReadingsBySensorAndTimeRangeParams{
+		SensorID:      id,
+		ReadingTime:   since,
+		ReadingTime_2: until,
+	})
+	if err != nil {
+		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	if rows == nil {
+		rows = []db.Gr33ncoreSensorReading{}
+	}
+	if len(rows) > limit {
+		rows = rows[:limit]
+	}
+	reverseReadingsInPlace(rows)
+	httputil.WriteJSON(w, http.StatusOK, rows)
+}
+
+type sensorReadingStatsResponse struct {
+	Count            int64      `json:"count"`
+	Avg              float64    `json:"avg"`
+	Min              *float64   `json:"min"`
+	Max              *float64   `json:"max"`
+	FirstReadingTime *time.Time `json:"first_reading_time"`
+	LastReadingTime  *time.Time `json:"last_reading_time"`
+}
+
+func statsNumericPtr(v interface{}) *float64 {
+	if v == nil {
+		return nil
+	}
+	switch x := v.(type) {
+	case float64:
+		return &x
+	case float32:
+		f := float64(x)
+		return &f
+	case []byte:
+		f, err := strconv.ParseFloat(string(x), 64)
+		if err != nil {
+			return nil
+		}
+		return &f
+	case string:
+		f, err := strconv.ParseFloat(x, 64)
+		if err != nil {
+			return nil
+		}
+		return &f
+	default:
+		f, err := strconv.ParseFloat(fmt.Sprint(x), 64)
+		if err != nil {
+			return nil
+		}
+		return &f
+	}
+}
+
+func statsTimePtr(v interface{}) *time.Time {
+	if v == nil {
+		return nil
+	}
+	switch x := v.(type) {
+	case time.Time:
+		if x.IsZero() {
+			return nil
+		}
+		u := x.UTC()
+		return &u
+	case pgtype.Timestamptz:
+		if !x.Valid {
+			return nil
+		}
+		u := x.Time.UTC()
+		return &u
+	default:
+		return nil
+	}
+}
+
+// ReadingStats — GET /sensors/{id}/readings/stats?since=&until=
+func (h *Handler) ReadingStats(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	if err != nil {
+		httputil.WriteError(w, http.StatusBadRequest, "invalid sensor id")
+		return
+	}
+	if _, err := h.q.GetSensorByID(r.Context(), id); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			httputil.WriteError(w, http.StatusNotFound, "sensor not found")
+			return
+		}
+		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	since, until, err := readingTimeRange(r)
+	if err != nil {
+		httputil.WriteError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	row, err := h.q.GetSensorReadingStats(r.Context(), db.GetSensorReadingStatsParams{
+		SensorID:      id,
+		ReadingTime:   since,
+		ReadingTime_2: until,
+	})
+	if err != nil {
+		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	avg := statsNumericPtr(row.AvgValue)
+	avgVal := 0.0
+	if avg != nil {
+		avgVal = *avg
+	}
+	out := sensorReadingStatsResponse{
+		Count: row.TotalReadings,
+		Avg:   avgVal,
+		Min:   statsNumericPtr(row.MinValue),
+		Max:   statsNumericPtr(row.MaxValue),
+	}
+	out.FirstReadingTime = statsTimePtr(row.FirstReading)
+	out.LastReadingTime = statsTimePtr(row.LastReading)
+	httputil.WriteJSON(w, http.StatusOK, out)
+}
+
 // PostReading — POST /sensors/{id}/readings
 // Pi payload: { "value_raw": 22.5, "is_valid": true, "battery_level_percent": 87.0 }
 func (h *Handler) PostReading(w http.ResponseWriter, r *http.Request) {

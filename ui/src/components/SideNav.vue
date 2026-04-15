@@ -61,6 +61,7 @@ const nav = [
   { to: '/tasks',        icon: '✅', label: 'Tasks'        },
   { to: '/fertigation', icon: '💧', label: 'Fertigation' },
   { to: '/inventory',   icon: '🧪', label: 'Inventory'   },
+  { to: '/costs',       icon: '💰', label: 'Costs'       },
   { to: '/alerts',      icon: '🔔', label: 'Alerts'      },
   { to: '/settings',    icon: '⚙️', label: 'Settings'    },
 ]

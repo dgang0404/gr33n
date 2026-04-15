@@ -170,6 +170,10 @@
           <option :value="null">No EC target</option>
           <option v-for="t in ecTargets" :key="t.id" :value="t.id">{{ t.growth_stage }} ({{ t.ec_min_mscm }}–{{ t.ec_max_mscm }})</option>
         </select>
+        <select v-model="progForm.application_recipe_id" class="input-field">
+          <option :value="null">No NF recipe</option>
+          <option v-for="r in nfRecipes" :key="r.id" :value="r.id">{{ r.name }}</option>
+        </select>
         <input v-model.number="progForm.total_volume_liters" type="number" step="0.1" placeholder="Total volume (L)"
           required class="input-field" />
         <label class="flex items-center gap-2 text-zinc-300 text-sm">
@@ -198,6 +202,81 @@
         </div>
       </div>
       <p v-if="!programs.length" class="text-zinc-500 text-sm">No programs configured yet.</p>
+    </template>
+
+    <!-- Crop cycles -->
+    <template v-else-if="activeTab === 'crop-cycles'">
+      <div class="flex items-center justify-between">
+        <p class="text-zinc-400 text-sm">{{ cropCycles.length }} cycle(s)</p>
+        <button @click="toggleCycleForm"
+          class="px-3 py-1.5 bg-green-700 hover:bg-green-600 text-white text-xs rounded-lg">
+          {{ showCycleForm ? 'Cancel' : '+ New cycle' }}
+        </button>
+      </div>
+
+      <form v-if="showCycleForm" @submit.prevent="submitCycle"
+        class="bg-zinc-900 border border-zinc-800 rounded-xl p-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <select v-model.number="cycleForm.zone_id" required class="input-field">
+          <option value="" disabled>Zone</option>
+          <option v-for="z in zones" :key="z.id" :value="z.id">{{ z.name }}</option>
+        </select>
+        <input v-model="cycleForm.name" placeholder="Cycle name" required class="input-field" />
+        <input v-model="cycleForm.strain_or_variety" placeholder="Strain / variety" class="input-field" />
+        <select v-model="cycleForm.current_stage" class="input-field">
+          <option v-for="gs in growthStages" :key="gs" :value="gs">{{ gs.replace(/_/g, ' ') }}</option>
+        </select>
+        <input v-model="cycleForm.started_at" type="date" required class="input-field" />
+        <select v-model.number="cycleForm.primary_program_id" class="input-field">
+          <option :value="null">No primary program</option>
+          <option v-for="p in programs" :key="p.id" :value="p.id">{{ p.name }}</option>
+        </select>
+        <textarea v-model="cycleForm.cycle_notes" placeholder="Notes" class="input-field sm:col-span-2" rows="2" />
+        <label class="flex items-center gap-2 text-zinc-300 text-sm sm:col-span-2">
+          <input type="checkbox" v-model="cycleForm.is_active" class="rounded bg-zinc-800 border-zinc-700" />
+          Active
+        </label>
+        <button type="submit" :disabled="saving"
+          class="px-4 py-2 bg-green-700 text-white text-sm rounded-lg disabled:opacity-50 sm:col-span-2">
+          {{ saving ? 'Saving…' : (editCycle ? 'Update cycle' : 'Create cycle') }}
+        </button>
+      </form>
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div v-for="c in cropCycles" :key="c.id"
+          class="bg-zinc-900 border border-zinc-800 rounded-xl p-4 space-y-3">
+          <div class="flex items-start justify-between gap-2">
+            <div>
+              <p class="text-white font-medium">{{ c.name }}</p>
+              <p class="text-zinc-500 text-xs mt-1">{{ zoneLabel(c.zone_id) }}
+                <span v-if="c.strain_or_variety"> · {{ c.strain_or_variety }}</span>
+              </p>
+            </div>
+            <span class="text-xs px-2 py-0.5 rounded-full capitalize shrink-0"
+              :class="c.is_active ? 'bg-green-900/50 text-green-300' : 'bg-zinc-800 text-zinc-500'">
+              {{ c.is_active ? 'active' : 'inactive' }}
+            </span>
+          </div>
+          <p class="text-xs text-zinc-400">Stage: <span class="text-zinc-200 capitalize">{{ cycleStage(c) }}</span></p>
+          <p class="text-xs text-zinc-500">Started {{ isoDate(c.started_at) }}</p>
+          <p v-if="c.primary_program_id" class="text-xs text-zinc-500">
+            Program: {{ programName(c.primary_program_id) }}
+          </p>
+          <div v-if="cycleStage(c) === 'harvest'" class="text-xs text-zinc-400 space-y-1">
+            <p v-if="c.yield_grams != null">Yield: {{ c.yield_grams }} g</p>
+            <p v-if="c.yield_notes">{{ c.yield_notes }}</p>
+          </div>
+          <div class="flex flex-wrap gap-2 items-center">
+            <select v-model="stageDraft[c.id]" class="input-field text-xs py-1 max-w-[10rem]">
+              <option v-for="gs in growthStages" :key="gs" :value="gs">{{ gs.replace(/_/g, ' ') }}</option>
+            </select>
+            <button type="button" @click="patchStage(c)" :disabled="saving"
+              class="text-xs px-2 py-1 rounded bg-zinc-800 text-zinc-300 hover:bg-zinc-700">Set stage</button>
+            <button type="button" @click="startEditCycle(c)" class="text-xs text-zinc-500 hover:text-zinc-300">Edit</button>
+            <button type="button" @click="deleteCycle(c)" class="text-xs text-red-500 hover:text-red-400">Deactivate</button>
+          </div>
+        </div>
+      </div>
+      <p v-if="!cropCycles.length" class="text-zinc-500 text-sm">No crop cycles yet.</p>
     </template>
 
     <!-- Events -->
@@ -265,10 +344,12 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
+import { useRoute } from 'vue-router'
 import { useFarmStore } from '../stores/farm'
 import { useFarmContextStore } from '../stores/farmContext'
 
+const route = useRoute()
 const store = useFarmStore()
 const farmContext = useFarmContextStore()
 const loading = ref(false)
@@ -279,6 +360,7 @@ const tabs = [
   { id: 'reservoirs', label: 'Reservoirs' },
   { id: 'ec-targets', label: 'EC Targets' },
   { id: 'programs', label: 'Programs' },
+  { id: 'crop-cycles', label: 'Crop Cycles' },
   { id: 'events', label: 'Events' },
 ]
 
@@ -290,7 +372,25 @@ const farmId = computed(() => farmContext.farmId)
 const reservoirs = ref([])
 const ecTargets = ref([])
 const programs = ref([])
+const nfRecipes = ref([])
+const cropCycles = ref([])
 const fertigationEvents = ref([])
+const showCycleForm = ref(false)
+const editCycle = ref(null)
+const stageDraft = reactive({})
+const cycleForm = ref({
+  zone_id: '',
+  name: '',
+  strain_or_variety: '',
+  current_stage: 'seedling',
+  started_at: new Date().toISOString().slice(0, 10),
+  is_active: true,
+  cycle_notes: '',
+  primary_program_id: null,
+  harvested_at: '',
+  yield_grams: null,
+  yield_notes: '',
+})
 
 const sortedEvents = computed(() =>
   [...fertigationEvents.value].sort((a, b) => new Date(b.applied_at) - new Date(a.applied_at))
@@ -303,7 +403,18 @@ const showEventForm = ref(false)
 
 const resForm = ref({ name: '', status: 'ready', capacity_liters: 0, current_volume_liters: 0, zone_id: null })
 const ecForm = ref({ growth_stage: '', zone_id: null, ec_min_mscm: 0, ec_max_mscm: 0, ph_min: 0, ph_max: 0, notes: '' })
-const progForm = ref({ name: '', target_zone_id: null, reservoir_id: null, ec_target_id: null, total_volume_liters: 0, is_active: false, ec_trigger_low: 0, ph_trigger_low: 0, ph_trigger_high: 0 })
+const progForm = ref({
+  name: '',
+  application_recipe_id: null,
+  target_zone_id: null,
+  reservoir_id: null,
+  ec_target_id: null,
+  total_volume_liters: 0,
+  is_active: false,
+  ec_trigger_low: 0,
+  ph_trigger_low: 0,
+  ph_trigger_high: 0,
+})
 const evForm = ref({ zone_id: '', program_id: null, volume_applied_liters: 0, ec_before_mscm: 0, ec_after_mscm: 0, ph_before: 0, ph_after: 0, notes: '', trigger_source: 'manual' })
 
 async function refresh() {
@@ -311,20 +422,155 @@ async function refresh() {
   try {
     if (!store.zones.length && farmId.value) await store.loadAll(farmId.value)
     const fid = farmId.value
-    const [r, ec, p, ev] = await Promise.all([
+    const [r, ec, p, ev, cc, recipes] = await Promise.all([
       store.loadReservoirs(fid),
       store.loadEcTargets(fid),
       store.loadFertigationPrograms(fid),
       store.loadFertigationEvents(fid),
+      store.loadCropCycles(fid),
+      store.loadRecipes(fid),
     ])
     reservoirs.value = r
     ecTargets.value = ec
     programs.value = p
     fertigationEvents.value = ev
+    cropCycles.value = cc
+    nfRecipes.value = recipes
+    for (const c of cropCycles.value) {
+      if (stageDraft[c.id] == null) stageDraft[c.id] = cycleStageRaw(c)
+    }
   } finally { loading.value = false }
 }
 
-onMounted(refresh)
+function cycleStageRaw(c) {
+  const s = c.current_stage
+  if (!s) return 'seedling'
+  if (typeof s === 'object' && s.valid) return s.gr33nfertigation_growth_stage_enum
+  if (typeof s === 'string') return s
+  return 'seedling'
+}
+
+function cycleStage(c) {
+  return String(cycleStageRaw(c)).replace(/_/g, ' ')
+}
+
+function isoDate(d) {
+  if (!d) return '—'
+  if (typeof d === 'string') return d.slice(0, 10)
+  if (d.Time) return String(d.Time).slice(0, 10)
+  return '—'
+}
+
+function programName(id) {
+  return programs.value.find(p => p.id === id)?.name ?? `#${id}`
+}
+
+function emptyCycleForm() {
+  return {
+    zone_id: '',
+    name: '',
+    strain_or_variety: '',
+    current_stage: 'seedling',
+    started_at: new Date().toISOString().slice(0, 10),
+    is_active: true,
+    cycle_notes: '',
+    primary_program_id: null,
+    harvested_at: '',
+    yield_grams: null,
+    yield_notes: '',
+  }
+}
+
+function toggleCycleForm() {
+  showCycleForm.value = !showCycleForm.value
+  if (!showCycleForm.value) {
+    editCycle.value = null
+    cycleForm.value = emptyCycleForm()
+  }
+}
+
+function startEditCycle(c) {
+  editCycle.value = c
+  showCycleForm.value = true
+  cycleForm.value = {
+    zone_id: c.zone_id,
+    name: c.name,
+    strain_or_variety: c.strain_or_variety || '',
+    current_stage: cycleStageRaw(c),
+    started_at: isoDate(c.started_at) === '—' ? new Date().toISOString().slice(0, 10) : isoDate(c.started_at),
+    is_active: !!c.is_active,
+    cycle_notes: c.cycle_notes || '',
+    primary_program_id: c.primary_program_id ?? null,
+    harvested_at: c.harvested_at ? isoDate(c.harvested_at) : '',
+    yield_grams: c.yield_grams != null ? Number(c.yield_grams) : null,
+    yield_notes: c.yield_notes || '',
+  }
+}
+
+async function submitCycle() {
+  saving.value = true
+  try {
+    const fid = farmId.value
+    const base = {
+      name: cycleForm.value.name.trim(),
+      strain_or_variety: cycleForm.value.strain_or_variety?.trim() || undefined,
+      zone_id: Number(cycleForm.value.zone_id),
+      is_active: cycleForm.value.is_active,
+      cycle_notes: cycleForm.value.cycle_notes?.trim() || undefined,
+      primary_program_id: cycleForm.value.primary_program_id,
+    }
+    if (editCycle.value) {
+      const payload = {
+        ...base,
+        harvested_at: cycleForm.value.harvested_at || undefined,
+        yield_grams: cycleForm.value.yield_grams != null ? cycleForm.value.yield_grams : undefined,
+        yield_notes: cycleForm.value.yield_notes?.trim() || undefined,
+      }
+      await store.updateCropCycle(editCycle.value.id, payload)
+    } else {
+      await store.createCropCycle(fid, {
+        zone_id: base.zone_id,
+        name: base.name,
+        strain_or_variety: base.strain_or_variety,
+        current_stage: cycleForm.value.current_stage,
+        started_at: cycleForm.value.started_at,
+        is_active: base.is_active,
+        cycle_notes: base.cycle_notes,
+        primary_program_id: base.primary_program_id,
+      })
+    }
+    showCycleForm.value = false
+    editCycle.value = null
+    cycleForm.value = emptyCycleForm()
+    cropCycles.value = await store.loadCropCycles(fid)
+  } finally { saving.value = false }
+}
+
+async function patchStage(c) {
+  const next = stageDraft[c.id]
+  if (!next) return
+  saving.value = true
+  try {
+    await store.updateCropCycleStage(c.id, next)
+    cropCycles.value = await store.loadCropCycles(farmId.value)
+  } finally { saving.value = false }
+}
+
+async function deleteCycle(c) {
+  if (!confirm(`Deactivate cycle "${c.name}"?`)) return
+  await store.deleteCropCycle(c.id)
+  cropCycles.value = await store.loadCropCycles(farmId.value)
+}
+
+onMounted(() => {
+  if (route.query.tab === 'crop-cycles') activeTab.value = 'crop-cycles'
+  if (route.query.recipe) {
+    progForm.value.application_recipe_id = Number(route.query.recipe)
+    activeTab.value = 'programs'
+    showProgramForm.value = true
+  }
+  refresh()
+})
 
 async function submitReservoir() {
   saving.value = true
@@ -351,7 +597,18 @@ async function submitProgram() {
   try {
     await store.createProgram(farmId.value, progForm.value)
     showProgramForm.value = false
-    progForm.value = { name: '', target_zone_id: null, reservoir_id: null, ec_target_id: null, total_volume_liters: 0, is_active: false, ec_trigger_low: 0, ph_trigger_low: 0, ph_trigger_high: 0 }
+    progForm.value = {
+      name: '',
+      application_recipe_id: null,
+      target_zone_id: null,
+      reservoir_id: null,
+      ec_target_id: null,
+      total_volume_liters: 0,
+      is_active: false,
+      ec_trigger_low: 0,
+      ph_trigger_low: 0,
+      ph_trigger_high: 0,
+    }
     programs.value = await store.loadFertigationPrograms(farmId.value)
   } finally { saving.value = false }
 }

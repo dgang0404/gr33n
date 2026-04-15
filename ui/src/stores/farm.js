@@ -60,6 +60,11 @@ export const useFarmStore = defineStore('farm', {
       return this.tasks
     },
 
+    async createTask(farmId, data) {
+      const r = await api.post(`/farms/${farmId}/tasks`, data)
+      return r.data
+    },
+
     async loadSchedules(farmId) {
       const r = await api.get(`/farms/${farmId}/schedules`)
       this.schedules = Array.isArray(r.data) ? r.data : []
@@ -93,6 +98,25 @@ export const useFarmStore = defineStore('farm', {
           this.readings[s.id] = r.data
         } catch { /* no readings yet */ }
       }
+    },
+
+    async loadSensorReadings(sensorId, { since, until, limit } = {}) {
+      const params = new URLSearchParams()
+      if (since) params.set('since', since)
+      if (until) params.set('until', until)
+      if (limit != null) params.set('limit', String(limit))
+      const qs = params.toString()
+      const r = await api.get(`/sensors/${sensorId}/readings${qs ? '?' + qs : ''}`)
+      return Array.isArray(r.data) ? r.data : []
+    },
+
+    async loadSensorStats(sensorId, { since, until } = {}) {
+      const params = new URLSearchParams()
+      if (since) params.set('since', since)
+      if (until) params.set('until', until)
+      const qs = params.toString()
+      const r = await api.get(`/sensors/${sensorId}/readings/stats${qs ? '?' + qs : ''}`)
+      return r.data
     },
 
     async loadActuatorEvents(actuatorId, { since, limit } = {}) {
@@ -227,6 +251,86 @@ export const useFarmStore = defineStore('farm', {
 
     async deleteNfBatch(id) {
       await api.delete(`/naturalfarming/batches/${id}`)
+    },
+
+    async loadCropCycles(farmId) {
+      const r = await api.get(`/farms/${farmId}/crop-cycles`)
+      return Array.isArray(r.data) ? r.data : []
+    },
+
+    async createCropCycle(farmId, data) {
+      const r = await api.post(`/farms/${farmId}/crop-cycles`, data)
+      return r.data
+    },
+
+    async updateCropCycle(id, data) {
+      const r = await api.put(`/crop-cycles/${id}`, data)
+      return r.data
+    },
+
+    async updateCropCycleStage(id, stage) {
+      const r = await api.patch(`/crop-cycles/${id}/stage`, { current_stage: stage })
+      return r.data
+    },
+
+    async deleteCropCycle(id) {
+      await api.delete(`/crop-cycles/${id}`)
+    },
+
+    async loadRecipes(farmId) {
+      const r = await api.get(`/farms/${farmId}/naturalfarming/recipes`)
+      return Array.isArray(r.data) ? r.data : []
+    },
+
+    async createRecipe(farmId, data) {
+      const r = await api.post(`/farms/${farmId}/naturalfarming/recipes`, data)
+      return r.data
+    },
+
+    async updateRecipe(id, data) {
+      const r = await api.put(`/naturalfarming/recipes/${id}`, data)
+      return r.data
+    },
+
+    async deleteRecipe(id) {
+      await api.delete(`/naturalfarming/recipes/${id}`)
+    },
+
+    async loadRecipeComponents(recipeId) {
+      const r = await api.get(`/naturalfarming/recipes/${recipeId}/components`)
+      return Array.isArray(r.data) ? r.data : []
+    },
+
+    async addRecipeComponent(recipeId, data) {
+      await api.post(`/naturalfarming/recipes/${recipeId}/components`, data)
+    },
+
+    async removeRecipeComponent(recipeId, inputDefinitionId) {
+      await api.delete(`/naturalfarming/recipes/${recipeId}/components/${inputDefinitionId}`)
+    },
+
+    async loadCostSummary(farmId) {
+      const r = await api.get(`/farms/${farmId}/costs/summary`)
+      return r.data
+    },
+
+    async loadCosts(farmId, { limit = 50, offset = 0 } = {}) {
+      const r = await api.get(`/farms/${farmId}/costs?limit=${limit}&offset=${offset}`)
+      return Array.isArray(r.data) ? r.data : []
+    },
+
+    async createCost(farmId, data) {
+      const r = await api.post(`/farms/${farmId}/costs`, data)
+      return r.data
+    },
+
+    async updateCost(id, data) {
+      const r = await api.put(`/costs/${id}`, data)
+      return r.data
+    },
+
+    async deleteCost(id) {
+      await api.delete(`/costs/${id}`)
     },
 
     // Alerts

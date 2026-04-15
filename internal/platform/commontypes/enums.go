@@ -3,6 +3,7 @@ package commontypes
 // ── User & Farm roles ─────────────────────────────────────────────────────────
 
 type UserRoleEnum string
+
 const (
 	UserRoleAdmin       UserRoleEnum = "admin"
 	UserRoleFarmManager UserRoleEnum = "farm_manager"
@@ -12,6 +13,7 @@ const (
 )
 
 type FarmMemberRoleEnum string
+
 const (
 	FarmMemberOwner    FarmMemberRoleEnum = "owner"
 	FarmMemberManager  FarmMemberRoleEnum = "manager"
@@ -22,6 +24,7 @@ const (
 // ── Device & Operational status ───────────────────────────────────────────────
 
 type DeviceStatusEnum string
+
 const (
 	DeviceStatusOnline      DeviceStatusEnum = "online"
 	DeviceStatusOffline     DeviceStatusEnum = "offline"
@@ -31,6 +34,7 @@ const (
 )
 
 type OperationalStatusEnum string
+
 const (
 	OperationalStatusActive      OperationalStatusEnum = "active"
 	OperationalStatusInactive    OperationalStatusEnum = "inactive"
@@ -41,6 +45,7 @@ const (
 // ── Tasks ─────────────────────────────────────────────────────────────────────
 
 type TaskStatusEnum string
+
 const (
 	TaskStatusPending    TaskStatusEnum = "pending"
 	TaskStatusInProgress TaskStatusEnum = "in_progress"
@@ -52,6 +57,7 @@ const (
 // ── Notifications ─────────────────────────────────────────────────────────────
 
 type NotificationPriorityEnum string
+
 const (
 	NotificationPriorityLow      NotificationPriorityEnum = "low"
 	NotificationPriorityMedium   NotificationPriorityEnum = "medium"
@@ -60,6 +66,7 @@ const (
 )
 
 type NotificationStatusEnum string
+
 const (
 	NotificationStatusPending        NotificationStatusEnum = "pending"
 	NotificationStatusQueued         NotificationStatusEnum = "queued"
@@ -75,6 +82,7 @@ const (
 // ── Logging ───────────────────────────────────────────────────────────────────
 
 type LogLevelEnum string
+
 const (
 	LogLevelDebug    LogLevelEnum = "debug"
 	LogLevelInfo     LogLevelEnum = "info"
@@ -86,6 +94,7 @@ const (
 // ── Automation ────────────────────────────────────────────────────────────────
 
 type AutomationTriggerSourceEnum string
+
 const (
 	AutomationTriggerSchedule  AutomationTriggerSourceEnum = "schedule"
 	AutomationTriggerSensor    AutomationTriggerSourceEnum = "sensor_threshold"
@@ -95,6 +104,7 @@ const (
 )
 
 type ExecutableActionTypeEnum string
+
 const (
 	ExecutableActionActuator     ExecutableActionTypeEnum = "actuator_command"
 	ExecutableActionNotification ExecutableActionTypeEnum = "send_notification"
@@ -105,6 +115,7 @@ const (
 // ── Weather ───────────────────────────────────────────────────────────────────
 
 type WeatherDataSourceEnum string
+
 const (
 	WeatherDataSourceSensor   WeatherDataSourceEnum = "on_site_sensor"
 	WeatherDataSourceAPI      WeatherDataSourceEnum = "weather_api"
@@ -112,20 +123,35 @@ const (
 	WeatherDataSourceForecast WeatherDataSourceEnum = "forecast"
 )
 
-// ── Cost ──────────────────────────────────────────────────────────────────────
+// ── Cost (matches gr33ncore.cost_category_enum) ───────────────────────────────
 
 type CostCategoryEnum string
+
 const (
-	CostCategoryLabour      CostCategoryEnum = "labour"
-	CostCategoryInputs      CostCategoryEnum = "inputs"
-	CostCategoryEquipment   CostCategoryEnum = "equipment"
-	CostCategoryInfrastructure CostCategoryEnum = "infrastructure"
-	CostCategoryOther       CostCategoryEnum = "other"
+	CostCategorySeedsPlants               CostCategoryEnum = "seeds_plants"
+	CostCategoryFertilizersSoilAmendments CostCategoryEnum = "fertilizers_soil_amendments"
+	CostCategoryPestDiseaseControl        CostCategoryEnum = "pest_disease_control"
+	CostCategoryWaterIrrigation           CostCategoryEnum = "water_irrigation"
+	CostCategoryLaborWages                CostCategoryEnum = "labor_wages"
+	CostCategoryEquipmentPurchaseRental   CostCategoryEnum = "equipment_purchase_rental"
+	CostCategoryEquipmentMaintenanceFuel  CostCategoryEnum = "equipment_maintenance_fuel"
+	CostCategoryUtilitiesElectricityGas   CostCategoryEnum = "utilities_electricity_gas"
+	CostCategoryLandRentMortgage          CostCategoryEnum = "land_rent_mortgage"
+	CostCategoryInsurance                 CostCategoryEnum = "insurance"
+	CostCategoryLicensesPermits           CostCategoryEnum = "licenses_permits"
+	CostCategoryFeedLivestock             CostCategoryEnum = "feed_livestock"
+	CostCategoryVeterinaryServices        CostCategoryEnum = "veterinary_services"
+	CostCategoryPackagingSupplies         CostCategoryEnum = "packaging_supplies"
+	CostCategoryTransportationLogistics   CostCategoryEnum = "transportation_logistics"
+	CostCategoryMarketingSales            CostCategoryEnum = "marketing_sales"
+	CostCategoryTrainingConsultancy       CostCategoryEnum = "training_consultancy"
+	CostCategoryMiscellaneous             CostCategoryEnum = "miscellaneous"
 )
 
 // ── Farm scale ────────────────────────────────────────────────────────────────
 
 type FarmScaleTierEnum string
+
 const (
 	FarmScaleMicro      FarmScaleTierEnum = "micro"
 	FarmScaleSmall      FarmScaleTierEnum = "small"
@@ -137,14 +163,16 @@ const (
 // ── Validation ────────────────────────────────────────────────────────────────
 
 type ValidationRuleTypeEnum string
+
 const (
-	ValidationRuleRange   ValidationRuleTypeEnum = "range"
-	ValidationRuleRegex   ValidationRuleTypeEnum = "regex"
-	ValidationRuleEnum    ValidationRuleTypeEnum = "enum"
-	ValidationRuleCustom  ValidationRuleTypeEnum = "custom"
+	ValidationRuleRange  ValidationRuleTypeEnum = "range"
+	ValidationRuleRegex  ValidationRuleTypeEnum = "regex"
+	ValidationRuleEnum   ValidationRuleTypeEnum = "enum"
+	ValidationRuleCustom ValidationRuleTypeEnum = "custom"
 )
 
 type ValidationSeverityEnum string
+
 const (
 	ValidationSeverityError   ValidationSeverityEnum = "error"
 	ValidationSeverityWarning ValidationSeverityEnum = "warning"
@@ -154,6 +182,7 @@ const (
 // ── User activity ─────────────────────────────────────────────────────────────
 
 type UserActionTypeEnum string
+
 const (
 	UserActionCreate UserActionTypeEnum = "create"
 	UserActionUpdate UserActionTypeEnum = "update"

@@ -2,7 +2,78 @@
   <div class="p-6">
     <div class="flex items-center justify-between mb-6">
       <h1 class="text-xl font-semibold text-white">Tasks</h1>
-      <span class="text-xs text-zinc-500">{{ tasks.length }} tasks</span>
+      <div class="flex items-center gap-3">
+        <button
+          type="button"
+          @click="showForm = !showForm"
+          class="text-xs font-medium px-3 py-1.5 rounded-lg bg-green-900/50 text-green-400 border border-green-800 hover:bg-green-900/70"
+        >
+          + New task
+        </button>
+        <span class="text-xs text-zinc-500">{{ tasks.length }} tasks</span>
+      </div>
+    </div>
+
+    <div
+      v-if="showForm"
+      class="mb-6 bg-zinc-900 border border-zinc-800 rounded-xl p-4 space-y-3 max-w-xl"
+    >
+      <h2 class="text-sm font-medium text-white">Create task</h2>
+      <div>
+        <label class="block text-xs text-zinc-500 mb-1">Title</label>
+        <input v-model="form.title" type="text" required
+          class="w-full bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white" />
+      </div>
+      <div>
+        <label class="block text-xs text-zinc-500 mb-1">Description</label>
+        <textarea v-model="form.description" rows="2"
+          class="w-full bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white" />
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-xs text-zinc-500 mb-1">Zone</label>
+          <select v-model="form.zone_id"
+            class="w-full bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white">
+            <option value="">—</option>
+            <option v-for="z in store.zones" :key="z.id" :value="String(z.id)">{{ z.name }}</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs text-zinc-500 mb-1">Priority</label>
+          <select v-model.number="form.priority"
+            class="w-full bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white">
+            <option :value="0">Low</option>
+            <option :value="1">Normal</option>
+            <option :value="2">High</option>
+            <option :value="3">Urgent</option>
+          </select>
+        </div>
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-xs text-zinc-500 mb-1">Due date</label>
+          <input v-model="form.due_date" type="date"
+            class="w-full bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white" />
+        </div>
+        <div>
+          <label class="block text-xs text-zinc-500 mb-1">Type</label>
+          <input v-model="form.task_type" type="text" placeholder="e.g. inspection"
+            class="w-full bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white" />
+        </div>
+      </div>
+      <p v-if="formError" class="text-xs text-red-400">{{ formError }}</p>
+      <div class="flex gap-2">
+        <button
+          type="button"
+          :disabled="submitting || !form.title.trim()"
+          @click="submitTask"
+          class="text-xs font-medium px-3 py-1.5 rounded-lg bg-green-700 text-white disabled:opacity-40"
+        >
+          Create
+        </button>
+        <button type="button" @click="showForm = false"
+          class="text-xs text-zinc-500 hover:text-zinc-300">Cancel</button>
+      </div>
     </div>
 
     <div v-if="loading" class="text-zinc-400 text-sm">Loading tasks…</div>
@@ -67,6 +138,17 @@ const store = useFarmStore()
 const farmContext = useFarmContextStore()
 const tasks = ref([])
 const loading = ref(false)
+const showForm = ref(false)
+const submitting = ref(false)
+const formError = ref('')
+const form = ref({
+  title: '',
+  description: '',
+  zone_id: '',
+  task_type: '',
+  priority: 1,
+  due_date: '',
+})
 
 onMounted(async () => {
   const fid = farmContext.farmId
@@ -75,6 +157,45 @@ onMounted(async () => {
   try { tasks.value = await store.loadTasks(fid) }
   finally { loading.value = false }
 })
+
+async function submitTask() {
+  formError.value = ''
+  const fid = farmContext.farmId
+  if (!fid) {
+    formError.value = 'No farm selected'
+    return
+  }
+  const title = form.value.title.trim()
+  if (!title) return
+  submitting.value = true
+  try {
+    const payload = {
+      title,
+      priority: form.value.priority,
+    }
+    const d = form.value.description.trim()
+    if (d) payload.description = d
+    if (form.value.zone_id) payload.zone_id = Number(form.value.zone_id)
+    const tt = form.value.task_type.trim()
+    if (tt) payload.task_type = tt
+    if (form.value.due_date) payload.due_date = form.value.due_date
+    await store.createTask(fid, payload)
+    tasks.value = await store.loadTasks(fid)
+    showForm.value = false
+    form.value = {
+      title: '',
+      description: '',
+      zone_id: '',
+      task_type: '',
+      priority: 1,
+      due_date: '',
+    }
+  } catch (e) {
+    formError.value = e.response?.data?.error || e.message || 'Failed to create task'
+  } finally {
+    submitting.value = false
+  }
+}
 
 const COLUMNS = [
   { id: 'scheduled', label: 'Scheduled', icon: '📋',

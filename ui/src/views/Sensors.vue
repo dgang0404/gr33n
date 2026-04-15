@@ -25,7 +25,14 @@
             :key="sensor.id"
             class="bg-zinc-950 hover:bg-zinc-900/60 transition-colors"
           >
-            <td class="px-4 py-3 text-white font-medium">{{ sensor.name }}</td>
+            <td class="px-4 py-3">
+              <router-link
+                :to="{ name: 'sensor-detail', params: { id: sensor.id } }"
+                class="text-white font-medium hover:text-green-400"
+              >
+                {{ sensor.name }}
+              </router-link>
+            </td>
             <td class="px-4 py-3 text-zinc-300">
               <span class="flex items-center gap-1.5">
                 <span>{{ sensorIcon(sensor.sensor_type) }}</span>

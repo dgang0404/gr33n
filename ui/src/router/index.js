@@ -3,10 +3,12 @@ import Dashboard from '../views/Dashboard.vue'
 import Zones from '../views/Zones.vue'
 import ZoneDetail from '../views/ZoneDetail.vue'
 import Sensors from '../views/Sensors.vue'
+import SensorDetail from '../views/SensorDetail.vue'
 import Actuators from '../views/Actuators.vue'
 import Schedules from '../views/Schedules.vue'
 import Tasks from '../views/Tasks.vue'
 import Inventory from '../views/Inventory.vue'
+import Costs from '../views/Costs.vue'
 import Fertigation from '../views/Fertigation.vue'
 import Alerts from '../views/Alerts.vue'
 import Settings from '../views/Settings.vue'
@@ -19,11 +21,13 @@ const routes = [
   { path: '/zones',        component: Zones,        name: 'zones' },
   { path: '/zones/:id',    component: ZoneDetail,   name: 'zone-detail' },
   { path: '/sensors',      component: Sensors,      name: 'sensors' },
+  { path: '/sensors/:id', component: SensorDetail, name: 'sensor-detail' },
   { path: '/actuators',    component: Actuators,    name: 'actuators' },
   { path: '/schedules',    component: Schedules,    name: 'schedules' },
   { path: '/tasks',        component: Tasks,        name: 'tasks' },
   { path: '/fertigation',  component: Fertigation,  name: 'fertigation' },
   { path: '/inventory',    component: Inventory,    name: 'inventory' },
+  { path: '/costs',        component: Costs,        name: 'costs' },
   { path: '/alerts',       component: Alerts,       name: 'alerts' },
   { path: '/settings',     component: Settings,     name: 'settings' },
 ]

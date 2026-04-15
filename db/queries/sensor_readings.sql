@@ -34,12 +34,12 @@ ORDER BY s.id, sr.reading_time DESC;
 
 -- name: GetSensorReadingStats :one
 SELECT
-    COUNT(*)           AS total_readings,
-    AVG(value_raw)     AS avg_value,
-    MIN(value_raw)     AS min_value,
-    MAX(value_raw)     AS max_value,
-    MIN(reading_time)  AS first_reading,
-    MAX(reading_time)  AS last_reading
+    COUNT(*)                    AS total_readings,
+    COALESCE(AVG(value_raw), 0) AS avg_value,
+    MIN(value_raw)              AS min_value,
+    MAX(value_raw)              AS max_value,
+    MIN(reading_time)           AS first_reading,
+    MAX(reading_time)           AS last_reading
 FROM gr33ncore.sensor_readings
 WHERE sensor_id = $1
   AND reading_time >= $2

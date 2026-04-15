@@ -40,12 +40,12 @@ func (q *Queries) GetLatestReadingBySensor(ctx context.Context, sensorID int64) 
 
 const getSensorReadingStats = `-- name: GetSensorReadingStats :one
 SELECT
-    COUNT(*)           AS total_readings,
-    AVG(value_raw)     AS avg_value,
-    MIN(value_raw)     AS min_value,
-    MAX(value_raw)     AS max_value,
-    MIN(reading_time)  AS first_reading,
-    MAX(reading_time)  AS last_reading
+    COUNT(*)                    AS total_readings,
+    COALESCE(AVG(value_raw), 0) AS avg_value,
+    MIN(value_raw)              AS min_value,
+    MAX(value_raw)              AS max_value,
+    MIN(reading_time)           AS first_reading,
+    MAX(reading_time)           AS last_reading
 FROM gr33ncore.sensor_readings
 WHERE sensor_id = $1
   AND reading_time >= $2
@@ -60,7 +60,7 @@ type GetSensorReadingStatsParams struct {
 
 type GetSensorReadingStatsRow struct {
 	TotalReadings int64       `db:"total_readings" json:"total_readings"`
-	AvgValue      float64     `db:"avg_value" json:"avg_value"`
+	AvgValue      interface{} `db:"avg_value" json:"avg_value"`
 	MinValue      interface{} `db:"min_value" json:"min_value"`
 	MaxValue      interface{} `db:"max_value" json:"max_value"`
 	FirstReading  interface{} `db:"first_reading" json:"first_reading"`

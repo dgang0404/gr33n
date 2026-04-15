@@ -41,6 +41,8 @@ tags:
     description: Schedules, runs, and worker health
   - name: tasks
     description: Task management
+  - name: costs
+    description: Farm cost and income transactions
   - name: fertigation
     description: Fertigation reservoirs, programs, EC targets, and events
   - name: naturalfarming
@@ -179,6 +181,39 @@ paths:
   # ── Pi routes (API key) ────────────────────────────────────
 
   /sensors/{id}/readings:
+    get:
+      tags: [sensors]
+      summary: List sensor readings in a time range
+      description: |
+        Returns readings from `since` through `until` (inclusive), oldest first.
+        Defaults to the last 24 hours. At most `limit` rows (newest within the window).
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+        - name: since
+          in: query
+          required: false
+          schema: { type: string, format: date-time }
+          description: Range start (RFC3339). Defaults to 24 hours before `until`.
+        - name: until
+          in: query
+          required: false
+          schema: { type: string, format: date-time }
+          description: Range end (RFC3339). Defaults to now (UTC).
+        - name: limit
+          in: query
+          required: false
+          schema: { type: integer, minimum: 1, maximum: 5000, default: 500 }
+      responses:
+        "200":
+          description: Readings oldest-first
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/SensorReading" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "404": { $ref: "#/components/responses/NotFound" }
     post:
       tags: [sensors]
       summary: Post a sensor reading (Pi client)
@@ -460,6 +495,31 @@ paths:
         - { $ref: "#/components/parameters/ID" }
       responses:
         "204": { description: Deleted }
+
+  /sensors/{id}/readings/stats:
+    get:
+      tags: [sensors]
+      summary: Aggregate stats for sensor readings in a time range
+      description: Defaults to the last 24 hours if `since` / `until` are omitted.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+        - name: since
+          in: query
+          required: false
+          schema: { type: string, format: date-time }
+        - name: until
+          in: query
+          required: false
+          schema: { type: string, format: date-time }
+      responses:
+        "200":
+          description: Aggregates for the window
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SensorReadingStats" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "404": { $ref: "#/components/responses/NotFound" }
 
   /sensors/{id}/readings/latest:
     get:
@@ -808,6 +868,120 @@ paths:
       responses:
         "204": { description: Deleted }
 
+  /farms/{id}/naturalfarming/recipes:
+    get:
+      tags: [naturalfarming]
+      summary: List application recipes for a farm
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/ApplicationRecipe" }
+    post:
+      tags: [naturalfarming]
+      summary: Create application recipe
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ApplicationRecipeCreate" }
+      responses:
+        "201":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ApplicationRecipe" }
+
+  /naturalfarming/recipes/{id}/components:
+    get:
+      tags: [naturalfarming]
+      summary: List recipe input components
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/RecipeComponent" }
+    post:
+      tags: [naturalfarming]
+      summary: Add or update a recipe component
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/RecipeComponentInput" }
+      responses:
+        "204": { description: Upserted }
+
+  /naturalfarming/recipes/{id}/components/{iid}:
+    delete:
+      tags: [naturalfarming]
+      summary: Remove recipe component
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+        - name: iid
+          in: path
+          required: true
+          schema: { type: integer }
+          description: input_definition_id
+      responses:
+        "204": { description: Removed }
+
+  /naturalfarming/recipes/{id}:
+    get:
+      tags: [naturalfarming]
+      summary: Get application recipe
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ApplicationRecipe" }
+    put:
+      tags: [naturalfarming]
+      summary: Update application recipe
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ApplicationRecipeUpdate" }
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ApplicationRecipe" }
+    delete:
+      tags: [naturalfarming]
+      summary: Soft-delete application recipe
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      responses:
+        "204": { description: Deleted }
+
   # ── Automation ─────────────────────────────────────────────
 
   /farms/{id}/schedules:
@@ -925,6 +1099,24 @@ paths:
               schema:
                 type: array
                 items: { $ref: "#/components/schemas/Task" }
+    post:
+      tags: [tasks]
+      summary: Create a task
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/TaskCreate" }
+      responses:
+        "201":
+          description: Created task
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Task" }
+        "400": { $ref: "#/components/responses/BadRequest" }
 
   /tasks/{id}/status:
     patch:
@@ -1136,6 +1328,179 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/FertigationEvent" }
+
+  /farms/{id}/crop-cycles:
+    get:
+      tags: [fertigation]
+      summary: List crop cycles for a farm
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      responses:
+        "200":
+          description: Crop cycles
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/CropCycle" }
+    post:
+      tags: [fertigation]
+      summary: Create a crop cycle
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CropCycleCreate" }
+      responses:
+        "201":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CropCycle" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "409": { $ref: "#/components/responses/BadRequest" }
+
+  /crop-cycles/{id}:
+    get:
+      tags: [fertigation]
+      summary: Get crop cycle by ID
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CropCycle" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    put:
+      tags: [fertigation]
+      summary: Update crop cycle
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CropCycleUpdate" }
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CropCycle" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/BadRequest" }
+    delete:
+      tags: [fertigation]
+      summary: Soft-delete crop cycle (set inactive)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      responses:
+        "204": { description: Deleted }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /crop-cycles/{id}/stage:
+    patch:
+      tags: [fertigation]
+      summary: Update crop cycle growth stage
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [current_stage]
+              properties:
+                current_stage: { $ref: "#/components/schemas/GrowthStageEnum" }
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CropCycle" }
+
+  /farms/{id}/costs/summary:
+    get:
+      tags: [costs]
+      summary: Income, expenses, and net for a farm
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CostSummary" }
+
+  /farms/{id}/costs:
+    get:
+      tags: [costs]
+      summary: List cost transactions
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+        - name: limit
+          in: query
+          schema: { type: integer, default: 50, maximum: 500 }
+        - name: offset
+          in: query
+          schema: { type: integer, default: 0 }
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/CostTransaction" }
+    post:
+      tags: [costs]
+      summary: Create cost transaction
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CostTransactionCreate" }
+      responses:
+        "201":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CostTransaction" }
+
+  /costs/{id}:
+    put:
+      tags: [costs]
+      summary: Update cost transaction
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CostTransactionUpdate" }
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CostTransaction" }
+    delete:
+      tags: [costs]
+      summary: Delete cost transaction
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      responses:
+        "204": { description: Deleted }
 
   # ── Alerts ──────────────────────────────────────────────────
 
@@ -1501,6 +1866,16 @@ components:
         signal_strength_dbm: { type: integer }
         is_valid: { type: boolean, default: true }
 
+    SensorReadingStats:
+      type: object
+      properties:
+        count: { type: integer, format: int64 }
+        avg: { type: number }
+        min: { type: number, nullable: true }
+        max: { type: number, nullable: true }
+        first_reading_time: { type: string, format: date-time, nullable: true }
+        last_reading_time: { type: string, format: date-time, nullable: true }
+
     Device:
       type: object
       properties:
@@ -1610,6 +1985,201 @@ components:
       type: string
       enum: [todo, in_progress, on_hold, completed, cancelled,
              blocked_requires_input, pending_review]
+
+    TaskCreate:
+      type: object
+      required: [title]
+      properties:
+        title: { type: string }
+        description: { type: string }
+        zone_id: { type: integer }
+        task_type: { type: string }
+        priority: { type: integer, minimum: 0, maximum: 3, default: 1 }
+        due_date: { type: string, format: date }
+        assigned_to_user_id: { type: string, format: uuid }
+
+    GrowthStageEnum:
+      type: string
+      enum: [clone, seedling, early_veg, late_veg, transition, early_flower, mid_flower, late_flower, flush, harvest, dry_cure]
+
+    CropCycle:
+      type: object
+      properties:
+        id: { type: integer }
+        farm_id: { type: integer }
+        zone_id: { type: integer }
+        name: { type: string }
+        strain_or_variety: { type: string, nullable: true }
+        current_stage: { $ref: "#/components/schemas/GrowthStageEnum" }
+        is_active: { type: boolean }
+        started_at: { type: string, format: date }
+        harvested_at: { type: string, format: date, nullable: true }
+        yield_grams: { type: number, nullable: true }
+        yield_notes: { type: string, nullable: true }
+        cycle_notes: { type: string, nullable: true }
+        primary_program_id: { type: integer, nullable: true }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+
+    CropCycleCreate:
+      type: object
+      required: [zone_id, name, started_at]
+      properties:
+        zone_id: { type: integer }
+        name: { type: string }
+        strain_or_variety: { type: string }
+        current_stage: { $ref: "#/components/schemas/GrowthStageEnum" }
+        is_active: { type: boolean }
+        started_at: { type: string, format: date }
+        cycle_notes: { type: string }
+        primary_program_id: { type: integer }
+
+    CropCycleUpdate:
+      type: object
+      required: [name, zone_id, is_active]
+      properties:
+        name: { type: string }
+        strain_or_variety: { type: string }
+        zone_id: { type: integer }
+        is_active: { type: boolean }
+        cycle_notes: { type: string }
+        harvested_at: { type: string, format: date }
+        yield_grams: { type: number }
+        yield_notes: { type: string }
+        primary_program_id: { type: integer }
+
+    ApplicationTargetEnum:
+      type: string
+      enum: [soil_drench, foliar_spray, seed_treatment, compost_pile_inoculant, livestock_water_supplement, other]
+
+    ApplicationRecipe:
+      type: object
+      properties:
+        id: { type: integer }
+        farm_id: { type: integer }
+        name: { type: string }
+        input_definition_id: { type: integer, nullable: true }
+        description: { type: string, nullable: true }
+        target_application_type: { $ref: "#/components/schemas/ApplicationTargetEnum" }
+        dilution_ratio: { type: string, nullable: true }
+        instructions: { type: string, nullable: true }
+        frequency_guidelines: { type: string, nullable: true }
+        notes: { type: string, nullable: true }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+
+    ApplicationRecipeCreate:
+      type: object
+      required: [name, target_application_type]
+      properties:
+        name: { type: string }
+        input_definition_id: { type: integer }
+        description: { type: string }
+        target_application_type: { $ref: "#/components/schemas/ApplicationTargetEnum" }
+        dilution_ratio: { type: string }
+        instructions: { type: string }
+        frequency_guidelines: { type: string }
+        notes: { type: string }
+
+    ApplicationRecipeUpdate:
+      type: object
+      required: [name, target_application_type]
+      properties:
+        name: { type: string }
+        input_definition_id: { type: integer }
+        description: { type: string }
+        target_application_type: { $ref: "#/components/schemas/ApplicationTargetEnum" }
+        dilution_ratio: { type: string }
+        instructions: { type: string }
+        frequency_guidelines: { type: string }
+        notes: { type: string }
+
+    RecipeComponent:
+      type: object
+      properties:
+        application_recipe_id: { type: integer }
+        input_definition_id: { type: integer }
+        part_value: { type: number }
+        part_unit_id: { type: integer, nullable: true }
+        notes: { type: string, nullable: true }
+        input_name: { type: string }
+
+    RecipeComponentInput:
+      type: object
+      required: [input_definition_id, part_value]
+      properties:
+        input_definition_id: { type: integer }
+        part_value: { type: number }
+        part_unit_id: { type: integer }
+        notes: { type: string }
+
+    CostCategoryEnum:
+      type: string
+      enum:
+        - seeds_plants
+        - fertilizers_soil_amendments
+        - pest_disease_control
+        - water_irrigation
+        - labor_wages
+        - equipment_purchase_rental
+        - equipment_maintenance_fuel
+        - utilities_electricity_gas
+        - land_rent_mortgage
+        - insurance
+        - licenses_permits
+        - feed_livestock
+        - veterinary_services
+        - packaging_supplies
+        - transportation_logistics
+        - marketing_sales
+        - training_consultancy
+        - miscellaneous
+
+    CostTransaction:
+      type: object
+      properties:
+        id: { type: integer }
+        farm_id: { type: integer }
+        transaction_date: { type: string, format: date }
+        category: { $ref: "#/components/schemas/CostCategoryEnum" }
+        subcategory: { type: string, nullable: true }
+        amount: { type: number }
+        currency: { type: string }
+        description: { type: string, nullable: true }
+        is_income: { type: boolean }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+
+    CostSummary:
+      type: object
+      properties:
+        total_income: { type: number }
+        total_expenses: { type: number }
+        net: { type: number }
+
+    CostTransactionCreate:
+      type: object
+      required: [transaction_date, category, amount, currency]
+      properties:
+        transaction_date: { type: string, format: date }
+        category: { $ref: "#/components/schemas/CostCategoryEnum" }
+        subcategory: { type: string }
+        amount: { type: number }
+        currency: { type: string, description: ISO 4217 uppercase }
+        description: { type: string }
+        is_income: { type: boolean }
+
+    CostTransactionUpdate:
+      type: object
+      required: [transaction_date, category, amount, currency, is_income]
+      properties:
+        transaction_date: { type: string, format: date }
+        category: { $ref: "#/components/schemas/CostCategoryEnum" }
+        subcategory: { type: string }
+        amount: { type: number }
+        currency: { type: string }
+        description: { type: string }
+        is_income: { type: boolean }
 
     Reservoir:
       type: object

@@ -82,6 +82,88 @@
       </div>
     </template>
 
+    <!-- Recipes tab -->
+    <template v-if="!loading && activeTab === 'recipes'">
+      <div class="flex items-center justify-between">
+        <p class="text-zinc-400 text-sm">{{ recipes.length }} recipe(s)</p>
+        <button @click="toggleRecipeForm"
+          class="px-3 py-1.5 bg-green-700 hover:bg-green-600 text-white text-xs rounded-lg">
+          {{ showRecipeForm ? 'Cancel' : '+ New recipe' }}
+        </button>
+      </div>
+
+      <form v-if="showRecipeForm" @submit.prevent="submitRecipe"
+        class="bg-zinc-900 border border-zinc-800 rounded-xl p-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <input v-model="recipeForm.name" placeholder="Recipe name" required class="input-field" />
+        <select v-model="recipeForm.target_application_type" required class="input-field">
+          <option v-for="t in applicationTargets" :key="t" :value="t">{{ t.replace(/_/g, ' ') }}</option>
+        </select>
+        <select v-model.number="recipeForm.input_definition_id" class="input-field">
+          <option :value="null">Primary input (optional)</option>
+          <option v-for="i in inputs" :key="i.id" :value="i.id">{{ i.name }}</option>
+        </select>
+        <input v-model="recipeForm.dilution_ratio" placeholder="Dilution ratio" class="input-field" />
+        <textarea v-model="recipeForm.description" placeholder="Description" class="input-field sm:col-span-2" rows="2" />
+        <textarea v-model="recipeForm.instructions" placeholder="Instructions" class="input-field sm:col-span-2" rows="2" />
+        <textarea v-model="recipeForm.frequency_guidelines" placeholder="Frequency" class="input-field sm:col-span-2" rows="2" />
+        <textarea v-model="recipeForm.notes" placeholder="Notes" class="input-field sm:col-span-2" rows="2" />
+        <button type="submit" :disabled="saving"
+          class="px-4 py-2 bg-green-700 text-white text-sm rounded-lg disabled:opacity-50 sm:col-span-2">
+          {{ saving ? 'Saving…' : (editRecipe ? 'Update recipe' : 'Create recipe') }}
+        </button>
+      </form>
+
+      <div class="grid gap-4 sm:grid-cols-2">
+        <div v-for="rec in recipes" :key="rec.id"
+          class="bg-zinc-800 border border-zinc-700 rounded-xl p-4 space-y-2">
+          <div class="flex items-start justify-between gap-2">
+            <h3 class="text-white font-semibold">{{ rec.name }}</h3>
+            <span class="text-xs px-2 py-0.5 rounded-full bg-zinc-700 text-zinc-300 capitalize">
+              {{ String(rec.target_application_type || '').replace(/_/g, ' ') }}
+            </span>
+          </div>
+          <p class="text-zinc-500 text-xs">
+            Primary: {{ rec.input_definition_id ? inputName(rec.input_definition_id) : '—' }}
+            <span v-if="rec.dilution_ratio"> · {{ rec.dilution_ratio }}</span>
+          </p>
+          <p v-if="rec.description" class="text-zinc-400 text-sm line-clamp-2">{{ rec.description }}</p>
+          <div class="flex flex-wrap gap-2 pt-2">
+            <button type="button" @click="openRecipeComponents(rec)" class="text-xs text-zinc-400 hover:text-white">Components</button>
+            <router-link
+              :to="{ path: '/fertigation', query: { tab: 'programs', recipe: rec.id } }"
+              class="text-xs text-green-500 hover:text-green-400"
+            >Use in program</router-link>
+            <button type="button" @click="startEditRecipe(rec)" class="text-xs text-zinc-400 hover:text-white">Edit</button>
+            <button type="button" @click="deleteRecipe(rec)" class="text-xs text-red-500 hover:text-red-400">Delete</button>
+          </div>
+        </div>
+      </div>
+      <p v-if="!recipes.length" class="text-zinc-500 text-sm">No recipes yet.</p>
+
+      <div v-if="componentRecipe" class="mt-6 bg-zinc-900 border border-zinc-800 rounded-xl p-4 space-y-3">
+        <div class="flex items-center justify-between">
+          <h3 class="text-white font-medium">Components — {{ componentRecipe.name }}</h3>
+          <button type="button" class="text-xs text-zinc-500" @click="componentRecipe = null">Close</button>
+        </div>
+        <form class="flex flex-wrap gap-2 items-end" @submit.prevent="addComponent">
+          <select v-model.number="compForm.input_definition_id" required class="input-field">
+            <option value="" disabled>Input</option>
+            <option v-for="i in inputs" :key="i.id" :value="i.id">{{ i.name }}</option>
+          </select>
+          <input v-model.number="compForm.part_value" type="number" step="0.001" placeholder="Parts" required class="input-field w-28" />
+          <button type="submit" :disabled="saving" class="px-3 py-2 bg-green-700 text-white text-xs rounded-lg">Add</button>
+        </form>
+        <ul class="space-y-2 text-sm">
+          <li v-for="c in recipeComponents" :key="c.input_definition_id"
+            class="flex justify-between gap-2 text-zinc-300 border-b border-zinc-800 pb-2">
+            <span>{{ c.input_name }} — {{ c.part_value }} parts</span>
+            <button type="button" class="text-xs text-red-500" @click="removeComponentRow(c)">Remove</button>
+          </li>
+          <li v-if="!recipeComponents.length" class="text-zinc-600">No extra components.</li>
+        </ul>
+      </div>
+    </template>
+
     <!-- Batches tab -->
     <template v-if="!loading && activeTab === 'batches'">
       <div class="flex items-center justify-between">
@@ -177,7 +259,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { useFarmStore } from '../stores/farm'
 import { useFarmContextStore } from '../stores/farmContext'
 
@@ -187,12 +269,25 @@ const farmContext = useFarmContextStore()
 const tabs = [
   { key: 'definitions', label: 'Input Definitions' },
   { key: 'batches',     label: 'Batches' },
+  { key: 'recipes',     label: 'Recipes' },
 ]
 const activeTab = ref('definitions')
 const loading   = ref(true)
 const saving    = ref(false)
 const inputs    = ref([])
 const batches   = ref([])
+const recipes   = ref([])
+const showRecipeForm = ref(false)
+const editRecipe = ref(null)
+const recipeForm = ref(emptyRecipeForm())
+const componentRecipe = ref(null)
+const recipeComponents = ref([])
+const compForm = ref({ input_definition_id: '', part_value: 1 })
+
+const applicationTargets = [
+  'soil_drench', 'foliar_spray', 'seed_treatment', 'compost_pile_inoculant',
+  'livestock_water_supplement', 'other',
+]
 
 const showInputForm = ref(false)
 const editInput = ref(null)
@@ -222,6 +317,25 @@ function emptyBatchForm() {
   return { input_definition_id: '', batch_identifier: '', status: 'planning', creation_start_date: '', creation_end_date: '', expected_ready_date: '', quantity_produced: null, current_quantity_remaining: null, storage_location: '', shelf_life_days: null, ph_value: null, ec_value_ms_cm: null, ingredients_used: '', procedure_followed: '', observations_notes: '', actual_ready_date: '' }
 }
 
+function emptyRecipeForm() {
+  return {
+    name: '',
+    target_application_type: 'soil_drench',
+    input_definition_id: null,
+    description: '',
+    dilution_ratio: '',
+    instructions: '',
+    frequency_guidelines: '',
+    notes: '',
+  }
+}
+
+async function loadRecipesList() {
+  const fid = farmContext.farmId
+  if (!fid) return
+  recipes.value = await store.loadRecipes(fid)
+}
+
 onMounted(async () => {
   try {
     const fid = farmContext.farmId
@@ -231,10 +345,89 @@ onMounted(async () => {
     ])
     inputs.value  = i
     batches.value = b
+    await loadRecipesList()
   } finally {
     loading.value = false
   }
 })
+
+watch(() => activeTab.value, (k) => {
+  if (k === 'recipes') loadRecipesList()
+})
+
+function toggleRecipeForm() {
+  showRecipeForm.value = !showRecipeForm.value
+  if (!showRecipeForm.value) {
+    editRecipe.value = null
+    recipeForm.value = emptyRecipeForm()
+  }
+}
+
+async function submitRecipe() {
+  saving.value = true
+  try {
+    const fid = farmContext.farmId
+    const payload = { ...recipeForm.value }
+    if (payload.input_definition_id === '' || payload.input_definition_id === null) {
+      delete payload.input_definition_id
+    }
+    if (editRecipe.value) {
+      await store.updateRecipe(editRecipe.value.id, payload)
+    } else {
+      await store.createRecipe(fid, payload)
+    }
+    showRecipeForm.value = false
+    editRecipe.value = null
+    recipeForm.value = emptyRecipeForm()
+    await loadRecipesList()
+  } finally { saving.value = false }
+}
+
+function startEditRecipe(rec) {
+  editRecipe.value = rec
+  showRecipeForm.value = true
+  recipeForm.value = {
+    name: rec.name,
+    target_application_type: rec.target_application_type,
+    input_definition_id: rec.input_definition_id ?? null,
+    description: rec.description || '',
+    dilution_ratio: rec.dilution_ratio || '',
+    instructions: rec.instructions || '',
+    frequency_guidelines: rec.frequency_guidelines || '',
+    notes: rec.notes || '',
+  }
+}
+
+async function deleteRecipe(rec) {
+  if (!confirm(`Delete recipe "${rec.name}"?`)) return
+  await store.deleteRecipe(rec.id)
+  if (componentRecipe.value?.id === rec.id) componentRecipe.value = null
+  await loadRecipesList()
+}
+
+async function openRecipeComponents(rec) {
+  componentRecipe.value = rec
+  recipeComponents.value = await store.loadRecipeComponents(rec.id)
+}
+
+async function addComponent() {
+  if (!componentRecipe.value || !compForm.value.input_definition_id) return
+  saving.value = true
+  try {
+    await store.addRecipeComponent(componentRecipe.value.id, {
+      input_definition_id: compForm.value.input_definition_id,
+      part_value: compForm.value.part_value,
+    })
+    compForm.value = { input_definition_id: '', part_value: 1 }
+    recipeComponents.value = await store.loadRecipeComponents(componentRecipe.value.id)
+  } finally { saving.value = false }
+}
+
+async function removeComponentRow(c) {
+  if (!componentRecipe.value) return
+  await store.removeRecipeComponent(componentRecipe.value.id, c.input_definition_id)
+  recipeComponents.value = await store.loadRecipeComponents(componentRecipe.value.id)
+}
 
 async function submitInput() {
   saving.value = true

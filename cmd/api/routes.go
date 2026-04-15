@@ -6,37 +6,43 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	automationworker "gr33n-api/internal/automation"
+	db "gr33n-api/internal/db"
 	actuatorhandler "gr33n-api/internal/handler/actuator"
-	alerthandler  "gr33n-api/internal/handler/alert"
+	alerthandler "gr33n-api/internal/handler/alert"
+	authhandler "gr33n-api/internal/handler/auth"
 	automationhandler "gr33n-api/internal/handler/automation"
-	authhandler   "gr33n-api/internal/handler/auth"
+	costhandler "gr33n-api/internal/handler/cost"
+	cropcyclehandler "gr33n-api/internal/handler/cropcycle"
 	devicehandler "gr33n-api/internal/handler/device"
-	farmhandler   "gr33n-api/internal/handler/farm"
+	farmhandler "gr33n-api/internal/handler/farm"
 	fertigationhandler "gr33n-api/internal/handler/fertigation"
-	nfhandler     "gr33n-api/internal/handler/naturalfarming"
+	nfhandler "gr33n-api/internal/handler/naturalfarming"
 	profilehandler "gr33n-api/internal/handler/profile"
+	recipehandler "gr33n-api/internal/handler/recipe"
 	sensorhandler "gr33n-api/internal/handler/sensor"
-	ssehandler    "gr33n-api/internal/handler/sse"
-	taskhandler   "gr33n-api/internal/handler/task"
-	zonehandler   "gr33n-api/internal/handler/zone"
-	db            "gr33n-api/internal/db"
+	ssehandler "gr33n-api/internal/handler/sse"
+	taskhandler "gr33n-api/internal/handler/task"
+	zonehandler "gr33n-api/internal/handler/zone"
 	"gr33n-api/internal/httputil"
 )
 
 func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationworker.Worker, adminUser string, adminHash []byte, hashFilePath string) {
-	farm   := farmhandler.NewHandler(pool)
-	zone   := zonehandler.NewHandler(pool)
+	farm := farmhandler.NewHandler(pool)
+	zone := zonehandler.NewHandler(pool)
 	device := devicehandler.NewHandler(pool)
 	actuator := actuatorhandler.NewHandler(pool)
 	automation := automationhandler.NewHandler(pool, worker)
-	sse    := ssehandler.NewHandler(pool)
+	sse := ssehandler.NewHandler(pool)
 	sensor := sensorhandler.NewHandler(pool, sse)
-	task   := taskhandler.NewHandler(pool)
+	task := taskhandler.NewHandler(pool)
 	fertigation := fertigationhandler.NewHandler(pool)
-	nf     := nfhandler.NewHandler(pool)
-	alert  := alerthandler.NewHandler(pool)
-	prof   := profilehandler.NewHandler(pool)
-	auth   := authhandler.NewHandler(adminUser, adminHash, hashFilePath, IssueToken, pool)
+	nf := nfhandler.NewHandler(pool)
+	recipe := recipehandler.NewHandler(pool)
+	cropcycle := cropcyclehandler.NewHandler(pool)
+	cost := costhandler.NewHandler(pool)
+	alert := alerthandler.NewHandler(pool)
+	prof := profilehandler.NewHandler(pool)
+	auth := authhandler.NewHandler(adminUser, adminHash, hashFilePath, IssueToken, pool)
 
 	// ── Public ───────────────────────────────────────────────────────────────
 	mux.HandleFunc("GET /health", func(w http.ResponseWriter, r *http.Request) {
@@ -55,9 +61,9 @@ func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationwo
 	})
 
 	// ── Pi routes — API key required ─────────────────────────────────────────
-	mux.Handle("POST /sensors/{id}/readings",   requireAPIKey(http.HandlerFunc(sensor.PostReading)))
-	mux.Handle("PATCH /devices/{id}/status",    requireAPIKey(http.HandlerFunc(device.UpdateStatus)))
-	mux.Handle("POST /actuators/{id}/events",   requireAPIKey(http.HandlerFunc(actuator.RecordEvent)))
+	mux.Handle("POST /sensors/{id}/readings", requireAPIKey(http.HandlerFunc(sensor.PostReading)))
+	mux.Handle("PATCH /devices/{id}/status", requireAPIKey(http.HandlerFunc(device.UpdateStatus)))
+	mux.Handle("POST /actuators/{id}/events", requireAPIKey(http.HandlerFunc(actuator.RecordEvent)))
 	mux.Handle("DELETE /devices/{id}/pending-command", requireAPIKey(http.HandlerFunc(device.ClearPendingCommand)))
 
 	// ── Dashboard routes — JWT required ──────────────────────────────────────
@@ -77,39 +83,42 @@ func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationwo
 	})))
 
 	// Farms
-	mux.Handle("GET /farms",               jwt(http.HandlerFunc(farm.List)))
-	mux.Handle("POST /farms",              jwt(http.HandlerFunc(farm.Create)))
-	mux.Handle("PUT /farms/{id}",          jwt(http.HandlerFunc(farm.Update)))
-	mux.Handle("DELETE /farms/{id}",       jwt(http.HandlerFunc(farm.Delete)))
-	mux.Handle("GET /farms/{id}",          jwt(http.HandlerFunc(farm.Get)))
-	mux.Handle("GET /farms/{id}/zones",    jwt(http.HandlerFunc(zone.ListByFarm)))
-	mux.Handle("GET /farms/{id}/devices",  jwt(http.HandlerFunc(device.ListByFarm)))
+	mux.Handle("GET /farms", jwt(http.HandlerFunc(farm.List)))
+	mux.Handle("POST /farms", jwt(http.HandlerFunc(farm.Create)))
+	mux.Handle("PUT /farms/{id}", jwt(http.HandlerFunc(farm.Update)))
+	mux.Handle("DELETE /farms/{id}", jwt(http.HandlerFunc(farm.Delete)))
+	mux.Handle("GET /farms/{id}", jwt(http.HandlerFunc(farm.Get)))
+	mux.Handle("GET /farms/{id}/zones", jwt(http.HandlerFunc(zone.ListByFarm)))
+	mux.Handle("GET /farms/{id}/devices", jwt(http.HandlerFunc(device.ListByFarm)))
 	mux.Handle("GET /farms/{id}/actuators", jwt(http.HandlerFunc(actuator.ListByFarm)))
-	mux.Handle("GET /farms/{id}/sensors",  jwt(http.HandlerFunc(sensor.ListByFarm)))
+	mux.Handle("GET /farms/{id}/sensors", jwt(http.HandlerFunc(sensor.ListByFarm)))
 	mux.Handle("GET /farms/{id}/schedules", jwt(http.HandlerFunc(automation.ListSchedulesByFarm)))
-	mux.Handle("GET /farms/{id}/tasks",    jwt(http.HandlerFunc(task.ListByFarm)))
+	mux.Handle("GET /farms/{id}/tasks", jwt(http.HandlerFunc(task.ListByFarm)))
+	mux.Handle("POST /farms/{id}/tasks", jwt(http.HandlerFunc(task.Create)))
 	mux.Handle("GET /farms/{id}/automation/runs", jwt(http.HandlerFunc(automation.ListRunsByFarm)))
 
 	// Sensors
-	mux.Handle("GET /sensors/{id}",                 jwt(http.HandlerFunc(sensor.Get)))
-	mux.Handle("POST /farms/{id}/sensors",           jwt(http.HandlerFunc(sensor.Create)))
-	mux.Handle("DELETE /sensors/{id}",              jwt(http.HandlerFunc(sensor.Delete)))
+	mux.Handle("GET /sensors/{id}", jwt(http.HandlerFunc(sensor.Get)))
+	mux.Handle("POST /farms/{id}/sensors", jwt(http.HandlerFunc(sensor.Create)))
+	mux.Handle("DELETE /sensors/{id}", jwt(http.HandlerFunc(sensor.Delete)))
 	mux.Handle("GET /sensors/{id}/readings/latest", jwt(http.HandlerFunc(sensor.LatestReading)))
+	mux.Handle("GET /sensors/{id}/readings/stats", jwt(http.HandlerFunc(sensor.ReadingStats)))
+	mux.Handle("GET /sensors/{id}/readings", jwt(http.HandlerFunc(sensor.ListReadings)))
 
 	// Devices
-	mux.Handle("GET /devices/{id}",        jwt(http.HandlerFunc(device.Get)))
+	mux.Handle("GET /devices/{id}", jwt(http.HandlerFunc(device.Get)))
 	mux.Handle("POST /farms/{id}/devices", jwt(http.HandlerFunc(device.Create)))
-	mux.Handle("DELETE /devices/{id}",     jwt(http.HandlerFunc(device.Delete)))
+	mux.Handle("DELETE /devices/{id}", jwt(http.HandlerFunc(device.Delete)))
 	mux.Handle("PATCH /actuators/{id}/state", jwt(http.HandlerFunc(actuator.UpdateState)))
 	mux.Handle("GET /actuators/{id}/events", jwt(http.HandlerFunc(actuator.ListEvents)))
 	mux.Handle("PATCH /schedules/{id}/active", jwt(http.HandlerFunc(automation.UpdateScheduleActive)))
 	mux.Handle("GET /automation/worker/health", jwt(http.HandlerFunc(automation.WorkerHealth)))
 
 	// Zones
-	mux.Handle("GET /zones/{id}",          jwt(http.HandlerFunc(zone.Get)))
-	mux.Handle("PUT /zones/{id}",          jwt(http.HandlerFunc(zone.Update)))
-	mux.Handle("POST /farms/{id}/zones",   jwt(http.HandlerFunc(zone.Create)))
-	mux.Handle("DELETE /zones/{id}",       jwt(http.HandlerFunc(zone.Delete)))
+	mux.Handle("GET /zones/{id}", jwt(http.HandlerFunc(zone.Get)))
+	mux.Handle("PUT /zones/{id}", jwt(http.HandlerFunc(zone.Update)))
+	mux.Handle("POST /farms/{id}/zones", jwt(http.HandlerFunc(zone.Create)))
+	mux.Handle("DELETE /zones/{id}", jwt(http.HandlerFunc(zone.Delete)))
 
 	// Tasks
 	mux.Handle("PATCH /tasks/{id}/status", jwt(http.HandlerFunc(task.UpdateStatus)))
@@ -128,32 +137,54 @@ func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationwo
 	mux.Handle("GET /farms/{id}/fertigation/events", jwt(http.HandlerFunc(fertigation.ListEventsByFarm)))
 	mux.Handle("POST /farms/{id}/fertigation/events", jwt(http.HandlerFunc(fertigation.CreateEvent)))
 
+	mux.Handle("GET /farms/{id}/crop-cycles", jwt(http.HandlerFunc(cropcycle.List)))
+	mux.Handle("POST /farms/{id}/crop-cycles", jwt(http.HandlerFunc(cropcycle.Create)))
+	mux.Handle("PATCH /crop-cycles/{id}/stage", jwt(http.HandlerFunc(cropcycle.UpdateStage)))
+	mux.Handle("GET /crop-cycles/{id}", jwt(http.HandlerFunc(cropcycle.Get)))
+	mux.Handle("PUT /crop-cycles/{id}", jwt(http.HandlerFunc(cropcycle.Update)))
+	mux.Handle("DELETE /crop-cycles/{id}", jwt(http.HandlerFunc(cropcycle.Delete)))
+
+	mux.Handle("GET /farms/{id}/costs/summary", jwt(http.HandlerFunc(cost.Summary)))
+	mux.Handle("GET /farms/{id}/costs", jwt(http.HandlerFunc(cost.List)))
+	mux.Handle("POST /farms/{id}/costs", jwt(http.HandlerFunc(cost.Create)))
+	mux.Handle("PUT /costs/{id}", jwt(http.HandlerFunc(cost.Update)))
+	mux.Handle("DELETE /costs/{id}", jwt(http.HandlerFunc(cost.Delete)))
+
 	// Natural farming
-	mux.Handle("GET /farms/{id}/naturalfarming/inputs",  jwt(http.HandlerFunc(nf.ListInputs)))
+	mux.Handle("GET /farms/{id}/naturalfarming/inputs", jwt(http.HandlerFunc(nf.ListInputs)))
 	mux.Handle("POST /farms/{id}/naturalfarming/inputs", jwt(http.HandlerFunc(nf.CreateInputDefinition)))
-	mux.Handle("PUT /naturalfarming/inputs/{id}",        jwt(http.HandlerFunc(nf.UpdateInputDefinition)))
-	mux.Handle("DELETE /naturalfarming/inputs/{id}",     jwt(http.HandlerFunc(nf.DeleteInputDefinition)))
+	mux.Handle("PUT /naturalfarming/inputs/{id}", jwt(http.HandlerFunc(nf.UpdateInputDefinition)))
+	mux.Handle("DELETE /naturalfarming/inputs/{id}", jwt(http.HandlerFunc(nf.DeleteInputDefinition)))
 	mux.Handle("GET /farms/{id}/naturalfarming/batches", jwt(http.HandlerFunc(nf.ListBatches)))
 	mux.Handle("POST /farms/{id}/naturalfarming/batches", jwt(http.HandlerFunc(nf.CreateInputBatch)))
-	mux.Handle("PUT /naturalfarming/batches/{id}",       jwt(http.HandlerFunc(nf.UpdateInputBatch)))
-	mux.Handle("DELETE /naturalfarming/batches/{id}",    jwt(http.HandlerFunc(nf.DeleteInputBatch)))
+	mux.Handle("PUT /naturalfarming/batches/{id}", jwt(http.HandlerFunc(nf.UpdateInputBatch)))
+	mux.Handle("DELETE /naturalfarming/batches/{id}", jwt(http.HandlerFunc(nf.DeleteInputBatch)))
+
+	mux.Handle("GET /farms/{id}/naturalfarming/recipes", jwt(http.HandlerFunc(recipe.List)))
+	mux.Handle("POST /farms/{id}/naturalfarming/recipes", jwt(http.HandlerFunc(recipe.Create)))
+	mux.Handle("GET /naturalfarming/recipes/{id}/components", jwt(http.HandlerFunc(recipe.ListComponents)))
+	mux.Handle("POST /naturalfarming/recipes/{id}/components", jwt(http.HandlerFunc(recipe.AddComponent)))
+	mux.Handle("DELETE /naturalfarming/recipes/{id}/components/{iid}", jwt(http.HandlerFunc(recipe.RemoveComponent)))
+	mux.Handle("GET /naturalfarming/recipes/{id}", jwt(http.HandlerFunc(recipe.Get)))
+	mux.Handle("PUT /naturalfarming/recipes/{id}", jwt(http.HandlerFunc(recipe.Update)))
+	mux.Handle("DELETE /naturalfarming/recipes/{id}", jwt(http.HandlerFunc(recipe.Delete)))
 
 	// Actuator events by schedule (for Schedules page event history)
 	mux.Handle("GET /schedules/{id}/actuator-events", jwt(http.HandlerFunc(actuator.ListEventsBySchedule)))
 
 	// Alerts
-	mux.Handle("GET /farms/{id}/alerts",              jwt(http.HandlerFunc(alert.ListByFarm)))
+	mux.Handle("GET /farms/{id}/alerts", jwt(http.HandlerFunc(alert.ListByFarm)))
 	mux.Handle("GET /farms/{id}/alerts/unread-count", jwt(http.HandlerFunc(alert.CountUnread)))
-	mux.Handle("PATCH /alerts/{id}/read",             jwt(http.HandlerFunc(alert.MarkRead)))
-	mux.Handle("PATCH /alerts/{id}/acknowledge",      jwt(http.HandlerFunc(alert.MarkAcknowledged)))
+	mux.Handle("PATCH /alerts/{id}/read", jwt(http.HandlerFunc(alert.MarkRead)))
+	mux.Handle("PATCH /alerts/{id}/acknowledge", jwt(http.HandlerFunc(alert.MarkAcknowledged)))
 
 	// Profile & farm members
-	mux.Handle("GET /profile",                           jwt(http.HandlerFunc(prof.GetMyProfile)))
-	mux.Handle("PUT /profile",                           jwt(http.HandlerFunc(prof.UpdateMyProfile)))
-	mux.Handle("GET /farms/{id}/members",                jwt(http.HandlerFunc(prof.GetFarmMembers)))
-	mux.Handle("POST /farms/{id}/members",               jwt(http.HandlerFunc(prof.AddFarmMember)))
-	mux.Handle("PATCH /farms/{id}/members/{uid}/role",   jwt(http.HandlerFunc(prof.UpdateMemberRole)))
-	mux.Handle("DELETE /farms/{id}/members/{uid}",       jwt(http.HandlerFunc(prof.RemoveMember)))
+	mux.Handle("GET /profile", jwt(http.HandlerFunc(prof.GetMyProfile)))
+	mux.Handle("PUT /profile", jwt(http.HandlerFunc(prof.UpdateMyProfile)))
+	mux.Handle("GET /farms/{id}/members", jwt(http.HandlerFunc(prof.GetFarmMembers)))
+	mux.Handle("POST /farms/{id}/members", jwt(http.HandlerFunc(prof.AddFarmMember)))
+	mux.Handle("PATCH /farms/{id}/members/{uid}/role", jwt(http.HandlerFunc(prof.UpdateMemberRole)))
+	mux.Handle("DELETE /farms/{id}/members/{uid}", jwt(http.HandlerFunc(prof.RemoveMember)))
 
 	// SSE — live sensor readings push
 	mux.Handle("GET /farms/{id}/sensors/stream", jwt(http.HandlerFunc(sse.Stream)))

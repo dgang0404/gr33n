@@ -5,11 +5,15 @@ import (
 	"errors"
 	"net/http"
 	"strconv"
+	"strings"
+	"time"
 
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"gr33n-api/internal/authctx"
 	db "gr33n-api/internal/db"
 	"gr33n-api/internal/httputil"
 	"gr33n-api/internal/platform/commontypes"
@@ -36,6 +40,77 @@ func (h *Handler) ListByFarm(w http.ResponseWriter, r *http.Request) {
 		rows = []db.Gr33ncoreTask{}
 	}
 	httputil.WriteJSON(w, http.StatusOK, rows)
+}
+
+// Create — POST /farms/{id}/tasks
+func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
+	farmID, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	if err != nil {
+		httputil.WriteError(w, http.StatusBadRequest, "invalid farm id")
+		return
+	}
+	var body struct {
+		Title            string     `json:"title"`
+		Description      *string    `json:"description"`
+		ZoneID           *int64     `json:"zone_id"`
+		TaskType         *string    `json:"task_type"`
+		Priority         *int32     `json:"priority"`
+		DueDate          *string    `json:"due_date"`
+		AssignedToUserID *uuid.UUID `json:"assigned_to_user_id"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		httputil.WriteError(w, http.StatusBadRequest, "invalid body")
+		return
+	}
+	title := strings.TrimSpace(body.Title)
+	if title == "" {
+		httputil.WriteError(w, http.StatusBadRequest, "title required")
+		return
+	}
+	priority := int32(1)
+	if body.Priority != nil {
+		priority = *body.Priority
+		if priority < 0 || priority > 3 {
+			httputil.WriteError(w, http.StatusBadRequest, "priority must be 0–3")
+			return
+		}
+	}
+	var dueDate pgtype.Date
+	if body.DueDate != nil && strings.TrimSpace(*body.DueDate) != "" {
+		t, err := time.Parse("2006-01-02", strings.TrimSpace(*body.DueDate))
+		if err != nil {
+			httputil.WriteError(w, http.StatusBadRequest, "invalid due_date (use YYYY-MM-DD)")
+			return
+		}
+		dueDate = pgtype.Date{Time: t, Valid: true}
+	}
+	var assignID pgtype.UUID
+	if body.AssignedToUserID != nil {
+		assignID = pgtype.UUID{Bytes: *body.AssignedToUserID, Valid: true}
+	}
+	var createdBy pgtype.UUID
+	if uid, ok := authctx.UserID(r.Context()); ok {
+		createdBy = pgtype.UUID{Bytes: uid, Valid: true}
+	}
+	q := db.New(h.pool)
+	task, err := q.CreateTask(r.Context(), db.CreateTaskParams{
+		FarmID:                   farmID,
+		ZoneID:                   body.ZoneID,
+		Title:                    title,
+		Description:              body.Description,
+		TaskType:                 body.TaskType,
+		Status:                   commontypes.TaskStatusEnum("todo"),
+		Priority:                 &priority,
+		AssignedToUserID:         assignID,
+		DueDate:                  dueDate,
+		EstimatedDurationMinutes: nil,
+		CreatedByUserID:          createdBy,
+	})
+	if err != nil {
+		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	httputil.WriteJSON(w, http.StatusCreated, task)
 }
 
 // UpdateStatus — PATCH /tasks/{id}/status

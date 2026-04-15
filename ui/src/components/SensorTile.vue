@@ -1,14 +1,23 @@
 <template>
-  <div class="card flex flex-col gap-2 min-w-0">
-    <div class="flex items-center justify-between">
-      <span class="text-xs text-gray-500 uppercase tracking-wide truncate">{{ label }}</span>
-      <span :class="badgeClass">{{ statusLabel }}</span>
+  <router-link
+    v-if="sensor?.id"
+    :to="{ name: 'sensor-detail', params: { id: sensor.id } }"
+    class="block rounded-xl ring-0 hover:ring-1 ring-zinc-600 focus:outline-none focus:ring-2 focus:ring-green-600 transition-shadow min-w-0"
+  >
+    <div class="card flex flex-col gap-2 min-w-0">
+      <div class="flex items-center justify-between">
+        <span class="text-xs text-gray-500 uppercase tracking-wide truncate">{{ label }}</span>
+        <span :class="badgeClass">{{ statusLabel }}</span>
+      </div>
+      <div class="flex items-end gap-1">
+        <span class="text-2xl font-bold font-mono text-white">{{ displayValue }}</span>
+        <span class="text-sm text-gray-500 mb-0.5">{{ unit }}</span>
+      </div>
+      <div class="text-xs text-gray-600">{{ ago }}</div>
     </div>
-    <div class="flex items-end gap-1">
-      <span class="text-2xl font-bold font-mono text-white">{{ displayValue }}</span>
-      <span class="text-sm text-gray-500 mb-0.5">{{ unit }}</span>
-    </div>
-    <div class="text-xs text-gray-600">{{ ago }}</div>
+  </router-link>
+  <div v-else class="card flex flex-col gap-2 min-w-0 opacity-50">
+    <div class="text-xs text-gray-500">Invalid sensor</div>
   </div>
 </template>
 
