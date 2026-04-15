@@ -7,20 +7,22 @@ import Actuators from '../views/Actuators.vue'
 import Schedules from '../views/Schedules.vue'
 import Tasks from '../views/Tasks.vue'
 import Inventory from '../views/Inventory.vue'
+import Fertigation from '../views/Fertigation.vue'
 import Settings from '../views/Settings.vue'
 import Login from '../views/Login.vue'
 
 const routes = [
-  { path: '/login',    component: Login,     name: 'login',     meta: { public: true } },
-  { path: '/',         component: Dashboard, name: 'dashboard' },
-  { path: '/zones',    component: Zones,     name: 'zones' },
-  { path: '/zones/:id',component: ZoneDetail,name: 'zone-detail' },
-  { path: '/sensors',  component: Sensors,   name: 'sensors' },
-  { path: '/actuators',component: Actuators, name: 'actuators' },
-  { path: '/schedules',component: Schedules, name: 'schedules' },
-  { path: '/tasks',    component: Tasks,     name: 'tasks' },
-  { path: '/inventory',component: Inventory, name: 'inventory' },
-  { path: '/settings', component: Settings,  name: 'settings' },
+  { path: '/login',        component: Login,        name: 'login',        meta: { public: true } },
+  { path: '/',             component: Dashboard,    name: 'dashboard' },
+  { path: '/zones',        component: Zones,        name: 'zones' },
+  { path: '/zones/:id',    component: ZoneDetail,   name: 'zone-detail' },
+  { path: '/sensors',      component: Sensors,      name: 'sensors' },
+  { path: '/actuators',    component: Actuators,    name: 'actuators' },
+  { path: '/schedules',    component: Schedules,    name: 'schedules' },
+  { path: '/tasks',        component: Tasks,        name: 'tasks' },
+  { path: '/fertigation',  component: Fertigation,  name: 'fertigation' },
+  { path: '/inventory',    component: Inventory,    name: 'inventory' },
+  { path: '/settings',     component: Settings,     name: 'settings' },
 ]
 
 const router = createRouter({
