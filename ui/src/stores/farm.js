@@ -93,6 +93,55 @@ export const useFarmStore = defineStore('farm', {
       }
     },
 
+    async loadActuatorEvents(actuatorId, { since, limit } = {}) {
+      const params = new URLSearchParams()
+      if (since) params.set('since', since)
+      if (limit) params.set('limit', String(limit))
+      const qs = params.toString()
+      const r = await api.get(`/actuators/${actuatorId}/events${qs ? '?' + qs : ''}`)
+      return Array.isArray(r.data) ? r.data : []
+    },
+
+    async loadFertigationPrograms(farmId = 1) {
+      const r = await api.get(`/farms/${farmId}/fertigation/programs`)
+      return Array.isArray(r.data) ? r.data : []
+    },
+
+    async loadFertigationEvents(farmId = 1) {
+      const r = await api.get(`/farms/${farmId}/fertigation/events`)
+      return Array.isArray(r.data) ? r.data : []
+    },
+
+    async loadReservoirs(farmId = 1) {
+      const r = await api.get(`/farms/${farmId}/fertigation/reservoirs`)
+      return Array.isArray(r.data) ? r.data : []
+    },
+
+    async loadEcTargets(farmId = 1) {
+      const r = await api.get(`/farms/${farmId}/fertigation/ec-targets`)
+      return Array.isArray(r.data) ? r.data : []
+    },
+
+    async createReservoir(farmId, data) {
+      const r = await api.post(`/farms/${farmId}/fertigation/reservoirs`, data)
+      return r.data
+    },
+
+    async createEcTarget(farmId, data) {
+      const r = await api.post(`/farms/${farmId}/fertigation/ec-targets`, data)
+      return r.data
+    },
+
+    async createProgram(farmId, data) {
+      const r = await api.post(`/farms/${farmId}/fertigation/programs`, data)
+      return r.data
+    },
+
+    async createFertigationEvent(farmId, data) {
+      const r = await api.post(`/farms/${farmId}/fertigation/events`, data)
+      return r.data
+    },
+
     async toggleDevice(deviceId, currentStatus) {
       const next = currentStatus === 'online' ? 'offline' : 'online'
       await api.patch(`/devices/${deviceId}/status`, { status: next })
