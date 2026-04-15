@@ -61,15 +61,18 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useFarmStore } from '../stores/farm'
+import { useFarmContextStore } from '../stores/farmContext'
 
 const store = useFarmStore()
+const farmContext = useFarmContextStore()
 const tasks = ref([])
 const loading = ref(false)
 
 onMounted(async () => {
-  if (!store.zones.length) await store.loadAll()
+  const fid = farmContext.farmId
+  if (!store.zones.length && fid) await store.loadAll(fid)
   loading.value = true
-  try { tasks.value = await store.loadTasks() }
+  try { tasks.value = await store.loadTasks(fid) }
   finally { loading.value = false }
 })
 

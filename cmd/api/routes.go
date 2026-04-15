@@ -125,7 +125,13 @@ func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationwo
 
 	// Natural farming
 	mux.Handle("GET /farms/{id}/naturalfarming/inputs",  jwt(http.HandlerFunc(nf.ListInputs)))
+	mux.Handle("POST /farms/{id}/naturalfarming/inputs", jwt(http.HandlerFunc(nf.CreateInputDefinition)))
+	mux.Handle("PUT /naturalfarming/inputs/{id}",        jwt(http.HandlerFunc(nf.UpdateInputDefinition)))
+	mux.Handle("DELETE /naturalfarming/inputs/{id}",     jwt(http.HandlerFunc(nf.DeleteInputDefinition)))
 	mux.Handle("GET /farms/{id}/naturalfarming/batches", jwt(http.HandlerFunc(nf.ListBatches)))
+	mux.Handle("POST /farms/{id}/naturalfarming/batches", jwt(http.HandlerFunc(nf.CreateInputBatch)))
+	mux.Handle("PUT /naturalfarming/batches/{id}",       jwt(http.HandlerFunc(nf.UpdateInputBatch)))
+	mux.Handle("DELETE /naturalfarming/batches/{id}",    jwt(http.HandlerFunc(nf.DeleteInputBatch)))
 
 	// Actuator events by schedule (for Schedules page event history)
 	mux.Handle("GET /schedules/{id}/actuator-events", jwt(http.HandlerFunc(actuator.ListEventsBySchedule)))

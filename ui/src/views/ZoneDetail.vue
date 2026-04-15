@@ -142,10 +142,12 @@
 import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { useFarmStore } from '../stores/farm'
+import { useFarmContextStore } from '../stores/farmContext'
 import SensorTile from '../components/SensorTile.vue'
 
 const route = useRoute()
 const store = useFarmStore()
+const farmContext = useFarmContextStore()
 const toggling = ref({})
 
 const programs = ref([])
@@ -153,7 +155,7 @@ const events = ref([])
 const actuatorEvents = ref([])
 const eventsLoading = ref(false)
 
-const farmId = computed(() => store.farm?.id || 1)
+const farmId = computed(() => farmContext.farmId)
 const zoneId = computed(() => Number(route.params.id))
 const zone = computed(() => store.zones.find(z => z.id === zoneId.value))
 const sensors = computed(() => store.sensorsByZone(zoneId.value))
@@ -192,7 +194,7 @@ async function toggleActuator(a) {
 }
 
 onMounted(async () => {
-  if (!store.zones.length) await store.loadAll(1)
+  if (!store.zones.length && farmId.value) await store.loadAll(farmId.value)
   const fid = farmId.value
   const [p, e] = await Promise.all([
     store.loadFertigationPrograms(fid),

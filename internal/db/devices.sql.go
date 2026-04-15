@@ -13,6 +13,17 @@ import (
 	"gr33n-api/internal/platform/commontypes"
 )
 
+const clearDevicePendingCommand = `-- name: ClearDevicePendingCommand :exec
+UPDATE gr33ncore.devices
+SET config = config - 'pending_command', updated_at = NOW()
+WHERE id = $1
+`
+
+func (q *Queries) ClearDevicePendingCommand(ctx context.Context, id int64) error {
+	_, err := q.db.Exec(ctx, clearDevicePendingCommand, id)
+	return err
+}
+
 const createDevice = `-- name: CreateDevice :one
 
 INSERT INTO gr33ncore.devices (
@@ -238,17 +249,6 @@ type SetDevicePendingCommandParams struct {
 
 func (q *Queries) SetDevicePendingCommand(ctx context.Context, arg SetDevicePendingCommandParams) error {
 	_, err := q.db.Exec(ctx, setDevicePendingCommand, arg.ID, arg.Column2)
-	return err
-}
-
-const clearDevicePendingCommand = `-- name: ClearDevicePendingCommand :exec
-UPDATE gr33ncore.devices
-SET config = config - 'pending_command', updated_at = NOW()
-WHERE id = $1
-`
-
-func (q *Queries) ClearDevicePendingCommand(ctx context.Context, id int64) error {
-	_, err := q.db.Exec(ctx, clearDevicePendingCommand, id)
 	return err
 }
 

@@ -14,15 +14,19 @@
 import SideNav from './components/SideNav.vue'
 import TopBar  from './components/TopBar.vue'
 import { useFarmStore } from './stores/farm'
-import { onMounted, onUnmounted } from 'vue'
+import { useFarmContextStore } from './stores/farmContext'
+import { onMounted, onUnmounted, watch } from 'vue'
 
 const store = useFarmStore()
+const farmContext = useFarmContextStore()
 let evtSource = null
 
-function connectSSE() {
+function connectSSE(farmId) {
+  if (evtSource) evtSource.close()
+  if (!farmId) return
   const base = import.meta.env.VITE_API_URL ?? 'http://localhost:8080'
   const token = localStorage.getItem('gr33n_token')
-  const url = `${base}/farms/1/sensors/stream${token ? '?token=' + token : ''}`
+  const url = `${base}/farms/${farmId}/sensors/stream${token ? '?token=' + token : ''}`
   evtSource = new EventSource(url)
   evtSource.addEventListener('readings', (e) => {
     try {
@@ -34,14 +38,23 @@ function connectSSE() {
   })
   evtSource.onerror = () => {
     evtSource.close()
-    setTimeout(connectSSE, 5000)
+    setTimeout(() => connectSSE(farmContext.farmId), 5000)
   }
 }
 
+watch(() => farmContext.farmId, (id) => {
+  if (id) connectSSE(id)
+})
+
 onMounted(async () => {
-  await store.loadAll(1)
+  await farmContext.fetchFarms()
+  if (!farmContext.farmId && farmContext.farms.length) {
+    await farmContext.selectFarm(farmContext.farms[0].id)
+  } else if (farmContext.farmId) {
+    await store.loadAll(farmContext.farmId)
+  }
   await store.refreshReadings()
-  connectSSE()
+  connectSSE(farmContext.farmId)
 })
 onUnmounted(() => {
   if (evtSource) evtSource.close()

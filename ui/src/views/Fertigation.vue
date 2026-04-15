@@ -267,8 +267,10 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue'
 import { useFarmStore } from '../stores/farm'
+import { useFarmContextStore } from '../stores/farmContext'
 
 const store = useFarmStore()
+const farmContext = useFarmContextStore()
 const loading = ref(false)
 const saving = ref(false)
 const activeTab = ref('reservoirs')
@@ -283,7 +285,7 @@ const tabs = [
 const growthStages = ['clone', 'seedling', 'early_veg', 'late_veg', 'transition', 'early_flower', 'mid_flower', 'late_flower', 'flush', 'harvest', 'dry_cure']
 
 const zones = computed(() => store.zones)
-const farmId = computed(() => store.farm?.id || 1)
+const farmId = computed(() => farmContext.farmId)
 
 const reservoirs = ref([])
 const ecTargets = ref([])
@@ -307,7 +309,7 @@ const evForm = ref({ zone_id: '', program_id: null, volume_applied_liters: 0, ec
 async function refresh() {
   loading.value = true
   try {
-    if (!store.zones.length) await store.loadAll(1)
+    if (!store.zones.length && farmId.value) await store.loadAll(farmId.value)
     const fid = farmId.value
     const [r, ec, p, ev] = await Promise.all([
       store.loadReservoirs(fid),

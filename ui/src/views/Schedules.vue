@@ -90,9 +90,11 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useFarmStore } from '../stores/farm'
+import { useFarmContextStore } from '../stores/farmContext'
 import api from '../api'
 
 const store = useFarmStore()
+const farmContext = useFarmContextStore()
 const schedules = ref([])
 const runs = ref([])
 const worker = ref({ running: false, simulation_mode: false })
@@ -102,12 +104,13 @@ const scheduleEvents = ref([])
 const eventsLoading = ref(false)
 
 async function refreshAll() {
-  if (!store.zones.length) await store.loadAll()
+  const fid = farmContext.farmId
+  if (!store.zones.length && fid) await store.loadAll(fid)
   loading.value = true
   try {
     const [s, r, w] = await Promise.all([
-      store.loadSchedules(),
-      store.loadAutomationRuns(),
+      store.loadSchedules(fid),
+      store.loadAutomationRuns(fid),
       api.get('/automation/worker/health'),
     ])
     schedules.value = s

@@ -52,10 +52,12 @@
 <script setup>
 import { onMounted } from 'vue'
 import { useFarmStore } from '../stores/farm'
+import { useFarmContextStore } from '../stores/farmContext'
 
 const store = useFarmStore()
+const farmContext = useFarmContextStore()
 onMounted(async () => {
-  if (!store.sensors.length) await store.loadAll()
+  if (!store.sensors.length && farmContext.farmId) await store.loadAll(farmContext.farmId)
   store.refreshReadings()
 })
 

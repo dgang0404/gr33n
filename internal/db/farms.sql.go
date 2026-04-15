@@ -103,6 +103,49 @@ func (q *Queries) GetFarmByID(ctx context.Context, id int64) (Gr33ncoreFarm, err
 	return i, err
 }
 
+const listAllFarms = `-- name: ListAllFarms :many
+SELECT id, name, description, location_text, location_gis, size_hectares, farm_type, scale_tier, owner_user_id, timezone, currency, operational_status, created_at, updated_at, updated_by_user_id, deleted_at FROM gr33ncore.farms
+WHERE deleted_at IS NULL
+ORDER BY name ASC
+`
+
+func (q *Queries) ListAllFarms(ctx context.Context) ([]Gr33ncoreFarm, error) {
+	rows, err := q.db.Query(ctx, listAllFarms)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Gr33ncoreFarm{}
+	for rows.Next() {
+		var i Gr33ncoreFarm
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.Description,
+			&i.LocationText,
+			&i.LocationGis,
+			&i.SizeHectares,
+			&i.FarmType,
+			&i.ScaleTier,
+			&i.OwnerUserID,
+			&i.Timezone,
+			&i.Currency,
+			&i.OperationalStatus,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.UpdatedByUserID,
+			&i.DeletedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listFarmsByOwner = `-- name: ListFarmsByOwner :many
 SELECT id, name, description, location_text, location_gis, size_hectares, farm_type, scale_tier, owner_user_id, timezone, currency, operational_status, created_at, updated_at, updated_by_user_id, deleted_at FROM gr33ncore.farms
 WHERE owner_user_id = $1 AND deleted_at IS NULL

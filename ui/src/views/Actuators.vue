@@ -60,10 +60,12 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useFarmStore } from '../stores/farm'
+import { useFarmContextStore } from '../stores/farmContext'
 
 const store = useFarmStore()
+const farmContext = useFarmContextStore()
 const toggling = ref({})
-onMounted(() => { if (!store.actuators.length) store.loadAll() })
+onMounted(() => { if (!store.actuators.length && farmContext.farmId) store.loadAll(farmContext.farmId) })
 
 async function toggle(actuator) {
   toggling.value[actuator.id] = true

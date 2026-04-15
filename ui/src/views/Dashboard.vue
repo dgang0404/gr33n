@@ -4,10 +4,10 @@
     <!-- Farm header -->
     <div class="flex items-center justify-between">
       <div>
-        <h2 class="text-xl font-bold text-white">{{ store.farm?.name ?? 'Farm 1' }}</h2>
+        <h2 class="text-xl font-bold text-white">{{ store.farm?.name ?? 'Loading...' }}</h2>
         <p class="text-sm text-gray-500">{{ store.zones.length }} zones · {{ store.sensors.length }} sensors · {{ store.devices.length }} devices</p>
       </div>
-      <button @click="store.loadAll(1)" class="text-xs text-gr33n-400 hover:text-gr33n-300 transition-colors">
+      <button @click="farmContext.farmId && store.loadAll(farmContext.farmId)" class="text-xs text-gr33n-400 hover:text-gr33n-300 transition-colors">
         ↻ Refresh
       </button>
     </div>
@@ -61,7 +61,9 @@
 
 <script setup>
 import { useFarmStore } from '../stores/farm'
+import { useFarmContextStore } from '../stores/farmContext'
 import SensorTile   from '../components/SensorTile.vue'
 import ActuatorCard from '../components/ActuatorCard.vue'
 const store = useFarmStore()
+const farmContext = useFarmContextStore()
 </script>

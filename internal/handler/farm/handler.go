@@ -22,21 +22,27 @@ func NewHandler(pool *pgxpool.Pool) *Handler {
 	return &Handler{q: db.New(pool)}
 }
 
-// GET /farms?user_id=<uuid>
+// GET /farms?user_id=<uuid>  (user_id is optional; omit to list all farms)
 func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
+	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+	defer cancel()
+
 	userIDStr := r.URL.Query().Get("user_id")
 	if userIDStr == "" {
-		httputil.WriteError(w, http.StatusBadRequest, "user_id query param required")
+		farms, err := h.q.ListAllFarms(ctx)
+		if err != nil {
+			httputil.WriteError(w, http.StatusInternalServerError, "failed to list farms")
+			return
+		}
+		httputil.WriteJSON(w, http.StatusOK, farms)
 		return
 	}
+
 	userID, err := uuid.Parse(userIDStr)
 	if err != nil {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid user_id")
 		return
 	}
-	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
-	defer cancel()
-
 	farms, err := h.q.ListFarmsForUser(ctx, userID)
 	if err != nil {
 		httputil.WriteError(w, http.StatusInternalServerError, "failed to list farms")

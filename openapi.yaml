@@ -214,9 +214,9 @@ paths:
       parameters:
         - name: user_id
           in: query
-          required: true
+          required: false
           schema: { type: string, format: uuid }
-          description: Owner user ID
+          description: Filter by user membership. Omit to list all farms.
       responses:
         "200":
           description: List of farms
@@ -665,6 +665,50 @@ paths:
               schema:
                 type: array
                 items: { $ref: "#/components/schemas/NaturalFarmingInputDefinition" }
+    post:
+      tags: [naturalfarming]
+      summary: Create a natural farming input definition
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/InputDefinitionCreate" }
+      responses:
+        "201":
+          description: Created input definition
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/NaturalFarmingInputDefinition" }
+
+  /naturalfarming/inputs/{id}:
+    put:
+      tags: [naturalfarming]
+      summary: Update a natural farming input definition
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/InputDefinitionUpdate" }
+      responses:
+        "200":
+          description: Updated input definition
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/NaturalFarmingInputDefinition" }
+    delete:
+      tags: [naturalfarming]
+      summary: Soft-delete a natural farming input definition
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      responses:
+        "204": { description: Deleted }
 
   /farms/{id}/naturalfarming/batches:
     get:
@@ -681,6 +725,50 @@ paths:
               schema:
                 type: array
                 items: { $ref: "#/components/schemas/NaturalFarmingInputBatch" }
+    post:
+      tags: [naturalfarming]
+      summary: Create a natural farming input batch
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/InputBatchCreate" }
+      responses:
+        "201":
+          description: Created input batch
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/NaturalFarmingInputBatch" }
+
+  /naturalfarming/batches/{id}:
+    put:
+      tags: [naturalfarming]
+      summary: Update a natural farming input batch
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/InputBatchUpdate" }
+      responses:
+        "200":
+          description: Updated input batch
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/NaturalFarmingInputBatch" }
+    delete:
+      tags: [naturalfarming]
+      summary: Soft-delete a natural farming input batch
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      responses:
+        "204": { description: Deleted }
 
   # ── Automation ─────────────────────────────────────────────
 
@@ -1496,6 +1584,94 @@ components:
         updated_at: { type: string, format: date-time }
         updated_by_user_id: { type: string, format: uuid, nullable: true }
         deleted_at: { type: string, format: date-time, nullable: true }
+
+    InputDefinitionCreate:
+      type: object
+      required: [name, category]
+      properties:
+        name: { type: string }
+        category:
+          type: string
+          enum:
+            - microbial_inoculant
+            - fermented_plant_juice
+            - water_soluble_nutrient
+            - oriental_herbal_nutrient
+            - fish_amino_acid
+            - insect_attractant_repellent
+            - soil_conditioner
+            - compost_tea_extract
+            - biochar_preparation
+            - other_ferment
+            - other_extract
+        description: { type: string }
+        typical_ingredients: { type: string }
+        preparation_summary: { type: string }
+        storage_guidelines: { type: string }
+        safety_precautions: { type: string }
+        reference_source: { type: string }
+
+    InputDefinitionUpdate:
+      type: object
+      required: [name, category]
+      properties:
+        name: { type: string }
+        category:
+          type: string
+          enum:
+            - microbial_inoculant
+            - fermented_plant_juice
+            - water_soluble_nutrient
+            - oriental_herbal_nutrient
+            - fish_amino_acid
+            - insect_attractant_repellent
+            - soil_conditioner
+            - compost_tea_extract
+            - biochar_preparation
+            - other_ferment
+            - other_extract
+        description: { type: string }
+        typical_ingredients: { type: string }
+        preparation_summary: { type: string }
+        storage_guidelines: { type: string }
+        safety_precautions: { type: string }
+        reference_source: { type: string }
+
+    InputBatchCreate:
+      type: object
+      required: [input_definition_id, status]
+      properties:
+        input_definition_id: { type: integer }
+        batch_identifier: { type: string }
+        creation_start_date: { type: string, format: date }
+        creation_end_date: { type: string, format: date }
+        expected_ready_date: { type: string, format: date }
+        quantity_produced: { type: number }
+        quantity_unit_id: { type: integer }
+        current_quantity_remaining: { type: number }
+        status:
+          type: string
+          enum: [planning, ingredients_gathered, mixing_in_progress, fermenting_brewing, maturing_aging, ready_for_use, partially_used, fully_used, expired_discarded, failed_production]
+        storage_location: { type: string }
+        shelf_life_days: { type: integer }
+        ph_value: { type: number }
+        ec_value_ms_cm: { type: number }
+        ingredients_used: { type: string }
+        procedure_followed: { type: string }
+        observations_notes: { type: string }
+
+    InputBatchUpdate:
+      type: object
+      required: [status]
+      properties:
+        batch_identifier: { type: string }
+        status:
+          type: string
+          enum: [planning, ingredients_gathered, mixing_in_progress, fermenting_brewing, maturing_aging, ready_for_use, partially_used, fully_used, expired_discarded, failed_production]
+        actual_ready_date: { type: string, format: date }
+        current_quantity_remaining: { type: number }
+        storage_location: { type: string }
+        observations_notes: { type: string }
 
     NaturalFarmingInputBatch:
       type: object

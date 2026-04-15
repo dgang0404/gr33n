@@ -30,7 +30,7 @@ export const useFarmStore = defineStore('farm', {
   },
 
   actions: {
-    async loadAll(farmId = 1) {
+    async loadAll(farmId) {
       this.loading = true
       try {
         const [farm, zones, sensors, devices, actuators] = await Promise.all([
@@ -52,13 +52,13 @@ export const useFarmStore = defineStore('farm', {
       }
     },
 
-    async loadTasks(farmId = 1) {
+    async loadTasks(farmId) {
       const r = await api.get(`/farms/${farmId}/tasks`)
       this.tasks = Array.isArray(r.data) ? r.data : []
       return this.tasks
     },
 
-    async loadSchedules(farmId = 1) {
+    async loadSchedules(farmId) {
       const r = await api.get(`/farms/${farmId}/schedules`)
       this.schedules = Array.isArray(r.data) ? r.data : []
       return this.schedules
@@ -72,7 +72,7 @@ export const useFarmStore = defineStore('farm', {
       return next
     },
 
-    async loadAutomationRuns(farmId = 1) {
+    async loadAutomationRuns(farmId) {
       const r = await api.get(`/farms/${farmId}/automation/runs`)
       this.automationRuns = Array.isArray(r.data) ? r.data : []
       return this.automationRuns
@@ -111,22 +111,22 @@ export const useFarmStore = defineStore('farm', {
       return Array.isArray(r.data) ? r.data : []
     },
 
-    async loadFertigationPrograms(farmId = 1) {
+    async loadFertigationPrograms(farmId) {
       const r = await api.get(`/farms/${farmId}/fertigation/programs`)
       return Array.isArray(r.data) ? r.data : []
     },
 
-    async loadFertigationEvents(farmId = 1) {
+    async loadFertigationEvents(farmId) {
       const r = await api.get(`/farms/${farmId}/fertigation/events`)
       return Array.isArray(r.data) ? r.data : []
     },
 
-    async loadReservoirs(farmId = 1) {
+    async loadReservoirs(farmId) {
       const r = await api.get(`/farms/${farmId}/fertigation/reservoirs`)
       return Array.isArray(r.data) ? r.data : []
     },
 
-    async loadEcTargets(farmId = 1) {
+    async loadEcTargets(farmId) {
       const r = await api.get(`/farms/${farmId}/fertigation/ec-targets`)
       return Array.isArray(r.data) ? r.data : []
     },
@@ -169,14 +169,62 @@ export const useFarmStore = defineStore('farm', {
       await api.delete(`/fertigation/programs/${id}`)
     },
 
-    async loadNfInputs(farmId = 1) {
+    // Zone CRUD
+    async createZone(farmId, data) {
+      const r = await api.post(`/farms/${farmId}/zones`, data)
+      this.zones.push(r.data)
+      return r.data
+    },
+
+    async updateZone(id, data) {
+      const r = await api.put(`/zones/${id}`, data)
+      const idx = this.zones.findIndex(z => z.id === id)
+      if (idx >= 0) this.zones[idx] = r.data
+      return r.data
+    },
+
+    async deleteZone(id) {
+      await api.delete(`/zones/${id}`)
+      this.zones = this.zones.filter(z => z.id !== id)
+    },
+
+    // Natural farming CRUD
+    async loadNfInputs(farmId) {
       const r = await api.get(`/farms/${farmId}/naturalfarming/inputs`)
       return Array.isArray(r.data) ? r.data : []
     },
 
-    async loadNfBatches(farmId = 1) {
+    async loadNfBatches(farmId) {
       const r = await api.get(`/farms/${farmId}/naturalfarming/batches`)
       return Array.isArray(r.data) ? r.data : []
+    },
+
+    async createNfInput(farmId, data) {
+      const r = await api.post(`/farms/${farmId}/naturalfarming/inputs`, data)
+      return r.data
+    },
+
+    async updateNfInput(id, data) {
+      const r = await api.put(`/naturalfarming/inputs/${id}`, data)
+      return r.data
+    },
+
+    async deleteNfInput(id) {
+      await api.delete(`/naturalfarming/inputs/${id}`)
+    },
+
+    async createNfBatch(farmId, data) {
+      const r = await api.post(`/farms/${farmId}/naturalfarming/batches`, data)
+      return r.data
+    },
+
+    async updateNfBatch(id, data) {
+      const r = await api.put(`/naturalfarming/batches/${id}`, data)
+      return r.data
+    },
+
+    async deleteNfBatch(id) {
+      await api.delete(`/naturalfarming/batches/${id}`)
     },
 
     async toggleDevice(deviceId, currentStatus) {

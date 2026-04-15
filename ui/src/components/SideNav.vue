@@ -12,13 +12,25 @@
         {{ item.label }}
       </RouterLink>
     </nav>
-    <div class="px-5 py-4 border-t border-gray-800 text-xs text-gray-600">
-      Farm 1 · local
+    <div class="px-3 py-3 border-t border-gray-800">
+      <select
+        :value="farmContext.farmId"
+        @change="farmContext.selectFarm(Number($event.target.value))"
+        class="w-full bg-gray-800 border border-gray-700 text-gray-300 text-xs rounded-lg px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-gr33n-600"
+      >
+        <option v-for="f in farmContext.farms" :key="f.id" :value="f.id">
+          {{ f.name }}
+        </option>
+      </select>
     </div>
   </aside>
 </template>
 
 <script setup>
+import { useFarmContextStore } from '../stores/farmContext'
+
+const farmContext = useFarmContextStore()
+
 const nav = [
   { to: '/',          icon: '🌿', label: 'Dashboard'  },
   { to: '/zones',     icon: '🗂️', label: 'Zones'       },
@@ -28,5 +40,6 @@ const nav = [
   { to: '/tasks',        icon: '✅', label: 'Tasks'        },
   { to: '/fertigation', icon: '💧', label: 'Fertigation' },
   { to: '/inventory',   icon: '🧪', label: 'Inventory'   },
+  { to: '/settings',    icon: '⚙️', label: 'Settings'    },
 ]
 </script>

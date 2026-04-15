@@ -34,6 +34,11 @@ SET name = $2, description = $3, location_text = $4, size_hectares = $5,
 WHERE id = $1 AND deleted_at IS NULL
 RETURNING *;
 
+-- name: ListAllFarms :many
+SELECT * FROM gr33ncore.farms
+WHERE deleted_at IS NULL
+ORDER BY name ASC;
+
 -- name: SoftDeleteFarm :exec
 UPDATE gr33ncore.farms
 SET deleted_at = NOW(), updated_at = NOW(), updated_by_user_id = $2

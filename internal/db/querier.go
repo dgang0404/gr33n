@@ -12,12 +12,12 @@ import (
 
 type Querier interface {
 	AddFarmMember(ctx context.Context, arg AddFarmMemberParams) (Gr33ncoreFarmMembership, error)
+	ClearDevicePendingCommand(ctx context.Context, id int64) error
 	// ============================================================
 	// Queries: gr33ncore.actuators + actuator_events
 	// ============================================================
 	CreateActuator(ctx context.Context, arg CreateActuatorParams) (Gr33ncoreActuator, error)
 	CreateAutomationRun(ctx context.Context, arg CreateAutomationRunParams) (Gr33ncoreAutomationRun, error)
-	ClearDevicePendingCommand(ctx context.Context, id int64) error
 	// ============================================================
 	// Queries: gr33ncore.devices
 	// ============================================================
@@ -28,6 +28,8 @@ type Querier interface {
 	// ============================================================
 	CreateFarm(ctx context.Context, arg CreateFarmParams) (Gr33ncoreFarm, error)
 	CreateFertigationEvent(ctx context.Context, arg CreateFertigationEventParams) (Gr33nfertigationFertigationEvent, error)
+	CreateInputBatch(ctx context.Context, arg CreateInputBatchParams) (Gr33nnaturalfarmingInputBatch, error)
+	CreateInputDefinition(ctx context.Context, arg CreateInputDefinitionParams) (Gr33nnaturalfarmingInputDefinition, error)
 	CreateProfile(ctx context.Context, arg CreateProfileParams) (Gr33ncoreProfile, error)
 	CreateProgram(ctx context.Context, arg CreateProgramParams) (Gr33nfertigationProgram, error)
 	CreateReservoir(ctx context.Context, arg CreateReservoirParams) (Gr33nfertigationReservoir, error)
@@ -78,6 +80,7 @@ type Querier interface {
 	ListActuatorEventsByActuator(ctx context.Context, arg ListActuatorEventsByActuatorParams) ([]Gr33ncoreActuatorEvent, error)
 	ListActuatorEventsBySchedule(ctx context.Context, arg ListActuatorEventsByScheduleParams) ([]Gr33ncoreActuatorEvent, error)
 	ListActuatorsByFarm(ctx context.Context, farmID int64) ([]Gr33ncoreActuator, error)
+	ListAllFarms(ctx context.Context) ([]Gr33ncoreFarm, error)
 	ListAllUnits(ctx context.Context) ([]Gr33ncoreUnit, error)
 	ListAutomationRunsByFarm(ctx context.Context, arg ListAutomationRunsByFarmParams) ([]Gr33ncoreAutomationRun, error)
 	ListDevicesByFarm(ctx context.Context, farmID int64) ([]Gr33ncoreDevice, error)
@@ -88,6 +91,9 @@ type Querier interface {
 	ListFarmsForUser(ctx context.Context, userID uuid.UUID) ([]Gr33ncoreFarm, error)
 	ListFertigationEventsByFarm(ctx context.Context, farmID int64) ([]Gr33nfertigationFertigationEvent, error)
 	ListInputBatchesByFarm(ctx context.Context, farmID int64) ([]Gr33nnaturalfarmingInputBatch, error)
+	// ============================================================
+	// Queries: gr33nnaturalfarming
+	// ============================================================
 	ListInputDefinitionsByFarm(ctx context.Context, farmID int64) ([]Gr33nnaturalfarmingInputDefinition, error)
 	ListLatestReadingsByFarm(ctx context.Context, farmID int64) ([]ListLatestReadingsByFarmRow, error)
 	ListProgramsByFarm(ctx context.Context, farmID int64) ([]Gr33nfertigationProgram, error)
@@ -113,6 +119,8 @@ type Querier interface {
 	SetDevicePendingCommand(ctx context.Context, arg SetDevicePendingCommandParams) error
 	SoftDeleteDevice(ctx context.Context, arg SoftDeleteDeviceParams) error
 	SoftDeleteFarm(ctx context.Context, arg SoftDeleteFarmParams) error
+	SoftDeleteInputBatch(ctx context.Context, arg SoftDeleteInputBatchParams) error
+	SoftDeleteInputDefinition(ctx context.Context, arg SoftDeleteInputDefinitionParams) error
 	SoftDeleteSensor(ctx context.Context, arg SoftDeleteSensorParams) error
 	SoftDeleteTask(ctx context.Context, arg SoftDeleteTaskParams) error
 	SoftDeleteZone(ctx context.Context, arg SoftDeleteZoneParams) error
@@ -120,6 +128,8 @@ type Querier interface {
 	UpdateDeviceStatus(ctx context.Context, arg UpdateDeviceStatusParams) (Gr33ncoreDevice, error)
 	UpdateFarm(ctx context.Context, arg UpdateFarmParams) (Gr33ncoreFarm, error)
 	UpdateFarmMemberRole(ctx context.Context, arg UpdateFarmMemberRoleParams) (Gr33ncoreFarmMembership, error)
+	UpdateInputBatch(ctx context.Context, arg UpdateInputBatchParams) (Gr33nnaturalfarmingInputBatch, error)
+	UpdateInputDefinition(ctx context.Context, arg UpdateInputDefinitionParams) (Gr33nnaturalfarmingInputDefinition, error)
 	UpdateProfile(ctx context.Context, arg UpdateProfileParams) (Gr33ncoreProfile, error)
 	UpdateProgram(ctx context.Context, arg UpdateProgramParams) (Gr33nfertigationProgram, error)
 	UpdateReservoir(ctx context.Context, arg UpdateReservoirParams) (Gr33nfertigationReservoir, error)

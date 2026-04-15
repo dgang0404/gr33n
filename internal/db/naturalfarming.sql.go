@@ -7,50 +7,147 @@ package db
 
 import (
 	"context"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
-const listInputDefinitionsByFarm = `-- name: ListInputDefinitionsByFarm :many
-SELECT id, farm_id, name, category, description, typical_ingredients, preparation_summary,
-       storage_guidelines, safety_precautions, reference_source, file_attachment_id,
-       created_at, updated_at, updated_by_user_id, deleted_at
-FROM gr33nnaturalfarming.input_definitions
-WHERE farm_id = $1 AND deleted_at IS NULL
-ORDER BY name ASC
+const createInputBatch = `-- name: CreateInputBatch :one
+INSERT INTO gr33nnaturalfarming.input_batches (
+  farm_id, input_definition_id, batch_identifier, creation_start_date,
+  creation_end_date, expected_ready_date, quantity_produced, quantity_unit_id,
+  current_quantity_remaining, status, storage_location, shelf_life_days,
+  ph_value, ec_value_ms_cm, ingredients_used, procedure_followed,
+  observations_notes
+) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17) RETURNING id, farm_id, input_definition_id, batch_identifier, creation_start_date, creation_end_date, expected_ready_date, actual_ready_date, quantity_produced, quantity_unit_id, current_quantity_remaining, status, storage_location, shelf_life_days, ph_value, ec_value_ms_cm, temperature_during_making, ingredients_used, procedure_followed, observations_notes, made_by_user_id, related_task_id, file_attachment_id, created_at, updated_at, updated_by_user_id, deleted_at
 `
 
-func (q *Queries) ListInputDefinitionsByFarm(ctx context.Context, farmID int64) ([]Gr33nnaturalfarmingInputDefinition, error) {
-	rows, err := q.db.Query(ctx, listInputDefinitionsByFarm, farmID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []Gr33nnaturalfarmingInputDefinition{}
-	for rows.Next() {
-		var i Gr33nnaturalfarmingInputDefinition
-		if err := rows.Scan(
-			&i.ID, &i.FarmID, &i.Name, &i.Category, &i.Description,
-			&i.TypicalIngredients, &i.PreparationSummary, &i.StorageGuidelines,
-			&i.SafetyPrecautions, &i.ReferenceSource, &i.FileAttachmentID,
-			&i.CreatedAt, &i.UpdatedAt, &i.UpdatedByUserID, &i.DeletedAt,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
+type CreateInputBatchParams struct {
+	FarmID                   int64                                   `db:"farm_id" json:"farm_id"`
+	InputDefinitionID        int64                                   `db:"input_definition_id" json:"input_definition_id"`
+	BatchIdentifier          *string                                 `db:"batch_identifier" json:"batch_identifier"`
+	CreationStartDate        pgtype.Date                             `db:"creation_start_date" json:"creation_start_date"`
+	CreationEndDate          pgtype.Date                             `db:"creation_end_date" json:"creation_end_date"`
+	ExpectedReadyDate        pgtype.Date                             `db:"expected_ready_date" json:"expected_ready_date"`
+	QuantityProduced         pgtype.Numeric                          `db:"quantity_produced" json:"quantity_produced"`
+	QuantityUnitID           *int64                                  `db:"quantity_unit_id" json:"quantity_unit_id"`
+	CurrentQuantityRemaining pgtype.Numeric                          `db:"current_quantity_remaining" json:"current_quantity_remaining"`
+	Status                   Gr33nnaturalfarmingInputBatchStatusEnum `db:"status" json:"status"`
+	StorageLocation          *string                                 `db:"storage_location" json:"storage_location"`
+	ShelfLifeDays            *int32                                  `db:"shelf_life_days" json:"shelf_life_days"`
+	PhValue                  pgtype.Numeric                          `db:"ph_value" json:"ph_value"`
+	EcValueMsCm              pgtype.Numeric                          `db:"ec_value_ms_cm" json:"ec_value_ms_cm"`
+	IngredientsUsed          *string                                 `db:"ingredients_used" json:"ingredients_used"`
+	ProcedureFollowed        *string                                 `db:"procedure_followed" json:"procedure_followed"`
+	ObservationsNotes        *string                                 `db:"observations_notes" json:"observations_notes"`
+}
+
+func (q *Queries) CreateInputBatch(ctx context.Context, arg CreateInputBatchParams) (Gr33nnaturalfarmingInputBatch, error) {
+	row := q.db.QueryRow(ctx, createInputBatch,
+		arg.FarmID,
+		arg.InputDefinitionID,
+		arg.BatchIdentifier,
+		arg.CreationStartDate,
+		arg.CreationEndDate,
+		arg.ExpectedReadyDate,
+		arg.QuantityProduced,
+		arg.QuantityUnitID,
+		arg.CurrentQuantityRemaining,
+		arg.Status,
+		arg.StorageLocation,
+		arg.ShelfLifeDays,
+		arg.PhValue,
+		arg.EcValueMsCm,
+		arg.IngredientsUsed,
+		arg.ProcedureFollowed,
+		arg.ObservationsNotes,
+	)
+	var i Gr33nnaturalfarmingInputBatch
+	err := row.Scan(
+		&i.ID,
+		&i.FarmID,
+		&i.InputDefinitionID,
+		&i.BatchIdentifier,
+		&i.CreationStartDate,
+		&i.CreationEndDate,
+		&i.ExpectedReadyDate,
+		&i.ActualReadyDate,
+		&i.QuantityProduced,
+		&i.QuantityUnitID,
+		&i.CurrentQuantityRemaining,
+		&i.Status,
+		&i.StorageLocation,
+		&i.ShelfLifeDays,
+		&i.PhValue,
+		&i.EcValueMsCm,
+		&i.TemperatureDuringMaking,
+		&i.IngredientsUsed,
+		&i.ProcedureFollowed,
+		&i.ObservationsNotes,
+		&i.MadeByUserID,
+		&i.RelatedTaskID,
+		&i.FileAttachmentID,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.UpdatedByUserID,
+		&i.DeletedAt,
+	)
+	return i, err
+}
+
+const createInputDefinition = `-- name: CreateInputDefinition :one
+INSERT INTO gr33nnaturalfarming.input_definitions (
+  farm_id, name, category, description, typical_ingredients,
+  preparation_summary, storage_guidelines, safety_precautions, reference_source
+) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING id, farm_id, name, category, description, typical_ingredients, preparation_summary, storage_guidelines, safety_precautions, reference_source, file_attachment_id, created_at, updated_at, updated_by_user_id, deleted_at
+`
+
+type CreateInputDefinitionParams struct {
+	FarmID             int64                                `db:"farm_id" json:"farm_id"`
+	Name               string                               `db:"name" json:"name"`
+	Category           Gr33nnaturalfarmingInputCategoryEnum `db:"category" json:"category"`
+	Description        *string                              `db:"description" json:"description"`
+	TypicalIngredients *string                              `db:"typical_ingredients" json:"typical_ingredients"`
+	PreparationSummary *string                              `db:"preparation_summary" json:"preparation_summary"`
+	StorageGuidelines  *string                              `db:"storage_guidelines" json:"storage_guidelines"`
+	SafetyPrecautions  *string                              `db:"safety_precautions" json:"safety_precautions"`
+	ReferenceSource    *string                              `db:"reference_source" json:"reference_source"`
+}
+
+func (q *Queries) CreateInputDefinition(ctx context.Context, arg CreateInputDefinitionParams) (Gr33nnaturalfarmingInputDefinition, error) {
+	row := q.db.QueryRow(ctx, createInputDefinition,
+		arg.FarmID,
+		arg.Name,
+		arg.Category,
+		arg.Description,
+		arg.TypicalIngredients,
+		arg.PreparationSummary,
+		arg.StorageGuidelines,
+		arg.SafetyPrecautions,
+		arg.ReferenceSource,
+	)
+	var i Gr33nnaturalfarmingInputDefinition
+	err := row.Scan(
+		&i.ID,
+		&i.FarmID,
+		&i.Name,
+		&i.Category,
+		&i.Description,
+		&i.TypicalIngredients,
+		&i.PreparationSummary,
+		&i.StorageGuidelines,
+		&i.SafetyPrecautions,
+		&i.ReferenceSource,
+		&i.FileAttachmentID,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.UpdatedByUserID,
+		&i.DeletedAt,
+	)
+	return i, err
 }
 
 const listInputBatchesByFarm = `-- name: ListInputBatchesByFarm :many
-SELECT id, farm_id, input_definition_id, batch_identifier, creation_start_date, creation_end_date,
-       expected_ready_date, actual_ready_date, quantity_produced, quantity_unit_id,
-       current_quantity_remaining, status, storage_location, shelf_life_days,
-       ph_value, ec_value_ms_cm, temperature_during_making, ingredients_used,
-       procedure_followed, observations_notes, made_by_user_id, related_task_id,
-       file_attachment_id, created_at, updated_at, updated_by_user_id, deleted_at
-FROM gr33nnaturalfarming.input_batches
+SELECT id, farm_id, input_definition_id, batch_identifier, creation_start_date, creation_end_date, expected_ready_date, actual_ready_date, quantity_produced, quantity_unit_id, current_quantity_remaining, status, storage_location, shelf_life_days, ph_value, ec_value_ms_cm, temperature_during_making, ingredients_used, procedure_followed, observations_notes, made_by_user_id, related_task_id, file_attachment_id, created_at, updated_at, updated_by_user_id, deleted_at FROM gr33nnaturalfarming.input_batches
 WHERE farm_id = $1 AND deleted_at IS NULL
 ORDER BY creation_start_date DESC
 `
@@ -65,13 +162,33 @@ func (q *Queries) ListInputBatchesByFarm(ctx context.Context, farmID int64) ([]G
 	for rows.Next() {
 		var i Gr33nnaturalfarmingInputBatch
 		if err := rows.Scan(
-			&i.ID, &i.FarmID, &i.InputDefinitionID, &i.BatchIdentifier,
-			&i.CreationStartDate, &i.CreationEndDate, &i.ExpectedReadyDate, &i.ActualReadyDate,
-			&i.QuantityProduced, &i.QuantityUnitID, &i.CurrentQuantityRemaining,
-			&i.Status, &i.StorageLocation, &i.ShelfLifeDays,
-			&i.PhValue, &i.EcValueMsCm, &i.TemperatureDuringMaking, &i.IngredientsUsed,
-			&i.ProcedureFollowed, &i.ObservationsNotes, &i.MadeByUserID, &i.RelatedTaskID,
-			&i.FileAttachmentID, &i.CreatedAt, &i.UpdatedAt, &i.UpdatedByUserID, &i.DeletedAt,
+			&i.ID,
+			&i.FarmID,
+			&i.InputDefinitionID,
+			&i.BatchIdentifier,
+			&i.CreationStartDate,
+			&i.CreationEndDate,
+			&i.ExpectedReadyDate,
+			&i.ActualReadyDate,
+			&i.QuantityProduced,
+			&i.QuantityUnitID,
+			&i.CurrentQuantityRemaining,
+			&i.Status,
+			&i.StorageLocation,
+			&i.ShelfLifeDays,
+			&i.PhValue,
+			&i.EcValueMsCm,
+			&i.TemperatureDuringMaking,
+			&i.IngredientsUsed,
+			&i.ProcedureFollowed,
+			&i.ObservationsNotes,
+			&i.MadeByUserID,
+			&i.RelatedTaskID,
+			&i.FileAttachmentID,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.UpdatedByUserID,
+			&i.DeletedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -81,4 +198,198 @@ func (q *Queries) ListInputBatchesByFarm(ctx context.Context, farmID int64) ([]G
 		return nil, err
 	}
 	return items, nil
+}
+
+const listInputDefinitionsByFarm = `-- name: ListInputDefinitionsByFarm :many
+
+SELECT id, farm_id, name, category, description, typical_ingredients, preparation_summary, storage_guidelines, safety_precautions, reference_source, file_attachment_id, created_at, updated_at, updated_by_user_id, deleted_at FROM gr33nnaturalfarming.input_definitions
+WHERE farm_id = $1 AND deleted_at IS NULL
+ORDER BY name ASC
+`
+
+// ============================================================
+// Queries: gr33nnaturalfarming
+// ============================================================
+func (q *Queries) ListInputDefinitionsByFarm(ctx context.Context, farmID int64) ([]Gr33nnaturalfarmingInputDefinition, error) {
+	rows, err := q.db.Query(ctx, listInputDefinitionsByFarm, farmID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Gr33nnaturalfarmingInputDefinition{}
+	for rows.Next() {
+		var i Gr33nnaturalfarmingInputDefinition
+		if err := rows.Scan(
+			&i.ID,
+			&i.FarmID,
+			&i.Name,
+			&i.Category,
+			&i.Description,
+			&i.TypicalIngredients,
+			&i.PreparationSummary,
+			&i.StorageGuidelines,
+			&i.SafetyPrecautions,
+			&i.ReferenceSource,
+			&i.FileAttachmentID,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.UpdatedByUserID,
+			&i.DeletedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const softDeleteInputBatch = `-- name: SoftDeleteInputBatch :exec
+UPDATE gr33nnaturalfarming.input_batches
+SET deleted_at=NOW(), updated_by_user_id=$2 WHERE id=$1
+`
+
+type SoftDeleteInputBatchParams struct {
+	ID              int64       `db:"id" json:"id"`
+	UpdatedByUserID pgtype.UUID `db:"updated_by_user_id" json:"updated_by_user_id"`
+}
+
+func (q *Queries) SoftDeleteInputBatch(ctx context.Context, arg SoftDeleteInputBatchParams) error {
+	_, err := q.db.Exec(ctx, softDeleteInputBatch, arg.ID, arg.UpdatedByUserID)
+	return err
+}
+
+const softDeleteInputDefinition = `-- name: SoftDeleteInputDefinition :exec
+UPDATE gr33nnaturalfarming.input_definitions
+SET deleted_at=NOW(), updated_by_user_id=$2 WHERE id=$1
+`
+
+type SoftDeleteInputDefinitionParams struct {
+	ID              int64       `db:"id" json:"id"`
+	UpdatedByUserID pgtype.UUID `db:"updated_by_user_id" json:"updated_by_user_id"`
+}
+
+func (q *Queries) SoftDeleteInputDefinition(ctx context.Context, arg SoftDeleteInputDefinitionParams) error {
+	_, err := q.db.Exec(ctx, softDeleteInputDefinition, arg.ID, arg.UpdatedByUserID)
+	return err
+}
+
+const updateInputBatch = `-- name: UpdateInputBatch :one
+UPDATE gr33nnaturalfarming.input_batches SET
+  batch_identifier=$2, status=$3, actual_ready_date=$4,
+  current_quantity_remaining=$5, storage_location=$6,
+  observations_notes=$7, updated_at=NOW(), updated_by_user_id=$8
+WHERE id=$1 AND deleted_at IS NULL RETURNING id, farm_id, input_definition_id, batch_identifier, creation_start_date, creation_end_date, expected_ready_date, actual_ready_date, quantity_produced, quantity_unit_id, current_quantity_remaining, status, storage_location, shelf_life_days, ph_value, ec_value_ms_cm, temperature_during_making, ingredients_used, procedure_followed, observations_notes, made_by_user_id, related_task_id, file_attachment_id, created_at, updated_at, updated_by_user_id, deleted_at
+`
+
+type UpdateInputBatchParams struct {
+	ID                       int64                                   `db:"id" json:"id"`
+	BatchIdentifier          *string                                 `db:"batch_identifier" json:"batch_identifier"`
+	Status                   Gr33nnaturalfarmingInputBatchStatusEnum `db:"status" json:"status"`
+	ActualReadyDate          pgtype.Date                             `db:"actual_ready_date" json:"actual_ready_date"`
+	CurrentQuantityRemaining pgtype.Numeric                          `db:"current_quantity_remaining" json:"current_quantity_remaining"`
+	StorageLocation          *string                                 `db:"storage_location" json:"storage_location"`
+	ObservationsNotes        *string                                 `db:"observations_notes" json:"observations_notes"`
+	UpdatedByUserID          pgtype.UUID                             `db:"updated_by_user_id" json:"updated_by_user_id"`
+}
+
+func (q *Queries) UpdateInputBatch(ctx context.Context, arg UpdateInputBatchParams) (Gr33nnaturalfarmingInputBatch, error) {
+	row := q.db.QueryRow(ctx, updateInputBatch,
+		arg.ID,
+		arg.BatchIdentifier,
+		arg.Status,
+		arg.ActualReadyDate,
+		arg.CurrentQuantityRemaining,
+		arg.StorageLocation,
+		arg.ObservationsNotes,
+		arg.UpdatedByUserID,
+	)
+	var i Gr33nnaturalfarmingInputBatch
+	err := row.Scan(
+		&i.ID,
+		&i.FarmID,
+		&i.InputDefinitionID,
+		&i.BatchIdentifier,
+		&i.CreationStartDate,
+		&i.CreationEndDate,
+		&i.ExpectedReadyDate,
+		&i.ActualReadyDate,
+		&i.QuantityProduced,
+		&i.QuantityUnitID,
+		&i.CurrentQuantityRemaining,
+		&i.Status,
+		&i.StorageLocation,
+		&i.ShelfLifeDays,
+		&i.PhValue,
+		&i.EcValueMsCm,
+		&i.TemperatureDuringMaking,
+		&i.IngredientsUsed,
+		&i.ProcedureFollowed,
+		&i.ObservationsNotes,
+		&i.MadeByUserID,
+		&i.RelatedTaskID,
+		&i.FileAttachmentID,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.UpdatedByUserID,
+		&i.DeletedAt,
+	)
+	return i, err
+}
+
+const updateInputDefinition = `-- name: UpdateInputDefinition :one
+UPDATE gr33nnaturalfarming.input_definitions SET
+  name=$2, category=$3, description=$4, typical_ingredients=$5,
+  preparation_summary=$6, storage_guidelines=$7, safety_precautions=$8,
+  reference_source=$9, updated_at=NOW(), updated_by_user_id=$10
+WHERE id=$1 AND deleted_at IS NULL RETURNING id, farm_id, name, category, description, typical_ingredients, preparation_summary, storage_guidelines, safety_precautions, reference_source, file_attachment_id, created_at, updated_at, updated_by_user_id, deleted_at
+`
+
+type UpdateInputDefinitionParams struct {
+	ID                 int64                                `db:"id" json:"id"`
+	Name               string                               `db:"name" json:"name"`
+	Category           Gr33nnaturalfarmingInputCategoryEnum `db:"category" json:"category"`
+	Description        *string                              `db:"description" json:"description"`
+	TypicalIngredients *string                              `db:"typical_ingredients" json:"typical_ingredients"`
+	PreparationSummary *string                              `db:"preparation_summary" json:"preparation_summary"`
+	StorageGuidelines  *string                              `db:"storage_guidelines" json:"storage_guidelines"`
+	SafetyPrecautions  *string                              `db:"safety_precautions" json:"safety_precautions"`
+	ReferenceSource    *string                              `db:"reference_source" json:"reference_source"`
+	UpdatedByUserID    pgtype.UUID                          `db:"updated_by_user_id" json:"updated_by_user_id"`
+}
+
+func (q *Queries) UpdateInputDefinition(ctx context.Context, arg UpdateInputDefinitionParams) (Gr33nnaturalfarmingInputDefinition, error) {
+	row := q.db.QueryRow(ctx, updateInputDefinition,
+		arg.ID,
+		arg.Name,
+		arg.Category,
+		arg.Description,
+		arg.TypicalIngredients,
+		arg.PreparationSummary,
+		arg.StorageGuidelines,
+		arg.SafetyPrecautions,
+		arg.ReferenceSource,
+		arg.UpdatedByUserID,
+	)
+	var i Gr33nnaturalfarmingInputDefinition
+	err := row.Scan(
+		&i.ID,
+		&i.FarmID,
+		&i.Name,
+		&i.Category,
+		&i.Description,
+		&i.TypicalIngredients,
+		&i.PreparationSummary,
+		&i.StorageGuidelines,
+		&i.SafetyPrecautions,
+		&i.ReferenceSource,
+		&i.FileAttachmentID,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.UpdatedByUserID,
+		&i.DeletedAt,
+	)
+	return i, err
 }
