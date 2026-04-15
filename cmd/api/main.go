@@ -21,16 +21,30 @@ func main() {
 	port  := getEnv("PORT", "8080")
 	jwtSecret = []byte(getEnv("JWT_SECRET", ""))
 	piAPIKey  = getEnv("PI_API_KEY", "")
+	corsOrigin = getEnv("CORS_ORIGIN", "http://localhost:5173")
+	authMode  = getEnv("AUTH_MODE", "dev")
 	adminUser    := getEnv("ADMIN_USERNAME", "admin")
 	simulationMode := strings.EqualFold(getEnv("AUTOMATION_SIMULATION_MODE", "true"), "true")
 	hashFilePath := filepath.Join(os.Getenv("HOME"), ".gr33n", "admin.hash")
 	adminHash    := loadPasswordHash(hashFilePath)
+
+	if authMode == "production" {
+		if len(jwtSecret) == 0 {
+			log.Fatal("AUTH_MODE=production requires JWT_SECRET to be set")
+		}
+		if piAPIKey == "" {
+			log.Fatal("AUTH_MODE=production requires PI_API_KEY to be set")
+		}
+	}
+
 	pool, err := connectDB(dbURL)
-	if err != nil { log.Fatalf("❌ Could not connect to database: %v", err) }
+	if err != nil { log.Fatalf("Could not connect to database: %v", err) }
 	defer pool.Close()
-	log.Println("✅ Connected to gr33n database")
-	if len(jwtSecret) == 0 { log.Println("⚠️  JWT_SECRET not set — JWT auth disabled (dev mode)") } else { log.Println("🔐 JWT auth enabled") }
-	if piAPIKey == "" { log.Println("⚠️  PI_API_KEY not set — Pi API key auth disabled (dev mode)") } else { log.Println("🔑 Pi API key auth enabled") }
+	log.Println("Connected to gr33n database")
+	log.Printf("AUTH_MODE=%s", authMode)
+	if len(jwtSecret) == 0 { log.Println("JWT_SECRET not set — JWT auth disabled (dev mode)") } else { log.Println("JWT auth enabled") }
+	if piAPIKey == "" { log.Println("PI_API_KEY not set — Pi API key auth disabled (dev mode)") } else { log.Println("Pi API key auth enabled") }
+	log.Printf("CORS_ORIGIN=%s", corsOrigin)
 	mux := http.NewServeMux()
 	var workerOpts []automationworker.WorkerOption
 	if cs := getEnv("AUTOMATION_COOLDOWN_SECONDS", ""); cs != "" {

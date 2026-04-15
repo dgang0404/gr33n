@@ -41,6 +41,9 @@ func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationwo
 			map[string]string{"status": "ok", "service": "gr33n-api"})
 	})
 	mux.HandleFunc("POST /auth/login", auth.Login)
+	mux.HandleFunc("GET /auth/mode", func(w http.ResponseWriter, r *http.Request) {
+		httputil.WriteJSON(w, http.StatusOK, map[string]string{"mode": authMode})
+	})
 
 	// ── Pi routes — API key required ─────────────────────────────────────────
 	mux.Handle("POST /sensors/{id}/readings", requireAPIKey(http.HandlerFunc(sensor.PostReading)))
@@ -53,14 +56,14 @@ func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationwo
 	mux.Handle("PATCH /auth/password", jwt(http.HandlerFunc(auth.ChangePassword)))
 
 	// Units
-	mux.HandleFunc("GET /units", func(w http.ResponseWriter, r *http.Request) {
+	mux.Handle("GET /units", jwt(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		units, err := db.New(pool).ListAllUnits(r.Context())
 		if err != nil {
 			httputil.WriteError(w, http.StatusInternalServerError, err.Error())
 			return
 		}
 		httputil.WriteJSON(w, http.StatusOK, units)
-	})
+	})))
 
 	// Farms
 	mux.Handle("GET /farms/{id}",          jwt(http.HandlerFunc(farm.Get)))

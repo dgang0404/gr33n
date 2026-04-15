@@ -15,6 +15,10 @@
       >
         <h2 class="text-white text-lg font-semibold">Sign in</h2>
 
+        <div v-if="auth.isDevMode" class="bg-amber-900/30 border border-amber-700/50 rounded-lg px-3 py-2">
+          <p class="text-amber-300 text-xs">Dev mode — auth is disabled. Any credentials will work.</p>
+        </div>
+
         <!-- Username -->
         <div class="flex flex-col gap-1.5">
           <label class="text-zinc-400 text-xs font-medium uppercase tracking-wide">Username</label>
@@ -73,6 +77,8 @@ import { useAuthStore } from '../stores/auth'
 
 const router = useRouter()
 const auth   = useAuthStore()
+
+auth.fetchAuthMode()
 
 const form    = reactive({ username: '', password: '' })
 const loading = ref(false)

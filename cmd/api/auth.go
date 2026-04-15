@@ -12,8 +12,10 @@ import (
 
 // package-level vars set by main() before registerRoutes()
 var (
-	piAPIKey  string
-	jwtSecret []byte
+	piAPIKey   string
+	jwtSecret  []byte
+	corsOrigin string
+	authMode   string // "dev" or "production"
 )
 
 type contextKey string

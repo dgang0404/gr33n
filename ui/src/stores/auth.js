@@ -5,13 +5,24 @@ export const useAuthStore = defineStore('auth', {
   state: () => ({
     token: localStorage.getItem('gr33n_token') ?? null,
     username: localStorage.getItem('gr33n_user') ?? null,
+    authMode: null,
   }),
 
   getters: {
     isLoggedIn: (state) => !!state.token,
+    isDevMode: (state) => state.authMode === 'dev',
   },
 
   actions: {
+    async fetchAuthMode() {
+      try {
+        const res = await api.get('/auth/mode')
+        this.authMode = res.data?.mode ?? 'dev'
+      } catch {
+        this.authMode = 'dev'
+      }
+    },
+
     async login(username, password) {
       const res = await api.post('/auth/login', { username, password })
       this.token = res.data.token
