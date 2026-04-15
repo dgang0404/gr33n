@@ -66,9 +66,10 @@ func (h *Handler) Stream(w http.ResponseWriter, r *http.Request) {
 	ticker := time.NewTicker(10 * time.Second)
 	defer ticker.Stop()
 
-	farmID, _ := strconv.ParseInt(r.PathValue("id"), 10, 64)
-	if farmID == 0 {
-		farmID = 1
+	farmID, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	if err != nil || farmID == 0 {
+		http.Error(w, "invalid farm id", http.StatusBadRequest)
+		return
 	}
 
 	q := db.New(h.pool)

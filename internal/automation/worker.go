@@ -118,7 +118,7 @@ func (w *Worker) runTick(ctx context.Context) {
 	for _, s := range schedules {
 		should, evalErr := shouldTriggerNow(s.CronExpression, s.LastTriggeredTime, now)
 		if evalErr != nil {
-			_, _ = w.q.CreateAutomationRun(ctx, db.CreateAutomationRunParams{
+			if _, err := w.q.CreateAutomationRun(ctx, db.CreateAutomationRunParams{
 				FarmID:     s.FarmID,
 				ScheduleID: &s.ID,
 				RuleID:     nil,
@@ -126,7 +126,9 @@ func (w *Worker) runTick(ctx context.Context) {
 				Message:    ptr(fmt.Sprintf("cron parse error for %s: %v", s.Name, evalErr)),
 				Details:    []byte(`{"phase":"cron_eval"}`),
 				ExecutedAt: now,
-			})
+			}); err != nil {
+				log.Printf("failed to record automation run: %v", err)
+			}
 			continue
 		}
 		if !should {
@@ -164,22 +166,29 @@ func shouldTriggerNow(expr string, lastTriggered pgtype.Timestamptz, now time.Ti
 }
 
 // checkCooldown prevents re-execution if the last successful run is within the cooldown window.
+// Returns true (skip) on DB errors to avoid running unchecked.
 func (w *Worker) checkCooldown(ctx context.Context, s db.Gr33ncoreSchedule, now time.Time) bool {
 	lastRun, err := w.q.GetLastSuccessfulRunBySchedule(ctx, &s.ID)
 	if err != nil {
-		return false
+		if errors.Is(err, pgx.ErrNoRows) {
+			return false
+		}
+		log.Printf("cooldown check failed for schedule %d: %v", s.ID, err)
+		return true
 	}
 	elapsed := now.Sub(lastRun.ExecutedAt)
 	if elapsed < w.cooldown {
 		log.Printf("schedule %d (%s) skipped: cooldown %v remaining", s.ID, s.Name, w.cooldown-elapsed)
-		_, _ = w.q.CreateAutomationRun(ctx, db.CreateAutomationRunParams{
+		if _, err := w.q.CreateAutomationRun(ctx, db.CreateAutomationRunParams{
 			FarmID:     s.FarmID,
 			ScheduleID: &s.ID,
 			Status:     "skipped",
 			Message:    ptr(fmt.Sprintf("cooldown: %v since last success, requires %v", elapsed.Truncate(time.Second), w.cooldown)),
 			Details:    []byte(`{"phase":"cooldown"}`),
 			ExecutedAt: now,
-		})
+		}); err != nil {
+			log.Printf("failed to record automation run: %v", err)
+		}
 		return true
 	}
 	return false
@@ -208,33 +217,39 @@ func (w *Worker) checkIdempotency(ctx context.Context, s db.Gr33ncoreSchedule, k
 func (w *Worker) executeSchedule(ctx context.Context, s db.Gr33ncoreSchedule, now time.Time, idemKey string) {
 	actions, err := w.q.ListExecutableActionsBySchedule(ctx, &s.ID)
 	if err != nil {
-		_, _ = w.q.CreateAutomationRun(ctx, db.CreateAutomationRunParams{
+		if _, runErr := w.q.CreateAutomationRun(ctx, db.CreateAutomationRunParams{
 			FarmID:     s.FarmID,
 			ScheduleID: &s.ID,
 			Status:     "failed",
 			Message:    ptr(fmt.Sprintf("failed to list actions: %v", err)),
 			Details:    []byte(`{"phase":"list_actions"}`),
 			ExecutedAt: now,
-		})
+		}); runErr != nil {
+			log.Printf("failed to record automation run: %v", runErr)
+		}
 		return
 	}
 
 	if len(actions) == 0 {
-		_, _ = w.q.CreateAutomationRun(ctx, db.CreateAutomationRunParams{
+		if _, err := w.q.CreateAutomationRun(ctx, db.CreateAutomationRunParams{
 			FarmID:     s.FarmID,
 			ScheduleID: &s.ID,
 			Status:     "skipped",
 			Message:    ptr("schedule has no executable actions"),
 			Details:    []byte(`{"phase":"execute","actions":0}`),
 			ExecutedAt: now,
-		})
-		_, _ = w.q.MarkScheduleTriggered(ctx, db.MarkScheduleTriggeredParams{
+		}); err != nil {
+			log.Printf("failed to record automation run: %v", err)
+		}
+		if _, err := w.q.MarkScheduleTriggered(ctx, db.MarkScheduleTriggeredParams{
 			ID: s.ID,
 			LastTriggeredTime: pgtype.Timestamptz{
 				Time:  now,
 				Valid: true,
 			},
-		})
+		}); err != nil {
+			log.Printf("failed to mark schedule triggered: %v", err)
+		}
 		return
 	}
 
@@ -269,22 +284,26 @@ func (w *Worker) executeSchedule(ctx context.Context, s db.Gr33ncoreSchedule, no
 		msg = msg + ": " + strings.Join(errorMessages, " | ")
 	}
 
-	_, _ = w.q.CreateAutomationRun(ctx, db.CreateAutomationRunParams{
+	if _, err := w.q.CreateAutomationRun(ctx, db.CreateAutomationRunParams{
 		FarmID:     s.FarmID,
 		ScheduleID: &s.ID,
 		Status:     status,
 		Message:    ptr(msg),
 		Details:    details,
 		ExecutedAt: now,
-	})
+	}); err != nil {
+		log.Printf("failed to record automation run: %v", err)
+	}
 
-	_, _ = w.q.MarkScheduleTriggered(ctx, db.MarkScheduleTriggeredParams{
+	if _, err := w.q.MarkScheduleTriggered(ctx, db.MarkScheduleTriggeredParams{
 		ID: s.ID,
 		LastTriggeredTime: pgtype.Timestamptz{
 			Time:  now,
 			Valid: true,
 		},
-	})
+	}); err != nil {
+		log.Printf("failed to mark schedule triggered: %v", err)
+	}
 }
 
 // executeActionWithRetry wraps executeAction with retries for transient errors.
@@ -302,7 +321,11 @@ func (w *Worker) executeActionWithRetry(ctx context.Context, schedule db.Gr33nco
 			backoff := time.Duration(1<<uint(attempt)) * 500 * time.Millisecond
 			log.Printf("action %d transient error (attempt %d/%d), retrying in %v: %v",
 				action.ID, attempt+1, w.maxRetries+1, backoff, lastErr)
-			time.Sleep(backoff)
+			select {
+			case <-time.After(backoff):
+			case <-ctx.Done():
+				return fmt.Errorf("context cancelled during retry backoff: %w", ctx.Err())
+			}
 		}
 	}
 	return fmt.Errorf("[transient after %d retries] %w", w.maxRetries+1, lastErr)
@@ -353,11 +376,13 @@ func (w *Worker) executeAction(ctx context.Context, schedule db.Gr33ncoreSchedul
 		if w.simulation {
 			var numeric pgtype.Numeric
 			_ = numeric.Scan(0)
-			_, _ = w.q.UpdateActuatorState(ctx, db.UpdateActuatorStateParams{
+			if _, err := w.q.UpdateActuatorState(ctx, db.UpdateActuatorStateParams{
 				ID:                  *action.TargetActuatorID,
 				CurrentStateNumeric: numeric,
 				CurrentStateText:    &stateText,
-			})
+			}); err != nil {
+				log.Printf("failed to update actuator state: %v", err)
+			}
 		}
 		params, _ := json.Marshal(map[string]any{
 			"command":         command,

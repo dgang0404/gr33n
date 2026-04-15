@@ -72,6 +72,10 @@ func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationwo
 	})))
 
 	// Farms
+	mux.Handle("GET /farms",               jwt(http.HandlerFunc(farm.List)))
+	mux.Handle("POST /farms",              jwt(http.HandlerFunc(farm.Create)))
+	mux.Handle("PUT /farms/{id}",          jwt(http.HandlerFunc(farm.Update)))
+	mux.Handle("DELETE /farms/{id}",       jwt(http.HandlerFunc(farm.Delete)))
 	mux.Handle("GET /farms/{id}",          jwt(http.HandlerFunc(farm.Get)))
 	mux.Handle("GET /farms/{id}/zones",    jwt(http.HandlerFunc(zone.ListByFarm)))
 	mux.Handle("GET /farms/{id}/devices",  jwt(http.HandlerFunc(device.ListByFarm)))
@@ -98,6 +102,7 @@ func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationwo
 
 	// Zones
 	mux.Handle("GET /zones/{id}",          jwt(http.HandlerFunc(zone.Get)))
+	mux.Handle("PUT /zones/{id}",          jwt(http.HandlerFunc(zone.Update)))
 	mux.Handle("POST /farms/{id}/zones",   jwt(http.HandlerFunc(zone.Create)))
 	mux.Handle("DELETE /zones/{id}",       jwt(http.HandlerFunc(zone.Delete)))
 

@@ -14,11 +14,15 @@ import (
 )
 
 type Handler struct {
-	q *db.Queries
+	q db.Querier
 }
 
 func NewHandler(pool *pgxpool.Pool) *Handler {
 	return &Handler{q: db.New(pool)}
+}
+
+func NewHandlerWithQuerier(q db.Querier) *Handler {
+	return &Handler{q: q}
 }
 
 // GET /farms/{id}/devices

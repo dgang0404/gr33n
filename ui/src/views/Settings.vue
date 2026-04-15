@@ -174,7 +174,7 @@ const resetPwForm = () => {
 
 // ── Pi API key display ───────────────────────────────────────────────────────
 const showKey  = ref(false)
-const piApiKey = import.meta.env.VITE_PI_API_KEY ?? '(set PI_API_KEY env var on server)'
+const piApiKey = '(configured on server — check PI_API_KEY env var)'
 
 // ── Token expiry ─────────────────────────────────────────────────────────────
 const tokenExpiry = computed(() => {

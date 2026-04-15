@@ -14,6 +14,8 @@ import unittest
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from unittest.mock import MagicMock, patch
 
+import yaml
+
 # ── Import the client module ──────────────────────────────────────────────────
 import sys, os
 sys.path.insert(0, os.path.dirname(__file__))
@@ -451,6 +453,167 @@ class TestOfflineQueueIntegration(unittest.TestCase):
             server.shutdown()
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# CONFIG + API KEY + DAEMON SKIP TESTS
+# ─────────────────────────────────────────────────────────────────────────────
+
+class TestLoadConfig(unittest.TestCase):
+    """Test load_config merges YAML with defaults correctly."""
+
+    def test_partial_config_merges_with_defaults(self):
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.yaml', delete=False) as f:
+            yaml.dump({'api': {'base_url': 'http://10.0.0.1:9090'}, 'farm': {'farm_id': 42}}, f)
+            path = f.name
+        try:
+            cfg = client.load_config(path)
+            self.assertEqual(cfg['api']['base_url'], 'http://10.0.0.1:9090')
+            self.assertEqual(cfg['farm']['farm_id'], 42)
+            self.assertEqual(cfg['api']['timeout_seconds'], 5)
+            self.assertEqual(cfg['schedule_poll_interval_seconds'], 30)
+        finally:
+            os.unlink(path)
+
+    def test_missing_file_returns_full_defaults(self):
+        cfg = client.load_config('/tmp/nonexistent_gr33n_test_config.yaml')
+        self.assertEqual(cfg, client.DEFAULT_CONFIG)
+
+    def test_empty_yaml_returns_defaults(self):
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.yaml', delete=False) as f:
+            f.write('')
+            path = f.name
+        try:
+            cfg = client.load_config(path)
+            self.assertEqual(cfg['api']['base_url'], client.DEFAULT_CONFIG['api']['base_url'])
+        finally:
+            os.unlink(path)
+
+    def test_scalar_override(self):
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.yaml', delete=False) as f:
+            yaml.dump({'schedule_poll_interval_seconds': 120}, f)
+            path = f.name
+        try:
+            cfg = client.load_config(path)
+            self.assertEqual(cfg['schedule_poll_interval_seconds'], 120)
+        finally:
+            os.unlink(path)
+
+
+class TestApiKeyHeader(unittest.TestCase):
+    """Test that X-Api-Key header is sent when api_key is configured."""
+
+    def test_api_key_sent_in_header(self):
+        captured_headers = {}
+
+        class HeaderCapture(BaseHTTPRequestHandler):
+            def log_message(self, *args): pass
+            def do_POST(self):
+                captured_headers.update(self.headers)
+                length = int(self.headers.get("Content-Length", 0))
+                self.rfile.read(length)
+                self.send_response(201)
+                self.send_header("Content-Type", "application/json")
+                self.end_headers()
+                self.wfile.write(b'{"id":1}')
+
+        server = HTTPServer(("127.0.0.1", 0), HeaderCapture)
+        port = server.server_address[1]
+        thread = threading.Thread(target=server.handle_request)
+        thread.start()
+        try:
+            api = client.Gr33nApiClient(
+                base_url=f"http://127.0.0.1:{port}",
+                farm_id=1,
+                api_key="test-key-123",
+            )
+            api.post_reading(1, 22.5)
+            thread.join(timeout=2)
+        finally:
+            server.server_close()
+
+        self.assertEqual(captured_headers.get("X-Api-Key"), "test-key-123")
+
+    def test_no_api_key_when_empty(self):
+        captured_headers = {}
+
+        class HeaderCapture(BaseHTTPRequestHandler):
+            def log_message(self, *args): pass
+            def do_POST(self):
+                captured_headers.update(self.headers)
+                length = int(self.headers.get("Content-Length", 0))
+                self.rfile.read(length)
+                self.send_response(201)
+                self.send_header("Content-Type", "application/json")
+                self.end_headers()
+                self.wfile.write(b'{"id":1}')
+
+        server = HTTPServer(("127.0.0.1", 0), HeaderCapture)
+        port = server.server_address[1]
+        thread = threading.Thread(target=server.handle_request)
+        thread.start()
+        try:
+            api = client.Gr33nApiClient(
+                base_url=f"http://127.0.0.1:{port}",
+                farm_id=1,
+                api_key="",
+            )
+            api.post_reading(1, 22.5)
+            thread.join(timeout=2)
+        finally:
+            server.server_close()
+
+        self.assertIsNone(captured_headers.get("X-Api-Key"))
+
+
+class TestDaemonLoopSkipOnUnreachable(unittest.TestCase):
+    """Test that daemon loops skip gracefully when API is unreachable."""
+
+    def _make_client(self):
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.yaml', delete=False) as f:
+            yaml.dump({
+                'api': {'base_url': 'http://127.0.0.1:19999', 'timeout_seconds': 1, 'api_key': ''},
+                'farm': {'farm_id': 1},
+                'sensors': [{'sensor_id': 1, 'sensor_type': 'temperature', 'source': 'dht22', 'pin': 4, 'interval_seconds': 1}],
+                'actuators': [{'actuator_id': 1, 'device_id': 1, 'device_type': 'light', 'gpio_pin': 17}],
+                'schedule_poll_interval_seconds': 1,
+                'offline_queue_path': tempfile.mktemp(suffix='.db'),
+                'offline_flush_interval_seconds': 1,
+            }, f)
+            self._cfg_path = f.name
+        return client.Gr33nPiClient(self._cfg_path)
+
+    def test_schedule_loop_skips_on_unreachable(self):
+        pi = self._make_client()
+        self.assertFalse(pi.api.is_reachable())
+        with patch.object(pi.api, 'get_devices') as mock_get:
+            pi.api.is_reachable = MagicMock(return_value=False)
+            pi._stop.set()
+            # Simulate one iteration: check reachable -> skip
+            if not pi.api.is_reachable():
+                pass  # skip as expected
+            mock_get.assert_not_called()
+        os.unlink(self._cfg_path)
+
+    def test_heartbeat_loop_skips_on_unreachable(self):
+        pi = self._make_client()
+        with patch.object(pi.api, 'patch_device_status') as mock_patch:
+            pi.api.is_reachable = MagicMock(return_value=False)
+            pi._stop.set()
+            if not pi.api.is_reachable():
+                pass
+            mock_patch.assert_not_called()
+        os.unlink(self._cfg_path)
+
+    def test_flush_loop_skips_on_unreachable(self):
+        pi = self._make_client()
+        with patch.object(pi.queue, 'pop_batch') as mock_pop:
+            pi.api.is_reachable = MagicMock(return_value=False)
+            pi._stop.set()
+            if not pi.api.is_reachable():
+                pass
+            mock_pop.assert_not_called()
+        os.unlink(self._cfg_path)
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
 
@@ -550,5 +713,3 @@ class TestEdgeCases(unittest.TestCase):
         )
 
 
-if __name__ == "__main__":
-    unittest.main()

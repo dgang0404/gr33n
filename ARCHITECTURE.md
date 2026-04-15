@@ -47,7 +47,7 @@ cmd/api/
 
 internal/
   db/          — sqlc output: Queries struct, all param/row types, models
-  handler/     — one package per resource (farm, zone, sensor, device, actuator, task, automation, auth, fertigation)
+  handler/     — one package per resource (farm, zone, sensor, device, actuator, task, automation, auth, fertigation, naturalfarming, sse)
   httputil/    — WriteJSON(w, status, v) and WriteError(w, status, msg)
   platform/
     commontypes/ — enums (TaskStatusEnum, DeviceStatusEnum, etc.)

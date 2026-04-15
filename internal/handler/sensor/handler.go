@@ -20,12 +20,16 @@ type SSENotifier interface {
 }
 
 type Handler struct {
-	pool *pgxpool.Pool
-	sse  SSENotifier
+	q   db.Querier
+	sse SSENotifier
 }
 
 func NewHandler(pool *pgxpool.Pool, sse SSENotifier) *Handler {
-	return &Handler{pool: pool, sse: sse}
+	return &Handler{q: db.New(pool), sse: sse}
+}
+
+func NewHandlerWithQuerier(q db.Querier, sse SSENotifier) *Handler {
+	return &Handler{q: q, sse: sse}
 }
 
 func (h *Handler) ListByFarm(w http.ResponseWriter, r *http.Request) {
@@ -34,8 +38,7 @@ func (h *Handler) ListByFarm(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid farm id")
 		return
 	}
-	q := db.New(h.pool)
-	rows, err := q.ListSensorsByFarm(r.Context(), farmID)
+	rows, err := h.q.ListSensorsByFarm(r.Context(), farmID)
 	if err != nil {
 		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
 		return
@@ -52,8 +55,7 @@ func (h *Handler) Get(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid sensor id")
 		return
 	}
-	q := db.New(h.pool)
-	s, err := q.GetSensorByID(r.Context(), id)
+	s, err := h.q.GetSensorByID(r.Context(), id)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			httputil.WriteError(w, http.StatusNotFound, "sensor not found")
@@ -112,8 +114,7 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		Config:                 []byte("{}"),
 		MetaData:               []byte("{}"),
 	}
-	q := db.New(h.pool)
-	s, err := q.CreateSensor(r.Context(), params)
+	s, err := h.q.CreateSensor(r.Context(), params)
 	if err != nil {
 		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
 		return
@@ -127,8 +128,7 @@ func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid sensor id")
 		return
 	}
-	q := db.New(h.pool)
-	if err := q.SoftDeleteSensor(r.Context(), db.SoftDeleteSensorParams{
+	if err := h.q.SoftDeleteSensor(r.Context(), db.SoftDeleteSensorParams{
 		ID:              id,
 		UpdatedByUserID: pgtype.UUID{}, // zero value = NULL in DB
 	}); err != nil {
@@ -145,8 +145,7 @@ func (h *Handler) LatestReading(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid sensor id")
 		return
 	}
-	q := db.New(h.pool)
-	reading, err := q.GetLatestReadingBySensor(r.Context(), id)
+	reading, err := h.q.GetLatestReadingBySensor(r.Context(), id)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			httputil.WriteError(w, http.StatusNotFound, "no readings yet")
@@ -208,8 +207,7 @@ func (h *Handler) PostReading(w http.ResponseWriter, r *http.Request) {
 		IsValid:             pIsValid,
 		MetaData:            nil,
 	}
-	q := db.New(h.pool)
-	reading, err := q.InsertSensorReading(r.Context(), params)
+	reading, err := h.q.InsertSensorReading(r.Context(), params)
 	if err != nil {
 		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
 		return
