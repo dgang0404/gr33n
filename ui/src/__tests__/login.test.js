@@ -12,6 +12,7 @@ vi.mock('../api', () => ({
 
 vi.mock('vue-router', () => ({
   useRouter: () => ({ push: vi.fn() }),
+  useRoute: () => ({ name: 'login', path: '/login' }),
 }))
 
 import Login from '../views/Login.vue'

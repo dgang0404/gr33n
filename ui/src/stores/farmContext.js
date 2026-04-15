@@ -6,6 +6,7 @@ export const useFarmContextStore = defineStore('farmContext', {
   state: () => ({
     farmId: Number(localStorage.getItem('gr33n_farm_id')) || null,
     farms: [],
+    farmSelectionNotice: null,
   }),
 
   getters: {
@@ -16,14 +17,31 @@ export const useFarmContextStore = defineStore('farmContext', {
     async fetchFarms() {
       const r = await api.get('/farms')
       this.farms = Array.isArray(r.data) ? r.data : []
+      // Recover from stale persisted farm IDs (e.g. after DB reset/reseed).
+      // If selected farm is missing, switch to first available farm.
+      if (this.farmId && !this.farms.some(f => f.id === this.farmId)) {
+        const previous = this.farmId
+        const next = this.farms[0]?.id ?? null
+        this.farmId = next
+        if (next) localStorage.setItem('gr33n_farm_id', String(next))
+        else localStorage.removeItem('gr33n_farm_id')
+        this.farmSelectionNotice = next
+          ? `Selected farm ${previous} was not found. Switched to farm ${next}.`
+          : `Selected farm ${previous} was not found. No farms are currently available.`
+      }
       return this.farms
     },
 
     async selectFarm(id) {
+      this.farmSelectionNotice = null
       this.farmId = id
       localStorage.setItem('gr33n_farm_id', String(id))
       const farmStore = useFarmStore()
       await farmStore.loadAll(id)
+    },
+
+    clearFarmSelectionNotice() {
+      this.farmSelectionNotice = null
     },
 
     async createFarm(data) {

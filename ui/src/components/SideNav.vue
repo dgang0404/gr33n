@@ -13,11 +13,16 @@
       </RouterLink>
     </nav>
     <div class="px-3 py-3 border-t border-gray-800">
+      <label class="block text-[10px] uppercase tracking-wide text-gray-500 mb-1">Farm</label>
       <select
-        :value="farmContext.farmId"
-        @change="farmContext.selectFarm(Number($event.target.value))"
-        class="w-full bg-gray-800 border border-gray-700 text-gray-300 text-xs rounded-lg px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-gr33n-600"
+        :value="farmContext.farmId ?? ''"
+        :disabled="!farmContext.farms.length"
+        @change="onFarmSelect($event)"
+        class="w-full bg-gray-800 border border-gray-700 text-gray-300 text-xs rounded-lg px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-gr33n-600 disabled:opacity-60"
       >
+        <option v-if="!farmContext.farms.length" value="" disabled>
+          {{ emptyFarmHint }}
+        </option>
         <option v-for="f in farmContext.farms" :key="f.id" :value="f.id">
           {{ f.name }}
         </option>
@@ -27,9 +32,25 @@
 </template>
 
 <script setup>
+import { computed } from 'vue'
 import { useFarmContextStore } from '../stores/farmContext'
+import { useAuthStore } from '../stores/auth'
 
 const farmContext = useFarmContextStore()
+const auth = useAuthStore()
+
+const emptyFarmHint = computed(() => {
+  if (!auth.token) return 'Sign in to load farms'
+  return 'No farms — check API DB / seed (see README)'
+})
+
+function onFarmSelect(ev) {
+  const raw = ev.target.value
+  if (raw === '' || raw == null) return
+  const id = Number(raw)
+  if (!Number.isFinite(id)) return
+  farmContext.selectFarm(id)
+}
 
 const nav = [
   { to: '/',          icon: '🌿', label: 'Dashboard'  },
@@ -40,6 +61,7 @@ const nav = [
   { to: '/tasks',        icon: '✅', label: 'Tasks'        },
   { to: '/fertigation', icon: '💧', label: 'Fertigation' },
   { to: '/inventory',   icon: '🧪', label: 'Inventory'   },
+  { to: '/alerts',      icon: '🔔', label: 'Alerts'      },
   { to: '/settings',    icon: '⚙️', label: 'Settings'    },
 ]
 </script>

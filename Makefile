@@ -7,13 +7,19 @@ PORT     ?= 8080
 DB_URL   ?= postgres://$(USER)@/gr33n?host=/var/run/postgresql
 
 # ── Development ────────────────────────────────────────────────
-run: ## Run the API server
-	DATABASE_URL="$(DB_URL)" $(GO) run ./cmd/api/
+run: ## Run the API server (dev build, auth bypass available)
+	AUTH_MODE=dev DATABASE_URL="$(DB_URL)" $(GO) run -tags dev ./cmd/api/
+
+run-auth: ## Run the API server with AUTH_MODE=production (real auth; dev-tagged build)
+	AUTH_MODE=production DATABASE_URL="$(DB_URL)" $(GO) run -tags dev ./cmd/api/
+
+run-auth-test: ## Local auth regression: AUTH_MODE=auth_test (requires JWT_SECRET, PI_API_KEY; dev tag only)
+	AUTH_MODE=auth_test DATABASE_URL="$(DB_URL)" $(GO) run -tags dev ./cmd/api/
 
 dev: ## Run API + UI dev server in parallel
 	@echo "Starting API on :$(PORT) and UI on :5173"
 	@trap 'kill 0' INT; \
-		DATABASE_URL="$(DB_URL)" $(GO) run ./cmd/api/ & \
+		AUTH_MODE=dev DATABASE_URL="$(DB_URL)" $(GO) run -tags dev ./cmd/api/ & \
 		cd ui && npm run dev & \
 		wait
 
@@ -28,11 +34,11 @@ build-ui: ## Build the Vue frontend for production
 	cd ui && npm run build
 
 # ── Test ───────────────────────────────────────────────────────
-test: ## Run Go tests
-	$(GO) test ./... -v -count=1
+test: ## Run Go tests (dev build so smoke tests can use auth bypass)
+	$(GO) test -tags dev ./... -v -count=1
 
 lint: ## Run go vet
-	$(GO) vet ./...
+	$(GO) vet -tags dev ./...
 
 # ── Database ───────────────────────────────────────────────────
 sqlc: ## Regenerate sqlc Go code from SQL queries

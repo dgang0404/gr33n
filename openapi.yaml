@@ -10,7 +10,8 @@ info:
     - Public routes require no auth.
     - Pi routes require `X-API-Key` header.
     - Dashboard routes require `Authorization: Bearer <JWT>`.
-    - In `AUTH_MODE=dev`, auth is bypassed.
+    - In `AUTH_MODE=dev` (dev-tagged build only), auth is bypassed.
+    - `AUTH_MODE=auth_test` enforces the same auth as production on a dev-tagged build only.
   license:
     name: AGPL-3.0
     url: https://www.gnu.org/licenses/agpl-3.0
@@ -44,6 +45,10 @@ tags:
     description: Fertigation reservoirs, programs, EC targets, and events
   - name: naturalfarming
     description: Korean Natural Farming (KNF) input definitions and batches
+  - name: alerts
+    description: Sensor alert notifications and threshold breach tracking
+  - name: profiles
+    description: User profiles and farm membership management
 
 paths:
 
@@ -101,7 +106,7 @@ paths:
     get:
       tags: [auth]
       summary: Get authentication mode
-      description: Returns current auth mode (dev or production).
+      description: Returns current auth mode (dev, auth_test, or production). auth_test is only valid on local dev builds compiled with `-tags dev`.
       responses:
         "200":
           description: Auth mode
@@ -110,7 +115,7 @@ paths:
               schema:
                 type: object
                 properties:
-                  mode: { type: string, enum: [dev, production] }
+                  mode: { type: string, enum: [dev, auth_test, production] }
 
   /auth/password:
     patch:
@@ -137,6 +142,39 @@ paths:
                 properties:
                   message: { type: string }
         "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /auth/register:
+    post:
+      tags: [auth]
+      summary: Register a new user
+      description: Creates auth.users + profiles row. Invited users (null password) can set password here.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email: { type: string, format: email }
+                password: { type: string, format: password, minLength: 8 }
+                full_name: { type: string }
+      responses:
+        "201":
+          description: User registered
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token: { type: string }
+                  expires_in: { type: integer }
+                  user_id: { type: string, format: uuid }
+        "409":
+          description: User already exists
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
 
   # ── Pi routes (API key) ────────────────────────────────────
 
@@ -1099,6 +1137,182 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/FertigationEvent" }
 
+  # ── Alerts ──────────────────────────────────────────────────
+
+  /farms/{id}/alerts:
+    get:
+      tags: [alerts]
+      summary: List alerts for a farm
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+        - name: limit
+          in: query
+          schema: { type: integer, default: 50, maximum: 200 }
+        - name: offset
+          in: query
+          schema: { type: integer, default: 0 }
+      responses:
+        "200":
+          description: List of alerts
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Alert" }
+
+  /farms/{id}/alerts/unread-count:
+    get:
+      tags: [alerts]
+      summary: Count unread alerts for a farm
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      responses:
+        "200":
+          description: Unread alert count
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  unread_count: { type: integer }
+
+  /alerts/{id}/read:
+    patch:
+      tags: [alerts]
+      summary: Mark an alert as read
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      responses:
+        "200":
+          description: Updated alert
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Alert" }
+
+  /alerts/{id}/acknowledge:
+    patch:
+      tags: [alerts]
+      summary: Acknowledge an alert
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      responses:
+        "200":
+          description: Updated alert
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Alert" }
+
+  # ── Profiles & farm members ────────────────────────────────
+
+  /profile:
+    get:
+      tags: [profiles]
+      summary: Get current user's profile
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          description: User profile
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Profile" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    put:
+      tags: [profiles]
+      summary: Update current user's profile
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ProfileUpdate" }
+      responses:
+        "200":
+          description: Updated profile
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Profile" }
+
+  /farms/{id}/members:
+    get:
+      tags: [profiles]
+      summary: List members of a farm
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      responses:
+        "200":
+          description: List of farm members
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/FarmMember" }
+    post:
+      tags: [profiles]
+      summary: Add a member to a farm (invite)
+      description: If the user does not exist, creates auth.users + profiles row with null password. The invited user can set their password via POST /auth/register.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/FarmMemberCreate" }
+      responses:
+        "201":
+          description: Created farm membership
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/FarmMembership" }
+
+  /farms/{id}/members/{uid}/role:
+    patch:
+      tags: [profiles]
+      summary: Update a member's role in a farm
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+        - name: uid
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [role_in_farm]
+              properties:
+                role_in_farm:
+                  type: string
+                  enum: [owner, manager, operator, viewer]
+      responses:
+        "200":
+          description: Updated membership
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/FarmMembership" }
+
+  /farms/{id}/members/{uid}:
+    delete:
+      tags: [profiles]
+      summary: Remove a member from a farm
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+        - name: uid
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "204": { description: Removed }
+
 components:
 
   securitySchemes:
@@ -1715,3 +1929,86 @@ components:
         updated_at: { type: string, format: date-time }
         updated_by_user_id: { type: string, format: uuid, nullable: true }
         deleted_at: { type: string, format: date-time, nullable: true }
+
+    # ── Alert schemas ──────────────────────────────────────────
+
+    Alert:
+      type: object
+      properties:
+        id: { type: integer }
+        farm_id: { type: integer }
+        recipient_user_id: { type: string, format: uuid, nullable: true }
+        triggering_event_source_type: { type: string, nullable: true }
+        triggering_event_source_id: { type: integer, nullable: true }
+        severity:
+          type: string
+          enum: [low, medium, high, critical]
+        subject_rendered: { type: string, nullable: true }
+        message_text_rendered: { type: string, nullable: true }
+        status:
+          type: string
+          enum: [pending, queued, sent, delivered, failed_to_send, read_by_user, acknowledged_by_user, archived_by_user, system_cleared]
+        is_read: { type: boolean }
+        read_at: { type: string, format: date-time, nullable: true }
+        is_acknowledged: { type: boolean }
+        acknowledged_at: { type: string, format: date-time, nullable: true }
+        acknowledged_by_user_id: { type: string, format: uuid, nullable: true }
+        created_at: { type: string, format: date-time }
+
+    # ── Profile & membership schemas ───────────────────────────
+
+    Profile:
+      type: object
+      properties:
+        user_id: { type: string, format: uuid }
+        full_name: { type: string, nullable: true }
+        email: { type: string }
+        avatar_url: { type: string, nullable: true }
+        role:
+          type: string
+          enum: [admin, farm_manager, operator, viewer, gr33n_system_admin, user]
+        preferences: { type: object }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+
+    ProfileUpdate:
+      type: object
+      properties:
+        full_name: { type: string }
+        avatar_url: { type: string }
+        preferences: { type: object }
+
+    FarmMember:
+      type: object
+      properties:
+        user_id: { type: string, format: uuid }
+        full_name: { type: string, nullable: true }
+        email: { type: string }
+        avatar_url: { type: string, nullable: true }
+        role_in_farm:
+          type: string
+          enum: [owner, manager, operator, viewer]
+        permissions: { type: object }
+        joined_at: { type: string, format: date-time }
+
+    FarmMemberCreate:
+      type: object
+      required: [email]
+      properties:
+        email: { type: string, format: email }
+        role_in_farm:
+          type: string
+          enum: [owner, manager, operator, viewer]
+          default: viewer
+        full_name: { type: string }
+
+    FarmMembership:
+      type: object
+      properties:
+        farm_id: { type: integer }
+        user_id: { type: string, format: uuid }
+        role_in_farm:
+          type: string
+          enum: [owner, manager, operator, viewer]
+        permissions: { type: object }
+        joined_at: { type: string, format: date-time }

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -21,6 +22,18 @@ type mockQuerier struct {
 
 func (m *mockQuerier) InsertSensorReading(ctx context.Context, arg db.InsertSensorReadingParams) (db.Gr33ncoreSensorReading, error) {
 	return m.insertReadingFn(ctx, arg)
+}
+
+func (m *mockQuerier) GetSensorByID(_ context.Context, _ int64) (db.Gr33ncoreSensor, error) {
+	return db.Gr33ncoreSensor{}, fmt.Errorf("not found")
+}
+
+func (m *mockQuerier) GetRecentUnacknowledgedAlertForSource(_ context.Context, _ db.GetRecentUnacknowledgedAlertForSourceParams) (int64, error) {
+	return 0, fmt.Errorf("not found")
+}
+
+func (m *mockQuerier) CreateAlert(_ context.Context, _ db.CreateAlertParams) (db.Gr33ncoreAlertsNotification, error) {
+	return db.Gr33ncoreAlertsNotification{}, nil
 }
 
 type noopSSE struct{}

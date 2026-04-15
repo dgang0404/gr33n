@@ -61,10 +61,15 @@ const (
 
 type NotificationStatusEnum string
 const (
-	NotificationStatusUnread    NotificationStatusEnum = "unread"
-	NotificationStatusRead      NotificationStatusEnum = "read"
-	NotificationStatusDismissed NotificationStatusEnum = "dismissed"
-	NotificationStatusActioned  NotificationStatusEnum = "actioned"
+	NotificationStatusPending        NotificationStatusEnum = "pending"
+	NotificationStatusQueued         NotificationStatusEnum = "queued"
+	NotificationStatusSent           NotificationStatusEnum = "sent"
+	NotificationStatusDelivered      NotificationStatusEnum = "delivered"
+	NotificationStatusFailedToSend   NotificationStatusEnum = "failed_to_send"
+	NotificationStatusReadByUser     NotificationStatusEnum = "read_by_user"
+	NotificationStatusAcknowledged   NotificationStatusEnum = "acknowledged_by_user"
+	NotificationStatusArchivedByUser NotificationStatusEnum = "archived_by_user"
+	NotificationStatusSystemCleared  NotificationStatusEnum = "system_cleared"
 )
 
 // ── Logging ───────────────────────────────────────────────────────────────────

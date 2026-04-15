@@ -68,7 +68,7 @@
           {{ pwError }}
         </p>
         <p v-if="pwSuccess" class="text-green-400 text-sm bg-green-950 border border-green-800 rounded-lg px-3 py-2">
-          ✅ Password updated successfully
+          Password updated successfully
         </p>
 
         <div class="flex gap-3 pt-1">
@@ -89,6 +89,61 @@
           </button>
         </div>
       </form>
+    </section>
+
+    <!-- Farm Members -->
+    <section class="bg-zinc-800 border border-zinc-700 rounded-xl p-5 mb-5">
+      <h2 class="text-white font-semibold mb-4 flex items-center gap-2">
+        <span>👥</span> Farm Members
+      </h2>
+
+      <div v-if="membersLoading" class="text-zinc-500 text-sm">Loading members...</div>
+      <div v-else-if="members.length === 0" class="text-zinc-500 text-sm">No members yet.</div>
+      <div v-else class="space-y-2 mb-4">
+        <div v-for="m in members" :key="m.user_id"
+          class="flex items-center justify-between bg-zinc-900 border border-zinc-700 rounded-lg px-4 py-2.5">
+          <div class="flex items-center gap-3 min-w-0">
+            <div class="w-8 h-8 rounded-full bg-zinc-700 flex items-center justify-center text-xs text-zinc-300 font-bold shrink-0">
+              {{ (m.full_name || m.email || '?')[0].toUpperCase() }}
+            </div>
+            <div class="min-w-0">
+              <p class="text-white text-sm truncate">{{ m.full_name || m.email }}</p>
+              <p class="text-zinc-500 text-xs truncate">{{ m.email }}</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            <select :value="m.role_in_farm" @change="changeRole(m.user_id, $event.target.value)"
+              class="bg-zinc-800 border border-zinc-700 text-zinc-300 text-xs rounded px-2 py-1 focus:outline-none">
+              <option value="owner">Owner</option>
+              <option value="manager">Manager</option>
+              <option value="operator">Operator</option>
+              <option value="viewer">Viewer</option>
+            </select>
+            <button @click="removeMember(m.user_id)"
+              class="text-zinc-500 hover:text-red-400 text-xs transition-colors" title="Remove">
+              ✕
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Invite form -->
+      <form @submit.prevent="inviteMember" class="flex gap-2">
+        <input v-model="inviteEmail" type="email" placeholder="email@example.com" required
+          class="input-field flex-1 text-xs" />
+        <select v-model="inviteRole" class="bg-zinc-900 border border-zinc-700 text-zinc-300 text-xs rounded-lg px-2 py-2 focus:outline-none">
+          <option value="viewer">Viewer</option>
+          <option value="operator">Operator</option>
+          <option value="manager">Manager</option>
+          <option value="owner">Owner</option>
+        </select>
+        <button type="submit" :disabled="inviting"
+          class="bg-green-600 hover:bg-green-500 disabled:bg-zinc-700 text-white text-xs font-semibold px-4 py-2 rounded-lg transition-colors shrink-0">
+          {{ inviting ? 'Inviting…' : 'Invite' }}
+        </button>
+      </form>
+      <p v-if="inviteError" class="text-red-400 text-xs mt-2">{{ inviteError }}</p>
+      <p v-if="inviteSuccess" class="text-green-400 text-xs mt-2">Member invited successfully.</p>
     </section>
 
     <!-- Pi connection info -->
@@ -133,13 +188,17 @@
 </template>
 
 <script setup>
-import { ref, computed, reactive } from 'vue'
+import { ref, computed, reactive, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
+import { useFarmStore } from '../stores/farm'
+import { useFarmContextStore } from '../stores/farmContext'
 import api from '../api'
 
 const router = useRouter()
 const auth   = useAuthStore()
+const farmStore = useFarmStore()
+const farmContext = useFarmContextStore()
 
 // ── Password change ──────────────────────────────────────────────────────────
 const pwForm    = reactive({ current: '', next: '', confirm: '' })
@@ -171,6 +230,61 @@ const resetPwForm = () => {
   pwForm.confirm = ''
   pwError.value  = null
 }
+
+// ── Farm Members ─────────────────────────────────────────────────────────────
+const members = ref([])
+const membersLoading = ref(false)
+const inviteEmail = ref('')
+const inviteRole = ref('viewer')
+const inviting = ref(false)
+const inviteError = ref(null)
+const inviteSuccess = ref(false)
+
+async function loadMembers() {
+  if (!farmContext.farmId) return
+  membersLoading.value = true
+  try {
+    members.value = await farmStore.loadFarmMembers(farmContext.farmId)
+  } finally {
+    membersLoading.value = false
+  }
+}
+
+async function inviteMember() {
+  inviteError.value = null
+  inviteSuccess.value = false
+  inviting.value = true
+  try {
+    await farmStore.addFarmMember(farmContext.farmId, {
+      email: inviteEmail.value,
+      role_in_farm: inviteRole.value,
+    })
+    inviteSuccess.value = true
+    inviteEmail.value = ''
+    await loadMembers()
+  } catch (e) {
+    inviteError.value = e.response?.data?.error ?? 'Invite failed'
+  } finally {
+    inviting.value = false
+  }
+}
+
+async function changeRole(userId, role) {
+  try {
+    await farmStore.updateFarmMemberRole(farmContext.farmId, userId, role)
+    await loadMembers()
+  } catch {}
+}
+
+async function removeMember(userId) {
+  try {
+    await farmStore.removeFarmMember(farmContext.farmId, userId)
+    await loadMembers()
+  } catch {}
+}
+
+onMounted(loadMembers)
+watch(() => farmContext.farmId, loadMembers)
 
 // ── Pi API key display ───────────────────────────────────────────────────────
 const showKey  = ref(false)

@@ -15,10 +15,12 @@ import SideNav from './components/SideNav.vue'
 import TopBar  from './components/TopBar.vue'
 import { useFarmStore } from './stores/farm'
 import { useFarmContextStore } from './stores/farmContext'
+import { useAuthStore } from './stores/auth'
 import { onMounted, onUnmounted, watch } from 'vue'
 
 const store = useFarmStore()
 const farmContext = useFarmContextStore()
+const auth = useAuthStore()
 let evtSource = null
 
 function connectSSE(farmId) {
@@ -46,7 +48,11 @@ watch(() => farmContext.farmId, (id) => {
   if (id) connectSSE(id)
 })
 
-onMounted(async () => {
+/** Only when localStorage has the JWT axios sends (avoids Pinia/localStorage mismatch after 401). */
+async function bootstrapFarmData() {
+  const token = localStorage.getItem('gr33n_token')
+  if (!token) return
+
   await farmContext.fetchFarms()
   if (!farmContext.farmId && farmContext.farms.length) {
     await farmContext.selectFarm(farmContext.farms[0].id)
@@ -55,7 +61,19 @@ onMounted(async () => {
   }
   await store.refreshReadings()
   connectSSE(farmContext.farmId)
+}
+
+onMounted(() => {
+  bootstrapFarmData()
 })
+
+watch(
+  () => auth.token,
+  (t) => {
+    if (t) bootstrapFarmData()
+  }
+)
+
 onUnmounted(() => {
   if (evtSource) evtSource.close()
 })

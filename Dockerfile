@@ -3,6 +3,7 @@ WORKDIR /src
 COPY go.mod go.sum ./
 RUN go mod download
 COPY . .
+# SECURITY: Do NOT add `-tags dev` here — it enables auth bypass.
 RUN CGO_ENABLED=0 go build -o /api ./cmd/api/
 
 FROM alpine:3.21

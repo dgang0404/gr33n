@@ -7,12 +7,14 @@ import (
 
 	automationworker "gr33n-api/internal/automation"
 	actuatorhandler "gr33n-api/internal/handler/actuator"
+	alerthandler  "gr33n-api/internal/handler/alert"
 	automationhandler "gr33n-api/internal/handler/automation"
 	authhandler   "gr33n-api/internal/handler/auth"
 	devicehandler "gr33n-api/internal/handler/device"
 	farmhandler   "gr33n-api/internal/handler/farm"
 	fertigationhandler "gr33n-api/internal/handler/fertigation"
 	nfhandler     "gr33n-api/internal/handler/naturalfarming"
+	profilehandler "gr33n-api/internal/handler/profile"
 	sensorhandler "gr33n-api/internal/handler/sensor"
 	ssehandler    "gr33n-api/internal/handler/sse"
 	taskhandler   "gr33n-api/internal/handler/task"
@@ -32,7 +34,9 @@ func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationwo
 	task   := taskhandler.NewHandler(pool)
 	fertigation := fertigationhandler.NewHandler(pool)
 	nf     := nfhandler.NewHandler(pool)
-	auth   := authhandler.NewHandler(adminUser, adminHash, hashFilePath, IssueToken)
+	alert  := alerthandler.NewHandler(pool)
+	prof   := profilehandler.NewHandler(pool)
+	auth   := authhandler.NewHandler(adminUser, adminHash, hashFilePath, IssueToken, pool)
 
 	// ── Public ───────────────────────────────────────────────────────────────
 	mux.HandleFunc("GET /health", func(w http.ResponseWriter, r *http.Request) {
@@ -45,6 +49,7 @@ func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationwo
 			map[string]string{"status": "ok", "service": "gr33n-api"})
 	})
 	mux.HandleFunc("POST /auth/login", auth.Login)
+	mux.HandleFunc("POST /auth/register", auth.Register)
 	mux.HandleFunc("GET /auth/mode", func(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteJSON(w, http.StatusOK, map[string]string{"mode": authMode})
 	})
@@ -135,6 +140,20 @@ func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationwo
 
 	// Actuator events by schedule (for Schedules page event history)
 	mux.Handle("GET /schedules/{id}/actuator-events", jwt(http.HandlerFunc(actuator.ListEventsBySchedule)))
+
+	// Alerts
+	mux.Handle("GET /farms/{id}/alerts",              jwt(http.HandlerFunc(alert.ListByFarm)))
+	mux.Handle("GET /farms/{id}/alerts/unread-count", jwt(http.HandlerFunc(alert.CountUnread)))
+	mux.Handle("PATCH /alerts/{id}/read",             jwt(http.HandlerFunc(alert.MarkRead)))
+	mux.Handle("PATCH /alerts/{id}/acknowledge",      jwt(http.HandlerFunc(alert.MarkAcknowledged)))
+
+	// Profile & farm members
+	mux.Handle("GET /profile",                           jwt(http.HandlerFunc(prof.GetMyProfile)))
+	mux.Handle("PUT /profile",                           jwt(http.HandlerFunc(prof.UpdateMyProfile)))
+	mux.Handle("GET /farms/{id}/members",                jwt(http.HandlerFunc(prof.GetFarmMembers)))
+	mux.Handle("POST /farms/{id}/members",               jwt(http.HandlerFunc(prof.AddFarmMember)))
+	mux.Handle("PATCH /farms/{id}/members/{uid}/role",   jwt(http.HandlerFunc(prof.UpdateMemberRole)))
+	mux.Handle("DELETE /farms/{id}/members/{uid}",       jwt(http.HandlerFunc(prof.RemoveMember)))
 
 	// SSE — live sensor readings push
 	mux.Handle("GET /farms/{id}/sensors/stream", jwt(http.HandlerFunc(sse.Stream)))

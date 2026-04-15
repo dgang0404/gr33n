@@ -265,12 +265,13 @@ Frontend (every 30s via refreshReadings())
 
 ## Authentication
 
-gr33n supports two explicit modes controlled by `AUTH_MODE`:
+gr33n supports three `AUTH_MODE` values:
 
 | Mode | `AUTH_MODE` | Behavior |
 |------|-------------|----------|
-| Dev | `dev` (default) | JWT and API key middleware pass through when secrets are unset. Top bar shows "DEV MODE" banner. |
-| Production | `production` | Fatal on startup if `JWT_SECRET` or `PI_API_KEY` are missing. Full auth enforcement. |
+| Dev | `dev` | Auth bypass (only when the API is built with `-tags dev`). Top bar shows "DEV MODE". |
+| Auth test | `auth_test` | Same JWT + API-key enforcement as production; **only** allowed on `-tags dev` binaries (QA/prod Docker images refuse it). Violet banner for local login regression. |
+| Production | `production` (default) | Full auth. Fatal on startup if `JWT_SECRET` or `PI_API_KEY` are missing. |
 
 `GET /auth/mode` (public) returns the current mode for frontend awareness.
 
@@ -280,7 +281,7 @@ gr33n supports two explicit modes controlled by `AUTH_MODE`:
 |----------|---------|---------|
 | `DATABASE_URL` | `postgres://<user>@/gr33n?host=/var/run/postgresql` | PostgreSQL connection string |
 | `PORT` | `8080` | API listen port |
-| `AUTH_MODE` | `dev` | `dev` or `production` |
+| `AUTH_MODE` | `production` | `dev`, `auth_test`, or `production` |
 | `JWT_SECRET` | (empty) | HMAC-SHA256 signing key for dashboard JWTs |
 | `PI_API_KEY` | (empty) | Shared secret for Pi client `X-API-Key` header |
 | `CORS_ORIGIN` | `http://localhost:5173` | Allowed CORS origin |
@@ -294,8 +295,8 @@ gr33n supports two explicit modes controlled by `AUTH_MODE`:
 ## Development Commands
 
 ```bash
-# Run API
-DATABASE_URL="postgres://$(whoami)@/gr33n?host=/var/run/postgresql" go run ./cmd/api/
+# Run API (see Makefile: `make run` uses AUTH_MODE=dev + `-tags dev`; `make run-auth-test` uses AUTH_MODE=auth_test for local auth regression)
+DATABASE_URL="postgres://$(whoami)@/gr33n?host=/var/run/postgresql" go run -tags dev ./cmd/api/
 
 # Run frontend
 cd ui && npm run dev

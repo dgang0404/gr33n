@@ -124,9 +124,10 @@ psql -d gr33n -f db/schema/gr33n-schema-v2-FINAL.sql
 # 3. Seed with JADAM demo data
 psql -d gr33n -f db/seeds/master_seed.sql
 
-# 4. Run the API
-export DATABASE_URL="postgres://$(whoami)@/gr33n?host=/var/run/postgresql"
-go run ./cmd/api/
+# 4. Run the API (from repo root)
+cp .env.example .env   # once: edit .env with DATABASE_URL, JWT_SECRET, PI_API_KEY if using auth
+# Or only: export DATABASE_URL="postgres://$(whoami)@/gr33n?host=/var/run/postgresql"
+go run -tags dev ./cmd/api/
 
 # 5. Run the frontend (separate terminal)
 cd ui && npm install && npm run dev

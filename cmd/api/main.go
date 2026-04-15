@@ -12,28 +12,67 @@ import (
 
 	"strconv"
 
+	"github.com/joho/godotenv"
 	"github.com/jackc/pgx/v5/pgxpool"
 	automationworker "gr33n-api/internal/automation"
 )
 
+// loadDotEnv reads optional .env then .env.local from the current working directory
+// (later file overrides). Shell exports still win — offline / local setups set secrets once in .env.
+func loadDotEnv() {
+	var paths []string
+	for _, p := range []string{".env", ".env.local"} {
+		if _, err := os.Stat(p); err == nil {
+			paths = append(paths, p)
+		}
+	}
+	if len(paths) == 0 {
+		return
+	}
+	if err := godotenv.Load(paths...); err != nil {
+		log.Printf("warning: env files %v: %v", paths, err)
+		return
+	}
+	log.Printf("Loaded config from %s", strings.Join(paths, ", "))
+}
+
 func main() {
+	loadDotEnv()
+
 	dbURL := getEnv("DATABASE_URL", "postgres://davidg@/gr33n?host=/var/run/postgresql")
 	port  := getEnv("PORT", "8080")
 	jwtSecret = []byte(getEnv("JWT_SECRET", ""))
 	piAPIKey  = getEnv("PI_API_KEY", "")
 	corsOrigin = getEnv("CORS_ORIGIN", "http://localhost:5173")
-	authMode  = getEnv("AUTH_MODE", "dev")
+	authMode = strings.ToLower(strings.TrimSpace(getEnv("AUTH_MODE", "production")))
+	if authMode == "" {
+		authMode = "production"
+	}
+	switch authMode {
+	case "dev", "auth_test", "production":
+	default:
+		log.Fatalf("AUTH_MODE must be dev, auth_test, or production (got %q)", authMode)
+	}
 	adminUser    := getEnv("ADMIN_USERNAME", "admin")
 	simulationMode := strings.EqualFold(getEnv("AUTOMATION_SIMULATION_MODE", "true"), "true")
 	hashFilePath := filepath.Join(os.Getenv("HOME"), ".gr33n", "admin.hash")
 	adminHash    := loadPasswordHash(hashFilePath)
 
-	if authMode == "production" {
+	if authMode == "dev" && !devBypassAllowed {
+		log.Fatal("AUTH_MODE=dev is not allowed in this binary. " +
+			"Rebuild with `-tags dev` for local development, or set AUTH_MODE=production.")
+	}
+	if authMode == "auth_test" && !devBypassAllowed {
+		log.Fatal("AUTH_MODE=auth_test is only for local binaries built with `-tags dev`. " +
+			"Use AUTH_MODE=production in QA/production.")
+	}
+
+	if authMode != "dev" {
 		if len(jwtSecret) == 0 {
-			log.Fatal("AUTH_MODE=production requires JWT_SECRET to be set")
+			log.Fatal("JWT_SECRET must be set when AUTH_MODE != dev")
 		}
 		if piAPIKey == "" {
-			log.Fatal("AUTH_MODE=production requires PI_API_KEY to be set")
+			log.Fatal("PI_API_KEY must be set when AUTH_MODE != dev")
 		}
 	}
 
@@ -41,9 +80,15 @@ func main() {
 	if err != nil { log.Fatalf("Could not connect to database: %v", err) }
 	defer pool.Close()
 	log.Println("Connected to gr33n database")
-	log.Printf("AUTH_MODE=%s", authMode)
-	if len(jwtSecret) == 0 { log.Println("JWT_SECRET not set — JWT auth disabled (dev mode)") } else { log.Println("JWT auth enabled") }
-	if piAPIKey == "" { log.Println("PI_API_KEY not set — Pi API key auth disabled (dev mode)") } else { log.Println("Pi API key auth enabled") }
+	log.Printf("AUTH_MODE=%s  (dev_bypass_compiled=%v)", authMode, devBypassAllowed)
+	switch authMode {
+	case "dev":
+		log.Println("⚠️  DEV MODE — auth bypass ACTIVE. Do NOT deploy this binary to QA/production.")
+	case "auth_test":
+		log.Println("🧪 AUTH_TEST — JWT + API-key enforced (local dev binary). Use for login / regression against real auth.")
+	default:
+		log.Println("🔒 Auth enforced (JWT + API-key)")
+	}
 	log.Printf("CORS_ORIGIN=%s", corsOrigin)
 	mux := http.NewServeMux()
 	var workerOpts []automationworker.WorkerOption

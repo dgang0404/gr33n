@@ -7,6 +7,8 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
+	"gr33n-api/internal/authctx"
 	"gr33n-api/internal/httputil"
 )
 
@@ -15,20 +17,25 @@ var (
 	piAPIKey   string
 	jwtSecret  []byte
 	corsOrigin string
-	authMode   string // "dev" or "production"
+	authMode   string // "dev" | "auth_test" | "production"
 )
 
 type contextKey string
 
 const claimsKey contextKey = "claims"
 
+// isDevAuthBypass reports whether auth bypass is active.
+// Requires BOTH: binary compiled with `-tags dev` AND AUTH_MODE=dev at runtime.
+func isDevAuthBypass() bool {
+	return devBypassAllowed && authMode == "dev"
+}
+
 // ── API Key middleware (Pi → API) ────────────────────────────────────────────
 // Protects POST /sensors/{id}/readings and PATCH /devices/{id}/status.
 // Pi sends:  X-API-Key: <PI_API_KEY>
 func requireAPIKey(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if piAPIKey == "" {
-			// PI_API_KEY not configured — pass through (dev mode)
+		if isDevAuthBypass() {
 			next.ServeHTTP(w, r)
 			return
 		}
@@ -50,8 +57,7 @@ func requireAPIKey(next http.Handler) http.Handler {
 // Vue sends:  Authorization: Bearer <token>
 func requireJWT(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if len(jwtSecret) == 0 {
-			// JWT_SECRET not configured — pass through (dev mode)
+		if isDevAuthBypass() {
 			next.ServeHTTP(w, r)
 			return
 		}
@@ -80,17 +86,34 @@ func requireJWT(next http.Handler) http.Handler {
 		}
 
 		ctx := context.WithValue(r.Context(), claimsKey, token.Claims)
+		if mc, ok := token.Claims.(jwt.MapClaims); ok {
+			if uidStr, exists := mc["user_id"]; exists {
+				if s, ok := uidStr.(string); ok {
+					if uid, err := uuid.Parse(s); err == nil {
+						ctx = authctx.WithUserID(ctx, uid)
+					}
+				}
+			}
+			if email, exists := mc["email"]; exists {
+				if s, ok := email.(string); ok {
+					ctx = authctx.WithEmail(ctx, s)
+				}
+			}
+		}
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
 
 // IssueToken is called by the login handler to mint a signed JWT.
 // exp: duration until expiry (e.g. 24 * time.Hour)
-func IssueToken(username string, exp time.Duration) (string, error) {
+func IssueToken(username string, exp time.Duration, extra map[string]any) (string, error) {
 	claims := jwt.MapClaims{
 		"sub": username,
 		"iat": time.Now().Unix(),
 		"exp": time.Now().Add(exp).Unix(),
+	}
+	for k, v := range extra {
+		claims[k] = v
 	}
 	return jwt.NewWithClaims(jwt.SigningMethodHS256, claims).SignedString(jwtSecret)
 }

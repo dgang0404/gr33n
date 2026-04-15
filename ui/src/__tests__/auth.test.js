@@ -51,13 +51,25 @@ describe('auth store', () => {
     expect(localStorage.getItem('gr33n_token')).toBeNull()
   })
 
-  it('fetchAuthMode() defaults to dev on error', async () => {
+  it('fetchAuthMode() defaults to production on error', async () => {
     api.get.mockRejectedValue(new Error('network'))
     const auth = useAuthStore()
 
     await auth.fetchAuthMode()
 
-    expect(auth.authMode).toBe('dev')
-    expect(auth.isDevMode).toBe(true)
+    expect(auth.authMode).toBe('production')
+    expect(auth.isDevMode).toBe(false)
+    expect(auth.isAuthTestMode).toBe(false)
+  })
+
+  it('fetchAuthMode() sets auth_test from API', async () => {
+    api.get.mockResolvedValue({ data: { mode: 'auth_test' } })
+    const auth = useAuthStore()
+
+    await auth.fetchAuthMode()
+
+    expect(auth.authMode).toBe('auth_test')
+    expect(auth.isAuthTestMode).toBe(true)
+    expect(auth.isDevMode).toBe(false)
   })
 })

@@ -37,11 +37,20 @@ const val   = computed(() => props.reading?.value_raw ?? null)
 
 const displayValue = computed(() => val.value == null ? '—' : Number(val.value).toFixed(1))
 
+const thresholdLow = computed(() => {
+  const db = props.sensor?.alert_threshold_low
+  return db != null ? Number(db) : meta.value.low
+})
+const thresholdHigh = computed(() => {
+  const db = props.sensor?.alert_threshold_high
+  return db != null ? Number(db) : meta.value.high
+})
+
 const status = computed(() => {
   if (val.value == null) return 'unknown'
-  if (val.value < meta.value.low || val.value > meta.value.high) return 'danger'
-  const lo = meta.value.low, hi = meta.value.high, range = hi - lo
-  if (val.value < lo + range * 0.15 || val.value > hi - range * 0.15) return 'warn'
+  if (val.value < thresholdLow.value || val.value > thresholdHigh.value) return 'danger'
+  const lo = thresholdLow.value, hi = thresholdHigh.value, range = hi - lo
+  if (range > 0 && (val.value < lo + range * 0.15 || val.value > hi - range * 0.15)) return 'warn'
   return 'ok'
 })
 

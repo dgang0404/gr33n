@@ -18,7 +18,7 @@ Whether deployed in a cabin, co-op greenhouse, or airgapped industrial farm, gr3
 
 | Feature | Status | Notes |
 |---------|--------|-------|
-| Auth Modes | ✅ Explicit | `AUTH_MODE=dev` (bypass) or `AUTH_MODE=production` (enforce). Production fatals if secrets missing |
+| Auth Modes | ✅ Explicit | `dev` (bypass, dev-tagged binary only), `auth_test` (enforce like production, dev-tagged binary only), `production` (enforce). Non-dev modes fatals if secrets missing |
 | JWT Auth | ✅ Supported | HS256 via `JWT_SECRET`. Dashboard routes require Bearer token when enabled |
 | Pi API Key | ✅ Supported | `PI_API_KEY` env var. Pi sends `X-API-Key` header on sensor/device routes |
 | Row-Level Security (RLS) | ⚙️ Schema-ready | Tables support RLS policies; enable per-table for Supabase or multi-user deployments |

@@ -1159,9 +1159,10 @@ func (ns NullGr33nnaturalfarmingInputCategoryEnum) Value() (driver.Value, error)
 }
 
 type AuthUser struct {
-	ID        uuid.UUID          `db:"id" json:"id"`
-	Email     *string            `db:"email" json:"email"`
-	CreatedAt pgtype.Timestamptz `db:"created_at" json:"created_at"`
+	ID           uuid.UUID          `db:"id" json:"id"`
+	Email        *string            `db:"email" json:"email"`
+	PasswordHash []byte             `db:"password_hash" json:"password_hash"`
+	CreatedAt    pgtype.Timestamptz `db:"created_at" json:"created_at"`
 }
 
 type Gr33ncoreActuator struct {

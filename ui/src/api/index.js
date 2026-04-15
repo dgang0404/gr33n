@@ -6,6 +6,12 @@ const api = axios.create({
   headers: { 'Content-Type': 'application/json' },
 })
 
+/** Set from `main.js` so Pinia stays in sync with localStorage (avoids stale UI after 401). */
+let onUnauthorized = null
+export function setUnauthorizedHandler(fn) {
+  onUnauthorized = fn
+}
+
 // Attach JWT token to every request (if present)
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('gr33n_token')
@@ -15,13 +21,17 @@ api.interceptors.request.use((config) => {
   return config
 })
 
-// On 401 — clear token and redirect to login
+// On 401 — clear session and redirect to login
 api.interceptors.response.use(
   r => r,
   err => {
     if (err.response?.status === 401) {
-      localStorage.removeItem('gr33n_token')
-      localStorage.removeItem('gr33n_user')
+      if (onUnauthorized) onUnauthorized()
+      else {
+        localStorage.removeItem('gr33n_token')
+        localStorage.removeItem('gr33n_user')
+        localStorage.removeItem('gr33n_user_id')
+      }
       // Only redirect if not already on /login to avoid loops
       if (window.location.pathname !== '/login') {
         window.location.href = '/login'

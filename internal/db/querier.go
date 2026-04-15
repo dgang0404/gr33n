@@ -13,10 +13,16 @@ import (
 type Querier interface {
 	AddFarmMember(ctx context.Context, arg AddFarmMemberParams) (Gr33ncoreFarmMembership, error)
 	ClearDevicePendingCommand(ctx context.Context, id int64) error
+	CountUnreadAlertsByFarm(ctx context.Context, farmID int64) (int64, error)
 	// ============================================================
 	// Queries: gr33ncore.actuators + actuator_events
 	// ============================================================
 	CreateActuator(ctx context.Context, arg CreateActuatorParams) (Gr33ncoreActuator, error)
+	// ============================================================
+	// Queries: gr33ncore.alerts_notifications
+	// ============================================================
+	CreateAlert(ctx context.Context, arg CreateAlertParams) (Gr33ncoreAlertsNotification, error)
+	CreateAuthUser(ctx context.Context, arg CreateAuthUserParams) (AuthUser, error)
 	CreateAutomationRun(ctx context.Context, arg CreateAutomationRunParams) (Gr33ncoreAutomationRun, error)
 	// ============================================================
 	// Queries: gr33ncore.devices
@@ -48,6 +54,10 @@ type Querier interface {
 	DeleteProgram(ctx context.Context, id int64) error
 	DeleteReservoir(ctx context.Context, id int64) error
 	GetActuatorByID(ctx context.Context, id int64) (Gr33ncoreActuator, error)
+	// ============================================================
+	// Queries: auth.users
+	// ============================================================
+	GetAuthUserByEmail(ctx context.Context, email *string) (AuthUser, error)
 	GetAutomationRunByDetails(ctx context.Context, arg GetAutomationRunByDetailsParams) (Gr33ncoreAutomationRun, error)
 	GetBaseUnitForType(ctx context.Context, unitType string) (Gr33ncoreUnit, error)
 	GetDeviceByID(ctx context.Context, id int64) (Gr33ncoreDevice, error)
@@ -62,6 +72,7 @@ type Querier interface {
 	// Queries: gr33ncore.profiles
 	// ============================================================
 	GetProfileByUserID(ctx context.Context, userID uuid.UUID) (Gr33ncoreProfile, error)
+	GetRecentUnacknowledgedAlertForSource(ctx context.Context, arg GetRecentUnacknowledgedAlertForSourceParams) (int64, error)
 	GetSensorByID(ctx context.Context, id int64) (Gr33ncoreSensor, error)
 	GetSensorReadingStats(ctx context.Context, arg GetSensorReadingStatsParams) (GetSensorReadingStatsRow, error)
 	GetTaskByID(ctx context.Context, id int64) (Gr33ncoreTask, error)
@@ -80,6 +91,8 @@ type Querier interface {
 	ListActuatorEventsByActuator(ctx context.Context, arg ListActuatorEventsByActuatorParams) ([]Gr33ncoreActuatorEvent, error)
 	ListActuatorEventsBySchedule(ctx context.Context, arg ListActuatorEventsByScheduleParams) ([]Gr33ncoreActuatorEvent, error)
 	ListActuatorsByFarm(ctx context.Context, farmID int64) ([]Gr33ncoreActuator, error)
+	ListAlertsByFarm(ctx context.Context, arg ListAlertsByFarmParams) ([]Gr33ncoreAlertsNotification, error)
+	ListAlertsByRecipient(ctx context.Context, arg ListAlertsByRecipientParams) ([]Gr33ncoreAlertsNotification, error)
 	ListAllFarms(ctx context.Context) ([]Gr33ncoreFarm, error)
 	ListAllUnits(ctx context.Context) ([]Gr33ncoreUnit, error)
 	ListAutomationRunsByFarm(ctx context.Context, arg ListAutomationRunsByFarmParams) ([]Gr33ncoreAutomationRun, error)
@@ -114,6 +127,8 @@ type Querier interface {
 	ListUnitsByType(ctx context.Context, unitType string) ([]Gr33ncoreUnit, error)
 	ListZonesByFarm(ctx context.Context, farmID int64) ([]Gr33ncoreZone, error)
 	ListZonesByParent(ctx context.Context, parentZoneID *int64) ([]Gr33ncoreZone, error)
+	MarkAlertAcknowledged(ctx context.Context, arg MarkAlertAcknowledgedParams) (Gr33ncoreAlertsNotification, error)
+	MarkAlertRead(ctx context.Context, id int64) (Gr33ncoreAlertsNotification, error)
 	MarkScheduleTriggered(ctx context.Context, arg MarkScheduleTriggeredParams) (Gr33ncoreSchedule, error)
 	RemoveFarmMember(ctx context.Context, arg RemoveFarmMemberParams) error
 	SetDevicePendingCommand(ctx context.Context, arg SetDevicePendingCommandParams) error
@@ -125,6 +140,7 @@ type Querier interface {
 	SoftDeleteTask(ctx context.Context, arg SoftDeleteTaskParams) error
 	SoftDeleteZone(ctx context.Context, arg SoftDeleteZoneParams) error
 	UpdateActuatorState(ctx context.Context, arg UpdateActuatorStateParams) (Gr33ncoreActuator, error)
+	UpdateAuthUserPasswordHash(ctx context.Context, arg UpdateAuthUserPasswordHashParams) error
 	UpdateDeviceStatus(ctx context.Context, arg UpdateDeviceStatusParams) (Gr33ncoreDevice, error)
 	UpdateFarm(ctx context.Context, arg UpdateFarmParams) (Gr33ncoreFarm, error)
 	UpdateFarmMemberRole(ctx context.Context, arg UpdateFarmMemberRoleParams) (Gr33ncoreFarmMembership, error)

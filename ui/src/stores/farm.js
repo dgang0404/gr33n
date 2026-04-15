@@ -12,6 +12,8 @@ export const useFarmStore = defineStore('farm', {
     automationRuns: [],
     tasks: [],
     readings: {},
+    alerts: [],
+    unreadAlertCount: 0,
     loading: false,
     error: null,
   }),
@@ -225,6 +227,64 @@ export const useFarmStore = defineStore('farm', {
 
     async deleteNfBatch(id) {
       await api.delete(`/naturalfarming/batches/${id}`)
+    },
+
+    // Alerts
+    async loadAlerts(farmId, { limit = 50, offset = 0 } = {}) {
+      const r = await api.get(`/farms/${farmId}/alerts?limit=${limit}&offset=${offset}`)
+      this.alerts = Array.isArray(r.data) ? r.data : []
+      return this.alerts
+    },
+
+    async countUnreadAlerts(farmId) {
+      const r = await api.get(`/farms/${farmId}/alerts/unread-count`)
+      this.unreadAlertCount = r.data?.unread_count ?? 0
+      return this.unreadAlertCount
+    },
+
+    async markAlertRead(id) {
+      const r = await api.patch(`/alerts/${id}/read`)
+      const idx = this.alerts.findIndex(a => a.id === id)
+      if (idx >= 0) this.alerts[idx] = r.data
+      return r.data
+    },
+
+    async markAlertAcknowledged(id) {
+      const r = await api.patch(`/alerts/${id}/acknowledge`)
+      const idx = this.alerts.findIndex(a => a.id === id)
+      if (idx >= 0) this.alerts[idx] = r.data
+      return r.data
+    },
+
+    // Farm members
+    async loadFarmMembers(farmId) {
+      const r = await api.get(`/farms/${farmId}/members`)
+      return Array.isArray(r.data) ? r.data : []
+    },
+
+    async addFarmMember(farmId, data) {
+      const r = await api.post(`/farms/${farmId}/members`, data)
+      return r.data
+    },
+
+    async updateFarmMemberRole(farmId, userId, roleInFarm) {
+      const r = await api.patch(`/farms/${farmId}/members/${userId}/role`, { role_in_farm: roleInFarm })
+      return r.data
+    },
+
+    async removeFarmMember(farmId, userId) {
+      await api.delete(`/farms/${farmId}/members/${userId}`)
+    },
+
+    // Profile
+    async getProfile() {
+      const r = await api.get('/profile')
+      return r.data
+    },
+
+    async updateProfile(data) {
+      const r = await api.put('/profile', data)
+      return r.data
     },
 
     async toggleDevice(deviceId, currentStatus) {

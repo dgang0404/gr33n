@@ -1,8 +1,12 @@
 package sensor
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
+	"log"
+	"math"
 	"net/http"
 	"strconv"
 	"time"
@@ -215,5 +219,82 @@ func (h *Handler) PostReading(w http.ResponseWriter, r *http.Request) {
 	if h.sse != nil {
 		h.sse.Notify()
 	}
+
+	go h.evaluateThresholds(r.Context(), id, body.ValueRaw)
+
 	httputil.WriteJSON(w, http.StatusCreated, reading)
+}
+
+func numericToFloat64(n pgtype.Numeric) (float64, bool) {
+	if !n.Valid {
+		return 0, false
+	}
+	f, err := n.Float64Value()
+	if err != nil || !f.Valid {
+		return 0, false
+	}
+	return f.Float64, true
+}
+
+func (h *Handler) evaluateThresholds(ctx context.Context, sensorID int64, valueRaw float64) {
+	sensor, err := h.q.GetSensorByID(ctx, sensorID)
+	if err != nil {
+		return
+	}
+
+	lo, hasLo := numericToFloat64(sensor.AlertThresholdLow)
+	hi, hasHi := numericToFloat64(sensor.AlertThresholdHigh)
+	if !hasLo && !hasHi {
+		return
+	}
+
+	breach := false
+	var msg string
+	if hasLo && valueRaw < lo {
+		breach = true
+		msg = fmt.Sprintf("Value %.1f below low threshold %.1f", valueRaw, lo)
+	} else if hasHi && valueRaw > hi {
+		breach = true
+		msg = fmt.Sprintf("Value %.1f exceeds high threshold %.1f", valueRaw, hi)
+	}
+	if !breach {
+		return
+	}
+
+	srcType := "sensor_reading"
+	_, err = h.q.GetRecentUnacknowledgedAlertForSource(ctx, db.GetRecentUnacknowledgedAlertForSourceParams{
+		FarmID:                    sensor.FarmID,
+		TriggeringEventSourceType: &srcType,
+		TriggeringEventSourceID:   &sensorID,
+	})
+	if err == nil {
+		return // recent unacknowledged alert exists, skip
+	}
+
+	severity := db.Gr33ncoreNotificationPriorityEnumHigh
+	if hasLo && hasHi {
+		rangeSpan := hi - lo
+		if rangeSpan > 0 {
+			deviation := math.Max(lo-valueRaw, valueRaw-hi)
+			if deviation > rangeSpan*0.5 {
+				severity = db.Gr33ncoreNotificationPriorityEnumCritical
+			}
+		}
+	}
+
+	subject := fmt.Sprintf("Sensor '%s' threshold breach", sensor.Name)
+	_, err = h.q.CreateAlert(ctx, db.CreateAlertParams{
+		FarmID:                    sensor.FarmID,
+		TriggeringEventSourceType: &srcType,
+		TriggeringEventSourceID:   &sensorID,
+		Severity: db.NullGr33ncoreNotificationPriorityEnum{
+			Gr33ncoreNotificationPriorityEnum: severity,
+			Valid:                             true,
+		},
+		SubjectRendered:     &subject,
+		MessageTextRendered: &msg,
+	})
+	if err != nil {
+		log.Printf("alert: failed to create for sensor %d: %v", sensorID, err)
+	}
 }

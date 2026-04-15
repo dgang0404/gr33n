@@ -8,11 +8,13 @@ import Schedules from '../views/Schedules.vue'
 import Tasks from '../views/Tasks.vue'
 import Inventory from '../views/Inventory.vue'
 import Fertigation from '../views/Fertigation.vue'
+import Alerts from '../views/Alerts.vue'
 import Settings from '../views/Settings.vue'
 import Login from '../views/Login.vue'
 
 const routes = [
   { path: '/login',        component: Login,        name: 'login',        meta: { public: true } },
+  { path: '/register',     component: Login,        name: 'register',     meta: { public: true } },
   { path: '/',             component: Dashboard,    name: 'dashboard' },
   { path: '/zones',        component: Zones,        name: 'zones' },
   { path: '/zones/:id',    component: ZoneDetail,   name: 'zone-detail' },
@@ -22,6 +24,7 @@ const routes = [
   { path: '/tasks',        component: Tasks,        name: 'tasks' },
   { path: '/fertigation',  component: Fertigation,  name: 'fertigation' },
   { path: '/inventory',    component: Inventory,    name: 'inventory' },
+  { path: '/alerts',       component: Alerts,       name: 'alerts' },
   { path: '/settings',     component: Settings,     name: 'settings' },
 ]
 
@@ -33,7 +36,7 @@ const router = createRouter({
 router.beforeEach((to) => {
   const token = localStorage.getItem('gr33n_token')
   if (!to.meta.public && !token) return { name: 'login' }
-  if (to.name === 'login' && token) return { name: 'dashboard' }
+  if ((to.name === 'login' || to.name === 'register') && token) return { name: 'dashboard' }
 })
 
 export default router
