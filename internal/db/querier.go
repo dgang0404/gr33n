@@ -43,12 +43,14 @@ type Querier interface {
 	// ============================================================
 	CreateZone(ctx context.Context, arg CreateZoneParams) (Gr33ncoreZone, error)
 	GetActuatorByID(ctx context.Context, id int64) (Gr33ncoreActuator, error)
+	GetAutomationRunByDetails(ctx context.Context, arg GetAutomationRunByDetailsParams) (Gr33ncoreAutomationRun, error)
 	GetBaseUnitForType(ctx context.Context, unitType string) (Gr33ncoreUnit, error)
 	GetDeviceByID(ctx context.Context, id int64) (Gr33ncoreDevice, error)
 	GetDeviceByUID(ctx context.Context, deviceUid *string) (Gr33ncoreDevice, error)
 	GetFarmByID(ctx context.Context, id int64) (Gr33ncoreFarm, error)
 	GetFarmMembers(ctx context.Context, farmID int64) ([]GetFarmMembersRow, error)
 	GetFarmMembership(ctx context.Context, arg GetFarmMembershipParams) (Gr33ncoreFarmMembership, error)
+	GetLastSuccessfulRunBySchedule(ctx context.Context, scheduleID *int64) (Gr33ncoreAutomationRun, error)
 	GetLatestReadingBySensor(ctx context.Context, sensorID int64) (Gr33ncoreSensorReading, error)
 	GetProfileByEmail(ctx context.Context, email string) (Gr33ncoreProfile, error)
 	// ============================================================

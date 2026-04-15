@@ -39,3 +39,14 @@ SELECT * FROM gr33ncore.automation_runs
 WHERE farm_id = $1
 ORDER BY executed_at DESC
 LIMIT $2;
+
+-- name: GetLastSuccessfulRunBySchedule :one
+SELECT * FROM gr33ncore.automation_runs
+WHERE schedule_id = $1 AND status = 'success'
+ORDER BY executed_at DESC
+LIMIT 1;
+
+-- name: GetAutomationRunByDetails :one
+SELECT * FROM gr33ncore.automation_runs
+WHERE schedule_id = $1 AND details @> $2::jsonb
+LIMIT 1;

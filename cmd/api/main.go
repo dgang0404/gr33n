@@ -10,6 +10,8 @@ import (
 	"strings"
 	"time"
 
+	"strconv"
+
 	"github.com/jackc/pgx/v5/pgxpool"
 	automationworker "gr33n-api/internal/automation"
 )
@@ -30,7 +32,14 @@ func main() {
 	if len(jwtSecret) == 0 { log.Println("⚠️  JWT_SECRET not set — JWT auth disabled (dev mode)") } else { log.Println("🔐 JWT auth enabled") }
 	if piAPIKey == "" { log.Println("⚠️  PI_API_KEY not set — Pi API key auth disabled (dev mode)") } else { log.Println("🔑 Pi API key auth enabled") }
 	mux := http.NewServeMux()
-	worker := automationworker.NewWorker(pool, simulationMode)
+	var workerOpts []automationworker.WorkerOption
+	if cs := getEnv("AUTOMATION_COOLDOWN_SECONDS", ""); cs != "" {
+		if n, err := strconv.Atoi(cs); err == nil && n > 0 {
+			workerOpts = append(workerOpts, automationworker.WithCooldown(time.Duration(n)*time.Second))
+			log.Printf("⏱  Automation cooldown set to %ds", n)
+		}
+	}
+	worker := automationworker.NewWorker(pool, simulationMode, workerOpts...)
 	go worker.Start(context.Background())
 	log.Printf("🧠 Automation worker started (simulation_mode=%v)", simulationMode)
 	registerRoutes(mux, pool, worker, adminUser, adminHash, hashFilePath)

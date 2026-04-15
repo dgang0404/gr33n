@@ -2,7 +2,9 @@ package automation
 
 import (
 	"context"
+	"crypto/sha256"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"strconv"
@@ -10,6 +12,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/robfig/cron/v3"
@@ -27,6 +30,8 @@ type Status struct {
 type Worker struct {
 	q          *db.Queries
 	simulation bool
+	cooldown   time.Duration
+	maxRetries int
 
 	mu         sync.RWMutex
 	running    bool
@@ -34,11 +39,27 @@ type Worker struct {
 	lastError  string
 }
 
-func NewWorker(pool *pgxpool.Pool, simulation bool) *Worker {
-	return &Worker{
+func NewWorker(pool *pgxpool.Pool, simulation bool, opts ...WorkerOption) *Worker {
+	w := &Worker{
 		q:          db.New(pool),
 		simulation: simulation,
+		cooldown:   2 * time.Minute,
+		maxRetries: 2,
 	}
+	for _, opt := range opts {
+		opt(w)
+	}
+	return w
+}
+
+type WorkerOption func(*Worker)
+
+func WithCooldown(d time.Duration) WorkerOption {
+	return func(w *Worker) { w.cooldown = d }
+}
+
+func WithMaxRetries(n int) WorkerOption {
+	return func(w *Worker) { w.maxRetries = n }
 }
 
 func (w *Worker) Start(ctx context.Context) {
@@ -111,7 +132,19 @@ func (w *Worker) runTick(ctx context.Context) {
 		if !should {
 			continue
 		}
-		w.executeSchedule(ctx, s, now)
+
+		if w.cooldown > 0 {
+			if skipped := w.checkCooldown(ctx, s, now); skipped {
+				continue
+			}
+		}
+
+		idemKey := idempotencyKey(s.ID, now)
+		if w.checkIdempotency(ctx, s, idemKey, now) {
+			continue
+		}
+
+		w.executeSchedule(ctx, s, now, idemKey)
 	}
 	w.setLastTick(nil)
 }
@@ -130,7 +163,49 @@ func shouldTriggerNow(expr string, lastTriggered pgtype.Timestamptz, now time.Ti
 	return next.Equal(now), nil
 }
 
-func (w *Worker) executeSchedule(ctx context.Context, s db.Gr33ncoreSchedule, now time.Time) {
+// checkCooldown prevents re-execution if the last successful run is within the cooldown window.
+func (w *Worker) checkCooldown(ctx context.Context, s db.Gr33ncoreSchedule, now time.Time) bool {
+	lastRun, err := w.q.GetLastSuccessfulRunBySchedule(ctx, &s.ID)
+	if err != nil {
+		return false
+	}
+	elapsed := now.Sub(lastRun.ExecutedAt)
+	if elapsed < w.cooldown {
+		log.Printf("schedule %d (%s) skipped: cooldown %v remaining", s.ID, s.Name, w.cooldown-elapsed)
+		_, _ = w.q.CreateAutomationRun(ctx, db.CreateAutomationRunParams{
+			FarmID:     s.FarmID,
+			ScheduleID: &s.ID,
+			Status:     "skipped",
+			Message:    ptr(fmt.Sprintf("cooldown: %v since last success, requires %v", elapsed.Truncate(time.Second), w.cooldown)),
+			Details:    []byte(`{"phase":"cooldown"}`),
+			ExecutedAt: now,
+		})
+		return true
+	}
+	return false
+}
+
+func idempotencyKey(scheduleID int64, now time.Time) string {
+	raw := fmt.Sprintf("%d:%s", scheduleID, now.Format("2006-01-02T15:04"))
+	h := sha256.Sum256([]byte(raw))
+	return fmt.Sprintf("%x", h[:8])
+}
+
+// checkIdempotency prevents duplicate execution for the same schedule+minute.
+func (w *Worker) checkIdempotency(ctx context.Context, s db.Gr33ncoreSchedule, key string, now time.Time) bool {
+	detailsJSON, _ := json.Marshal(map[string]string{"idempotency_key": key})
+	_, err := w.q.GetAutomationRunByDetails(ctx, db.GetAutomationRunByDetailsParams{
+		ScheduleID: &s.ID,
+		Column2:    detailsJSON,
+	})
+	if err == nil {
+		log.Printf("schedule %d (%s) skipped: idempotent run already exists (key=%s)", s.ID, s.Name, key)
+		return true
+	}
+	return false
+}
+
+func (w *Worker) executeSchedule(ctx context.Context, s db.Gr33ncoreSchedule, now time.Time, idemKey string) {
 	actions, err := w.q.ListExecutableActionsBySchedule(ctx, &s.ID)
 	if err != nil {
 		_, _ = w.q.CreateAutomationRun(ctx, db.CreateAutomationRunParams{
@@ -166,7 +241,7 @@ func (w *Worker) executeSchedule(ctx context.Context, s db.Gr33ncoreSchedule, no
 	successCount := 0
 	errorMessages := []string{}
 	for _, action := range actions {
-		if err := w.executeAction(ctx, s, action, now); err != nil {
+		if err := w.executeActionWithRetry(ctx, s, action, now); err != nil {
 			errorMessages = append(errorMessages, err.Error())
 		} else {
 			successCount++
@@ -185,6 +260,7 @@ func (w *Worker) executeSchedule(ctx context.Context, s db.Gr33ncoreSchedule, no
 		"actions_success": successCount,
 		"actions_failed":  len(errorMessages),
 		"simulation_mode": w.simulation,
+		"idempotency_key": idemKey,
 		"errors":          errorMessages,
 	})
 
@@ -209,6 +285,53 @@ func (w *Worker) executeSchedule(ctx context.Context, s db.Gr33ncoreSchedule, no
 			Valid: true,
 		},
 	})
+}
+
+// executeActionWithRetry wraps executeAction with retries for transient errors.
+func (w *Worker) executeActionWithRetry(ctx context.Context, schedule db.Gr33ncoreSchedule, action db.Gr33ncoreExecutableAction, now time.Time) error {
+	var lastErr error
+	for attempt := range w.maxRetries + 1 {
+		lastErr = w.executeAction(ctx, schedule, action, now)
+		if lastErr == nil {
+			return nil
+		}
+		if !isTransient(lastErr) {
+			return fmt.Errorf("[permanent] %w", lastErr)
+		}
+		if attempt < w.maxRetries {
+			backoff := time.Duration(1<<uint(attempt)) * 500 * time.Millisecond
+			log.Printf("action %d transient error (attempt %d/%d), retrying in %v: %v",
+				action.ID, attempt+1, w.maxRetries+1, backoff, lastErr)
+			time.Sleep(backoff)
+		}
+	}
+	return fmt.Errorf("[transient after %d retries] %w", w.maxRetries+1, lastErr)
+}
+
+// isTransient classifies errors as retryable (connection, timeout) vs permanent (bad config, missing target).
+func isTransient(err error) bool {
+	if err == nil {
+		return false
+	}
+	if errors.Is(err, context.DeadlineExceeded) {
+		return true
+	}
+	msg := err.Error()
+	transientPatterns := []string{
+		"connection refused", "connection reset", "broken pipe",
+		"timeout", "temporarily unavailable", "too many connections",
+		"pgconn", "conn closed",
+	}
+	for _, p := range transientPatterns {
+		if strings.Contains(strings.ToLower(msg), p) {
+			return true
+		}
+	}
+	// pgx ErrNoRows is not transient — it's a missing record
+	if errors.Is(err, pgx.ErrNoRows) {
+		return false
+	}
+	return false
 }
 
 func (w *Worker) executeAction(ctx context.Context, schedule db.Gr33ncoreSchedule, action db.Gr33ncoreExecutableAction, now time.Time) error {
@@ -247,19 +370,19 @@ func (w *Worker) executeAction(ctx context.Context, schedule db.Gr33ncoreSchedul
 		}
 		source := db.Gr33ncoreActuatorEventSourceEnumScheduleTrigger
 		_, err := w.q.InsertActuatorEvent(ctx, db.InsertActuatorEventParams{
-			EventTime:            now,
-			ActuatorID:           *action.TargetActuatorID,
-			CommandSent:          ptr(command),
-			ParametersSent:       params,
-			TriggeredByUserID:    pgtype.UUID{},
+			EventTime:             now,
+			ActuatorID:            *action.TargetActuatorID,
+			CommandSent:           ptr(command),
+			ParametersSent:        params,
+			TriggeredByUserID:     pgtype.UUID{},
 			TriggeredByScheduleID: &schedule.ID,
 			TriggeredByRuleID:     nil,
-			Source:               source,
+			Source:                source,
 			ExecutionStatus: db.NullGr33ncoreActuatorExecutionStatusEnum{
 				Gr33ncoreActuatorExecutionStatusEnum: status,
 				Valid:                                true,
 			},
-			MetaData:             []byte(`{}`),
+			MetaData: []byte(`{}`),
 		})
 		return err
 

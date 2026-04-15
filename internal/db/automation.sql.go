@@ -53,6 +53,56 @@ func (q *Queries) CreateAutomationRun(ctx context.Context, arg CreateAutomationR
 	return i, err
 }
 
+const getAutomationRunByDetails = `-- name: GetAutomationRunByDetails :one
+SELECT id, farm_id, schedule_id, rule_id, status, message, details, executed_at FROM gr33ncore.automation_runs
+WHERE schedule_id = $1 AND details @> $2::jsonb
+LIMIT 1
+`
+
+type GetAutomationRunByDetailsParams struct {
+	ScheduleID *int64 `db:"schedule_id" json:"schedule_id"`
+	Column2    []byte `db:"column_2" json:"column_2"`
+}
+
+func (q *Queries) GetAutomationRunByDetails(ctx context.Context, arg GetAutomationRunByDetailsParams) (Gr33ncoreAutomationRun, error) {
+	row := q.db.QueryRow(ctx, getAutomationRunByDetails, arg.ScheduleID, arg.Column2)
+	var i Gr33ncoreAutomationRun
+	err := row.Scan(
+		&i.ID,
+		&i.FarmID,
+		&i.ScheduleID,
+		&i.RuleID,
+		&i.Status,
+		&i.Message,
+		&i.Details,
+		&i.ExecutedAt,
+	)
+	return i, err
+}
+
+const getLastSuccessfulRunBySchedule = `-- name: GetLastSuccessfulRunBySchedule :one
+SELECT id, farm_id, schedule_id, rule_id, status, message, details, executed_at FROM gr33ncore.automation_runs
+WHERE schedule_id = $1 AND status = 'success'
+ORDER BY executed_at DESC
+LIMIT 1
+`
+
+func (q *Queries) GetLastSuccessfulRunBySchedule(ctx context.Context, scheduleID *int64) (Gr33ncoreAutomationRun, error) {
+	row := q.db.QueryRow(ctx, getLastSuccessfulRunBySchedule, scheduleID)
+	var i Gr33ncoreAutomationRun
+	err := row.Scan(
+		&i.ID,
+		&i.FarmID,
+		&i.ScheduleID,
+		&i.RuleID,
+		&i.Status,
+		&i.Message,
+		&i.Details,
+		&i.ExecutedAt,
+	)
+	return i, err
+}
+
 const listActiveSchedules = `-- name: ListActiveSchedules :many
 SELECT id, farm_id, name, description, schedule_type, cron_expression, timezone, is_active, last_triggered_time, next_expected_trigger_time, meta_data, created_at, updated_at FROM gr33ncore.schedules
 WHERE is_active = TRUE
