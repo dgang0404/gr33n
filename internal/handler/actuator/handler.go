@@ -3,6 +3,8 @@ package actuator
 import (
 	"encoding/json"
 	"net/http"
+	"strconv"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -76,4 +78,41 @@ func (h *Handler) UpdateState(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	httputil.WriteJSON(w, http.StatusOK, row)
+}
+
+// GET /actuators/{id}/events?since=RFC3339&limit=N
+func (h *Handler) ListEvents(w http.ResponseWriter, r *http.Request) {
+	actuatorID, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	if err != nil {
+		httputil.WriteError(w, http.StatusBadRequest, "invalid actuator id")
+		return
+	}
+
+	since := time.Now().UTC().Add(-24 * time.Hour)
+	if s := r.URL.Query().Get("since"); s != "" {
+		if t, err := time.Parse(time.RFC3339, s); err == nil {
+			since = t
+		}
+	}
+
+	limit := int32(50)
+	if l := r.URL.Query().Get("limit"); l != "" {
+		if n, err := strconv.ParseInt(l, 10, 32); err == nil && n > 0 && n <= 200 {
+			limit = int32(n)
+		}
+	}
+
+	rows, err := h.q.ListActuatorEventsByActuator(r.Context(), db.ListActuatorEventsByActuatorParams{
+		ActuatorID: actuatorID,
+		EventTime:  since,
+		Limit:      limit,
+	})
+	if err != nil {
+		httputil.WriteError(w, http.StatusInternalServerError, "failed to list actuator events")
+		return
+	}
+	if rows == nil {
+		rows = []db.Gr33ncoreActuatorEvent{}
+	}
+	httputil.WriteJSON(w, http.StatusOK, rows)
 }

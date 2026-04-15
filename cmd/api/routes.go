@@ -83,6 +83,7 @@ func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationwo
 	mux.Handle("POST /farms/{id}/devices", jwt(http.HandlerFunc(device.Create)))
 	mux.Handle("DELETE /devices/{id}",     jwt(http.HandlerFunc(device.Delete)))
 	mux.Handle("PATCH /actuators/{id}/state", jwt(http.HandlerFunc(actuator.UpdateState)))
+	mux.Handle("GET /actuators/{id}/events", jwt(http.HandlerFunc(actuator.ListEvents)))
 	mux.Handle("PATCH /schedules/{id}/active", jwt(http.HandlerFunc(automation.UpdateScheduleActive)))
 	mux.Handle("GET /automation/worker/health", jwt(http.HandlerFunc(automation.WorkerHealth)))
 
