@@ -71,17 +71,29 @@ HTTP request
 
 ```
 process start
-  → NewWorker(pool, simulationMode)
+  → NewWorker(pool, simulationMode, opts...)
   → worker ticker (30s)
       → ListActiveSchedules()
       → cron match for current minute
+      → cooldown check (skip if last success within cooldown window)
+      → idempotency check (skip if run with same schedule+minute key exists)
       → ListExecutableActionsBySchedule()
-      → execute action:
+      → execute action (with retry for transient errors):
           - control_actuator → actuator_events (+ actuator state update in simulation mode)
           - update_record_in_gr33n (fertigation_events) → fertigation event insert
-      → insert automation_runs log row
+      → insert automation_runs log row (with idempotency_key in details)
       → update schedules.last_triggered_time
 ```
+
+#### Execution safeguards
+
+| Safeguard | Behavior |
+|-----------|----------|
+| Same-minute dedup | `shouldTriggerNow` skips if `last_triggered_time` equals current minute |
+| Cooldown | Configurable via `AUTOMATION_COOLDOWN_SECONDS` (default 120s). Skips execution if last successful run is within the window |
+| Idempotency | SHA-256 key from `schedule_id:minute`. Checks `automation_runs` JSONB for existing key before execution |
+| Retry | Transient errors (connection, timeout) retried up to 2x with exponential backoff. Permanent errors fail immediately |
+| Error classification | `isTransient()` categorizes by error message patterns (connection refused, timeout, pgconn) |
 
 Simulation mode is controlled by `AUTOMATION_SIMULATION_MODE` (default `true`).
 
@@ -170,9 +182,12 @@ actions:
 |------|-------|-------------|
 | Dashboard | `/` | store.farm, store.sensors, store.devices |
 | Zones | `/zones` | store.zones, store.sensorsByZone(), store.devicesByZone() |
+| Zone Detail | `/zones/:id` | Operator console: live sensor readings, actuator toggles, actuator event timeline, fertigation summary |
 | Sensors | `/sensors` | store.sensors, store.readings, store.zones |
-| Actuators | `/actuators` | store.devices, store.zones |
-| Schedules | `/schedules` | store.tasks (via loadTasks()) |
+| Actuators | `/actuators` | store.actuators, store.zones |
+| Schedules | `/schedules` | store.schedules, store.automationRuns, worker health |
+| Tasks | `/tasks` | store.tasks (kanban-style status columns) |
+| Fertigation | `/fertigation` | Tabbed: reservoirs, EC targets, programs, events with create forms |
 | Inventory | `/inventory` | hardcoded JADAM inputs (stub) |
 
 ---
@@ -237,6 +252,32 @@ Frontend (every 30s via refreshReadings())
 
 ---
 
+## Authentication
+
+gr33n supports two explicit modes controlled by `AUTH_MODE`:
+
+| Mode | `AUTH_MODE` | Behavior |
+|------|-------------|----------|
+| Dev | `dev` (default) | JWT and API key middleware pass through when secrets are unset. Top bar shows "DEV MODE" banner. |
+| Production | `production` | Fatal on startup if `JWT_SECRET` or `PI_API_KEY` are missing. Full auth enforcement. |
+
+`GET /auth/mode` (public) returns the current mode for frontend awareness.
+
+### Environment variables
+
+| Variable | Default | Purpose |
+|----------|---------|---------|
+| `AUTH_MODE` | `dev` | `dev` or `production` |
+| `JWT_SECRET` | (empty) | HMAC-SHA256 signing key for dashboard JWTs |
+| `PI_API_KEY` | (empty) | Shared secret for Pi client `X-API-Key` header |
+| `CORS_ORIGIN` | `http://localhost:5173` | Allowed CORS origin |
+| `ADMIN_USERNAME` | `admin` | Login username |
+| `ADMIN_PASSWORD_HASH` | (empty) | bcrypt hash (or read from `~/.gr33n/admin.hash`) |
+| `AUTOMATION_SIMULATION_MODE` | `true` | Worker simulates hardware instead of sending real commands |
+| `AUTOMATION_COOLDOWN_SECONDS` | (empty) | Minimum seconds between successful schedule executions |
+
+---
+
 ## Development Commands
 
 ```bash
@@ -251,6 +292,9 @@ sqlc generate
 
 # Build check
 go build ./...
+
+# Run all Go tests (requires local DB with seed data)
+go test ./... -count=1
 
 # Run Pi client tests
 cd pi_client && python3 -m pytest test_gr33n_client.py -v

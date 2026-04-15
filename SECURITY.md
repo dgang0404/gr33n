@@ -18,12 +18,14 @@ Whether deployed in a cabin, co-op greenhouse, or airgapped industrial farm, gr3
 
 | Feature | Status | Notes |
 |---------|--------|-------|
-| User Auth | ✅ Supported | PostgreSQL peer auth (dev) or Supabase `auth.users` (hosted) |
+| Auth Modes | ✅ Explicit | `AUTH_MODE=dev` (bypass) or `AUTH_MODE=production` (enforce). Production fatals if secrets missing |
+| JWT Auth | ✅ Supported | HS256 via `JWT_SECRET`. Dashboard routes require Bearer token when enabled |
+| Pi API Key | ✅ Supported | `PI_API_KEY` env var. Pi sends `X-API-Key` header on sensor/device routes |
 | Row-Level Security (RLS) | ✅ Schema-ready | Enforced on all user-specific tables across `gr33ncore` |
 | Role Separation | ⚙️ Recommended | Use `gr33n_admin`, `gr33n_operator`, `gr33n_guest_inserter` with minimal permissions |
 | TLS / HTTPS | ✅ Local-ready | Use Caddy or nginx to terminate HTTPS on your LAN |
 | At-rest Encryption | ⚙️ Optional | Use LUKS disk encryption for sensitive deployments |
-| CORS | ✅ Configurable | Permissive in dev (`cors.go`), lock down for production |
+| CORS | ✅ Configurable | `CORS_ORIGIN` env var (defaults to `localhost:5173`). Set to your production domain |
 
 ---
 
@@ -95,7 +97,7 @@ We'll respond within 72 hours.
 - Automated `gr33n-scrub-bot` CI pipeline for insert validation
 - Signed data packages using GPG or farm fingerprints
 - Local firewall configuration guides for common deployment topologies
-- JWT-based auth for multi-user local deployments
+- Multi-user JWT auth with per-user farm memberships
 
 ---
 
