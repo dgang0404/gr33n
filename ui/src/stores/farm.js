@@ -7,6 +7,9 @@ export const useFarmStore = defineStore('farm', {
     zones: [],
     sensors: [],
     devices: [],
+    actuators: [],
+    schedules: [],
+    automationRuns: [],
     tasks: [],
     readings: {},
     loading: false,
@@ -23,22 +26,25 @@ export const useFarmStore = defineStore('farm', {
     activeDevices:  (state) => state.devices.filter(d => d.status === 'online'),
     devicesByZone:  (state) => (zoneId) => state.devices.filter(d => d.zone_id === zoneId),
     sensorsByZone:  (state) => (zoneId) => state.sensors.filter(s => s.zone_id === zoneId),
+    actuatorsByZone: (state) => (zoneId) => state.actuators.filter(a => a.zone_id === zoneId),
   },
 
   actions: {
     async loadAll(farmId = 1) {
       this.loading = true
       try {
-        const [farm, zones, sensors, devices] = await Promise.all([
+        const [farm, zones, sensors, devices, actuators] = await Promise.all([
           api.get(`/farms/${farmId}`),
           api.get(`/farms/${farmId}/zones`),
           api.get(`/farms/${farmId}/sensors`),
           api.get(`/farms/${farmId}/devices`),
+          api.get(`/farms/${farmId}/actuators`),
         ])
         this.farm    = farm.data
         this.zones   = Array.isArray(zones.data)   ? zones.data   : []
         this.sensors = Array.isArray(sensors.data) ? sensors.data : []
         this.devices = Array.isArray(devices.data) ? devices.data : []
+        this.actuators = Array.isArray(actuators.data) ? actuators.data : []
       } catch (e) {
         this.error = e.message
       } finally {
@@ -50,6 +56,26 @@ export const useFarmStore = defineStore('farm', {
       const r = await api.get(`/farms/${farmId}/tasks`)
       this.tasks = Array.isArray(r.data) ? r.data : []
       return this.tasks
+    },
+
+    async loadSchedules(farmId = 1) {
+      const r = await api.get(`/farms/${farmId}/schedules`)
+      this.schedules = Array.isArray(r.data) ? r.data : []
+      return this.schedules
+    },
+
+    async updateScheduleActive(scheduleId, isActive) {
+      const r = await api.patch(`/schedules/${scheduleId}/active`, { is_active: isActive })
+      const next = r.data
+      const idx = this.schedules.findIndex(s => s.id === scheduleId)
+      if (idx >= 0) this.schedules[idx] = next
+      return next
+    },
+
+    async loadAutomationRuns(farmId = 1) {
+      const r = await api.get(`/farms/${farmId}/automation/runs`)
+      this.automationRuns = Array.isArray(r.data) ? r.data : []
+      return this.automationRuns
     },
 
     async updateTaskStatus(taskId, status) {
@@ -72,6 +98,17 @@ export const useFarmStore = defineStore('farm', {
       await api.patch(`/devices/${deviceId}/status`, { status: next })
       const d = this.devices.find(d => d.id === deviceId)
       if (d) d.status = next
+    },
+
+    async toggleActuator(actuatorId, currentStateText) {
+      const nextText = currentStateText === 'online' ? 'offline' : 'online'
+      const r = await api.patch(`/actuators/${actuatorId}/state`, {
+        state_text: nextText,
+        state_numeric: nextText === 'online' ? 1 : 0,
+      })
+      const idx = this.actuators.findIndex(a => a.id === actuatorId)
+      if (idx >= 0) this.actuators[idx] = r.data
+      return r.data
     },
   },
 })

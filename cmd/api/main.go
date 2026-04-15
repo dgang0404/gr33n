@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	automationworker "gr33n-api/internal/automation"
 )
 
 func main() {
@@ -19,6 +20,7 @@ func main() {
 	jwtSecret = []byte(getEnv("JWT_SECRET", ""))
 	piAPIKey  = getEnv("PI_API_KEY", "")
 	adminUser    := getEnv("ADMIN_USERNAME", "admin")
+	simulationMode := strings.EqualFold(getEnv("AUTOMATION_SIMULATION_MODE", "true"), "true")
 	hashFilePath := filepath.Join(os.Getenv("HOME"), ".gr33n", "admin.hash")
 	adminHash    := loadPasswordHash(hashFilePath)
 	pool, err := connectDB(dbURL)
@@ -28,7 +30,10 @@ func main() {
 	if len(jwtSecret) == 0 { log.Println("⚠️  JWT_SECRET not set — JWT auth disabled (dev mode)") } else { log.Println("🔐 JWT auth enabled") }
 	if piAPIKey == "" { log.Println("⚠️  PI_API_KEY not set — Pi API key auth disabled (dev mode)") } else { log.Println("🔑 Pi API key auth enabled") }
 	mux := http.NewServeMux()
-	registerRoutes(mux, pool, adminUser, adminHash, hashFilePath)
+	worker := automationworker.NewWorker(pool, simulationMode)
+	go worker.Start(context.Background())
+	log.Printf("🧠 Automation worker started (simulation_mode=%v)", simulationMode)
+	registerRoutes(mux, pool, worker, adminUser, adminHash, hashFilePath)
 	addr := fmt.Sprintf(":%s", port)
 	log.Printf("🌱 gr33n API running on http://localhost%s", addr)
 	if err := http.ListenAndServe(addr, corsMiddleware(mux)); err != nil { log.Fatalf("❌ Server error: %v", err) }

@@ -18,9 +18,19 @@ import api from '../api'
 const route  = useRoute()
 const apiOk  = ref(true)
 const now    = ref('')
-const labels = { '/': 'Dashboard', '/zones': 'Zones', '/sensors': 'Sensors',
-                 '/actuators': 'Actuators', '/schedules': 'Schedules', '/inventory': 'Inventory' }
-const title  = computed(() => labels[route.path] ?? 'gr33n')
+const labels = {
+  '/': 'Dashboard',
+  '/zones': 'Zones',
+  '/sensors': 'Sensors',
+  '/actuators': 'Controls',
+  '/schedules': 'Schedules',
+  '/tasks': 'Tasks',
+  '/inventory': 'Inventory',
+}
+const title = computed(() => {
+  if (route.path.startsWith('/zones/')) return 'Zone Details'
+  return labels[route.path] ?? 'gr33n'
+})
 
 let tick
 onMounted(() => {

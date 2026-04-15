@@ -1240,6 +1240,17 @@ type Gr33ncoreAutomationRule struct {
 	UpdatedAt             time.Time                               `db:"updated_at" json:"updated_at"`
 }
 
+type Gr33ncoreAutomationRun struct {
+	ID         int64     `db:"id" json:"id"`
+	FarmID     int64     `db:"farm_id" json:"farm_id"`
+	ScheduleID *int64    `db:"schedule_id" json:"schedule_id"`
+	RuleID     *int64    `db:"rule_id" json:"rule_id"`
+	Status     string    `db:"status" json:"status"`
+	Message    *string   `db:"message" json:"message"`
+	Details    []byte    `db:"details" json:"details"`
+	ExecutedAt time.Time `db:"executed_at" json:"executed_at"`
+}
+
 type Gr33ncoreCostTransaction struct {
 	ID                  int64                        `db:"id" json:"id"`
 	FarmID              int64                        `db:"farm_id" json:"farm_id"`

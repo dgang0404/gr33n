@@ -543,6 +543,18 @@ CREATE TABLE IF NOT EXISTS gr33ncore.executable_actions (
     )
 );
 
+-- Automation run log (observability for scheduler executions)
+CREATE TABLE IF NOT EXISTS gr33ncore.automation_runs (
+    id              BIGSERIAL PRIMARY KEY,
+    farm_id         BIGINT NOT NULL REFERENCES gr33ncore.farms(id) ON DELETE CASCADE,
+    schedule_id     BIGINT REFERENCES gr33ncore.schedules(id) ON DELETE SET NULL,
+    rule_id         BIGINT REFERENCES gr33ncore.automation_rules(id) ON DELETE SET NULL,
+    status          TEXT NOT NULL CHECK (status IN ('success', 'partial_success', 'failed', 'skipped')),
+    message         TEXT,
+    details         JSONB DEFAULT '{}'::jsonb,
+    executed_at     TIMESTAMPTZ DEFAULT NOW() NOT NULL
+);
+
 -- FK back-references for actuator_events
 ALTER TABLE gr33ncore.actuator_events
     ADD CONSTRAINT fk_actuator_event_schedule
@@ -841,6 +853,10 @@ CREATE INDEX IF NOT EXISTS idx_activity_farm_time
     ON gr33ncore.user_activity_log(farm_id, activity_time DESC);
 CREATE INDEX IF NOT EXISTS idx_activity_action_type
     ON gr33ncore.user_activity_log(action_type, activity_time DESC);
+CREATE INDEX IF NOT EXISTS idx_automation_runs_farm_time
+    ON gr33ncore.automation_runs(farm_id, executed_at DESC);
+CREATE INDEX IF NOT EXISTS idx_automation_runs_schedule_time
+    ON gr33ncore.automation_runs(schedule_id, executed_at DESC);
 
 -- ============================================================
 -- TIMESCALEDB HYPERTABLE CONVERSIONS

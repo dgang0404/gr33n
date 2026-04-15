@@ -5,6 +5,9 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	automationworker "gr33n-api/internal/automation"
+	actuatorhandler "gr33n-api/internal/handler/actuator"
+	automationhandler "gr33n-api/internal/handler/automation"
 	authhandler   "gr33n-api/internal/handler/auth"
 	devicehandler "gr33n-api/internal/handler/device"
 	farmhandler   "gr33n-api/internal/handler/farm"
@@ -16,10 +19,12 @@ import (
 	"gr33n-api/internal/httputil"
 )
 
-func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, adminUser string, adminHash []byte, hashFilePath string) {
+func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationworker.Worker, adminUser string, adminHash []byte, hashFilePath string) {
 	farm   := farmhandler.NewHandler(pool)
 	zone   := zonehandler.NewHandler(pool)
 	device := devicehandler.NewHandler(pool)
+	actuator := actuatorhandler.NewHandler(pool)
+	automation := automationhandler.NewHandler(pool, worker)
 	sensor := sensorhandler.NewHandler(pool)
 	task   := taskhandler.NewHandler(pool)
 	fertigation := fertigationhandler.NewHandler(pool)
@@ -61,8 +66,11 @@ func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, adminUser string, ad
 	mux.Handle("GET /farms/{id}",          jwt(http.HandlerFunc(farm.Get)))
 	mux.Handle("GET /farms/{id}/zones",    jwt(http.HandlerFunc(zone.ListByFarm)))
 	mux.Handle("GET /farms/{id}/devices",  jwt(http.HandlerFunc(device.ListByFarm)))
+	mux.Handle("GET /farms/{id}/actuators", jwt(http.HandlerFunc(actuator.ListByFarm)))
 	mux.Handle("GET /farms/{id}/sensors",  jwt(http.HandlerFunc(sensor.ListByFarm)))
+	mux.Handle("GET /farms/{id}/schedules", jwt(http.HandlerFunc(automation.ListSchedulesByFarm)))
 	mux.Handle("GET /farms/{id}/tasks",    jwt(http.HandlerFunc(task.ListByFarm)))
+	mux.Handle("GET /farms/{id}/automation/runs", jwt(http.HandlerFunc(automation.ListRunsByFarm)))
 
 	// Sensors
 	mux.Handle("GET /sensors/{id}",                 jwt(http.HandlerFunc(sensor.Get)))
@@ -74,6 +82,9 @@ func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, adminUser string, ad
 	mux.Handle("GET /devices/{id}",        jwt(http.HandlerFunc(device.Get)))
 	mux.Handle("POST /farms/{id}/devices", jwt(http.HandlerFunc(device.Create)))
 	mux.Handle("DELETE /devices/{id}",     jwt(http.HandlerFunc(device.Delete)))
+	mux.Handle("PATCH /actuators/{id}/state", jwt(http.HandlerFunc(actuator.UpdateState)))
+	mux.Handle("PATCH /schedules/{id}/active", jwt(http.HandlerFunc(automation.UpdateScheduleActive)))
+	mux.Handle("GET /automation/worker/health", jwt(http.HandlerFunc(automation.WorkerHealth)))
 
 	// Zones
 	mux.Handle("GET /zones/{id}",          jwt(http.HandlerFunc(zone.Get)))

@@ -469,6 +469,117 @@ VALUES
 ON CONFLICT DO NOTHING;
 
 -- ===========================================================================
+-- SECTION 4C: DEMO DEVICES + ACTUATORS + SCHEDULE ACTIONS
+-- ===========================================================================
+
+INSERT INTO gr33ncore.devices
+    (farm_id, zone_id, name, device_uid, device_type, status, config)
+SELECT
+    1,
+    (SELECT id FROM gr33ncore.zones WHERE farm_id = 1 AND name = 'Veg Room'),
+    'Veg Relay Controller',
+    'demo-veg-relay-01',
+    'relay_controller',
+    'online'::gr33ncore.device_status_enum,
+    '{"simulation": true}'::jsonb
+WHERE NOT EXISTS (
+    SELECT 1 FROM gr33ncore.devices WHERE farm_id = 1 AND device_uid = 'demo-veg-relay-01'
+);
+
+INSERT INTO gr33ncore.devices
+    (farm_id, zone_id, name, device_uid, device_type, status, config)
+SELECT
+    1,
+    (SELECT id FROM gr33ncore.zones WHERE farm_id = 1 AND name = 'Flower Room'),
+    'Flower Relay Controller',
+    'demo-flower-relay-01',
+    'relay_controller',
+    'online'::gr33ncore.device_status_enum,
+    '{"simulation": true}'::jsonb
+WHERE NOT EXISTS (
+    SELECT 1 FROM gr33ncore.devices WHERE farm_id = 1 AND device_uid = 'demo-flower-relay-01'
+);
+
+INSERT INTO gr33ncore.actuators
+    (device_id, farm_id, zone_id, name, actuator_type, hardware_identifier, current_state_text, config)
+SELECT
+    d.id,
+    1,
+    d.zone_id,
+    'Veg Room Grow Light',
+    'light',
+    'relay_1',
+    'offline',
+    '{"channel": 1, "simulation": true}'::jsonb
+FROM gr33ncore.devices d
+WHERE d.farm_id = 1
+  AND d.device_uid = 'demo-veg-relay-01'
+  AND NOT EXISTS (
+      SELECT 1 FROM gr33ncore.actuators a
+      WHERE a.farm_id = 1 AND a.name = 'Veg Room Grow Light' AND a.deleted_at IS NULL
+  );
+
+INSERT INTO gr33ncore.actuators
+    (device_id, farm_id, zone_id, name, actuator_type, hardware_identifier, current_state_text, config)
+SELECT
+    d.id,
+    1,
+    d.zone_id,
+    'Flower Room Irrigation Pump',
+    'pump',
+    'relay_2',
+    'offline',
+    '{"channel": 2, "simulation": true}'::jsonb
+FROM gr33ncore.devices d
+WHERE d.farm_id = 1
+  AND d.device_uid = 'demo-flower-relay-01'
+  AND NOT EXISTS (
+      SELECT 1 FROM gr33ncore.actuators a
+      WHERE a.farm_id = 1 AND a.name = 'Flower Room Irrigation Pump' AND a.deleted_at IS NULL
+  );
+
+INSERT INTO gr33ncore.executable_actions
+    (schedule_id, execution_order, action_type, target_actuator_id, action_command, action_parameters)
+SELECT
+    s.id,
+    0,
+    'control_actuator'::gr33ncore.executable_action_type_enum,
+    a.id,
+    'on',
+    '{"source":"seed_demo"}'::jsonb
+FROM gr33ncore.schedules s
+JOIN gr33ncore.actuators a ON a.farm_id = 1 AND a.name = 'Veg Room Grow Light' AND a.deleted_at IS NULL
+WHERE s.farm_id = 1
+  AND s.name = 'Light ON 18/6 Veg'
+  AND NOT EXISTS (
+      SELECT 1 FROM gr33ncore.executable_actions ea
+      WHERE ea.schedule_id = s.id AND ea.target_actuator_id = a.id AND ea.action_command = 'on'
+  );
+
+INSERT INTO gr33ncore.executable_actions
+    (schedule_id, execution_order, action_type, target_actuator_id, action_command, action_parameters)
+SELECT
+    s.id,
+    0,
+    'control_actuator'::gr33ncore.executable_action_type_enum,
+    a.id,
+    'off',
+    '{"source":"seed_demo"}'::jsonb
+FROM gr33ncore.schedules s
+JOIN gr33ncore.actuators a ON a.farm_id = 1 AND a.name = 'Veg Room Grow Light' AND a.deleted_at IS NULL
+WHERE s.farm_id = 1
+  AND s.name = 'Light OFF 18/6 Veg'
+  AND NOT EXISTS (
+      SELECT 1 FROM gr33ncore.executable_actions ea
+      WHERE ea.schedule_id = s.id AND ea.target_actuator_id = a.id AND ea.action_command = 'off'
+  );
+
+UPDATE gr33ncore.schedules
+SET is_active = TRUE
+WHERE farm_id = 1
+  AND name IN ('Light ON 18/6 Veg', 'Light OFF 18/6 Veg');
+
+-- ===========================================================================
 -- SECTION 4B: FERTIGATION BASELINE DATA
 -- ===========================================================================
 

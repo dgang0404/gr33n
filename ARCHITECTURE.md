@@ -51,6 +51,7 @@ internal/
   httputil/    — WriteJSON(w, status, v) and WriteError(w, status, msg)
   platform/
     commontypes/ — enums (TaskStatusEnum, DeviceStatusEnum, etc.)
+  automation/   — schedule execution worker (cron evaluation + action dispatch)
 ```
 
 ### Request lifecycle
@@ -65,6 +66,24 @@ HTTP request
       → db.New(pool).QueryFunction(ctx, params)
       → httputil.WriteJSON(w, status, result)
 ```
+
+### Automation worker lifecycle
+
+```
+process start
+  → NewWorker(pool, simulationMode)
+  → worker ticker (30s)
+      → ListActiveSchedules()
+      → cron match for current minute
+      → ListExecutableActionsBySchedule()
+      → execute action:
+          - control_actuator → actuator_events (+ actuator state update in simulation mode)
+          - update_record_in_gr33n (fertigation_events) → fertigation event insert
+      → insert automation_runs log row
+      → update schedules.last_triggered_time
+```
+
+Simulation mode is controlled by `AUTOMATION_SIMULATION_MODE` (default `true`).
 
 ### Database connection
 

@@ -1,9 +1,11 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import Dashboard from '../views/Dashboard.vue'
 import Zones from '../views/Zones.vue'
+import ZoneDetail from '../views/ZoneDetail.vue'
 import Sensors from '../views/Sensors.vue'
 import Actuators from '../views/Actuators.vue'
 import Schedules from '../views/Schedules.vue'
+import Tasks from '../views/Tasks.vue'
 import Inventory from '../views/Inventory.vue'
 import Settings from '../views/Settings.vue'
 import Login from '../views/Login.vue'
@@ -12,9 +14,11 @@ const routes = [
   { path: '/login',    component: Login,     name: 'login',     meta: { public: true } },
   { path: '/',         component: Dashboard, name: 'dashboard' },
   { path: '/zones',    component: Zones,     name: 'zones' },
+  { path: '/zones/:id',component: ZoneDetail,name: 'zone-detail' },
   { path: '/sensors',  component: Sensors,   name: 'sensors' },
   { path: '/actuators',component: Actuators, name: 'actuators' },
   { path: '/schedules',component: Schedules, name: 'schedules' },
+  { path: '/tasks',    component: Tasks,     name: 'tasks' },
   { path: '/inventory',component: Inventory, name: 'inventory' },
   { path: '/settings', component: Settings,  name: 'settings' },
 ]

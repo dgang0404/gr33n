@@ -53,6 +53,19 @@ For production use, rotate the API to a dedicated LAN interface and block WAN ac
 
 ---
 
+## 🧪 Automation simulation mode
+
+For local development, automation can run without physical Pi/relay hardware:
+
+- Set `AUTOMATION_SIMULATION_MODE=true` (default behavior in local dev)
+- Schedule actions are still logged in `gr33ncore.automation_runs`
+- Actuator commands are recorded as simulated actuator events
+- Fertigation automation can create `gr33nfertigation.fertigation_events` records
+
+Important: simulation mode validates logic and data flow, but does not physically switch lights, pumps, or valves.
+
+---
+
 ## 🚨 Data Sharing + Inserts
 
 For community-contributed insert statements (gr33n_inserts, coming soon):

@@ -23,8 +23,9 @@ const nav = [
   { to: '/',          icon: '🌿', label: 'Dashboard'  },
   { to: '/zones',     icon: '🗂️', label: 'Zones'       },
   { to: '/sensors',   icon: '📡', label: 'Sensors'     },
-  { to: '/actuators', icon: '⚡', label: 'Actuators'   },
+  { to: '/actuators', icon: '⚡', label: 'Controls'    },
   { to: '/schedules', icon: '📅', label: 'Schedules'   },
+  { to: '/tasks',     icon: '✅', label: 'Tasks'       },
   { to: '/inventory', icon: '🧪', label: 'Inventory'   },
 ]
 </script>
