@@ -9,6 +9,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	db "gr33n-api/internal/db"
+	"gr33n-api/internal/farmauthz"
 	"gr33n-api/internal/httputil"
 	commontypes "gr33n-api/internal/platform/commontypes"
 )
@@ -74,6 +75,9 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	params.FarmID = farmID
+	if !farmauthz.RequireFarmMember(w, r, h.q, farmID) {
+		return
+	}
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()
 
@@ -139,6 +143,15 @@ func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
 	}
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()
+
+	d0, err := h.q.GetDeviceByID(ctx, id)
+	if err != nil {
+		httputil.WriteError(w, http.StatusNotFound, "device not found")
+		return
+	}
+	if !farmauthz.RequireFarmMember(w, r, h.q, d0.FarmID) {
+		return
+	}
 
 	err = h.q.SoftDeleteDevice(ctx, db.SoftDeleteDeviceParams{ID: id})
 	if err != nil {

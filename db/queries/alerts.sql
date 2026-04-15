@@ -9,6 +9,9 @@ INSERT INTO gr33ncore.alerts_notifications (
   message_text_rendered, status
 ) VALUES ($1,$2,$3,$4,$5,$6,$7,'pending') RETURNING *;
 
+-- name: GetAlertNotificationByID :one
+SELECT * FROM gr33ncore.alerts_notifications WHERE id = $1;
+
 -- name: ListAlertsByFarm :many
 SELECT * FROM gr33ncore.alerts_notifications
 WHERE farm_id = $1

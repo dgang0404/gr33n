@@ -2,14 +2,17 @@ package actuator
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"strconv"
 	"time"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	db "gr33n-api/internal/db"
+	"gr33n-api/internal/farmauthz"
 	"gr33n-api/internal/httputil"
 )
 
@@ -53,6 +56,18 @@ func (h *Handler) UpdateState(w http.ResponseWriter, r *http.Request) {
 	}
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+	a0, err := h.q.GetActuatorByID(r.Context(), actuatorID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			httputil.WriteError(w, http.StatusNotFound, "actuator not found")
+			return
+		}
+		httputil.WriteError(w, http.StatusInternalServerError, "failed to load actuator")
+		return
+	}
+	if !farmauthz.RequireFarmMember(w, r, h.q, a0.FarmID) {
 		return
 	}
 

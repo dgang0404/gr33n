@@ -161,6 +161,8 @@ Base URL: `http://localhost:8080` — full spec in [openapi.yaml](openapi.yaml).
 
 ### Dashboard Routes (JWT)
 
+JWT is required for all routes in this section. Mutations (POST, PUT, PATCH, DELETE) also require the user to be a **farm member** (see `gr33ncore.farm_memberships`) or the farm **owner** (`gr33ncore.farms.owner_user_id`). Integration tests in `cmd/api/smoke_test.go` run with `AUTH_MODE=auth_test` and a real JWT.
+
 | Method | Path | Description |
 |--------|------|-------------|
 | PATCH | `/auth/password` | Change password |
@@ -178,6 +180,8 @@ Base URL: `http://localhost:8080` — full spec in [openapi.yaml](openapi.yaml).
 | POST | `/farms/:id/sensors` | Create sensor |
 | DELETE | `/sensors/:id` | Delete sensor |
 | GET | `/sensors/:id/readings/latest` | Latest reading |
+| GET | `/sensors/:id/readings` | List readings (since/until/limit) |
+| GET | `/sensors/:id/readings/stats` | Aggregate stats for a time range |
 | GET | `/devices/:id` | Device detail |
 | POST | `/farms/:id/devices` | Create device |
 | DELETE | `/devices/:id` | Delete device |
@@ -200,8 +204,25 @@ Base URL: `http://localhost:8080` — full spec in [openapi.yaml](openapi.yaml).
 | POST | `/farms/:id/fertigation/programs` | Create program |
 | PATCH | `/fertigation/programs/:rid` | Update program |
 | DELETE | `/fertigation/programs/:rid` | Delete program |
-| GET | `/farms/:id/fertigation/events` | List fertigation events |
-| POST | `/farms/:id/fertigation/events` | Create fertigation event |
+| GET | `/farms/:id/fertigation/events` | List fertigation events (`?crop_cycle_id=` optional) |
+| POST | `/farms/:id/fertigation/events` | Create fertigation event (optional `crop_cycle_id`) |
+| GET | `/farms/:id/crop-cycles` | List crop cycles |
+| POST | `/farms/:id/crop-cycles` | Create crop cycle |
+| GET | `/crop-cycles/:id` | Get crop cycle |
+| PUT | `/crop-cycles/:id` | Update crop cycle |
+| DELETE | `/crop-cycles/:id` | Deactivate crop cycle |
+| PATCH | `/crop-cycles/:id/stage` | Update growth stage |
+| GET | `/farms/:id/costs/summary` | Cost totals (income, expenses, net) |
+| GET | `/farms/:id/costs` | List cost transactions |
+| GET | `/farms/:id/costs/export` | Download costs as CSV |
+| POST | `/farms/:id/costs` | Create cost transaction |
+| PUT | `/costs/:id` | Update cost transaction |
+| DELETE | `/costs/:id` | Delete cost transaction |
+| GET | `/farms/:id/naturalfarming/recipes` | List application recipes |
+| POST | `/farms/:id/naturalfarming/recipes` | Create recipe |
+| GET | `/naturalfarming/recipes/:id` | Get recipe |
+| PUT | `/naturalfarming/recipes/:id` | Update recipe |
+| DELETE | `/naturalfarming/recipes/:id` | Delete recipe |
 | GET | `/farms/:id/naturalfarming/inputs` | List NF input definitions |
 | GET | `/farms/:id/naturalfarming/batches` | List NF input batches |
 
@@ -288,6 +309,7 @@ For users who choose to integrate local AI, gr33n offers schema-guided intellige
 - [x] Raspberry Pi sensor client with systemd daemon
 - [x] OpenAPI spec (openapi.yaml)
 - [x] Sensor readings live on dashboard (SSE stream with JWT query param auth)
+- [x] Phase 10 — JWT smoke tests (`AUTH_MODE=auth_test`), farm-scoped write authorization, fertigation ↔ crop cycle link, costs CSV export, SensorDetail export UX
 - [x] Actuator control pipeline (automation worker → pending_command → Pi poll → execute → report)
 - [x] Fertigation module — reservoirs, EC targets, programs, events
 - [x] Natural farming inventory UI — input definitions & batch tracking

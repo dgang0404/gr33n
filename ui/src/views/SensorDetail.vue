@@ -2,8 +2,14 @@
   <div class="p-6 space-y-6">
     <div>
       <router-link to="/sensors" class="text-xs text-zinc-500 hover:text-zinc-300">&larr; Back to sensors</router-link>
-      <div v-if="loadError" class="mt-4 text-red-400 text-sm">{{ loadError }}</div>
-      <div v-else-if="!sensor" class="mt-4 text-zinc-500 text-sm">Loading sensor…</div>
+      <div v-if="loadError" class="mt-4 rounded-lg border border-red-900/50 bg-red-950/30 px-4 py-3 text-red-300 text-sm">
+        {{ loadError }}
+      </div>
+      <div v-else-if="!sensor" class="mt-4 space-y-3 animate-pulse" aria-hidden="true">
+        <div class="h-8 bg-zinc-800 rounded-lg w-2/3 max-w-md" />
+        <div class="h-4 bg-zinc-800/80 rounded w-1/3" />
+        <div class="h-24 bg-zinc-900 border border-zinc-800 rounded-xl" />
+      </div>
       <template v-else>
         <div class="mt-3 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
           <div>
@@ -24,7 +30,7 @@
           </div>
         </div>
 
-        <div class="flex flex-wrap gap-2 mt-4">
+        <div class="flex flex-wrap items-center gap-2 mt-4">
           <button
             v-for="opt in rangeOptions"
             :key="opt.hours"
@@ -37,9 +43,17 @@
           >
             {{ opt.label }}
           </button>
+          <button
+            type="button"
+            @click="exportReadingsCsv"
+            :disabled="!readings.length || historyLoading"
+            class="text-xs ml-auto px-3 py-1.5 rounded-lg border border-zinc-600 text-zinc-400 hover:border-zinc-500 hover:text-zinc-200 disabled:opacity-40"
+          >
+            Export range (CSV)
+          </button>
         </div>
 
-        <div v-if="statsLoading" class="text-zinc-500 text-sm">Loading stats…</div>
+        <div v-if="historyLoading" class="text-zinc-500 text-sm mt-2">Loading stats and chart…</div>
         <div v-else class="grid grid-cols-2 md:grid-cols-4 gap-3 mt-2">
           <div v-for="card in statCards" :key="card.label" class="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
             <p class="text-zinc-500 text-xs mb-1">{{ card.label }}</p>
@@ -49,8 +63,8 @@
 
         <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
           <h2 class="text-sm font-semibold text-white mb-3">History</h2>
-          <p v-if="chartLoading" class="text-zinc-500 text-sm">Loading chart…</p>
-          <p v-else-if="!chartData.datasets[0]?.data?.length" class="text-zinc-500 text-sm">No readings in this range.</p>
+          <p v-if="historyLoading" class="text-zinc-500 text-sm">Loading chart…</p>
+          <p v-else-if="!chartData.datasets[0]?.data?.length" class="text-zinc-500 text-sm">No readings in this range. Try a longer window or confirm the Pi is posting readings.</p>
           <div v-else class="h-80 w-full">
             <Line :data="chartData" :options="chartOptions" />
           </div>
@@ -88,8 +102,7 @@ const sensor = ref(null)
 const stats = ref(null)
 const readings = ref([])
 const loadError = ref(null)
-const statsLoading = ref(true)
-const chartLoading = ref(true)
+const historyLoading = ref(true)
 const rangeHours = ref(24)
 
 const rangeOptions = [
@@ -276,13 +289,43 @@ async function loadSensor(id) {
   }
 }
 
+function csvEscape(s) {
+  if (s == null) return ''
+  const t = String(s)
+  if (/[",\n]/.test(t)) return `"${t.replace(/"/g, '""')}"`
+  return t
+}
+
+function exportReadingsCsv() {
+  const id = route.params.id
+  if (!id || !readings.value.length) return
+  const { since, until } = rangeToSinceUntil(rangeHours.value)
+  const header = ['reading_time', 'value_raw', 'value_normalized', 'is_valid']
+  const lines = [header.join(',')]
+  for (const r of readings.value) {
+    lines.push([
+      csvEscape(r.reading_time),
+      csvEscape(r.value_raw),
+      csvEscape(r.value_normalized),
+      csvEscape(r.is_valid),
+    ].join(','))
+  }
+  const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `sensor-${id}-readings-${rangeHours.value}h.csv`
+  a.click()
+  URL.revokeObjectURL(url)
+}
+
 async function fetchHistory() {
   const id = route.params.id
   if (!id) return
   const { since, until } = rangeToSinceUntil(rangeHours.value)
-  statsLoading.value = true
-  chartLoading.value = true
+  historyLoading.value = true
   try {
+    loadError.value = null
     const [st, rs] = await Promise.all([
       store.loadSensorStats(id, { since, until }),
       store.loadSensorReadings(id, { since, until, limit: 2000 }),
@@ -294,8 +337,7 @@ async function fetchHistory() {
     readings.value = []
     loadError.value = e.response?.data?.error || e.message || 'Failed to load history'
   } finally {
-    statsLoading.value = false
-    chartLoading.value = false
+    historyLoading.value = false
   }
 }
 

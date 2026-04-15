@@ -2,6 +2,14 @@
 -- Queries: gr33nnaturalfarming
 -- ============================================================
 
+-- name: GetInputDefinitionByID :one
+SELECT * FROM gr33nnaturalfarming.input_definitions
+WHERE id = $1 AND deleted_at IS NULL;
+
+-- name: GetInputBatchByID :one
+SELECT * FROM gr33nnaturalfarming.input_batches
+WHERE id = $1 AND deleted_at IS NULL;
+
 -- name: ListInputDefinitionsByFarm :many
 SELECT * FROM gr33nnaturalfarming.input_definitions
 WHERE farm_id = $1 AND deleted_at IS NULL

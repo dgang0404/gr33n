@@ -7,6 +7,10 @@ SELECT * FROM gr33ncore.schedules
 WHERE farm_id = $1
 ORDER BY name ASC;
 
+-- name: GetScheduleByID :one
+SELECT * FROM gr33ncore.schedules
+WHERE id = $1;
+
 -- name: UpdateScheduleActive :one
 UPDATE gr33ncore.schedules
 SET is_active = $2, updated_at = NOW()

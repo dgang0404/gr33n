@@ -9,6 +9,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	db "gr33n-api/internal/db"
+	"gr33n-api/internal/farmauthz"
 	"gr33n-api/internal/httputil"
 )
 
@@ -69,6 +70,9 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	params.FarmID = farmID
+	if !farmauthz.RequireFarmMember(w, r, h.q, farmID) {
+		return
+	}
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()
 
@@ -96,6 +100,15 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()
 
+	z0, err := h.q.GetZoneByID(ctx, id)
+	if err != nil {
+		httputil.WriteError(w, http.StatusNotFound, "zone not found")
+		return
+	}
+	if !farmauthz.RequireFarmMember(w, r, h.q, z0.FarmID) {
+		return
+	}
+
 	zone, err := h.q.UpdateZone(ctx, params)
 	if err != nil {
 		httputil.WriteError(w, http.StatusInternalServerError, "failed to update zone")
@@ -113,6 +126,15 @@ func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
 	}
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()
+
+	z0, err := h.q.GetZoneByID(ctx, id)
+	if err != nil {
+		httputil.WriteError(w, http.StatusNotFound, "zone not found")
+		return
+	}
+	if !farmauthz.RequireFarmMember(w, r, h.q, z0.FarmID) {
+		return
+	}
 
 	err = h.q.SoftDeleteZone(ctx, db.SoftDeleteZoneParams{ID: id})
 	if err != nil {

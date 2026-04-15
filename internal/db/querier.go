@@ -68,6 +68,7 @@ type Querier interface {
 	DeleteProgram(ctx context.Context, id int64) error
 	DeleteReservoir(ctx context.Context, id int64) error
 	GetActuatorByID(ctx context.Context, id int64) (Gr33ncoreActuator, error)
+	GetAlertNotificationByID(ctx context.Context, id int64) (Gr33ncoreAlertsNotification, error)
 	// ============================================================
 	// Queries: auth.users
 	// ============================================================
@@ -82,6 +83,13 @@ type Querier interface {
 	GetFarmByID(ctx context.Context, id int64) (Gr33ncoreFarm, error)
 	GetFarmMembers(ctx context.Context, farmID int64) ([]GetFarmMembersRow, error)
 	GetFarmMembership(ctx context.Context, arg GetFarmMembershipParams) (Gr33ncoreFarmMembership, error)
+	GetFertigationProgramByID(ctx context.Context, id int64) (Gr33nfertigationProgram, error)
+	GetFertigationReservoirByID(ctx context.Context, id int64) (Gr33nfertigationReservoir, error)
+	GetInputBatchByID(ctx context.Context, id int64) (Gr33nnaturalfarmingInputBatch, error)
+	// ============================================================
+	// Queries: gr33nnaturalfarming
+	// ============================================================
+	GetInputDefinitionByID(ctx context.Context, id int64) (Gr33nnaturalfarmingInputDefinition, error)
 	GetLastSuccessfulRunBySchedule(ctx context.Context, scheduleID *int64) (Gr33ncoreAutomationRun, error)
 	GetLatestReadingBySensor(ctx context.Context, sensorID int64) (Gr33ncoreSensorReading, error)
 	GetProfileByEmail(ctx context.Context, email string) (Gr33ncoreProfile, error)
@@ -91,6 +99,7 @@ type Querier interface {
 	GetProfileByUserID(ctx context.Context, userID uuid.UUID) (Gr33ncoreProfile, error)
 	GetRecentUnacknowledgedAlertForSource(ctx context.Context, arg GetRecentUnacknowledgedAlertForSourceParams) (int64, error)
 	GetRecipeByID(ctx context.Context, id int64) (Gr33nnaturalfarmingApplicationRecipe, error)
+	GetScheduleByID(ctx context.Context, id int64) (Gr33ncoreSchedule, error)
 	GetSensorByID(ctx context.Context, id int64) (Gr33ncoreSensor, error)
 	GetSensorReadingStats(ctx context.Context, arg GetSensorReadingStatsParams) (GetSensorReadingStatsRow, error)
 	GetTaskByID(ctx context.Context, id int64) (Gr33ncoreTask, error)
@@ -115,6 +124,7 @@ type Querier interface {
 	ListAllUnits(ctx context.Context) ([]Gr33ncoreUnit, error)
 	ListAutomationRunsByFarm(ctx context.Context, arg ListAutomationRunsByFarmParams) ([]Gr33ncoreAutomationRun, error)
 	ListCostTransactionsByFarm(ctx context.Context, arg ListCostTransactionsByFarmParams) ([]Gr33ncoreCostTransaction, error)
+	ListCostTransactionsByFarmExport(ctx context.Context, farmID int64) ([]ListCostTransactionsByFarmExportRow, error)
 	ListCropCyclesByFarm(ctx context.Context, farmID int64) ([]Gr33nfertigationCropCycle, error)
 	ListDevicesByFarm(ctx context.Context, farmID int64) ([]Gr33ncoreDevice, error)
 	ListDevicesByZone(ctx context.Context, zoneID *int64) ([]Gr33ncoreDevice, error)
@@ -123,10 +133,8 @@ type Querier interface {
 	ListFarmsByOwner(ctx context.Context, ownerUserID uuid.UUID) ([]Gr33ncoreFarm, error)
 	ListFarmsForUser(ctx context.Context, userID uuid.UUID) ([]Gr33ncoreFarm, error)
 	ListFertigationEventsByFarm(ctx context.Context, farmID int64) ([]Gr33nfertigationFertigationEvent, error)
+	ListFertigationEventsByFarmAndCropCycle(ctx context.Context, arg ListFertigationEventsByFarmAndCropCycleParams) ([]Gr33nfertigationFertigationEvent, error)
 	ListInputBatchesByFarm(ctx context.Context, farmID int64) ([]Gr33nnaturalfarmingInputBatch, error)
-	// ============================================================
-	// Queries: gr33nnaturalfarming
-	// ============================================================
 	ListInputDefinitionsByFarm(ctx context.Context, farmID int64) ([]Gr33nnaturalfarmingInputDefinition, error)
 	ListLatestReadingsByFarm(ctx context.Context, farmID int64) ([]ListLatestReadingsByFarmRow, error)
 	ListProgramsByFarm(ctx context.Context, farmID int64) ([]Gr33nfertigationProgram, error)
@@ -181,6 +189,7 @@ type Querier interface {
 	UpdateScheduleActive(ctx context.Context, arg UpdateScheduleActiveParams) (Gr33ncoreSchedule, error)
 	UpdateTaskStatus(ctx context.Context, arg UpdateTaskStatusParams) (Gr33ncoreTask, error)
 	UpdateZone(ctx context.Context, arg UpdateZoneParams) (Gr33ncoreZone, error)
+	UserHasFarmAccess(ctx context.Context, arg UserHasFarmAccessParams) (*bool, error)
 }
 
 var _ Querier = (*Queries)(nil)

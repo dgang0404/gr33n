@@ -1303,6 +1303,10 @@ paths:
       security: [{ bearerAuth: [] }]
       parameters:
         - { $ref: "#/components/parameters/ID" }
+        - name: crop_cycle_id
+          in: query
+          description: When set, return only events linked to this crop cycle
+          schema: { type: integer, format: int64 }
       responses:
         "200":
           description: List of fertigation events
@@ -1438,6 +1442,23 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/CostSummary" }
+
+  /farms/{id}/costs/export:
+    get:
+      tags: [costs]
+      summary: Download farm cost transactions as CSV (no PII columns)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+        - name: format
+          in: query
+          schema: { type: string, enum: [csv], default: csv }
+      responses:
+        "200":
+          description: CSV file
+          content:
+            text/csv:
+              schema: { type: string, format: binary }
 
   /farms/{id}/costs:
     get:
@@ -2306,6 +2327,7 @@ components:
         program_id: { type: integer, nullable: true }
         reservoir_id: { type: integer, nullable: true }
         zone_id: { type: integer }
+        crop_cycle_id: { type: integer, nullable: true }
         applied_at: { type: string, format: date-time }
         growth_stage: { type: string, nullable: true }
         volume_applied_liters: { type: number }
@@ -2325,6 +2347,7 @@ components:
         program_id: { type: integer }
         reservoir_id: { type: integer }
         zone_id: { type: integer }
+        crop_cycle_id: { type: integer, description: Optional; must belong to the same farm and zone as the event }
         applied_at: { type: string, format: date-time }
         growth_stage: { type: string }
         volume_applied_liters: { type: number }

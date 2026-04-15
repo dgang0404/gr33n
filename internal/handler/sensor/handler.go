@@ -16,6 +16,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	db "gr33n-api/internal/db"
+	"gr33n-api/internal/farmauthz"
 	"gr33n-api/internal/httputil"
 )
 
@@ -77,6 +78,9 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid farm id")
 		return
 	}
+	if !farmauthz.RequireFarmMember(w, r, h.q, farmID) {
+		return
+	}
 	var body struct {
 		ZoneID                 *int64   `json:"zone_id"`
 		DeviceID               *int64   `json:"device_id"`
@@ -130,6 +134,18 @@ func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid sensor id")
+		return
+	}
+	s0, err := h.q.GetSensorByID(r.Context(), id)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			httputil.WriteError(w, http.StatusNotFound, "sensor not found")
+			return
+		}
+		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	if !farmauthz.RequireFarmMember(w, r, h.q, s0.FarmID) {
 		return
 	}
 	if err := h.q.SoftDeleteSensor(r.Context(), db.SoftDeleteSensorParams{

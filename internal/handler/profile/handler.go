@@ -12,6 +12,7 @@ import (
 
 	"gr33n-api/internal/authctx"
 	db "gr33n-api/internal/db"
+	"gr33n-api/internal/farmauthz"
 	"gr33n-api/internal/httputil"
 	"gr33n-api/internal/platform/commontypes"
 )
@@ -93,6 +94,9 @@ func (h *Handler) GetFarmMembers(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	q := db.New(h.pool)
+	if !farmauthz.RequireFarmMember(w, r, q, farmID) {
+		return
+	}
 	rows, err := q.GetFarmMembers(r.Context(), farmID)
 	if err != nil {
 		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
@@ -128,6 +132,9 @@ func (h *Handler) AddFarmMember(w http.ResponseWriter, r *http.Request) {
 	}
 
 	q := db.New(h.pool)
+	if !farmauthz.RequireFarmMember(w, r, q, farmID) {
+		return
+	}
 
 	authUser, err := q.GetAuthUserByEmail(r.Context(), &body.Email)
 	if err != nil {
@@ -192,6 +199,9 @@ func (h *Handler) UpdateMemberRole(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	q := db.New(h.pool)
+	if !farmauthz.RequireFarmMember(w, r, q, farmID) {
+		return
+	}
 	m, err := q.UpdateFarmMemberRole(r.Context(), db.UpdateFarmMemberRoleParams{
 		FarmID:     farmID,
 		UserID:     uid,
@@ -216,6 +226,9 @@ func (h *Handler) RemoveMember(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	q := db.New(h.pool)
+	if !farmauthz.RequireFarmMember(w, r, q, farmID) {
+		return
+	}
 	if err := q.RemoveFarmMember(r.Context(), db.RemoveFarmMemberParams{
 		FarmID: farmID,
 		UserID: uid,

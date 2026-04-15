@@ -14,6 +14,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	db "gr33n-api/internal/db"
+	"gr33n-api/internal/farmauthz"
 	"gr33n-api/internal/httputil"
 )
 
@@ -96,6 +97,9 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 	farmID, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid farm id")
+		return
+	}
+	if !farmauthz.RequireFarmMember(w, r, h.q, farmID) {
 		return
 	}
 	var body struct {
@@ -198,6 +202,9 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
+	if !farmauthz.RequireFarmMember(w, r, h.q, existing.FarmID) {
+		return
+	}
 	z, err := h.q.GetZoneByID(r.Context(), body.ZoneID)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -273,12 +280,16 @@ func (h *Handler) UpdateStage(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusBadRequest, "current_stage required")
 		return
 	}
-	if _, err := h.q.GetCropCycleByID(r.Context(), id); err != nil {
+	cc, err := h.q.GetCropCycleByID(r.Context(), id)
+	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			httputil.WriteError(w, http.StatusNotFound, "crop cycle not found")
 			return
 		}
 		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	if !farmauthz.RequireFarmMember(w, r, h.q, cc.FarmID) {
 		return
 	}
 	row, err := h.q.UpdateCropCycleStage(r.Context(), db.UpdateCropCycleStageParams{
@@ -299,12 +310,16 @@ func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid crop cycle id")
 		return
 	}
-	if _, err := h.q.GetCropCycleByID(r.Context(), id); err != nil {
+	cc, err := h.q.GetCropCycleByID(r.Context(), id)
+	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			httputil.WriteError(w, http.StatusNotFound, "crop cycle not found")
 			return
 		}
 		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	if !farmauthz.RequireFarmMember(w, r, h.q, cc.FarmID) {
 		return
 	}
 	if err := h.q.SoftDeleteCropCycle(r.Context(), id); err != nil {

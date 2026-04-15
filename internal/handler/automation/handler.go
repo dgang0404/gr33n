@@ -2,12 +2,15 @@ package automation
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	automationworker "gr33n-api/internal/automation"
 	db "gr33n-api/internal/db"
+	"gr33n-api/internal/farmauthz"
 	"gr33n-api/internal/httputil"
 )
 
@@ -53,6 +56,18 @@ func (h *Handler) UpdateScheduleActive(w http.ResponseWriter, r *http.Request) {
 	}
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+	sch, err := h.q.GetScheduleByID(r.Context(), id)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			httputil.WriteError(w, http.StatusNotFound, "schedule not found")
+			return
+		}
+		httputil.WriteError(w, http.StatusInternalServerError, "failed to load schedule")
+		return
+	}
+	if !farmauthz.RequireFarmMember(w, r, h.q, sch.FarmID) {
 		return
 	}
 	row, err := h.q.UpdateScheduleActive(r.Context(), db.UpdateScheduleActiveParams{

@@ -64,15 +64,15 @@ func (q *Queries) CreateEcTarget(ctx context.Context, arg CreateEcTargetParams) 
 
 const createFertigationEvent = `-- name: CreateFertigationEvent :one
 INSERT INTO gr33nfertigation.fertigation_events (
-    farm_id, program_id, reservoir_id, zone_id, applied_at,
+    farm_id, program_id, reservoir_id, zone_id, crop_cycle_id, applied_at,
     growth_stage, volume_applied_liters, run_duration_seconds,
     ec_before_mscm, ec_after_mscm, ph_before, ph_after,
     trigger_source, notes, metadata
 ) VALUES (
-    $1, $2, $3, $4, $5,
-    $6, $7, $8,
-    $9, $10, $11, $12,
-    $13, $14, $15
+    $1, $2, $3, $4, $5, $6,
+    $7, $8, $9,
+    $10, $11, $12, $13,
+    $14, $15, $16
 )
 RETURNING id, farm_id, program_id, reservoir_id, zone_id, actuator_id, mixing_event_id, crop_cycle_id, applied_at, growth_stage, volume_applied_liters, run_duration_seconds, ec_before_mscm, ec_after_mscm, ph_before, ph_after, runoff_ec_mscm, runoff_ph, trigger_source, triggered_by_rule_id, triggered_by_schedule_id, triggered_by_user_id, plant_response, notes, metadata, created_at
 `
@@ -82,6 +82,7 @@ type CreateFertigationEventParams struct {
 	ProgramID           *int64                                 `db:"program_id" json:"program_id"`
 	ReservoirID         *int64                                 `db:"reservoir_id" json:"reservoir_id"`
 	ZoneID              int64                                  `db:"zone_id" json:"zone_id"`
+	CropCycleID         *int64                                 `db:"crop_cycle_id" json:"crop_cycle_id"`
 	AppliedAt           time.Time                              `db:"applied_at" json:"applied_at"`
 	GrowthStage         NullGr33nfertigationGrowthStageEnum    `db:"growth_stage" json:"growth_stage"`
 	VolumeAppliedLiters pgtype.Numeric                         `db:"volume_applied_liters" json:"volume_applied_liters"`
@@ -101,6 +102,7 @@ func (q *Queries) CreateFertigationEvent(ctx context.Context, arg CreateFertigat
 		arg.ProgramID,
 		arg.ReservoirID,
 		arg.ZoneID,
+		arg.CropCycleID,
 		arg.AppliedAt,
 		arg.GrowthStage,
 		arg.VolumeAppliedLiters,
@@ -297,6 +299,73 @@ func (q *Queries) DeleteReservoir(ctx context.Context, id int64) error {
 	return err
 }
 
+const getFertigationProgramByID = `-- name: GetFertigationProgramByID :one
+SELECT id, farm_id, name, description, application_recipe_id, reservoir_id, target_zone_id, schedule_id, ec_target_id, volume_liters_per_sqm, total_volume_liters, dilution_ratio, run_duration_seconds, ec_trigger_low, ph_trigger_low, ph_trigger_high, is_active, metadata, created_at, updated_at, deleted_at FROM gr33nfertigation.programs
+WHERE id = $1 AND deleted_at IS NULL
+`
+
+func (q *Queries) GetFertigationProgramByID(ctx context.Context, id int64) (Gr33nfertigationProgram, error) {
+	row := q.db.QueryRow(ctx, getFertigationProgramByID, id)
+	var i Gr33nfertigationProgram
+	err := row.Scan(
+		&i.ID,
+		&i.FarmID,
+		&i.Name,
+		&i.Description,
+		&i.ApplicationRecipeID,
+		&i.ReservoirID,
+		&i.TargetZoneID,
+		&i.ScheduleID,
+		&i.EcTargetID,
+		&i.VolumeLitersPerSqm,
+		&i.TotalVolumeLiters,
+		&i.DilutionRatio,
+		&i.RunDurationSeconds,
+		&i.EcTriggerLow,
+		&i.PhTriggerLow,
+		&i.PhTriggerHigh,
+		&i.IsActive,
+		&i.Metadata,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.DeletedAt,
+	)
+	return i, err
+}
+
+const getFertigationReservoirByID = `-- name: GetFertigationReservoirByID :one
+SELECT id, farm_id, zone_id, name, description, capacity_liters, current_volume_liters, status, ec_sensor_id, ph_sensor_id, temp_sensor_id, water_level_sensor_id, delivery_actuator_id, last_ec_mscm, last_ph, last_reading_time, metadata, created_at, updated_at, deleted_at FROM gr33nfertigation.reservoirs
+WHERE id = $1 AND deleted_at IS NULL
+`
+
+func (q *Queries) GetFertigationReservoirByID(ctx context.Context, id int64) (Gr33nfertigationReservoir, error) {
+	row := q.db.QueryRow(ctx, getFertigationReservoirByID, id)
+	var i Gr33nfertigationReservoir
+	err := row.Scan(
+		&i.ID,
+		&i.FarmID,
+		&i.ZoneID,
+		&i.Name,
+		&i.Description,
+		&i.CapacityLiters,
+		&i.CurrentVolumeLiters,
+		&i.Status,
+		&i.EcSensorID,
+		&i.PhSensorID,
+		&i.TempSensorID,
+		&i.WaterLevelSensorID,
+		&i.DeliveryActuatorID,
+		&i.LastEcMscm,
+		&i.LastPh,
+		&i.LastReadingTime,
+		&i.Metadata,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.DeletedAt,
+	)
+	return i, err
+}
+
 const listEcTargetsByFarm = `-- name: ListEcTargetsByFarm :many
 SELECT id, farm_id, zone_id, growth_stage, ec_min_mscm, ec_max_mscm, ph_min, ph_max, notes, rationale, created_at, updated_at FROM gr33nfertigation.ec_targets
 WHERE farm_id = $1
@@ -344,6 +413,64 @@ ORDER BY applied_at DESC
 
 func (q *Queries) ListFertigationEventsByFarm(ctx context.Context, farmID int64) ([]Gr33nfertigationFertigationEvent, error) {
 	rows, err := q.db.Query(ctx, listFertigationEventsByFarm, farmID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Gr33nfertigationFertigationEvent{}
+	for rows.Next() {
+		var i Gr33nfertigationFertigationEvent
+		if err := rows.Scan(
+			&i.ID,
+			&i.FarmID,
+			&i.ProgramID,
+			&i.ReservoirID,
+			&i.ZoneID,
+			&i.ActuatorID,
+			&i.MixingEventID,
+			&i.CropCycleID,
+			&i.AppliedAt,
+			&i.GrowthStage,
+			&i.VolumeAppliedLiters,
+			&i.RunDurationSeconds,
+			&i.EcBeforeMscm,
+			&i.EcAfterMscm,
+			&i.PhBefore,
+			&i.PhAfter,
+			&i.RunoffEcMscm,
+			&i.RunoffPh,
+			&i.TriggerSource,
+			&i.TriggeredByRuleID,
+			&i.TriggeredByScheduleID,
+			&i.TriggeredByUserID,
+			&i.PlantResponse,
+			&i.Notes,
+			&i.Metadata,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listFertigationEventsByFarmAndCropCycle = `-- name: ListFertigationEventsByFarmAndCropCycle :many
+SELECT id, farm_id, program_id, reservoir_id, zone_id, actuator_id, mixing_event_id, crop_cycle_id, applied_at, growth_stage, volume_applied_liters, run_duration_seconds, ec_before_mscm, ec_after_mscm, ph_before, ph_after, runoff_ec_mscm, runoff_ph, trigger_source, triggered_by_rule_id, triggered_by_schedule_id, triggered_by_user_id, plant_response, notes, metadata, created_at FROM gr33nfertigation.fertigation_events
+WHERE farm_id = $1 AND crop_cycle_id = $2
+ORDER BY applied_at DESC
+`
+
+type ListFertigationEventsByFarmAndCropCycleParams struct {
+	FarmID      int64  `db:"farm_id" json:"farm_id"`
+	CropCycleID *int64 `db:"crop_cycle_id" json:"crop_cycle_id"`
+}
+
+func (q *Queries) ListFertigationEventsByFarmAndCropCycle(ctx context.Context, arg ListFertigationEventsByFarmAndCropCycleParams) ([]Gr33nfertigationFertigationEvent, error) {
+	rows, err := q.db.Query(ctx, listFertigationEventsByFarmAndCropCycle, arg.FarmID, arg.CropCycleID)
 	if err != nil {
 		return nil, err
 	}

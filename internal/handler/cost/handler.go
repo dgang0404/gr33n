@@ -1,6 +1,7 @@
 package cost
 
 import (
+	"encoding/csv"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -14,6 +15,7 @@ import (
 
 	"gr33n-api/internal/authctx"
 	db "gr33n-api/internal/db"
+	"gr33n-api/internal/farmauthz"
 	"gr33n-api/internal/httputil"
 	"gr33n-api/internal/platform/commontypes"
 )
@@ -55,6 +57,9 @@ func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 	farmID, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid farm id")
+		return
+	}
+	if !farmauthz.RequireFarmMember(w, r, h.q, farmID) {
 		return
 	}
 	limit := int32(50)
@@ -100,6 +105,9 @@ func (h *Handler) Summary(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid farm id")
 		return
 	}
+	if !farmauthz.RequireFarmMember(w, r, h.q, farmID) {
+		return
+	}
 	row, err := h.q.GetCostSummaryByFarm(r.Context(), farmID)
 	if err != nil {
 		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
@@ -112,11 +120,75 @@ func (h *Handler) Summary(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// Export — GET /farms/{id}/costs/export?format=csv
+func (h *Handler) Export(w http.ResponseWriter, r *http.Request) {
+	farmID, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	if err != nil {
+		httputil.WriteError(w, http.StatusBadRequest, "invalid farm id")
+		return
+	}
+	if !farmauthz.RequireFarmMember(w, r, h.q, farmID) {
+		return
+	}
+	format := strings.ToLower(strings.TrimSpace(r.URL.Query().Get("format")))
+	if format != "" && format != "csv" {
+		httputil.WriteError(w, http.StatusBadRequest, "format must be csv")
+		return
+	}
+	rows, err := h.q.ListCostTransactionsByFarmExport(r.Context(), farmID)
+	if err != nil {
+		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	w.Header().Set("Content-Type", "text/csv; charset=utf-8")
+	w.Header().Set("Content-Disposition", `attachment; filename="farm-costs-`+strconv.FormatInt(farmID, 10)+`.csv"`)
+	cw := csv.NewWriter(w)
+	_ = cw.Write([]string{"date", "category", "amount", "currency", "is_income", "description"})
+	for _, row := range rows {
+		desc := ""
+		if row.Description != nil {
+			desc = *row.Description
+		}
+		sub := ""
+		if row.Subcategory != nil {
+			sub = *row.Subcategory
+		}
+		cat := string(row.Category)
+		if sub != "" {
+			cat = cat + " / " + sub
+		}
+		amt := ""
+		if f, err := row.Amount.Float64Value(); err == nil && f.Valid {
+			amt = strconv.FormatFloat(f.Float64, 'f', -1, 64)
+		}
+		dateStr := ""
+		if row.TransactionDate.Valid {
+			dateStr = row.TransactionDate.Time.Format("2006-01-02")
+		}
+		_ = cw.Write([]string{
+			dateStr,
+			cat,
+			amt,
+			row.Currency,
+			strconv.FormatBool(row.IsIncome),
+			desc,
+		})
+	}
+	cw.Flush()
+	if err := cw.Error(); err != nil {
+		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+}
+
 // Create — POST /farms/{id}/costs
 func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 	farmID, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid farm id")
+		return
+	}
+	if !farmauthz.RequireFarmMember(w, r, h.q, farmID) {
 		return
 	}
 	var body struct {
@@ -193,12 +265,16 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid body")
 		return
 	}
-	if _, err := h.q.GetCostTransactionByID(r.Context(), id); err != nil {
+	existing, err := h.q.GetCostTransactionByID(r.Context(), id)
+	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			httputil.WriteError(w, http.StatusNotFound, "transaction not found")
 			return
 		}
 		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	if !farmauthz.RequireFarmMember(w, r, h.q, existing.FarmID) {
 		return
 	}
 	td, err := parseDate(body.TransactionDate)
@@ -248,12 +324,16 @@ func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid cost id")
 		return
 	}
-	if _, err := h.q.GetCostTransactionByID(r.Context(), id); err != nil {
+	existing, err := h.q.GetCostTransactionByID(r.Context(), id)
+	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			httputil.WriteError(w, http.StatusNotFound, "transaction not found")
 			return
 		}
 		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	if !farmauthz.RequireFarmMember(w, r, h.q, existing.FarmID) {
 		return
 	}
 	if err := h.q.DeleteCostTransaction(r.Context(), id); err != nil {

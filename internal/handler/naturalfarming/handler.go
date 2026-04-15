@@ -2,13 +2,16 @@ package naturalfarming
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"strconv"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	db "gr33n-api/internal/db"
+	"gr33n-api/internal/farmauthz"
 	"gr33n-api/internal/httputil"
 )
 
@@ -71,6 +74,9 @@ func (h *Handler) CreateInputDefinition(w http.ResponseWriter, r *http.Request) 
 		httputil.WriteError(w, http.StatusBadRequest, "invalid farm id")
 		return
 	}
+	if !farmauthz.RequireFarmMember(w, r, h.q, farmID) {
+		return
+	}
 	var req struct {
 		Name               string  `json:"name"`
 		Category           string  `json:"category"`
@@ -124,6 +130,18 @@ func (h *Handler) UpdateInputDefinition(w http.ResponseWriter, r *http.Request) 
 		httputil.WriteError(w, http.StatusBadRequest, "invalid request body")
 		return
 	}
+	def, err := h.q.GetInputDefinitionByID(r.Context(), id)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			httputil.WriteError(w, http.StatusNotFound, "input definition not found")
+			return
+		}
+		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	if !farmauthz.RequireFarmMember(w, r, h.q, def.FarmID) {
+		return
+	}
 	row, err := h.q.UpdateInputDefinition(r.Context(), db.UpdateInputDefinitionParams{
 		ID:                 id,
 		Name:               req.Name,
@@ -149,6 +167,18 @@ func (h *Handler) DeleteInputDefinition(w http.ResponseWriter, r *http.Request) 
 		httputil.WriteError(w, http.StatusBadRequest, "invalid input definition id")
 		return
 	}
+	def, err := h.q.GetInputDefinitionByID(r.Context(), id)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			httputil.WriteError(w, http.StatusNotFound, "input definition not found")
+			return
+		}
+		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	if !farmauthz.RequireFarmMember(w, r, h.q, def.FarmID) {
+		return
+	}
 	if err := h.q.SoftDeleteInputDefinition(r.Context(), db.SoftDeleteInputDefinitionParams{
 		ID:              id,
 		UpdatedByUserID: pgtype.UUID{},
@@ -164,6 +194,9 @@ func (h *Handler) CreateInputBatch(w http.ResponseWriter, r *http.Request) {
 	farmID, err := farmIDFromPath(r)
 	if err != nil {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid farm id")
+		return
+	}
+	if !farmauthz.RequireFarmMember(w, r, h.q, farmID) {
 		return
 	}
 	var params db.CreateInputBatchParams
@@ -193,6 +226,18 @@ func (h *Handler) UpdateInputBatch(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	params.ID = id
+	b0, err := h.q.GetInputBatchByID(r.Context(), id)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			httputil.WriteError(w, http.StatusNotFound, "batch not found")
+			return
+		}
+		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	if !farmauthz.RequireFarmMember(w, r, h.q, b0.FarmID) {
+		return
+	}
 	row, err := h.q.UpdateInputBatch(r.Context(), params)
 	if err != nil {
 		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
@@ -206,6 +251,18 @@ func (h *Handler) DeleteInputBatch(w http.ResponseWriter, r *http.Request) {
 	id, err := resourceIDFromPath(r)
 	if err != nil {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid batch id")
+		return
+	}
+	b0, err := h.q.GetInputBatchByID(r.Context(), id)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			httputil.WriteError(w, http.StatusNotFound, "batch not found")
+			return
+		}
+		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	if !farmauthz.RequireFarmMember(w, r, h.q, b0.FarmID) {
 		return
 	}
 	if err := h.q.SoftDeleteInputBatch(r.Context(), db.SoftDeleteInputBatchParams{

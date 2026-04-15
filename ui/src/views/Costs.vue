@@ -1,8 +1,14 @@
 <template>
   <div class="p-6 space-y-6">
-    <div class="flex items-center justify-between">
+    <div class="flex items-center justify-between gap-3">
       <h1 class="text-xl font-semibold text-white">Costs</h1>
-      <button type="button" @click="reload" class="text-xs text-zinc-400 hover:text-zinc-200">Refresh</button>
+      <div class="flex items-center gap-2">
+        <button type="button" @click="downloadCsv" :disabled="!farmContext.farmId"
+          class="text-xs px-3 py-1.5 rounded-lg border border-zinc-600 text-zinc-300 hover:border-zinc-500 disabled:opacity-40">
+          Export CSV
+        </button>
+        <button type="button" @click="reload" class="text-xs text-zinc-400 hover:text-zinc-200">Refresh</button>
+      </div>
     </div>
 
     <div v-if="loading" class="text-zinc-400 text-sm">Loading…</div>
@@ -108,6 +114,7 @@
 
 <script setup>
 import { onMounted, reactive, ref } from 'vue'
+import api from '../api'
 import { useFarmStore } from '../stores/farm'
 import { useFarmContextStore } from '../stores/farmContext'
 
@@ -160,6 +167,25 @@ function isoDate(d) {
 
 function formatCat(c) {
   return c ? c.replace(/_/g, ' ') : ''
+}
+
+async function downloadCsv() {
+  const fid = farmContext.farmId
+  if (!fid) return
+  try {
+    const r = await api.get(`/farms/${fid}/costs/export`, {
+      params: { format: 'csv' },
+      responseType: 'blob',
+    })
+    const url = URL.createObjectURL(r.data)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `farm-${fid}-costs.csv`
+    a.click()
+    URL.revokeObjectURL(url)
+  } catch (e) {
+    formError.value = e.response?.data?.error || e.message || 'Export failed'
+  }
 }
 
 async function reload() {

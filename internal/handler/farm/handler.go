@@ -11,6 +11,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	db "gr33n-api/internal/db"
+	"gr33n-api/internal/farmauthz"
 	"gr33n-api/internal/httputil"
 )
 
@@ -100,6 +101,9 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	params.ID = id
+	if !farmauthz.RequireFarmMember(w, r, h.q, id) {
+		return
+	}
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()
 
@@ -122,6 +126,9 @@ func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
 		UpdatedByUserID uuid.UUID `json:"updated_by_user_id"`
 	}
 	json.NewDecoder(r.Body).Decode(&body)
+	if !farmauthz.RequireFarmMember(w, r, h.q, id) {
+		return
+	}
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()
 

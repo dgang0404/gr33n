@@ -145,6 +145,7 @@ func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationwo
 	mux.Handle("DELETE /crop-cycles/{id}", jwt(http.HandlerFunc(cropcycle.Delete)))
 
 	mux.Handle("GET /farms/{id}/costs/summary", jwt(http.HandlerFunc(cost.Summary)))
+	mux.Handle("GET /farms/{id}/costs/export", jwt(http.HandlerFunc(cost.Export)))
 	mux.Handle("GET /farms/{id}/costs", jwt(http.HandlerFunc(cost.List)))
 	mux.Handle("POST /farms/{id}/costs", jwt(http.HandlerFunc(cost.Create)))
 	mux.Handle("PUT /costs/{id}", jwt(http.HandlerFunc(cost.Update)))

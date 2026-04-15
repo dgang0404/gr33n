@@ -15,6 +15,13 @@ WHERE farm_id = $1
 ORDER BY transaction_date DESC, id DESC
 LIMIT $2 OFFSET $3;
 
+-- name: ListCostTransactionsByFarmExport :many
+SELECT id, farm_id, transaction_date, category, subcategory, amount, currency,
+ description, is_income
+FROM gr33ncore.cost_transactions
+WHERE farm_id = $1
+ORDER BY transaction_date ASC, id ASC;
+
 -- name: GetCostSummaryByFarm :one
 SELECT
     COALESCE(SUM(CASE WHEN is_income THEN amount ELSE 0 END), 0)::numeric AS total_income,

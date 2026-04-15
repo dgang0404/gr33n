@@ -80,6 +80,37 @@ func (q *Queries) CreateAlert(ctx context.Context, arg CreateAlertParams) (Gr33n
 	return i, err
 }
 
+const getAlertNotificationByID = `-- name: GetAlertNotificationByID :one
+SELECT id, farm_id, recipient_user_id, notification_template_id, triggering_event_source_type, triggering_event_source_id, severity, subject_rendered, message_text_rendered, message_html_rendered, delivery_attempts, status, is_read, read_at, is_acknowledged, acknowledged_at, acknowledged_by_user_id, created_at, scheduled_send_at FROM gr33ncore.alerts_notifications WHERE id = $1
+`
+
+func (q *Queries) GetAlertNotificationByID(ctx context.Context, id int64) (Gr33ncoreAlertsNotification, error) {
+	row := q.db.QueryRow(ctx, getAlertNotificationByID, id)
+	var i Gr33ncoreAlertsNotification
+	err := row.Scan(
+		&i.ID,
+		&i.FarmID,
+		&i.RecipientUserID,
+		&i.NotificationTemplateID,
+		&i.TriggeringEventSourceType,
+		&i.TriggeringEventSourceID,
+		&i.Severity,
+		&i.SubjectRendered,
+		&i.MessageTextRendered,
+		&i.MessageHtmlRendered,
+		&i.DeliveryAttempts,
+		&i.Status,
+		&i.IsRead,
+		&i.ReadAt,
+		&i.IsAcknowledged,
+		&i.AcknowledgedAt,
+		&i.AcknowledgedByUserID,
+		&i.CreatedAt,
+		&i.ScheduledSendAt,
+	)
+	return i, err
+}
+
 const getRecentUnacknowledgedAlertForSource = `-- name: GetRecentUnacknowledgedAlertForSource :one
 SELECT id FROM gr33ncore.alerts_notifications
 WHERE farm_id = $1

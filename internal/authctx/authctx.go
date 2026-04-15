@@ -9,8 +9,9 @@ import (
 type ctxKey string
 
 const (
-	userIDKey ctxKey = "user_id"
-	emailKey  ctxKey = "email"
+	userIDKey        ctxKey = "user_id"
+	emailKey         ctxKey = "email"
+	farmAuthzSkipKey ctxKey = "farm_authz_skip"
 )
 
 func WithUserID(ctx context.Context, uid uuid.UUID) context.Context {
@@ -29,4 +30,14 @@ func UserID(ctx context.Context) (uuid.UUID, bool) {
 func Email(ctx context.Context) string {
 	s, _ := ctx.Value(emailKey).(string)
 	return s
+}
+
+// WithFarmAuthzSkip marks the request as exempt from farm membership checks (AUTH_MODE=dev bypass only).
+func WithFarmAuthzSkip(ctx context.Context, skip bool) context.Context {
+	return context.WithValue(ctx, farmAuthzSkipKey, skip)
+}
+
+func FarmAuthzSkip(ctx context.Context) bool {
+	v, _ := ctx.Value(farmAuthzSkipKey).(bool)
+	return v
 }

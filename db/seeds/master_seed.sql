@@ -22,6 +22,11 @@ VALUES (
     'Dev Farmer', 'dev@gr33n.local', 'farm_manager'
 ) ON CONFLICT (user_id) DO NOTHING;
 
+-- bcrypt hash for password: devpassword (for local / smoke JWT login)
+UPDATE auth.users
+SET password_hash = convert_to('$2a$10$OTVuyp0CSrHuDkZ2F8ZIHe2rF56HUYyDp6haKYuwKaDBNQMPIfJe.', 'UTF8')
+WHERE id = '00000000-0000-0000-0000-000000000001';
+
 INSERT INTO gr33ncore.farms (
     id, name, description, owner_user_id,
     timezone, currency, scale_tier, operational_status
@@ -31,6 +36,15 @@ INSERT INTO gr33ncore.farms (
     '00000000-0000-0000-0000-000000000001',
     'America/New_York', 'USD', 'small', 'active'
 ) ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO gr33ncore.farm_memberships (farm_id, user_id, role_in_farm, permissions, joined_at)
+VALUES (
+    1,
+    '00000000-0000-0000-0000-000000000001',
+    'owner',
+    '{}'::jsonb,
+    NOW()
+) ON CONFLICT (farm_id, user_id) DO NOTHING;
 
 INSERT INTO gr33ncore.zones (farm_id, name, description, zone_type)
 VALUES

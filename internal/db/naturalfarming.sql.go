@@ -146,6 +146,78 @@ func (q *Queries) CreateInputDefinition(ctx context.Context, arg CreateInputDefi
 	return i, err
 }
 
+const getInputBatchByID = `-- name: GetInputBatchByID :one
+SELECT id, farm_id, input_definition_id, batch_identifier, creation_start_date, creation_end_date, expected_ready_date, actual_ready_date, quantity_produced, quantity_unit_id, current_quantity_remaining, status, storage_location, shelf_life_days, ph_value, ec_value_ms_cm, temperature_during_making, ingredients_used, procedure_followed, observations_notes, made_by_user_id, related_task_id, file_attachment_id, created_at, updated_at, updated_by_user_id, deleted_at FROM gr33nnaturalfarming.input_batches
+WHERE id = $1 AND deleted_at IS NULL
+`
+
+func (q *Queries) GetInputBatchByID(ctx context.Context, id int64) (Gr33nnaturalfarmingInputBatch, error) {
+	row := q.db.QueryRow(ctx, getInputBatchByID, id)
+	var i Gr33nnaturalfarmingInputBatch
+	err := row.Scan(
+		&i.ID,
+		&i.FarmID,
+		&i.InputDefinitionID,
+		&i.BatchIdentifier,
+		&i.CreationStartDate,
+		&i.CreationEndDate,
+		&i.ExpectedReadyDate,
+		&i.ActualReadyDate,
+		&i.QuantityProduced,
+		&i.QuantityUnitID,
+		&i.CurrentQuantityRemaining,
+		&i.Status,
+		&i.StorageLocation,
+		&i.ShelfLifeDays,
+		&i.PhValue,
+		&i.EcValueMsCm,
+		&i.TemperatureDuringMaking,
+		&i.IngredientsUsed,
+		&i.ProcedureFollowed,
+		&i.ObservationsNotes,
+		&i.MadeByUserID,
+		&i.RelatedTaskID,
+		&i.FileAttachmentID,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.UpdatedByUserID,
+		&i.DeletedAt,
+	)
+	return i, err
+}
+
+const getInputDefinitionByID = `-- name: GetInputDefinitionByID :one
+
+SELECT id, farm_id, name, category, description, typical_ingredients, preparation_summary, storage_guidelines, safety_precautions, reference_source, file_attachment_id, created_at, updated_at, updated_by_user_id, deleted_at FROM gr33nnaturalfarming.input_definitions
+WHERE id = $1 AND deleted_at IS NULL
+`
+
+// ============================================================
+// Queries: gr33nnaturalfarming
+// ============================================================
+func (q *Queries) GetInputDefinitionByID(ctx context.Context, id int64) (Gr33nnaturalfarmingInputDefinition, error) {
+	row := q.db.QueryRow(ctx, getInputDefinitionByID, id)
+	var i Gr33nnaturalfarmingInputDefinition
+	err := row.Scan(
+		&i.ID,
+		&i.FarmID,
+		&i.Name,
+		&i.Category,
+		&i.Description,
+		&i.TypicalIngredients,
+		&i.PreparationSummary,
+		&i.StorageGuidelines,
+		&i.SafetyPrecautions,
+		&i.ReferenceSource,
+		&i.FileAttachmentID,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.UpdatedByUserID,
+		&i.DeletedAt,
+	)
+	return i, err
+}
+
 const listInputBatchesByFarm = `-- name: ListInputBatchesByFarm :many
 SELECT id, farm_id, input_definition_id, batch_identifier, creation_start_date, creation_end_date, expected_ready_date, actual_ready_date, quantity_produced, quantity_unit_id, current_quantity_remaining, status, storage_location, shelf_life_days, ph_value, ec_value_ms_cm, temperature_during_making, ingredients_used, procedure_followed, observations_notes, made_by_user_id, related_task_id, file_attachment_id, created_at, updated_at, updated_by_user_id, deleted_at FROM gr33nnaturalfarming.input_batches
 WHERE farm_id = $1 AND deleted_at IS NULL
@@ -201,15 +273,11 @@ func (q *Queries) ListInputBatchesByFarm(ctx context.Context, farmID int64) ([]G
 }
 
 const listInputDefinitionsByFarm = `-- name: ListInputDefinitionsByFarm :many
-
 SELECT id, farm_id, name, category, description, typical_ingredients, preparation_summary, storage_guidelines, safety_precautions, reference_source, file_attachment_id, created_at, updated_at, updated_by_user_id, deleted_at FROM gr33nnaturalfarming.input_definitions
 WHERE farm_id = $1 AND deleted_at IS NULL
 ORDER BY name ASC
 `
 
-// ============================================================
-// Queries: gr33nnaturalfarming
-// ============================================================
 func (q *Queries) ListInputDefinitionsByFarm(ctx context.Context, farmID int64) ([]Gr33nnaturalfarmingInputDefinition, error) {
 	rows, err := q.db.Query(ctx, listInputDefinitionsByFarm, farmID)
 	if err != nil {

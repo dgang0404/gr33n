@@ -2,14 +2,17 @@ package fertigation
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"strconv"
 	"time"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	db "gr33n-api/internal/db"
+	"gr33n-api/internal/farmauthz"
 	"gr33n-api/internal/httputil"
 )
 
@@ -40,6 +43,18 @@ func (h *Handler) UpdateReservoir(w http.ResponseWriter, r *http.Request) {
 	id, err := resourceIDFromPath(r)
 	if err != nil {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid reservoir id")
+		return
+	}
+	res, err := h.q.GetFertigationReservoirByID(r.Context(), id)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			httputil.WriteError(w, http.StatusNotFound, "reservoir not found")
+			return
+		}
+		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	if !farmauthz.RequireFarmMember(w, r, h.q, res.FarmID) {
 		return
 	}
 	var req struct {
@@ -85,6 +100,18 @@ func (h *Handler) DeleteReservoir(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid reservoir id")
 		return
 	}
+	res, err := h.q.GetFertigationReservoirByID(r.Context(), id)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			httputil.WriteError(w, http.StatusNotFound, "reservoir not found")
+			return
+		}
+		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	if !farmauthz.RequireFarmMember(w, r, h.q, res.FarmID) {
+		return
+	}
 	if err := h.q.DeleteReservoir(r.Context(), id); err != nil {
 		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
 		return
@@ -97,6 +124,18 @@ func (h *Handler) UpdateProgram(w http.ResponseWriter, r *http.Request) {
 	id, err := resourceIDFromPath(r)
 	if err != nil {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid program id")
+		return
+	}
+	prog, err := h.q.GetFertigationProgramByID(r.Context(), id)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			httputil.WriteError(w, http.StatusNotFound, "program not found")
+			return
+		}
+		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	if !farmauthz.RequireFarmMember(w, r, h.q, prog.FarmID) {
 		return
 	}
 	var req struct {
@@ -141,6 +180,18 @@ func (h *Handler) DeleteProgram(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid program id")
 		return
 	}
+	prog, err := h.q.GetFertigationProgramByID(r.Context(), id)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			httputil.WriteError(w, http.StatusNotFound, "program not found")
+			return
+		}
+		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	if !farmauthz.RequireFarmMember(w, r, h.q, prog.FarmID) {
+		return
+	}
 	if err := h.q.DeleteProgram(r.Context(), id); err != nil {
 		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
 		return
@@ -171,6 +222,9 @@ func (h *Handler) CreateReservoir(w http.ResponseWriter, r *http.Request) {
 	farmID, err := farmIDFromPath(r)
 	if err != nil {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid farm id")
+		return
+	}
+	if !farmauthz.RequireFarmMember(w, r, h.q, farmID) {
 		return
 	}
 
@@ -237,6 +291,9 @@ func (h *Handler) CreateEcTarget(w http.ResponseWriter, r *http.Request) {
 	farmID, err := farmIDFromPath(r)
 	if err != nil {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid farm id")
+		return
+	}
+	if !farmauthz.RequireFarmMember(w, r, h.q, farmID) {
 		return
 	}
 
@@ -319,6 +376,9 @@ func (h *Handler) CreateProgram(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid farm id")
 		return
 	}
+	if !farmauthz.RequireFarmMember(w, r, h.q, farmID) {
+		return
+	}
 
 	var req struct {
 		Name                string  `json:"name"`
@@ -391,7 +451,21 @@ func (h *Handler) ListEventsByFarm(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid farm id")
 		return
 	}
-	rows, err := h.q.ListFertigationEventsByFarm(r.Context(), farmID)
+	var rows []db.Gr33nfertigationFertigationEvent
+	if v := r.URL.Query().Get("crop_cycle_id"); v != "" {
+		ccID, err := strconv.ParseInt(v, 10, 64)
+		if err != nil || ccID < 1 {
+			httputil.WriteError(w, http.StatusBadRequest, "invalid crop_cycle_id")
+			return
+		}
+		cc := ccID
+		rows, err = h.q.ListFertigationEventsByFarmAndCropCycle(r.Context(), db.ListFertigationEventsByFarmAndCropCycleParams{
+			FarmID:      farmID,
+			CropCycleID: &cc,
+		})
+	} else {
+		rows, err = h.q.ListFertigationEventsByFarm(r.Context(), farmID)
+	}
 	if err != nil {
 		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
 		return
@@ -409,11 +483,15 @@ func (h *Handler) CreateEvent(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid farm id")
 		return
 	}
+	if !farmauthz.RequireFarmMember(w, r, h.q, farmID) {
+		return
+	}
 
 	var req struct {
 		ProgramID           *int64             `json:"program_id"`
 		ReservoirID         *int64             `json:"reservoir_id"`
 		ZoneID              int64              `json:"zone_id"`
+		CropCycleID         *int64             `json:"crop_cycle_id"`
 		AppliedAt           time.Time          `json:"applied_at"`
 		GrowthStage         *string            `json:"growth_stage"`
 		VolumeAppliedLiters float64            `json:"volume_applied_liters"`
@@ -429,6 +507,36 @@ func (h *Handler) CreateEvent(w http.ResponseWriter, r *http.Request) {
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid request body")
 		return
+	}
+
+	z, err := h.q.GetZoneByID(r.Context(), req.ZoneID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			httputil.WriteError(w, http.StatusBadRequest, "zone not found")
+			return
+		}
+		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	if z.FarmID != farmID {
+		httputil.WriteError(w, http.StatusBadRequest, "zone does not belong to this farm")
+		return
+	}
+
+	if req.CropCycleID != nil {
+		cc, err := h.q.GetCropCycleByID(r.Context(), *req.CropCycleID)
+		if err != nil {
+			if errors.Is(err, pgx.ErrNoRows) {
+				httputil.WriteError(w, http.StatusBadRequest, "crop cycle not found")
+				return
+			}
+			httputil.WriteError(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+		if cc.FarmID != farmID || cc.ZoneID != req.ZoneID {
+			httputil.WriteError(w, http.StatusBadRequest, "crop cycle must belong to this farm and zone")
+			return
+		}
 	}
 
 	volumeApplied, err := numericFromFloat64(req.VolumeAppliedLiters)
@@ -492,6 +600,7 @@ func (h *Handler) CreateEvent(w http.ResponseWriter, r *http.Request) {
 		ProgramID:           req.ProgramID,
 		ReservoirID:         req.ReservoirID,
 		ZoneID:              req.ZoneID,
+		CropCycleID:         req.CropCycleID,
 		AppliedAt:           appliedAt,
 		GrowthStage:         growthStage,
 		VolumeAppliedLiters: volumeApplied,

@@ -50,19 +50,32 @@ SELECT * FROM gr33nfertigation.fertigation_events
 WHERE farm_id = $1
 ORDER BY applied_at DESC;
 
+-- name: ListFertigationEventsByFarmAndCropCycle :many
+SELECT * FROM gr33nfertigation.fertigation_events
+WHERE farm_id = $1 AND crop_cycle_id = $2
+ORDER BY applied_at DESC;
+
 -- name: CreateFertigationEvent :one
 INSERT INTO gr33nfertigation.fertigation_events (
-    farm_id, program_id, reservoir_id, zone_id, applied_at,
+    farm_id, program_id, reservoir_id, zone_id, crop_cycle_id, applied_at,
     growth_stage, volume_applied_liters, run_duration_seconds,
     ec_before_mscm, ec_after_mscm, ph_before, ph_after,
     trigger_source, notes, metadata
 ) VALUES (
-    $1, $2, $3, $4, $5,
-    $6, $7, $8,
-    $9, $10, $11, $12,
-    $13, $14, $15
+    $1, $2, $3, $4, $5, $6,
+    $7, $8, $9,
+    $10, $11, $12, $13,
+    $14, $15, $16
 )
 RETURNING *;
+
+-- name: GetFertigationReservoirByID :one
+SELECT * FROM gr33nfertigation.reservoirs
+WHERE id = $1 AND deleted_at IS NULL;
+
+-- name: GetFertigationProgramByID :one
+SELECT * FROM gr33nfertigation.programs
+WHERE id = $1 AND deleted_at IS NULL;
 
 -- name: UpdateReservoir :one
 UPDATE gr33nfertigation.reservoirs

@@ -39,6 +39,18 @@ SELECT * FROM gr33ncore.farms
 WHERE deleted_at IS NULL
 ORDER BY name ASC;
 
+-- name: UserHasFarmAccess :one
+SELECT (
+ EXISTS (
+        SELECT 1 FROM gr33ncore.farm_memberships m
+        WHERE m.farm_id = $1 AND m.user_id = $2
+    )
+    OR EXISTS (
+        SELECT 1 FROM gr33ncore.farms f
+        WHERE f.id = $1 AND f.owner_user_id = $2 AND f.deleted_at IS NULL
+    )
+) AS user_has_farm_access;
+
 -- name: SoftDeleteFarm :exec
 UPDATE gr33ncore.farms
 SET deleted_at = NOW(), updated_at = NOW(), updated_by_user_id = $2

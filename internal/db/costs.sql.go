@@ -179,6 +179,56 @@ func (q *Queries) ListCostTransactionsByFarm(ctx context.Context, arg ListCostTr
 	return items, nil
 }
 
+const listCostTransactionsByFarmExport = `-- name: ListCostTransactionsByFarmExport :many
+SELECT id, farm_id, transaction_date, category, subcategory, amount, currency,
+ description, is_income
+FROM gr33ncore.cost_transactions
+WHERE farm_id = $1
+ORDER BY transaction_date ASC, id ASC
+`
+
+type ListCostTransactionsByFarmExportRow struct {
+	ID              int64                        `db:"id" json:"id"`
+	FarmID          int64                        `db:"farm_id" json:"farm_id"`
+	TransactionDate pgtype.Date                  `db:"transaction_date" json:"transaction_date"`
+	Category        commontypes.CostCategoryEnum `db:"category" json:"category"`
+	Subcategory     *string                      `db:"subcategory" json:"subcategory"`
+	Amount          pgtype.Numeric               `db:"amount" json:"amount"`
+	Currency        string                       `db:"currency" json:"currency"`
+	Description     *string                      `db:"description" json:"description"`
+	IsIncome        bool                         `db:"is_income" json:"is_income"`
+}
+
+func (q *Queries) ListCostTransactionsByFarmExport(ctx context.Context, farmID int64) ([]ListCostTransactionsByFarmExportRow, error) {
+	rows, err := q.db.Query(ctx, listCostTransactionsByFarmExport, farmID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListCostTransactionsByFarmExportRow{}
+	for rows.Next() {
+		var i ListCostTransactionsByFarmExportRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.FarmID,
+			&i.TransactionDate,
+			&i.Category,
+			&i.Subcategory,
+			&i.Amount,
+			&i.Currency,
+			&i.Description,
+			&i.IsIncome,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const updateCostTransaction = `-- name: UpdateCostTransaction :one
 UPDATE gr33ncore.cost_transactions SET
     transaction_date = $2,

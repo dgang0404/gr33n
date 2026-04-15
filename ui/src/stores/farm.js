@@ -142,8 +142,10 @@ export const useFarmStore = defineStore('farm', {
       return Array.isArray(r.data) ? r.data : []
     },
 
-    async loadFertigationEvents(farmId) {
-      const r = await api.get(`/farms/${farmId}/fertigation/events`)
+    async loadFertigationEvents(farmId, { cropCycleId } = {}) {
+      const params = {}
+      if (cropCycleId != null && cropCycleId !== '') params.crop_cycle_id = cropCycleId
+      const r = await api.get(`/farms/${farmId}/fertigation/events`, { params })
       return Array.isArray(r.data) ? r.data : []
     },
 

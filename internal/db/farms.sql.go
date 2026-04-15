@@ -308,3 +308,28 @@ func (q *Queries) UpdateFarm(ctx context.Context, arg UpdateFarmParams) (Gr33nco
 	)
 	return i, err
 }
+
+const userHasFarmAccess = `-- name: UserHasFarmAccess :one
+SELECT (
+ EXISTS (
+        SELECT 1 FROM gr33ncore.farm_memberships m
+        WHERE m.farm_id = $1 AND m.user_id = $2
+    )
+    OR EXISTS (
+        SELECT 1 FROM gr33ncore.farms f
+        WHERE f.id = $1 AND f.owner_user_id = $2 AND f.deleted_at IS NULL
+    )
+) AS user_has_farm_access
+`
+
+type UserHasFarmAccessParams struct {
+	FarmID int64     `db:"farm_id" json:"farm_id"`
+	UserID uuid.UUID `db:"user_id" json:"user_id"`
+}
+
+func (q *Queries) UserHasFarmAccess(ctx context.Context, arg UserHasFarmAccessParams) (*bool, error) {
+	row := q.db.QueryRow(ctx, userHasFarmAccess, arg.FarmID, arg.UserID)
+	var user_has_farm_access *bool
+	err := row.Scan(&user_has_farm_access)
+	return user_has_farm_access, err
+}

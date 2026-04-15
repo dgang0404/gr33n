@@ -1,13 +1,16 @@
 package alert
 
 import (
+	"errors"
 	"net/http"
 	"strconv"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	db "gr33n-api/internal/db"
+	"gr33n-api/internal/farmauthz"
 	"gr33n-api/internal/httputil"
 )
 
@@ -65,6 +68,18 @@ func (h *Handler) MarkRead(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	q := db.New(h.pool)
+	a0, err := q.GetAlertNotificationByID(r.Context(), id)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			httputil.WriteError(w, http.StatusNotFound, "alert not found")
+			return
+		}
+		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	if !farmauthz.RequireFarmMember(w, r, q, a0.FarmID) {
+		return
+	}
 	alert, err := q.MarkAlertRead(r.Context(), id)
 	if err != nil {
 		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
@@ -80,6 +95,18 @@ func (h *Handler) MarkAcknowledged(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	q := db.New(h.pool)
+	a0, err := q.GetAlertNotificationByID(r.Context(), id)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			httputil.WriteError(w, http.StatusNotFound, "alert not found")
+			return
+		}
+		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	if !farmauthz.RequireFarmMember(w, r, q, a0.FarmID) {
+		return
+	}
 	alert, err := q.MarkAlertAcknowledged(r.Context(), db.MarkAlertAcknowledgedParams{
 		ID:                   id,
 		AcknowledgedByUserID: pgtype.UUID{},

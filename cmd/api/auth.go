@@ -58,7 +58,8 @@ func requireAPIKey(next http.Handler) http.Handler {
 func requireJWT(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if isDevAuthBypass() {
-			next.ServeHTTP(w, r)
+			ctx := authctx.WithFarmAuthzSkip(r.Context(), true)
+			next.ServeHTTP(w, r.WithContext(ctx))
 			return
 		}
 

@@ -103,6 +103,32 @@ func (q *Queries) GetLastSuccessfulRunBySchedule(ctx context.Context, scheduleID
 	return i, err
 }
 
+const getScheduleByID = `-- name: GetScheduleByID :one
+SELECT id, farm_id, name, description, schedule_type, cron_expression, timezone, is_active, last_triggered_time, next_expected_trigger_time, meta_data, created_at, updated_at FROM gr33ncore.schedules
+WHERE id = $1
+`
+
+func (q *Queries) GetScheduleByID(ctx context.Context, id int64) (Gr33ncoreSchedule, error) {
+	row := q.db.QueryRow(ctx, getScheduleByID, id)
+	var i Gr33ncoreSchedule
+	err := row.Scan(
+		&i.ID,
+		&i.FarmID,
+		&i.Name,
+		&i.Description,
+		&i.ScheduleType,
+		&i.CronExpression,
+		&i.Timezone,
+		&i.IsActive,
+		&i.LastTriggeredTime,
+		&i.NextExpectedTriggerTime,
+		&i.MetaData,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const listActiveSchedules = `-- name: ListActiveSchedules :many
 SELECT id, farm_id, name, description, schedule_type, cron_expression, timezone, is_active, last_triggered_time, next_expected_trigger_time, meta_data, created_at, updated_at FROM gr33ncore.schedules
 WHERE is_active = TRUE

@@ -281,8 +281,17 @@
 
     <!-- Events -->
     <template v-else-if="activeTab === 'events'">
-      <div class="flex items-center justify-between">
-        <p class="text-zinc-400 text-sm">{{ fertigationEvents.length }} event(s)</p>
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div class="flex flex-wrap items-center gap-3">
+          <p class="text-zinc-400 text-sm">{{ fertigationEvents.length }} event(s)</p>
+          <label class="flex items-center gap-2 text-xs text-zinc-500">
+            <span>Filter by crop cycle</span>
+            <select v-model="eventCropFilter" @change="reloadEventsOnly" class="input-field py-1 text-xs max-w-[14rem]">
+              <option value="">All cycles</option>
+              <option v-for="c in cropCycles" :key="c.id" :value="String(c.id)">{{ c.name }} ({{ zoneLabel(c.zone_id) }})</option>
+            </select>
+          </label>
+        </div>
         <button @click="showEventForm = !showEventForm"
           class="px-3 py-1.5 bg-green-700 hover:bg-green-600 text-white text-xs rounded-lg">
           {{ showEventForm ? 'Cancel' : '+ Log Event' }}
@@ -294,6 +303,10 @@
         <select v-model.number="evForm.zone_id" required class="input-field">
           <option value="" disabled>Zone</option>
           <option v-for="z in zones" :key="z.id" :value="z.id">{{ z.name }}</option>
+        </select>
+        <select v-model="evForm.crop_cycle_id" class="input-field">
+          <option :value="null">No crop cycle</option>
+          <option v-for="c in cyclesForEventZone" :key="c.id" :value="c.id">{{ c.name }}</option>
         </select>
         <select v-model="evForm.program_id" class="input-field">
           <option :value="null">No program</option>
@@ -318,6 +331,7 @@
             <tr>
               <th class="py-2 pr-4">Time</th>
               <th class="py-2 pr-4">Zone</th>
+              <th class="py-2 pr-4">Crop cycle</th>
               <th class="py-2 pr-4">Volume</th>
               <th class="py-2 pr-4">EC Before→After</th>
               <th class="py-2 pr-4">pH Before→After</th>
@@ -329,6 +343,7 @@
             <tr v-for="e in sortedEvents" :key="e.id" class="border-b border-zinc-800/50">
               <td class="py-2 pr-4 whitespace-nowrap">{{ formatDate(e.applied_at) }}</td>
               <td class="py-2 pr-4">{{ zoneLabel(e.zone_id) }}</td>
+              <td class="py-2 pr-4 text-zinc-500 text-xs">{{ cycleLabel(e.crop_cycle_id) }}</td>
               <td class="py-2 pr-4 font-mono">{{ e.volume_applied_liters || 0 }}L</td>
               <td class="py-2 pr-4 font-mono">{{ e.ec_before_mscm || '—' }} → {{ e.ec_after_mscm || '—' }}</td>
               <td class="py-2 pr-4 font-mono">{{ e.ph_before || '—' }} → {{ e.ph_after || '—' }}</td>
@@ -344,7 +359,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useFarmStore } from '../stores/farm'
 import { useFarmContextStore } from '../stores/farmContext'
@@ -375,6 +390,7 @@ const programs = ref([])
 const nfRecipes = ref([])
 const cropCycles = ref([])
 const fertigationEvents = ref([])
+const eventCropFilter = ref('')
 const showCycleForm = ref(false)
 const editCycle = ref(null)
 const stageDraft = reactive({})
@@ -415,18 +431,43 @@ const progForm = ref({
   ph_trigger_low: 0,
   ph_trigger_high: 0,
 })
-const evForm = ref({ zone_id: '', program_id: null, volume_applied_liters: 0, ec_before_mscm: 0, ec_after_mscm: 0, ph_before: 0, ph_after: 0, notes: '', trigger_source: 'manual' })
+const evForm = ref({
+  zone_id: '',
+  crop_cycle_id: null,
+  program_id: null,
+  volume_applied_liters: 0,
+  ec_before_mscm: 0,
+  ec_after_mscm: 0,
+  ph_before: 0,
+  ph_after: 0,
+  notes: '',
+  trigger_source: 'manual',
+})
+
+const cyclesForEventZone = computed(() => {
+  const zid = evForm.value.zone_id
+  if (!zid) return cropCycles.value
+  return cropCycles.value.filter((c) => Number(c.zone_id) === Number(zid))
+})
+
+watch(
+  () => evForm.value.zone_id,
+  () => {
+    evForm.value.crop_cycle_id = null
+  }
+)
 
 async function refresh() {
   loading.value = true
   try {
     if (!store.zones.length && farmId.value) await store.loadAll(farmId.value)
     const fid = farmId.value
+    const cropQ = eventCropFilter.value ? Number(eventCropFilter.value) : undefined
     const [r, ec, p, ev, cc, recipes] = await Promise.all([
       store.loadReservoirs(fid),
       store.loadEcTargets(fid),
       store.loadFertigationPrograms(fid),
-      store.loadFertigationEvents(fid),
+      store.loadFertigationEvents(fid, { cropCycleId: cropQ }),
       store.loadCropCycles(fid),
       store.loadRecipes(fid),
     ])
@@ -440,6 +481,19 @@ async function refresh() {
       if (stageDraft[c.id] == null) stageDraft[c.id] = cycleStageRaw(c)
     }
   } finally { loading.value = false }
+}
+
+async function reloadEventsOnly() {
+  const fid = farmId.value
+  if (!fid) return
+  const cropQ = eventCropFilter.value ? Number(eventCropFilter.value) : undefined
+  fertigationEvents.value = await store.loadFertigationEvents(fid, { cropCycleId: cropQ })
+}
+
+function cycleLabel(id) {
+  if (id == null) return '—'
+  const c = cropCycles.value.find((x) => x.id === id)
+  return c ? c.name : `#${id}`
 }
 
 function cycleStageRaw(c) {
@@ -616,10 +670,23 @@ async function submitProgram() {
 async function submitEvent() {
   saving.value = true
   try {
-    await store.createFertigationEvent(farmId.value, evForm.value)
+    const payload = { ...evForm.value }
+    if (!payload.crop_cycle_id) delete payload.crop_cycle_id
+    await store.createFertigationEvent(farmId.value, payload)
     showEventForm.value = false
-    evForm.value = { zone_id: '', program_id: null, volume_applied_liters: 0, ec_before_mscm: 0, ec_after_mscm: 0, ph_before: 0, ph_after: 0, notes: '', trigger_source: 'manual' }
-    fertigationEvents.value = await store.loadFertigationEvents(farmId.value)
+    evForm.value = {
+      zone_id: '',
+      crop_cycle_id: null,
+      program_id: null,
+      volume_applied_liters: 0,
+      ec_before_mscm: 0,
+      ec_after_mscm: 0,
+      ph_before: 0,
+      ph_after: 0,
+      notes: '',
+      trigger_source: 'manual',
+    }
+    await reloadEventsOnly()
   } finally { saving.value = false }
 }
 

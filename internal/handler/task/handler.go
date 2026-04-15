@@ -15,6 +15,7 @@ import (
 
 	"gr33n-api/internal/authctx"
 	db "gr33n-api/internal/db"
+	"gr33n-api/internal/farmauthz"
 	"gr33n-api/internal/httputil"
 	"gr33n-api/internal/platform/commontypes"
 )
@@ -47,6 +48,10 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 	farmID, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid farm id")
+		return
+	}
+	q := db.New(h.pool)
+	if !farmauthz.RequireFarmMember(w, r, q, farmID) {
 		return
 	}
 	var body struct {
@@ -92,7 +97,6 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 	if uid, ok := authctx.UserID(r.Context()); ok {
 		createdBy = pgtype.UUID{Bytes: uid, Valid: true}
 	}
-	q := db.New(h.pool)
 	task, err := q.CreateTask(r.Context(), db.CreateTaskParams{
 		FarmID:                   farmID,
 		ZoneID:                   body.ZoneID,
@@ -130,6 +134,18 @@ func (h *Handler) UpdateStatus(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	q := db.New(h.pool)
+	t0, err := q.GetTaskByID(r.Context(), id)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			httputil.WriteError(w, http.StatusNotFound, "task not found")
+			return
+		}
+		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	if !farmauthz.RequireFarmMember(w, r, q, t0.FarmID) {
+		return
+	}
 	task, err := q.UpdateTaskStatus(r.Context(), db.UpdateTaskStatusParams{
 		ID:              id,
 		Status:          commontypes.TaskStatusEnum(body.Status),
