@@ -30,7 +30,7 @@ func (q *Queries) CountInsertCommonsSyncAttemptsSince(ctx context.Context, arg C
 
 const getInsertCommonsSyncEventByFarmIdempotencyKey = `-- name: GetInsertCommonsSyncEventByFarmIdempotencyKey :one
 
-SELECT id, farm_id, idempotency_key, status, http_status, error, payload, created_at
+SELECT id, farm_id, idempotency_key, status, http_status, error, payload, bundle_id, created_at
 FROM gr33ncore.insert_commons_sync_events
 WHERE farm_id = $1 AND idempotency_key = $2
 LIMIT 1
@@ -55,13 +55,14 @@ func (q *Queries) GetInsertCommonsSyncEventByFarmIdempotencyKey(ctx context.Cont
 		&i.HttpStatus,
 		&i.Error,
 		&i.Payload,
+		&i.BundleID,
 		&i.CreatedAt,
 	)
 	return i, err
 }
 
 const listInsertCommonsSyncEventsByFarm = `-- name: ListInsertCommonsSyncEventsByFarm :many
-SELECT id, farm_id, idempotency_key, status, http_status, error, created_at
+SELECT id, farm_id, idempotency_key, status, http_status, error, bundle_id, created_at
 FROM gr33ncore.insert_commons_sync_events
 WHERE farm_id = $1
 ORDER BY created_at DESC, id DESC
@@ -81,6 +82,7 @@ type ListInsertCommonsSyncEventsByFarmRow struct {
 	Status         string    `db:"status" json:"status"`
 	HttpStatus     *int32    `db:"http_status" json:"http_status"`
 	Error          *string   `db:"error" json:"error"`
+	BundleID       *int64    `db:"bundle_id" json:"bundle_id"`
 	CreatedAt      time.Time `db:"created_at" json:"created_at"`
 }
 
@@ -100,6 +102,7 @@ func (q *Queries) ListInsertCommonsSyncEventsByFarm(ctx context.Context, arg Lis
 			&i.Status,
 			&i.HttpStatus,
 			&i.Error,
+			&i.BundleID,
 			&i.CreatedAt,
 		); err != nil {
 			return nil, err
@@ -114,8 +117,8 @@ func (q *Queries) ListInsertCommonsSyncEventsByFarm(ctx context.Context, arg Lis
 
 const upsertInsertCommonsSyncEvent = `-- name: UpsertInsertCommonsSyncEvent :one
 INSERT INTO gr33ncore.insert_commons_sync_events (
-    farm_id, idempotency_key, status, http_status, error, payload
-) VALUES ($1, $2, $3, $4, $5, $6)
+    farm_id, idempotency_key, status, http_status, error, payload, bundle_id
+) VALUES ($1, $2, $3, $4, $5, $6, $7)
 ON CONFLICT (farm_id, idempotency_key)
 WHERE idempotency_key IS NOT NULL
 DO UPDATE SET
@@ -123,8 +126,9 @@ DO UPDATE SET
     http_status = EXCLUDED.http_status,
     error = EXCLUDED.error,
     payload = EXCLUDED.payload,
+    bundle_id = EXCLUDED.bundle_id,
     created_at = NOW()
-RETURNING id, farm_id, idempotency_key, status, http_status, error, payload, created_at
+RETURNING id, farm_id, idempotency_key, status, http_status, error, payload, bundle_id, created_at
 `
 
 type UpsertInsertCommonsSyncEventParams struct {
@@ -134,6 +138,7 @@ type UpsertInsertCommonsSyncEventParams struct {
 	HttpStatus     *int32  `db:"http_status" json:"http_status"`
 	Error          *string `db:"error" json:"error"`
 	Payload        []byte  `db:"payload" json:"payload"`
+	BundleID       *int64  `db:"bundle_id" json:"bundle_id"`
 }
 
 func (q *Queries) UpsertInsertCommonsSyncEvent(ctx context.Context, arg UpsertInsertCommonsSyncEventParams) (Gr33ncoreInsertCommonsSyncEvent, error) {
@@ -144,6 +149,7 @@ func (q *Queries) UpsertInsertCommonsSyncEvent(ctx context.Context, arg UpsertIn
 		arg.HttpStatus,
 		arg.Error,
 		arg.Payload,
+		arg.BundleID,
 	)
 	var i Gr33ncoreInsertCommonsSyncEvent
 	err := row.Scan(
@@ -154,6 +160,7 @@ func (q *Queries) UpsertInsertCommonsSyncEvent(ctx context.Context, arg UpsertIn
 		&i.HttpStatus,
 		&i.Error,
 		&i.Payload,
+		&i.BundleID,
 		&i.CreatedAt,
 	)
 	return i, err

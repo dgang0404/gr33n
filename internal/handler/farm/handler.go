@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -18,6 +19,7 @@ import (
 	"gr33n-api/internal/authctx"
 	db "gr33n-api/internal/db"
 	"gr33n-api/internal/farmauthz"
+	"gr33n-api/internal/farmbootstrap"
 	"gr33n-api/internal/httputil"
 )
 
@@ -33,12 +35,14 @@ func int64PtrEqual(a, b *int64) bool {
 
 type Handler struct {
 	q          db.Querier
+	pool       *pgxpool.Pool
 	httpClient *http.Client
 }
 
 func NewHandler(pool *pgxpool.Pool) *Handler {
 	return &Handler{
-		q: db.New(pool),
+		q:    db.New(pool),
+		pool: pool,
 		httpClient: &http.Client{
 			Timeout: 20 * time.Second,
 		},
@@ -47,7 +51,8 @@ func NewHandler(pool *pgxpool.Pool) *Handler {
 
 func NewHandlerWithQuerier(q db.Querier) *Handler {
 	return &Handler{
-		q: q,
+		q:    q,
+		pool: nil,
 		httpClient: &http.Client{
 			Timeout: 20 * time.Second,
 		},
@@ -106,21 +111,24 @@ func (h *Handler) Get(w http.ResponseWriter, r *http.Request) {
 
 // POST /farms
 func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
-	var params db.CreateFarmParams
-	if err := json.NewDecoder(r.Body).Decode(&params); err != nil {
+	var req struct {
+		db.CreateFarmParams
+		BootstrapTemplate *string `json:"bootstrap_template"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid request body")
 		return
 	}
-	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(r.Context(), 25*time.Second)
 	defer cancel()
 
-	if params.OrganizationID != nil {
+	if req.OrganizationID != nil {
 		uid, ok := authctx.UserID(r.Context())
 		if !ok {
 			httputil.WriteError(w, http.StatusUnauthorized, "authentication required")
 			return
 		}
-		can, err := farmauthz.UserCanAdminOrg(ctx, h.q, *params.OrganizationID, uid)
+		can, err := farmauthz.UserCanAdminOrg(ctx, h.q, *req.OrganizationID, uid)
 		if err != nil {
 			httputil.WriteError(w, http.StatusInternalServerError, "failed to verify organization access")
 			return
@@ -131,9 +139,41 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	farm, err := h.q.CreateFarm(ctx, params)
+	effectiveBootstrap := req.BootstrapTemplate
+	if effectiveBootstrap == nil && req.OrganizationID != nil {
+		orgRow, err := h.q.GetOrganizationByID(ctx, *req.OrganizationID)
+		if err == nil && orgRow.DefaultBootstrapTemplate != nil {
+			t := strings.TrimSpace(*orgRow.DefaultBootstrapTemplate)
+			if t != "" {
+				effectiveBootstrap = &t
+			}
+		}
+	}
+
+	farm, err := h.q.CreateFarm(ctx, req.CreateFarmParams)
 	if err != nil {
 		httputil.WriteError(w, http.StatusInternalServerError, "failed to create farm")
+		return
+	}
+
+	tmplVal, tmplRequested := farmbootstrap.RequestedTemplate(effectiveBootstrap)
+	var boot map[string]any
+	if tmplRequested {
+		if farmbootstrap.IsBlankChoice(tmplVal) {
+			boot = map[string]any{"skipped": true}
+		} else {
+			uid, ok := authctx.UserID(r.Context())
+			if !ok || uid != req.OwnerUserID {
+				boot = map[string]any{"skipped": true, "reason": "creator_must_match_owner_user_id"}
+			} else {
+				boot, err = h.runFarmBootstrap(ctx, farm.ID, tmplVal)
+				if err != nil {
+					httputil.WriteError(w, http.StatusInternalServerError, "farm created but bootstrap failed: "+err.Error())
+					return
+				}
+			}
+		}
+		httputil.WriteJSON(w, http.StatusCreated, map[string]any{"farm": farm, "bootstrap": boot})
 		return
 	}
 	httputil.WriteJSON(w, http.StatusCreated, farm)
@@ -261,6 +301,30 @@ func (h *Handler) SetOrganization(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusInternalServerError, "failed to update farm organization")
 		return
 	}
+	if !int64PtrEqual(existing.OrganizationID, orgID) {
+		mod := "gr33ncore"
+		tbl := "farms"
+		rid := strconv.FormatInt(id, 10)
+		details := map[string]any{"kind": "farm_organization_changed"}
+		if orgID != nil {
+			details["organization_id"] = *orgID
+		} else {
+			details["organization_id"] = nil
+		}
+		if existing.OrganizationID != nil {
+			details["previous_organization_id"] = *existing.OrganizationID
+		} else {
+			details["previous_organization_id"] = nil
+		}
+		auditlog.Submit(ctx, h.q, r, auditlog.Event{
+			FarmID:         auditlog.FarmIDPtr(id),
+			Action:         db.Gr33ncoreUserActionTypeEnumUpdateRecord,
+			TargetSchema:   &mod,
+			TargetTable:    &tbl,
+			TargetRecordID: &rid,
+			Details:        details,
+		})
+	}
 	httputil.WriteJSON(w, http.StatusOK, farm)
 }
 
@@ -293,7 +357,7 @@ func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
 	tbl := "farms"
 	rid := strconv.FormatInt(id, 10)
 	auditlog.Submit(ctx, h.q, r, auditlog.Event{
-		FarmID:         id,
+		FarmID:         auditlog.FarmIDPtr(id),
 		Action:         db.Gr33ncoreUserActionTypeEnumDeleteRecord,
 		TargetSchema:   &mod,
 		TargetTable:    &tbl,
@@ -314,7 +378,8 @@ func (h *Handler) SetInsertCommonsOptIn(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 	var body struct {
-		InsertCommonsOptIn bool `json:"insert_commons_opt_in"`
+		InsertCommonsOptIn           bool  `json:"insert_commons_opt_in"`
+		InsertCommonsRequireApproval *bool `json:"insert_commons_require_approval"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid request body")
@@ -322,9 +387,26 @@ func (h *Handler) SetInsertCommonsOptIn(w http.ResponseWriter, r *http.Request) 
 	}
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()
+	existing, err := h.q.GetFarmByID(ctx, id)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			httputil.WriteError(w, http.StatusNotFound, "farm not found")
+			return
+		}
+		httputil.WriteError(w, http.StatusInternalServerError, "failed to load farm")
+		return
+	}
+	reqApproval := existing.InsertCommonsRequireApproval
+	if body.InsertCommonsRequireApproval != nil {
+		reqApproval = *body.InsertCommonsRequireApproval
+	}
+	if !body.InsertCommonsOptIn {
+		reqApproval = false
+	}
 	row, err := h.q.SetFarmInsertCommonsOptIn(ctx, db.SetFarmInsertCommonsOptInParams{
-		ID:                 id,
-		InsertCommonsOptIn: body.InsertCommonsOptIn,
+		ID:                           id,
+		InsertCommonsOptIn:           body.InsertCommonsOptIn,
+		InsertCommonsRequireApproval: reqApproval,
 	})
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -338,14 +420,15 @@ func (h *Handler) SetInsertCommonsOptIn(w http.ResponseWriter, r *http.Request) 
 	tbl := "farms"
 	rid := strconv.FormatInt(id, 10)
 	auditlog.Submit(ctx, h.q, r, auditlog.Event{
-		FarmID:         id,
+		FarmID:         auditlog.FarmIDPtr(id),
 		Action:         db.Gr33ncoreUserActionTypeEnumChangeSetting,
 		TargetSchema:   &mod,
 		TargetTable:    &tbl,
 		TargetRecordID: &rid,
 		Details: map[string]any{
-			"kind":                  "insert_commons_opt_in",
-			"insert_commons_opt_in": body.InsertCommonsOptIn,
+			"kind":                            "insert_commons_opt_in",
+			"insert_commons_opt_in":           body.InsertCommonsOptIn,
+			"insert_commons_require_approval": row.InsertCommonsRequireApproval,
 		},
 	})
 	httputil.WriteJSON(w, http.StatusOK, row)

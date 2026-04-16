@@ -20,6 +20,7 @@ dist/
 .env.production
 
 # IDE
+.cursor/
 .vscode/
 .idea/
 *.swp

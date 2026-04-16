@@ -51,3 +51,45 @@ FROM gr33ncore.user_activity_log
 WHERE farm_id = $1
 ORDER BY activity_time DESC, id DESC
 LIMIT $2 OFFSET $3;
+
+-- name: ListUserActivityLogForOrganization :many
+-- Org-wide audit: farms in the org plus org-only rows (NULL farm_id, details.organization_id, org membership targets).
+SELECT
+    id,
+    user_id,
+    farm_id,
+    activity_time,
+    action_type,
+    target_module_schema,
+    target_table_name,
+    target_record_id,
+    target_record_description,
+    ip_address,
+    user_agent,
+    session_id,
+    status,
+    failure_reason,
+    details,
+    created_at
+FROM gr33ncore.user_activity_log
+WHERE
+    farm_id IN (
+        SELECT f.id FROM gr33ncore.farms f
+        WHERE f.organization_id = $1 AND f.deleted_at IS NULL
+    )
+    OR (
+        (farm_id IS NULL OR farm_id = 0)
+        AND (
+            (details->>'organization_id')::bigint = $1
+            OR (
+                target_table_name = 'organizations'
+                AND target_record_id = ($1::bigint)::text
+            )
+            OR (
+                target_table_name = 'organization_memberships'
+                AND target_record_id LIKE (($1::bigint)::text || ':%')
+            )
+        )
+    )
+ORDER BY activity_time DESC, id DESC
+LIMIT $2 OFFSET $3;

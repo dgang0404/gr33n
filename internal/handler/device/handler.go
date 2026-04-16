@@ -33,7 +33,7 @@ func (h *Handler) ListByFarm(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid farm id")
 		return
 	}
-	if !farmauthz.RequireFarmMember(w, r, h.q, farmID) {
+	if !farmauthz.RequireFarmMemberOrPiEdge(w, r, h.q, farmID) {
 		return
 	}
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)

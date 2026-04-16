@@ -1,0 +1,16 @@
+[Unit]
+Description=gr33n MQTT telemetry bridge (farm edge)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+# Copy mqtt-bridge.example.env to /etc/default/gr33n-mqtt-bridge and adjust paths.
+EnvironmentFile=-/etc/default/gr33n-mqtt-bridge
+WorkingDirectory=/opt/gr33n/pi_client
+ExecStart=/usr/bin/python3 /opt/gr33n/pi_client/mqtt_telemetry_bridge.py
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

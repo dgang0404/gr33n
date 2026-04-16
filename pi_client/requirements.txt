@@ -1,5 +1,6 @@
 requests>=2.31.0
 PyYAML>=6.0
+paho-mqtt>=2.1.0
 gpiozero>=2.0
 RPi.GPIO>=0.7.1
 adafruit-circuitpython-dht>=3.7

@@ -101,6 +101,6 @@ func main() {
 	h := insertcommonsreceiver.NewHandler(pool, secret, allowInsecure, retentionDays)
 	http.Handle("/", h)
 
-	log.Printf("gr33n Insert Commons receiver on http://localhost%s (POST /v1/ingest, GET /health)", listen)
+	log.Printf("gr33n Insert Commons receiver on http://localhost%s (POST /v1/ingest, GET /v1/stats, GET /health)", listen)
 	log.Fatal(http.ListenAndServe(listen, nil))
 }

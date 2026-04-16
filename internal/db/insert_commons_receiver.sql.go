@@ -8,6 +8,8 @@ package db
 import (
 	"context"
 	"time"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const deleteInsertCommonsReceivedPayloadsBefore = `-- name: DeleteInsertCommonsReceivedPayloadsBefore :exec
@@ -18,6 +20,29 @@ WHERE received_at < $1
 func (q *Queries) DeleteInsertCommonsReceivedPayloadsBefore(ctx context.Context, receivedAt time.Time) error {
 	_, err := q.db.Exec(ctx, deleteInsertCommonsReceivedPayloadsBefore, receivedAt)
 	return err
+}
+
+const getInsertCommonsReceivedPayloadByFarmIdempotency = `-- name: GetInsertCommonsReceivedPayloadByFarmIdempotency :one
+SELECT id, payload_hash
+FROM gr33ncore.insert_commons_received_payloads
+WHERE farm_pseudonym = $1 AND source_idempotency_key = $2
+`
+
+type GetInsertCommonsReceivedPayloadByFarmIdempotencyParams struct {
+	FarmPseudonym        string  `db:"farm_pseudonym" json:"farm_pseudonym"`
+	SourceIdempotencyKey *string `db:"source_idempotency_key" json:"source_idempotency_key"`
+}
+
+type GetInsertCommonsReceivedPayloadByFarmIdempotencyRow struct {
+	ID          int64  `db:"id" json:"id"`
+	PayloadHash string `db:"payload_hash" json:"payload_hash"`
+}
+
+func (q *Queries) GetInsertCommonsReceivedPayloadByFarmIdempotency(ctx context.Context, arg GetInsertCommonsReceivedPayloadByFarmIdempotencyParams) (GetInsertCommonsReceivedPayloadByFarmIdempotencyRow, error) {
+	row := q.db.QueryRow(ctx, getInsertCommonsReceivedPayloadByFarmIdempotency, arg.FarmPseudonym, arg.SourceIdempotencyKey)
+	var i GetInsertCommonsReceivedPayloadByFarmIdempotencyRow
+	err := row.Scan(&i.ID, &i.PayloadHash)
+	return i, err
 }
 
 const getInsertCommonsReceivedPayloadIDByHash = `-- name: GetInsertCommonsReceivedPayloadIDByHash :one
@@ -33,6 +58,68 @@ func (q *Queries) GetInsertCommonsReceivedPayloadIDByHash(ctx context.Context, p
 	return id, err
 }
 
+const insertCommonsReceiverDailyCounts = `-- name: InsertCommonsReceiverDailyCounts :many
+SELECT (timezone('UTC', received_at))::date AS day,
+    COUNT(*)::bigint AS ingest_count
+FROM gr33ncore.insert_commons_received_payloads
+WHERE received_at >= $1
+GROUP BY 1
+ORDER BY 1 DESC
+`
+
+type InsertCommonsReceiverDailyCountsRow struct {
+	Day         pgtype.Date `db:"day" json:"day"`
+	IngestCount int64       `db:"ingest_count" json:"ingest_count"`
+}
+
+func (q *Queries) InsertCommonsReceiverDailyCounts(ctx context.Context, receivedAt time.Time) ([]InsertCommonsReceiverDailyCountsRow, error) {
+	rows, err := q.db.Query(ctx, insertCommonsReceiverDailyCounts, receivedAt)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []InsertCommonsReceiverDailyCountsRow{}
+	for rows.Next() {
+		var i InsertCommonsReceiverDailyCountsRow
+		if err := rows.Scan(&i.Day, &i.IngestCount); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const insertCommonsReceiverStats = `-- name: InsertCommonsReceiverStats :one
+SELECT
+    COUNT(*)::bigint AS total_payloads,
+    COUNT(DISTINCT farm_pseudonym)::bigint AS distinct_pseudonyms,
+    MIN(received_at) AS oldest_received_at,
+    MAX(received_at) AS newest_received_at
+FROM gr33ncore.insert_commons_received_payloads
+`
+
+type InsertCommonsReceiverStatsRow struct {
+	TotalPayloads      int64       `db:"total_payloads" json:"total_payloads"`
+	DistinctPseudonyms int64       `db:"distinct_pseudonyms" json:"distinct_pseudonyms"`
+	OldestReceivedAt   interface{} `db:"oldest_received_at" json:"oldest_received_at"`
+	NewestReceivedAt   interface{} `db:"newest_received_at" json:"newest_received_at"`
+}
+
+func (q *Queries) InsertCommonsReceiverStats(ctx context.Context) (InsertCommonsReceiverStatsRow, error) {
+	row := q.db.QueryRow(ctx, insertCommonsReceiverStats)
+	var i InsertCommonsReceiverStatsRow
+	err := row.Scan(
+		&i.TotalPayloads,
+		&i.DistinctPseudonyms,
+		&i.OldestReceivedAt,
+		&i.NewestReceivedAt,
+	)
+	return i, err
+}
+
 const insertInsertCommonsReceivedPayload = `-- name: InsertInsertCommonsReceivedPayload :one
 
 INSERT INTO gr33ncore.insert_commons_received_payloads (
@@ -40,19 +127,21 @@ INSERT INTO gr33ncore.insert_commons_received_payloads (
     farm_pseudonym,
     schema_version,
     generated_at,
-    payload
+    payload,
+    source_idempotency_key
 ) VALUES (
-    $1, $2, $3, $4, $5
+    $1, $2, $3, $4, $5, $6
 )
 RETURNING id
 `
 
 type InsertInsertCommonsReceivedPayloadParams struct {
-	PayloadHash   string    `db:"payload_hash" json:"payload_hash"`
-	FarmPseudonym string    `db:"farm_pseudonym" json:"farm_pseudonym"`
-	SchemaVersion string    `db:"schema_version" json:"schema_version"`
-	GeneratedAt   time.Time `db:"generated_at" json:"generated_at"`
-	Payload       []byte    `db:"payload" json:"payload"`
+	PayloadHash          string    `db:"payload_hash" json:"payload_hash"`
+	FarmPseudonym        string    `db:"farm_pseudonym" json:"farm_pseudonym"`
+	SchemaVersion        string    `db:"schema_version" json:"schema_version"`
+	GeneratedAt          time.Time `db:"generated_at" json:"generated_at"`
+	Payload              []byte    `db:"payload" json:"payload"`
+	SourceIdempotencyKey *string   `db:"source_idempotency_key" json:"source_idempotency_key"`
 }
 
 // ============================================================
@@ -65,6 +154,7 @@ func (q *Queries) InsertInsertCommonsReceivedPayload(ctx context.Context, arg In
 		arg.SchemaVersion,
 		arg.GeneratedAt,
 		arg.Payload,
+		arg.SourceIdempotencyKey,
 	)
 	var id int64
 	err := row.Scan(&id)

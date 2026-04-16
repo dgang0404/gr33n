@@ -9,14 +9,23 @@ import (
 	"testing"
 	"time"
 
+	"gr33n-api/internal/authctx"
 	db "gr33n-api/internal/db"
 	commontypes "gr33n-api/internal/platform/commontypes"
 )
 
 type mockQuerier struct {
 	db.Querier
-	updateStatusFn     func(ctx context.Context, arg db.UpdateDeviceStatusParams) (db.Gr33ncoreDevice, error)
-	clearPendingCmdFn  func(ctx context.Context, id int64) error
+	updateStatusFn      func(ctx context.Context, arg db.UpdateDeviceStatusParams) (db.Gr33ncoreDevice, error)
+	clearPendingCmdFn   func(ctx context.Context, id int64) error
+	listDevicesByFarmFn func(ctx context.Context, farmID int64) ([]db.Gr33ncoreDevice, error)
+}
+
+func (m *mockQuerier) ListDevicesByFarm(ctx context.Context, farmID int64) ([]db.Gr33ncoreDevice, error) {
+	if m.listDevicesByFarmFn != nil {
+		return m.listDevicesByFarmFn(ctx, farmID)
+	}
+	return []db.Gr33ncoreDevice{}, nil
 }
 
 func (m *mockQuerier) UpdateDeviceStatus(ctx context.Context, arg db.UpdateDeviceStatusParams) (db.Gr33ncoreDevice, error) {
@@ -31,11 +40,11 @@ func TestUpdateStatus_ValidBody_200(t *testing.T) {
 	mq := &mockQuerier{
 		updateStatusFn: func(_ context.Context, arg db.UpdateDeviceStatusParams) (db.Gr33ncoreDevice, error) {
 			return db.Gr33ncoreDevice{
-				ID:     arg.ID,
-				Name:   "test-device",
-				Status: arg.Status,
-				Config: []byte("{}"),
-				MetaData: []byte("{}"),
+				ID:        arg.ID,
+				Name:      "test-device",
+				Status:    arg.Status,
+				Config:    []byte("{}"),
+				MetaData:  []byte("{}"),
 				CreatedAt: time.Now(),
 				UpdatedAt: time.Now(),
 			}, nil
@@ -114,5 +123,26 @@ func TestClearPendingCommand_InvalidID_400(t *testing.T) {
 
 	if rec.Code != http.StatusBadRequest {
 		t.Fatalf("expected 400, got %d", rec.Code)
+	}
+}
+
+func TestListByFarm_PiEdgeAuth_200(t *testing.T) {
+	mq := &mockQuerier{
+		listDevicesByFarmFn: func(_ context.Context, farmID int64) ([]db.Gr33ncoreDevice, error) {
+			if farmID != 9 {
+				t.Fatalf("unexpected farm id %d", farmID)
+			}
+			return []db.Gr33ncoreDevice{
+				{ID: 1, Name: "edge-gateway", FarmID: 9, Config: []byte(`{"pending_command":{"command":"on"}}`)},
+			}, nil
+		},
+	}
+	h := NewHandlerWithQuerier(mq)
+	req := httptest.NewRequest(http.MethodGet, "/farms/9/devices", nil)
+	req = req.WithContext(authctx.WithPiEdgeAuth(context.Background()))
+	rec := httptest.NewRecorder()
+	h.ListByFarm(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d: %s", rec.Code, rec.Body.String())
 	}
 }

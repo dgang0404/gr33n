@@ -1254,6 +1254,23 @@ type Gr33ncoreAutomationRun struct {
 	ExecutedAt time.Time `db:"executed_at" json:"executed_at"`
 }
 
+type Gr33ncoreCommonsCatalogEntry struct {
+	ID                 int64     `db:"id" json:"id"`
+	Slug               string    `db:"slug" json:"slug"`
+	Title              string    `db:"title" json:"title"`
+	Summary            string    `db:"summary" json:"summary"`
+	Body               []byte    `db:"body" json:"body"`
+	ContributorDisplay string    `db:"contributor_display" json:"contributor_display"`
+	ContributorUri     *string   `db:"contributor_uri" json:"contributor_uri"`
+	LicenseSpdx        string    `db:"license_spdx" json:"license_spdx"`
+	LicenseNotes       *string   `db:"license_notes" json:"license_notes"`
+	Tags               []string  `db:"tags" json:"tags"`
+	Published          bool      `db:"published" json:"published"`
+	SortOrder          int32     `db:"sort_order" json:"sort_order"`
+	CreatedAt          time.Time `db:"created_at" json:"created_at"`
+	UpdatedAt          time.Time `db:"updated_at" json:"updated_at"`
+}
+
 type Gr33ncoreCostTransaction struct {
 	ID                  int64                        `db:"id" json:"id"`
 	FarmID              int64                        `db:"farm_id" json:"farm_id"`
@@ -1342,6 +1359,7 @@ type Gr33ncoreFarm struct {
 	InsertCommonsLastError           *string                           `db:"insert_commons_last_error" json:"insert_commons_last_error"`
 	InsertCommonsBackoffUntil        pgtype.Timestamptz                `db:"insert_commons_backoff_until" json:"insert_commons_backoff_until"`
 	InsertCommonsConsecutiveFailures int32                             `db:"insert_commons_consecutive_failures" json:"insert_commons_consecutive_failures"`
+	InsertCommonsRequireApproval     bool                              `db:"insert_commons_require_approval" json:"insert_commons_require_approval"`
 }
 
 type Gr33ncoreFarmActiveModule struct {
@@ -1350,6 +1368,15 @@ type Gr33ncoreFarmActiveModule struct {
 	IsEnabled        bool      `db:"is_enabled" json:"is_enabled"`
 	Configuration    []byte    `db:"configuration" json:"configuration"`
 	ActivatedAt      time.Time `db:"activated_at" json:"activated_at"`
+}
+
+type Gr33ncoreFarmCommonsCatalogImport struct {
+	ID             int64     `db:"id" json:"id"`
+	FarmID         int64     `db:"farm_id" json:"farm_id"`
+	CatalogEntryID int64     `db:"catalog_entry_id" json:"catalog_entry_id"`
+	ImportedBy     uuid.UUID `db:"imported_by" json:"imported_by"`
+	ImportedAt     time.Time `db:"imported_at" json:"imported_at"`
+	Note           *string   `db:"note" json:"note"`
 }
 
 type Gr33ncoreFarmFinanceAccountMapping struct {
@@ -1388,14 +1415,31 @@ type Gr33ncoreFileAttachment struct {
 	UpdatedAt           time.Time   `db:"updated_at" json:"updated_at"`
 }
 
+type Gr33ncoreInsertCommonsBundle struct {
+	ID                 int64              `db:"id" json:"id"`
+	FarmID             int64              `db:"farm_id" json:"farm_id"`
+	IdempotencyKey     *string            `db:"idempotency_key" json:"idempotency_key"`
+	PayloadHash        string             `db:"payload_hash" json:"payload_hash"`
+	Payload            []byte             `db:"payload" json:"payload"`
+	Status             string             `db:"status" json:"status"`
+	ReviewerUserID     pgtype.UUID        `db:"reviewer_user_id" json:"reviewer_user_id"`
+	ReviewedAt         pgtype.Timestamptz `db:"reviewed_at" json:"reviewed_at"`
+	ReviewNote         *string            `db:"review_note" json:"review_note"`
+	DeliveryHttpStatus *int32             `db:"delivery_http_status" json:"delivery_http_status"`
+	DeliveryError      *string            `db:"delivery_error" json:"delivery_error"`
+	CreatedAt          time.Time          `db:"created_at" json:"created_at"`
+	UpdatedAt          time.Time          `db:"updated_at" json:"updated_at"`
+}
+
 type Gr33ncoreInsertCommonsReceivedPayload struct {
-	ID            int64     `db:"id" json:"id"`
-	ReceivedAt    time.Time `db:"received_at" json:"received_at"`
-	PayloadHash   string    `db:"payload_hash" json:"payload_hash"`
-	FarmPseudonym string    `db:"farm_pseudonym" json:"farm_pseudonym"`
-	SchemaVersion string    `db:"schema_version" json:"schema_version"`
-	GeneratedAt   time.Time `db:"generated_at" json:"generated_at"`
-	Payload       []byte    `db:"payload" json:"payload"`
+	ID                   int64     `db:"id" json:"id"`
+	ReceivedAt           time.Time `db:"received_at" json:"received_at"`
+	PayloadHash          string    `db:"payload_hash" json:"payload_hash"`
+	FarmPseudonym        string    `db:"farm_pseudonym" json:"farm_pseudonym"`
+	SchemaVersion        string    `db:"schema_version" json:"schema_version"`
+	GeneratedAt          time.Time `db:"generated_at" json:"generated_at"`
+	Payload              []byte    `db:"payload" json:"payload"`
+	SourceIdempotencyKey *string   `db:"source_idempotency_key" json:"source_idempotency_key"`
 }
 
 type Gr33ncoreInsertCommonsSyncEvent struct {
@@ -1406,6 +1450,7 @@ type Gr33ncoreInsertCommonsSyncEvent struct {
 	HttpStatus     *int32    `db:"http_status" json:"http_status"`
 	Error          *string   `db:"error" json:"error"`
 	Payload        []byte    `db:"payload" json:"payload"`
+	BundleID       *int64    `db:"bundle_id" json:"bundle_id"`
 	CreatedAt      time.Time `db:"created_at" json:"created_at"`
 }
 
@@ -1425,12 +1470,13 @@ type Gr33ncoreNotificationTemplate struct {
 }
 
 type Gr33ncoreOrganization struct {
-	ID            int64     `db:"id" json:"id"`
-	Name          string    `db:"name" json:"name"`
-	PlanTier      string    `db:"plan_tier" json:"plan_tier"`
-	BillingStatus string    `db:"billing_status" json:"billing_status"`
-	CreatedAt     time.Time `db:"created_at" json:"created_at"`
-	UpdatedAt     time.Time `db:"updated_at" json:"updated_at"`
+	ID                       int64     `db:"id" json:"id"`
+	Name                     string    `db:"name" json:"name"`
+	PlanTier                 string    `db:"plan_tier" json:"plan_tier"`
+	BillingStatus            string    `db:"billing_status" json:"billing_status"`
+	DefaultBootstrapTemplate *string   `db:"default_bootstrap_template" json:"default_bootstrap_template"`
+	CreatedAt                time.Time `db:"created_at" json:"created_at"`
+	UpdatedAt                time.Time `db:"updated_at" json:"updated_at"`
 }
 
 type Gr33ncoreOrganizationMembership struct {
@@ -1573,6 +1619,15 @@ type Gr33ncoreUserActivityLog struct {
 	FailureReason           *string                     `db:"failure_reason" json:"failure_reason"`
 	Details                 []byte                      `db:"details" json:"details"`
 	CreatedAt               time.Time                   `db:"created_at" json:"created_at"`
+}
+
+type Gr33ncoreUserPushToken struct {
+	ID        int64     `db:"id" json:"id"`
+	UserID    uuid.UUID `db:"user_id" json:"user_id"`
+	Platform  string    `db:"platform" json:"platform"`
+	FcmToken  string    `db:"fcm_token" json:"fcm_token"`
+	CreatedAt time.Time `db:"created_at" json:"created_at"`
+	UpdatedAt time.Time `db:"updated_at" json:"updated_at"`
 }
 
 type Gr33ncoreValidationRule struct {

@@ -64,15 +64,14 @@ npm run cap:open:ios
 - **Encryption export** (US): review current BIS/self-classification guidance for your distribution.
 - **Per-farm data**: the app is a client; your backend privacy posture and DPA still drive compliance.
 
-## Push notifications (roadmap, not shipped)
+## Push notifications (FCM — server shipped)
 
-Field alerts via push are attractive but add moving parts:
+The API can send **farm alert** push when Firebase credentials are configured. See **[`notifications-operator-playbook.md`](notifications-operator-playbook.md)** for env vars (`FCM_SERVICE_ACCOUNT_JSON` or `GOOGLE_APPLICATION_CREDENTIALS`), `/profile/push-tokens`, and `profiles.preferences.notify` volume controls.
 
-- **FCM** (Android) and **APNs** (iOS) require platform projects, keys, and a server path to send notifications (or a third-party relay).
-- **Web push** (PWA) uses different subscription APIs than native; a unified strategy usually means **native-only push** via Capacitor plugins plus optional **web push** for PWA later.
-- Product choice: which events warrant push (alerts, task assignments, sync failures) vs in-app-only.
+- **FCM** (Android) and **APNs** (iOS via FCM) still require Firebase/Google Cloud project setup and Capacitor client integration to obtain tokens.
+- **Web push** (PWA) is not implemented yet; `platform=web` is reserved.
 
-Recommendation: treat push as a **Phase 14+** vertical after you have stable alert semantics and operator appetite for notification volume.
+Today, **sensor threshold** alerts trigger push for farm roles **owner**, **manager**, and **operator** who opt in and meet **min_priority**.
 
 ## Troubleshooting
 

@@ -12,7 +12,8 @@ SELECT * FROM gr33ncore.organizations WHERE id = $1;
 
 -- name: UpdateOrganization :one
 UPDATE gr33ncore.organizations
-SET name = $2, plan_tier = $3, billing_status = $4, updated_at = NOW()
+SET name = $2, plan_tier = $3, billing_status = $4,
+    default_bootstrap_template = $5, updated_at = NOW()
 WHERE id = $1
 RETURNING *;
 
@@ -22,6 +23,7 @@ SELECT
     o.name,
     o.plan_tier,
     o.billing_status,
+    o.default_bootstrap_template,
     o.created_at,
     o.updated_at,
     m.role_in_org

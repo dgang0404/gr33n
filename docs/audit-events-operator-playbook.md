@@ -1,6 +1,6 @@
 # Farm audit events — operator playbook
 
-This playbook covers the **farm-scoped audit trail** stored in `gr33ncore.user_activity_log` and exposed as `GET /farms/{id}/audit-events`. It complements the qualitative checklist in [`receipt-storage-cutover-runbook.md`](receipt-storage-cutover-runbook.md) under **Audit and Observability**.
+This playbook covers the audit trail in `gr33ncore.user_activity_log`: **farm-scoped** listing (`GET /farms/{id}/audit-events`) and **organization-scoped** listing (`GET /organizations/{id}/audit-events`). It complements the qualitative checklist in [`receipt-storage-cutover-runbook.md`](receipt-storage-cutover-runbook.md) under **Audit and Observability**.
 
 ## Purpose
 
@@ -9,30 +9,44 @@ This playbook covers the **farm-scoped audit trail** stored in `gr33ncore.user_a
 
 ## Who can read audit events
 
-- Only users with **farm administration** capability: **owner** and **manager** roles (same gate as `GET /farms/{id}/members`).
+- **Farm trail:** users with **farm administration** capability (**owner** and **manager** roles; same gate as `GET /farms/{id}/members`).
+- **Organization trail:** **organization owner or org admin** only (`GET /organizations/{id}/audit-events`).
 - Other roles receive `403 Forbidden`.
+
+The dashboard **Settings** page lists recent events for **Organization audit** (org owner/admin) and **Farm audit** (farm owner/manager on the selected farm), using these same endpoints.
 
 ## Scope and limitations
 
-- **`GET /farms/{id}/audit-events` lists rows where `farm_id` equals that farm.** Organization governance events (create org, update org, add org member) are logged with **`farm_id` set to `0`** in the current implementation; they **do not** appear when you query a real farm id. Review those in **`gr33ncore.user_activity_log`** directly (filter by `details->>'kind'` and `target_table_name`) or via your SIEM.
-- **Linking a farm to an organization** (`PATCH /farms/{id}/organization`) is **not** written to the audit log yet; treat API logs and DB snapshots as supplemental evidence for that action.
+- **`GET /farms/{id}/audit-events`** returns rows where **`farm_id` equals that farm** (farm-scoped governance, finance, federation, etc.).
+- **Organization-only events** (create/update org, add org member) use **`farm_id` NULL** (not linked to a farm row). They **do not** appear on farm audit; use **org audit** or SQL.
+- **`GET /organizations/{id}/audit-events`** returns: (1) all farm-scoped events for farms currently linked to that org, and (2) org-only rows for that org (`details.organization_id`, or legacy rows with `farm_id` 0 / NULL matching org targets).
+- Older rows may still have **`farm_id` = 0** from before NULL was used; org audit and direct SQL both match those where applicable.
 
 ## API
 
-- **Method and path:** `GET /farms/{id}/audit-events`
-- **Auth:** `Authorization: Bearer <JWT>` (or dev auth mode per deployment).
-- **Query parameters:**
-  - `limit` — default `50`, maximum `200`
-  - `offset` — default `0` (newest-first pagination)
+### Farm audit
 
-Canonical contract and response shape: [`openapi.yaml`](../openapi.yaml) (path `/farms/{id}/audit-events`, schema `AuditActivityEvent`).
+- **Path:** `GET /farms/{id}/audit-events`
+- **Auth:** `Authorization: Bearer <JWT>` (or dev auth mode per deployment).
+- **Query:** `limit` (default `50`, max `200`), `offset` (default `0`, newest-first).
+
+### Organization audit
+
+- **Path:** `GET /organizations/{id}/audit-events`
+- **Auth:** JWT; **org owner or org admin** only.
+- **Query:** same `limit` / `offset` as farm audit.
+
+Canonical contract and response shape: [`openapi.yaml`](../openapi.yaml) (schema `AuditActivityEvent`).
 
 ### Example (curl)
 
 ```bash
-# Replace HOST, FARM_ID, and JWT with real values.
+# Replace HOST, FARM_ID, ORG_ID, and JWT with real values.
 curl -sS -H "Authorization: Bearer $JWT" \
   "https://HOST/farms/FARM_ID/audit-events?limit=50&offset=0"
+
+curl -sS -H "Authorization: Bearer $JWT" \
+  "https://HOST/organizations/ORG_ID/audit-events?limit=50&offset=0"
 ```
 
 ## Response fields (summary)
@@ -69,9 +83,10 @@ These `details.kind` values are written by the API today (list may grow in later
 | `cost_transaction_deleted` | `delete_record` | Cost row removed |
 | `cost_receipt_uploaded` | `create_record` | Receipt file attached |
 | `cost_receipt_access` | `export_data` | Receipt bytes or download URL issued |
-| `organization_created` | `change_setting` | New org record (`farm_id` **0** in DB; not visible via farm audit API) |
-| `organization_updated` | `change_setting` | Org name / plan / billing fields (`farm_id` **0**) |
-| `organization_member_added` | `change_setting` | User added to org (`farm_id` **0**); `details.role` is org role |
+| `organization_created` | `change_setting` | New org record; `farm_id` **NULL**; `details.organization_id` set |
+| `organization_updated` | `change_setting` | Org name / plan / billing fields; `details.organization_id` |
+| `organization_member_added` | `change_setting` | User added to org; `details.organization_id`; `details.role` is org role |
+| `farm_organization_changed` | `update_record` | Farm linked or unlinked from an org (`PATCH /farms/{id}/organization`); `details.organization_id` / `previous_organization_id` |
 
 Operations that are **not** yet mirrored into this log (for example JWT secret rotation, Pi API key rotation, storage env changes) should continue to use **external** operator evidence as described in the receipt storage runbook.
 

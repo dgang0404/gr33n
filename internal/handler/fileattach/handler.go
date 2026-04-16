@@ -181,7 +181,7 @@ func (h *Handler) logReceiptAudit(r *http.Request, farmID, attachmentID int64, k
 	tbl := "file_attachments"
 	aid := strconv.FormatInt(attachmentID, 10)
 	auditlog.Submit(r.Context(), h.q, r, auditlog.Event{
-		FarmID:         farmID,
+		FarmID:         auditlog.FarmIDPtr(farmID),
 		Action:         db.Gr33ncoreUserActionTypeEnumCreateRecord,
 		TargetSchema:   &mod,
 		TargetTable:    &tbl,
@@ -195,7 +195,7 @@ func (h *Handler) logReceiptAccess(r *http.Request, att db.Gr33ncoreFileAttachme
 	tbl := "file_attachments"
 	aid := strconv.FormatInt(att.ID, 10)
 	auditlog.Submit(r.Context(), h.q, r, auditlog.Event{
-		FarmID:         att.FarmID,
+		FarmID:         auditlog.FarmIDPtr(att.FarmID),
 		Action:         db.Gr33ncoreUserActionTypeEnumExportData,
 		TargetSchema:   &mod,
 		TargetTable:    &tbl,

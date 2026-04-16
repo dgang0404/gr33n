@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"io"
 	"net/http"
 	"strconv"
 	"strings"
@@ -93,14 +94,15 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 	tbl := "organizations"
 	rid := strconv.FormatInt(org.ID, 10)
 	auditlog.Submit(ctx, h.q, r, auditlog.Event{
-		FarmID:         0,
+		FarmID:         nil,
 		Action:         db.Gr33ncoreUserActionTypeEnumChangeSetting,
 		TargetSchema:   &mod,
 		TargetTable:    &tbl,
 		TargetRecordID: &rid,
 		Details: map[string]any{
-			"kind": "organization_created",
-			"name": org.Name,
+			"kind":            "organization_created",
+			"name":            org.Name,
+			"organization_id": org.ID,
 		},
 	})
 	httputil.WriteJSON(w, http.StatusCreated, org)
@@ -160,12 +162,22 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 	if !farmauthz.RequireOrgAdmin(w, r, h.q, orgID) {
 		return
 	}
+	rawBody, err := io.ReadAll(r.Body)
+	if err != nil {
+		httputil.WriteError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+	var raw map[string]json.RawMessage
+	if err := json.Unmarshal(rawBody, &raw); err != nil {
+		httputil.WriteError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
 	var body struct {
 		Name          *string `json:"name"`
 		PlanTier      *string `json:"plan_tier"`
 		BillingStatus *string `json:"billing_status"`
 	}
-	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+	if err := json.Unmarshal(rawBody, &body); err != nil {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid request body")
 		return
 	}
@@ -203,11 +215,30 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 			billing = t
 		}
 	}
+	defTemplate := existing.DefaultBootstrapTemplate
+	if v, ok := raw["default_bootstrap_template"]; ok {
+		var defMaybe *string
+		if err := json.Unmarshal(v, &defMaybe); err != nil {
+			httputil.WriteError(w, http.StatusBadRequest, "invalid default_bootstrap_template")
+			return
+		}
+		if defMaybe == nil {
+			defTemplate = nil
+		} else {
+			t := strings.TrimSpace(*defMaybe)
+			if t == "" {
+				defTemplate = nil
+			} else {
+				defTemplate = &t
+			}
+		}
+	}
 	org, err := h.q.UpdateOrganization(ctx, db.UpdateOrganizationParams{
-		ID:            orgID,
-		Name:          name,
-		PlanTier:      plan,
-		BillingStatus: billing,
+		ID:                       orgID,
+		Name:                     name,
+		PlanTier:                 plan,
+		BillingStatus:            billing,
+		DefaultBootstrapTemplate: defTemplate,
 	})
 	if err != nil {
 		httputil.WriteError(w, http.StatusInternalServerError, "failed to update organization")
@@ -217,12 +248,15 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 	tbl := "organizations"
 	rid := strconv.FormatInt(orgID, 10)
 	auditlog.Submit(ctx, h.q, r, auditlog.Event{
-		FarmID:         0,
+		FarmID:         nil,
 		Action:         db.Gr33ncoreUserActionTypeEnumChangeSetting,
 		TargetSchema:   &mod,
 		TargetTable:    &tbl,
 		TargetRecordID: &rid,
-		Details:        map[string]any{"kind": "organization_updated"},
+		Details: map[string]any{
+			"kind":            "organization_updated",
+			"organization_id": orgID,
+		},
 	})
 	httputil.WriteJSON(w, http.StatusOK, org)
 }
@@ -313,14 +347,15 @@ func (h *Handler) AddMember(w http.ResponseWriter, r *http.Request) {
 	tbl := "organization_memberships"
 	rid := strconv.FormatInt(orgID, 10) + ":" + prof.UserID.String()
 	auditlog.Submit(ctx, h.q, r, auditlog.Event{
-		FarmID:         0,
+		FarmID:         nil,
 		Action:         db.Gr33ncoreUserActionTypeEnumChangeSetting,
 		TargetSchema:   &mod,
 		TargetTable:    &tbl,
 		TargetRecordID: &rid,
 		Details: map[string]any{
-			"kind": "organization_member_added",
-			"role": role,
+			"kind":            "organization_member_added",
+			"role":            role,
+			"organization_id": orgID,
 		},
 	})
 	httputil.WriteJSON(w, http.StatusCreated, m)

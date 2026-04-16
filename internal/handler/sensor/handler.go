@@ -24,17 +24,35 @@ type SSENotifier interface {
 	Notify()
 }
 
+// FarmAlertPusher sends mobile push for farm-scoped alerts (optional; nil disables).
+type FarmAlertPusher interface {
+	DispatchFarmAlert(ctx context.Context, alert db.Gr33ncoreAlertsNotification)
+}
+
+// batchReadingIngest is the request shape for POST /sensors/readings/batch items.
+type batchReadingIngest struct {
+	SensorID            int64      `json:"sensor_id"`
+	ReadingTime         *time.Time `json:"reading_time"`
+	ValueRaw            float64    `json:"value_raw"`
+	ValueText           *string    `json:"value_text"`
+	BatteryLevelPercent *float64   `json:"battery_level_percent"`
+	SignalStrengthDbm   *int32     `json:"signal_strength_dbm"`
+	IsValid             *bool      `json:"is_valid"`
+}
+
 type Handler struct {
-	q   db.Querier
-	sse SSENotifier
+	q    db.Querier
+	sse  SSENotifier
+	push FarmAlertPusher
+	pool *pgxpool.Pool
 }
 
-func NewHandler(pool *pgxpool.Pool, sse SSENotifier) *Handler {
-	return &Handler{q: db.New(pool), sse: sse}
+func NewHandler(pool *pgxpool.Pool, sse SSENotifier, push FarmAlertPusher) *Handler {
+	return &Handler{q: db.New(pool), sse: sse, push: push, pool: pool}
 }
 
-func NewHandlerWithQuerier(q db.Querier, sse SSENotifier) *Handler {
-	return &Handler{q: q, sse: sse}
+func NewHandlerWithQuerier(q db.Querier, sse SSENotifier, push FarmAlertPusher) *Handler {
+	return &Handler{q: q, sse: sse, push: push, pool: nil}
 }
 
 func (h *Handler) ListByFarm(w http.ResponseWriter, r *http.Request) {
@@ -198,6 +216,7 @@ func (h *Handler) LatestReading(w http.ResponseWriter, r *http.Request) {
 const (
 	defaultReadingListLimit = 500
 	maxReadingListLimit     = 5000
+	maxBatchReadings        = 64
 	defaultReadingRange     = 24 * time.Hour
 )
 
@@ -481,6 +500,113 @@ func (h *Handler) PostReading(w http.ResponseWriter, r *http.Request) {
 	httputil.WriteJSON(w, http.StatusCreated, reading)
 }
 
+// PostReadingsBatch — POST /sensors/readings/batch
+// Compact multi-reading ingest for MQTT bridges and microcontrollers (one HTTP round-trip).
+// Body: JSON array of { "sensor_id", "value_raw", optional "reading_time", "is_valid", ... }.
+func (h *Handler) PostReadingsBatch(w http.ResponseWriter, r *http.Request) {
+	var items []batchReadingIngest
+	if err := json.NewDecoder(r.Body).Decode(&items); err != nil {
+		httputil.WriteError(w, http.StatusBadRequest, "invalid JSON")
+		return
+	}
+	if len(items) == 0 {
+		httputil.WriteError(w, http.StatusBadRequest, "empty batch")
+		return
+	}
+	if len(items) > maxBatchReadings {
+		httputil.WriteError(w, http.StatusBadRequest,
+			fmt.Sprintf("at most %d readings per request", maxBatchReadings))
+		return
+	}
+	for i := range items {
+		if items[i].SensorID < 1 {
+			httputil.WriteError(w, http.StatusBadRequest, "each item requires sensor_id")
+			return
+		}
+	}
+
+	ctx := r.Context()
+	var out []db.Gr33ncoreSensorReading
+	var err error
+	if h.pool != nil {
+		var tx pgx.Tx
+		tx, err = h.pool.Begin(ctx)
+		if err != nil {
+			httputil.WriteError(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+		defer tx.Rollback(ctx)
+		qtx := db.New(tx)
+		out, err = h.insertSensorReadingBatch(ctx, qtx, items)
+		if err != nil {
+			httputil.WriteError(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+		if err := tx.Commit(ctx); err != nil {
+			httputil.WriteError(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+	} else {
+		out, err = h.insertSensorReadingBatch(ctx, h.q, items)
+		if err != nil {
+			httputil.WriteError(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+	}
+
+	if h.sse != nil {
+		h.sse.Notify()
+	}
+	for _, item := range items {
+		go h.evaluateThresholds(context.Background(), item.SensorID, item.ValueRaw)
+	}
+
+	httputil.WriteJSON(w, http.StatusCreated, map[string]any{
+		"inserted": len(out),
+		"readings": out,
+	})
+}
+
+func (h *Handler) insertSensorReadingBatch(ctx context.Context, q db.Querier, items []batchReadingIngest) ([]db.Gr33ncoreSensorReading, error) {
+	out := make([]db.Gr33ncoreSensorReading, 0, len(items))
+	for _, item := range items {
+		ts := time.Now().UTC()
+		if item.ReadingTime != nil {
+			ts = *item.ReadingTime
+		}
+		isValid := true
+		if item.IsValid != nil {
+			isValid = *item.IsValid
+		}
+		pIsValid := &isValid
+
+		var valueRaw pgtype.Numeric
+		_ = valueRaw.Scan(strconv.FormatFloat(item.ValueRaw, 'f', -1, 64))
+
+		var battery pgtype.Numeric
+		if item.BatteryLevelPercent != nil {
+			_ = battery.Scan(strconv.FormatFloat(*item.BatteryLevelPercent, 'f', 2, 64))
+		}
+
+		row, err := q.InsertSensorReading(ctx, db.InsertSensorReadingParams{
+			ReadingTime:         ts,
+			SensorID:            item.SensorID,
+			ValueRaw:            valueRaw,
+			ValueText:           item.ValueText,
+			ValueJson:           nil,
+			BatteryLevelPercent: battery,
+			SignalStrengthDbm:   item.SignalStrengthDbm,
+			IsValid:             pIsValid,
+			MetaData:            nil,
+		})
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, row)
+	}
+	return out, nil
+}
+
 func numericToFloat64(n pgtype.Numeric) (float64, bool) {
 	if !n.Valid {
 		return 0, false
@@ -539,7 +665,7 @@ func (h *Handler) evaluateThresholds(ctx context.Context, sensorID int64, valueR
 	}
 
 	subject := fmt.Sprintf("Sensor '%s' threshold breach", sensor.Name)
-	_, err = h.q.CreateAlert(ctx, db.CreateAlertParams{
+	created, err := h.q.CreateAlert(ctx, db.CreateAlertParams{
 		FarmID:                    sensor.FarmID,
 		TriggeringEventSourceType: &srcType,
 		TriggeringEventSourceID:   &sensorID,
@@ -552,5 +678,14 @@ func (h *Handler) evaluateThresholds(ctx context.Context, sensorID int64, valueR
 	})
 	if err != nil {
 		log.Printf("alert: failed to create for sensor %d: %v", sensorID, err)
+		return
+	}
+	if h.push != nil {
+		a := created
+		go func() {
+			c, cancel := context.WithTimeout(context.Background(), 45*time.Second)
+			defer cancel()
+			h.push.DispatchFarmAlert(c, a)
+		}()
 	}
 }

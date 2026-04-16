@@ -13,7 +13,7 @@ info:
     - In `AUTH_MODE=dev` (dev-tagged build only), auth is bypassed.
     - `AUTH_MODE=auth_test` enforces the same auth as production on a dev-tagged build only.
 
-    **Operator docs:** Phase 13 index — `docs/phase-13-operator-documentation.md`. Farm audit trail — `docs/audit-events-operator-playbook.md`. Insert Commons receiver — `docs/insert-commons-receiver-playbook.md`. Receipt storage cutover — `docs/receipt-storage-cutover-runbook.md`. Optional mobile wrapper — `docs/mobile-distribution.md`.
+    **Operator docs:** Phase 13 index — `docs/phase-13-operator-documentation.md`. **Phase 14 index** — `docs/phase-14-operator-documentation.md`. Farm audit trail — `docs/audit-events-operator-playbook.md`. Insert Commons pipeline — `docs/insert-commons-pipeline-runbook.md`; receiver — `docs/insert-commons-receiver-playbook.md`. Commons catalog (gr33n_inserts) — `docs/commons-catalog-operator-playbook.md`. Receipt storage cutover — `docs/receipt-storage-cutover-runbook.md`. Push alerts (FCM) — `docs/notifications-operator-playbook.md`. Domain module stubs (DB only; no API yet) — `docs/domain-modules-operator-playbook.md`. Optional mobile wrapper — `docs/mobile-distribution.md`.
 
     **Phase 13 API areas:** `organizations` (multi-farm grouping, usage summary), `farms` (Insert Commons opt-in/sync/history, farm-scoped audit events), `costs` / attachments (finance mappings, exports, receipts).
   license:
@@ -31,6 +31,8 @@ tags:
     description: Authentication and password management
   - name: units
     description: Units of measure reference
+  - name: commons
+    description: Published commons catalog (gr33n_inserts) — browse metadata packs and record per-farm imports
   - name: farms
     description: Farm management, Insert Commons opt-in and sync, and farm-scoped audit events (owner/manager)
   - name: organizations
@@ -243,6 +245,35 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/SensorReading" }
 
+  /sensors/readings/batch:
+    post:
+      tags: [sensors]
+      summary: Post multiple sensor readings (edge / MQTT bridge)
+      description: |
+        One HTTP request for several readings (e.g. MQTT subscriber on a gateway).
+        Inserts run in a single transaction. At most 64 items per request.
+        Same `X-API-Key` as `POST /sensors/{id}/readings`.
+      security: [{ apiKeyAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              minItems: 1
+              maxItems: 64
+              items: { $ref: "#/components/schemas/SensorReadingBatchItem" }
+            example:
+              - { sensor_id: 1, value_raw: 22.5, is_valid: true }
+              - { sensor_id: 2, value_raw: 61.0 }
+      responses:
+        "201":
+          description: All readings stored
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SensorReadingBatchResponse" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+
   /devices/{id}/status:
     patch:
       tags: [devices]
@@ -283,6 +314,99 @@ paths:
                 type: array
                 items: { $ref: "#/components/schemas/Unit" }
 
+  # ── Commons catalog (gr33n_inserts) ───────────────────────
+
+  /commons/catalog:
+    get:
+      tags: [commons]
+      summary: List published commons catalog entries
+      description: >
+        Returns metadata for operator-curated packs (documentation, reference JSON, future insert templates).
+        Response rows omit the heavy `body`; use `GET /commons/catalog/{slug}` for the full payload.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: q
+          in: query
+          schema: { type: string }
+          description: Search title, summary, or tags (case-insensitive substring)
+        - name: limit
+          in: query
+          schema: { type: integer, default: 50, maximum: 100 }
+        - name: offset
+          in: query
+          schema: { type: integer, minimum: 0, default: 0 }
+      responses:
+        "200":
+          description: List of catalog entries
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/CommonsCatalogListEntry" }
+
+  /commons/catalog/{slug}:
+    get:
+      tags: [commons]
+      summary: Get one published catalog entry by slug
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Full entry including `body` (JSON)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CommonsCatalogEntryDetail" }
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /farms/{id}/commons/catalog-imports:
+    get:
+      tags: [commons]
+      summary: List catalog imports recorded for this farm
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      responses:
+        "200":
+          description: Import audit rows with catalog metadata
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/FarmCommonsCatalogImportListRow" }
+        "403":
+          $ref: "#/components/responses/Forbidden"
+    post:
+      tags: [commons]
+      summary: Record a catalog import for this farm (farm admin)
+      description: >
+        Idempotent per farm and catalog entry. Does not execute SQL or mutate farm data automatically —
+        records provenance and returns the catalog `body` for clients, automation, or future workers.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CommonsCatalogImportRequest" }
+      responses:
+        "200":
+          description: Import row plus catalog entry snapshot
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CommonsCatalogImportResponse" }
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
   # ── Farms ──────────────────────────────────────────────────
 
   /farms:
@@ -307,6 +431,14 @@ paths:
     post:
       tags: [farms]
       summary: Create a farm
+      description: >
+        If `bootstrap_template` is omitted and the farm is not linked to an organization with a default template,
+        the response body is a plain Farm object.
+        If `bootstrap_template` is present (including `none`), or if the farm has `organization_id` set and that
+        organization has `default_bootstrap_template`, the response is `{ farm, bootstrap }` where `bootstrap`
+        is the outcome of `gr33ncore.apply_farm_bootstrap_template` (skipped, applied, already_applied, or error detail).
+        Sending `bootstrap_template: "none"` skips both an explicit pack and the organization default.
+        Auto-bootstrap runs only when the authenticated user matches `owner_user_id`.
       security: [{ bearerAuth: [] }]
       requestBody:
         required: true
@@ -315,10 +447,48 @@ paths:
             schema: { $ref: "#/components/schemas/FarmCreate" }
       responses:
         "201":
-          description: Created farm
+          description: Created farm (or farm + bootstrap when bootstrap_template was sent)
           content:
             application/json:
-              schema: { $ref: "#/components/schemas/Farm" }
+              schema:
+                oneOf:
+                  - { $ref: "#/components/schemas/Farm" }
+                  - { $ref: "#/components/schemas/FarmCreatedWithBootstrap" }
+
+  /farms/{id}/bootstrap-template:
+    post:
+      tags: [farms]
+      summary: Apply a versioned starter template to an existing farm (farm admin)
+      description: >
+        Idempotent per farm and template key. Currently supported `template` value: `jadam_indoor_photoperiod_v1`.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [template]
+              properties:
+                template:
+                  type: string
+                  example: jadam_indoor_photoperiod_v1
+      responses:
+        "200":
+          description: Bootstrap result
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/FarmBootstrapApplyResponse" }
+        "400":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "404":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
 
   /farms/{id}:
     get:
@@ -462,6 +632,32 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/OrganizationUsageSummary" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /organizations/{id}/audit-events:
+    get:
+      tags: [organizations]
+      summary: List audit events across farms in the organization (org owner or admin only)
+      description: >
+        Union of farm-scoped events for all farms linked to this organization and org-only rows
+        (organization create/update, membership changes). Same response shape as farm audit events.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+        - name: limit
+          in: query
+          schema: { type: integer, default: 50, maximum: 200 }
+        - name: offset
+          in: query
+          schema: { type: integer, default: 0, minimum: 0 }
+      responses:
+        "200":
+          description: Audit events newest-first
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/AuditActivityEvent" }
         "403": { $ref: "#/components/responses/Forbidden" }
 
   /organizations/{id}/members:
@@ -693,7 +889,12 @@ paths:
     get:
       tags: [devices]
       summary: List devices for a farm
-      security: [{ bearerAuth: [] }]
+      description: |
+        Dashboard users send a JWT. Edge gateways (Pi, MQTT bridge) may use `X-API-Key`
+        with the same `PI_API_KEY` as sensor ingest, to poll `config.pending_command` for tasking.
+      security:
+        - { bearerAuth: [] }
+        - { apiKeyAuth: [] }
       parameters:
         - { $ref: "#/components/parameters/ID" }
       responses:
@@ -1806,16 +2007,40 @@ paths:
               required: [insert_commons_opt_in]
               properties:
                 insert_commons_opt_in: { type: boolean }
+                insert_commons_require_approval:
+                  type: boolean
+                  description: When true and opt-in is on, sync payloads are queued for farm-admin approval before POST to ingest. Omitted leaves the current farm setting unchanged.
       responses:
         "200":
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Farm" }
 
+  /farms/{id}/insert-commons/preview:
+    get:
+      tags: [farms]
+      summary: Preview Insert Commons ingest JSON (farm admin; read-only)
+      description: >
+        Builds the same validated aggregate payload as `POST .../insert-commons/sync` would send,
+        without recording a sync attempt, queueing an approval bundle, or POSTing to the ingest URL.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      responses:
+        "200":
+          description: Preview payload (valid after successful build)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/InsertCommonsPreviewResponse" }
+        "403":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+
   /farms/{id}/insert-commons/sync:
     post:
       tags: [farms]
-      summary: Sync anonymized aggregates to Insert Commons (optional HTTP ingest) with idempotency + backoff
+      summary: Sync anonymized aggregates to Insert Commons (optional HTTP ingest) with idempotency, optional approval queue, and backoff
       security: [{ bearerAuth: [] }]
       parameters:
         - { $ref: "#/components/parameters/ID" }
@@ -1895,6 +2120,141 @@ paths:
               schema:
                 type: array
                 items: { $ref: "#/components/schemas/InsertCommonsSyncEvent" }
+
+  /farms/{id}/insert-commons/bundles:
+    get:
+      tags: [farms]
+      summary: List Insert Commons bundles for a farm (admin or cost edit)
+      description: Filter by bundle status; omit status to return all.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+        - name: status
+          in: query
+          required: false
+          schema: { type: string }
+        - name: limit
+          in: query
+          schema: { type: integer, default: 25, maximum: 100 }
+        - name: offset
+          in: query
+          schema: { type: integer, default: 0, minimum: 0 }
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/InsertCommonsBundle" }
+
+  /farms/{id}/insert-commons/bundles/{bundle_id}/approve:
+    post:
+      tags: [farms]
+      summary: Approve a pending Insert Commons bundle and deliver to ingest (farm admin)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+        - name: bundle_id
+          in: path
+          required: true
+          schema: { type: integer, format: int64 }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                note: { type: string }
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/InsertCommonsBundleDeliveryResult" }
+        "429":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "502":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+
+  /farms/{id}/insert-commons/bundles/{bundle_id}/reject:
+    post:
+      tags: [farms]
+      summary: Reject a pending Insert Commons bundle (farm admin)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+        - name: bundle_id
+          in: path
+          required: true
+          schema: { type: integer, format: int64 }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [note]
+              properties:
+                note: { type: string }
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/InsertCommonsBundle" }
+
+  /farms/{id}/insert-commons/bundles/{bundle_id}/deliver:
+    post:
+      tags: [farms]
+      summary: Retry delivery for a bundle in delivery_failed state (farm admin)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+        - name: bundle_id
+          in: path
+          required: true
+          schema: { type: integer, format: int64 }
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/InsertCommonsBundleDeliveryResult" }
+        "429":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "502":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+
+  /farms/{id}/insert-commons/bundles/{bundle_id}/export:
+    get:
+      tags: [farms]
+      summary: Download bundle JSON for review or archival (admin or cost edit)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+        - name: bundle_id
+          in: path
+          required: true
+          schema: { type: integer, format: int64 }
+        - name: format
+          in: query
+          description: ingest = raw payload sent to receiver; package_v1 = wrapped export with metadata
+          schema:
+            type: string
+            enum: [ingest, package_v1]
+            default: ingest
+      responses:
+        "200":
+          description: JSON attachment
+          content:
+            application/json:
+              schema: { type: object, additionalProperties: true }
 
   # ── Alerts ──────────────────────────────────────────────────
 
@@ -1994,6 +2354,83 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Profile" }
+
+  /profile/notification-preferences:
+    get:
+      tags: [profiles]
+      summary: Get notification preferences (volume / push opt-in)
+      description: |
+        Returns merged defaults plus `profiles.preferences.notify` (`push_enabled`, `min_priority`).
+        Only farm roles **owner**, **manager**, and **operator** are eligible for farm alert push.
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          description: Effective notification preferences
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/NotificationPreferences" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    patch:
+      tags: [profiles]
+      summary: Update notification preferences
+      description: Merges into `profiles.preferences.notify` without removing other preference keys.
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/NotificationPreferencesPatch" }
+      responses:
+        "200":
+          description: Updated effective preferences
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/NotificationPreferences" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /profile/push-tokens:
+    get:
+      tags: [profiles]
+      summary: List FCM device tokens for the current user
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          description: Registered tokens (newest first)
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/UserPushToken" }
+    post:
+      tags: [profiles]
+      summary: Register or refresh an FCM device token
+      description: Upserts by `fcm_token` so a token moves cleanly to a new user/device owner.
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PushTokenRegister" }
+      responses:
+        "200":
+          description: Upserted token row
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/UserPushToken" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+    delete:
+      tags: [profiles]
+      summary: Remove one FCM device token
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PushTokenDelete" }
+      responses:
+        "204":
+          description: Token removed (or was not present)
 
   /farms/{id}/members:
     get:
@@ -2156,6 +2593,7 @@ components:
         organization_id: { type: integer, nullable: true, description: Optional parent organization for multi-farm tenancy }
         created_at: { type: string, format: date-time }
         insert_commons_opt_in: { type: boolean }
+        insert_commons_require_approval: { type: boolean, description: When true, manual sync queues payloads until a farm admin approves }
         insert_commons_last_sync_at: { type: string, format: date-time, nullable: true }
         insert_commons_last_attempt_at: { type: string, format: date-time, nullable: true }
         insert_commons_last_delivery_status: { type: string, nullable: true }
@@ -2179,6 +2617,23 @@ components:
         privacy_notice: { type: string }
         receiver_contract: { type: object, additionalProperties: true }
         receiver_error_excerpt: { type: string, nullable: true }
+        pending_approval: { type: boolean, description: True when payload is queued for human approval }
+        bundle_id: { type: integer, format: int64, nullable: true }
+
+    InsertCommonsPreviewResponse:
+      type: object
+      required: [valid]
+      properties:
+        valid: { type: boolean, description: True when payload was built and passed schema validation }
+        schema_version: { type: string }
+        farm_pseudonym: { type: string }
+        generated_at: { type: string, description: RFC3339 timestamp from the preview payload }
+        payload:
+          type: object
+          additionalProperties: true
+          description: Full ingest JSON (Insert Commons v1 shape)
+        privacy_notice: { type: string }
+        receiver_contract: { type: object, additionalProperties: true }
 
     InsertCommonsSyncEvent:
       type: object
@@ -2189,7 +2644,38 @@ components:
         status: { type: string }
         http_status: { type: integer, nullable: true }
         error: { type: string, nullable: true }
+        bundle_id: { type: integer, format: int64, nullable: true }
         created_at: { type: string, format: date-time }
+
+    InsertCommonsBundle:
+      type: object
+      properties:
+        id: { type: integer, format: int64 }
+        farm_id: { type: integer }
+        idempotency_key: { type: string, nullable: true }
+        payload_hash: { type: string }
+        status:
+          type: string
+          enum: [pending_approval, approved, rejected, delivered, delivery_failed]
+        reviewer_user_id: { type: string, format: uuid, nullable: true }
+        reviewed_at: { type: string, format: date-time, nullable: true }
+        review_note: { type: string, nullable: true }
+        delivery_http_status: { type: integer, nullable: true }
+        delivery_error: { type: string, nullable: true }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+
+    InsertCommonsBundleDeliveryResult:
+      type: object
+      properties:
+        ok: { type: boolean }
+        farm_id: { type: integer }
+        bundle_id: { type: integer, format: int64 }
+        delivery_status: { type: string }
+        http_status: { type: integer, nullable: true }
+        last_sync_at: { type: string, format: date-time, nullable: true }
+        last_attempt_at: { type: string, format: date-time, nullable: true }
+        receiver_error_excerpt: { type: string, nullable: true }
 
     AuditActivityEvent:
       type: object
@@ -2258,6 +2744,28 @@ components:
         currency: { type: string, example: USD }
         operational_status: { type: string }
         organization_id: { type: integer, nullable: true, description: Optional; requires org admin role }
+        bootstrap_template:
+          type: string
+          nullable: true
+          description: Optional. `jadam_indoor_photoperiod_v1` for starter zones/schedules/JADAM+fertigation baseline; `none` or `blank` to explicitly skip. Omit for a blank farm response shape.
+
+    FarmCreatedWithBootstrap:
+      type: object
+      required: [farm, bootstrap]
+      properties:
+        farm: { $ref: "#/components/schemas/Farm" }
+        bootstrap:
+          type: object
+          additionalProperties: true
+          description: Result JSON from apply_farm_bootstrap_template (skipped, applied, already_applied, error, etc.)
+
+    FarmBootstrapApplyResponse:
+      type: object
+      properties:
+        farm_id: { type: integer }
+        bootstrap:
+          type: object
+          additionalProperties: true
 
     FarmUpdate:
       type: object
@@ -2291,6 +2799,12 @@ components:
         name: { type: string }
         plan_tier: { type: string, description: Billing / product tier hook (e.g. pilot, standard) }
         billing_status: { type: string, description: e.g. none, trialing, active }
+        default_bootstrap_template:
+          type: string
+          nullable: true
+          description: >
+            When set, `POST /farms` may apply this template for new farms that set `organization_id` to this org
+            and omit `bootstrap_template` (see farm create). Use `null` in PATCH to clear.
         created_at: { type: string, format: date-time }
         updated_at: { type: string, format: date-time }
 
@@ -2316,6 +2830,10 @@ components:
         name: { type: string }
         plan_tier: { type: string }
         billing_status: { type: string }
+        default_bootstrap_template:
+          type: string
+          nullable: true
+          description: Farm bootstrap key (e.g. jadam_indoor_photoperiod_v1) or null to clear the org default
 
     OrganizationUsageSummary:
       type: object
@@ -2394,6 +2912,23 @@ components:
         battery_level_percent: { type: number }
         signal_strength_dbm: { type: integer }
         is_valid: { type: boolean, default: true }
+
+    SensorReadingBatchItem:
+      allOf:
+        - { $ref: "#/components/schemas/SensorReadingCreate" }
+        - type: object
+          required: [sensor_id]
+          properties:
+            sensor_id: { type: integer, description: gr33ncore.sensors.id }
+
+    SensorReadingBatchResponse:
+      type: object
+      required: [inserted, readings]
+      properties:
+        inserted: { type: integer }
+        readings:
+          type: array
+          items: { $ref: "#/components/schemas/SensorReading" }
 
     SensorReadingStats:
       type: object
@@ -3117,6 +3652,51 @@ components:
         avatar_url: { type: string }
         preferences: { type: object }
 
+    NotificationPreferences:
+      type: object
+      properties:
+        push_enabled: { type: boolean, description: When false, no FCM messages are sent for this user. }
+        min_priority:
+          type: string
+          enum: [low, medium, high, critical]
+          description: Deliver push only when alert severity is at least this level.
+
+    NotificationPreferencesPatch:
+      type: object
+      description: At least one field required.
+      properties:
+        push_enabled: { type: boolean }
+        min_priority:
+          type: string
+          enum: [low, medium, high, critical]
+
+    PushTokenRegister:
+      type: object
+      required: [platform, fcm_token]
+      properties:
+        platform:
+          type: string
+          enum: [android, ios, web]
+        fcm_token: { type: string }
+
+    PushTokenDelete:
+      type: object
+      required: [fcm_token]
+      properties:
+        fcm_token: { type: string }
+
+    UserPushToken:
+      type: object
+      properties:
+        id: { type: integer }
+        user_id: { type: string, format: uuid }
+        platform:
+          type: string
+          enum: [android, ios, web]
+        fcm_token: { type: string }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+
     FarmMember:
       type: object
       properties:
@@ -3151,3 +3731,75 @@ components:
           enum: [owner, manager, operator, viewer]
         permissions: { type: object }
         joined_at: { type: string, format: date-time }
+
+    CommonsCatalogListEntry:
+      type: object
+      description: Published catalog row without full body JSON
+      properties:
+        id: { type: integer }
+        slug: { type: string }
+        title: { type: string }
+        summary: { type: string }
+        contributor_display: { type: string }
+        contributor_uri: { type: string, nullable: true }
+        license_spdx: { type: string }
+        license_notes: { type: string, nullable: true }
+        tags:
+          type: array
+          items: { type: string }
+        sort_order: { type: integer }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+
+    CommonsCatalogEntryDetail:
+      type: object
+      properties:
+        id: { type: integer }
+        slug: { type: string }
+        title: { type: string }
+        summary: { type: string }
+        body: { type: object, description: Arbitrary JSON (e.g. gr33n.commons_catalog.v1) }
+        contributor_display: { type: string }
+        contributor_uri: { type: string, nullable: true }
+        license_spdx: { type: string }
+        license_notes: { type: string, nullable: true }
+        tags:
+          type: array
+          items: { type: string }
+        sort_order: { type: integer }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+
+    FarmCommonsCatalogImportListRow:
+      type: object
+      properties:
+        id: { type: integer }
+        imported_at: { type: string, format: date-time }
+        note: { type: string, nullable: true }
+        catalog_entry_id: { type: integer }
+        slug: { type: string }
+        title: { type: string }
+        license_spdx: { type: string }
+        contributor_display: { type: string }
+
+    CommonsCatalogImportRequest:
+      type: object
+      required: [slug]
+      properties:
+        slug: { type: string, description: Published catalog slug }
+        note: { type: string, description: Optional operator note }
+
+    CommonsCatalogImportResponse:
+      type: object
+      properties:
+        import:
+          type: object
+          properties:
+            id: { type: integer }
+            farm_id: { type: integer }
+            catalog_entry_id: { type: integer }
+            imported_at: { type: string, format: date-time }
+            note: { type: string, nullable: true }
+        catalog_entry:
+          type: object
+          description: Snapshot of metadata + parsed body for tooling

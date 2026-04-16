@@ -15,6 +15,7 @@ import (
 	audithandler "gr33n-api/internal/handler/audit"
 	authhandler "gr33n-api/internal/handler/auth"
 	automationhandler "gr33n-api/internal/handler/automation"
+	commonscataloghandler "gr33n-api/internal/handler/commonscatalog"
 	costhandler "gr33n-api/internal/handler/cost"
 	cropcyclehandler "gr33n-api/internal/handler/cropcycle"
 	devicehandler "gr33n-api/internal/handler/device"
@@ -30,6 +31,7 @@ import (
 	taskhandler "gr33n-api/internal/handler/task"
 	zonehandler "gr33n-api/internal/handler/zone"
 	"gr33n-api/internal/httputil"
+	"gr33n-api/internal/pushnotify"
 )
 
 func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationworker.Worker, adminUser string, adminHash []byte, hashFilePath string, fileStore filestorage.Store, fileCfg filestorage.Config) {
@@ -41,7 +43,8 @@ func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationwo
 	actuator := actuatorhandler.NewHandler(pool)
 	automation := automationhandler.NewHandler(pool, worker)
 	sse := ssehandler.NewHandler(pool)
-	sensor := sensorhandler.NewHandler(pool, sse)
+	pushDispatch := pushnotify.NewDispatcher(pool)
+	sensor := sensorhandler.NewHandler(pool, sse, pushDispatch)
 	task := taskhandler.NewHandler(pool)
 	fertigation := fertigationhandler.NewHandler(pool)
 	nf := nfhandler.NewHandler(pool)
@@ -60,6 +63,7 @@ func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationwo
 	}
 	cost := costhandler.NewHandler(pool, fileStore)
 	files := fileattachhandler.NewHandler(pool, fileStore, fileCfg.DownloadURLTTL)
+	commonsCatalog := commonscataloghandler.NewHandler(pool)
 
 	// ── Public ───────────────────────────────────────────────────────────────
 	mux.HandleFunc("GET /health", func(w http.ResponseWriter, r *http.Request) {
@@ -79,6 +83,7 @@ func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationwo
 
 	// ── Pi routes — API key required ─────────────────────────────────────────
 	mux.Handle("POST /sensors/{id}/readings", requireAPIKey(http.HandlerFunc(sensor.PostReading)))
+	mux.Handle("POST /sensors/readings/batch", requireAPIKey(http.HandlerFunc(sensor.PostReadingsBatch)))
 	mux.Handle("PATCH /devices/{id}/status", requireAPIKey(http.HandlerFunc(device.UpdateStatus)))
 	mux.Handle("POST /actuators/{id}/events", requireAPIKey(http.HandlerFunc(actuator.RecordEvent)))
 	mux.Handle("DELETE /devices/{id}/pending-command", requireAPIKey(http.HandlerFunc(device.ClearPendingCommand)))
@@ -99,9 +104,16 @@ func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationwo
 		httputil.WriteJSON(w, http.StatusOK, units)
 	})))
 
+	// Commons catalog (gr33n_inserts — browse + per-farm import audit)
+	mux.Handle("GET /commons/catalog", jwt(http.HandlerFunc(commonsCatalog.List)))
+	mux.Handle("GET /commons/catalog/{slug}", jwt(http.HandlerFunc(commonsCatalog.GetBySlug)))
+	mux.Handle("GET /farms/{id}/commons/catalog-imports", jwt(http.HandlerFunc(commonsCatalog.ListFarmImports)))
+	mux.Handle("POST /farms/{id}/commons/catalog-imports", jwt(http.HandlerFunc(commonsCatalog.Import)))
+
 	// Farms
 	mux.Handle("GET /farms", jwt(http.HandlerFunc(farm.List)))
 	mux.Handle("POST /farms", jwt(http.HandlerFunc(farm.Create)))
+	mux.Handle("POST /farms/{id}/bootstrap-template", jwt(http.HandlerFunc(farm.ApplyFarmBootstrapTemplate)))
 	mux.Handle("PUT /farms/{id}", jwt(http.HandlerFunc(farm.Update)))
 	mux.Handle("PATCH /farms/{id}/organization", jwt(http.HandlerFunc(farm.SetOrganization)))
 	mux.Handle("DELETE /farms/{id}", jwt(http.HandlerFunc(farm.Delete)))
@@ -113,13 +125,20 @@ func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationwo
 	mux.Handle("GET /organizations/{id}", jwt(http.HandlerFunc(org.Get)))
 	mux.Handle("PATCH /organizations/{id}", jwt(http.HandlerFunc(org.Update)))
 	mux.Handle("GET /organizations/{id}/usage-summary", jwt(http.HandlerFunc(org.UsageSummary)))
+	mux.Handle("GET /organizations/{id}/audit-events", jwt(http.HandlerFunc(audit.ListByOrganization)))
 	mux.Handle("POST /organizations/{id}/members", jwt(http.HandlerFunc(org.AddMember)))
 	mux.Handle("PATCH /farms/{id}/insert-commons/opt-in", jwt(http.HandlerFunc(farm.SetInsertCommonsOptIn)))
+	mux.Handle("GET /farms/{id}/insert-commons/preview", jwt(http.HandlerFunc(farm.InsertCommonsPreview)))
 	mux.Handle("POST /farms/{id}/insert-commons/sync", jwt(http.HandlerFunc(farm.InsertCommonsSync)))
 	mux.Handle("GET /farms/{id}/insert-commons/sync-events", jwt(http.HandlerFunc(farm.InsertCommonsHistory)))
+	mux.Handle("GET /farms/{id}/insert-commons/bundles", jwt(http.HandlerFunc(farm.ListInsertCommonsBundles)))
+	mux.Handle("POST /farms/{id}/insert-commons/bundles/{bundle_id}/approve", jwt(http.HandlerFunc(farm.ApproveInsertCommonsBundleHTTP)))
+	mux.Handle("POST /farms/{id}/insert-commons/bundles/{bundle_id}/reject", jwt(http.HandlerFunc(farm.RejectInsertCommonsBundleHTTP)))
+	mux.Handle("POST /farms/{id}/insert-commons/bundles/{bundle_id}/deliver", jwt(http.HandlerFunc(farm.RetryInsertCommonsBundleDeliver)))
+	mux.Handle("GET /farms/{id}/insert-commons/bundles/{bundle_id}/export", jwt(http.HandlerFunc(farm.ExportInsertCommonsBundle)))
 	mux.Handle("GET /farms/{id}/audit-events", jwt(http.HandlerFunc(audit.ListByFarm)))
 	mux.Handle("GET /farms/{id}/zones", jwt(http.HandlerFunc(zone.ListByFarm)))
-	mux.Handle("GET /farms/{id}/devices", jwt(http.HandlerFunc(device.ListByFarm)))
+	mux.Handle("GET /farms/{id}/devices", requireJWTOrPiEdge(http.HandlerFunc(device.ListByFarm)))
 	mux.Handle("GET /farms/{id}/actuators", jwt(http.HandlerFunc(actuator.ListByFarm)))
 	mux.Handle("GET /farms/{id}/sensors", jwt(http.HandlerFunc(sensor.ListByFarm)))
 	mux.Handle("GET /farms/{id}/schedules", jwt(http.HandlerFunc(automation.ListSchedulesByFarm)))
@@ -219,6 +238,11 @@ func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationwo
 	// Profile & farm members
 	mux.Handle("GET /profile", jwt(http.HandlerFunc(prof.GetMyProfile)))
 	mux.Handle("PUT /profile", jwt(http.HandlerFunc(prof.UpdateMyProfile)))
+	mux.Handle("GET /profile/notification-preferences", jwt(http.HandlerFunc(prof.GetNotificationPreferences)))
+	mux.Handle("PATCH /profile/notification-preferences", jwt(http.HandlerFunc(prof.PatchNotificationPreferences)))
+	mux.Handle("GET /profile/push-tokens", jwt(http.HandlerFunc(prof.ListMyPushTokens)))
+	mux.Handle("POST /profile/push-tokens", jwt(http.HandlerFunc(prof.RegisterPushToken)))
+	mux.Handle("DELETE /profile/push-tokens", jwt(http.HandlerFunc(prof.UnregisterPushToken)))
 	mux.Handle("GET /farms/{id}/members", jwt(http.HandlerFunc(prof.GetFarmMembers)))
 	mux.Handle("POST /farms/{id}/members", jwt(http.HandlerFunc(prof.AddFarmMember)))
 	mux.Handle("PATCH /farms/{id}/members/{uid}/role", jwt(http.HandlerFunc(prof.UpdateMemberRole)))

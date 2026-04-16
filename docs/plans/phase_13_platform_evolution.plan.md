@@ -72,3 +72,5 @@ Central index: [`docs/phase-13-operator-documentation.md`](../phase-13-operator-
 ## Using this plan in a new chat
 
 Reference `@docs/plans/phase_13_platform_evolution.plan.md` and specify which workstreams to implement first; adjust todos to match your release goals.
+
+**Successor:** Phase 14 — [`phase_14_network_and_commons.plan.md`](phase_14_network_and_commons.plan.md).

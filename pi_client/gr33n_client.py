@@ -179,8 +179,22 @@ class Gr33nApiClient:
             log.debug('API unreachable: %s', exc)
             return False
 
+    def post_readings_batch(self, items: list) -> bool:
+        """POST /sensors/readings/batch — items are dicts with sensor_id, value_raw, optional reading_time, is_valid."""
+        if not items:
+            return True
+        try:
+            r = self._s.post(f'{self.base_url}/sensors/readings/batch', json=items, timeout=self.timeout)
+            if r.status_code in (200, 201):
+                return True
+            log.warning('API rejected batch ingest status=%s body=%s', r.status_code, r.text[:200])
+            return False
+        except requests.RequestException as exc:
+            log.debug('API unreachable: %s', exc)
+            return False
+
     def get_devices(self) -> list:
-        # GET /farms/{id}/devices - matches handleListDevices in routes.go
+        # GET /farms/{id}/devices — JWT or X-API-Key (Pi); see mqtt-edge-operator-playbook.md
         try:
             r = self._s.get(f'{self.base_url}/farms/{self.farm_id}/devices', timeout=self.timeout)
             if r.status_code == 200:

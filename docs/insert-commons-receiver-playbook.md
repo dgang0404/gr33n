@@ -1,6 +1,6 @@
 # Insert Commons receiver — operator playbook
 
-The gr33n **farm API** can POST coarse aggregate payloads to an external URL when Insert Commons sharing is enabled and environment variables are set. This document is for **operators and integrators** implementing or hosting that **receiver** (ingest endpoint). The farm-side sender behavior lives in `internal/handler/farm/insert_commons.go`.
+The gr33n **farm API** can POST coarse aggregate payloads to an external URL when Insert Commons sharing is enabled and environment variables are set. This document is for **operators and integrators** implementing or hosting that **receiver** (ingest endpoint). For validation rules, approval queue, preview, and schema policy on the **farm side**, see **[`insert-commons-pipeline-runbook.md`](insert-commons-pipeline-runbook.md)**. Implementation: `internal/handler/farm/insert_commons.go`.
 
 ## Farm-side configuration (sender)
 
@@ -24,13 +24,15 @@ Farm users still must **opt in** per farm (`PATCH /farms/{id}/insert-commons/opt
 | URL | Exactly the value of `INSERT_COMMONS_INGEST_URL` |
 | Header `Content-Type` | `application/json` |
 | Header `Authorization` | Optional `Bearer <INSERT_COMMONS_SHARED_SECRET>` when the farm is configured with a secret |
+| Header `Gr33n-Idempotency-Key` | Optional; **farm API forwards** the same key as the farm sync `Idempotency-Key` (max 128 chars). Alias: `Idempotency-Key` on ingest. |
 | Body | JSON object (UTF-8), see **Payload** below |
 | Body size | Farm API limits read snippets on error; keep responses concise. Sender uses a bounded client read size for error bodies (order of 1 MiB). |
 
 ### Success and idempotency
 
 - Respond with **2xx** when the payload is accepted and stored (or is a **duplicate** of an already accepted payload for the same logical sync).
-- **Farm-side idempotency:** the dashboard sync call may send `Idempotency-Key` to the **farm API**; the farm stores outcomes in `gr33ncore.insert_commons_sync_events`. That key is **not** forwarded on the outbound POST to the receiver today, so the receiver should dedupe using a **stable fingerprint of the JSON body** (for example a hash of the canonical serialized payload, or of `farm_pseudonym` plus `generated_at` if that matches your risk model) or treat duplicate deliveries as idempotent when the body bytes match. The **in-repo pilot receiver** (below) dedupes on **SHA-256 of the raw request body**.
+- **Body fingerprint:** dedupe on **SHA-256 of the raw request body** (same bytes → same row).
+- **Farm idempotency key:** when `Gr33n-Idempotency-Key` / `Idempotency-Key` is present, the **in-repo pilot receiver** also enforces uniqueness per **`(farm_pseudonym, key)`**. Re-sending the same key with **different** body bytes returns **409 Conflict** (client bug or misuse). Custom receivers should mirror this if they want to correlate with farm sync history without relying on body hash alone.
 - **429** or **5xx** from the receiver triggers **retryable** handling on the farm (backoff and consecutive failure tracking). **4xx** (except 429) is treated as a **client** failure and is not retried the same way.
 
 ### Response body
@@ -38,6 +40,8 @@ Farm users still must **opt in** per farm (`PATCH /farms/{id}/insert-commons/opt
 No strict schema is required on success. For failures, a short plain or JSON error body helps operators; the farm API may surface a truncated excerpt in sync history metadata for support.
 
 ## Payload (`gr33n.insert_commons.v1`)
+
+**Strict validation:** The farm API and the in-repo pilot receiver reject bodies that add **any** top-level key beyond the six below, omit required **`aggregates`** children (`costs.totals`, `costs.by_category`, `tasks.by_status`, `devices.by_status`), or send **`privacy.includes_pii`** as a non-boolean. Integrators building JSON by hand should follow [`insert-commons-pipeline-runbook.md`](insert-commons-pipeline-runbook.md) and use **`GET .../insert-commons/preview`** on the farm as a golden example.
 
 Top-level keys (sender today):
 
@@ -74,7 +78,7 @@ Sender sets `includes_pii: false`, `includes_raw_location_text: false`, and a st
 
 1. **Authenticate** the request (Bearer secret, mTLS, or network allowlist — at least one).
 2. **Validate** `schema_version` and required keys; reject unknown schema versions with **4xx** so the farm does not treat them as transient server errors.
-3. **Persist** payload with **idempotency** at the receiver (see above; outbound POST does not yet include the farm API idempotency key).
+3. **Persist** payload with **idempotency** at the receiver (body hash + optional farm idempotency header; see **Success and idempotency**).
 4. **Apply retention** to received rows in the receiver’s store (cold storage, TTL, or aggregate-only downstream tables).
 5. **Do not** treat `farm_pseudonym` as globally unique without coordination; it is unique given the same key material as the sender.
 
@@ -90,11 +94,14 @@ This repository ships a **minimal optional service** that implements the contrac
 
 ### Apply migration
 
-On the database that will store ingested rows (often the **same** database as the farm API):
+On the database that will store ingested rows (often the **same** database as the farm API), apply migrations in order:
 
 ```bash
 psql "$DATABASE_URL" -f db/migrations/20260417_phase13_insert_commons_receiver.sql
+psql "$DATABASE_URL" -f db/migrations/20260425_insert_commons_receiver_idempotency_stats.sql
 ```
+
+The second migration adds `source_idempotency_key` and the pilot **`GET /v1/stats`** query support.
 
 ### Configure the farm API (sender)
 
@@ -131,9 +138,12 @@ Or use `make run-receiver` from the repository `Makefile`.
 | Method | Path | Description |
 |--------|------|-------------|
 | GET | `/health` | Liveness |
-| POST | `/v1/ingest` | Accept one payload (`Content-Type: application/json`, optional `Authorization: Bearer …`) |
+| GET | `/v1/stats` | Pilot **operator summary**: total rows, distinct `farm_pseudonym` count, oldest/newest `received_at`, UTC **daily ingest counts** for the last 30 days (`Authorization: Bearer …` same as ingest) |
+| POST | `/v1/ingest` | Accept one payload (`Content-Type: application/json`, optional `Authorization: Bearer …`, optional `Gr33n-Idempotency-Key`) |
 
 Validation rejects unknown `schema_version`, malformed JSON, missing required keys, and timestamps more than **10 minutes** in the future or older than **365 days** (abuse guard).
+
+**Privacy:** `/v1/stats` aggregates only over **pseudonyms** and counts — no cross-farm “league tables” or raw payload fields. Operators use it for retention and pilot health, not re-identification.
 
 ## Related documents
 

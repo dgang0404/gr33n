@@ -16,7 +16,7 @@ const createOrganization = `-- name: CreateOrganization :one
 
 INSERT INTO gr33ncore.organizations (name, plan_tier, billing_status)
 VALUES ($1, $2, $3)
-RETURNING id, name, plan_tier, billing_status, created_at, updated_at
+RETURNING id, name, plan_tier, billing_status, default_bootstrap_template, created_at, updated_at
 `
 
 type CreateOrganizationParams struct {
@@ -36,6 +36,7 @@ func (q *Queries) CreateOrganization(ctx context.Context, arg CreateOrganization
 		&i.Name,
 		&i.PlanTier,
 		&i.BillingStatus,
+		&i.DefaultBootstrapTemplate,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -67,7 +68,7 @@ func (q *Queries) CreateOrganizationMembership(ctx context.Context, arg CreateOr
 }
 
 const getOrganizationByID = `-- name: GetOrganizationByID :one
-SELECT id, name, plan_tier, billing_status, created_at, updated_at FROM gr33ncore.organizations WHERE id = $1
+SELECT id, name, plan_tier, billing_status, default_bootstrap_template, created_at, updated_at FROM gr33ncore.organizations WHERE id = $1
 `
 
 func (q *Queries) GetOrganizationByID(ctx context.Context, id int64) (Gr33ncoreOrganization, error) {
@@ -78,6 +79,7 @@ func (q *Queries) GetOrganizationByID(ctx context.Context, id int64) (Gr33ncoreO
 		&i.Name,
 		&i.PlanTier,
 		&i.BillingStatus,
+		&i.DefaultBootstrapTemplate,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -152,6 +154,7 @@ SELECT
     o.name,
     o.plan_tier,
     o.billing_status,
+    o.default_bootstrap_template,
     o.created_at,
     o.updated_at,
     m.role_in_org
@@ -162,13 +165,14 @@ ORDER BY o.name ASC
 `
 
 type ListOrganizationsForUserRow struct {
-	ID            int64     `db:"id" json:"id"`
-	Name          string    `db:"name" json:"name"`
-	PlanTier      string    `db:"plan_tier" json:"plan_tier"`
-	BillingStatus string    `db:"billing_status" json:"billing_status"`
-	CreatedAt     time.Time `db:"created_at" json:"created_at"`
-	UpdatedAt     time.Time `db:"updated_at" json:"updated_at"`
-	RoleInOrg     string    `db:"role_in_org" json:"role_in_org"`
+	ID                       int64     `db:"id" json:"id"`
+	Name                     string    `db:"name" json:"name"`
+	PlanTier                 string    `db:"plan_tier" json:"plan_tier"`
+	BillingStatus            string    `db:"billing_status" json:"billing_status"`
+	DefaultBootstrapTemplate *string   `db:"default_bootstrap_template" json:"default_bootstrap_template"`
+	CreatedAt                time.Time `db:"created_at" json:"created_at"`
+	UpdatedAt                time.Time `db:"updated_at" json:"updated_at"`
+	RoleInOrg                string    `db:"role_in_org" json:"role_in_org"`
 }
 
 func (q *Queries) ListOrganizationsForUser(ctx context.Context, userID uuid.UUID) ([]ListOrganizationsForUserRow, error) {
@@ -185,6 +189,7 @@ func (q *Queries) ListOrganizationsForUser(ctx context.Context, userID uuid.UUID
 			&i.Name,
 			&i.PlanTier,
 			&i.BillingStatus,
+			&i.DefaultBootstrapTemplate,
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.RoleInOrg,
@@ -201,16 +206,18 @@ func (q *Queries) ListOrganizationsForUser(ctx context.Context, userID uuid.UUID
 
 const updateOrganization = `-- name: UpdateOrganization :one
 UPDATE gr33ncore.organizations
-SET name = $2, plan_tier = $3, billing_status = $4, updated_at = NOW()
+SET name = $2, plan_tier = $3, billing_status = $4,
+    default_bootstrap_template = $5, updated_at = NOW()
 WHERE id = $1
-RETURNING id, name, plan_tier, billing_status, created_at, updated_at
+RETURNING id, name, plan_tier, billing_status, default_bootstrap_template, created_at, updated_at
 `
 
 type UpdateOrganizationParams struct {
-	ID            int64  `db:"id" json:"id"`
-	Name          string `db:"name" json:"name"`
-	PlanTier      string `db:"plan_tier" json:"plan_tier"`
-	BillingStatus string `db:"billing_status" json:"billing_status"`
+	ID                       int64   `db:"id" json:"id"`
+	Name                     string  `db:"name" json:"name"`
+	PlanTier                 string  `db:"plan_tier" json:"plan_tier"`
+	BillingStatus            string  `db:"billing_status" json:"billing_status"`
+	DefaultBootstrapTemplate *string `db:"default_bootstrap_template" json:"default_bootstrap_template"`
 }
 
 func (q *Queries) UpdateOrganization(ctx context.Context, arg UpdateOrganizationParams) (Gr33ncoreOrganization, error) {
@@ -219,6 +226,7 @@ func (q *Queries) UpdateOrganization(ctx context.Context, arg UpdateOrganization
 		arg.Name,
 		arg.PlanTier,
 		arg.BillingStatus,
+		arg.DefaultBootstrapTemplate,
 	)
 	var i Gr33ncoreOrganization
 	err := row.Scan(
@@ -226,6 +234,7 @@ func (q *Queries) UpdateOrganization(ctx context.Context, arg UpdateOrganization
 		&i.Name,
 		&i.PlanTier,
 		&i.BillingStatus,
+		&i.DefaultBootstrapTemplate,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)

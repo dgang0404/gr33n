@@ -289,7 +289,7 @@ func (h *Handler) Export(w http.ResponseWriter, r *http.Request) {
 			details[k] = v
 		}
 		auditlog.Submit(ctx, h.q, r, auditlog.Event{
-			FarmID:       farmID,
+			FarmID:       auditlog.FarmIDPtr(farmID),
 			Action:       db.Gr33ncoreUserActionTypeEnumExportData,
 			TargetSchema: &mod,
 			TargetTable:  &tbl,
@@ -333,7 +333,7 @@ func (h *Handler) Export(w http.ResponseWriter, r *http.Request) {
 	}
 	glMap := buildGLAccountMap(glOverrides)
 	auditlog.Submit(ctx, h.q, r, auditlog.Event{
-		FarmID:       farmID,
+		FarmID:       auditlog.FarmIDPtr(farmID),
 		Action:       db.Gr33ncoreUserActionTypeEnumExportData,
 		TargetSchema: &mod,
 		TargetTable:  &tbl,
@@ -517,7 +517,7 @@ func (h *Handler) UpsertCoaMappings(w http.ResponseWriter, r *http.Request) {
 	mod := "gr33ncore"
 	tbl := "farm_finance_account_mappings"
 	auditlog.Submit(r.Context(), h.q, r, auditlog.Event{
-		FarmID:       farmID,
+		FarmID:       auditlog.FarmIDPtr(farmID),
 		Action:       db.Gr33ncoreUserActionTypeEnumChangeSetting,
 		TargetSchema: &mod,
 		TargetTable:  &tbl,
@@ -556,7 +556,7 @@ func (h *Handler) ResetCoaMappingByCategory(w http.ResponseWriter, r *http.Reque
 	tbl := "farm_finance_account_mappings"
 	catLabel := string(cat)
 	auditlog.Submit(r.Context(), h.q, r, auditlog.Event{
-		FarmID:       farmID,
+		FarmID:       auditlog.FarmIDPtr(farmID),
 		Action:       db.Gr33ncoreUserActionTypeEnumChangeSetting,
 		TargetSchema: &mod,
 		TargetTable:  &tbl,
@@ -585,7 +585,7 @@ func (h *Handler) ResetCoaMappingsAll(w http.ResponseWriter, r *http.Request) {
 	mod := "gr33ncore"
 	tbl := "farm_finance_account_mappings"
 	auditlog.Submit(r.Context(), h.q, r, auditlog.Event{
-		FarmID:       farmID,
+		FarmID:       auditlog.FarmIDPtr(farmID),
 		Action:       db.Gr33ncoreUserActionTypeEnumChangeSetting,
 		TargetSchema: &mod,
 		TargetTable:  &tbl,
@@ -939,7 +939,7 @@ func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
 	tbl := "cost_transactions"
 	rid := strconv.FormatInt(id, 10)
 	auditlog.Submit(r.Context(), h.q, r, auditlog.Event{
-		FarmID:         existing.FarmID,
+		FarmID:         auditlog.FarmIDPtr(existing.FarmID),
 		Action:         db.Gr33ncoreUserActionTypeEnumDeleteRecord,
 		TargetSchema:   &mod,
 		TargetTable:    &tbl,

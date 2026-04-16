@@ -31,7 +31,8 @@ func isDevAuthBypass() bool {
 }
 
 // ── API Key middleware (Pi → API) ────────────────────────────────────────────
-// Protects POST /sensors/{id}/readings and PATCH /devices/{id}/status.
+// Protects POST /sensors/{id}/readings, POST /sensors/readings/batch,
+// PATCH /devices/{id}/status, and other Pi-only routes.
 // Pi sends:  X-API-Key: <PI_API_KEY>
 func requireAPIKey(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -49,6 +50,28 @@ func requireAPIKey(next http.Handler) http.Handler {
 			return
 		}
 		next.ServeHTTP(w, r)
+	})
+}
+
+// requireJWTOrPiEdge allows dashboard JWT or the shared Pi API key (no JWT).
+// Used for GET /farms/{id}/devices so edge gateways can poll pending_command in production.
+func requireJWTOrPiEdge(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if isDevAuthBypass() {
+			ctx := authctx.WithFarmAuthzSkip(r.Context(), true)
+			next.ServeHTTP(w, r.WithContext(ctx))
+			return
+		}
+		key := strings.TrimSpace(r.Header.Get("X-API-Key"))
+		if key != "" {
+			if key != piAPIKey {
+				httputil.WriteError(w, http.StatusForbidden, "invalid API key")
+				return
+			}
+			next.ServeHTTP(w, r.WithContext(authctx.WithPiEdgeAuth(r.Context())))
+			return
+		}
+		requireJWT(next).ServeHTTP(w, r)
 	})
 }
 

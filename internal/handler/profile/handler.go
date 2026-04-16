@@ -183,7 +183,7 @@ func (h *Handler) AddFarmMember(w http.ResponseWriter, r *http.Request) {
 	rid := member.UserID.String()
 	role := string(member.RoleInFarm)
 	auditlog.Submit(r.Context(), q, r, auditlog.Event{
-		FarmID:         farmID,
+		FarmID:         auditlog.FarmIDPtr(farmID),
 		Action:         db.Gr33ncoreUserActionTypeEnumCreateRecord,
 		TargetSchema:   &mod,
 		TargetTable:    &tbl,
@@ -232,7 +232,7 @@ func (h *Handler) UpdateMemberRole(w http.ResponseWriter, r *http.Request) {
 	tbl := "farm_memberships"
 	rid := uid.String()
 	auditlog.Submit(r.Context(), q, r, auditlog.Event{
-		FarmID:         farmID,
+		FarmID:         auditlog.FarmIDPtr(farmID),
 		Action:         db.Gr33ncoreUserActionTypeEnumUpdateRecord,
 		TargetSchema:   &mod,
 		TargetTable:    &tbl,
@@ -271,7 +271,7 @@ func (h *Handler) RemoveMember(w http.ResponseWriter, r *http.Request) {
 	tbl := "farm_memberships"
 	rid := uid.String()
 	auditlog.Submit(r.Context(), q, r, auditlog.Event{
-		FarmID:         farmID,
+		FarmID:         auditlog.FarmIDPtr(farmID),
 		Action:         db.Gr33ncoreUserActionTypeEnumDeleteRecord,
 		TargetSchema:   &mod,
 		TargetTable:    &tbl,

@@ -1,6 +1,8 @@
 -- =============================================================================
--- gr33n Master Seed File  v1.004
--- Fix: schedules table has no metadata column — notes moved to description
+-- gr33n Master Seed File  v1.005
+-- + Demo input_batches (inventory), flower reservoir + fertigation program,
+--   mixing_events + components, crop_cycles, protocol tasks (18/6 veg vs 12/12 flower).
+-- v1.004: schedules table has no metadata column — notes moved to description
 -- =============================================================================
 -- Run once after schema:
 --   psql -d gr33n -f db/seeds/master_seed.sql
@@ -863,4 +865,319 @@ FROM (VALUES
   (NULL,           'Order OHN ingredients',        'Garlic, ginger, angelica root, cinnamon bark, soju.',         'procurement',   'pending_review',1, CURRENT_DATE + 7)
 ) AS t(z, title, description, task_type, status, priority, due_date)
 ON CONFLICT DO NOTHING;
+
+-- ===========================================================================
+-- SECTION 8: INVENTORY BATCHES + FLOWER FERTIGATION + MIXING HISTORY
+-- Typical protocol: 18/6 veg uses JLF+JMS style feeding; 12/12 flower shifts
+-- toward flowering inputs (FFJ+WCA here). Farmers mostly tune volumes & cron.
+-- ===========================================================================
+
+-- Ready-to-use demo lots (adjust quantities in the UI as you draw them down)
+INSERT INTO gr33nnaturalfarming.input_batches (
+    farm_id, input_definition_id, batch_identifier, creation_start_date, actual_ready_date,
+    quantity_produced, quantity_unit_id, current_quantity_remaining, status,
+    storage_location, observations_notes, made_by_user_id
+)
+SELECT
+ 1,
+    d.id,
+    v.batch_identifier,
+    v.started::date,
+    v.ready::date,
+    v.qty_l,
+    u.id,
+    v.remaining_l,
+    'ready_for_use'::gr33nnaturalfarming.input_batch_status_enum,
+    v.location,
+    v.notes,
+    '00000000-0000-0000-0000-000000000001'::uuid
+FROM (VALUES
+    ('SEED-JLF-GEN-001',  DATE '2026-01-10', DATE '2026-01-24', 45.0::numeric, 38.0::numeric,
+     'Veg Room — concentrate shelf',
+     'JLF General (weed/grass ferment). Demo lot for 18/6 veg reservoir mixes; dilute 1:20–1:30 to tank.'),
+    ('SEED-JMS-001',      DATE '2026-02-01', DATE '2026-02-05', 25.0::numeric, 22.0::numeric,
+     'Veg Room — fridge',
+     'JMS concentrate. Pair with JLF for combined drench per master recipe.'),
+    ('SEED-FFJ-001',      DATE '2026-02-15', DATE '2026-03-01', 8.0::numeric, 6.5::numeric,
+     'Flower Room — fridge',
+     'FFJ for 12/12 flowering phase — use in lighter feed or foliar per recipe.'),
+    ('SEED-WCA-001',      DATE '2026-01-20', DATE '2026-02-10', 12.0::numeric, 10.0::numeric,
+     'Flower Room — bench',
+     'WCA (eggshell vinegar calcium). Pairs with FFJ during flower.')
+) AS v(batch_identifier, started, ready, qty_l, remaining_l, location, notes)
+JOIN gr33ncore.units u ON u.name = 'liter'
+JOIN gr33nnaturalfarming.input_definitions d
+  ON d.farm_id = 1
+ AND d.deleted_at IS NULL
+ AND (
+ (v.batch_identifier = 'SEED-JLF-GEN-001' AND d.name LIKE 'JLF General%')
+   OR (v.batch_identifier = 'SEED-JMS-001' AND d.name LIKE 'JMS%')
+   OR (v.batch_identifier = 'SEED-FFJ-001' AND d.name LIKE 'FFJ%')
+   OR (v.batch_identifier = 'SEED-WCA-001' AND d.name LIKE 'WCA%')
+ )
+WHERE NOT EXISTS (
+ SELECT 1 FROM gr33nnaturalfarming.input_batches b
+    WHERE b.farm_id = 1 AND b.batch_identifier = v.batch_identifier AND b.deleted_at IS NULL
+);
+
+INSERT INTO gr33nfertigation.reservoirs
+    (farm_id, zone_id, name, description, capacity_liters, current_volume_liters, status)
+SELECT
+    1,
+    (SELECT id FROM gr33ncore.zones WHERE farm_id = 1 AND name = 'Flower Room'),
+    'Flower Nutrient Reservoir',
+    'Dedicated tank for 12/12 flower feeding (FFJ+WCA-style program). Keep separate from veg JLF+JMS tank.',
+    400.00,
+    220.00,
+    'ready'::gr33nfertigation.reservoir_status_enum
+ON CONFLICT (farm_id, name) DO NOTHING;
+
+INSERT INTO gr33nfertigation.programs
+    (farm_id, name, description, application_recipe_id, reservoir_id, target_zone_id, schedule_id,
+     ec_target_id, total_volume_liters, run_duration_seconds, ec_trigger_low, ph_trigger_low, ph_trigger_high, is_active)
+SELECT
+    1,
+    'Flower Daily FFJ+WCA Program',
+    '12/12 flower room: scheduled irrigations aligned with "Water Early Flower Daily" using FFJ+WCA flowering recipe. Tune EC/pH and volumes to your cultivar.',
+    r.id,
+    rv.id,
+    z.id,
+    s.id,
+    et.id,
+    95.000,
+    840,
+    1.400,
+    5.8,
+    6.8,
+    TRUE
+FROM gr33ncore.zones z
+JOIN gr33nnaturalfarming.application_recipes r
+    ON r.farm_id = 1 AND r.name = 'FFJ and WCA Flowering Boost' AND r.deleted_at IS NULL
+JOIN gr33ncore.schedules s
+    ON s.farm_id = 1 AND s.name = 'Water Early Flower Daily'
+JOIN gr33nfertigation.reservoirs rv
+    ON rv.farm_id = 1 AND rv.name = 'Flower Nutrient Reservoir'
+JOIN gr33nfertigation.ec_targets et
+    ON et.farm_id = 1 AND et.zone_id = z.id   AND et.growth_stage = 'early_flower'::gr33nfertigation.growth_stage_enum
+WHERE z.farm_id = 1
+  AND z.name = 'Flower Room'
+  AND NOT EXISTS (
+      SELECT 1
+      FROM gr33nfertigation.programs p
+      WHERE p.farm_id = 1
+        AND p.name = 'Flower Daily FFJ+WCA Program'
+        AND p.deleted_at IS NULL
+  );
+
+INSERT INTO gr33nfertigation.fertigation_events
+    (farm_id, program_id, reservoir_id, zone_id, applied_at, growth_stage,
+     volume_applied_liters, run_duration_seconds, ec_before_mscm, ec_after_mscm,
+     ph_before, ph_after, trigger_source, notes)
+SELECT
+    1,
+    p.id,
+    rv.id,
+    z.id,
+    TIMESTAMPTZ '2026-03-05 08:00:00+00',
+    'early_flower'::gr33nfertigation.growth_stage_enum,
+    88.000,
+    800,
+    1.550,
+    1.920,
+    6.00,
+    6.18,
+    'schedule_cron'::gr33nfertigation.program_trigger_enum,
+    'Seeded flower-room fertigation run (12/12 protocol baseline).'
+FROM gr33ncore.zones z
+JOIN gr33nfertigation.programs p
+    ON p.farm_id = 1 AND p.name = 'Flower Daily FFJ+WCA Program' AND p.deleted_at IS NULL
+JOIN gr33nfertigation.reservoirs rv
+    ON rv.farm_id = 1 AND rv.name = 'Flower Nutrient Reservoir'
+WHERE z.farm_id = 1
+  AND z.name = 'Flower Room'
+  AND NOT EXISTS (
+      SELECT 1
+      FROM gr33nfertigation.fertigation_events fe
+      WHERE fe.farm_id = 1
+        AND fe.applied_at = TIMESTAMPTZ '2026-03-05 08:00:00+00'
+        AND fe.zone_id = z.id
+  );
+
+-- Mixing logs: what went into each reservoir (inventory draw + water volume)
+DO $$
+DECLARE
+    r_veg     BIGINT;
+    r_flower  BIGINT;
+    p_veg     BIGINT;
+    p_flower  BIGINT;
+    mix_veg   BIGINT;
+    mix_fl    BIGINT;
+    b_jlf     BIGINT;
+    b_jms     BIGINT;
+    b_ffj     BIGINT;
+    b_wca     BIGINT;
+    i_jlf     BIGINT;
+    i_jms     BIGINT;
+    i_ffj     BIGINT;
+    i_wca     BIGINT;
+BEGIN
+    SELECT id INTO r_veg FROM gr33nfertigation.reservoirs WHERE farm_id = 1 AND name = 'Main Nutrient Reservoir' LIMIT 1;
+    SELECT id INTO r_flower FROM gr33nfertigation.reservoirs WHERE farm_id = 1 AND name = 'Flower Nutrient Reservoir' LIMIT 1;
+    SELECT id INTO p_veg FROM gr33nfertigation.programs WHERE farm_id = 1 AND name = 'Veg Daily JLF Program' AND deleted_at IS NULL LIMIT 1;
+    SELECT id INTO p_flower FROM gr33nfertigation.programs WHERE farm_id = 1 AND name = 'Flower Daily FFJ+WCA Program' AND deleted_at IS NULL LIMIT 1;
+
+    SELECT id INTO i_jlf FROM gr33nnaturalfarming.input_definitions WHERE farm_id = 1 AND name LIKE 'JLF General%' AND deleted_at IS NULL LIMIT 1;
+    SELECT id INTO i_jms FROM gr33nnaturalfarming.input_definitions WHERE farm_id = 1 AND name LIKE 'JMS%' AND deleted_at IS NULL LIMIT 1;
+    SELECT id INTO i_ffj FROM gr33nnaturalfarming.input_definitions WHERE farm_id = 1 AND name LIKE 'FFJ%' AND deleted_at IS NULL LIMIT 1;
+    SELECT id INTO i_wca FROM gr33nnaturalfarming.input_definitions WHERE farm_id = 1 AND name LIKE 'WCA%' AND deleted_at IS NULL LIMIT 1;
+
+    SELECT id INTO b_jlf FROM gr33nnaturalfarming.input_batches WHERE farm_id = 1 AND batch_identifier = 'SEED-JLF-GEN-001' AND deleted_at IS NULL LIMIT 1;
+    SELECT id INTO b_jms FROM gr33nnaturalfarming.input_batches WHERE farm_id = 1 AND batch_identifier = 'SEED-JMS-001' AND deleted_at IS NULL LIMIT 1;
+    SELECT id INTO b_ffj FROM gr33nnaturalfarming.input_batches WHERE farm_id = 1 AND batch_identifier = 'SEED-FFJ-001' AND deleted_at IS NULL LIMIT 1;
+    SELECT id INTO b_wca FROM gr33nnaturalfarming.input_batches WHERE farm_id = 1 AND batch_identifier = 'SEED-WCA-001' AND deleted_at IS NULL LIMIT 1;
+
+    IF r_veg IS NOT NULL AND NOT EXISTS (
+        SELECT 1 FROM gr33nfertigation.mixing_events me
+        WHERE me.reservoir_id = r_veg AND me.notes LIKE '%[seed:veg-mix-demo]%'
+    ) THEN
+        INSERT INTO gr33nfertigation.mixing_events (
+            farm_id, reservoir_id, program_id, mixed_by_user_id, mixed_at,
+            water_volume_liters, water_source, water_ec_mscm, water_ph,
+            final_ec_mscm, final_ph, ec_target_met,
+            notes
+        ) VALUES (
+            1, r_veg, p_veg, '00000000-0000-0000-0000-000000000001'::uuid, TIMESTAMPTZ '2026-03-01 07:15:00+00',
+            300.0, 'RO + rain blend', 0.05, 6.50,
+            1.65, 6.12, TRUE,
+            '18/6 veg protocol demo mix: JLF+JMS style batch before irrigations. [seed:veg-mix-demo]'
+        ) RETURNING id INTO mix_veg;
+
+        IF i_jlf IS NOT NULL THEN
+            INSERT INTO gr33nfertigation.mixing_event_components
+                (mixing_event_id, input_definition_id, input_batch_id, volume_added_ml, dilution_ratio, notes)
+            VALUES (mix_veg, i_jlf, b_jlf, 15000.000, 'concentrate to ~1:20 tank',
+                    'Demo: ~15 L equivalent concentrate contribution — tune to your real JLF strength.');
+        END IF;
+        IF i_jms IS NOT NULL THEN
+            INSERT INTO gr33nfertigation.mixing_event_components
+                (mixing_event_id, input_definition_id, input_batch_id, volume_added_ml, dilution_ratio, notes)
+            VALUES (mix_veg, i_jms, b_jms, 600.000, '1:500 in tank',
+                    'Demo JMS contribution; adjust to recipe.');
+        END IF;
+    END IF;
+
+    IF r_flower IS NOT NULL AND NOT EXISTS (
+        SELECT 1 FROM gr33nfertigation.mixing_events me
+        WHERE me.reservoir_id = r_flower AND me.notes LIKE '%[seed:flower-mix-demo]%'
+    ) THEN
+        INSERT INTO gr33nfertigation.mixing_events (
+            farm_id, reservoir_id, program_id, mixed_by_user_id, mixed_at,
+            water_volume_liters, water_source, water_ec_mscm, water_ph,
+            final_ec_mscm, final_ph, ec_target_met,
+            notes
+        ) VALUES (
+            1, r_flower, p_flower, '00000000-0000-0000-0000-000000000001'::uuid, TIMESTAMPTZ '2026-03-05 07:20:00+00',
+            220.0, 'RO', 0.04, 6.45,
+            1.78, 6.05, TRUE,
+            '12/12 flower protocol demo mix: FFJ+WCA oriented batch. [seed:flower-mix-demo]'
+        ) RETURNING id INTO mix_fl;
+
+        IF i_ffj IS NOT NULL THEN
+            INSERT INTO gr33nfertigation.mixing_event_components
+                (mixing_event_id, input_definition_id, input_batch_id, volume_added_ml, dilution_ratio, notes)
+            VALUES (mix_fl, i_ffj, b_ffj, 2200.000, 'light feed contribution',
+                    'Demo FFJ draw — flowering phase; follow FFJ+WCA recipe for final ratios.');
+        END IF;
+        IF i_wca IS NOT NULL THEN
+            INSERT INTO gr33nfertigation.mixing_event_components
+                (mixing_event_id, input_definition_id, input_batch_id, volume_added_ml, dilution_ratio, notes)
+            VALUES (mix_fl, i_wca, b_wca, 800.000, '1:1000 relative',
+                    'Demo WCA contribution paired with FFJ.');
+        END IF;
+    END IF;
+END $$;
+
+UPDATE gr33nfertigation.fertigation_events fe
+SET mixing_event_id = me.id
+FROM gr33nfertigation.mixing_events me
+JOIN gr33nfertigation.reservoirs rv ON me.reservoir_id = rv.id AND rv.farm_id = 1
+WHERE fe.farm_id = 1
+  AND fe.mixing_event_id IS NULL
+  AND fe.applied_at = TIMESTAMPTZ '2026-03-01 08:00:00+00'
+  AND rv.name = 'Main Nutrient Reservoir'
+  AND me.notes LIKE '%[seed:veg-mix-demo]%';
+
+UPDATE gr33nfertigation.fertigation_events fe
+SET mixing_event_id = me.id
+FROM gr33nfertigation.mixing_events me
+JOIN gr33nfertigation.reservoirs rv ON me.reservoir_id = rv.id AND rv.farm_id = 1
+WHERE fe.farm_id = 1
+  AND fe.mixing_event_id IS NULL
+  AND fe.applied_at = TIMESTAMPTZ '2026-03-05 08:00:00+00'
+  AND rv.name = 'Flower Nutrient Reservoir'
+  AND me.notes LIKE '%[seed:flower-mix-demo]%';
+
+INSERT INTO gr33nfertigation.crop_cycles
+    (farm_id, zone_id, name, strain_or_variety, current_stage, is_active, started_at, cycle_notes)
+SELECT
+    1,
+    z.id,
+    'Demo — Veg canopy (18/6)',
+    'Generic photoperiod (demo)',
+    'late_veg'::gr33nfertigation.growth_stage_enum,
+    TRUE,
+    CURRENT_DATE - 35,
+    'Seed template: match light schedule "Light ON/OFF 18/6 Veg" and veg fertigation program.'
+FROM gr33ncore.zones z
+WHERE z.farm_id = 1 AND z.name = 'Veg Room'
+  AND NOT EXISTS (
+ SELECT 1 FROM gr33nfertigation.crop_cycles cc
+    WHERE cc.zone_id = z.id AND cc.is_active = TRUE
+  );
+
+INSERT INTO gr33nfertigation.crop_cycles
+    (farm_id, zone_id, name, strain_or_variety, current_stage, is_active, started_at, cycle_notes)
+SELECT
+    1,
+    z.id,
+    'Demo — Flower run (12/12)',
+    'Generic photoperiod (demo)',
+    'early_flower'::gr33nfertigation.growth_stage_enum,
+    TRUE,
+    CURRENT_DATE - 14,
+    'Seed template: match "Light ON/OFF 12/12 Flower" and flower FFJ+WCA program.'
+FROM gr33ncore.zones z
+WHERE z.farm_id = 1 AND z.name = 'Flower Room'
+  AND NOT EXISTS (
+    SELECT 1 FROM gr33nfertigation.crop_cycles cc
+    WHERE cc.zone_id = z.id AND cc.is_active = TRUE
+  );
+
+INSERT INTO gr33ncore.tasks
+ (farm_id, zone_id, title, description, task_type, status, priority, due_date)
+SELECT
+  1,
+  (SELECT id FROM gr33ncore.zones WHERE farm_id = 1 AND name = z),
+  title, description, task_type,
+  status::gr33ncore.task_status_enum,
+  priority,
+  due_date::date
+FROM (VALUES
+  ('Veg Room',
+ 'Protocol: refresh veg reservoir mix (18/6)',
+   'Main Nutrient Reservoir: JLF+JMS style batch per demo mixing log. Adjust concentrate mL to hit EC 1.4–2.2 late veg.',
+   'jadam_mix', 'todo', 2, CURRENT_DATE),
+  ('Flower Room',
+   'Protocol: refresh flower reservoir mix (12/12)',
+   'Flower Nutrient Reservoir: FFJ+WCA-oriented batch for early flower. Cross-check EC vs early_flower targets.',
+   'jadam_mix', 'todo', 2, CURRENT_DATE + 1),
+  ('Veg Room',
+   'When flipping to flower: switch light schedules',
+   'Deactivate 18/6 ON/OFF schedules; activate 12/12 ON/OFF for Flower Room. Update irrigation to flower watering presets.',
+   'production', 'todo', 1, CURRENT_DATE + 14)
+) AS t(z, title, description, task_type, status, priority, due_date)
+WHERE NOT EXISTS (
+  SELECT 1 FROM gr33ncore.tasks o
+  WHERE o.farm_id = 1 AND o.deleted_at IS NULL AND o.title = t.title
+);
 

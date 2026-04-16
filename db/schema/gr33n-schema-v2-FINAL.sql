@@ -234,10 +234,11 @@ CREATE TRIGGER trg_profiles_updated_at
 
 -- Organizations (multi-farm tenant grouping; farms.organization_id optional)
 CREATE TABLE IF NOT EXISTS gr33ncore.organizations (
-    id              BIGSERIAL PRIMARY KEY,
+    id BIGSERIAL PRIMARY KEY,
     name            TEXT        NOT NULL,
     plan_tier       TEXT        NOT NULL DEFAULT 'pilot',
     billing_status  TEXT        NOT NULL DEFAULT 'none',
+    default_bootstrap_template TEXT,
     created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -281,7 +282,8 @@ CREATE TABLE IF NOT EXISTS gr33ncore.farms (
     insert_commons_last_delivery_status TEXT,
     insert_commons_last_error TEXT,
     insert_commons_backoff_until TIMESTAMPTZ,
-    insert_commons_consecutive_failures INT NOT NULL DEFAULT 0
+    insert_commons_consecutive_failures INT NOT NULL DEFAULT 0,
+    insert_commons_require_approval BOOLEAN NOT NULL DEFAULT FALSE
 );
 CREATE TRIGGER trg_farms_updated_at
     BEFORE UPDATE ON gr33ncore.farms
@@ -290,6 +292,29 @@ CREATE TRIGGER trg_farms_updated_at
 CREATE INDEX IF NOT EXISTS idx_farms_organization_id
     ON gr33ncore.farms (organization_id)
     WHERE deleted_at IS NULL AND organization_id IS NOT NULL;
+
+-- Insert Commons outbound bundles (approval queue + export)
+CREATE TABLE IF NOT EXISTS gr33ncore.insert_commons_bundles (
+    id                   BIGSERIAL PRIMARY KEY,
+    farm_id              BIGINT NOT NULL REFERENCES gr33ncore.farms(id) ON DELETE CASCADE,
+    idempotency_key      TEXT,
+    payload_hash         TEXT        NOT NULL,
+    payload              JSONB       NOT NULL,
+    status               TEXT        NOT NULL CHECK (status IN (
+        'pending_approval', 'approved', 'rejected', 'delivered', 'delivery_failed'
+    )),
+    reviewer_user_id     UUID REFERENCES gr33ncore.profiles(user_id) ON DELETE SET NULL,
+    reviewed_at          TIMESTAMPTZ,
+    review_note TEXT,
+    delivery_http_status INT,
+    delivery_error       TEXT,
+    created_at           TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at           TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_insert_commons_bundles_farm_hash
+    ON gr33ncore.insert_commons_bundles (farm_id, payload_hash);
+CREATE INDEX IF NOT EXISTS idx_insert_commons_bundles_farm_status_created
+    ON gr33ncore.insert_commons_bundles (farm_id, status, created_at DESC);
 
 -- Insert Commons sync audit (farm-side sender)
 CREATE TABLE IF NOT EXISTS gr33ncore.insert_commons_sync_events (
@@ -300,6 +325,7 @@ CREATE TABLE IF NOT EXISTS gr33ncore.insert_commons_sync_events (
     http_status      INT,
     error            TEXT,
     payload          JSONB NOT NULL,
+    bundle_id        BIGINT REFERENCES gr33ncore.insert_commons_bundles(id) ON DELETE SET NULL,
     created_at       TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 CREATE UNIQUE INDEX IF NOT EXISTS uq_insert_commons_sync_farm_idem
@@ -307,20 +333,62 @@ CREATE UNIQUE INDEX IF NOT EXISTS uq_insert_commons_sync_farm_idem
     WHERE idempotency_key IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_insert_commons_sync_farm_created
     ON gr33ncore.insert_commons_sync_events (farm_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_insert_commons_sync_bundle
+    ON gr33ncore.insert_commons_sync_events (bundle_id)
+    WHERE bundle_id IS NOT NULL;
 
 -- Insert Commons receiver (pilot ingest store; optional separate process)
 CREATE TABLE IF NOT EXISTS gr33ncore.insert_commons_received_payloads (
-    id               BIGSERIAL PRIMARY KEY,
-    received_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    payload_hash     TEXT        NOT NULL,
-    farm_pseudonym   TEXT        NOT NULL,
-    schema_version   TEXT        NOT NULL,
-    generated_at     TIMESTAMPTZ NOT NULL,
-    payload          JSONB       NOT NULL,
+    id BIGSERIAL PRIMARY KEY,
+    received_at              TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    payload_hash             TEXT        NOT NULL,
+    farm_pseudonym           TEXT        NOT NULL,
+    schema_version           TEXT        NOT NULL,
+    generated_at             TIMESTAMPTZ NOT NULL,
+    payload                  JSONB       NOT NULL,
+    source_idempotency_key   TEXT        NULL,
     CONSTRAINT uq_insert_commons_received_payload_hash UNIQUE (payload_hash)
 );
+CREATE UNIQUE INDEX IF NOT EXISTS uq_insert_commons_received_farm_idem
+    ON gr33ncore.insert_commons_received_payloads (farm_pseudonym, source_idempotency_key)
+    WHERE source_idempotency_key IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_insert_commons_received_received_at
     ON gr33ncore.insert_commons_received_payloads (received_at DESC);
+
+-- Commons catalog (gr33n_inserts — published packs + farm import audit)
+CREATE TABLE IF NOT EXISTS gr33ncore.commons_catalog_entries (
+    id                   BIGSERIAL PRIMARY KEY,
+    slug                 TEXT        NOT NULL UNIQUE,
+    title                TEXT        NOT NULL,
+    summary              TEXT        NOT NULL DEFAULT '',
+    body                 JSONB       NOT NULL DEFAULT '{}'::jsonb,
+    contributor_display  TEXT        NOT NULL DEFAULT '',
+    contributor_uri      TEXT,
+    license_spdx         TEXT        NOT NULL DEFAULT 'CC-BY-4.0',
+    license_notes        TEXT,
+    tags                 TEXT[]      NOT NULL DEFAULT ARRAY[]::TEXT[],
+    published            BOOLEAN     NOT NULL DEFAULT FALSE,
+    sort_order           INT         NOT NULL DEFAULT 0,
+    created_at           TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at           TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_commons_catalog_published_sort
+    ON gr33ncore.commons_catalog_entries (published, sort_order, title)
+    WHERE published = TRUE;
+CREATE TABLE IF NOT EXISTS gr33ncore.farm_commons_catalog_imports (
+    id                 BIGSERIAL PRIMARY KEY,
+    farm_id            BIGINT      NOT NULL REFERENCES gr33ncore.farms(id) ON DELETE CASCADE,
+    catalog_entry_id   BIGINT      NOT NULL REFERENCES gr33ncore.commons_catalog_entries(id) ON DELETE CASCADE,
+    imported_by        UUID        NOT NULL REFERENCES gr33ncore.profiles(user_id) ON DELETE CASCADE,
+    imported_at        TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    note               TEXT,
+    UNIQUE (farm_id, catalog_entry_id)
+);
+CREATE INDEX IF NOT EXISTS idx_farm_commons_imports_farm
+    ON gr33ncore.farm_commons_catalog_imports (farm_id, imported_at DESC);
+CREATE TRIGGER trg_commons_catalog_entries_updated_at
+    BEFORE UPDATE ON gr33ncore.commons_catalog_entries
+    FOR EACH ROW EXECUTE FUNCTION gr33ncore.set_updated_at();
 
 -- Cost transaction idempotency (offline / safe retries)
 CREATE TABLE IF NOT EXISTS gr33ncore.cost_transaction_idempotency (
@@ -690,6 +758,22 @@ CREATE TABLE IF NOT EXISTS gr33ncore.alerts_notifications (
     created_at               TIMESTAMPTZ DEFAULT NOW() NOT NULL,
     scheduled_send_at        TIMESTAMPTZ DEFAULT NOW()
 );
+
+CREATE TABLE IF NOT EXISTS gr33ncore.user_push_tokens (
+    id         BIGSERIAL PRIMARY KEY,
+    user_id    UUID NOT NULL REFERENCES gr33ncore.profiles(user_id) ON DELETE CASCADE,
+    platform   TEXT NOT NULL CHECK (platform IN ('android', 'ios', 'web')),
+    fcm_token  TEXT NOT NULL UNIQUE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_user_push_tokens_user_id
+    ON gr33ncore.user_push_tokens (user_id);
+
+CREATE TRIGGER trg_user_push_tokens_updated_at
+    BEFORE UPDATE ON gr33ncore.user_push_tokens
+    FOR EACH ROW EXECUTE FUNCTION gr33ncore.set_updated_at();
 
 -- System logs
 CREATE TABLE IF NOT EXISTS gr33ncore.system_logs (
@@ -1306,6 +1390,74 @@ CREATE INDEX IF NOT EXISTS idx_fert_events_cycle
     ON gr33nfertigation.fertigation_events(crop_cycle_id, applied_at DESC);
 CREATE INDEX IF NOT EXISTS idx_crop_cycles_zone
     ON gr33nfertigation.crop_cycles(zone_id, started_at DESC);
+
+-- ============================================================
+-- SCHEMAS: gr33ncrops, gr33nanimals, gr33naquaponics (Phase 14 WS7 stubs)
+-- ============================================================
+-- Enable per farm with gr33ncore.farm_active_modules.module_schema_name
+-- matching the schema name. See docs/domain-modules-operator-playbook.md.
+
+CREATE SCHEMA IF NOT EXISTS gr33ncrops;
+
+CREATE TABLE IF NOT EXISTS gr33ncrops.plants (
+    id                   BIGSERIAL PRIMARY KEY,
+    farm_id              BIGINT NOT NULL REFERENCES gr33ncore.farms(id) ON DELETE CASCADE,
+    display_name         TEXT NOT NULL,
+    variety_or_cultivar  TEXT,
+    meta                 JSONB NOT NULL DEFAULT '{}'::jsonb,
+    created_at           TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at           TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    deleted_at           TIMESTAMPTZ
+);
+
+CREATE INDEX IF NOT EXISTS idx_gr33ncrops_plants_farm
+    ON gr33ncrops.plants (farm_id)
+    WHERE deleted_at IS NULL;
+
+CREATE TRIGGER trg_gr33ncrops_plants_updated_at
+    BEFORE UPDATE ON gr33ncrops.plants
+    FOR EACH ROW EXECUTE FUNCTION gr33ncore.set_updated_at();
+
+CREATE SCHEMA IF NOT EXISTS gr33nanimals;
+
+CREATE TABLE IF NOT EXISTS gr33nanimals.animal_groups (
+    id          BIGSERIAL PRIMARY KEY,
+    farm_id     BIGINT NOT NULL REFERENCES gr33ncore.farms(id) ON DELETE CASCADE,
+    label       TEXT NOT NULL,
+    species     TEXT,
+    meta        JSONB NOT NULL DEFAULT '{}'::jsonb,
+    created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    deleted_at  TIMESTAMPTZ
+);
+
+CREATE INDEX IF NOT EXISTS idx_gr33nanimals_groups_farm
+    ON gr33nanimals.animal_groups (farm_id)
+    WHERE deleted_at IS NULL;
+
+CREATE TRIGGER trg_gr33nanimals_animal_groups_updated_at
+    BEFORE UPDATE ON gr33nanimals.animal_groups
+    FOR EACH ROW EXECUTE FUNCTION gr33ncore.set_updated_at();
+
+CREATE SCHEMA IF NOT EXISTS gr33naquaponics;
+
+CREATE TABLE IF NOT EXISTS gr33naquaponics.loops (
+    id          BIGSERIAL PRIMARY KEY,
+    farm_id     BIGINT NOT NULL REFERENCES gr33ncore.farms(id) ON DELETE CASCADE,
+    label       TEXT NOT NULL,
+    meta        JSONB NOT NULL DEFAULT '{}'::jsonb,
+    created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    deleted_at  TIMESTAMPTZ
+);
+
+CREATE INDEX IF NOT EXISTS idx_gr33naquaponics_loops_farm
+    ON gr33naquaponics.loops (farm_id)
+    WHERE deleted_at IS NULL;
+
+CREATE TRIGGER trg_gr33naquaponics_loops_updated_at
+    BEFORE UPDATE ON gr33naquaponics.loops
+    FOR EACH ROW EXECUTE FUNCTION gr33ncore.set_updated_at();
 
 -- ============================================================
 -- MIGRATION NOTES (read before running)

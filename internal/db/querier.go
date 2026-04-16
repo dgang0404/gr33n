@@ -14,6 +14,7 @@ import (
 type Querier interface {
 	AddFarmMember(ctx context.Context, arg AddFarmMemberParams) (Gr33ncoreFarmMembership, error)
 	AddRecipeComponent(ctx context.Context, arg AddRecipeComponentParams) error
+	ApproveInsertCommonsBundle(ctx context.Context, arg ApproveInsertCommonsBundleParams) (Gr33ncoreInsertCommonsBundle, error)
 	ClearDevicePendingCommand(ctx context.Context, id int64) error
 	CountDevicesByStatusForFarm(ctx context.Context, farmID int64) ([]CountDevicesByStatusForFarmRow, error)
 	CountInsertCommonsSyncAttemptsSince(ctx context.Context, arg CountInsertCommonsSyncAttemptsSinceParams) (int64, error)
@@ -80,7 +81,9 @@ type Querier interface {
 	DeleteCostTransaction(ctx context.Context, id int64) error
 	DeleteInsertCommonsReceivedPayloadsBefore(ctx context.Context, receivedAt time.Time) error
 	DeleteProgram(ctx context.Context, id int64) error
+	DeletePushTokenByFCMToken(ctx context.Context, fcmToken string) error
 	DeleteReservoir(ctx context.Context, id int64) error
+	DeleteUserPushToken(ctx context.Context, arg DeleteUserPushTokenParams) error
 	GetActuatorByID(ctx context.Context, id int64) (Gr33ncoreActuator, error)
 	GetAlertNotificationByID(ctx context.Context, id int64) (Gr33ncoreAlertsNotification, error)
 	// ============================================================
@@ -111,6 +114,9 @@ type Querier interface {
 	// Queries: gr33nnaturalfarming
 	// ============================================================
 	GetInputDefinitionByID(ctx context.Context, id int64) (Gr33nnaturalfarmingInputDefinition, error)
+	GetInsertCommonsBundleByID(ctx context.Context, id int64) (Gr33ncoreInsertCommonsBundle, error)
+	GetInsertCommonsBundlePendingByFarmIdempotencyKey(ctx context.Context, arg GetInsertCommonsBundlePendingByFarmIdempotencyKeyParams) (Gr33ncoreInsertCommonsBundle, error)
+	GetInsertCommonsReceivedPayloadByFarmIdempotency(ctx context.Context, arg GetInsertCommonsReceivedPayloadByFarmIdempotencyParams) (GetInsertCommonsReceivedPayloadByFarmIdempotencyRow, error)
 	GetInsertCommonsReceivedPayloadIDByHash(ctx context.Context, payloadHash string) (int64, error)
 	// ============================================================
 	// Queries: gr33ncore.insert_commons_sync_events
@@ -126,6 +132,7 @@ type Querier interface {
 	// Queries: gr33ncore.profiles
 	// ============================================================
 	GetProfileByUserID(ctx context.Context, userID uuid.UUID) (Gr33ncoreProfile, error)
+	GetPublishedCommonsCatalogEntryBySlug(ctx context.Context, slug string) (GetPublishedCommonsCatalogEntryBySlugRow, error)
 	GetRecentUnacknowledgedAlertForSource(ctx context.Context, arg GetRecentUnacknowledgedAlertForSourceParams) (int64, error)
 	GetRecipeByID(ctx context.Context, id int64) (Gr33nnaturalfarmingApplicationRecipe, error)
 	GetScheduleByID(ctx context.Context, id int64) (Gr33ncoreSchedule, error)
@@ -139,7 +146,13 @@ type Querier interface {
 	GetUnitByName(ctx context.Context, name string) (Gr33ncoreUnit, error)
 	GetZoneByID(ctx context.Context, id int64) (Gr33ncoreZone, error)
 	InsertActuatorEvent(ctx context.Context, arg InsertActuatorEventParams) (Gr33ncoreActuatorEvent, error)
+	InsertCommonsReceiverDailyCounts(ctx context.Context, receivedAt time.Time) ([]InsertCommonsReceiverDailyCountsRow, error)
+	InsertCommonsReceiverStats(ctx context.Context) (InsertCommonsReceiverStatsRow, error)
 	InsertCostTransactionIdempotency(ctx context.Context, arg InsertCostTransactionIdempotencyParams) error
+	// ============================================================
+	// Queries: gr33ncore.insert_commons_bundles (approval + export)
+	// ============================================================
+	InsertInsertCommonsBundle(ctx context.Context, arg InsertInsertCommonsBundleParams) (Gr33ncoreInsertCommonsBundle, error)
 	// ============================================================
 	// Insert Commons receiver (ingest persistence)
 	// ============================================================
@@ -168,20 +181,28 @@ type Querier interface {
 	ListDevicesByZone(ctx context.Context, zoneID *int64) ([]Gr33ncoreDevice, error)
 	ListEcTargetsByFarm(ctx context.Context, farmID int64) ([]Gr33nfertigationEcTarget, error)
 	ListExecutableActionsBySchedule(ctx context.Context, scheduleID *int64) ([]Gr33ncoreExecutableAction, error)
+	ListFarmCommonsCatalogImports(ctx context.Context, farmID int64) ([]ListFarmCommonsCatalogImportsRow, error)
 	// ============================================================
 	// Queries: gr33ncore.farm_finance_account_mappings
 	// ============================================================
 	ListFarmFinanceAccountMappings(ctx context.Context, farmID int64) ([]Gr33ncoreFarmFinanceAccountMapping, error)
+	ListFarmPushNotifyMemberUserIDs(ctx context.Context, farmID int64) ([]uuid.UUID, error)
 	ListFarmsByOwner(ctx context.Context, ownerUserID uuid.UUID) ([]Gr33ncoreFarm, error)
 	ListFarmsForUser(ctx context.Context, userID uuid.UUID) ([]Gr33ncoreFarm, error)
 	ListFertigationEventsByFarm(ctx context.Context, farmID int64) ([]Gr33nfertigationFertigationEvent, error)
 	ListFertigationEventsByFarmAndCropCycle(ctx context.Context, arg ListFertigationEventsByFarmAndCropCycleParams) ([]Gr33nfertigationFertigationEvent, error)
 	ListInputBatchesByFarm(ctx context.Context, farmID int64) ([]Gr33nnaturalfarmingInputBatch, error)
 	ListInputDefinitionsByFarm(ctx context.Context, farmID int64) ([]Gr33nnaturalfarmingInputDefinition, error)
+	ListInsertCommonsBundlesByFarm(ctx context.Context, arg ListInsertCommonsBundlesByFarmParams) ([]Gr33ncoreInsertCommonsBundle, error)
 	ListInsertCommonsSyncEventsByFarm(ctx context.Context, arg ListInsertCommonsSyncEventsByFarmParams) ([]ListInsertCommonsSyncEventsByFarmRow, error)
 	ListLatestReadingsByFarm(ctx context.Context, farmID int64) ([]ListLatestReadingsByFarmRow, error)
 	ListOrganizationsForUser(ctx context.Context, userID uuid.UUID) ([]ListOrganizationsForUserRow, error)
 	ListProgramsByFarm(ctx context.Context, farmID int64) ([]Gr33nfertigationProgram, error)
+	// ============================================================
+	// Commons catalog (gr33n_inserts direction — browse / import audit)
+	// ============================================================
+	ListPublishedCommonsCatalogEntries(ctx context.Context, arg ListPublishedCommonsCatalogEntriesParams) ([]ListPublishedCommonsCatalogEntriesRow, error)
+	ListPushTokensByUserID(ctx context.Context, userID uuid.UUID) ([]Gr33ncoreUserPushToken, error)
 	ListReadingsBySensorAndTimeRange(ctx context.Context, arg ListReadingsBySensorAndTimeRangeParams) ([]Gr33ncoreSensorReading, error)
 	ListRecipeComponents(ctx context.Context, applicationRecipeID int64) ([]ListRecipeComponentsRow, error)
 	ListRecipesByFarm(ctx context.Context, farmID int64) ([]Gr33nnaturalfarmingApplicationRecipe, error)
@@ -200,6 +221,8 @@ type Querier interface {
 	ListTasksByFarm(ctx context.Context, farmID int64) ([]Gr33ncoreTask, error)
 	ListUnitsByType(ctx context.Context, unitType string) ([]Gr33ncoreUnit, error)
 	ListUserActivityLogByFarm(ctx context.Context, arg ListUserActivityLogByFarmParams) ([]Gr33ncoreUserActivityLog, error)
+	// Org-wide audit: farms in the org plus org-only rows (NULL farm_id, details.organization_id, org membership targets).
+	ListUserActivityLogForOrganization(ctx context.Context, arg ListUserActivityLogForOrganizationParams) ([]Gr33ncoreUserActivityLog, error)
 	ListZonesByFarm(ctx context.Context, farmID int64) ([]Gr33ncoreZone, error)
 	ListZonesByParent(ctx context.Context, parentZoneID *int64) ([]Gr33ncoreZone, error)
 	MarkAlertAcknowledged(ctx context.Context, arg MarkAlertAcknowledgedParams) (Gr33ncoreAlertsNotification, error)
@@ -208,7 +231,10 @@ type Querier interface {
 	MarkFarmInsertCommonsDelivered(ctx context.Context, arg MarkFarmInsertCommonsDeliveredParams) (Gr33ncoreFarm, error)
 	MarkFarmInsertCommonsSkippedReceiver(ctx context.Context, arg MarkFarmInsertCommonsSkippedReceiverParams) (Gr33ncoreFarm, error)
 	MarkFarmInsertCommonsSyncFailure(ctx context.Context, arg MarkFarmInsertCommonsSyncFailureParams) (Gr33ncoreFarm, error)
+	MarkInsertCommonsBundleDelivered(ctx context.Context, arg MarkInsertCommonsBundleDeliveredParams) (Gr33ncoreInsertCommonsBundle, error)
+	MarkInsertCommonsBundleDeliveryFailed(ctx context.Context, arg MarkInsertCommonsBundleDeliveryFailedParams) (Gr33ncoreInsertCommonsBundle, error)
 	MarkScheduleTriggered(ctx context.Context, arg MarkScheduleTriggeredParams) (Gr33ncoreSchedule, error)
+	RejectInsertCommonsBundle(ctx context.Context, arg RejectInsertCommonsBundleParams) (Gr33ncoreInsertCommonsBundle, error)
 	RemoveFarmMember(ctx context.Context, arg RemoveFarmMemberParams) error
 	RemoveRecipeComponent(ctx context.Context, arg RemoveRecipeComponentParams) error
 	ResetFarmFinanceAccountMappingByCategory(ctx context.Context, arg ResetFarmFinanceAccountMappingByCategoryParams) (int64, error)
@@ -243,8 +269,13 @@ type Querier interface {
 	UpdateScheduleActive(ctx context.Context, arg UpdateScheduleActiveParams) (Gr33ncoreSchedule, error)
 	UpdateTaskStatus(ctx context.Context, arg UpdateTaskStatusParams) (Gr33ncoreTask, error)
 	UpdateZone(ctx context.Context, arg UpdateZoneParams) (Gr33ncoreZone, error)
+	UpsertFarmCommonsCatalogImport(ctx context.Context, arg UpsertFarmCommonsCatalogImportParams) (Gr33ncoreFarmCommonsCatalogImport, error)
 	UpsertFarmFinanceAccountMapping(ctx context.Context, arg UpsertFarmFinanceAccountMappingParams) (Gr33ncoreFarmFinanceAccountMapping, error)
 	UpsertInsertCommonsSyncEvent(ctx context.Context, arg UpsertInsertCommonsSyncEventParams) (Gr33ncoreInsertCommonsSyncEvent, error)
+	// ============================================================
+	// Queries: gr33ncore.user_push_tokens
+	// ============================================================
+	UpsertUserPushToken(ctx context.Context, arg UpsertUserPushTokenParams) (Gr33ncoreUserPushToken, error)
 	UserHasFarmAccess(ctx context.Context, arg UserHasFarmAccessParams) (*bool, error)
 }
 

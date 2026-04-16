@@ -7,7 +7,7 @@ An open-source agricultural operating system designed to reclaim data, land, and
 [![Vue](https://img.shields.io/badge/Vue-3-4FC08D?logo=vue.js)](https://vuejs.org)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-14+-336791?logo=postgresql)](https://postgresql.org)
 
-**Phase 13 (platform evolution)** is the current engineering focus: federation receivers, compliance-grade audit surfaces, deeper finance and offline coverage, optional **Capacitor** packaging for store or sideloaded mobile (PWA remains primary), and related operator documentation. This repo includes a **pilot Insert Commons receiver** (`make run-receiver`) and farm audit API docs. Start from the **[Phase 13 operator documentation index](docs/phase-13-operator-documentation.md)**, then [`docs/plans/phase_13_platform_evolution.plan.md`](docs/plans/phase_13_platform_evolution.plan.md), [`docs/mobile-distribution.md`](docs/mobile-distribution.md), [`docs/audit-events-operator-playbook.md`](docs/audit-events-operator-playbook.md), and [`docs/insert-commons-receiver-playbook.md`](docs/insert-commons-receiver-playbook.md).
+**Phase 14 (field network & commons)** workstreams are **largely complete** on main (edge/MQTT patterns, Insert Commons pipeline + catalog, federation/receiver hardening, FCM alert push, org audit, farm bootstrap hooks, and stub domain schemas for crops/animals/aquaponics). Ongoing polish lives in **[`docs/phase-14-operator-documentation.md`](docs/phase-14-operator-documentation.md)** and [`docs/plans/phase_14_network_and_commons.plan.md`](docs/plans/phase_14_network_and_commons.plan.md). **Phase 15** centers on **[farm onboarding & templates](docs/plans/phase_15_farm_onboarding.plan.md)**. Phase 13 history: **[`docs/phase-13-operator-documentation.md`](docs/phase-13-operator-documentation.md)**. Key playbooks: [`docs/mqtt-edge-operator-playbook.md`](docs/mqtt-edge-operator-playbook.md), [`docs/insert-commons-pipeline-runbook.md`](docs/insert-commons-pipeline-runbook.md), [`docs/insert-commons-receiver-playbook.md`](docs/insert-commons-receiver-playbook.md), [`docs/notifications-operator-playbook.md`](docs/notifications-operator-playbook.md), [`docs/domain-modules-operator-playbook.md`](docs/domain-modules-operator-playbook.md), [`docs/mobile-distribution.md`](docs/mobile-distribution.md), [`docs/audit-events-operator-playbook.md`](docs/audit-events-operator-playbook.md).
 
 ---
 
@@ -46,7 +46,7 @@ gr33n will never require a permanent internet connection, forced login, or hidde
 
 - **Automation-Ready** — Schedule tasks, trigger actuators, run AI models — or run it all manually. Your tech, your tempo.
 
-- **Insert Commons (farm-side sender)** — Per-farm opt-in in Settings; `POST /farms/{id}/insert-commons/sync` builds **coarse, pseudonymous aggregates** and optionally POSTs them to `INSERT_COMMONS_INGEST_URL` with optional `Authorization: Bearer <INSERT_COMMONS_SHARED_SECRET>`. Sync attempts are persisted (`GET /farms/{id}/insert-commons/sync-events`) with **idempotency keys**, **rate limits**, and **server-side backoff** after repeated delivery failures. A separate **farm audit trail** records sensitive actions (membership, opt-in, sync attempts, finance COA changes, cost exports, receipt access, and more) for owner/manager review via `GET /farms/{id}/audit-events` (see [`docs/audit-events-operator-playbook.md`](docs/audit-events-operator-playbook.md)). For self-hosted pilots, an optional **receiver** process (`cmd/insert-commons-receiver`, `make run-receiver`) validates payloads, enforces the shared secret, dedupes on payload hash, and stores rows in Postgres — see [`docs/insert-commons-receiver-playbook.md`](docs/insert-commons-receiver-playbook.md) and migration `db/migrations/20260417_phase13_insert_commons_receiver.sql`. Apply `db/migrations/20260415_phase11_rbac_receipts_commons.sql` and `db/migrations/20260416_phase12_insert_commons_federation.sql` on existing databases.
+- **Insert Commons (farm-side sender)** — Per-farm opt-in in Settings; `POST /farms/{id}/insert-commons/sync` builds **coarse, pseudonymous aggregates** and optionally POSTs them to `INSERT_COMMONS_INGEST_URL` with optional `Authorization: Bearer <INSERT_COMMONS_SHARED_SECRET>`. Sync attempts are persisted (`GET /farms/{id}/insert-commons/sync-events`) with **idempotency keys**, **rate limits**, and **server-side backoff** after repeated delivery failures. A separate **farm audit trail** records sensitive actions (membership, opt-in, sync attempts, finance COA changes, cost exports, receipt access, and more) for owner/manager review via `GET /farms/{id}/audit-events` (see [`docs/audit-events-operator-playbook.md`](docs/audit-events-operator-playbook.md)). For self-hosted pilots, an optional **receiver** process (`cmd/insert-commons-receiver`, `make run-receiver`) validates payloads, enforces the shared secret, dedupes on payload hash, and stores rows in Postgres — see [`docs/insert-commons-receiver-playbook.md`](docs/insert-commons-receiver-playbook.md) and migration `db/migrations/20260417_phase13_insert_commons_receiver.sql`. Apply `db/migrations/20260415_phase11_rbac_receipts_commons.sql` and `db/migrations/20260416_phase12_insert_commons_federation.sql` on existing databases. **Custom clients** POSTing ingest JSON themselves must use the **exact** documented shape (only six top-level keys, complete `aggregates` children, boolean `includes_pii`) or validation returns **400** — see [`docs/insert-commons-pipeline-runbook.md`](docs/insert-commons-pipeline-runbook.md) (*Custom senders*).
 
 ---
 
@@ -73,7 +73,7 @@ gr33n-api/
 │   ├── routes.go            # All HTTP route registrations
 │   └── cors.go              # CORS middleware
 ├── cmd/insert-commons-receiver/
-│   └── main.go              # Optional pilot ingest service for Insert Commons (`POST /v1/ingest`)
+│   └── main.go              # Optional pilot ingest service for Insert Commons (`POST /v1/ingest`, `GET /v1/stats`)
 ├── internal/
 │   ├── db/                  # sqlc-generated query layer (DO NOT EDIT)
 │   ├── handler/
@@ -90,7 +90,7 @@ gr33n-api/
 │   ├── schema/
 │   │   └── gr33n-schema-v2-FINAL.sql   # Full PostgreSQL schema (source of truth)
 │   ├── seeds/
-│   │   └── master_seed.sql             # JADAM demo data v1.004
+│   │   └── master_seed.sql             # JADAM demo data v1.005 (veg/flower protocols + inventory + mixing)
 │   └── queries/             # sqlc SQL source files
 ├── ui/                      # Vue 3 frontend
 │   └── src/
@@ -226,9 +226,10 @@ Farm API POSTs JSON to `INSERT_COMMONS_INGEST_URL`; this repo’s **pilot receiv
 | Method | Path | Description |
 |--------|------|-------------|
 | GET | `/health` | Process liveness |
-| POST | `/v1/ingest` | Validate payload, optional `Authorization: Bearer <INSERT_COMMONS_SHARED_SECRET>`, persist idempotently |
+| GET | `/v1/stats` | Pilot aggregate counts (pseudonyms, daily ingests, retention) — same Bearer auth as ingest |
+| POST | `/v1/ingest` | Validate payload, optional `Authorization: Bearer <INSERT_COMMONS_SHARED_SECRET>`, optional `Gr33n-Idempotency-Key` (forwarded from farm sync), persist idempotently |
 
-Details, migration, and retention: [`docs/insert-commons-receiver-playbook.md`](docs/insert-commons-receiver-playbook.md).
+Details, migration, and retention: [`docs/insert-commons-receiver-playbook.md`](docs/insert-commons-receiver-playbook.md). If you build or forward JSON manually, match the farm API’s ingest schema (no extra top-level fields; full `aggregates`; `privacy.includes_pii` as JSON boolean); `GET /farms/:id/insert-commons/preview` returns a valid example body — full rules in [`docs/insert-commons-pipeline-runbook.md`](docs/insert-commons-pipeline-runbook.md).
 
 ### Dashboard routes (JWT)
 
@@ -271,6 +272,7 @@ Integration tests in `cmd/api/smoke_test.go` use `AUTH_MODE=auth_test` with a re
 | Method | Path | Description |
 |--------|------|-------------|
 | PATCH | `/farms/:id/insert-commons/opt-in` | Toggle Insert Commons aggregate sharing (**admin**) |
+| GET | `/farms/:id/insert-commons/preview` | Preview validated ingest JSON only — no sync, no history (**admin**) |
 | POST | `/farms/:id/insert-commons/sync` | Build aggregates and POST to `INSERT_COMMONS_INGEST_URL` when set (**admin** or **finance**) |
 | GET | `/farms/:id/insert-commons/sync-events` | Paginated sync attempt history (**admin** or **finance** / anyone with cost **view**) |
 | GET | `/farms/:id/audit-events` | Sensitive-action audit log (**admin** only; query `limit`, `offset`) |
@@ -464,6 +466,12 @@ Configure sensors, actuators (with `device_id`), and GPIO pins in `pi_client/con
 
 ---
 
+### MQTT telemetry bridge (microcontrollers)
+
+MCUs can publish to an on-farm **MQTT broker**; a **bridge** process subscribes and forwards to **`POST /sensors/readings/batch`** using `X-API-Key` (same server `PI_API_KEY` as the Pi daemon). Reference implementation: [`pi_client/mqtt_telemetry_bridge.py`](pi_client/mqtt_telemetry_bridge.py). Topics, TLS, ACLs, and tasking: [`docs/mqtt-edge-operator-playbook.md`](docs/mqtt-edge-operator-playbook.md).
+
+---
+
 ## 🔄 AI Augmentation with Consent
 
 gr33n doesn't replace farm.chat — it augments it.
@@ -496,16 +504,17 @@ For users who choose to integrate local AI, gr33n offers schema-guided intellige
 - [x] Phase 10 — JWT smoke tests (`AUTH_MODE=auth_test`), farm-scoped write authorization, fertigation ↔ crop cycle link, costs CSV export, SensorDetail export UX
 - [x] Phase 11 — Farm RBAC (viewer / operator / finance / manager / owner), cost receipts + local `FILE_STORAGE_DIR` storage, **PWA-first** installable shell (manifest + SW in production builds; Capacitor still an option for store-distributed apps), Insert Commons opt-in + early sync hook, OpenAPI updates
 - [x] Phase 13 — Platform evolution (receiver-side Insert Commons, audit/compliance API, offline + finance depth, tenancy experiments, optional Capacitor scaffold; [`docs/phase-13-operator-documentation.md`](docs/phase-13-operator-documentation.md) indexes plans and playbooks)
+- [x] Phase 14 — Field network & commons (MQTT/edge, insert pipeline, gr33n_inserts catalog, federation/receiver depth, FCM notifications, org governance, domain schema stubs; [`docs/plans/phase_14_network_and_commons.plan.md`](docs/plans/phase_14_network_and_commons.plan.md), [`docs/phase-14-operator-documentation.md`](docs/phase-14-operator-documentation.md))
 - [x] Actuator control pipeline (automation worker → pending_command → Pi poll → execute → report)
 - [x] Fertigation module — reservoirs, EC targets, programs, events
 - [x] Natural farming inventory UI — input definitions & batch tracking
 - [x] Pi heartbeat loop — devices show online/offline in real time
 - [x] Docker Compose + Dockerfile for containerized deployment
-- [ ] Microcontroller integrations (MQTT + field tasking)
-- [ ] Data insert pipeline (scrubbing, approval, federation-ready)
+- [x] Microcontroller integrations — MQTT → HTTP bridge ([`pi_client/mqtt_telemetry_bridge.py`](pi_client/mqtt_telemetry_bridge.py), [`docs/mqtt-edge-operator-playbook.md`](docs/mqtt-edge-operator-playbook.md)); field tasking unchanged (`pending_command` + Pi / bridge poll)
+- [x] Data insert pipeline (Insert Commons validation, approval bundles, export — [`docs/insert-commons-pipeline-runbook.md`](docs/insert-commons-pipeline-runbook.md))
 - [ ] LM Studio integration and AI scaffolds for insert-sharing
-- [ ] gr33n_inserts — community contributed data commons
-- [ ] gr33n_crops, gr33n_animals, gr33n_aquaponics module schemas
+- [x] gr33n_inserts — commons catalog API (browse + farm import audit; [`docs/commons-catalog-operator-playbook.md`](docs/commons-catalog-operator-playbook.md))
+- [x] Stub schemas `gr33ncrops`, `gr33nanimals`, `gr33naquaponics` (placeholder tables; enable via `farm_active_modules` — [`docs/domain-modules-operator-playbook.md`](docs/domain-modules-operator-playbook.md))
 
 ---
 

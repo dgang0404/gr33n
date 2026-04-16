@@ -90,6 +90,7 @@ ALTER TABLE gr33ncore.farms ADD COLUMN IF NOT EXISTS insert_commons_last_deliver
 ALTER TABLE gr33ncore.farms ADD COLUMN IF NOT EXISTS insert_commons_last_error TEXT;
 ALTER TABLE gr33ncore.farms ADD COLUMN IF NOT EXISTS insert_commons_backoff_until TIMESTAMPTZ;
 ALTER TABLE gr33ncore.farms ADD COLUMN IF NOT EXISTS insert_commons_consecutive_failures INT NOT NULL DEFAULT 0;
+ALTER TABLE gr33ncore.farms ADD COLUMN IF NOT EXISTS insert_commons_require_approval BOOLEAN NOT NULL DEFAULT FALSE;
 CREATE TABLE IF NOT EXISTS gr33ncore.insert_commons_sync_events (
     id               BIGSERIAL PRIMARY KEY,
     farm_id          BIGINT NOT NULL REFERENCES gr33ncore.farms(id) ON DELETE CASCADE,
@@ -105,6 +106,31 @@ CREATE UNIQUE INDEX IF NOT EXISTS uq_insert_commons_sync_farm_idem
     WHERE idempotency_key IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_insert_commons_sync_farm_created
     ON gr33ncore.insert_commons_sync_events (farm_id, created_at DESC);
+CREATE TABLE IF NOT EXISTS gr33ncore.insert_commons_bundles (
+    id                  BIGSERIAL PRIMARY KEY,
+    farm_id             BIGINT NOT NULL REFERENCES gr33ncore.farms(id) ON DELETE CASCADE,
+    idempotency_key     TEXT,
+    payload_hash        TEXT        NOT NULL,
+    payload             JSONB       NOT NULL,
+    status              TEXT        NOT NULL CHECK (status IN (
+        'pending_approval', 'approved', 'rejected', 'delivered', 'delivery_failed'
+    )),
+    reviewer_user_id    UUID REFERENCES gr33ncore.profiles(user_id) ON DELETE SET NULL,
+    reviewed_at         TIMESTAMPTZ,
+    review_note         TEXT,
+    delivery_http_status INT,
+    delivery_error      TEXT,
+    created_at          TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at          TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_insert_commons_bundles_farm_hash
+    ON gr33ncore.insert_commons_bundles (farm_id, payload_hash);
+CREATE INDEX IF NOT EXISTS idx_insert_commons_bundles_farm_status_created
+    ON gr33ncore.insert_commons_bundles (farm_id, status, created_at DESC);
+ALTER TABLE gr33ncore.insert_commons_sync_events ADD COLUMN IF NOT EXISTS bundle_id BIGINT REFERENCES gr33ncore.insert_commons_bundles(id) ON DELETE SET NULL;
+CREATE INDEX IF NOT EXISTS idx_insert_commons_sync_bundle
+    ON gr33ncore.insert_commons_sync_events (bundle_id)
+    WHERE bundle_id IS NOT NULL;
 CREATE TABLE IF NOT EXISTS gr33ncore.farm_finance_account_mappings (
     id            BIGSERIAL PRIMARY KEY,
     farm_id       BIGINT NOT NULL REFERENCES gr33ncore.farms(id) ON DELETE CASCADE,
@@ -156,6 +182,41 @@ CREATE INDEX IF NOT EXISTS idx_org_memberships_user_smoke
 ALTER TABLE gr33ncore.farms ADD COLUMN IF NOT EXISTS organization_id BIGINT
     REFERENCES gr33ncore.organizations(id) ON DELETE SET NULL;
 `); err != nil {
+		return err
+	}
+	bootstrapSQL, err := os.ReadFile(filepath.Join("..", "..", "db", "migrations", "20260423_farm_bootstrap_templates.sql"))
+	if err != nil {
+		return err
+	}
+	if _, err := pool.Exec(ctx, string(bootstrapSQL)); err != nil {
+		return err
+	}
+	orgBootstrapSQL, err := os.ReadFile(filepath.Join("..", "..", "db", "migrations", "20260424_organization_default_bootstrap_template.sql"))
+	if err != nil {
+		return err
+	}
+	if _, err := pool.Exec(ctx, string(orgBootstrapSQL)); err != nil {
+		return err
+	}
+	commonsCatalogSQL, err := os.ReadFile(filepath.Join("..", "..", "db", "migrations", "20260426_commons_catalog.sql"))
+	if err != nil {
+		return err
+	}
+	if _, err := pool.Exec(ctx, string(commonsCatalogSQL)); err != nil {
+		return err
+	}
+	pushTokSQL, err := os.ReadFile(filepath.Join("..", "..", "db", "migrations", "20260427_user_push_tokens.sql"))
+	if err != nil {
+		return err
+	}
+	if _, err := pool.Exec(ctx, string(pushTokSQL)); err != nil {
+		return err
+	}
+	domainModsSQL, err := os.ReadFile(filepath.Join("..", "..", "db", "migrations", "20260428_phase14_domain_module_stubs.sql"))
+	if err != nil {
+		return err
+	}
+	if _, err := pool.Exec(ctx, string(domainModsSQL)); err != nil {
 		return err
 	}
 	return nil
@@ -261,6 +322,44 @@ func TestAuthModeEndpoint(t *testing.T) {
 	}
 }
 
+func TestNotificationPreferencesAndPushTokens(t *testing.T) {
+	tok := smokeJWT(t)
+	resp := authPatch(t, tok, "/profile/notification-preferences", map[string]any{
+		"push_enabled": false,
+		"min_priority": "medium",
+	})
+	expectStatus(t, resp, 200)
+	resp = authGet(t, tok, "/profile/notification-preferences")
+	expectStatus(t, resp, 200)
+	m := decodeMap(t, resp)
+	if pe, ok := m["push_enabled"].(bool); !ok || pe {
+		t.Fatalf("expected push_enabled false after reset, got %+v", m)
+	}
+	resp = authPatch(t, tok, "/profile/notification-preferences", map[string]any{
+		"push_enabled": true,
+		"min_priority": "high",
+	})
+	expectStatus(t, resp, 200)
+	m = decodeMap(t, resp)
+	if m["push_enabled"] != true || m["min_priority"] != "high" {
+		t.Fatalf("patch result %+v", m)
+	}
+	fakeTok := "smoke-fcm-" + uniqueName("tok")
+	resp = authPost(t, tok, "/profile/push-tokens", map[string]any{
+		"platform":  "android",
+		"fcm_token": fakeTok,
+	})
+	expectStatus(t, resp, 200)
+	resp = authGet(t, tok, "/profile/push-tokens")
+	expectStatus(t, resp, 200)
+	slice := decodeSlice(t, resp)
+	if len(slice) != 1 {
+		t.Fatalf("expected 1 push token, got %d", len(slice))
+	}
+	resp = authDeleteJSON(t, tok, "/profile/push-tokens", map[string]any{"fcm_token": fakeTok})
+	expectStatus(t, resp, 204)
+}
+
 func TestJWTRequiredForDashboard(t *testing.T) {
 	resp := get(t, "/farms/1")
 	expectStatus(t, resp, http.StatusUnauthorized)
@@ -283,6 +382,54 @@ func TestGetFarm(t *testing.T) {
 	body := decodeMap(t, resp)
 	if body["name"] == nil {
 		t.Fatal("expected farm to have a name")
+	}
+}
+
+func TestCommonsCatalogBrowseAndImport(t *testing.T) {
+	tok := smokeJWT(t)
+	resp := authGet(t, tok, "/commons/catalog")
+	expectStatus(t, resp, 200)
+	items := decodeSlice(t, resp)
+	if len(items) < 1 {
+		t.Fatal("expected at least one published catalog entry")
+	}
+	resp = authGet(t, tok, "/commons/catalog/gr33n-insert-commons-v1-readme")
+	expectStatus(t, resp, 200)
+	detail := decodeMap(t, resp)
+	if detail["slug"] != "gr33n-insert-commons-v1-readme" {
+		t.Fatalf("unexpected slug %v", detail["slug"])
+	}
+	resp = authGet(t, tok, "/farms/1/commons/catalog-imports")
+	expectStatus(t, resp, 200)
+	_ = decodeSlice(t, resp)
+
+	resp = authPost(t, tok, "/farms/1/commons/catalog-imports", map[string]any{
+		"slug": "gr33n-insert-commons-v1-readme",
+		"note": "smoke test",
+	})
+	expectStatus(t, resp, 200)
+	out := decodeMap(t, resp)
+	if out["import"] == nil || out["catalog_entry"] == nil {
+		t.Fatalf("expected import and catalog_entry, got %#v", out)
+	}
+	resp = authGet(t, tok, "/farms/1/commons/catalog-imports")
+	expectStatus(t, resp, 200)
+	imports := decodeSlice(t, resp)
+	if len(imports) < 1 {
+		t.Fatal("expected farm to list at least one catalog import")
+	}
+}
+
+func TestInsertCommonsPreview(t *testing.T) {
+	tok := smokeJWT(t)
+	resp := authGet(t, tok, "/farms/1/insert-commons/preview")
+	expectStatus(t, resp, http.StatusOK)
+	m := decodeMap(t, resp)
+	if v, ok := m["valid"].(bool); !ok || !v {
+		t.Fatalf("expected valid preview, got %#v", m)
+	}
+	if m["payload"] == nil {
+		t.Fatal("expected payload in preview response")
 	}
 }
 
@@ -454,6 +601,10 @@ func TestOrganizationCreateListUsageAndFarmLink(t *testing.T) {
 		t.Fatalf("usage summary missing farm_count: %#v", summary)
 	}
 
+	resp = authGet(t, tok, fmt.Sprintf("/organizations/%d/audit-events?limit=10", orgID))
+	expectStatus(t, resp, http.StatusOK)
+	_ = decodeSlice(t, resp)
+
 	resp = authPatch(t, tok, "/farms/1/organization", map[string]any{"organization_id": orgID})
 	expectStatus(t, resp, http.StatusOK)
 	farm := decodeMap(t, resp)
@@ -463,6 +614,64 @@ func TestOrganizationCreateListUsageAndFarmLink(t *testing.T) {
 
 	resp = authPatch(t, tok, "/farms/1/organization", map[string]any{"organization_id": nil})
 	expectStatus(t, resp, http.StatusOK)
+}
+
+func TestOrgDefaultBootstrapOnFarmCreate(t *testing.T) {
+	tok := smokeJWT(t)
+	resp := authPost(t, tok, "/organizations", map[string]any{"name": uniqueName("org_bootstrap_default")})
+	expectStatus(t, resp, http.StatusCreated)
+	org := decodeMap(t, resp)
+	orgID := int64(org["id"].(float64))
+
+	resp = authPatch(t, tok, fmt.Sprintf("/organizations/%d", orgID), map[string]any{
+		"default_bootstrap_template": "jadam_indoor_photoperiod_v1",
+	})
+	expectStatus(t, resp, http.StatusOK)
+
+	name := uniqueName("org_default_farm")
+	resp = authPost(t, tok, "/farms", map[string]any{
+		"name":               name,
+		"owner_user_id":      smokeDevUserUUID,
+		"timezone":           "UTC",
+		"currency":           "USD",
+		"operational_status": "active",
+		"scale_tier":         "small",
+		"organization_id":    orgID,
+	})
+	expectStatus(t, resp, http.StatusCreated)
+	payload := decodeMap(t, resp)
+	farmObj, ok := payload["farm"].(map[string]any)
+	if !ok {
+		t.Fatalf("expected farm + bootstrap from org default, got %#v", payload)
+	}
+	if _, ok := payload["bootstrap"]; !ok {
+		t.Fatal("expected bootstrap in response when org default applies")
+	}
+	fid := int64(farmObj["id"].(float64))
+	zones := decodeSlice(t, authGet(t, tok, fmt.Sprintf("/farms/%d/zones", fid)))
+	if len(zones) < 4 {
+		t.Fatalf("expected org default bootstrap zones, got %d", len(zones))
+	}
+
+	name2 := uniqueName("org_default_farm_explicit_none")
+	resp = authPost(t, tok, "/farms", map[string]any{
+		"name":               name2,
+		"owner_user_id":      smokeDevUserUUID,
+		"timezone":           "UTC",
+		"currency":           "USD",
+		"operational_status": "active",
+		"scale_tier":         "small",
+		"organization_id":    orgID,
+		"bootstrap_template": "none",
+	})
+	expectStatus(t, resp, http.StatusCreated)
+	payload2 := decodeMap(t, resp)
+	farm2 := payload2["farm"].(map[string]any)
+	fid2 := int64(farm2["id"].(float64))
+	zones2 := decodeSlice(t, authGet(t, tok, fmt.Sprintf("/farms/%d/zones", fid2)))
+	if len(zones2) != 0 {
+		t.Fatalf("bootstrap_template none should skip org default, got %d zones", len(zones2))
+	}
 }
 
 func TestCoaMappingsListAndUpdate(t *testing.T) {
@@ -813,6 +1022,22 @@ func authDelete(t *testing.T, token, path string) *http.Response {
 	return resp
 }
 
+func authDeleteJSON(t *testing.T, token, path string, body any) *http.Response {
+	t.Helper()
+	b, _ := json.Marshal(body)
+	req, err := http.NewRequest(http.MethodDelete, testServer.URL+path, bytes.NewReader(b))
+	if err != nil {
+		t.Fatal(err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+token)
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatalf("DELETE %s: %v", path, err)
+	}
+	return resp
+}
+
 func authMultipartPost(t *testing.T, token, path, fieldName, fileName, contentType string, fileBody []byte, fields map[string]string) *http.Response {
 	t.Helper()
 	var body bytes.Buffer
@@ -846,6 +1071,40 @@ func authMultipartPost(t *testing.T, token, path, fieldName, fileName, contentTy
 		t.Fatalf("POST %s: %v", path, err)
 	}
 	return resp
+}
+
+func TestFarmBootstrapOnCreate(t *testing.T) {
+	tok := smokeJWT(t)
+	name := uniqueName("bootstrap_farm")
+	resp := authPost(t, tok, "/farms", map[string]any{
+		"name":               name,
+		"owner_user_id":      smokeDevUserUUID,
+		"timezone":           "UTC",
+		"currency":           "USD",
+		"operational_status": "active",
+		"scale_tier":         "small",
+		"bootstrap_template": "jadam_indoor_photoperiod_v1",
+	})
+	expectStatus(t, resp, http.StatusCreated)
+	payload := decodeMap(t, resp)
+	farmObj, ok := payload["farm"].(map[string]any)
+	if !ok {
+		t.Fatalf("expected farm in response, got %v", payload)
+	}
+	fid := int64(farmObj["id"].(float64))
+	zones := decodeSlice(t, authGet(t, tok, fmt.Sprintf("/farms/%d/zones", fid)))
+	if len(zones) < 4 {
+		t.Fatalf("expected at least 4 zones from bootstrap, got %d", len(zones))
+	}
+	resp2 := authPost(t, tok, fmt.Sprintf("/farms/%d/bootstrap-template", fid), map[string]any{
+		"template": "jadam_indoor_photoperiod_v1",
+	})
+	expectStatus(t, resp2, http.StatusOK)
+	again := decodeMap(t, resp2)
+	boot := again["bootstrap"].(map[string]any)
+	if applied, _ := boot["already_applied"].(bool); !applied {
+		t.Fatalf("expected already_applied on second template apply, got %#v", boot)
+	}
 }
 
 func createSmokeCost(t *testing.T, tok string) int64 {

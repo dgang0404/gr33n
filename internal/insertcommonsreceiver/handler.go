@@ -4,9 +4,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
-	"encoding/json"
 	"errors"
-	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -19,12 +17,14 @@ import (
 
 	db "gr33n-api/internal/db"
 	"gr33n-api/internal/httputil"
+	"gr33n-api/internal/insertcommonsschema"
 )
 
-// SchemaVersion must match the farm-side sender (internal/handler/farm/insert_commons.go).
-const SchemaVersion = "gr33n.insert_commons.v1"
-
-const maxBodyBytes = 1 << 20
+const (
+	maxBodyBytes         = 1 << 20
+	maxIdempotencyKeyLen = 128
+	pgerrUniqueViolation = "23505"
+)
 
 // Handler is a minimal HTTP ingest service for Insert Commons pilot deployments.
 type Handler struct {
@@ -45,11 +45,13 @@ func NewHandler(pool *pgxpool.Pool, sharedSecret string, allowNoAuth bool, reten
 	}
 }
 
-// ServeHTTP handles GET /health and POST /v1/ingest only.
+// ServeHTTP handles GET /health, GET /v1/stats, and POST /v1/ingest.
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	switch {
 	case r.Method == http.MethodGet && r.URL.Path == "/health":
 		httputil.WriteJSON(w, http.StatusOK, map[string]string{"status": "ok", "service": "gr33n-insert-commons-receiver"})
+	case r.Method == http.MethodGet && r.URL.Path == "/v1/stats":
+		h.stats(w, r)
 	case r.Method == http.MethodPost && r.URL.Path == "/v1/ingest":
 		h.ingest(w, r)
 	default:
@@ -78,12 +80,76 @@ func (h *Handler) checkAuth(w http.ResponseWriter, r *http.Request) bool {
 	return true
 }
 
+func ingestIdempotencyKey(r *http.Request) (string, error) {
+	k := strings.TrimSpace(r.Header.Get("Gr33n-Idempotency-Key"))
+	if k == "" {
+		k = strings.TrimSpace(r.Header.Get("Idempotency-Key"))
+	}
+	if len(k) > maxIdempotencyKeyLen {
+		return "", errors.New("idempotency key too long")
+	}
+	return k, nil
+}
+
+func (h *Handler) stats(w http.ResponseWriter, r *http.Request) {
+	if !h.checkAuth(w, r) {
+		return
+	}
+	ctx, cancel := context.WithTimeout(r.Context(), 15*time.Second)
+	defer cancel()
+
+	st, err := h.q.InsertCommonsReceiverStats(ctx)
+	if err != nil {
+		log.Printf("insert commons stats: %v", err)
+		httputil.WriteError(w, http.StatusInternalServerError, "failed to load stats")
+		return
+	}
+	since := time.Now().UTC().AddDate(0, 0, -30)
+	days, err := h.q.InsertCommonsReceiverDailyCounts(ctx, since)
+	if err != nil {
+		log.Printf("insert commons daily stats: %v", err)
+		httputil.WriteError(w, http.StatusInternalServerError, "failed to load daily stats")
+		return
+	}
+
+	daily := make([]map[string]any, 0, len(days))
+	for _, row := range days {
+		item := map[string]any{"ingest_count": row.IngestCount}
+		if row.Day.Valid {
+			item["day"] = row.Day.Time.Format("2006-01-02")
+		}
+		daily = append(daily, item)
+	}
+
+	out := map[string]any{
+		"service":             "gr33n-insert-commons-receiver",
+		"retention_days":      h.retentionDays,
+		"total_payloads":      st.TotalPayloads,
+		"distinct_pseudonyms": st.DistinctPseudonyms,
+		"ingests_by_utc_day":  daily,
+	}
+	if ts, ok := st.OldestReceivedAt.(time.Time); ok {
+		out["oldest_received_at"] = ts.UTC().Format(time.RFC3339Nano)
+	}
+	if ts, ok := st.NewestReceivedAt.(time.Time); ok {
+		out["newest_received_at"] = ts.UTC().Format(time.RFC3339Nano)
+	}
+
+	httputil.WriteJSON(w, http.StatusOK, out)
+}
+
 func (h *Handler) ingest(w http.ResponseWriter, r *http.Request) {
 	if !h.checkAuth(w, r) {
 		return
 	}
 	if !strings.HasPrefix(strings.ToLower(strings.TrimSpace(r.Header.Get("Content-Type"))), "application/json") {
 		httputil.WriteError(w, http.StatusBadRequest, "Content-Type must be application/json")
+		return
+	}
+
+	idem, err := ingestIdempotencyKey(r)
+	if err != nil {
+		httputil.WriteError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
@@ -97,7 +163,7 @@ func (h *Handler) ingest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	farmPseudo, genAt, err := validatePayload(raw)
+	farmPseudo, genAt, err := insertcommonsschema.ValidatePayload(raw)
 	if err != nil {
 		httputil.WriteError(w, http.StatusBadRequest, err.Error())
 		return
@@ -109,21 +175,64 @@ func (h *Handler) ingest(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), 15*time.Second)
 	defer cancel()
 
+	if idem != "" {
+		ik := idem
+		prev, qerr := h.q.GetInsertCommonsReceivedPayloadByFarmIdempotency(ctx, db.GetInsertCommonsReceivedPayloadByFarmIdempotencyParams{
+			FarmPseudonym:        farmPseudo,
+			SourceIdempotencyKey: &ik,
+		})
+		if qerr == nil {
+			if prev.PayloadHash != payloadHash {
+				httputil.WriteError(w, http.StatusConflict, "idempotency key already stored with a different payload")
+				return
+			}
+			h.writeIngestOK(w, true, prev.ID)
+			return
+		}
+		if !errors.Is(qerr, pgx.ErrNoRows) {
+			log.Printf("insert commons ingest: idempotency lookup: %v", qerr)
+			httputil.WriteError(w, http.StatusInternalServerError, "failed to verify idempotency")
+			return
+		}
+	}
+
+	var idemPtr *string
+	if idem != "" {
+		ik := idem
+		idemPtr = &ik
+	}
+
 	id, err := h.q.InsertInsertCommonsReceivedPayload(ctx, db.InsertInsertCommonsReceivedPayloadParams{
-		PayloadHash:   payloadHash,
-		FarmPseudonym: farmPseudo,
-		SchemaVersion: SchemaVersion,
-		GeneratedAt:   genAt,
-		Payload:       raw,
+		PayloadHash:          payloadHash,
+		FarmPseudonym:        farmPseudo,
+		SchemaVersion:        insertcommonsschema.SchemaVersion,
+		GeneratedAt:          genAt,
+		Payload:              raw,
+		SourceIdempotencyKey: idemPtr,
 	})
 	duplicate := false
 	if err != nil {
 		var pe *pgconn.PgError
-		if errors.As(err, &pe) && pe.Code == "23505" {
-			duplicate = true
-			id, err = h.q.GetInsertCommonsReceivedPayloadIDByHash(ctx, payloadHash)
-			if errors.Is(err, pgx.ErrNoRows) {
-				err = errors.New("duplicate without stored row")
+		if errors.As(err, &pe) && pe.Code == pgerrUniqueViolation {
+			if existing, e2 := h.q.GetInsertCommonsReceivedPayloadIDByHash(ctx, payloadHash); e2 == nil {
+				duplicate = true
+				id = existing
+				err = nil
+			} else if idem != "" {
+				ik := idem
+				row, e3 := h.q.GetInsertCommonsReceivedPayloadByFarmIdempotency(ctx, db.GetInsertCommonsReceivedPayloadByFarmIdempotencyParams{
+					FarmPseudonym:        farmPseudo,
+					SourceIdempotencyKey: &ik,
+				})
+				if e3 == nil {
+					if row.PayloadHash != payloadHash {
+						httputil.WriteError(w, http.StatusConflict, "idempotency key already stored with a different payload")
+						return
+					}
+					duplicate = true
+					id = row.ID
+					err = nil
+				}
 			}
 		}
 		if err != nil {
@@ -144,98 +253,15 @@ func (h *Handler) ingest(w http.ResponseWriter, r *http.Request) {
 		}()
 	}
 
+	h.writeIngestOK(w, !duplicate, id)
+}
+
+func (h *Handler) writeIngestOK(w http.ResponseWriter, duplicate bool, id int64) {
 	httputil.WriteJSON(w, http.StatusOK, map[string]any{
 		"ok":         true,
 		"accepted":   !duplicate,
 		"duplicate":  duplicate,
 		"storage_id": id,
-		"schema":     SchemaVersion,
+		"schema":     insertcommonsschema.SchemaVersion,
 	})
-}
-
-func validatePayload(raw []byte) (farmPseudo string, genAt time.Time, err error) {
-	var root map[string]json.RawMessage
-	if err := json.Unmarshal(raw, &root); err != nil {
-		return "", time.Time{}, fmt.Errorf("invalid json: %w", err)
-	}
-	required := []string{"schema_version", "generated_at", "farm_pseudonym", "farm_profile", "aggregates", "privacy"}
-	for _, k := range required {
-		if _, ok := root[k]; !ok {
-			return "", time.Time{}, fmt.Errorf("missing required field: %s", k)
-		}
-	}
-	var ver string
-	if err := json.Unmarshal(root["schema_version"], &ver); err != nil {
-		return "", time.Time{}, errors.New("invalid schema_version")
-	}
-	if strings.TrimSpace(ver) != SchemaVersion {
-		return "", time.Time{}, fmt.Errorf("unsupported schema_version %q (expected %s)", ver, SchemaVersion)
-	}
-	var genStr string
-	if err := json.Unmarshal(root["generated_at"], &genStr); err != nil {
-		return "", time.Time{}, errors.New("invalid generated_at")
-	}
-	genStr = strings.TrimSpace(genStr)
-	var parseErr error
-	for _, layout := range []string{time.RFC3339Nano, time.RFC3339} {
-		genAt, parseErr = time.Parse(layout, genStr)
-		if parseErr == nil {
-			break
-		}
-	}
-	if parseErr != nil {
-		return "", time.Time{}, errors.New("generated_at must be RFC3339 or RFC3339Nano")
-	}
-	if genStr == "" {
-		return "", time.Time{}, errors.New("generated_at is empty")
-	}
-	now := time.Now().UTC()
-	if genAt.After(now.Add(10 * time.Minute)) {
-		return "", time.Time{}, errors.New("generated_at is too far in the future")
-	}
-	if genAt.Before(now.Add(-365 * 24 * time.Hour)) {
-		return "", time.Time{}, errors.New("generated_at is too old")
-	}
-
-	if err := json.Unmarshal(root["farm_pseudonym"], &farmPseudo); err != nil {
-		return "", time.Time{}, errors.New("invalid farm_pseudonym")
-	}
-	farmPseudo = strings.TrimSpace(farmPseudo)
-	if farmPseudo == "" {
-		return "", time.Time{}, errors.New("farm_pseudonym is required")
-	}
-
-	var fp map[string]any
-	if err := json.Unmarshal(root["farm_profile"], &fp); err != nil {
-		return "", time.Time{}, errors.New("farm_profile must be an object")
-	}
-	for _, k := range []string{"scale_tier", "timezone_bucket", "currency", "operational_status"} {
-		if _, ok := fp[k]; !ok {
-			return "", time.Time{}, fmt.Errorf("farm_profile missing %q", k)
-		}
-	}
-
-	var agg map[string]any
-	if err := json.Unmarshal(root["aggregates"], &agg); err != nil {
-		return "", time.Time{}, errors.New("aggregates must be an object")
-	}
-	for _, k := range []string{"costs", "tasks", "devices"} {
-		v, ok := agg[k]
-		if !ok {
-			return "", time.Time{}, fmt.Errorf("aggregates missing %q", k)
-		}
-		if _, isObj := v.(map[string]any); !isObj {
-			return "", time.Time{}, fmt.Errorf("aggregates.%s must be an object", k)
-		}
-	}
-
-	var priv map[string]any
-	if err := json.Unmarshal(root["privacy"], &priv); err != nil {
-		return "", time.Time{}, errors.New("privacy must be an object")
-	}
-	if _, ok := priv["includes_pii"]; !ok {
-		return "", time.Time{}, errors.New("privacy.includes_pii is required")
-	}
-
-	return farmPseudo, genAt.UTC(), nil
 }

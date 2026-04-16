@@ -140,3 +140,89 @@ func (q *Queries) ListUserActivityLogByFarm(ctx context.Context, arg ListUserAct
 	}
 	return items, nil
 }
+
+const listUserActivityLogForOrganization = `-- name: ListUserActivityLogForOrganization :many
+SELECT
+    id,
+    user_id,
+    farm_id,
+    activity_time,
+    action_type,
+    target_module_schema,
+    target_table_name,
+    target_record_id,
+    target_record_description,
+    ip_address,
+    user_agent,
+    session_id,
+    status,
+    failure_reason,
+    details,
+    created_at
+FROM gr33ncore.user_activity_log
+WHERE
+    farm_id IN (
+        SELECT f.id FROM gr33ncore.farms f
+        WHERE f.organization_id = $1 AND f.deleted_at IS NULL
+    )
+    OR (
+        (farm_id IS NULL OR farm_id = 0)
+        AND (
+            (details->>'organization_id')::bigint = $1
+            OR (
+                target_table_name = 'organizations'
+                AND target_record_id = ($1::bigint)::text
+            )
+            OR (
+                target_table_name = 'organization_memberships'
+                AND target_record_id LIKE (($1::bigint)::text || ':%')
+            )
+        )
+    )
+ORDER BY activity_time DESC, id DESC
+LIMIT $2 OFFSET $3
+`
+
+type ListUserActivityLogForOrganizationParams struct {
+	OrganizationID *int64 `db:"organization_id" json:"organization_id"`
+	Limit          int32  `db:"limit" json:"limit"`
+	Offset         int32  `db:"offset" json:"offset"`
+}
+
+// Org-wide audit: farms in the org plus org-only rows (NULL farm_id, details.organization_id, org membership targets).
+func (q *Queries) ListUserActivityLogForOrganization(ctx context.Context, arg ListUserActivityLogForOrganizationParams) ([]Gr33ncoreUserActivityLog, error) {
+	rows, err := q.db.Query(ctx, listUserActivityLogForOrganization, arg.OrganizationID, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Gr33ncoreUserActivityLog{}
+	for rows.Next() {
+		var i Gr33ncoreUserActivityLog
+		if err := rows.Scan(
+			&i.ID,
+			&i.UserID,
+			&i.FarmID,
+			&i.ActivityTime,
+			&i.ActionType,
+			&i.TargetModuleSchema,
+			&i.TargetTableName,
+			&i.TargetRecordID,
+			&i.TargetRecordDescription,
+			&i.IpAddress,
+			&i.UserAgent,
+			&i.SessionID,
+			&i.Status,
+			&i.FailureReason,
+			&i.Details,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}

@@ -15,13 +15,21 @@ import (
 
 // Event describes one append-only audit row for a farm-scoped action.
 type Event struct {
-	FarmID int64
+	// FarmID is the farm scope when set. Use nil for organization-only or global audit rows
+	// (avoids invalid FK references to gr33ncore.farms).
+	FarmID *int64
 	Action db.Gr33ncoreUserActionTypeEnum
 	// Optional row context (module.table / record id).
 	TargetSchema, TargetTable, TargetRecordID, TargetDesc *string
 	Status                                                string // success | failure | pending
 	FailureReason                                         *string
 	Details                                               map[string]any
+}
+
+// FarmIDPtr returns a non-nil *int64 for farm-scoped audit rows.
+func FarmIDPtr(id int64) *int64 {
+	v := id
+	return &v
 }
 
 // Submit writes an audit event; failures are logged and do not affect the caller's flow.
@@ -58,7 +66,7 @@ func SubmitErr(ctx context.Context, q db.Querier, r *http.Request, ev Event) err
 	}
 	return q.InsertUserActivityLog(ctx, db.InsertUserActivityLogParams{
 		UserID:                  uid,
-		FarmID:                  &ev.FarmID,
+		FarmID:                  ev.FarmID,
 		ActionType:              ev.Action,
 		TargetModuleSchema:      ev.TargetSchema,
 		TargetTableName:         ev.TargetTable,

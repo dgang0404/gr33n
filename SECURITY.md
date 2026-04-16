@@ -53,6 +53,8 @@ The Pi client (`pi_client/gr33n_client.py`) communicates only with your local AP
 
 For production use, rotate the API to a dedicated LAN interface and block WAN access at the router.
 
+**MQTT bridge** ([`pi_client/mqtt_telemetry_bridge.py`](pi_client/mqtt_telemetry_bridge.py)): holds the same `PI_API_KEY` over HTTPS; keep the broker authenticated (no anonymous MQTT in production), use TLS where possible, and restrict broker ACLs per device. See [`docs/mqtt-edge-operator-playbook.md`](docs/mqtt-edge-operator-playbook.md).
+
 ---
 
 ## 🧪 Automation simulation mode
@@ -70,7 +72,7 @@ Important: simulation mode validates logic and data flow, but does not physicall
 
 ## 🚨 Data Sharing + Inserts
 
-For community-contributed insert statements (gr33n_inserts, coming soon):
+For community-contributed insert packs (gr33n_inserts commons catalog — browse/import API, see [`docs/commons-catalog-operator-playbook.md`](docs/commons-catalog-operator-playbook.md)):
 
 - Inserts are staged into temporary tables before promotion
 - `data_scrubber()` sanitizes input before it touches production data

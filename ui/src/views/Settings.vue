@@ -91,6 +91,74 @@
       </form>
     </section>
 
+    <!-- Create farm (bootstrap template picker) -->
+    <section class="bg-zinc-800 border border-zinc-700 rounded-xl p-5 mb-5">
+      <h2 class="text-white font-semibold mb-3">New farm</h2>
+      <p class="text-zinc-500 text-xs mb-4">
+        Create a farm you own. Starter packs are idempotent — applying the same template again does not duplicate data.
+        If you link an organization with a default template, you can start from that default without picking a pack here.
+      </p>
+      <form class="space-y-3" @submit.prevent="submitNewFarm">
+        <div class="flex flex-col gap-1.5">
+          <label class="text-zinc-400 text-xs uppercase tracking-wide">Farm name</label>
+          <input v-model="newFarm.name" type="text" required placeholder="e.g. North greenhouse"
+            class="input-field text-sm" />
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="flex flex-col gap-1.5">
+            <label class="text-zinc-400 text-xs uppercase tracking-wide">Timezone</label>
+            <input v-model="newFarm.timezone" type="text" required class="input-field text-sm" />
+          </div>
+          <div class="flex flex-col gap-1.5">
+            <label class="text-zinc-400 text-xs uppercase tracking-wide">Currency</label>
+            <input v-model="newFarm.currency" type="text" required maxlength="3"
+              class="input-field text-sm uppercase" />
+          </div>
+        </div>
+        <div class="flex flex-col gap-1.5">
+          <label class="text-zinc-400 text-xs uppercase tracking-wide">Organization (optional)</label>
+          <select v-model="newFarm.organizationId"
+            class="bg-zinc-900 border border-zinc-700 text-zinc-300 text-sm rounded-lg px-3 py-2 focus:outline-none">
+            <option value="">— None —</option>
+            <option v-for="o in adminOrgs" :key="o.id" :value="String(o.id)">{{ o.name }}</option>
+          </select>
+        </div>
+        <fieldset class="space-y-2 border border-zinc-700 rounded-lg p-3 bg-zinc-900/50">
+          <legend class="text-zinc-400 text-xs uppercase tracking-wide px-1">Starting content</legend>
+          <label class="flex items-start gap-2 text-sm text-zinc-300 cursor-pointer">
+            <input v-model="newFarm.bootstrapMode" type="radio" value="blank" class="mt-1" />
+            <span>Start blank — empty zones and schedules (explicit). Use this to skip an organization default.</span>
+          </label>
+          <label class="flex items-start gap-2 text-sm text-zinc-300 cursor-pointer">
+            <input v-model="newFarm.bootstrapMode" type="radio" value="starter" class="mt-1" />
+            <span>Apply starter pack now</span>
+          </label>
+          <label v-if="newFarm.organizationId" class="flex items-start gap-2 text-sm text-zinc-300 cursor-pointer">
+            <input v-model="newFarm.bootstrapMode" type="radio" value="org_default" class="mt-1" />
+            <span>Use organization default only (omit template in the request). Falls back to blank if the org has no default.</span>
+          </label>
+          <div v-if="newFarm.bootstrapMode === 'starter'" class="pl-6 space-y-2">
+            <select v-model="newFarm.starterKey"
+              class="bg-zinc-900 border border-zinc-700 text-zinc-300 text-sm rounded-lg px-3 py-2 w-full max-w-md focus:outline-none">
+              <option v-for="opt in starterPackOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
+            </select>
+            <details v-if="newFarm.starterKey === jadamKey" class="text-zinc-500 text-xs">
+              <summary class="text-gr33n-400 cursor-pointer select-none">{{ jadamSummary.title }}</summary>
+              <ul class="list-disc pl-5 mt-2 space-y-1">
+                <li v-for="(b, i) in jadamSummary.bullets" :key="i">{{ b }}</li>
+              </ul>
+            </details>
+          </div>
+        </fieldset>
+        <p v-if="newFarmError" class="text-red-400 text-xs">{{ newFarmError }}</p>
+        <p v-if="newFarmOk" class="text-green-400 text-xs">{{ newFarmOk }}</p>
+        <button type="submit" :disabled="newFarmSaving || !auth.userId"
+          class="bg-green-600 hover:bg-green-500 disabled:bg-zinc-700 text-white text-sm font-semibold px-5 py-2 rounded-lg">
+          {{ newFarmSaving ? 'Creating…' : 'Create farm' }}
+        </button>
+      </form>
+    </section>
+
     <!-- Organizations (multi-farm tenancy) -->
     <section class="bg-zinc-800 border border-zinc-700 rounded-xl p-5 mb-5">
       <h2 class="text-white font-semibold mb-3 flex items-center gap-2">
@@ -111,18 +179,35 @@
         </button>
       </form>
       <p v-if="orgError" class="text-red-400 text-xs mb-2">{{ orgError }}</p>
+      <p v-if="orgDefaultError" class="text-red-400 text-xs mb-2">{{ orgDefaultError }}</p>
       <div v-if="orgLoading && !orgs.length" class="text-zinc-500 text-sm">Loading…</div>
       <ul v-else-if="orgs.length" class="space-y-2 mb-4">
         <li v-for="o in orgs" :key="o.id"
-          class="flex flex-wrap items-center justify-between gap-2 bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-sm">
-          <div>
-            <span class="text-zinc-200 font-medium">{{ o.name }}</span>
-            <span class="text-zinc-500 text-xs ml-2">{{ o.role_in_org }} · {{ o.plan_tier }}</span>
+          class="flex flex-col gap-2 bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-sm">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <span class="text-zinc-200 font-medium">{{ o.name }}</span>
+              <span class="text-zinc-500 text-xs ml-2">{{ o.role_in_org }} · {{ o.plan_tier }}</span>
+            </div>
+            <button type="button" class="text-xs text-green-500 hover:text-green-400"
+              @click="loadOrgUsage(o.id)">
+              Usage summary
+            </button>
           </div>
-          <button type="button" class="text-xs text-green-500 hover:text-green-400"
-            @click="loadOrgUsage(o.id)">
-            Usage summary
-          </button>
+          <div v-if="o.role_in_org === 'owner' || o.role_in_org === 'admin'"
+            class="flex flex-wrap items-center gap-2 text-xs border-t border-zinc-800 pt-2">
+            <span class="text-zinc-500 shrink-0">Default template for new farms:</span>
+            <select v-model="orgDefaultDraft[o.id]"
+              class="bg-zinc-950 border border-zinc-600 text-zinc-300 rounded px-2 py-1 min-w-[10rem] focus:outline-none">
+              <option value="">None (blank)</option>
+              <option :value="jadamKey">Indoor photoperiod v1</option>
+            </select>
+            <button type="button" :disabled="orgDefaultSaving === o.id"
+              class="text-xs bg-zinc-700 hover:bg-zinc-600 disabled:opacity-50 text-white px-3 py-1 rounded"
+              @click="saveOrgBootstrapDefault(o.id)">
+              {{ orgDefaultSaving === o.id ? 'Saving…' : 'Save' }}
+            </button>
+          </div>
         </li>
       </ul>
       <p v-else class="text-zinc-600 text-sm mb-4">You are not in any organization yet.</p>
@@ -169,6 +254,49 @@
         <p v-if="orgInviteError" class="text-red-400 text-xs">{{ orgInviteError }}</p>
         <p v-if="orgInviteOk" class="text-green-400 text-xs">Member added.</p>
       </form>
+
+      <div v-if="adminOrgs.length" class="border-t border-zinc-700 pt-4 mt-4">
+        <h3 class="text-zinc-200 text-sm font-semibold mb-1">Organization audit</h3>
+        <p class="text-zinc-500 text-xs mb-3">
+          Cross-farm and org-only events (settings, membership, exports). Requires org owner or admin.
+        </p>
+        <div class="flex flex-wrap gap-2 items-center mb-3">
+          <select v-model="auditOrgId"
+            class="bg-zinc-900 border border-zinc-700 text-zinc-300 text-sm rounded-lg px-3 py-2 min-w-[12rem] focus:outline-none"
+            @change="loadOrgAudit">
+            <option v-for="o in adminOrgs" :key="o.id" :value="String(o.id)">{{ o.name }}</option>
+          </select>
+          <button type="button" :disabled="orgAuditLoading" @click="loadOrgAudit"
+            class="text-xs bg-zinc-700 hover:bg-zinc-600 disabled:opacity-50 text-white px-3 py-2 rounded-lg">
+            {{ orgAuditLoading ? 'Loading…' : 'Refresh' }}
+          </button>
+        </div>
+        <p v-if="orgAuditError" class="text-red-400 text-xs mb-2">{{ orgAuditError }}</p>
+        <div v-if="orgAuditLoading && !orgAuditEvents.length" class="text-zinc-500 text-sm">Loading…</div>
+        <div v-else-if="!orgAuditEvents.length" class="text-zinc-600 text-sm">No audit events for this org yet.</div>
+        <div v-else class="overflow-x-auto border border-zinc-700 rounded-lg max-h-80 overflow-y-auto">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-zinc-900 text-zinc-400 sticky top-0">
+              <tr>
+                <th class="px-2 py-2 font-medium">Time</th>
+                <th class="px-2 py-2 font-medium">Kind</th>
+                <th class="px-2 py-2 font-medium">Action</th>
+                <th class="px-2 py-2 font-medium">Farm</th>
+                <th class="px-2 py-2 font-medium">Target</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-zinc-800">
+              <tr v-for="ev in orgAuditEvents" :key="ev.id" class="text-zinc-300 hover:bg-zinc-900/80">
+                <td class="px-2 py-1.5 whitespace-nowrap text-zinc-500">{{ fmtTs(ev.activity_time) }}</td>
+                <td class="px-2 py-1.5 font-mono text-gr33n-400/90">{{ auditEventKind(ev) }}</td>
+                <td class="px-2 py-1.5">{{ ev.action_type }}</td>
+                <td class="px-2 py-1.5 text-zinc-500">{{ ev.farm_id != null ? ev.farm_id : '—' }}</td>
+                <td class="px-2 py-1.5 max-w-[14rem] truncate" :title="auditTarget(ev)">{{ auditTarget(ev) }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
     </section>
 
     <!-- Farm Members -->
@@ -226,6 +354,41 @@
       </form>
       <p v-if="inviteError" class="text-red-400 text-xs mt-2">{{ inviteError }}</p>
       <p v-if="inviteSuccess" class="text-green-400 text-xs mt-2">Member invited successfully.</p>
+
+      <!-- Farm-scoped audit (owner/manager) -->
+      <div v-if="farmContext.farmId && isFarmAdmin" class="border-t border-zinc-700 pt-4 mt-4">
+        <h3 class="text-zinc-200 text-sm font-semibold mb-1">Farm audit</h3>
+        <p class="text-zinc-500 text-xs mb-3">
+          Actions on this farm (membership, settings, exports, Insert Commons sync, etc.). Newest first.
+        </p>
+        <button type="button" :disabled="farmAuditLoading" @click="loadFarmAudit"
+          class="text-xs bg-zinc-700 hover:bg-zinc-600 disabled:opacity-50 text-white px-3 py-2 rounded-lg mb-3">
+          {{ farmAuditLoading ? 'Loading…' : 'Refresh' }}
+        </button>
+        <p v-if="farmAuditError" class="text-red-400 text-xs mb-2">{{ farmAuditError }}</p>
+        <div v-if="farmAuditLoading && !farmAuditEvents.length" class="text-zinc-500 text-sm">Loading…</div>
+        <div v-else-if="!farmAuditEvents.length" class="text-zinc-600 text-sm">No audit events for this farm yet.</div>
+        <div v-else class="overflow-x-auto border border-zinc-700 rounded-lg max-h-80 overflow-y-auto">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-zinc-900 text-zinc-400 sticky top-0">
+              <tr>
+                <th class="px-2 py-2 font-medium">Time</th>
+                <th class="px-2 py-2 font-medium">Kind</th>
+                <th class="px-2 py-2 font-medium">Action</th>
+                <th class="px-2 py-2 font-medium">Target</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-zinc-800">
+              <tr v-for="ev in farmAuditEvents" :key="ev.id" class="text-zinc-300 hover:bg-zinc-900/80">
+                <td class="px-2 py-1.5 whitespace-nowrap text-zinc-500">{{ fmtTs(ev.activity_time) }}</td>
+                <td class="px-2 py-1.5 font-mono text-gr33n-400/90">{{ auditEventKind(ev) }}</td>
+                <td class="px-2 py-1.5">{{ ev.action_type }}</td>
+                <td class="px-2 py-1.5 max-w-[18rem] truncate" :title="auditTarget(ev)">{{ auditTarget(ev) }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
     </section>
 
     <!-- Insert Commons (benchmark sharing) -->
@@ -236,20 +399,158 @@
         (not your farm name). If <code class="text-green-400">INSERT_COMMONS_INGEST_URL</code> is unset, the server records an attempt but does not call out.
         You can revoke anytime by turning sharing off.
       </p>
+      <p v-if="!canViewInsertCommons" class="text-amber-200/90 text-xs mb-3">
+        Running sync, viewing history, and exporting bundles need <strong class="font-medium">owner</strong>, <strong class="font-medium">manager</strong>, or <strong class="font-medium">finance</strong> access on this farm.
+      </p>
       <label class="flex items-center gap-2 text-zinc-300 text-sm mb-3">
         <input v-model="insertOptIn" type="checkbox" class="rounded bg-zinc-800 border-zinc-700"
           @change="onInsertOptInChange" />
         Share anonymized aggregates with Insert Commons
       </label>
+      <label        v-if="insertOptIn && isFarmAdmin"
+        class="flex items-center gap-2 text-zinc-300 text-sm mb-3"
+      >
+        <input
+          v-model="insertRequireApproval"
+          type="checkbox"
+          class="rounded bg-zinc-800 border-zinc-700"
+          @change="onInsertRequireApprovalChange"
+        />
+        Require owner/manager approval before each payload is sent to the ingest URL
+      </label>
+      <p
+        v-else-if="insertOptIn && insertRequireApproval && !isFarmAdmin"
+        class="text-amber-200/90 text-xs mb-3"
+      >
+        This farm is in <span class="font-medium">approval queue</span> mode. A farm owner or manager must approve each payload before it is sent.
+      </p>
+      <div v-if="isFarmAdmin" class="mb-4">
+        <button
+          type="button"
+          :disabled="insertPreviewLoading || !farmContext.farmId"
+          class="bg-zinc-800 hover:bg-zinc-700 border border-zinc-600 disabled:opacity-40 text-zinc-200 text-xs font-semibold px-4 py-2 rounded-lg mr-2"
+          @click="loadInsertPreview"
+        >
+          {{ insertPreviewLoading ? 'Building preview…' : 'Preview ingest JSON' }}
+        </button>
+        <p class="text-zinc-500 text-xs mt-2">
+          Read-only: same validated payload shape as sync, without sending or saving history.
+        </p>
+        <p v-if="insertPreviewError" class="text-red-400 text-xs mt-1">{{ insertPreviewError }}</p>
+        <details v-if="insertPreviewData && insertPreviewData.valid" class="mt-2">
+          <summary class="text-gr33n-400 text-xs cursor-pointer select-none">Show payload JSON</summary>
+          <pre class="mt-2 p-2 bg-zinc-950 border border-zinc-800 rounded text-[10px] text-zinc-400 overflow-x-auto max-h-64 whitespace-pre-wrap break-words">{{ insertPreviewJson }}</pre>
+        </details>
+      </div>
       <div class="flex flex-wrap items-center gap-2">
-        <button type="button" :disabled="!insertOptIn || insertSyncing"
+        <button
+          type="button"
+          :disabled="!insertOptIn || insertSyncing || !canViewInsertCommons"
           class="bg-zinc-700 hover:bg-zinc-600 disabled:opacity-40 text-white text-xs font-semibold px-4 py-2 rounded-lg"
-          @click="runInsertSync">
+          @click="runInsertSync"
+        >
           {{ insertSyncing ? 'Syncing…' : 'Run sync' }}
         </button>
         <span v-if="insertSyncMsg" class="text-zinc-500 text-xs">{{ insertSyncMsg }}</span>
       </div>
-      <div v-if="insertOptIn" class="mt-4">
+      <div v-if="insertOptIn && canViewInsertCommons" class="mt-4">
+        <div class="flex items-center justify-between mb-2">
+          <p class="text-zinc-500 text-xs uppercase tracking-wide">Pending &amp; recent bundles</p>
+          <button
+            type="button"
+            class="text-zinc-500 hover:text-white text-xs"
+            @click="loadInsertBundles"
+            :disabled="insertBundlesLoading"
+          >
+            {{ insertBundlesLoading ? 'Loading…' : 'Refresh' }}
+          </button>
+        </div>
+        <div v-if="insertBundlesLoading && insertBundles.length === 0" class="text-zinc-600 text-xs">Loading bundles…</div>
+        <div v-else-if="insertBundles.length === 0" class="text-zinc-600 text-xs">No bundles yet. Run sync to create one.</div>
+        <ul v-else class="space-y-2">
+          <li
+            v-for="b in insertBundles"
+            :key="b.id"
+            class="bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-xs"
+          >
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <span class="text-zinc-300 font-mono">#{{ b.id }} · {{ b.status }}</span>
+              <span class="text-zinc-600 shrink-0">{{ fmtTs(b.created_at) }}</span>
+            </div>
+            <div class="text-zinc-600 mt-1 break-all" v-if="b.idempotency_key">idem: {{ b.idempotency_key }}</div>
+            <div class="text-zinc-600 mt-1" v-if="b.delivery_http_status != null">delivery http: {{ b.delivery_http_status }}</div>
+            <div class="text-red-300 mt-1 break-words" v-if="b.delivery_error">{{ b.delivery_error }}</div>
+            <div class="flex flex-wrap gap-2 mt-2">
+              <button
+                v-if="isFarmAdmin && b.status === 'pending_approval'"
+                type="button"
+                class="text-green-400 hover:text-green-300 text-xs font-medium disabled:opacity-40"
+                :disabled="insertBundleBusy === b.id"
+                @click="approveInsertBundle(b.id)"
+              >
+                Approve &amp; send
+              </button>
+              <template v-if="isFarmAdmin && b.status === 'pending_approval'">
+                <button
+                  v-if="rejectExpandId !== b.id"
+                  type="button"
+                  class="text-red-400 hover:text-red-300 text-xs font-medium"
+                  @click="openRejectBundle(b.id)"
+                >
+                  Reject…
+                </button>
+              </template>
+              <button
+                v-if="isFarmAdmin && b.status === 'delivery_failed'"
+                type="button"
+                class="text-amber-400 hover:text-amber-300 text-xs font-medium disabled:opacity-40"
+                :disabled="insertBundleBusy === b.id"
+                @click="retryInsertBundleDeliver(b.id)"
+              >
+                Retry delivery
+              </button>
+              <button
+                type="button"
+                class="text-zinc-400 hover:text-white text-xs font-medium disabled:opacity-40"
+                :disabled="insertBundleBusy === b.id"
+                @click="farmStore.downloadInsertCommonsBundleExport(farmContext.farmId, b.id, 'ingest')"
+              >
+                Export ingest JSON
+              </button>
+              <button
+                type="button"
+                class="text-zinc-400 hover:text-white text-xs font-medium disabled:opacity-40"
+                :disabled="insertBundleBusy === b.id"
+                @click="farmStore.downloadInsertCommonsBundleExport(farmContext.farmId, b.id, 'package_v1')"
+              >
+                Export package v1
+              </button>
+            </div>
+            <div v-if="rejectExpandId === b.id" class="mt-2 space-y-2 border-t border-zinc-700 pt-2">
+              <textarea
+                v-model="rejectNote"
+                rows="2"
+                placeholder="Reason for rejection (required)"
+                class="w-full bg-zinc-950 border border-zinc-600 rounded px-2 py-1.5 text-zinc-200 text-xs placeholder-zinc-600"
+              />
+              <div class="flex gap-2">
+                <button
+                  type="button"
+                  class="bg-red-900/80 hover:bg-red-800 text-white text-xs font-semibold px-3 py-1 rounded disabled:opacity-40"
+                  :disabled="insertBundleBusy === b.id || !rejectNote.trim()"
+                  @click="confirmRejectBundle(b.id)"
+                >
+                  Confirm reject
+                </button>
+                <button type="button" class="text-zinc-500 hover:text-white text-xs" @click="cancelRejectBundle">
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </li>
+        </ul>
+      </div>
+      <div v-if="insertOptIn && canViewInsertCommons" class="mt-4">
         <div class="flex items-center justify-between mb-2">
           <p class="text-zinc-500 text-xs uppercase tracking-wide">Recent sync attempts</p>
           <button type="button" class="text-zinc-500 hover:text-white text-xs" @click="loadInsertHistory" :disabled="insertHistoryLoading">
@@ -264,6 +565,7 @@
               <span class="text-zinc-300 font-mono">{{ e.status }}</span>
               <span class="text-zinc-600 shrink-0">{{ fmtTs(e.created_at) }}</span>
             </div>
+            <div class="text-zinc-600 mt-1" v-if="e.bundle_id != null">bundle: {{ e.bundle_id }}</div>
             <div class="text-zinc-600 mt-1 break-all" v-if="e.idempotency_key">idem: {{ e.idempotency_key }}</div>
             <div class="text-zinc-600 mt-1" v-if="e.http_status != null">http: {{ e.http_status }}</div>
             <div class="text-red-300 mt-1 break-words" v-if="e.error">{{ e.error }}</div>
@@ -320,11 +622,89 @@ import { useAuthStore } from '../stores/auth'
 import { useFarmStore } from '../stores/farm'
 import { useFarmContextStore } from '../stores/farmContext'
 import api from '../api'
+import {
+  BOOTSTRAP_STARTER_OPTIONS,
+  BOOTSTRAP_TEMPLATE_KEYS,
+  JADAM_INDOOR_PHOTOPERIOD_V1_SUMMARY,
+} from '../constants/bootstrapTemplates'
 
 const router = useRouter()
 const auth   = useAuthStore()
 const farmStore = useFarmStore()
 const farmContext = useFarmContextStore()
+
+const starterPackOptions = BOOTSTRAP_STARTER_OPTIONS
+const jadamKey = BOOTSTRAP_TEMPLATE_KEYS.JADAM_INDOOR_PHOTOPERIOD_V1
+const jadamSummary = JADAM_INDOOR_PHOTOPERIOD_V1_SUMMARY
+
+const newFarm = reactive({
+  name: '',
+  timezone: 'UTC',
+  currency: 'USD',
+  organizationId: '',
+  bootstrapMode: 'blank',
+  starterKey: BOOTSTRAP_TEMPLATE_KEYS.JADAM_INDOOR_PHOTOPERIOD_V1,
+})
+const newFarmSaving = ref(false)
+const newFarmError = ref(null)
+const newFarmOk = ref(null)
+
+watch(
+  () => newFarm.organizationId,
+  (v) => {
+    if (!v && newFarm.bootstrapMode === 'org_default') {
+      newFarm.bootstrapMode = 'blank'
+    }
+  },
+)
+
+async function submitNewFarm() {
+  newFarmError.value = null
+  newFarmOk.value = null
+  if (!auth.userId) {
+    newFarmError.value = 'Sign in required'
+    return
+  }
+  if (newFarm.bootstrapMode === 'org_default' && !newFarm.organizationId) {
+    newFarmError.value = 'Select an organization to use its default template'
+    return
+  }
+  newFarmSaving.value = true
+  try {
+    const payload = {
+      name: newFarm.name.trim(),
+      owner_user_id: auth.userId,
+      timezone: newFarm.timezone.trim(),
+      currency: newFarm.currency.trim().toUpperCase(),
+      operational_status: 'active',
+      scale_tier: 'small',
+    }
+    if (newFarm.organizationId) {
+      payload.organization_id = Number(newFarm.organizationId)
+    }
+    if (newFarm.bootstrapMode === 'blank') {
+      payload.bootstrap_template = 'none'
+    } else if (newFarm.bootstrapMode === 'starter') {
+      payload.bootstrap_template = newFarm.starterKey
+    }
+
+    const { farm, bootstrap } = await farmContext.createFarm(payload)
+    await farmContext.selectFarm(farm.id)
+    let msg = `Farm “${farm.name}” created.`
+    if (bootstrap && typeof bootstrap === 'object') {
+      if (bootstrap.skipped) msg += ' No starter data applied.'
+      else if (bootstrap.already_applied) msg += ' Template was already applied for this farm.'
+      else if (bootstrap.error) msg += ` Starter: ${bootstrap.error}`
+      else msg += ' Starter pack applied.'
+    }
+    newFarmOk.value = msg
+    newFarm.name = ''
+  } catch (e) {
+    newFarmError.value = e.response?.data?.error ?? 'Could not create farm'
+  } finally {
+    newFarmSaving.value = false
+  }
+}
 
 // ── Organizations ─────────────────────────────────────────────────────────────
 const orgs = ref([])
@@ -347,12 +727,70 @@ const adminOrgs = computed(() =>
   orgs.value.filter((o) => o.role_in_org === 'owner' || o.role_in_org === 'admin'),
 )
 
+const orgDefaultDraft = reactive({})
+const orgDefaultSaving = ref(null)
+const orgDefaultError = ref(null)
+
+const auditOrgId = ref('')
+const orgAuditEvents = ref([])
+const orgAuditLoading = ref(false)
+const orgAuditError = ref(null)
+
+async function loadOrgAudit() {
+  if (!auditOrgId.value) return
+  orgAuditLoading.value = true
+  orgAuditError.value = null
+  try {
+    const r = await api.get(`/organizations/${auditOrgId.value}/audit-events`, { params: { limit: 50 } })
+    orgAuditEvents.value = Array.isArray(r.data) ? r.data : []
+  } catch (e) {
+    orgAuditError.value = e.response?.data?.error ?? 'Could not load organization audit'
+    orgAuditEvents.value = []
+  } finally {
+    orgAuditLoading.value = false
+  }
+}
+
+watch(
+  adminOrgs,
+  (list) => {
+    if (!list.length) {
+      orgAuditEvents.value = []
+      return
+    }
+    if (!auditOrgId.value || !list.some((o) => String(o.id) === auditOrgId.value)) {
+      auditOrgId.value = String(list[0].id)
+    }
+    loadOrgAudit()
+  },
+  { flush: 'post' },
+)
+
+async function saveOrgBootstrapDefault(orgId) {
+  orgDefaultError.value = null
+  orgDefaultSaving.value = orgId
+  try {
+    const raw = orgDefaultDraft[orgId] ?? ''
+    await api.patch(`/organizations/${orgId}`, {
+      default_bootstrap_template: raw === '' ? null : raw,
+    })
+    await loadOrgs()
+  } catch (e) {
+    orgDefaultError.value = e.response?.data?.error ?? 'Could not update org default'
+  } finally {
+    orgDefaultSaving.value = null
+  }
+}
+
 async function loadOrgs() {
   orgLoading.value = true
   orgError.value = null
   try {
     const r = await api.get('/organizations')
     orgs.value = Array.isArray(r.data) ? r.data : []
+    for (const o of orgs.value) {
+      orgDefaultDraft[o.id] = o.default_bootstrap_template || ''
+    }
     if (adminOrgs.value.length && orgInviteTargetId.value === '') {
       orgInviteTargetId.value = String(adminOrgs.value[0].id)
     }
@@ -479,10 +917,94 @@ const inviteError = ref(null)
 const inviteSuccess = ref(false)
 
 const insertOptIn = ref(false)
+const insertRequireApproval = ref(false)
 const insertSyncing = ref(false)
 const insertSyncMsg = ref('')
+const insertPreviewLoading = ref(false)
+const insertPreviewError = ref(null)
+const insertPreviewData = ref(null)
+
+const insertPreviewJson = computed(() => {
+  const p = insertPreviewData.value?.payload
+  if (!p) return ''
+  try {
+    return JSON.stringify(p, null, 2)
+  } catch {
+    return String(p)
+  }
+})
 const insertHistory = ref([])
 const insertHistoryLoading = ref(false)
+const insertBundles = ref([])
+const insertBundlesLoading = ref(false)
+const insertBundleBusy = ref(null)
+const rejectExpandId = ref(null)
+const rejectNote = ref('')
+
+const isFarmAdmin = computed(() => {
+  const uid = auth.userId
+  const fid = farmContext.farmId
+  if (!uid || !fid) return false
+  const f = farmStore.farm
+  if (
+    f &&
+    Number(f.id) === Number(fid) &&
+    f.owner_user_id &&
+    String(f.owner_user_id).toLowerCase() === String(uid).toLowerCase()
+  ) {
+    return true
+  }
+  const m = members.value.find((x) => String(x.user_id).toLowerCase() === String(uid).toLowerCase())
+  return !!(m && (m.role_in_farm === 'owner' || m.role_in_farm === 'manager'))
+})
+
+const farmAuditEvents = ref([])
+const farmAuditLoading = ref(false)
+const farmAuditError = ref(null)
+
+async function loadFarmAudit() {
+  const fid = farmContext.farmId
+  if (!fid || !isFarmAdmin.value) {
+    farmAuditEvents.value = []
+    return
+  }
+  farmAuditLoading.value = true
+  farmAuditError.value = null
+  try {
+    const r = await api.get(`/farms/${fid}/audit-events`, { params: { limit: 50 } })
+    farmAuditEvents.value = Array.isArray(r.data) ? r.data : []
+  } catch (e) {
+    farmAuditError.value = e.response?.data?.error ?? 'Could not load farm audit'
+    farmAuditEvents.value = []
+  } finally {
+    farmAuditLoading.value = false
+  }
+}
+
+watch(
+  () => [farmContext.farmId, isFarmAdmin.value],
+  () => {
+    loadFarmAudit()
+  },
+  { flush: 'post', immediate: true },
+)
+
+const canViewInsertCommons = computed(() => {
+  const uid = auth.userId
+  const fid = farmContext.farmId
+  if (!uid || !fid) return false
+  const f = farmStore.farm
+  if (
+    f &&
+    Number(f.id) === Number(fid) &&
+    f.owner_user_id &&
+    String(f.owner_user_id).toLowerCase() === String(uid).toLowerCase()
+  ) {
+    return true
+  }
+  const m = members.value.find((x) => String(x.user_id).toLowerCase() === String(uid).toLowerCase())
+  return !!(m && ['owner', 'manager', 'finance'].includes(m.role_in_farm))
+})
 
 function fmtTs(iso) {
   if (!iso) return ''
@@ -491,8 +1013,22 @@ function fmtTs(iso) {
   return d.toLocaleString()
 }
 
+function auditEventKind(ev) {
+  const d = ev?.details
+  if (d && typeof d === 'object' && d.kind != null) return String(d.kind)
+  return '—'
+}
+
+function auditTarget(ev) {
+  if (!ev) return '—'
+  const parts = []
+  if (ev.target_table_name) parts.push(ev.target_table_name)
+  if (ev.target_record_id) parts.push(ev.target_record_id)
+  return parts.length ? parts.join(' · ') : '—'
+}
+
 async function loadInsertHistory() {
-  if (!farmContext.farmId || !insertOptIn.value) return
+  if (!farmContext.farmId || !insertOptIn.value || !canViewInsertCommons.value) return
   insertHistoryLoading.value = true
   try {
     insertHistory.value = await farmStore.listInsertCommonsSyncEvents(farmContext.farmId, { limit: 8, offset: 0 })
@@ -503,12 +1039,30 @@ async function loadInsertHistory() {
   }
 }
 
+async function loadInsertBundles() {
+  if (!farmContext.farmId || !insertOptIn.value || !canViewInsertCommons.value) return
+  insertBundlesLoading.value = true
+  try {
+    insertBundles.value = await farmStore.listInsertCommonsBundles(farmContext.farmId, { limit: 25, offset: 0 })
+  } catch {
+    insertBundles.value = []
+  } finally {
+    insertBundlesLoading.value = false
+  }
+}
+
 async function loadFarmSharing() {
   if (!farmContext.farmId) return
   try {
     await farmStore.loadAll(farmContext.farmId)
     insertOptIn.value = !!farmStore.farm?.insert_commons_opt_in
-    await loadInsertHistory()
+    insertRequireApproval.value = !!farmStore.farm?.insert_commons_require_approval
+    if (!insertOptIn.value) {
+      insertHistory.value = []
+      insertBundles.value = []
+    } else if (canViewInsertCommons.value) {
+      await Promise.all([loadInsertHistory(), loadInsertBundles()])
+    }
   } catch { /* ignore */ }
 }
 
@@ -516,29 +1070,134 @@ async function onInsertOptInChange() {
   if (!farmContext.farmId) return
   insertSyncMsg.value = ''
   try {
-    await farmStore.setInsertCommonsOptIn(farmContext.farmId, insertOptIn.value)
+    const payload = { insert_commons_opt_in: insertOptIn.value }
+    if (insertOptIn.value) {
+      payload.insert_commons_require_approval = insertRequireApproval.value
+    }
+    await farmStore.setInsertCommonsOptIn(farmContext.farmId, payload)
     insertSyncMsg.value = insertOptIn.value ? 'Sharing enabled.' : 'Sharing disabled.'
     if (!insertOptIn.value) {
       insertHistory.value = []
-    } else {
-      await loadInsertHistory()
+      insertBundles.value = []
+    } else if (canViewInsertCommons.value) {
+      await Promise.all([loadInsertHistory(), loadInsertBundles()])
     }
   } catch (e) {
     insertSyncMsg.value = e.response?.data?.error ?? 'Could not update setting'
   }
 }
 
+async function onInsertRequireApprovalChange() {
+  if (!farmContext.farmId || !isFarmAdmin.value) return
+  insertSyncMsg.value = ''
+  try {
+    await farmStore.setInsertCommonsOptIn(farmContext.farmId, {
+      insert_commons_opt_in: true,
+      insert_commons_require_approval: insertRequireApproval.value,
+    })
+    insertSyncMsg.value = insertRequireApproval.value
+      ? 'Approval queue enabled.'
+      : 'Payloads will send on sync when ingest is configured (no approval step).'
+    await farmStore.loadAll(farmContext.farmId)
+    await Promise.all([loadInsertBundles(), loadInsertHistory()])
+  } catch (e) {
+    await loadFarmSharing()
+    insertSyncMsg.value = e.response?.data?.error ?? 'Could not update approval setting'
+  }
+}
+
+function openRejectBundle(id) {
+  rejectExpandId.value = id
+  rejectNote.value = ''
+}
+
+function cancelRejectBundle() {
+  rejectExpandId.value = null
+  rejectNote.value = ''
+}
+
+async function confirmRejectBundle(bundleId) {
+  if (!farmContext.farmId || !rejectNote.value.trim()) return
+  insertBundleBusy.value = bundleId
+  insertSyncMsg.value = ''
+  try {
+    await farmStore.rejectInsertCommonsBundle(farmContext.farmId, bundleId, { note: rejectNote.value.trim() })
+    insertSyncMsg.value = 'Bundle rejected.'
+    cancelRejectBundle()
+    await Promise.all([farmStore.loadAll(farmContext.farmId), loadInsertBundles(), loadInsertHistory()])
+  } catch (e) {
+    insertSyncMsg.value = e.response?.data?.error ?? 'Reject failed'
+  } finally {
+    insertBundleBusy.value = null
+  }
+}
+
+async function approveInsertBundle(bundleId) {
+  if (!farmContext.farmId) return
+  insertBundleBusy.value = bundleId
+  insertSyncMsg.value = ''
+  try {
+    await farmStore.approveInsertCommonsBundle(farmContext.farmId, bundleId, {})
+    insertSyncMsg.value = 'Bundle approved; delivery attempted.'
+    await Promise.all([farmStore.loadAll(farmContext.farmId), loadInsertBundles(), loadInsertHistory()])
+  } catch (e) {
+    insertSyncMsg.value = e.response?.data?.error ?? 'Approve failed'
+    await Promise.all([loadInsertBundles(), loadInsertHistory()])
+  } finally {
+    insertBundleBusy.value = null
+  }
+}
+
+async function retryInsertBundleDeliver(bundleId) {
+  if (!farmContext.farmId) return
+  insertBundleBusy.value = bundleId
+  insertSyncMsg.value = ''
+  try {
+    await farmStore.retryInsertCommonsBundleDeliver(farmContext.farmId, bundleId)
+    insertSyncMsg.value = 'Retry completed.'
+    await Promise.all([farmStore.loadAll(farmContext.farmId), loadInsertBundles(), loadInsertHistory()])
+  } catch (e) {
+    insertSyncMsg.value = e.response?.data?.error ?? 'Retry failed'
+    await Promise.all([loadInsertBundles(), loadInsertHistory()])
+  } finally {
+    insertBundleBusy.value = null
+  }
+}
+
+async function loadInsertPreview() {
+  if (!farmContext.farmId || !isFarmAdmin.value) return
+  insertPreviewError.value = null
+  insertPreviewData.value = null
+  insertPreviewLoading.value = true
+  try {
+    insertPreviewData.value = await farmStore.previewInsertCommons(farmContext.farmId)
+    if (!insertPreviewData.value?.valid) {
+      insertPreviewError.value = insertPreviewData.value?.error ?? 'Preview invalid'
+      insertPreviewData.value = null
+    }
+  } catch (e) {
+    insertPreviewError.value = e.response?.data?.error ?? 'Preview failed'
+  } finally {
+    insertPreviewLoading.value = false
+  }
+}
+
 async function runInsertSync() {
-  if (!farmContext.farmId || !insertOptIn.value) return
+  if (!farmContext.farmId || !insertOptIn.value || !canViewInsertCommons.value) return
   insertSyncing.value = true
   insertSyncMsg.value = ''
   try {
     const r = await farmStore.insertCommonsSync(farmContext.farmId)
-    const status = r.delivery_status ? String(r.delivery_status) : 'unknown'
-    const http = r.http_status != null ? ` (HTTP ${r.http_status})` : ''
-    insertSyncMsg.value = `${status}${http} — ${r.privacy_notice || 'Sync recorded.'}`
+    if (r.pending_approval) {
+      const bid = r.bundle_id != null ? r.bundle_id : '—'
+      insertSyncMsg.value = `Queued for approval (bundle #${bid}). An owner or manager can approve it below.`
+    } else {
+      const status = r.delivery_status ? String(r.delivery_status) : 'unknown'
+      const http = r.http_status != null ? ` (HTTP ${r.http_status})` : ''
+      insertSyncMsg.value = `${status}${http} — ${r.privacy_notice || 'Sync recorded.'}`
+    }
     await farmStore.loadAll(farmContext.farmId)
-    await loadInsertHistory()
+    await Promise.all([loadInsertHistory(), loadInsertBundles()])
   } catch (e) {
     insertSyncMsg.value = e.response?.data?.error ?? 'Sync failed'
   } finally {
@@ -598,6 +1257,13 @@ watch(() => farmContext.farmId, () => {
   loadOrgs()
   loadMembers()
   loadFarmSharing()
+})
+
+watch(canViewInsertCommons, (ok) => {
+  if (ok && farmContext.farmId && insertOptIn.value) {
+    loadInsertHistory()
+    loadInsertBundles()
+  }
 })
 
 // ── Pi API key display ───────────────────────────────────────────────────────

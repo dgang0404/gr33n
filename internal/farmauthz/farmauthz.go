@@ -25,6 +25,16 @@ func RequireFarmMember(w http.ResponseWriter, r *http.Request, q db.Querier, far
 	return requireFarmAccess(w, r, q, farmID, uid)
 }
 
+// RequireFarmMemberOrPiEdge allows GET-style farm scoping when the caller used the shared
+// Pi API key (same secret as POST /sensors/{id}/readings). Trust model matches per-sensor
+// ingest: knowing farm_id and holding PI_API_KEY is sufficient to list that farm's devices.
+func RequireFarmMemberOrPiEdge(w http.ResponseWriter, r *http.Request, q db.Querier, farmID int64) bool {
+	if authctx.PiEdgeAuth(r.Context()) {
+		return true
+	}
+	return RequireFarmMember(w, r, q, farmID)
+}
+
 func requireFarmAccess(w http.ResponseWriter, r *http.Request, q db.Querier, farmID int64, uid uuid.UUID) bool {
 	hasPtr, err := q.UserHasFarmAccess(r.Context(), db.UserHasFarmAccessParams{
 		FarmID: farmID,

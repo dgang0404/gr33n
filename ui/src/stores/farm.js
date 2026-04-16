@@ -755,14 +755,84 @@ export const useFarmStore = defineStore('farm', {
       return r.data
     },
 
-    async setInsertCommonsOptIn(farmId, insertCommonsOptIn) {
-      const r = await api.patch(`/farms/${farmId}/insert-commons/opt-in`, {
-        insert_commons_opt_in: insertCommonsOptIn,
-      })
+    /**
+     * @param {number} farmId
+     * @param {boolean | { insert_commons_opt_in: boolean, insert_commons_require_approval?: boolean }} opts
+     */
+    async setInsertCommonsOptIn(farmId, opts) {
+      const payload =
+        typeof opts === 'boolean'
+          ? { insert_commons_opt_in: opts }
+          : {
+              insert_commons_opt_in: opts.insert_commons_opt_in,
+              ...(opts.insert_commons_require_approval !== undefined
+                ? { insert_commons_require_approval: opts.insert_commons_require_approval }
+                : {}),
+            }
+      const r = await api.patch(`/farms/${farmId}/insert-commons/opt-in`, payload)
       if (this.farm && this.farm.id === farmId) {
         this.farm = r.data
       }
       return r.data
+    },
+
+    /** @param {number} farmId */
+    async previewInsertCommons(farmId) {
+      const r = await api.get(`/farms/${farmId}/insert-commons/preview`)
+      return r.data
+    },
+
+    async listInsertCommonsBundles(farmId, { status = '', limit = 25, offset = 0 } = {}) {
+      const params = new URLSearchParams({
+        limit: String(limit),
+        offset: String(offset),
+      })
+      if (status) params.set('status', status)
+      const r = await api.get(`/farms/${farmId}/insert-commons/bundles?${params}`)
+      return Array.isArray(r.data) ? r.data : []
+    },
+
+    async approveInsertCommonsBundle(farmId, bundleId, body = {}) {
+      const r = await api.post(
+        `/farms/${farmId}/insert-commons/bundles/${bundleId}/approve`,
+        body,
+        { timeout: 35000 },
+      )
+      return r.data
+    },
+
+    async rejectInsertCommonsBundle(farmId, bundleId, { note }) {
+      const r = await api.post(`/farms/${farmId}/insert-commons/bundles/${bundleId}/reject`, { note })
+      return r.data
+    },
+
+    async retryInsertCommonsBundleDeliver(farmId, bundleId) {
+      const r = await api.post(
+        `/farms/${farmId}/insert-commons/bundles/${bundleId}/deliver`,
+        {},
+        { timeout: 35000 },
+      )
+      return r.data
+    },
+
+    async downloadInsertCommonsBundleExport(farmId, bundleId, format = 'ingest') {
+      const r = await api.get(`/farms/${farmId}/insert-commons/bundles/${bundleId}/export`, {
+        params: { format },
+        responseType: 'blob',
+        timeout: 60000,
+      })
+      const cd = r.headers['content-disposition']
+      let filename = `insert-commons-bundle-${bundleId}.json`
+      if (cd) {
+        const m = /filename="([^"]+)"/.exec(cd)
+        if (m) filename = m[1]
+      }
+      const url = URL.createObjectURL(r.data)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = filename
+      a.click()
+      URL.revokeObjectURL(url)
     },
 
     async insertCommonsSync(farmId) {

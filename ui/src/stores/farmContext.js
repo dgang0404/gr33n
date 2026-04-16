@@ -47,7 +47,11 @@ export const useFarmContextStore = defineStore('farmContext', {
     async createFarm(data) {
       const r = await api.post('/farms', data)
       await this.fetchFarms()
-      return r.data
+      const raw = r.data
+      if (raw && typeof raw === 'object' && raw.farm != null) {
+        return { farm: raw.farm, bootstrap: raw.bootstrap ?? null }
+      }
+      return { farm: raw, bootstrap: null }
     },
 
     async updateFarm(id, data) {

@@ -1,0 +1,13 @@
+# Map MQTT telemetry slugs to gr33ncore.sensors.id rows.
+# Topic shape: <prefix>/<farm_id>/<device_uid>/telemetry/<slug>
+# (see docs/mqtt-edge-operator-playbook.md)
+#
+# If <slug> is all digits, it is treated as sensor_id and this file is not needed for that topic.
+
+sensor_map:
+  - device_uid: field-001
+    slug: air_temp
+    sensor_id: 101
+  - device_uid: field-001
+    slug: rh
+    sensor_id: 102

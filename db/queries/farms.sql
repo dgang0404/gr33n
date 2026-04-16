@@ -69,6 +69,7 @@ RETURNING *;
 -- name: SetFarmInsertCommonsOptIn :one
 UPDATE gr33ncore.farms
 SET insert_commons_opt_in = $2,
+    insert_commons_require_approval = CASE WHEN $2 THEN $3 ELSE FALSE END,
     insert_commons_backoff_until = CASE WHEN $2 THEN insert_commons_backoff_until ELSE NULL END,
     insert_commons_consecutive_failures = CASE WHEN $2 THEN insert_commons_consecutive_failures ELSE 0 END,
     insert_commons_last_error = CASE WHEN $2 THEN insert_commons_last_error ELSE NULL END,
