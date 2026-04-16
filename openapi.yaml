@@ -1446,19 +1446,90 @@ paths:
   /farms/{id}/costs/export:
     get:
       tags: [costs]
-      summary: Download farm cost transactions as CSV (no PII columns)
+      summary: Download farm cost transactions as CSV or GL-friendly CSV
       security: [{ bearerAuth: [] }]
       parameters:
         - { $ref: "#/components/parameters/ID" }
         - name: format
           in: query
-          schema: { type: string, enum: [csv], default: csv }
+          schema: { type: string, enum: [csv, gl_csv], default: csv }
       responses:
         "200":
           description: CSV file
           content:
             text/csv:
               schema: { type: string, format: binary }
+
+  /farms/{id}/finance/coa-mappings:
+    get:
+      tags: [costs]
+      summary: List farm chart-of-accounts mapping used for GL export
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/CoaMapping" }
+    put:
+      tags: [costs]
+      summary: Save farm chart-of-accounts mapping overrides
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [mappings]
+              properties:
+                mappings:
+                  type: array
+                  items: { $ref: "#/components/schemas/CoaMappingUpsert" }
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/CoaMapping" }
+    delete:
+      tags: [costs]
+      summary: Reset all farm chart-of-accounts mapping overrides to defaults
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/CoaMapping" }
+
+  /farms/{id}/finance/coa-mappings/{category}:
+    delete:
+      tags: [costs]
+      summary: Reset one farm chart-of-accounts category override to default
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+        - name: category
+          in: path
+          required: true
+          schema: { $ref: "#/components/schemas/CostCategoryEnum" }
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/CoaMapping" }
 
   /farms/{id}/costs:
     get:
@@ -1567,6 +1638,20 @@ paths:
             application/octet-stream:
               schema: { type: string, format: binary }
 
+  /file-attachments/{id}/download:
+    get:
+      tags: [costs]
+      summary: Resolve a receipt download target (presigned URL for object storage, proxied API URL for local storage)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      responses:
+        "200":
+          description: Receipt download target
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/FileAttachmentDownloadTarget" }
+
   /farms/{id}/insert-commons/opt-in:
     patch:
       tags: [farms]
@@ -1592,22 +1677,56 @@ paths:
   /farms/{id}/insert-commons/sync:
     post:
       tags: [farms]
-      summary: MVP sync stub — records last sync time when opt-in is enabled
+      summary: Sync anonymized aggregates to Insert Commons (optional HTTP ingest) with idempotency + backoff
       security: [{ bearerAuth: [] }]
       parameters:
         - { $ref: "#/components/parameters/ID" }
+        - name: Idempotency-Key
+          in: header
+          required: false
+          schema: { type: string }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                idempotency_key: { type: string }
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/InsertCommonsSyncResponse" }
+        "429":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "502":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+
+  /farms/{id}/insert-commons/sync-events:
+    get:
+      tags: [farms]
+      summary: List recent Insert Commons sync attempts for a farm (admin or finance)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+        - name: limit
+          in: query
+          schema: { type: integer, default: 25, maximum: 100 }
+        - name: offset
+          in: query
+          schema: { type: integer, default: 0, minimum: 0 }
       responses:
         "200":
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  ok: { type: boolean }
-                  farm_id: { type: integer }
-                  last_sync_at: { type: string, format: date-time, nullable: true }
-                  aggregates: { type: object }
-                  privacy_notice: { type: string }
+                type: array
+                items: { $ref: "#/components/schemas/InsertCommonsSyncEvent" }
 
   # ── Alerts ──────────────────────────────────────────────────
 
@@ -1833,6 +1952,16 @@ components:
       properties:
         error: { type: string }
 
+    FileAttachmentDownloadTarget:
+      type: object
+      required: [url, backend, proxied, file_name]
+      properties:
+        url: { type: string }
+        backend: { type: string, example: local }
+        proxied: { type: boolean }
+        expires_at: { type: string, format: date-time, nullable: true }
+        file_name: { type: string }
+
     Unit:
       type: object
       properties:
@@ -1859,6 +1988,39 @@ components:
         created_at: { type: string, format: date-time }
         insert_commons_opt_in: { type: boolean }
         insert_commons_last_sync_at: { type: string, format: date-time, nullable: true }
+        insert_commons_last_attempt_at: { type: string, format: date-time, nullable: true }
+        insert_commons_last_delivery_status: { type: string, nullable: true }
+        insert_commons_last_error: { type: string, nullable: true }
+        insert_commons_backoff_until: { type: string, format: date-time, nullable: true }
+        insert_commons_consecutive_failures: { type: integer }
+
+    InsertCommonsSyncResponse:
+      type: object
+      properties:
+        ok: { type: boolean }
+        duplicate: { type: boolean }
+        farm_id: { type: integer }
+        idempotency_key: { type: string }
+        delivery_status: { type: string }
+        http_status: { type: integer, nullable: true }
+        last_sync_at: { type: string, format: date-time, nullable: true }
+        last_attempt_at: { type: string, format: date-time, nullable: true }
+        backoff_until: { type: string, format: date-time, nullable: true }
+        aggregates: { type: object, additionalProperties: true }
+        privacy_notice: { type: string }
+        receiver_contract: { type: object, additionalProperties: true }
+        receiver_error_excerpt: { type: string, nullable: true }
+
+    InsertCommonsSyncEvent:
+      type: object
+      properties:
+        id: { type: integer }
+        farm_id: { type: integer }
+        idempotency_key: { type: string, nullable: true }
+        status: { type: string }
+        http_status: { type: integer, nullable: true }
+        error: { type: string, nullable: true }
+        created_at: { type: string, format: date-time }
 
     Zone:
       type: object
@@ -2292,6 +2454,23 @@ components:
         description: { type: string }
         is_income: { type: boolean }
         receipt_file_id: { type: integer, nullable: true }
+
+    CoaMapping:
+      type: object
+      required: [category, account_code, account_name, source]
+      properties:
+        category: { $ref: "#/components/schemas/CostCategoryEnum" }
+        account_code: { type: string }
+        account_name: { type: string }
+        source: { type: string, enum: [default, override] }
+
+    CoaMappingUpsert:
+      type: object
+      required: [category, account_code, account_name]
+      properties:
+        category: { $ref: "#/components/schemas/CostCategoryEnum" }
+        account_code: { type: string }
+        account_name: { type: string }
 
     Reservoir:
       type: object

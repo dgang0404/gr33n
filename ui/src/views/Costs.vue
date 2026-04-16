@@ -7,6 +7,10 @@
           class="text-xs px-3 py-1.5 rounded-lg border border-zinc-600 text-zinc-300 hover:border-zinc-500 disabled:opacity-40">
           Export CSV
         </button>
+        <button type="button" @click="downloadGlCsv" :disabled="!farmContext.farmId"
+          class="text-xs px-3 py-1.5 rounded-lg border border-zinc-600 text-zinc-300 hover:border-zinc-500 disabled:opacity-40">
+          Export GL CSV
+        </button>
         <button type="button" @click="reload" class="text-xs text-zinc-400 hover:text-zinc-200">Refresh</button>
       </div>
     </div>
@@ -57,6 +61,71 @@
           </button>
         </form>
         <p v-if="formError" class="text-xs text-red-400 mt-2">{{ formError }}</p>
+      </div>
+
+      <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="text-sm font-semibold text-white">GL account mapping</h2>
+          <div class="flex items-center gap-2">
+            <button
+              type="button"
+              :disabled="coaSaving || !farmContext.farmId"
+              @click="resetCoaAll"
+              class="text-xs px-3 py-1.5 rounded-lg border border-zinc-700 text-zinc-400 hover:border-zinc-500 disabled:opacity-40"
+            >
+              Reset all defaults
+            </button>
+            <button
+              type="button"
+              :disabled="coaSaving || !farmContext.farmId"
+              @click="saveCoa"
+              class="text-xs px-3 py-1.5 rounded-lg border border-zinc-600 text-zinc-300 hover:border-zinc-500 disabled:opacity-40"
+            >
+              {{ coaSaving ? 'Saving…' : 'Save mapping' }}
+            </button>
+          </div>
+        </div>
+        <p class="text-xs text-zinc-500 mb-3">
+          These account codes are used by `Export GL CSV` and can be customized per farm.
+        </p>
+        <div class="overflow-x-auto border border-zinc-800 rounded-lg">
+          <table class="w-full text-xs">
+            <thead class="bg-zinc-950 text-zinc-500 uppercase">
+              <tr>
+                <th class="text-left px-3 py-2">Category</th>
+                <th class="text-left px-3 py-2">Account code</th>
+                <th class="text-left px-3 py-2">Account name</th>
+                <th class="text-left px-3 py-2">Source</th>
+                <th class="text-left px-3 py-2">Action</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-zinc-800">
+              <tr v-for="m in coaMappings" :key="m.category" class="bg-zinc-900">
+                <td class="px-3 py-2 text-zinc-300">{{ formatCat(m.category) }}</td>
+                <td class="px-3 py-2">
+                  <input v-model="m.account_code" class="input-field w-28" />
+                </td>
+                <td class="px-3 py-2">
+                  <input v-model="m.account_name" class="input-field w-full min-w-[220px]" />
+                </td>
+                <td class="px-3 py-2">
+                  <span class="text-[11px] px-2 py-0.5 rounded bg-zinc-800 text-zinc-400">{{ m.source }}</span>
+                </td>
+                <td class="px-3 py-2">
+                  <button
+                    type="button"
+                    :disabled="coaSaving || m.source !== 'override'"
+                    @click="resetCoaCategory(m.category)"
+                    class="text-[11px] px-2 py-1 rounded border border-zinc-700 text-zinc-400 hover:text-zinc-200 disabled:opacity-40"
+                  >
+                    Reset
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p v-if="coaError" class="text-xs text-red-400 mt-2">{{ coaError }}</p>
       </div>
 
       <div class="overflow-x-auto border border-zinc-800 rounded-xl">
@@ -149,6 +218,9 @@ const transactions = ref([])
 const editRow = ref(null)
 const createReceiptFile = ref(null)
 const editReceiptFile = ref(null)
+const coaMappings = ref([])
+const coaSaving = ref(false)
+const coaError = ref('')
 const editForm = reactive({
   transaction_date: '',
   category: 'miscellaneous',
@@ -202,10 +274,13 @@ function onEditReceiptPick(e) {
 
 async function openReceipt(fileId) {
   try {
-    const r = await api.get(`/file-attachments/${fileId}/content`, { responseType: 'blob' })
-    const url = URL.createObjectURL(r.data)
-    window.open(url, '_blank', 'noopener')
-    setTimeout(() => URL.revokeObjectURL(url), 120_000)
+    const r = await api.get(`/file-attachments/${fileId}/download`)
+    const url = String(r.data?.url || '')
+    if (!url) throw new Error('Missing receipt URL')
+    const finalUrl = url.startsWith('http://') || url.startsWith('https://')
+      ? url
+      : `${api.defaults.baseURL}${url}`
+    window.open(finalUrl, '_blank', 'noopener')
   } catch (e) {
     formError.value = e.response?.data?.error || e.message || 'Could not open receipt'
   }
@@ -230,6 +305,25 @@ async function downloadCsv() {
   }
 }
 
+async function downloadGlCsv() {
+  const fid = farmContext.farmId
+  if (!fid) return
+  try {
+    const r = await api.get(`/farms/${fid}/costs/export`, {
+      params: { format: 'gl_csv' },
+      responseType: 'blob',
+    })
+    const url = URL.createObjectURL(r.data)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `farm-${fid}-costs-gl.csv`
+    a.click()
+    URL.revokeObjectURL(url)
+  } catch (e) {
+    formError.value = e.response?.data?.error || e.message || 'GL export failed'
+  }
+}
+
 async function reload() {
   loading.value = true
   formError.value = ''
@@ -237,14 +331,63 @@ async function reload() {
     const fid = farmContext.farmId
     if (!fid) return
     if (!store.zones.length) await store.loadAll(fid)
-    const [s, tx] = await Promise.all([
+    const [s, tx, coa] = await Promise.all([
       store.loadCostSummary(fid),
       store.loadCosts(fid, { limit: 100, offset: 0 }),
+      store.loadCoaMappings(fid),
     ])
     Object.assign(summary, s || { total_income: 0, total_expenses: 0, net: 0 })
     transactions.value = tx
+    coaMappings.value = coa
   } finally {
     loading.value = false
+  }
+}
+
+async function saveCoa() {
+  const fid = farmContext.farmId
+  if (!fid) return
+  coaError.value = ''
+  coaSaving.value = true
+  try {
+    coaMappings.value = await store.saveCoaMappings(fid, coaMappings.value.map((m) => ({
+      category: m.category,
+      account_code: String(m.account_code || '').trim(),
+      account_name: String(m.account_name || '').trim(),
+    })))
+  } catch (e) {
+    coaError.value = e.response?.data?.error || e.message || 'Could not save mapping'
+  } finally {
+    coaSaving.value = false
+  }
+}
+
+async function resetCoaCategory(category) {
+  const fid = farmContext.farmId
+  if (!fid || !category) return
+  coaError.value = ''
+  coaSaving.value = true
+  try {
+    coaMappings.value = await store.resetCoaMappingCategory(fid, category)
+  } catch (e) {
+    coaError.value = e.response?.data?.error || e.message || 'Could not reset category mapping'
+  } finally {
+    coaSaving.value = false
+  }
+}
+
+async function resetCoaAll() {
+  const fid = farmContext.farmId
+  if (!fid) return
+  if (!confirm('Reset all GL mappings back to defaults for this farm?')) return
+  coaError.value = ''
+  coaSaving.value = true
+  try {
+    coaMappings.value = await store.resetCoaMappingsAll(fid)
+  } catch (e) {
+    coaError.value = e.response?.data?.error || e.message || 'Could not reset mappings'
+  } finally {
+    coaSaving.value = false
   }
 }
 

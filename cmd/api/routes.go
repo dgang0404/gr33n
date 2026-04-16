@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"log"
 	"net/http"
 
@@ -29,7 +30,7 @@ import (
 	"gr33n-api/internal/httputil"
 )
 
-func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationworker.Worker, adminUser string, adminHash []byte, hashFilePath string, fileStorageRoot string) {
+func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationworker.Worker, adminUser string, adminHash []byte, hashFilePath string, fileStore filestorage.Store, fileCfg filestorage.Config) {
 	farm := farmhandler.NewHandler(pool)
 	zone := zonehandler.NewHandler(pool)
 	device := devicehandler.NewHandler(pool)
@@ -42,16 +43,19 @@ func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationwo
 	nf := nfhandler.NewHandler(pool)
 	recipe := recipehandler.NewHandler(pool)
 	cropcycle := cropcyclehandler.NewHandler(pool)
-	cost := costhandler.NewHandler(pool)
 	alert := alerthandler.NewHandler(pool)
 	prof := profilehandler.NewHandler(pool)
 	auth := authhandler.NewHandler(adminUser, adminHash, hashFilePath, IssueToken, pool)
 
-	store, err := filestorage.NewLocal(fileStorageRoot)
-	if err != nil {
-		log.Fatalf("file storage (%s): %v", fileStorageRoot, err)
+	if fileStore == nil {
+		store, err := filestorage.NewStore(context.Background(), filestorage.Config{Backend: "local", LocalRoot: "./data/files"})
+		if err != nil {
+			log.Fatalf("file storage init: %v", err)
+		}
+		fileStore = store
 	}
-	files := fileattachhandler.NewHandler(pool, store)
+	cost := costhandler.NewHandler(pool, fileStore)
+	files := fileattachhandler.NewHandler(pool, fileStore, fileCfg.DownloadURLTTL)
 
 	// ── Public ───────────────────────────────────────────────────────────────
 	mux.HandleFunc("GET /health", func(w http.ResponseWriter, r *http.Request) {
@@ -99,6 +103,7 @@ func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationwo
 	mux.Handle("GET /farms/{id}", jwt(http.HandlerFunc(farm.Get)))
 	mux.Handle("PATCH /farms/{id}/insert-commons/opt-in", jwt(http.HandlerFunc(farm.SetInsertCommonsOptIn)))
 	mux.Handle("POST /farms/{id}/insert-commons/sync", jwt(http.HandlerFunc(farm.InsertCommonsSync)))
+	mux.Handle("GET /farms/{id}/insert-commons/sync-events", jwt(http.HandlerFunc(farm.InsertCommonsHistory)))
 	mux.Handle("GET /farms/{id}/zones", jwt(http.HandlerFunc(zone.ListByFarm)))
 	mux.Handle("GET /farms/{id}/devices", jwt(http.HandlerFunc(device.ListByFarm)))
 	mux.Handle("GET /farms/{id}/actuators", jwt(http.HandlerFunc(actuator.ListByFarm)))
@@ -157,11 +162,16 @@ func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationwo
 
 	mux.Handle("GET /farms/{id}/costs/summary", jwt(http.HandlerFunc(cost.Summary)))
 	mux.Handle("GET /farms/{id}/costs/export", jwt(http.HandlerFunc(cost.Export)))
+	mux.Handle("GET /farms/{id}/finance/coa-mappings", jwt(http.HandlerFunc(cost.ListCoaMappings)))
+	mux.Handle("PUT /farms/{id}/finance/coa-mappings", jwt(http.HandlerFunc(cost.UpsertCoaMappings)))
+	mux.Handle("DELETE /farms/{id}/finance/coa-mappings", jwt(http.HandlerFunc(cost.ResetCoaMappingsAll)))
+	mux.Handle("DELETE /farms/{id}/finance/coa-mappings/{category}", jwt(http.HandlerFunc(cost.ResetCoaMappingByCategory)))
 	mux.Handle("GET /farms/{id}/costs", jwt(http.HandlerFunc(cost.List)))
 	mux.Handle("POST /farms/{id}/costs", jwt(http.HandlerFunc(cost.Create)))
 	mux.Handle("PUT /costs/{id}", jwt(http.HandlerFunc(cost.Update)))
 	mux.Handle("DELETE /costs/{id}", jwt(http.HandlerFunc(cost.Delete)))
 	mux.Handle("POST /farms/{id}/cost-receipts", jwt(http.HandlerFunc(files.UploadCostReceipt)))
+	mux.Handle("GET /file-attachments/{id}/download", jwt(http.HandlerFunc(files.DownloadTarget)))
 	mux.Handle("GET /file-attachments/{id}/content", jwt(http.HandlerFunc(files.Download)))
 
 	// Natural farming

@@ -14,6 +14,9 @@ type Querier interface {
 	AddFarmMember(ctx context.Context, arg AddFarmMemberParams) (Gr33ncoreFarmMembership, error)
 	AddRecipeComponent(ctx context.Context, arg AddRecipeComponentParams) error
 	ClearDevicePendingCommand(ctx context.Context, id int64) error
+	CountDevicesByStatusForFarm(ctx context.Context, farmID int64) ([]CountDevicesByStatusForFarmRow, error)
+	CountInsertCommonsSyncAttemptsSince(ctx context.Context, arg CountInsertCommonsSyncAttemptsSinceParams) (int64, error)
+	CountTasksByStatusForFarm(ctx context.Context, farmID int64) ([]CountTasksByStatusForFarmRow, error)
 	CountUnreadAlertsByFarm(ctx context.Context, farmID int64) (int64, error)
 	// ============================================================
 	// Queries: gr33ncore.actuators + actuator_events
@@ -79,6 +82,7 @@ type Querier interface {
 	GetAuthUserByEmail(ctx context.Context, email *string) (AuthUser, error)
 	GetAutomationRunByDetails(ctx context.Context, arg GetAutomationRunByDetailsParams) (Gr33ncoreAutomationRun, error)
 	GetBaseUnitForType(ctx context.Context, unitType string) (Gr33ncoreUnit, error)
+	GetCostCategoryTotalsByFarm(ctx context.Context, farmID int64) ([]GetCostCategoryTotalsByFarmRow, error)
 	GetCostSummaryByFarm(ctx context.Context, farmID int64) (GetCostSummaryByFarmRow, error)
 	GetCostTransactionByID(ctx context.Context, id int64) (Gr33ncoreCostTransaction, error)
 	GetCropCycleByID(ctx context.Context, id int64) (Gr33nfertigationCropCycle, error)
@@ -95,6 +99,10 @@ type Querier interface {
 	// Queries: gr33nnaturalfarming
 	// ============================================================
 	GetInputDefinitionByID(ctx context.Context, id int64) (Gr33nnaturalfarmingInputDefinition, error)
+	// ============================================================
+	// Queries: gr33ncore.insert_commons_sync_events
+	// ============================================================
+	GetInsertCommonsSyncEventByFarmIdempotencyKey(ctx context.Context, arg GetInsertCommonsSyncEventByFarmIdempotencyKeyParams) (Gr33ncoreInsertCommonsSyncEvent, error)
 	GetLastSuccessfulRunBySchedule(ctx context.Context, scheduleID *int64) (Gr33ncoreAutomationRun, error)
 	GetLatestReadingBySensor(ctx context.Context, sensorID int64) (Gr33ncoreSensorReading, error)
 	GetProfileByEmail(ctx context.Context, email string) (Gr33ncoreProfile, error)
@@ -135,12 +143,17 @@ type Querier interface {
 	ListDevicesByZone(ctx context.Context, zoneID *int64) ([]Gr33ncoreDevice, error)
 	ListEcTargetsByFarm(ctx context.Context, farmID int64) ([]Gr33nfertigationEcTarget, error)
 	ListExecutableActionsBySchedule(ctx context.Context, scheduleID *int64) ([]Gr33ncoreExecutableAction, error)
+	// ============================================================
+	// Queries: gr33ncore.farm_finance_account_mappings
+	// ============================================================
+	ListFarmFinanceAccountMappings(ctx context.Context, farmID int64) ([]Gr33ncoreFarmFinanceAccountMapping, error)
 	ListFarmsByOwner(ctx context.Context, ownerUserID uuid.UUID) ([]Gr33ncoreFarm, error)
 	ListFarmsForUser(ctx context.Context, userID uuid.UUID) ([]Gr33ncoreFarm, error)
 	ListFertigationEventsByFarm(ctx context.Context, farmID int64) ([]Gr33nfertigationFertigationEvent, error)
 	ListFertigationEventsByFarmAndCropCycle(ctx context.Context, arg ListFertigationEventsByFarmAndCropCycleParams) ([]Gr33nfertigationFertigationEvent, error)
 	ListInputBatchesByFarm(ctx context.Context, farmID int64) ([]Gr33nnaturalfarmingInputBatch, error)
 	ListInputDefinitionsByFarm(ctx context.Context, farmID int64) ([]Gr33nnaturalfarmingInputDefinition, error)
+	ListInsertCommonsSyncEventsByFarm(ctx context.Context, arg ListInsertCommonsSyncEventsByFarmParams) ([]ListInsertCommonsSyncEventsByFarmRow, error)
 	ListLatestReadingsByFarm(ctx context.Context, farmID int64) ([]ListLatestReadingsByFarmRow, error)
 	ListProgramsByFarm(ctx context.Context, farmID int64) ([]Gr33nfertigationProgram, error)
 	ListReadingsBySensorAndTimeRange(ctx context.Context, arg ListReadingsBySensorAndTimeRangeParams) ([]Gr33ncoreSensorReading, error)
@@ -164,9 +177,15 @@ type Querier interface {
 	ListZonesByParent(ctx context.Context, parentZoneID *int64) ([]Gr33ncoreZone, error)
 	MarkAlertAcknowledged(ctx context.Context, arg MarkAlertAcknowledgedParams) (Gr33ncoreAlertsNotification, error)
 	MarkAlertRead(ctx context.Context, id int64) (Gr33ncoreAlertsNotification, error)
+	MarkFarmInsertCommonsAttempt(ctx context.Context, id int64) (Gr33ncoreFarm, error)
+	MarkFarmInsertCommonsDelivered(ctx context.Context, arg MarkFarmInsertCommonsDeliveredParams) (Gr33ncoreFarm, error)
+	MarkFarmInsertCommonsSkippedReceiver(ctx context.Context, arg MarkFarmInsertCommonsSkippedReceiverParams) (Gr33ncoreFarm, error)
+	MarkFarmInsertCommonsSyncFailure(ctx context.Context, arg MarkFarmInsertCommonsSyncFailureParams) (Gr33ncoreFarm, error)
 	MarkScheduleTriggered(ctx context.Context, arg MarkScheduleTriggeredParams) (Gr33ncoreSchedule, error)
 	RemoveFarmMember(ctx context.Context, arg RemoveFarmMemberParams) error
 	RemoveRecipeComponent(ctx context.Context, arg RemoveRecipeComponentParams) error
+	ResetFarmFinanceAccountMappingByCategory(ctx context.Context, arg ResetFarmFinanceAccountMappingByCategoryParams) (int64, error)
+	ResetFarmFinanceAccountMappingsAll(ctx context.Context, farmID int64) (int64, error)
 	SetDevicePendingCommand(ctx context.Context, arg SetDevicePendingCommandParams) error
 	SetFarmInsertCommonsOptIn(ctx context.Context, arg SetFarmInsertCommonsOptInParams) (Gr33ncoreFarm, error)
 	SoftDeleteCropCycle(ctx context.Context, id int64) error
@@ -178,7 +197,6 @@ type Querier interface {
 	SoftDeleteSensor(ctx context.Context, arg SoftDeleteSensorParams) error
 	SoftDeleteTask(ctx context.Context, arg SoftDeleteTaskParams) error
 	SoftDeleteZone(ctx context.Context, arg SoftDeleteZoneParams) error
-	TouchFarmInsertCommonsSync(ctx context.Context, id int64) (Gr33ncoreFarm, error)
 	UpdateActuatorState(ctx context.Context, arg UpdateActuatorStateParams) (Gr33ncoreActuator, error)
 	UpdateAuthUserPasswordHash(ctx context.Context, arg UpdateAuthUserPasswordHashParams) error
 	UpdateCostTransaction(ctx context.Context, arg UpdateCostTransactionParams) (Gr33ncoreCostTransaction, error)
@@ -196,6 +214,8 @@ type Querier interface {
 	UpdateScheduleActive(ctx context.Context, arg UpdateScheduleActiveParams) (Gr33ncoreSchedule, error)
 	UpdateTaskStatus(ctx context.Context, arg UpdateTaskStatusParams) (Gr33ncoreTask, error)
 	UpdateZone(ctx context.Context, arg UpdateZoneParams) (Gr33ncoreZone, error)
+	UpsertFarmFinanceAccountMapping(ctx context.Context, arg UpsertFarmFinanceAccountMappingParams) (Gr33ncoreFarmFinanceAccountMapping, error)
+	UpsertInsertCommonsSyncEvent(ctx context.Context, arg UpsertInsertCommonsSyncEventParams) (Gr33ncoreInsertCommonsSyncEvent, error)
 	UserHasFarmAccess(ctx context.Context, arg UserHasFarmAccessParams) (*bool, error)
 }
 

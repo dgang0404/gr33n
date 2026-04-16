@@ -1,11 +1,13 @@
 package filestorage
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 )
 
 // Local stores blobs under a single root directory (dev / single-node prod).
@@ -36,8 +38,10 @@ func (l *Local) absKey(key string) (string, error) {
 	return full, nil
 }
 
+func (l *Local) Backend() string { return "local" }
+
 // Put writes the stream to key, refusing to write more than maxBytes.
-func (l *Local) Put(key string, r io.Reader, maxBytes int64) (written int64, err error) {
+func (l *Local) Put(_ context.Context, key string, r io.Reader, maxBytes int64) (written int64, err error) {
 	path, err := l.absKey(key)
 	if err != nil {
 		return 0, err
@@ -64,12 +68,28 @@ func (l *Local) Put(key string, r io.Reader, maxBytes int64) (written int64, err
 }
 
 // Open returns a reader for key.
-func (l *Local) Open(key string) (io.ReadCloser, error) {
+func (l *Local) Open(_ context.Context, key string) (io.ReadCloser, error) {
 	path, err := l.absKey(key)
 	if err != nil {
 		return nil, err
 	}
 	return os.Open(path)
+}
+
+// Delete removes a blob if it exists.
+func (l *Local) Delete(_ context.Context, key string) error {
+	path, err := l.absKey(key)
+	if err != nil {
+		return err
+	}
+	if err := os.Remove(path); err != nil && !os.IsNotExist(err) {
+		return err
+	}
+	return nil
+}
+
+func (l *Local) DownloadURL(_ context.Context, key, filename, mime string, ttl time.Duration) (string, error) {
+	return "", ErrDownloadURLNotSupported
 }
 
 // ExtForMime returns a safe file extension for receipt uploads.

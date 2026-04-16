@@ -12,6 +12,39 @@ import (
 	"gr33n-api/internal/platform/commontypes"
 )
 
+const countTasksByStatusForFarm = `-- name: CountTasksByStatusForFarm :many
+SELECT status, COUNT(*)::bigint AS cnt
+FROM gr33ncore.tasks
+WHERE farm_id = $1 AND deleted_at IS NULL
+GROUP BY status
+ORDER BY status ASC
+`
+
+type CountTasksByStatusForFarmRow struct {
+	Status commontypes.TaskStatusEnum `db:"status" json:"status"`
+	Cnt    int64                      `db:"cnt" json:"cnt"`
+}
+
+func (q *Queries) CountTasksByStatusForFarm(ctx context.Context, farmID int64) ([]CountTasksByStatusForFarmRow, error) {
+	rows, err := q.db.Query(ctx, countTasksByStatusForFarm, farmID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []CountTasksByStatusForFarmRow{}
+	for rows.Next() {
+		var i CountTasksByStatusForFarmRow
+		if err := rows.Scan(&i.Status, &i.Cnt); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const createTask = `-- name: CreateTask :one
 
 INSERT INTO gr33ncore.tasks (

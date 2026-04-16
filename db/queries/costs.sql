@@ -30,6 +30,18 @@ SELECT
 FROM gr33ncore.cost_transactions
 WHERE farm_id = $1;
 
+-- name: GetCostCategoryTotalsByFarm :many
+SELECT
+    category,
+    currency,
+    COALESCE(SUM(CASE WHEN is_income THEN amount ELSE 0 END), 0)::numeric AS income,
+    COALESCE(SUM(CASE WHEN NOT is_income THEN amount ELSE 0 END), 0)::numeric AS expense,
+    COUNT(*)::bigint AS tx_count
+FROM gr33ncore.cost_transactions
+WHERE farm_id = $1
+GROUP BY category, currency
+ORDER BY category ASC, currency ASC;
+
 -- name: GetCostTransactionByID :one
 SELECT * FROM gr33ncore.cost_transactions WHERE id = $1;
 

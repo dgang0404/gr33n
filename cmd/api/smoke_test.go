@@ -7,8 +7,10 @@ import (
 	"fmt"
 	"io"
 	"math/rand"
+	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
+	"net/textproto"
 	"os"
 	"path/filepath"
 	"strings"
@@ -21,11 +23,12 @@ import (
 	"golang.org/x/crypto/bcrypt"
 
 	automationworker "gr33n-api/internal/automation"
+	"gr33n-api/internal/filestorage"
 )
 
 const (
 	smokeDevEmail    = "dev@gr33n.local"
-	smokeDevPass = "devpassword"
+	smokeDevPass     = "devpassword"
 	smokeDevUserUUID = "00000000-0000-0000-0000-000000000001"
 )
 
@@ -82,6 +85,47 @@ DO $$ BEGIN
 END $$;
 ALTER TABLE gr33ncore.farms ADD COLUMN IF NOT EXISTS insert_commons_opt_in BOOLEAN NOT NULL DEFAULT FALSE;
 ALTER TABLE gr33ncore.farms ADD COLUMN IF NOT EXISTS insert_commons_last_sync_at TIMESTAMPTZ;
+ALTER TABLE gr33ncore.farms ADD COLUMN IF NOT EXISTS insert_commons_last_attempt_at TIMESTAMPTZ;
+ALTER TABLE gr33ncore.farms ADD COLUMN IF NOT EXISTS insert_commons_last_delivery_status TEXT;
+ALTER TABLE gr33ncore.farms ADD COLUMN IF NOT EXISTS insert_commons_last_error TEXT;
+ALTER TABLE gr33ncore.farms ADD COLUMN IF NOT EXISTS insert_commons_backoff_until TIMESTAMPTZ;
+ALTER TABLE gr33ncore.farms ADD COLUMN IF NOT EXISTS insert_commons_consecutive_failures INT NOT NULL DEFAULT 0;
+CREATE TABLE IF NOT EXISTS gr33ncore.insert_commons_sync_events (
+    id               BIGSERIAL PRIMARY KEY,
+    farm_id          BIGINT NOT NULL REFERENCES gr33ncore.farms(id) ON DELETE CASCADE,
+    idempotency_key  TEXT,
+    status           TEXT NOT NULL,
+    http_status      INT,
+    error            TEXT,
+    payload          JSONB NOT NULL,
+    created_at       TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_insert_commons_sync_farm_idem
+    ON gr33ncore.insert_commons_sync_events (farm_id, idempotency_key)
+    WHERE idempotency_key IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_insert_commons_sync_farm_created
+    ON gr33ncore.insert_commons_sync_events (farm_id, created_at DESC);
+CREATE TABLE IF NOT EXISTS gr33ncore.farm_finance_account_mappings (
+    id            BIGSERIAL PRIMARY KEY,
+    farm_id       BIGINT NOT NULL REFERENCES gr33ncore.farms(id) ON DELETE CASCADE,
+    cost_category gr33ncore.cost_category_enum NOT NULL,
+    account_code  TEXT   NOT NULL,
+    account_name  TEXT   NOT NULL,
+    is_active     BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at    TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    updated_at    TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    UNIQUE (farm_id, cost_category)
+);
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_trigger
+    WHERE tgname = 'trg_farm_finance_account_mappings_updated_at'
+  ) THEN
+    CREATE TRIGGER trg_farm_finance_account_mappings_updated_at
+      BEFORE UPDATE ON gr33ncore.farm_finance_account_mappings
+      FOR EACH ROW EXECUTE FUNCTION gr33ncore.set_updated_at();
+  END IF;
+END $$;
 `); err != nil {
 		return err
 	}
@@ -121,7 +165,13 @@ func TestMain(m *testing.M) {
 	}
 	mux := http.NewServeMux()
 	worker := automationworker.NewWorker(pool, true)
-	registerRoutes(mux, pool, worker, "admin", nil, "", filepath.Join(smokeFiles, "blobs"))
+	store, err := filestorage.NewLocal(filepath.Join(smokeFiles, "blobs"))
+	if err != nil {
+		pool.Close()
+		fmt.Fprintf(os.Stderr, "smoke_test init storage: %v\n", err)
+		os.Exit(1)
+	}
+	registerRoutes(mux, pool, worker, "admin", nil, "", store, filestorage.Config{Backend: "local"})
 	testServer = httptest.NewServer(corsMiddleware(mux))
 
 	code := m.Run()
@@ -295,11 +345,11 @@ func TestCropCycleCreateAndStage(t *testing.T) {
 	tok := smokeJWT(t)
 	name := uniqueName("smoke_cycle")
 	resp := authPost(t, tok, "/farms/1/crop-cycles", map[string]any{
-		"zone_id":      1,
-		"name":         name,
+		"zone_id":       1,
+		"name":          name,
 		"current_stage": "early_veg",
-		"started_at":   "2025-01-01",
-		"is_active":    false,
+		"started_at":    "2025-01-01",
+		"is_active":     false,
 	})
 	expectStatus(t, resp, 201)
 	created := decodeMap(t, resp)
@@ -330,6 +380,137 @@ func TestCostsSummaryListExport(t *testing.T) {
 	if !strings.HasPrefix(string(body), "date,category,amount") {
 		t.Fatalf("expected CSV header, got %q", string(body[:min(40, len(body))]))
 	}
+
+	resp = authGet(t, tok, "/farms/1/costs/export?format=gl_csv")
+	expectStatus(t, resp, 200)
+	defer resp.Body.Close()
+	body, err = io.ReadAll(resp.Body)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.HasPrefix(string(body), "date,entry_type,account_code") {
+		t.Fatalf("expected GL CSV header, got %q", string(body[:min(60, len(body))]))
+	}
+}
+
+func TestCoaMappingsListAndUpdate(t *testing.T) {
+	tok := smokeJWT(t)
+	resp := authGet(t, tok, "/farms/1/finance/coa-mappings")
+	expectStatus(t, resp, http.StatusOK)
+	items := decodeSlice(t, resp)
+	if len(items) == 0 {
+		t.Fatal("expected default coa mappings")
+	}
+
+	resp = authPut(t, tok, "/farms/1/finance/coa-mappings", map[string]any{
+		"mappings": []map[string]any{
+			{
+				"category":     "miscellaneous",
+				"account_code": "6999",
+				"account_name": "Custom misc expense",
+			},
+		},
+	})
+	expectStatus(t, resp, http.StatusOK)
+	updated := decodeSlice(t, resp)
+	found := false
+	for _, it := range updated {
+		row, ok := it.(map[string]any)
+		if !ok {
+			continue
+		}
+		if row["category"] == "miscellaneous" && row["account_code"] == "6999" {
+			found = true
+			break
+		}
+	}
+	if !found {
+		t.Fatal("expected updated miscellaneous coa mapping")
+	}
+
+	resp = authDelete(t, tok, "/farms/1/finance/coa-mappings/miscellaneous")
+	expectStatus(t, resp, http.StatusOK)
+	resetOne := decodeSlice(t, resp)
+	for _, it := range resetOne {
+		row, ok := it.(map[string]any)
+		if !ok {
+			continue
+		}
+		if row["category"] == "miscellaneous" && row["source"] != "default" {
+			t.Fatal("expected miscellaneous mapping reset to default")
+		}
+	}
+
+	resp = authDelete(t, tok, "/farms/1/finance/coa-mappings")
+	expectStatus(t, resp, http.StatusOK)
+	resetAll := decodeSlice(t, resp)
+	for _, it := range resetAll {
+		row, ok := it.(map[string]any)
+		if !ok {
+			continue
+		}
+		if row["source"] != "default" {
+			t.Fatal("expected all mappings reset to default")
+		}
+	}
+}
+
+func TestCostReceiptUploadAndDownload(t *testing.T) {
+	tok := smokeJWT(t)
+	costID := createSmokeCost(t, tok)
+	attachmentID := uploadSmokeReceipt(t, tok, costID, "receipt.pdf", []byte("%PDF-1.4 smoke\n"))
+
+	resp := authGet(t, tok, fmt.Sprintf("/file-attachments/%d/download", attachmentID))
+	expectStatus(t, resp, http.StatusOK)
+	target := decodeMap(t, resp)
+	if target["proxied"] != true {
+		t.Fatalf("proxied = %v, want true for local storage", target["proxied"])
+	}
+	if target["backend"] != "local" {
+		t.Fatalf("backend = %v, want local", target["backend"])
+	}
+	if target["url"] != fmt.Sprintf("/file-attachments/%d/content", attachmentID) {
+		t.Fatalf("url = %v", target["url"])
+	}
+
+	resp = authGet(t, tok, fmt.Sprintf("/file-attachments/%d/content", attachmentID))
+	expectStatus(t, resp, http.StatusOK)
+	defer resp.Body.Close()
+	if got := resp.Header.Get("Content-Type"); got != "application/pdf" {
+		t.Fatalf("Content-Type = %q, want application/pdf", got)
+	}
+	data, err := io.ReadAll(resp.Body)
+	if err != nil {
+		t.Fatalf("ReadAll: %v", err)
+	}
+	if string(data) != "%PDF-1.4 smoke\n" {
+		t.Fatalf("downloaded bytes = %q", string(data))
+	}
+}
+
+func TestCostReceiptReplacementCleansUpOldAttachment(t *testing.T) {
+	tok := smokeJWT(t)
+	costID := createSmokeCost(t, tok)
+	firstID := uploadSmokeReceipt(t, tok, costID, "receipt-a.pdf", []byte("%PDF-1.4 first\n"))
+	secondID := uploadSmokeReceipt(t, tok, costID, "receipt-b.pdf", []byte("%PDF-1.4 second\n"))
+
+	resp := authGet(t, tok, fmt.Sprintf("/file-attachments/%d/content", firstID))
+	expectStatus(t, resp, http.StatusNotFound)
+
+	resp = authGet(t, tok, fmt.Sprintf("/file-attachments/%d/content", secondID))
+	expectStatus(t, resp, http.StatusOK)
+}
+
+func TestDeletingCostCleansUpReceiptAttachment(t *testing.T) {
+	tok := smokeJWT(t)
+	costID := createSmokeCost(t, tok)
+	attachmentID := uploadSmokeReceipt(t, tok, costID, "receipt-delete.pdf", []byte("%PDF-1.4 delete\n"))
+
+	resp := authDelete(t, tok, fmt.Sprintf("/costs/%d", costID))
+	expectStatus(t, resp, http.StatusNoContent)
+
+	resp = authGet(t, tok, fmt.Sprintf("/file-attachments/%d/content", attachmentID))
+	expectStatus(t, resp, http.StatusNotFound)
 }
 
 func TestRecipeList(t *testing.T) {
@@ -528,6 +709,97 @@ func authPatch(t *testing.T, token, path string, body any) *http.Response {
 		t.Fatalf("PATCH %s: %v", path, err)
 	}
 	return resp
+}
+
+func authPut(t *testing.T, token, path string, body any) *http.Response {
+	t.Helper()
+	b, _ := json.Marshal(body)
+	req, err := http.NewRequest(http.MethodPut, testServer.URL+path, bytes.NewReader(b))
+	if err != nil {
+		t.Fatal(err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+token)
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatalf("PUT %s: %v", path, err)
+	}
+	return resp
+}
+
+func authDelete(t *testing.T, token, path string) *http.Response {
+	t.Helper()
+	req, err := http.NewRequest(http.MethodDelete, testServer.URL+path, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	req.Header.Set("Authorization", "Bearer "+token)
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatalf("DELETE %s: %v", path, err)
+	}
+	return resp
+}
+
+func authMultipartPost(t *testing.T, token, path, fieldName, fileName, contentType string, fileBody []byte, fields map[string]string) *http.Response {
+	t.Helper()
+	var body bytes.Buffer
+	w := multipart.NewWriter(&body)
+	partHeaders := make(textproto.MIMEHeader)
+	partHeaders.Set("Content-Disposition", fmt.Sprintf(`form-data; name="%s"; filename="%s"`, fieldName, fileName))
+	partHeaders.Set("Content-Type", contentType)
+	part, err := w.CreatePart(partHeaders)
+	if err != nil {
+		t.Fatalf("CreatePart: %v", err)
+	}
+	if _, err := part.Write(fileBody); err != nil {
+		t.Fatalf("part.Write: %v", err)
+	}
+	for k, v := range fields {
+		if err := w.WriteField(k, v); err != nil {
+			t.Fatalf("WriteField(%s): %v", k, err)
+		}
+	}
+	if err := w.Close(); err != nil {
+		t.Fatalf("writer.Close: %v", err)
+	}
+	req, err := http.NewRequest(http.MethodPost, testServer.URL+path, &body)
+	if err != nil {
+		t.Fatal(err)
+	}
+	req.Header.Set("Content-Type", w.FormDataContentType())
+	req.Header.Set("Authorization", "Bearer "+token)
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatalf("POST %s: %v", path, err)
+	}
+	return resp
+}
+
+func createSmokeCost(t *testing.T, tok string) int64 {
+	t.Helper()
+	resp := authPost(t, tok, "/farms/1/costs", map[string]any{
+		"transaction_date": "2026-04-16",
+		"category":         "miscellaneous",
+		"amount":           12.5,
+		"currency":         "USD",
+		"description":      "receipt smoke test",
+		"is_income":        false,
+	})
+	expectStatus(t, resp, http.StatusCreated)
+	created := decodeMap(t, resp)
+	return int64(created["id"].(float64))
+}
+
+func uploadSmokeReceipt(t *testing.T, tok string, costID int64, fileName string, body []byte) int64 {
+	t.Helper()
+	resp := authMultipartPost(t, tok, "/farms/1/cost-receipts", "file", fileName, "application/pdf", body, map[string]string{
+		"cost_transaction_id": fmt.Sprintf("%d", costID),
+	})
+	expectStatus(t, resp, http.StatusCreated)
+	payload := decodeMap(t, resp)
+	attachment := payload["file_attachment"].(map[string]any)
+	return int64(attachment["id"].(float64))
 }
 
 func postNoAuth(path string, body any) *http.Response {

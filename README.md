@@ -44,7 +44,7 @@ gr33n will never require a permanent internet connection, forced login, or hidde
 
 - **Automation-Ready** — Schedule tasks, trigger actuators, run AI models — or run it all manually. Your tech, your tempo.
 
-- **Insert Commons (MVP)** — Per-farm opt-in in Settings; `POST /farms/{id}/insert-commons/sync` records a sync timestamp (full outbound adapters are still future work). Apply `db/migrations/20260415_phase11_rbac_receipts_commons.sql` on existing databases.
+- **Insert Commons (farm-side sender)** — Per-farm opt-in in Settings; `POST /farms/{id}/insert-commons/sync` builds **coarse, pseudonymous aggregates** and optionally POSTs them to `INSERT_COMMONS_INGEST_URL` with optional `Authorization: Bearer <INSERT_COMMONS_SHARED_SECRET>`. Sync attempts are persisted for audit (`GET /farms/{id}/insert-commons/sync-events`) with **idempotency keys**, **rate limits**, and **server-side backoff** after repeated delivery failures. Apply `db/migrations/20260415_phase11_rbac_receipts_commons.sql` and `db/migrations/20260416_phase12_insert_commons_federation.sql` on existing databases.
 
 ---
 
@@ -136,6 +136,56 @@ cd ui && npm install && npm run dev
 API → `http://localhost:8080`
 UI  → `http://localhost:5173`
 
+Receipt storage defaults to local disk for development:
+
+- `FILE_STORAGE_BACKEND=local`
+- `FILE_STORAGE_DIR=./data/files`
+
+Production deployments can switch receipts to S3-compatible object storage by setting:
+
+- `FILE_STORAGE_BACKEND=s3`
+- `S3_BUCKET=<bucket>`
+- `S3_REGION=<region>`
+- optional: `S3_ENDPOINT=<custom endpoint>` for MinIO / R2 / other S3-compatible providers
+- optional: `S3_PREFIX=<key prefix>`
+- optional: `S3_ACCESS_KEY_ID` and `S3_SECRET_ACCESS_KEY`
+- optional: `S3_USE_PATH_STYLE=true`
+- optional: `S3_DISABLE_HTTPS=true` for local/test endpoints only
+- optional: `FILE_STORAGE_SIGNED_URL_TTL_SECONDS=300` for short-lived receipt download links
+
+To backfill existing blobs from an old local `FILE_STORAGE_DIR` into the configured target backend before cutover:
+
+```bash
+# 1. Keep DATABASE_URL pointed at the live DB
+# 2. Point the target backend env vars at the new storage location
+# 3. Run a dry run first
+go run ./cmd/filebackfill --source-dir /path/to/old/files --dry-run
+
+# 4. Then copy all attachments (or only receipts)
+go run ./cmd/filebackfill --source-dir /path/to/old/files
+go run ./cmd/filebackfill --source-dir /path/to/old/files --file-type cost_receipt
+```
+
+The backfill preserves each attachment's existing `storage_path`, so DB rows do not change. After the copy is complete, switch the API to the new `FILE_STORAGE_BACKEND` and verify a few receipt downloads before removing the old local storage.
+
+For operator guidance on receipt storage cutover plus DB/blob backup and restore, see `docs/receipt-storage-cutover-runbook.md`.
+
+### PWA install + offline task writes
+
+Phase 12 adds an offline write queue for the Tasks workflow (`create task` and `advance status`):
+
+- when offline (or on retryable network failure), task writes are queued locally
+- queued items are marked in the Tasks UI
+- each queued item can be retried or discarded
+- queued writes auto-sync on reconnect, and manual `Sync now` is available
+- non-retryable server failures are shown as stale/conflict items for operator review
+
+Install/offline notes:
+
+- install the app from your browser for field use (PWA)
+- keep one online sync checkpoint before long offline sessions
+- after reconnect, verify queued writes drained before ending a shift
+
 ---
 
 ## API Endpoints
@@ -214,7 +264,11 @@ JWT is required for all routes in this section. Mutations (POST, PUT, PATCH, DEL
 | PATCH | `/crop-cycles/:id/stage` | Update growth stage |
 | GET | `/farms/:id/costs/summary` | Cost totals (income, expenses, net) |
 | GET | `/farms/:id/costs` | List cost transactions |
-| GET | `/farms/:id/costs/export` | Download costs as CSV |
+| GET | `/farms/:id/costs/export` | Download costs as CSV (`format=csv` or `format=gl_csv`) |
+| GET | `/farms/:id/finance/coa-mappings` | List farm COA mappings for GL export |
+| PUT | `/farms/:id/finance/coa-mappings` | Save farm COA mapping overrides |
+| DELETE | `/farms/:id/finance/coa-mappings` | Reset all farm COA mapping overrides to defaults |
+| DELETE | `/farms/:id/finance/coa-mappings/:category` | Reset one farm COA category override to default |
 | POST | `/farms/:id/costs` | Create cost transaction |
 | PUT | `/costs/:id` | Update cost transaction |
 | DELETE | `/costs/:id` | Delete cost transaction |
@@ -310,7 +364,7 @@ For users who choose to integrate local AI, gr33n offers schema-guided intellige
 - [x] OpenAPI spec (openapi.yaml)
 - [x] Sensor readings live on dashboard (SSE stream with JWT query param auth)
 - [x] Phase 10 — JWT smoke tests (`AUTH_MODE=auth_test`), farm-scoped write authorization, fertigation ↔ crop cycle link, costs CSV export, SensorDetail export UX
-- [x] Phase 11 — Farm RBAC (viewer / operator / finance / manager / owner), cost receipts + local `FILE_STORAGE_DIR` storage, **PWA-first** installable shell (manifest + SW in production builds; Capacitor still an option for store-distributed apps), Insert Commons opt-in + sync stub, OpenAPI updates
+- [x] Phase 11 — Farm RBAC (viewer / operator / finance / manager / owner), cost receipts + local `FILE_STORAGE_DIR` storage, **PWA-first** installable shell (manifest + SW in production builds; Capacitor still an option for store-distributed apps), Insert Commons opt-in + early sync hook, OpenAPI updates
 - [x] Actuator control pipeline (automation worker → pending_command → Pi poll → execute → report)
 - [x] Fertigation module — reservoirs, EC targets, programs, events
 - [x] Natural farming inventory UI — input definitions & batch tracking

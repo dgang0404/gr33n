@@ -34,3 +34,10 @@ RETURNING *;
 UPDATE gr33ncore.tasks
 SET deleted_at = NOW(), updated_at = NOW(), updated_by_user_id = $2
 WHERE id = $1;
+
+-- name: CountTasksByStatusForFarm :many
+SELECT status, COUNT(*)::bigint AS cnt
+FROM gr33ncore.tasks
+WHERE farm_id = $1 AND deleted_at IS NULL
+GROUP BY status
+ORDER BY status ASC;

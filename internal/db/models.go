@@ -1308,24 +1308,29 @@ type Gr33ncoreExecutableAction struct {
 }
 
 type Gr33ncoreFarm struct {
-	ID                      int64                             `db:"id" json:"id"`
-	Name                    string                            `db:"name" json:"name"`
-	Description             *string                           `db:"description" json:"description"`
-	LocationText            *string                           `db:"location_text" json:"location_text"`
-	LocationGis             interface{}                       `db:"location_gis" json:"location_gis"`
-	SizeHectares            pgtype.Numeric                    `db:"size_hectares" json:"size_hectares"`
-	FarmType                *string                           `db:"farm_type" json:"farm_type"`
-	ScaleTier               commontypes.FarmScaleTierEnum     `db:"scale_tier" json:"scale_tier"`
-	OwnerUserID             uuid.UUID                         `db:"owner_user_id" json:"owner_user_id"`
-	Timezone                string                            `db:"timezone" json:"timezone"`
-	Currency                string                            `db:"currency" json:"currency"`
-	OperationalStatus       commontypes.OperationalStatusEnum `db:"operational_status" json:"operational_status"`
-	CreatedAt               time.Time                         `db:"created_at" json:"created_at"`
-	UpdatedAt               time.Time                         `db:"updated_at" json:"updated_at"`
-	UpdatedByUserID         pgtype.UUID                       `db:"updated_by_user_id" json:"updated_by_user_id"`
-	DeletedAt               pgtype.Timestamptz                `db:"deleted_at" json:"deleted_at"`
-	InsertCommonsOptIn      bool                              `db:"insert_commons_opt_in" json:"insert_commons_opt_in"`
-	InsertCommonsLastSyncAt pgtype.Timestamptz                `db:"insert_commons_last_sync_at" json:"insert_commons_last_sync_at"`
+	ID                               int64                             `db:"id" json:"id"`
+	Name                             string                            `db:"name" json:"name"`
+	Description                      *string                           `db:"description" json:"description"`
+	LocationText                     *string                           `db:"location_text" json:"location_text"`
+	LocationGis                      interface{}                       `db:"location_gis" json:"location_gis"`
+	SizeHectares                     pgtype.Numeric                    `db:"size_hectares" json:"size_hectares"`
+	FarmType                         *string                           `db:"farm_type" json:"farm_type"`
+	ScaleTier                        commontypes.FarmScaleTierEnum     `db:"scale_tier" json:"scale_tier"`
+	OwnerUserID                      uuid.UUID                         `db:"owner_user_id" json:"owner_user_id"`
+	Timezone                         string                            `db:"timezone" json:"timezone"`
+	Currency                         string                            `db:"currency" json:"currency"`
+	OperationalStatus                commontypes.OperationalStatusEnum `db:"operational_status" json:"operational_status"`
+	CreatedAt                        time.Time                         `db:"created_at" json:"created_at"`
+	UpdatedAt                        time.Time                         `db:"updated_at" json:"updated_at"`
+	UpdatedByUserID                  pgtype.UUID                       `db:"updated_by_user_id" json:"updated_by_user_id"`
+	DeletedAt                        pgtype.Timestamptz                `db:"deleted_at" json:"deleted_at"`
+	InsertCommonsOptIn               bool                              `db:"insert_commons_opt_in" json:"insert_commons_opt_in"`
+	InsertCommonsLastSyncAt          pgtype.Timestamptz                `db:"insert_commons_last_sync_at" json:"insert_commons_last_sync_at"`
+	InsertCommonsLastAttemptAt       pgtype.Timestamptz                `db:"insert_commons_last_attempt_at" json:"insert_commons_last_attempt_at"`
+	InsertCommonsLastDeliveryStatus  *string                           `db:"insert_commons_last_delivery_status" json:"insert_commons_last_delivery_status"`
+	InsertCommonsLastError           *string                           `db:"insert_commons_last_error" json:"insert_commons_last_error"`
+	InsertCommonsBackoffUntil        pgtype.Timestamptz                `db:"insert_commons_backoff_until" json:"insert_commons_backoff_until"`
+	InsertCommonsConsecutiveFailures int32                             `db:"insert_commons_consecutive_failures" json:"insert_commons_consecutive_failures"`
 }
 
 type Gr33ncoreFarmActiveModule struct {
@@ -1334,6 +1339,17 @@ type Gr33ncoreFarmActiveModule struct {
 	IsEnabled        bool      `db:"is_enabled" json:"is_enabled"`
 	Configuration    []byte    `db:"configuration" json:"configuration"`
 	ActivatedAt      time.Time `db:"activated_at" json:"activated_at"`
+}
+
+type Gr33ncoreFarmFinanceAccountMapping struct {
+	ID           int64                        `db:"id" json:"id"`
+	FarmID       int64                        `db:"farm_id" json:"farm_id"`
+	CostCategory commontypes.CostCategoryEnum `db:"cost_category" json:"cost_category"`
+	AccountCode  string                       `db:"account_code" json:"account_code"`
+	AccountName  string                       `db:"account_name" json:"account_name"`
+	IsActive     bool                         `db:"is_active" json:"is_active"`
+	CreatedAt    time.Time                    `db:"created_at" json:"created_at"`
+	UpdatedAt    time.Time                    `db:"updated_at" json:"updated_at"`
 }
 
 type Gr33ncoreFarmMembership struct {
@@ -1359,6 +1375,17 @@ type Gr33ncoreFileAttachment struct {
 	UploadedByUserID    pgtype.UUID `db:"uploaded_by_user_id" json:"uploaded_by_user_id"`
 	CreatedAt           time.Time   `db:"created_at" json:"created_at"`
 	UpdatedAt           time.Time   `db:"updated_at" json:"updated_at"`
+}
+
+type Gr33ncoreInsertCommonsSyncEvent struct {
+	ID             int64     `db:"id" json:"id"`
+	FarmID         int64     `db:"farm_id" json:"farm_id"`
+	IdempotencyKey *string   `db:"idempotency_key" json:"idempotency_key"`
+	Status         string    `db:"status" json:"status"`
+	HttpStatus     *int32    `db:"http_status" json:"http_status"`
+	Error          *string   `db:"error" json:"error"`
+	Payload        []byte    `db:"payload" json:"payload"`
+	CreatedAt      time.Time `db:"created_at" json:"created_at"`
 }
 
 type Gr33ncoreNotificationTemplate struct {

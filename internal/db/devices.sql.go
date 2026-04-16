@@ -24,6 +24,39 @@ func (q *Queries) ClearDevicePendingCommand(ctx context.Context, id int64) error
 	return err
 }
 
+const countDevicesByStatusForFarm = `-- name: CountDevicesByStatusForFarm :many
+SELECT status, COUNT(*)::bigint AS cnt
+FROM gr33ncore.devices
+WHERE farm_id = $1 AND deleted_at IS NULL
+GROUP BY status
+ORDER BY status ASC
+`
+
+type CountDevicesByStatusForFarmRow struct {
+	Status commontypes.DeviceStatusEnum `db:"status" json:"status"`
+	Cnt    int64                        `db:"cnt" json:"cnt"`
+}
+
+func (q *Queries) CountDevicesByStatusForFarm(ctx context.Context, farmID int64) ([]CountDevicesByStatusForFarmRow, error) {
+	rows, err := q.db.Query(ctx, countDevicesByStatusForFarm, farmID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []CountDevicesByStatusForFarmRow{}
+	for rows.Next() {
+		var i CountDevicesByStatusForFarmRow
+		if err := rows.Scan(&i.Status, &i.Cnt); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const createDevice = `-- name: CreateDevice :one
 
 INSERT INTO gr33ncore.devices (

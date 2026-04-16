@@ -12,9 +12,10 @@ import (
 
 	"strconv"
 
-	"github.com/joho/godotenv"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/joho/godotenv"
 	automationworker "gr33n-api/internal/automation"
+	"gr33n-api/internal/filestorage"
 )
 
 // loadDotEnv reads optional .env then .env.local from the current working directory
@@ -40,9 +41,9 @@ func main() {
 	loadDotEnv()
 
 	dbURL := getEnv("DATABASE_URL", "postgres://davidg@/gr33n?host=/var/run/postgresql")
-	port  := getEnv("PORT", "8080")
+	port := getEnv("PORT", "8080")
 	jwtSecret = []byte(getEnv("JWT_SECRET", ""))
-	piAPIKey  = getEnv("PI_API_KEY", "")
+	piAPIKey = getEnv("PI_API_KEY", "")
 	corsOrigin = getEnv("CORS_ORIGIN", "http://localhost:5173")
 	authMode = strings.ToLower(strings.TrimSpace(getEnv("AUTH_MODE", "production")))
 	if authMode == "" {
@@ -53,10 +54,10 @@ func main() {
 	default:
 		log.Fatalf("AUTH_MODE must be dev, auth_test, or production (got %q)", authMode)
 	}
-	adminUser    := getEnv("ADMIN_USERNAME", "admin")
+	adminUser := getEnv("ADMIN_USERNAME", "admin")
 	simulationMode := strings.EqualFold(getEnv("AUTOMATION_SIMULATION_MODE", "true"), "true")
 	hashFilePath := filepath.Join(os.Getenv("HOME"), ".gr33n", "admin.hash")
-	adminHash    := loadPasswordHash(hashFilePath)
+	adminHash := loadPasswordHash(hashFilePath)
 
 	if authMode == "dev" && !devBypassAllowed {
 		log.Fatal("AUTH_MODE=dev is not allowed in this binary. " +
@@ -77,7 +78,9 @@ func main() {
 	}
 
 	pool, err := connectDB(dbURL)
-	if err != nil { log.Fatalf("Could not connect to database: %v", err) }
+	if err != nil {
+		log.Fatalf("Could not connect to database: %v", err)
+	}
 	defer pool.Close()
 	log.Println("Connected to gr33n database")
 	log.Printf("AUTH_MODE=%s  (dev_bypass_compiled=%v)", authMode, devBypassAllowed)
@@ -101,40 +104,71 @@ func main() {
 	worker := automationworker.NewWorker(pool, simulationMode, workerOpts...)
 	go worker.Start(context.Background())
 	log.Printf("🧠 Automation worker started (simulation_mode=%v)", simulationMode)
-	fileRoot := getEnv("FILE_STORAGE_DIR", "./data/files")
-	registerRoutes(mux, pool, worker, adminUser, adminHash, hashFilePath, fileRoot)
-	log.Printf("FILE_STORAGE_DIR=%s", fileRoot)
+	fileStore, fileCfg, err := filestorage.NewFromEnv(context.Background())
+	if err != nil {
+		log.Fatalf("file storage init: %v", err)
+	}
+	registerRoutes(mux, pool, worker, adminUser, adminHash, hashFilePath, fileStore, fileCfg)
+	log.Printf("FILE_STORAGE_BACKEND=%s", fileCfg.Backend)
+	if fileCfg.Backend == "local" {
+		log.Printf("FILE_STORAGE_DIR=%s", fileCfg.LocalRoot)
+	} else {
+		log.Printf("S3_BUCKET=%s S3_REGION=%s S3_ENDPOINT=%s S3_PREFIX=%s", fileCfg.S3Bucket, fileCfg.S3Region, fileCfg.S3Endpoint, fileCfg.S3Prefix)
+	}
 	addr := fmt.Sprintf(":%s", port)
 	log.Printf("🌱 gr33n API running on http://localhost%s", addr)
-	if err := http.ListenAndServe(addr, corsMiddleware(mux)); err != nil { log.Fatalf("❌ Server error: %v", err) }
+	if err := http.ListenAndServe(addr, corsMiddleware(mux)); err != nil {
+		log.Fatalf("❌ Server error: %v", err)
+	}
 }
 
 func loadPasswordHash(filePath string) []byte {
 	if data, err := os.ReadFile(filePath); err == nil {
 		hash := []byte(strings.TrimSpace(string(data)))
-		if len(hash) > 0 { log.Printf("🔒 Loaded password hash from %s", filePath); return hash }
+		if len(hash) > 0 {
+			log.Printf("🔒 Loaded password hash from %s", filePath)
+			return hash
+		}
 	}
-	if h := getEnv("ADMIN_PASSWORD_HASH", ""); h != "" { log.Println("🔒 Loaded password hash from env"); return []byte(h) }
+	if h := getEnv("ADMIN_PASSWORD_HASH", ""); h != "" {
+		log.Println("🔒 Loaded password hash from env")
+		return []byte(h)
+	}
 	return nil
 }
 
 func connectDB(dbURL string) (*pgxpool.Pool, error) {
 	config, err := pgxpool.ParseConfig(dbURL)
-	if err != nil { return nil, fmt.Errorf("invalid DATABASE_URL: %w", err) }
-	config.MaxConns = 20; config.MinConns = 2
-	config.MaxConnLifetime = 1 * time.Hour; config.MaxConnIdleTime = 30 * time.Minute
-	var pool *pgxpool.Pool; var lastErr error
+	if err != nil {
+		return nil, fmt.Errorf("invalid DATABASE_URL: %w", err)
+	}
+	config.MaxConns = 20
+	config.MinConns = 2
+	config.MaxConnLifetime = 1 * time.Hour
+	config.MaxConnIdleTime = 30 * time.Minute
+	var pool *pgxpool.Pool
+	var lastErr error
 	for i := range 5 {
 		log.Printf("⏳ Waiting for database... attempt %d/5", i+1)
 		pool, err = pgxpool.NewWithConfig(context.Background(), config)
-		if err != nil { lastErr = err; time.Sleep(2 * time.Second); continue }
-		if pingErr := pool.Ping(context.Background()); pingErr != nil { lastErr = pingErr; time.Sleep(2 * time.Second); continue }
+		if err != nil {
+			lastErr = err
+			time.Sleep(2 * time.Second)
+			continue
+		}
+		if pingErr := pool.Ping(context.Background()); pingErr != nil {
+			lastErr = pingErr
+			time.Sleep(2 * time.Second)
+			continue
+		}
 		return pool, nil
 	}
 	return nil, fmt.Errorf("could not reach database after 5 attempts: %w", lastErr)
 }
 
 func getEnv(key, fallback string) string {
-	if val, ok := os.LookupEnv(key); ok { return val }
+	if val, ok := os.LookupEnv(key); ok {
+		return val
+	}
 	return fallback
 }

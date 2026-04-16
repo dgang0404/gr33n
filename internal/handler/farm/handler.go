@@ -18,11 +18,26 @@ import (
 )
 
 type Handler struct {
-	q *db.Queries
+	q          db.Querier
+	httpClient *http.Client
 }
 
 func NewHandler(pool *pgxpool.Pool) *Handler {
-	return &Handler{q: db.New(pool)}
+	return &Handler{
+		q: db.New(pool),
+		httpClient: &http.Client{
+			Timeout: 20 * time.Second,
+		},
+	}
+}
+
+func NewHandlerWithQuerier(q db.Querier) *Handler {
+	return &Handler{
+		q: q,
+		httpClient: &http.Client{
+			Timeout: 20 * time.Second,
+		},
+	}
 }
 
 // GET /farms?user_id=<uuid>  (user_id is optional; omit to list all farms)
@@ -180,47 +195,4 @@ func (h *Handler) SetInsertCommonsOptIn(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 	httputil.WriteJSON(w, http.StatusOK, row)
-}
-
-// InsertCommonsSync — POST /farms/{id}/insert-commons/sync (MVP stub; records sync time when opt-in is on)
-func (h *Handler) InsertCommonsSync(w http.ResponseWriter, r *http.Request) {
-	id, err := httputil.PathID(r.URL.Path, 2)
-	if err != nil {
-		httputil.WriteError(w, http.StatusBadRequest, "invalid farm id")
-		return
-	}
-	if !farmauthz.RequireFarmMember(w, r, h.q, id) {
-		return
-	}
-	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
-	defer cancel()
-	farm, err := h.q.GetFarmByID(ctx, id)
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			httputil.WriteError(w, http.StatusNotFound, "farm not found")
-			return
-		}
-		httputil.WriteError(w, http.StatusInternalServerError, "failed to load farm")
-		return
-	}
-	if !farm.InsertCommonsOptIn {
-		httputil.WriteError(w, http.StatusForbidden, "Insert Commons sharing is disabled for this farm")
-		return
-	}
-	row, err := h.q.TouchFarmInsertCommonsSync(ctx, id)
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			httputil.WriteError(w, http.StatusForbidden, "Insert Commons sharing is disabled for this farm")
-			return
-		}
-		httputil.WriteError(w, http.StatusInternalServerError, "sync failed")
-		return
-	}
-	httputil.WriteJSON(w, http.StatusOK, map[string]any{
-		"ok":             true,
-		"farm_id":        id,
-		"last_sync_at":   row.InsertCommonsLastSyncAt,
-		"aggregates":     map[string]any{},
-		"privacy_notice": "Only anonymized aggregates leave the farm; revoke anytime by turning sharing off.",
-	})
 }

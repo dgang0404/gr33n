@@ -50,3 +50,10 @@ WHERE id = $1;
 UPDATE gr33ncore.devices
 SET deleted_at = NOW(), updated_at = NOW(), updated_by_user_id = $2
 WHERE id = $1;
+
+-- name: CountDevicesByStatusForFarm :many
+SELECT status, COUNT(*)::bigint AS cnt
+FROM gr33ncore.devices
+WHERE farm_id = $1 AND deleted_at IS NULL
+GROUP BY status
+ORDER BY status ASC;

@@ -152,8 +152,9 @@
     <section v-if="farmContext.farmId" class="bg-zinc-800 border border-zinc-700 rounded-xl p-5 mb-5">
       <h2 class="text-white font-semibold mb-3">Insert Commons</h2>
       <p class="text-zinc-400 text-sm mb-3">
-        Optional community benchmarks. Only anonymized aggregates are intended to leave your farm; you can revoke at any time.
-        Retention follows the platform operator’s policy once sync adapters are enabled.
+        Optional community benchmarks. The API only sends <span class="text-zinc-300">coarse aggregates</span> under a stable per-farm pseudonym
+        (not your farm name). If <code class="text-green-400">INSERT_COMMONS_INGEST_URL</code> is unset, the server records an attempt but does not call out.
+        You can revoke anytime by turning sharing off.
       </p>
       <label class="flex items-center gap-2 text-zinc-300 text-sm mb-3">
         <input v-model="insertOptIn" type="checkbox" class="rounded bg-zinc-800 border-zinc-700"
@@ -164,9 +165,30 @@
         <button type="button" :disabled="!insertOptIn || insertSyncing"
           class="bg-zinc-700 hover:bg-zinc-600 disabled:opacity-40 text-white text-xs font-semibold px-4 py-2 rounded-lg"
           @click="runInsertSync">
-          {{ insertSyncing ? 'Syncing…' : 'Run sync (stub)' }}
+          {{ insertSyncing ? 'Syncing…' : 'Run sync' }}
         </button>
         <span v-if="insertSyncMsg" class="text-zinc-500 text-xs">{{ insertSyncMsg }}</span>
+      </div>
+      <div v-if="insertOptIn" class="mt-4">
+        <div class="flex items-center justify-between mb-2">
+          <p class="text-zinc-500 text-xs uppercase tracking-wide">Recent sync attempts</p>
+          <button type="button" class="text-zinc-500 hover:text-white text-xs" @click="loadInsertHistory" :disabled="insertHistoryLoading">
+            {{ insertHistoryLoading ? 'Loading…' : 'Refresh' }}
+          </button>
+        </div>
+        <div v-if="insertHistoryLoading && insertHistory.length === 0" class="text-zinc-600 text-xs">Loading history…</div>
+        <div v-else-if="insertHistory.length === 0" class="text-zinc-600 text-xs">No attempts yet.</div>
+        <ul v-else class="space-y-2">
+          <li v-for="e in insertHistory" :key="e.id" class="bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-xs">
+            <div class="flex items-center justify-between gap-2">
+              <span class="text-zinc-300 font-mono">{{ e.status }}</span>
+              <span class="text-zinc-600 shrink-0">{{ fmtTs(e.created_at) }}</span>
+            </div>
+            <div class="text-zinc-600 mt-1 break-all" v-if="e.idempotency_key">idem: {{ e.idempotency_key }}</div>
+            <div class="text-zinc-600 mt-1" v-if="e.http_status != null">http: {{ e.http_status }}</div>
+            <div class="text-red-300 mt-1 break-words" v-if="e.error">{{ e.error }}</div>
+          </li>
+        </ul>
       </div>
     </section>
 
@@ -267,12 +289,34 @@ const inviteSuccess = ref(false)
 const insertOptIn = ref(false)
 const insertSyncing = ref(false)
 const insertSyncMsg = ref('')
+const insertHistory = ref([])
+const insertHistoryLoading = ref(false)
+
+function fmtTs(iso) {
+  if (!iso) return ''
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return String(iso)
+  return d.toLocaleString()
+}
+
+async function loadInsertHistory() {
+  if (!farmContext.farmId || !insertOptIn.value) return
+  insertHistoryLoading.value = true
+  try {
+    insertHistory.value = await farmStore.listInsertCommonsSyncEvents(farmContext.farmId, { limit: 8, offset: 0 })
+  } catch {
+    insertHistory.value = []
+  } finally {
+    insertHistoryLoading.value = false
+  }
+}
 
 async function loadFarmSharing() {
   if (!farmContext.farmId) return
   try {
     await farmStore.loadAll(farmContext.farmId)
     insertOptIn.value = !!farmStore.farm?.insert_commons_opt_in
+    await loadInsertHistory()
   } catch { /* ignore */ }
 }
 
@@ -282,6 +326,11 @@ async function onInsertOptInChange() {
   try {
     await farmStore.setInsertCommonsOptIn(farmContext.farmId, insertOptIn.value)
     insertSyncMsg.value = insertOptIn.value ? 'Sharing enabled.' : 'Sharing disabled.'
+    if (!insertOptIn.value) {
+      insertHistory.value = []
+    } else {
+      await loadInsertHistory()
+    }
   } catch (e) {
     insertSyncMsg.value = e.response?.data?.error ?? 'Could not update setting'
   }
@@ -293,7 +342,11 @@ async function runInsertSync() {
   insertSyncMsg.value = ''
   try {
     const r = await farmStore.insertCommonsSync(farmContext.farmId)
-    insertSyncMsg.value = r.privacy_notice || r.note || 'Sync recorded.'
+    const status = r.delivery_status ? String(r.delivery_status) : 'unknown'
+    const http = r.http_status != null ? ` (HTTP ${r.http_status})` : ''
+    insertSyncMsg.value = `${status}${http} — ${r.privacy_notice || 'Sync recorded.'}`
+    await farmStore.loadAll(farmContext.farmId)
+    await loadInsertHistory()
   } catch (e) {
     insertSyncMsg.value = e.response?.data?.error ?? 'Sync failed'
   } finally {

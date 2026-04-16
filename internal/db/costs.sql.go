@@ -81,6 +81,53 @@ func (q *Queries) DeleteCostTransaction(ctx context.Context, id int64) error {
 	return err
 }
 
+const getCostCategoryTotalsByFarm = `-- name: GetCostCategoryTotalsByFarm :many
+SELECT
+    category,
+    currency,
+    COALESCE(SUM(CASE WHEN is_income THEN amount ELSE 0 END), 0)::numeric AS income,
+    COALESCE(SUM(CASE WHEN NOT is_income THEN amount ELSE 0 END), 0)::numeric AS expense,
+    COUNT(*)::bigint AS tx_count
+FROM gr33ncore.cost_transactions
+WHERE farm_id = $1
+GROUP BY category, currency
+ORDER BY category ASC, currency ASC
+`
+
+type GetCostCategoryTotalsByFarmRow struct {
+	Category commontypes.CostCategoryEnum `db:"category" json:"category"`
+	Currency string                       `db:"currency" json:"currency"`
+	Income   pgtype.Numeric               `db:"income" json:"income"`
+	Expense  pgtype.Numeric               `db:"expense" json:"expense"`
+	TxCount  int64                        `db:"tx_count" json:"tx_count"`
+}
+
+func (q *Queries) GetCostCategoryTotalsByFarm(ctx context.Context, farmID int64) ([]GetCostCategoryTotalsByFarmRow, error) {
+	rows, err := q.db.Query(ctx, getCostCategoryTotalsByFarm, farmID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []GetCostCategoryTotalsByFarmRow{}
+	for rows.Next() {
+		var i GetCostCategoryTotalsByFarmRow
+		if err := rows.Scan(
+			&i.Category,
+			&i.Currency,
+			&i.Income,
+			&i.Expense,
+			&i.TxCount,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getCostSummaryByFarm = `-- name: GetCostSummaryByFarm :one
 SELECT
     COALESCE(SUM(CASE WHEN is_income THEN amount ELSE 0 END), 0)::numeric AS total_income,

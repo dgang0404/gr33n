@@ -1,5 +1,13 @@
 import { defineStore } from 'pinia'
 import api from '../api'
+import {
+  isRetryableTaskQueueError,
+  loadTaskQueue,
+  makeCreateTaskItem,
+  makeUpdateTaskStatusItem,
+  pendingCount,
+  saveTaskQueue,
+} from '../offline/taskQueue'
 
 export const useFarmStore = defineStore('farm', {
   state: () => ({
@@ -14,6 +22,13 @@ export const useFarmStore = defineStore('farm', {
     readings: {},
     alerts: [],
     unreadAlertCount: 0,
+    taskWriteQueue: loadTaskQueue(),
+    taskQueueBusy: false,
+    taskSyncStatus: {
+      lastAttemptAt: '',
+      lastResult: 'idle',
+      lastMessage: '',
+    },
     loading: false,
     error: null,
   }),
@@ -29,6 +44,7 @@ export const useFarmStore = defineStore('farm', {
     devicesByZone:  (state) => (zoneId) => state.devices.filter(d => d.zone_id === zoneId),
     sensorsByZone:  (state) => (zoneId) => state.sensors.filter(s => s.zone_id === zoneId),
     actuatorsByZone: (state) => (zoneId) => state.actuators.filter(a => a.zone_id === zoneId),
+    taskQueuePendingCount: (state) => (farmId) => pendingCount(state.taskWriteQueue, farmId),
   },
 
   actions: {
@@ -56,13 +72,26 @@ export const useFarmStore = defineStore('farm', {
 
     async loadTasks(farmId) {
       const r = await api.get(`/farms/${farmId}/tasks`)
-      this.tasks = Array.isArray(r.data) ? r.data : []
+      this.tasks = this.withTaskQueueOverlay(Array.isArray(r.data) ? r.data : [], farmId)
       return this.tasks
     },
 
     async createTask(farmId, data) {
-      const r = await api.post(`/farms/${farmId}/tasks`, data)
-      return r.data
+      const tryOnline = typeof navigator === 'undefined' || navigator.onLine
+      if (tryOnline) {
+        try {
+          const r = await api.post(`/farms/${farmId}/tasks`, data)
+          return r.data
+        } catch (err) {
+          if (!isRetryableTaskQueueError(err)) throw err
+        }
+      }
+      const item = makeCreateTaskItem(farmId, data)
+      this.taskWriteQueue.push(item)
+      this.persistTaskWriteQueue()
+      const optimistic = this.optimisticTaskFromCreateItem(item)
+      this.tasks = [...this.tasks, optimistic]
+      return optimistic
     },
 
     async loadSchedules(farmId) {
@@ -86,9 +115,255 @@ export const useFarmStore = defineStore('farm', {
     },
 
     async updateTaskStatus(taskId, status) {
-      await api.patch(`/tasks/${taskId}/status`, { status })
-      const t = this.tasks.find(t => t.id === taskId)
-      if (t) t.status = status
+      const task = this.tasks.find((t) => String(t.id) === String(taskId))
+      const farmId = task?.farm_id
+      if (!task || !farmId) {
+        await api.patch(`/tasks/${taskId}/status`, { status })
+        return
+      }
+      const tryOnline = typeof navigator === 'undefined' || navigator.onLine
+      if (tryOnline && typeof task.id === 'number') {
+        try {
+          await api.patch(`/tasks/${task.id}/status`, { status })
+          task.status = status
+          task._offline = null
+          return
+        } catch (err) {
+          if (!isRetryableTaskQueueError(err)) throw err
+        }
+      }
+
+      const taskRef = typeof task.id === 'number' ? task.id : task.id
+      const item = makeUpdateTaskStatusItem(farmId, taskRef, status)
+      this.taskWriteQueue.push(item)
+      this.persistTaskWriteQueue()
+      task.status = status
+      task._offline = {
+        ...(task._offline || {}),
+        queued: true,
+        pendingSync: true,
+        stale: false,
+        queueItemId: item.id,
+      }
+    },
+
+    async flushTaskWriteQueue({ farmId, force = false } = {}) {
+      if (this.taskQueueBusy) return
+      if (!force && typeof navigator !== 'undefined' && !navigator.onLine) return
+      this.taskQueueBusy = true
+      this.taskSyncStatus.lastAttemptAt = new Date().toISOString()
+      this.taskSyncStatus.lastResult = 'running'
+      this.taskSyncStatus.lastMessage = ''
+      const localToServer = new Map()
+      let hadFailures = false
+      try {
+        for (const item of this.taskWriteQueue) {
+          if (farmId != null && item.farmId !== farmId) continue
+          if (item.state === 'synced') continue
+          if (item.type === 'create_task') {
+            try {
+              const r = await api.post(`/farms/${item.farmId}/tasks`, item.payload)
+              localToServer.set(item.clientTaskId, r.data.id)
+              this.replaceLocalTask(item.clientTaskId, r.data)
+              item.state = 'synced'
+              item.lastError = ''
+            } catch (err) {
+              item.attempts += 1
+              item.updatedAt = new Date().toISOString()
+              if (isRetryableTaskQueueError(err)) {
+                item.state = 'pending'
+                item.lastError = err.message || 'network retry'
+              } else {
+                item.state = 'failed'
+                item.lastError = err.response?.data?.error || err.message || 'sync failed'
+                hadFailures = true
+                this.markTaskConflict(item.clientTaskId, item.lastError)
+              }
+            }
+            continue
+          }
+
+          if (item.type === 'update_task_status') {
+            let targetID = item.payload.taskId
+            if (!targetID && item.payload.clientTaskId) {
+              targetID = localToServer.get(item.payload.clientTaskId) ||
+                this.tasks.find((t) => t._offline?.clientTaskId === item.payload.clientTaskId)?.id
+            }
+            if (typeof targetID !== 'number') {
+              continue
+            }
+            try {
+              await api.patch(`/tasks/${targetID}/status`, { status: item.payload.status })
+              const t = this.tasks.find((x) => x.id === targetID)
+              if (t) {
+                t.status = item.payload.status
+                t._offline = null
+              }
+              item.state = 'synced'
+              item.lastError = ''
+            } catch (err) {
+              item.attempts += 1
+              item.updatedAt = new Date().toISOString()
+              const t = this.tasks.find((x) => x.id === targetID)
+              if (isRetryableTaskQueueError(err)) {
+                item.state = 'pending'
+                item.lastError = err.message || 'network retry'
+              } else {
+                item.state = 'failed'
+                item.lastError = err.response?.data?.error || err.message || 'sync failed'
+                hadFailures = true
+                if (t) {
+                  t._offline = {
+                    ...(t._offline || {}),
+                    queued: true,
+                    pendingSync: false,
+                    stale: true,
+                    conflict: item.lastError,
+                    queueItemId: item.id,
+                  }
+                }
+              }
+            }
+          }
+        }
+      } finally {
+        this.taskWriteQueue = this.taskWriteQueue.filter((i) => i.state !== 'synced')
+        this.persistTaskWriteQueue()
+        if (hadFailures) {
+          this.taskSyncStatus.lastResult = 'partial_error'
+          this.taskSyncStatus.lastMessage = 'Some queued writes need review'
+        } else {
+          this.taskSyncStatus.lastResult = 'ok'
+          this.taskSyncStatus.lastMessage = this.taskWriteQueue.length
+            ? `${this.taskWriteQueue.length} write(s) still queued`
+            : 'All queued writes synced'
+        }
+        this.taskQueueBusy = false
+      }
+    },
+
+    clearTaskQueueItem(queueItemId) {
+      this.discardTaskQueueItem(queueItemId)
+    },
+
+    retryTaskQueueItem(queueItemId) {
+      const item = this.taskWriteQueue.find((i) => i.id === queueItemId)
+      if (!item) return false
+      item.state = 'pending'
+      item.lastError = ''
+      item.updatedAt = new Date().toISOString()
+      const task = this.findTaskByQueueItemId(queueItemId)
+      if (task) {
+        task._offline = {
+          ...(task._offline || {}),
+          queued: true,
+          pendingSync: true,
+          stale: false,
+          conflict: '',
+          queueItemId,
+        }
+      }
+      this.persistTaskWriteQueue()
+      return true
+    },
+
+    discardTaskQueueItem(queueItemId) {
+      const item = this.taskWriteQueue.find((i) => i.id === queueItemId)
+      if (!item) return false
+      this.taskWriteQueue = this.taskWriteQueue.filter((i) => i.id !== queueItemId)
+      if (item.type === 'create_task') {
+        this.tasks = this.tasks.filter(
+          (t) => t.id !== item.clientTaskId && t._offline?.clientTaskId !== item.clientTaskId,
+        )
+      }
+      if (item.type === 'update_task_status') {
+        const task = this.findTaskByQueueItemId(queueItemId)
+        if (task?._offline) {
+          task._offline = null
+        }
+      }
+      this.persistTaskWriteQueue()
+      return true
+    },
+
+    persistTaskWriteQueue() {
+      saveTaskQueue(this.taskWriteQueue)
+    },
+
+    withTaskQueueOverlay(serverTasks, farmId) {
+      const list = [...serverTasks]
+      for (const item of this.taskWriteQueue) {
+        if (item.farmId !== farmId) continue
+        if (item.type === 'create_task') {
+          if (!list.some((t) => t._offline?.clientTaskId === item.clientTaskId)) {
+            list.push(this.optimisticTaskFromCreateItem(item))
+          }
+          continue
+        }
+        if (item.type === 'update_task_status') {
+          const task = list.find((t) => String(t.id) === String(item.payload.taskId))
+          if (task) {
+            task.status = item.payload.status
+            task._offline = {
+              queued: true,
+              pendingSync: item.state !== 'failed',
+              stale: item.state === 'failed',
+              conflict: item.state === 'failed' ? item.lastError : '',
+              queueItemId: item.id,
+            }
+          }
+        }
+      }
+      return list
+    },
+
+    optimisticTaskFromCreateItem(item) {
+      return {
+        id: item.clientTaskId,
+        farm_id: item.farmId,
+        zone_id: item.payload.zone_id ?? null,
+        title: item.payload.title,
+        description: item.payload.description ?? null,
+        task_type: item.payload.task_type ?? null,
+        status: 'todo',
+        priority: item.payload.priority ?? 1,
+        due_date: item.payload.due_date ?? null,
+        created_at: item.createdAt,
+        updated_at: item.updatedAt,
+        _offline: {
+          queued: true,
+          pendingSync: item.state !== 'failed',
+          stale: item.state === 'failed',
+          conflict: item.state === 'failed' ? item.lastError : '',
+          queueItemId: item.id,
+          clientTaskId: item.clientTaskId,
+        },
+      }
+    },
+
+    replaceLocalTask(clientTaskId, serverTask) {
+      const idx = this.tasks.findIndex((t) => t.id === clientTaskId || t._offline?.clientTaskId === clientTaskId)
+      if (idx >= 0) {
+        this.tasks[idx] = serverTask
+      } else {
+        this.tasks.push(serverTask)
+      }
+    },
+
+    markTaskConflict(clientTaskId, message) {
+      const t = this.tasks.find((x) => x.id === clientTaskId || x._offline?.clientTaskId === clientTaskId)
+      if (!t) return
+      t._offline = {
+        ...(t._offline || {}),
+        queued: true,
+        pendingSync: false,
+        stale: true,
+        conflict: message || 'sync conflict',
+      }
+    },
+
+    findTaskByQueueItemId(queueItemId) {
+      return this.tasks.find((t) => t._offline?.queueItemId === queueItemId)
     },
 
     async refreshReadings() {
@@ -316,6 +591,26 @@ export const useFarmStore = defineStore('farm', {
       return r.data
     },
 
+    async loadCoaMappings(farmId) {
+      const r = await api.get(`/farms/${farmId}/finance/coa-mappings`)
+      return Array.isArray(r.data) ? r.data : []
+    },
+
+    async saveCoaMappings(farmId, mappings) {
+      const r = await api.put(`/farms/${farmId}/finance/coa-mappings`, { mappings })
+      return Array.isArray(r.data) ? r.data : []
+    },
+
+    async resetCoaMappingCategory(farmId, category) {
+      const r = await api.delete(`/farms/${farmId}/finance/coa-mappings/${encodeURIComponent(category)}`)
+      return Array.isArray(r.data) ? r.data : []
+    },
+
+    async resetCoaMappingsAll(farmId) {
+      const r = await api.delete(`/farms/${farmId}/finance/coa-mappings`)
+      return Array.isArray(r.data) ? r.data : []
+    },
+
     async loadCosts(farmId, { limit = 50, offset = 0 } = {}) {
       const r = await api.get(`/farms/${farmId}/costs?limit=${limit}&offset=${offset}`)
       return Array.isArray(r.data) ? r.data : []
@@ -356,8 +651,19 @@ export const useFarmStore = defineStore('farm', {
     },
 
     async insertCommonsSync(farmId) {
-      const r = await api.post(`/farms/${farmId}/insert-commons/sync`, {})
+      const idem =
+        (globalThis.crypto && typeof globalThis.crypto.randomUUID === 'function')
+          ? globalThis.crypto.randomUUID()
+          : `${Date.now()}-${Math.random()}`
+      const r = await api.post(`/farms/${farmId}/insert-commons/sync`, {}, {
+        headers: { 'Idempotency-Key': idem },
+      })
       return r.data
+    },
+
+    async listInsertCommonsSyncEvents(farmId, { limit = 10, offset = 0 } = {}) {
+      const r = await api.get(`/farms/${farmId}/insert-commons/sync-events?limit=${limit}&offset=${offset}`)
+      return Array.isArray(r.data) ? r.data : []
     },
 
     // Alerts

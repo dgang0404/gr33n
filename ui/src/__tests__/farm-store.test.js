@@ -18,6 +18,7 @@ describe('farm store', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
     vi.clearAllMocks()
+    localStorage.clear()
   })
 
   it('loadAll() fetches farm, zones, sensors, devices, actuators', async () => {
@@ -64,5 +65,36 @@ describe('farm store', () => {
     ]
 
     expect(farm.activeDevices).toHaveLength(2)
+  })
+
+  it('queues task create when network is unavailable', async () => {
+    const farm = useFarmStore()
+    api.post.mockRejectedValueOnce(new Error('network down'))
+
+    const created = await farm.createTask(1, { title: 'Offline task', priority: 1 })
+
+    expect(created.id).toContain('local-task-')
+    expect(farm.taskWriteQueue).toHaveLength(1)
+    expect(farm.taskWriteQueue[0].type).toBe('create_task')
+    expect(farm.taskQueuePendingCount(1)).toBe(1)
+  })
+
+  it('can retry and discard queued items', async () => {
+    const farm = useFarmStore()
+    api.post.mockRejectedValueOnce(new Error('network down'))
+    const created = await farm.createTask(1, { title: 'Offline task', priority: 1 })
+    const queueId = farm.taskWriteQueue[0].id
+
+    farm.taskWriteQueue[0].state = 'failed'
+    farm.taskWriteQueue[0].lastError = 'validation failed'
+    const retried = farm.retryTaskQueueItem(queueId)
+    expect(retried).toBe(true)
+    expect(farm.taskWriteQueue[0].state).toBe('pending')
+    expect(farm.taskWriteQueue[0].lastError).toBe('')
+
+    const discarded = farm.discardTaskQueueItem(queueId)
+    expect(discarded).toBe(true)
+    expect(farm.taskWriteQueue).toHaveLength(0)
+    expect(farm.tasks.find((t) => t.id === created.id)).toBeUndefined()
   })
 })

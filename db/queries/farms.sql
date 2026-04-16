@@ -58,12 +58,51 @@ WHERE id = $1;
 
 -- name: SetFarmInsertCommonsOptIn :one
 UPDATE gr33ncore.farms
-SET insert_commons_opt_in = $2, updated_at = NOW()
+SET insert_commons_opt_in = $2,
+    insert_commons_backoff_until = CASE WHEN $2 THEN insert_commons_backoff_until ELSE NULL END,
+    insert_commons_consecutive_failures = CASE WHEN $2 THEN insert_commons_consecutive_failures ELSE 0 END,
+    insert_commons_last_error = CASE WHEN $2 THEN insert_commons_last_error ELSE NULL END,
+    insert_commons_last_delivery_status = CASE WHEN $2 THEN insert_commons_last_delivery_status ELSE NULL END,
+    updated_at = NOW()
 WHERE id = $1 AND deleted_at IS NULL
 RETURNING *;
 
--- name: TouchFarmInsertCommonsSync :one
+-- name: MarkFarmInsertCommonsAttempt :one
 UPDATE gr33ncore.farms
-SET insert_commons_last_sync_at = NOW(), updated_at = NOW()
+SET insert_commons_last_attempt_at = NOW(), updated_at = NOW()
+WHERE id = $1 AND deleted_at IS NULL AND insert_commons_opt_in = TRUE
+RETURNING *;
+
+-- name: MarkFarmInsertCommonsDelivered :one
+UPDATE gr33ncore.farms
+SET insert_commons_last_sync_at = NOW(),
+    insert_commons_last_attempt_at = NOW(),
+    insert_commons_last_delivery_status = $2,
+    insert_commons_last_error = NULL,
+    insert_commons_backoff_until = NULL,
+    insert_commons_consecutive_failures = 0,
+    updated_at = NOW()
+WHERE id = $1 AND deleted_at IS NULL AND insert_commons_opt_in = TRUE
+RETURNING *;
+
+-- name: MarkFarmInsertCommonsSkippedReceiver :one
+UPDATE gr33ncore.farms
+SET insert_commons_last_attempt_at = NOW(),
+    insert_commons_last_delivery_status = $2,
+    insert_commons_last_error = NULL,
+    insert_commons_backoff_until = NULL,
+    insert_commons_consecutive_failures = 0,
+    updated_at = NOW()
+WHERE id = $1 AND deleted_at IS NULL AND insert_commons_opt_in = TRUE
+RETURNING *;
+
+-- name: MarkFarmInsertCommonsSyncFailure :one
+UPDATE gr33ncore.farms
+SET insert_commons_last_attempt_at = NOW(),
+    insert_commons_last_delivery_status = $2,
+    insert_commons_last_error = $3,
+    insert_commons_backoff_until = $4,
+    insert_commons_consecutive_failures = insert_commons_consecutive_failures + 1,
+    updated_at = NOW()
 WHERE id = $1 AND deleted_at IS NULL AND insert_commons_opt_in = TRUE
 RETURNING *;

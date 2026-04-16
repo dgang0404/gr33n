@@ -252,11 +252,33 @@ CREATE TABLE IF NOT EXISTS gr33ncore.farms (
     updated_by_user_id UUID        REFERENCES gr33ncore.profiles(user_id) ON DELETE SET NULL,
     deleted_at         TIMESTAMPTZ DEFAULT NULL,
     insert_commons_opt_in BOOLEAN NOT NULL DEFAULT FALSE,
-    insert_commons_last_sync_at TIMESTAMPTZ
+    insert_commons_last_sync_at TIMESTAMPTZ,
+    insert_commons_last_attempt_at TIMESTAMPTZ,
+    insert_commons_last_delivery_status TEXT,
+    insert_commons_last_error TEXT,
+    insert_commons_backoff_until TIMESTAMPTZ,
+    insert_commons_consecutive_failures INT NOT NULL DEFAULT 0
 );
 CREATE TRIGGER trg_farms_updated_at
     BEFORE UPDATE ON gr33ncore.farms
     FOR EACH ROW EXECUTE FUNCTION gr33ncore.set_updated_at();
+
+-- Insert Commons sync audit (farm-side sender)
+CREATE TABLE IF NOT EXISTS gr33ncore.insert_commons_sync_events (
+    id               BIGSERIAL PRIMARY KEY,
+    farm_id          BIGINT NOT NULL REFERENCES gr33ncore.farms(id) ON DELETE CASCADE,
+    idempotency_key  TEXT,
+    status           TEXT NOT NULL,
+    http_status      INT,
+    error            TEXT,
+    payload          JSONB NOT NULL,
+    created_at       TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_insert_commons_sync_farm_idem
+    ON gr33ncore.insert_commons_sync_events (farm_id, idempotency_key)
+    WHERE idempotency_key IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_insert_commons_sync_farm_created
+    ON gr33ncore.insert_commons_sync_events (farm_id, created_at DESC);
 
 -- Farm memberships
 CREATE TABLE IF NOT EXISTS gr33ncore.farm_memberships (
@@ -708,6 +730,22 @@ CREATE TABLE IF NOT EXISTS gr33ncore.cost_transactions (
 );
 CREATE TRIGGER trg_cost_transactions_updated_at
     BEFORE UPDATE ON gr33ncore.cost_transactions
+    FOR EACH ROW EXECUTE FUNCTION gr33ncore.set_updated_at();
+
+-- Farm finance COA mapping overrides (used for GL exports)
+CREATE TABLE IF NOT EXISTS gr33ncore.farm_finance_account_mappings (
+    id            BIGSERIAL PRIMARY KEY,
+    farm_id       BIGINT NOT NULL REFERENCES gr33ncore.farms(id) ON DELETE CASCADE,
+    cost_category gr33ncore.cost_category_enum NOT NULL,
+    account_code  TEXT   NOT NULL,
+    account_name  TEXT   NOT NULL,
+    is_active     BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at    TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    updated_at    TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    UNIQUE (farm_id, cost_category)
+);
+CREATE TRIGGER trg_farm_finance_account_mappings_updated_at
+    BEFORE UPDATE ON gr33ncore.farm_finance_account_mappings
     FOR EACH ROW EXECUTE FUNCTION gr33ncore.set_updated_at();
 
 -- Validation rules
