@@ -126,6 +126,35 @@ DO $$ BEGIN
       FOR EACH ROW EXECUTE FUNCTION gr33ncore.set_updated_at();
   END IF;
 END $$;
+ALTER TABLE gr33ncore.cost_transactions ADD COLUMN IF NOT EXISTS document_type TEXT;
+ALTER TABLE gr33ncore.cost_transactions ADD COLUMN IF NOT EXISTS document_reference TEXT;
+ALTER TABLE gr33ncore.cost_transactions ADD COLUMN IF NOT EXISTS counterparty TEXT;
+CREATE TABLE IF NOT EXISTS gr33ncore.organizations (
+    id              BIGSERIAL PRIMARY KEY,
+    name            TEXT        NOT NULL,
+    plan_tier       TEXT        NOT NULL DEFAULT 'pilot',
+    billing_status  TEXT        NOT NULL DEFAULT 'none',
+    created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'trg_organizations_updated_at') THEN
+    CREATE TRIGGER trg_organizations_updated_at
+      BEFORE UPDATE ON gr33ncore.organizations
+      FOR EACH ROW EXECUTE FUNCTION gr33ncore.set_updated_at();
+  END IF;
+END $$;
+CREATE TABLE IF NOT EXISTS gr33ncore.organization_memberships (
+    organization_id BIGINT NOT NULL REFERENCES gr33ncore.organizations(id) ON DELETE CASCADE,
+    user_id         UUID NOT NULL REFERENCES gr33ncore.profiles(user_id) ON DELETE CASCADE,
+    role_in_org     TEXT   NOT NULL CHECK (role_in_org IN ('owner', 'admin', 'member')),
+    joined_at       TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    PRIMARY KEY (organization_id, user_id)
+);
+CREATE INDEX IF NOT EXISTS idx_org_memberships_user_smoke
+    ON gr33ncore.organization_memberships (user_id);
+ALTER TABLE gr33ncore.farms ADD COLUMN IF NOT EXISTS organization_id BIGINT
+    REFERENCES gr33ncore.organizations(id) ON DELETE SET NULL;
 `); err != nil {
 		return err
 	}
@@ -377,8 +406,8 @@ func TestCostsSummaryListExport(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !strings.HasPrefix(string(body), "date,category,amount") {
-		t.Fatalf("expected CSV header, got %q", string(body[:min(40, len(body))]))
+	if !strings.HasPrefix(string(body), "date,category,amount,currency,is_income,description,document_type") {
+		t.Fatalf("expected CSV header, got %q", string(body[:min(80, len(body))]))
 	}
 
 	resp = authGet(t, tok, "/farms/1/costs/export?format=gl_csv")
@@ -391,6 +420,49 @@ func TestCostsSummaryListExport(t *testing.T) {
 	if !strings.HasPrefix(string(body), "date,entry_type,account_code") {
 		t.Fatalf("expected GL CSV header, got %q", string(body[:min(60, len(body))]))
 	}
+
+	resp = authGet(t, tok, "/farms/1/costs/export?format=summary_csv")
+	expectStatus(t, resp, 200)
+	defer resp.Body.Close()
+	body, err = io.ReadAll(resp.Body)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.HasPrefix(string(body), "period,category,currency,income_total") {
+		t.Fatalf("expected summary CSV header, got %q", string(body[:min(70, len(body))]))
+	}
+}
+
+func TestOrganizationCreateListUsageAndFarmLink(t *testing.T) {
+	tok := smokeJWT(t)
+	resp := authPost(t, tok, "/organizations", map[string]any{"name": "Smoke Tenant Org"})
+	expectStatus(t, resp, http.StatusCreated)
+	created := decodeMap(t, resp)
+	orgID := int64(created["id"].(float64))
+
+	resp = authGet(t, tok, "/organizations")
+	expectStatus(t, resp, http.StatusOK)
+	list := decodeSlice(t, resp)
+	if len(list) == 0 {
+		t.Fatal("expected at least one organization")
+	}
+
+	resp = authGet(t, tok, fmt.Sprintf("/organizations/%d/usage-summary", orgID))
+	expectStatus(t, resp, http.StatusOK)
+	summary := decodeMap(t, resp)
+	if _, ok := summary["farm_count"]; !ok {
+		t.Fatalf("usage summary missing farm_count: %#v", summary)
+	}
+
+	resp = authPatch(t, tok, "/farms/1/organization", map[string]any{"organization_id": orgID})
+	expectStatus(t, resp, http.StatusOK)
+	farm := decodeMap(t, resp)
+	if int64(farm["organization_id"].(float64)) != orgID {
+		t.Fatalf("expected farm linked to org %d, got %#v", orgID, farm["organization_id"])
+	}
+
+	resp = authPatch(t, tok, "/farms/1/organization", map[string]any{"organization_id": nil})
+	expectStatus(t, resp, http.StatusOK)
 }
 
 func TestCoaMappingsListAndUpdate(t *testing.T) {

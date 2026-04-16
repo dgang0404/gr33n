@@ -6,8 +6,9 @@
 INSERT INTO gr33ncore.farms (
     name, description, location_text, size_hectares, farm_type,
     scale_tier, owner_user_id, timezone, currency, operational_status,
+    organization_id,
     created_at, updated_at
-) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW(), NOW())
+) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW(), NOW())
 RETURNING *;
 
 -- name: GetFarmByID :one
@@ -30,7 +31,9 @@ ORDER BY f.name ASC;
 UPDATE gr33ncore.farms
 SET name = $2, description = $3, location_text = $4, size_hectares = $5,
     farm_type = $6, scale_tier = $7, timezone = $8, currency = $9,
-    operational_status = $10, updated_by_user_id = $11, updated_at = NOW()
+    operational_status = $10, updated_by_user_id = $11,
+    organization_id = $12,
+    updated_at = NOW()
 WHERE id = $1 AND deleted_at IS NULL
 RETURNING *;
 
@@ -55,6 +58,13 @@ SELECT (
 UPDATE gr33ncore.farms
 SET deleted_at = NOW(), updated_at = NOW(), updated_by_user_id = $2
 WHERE id = $1;
+
+-- name: SetFarmOrganization :one
+UPDATE gr33ncore.farms
+SET organization_id = $2,
+    updated_at = NOW()
+WHERE id = $1 AND deleted_at IS NULL
+RETURNING *;
 
 -- name: SetFarmInsertCommonsOptIn :one
 UPDATE gr33ncore.farms

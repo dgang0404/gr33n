@@ -268,7 +268,10 @@ const pendingWrites = computed(() => store.taskQueuePendingCount(farmContext.far
 const queueHasStale = computed(() => tasks.value.some((t) => t._offline?.stale))
 const queueItems = computed(() => {
   const fid = farmContext.farmId
-  return store.taskWriteQueue.filter((i) => i.farmId === fid)
+  return store.taskWriteQueue.filter(
+    (i) =>
+      i.farmId === fid && (i.type === 'create_task' || i.type === 'update_task_status'),
+  )
 })
 const syncStatusText = computed(() => {
   const status = store.taskSyncStatus
@@ -390,6 +393,9 @@ function queueItemLabel(item) {
   }
   if (item.type === 'update_task_status') {
     return `Update status: ${item.payload?.status || 'unknown'}`
+  }
+  if (item.type === 'create_cost') {
+    return `Create cost: ${item.payload?.category || '?'} ${item.payload?.amount ?? ''}`
   }
   return item.type || 'queued write'
 }

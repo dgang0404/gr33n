@@ -6,6 +6,7 @@ package db
 
 import (
 	"context"
+	"time"
 
 	"github.com/google/uuid"
 )
@@ -52,6 +53,11 @@ type Querier interface {
 	CreateFileAttachment(ctx context.Context, arg CreateFileAttachmentParams) (Gr33ncoreFileAttachment, error)
 	CreateInputBatch(ctx context.Context, arg CreateInputBatchParams) (Gr33nnaturalfarmingInputBatch, error)
 	CreateInputDefinition(ctx context.Context, arg CreateInputDefinitionParams) (Gr33nnaturalfarmingInputDefinition, error)
+	// ============================================================
+	// Queries: organizations & org membership
+	// ============================================================
+	CreateOrganization(ctx context.Context, arg CreateOrganizationParams) (Gr33ncoreOrganization, error)
+	CreateOrganizationMembership(ctx context.Context, arg CreateOrganizationMembershipParams) (Gr33ncoreOrganizationMembership, error)
 	CreateProfile(ctx context.Context, arg CreateProfileParams) (Gr33ncoreProfile, error)
 	CreateProgram(ctx context.Context, arg CreateProgramParams) (Gr33nfertigationProgram, error)
 	// ============================================================
@@ -72,6 +78,7 @@ type Querier interface {
 	// ============================================================
 	CreateZone(ctx context.Context, arg CreateZoneParams) (Gr33ncoreZone, error)
 	DeleteCostTransaction(ctx context.Context, id int64) error
+	DeleteInsertCommonsReceivedPayloadsBefore(ctx context.Context, receivedAt time.Time) error
 	DeleteProgram(ctx context.Context, id int64) error
 	DeleteReservoir(ctx context.Context, id int64) error
 	GetActuatorByID(ctx context.Context, id int64) (Gr33ncoreActuator, error)
@@ -83,8 +90,13 @@ type Querier interface {
 	GetAutomationRunByDetails(ctx context.Context, arg GetAutomationRunByDetailsParams) (Gr33ncoreAutomationRun, error)
 	GetBaseUnitForType(ctx context.Context, unitType string) (Gr33ncoreUnit, error)
 	GetCostCategoryTotalsByFarm(ctx context.Context, farmID int64) ([]GetCostCategoryTotalsByFarmRow, error)
+	GetCostCategoryTotalsByFarmForYear(ctx context.Context, arg GetCostCategoryTotalsByFarmForYearParams) ([]GetCostCategoryTotalsByFarmForYearRow, error)
 	GetCostSummaryByFarm(ctx context.Context, farmID int64) (GetCostSummaryByFarmRow, error)
 	GetCostTransactionByID(ctx context.Context, id int64) (Gr33ncoreCostTransaction, error)
+	// ============================================================
+	// Cost transaction idempotency
+	// ============================================================
+	GetCostTransactionIDByIdempotencyKey(ctx context.Context, arg GetCostTransactionIDByIdempotencyKeyParams) (int64, error)
 	GetCropCycleByID(ctx context.Context, id int64) (Gr33nfertigationCropCycle, error)
 	GetDeviceByID(ctx context.Context, id int64) (Gr33ncoreDevice, error)
 	GetDeviceByUID(ctx context.Context, deviceUid *string) (Gr33ncoreDevice, error)
@@ -99,12 +111,16 @@ type Querier interface {
 	// Queries: gr33nnaturalfarming
 	// ============================================================
 	GetInputDefinitionByID(ctx context.Context, id int64) (Gr33nnaturalfarmingInputDefinition, error)
+	GetInsertCommonsReceivedPayloadIDByHash(ctx context.Context, payloadHash string) (int64, error)
 	// ============================================================
 	// Queries: gr33ncore.insert_commons_sync_events
 	// ============================================================
 	GetInsertCommonsSyncEventByFarmIdempotencyKey(ctx context.Context, arg GetInsertCommonsSyncEventByFarmIdempotencyKeyParams) (Gr33ncoreInsertCommonsSyncEvent, error)
 	GetLastSuccessfulRunBySchedule(ctx context.Context, scheduleID *int64) (Gr33ncoreAutomationRun, error)
 	GetLatestReadingBySensor(ctx context.Context, sensorID int64) (Gr33ncoreSensorReading, error)
+	GetOrganizationByID(ctx context.Context, id int64) (Gr33ncoreOrganization, error)
+	GetOrganizationMembership(ctx context.Context, arg GetOrganizationMembershipParams) (Gr33ncoreOrganizationMembership, error)
+	GetOrganizationUsageSummary(ctx context.Context, organizationID *int64) (GetOrganizationUsageSummaryRow, error)
 	GetProfileByEmail(ctx context.Context, email string) (Gr33ncoreProfile, error)
 	// ============================================================
 	// Queries: gr33ncore.profiles
@@ -123,10 +139,19 @@ type Querier interface {
 	GetUnitByName(ctx context.Context, name string) (Gr33ncoreUnit, error)
 	GetZoneByID(ctx context.Context, id int64) (Gr33ncoreZone, error)
 	InsertActuatorEvent(ctx context.Context, arg InsertActuatorEventParams) (Gr33ncoreActuatorEvent, error)
+	InsertCostTransactionIdempotency(ctx context.Context, arg InsertCostTransactionIdempotencyParams) error
+	// ============================================================
+	// Insert Commons receiver (ingest persistence)
+	// ============================================================
+	InsertInsertCommonsReceivedPayload(ctx context.Context, arg InsertInsertCommonsReceivedPayloadParams) (int64, error)
 	// ============================================================
 	// Queries: gr33ncore.sensor_readings (TimescaleDB hypertable)
 	// ============================================================
 	InsertSensorReading(ctx context.Context, arg InsertSensorReadingParams) (Gr33ncoreSensorReading, error)
+	// ============================================================
+	// Queries: gr33ncore.user_activity_log (compliance / audit trail)
+	// ============================================================
+	InsertUserActivityLog(ctx context.Context, arg InsertUserActivityLogParams) error
 	ListActiveSchedules(ctx context.Context) ([]Gr33ncoreSchedule, error)
 	ListActuatorEventsByActuator(ctx context.Context, arg ListActuatorEventsByActuatorParams) ([]Gr33ncoreActuatorEvent, error)
 	ListActuatorEventsBySchedule(ctx context.Context, arg ListActuatorEventsByScheduleParams) ([]Gr33ncoreActuatorEvent, error)
@@ -155,6 +180,7 @@ type Querier interface {
 	ListInputDefinitionsByFarm(ctx context.Context, farmID int64) ([]Gr33nnaturalfarmingInputDefinition, error)
 	ListInsertCommonsSyncEventsByFarm(ctx context.Context, arg ListInsertCommonsSyncEventsByFarmParams) ([]ListInsertCommonsSyncEventsByFarmRow, error)
 	ListLatestReadingsByFarm(ctx context.Context, farmID int64) ([]ListLatestReadingsByFarmRow, error)
+	ListOrganizationsForUser(ctx context.Context, userID uuid.UUID) ([]ListOrganizationsForUserRow, error)
 	ListProgramsByFarm(ctx context.Context, farmID int64) ([]Gr33nfertigationProgram, error)
 	ListReadingsBySensorAndTimeRange(ctx context.Context, arg ListReadingsBySensorAndTimeRangeParams) ([]Gr33ncoreSensorReading, error)
 	ListRecipeComponents(ctx context.Context, applicationRecipeID int64) ([]ListRecipeComponentsRow, error)
@@ -173,6 +199,7 @@ type Querier interface {
 	ListTasksByAssignee(ctx context.Context, arg ListTasksByAssigneeParams) ([]Gr33ncoreTask, error)
 	ListTasksByFarm(ctx context.Context, farmID int64) ([]Gr33ncoreTask, error)
 	ListUnitsByType(ctx context.Context, unitType string) ([]Gr33ncoreUnit, error)
+	ListUserActivityLogByFarm(ctx context.Context, arg ListUserActivityLogByFarmParams) ([]Gr33ncoreUserActivityLog, error)
 	ListZonesByFarm(ctx context.Context, farmID int64) ([]Gr33ncoreZone, error)
 	ListZonesByParent(ctx context.Context, parentZoneID *int64) ([]Gr33ncoreZone, error)
 	MarkAlertAcknowledged(ctx context.Context, arg MarkAlertAcknowledgedParams) (Gr33ncoreAlertsNotification, error)
@@ -188,6 +215,7 @@ type Querier interface {
 	ResetFarmFinanceAccountMappingsAll(ctx context.Context, farmID int64) (int64, error)
 	SetDevicePendingCommand(ctx context.Context, arg SetDevicePendingCommandParams) error
 	SetFarmInsertCommonsOptIn(ctx context.Context, arg SetFarmInsertCommonsOptInParams) (Gr33ncoreFarm, error)
+	SetFarmOrganization(ctx context.Context, arg SetFarmOrganizationParams) (Gr33ncoreFarm, error)
 	SoftDeleteCropCycle(ctx context.Context, id int64) error
 	SoftDeleteDevice(ctx context.Context, arg SoftDeleteDeviceParams) error
 	SoftDeleteFarm(ctx context.Context, arg SoftDeleteFarmParams) error
@@ -207,6 +235,7 @@ type Querier interface {
 	UpdateFarmMemberRole(ctx context.Context, arg UpdateFarmMemberRoleParams) (Gr33ncoreFarmMembership, error)
 	UpdateInputBatch(ctx context.Context, arg UpdateInputBatchParams) (Gr33nnaturalfarmingInputBatch, error)
 	UpdateInputDefinition(ctx context.Context, arg UpdateInputDefinitionParams) (Gr33nnaturalfarmingInputDefinition, error)
+	UpdateOrganization(ctx context.Context, arg UpdateOrganizationParams) (Gr33ncoreOrganization, error)
 	UpdateProfile(ctx context.Context, arg UpdateProfileParams) (Gr33ncoreProfile, error)
 	UpdateProgram(ctx context.Context, arg UpdateProgramParams) (Gr33nfertigationProgram, error)
 	UpdateRecipe(ctx context.Context, arg UpdateRecipeParams) (Gr33nnaturalfarmingApplicationRecipe, error)

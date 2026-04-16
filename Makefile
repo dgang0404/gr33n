@@ -1,4 +1,4 @@
-.PHONY: run build test seed sqlc ui dev clean lint
+.PHONY: run run-receiver build build-receiver test seed sqlc ui dev clean lint
 
 # ── Variables ──────────────────────────────────────────────────
 BINARY   := api
@@ -16,6 +16,9 @@ run-auth: ## Run the API server with AUTH_MODE=production (real auth; dev-tagged
 run-auth-test: ## Local auth regression: AUTH_MODE=auth_test (requires JWT_SECRET, PI_API_KEY; dev tag only)
 	AUTH_MODE=auth_test DATABASE_URL="$(DB_URL)" $(GO) run -tags dev ./cmd/api/
 
+run-receiver: ## Run optional Insert Commons ingest receiver (:8765; set INSERT_COMMONS_SHARED_SECRET or ALLOW_INSECURE)
+	DATABASE_URL="$(DB_URL)" $(GO) run ./cmd/insert-commons-receiver/
+
 dev: ## Run API + UI dev server in parallel
 	@echo "Starting API on :$(PORT) and UI on :5173"
 	@trap 'kill 0' INT; \
@@ -29,6 +32,9 @@ ui: ## Run the Vue dev server
 # ── Build ──────────────────────────────────────────────────────
 build: ## Build the Go binary
 	$(GO) build -o $(BINARY) ./cmd/api/
+
+build-receiver: ## Build Insert Commons receiver binary
+	$(GO) build -o insert-commons-receiver ./cmd/insert-commons-receiver/
 
 build-ui: ## Build the Vue frontend for production
 	cd ui && npm run build

@@ -21,6 +21,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 
+	"gr33n-api/internal/auditlog"
 	db "gr33n-api/internal/db"
 	"gr33n-api/internal/farmauthz"
 	"gr33n-api/internal/httputil"
@@ -214,6 +215,22 @@ func (h *Handler) InsertCommonsSync(w http.ResponseWriter, r *http.Request) {
 	}); err == nil {
 		if strings.EqualFold(prev.Status, "delivered") || strings.EqualFold(prev.Status, "skipped_no_receiver") {
 			ok := strings.EqualFold(prev.Status, "delivered") || strings.EqualFold(prev.Status, "skipped_no_receiver")
+			mod := "gr33ncore"
+			tbl := "insert_commons_sync"
+			ik := idem
+			auditlog.Submit(ctx, h.q, r, auditlog.Event{
+				FarmID:         farmID,
+				Action:         db.Gr33ncoreUserActionTypeEnumExecuteAction,
+				TargetSchema:   &mod,
+				TargetTable:    &tbl,
+				TargetRecordID: &ik,
+				Details: map[string]any{
+					"kind":              "insert_commons_sync",
+					"duplicate":         true,
+					"delivery_status":   prev.Status,
+					"prior_http_status": prev.HttpStatus,
+				},
+			})
 			httputil.WriteJSON(w, http.StatusOK, map[string]any{
 				"ok":              ok,
 				"duplicate":       true,
@@ -284,6 +301,7 @@ func (h *Handler) InsertCommonsSync(w http.ResponseWriter, r *http.Request) {
 			"currency": strings.TrimSpace(row.Currency),
 			"income":   numericToFloat64(row.Income),
 			"expense":  numericToFloat64(row.Expense),
+			"net":      numericToFloat64(row.Net),
 			"tx_count": row.TxCount,
 		})
 	}
@@ -472,6 +490,28 @@ func (h *Handler) InsertCommonsSync(w http.ResponseWriter, r *http.Request) {
 	if strings.TrimSpace(respSnippet) != "" {
 		resp["receiver_error_excerpt"] = respSnippet
 	}
+
+	st := "success"
+	if !ok {
+		st = "failure"
+	}
+	mod := "gr33ncore"
+	tbl := "insert_commons_sync"
+	ik := idem
+	auditlog.Submit(ctx, h.q, r, auditlog.Event{
+		FarmID:         farmID,
+		Action:         db.Gr33ncoreUserActionTypeEnumExecuteAction,
+		TargetSchema:   &mod,
+		TargetTable:    &tbl,
+		TargetRecordID: &ik,
+		Status:         st,
+		Details: map[string]any{
+			"kind":            "insert_commons_sync",
+			"delivery_status": eventStatus,
+			"http_status":     httpStatus,
+			"ok":              ok,
+		},
+	})
 
 	httputil.WriteJSON(w, status, resp)
 }

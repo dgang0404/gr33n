@@ -16,22 +16,26 @@ const createCostTransaction = `-- name: CreateCostTransaction :one
 
 INSERT INTO gr33ncore.cost_transactions (
     farm_id, transaction_date, category, subcategory, amount, currency,
-    description, is_income, created_by_user_id, receipt_file_id
-) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-RETURNING id, farm_id, transaction_date, category, subcategory, amount, currency, description, related_module_schema, related_table_name, related_record_id, receipt_file_id, is_income, created_by_user_id, created_at, updated_at
+    description, is_income, created_by_user_id, receipt_file_id,
+    document_type, document_reference, counterparty
+) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+RETURNING id, farm_id, transaction_date, category, subcategory, amount, currency, description, related_module_schema, related_table_name, related_record_id, receipt_file_id, is_income, document_type, document_reference, counterparty, created_by_user_id, created_at, updated_at
 `
 
 type CreateCostTransactionParams struct {
-	FarmID          int64                        `db:"farm_id" json:"farm_id"`
-	TransactionDate pgtype.Date                  `db:"transaction_date" json:"transaction_date"`
-	Category        commontypes.CostCategoryEnum `db:"category" json:"category"`
-	Subcategory     *string                      `db:"subcategory" json:"subcategory"`
-	Amount          pgtype.Numeric               `db:"amount" json:"amount"`
-	Currency        string                       `db:"currency" json:"currency"`
-	Description     *string                      `db:"description" json:"description"`
-	IsIncome        bool                         `db:"is_income" json:"is_income"`
-	CreatedByUserID pgtype.UUID                  `db:"created_by_user_id" json:"created_by_user_id"`
-	ReceiptFileID   *int64                       `db:"receipt_file_id" json:"receipt_file_id"`
+	FarmID            int64                        `db:"farm_id" json:"farm_id"`
+	TransactionDate   pgtype.Date                  `db:"transaction_date" json:"transaction_date"`
+	Category          commontypes.CostCategoryEnum `db:"category" json:"category"`
+	Subcategory       *string                      `db:"subcategory" json:"subcategory"`
+	Amount            pgtype.Numeric               `db:"amount" json:"amount"`
+	Currency          string                       `db:"currency" json:"currency"`
+	Description       *string                      `db:"description" json:"description"`
+	IsIncome          bool                         `db:"is_income" json:"is_income"`
+	CreatedByUserID   pgtype.UUID                  `db:"created_by_user_id" json:"created_by_user_id"`
+	ReceiptFileID     *int64                       `db:"receipt_file_id" json:"receipt_file_id"`
+	DocumentType      *string                      `db:"document_type" json:"document_type"`
+	DocumentReference *string                      `db:"document_reference" json:"document_reference"`
+	Counterparty      *string                      `db:"counterparty" json:"counterparty"`
 }
 
 // ============================================================
@@ -49,6 +53,9 @@ func (q *Queries) CreateCostTransaction(ctx context.Context, arg CreateCostTrans
 		arg.IsIncome,
 		arg.CreatedByUserID,
 		arg.ReceiptFileID,
+		arg.DocumentType,
+		arg.DocumentReference,
+		arg.Counterparty,
 	)
 	var i Gr33ncoreCostTransaction
 	err := row.Scan(
@@ -65,6 +72,9 @@ func (q *Queries) CreateCostTransaction(ctx context.Context, arg CreateCostTrans
 		&i.RelatedRecordID,
 		&i.ReceiptFileID,
 		&i.IsIncome,
+		&i.DocumentType,
+		&i.DocumentReference,
+		&i.Counterparty,
 		&i.CreatedByUserID,
 		&i.CreatedAt,
 		&i.UpdatedAt,
@@ -87,6 +97,7 @@ SELECT
     currency,
     COALESCE(SUM(CASE WHEN is_income THEN amount ELSE 0 END), 0)::numeric AS income,
     COALESCE(SUM(CASE WHEN NOT is_income THEN amount ELSE 0 END), 0)::numeric AS expense,
+    COALESCE(SUM(CASE WHEN is_income THEN amount ELSE -amount END), 0)::numeric AS net,
     COUNT(*)::bigint AS tx_count
 FROM gr33ncore.cost_transactions
 WHERE farm_id = $1
@@ -99,6 +110,7 @@ type GetCostCategoryTotalsByFarmRow struct {
 	Currency string                       `db:"currency" json:"currency"`
 	Income   pgtype.Numeric               `db:"income" json:"income"`
 	Expense  pgtype.Numeric               `db:"expense" json:"expense"`
+	Net      pgtype.Numeric               `db:"net" json:"net"`
 	TxCount  int64                        `db:"tx_count" json:"tx_count"`
 }
 
@@ -116,6 +128,65 @@ func (q *Queries) GetCostCategoryTotalsByFarm(ctx context.Context, farmID int64)
 			&i.Currency,
 			&i.Income,
 			&i.Expense,
+			&i.Net,
+			&i.TxCount,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getCostCategoryTotalsByFarmForYear = `-- name: GetCostCategoryTotalsByFarmForYear :many
+SELECT
+    category,
+    currency,
+    COALESCE(SUM(CASE WHEN is_income THEN amount ELSE 0 END), 0)::numeric AS income,
+    COALESCE(SUM(CASE WHEN NOT is_income THEN amount ELSE 0 END), 0)::numeric AS expense,
+    COALESCE(SUM(CASE WHEN is_income THEN amount ELSE -amount END), 0)::numeric AS net,
+    COUNT(*)::bigint AS tx_count
+FROM gr33ncore.cost_transactions
+WHERE farm_id = $1
+  AND transaction_date >= $2::date
+  AND transaction_date < $3::date
+GROUP BY category, currency
+ORDER BY category ASC, currency ASC
+`
+
+type GetCostCategoryTotalsByFarmForYearParams struct {
+	FarmID  int64       `db:"farm_id" json:"farm_id"`
+	Column2 pgtype.Date `db:"column_2" json:"column_2"`
+	Column3 pgtype.Date `db:"column_3" json:"column_3"`
+}
+
+type GetCostCategoryTotalsByFarmForYearRow struct {
+	Category commontypes.CostCategoryEnum `db:"category" json:"category"`
+	Currency string                       `db:"currency" json:"currency"`
+	Income   pgtype.Numeric               `db:"income" json:"income"`
+	Expense  pgtype.Numeric               `db:"expense" json:"expense"`
+	Net      pgtype.Numeric               `db:"net" json:"net"`
+	TxCount  int64                        `db:"tx_count" json:"tx_count"`
+}
+
+func (q *Queries) GetCostCategoryTotalsByFarmForYear(ctx context.Context, arg GetCostCategoryTotalsByFarmForYearParams) ([]GetCostCategoryTotalsByFarmForYearRow, error) {
+	rows, err := q.db.Query(ctx, getCostCategoryTotalsByFarmForYear, arg.FarmID, arg.Column2, arg.Column3)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []GetCostCategoryTotalsByFarmForYearRow{}
+	for rows.Next() {
+		var i GetCostCategoryTotalsByFarmForYearRow
+		if err := rows.Scan(
+			&i.Category,
+			&i.Currency,
+			&i.Income,
+			&i.Expense,
+			&i.Net,
 			&i.TxCount,
 		); err != nil {
 			return nil, err
@@ -151,7 +222,7 @@ func (q *Queries) GetCostSummaryByFarm(ctx context.Context, farmID int64) (GetCo
 }
 
 const getCostTransactionByID = `-- name: GetCostTransactionByID :one
-SELECT id, farm_id, transaction_date, category, subcategory, amount, currency, description, related_module_schema, related_table_name, related_record_id, receipt_file_id, is_income, created_by_user_id, created_at, updated_at FROM gr33ncore.cost_transactions WHERE id = $1
+SELECT id, farm_id, transaction_date, category, subcategory, amount, currency, description, related_module_schema, related_table_name, related_record_id, receipt_file_id, is_income, document_type, document_reference, counterparty, created_by_user_id, created_at, updated_at FROM gr33ncore.cost_transactions WHERE id = $1
 `
 
 func (q *Queries) GetCostTransactionByID(ctx context.Context, id int64) (Gr33ncoreCostTransaction, error) {
@@ -171,6 +242,9 @@ func (q *Queries) GetCostTransactionByID(ctx context.Context, id int64) (Gr33nco
 		&i.RelatedRecordID,
 		&i.ReceiptFileID,
 		&i.IsIncome,
+		&i.DocumentType,
+		&i.DocumentReference,
+		&i.Counterparty,
 		&i.CreatedByUserID,
 		&i.CreatedAt,
 		&i.UpdatedAt,
@@ -179,7 +253,7 @@ func (q *Queries) GetCostTransactionByID(ctx context.Context, id int64) (Gr33nco
 }
 
 const listCostTransactionsByFarm = `-- name: ListCostTransactionsByFarm :many
-SELECT id, farm_id, transaction_date, category, subcategory, amount, currency, description, related_module_schema, related_table_name, related_record_id, receipt_file_id, is_income, created_by_user_id, created_at, updated_at FROM gr33ncore.cost_transactions
+SELECT id, farm_id, transaction_date, category, subcategory, amount, currency, description, related_module_schema, related_table_name, related_record_id, receipt_file_id, is_income, document_type, document_reference, counterparty, created_by_user_id, created_at, updated_at FROM gr33ncore.cost_transactions
 WHERE farm_id = $1
 ORDER BY transaction_date DESC, id DESC
 LIMIT $2 OFFSET $3
@@ -214,6 +288,9 @@ func (q *Queries) ListCostTransactionsByFarm(ctx context.Context, arg ListCostTr
 			&i.RelatedRecordID,
 			&i.ReceiptFileID,
 			&i.IsIncome,
+			&i.DocumentType,
+			&i.DocumentReference,
+			&i.Counterparty,
 			&i.CreatedByUserID,
 			&i.CreatedAt,
 			&i.UpdatedAt,
@@ -230,22 +307,25 @@ func (q *Queries) ListCostTransactionsByFarm(ctx context.Context, arg ListCostTr
 
 const listCostTransactionsByFarmExport = `-- name: ListCostTransactionsByFarmExport :many
 SELECT id, farm_id, transaction_date, category, subcategory, amount, currency,
- description, is_income
+ description, is_income, document_type, document_reference, counterparty
 FROM gr33ncore.cost_transactions
 WHERE farm_id = $1
 ORDER BY transaction_date ASC, id ASC
 `
 
 type ListCostTransactionsByFarmExportRow struct {
-	ID              int64                        `db:"id" json:"id"`
-	FarmID          int64                        `db:"farm_id" json:"farm_id"`
-	TransactionDate pgtype.Date                  `db:"transaction_date" json:"transaction_date"`
-	Category        commontypes.CostCategoryEnum `db:"category" json:"category"`
-	Subcategory     *string                      `db:"subcategory" json:"subcategory"`
-	Amount          pgtype.Numeric               `db:"amount" json:"amount"`
-	Currency        string                       `db:"currency" json:"currency"`
-	Description     *string                      `db:"description" json:"description"`
-	IsIncome        bool                         `db:"is_income" json:"is_income"`
+	ID                int64                        `db:"id" json:"id"`
+	FarmID            int64                        `db:"farm_id" json:"farm_id"`
+	TransactionDate   pgtype.Date                  `db:"transaction_date" json:"transaction_date"`
+	Category          commontypes.CostCategoryEnum `db:"category" json:"category"`
+	Subcategory       *string                      `db:"subcategory" json:"subcategory"`
+	Amount            pgtype.Numeric               `db:"amount" json:"amount"`
+	Currency          string                       `db:"currency" json:"currency"`
+	Description       *string                      `db:"description" json:"description"`
+	IsIncome          bool                         `db:"is_income" json:"is_income"`
+	DocumentType      *string                      `db:"document_type" json:"document_type"`
+	DocumentReference *string                      `db:"document_reference" json:"document_reference"`
+	Counterparty      *string                      `db:"counterparty" json:"counterparty"`
 }
 
 func (q *Queries) ListCostTransactionsByFarmExport(ctx context.Context, farmID int64) ([]ListCostTransactionsByFarmExportRow, error) {
@@ -267,6 +347,9 @@ func (q *Queries) ListCostTransactionsByFarmExport(ctx context.Context, farmID i
 			&i.Currency,
 			&i.Description,
 			&i.IsIncome,
+			&i.DocumentType,
+			&i.DocumentReference,
+			&i.Counterparty,
 		); err != nil {
 			return nil, err
 		}
@@ -288,21 +371,27 @@ UPDATE gr33ncore.cost_transactions SET
     description = $7,
     is_income = $8,
     receipt_file_id = $9,
+    document_type = $10,
+    document_reference = $11,
+    counterparty = $12,
     updated_at = NOW()
 WHERE id = $1
-RETURNING id, farm_id, transaction_date, category, subcategory, amount, currency, description, related_module_schema, related_table_name, related_record_id, receipt_file_id, is_income, created_by_user_id, created_at, updated_at
+RETURNING id, farm_id, transaction_date, category, subcategory, amount, currency, description, related_module_schema, related_table_name, related_record_id, receipt_file_id, is_income, document_type, document_reference, counterparty, created_by_user_id, created_at, updated_at
 `
 
 type UpdateCostTransactionParams struct {
-	ID              int64                        `db:"id" json:"id"`
-	TransactionDate pgtype.Date                  `db:"transaction_date" json:"transaction_date"`
-	Category        commontypes.CostCategoryEnum `db:"category" json:"category"`
-	Subcategory     *string                      `db:"subcategory" json:"subcategory"`
-	Amount          pgtype.Numeric               `db:"amount" json:"amount"`
-	Currency        string                       `db:"currency" json:"currency"`
-	Description     *string                      `db:"description" json:"description"`
-	IsIncome        bool                         `db:"is_income" json:"is_income"`
-	ReceiptFileID   *int64                       `db:"receipt_file_id" json:"receipt_file_id"`
+	ID                int64                        `db:"id" json:"id"`
+	TransactionDate   pgtype.Date                  `db:"transaction_date" json:"transaction_date"`
+	Category          commontypes.CostCategoryEnum `db:"category" json:"category"`
+	Subcategory       *string                      `db:"subcategory" json:"subcategory"`
+	Amount            pgtype.Numeric               `db:"amount" json:"amount"`
+	Currency          string                       `db:"currency" json:"currency"`
+	Description       *string                      `db:"description" json:"description"`
+	IsIncome          bool                         `db:"is_income" json:"is_income"`
+	ReceiptFileID     *int64                       `db:"receipt_file_id" json:"receipt_file_id"`
+	DocumentType      *string                      `db:"document_type" json:"document_type"`
+	DocumentReference *string                      `db:"document_reference" json:"document_reference"`
+	Counterparty      *string                      `db:"counterparty" json:"counterparty"`
 }
 
 func (q *Queries) UpdateCostTransaction(ctx context.Context, arg UpdateCostTransactionParams) (Gr33ncoreCostTransaction, error) {
@@ -316,6 +405,9 @@ func (q *Queries) UpdateCostTransaction(ctx context.Context, arg UpdateCostTrans
 		arg.Description,
 		arg.IsIncome,
 		arg.ReceiptFileID,
+		arg.DocumentType,
+		arg.DocumentReference,
+		arg.Counterparty,
 	)
 	var i Gr33ncoreCostTransaction
 	err := row.Scan(
@@ -332,6 +424,9 @@ func (q *Queries) UpdateCostTransaction(ctx context.Context, arg UpdateCostTrans
 		&i.RelatedRecordID,
 		&i.ReceiptFileID,
 		&i.IsIncome,
+		&i.DocumentType,
+		&i.DocumentReference,
+		&i.Counterparty,
 		&i.CreatedByUserID,
 		&i.CreatedAt,
 		&i.UpdatedAt,

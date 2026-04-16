@@ -12,6 +12,10 @@ info:
     - Dashboard routes require `Authorization: Bearer <JWT>`.
     - In `AUTH_MODE=dev` (dev-tagged build only), auth is bypassed.
     - `AUTH_MODE=auth_test` enforces the same auth as production on a dev-tagged build only.
+
+    **Operator docs:** Phase 13 index — `docs/phase-13-operator-documentation.md`. Farm audit trail — `docs/audit-events-operator-playbook.md`. Insert Commons receiver — `docs/insert-commons-receiver-playbook.md`. Receipt storage cutover — `docs/receipt-storage-cutover-runbook.md`. Optional mobile wrapper — `docs/mobile-distribution.md`.
+
+    **Phase 13 API areas:** `organizations` (multi-farm grouping, usage summary), `farms` (Insert Commons opt-in/sync/history, farm-scoped audit events), `costs` / attachments (finance mappings, exports, receipts).
   license:
     name: AGPL-3.0
     url: https://www.gnu.org/licenses/agpl-3.0
@@ -28,7 +32,9 @@ tags:
   - name: units
     description: Units of measure reference
   - name: farms
-    description: Farm management
+    description: Farm management, Insert Commons opt-in and sync, and farm-scoped audit events (owner/manager)
+  - name: organizations
+    description: Multi-farm organization grouping, membership, and usage summaries (billing hooks)
   - name: zones
     description: Zone management
   - name: sensors
@@ -362,6 +368,122 @@ paths:
       responses:
         "204": { description: Deleted }
         "404": { $ref: "#/components/responses/NotFound" }
+
+  /farms/{id}/organization:
+    patch:
+      tags: [farms]
+      summary: Link or unlink farm from an organization (farm admin; org admin required to link)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/FarmOrganizationPatch" }
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Farm" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /organizations:
+    post:
+      tags: [organizations]
+      summary: Create an organization (caller becomes owner)
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/OrganizationCreate" }
+      responses:
+        "201":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Organization" }
+    get:
+      tags: [organizations]
+      summary: List organizations the current user belongs to
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/OrganizationWithMembership" }
+
+  /organizations/{id}:
+    get:
+      tags: [organizations]
+      summary: Get organization by id (members only)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Organization" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    patch:
+      tags: [organizations]
+      summary: Update organization name and billing hooks (owner or org admin)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/OrganizationUpdate" }
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Organization" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /organizations/{id}/usage-summary:
+    get:
+      tags: [organizations]
+      summary: Aggregated usage counts across farms in the organization (metering hook)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/OrganizationUsageSummary" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /organizations/{id}/members:
+    post:
+      tags: [organizations]
+      summary: Add an existing user to the organization by email (org admin)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/OrganizationMemberInvite" }
+      responses:
+        "201":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/OrganizationMembership" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/BadRequest" }
 
   /farms/{id}/zones:
     get:
@@ -1446,13 +1568,17 @@ paths:
   /farms/{id}/costs/export:
     get:
       tags: [costs]
-      summary: Download farm cost transactions as CSV or GL-friendly CSV
+      summary: Download farm cost transactions as CSV, GL-friendly CSV, or category summary CSV (tax/workpaper)
       security: [{ bearerAuth: [] }]
       parameters:
         - { $ref: "#/components/parameters/ID" }
         - name: format
           in: query
-          schema: { type: string, enum: [csv, gl_csv], default: csv }
+          schema: { type: string, enum: [csv, gl_csv, summary_csv], default: csv }
+        - name: year
+          in: query
+          description: Calendar year filter for summary_csv only (omit for all-time totals)
+          schema: { type: integer, minimum: 1900, maximum: 2100 }
       responses:
         "200":
           description: CSV file
@@ -1554,15 +1680,27 @@ paths:
     post:
       tags: [costs]
       summary: Create cost transaction
+      description: >
+        Optional `Idempotency-Key` (client-generated UUID recommended) makes creates safe to retry:
+        duplicate requests with the same key return `200` and the original row. Used by the PWA offline cost queue.
       security: [{ bearerAuth: [] }]
       parameters:
         - { $ref: "#/components/parameters/ID" }
+        - name: Idempotency-Key
+          in: header
+          required: false
+          schema: { type: string, maxLength: 128 }
       requestBody:
         required: true
         content:
           application/json:
             schema: { $ref: "#/components/schemas/CostTransactionCreate" }
       responses:
+        "200":
+          description: Same cost as an earlier request with this idempotency key
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CostTransaction" }
         "201":
           content:
             application/json:
@@ -1703,6 +1841,36 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/Error" }
         "502":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+
+  /farms/{id}/audit-events:
+    get:
+      tags: [farms]
+      summary: List sensitive-action audit events for a farm (owner or manager only)
+      description: >
+        Append-only trail for governance and compliance-sensitive operations (membership,
+        Insert Commons opt-in and sync, finance COA mappings, cost exports, receipt access, etc.).
+        Details JSON shape varies by event kind.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+        - name: limit
+          in: query
+          schema: { type: integer, default: 50, maximum: 200 }
+        - name: offset
+          in: query
+          schema: { type: integer, default: 0, minimum: 0 }
+      responses:
+        "200":
+          description: Audit events newest-first
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/AuditActivityEvent" }
+        "403":
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Error" }
@@ -1985,6 +2153,7 @@ components:
         operational_status: { type: string }
         timezone: { type: string, example: UTC }
         currency: { type: string, example: USD }
+        organization_id: { type: integer, nullable: true, description: Optional parent organization for multi-farm tenancy }
         created_at: { type: string, format: date-time }
         insert_commons_opt_in: { type: boolean }
         insert_commons_last_sync_at: { type: string, format: date-time, nullable: true }
@@ -2020,6 +2189,27 @@ components:
         status: { type: string }
         http_status: { type: integer, nullable: true }
         error: { type: string, nullable: true }
+        created_at: { type: string, format: date-time }
+
+    AuditActivityEvent:
+      type: object
+      properties:
+        id: { type: integer }
+        farm_id: { type: integer }
+        user_id: { type: string, format: uuid, nullable: true }
+        activity_time: { type: string, format: date-time }
+        action_type:
+          type: string
+          description: Matches gr33ncore.user_action_type_enum (e.g. change_setting, export_data, delete_record).
+        target_module_schema: { type: string, nullable: true }
+        target_table_name: { type: string, nullable: true }
+        target_record_id: { type: string, nullable: true }
+        target_record_description: { type: string, nullable: true }
+        user_agent: { type: string, nullable: true }
+        ip_address: { type: string, nullable: true }
+        status: { type: string, nullable: true }
+        failure_reason: { type: string, nullable: true }
+        details: { type: object, additionalProperties: true }
         created_at: { type: string, format: date-time }
 
     Zone:
@@ -2067,6 +2257,7 @@ components:
         timezone: { type: string, example: UTC }
         currency: { type: string, example: USD }
         operational_status: { type: string }
+        organization_id: { type: integer, nullable: true, description: Optional; requires org admin role }
 
     FarmUpdate:
       type: object
@@ -2082,6 +2273,73 @@ components:
         currency: { type: string }
         operational_status: { type: string }
         updated_by_user_id: { type: string, format: uuid }
+        organization_id: { type: integer, nullable: true }
+
+    FarmOrganizationPatch:
+      type: object
+      required: [organization_id]
+      properties:
+        organization_id:
+          type: integer
+          nullable: true
+          description: Organization id to link, or null to unlink
+
+    Organization:
+      type: object
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        plan_tier: { type: string, description: Billing / product tier hook (e.g. pilot, standard) }
+        billing_status: { type: string, description: e.g. none, trialing, active }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+
+    OrganizationWithMembership:
+      allOf:
+        - { $ref: "#/components/schemas/Organization" }
+        - type: object
+          required: [role_in_org]
+          properties:
+            role_in_org: { type: string, enum: [owner, admin, member] }
+
+    OrganizationCreate:
+      type: object
+      required: [name]
+      properties:
+        name: { type: string }
+        plan_tier: { type: string }
+        billing_status: { type: string }
+
+    OrganizationUpdate:
+      type: object
+      properties:
+        name: { type: string }
+        plan_tier: { type: string }
+        billing_status: { type: string }
+
+    OrganizationUsageSummary:
+      type: object
+      properties:
+        farm_count: { type: integer, format: int64 }
+        device_count: { type: integer, format: int64 }
+        sensor_count: { type: integer, format: int64 }
+        task_count: { type: integer, format: int64 }
+        cost_transaction_count: { type: integer, format: int64 }
+
+    OrganizationMemberInvite:
+      type: object
+      required: [email]
+      properties:
+        email: { type: string, format: email }
+        role_in_org: { type: string, enum: [member, admin], default: member }
+
+    OrganizationMembership:
+      type: object
+      properties:
+        organization_id: { type: integer }
+        user_id: { type: string, format: uuid }
+        role_in_org: { type: string }
+        joined_at: { type: string, format: date-time }
 
     Sensor:
       type: object
@@ -2418,6 +2676,18 @@ components:
         currency: { type: string }
         description: { type: string, nullable: true }
         is_income: { type: boolean }
+        document_type:
+          type: string
+          nullable: true
+          description: Optional bookkeeping label (e.g. invoice, bill, sales_receipt)
+        document_reference:
+          type: string
+          nullable: true
+          description: External reference such as invoice or PO number
+        counterparty:
+          type: string
+          nullable: true
+          description: Vendor or customer name for this line
         receipt_file_id: { type: integer, nullable: true, description: Linked cost receipt attachment id }
         created_at: { type: string, format: date-time }
         updated_at: { type: string, format: date-time }
@@ -2441,6 +2711,9 @@ components:
         description: { type: string }
         is_income: { type: boolean }
         receipt_file_id: { type: integer, description: Optional link to uploaded receipt }
+        document_type: { type: string, maxLength: 64 }
+        document_reference: { type: string, maxLength: 128 }
+        counterparty: { type: string, maxLength: 256 }
 
     CostTransactionUpdate:
       type: object
@@ -2454,6 +2727,9 @@ components:
         description: { type: string }
         is_income: { type: boolean }
         receipt_file_id: { type: integer, nullable: true }
+        document_type: { type: string, maxLength: 64, description: Omit to leave unchanged; empty string clears }
+        document_reference: { type: string, maxLength: 128 }
+        counterparty: { type: string, maxLength: 256 }
 
     CoaMapping:
       type: object

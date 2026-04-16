@@ -12,6 +12,7 @@ import (
 	"gr33n-api/internal/filestorage"
 	actuatorhandler "gr33n-api/internal/handler/actuator"
 	alerthandler "gr33n-api/internal/handler/alert"
+	audithandler "gr33n-api/internal/handler/audit"
 	authhandler "gr33n-api/internal/handler/auth"
 	automationhandler "gr33n-api/internal/handler/automation"
 	costhandler "gr33n-api/internal/handler/cost"
@@ -21,6 +22,7 @@ import (
 	fertigationhandler "gr33n-api/internal/handler/fertigation"
 	fileattachhandler "gr33n-api/internal/handler/fileattach"
 	nfhandler "gr33n-api/internal/handler/naturalfarming"
+	organizationhandler "gr33n-api/internal/handler/organization"
 	profilehandler "gr33n-api/internal/handler/profile"
 	recipehandler "gr33n-api/internal/handler/recipe"
 	sensorhandler "gr33n-api/internal/handler/sensor"
@@ -32,6 +34,8 @@ import (
 
 func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationworker.Worker, adminUser string, adminHash []byte, hashFilePath string, fileStore filestorage.Store, fileCfg filestorage.Config) {
 	farm := farmhandler.NewHandler(pool)
+	org := organizationhandler.NewHandler(pool)
+	audit := audithandler.NewHandler(pool)
 	zone := zonehandler.NewHandler(pool)
 	device := devicehandler.NewHandler(pool)
 	actuator := actuatorhandler.NewHandler(pool)
@@ -99,11 +103,21 @@ func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationwo
 	mux.Handle("GET /farms", jwt(http.HandlerFunc(farm.List)))
 	mux.Handle("POST /farms", jwt(http.HandlerFunc(farm.Create)))
 	mux.Handle("PUT /farms/{id}", jwt(http.HandlerFunc(farm.Update)))
+	mux.Handle("PATCH /farms/{id}/organization", jwt(http.HandlerFunc(farm.SetOrganization)))
 	mux.Handle("DELETE /farms/{id}", jwt(http.HandlerFunc(farm.Delete)))
 	mux.Handle("GET /farms/{id}", jwt(http.HandlerFunc(farm.Get)))
+
+	// Organizations (multi-farm tenant grouping)
+	mux.Handle("POST /organizations", jwt(http.HandlerFunc(org.Create)))
+	mux.Handle("GET /organizations", jwt(http.HandlerFunc(org.ListMine)))
+	mux.Handle("GET /organizations/{id}", jwt(http.HandlerFunc(org.Get)))
+	mux.Handle("PATCH /organizations/{id}", jwt(http.HandlerFunc(org.Update)))
+	mux.Handle("GET /organizations/{id}/usage-summary", jwt(http.HandlerFunc(org.UsageSummary)))
+	mux.Handle("POST /organizations/{id}/members", jwt(http.HandlerFunc(org.AddMember)))
 	mux.Handle("PATCH /farms/{id}/insert-commons/opt-in", jwt(http.HandlerFunc(farm.SetInsertCommonsOptIn)))
 	mux.Handle("POST /farms/{id}/insert-commons/sync", jwt(http.HandlerFunc(farm.InsertCommonsSync)))
 	mux.Handle("GET /farms/{id}/insert-commons/sync-events", jwt(http.HandlerFunc(farm.InsertCommonsHistory)))
+	mux.Handle("GET /farms/{id}/audit-events", jwt(http.HandlerFunc(audit.ListByFarm)))
 	mux.Handle("GET /farms/{id}/zones", jwt(http.HandlerFunc(zone.ListByFarm)))
 	mux.Handle("GET /farms/{id}/devices", jwt(http.HandlerFunc(device.ListByFarm)))
 	mux.Handle("GET /farms/{id}/actuators", jwt(http.HandlerFunc(actuator.ListByFarm)))

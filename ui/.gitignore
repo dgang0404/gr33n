@@ -12,6 +12,13 @@ dist
 dist-ssr
 *.local
 
+# Capacitor local overrides (API URL for device builds)
+.env.capacitor.local
+
+# Native IDE projects (generate with npm run cap:add:*)
+android/
+ios/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

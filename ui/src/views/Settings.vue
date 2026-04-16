@@ -91,6 +91,86 @@
       </form>
     </section>
 
+    <!-- Organizations (multi-farm tenancy) -->
+    <section class="bg-zinc-800 border border-zinc-700 rounded-xl p-5 mb-5">
+      <h2 class="text-white font-semibold mb-3 flex items-center gap-2">
+        <span>Org</span> Organizations
+      </h2>
+      <p class="text-zinc-500 text-xs mb-4">
+        Optional grouping for several farms. Usage totals are a lightweight metering hook for future billing (not a live invoice).
+      </p>
+      <form @submit.prevent="createOrg" class="flex flex-wrap gap-2 mb-4">
+        <input v-model="newOrgName" type="text" placeholder="New organization name" required
+          class="input-field flex-1 min-w-[200px] text-sm" />
+        <button type="submit" :disabled="orgSaving"
+          class="bg-green-600 hover:bg-green-500 disabled:bg-zinc-700 text-white text-xs font-semibold px-4 py-2 rounded-lg shrink-0">
+          {{ orgSaving ? 'Creating…' : 'Create' }}
+        </button>
+        <button type="button" class="text-zinc-500 hover:text-zinc-300 text-xs px-2" :disabled="orgLoading" @click="loadOrgs">
+          Refresh list
+        </button>
+      </form>
+      <p v-if="orgError" class="text-red-400 text-xs mb-2">{{ orgError }}</p>
+      <div v-if="orgLoading && !orgs.length" class="text-zinc-500 text-sm">Loading…</div>
+      <ul v-else-if="orgs.length" class="space-y-2 mb-4">
+        <li v-for="o in orgs" :key="o.id"
+          class="flex flex-wrap items-center justify-between gap-2 bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-sm">
+          <div>
+            <span class="text-zinc-200 font-medium">{{ o.name }}</span>
+            <span class="text-zinc-500 text-xs ml-2">{{ o.role_in_org }} · {{ o.plan_tier }}</span>
+          </div>
+          <button type="button" class="text-xs text-green-500 hover:text-green-400"
+            @click="loadOrgUsage(o.id)">
+            Usage summary
+          </button>
+        </li>
+      </ul>
+      <p v-else class="text-zinc-600 text-sm mb-4">You are not in any organization yet.</p>
+      <div v-if="orgUsage" class="text-xs text-zinc-400 font-mono bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 mb-4">
+        <span class="text-zinc-500">Last requested: </span>
+        farms {{ orgUsage.farm_count }} · devices {{ orgUsage.device_count }} · sensors {{ orgUsage.sensor_count }}
+        · tasks {{ orgUsage.task_count }} · cost lines {{ orgUsage.cost_transaction_count }}
+      </div>
+
+      <div v-if="adminOrgs.length && farmContext.farmId" class="border-t border-zinc-700 pt-4">
+        <p class="text-zinc-400 text-xs uppercase tracking-wide mb-2">Current farm → organization</p>
+        <div class="flex flex-wrap gap-2 items-center">
+          <select v-model="farmOrgLink"
+            class="bg-zinc-900 border border-zinc-700 text-zinc-300 text-sm rounded-lg px-3 py-2 min-w-[12rem] focus:outline-none">
+            <option value="">— None —</option>
+            <option v-for="o in adminOrgs" :key="o.id" :value="String(o.id)">{{ o.name }}</option>
+          </select>
+          <button type="button" :disabled="farmOrgSaving" @click="saveFarmOrgLink"
+            class="bg-zinc-700 hover:bg-zinc-600 disabled:opacity-40 text-white text-xs font-semibold px-4 py-2 rounded-lg">
+            {{ farmOrgSaving ? 'Saving…' : 'Save link' }}
+          </button>
+        </div>
+        <p v-if="farmOrgMsg" class="text-zinc-500 text-xs mt-2">{{ farmOrgMsg }}</p>
+      </div>
+
+      <form v-if="adminOrgs.length" @submit.prevent="inviteOrgMember" class="border-t border-zinc-700 pt-4 mt-4 space-y-2">
+        <p class="text-zinc-400 text-xs uppercase tracking-wide">Add existing user to organization</p>
+        <div class="flex flex-wrap gap-2">
+          <select v-model="orgInviteTargetId" required
+            class="bg-zinc-900 border border-zinc-700 text-zinc-300 text-xs rounded-lg px-2 py-2">
+            <option v-for="o in adminOrgs" :key="o.id" :value="String(o.id)">{{ o.name }}</option>
+          </select>
+          <input v-model="orgInviteEmail" type="email" required placeholder="email@example.com"
+            class="input-field flex-1 min-w-[180px] text-xs" />
+          <select v-model="orgInviteRole" class="bg-zinc-900 border border-zinc-700 text-zinc-300 text-xs rounded-lg px-2 py-2">
+            <option value="member">Member</option>
+            <option value="admin">Admin</option>
+          </select>
+          <button type="submit" :disabled="orgInviting"
+            class="bg-green-600 hover:bg-green-500 disabled:bg-zinc-700 text-white text-xs font-semibold px-4 py-2 rounded-lg">
+            {{ orgInviting ? 'Adding…' : 'Add' }}
+          </button>
+        </div>
+        <p v-if="orgInviteError" class="text-red-400 text-xs">{{ orgInviteError }}</p>
+        <p v-if="orgInviteOk" class="text-green-400 text-xs">Member added.</p>
+      </form>
+    </section>
+
     <!-- Farm Members -->
     <section class="bg-zinc-800 border border-zinc-700 rounded-xl p-5 mb-5">
       <h2 class="text-white font-semibold mb-4 flex items-center gap-2">
@@ -246,6 +326,118 @@ const auth   = useAuthStore()
 const farmStore = useFarmStore()
 const farmContext = useFarmContextStore()
 
+// ── Organizations ─────────────────────────────────────────────────────────────
+const orgs = ref([])
+const orgLoading = ref(false)
+const orgError = ref(null)
+const newOrgName = ref('')
+const orgSaving = ref(false)
+const orgUsage = ref(null)
+const farmOrgLink = ref('')
+const farmOrgSaving = ref(false)
+const farmOrgMsg = ref('')
+const orgInviteEmail = ref('')
+const orgInviteRole = ref('member')
+const orgInviteTargetId = ref('')
+const orgInviting = ref(false)
+const orgInviteError = ref(null)
+const orgInviteOk = ref(false)
+
+const adminOrgs = computed(() =>
+  orgs.value.filter((o) => o.role_in_org === 'owner' || o.role_in_org === 'admin'),
+)
+
+async function loadOrgs() {
+  orgLoading.value = true
+  orgError.value = null
+  try {
+    const r = await api.get('/organizations')
+    orgs.value = Array.isArray(r.data) ? r.data : []
+    if (adminOrgs.value.length && orgInviteTargetId.value === '') {
+      orgInviteTargetId.value = String(adminOrgs.value[0].id)
+    }
+  } catch (e) {
+    orgError.value = e.response?.data?.error ?? 'Could not load organizations'
+    orgs.value = []
+  } finally {
+    orgLoading.value = false
+  }
+}
+
+async function createOrg() {
+  orgError.value = null
+  orgSaving.value = true
+  try {
+    await api.post('/organizations', { name: newOrgName.value.trim() })
+    newOrgName.value = ''
+    await loadOrgs()
+  } catch (e) {
+    orgError.value = e.response?.data?.error ?? 'Could not create organization'
+  } finally {
+    orgSaving.value = false
+  }
+}
+
+async function loadOrgUsage(orgId) {
+  try {
+    const r = await api.get(`/organizations/${orgId}/usage-summary`)
+    orgUsage.value = r.data
+  } catch {
+    orgUsage.value = null
+  }
+}
+
+async function saveFarmOrgLink() {
+  farmOrgMsg.value = ''
+  farmOrgSaving.value = true
+  try {
+    const fid = farmContext.farmId
+    const v = farmOrgLink.value
+    await api.patch(`/farms/${fid}/organization`, {
+      organization_id: v === '' ? null : Number(v),
+    })
+    await farmStore.loadAll(fid)
+    await farmContext.fetchFarms()
+    farmOrgMsg.value = 'Saved.'
+  } catch (e) {
+    farmOrgMsg.value = e.response?.data?.error ?? 'Could not update farm organization'
+  } finally {
+    farmOrgSaving.value = false
+  }
+}
+
+async function inviteOrgMember() {
+  orgInviteError.value = null
+  orgInviteOk.value = false
+  orgInviting.value = true
+  try {
+    const oid = Number(orgInviteTargetId.value)
+    await api.post(`/organizations/${oid}/members`, {
+      email: orgInviteEmail.value.trim(),
+      role_in_org: orgInviteRole.value,
+    })
+    orgInviteOk.value = true
+    orgInviteEmail.value = ''
+    await loadOrgs()
+  } catch (e) {
+    orgInviteError.value = e.response?.data?.error ?? 'Could not add member'
+  } finally {
+    orgInviting.value = false
+  }
+}
+
+watch(
+  () => farmStore.farm,
+  (f) => {
+    if (!f) {
+      farmOrgLink.value = ''
+      return
+    }
+    farmOrgLink.value = f.organization_id != null ? String(f.organization_id) : ''
+  },
+  { immediate: true },
+)
+
 // ── Password change ──────────────────────────────────────────────────────────
 const pwForm    = reactive({ current: '', next: '', confirm: '' })
 const pwLoading = ref(false)
@@ -398,10 +590,12 @@ async function removeMember(userId) {
 }
 
 onMounted(() => {
+  loadOrgs()
   loadMembers()
   loadFarmSharing()
 })
 watch(() => farmContext.farmId, () => {
+  loadOrgs()
   loadMembers()
   loadFarmSharing()
 })

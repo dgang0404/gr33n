@@ -317,6 +317,8 @@ For each sensitive event, record:
 
 Use these as evidence anchors when reviewing incidents or audits:
 
+- Farm audit API: [`docs/audit-events-operator-playbook.md`](audit-events-operator-playbook.md) (`GET /farms/{id}/audit-events`).
+- Insert Commons receiver contract: [`docs/insert-commons-receiver-playbook.md`](insert-commons-receiver-playbook.md).
 - API deploy/change history
 - operator command history for backup/restore/backfill runs
 - API application logs around the change window

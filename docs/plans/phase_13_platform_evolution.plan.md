@@ -4,25 +4,25 @@ overview: Phase 13 picks up after Phase 12 productization — optional receiver-
 todos:
   - id: insert-commons-receiver
     content: "WS1-Commons receiver: Stand up or integrate an Insert Commons ingest service (validate schema_version, authenticate farms, idempotent store, retention); document contract vs farm sender; optional in-repo minimal receiver for self-hosted pilots."
-    status: pending
+    status: completed
   - id: audit-compliance
     content: "WS2-Audit: Productize audit trails for sensitive actions (RBAC, receipt access, sync toggles, finance mappings, destructive ops); export/query API or operator UI hooks; align with runbook retention."
-    status: pending
+    status: completed
   - id: offline-expansion
     content: "WS3-Offline: Extend PWA queued writes beyond tasks (e.g. cost quick-add with receipt queue, or zone notes); unify idempotency patterns with server; conflict UX parity."
-    status: pending
+    status: completed
   - id: finance-depth
     content: "WS4-Finance: Deeper bookkeeping — invoices/revenue docs, tax-oriented exports, or first external accounting connector behind a narrow adapter; keep schema reversible."
-    status: pending
+    status: completed
   - id: tenancy-billing
     content: "WS5-Tenancy: Early multi-farm org or tenant boundaries, usage metering hooks, and billing/pricing experiments beyond Phase 12 primitives (no full marketplace)."
-    status: pending
+    status: completed
   - id: mobile-distribution
     content: "WS6-Mobile: Capacitor or similar packaging roadmap, push notifications strategy, and store constraints — without replacing the Vue PWA core."
-    status: pending
+    status: completed
   - id: phase13-docs
     content: "WS7-Docs: README phase banner, OpenAPI for new surfaces, operator playbooks for audit and commons receiver deploy."
-    status: pending
+    status: completed
 isProject: false
 ---
 
@@ -56,6 +56,18 @@ Phase 12 on **`main`** includes production-oriented storage, offline task queue,
 5. **Tenancy / billing** — when product needs org-level boundaries or metering.
 6. **Mobile distribution** — when field rollout requires store or push channels.
 7. **Docs** continuously.
+
+## WS7 — Documentation deliverables
+
+Central index: [`docs/phase-13-operator-documentation.md`](../phase-13-operator-documentation.md).
+
+| Deliverable | Location |
+|-------------|-----------|
+| Phase banner + roadmap links | [`README.md`](../../README.md) |
+| API schemas for new surfaces (organizations, audit, Insert Commons, finance/costs) | [`openapi.yaml`](../../openapi.yaml) |
+| Farm audit API and retention | [`docs/audit-events-operator-playbook.md`](../audit-events-operator-playbook.md) |
+| Receiver deploy and HTTP contract | [`docs/insert-commons-receiver-playbook.md`](../insert-commons-receiver-playbook.md) |
+| Capacitor / store path (optional) | [`docs/mobile-distribution.md`](../mobile-distribution.md) |
 
 ## Using this plan in a new chat
 

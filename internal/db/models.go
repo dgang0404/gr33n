@@ -1268,9 +1268,19 @@ type Gr33ncoreCostTransaction struct {
 	RelatedRecordID     *int64                       `db:"related_record_id" json:"related_record_id"`
 	ReceiptFileID       *int64                       `db:"receipt_file_id" json:"receipt_file_id"`
 	IsIncome            bool                         `db:"is_income" json:"is_income"`
+	DocumentType        *string                      `db:"document_type" json:"document_type"`
+	DocumentReference   *string                      `db:"document_reference" json:"document_reference"`
+	Counterparty        *string                      `db:"counterparty" json:"counterparty"`
 	CreatedByUserID     pgtype.UUID                  `db:"created_by_user_id" json:"created_by_user_id"`
 	CreatedAt           time.Time                    `db:"created_at" json:"created_at"`
 	UpdatedAt           time.Time                    `db:"updated_at" json:"updated_at"`
+}
+
+type Gr33ncoreCostTransactionIdempotency struct {
+	FarmID            int64     `db:"farm_id" json:"farm_id"`
+	IdempotencyKey    string    `db:"idempotency_key" json:"idempotency_key"`
+	CostTransactionID int64     `db:"cost_transaction_id" json:"cost_transaction_id"`
+	CreatedAt         time.Time `db:"created_at" json:"created_at"`
 }
 
 type Gr33ncoreDevice struct {
@@ -1324,6 +1334,7 @@ type Gr33ncoreFarm struct {
 	UpdatedAt                        time.Time                         `db:"updated_at" json:"updated_at"`
 	UpdatedByUserID                  pgtype.UUID                       `db:"updated_by_user_id" json:"updated_by_user_id"`
 	DeletedAt                        pgtype.Timestamptz                `db:"deleted_at" json:"deleted_at"`
+	OrganizationID                   *int64                            `db:"organization_id" json:"organization_id"`
 	InsertCommonsOptIn               bool                              `db:"insert_commons_opt_in" json:"insert_commons_opt_in"`
 	InsertCommonsLastSyncAt          pgtype.Timestamptz                `db:"insert_commons_last_sync_at" json:"insert_commons_last_sync_at"`
 	InsertCommonsLastAttemptAt       pgtype.Timestamptz                `db:"insert_commons_last_attempt_at" json:"insert_commons_last_attempt_at"`
@@ -1377,6 +1388,16 @@ type Gr33ncoreFileAttachment struct {
 	UpdatedAt           time.Time   `db:"updated_at" json:"updated_at"`
 }
 
+type Gr33ncoreInsertCommonsReceivedPayload struct {
+	ID            int64     `db:"id" json:"id"`
+	ReceivedAt    time.Time `db:"received_at" json:"received_at"`
+	PayloadHash   string    `db:"payload_hash" json:"payload_hash"`
+	FarmPseudonym string    `db:"farm_pseudonym" json:"farm_pseudonym"`
+	SchemaVersion string    `db:"schema_version" json:"schema_version"`
+	GeneratedAt   time.Time `db:"generated_at" json:"generated_at"`
+	Payload       []byte    `db:"payload" json:"payload"`
+}
+
 type Gr33ncoreInsertCommonsSyncEvent struct {
 	ID             int64     `db:"id" json:"id"`
 	FarmID         int64     `db:"farm_id" json:"farm_id"`
@@ -1401,6 +1422,22 @@ type Gr33ncoreNotificationTemplate struct {
 	IsSystemTemplate        *bool                                 `db:"is_system_template" json:"is_system_template"`
 	CreatedAt               time.Time                             `db:"created_at" json:"created_at"`
 	UpdatedAt               time.Time                             `db:"updated_at" json:"updated_at"`
+}
+
+type Gr33ncoreOrganization struct {
+	ID            int64     `db:"id" json:"id"`
+	Name          string    `db:"name" json:"name"`
+	PlanTier      string    `db:"plan_tier" json:"plan_tier"`
+	BillingStatus string    `db:"billing_status" json:"billing_status"`
+	CreatedAt     time.Time `db:"created_at" json:"created_at"`
+	UpdatedAt     time.Time `db:"updated_at" json:"updated_at"`
+}
+
+type Gr33ncoreOrganizationMembership struct {
+	OrganizationID int64     `db:"organization_id" json:"organization_id"`
+	UserID         uuid.UUID `db:"user_id" json:"user_id"`
+	RoleInOrg      string    `db:"role_in_org" json:"role_in_org"`
+	JoinedAt       time.Time `db:"joined_at" json:"joined_at"`
 }
 
 type Gr33ncoreProfile struct {

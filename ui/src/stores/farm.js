@@ -1,12 +1,15 @@
 import { defineStore } from 'pinia'
 import api from '../api'
 import {
+  dataUrlToFile,
+  fileToDataUrl,
   isRetryableTaskQueueError,
-  loadTaskQueue,
+  loadOfflineQueue,
+  makeCreateCostItem,
   makeCreateTaskItem,
   makeUpdateTaskStatusItem,
   pendingCount,
-  saveTaskQueue,
+  saveOfflineQueue,
 } from '../offline/taskQueue'
 
 export const useFarmStore = defineStore('farm', {
@@ -22,7 +25,7 @@ export const useFarmStore = defineStore('farm', {
     readings: {},
     alerts: [],
     unreadAlertCount: 0,
-    taskWriteQueue: loadTaskQueue(),
+    taskWriteQueue: loadOfflineQueue(),
     taskQueueBusy: false,
     taskSyncStatus: {
       lastAttemptAt: '',
@@ -224,6 +227,37 @@ export const useFarmStore = defineStore('farm', {
                 }
               }
             }
+            continue
+          }
+
+          if (item.type === 'create_cost') {
+            try {
+              const r = await api.post(`/farms/${item.farmId}/costs`, item.payload, {
+                headers: { 'Idempotency-Key': item.idempotencyKey },
+              })
+              const row = r.data
+              if (item.receiptDataUrl) {
+                const file = dataUrlToFile(item.receiptDataUrl, item.receiptFileName || 'receipt')
+                const fd = new FormData()
+                fd.append('file', file)
+                fd.append('cost_transaction_id', String(row.id))
+                await api.post(`/farms/${item.farmId}/cost-receipts`, fd)
+              }
+              item.state = 'synced'
+              item.lastError = ''
+            } catch (err) {
+              item.attempts += 1
+              item.updatedAt = new Date().toISOString()
+              if (isRetryableTaskQueueError(err)) {
+                item.state = 'pending'
+                item.lastError = err.message || 'network retry'
+              } else {
+                item.state = 'failed'
+                item.lastError = err.response?.data?.error || err.message || 'sync failed'
+                hadFailures = true
+              }
+            }
+            continue
           }
         }
       } finally {
@@ -276,6 +310,9 @@ export const useFarmStore = defineStore('farm', {
           (t) => t.id !== item.clientTaskId && t._offline?.clientTaskId !== item.clientTaskId,
         )
       }
+      if (item.type === 'create_cost') {
+        /* Costs view merges from queue; dropping the item is enough */
+      }
       if (item.type === 'update_task_status') {
         const task = this.findTaskByQueueItemId(queueItemId)
         if (task?._offline) {
@@ -287,7 +324,48 @@ export const useFarmStore = defineStore('farm', {
     },
 
     persistTaskWriteQueue() {
-      saveTaskQueue(this.taskWriteQueue)
+      saveOfflineQueue(this.taskWriteQueue)
+    },
+
+    withCostQueueOverlay(serverCosts, farmId) {
+      const list = [...(serverCosts || [])]
+      for (const item of this.taskWriteQueue) {
+        if (item.farmId !== farmId || item.type !== 'create_cost') continue
+        if (item.state === 'synced') continue
+        if (list.some((t) => t._offline?.clientCostId === item.clientCostId)) continue
+        list.unshift(this.optimisticCostFromQueueItem(item))
+      }
+      return list
+    },
+
+    optimisticCostFromQueueItem(item) {
+      const p = item.payload || {}
+      return {
+        id: item.clientCostId,
+        farm_id: item.farmId,
+        transaction_date: p.transaction_date,
+        category: p.category,
+        subcategory: p.subcategory ?? null,
+        amount: p.amount,
+        currency: p.currency,
+        description: p.description ?? null,
+        document_type: p.document_type ?? null,
+        document_reference: p.document_reference ?? null,
+        counterparty: p.counterparty ?? null,
+        is_income: !!p.is_income,
+        receipt_file_id: null,
+        created_at: item.createdAt,
+        updated_at: item.updatedAt,
+        _offline: {
+          queued: true,
+          pendingSync: item.state !== 'failed',
+          stale: item.state === 'failed',
+          conflict: item.state === 'failed' ? item.lastError : '',
+          queueItemId: item.id,
+          clientCostId: item.clientCostId,
+          receiptPending: !!item.receiptDataUrl,
+        },
+      }
     },
 
     withTaskQueueOverlay(serverTasks, farmId) {
@@ -613,12 +691,49 @@ export const useFarmStore = defineStore('farm', {
 
     async loadCosts(farmId, { limit = 50, offset = 0 } = {}) {
       const r = await api.get(`/farms/${farmId}/costs?limit=${limit}&offset=${offset}`)
-      return Array.isArray(r.data) ? r.data : []
+      const list = Array.isArray(r.data) ? r.data : []
+      return this.withCostQueueOverlay(list, farmId)
     },
 
-    async createCost(farmId, data) {
-      const r = await api.post(`/farms/${farmId}/costs`, data)
-      return r.data
+    /**
+     * @param {object} data cost create body
+     * @param {{ receiptFile?: File }=} options when offline or flaky network, optional receipt is queued as data URL
+     */
+    async createCost(farmId, data, options = {}) {
+      const { receiptFile } = options
+      const idempotencyKey =
+        globalThis.crypto && typeof globalThis.crypto.randomUUID === 'function'
+          ? globalThis.crypto.randomUUID()
+          : `${Date.now()}-${Math.random()}`
+      let receiptDataUrl = ''
+      let receiptFileName = ''
+      if (receiptFile) {
+        receiptDataUrl = await fileToDataUrl(receiptFile)
+        receiptFileName = receiptFile.name || 'receipt'
+      }
+      const tryOnline = typeof navigator === 'undefined' || navigator.onLine
+      if (tryOnline) {
+        try {
+          const r = await api.post(`/farms/${farmId}/costs`, data, {
+            headers: { 'Idempotency-Key': idempotencyKey },
+          })
+          const row = r.data
+          if (receiptFile) {
+            await this.uploadCostReceipt(farmId, receiptFile, row.id)
+          }
+          return row
+        } catch (err) {
+          if (!isRetryableTaskQueueError(err)) throw err
+        }
+      }
+      const item = makeCreateCostItem(farmId, data, {
+        idempotencyKey,
+        receiptDataUrl,
+        receiptFileName,
+      })
+      this.taskWriteQueue.push(item)
+      this.persistTaskWriteQueue()
+      return this.optimisticCostFromQueueItem(item)
     },
 
     async updateCost(id, data) {

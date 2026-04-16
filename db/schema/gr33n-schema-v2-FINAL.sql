@@ -232,6 +232,29 @@ CREATE TRIGGER trg_profiles_updated_at
     BEFORE UPDATE ON gr33ncore.profiles
     FOR EACH ROW EXECUTE FUNCTION gr33ncore.set_updated_at();
 
+-- Organizations (multi-farm tenant grouping; farms.organization_id optional)
+CREATE TABLE IF NOT EXISTS gr33ncore.organizations (
+    id              BIGSERIAL PRIMARY KEY,
+    name            TEXT        NOT NULL,
+    plan_tier       TEXT        NOT NULL DEFAULT 'pilot',
+    billing_status  TEXT        NOT NULL DEFAULT 'none',
+    created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE TRIGGER trg_organizations_updated_at
+    BEFORE UPDATE ON gr33ncore.organizations
+    FOR EACH ROW EXECUTE FUNCTION gr33ncore.set_updated_at();
+
+CREATE TABLE IF NOT EXISTS gr33ncore.organization_memberships (
+    organization_id BIGINT NOT NULL REFERENCES gr33ncore.organizations(id) ON DELETE CASCADE,
+    user_id         UUID NOT NULL REFERENCES gr33ncore.profiles(user_id) ON DELETE CASCADE,
+    role_in_org     TEXT   NOT NULL CHECK (role_in_org IN ('owner', 'admin', 'member')),
+    joined_at       TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    PRIMARY KEY (organization_id, user_id)
+);
+CREATE INDEX IF NOT EXISTS idx_org_memberships_user
+    ON gr33ncore.organization_memberships (user_id);
+
 -- Farms
 CREATE TABLE IF NOT EXISTS gr33ncore.farms (
     id                 BIGSERIAL PRIMARY KEY,
@@ -251,6 +274,7 @@ CREATE TABLE IF NOT EXISTS gr33ncore.farms (
     updated_at         TIMESTAMPTZ DEFAULT NOW() NOT NULL,
     updated_by_user_id UUID        REFERENCES gr33ncore.profiles(user_id) ON DELETE SET NULL,
     deleted_at         TIMESTAMPTZ DEFAULT NULL,
+    organization_id    BIGINT REFERENCES gr33ncore.organizations(id) ON DELETE SET NULL,
     insert_commons_opt_in BOOLEAN NOT NULL DEFAULT FALSE,
     insert_commons_last_sync_at TIMESTAMPTZ,
     insert_commons_last_attempt_at TIMESTAMPTZ,
@@ -262,6 +286,10 @@ CREATE TABLE IF NOT EXISTS gr33ncore.farms (
 CREATE TRIGGER trg_farms_updated_at
     BEFORE UPDATE ON gr33ncore.farms
     FOR EACH ROW EXECUTE FUNCTION gr33ncore.set_updated_at();
+
+CREATE INDEX IF NOT EXISTS idx_farms_organization_id
+    ON gr33ncore.farms (organization_id)
+    WHERE deleted_at IS NULL AND organization_id IS NOT NULL;
 
 -- Insert Commons sync audit (farm-side sender)
 CREATE TABLE IF NOT EXISTS gr33ncore.insert_commons_sync_events (
@@ -279,6 +307,31 @@ CREATE UNIQUE INDEX IF NOT EXISTS uq_insert_commons_sync_farm_idem
     WHERE idempotency_key IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_insert_commons_sync_farm_created
     ON gr33ncore.insert_commons_sync_events (farm_id, created_at DESC);
+
+-- Insert Commons receiver (pilot ingest store; optional separate process)
+CREATE TABLE IF NOT EXISTS gr33ncore.insert_commons_received_payloads (
+    id               BIGSERIAL PRIMARY KEY,
+    received_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    payload_hash     TEXT        NOT NULL,
+    farm_pseudonym   TEXT        NOT NULL,
+    schema_version   TEXT        NOT NULL,
+    generated_at     TIMESTAMPTZ NOT NULL,
+    payload          JSONB       NOT NULL,
+    CONSTRAINT uq_insert_commons_received_payload_hash UNIQUE (payload_hash)
+);
+CREATE INDEX IF NOT EXISTS idx_insert_commons_received_received_at
+    ON gr33ncore.insert_commons_received_payloads (received_at DESC);
+
+-- Cost transaction idempotency (offline / safe retries)
+CREATE TABLE IF NOT EXISTS gr33ncore.cost_transaction_idempotency (
+    farm_id              BIGINT NOT NULL REFERENCES gr33ncore.farms(id) ON DELETE CASCADE,
+    idempotency_key      TEXT   NOT NULL,
+    cost_transaction_id  BIGINT NOT NULL REFERENCES gr33ncore.cost_transactions(id) ON DELETE CASCADE,
+    created_at           TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    PRIMARY KEY (farm_id, idempotency_key)
+);
+CREATE INDEX IF NOT EXISTS idx_cost_idem_transaction
+    ON gr33ncore.cost_transaction_idempotency (cost_transaction_id);
 
 -- Farm memberships
 CREATE TABLE IF NOT EXISTS gr33ncore.farm_memberships (
@@ -724,6 +777,9 @@ CREATE TABLE IF NOT EXISTS gr33ncore.cost_transactions (
     related_record_id     BIGINT,
     receipt_file_id  BIGINT REFERENCES gr33ncore.file_attachments(id) ON DELETE SET NULL,
     is_income        BOOLEAN DEFAULT FALSE NOT NULL,
+    document_type      TEXT,
+    document_reference TEXT,
+    counterparty       TEXT,
     created_by_user_id UUID REFERENCES gr33ncore.profiles(user_id),
     created_at       TIMESTAMPTZ DEFAULT NOW() NOT NULL,
     updated_at       TIMESTAMPTZ DEFAULT NOW() NOT NULL

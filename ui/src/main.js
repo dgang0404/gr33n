@@ -1,4 +1,5 @@
 import { createApp } from 'vue'
+import { Capacitor } from '@capacitor/core'
 import { createPinia } from 'pinia'
 import router from './router'
 import App from './App.vue'
@@ -15,6 +16,15 @@ setUnauthorizedHandler(() => {
 
 app.mount('#app')
 
+if (Capacitor.isNativePlatform()) {
+  import('@capacitor/app').then(({ App }) => {
+    App.addListener('backButton', ({ canGoBack }) => {
+      if (canGoBack) window.history.back()
+      else App.exitApp()
+    })
+  }).catch(() => {})
+}
+
 if (import.meta.env.PROD && 'serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/sw.js').catch(() => {})
+  navigator.serviceWorker.register(`${import.meta.env.BASE_URL}sw.js`).catch(() => {})
 }

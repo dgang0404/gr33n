@@ -15,6 +15,7 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"gr33n-api/internal/auditlog"
 	"gr33n-api/internal/authctx"
 	db "gr33n-api/internal/db"
 	"gr33n-api/internal/farmauthz"
@@ -154,6 +155,11 @@ func (h *Handler) UploadCostReceipt(w http.ResponseWriter, r *http.Request) {
 			httputil.WriteError(w, http.StatusInternalServerError, err.Error())
 			return
 		}
+		replaced := oldReceiptID != nil
+		h.logReceiptAudit(r, farmID, att.ID, "cost_receipt_uploaded", map[string]any{
+			"cost_transaction_id": *costID,
+			"replaced_receipt":    replaced,
+		})
 		h.cleanupReplacedReceipt(r.Context(), oldReceiptID, rid)
 		httputil.WriteJSON(w, http.StatusCreated, map[string]any{
 			"file_attachment":  att,
@@ -162,7 +168,45 @@ func (h *Handler) UploadCostReceipt(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	h.logReceiptAudit(r, farmID, att.ID, "cost_receipt_uploaded", map[string]any{"draft": true})
 	httputil.WriteJSON(w, http.StatusCreated, att)
+}
+
+func (h *Handler) logReceiptAudit(r *http.Request, farmID, attachmentID int64, kind string, extra map[string]any) {
+	details := map[string]any{"kind": kind, "file_attachment_id": attachmentID}
+	for k, v := range extra {
+		details[k] = v
+	}
+	mod := "gr33ncore"
+	tbl := "file_attachments"
+	aid := strconv.FormatInt(attachmentID, 10)
+	auditlog.Submit(r.Context(), h.q, r, auditlog.Event{
+		FarmID:         farmID,
+		Action:         db.Gr33ncoreUserActionTypeEnumCreateRecord,
+		TargetSchema:   &mod,
+		TargetTable:    &tbl,
+		TargetRecordID: &aid,
+		Details:        details,
+	})
+}
+
+func (h *Handler) logReceiptAccess(r *http.Request, att db.Gr33ncoreFileAttachment, endpoint string) {
+	mod := "gr33ncore"
+	tbl := "file_attachments"
+	aid := strconv.FormatInt(att.ID, 10)
+	auditlog.Submit(r.Context(), h.q, r, auditlog.Event{
+		FarmID:         att.FarmID,
+		Action:         db.Gr33ncoreUserActionTypeEnumExportData,
+		TargetSchema:   &mod,
+		TargetTable:    &tbl,
+		TargetRecordID: &aid,
+		Details: map[string]any{
+			"kind":          "cost_receipt_access",
+			"endpoint":      endpoint,
+			"file_type":     att.FileType,
+			"related_table": att.RelatedTableName,
+		},
+	})
 }
 
 // Download — GET /file-attachments/{id}/content
@@ -171,6 +215,7 @@ func (h *Handler) Download(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		return
 	}
+	h.logReceiptAccess(r, att, "content")
 	rc, err := h.store.Open(r.Context(), att.StoragePath)
 	if err != nil {
 		httputil.WriteError(w, http.StatusNotFound, "stored file missing")
@@ -193,6 +238,7 @@ func (h *Handler) DownloadTarget(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		return
 	}
+	h.logReceiptAccess(r, att, "download")
 	url, err := h.store.DownloadURL(r.Context(), att.StoragePath, att.FileName, contentType(att), h.downloadURLTTL)
 	if err != nil {
 		// Local storage and any non-presigning backends continue to use the proxied content endpoint.

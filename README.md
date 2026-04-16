@@ -7,6 +7,8 @@ An open-source agricultural operating system designed to reclaim data, land, and
 [![Vue](https://img.shields.io/badge/Vue-3-4FC08D?logo=vue.js)](https://vuejs.org)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-14+-336791?logo=postgresql)](https://postgresql.org)
 
+**Phase 13 (platform evolution)** is the current engineering focus: federation receivers, compliance-grade audit surfaces, deeper finance and offline coverage, optional **Capacitor** packaging for store or sideloaded mobile (PWA remains primary), and related operator documentation. This repo includes a **pilot Insert Commons receiver** (`make run-receiver`) and farm audit API docs. Start from the **[Phase 13 operator documentation index](docs/phase-13-operator-documentation.md)**, then [`docs/plans/phase_13_platform_evolution.plan.md`](docs/plans/phase_13_platform_evolution.plan.md), [`docs/mobile-distribution.md`](docs/mobile-distribution.md), [`docs/audit-events-operator-playbook.md`](docs/audit-events-operator-playbook.md), and [`docs/insert-commons-receiver-playbook.md`](docs/insert-commons-receiver-playbook.md).
+
 ---
 
 ## What Is gr33n?
@@ -44,7 +46,7 @@ gr33n will never require a permanent internet connection, forced login, or hidde
 
 - **Automation-Ready** — Schedule tasks, trigger actuators, run AI models — or run it all manually. Your tech, your tempo.
 
-- **Insert Commons (farm-side sender)** — Per-farm opt-in in Settings; `POST /farms/{id}/insert-commons/sync` builds **coarse, pseudonymous aggregates** and optionally POSTs them to `INSERT_COMMONS_INGEST_URL` with optional `Authorization: Bearer <INSERT_COMMONS_SHARED_SECRET>`. Sync attempts are persisted for audit (`GET /farms/{id}/insert-commons/sync-events`) with **idempotency keys**, **rate limits**, and **server-side backoff** after repeated delivery failures. Apply `db/migrations/20260415_phase11_rbac_receipts_commons.sql` and `db/migrations/20260416_phase12_insert_commons_federation.sql` on existing databases.
+- **Insert Commons (farm-side sender)** — Per-farm opt-in in Settings; `POST /farms/{id}/insert-commons/sync` builds **coarse, pseudonymous aggregates** and optionally POSTs them to `INSERT_COMMONS_INGEST_URL` with optional `Authorization: Bearer <INSERT_COMMONS_SHARED_SECRET>`. Sync attempts are persisted (`GET /farms/{id}/insert-commons/sync-events`) with **idempotency keys**, **rate limits**, and **server-side backoff** after repeated delivery failures. A separate **farm audit trail** records sensitive actions (membership, opt-in, sync attempts, finance COA changes, cost exports, receipt access, and more) for owner/manager review via `GET /farms/{id}/audit-events` (see [`docs/audit-events-operator-playbook.md`](docs/audit-events-operator-playbook.md)). For self-hosted pilots, an optional **receiver** process (`cmd/insert-commons-receiver`, `make run-receiver`) validates payloads, enforces the shared secret, dedupes on payload hash, and stores rows in Postgres — see [`docs/insert-commons-receiver-playbook.md`](docs/insert-commons-receiver-playbook.md) and migration `db/migrations/20260417_phase13_insert_commons_receiver.sql`. Apply `db/migrations/20260415_phase11_rbac_receipts_commons.sql` and `db/migrations/20260416_phase12_insert_commons_federation.sql` on existing databases.
 
 ---
 
@@ -70,6 +72,8 @@ gr33n-api/
 │   ├── main.go              # Entry point, DB pool, server startup
 │   ├── routes.go            # All HTTP route registrations
 │   └── cors.go              # CORS middleware
+├── cmd/insert-commons-receiver/
+│   └── main.go              # Optional pilot ingest service for Insert Commons (`POST /v1/ingest`)
 ├── internal/
 │   ├── db/                  # sqlc-generated query layer (DO NOT EDIT)
 │   ├── handler/
@@ -79,6 +83,7 @@ gr33n-api/
 │   │   ├── device/          # Devices CRUD + status toggle
 │   │   └── task/            # Tasks list + status update
 │   ├── httputil/            # WriteJSON / WriteError helpers
+│   ├── insertcommonsreceiver/ # Optional Insert Commons ingest HTTP handler
 │   └── platform/
 │       └── commontypes/     # Shared enum types for sqlc
 ├── db/
@@ -186,11 +191,13 @@ Install/offline notes:
 - keep one online sync checkpoint before long offline sessions
 - after reconnect, verify queued writes drained before ending a shift
 
+For **Play Store / App Store / MDM** distribution without replacing the PWA, use the optional Capacitor scaffold in `ui/` (`npm run build:cap`, `cap:sync`, platform add/open). See [`docs/mobile-distribution.md`](docs/mobile-distribution.md).
+
 ---
 
 ## API Endpoints
 
-Base URL: `http://localhost:8080` — full spec in [openapi.yaml](openapi.yaml).
+Base URL: `http://localhost:8080` — authoritative request/response schemas in [openapi.yaml](openapi.yaml). Path placeholders use `:id`, `:rid`, `:uid`, `:iid` for readability (the server matches the same paths with `{id}` style).
 
 ### Public
 
@@ -198,9 +205,12 @@ Base URL: `http://localhost:8080` — full spec in [openapi.yaml](openapi.yaml).
 |--------|------|-------------|
 | GET | `/health` | API + DB health check |
 | POST | `/auth/login` | Authenticate & receive JWT |
-| GET | `/auth/mode` | Current auth mode (dev/production) |
+| POST | `/auth/register` | Register a new account or set password for an **invited** user (existing email with no password yet) |
+| GET | `/auth/mode` | Current auth mode (dev / production / auth_test) |
 
-### Pi Routes (API key)
+### Pi routes (API key)
+
+Header: `X-API-Key: <PI_API_KEY>` (see env configuration for the API process).
 
 | Method | Path | Description |
 |--------|------|-------------|
@@ -209,41 +219,119 @@ Base URL: `http://localhost:8080` — full spec in [openapi.yaml](openapi.yaml).
 | POST | `/actuators/:id/events` | Pi reports executed command |
 | DELETE | `/devices/:id/pending-command` | Pi clears pending command after execution |
 
-### Dashboard Routes (JWT)
+### Insert Commons receiver (optional separate process)
 
-JWT is required for all routes in this section. Mutations (POST, PUT, PATCH, DELETE) also require the user to be a **farm member** (see `gr33ncore.farm_memberships`) or the farm **owner** (`gr33ncore.farms.owner_user_id`). Integration tests in `cmd/api/smoke_test.go` run with `AUTH_MODE=auth_test` and a real JWT.
+Farm API POSTs JSON to `INSERT_COMMONS_INGEST_URL`; this repo’s **pilot receiver** (`go run ./cmd/insert-commons-receiver/` or `make run-receiver`) listens on `INSERT_COMMONS_RECEIVER_LISTEN` (default **`:8765`**) and implements:
 
 | Method | Path | Description |
 |--------|------|-------------|
-| PATCH | `/auth/password` | Change password |
+| GET | `/health` | Process liveness |
+| POST | `/v1/ingest` | Validate payload, optional `Authorization: Bearer <INSERT_COMMONS_SHARED_SECRET>`, persist idempotently |
+
+Details, migration, and retention: [`docs/insert-commons-receiver-playbook.md`](docs/insert-commons-receiver-playbook.md).
+
+### Dashboard routes (JWT)
+
+Header: `Authorization: Bearer <JWT>` (SSE also supports `?token=` on the stream URL where documented).
+
+**Farm access:** most `/farms/:id/...` routes require the user to be the farm **owner** or a **member** (`gr33ncore.farm_memberships`). **Role caps** apply per area (for example *view* vs *edit* costs, *operate* for field workflows, *admin* for farm settings and membership). Exact checks live in `internal/farmauthz` and in [openapi.yaml](openapi.yaml) per route.
+
+Integration tests in `cmd/api/smoke_test.go` use `AUTH_MODE=auth_test` with a real JWT.
+
+#### Auth, profile, units
+
+| Method | Path | Description |
+|--------|------|-------------|
+| PATCH | `/auth/password` | Change password (must be logged in) |
+| GET | `/profile` | Current user profile |
+| PUT | `/profile` | Update current user profile |
 | GET | `/units` | List all measurement units |
-| GET | `/farms/:id` | Farm detail |
-| GET | `/farms/:id/zones` | List zones |
+
+#### Farms
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/farms` | List farms; use `?user_id=<uuid>` to restrict to that user’s farms (recommended for UIs). If omitted, lists **all** farms — use only in trusted operator contexts. |
+| POST | `/farms` | Create farm |
+| GET | `/farms/:id` | Farm detail (member or owner) |
+| PUT | `/farms/:id` | Update farm record (**admin**: owner or manager) |
+| DELETE | `/farms/:id` | Soft-delete farm (**admin**) |
+
+#### Farm members (**admin**: owner or manager)
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/farms/:id/members` | List members and roles |
+| POST | `/farms/:id/members` | Invite or add member (`email`, `role_in_farm`, optional `full_name`) |
+| PATCH | `/farms/:id/members/:uid/role` | Change member role (`:uid` = user UUID) |
+| DELETE | `/farms/:id/members/:uid` | Remove member from farm |
+
+#### Insert Commons & audit
+
+| Method | Path | Description |
+|--------|------|-------------|
+| PATCH | `/farms/:id/insert-commons/opt-in` | Toggle Insert Commons aggregate sharing (**admin**) |
+| POST | `/farms/:id/insert-commons/sync` | Build aggregates and POST to `INSERT_COMMONS_INGEST_URL` when set (**admin** or **finance**) |
+| GET | `/farms/:id/insert-commons/sync-events` | Paginated sync attempt history (**admin** or **finance** / anyone with cost **view**) |
+| GET | `/farms/:id/audit-events` | Sensitive-action audit log (**admin** only; query `limit`, `offset`) |
+
+#### Zones
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/farms/:id/zones` | List zones for farm |
+| GET | `/zones/:id` | Zone detail |
+| POST | `/farms/:id/zones` | Create zone |
+| PUT | `/zones/:id` | Update zone |
+| DELETE | `/zones/:id` | Delete zone |
+
+#### Devices & actuators
+
+| Method | Path | Description |
+|--------|------|-------------|
 | GET | `/farms/:id/devices` | List devices |
+| GET | `/devices/:id` | Device detail |
+| POST | `/farms/:id/devices` | Create device |
+| DELETE | `/devices/:id` | Delete device |
+| GET | `/farms/:id/actuators` | List actuators for farm |
+| PATCH | `/actuators/:id/state` | Update actuator state (dashboard) |
+| GET | `/actuators/:id/events` | Actuator event history |
+
+#### Sensors & live stream
+
+| Method | Path | Description |
+|--------|------|-------------|
 | GET | `/farms/:id/sensors` | List sensors |
-| GET | `/farms/:id/actuators` | List actuators |
-| GET | `/farms/:id/schedules` | List schedules |
-| GET | `/farms/:id/tasks` | List tasks |
-| GET | `/farms/:id/automation/runs` | List automation runs |
-| GET | `/farms/:id/sensors/stream` | SSE live sensor readings |
+| GET | `/farms/:id/sensors/stream` | **SSE** live sensor readings (JWT may be passed as query `token`) |
 | GET | `/sensors/:id` | Sensor detail |
 | POST | `/farms/:id/sensors` | Create sensor |
 | DELETE | `/sensors/:id` | Delete sensor |
 | GET | `/sensors/:id/readings/latest` | Latest reading |
-| GET | `/sensors/:id/readings` | List readings (since/until/limit) |
+| GET | `/sensors/:id/readings` | List readings (`since`, `until`, `limit`, …) |
 | GET | `/sensors/:id/readings/stats` | Aggregate stats for a time range |
-| GET | `/devices/:id` | Device detail |
-| POST | `/farms/:id/devices` | Create device |
-| DELETE | `/devices/:id` | Delete device |
-| PATCH | `/actuators/:id/state` | Update actuator state |
-| GET | `/actuators/:id/events` | Actuator event history |
+
+#### Automation (schedules & runs)
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/farms/:id/schedules` | List schedules |
 | PATCH | `/schedules/:id/active` | Toggle schedule active |
-| GET | `/automation/worker/health` | Automation worker status |
-| GET | `/zones/:id` | Zone detail |
-| POST | `/farms/:id/zones` | Create zone |
-| DELETE | `/zones/:id` | Delete zone |
+| GET | `/farms/:id/automation/runs` | List automation runs for farm |
+| GET | `/schedules/:id/actuator-events` | Actuator events triggered by schedule |
+| GET | `/automation/worker/health` | Automation worker health |
+
+#### Tasks
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/farms/:id/tasks` | List tasks |
+| POST | `/farms/:id/tasks` | Create task |
 | PATCH | `/tasks/:id/status` | Update task status |
-| GET | `/schedules/:id/actuator-events` | Events by schedule |
+
+#### Fertigation
+
+| Method | Path | Description |
+|--------|------|-------------|
 | GET | `/farms/:id/fertigation/reservoirs` | List reservoirs |
 | POST | `/farms/:id/fertigation/reservoirs` | Create reservoir |
 | PATCH | `/fertigation/reservoirs/:rid` | Update reservoir |
@@ -256,29 +344,70 @@ JWT is required for all routes in this section. Mutations (POST, PUT, PATCH, DEL
 | DELETE | `/fertigation/programs/:rid` | Delete program |
 | GET | `/farms/:id/fertigation/events` | List fertigation events (`?crop_cycle_id=` optional) |
 | POST | `/farms/:id/fertigation/events` | Create fertigation event (optional `crop_cycle_id`) |
+
+#### Crop cycles
+
+| Method | Path | Description |
+|--------|------|-------------|
 | GET | `/farms/:id/crop-cycles` | List crop cycles |
 | POST | `/farms/:id/crop-cycles` | Create crop cycle |
 | GET | `/crop-cycles/:id` | Get crop cycle |
 | PUT | `/crop-cycles/:id` | Update crop cycle |
 | DELETE | `/crop-cycles/:id` | Deactivate crop cycle |
 | PATCH | `/crop-cycles/:id/stage` | Update growth stage |
+
+#### Costs, finance & receipts
+
+| Method | Path | Description |
+|--------|------|-------------|
 | GET | `/farms/:id/costs/summary` | Cost totals (income, expenses, net) |
-| GET | `/farms/:id/costs` | List cost transactions |
-| GET | `/farms/:id/costs/export` | Download costs as CSV (`format=csv` or `format=gl_csv`) |
-| GET | `/farms/:id/finance/coa-mappings` | List farm COA mappings for GL export |
-| PUT | `/farms/:id/finance/coa-mappings` | Save farm COA mapping overrides |
-| DELETE | `/farms/:id/finance/coa-mappings` | Reset all farm COA mapping overrides to defaults |
-| DELETE | `/farms/:id/finance/coa-mappings/:category` | Reset one farm COA category override to default |
+| GET | `/farms/:id/costs` | List cost transactions (`limit`, `offset`, …) |
+| GET | `/farms/:id/costs/export` | Download CSV (`format=csv` or `format=gl_csv`) |
+| GET | `/farms/:id/finance/coa-mappings` | List COA mappings for GL export |
+| PUT | `/farms/:id/finance/coa-mappings` | Save COA mapping overrides |
+| DELETE | `/farms/:id/finance/coa-mappings` | Reset all COA overrides |
+| DELETE | `/farms/:id/finance/coa-mappings/:category` | Reset one category override |
 | POST | `/farms/:id/costs` | Create cost transaction |
 | PUT | `/costs/:id` | Update cost transaction |
 | DELETE | `/costs/:id` | Delete cost transaction |
+| POST | `/farms/:id/cost-receipts` | Upload cost receipt (**multipart**: `file`, optional `cost_transaction_id`) |
+| GET | `/file-attachments/:id/content` | Inline file bytes (cost receipt when linked) |
+| GET | `/file-attachments/:id/download` | Presigned or proxied download URL JSON (backend-dependent) |
+
+#### Alerts
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/farms/:id/alerts` | List alerts for farm |
+| GET | `/farms/:id/alerts/unread-count` | Unread count |
+| PATCH | `/alerts/:id/read` | Mark alert read |
+| PATCH | `/alerts/:id/acknowledge` | Acknowledge alert |
+
+#### Natural farming — inputs & batches
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/farms/:id/naturalfarming/inputs` | List input definitions |
+| POST | `/farms/:id/naturalfarming/inputs` | Create input definition |
+| PUT | `/naturalfarming/inputs/:id` | Update input definition |
+| DELETE | `/naturalfarming/inputs/:id` | Delete input definition |
+| GET | `/farms/:id/naturalfarming/batches` | List input batches |
+| POST | `/farms/:id/naturalfarming/batches` | Create input batch |
+| PUT | `/naturalfarming/batches/:id` | Update input batch |
+| DELETE | `/naturalfarming/batches/:id` | Delete input batch |
+
+#### Natural farming — recipes & components
+
+| Method | Path | Description |
+|--------|------|-------------|
 | GET | `/farms/:id/naturalfarming/recipes` | List application recipes |
 | POST | `/farms/:id/naturalfarming/recipes` | Create recipe |
 | GET | `/naturalfarming/recipes/:id` | Get recipe |
 | PUT | `/naturalfarming/recipes/:id` | Update recipe |
 | DELETE | `/naturalfarming/recipes/:id` | Delete recipe |
-| GET | `/farms/:id/naturalfarming/inputs` | List NF input definitions |
-| GET | `/farms/:id/naturalfarming/batches` | List NF input batches |
+| GET | `/naturalfarming/recipes/:id/components` | List recipe components |
+| POST | `/naturalfarming/recipes/:id/components` | Add component |
+| DELETE | `/naturalfarming/recipes/:id/components/:iid` | Remove component (`:iid` = component row id) |
 
 ---
 
@@ -304,6 +433,7 @@ The master seed loads a complete JADAM natural farming demo dataset — verified
 ```bash
 make help       # Show all targets
 make run        # Run the API server
+make run-receiver # Run optional Insert Commons receiver (see docs/insert-commons-receiver-playbook.md)
 make dev        # Run API + UI dev server in parallel
 make ui         # Run the Vue dev server
 make build      # Build the Go binary
@@ -365,6 +495,7 @@ For users who choose to integrate local AI, gr33n offers schema-guided intellige
 - [x] Sensor readings live on dashboard (SSE stream with JWT query param auth)
 - [x] Phase 10 — JWT smoke tests (`AUTH_MODE=auth_test`), farm-scoped write authorization, fertigation ↔ crop cycle link, costs CSV export, SensorDetail export UX
 - [x] Phase 11 — Farm RBAC (viewer / operator / finance / manager / owner), cost receipts + local `FILE_STORAGE_DIR` storage, **PWA-first** installable shell (manifest + SW in production builds; Capacitor still an option for store-distributed apps), Insert Commons opt-in + early sync hook, OpenAPI updates
+- [x] Phase 13 — Platform evolution (receiver-side Insert Commons, audit/compliance API, offline + finance depth, tenancy experiments, optional Capacitor scaffold; [`docs/phase-13-operator-documentation.md`](docs/phase-13-operator-documentation.md) indexes plans and playbooks)
 - [x] Actuator control pipeline (automation worker → pending_command → Pi poll → execute → report)
 - [x] Fertigation module — reservoirs, EC targets, programs, events
 - [x] Natural farming inventory UI — input definitions & batch tracking

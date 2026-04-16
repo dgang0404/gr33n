@@ -5,8 +5,9 @@
 -- name: CreateCostTransaction :one
 INSERT INTO gr33ncore.cost_transactions (
     farm_id, transaction_date, category, subcategory, amount, currency,
-    description, is_income, created_by_user_id, receipt_file_id
-) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+    description, is_income, created_by_user_id, receipt_file_id,
+    document_type, document_reference, counterparty
+) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
 RETURNING *;
 
 -- name: ListCostTransactionsByFarm :many
@@ -17,7 +18,7 @@ LIMIT $2 OFFSET $3;
 
 -- name: ListCostTransactionsByFarmExport :many
 SELECT id, farm_id, transaction_date, category, subcategory, amount, currency,
- description, is_income
+ description, is_income, document_type, document_reference, counterparty
 FROM gr33ncore.cost_transactions
 WHERE farm_id = $1
 ORDER BY transaction_date ASC, id ASC;
@@ -36,9 +37,25 @@ SELECT
     currency,
     COALESCE(SUM(CASE WHEN is_income THEN amount ELSE 0 END), 0)::numeric AS income,
     COALESCE(SUM(CASE WHEN NOT is_income THEN amount ELSE 0 END), 0)::numeric AS expense,
+    COALESCE(SUM(CASE WHEN is_income THEN amount ELSE -amount END), 0)::numeric AS net,
     COUNT(*)::bigint AS tx_count
 FROM gr33ncore.cost_transactions
 WHERE farm_id = $1
+GROUP BY category, currency
+ORDER BY category ASC, currency ASC;
+
+-- name: GetCostCategoryTotalsByFarmForYear :many
+SELECT
+    category,
+    currency,
+    COALESCE(SUM(CASE WHEN is_income THEN amount ELSE 0 END), 0)::numeric AS income,
+    COALESCE(SUM(CASE WHEN NOT is_income THEN amount ELSE 0 END), 0)::numeric AS expense,
+    COALESCE(SUM(CASE WHEN is_income THEN amount ELSE -amount END), 0)::numeric AS net,
+    COUNT(*)::bigint AS tx_count
+FROM gr33ncore.cost_transactions
+WHERE farm_id = $1
+  AND transaction_date >= $2::date
+  AND transaction_date < $3::date
 GROUP BY category, currency
 ORDER BY category ASC, currency ASC;
 
@@ -55,6 +72,9 @@ UPDATE gr33ncore.cost_transactions SET
     description = $7,
     is_income = $8,
     receipt_file_id = $9,
+    document_type = $10,
+    document_reference = $11,
+    counterparty = $12,
     updated_at = NOW()
 WHERE id = $1
 RETURNING *;

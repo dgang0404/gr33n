@@ -10,6 +10,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"gr33n-api/internal/auditlog"
 	"gr33n-api/internal/authctx"
 	db "gr33n-api/internal/db"
 	"gr33n-api/internal/farmauthz"
@@ -177,6 +178,22 @@ func (h *Handler) AddFarmMember(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
+	mod := "gr33ncore"
+	tbl := "farm_memberships"
+	rid := member.UserID.String()
+	role := string(member.RoleInFarm)
+	auditlog.Submit(r.Context(), q, r, auditlog.Event{
+		FarmID:         farmID,
+		Action:         db.Gr33ncoreUserActionTypeEnumCreateRecord,
+		TargetSchema:   &mod,
+		TargetTable:    &tbl,
+		TargetRecordID: &rid,
+		Details: map[string]any{
+			"kind":         "farm_member_added",
+			"role_in_farm": role,
+			"email":        body.Email,
+		},
+	})
 	httputil.WriteJSON(w, http.StatusCreated, member)
 }
 
@@ -211,6 +228,20 @@ func (h *Handler) UpdateMemberRole(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
+	mod := "gr33ncore"
+	tbl := "farm_memberships"
+	rid := uid.String()
+	auditlog.Submit(r.Context(), q, r, auditlog.Event{
+		FarmID:         farmID,
+		Action:         db.Gr33ncoreUserActionTypeEnumUpdateRecord,
+		TargetSchema:   &mod,
+		TargetTable:    &tbl,
+		TargetRecordID: &rid,
+		Details: map[string]any{
+			"kind":         "farm_member_role_changed",
+			"role_in_farm": body.RoleInFarm,
+		},
+	})
 	httputil.WriteJSON(w, http.StatusOK, m)
 }
 
@@ -236,5 +267,16 @@ func (h *Handler) RemoveMember(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
+	mod := "gr33ncore"
+	tbl := "farm_memberships"
+	rid := uid.String()
+	auditlog.Submit(r.Context(), q, r, auditlog.Event{
+		FarmID:         farmID,
+		Action:         db.Gr33ncoreUserActionTypeEnumDeleteRecord,
+		TargetSchema:   &mod,
+		TargetTable:    &tbl,
+		TargetRecordID: &rid,
+		Details:        map[string]any{"kind": "farm_member_removed"},
+	})
 	w.WriteHeader(http.StatusNoContent)
 }

@@ -79,6 +79,26 @@ describe('farm store', () => {
     expect(farm.taskQueuePendingCount(1)).toBe(1)
   })
 
+  it('queues cost create when network is unavailable', async () => {
+    const farm = useFarmStore()
+    api.post.mockRejectedValueOnce(new Error('network down'))
+
+    const created = await farm.createCost(1, {
+      transaction_date: '2026-04-16',
+      category: 'miscellaneous',
+      amount: 12.5,
+      currency: 'USD',
+      is_income: false,
+    })
+
+    expect(String(created.id)).toContain('local-cost-')
+    expect(created._offline?.queued).toBe(true)
+    expect(farm.taskWriteQueue).toHaveLength(1)
+    expect(farm.taskWriteQueue[0].type).toBe('create_cost')
+    expect(farm.taskWriteQueue[0].idempotencyKey).toBeTruthy()
+    expect(farm.taskWriteQueue[0].payload.amount).toBe(12.5)
+  })
+
   it('can retry and discard queued items', async () => {
     const farm = useFarmStore()
     api.post.mockRejectedValueOnce(new Error('network down'))
