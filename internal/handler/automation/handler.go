@@ -1,8 +1,10 @@
 package automation
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/jackc/pgx/v5"
@@ -13,6 +15,61 @@ import (
 	"gr33n-api/internal/farmauthz"
 	"gr33n-api/internal/httputil"
 )
+
+// validPreconditionOps enumerates the comparison operators accepted by the
+// schedule-precondition evaluator. Keeping the list here (mirrored in the
+// worker) lets us reject bad rules at the write path rather than silently
+// at tick time.
+var validPreconditionOps = map[string]struct{}{
+	"lt":  {},
+	"lte": {},
+	"eq":  {},
+	"gte": {},
+	"gt":  {},
+	"ne":  {},
+}
+
+type schedulePrecondition struct {
+	SensorID int64   `json:"sensor_id"`
+	Op       string  `json:"op"`
+	Value    float64 `json:"value"`
+}
+
+// parsePreconditions validates the raw JSON payload sent by the client and
+// returns a canonicalised []byte suitable for the DB. An empty/absent list
+// normalises to "[]".
+func parsePreconditions(ctx context.Context, q *db.Queries, farmID int64, raw json.RawMessage) ([]byte, error) {
+	if len(raw) == 0 || string(raw) == "null" {
+		return []byte("[]"), nil
+	}
+	var items []schedulePrecondition
+	if err := json.Unmarshal(raw, &items); err != nil {
+		return nil, fmt.Errorf("preconditions must be an array of {sensor_id, op, value}")
+	}
+	for i, p := range items {
+		if p.SensorID <= 0 {
+			return nil, fmt.Errorf("preconditions[%d]: sensor_id must be > 0", i)
+		}
+		if _, ok := validPreconditionOps[p.Op]; !ok {
+			return nil, fmt.Errorf("preconditions[%d]: op must be one of lt|lte|eq|gte|gt|ne", i)
+		}
+		sensor, err := q.GetSensorByID(ctx, p.SensorID)
+		if err != nil {
+			if errors.Is(err, pgx.ErrNoRows) {
+				return nil, fmt.Errorf("preconditions[%d]: sensor %d not found", i, p.SensorID)
+			}
+			return nil, fmt.Errorf("preconditions[%d]: %w", i, err)
+		}
+		if sensor.FarmID != farmID {
+			return nil, fmt.Errorf("preconditions[%d]: sensor %d does not belong to this farm", i, p.SensorID)
+		}
+	}
+	canonical, err := json.Marshal(items)
+	if err != nil {
+		return nil, err
+	}
+	return canonical, nil
+}
 
 type Handler struct {
 	q      *db.Queries
@@ -119,13 +176,14 @@ func (h *Handler) CreateSchedule(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var body struct {
-		Name           string `json:"name"`
-		Description    *string `json:"description"`
-		ScheduleType   string `json:"schedule_type"`
-		CronExpression string `json:"cron_expression"`
-		Timezone       string `json:"timezone"`
-		IsActive       bool   `json:"is_active"`
-		MetaData       []byte `json:"meta_data"`
+		Name           string          `json:"name"`
+		Description    *string         `json:"description"`
+		ScheduleType   string          `json:"schedule_type"`
+		CronExpression string          `json:"cron_expression"`
+		Timezone       string          `json:"timezone"`
+		IsActive       bool            `json:"is_active"`
+		MetaData       []byte          `json:"meta_data"`
+		Preconditions  json.RawMessage `json:"preconditions"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid request body")
@@ -141,6 +199,11 @@ func (h *Handler) CreateSchedule(w http.ResponseWriter, r *http.Request) {
 	if body.MetaData == nil {
 		body.MetaData = []byte("{}")
 	}
+	preconds, err := parsePreconditions(r.Context(), h.q, farmID, body.Preconditions)
+	if err != nil {
+		httputil.WriteError(w, http.StatusBadRequest, err.Error())
+		return
+	}
 	row, err := h.q.CreateSchedule(r.Context(), db.CreateScheduleParams{
 		FarmID:         farmID,
 		Name:           body.Name,
@@ -150,6 +213,7 @@ func (h *Handler) CreateSchedule(w http.ResponseWriter, r *http.Request) {
 		Timezone:       body.Timezone,
 		IsActive:       body.IsActive,
 		MetaData:       body.MetaData,
+		Preconditions:  preconds,
 	})
 	if err != nil {
 		httputil.WriteError(w, http.StatusInternalServerError, "failed to create schedule")
@@ -178,13 +242,14 @@ func (h *Handler) UpdateSchedule(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var body struct {
-		Name           string  `json:"name"`
-		Description    *string `json:"description"`
-		ScheduleType   string  `json:"schedule_type"`
-		CronExpression string  `json:"cron_expression"`
-		Timezone       string  `json:"timezone"`
-		IsActive       bool    `json:"is_active"`
-		MetaData       []byte  `json:"meta_data"`
+		Name           string          `json:"name"`
+		Description    *string         `json:"description"`
+		ScheduleType   string          `json:"schedule_type"`
+		CronExpression string          `json:"cron_expression"`
+		Timezone       string          `json:"timezone"`
+		IsActive       bool            `json:"is_active"`
+		MetaData       []byte          `json:"meta_data"`
+		Preconditions  json.RawMessage `json:"preconditions"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid request body")
@@ -200,6 +265,21 @@ func (h *Handler) UpdateSchedule(w http.ResponseWriter, r *http.Request) {
 	if body.MetaData == nil {
 		body.MetaData = []byte("{}")
 	}
+	// An absent preconditions field means "don't touch" — preserve existing
+	// interlock rules so a partial PUT doesn't accidentally clear them.
+	var preconds []byte
+	if len(body.Preconditions) == 0 {
+		preconds = sch.Preconditions
+		if len(preconds) == 0 {
+			preconds = []byte("[]")
+		}
+	} else {
+		preconds, err = parsePreconditions(r.Context(), h.q, sch.FarmID, body.Preconditions)
+		if err != nil {
+			httputil.WriteError(w, http.StatusBadRequest, err.Error())
+			return
+		}
+	}
 	row, err := h.q.UpdateSchedule(r.Context(), db.UpdateScheduleParams{
 		ID:             id,
 		Name:           body.Name,
@@ -209,6 +289,7 @@ func (h *Handler) UpdateSchedule(w http.ResponseWriter, r *http.Request) {
 		Timezone:       body.Timezone,
 		IsActive:       body.IsActive,
 		MetaData:       body.MetaData,
+		Preconditions:  preconds,
 	})
 	if err != nil {
 		httputil.WriteError(w, http.StatusInternalServerError, "failed to update schedule")

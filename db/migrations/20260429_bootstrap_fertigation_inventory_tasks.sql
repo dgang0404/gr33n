@@ -31,6 +31,7 @@ BEGIN
     SELECT p_farm_id, x.n, x.d, x.t
     FROM (
         VALUES
+            ('Seedling Room', 'Germination and early seedling stage. High humidity, gentle light.', 'indoor'),
             ('Veg Room', 'Vegetative growth stage. 18/6 light, JLF+JMS feeding.', 'indoor'),
             ('Flower Room', 'Flowering and fruiting stage. 12/12 light, FFJ+WCA program.', 'indoor'),
             ('Outdoor Garden', 'Outdoor raised beds and garden rows. Natural light. JADAM soil program.', 'outdoor')
@@ -257,7 +258,7 @@ BEGIN
             ('flush',        0.0::numeric, 0.5::numeric, 5.8::numeric, 6.8::numeric)
     ) AS gs(stage, ec_min, ec_max, ph_min, ph_max) ON TRUE
     WHERE z.farm_id = p_farm_id
-      AND z.name IN ('Veg Room', 'Flower Room', 'Outdoor Garden')
+      AND z.name IN ('Seedling Room', 'Veg Room', 'Flower Room', 'Outdoor Garden')
       AND z.deleted_at IS NULL
     ON CONFLICT (farm_id, zone_id, growth_stage) DO NOTHING;
 

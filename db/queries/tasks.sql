@@ -6,9 +6,19 @@
 INSERT INTO gr33ncore.tasks (
     farm_id, zone_id, schedule_id, title, description, task_type, status, priority,
     assigned_to_user_id, due_date, estimated_duration_minutes,
-    created_by_user_id, created_at, updated_at
-) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW(), NOW())
+    source_alert_id, source_rule_id, created_by_user_id, created_at, updated_at
+) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, NOW(), NOW())
 RETURNING *;
+
+-- name: ListTasksBySourceAlertID :many
+SELECT * FROM gr33ncore.tasks
+WHERE source_alert_id = $1 AND deleted_at IS NULL
+ORDER BY created_at DESC;
+
+-- name: ListTasksBySourceRuleID :many
+SELECT * FROM gr33ncore.tasks
+WHERE source_rule_id = $1 AND deleted_at IS NULL
+ORDER BY created_at DESC;
 
 -- name: GetTaskByID :one
 SELECT * FROM gr33ncore.tasks

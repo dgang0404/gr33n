@@ -111,6 +111,11 @@
                 <span v-if="r.schedule_id" class="text-[10px] text-zinc-600">
                   schedule #{{ r.schedule_id }}
                 </span>
+                <router-link v-else-if="r.rule_id"
+                  :to="{ name: 'automation' }"
+                  class="text-[10px] text-zinc-500 hover:text-zinc-300">
+                  rule #{{ r.rule_id }}
+                </router-link>
               </div>
               <span class="text-xs text-zinc-600">{{ formatTime(r.executed_at) }}</span>
             </div>
@@ -155,6 +160,53 @@
             <input type="checkbox" v-model="form.is_active" id="sched-active" class="rounded border-zinc-600" />
             <label for="sched-active" class="text-xs text-zinc-300">Active</label>
           </div>
+
+          <div class="pt-2 border-t border-zinc-800">
+            <div class="flex items-center justify-between mb-1">
+              <label class="text-xs text-zinc-400">
+                Preconditions
+                <HelpTip position="top">
+                  Interlock-lite. Before firing any actions, the worker checks the latest reading for each sensor listed here.
+                  If any rule fails — or a sensor has no reading yet — the run is recorded as <span class="font-mono">status=skipped, message=precondition_failed</span>
+                  and no actuator commands are written. Empty list = no interlock.
+                </HelpTip>
+              </label>
+              <button type="button" @click="addPrecondition"
+                class="text-[11px] text-zinc-300 border border-zinc-700 rounded px-2 py-0.5 hover:text-white">
+                + Add rule
+              </button>
+            </div>
+            <p v-if="!form.preconditions.length" class="text-[11px] text-zinc-600 italic">
+              No preconditions — schedule fires whenever the cron expression matches.
+            </p>
+            <div v-else class="space-y-2">
+              <div v-for="(rule, idx) in form.preconditions" :key="idx"
+                class="grid grid-cols-[minmax(0,1fr)_80px_100px_auto] gap-2 items-center">
+                <select v-model.number="rule.sensor_id"
+                  class="bg-zinc-950 border border-zinc-700 rounded px-2 py-1 text-xs text-white">
+                  <option :value="0" disabled>Select sensor</option>
+                  <option v-for="s in sensors" :key="s.id" :value="s.id">
+                    {{ s.name }}{{ s.sensor_type ? ' (' + s.sensor_type + ')' : '' }}
+                  </option>
+                </select>
+                <select v-model="rule.op"
+                  class="bg-zinc-950 border border-zinc-700 rounded px-2 py-1 text-xs text-white">
+                  <option value="lt">&lt;</option>
+                  <option value="lte">&le;</option>
+                  <option value="eq">=</option>
+                  <option value="gte">&ge;</option>
+                  <option value="gt">&gt;</option>
+                  <option value="ne">&ne;</option>
+                </select>
+                <input type="number" step="any" v-model.number="rule.value"
+                  class="bg-zinc-950 border border-zinc-700 rounded px-2 py-1 text-xs text-white" />
+                <button type="button" @click="removePrecondition(idx)"
+                  class="text-[11px] text-red-400 hover:text-red-300 px-1">
+                  Remove
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
         <div v-if="formError" class="text-red-400 text-xs">{{ formError }}</div>
         <div class="flex justify-end gap-3 pt-2">
@@ -195,6 +247,7 @@ const schedules = ref([])
 const runs = ref([])
 const programs = ref([])
 const tasks = ref([])
+const sensors = ref([])
 const worker = ref({ running: false, simulation_mode: false })
 const loading = ref(false)
 const expandedSchedule = ref(null)
@@ -209,7 +262,32 @@ const deleteTarget = ref(null)
 const form = ref(emptyForm())
 
 function emptyForm() {
-  return { name: '', description: '', schedule_type: 'cron', cron_expression: '', timezone: 'UTC', is_active: true }
+  return {
+    name: '', description: '', schedule_type: 'cron',
+    cron_expression: '', timezone: 'UTC', is_active: true,
+    preconditions: [],
+  }
+}
+
+function normalisePreconditions(raw) {
+  if (!Array.isArray(raw)) return []
+  return raw.map((p) => ({
+    sensor_id: Number(p.sensor_id) || 0,
+    op: p.op || 'gte',
+    value: p.value ?? 0,
+  }))
+}
+
+function addPrecondition() {
+  form.value.preconditions.push({
+    sensor_id: sensors.value[0]?.id || 0,
+    op: 'gte',
+    value: 0,
+  })
+}
+
+function removePrecondition(idx) {
+  form.value.preconditions.splice(idx, 1)
 }
 
 function openCreate() {
@@ -228,6 +306,7 @@ function openEdit(s) {
     cron_expression: s.cron_expression,
     timezone: s.timezone,
     is_active: s.is_active,
+    preconditions: normalisePreconditions(s.preconditions),
   }
   formError.value = ''
   showModal.value = true
@@ -239,9 +318,31 @@ async function saveSchedule() {
     formError.value = 'Name and cron expression are required.'
     return
   }
+  for (const [i, p] of form.value.preconditions.entries()) {
+    if (!p.sensor_id) {
+      formError.value = `Precondition ${i + 1}: pick a sensor.`
+      return
+    }
+    if (!['lt', 'lte', 'eq', 'gte', 'gt', 'ne'].includes(p.op)) {
+      formError.value = `Precondition ${i + 1}: invalid operator.`
+      return
+    }
+    if (typeof p.value !== 'number' || Number.isNaN(p.value)) {
+      formError.value = `Precondition ${i + 1}: value must be a number.`
+      return
+    }
+  }
   saving.value = true
   try {
-    const payload = { ...form.value, description: form.value.description || null }
+    const payload = {
+      ...form.value,
+      description: form.value.description || null,
+      preconditions: form.value.preconditions.map((p) => ({
+        sensor_id: Number(p.sensor_id),
+        op: p.op,
+        value: Number(p.value),
+      })),
+    }
     if (editingSchedule.value) {
       const updated = await store.updateSchedule(editingSchedule.value.id, payload)
       const idx = schedules.value.findIndex(s => s.id === editingSchedule.value.id)
@@ -287,7 +388,7 @@ function taskZoneName(zoneId) {
 
 async function refreshAll() {
   const fid = farmContext.farmId
-  if (!store.zones.length && fid) await store.loadAll(fid)
+  if (fid && (!store.zones.length || !store.sensors.length)) await store.loadAll(fid)
   loading.value = true
   try {
     const [s, r, w, p] = await Promise.all([
@@ -302,6 +403,7 @@ async function refreshAll() {
     programs.value = p
     await store.loadTasks(fid)
     tasks.value = store.tasks
+    sensors.value = Array.isArray(store.sensors) ? store.sensors : []
   } finally {
     loading.value = false
   }

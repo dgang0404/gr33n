@@ -142,10 +142,10 @@
               class="bg-zinc-900 border border-zinc-700 text-zinc-300 text-sm rounded-lg px-3 py-2 w-full max-w-md focus:outline-none">
               <option v-for="opt in starterPackOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
             </select>
-            <details v-if="newFarm.starterKey === jadamKey" class="text-zinc-500 text-xs">
-              <summary class="text-gr33n-400 cursor-pointer select-none">{{ jadamSummary.title }}</summary>
+            <details v-if="starterSummaryForNewFarm" class="text-zinc-500 text-xs">
+              <summary class="text-gr33n-400 cursor-pointer select-none">{{ starterSummaryForNewFarm.title }}</summary>
               <ul class="list-disc pl-5 mt-2 space-y-1">
-                <li v-for="(b, i) in jadamSummary.bullets" :key="i">{{ b }}</li>
+                <li v-for="(b, i) in starterSummaryForNewFarm.bullets" :key="i">{{ b }}</li>
               </ul>
             </details>
           </div>
@@ -175,6 +175,12 @@
             class="bg-zinc-900 border border-zinc-700 text-zinc-300 text-sm rounded-lg px-3 py-2 min-w-[14rem]">
             <option v-for="opt in starterPackOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
           </select>
+          <details v-if="starterSummaryForApply" class="text-zinc-500 text-xs w-full max-w-md mt-2">
+            <summary class="text-gr33n-400 cursor-pointer select-none">{{ starterSummaryForApply.title }}</summary>
+            <ul class="list-disc pl-5 mt-2 space-y-1">
+              <li v-for="(b, i) in starterSummaryForApply.bullets" :key="i">{{ b }}</li>
+            </ul>
+          </details>
         </div>
         <button type="button" :disabled="applyStarterSaving"
           class="bg-amber-700 hover:bg-amber-600 disabled:bg-zinc-700 text-white text-sm font-semibold px-4 py-2 rounded-lg"
@@ -225,9 +231,11 @@
             class="flex flex-wrap items-center gap-2 text-xs border-t border-zinc-800 pt-2">
             <span class="text-zinc-500 shrink-0">Default template for new farms:</span>
             <select v-model="orgDefaultDraft[o.id]"
-              class="bg-zinc-950 border border-zinc-600 text-zinc-300 rounded px-2 py-1 min-w-[10rem] focus:outline-none">
+              class="bg-zinc-950 border border-zinc-600 text-zinc-300 rounded px-2 py-1 min-w-[12rem] focus:outline-none">
               <option value="">None (blank)</option>
-              <option :value="jadamKey">Indoor photoperiod v1</option>
+              <option v-for="opt in starterPackOptions" :key="'orgdef-' + opt.value" :value="opt.value">
+                {{ opt.label }}
+              </option>
             </select>
             <button type="button" :disabled="orgDefaultSaving === o.id"
               class="text-xs bg-zinc-700 hover:bg-zinc-600 disabled:opacity-50 text-white px-3 py-1 rounded"
@@ -683,7 +691,7 @@ import api from '../api'
 import {
   BOOTSTRAP_STARTER_OPTIONS,
   BOOTSTRAP_TEMPLATE_KEYS,
-  JADAM_INDOOR_PHOTOPERIOD_V1_SUMMARY,
+  BOOTSTRAP_STARTER_SUMMARIES,
 } from '../constants/bootstrapTemplates'
 
 const router = useRouter()
@@ -692,8 +700,13 @@ const farmStore = useFarmStore()
 const farmContext = useFarmContextStore()
 
 const starterPackOptions = BOOTSTRAP_STARTER_OPTIONS
-const jadamKey = BOOTSTRAP_TEMPLATE_KEYS.JADAM_INDOOR_PHOTOPERIOD_V1
-const jadamSummary = JADAM_INDOOR_PHOTOPERIOD_V1_SUMMARY
+
+const starterSummaryForNewFarm = computed(
+  () => BOOTSTRAP_STARTER_SUMMARIES[newFarm.starterKey] || null,
+)
+const starterSummaryForApply = computed(
+  () => BOOTSTRAP_STARTER_SUMMARIES[applyStarterKey.value] || null,
+)
 
 const newFarm = reactive({
   name: '',

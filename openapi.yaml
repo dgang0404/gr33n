@@ -56,7 +56,7 @@ tags:
   - name: fertigation
     description: Fertigation reservoirs, programs, EC targets, and events
   - name: naturalfarming
-    description: Korean Natural Farming (KNF) input definitions and batches
+    description: Natural farming inputs and batches (JADAM-style starter data and custom definitions)
   - name: alerts
     description: Sensor alert notifications and threshold breach tracking
   - name: profiles
@@ -462,7 +462,8 @@ paths:
       tags: [farms]
       summary: Apply a versioned starter template to an existing farm (farm admin)
       description: >
-        Idempotent per farm and template key. Currently supported `template` value: `jadam_indoor_photoperiod_v1`.
+        Idempotent per farm and template key. Supported `template` values include `jadam_indoor_photoperiod_v1`,
+        `chicken_coop_v1`, `greenhouse_climate_v1`, `drying_room_v1`, and `small_aquaponics_v1` (see `gr33ncore.apply_farm_bootstrap_template`).
       security: [{ bearerAuth: [] }]
       parameters:
         - { $ref: "#/components/parameters/ID" }
@@ -807,6 +808,28 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/Sensor" }
         "404": { $ref: "#/components/responses/NotFound" }
+    put:
+      tags: [sensors]
+      summary: Update sensor configuration (thresholds, duration, cooldown, metadata)
+      description: >
+        Patch-style — any omitted field leaves its stored value untouched. Pass explicit
+        `null` to clear a nullable column such as `alert_threshold_low`.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SensorUpdate" }
+      responses:
+        "200":
+          description: Updated sensor
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Sensor" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "404": { $ref: "#/components/responses/NotFound" }
     delete:
       tags: [sensors]
       summary: Soft-delete a sensor
@@ -1071,7 +1094,7 @@ paths:
               schema: { $ref: "#/components/schemas/ActuatorEvent" }
         "400": { $ref: "#/components/responses/BadRequest" }
 
-  # ── Natural Farming ───────────────────────────────────────
+  # ── Natural farming (inputs & batches; tag: naturalfarming) ─────────────
 
   /farms/{id}/naturalfarming/inputs:
     get:
@@ -1454,6 +1477,188 @@ paths:
                   last_tick_at: { type: string, format: date-time, nullable: true }
                   last_error: { type: string }
                   status: { type: string, enum: [ok, disabled] }
+
+  # ── Automation rules (Phase 20 WS1) ────────────────────────
+
+  /farms/{id}/automation/rules:
+    get:
+      tags: [automation]
+      summary: List automation rules for a farm
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      responses:
+        "200":
+          description: List of automation rules
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/AutomationRule" }
+    post:
+      tags: [automation]
+      summary: Create an automation rule for a farm
+      description: >
+        Creates a rule that the automation worker will evaluate on each tick.
+        The server validates `trigger_source` against the DB enum, ensures any
+        sensor references (both in `trigger_configuration` and `conditions`)
+        belong to this farm, and canonicalises `conditions` into
+        `{ logic, predicates }`. Actions are attached via
+        `POST /automation/rules/{id}/actions`.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AutomationRuleCreate" }
+      responses:
+        "201":
+          description: Created rule
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AutomationRule" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+
+  /automation/rules/{id}:
+    get:
+      tags: [automation]
+      summary: Get an automation rule
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      responses:
+        "200":
+          description: Rule
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AutomationRule" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    put:
+      tags: [automation]
+      summary: Update an automation rule
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AutomationRuleCreate" }
+      responses:
+        "200":
+          description: Updated rule
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AutomationRule" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    delete:
+      tags: [automation]
+      summary: Delete an automation rule
+      description: >
+        Cascades to `executable_actions` with this `rule_id` and nulls out
+        `source_rule_id` on any tasks the rule previously generated.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      responses:
+        "204": { description: Deleted }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /automation/rules/{id}/active:
+    patch:
+      tags: [automation]
+      summary: Toggle automation rule active/inactive
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [is_active]
+              properties:
+                is_active: { type: boolean }
+      responses:
+        "200":
+          description: Updated rule
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AutomationRule" }
+
+  /automation/rules/{id}/actions:
+    get:
+      tags: [automation]
+      summary: List actions attached to a rule
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      responses:
+        "200":
+          description: Ordered list of executable actions for this rule
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/ExecutableAction" }
+    post:
+      tags: [automation]
+      summary: Attach an executable action to a rule
+      description: >
+        Phase 20 dispatches `control_actuator`, `create_task`, and
+        `send_notification`. The other enum values
+        (`trigger_another_automation_rule`, `http_webhook_call`,
+        `update_record_in_gr33n`, `log_custom_event`) are deferred and
+        rejected with HTTP 400.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ExecutableActionCreate" }
+      responses:
+        "201":
+          description: Created action
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ExecutableAction" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+
+  /automation/actions/{id}:
+    put:
+      tags: [automation]
+      summary: Update a rule-bound executable action
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ExecutableActionCreate" }
+      responses:
+        "200":
+          description: Updated action
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ExecutableAction" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    delete:
+      tags: [automation]
+      summary: Delete a rule-bound executable action
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      responses:
+        "204": { description: Deleted }
+        "404": { $ref: "#/components/responses/NotFound" }
 
   # ── Tasks ──────────────────────────────────────────────────
 
@@ -2543,6 +2748,30 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/Alert" }
 
+  /alerts/{id}/create-task:
+    post:
+      tags: [alerts]
+      summary: Create a task from an alert
+      description: >
+        Synthesises a task from the alert (title, description, priority,
+        zone) and links the resulting task back to the alert via
+        `source_alert_id`. Body is optional — any provided field overrides
+        the derived default.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/TaskFromAlert" }
+      responses:
+        "201":
+          description: Created task
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Task" }
+
   # ── Profiles & farm members ────────────────────────────────
 
   /profile:
@@ -2965,7 +3194,7 @@ components:
         bootstrap_template:
           type: string
           nullable: true
-          description: Optional. `jadam_indoor_photoperiod_v1` for starter zones/schedules/JADAM+fertigation baseline; `none` or `blank` to explicitly skip. Omit for a blank farm response shape.
+          description: Optional bootstrap key (`jadam_indoor_photoperiod_v1`, `chicken_coop_v1`, `greenhouse_climate_v1`, `drying_room_v1`, `small_aquaponics_v1`) or `none` / `blank` to skip. Omit for a blank farm response shape.
 
     FarmCreatedWithBootstrap:
       type: object
@@ -3051,7 +3280,7 @@ components:
         default_bootstrap_template:
           type: string
           nullable: true
-          description: Farm bootstrap key (e.g. jadam_indoor_photoperiod_v1) or null to clear the org default
+          description: Farm bootstrap key (e.g. jadam_indoor_photoperiod_v1, chicken_coop_v1, greenhouse_climate_v1, drying_room_v1, small_aquaponics_v1) or null to clear the org default
 
     OrganizationUsageSummary:
       type: object
@@ -3093,6 +3322,30 @@ components:
         alert_threshold_low: { type: number, nullable: true }
         alert_threshold_high: { type: number, nullable: true }
         reading_interval_seconds: { type: integer, nullable: true }
+        alert_duration_seconds:
+          type: integer
+          minimum: 0
+          maximum: 86400
+          default: 0
+          description: >
+            Minimum sustained time (seconds) a reading must stay out of bounds before an alert
+            is emitted. 0 means alert on the first breaching reading.
+        alert_cooldown_seconds:
+          type: integer
+          minimum: 0
+          maximum: 604800
+          default: 300
+          description: >
+            Minimum quiet window (seconds) after an alert fires before another alert can fire
+            for the same sensor. Measured against the most recent alert's created_at.
+        alert_breach_started_at:
+          type: string
+          format: date-time
+          nullable: true
+          readOnly: true
+          description: >
+            Internal evaluator state — when the current out-of-range streak started.
+            NULL while the reading is in bounds.
         created_at: { type: string, format: date-time }
 
     SensorCreate:
@@ -3106,6 +3359,32 @@ components:
         device_id: { type: integer }
         hardware_identifier: { type: string }
         reading_interval_seconds: { type: integer }
+        value_min_expected: { type: number }
+        value_max_expected: { type: number }
+        alert_threshold_low: { type: number }
+        alert_threshold_high: { type: number }
+        alert_duration_seconds: { type: integer, minimum: 0, maximum: 86400, default: 0 }
+        alert_cooldown_seconds: { type: integer, minimum: 0, maximum: 604800, default: 300 }
+
+    SensorUpdate:
+      type: object
+      description: >
+        Patch-style update. Any field omitted from the body leaves the stored value unchanged.
+        Pass JSON null explicitly to clear a nullable field (e.g. a threshold).
+      properties:
+        zone_id: { type: integer, nullable: true }
+        device_id: { type: integer, nullable: true }
+        name: { type: string }
+        sensor_type: { type: string }
+        unit_id: { type: integer }
+        hardware_identifier: { type: string, nullable: true }
+        value_min_expected: { type: number, nullable: true }
+        value_max_expected: { type: number, nullable: true }
+        alert_threshold_low: { type: number, nullable: true }
+        alert_threshold_high: { type: number, nullable: true }
+        reading_interval_seconds: { type: integer, nullable: true }
+        alert_duration_seconds: { type: integer, minimum: 0, maximum: 86400 }
+        alert_cooldown_seconds: { type: integer, minimum: 0, maximum: 604800 }
 
     SensorReading:
       type: object
@@ -3235,7 +3514,31 @@ components:
         is_active: { type: boolean }
         last_triggered_time: { type: string, format: date-time, nullable: true }
         next_expected_trigger_time: { type: string, format: date-time, nullable: true }
+        preconditions:
+          type: array
+          description: >
+            Interlock-lite rules evaluated before the worker fires any executable
+            action for this schedule. Empty array = no interlock.
+          items: { $ref: "#/components/schemas/SchedulePrecondition" }
         created_at: { type: string, format: date-time }
+
+    SchedulePrecondition:
+      type: object
+      required: [sensor_id, op, value]
+      description: >
+        Predicate against the latest reading for a sensor. If any precondition
+        fails at tick time the worker records an automation_runs row with
+        status='skipped' and message='precondition_failed', and no actuator
+        commands are written. Missing readings count as a failure.
+      properties:
+        sensor_id:
+          type: integer
+          description: Must belong to the same farm as the schedule.
+        op:
+          type: string
+          enum: [lt, lte, eq, gte, gt, ne]
+        value:
+          type: number
 
     ScheduleCreate:
       type: object
@@ -3256,10 +3559,17 @@ components:
           type: object
           description: Arbitrary JSON payload consumed by the worker for this schedule type
           additionalProperties: true
+        preconditions:
+          type: array
+          description: Optional interlock rules (default empty array).
+          items: { $ref: "#/components/schemas/SchedulePrecondition" }
 
     ScheduleUpdate:
       allOf:
         - $ref: "#/components/schemas/ScheduleCreate"
+      description: >
+        Omitting `preconditions` preserves the existing interlock rules. Send
+        an empty array to clear them.
 
     AutomationRun:
       type: object
@@ -3272,6 +3582,167 @@ components:
         message: { type: string, nullable: true }
         details: { type: object, nullable: true }
         executed_at: { type: string, format: date-time }
+
+    # ── Automation rules (Phase 20 WS1) ───────────────────────
+
+    AutomationTriggerSource:
+      type: string
+      description: Must match the `gr33ncore.automation_trigger_source_enum` DB enum.
+      enum:
+        - sensor_reading_threshold
+        - specific_time_cron
+        - actuator_state_changed
+        - manual_api_trigger
+        - task_status_updated
+        - new_system_log_event
+        - external_webhook_received
+
+    ExecutableActionType:
+      type: string
+      description: >
+        Must match the `gr33ncore.executable_action_type_enum` DB enum. Phase
+        20 dispatches `control_actuator`, `create_task`, and
+        `send_notification`; other values are rejected with HTTP 400 at the
+        write path until a later phase wires up their dispatchers.
+      enum:
+        - control_actuator
+        - create_task
+        - send_notification
+        - trigger_another_automation_rule
+        - http_webhook_call
+        - update_record_in_gr33n
+        - log_custom_event
+
+    RulePredicate:
+      type: object
+      required: [sensor_id, op, value]
+      description: >
+        Predicate against the latest reading for a sensor. Mirrors the shape
+        used by schedule preconditions so the worker can reuse its evaluator.
+      properties:
+        sensor_id:
+          type: integer
+          description: Must belong to the same farm as the rule.
+        op:
+          type: string
+          enum: [lt, lte, eq, gte, gt, ne]
+        value:
+          type: number
+
+    RuleConditions:
+      type: object
+      required: [logic, predicates]
+      description: >
+        Canonical form stored in `conditions_jsonb`. `logic` also mirrored in
+        the scalar `condition_logic` column for convenience.
+      properties:
+        logic:
+          type: string
+          enum: [ALL, ANY]
+        predicates:
+          type: array
+          items: { $ref: "#/components/schemas/RulePredicate" }
+
+    AutomationRule:
+      type: object
+      properties:
+        id: { type: integer, format: int64 }
+        farm_id: { type: integer, format: int64 }
+        name: { type: string }
+        description: { type: string, nullable: true }
+        is_active: { type: boolean }
+        trigger_source: { $ref: "#/components/schemas/AutomationTriggerSource" }
+        trigger_configuration:
+          type: object
+          description: >
+            Shape depends on `trigger_source`. For `sensor_reading_threshold`
+            this is `{ sensor_id, op, value }`; for `specific_time_cron` it is
+            `{ cron_expression, timezone? }`. Empty `{}` is allowed for
+            trigger sources that don't require configuration.
+          additionalProperties: true
+        condition_logic:
+          type: string
+          enum: [ALL, ANY]
+          nullable: true
+        conditions_jsonb: { $ref: "#/components/schemas/RuleConditions" }
+        cooldown_period_seconds: { type: integer, nullable: true }
+        last_evaluated_time: { type: string, format: date-time, nullable: true }
+        last_triggered_time: { type: string, format: date-time, nullable: true }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+
+    AutomationRuleCreate:
+      type: object
+      required: [name, trigger_source]
+      properties:
+        name: { type: string }
+        description: { type: string, nullable: true }
+        is_active: { type: boolean, default: false }
+        trigger_source: { $ref: "#/components/schemas/AutomationTriggerSource" }
+        trigger_configuration:
+          type: object
+          description: See `AutomationRule.trigger_configuration`.
+          additionalProperties: true
+        condition_logic:
+          type: string
+          enum: [ALL, ANY]
+          default: ALL
+        conditions:
+          type: array
+          description: >
+            Predicates evaluated under `condition_logic`. Stored in
+            `conditions_jsonb` as `{ logic, predicates }`.
+          items: { $ref: "#/components/schemas/RulePredicate" }
+        cooldown_period_seconds:
+          type: integer
+          minimum: 0
+          description: Min seconds between successive fires of this rule.
+
+    ExecutableAction:
+      type: object
+      description: >
+        A single step attached to an automation rule (or a schedule). The
+        table intentionally has no created_at/updated_at columns — actions
+        are edited as a list, not versioned individually.
+      properties:
+        id: { type: integer, format: int64 }
+        rule_id: { type: integer, format: int64, nullable: true }
+        schedule_id: { type: integer, format: int64, nullable: true }
+        execution_order: { type: integer }
+        action_type: { $ref: "#/components/schemas/ExecutableActionType" }
+        target_actuator_id: { type: integer, format: int64, nullable: true }
+        target_notification_template_id: { type: integer, format: int64, nullable: true }
+        target_automation_rule_id: { type: integer, format: int64, nullable: true }
+        action_command: { type: string, nullable: true }
+        action_parameters:
+          type: object
+          nullable: true
+          additionalProperties: true
+        delay_before_execution_seconds: { type: integer, nullable: true }
+
+    ExecutableActionCreate:
+      type: object
+      required: [action_type]
+      description: >
+        Validation depends on `action_type`:
+          - `control_actuator`: `target_actuator_id` and `action_command` are
+            required; `action_parameters` is optional.
+          - `create_task`: `action_parameters` must be a non-empty object
+            carrying the task payload (title, etc.).
+          - `send_notification`: `target_notification_template_id` is
+            required.
+        Other enum values are rejected with HTTP 400.
+      properties:
+        execution_order: { type: integer, default: 0 }
+        action_type: { $ref: "#/components/schemas/ExecutableActionType" }
+        target_actuator_id: { type: integer, format: int64, nullable: true }
+        target_notification_template_id: { type: integer, format: int64, nullable: true }
+        action_command: { type: string, nullable: true }
+        action_parameters:
+          type: object
+          nullable: true
+          additionalProperties: true
+        delay_before_execution_seconds: { type: integer, nullable: true, minimum: 0 }
 
     Task:
       type: object
@@ -3286,6 +3757,17 @@ components:
         status: { $ref: "#/components/schemas/TaskStatusEnum" }
         priority: { type: integer, minimum: 0, maximum: 3 }
         due_date: { type: string, format: date, nullable: true }
+        source_alert_id:
+          type: integer
+          nullable: true
+          description: If set, the alerts_notifications.id this task was created from.
+        source_rule_id:
+          type: integer
+          format: int64
+          nullable: true
+          description: >
+            If set, the automation_rules.id whose `create_task` action created
+            this task. Cleared to null if the rule is later deleted.
         created_at: { type: string, format: date-time }
 
     TaskStatusEnum:
@@ -3305,6 +3787,29 @@ components:
         priority: { type: integer, minimum: 0, maximum: 3, default: 1 }
         due_date: { type: string, format: date }
         assigned_to_user_id: { type: string, format: uuid }
+        source_alert_id:
+          type: integer
+          description: Optional back-reference to the alert this task was created from (must belong to farm).
+        source_rule_id:
+          type: integer
+          format: int64
+          description: Optional back-reference to the automation rule whose action created this task (must belong to farm).
+
+    TaskFromAlert:
+      type: object
+      description: >
+        Optional overrides when turning an alert into a task. Omitted fields
+        are derived from the alert — title/description from the rendered
+        subject+message, priority from severity (critical=3, high=2,
+        medium=1, low=0), and zone from the triggering sensor.
+      properties:
+        title: { type: string }
+        description: { type: string, nullable: true }
+        zone_id: { type: integer, nullable: true }
+        task_type: { type: string, nullable: true }
+        priority: { type: integer, minimum: 0, maximum: 3 }
+        due_date: { type: string, format: date, nullable: true }
+        assigned_to_user_id: { type: string, format: uuid, nullable: true }
 
     TaskUpdate:
       type: object

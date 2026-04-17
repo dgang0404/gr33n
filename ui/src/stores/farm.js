@@ -135,6 +135,55 @@ export const useFarmStore = defineStore('farm', {
       return this.automationRuns
     },
 
+    // ── Automation rules (Phase 20) ──────────────────────────────────────
+    async loadAutomationRules(farmId) {
+      const r = await api.get(`/farms/${farmId}/automation/rules`)
+      return Array.isArray(r.data) ? r.data : []
+    },
+
+    async createAutomationRule(farmId, payload) {
+      const r = await api.post(`/farms/${farmId}/automation/rules`, payload)
+      return r.data
+    },
+
+    async getAutomationRule(ruleId) {
+      const r = await api.get(`/automation/rules/${ruleId}`)
+      return r.data
+    },
+
+    async updateAutomationRule(ruleId, payload) {
+      const r = await api.put(`/automation/rules/${ruleId}`, payload)
+      return r.data
+    },
+
+    async updateAutomationRuleActive(ruleId, isActive) {
+      const r = await api.patch(`/automation/rules/${ruleId}/active`, { is_active: isActive })
+      return r.data
+    },
+
+    async deleteAutomationRule(ruleId) {
+      await api.delete(`/automation/rules/${ruleId}`)
+    },
+
+    async loadRuleActions(ruleId) {
+      const r = await api.get(`/automation/rules/${ruleId}/actions`)
+      return Array.isArray(r.data) ? r.data : []
+    },
+
+    async createRuleAction(ruleId, payload) {
+      const r = await api.post(`/automation/rules/${ruleId}/actions`, payload)
+      return r.data
+    },
+
+    async updateRuleAction(actionId, payload) {
+      const r = await api.put(`/automation/actions/${actionId}`, payload)
+      return r.data
+    },
+
+    async deleteRuleAction(actionId) {
+      await api.delete(`/automation/actions/${actionId}`)
+    },
+
     async updateTaskStatus(taskId, status) {
       const task = this.tasks.find((t) => String(t.id) === String(taskId))
       const farmId = task?.farm_id
@@ -972,6 +1021,18 @@ export const useFarmStore = defineStore('farm', {
       const idx = this.alerts.findIndex(a => a.id === id)
       if (idx >= 0) this.alerts[idx] = r.data
       return r.data
+    },
+
+    async createTaskFromAlert(alertId, overrides = {}) {
+      const r = await api.post(`/alerts/${alertId}/create-task`, overrides || {})
+      const task = r.data
+      // Optimistically keep the local task list in sync so the Alerts page
+      // can render the "→ Task #N" badge without a full reload.
+      if (task && task.id != null) {
+        const exists = this.tasks.some((t) => t.id === task.id)
+        if (!exists) this.tasks = [...this.tasks, task]
+      }
+      return task
     },
 
     // Farm members

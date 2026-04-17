@@ -6,6 +6,7 @@ import Sensors from '../views/Sensors.vue'
 import SensorDetail from '../views/SensorDetail.vue'
 import Actuators from '../views/Actuators.vue'
 import Schedules from '../views/Schedules.vue'
+import Automation from '../views/Automation.vue'
 import Tasks from '../views/Tasks.vue'
 import Inventory from '../views/Inventory.vue'
 import Costs from '../views/Costs.vue'
@@ -26,6 +27,7 @@ const routes = [
   { path: '/sensors/:id', component: SensorDetail, name: 'sensor-detail' },
   { path: '/actuators',    component: Actuators,    name: 'actuators' },
   { path: '/schedules',    component: Schedules,    name: 'schedules' },
+  { path: '/automation',   component: Automation,   name: 'automation' },
   { path: '/tasks',        component: Tasks,        name: 'tasks' },
   { path: '/fertigation',  component: Fertigation,  name: 'fertigation' },
   { path: '/inventory',    component: Inventory,    name: 'inventory' },

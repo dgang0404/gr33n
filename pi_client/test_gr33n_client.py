@@ -801,3 +801,186 @@ class TestEdgeCases(unittest.TestCase):
             server.server_close()
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# Phase 20.5 WS1 — Derived sensors (dew_point / vpd / heat_index)
+# ─────────────────────────────────────────────────────────────────────────────
+
+class TestDerivedSensorMath(unittest.TestCase):
+    """Pure-math tests for derived-sensor formulas.
+
+    Reference pairs from published engineering tables (NOAA, FAO-56,
+    Extension agronomy). Tolerance is wide enough to accommodate the single
+    rounding step inside the computer functions.
+    """
+
+    def test_dew_point_known_pair_hot_humid(self):
+        # t=30°C, RH=80% → dp ~= 26.2°C (NOAA psychrometric chart)
+        self.assertAlmostEqual(client.compute_dew_point_c(30.0, 80.0), 26.2, delta=0.2)
+
+    def test_dew_point_known_pair_cool_moderate(self):
+        # t=20°C, RH=50% → dp ~= 9.3°C
+        self.assertAlmostEqual(client.compute_dew_point_c(20.0, 50.0), 9.3, delta=0.3)
+
+    def test_dew_point_cannabis_flower_window(self):
+        # cannabis flower target: ~25°C / 50% RH → dp ~= 13.9°C (cited mid-flower ideal)
+        self.assertAlmostEqual(client.compute_dew_point_c(25.0, 50.0), 13.9, delta=0.3)
+
+    def test_dew_point_handles_zero_humidity(self):
+        # Degenerate input must not crash (log(0) guard).
+        val = client.compute_dew_point_c(20.0, 0.0)
+        self.assertIsInstance(val, float)
+
+    def test_vpd_known_pair(self):
+        # t=25°C, RH=50% → SVP ~= 3.169 kPa → VPD ~= 1.585 kPa
+        self.assertAlmostEqual(client.compute_vpd_kpa(25.0, 50.0), 1.585, delta=0.01)
+
+    def test_vpd_saturated_air_is_zero(self):
+        # RH=100% means zero deficit regardless of temperature.
+        self.assertAlmostEqual(client.compute_vpd_kpa(22.0, 100.0), 0.0, delta=0.001)
+
+    def test_vpd_low_rh_is_higher(self):
+        # Monotonicity: at fixed temperature, lower RH → higher VPD.
+        self.assertGreater(
+            client.compute_vpd_kpa(25.0, 30.0),
+            client.compute_vpd_kpa(25.0, 70.0),
+        )
+
+    def test_heat_index_below_threshold_returns_dry_bulb(self):
+        # Below ~26.7°C (80°F) the NWS regression doesn't apply.
+        self.assertAlmostEqual(client.compute_heat_index_c(20.0, 80.0), 20.0, delta=0.01)
+
+    def test_heat_index_hot_humid(self):
+        # t=32°C (~90°F), RH=70% → HI ~= 41°C (~106°F per NWS table)
+        self.assertAlmostEqual(client.compute_heat_index_c(32.0, 70.0), 41.0, delta=1.5)
+
+
+class TestReadingCache(unittest.TestCase):
+    """Staleness + thread-safety of the shared ReadingCache."""
+
+    def test_get_returns_none_when_empty(self):
+        c = client.ReadingCache()
+        self.assertIsNone(c.get(42, max_age_s=60))
+
+    def test_get_returns_fresh_value(self):
+        c = client.ReadingCache()
+        c.put(1, 22.5, now=100.0)
+        self.assertEqual(c.get(1, max_age_s=60, now=120.0), 22.5)
+
+    def test_get_returns_none_when_stale(self):
+        c = client.ReadingCache()
+        c.put(1, 22.5, now=0.0)
+        self.assertIsNone(c.get(1, max_age_s=30, now=1000.0))
+
+    def test_put_overwrites(self):
+        c = client.ReadingCache()
+        c.put(1, 22.5, now=100.0)
+        c.put(1, 30.0, now=110.0)
+        self.assertEqual(c.get(1, max_age_s=60, now=120.0), 30.0)
+
+
+class TestDerivedSensorReader(unittest.TestCase):
+    """Integration of SensorReader with ReadingCache for `source: derived`."""
+
+    def _derived_reader(self, stype='dew_point', t_sid=1, rh_sid=2,
+                        max_age=120, cache=None):
+        cfg = {
+            'sensor_id': 99,
+            'sensor_type': stype,
+            'source': 'derived',
+            'inputs': {'temperature_c': t_sid, 'humidity_pct': rh_sid},
+            'input_max_age_seconds': max_age,
+        }
+        return client.SensorReader(cfg, cache=cache)
+
+    def test_returns_none_when_inputs_missing(self):
+        cache = client.ReadingCache()
+        r = self._derived_reader(cache=cache)
+        self.assertIsNone(r.read())
+
+    def test_returns_none_when_one_input_missing(self):
+        cache = client.ReadingCache()
+        cache.put(1, 25.0)
+        r = self._derived_reader(cache=cache)
+        self.assertIsNone(r.read(),
+            "dew_point must not fabricate a value when humidity is uncached")
+
+    def test_returns_none_without_cache(self):
+        r = self._derived_reader(cache=None)
+        self.assertIsNone(r.read(),
+            "a derived reader without a cache binding should fail closed")
+
+    def test_computes_dew_point_when_inputs_fresh(self):
+        cache = client.ReadingCache()
+        cache.put(1, 25.0)
+        cache.put(2, 50.0)
+        r = self._derived_reader(stype='dew_point', cache=cache)
+        val = r.read()
+        self.assertIsNotNone(val)
+        self.assertAlmostEqual(val, 13.9, delta=0.3)
+
+    def test_computes_vpd_when_inputs_fresh(self):
+        cache = client.ReadingCache()
+        cache.put(1, 25.0)
+        cache.put(2, 50.0)
+        r = self._derived_reader(stype='vpd', cache=cache)
+        val = r.read()
+        self.assertIsNotNone(val)
+        self.assertAlmostEqual(val, 1.585, delta=0.01)
+
+    def test_returns_none_when_input_stale(self):
+        cache = client.ReadingCache()
+        # Seed values with an ancient monotonic timestamp so the max-age
+        # check trips no matter when the test runs.
+        cache.put(1, 25.0, now=0.0)
+        cache.put(2, 50.0, now=0.0)
+        r = self._derived_reader(max_age=1, cache=cache)
+        self.assertIsNone(r.read(),
+            "stale inputs must suppress the derived reading, not emit old math")
+
+    def test_unknown_sensor_type_returns_none(self):
+        cache = client.ReadingCache()
+        cache.put(1, 25.0)
+        cache.put(2, 50.0)
+        r = self._derived_reader(stype='mystery_metric', cache=cache)
+        self.assertIsNone(r.read())
+
+
+class TestDerivedSensorInClient(unittest.TestCase):
+    """End-to-end: a Gr33nPiClient built with derived sensors wires the cache."""
+
+    def test_client_shares_cache_across_readers(self):
+        cfg = {
+            'api':   {'base_url': 'http://127.0.0.1:1', 'timeout_seconds': 1, 'api_key': ''},
+            'farm':  {'farm_id': 1},
+            'sensors': [
+                {'sensor_id': 1, 'sensor_type': 'temperature', 'source': 'dht22', 'pin': 4, 'interval_seconds': 60},
+                {'sensor_id': 2, 'sensor_type': 'humidity',    'source': 'dht22', 'pin': 4, 'interval_seconds': 60},
+                {'sensor_id': 8, 'sensor_type': 'dew_point',   'source': 'derived',
+                 'inputs': {'temperature_c': 1, 'humidity_pct': 2},
+                 'input_max_age_seconds': 600, 'interval_seconds': 60},
+            ],
+            'actuators': [],
+            'offline_queue_path': tempfile.NamedTemporaryFile(suffix='.db', delete=False).name,
+            'schedule_poll_interval_seconds': 30,
+            'offline_flush_interval_seconds': 60,
+        }
+        with tempfile.NamedTemporaryFile('w', suffix='.yaml', delete=False) as f:
+            yaml.dump(cfg, f)
+            cfg_path = f.name
+
+        c = client.Gr33nPiClient(config_path=cfg_path)
+        # Every reader must share the same cache instance so cross-sensor
+        # reads work within a single sensor-loop tick.
+        caches = {id(r.cache) for r in c._readers.values()}
+        self.assertEqual(len(caches), 1,
+            "all SensorReaders should reference one shared ReadingCache")
+
+        # Simulate the sensor-loop flow: physical sensors write to cache,
+        # then derived sensor reads and computes.
+        c._reading_cache.put(1, 25.0)
+        c._reading_cache.put(2, 50.0)
+        val = c._readers[8].read()
+        self.assertIsNotNone(val)
+        self.assertAlmostEqual(val, 13.9, delta=0.3)
+
+

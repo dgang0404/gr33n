@@ -2,6 +2,7 @@
 # gr33n Pi Client - sensor + actuator daemon
 
 import logging
+import math
 import sqlite3
 import threading
 import time
@@ -243,10 +244,108 @@ class Gr33nApiClient:
             return False
 
 
+# --- DERIVED SENSOR SUPPORT -------------------------------------------------
+# A `source: derived` sensor computes its value from other sensors on the
+# same Pi (e.g. dew_point from temperature + humidity). The physical readers
+# below write their latest value into a shared ReadingCache after every
+# successful read; derived readers query that cache instead of talking to
+# hardware. Keeping computation on the edge means derived channels keep
+# working when the network is flaky, and the backend never has to know the
+# difference — dew_point is ingested exactly like temperature would be.
+
+DEFAULT_DERIVED_INPUT_MAX_AGE_SECONDS = 120
+
+
+class ReadingCache:
+    """Thread-safe most-recent-value cache keyed by sensor_id.
+
+    `put` records (value, monotonic_timestamp) so staleness checks are
+    wall-clock-independent. `get` returns None when no reading is cached or
+    when the cached reading is older than `max_age_s`. The `now` kwarg on
+    both methods is for deterministic tests; production code leaves it
+    unset and lets `time.monotonic()` flow.
+    """
+
+    def __init__(self):
+        self._data: dict = {}
+        self._lock = threading.Lock()
+
+    def put(self, sensor_id: int, value: float, now: Optional[float] = None):
+        ts = now if now is not None else time.monotonic()
+        with self._lock:
+            self._data[sensor_id] = (float(value), ts)
+
+    def get(self, sensor_id: int, max_age_s: float, now: Optional[float] = None) -> Optional[float]:
+        ts_now = now if now is not None else time.monotonic()
+        with self._lock:
+            rec = self._data.get(sensor_id)
+        if rec is None:
+            return None
+        value, ts = rec
+        if ts_now - ts > max_age_s:
+            return None
+        return value
+
+
+def compute_dew_point_c(t_c: float, rh_pct: float) -> float:
+    """Magnus-Tetens dew-point approximation (valid 0-60°C, RH > 1%).
+
+    Reference: August-Roche-Magnus formula. Output °C.
+    """
+    if rh_pct <= 0:
+        # Log-of-zero would blow up; treat as "extremely dry" floor.
+        rh_pct = 0.01
+    a, b = 17.625, 243.04
+    gamma = math.log(rh_pct / 100.0) + (a * t_c) / (b + t_c)
+    return round((b * gamma) / (a - gamma), 2)
+
+
+def compute_vpd_kpa(t_c: float, rh_pct: float) -> float:
+    """Vapour Pressure Deficit in kPa, leaf-temperature approximation.
+
+    VPD = SVP * (1 - RH/100), with SVP via Tetens over water. Output kPa,
+    rounded to 3 decimals — the resolution growers actually tune against.
+    """
+    svp = 0.6108 * math.exp((17.27 * t_c) / (t_c + 237.3))
+    return round(svp * (1.0 - rh_pct / 100.0), 3)
+
+
+def compute_heat_index_c(t_c: float, rh_pct: float) -> float:
+    """Rothfusz heat-index regression, converted to Celsius.
+
+    The regression is defined in Fahrenheit; below 80°F (~26.7°C) the NWS
+    says "use the dry-bulb temperature" because the regression diverges.
+    We follow that convention — low-temperature callers just get `t_c` back.
+    """
+    t_f = t_c * 9.0 / 5.0 + 32.0
+    if t_f < 80.0:
+        return round(t_c, 2)
+    hi_f = (
+        -42.379
+        + 2.04901523 * t_f
+        + 10.14333127 * rh_pct
+        - 0.22475541 * t_f * rh_pct
+        - 0.00683783 * t_f * t_f
+        - 0.05481717 * rh_pct * rh_pct
+        + 0.00122874 * t_f * t_f * rh_pct
+        + 0.00085282 * t_f * rh_pct * rh_pct
+        - 0.00000199 * t_f * t_f * rh_pct * rh_pct
+    )
+    return round((hi_f - 32.0) * 5.0 / 9.0, 2)
+
+
+_DERIVED_COMPUTERS = {
+    'dew_point':   compute_dew_point_c,
+    'vpd':         compute_vpd_kpa,
+    'heat_index':  compute_heat_index_c,
+}
+
+
 # --- SENSOR READER ----------------------------------------------------------
 class SensorReader:
-    def __init__(self, cfg: dict):
+    def __init__(self, cfg: dict, cache: Optional[ReadingCache] = None):
         self.cfg = cfg
+        self.cache = cache
         self._dht = self._adc = self._uart = self._i2c = None
         self._init_hardware()
 
@@ -264,10 +363,28 @@ class SensorReader:
             self._uart = serial.Serial(self.cfg.get('port', '/dev/ttyS0'), baudrate=9600, timeout=2)
         elif src == 'bh1750' and I2C_BUS_AVAILABLE:
             self._i2c = smbus2.SMBus(1)
+        elif src == 'derived':
+            # Derived sensors have no hardware — they consume other sensors'
+            # cached readings. Validate the shape early so a misconfigured
+            # entry fails loudly at daemon start, not silently at tick time.
+            stype = self.cfg.get('sensor_type', '')
+            if stype not in _DERIVED_COMPUTERS:
+                log.warning("derived sensor %s has unsupported sensor_type=%r "
+                            "(expected one of %s)",
+                            self.cfg.get('sensor_id'), stype,
+                            sorted(_DERIVED_COMPUTERS.keys()))
+            inputs = self.cfg.get('inputs') or {}
+            for key in ('temperature_c', 'humidity_pct'):
+                if not isinstance(inputs.get(key), int):
+                    log.warning("derived sensor %s missing required input %r "
+                                "(expected an integer sensor_id)",
+                                self.cfg.get('sensor_id'), key)
 
     def read(self) -> Optional[float]:
         src   = self.cfg.get('source', '')
         stype = self.cfg.get('sensor_type', '')
+        if src == 'derived':
+            return self._read_derived(stype)
         if src == 'dht22':
             if not self._dht:
                 return self._mock(stype)
@@ -310,6 +427,41 @@ class SensorReader:
             except Exception:
                 return None
         return self._mock(stype)
+
+    def _read_derived(self, stype: str) -> Optional[float]:
+        """Compute a derived sensor value from other cached readings.
+
+        Returns None (not a mock) when any input is missing or stale —
+        emitting an invented dew_point when the temp sensor is dead would
+        masquerade as a real reading and silently defeat the alert pipeline.
+        """
+        computer = _DERIVED_COMPUTERS.get(stype)
+        if computer is None:
+            return None
+        if self.cache is None:
+            log.debug("derived sensor %s has no shared cache bound — returning None",
+                      self.cfg.get('sensor_id'))
+            return None
+        inputs = self.cfg.get('inputs') or {}
+        max_age = float(self.cfg.get('input_max_age_seconds',
+                                     DEFAULT_DERIVED_INPUT_MAX_AGE_SECONDS))
+        t_sid = inputs.get('temperature_c')
+        rh_sid = inputs.get('humidity_pct')
+        if not (isinstance(t_sid, int) and isinstance(rh_sid, int)):
+            return None
+        t_c = self.cache.get(t_sid, max_age)
+        rh = self.cache.get(rh_sid, max_age)
+        if t_c is None or rh is None:
+            log.debug("derived sensor %s (%s) skipped: stale/missing inputs "
+                      "(temperature_c sid=%s → %s, humidity_pct sid=%s → %s, max_age=%ss)",
+                      self.cfg.get('sensor_id'), stype, t_sid, t_c, rh_sid, rh, max_age)
+            return None
+        try:
+            return computer(t_c, rh)
+        except (ValueError, OverflowError) as exc:
+            log.warning("derived sensor %s (%s) compute failed: %s (t=%s rh=%s)",
+                        self.cfg.get('sensor_id'), stype, exc, t_c, rh)
+            return None
 
     @staticmethod
     def _mock(stype: str) -> float:
@@ -365,7 +517,13 @@ class Gr33nPiClient:
         self.queue      = OfflineQueue(self.cfg['offline_queue_path'])
         self._stop      = threading.Event()
         self._last_read: dict = {}
-        self._readers: dict = {s['sensor_id']: SensorReader(s) for s in self.cfg['sensors']}
+        # Shared across all readers so `source: derived` sensors can compute
+        # from the freshest values physical sensors posted this tick.
+        self._reading_cache = ReadingCache()
+        self._readers: dict = {
+            s['sensor_id']: SensorReader(s, cache=self._reading_cache)
+            for s in self.cfg['sensors']
+        }
         self._actuators: dict = {a['actuator_id']: ActuatorController(a) for a in self.cfg['actuators']}
 
     def _sensor_loop(self):
@@ -382,6 +540,10 @@ class Gr33nPiClient:
                     log.warning('No reading from sensor_id=%s', sid)
                     continue
                 self._last_read[sid] = now
+                # Feed the shared cache so derived sensors iterated later in
+                # this same tick pick up fresh inputs. Config convention:
+                # list derived sensors AFTER their source sensors.
+                self._reading_cache.put(sid, value)
                 ts = datetime.now(timezone.utc).isoformat()
                 log.debug('sensor_id=%s  %s=%.3f', sid, scfg['sensor_type'], value)
                 if self.api.is_reachable():

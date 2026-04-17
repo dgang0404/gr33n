@@ -10,7 +10,7 @@ farm:
   farm_id: 1                               # gr33n Demo Farm (from master_seed.sql)
 
 # sensor_id values come from gr33ncore.sensors (auto-inserted by master_seed.sql)
-# Zones seeded: Seedling Room, Veg Room, Flower Room, Outdoor Beds
+# Zones seeded: Veg Room, Flower Room, Outdoor Garden
 sensors:
   - sensor_id: 1
     sensor_type: temperature
@@ -52,6 +52,28 @@ sensors:
     sensor_type: par
     source: bh1750             # BH1750 I2C lux sensor, converted to PAR
     interval_seconds: 60
+
+  # Derived sensors compute their value from other sensors on THIS Pi
+  # (no hardware). Supported sensor_type values: dew_point, vpd, heat_index.
+  # List them AFTER their source sensors so each tick pulls fresh inputs.
+  # Uncomment and adjust sensor_id / input sensor_ids to enable:
+  #
+  # - sensor_id: 8
+  #   sensor_type: dew_point        # °C
+  #   source: derived
+  #   inputs:
+  #     temperature_c: 1            # sensor_id of the temperature sensor
+  #     humidity_pct: 2             # sensor_id of the humidity sensor
+  #   input_max_age_seconds: 120    # skip when inputs are older than this
+  #   interval_seconds: 60
+  #
+  # - sensor_id: 9
+  #   sensor_type: vpd              # kPa
+  #   source: derived
+  #   inputs:
+  #     temperature_c: 1
+  #     humidity_pct: 2
+  #   interval_seconds: 60
 
 actuators:
   - actuator_id: 1

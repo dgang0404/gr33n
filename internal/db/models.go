@@ -1530,6 +1530,7 @@ type Gr33ncoreSchedule struct {
 	LastTriggeredTime       pgtype.Timestamptz `db:"last_triggered_time" json:"last_triggered_time"`
 	NextExpectedTriggerTime pgtype.Timestamptz `db:"next_expected_trigger_time" json:"next_expected_trigger_time"`
 	MetaData                []byte             `db:"meta_data" json:"meta_data"`
+	Preconditions           []byte             `db:"preconditions" json:"preconditions"`
 	CreatedAt               time.Time          `db:"created_at" json:"created_at"`
 	UpdatedAt               time.Time          `db:"updated_at" json:"updated_at"`
 }
@@ -1547,6 +1548,9 @@ type Gr33ncoreSensor struct {
 	ValueMaxExpected       pgtype.Numeric     `db:"value_max_expected" json:"value_max_expected"`
 	AlertThresholdLow      pgtype.Numeric     `db:"alert_threshold_low" json:"alert_threshold_low"`
 	AlertThresholdHigh     pgtype.Numeric     `db:"alert_threshold_high" json:"alert_threshold_high"`
+	AlertDurationSeconds   int32              `db:"alert_duration_seconds" json:"alert_duration_seconds"`
+	AlertCooldownSeconds   int32              `db:"alert_cooldown_seconds" json:"alert_cooldown_seconds"`
+	AlertBreachStartedAt   pgtype.Timestamptz `db:"alert_breach_started_at" json:"alert_breach_started_at"`
 	ReadingIntervalSeconds *int32             `db:"reading_interval_seconds" json:"reading_interval_seconds"`
 	IsCalibrated           *bool              `db:"is_calibrated" json:"is_calibrated"`
 	LastCalibrationDate    pgtype.Date        `db:"last_calibration_date" json:"last_calibration_date"`
@@ -1604,6 +1608,8 @@ type Gr33ncoreTask struct {
 	RelatedModuleSchema      *string                    `db:"related_module_schema" json:"related_module_schema"`
 	RelatedTableName         *string                    `db:"related_table_name" json:"related_table_name"`
 	RelatedRecordID          *int64                     `db:"related_record_id" json:"related_record_id"`
+	SourceAlertID            *int64                     `db:"source_alert_id" json:"source_alert_id"`
+	SourceRuleID             *int64                     `db:"source_rule_id" json:"source_rule_id"`
 	CreatedByUserID          pgtype.UUID                `db:"created_by_user_id" json:"created_by_user_id"`
 	CreatedAt                time.Time                  `db:"created_at" json:"created_at"`
 	UpdatedAt                time.Time                  `db:"updated_at" json:"updated_at"`

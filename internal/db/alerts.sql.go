@@ -7,6 +7,7 @@ package db
 
 import (
 	"context"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgtype"
 )
@@ -80,6 +81,63 @@ func (q *Queries) CreateAlert(ctx context.Context, arg CreateAlertParams) (Gr33n
 	return i, err
 }
 
+const createAlertForRule = `-- name: CreateAlertForRule :one
+INSERT INTO gr33ncore.alerts_notifications (
+  farm_id, notification_template_id,
+  triggering_event_source_type, triggering_event_source_id,
+  severity, subject_rendered, message_text_rendered, status
+) VALUES ($1, $2, 'automation_rule', $3, $4, $5, $6, 'pending')
+RETURNING id, farm_id, recipient_user_id, notification_template_id, triggering_event_source_type, triggering_event_source_id, severity, subject_rendered, message_text_rendered, message_html_rendered, delivery_attempts, status, is_read, read_at, is_acknowledged, acknowledged_at, acknowledged_by_user_id, created_at, scheduled_send_at
+`
+
+type CreateAlertForRuleParams struct {
+	FarmID                  int64                                 `db:"farm_id" json:"farm_id"`
+	NotificationTemplateID  *int64                                `db:"notification_template_id" json:"notification_template_id"`
+	TriggeringEventSourceID *int64                                `db:"triggering_event_source_id" json:"triggering_event_source_id"`
+	Severity                NullGr33ncoreNotificationPriorityEnum `db:"severity" json:"severity"`
+	SubjectRendered         *string                               `db:"subject_rendered" json:"subject_rendered"`
+	MessageTextRendered     *string                               `db:"message_text_rendered" json:"message_text_rendered"`
+}
+
+// Inserts an alerts_notifications row for a Phase 20 rule-driven
+// send_notification action. Distinct from CreateAlert because it
+// carries notification_template_id (so the Alerts page can show which
+// template rendered this notification) and sets
+// triggering_event_source_type = 'automation_rule'.
+func (q *Queries) CreateAlertForRule(ctx context.Context, arg CreateAlertForRuleParams) (Gr33ncoreAlertsNotification, error) {
+	row := q.db.QueryRow(ctx, createAlertForRule,
+		arg.FarmID,
+		arg.NotificationTemplateID,
+		arg.TriggeringEventSourceID,
+		arg.Severity,
+		arg.SubjectRendered,
+		arg.MessageTextRendered,
+	)
+	var i Gr33ncoreAlertsNotification
+	err := row.Scan(
+		&i.ID,
+		&i.FarmID,
+		&i.RecipientUserID,
+		&i.NotificationTemplateID,
+		&i.TriggeringEventSourceType,
+		&i.TriggeringEventSourceID,
+		&i.Severity,
+		&i.SubjectRendered,
+		&i.MessageTextRendered,
+		&i.MessageHtmlRendered,
+		&i.DeliveryAttempts,
+		&i.Status,
+		&i.IsRead,
+		&i.ReadAt,
+		&i.IsAcknowledged,
+		&i.AcknowledgedAt,
+		&i.AcknowledgedByUserID,
+		&i.CreatedAt,
+		&i.ScheduledSendAt,
+	)
+	return i, err
+}
+
 const getAlertNotificationByID = `-- name: GetAlertNotificationByID :one
 SELECT id, farm_id, recipient_user_id, notification_template_id, triggering_event_source_type, triggering_event_source_id, severity, subject_rendered, message_text_rendered, message_html_rendered, delivery_attempts, status, is_read, read_at, is_acknowledged, acknowledged_at, acknowledged_by_user_id, created_at, scheduled_send_at FROM gr33ncore.alerts_notifications WHERE id = $1
 `
@@ -107,6 +165,55 @@ func (q *Queries) GetAlertNotificationByID(ctx context.Context, id int64) (Gr33n
 		&i.AcknowledgedByUserID,
 		&i.CreatedAt,
 		&i.ScheduledSendAt,
+	)
+	return i, err
+}
+
+const getLatestAlertCreatedAtForSource = `-- name: GetLatestAlertCreatedAtForSource :one
+SELECT created_at FROM gr33ncore.alerts_notifications
+WHERE farm_id = $1
+  AND triggering_event_source_type = $2
+  AND triggering_event_source_id = $3
+ORDER BY created_at DESC
+LIMIT 1
+`
+
+type GetLatestAlertCreatedAtForSourceParams struct {
+	FarmID                    int64   `db:"farm_id" json:"farm_id"`
+	TriggeringEventSourceType *string `db:"triggering_event_source_type" json:"triggering_event_source_type"`
+	TriggeringEventSourceID   *int64  `db:"triggering_event_source_id" json:"triggering_event_source_id"`
+}
+
+// Returns the created_at of the most recent alert for this (farm, source_type, source_id)
+// regardless of ack status. Used by the sensor threshold evaluator to enforce per-sensor
+// cooldown windows.
+func (q *Queries) GetLatestAlertCreatedAtForSource(ctx context.Context, arg GetLatestAlertCreatedAtForSourceParams) (time.Time, error) {
+	row := q.db.QueryRow(ctx, getLatestAlertCreatedAtForSource, arg.FarmID, arg.TriggeringEventSourceType, arg.TriggeringEventSourceID)
+	var created_at time.Time
+	err := row.Scan(&created_at)
+	return created_at, err
+}
+
+const getNotificationTemplateByID = `-- name: GetNotificationTemplateByID :one
+SELECT id, farm_id, template_key, description, subject_template, body_template_text, body_template_html, default_delivery_channels, default_priority, is_system_template, created_at, updated_at FROM gr33ncore.notification_templates WHERE id = $1
+`
+
+func (q *Queries) GetNotificationTemplateByID(ctx context.Context, id int64) (Gr33ncoreNotificationTemplate, error) {
+	row := q.db.QueryRow(ctx, getNotificationTemplateByID, id)
+	var i Gr33ncoreNotificationTemplate
+	err := row.Scan(
+		&i.ID,
+		&i.FarmID,
+		&i.TemplateKey,
+		&i.Description,
+		&i.SubjectTemplate,
+		&i.BodyTemplateText,
+		&i.BodyTemplateHtml,
+		&i.DefaultDeliveryChannels,
+		&i.DefaultPriority,
+		&i.IsSystemTemplate,
+		&i.CreatedAt,
+		&i.UpdatedAt,
 	)
 	return i, err
 }

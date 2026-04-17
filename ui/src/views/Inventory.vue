@@ -1,7 +1,11 @@
 <template>
   <div class="space-y-4">
-    <div class="flex items-center justify-between">
-      <h2 class="text-lg font-bold text-white">JADAM Inputs & Batches</h2>
+    <div class="flex flex-col gap-1">
+      <h2 class="text-lg font-bold text-white">Natural farming inputs & batches</h2>
+      <p class="text-zinc-500 text-xs max-w-2xl">
+        Fermented inputs, recipes, and lot tracking. Starter/demo rows may use <strong class="text-zinc-400">JADAM</strong>-style names (JMS, JLF, …); your farm can define any mix.
+        See <a href="https://github.com/dgang0404/gr33n/blob/main/docs/terminology-guideline.md" class="text-green-500 hover:underline" target="_blank" rel="noopener">terminology guideline</a>.
+      </p>
     </div>
 
     <!-- Tabs -->

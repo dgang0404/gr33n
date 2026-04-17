@@ -16,6 +16,7 @@ import (
 	"github.com/joho/godotenv"
 	automationworker "gr33n-api/internal/automation"
 	"gr33n-api/internal/filestorage"
+	"gr33n-api/internal/pushnotify"
 )
 
 // loadDotEnv reads optional .env then .env.local from the current working directory
@@ -101,6 +102,8 @@ func main() {
 			log.Printf("⏱  Automation cooldown set to %ds", n)
 		}
 	}
+	pushDispatch := pushnotify.NewDispatcher(pool)
+	workerOpts = append(workerOpts, automationworker.WithPushNotifier(pushDispatch))
 	worker := automationworker.NewWorker(pool, simulationMode, workerOpts...)
 	go worker.Start(context.Background())
 	log.Printf("🧠 Automation worker started (simulation_mode=%v)", simulationMode)
@@ -108,7 +111,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("file storage init: %v", err)
 	}
-	registerRoutes(mux, pool, worker, adminUser, adminHash, hashFilePath, fileStore, fileCfg)
+	registerRoutes(mux, pool, worker, pushDispatch, adminUser, adminHash, hashFilePath, fileStore, fileCfg)
 	log.Printf("FILE_STORAGE_BACKEND=%s", fileCfg.Backend)
 	if fileCfg.Backend == "local" {
 		log.Printf("FILE_STORAGE_DIR=%s", fileCfg.LocalRoot)

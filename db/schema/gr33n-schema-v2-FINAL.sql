@@ -468,6 +468,9 @@ CREATE TABLE IF NOT EXISTS gr33ncore.sensors (
     value_max_expected       NUMERIC,
     alert_threshold_low      NUMERIC,
     alert_threshold_high     NUMERIC,
+    alert_duration_seconds   INTEGER     NOT NULL DEFAULT 0,
+    alert_cooldown_seconds   INTEGER     NOT NULL DEFAULT 300,
+    alert_breach_started_at  TIMESTAMPTZ NULL,
     reading_interval_seconds INTEGER,
     is_calibrated            BOOLEAN DEFAULT FALSE,
     last_calibration_date    DATE,
@@ -595,6 +598,8 @@ CREATE TABLE IF NOT EXISTS gr33ncore.schedules (
     last_triggered_time        TIMESTAMPTZ,
     next_expected_trigger_time TIMESTAMPTZ,
     meta_data                  JSONB  DEFAULT '{}'::jsonb,
+    preconditions              JSONB  NOT NULL DEFAULT '[]'::jsonb
+        CHECK (jsonb_typeof(preconditions) = 'array'),
     created_at                 TIMESTAMPTZ DEFAULT NOW() NOT NULL,
     updated_at                 TIMESTAMPTZ DEFAULT NOW() NOT NULL
 );
@@ -621,12 +626,20 @@ CREATE TABLE IF NOT EXISTS gr33ncore.tasks (
     related_module_schema      TEXT,
     related_table_name         TEXT,
     related_record_id          BIGINT,
+    source_alert_id            BIGINT REFERENCES gr33ncore.alerts_notifications(id) ON DELETE SET NULL,
+    source_rule_id             BIGINT REFERENCES gr33ncore.automation_rules(id) ON DELETE SET NULL,
     created_by_user_id         UUID   REFERENCES gr33ncore.profiles(user_id),
     created_at                 TIMESTAMPTZ DEFAULT NOW() NOT NULL,
     updated_at                 TIMESTAMPTZ DEFAULT NOW() NOT NULL,
     updated_by_user_id         UUID   REFERENCES gr33ncore.profiles(user_id) ON DELETE SET NULL,
     deleted_at                 TIMESTAMPTZ DEFAULT NULL
 );
+CREATE INDEX IF NOT EXISTS idx_tasks_source_alert_id
+    ON gr33ncore.tasks (source_alert_id)
+    WHERE source_alert_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_tasks_source_rule_id
+    ON gr33ncore.tasks (source_rule_id)
+    WHERE source_rule_id IS NOT NULL;
 CREATE TRIGGER trg_tasks_updated_at
     BEFORE UPDATE ON gr33ncore.tasks
     FOR EACH ROW EXECUTE FUNCTION gr33ncore.set_updated_at();

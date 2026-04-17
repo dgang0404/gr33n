@@ -212,6 +212,9 @@
           <p v-if="task.schedule_id" class="text-[11px] text-zinc-500 mb-1">
             <router-link to="/schedules" class="text-green-600 hover:text-green-400">{{ scheduleName(task.schedule_id) }}</router-link>
           </p>
+          <p v-if="task.source_alert_id" class="text-[11px] text-zinc-500 mb-1">
+            <router-link to="/alerts" class="text-blue-400 hover:text-blue-300">From alert #{{ task.source_alert_id }}</router-link>
+          </p>
           <div class="flex items-center justify-between text-xs text-zinc-600 mb-2">
             <router-link v-if="task.zone_id" :to="`/zones/${task.zone_id}`" class="hover:text-green-400 transition-colors">{{ zoneName(task.zone_id) }}</router-link>
             <span v-else></span>

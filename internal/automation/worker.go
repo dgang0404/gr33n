@@ -27,11 +27,20 @@ type Status struct {
 	LastError      string    `json:"last_error,omitempty"`
 }
 
+// PushNotifier is the minimum interface the rule evaluator needs from
+// pushnotify.Dispatcher. Declaring it here (instead of importing
+// pushnotify directly) avoids a potential import cycle and lets tests
+// stub it. The real implementation is internal/pushnotify.Dispatcher.
+type PushNotifier interface {
+	DispatchFarmAlert(ctx context.Context, alert db.Gr33ncoreAlertsNotification)
+}
+
 type Worker struct {
 	q          *db.Queries
 	simulation bool
 	cooldown   time.Duration
 	maxRetries int
+	notifier   PushNotifier
 
 	mu         sync.RWMutex
 	running    bool
@@ -60,6 +69,14 @@ func WithCooldown(d time.Duration) WorkerOption {
 
 func WithMaxRetries(n int) WorkerOption {
 	return func(w *Worker) { w.maxRetries = n }
+}
+
+// WithPushNotifier injects a push dispatcher for rule-driven
+// send_notification actions. If nil, the worker inserts the
+// alerts_notifications row but skips the push fan-out (the alert still
+// shows up on the Alerts page).
+func WithPushNotifier(n PushNotifier) WorkerOption {
+	return func(w *Worker) { w.notifier = n }
 }
 
 func (w *Worker) Start(ctx context.Context) {
@@ -146,9 +163,22 @@ func (w *Worker) runTick(ctx context.Context) {
 			continue
 		}
 
+		// Interlock-lite: the latest reading for every sensor in
+		// preconditions must satisfy its predicate before we touch actuators.
+		if skipped := w.checkPreconditions(ctx, s, now); skipped {
+			continue
+		}
+
 		w.executeSchedule(ctx, s, now, idemKey)
 	}
+	w.runRuleTick(ctx, now)
 	w.setLastTick(nil)
+}
+
+// Tick runs a single evaluation pass. Exported so integration tests can
+// exercise the scheduler deterministically without the 30s ticker.
+func (w *Worker) Tick(ctx context.Context) {
+	w.runTick(ctx)
 }
 
 func shouldTriggerNow(expr string, lastTriggered pgtype.Timestamptz, now time.Time) (bool, error) {
@@ -192,6 +222,65 @@ func (w *Worker) checkCooldown(ctx context.Context, s db.Gr33ncoreSchedule, now 
 		return true
 	}
 	return false
+}
+
+// checkPreconditions fetches the latest reading for every sensor listed in
+// schedule.Preconditions and verifies its predicate holds. On any failure
+// it records an automation_runs row (status='skipped',
+// message='precondition_failed') and returns true so the caller aborts
+// execution. Missing readings are treated as a failure — the operator asked
+// for an interlock and we can't assert safety without data.
+//
+// The underlying evaluator (EvaluatePredicates) is shared with the Phase 20
+// rule evaluator in rules.go; schedule preconditions always use LogicAll.
+func (w *Worker) checkPreconditions(ctx context.Context, s db.Gr33ncoreSchedule, now time.Time) bool {
+	if len(s.Preconditions) == 0 {
+		return false
+	}
+	var preds []Predicate
+	if err := json.Unmarshal(s.Preconditions, &preds); err != nil {
+		log.Printf("schedule %d: invalid preconditions JSON, skipping execution: %v", s.ID, err)
+		details, _ := json.Marshal(map[string]any{
+			"phase": "preconditions",
+			"error": "invalid_preconditions_json",
+		})
+		if _, err := w.q.CreateAutomationRun(ctx, db.CreateAutomationRunParams{
+			FarmID:     s.FarmID,
+			ScheduleID: &s.ID,
+			Status:     "skipped",
+			Message:    ptr("precondition_failed"),
+			Details:    details,
+			ExecutedAt: now,
+		}); err != nil {
+			log.Printf("failed to record automation run: %v", err)
+		}
+		return true
+	}
+	if len(preds) == 0 {
+		return false
+	}
+
+	passed, failed := EvaluatePredicates(ctx, w.q, LogicAll, preds)
+	if passed {
+		return false
+	}
+
+	details, _ := json.Marshal(map[string]any{
+		"phase":  "preconditions",
+		"failed": failed,
+	})
+	log.Printf("schedule %d (%s) skipped: %d precondition(s) failed", s.ID, s.Name, len(failed))
+	if _, err := w.q.CreateAutomationRun(ctx, db.CreateAutomationRunParams{
+		FarmID:     s.FarmID,
+		ScheduleID: &s.ID,
+		Status:     "skipped",
+		Message:    ptr("precondition_failed"),
+		Details:    details,
+		ExecutedAt: now,
+	}); err != nil {
+		log.Printf("failed to record automation run: %v", err)
+	}
+	return true
 }
 
 func idempotencyKey(scheduleID int64, now time.Time) string {

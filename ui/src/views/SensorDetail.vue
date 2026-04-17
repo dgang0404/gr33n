@@ -69,6 +69,112 @@
             <Line :data="chartData" :options="chartOptions" />
           </div>
         </div>
+
+        <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
+          <div class="flex items-center justify-between mb-3">
+            <h2 class="text-sm font-semibold text-white">Alert thresholds</h2>
+            <button
+              v-if="!editingAlerts"
+              type="button"
+              @click="beginEditAlerts"
+              class="text-xs px-3 py-1.5 rounded-lg border border-zinc-600 text-zinc-300 hover:border-zinc-500 hover:text-white"
+            >Edit</button>
+          </div>
+
+          <div v-if="!editingAlerts" class="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+            <div>
+              <p class="text-zinc-500 text-xs mb-1">Low threshold</p>
+              <p class="text-white tabular-nums">{{ sensor.alert_threshold_low ?? '—' }}</p>
+            </div>
+            <div>
+              <p class="text-zinc-500 text-xs mb-1">High threshold</p>
+              <p class="text-white tabular-nums">{{ sensor.alert_threshold_high ?? '—' }}</p>
+            </div>
+            <div>
+              <p class="text-zinc-500 text-xs mb-1">Alert duration</p>
+              <p class="text-white tabular-nums">{{ formatSecondsAsMinutes(sensor.alert_duration_seconds) }}</p>
+            </div>
+            <div>
+              <p class="text-zinc-500 text-xs mb-1">Alert cooldown</p>
+              <p class="text-white tabular-nums">{{ formatSecondsAsMinutes(sensor.alert_cooldown_seconds) }}</p>
+            </div>
+          </div>
+
+          <form v-else class="grid grid-cols-1 md:grid-cols-2 gap-4" @submit.prevent="saveAlerts">
+            <label class="block">
+              <span class="text-xs text-zinc-400">Low threshold</span>
+              <input
+                v-model="editForm.alert_threshold_low"
+                type="number"
+                step="any"
+                placeholder="(none)"
+                class="mt-1 w-full rounded-lg bg-zinc-950 border border-zinc-700 px-3 py-2 text-sm text-white focus:outline-none focus:border-green-600"
+              />
+            </label>
+            <label class="block">
+              <span class="text-xs text-zinc-400">High threshold</span>
+              <input
+                v-model="editForm.alert_threshold_high"
+                type="number"
+                step="any"
+                placeholder="(none)"
+                class="mt-1 w-full rounded-lg bg-zinc-950 border border-zinc-700 px-3 py-2 text-sm text-white focus:outline-none focus:border-green-600"
+              />
+            </label>
+            <label class="block">
+              <span class="inline-flex items-center text-xs text-zinc-400">
+                Alert duration (minutes)
+                <HelpTip position="top">
+                  How long a reading must stay out of bounds before an alert fires.
+                  Example: set to <strong>10</strong> to mean "only alert after 10 minutes
+                  continuously below / above threshold". <strong>0</strong> alerts on the first breaching reading.
+                </HelpTip>
+              </span>
+              <input
+                v-model.number="editForm.alert_duration_minutes"
+                type="number"
+                min="0"
+                max="1440"
+                step="1"
+                class="mt-1 w-full rounded-lg bg-zinc-950 border border-zinc-700 px-3 py-2 text-sm text-white focus:outline-none focus:border-green-600"
+              />
+            </label>
+            <label class="block">
+              <span class="inline-flex items-center text-xs text-zinc-400">
+                Alert cooldown (minutes)
+                <HelpTip position="top">
+                  Minimum quiet window before another alert can fire for this sensor.
+                  Example: set to <strong>60</strong> to mean "after alerting, stay quiet for an hour
+                  even if the value stays out of bounds". Defaults to 5 minutes.
+                </HelpTip>
+              </span>
+              <input
+                v-model.number="editForm.alert_cooldown_minutes"
+                type="number"
+                min="0"
+                max="10080"
+                step="1"
+                class="mt-1 w-full rounded-lg bg-zinc-950 border border-zinc-700 px-3 py-2 text-sm text-white focus:outline-none focus:border-green-600"
+              />
+            </label>
+
+            <div v-if="editError" class="md:col-span-2 text-sm text-red-400">{{ editError }}</div>
+
+            <div class="md:col-span-2 flex items-center gap-2 justify-end">
+              <button
+                type="button"
+                :disabled="editSaving"
+                @click="cancelEditAlerts"
+                class="text-xs px-3 py-1.5 rounded-lg border border-zinc-700 text-zinc-400 hover:text-white disabled:opacity-50"
+              >Cancel</button>
+              <button
+                type="submit"
+                :disabled="editSaving"
+                class="text-xs px-3 py-1.5 rounded-lg bg-green-700 border border-green-600 text-white hover:bg-green-600 disabled:opacity-50"
+              >{{ editSaving ? 'Saving…' : 'Save' }}</button>
+            </div>
+          </form>
+        </div>
       </template>
     </div>
   </div>
@@ -91,6 +197,7 @@ import { Line } from 'vue-chartjs'
 import api from '../api'
 import { useFarmStore } from '../stores/farm'
 import { useFarmContextStore } from '../stores/farmContext'
+import HelpTip from '../components/HelpTip.vue'
 
 ChartJS.register(LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler)
 
@@ -104,6 +211,89 @@ const readings = ref([])
 const loadError = ref(null)
 const historyLoading = ref(true)
 const rangeHours = ref(24)
+
+const editingAlerts = ref(false)
+const editSaving = ref(false)
+const editError = ref(null)
+const editForm = ref({
+  alert_threshold_low: '',
+  alert_threshold_high: '',
+  alert_duration_minutes: 0,
+  alert_cooldown_minutes: 5,
+})
+
+function formatSecondsAsMinutes(secs) {
+  if (secs == null || !Number.isFinite(Number(secs))) return '—'
+  const n = Number(secs)
+  if (n === 0) return '0 min (immediate)'
+  if (n % 60 === 0) return `${n / 60} min`
+  return `${(n / 60).toFixed(1)} min`
+}
+
+function beginEditAlerts() {
+  if (!sensor.value) return
+  editError.value = null
+  editForm.value = {
+    alert_threshold_low: sensor.value.alert_threshold_low ?? '',
+    alert_threshold_high: sensor.value.alert_threshold_high ?? '',
+    alert_duration_minutes: Math.round((sensor.value.alert_duration_seconds ?? 0) / 60),
+    alert_cooldown_minutes: Math.round((sensor.value.alert_cooldown_seconds ?? 300) / 60),
+  }
+  editingAlerts.value = true
+}
+
+function cancelEditAlerts() {
+  editingAlerts.value = false
+  editError.value = null
+}
+
+function parseThreshold(v) {
+  if (v === '' || v == null) return null
+  const n = Number(v)
+  if (!Number.isFinite(n)) return undefined
+  return n
+}
+
+async function saveAlerts() {
+  if (!sensor.value) return
+  editError.value = null
+
+  const low = parseThreshold(editForm.value.alert_threshold_low)
+  const high = parseThreshold(editForm.value.alert_threshold_high)
+  if (low === undefined || high === undefined) {
+    editError.value = 'Thresholds must be numbers or blank.'
+    return
+  }
+
+  const durMin = Number(editForm.value.alert_duration_minutes)
+  const coolMin = Number(editForm.value.alert_cooldown_minutes)
+  if (!Number.isFinite(durMin) || durMin < 0 || durMin > 1440) {
+    editError.value = 'Duration must be between 0 and 1440 minutes.'
+    return
+  }
+  if (!Number.isFinite(coolMin) || coolMin < 0 || coolMin > 10080) {
+    editError.value = 'Cooldown must be between 0 and 10080 minutes.'
+    return
+  }
+
+  const payload = {
+    alert_threshold_low: low,
+    alert_threshold_high: high,
+    alert_duration_seconds: Math.round(durMin * 60),
+    alert_cooldown_seconds: Math.round(coolMin * 60),
+  }
+
+  editSaving.value = true
+  try {
+    const r = await api.put(`/sensors/${sensor.value.id}`, payload)
+    sensor.value = r.data
+    editingAlerts.value = false
+  } catch (e) {
+    editError.value = e.response?.data?.error || e.message || 'Failed to save sensor settings'
+  } finally {
+    editSaving.value = false
+  }
+}
 
 const rangeOptions = [
   { hours: 1, label: '1h' },

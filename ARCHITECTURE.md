@@ -197,7 +197,7 @@ actions:
 | Schedules | `/schedules` | store.schedules, store.automationRuns, worker health |
 | Tasks | `/tasks` | store.tasks (kanban-style status columns) |
 | Fertigation | `/fertigation` | Tabbed: reservoirs, EC targets, programs, events with create forms |
-| Inventory | `/inventory` | hardcoded JADAM inputs (stub) |
+| Inventory | `/inventory` | natural-farming inputs & batches (API-backed; demo uses JADAM-style names) |
 | Login | `/login` | Auth store login action (public route) |
 | Settings | `/settings` | Account info, password change, sign out |
 

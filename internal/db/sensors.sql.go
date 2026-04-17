@@ -11,15 +11,33 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const clearSensorAlertBreachStart = `-- name: ClearSensorAlertBreachStart :exec
+UPDATE gr33ncore.sensors
+SET alert_breach_started_at = NULL, updated_at = NOW()
+WHERE id = $1 AND deleted_at IS NULL AND alert_breach_started_at IS NOT NULL
+`
+
+func (q *Queries) ClearSensorAlertBreachStart(ctx context.Context, id int64) error {
+	_, err := q.db.Exec(ctx, clearSensorAlertBreachStart, id)
+	return err
+}
+
 const createSensor = `-- name: CreateSensor :one
 
 INSERT INTO gr33ncore.sensors (
     device_id, farm_id, zone_id, name, sensor_type, unit_id,
     hardware_identifier, value_min_expected, value_max_expected,
     alert_threshold_low, alert_threshold_high, reading_interval_seconds,
+    alert_duration_seconds, alert_cooldown_seconds,
     config, meta_data, created_at, updated_at
-) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, NOW(), NOW())
-RETURNING id, device_id, farm_id, zone_id, name, sensor_type, unit_id, hardware_identifier, value_min_expected, value_max_expected, alert_threshold_low, alert_threshold_high, reading_interval_seconds, is_calibrated, last_calibration_date, calibration_data, config, meta_data, created_at, updated_at, updated_by_user_id, deleted_at
+) VALUES (
+    $1, $2, $3, $4, $5, $6,
+    $7, $8, $9,
+    $10, $11, $12,
+    $13, $14,
+    $15, $16, NOW(), NOW()
+)
+RETURNING id, device_id, farm_id, zone_id, name, sensor_type, unit_id, hardware_identifier, value_min_expected, value_max_expected, alert_threshold_low, alert_threshold_high, alert_duration_seconds, alert_cooldown_seconds, alert_breach_started_at, reading_interval_seconds, is_calibrated, last_calibration_date, calibration_data, config, meta_data, created_at, updated_at, updated_by_user_id, deleted_at
 `
 
 type CreateSensorParams struct {
@@ -35,6 +53,8 @@ type CreateSensorParams struct {
 	AlertThresholdLow      pgtype.Numeric `db:"alert_threshold_low" json:"alert_threshold_low"`
 	AlertThresholdHigh     pgtype.Numeric `db:"alert_threshold_high" json:"alert_threshold_high"`
 	ReadingIntervalSeconds *int32         `db:"reading_interval_seconds" json:"reading_interval_seconds"`
+	AlertDurationSeconds   int32          `db:"alert_duration_seconds" json:"alert_duration_seconds"`
+	AlertCooldownSeconds   int32          `db:"alert_cooldown_seconds" json:"alert_cooldown_seconds"`
 	Config                 []byte         `db:"config" json:"config"`
 	MetaData               []byte         `db:"meta_data" json:"meta_data"`
 }
@@ -56,6 +76,8 @@ func (q *Queries) CreateSensor(ctx context.Context, arg CreateSensorParams) (Gr3
 		arg.AlertThresholdLow,
 		arg.AlertThresholdHigh,
 		arg.ReadingIntervalSeconds,
+		arg.AlertDurationSeconds,
+		arg.AlertCooldownSeconds,
 		arg.Config,
 		arg.MetaData,
 	)
@@ -73,6 +95,9 @@ func (q *Queries) CreateSensor(ctx context.Context, arg CreateSensorParams) (Gr3
 		&i.ValueMaxExpected,
 		&i.AlertThresholdLow,
 		&i.AlertThresholdHigh,
+		&i.AlertDurationSeconds,
+		&i.AlertCooldownSeconds,
+		&i.AlertBreachStartedAt,
 		&i.ReadingIntervalSeconds,
 		&i.IsCalibrated,
 		&i.LastCalibrationDate,
@@ -88,7 +113,7 @@ func (q *Queries) CreateSensor(ctx context.Context, arg CreateSensorParams) (Gr3
 }
 
 const getSensorByID = `-- name: GetSensorByID :one
-SELECT id, device_id, farm_id, zone_id, name, sensor_type, unit_id, hardware_identifier, value_min_expected, value_max_expected, alert_threshold_low, alert_threshold_high, reading_interval_seconds, is_calibrated, last_calibration_date, calibration_data, config, meta_data, created_at, updated_at, updated_by_user_id, deleted_at FROM gr33ncore.sensors
+SELECT id, device_id, farm_id, zone_id, name, sensor_type, unit_id, hardware_identifier, value_min_expected, value_max_expected, alert_threshold_low, alert_threshold_high, alert_duration_seconds, alert_cooldown_seconds, alert_breach_started_at, reading_interval_seconds, is_calibrated, last_calibration_date, calibration_data, config, meta_data, created_at, updated_at, updated_by_user_id, deleted_at FROM gr33ncore.sensors
 WHERE id = $1 AND deleted_at IS NULL
 `
 
@@ -108,6 +133,9 @@ func (q *Queries) GetSensorByID(ctx context.Context, id int64) (Gr33ncoreSensor,
 		&i.ValueMaxExpected,
 		&i.AlertThresholdLow,
 		&i.AlertThresholdHigh,
+		&i.AlertDurationSeconds,
+		&i.AlertCooldownSeconds,
+		&i.AlertBreachStartedAt,
 		&i.ReadingIntervalSeconds,
 		&i.IsCalibrated,
 		&i.LastCalibrationDate,
@@ -123,7 +151,7 @@ func (q *Queries) GetSensorByID(ctx context.Context, id int64) (Gr33ncoreSensor,
 }
 
 const listSensorsByDevice = `-- name: ListSensorsByDevice :many
-SELECT id, device_id, farm_id, zone_id, name, sensor_type, unit_id, hardware_identifier, value_min_expected, value_max_expected, alert_threshold_low, alert_threshold_high, reading_interval_seconds, is_calibrated, last_calibration_date, calibration_data, config, meta_data, created_at, updated_at, updated_by_user_id, deleted_at FROM gr33ncore.sensors
+SELECT id, device_id, farm_id, zone_id, name, sensor_type, unit_id, hardware_identifier, value_min_expected, value_max_expected, alert_threshold_low, alert_threshold_high, alert_duration_seconds, alert_cooldown_seconds, alert_breach_started_at, reading_interval_seconds, is_calibrated, last_calibration_date, calibration_data, config, meta_data, created_at, updated_at, updated_by_user_id, deleted_at FROM gr33ncore.sensors
 WHERE device_id = $1 AND deleted_at IS NULL
 ORDER BY name ASC
 `
@@ -150,6 +178,9 @@ func (q *Queries) ListSensorsByDevice(ctx context.Context, deviceID *int64) ([]G
 			&i.ValueMaxExpected,
 			&i.AlertThresholdLow,
 			&i.AlertThresholdHigh,
+			&i.AlertDurationSeconds,
+			&i.AlertCooldownSeconds,
+			&i.AlertBreachStartedAt,
 			&i.ReadingIntervalSeconds,
 			&i.IsCalibrated,
 			&i.LastCalibrationDate,
@@ -172,7 +203,7 @@ func (q *Queries) ListSensorsByDevice(ctx context.Context, deviceID *int64) ([]G
 }
 
 const listSensorsByFarm = `-- name: ListSensorsByFarm :many
-SELECT id, device_id, farm_id, zone_id, name, sensor_type, unit_id, hardware_identifier, value_min_expected, value_max_expected, alert_threshold_low, alert_threshold_high, reading_interval_seconds, is_calibrated, last_calibration_date, calibration_data, config, meta_data, created_at, updated_at, updated_by_user_id, deleted_at FROM gr33ncore.sensors
+SELECT id, device_id, farm_id, zone_id, name, sensor_type, unit_id, hardware_identifier, value_min_expected, value_max_expected, alert_threshold_low, alert_threshold_high, alert_duration_seconds, alert_cooldown_seconds, alert_breach_started_at, reading_interval_seconds, is_calibrated, last_calibration_date, calibration_data, config, meta_data, created_at, updated_at, updated_by_user_id, deleted_at FROM gr33ncore.sensors
 WHERE farm_id = $1 AND deleted_at IS NULL
 ORDER BY name ASC
 `
@@ -199,6 +230,9 @@ func (q *Queries) ListSensorsByFarm(ctx context.Context, farmID int64) ([]Gr33nc
 			&i.ValueMaxExpected,
 			&i.AlertThresholdLow,
 			&i.AlertThresholdHigh,
+			&i.AlertDurationSeconds,
+			&i.AlertCooldownSeconds,
+			&i.AlertBreachStartedAt,
 			&i.ReadingIntervalSeconds,
 			&i.IsCalibrated,
 			&i.LastCalibrationDate,
@@ -221,7 +255,7 @@ func (q *Queries) ListSensorsByFarm(ctx context.Context, farmID int64) ([]Gr33nc
 }
 
 const listSensorsByZone = `-- name: ListSensorsByZone :many
-SELECT id, device_id, farm_id, zone_id, name, sensor_type, unit_id, hardware_identifier, value_min_expected, value_max_expected, alert_threshold_low, alert_threshold_high, reading_interval_seconds, is_calibrated, last_calibration_date, calibration_data, config, meta_data, created_at, updated_at, updated_by_user_id, deleted_at FROM gr33ncore.sensors
+SELECT id, device_id, farm_id, zone_id, name, sensor_type, unit_id, hardware_identifier, value_min_expected, value_max_expected, alert_threshold_low, alert_threshold_high, alert_duration_seconds, alert_cooldown_seconds, alert_breach_started_at, reading_interval_seconds, is_calibrated, last_calibration_date, calibration_data, config, meta_data, created_at, updated_at, updated_by_user_id, deleted_at FROM gr33ncore.sensors
 WHERE zone_id = $1 AND deleted_at IS NULL
 ORDER BY sensor_type, name ASC
 `
@@ -248,6 +282,9 @@ func (q *Queries) ListSensorsByZone(ctx context.Context, zoneID *int64) ([]Gr33n
 			&i.ValueMaxExpected,
 			&i.AlertThresholdLow,
 			&i.AlertThresholdHigh,
+			&i.AlertDurationSeconds,
+			&i.AlertCooldownSeconds,
+			&i.AlertBreachStartedAt,
 			&i.ReadingIntervalSeconds,
 			&i.IsCalibrated,
 			&i.LastCalibrationDate,
@@ -269,6 +306,22 @@ func (q *Queries) ListSensorsByZone(ctx context.Context, zoneID *int64) ([]Gr33n
 	return items, nil
 }
 
+const setSensorAlertBreachStart = `-- name: SetSensorAlertBreachStart :exec
+UPDATE gr33ncore.sensors
+SET alert_breach_started_at = $2, updated_at = NOW()
+WHERE id = $1 AND deleted_at IS NULL
+`
+
+type SetSensorAlertBreachStartParams struct {
+	ID                   int64              `db:"id" json:"id"`
+	AlertBreachStartedAt pgtype.Timestamptz `db:"alert_breach_started_at" json:"alert_breach_started_at"`
+}
+
+func (q *Queries) SetSensorAlertBreachStart(ctx context.Context, arg SetSensorAlertBreachStartParams) error {
+	_, err := q.db.Exec(ctx, setSensorAlertBreachStart, arg.ID, arg.AlertBreachStartedAt)
+	return err
+}
+
 const softDeleteSensor = `-- name: SoftDeleteSensor :exec
 UPDATE gr33ncore.sensors
 SET deleted_at = NOW(), updated_at = NOW(), updated_by_user_id = $2
@@ -283,4 +336,96 @@ type SoftDeleteSensorParams struct {
 func (q *Queries) SoftDeleteSensor(ctx context.Context, arg SoftDeleteSensorParams) error {
 	_, err := q.db.Exec(ctx, softDeleteSensor, arg.ID, arg.UpdatedByUserID)
 	return err
+}
+
+const updateSensor = `-- name: UpdateSensor :one
+UPDATE gr33ncore.sensors
+SET
+    zone_id                  = COALESCE($1, zone_id),
+    device_id                = COALESCE($2, device_id),
+    name                     = COALESCE($3, name),
+    sensor_type              = COALESCE($4, sensor_type),
+    unit_id                  = COALESCE($5, unit_id),
+    hardware_identifier      = COALESCE($6, hardware_identifier),
+    value_min_expected       = COALESCE($7, value_min_expected),
+    value_max_expected       = COALESCE($8, value_max_expected),
+    alert_threshold_low      = COALESCE($9, alert_threshold_low),
+    alert_threshold_high     = COALESCE($10, alert_threshold_high),
+    reading_interval_seconds = COALESCE($11, reading_interval_seconds),
+    alert_duration_seconds   = COALESCE($12, alert_duration_seconds),
+    alert_cooldown_seconds   = COALESCE($13, alert_cooldown_seconds),
+    updated_at               = NOW(),
+    updated_by_user_id       = $14
+WHERE id = $15 AND deleted_at IS NULL
+RETURNING id, device_id, farm_id, zone_id, name, sensor_type, unit_id, hardware_identifier, value_min_expected, value_max_expected, alert_threshold_low, alert_threshold_high, alert_duration_seconds, alert_cooldown_seconds, alert_breach_started_at, reading_interval_seconds, is_calibrated, last_calibration_date, calibration_data, config, meta_data, created_at, updated_at, updated_by_user_id, deleted_at
+`
+
+type UpdateSensorParams struct {
+	ZoneID                 *int64         `db:"zone_id" json:"zone_id"`
+	DeviceID               *int64         `db:"device_id" json:"device_id"`
+	Name                   *string        `db:"name" json:"name"`
+	SensorType             *string        `db:"sensor_type" json:"sensor_type"`
+	UnitID                 *int64         `db:"unit_id" json:"unit_id"`
+	HardwareIdentifier     *string        `db:"hardware_identifier" json:"hardware_identifier"`
+	ValueMinExpected       pgtype.Numeric `db:"value_min_expected" json:"value_min_expected"`
+	ValueMaxExpected       pgtype.Numeric `db:"value_max_expected" json:"value_max_expected"`
+	AlertThresholdLow      pgtype.Numeric `db:"alert_threshold_low" json:"alert_threshold_low"`
+	AlertThresholdHigh     pgtype.Numeric `db:"alert_threshold_high" json:"alert_threshold_high"`
+	ReadingIntervalSeconds *int32         `db:"reading_interval_seconds" json:"reading_interval_seconds"`
+	AlertDurationSeconds   *int32         `db:"alert_duration_seconds" json:"alert_duration_seconds"`
+	AlertCooldownSeconds   *int32         `db:"alert_cooldown_seconds" json:"alert_cooldown_seconds"`
+	UpdatedByUserID        pgtype.UUID    `db:"updated_by_user_id" json:"updated_by_user_id"`
+	ID                     int64          `db:"id" json:"id"`
+}
+
+// Patch-style update: each field overwritten when the caller passes a non-NULL value;
+// pass NULL to leave the existing value untouched. alert_breach_started_at is managed
+// by the evaluator and is not editable via this query.
+func (q *Queries) UpdateSensor(ctx context.Context, arg UpdateSensorParams) (Gr33ncoreSensor, error) {
+	row := q.db.QueryRow(ctx, updateSensor,
+		arg.ZoneID,
+		arg.DeviceID,
+		arg.Name,
+		arg.SensorType,
+		arg.UnitID,
+		arg.HardwareIdentifier,
+		arg.ValueMinExpected,
+		arg.ValueMaxExpected,
+		arg.AlertThresholdLow,
+		arg.AlertThresholdHigh,
+		arg.ReadingIntervalSeconds,
+		arg.AlertDurationSeconds,
+		arg.AlertCooldownSeconds,
+		arg.UpdatedByUserID,
+		arg.ID,
+	)
+	var i Gr33ncoreSensor
+	err := row.Scan(
+		&i.ID,
+		&i.DeviceID,
+		&i.FarmID,
+		&i.ZoneID,
+		&i.Name,
+		&i.SensorType,
+		&i.UnitID,
+		&i.HardwareIdentifier,
+		&i.ValueMinExpected,
+		&i.ValueMaxExpected,
+		&i.AlertThresholdLow,
+		&i.AlertThresholdHigh,
+		&i.AlertDurationSeconds,
+		&i.AlertCooldownSeconds,
+		&i.AlertBreachStartedAt,
+		&i.ReadingIntervalSeconds,
+		&i.IsCalibrated,
+		&i.LastCalibrationDate,
+		&i.CalibrationData,
+		&i.Config,
+		&i.MetaData,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.UpdatedByUserID,
+		&i.DeletedAt,
+	)
+	return i, err
 }

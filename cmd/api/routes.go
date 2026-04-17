@@ -35,7 +35,7 @@ import (
 	"gr33n-api/internal/pushnotify"
 )
 
-func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationworker.Worker, adminUser string, adminHash []byte, hashFilePath string, fileStore filestorage.Store, fileCfg filestorage.Config) {
+func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationworker.Worker, pushDispatch *pushnotify.Dispatcher, adminUser string, adminHash []byte, hashFilePath string, fileStore filestorage.Store, fileCfg filestorage.Config) {
 	farm := farmhandler.NewHandler(pool)
 	org := organizationhandler.NewHandler(pool)
 	audit := audithandler.NewHandler(pool)
@@ -44,7 +44,9 @@ func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationwo
 	actuator := actuatorhandler.NewHandler(pool)
 	automation := automationhandler.NewHandler(pool, worker)
 	sse := ssehandler.NewHandler(pool)
-	pushDispatch := pushnotify.NewDispatcher(pool)
+	if pushDispatch == nil {
+		pushDispatch = pushnotify.NewDispatcher(pool)
+	}
 	sensor := sensorhandler.NewHandler(pool, sse, pushDispatch)
 	task := taskhandler.NewHandler(pool)
 	fertigation := fertigationhandler.NewHandler(pool)
@@ -148,10 +150,13 @@ func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationwo
 	mux.Handle("GET /farms/{id}/tasks", jwt(http.HandlerFunc(task.ListByFarm)))
 	mux.Handle("POST /farms/{id}/tasks", jwt(http.HandlerFunc(task.Create)))
 	mux.Handle("GET /farms/{id}/automation/runs", jwt(http.HandlerFunc(automation.ListRunsByFarm)))
+	mux.Handle("GET /farms/{id}/automation/rules", jwt(http.HandlerFunc(automation.ListAutomationRulesByFarm)))
+	mux.Handle("POST /farms/{id}/automation/rules", jwt(http.HandlerFunc(automation.CreateAutomationRule)))
 
 	// Sensors
 	mux.Handle("GET /sensors/{id}", jwt(http.HandlerFunc(sensor.Get)))
 	mux.Handle("POST /farms/{id}/sensors", jwt(http.HandlerFunc(sensor.Create)))
+	mux.Handle("PUT /sensors/{id}", jwt(http.HandlerFunc(sensor.Update)))
 	mux.Handle("DELETE /sensors/{id}", jwt(http.HandlerFunc(sensor.Delete)))
 	mux.Handle("GET /sensors/{id}/readings/latest", jwt(http.HandlerFunc(sensor.LatestReading)))
 	mux.Handle("GET /sensors/{id}/readings/stats", jwt(http.HandlerFunc(sensor.ReadingStats)))
@@ -167,6 +172,16 @@ func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationwo
 	mux.Handle("PUT /schedules/{id}", jwt(http.HandlerFunc(automation.UpdateSchedule)))
 	mux.Handle("DELETE /schedules/{id}", jwt(http.HandlerFunc(automation.DeleteSchedule)))
 	mux.Handle("GET /automation/worker/health", jwt(http.HandlerFunc(automation.WorkerHealth)))
+
+	// Automation rules (Phase 20 WS1)
+	mux.Handle("GET /automation/rules/{id}", jwt(http.HandlerFunc(automation.GetAutomationRule)))
+	mux.Handle("PUT /automation/rules/{id}", jwt(http.HandlerFunc(automation.UpdateAutomationRule)))
+	mux.Handle("DELETE /automation/rules/{id}", jwt(http.HandlerFunc(automation.DeleteAutomationRule)))
+	mux.Handle("PATCH /automation/rules/{id}/active", jwt(http.HandlerFunc(automation.UpdateAutomationRuleActive)))
+	mux.Handle("GET /automation/rules/{id}/actions", jwt(http.HandlerFunc(automation.ListActionsByRule)))
+	mux.Handle("POST /automation/rules/{id}/actions", jwt(http.HandlerFunc(automation.CreateActionForRule)))
+	mux.Handle("PUT /automation/actions/{id}", jwt(http.HandlerFunc(automation.UpdateAction)))
+	mux.Handle("DELETE /automation/actions/{id}", jwt(http.HandlerFunc(automation.DeleteAction)))
 
 	// Zones
 	mux.Handle("GET /zones/{id}", jwt(http.HandlerFunc(zone.Get)))
@@ -251,6 +266,7 @@ func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationwo
 	mux.Handle("GET /farms/{id}/alerts/unread-count", jwt(http.HandlerFunc(alert.CountUnread)))
 	mux.Handle("PATCH /alerts/{id}/read", jwt(http.HandlerFunc(alert.MarkRead)))
 	mux.Handle("PATCH /alerts/{id}/acknowledge", jwt(http.HandlerFunc(alert.MarkAcknowledged)))
+	mux.Handle("POST /alerts/{id}/create-task", jwt(http.HandlerFunc(alert.CreateTaskFromAlert)))
 
 	// Profile & farm members
 	mux.Handle("GET /profile", jwt(http.HandlerFunc(prof.GetMyProfile)))

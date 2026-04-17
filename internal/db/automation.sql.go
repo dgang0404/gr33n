@@ -10,7 +10,62 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5/pgtype"
+	"gr33n-api/internal/platform/commontypes"
 )
+
+const createAutomationRule = `-- name: CreateAutomationRule :one
+INSERT INTO gr33ncore.automation_rules (
+    farm_id, name, description, is_active,
+    trigger_source, trigger_configuration,
+    condition_logic, conditions_jsonb,
+    cooldown_period_seconds
+) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+RETURNING id, farm_id, name, description, is_active, trigger_source, trigger_configuration, condition_logic, conditions_jsonb, last_evaluated_time, last_triggered_time, cooldown_period_seconds, created_at, updated_at
+`
+
+type CreateAutomationRuleParams struct {
+	FarmID                int64                                   `db:"farm_id" json:"farm_id"`
+	Name                  string                                  `db:"name" json:"name"`
+	Description           *string                                 `db:"description" json:"description"`
+	IsActive              bool                                    `db:"is_active" json:"is_active"`
+	TriggerSource         commontypes.AutomationTriggerSourceEnum `db:"trigger_source" json:"trigger_source"`
+	TriggerConfiguration  []byte                                  `db:"trigger_configuration" json:"trigger_configuration"`
+	ConditionLogic        *string                                 `db:"condition_logic" json:"condition_logic"`
+	ConditionsJsonb       []byte                                  `db:"conditions_jsonb" json:"conditions_jsonb"`
+	CooldownPeriodSeconds *int32                                  `db:"cooldown_period_seconds" json:"cooldown_period_seconds"`
+}
+
+func (q *Queries) CreateAutomationRule(ctx context.Context, arg CreateAutomationRuleParams) (Gr33ncoreAutomationRule, error) {
+	row := q.db.QueryRow(ctx, createAutomationRule,
+		arg.FarmID,
+		arg.Name,
+		arg.Description,
+		arg.IsActive,
+		arg.TriggerSource,
+		arg.TriggerConfiguration,
+		arg.ConditionLogic,
+		arg.ConditionsJsonb,
+		arg.CooldownPeriodSeconds,
+	)
+	var i Gr33ncoreAutomationRule
+	err := row.Scan(
+		&i.ID,
+		&i.FarmID,
+		&i.Name,
+		&i.Description,
+		&i.IsActive,
+		&i.TriggerSource,
+		&i.TriggerConfiguration,
+		&i.ConditionLogic,
+		&i.ConditionsJsonb,
+		&i.LastEvaluatedTime,
+		&i.LastTriggeredTime,
+		&i.CooldownPeriodSeconds,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
 
 const createAutomationRun = `-- name: CreateAutomationRun :one
 INSERT INTO gr33ncore.automation_runs (
@@ -53,12 +108,62 @@ func (q *Queries) CreateAutomationRun(ctx context.Context, arg CreateAutomationR
 	return i, err
 }
 
+const createExecutableActionForRule = `-- name: CreateExecutableActionForRule :one
+INSERT INTO gr33ncore.executable_actions (
+    rule_id, execution_order, action_type,
+    target_actuator_id, target_automation_rule_id, target_notification_template_id,
+    action_command, action_parameters, delay_before_execution_seconds
+) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+RETURNING id, schedule_id, rule_id, execution_order, action_type, target_actuator_id, target_automation_rule_id, target_notification_template_id, action_command, action_parameters, delay_before_execution_seconds
+`
+
+type CreateExecutableActionForRuleParams struct {
+	RuleID                       *int64                               `db:"rule_id" json:"rule_id"`
+	ExecutionOrder               int32                                `db:"execution_order" json:"execution_order"`
+	ActionType                   commontypes.ExecutableActionTypeEnum `db:"action_type" json:"action_type"`
+	TargetActuatorID             *int64                               `db:"target_actuator_id" json:"target_actuator_id"`
+	TargetAutomationRuleID       *int64                               `db:"target_automation_rule_id" json:"target_automation_rule_id"`
+	TargetNotificationTemplateID *int64                               `db:"target_notification_template_id" json:"target_notification_template_id"`
+	ActionCommand                *string                              `db:"action_command" json:"action_command"`
+	ActionParameters             []byte                               `db:"action_parameters" json:"action_parameters"`
+	DelayBeforeExecutionSeconds  *int32                               `db:"delay_before_execution_seconds" json:"delay_before_execution_seconds"`
+}
+
+func (q *Queries) CreateExecutableActionForRule(ctx context.Context, arg CreateExecutableActionForRuleParams) (Gr33ncoreExecutableAction, error) {
+	row := q.db.QueryRow(ctx, createExecutableActionForRule,
+		arg.RuleID,
+		arg.ExecutionOrder,
+		arg.ActionType,
+		arg.TargetActuatorID,
+		arg.TargetAutomationRuleID,
+		arg.TargetNotificationTemplateID,
+		arg.ActionCommand,
+		arg.ActionParameters,
+		arg.DelayBeforeExecutionSeconds,
+	)
+	var i Gr33ncoreExecutableAction
+	err := row.Scan(
+		&i.ID,
+		&i.ScheduleID,
+		&i.RuleID,
+		&i.ExecutionOrder,
+		&i.ActionType,
+		&i.TargetActuatorID,
+		&i.TargetAutomationRuleID,
+		&i.TargetNotificationTemplateID,
+		&i.ActionCommand,
+		&i.ActionParameters,
+		&i.DelayBeforeExecutionSeconds,
+	)
+	return i, err
+}
+
 const createSchedule = `-- name: CreateSchedule :one
 INSERT INTO gr33ncore.schedules (
     farm_id, name, description, schedule_type, cron_expression,
-    timezone, is_active, meta_data
-) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-RETURNING id, farm_id, name, description, schedule_type, cron_expression, timezone, is_active, last_triggered_time, next_expected_trigger_time, meta_data, created_at, updated_at
+    timezone, is_active, meta_data, preconditions
+) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+RETURNING id, farm_id, name, description, schedule_type, cron_expression, timezone, is_active, last_triggered_time, next_expected_trigger_time, meta_data, preconditions, created_at, updated_at
 `
 
 type CreateScheduleParams struct {
@@ -70,6 +175,7 @@ type CreateScheduleParams struct {
 	Timezone       string  `db:"timezone" json:"timezone"`
 	IsActive       bool    `db:"is_active" json:"is_active"`
 	MetaData       []byte  `db:"meta_data" json:"meta_data"`
+	Preconditions  []byte  `db:"preconditions" json:"preconditions"`
 }
 
 func (q *Queries) CreateSchedule(ctx context.Context, arg CreateScheduleParams) (Gr33ncoreSchedule, error) {
@@ -82,6 +188,7 @@ func (q *Queries) CreateSchedule(ctx context.Context, arg CreateScheduleParams) 
 		arg.Timezone,
 		arg.IsActive,
 		arg.MetaData,
+		arg.Preconditions,
 	)
 	var i Gr33ncoreSchedule
 	err := row.Scan(
@@ -96,10 +203,29 @@ func (q *Queries) CreateSchedule(ctx context.Context, arg CreateScheduleParams) 
 		&i.LastTriggeredTime,
 		&i.NextExpectedTriggerTime,
 		&i.MetaData,
+		&i.Preconditions,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
 	return i, err
+}
+
+const deleteAutomationRule = `-- name: DeleteAutomationRule :exec
+DELETE FROM gr33ncore.automation_rules WHERE id = $1
+`
+
+func (q *Queries) DeleteAutomationRule(ctx context.Context, id int64) error {
+	_, err := q.db.Exec(ctx, deleteAutomationRule, id)
+	return err
+}
+
+const deleteExecutableAction = `-- name: DeleteExecutableAction :exec
+DELETE FROM gr33ncore.executable_actions WHERE id = $1
+`
+
+func (q *Queries) DeleteExecutableAction(ctx context.Context, id int64) error {
+	_, err := q.db.Exec(ctx, deleteExecutableAction, id)
+	return err
 }
 
 const deleteSchedule = `-- name: DeleteSchedule :exec
@@ -109,6 +235,33 @@ DELETE FROM gr33ncore.schedules WHERE id = $1
 func (q *Queries) DeleteSchedule(ctx context.Context, id int64) error {
 	_, err := q.db.Exec(ctx, deleteSchedule, id)
 	return err
+}
+
+const getAutomationRuleByID = `-- name: GetAutomationRuleByID :one
+SELECT id, farm_id, name, description, is_active, trigger_source, trigger_configuration, condition_logic, conditions_jsonb, last_evaluated_time, last_triggered_time, cooldown_period_seconds, created_at, updated_at FROM gr33ncore.automation_rules
+WHERE id = $1
+`
+
+func (q *Queries) GetAutomationRuleByID(ctx context.Context, id int64) (Gr33ncoreAutomationRule, error) {
+	row := q.db.QueryRow(ctx, getAutomationRuleByID, id)
+	var i Gr33ncoreAutomationRule
+	err := row.Scan(
+		&i.ID,
+		&i.FarmID,
+		&i.Name,
+		&i.Description,
+		&i.IsActive,
+		&i.TriggerSource,
+		&i.TriggerConfiguration,
+		&i.ConditionLogic,
+		&i.ConditionsJsonb,
+		&i.LastEvaluatedTime,
+		&i.LastTriggeredTime,
+		&i.CooldownPeriodSeconds,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
 }
 
 const getAutomationRunByDetails = `-- name: GetAutomationRunByDetails :one
@@ -138,6 +291,30 @@ func (q *Queries) GetAutomationRunByDetails(ctx context.Context, arg GetAutomati
 	return i, err
 }
 
+const getExecutableActionByID = `-- name: GetExecutableActionByID :one
+SELECT id, schedule_id, rule_id, execution_order, action_type, target_actuator_id, target_automation_rule_id, target_notification_template_id, action_command, action_parameters, delay_before_execution_seconds FROM gr33ncore.executable_actions
+WHERE id = $1
+`
+
+func (q *Queries) GetExecutableActionByID(ctx context.Context, id int64) (Gr33ncoreExecutableAction, error) {
+	row := q.db.QueryRow(ctx, getExecutableActionByID, id)
+	var i Gr33ncoreExecutableAction
+	err := row.Scan(
+		&i.ID,
+		&i.ScheduleID,
+		&i.RuleID,
+		&i.ExecutionOrder,
+		&i.ActionType,
+		&i.TargetActuatorID,
+		&i.TargetAutomationRuleID,
+		&i.TargetNotificationTemplateID,
+		&i.ActionCommand,
+		&i.ActionParameters,
+		&i.DelayBeforeExecutionSeconds,
+	)
+	return i, err
+}
+
 const getLastSuccessfulRunBySchedule = `-- name: GetLastSuccessfulRunBySchedule :one
 SELECT id, farm_id, schedule_id, rule_id, status, message, details, executed_at FROM gr33ncore.automation_runs
 WHERE schedule_id = $1 AND status = 'success'
@@ -162,7 +339,7 @@ func (q *Queries) GetLastSuccessfulRunBySchedule(ctx context.Context, scheduleID
 }
 
 const getScheduleByID = `-- name: GetScheduleByID :one
-SELECT id, farm_id, name, description, schedule_type, cron_expression, timezone, is_active, last_triggered_time, next_expected_trigger_time, meta_data, created_at, updated_at FROM gr33ncore.schedules
+SELECT id, farm_id, name, description, schedule_type, cron_expression, timezone, is_active, last_triggered_time, next_expected_trigger_time, meta_data, preconditions, created_at, updated_at FROM gr33ncore.schedules
 WHERE id = $1
 `
 
@@ -181,14 +358,55 @@ func (q *Queries) GetScheduleByID(ctx context.Context, id int64) (Gr33ncoreSched
 		&i.LastTriggeredTime,
 		&i.NextExpectedTriggerTime,
 		&i.MetaData,
+		&i.Preconditions,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
 	return i, err
 }
 
+const listActiveAutomationRules = `-- name: ListActiveAutomationRules :many
+SELECT id, farm_id, name, description, is_active, trigger_source, trigger_configuration, condition_logic, conditions_jsonb, last_evaluated_time, last_triggered_time, cooldown_period_seconds, created_at, updated_at FROM gr33ncore.automation_rules
+WHERE is_active = TRUE
+`
+
+func (q *Queries) ListActiveAutomationRules(ctx context.Context) ([]Gr33ncoreAutomationRule, error) {
+	rows, err := q.db.Query(ctx, listActiveAutomationRules)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Gr33ncoreAutomationRule{}
+	for rows.Next() {
+		var i Gr33ncoreAutomationRule
+		if err := rows.Scan(
+			&i.ID,
+			&i.FarmID,
+			&i.Name,
+			&i.Description,
+			&i.IsActive,
+			&i.TriggerSource,
+			&i.TriggerConfiguration,
+			&i.ConditionLogic,
+			&i.ConditionsJsonb,
+			&i.LastEvaluatedTime,
+			&i.LastTriggeredTime,
+			&i.CooldownPeriodSeconds,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listActiveSchedules = `-- name: ListActiveSchedules :many
-SELECT id, farm_id, name, description, schedule_type, cron_expression, timezone, is_active, last_triggered_time, next_expected_trigger_time, meta_data, created_at, updated_at FROM gr33ncore.schedules
+SELECT id, farm_id, name, description, schedule_type, cron_expression, timezone, is_active, last_triggered_time, next_expected_trigger_time, meta_data, preconditions, created_at, updated_at FROM gr33ncore.schedules
 WHERE is_active = TRUE
 `
 
@@ -213,6 +431,52 @@ func (q *Queries) ListActiveSchedules(ctx context.Context) ([]Gr33ncoreSchedule,
 			&i.LastTriggeredTime,
 			&i.NextExpectedTriggerTime,
 			&i.MetaData,
+			&i.Preconditions,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listAutomationRulesByFarm = `-- name: ListAutomationRulesByFarm :many
+
+SELECT id, farm_id, name, description, is_active, trigger_source, trigger_configuration, condition_logic, conditions_jsonb, last_evaluated_time, last_triggered_time, cooldown_period_seconds, created_at, updated_at FROM gr33ncore.automation_rules
+WHERE farm_id = $1
+ORDER BY name ASC
+`
+
+// ============================================================
+// Queries: automation_rules (Phase 20 WS1)
+// ============================================================
+func (q *Queries) ListAutomationRulesByFarm(ctx context.Context, farmID int64) ([]Gr33ncoreAutomationRule, error) {
+	rows, err := q.db.Query(ctx, listAutomationRulesByFarm, farmID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Gr33ncoreAutomationRule{}
+	for rows.Next() {
+		var i Gr33ncoreAutomationRule
+		if err := rows.Scan(
+			&i.ID,
+			&i.FarmID,
+			&i.Name,
+			&i.Description,
+			&i.IsActive,
+			&i.TriggerSource,
+			&i.TriggerConfiguration,
+			&i.ConditionLogic,
+			&i.ConditionsJsonb,
+			&i.LastEvaluatedTime,
+			&i.LastTriggeredTime,
+			&i.CooldownPeriodSeconds,
 			&i.CreatedAt,
 			&i.UpdatedAt,
 		); err != nil {
@@ -267,6 +531,48 @@ func (q *Queries) ListAutomationRunsByFarm(ctx context.Context, arg ListAutomati
 	return items, nil
 }
 
+const listExecutableActionsByRule = `-- name: ListExecutableActionsByRule :many
+
+SELECT id, schedule_id, rule_id, execution_order, action_type, target_actuator_id, target_automation_rule_id, target_notification_template_id, action_command, action_parameters, delay_before_execution_seconds FROM gr33ncore.executable_actions
+WHERE rule_id = $1
+ORDER BY execution_order ASC, id ASC
+`
+
+// ============================================================
+// Queries: executable_actions bound to rules (Phase 20 WS1)
+// ============================================================
+func (q *Queries) ListExecutableActionsByRule(ctx context.Context, ruleID *int64) ([]Gr33ncoreExecutableAction, error) {
+	rows, err := q.db.Query(ctx, listExecutableActionsByRule, ruleID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Gr33ncoreExecutableAction{}
+	for rows.Next() {
+		var i Gr33ncoreExecutableAction
+		if err := rows.Scan(
+			&i.ID,
+			&i.ScheduleID,
+			&i.RuleID,
+			&i.ExecutionOrder,
+			&i.ActionType,
+			&i.TargetActuatorID,
+			&i.TargetAutomationRuleID,
+			&i.TargetNotificationTemplateID,
+			&i.ActionCommand,
+			&i.ActionParameters,
+			&i.DelayBeforeExecutionSeconds,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listExecutableActionsBySchedule = `-- name: ListExecutableActionsBySchedule :many
 SELECT id, schedule_id, rule_id, execution_order, action_type, target_actuator_id, target_automation_rule_id, target_notification_template_id, action_command, action_parameters, delay_before_execution_seconds FROM gr33ncore.executable_actions
 WHERE schedule_id = $1
@@ -307,7 +613,7 @@ func (q *Queries) ListExecutableActionsBySchedule(ctx context.Context, scheduleI
 
 const listSchedulesByFarm = `-- name: ListSchedulesByFarm :many
 
-SELECT id, farm_id, name, description, schedule_type, cron_expression, timezone, is_active, last_triggered_time, next_expected_trigger_time, meta_data, created_at, updated_at FROM gr33ncore.schedules
+SELECT id, farm_id, name, description, schedule_type, cron_expression, timezone, is_active, last_triggered_time, next_expected_trigger_time, meta_data, preconditions, created_at, updated_at FROM gr33ncore.schedules
 WHERE farm_id = $1
 ORDER BY name ASC
 `
@@ -336,6 +642,7 @@ func (q *Queries) ListSchedulesByFarm(ctx context.Context, farmID int64) ([]Gr33
 			&i.LastTriggeredTime,
 			&i.NextExpectedTriggerTime,
 			&i.MetaData,
+			&i.Preconditions,
 			&i.CreatedAt,
 			&i.UpdatedAt,
 		); err != nil {
@@ -349,11 +656,79 @@ func (q *Queries) ListSchedulesByFarm(ctx context.Context, farmID int64) ([]Gr33
 	return items, nil
 }
 
+const markAutomationRuleEvaluated = `-- name: MarkAutomationRuleEvaluated :one
+UPDATE gr33ncore.automation_rules
+SET last_evaluated_time = $2, updated_at = NOW()
+WHERE id = $1
+RETURNING id, farm_id, name, description, is_active, trigger_source, trigger_configuration, condition_logic, conditions_jsonb, last_evaluated_time, last_triggered_time, cooldown_period_seconds, created_at, updated_at
+`
+
+type MarkAutomationRuleEvaluatedParams struct {
+	ID                int64              `db:"id" json:"id"`
+	LastEvaluatedTime pgtype.Timestamptz `db:"last_evaluated_time" json:"last_evaluated_time"`
+}
+
+func (q *Queries) MarkAutomationRuleEvaluated(ctx context.Context, arg MarkAutomationRuleEvaluatedParams) (Gr33ncoreAutomationRule, error) {
+	row := q.db.QueryRow(ctx, markAutomationRuleEvaluated, arg.ID, arg.LastEvaluatedTime)
+	var i Gr33ncoreAutomationRule
+	err := row.Scan(
+		&i.ID,
+		&i.FarmID,
+		&i.Name,
+		&i.Description,
+		&i.IsActive,
+		&i.TriggerSource,
+		&i.TriggerConfiguration,
+		&i.ConditionLogic,
+		&i.ConditionsJsonb,
+		&i.LastEvaluatedTime,
+		&i.LastTriggeredTime,
+		&i.CooldownPeriodSeconds,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const markAutomationRuleTriggered = `-- name: MarkAutomationRuleTriggered :one
+UPDATE gr33ncore.automation_rules
+SET last_triggered_time = $2, last_evaluated_time = $2, updated_at = NOW()
+WHERE id = $1
+RETURNING id, farm_id, name, description, is_active, trigger_source, trigger_configuration, condition_logic, conditions_jsonb, last_evaluated_time, last_triggered_time, cooldown_period_seconds, created_at, updated_at
+`
+
+type MarkAutomationRuleTriggeredParams struct {
+	ID                int64              `db:"id" json:"id"`
+	LastTriggeredTime pgtype.Timestamptz `db:"last_triggered_time" json:"last_triggered_time"`
+}
+
+func (q *Queries) MarkAutomationRuleTriggered(ctx context.Context, arg MarkAutomationRuleTriggeredParams) (Gr33ncoreAutomationRule, error) {
+	row := q.db.QueryRow(ctx, markAutomationRuleTriggered, arg.ID, arg.LastTriggeredTime)
+	var i Gr33ncoreAutomationRule
+	err := row.Scan(
+		&i.ID,
+		&i.FarmID,
+		&i.Name,
+		&i.Description,
+		&i.IsActive,
+		&i.TriggerSource,
+		&i.TriggerConfiguration,
+		&i.ConditionLogic,
+		&i.ConditionsJsonb,
+		&i.LastEvaluatedTime,
+		&i.LastTriggeredTime,
+		&i.CooldownPeriodSeconds,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const markScheduleTriggered = `-- name: MarkScheduleTriggered :one
 UPDATE gr33ncore.schedules
 SET last_triggered_time = $2, updated_at = NOW()
 WHERE id = $1
-RETURNING id, farm_id, name, description, schedule_type, cron_expression, timezone, is_active, last_triggered_time, next_expected_trigger_time, meta_data, created_at, updated_at
+RETURNING id, farm_id, name, description, schedule_type, cron_expression, timezone, is_active, last_triggered_time, next_expected_trigger_time, meta_data, preconditions, created_at, updated_at
 `
 
 type MarkScheduleTriggeredParams struct {
@@ -376,8 +751,149 @@ func (q *Queries) MarkScheduleTriggered(ctx context.Context, arg MarkScheduleTri
 		&i.LastTriggeredTime,
 		&i.NextExpectedTriggerTime,
 		&i.MetaData,
+		&i.Preconditions,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const updateAutomationRule = `-- name: UpdateAutomationRule :one
+UPDATE gr33ncore.automation_rules
+SET name = $2, description = $3, is_active = $4,
+    trigger_source = $5, trigger_configuration = $6,
+    condition_logic = $7, conditions_jsonb = $8,
+    cooldown_period_seconds = $9, updated_at = NOW()
+WHERE id = $1
+RETURNING id, farm_id, name, description, is_active, trigger_source, trigger_configuration, condition_logic, conditions_jsonb, last_evaluated_time, last_triggered_time, cooldown_period_seconds, created_at, updated_at
+`
+
+type UpdateAutomationRuleParams struct {
+	ID                    int64                                   `db:"id" json:"id"`
+	Name                  string                                  `db:"name" json:"name"`
+	Description           *string                                 `db:"description" json:"description"`
+	IsActive              bool                                    `db:"is_active" json:"is_active"`
+	TriggerSource         commontypes.AutomationTriggerSourceEnum `db:"trigger_source" json:"trigger_source"`
+	TriggerConfiguration  []byte                                  `db:"trigger_configuration" json:"trigger_configuration"`
+	ConditionLogic        *string                                 `db:"condition_logic" json:"condition_logic"`
+	ConditionsJsonb       []byte                                  `db:"conditions_jsonb" json:"conditions_jsonb"`
+	CooldownPeriodSeconds *int32                                  `db:"cooldown_period_seconds" json:"cooldown_period_seconds"`
+}
+
+func (q *Queries) UpdateAutomationRule(ctx context.Context, arg UpdateAutomationRuleParams) (Gr33ncoreAutomationRule, error) {
+	row := q.db.QueryRow(ctx, updateAutomationRule,
+		arg.ID,
+		arg.Name,
+		arg.Description,
+		arg.IsActive,
+		arg.TriggerSource,
+		arg.TriggerConfiguration,
+		arg.ConditionLogic,
+		arg.ConditionsJsonb,
+		arg.CooldownPeriodSeconds,
+	)
+	var i Gr33ncoreAutomationRule
+	err := row.Scan(
+		&i.ID,
+		&i.FarmID,
+		&i.Name,
+		&i.Description,
+		&i.IsActive,
+		&i.TriggerSource,
+		&i.TriggerConfiguration,
+		&i.ConditionLogic,
+		&i.ConditionsJsonb,
+		&i.LastEvaluatedTime,
+		&i.LastTriggeredTime,
+		&i.CooldownPeriodSeconds,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const updateAutomationRuleActive = `-- name: UpdateAutomationRuleActive :one
+UPDATE gr33ncore.automation_rules
+SET is_active = $2, updated_at = NOW()
+WHERE id = $1
+RETURNING id, farm_id, name, description, is_active, trigger_source, trigger_configuration, condition_logic, conditions_jsonb, last_evaluated_time, last_triggered_time, cooldown_period_seconds, created_at, updated_at
+`
+
+type UpdateAutomationRuleActiveParams struct {
+	ID       int64 `db:"id" json:"id"`
+	IsActive bool  `db:"is_active" json:"is_active"`
+}
+
+func (q *Queries) UpdateAutomationRuleActive(ctx context.Context, arg UpdateAutomationRuleActiveParams) (Gr33ncoreAutomationRule, error) {
+	row := q.db.QueryRow(ctx, updateAutomationRuleActive, arg.ID, arg.IsActive)
+	var i Gr33ncoreAutomationRule
+	err := row.Scan(
+		&i.ID,
+		&i.FarmID,
+		&i.Name,
+		&i.Description,
+		&i.IsActive,
+		&i.TriggerSource,
+		&i.TriggerConfiguration,
+		&i.ConditionLogic,
+		&i.ConditionsJsonb,
+		&i.LastEvaluatedTime,
+		&i.LastTriggeredTime,
+		&i.CooldownPeriodSeconds,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const updateExecutableAction = `-- name: UpdateExecutableAction :one
+UPDATE gr33ncore.executable_actions
+SET execution_order = $2, action_type = $3,
+    target_actuator_id = $4, target_automation_rule_id = $5,
+    target_notification_template_id = $6,
+    action_command = $7, action_parameters = $8,
+    delay_before_execution_seconds = $9
+WHERE id = $1
+RETURNING id, schedule_id, rule_id, execution_order, action_type, target_actuator_id, target_automation_rule_id, target_notification_template_id, action_command, action_parameters, delay_before_execution_seconds
+`
+
+type UpdateExecutableActionParams struct {
+	ID                           int64                                `db:"id" json:"id"`
+	ExecutionOrder               int32                                `db:"execution_order" json:"execution_order"`
+	ActionType                   commontypes.ExecutableActionTypeEnum `db:"action_type" json:"action_type"`
+	TargetActuatorID             *int64                               `db:"target_actuator_id" json:"target_actuator_id"`
+	TargetAutomationRuleID       *int64                               `db:"target_automation_rule_id" json:"target_automation_rule_id"`
+	TargetNotificationTemplateID *int64                               `db:"target_notification_template_id" json:"target_notification_template_id"`
+	ActionCommand                *string                              `db:"action_command" json:"action_command"`
+	ActionParameters             []byte                               `db:"action_parameters" json:"action_parameters"`
+	DelayBeforeExecutionSeconds  *int32                               `db:"delay_before_execution_seconds" json:"delay_before_execution_seconds"`
+}
+
+func (q *Queries) UpdateExecutableAction(ctx context.Context, arg UpdateExecutableActionParams) (Gr33ncoreExecutableAction, error) {
+	row := q.db.QueryRow(ctx, updateExecutableAction,
+		arg.ID,
+		arg.ExecutionOrder,
+		arg.ActionType,
+		arg.TargetActuatorID,
+		arg.TargetAutomationRuleID,
+		arg.TargetNotificationTemplateID,
+		arg.ActionCommand,
+		arg.ActionParameters,
+		arg.DelayBeforeExecutionSeconds,
+	)
+	var i Gr33ncoreExecutableAction
+	err := row.Scan(
+		&i.ID,
+		&i.ScheduleID,
+		&i.RuleID,
+		&i.ExecutionOrder,
+		&i.ActionType,
+		&i.TargetActuatorID,
+		&i.TargetAutomationRuleID,
+		&i.TargetNotificationTemplateID,
+		&i.ActionCommand,
+		&i.ActionParameters,
+		&i.DelayBeforeExecutionSeconds,
 	)
 	return i, err
 }
@@ -386,9 +902,9 @@ const updateSchedule = `-- name: UpdateSchedule :one
 UPDATE gr33ncore.schedules
 SET name = $2, description = $3, schedule_type = $4,
     cron_expression = $5, timezone = $6, is_active = $7,
-    meta_data = $8, updated_at = NOW()
+    meta_data = $8, preconditions = $9, updated_at = NOW()
 WHERE id = $1
-RETURNING id, farm_id, name, description, schedule_type, cron_expression, timezone, is_active, last_triggered_time, next_expected_trigger_time, meta_data, created_at, updated_at
+RETURNING id, farm_id, name, description, schedule_type, cron_expression, timezone, is_active, last_triggered_time, next_expected_trigger_time, meta_data, preconditions, created_at, updated_at
 `
 
 type UpdateScheduleParams struct {
@@ -400,6 +916,7 @@ type UpdateScheduleParams struct {
 	Timezone       string  `db:"timezone" json:"timezone"`
 	IsActive       bool    `db:"is_active" json:"is_active"`
 	MetaData       []byte  `db:"meta_data" json:"meta_data"`
+	Preconditions  []byte  `db:"preconditions" json:"preconditions"`
 }
 
 func (q *Queries) UpdateSchedule(ctx context.Context, arg UpdateScheduleParams) (Gr33ncoreSchedule, error) {
@@ -412,6 +929,7 @@ func (q *Queries) UpdateSchedule(ctx context.Context, arg UpdateScheduleParams) 
 		arg.Timezone,
 		arg.IsActive,
 		arg.MetaData,
+		arg.Preconditions,
 	)
 	var i Gr33ncoreSchedule
 	err := row.Scan(
@@ -426,6 +944,7 @@ func (q *Queries) UpdateSchedule(ctx context.Context, arg UpdateScheduleParams) 
 		&i.LastTriggeredTime,
 		&i.NextExpectedTriggerTime,
 		&i.MetaData,
+		&i.Preconditions,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -436,7 +955,7 @@ const updateScheduleActive = `-- name: UpdateScheduleActive :one
 UPDATE gr33ncore.schedules
 SET is_active = $2, updated_at = NOW()
 WHERE id = $1
-RETURNING id, farm_id, name, description, schedule_type, cron_expression, timezone, is_active, last_triggered_time, next_expected_trigger_time, meta_data, created_at, updated_at
+RETURNING id, farm_id, name, description, schedule_type, cron_expression, timezone, is_active, last_triggered_time, next_expected_trigger_time, meta_data, preconditions, created_at, updated_at
 `
 
 type UpdateScheduleActiveParams struct {
@@ -459,6 +978,7 @@ func (q *Queries) UpdateScheduleActive(ctx context.Context, arg UpdateScheduleAc
 		&i.LastTriggeredTime,
 		&i.NextExpectedTriggerTime,
 		&i.MetaData,
+		&i.Preconditions,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)

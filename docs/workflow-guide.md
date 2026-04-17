@@ -9,6 +9,7 @@
 > **Companion docs:**
 > - [`openapi.yaml`](../openapi.yaml) — canonical machine-readable spec of every route.
 > - [`pi-integration-guide.md`](pi-integration-guide.md) — how on-farm hardware reaches the platform.
+> - [`pattern-playbooks.md`](pattern-playbooks.md) — hardware + tuning notes for optional farm **bootstrap templates** (chicken coop, greenhouse, drying room, aquaponics, JADAM indoor starter).
 > - [`phase-13-operator-documentation.md`](phase-13-operator-documentation.md), [`phase-14-operator-documentation.md`](phase-14-operator-documentation.md) — phased feature rollouts.
 
 ---
@@ -62,6 +63,10 @@ A **sensor** is a logical channel (e.g. "root-zone EC probe #2"). The Pi reads i
 
 The Pi can also batch readings (`POST /sensors/readings/batch`) which is how the offline queue drains after reconnect. See [`pi-integration-guide.md`](pi-integration-guide.md) for details.
 
+### Derived channels (optional)
+
+Some channels are **computed on the Pi** from other sensors (for example **dew point**, **VPD**, **heat index** from air temperature + relative humidity). You still register them as normal rows in `gr33ncore.sensors` with a distinct `sensor_type`; the Pi posts readings the same way as for a physical probe. That keeps automation **rules** and **schedule preconditions** unchanged — they keep using the same `{sensor_id, op, value}` predicate shape. Configure the client in `pi_client/config.yaml` under `source: derived` (see [`pattern-playbooks.md`](pattern-playbooks.md) — Greenhouse section and the Pi client source).
+
 ### Devices & Actuators
 
 A **device** is a piece of physical hardware (usually the Pi or a microcontroller bridged via MQTT). A device has `online`/`offline` status (`PATCH /devices/{id}/status`) and may own one or more **actuators** (relays, valves, pumps, lights).
@@ -78,22 +83,53 @@ Operator flow for controlling an actuator:
 
 The **Schedules** page shows each automation run side-by-side with the actuator events it caused — this is the audit trail for "did the light actually come on at 06:00?".
 
+### Pattern playbooks (bootstrap templates)
+
+When you **create a farm** or **apply a starter pack** (Settings), you can pick a **template key** instead of starting completely blank. Each template seeds zones, sensors, actuators, schedules, rules, and starter tasks appropriate to a pattern (indoor photoperiod + JADAM-style inputs, chicken coop, greenhouse climate, drying room, small aquaponics). Rules are usually seeded **inactive** and schedules **off** until you wire hardware and tune thresholds. See **[`pattern-playbooks.md`](pattern-playbooks.md)** for hardware notes, what each template creates, and how to tune safely.
+
 ---
 
 ## 3. Schedules & automation runs
 
+The automation worker has **two peer triggers**: the **clock** (schedules) and **sensor state** (rules). Both ultimately write to the same `gr33ncore.automation_runs` table and the same Pi-side actuator pipeline, so operators get one unified audit log regardless of what made the worker act.
+
+### 3a. Schedules (time-driven)
+
 A **schedule** is a cron expression plus a small `meta_data` payload telling the worker what to do. Types in use today include irrigation pulses, alert evaluation, and fertigation program triggers. Schedules belong to a farm (`POST /farms/{id}/schedules`) and can be toggled active/inactive without deleting them (`PATCH /schedules/{id}/active`).
 
-The **automation worker** polls due schedules, runs their action, and writes one row to `gr33ncore.automation_runs` per trigger — visible via `GET /farms/{id}/automation/runs`. Each run has `status` = `success | partial_success | failed | skipped` and a `details` JSON blob. Failed runs raise alerts.
+Schedules can also carry **preconditions** — a JSON `{ logic: ALL|ANY, predicates: [{sensor_id, op, value}] }` list that the worker checks before executing. If preconditions fail, the run lands with `status='skipped', details.reason='precondition_failed'` instead of firing the actuator. This is the "interlock lite" guardrail from Phase 19 WS4.
+
+### 3b. Automation rules (sensor-driven)
+
+An **automation rule** fires when sensor state changes, not when a clock ticks. Rules live in `gr33ncore.automation_rules` and are managed via `GET|POST /farms/{id}/automation/rules`, `GET|PUT|DELETE /automation/rules/{id}`, and `PATCH /automation/rules/{id}/active`. Each rule has three pieces:
+
+1. **Trigger** — `trigger_source` says what kind of event the rule listens to (today: `manual_api_trigger` and `sensor_reading_threshold`) plus a `trigger_configuration` JSON for trigger-specific context (e.g. `{ sensor_id: 42 }`).
+2. **Conditions** — `conditions_jsonb = { logic: ALL|ANY, predicates: [...] }` using the **same predicate shape as schedule preconditions**. One canonical evaluator (`internal/automation/predicates.go`) runs in both places, so a predicate that works on a schedule guard works identically on a rule.
+3. **Actions** — an ordered list of rows in `gr33ncore.executable_actions` attached via `GET|POST /automation/rules/{id}/actions` and mutated via `PUT|DELETE /automation/actions/{id}`. Phase 20 ships three action types:
+   - `control_actuator` — writes a `pending_command` on a device and logs an `actuator_events` row stamped with `triggered_by_rule_id`.
+   - `create_task` — inserts a task whose `source_rule_id` points back at the rule (same provenance pattern as Phase 19's `source_alert_id`).
+   - `send_notification` — renders a `notification_templates` row into `alerts_notifications` and fans it through the push pipeline.
+
+   The remaining action-type enum values (`http_webhook_call`, `update_record_in_gr33n`, `trigger_another_automation_rule`, `log_custom_event`) are deferred and the handler rejects them with HTTP 400 so operators can't accidentally ship rules that silently do nothing.
+
+**Dew point / VPD as rule inputs.** Climate rules often key off **dew point** or **vapor pressure deficit (VPD)**. Those can be **computed on the Pi** from air temperature + humidity and ingested as normal sensor readings (see §2 *Derived channels* and [`pattern-playbooks.md`](pattern-playbooks.md)). Predicates stay the usual `{ sensor_id, op, value }` — no special case in the worker.
+
+Rules honor `cooldown_period_seconds`. Two ticks inside the cooldown window produce one `success` run and one `skipped` run with `details.reason='cooldown'`; once the window elapses the rule can fire again. On a successful tick the worker advances `last_triggered_time`; every tick (fire or not) advances `last_evaluated_time`.
+
+Deleting a rule **cascades** its `executable_actions` (they're meaningless without the parent rule) but **nulls** `tasks.source_rule_id` so operator-facing work survives an administrator tidying up automations. The same `ON DELETE SET NULL` pattern Phase 19 used for `source_alert_id`.
+
+### 3c. The unified run log
+
+The **automation worker** polls due schedules *and* active rules on each tick, and writes one row to `gr33ncore.automation_runs` per trigger — visible via `GET /farms/{id}/automation/runs`. Each run has `status` = `success | partial_success | failed | skipped`, a nullable `schedule_id` (set for cron-driven runs) *or* `rule_id` (set for sensor-driven runs), and a `details` JSON blob shaped as `{ phase, conditions_met?, actions_total, actions_success, errors: [{action_id, message}], reason? }`. Failed runs raise alerts. The UI's Schedules page and the new Automation page both read this table, filtered by `schedule_id` / `rule_id` respectively, so each surface shows only its own history.
 
 When an automation run switches a relay, that shows up twice:
 
-- In `automation_runs` (what the worker tried to do).
-- In `actuator_events` for the affected actuator (what the Pi actually did — see §2).
+- In `automation_runs` (what the worker tried to do — regardless of whether the trigger was clock or sensor).
+- In `actuator_events` for the affected actuator (what the Pi actually did — see §2). Rule-driven events also stamp `triggered_by_rule_id` so you can join back to the originating rule.
 
-If those two ever disagree, that's a diagnostic signal the hardware is drifting from what the scheduler asked.
+If those two ever disagree, that's a diagnostic signal the hardware is drifting from what the worker asked.
 
-**Tasks linked to schedules.** A task can reference a `schedule_id` (e.g. "before the 06:00 irrigation, check tank level"). The UI highlights these on the Schedules page and the Tasks page so operators can see what manual work is tied to which automation.
+**Tasks linked to schedules and rules.** A task can reference a `schedule_id` ("before the 06:00 irrigation, check tank level") **or** a `source_rule_id` ("this task was auto-created by rule #42 when EC dropped below 1.2"). The UI highlights both on the Tasks page and the relevant source page (Schedules / Automation).
 
 ---
 
@@ -223,8 +259,10 @@ Every action above is recorded as a row in Postgres; nothing depends on an exter
 | **Sensor** | Logical measurement channel. Readings are time-series. |
 | **Actuator** | Controllable output (relay, valve, pump, light). |
 | **Device** | The hardware running actuators / bridging sensors (usually a Pi). Has online/offline status and a `pending_command` slot. |
-| **Schedule** | Cron + meta_data; triggers an automation action. |
-| **Automation run** | One execution of a schedule; has status and a details payload. |
+| **Schedule** | Cron + meta_data; triggers an automation action on a clock. Can carry preconditions (sensor-state interlocks) that must pass before firing. |
+| **Automation rule** | Sensor-driven peer of a schedule. Fires when `conditions_jsonb` (ALL/ANY of `{sensor_id, op, value}` predicates) evaluates true, then runs an ordered list of `executable_actions`. Honors `cooldown_period_seconds`. |
+| **Executable action** | One step attached to a rule — `control_actuator`, `create_task`, or `send_notification` in Phase 20. Other enum values are reserved for later phases and rejected at creation today. |
+| **Automation run** | One execution of *either* a schedule *or* a rule; has status (`success|partial_success|failed|skipped`), a `details` JSON, and a nullable `schedule_id` or `rule_id` pointing back at what triggered it. |
 | **Program** | A fertigation recipe/EC-target/schedule triplet. |
 | **EC target** | A named EC setpoint (e.g. "flower EC 2.0"). |
 | **Reservoir** | A tank you mix and dispense from. |
@@ -243,6 +281,7 @@ Every action above is recorded as a row in Postgres; nothing depends on an exter
 ## 11. Where to go next
 
 - For **every API contract**: [`openapi.yaml`](../openapi.yaml).
+- For **bootstrap templates & wiring patterns**: [`pattern-playbooks.md`](pattern-playbooks.md).
 - For **Pi-side flows**: [`pi-integration-guide.md`](pi-integration-guide.md), [`mqtt-edge-operator-playbook.md`](mqtt-edge-operator-playbook.md).
 - For **commons publishing**: [`insert-commons-pipeline-runbook.md`](insert-commons-pipeline-runbook.md), [`commons-catalog-operator-playbook.md`](commons-catalog-operator-playbook.md).
 - For **alerts and push**: [`notifications-operator-playbook.md`](notifications-operator-playbook.md).

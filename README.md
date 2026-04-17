@@ -7,7 +7,7 @@ An open-source agricultural operating system designed to reclaim data, land, and
 [![Vue](https://img.shields.io/badge/Vue-3-4FC08D?logo=vue.js)](https://vuejs.org)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-14+-336791?logo=postgresql)](https://postgresql.org)
 
-**Phase 14 (field network & commons)** workstreams are **largely complete** on main (edge/MQTT patterns, Insert Commons pipeline + catalog, federation/receiver hardening, FCM alert push, org audit, farm bootstrap hooks, and stub domain schemas for crops/animals/aquaponics). Ongoing polish lives in **[`docs/phase-14-operator-documentation.md`](docs/phase-14-operator-documentation.md)** and [`docs/plans/phase_14_network_and_commons.plan.md`](docs/plans/phase_14_network_and_commons.plan.md). **Phase 15** centers on **[farm onboarding & templates](docs/plans/phase_15_farm_onboarding.plan.md)**. Phase 13 history: **[`docs/phase-13-operator-documentation.md`](docs/phase-13-operator-documentation.md)**. Key playbooks: [`docs/mqtt-edge-operator-playbook.md`](docs/mqtt-edge-operator-playbook.md), [`docs/insert-commons-pipeline-runbook.md`](docs/insert-commons-pipeline-runbook.md), [`docs/insert-commons-receiver-playbook.md`](docs/insert-commons-receiver-playbook.md), [`docs/notifications-operator-playbook.md`](docs/notifications-operator-playbook.md), [`docs/domain-modules-operator-playbook.md`](docs/domain-modules-operator-playbook.md), [`docs/mobile-distribution.md`](docs/mobile-distribution.md), [`docs/audit-events-operator-playbook.md`](docs/audit-events-operator-playbook.md).
+**Phase 14 (field network & commons)** workstreams are **largely complete** on main (edge/MQTT patterns, Insert Commons pipeline + catalog, federation/receiver hardening, FCM alert push, org audit, farm bootstrap hooks, and stub domain schemas for crops/animals/aquaponics). Ongoing polish lives in **[`docs/phase-14-operator-documentation.md`](docs/phase-14-operator-documentation.md)** and [`docs/plans/phase_14_network_and_commons.plan.md`](docs/plans/phase_14_network_and_commons.plan.md). **Phase 15** centers on **[farm onboarding & templates](docs/plans/phase_15_farm_onboarding.plan.md)**. Phase 13 history: **[`docs/phase-13-operator-documentation.md`](docs/phase-13-operator-documentation.md)**. Key playbooks: [`docs/mqtt-edge-operator-playbook.md`](docs/mqtt-edge-operator-playbook.md), [`docs/insert-commons-pipeline-runbook.md`](docs/insert-commons-pipeline-runbook.md), [`docs/insert-commons-receiver-playbook.md`](docs/insert-commons-receiver-playbook.md), [`docs/notifications-operator-playbook.md`](docs/notifications-operator-playbook.md), [`docs/domain-modules-operator-playbook.md`](docs/domain-modules-operator-playbook.md), [`docs/mobile-distribution.md`](docs/mobile-distribution.md), [`docs/audit-events-operator-playbook.md`](docs/audit-events-operator-playbook.md), [`docs/terminology-guideline.md`](docs/terminology-guideline.md) (JADAM vs natural farming in copy).
 
 ---
 
@@ -40,7 +40,7 @@ gr33n will never require a permanent internet connection, forced login, or hidde
 
 ## Core Principles
 
-- **Modularity** — Each ag domain (crops, animals, KNF inputs, IoT sensors) lives in its own schema. Use what you need, prune the rest. Enable modules per-farm via `gr33ncore.farm_active_modules`.
+- **Modularity** — Each ag domain (crops, animals, natural-farming inputs, IoT sensors) lives in its own schema. Use what you need, prune the rest. Enable modules per-farm via `gr33ncore.farm_active_modules`.
 
 - **Connectivity Optional** — Works offline, intranet-only, or online. Supports Supabase or bare-metal Postgres with TimescaleDB/PostGIS.
 
@@ -90,7 +90,7 @@ gr33n-api/
 │   ├── schema/
 │   │   └── gr33n-schema-v2-FINAL.sql   # Full PostgreSQL schema (source of truth)
 │   ├── seeds/
-│   │   └── master_seed.sql             # JADAM demo data v1.005 (veg/flower protocols + inventory + mixing)
+│   │   └── master_seed.sql             # Demo farm: natural-farming inventory + JADAM-style inputs (v1.005)
 │   └── queries/             # sqlc SQL source files
 ├── ui/                      # Vue 3 frontend
 │   └── src/
@@ -128,7 +128,7 @@ cd gr33n-api
 sudo -u postgres psql -c "CREATE DATABASE gr33n;"
 psql -d gr33n -f db/schema/gr33n-schema-v2-FINAL.sql
 
-# 3. Seed with JADAM demo data
+# 3. Seed demo data (natural farming + JADAM-style starter labels)
 psql -d gr33n -f db/seeds/master_seed.sql
 
 # 4. Run the API (from repo root)
@@ -417,12 +417,12 @@ Integration tests in `cmd/api/smoke_test.go` use `AUTH_MODE=auth_test` with a re
 
 ## Seed Data (v1.004)
 
-The master seed loads a complete JADAM natural farming demo dataset — verified clean against the live schema:
+The master seed loads a **demo farm** with natural-farming inventory and **JADAM**-style input names (JMS, JLF, …), photoperiod schedules, and automation — verified clean against the live schema:
 
 | Table | Rows | Contents |
 |-------|------|----------|
 | `farms` | 1 | gr33n Demo Farm |
-| `zones` | 4 | Seedling Room, Veg Room, Flower Room, Outdoor Beds |
+| `zones` | 3 | Veg Room, Flower Room, Outdoor Garden |
 | `sensors` | 10 | PAR, lux, temp, humidity, EC, pH, CO2, soil moisture |
 | `input_definitions` | 15 | JMS, LAB, FPJ, FFJ, OHN, JHS, WCA, WCS, JWA, JS, JLF variants, compost tea |
 | `application_recipes` | 14 | Soil drenches, foliar sprays, pest control, fungicide |
@@ -499,7 +499,7 @@ For users who choose to integrate local AI, gr33n offers schema-guided intellige
 - [x] gr33ncore schema — users, sensors, schedules, zones, automation rules
 - [x] gr33nnaturalfarming schema — inputs, recipes, batches
 - [x] Go REST API — farms, zones, devices, sensors, tasks, readings
-- [x] JADAM natural farming seed data — 15 inputs, 14 recipes, full automation
+- [x] Natural farming demo seed — 15 inputs, 14 recipes, full automation (JADAM-style labels)
 - [x] sqlc query layer + enum types
 - [x] Vue 3 frontend — Dashboard, Zones, Sensors, Actuators, Schedules, Settings, Inventory
 - [x] Raspberry Pi sensor client with systemd daemon

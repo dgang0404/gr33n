@@ -96,6 +96,34 @@ func (h *Handler) Get(w http.ResponseWriter, r *http.Request) {
 	httputil.WriteJSON(w, http.StatusOK, s)
 }
 
+// Duration + cooldown bounds (mirrored in CHECK constraints on gr33ncore.sensors).
+const (
+	maxAlertDurationSeconds int32 = 86400  // 24h
+	maxAlertCooldownSeconds int32 = 604800 // 7d
+)
+
+func clampAlertSeconds(v *int32, max int32, fallback int32) int32 {
+	if v == nil {
+		return fallback
+	}
+	if *v < 0 {
+		return 0
+	}
+	if *v > max {
+		return max
+	}
+	return *v
+}
+
+func floatToNumeric(v *float64) pgtype.Numeric {
+	if v == nil {
+		return pgtype.Numeric{}
+	}
+	var n pgtype.Numeric
+	_ = n.Scan(strconv.FormatFloat(*v, 'f', -1, 64))
+	return n
+}
+
 func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 	farmID, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil {
@@ -117,18 +145,12 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		AlertThresholdLow      *float64 `json:"alert_threshold_low"`
 		AlertThresholdHigh     *float64 `json:"alert_threshold_high"`
 		ReadingIntervalSeconds *int32   `json:"reading_interval_seconds"`
+		AlertDurationSeconds   *int32   `json:"alert_duration_seconds"`
+		AlertCooldownSeconds   *int32   `json:"alert_cooldown_seconds"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid body")
 		return
-	}
-	toNum := func(v *float64) pgtype.Numeric {
-		if v == nil {
-			return pgtype.Numeric{}
-		}
-		var n pgtype.Numeric
-		_ = n.Scan(strconv.FormatFloat(*v, 'f', -1, 64))
-		return n
 	}
 	params := db.CreateSensorParams{
 		FarmID:                 farmID,
@@ -138,11 +160,13 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		SensorType:             body.SensorType,
 		UnitID:                 body.UnitID,
 		HardwareIdentifier:     body.HardwareIdentifier,
-		ValueMinExpected:       toNum(body.ValueMinExpected),
-		ValueMaxExpected:       toNum(body.ValueMaxExpected),
-		AlertThresholdLow:      toNum(body.AlertThresholdLow),
-		AlertThresholdHigh:     toNum(body.AlertThresholdHigh),
+		ValueMinExpected:       floatToNumeric(body.ValueMinExpected),
+		ValueMaxExpected:       floatToNumeric(body.ValueMaxExpected),
+		AlertThresholdLow:      floatToNumeric(body.AlertThresholdLow),
+		AlertThresholdHigh:     floatToNumeric(body.AlertThresholdHigh),
 		ReadingIntervalSeconds: body.ReadingIntervalSeconds,
+		AlertDurationSeconds:   clampAlertSeconds(body.AlertDurationSeconds, maxAlertDurationSeconds, 0),
+		AlertCooldownSeconds:   clampAlertSeconds(body.AlertCooldownSeconds, maxAlertCooldownSeconds, 300),
 		Config:                 []byte("{}"),
 		MetaData:               []byte("{}"),
 	}
@@ -152,6 +176,139 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	httputil.WriteJSON(w, http.StatusCreated, s)
+}
+
+// Update — PUT /sensors/{id}
+// Patch-style: any field omitted from the body leaves the stored value unchanged.
+// Callers that want to null out a nullable threshold can pass JSON null explicitly.
+func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	if err != nil {
+		httputil.WriteError(w, http.StatusBadRequest, "invalid sensor id")
+		return
+	}
+	existing, err := h.q.GetSensorByID(r.Context(), id)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			httputil.WriteError(w, http.StatusNotFound, "sensor not found")
+			return
+		}
+		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	if !farmauthz.RequireFarmOperate(w, r, h.q, existing.FarmID) {
+		return
+	}
+
+	// json.RawMessage-free patch: presence of key is enough — we parse into a map
+	// and only forward fields that were present. This lets the client pass `null`
+	// to clear a threshold and omit the field entirely to leave it untouched.
+	var raw map[string]json.RawMessage
+	if err := json.NewDecoder(r.Body).Decode(&raw); err != nil {
+		httputil.WriteError(w, http.StatusBadRequest, "invalid body")
+		return
+	}
+
+	params := db.UpdateSensorParams{ID: id}
+
+	decodeInt64Ptr := func(key string, dst **int64) error {
+		if v, ok := raw[key]; ok {
+			if string(v) == "null" {
+				*dst = nil
+				return nil
+			}
+			var n int64
+			if err := json.Unmarshal(v, &n); err != nil {
+				return fmt.Errorf("invalid %s", key)
+			}
+			*dst = &n
+		}
+		return nil
+	}
+	decodeStringPtr := func(key string, dst **string) error {
+		if v, ok := raw[key]; ok {
+			if string(v) == "null" {
+				*dst = nil
+				return nil
+			}
+			var s string
+			if err := json.Unmarshal(v, &s); err != nil {
+				return fmt.Errorf("invalid %s", key)
+			}
+			*dst = &s
+		}
+		return nil
+	}
+	decodeInt32Ptr := func(key string, dst **int32, max int32) error {
+		if v, ok := raw[key]; ok {
+			if string(v) == "null" {
+				*dst = nil
+				return nil
+			}
+			var n int32
+			if err := json.Unmarshal(v, &n); err != nil {
+				return fmt.Errorf("invalid %s", key)
+			}
+			if n < 0 {
+				n = 0
+			}
+			if max > 0 && n > max {
+				n = max
+			}
+			*dst = &n
+		}
+		return nil
+	}
+	decodeNumeric := func(key string, dst *pgtype.Numeric) error {
+		if v, ok := raw[key]; ok {
+			if string(v) == "null" {
+				*dst = pgtype.Numeric{} // invalid ⇒ SQL NULL via sqlc.narg
+				return nil
+			}
+			var f float64
+			if err := json.Unmarshal(v, &f); err != nil {
+				return fmt.Errorf("invalid %s", key)
+			}
+			var n pgtype.Numeric
+			if err := n.Scan(strconv.FormatFloat(f, 'f', -1, 64)); err != nil {
+				return fmt.Errorf("invalid %s", key)
+			}
+			*dst = n
+		}
+		return nil
+	}
+
+	for _, fn := range []func() error{
+		func() error { return decodeInt64Ptr("zone_id", &params.ZoneID) },
+		func() error { return decodeInt64Ptr("device_id", &params.DeviceID) },
+		func() error { return decodeStringPtr("name", &params.Name) },
+		func() error { return decodeStringPtr("sensor_type", &params.SensorType) },
+		func() error { return decodeInt64Ptr("unit_id", &params.UnitID) },
+		func() error { return decodeStringPtr("hardware_identifier", &params.HardwareIdentifier) },
+		func() error { return decodeNumeric("value_min_expected", &params.ValueMinExpected) },
+		func() error { return decodeNumeric("value_max_expected", &params.ValueMaxExpected) },
+		func() error { return decodeNumeric("alert_threshold_low", &params.AlertThresholdLow) },
+		func() error { return decodeNumeric("alert_threshold_high", &params.AlertThresholdHigh) },
+		func() error { return decodeInt32Ptr("reading_interval_seconds", &params.ReadingIntervalSeconds, 0) },
+		func() error {
+			return decodeInt32Ptr("alert_duration_seconds", &params.AlertDurationSeconds, maxAlertDurationSeconds)
+		},
+		func() error {
+			return decodeInt32Ptr("alert_cooldown_seconds", &params.AlertCooldownSeconds, maxAlertCooldownSeconds)
+		},
+	} {
+		if err := fn(); err != nil {
+			httputil.WriteError(w, http.StatusBadRequest, err.Error())
+			return
+		}
+	}
+
+	updated, err := h.q.UpdateSensor(r.Context(), params)
+	if err != nil {
+		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	httputil.WriteJSON(w, http.StatusOK, updated)
 }
 
 func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
@@ -495,7 +652,9 @@ func (h *Handler) PostReading(w http.ResponseWriter, r *http.Request) {
 		h.sse.Notify()
 	}
 
-	go h.evaluateThresholds(r.Context(), id, body.ValueRaw)
+	// Run the evaluator in the background with its own context — r.Context() is cancelled
+	// as soon as the HTTP handler returns, which was racing with the goroutine's SQL calls.
+	go h.evaluateThresholds(context.Background(), id, body.ValueRaw)
 
 	httputil.WriteJSON(w, http.StatusCreated, reading)
 }
@@ -618,6 +777,16 @@ func numericToFloat64(n pgtype.Numeric) (float64, bool) {
 	return f.Float64, true
 }
 
+// evaluateThresholds implements the Phase 19 duration + cooldown state machine.
+//
+// Per sensor:
+//   - If the reading is in bounds: clear any existing breach-start timestamp and return.
+//   - If the reading is out of bounds:
+//   - If alert_breach_started_at is NULL, stamp it with "now" (marks the start of the streak).
+//   - If the streak has lasted < alert_duration_seconds, return (still accumulating evidence).
+//   - If the last alert for this source fired < alert_cooldown_seconds ago, return (suppressed).
+//   - Otherwise, create the alert. Keep alert_breach_started_at set so subsequent readings
+//     remain suppressed until the cooldown window elapses or the reading returns to bounds.
 func (h *Handler) evaluateThresholds(ctx context.Context, sensorID int64, valueRaw float64) {
 	sensor, err := h.q.GetSensorByID(ctx, sensorID)
 	if err != nil {
@@ -639,18 +808,56 @@ func (h *Handler) evaluateThresholds(ctx context.Context, sensorID int64, valueR
 		breach = true
 		msg = fmt.Sprintf("Value %.1f exceeds high threshold %.1f", valueRaw, hi)
 	}
+
+	now := time.Now().UTC()
+
 	if !breach {
+		// Reading returned to bounds — reset the streak so the next excursion starts fresh.
+		if sensor.AlertBreachStartedAt.Valid {
+			if err := h.q.ClearSensorAlertBreachStart(ctx, sensorID); err != nil {
+				log.Printf("alert: failed to clear breach start for sensor %d: %v", sensorID, err)
+			}
+		}
 		return
 	}
 
+	// Breach ongoing — ensure we have a streak start timestamp.
+	breachStart := now
+	if sensor.AlertBreachStartedAt.Valid {
+		breachStart = sensor.AlertBreachStartedAt.Time
+	} else {
+		if err := h.q.SetSensorAlertBreachStart(ctx, db.SetSensorAlertBreachStartParams{
+			ID:                   sensorID,
+			AlertBreachStartedAt: pgtype.Timestamptz{Time: now, Valid: true},
+		}); err != nil {
+			log.Printf("alert: failed to set breach start for sensor %d: %v", sensorID, err)
+			// Not fatal — we still evaluate duration/cooldown below using breachStart=now.
+		}
+	}
+
+	// Gate 1: sustained-breach duration.
+	if sensor.AlertDurationSeconds > 0 {
+		elapsed := now.Sub(breachStart)
+		if elapsed < time.Duration(sensor.AlertDurationSeconds)*time.Second {
+			return
+		}
+	}
+
 	srcType := "sensor_reading"
-	_, err = h.q.GetRecentUnacknowledgedAlertForSource(ctx, db.GetRecentUnacknowledgedAlertForSourceParams{
-		FarmID:                    sensor.FarmID,
-		TriggeringEventSourceType: &srcType,
-		TriggeringEventSourceID:   &sensorID,
-	})
-	if err == nil {
-		return // recent unacknowledged alert exists, skip
+
+	// Gate 2: per-sensor cooldown since the last alert for this source.
+	if sensor.AlertCooldownSeconds > 0 {
+		lastCreated, err := h.q.GetLatestAlertCreatedAtForSource(ctx, db.GetLatestAlertCreatedAtForSourceParams{
+			FarmID:                    sensor.FarmID,
+			TriggeringEventSourceType: &srcType,
+			TriggeringEventSourceID:   &sensorID,
+		})
+		if err == nil {
+			cooldown := time.Duration(sensor.AlertCooldownSeconds) * time.Second
+			if now.Sub(lastCreated) < cooldown {
+				return
+			}
+		}
 	}
 
 	severity := db.Gr33ncoreNotificationPriorityEnumHigh

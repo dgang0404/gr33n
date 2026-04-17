@@ -66,6 +66,8 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		Priority         *int32     `json:"priority"`
 		DueDate          *string    `json:"due_date"`
 		AssignedToUserID *uuid.UUID `json:"assigned_to_user_id"`
+		SourceAlertID    *int64     `json:"source_alert_id"`
+		SourceRuleID     *int64     `json:"source_rule_id"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid body")
@@ -112,6 +114,36 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
+	if body.SourceAlertID != nil {
+		a, err := q.GetAlertNotificationByID(r.Context(), *body.SourceAlertID)
+		if err != nil {
+			if errors.Is(err, pgx.ErrNoRows) {
+				httputil.WriteError(w, http.StatusBadRequest, "source alert not found")
+				return
+			}
+			httputil.WriteError(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+		if a.FarmID != farmID {
+			httputil.WriteError(w, http.StatusBadRequest, "source alert does not belong to this farm")
+			return
+		}
+	}
+	if body.SourceRuleID != nil {
+		rule, err := q.GetAutomationRuleByID(r.Context(), *body.SourceRuleID)
+		if err != nil {
+			if errors.Is(err, pgx.ErrNoRows) {
+				httputil.WriteError(w, http.StatusBadRequest, "source rule not found")
+				return
+			}
+			httputil.WriteError(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+		if rule.FarmID != farmID {
+			httputil.WriteError(w, http.StatusBadRequest, "source rule does not belong to this farm")
+			return
+		}
+	}
 	var createdBy pgtype.UUID
 	if uid, ok := authctx.UserID(r.Context()); ok {
 		createdBy = pgtype.UUID{Bytes: uid, Valid: true}
@@ -128,6 +160,8 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		AssignedToUserID:         assignID,
 		DueDate:                  dueDate,
 		EstimatedDurationMinutes: nil,
+		SourceAlertID:            body.SourceAlertID,
+		SourceRuleID:             body.SourceRuleID,
 		CreatedByUserID:          createdBy,
 	})
 	if err != nil {
