@@ -1186,6 +1186,20 @@ type Gr33nanimalsAnimalGroup struct {
 	DeletedAt      pgtype.Timestamptz `db:"deleted_at" json:"deleted_at"`
 }
 
+type Gr33nanimalsAnimalLifecycleEvent struct {
+	ID            int64       `db:"id" json:"id"`
+	FarmID        int64       `db:"farm_id" json:"farm_id"`
+	AnimalGroupID int64       `db:"animal_group_id" json:"animal_group_id"`
+	EventType     string      `db:"event_type" json:"event_type"`
+	EventTime     time.Time   `db:"event_time" json:"event_time"`
+	DeltaCount    *int32      `db:"delta_count" json:"delta_count"`
+	Notes         *string     `db:"notes" json:"notes"`
+	RecordedBy    pgtype.UUID `db:"recorded_by" json:"recorded_by"`
+	RelatedTaskID *int64      `db:"related_task_id" json:"related_task_id"`
+	Meta          []byte      `db:"meta" json:"meta"`
+	CreatedAt     time.Time   `db:"created_at" json:"created_at"`
+}
+
 type Gr33naquaponicsLoop struct {
 	ID             int64              `db:"id" json:"id"`
 	FarmID         int64              `db:"farm_id" json:"farm_id"`
@@ -1193,6 +1207,7 @@ type Gr33naquaponicsLoop struct {
 	Meta           []byte             `db:"meta" json:"meta"`
 	FishTankZoneID *int64             `db:"fish_tank_zone_id" json:"fish_tank_zone_id"`
 	GrowBedZoneID  *int64             `db:"grow_bed_zone_id" json:"grow_bed_zone_id"`
+	Active         bool               `db:"active" json:"active"`
 	CreatedAt      time.Time          `db:"created_at" json:"created_at"`
 	UpdatedAt      time.Time          `db:"updated_at" json:"updated_at"`
 	DeletedAt      pgtype.Timestamptz `db:"deleted_at" json:"deleted_at"`

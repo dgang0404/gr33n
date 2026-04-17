@@ -728,6 +728,70 @@ export const useFarmStore = defineStore('farm', {
       await api.delete(`/plants/${id}`)
     },
 
+    // Animal husbandry (Phase 20.8)
+    async loadAnimalGroups(farmId) {
+      const r = await api.get(`/farms/${farmId}/animal-groups`)
+      return Array.isArray(r.data) ? r.data : []
+    },
+
+    async getAnimalGroup(id) {
+      const r = await api.get(`/animal-groups/${id}`)
+      return r.data
+    },
+
+    async createAnimalGroup(farmId, data) {
+      const r = await api.post(`/farms/${farmId}/animal-groups`, data)
+      return r.data
+    },
+
+    async updateAnimalGroup(id, data) {
+      const r = await api.put(`/animal-groups/${id}`, data)
+      return r.data
+    },
+
+    async archiveAnimalGroup(id, reason) {
+      const r = await api.patch(`/animal-groups/${id}/archive`, { archived_reason: reason || null })
+      return r.data
+    },
+
+    async deleteAnimalGroup(id) {
+      await api.delete(`/animal-groups/${id}`)
+    },
+
+    async loadLifecycleEvents(groupId) {
+      const r = await api.get(`/animal-groups/${groupId}/lifecycle-events`)
+      return Array.isArray(r.data) ? r.data : []
+    },
+
+    async createLifecycleEvent(groupId, data) {
+      const r = await api.post(`/animal-groups/${groupId}/lifecycle-events`, data)
+      return r.data
+    },
+
+    async deleteLifecycleEvent(id) {
+      await api.delete(`/lifecycle-events/${id}`)
+    },
+
+    // Aquaponics loops (Phase 20.8)
+    async loadAquaponicsLoops(farmId) {
+      const r = await api.get(`/farms/${farmId}/aquaponics-loops`)
+      return Array.isArray(r.data) ? r.data : []
+    },
+
+    async createAquaponicsLoop(farmId, data) {
+      const r = await api.post(`/farms/${farmId}/aquaponics-loops`, data)
+      return r.data
+    },
+
+    async updateAquaponicsLoop(id, data) {
+      const r = await api.put(`/aquaponics-loops/${id}`, data)
+      return r.data
+    },
+
+    async deleteAquaponicsLoop(id) {
+      await api.delete(`/aquaponics-loops/${id}`)
+    },
+
     // Commons Catalog
     async loadCatalog({ q = '', limit = 50, offset = 0 } = {}) {
       const params = new URLSearchParams({ limit: String(limit), offset: String(offset) })

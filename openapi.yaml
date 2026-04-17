@@ -2283,6 +2283,248 @@ paths:
         "204": { description: Deleted }
         "404": { $ref: "#/components/responses/NotFound" }
 
+  /farms/{id}/animal-groups:
+    get:
+      tags: [animals]
+      summary: List animal groups for a farm
+      description: >-
+        Returns active + archived groups (soft-deleted rows are excluded).
+        Sorted by `active` desc, then label.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      responses:
+        "200":
+          description: Animal groups
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/AnimalGroup" }
+    post:
+      tags: [animals]
+      summary: Create an animal group
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AnimalGroupCreate" }
+      responses:
+        "201":
+          description: Created animal group
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AnimalGroup" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+
+  /animal-groups/{id}:
+    get:
+      tags: [animals]
+      summary: Get an animal group by ID
+      description: >-
+        Response includes the group row plus `delta_total`, the signed sum of
+        `delta_count` across all lifecycle events (UI reconciliation aid).
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      responses:
+        "200":
+          description: Animal group with delta total
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AnimalGroupDetail" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    put:
+      tags: [animals]
+      summary: Update an animal group
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AnimalGroupCreate" }
+      responses:
+        "200":
+          description: Updated animal group
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AnimalGroup" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    delete:
+      tags: [animals]
+      summary: Soft-delete an animal group
+      description: >-
+        Use `PATCH /animal-groups/{id}/archive` to preserve lifecycle history;
+        delete is for mistake-entry cleanup.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      responses:
+        "204": { description: Deleted }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /animal-groups/{id}/archive:
+    patch:
+      tags: [animals]
+      summary: Archive an animal group
+      description: >-
+        Marks the group `active=false` with `archived_at=NOW()` and an optional
+        reason. Lifecycle history is preserved; the row still appears in listings
+        but with active=false so the UI can filter it out by default.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                archived_reason: { type: string, nullable: true }
+      responses:
+        "200":
+          description: Archived animal group
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AnimalGroup" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /animal-groups/{id}/lifecycle-events:
+    get:
+      tags: [animals]
+      summary: List lifecycle events for an animal group
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      responses:
+        "200":
+          description: Lifecycle events (newest first)
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/AnimalLifecycleEvent" }
+    post:
+      tags: [animals]
+      summary: Record a lifecycle event
+      description: >-
+        `event_type` is freeform (e.g. `added`, `born`, `died`, `sold`,
+        `culled`, `health_event`, `weight_check`, `note`). `delta_count` is
+        signed (+ for added/born, - for died/sold/culled, null for notes).
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AnimalLifecycleEventCreate" }
+      responses:
+        "201":
+          description: Created event
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AnimalLifecycleEvent" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+
+  /lifecycle-events/{id}:
+    delete:
+      tags: [animals]
+      summary: Delete a lifecycle event
+      description: >-
+        Prefer appending a compensating event (e.g. a `+1 born` to cancel a
+        mistaken `-1 died`). Delete is for true mistake-entry cleanup.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      responses:
+        "204": { description: Deleted }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /farms/{id}/aquaponics-loops:
+    get:
+      tags: [aquaponics]
+      summary: List aquaponics loops for a farm
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      responses:
+        "200":
+          description: Aquaponics loops
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/AquaponicsLoop" }
+    post:
+      tags: [aquaponics]
+      summary: Create an aquaponics loop
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AquaponicsLoopCreate" }
+      responses:
+        "201":
+          description: Created loop
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AquaponicsLoop" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+
+  /aquaponics-loops/{id}:
+    get:
+      tags: [aquaponics]
+      summary: Get an aquaponics loop by ID
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      responses:
+        "200":
+          description: Aquaponics loop
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AquaponicsLoop" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    put:
+      tags: [aquaponics]
+      summary: Update an aquaponics loop
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AquaponicsLoopUpdate" }
+      responses:
+        "200":
+          description: Updated loop
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AquaponicsLoop" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    delete:
+      tags: [aquaponics]
+      summary: Soft-delete an aquaponics loop
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      responses:
+        "204": { description: Deleted }
+        "404": { $ref: "#/components/responses/NotFound" }
+
   /farms/{id}/costs/summary:
     get:
       tags: [costs]
@@ -4244,6 +4486,112 @@ components:
     PlantUpdate:
       allOf:
         - $ref: "#/components/schemas/PlantCreate"
+
+    AnimalGroup:
+      type: object
+      properties:
+        id: { type: integer, format: int64 }
+        farm_id: { type: integer, format: int64 }
+        label: { type: string }
+        species: { type: string, nullable: true }
+        count: { type: integer, nullable: true, description: "Operator-maintained head count (not auto-reconciled against lifecycle deltas)." }
+        primary_zone_id: { type: integer, format: int64, nullable: true }
+        active: { type: boolean }
+        archived_at: { type: string, format: date-time, nullable: true }
+        archived_reason: { type: string, nullable: true }
+        meta:
+          type: object
+          additionalProperties: true
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+        deleted_at: { type: string, format: date-time, nullable: true }
+
+    AnimalGroupCreate:
+      type: object
+      required: [label]
+      properties:
+        label: { type: string }
+        species: { type: string, nullable: true }
+        count: { type: integer, nullable: true, minimum: 0 }
+        primary_zone_id: { type: integer, format: int64, nullable: true }
+        meta:
+          type: object
+          additionalProperties: true
+
+    AnimalGroupDetail:
+      type: object
+      properties:
+        group: { $ref: "#/components/schemas/AnimalGroup" }
+        delta_total:
+          type: integer
+          format: int64
+          description: "Signed sum of delta_count across every lifecycle event for this group."
+
+    AnimalLifecycleEvent:
+      type: object
+      properties:
+        id: { type: integer, format: int64 }
+        farm_id: { type: integer, format: int64 }
+        animal_group_id: { type: integer, format: int64 }
+        event_type:
+          type: string
+          description: "Freeform vocabulary (added, born, died, sold, culled, health_event, weight_check, note, …)."
+        event_time: { type: string, format: date-time }
+        delta_count: { type: integer, nullable: true, description: "Signed (+added/born, -died/sold/culled, null for notes)." }
+        notes: { type: string, nullable: true }
+        recorded_by: { type: string, format: uuid, nullable: true }
+        related_task_id: { type: integer, format: int64, nullable: true }
+        meta:
+          type: object
+          additionalProperties: true
+        created_at: { type: string, format: date-time }
+
+    AnimalLifecycleEventCreate:
+      type: object
+      required: [event_type]
+      properties:
+        event_type: { type: string }
+        event_time: { type: string, format: date-time, nullable: true, description: "Defaults to NOW() when omitted." }
+        delta_count: { type: integer, nullable: true }
+        notes: { type: string, nullable: true }
+        related_task_id: { type: integer, format: int64, nullable: true }
+        meta:
+          type: object
+          additionalProperties: true
+
+    AquaponicsLoop:
+      type: object
+      properties:
+        id: { type: integer, format: int64 }
+        farm_id: { type: integer, format: int64 }
+        label: { type: string }
+        fish_tank_zone_id: { type: integer, format: int64, nullable: true }
+        grow_bed_zone_id: { type: integer, format: int64, nullable: true }
+        active: { type: boolean }
+        meta:
+          type: object
+          additionalProperties: true
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+        deleted_at: { type: string, format: date-time, nullable: true }
+
+    AquaponicsLoopCreate:
+      type: object
+      required: [label]
+      properties:
+        label: { type: string }
+        fish_tank_zone_id: { type: integer, format: int64, nullable: true }
+        grow_bed_zone_id: { type: integer, format: int64, nullable: true }
+        meta:
+          type: object
+          additionalProperties: true
+
+    AquaponicsLoopUpdate:
+      allOf:
+        - $ref: "#/components/schemas/AquaponicsLoopCreate"
+        - type: object
+          properties:
+            active: { type: boolean }
 
     GrowthStageEnum:
       type: string

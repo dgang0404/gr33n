@@ -28,6 +28,8 @@ import (
 	recipehandler "gr33n-api/internal/handler/recipe"
 	sensorhandler "gr33n-api/internal/handler/sensor"
 	ssehandler "gr33n-api/internal/handler/sse"
+	animalhandler "gr33n-api/internal/handler/animal"
+	aquaponicshandler "gr33n-api/internal/handler/aquaponics"
 	planthandler "gr33n-api/internal/handler/plants"
 	setpointhandler "gr33n-api/internal/handler/setpoint"
 	taskhandler "gr33n-api/internal/handler/task"
@@ -55,6 +57,8 @@ func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationwo
 	recipe := recipehandler.NewHandler(pool)
 	cropcycle := cropcyclehandler.NewHandler(pool)
 	plants := planthandler.NewHandler(pool)
+	animals := animalhandler.NewHandler(pool)
+	aquaponics := aquaponicshandler.NewHandler(pool)
 	alert := alerthandler.NewHandler(pool)
 	prof := profilehandler.NewHandler(pool)
 	setpoint := setpointhandler.NewHandler(pool)
@@ -241,6 +245,24 @@ func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationwo
 	mux.Handle("GET /plants/{id}", jwt(http.HandlerFunc(plants.Get)))
 	mux.Handle("PUT /plants/{id}", jwt(http.HandlerFunc(plants.Update)))
 	mux.Handle("DELETE /plants/{id}", jwt(http.HandlerFunc(plants.Delete)))
+
+	// Animal husbandry (Phase 20.8 WS2)
+	mux.Handle("GET /farms/{id}/animal-groups", jwt(http.HandlerFunc(animals.ListGroups)))
+	mux.Handle("POST /farms/{id}/animal-groups", jwt(http.HandlerFunc(animals.CreateGroup)))
+	mux.Handle("GET /animal-groups/{id}", jwt(http.HandlerFunc(animals.GetGroup)))
+	mux.Handle("PUT /animal-groups/{id}", jwt(http.HandlerFunc(animals.UpdateGroup)))
+	mux.Handle("PATCH /animal-groups/{id}/archive", jwt(http.HandlerFunc(animals.ArchiveGroup)))
+	mux.Handle("DELETE /animal-groups/{id}", jwt(http.HandlerFunc(animals.DeleteGroup)))
+	mux.Handle("GET /animal-groups/{id}/lifecycle-events", jwt(http.HandlerFunc(animals.ListLifecycle)))
+	mux.Handle("POST /animal-groups/{id}/lifecycle-events", jwt(http.HandlerFunc(animals.CreateLifecycle)))
+	mux.Handle("DELETE /lifecycle-events/{id}", jwt(http.HandlerFunc(animals.DeleteLifecycle)))
+
+	// Aquaponics loops (Phase 20.8 WS2)
+	mux.Handle("GET /farms/{id}/aquaponics-loops", jwt(http.HandlerFunc(aquaponics.ListLoops)))
+	mux.Handle("POST /farms/{id}/aquaponics-loops", jwt(http.HandlerFunc(aquaponics.CreateLoop)))
+	mux.Handle("GET /aquaponics-loops/{id}", jwt(http.HandlerFunc(aquaponics.GetLoop)))
+	mux.Handle("PUT /aquaponics-loops/{id}", jwt(http.HandlerFunc(aquaponics.UpdateLoop)))
+	mux.Handle("DELETE /aquaponics-loops/{id}", jwt(http.HandlerFunc(aquaponics.DeleteLoop)))
 
 	mux.Handle("GET /farms/{id}/costs/summary", jwt(http.HandlerFunc(cost.Summary)))
 	mux.Handle("GET /farms/{id}/costs/export", jwt(http.HandlerFunc(cost.Export)))

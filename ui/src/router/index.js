@@ -13,6 +13,8 @@ import Costs from '../views/Costs.vue'
 import Fertigation from '../views/Fertigation.vue'
 import Alerts from '../views/Alerts.vue'
 import Plants from '../views/Plants.vue'
+import Animals from '../views/Animals.vue'
+import Aquaponics from '../views/Aquaponics.vue'
 import CommonsCatalog from '../views/CommonsCatalog.vue'
 import Setpoints from '../views/Setpoints.vue'
 import Settings from '../views/Settings.vue'
@@ -36,6 +38,8 @@ const routes = [
   { path: '/costs',        component: Costs,        name: 'costs' },
   { path: '/alerts',       component: Alerts,       name: 'alerts' },
   { path: '/plants',       component: Plants,       name: 'plants' },
+  { path: '/animals',      component: Animals,      name: 'animals' },
+  { path: '/aquaponics',   component: Aquaponics,   name: 'aquaponics' },
   { path: '/catalog',      component: CommonsCatalog, name: 'catalog' },
   { path: '/settings',     component: Settings,     name: 'settings' },
 ]

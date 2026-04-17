@@ -70,10 +70,15 @@ var errIdempotentNoop = errors.New("autologger: already logged")
 // no unit_cost configured — in that case we still decrement stock but
 // skip the cost_transactions write.
 type resolvedPrice struct {
-	unitCost   float64
-	currency   string
-	costKnown  bool
-	defName    string
+	unitCost  float64
+	currency  string
+	costKnown bool
+	defName   string
+	// category is the cost_category_enum value this input maps to.
+	// Defaults to fertilizers_soil_amendments (the pre-Phase-20.8
+	// autologger's hard-coded value); Phase 20.8 WS3 extended the
+	// mapping to cover animal husbandry inputs.
+	category commontypes.CostCategoryEnum
 }
 
 func resolveDefinitionPrice(ctx context.Context, q *db.Queries, defID int64) (resolvedPrice, error) {
@@ -81,7 +86,10 @@ func resolveDefinitionPrice(ctx context.Context, q *db.Queries, defID int64) (re
 	if err != nil {
 		return resolvedPrice{}, fmt.Errorf("get input_definition %d: %w", defID, err)
 	}
-	out := resolvedPrice{defName: def.Name}
+	out := resolvedPrice{
+		defName:  def.Name,
+		category: mapInputCategoryToCostCategory(def.Category),
+	}
 	if def.UnitCost.Valid && def.UnitCostCurrency != nil && *def.UnitCostCurrency != "" {
 		if f, ok := numericToFloat(def.UnitCost); ok && f > 0 {
 			out.unitCost = f
@@ -90,6 +98,31 @@ func resolveDefinitionPrice(ctx context.Context, q *db.Queries, defID int64) (re
 		}
 	}
 	return out, nil
+}
+
+// mapInputCategoryToCostCategory is the Phase 20.8 WS3 lookup between
+// an `input_definitions.category` value (what the operator tagged the
+// product as) and the `cost_category_enum` value the autologger
+// stamps on the cost_transactions row. Kept here, not on the database,
+// because it is purely a classification concern — the operator never
+// chooses a cost category directly when consuming an input. If a new
+// input category is added later without a mapping entry, we fall back
+// to `fertilizers_soil_amendments` so automation still succeeds (the
+// operator can retag via `UpdateCostTransactionCategory` after the
+// fact).
+func mapInputCategoryToCostCategory(ic db.Gr33nnaturalfarmingInputCategoryEnum) commontypes.CostCategoryEnum {
+	switch ic {
+	case db.Gr33nnaturalfarmingInputCategoryEnumAnimalFeed,
+		db.Gr33nnaturalfarmingInputCategoryEnumBedding:
+		// Bedding folds into feed_livestock for now; if farms start
+		// caring about the split we can promote bedding to a distinct
+		// cost_category_enum value in a later phase.
+		return commontypes.CostCategoryFeedLivestock
+	case db.Gr33nnaturalfarmingInputCategoryEnumVeterinarySupply:
+		return commontypes.CostCategoryVeterinaryServices
+	default:
+		return commontypes.CostCategoryFertilizersSoilAmendments
+	}
 }
 
 // checkIdempotency returns (existingTxID, true) when the key has
@@ -193,7 +226,7 @@ func LogMixingComponent(
 		volumeMl, price.defName, price.unitCost)
 	relSchema := schemaFertigation
 	relTable := "mixing_event_components"
-	category := commontypes.CostCategoryFertilizersSoilAmendments
+	category := price.category
 	txID, err := writeCostRowWithIdempotency(ctx, q, farmID, key,
 		db.CreateCostTransactionAutoLoggedParams{
 			FarmID:              farmID,
@@ -271,7 +304,7 @@ func LogTaskConsumption(
 		quantity, price.defName, price.unitCost)
 	relSchema := schemaCore
 	relTable := "task_input_consumptions"
-	category := commontypes.CostCategoryFertilizersSoilAmendments
+	category := price.category
 
 	txID, err := writeCostRowWithIdempotency(ctx, q, consumption.FarmID, key,
 		db.CreateCostTransactionAutoLoggedParams{

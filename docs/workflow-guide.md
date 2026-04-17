@@ -285,7 +285,96 @@ Every action above is recorded as a row in Postgres; nothing depends on an exter
 
 ---
 
-## 10. Glossary (quick reference)
+## 10. Animal husbandry & aquaponics
+
+Phase 20.8 lights up the livestock half of the platform on the same three
+rails every other subject area uses — **record → consume → cost**.
+
+### 10.1 Animal groups
+
+`gr33nanimals.animal_groups` is the unit of management. One row = one
+flock / herd / hive / cohort. A group has:
+
+- `label`, optional `species` (free text — "chicken", "tilapia",
+  "honeybee", "cattle"…), and a running `count`.
+- An optional `primary_zone_id` — the coop / paddock / tank the group
+  lives in. Cross-farm zone ids are rejected at create/update.
+- `active` (defaults true) and an `archived_reason` once the group is
+  retired — groups are never hard-deleted until the row is soft-deleted
+  by the owner.
+
+Routes: `GET /farms/{farm_id}/animal-groups`,
+`POST /farms/{farm_id}/animal-groups`,
+`GET /animal-groups/{id}`, `PUT /animal-groups/{id}`,
+`PATCH /animal-groups/{id}/archive`, `DELETE /animal-groups/{id}`.
+UI lives under **Livestock → Animals**.
+
+### 10.2 Lifecycle events — the audit trail
+
+Every non-trivial change to a group is recorded in
+`gr33nanimals.animal_lifecycle_events` (added, born, died, sold,
+harvested, moved, note). Each row carries a signed `delta_count`, an
+optional `notes` / `related_task_id`, and is stamped with
+`recorded_by = authctx.UserID`.
+
+The `GET /animal-groups/{id}` detail response returns `delta_total`
+(sum of signed deltas) next to the manually edited `count`. The UI
+surfaces a reconciliation hint when the two diverge — we intentionally
+do **not** overwrite `count` from events, so operators can keep the
+displayed headcount authoritative while still logging what actually
+happened.
+
+Routes: `GET /animal-groups/{group_id}/lifecycle-events`,
+`POST /animal-groups/{group_id}/lifecycle-events`,
+`DELETE /lifecycle-events/{id}`.
+
+### 10.3 Feed, bedding, vet supplies → costs
+
+Feed is just a `gr33nnaturalfarming.input_definitions` row with
+`category = 'animal_feed'` (bedding → `bedding`, vet drugs →
+`veterinary_supply`). When a task consumption drains a batch of one of
+these inputs, the Phase 20.7 autologger fires as usual *and* the Phase
+20.8 `mapInputCategoryToCostCategory` helper maps the input category
+to the right `cost_category_enum`:
+
+| Input category      | Cost category         |
+|---------------------|-----------------------|
+| `animal_feed`       | `feed_livestock`      |
+| `bedding`           | `bedding_supplies`    |
+| `veterinary_supply` | `veterinary_services` |
+| (all other inputs)  | `natural_farming_inputs` (legacy default) |
+
+That means "feed the layer flock" costs land in the feed rollup
+automatically — no separate pathway for livestock costs.
+
+### 10.4 Aquaponics loops
+
+`gr33naquaponics.loops` now has two typed FKs —
+`fish_tank_zone_id` and `grow_bed_zone_id` — plus an `active` flag.
+One row = one fish-tank/grow-bed pair. The Phase 20.8 bootstrap
+upgrade (`_bootstrap_small_aquaponics_v1`) seeds exactly one loop
+and back-patches old rows that predate the typed FKs via
+`UPDATE … COALESCE`, so re-running a bootstrap on a legacy farm is
+safe and lossless.
+
+Routes: `GET /farms/{farm_id}/aquaponics-loops`,
+`POST /farms/{farm_id}/aquaponics-loops`,
+`GET /aquaponics-loops/{id}`, `PUT /aquaponics-loops/{id}`,
+`DELETE /aquaponics-loops/{id}`. UI lives under **Livestock →
+Aquaponics**. The loop card links to both zones so zone-level
+readings (DO, pH, temperature) are one click away.
+
+### 10.5 Bootstrap idempotency
+
+Both `chicken_coop_v1` and `small_aquaponics_v1` bootstraps are
+idempotent on two levels: the dispatcher short-circuits at
+`gr33ncore.farm_bootstrap_applications`, **and** the inner
+`_bootstrap_*_v1` functions use `NOT EXISTS` / `UPDATE … COALESCE`
+guards so a direct re-run writes zero new rows.
+
+---
+
+## 11. Glossary (quick reference)
 
 | Term | Meaning |
 |------|---------|
@@ -313,6 +402,9 @@ Every action above is recorded as a row in Postgres; nothing depends on an exter
 | **Autologger** | The `internal/costing` hook set that turns mixing components, task consumptions, and electricity rollups into idempotent `cost_transactions` rows + inventory deductions. Replays are silent no-ops via `cost_transaction_idempotency`. See §7a. |
 | **Energy price** | A row in `gr33ncore.farm_energy_prices` with `effective_from` / `effective_to` and `price_per_kwh`. Required for the nightly electricity rollup. |
 | **Low-stock threshold** | Opt-in `gr33nnaturalfarming.input_batches.low_stock_threshold`. When `current_quantity_remaining` drops below it, the worker fires one `medium`-severity alert per batch per UTC day. |
+| **Animal group** | Row in `gr33nanimals.animal_groups` — one flock / herd / cohort. Carries `species`, `count`, optional `primary_zone_id`, and an `archived_reason` once retired. See §10.1. |
+| **Lifecycle event** | Row in `gr33nanimals.animal_lifecycle_events`. Signed `delta_count` audit entry for added / born / died / sold / moved / note events on an animal group. `recorded_by` is stamped from JWT. See §10.2. |
+| **Aquaponics loop** | Row in `gr33naquaponics.loops` pairing a `fish_tank_zone_id` with a `grow_bed_zone_id`. Managed under **Livestock → Aquaponics**; seeded by `small_aquaponics_v1`. See §10.4. |
 | **Commons Catalog** | Public library of importable metadata packs. |
 | **Insert Commons** | Opt-in farm → commons publishing pipeline. |
 | **Natural farming** | Generic English umbrella term used in module titles, API tags, and UI copy for farming that relies on on-site fermented extracts, microbial cultures, and soil amendments (FPJ, FAA, JMS, etc.). Intentionally unqualified — no national / regional / ethnic modifier — because the system doesn't privilege any single tradition. See [`terminology-guideline.md`](terminology-guideline.md). |
@@ -320,7 +412,7 @@ Every action above is recorded as a row in Postgres; nothing depends on an exter
 
 ---
 
-## 11. Where to go next
+## 12. Where to go next
 
 - For **every API contract**: [`openapi.yaml`](../openapi.yaml).
 - For **bootstrap templates & wiring patterns**: [`pattern-playbooks.md`](pattern-playbooks.md).

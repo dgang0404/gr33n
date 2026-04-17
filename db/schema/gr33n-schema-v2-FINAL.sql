@@ -1602,6 +1602,28 @@ CREATE TRIGGER trg_gr33nanimals_animal_groups_updated_at
     BEFORE UPDATE ON gr33nanimals.animal_groups
     FOR EACH ROW EXECUTE FUNCTION gr33ncore.set_updated_at();
 
+-- Phase 20.8 WS1 — lifecycle timeline. Mirrors crop_cycles' shape so
+-- RAG queries written against crop_cycles generalize trivially.
+-- event_type is TEXT (not enum) deliberately; vocabulary settles
+-- from real use before any tightening.
+CREATE TABLE IF NOT EXISTS gr33nanimals.animal_lifecycle_events (
+    id              BIGSERIAL PRIMARY KEY,
+    farm_id         BIGINT NOT NULL REFERENCES gr33ncore.farms(id) ON DELETE CASCADE,
+    animal_group_id BIGINT NOT NULL REFERENCES gr33nanimals.animal_groups(id) ON DELETE CASCADE,
+    event_type      TEXT NOT NULL,
+    event_time      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    delta_count     INTEGER,
+    notes           TEXT,
+    recorded_by     UUID REFERENCES gr33ncore.profiles(user_id) ON DELETE SET NULL,
+    related_task_id BIGINT REFERENCES gr33ncore.tasks(id) ON DELETE SET NULL,
+    meta            JSONB NOT NULL DEFAULT '{}'::jsonb,
+    created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_animal_lifecycle_events_group_time
+    ON gr33nanimals.animal_lifecycle_events (animal_group_id, event_time DESC);
+CREATE INDEX IF NOT EXISTS idx_animal_lifecycle_events_farm_time
+    ON gr33nanimals.animal_lifecycle_events (farm_id, event_time DESC);
+
 CREATE SCHEMA IF NOT EXISTS gr33naquaponics;
 
 CREATE TABLE IF NOT EXISTS gr33naquaponics.loops (
@@ -1612,6 +1634,8 @@ CREATE TABLE IF NOT EXISTS gr33naquaponics.loops (
     -- Phase 20.95 WS4 topology columns (nullable).
     fish_tank_zone_id BIGINT REFERENCES gr33ncore.zones(id) ON DELETE SET NULL,
     grow_bed_zone_id  BIGINT REFERENCES gr33ncore.zones(id) ON DELETE SET NULL,
+    -- Phase 20.8 WS1 — operator-toggleable on/off flag.
+    active            BOOLEAN NOT NULL DEFAULT TRUE,
     created_at        TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at        TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     deleted_at        TIMESTAMPTZ

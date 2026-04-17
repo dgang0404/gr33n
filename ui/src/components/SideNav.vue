@@ -115,6 +115,13 @@ const navGroups = [
     ],
   },
   {
+    label: 'Livestock',
+    items: [
+      { to: '/animals',    icon: '🐔', label: 'Animals'    },
+      { to: '/aquaponics', icon: '🐟', label: 'Aquaponics' },
+    ],
+  },
+  {
     label: 'Monitor',
     items: [
       { to: '/alerts', icon: '🔔', label: 'Alerts' },
