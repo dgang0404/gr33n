@@ -58,10 +58,12 @@
             {{ zone.description }}
           </p>
 
-          <div class="flex items-center gap-4 text-xs text-zinc-400">
-            <span>🌡 {{ store.sensorsByZone(zone.id).length }} sensors</span>
-            <span>⚙️ {{ store.devicesByZone(zone.id).length }} devices</span>
-            <span v-if="zone.area_sqm">📐 {{ zone.area_sqm }} m²</span>
+          <div class="flex flex-wrap items-center gap-3 text-xs text-zinc-400">
+            <span v-if="zoneReservoirs(zone.id).length">{{ zoneReservoirs(zone.id).length }} reservoir{{ zoneReservoirs(zone.id).length > 1 ? 's' : '' }}</span>
+            <span v-if="zonePrograms(zone.id).length" class="text-green-500">{{ zonePrograms(zone.id).length }} active program{{ zonePrograms(zone.id).length > 1 ? 's' : '' }}</span>
+            <span v-if="zoneTasks(zone.id).length" class="text-blue-400">{{ zoneTasks(zone.id).length }} open task{{ zoneTasks(zone.id).length > 1 ? 's' : '' }}</span>
+            <span>{{ store.sensorsByZone(zone.id).length }} sensor{{ store.sensorsByZone(zone.id).length !== 1 ? 's' : '' }}</span>
+            <span v-if="zone.area_sqm">{{ zone.area_sqm }} m²</span>
           </div>
         </router-link>
         <div class="flex gap-2 mt-3 pt-3 border-t border-zinc-800">
@@ -89,8 +91,27 @@ const saving = ref(false)
 const zoneForm = ref({ name: '', description: '', zone_type: '', area_sqm: null })
 const zoneTypes = ['indoor', 'outdoor', 'greenhouse', 'nursery', 'seedling', 'veg', 'flower', 'storage']
 
-onMounted(() => {
-  if (!store.zones.length && farmContext.farmId) store.loadAll(farmContext.farmId)
+const programs = ref([])
+const tasks = ref([])
+const reservoirs = ref([])
+
+function zonePrograms(zoneId) { return programs.value.filter(p => p.target_zone_id === zoneId && p.is_active) }
+function zoneTasks(zoneId) { return tasks.value.filter(t => t.zone_id === zoneId && t.status !== 'completed' && t.status !== 'cancelled') }
+function zoneReservoirs(zoneId) { return reservoirs.value.filter(r => r.zone_id === zoneId) }
+
+onMounted(async () => {
+  const fid = farmContext.farmId
+  if (!store.zones.length && fid) await store.loadAll(fid)
+  if (fid) {
+    const [p, t, r] = await Promise.all([
+      store.loadFertigationPrograms(fid),
+      store.loadTasks(fid),
+      store.loadReservoirs(fid),
+    ])
+    programs.value = p
+    tasks.value = store.tasks
+    reservoirs.value = r
+  }
 })
 
 function startEdit(zone) {

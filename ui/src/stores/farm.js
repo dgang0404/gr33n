@@ -111,6 +111,24 @@ export const useFarmStore = defineStore('farm', {
       return next
     },
 
+    async createSchedule(farmId, payload) {
+      const r = await api.post(`/farms/${farmId}/schedules`, payload)
+      this.schedules = [...this.schedules, r.data]
+      return r.data
+    },
+
+    async updateSchedule(scheduleId, payload) {
+      const r = await api.put(`/schedules/${scheduleId}`, payload)
+      const idx = this.schedules.findIndex(s => s.id === scheduleId)
+      if (idx >= 0) this.schedules[idx] = r.data
+      return r.data
+    },
+
+    async deleteSchedule(scheduleId) {
+      await api.delete(`/schedules/${scheduleId}`)
+      this.schedules = this.schedules.filter(s => s.id !== scheduleId)
+    },
+
     async loadAutomationRuns(farmId) {
       const r = await api.get(`/farms/${farmId}/automation/runs`)
       this.automationRuns = Array.isArray(r.data) ? r.data : []
@@ -148,6 +166,18 @@ export const useFarmStore = defineStore('farm', {
         stale: false,
         queueItemId: item.id,
       }
+    },
+
+    async updateTask(taskId, payload) {
+      const r = await api.put(`/tasks/${taskId}`, payload)
+      const idx = this.tasks.findIndex(t => t.id === taskId)
+      if (idx >= 0) this.tasks[idx] = r.data
+      return r.data
+    },
+
+    async deleteTask(taskId) {
+      await api.delete(`/tasks/${taskId}`)
+      this.tasks = this.tasks.filter(t => t.id !== taskId)
     },
 
     async flushTaskWriteQueue({ farmId, force = false } = {}) {
@@ -400,6 +430,7 @@ export const useFarmStore = defineStore('farm', {
         id: item.clientTaskId,
         farm_id: item.farmId,
         zone_id: item.payload.zone_id ?? null,
+        schedule_id: item.payload.schedule_id ?? null,
         title: item.payload.title,
         description: item.payload.description ?? null,
         task_type: item.payload.task_type ?? null,
@@ -532,6 +563,21 @@ export const useFarmStore = defineStore('farm', {
       return r.data
     },
 
+    async loadMixingEvents(farmId) {
+      const r = await api.get(`/farms/${farmId}/fertigation/mixing-events`)
+      return Array.isArray(r.data) ? r.data : []
+    },
+
+    async loadMixingEventComponents(farmId, mixingEventId) {
+      const r = await api.get(`/farms/${farmId}/fertigation/mixing-events/${mixingEventId}/components`)
+      return Array.isArray(r.data) ? r.data : []
+    },
+
+    async createMixingEvent(farmId, payload) {
+      const r = await api.post(`/farms/${farmId}/fertigation/mixing-events`, payload)
+      return r.data
+    },
+
     async updateReservoir(id, data) {
       const r = await api.patch(`/fertigation/reservoirs/${id}`, data)
       return r.data
@@ -606,6 +652,56 @@ export const useFarmStore = defineStore('farm', {
 
     async deleteNfBatch(id) {
       await api.delete(`/naturalfarming/batches/${id}`)
+    },
+
+    // Plants (crop tracking)
+    async loadPlants(farmId) {
+      const r = await api.get(`/farms/${farmId}/plants`)
+      return Array.isArray(r.data) ? r.data : []
+    },
+
+    async getPlant(id) {
+      const r = await api.get(`/plants/${id}`)
+      return r.data
+    },
+
+    async createPlant(farmId, data) {
+      const r = await api.post(`/farms/${farmId}/plants`, data)
+      return r.data
+    },
+
+    async updatePlant(id, data) {
+      const r = await api.put(`/plants/${id}`, data)
+      return r.data
+    },
+
+    async deletePlant(id) {
+      await api.delete(`/plants/${id}`)
+    },
+
+    // Commons Catalog
+    async loadCatalog({ q = '', limit = 50, offset = 0 } = {}) {
+      const params = new URLSearchParams({ limit: String(limit), offset: String(offset) })
+      if (q) params.set('q', q)
+      const r = await api.get(`/commons/catalog?${params}`)
+      return Array.isArray(r.data) ? r.data : []
+    },
+
+    async getCatalogEntry(slug) {
+      const r = await api.get(`/commons/catalog/${encodeURIComponent(slug)}`)
+      return r.data
+    },
+
+    async loadCatalogImports(farmId) {
+      const r = await api.get(`/farms/${farmId}/commons/catalog-imports`)
+      return Array.isArray(r.data) ? r.data : []
+    },
+
+    async importCatalogEntry(farmId, slug, note) {
+      const body = { slug }
+      if (note) body.note = note
+      const r = await api.post(`/farms/${farmId}/commons/catalog-imports`, body)
+      return r.data
     },
 
     async loadCropCycles(farmId) {

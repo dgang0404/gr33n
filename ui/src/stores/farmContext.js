@@ -54,6 +54,14 @@ export const useFarmContextStore = defineStore('farmContext', {
       return { farm: raw, bootstrap: null }
     },
 
+    /** Farm admin: apply a named starter template to an existing farm (skipped if already applied). */
+    async applyBootstrapTemplate(farmId, template) {
+      const r = await api.post(`/farms/${farmId}/bootstrap-template`, { template })
+      const farmStore = useFarmStore()
+      await farmStore.loadAll(farmId)
+      return r.data
+    },
+
     async updateFarm(id, data) {
       const r = await api.put(`/farms/${id}`, data)
       const idx = this.farms.findIndex(f => f.id === id)

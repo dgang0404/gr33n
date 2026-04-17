@@ -115,6 +115,8 @@ gr33n-api/
 
 ## Quick Start
 
+**Guided one-path setup (DB → env → UI deps):** [docs/local-operator-bootstrap.md](docs/local-operator-bootstrap.md) — run `./scripts/bootstrap-local.sh` or `make bootstrap-local`.
+
 Full setup in [INSTALL.md](INSTALL.md). Short version:
 
 ```bash
@@ -434,6 +436,8 @@ The master seed loads a complete JADAM natural farming demo dataset — verified
 
 ```bash
 make help       # Show all targets
+make bootstrap-local  # Guided DB + env + UI deps (see docs/local-operator-bootstrap.md)
+make bootstrap-local-docker  # Same, but start stack with docker compose
 make run        # Run the API server
 make run-receiver # Run optional Insert Commons receiver (see docs/insert-commons-receiver-playbook.md)
 make dev        # Run API + UI dev server in parallel

@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="96" fill="#09090b"/>
+  <g transform="translate(256,256)">
+    <ellipse cx="0" cy="-20" rx="100" ry="140" fill="#166534" transform="rotate(-15)"/>
+    <ellipse cx="0" cy="-20" rx="100" ry="140" fill="#22c55e" opacity="0.5" transform="rotate(15)"/>
+    <line x1="0" y1="60" x2="0" y2="160" stroke="#166534" stroke-width="16" stroke-linecap="round"/>
+  </g>
+  <text x="256" y="450" text-anchor="middle" font-family="system-ui,sans-serif" font-weight="800" font-size="80" fill="#22c55e">gr33n</text>
+</svg>

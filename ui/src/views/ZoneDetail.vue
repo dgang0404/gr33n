@@ -112,7 +112,10 @@
 
       <!-- Fertigation Summary -->
       <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
-        <h2 class="text-sm font-semibold text-white mb-3">Fertigation Summary</h2>
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="text-sm font-semibold text-white">Fertigation</h2>
+          <router-link to="/fertigation" class="text-xs text-green-600 hover:text-green-400">Open Fertigation →</router-link>
+        </div>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div class="bg-zinc-950 border border-zinc-800 rounded-lg p-3">
             <p class="text-zinc-400 text-xs mb-1">Active Program</p>
@@ -129,6 +132,35 @@
                 class="text-zinc-300 text-xs">
                 {{ formatTime(e.applied_at) }} · {{ e.volume_applied_liters || '0' }}L
                 <span v-if="e.ec_after_mscm" class="text-zinc-500">· EC {{ e.ec_after_mscm }}</span>
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Schedules & Tasks for this zone -->
+      <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="text-sm font-semibold text-white">Schedules & Tasks</h2>
+          <div class="flex gap-3">
+            <router-link to="/schedules" class="text-xs text-green-600 hover:text-green-400">Schedules →</router-link>
+            <router-link to="/tasks" class="text-xs text-green-600 hover:text-green-400">Tasks →</router-link>
+          </div>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div class="bg-zinc-950 border border-zinc-800 rounded-lg p-3">
+            <p class="text-zinc-400 text-xs mb-1">Irrigation Schedule</p>
+            <p v-if="zoneSchedule" class="text-zinc-200 text-sm">{{ zoneSchedule.name }}</p>
+            <p v-if="zoneSchedule" class="text-zinc-600 text-xs mt-0.5">{{ zoneSchedule.cron_expression }} · {{ zoneSchedule.is_active ? 'active' : 'inactive' }}</p>
+            <p v-else class="text-zinc-500 text-sm">None linked</p>
+          </div>
+          <div class="bg-zinc-950 border border-zinc-800 rounded-lg p-3">
+            <p class="text-zinc-400 text-xs mb-1">Open Tasks ({{ zoneTasks.length }})</p>
+            <div v-if="!zoneTasks.length" class="text-zinc-500 text-sm">No tasks</div>
+            <div v-else class="space-y-1 max-h-32 overflow-y-auto">
+              <p v-for="t in zoneTasks.slice(0, 5)" :key="t.id" class="text-zinc-300 text-xs">
+                <span class="capitalize px-1 py-0.5 rounded text-[10px]" :class="t.status === 'in_progress' ? 'bg-blue-900/50 text-blue-300' : 'bg-zinc-800 text-zinc-400'">{{ t.status?.replace(/_/g, ' ') }}</span>
+                {{ t.title }}
               </p>
             </div>
           </div>
@@ -154,6 +186,8 @@ const programs = ref([])
 const events = ref([])
 const actuatorEvents = ref([])
 const eventsLoading = ref(false)
+const schedules = ref([])
+const tasks = ref([])
 
 const farmId = computed(() => farmContext.farmId)
 const zoneId = computed(() => Number(route.params.id))
@@ -169,6 +203,14 @@ const zoneEvents = computed(() =>
     .sort((a, b) => new Date(b.applied_at) - new Date(a.applied_at))
 )
 const latestEvent = computed(() => zoneEvents.value[0] || null)
+const zoneSchedule = computed(() => {
+  const prog = activeProgram.value
+  if (!prog?.schedule_id) return null
+  return schedules.value.find(s => s.id === prog.schedule_id) || null
+})
+const zoneTasks = computed(() =>
+  tasks.value.filter(t => t.zone_id === zoneId.value && t.status !== 'completed' && t.status !== 'cancelled')
+)
 
 async function loadEvents() {
   eventsLoading.value = true
@@ -196,12 +238,16 @@ async function toggleActuator(a) {
 onMounted(async () => {
   if (!store.zones.length && farmId.value) await store.loadAll(farmId.value)
   const fid = farmId.value
-  const [p, e] = await Promise.all([
+  const [p, e, s] = await Promise.all([
     store.loadFertigationPrograms(fid),
     store.loadFertigationEvents(fid),
+    store.loadSchedules(fid),
   ])
   programs.value = p
   events.value = e
+  schedules.value = s
+  await store.loadTasks(fid)
+  tasks.value = store.tasks
   await loadEvents()
 })
 

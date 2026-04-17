@@ -219,6 +219,13 @@ ALTER TABLE gr33ncore.farms ADD COLUMN IF NOT EXISTS organization_id BIGINT
 	if _, err := pool.Exec(ctx, string(domainModsSQL)); err != nil {
 		return err
 	}
+	bootstrapFertSQL, err := os.ReadFile(filepath.Join("..", "..", "db", "migrations", "20260429_bootstrap_fertigation_inventory_tasks.sql"))
+	if err != nil {
+		return err
+	}
+	if _, err := pool.Exec(ctx, string(bootstrapFertSQL)); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -924,6 +931,537 @@ func TestFertigationEventRoundtripWithCropCycle(t *testing.T) {
 	if len(items) == 0 {
 		t.Fatal("expected filtered fertigation events")
 	}
+}
+
+// ── Phase 16: Schedule CRUD ─────────────────────────────────────────────────
+
+func TestScheduleCreateUpdateDelete(t *testing.T) {
+	tok := smokeJWT(t)
+	name := uniqueName("smoke_schedule")
+	resp := authPost(t, tok, "/farms/1/schedules", map[string]any{
+		"name":            name,
+		"schedule_type":   "cron",
+		"cron_expression": "0 6 * * *",
+		"timezone":        "UTC",
+		"is_active":       true,
+	})
+	expectStatus(t, resp, 201)
+	created := decodeMap(t, resp)
+	if created["name"] != name {
+		t.Fatalf("expected name=%s, got %v", name, created["name"])
+	}
+	id := int64(created["id"].(float64))
+
+	updatedName := uniqueName("smoke_schedule_upd")
+	resp = authPut(t, tok, fmt.Sprintf("/schedules/%d", id), map[string]any{
+		"name":            updatedName,
+		"schedule_type":   "cron",
+		"cron_expression": "0 8 * * *",
+		"timezone":        "America/New_York",
+		"is_active":       false,
+	})
+	expectStatus(t, resp, 200)
+	updated := decodeMap(t, resp)
+	if updated["name"] != updatedName {
+		t.Fatalf("expected updated name=%s, got %v", updatedName, updated["name"])
+	}
+	if updated["is_active"] != false {
+		t.Fatal("expected is_active=false after update")
+	}
+
+	resp = authDelete(t, tok, fmt.Sprintf("/schedules/%d", id))
+	expectStatus(t, resp, 204)
+
+	resp = authGet(t, tok, "/farms/1/schedules")
+	expectStatus(t, resp, 200)
+	schedList := decodeSlice(t, resp)
+	for _, s := range schedList {
+		if m, ok := s.(map[string]any); ok && m["name"] == updatedName {
+			t.Fatal("deleted schedule still appears in list")
+		}
+	}
+}
+
+// ── Phase 16: Mixing Event Creation ─────────────────────────────────────────
+
+func TestMixingEventCreateWithComponents(t *testing.T) {
+	tok := smokeJWT(t)
+
+	resName := uniqueName("smoke_mix_res")
+	resp := authPost(t, tok, "/farms/1/fertigation/reservoirs", map[string]any{
+		"name":                  resName,
+		"status":                "ready",
+		"capacity_liters":       50.0,
+		"current_volume_liters": 40.0,
+	})
+	expectStatus(t, resp, 201)
+	res := decodeMap(t, resp)
+	resID := int64(res["id"].(float64))
+
+	inputsResp := authGet(t, tok, "/farms/1/naturalfarming/inputs")
+	expectStatus(t, inputsResp, 200)
+	inputs := decodeSlice(t, inputsResp)
+	if len(inputs) == 0 {
+		t.Skip("no NF inputs in seed data")
+	}
+	inputDef := inputs[0].(map[string]any)
+	inputDefID := int64(inputDef["id"].(float64))
+
+	resp = authPost(t, tok, "/farms/1/fertigation/mixing-events", map[string]any{
+		"reservoir_id":        resID,
+		"water_volume_liters": 20.0,
+		"water_source":        "municipal",
+		"water_ec_mscm":       0.3,
+		"water_ph":            7.0,
+		"final_ec_mscm":       1.5,
+		"final_ph":            6.2,
+		"notes":               "smoke test mix",
+		"components": []map[string]any{
+			{
+				"input_definition_id": inputDefID,
+				"volume_added_ml":     40.0,
+				"dilution_ratio":      "1:500",
+			},
+		},
+	})
+	expectStatus(t, resp, 201)
+	result := decodeMap(t, resp)
+	if result["event"] == nil {
+		t.Fatal("expected event in response")
+	}
+	comps, ok := result["components"].([]any)
+	if !ok || len(comps) != 1 {
+		t.Fatalf("expected 1 component, got %v", result["components"])
+	}
+}
+
+// ── Phase 16: Task Update + Delete ──────────────────────────────────────────
+
+func TestTaskUpdateAndDelete(t *testing.T) {
+	tok := smokeJWT(t)
+
+	resp := authPost(t, tok, "/farms/1/tasks", map[string]any{
+		"title":    "smoke update task",
+		"priority": 1,
+	})
+	expectStatus(t, resp, 201)
+	created := decodeMap(t, resp)
+	taskID := int64(created["id"].(float64))
+
+	updatedTitle := uniqueName("smoke_task_upd")
+	resp = authPut(t, tok, fmt.Sprintf("/tasks/%d", taskID), map[string]any{
+		"title":    updatedTitle,
+		"priority": 2,
+	})
+	expectStatus(t, resp, 200)
+	updated := decodeMap(t, resp)
+	if updated["title"] != updatedTitle {
+		t.Fatalf("expected title=%s, got %v", updatedTitle, updated["title"])
+	}
+	prio, _ := updated["priority"].(float64)
+	if int(prio) != 2 {
+		t.Fatalf("expected priority=2, got %v", updated["priority"])
+	}
+
+	resp = authDelete(t, tok, fmt.Sprintf("/tasks/%d", taskID))
+	expectStatus(t, resp, 204)
+
+	resp = authGet(t, tok, "/farms/1/tasks")
+	expectStatus(t, resp, 200)
+	taskList := decodeSlice(t, resp)
+	for _, item := range taskList {
+		if m, ok := item.(map[string]any); ok {
+			if int64(m["id"].(float64)) == taskID {
+				t.Fatal("soft-deleted task still appears in list")
+			}
+		}
+	}
+}
+
+func TestPlantCRUD(t *testing.T) {
+	tok := smokeJWT(t)
+
+	// Create
+	name := uniqueName("smoke_plant")
+	resp := authPost(t, tok, "/farms/1/plants", map[string]any{
+		"display_name":        name,
+		"variety_or_cultivar": "Indica",
+		"meta":                map[string]any{"photoperiod": "short-day"},
+	})
+	expectStatus(t, resp, http.StatusCreated)
+	created := decodeMap(t, resp)
+	plantID := int64(created["id"].(float64))
+	if created["display_name"] != name {
+		t.Fatalf("expected display_name=%s, got %v", name, created["display_name"])
+	}
+
+	// List
+	resp = authGet(t, tok, "/farms/1/plants")
+	expectStatus(t, resp, http.StatusOK)
+	plants := decodeSlice(t, resp)
+	found := false
+	for _, item := range plants {
+		if m, ok := item.(map[string]any); ok {
+			if int64(m["id"].(float64)) == plantID {
+				found = true
+				break
+			}
+		}
+	}
+	if !found {
+		t.Fatal("created plant not found in list")
+	}
+
+	// Get
+	resp = authGet(t, tok, fmt.Sprintf("/plants/%d", plantID))
+	expectStatus(t, resp, http.StatusOK)
+	got := decodeMap(t, resp)
+	if got["display_name"] != name {
+		t.Fatalf("get: expected display_name=%s, got %v", name, got["display_name"])
+	}
+
+	// Update
+	updatedName := uniqueName("smoke_plant_upd")
+	resp = authPut(t, tok, fmt.Sprintf("/plants/%d", plantID), map[string]any{
+		"display_name":        updatedName,
+		"variety_or_cultivar": "Sativa",
+		"meta":                map[string]any{"photoperiod": "long-day"},
+	})
+	expectStatus(t, resp, http.StatusOK)
+	updated := decodeMap(t, resp)
+	if updated["display_name"] != updatedName {
+		t.Fatalf("expected updated name=%s, got %v", updatedName, updated["display_name"])
+	}
+
+	// Soft delete
+	resp = authDelete(t, tok, fmt.Sprintf("/plants/%d", plantID))
+	expectStatus(t, resp, http.StatusNoContent)
+
+	// Verify gone from list
+	resp = authGet(t, tok, "/farms/1/plants")
+	expectStatus(t, resp, http.StatusOK)
+	plantsAfter := decodeSlice(t, resp)
+	for _, item := range plantsAfter {
+		if m, ok := item.(map[string]any); ok {
+			if int64(m["id"].(float64)) == plantID {
+				t.Fatal("soft-deleted plant still appears in list")
+			}
+		}
+	}
+}
+
+// ── Phase 18: Smoke Test Gap Fill ────────────────────────────────────────────
+
+func TestAlertLifecycle(t *testing.T) {
+	tok := smokeJWT(t)
+
+	resp := authGet(t, tok, "/farms/1/alerts")
+	expectStatus(t, resp, http.StatusOK)
+	alerts := decodeSlice(t, resp)
+
+	resp = authGet(t, tok, "/farms/1/alerts/unread-count")
+	expectStatus(t, resp, http.StatusOK)
+	countMap := decodeMap(t, resp)
+	if _, ok := countMap["unread_count"]; !ok {
+		t.Fatalf("expected unread_count field in response, got %#v", countMap)
+	}
+
+	if len(alerts) == 0 {
+		t.Skip("no alerts in seed data to test read/acknowledge")
+	}
+
+	first := alerts[0].(map[string]any)
+	alertID := int64(first["id"].(float64))
+
+	resp = authPatch(t, tok, fmt.Sprintf("/alerts/%d/read", alertID), map[string]any{})
+	expectStatus(t, resp, http.StatusOK)
+
+	resp = authPatch(t, tok, fmt.Sprintf("/alerts/%d/acknowledge", alertID), map[string]any{})
+	expectStatus(t, resp, http.StatusOK)
+}
+
+func TestCropCycleFullCRUD(t *testing.T) {
+	tok := smokeJWT(t)
+
+	name := uniqueName("smoke_cc_crud")
+	resp := authPost(t, tok, "/farms/1/crop-cycles", map[string]any{
+		"zone_id":       1,
+		"name":          name,
+		"current_stage": "seedling",
+		"started_at":    "2025-03-01",
+		"is_active":     false,
+	})
+	expectStatus(t, resp, http.StatusCreated)
+	created := decodeMap(t, resp)
+	ccID := int64(created["id"].(float64))
+
+	resp = authGet(t, tok, fmt.Sprintf("/crop-cycles/%d", ccID))
+	expectStatus(t, resp, http.StatusOK)
+	got := decodeMap(t, resp)
+	if got["name"] != name {
+		t.Fatalf("GET crop cycle: expected name=%s, got %v", name, got["name"])
+	}
+
+	updName := uniqueName("smoke_cc_upd")
+	resp = authPut(t, tok, fmt.Sprintf("/crop-cycles/%d", ccID), map[string]any{
+		"name":      updName,
+		"zone_id":   1,
+		"is_active": false,
+	})
+	expectStatus(t, resp, http.StatusOK)
+	updated := decodeMap(t, resp)
+	if updated["name"] != updName {
+		t.Fatalf("PUT crop cycle: expected name=%s, got %v", updName, updated["name"])
+	}
+
+	resp = authDelete(t, tok, fmt.Sprintf("/crop-cycles/%d", ccID))
+	expectStatus(t, resp, http.StatusNoContent)
+
+	resp = authGet(t, tok, "/farms/1/crop-cycles")
+	expectStatus(t, resp, http.StatusOK)
+	cycles := decodeSlice(t, resp)
+	for _, c := range cycles {
+		m := c.(map[string]any)
+		if int64(m["id"].(float64)) == ccID && m["is_active"] == true {
+			t.Fatal("deleted crop cycle still active in list")
+		}
+	}
+}
+
+func TestFertigationReservoirUpdateDelete(t *testing.T) {
+	tok := smokeJWT(t)
+
+	name := uniqueName("smoke_res_ud")
+	resp := authPost(t, tok, "/farms/1/fertigation/reservoirs", map[string]any{
+		"name":                  name,
+		"status":                "ready",
+		"capacity_liters":       80.0,
+		"current_volume_liters": 40.0,
+	})
+	expectStatus(t, resp, http.StatusCreated)
+	created := decodeMap(t, resp)
+	resID := int64(created["id"].(float64))
+
+	updName := uniqueName("smoke_res_upd")
+	resp = authPatch(t, tok, fmt.Sprintf("/fertigation/reservoirs/%d", resID), map[string]any{
+		"name":                  updName,
+		"status":                "mixing",
+		"capacity_liters":       80.0,
+		"current_volume_liters": 35.0,
+	})
+	expectStatus(t, resp, http.StatusOK)
+	updated := decodeMap(t, resp)
+	if updated["name"] != updName {
+		t.Fatalf("expected updated name=%s, got %v", updName, updated["name"])
+	}
+
+	resp = authDelete(t, tok, fmt.Sprintf("/fertigation/reservoirs/%d", resID))
+	expectStatus(t, resp, http.StatusNoContent)
+}
+
+func TestFertigationProgramUpdateDelete(t *testing.T) {
+	tok := smokeJWT(t)
+
+	name := uniqueName("smoke_prog_ud")
+	resp := authPost(t, tok, "/farms/1/fertigation/programs", map[string]any{
+		"name":                name,
+		"total_volume_liters": 10.0,
+		"is_active":           false,
+		"ec_trigger_low":      0.0,
+		"ph_trigger_low":      0.0,
+		"ph_trigger_high":     0.0,
+	})
+	expectStatus(t, resp, http.StatusCreated)
+	created := decodeMap(t, resp)
+	progID := int64(created["id"].(float64))
+
+	updName := uniqueName("smoke_prog_upd")
+	resp = authPatch(t, tok, fmt.Sprintf("/fertigation/programs/%d", progID), map[string]any{
+		"name":      updName,
+		"is_active": true,
+	})
+	expectStatus(t, resp, http.StatusOK)
+	updated := decodeMap(t, resp)
+	if updated["name"] != updName {
+		t.Fatalf("expected updated name=%s, got %v", updName, updated["name"])
+	}
+
+	resp = authDelete(t, tok, fmt.Sprintf("/fertigation/programs/%d", progID))
+	expectStatus(t, resp, http.StatusNoContent)
+}
+
+func TestNfInputDefinitionCRUD(t *testing.T) {
+	tok := smokeJWT(t)
+
+	name := uniqueName("smoke_nf_input")
+	resp := authPost(t, tok, "/farms/1/naturalfarming/inputs", map[string]any{
+		"name":        name,
+		"category":    "fermented_plant_juice",
+		"description": "smoke test input",
+	})
+	expectStatus(t, resp, http.StatusCreated)
+	created := decodeMap(t, resp)
+	inputID := int64(created["id"].(float64))
+
+	updName := uniqueName("smoke_nf_upd")
+	resp = authPut(t, tok, fmt.Sprintf("/naturalfarming/inputs/%d", inputID), map[string]any{
+		"name":        updName,
+		"category":    "fermented_plant_juice",
+		"description": "updated",
+	})
+	expectStatus(t, resp, http.StatusOK)
+	updated := decodeMap(t, resp)
+	if updated["name"] != updName {
+		t.Fatalf("expected updated name=%s, got %v", updName, updated["name"])
+	}
+
+	resp = authDelete(t, tok, fmt.Sprintf("/naturalfarming/inputs/%d", inputID))
+	expectStatus(t, resp, http.StatusNoContent)
+}
+
+func TestNfBatchCRUD(t *testing.T) {
+	tok := smokeJWT(t)
+
+	inputsResp := authGet(t, tok, "/farms/1/naturalfarming/inputs")
+	expectStatus(t, inputsResp, http.StatusOK)
+	inputs := decodeSlice(t, inputsResp)
+	if len(inputs) == 0 {
+		t.Skip("no NF inputs to create batch against")
+	}
+	inputID := int64(inputs[0].(map[string]any)["id"].(float64))
+
+	code := uniqueName("batch")
+	resp := authPost(t, tok, "/farms/1/naturalfarming/batches", map[string]any{
+		"input_definition_id": inputID,
+		"batch_identifier":    code,
+		"status":              "fermenting_brewing",
+		"creation_start_date": "2025-06-01",
+	})
+	expectStatus(t, resp, http.StatusCreated)
+	created := decodeMap(t, resp)
+	batchID := int64(created["id"].(float64))
+
+	resp = authPut(t, tok, fmt.Sprintf("/naturalfarming/batches/%d", batchID), map[string]any{
+		"input_definition_id": inputID,
+		"batch_identifier":    code,
+		"status":              "ready_for_use",
+	})
+	expectStatus(t, resp, http.StatusOK)
+
+	resp = authDelete(t, tok, fmt.Sprintf("/naturalfarming/batches/%d", batchID))
+	expectStatus(t, resp, http.StatusNoContent)
+}
+
+func TestRecipeFullCRUD(t *testing.T) {
+	tok := smokeJWT(t)
+
+	name := uniqueName("smoke_recipe")
+	resp := authPost(t, tok, "/farms/1/naturalfarming/recipes", map[string]any{
+		"name":                    name,
+		"description":             "smoke recipe",
+		"target_application_type": "soil_drench",
+	})
+	expectStatus(t, resp, http.StatusCreated)
+	created := decodeMap(t, resp)
+	recipeID := int64(created["id"].(float64))
+
+	resp = authGet(t, tok, fmt.Sprintf("/naturalfarming/recipes/%d", recipeID))
+	expectStatus(t, resp, http.StatusOK)
+
+	inputsResp := authGet(t, tok, "/farms/1/naturalfarming/inputs")
+	expectStatus(t, inputsResp, http.StatusOK)
+	inputs := decodeSlice(t, inputsResp)
+	if len(inputs) > 0 {
+		inputID := int64(inputs[0].(map[string]any)["id"].(float64))
+
+		resp = authPost(t, tok, fmt.Sprintf("/naturalfarming/recipes/%d/components", recipeID), map[string]any{
+			"input_definition_id": inputID,
+			"volume_ml":          20.0,
+			"dilution_ratio":     "1:500",
+		})
+		if resp.StatusCode != http.StatusCreated && resp.StatusCode != http.StatusNoContent && resp.StatusCode != http.StatusOK {
+			t.Fatalf("add component: expected 2xx, got %d", resp.StatusCode)
+		}
+
+		resp = authGet(t, tok, fmt.Sprintf("/naturalfarming/recipes/%d/components", recipeID))
+		expectStatus(t, resp, http.StatusOK)
+		comps := decodeSlice(t, resp)
+		if len(comps) == 0 {
+			t.Fatal("expected at least one recipe component")
+		}
+
+		resp = authDelete(t, tok, fmt.Sprintf("/naturalfarming/recipes/%d/components/%d", recipeID, inputID))
+		expectStatus(t, resp, http.StatusNoContent)
+	}
+
+	updName := uniqueName("smoke_recipe_upd")
+	resp = authPut(t, tok, fmt.Sprintf("/naturalfarming/recipes/%d", recipeID), map[string]any{
+		"name":                    updName,
+		"description":             "updated smoke recipe",
+		"target_application_type": "foliar_spray",
+	})
+	expectStatus(t, resp, http.StatusOK)
+
+	resp = authDelete(t, tok, fmt.Sprintf("/naturalfarming/recipes/%d", recipeID))
+	expectStatus(t, resp, http.StatusNoContent)
+}
+
+func TestProfileGetAndUpdate(t *testing.T) {
+	tok := smokeJWT(t)
+
+	resp := authGet(t, tok, "/profile")
+	expectStatus(t, resp, http.StatusOK)
+	profile := decodeMap(t, resp)
+	if profile["email"] == nil && profile["user_id"] == nil {
+		t.Fatalf("profile missing expected fields: %#v", profile)
+	}
+
+	resp = authPut(t, tok, "/profile", map[string]any{
+		"full_name": "Smoke Test User",
+		"timezone":  "America/New_York",
+	})
+	expectStatus(t, resp, http.StatusOK)
+	updated := decodeMap(t, resp)
+	if updated["full_name"] != "Smoke Test User" {
+		t.Fatalf("expected full_name update, got %v", updated["full_name"])
+	}
+}
+
+func TestScheduleActiveToggle(t *testing.T) {
+	tok := smokeJWT(t)
+
+	name := uniqueName("smoke_toggle_sched")
+	resp := authPost(t, tok, "/farms/1/schedules", map[string]any{
+		"name":            name,
+		"schedule_type":   "cron",
+		"cron_expression": "0 12 * * *",
+		"timezone":        "UTC",
+		"is_active":       true,
+	})
+	expectStatus(t, resp, http.StatusCreated)
+	created := decodeMap(t, resp)
+	schedID := int64(created["id"].(float64))
+
+	resp = authPatch(t, tok, fmt.Sprintf("/schedules/%d/active", schedID), map[string]any{
+		"is_active": false,
+	})
+	expectStatus(t, resp, http.StatusOK)
+	toggled := decodeMap(t, resp)
+	if toggled["is_active"] != false {
+		t.Fatal("expected is_active=false after toggle")
+	}
+
+	resp = authPatch(t, tok, fmt.Sprintf("/schedules/%d/active", schedID), map[string]any{
+		"is_active": true,
+	})
+	expectStatus(t, resp, http.StatusOK)
+
+	resp = authGet(t, tok, fmt.Sprintf("/schedules/%d/actuator-events", schedID))
+	expectStatus(t, resp, http.StatusOK)
+	_ = decodeSlice(t, resp)
+
+	resp = authDelete(t, tok, fmt.Sprintf("/schedules/%d", schedID))
+	expectStatus(t, resp, http.StatusNoContent)
 }
 
 func min(a, b int) int {

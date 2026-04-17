@@ -11,6 +11,8 @@ import Inventory from '../views/Inventory.vue'
 import Costs from '../views/Costs.vue'
 import Fertigation from '../views/Fertigation.vue'
 import Alerts from '../views/Alerts.vue'
+import Plants from '../views/Plants.vue'
+import CommonsCatalog from '../views/CommonsCatalog.vue'
 import Settings from '../views/Settings.vue'
 import Login from '../views/Login.vue'
 
@@ -29,6 +31,8 @@ const routes = [
   { path: '/inventory',    component: Inventory,    name: 'inventory' },
   { path: '/costs',        component: Costs,        name: 'costs' },
   { path: '/alerts',       component: Alerts,       name: 'alerts' },
+  { path: '/plants',       component: Plants,       name: 'plants' },
+  { path: '/catalog',      component: CommonsCatalog, name: 'catalog' },
   { path: '/settings',     component: Settings,     name: 'settings' },
 ]
 

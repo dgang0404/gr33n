@@ -6,9 +6,10 @@
 |------|---------|---------|
 | Go | 1.23+ | https://go.dev/dl/ or `snap install go --classic` |
 | PostgreSQL | 14+ | `sudo apt install postgresql` |
+| PostGIS | 3.x (match Postgres) | `sudo apt install postgresql-14-postgis-3` (version as needed) |
 | TimescaleDB | 2.x | https://docs.timescale.com/self-hosted/latest/install/ |
 | sqlc | latest | `go install github.com/sqlc-dev/sqlc/cmd/sqlc@latest` |
-| golang-migrate | latest | `go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest` |
+| Node.js (UI) | 22+ | https://nodejs.org/ or your OS package manager |
 
 ---
 
@@ -55,11 +56,24 @@ psql -d gr33n -c "SELECT current_user, current_database();"
 
 ---
 
-## 3. Run migrations
+## 3. Apply database schema
+
+For a **new** database, load the full schema (includes `CREATE EXTENSION` for PostGIS and TimescaleDB — those packages must be installed on the server):
 
 ```bash
-migrate -path ./migrations -database "postgres://$USER@/gr33n?host=/var/run/postgresql" up
+psql -d gr33n -v ON_ERROR_STOP=1 -f db/schema/gr33n-schema-v2-FINAL.sql
 ```
+
+**Upgrading** an older database that was created from an earlier snapshot: apply SQL files under `db/migrations/` in **lexicographic (filename) order**:
+
+```bash
+for f in $(printf '%s\n' db/migrations/*.sql | LC_ALL=C sort); do
+  echo "==> $f"
+  psql -d gr33n -v ON_ERROR_STOP=1 -f "$f"
+done
+```
+
+Or run `./scripts/bootstrap-local.sh` from the repo root (schema + sorted migrations + optional `--seed`); see [`docs/local-operator-bootstrap.md`](docs/local-operator-bootstrap.md).
 
 ---
 
@@ -174,8 +188,9 @@ gr33n-api/
 │   └── platform/
 │       └── commontypes/
 │           └── enums.go     # Shared enum types used by sqlc
-├── migrations/              # SQL migration files (golang-migrate)
-├── schema/                  # sqlc schema + query source files
+├── db/
+│   ├── migrations/          # Incremental SQL migrations (apply in filename order on upgrades)
+│   └── schema/              # Full schema snapshot (greenfield installs)
 ├── sqlc.yaml
 ├── go.mod
 └── go.sum

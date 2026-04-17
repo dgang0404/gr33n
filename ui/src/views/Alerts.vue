@@ -1,6 +1,6 @@
 <template>
   <div class="p-6 max-w-5xl">
-    <div class="flex items-center justify-between mb-6">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
       <h1 class="text-2xl font-bold text-green-400">Alerts</h1>
       <div class="flex items-center gap-3">
         <select v-model="severityFilter"
@@ -25,7 +25,7 @@
 
     <div v-else class="space-y-2">
       <div v-for="a in filtered" :key="a.id"
-        class="bg-zinc-800 border border-zinc-700 rounded-xl p-4 flex items-start gap-4"
+        class="bg-zinc-800 border border-zinc-700 rounded-xl p-4 flex flex-col sm:flex-row items-start gap-3 sm:gap-4"
         :class="{ 'opacity-60': a.is_acknowledged }">
         <span :class="severityBadge(a.severity)" class="mt-0.5 text-xs font-bold px-2 py-0.5 rounded uppercase shrink-0">
           {{ a.severity?.gr33ncore_notification_priority_enum || a.severity || 'medium' }}
@@ -35,7 +35,7 @@
           <p class="text-zinc-400 text-xs mt-0.5">{{ a.message_text_rendered }}</p>
           <p class="text-zinc-600 text-xs mt-1">{{ formatTime(a.created_at) }}</p>
         </div>
-        <div class="flex items-center gap-2 shrink-0">
+        <div class="flex items-center gap-2 shrink-0 self-end sm:self-auto">
           <span v-if="a.is_read" class="text-zinc-600 text-xs">Read</span>
           <button v-else @click="markRead(a.id)"
             class="text-xs text-zinc-400 hover:text-white border border-zinc-700 rounded px-2 py-1 transition-colors">

@@ -54,11 +54,14 @@ type Querier interface {
 	CreateFileAttachment(ctx context.Context, arg CreateFileAttachmentParams) (Gr33ncoreFileAttachment, error)
 	CreateInputBatch(ctx context.Context, arg CreateInputBatchParams) (Gr33nnaturalfarmingInputBatch, error)
 	CreateInputDefinition(ctx context.Context, arg CreateInputDefinitionParams) (Gr33nnaturalfarmingInputDefinition, error)
+	CreateMixingEvent(ctx context.Context, arg CreateMixingEventParams) (Gr33nfertigationMixingEvent, error)
+	CreateMixingEventComponent(ctx context.Context, arg CreateMixingEventComponentParams) (Gr33nfertigationMixingEventComponent, error)
 	// ============================================================
 	// Queries: organizations & org membership
 	// ============================================================
 	CreateOrganization(ctx context.Context, arg CreateOrganizationParams) (Gr33ncoreOrganization, error)
 	CreateOrganizationMembership(ctx context.Context, arg CreateOrganizationMembershipParams) (Gr33ncoreOrganizationMembership, error)
+	CreatePlant(ctx context.Context, arg CreatePlantParams) (Gr33ncropsPlant, error)
 	CreateProfile(ctx context.Context, arg CreateProfileParams) (Gr33ncoreProfile, error)
 	CreateProgram(ctx context.Context, arg CreateProgramParams) (Gr33nfertigationProgram, error)
 	// ============================================================
@@ -66,6 +69,7 @@ type Querier interface {
 	// ============================================================
 	CreateRecipe(ctx context.Context, arg CreateRecipeParams) (Gr33nnaturalfarmingApplicationRecipe, error)
 	CreateReservoir(ctx context.Context, arg CreateReservoirParams) (Gr33nfertigationReservoir, error)
+	CreateSchedule(ctx context.Context, arg CreateScheduleParams) (Gr33ncoreSchedule, error)
 	// ============================================================
 	// Queries: gr33ncore.sensors
 	// ============================================================
@@ -83,6 +87,7 @@ type Querier interface {
 	DeleteProgram(ctx context.Context, id int64) error
 	DeletePushTokenByFCMToken(ctx context.Context, fcmToken string) error
 	DeleteReservoir(ctx context.Context, id int64) error
+	DeleteSchedule(ctx context.Context, id int64) error
 	DeleteUserPushToken(ctx context.Context, arg DeleteUserPushTokenParams) error
 	GetActuatorByID(ctx context.Context, id int64) (Gr33ncoreActuator, error)
 	GetAlertNotificationByID(ctx context.Context, id int64) (Gr33ncoreAlertsNotification, error)
@@ -124,9 +129,11 @@ type Querier interface {
 	GetInsertCommonsSyncEventByFarmIdempotencyKey(ctx context.Context, arg GetInsertCommonsSyncEventByFarmIdempotencyKeyParams) (Gr33ncoreInsertCommonsSyncEvent, error)
 	GetLastSuccessfulRunBySchedule(ctx context.Context, scheduleID *int64) (Gr33ncoreAutomationRun, error)
 	GetLatestReadingBySensor(ctx context.Context, sensorID int64) (Gr33ncoreSensorReading, error)
+	GetMixingEventByID(ctx context.Context, id int64) (Gr33nfertigationMixingEvent, error)
 	GetOrganizationByID(ctx context.Context, id int64) (Gr33ncoreOrganization, error)
 	GetOrganizationMembership(ctx context.Context, arg GetOrganizationMembershipParams) (Gr33ncoreOrganizationMembership, error)
 	GetOrganizationUsageSummary(ctx context.Context, organizationID *int64) (GetOrganizationUsageSummaryRow, error)
+	GetPlant(ctx context.Context, id int64) (Gr33ncropsPlant, error)
 	GetProfileByEmail(ctx context.Context, email string) (Gr33ncoreProfile, error)
 	// ============================================================
 	// Queries: gr33ncore.profiles
@@ -196,7 +203,10 @@ type Querier interface {
 	ListInsertCommonsBundlesByFarm(ctx context.Context, arg ListInsertCommonsBundlesByFarmParams) ([]Gr33ncoreInsertCommonsBundle, error)
 	ListInsertCommonsSyncEventsByFarm(ctx context.Context, arg ListInsertCommonsSyncEventsByFarmParams) ([]ListInsertCommonsSyncEventsByFarmRow, error)
 	ListLatestReadingsByFarm(ctx context.Context, farmID int64) ([]ListLatestReadingsByFarmRow, error)
+	ListMixingEventComponents(ctx context.Context, mixingEventID int64) ([]Gr33nfertigationMixingEventComponent, error)
+	ListMixingEventsByFarm(ctx context.Context, farmID int64) ([]Gr33nfertigationMixingEvent, error)
 	ListOrganizationsForUser(ctx context.Context, userID uuid.UUID) ([]ListOrganizationsForUserRow, error)
+	ListPlantsByFarm(ctx context.Context, farmID int64) ([]Gr33ncropsPlant, error)
 	ListProgramsByFarm(ctx context.Context, farmID int64) ([]Gr33nfertigationProgram, error)
 	// ============================================================
 	// Commons catalog (gr33n_inserts direction — browse / import audit)
@@ -247,6 +257,7 @@ type Querier interface {
 	SoftDeleteFarm(ctx context.Context, arg SoftDeleteFarmParams) error
 	SoftDeleteInputBatch(ctx context.Context, arg SoftDeleteInputBatchParams) error
 	SoftDeleteInputDefinition(ctx context.Context, arg SoftDeleteInputDefinitionParams) error
+	SoftDeletePlant(ctx context.Context, id int64) error
 	SoftDeleteRecipe(ctx context.Context, id int64) error
 	SoftDeleteSensor(ctx context.Context, arg SoftDeleteSensorParams) error
 	SoftDeleteTask(ctx context.Context, arg SoftDeleteTaskParams) error
@@ -262,11 +273,14 @@ type Querier interface {
 	UpdateInputBatch(ctx context.Context, arg UpdateInputBatchParams) (Gr33nnaturalfarmingInputBatch, error)
 	UpdateInputDefinition(ctx context.Context, arg UpdateInputDefinitionParams) (Gr33nnaturalfarmingInputDefinition, error)
 	UpdateOrganization(ctx context.Context, arg UpdateOrganizationParams) (Gr33ncoreOrganization, error)
+	UpdatePlant(ctx context.Context, arg UpdatePlantParams) (Gr33ncropsPlant, error)
 	UpdateProfile(ctx context.Context, arg UpdateProfileParams) (Gr33ncoreProfile, error)
 	UpdateProgram(ctx context.Context, arg UpdateProgramParams) (Gr33nfertigationProgram, error)
 	UpdateRecipe(ctx context.Context, arg UpdateRecipeParams) (Gr33nnaturalfarmingApplicationRecipe, error)
 	UpdateReservoir(ctx context.Context, arg UpdateReservoirParams) (Gr33nfertigationReservoir, error)
+	UpdateSchedule(ctx context.Context, arg UpdateScheduleParams) (Gr33ncoreSchedule, error)
 	UpdateScheduleActive(ctx context.Context, arg UpdateScheduleActiveParams) (Gr33ncoreSchedule, error)
+	UpdateTask(ctx context.Context, arg UpdateTaskParams) (Gr33ncoreTask, error)
 	UpdateTaskStatus(ctx context.Context, arg UpdateTaskStatusParams) (Gr33ncoreTask, error)
 	UpdateZone(ctx context.Context, arg UpdateZoneParams) (Gr33ncoreZone, error)
 	UpsertFarmCommonsCatalogImport(ctx context.Context, arg UpsertFarmCommonsCatalogImportParams) (Gr33ncoreFarmCommonsCatalogImport, error)

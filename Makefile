@@ -1,10 +1,17 @@
-.PHONY: run run-receiver build build-receiver test seed sqlc ui dev clean lint
+.PHONY: run run-receiver build build-receiver test seed sqlc ui dev clean lint bootstrap-local bootstrap-local-docker
 
 # ── Variables ──────────────────────────────────────────────────
 BINARY   := api
 GO       := go
 PORT     ?= 8080
 DB_URL   ?= postgres://$(USER)@/gr33n?host=/var/run/postgresql
+
+# ── Bootstrap (Phase 15 operator path) ─────────────────────────
+bootstrap-local: ## DB schema + migrations, .env from example if missing, npm ci (see docs/local-operator-bootstrap.md)
+	@./scripts/bootstrap-local.sh
+
+bootstrap-local-docker: ## docker compose up -d + npm ci (DB/API/UI in containers)
+	@./scripts/bootstrap-local.sh --docker
 
 # ── Development ────────────────────────────────────────────────
 run: ## Run the API server (dev build, auth bypass available)

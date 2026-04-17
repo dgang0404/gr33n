@@ -390,17 +390,6 @@ CREATE TRIGGER trg_commons_catalog_entries_updated_at
     BEFORE UPDATE ON gr33ncore.commons_catalog_entries
     FOR EACH ROW EXECUTE FUNCTION gr33ncore.set_updated_at();
 
--- Cost transaction idempotency (offline / safe retries)
-CREATE TABLE IF NOT EXISTS gr33ncore.cost_transaction_idempotency (
-    farm_id              BIGINT NOT NULL REFERENCES gr33ncore.farms(id) ON DELETE CASCADE,
-    idempotency_key      TEXT   NOT NULL,
-    cost_transaction_id  BIGINT NOT NULL REFERENCES gr33ncore.cost_transactions(id) ON DELETE CASCADE,
-    created_at           TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    PRIMARY KEY (farm_id, idempotency_key)
-);
-CREATE INDEX IF NOT EXISTS idx_cost_idem_transaction
-    ON gr33ncore.cost_transaction_idempotency (cost_transaction_id);
-
 -- Farm memberships
 CREATE TABLE IF NOT EXISTS gr33ncore.farm_memberships (
     farm_id      BIGINT NOT NULL REFERENCES gr33ncore.farms(id)    ON DELETE CASCADE,
@@ -593,11 +582,32 @@ CREATE TABLE IF NOT EXISTS gr33ncore.actuator_events (
     PRIMARY KEY (event_time, actuator_id)  -- FIX #4: time col first
 );
 
--- Tasks
+-- Schedules
+CREATE TABLE IF NOT EXISTS gr33ncore.schedules (
+    id                         BIGSERIAL PRIMARY KEY,
+    farm_id                    BIGINT NOT NULL REFERENCES gr33ncore.farms(id) ON DELETE CASCADE,
+    name                       TEXT   NOT NULL,
+    description                TEXT,
+    schedule_type              TEXT   NOT NULL,
+    cron_expression            TEXT   NOT NULL,
+    timezone                   TEXT   DEFAULT 'UTC' NOT NULL,
+    is_active                  BOOLEAN DEFAULT TRUE NOT NULL,
+    last_triggered_time        TIMESTAMPTZ,
+    next_expected_trigger_time TIMESTAMPTZ,
+    meta_data                  JSONB  DEFAULT '{}'::jsonb,
+    created_at                 TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    updated_at                 TIMESTAMPTZ DEFAULT NOW() NOT NULL
+);
+CREATE TRIGGER trg_schedules_updated_at
+    BEFORE UPDATE ON gr33ncore.schedules
+    FOR EACH ROW EXECUTE FUNCTION gr33ncore.set_updated_at();
+
+-- Tasks (after schedules — schedule_id FK)
 CREATE TABLE IF NOT EXISTS gr33ncore.tasks (
     id                         BIGSERIAL PRIMARY KEY,
     farm_id                    BIGINT NOT NULL REFERENCES gr33ncore.farms(id) ON DELETE CASCADE,
     zone_id                    BIGINT REFERENCES gr33ncore.zones(id) ON DELETE SET NULL,
+    schedule_id                BIGINT REFERENCES gr33ncore.schedules(id) ON DELETE SET NULL,
     title                      TEXT   NOT NULL,
     description                TEXT,
     task_type                  TEXT,
@@ -619,26 +629,6 @@ CREATE TABLE IF NOT EXISTS gr33ncore.tasks (
 );
 CREATE TRIGGER trg_tasks_updated_at
     BEFORE UPDATE ON gr33ncore.tasks
-    FOR EACH ROW EXECUTE FUNCTION gr33ncore.set_updated_at();
-
--- Schedules
-CREATE TABLE IF NOT EXISTS gr33ncore.schedules (
-    id                         BIGSERIAL PRIMARY KEY,
-    farm_id                    BIGINT NOT NULL REFERENCES gr33ncore.farms(id) ON DELETE CASCADE,
-    name                       TEXT   NOT NULL,
-    description                TEXT,
-    schedule_type              TEXT   NOT NULL,
-    cron_expression            TEXT   NOT NULL,
-    timezone                   TEXT   DEFAULT 'UTC' NOT NULL,
-    is_active                  BOOLEAN DEFAULT TRUE NOT NULL,
-    last_triggered_time        TIMESTAMPTZ,
-    next_expected_trigger_time TIMESTAMPTZ,
-    meta_data                  JSONB  DEFAULT '{}'::jsonb,
-    created_at                 TIMESTAMPTZ DEFAULT NOW() NOT NULL,
-    updated_at                 TIMESTAMPTZ DEFAULT NOW() NOT NULL
-);
-CREATE TRIGGER trg_schedules_updated_at
-    BEFORE UPDATE ON gr33ncore.schedules
     FOR EACH ROW EXECUTE FUNCTION gr33ncore.set_updated_at();
 
 -- Automation rules
@@ -871,6 +861,17 @@ CREATE TABLE IF NOT EXISTS gr33ncore.cost_transactions (
 CREATE TRIGGER trg_cost_transactions_updated_at
     BEFORE UPDATE ON gr33ncore.cost_transactions
     FOR EACH ROW EXECUTE FUNCTION gr33ncore.set_updated_at();
+
+-- Cost transaction idempotency (offline / safe retries) — must follow cost_transactions
+CREATE TABLE IF NOT EXISTS gr33ncore.cost_transaction_idempotency (
+    farm_id              BIGINT NOT NULL REFERENCES gr33ncore.farms(id) ON DELETE CASCADE,
+    idempotency_key      TEXT   NOT NULL,
+    cost_transaction_id  BIGINT NOT NULL REFERENCES gr33ncore.cost_transactions(id) ON DELETE CASCADE,
+    created_at           TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    PRIMARY KEY (farm_id, idempotency_key)
+);
+CREATE INDEX IF NOT EXISTS idx_cost_idem_transaction
+    ON gr33ncore.cost_transaction_idempotency (cost_transaction_id);
 
 -- Farm finance COA mapping overrides (used for GL exports)
 CREATE TABLE IF NOT EXISTS gr33ncore.farm_finance_account_mappings (

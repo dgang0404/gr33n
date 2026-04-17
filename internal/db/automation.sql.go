@@ -53,6 +53,64 @@ func (q *Queries) CreateAutomationRun(ctx context.Context, arg CreateAutomationR
 	return i, err
 }
 
+const createSchedule = `-- name: CreateSchedule :one
+INSERT INTO gr33ncore.schedules (
+    farm_id, name, description, schedule_type, cron_expression,
+    timezone, is_active, meta_data
+) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+RETURNING id, farm_id, name, description, schedule_type, cron_expression, timezone, is_active, last_triggered_time, next_expected_trigger_time, meta_data, created_at, updated_at
+`
+
+type CreateScheduleParams struct {
+	FarmID         int64   `db:"farm_id" json:"farm_id"`
+	Name           string  `db:"name" json:"name"`
+	Description    *string `db:"description" json:"description"`
+	ScheduleType   string  `db:"schedule_type" json:"schedule_type"`
+	CronExpression string  `db:"cron_expression" json:"cron_expression"`
+	Timezone       string  `db:"timezone" json:"timezone"`
+	IsActive       bool    `db:"is_active" json:"is_active"`
+	MetaData       []byte  `db:"meta_data" json:"meta_data"`
+}
+
+func (q *Queries) CreateSchedule(ctx context.Context, arg CreateScheduleParams) (Gr33ncoreSchedule, error) {
+	row := q.db.QueryRow(ctx, createSchedule,
+		arg.FarmID,
+		arg.Name,
+		arg.Description,
+		arg.ScheduleType,
+		arg.CronExpression,
+		arg.Timezone,
+		arg.IsActive,
+		arg.MetaData,
+	)
+	var i Gr33ncoreSchedule
+	err := row.Scan(
+		&i.ID,
+		&i.FarmID,
+		&i.Name,
+		&i.Description,
+		&i.ScheduleType,
+		&i.CronExpression,
+		&i.Timezone,
+		&i.IsActive,
+		&i.LastTriggeredTime,
+		&i.NextExpectedTriggerTime,
+		&i.MetaData,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const deleteSchedule = `-- name: DeleteSchedule :exec
+DELETE FROM gr33ncore.schedules WHERE id = $1
+`
+
+func (q *Queries) DeleteSchedule(ctx context.Context, id int64) error {
+	_, err := q.db.Exec(ctx, deleteSchedule, id)
+	return err
+}
+
 const getAutomationRunByDetails = `-- name: GetAutomationRunByDetails :one
 SELECT id, farm_id, schedule_id, rule_id, status, message, details, executed_at FROM gr33ncore.automation_runs
 WHERE schedule_id = $1 AND details @> $2::jsonb
@@ -305,6 +363,56 @@ type MarkScheduleTriggeredParams struct {
 
 func (q *Queries) MarkScheduleTriggered(ctx context.Context, arg MarkScheduleTriggeredParams) (Gr33ncoreSchedule, error) {
 	row := q.db.QueryRow(ctx, markScheduleTriggered, arg.ID, arg.LastTriggeredTime)
+	var i Gr33ncoreSchedule
+	err := row.Scan(
+		&i.ID,
+		&i.FarmID,
+		&i.Name,
+		&i.Description,
+		&i.ScheduleType,
+		&i.CronExpression,
+		&i.Timezone,
+		&i.IsActive,
+		&i.LastTriggeredTime,
+		&i.NextExpectedTriggerTime,
+		&i.MetaData,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const updateSchedule = `-- name: UpdateSchedule :one
+UPDATE gr33ncore.schedules
+SET name = $2, description = $3, schedule_type = $4,
+    cron_expression = $5, timezone = $6, is_active = $7,
+    meta_data = $8, updated_at = NOW()
+WHERE id = $1
+RETURNING id, farm_id, name, description, schedule_type, cron_expression, timezone, is_active, last_triggered_time, next_expected_trigger_time, meta_data, created_at, updated_at
+`
+
+type UpdateScheduleParams struct {
+	ID             int64   `db:"id" json:"id"`
+	Name           string  `db:"name" json:"name"`
+	Description    *string `db:"description" json:"description"`
+	ScheduleType   string  `db:"schedule_type" json:"schedule_type"`
+	CronExpression string  `db:"cron_expression" json:"cron_expression"`
+	Timezone       string  `db:"timezone" json:"timezone"`
+	IsActive       bool    `db:"is_active" json:"is_active"`
+	MetaData       []byte  `db:"meta_data" json:"meta_data"`
+}
+
+func (q *Queries) UpdateSchedule(ctx context.Context, arg UpdateScheduleParams) (Gr33ncoreSchedule, error) {
+	row := q.db.QueryRow(ctx, updateSchedule,
+		arg.ID,
+		arg.Name,
+		arg.Description,
+		arg.ScheduleType,
+		arg.CronExpression,
+		arg.Timezone,
+		arg.IsActive,
+		arg.MetaData,
+	)
 	var i Gr33ncoreSchedule
 	err := row.Scan(
 		&i.ID,

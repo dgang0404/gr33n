@@ -48,16 +48,17 @@ func (q *Queries) CountTasksByStatusForFarm(ctx context.Context, farmID int64) (
 const createTask = `-- name: CreateTask :one
 
 INSERT INTO gr33ncore.tasks (
-    farm_id, zone_id, title, description, task_type, status, priority,
+    farm_id, zone_id, schedule_id, title, description, task_type, status, priority,
     assigned_to_user_id, due_date, estimated_duration_minutes,
     created_by_user_id, created_at, updated_at
-) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW(), NOW())
-RETURNING id, farm_id, zone_id, title, description, task_type, status, priority, assigned_to_user_id, due_date, estimated_duration_minutes, actual_start_time, actual_end_time, related_module_schema, related_table_name, related_record_id, created_by_user_id, created_at, updated_at, updated_by_user_id, deleted_at
+) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW(), NOW())
+RETURNING id, farm_id, zone_id, schedule_id, title, description, task_type, status, priority, assigned_to_user_id, due_date, estimated_duration_minutes, actual_start_time, actual_end_time, related_module_schema, related_table_name, related_record_id, created_by_user_id, created_at, updated_at, updated_by_user_id, deleted_at
 `
 
 type CreateTaskParams struct {
 	FarmID                   int64                      `db:"farm_id" json:"farm_id"`
 	ZoneID                   *int64                     `db:"zone_id" json:"zone_id"`
+	ScheduleID               *int64                     `db:"schedule_id" json:"schedule_id"`
 	Title                    string                     `db:"title" json:"title"`
 	Description              *string                    `db:"description" json:"description"`
 	TaskType                 *string                    `db:"task_type" json:"task_type"`
@@ -76,6 +77,7 @@ func (q *Queries) CreateTask(ctx context.Context, arg CreateTaskParams) (Gr33nco
 	row := q.db.QueryRow(ctx, createTask,
 		arg.FarmID,
 		arg.ZoneID,
+		arg.ScheduleID,
 		arg.Title,
 		arg.Description,
 		arg.TaskType,
@@ -91,6 +93,7 @@ func (q *Queries) CreateTask(ctx context.Context, arg CreateTaskParams) (Gr33nco
 		&i.ID,
 		&i.FarmID,
 		&i.ZoneID,
+		&i.ScheduleID,
 		&i.Title,
 		&i.Description,
 		&i.TaskType,
@@ -114,7 +117,7 @@ func (q *Queries) CreateTask(ctx context.Context, arg CreateTaskParams) (Gr33nco
 }
 
 const getTaskByID = `-- name: GetTaskByID :one
-SELECT id, farm_id, zone_id, title, description, task_type, status, priority, assigned_to_user_id, due_date, estimated_duration_minutes, actual_start_time, actual_end_time, related_module_schema, related_table_name, related_record_id, created_by_user_id, created_at, updated_at, updated_by_user_id, deleted_at FROM gr33ncore.tasks
+SELECT id, farm_id, zone_id, schedule_id, title, description, task_type, status, priority, assigned_to_user_id, due_date, estimated_duration_minutes, actual_start_time, actual_end_time, related_module_schema, related_table_name, related_record_id, created_by_user_id, created_at, updated_at, updated_by_user_id, deleted_at FROM gr33ncore.tasks
 WHERE id = $1 AND deleted_at IS NULL
 `
 
@@ -125,6 +128,7 @@ func (q *Queries) GetTaskByID(ctx context.Context, id int64) (Gr33ncoreTask, err
 		&i.ID,
 		&i.FarmID,
 		&i.ZoneID,
+		&i.ScheduleID,
 		&i.Title,
 		&i.Description,
 		&i.TaskType,
@@ -148,7 +152,7 @@ func (q *Queries) GetTaskByID(ctx context.Context, id int64) (Gr33ncoreTask, err
 }
 
 const listTasksByAssignee = `-- name: ListTasksByAssignee :many
-SELECT id, farm_id, zone_id, title, description, task_type, status, priority, assigned_to_user_id, due_date, estimated_duration_minutes, actual_start_time, actual_end_time, related_module_schema, related_table_name, related_record_id, created_by_user_id, created_at, updated_at, updated_by_user_id, deleted_at FROM gr33ncore.tasks
+SELECT id, farm_id, zone_id, schedule_id, title, description, task_type, status, priority, assigned_to_user_id, due_date, estimated_duration_minutes, actual_start_time, actual_end_time, related_module_schema, related_table_name, related_record_id, created_by_user_id, created_at, updated_at, updated_by_user_id, deleted_at FROM gr33ncore.tasks
 WHERE assigned_to_user_id = $1 AND farm_id = $2 AND deleted_at IS NULL
 ORDER BY due_date ASC NULLS LAST
 `
@@ -171,6 +175,7 @@ func (q *Queries) ListTasksByAssignee(ctx context.Context, arg ListTasksByAssign
 			&i.ID,
 			&i.FarmID,
 			&i.ZoneID,
+			&i.ScheduleID,
 			&i.Title,
 			&i.Description,
 			&i.TaskType,
@@ -201,7 +206,7 @@ func (q *Queries) ListTasksByAssignee(ctx context.Context, arg ListTasksByAssign
 }
 
 const listTasksByFarm = `-- name: ListTasksByFarm :many
-SELECT id, farm_id, zone_id, title, description, task_type, status, priority, assigned_to_user_id, due_date, estimated_duration_minutes, actual_start_time, actual_end_time, related_module_schema, related_table_name, related_record_id, created_by_user_id, created_at, updated_at, updated_by_user_id, deleted_at FROM gr33ncore.tasks
+SELECT id, farm_id, zone_id, schedule_id, title, description, task_type, status, priority, assigned_to_user_id, due_date, estimated_duration_minutes, actual_start_time, actual_end_time, related_module_schema, related_table_name, related_record_id, created_by_user_id, created_at, updated_at, updated_by_user_id, deleted_at FROM gr33ncore.tasks
 WHERE farm_id = $1 AND deleted_at IS NULL
 ORDER BY due_date ASC NULLS LAST, priority DESC
 `
@@ -219,6 +224,7 @@ func (q *Queries) ListTasksByFarm(ctx context.Context, farmID int64) ([]Gr33ncor
 			&i.ID,
 			&i.FarmID,
 			&i.ZoneID,
+			&i.ScheduleID,
 			&i.Title,
 			&i.Description,
 			&i.TaskType,
@@ -264,11 +270,77 @@ func (q *Queries) SoftDeleteTask(ctx context.Context, arg SoftDeleteTaskParams) 
 	return err
 }
 
+const updateTask = `-- name: UpdateTask :one
+UPDATE gr33ncore.tasks
+SET title = $2, description = $3, zone_id = $4, schedule_id = $5,
+    task_type = $6, priority = $7, due_date = $8,
+    assigned_to_user_id = $9, estimated_duration_minutes = $10,
+    updated_by_user_id = $11, updated_at = NOW()
+WHERE id = $1 AND deleted_at IS NULL
+RETURNING id, farm_id, zone_id, schedule_id, title, description, task_type, status, priority, assigned_to_user_id, due_date, estimated_duration_minutes, actual_start_time, actual_end_time, related_module_schema, related_table_name, related_record_id, created_by_user_id, created_at, updated_at, updated_by_user_id, deleted_at
+`
+
+type UpdateTaskParams struct {
+	ID                       int64       `db:"id" json:"id"`
+	Title                    string      `db:"title" json:"title"`
+	Description              *string     `db:"description" json:"description"`
+	ZoneID                   *int64      `db:"zone_id" json:"zone_id"`
+	ScheduleID               *int64      `db:"schedule_id" json:"schedule_id"`
+	TaskType                 *string     `db:"task_type" json:"task_type"`
+	Priority                 *int32      `db:"priority" json:"priority"`
+	DueDate                  pgtype.Date `db:"due_date" json:"due_date"`
+	AssignedToUserID         pgtype.UUID `db:"assigned_to_user_id" json:"assigned_to_user_id"`
+	EstimatedDurationMinutes *int32      `db:"estimated_duration_minutes" json:"estimated_duration_minutes"`
+	UpdatedByUserID          pgtype.UUID `db:"updated_by_user_id" json:"updated_by_user_id"`
+}
+
+func (q *Queries) UpdateTask(ctx context.Context, arg UpdateTaskParams) (Gr33ncoreTask, error) {
+	row := q.db.QueryRow(ctx, updateTask,
+		arg.ID,
+		arg.Title,
+		arg.Description,
+		arg.ZoneID,
+		arg.ScheduleID,
+		arg.TaskType,
+		arg.Priority,
+		arg.DueDate,
+		arg.AssignedToUserID,
+		arg.EstimatedDurationMinutes,
+		arg.UpdatedByUserID,
+	)
+	var i Gr33ncoreTask
+	err := row.Scan(
+		&i.ID,
+		&i.FarmID,
+		&i.ZoneID,
+		&i.ScheduleID,
+		&i.Title,
+		&i.Description,
+		&i.TaskType,
+		&i.Status,
+		&i.Priority,
+		&i.AssignedToUserID,
+		&i.DueDate,
+		&i.EstimatedDurationMinutes,
+		&i.ActualStartTime,
+		&i.ActualEndTime,
+		&i.RelatedModuleSchema,
+		&i.RelatedTableName,
+		&i.RelatedRecordID,
+		&i.CreatedByUserID,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.UpdatedByUserID,
+		&i.DeletedAt,
+	)
+	return i, err
+}
+
 const updateTaskStatus = `-- name: UpdateTaskStatus :one
 UPDATE gr33ncore.tasks
 SET status = $2, updated_by_user_id = $3, updated_at = NOW()
 WHERE id = $1 AND deleted_at IS NULL
-RETURNING id, farm_id, zone_id, title, description, task_type, status, priority, assigned_to_user_id, due_date, estimated_duration_minutes, actual_start_time, actual_end_time, related_module_schema, related_table_name, related_record_id, created_by_user_id, created_at, updated_at, updated_by_user_id, deleted_at
+RETURNING id, farm_id, zone_id, schedule_id, title, description, task_type, status, priority, assigned_to_user_id, due_date, estimated_duration_minutes, actual_start_time, actual_end_time, related_module_schema, related_table_name, related_record_id, created_by_user_id, created_at, updated_at, updated_by_user_id, deleted_at
 `
 
 type UpdateTaskStatusParams struct {
@@ -284,6 +356,7 @@ func (q *Queries) UpdateTaskStatus(ctx context.Context, arg UpdateTaskStatusPara
 		&i.ID,
 		&i.FarmID,
 		&i.ZoneID,
+		&i.ScheduleID,
 		&i.Title,
 		&i.Description,
 		&i.TaskType,

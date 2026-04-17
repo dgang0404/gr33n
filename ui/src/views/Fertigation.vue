@@ -1,12 +1,20 @@
 <template>
   <div class="p-6 space-y-6">
     <div class="flex items-center justify-between">
-      <h1 class="text-xl font-semibold text-white">Fertigation</h1>
+      <div class="flex items-center gap-2">
+        <h1 class="text-xl font-semibold text-white">Fertigation</h1>
+        <HelpTip position="bottom">
+          Fertigation combines fertilization and irrigation. Use <strong>Reservoirs</strong> to track your nutrient
+          tanks, <strong>Programs</strong> to define feeding plans linked to schedules, <strong>EC Targets</strong>
+          for conductivity goals per growth stage, <strong>Mixing Log</strong> to record what you mixed and when,
+          <strong>Crop Cycles</strong> to track individual grows, and <strong>Events</strong> for every feed applied.
+        </HelpTip>
+      </div>
       <button @click="refresh" class="text-xs text-zinc-400 hover:text-zinc-200">Refresh</button>
     </div>
 
     <!-- Tabs -->
-    <div class="flex gap-1 bg-zinc-900 border border-zinc-800 rounded-lg p-1">
+    <div class="flex flex-wrap gap-1 bg-zinc-900 border border-zinc-800 rounded-lg p-1">
       <button
         v-for="t in tabs" :key="t.id"
         @click="activeTab = t.id"
@@ -22,7 +30,9 @@
     <!-- Reservoirs -->
     <template v-else-if="activeTab === 'reservoirs'">
       <div class="flex items-center justify-between">
-        <p class="text-zinc-400 text-sm">{{ reservoirs.length }} reservoir(s)</p>
+        <p class="text-zinc-400 text-sm">{{ reservoirs.length }} reservoir(s)
+          <HelpTip>A reservoir is a physical nutrient tank. Track its volume, EC and pH. Programs draw from reservoirs when feeding runs.</HelpTip>
+        </p>
         <button @click="showReservoirForm = !showReservoirForm"
           class="px-3 py-1.5 bg-green-700 hover:bg-green-600 text-white text-xs rounded-lg">
           {{ showReservoirForm ? 'Cancel' : '+ Add Reservoir' }}
@@ -79,7 +89,10 @@
           <p v-if="r.last_ec_mscm" class="text-zinc-500 text-xs">
             EC {{ r.last_ec_mscm }} mS/cm · pH {{ r.last_ph || '—' }}
           </p>
-          <p class="text-zinc-600 text-xs">{{ zoneLabel(r.zone_id) }}</p>
+          <p class="text-zinc-600 text-xs">
+            <router-link v-if="r.zone_id" :to="`/zones/${r.zone_id}`" class="hover:text-green-400 transition-colors">{{ zoneLabel(r.zone_id) }}</router-link>
+            <span v-else>All zones</span>
+          </p>
         </div>
       </div>
       <p v-if="!reservoirs.length" class="text-zinc-500 text-sm">No reservoirs configured yet.</p>
@@ -88,7 +101,9 @@
     <!-- EC Targets -->
     <template v-else-if="activeTab === 'ec-targets'">
       <div class="flex items-center justify-between">
-        <p class="text-zinc-400 text-sm">{{ ecTargets.length }} target(s)</p>
+        <p class="text-zinc-400 text-sm">{{ ecTargets.length }} target(s)
+          <HelpTip>EC Targets define the ideal electrical conductivity (nutrient strength) and pH range per growth stage. Programs reference these to know the target mix.</HelpTip>
+        </p>
         <button @click="showEcForm = !showEcForm"
           class="px-3 py-1.5 bg-green-700 hover:bg-green-600 text-white text-xs rounded-lg">
           {{ showEcForm ? 'Cancel' : '+ Add EC Target' }}
@@ -134,7 +149,10 @@
           <tbody class="text-zinc-300">
             <tr v-for="t in ecTargets" :key="t.id" class="border-b border-zinc-800/50">
               <td class="py-2 pr-4 capitalize">{{ t.growth_stage }}</td>
-              <td class="py-2 pr-4">{{ zoneLabel(t.zone_id) }}</td>
+              <td class="py-2 pr-4">
+                <router-link v-if="t.zone_id" :to="`/zones/${t.zone_id}`" class="hover:text-green-400 transition-colors">{{ zoneLabel(t.zone_id) }}</router-link>
+                <span v-else>All zones</span>
+              </td>
               <td class="py-2 pr-4 font-mono">{{ t.ec_min_mscm }}–{{ t.ec_max_mscm }} mS/cm</td>
               <td class="py-2 pr-4 font-mono">{{ t.ph_min }}–{{ t.ph_max }}</td>
               <td class="py-2 text-zinc-500 truncate max-w-48">{{ t.notes || '—' }}</td>
@@ -148,7 +166,9 @@
     <!-- Programs -->
     <template v-else-if="activeTab === 'programs'">
       <div class="flex items-center justify-between">
-        <p class="text-zinc-400 text-sm">{{ programs.length }} program(s)</p>
+        <p class="text-zinc-400 text-sm">{{ programs.length }} program(s)
+          <HelpTip>A program ties everything together: it links a reservoir, EC target, NF recipe, schedule, and zone into an automated feeding plan. Activate it to let the automation worker run it.</HelpTip>
+        </p>
         <button @click="showProgramForm = !showProgramForm"
           class="px-3 py-1.5 bg-green-700 hover:bg-green-600 text-white text-xs rounded-lg">
           {{ showProgramForm ? 'Cancel' : '+ Add Program' }}
@@ -174,6 +194,10 @@
           <option :value="null">No NF recipe</option>
           <option v-for="r in nfRecipes" :key="r.id" :value="r.id">{{ r.name }}</option>
         </select>
+        <select v-model="progForm.schedule_id" class="input-field">
+          <option :value="null">No schedule (manual / other trigger)</option>
+          <option v-for="s in schedules" :key="s.id" :value="s.id">{{ s.name }} · {{ s.cron_expression }}</option>
+        </select>
         <input v-model.number="progForm.total_volume_liters" type="number" step="0.1" placeholder="Total volume (L)"
           required class="input-field" />
         <label class="flex items-center gap-2 text-zinc-300 text-sm">
@@ -197,17 +221,129 @@
               {{ p.is_active ? 'Active' : 'Inactive' }}
             </span>
           </div>
-          <p class="text-zinc-400 text-xs">{{ zoneLabel(p.target_zone_id) }} · {{ p.total_volume_liters || 0 }}L</p>
+          <p class="text-zinc-400 text-xs">
+            <router-link v-if="p.target_zone_id" :to="`/zones/${p.target_zone_id}`" class="hover:text-green-400 transition-colors">{{ zoneLabel(p.target_zone_id) }}</router-link>
+            <span v-else>All zones</span>
+            · {{ p.total_volume_liters || 0 }}L
+          </p>
           <p v-if="p.description" class="text-zinc-500 text-xs">{{ p.description }}</p>
+          <div class="text-zinc-600 text-xs space-y-0.5 border-t border-zinc-800/80 pt-2 mt-2">
+            <p v-if="p.reservoir_id"><span class="text-zinc-500">Reservoir:</span> <a href="#" @click.prevent="activeTab = 'reservoirs'" class="text-green-600 hover:text-green-400">{{ reservoirName(p.reservoir_id) }}</a></p>
+            <p v-if="p.schedule_id"><span class="text-zinc-500">Schedule:</span> <router-link to="/schedules" class="text-green-600 hover:text-green-400">{{ scheduleName(p.schedule_id) }}</router-link></p>
+            <p v-if="p.application_recipe_id">
+              <span class="text-zinc-500">Recipe:</span>
+              <router-link :to="{ path: '/inventory', query: { tab: 'recipes' } }" class="text-green-600 hover:text-green-400">{{ recipeName(p.application_recipe_id) }}</router-link>
+            </p>
+          </div>
         </div>
       </div>
       <p v-if="!programs.length" class="text-zinc-500 text-sm">No programs configured yet.</p>
     </template>
 
+    <!-- Mixing log (reservoir ↔ program ↔ inventory batches) -->
+    <template v-else-if="activeTab === 'mixing'">
+      <div class="flex items-center justify-between">
+        <p class="text-zinc-400 text-sm">{{ mixingEvents.length }} mixing event(s)
+          <HelpTip>The mixing log records every time you prepare a nutrient solution. Each entry tracks the reservoir, water volume, final EC/pH, and which inventory inputs you drew from.</HelpTip>
+        </p>
+        <div class="flex items-center gap-3">
+          <button @click="showMixForm = !showMixForm"
+            class="px-3 py-1.5 bg-green-700 hover:bg-green-600 text-white text-xs rounded-lg">
+            {{ showMixForm ? 'Cancel' : '+ Log Mix' }}
+          </button>
+          <router-link to="/inventory" class="text-xs text-green-600 hover:text-green-400">Inventory batches &rarr;</router-link>
+        </div>
+      </div>
+
+      <form v-if="showMixForm" @submit.prevent="submitMix"
+        class="bg-zinc-900 border border-zinc-800 rounded-xl p-4 space-y-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          <select v-model.number="mixForm.reservoir_id" required class="input-field">
+            <option value="" disabled>Reservoir</option>
+            <option v-for="r in reservoirs" :key="r.id" :value="r.id">{{ r.name }}</option>
+          </select>
+          <select v-model="mixForm.program_id" class="input-field">
+            <option :value="null">No program</option>
+            <option v-for="p in programs" :key="p.id" :value="p.id">{{ p.name }}</option>
+          </select>
+          <input v-model.number="mixForm.water_volume_liters" type="number" step="0.1" min="0.1"
+            placeholder="Water volume (L)" required class="input-field" />
+          <input v-model="mixForm.water_source" placeholder="Water source (optional)" class="input-field" />
+          <input v-model.number="mixForm.water_ec_mscm" type="number" step="0.01" placeholder="Water EC (mS/cm)" class="input-field" />
+          <input v-model.number="mixForm.water_ph" type="number" step="0.1" placeholder="Water pH" class="input-field" />
+          <input v-model.number="mixForm.final_ec_mscm" type="number" step="0.01" placeholder="Final EC (mS/cm)" class="input-field" />
+          <input v-model.number="mixForm.final_ph" type="number" step="0.1" placeholder="Final pH" class="input-field" />
+          <input v-model.number="mixForm.final_temp_celsius" type="number" step="0.1" placeholder="Final temp (°C)" class="input-field" />
+          <input v-model="mixForm.notes" placeholder="Notes (optional)" class="input-field sm:col-span-2" />
+        </div>
+
+        <div class="border-t border-zinc-800 pt-3">
+          <div class="flex items-center justify-between mb-2">
+            <p class="text-xs text-zinc-400 font-semibold">Components (inventory draws)</p>
+            <button type="button" @click="addMixComponent" class="text-xs text-green-500 hover:text-green-400">+ Add component</button>
+          </div>
+          <div v-for="(comp, ci) in mixForm.components" :key="ci" class="grid grid-cols-1 sm:grid-cols-5 gap-2 mb-2 items-end">
+            <select v-model.number="comp.input_definition_id" required class="input-field text-xs">
+              <option value="" disabled>Input</option>
+              <option v-for="inp in nfInputs" :key="inp.id" :value="inp.id">{{ inp.name }}</option>
+            </select>
+            <select v-model="comp.input_batch_id" class="input-field text-xs">
+              <option :value="null">No batch</option>
+              <option v-for="b in batchesForInput(comp.input_definition_id)" :key="b.id" :value="b.id">{{ b.batch_code || `#${b.id}` }}</option>
+            </select>
+            <input v-model.number="comp.volume_added_ml" type="number" step="0.1" min="0.1"
+              placeholder="Volume (mL)" required class="input-field text-xs" />
+            <input v-model="comp.dilution_ratio" placeholder="Dilution (e.g. 1:500)" class="input-field text-xs" />
+            <button type="button" @click="mixForm.components.splice(ci, 1)" class="text-xs text-red-400 hover:text-red-300 py-2">&times; Remove</button>
+          </div>
+          <p v-if="!mixForm.components.length" class="text-zinc-600 text-xs">No components added yet.</p>
+        </div>
+
+        <div v-if="mixFormError" class="text-red-400 text-xs">{{ mixFormError }}</div>
+        <button type="submit" :disabled="saving"
+          class="px-4 py-2 bg-green-700 hover:bg-green-600 text-white text-sm rounded-lg disabled:opacity-50">
+          {{ saving ? 'Saving\u2026' : 'Log Mix' }}
+        </button>
+      </form>
+      <div class="space-y-3">
+        <div v-for="m in mixingEvents" :key="m.id"
+          class="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
+          <div class="flex flex-wrap items-start justify-between gap-2">
+            <div>
+              <p class="text-white text-sm font-medium">Mix #{{ m.id }} · {{ reservoirName(m.reservoir_id) }}</p>
+              <p class="text-zinc-500 text-xs mt-1">{{ formatMixDate(m.mixed_at) }}
+                <span v-if="m.program_id"> · Program {{ programName(m.program_id) }}</span>
+              </p>
+            </div>
+            <button type="button" class="text-xs text-zinc-400 hover:text-zinc-200"
+              @click="toggleMixComponents(m.id)">
+              {{ mixingExpanded[m.id] ? 'Hide' : 'Show' }} inventory draws
+            </button>
+          </div>
+          <p v-if="m.notes" class="text-zinc-600 text-xs mt-2 line-clamp-3">{{ m.notes }}</p>
+          <div v-if="mixingExpanded[m.id]" class="mt-3 border-t border-zinc-800 pt-3">
+            <p v-if="!mixingComponentsCache[m.id]?.length && mixingComponentsLoading[m.id]" class="text-zinc-500 text-xs">Loading…</p>
+            <ul v-else-if="mixingComponentsCache[m.id]?.length" class="text-xs text-zinc-400 space-y-1">
+              <li v-for="c in mixingComponentsCache[m.id]" :key="c.id">
+                {{ inputName(c.input_definition_id) }}
+                <router-link v-if="c.input_batch_id" :to="{ path: '/inventory', query: { tab: 'batches' } }" class="text-green-600 hover:text-green-400"> · batch #{{ c.input_batch_id }}</router-link>
+                · {{ c.volume_added_ml }} mL
+                <span v-if="c.dilution_ratio" class="text-zinc-600"> ({{ c.dilution_ratio }})</span>
+              </li>
+            </ul>
+            <p v-else class="text-zinc-600 text-xs">No line items.</p>
+          </div>
+        </div>
+      </div>
+      <p v-if="!mixingEvents.length" class="text-zinc-500 text-sm">No mixing events yet. Starter packs log demo mixes tied to reservoirs and inventory.</p>
+    </template>
+
     <!-- Crop cycles -->
     <template v-else-if="activeTab === 'crop-cycles'">
       <div class="flex items-center justify-between">
-        <p class="text-zinc-400 text-sm">{{ cropCycles.length }} cycle(s)</p>
+        <p class="text-zinc-400 text-sm">{{ cropCycles.length }} cycle(s)
+          <HelpTip>A crop cycle is one grow run of a plant in a zone — from seed/clone through harvest. Link it to a fertigation program to track feeding per cycle. Update the growth stage as the plant progresses.</HelpTip>
+        </p>
         <button @click="toggleCycleForm"
           class="px-3 py-1.5 bg-green-700 hover:bg-green-600 text-white text-xs rounded-lg">
           {{ showCycleForm ? 'Cancel' : '+ New cycle' }}
@@ -283,7 +419,9 @@
     <template v-else-if="activeTab === 'events'">
       <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div class="flex flex-wrap items-center gap-3">
-          <p class="text-zinc-400 text-sm">{{ fertigationEvents.length }} event(s)</p>
+          <p class="text-zinc-400 text-sm">{{ fertigationEvents.length }} event(s)
+            <HelpTip>Events record each individual feeding — volume applied, EC/pH before and after, which zone and crop cycle. Events are created automatically by programs or logged manually here.</HelpTip>
+          </p>
           <label class="flex items-center gap-2 text-xs text-zinc-500">
             <span>Filter by crop cycle</span>
             <select v-model="eventCropFilter" @change="reloadEventsOnly" class="input-field py-1 text-xs max-w-[14rem]">
@@ -335,6 +473,7 @@
               <th class="py-2 pr-4">Volume</th>
               <th class="py-2 pr-4">EC Before→After</th>
               <th class="py-2 pr-4">pH Before→After</th>
+              <th class="py-2 pr-4">Program</th>
               <th class="py-2 pr-4">Trigger</th>
               <th class="py-2">Notes</th>
             </tr>
@@ -342,11 +481,18 @@
           <tbody class="text-zinc-300">
             <tr v-for="e in sortedEvents" :key="e.id" class="border-b border-zinc-800/50">
               <td class="py-2 pr-4 whitespace-nowrap">{{ formatDate(e.applied_at) }}</td>
-              <td class="py-2 pr-4">{{ zoneLabel(e.zone_id) }}</td>
+              <td class="py-2 pr-4">
+                <router-link v-if="e.zone_id" :to="`/zones/${e.zone_id}`" class="hover:text-green-400 transition-colors">{{ zoneLabel(e.zone_id) }}</router-link>
+                <span v-else>—</span>
+              </td>
               <td class="py-2 pr-4 text-zinc-500 text-xs">{{ cycleLabel(e.crop_cycle_id) }}</td>
               <td class="py-2 pr-4 font-mono">{{ e.volume_applied_liters || 0 }}L</td>
               <td class="py-2 pr-4 font-mono">{{ e.ec_before_mscm || '—' }} → {{ e.ec_after_mscm || '—' }}</td>
               <td class="py-2 pr-4 font-mono">{{ e.ph_before || '—' }} → {{ e.ph_after || '—' }}</td>
+              <td class="py-2 pr-4 text-xs">
+                <a v-if="e.program_id" href="#" @click.prevent="activeTab = 'programs'" class="text-green-600 hover:text-green-400">{{ programName(e.program_id) }}</a>
+                <span v-else class="text-zinc-600">—</span>
+              </td>
               <td class="py-2 pr-4 text-xs capitalize">{{ (e.trigger_source || 'manual').replace(/_/g, ' ') }}</td>
               <td class="py-2 text-zinc-500 truncate max-w-48">{{ e.notes || '—' }}</td>
             </tr>
@@ -363,6 +509,7 @@ import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useFarmStore } from '../stores/farm'
 import { useFarmContextStore } from '../stores/farmContext'
+import HelpTip from '../components/HelpTip.vue'
 
 const route = useRoute()
 const store = useFarmStore()
@@ -375,6 +522,7 @@ const tabs = [
   { id: 'reservoirs', label: 'Reservoirs' },
   { id: 'ec-targets', label: 'EC Targets' },
   { id: 'programs', label: 'Programs' },
+  { id: 'mixing', label: 'Mixing log' },
   { id: 'crop-cycles', label: 'Crop Cycles' },
   { id: 'events', label: 'Events' },
 ]
@@ -388,6 +536,12 @@ const reservoirs = ref([])
 const ecTargets = ref([])
 const programs = ref([])
 const nfRecipes = ref([])
+const schedules = ref([])
+const nfInputs = ref([])
+const mixingEvents = ref([])
+const mixingExpanded = ref({})
+const mixingComponentsCache = reactive({})
+const mixingComponentsLoading = reactive({})
 const cropCycles = ref([])
 const fertigationEvents = ref([])
 const eventCropFilter = ref('')
@@ -416,6 +570,77 @@ const showReservoirForm = ref(false)
 const showEcForm = ref(false)
 const showProgramForm = ref(false)
 const showEventForm = ref(false)
+const showMixForm = ref(false)
+const mixFormError = ref('')
+const nfBatches = ref([])
+const mixForm = ref(emptyMixForm())
+
+function emptyMixForm() {
+  return {
+    reservoir_id: '',
+    program_id: null,
+    water_volume_liters: 0,
+    water_source: '',
+    water_ec_mscm: null,
+    water_ph: null,
+    final_ec_mscm: null,
+    final_ph: null,
+    final_temp_celsius: null,
+    notes: '',
+    components: [],
+  }
+}
+
+function addMixComponent() {
+  mixForm.value.components.push({
+    input_definition_id: '',
+    input_batch_id: null,
+    volume_added_ml: 0,
+    dilution_ratio: '',
+  })
+}
+
+function batchesForInput(inputDefId) {
+  if (!inputDefId) return nfBatches.value
+  return nfBatches.value.filter(b => b.input_definition_id === inputDefId)
+}
+
+async function submitMix() {
+  mixFormError.value = ''
+  if (!mixForm.value.reservoir_id || !mixForm.value.water_volume_liters) {
+    mixFormError.value = 'Reservoir and water volume are required.'
+    return
+  }
+  saving.value = true
+  try {
+    const payload = {
+      reservoir_id: Number(mixForm.value.reservoir_id),
+      program_id: mixForm.value.program_id ? Number(mixForm.value.program_id) : null,
+      water_volume_liters: mixForm.value.water_volume_liters,
+      water_source: mixForm.value.water_source || null,
+      water_ec_mscm: mixForm.value.water_ec_mscm || null,
+      water_ph: mixForm.value.water_ph || null,
+      final_ec_mscm: mixForm.value.final_ec_mscm || null,
+      final_ph: mixForm.value.final_ph || null,
+      final_temp_celsius: mixForm.value.final_temp_celsius || null,
+      notes: mixForm.value.notes || null,
+      components: mixForm.value.components.map(c => ({
+        input_definition_id: Number(c.input_definition_id),
+        input_batch_id: c.input_batch_id ? Number(c.input_batch_id) : null,
+        volume_added_ml: c.volume_added_ml,
+        dilution_ratio: c.dilution_ratio || null,
+      })),
+    }
+    await store.createMixingEvent(farmId.value, payload)
+    showMixForm.value = false
+    mixForm.value = emptyMixForm()
+    mixingEvents.value = await store.loadMixingEvents(farmId.value)
+  } catch (e) {
+    mixFormError.value = e?.response?.data?.error || 'Failed to log mix.'
+  } finally {
+    saving.value = false
+  }
+}
 
 const resForm = ref({ name: '', status: 'ready', capacity_liters: 0, current_volume_liters: 0, zone_id: null })
 const ecForm = ref({ growth_stage: '', zone_id: null, ec_min_mscm: 0, ec_max_mscm: 0, ph_min: 0, ph_max: 0, notes: '' })
@@ -424,6 +649,7 @@ const progForm = ref({
   application_recipe_id: null,
   target_zone_id: null,
   reservoir_id: null,
+  schedule_id: null,
   ec_target_id: null,
   total_volume_liters: 0,
   is_active: false,
@@ -463,13 +689,17 @@ async function refresh() {
     if (!store.zones.length && farmId.value) await store.loadAll(farmId.value)
     const fid = farmId.value
     const cropQ = eventCropFilter.value ? Number(eventCropFilter.value) : undefined
-    const [r, ec, p, ev, cc, recipes] = await Promise.all([
+       const [r, ec, p, ev, cc, recipes, sch, inputs, mix, batches] = await Promise.all([
       store.loadReservoirs(fid),
       store.loadEcTargets(fid),
       store.loadFertigationPrograms(fid),
       store.loadFertigationEvents(fid, { cropCycleId: cropQ }),
       store.loadCropCycles(fid),
       store.loadRecipes(fid),
+      store.loadSchedules(fid),
+      store.loadNfInputs(fid),
+      store.loadMixingEvents(fid),
+      store.loadNfBatches(fid),
     ])
     reservoirs.value = r
     ecTargets.value = ec
@@ -477,6 +707,10 @@ async function refresh() {
     fertigationEvents.value = ev
     cropCycles.value = cc
     nfRecipes.value = recipes
+    schedules.value = sch
+    nfInputs.value = inputs
+    mixingEvents.value = mix
+    nfBatches.value = batches
     for (const c of cropCycles.value) {
       if (stageDraft[c.id] == null) stageDraft[c.id] = cycleStageRaw(c)
     }
@@ -517,6 +751,44 @@ function isoDate(d) {
 
 function programName(id) {
   return programs.value.find(p => p.id === id)?.name ?? `#${id}`
+}
+
+function reservoirName(id) {
+  if (id == null) return '—'
+  return reservoirs.value.find((x) => x.id === id)?.name ?? `#${id}`
+}
+
+function scheduleName(id) {
+  if (id == null) return '—'
+  return schedules.value.find((s) => s.id === id)?.name ?? `#${id}`
+}
+
+function recipeName(id) {
+  if (id == null) return '—'
+  return nfRecipes.value.find((r) => r.id === id)?.name ?? `#${id}`
+}
+
+function inputName(id) {
+  if (id == null) return '—'
+  return nfInputs.value.find((i) => i.id === id)?.name ?? `input #${id}`
+}
+
+function formatMixDate(ts) {
+  return formatDate(ts)
+}
+
+async function toggleMixComponents(mid) {
+  const cur = mixingExpanded.value[mid]
+  mixingExpanded.value = { ...mixingExpanded.value, [mid]: !cur }
+  if (!mixingExpanded.value[mid] || mixingComponentsCache[mid]) return
+  const fid = farmId.value
+  if (!fid) return
+  mixingComponentsLoading[mid] = true
+  try {
+    mixingComponentsCache[mid] = await store.loadMixingEventComponents(fid, mid)
+  } finally {
+    mixingComponentsLoading[mid] = false
+  }
 }
 
 function emptyCycleForm() {
@@ -617,7 +889,8 @@ async function deleteCycle(c) {
 }
 
 onMounted(() => {
-  if (route.query.tab === 'crop-cycles') activeTab.value = 'crop-cycles'
+  const qTab = route.query.tab
+  if (qTab && tabs.some(t => t.id === qTab)) activeTab.value = qTab
   if (route.query.recipe) {
     progForm.value.application_recipe_id = Number(route.query.recipe)
     activeTab.value = 'programs'
@@ -649,13 +922,16 @@ async function submitEcTarget() {
 async function submitProgram() {
   saving.value = true
   try {
-    await store.createProgram(farmId.value, progForm.value)
+    const payload = { ...progForm.value }
+    if (payload.schedule_id == null) delete payload.schedule_id
+    await store.createProgram(farmId.value, payload)
     showProgramForm.value = false
     progForm.value = {
       name: '',
       application_recipe_id: null,
       target_zone_id: null,
       reservoir_id: null,
+      schedule_id: null,
       ec_target_id: null,
       total_volume_liters: 0,
       is_active: false,

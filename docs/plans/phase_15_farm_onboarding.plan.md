@@ -20,7 +20,7 @@ todos:
     status: completed
   - id: operator-deployment-runner
     content: "Guided bootstrap for non-IT operators: documented one-path setup and/or a small script runner for DB migrate, API, UI, Pi client, env templates, and first admin user — reduce copy-paste and env-var errors."
-    status: pending
+    status: completed
 isProject: false
 ---
 
@@ -54,8 +54,8 @@ Coordinate with Phase 14 only where **WS9** (below) overlaps on documentation or
 
 | Track | Outcome |
 |-------|---------|
-| **Docs** | Single “start here” path: prerequisites, order of operations (DB → API → UI → optional receiver → Pi), `.env.example` pointers, and links to Insert Commons / audit playbooks (including **strict ingest JSON** — no extra top-level keys; see [`insert-commons-pipeline-runbook.md`](../insert-commons-pipeline-runbook.md)). |
-| **Script runner (optional)** | One entrypoint (e.g. `make bootstrap-local` or a small shell/Go helper) that checks prerequisites, runs migrations, prints or merges env from templates, and documents how to create the first user — **without** replacing Docker/Kubernetes choices for advanced operators. |
+| **Docs** | Single “start here” path: [`local-operator-bootstrap.md`](../local-operator-bootstrap.md) — prerequisites, order of operations (DB → API → UI → optional receiver → Pi), `.env.example` pointers, and links to Insert Commons / audit playbooks (including **strict ingest JSON** — no extra top-level keys; see [`insert-commons-pipeline-runbook.md`](../insert-commons-pipeline-runbook.md)). |
+| **Script runner (optional)** | `scripts/bootstrap-local.sh` and `make bootstrap-local` / `make bootstrap-local-docker` — checks prerequisites, applies schema + `db/migrations`, optional `--seed`, copies `.env` from `.env.example` once, `npm ci` in `ui/`; first user via register — **without** replacing Docker/Kubernetes choices for advanced operators. |
 | **Scope guardrails** | Prefer idempotent, readable steps over a black-box installer; keep security-sensitive steps (secrets, TLS) explicit. |
 
 See todo **`operator-deployment-runner`** in the frontmatter.

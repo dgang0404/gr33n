@@ -49,6 +49,8 @@ tags:
     description: Schedules, runs, and worker health
   - name: tasks
     description: Task management
+  - name: plants
+    description: Plant / crop tracking (per-farm named plants with variety and metadata)
   - name: costs
     description: Farm cost and income transactions
   - name: fertigation
@@ -1322,6 +1324,54 @@ paths:
               schema:
                 type: array
                 items: { $ref: "#/components/schemas/Schedule" }
+    post:
+      tags: [automation]
+      summary: Create a schedule for a farm
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ScheduleCreate" }
+      responses:
+        "201":
+          description: Created schedule
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Schedule" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+
+  /schedules/{id}:
+    put:
+      tags: [automation]
+      summary: Update a schedule
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ScheduleUpdate" }
+      responses:
+        "200":
+          description: Updated schedule
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Schedule" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    delete:
+      tags: [automation]
+      summary: Delete a schedule
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      responses:
+        "204": { description: Deleted }
+        "404": { $ref: "#/components/responses/NotFound" }
 
   /schedules/{id}/active:
     patch:
@@ -1440,6 +1490,36 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/Task" }
         "400": { $ref: "#/components/responses/BadRequest" }
+
+  /tasks/{id}:
+    put:
+      tags: [tasks]
+      summary: Update a task (full edit)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/TaskUpdate" }
+      responses:
+        "200":
+          description: Updated task
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Task" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    delete:
+      tags: [tasks]
+      summary: Delete a task (soft delete)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      responses:
+        "204": { description: Deleted }
+        "404": { $ref: "#/components/responses/NotFound" }
 
   /tasks/{id}/status:
     patch:
@@ -1656,6 +1736,65 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/FertigationEvent" }
 
+  /farms/{id}/fertigation/mixing-events:
+    get:
+      tags: [fertigation]
+      summary: List reservoir mixing events (inventory draws + water) for a farm
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      responses:
+        "200":
+          description: Mixing events newest first
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/FertigationMixingEvent" }
+    post:
+      tags: [fertigation]
+      summary: Record a reservoir mixing event with optional component draws
+      description: |
+        Creates a mixing event for a reservoir. Optional `components` entries are recorded as
+        inventory draws against natural-farming input definitions / batches. Reservoir must
+        belong to the same farm.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/FertigationMixingEventCreate" }
+      responses:
+        "201":
+          description: Created mixing event
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/FertigationMixingEvent" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+
+  /farms/{id}/fertigation/mixing-events/{mid}/components:
+    get:
+      tags: [fertigation]
+      summary: Recipe components / inventory batches used in a mixing event
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+        - name: mid
+          in: path
+          required: true
+          schema: { type: integer, format: int64 }
+      responses:
+        "200":
+          description: Mixing event line items
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/FertigationMixingEventComponent" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
   /farms/{id}/crop-cycles:
     get:
       tags: [fertigation]
@@ -1752,6 +1891,85 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/CropCycle" }
+
+  # ── Plants ─────────────────────────────────────────────────
+
+  /farms/{id}/plants:
+    get:
+      tags: [plants]
+      summary: List plants for a farm
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      responses:
+        "200":
+          description: List of plants (active, not soft-deleted)
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Plant" }
+    post:
+      tags: [plants]
+      summary: Create a plant for a farm
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PlantCreate" }
+      responses:
+        "201":
+          description: Created plant
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Plant" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+
+  /plants/{id}:
+    get:
+      tags: [plants]
+      summary: Get a plant by ID
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      responses:
+        "200":
+          description: Plant
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Plant" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    put:
+      tags: [plants]
+      summary: Update a plant
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PlantUpdate" }
+      responses:
+        "200":
+          description: Updated plant
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Plant" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    delete:
+      tags: [plants]
+      summary: Soft-delete a plant
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      responses:
+        "204": { description: Deleted }
+        "404": { $ref: "#/components/responses/NotFound" }
 
   /farms/{id}/costs/summary:
     get:
@@ -3019,6 +3237,30 @@ components:
         next_expected_trigger_time: { type: string, format: date-time, nullable: true }
         created_at: { type: string, format: date-time }
 
+    ScheduleCreate:
+      type: object
+      required: [name, schedule_type, cron_expression]
+      properties:
+        name: { type: string }
+        description: { type: string, nullable: true }
+        schedule_type:
+          type: string
+          description: Application-defined schedule type (e.g. "irrigation", "alert_check")
+        cron_expression:
+          type: string
+          description: Standard 5-field cron expression
+          example: "0 */6 * * *"
+        timezone: { type: string, default: UTC }
+        is_active: { type: boolean, default: false }
+        meta_data:
+          type: object
+          description: Arbitrary JSON payload consumed by the worker for this schedule type
+          additionalProperties: true
+
+    ScheduleUpdate:
+      allOf:
+        - $ref: "#/components/schemas/ScheduleCreate"
+
     AutomationRun:
       type: object
       properties:
@@ -3037,6 +3279,7 @@ components:
         id: { type: integer }
         farm_id: { type: integer }
         zone_id: { type: integer, nullable: true }
+        schedule_id: { type: integer, nullable: true, description: Optional link to a farm schedule (e.g. irrigation cron) }
         title: { type: string }
         description: { type: string, nullable: true }
         task_type: { type: string, nullable: true }
@@ -3057,10 +3300,54 @@ components:
         title: { type: string }
         description: { type: string }
         zone_id: { type: integer }
+        schedule_id: { type: integer, description: Optional farm schedule this task supports (must belong to farm) }
         task_type: { type: string }
         priority: { type: integer, minimum: 0, maximum: 3, default: 1 }
         due_date: { type: string, format: date }
         assigned_to_user_id: { type: string, format: uuid }
+
+    TaskUpdate:
+      type: object
+      required: [title]
+      properties:
+        title: { type: string }
+        description: { type: string, nullable: true }
+        zone_id: { type: integer, nullable: true }
+        schedule_id: { type: integer, nullable: true }
+        task_type: { type: string, nullable: true }
+        priority: { type: integer, minimum: 0, maximum: 3 }
+        due_date: { type: string, format: date, nullable: true }
+        assigned_to_user_id: { type: string, format: uuid, nullable: true }
+        estimated_duration_minutes: { type: integer, nullable: true }
+
+    Plant:
+      type: object
+      properties:
+        id: { type: integer, format: int64 }
+        farm_id: { type: integer, format: int64 }
+        display_name: { type: string }
+        variety_or_cultivar: { type: string, nullable: true }
+        meta:
+          type: object
+          description: Arbitrary JSON metadata (e.g. notes, tags)
+          additionalProperties: true
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+        deleted_at: { type: string, format: date-time, nullable: true }
+
+    PlantCreate:
+      type: object
+      required: [display_name]
+      properties:
+        display_name: { type: string }
+        variety_or_cultivar: { type: string, nullable: true }
+        meta:
+          type: object
+          additionalProperties: true
+
+    PlantUpdate:
+      allOf:
+        - $ref: "#/components/schemas/PlantCreate"
 
     GrowthStageEnum:
       type: string
@@ -3440,6 +3727,61 @@ components:
         trigger_source: { type: string }
         notes: { type: string }
         metadata: { type: object }
+
+    FertigationMixingEvent:
+      type: object
+      properties:
+        id: { type: integer }
+        farm_id: { type: integer }
+        reservoir_id: { type: integer }
+        program_id: { type: integer, nullable: true }
+        mixed_at: { type: string, format: date-time }
+        water_volume_liters: { type: number }
+        water_source: { type: string, nullable: true }
+        final_ec_mscm: { type: number, nullable: true }
+        final_ph: { type: number, nullable: true }
+        notes: { type: string, nullable: true }
+
+    FertigationMixingEventComponent:
+      type: object
+      properties:
+        id: { type: integer }
+        mixing_event_id: { type: integer }
+        input_definition_id: { type: integer }
+        input_batch_id: { type: integer, nullable: true }
+        volume_added_ml: { type: number }
+        dilution_ratio: { type: string, nullable: true }
+        notes: { type: string, nullable: true }
+
+    FertigationMixingEventCreate:
+      type: object
+      required: [reservoir_id, water_volume_liters]
+      properties:
+        reservoir_id: { type: integer, format: int64 }
+        program_id: { type: integer, format: int64, nullable: true }
+        water_volume_liters: { type: number, minimum: 0, exclusiveMinimum: true }
+        water_source: { type: string, nullable: true }
+        water_ec_mscm: { type: number, nullable: true }
+        water_ph: { type: number, nullable: true }
+        final_ec_mscm: { type: number, nullable: true }
+        final_ph: { type: number, nullable: true }
+        final_temp_celsius: { type: number, nullable: true }
+        ec_target_id: { type: integer, format: int64, nullable: true }
+        ec_target_met: { type: boolean, nullable: true }
+        notes: { type: string, nullable: true }
+        observations: { type: string, nullable: true }
+        components:
+          type: array
+          description: Optional per-input-draw line items recorded against inventory
+          items:
+            type: object
+            required: [input_definition_id, volume_added_ml]
+            properties:
+              input_definition_id: { type: integer, format: int64 }
+              input_batch_id: { type: integer, format: int64, nullable: true }
+              volume_added_ml: { type: number }
+              dilution_ratio: { type: string, nullable: true }
+              notes: { type: string, nullable: true }
 
     NaturalFarmingInputDefinition:
       type: object

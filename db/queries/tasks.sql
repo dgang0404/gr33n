@@ -4,10 +4,10 @@
 
 -- name: CreateTask :one
 INSERT INTO gr33ncore.tasks (
-    farm_id, zone_id, title, description, task_type, status, priority,
+    farm_id, zone_id, schedule_id, title, description, task_type, status, priority,
     assigned_to_user_id, due_date, estimated_duration_minutes,
     created_by_user_id, created_at, updated_at
-) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW(), NOW())
+) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW(), NOW())
 RETURNING *;
 
 -- name: GetTaskByID :one
@@ -27,6 +27,15 @@ ORDER BY due_date ASC NULLS LAST;
 -- name: UpdateTaskStatus :one
 UPDATE gr33ncore.tasks
 SET status = $2, updated_by_user_id = $3, updated_at = NOW()
+WHERE id = $1 AND deleted_at IS NULL
+RETURNING *;
+
+-- name: UpdateTask :one
+UPDATE gr33ncore.tasks
+SET title = $2, description = $3, zone_id = $4, schedule_id = $5,
+    task_type = $6, priority = $7, due_date = $8,
+    assigned_to_user_id = $9, estimated_duration_minutes = $10,
+    updated_by_user_id = $11, updated_at = NOW()
 WHERE id = $1 AND deleted_at IS NULL
 RETURNING *;
 

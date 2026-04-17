@@ -11,17 +11,19 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"gr33n-api/internal/authctx"
 	db "gr33n-api/internal/db"
 	"gr33n-api/internal/farmauthz"
 	"gr33n-api/internal/httputil"
 )
 
 type Handler struct {
-	q *db.Queries
+	pool *pgxpool.Pool
+	q    *db.Queries
 }
 
 func NewHandler(pool *pgxpool.Pool) *Handler {
-	return &Handler{q: db.New(pool)}
+	return &Handler{pool: pool, q: db.New(pool)}
 }
 
 func numericFromFloat64(v float64) (pgtype.Numeric, error) {
@@ -36,6 +38,10 @@ func farmIDFromPath(r *http.Request) (int64, error) {
 
 func resourceIDFromPath(r *http.Request) (int64, error) {
 	return strconv.ParseInt(r.PathValue("rid"), 10, 64)
+}
+
+func mixingEventIDFromPath(r *http.Request) (int64, error) {
+	return strconv.ParseInt(r.PathValue("mid"), 10, 64)
 }
 
 // PATCH /fertigation/reservoirs/{rid}
@@ -630,4 +636,203 @@ func (h *Handler) CreateEvent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	httputil.WriteJSON(w, http.StatusCreated, row)
+}
+
+// POST /farms/{id}/fertigation/mixing-events
+func (h *Handler) CreateMixingEvent(w http.ResponseWriter, r *http.Request) {
+	farmID, err := farmIDFromPath(r)
+	if err != nil {
+		httputil.WriteError(w, http.StatusBadRequest, "invalid farm id")
+		return
+	}
+	if !farmauthz.RequireFarmOperate(w, r, h.q, farmID) {
+		return
+	}
+
+	var req struct {
+		ReservoirID       int64    `json:"reservoir_id"`
+		ProgramID         *int64   `json:"program_id"`
+		WaterVolumeLiters float64  `json:"water_volume_liters"`
+		WaterSource       *string  `json:"water_source"`
+		WaterEcMscm       *float64 `json:"water_ec_mscm"`
+		WaterPh           *float64 `json:"water_ph"`
+		FinalEcMscm       *float64 `json:"final_ec_mscm"`
+		FinalPh           *float64 `json:"final_ph"`
+		FinalTempCelsius  *float64 `json:"final_temp_celsius"`
+		EcTargetID        *int64   `json:"ec_target_id"`
+		EcTargetMet       *bool    `json:"ec_target_met"`
+		Notes             *string  `json:"notes"`
+		Observations      *string  `json:"observations"`
+		Components        []struct {
+			InputDefinitionID int64   `json:"input_definition_id"`
+			InputBatchID      *int64  `json:"input_batch_id"`
+			VolumeAddedMl     float64 `json:"volume_added_ml"`
+			DilutionRatio     *string `json:"dilution_ratio"`
+			Notes             *string `json:"notes"`
+		} `json:"components"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		httputil.WriteError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+	if req.ReservoirID < 1 || req.WaterVolumeLiters <= 0 {
+		httputil.WriteError(w, http.StatusBadRequest, "reservoir_id and water_volume_liters are required")
+		return
+	}
+
+	res, err := h.q.GetFertigationReservoirByID(r.Context(), req.ReservoirID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			httputil.WriteError(w, http.StatusBadRequest, "reservoir not found")
+			return
+		}
+		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	if res.FarmID != farmID {
+		httputil.WriteError(w, http.StatusBadRequest, "reservoir does not belong to this farm")
+		return
+	}
+
+	waterVol, _ := numericFromFloat64(req.WaterVolumeLiters)
+	var waterEc, waterPh, finalEc, finalPh, finalTemp pgtype.Numeric
+	if req.WaterEcMscm != nil {
+		waterEc, _ = numericFromFloat64(*req.WaterEcMscm)
+	}
+	if req.WaterPh != nil {
+		waterPh, _ = numericFromFloat64(*req.WaterPh)
+	}
+	if req.FinalEcMscm != nil {
+		finalEc, _ = numericFromFloat64(*req.FinalEcMscm)
+	}
+	if req.FinalPh != nil {
+		finalPh, _ = numericFromFloat64(*req.FinalPh)
+	}
+	if req.FinalTempCelsius != nil {
+		finalTemp, _ = numericFromFloat64(*req.FinalTempCelsius)
+	}
+
+	var mixedBy pgtype.UUID
+	if uid, ok := authctx.UserID(r.Context()); ok {
+		mixedBy = pgtype.UUID{Bytes: uid, Valid: true}
+	}
+
+	tx, err := h.pool.Begin(r.Context())
+	if err != nil {
+		httputil.WriteError(w, http.StatusInternalServerError, "failed to begin transaction")
+		return
+	}
+	defer tx.Rollback(r.Context())
+	qtx := h.q.WithTx(tx)
+
+	event, err := qtx.CreateMixingEvent(r.Context(), db.CreateMixingEventParams{
+		FarmID:            farmID,
+		ReservoirID:       req.ReservoirID,
+		ProgramID:         req.ProgramID,
+		MixedByUserID:     mixedBy,
+		MixedAt:           time.Now().UTC(),
+		WaterVolumeLiters: waterVol,
+		WaterSource:       req.WaterSource,
+		WaterEcMscm:       waterEc,
+		WaterPh:           waterPh,
+		FinalEcMscm:       finalEc,
+		FinalPh:           finalPh,
+		FinalTempCelsius:  finalTemp,
+		EcTargetID:        req.EcTargetID,
+		EcTargetMet:       req.EcTargetMet,
+		Notes:             req.Notes,
+		Observations:      req.Observations,
+	})
+	if err != nil {
+		httputil.WriteError(w, http.StatusInternalServerError, "failed to create mixing event")
+		return
+	}
+
+	components := make([]db.Gr33nfertigationMixingEventComponent, 0, len(req.Components))
+	for _, c := range req.Components {
+		vol, _ := numericFromFloat64(c.VolumeAddedMl)
+		comp, err := qtx.CreateMixingEventComponent(r.Context(), db.CreateMixingEventComponentParams{
+			MixingEventID:     event.ID,
+			InputDefinitionID: c.InputDefinitionID,
+			InputBatchID:      c.InputBatchID,
+			VolumeAddedMl:     vol,
+			DilutionRatio:     c.DilutionRatio,
+			Notes:             c.Notes,
+		})
+		if err != nil {
+			httputil.WriteError(w, http.StatusInternalServerError, "failed to create mixing component")
+			return
+		}
+		components = append(components, comp)
+	}
+
+	if err := tx.Commit(r.Context()); err != nil {
+		httputil.WriteError(w, http.StatusInternalServerError, "failed to commit transaction")
+		return
+	}
+
+	httputil.WriteJSON(w, http.StatusCreated, map[string]any{
+		"event":      event,
+		"components": components,
+	})
+}
+
+// GET /farms/{id}/fertigation/mixing-events
+func (h *Handler) ListMixingEventsByFarm(w http.ResponseWriter, r *http.Request) {
+	farmID, err := farmIDFromPath(r)
+	if err != nil {
+		httputil.WriteError(w, http.StatusBadRequest, "invalid farm id")
+		return
+	}
+	if !farmauthz.RequireFarmMember(w, r, h.q, farmID) {
+		return
+	}
+	rows, err := h.q.ListMixingEventsByFarm(r.Context(), farmID)
+	if err != nil {
+		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	if rows == nil {
+		rows = []db.Gr33nfertigationMixingEvent{}
+	}
+	httputil.WriteJSON(w, http.StatusOK, rows)
+}
+
+// GET /farms/{id}/fertigation/mixing-events/{mid}/components
+func (h *Handler) ListMixingEventComponents(w http.ResponseWriter, r *http.Request) {
+	farmID, err := farmIDFromPath(r)
+	if err != nil {
+		httputil.WriteError(w, http.StatusBadRequest, "invalid farm id")
+		return
+	}
+	mid, err := mixingEventIDFromPath(r)
+	if err != nil || mid < 1 {
+		httputil.WriteError(w, http.StatusBadRequest, "invalid mixing event id")
+		return
+	}
+	if !farmauthz.RequireFarmMember(w, r, h.q, farmID) {
+		return
+	}
+	ev, err := h.q.GetMixingEventByID(r.Context(), mid)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			httputil.WriteError(w, http.StatusNotFound, "mixing event not found")
+			return
+		}
+		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	if ev.FarmID != farmID {
+		httputil.WriteError(w, http.StatusNotFound, "mixing event not found")
+		return
+	}
+	rows, err := h.q.ListMixingEventComponents(r.Context(), mid)
+	if err != nil {
+		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	if rows == nil {
+		rows = []db.Gr33nfertigationMixingEventComponent{}
+	}
+	httputil.WriteJSON(w, http.StatusOK, rows)
 }

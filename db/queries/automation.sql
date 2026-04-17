@@ -54,3 +54,21 @@ LIMIT 1;
 SELECT * FROM gr33ncore.automation_runs
 WHERE schedule_id = $1 AND details @> $2::jsonb
 LIMIT 1;
+
+-- name: CreateSchedule :one
+INSERT INTO gr33ncore.schedules (
+    farm_id, name, description, schedule_type, cron_expression,
+    timezone, is_active, meta_data
+) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+RETURNING *;
+
+-- name: UpdateSchedule :one
+UPDATE gr33ncore.schedules
+SET name = $2, description = $3, schedule_type = $4,
+    cron_expression = $5, timezone = $6, is_active = $7,
+    meta_data = $8, updated_at = NOW()
+WHERE id = $1
+RETURNING *;
+
+-- name: DeleteSchedule :exec
+DELETE FROM gr33ncore.schedules WHERE id = $1;

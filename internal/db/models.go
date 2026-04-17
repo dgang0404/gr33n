@@ -1167,6 +1167,27 @@ type AuthUser struct {
 	CreatedAt    pgtype.Timestamptz `db:"created_at" json:"created_at"`
 }
 
+type Gr33nanimalsAnimalGroup struct {
+	ID        int64              `db:"id" json:"id"`
+	FarmID    int64              `db:"farm_id" json:"farm_id"`
+	Label     string             `db:"label" json:"label"`
+	Species   *string            `db:"species" json:"species"`
+	Meta      []byte             `db:"meta" json:"meta"`
+	CreatedAt time.Time          `db:"created_at" json:"created_at"`
+	UpdatedAt time.Time          `db:"updated_at" json:"updated_at"`
+	DeletedAt pgtype.Timestamptz `db:"deleted_at" json:"deleted_at"`
+}
+
+type Gr33naquaponicsLoop struct {
+	ID        int64              `db:"id" json:"id"`
+	FarmID    int64              `db:"farm_id" json:"farm_id"`
+	Label     string             `db:"label" json:"label"`
+	Meta      []byte             `db:"meta" json:"meta"`
+	CreatedAt time.Time          `db:"created_at" json:"created_at"`
+	UpdatedAt time.Time          `db:"updated_at" json:"updated_at"`
+	DeletedAt pgtype.Timestamptz `db:"deleted_at" json:"deleted_at"`
+}
+
 type Gr33ncoreActuator struct {
 	ID                  int64              `db:"id" json:"id"`
 	DeviceID            *int64             `db:"device_id" json:"device_id"`
@@ -1569,6 +1590,7 @@ type Gr33ncoreTask struct {
 	ID                       int64                      `db:"id" json:"id"`
 	FarmID                   int64                      `db:"farm_id" json:"farm_id"`
 	ZoneID                   *int64                     `db:"zone_id" json:"zone_id"`
+	ScheduleID               *int64                     `db:"schedule_id" json:"schedule_id"`
 	Title                    string                     `db:"title" json:"title"`
 	Description              *string                    `db:"description" json:"description"`
 	TaskType                 *string                    `db:"task_type" json:"task_type"`
@@ -1684,6 +1706,17 @@ type Gr33ncoreZone struct {
 	UpdatedAt       time.Time          `db:"updated_at" json:"updated_at"`
 	UpdatedByUserID pgtype.UUID        `db:"updated_by_user_id" json:"updated_by_user_id"`
 	DeletedAt       pgtype.Timestamptz `db:"deleted_at" json:"deleted_at"`
+}
+
+type Gr33ncropsPlant struct {
+	ID                int64              `db:"id" json:"id"`
+	FarmID            int64              `db:"farm_id" json:"farm_id"`
+	DisplayName       string             `db:"display_name" json:"display_name"`
+	VarietyOrCultivar *string            `db:"variety_or_cultivar" json:"variety_or_cultivar"`
+	Meta              []byte             `db:"meta" json:"meta"`
+	CreatedAt         time.Time          `db:"created_at" json:"created_at"`
+	UpdatedAt         time.Time          `db:"updated_at" json:"updated_at"`
+	DeletedAt         pgtype.Timestamptz `db:"deleted_at" json:"deleted_at"`
 }
 
 type Gr33nfertigationCropCycle struct {

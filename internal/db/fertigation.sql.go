@@ -147,6 +147,117 @@ func (q *Queries) CreateFertigationEvent(ctx context.Context, arg CreateFertigat
 	return i, err
 }
 
+const createMixingEvent = `-- name: CreateMixingEvent :one
+INSERT INTO gr33nfertigation.mixing_events (
+    farm_id, reservoir_id, program_id, mixed_by_user_id, mixed_at,
+    water_volume_liters, water_source, water_ec_mscm, water_ph,
+    final_ec_mscm, final_ph, final_temp_celsius,
+    ec_target_id, ec_target_met, notes, observations
+) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+RETURNING id, farm_id, reservoir_id, program_id, mixed_by_user_id, mixed_at, water_volume_liters, water_source, water_ec_mscm, water_ph, final_ec_mscm, final_ph, final_temp_celsius, ec_target_id, ec_target_met, notes, observations, created_at
+`
+
+type CreateMixingEventParams struct {
+	FarmID            int64          `db:"farm_id" json:"farm_id"`
+	ReservoirID       int64          `db:"reservoir_id" json:"reservoir_id"`
+	ProgramID         *int64         `db:"program_id" json:"program_id"`
+	MixedByUserID     pgtype.UUID    `db:"mixed_by_user_id" json:"mixed_by_user_id"`
+	MixedAt           time.Time      `db:"mixed_at" json:"mixed_at"`
+	WaterVolumeLiters pgtype.Numeric `db:"water_volume_liters" json:"water_volume_liters"`
+	WaterSource       *string        `db:"water_source" json:"water_source"`
+	WaterEcMscm       pgtype.Numeric `db:"water_ec_mscm" json:"water_ec_mscm"`
+	WaterPh           pgtype.Numeric `db:"water_ph" json:"water_ph"`
+	FinalEcMscm       pgtype.Numeric `db:"final_ec_mscm" json:"final_ec_mscm"`
+	FinalPh           pgtype.Numeric `db:"final_ph" json:"final_ph"`
+	FinalTempCelsius  pgtype.Numeric `db:"final_temp_celsius" json:"final_temp_celsius"`
+	EcTargetID        *int64         `db:"ec_target_id" json:"ec_target_id"`
+	EcTargetMet       *bool          `db:"ec_target_met" json:"ec_target_met"`
+	Notes             *string        `db:"notes" json:"notes"`
+	Observations      *string        `db:"observations" json:"observations"`
+}
+
+func (q *Queries) CreateMixingEvent(ctx context.Context, arg CreateMixingEventParams) (Gr33nfertigationMixingEvent, error) {
+	row := q.db.QueryRow(ctx, createMixingEvent,
+		arg.FarmID,
+		arg.ReservoirID,
+		arg.ProgramID,
+		arg.MixedByUserID,
+		arg.MixedAt,
+		arg.WaterVolumeLiters,
+		arg.WaterSource,
+		arg.WaterEcMscm,
+		arg.WaterPh,
+		arg.FinalEcMscm,
+		arg.FinalPh,
+		arg.FinalTempCelsius,
+		arg.EcTargetID,
+		arg.EcTargetMet,
+		arg.Notes,
+		arg.Observations,
+	)
+	var i Gr33nfertigationMixingEvent
+	err := row.Scan(
+		&i.ID,
+		&i.FarmID,
+		&i.ReservoirID,
+		&i.ProgramID,
+		&i.MixedByUserID,
+		&i.MixedAt,
+		&i.WaterVolumeLiters,
+		&i.WaterSource,
+		&i.WaterEcMscm,
+		&i.WaterPh,
+		&i.FinalEcMscm,
+		&i.FinalPh,
+		&i.FinalTempCelsius,
+		&i.EcTargetID,
+		&i.EcTargetMet,
+		&i.Notes,
+		&i.Observations,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
+const createMixingEventComponent = `-- name: CreateMixingEventComponent :one
+INSERT INTO gr33nfertigation.mixing_event_components (
+    mixing_event_id, input_definition_id, input_batch_id,
+    volume_added_ml, dilution_ratio, notes
+) VALUES ($1, $2, $3, $4, $5, $6)
+RETURNING id, mixing_event_id, input_definition_id, input_batch_id, volume_added_ml, dilution_ratio, notes
+`
+
+type CreateMixingEventComponentParams struct {
+	MixingEventID     int64          `db:"mixing_event_id" json:"mixing_event_id"`
+	InputDefinitionID int64          `db:"input_definition_id" json:"input_definition_id"`
+	InputBatchID      *int64         `db:"input_batch_id" json:"input_batch_id"`
+	VolumeAddedMl     pgtype.Numeric `db:"volume_added_ml" json:"volume_added_ml"`
+	DilutionRatio     *string        `db:"dilution_ratio" json:"dilution_ratio"`
+	Notes             *string        `db:"notes" json:"notes"`
+}
+
+func (q *Queries) CreateMixingEventComponent(ctx context.Context, arg CreateMixingEventComponentParams) (Gr33nfertigationMixingEventComponent, error) {
+	row := q.db.QueryRow(ctx, createMixingEventComponent,
+		arg.MixingEventID,
+		arg.InputDefinitionID,
+		arg.InputBatchID,
+		arg.VolumeAddedMl,
+		arg.DilutionRatio,
+		arg.Notes,
+	)
+	var i Gr33nfertigationMixingEventComponent
+	err := row.Scan(
+		&i.ID,
+		&i.MixingEventID,
+		&i.InputDefinitionID,
+		&i.InputBatchID,
+		&i.VolumeAddedMl,
+		&i.DilutionRatio,
+		&i.Notes,
+	)
+	return i, err
+}
+
 const createProgram = `-- name: CreateProgram :one
 INSERT INTO gr33nfertigation.programs (
     farm_id, name, description, application_recipe_id, reservoir_id,
@@ -366,6 +477,36 @@ func (q *Queries) GetFertigationReservoirByID(ctx context.Context, id int64) (Gr
 	return i, err
 }
 
+const getMixingEventByID = `-- name: GetMixingEventByID :one
+SELECT id, farm_id, reservoir_id, program_id, mixed_by_user_id, mixed_at, water_volume_liters, water_source, water_ec_mscm, water_ph, final_ec_mscm, final_ph, final_temp_celsius, ec_target_id, ec_target_met, notes, observations, created_at FROM gr33nfertigation.mixing_events WHERE id = $1
+`
+
+func (q *Queries) GetMixingEventByID(ctx context.Context, id int64) (Gr33nfertigationMixingEvent, error) {
+	row := q.db.QueryRow(ctx, getMixingEventByID, id)
+	var i Gr33nfertigationMixingEvent
+	err := row.Scan(
+		&i.ID,
+		&i.FarmID,
+		&i.ReservoirID,
+		&i.ProgramID,
+		&i.MixedByUserID,
+		&i.MixedAt,
+		&i.WaterVolumeLiters,
+		&i.WaterSource,
+		&i.WaterEcMscm,
+		&i.WaterPh,
+		&i.FinalEcMscm,
+		&i.FinalPh,
+		&i.FinalTempCelsius,
+		&i.EcTargetID,
+		&i.EcTargetMet,
+		&i.Notes,
+		&i.Observations,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
 const listEcTargetsByFarm = `-- name: ListEcTargetsByFarm :many
 SELECT id, farm_id, zone_id, growth_stage, ec_min_mscm, ec_max_mscm, ph_min, ph_max, notes, rationale, created_at, updated_at FROM gr33nfertigation.ec_targets
 WHERE farm_id = $1
@@ -504,6 +645,85 @@ func (q *Queries) ListFertigationEventsByFarmAndCropCycle(ctx context.Context, a
 			&i.PlantResponse,
 			&i.Notes,
 			&i.Metadata,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listMixingEventComponents = `-- name: ListMixingEventComponents :many
+SELECT id, mixing_event_id, input_definition_id, input_batch_id, volume_added_ml, dilution_ratio, notes FROM gr33nfertigation.mixing_event_components
+WHERE mixing_event_id = $1
+ORDER BY id ASC
+`
+
+func (q *Queries) ListMixingEventComponents(ctx context.Context, mixingEventID int64) ([]Gr33nfertigationMixingEventComponent, error) {
+	rows, err := q.db.Query(ctx, listMixingEventComponents, mixingEventID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Gr33nfertigationMixingEventComponent{}
+	for rows.Next() {
+		var i Gr33nfertigationMixingEventComponent
+		if err := rows.Scan(
+			&i.ID,
+			&i.MixingEventID,
+			&i.InputDefinitionID,
+			&i.InputBatchID,
+			&i.VolumeAddedMl,
+			&i.DilutionRatio,
+			&i.Notes,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listMixingEventsByFarm = `-- name: ListMixingEventsByFarm :many
+SELECT id, farm_id, reservoir_id, program_id, mixed_by_user_id, mixed_at, water_volume_liters, water_source, water_ec_mscm, water_ph, final_ec_mscm, final_ph, final_temp_celsius, ec_target_id, ec_target_met, notes, observations, created_at FROM gr33nfertigation.mixing_events
+WHERE farm_id = $1
+ORDER BY mixed_at DESC
+`
+
+func (q *Queries) ListMixingEventsByFarm(ctx context.Context, farmID int64) ([]Gr33nfertigationMixingEvent, error) {
+	rows, err := q.db.Query(ctx, listMixingEventsByFarm, farmID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Gr33nfertigationMixingEvent{}
+	for rows.Next() {
+		var i Gr33nfertigationMixingEvent
+		if err := rows.Scan(
+			&i.ID,
+			&i.FarmID,
+			&i.ReservoirID,
+			&i.ProgramID,
+			&i.MixedByUserID,
+			&i.MixedAt,
+			&i.WaterVolumeLiters,
+			&i.WaterSource,
+			&i.WaterEcMscm,
+			&i.WaterPh,
+			&i.FinalEcMscm,
+			&i.FinalPh,
+			&i.FinalTempCelsius,
+			&i.EcTargetID,
+			&i.EcTargetMet,
+			&i.Notes,
+			&i.Observations,
 			&i.CreatedAt,
 		); err != nil {
 			return nil, err

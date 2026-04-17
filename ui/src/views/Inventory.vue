@@ -226,6 +226,7 @@
               <th class="pb-2 pr-4">Input</th>
               <th class="pb-2 pr-4">Status</th>
               <th class="pb-2 pr-4">Qty Remaining</th>
+              <th class="pb-2 pr-4">Used in</th>
               <th class="pb-2 pr-4">Started</th>
               <th class="pb-2 pr-4">Storage</th>
               <th class="pb-2">Actions</th>
@@ -239,6 +240,14 @@
                 <span :class="statusClass(b.status)">{{ formatStatus(b.status) }}</span>
               </td>
               <td class="py-2.5 pr-4 font-mono text-zinc-300">{{ b.current_quantity_remaining ?? '—' }}</td>
+              <td class="py-2.5 pr-4">
+                <router-link v-if="batchMixCount(b.id)"
+                  :to="{ path: '/fertigation', query: { tab: 'mixing' } }"
+                  class="text-xs text-green-600 hover:text-green-400">
+                  {{ batchMixCount(b.id) }} mix{{ batchMixCount(b.id) > 1 ? 'es' : '' }}
+                </router-link>
+                <span v-else class="text-xs text-zinc-600">—</span>
+              </td>
               <td class="py-2.5 pr-4 text-zinc-400">{{ formatDate(b.creation_start_date) }}</td>
               <td class="py-2.5 pr-4 text-zinc-400">{{ b.storage_location ?? '—' }}</td>
               <td class="py-2.5">
@@ -249,7 +258,7 @@
               </td>
             </tr>
             <tr v-if="!batches.length">
-              <td colspan="7" class="text-zinc-500 text-center py-8">No batches found.</td>
+              <td colspan="8" class="text-zinc-500 text-center py-8">No batches found.</td>
             </tr>
           </tbody>
         </table>
@@ -260,11 +269,20 @@
 
 <script setup>
 import { ref, onMounted, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import { useFarmStore } from '../stores/farm'
 import { useFarmContextStore } from '../stores/farmContext'
 
+const route = useRoute()
+
 const store = useFarmStore()
 const farmContext = useFarmContextStore()
+
+const mixingComponentsByBatch = ref({})
+
+function batchMixCount(batchId) {
+  return mixingComponentsByBatch.value[batchId] || 0
+}
 
 const tabs = [
   { key: 'definitions', label: 'Input Definitions' },
@@ -339,13 +357,26 @@ async function loadRecipesList() {
 onMounted(async () => {
   try {
     const fid = farmContext.farmId
-    const [i, b] = await Promise.all([
+    const [i, b, mixEvents] = await Promise.all([
       store.loadNfInputs(fid),
       store.loadNfBatches(fid),
+      store.loadMixingEvents(fid),
     ])
     inputs.value  = i
     batches.value = b
+    if (route.query.tab === 'batches') activeTab.value = 'batches'
+    else if (route.query.tab === 'recipes') activeTab.value = 'recipes'
     await loadRecipesList()
+    const counts = {}
+    for (const me of mixEvents) {
+      try {
+        const comps = await store.loadMixingEventComponents(fid, me.id)
+        for (const c of comps) {
+          if (c.input_batch_id) counts[c.input_batch_id] = (counts[c.input_batch_id] || 0) + 1
+        }
+      } catch { /* skip if endpoint fails */ }
+    }
+    mixingComponentsByBatch.value = counts
   } finally {
     loading.value = false
   }

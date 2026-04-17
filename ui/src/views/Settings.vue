@@ -159,6 +159,33 @@
       </form>
     </section>
 
+    <!-- Apply starter to existing farm (farm admin) -->
+    <section v-if="farmContext.farmId"
+      class="bg-zinc-800 border border-zinc-700 rounded-xl p-5 mb-5">
+      <h2 class="text-white font-semibold mb-3">Current farm — apply starter pack</h2>
+      <p class="text-zinc-500 text-xs mb-4">
+        Use this if the farm was created blank and you want demo zones, inventory lots,
+        fertigation (reservoirs, programs, schedules, mixing log), and a task linked to an irrigation schedule.
+        Farm admins only. If the pack was already applied, the API returns “already applied” and leaves data unchanged.
+      </p>
+      <div class="flex flex-wrap items-end gap-3">
+        <div class="flex flex-col gap-1.5">
+          <label class="text-zinc-400 text-xs uppercase tracking-wide">Template</label>
+          <select v-model="applyStarterKey"
+            class="bg-zinc-900 border border-zinc-700 text-zinc-300 text-sm rounded-lg px-3 py-2 min-w-[14rem]">
+            <option v-for="opt in starterPackOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
+          </select>
+        </div>
+        <button type="button" :disabled="applyStarterSaving"
+          class="bg-amber-700 hover:bg-amber-600 disabled:bg-zinc-700 text-white text-sm font-semibold px-4 py-2 rounded-lg"
+          @click="submitApplyStarter">
+          {{ applyStarterSaving ? 'Applying…' : 'Apply to current farm' }}
+        </button>
+      </div>
+      <p v-if="applyStarterError" class="text-red-400 text-xs mt-2">{{ applyStarterError }}</p>
+      <p v-if="applyStarterMsg" class="text-green-400 text-xs mt-2">{{ applyStarterMsg }}</p>
+    </section>
+
     <!-- Organizations (multi-farm tenancy) -->
     <section class="bg-zinc-800 border border-zinc-700 rounded-xl p-5 mb-5">
       <h2 class="text-white font-semibold mb-3 flex items-center gap-2">
@@ -600,6 +627,37 @@
     </section>
 
     <!-- Sign out -->
+    <!-- Push Notifications -->
+    <section class="bg-zinc-800 border border-zinc-700 rounded-xl p-5 mb-5">
+      <h2 class="text-white font-semibold mb-3 flex items-center gap-2">
+        <span>🔔</span> Push Notifications
+      </h2>
+      <p class="text-zinc-500 text-xs mb-4">
+        Enable push notifications to receive alerts and task reminders on your device.
+        On native (Android/iOS) this uses Firebase Cloud Messaging.
+      </p>
+      <div class="flex items-center gap-3 mb-4">
+        <label class="flex items-center gap-2 text-zinc-300 text-sm">
+          <input v-model="pushEnabled" type="checkbox" class="rounded bg-zinc-800 border-zinc-700" @change="onPushToggle" />
+          Push notifications enabled
+        </label>
+        <span v-if="pushSaving" class="text-xs text-zinc-500">Saving…</span>
+        <span v-if="pushError" class="text-xs text-red-400">{{ pushError }}</span>
+      </div>
+      <div v-if="pushTokens.length" class="space-y-2">
+        <p class="text-zinc-400 text-xs uppercase tracking-wide mb-1">Registered devices</p>
+        <div v-for="tok in pushTokens" :key="tok.id"
+          class="flex items-center justify-between bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-xs">
+          <div class="min-w-0">
+            <span class="text-zinc-200 font-mono truncate block max-w-xs">{{ tok.fcm_token?.slice(0, 24) }}…</span>
+            <span class="text-zinc-500">{{ tok.platform }} · {{ formatPushDate(tok.created_at) }}</span>
+          </div>
+          <button @click="removePushToken(tok.fcm_token)" class="text-zinc-500 hover:text-red-400 shrink-0">✕</button>
+        </div>
+      </div>
+      <p v-else class="text-zinc-600 text-xs">No push tokens registered.</p>
+    </section>
+
     <section class="bg-zinc-800 border border-zinc-700 rounded-xl p-5">
       <h2 class="text-white font-semibold mb-3 flex items-center gap-2">
         <span>🚪</span> Session
@@ -648,6 +706,39 @@ const newFarm = reactive({
 const newFarmSaving = ref(false)
 const newFarmError = ref(null)
 const newFarmOk = ref(null)
+
+const applyStarterKey = ref(BOOTSTRAP_TEMPLATE_KEYS.JADAM_INDOOR_PHOTOPERIOD_V1)
+const applyStarterSaving = ref(false)
+const applyStarterError = ref(null)
+const applyStarterMsg = ref(null)
+
+async function submitApplyStarter() {
+  applyStarterError.value = null
+  applyStarterMsg.value = null
+  const fid = farmContext.farmId
+  if (!fid) {
+    applyStarterError.value = 'No farm selected'
+    return
+  }
+  applyStarterSaving.value = true
+  try {
+    const data = await farmContext.applyBootstrapTemplate(fid, applyStarterKey.value)
+    const b = data?.bootstrap
+    if (b?.already_applied) {
+      applyStarterMsg.value = 'This template was already applied to this farm.'
+    } else if (b?.applied) {
+      applyStarterMsg.value = 'Starter pack applied. Open Fertigation, Inventory, and Tasks to see linked data.'
+    } else if (b?.error) {
+      applyStarterError.value = String(b.error)
+    } else {
+      applyStarterMsg.value = 'Done.'
+    }
+  } catch (e) {
+    applyStarterError.value = e.response?.data?.error ?? e.message ?? 'Could not apply starter'
+  } finally {
+    applyStarterSaving.value = false
+  }
+}
 
 watch(
   () => newFarm.organizationId,
@@ -1252,6 +1343,7 @@ onMounted(() => {
   loadOrgs()
   loadMembers()
   loadFarmSharing()
+  loadPushState()
 })
 watch(() => farmContext.farmId, () => {
   loadOrgs()
@@ -1283,6 +1375,48 @@ const tokenExpiry = computed(() => {
     return h > 0 ? `${h}h ${m}m` : `${m}m`
   } catch { return 'unknown' }
 })
+
+// ── Push notifications ───────────────────────────────────────────────────────
+const pushEnabled = ref(false)
+const pushSaving = ref(false)
+const pushError = ref('')
+const pushTokens = ref([])
+
+async function loadPushState() {
+  try {
+    const prefs = await api.get('/profile/notification-preferences')
+    pushEnabled.value = prefs.data?.push_enabled ?? false
+  } catch { /* no prefs yet */ }
+  try {
+    const r = await api.get('/profile/push-tokens')
+    pushTokens.value = Array.isArray(r.data) ? r.data : []
+  } catch { /* ignore */ }
+}
+
+async function onPushToggle() {
+  pushSaving.value = true
+  pushError.value = ''
+  try {
+    await api.patch('/profile/notification-preferences', { push_enabled: pushEnabled.value })
+  } catch (e) {
+    pushError.value = e.response?.data?.error || e.message || 'Failed to save'
+    pushEnabled.value = !pushEnabled.value
+  } finally {
+    pushSaving.value = false
+  }
+}
+
+async function removePushToken(fcmToken) {
+  try {
+    await api.delete('/profile/push-tokens', { data: { fcm_token: fcmToken } })
+    pushTokens.value = pushTokens.value.filter(t => t.fcm_token !== fcmToken)
+  } catch { /* ignore */ }
+}
+
+function formatPushDate(ts) {
+  if (!ts) return ''
+  return new Date(ts).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+}
 
 // ── Sign out ─────────────────────────────────────────────────────────────────
 const signOut = () => {

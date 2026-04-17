@@ -2,7 +2,14 @@
   <div class="p-6">
     <div class="flex items-center justify-between mb-6">
       <h1 class="text-xl font-semibold text-white">Automation Schedules</h1>
-      <button class="text-xs text-zinc-400 hover:text-zinc-200" @click="refreshAll">Refresh</button>
+        <HelpTip position="bottom">
+          Schedules use cron expressions to trigger actions automatically. A schedule can drive a fertigation program (auto-feed) or generate tasks (reminders).
+          The automation worker checks active schedules and fires actuator events or creates tasks on the defined cadence.
+        </HelpTip>
+      <div class="flex items-center gap-3">
+        <button class="px-3 py-1.5 text-xs rounded bg-gr33n-600 hover:bg-gr33n-500 text-white font-medium" @click="openCreate">+ New Schedule</button>
+        <button class="text-xs text-zinc-400 hover:text-zinc-200" @click="refreshAll">Refresh</button>
+      </div>
     </div>
 
     <div v-if="loading" class="text-zinc-400 text-sm">Loading schedules…</div>
@@ -18,8 +25,22 @@
                 <p class="text-sm text-zinc-200 font-medium">{{ s.name }}</p>
                 <p class="text-xs text-zinc-500 mt-1">{{ s.schedule_type }} · {{ s.cron_expression }} · {{ s.timezone }}</p>
                 <p class="text-xs text-zinc-600 mt-1">Last trigger: {{ s.last_triggered_time || 'never' }}</p>
+                <div class="flex flex-wrap gap-2 mt-1.5">
+                  <router-link v-if="scheduleProgram(s.id)"
+                    :to="{ path: '/fertigation', query: { tab: 'programs' } }"
+                    class="text-[11px] px-1.5 py-0.5 rounded bg-green-900/40 text-green-400 border border-green-800/50 hover:bg-green-900/70">
+                    Program: {{ scheduleProgram(s.id).name }}
+                  </router-link>
+                  <router-link v-if="scheduleTasks(s.id).length"
+                    to="/tasks"
+                    class="text-[11px] px-1.5 py-0.5 rounded bg-blue-900/40 text-blue-400 border border-blue-800/50 hover:bg-blue-900/70">
+                    {{ scheduleTasks(s.id).length }} task{{ scheduleTasks(s.id).length > 1 ? 's' : '' }}
+                  </router-link>
+                </div>
               </div>
               <div class="flex items-center gap-2">
+                <button @click="openEdit(s)" class="px-2 py-1 text-xs rounded border border-zinc-700 text-zinc-400 hover:text-zinc-200" title="Edit">&#9998;</button>
+                <button @click="confirmDelete(s)" class="px-2 py-1 text-xs rounded border border-red-900/50 text-red-400 hover:text-red-300" title="Delete">&#128465;</button>
                 <button
                   @click="toggleEvents(s.id)"
                   class="px-2 py-1 text-xs rounded border border-zinc-700 text-zinc-400 hover:text-zinc-200"
@@ -33,6 +54,20 @@
                 >
                   {{ s.is_active ? 'Active' : 'Inactive' }}
                 </button>
+              </div>
+            </div>
+            <!-- Linked tasks -->
+            <div v-if="scheduleTasks(s.id).length" class="mt-2 ml-0.5">
+              <div class="space-y-1">
+                <div v-for="t in scheduleTasks(s.id)" :key="t.id"
+                  class="flex items-center gap-2 text-xs">
+                  <span class="capitalize px-1.5 py-0.5 rounded text-[10px]"
+                    :class="t.status === 'in_progress' ? 'bg-blue-900/50 text-blue-300' : t.status === 'completed' ? 'bg-green-900/50 text-green-300' : 'bg-zinc-800 text-zinc-400'">
+                    {{ t.status?.replace(/_/g, ' ') }}
+                  </span>
+                  <span class="text-zinc-300">{{ t.title }}</span>
+                  <span v-if="t.zone_id" class="text-zinc-600">· {{ taskZoneName(t.zone_id) }}</span>
+                </div>
               </div>
             </div>
             <!-- Actuator event history for this schedule -->
@@ -84,6 +119,66 @@
         </div>
       </div>
     </div>
+
+    <!-- Create/Edit Modal -->
+    <div v-if="showModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60" @click.self="showModal = false">
+      <div class="bg-zinc-900 border border-zinc-700 rounded-xl p-6 w-full max-w-md space-y-4">
+        <h3 class="text-white font-semibold">{{ editingSchedule ? 'Edit Schedule' : 'New Schedule' }}</h3>
+        <div class="space-y-3">
+          <div>
+            <label class="text-xs text-zinc-400 block mb-1">Name</label>
+            <input v-model="form.name" class="w-full bg-zinc-950 border border-zinc-700 rounded px-3 py-1.5 text-sm text-white" />
+          </div>
+          <div>
+            <label class="text-xs text-zinc-400 block mb-1">Description</label>
+            <input v-model="form.description" class="w-full bg-zinc-950 border border-zinc-700 rounded px-3 py-1.5 text-sm text-white" />
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="text-xs text-zinc-400 block mb-1">Type</label>
+              <select v-model="form.schedule_type" class="w-full bg-zinc-950 border border-zinc-700 rounded px-3 py-1.5 text-sm text-white">
+                <option value="cron">cron</option>
+                <option value="interval">interval</option>
+                <option value="one_time">one_time</option>
+              </select>
+            </div>
+            <div>
+              <label class="text-xs text-zinc-400 block mb-1">Timezone</label>
+              <input v-model="form.timezone" class="w-full bg-zinc-950 border border-zinc-700 rounded px-3 py-1.5 text-sm text-white" placeholder="UTC" />
+            </div>
+          </div>
+          <div>
+            <label class="text-xs text-zinc-400 block mb-1">Cron Expression</label>
+            <input v-model="form.cron_expression" class="w-full bg-zinc-950 border border-zinc-700 rounded px-3 py-1.5 text-sm text-white font-mono" placeholder="0 6 * * *" />
+          </div>
+          <div class="flex items-center gap-2">
+            <input type="checkbox" v-model="form.is_active" id="sched-active" class="rounded border-zinc-600" />
+            <label for="sched-active" class="text-xs text-zinc-300">Active</label>
+          </div>
+        </div>
+        <div v-if="formError" class="text-red-400 text-xs">{{ formError }}</div>
+        <div class="flex justify-end gap-3 pt-2">
+          <button @click="showModal = false" class="px-3 py-1.5 text-xs rounded border border-zinc-700 text-zinc-400 hover:text-zinc-200">Cancel</button>
+          <button @click="saveSchedule" :disabled="saving" class="px-3 py-1.5 text-xs rounded bg-gr33n-600 hover:bg-gr33n-500 text-white font-medium disabled:opacity-50">
+            {{ saving ? 'Saving…' : (editingSchedule ? 'Update' : 'Create') }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Delete Confirmation -->
+    <div v-if="deleteTarget" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60" @click.self="deleteTarget = null">
+      <div class="bg-zinc-900 border border-zinc-700 rounded-xl p-6 w-full max-w-sm space-y-4">
+        <h3 class="text-white font-semibold">Delete Schedule</h3>
+        <p class="text-sm text-zinc-300">Delete <span class="text-white font-medium">{{ deleteTarget.name }}</span>? This will also remove linked automation runs and executable actions.</p>
+        <div class="flex justify-end gap-3 pt-2">
+          <button @click="deleteTarget = null" class="px-3 py-1.5 text-xs rounded border border-zinc-700 text-zinc-400 hover:text-zinc-200">Cancel</button>
+          <button @click="doDelete" :disabled="saving" class="px-3 py-1.5 text-xs rounded bg-red-600 hover:bg-red-500 text-white font-medium disabled:opacity-50">
+            {{ saving ? 'Deleting…' : 'Delete' }}
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -91,31 +186,122 @@
 import { ref, onMounted } from 'vue'
 import { useFarmStore } from '../stores/farm'
 import { useFarmContextStore } from '../stores/farmContext'
+import HelpTip from '../components/HelpTip.vue'
 import api from '../api'
 
 const store = useFarmStore()
 const farmContext = useFarmContextStore()
 const schedules = ref([])
 const runs = ref([])
+const programs = ref([])
+const tasks = ref([])
 const worker = ref({ running: false, simulation_mode: false })
 const loading = ref(false)
 const expandedSchedule = ref(null)
 const scheduleEvents = ref([])
 const eventsLoading = ref(false)
 
+const showModal = ref(false)
+const editingSchedule = ref(null)
+const saving = ref(false)
+const formError = ref('')
+const deleteTarget = ref(null)
+const form = ref(emptyForm())
+
+function emptyForm() {
+  return { name: '', description: '', schedule_type: 'cron', cron_expression: '', timezone: 'UTC', is_active: true }
+}
+
+function openCreate() {
+  editingSchedule.value = null
+  form.value = emptyForm()
+  formError.value = ''
+  showModal.value = true
+}
+
+function openEdit(s) {
+  editingSchedule.value = s
+  form.value = {
+    name: s.name,
+    description: s.description || '',
+    schedule_type: s.schedule_type,
+    cron_expression: s.cron_expression,
+    timezone: s.timezone,
+    is_active: s.is_active,
+  }
+  formError.value = ''
+  showModal.value = true
+}
+
+async function saveSchedule() {
+  formError.value = ''
+  if (!form.value.name || !form.value.cron_expression) {
+    formError.value = 'Name and cron expression are required.'
+    return
+  }
+  saving.value = true
+  try {
+    const payload = { ...form.value, description: form.value.description || null }
+    if (editingSchedule.value) {
+      const updated = await store.updateSchedule(editingSchedule.value.id, payload)
+      const idx = schedules.value.findIndex(s => s.id === editingSchedule.value.id)
+      if (idx >= 0) schedules.value[idx] = updated
+    } else {
+      const created = await store.createSchedule(farmContext.farmId, payload)
+      schedules.value = [...schedules.value, created]
+    }
+    showModal.value = false
+  } catch (e) {
+    formError.value = e?.response?.data?.error || 'Failed to save schedule.'
+  } finally {
+    saving.value = false
+  }
+}
+
+function confirmDelete(s) {
+  deleteTarget.value = s
+}
+
+async function doDelete() {
+  saving.value = true
+  try {
+    await store.deleteSchedule(deleteTarget.value.id)
+    schedules.value = schedules.value.filter(s => s.id !== deleteTarget.value.id)
+    deleteTarget.value = null
+  } catch (e) {
+    formError.value = e?.response?.data?.error || 'Failed to delete schedule.'
+  } finally {
+    saving.value = false
+  }
+}
+
+function scheduleProgram(scheduleId) {
+  return programs.value.find(p => p.schedule_id === scheduleId && p.is_active)
+}
+function scheduleTasks(scheduleId) {
+  return tasks.value.filter(t => t.schedule_id === scheduleId)
+}
+function taskZoneName(zoneId) {
+  return store.zones.find(z => z.id === zoneId)?.name || ''
+}
+
 async function refreshAll() {
   const fid = farmContext.farmId
   if (!store.zones.length && fid) await store.loadAll(fid)
   loading.value = true
   try {
-    const [s, r, w] = await Promise.all([
+    const [s, r, w, p] = await Promise.all([
       store.loadSchedules(fid),
       store.loadAutomationRuns(fid),
       api.get('/automation/worker/health'),
+      store.loadFertigationPrograms(fid),
     ])
     schedules.value = s
     runs.value = r
     worker.value = w.data || { running: false, simulation_mode: false }
+    programs.value = p
+    await store.loadTasks(fid)
+    tasks.value = store.tasks
   } finally {
     loading.value = false
   }
@@ -148,7 +334,7 @@ async function toggleEvents(scheduleId) {
 }
 
 function formatTime(t) {
-  if (!t) return '—'
+  if (!t) return '\u2014'
   return new Date(t).toLocaleString(undefined, {
     month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit'
   })

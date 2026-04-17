@@ -162,6 +162,39 @@ class TestApiClient(unittest.TestCase):
         self.assertAlmostEqual(body["value_raw"], 22.5)
         self.assertTrue(body["is_valid"])
 
+    def test_post_readings_batch_success(self):
+        """post_readings_batch POSTs a JSON array to /sensors/readings/batch."""
+        before = len(received_requests)
+        items = [
+            {"sensor_id": 1, "value_raw": 22.5, "reading_time": "2026-03-03T10:00:00+00:00", "is_valid": True},
+            {"sensor_id": 2, "value_raw": 58.1, "reading_time": "2026-03-03T10:00:01+00:00", "is_valid": True},
+            {"sensor_id": 3, "value_raw": 1.42, "reading_time": "2026-03-03T10:00:02+00:00", "is_valid": True},
+        ]
+        ok = self.api.post_readings_batch(items)
+        self.assertTrue(ok)
+        batch_posts = [
+            r for r in received_requests[before:]
+            if r["method"] == "POST" and r["path"].endswith("/sensors/readings/batch")
+        ]
+        self.assertEqual(len(batch_posts), 1, "expected exactly one POST to /sensors/readings/batch")
+        body = batch_posts[0]["body"]
+        self.assertIsInstance(body, list)
+        self.assertEqual(len(body), 3)
+        self.assertEqual(body[0]["sensor_id"], 1)
+        self.assertAlmostEqual(body[2]["value_raw"], 1.42)
+
+    def test_post_readings_batch_empty_short_circuits(self):
+        """Empty items list must return True without making a network request."""
+        before = len(received_requests)
+        ok = self.api.post_readings_batch([])
+        self.assertTrue(ok)
+        after = received_requests[before:]
+        self.assertEqual(
+            [r for r in after if r["method"] == "POST" and "readings/batch" in r["path"]],
+            [],
+            "empty batch must not issue a POST",
+        )
+
     def test_get_devices_returns_list(self):
         devices = self.api.get_devices()
         self.assertIsInstance(devices, list)
@@ -711,5 +744,60 @@ class TestEdgeCases(unittest.TestCase):
             result,
             "post_reading must return False on HTTP 500 so the sensor loop queues offline"
         )
+
+    # ── Test 4: batch path + 500 handling ─────────────────────────────────────
+    def test_batch_posts_to_correct_path_and_handles_500(self):
+        """post_readings_batch must hit /sensors/readings/batch and return False on 500."""
+        posted_paths = []
+        posted_bodies = []
+
+        class BatchHandler(BaseHTTPRequestHandler):
+            def log_message(self, *args): pass
+            mode = {"status": 201}
+
+            def do_POST(self):
+                length = int(self.headers.get("Content-Length", 0))
+                raw = self.rfile.read(length)
+                try:
+                    posted_bodies.append(json.loads(raw))
+                except Exception:
+                    posted_bodies.append(None)
+                posted_paths.append(self.path)
+                self.send_response(BatchHandler.mode["status"])
+                self.send_header("Content-Type", "application/json")
+                self.end_headers()
+                if BatchHandler.mode["status"] >= 500:
+                    self.wfile.write(b'{"error":"boom"}')
+                else:
+                    self.wfile.write(b'{"inserted":2}')
+
+        server = HTTPServer(("127.0.0.1", 0), BatchHandler)
+        port = server.server_address[1]
+        t = threading.Thread(target=server.serve_forever, daemon=True)
+        t.start()
+        try:
+            api = client.Gr33nApiClient(base_url=f"http://127.0.0.1:{port}", farm_id=1, timeout=3)
+
+            items = [
+                {"sensor_id": 1, "value_raw": 22.5, "reading_time": "2026-03-03T10:00:00+00:00", "is_valid": True},
+                {"sensor_id": 2, "value_raw": 58.1, "reading_time": "2026-03-03T10:00:01+00:00", "is_valid": True},
+            ]
+
+            BatchHandler.mode["status"] = 201
+            self.assertTrue(api.post_readings_batch(items))
+            self.assertTrue(
+                any(p.endswith("/sensors/readings/batch") for p in posted_paths),
+                f"expected POST to /sensors/readings/batch, got: {posted_paths}",
+            )
+            self.assertEqual(posted_bodies[-1], items)
+
+            BatchHandler.mode["status"] = 500
+            self.assertFalse(
+                api.post_readings_batch(items),
+                "post_readings_batch must return False on HTTP 500 so caller can requeue",
+            )
+        finally:
+            server.shutdown()
+            server.server_close()
 
 

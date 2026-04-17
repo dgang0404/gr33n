@@ -33,4 +33,4 @@ This page is the **Phase 14** counterpart to [`phase-13-operator-documentation.m
 
 ## Using this in a new chat
 
-Reference `@docs/phase-14-operator-documentation.md` for Phase 14 deliverables. For **next engineering work**, default to **[`plans/phase_15_farm_onboarding.plan.md`](plans/phase_15_farm_onboarding.plan.md)** unless you are patching Phase 14 docs or migrations.
+Reference `@docs/phase-14-operator-documentation.md` for Phase 14 deliverables. For **next engineering work**, default to **[`plans/phase_15_farm_onboarding.plan.md`](plans/phase_15_farm_onboarding.plan.md)** unless you are patching Phase 14 docs or migrations. For **first-time local setup**, use **[`local-operator-bootstrap.md`](local-operator-bootstrap.md)** (`make bootstrap-local`).

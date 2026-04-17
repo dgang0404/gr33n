@@ -20,8 +20,22 @@
         </button>
       </div>
     </div>
-    <div class="h-14 flex items-center justify-between px-6">
-      <h1 class="text-sm font-semibold text-gray-300">{{ title }}</h1>
+    <div class="h-14 flex items-center justify-between px-4 sm:px-6">
+      <div class="flex items-center gap-3">
+        <!-- Mobile hamburger -->
+        <button
+          class="md:hidden p-1.5 rounded-md text-gray-400 hover:text-white hover:bg-gray-800"
+          @click="$emit('toggle-drawer')"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="3" y1="6" x2="21" y2="6"/>
+            <line x1="3" y1="12" x2="21" y2="12"/>
+            <line x1="3" y1="18" x2="21" y2="18"/>
+          </svg>
+        </button>
+        <h1 class="text-sm font-semibold text-gray-300">{{ title }}</h1>
+      </div>
       <div class="flex items-center gap-4">
         <RouterLink to="/alerts" class="relative text-gray-400 hover:text-white transition-colors" title="Alerts">
           <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -33,11 +47,11 @@
             {{ farmStore.unreadAlertCount > 9 ? '9+' : farmStore.unreadAlertCount }}
           </span>
         </RouterLink>
-        <span :class="apiOk ? 'text-gr33n-400' : 'text-danger'" class="text-xs font-mono">
+        <span :class="apiOk ? 'text-gr33n-400' : 'text-danger'" class="text-xs font-mono hidden sm:inline">
           {{ apiOk ? '● API online' : '● API offline' }}
         </span>
-        <span class="text-xs text-gray-500">{{ now }}</span>
-        <span v-if="auth.username" class="text-xs text-gray-500">{{ auth.username }}</span>
+        <span class="text-xs text-gray-500 hidden sm:inline">{{ now }}</span>
+        <span v-if="auth.username" class="text-xs text-gray-500 hidden sm:inline">{{ auth.username }}</span>
       </div>
     </div>
   </header>
@@ -50,6 +64,8 @@ import { useAuthStore } from '../stores/auth'
 import { useFarmStore } from '../stores/farm'
 import { useFarmContextStore } from '../stores/farmContext'
 import api from '../api'
+
+defineEmits(['toggle-drawer'])
 
 const route = useRoute()
 const auth  = useAuthStore()
@@ -67,6 +83,10 @@ const labels = {
   '/fertigation': 'Fertigation',
   '/inventory': 'Inventory',
   '/alerts': 'Alerts',
+  '/plants': 'Plants',
+  '/catalog': 'Catalog',
+  '/costs': 'Costs',
+  '/settings': 'Settings',
 }
 const title = computed(() => {
   if (route.path.startsWith('/zones/')) return 'Zone Details'

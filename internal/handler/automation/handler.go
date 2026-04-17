@@ -108,6 +108,141 @@ func (h *Handler) ListRunsByFarm(w http.ResponseWriter, r *http.Request) {
 	httputil.WriteJSON(w, http.StatusOK, rows)
 }
 
+// POST /farms/{id}/schedules
+func (h *Handler) CreateSchedule(w http.ResponseWriter, r *http.Request) {
+	farmID, err := httputil.PathID(r.URL.Path, 2)
+	if err != nil {
+		httputil.WriteError(w, http.StatusBadRequest, "invalid farm id")
+		return
+	}
+	if !farmauthz.RequireFarmOperate(w, r, h.q, farmID) {
+		return
+	}
+	var body struct {
+		Name           string `json:"name"`
+		Description    *string `json:"description"`
+		ScheduleType   string `json:"schedule_type"`
+		CronExpression string `json:"cron_expression"`
+		Timezone       string `json:"timezone"`
+		IsActive       bool   `json:"is_active"`
+		MetaData       []byte `json:"meta_data"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		httputil.WriteError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+	if body.Name == "" || body.CronExpression == "" || body.ScheduleType == "" {
+		httputil.WriteError(w, http.StatusBadRequest, "name, schedule_type, and cron_expression are required")
+		return
+	}
+	if body.Timezone == "" {
+		body.Timezone = "UTC"
+	}
+	if body.MetaData == nil {
+		body.MetaData = []byte("{}")
+	}
+	row, err := h.q.CreateSchedule(r.Context(), db.CreateScheduleParams{
+		FarmID:         farmID,
+		Name:           body.Name,
+		Description:    body.Description,
+		ScheduleType:   body.ScheduleType,
+		CronExpression: body.CronExpression,
+		Timezone:       body.Timezone,
+		IsActive:       body.IsActive,
+		MetaData:       body.MetaData,
+	})
+	if err != nil {
+		httputil.WriteError(w, http.StatusInternalServerError, "failed to create schedule")
+		return
+	}
+	httputil.WriteJSON(w, http.StatusCreated, row)
+}
+
+// PUT /schedules/{id}
+func (h *Handler) UpdateSchedule(w http.ResponseWriter, r *http.Request) {
+	id, err := httputil.PathID(r.URL.Path, 2)
+	if err != nil {
+		httputil.WriteError(w, http.StatusBadRequest, "invalid schedule id")
+		return
+	}
+	sch, err := h.q.GetScheduleByID(r.Context(), id)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			httputil.WriteError(w, http.StatusNotFound, "schedule not found")
+			return
+		}
+		httputil.WriteError(w, http.StatusInternalServerError, "failed to load schedule")
+		return
+	}
+	if !farmauthz.RequireFarmOperate(w, r, h.q, sch.FarmID) {
+		return
+	}
+	var body struct {
+		Name           string  `json:"name"`
+		Description    *string `json:"description"`
+		ScheduleType   string  `json:"schedule_type"`
+		CronExpression string  `json:"cron_expression"`
+		Timezone       string  `json:"timezone"`
+		IsActive       bool    `json:"is_active"`
+		MetaData       []byte  `json:"meta_data"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		httputil.WriteError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+	if body.Name == "" || body.CronExpression == "" || body.ScheduleType == "" {
+		httputil.WriteError(w, http.StatusBadRequest, "name, schedule_type, and cron_expression are required")
+		return
+	}
+	if body.Timezone == "" {
+		body.Timezone = "UTC"
+	}
+	if body.MetaData == nil {
+		body.MetaData = []byte("{}")
+	}
+	row, err := h.q.UpdateSchedule(r.Context(), db.UpdateScheduleParams{
+		ID:             id,
+		Name:           body.Name,
+		Description:    body.Description,
+		ScheduleType:   body.ScheduleType,
+		CronExpression: body.CronExpression,
+		Timezone:       body.Timezone,
+		IsActive:       body.IsActive,
+		MetaData:       body.MetaData,
+	})
+	if err != nil {
+		httputil.WriteError(w, http.StatusInternalServerError, "failed to update schedule")
+		return
+	}
+	httputil.WriteJSON(w, http.StatusOK, row)
+}
+
+// DELETE /schedules/{id}
+func (h *Handler) DeleteSchedule(w http.ResponseWriter, r *http.Request) {
+	id, err := httputil.PathID(r.URL.Path, 2)
+	if err != nil {
+		httputil.WriteError(w, http.StatusBadRequest, "invalid schedule id")
+		return
+	}
+	sch, err := h.q.GetScheduleByID(r.Context(), id)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			httputil.WriteError(w, http.StatusNotFound, "schedule not found")
+			return
+		}
+		httputil.WriteError(w, http.StatusInternalServerError, "failed to load schedule")
+		return
+	}
+	if !farmauthz.RequireFarmOperate(w, r, h.q, sch.FarmID) {
+		return
+	}
+	if err := h.q.DeleteSchedule(r.Context(), id); err != nil {
+		httputil.WriteError(w, http.StatusInternalServerError, "failed to delete schedule")
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
 // GET /automation/worker/health
 func (h *Handler) WorkerHealth(w http.ResponseWriter, r *http.Request) {
 	if h.worker == nil {

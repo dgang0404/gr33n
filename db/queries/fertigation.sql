@@ -101,3 +101,32 @@ RETURNING *;
 UPDATE gr33nfertigation.programs
 SET deleted_at = NOW()
 WHERE id = $1 AND deleted_at IS NULL;
+
+-- name: GetMixingEventByID :one
+SELECT * FROM gr33nfertigation.mixing_events WHERE id = $1;
+
+-- name: ListMixingEventsByFarm :many
+SELECT * FROM gr33nfertigation.mixing_events
+WHERE farm_id = $1
+ORDER BY mixed_at DESC;
+
+-- name: ListMixingEventComponents :many
+SELECT * FROM gr33nfertigation.mixing_event_components
+WHERE mixing_event_id = $1
+ORDER BY id ASC;
+
+-- name: CreateMixingEvent :one
+INSERT INTO gr33nfertigation.mixing_events (
+    farm_id, reservoir_id, program_id, mixed_by_user_id, mixed_at,
+    water_volume_liters, water_source, water_ec_mscm, water_ph,
+    final_ec_mscm, final_ph, final_temp_celsius,
+    ec_target_id, ec_target_met, notes, observations
+) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+RETURNING *;
+
+-- name: CreateMixingEventComponent :one
+INSERT INTO gr33nfertigation.mixing_event_components (
+    mixing_event_id, input_definition_id, input_batch_id,
+    volume_added_ml, dilution_ratio, notes
+) VALUES ($1, $2, $3, $4, $5, $6)
+RETURNING *;
