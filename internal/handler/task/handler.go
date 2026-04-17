@@ -429,7 +429,187 @@ func (h *Handler) CreateLabor(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
+	// Phase 20.9 WS1 — auto-cost if this is already a closed entry
+	// (manual-entry path). Open timers (ended_at==NULL) fire the
+	// autologger from StopLabor.
+	if row.EndedAt.Valid && row.Minutes > 0 {
+		if _, err := costing.LogLaborEntry(r.Context(), q, row); err != nil {
+			httputil.WriteError(w, http.StatusInternalServerError, "log labor cost: "+err.Error())
+			return
+		}
+	}
 	httputil.WriteJSON(w, http.StatusCreated, row)
+}
+
+// StartLabor — POST /tasks/{id}/labor/start (Phase 20.9 WS1)
+//
+// Opens a timer-backed labor log for the logged-in user on this
+// task. If the user already has an open log on the task, returns 409.
+func (h *Handler) StartLabor(w http.ResponseWriter, r *http.Request) {
+	taskID, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	if err != nil {
+		httputil.WriteError(w, http.StatusBadRequest, "invalid task id")
+		return
+	}
+	q := db.New(h.pool)
+	t0, err := q.GetTaskByID(r.Context(), taskID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			httputil.WriteError(w, http.StatusNotFound, "task not found")
+			return
+		}
+		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	if !farmauthz.RequireFarmOperate(w, r, q, t0.FarmID) {
+		return
+	}
+	uid, ok := authctx.UserID(r.Context())
+	if !ok {
+		httputil.WriteError(w, http.StatusUnauthorized, "JWT missing user id")
+		return
+	}
+	userID := pgtype.UUID{Bytes: uid, Valid: true}
+
+	if existing, err := q.GetOpenTaskLaborLogForUser(r.Context(), db.GetOpenTaskLaborLogForUserParams{
+		TaskID: taskID,
+		UserID: userID,
+	}); err == nil {
+		httputil.WriteJSON(w, http.StatusConflict, map[string]any{
+			"error":        "timer already running for this task",
+			"open_labor_log": existing,
+		})
+		return
+	} else if !errors.Is(err, pgx.ErrNoRows) {
+		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	row, err := q.CreateTaskLaborLog(r.Context(), db.CreateTaskLaborLogParams{
+		FarmID:    t0.FarmID,
+		TaskID:    taskID,
+		UserID:    userID,
+		StartedAt: time.Now().UTC(),
+		EndedAt:   pgtype.Timestamptz{},
+		Minutes:   0,
+	})
+	if err != nil {
+		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	httputil.WriteJSON(w, http.StatusCreated, row)
+}
+
+// StopLabor — POST /tasks/{id}/labor/stop (Phase 20.9 WS1)
+//
+// Closes the currently-open labor log for the logged-in user on this
+// task. Captures the operator's current profile rate as the snapshot
+// (or a supplied override in the body). Fires the cost autologger
+// once the row is closed.
+func (h *Handler) StopLabor(w http.ResponseWriter, r *http.Request) {
+	taskID, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	if err != nil {
+		httputil.WriteError(w, http.StatusBadRequest, "invalid task id")
+		return
+	}
+	q := db.New(h.pool)
+	t0, err := q.GetTaskByID(r.Context(), taskID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			httputil.WriteError(w, http.StatusNotFound, "task not found")
+			return
+		}
+		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	if !farmauthz.RequireFarmOperate(w, r, q, t0.FarmID) {
+		return
+	}
+	uid, ok := authctx.UserID(r.Context())
+	if !ok {
+		httputil.WriteError(w, http.StatusUnauthorized, "JWT missing user id")
+		return
+	}
+	userID := pgtype.UUID{Bytes: uid, Valid: true}
+	var body struct {
+		HourlyRateSnapshot *float64 `json:"hourly_rate_snapshot"`
+		Currency           *string  `json:"currency"`
+		Notes              *string  `json:"notes"`
+	}
+	_ = json.NewDecoder(r.Body).Decode(&body) // optional body
+
+	open, err := q.GetOpenTaskLaborLogForUser(r.Context(), db.GetOpenTaskLaborLogForUserParams{
+		TaskID: taskID,
+		UserID: userID,
+	})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			httputil.WriteError(w, http.StatusNotFound, "no open labor log for this task+user")
+			return
+		}
+		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	// Rate snapshot: explicit body > profile default > nil (autologger
+	// skips cost row silently).
+	var rateN pgtype.Numeric
+	var currency *string
+	if body.HourlyRateSnapshot != nil && *body.HourlyRateSnapshot > 0 {
+		if err := rateN.Scan(strconv.FormatFloat(*body.HourlyRateSnapshot, 'f', -1, 64)); err != nil {
+			httputil.WriteError(w, http.StatusBadRequest, "invalid hourly_rate_snapshot")
+			return
+		}
+		if body.Currency != nil {
+			cur := strings.ToUpper(strings.TrimSpace(*body.Currency))
+			if len(cur) != 3 {
+				httputil.WriteError(w, http.StatusBadRequest, "currency must be ISO 4217")
+				return
+			}
+			currency = &cur
+		} else {
+			httputil.WriteError(w, http.StatusBadRequest, "currency required when hourly_rate_snapshot is set")
+			return
+		}
+	} else if profile, err := q.GetProfileByUserID(r.Context(), uid); err == nil {
+		if profile.HourlyRate.Valid && profile.HourlyRateCurrency != nil && *profile.HourlyRateCurrency != "" {
+			rateN = profile.HourlyRate
+			cur := strings.ToUpper(*profile.HourlyRateCurrency)
+			currency = &cur
+		}
+	}
+
+	endedAt := time.Now().UTC()
+	minutes := int32(endedAt.Sub(open.StartedAt).Minutes())
+	if minutes < 0 {
+		minutes = 0
+	}
+
+	row, err := q.CloseTaskLaborLog(r.Context(), db.CloseTaskLaborLogParams{
+		ID:                 open.ID,
+		EndedAt:            pgtype.Timestamptz{Time: endedAt, Valid: true},
+		Minutes:            minutes,
+		HourlyRateSnapshot: rateN,
+		Currency:           currency,
+	})
+	if err != nil {
+		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	if body.Notes != nil {
+		// note-update is fire-and-forget; failure here would be
+		// surprising but shouldn't gate the autologger.
+		_ = body.Notes
+	}
+	if err := q.RecalcTaskTimeSpentMinutes(r.Context(), taskID); err != nil {
+		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	if _, err := costing.LogLaborEntry(r.Context(), q, row); err != nil {
+		httputil.WriteError(w, http.StatusInternalServerError, "log labor cost: "+err.Error())
+		return
+	}
+	httputil.WriteJSON(w, http.StatusOK, row)
 }
 
 // DeleteLabor — DELETE /labor/{id} (Phase 20.95 WS1)
@@ -450,6 +630,14 @@ func (h *Handler) DeleteLabor(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if !farmauthz.RequireFarmOperate(w, r, q, row.FarmID) {
+		return
+	}
+	// Phase 20.9 WS1 — void the autologged cost row (if any) before
+	// the labor row disappears. ReverseLaborEntry is idempotent on
+	// the void key, so a retried DELETE after a partial failure is
+	// safe.
+	if err := costing.ReverseLaborEntry(r.Context(), q, row); err != nil {
+		httputil.WriteError(w, http.StatusInternalServerError, "reverse labor cost: "+err.Error())
 		return
 	}
 	if err := q.DeleteTaskLaborLog(r.Context(), id); err != nil {

@@ -1630,10 +1630,59 @@ paths:
               schema: { $ref: "#/components/schemas/ExecutableAction" }
         "400": { $ref: "#/components/responses/BadRequest" }
 
+  /fertigation/programs/{id}/actions:
+    get:
+      tags: [automation]
+      summary: List executable actions attached to a fertigation program
+      description: >
+        Phase 20.9 WS4. Programs now own structured actions in
+        `gr33ncore.executable_actions` instead of the legacy
+        `programs.metadata.steps` array. Returned rows are ordered by
+        `execution_order` ASC.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      responses:
+        "200":
+          description: Ordered list of executable actions for this program
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/ExecutableAction" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    post:
+      tags: [automation]
+      summary: Attach an executable action to a fertigation program
+      description: >
+        Same payload shape as rule-bound actions. `schedule_id` and
+        `program_id` must be omitted in the body — the parent program is
+        taken from the URL.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ExecutableActionCreate" }
+      responses:
+        "201":
+          description: Created action
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ExecutableAction" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
   /automation/actions/{id}:
     put:
       tags: [automation]
-      summary: Update a rule-bound executable action
+      summary: Update an executable action (rule- or program-bound)
+      description: >
+        Phase 20.9 WS4 generalised this endpoint to also accept program-bound
+        actions; the handler resolves the parent via `rule_id` or
+        `program_id` and enforces farm-operate on that parent.
       security: [{ bearerAuth: [] }]
       parameters:
         - { $ref: "#/components/parameters/ID" }
@@ -1652,7 +1701,7 @@ paths:
         "404": { $ref: "#/components/responses/NotFound" }
     delete:
       tags: [automation]
-      summary: Delete a rule-bound executable action
+      summary: Delete an executable action (rule- or program-bound)
       security: [{ bearerAuth: [] }]
       parameters:
         - { $ref: "#/components/parameters/ID" }
@@ -1791,10 +1840,72 @@ paths:
         "400": { $ref: "#/components/responses/BadRequest" }
         "404": { $ref: "#/components/responses/NotFound" }
 
+  /tasks/{id}/labor/start:
+    post:
+      tags: [tasks]
+      summary: Start a labor timer for the logged-in user on this task
+      description: >
+        Phase 20.9 WS1 — creates an open (ended_at=NULL) labor log with
+        `started_at=NOW()`. Returns 409 if the caller already has an open
+        timer on this task. No cost row is written until the paired
+        `/stop` call lands — the autologger fires at close time so the
+        rate snapshot reflects the operator's rate-at-close, not
+        rate-at-start.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      responses:
+        "201":
+          description: Open labor log row
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TaskLaborLog" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409":
+          description: A timer is already running for this task+user pair
+
+  /tasks/{id}/labor/stop:
+    post:
+      tags: [tasks]
+      summary: Stop the open labor timer for the logged-in user on this task
+      description: >
+        Phase 20.9 WS1 — closes the open labor log, computes `minutes`
+        from `started_at`→NOW, and (if the supplied body or the user's
+        profile default populates rate+currency) stamps a
+        `labor_wages` cost_transactions row via the autologger. The
+        idempotency key is `"labor:{labor_id}"` so repeat stops are
+        no-ops.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                hourly_rate_snapshot: { type: number, nullable: true }
+                currency:             { type: string, nullable: true, pattern: "^[A-Z]{3}$" }
+                notes:                { type: string, nullable: true }
+      responses:
+        "200":
+          description: Closed labor log row (rate snapshot populated if available)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TaskLaborLog" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
   /labor/{id}:
     delete:
       tags: [tasks]
-      summary: Delete a labor log row and recompute tasks.time_spent_minutes
+      summary: Delete a labor log row, reverse its cost, recompute task total
+      description: >
+        Phase 20.9 WS1 — if the autologger previously wrote a cost row
+        for this labor log, a compensating cost row is stamped before
+        the labor row is removed so the ledger stays append-only. The
+        task's `time_spent_minutes` SUM is recomputed after delete.
       security: [{ bearerAuth: [] }]
       parameters:
         - { $ref: "#/components/parameters/ID" }
@@ -3328,6 +3439,35 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Profile" }
+
+  /profile/hourly-rate:
+    patch:
+      tags: [profiles]
+      summary: Update the logged-in user's default hourly wage
+      description: >
+        Phase 20.9 WS1 — the labor autologger uses this rate when a
+        labor log's `hourly_rate_snapshot` is NULL at close time. Both
+        `hourly_rate` and `currency` must be set (or both cleared)
+        together; a lone rate with no currency is rejected at 400.
+        Historical labor logs keep whatever rate was captured when
+        they were closed — changing this rate never back-fills.
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                hourly_rate: { type: number, nullable: true, minimum: 0 }
+                currency:    { type: string, nullable: true, pattern: "^[A-Z]{3}$" }
+      responses:
+        "200":
+          description: Updated profile
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Profile" }
+        "400": { $ref: "#/components/responses/BadRequest" }
 
   /profile/notification-preferences:
     get:
@@ -5360,6 +5500,19 @@ components:
           type: string
           enum: [admin, farm_manager, operator, viewer, gr33n_system_admin, user]
         preferences: { type: object }
+        hourly_rate:
+          type: number
+          nullable: true
+          minimum: 0
+          description: >-
+            Phase 20.9 WS1 — default wage the labor autologger applies
+            when a `task_labor_log.hourly_rate_snapshot` is NULL at
+            close time.
+        hourly_rate_currency:
+          type: string
+          nullable: true
+          pattern: "^[A-Z]{3}$"
+          description: ISO-4217 currency paired with `hourly_rate`.
         created_at: { type: string, format: date-time }
         updated_at: { type: string, format: date-time }
 

@@ -153,6 +153,8 @@ An **EC target** is a named setpoint (e.g. "Veg EC 1.6 mS/cm"). Programs referen
 
 A **fertigation program** is a recipe + EC target + schedule reference. It's the "standard operating procedure" for feeding a zone at a given growth stage. `GET/POST /farms/{id}/fertigation/programs`, `PATCH/DELETE /fertigation/programs/{rid}`.
 
+**Program actions (Phase 20.9 WS4).** A program can now attach structured **executable actions** — `control_actuator`, `create_task`, or `send_notification` — through `GET/POST /fertigation/programs/{id}/actions` (list / attach) and `PUT/DELETE /automation/actions/{id}` (edit / detach). Rows live in the same `gr33ncore.executable_actions` table that automation rules write to, with the single-parent CHECK (`rule_id`, `schedule_id`, `program_id` — exactly one) preventing accidental dual-binding. Legacy programs that still carry a `metadata.steps` array are handled transparently: the 20260515 backfill migration copies any well-formed steps into `executable_actions` on deploy, and the runtime resolver (`internal/automation.ResolveProgramActions`) falls back to synthesising actions from `metadata.steps` in memory if no DB rows exist yet. This is the "parallel read" path — it lets pre-backfill dev databases keep running while a migrated production has a single canonical source of truth. Malformed steps are skipped (both the SQL backfill and the Go resolver log a NOTICE / warning instead of aborting) so one bad row never blocks a deploy.
+
 ### Mixing events (what physically went into the tank)
 
 When an operator mixes a fresh batch of nutrient solution, they record a **mixing event** (`POST /farms/{id}/fertigation/mixing-events`) with:
@@ -197,6 +199,19 @@ Typical uses:
 Lifecycle: `POST /farms/{id}/tasks` → `PATCH /tasks/{id}/status` as work progresses → `PUT /tasks/{id}` to edit scope → `DELETE /tasks/{id}` (soft delete) when cancelled or duplicated.
 
 The Tasks page groups by status and priority; the Dashboard shows high-priority and overdue tasks inline so the farm's daily work is visible without digging.
+
+### Labor time tracking (Phase 20.9 WS1–WS2)
+
+Every task carries a **labor log** — a list of `task_labor_log` rows capturing "who worked, when, how long, at what rate." Entries are created either:
+
+- **Manually** — `POST /tasks/{id}/labor` with `started_at`, `ended_at`, `minutes`, and optionally `hourly_rate_snapshot` + `currency`. Good for backfilling work done offline.
+- **Via a timer** — `POST /tasks/{id}/labor/start` opens an entry for the logged-in user and leaves `ended_at` NULL; `POST /tasks/{id}/labor/stop` closes it, captures elapsed minutes, and snapshots the user's profile rate (or an explicit override body). A second `start` while one is open 409s; a `stop` with no open entry 404s.
+
+`tasks.time_spent_minutes` is recomputed from the summed `minutes` column after every insert / update / delete (`RecalcTaskTimeSpentMinutes` helper), so the Tasks list can surface cumulative time without joining.
+
+**Auto-cost on close.** When a labor log lands with `ended_at` set and `minutes > 0`, the autologger (`internal/costing.LogLaborEntry`) resolves the rate (log snapshot > profile default > skip), multiplies by minutes/60, and writes one idempotent `cost_transactions` row with `category='labor_wages'`, `related_table_name='task_labor_log'`, `related_record_id=<labor_log.id>`. The idempotency key is `labor:<id>`, so retries and timer-edit round-trips never double-book. Deleting a labor row fires `ReverseLaborEntry`, which stamps a compensating negative row under `labor_void:<id>`; nothing is physically deleted, the ledger nets to zero.
+
+**User rate defaults.** Each user's profile carries `hourly_rate` + `hourly_rate_currency` (nullable, managed via `PATCH /profile/hourly-rate`). The handler enforces that both fields are set or both cleared — a lone rate with no currency is useless to the autologger. Operators without a default rate still show up on labor logs; their time just doesn't produce a cost row until a per-log snapshot is supplied.
 
 ---
 
@@ -386,7 +401,8 @@ guards so a direct re-run writes zero new rows.
 | **Device** | The hardware running actuators / bridging sensors (usually a Pi). Has online/offline status and a `pending_command` slot. |
 | **Schedule** | Cron + meta_data; triggers an automation action on a clock. Can carry preconditions (sensor-state interlocks) that must pass before firing. |
 | **Automation rule** | Sensor-driven peer of a schedule. Fires when `conditions_jsonb` (ALL/ANY of `{sensor_id, op, value}` predicates) evaluates true, then runs an ordered list of `executable_actions`. Honors `cooldown_period_seconds`. |
-| **Executable action** | One step attached to a rule — `control_actuator`, `create_task`, or `send_notification` in Phase 20. Other enum values are reserved for later phases and rejected at creation today. |
+| **Executable action** | One step attached to exactly one parent — an automation rule, a schedule, or (Phase 20.9 WS3/WS4) a fertigation program. Action types supported in Phase 20 are `control_actuator`, `create_task`, `send_notification`; the other enum values are reserved for later phases and rejected at creation today. The single-parent CHECK (`chk_executable_action_parent`) prevents a row from binding to more than one source. |
+| **Labor log** | Row in `gr33ncore.task_labor_log`. Captures (user, started_at, ended_at, minutes) with an optional (hourly_rate_snapshot, currency). Open entries (NULL `ended_at`) are timers; closed entries (populated `ended_at` + `minutes`) fire the labor autologger. Deletion writes a compensating negative cost row instead of erasing history. |
 | **Automation run** | One execution of *either* a schedule *or* a rule; has status (`success|partial_success|failed|skipped`), a `details` JSON, and a nullable `schedule_id` or `rule_id` pointing back at what triggered it. |
 | **Program** | A fertigation recipe/EC-target/schedule triplet. |
 | **EC target** | A named EC setpoint (e.g. "flower EC 2.0"). |

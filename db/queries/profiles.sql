@@ -3,12 +3,14 @@
 -- ============================================================
 
 -- name: GetProfileByUserID :one
-SELECT user_id, full_name, email, avatar_url, role, preferences, created_at, updated_at
+SELECT user_id, full_name, email, avatar_url, role, preferences,
+       hourly_rate, hourly_rate_currency, created_at, updated_at
 FROM gr33ncore.profiles
 WHERE user_id = $1;
 
 -- name: GetProfileByEmail :one
-SELECT user_id, full_name, email, avatar_url, role, preferences, created_at, updated_at
+SELECT user_id, full_name, email, avatar_url, role, preferences,
+       hourly_rate, hourly_rate_currency, created_at, updated_at
 FROM gr33ncore.profiles
 WHERE email = $1;
 
@@ -20,6 +22,17 @@ RETURNING *;
 -- name: UpdateProfile :one
 UPDATE gr33ncore.profiles
 SET full_name = $2, avatar_url = $3, role = $4, preferences = $5, updated_at = NOW()
+WHERE user_id = $1
+RETURNING *;
+
+-- name: UpdateProfileHourlyRate :one
+-- Phase 20.9 WS1 — operator-set default wage. NULL clears the rate
+-- (and the autologger will skip cost rows for logs with no
+-- snapshot).
+UPDATE gr33ncore.profiles
+SET hourly_rate = sqlc.narg('hourly_rate')::numeric,
+    hourly_rate_currency = sqlc.narg('hourly_rate_currency')::char(3),
+    updated_at = NOW()
 WHERE user_id = $1
 RETURNING *;
 

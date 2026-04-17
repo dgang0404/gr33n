@@ -12,6 +12,54 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const closeTaskLaborLog = `-- name: CloseTaskLaborLog :one
+UPDATE gr33ncore.task_labor_log
+SET ended_at = $2,
+    minutes = $3,
+    hourly_rate_snapshot = $4::numeric,
+    currency = $5::char(3),
+    updated_at = NOW()
+WHERE id = $1
+RETURNING id, farm_id, task_id, user_id, started_at, ended_at, minutes, hourly_rate_snapshot, currency, notes, created_at, updated_at
+`
+
+type CloseTaskLaborLogParams struct {
+	ID                 int64              `db:"id" json:"id"`
+	EndedAt            pgtype.Timestamptz `db:"ended_at" json:"ended_at"`
+	Minutes            int32              `db:"minutes" json:"minutes"`
+	HourlyRateSnapshot pgtype.Numeric     `db:"hourly_rate_snapshot" json:"hourly_rate_snapshot"`
+	Currency           *string            `db:"currency" json:"currency"`
+}
+
+// Phase 20.9 WS1 — stops a running timer. Rate is captured at close
+// time, not start, so a rate change mid-shift applies to the rest of
+// the shift, not retroactively.
+func (q *Queries) CloseTaskLaborLog(ctx context.Context, arg CloseTaskLaborLogParams) (Gr33ncoreTaskLaborLog, error) {
+	row := q.db.QueryRow(ctx, closeTaskLaborLog,
+		arg.ID,
+		arg.EndedAt,
+		arg.Minutes,
+		arg.HourlyRateSnapshot,
+		arg.Currency,
+	)
+	var i Gr33ncoreTaskLaborLog
+	err := row.Scan(
+		&i.ID,
+		&i.FarmID,
+		&i.TaskID,
+		&i.UserID,
+		&i.StartedAt,
+		&i.EndedAt,
+		&i.Minutes,
+		&i.HourlyRateSnapshot,
+		&i.Currency,
+		&i.Notes,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const createTaskLaborLog = `-- name: CreateTaskLaborLog :one
 INSERT INTO gr33ncore.task_labor_log (
     farm_id, task_id, user_id, started_at, ended_at, minutes,
@@ -69,6 +117,40 @@ DELETE FROM gr33ncore.task_labor_log WHERE id = $1
 func (q *Queries) DeleteTaskLaborLog(ctx context.Context, id int64) error {
 	_, err := q.db.Exec(ctx, deleteTaskLaborLog, id)
 	return err
+}
+
+const getOpenTaskLaborLogForUser = `-- name: GetOpenTaskLaborLogForUser :one
+SELECT id, farm_id, task_id, user_id, started_at, ended_at, minutes, hourly_rate_snapshot, currency, notes, created_at, updated_at FROM gr33ncore.task_labor_log
+WHERE task_id = $1 AND user_id = $2 AND ended_at IS NULL
+ORDER BY started_at DESC
+LIMIT 1
+`
+
+type GetOpenTaskLaborLogForUserParams struct {
+	TaskID int64       `db:"task_id" json:"task_id"`
+	UserID pgtype.UUID `db:"user_id" json:"user_id"`
+}
+
+// Phase 20.9 WS1 — timer stop path. At most one open (ended_at IS NULL)
+// row per (task, user) is expected; the handler is the only writer.
+func (q *Queries) GetOpenTaskLaborLogForUser(ctx context.Context, arg GetOpenTaskLaborLogForUserParams) (Gr33ncoreTaskLaborLog, error) {
+	row := q.db.QueryRow(ctx, getOpenTaskLaborLogForUser, arg.TaskID, arg.UserID)
+	var i Gr33ncoreTaskLaborLog
+	err := row.Scan(
+		&i.ID,
+		&i.FarmID,
+		&i.TaskID,
+		&i.UserID,
+		&i.StartedAt,
+		&i.EndedAt,
+		&i.Minutes,
+		&i.HourlyRateSnapshot,
+		&i.Currency,
+		&i.Notes,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
 }
 
 const getTaskLaborLogByID = `-- name: GetTaskLaborLogByID :one

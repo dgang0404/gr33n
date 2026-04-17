@@ -220,6 +220,18 @@
             <span v-else></span>
             <span v-if="task.due_date">Due {{ task.due_date }}</span>
           </div>
+          <div class="flex items-center gap-3 mb-2 text-[11px]">
+            <span class="text-zinc-500">
+              Time: <span class="text-zinc-200">{{ formatMinutes(task.time_spent_minutes) }}</span>
+            </span>
+            <button
+              type="button"
+              @click="openTimeLog(task)"
+              class="text-green-500 hover:text-green-400"
+            >
+              Time log
+            </button>
+          </div>
           <div class="flex items-center gap-3">
             <button
               v-if="col.next"
@@ -294,6 +306,64 @@
             </div>
           </div>
         </div>
+      </div>
+    </div>
+
+    <!-- Time log modal (Phase 20.9 WS1/WS2) -->
+    <div v-if="timeLogTask" class="fixed inset-0 z-50 bg-black/70 p-4 flex items-start justify-center pt-16" @click.self="closeTimeLog">
+      <div class="bg-zinc-900 border border-zinc-700 rounded-xl p-5 w-full max-w-lg space-y-4">
+        <div class="flex items-center justify-between">
+          <h3 class="text-white font-semibold text-sm">Time log — {{ timeLogTask.title }}</h3>
+          <button @click="closeTimeLog" class="text-xs text-zinc-400 hover:text-zinc-200">Close</button>
+        </div>
+        <p class="text-xs text-zinc-400">
+          Total: <span class="text-zinc-200 font-medium">{{ formatMinutes(timeLogTask.time_spent_minutes) }}</span>
+          &middot;
+          {{ timeLogEntries.length }} entr{{ timeLogEntries.length === 1 ? 'y' : 'ies' }}
+        </p>
+        <div class="flex items-center gap-3">
+          <button
+            v-if="!openTimerEntry"
+            @click="startTimer"
+            :disabled="timerBusy"
+            class="text-xs px-3 py-1.5 rounded bg-emerald-900/50 text-emerald-300 border border-emerald-800 hover:bg-emerald-900/70 disabled:opacity-40"
+          >Start timer</button>
+          <button
+            v-else
+            @click="stopTimer"
+            :disabled="timerBusy"
+            class="text-xs px-3 py-1.5 rounded bg-red-900/50 text-red-300 border border-red-800 hover:bg-red-900/70 disabled:opacity-40"
+          >Stop timer (running {{ runningTimerMinutes }} min)</button>
+        </div>
+        <form @submit.prevent="submitManualLog" class="border-t border-zinc-800 pt-3 space-y-2">
+          <p class="text-[11px] text-zinc-500">Quick log — enter elapsed minutes for work you already did.</p>
+          <div class="flex items-center gap-2">
+            <input v-model.number="manualMinutes" type="number" min="1" placeholder="Minutes"
+              class="w-24 bg-zinc-950 border border-zinc-700 rounded px-2 py-1 text-xs text-white" />
+            <input v-model.number="manualRate" type="number" min="0" step="0.01" placeholder="Rate (opt)"
+              class="w-28 bg-zinc-950 border border-zinc-700 rounded px-2 py-1 text-xs text-white" />
+            <input v-model="manualCurrency" type="text" maxlength="3" placeholder="USD"
+              class="w-16 bg-zinc-950 border border-zinc-700 rounded px-2 py-1 text-xs text-white uppercase" />
+            <button type="submit" :disabled="timerBusy || !manualMinutes"
+              class="text-xs px-2 py-1 rounded bg-zinc-800 border border-zinc-700 text-zinc-200 hover:bg-zinc-700 disabled:opacity-40">
+              Log
+            </button>
+          </div>
+        </form>
+        <div v-if="timeLogEntries.length === 0" class="text-[11px] text-zinc-500">No entries yet.</div>
+        <ul v-else class="space-y-1 max-h-60 overflow-auto pr-1">
+          <li v-for="e in timeLogEntries" :key="e.id"
+              class="flex items-center justify-between text-[11px] bg-zinc-950 border border-zinc-800 rounded px-2 py-1.5">
+            <div class="flex-1">
+              <span class="text-zinc-200">{{ e.minutes }} min</span>
+              <span v-if="e.hourly_rate_snapshot" class="text-zinc-500"> @ {{ Number(e.hourly_rate_snapshot).toFixed(2) }} {{ e.currency || '' }}</span>
+              <span v-if="!e.ended_at" class="ml-2 text-emerald-400">(running)</span>
+            </div>
+            <span class="text-zinc-500">{{ formatTimestamp(e.started_at) }}</span>
+            <button @click="deleteLaborEntry(e)" class="ml-2 text-red-500 hover:text-red-400">&times;</button>
+          </li>
+        </ul>
+        <p v-if="timeLogError" class="text-xs text-red-400">{{ timeLogError }}</p>
       </div>
     </div>
 
@@ -404,6 +474,136 @@ async function doDelete() {
   } finally {
     submitting.value = false
   }
+}
+
+// ── Time log (Phase 20.9 WS1/WS2) ────────────────────────────────────
+const timeLogTask = ref(null)
+const timeLogEntries = ref([])
+const timeLogError = ref('')
+const timerBusy = ref(false)
+const manualMinutes = ref(null)
+const manualRate = ref(null)
+const manualCurrency = ref('USD')
+const nowTick = ref(Date.now())
+let timerInterval = null
+
+const openTimerEntry = computed(() =>
+  timeLogEntries.value.find((e) => !e.ended_at) || null,
+)
+const runningTimerMinutes = computed(() => {
+  const e = openTimerEntry.value
+  if (!e) return 0
+  const started = new Date(e.started_at).getTime()
+  return Math.max(0, Math.floor((nowTick.value - started) / 60000))
+})
+
+async function openTimeLog(task) {
+  timeLogTask.value = task
+  timeLogError.value = ''
+  try {
+    timeLogEntries.value = await store.loadTaskLabor(task.id)
+  } catch (e) {
+    timeLogError.value = e.response?.data?.error || 'Failed to load time log'
+    timeLogEntries.value = []
+  }
+  if (!timerInterval) {
+    timerInterval = setInterval(() => { nowTick.value = Date.now() }, 30000)
+  }
+}
+
+function closeTimeLog() {
+  timeLogTask.value = null
+  timeLogEntries.value = []
+  timeLogError.value = ''
+  if (timerInterval) {
+    clearInterval(timerInterval)
+    timerInterval = null
+  }
+}
+
+async function startTimer() {
+  if (!timeLogTask.value) return
+  timerBusy.value = true
+  timeLogError.value = ''
+  try {
+    await store.startTaskTimer(timeLogTask.value.id)
+    timeLogEntries.value = await store.loadTaskLabor(timeLogTask.value.id)
+  } catch (e) {
+    timeLogError.value = e.response?.data?.error || 'Failed to start timer'
+  } finally {
+    timerBusy.value = false
+  }
+}
+
+async function stopTimer() {
+  if (!timeLogTask.value) return
+  timerBusy.value = true
+  timeLogError.value = ''
+  try {
+    await store.stopTaskTimer(timeLogTask.value.id, {})
+    timeLogEntries.value = await store.loadTaskLabor(timeLogTask.value.id)
+    await store.loadTasks(farmContext.farmId) // refresh time_spent_minutes
+  } catch (e) {
+    timeLogError.value = e.response?.data?.error || 'Failed to stop timer'
+  } finally {
+    timerBusy.value = false
+  }
+}
+
+async function submitManualLog() {
+  if (!timeLogTask.value || !manualMinutes.value) return
+  timerBusy.value = true
+  timeLogError.value = ''
+  try {
+    const now = new Date()
+    const started = new Date(now.getTime() - manualMinutes.value * 60000)
+    const body = {
+      started_at: started.toISOString(),
+      ended_at: now.toISOString(),
+      minutes: Math.max(1, Math.floor(manualMinutes.value)),
+    }
+    if (manualRate.value && Number(manualRate.value) > 0) {
+      body.hourly_rate_snapshot = Number(manualRate.value)
+      body.currency = (manualCurrency.value || 'USD').toUpperCase()
+    }
+    await store.createTaskLabor(timeLogTask.value.id, body)
+    timeLogEntries.value = await store.loadTaskLabor(timeLogTask.value.id)
+    await store.loadTasks(farmContext.farmId)
+    manualMinutes.value = null
+    manualRate.value = null
+  } catch (e) {
+    timeLogError.value = e.response?.data?.error || 'Failed to log time'
+  } finally {
+    timerBusy.value = false
+  }
+}
+
+async function deleteLaborEntry(e) {
+  timerBusy.value = true
+  timeLogError.value = ''
+  try {
+    await store.deleteTaskLabor(e.id)
+    timeLogEntries.value = await store.loadTaskLabor(timeLogTask.value.id)
+    await store.loadTasks(farmContext.farmId)
+  } catch (err) {
+    timeLogError.value = err.response?.data?.error || 'Failed to delete entry'
+  } finally {
+    timerBusy.value = false
+  }
+}
+
+function formatMinutes(min) {
+  if (!min || min <= 0) return '0m'
+  if (min < 60) return `${min}m`
+  const h = Math.floor(min / 60)
+  const m = min % 60
+  return m ? `${h}h ${m}m` : `${h}h`
+}
+
+function formatTimestamp(ts) {
+  if (!ts) return ''
+  const d = new Date(ts)
+  return d.toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
 }
 
 onMounted(async () => {

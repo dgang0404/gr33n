@@ -1548,14 +1548,16 @@ type Gr33ncoreOrganizationMembership struct {
 }
 
 type Gr33ncoreProfile struct {
-	UserID      uuid.UUID                `db:"user_id" json:"user_id"`
-	FullName    *string                  `db:"full_name" json:"full_name"`
-	Email       string                   `db:"email" json:"email"`
-	AvatarUrl   *string                  `db:"avatar_url" json:"avatar_url"`
-	Role        commontypes.UserRoleEnum `db:"role" json:"role"`
-	Preferences []byte                   `db:"preferences" json:"preferences"`
-	CreatedAt   time.Time                `db:"created_at" json:"created_at"`
-	UpdatedAt   time.Time                `db:"updated_at" json:"updated_at"`
+	UserID             uuid.UUID                `db:"user_id" json:"user_id"`
+	FullName           *string                  `db:"full_name" json:"full_name"`
+	Email              string                   `db:"email" json:"email"`
+	AvatarUrl          *string                  `db:"avatar_url" json:"avatar_url"`
+	Role               commontypes.UserRoleEnum `db:"role" json:"role"`
+	Preferences        []byte                   `db:"preferences" json:"preferences"`
+	HourlyRate         pgtype.Numeric           `db:"hourly_rate" json:"hourly_rate"`
+	HourlyRateCurrency *string                  `db:"hourly_rate_currency" json:"hourly_rate_currency"`
+	CreatedAt          time.Time                `db:"created_at" json:"created_at"`
+	UpdatedAt          time.Time                `db:"updated_at" json:"updated_at"`
 }
 
 type Gr33ncoreSchedule struct {

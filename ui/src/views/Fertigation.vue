@@ -235,6 +235,60 @@
               <router-link :to="{ path: '/inventory', query: { tab: 'recipes' } }" class="text-green-600 hover:text-green-400">{{ recipeName(p.application_recipe_id) }}</router-link>
             </p>
           </div>
+
+          <!-- Phase 20.9 WS4 — per-program executable_actions editor. -->
+          <div class="border-t border-zinc-800/80 pt-2 mt-2">
+            <div class="flex items-center justify-between">
+              <p class="text-zinc-500 text-xs">
+                Actions
+                <span class="text-zinc-600">({{ (programActions[p.id] || []).length }})</span>
+                <HelpTip position="top">Program actions run in order when the worker picks the program up. Prefer this list over the legacy <span class="font-mono">metadata.steps</span> array — new rows are written directly to <span class="font-mono">executable_actions</span>.</HelpTip>
+              </p>
+              <button @click="toggleProgramActions(p.id)" class="text-xs text-green-600 hover:text-green-400">
+                {{ expandedActions[p.id] ? 'Hide' : 'Manage' }}
+              </button>
+            </div>
+            <div v-if="expandedActions[p.id]" class="mt-2 space-y-2">
+              <div v-for="a in (programActions[p.id] || [])" :key="a.id"
+                class="flex items-center justify-between bg-zinc-950 border border-zinc-800 rounded px-2 py-1 text-xs">
+                <span class="text-zinc-300">
+                  <span class="text-zinc-500">#{{ a.execution_order }}</span>
+                  ·
+                  <span class="font-mono">{{ a.action_type }}</span>
+                  <span v-if="a.action_type === 'control_actuator' && a.action_command" class="text-zinc-500">
+                    → {{ a.action_command }}
+                  </span>
+                </span>
+                <button @click="removeProgramAction(p.id, a.id)" class="text-red-400 hover:text-red-300">&times;</button>
+              </div>
+
+              <form @submit.prevent="submitProgramAction(p.id)"
+                class="grid grid-cols-1 sm:grid-cols-3 gap-2 items-end bg-zinc-950 border border-zinc-800 rounded p-2">
+                <select v-model="programActionDraft[p.id].action_type"
+                  class="input-field text-xs sm:col-span-1">
+                  <option value="control_actuator">control_actuator</option>
+                  <option value="create_task">create_task</option>
+                  <option value="send_notification">send_notification</option>
+                </select>
+                <input v-if="programActionDraft[p.id].action_type === 'control_actuator'"
+                  v-model="programActionDraft[p.id].action_command" placeholder="command (on/off/…)"
+                  class="input-field text-xs" />
+                <input v-if="programActionDraft[p.id].action_type === 'control_actuator'"
+                  v-model.number="programActionDraft[p.id].target_actuator_id" type="number" placeholder="actuator id"
+                  class="input-field text-xs" />
+                <input v-if="programActionDraft[p.id].action_type === 'send_notification'"
+                  v-model.number="programActionDraft[p.id].target_notification_template_id" type="number" placeholder="template id"
+                  class="input-field text-xs sm:col-span-2" />
+                <input v-if="programActionDraft[p.id].action_type === 'create_task'"
+                  v-model="programActionDraft[p.id].task_title" placeholder="task title"
+                  class="input-field text-xs sm:col-span-2" />
+                <button type="submit" class="px-2 py-1 bg-green-700 hover:bg-green-600 text-white text-xs rounded sm:col-span-3">
+                  + Add action
+                </button>
+              </form>
+              <p v-if="programActionErrors[p.id]" class="text-xs text-red-400">{{ programActionErrors[p.id] }}</p>
+            </div>
+          </div>
         </div>
       </div>
       <p v-if="!programs.length" class="text-zinc-500 text-sm">No programs configured yet.</p>
@@ -535,6 +589,11 @@ const farmId = computed(() => farmContext.farmId)
 const reservoirs = ref([])
 const ecTargets = ref([])
 const programs = ref([])
+// Phase 20.9 WS4 — per-program executable_actions managed inline under each card.
+const programActions = reactive({})
+const programActionDraft = reactive({})
+const programActionErrors = reactive({})
+const expandedActions = reactive({})
 const nfRecipes = ref([])
 const schedules = ref([])
 const nfInputs = ref([])
@@ -941,6 +1000,74 @@ async function submitProgram() {
     }
     programs.value = await store.loadFertigationPrograms(farmId.value)
   } finally { saving.value = false }
+}
+
+// Phase 20.9 WS4 — program action editor helpers. Lives alongside the program
+// card so operators can attach control_actuator / create_task / send_notification
+// actions without jumping to a separate view.
+function ensureProgramActionDraft(programId) {
+  if (!programActionDraft[programId]) {
+    programActionDraft[programId] = {
+      action_type: 'control_actuator',
+      target_actuator_id: null,
+      target_notification_template_id: null,
+      action_command: '',
+      task_title: '',
+    }
+  }
+}
+
+async function toggleProgramActions(programId) {
+  ensureProgramActionDraft(programId)
+  if (expandedActions[programId]) {
+    expandedActions[programId] = false
+    return
+  }
+  expandedActions[programId] = true
+  if (!programActions[programId]) {
+    try {
+      programActions[programId] = await store.loadProgramActions(programId)
+    } catch (err) {
+      programActionErrors[programId] = err?.response?.data?.error || err.message || 'Failed to load actions'
+    }
+  }
+}
+
+async function submitProgramAction(programId) {
+  const draft = programActionDraft[programId]
+  if (!draft) return
+  programActionErrors[programId] = ''
+  const current = programActions[programId] || []
+  const payload = {
+    execution_order: current.length + 1,
+    action_type: draft.action_type,
+    target_actuator_id: draft.action_type === 'control_actuator' ? (draft.target_actuator_id || null) : null,
+    target_notification_template_id: draft.action_type === 'send_notification' ? (draft.target_notification_template_id || null) : null,
+    action_command: draft.action_type === 'control_actuator' ? (draft.action_command || null) : null,
+    action_parameters: draft.action_type === 'create_task' && draft.task_title
+      ? { title: draft.task_title }
+      : null,
+  }
+  try {
+    const created = await store.createProgramAction(programId, payload)
+    programActions[programId] = [...current, created]
+    // Reset relevant fields but keep the action_type pinned for rapid entry.
+    draft.action_command = ''
+    draft.task_title = ''
+    draft.target_actuator_id = null
+    draft.target_notification_template_id = null
+  } catch (err) {
+    programActionErrors[programId] = err?.response?.data?.error || err.message || 'Failed to create action'
+  }
+}
+
+async function removeProgramAction(programId, actionId) {
+  try {
+    await store.deleteProgramAction(actionId)
+    programActions[programId] = (programActions[programId] || []).filter(a => a.id !== actionId)
+  } catch (err) {
+    programActionErrors[programId] = err?.response?.data?.error || err.message || 'Failed to delete action'
+  }
 }
 
 async function submitEvent() {

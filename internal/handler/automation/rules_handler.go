@@ -47,6 +47,7 @@ type actionView struct {
 	ID                           int64                                `json:"id"`
 	RuleID                       *int64                               `json:"rule_id"`
 	ScheduleID                   *int64                               `json:"schedule_id"`
+	ProgramID                    *int64                               `json:"program_id"`
 	ExecutionOrder               int32                                `json:"execution_order"`
 	ActionType                   commontypes.ExecutableActionTypeEnum `json:"action_type"`
 	TargetActuatorID             *int64                               `json:"target_actuator_id"`
@@ -99,6 +100,7 @@ func toActionView(a db.Gr33ncoreExecutableAction) actionView {
 		ID:                           a.ID,
 		RuleID:                       a.RuleID,
 		ScheduleID:                   a.ScheduleID,
+		ProgramID:                    a.ProgramID,
 		ExecutionOrder:               a.ExecutionOrder,
 		ActionType:                   a.ActionType,
 		TargetActuatorID:             a.TargetActuatorID,
@@ -703,16 +705,11 @@ func (h *Handler) UpdateAction(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusInternalServerError, "failed to load action")
 		return
 	}
-	if existing.RuleID == nil {
-		httputil.WriteError(w, http.StatusBadRequest, "this endpoint only manages rule-bound actions; use the schedules API for schedule-bound actions")
+	farmID, ok := h.resolveActionFarmID(w, r, existing)
+	if !ok {
 		return
 	}
-	rule, err := h.q.GetAutomationRuleByID(r.Context(), *existing.RuleID)
-	if err != nil {
-		httputil.WriteError(w, http.StatusInternalServerError, "failed to resolve parent rule")
-		return
-	}
-	if !farmauthz.RequireFarmOperate(w, r, h.q, rule.FarmID) {
+	if !farmauthz.RequireFarmOperate(w, r, h.q, farmID) {
 		return
 	}
 	var body executableActionBody
@@ -724,7 +721,7 @@ func (h *Handler) UpdateAction(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusBadRequest, err.Error())
 		return
 	}
-	params, err := validateActionShape(&body, rule.FarmID, h.q, r.Context())
+	params, err := validateActionShape(&body, farmID, h.q, r.Context())
 	if err != nil {
 		httputil.WriteError(w, http.StatusBadRequest, err.Error())
 		return
@@ -763,16 +760,11 @@ func (h *Handler) DeleteAction(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusInternalServerError, "failed to load action")
 		return
 	}
-	if existing.RuleID == nil {
-		httputil.WriteError(w, http.StatusBadRequest, "this endpoint only manages rule-bound actions; use the schedules API for schedule-bound actions")
+	farmID, ok := h.resolveActionFarmID(w, r, existing)
+	if !ok {
 		return
 	}
-	rule, err := h.q.GetAutomationRuleByID(r.Context(), *existing.RuleID)
-	if err != nil {
-		httputil.WriteError(w, http.StatusInternalServerError, "failed to resolve parent rule")
-		return
-	}
-	if !farmauthz.RequireFarmOperate(w, r, h.q, rule.FarmID) {
+	if !farmauthz.RequireFarmOperate(w, r, h.q, farmID) {
 		return
 	}
 	if err := h.q.DeleteExecutableAction(r.Context(), id); err != nil {
@@ -780,4 +772,125 @@ func (h *Handler) DeleteAction(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
+}
+
+// resolveActionFarmID walks the action's parent (rule/schedule/program) and
+// returns the owning farm_id. It writes a 4xx/5xx response and returns ok=false
+// on any failure.
+func (h *Handler) resolveActionFarmID(w http.ResponseWriter, r *http.Request, a db.Gr33ncoreExecutableAction) (int64, bool) {
+	switch {
+	case a.RuleID != nil:
+		rule, err := h.q.GetAutomationRuleByID(r.Context(), *a.RuleID)
+		if err != nil {
+			httputil.WriteError(w, http.StatusInternalServerError, "failed to resolve parent rule")
+			return 0, false
+		}
+		return rule.FarmID, true
+	case a.ProgramID != nil:
+		prog, err := h.q.GetFertigationProgramByID(r.Context(), *a.ProgramID)
+		if err != nil {
+			httputil.WriteError(w, http.StatusInternalServerError, "failed to resolve parent program")
+			return 0, false
+		}
+		return prog.FarmID, true
+	case a.ScheduleID != nil:
+		httputil.WriteError(w, http.StatusBadRequest, "schedule-bound actions are managed via the schedules API")
+		return 0, false
+	default:
+		httputil.WriteError(w, http.StatusInternalServerError, "orphaned executable_action: no parent bound")
+		return 0, false
+	}
+}
+
+// ── Executable actions (program-bound) ─────────────────────────────────────
+//
+// Phase 20.9 WS4 mirrors the rule-bound CRUD onto fertigation programs so the
+// program editor can attach structured actions (control_actuator, create_task,
+// send_notification) instead of storing them in programs.metadata.steps.
+
+// GET /fertigation/programs/{id}/actions
+func (h *Handler) ListActionsByProgram(w http.ResponseWriter, r *http.Request) {
+	programID, err := httputil.PathID(r.URL.Path, 3)
+	if err != nil {
+		httputil.WriteError(w, http.StatusBadRequest, "invalid program id")
+		return
+	}
+	prog, err := h.q.GetFertigationProgramByID(r.Context(), programID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			httputil.WriteError(w, http.StatusNotFound, "program not found")
+			return
+		}
+		httputil.WriteError(w, http.StatusInternalServerError, "failed to load program")
+		return
+	}
+	if !farmauthz.RequireFarmMember(w, r, h.q, prog.FarmID) {
+		return
+	}
+	rows, err := h.q.ListExecutableActionsByProgram(r.Context(), &programID)
+	if err != nil {
+		httputil.WriteError(w, http.StatusInternalServerError, "failed to list actions")
+		return
+	}
+	if rows == nil {
+		rows = []db.Gr33ncoreExecutableAction{}
+	}
+	httputil.WriteJSON(w, http.StatusOK, toActionViews(rows))
+}
+
+// POST /fertigation/programs/{id}/actions
+func (h *Handler) CreateActionForProgram(w http.ResponseWriter, r *http.Request) {
+	programID, err := httputil.PathID(r.URL.Path, 3)
+	if err != nil {
+		httputil.WriteError(w, http.StatusBadRequest, "invalid program id")
+		return
+	}
+	prog, err := h.q.GetFertigationProgramByID(r.Context(), programID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			httputil.WriteError(w, http.StatusNotFound, "program not found")
+			return
+		}
+		httputil.WriteError(w, http.StatusInternalServerError, "failed to load program")
+		return
+	}
+	if !farmauthz.RequireFarmOperate(w, r, h.q, prog.FarmID) {
+		return
+	}
+	var body executableActionBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		httputil.WriteError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+	// Reject two-source writes before hitting the DB CHECK.
+	if body.ScheduleID != nil || body.ProgramID != nil {
+		httputil.WriteError(w, http.StatusBadRequest,
+			"executable_actions may bind to exactly one source; this endpoint binds to the program in the URL, so schedule_id and program_id must be omitted")
+		return
+	}
+	if err := validateActionType(body.ActionType); err != nil {
+		httputil.WriteError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	params, err := validateActionShape(&body, prog.FarmID, h.q, r.Context())
+	if err != nil {
+		httputil.WriteError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	row, err := h.q.CreateExecutableActionForProgram(r.Context(), db.CreateExecutableActionForProgramParams{
+		ProgramID:                    &programID,
+		ExecutionOrder:               body.ExecutionOrder,
+		ActionType:                   commontypes.ExecutableActionTypeEnum(body.ActionType),
+		TargetActuatorID:             body.TargetActuatorID,
+		TargetAutomationRuleID:       nil,
+		TargetNotificationTemplateID: body.TargetNotificationTemplateID,
+		ActionCommand:                body.ActionCommand,
+		ActionParameters:             params,
+		DelayBeforeExecutionSeconds:  body.DelayBeforeExecutionSeconds,
+	})
+	if err != nil {
+		httputil.WriteError(w, http.StatusInternalServerError, "failed to create action: "+err.Error())
+		return
+	}
+	httputil.WriteJSON(w, http.StatusCreated, toActionView(row))
 }

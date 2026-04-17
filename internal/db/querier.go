@@ -18,6 +18,10 @@ type Querier interface {
 	ArchiveAnimalGroup(ctx context.Context, arg ArchiveAnimalGroupParams) (Gr33nanimalsAnimalGroup, error)
 	ClearDevicePendingCommand(ctx context.Context, id int64) error
 	ClearSensorAlertBreachStart(ctx context.Context, id int64) error
+	// Phase 20.9 WS1 — stops a running timer. Rate is captured at close
+	// time, not start, so a rate change mid-shift applies to the rest of
+	// the shift, not retroactively.
+	CloseTaskLaborLog(ctx context.Context, arg CloseTaskLaborLogParams) (Gr33ncoreTaskLaborLog, error)
 	CountDevicesByStatusForFarm(ctx context.Context, farmID int64) ([]CountDevicesByStatusForFarmRow, error)
 	CountInsertCommonsSyncAttemptsSince(ctx context.Context, arg CountInsertCommonsSyncAttemptsSinceParams) (int64, error)
 	CountTasksByStatusForFarm(ctx context.Context, farmID int64) ([]CountTasksByStatusForFarmRow, error)
@@ -219,6 +223,9 @@ type Querier interface {
 	GetLifecycleEventByID(ctx context.Context, id int64) (Gr33nanimalsAnimalLifecycleEvent, error)
 	GetMixingEventByID(ctx context.Context, id int64) (Gr33nfertigationMixingEvent, error)
 	GetNotificationTemplateByID(ctx context.Context, id int64) (Gr33ncoreNotificationTemplate, error)
+	// Phase 20.9 WS1 — timer stop path. At most one open (ended_at IS NULL)
+	// row per (task, user) is expected; the handler is the only writer.
+	GetOpenTaskLaborLogForUser(ctx context.Context, arg GetOpenTaskLaborLogForUserParams) (Gr33ncoreTaskLaborLog, error)
 	GetOrganizationByID(ctx context.Context, id int64) (Gr33ncoreOrganization, error)
 	GetOrganizationMembership(ctx context.Context, arg GetOrganizationMembershipParams) (Gr33ncoreOrganizationMembership, error)
 	GetOrganizationUsageSummary(ctx context.Context, organizationID *int64) (GetOrganizationUsageSummaryRow, error)
@@ -445,6 +452,10 @@ type Querier interface {
 	UpdateOrganization(ctx context.Context, arg UpdateOrganizationParams) (Gr33ncoreOrganization, error)
 	UpdatePlant(ctx context.Context, arg UpdatePlantParams) (Gr33ncropsPlant, error)
 	UpdateProfile(ctx context.Context, arg UpdateProfileParams) (Gr33ncoreProfile, error)
+	// Phase 20.9 WS1 — operator-set default wage. NULL clears the rate
+	// (and the autologger will skip cost rows for logs with no
+	// snapshot).
+	UpdateProfileHourlyRate(ctx context.Context, arg UpdateProfileHourlyRateParams) (Gr33ncoreProfile, error)
 	UpdateProgram(ctx context.Context, arg UpdateProgramParams) (Gr33nfertigationProgram, error)
 	UpdateRecipe(ctx context.Context, arg UpdateRecipeParams) (Gr33nnaturalfarmingApplicationRecipe, error)
 	UpdateReservoir(ctx context.Context, arg UpdateReservoirParams) (Gr33nfertigationReservoir, error)

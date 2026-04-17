@@ -19,6 +19,43 @@
       </div>
     </section>
 
+    <!-- Hourly rate (Phase 20.9 WS1/WS2) -->
+    <section class="bg-zinc-800 border border-zinc-700 rounded-xl p-5 mb-5">
+      <h2 class="text-white font-semibold mb-3 flex items-center gap-2">
+        <span>💰</span> Labor rate
+      </h2>
+      <p class="text-xs text-zinc-500 mb-3">
+        Default hourly wage used when you close a time log on a task and
+        don&rsquo;t override the rate. Historical logs keep whatever rate
+        was captured when they were closed — changing this never back-fills.
+        Leave both fields blank to disable auto-cost for your time.
+      </p>
+      <form @submit.prevent="saveHourlyRate" class="flex flex-wrap items-end gap-3">
+        <div class="flex flex-col gap-1">
+          <label class="text-zinc-400 text-[11px] uppercase tracking-wide">Rate / hour</label>
+          <input v-model.number="hourlyRateForm.rate" type="number" min="0" step="0.01"
+            placeholder="e.g. 25.00"
+            class="bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-1.5 text-sm text-white w-32" />
+        </div>
+        <div class="flex flex-col gap-1">
+          <label class="text-zinc-400 text-[11px] uppercase tracking-wide">Currency</label>
+          <input v-model="hourlyRateForm.currency" type="text" maxlength="3"
+            placeholder="USD"
+            class="bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-1.5 text-sm text-white w-24 uppercase" />
+        </div>
+        <button type="submit" :disabled="hourlyRateSaving"
+          class="text-xs px-3 py-1.5 rounded-lg bg-green-900/50 text-green-400 border border-green-800 hover:bg-green-900/70 disabled:opacity-40">
+          {{ hourlyRateSaving ? 'Saving…' : 'Save' }}
+        </button>
+        <button type="button" @click="clearHourlyRate" :disabled="hourlyRateSaving"
+          class="text-xs px-3 py-1.5 rounded-lg bg-zinc-900 border border-zinc-700 text-zinc-300 hover:bg-zinc-800 disabled:opacity-40">
+          Clear
+        </button>
+      </form>
+      <p v-if="hourlyRateMessage" class="mt-2 text-xs text-emerald-400">{{ hourlyRateMessage }}</p>
+      <p v-if="hourlyRateError" class="mt-2 text-xs text-red-400">{{ hourlyRateError }}</p>
+    </section>
+
     <!-- Change password -->
     <section class="bg-zinc-800 border border-zinc-700 rounded-xl p-5 mb-5">
       <h2 class="text-white font-semibold mb-4 flex items-center gap-2">
@@ -725,6 +762,52 @@ const applyStarterSaving = ref(false)
 const applyStarterError = ref(null)
 const applyStarterMsg = ref(null)
 
+// Hourly rate (Phase 20.9 WS1/WS2)
+const hourlyRateForm = reactive({ rate: null, currency: 'USD' })
+const hourlyRateSaving = ref(false)
+const hourlyRateError = ref('')
+const hourlyRateMessage = ref('')
+
+async function loadMyHourlyRate() {
+  try {
+    const p = await farmStore.loadMyProfile()
+    hourlyRateForm.rate = p.hourly_rate ?? null
+    hourlyRateForm.currency = p.hourly_rate_currency ?? 'USD'
+  } catch {
+    // noop — profile may 404 for freshly provisioned accounts
+  }
+}
+
+async function saveHourlyRate() {
+  hourlyRateSaving.value = true
+  hourlyRateError.value = ''
+  hourlyRateMessage.value = ''
+  try {
+    const rate = hourlyRateForm.rate
+    const cur = (hourlyRateForm.currency || '').toUpperCase().trim()
+    if (rate != null && Number(rate) >= 0) {
+      if (cur.length !== 3) {
+        throw new Error('Currency must be a 3-letter ISO code')
+      }
+      await farmStore.updateMyHourlyRate(Number(rate), cur)
+    } else {
+      await farmStore.updateMyHourlyRate(null, null)
+    }
+    hourlyRateMessage.value = 'Saved.'
+  } catch (e) {
+    hourlyRateError.value = e.response?.data?.error || e.message || 'Failed to save'
+  } finally {
+    hourlyRateSaving.value = false
+  }
+}
+
+async function clearHourlyRate() {
+  hourlyRateForm.rate = null
+  hourlyRateForm.currency = ''
+  await saveHourlyRate()
+  hourlyRateForm.currency = 'USD'
+}
+
 async function submitApplyStarter() {
   applyStarterError.value = null
   applyStarterMsg.value = null
@@ -1357,6 +1440,7 @@ onMounted(() => {
   loadMembers()
   loadFarmSharing()
   loadPushState()
+  loadMyHourlyRate()
 })
 watch(() => farmContext.farmId, () => {
   loadOrgs()

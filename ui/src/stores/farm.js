@@ -184,6 +184,27 @@ export const useFarmStore = defineStore('farm', {
       await api.delete(`/automation/actions/${actionId}`)
     },
 
+    // Phase 20.9 WS4 — fertigation-program-bound executable actions. Uses the
+    // same shape as rule actions so the UI can share an ActionListEditor.
+    async loadProgramActions(programId) {
+      const r = await api.get(`/fertigation/programs/${programId}/actions`)
+      return Array.isArray(r.data) ? r.data : []
+    },
+
+    async createProgramAction(programId, payload) {
+      const r = await api.post(`/fertigation/programs/${programId}/actions`, payload)
+      return r.data
+    },
+
+    async updateProgramAction(actionId, payload) {
+      const r = await api.put(`/automation/actions/${actionId}`, payload)
+      return r.data
+    },
+
+    async deleteProgramAction(actionId) {
+      await api.delete(`/automation/actions/${actionId}`)
+    },
+
     async updateTaskStatus(taskId, status) {
       const task = this.tasks.find((t) => String(t.id) === String(taskId))
       const farmId = task?.farm_id
@@ -790,6 +811,41 @@ export const useFarmStore = defineStore('farm', {
 
     async deleteAquaponicsLoop(id) {
       await api.delete(`/aquaponics-loops/${id}`)
+    },
+
+    // Labor log (Phase 20.9 WS1 — timer + manual entry)
+    async loadTaskLabor(taskId) {
+      const r = await api.get(`/tasks/${taskId}/labor`)
+      return Array.isArray(r.data) ? r.data : []
+    },
+
+    async createTaskLabor(taskId, data) {
+      const r = await api.post(`/tasks/${taskId}/labor`, data)
+      return r.data
+    },
+
+    async startTaskTimer(taskId) {
+      const r = await api.post(`/tasks/${taskId}/labor/start`)
+      return r.data
+    },
+
+    async stopTaskTimer(taskId, data = {}) {
+      const r = await api.post(`/tasks/${taskId}/labor/stop`, data)
+      return r.data
+    },
+
+    async deleteTaskLabor(id) {
+      await api.delete(`/labor/${id}`)
+    },
+
+    async loadMyProfile() {
+      const r = await api.get('/profile')
+      return r.data
+    },
+
+    async updateMyHourlyRate(hourly_rate, currency) {
+      const r = await api.patch('/profile/hourly-rate', { hourly_rate, currency })
+      return r.data
     },
 
     // Commons Catalog

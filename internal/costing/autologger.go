@@ -325,6 +325,176 @@ func LogTaskConsumption(
 	return &txID, nil
 }
 
+// LogLaborEntry is the Phase 20.9 WS1 labor auto-cost hook. Called
+// post-insert for a task_labor_log row whose `ended_at` is already
+// set, and post-update when `ended_at` transitions from NULL → set
+// (timer stop). Idempotent on `labor:<id>`.
+//
+// Rate resolution precedence:
+//  1. The labor log's own `hourly_rate_snapshot` + `currency` (what
+//     the operator chose at close time; wins always).
+//  2. The logging user's `gr33ncore.profiles.hourly_rate` +
+//     `hourly_rate_currency` default.
+//  3. Neither — the stock decrement-style path simply skips the cost
+//     row. No error; future updates (e.g. operator fills the
+//     snapshot) re-enter this function with the same idempotency key,
+//     at which point the cost row lands.
+//
+// crop_cycle_id is resolved task → zone → GetActiveCropCycleForZone;
+// nil is fine (cost attributes to the farm only).
+func LogLaborEntry(
+	ctx context.Context,
+	q *db.Queries,
+	entry db.Gr33ncoreTaskLaborLog,
+) (*int64, error) {
+	if !entry.EndedAt.Valid {
+		return nil, nil
+	}
+	if entry.Minutes <= 0 {
+		return nil, nil
+	}
+	key := fmt.Sprintf("labor:%d", entry.ID)
+	if existing, already, err := checkIdempotency(ctx, q, entry.FarmID, key); err != nil {
+		return nil, err
+	} else if already {
+		return &existing, nil
+	}
+
+	// Resolve the effective rate.
+	rate, currency, ok := resolveLaborRate(ctx, q, entry)
+	if !ok {
+		return nil, nil
+	}
+
+	amount := (float64(entry.Minutes) / 60.0) * rate
+	amountN, err := numericFromFloat(amount)
+	if err != nil {
+		return nil, fmt.Errorf("encode labor amount: %w", err)
+	}
+
+	// crop_cycle resolution is best-effort. A labor log on a task with
+	// no zone (farm-scoped task) or a zone with no active cycle just
+	// attributes to the farm.
+	var cycleID *int64
+	if taskRow, err := q.GetTaskByID(ctx, entry.TaskID); err == nil {
+		if taskRow.ZoneID != nil {
+			if cycle, err := q.GetActiveCropCycleForZone(ctx, *taskRow.ZoneID); err == nil {
+				cycleID = &cycle.ID
+			}
+		}
+	}
+
+	desc := fmt.Sprintf("Labor: %d min @ %.2f/hr", entry.Minutes, rate)
+	relSchema := schemaCore
+	relTable := "task_labor_log"
+	category := commontypes.CostCategoryLaborWages
+	txDate := pgtype.Date{Time: entry.EndedAt.Time, Valid: true}
+
+	txID, err := writeCostRowWithIdempotency(ctx, q, entry.FarmID, key,
+		db.CreateCostTransactionAutoLoggedParams{
+			FarmID:              entry.FarmID,
+			TransactionDate:     txDate,
+			Category:            category,
+			Amount:              amountN,
+			Currency:            currency,
+			Description:         &desc,
+			CreatedByUserID:     entry.UserID,
+			CropCycleID:         cycleID,
+			RelatedModuleSchema: &relSchema,
+			RelatedTableName:    &relTable,
+			RelatedRecordID:     &entry.ID,
+		})
+	if err != nil {
+		return nil, err
+	}
+	return &txID, nil
+}
+
+// resolveLaborRate picks the hourly rate + currency for a labor log.
+// Returns (_, _, false) when neither the log's snapshot nor the
+// user's profile default populate both rate and currency.
+func resolveLaborRate(ctx context.Context, q *db.Queries, entry db.Gr33ncoreTaskLaborLog) (float64, string, bool) {
+	if entry.HourlyRateSnapshot.Valid && entry.Currency != nil && *entry.Currency != "" {
+		if f, ok := numericToFloat(entry.HourlyRateSnapshot); ok && f > 0 {
+			return f, *entry.Currency, true
+		}
+	}
+	if !entry.UserID.Valid {
+		return 0, "", false
+	}
+	profile, err := q.GetProfileByUserID(ctx, entry.UserID.Bytes)
+	if err != nil {
+		return 0, "", false
+	}
+	if !profile.HourlyRate.Valid || profile.HourlyRateCurrency == nil || *profile.HourlyRateCurrency == "" {
+		return 0, "", false
+	}
+	if f, ok := numericToFloat(profile.HourlyRate); ok && f > 0 {
+		return f, *profile.HourlyRateCurrency, true
+	}
+	return 0, "", false
+}
+
+// ReverseLaborEntry is called by the DELETE handler before removing a
+// labor log row. If the autologger previously wrote a cost row for
+// this labor log, we stamp a compensating row so the ledger nets to
+// zero while staying append-only. No stock deduction to unwind — labor
+// doesn't touch input_batches.
+func ReverseLaborEntry(
+	ctx context.Context,
+	q *db.Queries,
+	entry db.Gr33ncoreTaskLaborLog,
+) error {
+	key := fmt.Sprintf("labor:%d", entry.ID)
+	origID, already, err := checkIdempotency(ctx, q, entry.FarmID, key)
+	if err != nil {
+		return err
+	}
+	if !already {
+		return nil
+	}
+	orig, err := q.GetCostTransactionByID(ctx, origID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil
+		}
+		return fmt.Errorf("get original labor cost %d: %w", origID, err)
+	}
+	amountF, ok := numericToFloat(orig.Amount)
+	if !ok {
+		return nil
+	}
+	compN, err := numericFromFloat(-amountF)
+	if err != nil {
+		return err
+	}
+	desc := "[VOIDED] " + fmt.Sprintf("reverses cost_transaction %d", orig.ID)
+	if orig.Description != nil {
+		desc = "[VOIDED] " + *orig.Description
+	}
+	voidKey := fmt.Sprintf("labor_void:%d", entry.ID)
+	if _, already, err := checkIdempotency(ctx, q, entry.FarmID, voidKey); err != nil {
+		return err
+	} else if already {
+		return nil
+	}
+	_, err = writeCostRowWithIdempotency(ctx, q, entry.FarmID, voidKey,
+		db.CreateCostTransactionAutoLoggedParams{
+			FarmID:              entry.FarmID,
+			TransactionDate:     pgtype.Date{Time: time.Now().UTC(), Valid: true},
+			Category:            orig.Category,
+			Amount:              compN,
+			Currency:            orig.Currency,
+			Description:         &desc,
+			CreatedByUserID:     entry.UserID,
+			CropCycleID:         orig.CropCycleID,
+			RelatedModuleSchema: orig.RelatedModuleSchema,
+			RelatedTableName:    orig.RelatedTableName,
+			RelatedRecordID:     orig.RelatedRecordID,
+		})
+	return err
+}
+
 // ReverseTaskConsumption is called by the DELETE handler *before* the
 // consumption row is removed. It re-credits the batch and, if the
 // original landed a cost row, writes a compensating row so net = 0.

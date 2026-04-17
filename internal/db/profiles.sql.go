@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
 	"gr33n-api/internal/platform/commontypes"
 )
 
@@ -47,7 +48,7 @@ func (q *Queries) AddFarmMember(ctx context.Context, arg AddFarmMemberParams) (G
 const createProfile = `-- name: CreateProfile :one
 INSERT INTO gr33ncore.profiles (user_id, full_name, email, avatar_url, role, preferences, created_at, updated_at)
 VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())
-RETURNING user_id, full_name, email, avatar_url, role, preferences, created_at, updated_at
+RETURNING user_id, full_name, email, avatar_url, role, preferences, hourly_rate, hourly_rate_currency, created_at, updated_at
 `
 
 type CreateProfileParams struct {
@@ -76,6 +77,8 @@ func (q *Queries) CreateProfile(ctx context.Context, arg CreateProfileParams) (G
 		&i.AvatarUrl,
 		&i.Role,
 		&i.Preferences,
+		&i.HourlyRate,
+		&i.HourlyRateCurrency,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -153,7 +156,8 @@ func (q *Queries) GetFarmMembership(ctx context.Context, arg GetFarmMembershipPa
 }
 
 const getProfileByEmail = `-- name: GetProfileByEmail :one
-SELECT user_id, full_name, email, avatar_url, role, preferences, created_at, updated_at
+SELECT user_id, full_name, email, avatar_url, role, preferences,
+       hourly_rate, hourly_rate_currency, created_at, updated_at
 FROM gr33ncore.profiles
 WHERE email = $1
 `
@@ -168,6 +172,8 @@ func (q *Queries) GetProfileByEmail(ctx context.Context, email string) (Gr33ncor
 		&i.AvatarUrl,
 		&i.Role,
 		&i.Preferences,
+		&i.HourlyRate,
+		&i.HourlyRateCurrency,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -176,7 +182,8 @@ func (q *Queries) GetProfileByEmail(ctx context.Context, email string) (Gr33ncor
 
 const getProfileByUserID = `-- name: GetProfileByUserID :one
 
-SELECT user_id, full_name, email, avatar_url, role, preferences, created_at, updated_at
+SELECT user_id, full_name, email, avatar_url, role, preferences,
+       hourly_rate, hourly_rate_currency, created_at, updated_at
 FROM gr33ncore.profiles
 WHERE user_id = $1
 `
@@ -194,6 +201,8 @@ func (q *Queries) GetProfileByUserID(ctx context.Context, userID uuid.UUID) (Gr3
 		&i.AvatarUrl,
 		&i.Role,
 		&i.Preferences,
+		&i.HourlyRate,
+		&i.HourlyRateCurrency,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -245,7 +254,7 @@ const updateProfile = `-- name: UpdateProfile :one
 UPDATE gr33ncore.profiles
 SET full_name = $2, avatar_url = $3, role = $4, preferences = $5, updated_at = NOW()
 WHERE user_id = $1
-RETURNING user_id, full_name, email, avatar_url, role, preferences, created_at, updated_at
+RETURNING user_id, full_name, email, avatar_url, role, preferences, hourly_rate, hourly_rate_currency, created_at, updated_at
 `
 
 type UpdateProfileParams struct {
@@ -272,6 +281,44 @@ func (q *Queries) UpdateProfile(ctx context.Context, arg UpdateProfileParams) (G
 		&i.AvatarUrl,
 		&i.Role,
 		&i.Preferences,
+		&i.HourlyRate,
+		&i.HourlyRateCurrency,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const updateProfileHourlyRate = `-- name: UpdateProfileHourlyRate :one
+UPDATE gr33ncore.profiles
+SET hourly_rate = $2::numeric,
+    hourly_rate_currency = $3::char(3),
+    updated_at = NOW()
+WHERE user_id = $1
+RETURNING user_id, full_name, email, avatar_url, role, preferences, hourly_rate, hourly_rate_currency, created_at, updated_at
+`
+
+type UpdateProfileHourlyRateParams struct {
+	UserID             uuid.UUID      `db:"user_id" json:"user_id"`
+	HourlyRate         pgtype.Numeric `db:"hourly_rate" json:"hourly_rate"`
+	HourlyRateCurrency *string        `db:"hourly_rate_currency" json:"hourly_rate_currency"`
+}
+
+// Phase 20.9 WS1 — operator-set default wage. NULL clears the rate
+// (and the autologger will skip cost rows for logs with no
+// snapshot).
+func (q *Queries) UpdateProfileHourlyRate(ctx context.Context, arg UpdateProfileHourlyRateParams) (Gr33ncoreProfile, error) {
+	row := q.db.QueryRow(ctx, updateProfileHourlyRate, arg.UserID, arg.HourlyRate, arg.HourlyRateCurrency)
+	var i Gr33ncoreProfile
+	err := row.Scan(
+		&i.UserID,
+		&i.FullName,
+		&i.Email,
+		&i.AvatarUrl,
+		&i.Role,
+		&i.Preferences,
+		&i.HourlyRate,
+		&i.HourlyRateCurrency,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)

@@ -225,6 +225,8 @@ CREATE TABLE IF NOT EXISTS gr33ncore.profiles (
     avatar_url TEXT,
     role       gr33ncore.user_role_enum DEFAULT 'user' NOT NULL,
     preferences JSONB DEFAULT '{}'::jsonb,
+    hourly_rate          NUMERIC(10,2) CHECK (hourly_rate IS NULL OR hourly_rate >= 0),
+    hourly_rate_currency CHAR(3) CHECK (hourly_rate_currency IS NULL OR hourly_rate_currency ~ '^[A-Z]{3}$'),
     created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
     updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
 );

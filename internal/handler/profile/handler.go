@@ -5,9 +5,11 @@ import (
 	"errors"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"gr33n-api/internal/auditlog"
@@ -80,6 +82,67 @@ func (h *Handler) UpdateMyProfile(w http.ResponseWriter, r *http.Request) {
 		AvatarUrl:   avatarURL,
 		Role:        existing.Role,
 		Preferences: prefs,
+	})
+	if err != nil {
+		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	httputil.WriteJSON(w, http.StatusOK, updated)
+}
+
+// PatchMyHourlyRate — PATCH /profile/hourly-rate (Phase 20.9 WS1)
+//
+// Body: `{ hourly_rate: number|null, currency: "USD"|null }`. Passing
+// both fields null (or an empty body) clears the default rate and the
+// labor autologger will emit no cost row for future closes until a
+// snapshot is supplied per-log.
+func (h *Handler) PatchMyHourlyRate(w http.ResponseWriter, r *http.Request) {
+	uid, ok := authctx.UserID(r.Context())
+	if !ok {
+		httputil.WriteError(w, http.StatusUnauthorized, "user_id not in token")
+		return
+	}
+	var body struct {
+		HourlyRate *float64 `json:"hourly_rate"`
+		Currency   *string  `json:"currency"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		httputil.WriteError(w, http.StatusBadRequest, "invalid body")
+		return
+	}
+	var rateN pgtype.Numeric
+	if body.HourlyRate != nil {
+		if *body.HourlyRate < 0 {
+			httputil.WriteError(w, http.StatusBadRequest, "hourly_rate must be >= 0")
+			return
+		}
+		if err := rateN.Scan(strconv.FormatFloat(*body.HourlyRate, 'f', -1, 64)); err != nil {
+			httputil.WriteError(w, http.StatusBadRequest, "invalid hourly_rate")
+			return
+		}
+	}
+	var currency *string
+	if body.Currency != nil {
+		cur := strings.ToUpper(strings.TrimSpace(*body.Currency))
+		if cur != "" {
+			if len(cur) != 3 {
+				httputil.WriteError(w, http.StatusBadRequest, "currency must be ISO 4217 (3 uppercase letters)")
+				return
+			}
+			currency = &cur
+		}
+	}
+	// Rate + currency must both be set or both be cleared — a lone
+	// rate with no currency is useless to the autologger.
+	if rateN.Valid != (currency != nil) {
+		httputil.WriteError(w, http.StatusBadRequest, "hourly_rate and currency must be set (or cleared) together")
+		return
+	}
+	q := db.New(h.pool)
+	updated, err := q.UpdateProfileHourlyRate(r.Context(), db.UpdateProfileHourlyRateParams{
+		UserID:             uid,
+		HourlyRate:         rateN,
+		HourlyRateCurrency: currency,
 	})
 	if err != nil {
 		httputil.WriteError(w, http.StatusInternalServerError, err.Error())

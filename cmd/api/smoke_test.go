@@ -320,6 +320,20 @@ ALTER TABLE gr33ncore.farms ADD COLUMN IF NOT EXISTS organization_id BIGINT
 	if _, err := pool.Exec(ctx, string(phase208BootstrapUpgradeSQL)); err != nil {
 		return err
 	}
+	phase209LaborAutocostSQL, err := os.ReadFile(filepath.Join("..", "..", "db", "migrations", "20260514_phase209_labor_autocost.sql"))
+	if err != nil {
+		return err
+	}
+	if _, err := pool.Exec(ctx, string(phase209LaborAutocostSQL)); err != nil {
+		return err
+	}
+	phase209ProgramBackfillSQL, err := os.ReadFile(filepath.Join("..", "..", "db", "migrations", "20260515_phase209_program_actions_backfill.sql"))
+	if err != nil {
+		return err
+	}
+	if _, err := pool.Exec(ctx, string(phase209ProgramBackfillSQL)); err != nil {
+		return err
+	}
 	return nil
 }
 
