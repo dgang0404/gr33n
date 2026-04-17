@@ -653,6 +653,7 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		DocumentType        *string `json:"document_type"`
 		DocumentReference   *string `json:"document_reference"`
 		Counterparty        *string `json:"counterparty"`
+		CropCycleID         *int64  `json:"crop_cycle_id"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid body")
@@ -711,6 +712,21 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 	if uid, ok := authctx.UserID(r.Context()); ok {
 		createdBy = pgtype.UUID{Bytes: uid, Valid: true}
 	}
+	if body.CropCycleID != nil {
+		cc, err := h.q.GetCropCycleByID(r.Context(), *body.CropCycleID)
+		if err != nil {
+			if errors.Is(err, pgx.ErrNoRows) {
+				httputil.WriteError(w, http.StatusBadRequest, "crop_cycle_id not found")
+				return
+			}
+			httputil.WriteError(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+		if cc.FarmID != farmID {
+			httputil.WriteError(w, http.StatusBadRequest, "crop_cycle_id does not belong to this farm")
+			return
+		}
+	}
 	params := db.CreateCostTransactionParams{
 		FarmID:            farmID,
 		TransactionDate:   td,
@@ -725,6 +741,7 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		DocumentType:      docType,
 		DocumentReference: docRef,
 		Counterparty:      cp,
+		CropCycleID:       body.CropCycleID,
 	}
 
 	ctx := r.Context()
@@ -817,6 +834,7 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 		DocumentType        *string `json:"document_type"`
 		DocumentReference   *string `json:"document_reference"`
 		Counterparty        *string `json:"counterparty"`
+		CropCycleID         *int64  `json:"crop_cycle_id"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid body")
@@ -885,6 +903,23 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusBadRequest, "counterparty: "+err.Error())
 		return
 	}
+	cropCycleID := existing.CropCycleID
+	if body.CropCycleID != nil {
+		cc, err := h.q.GetCropCycleByID(r.Context(), *body.CropCycleID)
+		if err != nil {
+			if errors.Is(err, pgx.ErrNoRows) {
+				httputil.WriteError(w, http.StatusBadRequest, "crop_cycle_id not found")
+				return
+			}
+			httputil.WriteError(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+		if cc.FarmID != existing.FarmID {
+			httputil.WriteError(w, http.StatusBadRequest, "crop_cycle_id does not belong to this farm")
+			return
+		}
+		cropCycleID = body.CropCycleID
+	}
 	oldReceiptID := existing.ReceiptFileID
 	row, err := h.q.UpdateCostTransaction(r.Context(), db.UpdateCostTransactionParams{
 		ID:                id,
@@ -899,6 +934,7 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 		DocumentType:      docType,
 		DocumentReference: docRef,
 		Counterparty:      cp,
+		CropCycleID:       cropCycleID,
 	})
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {

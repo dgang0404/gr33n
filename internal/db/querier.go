@@ -51,11 +51,13 @@ type Querier interface {
 	// ============================================================
 	CreateDevice(ctx context.Context, arg CreateDeviceParams) (Gr33ncoreDevice, error)
 	CreateEcTarget(ctx context.Context, arg CreateEcTargetParams) (Gr33nfertigationEcTarget, error)
+	CreateExecutableActionForProgram(ctx context.Context, arg CreateExecutableActionForProgramParams) (Gr33ncoreExecutableAction, error)
 	CreateExecutableActionForRule(ctx context.Context, arg CreateExecutableActionForRuleParams) (Gr33ncoreExecutableAction, error)
 	// ============================================================
 	// Queries: gr33ncore.farms
 	// ============================================================
 	CreateFarm(ctx context.Context, arg CreateFarmParams) (Gr33ncoreFarm, error)
+	CreateFarmEnergyPrice(ctx context.Context, arg CreateFarmEnergyPriceParams) (Gr33ncoreFarmEnergyPrice, error)
 	CreateFertigationEvent(ctx context.Context, arg CreateFertigationEventParams) (Gr33nfertigationFertigationEvent, error)
 	// ============================================================
 	// Queries: gr33ncore.file_attachments
@@ -83,10 +85,12 @@ type Querier interface {
 	// Queries: gr33ncore.sensors
 	// ============================================================
 	CreateSensor(ctx context.Context, arg CreateSensorParams) (Gr33ncoreSensor, error)
+	CreateSetpoint(ctx context.Context, arg CreateSetpointParams) (Gr33ncoreZoneSetpoint, error)
 	// ============================================================
 	// Queries: gr33ncore.tasks
 	// ============================================================
 	CreateTask(ctx context.Context, arg CreateTaskParams) (Gr33ncoreTask, error)
+	CreateTaskLaborLog(ctx context.Context, arg CreateTaskLaborLogParams) (Gr33ncoreTaskLaborLog, error)
 	// ============================================================
 	// Queries: gr33ncore.zones
 	// ============================================================
@@ -94,12 +98,32 @@ type Querier interface {
 	DeleteAutomationRule(ctx context.Context, id int64) error
 	DeleteCostTransaction(ctx context.Context, id int64) error
 	DeleteExecutableAction(ctx context.Context, id int64) error
+	DeleteFarmEnergyPrice(ctx context.Context, id int64) error
 	DeleteInsertCommonsReceivedPayloadsBefore(ctx context.Context, receivedAt time.Time) error
 	DeleteProgram(ctx context.Context, id int64) error
 	DeletePushTokenByFCMToken(ctx context.Context, fcmToken string) error
 	DeleteReservoir(ctx context.Context, id int64) error
 	DeleteSchedule(ctx context.Context, id int64) error
+	DeleteSetpoint(ctx context.Context, id int64) error
+	DeleteTaskLaborLog(ctx context.Context, id int64) error
 	DeleteUserPushToken(ctx context.Context, arg DeleteUserPushTokenParams) error
+	// Phase 20.6 WS3 — the rule engine calls this to translate a rule's zone
+	// into the active cycle so the setpoint resolver has a `current_stage`
+	// to match against. At most one crop cycle per zone is active at a time
+	// (enforced by uq_active_crop_cycle).
+	GetActiveCropCycleForZone(ctx context.Context, zoneID int64) (Gr33nfertigationCropCycle, error)
+	// Precedence resolver: pick the single most-specific setpoint row for
+	// (zone, crop_cycle, stage, sensor_type). Rank 1 is most-specific; we
+	// ORDER BY rank ASC and LIMIT 1.
+	//   rank 1 : cycle + stage         (exact cycle + exact stage)
+	//   rank 2 : cycle + any stage     (NULL stage row on the cycle)
+	//   rank 3 : zone  + stage         (no cycle row; zone default for stage)
+	//   rank 4 : zone  + any stage     (zone fallback for every stage)
+	// sqlc.narg('crop_cycle_id') may be NULL (rule targets a zone with no
+	// active cycle) — in that case rows of rank 1 and 2 naturally drop out.
+	// sqlc.narg('stage') may be NULL (zone has no cycle and thus no stage)
+	// — rank 1 and 3 drop out, leaving any zone-wide fallback.
+	GetActiveSetpointForScope(ctx context.Context, arg GetActiveSetpointForScopeParams) (GetActiveSetpointForScopeRow, error)
 	GetActuatorByID(ctx context.Context, id int64) (Gr33ncoreActuator, error)
 	GetAlertNotificationByID(ctx context.Context, id int64) (Gr33ncoreAlertsNotification, error)
 	// ============================================================
@@ -122,6 +146,7 @@ type Querier interface {
 	GetDeviceByUID(ctx context.Context, deviceUid *string) (Gr33ncoreDevice, error)
 	GetExecutableActionByID(ctx context.Context, id int64) (Gr33ncoreExecutableAction, error)
 	GetFarmByID(ctx context.Context, id int64) (Gr33ncoreFarm, error)
+	GetFarmEnergyPriceByID(ctx context.Context, id int64) (Gr33ncoreFarmEnergyPrice, error)
 	GetFarmMembers(ctx context.Context, farmID int64) ([]GetFarmMembersRow, error)
 	GetFarmMembership(ctx context.Context, arg GetFarmMembershipParams) (Gr33ncoreFarmMembership, error)
 	GetFertigationProgramByID(ctx context.Context, id int64) (Gr33nfertigationProgram, error)
@@ -146,6 +171,13 @@ type Querier interface {
 	// cooldown windows.
 	GetLatestAlertCreatedAtForSource(ctx context.Context, arg GetLatestAlertCreatedAtForSourceParams) (time.Time, error)
 	GetLatestReadingBySensor(ctx context.Context, sensorID int64) (Gr33ncoreSensorReading, error)
+	// Phase 20.6 WS3 — setpoint-typed predicates key off `sensor_type`
+	// (e.g. "dew_point") rather than a specific sensor_id, so the evaluator
+	// has to pick the freshest reading across every sensor of that type in
+	// the zone. `gr33ncore.sensors` is small relative to sensor_readings so
+	// the JOIN is cheap; the ORDER BY reading_time DESC LIMIT 1 uses the
+	// existing per-sensor reading_time index.
+	GetLatestReadingForZoneSensorType(ctx context.Context, arg GetLatestReadingForZoneSensorTypeParams) (Gr33ncoreSensorReading, error)
 	GetMixingEventByID(ctx context.Context, id int64) (Gr33nfertigationMixingEvent, error)
 	GetNotificationTemplateByID(ctx context.Context, id int64) (Gr33ncoreNotificationTemplate, error)
 	GetOrganizationByID(ctx context.Context, id int64) (Gr33ncoreOrganization, error)
@@ -163,7 +195,9 @@ type Querier interface {
 	GetScheduleByID(ctx context.Context, id int64) (Gr33ncoreSchedule, error)
 	GetSensorByID(ctx context.Context, id int64) (Gr33ncoreSensor, error)
 	GetSensorReadingStats(ctx context.Context, arg GetSensorReadingStatsParams) (GetSensorReadingStatsRow, error)
+	GetSetpointByID(ctx context.Context, id int64) (Gr33ncoreZoneSetpoint, error)
 	GetTaskByID(ctx context.Context, id int64) (Gr33ncoreTask, error)
+	GetTaskLaborLogByID(ctx context.Context, id int64) (Gr33ncoreTaskLaborLog, error)
 	// ============================================================
 	// Queries: gr33ncore.units
 	// ============================================================
@@ -211,11 +245,21 @@ type Querier interface {
 	ListDevicesByZone(ctx context.Context, zoneID *int64) ([]Gr33ncoreDevice, error)
 	ListEcTargetsByFarm(ctx context.Context, farmID int64) ([]Gr33nfertigationEcTarget, error)
 	// ============================================================
+	// Queries: executable_actions bound to fertigation programs (Phase 20.95 WS3)
+	// Phase 20.7 WS3 will wire these into the program editor UI; for now we expose
+	// the CRUD surface so the DB round-trip is covered.
+	// ============================================================
+	ListExecutableActionsByProgram(ctx context.Context, programID *int64) ([]Gr33ncoreExecutableAction, error)
+	// ============================================================
 	// Queries: executable_actions bound to rules (Phase 20 WS1)
 	// ============================================================
 	ListExecutableActionsByRule(ctx context.Context, ruleID *int64) ([]Gr33ncoreExecutableAction, error)
 	ListExecutableActionsBySchedule(ctx context.Context, scheduleID *int64) ([]Gr33ncoreExecutableAction, error)
 	ListFarmCommonsCatalogImports(ctx context.Context, farmID int64) ([]ListFarmCommonsCatalogImportsRow, error)
+	// ============================================================
+	// Queries: gr33ncore.farm_energy_prices (Phase 20.95 WS2)
+	// ============================================================
+	ListFarmEnergyPrices(ctx context.Context, farmID int64) ([]Gr33ncoreFarmEnergyPrice, error)
 	// ============================================================
 	// Queries: gr33ncore.farm_finance_account_mappings
 	// ============================================================
@@ -254,6 +298,20 @@ type Querier interface {
 	ListSensorsByDevice(ctx context.Context, deviceID *int64) ([]Gr33ncoreSensor, error)
 	ListSensorsByFarm(ctx context.Context, farmID int64) ([]Gr33ncoreSensor, error)
 	ListSensorsByZone(ctx context.Context, zoneID *int64) ([]Gr33ncoreSensor, error)
+	ListSetpointsByCropCycle(ctx context.Context, cropCycleID *int64) ([]Gr33ncoreZoneSetpoint, error)
+	// Phase 20.6 WS1 — stage-scoped setpoints.
+	// The precedence resolver (GetActiveSetpointForScope) is the query the
+	// rule-engine calls on every setpoint-typed predicate evaluation.
+	ListSetpointsByFarm(ctx context.Context, farmID int64) ([]Gr33ncoreZoneSetpoint, error)
+	// Optional filters: zone_id ($2), crop_cycle_id ($3), sensor_type ($4).
+	// Pass NULL / empty-string to skip a filter. Keeping one query with
+	// nullable filter args avoids the handler having to branch.
+	ListSetpointsByFarmFiltered(ctx context.Context, arg ListSetpointsByFarmFilteredParams) ([]Gr33ncoreZoneSetpoint, error)
+	ListSetpointsByZone(ctx context.Context, zoneID *int64) ([]Gr33ncoreZoneSetpoint, error)
+	// ============================================================
+	// Queries: gr33ncore.task_labor_log (Phase 20.95 WS1)
+	// ============================================================
+	ListTaskLaborLogsByTask(ctx context.Context, taskID int64) ([]Gr33ncoreTaskLaborLog, error)
 	ListTasksByAssignee(ctx context.Context, arg ListTasksByAssigneeParams) ([]Gr33ncoreTask, error)
 	ListTasksByFarm(ctx context.Context, farmID int64) ([]Gr33ncoreTask, error)
 	ListTasksBySourceAlertID(ctx context.Context, sourceAlertID *int64) ([]Gr33ncoreTask, error)
@@ -275,6 +333,8 @@ type Querier interface {
 	MarkInsertCommonsBundleDelivered(ctx context.Context, arg MarkInsertCommonsBundleDeliveredParams) (Gr33ncoreInsertCommonsBundle, error)
 	MarkInsertCommonsBundleDeliveryFailed(ctx context.Context, arg MarkInsertCommonsBundleDeliveryFailedParams) (Gr33ncoreInsertCommonsBundle, error)
 	MarkScheduleTriggered(ctx context.Context, arg MarkScheduleTriggeredParams) (Gr33ncoreSchedule, error)
+	// Running SUM over surviving rows. Called by handler after INSERT/DELETE.
+	RecalcTaskTimeSpentMinutes(ctx context.Context, taskID int64) error
 	RejectInsertCommonsBundle(ctx context.Context, arg RejectInsertCommonsBundleParams) (Gr33ncoreInsertCommonsBundle, error)
 	RemoveFarmMember(ctx context.Context, arg RemoveFarmMemberParams) error
 	RemoveRecipeComponent(ctx context.Context, arg RemoveRecipeComponentParams) error
@@ -304,6 +364,7 @@ type Querier interface {
 	UpdateDeviceStatus(ctx context.Context, arg UpdateDeviceStatusParams) (Gr33ncoreDevice, error)
 	UpdateExecutableAction(ctx context.Context, arg UpdateExecutableActionParams) (Gr33ncoreExecutableAction, error)
 	UpdateFarm(ctx context.Context, arg UpdateFarmParams) (Gr33ncoreFarm, error)
+	UpdateFarmEnergyPrice(ctx context.Context, arg UpdateFarmEnergyPriceParams) (Gr33ncoreFarmEnergyPrice, error)
 	UpdateFarmMemberRole(ctx context.Context, arg UpdateFarmMemberRoleParams) (Gr33ncoreFarmMembership, error)
 	UpdateInputBatch(ctx context.Context, arg UpdateInputBatchParams) (Gr33nnaturalfarmingInputBatch, error)
 	UpdateInputDefinition(ctx context.Context, arg UpdateInputDefinitionParams) (Gr33nnaturalfarmingInputDefinition, error)
@@ -319,6 +380,7 @@ type Querier interface {
 	// pass NULL to leave the existing value untouched. alert_breach_started_at is managed
 	// by the evaluator and is not editable via this query.
 	UpdateSensor(ctx context.Context, arg UpdateSensorParams) (Gr33ncoreSensor, error)
+	UpdateSetpoint(ctx context.Context, arg UpdateSetpointParams) (Gr33ncoreZoneSetpoint, error)
 	UpdateTask(ctx context.Context, arg UpdateTaskParams) (Gr33ncoreTask, error)
 	UpdateTaskStatus(ctx context.Context, arg UpdateTaskStatusParams) (Gr33ncoreTask, error)
 	UpdateZone(ctx context.Context, arg UpdateZoneParams) (Gr33ncoreZone, error)

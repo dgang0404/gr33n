@@ -38,6 +38,47 @@ func (q *Queries) GetLatestReadingBySensor(ctx context.Context, sensorID int64) 
 	return i, err
 }
 
+const getLatestReadingForZoneSensorType = `-- name: GetLatestReadingForZoneSensorType :one
+SELECT sr.reading_time, sr.sensor_id, sr.value_raw, sr.value_normalized, sr.normalized_unit_id, sr.value_text, sr.value_json, sr.battery_level_percent, sr.signal_strength_dbm, sr.is_valid, sr.meta_data
+FROM gr33ncore.sensor_readings sr
+JOIN gr33ncore.sensors s ON s.id = sr.sensor_id
+WHERE s.zone_id = $1
+  AND s.sensor_type = $2
+  AND s.deleted_at IS NULL
+ORDER BY sr.reading_time DESC
+LIMIT 1
+`
+
+type GetLatestReadingForZoneSensorTypeParams struct {
+	ZoneID     *int64 `db:"zone_id" json:"zone_id"`
+	SensorType string `db:"sensor_type" json:"sensor_type"`
+}
+
+// Phase 20.6 WS3 — setpoint-typed predicates key off `sensor_type`
+// (e.g. "dew_point") rather than a specific sensor_id, so the evaluator
+// has to pick the freshest reading across every sensor of that type in
+// the zone. `gr33ncore.sensors` is small relative to sensor_readings so
+// the JOIN is cheap; the ORDER BY reading_time DESC LIMIT 1 uses the
+// existing per-sensor reading_time index.
+func (q *Queries) GetLatestReadingForZoneSensorType(ctx context.Context, arg GetLatestReadingForZoneSensorTypeParams) (Gr33ncoreSensorReading, error) {
+	row := q.db.QueryRow(ctx, getLatestReadingForZoneSensorType, arg.ZoneID, arg.SensorType)
+	var i Gr33ncoreSensorReading
+	err := row.Scan(
+		&i.ReadingTime,
+		&i.SensorID,
+		&i.ValueRaw,
+		&i.ValueNormalized,
+		&i.NormalizedUnitID,
+		&i.ValueText,
+		&i.ValueJson,
+		&i.BatteryLevelPercent,
+		&i.SignalStrengthDbm,
+		&i.IsValid,
+		&i.MetaData,
+	)
+	return i, err
+}
+
 const getSensorReadingStats = `-- name: GetSensorReadingStats :one
 SELECT
     COUNT(*)                    AS total_readings,

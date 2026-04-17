@@ -108,13 +108,64 @@ func (q *Queries) CreateAutomationRun(ctx context.Context, arg CreateAutomationR
 	return i, err
 }
 
+const createExecutableActionForProgram = `-- name: CreateExecutableActionForProgram :one
+INSERT INTO gr33ncore.executable_actions (
+    program_id, execution_order, action_type,
+    target_actuator_id, target_automation_rule_id, target_notification_template_id,
+    action_command, action_parameters, delay_before_execution_seconds
+) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+RETURNING id, schedule_id, rule_id, program_id, execution_order, action_type, target_actuator_id, target_automation_rule_id, target_notification_template_id, action_command, action_parameters, delay_before_execution_seconds
+`
+
+type CreateExecutableActionForProgramParams struct {
+	ProgramID                    *int64                               `db:"program_id" json:"program_id"`
+	ExecutionOrder               int32                                `db:"execution_order" json:"execution_order"`
+	ActionType                   commontypes.ExecutableActionTypeEnum `db:"action_type" json:"action_type"`
+	TargetActuatorID             *int64                               `db:"target_actuator_id" json:"target_actuator_id"`
+	TargetAutomationRuleID       *int64                               `db:"target_automation_rule_id" json:"target_automation_rule_id"`
+	TargetNotificationTemplateID *int64                               `db:"target_notification_template_id" json:"target_notification_template_id"`
+	ActionCommand                *string                              `db:"action_command" json:"action_command"`
+	ActionParameters             []byte                               `db:"action_parameters" json:"action_parameters"`
+	DelayBeforeExecutionSeconds  *int32                               `db:"delay_before_execution_seconds" json:"delay_before_execution_seconds"`
+}
+
+func (q *Queries) CreateExecutableActionForProgram(ctx context.Context, arg CreateExecutableActionForProgramParams) (Gr33ncoreExecutableAction, error) {
+	row := q.db.QueryRow(ctx, createExecutableActionForProgram,
+		arg.ProgramID,
+		arg.ExecutionOrder,
+		arg.ActionType,
+		arg.TargetActuatorID,
+		arg.TargetAutomationRuleID,
+		arg.TargetNotificationTemplateID,
+		arg.ActionCommand,
+		arg.ActionParameters,
+		arg.DelayBeforeExecutionSeconds,
+	)
+	var i Gr33ncoreExecutableAction
+	err := row.Scan(
+		&i.ID,
+		&i.ScheduleID,
+		&i.RuleID,
+		&i.ProgramID,
+		&i.ExecutionOrder,
+		&i.ActionType,
+		&i.TargetActuatorID,
+		&i.TargetAutomationRuleID,
+		&i.TargetNotificationTemplateID,
+		&i.ActionCommand,
+		&i.ActionParameters,
+		&i.DelayBeforeExecutionSeconds,
+	)
+	return i, err
+}
+
 const createExecutableActionForRule = `-- name: CreateExecutableActionForRule :one
 INSERT INTO gr33ncore.executable_actions (
     rule_id, execution_order, action_type,
     target_actuator_id, target_automation_rule_id, target_notification_template_id,
     action_command, action_parameters, delay_before_execution_seconds
 ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-RETURNING id, schedule_id, rule_id, execution_order, action_type, target_actuator_id, target_automation_rule_id, target_notification_template_id, action_command, action_parameters, delay_before_execution_seconds
+RETURNING id, schedule_id, rule_id, program_id, execution_order, action_type, target_actuator_id, target_automation_rule_id, target_notification_template_id, action_command, action_parameters, delay_before_execution_seconds
 `
 
 type CreateExecutableActionForRuleParams struct {
@@ -146,6 +197,7 @@ func (q *Queries) CreateExecutableActionForRule(ctx context.Context, arg CreateE
 		&i.ID,
 		&i.ScheduleID,
 		&i.RuleID,
+		&i.ProgramID,
 		&i.ExecutionOrder,
 		&i.ActionType,
 		&i.TargetActuatorID,
@@ -292,7 +344,7 @@ func (q *Queries) GetAutomationRunByDetails(ctx context.Context, arg GetAutomati
 }
 
 const getExecutableActionByID = `-- name: GetExecutableActionByID :one
-SELECT id, schedule_id, rule_id, execution_order, action_type, target_actuator_id, target_automation_rule_id, target_notification_template_id, action_command, action_parameters, delay_before_execution_seconds FROM gr33ncore.executable_actions
+SELECT id, schedule_id, rule_id, program_id, execution_order, action_type, target_actuator_id, target_automation_rule_id, target_notification_template_id, action_command, action_parameters, delay_before_execution_seconds FROM gr33ncore.executable_actions
 WHERE id = $1
 `
 
@@ -303,6 +355,7 @@ func (q *Queries) GetExecutableActionByID(ctx context.Context, id int64) (Gr33nc
 		&i.ID,
 		&i.ScheduleID,
 		&i.RuleID,
+		&i.ProgramID,
 		&i.ExecutionOrder,
 		&i.ActionType,
 		&i.TargetActuatorID,
@@ -531,9 +584,54 @@ func (q *Queries) ListAutomationRunsByFarm(ctx context.Context, arg ListAutomati
 	return items, nil
 }
 
+const listExecutableActionsByProgram = `-- name: ListExecutableActionsByProgram :many
+
+SELECT id, schedule_id, rule_id, program_id, execution_order, action_type, target_actuator_id, target_automation_rule_id, target_notification_template_id, action_command, action_parameters, delay_before_execution_seconds FROM gr33ncore.executable_actions
+WHERE program_id = $1
+ORDER BY execution_order ASC, id ASC
+`
+
+// ============================================================
+// Queries: executable_actions bound to fertigation programs (Phase 20.95 WS3)
+// Phase 20.7 WS3 will wire these into the program editor UI; for now we expose
+// the CRUD surface so the DB round-trip is covered.
+// ============================================================
+func (q *Queries) ListExecutableActionsByProgram(ctx context.Context, programID *int64) ([]Gr33ncoreExecutableAction, error) {
+	rows, err := q.db.Query(ctx, listExecutableActionsByProgram, programID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Gr33ncoreExecutableAction{}
+	for rows.Next() {
+		var i Gr33ncoreExecutableAction
+		if err := rows.Scan(
+			&i.ID,
+			&i.ScheduleID,
+			&i.RuleID,
+			&i.ProgramID,
+			&i.ExecutionOrder,
+			&i.ActionType,
+			&i.TargetActuatorID,
+			&i.TargetAutomationRuleID,
+			&i.TargetNotificationTemplateID,
+			&i.ActionCommand,
+			&i.ActionParameters,
+			&i.DelayBeforeExecutionSeconds,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listExecutableActionsByRule = `-- name: ListExecutableActionsByRule :many
 
-SELECT id, schedule_id, rule_id, execution_order, action_type, target_actuator_id, target_automation_rule_id, target_notification_template_id, action_command, action_parameters, delay_before_execution_seconds FROM gr33ncore.executable_actions
+SELECT id, schedule_id, rule_id, program_id, execution_order, action_type, target_actuator_id, target_automation_rule_id, target_notification_template_id, action_command, action_parameters, delay_before_execution_seconds FROM gr33ncore.executable_actions
 WHERE rule_id = $1
 ORDER BY execution_order ASC, id ASC
 `
@@ -554,6 +652,7 @@ func (q *Queries) ListExecutableActionsByRule(ctx context.Context, ruleID *int64
 			&i.ID,
 			&i.ScheduleID,
 			&i.RuleID,
+			&i.ProgramID,
 			&i.ExecutionOrder,
 			&i.ActionType,
 			&i.TargetActuatorID,
@@ -574,7 +673,7 @@ func (q *Queries) ListExecutableActionsByRule(ctx context.Context, ruleID *int64
 }
 
 const listExecutableActionsBySchedule = `-- name: ListExecutableActionsBySchedule :many
-SELECT id, schedule_id, rule_id, execution_order, action_type, target_actuator_id, target_automation_rule_id, target_notification_template_id, action_command, action_parameters, delay_before_execution_seconds FROM gr33ncore.executable_actions
+SELECT id, schedule_id, rule_id, program_id, execution_order, action_type, target_actuator_id, target_automation_rule_id, target_notification_template_id, action_command, action_parameters, delay_before_execution_seconds FROM gr33ncore.executable_actions
 WHERE schedule_id = $1
 ORDER BY execution_order ASC, id ASC
 `
@@ -592,6 +691,7 @@ func (q *Queries) ListExecutableActionsBySchedule(ctx context.Context, scheduleI
 			&i.ID,
 			&i.ScheduleID,
 			&i.RuleID,
+			&i.ProgramID,
 			&i.ExecutionOrder,
 			&i.ActionType,
 			&i.TargetActuatorID,
@@ -854,7 +954,7 @@ SET execution_order = $2, action_type = $3,
     action_command = $7, action_parameters = $8,
     delay_before_execution_seconds = $9
 WHERE id = $1
-RETURNING id, schedule_id, rule_id, execution_order, action_type, target_actuator_id, target_automation_rule_id, target_notification_template_id, action_command, action_parameters, delay_before_execution_seconds
+RETURNING id, schedule_id, rule_id, program_id, execution_order, action_type, target_actuator_id, target_automation_rule_id, target_notification_template_id, action_command, action_parameters, delay_before_execution_seconds
 `
 
 type UpdateExecutableActionParams struct {
@@ -886,6 +986,7 @@ func (q *Queries) UpdateExecutableAction(ctx context.Context, arg UpdateExecutab
 		&i.ID,
 		&i.ScheduleID,
 		&i.RuleID,
+		&i.ProgramID,
 		&i.ExecutionOrder,
 		&i.ActionType,
 		&i.TargetActuatorID,

@@ -17,9 +17,9 @@ const createCostTransaction = `-- name: CreateCostTransaction :one
 INSERT INTO gr33ncore.cost_transactions (
     farm_id, transaction_date, category, subcategory, amount, currency,
     description, is_income, created_by_user_id, receipt_file_id,
-    document_type, document_reference, counterparty
-) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
-RETURNING id, farm_id, transaction_date, category, subcategory, amount, currency, description, related_module_schema, related_table_name, related_record_id, receipt_file_id, is_income, document_type, document_reference, counterparty, created_by_user_id, created_at, updated_at
+    document_type, document_reference, counterparty, crop_cycle_id
+) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+RETURNING id, farm_id, transaction_date, category, subcategory, amount, currency, description, related_module_schema, related_table_name, related_record_id, receipt_file_id, is_income, document_type, document_reference, counterparty, created_by_user_id, created_at, updated_at, crop_cycle_id
 `
 
 type CreateCostTransactionParams struct {
@@ -36,6 +36,7 @@ type CreateCostTransactionParams struct {
 	DocumentType      *string                      `db:"document_type" json:"document_type"`
 	DocumentReference *string                      `db:"document_reference" json:"document_reference"`
 	Counterparty      *string                      `db:"counterparty" json:"counterparty"`
+	CropCycleID       *int64                       `db:"crop_cycle_id" json:"crop_cycle_id"`
 }
 
 // ============================================================
@@ -56,6 +57,7 @@ func (q *Queries) CreateCostTransaction(ctx context.Context, arg CreateCostTrans
 		arg.DocumentType,
 		arg.DocumentReference,
 		arg.Counterparty,
+		arg.CropCycleID,
 	)
 	var i Gr33ncoreCostTransaction
 	err := row.Scan(
@@ -78,6 +80,7 @@ func (q *Queries) CreateCostTransaction(ctx context.Context, arg CreateCostTrans
 		&i.CreatedByUserID,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.CropCycleID,
 	)
 	return i, err
 }
@@ -222,7 +225,7 @@ func (q *Queries) GetCostSummaryByFarm(ctx context.Context, farmID int64) (GetCo
 }
 
 const getCostTransactionByID = `-- name: GetCostTransactionByID :one
-SELECT id, farm_id, transaction_date, category, subcategory, amount, currency, description, related_module_schema, related_table_name, related_record_id, receipt_file_id, is_income, document_type, document_reference, counterparty, created_by_user_id, created_at, updated_at FROM gr33ncore.cost_transactions WHERE id = $1
+SELECT id, farm_id, transaction_date, category, subcategory, amount, currency, description, related_module_schema, related_table_name, related_record_id, receipt_file_id, is_income, document_type, document_reference, counterparty, created_by_user_id, created_at, updated_at, crop_cycle_id FROM gr33ncore.cost_transactions WHERE id = $1
 `
 
 func (q *Queries) GetCostTransactionByID(ctx context.Context, id int64) (Gr33ncoreCostTransaction, error) {
@@ -248,12 +251,13 @@ func (q *Queries) GetCostTransactionByID(ctx context.Context, id int64) (Gr33nco
 		&i.CreatedByUserID,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.CropCycleID,
 	)
 	return i, err
 }
 
 const listCostTransactionsByFarm = `-- name: ListCostTransactionsByFarm :many
-SELECT id, farm_id, transaction_date, category, subcategory, amount, currency, description, related_module_schema, related_table_name, related_record_id, receipt_file_id, is_income, document_type, document_reference, counterparty, created_by_user_id, created_at, updated_at FROM gr33ncore.cost_transactions
+SELECT id, farm_id, transaction_date, category, subcategory, amount, currency, description, related_module_schema, related_table_name, related_record_id, receipt_file_id, is_income, document_type, document_reference, counterparty, created_by_user_id, created_at, updated_at, crop_cycle_id FROM gr33ncore.cost_transactions
 WHERE farm_id = $1
 ORDER BY transaction_date DESC, id DESC
 LIMIT $2 OFFSET $3
@@ -294,6 +298,7 @@ func (q *Queries) ListCostTransactionsByFarm(ctx context.Context, arg ListCostTr
 			&i.CreatedByUserID,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.CropCycleID,
 		); err != nil {
 			return nil, err
 		}
@@ -374,9 +379,10 @@ UPDATE gr33ncore.cost_transactions SET
     document_type = $10,
     document_reference = $11,
     counterparty = $12,
+    crop_cycle_id = $13,
     updated_at = NOW()
 WHERE id = $1
-RETURNING id, farm_id, transaction_date, category, subcategory, amount, currency, description, related_module_schema, related_table_name, related_record_id, receipt_file_id, is_income, document_type, document_reference, counterparty, created_by_user_id, created_at, updated_at
+RETURNING id, farm_id, transaction_date, category, subcategory, amount, currency, description, related_module_schema, related_table_name, related_record_id, receipt_file_id, is_income, document_type, document_reference, counterparty, created_by_user_id, created_at, updated_at, crop_cycle_id
 `
 
 type UpdateCostTransactionParams struct {
@@ -392,6 +398,7 @@ type UpdateCostTransactionParams struct {
 	DocumentType      *string                      `db:"document_type" json:"document_type"`
 	DocumentReference *string                      `db:"document_reference" json:"document_reference"`
 	Counterparty      *string                      `db:"counterparty" json:"counterparty"`
+	CropCycleID       *int64                       `db:"crop_cycle_id" json:"crop_cycle_id"`
 }
 
 func (q *Queries) UpdateCostTransaction(ctx context.Context, arg UpdateCostTransactionParams) (Gr33ncoreCostTransaction, error) {
@@ -408,6 +415,7 @@ func (q *Queries) UpdateCostTransaction(ctx context.Context, arg UpdateCostTrans
 		arg.DocumentType,
 		arg.DocumentReference,
 		arg.Counterparty,
+		arg.CropCycleID,
 	)
 	var i Gr33ncoreCostTransaction
 	err := row.Scan(
@@ -430,6 +438,7 @@ func (q *Queries) UpdateCostTransaction(ctx context.Context, arg UpdateCostTrans
 		&i.CreatedByUserID,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.CropCycleID,
 	)
 	return i, err
 }

@@ -29,6 +29,7 @@ import (
 	sensorhandler "gr33n-api/internal/handler/sensor"
 	ssehandler "gr33n-api/internal/handler/sse"
 	planthandler "gr33n-api/internal/handler/plants"
+	setpointhandler "gr33n-api/internal/handler/setpoint"
 	taskhandler "gr33n-api/internal/handler/task"
 	zonehandler "gr33n-api/internal/handler/zone"
 	"gr33n-api/internal/httputil"
@@ -56,6 +57,7 @@ func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationwo
 	plants := planthandler.NewHandler(pool)
 	alert := alerthandler.NewHandler(pool)
 	prof := profilehandler.NewHandler(pool)
+	setpoint := setpointhandler.NewHandler(pool)
 	auth := authhandler.NewHandler(adminUser, adminHash, hashFilePath, IssueToken, pool)
 
 	if fileStore == nil {
@@ -153,6 +155,13 @@ func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationwo
 	mux.Handle("GET /farms/{id}/automation/rules", jwt(http.HandlerFunc(automation.ListAutomationRulesByFarm)))
 	mux.Handle("POST /farms/{id}/automation/rules", jwt(http.HandlerFunc(automation.CreateAutomationRule)))
 
+	// Stage-scoped setpoints (Phase 20.6 WS2)
+	mux.Handle("GET /farms/{id}/setpoints", jwt(http.HandlerFunc(setpoint.List)))
+	mux.Handle("POST /farms/{id}/setpoints", jwt(http.HandlerFunc(setpoint.Create)))
+	mux.Handle("GET /setpoints/{id}", jwt(http.HandlerFunc(setpoint.Get)))
+	mux.Handle("PUT /setpoints/{id}", jwt(http.HandlerFunc(setpoint.Update)))
+	mux.Handle("DELETE /setpoints/{id}", jwt(http.HandlerFunc(setpoint.Delete)))
+
 	// Sensors
 	mux.Handle("GET /sensors/{id}", jwt(http.HandlerFunc(sensor.Get)))
 	mux.Handle("POST /farms/{id}/sensors", jwt(http.HandlerFunc(sensor.Create)))
@@ -193,6 +202,10 @@ func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationwo
 	mux.Handle("PUT /tasks/{id}", jwt(http.HandlerFunc(task.Update)))
 	mux.Handle("DELETE /tasks/{id}", jwt(http.HandlerFunc(task.Delete)))
 	mux.Handle("PATCH /tasks/{id}/status", jwt(http.HandlerFunc(task.UpdateStatus)))
+	// Task labor log (Phase 20.95 WS1)
+	mux.Handle("GET /tasks/{id}/labor", jwt(http.HandlerFunc(task.ListLabor)))
+	mux.Handle("POST /tasks/{id}/labor", jwt(http.HandlerFunc(task.CreateLabor)))
+	mux.Handle("DELETE /labor/{id}", jwt(http.HandlerFunc(task.DeleteLabor)))
 
 	// Fertigation
 	mux.Handle("GET /farms/{id}/fertigation/reservoirs", jwt(http.HandlerFunc(fertigation.ListReservoirsByFarm)))
@@ -235,6 +248,11 @@ func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationwo
 	mux.Handle("POST /farms/{id}/costs", jwt(http.HandlerFunc(cost.Create)))
 	mux.Handle("PUT /costs/{id}", jwt(http.HandlerFunc(cost.Update)))
 	mux.Handle("DELETE /costs/{id}", jwt(http.HandlerFunc(cost.Delete)))
+	// Farm energy prices (Phase 20.95 WS2)
+	mux.Handle("GET /farms/{id}/energy-prices", jwt(http.HandlerFunc(cost.ListEnergyPrices)))
+	mux.Handle("POST /farms/{id}/energy-prices", jwt(http.HandlerFunc(cost.CreateEnergyPrice)))
+	mux.Handle("PUT /energy-prices/{id}", jwt(http.HandlerFunc(cost.UpdateEnergyPrice)))
+	mux.Handle("DELETE /energy-prices/{id}", jwt(http.HandlerFunc(cost.DeleteEnergyPrice)))
 	mux.Handle("POST /farms/{id}/cost-receipts", jwt(http.HandlerFunc(files.UploadCostReceipt)))
 	mux.Handle("GET /file-attachments/{id}/download", jwt(http.HandlerFunc(files.DownloadTarget)))
 	mux.Handle("GET /file-attachments/{id}/content", jwt(http.HandlerFunc(files.Download)))

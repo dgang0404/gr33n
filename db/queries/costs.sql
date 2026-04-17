@@ -6,8 +6,8 @@
 INSERT INTO gr33ncore.cost_transactions (
     farm_id, transaction_date, category, subcategory, amount, currency,
     description, is_income, created_by_user_id, receipt_file_id,
-    document_type, document_reference, counterparty
-) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+    document_type, document_reference, counterparty, crop_cycle_id
+) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
 RETURNING *;
 
 -- name: ListCostTransactionsByFarm :many
@@ -75,6 +75,7 @@ UPDATE gr33ncore.cost_transactions SET
     document_type = $10,
     document_reference = $11,
     counterparty = $12,
+    crop_cycle_id = $13,
     updated_at = NOW()
 WHERE id = $1
 RETURNING *;

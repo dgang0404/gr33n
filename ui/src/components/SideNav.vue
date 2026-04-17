@@ -100,6 +100,7 @@ const navGroups = [
       { to: '/tasks',     icon: '✅', label: 'Tasks'      },
       { to: '/schedules', icon: '📅', label: 'Schedules'  },
       { to: '/automation', icon: '🤖', label: 'Rules'     },
+      { to: '/setpoints', icon: '🎯', label: 'Setpoints' },
       { to: '/actuators', icon: '⚡', label: 'Controls'   },
       { to: '/sensors',   icon: '📡', label: 'Sensors'    },
     ],

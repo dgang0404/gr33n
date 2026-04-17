@@ -114,6 +114,10 @@ An **automation rule** fires when sensor state changes, not when a clock ticks. 
 
 **Dew point / VPD as rule inputs.** Climate rules often key off **dew point** or **vapor pressure deficit (VPD)**. Those can be **computed on the Pi** from air temperature + humidity and ingested as normal sensor readings (see §2 *Derived channels* and [`pattern-playbooks.md`](pattern-playbooks.md)). Predicates stay the usual `{ sensor_id, op, value }` — no special case in the worker.
 
+**Stage-scoped setpoints (Phase 20.6).** Instead of baking a numeric threshold into every rule, operators can store the *ideal environment* for a zone or crop cycle at a given stage as first-class data in `gr33ncore.zone_setpoints` (`GET|POST /farms/{id}/setpoints`, `GET|PUT|DELETE /setpoints/{id}`). A setpoint row carries `sensor_type` (e.g. `dew_point`), optional `min_value` / `max_value` / `ideal_value`, and a scope (`zone_id` and/or `crop_cycle_id`, plus an optional `stage`). Rules can reference them via a second predicate shape — `{ type: "setpoint", sensor_type, scope: "current_stage"|"zone_default", op: "out_of_range"|"below_ideal"|"above_ideal"|"inside_range" }` — and the worker resolves the most-specific row at eval time (precedence: `cycle+stage` > `cycle-any-stage` > `zone+stage` > `zone-any-stage`). If no row matches, the run is recorded as `skipped` with `message='no_setpoint_for_scope'` so the operator knows to configure one rather than thinking the rule failed. The net effect: one rule says *"dew point is out of ideal"* once, and it auto-adjusts as cycles advance through stages.
+
+**Photoperiod / fermented-input automations.** Rules don't know whether the sensor they're reading came from a hydroponic rack, a natural-farming ferment bucket, or a livestock barn — they only see thresholds and predicates. The **JADAM indoor photoperiod starter** bootstrap (see [`pattern-playbooks.md`](pattern-playbooks.md)) ships a canonical schedule + rule set for lighting and fermented-input inventory alerts; the worker runs those rules with the exact same code paths as any other rule. The term *JADAM* here is a proper noun for the method; when we mean the broader product area we say **natural farming** (see [`terminology-guideline.md`](terminology-guideline.md) and the glossary in §10).
+
 Rules honor `cooldown_period_seconds`. Two ticks inside the cooldown window produce one `success` run and one `skipped` run with `details.reason='cooldown'`; once the window elapses the rule can fire again. On a successful tick the worker advances `last_triggered_time`; every tick (fire or not) advances `last_evaluated_time`.
 
 Deleting a rule **cascades** its `executable_actions` (they're meaningless without the parent rule) but **nulls** `tasks.source_rule_id` so operator-facing work survives an administrator tidying up automations. The same `ON DELETE SET NULL` pattern Phase 19 used for `source_alert_id`.
@@ -172,7 +176,11 @@ A **fertigation event** (`POST /farms/{id}/fertigation/events`) is a zone-scoped
 
 Both accept arbitrary `meta` JSON for tags, notes, or integrations with the **Commons Catalog** (see §8).
 
+**Stage matters outside EC, too.** EC targets cover the fertigation side of "what should this zone look like right now"; **zone setpoints** (Phase 20.6 — see §3b) cover the environment side per stage (dew point / VPD / temperature ranges, etc.). The two are intentionally separate tables: EC targets drive mixing and programs; setpoints drive rule predicates. When a crop cycle's `current_stage` advances, any setpoint predicate on a rule keyed to that zone immediately starts resolving against the new stage's row — no rule edit required.
+
 **The operator story end-to-end:** set the EC target for "late veg" → assign that target to the program → mix a reservoir (record the mixing event with components) → the program triggers the schedule → the schedule fires an actuator → the Pi reports the actuator event → a fertigation event is recorded against the zone and the active crop cycle. Every step is auditable.
+
+**Fertigation with natural-farming inputs.** Components on a mixing event can draw from either commercial nutrient batches or **natural-farming input batches** (fermented extracts, microbial inoculants, etc.) — the schema doesn't distinguish, it just debits whatever `input_batches.id` you cite. The **JADAM indoor photoperiod starter** bootstrap seeds a handful of JADAM-style inputs (JMS, JLF, FFJ, WCA) so operators following that method have realistic demo data out of the box; operators using other approaches add their own input definitions and the rest of the fertigation pipeline is unchanged. See [`terminology-guideline.md`](terminology-guideline.md) for why we call the API module **natural farming** (the generic umbrella) rather than tying it to any nationality or tradition.
 
 ---
 
@@ -265,6 +273,7 @@ Every action above is recorded as a row in Postgres; nothing depends on an exter
 | **Automation run** | One execution of *either* a schedule *or* a rule; has status (`success|partial_success|failed|skipped`), a `details` JSON, and a nullable `schedule_id` or `rule_id` pointing back at what triggered it. |
 | **Program** | A fertigation recipe/EC-target/schedule triplet. |
 | **EC target** | A named EC setpoint (e.g. "flower EC 2.0"). |
+| **Zone setpoint** | A stage-scoped row in `gr33ncore.zone_setpoints` that says "for this zone / crop cycle / growth stage, the ideal `sensor_type` value is X (min/ideal/max)". Rules can reference setpoints via a `type: "setpoint"` predicate so one rule auto-adjusts as stages advance. Resolver precedence is `cycle+stage` > `cycle-any-stage` > `zone+stage` > `zone-any-stage`. |
 | **Reservoir** | A tank you mix and dispense from. |
 | **Mixing event** | "What physically went into the tank" — water + components + measured final EC/pH. |
 | **Fertigation event** | "What the zone actually received" — zone-scoped, optionally tied to a crop cycle. |
@@ -275,6 +284,8 @@ Every action above is recorded as a row in Postgres; nothing depends on an exter
 | **Cost** | Farm-scoped expense or income with optional receipt attachment and COA mapping. |
 | **Commons Catalog** | Public library of importable metadata packs. |
 | **Insert Commons** | Opt-in farm → commons publishing pipeline. |
+| **Natural farming** | Generic English umbrella term used in module titles, API tags, and UI copy for farming that relies on on-site fermented extracts, microbial cultures, and soil amendments (FPJ, FAA, JMS, etc.). Intentionally unqualified — no national / regional / ethnic modifier — because the system doesn't privilege any single tradition. See [`terminology-guideline.md`](terminology-guideline.md). |
+| **JADAM** | Proper noun for a specific documented method and its starter cultures (JMS, JLF, FFJ, WCA, …). Used when referring to that method precisely — e.g. the `jadam_indoor_photoperiod_v1` bootstrap template or `reference_source = "JADAM Organic Farming"` seed metadata. Not interchangeable with *natural farming*, which is the broader category. See [`terminology-guideline.md`](terminology-guideline.md). |
 
 ---
 

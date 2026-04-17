@@ -103,27 +103,70 @@
       </p>
       <div v-else class="space-y-2">
         <div v-for="(p, idx) in form.conditions" :key="idx"
-          class="grid grid-cols-[minmax(0,1fr)_80px_100px_auto] gap-2 items-center">
-          <select v-model.number="p.sensor_id"
-            class="bg-zinc-900 border border-zinc-700 rounded px-2 py-1 text-xs text-white">
-            <option :value="0" disabled>Select sensor</option>
-            <option v-for="s in sensors" :key="s.id" :value="s.id">
-              {{ s.name }}{{ s.sensor_type ? ' (' + s.sensor_type + ')' : '' }}
-            </option>
-          </select>
-          <select v-model="p.op"
-            class="bg-zinc-900 border border-zinc-700 rounded px-2 py-1 text-xs text-white">
-            <option value="lt">&lt;</option>
-            <option value="lte">&le;</option>
-            <option value="eq">=</option>
-            <option value="gte">&ge;</option>
-            <option value="gt">&gt;</option>
-            <option value="ne">&ne;</option>
-          </select>
-          <input type="number" step="any" v-model.number="p.value"
-            class="bg-zinc-900 border border-zinc-700 rounded px-2 py-1 text-xs text-white" />
-          <button type="button" @click="removeCondition(idx)"
-            class="text-[11px] text-red-400 hover:text-red-300 px-1">Remove</button>
+          class="bg-zinc-900 border border-zinc-800 rounded p-2 space-y-1">
+          <div class="flex items-center gap-2 text-[11px] text-zinc-400">
+            <label class="flex items-center gap-1 cursor-pointer">
+              <input type="checkbox" :checked="p.type === 'setpoint'"
+                @change="toggleSetpoint(p, $event.target.checked)"
+                class="accent-green-600" />
+              Use setpoint from zone/cycle
+            </label>
+            <HelpTip position="right">
+              When checked, the rule reads min/ideal/max from
+              <code>gr33ncore.zone_setpoints</code> at every tick, using the
+              trigger's zone + active crop cycle's <code>current_stage</code>.
+              Configure setpoints under Operate → Setpoints.
+              If no setpoint exists for the resolved scope, the rule skips with
+              <code>no_setpoint_for_scope</code> — not a failure, just "nothing to
+              compare against yet."
+            </HelpTip>
+            <div class="flex-1"></div>
+            <button type="button" @click="removeCondition(idx)"
+              class="text-[11px] text-red-400 hover:text-red-300 px-1">Remove</button>
+          </div>
+          <!-- Hard predicate fields -->
+          <div v-if="p.type !== 'setpoint'"
+            class="grid grid-cols-[minmax(0,1fr)_80px_100px] gap-2 items-center">
+            <select v-model.number="p.sensor_id"
+              class="bg-zinc-900 border border-zinc-700 rounded px-2 py-1 text-xs text-white">
+              <option :value="0" disabled>Select sensor</option>
+              <option v-for="s in sensors" :key="s.id" :value="s.id">
+                {{ s.name }}{{ s.sensor_type ? ' (' + s.sensor_type + ')' : '' }}
+              </option>
+            </select>
+            <select v-model="p.op"
+              class="bg-zinc-900 border border-zinc-700 rounded px-2 py-1 text-xs text-white">
+              <option value="lt">&lt;</option>
+              <option value="lte">&le;</option>
+              <option value="eq">=</option>
+              <option value="gte">&ge;</option>
+              <option value="gt">&gt;</option>
+              <option value="ne">&ne;</option>
+            </select>
+            <input type="number" step="any" v-model.number="p.value"
+              class="bg-zinc-900 border border-zinc-700 rounded px-2 py-1 text-xs text-white" />
+          </div>
+          <!-- Setpoint predicate fields -->
+          <div v-else class="grid grid-cols-[minmax(0,1fr)_140px_140px] gap-2 items-center">
+            <input v-model="p.sensor_type" type="text" list="sensor-type-list"
+              placeholder="sensor_type (dew_point, vpd, …)"
+              class="bg-zinc-900 border border-zinc-700 rounded px-2 py-1 text-xs text-white" />
+            <datalist id="sensor-type-list">
+              <option v-for="t in uniqueSensorTypes" :key="t" :value="t" />
+            </datalist>
+            <select v-model="p.scope"
+              class="bg-zinc-900 border border-zinc-700 rounded px-2 py-1 text-xs text-white">
+              <option value="current_stage">scope: current_stage</option>
+              <option value="zone_default">scope: zone_default</option>
+            </select>
+            <select v-model="p.op"
+              class="bg-zinc-900 border border-zinc-700 rounded px-2 py-1 text-xs text-white">
+              <option value="out_of_range">out_of_range</option>
+              <option value="below_ideal">below_ideal</option>
+              <option value="above_ideal">above_ideal</option>
+              <option value="inside_range">inside_range</option>
+            </select>
+          </div>
         </div>
       </div>
     </section>
@@ -380,11 +423,27 @@ function hydrateFromProps() {
   }
   const r = props.rule
   const conditions = r.conditions_jsonb && typeof r.conditions_jsonb === 'object' && Array.isArray(r.conditions_jsonb.predicates)
-    ? r.conditions_jsonb.predicates.map(p => ({
-        sensor_id: Number(p.sensor_id) || 0,
-        op: p.op || 'gte',
-        value: Number(p.value) || 0,
-      }))
+    ? r.conditions_jsonb.predicates.map(p => {
+        const type = p.type === 'setpoint' ? 'setpoint' : 'hard'
+        if (type === 'setpoint') {
+          return {
+            type: 'setpoint',
+            sensor_type: p.sensor_type || '',
+            scope: p.scope || 'current_stage',
+            op: p.op || 'out_of_range',
+            sensor_id: 0,
+            value: 0,
+          }
+        }
+        return {
+          type: 'hard',
+          sensor_id: Number(p.sensor_id) || 0,
+          op: p.op || 'gte',
+          value: Number(p.value) || 0,
+          sensor_type: '',
+          scope: 'current_stage',
+        }
+      })
     : []
   const trigCfg = r.trigger_configuration && typeof r.trigger_configuration === 'object'
     ? r.trigger_configuration
@@ -406,12 +465,49 @@ watch(() => [props.rule, props.actions, props.sensors], hydrateFromProps, { imme
 
 function addCondition() {
   form.value.conditions.push({
+    type: 'hard',
     sensor_id: props.sensors[0]?.id || 0,
     op: 'gte',
     value: 0,
+    sensor_type: '',
+    scope: 'current_stage',
   })
 }
 function removeCondition(idx) { form.value.conditions.splice(idx, 1) }
+
+// Flip a predicate between "hard" (sensor_id/op/value) and "setpoint"
+// (sensor_type/scope/op). We reset fields on toggle so saving the form
+// doesn't leak stale values into the wire payload (the backend
+// validator rejects sensor_id + value on setpoint predicates).
+function toggleSetpoint(p, on) {
+  if (on) {
+    p.type = 'setpoint'
+    p.sensor_id = 0
+    p.value = 0
+    if (!p.sensor_type) {
+      const firstSensor = props.sensors?.[0]
+      p.sensor_type = firstSensor?.sensor_type || ''
+    }
+    p.scope = p.scope || 'current_stage'
+    if (!['out_of_range', 'below_ideal', 'above_ideal', 'inside_range'].includes(p.op)) {
+      p.op = 'out_of_range'
+    }
+  } else {
+    p.type = 'hard'
+    p.sensor_type = ''
+    p.scope = 'current_stage'
+    if (!p.sensor_id) p.sensor_id = props.sensors?.[0]?.id || 0
+    if (!['lt', 'lte', 'eq', 'gte', 'gt', 'ne'].includes(p.op)) p.op = 'gte'
+  }
+}
+
+const uniqueSensorTypes = computed(() => {
+  const set = new Set()
+  for (const s of props.sensors || []) {
+    if (s.sensor_type) set.add(s.sensor_type)
+  }
+  return Array.from(set).sort()
+})
 
 function addAction() {
   form.value.actions.push({
@@ -481,7 +577,12 @@ function submit() {
     return
   }
   for (const [i, p] of form.value.conditions.entries()) {
-    if (!p.sensor_id) {
+    if (p.type === 'setpoint') {
+      if (!p.sensor_type?.trim()) {
+        emit('submit', { error: `Condition ${i + 1}: sensor_type is required for setpoint predicates.` })
+        return
+      }
+    } else if (!p.sensor_id) {
       emit('submit', { error: `Condition ${i + 1}: pick a sensor.` })
       return
     }
@@ -495,11 +596,21 @@ function submit() {
       ? { sensor_id: Number(triggerSensorId.value) }
       : {},
     condition_logic: form.value.condition_logic,
-    conditions: form.value.conditions.map(p => ({
-      sensor_id: Number(p.sensor_id),
-      op: p.op,
-      value: Number(p.value),
-    })),
+    conditions: form.value.conditions.map(p => (
+      p.type === 'setpoint'
+        ? {
+            type: 'setpoint',
+            sensor_type: p.sensor_type.trim(),
+            scope: p.scope || 'current_stage',
+            op: p.op,
+          }
+        : {
+            type: 'hard',
+            sensor_id: Number(p.sensor_id),
+            op: p.op,
+            value: Number(p.value),
+          }
+    )),
     cooldown_period_seconds: Number(form.value.cooldown_period_seconds) || 0,
   }
   const actionPayloads = form.value.actions.map((a, idx) => {

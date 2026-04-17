@@ -23,14 +23,16 @@ ORDER BY creation_start_date DESC;
 -- name: CreateInputDefinition :one
 INSERT INTO gr33nnaturalfarming.input_definitions (
   farm_id, name, category, description, typical_ingredients,
-  preparation_summary, storage_guidelines, safety_precautions, reference_source
-) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING *;
+  preparation_summary, storage_guidelines, safety_precautions, reference_source,
+  unit_cost, unit_cost_currency, unit_cost_unit_id
+) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) RETURNING *;
 
 -- name: UpdateInputDefinition :one
 UPDATE gr33nnaturalfarming.input_definitions SET
   name=$2, category=$3, description=$4, typical_ingredients=$5,
   preparation_summary=$6, storage_guidelines=$7, safety_precautions=$8,
-  reference_source=$9, updated_at=NOW(), updated_by_user_id=$10
+  reference_source=$9, unit_cost=$10, unit_cost_currency=$11, unit_cost_unit_id=$12,
+  updated_at=NOW(), updated_by_user_id=$13
 WHERE id=$1 AND deleted_at IS NULL RETURNING *;
 
 -- name: SoftDeleteInputDefinition :exec
@@ -43,14 +45,15 @@ INSERT INTO gr33nnaturalfarming.input_batches (
   creation_end_date, expected_ready_date, quantity_produced, quantity_unit_id,
   current_quantity_remaining, status, storage_location, shelf_life_days,
   ph_value, ec_value_ms_cm, ingredients_used, procedure_followed,
-  observations_notes
-) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17) RETURNING *;
+  observations_notes, low_stock_threshold
+) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18) RETURNING *;
 
 -- name: UpdateInputBatch :one
 UPDATE gr33nnaturalfarming.input_batches SET
   batch_identifier=$2, status=$3, actual_ready_date=$4,
   current_quantity_remaining=$5, storage_location=$6,
-  observations_notes=$7, updated_at=NOW(), updated_by_user_id=$8
+  observations_notes=$7, low_stock_threshold=$8,
+  updated_at=NOW(), updated_by_user_id=$9
 WHERE id=$1 AND deleted_at IS NULL RETURNING *;
 
 -- name: SoftDeleteInputBatch :exec

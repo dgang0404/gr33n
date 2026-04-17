@@ -10,19 +10,19 @@ overview: >
 todos:
   - id: ws1-migration-and-queries
     content: "WS1: Migration for gr33ncore.zone_setpoints (additive only); mirror in schema file; sqlc queries; Gr33ncoreZoneSetpoint model"
-    status: pending
+    status: completed
   - id: ws2-crud-handlers
     content: "WS2: CRUD handlers — GET|POST /farms/{id}/setpoints, GET|PUT|DELETE /setpoints/{id}; validate scope (zone_id XOR crop_cycle_id), sensor_type not empty, numeric coherence (min <= ideal <= max); OpenAPI paths + schemas"
-    status: pending
+    status: completed
   - id: ws3-rule-engine-hook
     content: "WS3: Optional setpoint-driven predicate shape in rules — `{ setpoint_key: 'dew_point', scope: 'current_stage' }` resolves at eval time to the zone's active setpoint row, falls back to a hard-coded predicate if no setpoint exists; promote to shared predicates.go"
-    status: pending
+    status: completed
   - id: ws4-ui-setpoints-page
     content: "WS4: Setpoints page under Operate — list per zone/cycle, inline edit, HelpTips explaining stage matching; link from Zone detail + Crop Cycle detail; extend RuleForm predicate picker with a 'use setpoint' toggle"
-    status: pending
+    status: completed
   - id: ws5-smoke-and-docs
     content: "WS5: Smoke — setpoint CRUD, rule fires against current_stage setpoint, falls back when no row exists; update workflow-guide.md §4 (Fertigation / stages) to describe setpoints; OpenAPI audit"
-    status: pending
+    status: completed
 isProject: false
 ---
 

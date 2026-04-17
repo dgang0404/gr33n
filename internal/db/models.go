@@ -1123,6 +1123,9 @@ const (
 	Gr33nnaturalfarmingInputCategoryEnumBiocharPreparation        Gr33nnaturalfarmingInputCategoryEnum = "biochar_preparation"
 	Gr33nnaturalfarmingInputCategoryEnumOtherFerment              Gr33nnaturalfarmingInputCategoryEnum = "other_ferment"
 	Gr33nnaturalfarmingInputCategoryEnumOtherExtract              Gr33nnaturalfarmingInputCategoryEnum = "other_extract"
+	Gr33nnaturalfarmingInputCategoryEnumAnimalFeed                Gr33nnaturalfarmingInputCategoryEnum = "animal_feed"
+	Gr33nnaturalfarmingInputCategoryEnumBedding                   Gr33nnaturalfarmingInputCategoryEnum = "bedding"
+	Gr33nnaturalfarmingInputCategoryEnumVeterinarySupply          Gr33nnaturalfarmingInputCategoryEnum = "veterinary_supply"
 )
 
 func (e *Gr33nnaturalfarmingInputCategoryEnum) Scan(src interface{}) error {
@@ -1168,24 +1171,31 @@ type AuthUser struct {
 }
 
 type Gr33nanimalsAnimalGroup struct {
-	ID        int64              `db:"id" json:"id"`
-	FarmID    int64              `db:"farm_id" json:"farm_id"`
-	Label     string             `db:"label" json:"label"`
-	Species   *string            `db:"species" json:"species"`
-	Meta      []byte             `db:"meta" json:"meta"`
-	CreatedAt time.Time          `db:"created_at" json:"created_at"`
-	UpdatedAt time.Time          `db:"updated_at" json:"updated_at"`
-	DeletedAt pgtype.Timestamptz `db:"deleted_at" json:"deleted_at"`
+	ID             int64              `db:"id" json:"id"`
+	FarmID         int64              `db:"farm_id" json:"farm_id"`
+	Label          string             `db:"label" json:"label"`
+	Species        *string            `db:"species" json:"species"`
+	Meta           []byte             `db:"meta" json:"meta"`
+	Count          *int32             `db:"count" json:"count"`
+	PrimaryZoneID  *int64             `db:"primary_zone_id" json:"primary_zone_id"`
+	Active         bool               `db:"active" json:"active"`
+	ArchivedAt     pgtype.Timestamptz `db:"archived_at" json:"archived_at"`
+	ArchivedReason *string            `db:"archived_reason" json:"archived_reason"`
+	CreatedAt      time.Time          `db:"created_at" json:"created_at"`
+	UpdatedAt      time.Time          `db:"updated_at" json:"updated_at"`
+	DeletedAt      pgtype.Timestamptz `db:"deleted_at" json:"deleted_at"`
 }
 
 type Gr33naquaponicsLoop struct {
-	ID        int64              `db:"id" json:"id"`
-	FarmID    int64              `db:"farm_id" json:"farm_id"`
-	Label     string             `db:"label" json:"label"`
-	Meta      []byte             `db:"meta" json:"meta"`
-	CreatedAt time.Time          `db:"created_at" json:"created_at"`
-	UpdatedAt time.Time          `db:"updated_at" json:"updated_at"`
-	DeletedAt pgtype.Timestamptz `db:"deleted_at" json:"deleted_at"`
+	ID             int64              `db:"id" json:"id"`
+	FarmID         int64              `db:"farm_id" json:"farm_id"`
+	Label          string             `db:"label" json:"label"`
+	Meta           []byte             `db:"meta" json:"meta"`
+	FishTankZoneID *int64             `db:"fish_tank_zone_id" json:"fish_tank_zone_id"`
+	GrowBedZoneID  *int64             `db:"grow_bed_zone_id" json:"grow_bed_zone_id"`
+	CreatedAt      time.Time          `db:"created_at" json:"created_at"`
+	UpdatedAt      time.Time          `db:"updated_at" json:"updated_at"`
+	DeletedAt      pgtype.Timestamptz `db:"deleted_at" json:"deleted_at"`
 }
 
 type Gr33ncoreActuator struct {
@@ -1207,6 +1217,7 @@ type Gr33ncoreActuator struct {
 	UpdatedAt           time.Time          `db:"updated_at" json:"updated_at"`
 	UpdatedByUserID     pgtype.UUID        `db:"updated_by_user_id" json:"updated_by_user_id"`
 	DeletedAt           pgtype.Timestamptz `db:"deleted_at" json:"deleted_at"`
+	Watts               pgtype.Numeric     `db:"watts" json:"watts"`
 }
 
 type Gr33ncoreActuatorEvent struct {
@@ -1312,6 +1323,7 @@ type Gr33ncoreCostTransaction struct {
 	CreatedByUserID     pgtype.UUID                  `db:"created_by_user_id" json:"created_by_user_id"`
 	CreatedAt           time.Time                    `db:"created_at" json:"created_at"`
 	UpdatedAt           time.Time                    `db:"updated_at" json:"updated_at"`
+	CropCycleID         *int64                       `db:"crop_cycle_id" json:"crop_cycle_id"`
 }
 
 type Gr33ncoreCostTransactionIdempotency struct {
@@ -1345,6 +1357,7 @@ type Gr33ncoreExecutableAction struct {
 	ID                           int64                                `db:"id" json:"id"`
 	ScheduleID                   *int64                               `db:"schedule_id" json:"schedule_id"`
 	RuleID                       *int64                               `db:"rule_id" json:"rule_id"`
+	ProgramID                    *int64                               `db:"program_id" json:"program_id"`
 	ExecutionOrder               int32                                `db:"execution_order" json:"execution_order"`
 	ActionType                   commontypes.ExecutableActionTypeEnum `db:"action_type" json:"action_type"`
 	TargetActuatorID             *int64                               `db:"target_actuator_id" json:"target_actuator_id"`
@@ -1398,6 +1411,18 @@ type Gr33ncoreFarmCommonsCatalogImport struct {
 	ImportedBy     uuid.UUID `db:"imported_by" json:"imported_by"`
 	ImportedAt     time.Time `db:"imported_at" json:"imported_at"`
 	Note           *string   `db:"note" json:"note"`
+}
+
+type Gr33ncoreFarmEnergyPrice struct {
+	ID            int64          `db:"id" json:"id"`
+	FarmID        int64          `db:"farm_id" json:"farm_id"`
+	EffectiveFrom pgtype.Date    `db:"effective_from" json:"effective_from"`
+	EffectiveTo   pgtype.Date    `db:"effective_to" json:"effective_to"`
+	PricePerKwh   pgtype.Numeric `db:"price_per_kwh" json:"price_per_kwh"`
+	Currency      string         `db:"currency" json:"currency"`
+	Notes         *string        `db:"notes" json:"notes"`
+	CreatedAt     time.Time      `db:"created_at" json:"created_at"`
+	UpdatedAt     time.Time      `db:"updated_at" json:"updated_at"`
 }
 
 type Gr33ncoreFarmFinanceAccountMapping struct {
@@ -1615,6 +1640,22 @@ type Gr33ncoreTask struct {
 	UpdatedAt                time.Time                  `db:"updated_at" json:"updated_at"`
 	UpdatedByUserID          pgtype.UUID                `db:"updated_by_user_id" json:"updated_by_user_id"`
 	DeletedAt                pgtype.Timestamptz         `db:"deleted_at" json:"deleted_at"`
+	TimeSpentMinutes         *int32                     `db:"time_spent_minutes" json:"time_spent_minutes"`
+}
+
+type Gr33ncoreTaskLaborLog struct {
+	ID                 int64              `db:"id" json:"id"`
+	FarmID             int64              `db:"farm_id" json:"farm_id"`
+	TaskID             int64              `db:"task_id" json:"task_id"`
+	UserID             pgtype.UUID        `db:"user_id" json:"user_id"`
+	StartedAt          time.Time          `db:"started_at" json:"started_at"`
+	EndedAt            pgtype.Timestamptz `db:"ended_at" json:"ended_at"`
+	Minutes            int32              `db:"minutes" json:"minutes"`
+	HourlyRateSnapshot pgtype.Numeric     `db:"hourly_rate_snapshot" json:"hourly_rate_snapshot"`
+	Currency           *string            `db:"currency" json:"currency"`
+	Notes              *string            `db:"notes" json:"notes"`
+	CreatedAt          time.Time          `db:"created_at" json:"created_at"`
+	UpdatedAt          time.Time          `db:"updated_at" json:"updated_at"`
 }
 
 // Master reference for all units. Ensures consistency and enables automatic conversions.
@@ -1712,6 +1753,21 @@ type Gr33ncoreZone struct {
 	UpdatedAt       time.Time          `db:"updated_at" json:"updated_at"`
 	UpdatedByUserID pgtype.UUID        `db:"updated_by_user_id" json:"updated_by_user_id"`
 	DeletedAt       pgtype.Timestamptz `db:"deleted_at" json:"deleted_at"`
+}
+
+type Gr33ncoreZoneSetpoint struct {
+	ID          int64          `db:"id" json:"id"`
+	FarmID      int64          `db:"farm_id" json:"farm_id"`
+	ZoneID      *int64         `db:"zone_id" json:"zone_id"`
+	CropCycleID *int64         `db:"crop_cycle_id" json:"crop_cycle_id"`
+	Stage       *string        `db:"stage" json:"stage"`
+	SensorType  string         `db:"sensor_type" json:"sensor_type"`
+	MinValue    pgtype.Numeric `db:"min_value" json:"min_value"`
+	MaxValue    pgtype.Numeric `db:"max_value" json:"max_value"`
+	IdealValue  pgtype.Numeric `db:"ideal_value" json:"ideal_value"`
+	Meta        []byte         `db:"meta" json:"meta"`
+	CreatedAt   time.Time      `db:"created_at" json:"created_at"`
+	UpdatedAt   time.Time      `db:"updated_at" json:"updated_at"`
 }
 
 type Gr33ncropsPlant struct {
@@ -1913,6 +1969,7 @@ type Gr33nnaturalfarmingInputBatch struct {
 	UpdatedAt                time.Time                               `db:"updated_at" json:"updated_at"`
 	UpdatedByUserID          pgtype.UUID                             `db:"updated_by_user_id" json:"updated_by_user_id"`
 	DeletedAt                pgtype.Timestamptz                      `db:"deleted_at" json:"deleted_at"`
+	LowStockThreshold        pgtype.Numeric                          `db:"low_stock_threshold" json:"low_stock_threshold"`
 }
 
 type Gr33nnaturalfarmingInputDefinition struct {
@@ -1931,6 +1988,9 @@ type Gr33nnaturalfarmingInputDefinition struct {
 	UpdatedAt          time.Time                            `db:"updated_at" json:"updated_at"`
 	UpdatedByUserID    pgtype.UUID                          `db:"updated_by_user_id" json:"updated_by_user_id"`
 	DeletedAt          pgtype.Timestamptz                   `db:"deleted_at" json:"deleted_at"`
+	UnitCost           pgtype.Numeric                       `db:"unit_cost" json:"unit_cost"`
+	UnitCostCurrency   *string                              `db:"unit_cost_currency" json:"unit_cost_currency"`
+	UnitCostUnitID     *int64                               `db:"unit_cost_unit_id" json:"unit_cost_unit_id"`
 }
 
 type Gr33nnaturalfarmingRecipeInputComponent struct {

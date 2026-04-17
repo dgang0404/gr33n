@@ -560,7 +560,9 @@ CREATE TABLE IF NOT EXISTS gr33ncore.actuators (
     created_at             TIMESTAMPTZ DEFAULT NOW() NOT NULL,
     updated_at             TIMESTAMPTZ DEFAULT NOW() NOT NULL,
     updated_by_user_id     UUID       REFERENCES gr33ncore.profiles(user_id) ON DELETE SET NULL,
-    deleted_at             TIMESTAMPTZ DEFAULT NULL
+    deleted_at             TIMESTAMPTZ DEFAULT NULL,
+    -- Phase 20.95 WS2: wattage for the nightly electricity rollup (0 = unknown/unmetered).
+    watts                  NUMERIC(10,2) DEFAULT 0 NOT NULL
 );
 CREATE TRIGGER trg_actuators_updated_at
     BEFORE UPDATE ON gr33ncore.actuators
@@ -632,7 +634,9 @@ CREATE TABLE IF NOT EXISTS gr33ncore.tasks (
     created_at                 TIMESTAMPTZ DEFAULT NOW() NOT NULL,
     updated_at                 TIMESTAMPTZ DEFAULT NOW() NOT NULL,
     updated_by_user_id         UUID   REFERENCES gr33ncore.profiles(user_id) ON DELETE SET NULL,
-    deleted_at                 TIMESTAMPTZ DEFAULT NULL
+    deleted_at                 TIMESTAMPTZ DEFAULT NULL,
+    -- Phase 20.95 WS1: denormalised SUM(task_labor_log.minutes) maintained by handler.
+    time_spent_minutes         INTEGER
 );
 CREATE INDEX IF NOT EXISTS idx_tasks_source_alert_id
     ON gr33ncore.tasks (source_alert_id)
@@ -642,6 +646,31 @@ CREATE INDEX IF NOT EXISTS idx_tasks_source_rule_id
     WHERE source_rule_id IS NOT NULL;
 CREATE TRIGGER trg_tasks_updated_at
     BEFORE UPDATE ON gr33ncore.tasks
+    FOR EACH ROW EXECUTE FUNCTION gr33ncore.set_updated_at();
+
+-- Phase 20.95 WS1 — task labor log (minutes + optional hourly-rate snapshot).
+-- tasks.time_spent_minutes is a running SUM over surviving log rows,
+-- written by the task labor handler on every insert/delete.
+CREATE TABLE IF NOT EXISTS gr33ncore.task_labor_log (
+    id                    BIGSERIAL PRIMARY KEY,
+    farm_id               BIGINT NOT NULL REFERENCES gr33ncore.farms(id) ON DELETE CASCADE,
+    task_id               BIGINT NOT NULL REFERENCES gr33ncore.tasks(id) ON DELETE CASCADE,
+    user_id               UUID   REFERENCES gr33ncore.profiles(user_id) ON DELETE SET NULL,
+    started_at            TIMESTAMPTZ NOT NULL,
+    ended_at              TIMESTAMPTZ,
+    minutes               INTEGER NOT NULL CHECK (minutes >= 0),
+    hourly_rate_snapshot  NUMERIC(10,2),
+    currency              CHAR(3) CHECK (currency IS NULL OR currency ~ '^[A-Z]{3}$'),
+    notes                 TEXT,
+    created_at            TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at            TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_task_labor_log_task
+    ON gr33ncore.task_labor_log (task_id);
+CREATE INDEX IF NOT EXISTS idx_task_labor_log_farm
+    ON gr33ncore.task_labor_log (farm_id);
+CREATE TRIGGER trg_task_labor_log_updated_at
+    BEFORE UPDATE ON gr33ncore.task_labor_log
     FOR EACH ROW EXECUTE FUNCTION gr33ncore.set_updated_at();
 
 -- Automation rules
@@ -670,6 +699,7 @@ CREATE TABLE IF NOT EXISTS gr33ncore.executable_actions (
     id                          BIGSERIAL PRIMARY KEY,
     schedule_id                 BIGINT REFERENCES gr33ncore.schedules(id) ON DELETE CASCADE,
     rule_id                     BIGINT REFERENCES gr33ncore.automation_rules(id) ON DELETE CASCADE,
+    program_id                  BIGINT, -- Phase 20.95 WS3; FK added after gr33nfertigation.programs is created below.
     execution_order             INTEGER DEFAULT 0 NOT NULL,
     action_type                 gr33ncore.executable_action_type_enum NOT NULL,
     target_actuator_id          BIGINT REFERENCES gr33ncore.actuators(id) ON DELETE SET NULL,
@@ -678,7 +708,7 @@ CREATE TABLE IF NOT EXISTS gr33ncore.executable_actions (
     action_command              TEXT,
     action_parameters           JSONB,
     delay_before_execution_seconds INTEGER DEFAULT 0,
-    CONSTRAINT chk_executable_source CHECK (schedule_id IS NOT NULL OR rule_id IS NOT NULL),
+    CONSTRAINT chk_executable_source CHECK (num_nonnulls(schedule_id, rule_id, program_id) = 1),
     CONSTRAINT chk_executable_action_details CHECK (
         (action_type = 'control_actuator'              AND target_actuator_id IS NOT NULL AND action_command IS NOT NULL) OR
         (action_type = 'trigger_another_automation_rule' AND target_automation_rule_id IS NOT NULL) OR
@@ -869,10 +899,34 @@ CREATE TABLE IF NOT EXISTS gr33ncore.cost_transactions (
     counterparty       TEXT,
     created_by_user_id UUID REFERENCES gr33ncore.profiles(user_id),
     created_at       TIMESTAMPTZ DEFAULT NOW() NOT NULL,
-    updated_at       TIMESTAMPTZ DEFAULT NOW() NOT NULL
+    updated_at       TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    -- Phase 20.95 WS2: optional link so Phase 21 can report "$ per cycle".
+    crop_cycle_id    BIGINT REFERENCES gr33nfertigation.crop_cycles(id) ON DELETE SET NULL
 );
+CREATE INDEX IF NOT EXISTS idx_cost_tx_crop_cycle
+    ON gr33ncore.cost_transactions (crop_cycle_id)
+    WHERE crop_cycle_id IS NOT NULL;
 CREATE TRIGGER trg_cost_transactions_updated_at
     BEFORE UPDATE ON gr33ncore.cost_transactions
+    FOR EACH ROW EXECUTE FUNCTION gr33ncore.set_updated_at();
+
+-- Phase 20.95 WS2 — per-farm $/kWh pricing history. Phase 20.7 WS4
+-- will multiply actuators.watts * runtime_hours * price_per_kwh.
+CREATE TABLE IF NOT EXISTS gr33ncore.farm_energy_prices (
+    id               BIGSERIAL PRIMARY KEY,
+    farm_id          BIGINT NOT NULL REFERENCES gr33ncore.farms(id) ON DELETE CASCADE,
+    effective_from   DATE   NOT NULL,
+    effective_to     DATE,
+    price_per_kwh    NUMERIC(10,4) NOT NULL CHECK (price_per_kwh >= 0),
+    currency         CHAR(3)       NOT NULL CHECK (currency ~ '^[A-Z]{3}$'),
+    notes            TEXT,
+    created_at       TIMESTAMPTZ   NOT NULL DEFAULT NOW(),
+    updated_at       TIMESTAMPTZ   NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_farm_energy_prices_active
+    ON gr33ncore.farm_energy_prices (farm_id, effective_from DESC);
+CREATE TRIGGER trg_farm_energy_prices_updated_at
+    BEFORE UPDATE ON gr33ncore.farm_energy_prices
     FOR EACH ROW EXECUTE FUNCTION gr33ncore.set_updated_at();
 
 -- Cost transaction idempotency (offline / safe retries) — must follow cost_transactions
@@ -1072,7 +1126,9 @@ CREATE SCHEMA IF NOT EXISTS gr33nnaturalfarming;
 CREATE TYPE gr33nnaturalfarming.input_category_enum AS ENUM (
     'microbial_inoculant','fermented_plant_juice','water_soluble_nutrient','oriental_herbal_nutrient',
     'fish_amino_acid','insect_attractant_repellent','soil_conditioner','compost_tea_extract',
-    'biochar_preparation','other_ferment','other_extract'
+    'biochar_preparation','other_ferment','other_extract',
+    -- Phase 20.95 WS2 — livestock categories so animal feed / bedding / vet supply cost correctly.
+    'animal_feed','bedding','veterinary_supply'
 );
 CREATE TYPE gr33nnaturalfarming.input_batch_status_enum AS ENUM (
     'planning','ingredients_gathered','mixing_in_progress','fermenting_brewing','maturing_aging',
@@ -1099,7 +1155,11 @@ CREATE TABLE IF NOT EXISTS gr33nnaturalfarming.input_definitions (
     created_at           TIMESTAMPTZ DEFAULT NOW() NOT NULL,
     updated_at           TIMESTAMPTZ DEFAULT NOW() NOT NULL,
     updated_by_user_id   UUID   REFERENCES gr33ncore.profiles(user_id) ON DELETE SET NULL,
-    deleted_at           TIMESTAMPTZ DEFAULT NULL
+    deleted_at           TIMESTAMPTZ DEFAULT NULL,
+    -- Phase 20.95 WS2 — optional per-input unit-cost metadata for auto-cost rollups.
+    unit_cost            NUMERIC(12,4),
+    unit_cost_currency   CHAR(3) CHECK (unit_cost_currency IS NULL OR unit_cost_currency ~ '^[A-Z]{3}$'),
+    unit_cost_unit_id    BIGINT REFERENCES gr33ncore.units(id) ON DELETE SET NULL
 );
 -- FIX #7: partial unique index instead of UNIQUE with deleted_at
 CREATE UNIQUE INDEX IF NOT EXISTS uq_input_definition_farm_name_active
@@ -1139,6 +1199,8 @@ CREATE TABLE IF NOT EXISTS gr33nnaturalfarming.input_batches (
     updated_at                TIMESTAMPTZ DEFAULT NOW() NOT NULL,
     updated_by_user_id        UUID   REFERENCES gr33ncore.profiles(user_id) ON DELETE SET NULL,
     deleted_at                TIMESTAMPTZ DEFAULT NULL,
+    -- Phase 20.95 WS2 — low-stock trigger marker for the future alerting rollup.
+    low_stock_threshold       NUMERIC(12,4),
     CONSTRAINT chk_quantity_consistency CHECK (
         (quantity_produced IS NULL) OR
         (quantity_unit_id IS NOT NULL AND current_quantity_remaining <= quantity_produced)
@@ -1326,6 +1388,14 @@ CREATE TRIGGER trg_programs_updated_at
 ALTER TABLE gr33nfertigation.crop_cycles
     ADD COLUMN primary_program_id BIGINT REFERENCES gr33nfertigation.programs(id) ON DELETE SET NULL;
 
+-- Phase 20.95 WS3 — FK on executable_actions.program_id (column created above;
+-- FK deferred here because gr33nfertigation.programs is defined below core).
+ALTER TABLE gr33ncore.executable_actions
+    ADD CONSTRAINT fk_executable_actions_program
+    FOREIGN KEY (program_id) REFERENCES gr33nfertigation.programs(id) ON DELETE CASCADE;
+CREATE INDEX IF NOT EXISTS idx_executable_actions_program
+    ON gr33ncore.executable_actions (program_id);
+
 CREATE TABLE IF NOT EXISTS gr33nfertigation.mixing_events (
     id                      BIGSERIAL PRIMARY KEY,
     farm_id                 BIGINT NOT NULL REFERENCES gr33ncore.farms(id) ON DELETE CASCADE,
@@ -1406,6 +1476,47 @@ CREATE INDEX IF NOT EXISTS idx_crop_cycles_zone
     ON gr33nfertigation.crop_cycles(zone_id, started_at DESC);
 
 -- ============================================================
+-- Phase 20.6 WS1 — stage-scoped setpoints (gr33ncore.zone_setpoints)
+-- ============================================================
+-- Placed here (not with the rest of gr33ncore early in the file) because
+-- it references gr33nfertigation.crop_cycles, which isn't declared until
+-- the fertigation block above. Strictly additive; no existing tables
+-- change. `stage` is TEXT (not growth_stage_enum) so non-crop zones —
+-- drying rooms, propagation areas, aquaponics loops — can carry
+-- setpoints too. Resolution precedence at eval time:
+-- cycle+stage > cycle-any-stage > zone+stage > zone-any-stage > nothing.
+CREATE TABLE IF NOT EXISTS gr33ncore.zone_setpoints (
+    id              BIGSERIAL PRIMARY KEY,
+    farm_id         BIGINT NOT NULL REFERENCES gr33ncore.farms(id) ON DELETE CASCADE,
+    zone_id         BIGINT REFERENCES gr33ncore.zones(id) ON DELETE CASCADE,
+    crop_cycle_id   BIGINT REFERENCES gr33nfertigation.crop_cycles(id) ON DELETE CASCADE,
+    stage           TEXT,
+    sensor_type     TEXT NOT NULL,
+    min_value       NUMERIC,
+    max_value       NUMERIC,
+    ideal_value     NUMERIC,
+    meta            JSONB NOT NULL DEFAULT '{}',
+    created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    CONSTRAINT chk_setpoint_scope CHECK (zone_id IS NOT NULL OR crop_cycle_id IS NOT NULL),
+    CONSTRAINT chk_setpoint_numeric_coherent CHECK (
+        (min_value IS NULL OR max_value IS NULL OR min_value <= max_value) AND
+        (ideal_value IS NULL OR min_value IS NULL OR ideal_value >= min_value) AND
+        (ideal_value IS NULL OR max_value IS NULL OR ideal_value <= max_value)
+    )
+);
+CREATE INDEX IF NOT EXISTS idx_zone_setpoints_zone_stage
+    ON gr33ncore.zone_setpoints (zone_id, stage, sensor_type);
+CREATE INDEX IF NOT EXISTS idx_zone_setpoints_cycle_stage
+    ON gr33ncore.zone_setpoints (crop_cycle_id, stage, sensor_type);
+CREATE INDEX IF NOT EXISTS idx_zone_setpoints_farm
+    ON gr33ncore.zone_setpoints (farm_id);
+DROP TRIGGER IF EXISTS trg_zone_setpoints_updated_at ON gr33ncore.zone_setpoints;
+CREATE TRIGGER trg_zone_setpoints_updated_at
+    BEFORE UPDATE ON gr33ncore.zone_setpoints
+    FOR EACH ROW EXECUTE FUNCTION gr33ncore.set_updated_at();
+
+-- ============================================================
 -- SCHEMAS: gr33ncrops, gr33nanimals, gr33naquaponics (Phase 14 WS7 stubs)
 -- ============================================================
 -- Enable per farm with gr33ncore.farm_active_modules.module_schema_name
@@ -1435,18 +1546,27 @@ CREATE TRIGGER trg_gr33ncrops_plants_updated_at
 CREATE SCHEMA IF NOT EXISTS gr33nanimals;
 
 CREATE TABLE IF NOT EXISTS gr33nanimals.animal_groups (
-    id          BIGSERIAL PRIMARY KEY,
-    farm_id     BIGINT NOT NULL REFERENCES gr33ncore.farms(id) ON DELETE CASCADE,
-    label       TEXT NOT NULL,
-    species     TEXT,
-    meta        JSONB NOT NULL DEFAULT '{}'::jsonb,
-    created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    deleted_at  TIMESTAMPTZ
+    id              BIGSERIAL PRIMARY KEY,
+    farm_id         BIGINT NOT NULL REFERENCES gr33ncore.farms(id) ON DELETE CASCADE,
+    label           TEXT NOT NULL,
+    species         TEXT,
+    meta            JSONB NOT NULL DEFAULT '{}'::jsonb,
+    -- Phase 20.95 WS4 scope columns (nullable / safe defaults).
+    count           INTEGER,
+    primary_zone_id BIGINT REFERENCES gr33ncore.zones(id) ON DELETE SET NULL,
+    active          BOOLEAN NOT NULL DEFAULT TRUE,
+    archived_at     TIMESTAMPTZ,
+    archived_reason TEXT,
+    created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    deleted_at      TIMESTAMPTZ
 );
 
 CREATE INDEX IF NOT EXISTS idx_gr33nanimals_groups_farm
     ON gr33nanimals.animal_groups (farm_id)
+    WHERE deleted_at IS NULL;
+CREATE INDEX IF NOT EXISTS idx_gr33nanimals_groups_primary_zone
+    ON gr33nanimals.animal_groups (primary_zone_id)
     WHERE deleted_at IS NULL;
 
 CREATE TRIGGER trg_gr33nanimals_animal_groups_updated_at
@@ -1456,17 +1576,26 @@ CREATE TRIGGER trg_gr33nanimals_animal_groups_updated_at
 CREATE SCHEMA IF NOT EXISTS gr33naquaponics;
 
 CREATE TABLE IF NOT EXISTS gr33naquaponics.loops (
-    id          BIGSERIAL PRIMARY KEY,
-    farm_id     BIGINT NOT NULL REFERENCES gr33ncore.farms(id) ON DELETE CASCADE,
-    label       TEXT NOT NULL,
-    meta        JSONB NOT NULL DEFAULT '{}'::jsonb,
-    created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    deleted_at  TIMESTAMPTZ
+    id                BIGSERIAL PRIMARY KEY,
+    farm_id           BIGINT NOT NULL REFERENCES gr33ncore.farms(id) ON DELETE CASCADE,
+    label             TEXT NOT NULL,
+    meta              JSONB NOT NULL DEFAULT '{}'::jsonb,
+    -- Phase 20.95 WS4 topology columns (nullable).
+    fish_tank_zone_id BIGINT REFERENCES gr33ncore.zones(id) ON DELETE SET NULL,
+    grow_bed_zone_id  BIGINT REFERENCES gr33ncore.zones(id) ON DELETE SET NULL,
+    created_at        TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at        TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    deleted_at        TIMESTAMPTZ
 );
 
 CREATE INDEX IF NOT EXISTS idx_gr33naquaponics_loops_farm
     ON gr33naquaponics.loops (farm_id)
+    WHERE deleted_at IS NULL;
+CREATE INDEX IF NOT EXISTS idx_gr33naquaponics_loops_fish_tank_zone
+    ON gr33naquaponics.loops (fish_tank_zone_id)
+    WHERE deleted_at IS NULL;
+CREATE INDEX IF NOT EXISTS idx_gr33naquaponics_loops_grow_bed_zone
+    ON gr33naquaponics.loops (grow_bed_zone_id)
     WHERE deleted_at IS NULL;
 
 CREATE TRIGGER trg_gr33naquaponics_loops_updated_at

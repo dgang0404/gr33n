@@ -1749,6 +1749,59 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/Task" }
 
+  /tasks/{id}/labor:
+    get:
+      tags: [tasks]
+      summary: List labor log rows for a task
+      description: >
+        Phase 20.95 WS1 — labor logging subset. Returns all rows in start-time order.
+        Future phases (20.9) will add a timer UI and auto-cost transactions.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      responses:
+        "200":
+          description: List of labor log rows
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/TaskLaborLog" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    post:
+      tags: [tasks]
+      summary: Append a labor log row and update tasks.time_spent_minutes
+      description: >
+        On insert the handler updates `tasks.time_spent_minutes` to the SUM of
+        surviving log rows (not a delta). Delete re-runs the same running SUM.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/TaskLaborLogCreate" }
+      responses:
+        "201":
+          description: Created labor log row
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TaskLaborLog" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /labor/{id}:
+    delete:
+      tags: [tasks]
+      summary: Delete a labor log row and recompute tasks.time_spent_minutes
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      responses:
+        "204": { description: Deleted }
+        "404": { $ref: "#/components/responses/NotFound" }
+
   # ── Fertigation ────────────────────────────────────────────
 
   /farms/{id}/fertigation/reservoirs:
@@ -2350,6 +2403,148 @@ paths:
     delete:
       tags: [costs]
       summary: Delete cost transaction
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      responses:
+        "204": { description: Deleted }
+
+  /farms/{id}/energy-prices:
+    get:
+      tags: [costs]
+      summary: List electricity price history for this farm
+      description: >
+        Phase 20.95 WS2 — the forthcoming Phase 20.7 WS4 rollup reads this table to
+        convert actuator runtime into cost_transactions rows.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/FarmEnergyPrice" }
+    post:
+      tags: [costs]
+      summary: Create an electricity price record
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/FarmEnergyPriceCreate" }
+      responses:
+        "201":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/FarmEnergyPrice" }
+
+  /energy-prices/{id}:
+    put:
+      tags: [costs]
+      summary: Update an electricity price record
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/FarmEnergyPriceUpdate" }
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/FarmEnergyPrice" }
+    delete:
+      tags: [costs]
+      summary: Delete an electricity price record
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      responses:
+        "204": { description: Deleted }
+
+  /farms/{id}/setpoints:
+    get:
+      tags: [automation]
+      summary: List stage-scoped setpoints for a farm (Phase 20.6)
+      description: >
+        Optional query filters: zone_id, crop_cycle_id, sensor_type. When a rule
+        or UI needs to resolve "what setpoint applies right now?", the server
+        chooses by precedence: cycle+stage > cycle-any-stage > zone+stage >
+        zone-any-stage. See `/setpoints/{id}` for per-row CRUD.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+        - in: query
+          name: zone_id
+          schema: { type: integer, format: int64 }
+        - in: query
+          name: crop_cycle_id
+          schema: { type: integer, format: int64 }
+        - in: query
+          name: sensor_type
+          schema: { type: string }
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Setpoint" }
+    post:
+      tags: [automation]
+      summary: Create a stage-scoped setpoint
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SetpointCreate" }
+      responses:
+        "201":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Setpoint" }
+
+  /setpoints/{id}:
+    get:
+      tags: [automation]
+      summary: Get a single setpoint
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Setpoint" }
+    put:
+      tags: [automation]
+      summary: Update a setpoint (full replace of writable fields)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SetpointUpdate" }
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Setpoint" }
+    delete:
+      tags: [automation]
+      summary: Delete a setpoint
       security: [{ bearerAuth: [] }]
       parameters:
         - { $ref: "#/components/parameters/ID" }
@@ -3482,6 +3677,13 @@ components:
         current_state_text: { type: string, nullable: true }
         last_known_state_time: { type: string, format: date-time, nullable: true }
         feedback_sensor_id: { type: integer, nullable: true }
+        watts:
+          type: number
+          default: 0
+          description: >
+            Phase 20.95 WS2 — nameplate wattage used by the forthcoming nightly
+            electricity rollup (Phase 20.7 WS4). DEFAULT 0 NOT NULL: 0 means
+            "unknown / unmetered" and drops the actuator out of the rollup.
         created_at: { type: string, format: date-time }
 
     ActuatorEvent:
@@ -3708,6 +3910,14 @@ components:
         id: { type: integer, format: int64 }
         rule_id: { type: integer, format: int64, nullable: true }
         schedule_id: { type: integer, format: int64, nullable: true }
+        program_id:
+          type: integer
+          format: int64
+          nullable: true
+          description: >
+            Phase 20.95 WS3 — optional fertigation program this action belongs to.
+            Exactly one of (schedule_id, rule_id, program_id) is set; the DB
+            constraint `chk_executable_source` is `num_nonnulls(...) = 1`.
         execution_order: { type: integer }
         action_type: { $ref: "#/components/schemas/ExecutableActionType" }
         target_actuator_id: { type: integer, format: int64, nullable: true }
@@ -3743,6 +3953,17 @@ components:
           nullable: true
           additionalProperties: true
         delay_before_execution_seconds: { type: integer, nullable: true, minimum: 0 }
+        schedule_id:
+          type: integer
+          format: int64
+          description: >
+            Phase 20.95 WS3 — do NOT set when POSTing to /automation/rules/{id}/actions;
+            the handler rejects two-source writes with 400. Documented here so the
+            OpenAPI client library makes the constraint visible.
+        program_id:
+          type: integer
+          format: int64
+          description: Phase 20.95 WS3 — see schedule_id note above.
 
     Task:
       type: object
@@ -3768,7 +3989,54 @@ components:
           description: >
             If set, the automation_rules.id whose `create_task` action created
             this task. Cleared to null if the rule is later deleted.
+        time_spent_minutes:
+          type: integer
+          nullable: true
+          description: >
+            Phase 20.95 WS1 — denormalised SUM of task_labor_log.minutes for
+            this task. Maintained by the labor handler on insert/delete. NULL
+            means "no labor rows have ever been logged" (not the same as 0,
+            which is set once a row has been deleted back to empty).
         created_at: { type: string, format: date-time }
+
+    TaskLaborLog:
+      type: object
+      description: >
+        Phase 20.95 WS1 — a single clock-in/clock-out (or manual minutes)
+        record against a task. The sum of rows drives `tasks.time_spent_minutes`.
+      properties:
+        id: { type: integer, format: int64 }
+        farm_id: { type: integer, format: int64 }
+        task_id: { type: integer, format: int64 }
+        user_id: { type: string, format: uuid, nullable: true }
+        started_at: { type: string, format: date-time }
+        ended_at: { type: string, format: date-time, nullable: true }
+        minutes: { type: integer, minimum: 0 }
+        hourly_rate_snapshot:
+          type: number
+          nullable: true
+          description: >
+            Snapshot of the worker's hourly rate at log time. Phase 20.9 will
+            multiply minutes * rate into a cost_transactions row; Phase 20.95
+            only stores the snapshot so no data is lost.
+        currency:
+          type: string
+          nullable: true
+          description: ISO 4217 uppercase (matched alongside hourly_rate_snapshot)
+        notes: { type: string, nullable: true }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+
+    TaskLaborLogCreate:
+      type: object
+      required: [started_at, minutes]
+      properties:
+        started_at: { type: string, format: date-time }
+        ended_at: { type: string, format: date-time, nullable: true }
+        minutes: { type: integer, minimum: 0 }
+        hourly_rate_snapshot: { type: number, nullable: true }
+        currency: { type: string, nullable: true, description: ISO 4217 uppercase }
+        notes: { type: string, nullable: true }
 
     TaskStatusEnum:
       type: string
@@ -4016,6 +4284,13 @@ components:
           nullable: true
           description: Vendor or customer name for this line
         receipt_file_id: { type: integer, nullable: true, description: Linked cost receipt attachment id }
+        crop_cycle_id:
+          type: integer
+          nullable: true
+          description: >
+            Phase 20.95 WS2 — optional link to the gr33nfertigation.crop_cycle that
+            this transaction should be attributed to, so the forthcoming Phase 20.7
+            cycle P&L rollup can total costs per cycle. ON DELETE SET NULL.
         created_at: { type: string, format: date-time }
         updated_at: { type: string, format: date-time }
 
@@ -4041,6 +4316,7 @@ components:
         document_type: { type: string, maxLength: 64 }
         document_reference: { type: string, maxLength: 128 }
         counterparty: { type: string, maxLength: 256 }
+        crop_cycle_id: { type: integer, description: Optional crop cycle to attribute this transaction to }
 
     CostTransactionUpdate:
       type: object
@@ -4057,6 +4333,7 @@ components:
         document_type: { type: string, maxLength: 64, description: Omit to leave unchanged; empty string clears }
         document_reference: { type: string, maxLength: 128 }
         counterparty: { type: string, maxLength: 256 }
+        crop_cycle_id: { type: integer, nullable: true, description: Optional crop cycle to attribute this transaction to }
 
     CoaMapping:
       type: object
@@ -4308,6 +4585,9 @@ components:
             - biochar_preparation
             - other_ferment
             - other_extract
+            - animal_feed
+            - bedding
+            - veterinary_supply
         description: { type: string, nullable: true }
         typical_ingredients: { type: string, nullable: true }
         preparation_summary: { type: string, nullable: true }
@@ -4315,6 +4595,18 @@ components:
         safety_precautions: { type: string, nullable: true }
         reference_source: { type: string, nullable: true }
         file_attachment_id: { type: integer, nullable: true }
+        unit_cost:
+          type: number
+          nullable: true
+          description: Phase 20.95 WS2 — default per-unit cost used for inventory-consumption auto-cost rollups.
+        unit_cost_currency:
+          type: string
+          nullable: true
+          description: ISO 4217 currency for unit_cost.
+        unit_cost_unit_id:
+          type: integer
+          nullable: true
+          description: gr33ncommons.units id describing the unit unit_cost is priced in.
         created_at: { type: string, format: date-time }
         updated_at: { type: string, format: date-time }
         updated_by_user_id: { type: string, format: uuid, nullable: true }
@@ -4339,12 +4631,18 @@ components:
             - biochar_preparation
             - other_ferment
             - other_extract
+            - animal_feed
+            - bedding
+            - veterinary_supply
         description: { type: string }
         typical_ingredients: { type: string }
         preparation_summary: { type: string }
         storage_guidelines: { type: string }
         safety_precautions: { type: string }
         reference_source: { type: string }
+        unit_cost: { type: number, description: Default per-unit cost for auto-cost rollups }
+        unit_cost_currency: { type: string, description: ISO 4217 currency }
+        unit_cost_unit_id: { type: integer, description: gr33ncommons.units id }
 
     InputDefinitionUpdate:
       type: object
@@ -4365,12 +4663,18 @@ components:
             - biochar_preparation
             - other_ferment
             - other_extract
+            - animal_feed
+            - bedding
+            - veterinary_supply
         description: { type: string }
         typical_ingredients: { type: string }
         preparation_summary: { type: string }
         storage_guidelines: { type: string }
         safety_precautions: { type: string }
         reference_source: { type: string }
+        unit_cost: { type: number }
+        unit_cost_currency: { type: string }
+        unit_cost_unit_id: { type: integer }
 
     InputBatchCreate:
       type: object
@@ -4394,6 +4698,11 @@ components:
         ingredients_used: { type: string }
         procedure_followed: { type: string }
         observations_notes: { type: string }
+        low_stock_threshold:
+          type: number
+          description: >
+            Phase 20.95 WS2 — if current_quantity_remaining drops below this threshold
+            the Phase 20.8 low-stock alert worker raises a medium-severity alert.
 
     InputBatchUpdate:
       type: object
@@ -4407,6 +4716,7 @@ components:
         current_quantity_remaining: { type: number }
         storage_location: { type: string }
         observations_notes: { type: string }
+        low_stock_threshold: { type: number, description: See InputBatchCreate.low_stock_threshold }
 
     NaturalFarmingInputBatch:
       type: object
@@ -4446,10 +4756,100 @@ components:
         made_by_user_id: { type: string, format: uuid, nullable: true }
         related_task_id: { type: integer, nullable: true }
         file_attachment_id: { type: integer, nullable: true }
+        low_stock_threshold:
+          type: number
+          nullable: true
+          description: Phase 20.95 WS2 — low-stock alert threshold (see InputBatchCreate).
         created_at: { type: string, format: date-time }
         updated_at: { type: string, format: date-time }
         updated_by_user_id: { type: string, format: uuid, nullable: true }
         deleted_at: { type: string, format: date-time, nullable: true }
+
+    FarmEnergyPrice:
+      type: object
+      description: >
+        Phase 20.95 WS2 — per-farm electricity price history used by the nightly
+        (Phase 20.7 WS4) actuator-runtime * watts * price_per_kwh cost rollup.
+      properties:
+        id: { type: integer, format: int64 }
+        farm_id: { type: integer, format: int64 }
+        effective_from: { type: string, format: date }
+        effective_to: { type: string, format: date, nullable: true }
+        price_per_kwh: { type: number }
+        currency: { type: string, description: ISO 4217 uppercase }
+        notes: { type: string, nullable: true }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+
+    FarmEnergyPriceCreate:
+      type: object
+      required: [effective_from, price_per_kwh, currency]
+      properties:
+        effective_from: { type: string, format: date }
+        effective_to: { type: string, format: date }
+        price_per_kwh: { type: number }
+        currency: { type: string }
+        notes: { type: string }
+
+    FarmEnergyPriceUpdate:
+      type: object
+      required: [effective_from, price_per_kwh, currency]
+      properties:
+        effective_from: { type: string, format: date }
+        effective_to: { type: string, format: date }
+        price_per_kwh: { type: number }
+        currency: { type: string }
+        notes: { type: string }
+
+    Setpoint:
+      type: object
+      description: >
+        Phase 20.6 — stage-scoped setpoint for a zone and/or crop cycle. Scope
+        is (zone_id, crop_cycle_id), at least one required. `stage` is TEXT so
+        the same table can carry values for non-crop zones (drying rooms,
+        propagation areas, aquaponics loops). Precedence at eval time:
+        cycle+stage > cycle-any-stage > zone+stage > zone-any-stage.
+      properties:
+        id: { type: integer, format: int64 }
+        farm_id: { type: integer, format: int64 }
+        zone_id: { type: integer, format: int64, nullable: true }
+        crop_cycle_id: { type: integer, format: int64, nullable: true }
+        stage: { type: string, nullable: true, description: "Matches gr33nfertigation.growth_stage_enum labels for fertigation crops; free text otherwise. NULL = applies to every stage in this scope." }
+        sensor_type: { type: string, description: "Sensor channel name (temp_f, rh, dew_point, vpd, ec, ph, …). Matches physical and derived sensors identically." }
+        min_value: { type: number, nullable: true }
+        max_value: { type: number, nullable: true }
+        ideal_value: { type: number, nullable: true }
+        meta: { type: object, additionalProperties: true, description: "Opaque provenance / UI notes. Rule engine does not read this." }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+
+    SetpointCreate:
+      type: object
+      required: [sensor_type]
+      description: "zone_id or crop_cycle_id (or both) must be supplied."
+      properties:
+        zone_id: { type: integer, format: int64 }
+        crop_cycle_id: { type: integer, format: int64 }
+        stage: { type: string }
+        sensor_type: { type: string }
+        min_value: { type: number }
+        max_value: { type: number }
+        ideal_value: { type: number }
+        meta: { type: object, additionalProperties: true }
+
+    SetpointUpdate:
+      type: object
+      required: [sensor_type]
+      description: "Full replace; same scope/coherence rules as create."
+      properties:
+        zone_id: { type: integer, format: int64 }
+        crop_cycle_id: { type: integer, format: int64 }
+        stage: { type: string }
+        sensor_type: { type: string }
+        min_value: { type: number }
+        max_value: { type: number }
+        ideal_value: { type: number }
+        meta: { type: object, additionalProperties: true }
 
     # ── Alert schemas ──────────────────────────────────────────
 

@@ -14,6 +14,7 @@ import Fertigation from '../views/Fertigation.vue'
 import Alerts from '../views/Alerts.vue'
 import Plants from '../views/Plants.vue'
 import CommonsCatalog from '../views/CommonsCatalog.vue'
+import Setpoints from '../views/Setpoints.vue'
 import Settings from '../views/Settings.vue'
 import Login from '../views/Login.vue'
 
@@ -28,6 +29,7 @@ const routes = [
   { path: '/actuators',    component: Actuators,    name: 'actuators' },
   { path: '/schedules',    component: Schedules,    name: 'schedules' },
   { path: '/automation',   component: Automation,   name: 'automation' },
+  { path: '/setpoints',    component: Setpoints,    name: 'setpoints' },
   { path: '/tasks',        component: Tasks,        name: 'tasks' },
   { path: '/fertigation',  component: Fertigation,  name: 'fertigation' },
   { path: '/inventory',    component: Inventory,    name: 'inventory' },

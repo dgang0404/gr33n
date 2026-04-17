@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
@@ -84,17 +85,25 @@ func (h *Handler) CreateInputDefinition(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 	var req struct {
-		Name               string  `json:"name"`
-		Category           string  `json:"category"`
-		Description        *string `json:"description"`
-		TypicalIngredients *string `json:"typical_ingredients"`
-		PreparationSummary *string `json:"preparation_summary"`
-		StorageGuidelines  *string `json:"storage_guidelines"`
-		SafetyPrecautions  *string `json:"safety_precautions"`
-		ReferenceSource    *string `json:"reference_source"`
+		Name               string   `json:"name"`
+		Category           string   `json:"category"`
+		Description        *string  `json:"description"`
+		TypicalIngredients *string  `json:"typical_ingredients"`
+		PreparationSummary *string  `json:"preparation_summary"`
+		StorageGuidelines  *string  `json:"storage_guidelines"`
+		SafetyPrecautions  *string  `json:"safety_precautions"`
+		ReferenceSource    *string  `json:"reference_source"`
+		UnitCost           *float64 `json:"unit_cost"`
+		UnitCostCurrency   *string  `json:"unit_cost_currency"`
+		UnitCostUnitID     *int64   `json:"unit_cost_unit_id"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+	unitCost, unitCostCurrency, err := parseUnitCost(req.UnitCost, req.UnitCostCurrency)
+	if err != nil {
+		httputil.WriteError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 	row, err := h.q.CreateInputDefinition(r.Context(), db.CreateInputDefinitionParams{
@@ -107,6 +116,9 @@ func (h *Handler) CreateInputDefinition(w http.ResponseWriter, r *http.Request) 
 		StorageGuidelines:  req.StorageGuidelines,
 		SafetyPrecautions:  req.SafetyPrecautions,
 		ReferenceSource:    req.ReferenceSource,
+		UnitCost:           unitCost,
+		UnitCostCurrency:   unitCostCurrency,
+		UnitCostUnitID:     req.UnitCostUnitID,
 	})
 	if err != nil {
 		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
@@ -123,14 +135,17 @@ func (h *Handler) UpdateInputDefinition(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 	var req struct {
-		Name               string  `json:"name"`
-		Category           string  `json:"category"`
-		Description        *string `json:"description"`
-		TypicalIngredients *string `json:"typical_ingredients"`
-		PreparationSummary *string `json:"preparation_summary"`
-		StorageGuidelines  *string `json:"storage_guidelines"`
-		SafetyPrecautions  *string `json:"safety_precautions"`
-		ReferenceSource    *string `json:"reference_source"`
+		Name               string   `json:"name"`
+		Category           string   `json:"category"`
+		Description        *string  `json:"description"`
+		TypicalIngredients *string  `json:"typical_ingredients"`
+		PreparationSummary *string  `json:"preparation_summary"`
+		StorageGuidelines  *string  `json:"storage_guidelines"`
+		SafetyPrecautions  *string  `json:"safety_precautions"`
+		ReferenceSource    *string  `json:"reference_source"`
+		UnitCost           *float64 `json:"unit_cost"`
+		UnitCostCurrency   *string  `json:"unit_cost_currency"`
+		UnitCostUnitID     *int64   `json:"unit_cost_unit_id"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid request body")
@@ -148,6 +163,11 @@ func (h *Handler) UpdateInputDefinition(w http.ResponseWriter, r *http.Request) 
 	if !farmauthz.RequireFarmOperate(w, r, h.q, def.FarmID) {
 		return
 	}
+	unitCost, unitCostCurrency, err := parseUnitCost(req.UnitCost, req.UnitCostCurrency)
+	if err != nil {
+		httputil.WriteError(w, http.StatusBadRequest, err.Error())
+		return
+	}
 	row, err := h.q.UpdateInputDefinition(r.Context(), db.UpdateInputDefinitionParams{
 		ID:                 id,
 		Name:               req.Name,
@@ -158,12 +178,40 @@ func (h *Handler) UpdateInputDefinition(w http.ResponseWriter, r *http.Request) 
 		StorageGuidelines:  req.StorageGuidelines,
 		SafetyPrecautions:  req.SafetyPrecautions,
 		ReferenceSource:    req.ReferenceSource,
+		UnitCost:           unitCost,
+		UnitCostCurrency:   unitCostCurrency,
+		UnitCostUnitID:     req.UnitCostUnitID,
 	})
 	if err != nil {
 		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 	httputil.WriteJSON(w, http.StatusOK, row)
+}
+
+// parseUnitCost validates and converts optional unit_cost / currency inputs.
+// Returns zeroed pgtype.Numeric (Valid=false) and nil *string when both are
+// absent; otherwise a valid Numeric and a normalised uppercase currency.
+func parseUnitCost(rawCost *float64, rawCurrency *string) (pgtype.Numeric, *string, error) {
+	var num pgtype.Numeric
+	if rawCost != nil {
+		if err := num.Scan(strconv.FormatFloat(*rawCost, 'f', -1, 64)); err != nil {
+			return pgtype.Numeric{}, nil, errors.New("invalid unit_cost")
+		}
+	}
+	var currencyOut *string
+	if rawCurrency != nil {
+		trimmed := strings.ToUpper(strings.TrimSpace(*rawCurrency))
+		if trimmed == "" {
+			currencyOut = nil
+		} else {
+			if len(trimmed) != 3 {
+				return pgtype.Numeric{}, nil, errors.New("unit_cost_currency must be ISO 4217 (3 uppercase letters)")
+			}
+			currencyOut = &trimmed
+		}
+	}
+	return num, currencyOut, nil
 }
 
 // DELETE /naturalfarming/inputs/{id}

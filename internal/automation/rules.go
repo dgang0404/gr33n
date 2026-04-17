@@ -74,8 +74,13 @@ func (w *Worker) evaluateRule(ctx context.Context, rule db.Gr33ncoreAutomationRu
 		return
 	}
 
-	passed, failed := EvaluatePredicates(ctx, w.q, conds.Logic, conds.Predicates)
+	scope := ScopeContext{FarmID: rule.FarmID, ZoneID: ruleZoneID(rule)}
+	passed, failed, skipMessage := EvaluatePredicatesInScope(ctx, w.q, conds.Logic, conds.Predicates, scope)
 	if !passed {
+		message := "conditions_not_met"
+		if skipMessage != "" {
+			message = skipMessage
+		}
 		details, _ := json.Marshal(map[string]any{
 			"phase":          "conditions",
 			"logic":          conds.Logic,
@@ -87,7 +92,7 @@ func (w *Worker) evaluateRule(ctx context.Context, rule db.Gr33ncoreAutomationRu
 			ScheduleID: nil,
 			RuleID:     &rule.ID,
 			Status:     "skipped",
-			Message:    ptr("conditions_not_met"),
+			Message:    ptr(message),
 			Details:    details,
 			ExecutedAt: now,
 		}); err != nil {
@@ -97,6 +102,40 @@ func (w *Worker) evaluateRule(ctx context.Context, rule db.Gr33ncoreAutomationRu
 	}
 
 	w.executeRule(ctx, rule, conds, now)
+}
+
+// ruleZoneID best-effort extracts a zone_id from the rule's
+// trigger_configuration JSON. Setpoint-typed predicates (Phase 20.6)
+// need it to find the active crop cycle; hard predicates ignore it.
+// Returns nil on any parse issue so the rule gracefully skips with
+// `no_scope_for_setpoint` rather than crashing.
+func ruleZoneID(rule db.Gr33ncoreAutomationRule) *int64 {
+	if len(rule.TriggerConfiguration) == 0 {
+		return nil
+	}
+	var cfg map[string]any
+	if err := json.Unmarshal(rule.TriggerConfiguration, &cfg); err != nil {
+		return nil
+	}
+	raw, ok := cfg["zone_id"]
+	if !ok {
+		return nil
+	}
+	switch v := raw.(type) {
+	case float64:
+		id := int64(v)
+		if id <= 0 {
+			return nil
+		}
+		return &id
+	case string:
+		n, err := strconv.ParseInt(v, 10, 64)
+		if err != nil || n <= 0 {
+			return nil
+		}
+		return &n
+	}
+	return nil
 }
 
 // rulePastCooldown returns true (AND records a skipped run) when the

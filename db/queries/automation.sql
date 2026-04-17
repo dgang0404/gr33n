@@ -162,3 +162,22 @@ RETURNING *;
 
 -- name: DeleteExecutableAction :exec
 DELETE FROM gr33ncore.executable_actions WHERE id = $1;
+
+-- ============================================================
+-- Queries: executable_actions bound to fertigation programs (Phase 20.95 WS3)
+-- Phase 20.7 WS3 will wire these into the program editor UI; for now we expose
+-- the CRUD surface so the DB round-trip is covered.
+-- ============================================================
+
+-- name: ListExecutableActionsByProgram :many
+SELECT * FROM gr33ncore.executable_actions
+WHERE program_id = $1
+ORDER BY execution_order ASC, id ASC;
+
+-- name: CreateExecutableActionForProgram :one
+INSERT INTO gr33ncore.executable_actions (
+    program_id, execution_order, action_type,
+    target_actuator_id, target_automation_rule_id, target_notification_template_id,
+    action_command, action_parameters, delay_before_execution_seconds
+) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+RETURNING *;

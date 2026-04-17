@@ -305,6 +305,163 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 	httputil.WriteJSON(w, http.StatusOK, task)
 }
 
+// ListLabor — GET /tasks/{id}/labor (Phase 20.95 WS1)
+func (h *Handler) ListLabor(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	if err != nil {
+		httputil.WriteError(w, http.StatusBadRequest, "invalid task id")
+		return
+	}
+	q := db.New(h.pool)
+	t0, err := q.GetTaskByID(r.Context(), id)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			httputil.WriteError(w, http.StatusNotFound, "task not found")
+			return
+		}
+		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	if !farmauthz.RequireFarmMember(w, r, q, t0.FarmID) {
+		return
+	}
+	rows, err := q.ListTaskLaborLogsByTask(r.Context(), id)
+	if err != nil {
+		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	if rows == nil {
+		rows = []db.Gr33ncoreTaskLaborLog{}
+	}
+	httputil.WriteJSON(w, http.StatusOK, rows)
+}
+
+// CreateLabor — POST /tasks/{id}/labor (Phase 20.95 WS1)
+func (h *Handler) CreateLabor(w http.ResponseWriter, r *http.Request) {
+	taskID, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	if err != nil {
+		httputil.WriteError(w, http.StatusBadRequest, "invalid task id")
+		return
+	}
+	q := db.New(h.pool)
+	t0, err := q.GetTaskByID(r.Context(), taskID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			httputil.WriteError(w, http.StatusNotFound, "task not found")
+			return
+		}
+		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	if !farmauthz.RequireFarmOperate(w, r, q, t0.FarmID) {
+		return
+	}
+	var body struct {
+		StartedAt          string   `json:"started_at"`
+		EndedAt            *string  `json:"ended_at"`
+		Minutes            int32    `json:"minutes"`
+		HourlyRateSnapshot *float64 `json:"hourly_rate_snapshot"`
+		Currency           *string  `json:"currency"`
+		Notes              *string  `json:"notes"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		httputil.WriteError(w, http.StatusBadRequest, "invalid body")
+		return
+	}
+	if body.Minutes < 0 {
+		httputil.WriteError(w, http.StatusBadRequest, "minutes must be >= 0")
+		return
+	}
+	startedAt, err := time.Parse(time.RFC3339, strings.TrimSpace(body.StartedAt))
+	if err != nil {
+		httputil.WriteError(w, http.StatusBadRequest, "invalid started_at (RFC3339 required)")
+		return
+	}
+	var endedAt pgtype.Timestamptz
+	if body.EndedAt != nil && strings.TrimSpace(*body.EndedAt) != "" {
+		et, err := time.Parse(time.RFC3339, strings.TrimSpace(*body.EndedAt))
+		if err != nil {
+			httputil.WriteError(w, http.StatusBadRequest, "invalid ended_at (RFC3339 required)")
+			return
+		}
+		endedAt = pgtype.Timestamptz{Time: et, Valid: true}
+	}
+	var hourly pgtype.Numeric
+	if body.HourlyRateSnapshot != nil {
+		if err := hourly.Scan(strconv.FormatFloat(*body.HourlyRateSnapshot, 'f', -1, 64)); err != nil {
+			httputil.WriteError(w, http.StatusBadRequest, "invalid hourly_rate_snapshot")
+			return
+		}
+	}
+	if body.Currency != nil {
+		cur := strings.ToUpper(strings.TrimSpace(*body.Currency))
+		if cur == "" {
+			body.Currency = nil
+		} else {
+			if len(cur) != 3 {
+				httputil.WriteError(w, http.StatusBadRequest, "currency must be ISO 4217 (3 uppercase letters)")
+				return
+			}
+			body.Currency = &cur
+		}
+	}
+	var userID pgtype.UUID
+	if uid, ok := authctx.UserID(r.Context()); ok {
+		userID = pgtype.UUID{Bytes: uid, Valid: true}
+	}
+	row, err := q.CreateTaskLaborLog(r.Context(), db.CreateTaskLaborLogParams{
+		FarmID:             t0.FarmID,
+		TaskID:             taskID,
+		UserID:             userID,
+		StartedAt:          startedAt,
+		EndedAt:            endedAt,
+		Minutes:            body.Minutes,
+		HourlyRateSnapshot: hourly,
+		Currency:           body.Currency,
+		Notes:              body.Notes,
+	})
+	if err != nil {
+		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	if err := q.RecalcTaskTimeSpentMinutes(r.Context(), taskID); err != nil {
+		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	httputil.WriteJSON(w, http.StatusCreated, row)
+}
+
+// DeleteLabor — DELETE /labor/{id} (Phase 20.95 WS1)
+func (h *Handler) DeleteLabor(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	if err != nil {
+		httputil.WriteError(w, http.StatusBadRequest, "invalid labor log id")
+		return
+	}
+	q := db.New(h.pool)
+	row, err := q.GetTaskLaborLogByID(r.Context(), id)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			httputil.WriteError(w, http.StatusNotFound, "labor log not found")
+			return
+		}
+		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	if !farmauthz.RequireFarmOperate(w, r, q, row.FarmID) {
+		return
+	}
+	if err := q.DeleteTaskLaborLog(r.Context(), id); err != nil {
+		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	if err := q.RecalcTaskTimeSpentMinutes(r.Context(), row.TaskID); err != nil {
+		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
 // Delete — DELETE /tasks/{id}
 func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)

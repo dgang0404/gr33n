@@ -68,6 +68,39 @@ func (q *Queries) CreateCropCycle(ctx context.Context, arg CreateCropCycleParams
 	return i, err
 }
 
+const getActiveCropCycleForZone = `-- name: GetActiveCropCycleForZone :one
+SELECT id, farm_id, zone_id, name, strain_or_variety, current_stage, is_active, started_at, harvested_at, yield_grams, yield_notes, cycle_notes, created_at, updated_at, primary_program_id FROM gr33nfertigation.crop_cycles
+WHERE zone_id = $1 AND is_active = TRUE
+LIMIT 1
+`
+
+// Phase 20.6 WS3 — the rule engine calls this to translate a rule's zone
+// into the active cycle so the setpoint resolver has a `current_stage`
+// to match against. At most one crop cycle per zone is active at a time
+// (enforced by uq_active_crop_cycle).
+func (q *Queries) GetActiveCropCycleForZone(ctx context.Context, zoneID int64) (Gr33nfertigationCropCycle, error) {
+	row := q.db.QueryRow(ctx, getActiveCropCycleForZone, zoneID)
+	var i Gr33nfertigationCropCycle
+	err := row.Scan(
+		&i.ID,
+		&i.FarmID,
+		&i.ZoneID,
+		&i.Name,
+		&i.StrainOrVariety,
+		&i.CurrentStage,
+		&i.IsActive,
+		&i.StartedAt,
+		&i.HarvestedAt,
+		&i.YieldGrams,
+		&i.YieldNotes,
+		&i.CycleNotes,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.PrimaryProgramID,
+	)
+	return i, err
+}
+
 const getCropCycleByID = `-- name: GetCropCycleByID :one
 SELECT id, farm_id, zone_id, name, strain_or_variety, current_stage, is_active, started_at, harvested_at, yield_grams, yield_notes, cycle_notes, created_at, updated_at, primary_program_id FROM gr33nfertigation.crop_cycles WHERE id = $1
 `

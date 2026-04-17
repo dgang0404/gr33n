@@ -17,8 +17,8 @@ INSERT INTO gr33nnaturalfarming.input_batches (
   creation_end_date, expected_ready_date, quantity_produced, quantity_unit_id,
   current_quantity_remaining, status, storage_location, shelf_life_days,
   ph_value, ec_value_ms_cm, ingredients_used, procedure_followed,
-  observations_notes
-) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17) RETURNING id, farm_id, input_definition_id, batch_identifier, creation_start_date, creation_end_date, expected_ready_date, actual_ready_date, quantity_produced, quantity_unit_id, current_quantity_remaining, status, storage_location, shelf_life_days, ph_value, ec_value_ms_cm, temperature_during_making, ingredients_used, procedure_followed, observations_notes, made_by_user_id, related_task_id, file_attachment_id, created_at, updated_at, updated_by_user_id, deleted_at
+  observations_notes, low_stock_threshold
+) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18) RETURNING id, farm_id, input_definition_id, batch_identifier, creation_start_date, creation_end_date, expected_ready_date, actual_ready_date, quantity_produced, quantity_unit_id, current_quantity_remaining, status, storage_location, shelf_life_days, ph_value, ec_value_ms_cm, temperature_during_making, ingredients_used, procedure_followed, observations_notes, made_by_user_id, related_task_id, file_attachment_id, created_at, updated_at, updated_by_user_id, deleted_at, low_stock_threshold
 `
 
 type CreateInputBatchParams struct {
@@ -39,6 +39,7 @@ type CreateInputBatchParams struct {
 	IngredientsUsed          *string                                 `db:"ingredients_used" json:"ingredients_used"`
 	ProcedureFollowed        *string                                 `db:"procedure_followed" json:"procedure_followed"`
 	ObservationsNotes        *string                                 `db:"observations_notes" json:"observations_notes"`
+	LowStockThreshold        pgtype.Numeric                          `db:"low_stock_threshold" json:"low_stock_threshold"`
 }
 
 func (q *Queries) CreateInputBatch(ctx context.Context, arg CreateInputBatchParams) (Gr33nnaturalfarmingInputBatch, error) {
@@ -60,6 +61,7 @@ func (q *Queries) CreateInputBatch(ctx context.Context, arg CreateInputBatchPara
 		arg.IngredientsUsed,
 		arg.ProcedureFollowed,
 		arg.ObservationsNotes,
+		arg.LowStockThreshold,
 	)
 	var i Gr33nnaturalfarmingInputBatch
 	err := row.Scan(
@@ -90,6 +92,7 @@ func (q *Queries) CreateInputBatch(ctx context.Context, arg CreateInputBatchPara
 		&i.UpdatedAt,
 		&i.UpdatedByUserID,
 		&i.DeletedAt,
+		&i.LowStockThreshold,
 	)
 	return i, err
 }
@@ -97,8 +100,9 @@ func (q *Queries) CreateInputBatch(ctx context.Context, arg CreateInputBatchPara
 const createInputDefinition = `-- name: CreateInputDefinition :one
 INSERT INTO gr33nnaturalfarming.input_definitions (
   farm_id, name, category, description, typical_ingredients,
-  preparation_summary, storage_guidelines, safety_precautions, reference_source
-) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING id, farm_id, name, category, description, typical_ingredients, preparation_summary, storage_guidelines, safety_precautions, reference_source, file_attachment_id, created_at, updated_at, updated_by_user_id, deleted_at
+  preparation_summary, storage_guidelines, safety_precautions, reference_source,
+  unit_cost, unit_cost_currency, unit_cost_unit_id
+) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) RETURNING id, farm_id, name, category, description, typical_ingredients, preparation_summary, storage_guidelines, safety_precautions, reference_source, file_attachment_id, created_at, updated_at, updated_by_user_id, deleted_at, unit_cost, unit_cost_currency, unit_cost_unit_id
 `
 
 type CreateInputDefinitionParams struct {
@@ -111,6 +115,9 @@ type CreateInputDefinitionParams struct {
 	StorageGuidelines  *string                              `db:"storage_guidelines" json:"storage_guidelines"`
 	SafetyPrecautions  *string                              `db:"safety_precautions" json:"safety_precautions"`
 	ReferenceSource    *string                              `db:"reference_source" json:"reference_source"`
+	UnitCost           pgtype.Numeric                       `db:"unit_cost" json:"unit_cost"`
+	UnitCostCurrency   *string                              `db:"unit_cost_currency" json:"unit_cost_currency"`
+	UnitCostUnitID     *int64                               `db:"unit_cost_unit_id" json:"unit_cost_unit_id"`
 }
 
 func (q *Queries) CreateInputDefinition(ctx context.Context, arg CreateInputDefinitionParams) (Gr33nnaturalfarmingInputDefinition, error) {
@@ -124,6 +131,9 @@ func (q *Queries) CreateInputDefinition(ctx context.Context, arg CreateInputDefi
 		arg.StorageGuidelines,
 		arg.SafetyPrecautions,
 		arg.ReferenceSource,
+		arg.UnitCost,
+		arg.UnitCostCurrency,
+		arg.UnitCostUnitID,
 	)
 	var i Gr33nnaturalfarmingInputDefinition
 	err := row.Scan(
@@ -142,12 +152,15 @@ func (q *Queries) CreateInputDefinition(ctx context.Context, arg CreateInputDefi
 		&i.UpdatedAt,
 		&i.UpdatedByUserID,
 		&i.DeletedAt,
+		&i.UnitCost,
+		&i.UnitCostCurrency,
+		&i.UnitCostUnitID,
 	)
 	return i, err
 }
 
 const getInputBatchByID = `-- name: GetInputBatchByID :one
-SELECT id, farm_id, input_definition_id, batch_identifier, creation_start_date, creation_end_date, expected_ready_date, actual_ready_date, quantity_produced, quantity_unit_id, current_quantity_remaining, status, storage_location, shelf_life_days, ph_value, ec_value_ms_cm, temperature_during_making, ingredients_used, procedure_followed, observations_notes, made_by_user_id, related_task_id, file_attachment_id, created_at, updated_at, updated_by_user_id, deleted_at FROM gr33nnaturalfarming.input_batches
+SELECT id, farm_id, input_definition_id, batch_identifier, creation_start_date, creation_end_date, expected_ready_date, actual_ready_date, quantity_produced, quantity_unit_id, current_quantity_remaining, status, storage_location, shelf_life_days, ph_value, ec_value_ms_cm, temperature_during_making, ingredients_used, procedure_followed, observations_notes, made_by_user_id, related_task_id, file_attachment_id, created_at, updated_at, updated_by_user_id, deleted_at, low_stock_threshold FROM gr33nnaturalfarming.input_batches
 WHERE id = $1 AND deleted_at IS NULL
 `
 
@@ -182,13 +195,14 @@ func (q *Queries) GetInputBatchByID(ctx context.Context, id int64) (Gr33nnatural
 		&i.UpdatedAt,
 		&i.UpdatedByUserID,
 		&i.DeletedAt,
+		&i.LowStockThreshold,
 	)
 	return i, err
 }
 
 const getInputDefinitionByID = `-- name: GetInputDefinitionByID :one
 
-SELECT id, farm_id, name, category, description, typical_ingredients, preparation_summary, storage_guidelines, safety_precautions, reference_source, file_attachment_id, created_at, updated_at, updated_by_user_id, deleted_at FROM gr33nnaturalfarming.input_definitions
+SELECT id, farm_id, name, category, description, typical_ingredients, preparation_summary, storage_guidelines, safety_precautions, reference_source, file_attachment_id, created_at, updated_at, updated_by_user_id, deleted_at, unit_cost, unit_cost_currency, unit_cost_unit_id FROM gr33nnaturalfarming.input_definitions
 WHERE id = $1 AND deleted_at IS NULL
 `
 
@@ -214,12 +228,15 @@ func (q *Queries) GetInputDefinitionByID(ctx context.Context, id int64) (Gr33nna
 		&i.UpdatedAt,
 		&i.UpdatedByUserID,
 		&i.DeletedAt,
+		&i.UnitCost,
+		&i.UnitCostCurrency,
+		&i.UnitCostUnitID,
 	)
 	return i, err
 }
 
 const listInputBatchesByFarm = `-- name: ListInputBatchesByFarm :many
-SELECT id, farm_id, input_definition_id, batch_identifier, creation_start_date, creation_end_date, expected_ready_date, actual_ready_date, quantity_produced, quantity_unit_id, current_quantity_remaining, status, storage_location, shelf_life_days, ph_value, ec_value_ms_cm, temperature_during_making, ingredients_used, procedure_followed, observations_notes, made_by_user_id, related_task_id, file_attachment_id, created_at, updated_at, updated_by_user_id, deleted_at FROM gr33nnaturalfarming.input_batches
+SELECT id, farm_id, input_definition_id, batch_identifier, creation_start_date, creation_end_date, expected_ready_date, actual_ready_date, quantity_produced, quantity_unit_id, current_quantity_remaining, status, storage_location, shelf_life_days, ph_value, ec_value_ms_cm, temperature_during_making, ingredients_used, procedure_followed, observations_notes, made_by_user_id, related_task_id, file_attachment_id, created_at, updated_at, updated_by_user_id, deleted_at, low_stock_threshold FROM gr33nnaturalfarming.input_batches
 WHERE farm_id = $1 AND deleted_at IS NULL
 ORDER BY creation_start_date DESC
 `
@@ -261,6 +278,7 @@ func (q *Queries) ListInputBatchesByFarm(ctx context.Context, farmID int64) ([]G
 			&i.UpdatedAt,
 			&i.UpdatedByUserID,
 			&i.DeletedAt,
+			&i.LowStockThreshold,
 		); err != nil {
 			return nil, err
 		}
@@ -273,7 +291,7 @@ func (q *Queries) ListInputBatchesByFarm(ctx context.Context, farmID int64) ([]G
 }
 
 const listInputDefinitionsByFarm = `-- name: ListInputDefinitionsByFarm :many
-SELECT id, farm_id, name, category, description, typical_ingredients, preparation_summary, storage_guidelines, safety_precautions, reference_source, file_attachment_id, created_at, updated_at, updated_by_user_id, deleted_at FROM gr33nnaturalfarming.input_definitions
+SELECT id, farm_id, name, category, description, typical_ingredients, preparation_summary, storage_guidelines, safety_precautions, reference_source, file_attachment_id, created_at, updated_at, updated_by_user_id, deleted_at, unit_cost, unit_cost_currency, unit_cost_unit_id FROM gr33nnaturalfarming.input_definitions
 WHERE farm_id = $1 AND deleted_at IS NULL
 ORDER BY name ASC
 `
@@ -303,6 +321,9 @@ func (q *Queries) ListInputDefinitionsByFarm(ctx context.Context, farmID int64) 
 			&i.UpdatedAt,
 			&i.UpdatedByUserID,
 			&i.DeletedAt,
+			&i.UnitCost,
+			&i.UnitCostCurrency,
+			&i.UnitCostUnitID,
 		); err != nil {
 			return nil, err
 		}
@@ -348,8 +369,9 @@ const updateInputBatch = `-- name: UpdateInputBatch :one
 UPDATE gr33nnaturalfarming.input_batches SET
   batch_identifier=$2, status=$3, actual_ready_date=$4,
   current_quantity_remaining=$5, storage_location=$6,
-  observations_notes=$7, updated_at=NOW(), updated_by_user_id=$8
-WHERE id=$1 AND deleted_at IS NULL RETURNING id, farm_id, input_definition_id, batch_identifier, creation_start_date, creation_end_date, expected_ready_date, actual_ready_date, quantity_produced, quantity_unit_id, current_quantity_remaining, status, storage_location, shelf_life_days, ph_value, ec_value_ms_cm, temperature_during_making, ingredients_used, procedure_followed, observations_notes, made_by_user_id, related_task_id, file_attachment_id, created_at, updated_at, updated_by_user_id, deleted_at
+  observations_notes=$7, low_stock_threshold=$8,
+  updated_at=NOW(), updated_by_user_id=$9
+WHERE id=$1 AND deleted_at IS NULL RETURNING id, farm_id, input_definition_id, batch_identifier, creation_start_date, creation_end_date, expected_ready_date, actual_ready_date, quantity_produced, quantity_unit_id, current_quantity_remaining, status, storage_location, shelf_life_days, ph_value, ec_value_ms_cm, temperature_during_making, ingredients_used, procedure_followed, observations_notes, made_by_user_id, related_task_id, file_attachment_id, created_at, updated_at, updated_by_user_id, deleted_at, low_stock_threshold
 `
 
 type UpdateInputBatchParams struct {
@@ -360,6 +382,7 @@ type UpdateInputBatchParams struct {
 	CurrentQuantityRemaining pgtype.Numeric                          `db:"current_quantity_remaining" json:"current_quantity_remaining"`
 	StorageLocation          *string                                 `db:"storage_location" json:"storage_location"`
 	ObservationsNotes        *string                                 `db:"observations_notes" json:"observations_notes"`
+	LowStockThreshold        pgtype.Numeric                          `db:"low_stock_threshold" json:"low_stock_threshold"`
 	UpdatedByUserID          pgtype.UUID                             `db:"updated_by_user_id" json:"updated_by_user_id"`
 }
 
@@ -372,6 +395,7 @@ func (q *Queries) UpdateInputBatch(ctx context.Context, arg UpdateInputBatchPara
 		arg.CurrentQuantityRemaining,
 		arg.StorageLocation,
 		arg.ObservationsNotes,
+		arg.LowStockThreshold,
 		arg.UpdatedByUserID,
 	)
 	var i Gr33nnaturalfarmingInputBatch
@@ -403,6 +427,7 @@ func (q *Queries) UpdateInputBatch(ctx context.Context, arg UpdateInputBatchPara
 		&i.UpdatedAt,
 		&i.UpdatedByUserID,
 		&i.DeletedAt,
+		&i.LowStockThreshold,
 	)
 	return i, err
 }
@@ -411,8 +436,9 @@ const updateInputDefinition = `-- name: UpdateInputDefinition :one
 UPDATE gr33nnaturalfarming.input_definitions SET
   name=$2, category=$3, description=$4, typical_ingredients=$5,
   preparation_summary=$6, storage_guidelines=$7, safety_precautions=$8,
-  reference_source=$9, updated_at=NOW(), updated_by_user_id=$10
-WHERE id=$1 AND deleted_at IS NULL RETURNING id, farm_id, name, category, description, typical_ingredients, preparation_summary, storage_guidelines, safety_precautions, reference_source, file_attachment_id, created_at, updated_at, updated_by_user_id, deleted_at
+  reference_source=$9, unit_cost=$10, unit_cost_currency=$11, unit_cost_unit_id=$12,
+  updated_at=NOW(), updated_by_user_id=$13
+WHERE id=$1 AND deleted_at IS NULL RETURNING id, farm_id, name, category, description, typical_ingredients, preparation_summary, storage_guidelines, safety_precautions, reference_source, file_attachment_id, created_at, updated_at, updated_by_user_id, deleted_at, unit_cost, unit_cost_currency, unit_cost_unit_id
 `
 
 type UpdateInputDefinitionParams struct {
@@ -425,6 +451,9 @@ type UpdateInputDefinitionParams struct {
 	StorageGuidelines  *string                              `db:"storage_guidelines" json:"storage_guidelines"`
 	SafetyPrecautions  *string                              `db:"safety_precautions" json:"safety_precautions"`
 	ReferenceSource    *string                              `db:"reference_source" json:"reference_source"`
+	UnitCost           pgtype.Numeric                       `db:"unit_cost" json:"unit_cost"`
+	UnitCostCurrency   *string                              `db:"unit_cost_currency" json:"unit_cost_currency"`
+	UnitCostUnitID     *int64                               `db:"unit_cost_unit_id" json:"unit_cost_unit_id"`
 	UpdatedByUserID    pgtype.UUID                          `db:"updated_by_user_id" json:"updated_by_user_id"`
 }
 
@@ -439,6 +468,9 @@ func (q *Queries) UpdateInputDefinition(ctx context.Context, arg UpdateInputDefi
 		arg.StorageGuidelines,
 		arg.SafetyPrecautions,
 		arg.ReferenceSource,
+		arg.UnitCost,
+		arg.UnitCostCurrency,
+		arg.UnitCostUnitID,
 		arg.UpdatedByUserID,
 	)
 	var i Gr33nnaturalfarmingInputDefinition
@@ -458,6 +490,9 @@ func (q *Queries) UpdateInputDefinition(ctx context.Context, arg UpdateInputDefi
 		&i.UpdatedAt,
 		&i.UpdatedByUserID,
 		&i.DeletedAt,
+		&i.UnitCost,
+		&i.UnitCostCurrency,
+		&i.UnitCostUnitID,
 	)
 	return i, err
 }

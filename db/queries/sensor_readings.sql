@@ -15,6 +15,22 @@ WHERE sensor_id = $1
 ORDER BY reading_time DESC
 LIMIT 1;
 
+-- name: GetLatestReadingForZoneSensorType :one
+-- Phase 20.6 WS3 — setpoint-typed predicates key off `sensor_type`
+-- (e.g. "dew_point") rather than a specific sensor_id, so the evaluator
+-- has to pick the freshest reading across every sensor of that type in
+-- the zone. `gr33ncore.sensors` is small relative to sensor_readings so
+-- the JOIN is cheap; the ORDER BY reading_time DESC LIMIT 1 uses the
+-- existing per-sensor reading_time index.
+SELECT sr.*
+FROM gr33ncore.sensor_readings sr
+JOIN gr33ncore.sensors s ON s.id = sr.sensor_id
+WHERE s.zone_id = $1
+  AND s.sensor_type = $2
+  AND s.deleted_at IS NULL
+ORDER BY sr.reading_time DESC
+LIMIT 1;
+
 -- name: ListReadingsBySensorAndTimeRange :many
 SELECT * FROM gr33ncore.sensor_readings
 WHERE sensor_id = $1

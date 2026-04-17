@@ -138,6 +138,43 @@
         </div>
       </div>
 
+      <!-- Setpoints for this zone (Phase 20.6) -->
+      <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="text-sm font-semibold text-white flex items-center gap-2">
+            Setpoints
+            <HelpTip>
+              Ideal environment per sensor type and growth stage. Rule-engine
+              predicates of type <code>setpoint</code> resolve these rows at every
+              tick using the precedence <strong>cycle + stage → cycle (any) → zone +
+              stage → zone (any)</strong>. Edit here for quick tweaks, or use the
+              dedicated Setpoints page for bulk management.
+            </HelpTip>
+          </h2>
+          <router-link to="/setpoints" class="text-xs text-green-600 hover:text-green-400">Manage →</router-link>
+        </div>
+        <p v-if="!zoneSetpoints.length" class="text-zinc-500 text-sm">
+          No setpoints configured for this zone yet. Add one from the Setpoints page to
+          make stage-aware rules possible.
+        </p>
+        <div v-else class="space-y-1 max-h-48 overflow-y-auto">
+          <div v-for="sp in zoneSetpoints" :key="sp.id"
+            class="bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 flex items-center justify-between gap-2"
+          >
+            <div class="min-w-0 text-xs">
+              <span class="text-zinc-200 font-medium">{{ sp.sensor_type }}</span>
+              <span class="text-zinc-500"> · {{ sp.stage || 'any stage' }}</span>
+              <span v-if="sp.crop_cycle_id" class="text-indigo-400"> · cycle override</span>
+            </div>
+            <div class="text-zinc-400 text-xs whitespace-nowrap">
+              <span v-if="sp.min_value != null">min {{ sp.min_value }}</span>
+              <span v-if="sp.ideal_value != null" class="ml-1">· ideal {{ sp.ideal_value }}</span>
+              <span v-if="sp.max_value != null" class="ml-1">· max {{ sp.max_value }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- Schedules & Tasks for this zone -->
       <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
         <div class="flex items-center justify-between mb-3">
@@ -173,8 +210,10 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
+import api from '../api'
 import { useFarmStore } from '../stores/farm'
 import { useFarmContextStore } from '../stores/farmContext'
+import HelpTip from '../components/HelpTip.vue'
 import SensorTile from '../components/SensorTile.vue'
 
 const route = useRoute()
@@ -188,6 +227,8 @@ const actuatorEvents = ref([])
 const eventsLoading = ref(false)
 const schedules = ref([])
 const tasks = ref([])
+const setpoints = ref([])
+const zoneSetpoints = computed(() => setpoints.value)
 
 const farmId = computed(() => farmContext.farmId)
 const zoneId = computed(() => Number(route.params.id))
@@ -248,6 +289,10 @@ onMounted(async () => {
   schedules.value = s
   await store.loadTasks(fid)
   tasks.value = store.tasks
+  try {
+    const res = await api.get(`/farms/${fid}/setpoints`, { params: { zone_id: zoneId.value } })
+    setpoints.value = res.data ?? []
+  } catch { setpoints.value = [] }
   await loadEvents()
 })
 

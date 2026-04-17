@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -149,10 +150,20 @@ var deferredActionTypes = map[string]struct{}{
 // rulePredicate is the canonical predicate shape shared with Phase 19
 // schedule preconditions. A rule's conditions_jsonb stores
 // { "logic": "ALL"|"ANY", "predicates": [<rulePredicate>,...] }.
+//
+// Phase 20.6 WS3 — Type discriminates two variants. Empty / "hard" is
+// the legacy {sensor_id, op, value} predicate. "setpoint" is the new
+// stage-scoped variant that resolves `gr33ncore.zone_setpoints` at
+// eval time against the rule's zone + active crop cycle.
 type rulePredicate struct {
-	SensorID int64   `json:"sensor_id"`
+	Type string `json:"type,omitempty"`
+
+	SensorID int64   `json:"sensor_id,omitempty"`
 	Op       string  `json:"op"`
-	Value    float64 `json:"value"`
+	Value    float64 `json:"value,omitempty"`
+
+	SensorType string `json:"sensor_type,omitempty"`
+	Scope      string `json:"scope,omitempty"`
 }
 
 type ruleConditions struct {
@@ -177,21 +188,54 @@ func parseRuleConditions(ctx context.Context, q *db.Queries, farmID int64, logic
 		}
 	}
 	for i, p := range preds {
-		if p.SensorID <= 0 {
-			return "", nil, fmt.Errorf("conditions[%d]: sensor_id must be > 0", i)
+		ptype := p.Type
+		if ptype == "" {
+			ptype = "hard"
 		}
-		if _, ok := validPreconditionOps[p.Op]; !ok {
-			return "", nil, fmt.Errorf("conditions[%d]: op must be one of lt|lte|eq|gte|gt|ne", i)
-		}
-		sensor, err := q.GetSensorByID(ctx, p.SensorID)
-		if err != nil {
-			if errors.Is(err, pgx.ErrNoRows) {
-				return "", nil, fmt.Errorf("conditions[%d]: sensor %d not found", i, p.SensorID)
+		switch ptype {
+		case "hard":
+			if p.SensorID <= 0 {
+				return "", nil, fmt.Errorf("conditions[%d]: sensor_id must be > 0", i)
 			}
-			return "", nil, fmt.Errorf("conditions[%d]: %w", i, err)
-		}
-		if sensor.FarmID != farmID {
-			return "", nil, fmt.Errorf("conditions[%d]: sensor %d does not belong to this farm", i, p.SensorID)
+			if _, ok := validPreconditionOps[p.Op]; !ok {
+				return "", nil, fmt.Errorf("conditions[%d]: op must be one of lt|lte|eq|gte|gt|ne", i)
+			}
+			sensor, err := q.GetSensorByID(ctx, p.SensorID)
+			if err != nil {
+				if errors.Is(err, pgx.ErrNoRows) {
+					return "", nil, fmt.Errorf("conditions[%d]: sensor %d not found", i, p.SensorID)
+				}
+				return "", nil, fmt.Errorf("conditions[%d]: %w", i, err)
+			}
+			if sensor.FarmID != farmID {
+				return "", nil, fmt.Errorf("conditions[%d]: sensor %d does not belong to this farm", i, p.SensorID)
+			}
+		case "setpoint":
+			// Phase 20.6 WS3 — setpoint predicates key off sensor_type
+			// + scope and resolve a zone_setpoints row at eval time.
+			// We validate shape here; zone/cycle resolution is a
+			// per-tick concern so rules configured before the operator
+			// has landed any setpoint rows still save cleanly.
+			if strings.TrimSpace(p.SensorType) == "" {
+				return "", nil, fmt.Errorf("conditions[%d]: sensor_type required for setpoint predicate", i)
+			}
+			switch p.Scope {
+			case "", "current_stage", "zone_default":
+				// OK; empty normalises to current_stage in the evaluator.
+			default:
+				return "", nil, fmt.Errorf("conditions[%d]: scope must be 'current_stage' or 'zone_default'", i)
+			}
+			switch p.Op {
+			case "out_of_range", "below_ideal", "above_ideal", "inside_range":
+				// OK
+			default:
+				return "", nil, fmt.Errorf("conditions[%d]: op must be one of out_of_range|below_ideal|above_ideal|inside_range for setpoint predicate", i)
+			}
+			if p.SensorID != 0 || p.Value != 0 {
+				return "", nil, fmt.Errorf("conditions[%d]: sensor_id and value must be omitted when type='setpoint'", i)
+			}
+		default:
+			return "", nil, fmt.Errorf("conditions[%d]: type must be 'hard' or 'setpoint'", i)
 		}
 	}
 	canon, err := json.Marshal(ruleConditions{Logic: logic, Predicates: preds})
@@ -493,6 +537,11 @@ type executableActionBody struct {
 	ActionCommand                *string         `json:"action_command"`
 	ActionParameters             json.RawMessage `json:"action_parameters"`
 	DelayBeforeExecutionSeconds  *int32          `json:"delay_before_execution_seconds"`
+	// Phase 20.95 WS3 — if the client tries to attach this action to a second
+	// source (schedule or fertigation program) in addition to the rule this
+	// POST is scoped to, reject with 400 before the DB check constraint can.
+	ScheduleID *int64 `json:"schedule_id"`
+	ProgramID  *int64 `json:"program_id"`
 }
 
 // validateActionTypeForCreate enforces the Phase 20 supported-action
@@ -603,6 +652,12 @@ func (h *Handler) CreateActionForRule(w http.ResponseWriter, r *http.Request) {
 	var body executableActionBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+	// Phase 20.95 WS3 — reject two-source writes before hitting the DB CHECK.
+	if body.ScheduleID != nil || body.ProgramID != nil {
+		httputil.WriteError(w, http.StatusBadRequest,
+			"executable_actions may bind to exactly one source; this endpoint binds to the rule in the URL, so schedule_id and program_id must be omitted")
 		return
 	}
 	if err := validateActionType(body.ActionType); err != nil {

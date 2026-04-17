@@ -1,4 +1,4 @@
-.PHONY: run run-receiver build build-receiver test seed sqlc ui dev clean lint bootstrap-local bootstrap-local-docker
+.PHONY: run run-receiver build build-receiver test seed sqlc ui dev clean lint bootstrap-local bootstrap-local-docker audit-openapi
 
 # ── Variables ──────────────────────────────────────────────────
 BINARY   := api
@@ -52,6 +52,9 @@ test: ## Run Go tests (dev build so smoke tests can use auth bypass)
 
 lint: ## Run go vet
 	$(GO) vet -tags dev ./...
+
+audit-openapi: ## Phase 20.95 WS6 — confirm openapi.yaml matches cmd/api/routes.go
+	@./scripts/openapi_route_diff.sh
 
 # ── Database ───────────────────────────────────────────────────
 sqlc: ## Regenerate sqlc Go code from SQL queries

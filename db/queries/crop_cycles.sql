@@ -41,3 +41,12 @@ RETURNING *;
 
 -- name: SoftDeleteCropCycle :exec
 UPDATE gr33nfertigation.crop_cycles SET is_active = FALSE, updated_at = NOW() WHERE id = $1;
+
+-- name: GetActiveCropCycleForZone :one
+-- Phase 20.6 WS3 — the rule engine calls this to translate a rule's zone
+-- into the active cycle so the setpoint resolver has a `current_stage`
+-- to match against. At most one crop cycle per zone is active at a time
+-- (enforced by uq_active_crop_cycle).
+SELECT * FROM gr33nfertigation.crop_cycles
+WHERE zone_id = $1 AND is_active = TRUE
+LIMIT 1;

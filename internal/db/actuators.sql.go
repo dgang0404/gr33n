@@ -18,7 +18,7 @@ INSERT INTO gr33ncore.actuators (
     device_id, farm_id, zone_id, name, actuator_type,
     hardware_identifier, feedback_sensor_id, config, meta_data, created_at, updated_at
 ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())
-RETURNING id, device_id, farm_id, zone_id, name, actuator_type, hardware_identifier, current_state_numeric, current_state_text, last_known_state_time, last_command_sent_time, feedback_sensor_id, config, meta_data, created_at, updated_at, updated_by_user_id, deleted_at
+RETURNING id, device_id, farm_id, zone_id, name, actuator_type, hardware_identifier, current_state_numeric, current_state_text, last_known_state_time, last_command_sent_time, feedback_sensor_id, config, meta_data, created_at, updated_at, updated_by_user_id, deleted_at, watts
 `
 
 type CreateActuatorParams struct {
@@ -68,12 +68,13 @@ func (q *Queries) CreateActuator(ctx context.Context, arg CreateActuatorParams) 
 		&i.UpdatedAt,
 		&i.UpdatedByUserID,
 		&i.DeletedAt,
+		&i.Watts,
 	)
 	return i, err
 }
 
 const getActuatorByID = `-- name: GetActuatorByID :one
-SELECT id, device_id, farm_id, zone_id, name, actuator_type, hardware_identifier, current_state_numeric, current_state_text, last_known_state_time, last_command_sent_time, feedback_sensor_id, config, meta_data, created_at, updated_at, updated_by_user_id, deleted_at FROM gr33ncore.actuators
+SELECT id, device_id, farm_id, zone_id, name, actuator_type, hardware_identifier, current_state_numeric, current_state_text, last_known_state_time, last_command_sent_time, feedback_sensor_id, config, meta_data, created_at, updated_at, updated_by_user_id, deleted_at, watts FROM gr33ncore.actuators
 WHERE id = $1 AND deleted_at IS NULL
 `
 
@@ -99,6 +100,7 @@ func (q *Queries) GetActuatorByID(ctx context.Context, id int64) (Gr33ncoreActua
 		&i.UpdatedAt,
 		&i.UpdatedByUserID,
 		&i.DeletedAt,
+		&i.Watts,
 	)
 	return i, err
 }
@@ -254,7 +256,7 @@ func (q *Queries) ListActuatorEventsBySchedule(ctx context.Context, arg ListActu
 }
 
 const listActuatorsByFarm = `-- name: ListActuatorsByFarm :many
-SELECT id, device_id, farm_id, zone_id, name, actuator_type, hardware_identifier, current_state_numeric, current_state_text, last_known_state_time, last_command_sent_time, feedback_sensor_id, config, meta_data, created_at, updated_at, updated_by_user_id, deleted_at FROM gr33ncore.actuators
+SELECT id, device_id, farm_id, zone_id, name, actuator_type, hardware_identifier, current_state_numeric, current_state_text, last_known_state_time, last_command_sent_time, feedback_sensor_id, config, meta_data, created_at, updated_at, updated_by_user_id, deleted_at, watts FROM gr33ncore.actuators
 WHERE farm_id = $1 AND deleted_at IS NULL
 ORDER BY name ASC
 `
@@ -287,6 +289,7 @@ func (q *Queries) ListActuatorsByFarm(ctx context.Context, farmID int64) ([]Gr33
 			&i.UpdatedAt,
 			&i.UpdatedByUserID,
 			&i.DeletedAt,
+			&i.Watts,
 		); err != nil {
 			return nil, err
 		}
@@ -303,7 +306,7 @@ UPDATE gr33ncore.actuators
 SET current_state_numeric = $2, current_state_text = $3,
     last_known_state_time = NOW(), updated_at = NOW()
 WHERE id = $1
-RETURNING id, device_id, farm_id, zone_id, name, actuator_type, hardware_identifier, current_state_numeric, current_state_text, last_known_state_time, last_command_sent_time, feedback_sensor_id, config, meta_data, created_at, updated_at, updated_by_user_id, deleted_at
+RETURNING id, device_id, farm_id, zone_id, name, actuator_type, hardware_identifier, current_state_numeric, current_state_text, last_known_state_time, last_command_sent_time, feedback_sensor_id, config, meta_data, created_at, updated_at, updated_by_user_id, deleted_at, watts
 `
 
 type UpdateActuatorStateParams struct {
@@ -334,6 +337,7 @@ func (q *Queries) UpdateActuatorState(ctx context.Context, arg UpdateActuatorSta
 		&i.UpdatedAt,
 		&i.UpdatedByUserID,
 		&i.DeletedAt,
+		&i.Watts,
 	)
 	return i, err
 }
