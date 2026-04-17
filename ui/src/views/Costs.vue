@@ -187,6 +187,63 @@
         <p v-if="coaError" class="text-xs text-red-400 mt-2">{{ coaError }}</p>
       </div>
 
+      <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="text-sm font-semibold text-white">Energy price ($/kWh)</h2>
+          <span class="text-[11px] text-zinc-500">
+            Phase 20.7 — enables the nightly electricity rollup (watts × runtime × price).
+          </span>
+        </div>
+        <p v-if="!energyPrices.length" class="text-xs text-zinc-500 mb-3">
+          No energy price configured. Add one to enable automatic electricity cost logging.
+        </p>
+        <div v-else class="overflow-x-auto border border-zinc-800 rounded-lg mb-3">
+          <table class="w-full text-xs">
+            <thead class="bg-zinc-950 text-zinc-500 uppercase">
+              <tr>
+                <th class="text-left px-3 py-2">Effective from</th>
+                <th class="text-left px-3 py-2">Effective to</th>
+                <th class="text-right px-3 py-2">$/kWh</th>
+                <th class="text-left px-3 py-2">Currency</th>
+                <th class="text-left px-3 py-2">Notes</th>
+                <th class="text-left px-3 py-2">Action</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-zinc-800">
+              <tr v-for="p in energyPrices" :key="p.id" class="bg-zinc-900">
+                <td class="px-3 py-2 text-zinc-300">{{ isoDate(p.effective_from) }}</td>
+                <td class="px-3 py-2 text-zinc-500">{{ p.effective_to ? isoDate(p.effective_to) : '—' }}</td>
+                <td class="px-3 py-2 text-right font-mono tabular-nums text-zinc-200">{{ Number(p.price_per_kwh).toFixed(4) }}</td>
+                <td class="px-3 py-2 text-zinc-300">{{ p.currency }}</td>
+                <td class="px-3 py-2 text-zinc-500">{{ p.notes || '—' }}</td>
+                <td class="px-3 py-2">
+                  <button type="button" class="text-[11px] text-red-500 hover:text-red-400" @click="deleteEnergyPrice(p.id)">Delete</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <form class="grid grid-cols-1 sm:grid-cols-5 gap-2" @submit.prevent="submitEnergyPrice">
+          <input v-model="newEnergyPrice.effective_from" type="date" required class="input-field" />
+          <input v-model.number="newEnergyPrice.price_per_kwh" type="number" step="0.0001" min="0" required placeholder="$/kWh" class="input-field" />
+          <input v-model="newEnergyPrice.currency" maxlength="3" required placeholder="USD" class="input-field uppercase" />
+          <input v-model="newEnergyPrice.notes" placeholder="Notes (optional)" class="input-field sm:col-span-1" />
+          <button type="submit" :disabled="energySaving" class="px-3 py-2 bg-green-700 text-white text-xs rounded-lg disabled:opacity-50">
+            {{ energySaving ? 'Saving…' : 'Add price' }}
+          </button>
+        </form>
+        <p v-if="energyError" class="text-xs text-red-400 mt-2">{{ energyError }}</p>
+      </div>
+
+      <div class="flex items-center gap-3 text-xs">
+        <label class="inline-flex items-center gap-2 text-zinc-400 cursor-pointer">
+          <input v-model="autoLoggedOnly" type="checkbox" class="rounded bg-zinc-800 border-zinc-700" />
+          Auto-logged only
+        </label>
+        <span class="text-zinc-600">·</span>
+        <span class="text-zinc-500">{{ filteredTransactions.length }} / {{ transactions.length }} rows</span>
+      </div>
+
       <div class="overflow-x-auto border border-zinc-800 rounded-xl">
         <table class="w-full text-sm">
           <thead class="bg-zinc-900 text-zinc-500 text-xs uppercase">
@@ -194,6 +251,7 @@
               <th class="text-left px-4 py-3">Date</th>
               <th class="text-left px-4 py-3">Category</th>
               <th class="text-left px-4 py-3">Description</th>
+              <th class="text-left px-4 py-3 text-[11px]">Source</th>
               <th class="text-left px-4 py-3 text-[11px]">Bookkeeping</th>
               <th class="text-right px-4 py-3">Amount</th>
               <th class="text-left px-4 py-3">Receipt</th>
@@ -201,7 +259,7 @@
             </tr>
           </thead>
           <tbody class="divide-y divide-zinc-800">
-            <tr v-for="t in transactions" :key="t._offline?.clientCostId || t.id" class="bg-zinc-950 hover:bg-zinc-900/50">
+            <tr v-for="t in filteredTransactions" :key="t._offline?.clientCostId || t.id" class="bg-zinc-950 hover:bg-zinc-900/50">
               <td class="px-4 py-2 text-zinc-300 whitespace-nowrap">{{ isoDate(t.transaction_date) }}</td>
               <td class="px-4 py-2">
                 <span class="text-xs px-2 py-0.5 rounded-full bg-zinc-800 text-zinc-300">{{ formatCat(t.category) }}</span>
@@ -213,6 +271,16 @@
                   <span v-if="t._offline?.receiptPending" class="text-zinc-500"> · receipt pending</span>
                 </span>
                 {{ t.description || '—' }}
+              </td>
+              <td class="px-4 py-2 text-[11px]">
+                <span
+                  v-if="t.related_module_schema && t.related_table_name"
+                  class="inline-block px-2 py-0.5 rounded bg-emerald-900/40 border border-emerald-800 text-emerald-300"
+                  :title="`Auto-logged from ${t.related_module_schema}.${t.related_table_name} (id ${t.related_record_id ?? '?'})`"
+                >
+                  auto · {{ t.related_table_name.replace(/_/g, ' ') }}
+                </span>
+                <span v-else class="text-zinc-600">manual</span>
               </td>
               <td class="px-4 py-2 text-[11px] text-zinc-500 max-w-[10rem]">
                 <template v-if="t.document_type || t.document_reference || t.counterparty">
@@ -245,8 +313,10 @@
                 </template>
               </td>
             </tr>
-            <tr v-if="!transactions.length">
-              <td colspan="7" class="px-4 py-8 text-center text-zinc-500">No transactions yet.</td>
+            <tr v-if="!filteredTransactions.length">
+              <td colspan="8" class="px-4 py-8 text-center text-zinc-500">
+                {{ autoLoggedOnly ? 'No auto-logged rows yet — mixing events, task consumptions, and electricity rollups will appear here.' : 'No transactions yet.' }}
+              </td>
             </tr>
           </tbody>
         </table>
@@ -336,6 +406,20 @@ const editReceiptFile = ref(null)
 const coaMappings = ref([])
 const coaSaving = ref(false)
 const coaError = ref('')
+const autoLoggedOnly = ref(false)
+const filteredTransactions = computed(() => {
+  if (!autoLoggedOnly.value) return transactions.value
+  return transactions.value.filter((t) => !!t.related_module_schema)
+})
+const energyPrices = ref([])
+const energySaving = ref(false)
+const energyError = ref('')
+const newEnergyPrice = reactive({
+  effective_from: new Date().toISOString().slice(0, 10),
+  price_per_kwh: 0.15,
+  currency: 'USD',
+  notes: '',
+})
 const editForm = reactive({
   transaction_date: '',
   category: 'miscellaneous',
@@ -552,16 +636,54 @@ async function reload() {
     const fid = farmContext.farmId
     if (!fid) return
     if (!store.zones.length) await store.loadAll(fid)
-    const [s, tx, coa] = await Promise.all([
+    const [s, tx, coa, prices] = await Promise.all([
       store.loadCostSummary(fid),
       store.loadCosts(fid, { limit: 100, offset: 0 }),
       store.loadCoaMappings(fid),
+      api.get(`/farms/${fid}/energy-prices`).then((r) => r.data).catch(() => []),
     ])
     Object.assign(summary, s || { total_income: 0, total_expenses: 0, net: 0 })
     transactions.value = tx
     coaMappings.value = coa
+    energyPrices.value = Array.isArray(prices) ? prices : []
   } finally {
     loading.value = false
+  }
+}
+
+async function submitEnergyPrice() {
+  const fid = farmContext.farmId
+  if (!fid) return
+  energyError.value = ''
+  energySaving.value = true
+  try {
+    const body = {
+      effective_from: newEnergyPrice.effective_from,
+      price_per_kwh: Number(newEnergyPrice.price_per_kwh),
+      currency: String(newEnergyPrice.currency || '').trim().toUpperCase(),
+      notes: String(newEnergyPrice.notes || '').trim() || undefined,
+    }
+    await api.post(`/farms/${fid}/energy-prices`, body)
+    newEnergyPrice.notes = ''
+    const r = await api.get(`/farms/${fid}/energy-prices`)
+    energyPrices.value = Array.isArray(r.data) ? r.data : []
+  } catch (e) {
+    energyError.value = e.response?.data?.error || e.message || 'Could not save energy price'
+  } finally {
+    energySaving.value = false
+  }
+}
+
+async function deleteEnergyPrice(id) {
+  if (!id) return
+  if (!confirm('Delete this energy price row? Past electricity rollups already logged under it are NOT affected.')) return
+  try {
+    await api.delete(`/energy-prices/${id}`)
+    const fid = farmContext.farmId
+    const r = await api.get(`/farms/${fid}/energy-prices`)
+    energyPrices.value = Array.isArray(r.data) ? r.data : []
+  } catch (e) {
+    energyError.value = e.response?.data?.error || e.message || 'Could not delete energy price'
   }
 }
 

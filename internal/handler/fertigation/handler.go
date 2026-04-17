@@ -12,6 +12,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"gr33n-api/internal/authctx"
+	"gr33n-api/internal/costing"
 	db "gr33n-api/internal/db"
 	"gr33n-api/internal/farmauthz"
 	"gr33n-api/internal/httputil"
@@ -761,6 +762,15 @@ func (h *Handler) CreateMixingEvent(w http.ResponseWriter, r *http.Request) {
 		})
 		if err != nil {
 			httputil.WriteError(w, http.StatusInternalServerError, "failed to create mixing component")
+			return
+		}
+		// Phase 20.7 WS2: inside the transaction so the deduct +
+		// cost row commit atomically with the component insert.
+		// The autologger is idempotent on `mixing_component:<id>`
+		// so a failed Commit → retry at the route layer (future
+		// offline-sync) won't double-bill.
+		if err := costing.LogMixingComponent(r.Context(), qtx, farmID, comp, event.MixedAt); err != nil {
+			httputil.WriteError(w, http.StatusInternalServerError, "failed to log mixing component cost: "+err.Error())
 			return
 		}
 		components = append(components, comp)

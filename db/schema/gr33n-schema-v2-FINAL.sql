@@ -1266,6 +1266,35 @@ CREATE INDEX IF NOT EXISTS idx_recipe_components_unit
 CREATE INDEX IF NOT EXISTS idx_input_definitions_farm
     ON gr33nnaturalfarming.input_definitions(farm_id) WHERE deleted_at IS NULL;
 
+-- Phase 20.7 WS1 — task-driven consumption join table. Placed after
+-- gr33nnaturalfarming.input_batches so the FK resolves during an
+-- end-to-end schema apply.
+CREATE TABLE IF NOT EXISTS gr33ncore.task_input_consumptions (
+    id              BIGSERIAL PRIMARY KEY,
+    farm_id         BIGINT NOT NULL REFERENCES gr33ncore.farms(id) ON DELETE CASCADE,
+    task_id         BIGINT NOT NULL REFERENCES gr33ncore.tasks(id) ON DELETE CASCADE,
+    input_batch_id  BIGINT NOT NULL REFERENCES gr33nnaturalfarming.input_batches(id) ON DELETE RESTRICT,
+    quantity        NUMERIC(10,3) NOT NULL CHECK (quantity > 0),
+    unit_id         BIGINT NOT NULL REFERENCES gr33ncore.units(id) ON DELETE RESTRICT,
+    notes           TEXT,
+    recorded_at     TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    recorded_by     UUID REFERENCES gr33ncore.profiles(user_id) ON DELETE SET NULL,
+    cost_transaction_id BIGINT REFERENCES gr33ncore.cost_transactions(id) ON DELETE SET NULL,
+    created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_task_consumptions_task
+    ON gr33ncore.task_input_consumptions (task_id);
+CREATE INDEX IF NOT EXISTS idx_task_consumptions_batch
+    ON gr33ncore.task_input_consumptions (input_batch_id);
+CREATE INDEX IF NOT EXISTS idx_task_consumptions_farm
+    ON gr33ncore.task_input_consumptions (farm_id);
+DROP TRIGGER IF EXISTS trg_task_input_consumptions_updated_at
+    ON gr33ncore.task_input_consumptions;
+CREATE TRIGGER trg_task_input_consumptions_updated_at
+    BEFORE UPDATE ON gr33ncore.task_input_consumptions
+    FOR EACH ROW EXECUTE FUNCTION gr33ncore.set_updated_at();
+
 -- ============================================================
 -- SCHEMA: gr33n_fertigation
 -- ============================================================

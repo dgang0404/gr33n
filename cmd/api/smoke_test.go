@@ -299,6 +299,13 @@ ALTER TABLE gr33ncore.farms ADD COLUMN IF NOT EXISTS organization_id BIGINT
 	if _, err := pool.Exec(ctx, string(phase206SetpointsSQL)); err != nil {
 		return err
 	}
+	phase207TaskConsumptionsSQL, err := os.ReadFile(filepath.Join("..", "..", "db", "migrations", "20260510_phase207_task_input_consumptions.sql"))
+	if err != nil {
+		return err
+	}
+	if _, err := pool.Exec(ctx, string(phase207TaskConsumptionsSQL)); err != nil {
+		return err
+	}
 	return nil
 }
 

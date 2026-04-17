@@ -1004,3 +1004,60 @@ func (h *Handler) cleanupDeletedReceipt(ctx context.Context, receiptID *int64) {
 		log.Printf("receipt cleanup attachment %d: %v", *receiptID, err)
 	}
 }
+
+// CropCycleSummary — GET /crop-cycles/{id}/cost-summary (Phase 20.7 WS6)
+// Returns per-category totals for a specific crop cycle. Feeds the
+// "Cost to date" card on crop-cycle detail and the first RAG-precursor
+// lens ("what did this cycle actually cost me?").
+func (h *Handler) CropCycleSummary(w http.ResponseWriter, r *http.Request) {
+	cycleID, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	if err != nil {
+		httputil.WriteError(w, http.StatusBadRequest, "invalid crop cycle id")
+		return
+	}
+	cycle, err := h.q.GetCropCycleByID(r.Context(), cycleID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			httputil.WriteError(w, http.StatusNotFound, "crop cycle not found")
+			return
+		}
+		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	if !farmauthz.RequireCostRead(w, r, h.q, cycle.FarmID) {
+		return
+	}
+	rows, err := h.q.GetCostTotalsByCropCycle(r.Context(), &cycleID)
+	if err != nil {
+		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	out := make([]map[string]any, 0, len(rows))
+	var netTotal float64
+	var expenseTotal float64
+	var incomeTotal float64
+	for _, row := range rows {
+		income := numericToFloat64(row.Income)
+		expense := numericToFloat64(row.Expense)
+		net := numericToFloat64(row.Net)
+		out = append(out, map[string]any{
+			"category": string(row.Category),
+			"currency": strings.TrimSpace(row.Currency),
+			"income":   income,
+			"expense":  expense,
+			"net":      net,
+			"tx_count": row.TxCount,
+		})
+		netTotal += net
+		expenseTotal += expense
+		incomeTotal += income
+	}
+	httputil.WriteJSON(w, http.StatusOK, map[string]any{
+		"crop_cycle_id":   cycleID,
+		"farm_id":         cycle.FarmID,
+		"category_totals": out,
+		"total_income":    incomeTotal,
+		"total_expenses":  expenseTotal,
+		"net":             netTotal,
+	})
+}

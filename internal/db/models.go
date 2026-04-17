@@ -1643,6 +1643,21 @@ type Gr33ncoreTask struct {
 	TimeSpentMinutes         *int32                     `db:"time_spent_minutes" json:"time_spent_minutes"`
 }
 
+type Gr33ncoreTaskInputConsumption struct {
+	ID                int64          `db:"id" json:"id"`
+	FarmID            int64          `db:"farm_id" json:"farm_id"`
+	TaskID            int64          `db:"task_id" json:"task_id"`
+	InputBatchID      int64          `db:"input_batch_id" json:"input_batch_id"`
+	Quantity          pgtype.Numeric `db:"quantity" json:"quantity"`
+	UnitID            int64          `db:"unit_id" json:"unit_id"`
+	Notes             *string        `db:"notes" json:"notes"`
+	RecordedAt        time.Time      `db:"recorded_at" json:"recorded_at"`
+	RecordedBy        pgtype.UUID    `db:"recorded_by" json:"recorded_by"`
+	CostTransactionID *int64         `db:"cost_transaction_id" json:"cost_transaction_id"`
+	CreatedAt         time.Time      `db:"created_at" json:"created_at"`
+	UpdatedAt         time.Time      `db:"updated_at" json:"updated_at"`
+}
+
 type Gr33ncoreTaskLaborLog struct {
 	ID                 int64              `db:"id" json:"id"`
 	FarmID             int64              `db:"farm_id" json:"farm_id"`

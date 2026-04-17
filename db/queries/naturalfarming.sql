@@ -59,3 +59,36 @@ WHERE id=$1 AND deleted_at IS NULL RETURNING *;
 -- name: SoftDeleteInputBatch :exec
 UPDATE gr33nnaturalfarming.input_batches
 SET deleted_at=NOW(), updated_by_user_id=$2 WHERE id=$1;
+
+-- Phase 20.7 WS2/WS3 — autologger deduct + refund. RETURNING the new
+-- remaining quantity lets the caller detect a negative-stock
+-- condition and log a warning without a second round-trip.
+-- name: DecrementInputBatchQuantity :one
+UPDATE gr33nnaturalfarming.input_batches
+SET current_quantity_remaining = current_quantity_remaining - $2::NUMERIC,
+    updated_at = NOW()
+WHERE id = $1 AND deleted_at IS NULL
+RETURNING id, current_quantity_remaining;
+
+-- name: IncrementInputBatchQuantity :one
+UPDATE gr33nnaturalfarming.input_batches
+SET current_quantity_remaining = current_quantity_remaining + $2::NUMERIC,
+    updated_at = NOW()
+WHERE id = $1 AND deleted_at IS NULL
+RETURNING id, current_quantity_remaining;
+
+-- Phase 20.7 WS5 — low-stock sweep: any batch whose remaining stock
+-- has dropped below its opt-in threshold. The worker fires one alert
+-- per batch per day (dedupe enforced in the worker, not here).
+-- name: ListLowStockBatchesByFarm :many
+SELECT b.id, b.farm_id, b.input_definition_id, b.batch_identifier,
+       b.current_quantity_remaining, b.low_stock_threshold,
+       b.quantity_unit_id,
+       d.name AS input_name
+FROM gr33nnaturalfarming.input_batches b
+JOIN gr33nnaturalfarming.input_definitions d ON d.id = b.input_definition_id
+WHERE b.farm_id = $1
+  AND b.deleted_at IS NULL
+  AND b.low_stock_threshold IS NOT NULL
+  AND b.current_quantity_remaining < b.low_stock_threshold
+ORDER BY b.id ASC;

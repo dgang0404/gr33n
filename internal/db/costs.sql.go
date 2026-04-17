@@ -7,6 +7,7 @@ package db
 
 import (
 	"context"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgtype"
 	"gr33n-api/internal/platform/commontypes"
@@ -85,6 +86,105 @@ func (q *Queries) CreateCostTransaction(ctx context.Context, arg CreateCostTrans
 	return i, err
 }
 
+const createCostTransactionAutoLogged = `-- name: CreateCostTransactionAutoLogged :one
+INSERT INTO gr33ncore.cost_transactions (
+    farm_id, transaction_date, category, subcategory, amount, currency,
+    description, is_income, created_by_user_id, receipt_file_id,
+    document_type, document_reference, counterparty, crop_cycle_id,
+    related_module_schema, related_table_name, related_record_id
+) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)
+RETURNING id, farm_id, transaction_date, category, subcategory, amount, currency, description, related_module_schema, related_table_name, related_record_id, receipt_file_id, is_income, document_type, document_reference, counterparty, created_by_user_id, created_at, updated_at, crop_cycle_id
+`
+
+type CreateCostTransactionAutoLoggedParams struct {
+	FarmID              int64                        `db:"farm_id" json:"farm_id"`
+	TransactionDate     pgtype.Date                  `db:"transaction_date" json:"transaction_date"`
+	Category            commontypes.CostCategoryEnum `db:"category" json:"category"`
+	Subcategory         *string                      `db:"subcategory" json:"subcategory"`
+	Amount              pgtype.Numeric               `db:"amount" json:"amount"`
+	Currency            string                       `db:"currency" json:"currency"`
+	Description         *string                      `db:"description" json:"description"`
+	IsIncome            bool                         `db:"is_income" json:"is_income"`
+	CreatedByUserID     pgtype.UUID                  `db:"created_by_user_id" json:"created_by_user_id"`
+	ReceiptFileID       *int64                       `db:"receipt_file_id" json:"receipt_file_id"`
+	DocumentType        *string                      `db:"document_type" json:"document_type"`
+	DocumentReference   *string                      `db:"document_reference" json:"document_reference"`
+	Counterparty        *string                      `db:"counterparty" json:"counterparty"`
+	CropCycleID         *int64                       `db:"crop_cycle_id" json:"crop_cycle_id"`
+	RelatedModuleSchema *string                      `db:"related_module_schema" json:"related_module_schema"`
+	RelatedTableName    *string                      `db:"related_table_name" json:"related_table_name"`
+	RelatedRecordID     *int64                       `db:"related_record_id" json:"related_record_id"`
+}
+
+// Phase 20.7 WS2 — autologger extension. The manual operator-facing
+// path (CreateCostTransaction above) can't set related_* because
+// those fields exist solely to link an auto-generated row back at the
+// telemetry that produced it. Keeping a separate query (instead of
+// adding three optional args to the existing one) avoids churning
+// every handler call site that doesn't care.
+func (q *Queries) CreateCostTransactionAutoLogged(ctx context.Context, arg CreateCostTransactionAutoLoggedParams) (Gr33ncoreCostTransaction, error) {
+	row := q.db.QueryRow(ctx, createCostTransactionAutoLogged,
+		arg.FarmID,
+		arg.TransactionDate,
+		arg.Category,
+		arg.Subcategory,
+		arg.Amount,
+		arg.Currency,
+		arg.Description,
+		arg.IsIncome,
+		arg.CreatedByUserID,
+		arg.ReceiptFileID,
+		arg.DocumentType,
+		arg.DocumentReference,
+		arg.Counterparty,
+		arg.CropCycleID,
+		arg.RelatedModuleSchema,
+		arg.RelatedTableName,
+		arg.RelatedRecordID,
+	)
+	var i Gr33ncoreCostTransaction
+	err := row.Scan(
+		&i.ID,
+		&i.FarmID,
+		&i.TransactionDate,
+		&i.Category,
+		&i.Subcategory,
+		&i.Amount,
+		&i.Currency,
+		&i.Description,
+		&i.RelatedModuleSchema,
+		&i.RelatedTableName,
+		&i.RelatedRecordID,
+		&i.ReceiptFileID,
+		&i.IsIncome,
+		&i.DocumentType,
+		&i.DocumentReference,
+		&i.Counterparty,
+		&i.CreatedByUserID,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.CropCycleID,
+	)
+	return i, err
+}
+
+const createCostTransactionIdempotency = `-- name: CreateCostTransactionIdempotency :exec
+INSERT INTO gr33ncore.cost_transaction_idempotency
+    (farm_id, idempotency_key, cost_transaction_id)
+VALUES ($1, $2, $3)
+`
+
+type CreateCostTransactionIdempotencyParams struct {
+	FarmID            int64  `db:"farm_id" json:"farm_id"`
+	IdempotencyKey    string `db:"idempotency_key" json:"idempotency_key"`
+	CostTransactionID int64  `db:"cost_transaction_id" json:"cost_transaction_id"`
+}
+
+func (q *Queries) CreateCostTransactionIdempotency(ctx context.Context, arg CreateCostTransactionIdempotencyParams) error {
+	_, err := q.db.Exec(ctx, createCostTransactionIdempotency, arg.FarmID, arg.IdempotencyKey, arg.CostTransactionID)
+	return err
+}
+
 const deleteCostTransaction = `-- name: DeleteCostTransaction :exec
 DELETE FROM gr33ncore.cost_transactions WHERE id = $1
 `
@@ -92,6 +192,42 @@ DELETE FROM gr33ncore.cost_transactions WHERE id = $1
 func (q *Queries) DeleteCostTransaction(ctx context.Context, id int64) error {
 	_, err := q.db.Exec(ctx, deleteCostTransaction, id)
 	return err
+}
+
+const getActiveFarmEnergyPrice = `-- name: GetActiveFarmEnergyPrice :one
+SELECT id, farm_id, effective_from, effective_to, price_per_kwh, currency, notes, created_at, updated_at FROM gr33ncore.farm_energy_prices
+WHERE farm_id = $1
+  AND effective_from <= $2
+  AND (effective_to IS NULL OR effective_to > $2)
+ORDER BY effective_from DESC
+LIMIT 1
+`
+
+type GetActiveFarmEnergyPriceParams struct {
+	FarmID        int64       `db:"farm_id" json:"farm_id"`
+	EffectiveFrom pgtype.Date `db:"effective_from" json:"effective_from"`
+}
+
+// Phase 20.7 WS4 — electricity rollup needs the active $/kWh for a
+// (farm, transaction_date). Greatest effective_from <= transaction_date
+// wins; effective_to (if set) caps the row. Returns ErrNoRows when no
+// pricing has been configured — the worker treats that as a skip, not
+// a failure.
+func (q *Queries) GetActiveFarmEnergyPrice(ctx context.Context, arg GetActiveFarmEnergyPriceParams) (Gr33ncoreFarmEnergyPrice, error) {
+	row := q.db.QueryRow(ctx, getActiveFarmEnergyPrice, arg.FarmID, arg.EffectiveFrom)
+	var i Gr33ncoreFarmEnergyPrice
+	err := row.Scan(
+		&i.ID,
+		&i.FarmID,
+		&i.EffectiveFrom,
+		&i.EffectiveTo,
+		&i.PricePerKwh,
+		&i.Currency,
+		&i.Notes,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
 }
 
 const getCostCategoryTotalsByFarm = `-- name: GetCostCategoryTotalsByFarm :many
@@ -224,6 +360,57 @@ func (q *Queries) GetCostSummaryByFarm(ctx context.Context, farmID int64) (GetCo
 	return i, err
 }
 
+const getCostTotalsByCropCycle = `-- name: GetCostTotalsByCropCycle :many
+SELECT
+    category,
+    currency,
+    COALESCE(SUM(CASE WHEN is_income THEN amount ELSE 0 END), 0)::numeric AS income,
+    COALESCE(SUM(CASE WHEN NOT is_income THEN amount ELSE 0 END), 0)::numeric AS expense,
+    COALESCE(SUM(CASE WHEN is_income THEN amount ELSE -amount END), 0)::numeric AS net,
+    COUNT(*)::bigint AS tx_count
+FROM gr33ncore.cost_transactions
+WHERE crop_cycle_id = $1
+GROUP BY category, currency
+ORDER BY category ASC, currency ASC
+`
+
+type GetCostTotalsByCropCycleRow struct {
+	Category commontypes.CostCategoryEnum `db:"category" json:"category"`
+	Currency string                       `db:"currency" json:"currency"`
+	Income   pgtype.Numeric               `db:"income" json:"income"`
+	Expense  pgtype.Numeric               `db:"expense" json:"expense"`
+	Net      pgtype.Numeric               `db:"net" json:"net"`
+	TxCount  int64                        `db:"tx_count" json:"tx_count"`
+}
+
+// Phase 20.7 WS6 — the "Cost to date" card on Crop Cycle detail.
+func (q *Queries) GetCostTotalsByCropCycle(ctx context.Context, cropCycleID *int64) ([]GetCostTotalsByCropCycleRow, error) {
+	rows, err := q.db.Query(ctx, getCostTotalsByCropCycle, cropCycleID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []GetCostTotalsByCropCycleRow{}
+	for rows.Next() {
+		var i GetCostTotalsByCropCycleRow
+		if err := rows.Scan(
+			&i.Category,
+			&i.Currency,
+			&i.Income,
+			&i.Expense,
+			&i.Net,
+			&i.TxCount,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getCostTransactionByID = `-- name: GetCostTransactionByID :one
 SELECT id, farm_id, transaction_date, category, subcategory, amount, currency, description, related_module_schema, related_table_name, related_record_id, receipt_file_id, is_income, document_type, document_reference, counterparty, created_by_user_id, created_at, updated_at, crop_cycle_id FROM gr33ncore.cost_transactions WHERE id = $1
 `
@@ -254,6 +441,221 @@ func (q *Queries) GetCostTransactionByID(ctx context.Context, id int64) (Gr33nco
 		&i.CropCycleID,
 	)
 	return i, err
+}
+
+const getCostTransactionByIdempotencyKey = `-- name: GetCostTransactionByIdempotencyKey :one
+SELECT ct.id, ct.farm_id, ct.transaction_date, ct.category, ct.subcategory, ct.amount, ct.currency, ct.description, ct.related_module_schema, ct.related_table_name, ct.related_record_id, ct.receipt_file_id, ct.is_income, ct.document_type, ct.document_reference, ct.counterparty, ct.created_by_user_id, ct.created_at, ct.updated_at, ct.crop_cycle_id
+FROM gr33ncore.cost_transaction_idempotency idem
+JOIN gr33ncore.cost_transactions ct ON ct.id = idem.cost_transaction_id
+WHERE idem.farm_id = $1 AND idem.idempotency_key = $2
+`
+
+type GetCostTransactionByIdempotencyKeyParams struct {
+	FarmID         int64  `db:"farm_id" json:"farm_id"`
+	IdempotencyKey string `db:"idempotency_key" json:"idempotency_key"`
+}
+
+// Used by the autologger to short-circuit if a deterministic key has
+// already produced a row. (farm_id, idempotency_key) is the PK so
+// this is a cheap point lookup.
+func (q *Queries) GetCostTransactionByIdempotencyKey(ctx context.Context, arg GetCostTransactionByIdempotencyKeyParams) (Gr33ncoreCostTransaction, error) {
+	row := q.db.QueryRow(ctx, getCostTransactionByIdempotencyKey, arg.FarmID, arg.IdempotencyKey)
+	var i Gr33ncoreCostTransaction
+	err := row.Scan(
+		&i.ID,
+		&i.FarmID,
+		&i.TransactionDate,
+		&i.Category,
+		&i.Subcategory,
+		&i.Amount,
+		&i.Currency,
+		&i.Description,
+		&i.RelatedModuleSchema,
+		&i.RelatedTableName,
+		&i.RelatedRecordID,
+		&i.ReceiptFileID,
+		&i.IsIncome,
+		&i.DocumentType,
+		&i.DocumentReference,
+		&i.Counterparty,
+		&i.CreatedByUserID,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.CropCycleID,
+	)
+	return i, err
+}
+
+const getLastActuatorEventBefore = `-- name: GetLastActuatorEventBefore :one
+SELECT event_time, actuator_id, command_sent, resulting_state_numeric_actual
+FROM gr33ncore.actuator_events
+WHERE actuator_id = $1 AND event_time < $2
+ORDER BY event_time DESC
+LIMIT 1
+`
+
+type GetLastActuatorEventBeforeParams struct {
+	ActuatorID int64     `db:"actuator_id" json:"actuator_id"`
+	EventTime  time.Time `db:"event_time" json:"event_time"`
+}
+
+type GetLastActuatorEventBeforeRow struct {
+	EventTime                   time.Time      `db:"event_time" json:"event_time"`
+	ActuatorID                  int64          `db:"actuator_id" json:"actuator_id"`
+	CommandSent                 *string        `db:"command_sent" json:"command_sent"`
+	ResultingStateNumericActual pgtype.Numeric `db:"resulting_state_numeric_actual" json:"resulting_state_numeric_actual"`
+}
+
+// Phase 20.7 WS4 — latest "what state was the actuator in right
+// before the window opened?". Needed so a light that was turned on
+// the day before and left on gets credited for its morning runtime.
+// NULL row → assume OFF at window start.
+func (q *Queries) GetLastActuatorEventBefore(ctx context.Context, arg GetLastActuatorEventBeforeParams) (GetLastActuatorEventBeforeRow, error) {
+	row := q.db.QueryRow(ctx, getLastActuatorEventBefore, arg.ActuatorID, arg.EventTime)
+	var i GetLastActuatorEventBeforeRow
+	err := row.Scan(
+		&i.EventTime,
+		&i.ActuatorID,
+		&i.CommandSent,
+		&i.ResultingStateNumericActual,
+	)
+	return i, err
+}
+
+const listActuatorEventsForRollup = `-- name: ListActuatorEventsForRollup :many
+SELECT event_time, actuator_id, command_sent, resulting_state_numeric_actual
+FROM gr33ncore.actuator_events
+WHERE actuator_id = $1
+  AND event_time >= $2
+  AND event_time <  $3
+ORDER BY event_time ASC
+`
+
+type ListActuatorEventsForRollupParams struct {
+	ActuatorID  int64     `db:"actuator_id" json:"actuator_id"`
+	EventTime   time.Time `db:"event_time" json:"event_time"`
+	EventTime_2 time.Time `db:"event_time_2" json:"event_time_2"`
+}
+
+type ListActuatorEventsForRollupRow struct {
+	EventTime                   time.Time      `db:"event_time" json:"event_time"`
+	ActuatorID                  int64          `db:"actuator_id" json:"actuator_id"`
+	CommandSent                 *string        `db:"command_sent" json:"command_sent"`
+	ResultingStateNumericActual pgtype.Numeric `db:"resulting_state_numeric_actual" json:"resulting_state_numeric_actual"`
+}
+
+// Phase 20.7 WS4 — pull the day's actuator_events for a given
+// (actuator, utc_date_window). The worker reconstructs on/off
+// intervals from `command_sent`; we return the rows ordered by
+// event_time so the Go side can do a single linear pass.
+func (q *Queries) ListActuatorEventsForRollup(ctx context.Context, arg ListActuatorEventsForRollupParams) ([]ListActuatorEventsForRollupRow, error) {
+	rows, err := q.db.Query(ctx, listActuatorEventsForRollup, arg.ActuatorID, arg.EventTime, arg.EventTime_2)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListActuatorEventsForRollupRow{}
+	for rows.Next() {
+		var i ListActuatorEventsForRollupRow
+		if err := rows.Scan(
+			&i.EventTime,
+			&i.ActuatorID,
+			&i.CommandSent,
+			&i.ResultingStateNumericActual,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listBillableActuatorsByFarm = `-- name: ListBillableActuatorsByFarm :many
+SELECT id, name, watts FROM gr33ncore.actuators
+WHERE farm_id = $1
+  AND deleted_at IS NULL
+  AND watts IS NOT NULL
+  AND watts > 0
+ORDER BY id
+`
+
+type ListBillableActuatorsByFarmRow struct {
+	ID    int64          `db:"id" json:"id"`
+	Name  string         `db:"name" json:"name"`
+	Watts pgtype.Numeric `db:"watts" json:"watts"`
+}
+
+// Phase 20.7 WS4 — list all actuators with watts > 0. The rollup
+// iterates these per farm and sums their on-intervals. Soft-deleted
+// actuators are excluded so retired hardware doesn't keep billing.
+func (q *Queries) ListBillableActuatorsByFarm(ctx context.Context, farmID int64) ([]ListBillableActuatorsByFarmRow, error) {
+	rows, err := q.db.Query(ctx, listBillableActuatorsByFarm, farmID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListBillableActuatorsByFarmRow{}
+	for rows.Next() {
+		var i ListBillableActuatorsByFarmRow
+		if err := rows.Scan(&i.ID, &i.Name, &i.Watts); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listCostTransactionsByCropCycle = `-- name: ListCostTransactionsByCropCycle :many
+SELECT id, farm_id, transaction_date, category, subcategory, amount, currency, description, related_module_schema, related_table_name, related_record_id, receipt_file_id, is_income, document_type, document_reference, counterparty, created_by_user_id, created_at, updated_at, crop_cycle_id FROM gr33ncore.cost_transactions
+WHERE crop_cycle_id = $1
+ORDER BY transaction_date DESC, id DESC
+`
+
+func (q *Queries) ListCostTransactionsByCropCycle(ctx context.Context, cropCycleID *int64) ([]Gr33ncoreCostTransaction, error) {
+	rows, err := q.db.Query(ctx, listCostTransactionsByCropCycle, cropCycleID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Gr33ncoreCostTransaction{}
+	for rows.Next() {
+		var i Gr33ncoreCostTransaction
+		if err := rows.Scan(
+			&i.ID,
+			&i.FarmID,
+			&i.TransactionDate,
+			&i.Category,
+			&i.Subcategory,
+			&i.Amount,
+			&i.Currency,
+			&i.Description,
+			&i.RelatedModuleSchema,
+			&i.RelatedTableName,
+			&i.RelatedRecordID,
+			&i.ReceiptFileID,
+			&i.IsIncome,
+			&i.DocumentType,
+			&i.DocumentReference,
+			&i.Counterparty,
+			&i.CreatedByUserID,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.CropCycleID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const listCostTransactionsByFarm = `-- name: ListCostTransactionsByFarm :many

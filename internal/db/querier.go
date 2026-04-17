@@ -42,6 +42,14 @@ type Querier interface {
 	// Queries: gr33ncore.cost_transactions
 	// ============================================================
 	CreateCostTransaction(ctx context.Context, arg CreateCostTransactionParams) (Gr33ncoreCostTransaction, error)
+	// Phase 20.7 WS2 — autologger extension. The manual operator-facing
+	// path (CreateCostTransaction above) can't set related_* because
+	// those fields exist solely to link an auto-generated row back at the
+	// telemetry that produced it. Keeping a separate query (instead of
+	// adding three optional args to the existing one) avoids churning
+	// every handler call site that doesn't care.
+	CreateCostTransactionAutoLogged(ctx context.Context, arg CreateCostTransactionAutoLoggedParams) (Gr33ncoreCostTransaction, error)
+	CreateCostTransactionIdempotency(ctx context.Context, arg CreateCostTransactionIdempotencyParams) error
 	// ============================================================
 	// Queries: gr33nfertigation.crop_cycles
 	// ============================================================
@@ -90,11 +98,16 @@ type Querier interface {
 	// Queries: gr33ncore.tasks
 	// ============================================================
 	CreateTask(ctx context.Context, arg CreateTaskParams) (Gr33ncoreTask, error)
+	CreateTaskInputConsumption(ctx context.Context, arg CreateTaskInputConsumptionParams) (Gr33ncoreTaskInputConsumption, error)
 	CreateTaskLaborLog(ctx context.Context, arg CreateTaskLaborLogParams) (Gr33ncoreTaskLaborLog, error)
 	// ============================================================
 	// Queries: gr33ncore.zones
 	// ============================================================
 	CreateZone(ctx context.Context, arg CreateZoneParams) (Gr33ncoreZone, error)
+	// Phase 20.7 WS2/WS3 — autologger deduct + refund. RETURNING the new
+	// remaining quantity lets the caller detect a negative-stock
+	// condition and log a warning without a second round-trip.
+	DecrementInputBatchQuantity(ctx context.Context, arg DecrementInputBatchQuantityParams) (DecrementInputBatchQuantityRow, error)
 	DeleteAutomationRule(ctx context.Context, id int64) error
 	DeleteCostTransaction(ctx context.Context, id int64) error
 	DeleteExecutableAction(ctx context.Context, id int64) error
@@ -105,6 +118,7 @@ type Querier interface {
 	DeleteReservoir(ctx context.Context, id int64) error
 	DeleteSchedule(ctx context.Context, id int64) error
 	DeleteSetpoint(ctx context.Context, id int64) error
+	DeleteTaskInputConsumption(ctx context.Context, id int64) error
 	DeleteTaskLaborLog(ctx context.Context, id int64) error
 	DeleteUserPushToken(ctx context.Context, arg DeleteUserPushTokenParams) error
 	// Phase 20.6 WS3 — the rule engine calls this to translate a rule's zone
@@ -112,6 +126,12 @@ type Querier interface {
 	// to match against. At most one crop cycle per zone is active at a time
 	// (enforced by uq_active_crop_cycle).
 	GetActiveCropCycleForZone(ctx context.Context, zoneID int64) (Gr33nfertigationCropCycle, error)
+	// Phase 20.7 WS4 — electricity rollup needs the active $/kWh for a
+	// (farm, transaction_date). Greatest effective_from <= transaction_date
+	// wins; effective_to (if set) caps the row. Returns ErrNoRows when no
+	// pricing has been configured — the worker treats that as a skip, not
+	// a failure.
+	GetActiveFarmEnergyPrice(ctx context.Context, arg GetActiveFarmEnergyPriceParams) (Gr33ncoreFarmEnergyPrice, error)
 	// Precedence resolver: pick the single most-specific setpoint row for
 	// (zone, crop_cycle, stage, sensor_type). Rank 1 is most-specific; we
 	// ORDER BY rank ASC and LIMIT 1.
@@ -136,7 +156,13 @@ type Querier interface {
 	GetCostCategoryTotalsByFarm(ctx context.Context, farmID int64) ([]GetCostCategoryTotalsByFarmRow, error)
 	GetCostCategoryTotalsByFarmForYear(ctx context.Context, arg GetCostCategoryTotalsByFarmForYearParams) ([]GetCostCategoryTotalsByFarmForYearRow, error)
 	GetCostSummaryByFarm(ctx context.Context, farmID int64) (GetCostSummaryByFarmRow, error)
+	// Phase 20.7 WS6 — the "Cost to date" card on Crop Cycle detail.
+	GetCostTotalsByCropCycle(ctx context.Context, cropCycleID *int64) ([]GetCostTotalsByCropCycleRow, error)
 	GetCostTransactionByID(ctx context.Context, id int64) (Gr33ncoreCostTransaction, error)
+	// Used by the autologger to short-circuit if a deterministic key has
+	// already produced a row. (farm_id, idempotency_key) is the PK so
+	// this is a cheap point lookup.
+	GetCostTransactionByIdempotencyKey(ctx context.Context, arg GetCostTransactionByIdempotencyKeyParams) (Gr33ncoreCostTransaction, error)
 	// ============================================================
 	// Cost transaction idempotency
 	// ============================================================
@@ -165,6 +191,11 @@ type Querier interface {
 	// Queries: gr33ncore.insert_commons_sync_events
 	// ============================================================
 	GetInsertCommonsSyncEventByFarmIdempotencyKey(ctx context.Context, arg GetInsertCommonsSyncEventByFarmIdempotencyKeyParams) (Gr33ncoreInsertCommonsSyncEvent, error)
+	// Phase 20.7 WS4 — latest "what state was the actuator in right
+	// before the window opened?". Needed so a light that was turned on
+	// the day before and left on gets credited for its morning runtime.
+	// NULL row → assume OFF at window start.
+	GetLastActuatorEventBefore(ctx context.Context, arg GetLastActuatorEventBeforeParams) (GetLastActuatorEventBeforeRow, error)
 	GetLastSuccessfulRunBySchedule(ctx context.Context, scheduleID *int64) (Gr33ncoreAutomationRun, error)
 	// Returns the created_at of the most recent alert for this (farm, source_type, source_id)
 	// regardless of ack status. Used by the sensor threshold evaluator to enforce per-sensor
@@ -197,6 +228,7 @@ type Querier interface {
 	GetSensorReadingStats(ctx context.Context, arg GetSensorReadingStatsParams) (GetSensorReadingStatsRow, error)
 	GetSetpointByID(ctx context.Context, id int64) (Gr33ncoreZoneSetpoint, error)
 	GetTaskByID(ctx context.Context, id int64) (Gr33ncoreTask, error)
+	GetTaskInputConsumptionByID(ctx context.Context, id int64) (Gr33ncoreTaskInputConsumption, error)
 	GetTaskLaborLogByID(ctx context.Context, id int64) (Gr33ncoreTaskLaborLog, error)
 	// ============================================================
 	// Queries: gr33ncore.units
@@ -204,6 +236,7 @@ type Querier interface {
 	GetUnitByID(ctx context.Context, id int64) (Gr33ncoreUnit, error)
 	GetUnitByName(ctx context.Context, name string) (Gr33ncoreUnit, error)
 	GetZoneByID(ctx context.Context, id int64) (Gr33ncoreZone, error)
+	IncrementInputBatchQuantity(ctx context.Context, arg IncrementInputBatchQuantityParams) (IncrementInputBatchQuantityRow, error)
 	InsertActuatorEvent(ctx context.Context, arg InsertActuatorEventParams) (Gr33ncoreActuatorEvent, error)
 	InsertCommonsReceiverDailyCounts(ctx context.Context, receivedAt time.Time) ([]InsertCommonsReceiverDailyCountsRow, error)
 	InsertCommonsReceiverStats(ctx context.Context) (InsertCommonsReceiverStatsRow, error)
@@ -228,6 +261,11 @@ type Querier interface {
 	ListActiveSchedules(ctx context.Context) ([]Gr33ncoreSchedule, error)
 	ListActuatorEventsByActuator(ctx context.Context, arg ListActuatorEventsByActuatorParams) ([]Gr33ncoreActuatorEvent, error)
 	ListActuatorEventsBySchedule(ctx context.Context, arg ListActuatorEventsByScheduleParams) ([]Gr33ncoreActuatorEvent, error)
+	// Phase 20.7 WS4 — pull the day's actuator_events for a given
+	// (actuator, utc_date_window). The worker reconstructs on/off
+	// intervals from `command_sent`; we return the rows ordered by
+	// event_time so the Go side can do a single linear pass.
+	ListActuatorEventsForRollup(ctx context.Context, arg ListActuatorEventsForRollupParams) ([]ListActuatorEventsForRollupRow, error)
 	ListActuatorsByFarm(ctx context.Context, farmID int64) ([]Gr33ncoreActuator, error)
 	ListAlertsByFarm(ctx context.Context, arg ListAlertsByFarmParams) ([]Gr33ncoreAlertsNotification, error)
 	ListAlertsByRecipient(ctx context.Context, arg ListAlertsByRecipientParams) ([]Gr33ncoreAlertsNotification, error)
@@ -238,6 +276,11 @@ type Querier interface {
 	// ============================================================
 	ListAutomationRulesByFarm(ctx context.Context, farmID int64) ([]Gr33ncoreAutomationRule, error)
 	ListAutomationRunsByFarm(ctx context.Context, arg ListAutomationRunsByFarmParams) ([]Gr33ncoreAutomationRun, error)
+	// Phase 20.7 WS4 — list all actuators with watts > 0. The rollup
+	// iterates these per farm and sums their on-intervals. Soft-deleted
+	// actuators are excluded so retired hardware doesn't keep billing.
+	ListBillableActuatorsByFarm(ctx context.Context, farmID int64) ([]ListBillableActuatorsByFarmRow, error)
+	ListCostTransactionsByCropCycle(ctx context.Context, cropCycleID *int64) ([]Gr33ncoreCostTransaction, error)
 	ListCostTransactionsByFarm(ctx context.Context, arg ListCostTransactionsByFarmParams) ([]Gr33ncoreCostTransaction, error)
 	ListCostTransactionsByFarmExport(ctx context.Context, farmID int64) ([]ListCostTransactionsByFarmExportRow, error)
 	ListCropCyclesByFarm(ctx context.Context, farmID int64) ([]Gr33nfertigationCropCycle, error)
@@ -274,6 +317,10 @@ type Querier interface {
 	ListInsertCommonsBundlesByFarm(ctx context.Context, arg ListInsertCommonsBundlesByFarmParams) ([]Gr33ncoreInsertCommonsBundle, error)
 	ListInsertCommonsSyncEventsByFarm(ctx context.Context, arg ListInsertCommonsSyncEventsByFarmParams) ([]ListInsertCommonsSyncEventsByFarmRow, error)
 	ListLatestReadingsByFarm(ctx context.Context, farmID int64) ([]ListLatestReadingsByFarmRow, error)
+	// Phase 20.7 WS5 — low-stock sweep: any batch whose remaining stock
+	// has dropped below its opt-in threshold. The worker fires one alert
+	// per batch per day (dedupe enforced in the worker, not here).
+	ListLowStockBatchesByFarm(ctx context.Context, farmID int64) ([]ListLowStockBatchesByFarmRow, error)
 	ListMixingEventComponents(ctx context.Context, mixingEventID int64) ([]Gr33nfertigationMixingEventComponent, error)
 	ListMixingEventsByFarm(ctx context.Context, farmID int64) ([]Gr33nfertigationMixingEvent, error)
 	ListOrganizationsForUser(ctx context.Context, userID uuid.UUID) ([]ListOrganizationsForUserRow, error)
@@ -308,6 +355,11 @@ type Querier interface {
 	// nullable filter args avoids the handler having to branch.
 	ListSetpointsByFarmFiltered(ctx context.Context, arg ListSetpointsByFarmFilteredParams) ([]Gr33ncoreZoneSetpoint, error)
 	ListSetpointsByZone(ctx context.Context, zoneID *int64) ([]Gr33ncoreZoneSetpoint, error)
+	// Phase 20.7 WS3 — task_input_consumptions CRUD. The handler wraps
+	// each Create in the autologger so the paired batch-decrement +
+	// cost_transactions row write happen atomically; Delete calls the
+	// compensating-refund path so the ledger stays append-only.
+	ListTaskInputConsumptionsByTask(ctx context.Context, taskID int64) ([]Gr33ncoreTaskInputConsumption, error)
 	// ============================================================
 	// Queries: gr33ncore.task_labor_log (Phase 20.95 WS1)
 	// ============================================================
@@ -382,6 +434,10 @@ type Querier interface {
 	UpdateSensor(ctx context.Context, arg UpdateSensorParams) (Gr33ncoreSensor, error)
 	UpdateSetpoint(ctx context.Context, arg UpdateSetpointParams) (Gr33ncoreZoneSetpoint, error)
 	UpdateTask(ctx context.Context, arg UpdateTaskParams) (Gr33ncoreTask, error)
+	// The autologger may write the cost_transactions row after the
+	// consumption row exists (so the idempotency key can reference the
+	// consumption id). This backfills the link.
+	UpdateTaskInputConsumptionCostTx(ctx context.Context, arg UpdateTaskInputConsumptionCostTxParams) error
 	UpdateTaskStatus(ctx context.Context, arg UpdateTaskStatusParams) (Gr33ncoreTask, error)
 	UpdateZone(ctx context.Context, arg UpdateZoneParams) (Gr33ncoreZone, error)
 	UpsertFarmCommonsCatalogImport(ctx context.Context, arg UpsertFarmCommonsCatalogImportParams) (Gr33ncoreFarmCommonsCatalogImport, error)

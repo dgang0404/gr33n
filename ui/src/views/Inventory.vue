@@ -214,6 +214,9 @@
             placeholder="Qty remaining" class="input-field" />
           <input v-model="batchForm.storage_location" placeholder="Storage location" class="input-field" />
         </template>
+        <input v-model.number="batchForm.low_stock_threshold" type="number" step="0.1"
+          placeholder="Low-stock threshold (optional)" class="input-field"
+          title="When remaining drops below this, the low-stock worker fires a medium-severity alert once per day." />
         <input v-model="batchForm.observations_notes" placeholder="Notes / observations"
           class="input-field sm:col-span-2 lg:col-span-3" />
         <button type="submit" :disabled="saving"
@@ -243,7 +246,19 @@
               <td class="py-2.5 pr-4">
                 <span :class="statusClass(b.status)">{{ formatStatus(b.status) }}</span>
               </td>
-              <td class="py-2.5 pr-4 font-mono text-zinc-300">{{ b.current_quantity_remaining ?? '—' }}</td>
+              <td class="py-2.5 pr-4 font-mono text-zinc-300">
+                {{ b.current_quantity_remaining ?? '—' }}
+                <span v-if="b.low_stock_threshold != null && Number(b.current_quantity_remaining) < Number(b.low_stock_threshold)"
+                  class="ml-2 text-[10px] px-1.5 py-0.5 rounded bg-amber-900/40 border border-amber-700 text-amber-300"
+                  :title="`Below threshold of ${b.low_stock_threshold}`">
+                  low
+                </span>
+                <span v-else-if="b.low_stock_threshold != null"
+                  class="ml-2 text-[10px] text-zinc-600"
+                  :title="`Threshold ${b.low_stock_threshold}`">
+                  ≥{{ b.low_stock_threshold }}
+                </span>
+              </td>
               <td class="py-2.5 pr-4">
                 <router-link v-if="batchMixCount(b.id)"
                   :to="{ path: '/fertigation', query: { tab: 'mixing' } }"
@@ -336,7 +351,7 @@ function emptyInputForm() {
   return { name: '', category: '', description: '', typical_ingredients: '', preparation_summary: '', storage_guidelines: '', safety_precautions: '', reference_source: '' }
 }
 function emptyBatchForm() {
-  return { input_definition_id: '', batch_identifier: '', status: 'planning', creation_start_date: '', creation_end_date: '', expected_ready_date: '', quantity_produced: null, current_quantity_remaining: null, storage_location: '', shelf_life_days: null, ph_value: null, ec_value_ms_cm: null, ingredients_used: '', procedure_followed: '', observations_notes: '', actual_ready_date: '' }
+  return { input_definition_id: '', batch_identifier: '', status: 'planning', creation_start_date: '', creation_end_date: '', expected_ready_date: '', quantity_produced: null, current_quantity_remaining: null, storage_location: '', shelf_life_days: null, ph_value: null, ec_value_ms_cm: null, ingredients_used: '', procedure_followed: '', observations_notes: '', actual_ready_date: '', low_stock_threshold: null }
 }
 
 function emptyRecipeForm() {
@@ -502,6 +517,7 @@ async function submitBatch() {
         current_quantity_remaining: batchForm.value.current_quantity_remaining,
         storage_location: batchForm.value.storage_location,
         observations_notes: batchForm.value.observations_notes,
+        low_stock_threshold: batchForm.value.low_stock_threshold,
       })
     } else {
       await store.createNfBatch(farmContext.farmId, batchForm.value)
@@ -524,6 +540,7 @@ function startEditBatch(batch) {
     current_quantity_remaining: batch.current_quantity_remaining,
     storage_location: batch.storage_location || '',
     observations_notes: batch.observations_notes || '',
+    low_stock_threshold: batch.low_stock_threshold ?? null,
   }
   showBatchForm.value = true
 }

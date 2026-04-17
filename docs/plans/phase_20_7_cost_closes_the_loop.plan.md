@@ -14,25 +14,25 @@ overview: >
 todos:
   - id: ws1-schema-additions
     content: "WS1: Additive migrations — input_definitions.unit_cost + unit_cost_currency + unit_cost_unit_id; input_batches.low_stock_threshold; actuators.watts; new gr33ncore.farm_energy_prices table; new gr33ncore.task_input_consumptions join table; cost_transactions.crop_cycle_id; broaden input_category_enum with animal_feed/bedding/veterinary_supply"
-    status: pending
+    status: completed
   - id: ws2-auto-deduct-and-cost-on-mixing
     content: "WS2: Post-commit auto-deduct on mixing_event_components insert — decrement input_batches.current_quantity_remaining and insert one cost_transaction per component (idempotent via cost_transaction_idempotency)"
-    status: pending
+    status: completed
   - id: ws3-task-consumption-api
     content: "WS3: task_input_consumptions CRUD — POST /tasks/{id}/consumptions, GET list, DELETE reverses the deduct+cost pair; UI on Task detail"
-    status: pending
+    status: completed
   - id: ws4-electricity-rollup
     content: "WS4: Nightly worker job — for each actuator with watts>0, compute on-duration from actuator_events across the day, multiply by current farm_energy_prices row, insert one cost_transaction per (actuator, date); idempotent; worker health surface mentions last run"
-    status: pending
+    status: completed
   - id: ws5-low-stock-rules
     content: "WS5: Low-stock alert — scheduled rule type (or inventory-specific worker pass) that fires when any input_batch.current_quantity_remaining < low_stock_threshold; alert → task via Phase 19 WS3 'create task from alert' flow"
-    status: pending
+    status: completed
   - id: ws6-ui-cost-surface
     content: "WS6: Costs page gets 'auto-logged' filter + source breadcrumb chip (chip reads cost_transactions.related_* to link back to the mixing event / actuator / task); Inventory page shows current_quantity_remaining + low_stock_threshold editor; Crop cycle detail shows 'cost to date' aggregate from cost_transactions.crop_cycle_id"
-    status: pending
+    status: completed
   - id: ws7-smoke-and-docs
     content: "WS7: Smoke per loop (mixing consumption, task consumption, electricity rollup, low-stock alert); docs/workflow-guide.md §7 (Costs) expanded; new cost-attribution playbook; OpenAPI audit"
-    status: pending
+    status: completed
 isProject: false
 ---
 

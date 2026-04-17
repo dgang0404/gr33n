@@ -46,6 +46,10 @@ type Worker struct {
 	running    bool
 	lastTickAt time.Time
 	lastError  string
+	// Phase 20.7: track the last UTC date we rolled up electricity for
+	// so the scheduled tick only fires once per day (the per-actuator
+	// idempotency table handles retries separately).
+	lastElecRollupDate time.Time
 }
 
 func NewWorker(pool *pgxpool.Pool, simulation bool, opts ...WorkerOption) *Worker {
@@ -172,6 +176,24 @@ func (w *Worker) runTick(ctx context.Context) {
 		w.executeSchedule(ctx, s, now, idemKey)
 	}
 	w.runRuleTick(ctx, now)
+
+	// Phase 20.7 WS5 — cheap per-batch-per-day deduped alert sweep.
+	// Safe to run every tick; the dedupe inside maybeFireLowStock
+	// keeps the alert table from filling up.
+	w.TickLowStockAlerts(ctx)
+
+	// Phase 20.7 WS4 — once-per-day electricity rollup. We target
+	// the *previous* UTC calendar day so all its events have landed.
+	// The first tick after 01:00 UTC wins; subsequent ticks see
+	// lastElecRollupDate == today and skip. The per-(actuator,date)
+	// idempotency table is the second line of defence.
+	yesterday := now.AddDate(0, 0, -1)
+	yesterdayDate := time.Date(yesterday.Year(), yesterday.Month(), yesterday.Day(), 0, 0, 0, 0, time.UTC)
+	if now.Hour() >= 1 && !w.lastElecRollupDate.Equal(yesterdayDate) {
+		w.TickElectricityRollup(ctx, yesterdayDate)
+		w.lastElecRollupDate = yesterdayDate
+	}
+
 	w.setLastTick(nil)
 }
 

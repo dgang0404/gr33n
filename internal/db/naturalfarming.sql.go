@@ -159,6 +159,34 @@ func (q *Queries) CreateInputDefinition(ctx context.Context, arg CreateInputDefi
 	return i, err
 }
 
+const decrementInputBatchQuantity = `-- name: DecrementInputBatchQuantity :one
+UPDATE gr33nnaturalfarming.input_batches
+SET current_quantity_remaining = current_quantity_remaining - $2::NUMERIC,
+    updated_at = NOW()
+WHERE id = $1 AND deleted_at IS NULL
+RETURNING id, current_quantity_remaining
+`
+
+type DecrementInputBatchQuantityParams struct {
+	ID      int64          `db:"id" json:"id"`
+	Column2 pgtype.Numeric `db:"column_2" json:"column_2"`
+}
+
+type DecrementInputBatchQuantityRow struct {
+	ID                       int64          `db:"id" json:"id"`
+	CurrentQuantityRemaining pgtype.Numeric `db:"current_quantity_remaining" json:"current_quantity_remaining"`
+}
+
+// Phase 20.7 WS2/WS3 — autologger deduct + refund. RETURNING the new
+// remaining quantity lets the caller detect a negative-stock
+// condition and log a warning without a second round-trip.
+func (q *Queries) DecrementInputBatchQuantity(ctx context.Context, arg DecrementInputBatchQuantityParams) (DecrementInputBatchQuantityRow, error) {
+	row := q.db.QueryRow(ctx, decrementInputBatchQuantity, arg.ID, arg.Column2)
+	var i DecrementInputBatchQuantityRow
+	err := row.Scan(&i.ID, &i.CurrentQuantityRemaining)
+	return i, err
+}
+
 const getInputBatchByID = `-- name: GetInputBatchByID :one
 SELECT id, farm_id, input_definition_id, batch_identifier, creation_start_date, creation_end_date, expected_ready_date, actual_ready_date, quantity_produced, quantity_unit_id, current_quantity_remaining, status, storage_location, shelf_life_days, ph_value, ec_value_ms_cm, temperature_during_making, ingredients_used, procedure_followed, observations_notes, made_by_user_id, related_task_id, file_attachment_id, created_at, updated_at, updated_by_user_id, deleted_at, low_stock_threshold FROM gr33nnaturalfarming.input_batches
 WHERE id = $1 AND deleted_at IS NULL
@@ -232,6 +260,31 @@ func (q *Queries) GetInputDefinitionByID(ctx context.Context, id int64) (Gr33nna
 		&i.UnitCostCurrency,
 		&i.UnitCostUnitID,
 	)
+	return i, err
+}
+
+const incrementInputBatchQuantity = `-- name: IncrementInputBatchQuantity :one
+UPDATE gr33nnaturalfarming.input_batches
+SET current_quantity_remaining = current_quantity_remaining + $2::NUMERIC,
+    updated_at = NOW()
+WHERE id = $1 AND deleted_at IS NULL
+RETURNING id, current_quantity_remaining
+`
+
+type IncrementInputBatchQuantityParams struct {
+	ID      int64          `db:"id" json:"id"`
+	Column2 pgtype.Numeric `db:"column_2" json:"column_2"`
+}
+
+type IncrementInputBatchQuantityRow struct {
+	ID                       int64          `db:"id" json:"id"`
+	CurrentQuantityRemaining pgtype.Numeric `db:"current_quantity_remaining" json:"current_quantity_remaining"`
+}
+
+func (q *Queries) IncrementInputBatchQuantity(ctx context.Context, arg IncrementInputBatchQuantityParams) (IncrementInputBatchQuantityRow, error) {
+	row := q.db.QueryRow(ctx, incrementInputBatchQuantity, arg.ID, arg.Column2)
+	var i IncrementInputBatchQuantityRow
+	err := row.Scan(&i.ID, &i.CurrentQuantityRemaining)
 	return i, err
 }
 
@@ -324,6 +377,63 @@ func (q *Queries) ListInputDefinitionsByFarm(ctx context.Context, farmID int64) 
 			&i.UnitCost,
 			&i.UnitCostCurrency,
 			&i.UnitCostUnitID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listLowStockBatchesByFarm = `-- name: ListLowStockBatchesByFarm :many
+SELECT b.id, b.farm_id, b.input_definition_id, b.batch_identifier,
+       b.current_quantity_remaining, b.low_stock_threshold,
+       b.quantity_unit_id,
+       d.name AS input_name
+FROM gr33nnaturalfarming.input_batches b
+JOIN gr33nnaturalfarming.input_definitions d ON d.id = b.input_definition_id
+WHERE b.farm_id = $1
+  AND b.deleted_at IS NULL
+  AND b.low_stock_threshold IS NOT NULL
+  AND b.current_quantity_remaining < b.low_stock_threshold
+ORDER BY b.id ASC
+`
+
+type ListLowStockBatchesByFarmRow struct {
+	ID                       int64          `db:"id" json:"id"`
+	FarmID                   int64          `db:"farm_id" json:"farm_id"`
+	InputDefinitionID        int64          `db:"input_definition_id" json:"input_definition_id"`
+	BatchIdentifier          *string        `db:"batch_identifier" json:"batch_identifier"`
+	CurrentQuantityRemaining pgtype.Numeric `db:"current_quantity_remaining" json:"current_quantity_remaining"`
+	LowStockThreshold        pgtype.Numeric `db:"low_stock_threshold" json:"low_stock_threshold"`
+	QuantityUnitID           *int64         `db:"quantity_unit_id" json:"quantity_unit_id"`
+	InputName                string         `db:"input_name" json:"input_name"`
+}
+
+// Phase 20.7 WS5 — low-stock sweep: any batch whose remaining stock
+// has dropped below its opt-in threshold. The worker fires one alert
+// per batch per day (dedupe enforced in the worker, not here).
+func (q *Queries) ListLowStockBatchesByFarm(ctx context.Context, farmID int64) ([]ListLowStockBatchesByFarmRow, error) {
+	rows, err := q.db.Query(ctx, listLowStockBatchesByFarm, farmID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListLowStockBatchesByFarmRow{}
+	for rows.Next() {
+		var i ListLowStockBatchesByFarmRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.FarmID,
+			&i.InputDefinitionID,
+			&i.BatchIdentifier,
+			&i.CurrentQuantityRemaining,
+			&i.LowStockThreshold,
+			&i.QuantityUnitID,
+			&i.InputName,
 		); err != nil {
 			return nil, err
 		}

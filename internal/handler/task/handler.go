@@ -14,6 +14,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"gr33n-api/internal/authctx"
+	"gr33n-api/internal/costing"
 	db "gr33n-api/internal/db"
 	"gr33n-api/internal/farmauthz"
 	"gr33n-api/internal/httputil"
@@ -491,6 +492,191 @@ func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
 		UpdatedByUserID: updatedBy,
 	}); err != nil {
 		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
+// ListConsumptions — GET /tasks/{id}/consumptions (Phase 20.7 WS3)
+func (h *Handler) ListConsumptions(w http.ResponseWriter, r *http.Request) {
+	taskID, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	if err != nil {
+		httputil.WriteError(w, http.StatusBadRequest, "invalid task id")
+		return
+	}
+	q := db.New(h.pool)
+	t0, err := q.GetTaskByID(r.Context(), taskID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			httputil.WriteError(w, http.StatusNotFound, "task not found")
+			return
+		}
+		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	if !farmauthz.RequireFarmMember(w, r, q, t0.FarmID) {
+		return
+	}
+	rows, err := q.ListTaskInputConsumptionsByTask(r.Context(), taskID)
+	if err != nil {
+		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	if rows == nil {
+		rows = []db.Gr33ncoreTaskInputConsumption{}
+	}
+	httputil.WriteJSON(w, http.StatusOK, rows)
+}
+
+// CreateConsumption — POST /tasks/{id}/consumptions (Phase 20.7 WS3)
+// Runs in a single transaction so the consumption row, batch deduct,
+// and paired cost_transactions row commit atomically. The autologger
+// handles idempotency on its own key.
+func (h *Handler) CreateConsumption(w http.ResponseWriter, r *http.Request) {
+	taskID, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	if err != nil {
+		httputil.WriteError(w, http.StatusBadRequest, "invalid task id")
+		return
+	}
+	q := db.New(h.pool)
+	t0, err := q.GetTaskByID(r.Context(), taskID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			httputil.WriteError(w, http.StatusNotFound, "task not found")
+			return
+		}
+		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	if !farmauthz.RequireFarmOperate(w, r, q, t0.FarmID) {
+		return
+	}
+	var body struct {
+		InputBatchID int64    `json:"input_batch_id"`
+		Quantity     float64  `json:"quantity"`
+		UnitID       int64    `json:"unit_id"`
+		Notes        *string  `json:"notes"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		httputil.WriteError(w, http.StatusBadRequest, "invalid body")
+		return
+	}
+	if body.InputBatchID < 1 || body.UnitID < 1 || body.Quantity <= 0 {
+		httputil.WriteError(w, http.StatusBadRequest, "input_batch_id, unit_id, and quantity>0 required")
+		return
+	}
+
+	// Cross-farm authz: the batch must live on the same farm as the task.
+	batch, err := q.GetInputBatchByID(r.Context(), body.InputBatchID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			httputil.WriteError(w, http.StatusBadRequest, "input_batch not found")
+			return
+		}
+		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	if batch.FarmID != t0.FarmID {
+		httputil.WriteError(w, http.StatusBadRequest, "input_batch does not belong to this task's farm")
+		return
+	}
+
+	var qty pgtype.Numeric
+	if err := qty.Scan(strconv.FormatFloat(body.Quantity, 'f', -1, 64)); err != nil {
+		httputil.WriteError(w, http.StatusBadRequest, "invalid quantity")
+		return
+	}
+	var recordedBy pgtype.UUID
+	if uid, ok := authctx.UserID(r.Context()); ok {
+		recordedBy = pgtype.UUID{Bytes: uid, Valid: true}
+	}
+
+	tx, err := h.pool.Begin(r.Context())
+	if err != nil {
+		httputil.WriteError(w, http.StatusInternalServerError, "failed to begin transaction")
+		return
+	}
+	defer tx.Rollback(r.Context())
+	qtx := q.WithTx(tx)
+
+	row, err := qtx.CreateTaskInputConsumption(r.Context(), db.CreateTaskInputConsumptionParams{
+		FarmID:            t0.FarmID,
+		TaskID:            taskID,
+		InputBatchID:      body.InputBatchID,
+		Quantity:          qty,
+		UnitID:            body.UnitID,
+		Notes:             body.Notes,
+		RecordedBy:        recordedBy,
+		CostTransactionID: nil,
+	})
+	if err != nil {
+		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	costTxID, err := costing.LogTaskConsumption(r.Context(), qtx, row)
+	if err != nil {
+		httputil.WriteError(w, http.StatusInternalServerError, "autolog consumption: "+err.Error())
+		return
+	}
+	if costTxID != nil {
+		if err := qtx.UpdateTaskInputConsumptionCostTx(r.Context(), db.UpdateTaskInputConsumptionCostTxParams{
+			ID:                row.ID,
+			CostTransactionID: costTxID,
+		}); err != nil {
+			httputil.WriteError(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+		row.CostTransactionID = costTxID
+	}
+	if err := tx.Commit(r.Context()); err != nil {
+		httputil.WriteError(w, http.StatusInternalServerError, "failed to commit transaction")
+		return
+	}
+	httputil.WriteJSON(w, http.StatusCreated, row)
+}
+
+// DeleteConsumption — DELETE /consumptions/{id} (Phase 20.7 WS3).
+// Calls autologger.ReverseTaskConsumption before the DELETE so the
+// batch is re-credited and a compensating cost row is written. The
+// ledger stays append-only (we never DELETE from cost_transactions).
+func (h *Handler) DeleteConsumption(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	if err != nil {
+		httputil.WriteError(w, http.StatusBadRequest, "invalid consumption id")
+		return
+	}
+	q := db.New(h.pool)
+	row, err := q.GetTaskInputConsumptionByID(r.Context(), id)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			httputil.WriteError(w, http.StatusNotFound, "consumption not found")
+			return
+		}
+		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	if !farmauthz.RequireFarmOperate(w, r, q, row.FarmID) {
+		return
+	}
+
+	tx, err := h.pool.Begin(r.Context())
+	if err != nil {
+		httputil.WriteError(w, http.StatusInternalServerError, "failed to begin transaction")
+		return
+	}
+	defer tx.Rollback(r.Context())
+	qtx := q.WithTx(tx)
+
+	if err := costing.ReverseTaskConsumption(r.Context(), qtx, row); err != nil {
+		httputil.WriteError(w, http.StatusInternalServerError, "reverse consumption: "+err.Error())
+		return
+	}
+	if err := qtx.DeleteTaskInputConsumption(r.Context(), id); err != nil {
+		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	if err := tx.Commit(r.Context()); err != nil {
+		httputil.WriteError(w, http.StatusInternalServerError, "failed to commit transaction")
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)

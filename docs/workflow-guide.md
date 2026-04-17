@@ -229,8 +229,36 @@ Key flows:
 - **Download** — `GET /file-attachments/{id}/download` (pre-signed) or `.../content` for direct streaming.
 - **Export** — `GET /farms/{id}/costs/export` returns a CSV for the accountant.
 - **COA mappings** — `GET/PUT /farms/{id}/finance/coa-mappings` maps gr33n categories to a chart-of-accounts, and `DELETE` variants reset either one category or all.
+- **Per-cycle P&L** — `GET /crop-cycles/{id}/cost-summary` returns category totals for every cost transaction tagged with that crop cycle (set by the autologger at write time, or manually on legacy rows). This is the first **RAG-precursor lens**: "what did this cycle actually cost me?"
 
 Costs are the one place where the platform intersects external finance; everything else stays inside the gr33n model.
+
+### 7a. Autologged costs (Phase 20.7)
+
+Three flows now write `cost_transactions` rows automatically — operators don't (and shouldn't) hand-enter them:
+
+| Source                          | When it fires                                                                                                                                  | Idempotency key                          | What it does                                                                                                                                   |
+| ------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Mixing event component**      | Inside the same transaction as `POST /farms/{id}/fertigation/mixing-events` (one row per component).                                           | `mixing_component:<id>`                  | Decrements `gr33nnaturalfarming.input_batches.current_quantity_remaining`; if the input has a `unit_cost`, writes a cost row priced `volume_added_ml × unit_cost`. |
+| **Task input consumption**      | `POST /tasks/{id}/consumptions` records a manual draw (e.g. "top-dressed row 3 with 0.5 L of FAA").                                            | `task_consumption:<id>`                  | Same shape as above. The consumption row stores the resulting `cost_transaction_id`. `DELETE /consumptions/{id}` re-credits the batch and writes a paired `[VOIDED]` cost row so net = 0 with an append-only ledger. |
+| **Electricity rollup**          | Once per UTC day (~01:00 local), per actuator with `watts > 0` and an active `farm_energy_prices` row.                                         | `electricity:<actuator_id>:<YYYY-MM-DD>` | Reconstructs ON/OFF intervals from `actuator_events.command_sent`, computes `kWh = watts × hours / 1000`, writes a cost row priced `kWh × price_per_kwh`. |
+
+Every auto-write is **idempotent** via `gr33ncore.cost_transaction_idempotency` (PK: `farm_id, idempotency_key`). Replays produce a silent no-op instead of duplicate rows. The `cost_transactions` row carries `related_module_schema` + `related_table_name` + `related_record_id` so the Costs page can render an **`auto · <table>`** chip and operators can filter "auto-logged only".
+
+### 7b. Energy prices
+
+`gr33ncore.farm_energy_prices` is a per-farm rate table with `effective_from` / `effective_to` windows so historical days are priced at the rate in effect that day. Manage via:
+
+- `GET / POST /farms/{id}/energy-prices`
+- `PUT / DELETE /energy-prices/{id}`
+
+The Costs page has an inline editor. **No active price = no electricity rollup row** (the worker silently skips farms without one).
+
+### 7c. Low-stock alerts
+
+`gr33nnaturalfarming.input_batches.low_stock_threshold` is opt-in. When `current_quantity_remaining < low_stock_threshold`, the automation worker fires a `medium`-severity alert tagged `triggering_event_source_type = 'inventory_low_stock'`. The Phase 19 "create task from alert" flow turns it into a refill task with one click.
+
+Dedupe: at most one alert per batch per UTC day. The Inventory page shows a **`low`** chip when the batch is below threshold so operators see the state without waiting for the alert.
 
 ---
 
@@ -282,6 +310,9 @@ Every action above is recorded as a row in Postgres; nothing depends on an exter
 | **Task** | Human checklist item; can link to a zone and/or schedule. |
 | **Alert** | Auto-generated row from a threshold breach or failed run. Drives push notifications and the bell badge. |
 | **Cost** | Farm-scoped expense or income with optional receipt attachment and COA mapping. |
+| **Autologger** | The `internal/costing` hook set that turns mixing components, task consumptions, and electricity rollups into idempotent `cost_transactions` rows + inventory deductions. Replays are silent no-ops via `cost_transaction_idempotency`. See §7a. |
+| **Energy price** | A row in `gr33ncore.farm_energy_prices` with `effective_from` / `effective_to` and `price_per_kwh`. Required for the nightly electricity rollup. |
+| **Low-stock threshold** | Opt-in `gr33nnaturalfarming.input_batches.low_stock_threshold`. When `current_quantity_remaining` drops below it, the worker fires one `medium`-severity alert per batch per UTC day. |
 | **Commons Catalog** | Public library of importable metadata packs. |
 | **Insert Commons** | Opt-in farm → commons publishing pipeline. |
 | **Natural farming** | Generic English umbrella term used in module titles, API tags, and UI copy for farming that relies on on-site fermented extracts, microbial cultures, and soil amendments (FPJ, FAA, JMS, etc.). Intentionally unqualified — no national / regional / ethnic modifier — because the system doesn't privilege any single tradition. See [`terminology-guideline.md`](terminology-guideline.md). |
