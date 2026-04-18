@@ -5,6 +5,7 @@ Tests sensor reading, offline queue, API client, and actuator logic.
 Run: python3 -m pytest test_gr33n_client.py -v
 """
 
+import base64
 import json
 import sqlite3
 import tempfile
@@ -20,6 +21,68 @@ import yaml
 import sys, os
 sys.path.insert(0, os.path.dirname(__file__))
 import gr33n_client as client
+
+
+class TestDeviceConfigDecode(unittest.TestCase):
+    """gr33n_client._device_config_dict matches Go JSON encoding of []byte config."""
+
+    def test_dict_passthrough(self):
+        self.assertEqual(client._device_config_dict({'foo': 1}), {'foo': 1})
+
+    def test_base64_roundtrip(self):
+        inner = {'pending_command': {'command': 'on', 'schedule_id': 7, 'program_id': 42}}
+        b64 = base64.b64encode(json.dumps(inner).encode('utf-8')).decode('ascii')
+        got = client._device_config_dict(b64)
+        self.assertEqual(got['pending_command']['command'], 'on')
+        self.assertEqual(got['pending_command']['schedule_id'], 7)
+        self.assertEqual(got['pending_command']['program_id'], 42)
+
+    def test_none_empty(self):
+        self.assertEqual(client._device_config_dict(None), {})
+        self.assertEqual(client._device_config_dict('not-valid-base64!!!'), {})
+
+
+class TestPostActuatorEventPayload(unittest.TestCase):
+    """POST /actuators/{id}/events JSON includes provenance fields."""
+
+    def test_includes_rule_schedule_program(self):
+        last = {}
+
+        class CaptureHandler(BaseHTTPRequestHandler):
+            def log_message(self, *args):
+                pass
+
+            def do_POST(self):
+                n = int(self.headers.get('Content-Length', 0))
+                raw = self.rfile.read(n) if n else b'{}'
+                last['path'] = self.path
+                last['json'] = json.loads(raw.decode('utf-8'))
+                self.send_response(201)
+                self.send_header('Content-Type', 'application/json')
+                self.end_headers()
+                self.wfile.write(b'{"ok":true}')
+
+        srv = HTTPServer(('127.0.0.1', 18095), CaptureHandler)
+        t = threading.Thread(target=srv.serve_forever, daemon=True)
+        t.start()
+        try:
+            api = client.Gr33nApiClient('http://127.0.0.1:18095', 1, timeout=3)
+            ok = api.post_actuator_event(
+                12, 'on', source='schedule_trigger',
+                schedule_id=3, rule_id=None, program_id=99,
+                meta_data={'edge': 'pytest'},
+                parameters_sent={'v': 1},
+            )
+            self.assertTrue(ok)
+            self.assertIn('/actuators/12/events', last['path'])
+            body = last['json']
+            self.assertEqual(body['triggered_by_schedule_id'], 3)
+            self.assertEqual(body['program_id'], 99)
+            self.assertEqual(body['meta_data']['edge'], 'pytest')
+            self.assertEqual(body['parameters_sent']['v'], 1)
+            self.assertNotIn('triggered_by_rule_id', body)
+        finally:
+            srv.shutdown()
 
 
 # ─────────────────────────────────────────────────────────────────────────────

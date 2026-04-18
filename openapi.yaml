@@ -1086,6 +1086,31 @@ paths:
                     - cancelled_by_user_or_system
                   default: command_sent_to_device
                 triggered_by_schedule_id: { type: integer, nullable: true }
+                triggered_by_rule_id:
+                  type: integer
+                  nullable: true
+                  description: >
+                    When the pending_command carried ``rule_id`` (automation
+                    rule dispatch), echo it here so actuator_events join back
+                    to the rule. Mutually exclusive with ``program_id``.
+                program_id:
+                  type: integer
+                  nullable: true
+                  description: >
+                    Fertigation program that queued the command (worker
+                    ``pending_command`` JSON). Stored in ``meta_data`` on the
+                    event row with ``reported_by: pi_client``. Mutually exclusive
+                    with ``triggered_by_rule_id``.
+                parameters_sent:
+                  type: object
+                  nullable: true
+                  description: Optional JSON object echoed from the edge (defaults to `{}`).
+                meta_data:
+                  type: object
+                  nullable: true
+                  description: >
+                    Optional operator metadata; merged with server fields
+                    ``reported_by`` and (when ``program_id`` is set) ``program_id``.
       responses:
         "201":
           description: Created actuator event
@@ -4167,6 +4192,12 @@ components:
         parameters_sent: { type: object, nullable: true }
         triggered_by_schedule_id: { type: integer, nullable: true }
         triggered_by_rule_id: { type: integer, nullable: true }
+        meta_data:
+          type: object
+          nullable: true
+          description: >
+            Includes ``program_id`` and ``reported_by: pi_client`` when the
+            Pi reported execution for a program-bound command.
         source: { type: string }
         execution_status:
           type: object

@@ -225,6 +225,56 @@ func postNoAuth(path string, body any) *http.Response {
 	return resp
 }
 
+// piGet performs GET with X-API-Key (Pi edge auth).
+func piGet(t *testing.T, path string) *http.Response {
+	t.Helper()
+	req, err := http.NewRequest(http.MethodGet, testServer.URL+path, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	req.Header.Set("X-API-Key", piAPIKey)
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatalf("GET %s: %v", path, err)
+	}
+	return resp
+}
+
+// piPostJSON performs POST with JSON body and X-API-Key (Pi edge auth).
+func piPostJSON(t *testing.T, path string, body any) *http.Response {
+	t.Helper()
+	b, err := json.Marshal(body)
+	if err != nil {
+		t.Fatal(err)
+	}
+	req, err := http.NewRequest(http.MethodPost, testServer.URL+path, bytes.NewReader(b))
+	if err != nil {
+		t.Fatal(err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-API-Key", piAPIKey)
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatalf("POST %s: %v", path, err)
+	}
+	return resp
+}
+
+// piDelete performs DELETE with X-API-Key (Pi edge auth).
+func piDelete(t *testing.T, path string) *http.Response {
+	t.Helper()
+	req, err := http.NewRequest(http.MethodDelete, testServer.URL+path, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	req.Header.Set("X-API-Key", piAPIKey)
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatalf("DELETE %s: %v", path, err)
+	}
+	return resp
+}
+
 func expectStatus(t *testing.T, resp *http.Response, code int) {
 	t.Helper()
 	if resp.StatusCode != code {

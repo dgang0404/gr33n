@@ -37,7 +37,8 @@ func isDevAuthBypass() bool {
 func requireAPIKey(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if isDevAuthBypass() {
-			next.ServeHTTP(w, r)
+			ctx := authctx.WithFarmAuthzSkip(r.Context(), true)
+			next.ServeHTTP(w, r.WithContext(ctx))
 			return
 		}
 		key := r.Header.Get("X-API-Key")
@@ -49,7 +50,10 @@ func requireAPIKey(next http.Handler) http.Handler {
 			httputil.WriteError(w, http.StatusForbidden, "invalid API key")
 			return
 		}
-		next.ServeHTTP(w, r)
+		// Same trust boundary as requireJWTOrPiEdge: a valid PI_API_KEY may
+		// call farm-scoped handlers (e.g. RecordEvent → RequireFarmMemberOrPiEdge)
+		// without a dashboard JWT.
+		next.ServeHTTP(w, r.WithContext(authctx.WithPiEdgeAuth(r.Context())))
 	})
 }
 

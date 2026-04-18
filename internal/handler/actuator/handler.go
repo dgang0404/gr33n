@@ -1,8 +1,11 @@
 package actuator
 
 import (
+	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
 	"time"
@@ -157,14 +160,74 @@ func (h *Handler) RecordEvent(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var body struct {
-		CommandSent           string  `json:"command_sent"`
-		Source                string  `json:"source"`
-		EventTime             string  `json:"event_time"`
-		ExecutionStatus       string  `json:"execution_status"`
-		TriggeredByScheduleID *int64  `json:"triggered_by_schedule_id"`
+		CommandSent             string          `json:"command_sent"`
+		Source                  string          `json:"source"`
+		EventTime               string          `json:"event_time"`
+		ExecutionStatus         string          `json:"execution_status"`
+		TriggeredByScheduleID   *int64          `json:"triggered_by_schedule_id"`
+		TriggeredByRuleID       *int64          `json:"triggered_by_rule_id"`
+		ProgramID               *int64          `json:"program_id"`
+		ParametersSent          json.RawMessage `json:"parameters_sent"`
+		MetaData                json.RawMessage `json:"meta_data"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+	if body.CommandSent == "" {
+		httputil.WriteError(w, http.StatusBadRequest, "command_sent is required")
+		return
+	}
+	if body.TriggeredByRuleID != nil && body.ProgramID != nil {
+		httputil.WriteError(w, http.StatusBadRequest, "cannot set both triggered_by_rule_id and program_id")
+		return
+	}
+
+	ctx := r.Context()
+	a0, err := h.q.GetActuatorByID(ctx, actuatorID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			httputil.WriteError(w, http.StatusNotFound, "actuator not found")
+			return
+		}
+		httputil.WriteError(w, http.StatusInternalServerError, "failed to load actuator")
+		return
+	}
+	if !farmauthz.RequireFarmMemberOrPiEdge(w, r, h.q, a0.FarmID) {
+		return
+	}
+
+	if msg, ok := validatePiActuatorEventProvenance(ctx, h.q, a0.FarmID, body.TriggeredByScheduleID, body.TriggeredByRuleID, body.ProgramID); !ok {
+		httputil.WriteError(w, http.StatusBadRequest, msg)
+		return
+	}
+
+	params := []byte(`{}`)
+	if len(bytes.TrimSpace(body.ParametersSent)) > 0 {
+		if !json.Valid(body.ParametersSent) {
+			httputil.WriteError(w, http.StatusBadRequest, "parameters_sent must be valid JSON")
+			return
+		}
+		params = body.ParametersSent
+	}
+
+	meta := map[string]any{"reported_by": "pi_client"}
+	if len(bytes.TrimSpace(body.MetaData)) > 0 {
+		var extra map[string]any
+		if err := json.Unmarshal(body.MetaData, &extra); err != nil {
+			httputil.WriteError(w, http.StatusBadRequest, "meta_data must be a JSON object")
+			return
+		}
+		for k, v := range extra {
+			meta[k] = v
+		}
+	}
+	if body.ProgramID != nil {
+		meta["program_id"] = *body.ProgramID
+	}
+	metaBytes, err := json.Marshal(meta)
+	if err != nil {
+		httputil.WriteError(w, http.StatusInternalServerError, "failed to marshal meta_data")
 		return
 	}
 
@@ -184,26 +247,74 @@ func (h *Handler) RecordEvent(w http.ResponseWriter, r *http.Request) {
 		status = db.Gr33ncoreActuatorExecutionStatusEnumCommandSentToDevice
 	}
 
-	row, err := h.q.InsertActuatorEvent(r.Context(), db.InsertActuatorEventParams{
+	row, err := h.q.InsertActuatorEvent(ctx, db.InsertActuatorEventParams{
 		EventTime:             evtTime,
 		ActuatorID:            actuatorID,
 		CommandSent:           &body.CommandSent,
-		ParametersSent:        []byte(`{}`),
+		ParametersSent:        params,
 		TriggeredByUserID:     pgtype.UUID{},
 		TriggeredByScheduleID: body.TriggeredByScheduleID,
-		TriggeredByRuleID:     nil,
+		TriggeredByRuleID:     body.TriggeredByRuleID,
 		Source:                src,
 		ExecutionStatus: db.NullGr33ncoreActuatorExecutionStatusEnum{
 			Gr33ncoreActuatorExecutionStatusEnum: status,
 			Valid:                                true,
 		},
-		MetaData: []byte(`{}`),
+		MetaData: metaBytes,
 	})
 	if err != nil {
 		httputil.WriteError(w, http.StatusInternalServerError, "failed to record actuator event")
 		return
 	}
 	httputil.WriteJSON(w, http.StatusCreated, row)
+}
+
+// validatePiActuatorEventProvenance ensures schedule / rule / program
+// foreign keys referenced on a Pi-reported actuator event belong to the
+// same farm as the actuator (defence-in-depth on top of DB FKs).
+func validatePiActuatorEventProvenance(
+	ctx context.Context,
+	q *db.Queries,
+	actuatorFarmID int64,
+	scheduleID, ruleID, programID *int64,
+) (string, bool) {
+	if scheduleID != nil {
+		sch, err := q.GetScheduleByID(ctx, *scheduleID)
+		if err != nil {
+			if errors.Is(err, pgx.ErrNoRows) {
+				return "triggered_by_schedule_id not found", false
+			}
+			return fmt.Sprintf("schedule lookup: %v", err), false
+		}
+		if sch.FarmID != actuatorFarmID {
+			return "triggered_by_schedule_id does not belong to actuator farm", false
+		}
+	}
+	if ruleID != nil {
+		rule, err := q.GetAutomationRuleByID(ctx, *ruleID)
+		if err != nil {
+			if errors.Is(err, pgx.ErrNoRows) {
+				return "triggered_by_rule_id not found", false
+			}
+			return fmt.Sprintf("rule lookup: %v", err), false
+		}
+		if rule.FarmID != actuatorFarmID {
+			return "triggered_by_rule_id does not belong to actuator farm", false
+		}
+	}
+	if programID != nil {
+		prog, err := q.GetFertigationProgramByID(ctx, *programID)
+		if err != nil {
+			if errors.Is(err, pgx.ErrNoRows) {
+				return "program_id not found", false
+			}
+			return fmt.Sprintf("program lookup: %v", err), false
+		}
+		if prog.FarmID != actuatorFarmID {
+			return "program_id does not belong to actuator farm", false
+		}
+	}
+	return "", true
 }
 
 // GET /actuators/{id}/events?since=RFC3339&limit=N

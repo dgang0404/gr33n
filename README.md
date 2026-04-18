@@ -519,7 +519,7 @@ A phase-by-phase ledger of what's live on `main`. Each row links to the governin
 
 **In flight / next up** (no committed plan docs yet; candidates in rough priority order):
 
-- [ ] **Pi ↔ API contract pass** — end-to-end test: worker or UI queues `pending_command`, Pi polls `GET /farms/{id}/devices`, executes GPIO, clears pending, posts `POST /actuators/{id}/events`; align optional fields (`rule_id`, `program_id`) between worker `SetDevicePendingCommand` JSON and [`pi_client/gr33n_client.py`](pi_client/gr33n_client.py) + [`RecordEvent`](internal/handler/actuator/handler.go) if we want full attribution on feedback rows.
+- [x] **Pi ↔ API contract pass** — smoke tests `TestPiContract*` in [`cmd/api/smoke_pi_contract_test.go`](cmd/api/smoke_pi_contract_test.go): enqueue `pending_command` → Pi-key `GET /farms/1/devices` (base64 `config` decode) → `POST /actuators/{id}/events` with `triggered_by_schedule_id`, `program_id` (→ `meta_data`), `triggered_by_rule_id`, `parameters_sent` → `DELETE` pending. [`pi_client/gr33n_client.py`](pi_client/gr33n_client.py) forwards `rule_id` / `program_id` / `schedule_id` and decodes real API `config`. `requireAPIKey` injects `PiEdgeAuth` context so `RecordEvent` can authorize like `GET /farms/{id}/devices`.
 - [ ] **Deprecate `programs.metadata.steps`** — after N deploys with zero fallback warnings, promote `action_source` checks to hard errors and drop the column.
 - [ ] **Program "run now" API** — explicit trigger for unscheduled / ad-hoc programs (today only schedule-bound programs fire via the tick).
 - [ ] **AI augmentation / LM Studio integration** for insert-sharing recommendations.

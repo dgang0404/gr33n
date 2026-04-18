@@ -18,7 +18,7 @@ Phase 14 **WS1** documents how MQTT-based and microcontroller field gear fits th
 
 1. **Microcontrollers** publish telemetry to MQTT topics (short payloads, QoS 1 where you need at-least-once).
 2. **Bridge** (Python, Node, or Go on a Pi/edge PC) subscribes, validates, maps topic or payload → `sensor_id`, calls the API.
-3. **Tasking**: automation writes `config.pending_command` on a device row. The **same bridge** (or the existing Pi client) polls **`GET /farms/{farm_id}/devices`** with **`X-API-Key: PI_API_KEY`**, executes the command locally (GPIO, relay, downstream MQTT publish), then **`DELETE /devices/{id}/pending-command`** and records actuator events as today.
+3. **Tasking**: automation writes `config.pending_command` on a device row. The **same bridge** (or the existing Pi client) polls **`GET /farms/{farm_id}/devices`** with **`X-API-Key: PI_API_KEY`**, executes the command locally (GPIO, relay, downstream MQTT publish), then **`DELETE /devices/{id}/pending-command`** and **`POST /actuators/{id}/events`** with provenance. The Go API JSON-encodes `devices.config` (`[]byte`) as a **base64 string**; [`pi_client/gr33n_client.py`](../pi_client/gr33n_client.py) decodes that automatically in `_schedule_loop`. Echo **`schedule_id`**, **`rule_id`**, and **`program_id`** from the pending JSON into the event body (`triggered_by_schedule_id`, `triggered_by_rule_id`, `program_id`) so `gr33ncore.actuator_events` rows stay auditable — see smoke tests `TestPiContract*` in `cmd/api/smoke_pi_contract_test.go`.
 
 ## Broker choice: Mosquitto vs managed
 

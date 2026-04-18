@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 # gr33n Pi Client - sensor + actuator daemon
 
+import base64
+import json as py_json
 import logging
 import math
 import sqlite3
@@ -42,6 +44,28 @@ try:
     SERIAL_AVAILABLE = True
 except ImportError:
     SERIAL_AVAILABLE = False
+
+
+def _device_config_dict(raw) -> dict:
+    """Decode ``device['config']`` from GET /farms/{id}/devices.
+
+    Go's ``encoding/json`` marshals ``[]byte`` as a base64 *string*; the Pi
+    must decode that string to recover ``pending_command`` and other keys.
+    If the server already returns an object (tests / future encoder), pass
+    it through.
+    """
+    if raw is None:
+        return {}
+    if isinstance(raw, dict):
+        return raw
+    if isinstance(raw, str):
+        try:
+            b = base64.b64decode(raw)
+            return py_json.loads(b.decode('utf-8'))
+        except (ValueError, py_json.JSONDecodeError, UnicodeDecodeError):
+            return {}
+    return {}
+
 
 try:
     import smbus2
@@ -219,15 +243,35 @@ class Gr33nApiClient:
 
     def post_actuator_event(self, actuator_id: int, command: str,
                              source: str = 'schedule_trigger',
-                             schedule_id: Optional[int] = None) -> bool:
+                             schedule_id: Optional[int] = None,
+                             rule_id: Optional[int] = None,
+                             program_id: Optional[int] = None,
+                             meta_data: Optional[dict] = None,
+                             parameters_sent: Optional[dict] = None) -> bool:
+        """Report command execution to the API (Pi feedback).
+
+        Pass through provenance from ``pending_command`` so actuator_events
+        rows join back to schedules, rules, and fertigation programs for
+        audit trails. ``rule_id`` and ``program_id`` are mutually exclusive
+        on the server; schedule-bound program fires include both
+        ``schedule_id`` and ``program_id``.
+        """
         payload = {
-            'actuator_id':              actuator_id,
-            'command_sent':             command,
-            'source':                   source,
-            'event_time':               datetime.now(timezone.utc).isoformat(),
-            'execution_status':         'command_sent_to_device',
-            'triggered_by_schedule_id': schedule_id,
+            'command_sent':     command,
+            'source':           source,
+            'event_time':       datetime.now(timezone.utc).isoformat(),
+            'execution_status': 'command_sent_to_device',
         }
+        if schedule_id is not None:
+            payload['triggered_by_schedule_id'] = schedule_id
+        if rule_id is not None:
+            payload['triggered_by_rule_id'] = rule_id
+        if program_id is not None:
+            payload['program_id'] = program_id
+        if meta_data:
+            payload['meta_data'] = meta_data
+        if parameters_sent:
+            payload['parameters_sent'] = parameters_sent
         try:
             r = self._s.post(f'{self.base_url}/actuators/{actuator_id}/events',
                              json=payload, timeout=self.timeout)
@@ -589,13 +633,17 @@ class Gr33nPiClient:
                 continue
             for device in self.api.get_devices():
                 did    = device.get('id')
-                config = device.get('config') or {}
+                config = _device_config_dict(device.get('config'))
                 pending = config.get('pending_command')
                 if not pending:
                     continue
+                rule_id = None
+                prog_id = None
                 if isinstance(pending, dict):
                     cmd      = pending.get('command', '')
                     sched_id = pending.get('schedule_id')
+                    rule_id = pending.get('rule_id')
+                    prog_id = pending.get('program_id')
                 else:
                     cmd      = str(pending)
                     sched_id = config.get('pending_schedule_id')
@@ -607,9 +655,11 @@ class Gr33nPiClient:
                     continue
                 log.info('Executing scheduled command %r for device_id=%s', cmd, did)
                 actuator.execute(cmd)
+                src = 'automation_rule_trigger' if rule_id is not None else 'schedule_trigger'
                 self.api.post_actuator_event(
                     actuator_id=actuator.actuator_id, command=cmd,
-                    source='schedule_trigger', schedule_id=sched_id,
+                    source=src, schedule_id=sched_id, rule_id=rule_id,
+                    program_id=prog_id,
                 )
                 self.api.clear_pending_command(did)
                 self.api.patch_device_status(did, 'online')
