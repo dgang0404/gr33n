@@ -13,26 +13,28 @@ overview: >
 todos:
   - id: ws1-schema-additions
     content: "WS1: Additive migrations — animal_groups.(count, primary_zone_id, active, archived_at, archived_reason); new gr33nanimals.animal_lifecycle_events table; aquaponics.loops.(fish_tank_zone_id, grow_bed_zone_id); regenerated sqlc"
-    status: pending
+    status: completed
   - id: ws2-crud-handlers
     content: "WS2: CRUD handlers for animal_groups + animal_lifecycle_events; aquaponics.loops CRUD; OpenAPI schemas + paths"
-    status: pending
+    status: completed
   - id: ws3-feed-consumption-wiring
     content: "WS3: Wire animal feed into Phase 20.7 task-consumption flow — operator records 'fed herd X, used 2kg feed' on a task; cost auto-logs as category='feed_livestock'; verify category override path in autologger"
-    status: pending
+    status: completed
   - id: ws4-ui-animals-page
     content: "WS4: Animals.vue under Operate — list groups per farm, inline edit count, lifecycle timeline view, link from Zone detail; Aquaponics.vue for loops (or merge into Zone detail); HelpTips explaining the 'use primitives' approach for climate/feeding/watering"
-    status: pending
+    status: completed
   - id: ws5-bootstrap-upgrade
     content: "WS5: Upgrade Phase 20.5 chicken_coop_v1 + small_aquaponics_v1 bootstraps to seed an animal_group / loop row with count + zone links (idempotent, won't break existing farms that already ran the bootstrap)"
-    status: pending
+    status: completed
   - id: ws6-smoke-and-docs
     content: "WS6: Smoke — CRUD + lifecycle event insert/archive; feed consumption end-to-end via a task; bootstrap re-run idempotency. Docs: new workflow-guide.md §12 'Animals & Aquaponics'; glossary entries; OpenAPI audit"
-    status: pending
+    status: completed
 isProject: false
 ---
 
 # Phase 20.8 — Animal Husbandry Flesh-Out
+
+**Implementation status:** Shipped on `main` (migrations `20260512_phase208_*`, `20260513_phase208_bootstrap_upgrade.sql`, handlers, `Animals.vue` / `Aquaponics.vue`, smoke coverage). Plan todos below were synced from `pending` → `completed` in April 2026 — they had drifted after the work landed.
 
 ## Why this phase
 

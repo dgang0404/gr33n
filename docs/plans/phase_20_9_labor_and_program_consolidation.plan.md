@@ -11,23 +11,25 @@ overview: >
 todos:
   - id: ws1-labor-schema-and-cost
     content: "WS1: Additive migration — tasks.time_spent_minutes (nullable); new gr33ncore.task_labor_log table (task_id, user_id, started_at, ended_at, minutes, hourly_rate_snapshot, currency); auto-cost on labor log insert (category='labor_wages', links to task + crop_cycle_id via task scope)"
-    status: pending
+    status: completed
   - id: ws2-labor-ui
     content: "WS2: Task detail 'Time' section — start/stop timer + manual entry + rate picker; Tasks list shows aggregate time; 'Cost to date' card on Crop Cycle detail now includes labor breakdown"
-    status: pending
+    status: completed
   - id: ws3-program-actions-link
     content: "WS3: Additive — executable_actions.program_id BIGINT REFERENCES gr33nfertigation.programs(id) ON DELETE CASCADE; CHECK ensuring rule_id XOR schedule_id XOR program_id; migrate existing program action metadata into executable_actions rows via one backfill query"
-    status: pending
+    status: completed
   - id: ws4-program-actions-dispatch
     content: "WS4: Worker program-tick reads actions from executable_actions (not meta_data.steps); existing meta_data steps remain supported in parallel for one phase then deprecated in a banner; UI program editor uses the same action-list component as RuleForm.vue"
-    status: pending
+    status: completed
   - id: ws5-smoke-and-docs
     content: "WS5: Smoke — labor log roundtrip, auto-cost lands, program execution via executable_actions, cross-source run log uniformity; workflow-guide.md §5 (Tasks) + §4 (Fertigation programs) updated; OpenAPI audit"
-    status: pending
+    status: completed
 isProject: false
 ---
 
 # Phase 20.9 — Labor Logging & Program → Actions Consolidation
+
+**Implementation status:** Labor (WS1–2), program `executable_actions` + backfill + resolver + API + smoke + docs (WS3, WS5) shipped on `main`. **WS4 literal spec drift:** worker **program-tick** (`runProgramTick`) and final `metadata.steps` sweep landed in **Phase 22** instead of inside the 20.9 PR boundary; program actions UI is an **inline panel on `Fertigation.vue`**, not a shared `RuleForm.vue` component. Functionally the consolidation + dispatch path is covered; todos were marked `completed` April 2026 to match shipped behavior.
 
 ## Why this phase
 
