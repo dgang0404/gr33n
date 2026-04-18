@@ -444,8 +444,9 @@ make dev        # Run API + UI dev server in parallel
 make ui         # Run the Vue dev server
 make build      # Build the Go binary
 make build-ui   # Build the Vue frontend for production
-make test       # Run Go tests
-make lint       # Run go vet
+make test       # Run Go tests (-tags dev, ./...)
+make lint       # Run go vet (-tags dev, ./...)
+make audit-openapi  # OpenAPI ↔ cmd/api/routes.go (must exit 0)
 make sqlc       # Regenerate sqlc Go code from SQL queries
 make seed       # Apply seed data to the database
 make schema     # Apply the schema to the database
@@ -454,6 +455,8 @@ make down       # Stop Docker Compose services
 make logs       # Tail Docker Compose logs
 make clean      # Remove build artifacts
 ```
+
+**Phase 23 / pre-merge gate (local):** `make test`, `make lint`, `make audit-openapi`, `python3 -m pytest pi_client/test_gr33n_client.py pi_client/test_mqtt_telemetry_bridge.py -q`, and `npm --prefix ui run build`.
 
 ---
 

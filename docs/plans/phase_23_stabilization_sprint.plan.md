@@ -7,7 +7,7 @@ overview: >
 todos:
   - id: ws1-ci-and-build-gates
     content: "WS1: CI discipline — document required commands (go test ./..., make audit-openapi); fix any drift or failures; optional: go vet, race on critical packages"
-    status: pending
+    status: completed
   - id: ws2-smoke-and-integration
     content: "WS2: Smoke hardening — full cmd/api suite green on clean DB; document DATABASE_URL / auth env; reduce flakiness; add notes for skipped tests"
     status: pending
@@ -51,7 +51,7 @@ Phases **20.x through 22** plus the **Pi ↔ API contract** landed a lot of surf
 | **WS4** | Automation worker / program-tick observability & tiny fixes only |
 | **WS5** | Pi API key trust model + runbook notes |
 | **WS6** | Operator docs aligned with shipped behavior |
-| **WS7** | Exit checklist → hand off to Phase 24 |
+| **WS7** | Exit checklist → hand off to Phase 21 then 24 |
 
 ## Exit criteria (all should be true)
 
