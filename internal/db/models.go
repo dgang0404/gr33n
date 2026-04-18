@@ -1299,6 +1299,7 @@ type Gr33ncoreAutomationRun struct {
 	Message    *string   `db:"message" json:"message"`
 	Details    []byte    `db:"details" json:"details"`
 	ExecutedAt time.Time `db:"executed_at" json:"executed_at"`
+	ProgramID  *int64    `db:"program_id" json:"program_id"`
 }
 
 type Gr33ncoreCommonsCatalogEntry struct {
@@ -1925,6 +1926,7 @@ type Gr33nfertigationProgram struct {
 	PhTriggerHigh       pgtype.Numeric     `db:"ph_trigger_high" json:"ph_trigger_high"`
 	IsActive            bool               `db:"is_active" json:"is_active"`
 	Metadata            []byte             `db:"metadata" json:"metadata"`
+	LastTriggeredTime   pgtype.Timestamptz `db:"last_triggered_time" json:"last_triggered_time"`
 	CreatedAt           time.Time          `db:"created_at" json:"created_at"`
 	UpdatedAt           time.Time          `db:"updated_at" json:"updated_at"`
 	DeletedAt           pgtype.Timestamptz `db:"deleted_at" json:"deleted_at"`

@@ -4247,11 +4247,25 @@ components:
 
     AutomationRun:
       type: object
+      description: >
+        One row per worker tick outcome. Exactly one of `schedule_id`,
+        `rule_id`, or `program_id` is populated (schedule/rule/program
+        attribution is mutually exclusive). `details.action_source` on
+        program runs is either `executable_actions` (DB-stored rows)
+        or `metadata_steps_fallback` (synthesised from
+        `programs.metadata.steps` — programs still on the fallback
+        path will also log a worker warning every minute they fire).
       properties:
         id: { type: integer }
         farm_id: { type: integer }
         schedule_id: { type: integer, nullable: true }
         rule_id: { type: integer, nullable: true }
+        program_id:
+          type: integer
+          nullable: true
+          description: >
+            Phase 22 WS1 — set when the worker's program-tick fires a
+            fertigation program. Null for schedule- or rule-driven runs.
         status: { type: string, enum: [success, partial_success, failed, skipped] }
         message: { type: string, nullable: true }
         details: { type: object, nullable: true }

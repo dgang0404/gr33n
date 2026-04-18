@@ -730,6 +730,9 @@ CREATE TABLE IF NOT EXISTS gr33ncore.automation_runs (
     farm_id         BIGINT NOT NULL REFERENCES gr33ncore.farms(id) ON DELETE CASCADE,
     schedule_id     BIGINT REFERENCES gr33ncore.schedules(id) ON DELETE SET NULL,
     rule_id         BIGINT REFERENCES gr33ncore.automation_rules(id) ON DELETE SET NULL,
+    -- Phase 22 WS1 — program_id FK added below after
+    -- gr33nfertigation.programs is defined (same ordering dance as
+    -- executable_actions.program_id / chk_executable_action_parent).
     status          TEXT NOT NULL CHECK (status IN ('success', 'partial_success', 'failed', 'skipped')),
     message         TEXT,
     details         JSONB DEFAULT '{}'::jsonb,
@@ -1409,6 +1412,10 @@ CREATE TABLE IF NOT EXISTS gr33nfertigation.programs (
     ph_trigger_high             NUMERIC(4,2) CHECK (ph_trigger_high >= 0 AND ph_trigger_high <= 14),
     is_active                   BOOLEAN DEFAULT TRUE NOT NULL,
     metadata                    JSONB DEFAULT '{}',
+    -- Phase 22 WS1 — worker stamps last_triggered_time on successful
+    -- program fires, mirroring schedules/rules so the tick can skip
+    -- "already fired this minute" without scanning automation_runs.
+    last_triggered_time         TIMESTAMPTZ,
     created_at                  TIMESTAMPTZ DEFAULT NOW() NOT NULL,
     updated_at                  TIMESTAMPTZ DEFAULT NOW() NOT NULL,
     deleted_at                  TIMESTAMPTZ DEFAULT NULL
@@ -1418,6 +1425,15 @@ CREATE TRIGGER trg_programs_updated_at
     FOR EACH ROW EXECUTE FUNCTION gr33ncore.set_updated_at();
 ALTER TABLE gr33nfertigation.crop_cycles
     ADD COLUMN primary_program_id BIGINT REFERENCES gr33nfertigation.programs(id) ON DELETE SET NULL;
+
+-- Phase 22 WS1 — program_id column on automation_runs (declared above;
+-- FK deferred here because programs is defined below core).
+ALTER TABLE gr33ncore.automation_runs
+    ADD COLUMN IF NOT EXISTS program_id BIGINT
+    REFERENCES gr33nfertigation.programs(id) ON DELETE SET NULL;
+CREATE INDEX IF NOT EXISTS idx_automation_runs_program_id
+    ON gr33ncore.automation_runs(program_id)
+    WHERE program_id IS NOT NULL;
 
 -- Phase 20.95 WS3 — FK on executable_actions.program_id (column created above;
 -- FK deferred here because gr33nfertigation.programs is defined below core).

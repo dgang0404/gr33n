@@ -77,6 +77,21 @@ WHERE id = $1 AND deleted_at IS NULL;
 SELECT * FROM gr33nfertigation.programs
 WHERE id = $1 AND deleted_at IS NULL;
 
+-- name: ListActivePrograms :many
+-- Phase 22 WS1 — feeds the worker's program-tick. Only programs with a
+-- bound schedule are dispatched automatically (unscheduled programs are
+-- template-only and require an explicit "run now" API call, added later).
+SELECT * FROM gr33nfertigation.programs
+WHERE is_active = TRUE
+  AND deleted_at IS NULL
+  AND schedule_id IS NOT NULL;
+
+-- name: MarkProgramTriggered :one
+UPDATE gr33nfertigation.programs
+SET last_triggered_time = $2, updated_at = NOW()
+WHERE id = $1
+RETURNING *;
+
 -- name: UpdateReservoir :one
 UPDATE gr33nfertigation.reservoirs
 SET name = $2, description = $3, capacity_liters = $4,

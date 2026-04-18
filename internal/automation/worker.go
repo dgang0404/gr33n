@@ -177,6 +177,13 @@ func (w *Worker) runTick(ctx context.Context) {
 	}
 	w.runRuleTick(ctx, now)
 
+	// Phase 22 WS1 — program-tick. Evaluates every active fertigation
+	// program whose bound schedule's cron fires at `now`. Deliberately
+	// runs after the schedule/rule passes so actuator commands from
+	// schedules land first (programs usually piggyback on the same
+	// schedule and we want consistent ordering in the event feed).
+	w.runProgramTick(ctx, now)
+
 	// Phase 20.7 WS5 — cheap per-batch-per-day deduped alert sweep.
 	// Safe to run every tick; the dedupe inside maybeFireLowStock
 	// keeps the alert table from filling up.

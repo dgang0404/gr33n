@@ -7,7 +7,7 @@ An open-source agricultural operating system designed to reclaim data, land, and
 [![Vue](https://img.shields.io/badge/Vue-3-4FC08D?logo=vue.js)](https://vuejs.org)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-14+-336791?logo=postgresql)](https://postgresql.org)
 
-**Phase 14 (field network & commons)** workstreams are **largely complete** on main (edge/MQTT patterns, Insert Commons pipeline + catalog, federation/receiver hardening, FCM alert push, org audit, farm bootstrap hooks, and stub domain schemas for crops/animals/aquaponics). Ongoing polish lives in **[`docs/phase-14-operator-documentation.md`](docs/phase-14-operator-documentation.md)** and [`docs/plans/phase_14_network_and_commons.plan.md`](docs/plans/phase_14_network_and_commons.plan.md). **Phase 15** centers on **[farm onboarding & templates](docs/plans/phase_15_farm_onboarding.plan.md)**. Phase 13 history: **[`docs/phase-13-operator-documentation.md`](docs/phase-13-operator-documentation.md)**. Key playbooks: [`docs/mqtt-edge-operator-playbook.md`](docs/mqtt-edge-operator-playbook.md), [`docs/insert-commons-pipeline-runbook.md`](docs/insert-commons-pipeline-runbook.md), [`docs/insert-commons-receiver-playbook.md`](docs/insert-commons-receiver-playbook.md), [`docs/notifications-operator-playbook.md`](docs/notifications-operator-playbook.md), [`docs/domain-modules-operator-playbook.md`](docs/domain-modules-operator-playbook.md), [`docs/mobile-distribution.md`](docs/mobile-distribution.md), [`docs/audit-events-operator-playbook.md`](docs/audit-events-operator-playbook.md), [`docs/terminology-guideline.md`](docs/terminology-guideline.md) (JADAM vs natural farming in copy).
+**Current focus:** Phase 22 (program-tick worker + final `metadata.steps` backfill) is on `main`. The automation worker now runs fertigation programs end-to-end, the `executable_actions` table is the single canonical store for program steps, and the legacy `metadata.steps` fallback path is observable (structured warning in the worker logs) and retired on fully-migrated databases. Snapshot: see the [Roadmap Status](#roadmap-status) section below for the phase-by-phase ledger. Phase 14 field-network & commons work is largely complete (edge/MQTT, Insert Commons pipeline + catalog, federation/receiver hardening, FCM alert push, org audit, farm bootstrap hooks, stub domain schemas). Phase 15+ builds on that substrate — operator onboarding templates ([`docs/plans/phase_15_farm_onboarding.plan.md`](docs/plans/phase_15_farm_onboarding.plan.md)), safety & alert rules, platform polish, automation rule engine, labor + cost rollups, crop cycle analytics. Key playbooks: [`docs/workflow-guide.md`](docs/workflow-guide.md), [`docs/mqtt-edge-operator-playbook.md`](docs/mqtt-edge-operator-playbook.md), [`docs/insert-commons-pipeline-runbook.md`](docs/insert-commons-pipeline-runbook.md), [`docs/insert-commons-receiver-playbook.md`](docs/insert-commons-receiver-playbook.md), [`docs/notifications-operator-playbook.md`](docs/notifications-operator-playbook.md), [`docs/domain-modules-operator-playbook.md`](docs/domain-modules-operator-playbook.md), [`docs/mobile-distribution.md`](docs/mobile-distribution.md), [`docs/audit-events-operator-playbook.md`](docs/audit-events-operator-playbook.md), [`docs/terminology-guideline.md`](docs/terminology-guideline.md) (JADAM vs natural farming in copy), [`docs/phase-13-operator-documentation.md`](docs/phase-13-operator-documentation.md), [`docs/phase-14-operator-documentation.md`](docs/phase-14-operator-documentation.md).
 
 ---
 
@@ -494,6 +494,36 @@ For users who choose to integrate local AI, gr33n offers schema-guided intellige
 
 ---
 
+## Roadmap Status
+
+A phase-by-phase ledger of what's live on `main`. Each row links to the governing plan doc where one exists; undated rows predate the phase-plan convention.
+
+| Phase | Focus | Status | Links |
+|------:|-------|--------|-------|
+| 10 | JWT smoke tests, farm-scoped write auth, fertigation ↔ crop cycle link, costs CSV, SensorDetail UX | ✅ Done | — |
+| 11 | Farm RBAC, cost receipts + local storage, PWA shell, Insert Commons opt-in | ✅ Done | — |
+| 12 | Insert Commons federation | ✅ Done | `db/migrations/20260416_phase12_insert_commons_federation.sql` |
+| 13 | Platform evolution — receiver, audit/compliance, offline, finance depth, tenancy | ✅ Done | [plan](docs/plans/phase_13_platform_evolution.plan.md) · [ops doc](docs/phase-13-operator-documentation.md) |
+| 14 | Field network & commons — MQTT/edge, insert pipeline, catalog, receiver, FCM, org governance, domain schema stubs | ✅ Done | [plan](docs/plans/phase_14_network_and_commons.plan.md) · [ops doc](docs/phase-14-operator-documentation.md) |
+| 15 | Farm onboarding & templates | ✅ Done | [plan](docs/plans/phase_15_farm_onboarding.plan.md) |
+| 18 | Platform polish | ✅ Done | [plan](docs/plans/phase_18_platform_polish.plan.md) |
+| 19 | Safety & alert rules | ✅ Done | [plan](docs/plans/phase_19_safety_and_alert_rules.plan.md) |
+| 20 | Automation rule engine (sensor-driven rules, dispatch, cooldowns, notifier fan-out) | ✅ Done | [plan](docs/plans/phase_20_automation_rule_engine.plan.md) |
+| 20.6 | Stage-scoped setpoints (`gr33ncore.zone_setpoints`) + rule engine integration + UI | ✅ Done | — |
+| 20.7 | Cost/energy rollups — nightly runtime × watts × kWh price; per-cycle P&L via `cost_transactions.crop_cycle_id` | ✅ Done | — |
+| 20.8 | Animal husbandry (groups + lifecycle events), typed `aquaponics.loops`, feed autologging, bootstrap upgrade | ✅ Done | — |
+| 20.9 | Labor auto-cost (timer + manual entry + profile rate); program `executable_actions` surface + `metadata.steps` backfill + `ResolveProgramActions` fallback | ✅ Done | — |
+| 20.95 | RAG-prep column adds & housekeeping (executable_actions.program_id, cost/energy columns, labor schema, animal/aquaponics scope) | ✅ Done | [plan](docs/plans/phase_20_95_rag_prep_and_housekeeping.plan.md) |
+| 21 | Crop cycle analytics & yield | ✅ Done | [plan](docs/plans/phase_21_crop_cycle_analytics.plan.md) |
+| **22** | **Worker program-tick + final `metadata.steps` backfill sweep** — `runProgramTick` dispatches `executable_actions` per program, `automation_runs.program_id` attribution, 20260517 sweep + per-program NOTICE log, structured fallback warning | ✅ Done | — |
+
+**In flight / next up** (no committed plan docs yet; candidates in rough priority order):
+
+- [ ] **Deprecate `programs.metadata.steps`** — after N deploys with zero fallback warnings, promote `action_source` checks to hard errors and drop the column.
+- [ ] **Program "run now" API** — explicit trigger for unscheduled / ad-hoc programs (today only schedule-bound programs fire via the tick).
+- [ ] **AI augmentation / LM Studio integration** for insert-sharing recommendations.
+- [ ] **Mobile distribution polish** — Capacitor packaging, store submission checklist.
+
 ## Project Roadmap
 
 - [x] gr33ncore schema — users, sensors, schedules, zones, automation rules
@@ -519,6 +549,11 @@ For users who choose to integrate local AI, gr33n offers schema-guided intellige
 - [ ] LM Studio integration and AI scaffolds for insert-sharing
 - [x] gr33n_inserts — commons catalog API (browse + farm import audit; [`docs/commons-catalog-operator-playbook.md`](docs/commons-catalog-operator-playbook.md))
 - [x] Stub schemas `gr33ncrops`, `gr33nanimals`, `gr33naquaponics` (placeholder tables; enable via `farm_active_modules` — [`docs/domain-modules-operator-playbook.md`](docs/domain-modules-operator-playbook.md))
+- [x] Phase 20 — automation rule engine (sensor-driven conditions, action dispatch, cooldowns, rule-driven notifications) — [plan](docs/plans/phase_20_automation_rule_engine.plan.md)
+- [x] Phase 20.6–20.9 — stage-scoped setpoints, cost/energy nightly rollups, animal husbandry, labor auto-cost, program actions + `metadata.steps` backfill
+- [x] Phase 20.95 — RAG-prep schema housekeeping for AI consumption — [plan](docs/plans/phase_20_95_rag_prep_and_housekeeping.plan.md)
+- [x] Phase 21 — crop cycle analytics & yield surface — [plan](docs/plans/phase_21_crop_cycle_analytics.plan.md)
+- [x] Phase 22 — worker program-tick (`runProgramTick`), `automation_runs.program_id`, final `metadata.steps` backfill sweep, observable fallback warning
 
 ---
 

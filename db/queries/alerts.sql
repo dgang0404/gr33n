@@ -73,5 +73,17 @@ INSERT INTO gr33ncore.alerts_notifications (
 ) VALUES ($1, $2, 'automation_rule', $3, $4, $5, $6, 'pending')
 RETURNING *;
 
+-- name: CreateAlertForProgram :one
+-- Phase 22 WS1 — program-driven send_notification action. Same shape
+-- as CreateAlertForRule but tags the source as 'automation_program'
+-- so the Alerts page can attribute the notification back to the
+-- fertigation program that fired it.
+INSERT INTO gr33ncore.alerts_notifications (
+  farm_id, notification_template_id,
+  triggering_event_source_type, triggering_event_source_id,
+  severity, subject_rendered, message_text_rendered, status
+) VALUES ($1, $2, 'automation_program', $3, $4, $5, $6, 'pending')
+RETURNING *;
+
 -- name: GetNotificationTemplateByID :one
 SELECT * FROM gr33ncore.notification_templates WHERE id = $1;

@@ -81,6 +81,62 @@ func (q *Queries) CreateAlert(ctx context.Context, arg CreateAlertParams) (Gr33n
 	return i, err
 }
 
+const createAlertForProgram = `-- name: CreateAlertForProgram :one
+INSERT INTO gr33ncore.alerts_notifications (
+  farm_id, notification_template_id,
+  triggering_event_source_type, triggering_event_source_id,
+  severity, subject_rendered, message_text_rendered, status
+) VALUES ($1, $2, 'automation_program', $3, $4, $5, $6, 'pending')
+RETURNING id, farm_id, recipient_user_id, notification_template_id, triggering_event_source_type, triggering_event_source_id, severity, subject_rendered, message_text_rendered, message_html_rendered, delivery_attempts, status, is_read, read_at, is_acknowledged, acknowledged_at, acknowledged_by_user_id, created_at, scheduled_send_at
+`
+
+type CreateAlertForProgramParams struct {
+	FarmID                  int64                                 `db:"farm_id" json:"farm_id"`
+	NotificationTemplateID  *int64                                `db:"notification_template_id" json:"notification_template_id"`
+	TriggeringEventSourceID *int64                                `db:"triggering_event_source_id" json:"triggering_event_source_id"`
+	Severity                NullGr33ncoreNotificationPriorityEnum `db:"severity" json:"severity"`
+	SubjectRendered         *string                               `db:"subject_rendered" json:"subject_rendered"`
+	MessageTextRendered     *string                               `db:"message_text_rendered" json:"message_text_rendered"`
+}
+
+// Phase 22 WS1 — program-driven send_notification action. Same shape
+// as CreateAlertForRule but tags the source as 'automation_program'
+// so the Alerts page can attribute the notification back to the
+// fertigation program that fired it.
+func (q *Queries) CreateAlertForProgram(ctx context.Context, arg CreateAlertForProgramParams) (Gr33ncoreAlertsNotification, error) {
+	row := q.db.QueryRow(ctx, createAlertForProgram,
+		arg.FarmID,
+		arg.NotificationTemplateID,
+		arg.TriggeringEventSourceID,
+		arg.Severity,
+		arg.SubjectRendered,
+		arg.MessageTextRendered,
+	)
+	var i Gr33ncoreAlertsNotification
+	err := row.Scan(
+		&i.ID,
+		&i.FarmID,
+		&i.RecipientUserID,
+		&i.NotificationTemplateID,
+		&i.TriggeringEventSourceType,
+		&i.TriggeringEventSourceID,
+		&i.Severity,
+		&i.SubjectRendered,
+		&i.MessageTextRendered,
+		&i.MessageHtmlRendered,
+		&i.DeliveryAttempts,
+		&i.Status,
+		&i.IsRead,
+		&i.ReadAt,
+		&i.IsAcknowledged,
+		&i.AcknowledgedAt,
+		&i.AcknowledgedByUserID,
+		&i.CreatedAt,
+		&i.ScheduledSendAt,
+	)
+	return i, err
+}
+
 const createAlertForRule = `-- name: CreateAlertForRule :one
 INSERT INTO gr33ncore.alerts_notifications (
   farm_id, notification_template_id,

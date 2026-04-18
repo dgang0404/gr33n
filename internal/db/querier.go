@@ -34,6 +34,11 @@ type Querier interface {
 	// Queries: gr33ncore.alerts_notifications
 	// ============================================================
 	CreateAlert(ctx context.Context, arg CreateAlertParams) (Gr33ncoreAlertsNotification, error)
+	// Phase 22 WS1 — program-driven send_notification action. Same shape
+	// as CreateAlertForRule but tags the source as 'automation_program'
+	// so the Alerts page can attribute the notification back to the
+	// fertigation program that fired it.
+	CreateAlertForProgram(ctx context.Context, arg CreateAlertForProgramParams) (Gr33ncoreAlertsNotification, error)
 	// Inserts an alerts_notifications row for a Phase 20 rule-driven
 	// send_notification action. Distinct from CreateAlert because it
 	// carries notification_template_id (so the Alerts page can show which
@@ -163,6 +168,7 @@ type Querier interface {
 	GetAuthUserByEmail(ctx context.Context, email *string) (AuthUser, error)
 	GetAutomationRuleByID(ctx context.Context, id int64) (Gr33ncoreAutomationRule, error)
 	GetAutomationRunByDetails(ctx context.Context, arg GetAutomationRunByDetailsParams) (Gr33ncoreAutomationRun, error)
+	GetAutomationRunByProgramAndDetails(ctx context.Context, arg GetAutomationRunByProgramAndDetailsParams) (Gr33ncoreAutomationRun, error)
 	GetBaseUnitForType(ctx context.Context, unitType string) (Gr33ncoreUnit, error)
 	GetCostCategoryTotalsByFarm(ctx context.Context, farmID int64) ([]GetCostCategoryTotalsByFarmRow, error)
 	GetCostCategoryTotalsByFarmForYear(ctx context.Context, arg GetCostCategoryTotalsByFarmForYearParams) ([]GetCostCategoryTotalsByFarmForYearRow, error)
@@ -273,6 +279,10 @@ type Querier interface {
 	// ============================================================
 	InsertUserActivityLog(ctx context.Context, arg InsertUserActivityLogParams) error
 	ListActiveAutomationRules(ctx context.Context) ([]Gr33ncoreAutomationRule, error)
+	// Phase 22 WS1 — feeds the worker's program-tick. Only programs with a
+	// bound schedule are dispatched automatically (unscheduled programs are
+	// template-only and require an explicit "run now" API call, added later).
+	ListActivePrograms(ctx context.Context) ([]Gr33nfertigationProgram, error)
 	ListActiveSchedules(ctx context.Context) ([]Gr33ncoreSchedule, error)
 	ListActuatorEventsByActuator(ctx context.Context, arg ListActuatorEventsByActuatorParams) ([]Gr33ncoreActuatorEvent, error)
 	ListActuatorEventsBySchedule(ctx context.Context, arg ListActuatorEventsByScheduleParams) ([]Gr33ncoreActuatorEvent, error)
@@ -408,6 +418,7 @@ type Querier interface {
 	MarkFarmInsertCommonsSyncFailure(ctx context.Context, arg MarkFarmInsertCommonsSyncFailureParams) (Gr33ncoreFarm, error)
 	MarkInsertCommonsBundleDelivered(ctx context.Context, arg MarkInsertCommonsBundleDeliveredParams) (Gr33ncoreInsertCommonsBundle, error)
 	MarkInsertCommonsBundleDeliveryFailed(ctx context.Context, arg MarkInsertCommonsBundleDeliveryFailedParams) (Gr33ncoreInsertCommonsBundle, error)
+	MarkProgramTriggered(ctx context.Context, arg MarkProgramTriggeredParams) (Gr33nfertigationProgram, error)
 	MarkScheduleTriggered(ctx context.Context, arg MarkScheduleTriggeredParams) (Gr33ncoreSchedule, error)
 	// Running SUM over surviving rows. Called by handler after INSERT/DELETE.
 	RecalcTaskTimeSpentMinutes(ctx context.Context, taskID int64) error

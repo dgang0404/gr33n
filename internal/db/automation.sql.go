@@ -69,15 +69,17 @@ func (q *Queries) CreateAutomationRule(ctx context.Context, arg CreateAutomation
 
 const createAutomationRun = `-- name: CreateAutomationRun :one
 INSERT INTO gr33ncore.automation_runs (
-    farm_id, schedule_id, rule_id, status, message, details, executed_at
-) VALUES ($1, $2, $3, $4, $5, $6, $7)
-RETURNING id, farm_id, schedule_id, rule_id, status, message, details, executed_at
+    farm_id, schedule_id, rule_id, program_id,
+    status, message, details, executed_at
+) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+RETURNING id, farm_id, schedule_id, rule_id, status, message, details, executed_at, program_id
 `
 
 type CreateAutomationRunParams struct {
 	FarmID     int64     `db:"farm_id" json:"farm_id"`
 	ScheduleID *int64    `db:"schedule_id" json:"schedule_id"`
 	RuleID     *int64    `db:"rule_id" json:"rule_id"`
+	ProgramID  *int64    `db:"program_id" json:"program_id"`
 	Status     string    `db:"status" json:"status"`
 	Message    *string   `db:"message" json:"message"`
 	Details    []byte    `db:"details" json:"details"`
@@ -89,6 +91,7 @@ func (q *Queries) CreateAutomationRun(ctx context.Context, arg CreateAutomationR
 		arg.FarmID,
 		arg.ScheduleID,
 		arg.RuleID,
+		arg.ProgramID,
 		arg.Status,
 		arg.Message,
 		arg.Details,
@@ -104,6 +107,7 @@ func (q *Queries) CreateAutomationRun(ctx context.Context, arg CreateAutomationR
 		&i.Message,
 		&i.Details,
 		&i.ExecutedAt,
+		&i.ProgramID,
 	)
 	return i, err
 }
@@ -317,7 +321,7 @@ func (q *Queries) GetAutomationRuleByID(ctx context.Context, id int64) (Gr33ncor
 }
 
 const getAutomationRunByDetails = `-- name: GetAutomationRunByDetails :one
-SELECT id, farm_id, schedule_id, rule_id, status, message, details, executed_at FROM gr33ncore.automation_runs
+SELECT id, farm_id, schedule_id, rule_id, status, message, details, executed_at, program_id FROM gr33ncore.automation_runs
 WHERE schedule_id = $1 AND details @> $2::jsonb
 LIMIT 1
 `
@@ -339,6 +343,35 @@ func (q *Queries) GetAutomationRunByDetails(ctx context.Context, arg GetAutomati
 		&i.Message,
 		&i.Details,
 		&i.ExecutedAt,
+		&i.ProgramID,
+	)
+	return i, err
+}
+
+const getAutomationRunByProgramAndDetails = `-- name: GetAutomationRunByProgramAndDetails :one
+SELECT id, farm_id, schedule_id, rule_id, status, message, details, executed_at, program_id FROM gr33ncore.automation_runs
+WHERE program_id = $1 AND details @> $2::jsonb
+LIMIT 1
+`
+
+type GetAutomationRunByProgramAndDetailsParams struct {
+	ProgramID *int64 `db:"program_id" json:"program_id"`
+	Column2   []byte `db:"column_2" json:"column_2"`
+}
+
+func (q *Queries) GetAutomationRunByProgramAndDetails(ctx context.Context, arg GetAutomationRunByProgramAndDetailsParams) (Gr33ncoreAutomationRun, error) {
+	row := q.db.QueryRow(ctx, getAutomationRunByProgramAndDetails, arg.ProgramID, arg.Column2)
+	var i Gr33ncoreAutomationRun
+	err := row.Scan(
+		&i.ID,
+		&i.FarmID,
+		&i.ScheduleID,
+		&i.RuleID,
+		&i.Status,
+		&i.Message,
+		&i.Details,
+		&i.ExecutedAt,
+		&i.ProgramID,
 	)
 	return i, err
 }
@@ -369,7 +402,7 @@ func (q *Queries) GetExecutableActionByID(ctx context.Context, id int64) (Gr33nc
 }
 
 const getLastSuccessfulRunBySchedule = `-- name: GetLastSuccessfulRunBySchedule :one
-SELECT id, farm_id, schedule_id, rule_id, status, message, details, executed_at FROM gr33ncore.automation_runs
+SELECT id, farm_id, schedule_id, rule_id, status, message, details, executed_at, program_id FROM gr33ncore.automation_runs
 WHERE schedule_id = $1 AND status = 'success'
 ORDER BY executed_at DESC
 LIMIT 1
@@ -387,6 +420,7 @@ func (q *Queries) GetLastSuccessfulRunBySchedule(ctx context.Context, scheduleID
 		&i.Message,
 		&i.Details,
 		&i.ExecutedAt,
+		&i.ProgramID,
 	)
 	return i, err
 }
@@ -544,7 +578,7 @@ func (q *Queries) ListAutomationRulesByFarm(ctx context.Context, farmID int64) (
 }
 
 const listAutomationRunsByFarm = `-- name: ListAutomationRunsByFarm :many
-SELECT id, farm_id, schedule_id, rule_id, status, message, details, executed_at FROM gr33ncore.automation_runs
+SELECT id, farm_id, schedule_id, rule_id, status, message, details, executed_at, program_id FROM gr33ncore.automation_runs
 WHERE farm_id = $1
 ORDER BY executed_at DESC
 LIMIT $2
@@ -573,6 +607,7 @@ func (q *Queries) ListAutomationRunsByFarm(ctx context.Context, arg ListAutomati
 			&i.Message,
 			&i.Details,
 			&i.ExecutedAt,
+			&i.ProgramID,
 		); err != nil {
 			return nil, err
 		}

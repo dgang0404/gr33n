@@ -34,8 +34,9 @@ ORDER BY execution_order ASC, id ASC;
 
 -- name: CreateAutomationRun :one
 INSERT INTO gr33ncore.automation_runs (
-    farm_id, schedule_id, rule_id, status, message, details, executed_at
-) VALUES ($1, $2, $3, $4, $5, $6, $7)
+    farm_id, schedule_id, rule_id, program_id,
+    status, message, details, executed_at
+) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 RETURNING *;
 
 -- name: ListAutomationRunsByFarm :many
@@ -53,6 +54,11 @@ LIMIT 1;
 -- name: GetAutomationRunByDetails :one
 SELECT * FROM gr33ncore.automation_runs
 WHERE schedule_id = $1 AND details @> $2::jsonb
+LIMIT 1;
+
+-- name: GetAutomationRunByProgramAndDetails :one
+SELECT * FROM gr33ncore.automation_runs
+WHERE program_id = $1 AND details @> $2::jsonb
 LIMIT 1;
 
 -- name: CreateSchedule :one
