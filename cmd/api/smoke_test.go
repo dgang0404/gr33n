@@ -351,6 +351,21 @@ ALTER TABLE gr33ncore.farms ADD COLUMN IF NOT EXISTS organization_id BIGINT
 	return nil
 }
 
+// smokeAbortWithoutDB prints why integration tests did not run, then exits.
+// Outside CI this exits 0 so `go test ./...` stays usable on laptops without Postgres.
+// In CI (GITHUB_ACTIONS or CI=true) we exit 1 so a missing DB service cannot look green.
+func smokeAbortWithoutDB(context string, err error) {
+	fmt.Fprintf(os.Stderr, "smoke_test: %s", context)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, ": %v", err)
+	}
+	fmt.Fprintf(os.Stderr, "\n  hint: set DATABASE_URL to a migrated database; optional seed: psql \"$DATABASE_URL\" -f db/seeds/master_seed.sql\n")
+	if os.Getenv("CI") == "true" || os.Getenv("GITHUB_ACTIONS") == "true" {
+		os.Exit(1)
+	}
+	os.Exit(0)
+}
+
 func TestMain(m *testing.M) {
 	dbURL := os.Getenv("DATABASE_URL")
 	if dbURL == "" {
@@ -359,11 +374,11 @@ func TestMain(m *testing.M) {
 
 	pool, err := pgxpool.New(context.Background(), dbURL)
 	if err != nil {
-		os.Exit(0)
+		smokeAbortWithoutDB("could not open DATABASE_URL (using default if env unset)", err)
 	}
 	if err := pool.Ping(context.Background()); err != nil {
 		pool.Close()
-		os.Exit(0)
+		smokeAbortWithoutDB("database ping failed", err)
 	}
 	if err := bootstrapSmokeAuth(pool); err != nil {
 		pool.Close()

@@ -239,7 +239,7 @@ Header: `Authorization: Bearer <JWT>` (SSE also supports `?token=` on the stream
 
 **Farm access:** most `/farms/:id/...` routes require the user to be the farm **owner** or a **member** (`gr33ncore.farm_memberships`). **Role caps** apply per area (for example *view* vs *edit* costs, *operate* for field workflows, *admin* for farm settings and membership). Exact checks live in `internal/farmauthz` and in [openapi.yaml](openapi.yaml) per route.
 
-Integration tests in `cmd/api/smoke_test.go` use `AUTH_MODE=auth_test` with a real JWT.
+Integration tests under `cmd/api/` (`TestMain` in [`cmd/api/smoke_test.go`](cmd/api/smoke_test.go)) spin up an `httptest` server with **`AUTH_MODE=auth_test`** and a real JWT login flow. They need **Postgres** at **`DATABASE_URL`** (schema + migrations; **master seed** recommended). Env, CI behavior, and data-dependent skips: [`docs/local-operator-bootstrap.md`](docs/local-operator-bootstrap.md#api-integration-smoke-tests).
 
 #### Auth, profile, units
 
@@ -456,7 +456,7 @@ make logs       # Tail Docker Compose logs
 make clean      # Remove build artifacts
 ```
 
-**Phase 23 / pre-merge gate (local):** `make test`, `make lint`, `make audit-openapi`, `python3 -m pytest pi_client/test_gr33n_client.py pi_client/test_mqtt_telemetry_bridge.py -q`, and `npm --prefix ui run build`.
+**Phase 23 / pre-merge gate (local):** `make test`, `make lint`, `make audit-openapi`, `python3 -m pytest pi_client/test_gr33n_client.py pi_client/test_mqtt_telemetry_bridge.py -q`, and `npm --prefix ui run build`. **`make test`** expects a reachable **`DATABASE_URL`** (see [bootstrap — smoke tests](docs/local-operator-bootstrap.md#api-integration-smoke-tests)) so `cmd/api` integration tests actually run.
 
 ---
 

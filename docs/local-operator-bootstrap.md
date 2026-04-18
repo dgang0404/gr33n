@@ -42,6 +42,20 @@ The script copies [`.env.example`](../.env.example) to `.env` **once** if `.env`
 5. **Optional: Insert Commons receiver** — `make run-receiver`; env and migrations: [`insert-commons-receiver-playbook.md`](insert-commons-receiver-playbook.md).
 6. **Optional: Pi client / MQTT** — [`pi_client/setup.sh`](../pi_client/setup.sh), [`mqtt-edge-operator-playbook.md`](mqtt-edge-operator-playbook.md). Python deps: `pi_client/requirements.txt`.
 
+## API integration smoke tests
+
+Run from repo root: `go test -tags dev ./cmd/api/...` (or `make test`, which includes this package). The `cmd/api` tests build an in-memory `httptest` server wired like production, with **`AUTH_MODE=auth_test`** and fixed test-only `JWT_SECRET` / `PI_API_KEY` (not read from your `.env`).
+
+| Requirement | Notes |
+|---------------|--------|
+| **`DATABASE_URL`** | Must point at Postgres that already has **full schema** (`db/schema/gr33n-schema-v2-FINAL.sql`) and **migrations** applied (same order as bootstrap). Export it in the shell before `go test`, or rely on the Makefile default `DB_URL` when you run `make test`. |
+| **`-tags dev`** | Required so `auth_test` mode is allowed (`make test` sets this). |
+| **Seed data** | Recommended: [`db/seeds/master_seed.sql`](../db/seeds/master_seed.sql) (demo **farm_id = 1**, sensors, NF inputs, alerts, etc.). A few tests **skip** if expected rows are missing (e.g. “no sensors in seed”, “no NF inputs in seed data”). |
+| **No database** | If the pool cannot open or ping, `TestMain` prints a **stderr hint** and exits **0** locally (so `go test ./...` without Postgres does not fail every package). In **CI** (`CI=true` or `GITHUB_ACTIONS`), the same condition exits **1** so a forgotten DB service does not look green. |
+| **Unset `DATABASE_URL`** | Tests use a **Linux peer-auth default** (`postgres://davidg@/gr33n?host=/var/run/postgresql`). Override with `DATABASE_URL` if your user or socket path differs. |
+
+Do not use `go test -shuffle=on` on this package as a gate — smoke tests share package-level state (see Phase 20.95 plan notes).
+
 ## First user and auth
 
 - **`AUTH_MODE=dev`** (default in `make run` / `make dev`): use the UI **Register** flow or `POST /auth/register` with `email`, `password` (minimum 8 characters), optional `full_name`.
