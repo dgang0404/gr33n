@@ -24,7 +24,7 @@ todos:
     content: "WS6: workflow-guide + mqtt-edge playbook — accuracy vs current behavior (base64 config, actuator event provenance); add 'Troubleshooting' bullets"
     status: pending
   - id: ws7-exit-checklist
-    content: "WS7: Exit checklist — sign-off table in README or here; link next phase phase_24_rag_retrieval_system.plan.md"
+    content: "WS7: Exit checklist — sign-off table in README or here; link next phases phase_21_crop_cycle_analytics.plan.md then phase_24_rag_retrieval_system.plan.md"
     status: pending
 isProject: false
 ---
@@ -64,4 +64,7 @@ Phases **20.x through 22** plus the **Pi ↔ API contract** landed a lot of surf
 
 ## After this sprint
 
-→ **[Phase 24 — RAG retrieval system](phase_24_rag_retrieval_system.plan.md)** (embeddings, retrieval API, farm scope, consent — **not** started until Phase 23 exit criteria are met).
+Recommended order (keeps phase numbers meaningful):
+
+1. **[Phase 21 — Crop cycle analytics](phase_21_crop_cycle_analytics.plan.md)** — reporting surface promised before RAG; richer metrics help retrieval later.
+2. **[Phase 24 — RAG retrieval system](phase_24_rag_retrieval_system.plan.md)** — embeddings + API; only after 23 exit (and **after 21** unless product explicitly defers analytics).

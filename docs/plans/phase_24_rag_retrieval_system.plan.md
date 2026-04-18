@@ -4,7 +4,8 @@ overview: >
   Build a real retrieval layer on top of Phase 20.95 RAG-prep schema: embed
   operator-relevant records, store vectors, expose a farm-scoped query API,
   and optional LLM answer synthesis with explicit consent boundaries. Starts
-  only after Phase 23 stabilization exit criteria are met.
+  after Phase 23 exit criteria and (recommended) Phase 21 crop-cycle analytics
+  so summary/compare endpoints exist before ingestion prioritization.
 todos:
   - id: ws1-scope-and-threat-model
     content: "WS1: Document data classes to embed (tasks, costs, automation_runs, crop cycles, etc.), farm isolation, and what must never leave the farm without opt-in"
@@ -36,6 +37,7 @@ isProject: false
 ## Preconditions
 
 - **[Phase 23 stabilization](phase_23_stabilization_sprint.plan.md)** exit criteria satisfied.
+- **[Phase 21 crop-cycle analytics](phase_21_crop_cycle_analytics.plan.md)** shipped (recommended); coordinate if deferred.
 - Clear **product decision** on which objects get embedded first (suggest: crop cycles + cost lines + automation runs + task titles, iterate).
 
 ## Non-goals (initial cut)
