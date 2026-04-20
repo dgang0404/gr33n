@@ -12,6 +12,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
+	pgvector_go "github.com/pgvector/pgvector-go"
 	"gr33n-api/internal/platform/commontypes"
 )
 
@@ -1559,6 +1560,23 @@ type Gr33ncoreProfile struct {
 	HourlyRateCurrency *string                  `db:"hourly_rate_currency" json:"hourly_rate_currency"`
 	CreatedAt          time.Time                `db:"created_at" json:"created_at"`
 	UpdatedAt          time.Time                `db:"updated_at" json:"updated_at"`
+}
+
+// Farm-scoped text chunks and embedding vectors for Phase 24 RAG; source_type + source_id + chunk_index form the dedupe key per farm.
+type Gr33ncoreRagEmbeddingChunk struct {
+	ID     int64 `db:"id" json:"id"`
+	FarmID int64 `db:"farm_id" json:"farm_id"`
+	// Stable embed source label, e.g. task, crop_cycle, automation_run.
+	SourceType  string             `db:"source_type" json:"source_type"`
+	SourceID    int64              `db:"source_id" json:"source_id"`
+	ChunkIndex  int32              `db:"chunk_index" json:"chunk_index"`
+	ContentText string             `db:"content_text" json:"content_text"`
+	Embedding   pgvector_go.Vector `db:"embedding" json:"embedding"`
+	ModelID     string             `db:"model_id" json:"model_id"`
+	// Optional filters: module, zone_id, date bounds, etc. — no secrets.
+	Metadata  []byte    `db:"metadata" json:"metadata"`
+	CreatedAt time.Time `db:"created_at" json:"created_at"`
+	UpdatedAt time.Time `db:"updated_at" json:"updated_at"`
 }
 
 type Gr33ncoreSchedule struct {

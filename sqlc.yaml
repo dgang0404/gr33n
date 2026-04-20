@@ -74,3 +74,7 @@ sql:
             go_type:
               import: "gr33n-api/internal/platform/commontypes"
               type: "FarmScaleTierEnum"
+          - db_type: "vector"
+            go_type:
+              import: "github.com/pgvector/pgvector-go"
+              type: "Vector"

@@ -45,6 +45,12 @@ WHERE farm_id = $1
 ORDER BY executed_at DESC
 LIMIT $2;
 
+-- name: ListAutomationRunsByFarmAfterID :many
+SELECT * FROM gr33ncore.automation_runs
+WHERE farm_id = $1 AND id > $2
+ORDER BY id ASC
+LIMIT $3;
+
 -- name: GetLastSuccessfulRunBySchedule :one
 SELECT * FROM gr33ncore.automation_runs
 WHERE schedule_id = $1 AND status = 'success'

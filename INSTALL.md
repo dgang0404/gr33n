@@ -8,6 +8,7 @@
 | PostgreSQL | 14+ | `sudo apt install postgresql` |
 | PostGIS | 3.x (match Postgres) | `sudo apt install postgresql-14-postgis-3` (version as needed) |
 | TimescaleDB | 2.x | https://docs.timescale.com/self-hosted/latest/install/ |
+| pgvector | Match Postgres major | Required for Phase 24 RAG (`CREATE EXTENSION vector`). Install per [pgvector](https://github.com/pgvector/pgvector#installation), or use the repo `docker compose` database image (`db/Dockerfile` builds pgvector). |
 | sqlc | latest | `go install github.com/sqlc-dev/sqlc/cmd/sqlc@latest` |
 | Node.js (UI) | 22+ | https://nodejs.org/ or your OS package manager |
 
@@ -36,7 +37,17 @@ sudo -u postgres psql -c "CREATE DATABASE gr33n;"
 sudo -u postgres psql -d gr33n -c "CREATE EXTENSION IF NOT EXISTS timescaledb CASCADE;"
 ```
 
-### 2c. Create a local dev user matching your Linux username
+### 2c. Enable pgvector (Phase 24 RAG)
+
+The bundled schema enables `vector` for `gr33ncore.rag_embedding_chunks`. Install the pgvector package for your Postgres version first, then:
+
+```bash
+sudo -u postgres psql -d gr33n -c "CREATE EXTENSION IF NOT EXISTS vector;"
+```
+
+If Postgres reports that the extension is not available, follow [pgvector installation](https://github.com/pgvector/pgvector#installation) for your OS, or run Postgres via **`docker compose`** in this repo (the `db` service builds TimescaleDB + pgvector).
+
+### 2d. Create a local dev user matching your Linux username
 
 PostgreSQL on Linux uses **peer authentication** by default — the connecting
 OS user must match a PostgreSQL role of the same name.
@@ -58,7 +69,7 @@ psql -d gr33n -c "SELECT current_user, current_database();"
 
 ## 3. Apply database schema
 
-For a **new** database, load the full schema (includes `CREATE EXTENSION` for PostGIS and TimescaleDB — those packages must be installed on the server):
+For a **new** database, load the full schema (includes `CREATE EXTENSION` for PostGIS, TimescaleDB, and **vector** — those packages must be installed on the server):
 
 ```bash
 psql -d gr33n -v ON_ERROR_STOP=1 -f db/schema/gr33n-schema-v2-FINAL.sql
@@ -93,6 +104,18 @@ export DATABASE_URL="postgres://$USER@/gr33n?host=/var/run/postgresql"
 ```
 
 Add this to your `~/.bashrc` or `~/.zshrc` to avoid typing it every time.
+
+### Optional: RAG search and answer synthesis (Phase 24)
+
+| Variable | Used for | Notes |
+|----------|----------|--------|
+| `EMBEDDING_API_KEY` | `GET/POST /farms/{id}/rag/search` and `/rag/answer` | OpenAI-compatible `/v1/embeddings` (see also `EMBEDDING_BASE_URL`, `EMBEDDING_MODEL`) |
+| `LLM_BASE_URL` | `POST /farms/{id}/rag/answer` | OpenAI-compatible base URL, e.g. `https://api.openai.com/v1` or `http://127.0.0.1:1234/v1` (LM Studio) |
+| `LLM_MODEL` | Answer synthesis | Chat model id (required with `LLM_BASE_URL` for answers) |
+| `LLM_API_KEY` | Answer synthesis | Set if the chat server requires `Authorization: Bearer`; many local servers need no key |
+| `LLM_TEMPERATURE` | Answer synthesis | Default `0.2` |
+| `LLM_MAX_TOKENS` | Answer synthesis | Default `1024` |
+| `RAG_SYNTHESIS_MAX_PER_MINUTE` | Answer endpoint | Default `30` (per API process) |
 
 ---
 

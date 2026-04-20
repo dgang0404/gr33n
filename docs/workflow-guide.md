@@ -430,6 +430,21 @@ idempotent on two levels: the dispatcher short-circuits at
 `_bootstrap_*_v1` functions use `NOT EXISTS` / `UPDATE … COALESCE`
 guards so a direct re-run writes zero new rows.
 
+### 10.6 Farm knowledge (RAG retrieval)
+
+Phase **24** adds **farm-scoped semantic retrieval** over text that has been **embedded** into Postgres (**pgvector**)
+and optional **LLM answer synthesis** that cites those chunks. Nothing trains a model on your data by default;
+third-party chat endpoints are an **explicit operator choice** via `LLM_BASE_URL` / `LLM_MODEL` on the API host.
+
+| UI | API (JWT + farm member) |
+|----|-------------------------|
+| **Monitor → Knowledge** | `GET`/`POST /farms/{id}/rag/search` — vector similarity + optional `module` / date filters on chunk rows |
+| Same page: **Ask (LLM)** | `POST /farms/{id}/rag/answer` — retrieve top‑k chunks, then chat completion with bracket citations `[n]` |
+
+Ingestion from operational tables is via the **`rag-ingest`** CLI (see repo `cmd/rag-ingest`). Operator-facing
+constraints (PII, secrets, Insert Commons boundaries) are documented in
+[`rag-scope-and-threat-model.md`](rag-scope-and-threat-model.md).
+
 ---
 
 ## 11. Glossary (quick reference)
@@ -468,6 +483,10 @@ guards so a direct re-run writes zero new rows.
 | **Insert Commons** | Opt-in farm → commons publishing pipeline. |
 | **Natural farming** | Generic English umbrella term used in module titles, API tags, and UI copy for farming that relies on on-site fermented extracts, microbial cultures, and soil amendments (FPJ, FAA, JMS, etc.). Intentionally unqualified — no national / regional / ethnic modifier — because the system doesn't privilege any single tradition. See [`terminology-guideline.md`](terminology-guideline.md). |
 | **JADAM** | Proper noun for a specific documented method and its starter cultures (JMS, JLF, FFJ, WCA, …). Used when referring to that method precisely — e.g. the `jadam_indoor_photoperiod_v1` bootstrap template or `reference_source = "JADAM Organic Farming"` seed metadata. Not interchangeable with *natural farming*, which is the broader category. See [`terminology-guideline.md`](terminology-guideline.md). |
+| **RAG (retrieval)** | **R**etrieval‑**a**ugmented context: embed farm text into vectors, search by meaning, optionally send ranked chunks to an LLM. UI: **Knowledge**; storage: `gr33ncore.rag_embedding_chunks`. |
+| **Embedding chunk** | One row of indexed text + vector for a farm (`source_type`, `source_id`, `chunk_index`, `content_text`, `embedding`). |
+| **pgvector** | PostgreSQL extension storing `vector` columns; cosine distance `<=>` ranks neighbors **within the same farm** in API queries. |
+| **Knowledge (UI)** | Dashboard screen under **Monitor → Knowledge** calling `/farms/{id}/rag/search` and optionally `/rag/answer`. |
 
 ---
 
@@ -479,3 +498,4 @@ guards so a direct re-run writes zero new rows.
 - For **commons publishing**: [`insert-commons-pipeline-runbook.md`](insert-commons-pipeline-runbook.md), [`commons-catalog-operator-playbook.md`](commons-catalog-operator-playbook.md).
 - For **alerts and push**: [`notifications-operator-playbook.md`](notifications-operator-playbook.md).
 - For **phased feature history**: [`phase-13-operator-documentation.md`](phase-13-operator-documentation.md), [`phase-14-operator-documentation.md`](phase-14-operator-documentation.md).
+- For **RAG scope, data classes, and LLM egress**: [`rag-scope-and-threat-model.md`](rag-scope-and-threat-model.md).

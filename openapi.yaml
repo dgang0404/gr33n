@@ -61,6 +61,8 @@ tags:
     description: Sensor alert notifications and threshold breach tracking
   - name: profiles
     description: User profiles and farm membership management
+  - name: rag
+    description: Farm-scoped vector retrieval over embedded operational text (Phase 24)
 
 paths:
 
@@ -3186,6 +3188,143 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/Error" }
 
+  /farms/{id}/rag/search:
+    get:
+      tags: [rag]
+      summary: Semantic search over embedded farm chunks (query string)
+      description: >
+        Requires `EMBEDDING_API_KEY` on the API server. Embeds `q` with the same model as ingestion,
+        then runs pgvector similarity restricted to this farm. Optional `module` filters `metadata.module`
+        (e.g. `core`, `automation`). `since` / `until` filter chunk `created_at` (RFC3339).
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+        - name: q
+          in: query
+          required: true
+          schema: { type: string }
+          description: Natural-language search query
+        - name: module
+          in: query
+          schema: { type: string }
+        - name: since
+          in: query
+          schema: { type: string, format: date-time }
+        - name: until
+          in: query
+          schema: { type: string, format: date-time }
+        - name: limit
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 50, default: 10 }
+      responses:
+        "200":
+          description: Ranked chunks (cosine distance; lower is closer for `<=>`)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RagSearchResponse" }
+        "400":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "403":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "503":
+          description: RAG not configured (missing embedding credentials)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "502":
+          description: Embedding provider error
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+    post:
+      tags: [rag]
+      summary: Semantic search over embedded farm chunks (JSON body)
+      description: Same behavior as GET; use for longer queries.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/RagSearchRequest" }
+      responses:
+        "200":
+          description: Ranked chunks
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RagSearchResponse" }
+        "400":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "403":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "503":
+          description: RAG not configured
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "502":
+          description: Embedding provider error
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+
+  /farms/{id}/rag/answer:
+    post:
+      tags: [rag]
+      summary: Retrieve context chunks then synthesize an answer with citations (optional LLM)
+      description: >
+        Requires `EMBEDDING_API_KEY` plus `LLM_BASE_URL` and `LLM_MODEL`. Performs the same filtered vector
+        retrieval as `/rag/search`, then calls an OpenAI-compatible chat completion (`/v1/chat/completions`).
+        The model must cite sources using bracket numbers [1], [2] matching the numbered context blocks.
+        Rate limited per deployment (`RAG_SYNTHESIS_MAX_PER_MINUTE`, default 30). Use a local gateway
+        (e.g. LM Studio) or a vetted cloud endpoint per your threat model.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/RagAnswerRequest" }
+      responses:
+        "200":
+          description: Answer text and grounded citations (chunk excerpts)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RagAnswerResponse" }
+        "400":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "403":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "429":
+          description: Synthesis rate limit exceeded
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "503":
+          description: Embedding or LLM not configured
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "502":
+          description: Embedding retrieval or LLM provider error
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+
   /farms/{id}/insert-commons/sync-events:
     get:
       tags: [farms]
@@ -3695,6 +3834,79 @@ components:
       type: object
       properties:
         error: { type: string }
+
+    RagSearchRequest:
+      type: object
+      required: [query]
+      properties:
+        query: { type: string }
+        module: { type: string, description: Filter chunks where metadata.module matches (e.g. core, automation) }
+        created_since: { type: string, format: date-time, description: Include chunks with created_at >= this time (RFC3339) }
+        created_until: { type: string, format: date-time, description: Include chunks with created_at <= this time (RFC3339) }
+        limit: { type: integer, minimum: 1, maximum: 50, default: 10 }
+
+    RagSearchResult:
+      type: object
+      properties:
+        id: { type: integer, format: int64 }
+        farm_id: { type: integer, format: int64 }
+        source_type: { type: string }
+        source_id: { type: integer, format: int64 }
+        chunk_index: { type: integer }
+        content_text: { type: string }
+        model_id: { type: string }
+        metadata:
+          type: object
+          additionalProperties: true
+        created_at: { type: string }
+        updated_at: { type: string }
+        distance:
+          type: number
+          description: Cosine distance from pgvector `<=>` (0 = identical; lower is more similar)
+
+    RagSearchResponse:
+      type: object
+      properties:
+        model_id: { type: string, description: Embedding model used for the query vector }
+        results:
+          type: array
+          items: { $ref: "#/components/schemas/RagSearchResult" }
+
+    RagAnswerRequest:
+      type: object
+      required: [query]
+      properties:
+        query: { type: string }
+        module: { type: string }
+        created_since: { type: string, format: date-time }
+        created_until: { type: string, format: date-time }
+        max_context_chunks:
+          type: integer
+          minimum: 1
+          maximum: 15
+          default: 8
+          description: Top-k chunks to pass to the LLM (same retrieval as search, capped lower than search max)
+
+    RagCitation:
+      type: object
+      required: [ref, chunk_id, source_type, source_id, excerpt]
+      properties:
+        ref: { type: integer, description: 1-based index into the numbered context blocks sent to the model }
+        chunk_id: { type: integer, format: int64 }
+        source_type: { type: string }
+        source_id: { type: integer, format: int64 }
+        excerpt: { type: string, description: Truncated chunk text for UI display }
+
+    RagAnswerResponse:
+      type: object
+      properties:
+        answer: { type: string }
+        citations:
+          type: array
+          items: { $ref: "#/components/schemas/RagCitation" }
+        embedding_model_id: { type: string }
+        llm_model: { type: string }
+        context_count: { type: integer, description: Number of chunks retrieved for this answer }
 
     FileAttachmentDownloadTarget:
       type: object

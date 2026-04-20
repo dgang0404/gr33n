@@ -126,6 +126,7 @@ const navGroups = [
     items: [
       { to: '/alerts', icon: '🔔', label: 'Alerts' },
       { to: '/costs',  icon: '💰', label: 'Costs'  },
+      { to: '/farm-knowledge', icon: '🔎', label: 'Knowledge' },
     ],
   },
   {

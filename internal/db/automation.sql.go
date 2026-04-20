@@ -619,6 +619,49 @@ func (q *Queries) ListAutomationRunsByFarm(ctx context.Context, arg ListAutomati
 	return items, nil
 }
 
+const listAutomationRunsByFarmAfterID = `-- name: ListAutomationRunsByFarmAfterID :many
+SELECT id, farm_id, schedule_id, rule_id, status, message, details, executed_at, program_id FROM gr33ncore.automation_runs
+WHERE farm_id = $1 AND id > $2
+ORDER BY id ASC
+LIMIT $3
+`
+
+type ListAutomationRunsByFarmAfterIDParams struct {
+	FarmID int64 `db:"farm_id" json:"farm_id"`
+	ID     int64 `db:"id" json:"id"`
+	Limit  int32 `db:"limit" json:"limit"`
+}
+
+func (q *Queries) ListAutomationRunsByFarmAfterID(ctx context.Context, arg ListAutomationRunsByFarmAfterIDParams) ([]Gr33ncoreAutomationRun, error) {
+	rows, err := q.db.Query(ctx, listAutomationRunsByFarmAfterID, arg.FarmID, arg.ID, arg.Limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Gr33ncoreAutomationRun{}
+	for rows.Next() {
+		var i Gr33ncoreAutomationRun
+		if err := rows.Scan(
+			&i.ID,
+			&i.FarmID,
+			&i.ScheduleID,
+			&i.RuleID,
+			&i.Status,
+			&i.Message,
+			&i.Details,
+			&i.ExecutedAt,
+			&i.ProgramID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listExecutableActionsByProgram = `-- name: ListExecutableActionsByProgram :many
 
 SELECT id, schedule_id, rule_id, program_id, execution_order, action_type, target_actuator_id, target_automation_rule_id, target_notification_template_id, action_command, action_parameters, delay_before_execution_seconds FROM gr33ncore.executable_actions

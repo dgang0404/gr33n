@@ -16,6 +16,7 @@ import (
 	"github.com/joho/godotenv"
 	automationworker "gr33n-api/internal/automation"
 	"gr33n-api/internal/filestorage"
+	"gr33n-api/internal/pgxutil"
 	"gr33n-api/internal/pushnotify"
 )
 
@@ -149,6 +150,7 @@ func connectDB(dbURL string) (*pgxpool.Pool, error) {
 	config.MinConns = 2
 	config.MaxConnLifetime = 1 * time.Hour
 	config.MaxConnIdleTime = 30 * time.Minute
+	pgxutil.RegisterVectorTypes(config)
 	var pool *pgxpool.Pool
 	var lastErr error
 	for i := range 5 {

@@ -1,6 +1,8 @@
 services:
   db:
-    image: timescale/timescaledb:latest-pg16
+    build:
+      context: .
+      dockerfile: db/Dockerfile
     restart: unless-stopped
     environment:
       POSTGRES_USER: gr33n

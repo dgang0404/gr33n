@@ -18,6 +18,7 @@ import Aquaponics from '../views/Aquaponics.vue'
 import CommonsCatalog from '../views/CommonsCatalog.vue'
 import Setpoints from '../views/Setpoints.vue'
 import Settings from '../views/Settings.vue'
+import FarmKnowledge from '../views/FarmKnowledge.vue'
 import Login from '../views/Login.vue'
 
 const routes = [
@@ -41,6 +42,7 @@ const routes = [
   { path: '/animals',      component: Animals,      name: 'animals' },
   { path: '/aquaponics',   component: Aquaponics,   name: 'aquaponics' },
   { path: '/catalog',      component: CommonsCatalog, name: 'catalog' },
+  { path: '/farm-knowledge', component: FarmKnowledge, name: 'farm-knowledge' },
   { path: '/settings',     component: Settings,     name: 'settings' },
 ]
 

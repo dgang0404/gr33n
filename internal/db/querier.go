@@ -24,6 +24,7 @@ type Querier interface {
 	CloseTaskLaborLog(ctx context.Context, arg CloseTaskLaborLogParams) (Gr33ncoreTaskLaborLog, error)
 	CountDevicesByStatusForFarm(ctx context.Context, farmID int64) ([]CountDevicesByStatusForFarmRow, error)
 	CountInsertCommonsSyncAttemptsSince(ctx context.Context, arg CountInsertCommonsSyncAttemptsSinceParams) (int64, error)
+	CountRagChunksByFarm(ctx context.Context, farmID int64) (int64, error)
 	CountTasksByStatusForFarm(ctx context.Context, farmID int64) ([]CountTasksByStatusForFarmRow, error)
 	CountUnreadAlertsByFarm(ctx context.Context, farmID int64) (int64, error)
 	// ============================================================
@@ -129,6 +130,8 @@ type Querier interface {
 	DeleteLifecycleEvent(ctx context.Context, id int64) error
 	DeleteProgram(ctx context.Context, id int64) error
 	DeletePushTokenByFCMToken(ctx context.Context, fcmToken string) error
+	DeleteRagChunksByFarmAndSourceType(ctx context.Context, arg DeleteRagChunksByFarmAndSourceTypeParams) error
+	DeleteRagChunksByFarmSource(ctx context.Context, arg DeleteRagChunksByFarmSourceParams) error
 	DeleteReservoir(ctx context.Context, id int64) error
 	DeleteSchedule(ctx context.Context, id int64) error
 	DeleteSetpoint(ctx context.Context, id int64) error
@@ -309,6 +312,7 @@ type Querier interface {
 	// ============================================================
 	ListAutomationRulesByFarm(ctx context.Context, farmID int64) ([]Gr33ncoreAutomationRule, error)
 	ListAutomationRunsByFarm(ctx context.Context, arg ListAutomationRunsByFarmParams) ([]Gr33ncoreAutomationRun, error)
+	ListAutomationRunsByFarmAfterID(ctx context.Context, arg ListAutomationRunsByFarmAfterIDParams) ([]Gr33ncoreAutomationRun, error)
 	// Phase 20.7 WS4 — list all actuators with watts > 0. The rollup
 	// iterates these per farm and sums their on-intervals. Soft-deleted
 	// actuators are excluded so retired hardware doesn't keep billing.
@@ -427,6 +431,10 @@ type Querier interface {
 	RemoveRecipeComponent(ctx context.Context, arg RemoveRecipeComponentParams) error
 	ResetFarmFinanceAccountMappingByCategory(ctx context.Context, arg ResetFarmFinanceAccountMappingByCategoryParams) (int64, error)
 	ResetFarmFinanceAccountMappingsAll(ctx context.Context, farmID int64) (int64, error)
+	// Farm-scoped nearest-neighbor search (caller supplies query embedding; WS4 retrieval API).
+	SearchRagNearestNeighbors(ctx context.Context, arg SearchRagNearestNeighborsParams) ([]SearchRagNearestNeighborsRow, error)
+	// Same as above with optional metadata module + created_at range (hybrid filters).
+	SearchRagNearestNeighborsFiltered(ctx context.Context, arg SearchRagNearestNeighborsFilteredParams) ([]SearchRagNearestNeighborsFilteredRow, error)
 	SetDevicePendingCommand(ctx context.Context, arg SetDevicePendingCommandParams) error
 	SetFarmInsertCommonsOptIn(ctx context.Context, arg SetFarmInsertCommonsOptInParams) (Gr33ncoreFarm, error)
 	SetFarmOrganization(ctx context.Context, arg SetFarmOrganizationParams) (Gr33ncoreFarm, error)
@@ -487,6 +495,10 @@ type Querier interface {
 	UpsertFarmCommonsCatalogImport(ctx context.Context, arg UpsertFarmCommonsCatalogImportParams) (Gr33ncoreFarmCommonsCatalogImport, error)
 	UpsertFarmFinanceAccountMapping(ctx context.Context, arg UpsertFarmFinanceAccountMappingParams) (Gr33ncoreFarmFinanceAccountMapping, error)
 	UpsertInsertCommonsSyncEvent(ctx context.Context, arg UpsertInsertCommonsSyncEventParams) (Gr33ncoreInsertCommonsSyncEvent, error)
+	// ============================================================
+	// Queries: gr33ncore.rag_embedding_chunks (Phase 24 RAG)
+	// ============================================================
+	UpsertRagEmbeddingChunk(ctx context.Context, arg UpsertRagEmbeddingChunkParams) (Gr33ncoreRagEmbeddingChunk, error)
 	// ============================================================
 	// Queries: gr33ncore.user_push_tokens
 	// ============================================================

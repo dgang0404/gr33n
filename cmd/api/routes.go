@@ -31,6 +31,7 @@ import (
 	animalhandler "gr33n-api/internal/handler/animal"
 	aquaponicshandler "gr33n-api/internal/handler/aquaponics"
 	planthandler "gr33n-api/internal/handler/plants"
+	raghandler "gr33n-api/internal/handler/rag"
 	setpointhandler "gr33n-api/internal/handler/setpoint"
 	taskhandler "gr33n-api/internal/handler/task"
 	zonehandler "gr33n-api/internal/handler/zone"
@@ -56,6 +57,7 @@ func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationwo
 	nf := nfhandler.NewHandler(pool)
 	recipe := recipehandler.NewHandler(pool)
 	cropcycle := cropcyclehandler.NewHandler(pool)
+	rag := raghandler.NewHandler(pool)
 	plants := planthandler.NewHandler(pool)
 	animals := animalhandler.NewHandler(pool)
 	aquaponics := aquaponicshandler.NewHandler(pool)
@@ -155,6 +157,9 @@ func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationwo
 	mux.Handle("POST /farms/{id}/schedules", jwt(http.HandlerFunc(automation.CreateSchedule)))
 	mux.Handle("GET /farms/{id}/tasks", jwt(http.HandlerFunc(task.ListByFarm)))
 	mux.Handle("POST /farms/{id}/tasks", jwt(http.HandlerFunc(task.Create)))
+	mux.Handle("GET /farms/{id}/rag/search", jwt(http.HandlerFunc(rag.Search)))
+	mux.Handle("POST /farms/{id}/rag/search", jwt(http.HandlerFunc(rag.Search)))
+	mux.Handle("POST /farms/{id}/rag/answer", jwt(http.HandlerFunc(rag.Answer)))
 	mux.Handle("GET /farms/{id}/automation/runs", jwt(http.HandlerFunc(automation.ListRunsByFarm)))
 	mux.Handle("GET /farms/{id}/automation/rules", jwt(http.HandlerFunc(automation.ListAutomationRulesByFarm)))
 	mux.Handle("POST /farms/{id}/automation/rules", jwt(http.HandlerFunc(automation.CreateAutomationRule)))
