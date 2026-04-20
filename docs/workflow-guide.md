@@ -164,6 +164,27 @@ A **fertigation program** is a recipe + EC target + schedule reference. It's the
 
 **Backfill lifecycle (Phase 22 WS2).** The 20260515 migration installed the `_backfill_program_actions(program_id)` function and ran it over every program in that window. The 20260517 "sweep" migration re-runs the function once more across the whole corpus on deploy, with a per-program `RAISE NOTICE` for any row that actually needed migrating. The function itself is idempotent — re-running it against a program that already has `executable_actions` rows returns `0` inserts — so the sweep is safe on any mature database. Malformed steps continue to be skipped (both the SQL backfill and the Go resolver log a NOTICE / warning instead of aborting) so one bad row never blocks a deploy. The fallback resolver path remains available as a safety net but should be considered deprecated once the sweep has run — the worker log warning is the breadcrumb for ops.
 
+**Worker tick order and monitoring (Phase 23).** The API process runs one automation worker (see `internal/automation/worker.go`). Every **30 seconds** it executes `runTick` in this order: **(1)** cron **schedules** (including precondition checks and schedule idempotency), **(2)** sensor-driven **rules**, **(3)** schedule-bound **fertigation programs** (`runProgramTick`), **(4)** low-stock inventory sweep, **(5)** optional once-per-day electricity rollup after 01:00 UTC. Program ticks intentionally run **after** schedule and rule work so actuator ordering stays predictable when a program shares a schedule with other automation.
+
+**`metadata.steps` fallback — what to grep and what to fix.** When a program still has no rows in `gr33ncore.executable_actions` but usable legacy JSON under `programs.metadata.steps`, the resolver returns `action_source = metadata_steps_fallback`. On each fire the worker prints a line you can grep in API logs:
+
+- `using metadata.steps fallback` — program ID and name are in the message; remediate by adding actions via `POST /fertigation/programs/{id}/actions` or running the SQL backfill helper `_backfill_program_actions(program_id)` (idempotent).
+
+If the top-level `metadata` JSON cannot be parsed, you may see `program N: metadata.steps unusable` — that program yields **no** synthesized actions until an operator repairs `metadata` or attaches DB actions.
+
+**Database checks (same signal as logs).** Program fires always write `gr33ncore.automation_runs` with `program_id` set when the worker evaluated that program. Successful or partial runs include `details.action_source` (`executable_actions` vs `metadata_steps_fallback` vs `empty` on zero-action skips). Example — recent fires that still used the legacy path:
+
+```sql
+SELECT id, farm_id, program_id, status, executed_at, message
+FROM gr33ncore.automation_runs
+WHERE program_id IS NOT NULL
+  AND details->>'action_source' = 'metadata_steps_fallback'
+ORDER BY executed_at DESC
+LIMIT 50;
+```
+
+**Other useful log prefixes** (schedules, rules, programs share the same stderr stream): `automation tick failed` (list schedules), `automation rule tick failed`, `automation program tick failed` (list programs), `failed to record automation run` / `failed to record program run` (persistence issues), `transient error (attempt` from schedule/program action retries, `cron parse error` for bad cron text, `precondition_failed` / `skipped: cooldown` (also recorded as `automation_runs` rows where applicable). `GET /automation/worker/health` exposes last tick time and last error string for quick dashboard checks.
+
 ### Mixing events (what physically went into the tank)
 
 When an operator mixes a fresh batch of nutrient solution, they record a **mixing event** (`POST /farms/{id}/fertigation/mixing-events`) with:
