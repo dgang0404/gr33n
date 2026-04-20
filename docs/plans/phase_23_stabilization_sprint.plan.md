@@ -13,7 +13,7 @@ todos:
     status: completed
   - id: ws3-openapi-routes-parity
     content: "WS3: scripts/openapi_route_diff.sh — resolve any mismatches; spot-check Pi + JWT routes documented"
-    status: pending
+    status: completed
   - id: ws4-automation-edge-cases
     content: "WS4: Worker + program tick — grep worker logs for error patterns; document metadata.steps fallback monitoring; optional small defensive fixes only"
     status: pending
@@ -47,7 +47,7 @@ Phases **20.x through 22** plus the **Pi ↔ API contract** landed a lot of surf
 |----|--------|
 | **WS1** | CI / build gates (`go test`, `make audit-openapi`, `go vet`) |
 | **WS2** | Smoke suite reliability + env documentation (`docs/local-operator-bootstrap.md` § API integration smoke tests; TestMain stderr + CI fail if DB missing) |
-| **WS3** | OpenAPI ↔ `routes.go` parity (`openapi_route_diff.sh`) |
+| **WS3** | OpenAPI ↔ `routes.go` parity (`openapi_route_diff.sh`) — green; Pi `apiKeyAuth` + `GET /farms/{id}/devices` dual auth documented; see `docs/local-operator-bootstrap.md` § OpenAPI route audit |
 | **WS4** | Automation worker / program-tick observability & tiny fixes only |
 | **WS5** | Pi API key trust model + runbook notes |
 | **WS6** | Operator docs aligned with shipped behavior |

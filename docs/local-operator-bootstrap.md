@@ -70,6 +70,12 @@ Farm-side pipeline and **strict ingest JSON** (only six top-level keys; no extra
 - Farm audit API and sensitive actions: [`audit-events-operator-playbook.md`](audit-events-operator-playbook.md).
 - Phase 14 playbook index (MQTT, commons catalog, notifications, etc.): [`phase-14-operator-documentation.md`](phase-14-operator-documentation.md).
 
+## OpenAPI route audit
+
+From the repo root, `make audit-openapi` runs [`scripts/openapi_route_diff.sh`](../scripts/openapi_route_diff.sh). It diffs **(HTTP method, path)** pairs from [`cmd/api/routes.go`](../cmd/api/routes.go) against [`openapi.yaml`](../openapi.yaml) and exits non-zero on any mismatch — run it after you add or rename HTTP routes.
+
+**Edge vs dashboard auth in the spec:** paths wrapped with `requireAPIKey` in `routes.go` are **Pi / bridge** calls using header **`X-API-Key`** (same secret as `PI_API_KEY` in `.env`). `GET /farms/{id}/devices` uses **`requireJWTOrPiEdge`**: OpenAPI lists **both** `bearerAuth` and `apiKeyAuth` so operators know the Pi may poll device `config` (including `pending_command`) with the API key while the dashboard uses a JWT.
+
 ## Security notes
 
 Bootstrap keeps **secrets and TLS** in your hands: the script does not generate passwords or certificates. Use real secrets in production; do not commit `.env`.

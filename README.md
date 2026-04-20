@@ -446,7 +446,7 @@ make build      # Build the Go binary
 make build-ui   # Build the Vue frontend for production
 make test       # Run Go tests (-tags dev, ./...)
 make lint       # Run go vet (-tags dev, ./...)
-make audit-openapi  # OpenAPI ↔ cmd/api/routes.go (must exit 0)
+make audit-openapi  # OpenAPI ↔ cmd/api/routes.go (must exit 0); see [OpenAPI route audit](docs/local-operator-bootstrap.md#openapi-route-audit)
 make sqlc       # Regenerate sqlc Go code from SQL queries
 make seed       # Apply seed data to the database
 make schema     # Apply the schema to the database
