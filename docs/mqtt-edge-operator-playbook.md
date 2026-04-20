@@ -95,6 +95,8 @@ Environment variable: **`PI_API_KEY`** on the API; edge clients send **`X-API-Ke
 
 **Trust model:** holding `PI_API_KEY` allows posting readings for any `sensor_id` and listing devices for any `farm_id` you request—same as knowing UUIDs/API surface today. Rotate the key if a bridge is compromised; prefer network segmentation between broker and bridge.
 
+**Middleware vs handlers:** `requireAPIKey` / `requireJWTOrPiEdge` live in `cmd/api/auth.go`; farm bypass for the key is `RequireFarmMemberOrPiEdge` in `internal/farmauthz/farmauthz.go`. Exact matrix (which routes re-check farm membership, rotation steps, least-privilege posture) is in [`pi-integration-guide.md`](pi-integration-guide.md#7-pi-api-key-security-middleware-and-least-privilege).
+
 ## Tasking and schedules
 
 - **Automation worker** sets `pending_command` on the target device when a schedule fires (see README schedule-loop overview).
@@ -112,6 +114,7 @@ Environment variable: **`PI_API_KEY`** on the API; edge clients send **`X-API-Ke
 
 ## Related documents
 
+- [`pi-integration-guide.md`](pi-integration-guide.md#7-pi-api-key-security-middleware-and-least-privilege) — Pi + bridge auth, `PI_API_KEY` rotation, `requireAPIKey` / `RequireFarmMemberOrPiEdge` behavior.
 - [`openapi.yaml`](../openapi.yaml) — machine-readable contracts.
 - [`docs/phase-13-operator-documentation.md`](phase-13-operator-documentation.md) — operator index.
 - Phase 14 plan: [`plans/phase_14_network_and_commons.plan.md`](plans/phase_14_network_and_commons.plan.md).
