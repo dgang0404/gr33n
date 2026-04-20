@@ -100,7 +100,7 @@ Environment variable: **`PI_API_KEY`** on the API; edge clients send **`X-API-Ke
 ## Tasking and schedules
 
 - **Automation worker** sets `pending_command` on the target device when a schedule fires (see README schedule-loop overview).
-- Edge code must poll **`GET /farms/{farm_id}/devices`** with the API key, inspect each device’s `config`, act on `pending_command`, then clear it.
+- Edge code must poll **`GET /farms/{farm_id}/devices`** with the API key, **base64-decode** each device’s `config` field from the JSON list (then parse JSON) to read **`pending_command`**, execute, then clear it. Same rule as the Pi daemon — the HTTP response uses a base64 string for `config` bytes, not an inline JSON object ([`workflow-guide.md`](workflow-guide.md#field-edge-troubleshooting-for-pi-and-mqtt)).
 - Human **tasks** (`/farms/{id}/tasks`) remain dashboard-centric for now; MQTT hooks are aimed at **device/actuator** execution paths.
 
 ## Troubleshooting
@@ -111,9 +111,13 @@ Environment variable: **`PI_API_KEY`** on the API; edge clients send **`X-API-Ke
 | HTTP **401/403** from API | Missing/wrong `X-API-Key`; API must have `PI_API_KEY` set (not `AUTH_MODE=dev` bypass on prod) |
 | Readings missing | Unmapped `(device_uid, slug)` — add YAML row or publish numeric slug equal to `sensor_id` |
 | Bursts overload HTTP | Raise `MQTT_BATCH_MS` so the bridge coalesces into fewer `POST /sensors/readings/batch` calls |
+| `config` looks like gibberish in `curl` / logs | Expected — value is **base64**; decode to JSON before looking for `pending_command` |
+| Automation fires but actuator events show no schedule/rule | Bridge must echo **`triggered_by_schedule_id`**, **`triggered_by_rule_id`**, **`program_id`** from pending JSON into **`POST /actuators/{id}/events`** (cannot send **both** `triggered_by_rule_id` and `program_id`) |
+| Wrong farm’s devices in response | `farm_id` in URL must match deployment; bridge env **`GR33N_FARM_ID`** must match topic layout |
 
 ## Related documents
 
+- [`workflow-guide.md`](workflow-guide.md#field-edge-troubleshooting-for-pi-and-mqtt) — device tasking, base64 `config`, actuator provenance, edge troubleshooting (§2).
 - [`pi-integration-guide.md`](pi-integration-guide.md#7-pi-api-key-security-middleware-and-least-privilege) — Pi + bridge auth, `PI_API_KEY` rotation, `requireAPIKey` / `RequireFarmMemberOrPiEdge` behavior.
 - [`openapi.yaml`](../openapi.yaml) — machine-readable contracts.
 - [`docs/phase-13-operator-documentation.md`](phase-13-operator-documentation.md) — operator index.

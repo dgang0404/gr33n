@@ -73,15 +73,28 @@ A **device** is a piece of physical hardware (usually the Pi or a microcontrolle
 
 Operator flow for controlling an actuator:
 
-1. A **schedule** (cron) or a rule decides "turn light on now".
-2. The API writes `config.pending_command` onto the device row.
-3. The Pi's polling loop picks it up via `GET /farms/{id}/devices`.
-4. The Pi executes it on GPIO, then:
-   - `POST /actuators/{id}/events` (records what it actually did, with `schedule_id` if applicable),
-   - `DELETE /devices/{id}/pending-command` (so it doesn't run twice).
-5. The API fans this out: actuator state changes, Schedules page picks up the event via `GET /schedules/{id}/actuator-events`, automation run log updates.
+1. A **schedule** (cron), a **rule**, or a **fertigation program** tick decides "turn this actuator now" (worker writes the pending payload).
+2. The API merges **`pending_command`** into the device’s **`config`** JSONB in Postgres (`devices.config` — see `internal/db` device queries).
+3. The **Pi daemon** or an **MQTT → HTTP bridge** polls **`GET /farms/{id}/devices`** (JWT or **`X-API-Key`**, same as sensor ingest — [`pi-integration-guide.md`](pi-integration-guide.md) §7).
+4. **Wire format:** the JSON you get from the API encodes `config` as a **base64 string** (Go `json.Marshal` on `[]byte`), not a nested JSON object. Decode it to UTF-8 JSON before reading `pending_command`; the in-repo Pi client does this in `_schedule_loop` ([`pi-integration-guide.md`](pi-integration-guide.md), [`mqtt-edge-operator-playbook.md`](mqtt-edge-operator-playbook.md)).
+5. The edge executes the command (GPIO, relay, downstream MQTT), then:
+   - **`POST /actuators/{id}/events`** — copy provenance from the pending JSON into **`triggered_by_schedule_id`**, **`triggered_by_rule_id`**, and **`program_id`** as applicable. The API rejects **`triggered_by_rule_id` together with `program_id`** (400); all referenced ids must belong to the **same farm** as the actuator ([`cmd/api/smoke_pi_contract_test.go`](../cmd/api/smoke_pi_contract_test.go) `TestPiContract*`).
+   - **`DELETE /devices/{id}/pending-command`** — clears the slot so the command does not repeat.
+6. The API fans this out: actuator state, **`GET /schedules/{id}/actuator-events`**, and **`gr33ncore.automation_runs`** / program run rows stay joinable for audit.
 
 The **Schedules** page shows each automation run side-by-side with the actuator events it caused — this is the audit trail for "did the light actually come on at 06:00?".
+
+### Field edge troubleshooting for Pi and MQTT
+
+Use this subsection with [`mqtt-edge-operator-playbook.md`](mqtt-edge-operator-playbook.md) when wiring bridges; it documents the **base64 `config`** wire format and **`GET /farms/{id}/devices`** auth in one place.
+
+| Symptom | What to check |
+|---------|----------------|
+| Pending command never clears | Edge must **`DELETE`** after success; wrong device id or stuck HTTP errors leave JSON in `config`. |
+| `GET /farms/{id}/devices` returns 401/403 | Missing/wrong **`X-API-Key`** or JWT; API needs **`PI_API_KEY`** in non-dev auth modes ([`pi-integration-guide.md`](pi-integration-guide.md#7-pi-api-key-security-middleware-and-least-privilege)). |
+| `pending_command` looks missing after decode | Confirm you **base64-decode** `config` from the list response; raw JSON text in DB tools is not the same as the HTTP body. |
+| Actuator events not linking to schedules/rules | Echo **`triggered_by_schedule_id`**, **`triggered_by_rule_id`**, **`program_id`** from pending JSON into the POST body (same names); IDs must belong to the actuator’s farm; do not send **`triggered_by_rule_id` together with `program_id`**. |
+| MQTT path only | Bridge topic / map issues: [`mqtt-edge-operator-playbook.md`](mqtt-edge-operator-playbook.md) **Troubleshooting** table. |
 
 ### Pattern playbooks (bootstrap templates)
 
@@ -106,7 +119,7 @@ An **automation rule** fires when sensor state changes, not when a clock ticks. 
 1. **Trigger** — `trigger_source` says what kind of event the rule listens to (today: `manual_api_trigger` and `sensor_reading_threshold`) plus a `trigger_configuration` JSON for trigger-specific context (e.g. `{ sensor_id: 42 }`).
 2. **Conditions** — `conditions_jsonb = { logic: ALL|ANY, predicates: [...] }` using the **same predicate shape as schedule preconditions**. One canonical evaluator (`internal/automation/predicates.go`) runs in both places, so a predicate that works on a schedule guard works identically on a rule.
 3. **Actions** — an ordered list of rows in `gr33ncore.executable_actions` attached via `GET|POST /automation/rules/{id}/actions` and mutated via `PUT|DELETE /automation/actions/{id}`. Phase 20 ships three action types:
-   - `control_actuator` — writes a `pending_command` on a device and logs an `actuator_events` row stamped with `triggered_by_rule_id`.
+   - `control_actuator` — writes `pending_command` into the device `config` and logs an `actuator_events` row with provenance (`triggered_by_schedule_id` and/or `triggered_by_rule_id` depending on the trigger).
    - `create_task` — inserts a task whose `source_rule_id` points back at the rule (same provenance pattern as Phase 19's `source_alert_id`).
    - `send_notification` — renders a `notification_templates` row into `alerts_notifications` and fans it through the push pipeline.
 
@@ -124,12 +137,12 @@ Deleting a rule **cascades** its `executable_actions` (they're meaningless witho
 
 ### 3c. The unified run log
 
-The **automation worker** polls due schedules *and* active rules on each tick, and writes one row to `gr33ncore.automation_runs` per trigger — visible via `GET /farms/{id}/automation/runs`. Each run has `status` = `success | partial_success | failed | skipped`, a nullable `schedule_id` (set for cron-driven runs) *or* `rule_id` (set for sensor-driven runs), and a `details` JSON blob shaped as `{ phase, conditions_met?, actions_total, actions_success, errors: [{action_id, message}], reason? }`. Failed runs raise alerts. The UI's Schedules page and the new Automation page both read this table, filtered by `schedule_id` / `rule_id` respectively, so each surface shows only its own history.
+The **automation worker** polls due schedules *and* active rules on each tick, and writes one row to `gr33ncore.automation_runs` per trigger — visible via `GET /farms/{id}/automation/runs`. Each run has `status` = `success | partial_success | failed | skipped`, a nullable **`schedule_id`** (cron-driven), **`rule_id`** (sensor-driven), and/or **`program_id`** (fertigation program tick), plus a `details` JSON blob shaped as `{ phase, conditions_met?, actions_total, actions_success, errors: [{action_id, message}], reason?, action_source? }`. Failed runs raise alerts. The UI's Schedules page and the new Automation page both read this table, filtered by `schedule_id` / `rule_id` respectively, so each surface shows only its own history; program fires also populate `program_id` on the same table.
 
 When an automation run switches a relay, that shows up twice:
 
 - In `automation_runs` (what the worker tried to do — regardless of whether the trigger was clock or sensor).
-- In `actuator_events` for the affected actuator (what the Pi actually did — see §2). Rule-driven events also stamp `triggered_by_rule_id` so you can join back to the originating rule.
+- In `actuator_events` for the affected actuator (what the Pi actually did — see §2). Events can carry **`triggered_by_schedule_id`**, **`triggered_by_rule_id`**, and/or **`program_id`** (from the pending payload / Pi POST) so you can join back to the originating schedule, rule, or fertigation program.
 
 If those two ever disagree, that's a diagnostic signal the hardware is drifting from what the worker asked.
 
@@ -428,12 +441,12 @@ guards so a direct re-run writes zero new rows.
 | **Zone** | Physical area inside a farm. All sensors / actuators / cycles belong to one zone. |
 | **Sensor** | Logical measurement channel. Readings are time-series. |
 | **Actuator** | Controllable output (relay, valve, pump, light). |
-| **Device** | The hardware running actuators / bridging sensors (usually a Pi). Has online/offline status and a `pending_command` slot. |
+| **Device** | The hardware running actuators / bridging sensors (usually a Pi). Has online/offline status; automation stores **`pending_command`** inside **`config`** (JSONB in Postgres). In **`GET /farms/{id}/devices`** JSON, `config` is a **base64** encoding of those bytes — decode before reading `pending_command`. |
 | **Schedule** | Cron + meta_data; triggers an automation action on a clock. Can carry preconditions (sensor-state interlocks) that must pass before firing. |
 | **Automation rule** | Sensor-driven peer of a schedule. Fires when `conditions_jsonb` (ALL/ANY of `{sensor_id, op, value}` predicates) evaluates true, then runs an ordered list of `executable_actions`. Honors `cooldown_period_seconds`. |
 | **Executable action** | One step attached to exactly one parent — an automation rule, a schedule, or (Phase 20.9 WS3/WS4) a fertigation program. Action types supported in Phase 20 are `control_actuator`, `create_task`, `send_notification`; the other enum values are reserved for later phases and rejected at creation today. The single-parent CHECK (`chk_executable_action_parent`) prevents a row from binding to more than one source. |
 | **Labor log** | Row in `gr33ncore.task_labor_log`. Captures (user, started_at, ended_at, minutes) with an optional (hourly_rate_snapshot, currency). Open entries (NULL `ended_at`) are timers; closed entries (populated `ended_at` + `minutes`) fire the labor autologger. Deletion writes a compensating negative cost row instead of erasing history. |
-| **Automation run** | One execution of *either* a schedule *or* a rule; has status (`success|partial_success|failed|skipped`), a `details` JSON, and a nullable `schedule_id` or `rule_id` pointing back at what triggered it. |
+| **Automation run** | One execution of a schedule, a rule, or a fertigation program tick; has status (`success|partial_success|failed|skipped`), a `details` JSON, and nullable `schedule_id`, `rule_id`, and/or `program_id` pointing back at what triggered it. |
 | **Program** | A fertigation recipe/EC-target/schedule triplet. |
 | **EC target** | A named EC setpoint (e.g. "flower EC 2.0"). |
 | **Zone setpoint** | A stage-scoped row in `gr33ncore.zone_setpoints` that says "for this zone / crop cycle / growth stage, the ideal `sensor_type` value is X (min/ideal/max)". Rules can reference setpoints via a `type: "setpoint"` predicate so one rule auto-adjusts as stages advance. Resolver precedence is `cycle+stage` > `cycle-any-stage` > `zone+stage` > `zone-any-stage`. |

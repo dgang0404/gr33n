@@ -22,7 +22,7 @@ todos:
     status: completed
   - id: ws6-operator-docs-pass
     content: "WS6: workflow-guide + mqtt-edge playbook — accuracy vs current behavior (base64 config, actuator event provenance); add 'Troubleshooting' bullets"
-    status: pending
+    status: completed
   - id: ws7-exit-checklist
     content: "WS7: Exit checklist — sign-off table in README or here; link next phases phase_21_crop_cycle_analytics.plan.md then phase_24_rag_retrieval_system.plan.md"
     status: pending
@@ -50,7 +50,7 @@ Phases **20.x through 22** plus the **Pi ↔ API contract** landed a lot of surf
 | **WS3** | OpenAPI ↔ `routes.go` parity (`openapi_route_diff.sh`) — green; Pi `apiKeyAuth` + `GET /farms/{id}/devices` dual auth documented; see `docs/local-operator-bootstrap.md` § OpenAPI route audit |
 | **WS4** | Automation worker / program-tick — log patterns + `metadata.steps` monitoring documented in `docs/workflow-guide.md` (Programs); no code change (audit only) |
 | **WS5** | Pi / API key — rotation + least privilege + `requireAPIKey` / `RequireFarmMemberOrPiEdge` matrix in `docs/pi-integration-guide.md` §7; MQTT playbook cross-link |
-| **WS6** | Operator docs aligned with shipped behavior |
+| **WS6** | Operator docs — `workflow-guide.md` §2 field edge (base64 `config`, provenance, troubleshooting) + `mqtt-edge-operator-playbook.md` tasking/troubleshooting |
 | **WS7** | Exit checklist → hand off to Phase 21 then 24 |
 
 ## Exit criteria (all should be true)
