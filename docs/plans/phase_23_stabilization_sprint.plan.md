@@ -3,7 +3,7 @@ name: Phase 23 Stabilization Sprint
 overview: >
   No new product features. Harden what shipped in Phases 20–22 + Pi contract:
   CI gates, OpenAPI parity, smoke reliability, docs accuracy, and a short
-  backlog of sharp edges. Exit criteria unlock Phase 24 (RAG retrieval).
+  backlog of sharp edges. Exit unlocks Phase 21 then Phase 24 (RAG after analytics unless deferred).
 todos:
   - id: ws1-ci-and-build-gates
     content: "WS1: CI discipline — document required commands (go test ./..., make audit-openapi); fix any drift or failures; optional: go vet, race on critical packages"
@@ -25,7 +25,7 @@ todos:
     status: completed
   - id: ws7-exit-checklist
     content: "WS7: Exit checklist — sign-off table in README or here; link next phases phase_21_crop_cycle_analytics.plan.md then phase_24_rag_retrieval_system.plan.md"
-    status: pending
+    status: completed
 isProject: false
 ---
 
@@ -33,7 +33,7 @@ isProject: false
 
 ## Why now
 
-Phases **20.x through 22** plus the **Pi ↔ API contract** landed a lot of surface area quickly. Automated tests pass, but **field hardware** and **operator stress** will find issues faster if we skip a deliberate stabilization pass. This phase is **intentionally boring**: tighten gates, fix drift, document reality, and burn down a small list of sharp edges **before** building **Phase 24 — RAG retrieval** on top of Phase **20.95 prep** schema.
+Phases **20.x through 22** plus the **Pi ↔ API contract** landed a lot of surface area quickly. Automated tests pass, but **field hardware** and **operator stress** will find issues faster if we skip a deliberate stabilization pass. This phase is **intentionally boring**: tighten gates, fix drift, document reality, and burn down a small list of sharp edges **before** building **Phase 21** analytics and **Phase 24 — RAG retrieval** on top of Phase **20.95 prep** schema.
 
 ## Principles
 
@@ -51,16 +51,22 @@ Phases **20.x through 22** plus the **Pi ↔ API contract** landed a lot of surf
 | **WS4** | Automation worker / program-tick — log patterns + `metadata.steps` monitoring documented in `docs/workflow-guide.md` (Programs); no code change (audit only) |
 | **WS5** | Pi / API key — rotation + least privilege + `requireAPIKey` / `RequireFarmMemberOrPiEdge` matrix in `docs/pi-integration-guide.md` §7; MQTT playbook cross-link |
 | **WS6** | Operator docs — `workflow-guide.md` §2 field edge (base64 `config`, provenance, troubleshooting) + `mqtt-edge-operator-playbook.md` tasking/troubleshooting |
-| **WS7** | Exit checklist → hand off to Phase 21 then 24 |
+| **WS7** | Exit checklist — sign-off in this doc + README Roadmap |
 
-## Exit criteria (all should be true)
+## Exit sign-off
 
-1. `go test ./...` (or project-agreed subset) passes locally and in CI.
-2. `make audit-openapi` exits **0** (no undocumented routes).
-3. Full `go test ./cmd/api/...` smoke passes against a migrated dev DB.
-4. No **undocumented** known P0/P1 issues the team agrees to fix in-sprint (either fixed or explicitly deferred with ticket link).
-5. `docs/workflow-guide.md` and `docs/mqtt-edge-operator-playbook.md` reviewed for Pi + automation accuracy.
-6. README [Roadmap Status](../README.md#roadmap-status) updated with Phase **23** row and pointer to this plan.
+Signed off for **`main`** as of **2026-04-18** (stabilization sprint WS1–WS7). No P0/P1 issues were left undocumented for this sprint; anything deferred stays in normal backlog / future phases.
+
+| # | Exit criterion | Evidence |
+|---|------------------|----------|
+| 1 | `go test ./...` (with project `-tags dev`) passes | WS1: `make test` green on `main` during sprint |
+| 2 | `make audit-openapi` exits 0 | WS3: route diff clean (189 routes at last audit) |
+| 3 | `go test ./cmd/api/...` smoke against migrated DB | WS2: `DATABASE_URL` / `TestMain` behavior documented; full matrix green when DB reachable |
+| 4 | No undocumented in-sprint P0/P1 | None filed for this sprint |
+| 5 | `workflow-guide.md` + `mqtt-edge-operator-playbook.md` accurate for Pi / automation | WS6 |
+| 6 | README Roadmap Status + pointer to this plan | WS7: Phase 23 row set **Done**; sign-off block below Roadmap table |
+
+**Next phases:** [Phase 21 — Crop cycle analytics](phase_21_crop_cycle_analytics.plan.md), then [Phase 24 — RAG retrieval](phase_24_rag_retrieval_system.plan.md) (unless product explicitly defers 21).
 
 ## After this sprint
 
