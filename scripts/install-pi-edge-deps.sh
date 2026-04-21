@@ -43,7 +43,7 @@ sudo apt-get install -y ca-certificates curl git python3 python3-pip python3-ven
 
 if [[ "$WITH_DOCKER" -eq 1 ]]; then
   echo "==> apt: Docker Engine + Compose plugin (optional full stack — see topology doc)"
-  sudo apt-get install -y docker.io docker-compose-plugin
+  sudo apt-get install -y docker.io docker-compose-v2
   sudo systemctl enable --now docker || true
   echo "Tip: add your user to group 'docker' if you run compose without sudo: sudo usermod -aG docker \"\$USER\" (then re-login)."
 fi

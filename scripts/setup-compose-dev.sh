@@ -10,16 +10,17 @@ cd "$ROOT"
 
 need() {
   command -v "$1" >/dev/null 2>&1 || {
-    echo "error: missing '$1'. Install Docker first, e.g.:" >&2
-    echo "  sudo apt-get update && sudo apt-get install -y docker.io docker-compose-plugin" >&2
-    echo "  sudo usermod -aG docker \"\$USER\" && newgrp docker" >&2
+    echo "error: missing '$1'. Install Docker first, e.g. (Ubuntu 22.04+ jammy):" >&2
+    echo "  sudo apt-get update && sudo apt-get install -y docker.io docker-compose-v2" >&2
+    echo "  (Stock Ubuntu uses package docker-compose-v2 for \`docker compose\`; docker-compose-plugin is from Docker's apt repo.)" >&2
+    echo "  sudo systemctl enable --now docker && sudo usermod -aG docker \"\$USER\" && newgrp docker" >&2
     exit 1
   }
 }
 
 need docker
 docker compose version >/dev/null 2>&1 || {
-  echo "error: install docker compose plugin (docker-compose-plugin)" >&2
+  echo "error: install Compose v2 — Ubuntu: sudo apt-get install -y docker-compose-v2" >&2
   exit 1
 }
 

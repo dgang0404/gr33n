@@ -13,6 +13,8 @@ Single happy path for standing up **Postgres → API → dashboard → optional 
 | PostgreSQL | 14+ with **TimescaleDB** and **PostGIS** (schema runs `CREATE EXTENSION`) | Provided by Compose |
 | Docker | — | Docker Engine + Compose v2 |
 
+**Ubuntu 22.04 (Jammy) — Docker from Ubuntu repos:** install **`docker.io`** and **`docker-compose-v2`** (provides `docker compose`). The package **`docker-compose-plugin`** is from Docker Inc.’s apt repository and is **not** in the default Ubuntu archive—if `apt` cannot find it, use **`docker-compose-v2`** instead. Install **`docker.io` first** so the **`docker`** group exists, then **`sudo usermod -aG docker "$USER"`** and log out/in (or `newgrp docker`).
+
 Detailed native Postgres steps (peer auth, roles): [`INSTALL.md`](../INSTALL.md).
 
 ## First clone (recommended for new contributors)
