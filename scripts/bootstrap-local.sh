@@ -55,6 +55,12 @@ if [[ "$USE_DOCKER" -eq 1 ]]; then
   echo "    postgres://gr33n:gr33n@127.0.0.1:5432/gr33n?sslmode=disable"
 else
   need psql
+  if [[ -f "$ROOT/.env" ]]; then
+    set -a
+    # shellcheck disable=1091
+    source "$ROOT/.env"
+    set +a
+  fi
   DATABASE_URL="${DATABASE_URL:-postgres://${USER}@/gr33n?host=/var/run/postgresql}"
   export DATABASE_URL
 
@@ -95,6 +101,10 @@ EOF
     fi
   else
     echo "==> Skipping schema/migrations (--skip-schema)"
+    if [[ "$SEED" -eq 1 ]]; then
+      echo "==> Loading demo seed (db/seeds/master_seed.sql)"
+      psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f "$ROOT/db/seeds/master_seed.sql"
+    fi
   fi
 fi
 
