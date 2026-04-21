@@ -1,4 +1,4 @@
-.PHONY: run run-receiver build build-receiver test seed sqlc ui dev dev-auth-test rag-ingest-help compose-db-up compose-db-status setup-compose-dev check-stack clean lint bootstrap-local bootstrap-local-docker install-deps-debian install-pi-edge-deps first-clone first-clone-docker first-clone-install-deps audit-openapi
+.PHONY: run run-receiver build build-receiver test seed sqlc ui dev dev-auth-test rag-ingest-help compose-db-up compose-db-status setup-compose-dev dev-stack local-up check-stack clean lint bootstrap-local bootstrap-local-docker install-deps-debian install-pi-edge-deps first-clone first-clone-docker first-clone-install-deps audit-openapi
 
 # ── Variables ──────────────────────────────────────────────────
 BINARY   := api
@@ -96,8 +96,14 @@ compose-db-up: ## Start only the Postgres image from docker-compose.yml (Timesca
 compose-db-status: ## Show docker compose db container status
 	docker compose ps db
 
-setup-compose-dev: ## Docker db up + wait + bootstrap --seed + check-stack (requires Docker; see scripts/setup-compose-dev.sh)
-	@./scripts/setup-compose-dev.sh
+setup-compose-dev: ## Alias for dev-stack — Docker db + bootstrap --seed + check-stack (see scripts/dev-stack.sh)
+	@./scripts/dev-stack.sh
+
+dev-stack: ## Reliable local Compose DB + bootstrap + seed + verify; auto-retries Docker via sg docker when needed
+	@./scripts/dev-stack.sh
+
+local-up: ## dev-stack then API + UI (same as ./scripts/dev-stack.sh --serve)
+	@./scripts/dev-stack.sh --serve
 
 check-stack: ## Verify .env DATABASE_URL, pgvector, optional API /health (see docs/local-operator-bootstrap.md)
 	@./scripts/check-local-stack.sh

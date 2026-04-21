@@ -444,6 +444,8 @@ make help       # Show all targets
 make bootstrap-local  # Guided DB + env + UI deps (see docs/local-operator-bootstrap.md)
 make bootstrap-local-docker  # Same, but start stack with docker compose
 make compose-db-up   # Postgres only — docker-compose db (Timescale + pgvector); pair .env DATABASE_URL with INSTALL.md §2 / .env.example
+make dev-stack       # Reliable: Compose db + bootstrap --seed + check-stack; auto sg docker fallback (see scripts/dev-stack.sh)
+make local-up        # dev-stack then API + UI (same as scripts/dev-stack.sh --serve)
 make check-stack     # Verify DATABASE_URL + pgvector + optional API /health (see docs/local-operator-bootstrap.md)
 make run        # Run the API server
 make run-receiver # Run optional Insert Commons receiver (see docs/insert-commons-receiver-playbook.md)
