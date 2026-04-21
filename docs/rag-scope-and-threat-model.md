@@ -100,23 +100,23 @@ The list below ties to tables introduced or strengthened in Phase 20.95 and rela
 
 ---
 
-## 6. Product checklist — ship in v1 ingestion?
+## 6. Checklist — ship in v1 ingestion?
 
-Tick **Yes** / **No** / **Later** per domain when product signs off. **Proposed default** reflects engineering bias (utility vs. sanitization burden); swap order after the checklist is approved.
+**Engineering defaults below** are the Phase 25 implementation baseline (aligned with [Phase 25 plan](plans/phase_25_rag_operations_and_expansion.plan.md) decisions). Product may refine priority later; ingest code must still respect sanitization rules in §4.2 regardless.
 
-| Domain | Ship in v1? (product) | Proposed default | Depends on |
-|--------|-------------------------|------------------|------------|
-| **Tasks** (`gr33ncore.tasks` text fields) | Yes / No / Later | **Yes** | Chunking in WS3 |
-| **Task labor notes** (`task_labor_log.notes`) | Yes / No / Later | **Later** | PII risk (§4.2) |
-| **Crop cycles** (`crop_cycles` names + strain + bounded notes) | Yes / No / Later | **Yes** | Phase 21 summary alignment optional |
-| **Fertigation programs** (name, description; not raw `metadata`) | Yes / No / Later | **Later** | Allowlist for `metadata` |
-| **Automation runs** (`status`, `message`; scrubbed `details`) | Yes / No / Later | **Yes** | JSON scrubber in WS3 |
-| **Automation rules / schedules / executable_actions** (labels only; no secrets) | Yes / No / Later | **Later** | Strip `action_parameters` |
-| **Costs** (per-line narrative vs rollup text only) | Yes / No / Later | **Later** | Commercial sensitivity (§4.2) |
-| **Inputs / inventory** (definitions, batches — no raw unit_cost unless approved) | Yes / No / Later | **Later** | Operator expectation |
-| **Alerts / notifications** (rendered subject/body text) | Yes / No / Later | **Later** | Volume + noise |
+| Domain | Engineering default | Depends on / notes |
+|--------|---------------------|-------------------|
+| **Tasks** (`gr33ncore.tasks` text fields) | **Yes** | Implemented in Phase 24 — chunking/sanitize per §4.2 |
+| **Task labor notes** (`task_labor_log.notes`) | **Later** | PII risk (§4.2); exclude or strip before any ingest |
+| **Crop cycles** (`crop_cycles` names + strain + bounded notes) | **Yes** | Phase 25 ingestion expansion — align with Phase 21 summaries when present; sanitize sensitive notes |
+| **Fertigation programs** (name, description; not raw `metadata`) | **Later** | Ship in Phase 25 **only if** `metadata` allowlist + tests land same window; else next release |
+| **Automation runs** (`status`, `message`; scrubbed `details`) | **Yes** | Implemented in Phase 24 — JSON scrubber for `details` |
+| **Automation rules / schedules / executable_actions** (labels only; no secrets) | **Later** | Strip `action_parameters` / secrets before ingest |
+| **Costs** (per-line narrative vs rollup text only) | **Later** | Commercial sensitivity (§4.2); rollup-only product call |
+| **Inputs / inventory** (definitions, batches — no raw unit_cost unless approved) | **Later** | Operator expectation before raw commercial fields |
+| **Alerts / notifications** (rendered subject/body text) | **Later** | Volume + noise |
 
-**Suggested implementation order when multiple rows are Yes:** tasks → crop cycles → automation runs → remainder in whatever order product prioritizes (matches the earlier engineering ordering).
+**Suggested implementation order for domains marked Yes:** tasks → automation runs → **crop cycles** (Phase 25) → programs only when allowlist is ready → remainder per product after §4.2 gates.
 
 ---
 
