@@ -7,6 +7,7 @@ package db
 
 import (
 	"context"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgtype"
 )
@@ -136,6 +137,53 @@ ORDER BY started_at DESC
 
 func (q *Queries) ListCropCyclesByFarm(ctx context.Context, farmID int64) ([]Gr33nfertigationCropCycle, error) {
 	rows, err := q.db.Query(ctx, listCropCyclesByFarm, farmID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Gr33nfertigationCropCycle{}
+	for rows.Next() {
+		var i Gr33nfertigationCropCycle
+		if err := rows.Scan(
+			&i.ID,
+			&i.FarmID,
+			&i.ZoneID,
+			&i.Name,
+			&i.StrainOrVariety,
+			&i.CurrentStage,
+			&i.IsActive,
+			&i.StartedAt,
+			&i.HarvestedAt,
+			&i.YieldGrams,
+			&i.YieldNotes,
+			&i.CycleNotes,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.PrimaryProgramID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listCropCyclesByFarmUpdatedAfter = `-- name: ListCropCyclesByFarmUpdatedAfter :many
+SELECT id, farm_id, zone_id, name, strain_or_variety, current_stage, is_active, started_at, harvested_at, yield_grams, yield_notes, cycle_notes, created_at, updated_at, primary_program_id FROM gr33nfertigation.crop_cycles
+WHERE farm_id = $1 AND updated_at > $2::timestamptz
+ORDER BY updated_at ASC, id ASC
+`
+
+type ListCropCyclesByFarmUpdatedAfterParams struct {
+	FarmID       int64     `db:"farm_id" json:"farm_id"`
+	UpdatedAfter time.Time `db:"updated_after" json:"updated_after"`
+}
+
+func (q *Queries) ListCropCyclesByFarmUpdatedAfter(ctx context.Context, arg ListCropCyclesByFarmUpdatedAfterParams) ([]Gr33nfertigationCropCycle, error) {
+	rows, err := q.db.Query(ctx, listCropCyclesByFarmUpdatedAfter, arg.FarmID, arg.UpdatedAfter)
 	if err != nil {
 		return nil, err
 	}

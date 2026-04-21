@@ -25,6 +25,28 @@ WHERE farm_id = $1 AND id > $2
 ORDER BY id ASC
 LIMIT $3;
 
+-- Incremental RAG ingest by created_at (first page).
+-- name: ListAlertsByFarmCreatedAfterFirst :many
+SELECT * FROM gr33ncore.alerts_notifications
+WHERE farm_id = sqlc.arg('farm_id') AND created_at > sqlc.arg('since')::timestamptz
+ORDER BY created_at ASC, id ASC
+LIMIT sqlc.arg('limit');
+
+-- Subsequent pages keyed by (created_at, id).
+-- name: ListAlertsByFarmCreatedAfterNext :many
+SELECT * FROM gr33ncore.alerts_notifications
+WHERE farm_id = sqlc.arg('farm_id')
+  AND (
+    created_at > sqlc.arg('cursor_created_at')::timestamptz
+    OR (created_at = sqlc.arg('cursor_created_at')::timestamptz AND id > sqlc.arg('cursor_id'))
+  )
+ORDER BY created_at ASC, id ASC
+LIMIT sqlc.arg('limit');
+
+-- name: CountAlertsByFarmCreatedAfter :one
+SELECT COUNT(*)::bigint FROM gr33ncore.alerts_notifications
+WHERE farm_id = sqlc.arg('farm_id') AND created_at > sqlc.arg('since')::timestamptz;
+
 -- name: CountAlertsByFarm :one
 SELECT COUNT(*)::bigint FROM gr33ncore.alerts_notifications
 WHERE farm_id = $1;

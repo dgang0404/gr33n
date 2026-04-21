@@ -43,7 +43,7 @@ Options:
 | `--seed` | Load [`db/seeds/master_seed.sql`](../db/seeds/master_seed.sql) (legacy demo **farm_id = 1**). Omit if you rely on dashboard **New farm** + template choice. |
 | `--skip-schema` | Skip `psql` schema and migrations (database already provisioned) |
 
-The script copies [`.env.example`](../.env.example) to `.env` **once** if `.env` is missing, then runs `npm ci` in `ui/`.
+The script copies [`.env.example`](../.env.example) to `.env` **once** if `.env` is missing, then runs `npm ci --legacy-peer-deps` in `ui/` (Capacitor peer ranges need this until versions are aligned).
 
 **Make equivalent:** `make bootstrap-local` (same as the script without flags). Use `make bootstrap-local-docker` for the Docker path.
 

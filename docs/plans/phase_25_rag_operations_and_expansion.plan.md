@@ -14,8 +14,8 @@ todos:
     content: "WS2: Extend rag-ingest + document builders for agreed domains (e.g. crop cycles, programs, costs rollups)—sanitizers per domain"
     status: completed
   - id: ws3-incremental-reembed
-    content: "WS3: Incremental re-embed strategy (cursors/outbox/triggers—not only manual CLI); backfill and idempotency verified at scale"
-    status: pending
+    content: "WS3: Incremental re-embed — CLI -updated-after, env RAG_INGEST_UPDATED_AFTER, keyset batching, operator doc (workflow §10.6, .env.example); NOTIFY/outbox deferred per Decisions §2"
+    status: completed
   - id: ws4-ops-and-ci
     content: "WS4: CI/staging/prod parity for pgvector; smoke or integration path; operator runbook snippet (env, migrate, ingest)"
     status: pending
@@ -107,7 +107,14 @@ Extend **`cmd/rag-ingest`** / **`internal/rag/ingest`** for approved domains; re
 
 ### WS3 — Incremental re-embed
 
-Design and implement **something better than full manual backfill only** for agreed tables (cursor flags, cron contract, or worker hook—TBD).
+**Shipped:** Polling-style incremental ingest aligned with **Decisions §2** (cron-friendly; idempotent upserts unchanged).
+
+- **CLI:** `rag-ingest -updated-after <RFC3339>` — `updated_at` domains (tasks, crop cycles, programs, schedules, rules, inventory defs/batches), **`executed_at`** for **`automation_runs`**, **`updated_at`** for **`cost_transactions`**, **`created_at`** for **`alerts_notifications`**; batched domains use `(timestamp, id)` keyset paging.
+- **Env:** `RAG_INGEST_UPDATED_AFTER` when the flag is omitted (flag overrides env).
+- **Docs:** [`workflow-guide.md` §10.6](../workflow-guide.md), **`.env.example`** embedding notes, **`make rag-ingest-help`**.
+- **`executable_actions`:** still full re-index when selected (no `updated_at` column)—see `-help`.
+
+**Deferred (per Decisions §2 unless operator demand):** PostgreSQL NOTIFY, logical replication, dedicated outbox table, in-process worker hook (could wrap the same CLI).
 
 ### WS4 — Ops and CI
 

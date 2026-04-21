@@ -24,6 +24,23 @@ func (q *Queries) CountAlertsByFarm(ctx context.Context, farmID int64) (int64, e
 	return column_1, err
 }
 
+const countAlertsByFarmCreatedAfter = `-- name: CountAlertsByFarmCreatedAfter :one
+SELECT COUNT(*)::bigint FROM gr33ncore.alerts_notifications
+WHERE farm_id = $1 AND created_at > $2::timestamptz
+`
+
+type CountAlertsByFarmCreatedAfterParams struct {
+	FarmID int64     `db:"farm_id" json:"farm_id"`
+	Since  time.Time `db:"since" json:"since"`
+}
+
+func (q *Queries) CountAlertsByFarmCreatedAfter(ctx context.Context, arg CountAlertsByFarmCreatedAfterParams) (int64, error) {
+	row := q.db.QueryRow(ctx, countAlertsByFarmCreatedAfter, arg.FarmID, arg.Since)
+	var column_1 int64
+	err := row.Scan(&column_1)
+	return column_1, err
+}
+
 const countUnreadAlertsByFarm = `-- name: CountUnreadAlertsByFarm :one
 SELECT COUNT(*) FROM gr33ncore.alerts_notifications
 WHERE farm_id = $1 AND is_read = FALSE
@@ -379,6 +396,124 @@ type ListAlertsByFarmAfterIDParams struct {
 // RAG ingest cursor (id order).
 func (q *Queries) ListAlertsByFarmAfterID(ctx context.Context, arg ListAlertsByFarmAfterIDParams) ([]Gr33ncoreAlertsNotification, error) {
 	rows, err := q.db.Query(ctx, listAlertsByFarmAfterID, arg.FarmID, arg.ID, arg.Limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Gr33ncoreAlertsNotification{}
+	for rows.Next() {
+		var i Gr33ncoreAlertsNotification
+		if err := rows.Scan(
+			&i.ID,
+			&i.FarmID,
+			&i.RecipientUserID,
+			&i.NotificationTemplateID,
+			&i.TriggeringEventSourceType,
+			&i.TriggeringEventSourceID,
+			&i.Severity,
+			&i.SubjectRendered,
+			&i.MessageTextRendered,
+			&i.MessageHtmlRendered,
+			&i.DeliveryAttempts,
+			&i.Status,
+			&i.IsRead,
+			&i.ReadAt,
+			&i.IsAcknowledged,
+			&i.AcknowledgedAt,
+			&i.AcknowledgedByUserID,
+			&i.CreatedAt,
+			&i.ScheduledSendAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listAlertsByFarmCreatedAfterFirst = `-- name: ListAlertsByFarmCreatedAfterFirst :many
+SELECT id, farm_id, recipient_user_id, notification_template_id, triggering_event_source_type, triggering_event_source_id, severity, subject_rendered, message_text_rendered, message_html_rendered, delivery_attempts, status, is_read, read_at, is_acknowledged, acknowledged_at, acknowledged_by_user_id, created_at, scheduled_send_at FROM gr33ncore.alerts_notifications
+WHERE farm_id = $1 AND created_at > $2::timestamptz
+ORDER BY created_at ASC, id ASC
+LIMIT $3
+`
+
+type ListAlertsByFarmCreatedAfterFirstParams struct {
+	FarmID int64     `db:"farm_id" json:"farm_id"`
+	Since  time.Time `db:"since" json:"since"`
+	Limit  int32     `db:"limit" json:"limit"`
+}
+
+// Incremental RAG ingest by created_at (first page).
+func (q *Queries) ListAlertsByFarmCreatedAfterFirst(ctx context.Context, arg ListAlertsByFarmCreatedAfterFirstParams) ([]Gr33ncoreAlertsNotification, error) {
+	rows, err := q.db.Query(ctx, listAlertsByFarmCreatedAfterFirst, arg.FarmID, arg.Since, arg.Limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Gr33ncoreAlertsNotification{}
+	for rows.Next() {
+		var i Gr33ncoreAlertsNotification
+		if err := rows.Scan(
+			&i.ID,
+			&i.FarmID,
+			&i.RecipientUserID,
+			&i.NotificationTemplateID,
+			&i.TriggeringEventSourceType,
+			&i.TriggeringEventSourceID,
+			&i.Severity,
+			&i.SubjectRendered,
+			&i.MessageTextRendered,
+			&i.MessageHtmlRendered,
+			&i.DeliveryAttempts,
+			&i.Status,
+			&i.IsRead,
+			&i.ReadAt,
+			&i.IsAcknowledged,
+			&i.AcknowledgedAt,
+			&i.AcknowledgedByUserID,
+			&i.CreatedAt,
+			&i.ScheduledSendAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listAlertsByFarmCreatedAfterNext = `-- name: ListAlertsByFarmCreatedAfterNext :many
+SELECT id, farm_id, recipient_user_id, notification_template_id, triggering_event_source_type, triggering_event_source_id, severity, subject_rendered, message_text_rendered, message_html_rendered, delivery_attempts, status, is_read, read_at, is_acknowledged, acknowledged_at, acknowledged_by_user_id, created_at, scheduled_send_at FROM gr33ncore.alerts_notifications
+WHERE farm_id = $1
+  AND (
+    created_at > $2::timestamptz
+    OR (created_at = $2::timestamptz AND id > $3)
+  )
+ORDER BY created_at ASC, id ASC
+LIMIT $4
+`
+
+type ListAlertsByFarmCreatedAfterNextParams struct {
+	FarmID          int64     `db:"farm_id" json:"farm_id"`
+	CursorCreatedAt time.Time `db:"cursor_created_at" json:"cursor_created_at"`
+	CursorID        int64     `db:"cursor_id" json:"cursor_id"`
+	Limit           int32     `db:"limit" json:"limit"`
+}
+
+// Subsequent pages keyed by (created_at, id).
+func (q *Queries) ListAlertsByFarmCreatedAfterNext(ctx context.Context, arg ListAlertsByFarmCreatedAfterNextParams) ([]Gr33ncoreAlertsNotification, error) {
+	rows, err := q.db.Query(ctx, listAlertsByFarmCreatedAfterNext,
+		arg.FarmID,
+		arg.CursorCreatedAt,
+		arg.CursorID,
+		arg.Limit,
+	)
 	if err != nil {
 		return nil, err
 	}

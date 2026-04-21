@@ -1,4 +1,4 @@
-.PHONY: run run-receiver build build-receiver test seed sqlc ui dev dev-auth-test clean lint bootstrap-local bootstrap-local-docker install-deps-debian install-pi-edge-deps first-clone first-clone-docker first-clone-install-deps audit-openapi
+.PHONY: run run-receiver build build-receiver test seed sqlc ui dev dev-auth-test rag-ingest-help clean lint bootstrap-local bootstrap-local-docker install-deps-debian install-pi-edge-deps first-clone first-clone-docker first-clone-install-deps audit-openapi
 
 # ── Variables ──────────────────────────────────────────────────
 BINARY   := api
@@ -85,6 +85,9 @@ audit-openapi: ## Phase 20.95 WS6 — confirm openapi.yaml matches cmd/api/route
 # ── Database ───────────────────────────────────────────────────
 sqlc: ## Regenerate sqlc Go code from SQL queries
 	sqlc generate
+
+rag-ingest-help: ## Show rag-ingest CLI flags (farm-scoped embedding; see docs/workflow-guide.md §10.6)
+	@$(GO) run ./cmd/rag-ingest -help
 
 seed: ## Apply seed data to the database
 	psql "$(DB_URL)" -f db/seeds/master_seed.sql

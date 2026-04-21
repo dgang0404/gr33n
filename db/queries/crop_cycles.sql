@@ -14,6 +14,11 @@ SELECT * FROM gr33nfertigation.crop_cycles
 WHERE farm_id = $1
 ORDER BY started_at DESC;
 
+-- name: ListCropCyclesByFarmUpdatedAfter :many
+SELECT * FROM gr33nfertigation.crop_cycles
+WHERE farm_id = sqlc.arg('farm_id') AND updated_at > sqlc.arg('updated_after')::timestamptz
+ORDER BY updated_at ASC, id ASC;
+
 -- name: GetCropCycleByID :one
 SELECT * FROM gr33nfertigation.crop_cycles WHERE id = $1;
 

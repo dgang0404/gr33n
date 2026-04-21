@@ -106,8 +106,8 @@ else
 fi
 
 if command -v npm >/dev/null 2>&1; then
-  echo "==> Installing UI dependencies (npm ci)"
-  (cd "$ROOT/ui" && npm ci)
+  echo "==> Installing UI dependencies (npm ci --legacy-peer-deps)"
+  (cd "$ROOT/ui" && npm ci --legacy-peer-deps)
 elif [[ "$USE_DOCKER" -eq 1 ]]; then
   echo "==> npm not found; skipping ui/ install (Compose already runs the UI container)"
 else

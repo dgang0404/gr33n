@@ -23,6 +23,28 @@ WHERE farm_id = $1 AND id > $2
 ORDER BY id ASC
 LIMIT $3;
 
+-- Incremental RAG ingest by updated_at (first page).
+-- name: ListCostTransactionsByFarmUpdatedAfterFirst :many
+SELECT * FROM gr33ncore.cost_transactions
+WHERE farm_id = sqlc.arg('farm_id') AND updated_at > sqlc.arg('since')::timestamptz
+ORDER BY updated_at ASC, id ASC
+LIMIT sqlc.arg('limit');
+
+-- Subsequent pages keyed by (updated_at, id).
+-- name: ListCostTransactionsByFarmUpdatedAfterNext :many
+SELECT * FROM gr33ncore.cost_transactions
+WHERE farm_id = sqlc.arg('farm_id')
+  AND (
+    updated_at > sqlc.arg('cursor_updated_at')::timestamptz
+    OR (updated_at = sqlc.arg('cursor_updated_at')::timestamptz AND id > sqlc.arg('cursor_id'))
+  )
+ORDER BY updated_at ASC, id ASC
+LIMIT sqlc.arg('limit');
+
+-- name: CountCostTransactionsByFarmUpdatedAfter :one
+SELECT COUNT(*)::bigint FROM gr33ncore.cost_transactions
+WHERE farm_id = sqlc.arg('farm_id') AND updated_at > sqlc.arg('since')::timestamptz;
+
 -- name: CountCostTransactionsByFarm :one
 SELECT COUNT(*)::bigint FROM gr33ncore.cost_transactions
 WHERE farm_id = $1;

@@ -23,7 +23,10 @@ type Querier interface {
 	// the shift, not retroactively.
 	CloseTaskLaborLog(ctx context.Context, arg CloseTaskLaborLogParams) (Gr33ncoreTaskLaborLog, error)
 	CountAlertsByFarm(ctx context.Context, farmID int64) (int64, error)
+	CountAlertsByFarmCreatedAfter(ctx context.Context, arg CountAlertsByFarmCreatedAfterParams) (int64, error)
+	CountAutomationRunsByFarmExecutedAfter(ctx context.Context, arg CountAutomationRunsByFarmExecutedAfterParams) (int64, error)
 	CountCostTransactionsByFarm(ctx context.Context, farmID int64) (int64, error)
+	CountCostTransactionsByFarmUpdatedAfter(ctx context.Context, arg CountCostTransactionsByFarmUpdatedAfterParams) (int64, error)
 	CountDevicesByStatusForFarm(ctx context.Context, farmID int64) ([]CountDevicesByStatusForFarmRow, error)
 	CountInsertCommonsSyncAttemptsSince(ctx context.Context, arg CountInsertCommonsSyncAttemptsSinceParams) (int64, error)
 	CountRagChunksByFarm(ctx context.Context, farmID int64) (int64, error)
@@ -300,6 +303,10 @@ type Querier interface {
 	ListAlertsByFarm(ctx context.Context, arg ListAlertsByFarmParams) ([]Gr33ncoreAlertsNotification, error)
 	// RAG ingest cursor (id order).
 	ListAlertsByFarmAfterID(ctx context.Context, arg ListAlertsByFarmAfterIDParams) ([]Gr33ncoreAlertsNotification, error)
+	// Incremental RAG ingest by created_at (first page).
+	ListAlertsByFarmCreatedAfterFirst(ctx context.Context, arg ListAlertsByFarmCreatedAfterFirstParams) ([]Gr33ncoreAlertsNotification, error)
+	// Subsequent pages keyed by (created_at, id).
+	ListAlertsByFarmCreatedAfterNext(ctx context.Context, arg ListAlertsByFarmCreatedAfterNextParams) ([]Gr33ncoreAlertsNotification, error)
 	ListAlertsByRecipient(ctx context.Context, arg ListAlertsByRecipientParams) ([]Gr33ncoreAlertsNotification, error)
 	ListAllFarms(ctx context.Context) ([]Gr33ncoreFarm, error)
 	ListAllUnits(ctx context.Context) ([]Gr33ncoreUnit, error)
@@ -315,8 +322,13 @@ type Querier interface {
 	// Queries: automation_rules (Phase 20 WS1)
 	// ============================================================
 	ListAutomationRulesByFarm(ctx context.Context, farmID int64) ([]Gr33ncoreAutomationRule, error)
+	ListAutomationRulesByFarmUpdatedAfter(ctx context.Context, arg ListAutomationRulesByFarmUpdatedAfterParams) ([]Gr33ncoreAutomationRule, error)
 	ListAutomationRunsByFarm(ctx context.Context, arg ListAutomationRunsByFarmParams) ([]Gr33ncoreAutomationRun, error)
 	ListAutomationRunsByFarmAfterID(ctx context.Context, arg ListAutomationRunsByFarmAfterIDParams) ([]Gr33ncoreAutomationRun, error)
+	// Incremental RAG ingest by executed_at (first page).
+	ListAutomationRunsByFarmExecutedAfterFirst(ctx context.Context, arg ListAutomationRunsByFarmExecutedAfterFirstParams) ([]Gr33ncoreAutomationRun, error)
+	// Subsequent pages keyed by (executed_at, id).
+	ListAutomationRunsByFarmExecutedAfterNext(ctx context.Context, arg ListAutomationRunsByFarmExecutedAfterNextParams) ([]Gr33ncoreAutomationRun, error)
 	// Phase 20.7 WS4 — list all actuators with watts > 0. The rollup
 	// iterates these per farm and sums their on-intervals. Soft-deleted
 	// actuators are excluded so retired hardware doesn't keep billing.
@@ -326,7 +338,12 @@ type Querier interface {
 	// Cursor batch for RAG ingest (stable id order).
 	ListCostTransactionsByFarmAfterID(ctx context.Context, arg ListCostTransactionsByFarmAfterIDParams) ([]Gr33ncoreCostTransaction, error)
 	ListCostTransactionsByFarmExport(ctx context.Context, farmID int64) ([]ListCostTransactionsByFarmExportRow, error)
+	// Incremental RAG ingest by updated_at (first page).
+	ListCostTransactionsByFarmUpdatedAfterFirst(ctx context.Context, arg ListCostTransactionsByFarmUpdatedAfterFirstParams) ([]Gr33ncoreCostTransaction, error)
+	// Subsequent pages keyed by (updated_at, id).
+	ListCostTransactionsByFarmUpdatedAfterNext(ctx context.Context, arg ListCostTransactionsByFarmUpdatedAfterNextParams) ([]Gr33ncoreCostTransaction, error)
 	ListCropCyclesByFarm(ctx context.Context, farmID int64) ([]Gr33nfertigationCropCycle, error)
+	ListCropCyclesByFarmUpdatedAfter(ctx context.Context, arg ListCropCyclesByFarmUpdatedAfterParams) ([]Gr33nfertigationCropCycle, error)
 	ListDevicesByFarm(ctx context.Context, farmID int64) ([]Gr33ncoreDevice, error)
 	ListDevicesByZone(ctx context.Context, zoneID *int64) ([]Gr33ncoreDevice, error)
 	ListEcTargetsByFarm(ctx context.Context, farmID int64) ([]Gr33nfertigationEcTarget, error)
@@ -358,7 +375,9 @@ type Querier interface {
 	ListFertigationEventsByFarm(ctx context.Context, farmID int64) ([]Gr33nfertigationFertigationEvent, error)
 	ListFertigationEventsByFarmAndCropCycle(ctx context.Context, arg ListFertigationEventsByFarmAndCropCycleParams) ([]Gr33nfertigationFertigationEvent, error)
 	ListInputBatchesByFarm(ctx context.Context, farmID int64) ([]Gr33nnaturalfarmingInputBatch, error)
+	ListInputBatchesByFarmUpdatedAfter(ctx context.Context, arg ListInputBatchesByFarmUpdatedAfterParams) ([]Gr33nnaturalfarmingInputBatch, error)
 	ListInputDefinitionsByFarm(ctx context.Context, farmID int64) ([]Gr33nnaturalfarmingInputDefinition, error)
+	ListInputDefinitionsByFarmUpdatedAfter(ctx context.Context, arg ListInputDefinitionsByFarmUpdatedAfterParams) ([]Gr33nnaturalfarmingInputDefinition, error)
 	ListInsertCommonsBundlesByFarm(ctx context.Context, arg ListInsertCommonsBundlesByFarmParams) ([]Gr33ncoreInsertCommonsBundle, error)
 	ListInsertCommonsSyncEventsByFarm(ctx context.Context, arg ListInsertCommonsSyncEventsByFarmParams) ([]ListInsertCommonsSyncEventsByFarmRow, error)
 	ListLatestReadingsByFarm(ctx context.Context, farmID int64) ([]ListLatestReadingsByFarmRow, error)
@@ -372,6 +391,7 @@ type Querier interface {
 	ListOrganizationsForUser(ctx context.Context, userID uuid.UUID) ([]ListOrganizationsForUserRow, error)
 	ListPlantsByFarm(ctx context.Context, farmID int64) ([]Gr33ncropsPlant, error)
 	ListProgramsByFarm(ctx context.Context, farmID int64) ([]Gr33nfertigationProgram, error)
+	ListProgramsByFarmUpdatedAfter(ctx context.Context, arg ListProgramsByFarmUpdatedAfterParams) ([]Gr33nfertigationProgram, error)
 	// ============================================================
 	// Commons catalog (gr33n_inserts direction — browse / import audit)
 	// ============================================================
@@ -388,6 +408,7 @@ type Querier interface {
 	// Queries: schedules, executable actions, automation runs
 	// ============================================================
 	ListSchedulesByFarm(ctx context.Context, farmID int64) ([]Gr33ncoreSchedule, error)
+	ListSchedulesByFarmUpdatedAfter(ctx context.Context, arg ListSchedulesByFarmUpdatedAfterParams) ([]Gr33ncoreSchedule, error)
 	ListSensorsByDevice(ctx context.Context, deviceID *int64) ([]Gr33ncoreSensor, error)
 	ListSensorsByFarm(ctx context.Context, farmID int64) ([]Gr33ncoreSensor, error)
 	ListSensorsByZone(ctx context.Context, zoneID *int64) ([]Gr33ncoreSensor, error)
@@ -412,6 +433,8 @@ type Querier interface {
 	ListTaskLaborLogsByTask(ctx context.Context, taskID int64) ([]Gr33ncoreTaskLaborLog, error)
 	ListTasksByAssignee(ctx context.Context, arg ListTasksByAssigneeParams) ([]Gr33ncoreTask, error)
 	ListTasksByFarm(ctx context.Context, farmID int64) ([]Gr33ncoreTask, error)
+	// Incremental RAG ingest (updated_at watermark).
+	ListTasksByFarmUpdatedAfter(ctx context.Context, arg ListTasksByFarmUpdatedAfterParams) ([]Gr33ncoreTask, error)
 	ListTasksBySourceAlertID(ctx context.Context, sourceAlertID *int64) ([]Gr33ncoreTask, error)
 	ListTasksBySourceRuleID(ctx context.Context, sourceRuleID *int64) ([]Gr33ncoreTask, error)
 	ListUnitsByType(ctx context.Context, unitType string) ([]Gr33ncoreUnit, error)

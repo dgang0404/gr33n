@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/pgvector/pgvector-go"
 
@@ -20,8 +21,18 @@ type Worker struct {
 func emptyJSON() []byte { return []byte("{}") }
 
 // IngestFarmTasks embeds all non-deleted tasks for a farm (chunk_index 0 per task).
-func (w *Worker) IngestFarmTasks(ctx context.Context, farmID int64) (int, error) {
-	tasks, err := w.Q.ListTasksByFarm(ctx, farmID)
+// If since is non-nil, only rows with updated_at strictly after since are embedded (incremental poll).
+func (w *Worker) IngestFarmTasks(ctx context.Context, farmID int64, since *time.Time) (int, error) {
+	var tasks []db.Gr33ncoreTask
+	var err error
+	if since != nil {
+		tasks, err = w.Q.ListTasksByFarmUpdatedAfter(ctx, db.ListTasksByFarmUpdatedAfterParams{
+			FarmID:       farmID,
+			UpdatedAfter: *since,
+		})
+	} else {
+		tasks, err = w.Q.ListTasksByFarm(ctx, farmID)
+	}
 	if err != nil {
 		return 0, err
 	}
@@ -37,10 +48,50 @@ func (w *Worker) IngestFarmTasks(ctx context.Context, farmID int64) (int, error)
 	return w.upsertBatch(ctx, farmID, SourceTypeTask, ids, docs)
 }
 
-// IngestFarmAutomationRuns embeds automation_runs in id order (cursor batching for large farms).
-func (w *Worker) IngestFarmAutomationRuns(ctx context.Context, farmID int64, batchSize int32, startAfterID int64) (int, error) {
+// IngestFarmAutomationRuns embeds automation_runs (cursor batching for large farms).
+// If since is nil, scans by id starting after startAfterID.
+// If since is set, scans by executed_at > since with (executed_at, id) keyset paging; startAfterID is ignored.
+func (w *Worker) IngestFarmAutomationRuns(ctx context.Context, farmID int64, batchSize int32, startAfterID int64, since *time.Time) (int, error) {
 	if batchSize <= 0 {
 		batchSize = 500
+	}
+	if since != nil {
+		var total int
+		page, err := w.Q.ListAutomationRunsByFarmExecutedAfterFirst(ctx, db.ListAutomationRunsByFarmExecutedAfterFirstParams{
+			FarmID: farmID,
+			Since:  *since,
+			Limit:  batchSize,
+		})
+		for {
+			if err != nil {
+				return total, err
+			}
+			if len(page) == 0 {
+				break
+			}
+			docs := make([]string, len(page))
+			ids := make([]int64, len(page))
+			for i := range page {
+				docs[i] = AutomationRunDocument(page[i])
+				ids[i] = page[i].ID
+			}
+			n, err := w.upsertBatch(ctx, farmID, SourceTypeAutomationRun, ids, docs)
+			if err != nil {
+				return total, err
+			}
+			total += n
+			if int32(len(page)) < batchSize {
+				break
+			}
+			last := page[len(page)-1]
+			page, err = w.Q.ListAutomationRunsByFarmExecutedAfterNext(ctx, db.ListAutomationRunsByFarmExecutedAfterNextParams{
+				FarmID:           farmID,
+				CursorExecutedAt: last.ExecutedAt,
+				CursorID:         last.ID,
+				Limit:            batchSize,
+			})
+		}
+		return total, nil
 	}
 	var total int
 	lastID := startAfterID
@@ -76,8 +127,17 @@ func (w *Worker) IngestFarmAutomationRuns(ctx context.Context, farmID int64, bat
 }
 
 // IngestFarmCropCycles embeds all crop cycles for a farm (chunk_index 0 per row).
-func (w *Worker) IngestFarmCropCycles(ctx context.Context, farmID int64) (int, error) {
-	cycles, err := w.Q.ListCropCyclesByFarm(ctx, farmID)
+func (w *Worker) IngestFarmCropCycles(ctx context.Context, farmID int64, since *time.Time) (int, error) {
+	var cycles []db.Gr33nfertigationCropCycle
+	var err error
+	if since != nil {
+		cycles, err = w.Q.ListCropCyclesByFarmUpdatedAfter(ctx, db.ListCropCyclesByFarmUpdatedAfterParams{
+			FarmID:       farmID,
+			UpdatedAfter: *since,
+		})
+	} else {
+		cycles, err = w.Q.ListCropCyclesByFarm(ctx, farmID)
+	}
 	if err != nil {
 		return 0, err
 	}
@@ -94,8 +154,17 @@ func (w *Worker) IngestFarmCropCycles(ctx context.Context, farmID int64) (int, e
 }
 
 // IngestFarmFertigationPrograms embeds fertigation programs for a farm (chunk_index 0 per row).
-func (w *Worker) IngestFarmFertigationPrograms(ctx context.Context, farmID int64) (int, error) {
-	progs, err := w.Q.ListProgramsByFarm(ctx, farmID)
+func (w *Worker) IngestFarmFertigationPrograms(ctx context.Context, farmID int64, since *time.Time) (int, error) {
+	var progs []db.Gr33nfertigationProgram
+	var err error
+	if since != nil {
+		progs, err = w.Q.ListProgramsByFarmUpdatedAfter(ctx, db.ListProgramsByFarmUpdatedAfterParams{
+			FarmID:       farmID,
+			UpdatedAfter: *since,
+		})
+	} else {
+		progs, err = w.Q.ListProgramsByFarm(ctx, farmID)
+	}
 	if err != nil {
 		return 0, err
 	}
@@ -112,8 +181,17 @@ func (w *Worker) IngestFarmFertigationPrograms(ctx context.Context, farmID int64
 }
 
 // IngestFarmSchedules embeds gr33ncore.schedules for a farm.
-func (w *Worker) IngestFarmSchedules(ctx context.Context, farmID int64) (int, error) {
-	rows, err := w.Q.ListSchedulesByFarm(ctx, farmID)
+func (w *Worker) IngestFarmSchedules(ctx context.Context, farmID int64, since *time.Time) (int, error) {
+	var rows []db.Gr33ncoreSchedule
+	var err error
+	if since != nil {
+		rows, err = w.Q.ListSchedulesByFarmUpdatedAfter(ctx, db.ListSchedulesByFarmUpdatedAfterParams{
+			FarmID:       farmID,
+			UpdatedAfter: *since,
+		})
+	} else {
+		rows, err = w.Q.ListSchedulesByFarm(ctx, farmID)
+	}
 	if err != nil {
 		return 0, err
 	}
@@ -130,8 +208,17 @@ func (w *Worker) IngestFarmSchedules(ctx context.Context, farmID int64) (int, er
 }
 
 // IngestFarmAutomationRules embeds gr33ncore.automation_rules for a farm.
-func (w *Worker) IngestFarmAutomationRules(ctx context.Context, farmID int64) (int, error) {
-	rows, err := w.Q.ListAutomationRulesByFarm(ctx, farmID)
+func (w *Worker) IngestFarmAutomationRules(ctx context.Context, farmID int64, since *time.Time) (int, error) {
+	var rows []db.Gr33ncoreAutomationRule
+	var err error
+	if since != nil {
+		rows, err = w.Q.ListAutomationRulesByFarmUpdatedAfter(ctx, db.ListAutomationRulesByFarmUpdatedAfterParams{
+			FarmID:       farmID,
+			UpdatedAfter: *since,
+		})
+	} else {
+		rows, err = w.Q.ListAutomationRulesByFarm(ctx, farmID)
+	}
 	if err != nil {
 		return 0, err
 	}
@@ -165,10 +252,49 @@ func (w *Worker) IngestFarmExecutableActions(ctx context.Context, farmID int64) 
 	return w.upsertBatch(ctx, farmID, SourceTypeExecutableAction, ids, docs)
 }
 
-// IngestFarmCostTransactions embeds cost_transactions in id order (amount/currency omitted in document text).
-func (w *Worker) IngestFarmCostTransactions(ctx context.Context, farmID int64, batchSize int32, startAfterID int64) (int, error) {
+// IngestFarmCostTransactions embeds cost_transactions (amount/currency omitted in document text).
+// If since is nil, scans by id after startAfterID. If since is set, scans updated_at > since with keyset paging; startAfterID is ignored.
+func (w *Worker) IngestFarmCostTransactions(ctx context.Context, farmID int64, batchSize int32, startAfterID int64, since *time.Time) (int, error) {
 	if batchSize <= 0 {
 		batchSize = 500
+	}
+	if since != nil {
+		var total int
+		page, err := w.Q.ListCostTransactionsByFarmUpdatedAfterFirst(ctx, db.ListCostTransactionsByFarmUpdatedAfterFirstParams{
+			FarmID: farmID,
+			Since:  *since,
+			Limit:  batchSize,
+		})
+		for {
+			if err != nil {
+				return total, err
+			}
+			if len(page) == 0 {
+				break
+			}
+			docs := make([]string, len(page))
+			ids := make([]int64, len(page))
+			for i := range page {
+				docs[i] = CostTransactionDocument(page[i])
+				ids[i] = page[i].ID
+			}
+			n, err := w.upsertBatch(ctx, farmID, SourceTypeCostTransaction, ids, docs)
+			if err != nil {
+				return total, err
+			}
+			total += n
+			if int32(len(page)) < batchSize {
+				break
+			}
+			last := page[len(page)-1]
+			page, err = w.Q.ListCostTransactionsByFarmUpdatedAfterNext(ctx, db.ListCostTransactionsByFarmUpdatedAfterNextParams{
+				FarmID:          farmID,
+				CursorUpdatedAt: last.UpdatedAt,
+				CursorID:        last.ID,
+				Limit:           batchSize,
+			})
+		}
+		return total, nil
 	}
 	var total int
 	lastID := startAfterID
@@ -204,8 +330,17 @@ func (w *Worker) IngestFarmCostTransactions(ctx context.Context, farmID int64, b
 }
 
 // IngestFarmInputDefinitions embeds natural-farming input definitions (no unit cost in text).
-func (w *Worker) IngestFarmInputDefinitions(ctx context.Context, farmID int64) (int, error) {
-	rows, err := w.Q.ListInputDefinitionsByFarm(ctx, farmID)
+func (w *Worker) IngestFarmInputDefinitions(ctx context.Context, farmID int64, since *time.Time) (int, error) {
+	var rows []db.Gr33nnaturalfarmingInputDefinition
+	var err error
+	if since != nil {
+		rows, err = w.Q.ListInputDefinitionsByFarmUpdatedAfter(ctx, db.ListInputDefinitionsByFarmUpdatedAfterParams{
+			FarmID:       farmID,
+			UpdatedAfter: *since,
+		})
+	} else {
+		rows, err = w.Q.ListInputDefinitionsByFarm(ctx, farmID)
+	}
 	if err != nil {
 		return 0, err
 	}
@@ -222,8 +357,17 @@ func (w *Worker) IngestFarmInputDefinitions(ctx context.Context, farmID int64) (
 }
 
 // IngestFarmInputBatches embeds input batches (no quantity / commercial numerics in text).
-func (w *Worker) IngestFarmInputBatches(ctx context.Context, farmID int64) (int, error) {
-	rows, err := w.Q.ListInputBatchesByFarm(ctx, farmID)
+func (w *Worker) IngestFarmInputBatches(ctx context.Context, farmID int64, since *time.Time) (int, error) {
+	var rows []db.Gr33nnaturalfarmingInputBatch
+	var err error
+	if since != nil {
+		rows, err = w.Q.ListInputBatchesByFarmUpdatedAfter(ctx, db.ListInputBatchesByFarmUpdatedAfterParams{
+			FarmID:       farmID,
+			UpdatedAfter: *since,
+		})
+	} else {
+		rows, err = w.Q.ListInputBatchesByFarm(ctx, farmID)
+	}
 	if err != nil {
 		return 0, err
 	}
@@ -239,10 +383,49 @@ func (w *Worker) IngestFarmInputBatches(ctx context.Context, farmID int64) (int,
 	return w.upsertBatch(ctx, farmID, SourceTypeInputBatch, ids, docs)
 }
 
-// IngestFarmAlertNotifications embeds alerts_notifications in id order.
-func (w *Worker) IngestFarmAlertNotifications(ctx context.Context, farmID int64, batchSize int32, startAfterID int64) (int, error) {
+// IngestFarmAlertNotifications embeds alerts_notifications.
+// If since is nil, scans by id after startAfterID. If since is set, scans created_at > since with keyset paging; startAfterID is ignored.
+func (w *Worker) IngestFarmAlertNotifications(ctx context.Context, farmID int64, batchSize int32, startAfterID int64, since *time.Time) (int, error) {
 	if batchSize <= 0 {
 		batchSize = 500
+	}
+	if since != nil {
+		var total int
+		page, err := w.Q.ListAlertsByFarmCreatedAfterFirst(ctx, db.ListAlertsByFarmCreatedAfterFirstParams{
+			FarmID: farmID,
+			Since:  *since,
+			Limit:  batchSize,
+		})
+		for {
+			if err != nil {
+				return total, err
+			}
+			if len(page) == 0 {
+				break
+			}
+			docs := make([]string, len(page))
+			ids := make([]int64, len(page))
+			for i := range page {
+				docs[i] = AlertNotificationDocument(page[i])
+				ids[i] = page[i].ID
+			}
+			n, err := w.upsertBatch(ctx, farmID, SourceTypeAlertNotification, ids, docs)
+			if err != nil {
+				return total, err
+			}
+			total += n
+			if int32(len(page)) < batchSize {
+				break
+			}
+			last := page[len(page)-1]
+			page, err = w.Q.ListAlertsByFarmCreatedAfterNext(ctx, db.ListAlertsByFarmCreatedAfterNextParams{
+				FarmID:          farmID,
+				CursorCreatedAt: last.CreatedAt,
+				CursorID:        last.ID,
+				Limit:           batchSize,
+			})
+		}
+		return total, nil
 	}
 	var total int
 	lastID := startAfterID

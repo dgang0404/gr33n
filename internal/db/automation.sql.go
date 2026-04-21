@@ -13,6 +13,23 @@ import (
 	"gr33n-api/internal/platform/commontypes"
 )
 
+const countAutomationRunsByFarmExecutedAfter = `-- name: CountAutomationRunsByFarmExecutedAfter :one
+SELECT COUNT(*)::bigint FROM gr33ncore.automation_runs
+WHERE farm_id = $1 AND executed_at > $2::timestamptz
+`
+
+type CountAutomationRunsByFarmExecutedAfterParams struct {
+	FarmID int64     `db:"farm_id" json:"farm_id"`
+	Since  time.Time `db:"since" json:"since"`
+}
+
+func (q *Queries) CountAutomationRunsByFarmExecutedAfter(ctx context.Context, arg CountAutomationRunsByFarmExecutedAfterParams) (int64, error) {
+	row := q.db.QueryRow(ctx, countAutomationRunsByFarmExecutedAfter, arg.FarmID, arg.Since)
+	var column_1 int64
+	err := row.Scan(&column_1)
+	return column_1, err
+}
+
 const createAutomationRule = `-- name: CreateAutomationRule :one
 INSERT INTO gr33ncore.automation_rules (
     farm_id, name, description, is_active,
@@ -577,6 +594,52 @@ func (q *Queries) ListAutomationRulesByFarm(ctx context.Context, farmID int64) (
 	return items, nil
 }
 
+const listAutomationRulesByFarmUpdatedAfter = `-- name: ListAutomationRulesByFarmUpdatedAfter :many
+SELECT id, farm_id, name, description, is_active, trigger_source, trigger_configuration, condition_logic, conditions_jsonb, last_evaluated_time, last_triggered_time, cooldown_period_seconds, created_at, updated_at FROM gr33ncore.automation_rules
+WHERE farm_id = $1 AND updated_at > $2::timestamptz
+ORDER BY updated_at ASC, id ASC
+`
+
+type ListAutomationRulesByFarmUpdatedAfterParams struct {
+	FarmID       int64     `db:"farm_id" json:"farm_id"`
+	UpdatedAfter time.Time `db:"updated_after" json:"updated_after"`
+}
+
+func (q *Queries) ListAutomationRulesByFarmUpdatedAfter(ctx context.Context, arg ListAutomationRulesByFarmUpdatedAfterParams) ([]Gr33ncoreAutomationRule, error) {
+	rows, err := q.db.Query(ctx, listAutomationRulesByFarmUpdatedAfter, arg.FarmID, arg.UpdatedAfter)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Gr33ncoreAutomationRule{}
+	for rows.Next() {
+		var i Gr33ncoreAutomationRule
+		if err := rows.Scan(
+			&i.ID,
+			&i.FarmID,
+			&i.Name,
+			&i.Description,
+			&i.IsActive,
+			&i.TriggerSource,
+			&i.TriggerConfiguration,
+			&i.ConditionLogic,
+			&i.ConditionsJsonb,
+			&i.LastEvaluatedTime,
+			&i.LastTriggeredTime,
+			&i.CooldownPeriodSeconds,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listAutomationRunsByFarm = `-- name: ListAutomationRunsByFarm :many
 SELECT id, farm_id, schedule_id, rule_id, status, message, details, executed_at, program_id FROM gr33ncore.automation_runs
 WHERE farm_id = $1
@@ -634,6 +697,104 @@ type ListAutomationRunsByFarmAfterIDParams struct {
 
 func (q *Queries) ListAutomationRunsByFarmAfterID(ctx context.Context, arg ListAutomationRunsByFarmAfterIDParams) ([]Gr33ncoreAutomationRun, error) {
 	rows, err := q.db.Query(ctx, listAutomationRunsByFarmAfterID, arg.FarmID, arg.ID, arg.Limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Gr33ncoreAutomationRun{}
+	for rows.Next() {
+		var i Gr33ncoreAutomationRun
+		if err := rows.Scan(
+			&i.ID,
+			&i.FarmID,
+			&i.ScheduleID,
+			&i.RuleID,
+			&i.Status,
+			&i.Message,
+			&i.Details,
+			&i.ExecutedAt,
+			&i.ProgramID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listAutomationRunsByFarmExecutedAfterFirst = `-- name: ListAutomationRunsByFarmExecutedAfterFirst :many
+SELECT id, farm_id, schedule_id, rule_id, status, message, details, executed_at, program_id FROM gr33ncore.automation_runs
+WHERE farm_id = $1 AND executed_at > $2::timestamptz
+ORDER BY executed_at ASC, id ASC
+LIMIT $3
+`
+
+type ListAutomationRunsByFarmExecutedAfterFirstParams struct {
+	FarmID int64     `db:"farm_id" json:"farm_id"`
+	Since  time.Time `db:"since" json:"since"`
+	Limit  int32     `db:"limit" json:"limit"`
+}
+
+// Incremental RAG ingest by executed_at (first page).
+func (q *Queries) ListAutomationRunsByFarmExecutedAfterFirst(ctx context.Context, arg ListAutomationRunsByFarmExecutedAfterFirstParams) ([]Gr33ncoreAutomationRun, error) {
+	rows, err := q.db.Query(ctx, listAutomationRunsByFarmExecutedAfterFirst, arg.FarmID, arg.Since, arg.Limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Gr33ncoreAutomationRun{}
+	for rows.Next() {
+		var i Gr33ncoreAutomationRun
+		if err := rows.Scan(
+			&i.ID,
+			&i.FarmID,
+			&i.ScheduleID,
+			&i.RuleID,
+			&i.Status,
+			&i.Message,
+			&i.Details,
+			&i.ExecutedAt,
+			&i.ProgramID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listAutomationRunsByFarmExecutedAfterNext = `-- name: ListAutomationRunsByFarmExecutedAfterNext :many
+SELECT id, farm_id, schedule_id, rule_id, status, message, details, executed_at, program_id FROM gr33ncore.automation_runs
+WHERE farm_id = $1
+  AND (
+    executed_at > $2::timestamptz
+    OR (executed_at = $2::timestamptz AND id > $3)
+  )
+ORDER BY executed_at ASC, id ASC
+LIMIT $4
+`
+
+type ListAutomationRunsByFarmExecutedAfterNextParams struct {
+	FarmID           int64     `db:"farm_id" json:"farm_id"`
+	CursorExecutedAt time.Time `db:"cursor_executed_at" json:"cursor_executed_at"`
+	CursorID         int64     `db:"cursor_id" json:"cursor_id"`
+	Limit            int32     `db:"limit" json:"limit"`
+}
+
+// Subsequent pages keyed by (executed_at, id).
+func (q *Queries) ListAutomationRunsByFarmExecutedAfterNext(ctx context.Context, arg ListAutomationRunsByFarmExecutedAfterNextParams) ([]Gr33ncoreAutomationRun, error) {
+	rows, err := q.db.Query(ctx, listAutomationRunsByFarmExecutedAfterNext,
+		arg.FarmID,
+		arg.CursorExecutedAt,
+		arg.CursorID,
+		arg.Limit,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -853,6 +1014,52 @@ ORDER BY name ASC
 // ============================================================
 func (q *Queries) ListSchedulesByFarm(ctx context.Context, farmID int64) ([]Gr33ncoreSchedule, error) {
 	rows, err := q.db.Query(ctx, listSchedulesByFarm, farmID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Gr33ncoreSchedule{}
+	for rows.Next() {
+		var i Gr33ncoreSchedule
+		if err := rows.Scan(
+			&i.ID,
+			&i.FarmID,
+			&i.Name,
+			&i.Description,
+			&i.ScheduleType,
+			&i.CronExpression,
+			&i.Timezone,
+			&i.IsActive,
+			&i.LastTriggeredTime,
+			&i.NextExpectedTriggerTime,
+			&i.MetaData,
+			&i.Preconditions,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listSchedulesByFarmUpdatedAfter = `-- name: ListSchedulesByFarmUpdatedAfter :many
+SELECT id, farm_id, name, description, schedule_type, cron_expression, timezone, is_active, last_triggered_time, next_expected_trigger_time, meta_data, preconditions, created_at, updated_at FROM gr33ncore.schedules
+WHERE farm_id = $1 AND updated_at > $2::timestamptz
+ORDER BY updated_at ASC, id ASC
+`
+
+type ListSchedulesByFarmUpdatedAfterParams struct {
+	FarmID       int64     `db:"farm_id" json:"farm_id"`
+	UpdatedAfter time.Time `db:"updated_after" json:"updated_after"`
+}
+
+func (q *Queries) ListSchedulesByFarmUpdatedAfter(ctx context.Context, arg ListSchedulesByFarmUpdatedAfterParams) ([]Gr33ncoreSchedule, error) {
+	rows, err := q.db.Query(ctx, listSchedulesByFarmUpdatedAfter, arg.FarmID, arg.UpdatedAfter)
 	if err != nil {
 		return nil, err
 	}

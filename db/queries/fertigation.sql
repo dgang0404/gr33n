@@ -31,6 +31,11 @@ SELECT * FROM gr33nfertigation.programs
 WHERE farm_id = $1 AND deleted_at IS NULL
 ORDER BY name ASC;
 
+-- name: ListProgramsByFarmUpdatedAfter :many
+SELECT * FROM gr33nfertigation.programs
+WHERE farm_id = sqlc.arg('farm_id') AND deleted_at IS NULL AND updated_at > sqlc.arg('updated_after')::timestamptz
+ORDER BY updated_at ASC, id ASC;
+
 -- name: CreateProgram :one
 INSERT INTO gr33nfertigation.programs (
     farm_id, name, description, application_recipe_id, reservoir_id,

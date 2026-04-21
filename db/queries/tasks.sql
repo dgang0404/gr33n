@@ -29,6 +29,12 @@ SELECT * FROM gr33ncore.tasks
 WHERE farm_id = $1 AND deleted_at IS NULL
 ORDER BY due_date ASC NULLS LAST, priority DESC;
 
+-- Incremental RAG ingest (updated_at watermark).
+-- name: ListTasksByFarmUpdatedAfter :many
+SELECT * FROM gr33ncore.tasks
+WHERE farm_id = sqlc.arg('farm_id') AND deleted_at IS NULL AND updated_at > sqlc.arg('updated_after')::timestamptz
+ORDER BY updated_at ASC, id ASC;
+
 -- name: ListTasksByAssignee :many
 SELECT * FROM gr33ncore.tasks
 WHERE assigned_to_user_id = $1 AND farm_id = $2 AND deleted_at IS NULL

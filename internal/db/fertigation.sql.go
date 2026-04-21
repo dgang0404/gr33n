@@ -840,6 +840,60 @@ func (q *Queries) ListProgramsByFarm(ctx context.Context, farmID int64) ([]Gr33n
 	return items, nil
 }
 
+const listProgramsByFarmUpdatedAfter = `-- name: ListProgramsByFarmUpdatedAfter :many
+SELECT id, farm_id, name, description, application_recipe_id, reservoir_id, target_zone_id, schedule_id, ec_target_id, volume_liters_per_sqm, total_volume_liters, dilution_ratio, run_duration_seconds, ec_trigger_low, ph_trigger_low, ph_trigger_high, is_active, metadata, last_triggered_time, created_at, updated_at, deleted_at FROM gr33nfertigation.programs
+WHERE farm_id = $1 AND deleted_at IS NULL AND updated_at > $2::timestamptz
+ORDER BY updated_at ASC, id ASC
+`
+
+type ListProgramsByFarmUpdatedAfterParams struct {
+	FarmID       int64     `db:"farm_id" json:"farm_id"`
+	UpdatedAfter time.Time `db:"updated_after" json:"updated_after"`
+}
+
+func (q *Queries) ListProgramsByFarmUpdatedAfter(ctx context.Context, arg ListProgramsByFarmUpdatedAfterParams) ([]Gr33nfertigationProgram, error) {
+	rows, err := q.db.Query(ctx, listProgramsByFarmUpdatedAfter, arg.FarmID, arg.UpdatedAfter)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Gr33nfertigationProgram{}
+	for rows.Next() {
+		var i Gr33nfertigationProgram
+		if err := rows.Scan(
+			&i.ID,
+			&i.FarmID,
+			&i.Name,
+			&i.Description,
+			&i.ApplicationRecipeID,
+			&i.ReservoirID,
+			&i.TargetZoneID,
+			&i.ScheduleID,
+			&i.EcTargetID,
+			&i.VolumeLitersPerSqm,
+			&i.TotalVolumeLiters,
+			&i.DilutionRatio,
+			&i.RunDurationSeconds,
+			&i.EcTriggerLow,
+			&i.PhTriggerLow,
+			&i.PhTriggerHigh,
+			&i.IsActive,
+			&i.Metadata,
+			&i.LastTriggeredTime,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.DeletedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listReservoirsByFarm = `-- name: ListReservoirsByFarm :many
 
 SELECT id, farm_id, zone_id, name, description, capacity_liters, current_volume_liters, status, ec_sensor_id, ph_sensor_id, temp_sensor_id, water_level_sensor_id, delivery_actuator_id, last_ec_mscm, last_ph, last_reading_time, metadata, created_at, updated_at, deleted_at FROM gr33nfertigation.reservoirs

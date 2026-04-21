@@ -20,6 +20,16 @@ SELECT * FROM gr33nnaturalfarming.input_batches
 WHERE farm_id = $1 AND deleted_at IS NULL
 ORDER BY creation_start_date DESC;
 
+-- name: ListInputDefinitionsByFarmUpdatedAfter :many
+SELECT * FROM gr33nnaturalfarming.input_definitions
+WHERE farm_id = sqlc.arg('farm_id') AND deleted_at IS NULL AND updated_at > sqlc.arg('updated_after')::timestamptz
+ORDER BY updated_at ASC, id ASC;
+
+-- name: ListInputBatchesByFarmUpdatedAfter :many
+SELECT * FROM gr33nnaturalfarming.input_batches
+WHERE farm_id = sqlc.arg('farm_id') AND deleted_at IS NULL AND updated_at > sqlc.arg('updated_after')::timestamptz
+ORDER BY updated_at ASC, id ASC;
+
 -- name: CreateInputDefinition :one
 INSERT INTO gr33nnaturalfarming.input_definitions (
   farm_id, name, category, description, typical_ingredients,

@@ -444,6 +444,11 @@ third-party chat endpoints are an **explicit operator choice** via `LLM_BASE_URL
 
 Ingestion from operational tables is via the **`rag-ingest`** CLI (see repo `cmd/rag-ingest`): flags include
 `-farm-id`, `-tasks`, `-automation-runs`, `-crop-cycles`, `-programs`, `-schedules`, `-automation-rules`, `-executable-actions`, `-cost-transactions`, `-inventory-definitions`, `-inventory-batches`, `-alerts`, `-dry-run`, plus cursor flags for automation runs, cost batches (`-cost-batch-size`, `-cost-after-id`), and alerts (`-alert-batch-size`, `-alert-after-id`).
+
+**Incremental (Phase 25 WS3):** `-updated-after <RFC3339>` limits work to rows changed after that instant (per-table semantics: mostly `updated_at`; `automation_runs` uses `executed_at`; `alerts_notifications` uses `created_at`; keyset batching for large tables). The same value can be provided as **`RAG_INGEST_UPDATED_AFTER`** when the flag is omitted—useful for cron. The CLI flag overrides the env var when both are set. With `-updated-after` / env set, id-based cursor flags (`-runs-after-id`, etc.) are ignored for those domains. **`executable_actions`** has no `updated_at`—that domain still re-indexes all farm-linked rows when selected.
+
+**Cron sketch:** persist a watermark file or compute “last successful run minus skew”, export `DATABASE_URL`, `EMBEDDING_API_KEY`, and `RAG_INGEST_UPDATED_AFTER`, then run `go run ./cmd/rag-ingest …` with the same domain flags you use for full ingest. Idempotency remains the existing `(farm_id, source_type, source_id, chunk_index)` upsert.
+
 Operator-facing constraints (PII, secrets, Insert Commons boundaries) are documented in
 [`rag-scope-and-threat-model.md`](rag-scope-and-threat-model.md).
 

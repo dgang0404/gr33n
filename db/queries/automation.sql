@@ -7,6 +7,11 @@ SELECT * FROM gr33ncore.schedules
 WHERE farm_id = $1
 ORDER BY name ASC;
 
+-- name: ListSchedulesByFarmUpdatedAfter :many
+SELECT * FROM gr33ncore.schedules
+WHERE farm_id = sqlc.arg('farm_id') AND updated_at > sqlc.arg('updated_after')::timestamptz
+ORDER BY updated_at ASC, id ASC;
+
 -- name: GetScheduleByID :one
 SELECT * FROM gr33ncore.schedules
 WHERE id = $1;
@@ -51,6 +56,28 @@ WHERE farm_id = $1 AND id > $2
 ORDER BY id ASC
 LIMIT $3;
 
+-- Incremental RAG ingest by executed_at (first page).
+-- name: ListAutomationRunsByFarmExecutedAfterFirst :many
+SELECT * FROM gr33ncore.automation_runs
+WHERE farm_id = sqlc.arg('farm_id') AND executed_at > sqlc.arg('since')::timestamptz
+ORDER BY executed_at ASC, id ASC
+LIMIT sqlc.arg('limit');
+
+-- Subsequent pages keyed by (executed_at, id).
+-- name: ListAutomationRunsByFarmExecutedAfterNext :many
+SELECT * FROM gr33ncore.automation_runs
+WHERE farm_id = sqlc.arg('farm_id')
+  AND (
+    executed_at > sqlc.arg('cursor_executed_at')::timestamptz
+    OR (executed_at = sqlc.arg('cursor_executed_at')::timestamptz AND id > sqlc.arg('cursor_id'))
+  )
+ORDER BY executed_at ASC, id ASC
+LIMIT sqlc.arg('limit');
+
+-- name: CountAutomationRunsByFarmExecutedAfter :one
+SELECT COUNT(*)::bigint FROM gr33ncore.automation_runs
+WHERE farm_id = sqlc.arg('farm_id') AND executed_at > sqlc.arg('since')::timestamptz;
+
 -- name: GetLastSuccessfulRunBySchedule :one
 SELECT * FROM gr33ncore.automation_runs
 WHERE schedule_id = $1 AND status = 'success'
@@ -93,6 +120,11 @@ DELETE FROM gr33ncore.schedules WHERE id = $1;
 SELECT * FROM gr33ncore.automation_rules
 WHERE farm_id = $1
 ORDER BY name ASC;
+
+-- name: ListAutomationRulesByFarmUpdatedAfter :many
+SELECT * FROM gr33ncore.automation_rules
+WHERE farm_id = sqlc.arg('farm_id') AND updated_at > sqlc.arg('updated_after')::timestamptz
+ORDER BY updated_at ASC, id ASC;
 
 -- name: GetAutomationRuleByID :one
 SELECT * FROM gr33ncore.automation_rules

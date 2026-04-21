@@ -7,6 +7,7 @@ package db
 
 import (
 	"context"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgtype"
 )
@@ -343,6 +344,66 @@ func (q *Queries) ListInputBatchesByFarm(ctx context.Context, farmID int64) ([]G
 	return items, nil
 }
 
+const listInputBatchesByFarmUpdatedAfter = `-- name: ListInputBatchesByFarmUpdatedAfter :many
+SELECT id, farm_id, input_definition_id, batch_identifier, creation_start_date, creation_end_date, expected_ready_date, actual_ready_date, quantity_produced, quantity_unit_id, current_quantity_remaining, status, storage_location, shelf_life_days, ph_value, ec_value_ms_cm, temperature_during_making, ingredients_used, procedure_followed, observations_notes, made_by_user_id, related_task_id, file_attachment_id, created_at, updated_at, updated_by_user_id, deleted_at, low_stock_threshold FROM gr33nnaturalfarming.input_batches
+WHERE farm_id = $1 AND deleted_at IS NULL AND updated_at > $2::timestamptz
+ORDER BY updated_at ASC, id ASC
+`
+
+type ListInputBatchesByFarmUpdatedAfterParams struct {
+	FarmID       int64     `db:"farm_id" json:"farm_id"`
+	UpdatedAfter time.Time `db:"updated_after" json:"updated_after"`
+}
+
+func (q *Queries) ListInputBatchesByFarmUpdatedAfter(ctx context.Context, arg ListInputBatchesByFarmUpdatedAfterParams) ([]Gr33nnaturalfarmingInputBatch, error) {
+	rows, err := q.db.Query(ctx, listInputBatchesByFarmUpdatedAfter, arg.FarmID, arg.UpdatedAfter)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Gr33nnaturalfarmingInputBatch{}
+	for rows.Next() {
+		var i Gr33nnaturalfarmingInputBatch
+		if err := rows.Scan(
+			&i.ID,
+			&i.FarmID,
+			&i.InputDefinitionID,
+			&i.BatchIdentifier,
+			&i.CreationStartDate,
+			&i.CreationEndDate,
+			&i.ExpectedReadyDate,
+			&i.ActualReadyDate,
+			&i.QuantityProduced,
+			&i.QuantityUnitID,
+			&i.CurrentQuantityRemaining,
+			&i.Status,
+			&i.StorageLocation,
+			&i.ShelfLifeDays,
+			&i.PhValue,
+			&i.EcValueMsCm,
+			&i.TemperatureDuringMaking,
+			&i.IngredientsUsed,
+			&i.ProcedureFollowed,
+			&i.ObservationsNotes,
+			&i.MadeByUserID,
+			&i.RelatedTaskID,
+			&i.FileAttachmentID,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.UpdatedByUserID,
+			&i.DeletedAt,
+			&i.LowStockThreshold,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listInputDefinitionsByFarm = `-- name: ListInputDefinitionsByFarm :many
 SELECT id, farm_id, name, category, description, typical_ingredients, preparation_summary, storage_guidelines, safety_precautions, reference_source, file_attachment_id, created_at, updated_at, updated_by_user_id, deleted_at, unit_cost, unit_cost_currency, unit_cost_unit_id FROM gr33nnaturalfarming.input_definitions
 WHERE farm_id = $1 AND deleted_at IS NULL
@@ -351,6 +412,56 @@ ORDER BY name ASC
 
 func (q *Queries) ListInputDefinitionsByFarm(ctx context.Context, farmID int64) ([]Gr33nnaturalfarmingInputDefinition, error) {
 	rows, err := q.db.Query(ctx, listInputDefinitionsByFarm, farmID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Gr33nnaturalfarmingInputDefinition{}
+	for rows.Next() {
+		var i Gr33nnaturalfarmingInputDefinition
+		if err := rows.Scan(
+			&i.ID,
+			&i.FarmID,
+			&i.Name,
+			&i.Category,
+			&i.Description,
+			&i.TypicalIngredients,
+			&i.PreparationSummary,
+			&i.StorageGuidelines,
+			&i.SafetyPrecautions,
+			&i.ReferenceSource,
+			&i.FileAttachmentID,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.UpdatedByUserID,
+			&i.DeletedAt,
+			&i.UnitCost,
+			&i.UnitCostCurrency,
+			&i.UnitCostUnitID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listInputDefinitionsByFarmUpdatedAfter = `-- name: ListInputDefinitionsByFarmUpdatedAfter :many
+SELECT id, farm_id, name, category, description, typical_ingredients, preparation_summary, storage_guidelines, safety_precautions, reference_source, file_attachment_id, created_at, updated_at, updated_by_user_id, deleted_at, unit_cost, unit_cost_currency, unit_cost_unit_id FROM gr33nnaturalfarming.input_definitions
+WHERE farm_id = $1 AND deleted_at IS NULL AND updated_at > $2::timestamptz
+ORDER BY updated_at ASC, id ASC
+`
+
+type ListInputDefinitionsByFarmUpdatedAfterParams struct {
+	FarmID       int64     `db:"farm_id" json:"farm_id"`
+	UpdatedAfter time.Time `db:"updated_after" json:"updated_after"`
+}
+
+func (q *Queries) ListInputDefinitionsByFarmUpdatedAfter(ctx context.Context, arg ListInputDefinitionsByFarmUpdatedAfterParams) ([]Gr33nnaturalfarmingInputDefinition, error) {
+	rows, err := q.db.Query(ctx, listInputDefinitionsByFarmUpdatedAfter, arg.FarmID, arg.UpdatedAfter)
 	if err != nil {
 		return nil, err
 	}

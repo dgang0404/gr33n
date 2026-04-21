@@ -25,6 +25,23 @@ func (q *Queries) CountCostTransactionsByFarm(ctx context.Context, farmID int64)
 	return column_1, err
 }
 
+const countCostTransactionsByFarmUpdatedAfter = `-- name: CountCostTransactionsByFarmUpdatedAfter :one
+SELECT COUNT(*)::bigint FROM gr33ncore.cost_transactions
+WHERE farm_id = $1 AND updated_at > $2::timestamptz
+`
+
+type CountCostTransactionsByFarmUpdatedAfterParams struct {
+	FarmID int64     `db:"farm_id" json:"farm_id"`
+	Since  time.Time `db:"since" json:"since"`
+}
+
+func (q *Queries) CountCostTransactionsByFarmUpdatedAfter(ctx context.Context, arg CountCostTransactionsByFarmUpdatedAfterParams) (int64, error) {
+	row := q.db.QueryRow(ctx, countCostTransactionsByFarmUpdatedAfter, arg.FarmID, arg.Since)
+	var column_1 int64
+	err := row.Scan(&column_1)
+	return column_1, err
+}
+
 const createCostTransaction = `-- name: CreateCostTransaction :one
 
 INSERT INTO gr33ncore.cost_transactions (
@@ -824,6 +841,126 @@ func (q *Queries) ListCostTransactionsByFarmExport(ctx context.Context, farmID i
 			&i.DocumentType,
 			&i.DocumentReference,
 			&i.Counterparty,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listCostTransactionsByFarmUpdatedAfterFirst = `-- name: ListCostTransactionsByFarmUpdatedAfterFirst :many
+SELECT id, farm_id, transaction_date, category, subcategory, amount, currency, description, related_module_schema, related_table_name, related_record_id, receipt_file_id, is_income, document_type, document_reference, counterparty, created_by_user_id, created_at, updated_at, crop_cycle_id FROM gr33ncore.cost_transactions
+WHERE farm_id = $1 AND updated_at > $2::timestamptz
+ORDER BY updated_at ASC, id ASC
+LIMIT $3
+`
+
+type ListCostTransactionsByFarmUpdatedAfterFirstParams struct {
+	FarmID int64     `db:"farm_id" json:"farm_id"`
+	Since  time.Time `db:"since" json:"since"`
+	Limit  int32     `db:"limit" json:"limit"`
+}
+
+// Incremental RAG ingest by updated_at (first page).
+func (q *Queries) ListCostTransactionsByFarmUpdatedAfterFirst(ctx context.Context, arg ListCostTransactionsByFarmUpdatedAfterFirstParams) ([]Gr33ncoreCostTransaction, error) {
+	rows, err := q.db.Query(ctx, listCostTransactionsByFarmUpdatedAfterFirst, arg.FarmID, arg.Since, arg.Limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Gr33ncoreCostTransaction{}
+	for rows.Next() {
+		var i Gr33ncoreCostTransaction
+		if err := rows.Scan(
+			&i.ID,
+			&i.FarmID,
+			&i.TransactionDate,
+			&i.Category,
+			&i.Subcategory,
+			&i.Amount,
+			&i.Currency,
+			&i.Description,
+			&i.RelatedModuleSchema,
+			&i.RelatedTableName,
+			&i.RelatedRecordID,
+			&i.ReceiptFileID,
+			&i.IsIncome,
+			&i.DocumentType,
+			&i.DocumentReference,
+			&i.Counterparty,
+			&i.CreatedByUserID,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.CropCycleID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listCostTransactionsByFarmUpdatedAfterNext = `-- name: ListCostTransactionsByFarmUpdatedAfterNext :many
+SELECT id, farm_id, transaction_date, category, subcategory, amount, currency, description, related_module_schema, related_table_name, related_record_id, receipt_file_id, is_income, document_type, document_reference, counterparty, created_by_user_id, created_at, updated_at, crop_cycle_id FROM gr33ncore.cost_transactions
+WHERE farm_id = $1
+  AND (
+    updated_at > $2::timestamptz
+    OR (updated_at = $2::timestamptz AND id > $3)
+  )
+ORDER BY updated_at ASC, id ASC
+LIMIT $4
+`
+
+type ListCostTransactionsByFarmUpdatedAfterNextParams struct {
+	FarmID          int64     `db:"farm_id" json:"farm_id"`
+	CursorUpdatedAt time.Time `db:"cursor_updated_at" json:"cursor_updated_at"`
+	CursorID        int64     `db:"cursor_id" json:"cursor_id"`
+	Limit           int32     `db:"limit" json:"limit"`
+}
+
+// Subsequent pages keyed by (updated_at, id).
+func (q *Queries) ListCostTransactionsByFarmUpdatedAfterNext(ctx context.Context, arg ListCostTransactionsByFarmUpdatedAfterNextParams) ([]Gr33ncoreCostTransaction, error) {
+	rows, err := q.db.Query(ctx, listCostTransactionsByFarmUpdatedAfterNext,
+		arg.FarmID,
+		arg.CursorUpdatedAt,
+		arg.CursorID,
+		arg.Limit,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Gr33ncoreCostTransaction{}
+	for rows.Next() {
+		var i Gr33ncoreCostTransaction
+		if err := rows.Scan(
+			&i.ID,
+			&i.FarmID,
+			&i.TransactionDate,
+			&i.Category,
+			&i.Subcategory,
+			&i.Amount,
+			&i.Currency,
+			&i.Description,
+			&i.RelatedModuleSchema,
+			&i.RelatedTableName,
+			&i.RelatedRecordID,
+			&i.ReceiptFileID,
+			&i.IsIncome,
+			&i.DocumentType,
+			&i.DocumentReference,
+			&i.Counterparty,
+			&i.CreatedByUserID,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.CropCycleID,
 		); err != nil {
 			return nil, err
 		}

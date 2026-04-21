@@ -7,6 +7,7 @@ package db
 
 import (
 	"context"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgtype"
 	"gr33n-api/internal/platform/commontypes"
@@ -226,6 +227,64 @@ ORDER BY due_date ASC NULLS LAST, priority DESC
 
 func (q *Queries) ListTasksByFarm(ctx context.Context, farmID int64) ([]Gr33ncoreTask, error) {
 	rows, err := q.db.Query(ctx, listTasksByFarm, farmID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Gr33ncoreTask{}
+	for rows.Next() {
+		var i Gr33ncoreTask
+		if err := rows.Scan(
+			&i.ID,
+			&i.FarmID,
+			&i.ZoneID,
+			&i.ScheduleID,
+			&i.Title,
+			&i.Description,
+			&i.TaskType,
+			&i.Status,
+			&i.Priority,
+			&i.AssignedToUserID,
+			&i.DueDate,
+			&i.EstimatedDurationMinutes,
+			&i.ActualStartTime,
+			&i.ActualEndTime,
+			&i.RelatedModuleSchema,
+			&i.RelatedTableName,
+			&i.RelatedRecordID,
+			&i.SourceAlertID,
+			&i.SourceRuleID,
+			&i.CreatedByUserID,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.UpdatedByUserID,
+			&i.DeletedAt,
+			&i.TimeSpentMinutes,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listTasksByFarmUpdatedAfter = `-- name: ListTasksByFarmUpdatedAfter :many
+SELECT id, farm_id, zone_id, schedule_id, title, description, task_type, status, priority, assigned_to_user_id, due_date, estimated_duration_minutes, actual_start_time, actual_end_time, related_module_schema, related_table_name, related_record_id, source_alert_id, source_rule_id, created_by_user_id, created_at, updated_at, updated_by_user_id, deleted_at, time_spent_minutes FROM gr33ncore.tasks
+WHERE farm_id = $1 AND deleted_at IS NULL AND updated_at > $2::timestamptz
+ORDER BY updated_at ASC, id ASC
+`
+
+type ListTasksByFarmUpdatedAfterParams struct {
+	FarmID       int64     `db:"farm_id" json:"farm_id"`
+	UpdatedAfter time.Time `db:"updated_after" json:"updated_after"`
+}
+
+// Incremental RAG ingest (updated_at watermark).
+func (q *Queries) ListTasksByFarmUpdatedAfter(ctx context.Context, arg ListTasksByFarmUpdatedAfterParams) ([]Gr33ncoreTask, error) {
+	rows, err := q.db.Query(ctx, listTasksByFarmUpdatedAfter, arg.FarmID, arg.UpdatedAfter)
 	if err != nil {
 		return nil, err
 	}
