@@ -442,8 +442,9 @@ third-party chat endpoints are an **explicit operator choice** via `LLM_BASE_URL
 | **Monitor → Knowledge** | `GET`/`POST /farms/{id}/rag/search` — vector similarity + optional `module` / date filters on chunk rows |
 | Same page: **Ask (LLM)** | `POST /farms/{id}/rag/answer` — retrieve top‑k chunks, then chat completion with bracket citations `[n]` |
 
-Ingestion from operational tables is via the **`rag-ingest`** CLI (see repo `cmd/rag-ingest`). Operator-facing
-constraints (PII, secrets, Insert Commons boundaries) are documented in
+Ingestion from operational tables is via the **`rag-ingest`** CLI (see repo `cmd/rag-ingest`): flags include
+`-farm-id`, `-tasks`, `-automation-runs`, `-crop-cycles`, `-dry-run`, plus cursor flags for automation runs.
+Operator-facing constraints (PII, secrets, Insert Commons boundaries) are documented in
 [`rag-scope-and-threat-model.md`](rag-scope-and-threat-model.md).
 
 ---

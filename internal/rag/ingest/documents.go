@@ -1,18 +1,23 @@
 package ingest
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
+
+	"github.com/jackc/pgx/v5/pgtype"
 
 	db "gr33n-api/internal/db"
 	"gr33n-api/internal/rag/sanitize"
 )
 
 const (
-	SourceTypeTask           = "task"
-	SourceTypeAutomationRun  = "automation_run"
-	metadataModuleCore       = "core"
-	metadataModuleAutomation = "automation"
+	SourceTypeTask          = "task"
+	SourceTypeAutomationRun = "automation_run"
+	SourceTypeCropCycle     = "crop_cycle"
+	metadataModuleCore         = "core"
+	metadataModuleAutomation   = "automation"
+	metadataModuleFertigation  = "fertigation"
 )
 
 // TaskDocument builds deterministic embed text from a task row (single chunk).
@@ -64,4 +69,66 @@ func AutomationRunDocument(run db.Gr33ncoreAutomationRun) string {
 		b.WriteString(txt)
 	}
 	return strings.TrimSpace(b.String())
+}
+
+// CropCycleDocument builds deterministic embed text from a crop_cycles row (single chunk).
+func CropCycleDocument(c db.Gr33nfertigationCropCycle) string {
+	var b strings.Builder
+	b.WriteString("crop_cycle: ")
+	b.WriteString(strings.TrimSpace(c.Name))
+	b.WriteByte('\n')
+	b.WriteString("zone_id: ")
+	b.WriteString(strconv.FormatInt(c.ZoneID, 10))
+	b.WriteByte('\n')
+	if c.StrainOrVariety != nil && strings.TrimSpace(*c.StrainOrVariety) != "" {
+		b.WriteString("strain_or_variety: ")
+		b.WriteString(strings.TrimSpace(*c.StrainOrVariety))
+		b.WriteByte('\n')
+	}
+	if c.CurrentStage.Valid {
+		b.WriteString("stage: ")
+		b.WriteString(string(c.CurrentStage.Gr33nfertigationGrowthStageEnum))
+		b.WriteByte('\n')
+	}
+	if c.IsActive {
+		b.WriteString("active: yes\n")
+	} else {
+		b.WriteString("active: no\n")
+	}
+	if s := formatPGDate(c.StartedAt); s != "" {
+		b.WriteString("started_at: ")
+		b.WriteString(s)
+		b.WriteByte('\n')
+	}
+	if s := formatPGDate(c.HarvestedAt); s != "" {
+		b.WriteString("harvested_at: ")
+		b.WriteString(s)
+		b.WriteByte('\n')
+	}
+	if f, err := c.YieldGrams.Float64Value(); err == nil && f.Valid {
+		fmt.Fprintf(&b, "yield_grams: %g\n", f.Float64)
+	}
+	if c.YieldNotes != nil && strings.TrimSpace(*c.YieldNotes) != "" {
+		b.WriteString("yield_notes: ")
+		b.WriteString(sanitize.PlainNotes(*c.YieldNotes, 8000))
+		b.WriteByte('\n')
+	}
+	if c.CycleNotes != nil && strings.TrimSpace(*c.CycleNotes) != "" {
+		b.WriteString("cycle_notes: ")
+		b.WriteString(sanitize.PlainNotes(*c.CycleNotes, 8000))
+		b.WriteByte('\n')
+	}
+	if c.PrimaryProgramID != nil && *c.PrimaryProgramID > 0 {
+		b.WriteString("primary_program_id: ")
+		b.WriteString(strconv.FormatInt(*c.PrimaryProgramID, 10))
+		b.WriteByte('\n')
+	}
+	return strings.TrimSpace(b.String())
+}
+
+func formatPGDate(d pgtype.Date) string {
+	if !d.Valid {
+		return ""
+	}
+	return d.Time.Format("2006-01-02")
 }

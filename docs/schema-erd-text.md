@@ -148,7 +148,9 @@ ASCII “pipes” view — **`gr33ncore.farms`** is the isolation anchor for das
 
 ## 8. Mermaid (same spine — renders on GitHub)
 
-Optional render of the **farm hub** + **RAG**. Entity names shortened for readability.
+**What is Mermaid?** A small **text language** for diagrams. A fenced code block with `mermaid` after the opening backticks is **not** a picture file — it is **source** that GitHub, GitLab, and many editors **render** as a box-and-line chart. If a viewer does not support Mermaid, you still have the ASCII sections above.
+
+Optional render of the **farm hub** + **RAG**. Table names are **short** (real SQL uses `gr33ncore.farms`, `gr33nfertigation.crop_cycles`, etc.).
 
 ```mermaid
 erDiagram
@@ -165,10 +167,12 @@ erDiagram
 
 ## 9. Maintenance
 
-When you add migrations:
+**What are migrations?** The app’s database is defined in two layers: the **baseline** file above, and then **incremental** SQL files in [`db/migrations/`](../db/migrations/) (run in **lexicographic filename order** on existing databases). A “migration” is one of those small **change scripts** (add a column, new table, new FK). New foreign keys or tables are what usually require **updating this ERD** — not every `VARCHAR` length change.
 
-1. Confirm FKs in **`db/migrations/*.sql`** — append new edges to the relevant ASCII section above.
+When you add migrations that **change relationships**:
+
+1. Confirm new or changed FKs in the relevant `db/migrations/*.sql` — append edges to the ASCII section above.
 2. Bump the **Generated** date and note the **latest migration filename** you considered (or say “baseline only”).
-3. Prefer regenerating **Mermaid** only when the conceptual graph changes — not for every column tweak.
+3. Prefer updating the **Mermaid** block only when the **conceptual** graph changes (new table-to-table links), not for every column tweak.
 
 Related: [database-schema-overview.md](database-schema-overview.md), [rag-scope-and-threat-model.md](rag-scope-and-threat-model.md).

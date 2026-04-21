@@ -75,6 +75,24 @@ func (w *Worker) IngestFarmAutomationRuns(ctx context.Context, farmID int64, bat
 	return total, nil
 }
 
+// IngestFarmCropCycles embeds all crop cycles for a farm (chunk_index 0 per row).
+func (w *Worker) IngestFarmCropCycles(ctx context.Context, farmID int64) (int, error) {
+	cycles, err := w.Q.ListCropCyclesByFarm(ctx, farmID)
+	if err != nil {
+		return 0, err
+	}
+	if len(cycles) == 0 {
+		return 0, nil
+	}
+	docs := make([]string, len(cycles))
+	ids := make([]int64, len(cycles))
+	for i := range cycles {
+		docs[i] = CropCycleDocument(cycles[i])
+		ids[i] = cycles[i].ID
+	}
+	return w.upsertBatch(ctx, farmID, SourceTypeCropCycle, ids, docs)
+}
+
 func (w *Worker) upsertBatch(ctx context.Context, farmID int64, sourceType string, sourceIDs []int64, texts []string) (int, error) {
 	if len(sourceIDs) != len(texts) || len(texts) == 0 {
 		return 0, nil
@@ -132,6 +150,8 @@ func metadataBytes(sourceType string) []byte {
 	switch sourceType {
 	case SourceTypeAutomationRun:
 		module = metadataModuleAutomation
+	case SourceTypeCropCycle:
+		module = metadataModuleFertigation
 	}
 	m := map[string]string{"module": module}
 	b, err := json.Marshal(m)

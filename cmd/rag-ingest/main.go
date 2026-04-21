@@ -23,6 +23,7 @@ func main() {
 		farmID       = flag.Int64("farm-id", 0, "farm id (required)")
 		doTasks      = flag.Bool("tasks", false, "index tasks")
 		doRuns       = flag.Bool("automation-runs", false, "index automation_runs")
+		doCycles     = flag.Bool("crop-cycles", false, "index gr33nfertigation.crop_cycles")
 		batchRuns    = flag.Int("run-batch-size", 500, "cursor batch size for automation runs")
 		startAfterID = flag.Int64("runs-after-id", 0, "only automation runs with id > this")
 		dryRun       = flag.Bool("dry-run", false, "print counts only (no embeddings / DB writes)")
@@ -32,8 +33,8 @@ func main() {
 	if *farmID <= 0 {
 		log.Fatal("-farm-id is required")
 	}
-	if !*doTasks && !*doRuns {
-		log.Fatal("specify at least one of -tasks or -automation-runs")
+	if !*doTasks && !*doRuns && !*doCycles {
+		log.Fatal("specify at least one of -tasks, -automation-runs, or -crop-cycles")
 	}
 
 	ctx := context.Background()
@@ -55,7 +56,7 @@ func main() {
 
 	if *dryRun {
 		q := db.New(pool)
-		var nTasks, nRuns int
+		var nTasks, nRuns, nCycles int
 		if *doTasks {
 			tasks, err := q.ListTasksByFarm(ctx, *farmID)
 			if err != nil {
@@ -73,7 +74,14 @@ func main() {
 			}
 			nRuns = len(runs)
 		}
-		fmt.Printf("dry-run farm=%d tasks=%d automation_runs=%d\n", *farmID, nTasks, nRuns)
+		if *doCycles {
+			cycles, err := q.ListCropCyclesByFarm(ctx, *farmID)
+			if err != nil {
+				log.Fatal(err)
+			}
+			nCycles = len(cycles)
+		}
+		fmt.Printf("dry-run farm=%d tasks=%d automation_runs=%d crop_cycles=%d\n", *farmID, nTasks, nRuns, nCycles)
 		return
 	}
 
@@ -97,5 +105,12 @@ func main() {
 			log.Fatalf("automation_runs: %v", err)
 		}
 		log.Printf("embedded automation_runs: %d", n)
+	}
+	if *doCycles {
+		n, err := w.IngestFarmCropCycles(ctx, *farmID)
+		if err != nil {
+			log.Fatalf("crop_cycles: %v", err)
+		}
+		log.Printf("embedded crop_cycles: %d", n)
 	}
 }
