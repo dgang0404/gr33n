@@ -443,7 +443,7 @@ third-party chat endpoints are an **explicit operator choice** via `LLM_BASE_URL
 | Same page: **Ask (LLM)** | `POST /farms/{id}/rag/answer` — retrieve top‑k chunks, then chat completion with bracket citations `[n]` |
 
 Ingestion from operational tables is via the **`rag-ingest`** CLI (see repo `cmd/rag-ingest`): flags include
-`-farm-id`, `-tasks`, `-automation-runs`, `-crop-cycles`, `-programs`, `-schedules`, `-automation-rules`, `-executable-actions`, `-cost-transactions`, `-dry-run`, plus cursor flags for automation runs and cost batches (`-cost-batch-size`, `-cost-after-id`).
+`-farm-id`, `-tasks`, `-automation-runs`, `-crop-cycles`, `-programs`, `-schedules`, `-automation-rules`, `-executable-actions`, `-cost-transactions`, `-inventory-definitions`, `-inventory-batches`, `-alerts`, `-dry-run`, plus cursor flags for automation runs, cost batches (`-cost-batch-size`, `-cost-after-id`), and alerts (`-alert-batch-size`, `-alert-after-id`).
 Operator-facing constraints (PII, secrets, Insert Commons boundaries) are documented in
 [`rag-scope-and-threat-model.md`](rag-scope-and-threat-model.md).
 

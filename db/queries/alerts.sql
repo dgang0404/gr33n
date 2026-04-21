@@ -18,6 +18,17 @@ WHERE farm_id = $1
 ORDER BY created_at DESC
 LIMIT $2 OFFSET $3;
 
+-- RAG ingest cursor (id order).
+-- name: ListAlertsByFarmAfterID :many
+SELECT * FROM gr33ncore.alerts_notifications
+WHERE farm_id = $1 AND id > $2
+ORDER BY id ASC
+LIMIT $3;
+
+-- name: CountAlertsByFarm :one
+SELECT COUNT(*)::bigint FROM gr33ncore.alerts_notifications
+WHERE farm_id = $1;
+
 -- name: CountUnreadAlertsByFarm :one
 SELECT COUNT(*) FROM gr33ncore.alerts_notifications
 WHERE farm_id = $1 AND is_read = FALSE;

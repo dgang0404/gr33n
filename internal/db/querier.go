@@ -22,6 +22,7 @@ type Querier interface {
 	// time, not start, so a rate change mid-shift applies to the rest of
 	// the shift, not retroactively.
 	CloseTaskLaborLog(ctx context.Context, arg CloseTaskLaborLogParams) (Gr33ncoreTaskLaborLog, error)
+	CountAlertsByFarm(ctx context.Context, farmID int64) (int64, error)
 	CountCostTransactionsByFarm(ctx context.Context, farmID int64) (int64, error)
 	CountDevicesByStatusForFarm(ctx context.Context, farmID int64) ([]CountDevicesByStatusForFarmRow, error)
 	CountInsertCommonsSyncAttemptsSince(ctx context.Context, arg CountInsertCommonsSyncAttemptsSinceParams) (int64, error)
@@ -297,6 +298,8 @@ type Querier interface {
 	ListActuatorEventsForRollup(ctx context.Context, arg ListActuatorEventsForRollupParams) ([]ListActuatorEventsForRollupRow, error)
 	ListActuatorsByFarm(ctx context.Context, farmID int64) ([]Gr33ncoreActuator, error)
 	ListAlertsByFarm(ctx context.Context, arg ListAlertsByFarmParams) ([]Gr33ncoreAlertsNotification, error)
+	// RAG ingest cursor (id order).
+	ListAlertsByFarmAfterID(ctx context.Context, arg ListAlertsByFarmAfterIDParams) ([]Gr33ncoreAlertsNotification, error)
 	ListAlertsByRecipient(ctx context.Context, arg ListAlertsByRecipientParams) ([]Gr33ncoreAlertsNotification, error)
 	ListAllFarms(ctx context.Context) ([]Gr33ncoreFarm, error)
 	ListAllUnits(ctx context.Context) ([]Gr33ncoreUnit, error)

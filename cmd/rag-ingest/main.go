@@ -29,10 +29,15 @@ func main() {
 		doRules      = flag.Bool("automation-rules", false, "index gr33ncore.automation_rules")
 		doActions    = flag.Bool("executable-actions", false, "index gr33ncore.executable_actions (farm-linked; action_parameters scrubbed)")
 		doCosts      = flag.Bool("cost-transactions", false, "index gr33ncore.cost_transactions (no amount/currency in text)")
+		doInputs     = flag.Bool("inventory-definitions", false, "index gr33nnaturalfarming.input_definitions (no unit cost)")
+		doBatches    = flag.Bool("inventory-batches", false, "index gr33nnaturalfarming.input_batches (no qty / cost numerics)")
+		doAlerts     = flag.Bool("alerts", false, "index gr33ncore.alerts_notifications")
 		batchRuns    = flag.Int("run-batch-size", 500, "cursor batch size for automation runs")
 		startAfterID = flag.Int64("runs-after-id", 0, "only automation runs with id > this")
 		batchCosts   = flag.Int("cost-batch-size", 500, "cursor batch size for cost transactions")
 		costAfterID  = flag.Int64("cost-after-id", 0, "only cost_transactions with id > this")
+		batchAlerts  = flag.Int("alert-batch-size", 500, "cursor batch size for alerts")
+		alertAfterID = flag.Int64("alert-after-id", 0, "only alerts_notifications with id > this")
 		dryRun       = flag.Bool("dry-run", false, "print counts only (no embeddings / DB writes)")
 	)
 	flag.Parse()
@@ -40,7 +45,7 @@ func main() {
 	if *farmID <= 0 {
 		log.Fatal("-farm-id is required")
 	}
-	if !*doTasks && !*doRuns && !*doCycles && !*doPrograms && !*doSchedules && !*doRules && !*doActions && !*doCosts {
+	if !*doTasks && !*doRuns && !*doCycles && !*doPrograms && !*doSchedules && !*doRules && !*doActions && !*doCosts && !*doInputs && !*doBatches && !*doAlerts {
 		log.Fatal("specify at least one ingest flag (see -help)")
 	}
 
@@ -64,7 +69,8 @@ func main() {
 	if *dryRun {
 		q := db.New(pool)
 		var nTasks, nRuns, nCycles, nPrograms, nSchedules, nRules, nActions int
-		var nCosts int64
+		var nCosts, nAlerts int64
+		var nInputs, nBatches int
 		if *doTasks {
 			tasks, err := q.ListTasksByFarm(ctx, *farmID)
 			if err != nil {
@@ -124,8 +130,29 @@ func main() {
 			}
 			nCosts = cnt
 		}
-		fmt.Printf("dry-run farm=%d tasks=%d automation_runs=%d crop_cycles=%d programs=%d schedules=%d automation_rules=%d executable_actions=%d cost_transactions=%d\n",
-			*farmID, nTasks, nRuns, nCycles, nPrograms, nSchedules, nRules, nActions, nCosts)
+		if *doInputs {
+			defs, err := q.ListInputDefinitionsByFarm(ctx, *farmID)
+			if err != nil {
+				log.Fatal(err)
+			}
+			nInputs = len(defs)
+		}
+		if *doBatches {
+			bat, err := q.ListInputBatchesByFarm(ctx, *farmID)
+			if err != nil {
+				log.Fatal(err)
+			}
+			nBatches = len(bat)
+		}
+		if *doAlerts {
+			cnt, err := q.CountAlertsByFarm(ctx, *farmID)
+			if err != nil {
+				log.Fatal(err)
+			}
+			nAlerts = cnt
+		}
+		fmt.Printf("dry-run farm=%d tasks=%d automation_runs=%d crop_cycles=%d programs=%d schedules=%d automation_rules=%d executable_actions=%d cost_transactions=%d input_definitions=%d input_batches=%d alerts=%d\n",
+			*farmID, nTasks, nRuns, nCycles, nPrograms, nSchedules, nRules, nActions, nCosts, nInputs, nBatches, nAlerts)
 		return
 	}
 
@@ -191,5 +218,26 @@ func main() {
 			log.Fatalf("cost_transactions: %v", err)
 		}
 		log.Printf("embedded cost_transactions: %d", n)
+	}
+	if *doInputs {
+		n, err := w.IngestFarmInputDefinitions(ctx, *farmID)
+		if err != nil {
+			log.Fatalf("input_definitions: %v", err)
+		}
+		log.Printf("embedded input_definitions: %d", n)
+	}
+	if *doBatches {
+		n, err := w.IngestFarmInputBatches(ctx, *farmID)
+		if err != nil {
+			log.Fatalf("input_batches: %v", err)
+		}
+		log.Printf("embedded input_batches: %d", n)
+	}
+	if *doAlerts {
+		n, err := w.IngestFarmAlertNotifications(ctx, *farmID, int32(*batchAlerts), *alertAfterID)
+		if err != nil {
+			log.Fatalf("alerts: %v", err)
+		}
+		log.Printf("embedded alerts_notifications: %d", n)
 	}
 }

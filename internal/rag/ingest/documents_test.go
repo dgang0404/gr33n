@@ -159,3 +159,47 @@ func TestCostTransactionDocumentOmitsMoney(t *testing.T) {
 }
 
 func ptrStr(s string) *string { return &s }
+
+func TestInputDefinitionDocumentOmitsUnitCost(t *testing.T) {
+	cost := pgtype.Numeric{}
+	_ = cost.Scan("99.99")
+	d := db.Gr33nnaturalfarmingInputDefinition{
+		ID:           1,
+		FarmID:       1,
+		Name:         "IMO-4",
+		Category:     db.Gr33nnaturalfarmingInputCategoryEnumMicrobialInoculant,
+		Description:  ptrStr("Indigenous microbes"),
+		UnitCost:     cost,
+		UnitCostCurrency: ptrStr("USD"),
+	}
+	out := InputDefinitionDocument(d)
+	if strings.Contains(out, "99") || strings.Contains(out, "USD") || strings.Contains(out, "unit_cost") {
+		t.Fatalf("must not embed commercial fields: %q", out)
+	}
+	if !strings.Contains(out, "IMO-4") || !strings.Contains(out, "microbial_inoculant") {
+		t.Fatalf("unexpected: %q", out)
+	}
+}
+
+func TestAlertNotificationDocumentOmitsRecipient(t *testing.T) {
+	sub := "Tank temp high"
+	msg := "Grow bed sensor 2 exceeded 28C"
+	a := db.Gr33ncoreAlertsNotification{
+		ID:                  1,
+		FarmID:              1,
+		SubjectRendered:     &sub,
+		MessageTextRendered:   &msg,
+		Severity:            db.NullGr33ncoreNotificationPriorityEnum{Valid: true, Gr33ncoreNotificationPriorityEnum: db.Gr33ncoreNotificationPriorityEnumHigh},
+		TriggeringEventSourceType: ptrStr("sensor_threshold"),
+		TriggeringEventSourceID:   ptrInt64(55),
+	}
+	out := AlertNotificationDocument(a)
+	if strings.Contains(out, "recipient") {
+		t.Fatalf("unexpected: %q", out)
+	}
+	if !strings.Contains(out, "high") || !strings.Contains(out, "28C") {
+		t.Fatalf("unexpected: %q", out)
+	}
+}
+
+func ptrInt64(v int64) *int64 { return &v }

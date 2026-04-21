@@ -203,6 +203,80 @@ func (w *Worker) IngestFarmCostTransactions(ctx context.Context, farmID int64, b
 	return total, nil
 }
 
+// IngestFarmInputDefinitions embeds natural-farming input definitions (no unit cost in text).
+func (w *Worker) IngestFarmInputDefinitions(ctx context.Context, farmID int64) (int, error) {
+	rows, err := w.Q.ListInputDefinitionsByFarm(ctx, farmID)
+	if err != nil {
+		return 0, err
+	}
+	if len(rows) == 0 {
+		return 0, nil
+	}
+	docs := make([]string, len(rows))
+	ids := make([]int64, len(rows))
+	for i := range rows {
+		docs[i] = InputDefinitionDocument(rows[i])
+		ids[i] = rows[i].ID
+	}
+	return w.upsertBatch(ctx, farmID, SourceTypeInputDefinition, ids, docs)
+}
+
+// IngestFarmInputBatches embeds input batches (no quantity / commercial numerics in text).
+func (w *Worker) IngestFarmInputBatches(ctx context.Context, farmID int64) (int, error) {
+	rows, err := w.Q.ListInputBatchesByFarm(ctx, farmID)
+	if err != nil {
+		return 0, err
+	}
+	if len(rows) == 0 {
+		return 0, nil
+	}
+	docs := make([]string, len(rows))
+	ids := make([]int64, len(rows))
+	for i := range rows {
+		docs[i] = InputBatchDocument(rows[i])
+		ids[i] = rows[i].ID
+	}
+	return w.upsertBatch(ctx, farmID, SourceTypeInputBatch, ids, docs)
+}
+
+// IngestFarmAlertNotifications embeds alerts_notifications in id order.
+func (w *Worker) IngestFarmAlertNotifications(ctx context.Context, farmID int64, batchSize int32, startAfterID int64) (int, error) {
+	if batchSize <= 0 {
+		batchSize = 500
+	}
+	var total int
+	lastID := startAfterID
+	for {
+		rows, err := w.Q.ListAlertsByFarmAfterID(ctx, db.ListAlertsByFarmAfterIDParams{
+			FarmID: farmID,
+			ID:     lastID,
+			Limit:  batchSize,
+		})
+		if err != nil {
+			return total, err
+		}
+		if len(rows) == 0 {
+			break
+		}
+		docs := make([]string, len(rows))
+		ids := make([]int64, len(rows))
+		for i := range rows {
+			docs[i] = AlertNotificationDocument(rows[i])
+			ids[i] = rows[i].ID
+		}
+		n, err := w.upsertBatch(ctx, farmID, SourceTypeAlertNotification, ids, docs)
+		if err != nil {
+			return total, err
+		}
+		total += n
+		lastID = rows[len(rows)-1].ID
+		if int32(len(rows)) < batchSize {
+			break
+		}
+	}
+	return total, nil
+}
+
 func (w *Worker) upsertBatch(ctx context.Context, farmID int64, sourceType string, sourceIDs []int64, texts []string) (int, error) {
 	if len(sourceIDs) != len(texts) || len(texts) == 0 {
 		return 0, nil
@@ -264,6 +338,10 @@ func metadataBytes(sourceType string) []byte {
 		module = metadataModuleFertigation
 	case SourceTypeCostTransaction:
 		module = metadataModuleCost
+	case SourceTypeInputDefinition, SourceTypeInputBatch:
+		module = metadataModuleInventory
+	case SourceTypeAlertNotification:
+		module = metadataModuleAlerts
 	}
 	m := map[string]string{"module": module}
 	b, err := json.Marshal(m)

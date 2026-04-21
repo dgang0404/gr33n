@@ -59,6 +59,8 @@ The script copies [`.env.example`](../.env.example) to `.env` **once** if `.env`
 2. **Environment** — Root [`.env.example`](../.env.example): `DATABASE_URL`, `AUTH_MODE`, and for real auth `JWT_SECRET` / `PI_API_KEY`. The API loads `.env` then `.env.local` from the repo root.
 3. **API** — `make run` (dev auth bypass) or `make run-auth` / production-style config; see comments in `.env.example`.
 4. **UI** — `make ui` or `make dev` (API + UI). Copy [`ui/.env.example`](../ui/.env.example) to `ui/.env` if you need a non-default API URL (`VITE_API_URL`; otherwise the code defaults to `http://localhost:8080`).
+
+**Auth-regression style (real JWT + farm checks, `auth_test` mode):** set in **`.env`** (or export) at least `AUTH_MODE=auth_test`, `JWT_SECRET` (long random), and `PI_API_KEY` (see [`.env.example`](../.env.example)). From the repo root: **`make dev-auth-test`** — same as `make dev` but the API runs with **`AUTH_MODE=auth_test`** (see [`.env.example`](../.env.example) and the `dev-auth-test` target in the [Makefile](../Makefile)). The API still loads `.env` on startup; you must be in the **project root** when you start it.
 5. **Optional: Insert Commons receiver** — `make run-receiver`; env and migrations: [`insert-commons-receiver-playbook.md`](insert-commons-receiver-playbook.md).
 6. **Optional: Pi client / MQTT** — OS packages: [`scripts/install-pi-edge-deps.sh`](../scripts/install-pi-edge-deps.sh). Then [`pi_client/setup.sh`](../pi_client/setup.sh), [`mqtt-edge-operator-playbook.md`](mqtt-edge-operator-playbook.md). Full topologies (edge vs all-on-Pi vs split servers): [`raspberry-pi-and-deployment-topology.md`](raspberry-pi-and-deployment-topology.md). Python deps: `pi_client/requirements.txt`.
 

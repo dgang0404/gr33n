@@ -1,4 +1,4 @@
-.PHONY: run run-receiver build build-receiver test seed sqlc ui dev clean lint bootstrap-local bootstrap-local-docker install-deps-debian install-pi-edge-deps first-clone first-clone-docker first-clone-install-deps audit-openapi
+.PHONY: run run-receiver build build-receiver test seed sqlc ui dev dev-auth-test clean lint bootstrap-local bootstrap-local-docker install-deps-debian install-pi-edge-deps first-clone first-clone-docker first-clone-install-deps audit-openapi
 
 # ── Variables ──────────────────────────────────────────────────
 BINARY   := api
@@ -48,6 +48,14 @@ dev: ## Run API + UI dev server in parallel
 	@echo "Starting API on :$(PORT) and UI on :5173"
 	@trap 'kill 0' INT; \
 		AUTH_MODE=dev DATABASE_URL="$(DB_URL)" $(GO) run -tags dev ./cmd/api/ & \
+		cd ui && npm run dev & \
+		wait
+
+dev-auth-test: ## API + UI with AUTH_MODE=auth_test — set JWT_SECRET & PI_API_KEY (e.g. in `.env`; see .env.example)
+	@echo "Starting API on :$(PORT) with AUTH_MODE=auth_test + UI on :5173"
+	@echo "Ensure JWT_SECRET and PI_API_KEY are set (copied from .env.example if needed)."
+	@trap 'kill 0' INT; \
+		AUTH_MODE=auth_test DATABASE_URL="$(DB_URL)" $(GO) run -tags dev ./cmd/api/ & \
 		cd ui && npm run dev & \
 		wait
 

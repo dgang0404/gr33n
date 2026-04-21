@@ -19,11 +19,16 @@ const (
 	SourceTypeSchedule         = "schedule"
 	SourceTypeAutomationRule   = "automation_rule"
 	SourceTypeExecutableAction = "executable_action"
-	SourceTypeCostTransaction  = "cost_transaction"
+	SourceTypeCostTransaction    = "cost_transaction"
+	SourceTypeInputDefinition    = "input_definition"
+	SourceTypeInputBatch         = "input_batch"
+	SourceTypeAlertNotification  = "alert_notification"
 	metadataModuleCore           = "core"
 	metadataModuleAutomation     = "automation"
 	metadataModuleFertigation    = "fertigation"
 	metadataModuleCost           = "cost"
+	metadataModuleInventory      = "inventory"
+	metadataModuleAlerts         = "alerts"
 )
 
 // TaskDocument builds deterministic embed text from a task row (single chunk).
@@ -137,6 +142,15 @@ func formatPGDate(d pgtype.Date) string {
 		return ""
 	}
 	return d.Time.Format("2006-01-02")
+}
+
+func writeDateLine(b *strings.Builder, label string, d pgtype.Date) {
+	if s := formatPGDate(d); s != "" {
+		b.WriteString(label)
+		b.WriteString(": ")
+		b.WriteString(s)
+		b.WriteByte('\n')
+	}
 }
 
 // FertigationProgramDocument builds embed text from gr33nfertigation.programs (single chunk).
@@ -377,6 +391,141 @@ func CostTransactionDocument(ct db.Gr33ncoreCostTransaction) string {
 	if ct.CropCycleID != nil && *ct.CropCycleID > 0 {
 		b.WriteString("crop_cycle_id: ")
 		b.WriteString(strconv.FormatInt(*ct.CropCycleID, 10))
+		b.WriteByte('\n')
+	}
+	return strings.TrimSpace(b.String())
+}
+
+// InputDefinitionDocument embeds catalog text without unit cost / currency (§4.2).
+func InputDefinitionDocument(d db.Gr33nnaturalfarmingInputDefinition) string {
+	var b strings.Builder
+	b.WriteString("input_definition: ")
+	b.WriteString(strings.TrimSpace(d.Name))
+	b.WriteByte('\n')
+	b.WriteString("category: ")
+	b.WriteString(string(d.Category))
+	b.WriteByte('\n')
+	if d.Description != nil && strings.TrimSpace(*d.Description) != "" {
+		b.WriteString(sanitize.PlainNotes(*d.Description, 12000))
+		b.WriteByte('\n')
+	}
+	if d.TypicalIngredients != nil && strings.TrimSpace(*d.TypicalIngredients) != "" {
+		b.WriteString("typical_ingredients: ")
+		b.WriteString(sanitize.PlainNotes(*d.TypicalIngredients, 8000))
+		b.WriteByte('\n')
+	}
+	if d.PreparationSummary != nil && strings.TrimSpace(*d.PreparationSummary) != "" {
+		b.WriteString("preparation_summary: ")
+		b.WriteString(sanitize.PlainNotes(*d.PreparationSummary, 8000))
+		b.WriteByte('\n')
+	}
+	if d.StorageGuidelines != nil && strings.TrimSpace(*d.StorageGuidelines) != "" {
+		b.WriteString("storage_guidelines: ")
+		b.WriteString(sanitize.PlainNotes(*d.StorageGuidelines, 8000))
+		b.WriteByte('\n')
+	}
+	if d.SafetyPrecautions != nil && strings.TrimSpace(*d.SafetyPrecautions) != "" {
+		b.WriteString("safety_precautions: ")
+		b.WriteString(sanitize.PlainNotes(*d.SafetyPrecautions, 8000))
+		b.WriteByte('\n')
+	}
+	if d.ReferenceSource != nil && strings.TrimSpace(*d.ReferenceSource) != "" {
+		b.WriteString("reference_source: ")
+		b.WriteString(sanitize.PlainNotes(*d.ReferenceSource, 4000))
+		b.WriteByte('\n')
+	}
+	return strings.TrimSpace(b.String())
+}
+
+// InputBatchDocument embeds batch narrative without quantity or commercial numerics (§4.2).
+func InputBatchDocument(batch db.Gr33nnaturalfarmingInputBatch) string {
+	var b strings.Builder
+	b.WriteString("input_batch\n")
+	b.WriteString("input_definition_id: ")
+	b.WriteString(strconv.FormatInt(batch.InputDefinitionID, 10))
+	b.WriteByte('\n')
+	if batch.BatchIdentifier != nil && strings.TrimSpace(*batch.BatchIdentifier) != "" {
+		b.WriteString("batch_identifier: ")
+		b.WriteString(strings.TrimSpace(*batch.BatchIdentifier))
+		b.WriteByte('\n')
+	}
+	writeDateLine(&b, "creation_start_date", batch.CreationStartDate)
+	writeDateLine(&b, "creation_end_date", batch.CreationEndDate)
+	writeDateLine(&b, "expected_ready_date", batch.ExpectedReadyDate)
+	writeDateLine(&b, "actual_ready_date", batch.ActualReadyDate)
+	b.WriteString("status: ")
+	b.WriteString(string(batch.Status))
+	b.WriteByte('\n')
+	if batch.StorageLocation != nil && strings.TrimSpace(*batch.StorageLocation) != "" {
+		b.WriteString("storage_location: ")
+		b.WriteString(strings.TrimSpace(*batch.StorageLocation))
+		b.WriteByte('\n')
+	}
+	if batch.ShelfLifeDays != nil && *batch.ShelfLifeDays > 0 {
+		b.WriteString("shelf_life_days: ")
+		b.WriteString(strconv.FormatInt(int64(*batch.ShelfLifeDays), 10))
+		b.WriteByte('\n')
+	}
+	if batch.TemperatureDuringMaking != nil && strings.TrimSpace(*batch.TemperatureDuringMaking) != "" {
+		b.WriteString("temperature_during_making: ")
+		b.WriteString(strings.TrimSpace(*batch.TemperatureDuringMaking))
+		b.WriteByte('\n')
+	}
+	if batch.IngredientsUsed != nil && strings.TrimSpace(*batch.IngredientsUsed) != "" {
+		b.WriteString("ingredients_used: ")
+		b.WriteString(sanitize.PlainNotes(*batch.IngredientsUsed, 8000))
+		b.WriteByte('\n')
+	}
+	if batch.ProcedureFollowed != nil && strings.TrimSpace(*batch.ProcedureFollowed) != "" {
+		b.WriteString("procedure_followed: ")
+		b.WriteString(sanitize.PlainNotes(*batch.ProcedureFollowed, 8000))
+		b.WriteByte('\n')
+	}
+	if batch.ObservationsNotes != nil && strings.TrimSpace(*batch.ObservationsNotes) != "" {
+		b.WriteString("observations_notes: ")
+		b.WriteString(sanitize.PlainNotes(*batch.ObservationsNotes, 8000))
+		b.WriteByte('\n')
+	}
+	if batch.RelatedTaskID != nil && *batch.RelatedTaskID > 0 {
+		b.WriteString("related_task_id: ")
+		b.WriteString(strconv.FormatInt(*batch.RelatedTaskID, 10))
+		b.WriteByte('\n')
+	}
+	return strings.TrimSpace(b.String())
+}
+
+// AlertNotificationDocument embeds rendered alert text without recipient identity (§4.2).
+func AlertNotificationDocument(a db.Gr33ncoreAlertsNotification) string {
+	var b strings.Builder
+	b.WriteString("alert_notification\n")
+	if a.Severity.Valid {
+		b.WriteString("severity: ")
+		b.WriteString(string(a.Severity.Gr33ncoreNotificationPriorityEnum))
+		b.WriteByte('\n')
+	}
+	if a.Status.Valid {
+		b.WriteString("status: ")
+		b.WriteString(string(a.Status.Gr33ncoreNotificationStatusEnum))
+		b.WriteByte('\n')
+	}
+	if a.TriggeringEventSourceType != nil && strings.TrimSpace(*a.TriggeringEventSourceType) != "" {
+		b.WriteString("triggering_event_source_type: ")
+		b.WriteString(strings.TrimSpace(*a.TriggeringEventSourceType))
+		b.WriteByte('\n')
+	}
+	if a.TriggeringEventSourceID != nil && *a.TriggeringEventSourceID > 0 {
+		b.WriteString("triggering_event_source_id: ")
+		b.WriteString(strconv.FormatInt(*a.TriggeringEventSourceID, 10))
+		b.WriteByte('\n')
+	}
+	if a.SubjectRendered != nil && strings.TrimSpace(*a.SubjectRendered) != "" {
+		b.WriteString("subject: ")
+		b.WriteString(sanitize.PlainNotes(*a.SubjectRendered, 4000))
+		b.WriteByte('\n')
+	}
+	if a.MessageTextRendered != nil && strings.TrimSpace(*a.MessageTextRendered) != "" {
+		b.WriteString("message: ")
+		b.WriteString(sanitize.PlainNotes(*a.MessageTextRendered, 12000))
 		b.WriteByte('\n')
 	}
 	return strings.TrimSpace(b.String())

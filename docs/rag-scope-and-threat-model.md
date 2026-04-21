@@ -113,10 +113,10 @@ The list below ties to tables introduced or strengthened in Phase 20.95 and rela
 | **Automation runs** (`status`, `message`; scrubbed `details`) | **Yes** | Implemented in Phase 24 — JSON scrubber for `details` |
 | **Automation rules / schedules / executable_actions** (labels + scrubbed JSON) | **Yes** | `rag-ingest -schedules`, `-automation-rules`, `-executable-actions`; `action_parameters` via `sanitize.AutomationDetailsJSON`; metadata `module` **automation** |
 | **Costs** (`cost_transactions` narrative without amounts) | **Yes** | **`rag-ingest -cost-transactions`** — embed text omits **amount**, **currency**, receipt ids; **`source_type`** **`cost_transaction`**; **`module`** **cost** |
-| **Inputs / inventory** (definitions, batches — no raw unit_cost unless approved) | **Later** | Operator expectation before raw commercial fields |
-| **Alerts / notifications** (rendered subject/body text) | **Later** | Volume + noise |
+| **Inputs / inventory** (definitions, batches; no cost/quantity numerics) | **Yes** | **`-inventory-definitions`**, **`-inventory-batches`**; `source_type` **`input_definition`** / **`input_batch`**; `module` **inventory**; no `unit_cost` or batch quantity fields in text |
+| **Alerts / notifications** (rendered text; no recipient) | **Yes** | **`-alerts`**; `source_type` **`alert_notification`**; `module` **alerts**; `ListAlertsByFarmAfterID` for large farms |
 
-**Suggested implementation order for domains marked Yes:** tasks → automation runs → schedules / automation rules / executable actions → **crop cycles** → **fertigation programs** → **cost transactions** → remainder per product after §4.2 gates.
+**Suggested implementation order for domains marked Yes:** tasks → automation runs → schedules / automation rules / executable actions → **crop cycles** → **fertigation programs** → **cost transactions** → **input definitions & batches** → **alerts** → remainder per product after §4.2 gates.
 
 ---
 
@@ -156,7 +156,7 @@ The list below ties to tables introduced or strengthened in Phase 20.95 and rela
 | WS | This document informs… |
 |----|-------------------------|
 | **WS2** (**done**) | pgvector + `rag_embedding_chunks`; `farm_id` + `(source_type, source_id, chunk_index)` dedupe; `metadata` for hybrid filters. |
-| **WS3** (**done**) | Implemented: `internal/rag/sanitize`, `internal/rag/embed`, `internal/rag/ingest`, `cmd/rag-ingest`; sqlc `rag.sql`; ingestion pulls from checklist-approved domains only; automation `details` sanitized; **crop_cycle**, **fertigation_program**, **schedule**, **automation_rule**, **executable_action** (`ListExecutableActionsByFarmForRAG`), **cost_transaction** (no money in text, `ListCostTransactionsByFarmAfterID`); embeddings must match `vector(1536)` unless `EMBEDDING_DIMENSION` matches a future migration. |
+| **WS3** (**done**) | Implemented: `internal/rag/sanitize`, `internal/rag/embed`, `internal/rag/ingest`, `cmd/rag-ingest`; sqlc `rag.sql`; ingestion pulls from checklist-approved domains only; automation `details` sanitized; **crop_cycle**, **fertigation_program**, **schedule**, **automation_rule**, **executable_action** (`ListExecutableActionsByFarmForRAG`), **cost_transaction** (`ListCostTransactionsByFarmAfterID`), **input_definition**, **input_batch**, **alert_notification** (`ListAlertsByFarmAfterID`); embeddings must match `vector(1536)` unless `EMBEDDING_DIMENSION` matches a future migration. |
 | **WS4** (**done**) | `GET`/`POST /farms/{id}/rag/search` — `requireJWT` + `RequireFarmMember`; farm id from path; OpenAPI `bearerAuth`; vector search always filters `farm_id`; optional `module` + `created_since`/`created_until` on chunk rows. |
 | **WS5** (**done**) | `POST /farms/{id}/rag/answer` — same JWT + membership; retrieval uses only farm-filtered chunks; LLM sees **only** those numbered blocks; citations derived from `[n]` references mapped to `chunk_id` / `source_type` / `source_id`; optional **LLM** via env (see Phase 24 plan WS5); **rate limit** `RAG_SYNTHESIS_MAX_PER_MINUTE`. |
 | **WS6** (**done**) | Dashboard **Monitor → Knowledge** (`/farm-knowledge`); smoke tests `cmd/api/smoke_rag_test.go`; glossary + §10.6 in `docs/workflow-guide.md`. |

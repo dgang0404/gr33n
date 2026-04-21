@@ -12,7 +12,7 @@ todos:
     status: completed
   - id: ws2-ingestion-breadth
     content: "WS2: Extend rag-ingest + document builders for agreed domains (e.g. crop cycles, programs, costs rollups)—sanitizers per domain"
-    status: pending
+    status: completed
   - id: ws3-incremental-reembed
     content: "WS3: Incremental re-embed strategy (cursors/outbox/triggers—not only manual CLI); backfill and idempotency verified at scale"
     status: pending
@@ -103,7 +103,7 @@ Pure “pgvector job only” is insufficient as an exit criterion if handlers ar
 
 Extend **`cmd/rag-ingest`** / **`internal/rag/ingest`** for approved domains; reuse **`internal/rag/sanitize`** patterns; add sqlc queries as needed per source table.
 
-**Shipped:** **Crop cycles** (`-crop-cycles`), **programs** (`-programs`, metadata allowlist), **schedules / automation rules / executable actions** (source types **`schedule`**, **`automation_rule`**, **`executable_action`**; `module` **automation**), **cost transactions** (`-cost-transactions`, **`source_type`** **`cost_transaction`**, `module` **cost**; no amount/currency in text; sqlc cursor `ListCostTransactionsByFarmAfterID` / `CountCostTransactionsByFarm`). **Still open (later / §6):** **inventory**, **alerts**.
+**Shipped:** **crop cycles**, **programs**, **schedules / rules / executable actions**, **cost transactions** (no money in text), **input definitions & batches** (`-inventory-definitions`, `-inventory-batches`; no unit cost / qty numerics), **alerts** (`-alerts`; `ListAlertsByFarmAfterID`). WS2 ingestion breadth checklist is effectively **complete** unless product asks for §6 tweaks.
 
 ### WS3 — Incremental re-embed
 
