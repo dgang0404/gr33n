@@ -93,6 +93,24 @@ func (w *Worker) IngestFarmCropCycles(ctx context.Context, farmID int64) (int, e
 	return w.upsertBatch(ctx, farmID, SourceTypeCropCycle, ids, docs)
 }
 
+// IngestFarmFertigationPrograms embeds fertigation programs for a farm (chunk_index 0 per row).
+func (w *Worker) IngestFarmFertigationPrograms(ctx context.Context, farmID int64) (int, error) {
+	progs, err := w.Q.ListProgramsByFarm(ctx, farmID)
+	if err != nil {
+		return 0, err
+	}
+	if len(progs) == 0 {
+		return 0, nil
+	}
+	docs := make([]string, len(progs))
+	ids := make([]int64, len(progs))
+	for i := range progs {
+		docs[i] = FertigationProgramDocument(progs[i])
+		ids[i] = progs[i].ID
+	}
+	return w.upsertBatch(ctx, farmID, SourceTypeFertigationProgram, ids, docs)
+}
+
 func (w *Worker) upsertBatch(ctx context.Context, farmID int64, sourceType string, sourceIDs []int64, texts []string) (int, error) {
 	if len(sourceIDs) != len(texts) || len(texts) == 0 {
 		return 0, nil
@@ -150,7 +168,7 @@ func metadataBytes(sourceType string) []byte {
 	switch sourceType {
 	case SourceTypeAutomationRun:
 		module = metadataModuleAutomation
-	case SourceTypeCropCycle:
+	case SourceTypeCropCycle, SourceTypeFertigationProgram:
 		module = metadataModuleFertigation
 	}
 	m := map[string]string{"module": module}

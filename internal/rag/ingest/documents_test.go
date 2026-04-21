@@ -48,3 +48,25 @@ func TestCropCycleDocument(t *testing.T) {
 		}
 	}
 }
+
+func TestFertigationProgramDocument(t *testing.T) {
+	desc := "Daily JLF foliar feed"
+	meta := []byte(`{"tags":["veg","demo"]}`)
+	p := db.Gr33nfertigationProgram{
+		ID:         3,
+		FarmID:     1,
+		Name:       "Veg Daily JLF Program",
+		Description: &desc,
+		IsActive:   true,
+		Metadata:   meta,
+	}
+	out := FertigationProgramDocument(p)
+	if len(out) < 30 {
+		t.Fatalf("unexpected: %q", out)
+	}
+	for _, sub := range []string{"fertigation_program:", "Veg Daily JLF", "active: yes", "tags", "veg"} {
+		if !strings.Contains(out, sub) {
+			t.Fatalf("missing %q in: %q", sub, out)
+		}
+	}
+}

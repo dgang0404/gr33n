@@ -92,6 +92,78 @@ func AutomationDetailsJSON(raw []byte) string {
 	return b.String()
 }
 
+// FertigationProgramMetadataForEmbed turns programs.metadata JSONB into short lines for embedding.
+// The legacy "steps" array (migrated to executable_actions) is always omitted — it may describe
+// HTTP actions or other sensitive payloads. Other keys use the same sensitivity heuristics as
+// automation details; nested objects are skipped; string arrays (e.g. tags) are joined.
+func FertigationProgramMetadataForEmbed(raw []byte) string {
+	raw = bytes.TrimSpace(raw)
+	if len(raw) == 0 || string(raw) == "{}" {
+		return ""
+	}
+	var m map[string]any
+	if err := json.Unmarshal(raw, &m); err != nil || len(m) == 0 {
+		return ""
+	}
+	keys := make([]string, 0, len(m))
+	for k := range m {
+		if strings.EqualFold(strings.TrimSpace(k), "steps") {
+			continue
+		}
+		if keyLooksSensitive(k) {
+			continue
+		}
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	var b strings.Builder
+	for _, k := range keys {
+		v := m[k]
+		line := programMetadataValueLine(v)
+		line = strings.TrimSpace(line)
+		if line == "" {
+			continue
+		}
+		if b.Len() > 0 {
+			b.WriteByte('\n')
+		}
+		b.WriteString(k)
+		b.WriteString(": ")
+		b.WriteString(line)
+	}
+	return b.String()
+}
+
+func programMetadataValueLine(v any) string {
+	switch t := v.(type) {
+	case string:
+		return PlainNotes(t, 4000)
+	case float64:
+		return strings.TrimSpace(fmt.Sprint(t))
+	case bool:
+		return fmt.Sprint(t)
+	case []any:
+		parts := make([]string, 0, len(t))
+		for _, el := range t {
+			s, ok := el.(string)
+			if !ok {
+				return ""
+			}
+			s = strings.TrimSpace(s)
+			if s != "" {
+				parts = append(parts, s)
+			}
+		}
+		if len(parts) == 0 {
+			return ""
+		}
+		return strings.Join(parts, ", ")
+	default:
+		// Skip nested objects / unknown shapes for v1.
+		return ""
+	}
+}
+
 func valueStringForEmbed(v any) string {
 	switch t := v.(type) {
 	case string:

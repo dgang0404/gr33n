@@ -12,12 +12,13 @@ import (
 )
 
 const (
-	SourceTypeTask          = "task"
-	SourceTypeAutomationRun = "automation_run"
-	SourceTypeCropCycle     = "crop_cycle"
-	metadataModuleCore         = "core"
-	metadataModuleAutomation   = "automation"
-	metadataModuleFertigation  = "fertigation"
+	SourceTypeTask                = "task"
+	SourceTypeAutomationRun       = "automation_run"
+	SourceTypeCropCycle           = "crop_cycle"
+	SourceTypeFertigationProgram  = "fertigation_program"
+	metadataModuleCore           = "core"
+	metadataModuleAutomation     = "automation"
+	metadataModuleFertigation    = "fertigation"
 )
 
 // TaskDocument builds deterministic embed text from a task row (single chunk).
@@ -131,4 +132,68 @@ func formatPGDate(d pgtype.Date) string {
 		return ""
 	}
 	return d.Time.Format("2006-01-02")
+}
+
+// FertigationProgramDocument builds embed text from gr33nfertigation.programs (single chunk).
+func FertigationProgramDocument(p db.Gr33nfertigationProgram) string {
+	var b strings.Builder
+	b.WriteString("fertigation_program: ")
+	b.WriteString(strings.TrimSpace(p.Name))
+	b.WriteByte('\n')
+	if p.Description != nil && strings.TrimSpace(*p.Description) != "" {
+		b.WriteString(sanitize.PlainNotes(*p.Description, 12000))
+		b.WriteByte('\n')
+	}
+	if p.IsActive {
+		b.WriteString("active: yes\n")
+	} else {
+		b.WriteString("active: no\n")
+	}
+	writeOptionalID(&b, "application_recipe_id", p.ApplicationRecipeID)
+	writeOptionalID(&b, "reservoir_id", p.ReservoirID)
+	writeOptionalID(&b, "target_zone_id", p.TargetZoneID)
+	writeOptionalID(&b, "schedule_id", p.ScheduleID)
+	writeOptionalID(&b, "ec_target_id", p.EcTargetID)
+	writeNumericLine(&b, "volume_liters_per_sqm", p.VolumeLitersPerSqm)
+	writeNumericLine(&b, "total_volume_liters", p.TotalVolumeLiters)
+	if p.DilutionRatio != nil && strings.TrimSpace(*p.DilutionRatio) != "" {
+		b.WriteString("dilution_ratio: ")
+		b.WriteString(strings.TrimSpace(*p.DilutionRatio))
+		b.WriteByte('\n')
+	}
+	if p.RunDurationSeconds != nil && *p.RunDurationSeconds > 0 {
+		b.WriteString("run_duration_seconds: ")
+		b.WriteString(strconv.FormatInt(int64(*p.RunDurationSeconds), 10))
+		b.WriteByte('\n')
+	}
+	writeNumericLine(&b, "ec_trigger_low", p.EcTriggerLow)
+	writeNumericLine(&b, "ph_trigger_low", p.PhTriggerLow)
+	writeNumericLine(&b, "ph_trigger_high", p.PhTriggerHigh)
+	if txt := sanitize.FertigationProgramMetadataForEmbed(p.Metadata); txt != "" {
+		b.WriteString("metadata:\n")
+		b.WriteString(txt)
+		b.WriteByte('\n')
+	}
+	return strings.TrimSpace(b.String())
+}
+
+func writeOptionalID(b *strings.Builder, label string, id *int64) {
+	if id == nil || *id <= 0 {
+		return
+	}
+	b.WriteString(label)
+	b.WriteString(": ")
+	b.WriteString(strconv.FormatInt(*id, 10))
+	b.WriteByte('\n')
+}
+
+func writeNumericLine(b *strings.Builder, label string, n pgtype.Numeric) {
+	if !n.Valid {
+		return
+	}
+	f, err := n.Float64Value()
+	if err != nil || !f.Valid {
+		return
+	}
+	fmt.Fprintf(b, "%s: %g\n", label, f.Float64)
 }
