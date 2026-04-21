@@ -56,6 +56,7 @@ The script copies [`.env.example`](../.env.example) to `.env` **once** if `.env`
 ### Unblock “API offline” / failed startup (checklist)
 
 1. **`.env` `DATABASE_URL`** must match the Postgres you actually use. Common mistake: leaving the placeholder `user:password` from [`.env.example`](../.env.example). **Compose DB:** after `make compose-db-up`, use `postgres://gr33n:gr33n@127.0.0.1:5432/gr33n?sslmode=disable`. **Native peer:** see [INSTALL.md §2d](../INSTALL.md).
+   - **One-shot after Docker is installed:** `make setup-compose-dev` (runs [`scripts/setup-compose-dev.sh`](../scripts/setup-compose-dev.sh): starts `db`, waits for readiness, `bootstrap --seed`, `check-stack`).
 2. **`pgvector`** — the API registers the `vector` type; if the extension is missing, startup fails with `vector type not found`. Install packages (e.g. `./scripts/install-system-deps-debian.sh` for PG16 + extensions) or use the Compose `db` image.
 3. **Verify without guessing:** from the repo root run **`make check-stack`** (runs [`scripts/check-local-stack.sh`](../scripts/check-local-stack.sh)) — connects with `DATABASE_URL`, checks `vector`, optionally curls `/health`.
 4. **UI → API:** [`ui/.env.example`](../ui/.env.example) → `ui/.env` with `VITE_API_URL=http://localhost:8080` if you changed the API port.
