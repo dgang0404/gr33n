@@ -1,10 +1,11 @@
-.PHONY: run run-receiver build build-receiver test seed sqlc ui dev dev-auth-test rag-ingest-help clean lint bootstrap-local bootstrap-local-docker install-deps-debian install-pi-edge-deps first-clone first-clone-docker first-clone-install-deps audit-openapi
+.PHONY: run run-receiver build build-receiver test seed sqlc ui dev dev-auth-test rag-ingest-help compose-db-up compose-db-status check-stack clean lint bootstrap-local bootstrap-local-docker install-deps-debian install-pi-edge-deps first-clone first-clone-docker first-clone-install-deps audit-openapi
 
 # ── Variables ──────────────────────────────────────────────────
 BINARY   := api
 GO       := go
 PORT     ?= 8080
-DB_URL   ?= postgres://$(USER)@/gr33n?host=/var/run/postgresql
+# Optional override for sqlc/run targets only: `make seed DB_URL=postgres://…`
+LOCAL_PEER_DSN ?= postgres://$(USER)@/gr33n?host=/var/run/postgresql
 
 # ── Bootstrap (Phase 15 operator path) ─────────────────────────
 bootstrap-local: ## DB schema + migrations, .env from example if missing, npm ci (see docs/local-operator-bootstrap.md)
@@ -32,22 +33,22 @@ first-clone-install-deps: ## first-clone + install-deps-debian first (Linux Debi
 	@./scripts/setup-first-clone.sh --install-system-deps
 
 # ── Development ────────────────────────────────────────────────
-run: ## Run the API server (dev build, auth bypass available)
-	AUTH_MODE=dev DATABASE_URL="$(DB_URL)" $(GO) run -tags dev ./cmd/api/
+run: ## Run the API server (dev build, auth bypass available); uses DATABASE_URL from .env unless DB_URL is set (`make run DB_URL=…`)
+	AUTH_MODE=dev $(if $(DB_URL),DATABASE_URL="$(DB_URL)") $(GO) run -tags dev ./cmd/api/
 
 run-auth: ## Run the API server with AUTH_MODE=production (real auth; dev-tagged build)
-	AUTH_MODE=production DATABASE_URL="$(DB_URL)" $(GO) run -tags dev ./cmd/api/
+	AUTH_MODE=production $(if $(DB_URL),DATABASE_URL="$(DB_URL)") $(GO) run -tags dev ./cmd/api/
 
 run-auth-test: ## Local auth regression: AUTH_MODE=auth_test (requires JWT_SECRET, PI_API_KEY; dev tag only)
-	AUTH_MODE=auth_test DATABASE_URL="$(DB_URL)" $(GO) run -tags dev ./cmd/api/
+	AUTH_MODE=auth_test $(if $(DB_URL),DATABASE_URL="$(DB_URL)") $(GO) run -tags dev ./cmd/api/
 
 run-receiver: ## Run optional Insert Commons ingest receiver (:8765; set INSERT_COMMONS_SHARED_SECRET or ALLOW_INSECURE)
-	DATABASE_URL="$(DB_URL)" $(GO) run ./cmd/insert-commons-receiver/
+	$(if $(DB_URL),DATABASE_URL="$(DB_URL)") $(GO) run ./cmd/insert-commons-receiver/
 
-dev: ## Run API + UI dev server in parallel
+dev: ## Run API + UI dev server in parallel (DATABASE_URL from .env unless `make dev DB_URL=…`)
 	@echo "Starting API on :$(PORT) and UI on :5173"
 	@trap 'kill 0' INT; \
-		AUTH_MODE=dev DATABASE_URL="$(DB_URL)" $(GO) run -tags dev ./cmd/api/ & \
+		AUTH_MODE=dev $(if $(DB_URL),DATABASE_URL="$(DB_URL)") $(GO) run -tags dev ./cmd/api/ & \
 		cd ui && npm run dev & \
 		wait
 
@@ -55,7 +56,7 @@ dev-auth-test: ## API + UI with AUTH_MODE=auth_test — set JWT_SECRET & PI_API_
 	@echo "Starting API on :$(PORT) with AUTH_MODE=auth_test + UI on :5173"
 	@echo "Ensure JWT_SECRET and PI_API_KEY are set (copied from .env.example if needed)."
 	@trap 'kill 0' INT; \
-		AUTH_MODE=auth_test DATABASE_URL="$(DB_URL)" $(GO) run -tags dev ./cmd/api/ & \
+		AUTH_MODE=auth_test $(if $(DB_URL),DATABASE_URL="$(DB_URL)") $(GO) run -tags dev ./cmd/api/ & \
 		cd ui && npm run dev & \
 		wait
 
@@ -89,11 +90,20 @@ sqlc: ## Regenerate sqlc Go code from SQL queries
 rag-ingest-help: ## Show rag-ingest CLI flags (farm-scoped embedding; see docs/workflow-guide.md §10.6)
 	@$(GO) run ./cmd/rag-ingest -help
 
-seed: ## Apply seed data to the database
-	psql "$(DB_URL)" -f db/seeds/master_seed.sql
+compose-db-up: ## Start only the Postgres image from docker-compose.yml (Timescale + pgvector build)
+	docker compose up -d db --build
+
+compose-db-status: ## Show docker compose db container status
+	docker compose ps db
+
+check-stack: ## Verify .env DATABASE_URL, pgvector, optional API /health (see docs/local-operator-bootstrap.md)
+	@./scripts/check-local-stack.sh
+
+seed: ## Apply seed data to the database (`make seed DB_URL=…` or defaults to LOCAL_PEER_DSN)
+	psql "$(if $(DB_URL),$(DB_URL),$(LOCAL_PEER_DSN))" -f db/seeds/master_seed.sql
 
 schema: ## Apply the schema to the database
-	psql "$(DB_URL)" -f db/schema/gr33n-schema-v2-FINAL.sql
+	psql "$(if $(DB_URL),$(DB_URL),$(LOCAL_PEER_DSN))" -f db/schema/gr33n-schema-v2-FINAL.sql
 
 # ── Docker ─────────────────────────────────────────────────────
 up: ## Start Docker Compose services

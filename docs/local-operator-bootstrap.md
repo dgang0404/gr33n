@@ -53,6 +53,14 @@ The script copies [`.env.example`](../.env.example) to `.env` **once** if `.env`
 
 **Native:** follow [INSTALL.md](../INSTALL.md) for Postgres + extensions, then `./scripts/bootstrap-local.sh`, set **`DATABASE_URL`** in `.env`, then **`make dev`** (API + UI together) or **`make run`** and **`make ui`** in two terminals.
 
+### Unblock “API offline” / failed startup (checklist)
+
+1. **`.env` `DATABASE_URL`** must match the Postgres you actually use. Common mistake: leaving the placeholder `user:password` from [`.env.example`](../.env.example). **Compose DB:** after `make compose-db-up`, use `postgres://gr33n:gr33n@127.0.0.1:5432/gr33n?sslmode=disable`. **Native peer:** see [INSTALL.md §2d](../INSTALL.md).
+2. **`pgvector`** — the API registers the `vector` type; if the extension is missing, startup fails with `vector type not found`. Install packages (e.g. `./scripts/install-system-deps-debian.sh` for PG16 + extensions) or use the Compose `db` image.
+3. **Verify without guessing:** from the repo root run **`make check-stack`** (runs [`scripts/check-local-stack.sh`](../scripts/check-local-stack.sh)) — connects with `DATABASE_URL`, checks `vector`, optionally curls `/health`.
+4. **UI → API:** [`ui/.env.example`](../ui/.env.example) → `ui/.env` with `VITE_API_URL=http://localhost:8080` if you changed the API port.
+5. **Auth test mode:** `JWT_SECRET` and `PI_API_KEY` must be set in `.env` when using **`make dev-auth-test`** (see `.env.example`).
+
 ## Order of operations
 
 1. **Database** — Full schema: `db/schema/gr33n-schema-v2-FINAL.sql`. Upgrades on older snapshots: apply `db/migrations/*.sql` in **filename sort order** (the bootstrap script does this after the schema).
