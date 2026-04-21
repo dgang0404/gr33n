@@ -324,6 +324,8 @@ type Querier interface {
 	ListDevicesByFarm(ctx context.Context, farmID int64) ([]Gr33ncoreDevice, error)
 	ListDevicesByZone(ctx context.Context, zoneID *int64) ([]Gr33ncoreDevice, error)
 	ListEcTargetsByFarm(ctx context.Context, farmID int64) ([]Gr33nfertigationEcTarget, error)
+	// RAG ingest: actions linked to this farm via schedule, rule, or fertigation program (exactly one parent).
+	ListExecutableActionsByFarmForRAG(ctx context.Context, farmID int64) ([]Gr33ncoreExecutableAction, error)
 	// ============================================================
 	// Queries: executable_actions bound to fertigation programs (Phase 20.95 WS3)
 	// Phase 20.7 WS3 will wire these into the program editor UI; for now we expose

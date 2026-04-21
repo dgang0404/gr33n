@@ -103,7 +103,7 @@ Pure “pgvector job only” is insufficient as an exit criterion if handlers ar
 
 Extend **`cmd/rag-ingest`** / **`internal/rag/ingest`** for approved domains; reuse **`internal/rag/sanitize`** patterns; add sqlc queries as needed per source table.
 
-**Shipped:** **Crop cycles** — `-crop-cycles`, `CropCycleDocument`, `source_type` **`crop_cycle`**. **Fertigation programs** — `-programs`, `FertigationProgramDocument`, `source_type` **`fertigation_program`**, program **`metadata`** via **`sanitize.FertigationProgramMetadataForEmbed`** (drops **`steps`**, sensitive keys). Both use chunk metadata `module` **`fertigation`**. **Still open (later / §6):** automation rules labels-only, costs rollups, inventory, alerts, etc.
+**Shipped:** **Crop cycles** (`-crop-cycles`), **programs** (`-programs`, metadata allowlist), **schedules / automation rules / executable actions** (`-schedules`, `-automation-rules`, `-executable-actions`; **`ListExecutableActionsByFarmForRAG`**; `action_parameters` via **`sanitize.AutomationDetailsJSON`**); source types **`schedule`**, **`automation_rule`**, **`executable_action`** with `module` **automation**. **Still open (later / §6):** **costs**, **inventory**, **alerts**.
 
 ### WS3 — Incremental re-embed
 

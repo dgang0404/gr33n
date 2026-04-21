@@ -111,6 +111,60 @@ func (w *Worker) IngestFarmFertigationPrograms(ctx context.Context, farmID int64
 	return w.upsertBatch(ctx, farmID, SourceTypeFertigationProgram, ids, docs)
 }
 
+// IngestFarmSchedules embeds gr33ncore.schedules for a farm.
+func (w *Worker) IngestFarmSchedules(ctx context.Context, farmID int64) (int, error) {
+	rows, err := w.Q.ListSchedulesByFarm(ctx, farmID)
+	if err != nil {
+		return 0, err
+	}
+	if len(rows) == 0 {
+		return 0, nil
+	}
+	docs := make([]string, len(rows))
+	ids := make([]int64, len(rows))
+	for i := range rows {
+		docs[i] = ScheduleDocument(rows[i])
+		ids[i] = rows[i].ID
+	}
+	return w.upsertBatch(ctx, farmID, SourceTypeSchedule, ids, docs)
+}
+
+// IngestFarmAutomationRules embeds gr33ncore.automation_rules for a farm.
+func (w *Worker) IngestFarmAutomationRules(ctx context.Context, farmID int64) (int, error) {
+	rows, err := w.Q.ListAutomationRulesByFarm(ctx, farmID)
+	if err != nil {
+		return 0, err
+	}
+	if len(rows) == 0 {
+		return 0, nil
+	}
+	docs := make([]string, len(rows))
+	ids := make([]int64, len(rows))
+	for i := range rows {
+		docs[i] = AutomationRuleDocument(rows[i])
+		ids[i] = rows[i].ID
+	}
+	return w.upsertBatch(ctx, farmID, SourceTypeAutomationRule, ids, docs)
+}
+
+// IngestFarmExecutableActions embeds executable_actions linked to the farm's schedules, rules, or programs.
+func (w *Worker) IngestFarmExecutableActions(ctx context.Context, farmID int64) (int, error) {
+	rows, err := w.Q.ListExecutableActionsByFarmForRAG(ctx, farmID)
+	if err != nil {
+		return 0, err
+	}
+	if len(rows) == 0 {
+		return 0, nil
+	}
+	docs := make([]string, len(rows))
+	ids := make([]int64, len(rows))
+	for i := range rows {
+		docs[i] = ExecutableActionDocument(rows[i])
+		ids[i] = rows[i].ID
+	}
+	return w.upsertBatch(ctx, farmID, SourceTypeExecutableAction, ids, docs)
+}
+
 func (w *Worker) upsertBatch(ctx context.Context, farmID int64, sourceType string, sourceIDs []int64, texts []string) (int, error) {
 	if len(sourceIDs) != len(texts) || len(texts) == 0 {
 		return 0, nil
@@ -166,7 +220,7 @@ func (w *Worker) upsertBatch(ctx context.Context, farmID int64, sourceType strin
 func metadataBytes(sourceType string) []byte {
 	module := metadataModuleCore
 	switch sourceType {
-	case SourceTypeAutomationRun:
+	case SourceTypeAutomationRun, SourceTypeSchedule, SourceTypeAutomationRule, SourceTypeExecutableAction:
 		module = metadataModuleAutomation
 	case SourceTypeCropCycle, SourceTypeFertigationProgram:
 		module = metadataModuleFertigation

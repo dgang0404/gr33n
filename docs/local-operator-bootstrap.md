@@ -45,6 +45,12 @@ The script copies [`.env.example`](../.env.example) to `.env` **once** if `.env`
 
 **Make equivalent:** `make bootstrap-local` (same as the script without flags). Use `make bootstrap-local-docker` for the Docker path.
 
+## When localhost (DB / API / UI) is not running
+
+**Docker:** from the repo root run `docker compose up -d --build` (or `make bootstrap-local-docker`). Dashboard: **http://localhost:5173** · API: **http://localhost:8080** (`AUTH_MODE=dev` in Compose). Postgres is exposed on **localhost:5432** (credentials in [`docker-compose.yml`](../docker-compose.yml)).
+
+**Native:** follow [INSTALL.md](../INSTALL.md) for Postgres + extensions, then `./scripts/bootstrap-local.sh`, set **`DATABASE_URL`** in `.env`, then **`make dev`** (API + UI together) or **`make run`** and **`make ui`** in two terminals.
+
 ## Order of operations
 
 1. **Database** — Full schema: `db/schema/gr33n-schema-v2-FINAL.sql`. Upgrades on older snapshots: apply `db/migrations/*.sql` in **filename sort order** (the bootstrap script does this after the schema).

@@ -25,6 +25,9 @@ func main() {
 		doRuns       = flag.Bool("automation-runs", false, "index automation_runs")
 		doCycles     = flag.Bool("crop-cycles", false, "index gr33nfertigation.crop_cycles")
 		doPrograms   = flag.Bool("programs", false, "index gr33nfertigation.programs (metadata allowlisted)")
+		doSchedules  = flag.Bool("schedules", false, "index gr33ncore.schedules")
+		doRules      = flag.Bool("automation-rules", false, "index gr33ncore.automation_rules")
+		doActions    = flag.Bool("executable-actions", false, "index gr33ncore.executable_actions (farm-linked; action_parameters scrubbed)")
 		batchRuns    = flag.Int("run-batch-size", 500, "cursor batch size for automation runs")
 		startAfterID = flag.Int64("runs-after-id", 0, "only automation runs with id > this")
 		dryRun       = flag.Bool("dry-run", false, "print counts only (no embeddings / DB writes)")
@@ -34,8 +37,8 @@ func main() {
 	if *farmID <= 0 {
 		log.Fatal("-farm-id is required")
 	}
-	if !*doTasks && !*doRuns && !*doCycles && !*doPrograms {
-		log.Fatal("specify at least one of -tasks, -automation-runs, -crop-cycles, or -programs")
+	if !*doTasks && !*doRuns && !*doCycles && !*doPrograms && !*doSchedules && !*doRules && !*doActions {
+		log.Fatal("specify at least one ingest flag (see -help)")
 	}
 
 	ctx := context.Background()
@@ -57,7 +60,7 @@ func main() {
 
 	if *dryRun {
 		q := db.New(pool)
-		var nTasks, nRuns, nCycles, nPrograms int
+		var nTasks, nRuns, nCycles, nPrograms, nSchedules, nRules, nActions int
 		if *doTasks {
 			tasks, err := q.ListTasksByFarm(ctx, *farmID)
 			if err != nil {
@@ -89,7 +92,29 @@ func main() {
 			}
 			nPrograms = len(progs)
 		}
-		fmt.Printf("dry-run farm=%d tasks=%d automation_runs=%d crop_cycles=%d programs=%d\n", *farmID, nTasks, nRuns, nCycles, nPrograms)
+		if *doSchedules {
+			sch, err := q.ListSchedulesByFarm(ctx, *farmID)
+			if err != nil {
+				log.Fatal(err)
+			}
+			nSchedules = len(sch)
+		}
+		if *doRules {
+			rules, err := q.ListAutomationRulesByFarm(ctx, *farmID)
+			if err != nil {
+				log.Fatal(err)
+			}
+			nRules = len(rules)
+		}
+		if *doActions {
+			acts, err := q.ListExecutableActionsByFarmForRAG(ctx, *farmID)
+			if err != nil {
+				log.Fatal(err)
+			}
+			nActions = len(acts)
+		}
+		fmt.Printf("dry-run farm=%d tasks=%d automation_runs=%d crop_cycles=%d programs=%d schedules=%d automation_rules=%d executable_actions=%d\n",
+			*farmID, nTasks, nRuns, nCycles, nPrograms, nSchedules, nRules, nActions)
 		return
 	}
 
@@ -127,5 +152,26 @@ func main() {
 			log.Fatalf("programs: %v", err)
 		}
 		log.Printf("embedded programs: %d", n)
+	}
+	if *doSchedules {
+		n, err := w.IngestFarmSchedules(ctx, *farmID)
+		if err != nil {
+			log.Fatalf("schedules: %v", err)
+		}
+		log.Printf("embedded schedules: %d", n)
+	}
+	if *doRules {
+		n, err := w.IngestFarmAutomationRules(ctx, *farmID)
+		if err != nil {
+			log.Fatalf("automation_rules: %v", err)
+		}
+		log.Printf("embedded automation_rules: %d", n)
+	}
+	if *doActions {
+		n, err := w.IngestFarmExecutableActions(ctx, *farmID)
+		if err != nil {
+			log.Fatalf("executable_actions: %v", err)
+		}
+		log.Printf("embedded executable_actions: %d", n)
 	}
 }

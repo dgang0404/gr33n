@@ -193,3 +193,21 @@ INSERT INTO gr33ncore.executable_actions (
     action_command, action_parameters, delay_before_execution_seconds
 ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
 RETURNING *;
+
+-- RAG ingest: actions linked to this farm via schedule, rule, or fertigation program (exactly one parent).
+-- name: ListExecutableActionsByFarmForRAG :many
+SELECT ea.*
+FROM gr33ncore.executable_actions ea
+WHERE EXISTS (
+    SELECT 1 FROM gr33ncore.schedules s
+    WHERE s.id = ea.schedule_id AND s.farm_id = $1
+)
+OR EXISTS (
+    SELECT 1 FROM gr33ncore.automation_rules r
+    WHERE r.id = ea.rule_id AND r.farm_id = $1
+)
+OR EXISTS (
+    SELECT 1 FROM gr33nfertigation.programs p
+    WHERE p.id = ea.program_id AND p.farm_id = $1 AND p.deleted_at IS NULL
+)
+ORDER BY ea.id ASC;

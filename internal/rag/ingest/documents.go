@@ -16,6 +16,9 @@ const (
 	SourceTypeAutomationRun       = "automation_run"
 	SourceTypeCropCycle           = "crop_cycle"
 	SourceTypeFertigationProgram  = "fertigation_program"
+	SourceTypeSchedule         = "schedule"
+	SourceTypeAutomationRule   = "automation_rule"
+	SourceTypeExecutableAction = "executable_action"
 	metadataModuleCore           = "core"
 	metadataModuleAutomation     = "automation"
 	metadataModuleFertigation    = "fertigation"
@@ -196,4 +199,119 @@ func writeNumericLine(b *strings.Builder, label string, n pgtype.Numeric) {
 		return
 	}
 	fmt.Fprintf(b, "%s: %g\n", label, f.Float64)
+}
+
+// ScheduleDocument builds embed text from gr33ncore.schedules (single chunk).
+func ScheduleDocument(s db.Gr33ncoreSchedule) string {
+	var b strings.Builder
+	b.WriteString("schedule: ")
+	b.WriteString(strings.TrimSpace(s.Name))
+	b.WriteByte('\n')
+	if s.Description != nil && strings.TrimSpace(*s.Description) != "" {
+		b.WriteString(sanitize.PlainNotes(*s.Description, 12000))
+		b.WriteByte('\n')
+	}
+	b.WriteString("schedule_type: ")
+	b.WriteString(strings.TrimSpace(s.ScheduleType))
+	b.WriteByte('\n')
+	b.WriteString("cron_expression: ")
+	b.WriteString(strings.TrimSpace(s.CronExpression))
+	b.WriteByte('\n')
+	b.WriteString("timezone: ")
+	b.WriteString(strings.TrimSpace(s.Timezone))
+	b.WriteByte('\n')
+	if s.IsActive {
+		b.WriteString("active: yes\n")
+	} else {
+		b.WriteString("active: no\n")
+	}
+	if txt := sanitize.AutomationDetailsJSON(s.MetaData); txt != "" {
+		b.WriteString("meta_data:\n")
+		b.WriteString(txt)
+		b.WriteByte('\n')
+	}
+	if txt := sanitize.AutomationDetailsJSON(s.Preconditions); txt != "" {
+		b.WriteString("preconditions:\n")
+		b.WriteString(txt)
+		b.WriteByte('\n')
+	}
+	return strings.TrimSpace(b.String())
+}
+
+// AutomationRuleDocument builds embed text from gr33ncore.automation_rules (single chunk).
+func AutomationRuleDocument(r db.Gr33ncoreAutomationRule) string {
+	var b strings.Builder
+	b.WriteString("automation_rule: ")
+	b.WriteString(strings.TrimSpace(r.Name))
+	b.WriteByte('\n')
+	if r.Description != nil && strings.TrimSpace(*r.Description) != "" {
+		b.WriteString(sanitize.PlainNotes(*r.Description, 12000))
+		b.WriteByte('\n')
+	}
+	if r.IsActive {
+		b.WriteString("active: yes\n")
+	} else {
+		b.WriteString("active: no\n")
+	}
+	b.WriteString("trigger_source: ")
+	b.WriteString(string(r.TriggerSource))
+	b.WriteByte('\n')
+	if r.ConditionLogic != nil && strings.TrimSpace(*r.ConditionLogic) != "" {
+		b.WriteString("condition_logic: ")
+		b.WriteString(strings.TrimSpace(*r.ConditionLogic))
+		b.WriteByte('\n')
+	}
+	if r.CooldownPeriodSeconds != nil && *r.CooldownPeriodSeconds > 0 {
+		b.WriteString("cooldown_period_seconds: ")
+		b.WriteString(strconv.FormatInt(int64(*r.CooldownPeriodSeconds), 10))
+		b.WriteByte('\n')
+	}
+	if txt := sanitize.AutomationDetailsJSON(r.TriggerConfiguration); txt != "" {
+		b.WriteString("trigger_configuration:\n")
+		b.WriteString(txt)
+		b.WriteByte('\n')
+	}
+	if txt := sanitize.AutomationDetailsJSON(r.ConditionsJsonb); txt != "" {
+		b.WriteString("conditions:\n")
+		b.WriteString(txt)
+		b.WriteByte('\n')
+	}
+	return strings.TrimSpace(b.String())
+}
+
+// ExecutableActionDocument builds embed text from executable_actions (labels + scrubbed JSON only).
+func ExecutableActionDocument(a db.Gr33ncoreExecutableAction) string {
+	var b strings.Builder
+	b.WriteString("executable_action\n")
+	switch {
+	case a.ScheduleID != nil:
+		fmt.Fprintf(&b, "parent: schedule_id %d\n", *a.ScheduleID)
+	case a.RuleID != nil:
+		fmt.Fprintf(&b, "parent: automation_rule_id %d\n", *a.RuleID)
+	case a.ProgramID != nil:
+		fmt.Fprintf(&b, "parent: fertigation_program_id %d\n", *a.ProgramID)
+	}
+	fmt.Fprintf(&b, "execution_order: %d\n", a.ExecutionOrder)
+	b.WriteString("action_type: ")
+	b.WriteString(string(a.ActionType))
+	b.WriteByte('\n')
+	writeOptionalID(&b, "target_actuator_id", a.TargetActuatorID)
+	writeOptionalID(&b, "target_automation_rule_id", a.TargetAutomationRuleID)
+	writeOptionalID(&b, "target_notification_template_id", a.TargetNotificationTemplateID)
+	if a.ActionCommand != nil && strings.TrimSpace(*a.ActionCommand) != "" {
+		b.WriteString("action_command: ")
+		b.WriteString(strings.TrimSpace(*a.ActionCommand))
+		b.WriteByte('\n')
+	}
+	if a.DelayBeforeExecutionSeconds != nil && *a.DelayBeforeExecutionSeconds > 0 {
+		b.WriteString("delay_before_execution_seconds: ")
+		b.WriteString(strconv.FormatInt(int64(*a.DelayBeforeExecutionSeconds), 10))
+		b.WriteByte('\n')
+	}
+	if txt := sanitize.AutomationDetailsJSON(a.ActionParameters); txt != "" {
+		b.WriteString("action_parameters:\n")
+		b.WriteString(txt)
+		b.WriteByte('\n')
+	}
+	return strings.TrimSpace(b.String())
 }

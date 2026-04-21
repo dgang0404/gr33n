@@ -662,6 +662,58 @@ func (q *Queries) ListAutomationRunsByFarmAfterID(ctx context.Context, arg ListA
 	return items, nil
 }
 
+const listExecutableActionsByFarmForRAG = `-- name: ListExecutableActionsByFarmForRAG :many
+SELECT ea.id, ea.schedule_id, ea.rule_id, ea.program_id, ea.execution_order, ea.action_type, ea.target_actuator_id, ea.target_automation_rule_id, ea.target_notification_template_id, ea.action_command, ea.action_parameters, ea.delay_before_execution_seconds
+FROM gr33ncore.executable_actions ea
+WHERE EXISTS (
+    SELECT 1 FROM gr33ncore.schedules s
+    WHERE s.id = ea.schedule_id AND s.farm_id = $1
+)
+OR EXISTS (
+    SELECT 1 FROM gr33ncore.automation_rules r
+    WHERE r.id = ea.rule_id AND r.farm_id = $1
+)
+OR EXISTS (
+    SELECT 1 FROM gr33nfertigation.programs p
+    WHERE p.id = ea.program_id AND p.farm_id = $1 AND p.deleted_at IS NULL
+)
+ORDER BY ea.id ASC
+`
+
+// RAG ingest: actions linked to this farm via schedule, rule, or fertigation program (exactly one parent).
+func (q *Queries) ListExecutableActionsByFarmForRAG(ctx context.Context, farmID int64) ([]Gr33ncoreExecutableAction, error) {
+	rows, err := q.db.Query(ctx, listExecutableActionsByFarmForRAG, farmID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Gr33ncoreExecutableAction{}
+	for rows.Next() {
+		var i Gr33ncoreExecutableAction
+		if err := rows.Scan(
+			&i.ID,
+			&i.ScheduleID,
+			&i.RuleID,
+			&i.ProgramID,
+			&i.ExecutionOrder,
+			&i.ActionType,
+			&i.TargetActuatorID,
+			&i.TargetAutomationRuleID,
+			&i.TargetNotificationTemplateID,
+			&i.ActionCommand,
+			&i.ActionParameters,
+			&i.DelayBeforeExecutionSeconds,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listExecutableActionsByProgram = `-- name: ListExecutableActionsByProgram :many
 
 SELECT id, schedule_id, rule_id, program_id, execution_order, action_type, target_actuator_id, target_automation_rule_id, target_notification_template_id, action_command, action_parameters, delay_before_execution_seconds FROM gr33ncore.executable_actions
