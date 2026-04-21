@@ -32,6 +32,8 @@ When you need a visual:
 1. Prefer regenerating from the live database or from `gr33n-schema-v2-FINAL.sql` using a tool you trust (e.g. SchemaSpy, pgAdmin, or schema-as-code exporters).
 2. If you publish a diagram in-repo, date it and say **which migration filename** or commit it was generated from.
 
+**Text-native overview (pipes + ASCII + optional Mermaid):** [schema-erd-text.md](schema-erd-text.md) — maintained against the baseline; refresh when migrations change the conceptual graph.
+
 Good documentation drives adoption; **accurate** schema docs beat pretty but wrong pictures.
 
 ## Related reading
