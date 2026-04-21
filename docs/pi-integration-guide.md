@@ -6,6 +6,7 @@
 > - API spec: [`openapi.yaml`](../openapi.yaml) — source of truth for every route used below.
 > - MQTT edge playbook: [`mqtt-edge-operator-playbook.md`](mqtt-edge-operator-playbook.md) — when you run the MQTT → API bridge instead of (or alongside) direct HTTP.
 > - Operator workflow narrative: [`workflow-guide.md`](workflow-guide.md) — how the pieces connect end-to-end.
+> - **Hardware layout & scaling:** [`raspberry-pi-and-deployment-topology.md`](raspberry-pi-and-deployment-topology.md) — Pi OS packages, full stack on one Pi, splitting DB/API/UI onto servers or containers as the farm grows.
 
 ---
 

@@ -1,10 +1,12 @@
 # gr33n-api — Local Development Setup
 
+**New here?** After cloning, run **`./scripts/setup-first-clone.sh`** (or **`make first-clone`**) from the repo root — it prepares env files, installs UI dependencies, and applies schema/migrations when your database is ready. Use **`./scripts/setup-first-clone.sh --docker`** if you prefer Docker Compose for Postgres. Full happy-path narrative: [`docs/local-operator-bootstrap.md`](docs/local-operator-bootstrap.md). **Schema source of truth** (not informal diagrams): [`docs/database-schema-overview.md`](docs/database-schema-overview.md).
+
 ## Prerequisites
 
 | Tool | Version | Install |
 |------|---------|---------|
-| Go | 1.23+ | https://go.dev/dl/ or `snap install go --classic` |
+| Go | 1.25+ | https://go.dev/dl/ or `snap install go --classic` |
 | PostgreSQL | 14+ | `sudo apt install postgresql` |
 | PostGIS | 3.x (match Postgres) | `sudo apt install postgresql-14-postgis-3` (version as needed) |
 | TimescaleDB | 2.x | https://docs.timescale.com/self-hosted/latest/install/ |
@@ -12,13 +14,39 @@
 | sqlc | latest | `go install github.com/sqlc-dev/sqlc/cmd/sqlc@latest` |
 | Node.js (UI) | 22+ | https://nodejs.org/ or your OS package manager |
 
+### Debian / Ubuntu (automated)
+
+On **Linux** with **apt** (Debian, Ubuntu, Mint, Pop!\_OS, …), you can install **PostgreSQL 16** (official PGDG apt), **PostGIS**, **pgvector**, **TimescaleDB**, and **Node.js 22** with sudo — you will be prompted for your password:
+
+```bash
+./scripts/install-system-deps-debian.sh
+# or: make install-deps-debian
+```
+
+This adds the PostgreSQL PGDG and TimescaleDB apt repositories, then installs packages. It does **not** install **Go** (distro packages are often too old for `go 1.25` in `go.mod`); install Go from [go.dev/dl](https://go.dev/dl/) or snap, then `go install … sqlc` as above.
+
+To run that script **and** the first-clone bootstrap in one flow:
+
+```bash
+./scripts/setup-first-clone.sh --install-system-deps
+# or: make first-clone-install-deps
+```
+
+Use **`./scripts/install-system-deps-debian.sh --skip-node`** if you already manage Node with nvm/fnm.
+
+### Raspberry Pi OS (edge daemon or experimental full stack)
+
+- **Edge-only Pi** (sensors/actuators talking to an API elsewhere): **`./scripts/install-pi-edge-deps.sh`** (`make install-pi-edge-deps`), then **`pi_client/setup.sh`** — see **`docs/raspberry-pi-and-deployment-topology.md`**.
+- **Docker on the Pi** (for `docker compose` experiments): **`./scripts/install-pi-edge-deps.sh --with-docker`** or **`make install-pi-edge-deps-docker`**.
+- Pi OS is Debian-derived; **do not** run `install-system-deps-debian.sh` on a small Pi unless you intend to host Postgres locally — see the topology doc for RAM/storage warnings.
+
 ---
 
 ## 1. Clone the repo
 
 ```bash
-git clone https://github.com/YOUR_ORG/gr33n-api.git
-cd gr33n-api
+git clone https://github.com/YOUR_ORG/gr33n.git
+cd gr33n
 ```
 
 ---

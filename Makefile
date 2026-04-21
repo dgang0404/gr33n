@@ -1,4 +1,4 @@
-.PHONY: run run-receiver build build-receiver test seed sqlc ui dev clean lint bootstrap-local bootstrap-local-docker audit-openapi
+.PHONY: run run-receiver build build-receiver test seed sqlc ui dev clean lint bootstrap-local bootstrap-local-docker install-deps-debian install-pi-edge-deps first-clone first-clone-docker first-clone-install-deps audit-openapi
 
 # ── Variables ──────────────────────────────────────────────────
 BINARY   := api
@@ -12,6 +12,24 @@ bootstrap-local: ## DB schema + migrations, .env from example if missing, npm ci
 
 bootstrap-local-docker: ## docker compose up -d + npm ci (DB/API/UI in containers)
 	@./scripts/bootstrap-local.sh --docker
+
+first-clone: ## First git clone: go mod download, .env templates, then bootstrap-local (needs DB — see INSTALL.md)
+	@./scripts/setup-first-clone.sh
+
+first-clone-docker: ## Same as first-clone but --docker (no host Postgres required for schema steps)
+	@./scripts/setup-first-clone.sh --docker
+
+install-deps-debian: ## Debian/Ubuntu: sudo apt — Postgres 16 (PGDG) + PostGIS + pgvector + TimescaleDB + Node 22 (not Go)
+	@./scripts/install-system-deps-debian.sh
+
+install-pi-edge-deps: ## Raspberry Pi OS: sudo apt — Python venv + GPIO helpers + git (+ optional Docker)
+	@./scripts/install-pi-edge-deps.sh
+
+install-pi-edge-deps-docker: ## Same + Docker Engine & Compose (full stack on Pi experiments)
+	@./scripts/install-pi-edge-deps.sh --with-docker
+
+first-clone-install-deps: ## first-clone + install-deps-debian first (Linux Debian/Ubuntu only)
+	@./scripts/setup-first-clone.sh --install-system-deps
 
 # ── Development ────────────────────────────────────────────────
 run: ## Run the API server (dev build, auth bypass available)

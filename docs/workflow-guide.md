@@ -9,6 +9,7 @@
 > **Companion docs:**
 > - [`openapi.yaml`](../openapi.yaml) — canonical machine-readable spec of every route.
 > - [`pi-integration-guide.md`](pi-integration-guide.md) — how on-farm hardware reaches the platform.
+> - [`raspberry-pi-and-deployment-topology.md`](raspberry-pi-and-deployment-topology.md) — Pi OS packages, hosting DB/API/UI together or separately.
 > - [`pattern-playbooks.md`](pattern-playbooks.md) — hardware + tuning notes for optional farm **bootstrap templates** (chicken coop, greenhouse, drying room, aquaponics, JADAM indoor starter).
 > - [`phase-13-operator-documentation.md`](phase-13-operator-documentation.md), [`phase-14-operator-documentation.md`](phase-14-operator-documentation.md) — phased feature rollouts.
 

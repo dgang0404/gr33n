@@ -54,7 +54,7 @@ gr33n will never require a permanent internet connection, forced login, or hidde
 
 | Layer | Technology |
 |-------|-----------|
-| API | Go 1.23 · `net/http` stdlib |
+| API | Go 1.25 · `net/http` stdlib |
 | Database | PostgreSQL 14+ · TimescaleDB · PostGIS |
 | Query layer | sqlc (generated — do not edit `internal/db/`) |
 | Frontend | Vue 3 · Vite · Pinia · Tailwind CSS |
@@ -67,7 +67,12 @@ gr33n will never require a permanent internet connection, forced login, or hidde
 ## Repository Layout
 
 ```
-gr33n-api/
+gr33n/
+├── scripts/
+│   ├── bootstrap-local.sh             # Schema, migrations, npm ci, .env from example
+│   ├── setup-first-clone.sh           # First clone (+ optional --install-system-deps)
+│   ├── install-system-deps-debian.sh # Debian/Ubuntu: sudo apt Postgres+Node (not Go)
+│   └── install-pi-edge-deps.sh       # Raspberry Pi OS: sudo apt for pi_client (+ optional Docker)
 ├── cmd/api/
 │   ├── main.go              # Entry point, DB pool, server startup
 │   ├── routes.go            # All HTTP route registrations
@@ -115,14 +120,14 @@ gr33n-api/
 
 ## Quick Start
 
-**Guided one-path setup (DB → env → UI deps):** [docs/local-operator-bootstrap.md](docs/local-operator-bootstrap.md) — run `./scripts/bootstrap-local.sh` or `make bootstrap-local`.
+**First time after `git clone`:** run **`./scripts/setup-first-clone.sh`** (or **`make first-clone`**) — it pulls Go deps, creates `.env` / `ui/.env` from examples, runs **`scripts/bootstrap-local.sh`** to load schema and `npm ci` in `ui/`. On **Debian/Ubuntu**, **`./scripts/setup-first-clone.sh --install-system-deps`** (`make first-clone-install-deps`) runs **`sudo apt`** first (Postgres 16 + extensions + Node 22; Go still from [go.dev/dl](https://go.dev/dl/)). Otherwise you must have Postgres with TimescaleDB, PostGIS, and pgvector available first (native), *or* use **`./scripts/setup-first-clone.sh --docker`** for the Compose database. Step-by-step: [docs/local-operator-bootstrap.md](docs/local-operator-bootstrap.md). How the database is actually defined (ignore stale ERDs): [docs/database-schema-overview.md](docs/database-schema-overview.md).
 
-Full setup in [INSTALL.md](INSTALL.md). Short version:
+Full setup in [INSTALL.md](INSTALL.md). Short manual version:
 
 ```bash
 # 1. Clone
 git clone https://github.com/dgang0404/gr33n.git
-cd gr33n-api
+cd gr33n
 
 # 2. Create and migrate the database
 sudo -u postgres psql -c "CREATE DATABASE gr33n;"
@@ -470,6 +475,8 @@ The Pi daemon runs four threads concurrently:
 - **flush-loop** — drains the offline SQLite queue when API becomes reachable
 
 Configure sensors, actuators (with `device_id`), and GPIO pins in `pi_client/config.yaml`. Install as a systemd service with `pi_client/setup.sh` so it starts automatically on boot.
+
+**Deployments:** Edge-only Pis vs running **Postgres + API + UI on the Pi**, and how setups scale to split DB/API/UI — see **[`docs/raspberry-pi-and-deployment-topology.md`](docs/raspberry-pi-and-deployment-topology.md)**. Minimal Pi OS apt packages before `setup.sh`: `./scripts/install-pi-edge-deps.sh` (`make install-pi-edge-deps`).
 
 ---
 

@@ -13,6 +13,18 @@ Single happy path for standing up **Postgres → API → dashboard → optional 
 
 Detailed native Postgres steps (peer auth, roles): [`INSTALL.md`](../INSTALL.md).
 
+## First clone (recommended for new contributors)
+
+From the repository root after `git clone`, run:
+
+```bash
+./scripts/setup-first-clone.sh
+```
+
+Or **`make first-clone`**. This runs `go mod download`, copies `.env` / `ui/.env` from examples if missing, then **`scripts/bootstrap-local.sh`**. You still need PostgreSQL created with extensions first for the native path — see [INSTALL.md](../INSTALL.md). **Debian/Ubuntu:** install Postgres stack + Node with **`./scripts/install-system-deps-debian.sh`** (sudo apt), or combine with **`./scripts/setup-first-clone.sh --install-system-deps`** (`make first-clone-install-deps`). For a machine without local Postgres, use **`./scripts/setup-first-clone.sh --docker`** or **`make first-clone-docker`**.
+
+For how the schema is defined (and why ad-hoc ERD screenshots may be outdated), see [database-schema-overview.md](database-schema-overview.md).
+
 ## One-command bootstrap
 
 From the repository root:
@@ -40,7 +52,7 @@ The script copies [`.env.example`](../.env.example) to `.env` **once** if `.env`
 3. **API** — `make run` (dev auth bypass) or `make run-auth` / production-style config; see comments in `.env.example`.
 4. **UI** — `make ui` or `make dev` (API + UI). Copy [`ui/.env.example`](../ui/.env.example) to `ui/.env` if you need a non-default API URL (`VITE_API_URL`; otherwise the code defaults to `http://localhost:8080`).
 5. **Optional: Insert Commons receiver** — `make run-receiver`; env and migrations: [`insert-commons-receiver-playbook.md`](insert-commons-receiver-playbook.md).
-6. **Optional: Pi client / MQTT** — [`pi_client/setup.sh`](../pi_client/setup.sh), [`mqtt-edge-operator-playbook.md`](mqtt-edge-operator-playbook.md). Python deps: `pi_client/requirements.txt`.
+6. **Optional: Pi client / MQTT** — OS packages: [`scripts/install-pi-edge-deps.sh`](../scripts/install-pi-edge-deps.sh). Then [`pi_client/setup.sh`](../pi_client/setup.sh), [`mqtt-edge-operator-playbook.md`](mqtt-edge-operator-playbook.md). Full topologies (edge vs all-on-Pi vs split servers): [`raspberry-pi-and-deployment-topology.md`](raspberry-pi-and-deployment-topology.md). Python deps: `pi_client/requirements.txt`.
 
 ## API integration smoke tests
 
