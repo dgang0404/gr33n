@@ -123,3 +123,39 @@ func TestExecutableActionDocument(t *testing.T) {
 		t.Fatalf("unexpected: %q", out)
 	}
 }
+
+func TestCostTransactionDocumentOmitsMoney(t *testing.T) {
+	desc := "Organic potting soil"
+	ref := "INV-2024-001"
+	cp := "Local nursery"
+	amt := pgtype.Numeric{}
+	_ = amt.Scan("123.45")
+	d := pgtype.Date{Valid: true, Time: time.Date(2025, 6, 1, 0, 0, 0, 0, time.UTC)}
+	c := db.Gr33ncoreCostTransaction{
+		ID:               100,
+		FarmID:           1,
+		TransactionDate:  d,
+		Category:         commontypes.CostCategorySeedsPlants,
+		Subcategory:      ptrStr("inputs"),
+		Description:      &desc,
+		IsIncome:         false,
+		Amount:           amt,
+		Currency:         "USD",
+		DocumentReference: &ref,
+		Counterparty:     &cp,
+	}
+	out := CostTransactionDocument(c)
+	if strings.Contains(out, "123") || strings.Contains(out, "USD") || strings.Contains(out, "amount") {
+		t.Fatalf("must not embed money or currency: %q", out)
+	}
+	for _, sub := range []string{"cost_transaction", "seeds_plants", "inputs", "expense", "Organic potting"} {
+		if !strings.Contains(out, sub) {
+			t.Fatalf("missing %q in: %q", sub, out)
+		}
+	}
+	if !strings.Contains(out, ref) || !strings.Contains(out, cp) {
+		t.Fatalf("expected memo fields: %q", out)
+	}
+}
+
+func ptrStr(s string) *string { return &s }

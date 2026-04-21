@@ -19,9 +19,11 @@ const (
 	SourceTypeSchedule         = "schedule"
 	SourceTypeAutomationRule   = "automation_rule"
 	SourceTypeExecutableAction = "executable_action"
+	SourceTypeCostTransaction  = "cost_transaction"
 	metadataModuleCore           = "core"
 	metadataModuleAutomation     = "automation"
 	metadataModuleFertigation    = "fertigation"
+	metadataModuleCost           = "cost"
 )
 
 // TaskDocument builds deterministic embed text from a task row (single chunk).
@@ -311,6 +313,70 @@ func ExecutableActionDocument(a db.Gr33ncoreExecutableAction) string {
 	if txt := sanitize.AutomationDetailsJSON(a.ActionParameters); txt != "" {
 		b.WriteString("action_parameters:\n")
 		b.WriteString(txt)
+		b.WriteByte('\n')
+	}
+	return strings.TrimSpace(b.String())
+}
+
+// CostTransactionDocument builds embed text from cost_transactions without monetary amounts or currency
+// (§4.2 commercial sensitivity — narrative retrieval only).
+func CostTransactionDocument(ct db.Gr33ncoreCostTransaction) string {
+	var b strings.Builder
+	b.WriteString("cost_transaction\n")
+	if d := formatPGDate(ct.TransactionDate); d != "" {
+		b.WriteString("transaction_date: ")
+		b.WriteString(d)
+		b.WriteByte('\n')
+	}
+	b.WriteString("category: ")
+	b.WriteString(string(ct.Category))
+	b.WriteByte('\n')
+	if ct.Subcategory != nil && strings.TrimSpace(*ct.Subcategory) != "" {
+		b.WriteString("subcategory: ")
+		b.WriteString(strings.TrimSpace(*ct.Subcategory))
+		b.WriteByte('\n')
+	}
+	if ct.IsIncome {
+		b.WriteString("direction: income\n")
+	} else {
+		b.WriteString("direction: expense\n")
+	}
+	if ct.Description != nil && strings.TrimSpace(*ct.Description) != "" {
+		b.WriteString("description: ")
+		b.WriteString(sanitize.PlainNotes(*ct.Description, 8000))
+		b.WriteByte('\n')
+	}
+	if ct.DocumentType != nil && strings.TrimSpace(*ct.DocumentType) != "" {
+		b.WriteString("document_type: ")
+		b.WriteString(strings.TrimSpace(*ct.DocumentType))
+		b.WriteByte('\n')
+	}
+	if ct.DocumentReference != nil && strings.TrimSpace(*ct.DocumentReference) != "" {
+		b.WriteString("document_reference: ")
+		b.WriteString(sanitize.PlainNotes(*ct.DocumentReference, 2000))
+		b.WriteByte('\n')
+	}
+	if ct.Counterparty != nil && strings.TrimSpace(*ct.Counterparty) != "" {
+		b.WriteString("counterparty: ")
+		b.WriteString(sanitize.PlainNotes(*ct.Counterparty, 500))
+		b.WriteByte('\n')
+	}
+	if ct.RelatedModuleSchema != nil && strings.TrimSpace(*ct.RelatedModuleSchema) != "" {
+		b.WriteString("related: ")
+		b.WriteString(strings.TrimSpace(*ct.RelatedModuleSchema))
+		if ct.RelatedTableName != nil {
+			b.WriteByte('.')
+			b.WriteString(strings.TrimSpace(*ct.RelatedTableName))
+		}
+		if ct.RelatedRecordID != nil {
+			b.WriteByte('#')
+			b.WriteString(strconv.FormatInt(*ct.RelatedRecordID, 10))
+		}
+		b.WriteByte('\n')
+	}
+	if ct.CropCycleID != nil && *ct.CropCycleID > 0 {
+		b.WriteString("crop_cycle_id: ")
+		b.WriteString(strconv.FormatInt(*ct.CropCycleID, 10))
 		b.WriteByte('\n')
 	}
 	return strings.TrimSpace(b.String())

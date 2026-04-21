@@ -28,8 +28,11 @@ func main() {
 		doSchedules  = flag.Bool("schedules", false, "index gr33ncore.schedules")
 		doRules      = flag.Bool("automation-rules", false, "index gr33ncore.automation_rules")
 		doActions    = flag.Bool("executable-actions", false, "index gr33ncore.executable_actions (farm-linked; action_parameters scrubbed)")
+		doCosts      = flag.Bool("cost-transactions", false, "index gr33ncore.cost_transactions (no amount/currency in text)")
 		batchRuns    = flag.Int("run-batch-size", 500, "cursor batch size for automation runs")
 		startAfterID = flag.Int64("runs-after-id", 0, "only automation runs with id > this")
+		batchCosts   = flag.Int("cost-batch-size", 500, "cursor batch size for cost transactions")
+		costAfterID  = flag.Int64("cost-after-id", 0, "only cost_transactions with id > this")
 		dryRun       = flag.Bool("dry-run", false, "print counts only (no embeddings / DB writes)")
 	)
 	flag.Parse()
@@ -37,7 +40,7 @@ func main() {
 	if *farmID <= 0 {
 		log.Fatal("-farm-id is required")
 	}
-	if !*doTasks && !*doRuns && !*doCycles && !*doPrograms && !*doSchedules && !*doRules && !*doActions {
+	if !*doTasks && !*doRuns && !*doCycles && !*doPrograms && !*doSchedules && !*doRules && !*doActions && !*doCosts {
 		log.Fatal("specify at least one ingest flag (see -help)")
 	}
 
@@ -61,6 +64,7 @@ func main() {
 	if *dryRun {
 		q := db.New(pool)
 		var nTasks, nRuns, nCycles, nPrograms, nSchedules, nRules, nActions int
+		var nCosts int64
 		if *doTasks {
 			tasks, err := q.ListTasksByFarm(ctx, *farmID)
 			if err != nil {
@@ -113,8 +117,15 @@ func main() {
 			}
 			nActions = len(acts)
 		}
-		fmt.Printf("dry-run farm=%d tasks=%d automation_runs=%d crop_cycles=%d programs=%d schedules=%d automation_rules=%d executable_actions=%d\n",
-			*farmID, nTasks, nRuns, nCycles, nPrograms, nSchedules, nRules, nActions)
+		if *doCosts {
+			cnt, err := q.CountCostTransactionsByFarm(ctx, *farmID)
+			if err != nil {
+				log.Fatal(err)
+			}
+			nCosts = cnt
+		}
+		fmt.Printf("dry-run farm=%d tasks=%d automation_runs=%d crop_cycles=%d programs=%d schedules=%d automation_rules=%d executable_actions=%d cost_transactions=%d\n",
+			*farmID, nTasks, nRuns, nCycles, nPrograms, nSchedules, nRules, nActions, nCosts)
 		return
 	}
 
@@ -173,5 +184,12 @@ func main() {
 			log.Fatalf("executable_actions: %v", err)
 		}
 		log.Printf("embedded executable_actions: %d", n)
+	}
+	if *doCosts {
+		n, err := w.IngestFarmCostTransactions(ctx, *farmID, int32(*batchCosts), *costAfterID)
+		if err != nil {
+			log.Fatalf("cost_transactions: %v", err)
+		}
+		log.Printf("embedded cost_transactions: %d", n)
 	}
 }

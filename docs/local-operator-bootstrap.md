@@ -1,5 +1,7 @@
 # Local operator bootstrap — start here
 
+**Run bootstrap and Make targets from the repository root** (`cd /path/to/gr33n-platform` after `git clone`). Commands like `./scripts/bootstrap-local.sh` and `make dev` apply to **this** repo only — not from your home directory (`~`).
+
 Single happy path for standing up **Postgres → API → dashboard → optional Insert Commons receiver → optional Pi / MQTT bridge**, with explicit env templates and pointers to federation and audit docs. For farm template behavior (blank vs starter pack), see [`plans/phase_15_farm_onboarding.plan.md`](plans/phase_15_farm_onboarding.plan.md).
 
 ## Prerequisites

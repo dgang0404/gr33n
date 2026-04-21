@@ -22,6 +22,7 @@ type Querier interface {
 	// time, not start, so a rate change mid-shift applies to the rest of
 	// the shift, not retroactively.
 	CloseTaskLaborLog(ctx context.Context, arg CloseTaskLaborLogParams) (Gr33ncoreTaskLaborLog, error)
+	CountCostTransactionsByFarm(ctx context.Context, farmID int64) (int64, error)
 	CountDevicesByStatusForFarm(ctx context.Context, farmID int64) ([]CountDevicesByStatusForFarmRow, error)
 	CountInsertCommonsSyncAttemptsSince(ctx context.Context, arg CountInsertCommonsSyncAttemptsSinceParams) (int64, error)
 	CountRagChunksByFarm(ctx context.Context, farmID int64) (int64, error)
@@ -319,6 +320,8 @@ type Querier interface {
 	ListBillableActuatorsByFarm(ctx context.Context, farmID int64) ([]ListBillableActuatorsByFarmRow, error)
 	ListCostTransactionsByCropCycle(ctx context.Context, cropCycleID *int64) ([]Gr33ncoreCostTransaction, error)
 	ListCostTransactionsByFarm(ctx context.Context, arg ListCostTransactionsByFarmParams) ([]Gr33ncoreCostTransaction, error)
+	// Cursor batch for RAG ingest (stable id order).
+	ListCostTransactionsByFarmAfterID(ctx context.Context, arg ListCostTransactionsByFarmAfterIDParams) ([]Gr33ncoreCostTransaction, error)
 	ListCostTransactionsByFarmExport(ctx context.Context, farmID int64) ([]ListCostTransactionsByFarmExportRow, error)
 	ListCropCyclesByFarm(ctx context.Context, farmID int64) ([]Gr33nfertigationCropCycle, error)
 	ListDevicesByFarm(ctx context.Context, farmID int64) ([]Gr33ncoreDevice, error)

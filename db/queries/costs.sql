@@ -16,6 +16,17 @@ WHERE farm_id = $1
 ORDER BY transaction_date DESC, id DESC
 LIMIT $2 OFFSET $3;
 
+-- Cursor batch for RAG ingest (stable id order).
+-- name: ListCostTransactionsByFarmAfterID :many
+SELECT * FROM gr33ncore.cost_transactions
+WHERE farm_id = $1 AND id > $2
+ORDER BY id ASC
+LIMIT $3;
+
+-- name: CountCostTransactionsByFarm :one
+SELECT COUNT(*)::bigint FROM gr33ncore.cost_transactions
+WHERE farm_id = $1;
+
 -- name: ListCostTransactionsByFarmExport :many
 SELECT id, farm_id, transaction_date, category, subcategory, amount, currency,
  description, is_income, document_type, document_reference, counterparty

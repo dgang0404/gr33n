@@ -165,6 +165,44 @@ func (w *Worker) IngestFarmExecutableActions(ctx context.Context, farmID int64) 
 	return w.upsertBatch(ctx, farmID, SourceTypeExecutableAction, ids, docs)
 }
 
+// IngestFarmCostTransactions embeds cost_transactions in id order (amount/currency omitted in document text).
+func (w *Worker) IngestFarmCostTransactions(ctx context.Context, farmID int64, batchSize int32, startAfterID int64) (int, error) {
+	if batchSize <= 0 {
+		batchSize = 500
+	}
+	var total int
+	lastID := startAfterID
+	for {
+		rows, err := w.Q.ListCostTransactionsByFarmAfterID(ctx, db.ListCostTransactionsByFarmAfterIDParams{
+			FarmID: farmID,
+			ID:     lastID,
+			Limit:  batchSize,
+		})
+		if err != nil {
+			return total, err
+		}
+		if len(rows) == 0 {
+			break
+		}
+		docs := make([]string, len(rows))
+		ids := make([]int64, len(rows))
+		for i := range rows {
+			docs[i] = CostTransactionDocument(rows[i])
+			ids[i] = rows[i].ID
+		}
+		n, err := w.upsertBatch(ctx, farmID, SourceTypeCostTransaction, ids, docs)
+		if err != nil {
+			return total, err
+		}
+		total += n
+		lastID = rows[len(rows)-1].ID
+		if int32(len(rows)) < batchSize {
+			break
+		}
+	}
+	return total, nil
+}
+
 func (w *Worker) upsertBatch(ctx context.Context, farmID int64, sourceType string, sourceIDs []int64, texts []string) (int, error) {
 	if len(sourceIDs) != len(texts) || len(texts) == 0 {
 		return 0, nil
@@ -224,6 +262,8 @@ func metadataBytes(sourceType string) []byte {
 		module = metadataModuleAutomation
 	case SourceTypeCropCycle, SourceTypeFertigationProgram:
 		module = metadataModuleFertigation
+	case SourceTypeCostTransaction:
+		module = metadataModuleCost
 	}
 	m := map[string]string{"module": module}
 	b, err := json.Marshal(m)

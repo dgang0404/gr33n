@@ -13,6 +13,18 @@ import (
 	"gr33n-api/internal/platform/commontypes"
 )
 
+const countCostTransactionsByFarm = `-- name: CountCostTransactionsByFarm :one
+SELECT COUNT(*)::bigint FROM gr33ncore.cost_transactions
+WHERE farm_id = $1
+`
+
+func (q *Queries) CountCostTransactionsByFarm(ctx context.Context, farmID int64) (int64, error) {
+	row := q.db.QueryRow(ctx, countCostTransactionsByFarm, farmID)
+	var column_1 int64
+	err := row.Scan(&column_1)
+	return column_1, err
+}
+
 const createCostTransaction = `-- name: CreateCostTransaction :one
 
 INSERT INTO gr33ncore.cost_transactions (
@@ -673,6 +685,61 @@ type ListCostTransactionsByFarmParams struct {
 
 func (q *Queries) ListCostTransactionsByFarm(ctx context.Context, arg ListCostTransactionsByFarmParams) ([]Gr33ncoreCostTransaction, error) {
 	rows, err := q.db.Query(ctx, listCostTransactionsByFarm, arg.FarmID, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Gr33ncoreCostTransaction{}
+	for rows.Next() {
+		var i Gr33ncoreCostTransaction
+		if err := rows.Scan(
+			&i.ID,
+			&i.FarmID,
+			&i.TransactionDate,
+			&i.Category,
+			&i.Subcategory,
+			&i.Amount,
+			&i.Currency,
+			&i.Description,
+			&i.RelatedModuleSchema,
+			&i.RelatedTableName,
+			&i.RelatedRecordID,
+			&i.ReceiptFileID,
+			&i.IsIncome,
+			&i.DocumentType,
+			&i.DocumentReference,
+			&i.Counterparty,
+			&i.CreatedByUserID,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.CropCycleID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listCostTransactionsByFarmAfterID = `-- name: ListCostTransactionsByFarmAfterID :many
+SELECT id, farm_id, transaction_date, category, subcategory, amount, currency, description, related_module_schema, related_table_name, related_record_id, receipt_file_id, is_income, document_type, document_reference, counterparty, created_by_user_id, created_at, updated_at, crop_cycle_id FROM gr33ncore.cost_transactions
+WHERE farm_id = $1 AND id > $2
+ORDER BY id ASC
+LIMIT $3
+`
+
+type ListCostTransactionsByFarmAfterIDParams struct {
+	FarmID int64 `db:"farm_id" json:"farm_id"`
+	ID     int64 `db:"id" json:"id"`
+	Limit  int32 `db:"limit" json:"limit"`
+}
+
+// Cursor batch for RAG ingest (stable id order).
+func (q *Queries) ListCostTransactionsByFarmAfterID(ctx context.Context, arg ListCostTransactionsByFarmAfterIDParams) ([]Gr33ncoreCostTransaction, error) {
+	rows, err := q.db.Query(ctx, listCostTransactionsByFarmAfterID, arg.FarmID, arg.ID, arg.Limit)
 	if err != nil {
 		return nil, err
 	}
