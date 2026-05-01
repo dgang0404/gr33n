@@ -1,0 +1,67 @@
+# Example `.env` for the API (reference)
+
+The **canonical template** committed to git is **[`../.env.example`](../.env.example)**. Copy it to **`.env`** at the repo root (gitignored) and edit values.
+
+The block below is a **documentation mirror** for reading in the browser or printing. If anything disagrees with `.env.example`, **trust `.env.example`** and update this file.
+
+```bash
+# gr33n API server configuration
+#
+# Copy to `.env` (gitignored) and set values once. The API loads `.env` then `.env.local`
+# automatically when you start it from the repo root — no need to export secrets every session.
+# Real process env vars always override these files.
+
+# Pick ONE that matches how you run Postgres (compose vs native); wrong URL → API offline / auth errors.
+# Docker Compose db (published on host 5433 — see docker-compose.yml):  postgres://gr33n:gr33n@127.0.0.1:5433/gr33n?sslmode=disable
+# Native Linux peer auth (same OS user as Postgres role):  postgres:///gr33n?host=/var/run/postgresql
+# TCP example (replace user/password):  postgres://user:password@localhost:5433/gr33n?sslmode=disable
+DATABASE_URL=postgres://user:password@localhost:5433/gr33n?sslmode=disable
+PORT=8080
+
+# AUTH_MODE: dev | auth_test | production (default: production)
+#
+# dev — JWT + Pi key checks skipped. Requires `-tags dev` (see Makefile run/dev).
+# auth_test — same enforcement as production, but only allowed on `-tags dev`
+#   binaries (docker/prod images refuse this mode). Use for local login regression.
+# production — full auth. Default when unset.
+#
+# Examples:
+#   make run / make dev              → AUTH_MODE=dev
+#   make run-auth-test               → AUTH_MODE=auth_test + set secrets below
+#   go build ./cmd/api               → never use dev or auth_test in deployed images
+AUTH_MODE=dev
+
+# Required when AUTH_MODE is auth_test or production
+JWT_SECRET=change-me-to-a-long-random-string
+PI_API_KEY=change-me-to-a-shared-secret
+
+CORS_ORIGIN=http://localhost:5173
+
+ADMIN_USERNAME=admin
+# bcrypt hash for env-admin — optional if you use ~/.gr33n/admin.hash instead (main.go prefers the file).
+# Generate: htpasswd -nbBC 10 "" 'yourpassword' | cut -d: -f2   OR   echo -n 'yourpassword' | go run scripts/gen-admin-hash.go
+ADMIN_PASSWORD_HASH=
+
+# Env-admin (ADMIN_USERNAME + admin.hash): JWT must carry user_id or farm routes return 401.
+# Defaults match db/seeds/master_seed.sql (demo user owns farm_id=1).
+ADMIN_BIND_USER_ID=00000000-0000-0000-0000-000000000001
+ADMIN_BIND_EMAIL=dev@gr33n.local
+
+# Automation worker
+AUTOMATION_SIMULATION_MODE=true
+AUTOMATION_COOLDOWN_SECONDS=60
+
+# rag-ingest CLI (Phase 24/25 — not loaded by cmd/api unless you export them)
+# DATABASE_URL must point at pgvector-enabled Postgres. EMBEDDING_* call your embedding provider.
+# EMBEDDING_API_KEY=
+# EMBEDDING_BASE_URL=
+# EMBEDDING_MODEL=
+# Optional incremental watermark for cron (RFC3339 / RFC3339Nano). Overrides empty -updated-after flag.
+# RAG_INGEST_UPDATED_AFTER=2026-04-01T00:00:00Z
+```
+
+**Notes**
+
+- **`ui/.env`** (or Vite env) is separate — typically **`VITE_API_URL=http://localhost:8080`**; see [`../ui/.env.example`](../ui/.env.example).
+- Env-admin password file: **`~/.gr33n/admin.hash`** (preferred over `ADMIN_PASSWORD_HASH` in files). Generate:  
+  `echo -n 'password' | go run scripts/gen-admin-hash.go > ~/.gr33n/admin.hash`

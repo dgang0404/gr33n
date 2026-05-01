@@ -46,7 +46,7 @@ Typical flow when you want **Timescale + PostGIS + pgvector** without a native P
 4. Env-admin password file (login **`admin`**): **`echo -n 'password' | go run scripts/gen-admin-hash.go > ~/.gr33n/admin.hash`**
 5. **`make dev-auth-test`** — API + UI with production-like auth.
 
-_operator narrative and troubleshooting:_ **`docs/local-operator-bootstrap.md`**.
+_operator narrative and troubleshooting:_ **`docs/local-operator-bootstrap.md`**. **Readable `.env` mirror:** [`docs/example-env.md`](docs/example-env.md).
 
 ---
 
