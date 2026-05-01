@@ -201,6 +201,14 @@ actions:
 | Login | `/login` | Auth store login action (public route) |
 | Settings | `/settings` | Account info, password change, sign out |
 
+### Dashboard connectivity (mental model)
+
+- **Farm scope**: The UI picks a **farm** (`farmContext.farmId`). Nearly all data APIs are **`/farms/:farm_id/...`**. Access is enforced with **`farm_memberships`** — the JWT must carry a **`user_id`** that belongs to that farm (env-admin login uses **`ADMIN_BIND_USER_ID`** to align with the seeded demo user).
+- **Operate** (Tasks, Schedules, Rules, Setpoints, Controls, Sensors): **Schedules** fire on cron (worker); **Rules** evaluate triggers → **executable_actions**; **Tasks** are human work items (status workflow, optional links to alerts/rules). **Controls / Sensors** reflect devices and telemetry paths.
+- **Grow** (Zones, Plants, Fertigation, Inventory): spatial and recipe-centric data — **fertigation** chains reservoirs, EC targets, programs, crop cycles, mixing/events to **schedules** and **natural-farming** recipes/batches.
+- **Telemetry vs registry**: The seed creates **sensor rows** and thresholds; **live readings** and **online** status only appear after a **Pi** (or other client) POSTs readings / heartbeats — automation **simulation** can move actuators without hardware.
+- **Setpoints**: Zone/stage “ideal” targets are opt-in; an empty table means nothing is wrong — the operator creates them when tuning loops.
+
 ---
 
 ## Raspberry Pi Client

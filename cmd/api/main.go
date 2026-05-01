@@ -12,6 +12,7 @@ import (
 
 	"strconv"
 
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
 	automationworker "gr33n-api/internal/automation"
@@ -60,6 +61,7 @@ func main() {
 	simulationMode := strings.EqualFold(getEnv("AUTOMATION_SIMULATION_MODE", "true"), "true")
 	hashFilePath := filepath.Join(os.Getenv("HOME"), ".gr33n", "admin.hash")
 	adminHash := loadPasswordHash(hashFilePath)
+	adminBindUserID, adminBindEmail := loadAdminBindIdentity()
 
 	if authMode == "dev" && !devBypassAllowed {
 		log.Fatal("AUTH_MODE=dev is not allowed in this binary. " +
@@ -112,7 +114,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("file storage init: %v", err)
 	}
-	registerRoutes(mux, pool, worker, pushDispatch, adminUser, adminHash, hashFilePath, fileStore, fileCfg)
+	registerRoutes(mux, pool, worker, pushDispatch, adminUser, adminHash, hashFilePath, fileStore, fileCfg, adminBindUserID, adminBindEmail)
 	log.Printf("FILE_STORAGE_BACKEND=%s", fileCfg.Backend)
 	if fileCfg.Backend == "local" {
 		log.Printf("FILE_STORAGE_DIR=%s", fileCfg.LocalRoot)
@@ -124,6 +126,20 @@ func main() {
 	if err := http.ListenAndServe(addr, corsMiddleware(mux)); err != nil {
 		log.Fatalf("❌ Server error: %v", err)
 	}
+}
+
+// loadAdminBindIdentity sets JWT claims for env-admin (ADMIN_USERNAME + admin.hash).
+// Farm routes require authctx.UserID; without user_id the dashboard gets 401 on every /farms/... call.
+// Defaults match db/seeds/master_seed.sql demo user.
+func loadAdminBindIdentity() (uuid.UUID, string) {
+	s := getEnv("ADMIN_BIND_USER_ID", "00000000-0000-0000-0000-000000000001")
+	id, err := uuid.Parse(s)
+	if err != nil {
+		log.Fatalf("ADMIN_BIND_USER_ID: invalid UUID %q", s)
+	}
+	email := strings.TrimSpace(getEnv("ADMIN_BIND_EMAIL", "dev@gr33n.local"))
+	log.Printf("🔑 Env-admin login binds JWT user_id=%s (farm RBAC)", id)
+	return id, email
 }
 
 func loadPasswordHash(filePath string) []byte {

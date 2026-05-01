@@ -53,6 +53,7 @@ CREATE INDEX IF NOT EXISTS idx_rag_embedding_chunks_embedding_hnsw
     USING hnsw (embedding vector_cosine_ops)
     WITH (m = 16, ef_construction = 64);
 
+DROP TRIGGER IF EXISTS trg_rag_embedding_chunks_updated_at ON gr33ncore.rag_embedding_chunks;
 CREATE TRIGGER trg_rag_embedding_chunks_updated_at
     BEFORE UPDATE ON gr33ncore.rag_embedding_chunks
     FOR EACH ROW EXECUTE FUNCTION gr33ncore.set_updated_at();

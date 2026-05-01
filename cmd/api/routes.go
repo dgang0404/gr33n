@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	automationworker "gr33n-api/internal/automation"
@@ -39,7 +40,7 @@ import (
 	"gr33n-api/internal/pushnotify"
 )
 
-func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationworker.Worker, pushDispatch *pushnotify.Dispatcher, adminUser string, adminHash []byte, hashFilePath string, fileStore filestorage.Store, fileCfg filestorage.Config) {
+func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationworker.Worker, pushDispatch *pushnotify.Dispatcher, adminUser string, adminHash []byte, hashFilePath string, fileStore filestorage.Store, fileCfg filestorage.Config, adminBindUserID uuid.UUID, adminBindEmail string) {
 	farm := farmhandler.NewHandler(pool)
 	org := organizationhandler.NewHandler(pool)
 	audit := audithandler.NewHandler(pool)
@@ -64,7 +65,7 @@ func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationwo
 	alert := alerthandler.NewHandler(pool)
 	prof := profilehandler.NewHandler(pool)
 	setpoint := setpointhandler.NewHandler(pool)
-	auth := authhandler.NewHandler(adminUser, adminHash, hashFilePath, IssueToken, pool)
+	auth := authhandler.NewHandler(adminUser, adminHash, hashFilePath, IssueToken, pool, adminBindUserID, adminBindEmail)
 
 	if fileStore == nil {
 		store, err := filestorage.NewStore(context.Background(), filestorage.Config{Backend: "local", LocalRoot: "./data/files"})

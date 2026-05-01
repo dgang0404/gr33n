@@ -69,7 +69,7 @@ On the Pi (after **`install-pi-edge-deps.sh --with-docker`** or manual Docker in
 docker compose up -d --build
 ```
 
-Defaults bind **5432**, **8080**, **5173** on `0.0.0.0`. From **another** laptop on the LAN, open the dashboard at `http://<pi-ip>:5173`.
+Defaults bind Postgres **5433** → container **5432**, plus **8080**, **5173** on `0.0.0.0` (host **5433** avoids collisions with OS Postgres on **5432**). From **another** laptop on the LAN, open the dashboard at `http://<pi-ip>:5173`.
 
 **Important:** The browser talks to the API using **`VITE_API_URL`**. For Compose as shipped, `ui` uses `http://localhost:8080` inside the UI container — that works only when the browser runs **on the Pi**. From another PC, set (for example) in **`ui/.env`** before build, or adjust Compose env:
 

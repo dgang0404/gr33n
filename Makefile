@@ -1,5 +1,9 @@
 .PHONY: run run-receiver build build-receiver test seed sqlc ui dev dev-auth-test rag-ingest-help compose-db-up compose-db-status setup-compose-dev dev-stack local-up check-stack clean lint bootstrap-local bootstrap-local-docker install-deps-debian install-pi-edge-deps first-clone first-clone-docker first-clone-install-deps audit-openapi
 
+# dash (common default /bin/sh) can report "wait: No child processes" for dev / dev-auth-test;
+# bash handles background jobs + wait reliably.
+SHELL := /bin/bash
+
 # ── Variables ──────────────────────────────────────────────────
 BINARY   := api
 GO       := go

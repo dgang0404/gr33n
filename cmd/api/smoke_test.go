@@ -413,7 +413,8 @@ func TestMain(m *testing.M) {
 		fmt.Fprintf(os.Stderr, "smoke_test init storage: %v\n", err)
 		os.Exit(1)
 	}
-	registerRoutes(mux, pool, worker, nil, "admin", nil, "", store, filestorage.Config{Backend: "local"})
+	seedUID := uuid.MustParse(smokeDevUserUUID)
+	registerRoutes(mux, pool, worker, nil, "admin", nil, "", store, filestorage.Config{Backend: "local"}, seedUID, smokeDevEmail)
 	testServer = httptest.NewServer(corsMiddleware(mux))
 
 	code := m.Run()

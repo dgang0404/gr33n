@@ -612,69 +612,7 @@ CREATE TRIGGER trg_schedules_updated_at
     BEFORE UPDATE ON gr33ncore.schedules
     FOR EACH ROW EXECUTE FUNCTION gr33ncore.set_updated_at();
 
--- Tasks (after schedules — schedule_id FK)
-CREATE TABLE IF NOT EXISTS gr33ncore.tasks (
-    id                         BIGSERIAL PRIMARY KEY,
-    farm_id                    BIGINT NOT NULL REFERENCES gr33ncore.farms(id) ON DELETE CASCADE,
-    zone_id                    BIGINT REFERENCES gr33ncore.zones(id) ON DELETE SET NULL,
-    schedule_id                BIGINT REFERENCES gr33ncore.schedules(id) ON DELETE SET NULL,
-    title                      TEXT   NOT NULL,
-    description                TEXT,
-    task_type                  TEXT,
-    status                     gr33ncore.task_status_enum DEFAULT 'todo' NOT NULL,
-    priority                   INTEGER DEFAULT 1 CHECK (priority BETWEEN 0 AND 3),
-    assigned_to_user_id        UUID   REFERENCES gr33ncore.profiles(user_id),
-    due_date                   DATE,
-    estimated_duration_minutes INTEGER,
-    actual_start_time          TIMESTAMPTZ,
-    actual_end_time            TIMESTAMPTZ,
-    related_module_schema      TEXT,
-    related_table_name         TEXT,
-    related_record_id          BIGINT,
-    source_alert_id            BIGINT REFERENCES gr33ncore.alerts_notifications(id) ON DELETE SET NULL,
-    source_rule_id             BIGINT REFERENCES gr33ncore.automation_rules(id) ON DELETE SET NULL,
-    created_by_user_id         UUID   REFERENCES gr33ncore.profiles(user_id),
-    created_at                 TIMESTAMPTZ DEFAULT NOW() NOT NULL,
-    updated_at                 TIMESTAMPTZ DEFAULT NOW() NOT NULL,
-    updated_by_user_id         UUID   REFERENCES gr33ncore.profiles(user_id) ON DELETE SET NULL,
-    deleted_at                 TIMESTAMPTZ DEFAULT NULL,
-    -- Phase 20.95 WS1: denormalised SUM(task_labor_log.minutes) maintained by handler.
-    time_spent_minutes         INTEGER
-);
-CREATE INDEX IF NOT EXISTS idx_tasks_source_alert_id
-    ON gr33ncore.tasks (source_alert_id)
-    WHERE source_alert_id IS NOT NULL;
-CREATE INDEX IF NOT EXISTS idx_tasks_source_rule_id
-    ON gr33ncore.tasks (source_rule_id)
-    WHERE source_rule_id IS NOT NULL;
-CREATE TRIGGER trg_tasks_updated_at
-    BEFORE UPDATE ON gr33ncore.tasks
-    FOR EACH ROW EXECUTE FUNCTION gr33ncore.set_updated_at();
-
--- Phase 20.95 WS1 — task labor log (minutes + optional hourly-rate snapshot).
--- tasks.time_spent_minutes is a running SUM over surviving log rows,
--- written by the task labor handler on every insert/delete.
-CREATE TABLE IF NOT EXISTS gr33ncore.task_labor_log (
-    id                    BIGSERIAL PRIMARY KEY,
-    farm_id               BIGINT NOT NULL REFERENCES gr33ncore.farms(id) ON DELETE CASCADE,
-    task_id               BIGINT NOT NULL REFERENCES gr33ncore.tasks(id) ON DELETE CASCADE,
-    user_id               UUID   REFERENCES gr33ncore.profiles(user_id) ON DELETE SET NULL,
-    started_at            TIMESTAMPTZ NOT NULL,
-    ended_at              TIMESTAMPTZ,
-    minutes               INTEGER NOT NULL CHECK (minutes >= 0),
-    hourly_rate_snapshot  NUMERIC(10,2),
-    currency              CHAR(3) CHECK (currency IS NULL OR currency ~ '^[A-Z]{3}$'),
-    notes                 TEXT,
-    created_at            TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at            TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-CREATE INDEX IF NOT EXISTS idx_task_labor_log_task
-    ON gr33ncore.task_labor_log (task_id);
-CREATE INDEX IF NOT EXISTS idx_task_labor_log_farm
-    ON gr33ncore.task_labor_log (farm_id);
-CREATE TRIGGER trg_task_labor_log_updated_at
-    BEFORE UPDATE ON gr33ncore.task_labor_log
-    FOR EACH ROW EXECUTE FUNCTION gr33ncore.set_updated_at();
+-- Tasks + task_labor_log: created after automation_rules and alerts_notifications (FK order).
 
 -- Automation rules
 CREATE TABLE IF NOT EXISTS gr33ncore.automation_rules (
@@ -798,6 +736,70 @@ CREATE TABLE IF NOT EXISTS gr33ncore.alerts_notifications (
     scheduled_send_at        TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- Tasks (after schedules, automation_rules, alerts_notifications — schedule_id + source FKs)
+CREATE TABLE IF NOT EXISTS gr33ncore.tasks (
+    id                         BIGSERIAL PRIMARY KEY,
+    farm_id                    BIGINT NOT NULL REFERENCES gr33ncore.farms(id) ON DELETE CASCADE,
+    zone_id                    BIGINT REFERENCES gr33ncore.zones(id) ON DELETE SET NULL,
+    schedule_id                BIGINT REFERENCES gr33ncore.schedules(id) ON DELETE SET NULL,
+    title                      TEXT   NOT NULL,
+    description                TEXT,
+    task_type                  TEXT,
+    status                     gr33ncore.task_status_enum DEFAULT 'todo' NOT NULL,
+    priority                   INTEGER DEFAULT 1 CHECK (priority BETWEEN 0 AND 3),
+    assigned_to_user_id        UUID   REFERENCES gr33ncore.profiles(user_id),
+    due_date                   DATE,
+    estimated_duration_minutes INTEGER,
+    actual_start_time          TIMESTAMPTZ,
+    actual_end_time            TIMESTAMPTZ,
+    related_module_schema      TEXT,
+    related_table_name         TEXT,
+    related_record_id          BIGINT,
+    source_alert_id            BIGINT REFERENCES gr33ncore.alerts_notifications(id) ON DELETE SET NULL,
+    source_rule_id             BIGINT REFERENCES gr33ncore.automation_rules(id) ON DELETE SET NULL,
+    created_by_user_id         UUID   REFERENCES gr33ncore.profiles(user_id),
+    created_at                 TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    updated_at                 TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    updated_by_user_id         UUID   REFERENCES gr33ncore.profiles(user_id) ON DELETE SET NULL,
+    deleted_at                 TIMESTAMPTZ DEFAULT NULL,
+    -- Phase 20.95 WS1: denormalised SUM(task_labor_log.minutes) maintained by handler.
+    time_spent_minutes         INTEGER
+);
+CREATE INDEX IF NOT EXISTS idx_tasks_source_alert_id
+    ON gr33ncore.tasks (source_alert_id)
+    WHERE source_alert_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_tasks_source_rule_id
+    ON gr33ncore.tasks (source_rule_id)
+    WHERE source_rule_id IS NOT NULL;
+CREATE TRIGGER trg_tasks_updated_at
+    BEFORE UPDATE ON gr33ncore.tasks
+    FOR EACH ROW EXECUTE FUNCTION gr33ncore.set_updated_at();
+
+-- Phase 20.95 WS1 — task labor log (minutes + optional hourly-rate snapshot).
+-- tasks.time_spent_minutes is a running SUM over surviving log rows,
+-- written by the task labor handler on every insert/delete.
+CREATE TABLE IF NOT EXISTS gr33ncore.task_labor_log (
+    id                    BIGSERIAL PRIMARY KEY,
+    farm_id               BIGINT NOT NULL REFERENCES gr33ncore.farms(id) ON DELETE CASCADE,
+    task_id               BIGINT NOT NULL REFERENCES gr33ncore.tasks(id) ON DELETE CASCADE,
+    user_id               UUID   REFERENCES gr33ncore.profiles(user_id) ON DELETE SET NULL,
+    started_at            TIMESTAMPTZ NOT NULL,
+    ended_at              TIMESTAMPTZ,
+    minutes               INTEGER NOT NULL CHECK (minutes >= 0),
+    hourly_rate_snapshot  NUMERIC(10,2),
+    currency              CHAR(3) CHECK (currency IS NULL OR currency ~ '^[A-Z]{3}$'),
+    notes                 TEXT,
+    created_at            TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at            TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_task_labor_log_task
+    ON gr33ncore.task_labor_log (task_id);
+CREATE INDEX IF NOT EXISTS idx_task_labor_log_farm
+    ON gr33ncore.task_labor_log (farm_id);
+CREATE TRIGGER trg_task_labor_log_updated_at
+    BEFORE UPDATE ON gr33ncore.task_labor_log
+    FOR EACH ROW EXECUTE FUNCTION gr33ncore.set_updated_at();
+
 CREATE TABLE IF NOT EXISTS gr33ncore.user_push_tokens (
     id         BIGSERIAL PRIMARY KEY,
     user_id    UUID NOT NULL REFERENCES gr33ncore.profiles(user_id) ON DELETE CASCADE,
@@ -907,7 +909,8 @@ CREATE TABLE IF NOT EXISTS gr33ncore.cost_transactions (
     created_at       TIMESTAMPTZ DEFAULT NOW() NOT NULL,
     updated_at       TIMESTAMPTZ DEFAULT NOW() NOT NULL,
     -- Phase 20.95 WS2: optional link so Phase 21 can report "$ per cycle".
-    crop_cycle_id    BIGINT REFERENCES gr33nfertigation.crop_cycles(id) ON DELETE SET NULL
+    -- FK added after gr33nfertigation.crop_cycles exists (see ALTER TABLE below).
+    crop_cycle_id    BIGINT
 );
 CREATE INDEX IF NOT EXISTS idx_cost_tx_crop_cycle
     ON gr33ncore.cost_transactions (crop_cycle_id)
@@ -1394,6 +1397,12 @@ CREATE TRIGGER trg_crop_cycles_updated_at
     BEFORE UPDATE ON gr33nfertigation.crop_cycles
     FOR EACH ROW EXECUTE FUNCTION gr33ncore.set_updated_at();
 
+ALTER TABLE gr33ncore.cost_transactions
+    DROP CONSTRAINT IF EXISTS fk_cost_transactions_crop_cycle;
+ALTER TABLE gr33ncore.cost_transactions
+    ADD CONSTRAINT fk_cost_transactions_crop_cycle
+    FOREIGN KEY (crop_cycle_id) REFERENCES gr33nfertigation.crop_cycles(id) ON DELETE SET NULL;
+
 CREATE TABLE IF NOT EXISTS gr33nfertigation.programs (
     id                          BIGSERIAL PRIMARY KEY,
     farm_id                     BIGINT NOT NULL REFERENCES gr33ncore.farms(id) ON DELETE CASCADE,
@@ -1718,6 +1727,7 @@ CREATE INDEX IF NOT EXISTS idx_rag_embedding_chunks_embedding_hnsw
     USING hnsw (embedding vector_cosine_ops)
     WITH (m = 16, ef_construction = 64);
 
+DROP TRIGGER IF EXISTS trg_rag_embedding_chunks_updated_at ON gr33ncore.rag_embedding_chunks;
 CREATE TRIGGER trg_rag_embedding_chunks_updated_at
     BEFORE UPDATE ON gr33ncore.rag_embedding_chunks
     FOR EACH ROW EXECUTE FUNCTION gr33ncore.set_updated_at();

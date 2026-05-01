@@ -17,6 +17,10 @@ Single happy path for standing up **Postgres → API → dashboard → optional 
 
 Detailed native Postgres steps (peer auth, roles): [`INSTALL.md`](../INSTALL.md).
 
+### Split hosts (DB vs API vs UI / Pi / VPS)
+
+Same codebase everywhere: point **`DATABASE_URL`** at wherever Postgres runs (**host, port, password**, **`sslmode`** for TLS). The DB must provide **TimescaleDB**, **PostGIS**, and **pgvector** (Compose [`db/Dockerfile`](../db/Dockerfile); bare metal [`scripts/install-system-deps-debian.sh`](../scripts/install-system-deps-debian.sh)). Run **`./scripts/bootstrap-local.sh --seed`** (or migrations only) against that URL once per environment; API and UI read **`DATABASE_URL`** / **`VITE_API_URL`** from `.env` like local dev.
+
 ## First clone (recommended for new contributors)
 
 From the repository root after `git clone`, run:
@@ -43,7 +47,7 @@ Options:
 |------|---------|
 | `--docker` | `docker compose up -d` instead of host `psql` schema steps |
 | `--seed` | Load [`db/seeds/master_seed.sql`](../db/seeds/master_seed.sql) (legacy demo **farm_id = 1**). Omit if you rely on dashboard **New farm** + template choice. |
-| `--skip-schema` | Skip `psql` schema and migrations (database already provisioned) |
+| `--skip-schema` | Skip only [`db/schema/gr33n-schema-v2-FINAL.sql`](../db/schema/gr33n-schema-v2-FINAL.sql) (use when enums/tables already exist); **`db/migrations/*.sql` still runs** |
 
 The script copies [`.env.example`](../.env.example) to `.env` **once** if `.env` is missing, then runs `npm ci --legacy-peer-deps` in `ui/` (Capacitor peer ranges need this until versions are aligned).
 
@@ -51,13 +55,13 @@ The script copies [`.env.example`](../.env.example) to `.env` **once** if `.env`
 
 ## When localhost (DB / API / UI) is not running
 
-**Docker:** from the repo root run `docker compose up -d --build` (or `make bootstrap-local-docker`). Dashboard: **http://localhost:5173** · API: **http://localhost:8080** (`AUTH_MODE=dev` in Compose). Postgres is exposed on **localhost:5432** (credentials in [`docker-compose.yml`](../docker-compose.yml)).
+**Docker:** from the repo root run `docker compose up -d --build` (or `make bootstrap-local-docker`). The **`db`** service only runs Postgres; load schema + optional seed with **`./scripts/bootstrap-local.sh --seed`** (or **`make dev-stack`**, which does that). Dashboard: **http://localhost:5173** · API: **http://localhost:8080** when using full Compose with **`api`+`ui`**. Postgres from Compose is exposed on **localhost:5433** (maps to 5432 inside the container; avoids colliding with OS Postgres on **5432**) — credentials in [`docker-compose.yml`](../docker-compose.yml).
 
 **Native:** follow [INSTALL.md](../INSTALL.md) for Postgres + extensions, then `./scripts/bootstrap-local.sh`, set **`DATABASE_URL`** in `.env`, then **`make dev`** (API + UI together) or **`make run`** and **`make ui`** in two terminals.
 
 ### Unblock “API offline” / failed startup (checklist)
 
-1. **`.env` `DATABASE_URL`** must match the Postgres you actually use. Common mistake: leaving the placeholder `user:password` from [`.env.example`](../.env.example). **Compose DB:** after `make compose-db-up`, use `postgres://gr33n:gr33n@127.0.0.1:5432/gr33n?sslmode=disable`. **Native peer:** see [INSTALL.md §2d](../INSTALL.md).
+1. **`.env` `DATABASE_URL`** must match the Postgres you actually use. Common mistake: leaving the placeholder `user:password` from [`.env.example`](../.env.example). **Compose DB:** after `make compose-db-up`, use `postgres://gr33n:gr33n@127.0.0.1:5433/gr33n?sslmode=disable` (host port **5433**). **Native peer:** see [INSTALL.md §2d](../INSTALL.md).
    - **One-shot after Docker is installed:** **`make dev-stack`** (recommended) — runs [`scripts/dev-stack.sh`](../scripts/dev-stack.sh): retries **`docker compose`** through **`sg docker`** when `/var/run/docker.sock` denies access, builds/starts **`db`**, **`bootstrap --seed`**, **`check-stack`**. Same as **`make setup-compose-dev`** (wrapper). **`make local-up`** runs **`dev-stack`** then **`make dev-auth-test`** (full API + UI). **`./scripts/dev-stack.sh --reset-volumes`** wipes Compose volumes before bring-up (destructive — fresh DB).
    - **Docker `permission denied` on `/var/run/docker.sock`:** after `sudo usermod -aG docker "$USER"`, your *current* terminal may still lack the `docker` group. Run **`newgrp docker`**, or **`sg docker -c 'cd …/gr33n-platform && make setup-compose-dev'`**, or **log out and back in**; confirm with **`groups`** (should list `docker`).
 2. **`pgvector`** — the API registers the `vector` type; if the extension is missing, startup fails with `vector type not found`. Install packages (e.g. `./scripts/install-system-deps-debian.sh` for PG16 + extensions) or use the Compose `db` image.

@@ -13,7 +13,7 @@ Usage: scripts/bootstrap-local.sh [options]
   (default)     Native Postgres: apply schema, optional migrations, optional seed; npm ci in ui/
   --docker      Run `docker compose up -d` (DB + API + UI in containers); npm ci in ui/ for local tooling
   --seed        After schema, load db/seeds/master_seed.sql (demo farm_id=1; skip if using dashboard templates only)
-  --skip-schema Do not run psql schema/migrations (advanced; DB already provisioned)
+  --skip-schema Skip db/schema/gr33n-schema-v2-FINAL.sql only (enums/tables already exist); migrations still run
   -h, --help    This message
 
 Environment:
@@ -52,7 +52,7 @@ if [[ "$USE_DOCKER" -eq 1 ]]; then
   docker compose up -d
   echo "    UI: http://localhost:5173  API: http://localhost:8080"
   echo "    For a host-run API/UI against this DB, set DATABASE_URL in .env, e.g.:"
-  echo "    postgres://gr33n:gr33n@127.0.0.1:5432/gr33n?sslmode=disable"
+  echo "    postgres://gr33n:gr33n@127.0.0.1:5433/gr33n?sslmode=disable"
 else
   need psql
   if [[ -f "$ROOT/.env" ]]; then
@@ -64,15 +64,23 @@ else
   DATABASE_URL="${DATABASE_URL:-postgres://${USER}@/gr33n?host=/var/run/postgresql}"
   export DATABASE_URL
 
-  if [[ "$SKIP_SCHEMA" -eq 0 ]]; then
-    echo "==> Checking database connection ($DATABASE_URL)"
-    if ! psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -c "SELECT 1" >/dev/null 2>&1; then
+  echo "==> Checking database connection ($DATABASE_URL)"
+  # Avoid racing `docker compose up -d db` — first init can take 30–60s.
+  max_waits=60
+  n=0
+  until psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -c "SELECT 1" >/dev/null 2>&1; do
+    n=$((n + 1))
+    if [[ "$n" -ge "$max_waits" ]]; then
       cat <<EOF >&2
-error: cannot connect to Postgres with DATABASE_URL.
+error: cannot connect to Postgres with DATABASE_URL after ${max_waits} attempts (~$((max_waits * 2))s).
 
-Create the database and extensions first, for example:
+If using Docker Compose db: wait until it is ready, then retry:
+  sg docker -c 'docker compose exec db pg_isready -U gr33n -d gr33n'
+
+Otherwise create the database and extensions first, for example:
   sudo -u postgres psql -c "CREATE DATABASE gr33n;"
   sudo -u postgres psql -d gr33n -c "CREATE EXTENSION IF NOT EXISTS timescaledb CASCADE;"
+  sudo -u postgres psql -d gr33n -c "CREATE EXTENSION IF NOT EXISTS vector;"
 
 Peer auth (typical Linux): ensure a Postgres role exists for your OS user:
   sudo -u postgres psql -c "CREATE USER $USER WITH SUPERUSER;"
@@ -81,30 +89,48 @@ Then re-run this script or set DATABASE_URL (see INSTALL.md).
 EOF
       exit 1
     fi
+    echo "    waiting for Postgres (${n}/${max_waits})..."
+    sleep 2
+  done
 
+  if [[ "$SKIP_SCHEMA" -eq 0 ]]; then
     echo "==> Applying db/schema/gr33n-schema-v2-FINAL.sql"
-    psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f "$ROOT/db/schema/gr33n-schema-v2-FINAL.sql"
+    if ! psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f "$ROOT/db/schema/gr33n-schema-v2-FINAL.sql"; then
+      seed_hint=""
+      [[ "$SEED" -eq 1 ]] && seed_hint=" --seed"
+      cat <<EOF >&2
 
-    echo "==> Applying db/migrations/*.sql (order: filename)"
-    shopt -s nullglob
-    for f in $(printf '%s\n' "$ROOT"/db/migrations/*.sql | LC_ALL=C sort); do
-      echo "    -> $(basename "$f")"
-      psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f "$f"
-    done
-    shopt -u nullglob
+error: schema SQL failed (see messages above). Typical causes:
+  • Running the monolithic schema twice on a DB that already has enums/tables (stops on CREATE TYPE).
+  • A previous run aborted mid-file — objects after the error line were never created.
 
-    if [[ "$SEED" -eq 1 ]]; then
-      echo "==> Loading demo seed (db/seeds/master_seed.sql)"
-      psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f "$ROOT/db/seeds/master_seed.sql"
-    else
-      echo "==> Skipping demo seed (use --seed for master_seed.sql, or create farms from the dashboard)"
+Recovery options:
+  • Fresh Compose volume (destructive):  sg docker -c 'cd $ROOT && docker compose down -v && docker compose up -d db'
+    then:  $ROOT/scripts/bootstrap-local.sh${seed_hint}
+  • DB already fully provisioned but you hit CREATE TYPE on re-run — skip only the big schema file (migrations still apply):
+      $ROOT/scripts/bootstrap-local.sh --skip-schema${seed_hint}
+
+Otherwise drop/recreate the database or restore from backup, then re-run this script.
+EOF
+      exit 1
     fi
   else
-    echo "==> Skipping schema/migrations (--skip-schema)"
-    if [[ "$SEED" -eq 1 ]]; then
-      echo "==> Loading demo seed (db/seeds/master_seed.sql)"
-      psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f "$ROOT/db/seeds/master_seed.sql"
-    fi
+    echo "==> Skipping db/schema/gr33n-schema-v2-FINAL.sql (--skip-schema); migrations still run."
+  fi
+
+  echo "==> Applying db/migrations/*.sql (order: filename)"
+  shopt -s nullglob
+  for f in $(printf '%s\n' "$ROOT"/db/migrations/*.sql | LC_ALL=C sort); do
+    echo "    -> $(basename "$f")"
+    psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f "$f"
+  done
+  shopt -u nullglob
+
+  if [[ "$SEED" -eq 1 ]]; then
+    echo "==> Loading demo seed (db/seeds/master_seed.sql)"
+    psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f "$ROOT/db/seeds/master_seed.sql"
+  else
+    echo "==> Skipping demo seed (use --seed for master_seed.sql, or create farms from the dashboard)"
   fi
 fi
 

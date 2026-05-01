@@ -34,6 +34,22 @@ To run that script **and** the first-clone bootstrap in one flow:
 
 Use **`./scripts/install-system-deps-debian.sh --skip-node`** if you already manage Node with nvm/fnm.
 
+---
+
+## Docker Compose DB + `AUTH_TEST` + demo seed (laptop / QA parity)
+
+Typical flow when you want **Timescale + PostGIS + pgvector** without a native Postgres install:
+
+1. From the repo root: **`sg docker -c 'docker compose up -d db'`** — Postgres is published on the host at **`127.0.0.1:5433`** (see `docker-compose.yml`).
+2. Copy **`.env.example` → `.env`**. Set **`DATABASE_URL=postgres://gr33n:gr33n@127.0.0.1:5433/gr33n?sslmode=disable`**, **`AUTH_MODE=auth_test`**, **`JWT_SECRET`**, **`PI_API_KEY`**, and optional **`ADMIN_BIND_USER_ID` / `ADMIN_BIND_EMAIL`** (env-admin JWT needs a real `user_id` for farm routes — defaults match `master_seed.sql`).
+3. **`./scripts/bootstrap-local.sh --seed`** — applies schema, migrations, and **`db/seeds/master_seed.sql`**.
+4. Env-admin password file (login **`admin`**): **`echo -n 'password' | go run scripts/gen-admin-hash.go > ~/.gr33n/admin.hash`**
+5. **`make dev-auth-test`** — API + UI with production-like auth.
+
+_operator narrative and troubleshooting:_ **`docs/local-operator-bootstrap.md`**.
+
+---
+
 ### Raspberry Pi OS (edge daemon or experimental full stack)
 
 - **Edge-only Pi** (sensors/actuators talking to an API elsewhere): **`./scripts/install-pi-edge-deps.sh`** (`make install-pi-edge-deps`), then **`pi_client/setup.sh`** — see **`docs/raspberry-pi-and-deployment-topology.md`**.

@@ -8,12 +8,15 @@ services:
       POSTGRES_USER: gr33n
       POSTGRES_PASSWORD: gr33n
       POSTGRES_DB: gr33n
+    # Host 5433 → container 5432: avoids "address already in use" when OS postgresql
+    # listens on 127.0.0.1:5432 (common on Ubuntu). Set .env DATABASE_URL to port 5433.
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - pgdata:/home/postgres/pgdata/data
-      - ./db/schema/gr33n-schema-v2-FINAL.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
-      - ./db/seeds/master_seed.sql:/docker-entrypoint-initdb.d/02-seed.sql:ro
+    # Do not mount schema/seed into docker-entrypoint-initdb.d: bootstrap-local.sh (and
+    # make dev-stack) apply schema + migrations + seed once. Mounting the same schema here
+    # causes a second run that fails on CREATE TYPE / leaves partial state.
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U gr33n"]
       interval: 5s

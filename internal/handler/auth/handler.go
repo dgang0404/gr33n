@@ -9,6 +9,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"golang.org/x/crypto/bcrypt"
@@ -21,21 +22,25 @@ import (
 type IssueTokenFunc func(username string, exp time.Duration, extra map[string]any) (string, error)
 
 type Handler struct {
-	mu            sync.RWMutex
-	adminUsername string
-	passwordHash  []byte
-	hashFilePath  string
-	issueToken    IssueTokenFunc
-	pool          *pgxpool.Pool
+	mu               sync.RWMutex
+	adminUsername    string
+	passwordHash     []byte
+	hashFilePath     string
+	issueToken       IssueTokenFunc
+	pool             *pgxpool.Pool
+	adminBindUserID  uuid.UUID // JWT user_id for env-admin login (farm RBAC requires it)
+	adminBindEmail   string    // optional email claim for env-admin (matches seeded profile)
 }
 
-func NewHandler(adminUsername string, passwordHash []byte, hashFilePath string, issueToken IssueTokenFunc, pool *pgxpool.Pool) *Handler {
+func NewHandler(adminUsername string, passwordHash []byte, hashFilePath string, issueToken IssueTokenFunc, pool *pgxpool.Pool, adminBindUserID uuid.UUID, adminBindEmail string) *Handler {
 	return &Handler{
-		adminUsername: adminUsername,
-		passwordHash:  passwordHash,
-		hashFilePath:  hashFilePath,
-		issueToken:    issueToken,
-		pool:          pool,
+		adminUsername:   adminUsername,
+		passwordHash:    passwordHash,
+		hashFilePath:    hashFilePath,
+		issueToken:      issueToken,
+		pool:            pool,
+		adminBindUserID: adminBindUserID,
+		adminBindEmail:  adminBindEmail,
 	}
 }
 
@@ -94,12 +99,23 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusUnauthorized, "invalid credentials")
 		return
 	}
-	token, err := h.issueToken(body.Username, tokenExp, nil)
+	extra := map[string]any{}
+	if h.adminBindUserID != uuid.Nil {
+		extra["user_id"] = h.adminBindUserID.String()
+		if h.adminBindEmail != "" {
+			extra["email"] = h.adminBindEmail
+		}
+	}
+	token, err := h.issueToken(body.Username, tokenExp, extra)
 	if err != nil {
 		httputil.WriteError(w, http.StatusInternalServerError, "could not issue token")
 		return
 	}
-	httputil.WriteJSON(w, http.StatusOK, map[string]any{"token": token, "expires_in": int(tokenExp.Seconds())})
+	out := map[string]any{"token": token, "expires_in": int(tokenExp.Seconds())}
+	if h.adminBindUserID != uuid.Nil {
+		out["user_id"] = h.adminBindUserID.String()
+	}
+	httputil.WriteJSON(w, http.StatusOK, out)
 }
 
 func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {

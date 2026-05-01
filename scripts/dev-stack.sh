@@ -81,7 +81,7 @@ compose() {
 echo "==> gr33n dev-stack (repo: $ROOT)"
 
 if [[ ! -f "$ROOT/.env" ]]; then
-  die "missing .env — copy .env.example to .env and set DATABASE_URL (Compose: postgres://gr33n:gr33n@127.0.0.1:5432/gr33n?sslmode=disable)"
+  die "missing .env — copy .env.example to .env and set DATABASE_URL (Compose: postgres://gr33n:gr33n@127.0.0.1:5433/gr33n?sslmode=disable)"
 fi
 
 if [[ "$RESET_VOL" -eq 1 ]]; then

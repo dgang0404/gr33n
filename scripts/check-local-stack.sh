@@ -53,9 +53,9 @@ if [[ "${VEC:-0}" != "1" ]]; then
   warn "vector extension missing on this database."
   echo "    Fix options:"
   echo "    • Docker: from repo root run  docker compose up -d db --build"
-  echo "      then set .env DATABASE_URL=postgres://gr33n:gr33n@127.0.0.1:5432/gr33n?sslmode=disable"
+  echo "      then set .env DATABASE_URL=postgres://gr33n:gr33n@127.0.0.1:5433/gr33n?sslmode=disable"
   echo "    • Native Ubuntu/Debian: ./scripts/install-system-deps-debian.sh (PG16+pgvector), then INSTALL.md §2"
-  echo "    • Then load schema if empty: ./scripts/bootstrap-local.sh --skip-schema   (or full bootstrap)"
+  echo "    • Then load schema and migrations: ./scripts/bootstrap-local.sh --seed"
   exit 1
 fi
 ok "vector present"
