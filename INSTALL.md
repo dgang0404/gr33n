@@ -161,6 +161,13 @@ Add this to your `~/.bashrc` or `~/.zshrc` to avoid typing it every time.
 | `LLM_MAX_TOKENS` | Answer synthesis | Default `1024` |
 | `RAG_SYNTHESIS_MAX_PER_MINUTE` | Answer endpoint | Default `30` (per API process) |
 
+### Optional: observability (sit-in logging)
+
+| Variable | Used for | Notes |
+|----------|----------|--------|
+| `LOG_FORMAT` | `cmd/api` access + automation logs | Set to `json` for **JSON** log lines (default is **text** `key=value` from `log/slog`). |
+| `AUTH_DEBUG_LOG` | Auth middleware | Set to `true` to log **`auth_rejected`** with a **reason** code when login fails (missing bearer, bad JWT, bad API key). Never logs token values. |
+
 ---
 
 ## 5. Build and run

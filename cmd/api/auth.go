@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"log/slog"
 	"net/http"
 	"strings"
 	"time"
@@ -18,6 +19,7 @@ var (
 	jwtSecret  []byte
 	corsOrigin string
 	authMode   string // "dev" | "auth_test" | "production"
+	authDebug  bool   // AUTH_DEBUG_LOG=true: log auth rejection reasons (no secrets, no JWT body)
 )
 
 type contextKey string
@@ -43,10 +45,16 @@ func requireAPIKey(next http.Handler) http.Handler {
 		}
 		key := r.Header.Get("X-API-Key")
 		if key == "" {
+			if authDebug {
+				slog.Warn("auth_rejected", "reason", "missing_x_api_key", "path", r.URL.Path)
+			}
 			httputil.WriteError(w, http.StatusUnauthorized, "X-API-Key required")
 			return
 		}
 		if key != piAPIKey {
+			if authDebug {
+				slog.Warn("auth_rejected", "reason", "invalid_x_api_key", "path", r.URL.Path)
+			}
 			httputil.WriteError(w, http.StatusForbidden, "invalid API key")
 			return
 		}
@@ -69,6 +77,9 @@ func requireJWTOrPiEdge(next http.Handler) http.Handler {
 		key := strings.TrimSpace(r.Header.Get("X-API-Key"))
 		if key != "" {
 			if key != piAPIKey {
+				if authDebug {
+					slog.Warn("auth_rejected", "reason", "invalid_x_api_key", "path", r.URL.Path)
+				}
 				httputil.WriteError(w, http.StatusForbidden, "invalid API key")
 				return
 			}
@@ -97,6 +108,9 @@ func requireJWT(next http.Handler) http.Handler {
 		} else if q := r.URL.Query().Get("token"); q != "" {
 			tokenStr = q
 		} else {
+			if authDebug {
+				slog.Warn("auth_rejected", "reason", "missing_bearer_or_query_token", "path", r.URL.Path)
+			}
 			httputil.WriteError(w, http.StatusUnauthorized, "Authorization: Bearer <token> required")
 			return
 		}
@@ -109,6 +123,13 @@ func requireJWT(next http.Handler) http.Handler {
 		}, jwt.WithExpirationRequired())
 
 		if err != nil || !token.Valid {
+			if authDebug {
+				if err != nil {
+					slog.Warn("auth_rejected", "reason", "jwt_invalid", "path", r.URL.Path, "err", err.Error())
+				} else {
+					slog.Warn("auth_rejected", "reason", "jwt_invalid", "path", r.URL.Path)
+				}
+			}
 			httputil.WriteError(w, http.StatusUnauthorized, "invalid or expired token")
 			return
 		}

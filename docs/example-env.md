@@ -37,6 +37,10 @@ PI_API_KEY=change-me-to-a-shared-secret
 
 CORS_ORIGIN=http://localhost:5173
 
+# Optional: structured request logs and auth rejection reasons (no tokens logged)
+# LOG_FORMAT=json
+# AUTH_DEBUG_LOG=true
+
 ADMIN_USERNAME=admin
 # bcrypt hash for env-admin — optional if you use ~/.gr33n/admin.hash instead (main.go prefers the file).
 # Generate: htpasswd -nbBC 10 "" 'yourpassword' | cut -d: -f2   OR   echo -n 'yourpassword' | go run scripts/gen-admin-hash.go

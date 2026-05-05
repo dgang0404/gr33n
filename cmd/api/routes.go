@@ -78,8 +78,19 @@ func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationwo
 	files := fileattachhandler.NewHandler(pool, fileStore, fileCfg.DownloadURLTTL)
 	commonsCatalog := commonscataloghandler.NewHandler(pool)
 
+	jwtChain := func(h http.Handler) http.Handler {
+		return requireJWT(withRequestLog("jwt", h))
+	}
+	piChain := func(h http.Handler) http.Handler {
+		return requireAPIKey(withRequestLog("api_key", h))
+	}
+	jwtOrPiChain := func(h http.Handler) http.Handler {
+		return requireJWTOrPiEdge(withRequestLog("jwt_or_pi", h))
+	}
+	jwt := jwtChain
+
 	// ── Public ───────────────────────────────────────────────────────────────
-	mux.HandleFunc("GET /health", func(w http.ResponseWriter, r *http.Request) {
+	mux.Handle("GET /health", withRequestLog("public", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if err := pool.Ping(r.Context()); err != nil {
 			httputil.WriteJSON(w, http.StatusServiceUnavailable,
 				map[string]string{"status": "unhealthy", "error": err.Error()})
@@ -87,22 +98,21 @@ func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationwo
 		}
 		httputil.WriteJSON(w, http.StatusOK,
 			map[string]string{"status": "ok", "service": "gr33n-api"})
-	})
-	mux.HandleFunc("POST /auth/login", auth.Login)
-	mux.HandleFunc("POST /auth/register", auth.Register)
-	mux.HandleFunc("GET /auth/mode", func(w http.ResponseWriter, r *http.Request) {
+	})))
+	mux.Handle("POST /auth/login", withRequestLog("public", http.HandlerFunc(auth.Login)))
+	mux.Handle("POST /auth/register", withRequestLog("public", http.HandlerFunc(auth.Register)))
+	mux.Handle("GET /auth/mode", withRequestLog("public", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteJSON(w, http.StatusOK, map[string]string{"mode": authMode})
-	})
+	})))
 
 	// ── Pi routes — API key required ─────────────────────────────────────────
-	mux.Handle("POST /sensors/{id}/readings", requireAPIKey(http.HandlerFunc(sensor.PostReading)))
-	mux.Handle("POST /sensors/readings/batch", requireAPIKey(http.HandlerFunc(sensor.PostReadingsBatch)))
-	mux.Handle("PATCH /devices/{id}/status", requireAPIKey(http.HandlerFunc(device.UpdateStatus)))
-	mux.Handle("POST /actuators/{id}/events", requireAPIKey(http.HandlerFunc(actuator.RecordEvent)))
-	mux.Handle("DELETE /devices/{id}/pending-command", requireAPIKey(http.HandlerFunc(device.ClearPendingCommand)))
+	mux.Handle("POST /sensors/{id}/readings", piChain(http.HandlerFunc(sensor.PostReading)))
+	mux.Handle("POST /sensors/readings/batch", piChain(http.HandlerFunc(sensor.PostReadingsBatch)))
+	mux.Handle("PATCH /devices/{id}/status", piChain(http.HandlerFunc(device.UpdateStatus)))
+	mux.Handle("POST /actuators/{id}/events", piChain(http.HandlerFunc(actuator.RecordEvent)))
+	mux.Handle("DELETE /devices/{id}/pending-command", piChain(http.HandlerFunc(device.ClearPendingCommand)))
 
 	// ── Dashboard routes — JWT required ──────────────────────────────────────
-	jwt := requireJWT
 
 	// Auth — password change (JWT protected so you must be logged in)
 	mux.Handle("PATCH /auth/password", jwt(http.HandlerFunc(auth.ChangePassword)))
@@ -151,7 +161,7 @@ func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationwo
 	mux.Handle("GET /farms/{id}/insert-commons/bundles/{bundle_id}/export", jwt(http.HandlerFunc(farm.ExportInsertCommonsBundle)))
 	mux.Handle("GET /farms/{id}/audit-events", jwt(http.HandlerFunc(audit.ListByFarm)))
 	mux.Handle("GET /farms/{id}/zones", jwt(http.HandlerFunc(zone.ListByFarm)))
-	mux.Handle("GET /farms/{id}/devices", requireJWTOrPiEdge(http.HandlerFunc(device.ListByFarm)))
+	mux.Handle("GET /farms/{id}/devices", jwtOrPiChain(http.HandlerFunc(device.ListByFarm)))
 	mux.Handle("GET /farms/{id}/actuators", jwt(http.HandlerFunc(actuator.ListByFarm)))
 	mux.Handle("GET /farms/{id}/sensors", jwt(http.HandlerFunc(sensor.ListByFarm)))
 	mux.Handle("GET /farms/{id}/schedules", jwt(http.HandlerFunc(automation.ListSchedulesByFarm)))

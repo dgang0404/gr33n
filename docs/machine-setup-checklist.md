@@ -50,6 +50,12 @@ psql "$DATABASE_URL" -c "SELECT count(*) FROM gr33ncore.farms;"
 psql "$DATABASE_URL" -c "SELECT count(*) FROM gr33nnaturalfarming.application_recipes WHERE deleted_at IS NULL;"
 ```
 
+## Second machine or browser profile
+
+- [ ] **New device** — repeat the **Configuration files** and **Database** / **Run stack** sections; do not copy another machine’s **`.env`** wholesale if `DATABASE_URL` or ports differ.
+- [ ] **Vite port** — if the UI is not on `5173`, set **`CORS_ORIGIN`** to the exact origin the browser uses (e.g. `http://localhost:5174`) and `ui/.env` **`VITE_API_URL`** to the API.
+- [ ] **Offline queue** — [tasks-first-operator-guide.md](tasks-first-operator-guide.md) §3: each profile has its own **`gr33n_offline_write_queue_v2`**; queued writes on laptop A are invisible to laptop B until synced to the server.
+
 ## Troubleshooting pointers
 
 - [INSTALL.md](../INSTALL.md) — native Postgres, extensions

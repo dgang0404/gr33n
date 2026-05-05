@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"log/slog"
 	"strconv"
 	"strings"
 	"sync"
@@ -132,7 +133,7 @@ func (w *Worker) runTick(ctx context.Context) {
 	schedules, err := w.q.ListActiveSchedules(ctx)
 	if err != nil {
 		w.setLastTick(err)
-		log.Printf("automation tick failed: %v", err)
+		slog.Warn("automation worker tick failed", "phase", "list_schedules", "err", err)
 		return
 	}
 
@@ -411,6 +412,21 @@ func (w *Worker) executeSchedule(ctx context.Context, s db.Gr33ncoreSchedule, no
 		ExecutedAt: now,
 	}); err != nil {
 		log.Printf("failed to record automation run: %v", err)
+		slog.Warn("automation schedule run persist failed", "schedule_id", s.ID, "farm_id", s.FarmID, "err", err)
+	} else {
+		attrs := []any{
+			"schedule_id", s.ID,
+			"farm_id", s.FarmID,
+			"schedule_name", s.Name,
+			"status", status,
+			"actions_total", len(actions),
+			"actions_success", successCount,
+		}
+		if status == "failed" {
+			slog.Warn("automation schedule run", attrs...)
+		} else {
+			slog.Info("automation schedule run", attrs...)
+		}
 	}
 
 	if _, err := w.q.MarkScheduleTriggered(ctx, db.MarkScheduleTriggeredParams{

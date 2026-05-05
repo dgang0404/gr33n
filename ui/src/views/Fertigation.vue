@@ -16,8 +16,9 @@
     <!-- Tabs -->
     <div class="flex flex-wrap gap-1 bg-zinc-900 border border-zinc-800 rounded-lg p-1">
       <button
+        type="button"
         v-for="t in tabs" :key="t.id"
-        @click="activeTab = t.id"
+        @click="selectTab(t.id)"
         class="px-4 py-2 text-sm rounded-md transition-colors"
         :class="activeTab === t.id
           ? 'bg-zinc-800 text-white font-medium'
@@ -28,7 +29,7 @@
     <div v-if="loading" class="text-zinc-400 text-sm">Loading…</div>
 
     <!-- Reservoirs -->
-    <template v-else-if="activeTab === 'reservoirs'">
+    <template v-if="activeTab === 'reservoirs'">
       <div class="flex items-center justify-between">
         <p class="text-zinc-400 text-sm">{{ reservoirs.length }} reservoir(s)
           <HelpTip>A reservoir is a physical nutrient tank. Track its volume, EC and pH. Programs draw from reservoirs when feeding runs.</HelpTip>
@@ -99,7 +100,7 @@
     </template>
 
     <!-- EC Targets -->
-    <template v-else-if="activeTab === 'ec-targets'">
+    <template v-if="activeTab === 'ec-targets'">
       <div class="flex items-center justify-between">
         <p class="text-zinc-400 text-sm">{{ ecTargets.length }} target(s)
           <HelpTip>EC Targets define the ideal electrical conductivity (nutrient strength) and pH range per growth stage. Programs reference these to know the target mix.</HelpTip>
@@ -164,7 +165,7 @@
     </template>
 
     <!-- Programs -->
-    <template v-else-if="activeTab === 'programs'">
+    <template v-if="activeTab === 'programs'">
       <div class="flex items-center justify-between">
         <p class="text-zinc-400 text-sm">{{ programs.length }} program(s)
           <HelpTip>A program ties everything together: it links a reservoir, EC target, NF recipe, schedule, and zone into an automated feeding plan. Activate it to let the automation worker run it.</HelpTip>
@@ -228,7 +229,7 @@
           </p>
           <p v-if="p.description" class="text-zinc-500 text-xs">{{ p.description }}</p>
           <div class="text-zinc-600 text-xs space-y-0.5 border-t border-zinc-800/80 pt-2 mt-2">
-            <p v-if="p.reservoir_id"><span class="text-zinc-500">Reservoir:</span> <a href="#" @click.prevent="activeTab = 'reservoirs'" class="text-green-600 hover:text-green-400">{{ reservoirName(p.reservoir_id) }}</a></p>
+            <p v-if="p.reservoir_id"><span class="text-zinc-500">Reservoir:</span> <a href="#" @click.prevent="selectTab('reservoirs')" class="text-green-600 hover:text-green-400">{{ reservoirName(p.reservoir_id) }}</a></p>
             <p v-if="p.schedule_id"><span class="text-zinc-500">Schedule:</span> <router-link to="/schedules" class="text-green-600 hover:text-green-400">{{ scheduleName(p.schedule_id) }}</router-link></p>
             <p v-if="p.application_recipe_id">
               <span class="text-zinc-500">Recipe:</span>
@@ -295,7 +296,7 @@
     </template>
 
     <!-- Mixing log (reservoir ↔ program ↔ inventory batches) -->
-    <template v-else-if="activeTab === 'mixing'">
+    <template v-if="activeTab === 'mixing'">
       <div class="flex items-center justify-between">
         <p class="text-zinc-400 text-sm">{{ mixingEvents.length }} mixing event(s)
           <HelpTip>The mixing log records every time you prepare a nutrient solution. Each entry tracks the reservoir, water volume, final EC/pH, and which inventory inputs you drew from.</HelpTip>
@@ -393,7 +394,7 @@
     </template>
 
     <!-- Crop cycles -->
-    <template v-else-if="activeTab === 'crop-cycles'">
+    <template v-if="activeTab === 'crop-cycles'">
       <div class="flex items-center justify-between">
         <p class="text-zinc-400 text-sm">{{ cropCycles.length }} cycle(s)
           <HelpTip>A crop cycle is one grow run of a plant in a zone — from seed/clone through harvest. Link it to a fertigation program to track feeding per cycle. Update the growth stage as the plant progresses.</HelpTip>
@@ -470,7 +471,7 @@
     </template>
 
     <!-- Events -->
-    <template v-else-if="activeTab === 'events'">
+    <template v-if="activeTab === 'events'">
       <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div class="flex flex-wrap items-center gap-3">
           <p class="text-zinc-400 text-sm">{{ fertigationEvents.length }} event(s)
@@ -544,10 +545,10 @@
               <td class="py-2 pr-4 font-mono">{{ e.ec_before_mscm || '—' }} → {{ e.ec_after_mscm || '—' }}</td>
               <td class="py-2 pr-4 font-mono">{{ e.ph_before || '—' }} → {{ e.ph_after || '—' }}</td>
               <td class="py-2 pr-4 text-xs">
-                <a v-if="e.program_id" href="#" @click.prevent="activeTab = 'programs'" class="text-green-600 hover:text-green-400">{{ programName(e.program_id) }}</a>
+                <a v-if="e.program_id" href="#" @click.prevent="selectTab('programs')" class="text-green-600 hover:text-green-400">{{ programName(e.program_id) }}</a>
                 <span v-else class="text-zinc-600">—</span>
               </td>
-              <td class="py-2 pr-4 text-xs capitalize">{{ (e.trigger_source || 'manual').replace(/_/g, ' ') }}</td>
+              <td class="py-2 pr-4 text-xs capitalize">{{ formatTriggerSource(e.trigger_source) }}</td>
               <td class="py-2 text-zinc-500 truncate max-w-48">{{ e.notes || '—' }}</td>
             </tr>
           </tbody>
@@ -560,12 +561,13 @@
 
 <script setup>
 import { computed, onMounted, reactive, ref, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useFarmStore } from '../stores/farm'
 import { useFarmContextStore } from '../stores/farmContext'
 import HelpTip from '../components/HelpTip.vue'
 
 const route = useRoute()
+const router = useRouter()
 const store = useFarmStore()
 const farmContext = useFarmContextStore()
 const loading = ref(false)
@@ -580,6 +582,41 @@ const tabs = [
   { id: 'crop-cycles', label: 'Crop Cycles' },
   { id: 'events', label: 'Events' },
 ]
+
+/** Vue Router may expose duplicate keys as string | string[] */
+function tabQueryParam(query) {
+  const raw = query.tab
+  if (raw == null) return undefined
+  const s = Array.isArray(raw) ? raw[0] : raw
+  return typeof s === 'string' ? s : undefined
+}
+
+function selectTab(id) {
+  activeTab.value = id
+  router
+    .replace({
+      name: 'fertigation',
+      query: { ...route.query, tab: id },
+    })
+    .catch((err) => {
+      if (err?.name === 'NavigationDuplicated') return
+      console.warn('[Fertigation] tab navigation failed', err)
+    })
+}
+
+watch(
+  () => [route.name, route.fullPath],
+  () => {
+    if (route.name !== 'fertigation') return
+    const q = tabQueryParam(route.query)
+    if (q && tabs.some((t) => t.id === q)) {
+      activeTab.value = q
+    } else {
+      activeTab.value = 'reservoirs'
+    }
+  },
+  { immediate: true },
+)
 
 const growthStages = ['clone', 'seedling', 'early_veg', 'late_veg', 'transition', 'early_flower', 'mid_flower', 'late_flower', 'flush', 'harvest', 'dry_cure']
 
@@ -742,39 +779,71 @@ watch(
   }
 )
 
+const REFRESH_TIMEOUT_MS = 45_000
+let refreshGeneration = 0
+
 async function refresh() {
+  const fid = farmId.value
+  if (!fid) {
+    loading.value = false
+    return
+  }
+  const gen = ++refreshGeneration
   loading.value = true
   try {
-    if (!store.zones.length && farmId.value) await store.loadAll(farmId.value)
-    const fid = farmId.value
-    const cropQ = eventCropFilter.value ? Number(eventCropFilter.value) : undefined
-       const [r, ec, p, ev, cc, recipes, sch, inputs, mix, batches] = await Promise.all([
-      store.loadReservoirs(fid),
-      store.loadEcTargets(fid),
-      store.loadFertigationPrograms(fid),
-      store.loadFertigationEvents(fid, { cropCycleId: cropQ }),
-      store.loadCropCycles(fid),
-      store.loadRecipes(fid),
-      store.loadSchedules(fid),
-      store.loadNfInputs(fid),
-      store.loadMixingEvents(fid),
-      store.loadNfBatches(fid),
+    await Promise.race([
+      (async () => {
+        if (!store.zones.length) await store.loadAll(fid)
+        const cropQ = eventCropFilter.value ? Number(eventCropFilter.value) : undefined
+        const [r, ec, p, ev, cc, recipes, sch, inputs, mix, batches] = await Promise.all([
+          store.loadReservoirs(fid),
+          store.loadEcTargets(fid),
+          store.loadFertigationPrograms(fid),
+          store.loadFertigationEvents(fid, { cropCycleId: cropQ }),
+          store.loadCropCycles(fid),
+          store.loadRecipes(fid),
+          store.loadSchedules(fid),
+          store.loadNfInputs(fid),
+          store.loadMixingEvents(fid),
+          store.loadNfBatches(fid),
+        ])
+        reservoirs.value = r
+        ecTargets.value = ec
+        programs.value = p
+        fertigationEvents.value = ev
+        cropCycles.value = cc
+        nfRecipes.value = recipes
+        schedules.value = sch
+        nfInputs.value = inputs
+        mixingEvents.value = mix
+        nfBatches.value = batches
+        for (const c of cropCycles.value) {
+          if (stageDraft[c.id] == null) stageDraft[c.id] = cycleStageRaw(c)
+        }
+      })(),
+      new Promise((_, rej) => {
+        setTimeout(
+          () => rej(new Error(`Fertigation refresh timed out after ${REFRESH_TIMEOUT_MS}ms`)),
+          REFRESH_TIMEOUT_MS,
+        )
+      }),
     ])
-    reservoirs.value = r
-    ecTargets.value = ec
-    programs.value = p
-    fertigationEvents.value = ev
-    cropCycles.value = cc
-    nfRecipes.value = recipes
-    schedules.value = sch
-    nfInputs.value = inputs
-    mixingEvents.value = mix
-    nfBatches.value = batches
-    for (const c of cropCycles.value) {
-      if (stageDraft[c.id] == null) stageDraft[c.id] = cycleStageRaw(c)
+  } catch (err) {
+    console.error('[Fertigation] refresh failed', err)
+  } finally {
+    if (gen === refreshGeneration) {
+      loading.value = false
     }
-  } finally { loading.value = false }
+  }
 }
+
+watch(
+  () => farmContext.farmId,
+  (id) => {
+    if (id) refresh()
+  },
+  { immediate: true },
+)
 
 async function reloadEventsOnly() {
   const fid = farmId.value
@@ -948,14 +1017,11 @@ async function deleteCycle(c) {
 }
 
 onMounted(() => {
-  const qTab = route.query.tab
-  if (qTab && tabs.some(t => t.id === qTab)) activeTab.value = qTab
   if (route.query.recipe) {
     progForm.value.application_recipe_id = Number(route.query.recipe)
-    activeTab.value = 'programs'
+    selectTab('programs')
     showProgramForm.value = true
   }
-  refresh()
 })
 
 async function submitReservoir() {
@@ -1101,6 +1167,24 @@ function zoneLabel(id) {
 function fillPct(r) {
   if (!r.capacity_liters || r.capacity_liters <= 0) return 0
   return Math.min(100, Math.round((r.current_volume_liters / r.capacity_liters) * 100))
+}
+
+function formatTriggerSource(raw) {
+  let s
+  if (raw == null || raw === '') {
+    s = 'manual'
+  } else if (typeof raw === 'string') {
+    s = raw
+  } else if (
+    typeof raw === 'object'
+    && raw !== null
+    && typeof raw.gr33nfertigation_program_trigger_enum === 'string'
+  ) {
+    s = raw.valid ? raw.gr33nfertigation_program_trigger_enum : 'manual'
+  } else {
+    s = 'manual'
+  }
+  return s.replace(/_/g, ' ')
 }
 
 function formatDate(ts) {

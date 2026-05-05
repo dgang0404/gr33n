@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"log/slog"
 	"strconv"
 	"strings"
 	"time"
@@ -37,7 +38,7 @@ import (
 func (w *Worker) runProgramTick(ctx context.Context, now time.Time) {
 	programs, err := w.q.ListActivePrograms(ctx)
 	if err != nil {
-		log.Printf("automation program tick failed: %v", err)
+		slog.Warn("automation worker tick failed", "phase", "list_programs", "err", err)
 		return
 	}
 	for _, p := range programs {

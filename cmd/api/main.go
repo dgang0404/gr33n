@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"log/slog"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -42,6 +43,8 @@ func loadDotEnv() {
 
 func main() {
 	loadDotEnv()
+	configureSlog()
+	authDebug = strings.EqualFold(getEnv("AUTH_DEBUG_LOG", ""), "true")
 
 	dbURL := getEnv("DATABASE_URL", "postgres://davidg@/gr33n?host=/var/run/postgresql")
 	port := getEnv("PORT", "8080")
@@ -192,4 +195,14 @@ func getEnv(key, fallback string) string {
 		return val
 	}
 	return fallback
+}
+
+// configureSlog sets default structured logging (text or JSON via LOG_FORMAT=json).
+func configureSlog() {
+	opts := &slog.HandlerOptions{Level: slog.LevelInfo}
+	if strings.EqualFold(os.Getenv("LOG_FORMAT"), "json") {
+		slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stdout, opts)))
+		return
+	}
+	slog.SetDefault(slog.New(slog.NewTextHandler(os.Stdout, opts)))
 }

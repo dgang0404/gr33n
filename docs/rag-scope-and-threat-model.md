@@ -98,6 +98,8 @@ The list below ties to tables introduced or strengthened in Phase 20.95 and rela
 | **Third-party LLM API** | **Explicit opt-in** per farm or deployment; document data flow, retention, and sub-processors; no payload by default ([insert-commons-pipeline-runbook.md](insert-commons-pipeline-runbook.md), [insert-commons-receiver-playbook.md](insert-commons-receiver-playbook.md) set expectations for minimal, consented sharing). |
 | **Insert Commons / pseudonymized sharing** | **Separate** pipeline from interactive RAG; only **scrubbed aggregates** per existing contracts—never raw retrieval chunks unless a future phase explicitly merges those designs. |
 
+For **intranet-only deployment**, point `EMBEDDING_BASE_URL` and `LLM_BASE_URL` (and related `EMBEDDING_*` / `LLM_*` settings) at hosts on your private LAN or loopback so search, ingest, and optional synthesis never require the public internet. A starter layout for **offline / VLAN** topologies—refine as you wire a production farm—is in [offline-or-intranet-deployment.md](offline-or-intranet-deployment.md).
+
 ---
 
 ## 6. Checklist — ship in v1 ingestion?
@@ -165,6 +167,7 @@ The list below ties to tables introduced or strengthened in Phase 20.95 and rela
 
 ## 9. References
 
+- [Offline / intranet deployment (LAN, VLAN, local LLM)](offline-or-intranet-deployment.md)
 - [Phase 24 — RAG retrieval system](plans/phase_24_rag_retrieval_system.plan.md)
 - [Phase 20.95 — RAG-prep columns](plans/phase_20_95_rag_prep_and_housekeeping.plan.md)
 - [Phase 21 — Crop cycle analytics](plans/phase_21_crop_cycle_analytics.plan.md)

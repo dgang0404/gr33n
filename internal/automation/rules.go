@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"log/slog"
 	"strconv"
 	"strings"
 	"time"
@@ -33,7 +34,7 @@ type RuleConditions struct {
 func (w *Worker) runRuleTick(ctx context.Context, now time.Time) {
 	rules, err := w.q.ListActiveAutomationRules(ctx)
 	if err != nil {
-		log.Printf("automation rule tick failed: %v", err)
+		slog.Warn("automation worker tick failed", "phase", "list_rules", "err", err)
 		w.setLastTick(err)
 		return
 	}
@@ -306,6 +307,20 @@ func (w *Worker) executeRule(ctx context.Context, rule db.Gr33ncoreAutomationRul
 		ExecutedAt: now,
 	}); err != nil {
 		log.Printf("failed to record rule run: %v", err)
+	} else {
+		attrs := []any{
+			"rule_id", rule.ID,
+			"farm_id", rule.FarmID,
+			"rule_name", rule.Name,
+			"status", status,
+			"actions_total", len(actions),
+			"actions_success", successCount,
+		}
+		if status == "failed" {
+			slog.Warn("automation rule run", attrs...)
+		} else {
+			slog.Info("automation rule run", attrs...)
+		}
 	}
 	w.markRuleTriggered(ctx, rule, now)
 }
