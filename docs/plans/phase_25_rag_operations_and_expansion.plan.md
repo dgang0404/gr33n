@@ -18,13 +18,13 @@ todos:
     status: completed
   - id: ws4-ops-and-ci
     content: "WS4: CI/staging/prod parity for pgvector; smoke or integration path; operator runbook snippet (env, migrate, ingest)"
-    status: pending
+    status: completed
   - id: ws5-quality-obs-limits
     content: "WS5: Integration tests with mocked embedding/LLM; optional metrics; synthesis rate limits (per-farm or per-user if needed); log/error hygiene"
-    status: pending
+    status: completed
   - id: ws6-ux-docs
     content: "WS6: UI empty/degraded states (503), optional nav polish; README/roadmap checkbox; cross-links from workflow guide; schema ERD text doc (schema-erd-text.md) refreshed when graph changes"
-    status: pending
+    status: completed
 isProject: false
 ---
 
@@ -32,7 +32,7 @@ isProject: false
 
 ## Status
 
-**Planning — open questions below are answered** for this pass. **WS1 (engineering)** is satisfied by **[docs/rag-scope-and-threat-model.md](../rag-scope-and-threat-model.md) §6** — engineering-defaults checklist and implementation order (product may still reprioritize later). This document is the hand-off after [Phase 24 — RAG retrieval system](phase_24_rag_retrieval_system.plan.md). Todos flip to `in_progress` / `completed` as work lands.
+**Planning — open questions below are answered** for this pass. **WS1–WS6** are satisfied as documented in **[rag-scope-and-threat-model.md](../rag-scope-and-threat-model.md) §6**, ingestion breadth (WS2), incremental re-embed (WS3), **CI + operator parity** (WS4 — **[rag-ci-and-staging-parity.md](../rag-ci-and-staging-parity.md)**), **integration tests + limits + logging** (WS5 — `internal/handler/rag`), and **Knowledge UX + docs cross-links + roadmap** (WS6). This document is the hand-off after [Phase 24 — RAG retrieval system](phase_24_rag_retrieval_system.plan.md). Todos flip to `in_progress` / `completed` as work lands.
 
 ## Preconditions
 
@@ -118,16 +118,16 @@ Extend **`cmd/rag-ingest`** / **`internal/rag/ingest`** for approved domains; re
 
 ### WS4 — Ops and CI
 
-Ensure **pgvector** and migrations run in **CI/staging/prod** the same way; document **minimum env** for a healthy Knowledge tab; optional short **operator** section (link from INSTALL or workflow guide).
+**Shipped:** GitHub Actions **`.github/workflows/ci.yml`** — Compose **`db`** build (Timescale + PostGIS + pgvector), **`bootstrap-local.sh --seed`**, asserts **`vector`** + **`gr33ncore.rag_embedding_chunks`**, **`go test -tags dev ./...`**, separate **`ui`** Vitest job. Operator runbook **[docs/rag-ci-and-staging-parity.md](../rag-ci-and-staging-parity.md)**; links from **[INSTALL.md](../../INSTALL.md)** §2c and **[workflow-guide.md](../workflow-guide.md)** §10.6.
 
 ### WS5 — Quality, observability, limits
 
-Stronger **automated tests** around farm isolation and handler behavior; **metrics** optional; tighten **rate limits** and production **error/logging** behavior as needed.
+**Shipped:** **`internal/handler/rag`** — `llm.ChatCompleter` interface (`ChatCompletion` + `ModelLabel`) for mocked LLM in tests; **`NewHandlerForTest`** + **`handler_integration_test.go`** (skipped without `DATABASE_URL`) exercising search + answer + farm isolation + rate limit with fake embedder/LLM and real pgvector queries; **`RAG_SYNTHESIS_MAX_PER_MINUTE_PER_FARM`** env for per-farm synthesis buckets (when set, replaces global-only cap); structured **`log/slog`** on embedding/retrieval/LLM failures and **`rag answer completed`** on success; JSON errors unchanged for clients (no raw provider bodies).
 
 ### WS6 — UX and docs
 
-503 / missing-key messaging in UI; nav/README/roadmap updates so Phase 25 exit is visible; **schema diagram:** [`docs/schema-erd-text.md`](../schema-erd-text.md) (ASCII + optional Mermaid from current SQL — refresh date/migrations note when the graph shifts); **Pi / deployment topology** narrative lives in **`docs/raspberry-pi-and-deployment-topology.md`** (iterate with hardware reality).
+**Shipped:** **`ui/src/views/FarmKnowledge.vue`** — empty results panel after a successful search with zero chunks; **503 / 502 / 429 / 504** styled as degraded (amber) vs hard errors (red), preserving API `error` strings from **`internal/handler/rag`**. **`SideNav`** — optional **`navTitle`** tooltip on **Knowledge**. **`README.md`** — roadmap rows + project checklist mark Phase **24**/**25** done; intro paragraph notes RAG shipped. **`workflow-guide.md`** §10.6 — UX/degraded paragraph + §12 links to **`rag-ci-and-staging-parity.md`**, **`schema-erd-text.md`**. **`schema-erd-text.md`** — migrations spot-check row for **`20260518_phase24_rag_pgvector.sql`**. **Pi / deployment topology** narrative remains in **`docs/raspberry-pi-and-deployment-topology.md`** (iterate with hardware reality).
 
 ---
 
-*Next step:* Execute WS1–WS6 using **Decisions** above; flip individual `todos` to `in_progress` / `completed` as work lands (same convention as Phase 24).
+*Next step:* Phase 25 is closed on **`main`** for this scope; follow-on work is product-driven (e.g. Phase 21 analytics, Pi validation) unless a new phase plan opens.

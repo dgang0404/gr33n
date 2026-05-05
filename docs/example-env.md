@@ -62,6 +62,10 @@ AUTOMATION_COOLDOWN_SECONDS=60
 # EMBEDDING_MODEL=
 # Optional incremental watermark for cron (RFC3339 / RFC3339Nano). Overrides empty -updated-after flag.
 # RAG_INGEST_UPDATED_AFTER=2026-04-01T00:00:00Z
+
+# Answer synthesis rate limits (cmd/api — POST .../rag/answer). See INSTALL §4 optional RAG table.
+# RAG_SYNTHESIS_MAX_PER_MINUTE=30
+# RAG_SYNTHESIS_MAX_PER_MINUTE_PER_FARM=10
 ```
 
 **Notes**

@@ -89,8 +89,24 @@
             {{ answerLoading ? 'Asking…' : 'Ask (LLM)' }}
           </button>
         </div>
-        <p v-if="searchError" class="text-sm text-red-400 bg-red-950/50 border border-red-900 rounded-lg px-3 py-2">{{ searchError }}</p>
-        <p v-if="answerError" class="text-sm text-red-400 bg-red-950/50 border border-red-900 rounded-lg px-3 py-2">{{ answerError }}</p>
+        <div
+          v-if="searchFeedback"
+          class="text-sm rounded-lg px-3 py-2 border"
+          :class="searchFeedback.degraded
+            ? 'text-amber-200 bg-amber-950/40 border-amber-900/70'
+            : 'text-red-400 bg-red-950/50 border-red-900'"
+        >
+          {{ searchFeedback.message }}
+        </div>
+        <div
+          v-if="answerFeedback"
+          class="text-sm rounded-lg px-3 py-2 border"
+          :class="answerFeedback.degraded
+            ? 'text-amber-200 bg-amber-950/40 border-amber-900/70'
+            : 'text-red-400 bg-red-950/50 border-red-900'"
+        >
+          {{ answerFeedback.message }}
+        </div>
       </section>
 
       <!-- Vector results -->
@@ -111,6 +127,17 @@
           </div>
           <pre class="text-sm text-zinc-200 whitespace-pre-wrap font-sans">{{ r.content_text }}</pre>
         </div>
+      </section>
+
+      <section
+        v-else-if="searchRanEmpty"
+        class="rounded-xl border border-zinc-800 bg-zinc-900/80 px-4 py-4 text-sm text-zinc-400"
+      >
+        <p class="text-zinc-300 font-medium mb-1">No chunks matched</p>
+        <p class="leading-relaxed">
+          Try different keywords, widen the date filters, or confirm <strong class="text-zinc-200">rag-ingest</strong> has indexed this farm
+          (see <code class="text-gr33n-400 text-xs">docs/workflow-guide.md</code> §10.6).
+        </p>
       </section>
 
       <!-- LLM answer -->
@@ -154,15 +181,31 @@ const untilIso = ref('')
 const limitN = ref(10)
 
 const searchLoading = ref(false)
-const searchError = ref('')
+const searchFeedback = ref(null)
 const results = ref([])
 const embedModel = ref('')
+const searchRanEmpty = ref(false)
 
 const answerLoading = ref(false)
-const answerError = ref('')
+const answerFeedback = ref(null)
 const answerText = ref(null)
 const citations = ref([])
 const llmModel = ref('')
+
+function axiosRagFeedback(err, fallback) {
+  const status = err.response?.status
+  const serverMsg = err.response?.data?.error
+  const msg =
+    typeof serverMsg === 'string' && serverMsg.trim()
+      ? serverMsg
+      : fallback || err.message || 'Request failed'
+  const degraded =
+    status === 503 ||
+    status === 429 ||
+    status === 502 ||
+    status === 504
+  return { degraded, message: msg }
+}
 
 function payloadFilters() {
   const body = {}
@@ -180,7 +223,9 @@ function payloadFilters() {
 }
 
 async function runSearch() {
-  searchError.value = ''
+  searchFeedback.value = null
+  answerFeedback.value = null
+  searchRanEmpty.value = false
   answerText.value = null
   citations.value = []
   const body = payloadFilters()
@@ -192,15 +237,16 @@ async function runSearch() {
     const { data } = await api.post(`/farms/${farmContext.farmId}/rag/search`, body)
     results.value = Array.isArray(data.results) ? data.results : []
     embedModel.value = data.model_id || ''
+    searchRanEmpty.value = results.value.length === 0
   } catch (e) {
-    searchError.value = e.response?.data?.error || e.message || 'Search failed'
+    searchFeedback.value = axiosRagFeedback(e, 'Search failed')
   } finally {
     searchLoading.value = false
   }
 }
 
 async function runAnswer() {
-  answerError.value = ''
+  answerFeedback.value = null
   answerText.value = null
   citations.value = []
   llmModel.value = ''
@@ -217,7 +263,7 @@ async function runAnswer() {
     llmModel.value = data.llm_model || ''
     embedModel.value = data.embedding_model_id || embedModel.value
   } catch (e) {
-    answerError.value = e.response?.data?.error || e.message || 'Answer failed'
+    answerFeedback.value = axiosRagFeedback(e, 'Answer failed')
   } finally {
     answerLoading.value = false
   }

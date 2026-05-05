@@ -6,6 +6,7 @@ Human-readable overview of **logical PostgreSQL schemas** and **foreign-key spin
 |-------|--------|
 | **Baseline** | `db/schema/gr33n-schema-v2-FINAL.sql` |
 | **Generated** | 2026-04-21 |
+| **Migrations spot-check** | Through `20260518_phase24_rag_pgvector.sql` for `gr33ncore.rag_embedding_chunks` (FK spine unchanged since) |
 | **Extensions (baseline header)** | `postgis`, `timescaledb`, `vector` (enable per env; see INSTALL) |
 
 ---

@@ -167,6 +167,7 @@ For **intranet-only deployment**, point `EMBEDDING_BASE_URL` and `LLM_BASE_URL` 
 
 ## 9. References
 
+- [RAG CI / staging / prod parity (Phase 25 WS4)](rag-ci-and-staging-parity.md)
 - [Offline / intranet deployment (LAN, VLAN, local LLM)](offline-or-intranet-deployment.md)
 - [Phase 24 — RAG retrieval system](plans/phase_24_rag_retrieval_system.plan.md)
 - [Phase 20.95 — RAG-prep columns](plans/phase_20_95_rag_prep_and_housekeeping.plan.md)

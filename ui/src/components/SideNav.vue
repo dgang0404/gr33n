@@ -31,7 +31,7 @@
             class="flex items-center rounded-lg text-sm text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
             :class="collapsed ? 'justify-center px-0 py-2' : 'gap-3 px-3 py-2'"
             active-class="bg-gr33n-900 text-gr33n-400 font-semibold"
-            :title="collapsed ? item.label : undefined"
+            :title="item.navTitle ?? (collapsed ? item.label : undefined)"
           >
             <span class="text-lg shrink-0">{{ item.icon }}</span>
             <span v-if="!collapsed">{{ item.label }}</span>
@@ -126,7 +126,7 @@ const navGroups = [
     items: [
       { to: '/alerts', icon: '🔔', label: 'Alerts' },
       { to: '/costs',  icon: '💰', label: 'Costs'  },
-      { to: '/farm-knowledge', icon: '🔎', label: 'Knowledge' },
+      { to: '/farm-knowledge', icon: '🔎', label: 'Knowledge', navTitle: 'Farm knowledge — semantic search & Ask (LLM); requires API embedding / LLM env' },
     ],
   },
   {

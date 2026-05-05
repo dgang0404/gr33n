@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	"log/slog"
 	"math"
 	"net/http"
 	"strconv"
@@ -33,16 +34,16 @@ const (
 )
 
 type Handler struct {
-	q            *db.Queries
-	embedder     embed.Embedder
-	llm          *llm.Client
-	synthLimiter *minuteLimiter
+	q         *db.Queries
+	embedder  embed.Embedder
+	llm       llm.ChatCompleter
+	synthGate synthesisLimiter
 }
 
 func NewHandler(pool *pgxpool.Pool) *Handler {
 	h := &Handler{
-		q:            db.New(pool),
-		synthLimiter: newSynthLimiterFromEnv(),
+		q:         db.New(pool),
+		synthGate: newSynthGateFromEnv(),
 	}
 	if emb, err := embed.NewOpenAICompatibleFromEnv(); err == nil {
 		h.embedder = emb
@@ -117,6 +118,7 @@ func (h *Handler) Search(w http.ResponseWriter, r *http.Request) {
 
 	rows, err := h.retrieveFilteredChunks(ctx, farmID, args)
 	if err != nil {
+		slog.Warn("rag search embedding failed", "farm_id", farmID, "err", err)
 		httputil.WriteError(w, http.StatusBadGateway, "embedding request failed")
 		return
 	}
@@ -194,8 +196,9 @@ func (h *Handler) Answer(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusServiceUnavailable, "answer synthesis is not configured (set LLM_BASE_URL and LLM_MODEL)")
 		return
 	}
-	if !h.synthLimiter.Allow() {
-		httputil.WriteError(w, http.StatusTooManyRequests, "synthesis rate limit exceeded (see RAG_SYNTHESIS_MAX_PER_MINUTE)")
+	if !h.synthGate.Allow(farmID) {
+		slog.Warn("rag answer synthesis rate limited", "farm_id", farmID)
+		httputil.WriteError(w, http.StatusTooManyRequests, "synthesis rate limit exceeded (see RAG_SYNTHESIS_MAX_PER_MINUTE or RAG_SYNTHESIS_MAX_PER_MINUTE_PER_FARM)")
 		return
 	}
 
@@ -235,6 +238,7 @@ func (h *Handler) Answer(w http.ResponseWriter, r *http.Request) {
 
 	chunks, err := h.retrieveFilteredChunks(ctx, farmID, args)
 	if err != nil {
+		slog.Warn("rag answer retrieval failed", "farm_id", farmID, "err", err)
 		httputil.WriteError(w, http.StatusBadGateway, "retrieval failed")
 		return
 	}
@@ -243,7 +247,7 @@ func (h *Handler) Answer(w http.ResponseWriter, r *http.Request) {
 			"answer":             "No indexed chunks matched your filters or query; ingest data with rag-ingest or broaden filters.",
 			"citations":          []synthesis.Citation{},
 			"embedding_model_id": h.embedder.ModelID(),
-			"llm_model":          h.llm.Model,
+			"llm_model":          h.llm.ModelLabel(),
 			"context_count":      0,
 		})
 		return
@@ -252,16 +256,18 @@ func (h *Handler) Answer(w http.ResponseWriter, r *http.Request) {
 	userMsg := synthesis.BuildUserMessage(args.Query, chunks)
 	answerText, err := h.llm.ChatCompletion(ctx, synthesis.SystemPrompt(), userMsg)
 	if err != nil {
+		slog.Warn("rag llm chat failed", "farm_id", farmID, "err", err)
 		httputil.WriteError(w, http.StatusBadGateway, "LLM request failed")
 		return
 	}
 
 	cites := synthesis.BuildCitations(answerText, chunks)
+	slog.Info("rag answer completed", "farm_id", farmID, "context_chunks", len(chunks), "citations", len(cites))
 	httputil.WriteJSON(w, http.StatusOK, map[string]any{
 		"answer":             answerText,
 		"citations":          cites,
 		"embedding_model_id": h.embedder.ModelID(),
-		"llm_model":          h.llm.Model,
+		"llm_model":          h.llm.ModelLabel(),
 		"context_count":      len(chunks),
 	})
 }
@@ -400,5 +406,19 @@ func distanceToFloat64(v interface{}) (float64, bool) {
 		return f, true
 	default:
 		return 0, false
+	}
+}
+
+// NewHandlerForTest wires explicit embedding + chat clients for integration tests (Phase 25 WS5).
+// nil gate defaults to unlimited synthesis calls (allowAllSynth).
+func NewHandlerForTest(pool *pgxpool.Pool, emb embed.Embedder, chat llm.ChatCompleter, gate synthesisLimiter) *Handler {
+	if gate == nil {
+		gate = allowAllSynth{}
+	}
+	return &Handler{
+		q:         db.New(pool),
+		embedder:  emb,
+		llm:       chat,
+		synthGate: gate,
 	}
 }

@@ -91,6 +91,8 @@ sudo -u postgres psql -d gr33n -c "CREATE EXTENSION IF NOT EXISTS vector;"
 
 If Postgres reports that the extension is not available, follow [pgvector installation](https://github.com/pgvector/pgvector#installation) for your OS, or run Postgres via **`docker compose`** in this repo (the `db` service builds TimescaleDB + pgvector).
 
+**CI / staging parity:** GitHub Actions uses the same Compose **`db`** image and **`bootstrap-local.sh`** path as local dev; hosted environments must still provide **Timescale + PostGIS + pgvector** where applicable — see **[docs/rag-ci-and-staging-parity.md](../docs/rag-ci-and-staging-parity.md)**.
+
 ### 2d. Create a local dev user matching your Linux username
 
 PostgreSQL on Linux uses **peer authentication** by default — the connecting
@@ -159,7 +161,8 @@ Add this to your `~/.bashrc` or `~/.zshrc` to avoid typing it every time.
 | `LLM_API_KEY` | Answer synthesis | Set if the chat server requires `Authorization: Bearer`; many local servers need no key |
 | `LLM_TEMPERATURE` | Answer synthesis | Default `0.2` |
 | `LLM_MAX_TOKENS` | Answer synthesis | Default `1024` |
-| `RAG_SYNTHESIS_MAX_PER_MINUTE` | Answer endpoint | Default `30` (per API process) |
+| `RAG_SYNTHESIS_MAX_PER_MINUTE` | Answer endpoint | Default `30` requests/minute per API process (rolling minute window). |
+| `RAG_SYNTHESIS_MAX_PER_MINUTE_PER_FARM` | Answer endpoint | Optional. When set to an integer **>0**, each `farm_id` gets its own cap per minute (replaces the global-only limiter). Use on shared deployments for fairness. |
 
 ### Optional: observability (sit-in logging)
 

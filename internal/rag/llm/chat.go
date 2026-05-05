@@ -150,10 +150,22 @@ func (c *Client) ChatCompletion(ctx context.Context, system, user string) (strin
 	return strings.TrimSpace(parsed.Choices[0].Message.Content), nil
 }
 
+// ModelLabel returns the configured chat model id for API responses.
+func (c *Client) ModelLabel() string {
+	return c.Model
+}
+
 func truncateErr(b []byte, n int) string {
 	s := string(b)
 	if len(s) <= n {
 		return s
 	}
 	return s[:n] + "…"
+}
+
+// ChatCompleter is implemented by *Client for answer synthesis; tests may inject mocks.
+type ChatCompleter interface {
+	ChatCompletion(ctx context.Context, system, user string) (string, error)
+	// ModelLabel identifies the chat model in JSON responses (e.g. OpenAI model id).
+	ModelLabel() string
 }

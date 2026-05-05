@@ -1,0 +1,77 @@
+# Phase 25 WS4 — CI parity with Docker Postgres (Timescale + PostGIS + pgvector).
+# Applies the same schema/migrations path as local bootstrap; runs Go tests including smoke tests.
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  go:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    env:
+      CI: true
+      DATABASE_URL: postgres://gr33n:gr33n@127.0.0.1:5433/gr33n?sslmode=disable
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install psql client
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+
+      - name: Build and start Compose Postgres (Timescale + pgvector + PostGIS)
+        run: docker compose up -d db --build
+
+      - name: Wait for Postgres
+        run: |
+          set -euo pipefail
+          for i in $(seq 1 90); do
+            if docker compose exec -T db pg_isready -U gr33n -d gr33n; then
+              echo "Postgres is ready."
+              exit 0
+            fi
+            echo "waiting ($i/90)..."
+            sleep 2
+          done
+          echo "::error::Postgres did not become ready in time"
+          docker compose logs db
+          exit 1
+
+      - name: Bootstrap schema, migrations, and demo seed
+        run: ./scripts/bootstrap-local.sh --seed
+
+      - name: Verify pgvector extension (RAG parity)
+        run: |
+          count=$(psql "$DATABASE_URL" -tAc "SELECT count(*) FROM pg_extension WHERE extname='vector'" | tr -d '[:space:]')
+          test "$count" = "1"
+          psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -c "SELECT to_regclass('gr33ncore.rag_embedding_chunks') AS rag_chunks_table;"
+
+      - name: Run Go tests (includes cmd/api smoke tests)
+        run: go test -tags dev ./... -count=1
+
+  ui:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install UI deps and test
+        working-directory: ui
+        run: npm ci --legacy-peer-deps && npm test -- --run
