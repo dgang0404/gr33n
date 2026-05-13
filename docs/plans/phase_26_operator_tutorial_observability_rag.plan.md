@@ -11,7 +11,7 @@ todos:
     content: "WS1: Tutorial + glossary — v1 shipped (/operator-guide, nav, dashboard hints); follow-up: overlay tour + more empty states"
     status: completed
   - id: ws2-obs-log-management
-    content: "WS2: Operational logs — runbook + json-file rotation + Promtail/Loki/Grafana compose overlay; optional K8s notes later"
+    content: "WS2: Operational logs — runbook + json-file rotation + Promtail/Loki/Grafana compose overlay (Compose + systemd; no K8s doc track)"
     status: completed
   - id: ws3-rag-education-boundary
     content: "WS3: RAG vs education vs ops logs — v1 in rag-scope §9 + workflow §10.6 + Knowledge HelpTip; follow-up help-library / incident domain"
@@ -45,7 +45,7 @@ isProject: false
 - **`make compose-logging-up`** / **`compose-logging-down`** — convenience wrappers.
 - Cross-links from **[`INSTALL.md`](../../INSTALL.md)** (observability table) and **[`operator-troubleshooting.md`](../operator-troubleshooting.md)**.
 
-**Follow-up:** Kubernetes-specific notes only if we ship K8s manifests later.
+**Out of scope:** Kubernetes logging documentation — deployments here stay **Compose + systemd/journald** (and optional Loki overlay); no K8s manifests or runbook section planned.
 
 ## WS3 — RAG education boundary (partial)
 
