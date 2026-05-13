@@ -1,4 +1,4 @@
-.PHONY: run run-receiver build build-receiver test seed sqlc ui dev dev-auth-test rag-ingest-help compose-db-up compose-db-status setup-compose-dev dev-stack local-up check-stack clean lint bootstrap-local bootstrap-local-docker install-deps-debian install-pi-edge-deps first-clone first-clone-docker first-clone-install-deps audit-openapi
+.PHONY: run run-receiver build build-receiver test seed sqlc ui dev dev-auth-test rag-ingest-help compose-db-up compose-db-status setup-compose-dev dev-stack local-up restart-local restart-local-serve db-sanity-report check-stack clean lint bootstrap-local bootstrap-local-docker install-deps-debian install-pi-edge-deps first-clone first-clone-docker first-clone-install-deps audit-openapi
 
 # dash (common default /bin/sh) can report "wait: No child processes" for dev / dev-auth-test;
 # bash handles background jobs + wait reliably.
@@ -108,6 +108,15 @@ dev-stack: ## Reliable local Compose DB + bootstrap + seed + verify; auto-retrie
 
 local-up: ## dev-stack then API + UI (same as ./scripts/dev-stack.sh --serve)
 	@./scripts/dev-stack.sh --serve
+
+restart-local: ## After reboot: Compose db up + wait + db sanity report (no migrations). See scripts/restart-local.sh --serve for API+UI
+	@./scripts/restart-local.sh
+
+restart-local-serve: ## Same as restart-local then make dev-auth-test (Go compile may be slow cold)
+	@./scripts/restart-local.sh --serve
+
+db-sanity-report: ## Read-only SQL checks (duplicate zones, extensions); exits non-zero if seed hazards detected
+	@./scripts/db-sanity-report.sh
 
 check-stack: ## Verify .env DATABASE_URL, pgvector, optional API /health (see docs/local-operator-bootstrap.md)
 	@./scripts/check-local-stack.sh

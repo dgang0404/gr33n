@@ -55,6 +55,22 @@ The script copies [`.env.example`](../.env.example) to `.env` **once** if `.env`
 
 **Make equivalent:** `make bootstrap-local` (same as the script without flags). Use `make bootstrap-local-docker` for the Docker path.
 
+## After a reboot (same DB volume — no full reinstall)
+
+Typical delay when running **`make dev-auth-test`** is **Go compiling** the API (`go run` builds before listening); that can take **several minutes** on a cold machine and is **not** an infinite loop. The automation worker may also log many rule evaluations shortly after startup — that is normal.
+
+**Quick path:** from the repo root:
+
+```bash
+make restart-local        # docker compose db only + wait + db sanity report
+make dev-auth-test        # API + UI (compile happens here unless you use a pre-built binary)
+```
+
+Or one line including servers: **`make restart-local-serve`** (same as `./scripts/restart-local.sh --serve`).
+
+- **`scripts/restart-local.sh`** does **not** run **`bootstrap-local.sh`** — your existing schema and data stay as-is. Use **`make dev-stack`** / **`./scripts/bootstrap-local.sh`** when migrations or seed need applying.
+- **`make db-sanity-report`** (or **`scripts/db-sanity-report.sh`**) prints extensions, farm count, duplicate zone names (these break **`master_seed.sql`**), and RAG chunk count. Non-zero exit means fix duplicates or treat DB as unhealthy for seeding.
+
 ## When localhost (DB / API / UI) is not running
 
 **Docker:** from the repo root run `docker compose up -d --build` (or `make bootstrap-local-docker`). The **`db`** service only runs Postgres; load schema + optional seed with **`./scripts/bootstrap-local.sh --seed`** (or **`make dev-stack`**, which does that). Dashboard: **http://localhost:5173** · API: **http://localhost:8080** when using full Compose with **`api`+`ui`**. Postgres from Compose is exposed on **localhost:5433** (maps to 5432 inside the container; avoids colliding with OS Postgres on **5432**) — credentials in [`docker-compose.yml`](../docker-compose.yml).
@@ -67,7 +83,7 @@ The script copies [`.env.example`](../.env.example) to `.env` **once** if `.env`
    - **One-shot after Docker is installed:** **`make dev-stack`** (recommended) — runs [`scripts/dev-stack.sh`](../scripts/dev-stack.sh): retries **`docker compose`** through **`sg docker`** when `/var/run/docker.sock` denies access, builds/starts **`db`**, **`bootstrap --seed`**, **`check-stack`**. Same as **`make setup-compose-dev`** (wrapper). **`make local-up`** runs **`dev-stack`** then **`make dev-auth-test`** (full API + UI). **`./scripts/dev-stack.sh --reset-volumes`** wipes Compose volumes before bring-up (destructive — fresh DB).
    - **Docker `permission denied` on `/var/run/docker.sock`:** after `sudo usermod -aG docker "$USER"`, your *current* terminal may still lack the `docker` group. Run **`newgrp docker`**, or **`sg docker -c 'cd …/gr33n-platform && make setup-compose-dev'`**, or **log out and back in**; confirm with **`groups`** (should list `docker`).
 2. **`pgvector`** — the API registers the `vector` type; if the extension is missing, startup fails with `vector type not found`. Install packages (e.g. `./scripts/install-system-deps-debian.sh` for PG16 + extensions) or use the Compose `db` image.
-3. **Verify without guessing:** from the repo root run **`make check-stack`** (runs [`scripts/check-local-stack.sh`](../scripts/check-local-stack.sh)) — connects with `DATABASE_URL`, checks `vector`, optionally curls `/health`.
+3. **Verify without guessing:** **`make check-stack`** (runs [`scripts/check-local-stack.sh`](../scripts/check-local-stack.sh)) — connects with `DATABASE_URL`, checks `vector`, optionally curls `/health`. After a reboot you can use **`make restart-local`** (starts Compose **`db`** only + waits + **`make db-sanity-report`**) before **`make dev-auth-test`**.
 4. **UI → API:** [`ui/.env.example`](../ui/.env.example) → `ui/.env` with `VITE_API_URL=http://localhost:8080` if you changed the API port.
 5. **Auth test mode:** `JWT_SECRET` and `PI_API_KEY` must be set in `.env` when using **`make dev-auth-test`** (see `.env.example`).
 
