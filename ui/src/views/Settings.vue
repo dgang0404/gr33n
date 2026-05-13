@@ -1,6 +1,11 @@
 <template>
   <div class="p-6 max-w-2xl">
-    <h1 class="text-2xl font-bold text-green-400 mb-6">Settings</h1>
+    <h1 class="text-2xl font-bold text-green-400 mb-2">Settings</h1>
+    <p class="text-sm text-zinc-500 mb-6">
+      New to the layout?
+      <router-link to="/operator-guide" class="text-gr33n-400 hover:underline">Operator guide</router-link>
+      — glossary and suggested tour order.
+    </p>
 
     <!-- Account info -->
     <section class="bg-zinc-800 border border-zinc-700 rounded-xl p-5 mb-5">

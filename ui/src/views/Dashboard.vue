@@ -10,6 +10,7 @@
             (reading temp/humidity/EC) and <em>actuators</em> (pumps, lights). <em>Schedules</em> trigger actuators on a
             cron cadence or generate <em>tasks</em>. <em>Fertigation programs</em> tie a schedule + reservoir + recipe +
             EC target into an automated feeding plan. <em>Crop cycles</em> track a single grow run per zone.
+            Open <router-link to="/operator-guide" class="text-gr33n-400 underline">Guide</router-link> for definitions and a suggested click path.
           </HelpTip>
         </h2>
         <p class="text-sm text-gray-500">{{ store.zones.length }} zones · {{ store.sensors.length }} sensors · {{ store.devices.length }} devices</p>
@@ -32,6 +33,10 @@
       <router-link to="/schedules"
         class="px-4 py-2 text-sm font-medium rounded-lg bg-zinc-800 text-zinc-300 border border-zinc-700 hover:bg-zinc-700 transition-colors">
         Schedules
+      </router-link>
+      <router-link to="/operator-guide"
+        class="px-4 py-2 text-sm font-medium rounded-lg bg-zinc-800 text-gr33n-400 border border-zinc-600 hover:bg-zinc-700 transition-colors">
+        Operator guide
       </router-link>
     </section>
 
@@ -64,7 +69,10 @@
             </div>
           </div>
         </div>
-        <p v-else class="text-sm text-zinc-600">No tasks due today.</p>
+        <p v-else class="text-sm text-zinc-600">
+          No tasks due today.
+          <span class="block text-xs text-zinc-500 mt-1">Add tasks from <router-link class="text-gr33n-500 hover:underline" to="/tasks">Tasks</router-link> or generate them via automation rules.</span>
+        </p>
       </section>
 
       <!-- Alerts -->
@@ -92,7 +100,10 @@
             <span class="text-[11px] text-zinc-600 shrink-0">{{ formatShort(a.created_at) }}</span>
           </div>
         </div>
-        <p v-else class="text-sm text-zinc-600">No recent alerts.</p>
+        <p v-else class="text-sm text-zinc-600">
+          No recent alerts.
+          <span class="block text-xs text-zinc-500 mt-1">Threshold breaches and failed runs create alerts — check <router-link class="text-gr33n-500 hover:underline" to="/automation">Rules</router-link> if you expected something here.</span>
+        </p>
       </section>
     </div>
 
@@ -115,7 +126,10 @@
             <span class="text-[10px] px-1.5 py-0.5 rounded bg-green-900/50 text-green-300 shrink-0">active</span>
           </div>
         </div>
-        <p v-else class="text-sm text-zinc-600">No active schedules.</p>
+        <p v-else class="text-sm text-zinc-600">
+          No active schedules.
+          <span class="block text-xs text-zinc-500 mt-1"><router-link class="text-gr33n-500 hover:underline" to="/schedules">Create a schedule</router-link> for time-based watering, lights, or program ticks.</span>
+        </p>
       </section>
 
       <!-- Recent Fertigation Events -->
@@ -138,7 +152,10 @@
             </div>
           </div>
         </div>
-        <p v-else class="text-sm text-zinc-600">No fertigation events yet.</p>
+        <p v-else class="text-sm text-zinc-600">
+          No fertigation events yet.
+          <span class="block text-xs text-zinc-500 mt-1">After programs run, events appear here — open <router-link class="text-gr33n-500 hover:underline" to="/fertigation">Fertigation</router-link> to configure reservoirs and programs.</span>
+        </p>
       </section>
     </div>
 
@@ -149,7 +166,10 @@
         <SensorTile v-for="s in store.sensors" :key="s.id"
           :sensor="s" :reading="store.readings[s.id]" />
       </div>
-      <div v-else class="text-sm text-gray-600">No sensors found for this farm.</div>
+      <div v-else class="text-sm text-gray-600">
+        No sensors found for this farm.
+        <p class="text-xs text-zinc-500 mt-1">Confirm the Pi or gateway is posting readings and the correct farm is selected. See <router-link class="text-gr33n-500 hover:underline" to="/operator-guide">Guide</router-link> · glossary <em>Sensor vs live reading</em>.</p>
+      </div>
     </section>
 
     <!-- Zone cards -->
@@ -171,7 +191,10 @@
           <div v-if="!store.devicesByZone(zone.id).length && !store.sensorsByZone(zone.id).length"
             class="text-xs text-gray-600">No devices assigned to this zone yet.</div>
         </div>
-        <div v-if="!store.zones.length" class="text-sm text-gray-600">No zones found.</div>
+        <div v-if="!store.zones.length" class="text-sm text-gray-600">
+          No zones found.
+          <p class="text-xs text-zinc-500 mt-1"><router-link class="text-gr33n-500 hover:underline" to="/zones">Create zones</router-link> first — sensors and actuators attach to them.</p>
+        </div>
       </div>
     </section>
 
@@ -180,7 +203,10 @@
       <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-widest mb-3">All Actuators</h3>
       <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
         <ActuatorCard v-for="d in store.devices" :key="d.id" :device="d" />
-        <div v-if="!store.devices.length" class="text-sm text-gray-600">No devices found.</div>
+        <div v-if="!store.devices.length" class="text-sm text-gray-600">
+          No devices found.
+          <p class="text-xs text-zinc-500 mt-1">Register hardware under zones so actuators and sensors show up.</p>
+        </div>
       </div>
     </section>
 

@@ -8,7 +8,7 @@ overview: >
   not embedding breadth.
 todos:
   - id: ws1-tutorial-glossary
-    content: "WS1: Tutorial flows + glossary (setpoints, schedules vs rules, empty states)—wire from HelpTip / operator tour"
+    content: "WS1: Tutorial + glossary — v1 shipped (/operator-guide, nav, dashboard hints); follow-up: overlay tour + more empty states"
     status: pending
   - id: ws2-obs-log-management
     content: "WS2: Operational log strategy—aggregation (Docker/journal/Loki), retention vs Timescale row pruning, archival export; document slog baseline"
@@ -23,7 +23,17 @@ isProject: false
 
 ## Status
 
-**Planning stub** — refine scope before execution. Complements **[sit-in operator experience](../workstreams/sit-in-operator-experience.md)** (tour, troubleshooting, structured **`slog`** logging already landed in §1–§2).
+**Active — WS1 v1 landed in-app** (glossary + suggested walk + dashboard empty hints). WS2–WS3 remain planning. Complements **[sit-in operator experience](../workstreams/sit-in-operator-experience.md)**.
+
+## WS1 — Tutorial + glossary (partial)
+
+**Shipped (v1):**
+
+- **`/operator-guide`** — Operator Guide: glossary entries aligned with **`workflow-guide.md`** §11 concepts (schedule vs rule, setpoint vs reading, RAG blurb), suggested **`router-link`** walk matching **`operator-tour.md`** §2.
+- **Navigation** — **System → Guide** in sidebar + mobile drawer (`SideNav.vue`, `App.vue`).
+- **Dashboard** — HelpTip links to Guide; quick action **Operator guide**; short “why empty” lines on tasks, alerts, schedules, fertigation, sensors, zones, devices widgets.
+
+**Follow-up (still WS1 scope):** richer guided tour (overlay / checklist persistence), empty-state copy on **Schedules**, **Sensors**, **Automation**, etc.; optional deep-link from HelpTips on those pages.
 
 ## Goals
 

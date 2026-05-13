@@ -132,6 +132,7 @@ const navGroups = [
   {
     label: 'System',
     items: [
+      { to: '/operator-guide', icon: '📖', label: 'Guide', navTitle: 'Operator walkthrough + glossary (Phase 26)' },
       { to: '/catalog',  icon: '📚', label: 'Catalog'  },
       { to: '/settings', icon: '⚙️', label: 'Settings' },
     ],

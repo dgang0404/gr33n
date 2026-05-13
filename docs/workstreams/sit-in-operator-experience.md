@@ -14,7 +14,7 @@
 
 | Item | Notes |
 |------|--------|
-| **Single-page operator tour** | **Done (v1):** [`docs/operator-tour.md`](../operator-tour.md) — narrative walk: Farm → Zones → Sensors/Controls → Schedules/Rules → Tasks → Fertigation; **mermaid data-flow** diagram; links to bootstrap + schema. Revise as nav/copy changes. |
+| **Single-page operator tour** | **Done (v1):** [`docs/operator-tour.md`](../operator-tour.md) — narrative walk: Farm → Zones → Sensors/Controls → Schedules/Rules → Tasks → Fertigation; **mermaid data-flow** diagram; links to bootstrap + schema. Revise as nav/copy changes. **In-app (Phase 26 WS1 v1):** **System → Guide** — glossary + suggested route order (`/operator-guide`). |
 | **“Why empty?” UX** | Per major UI area, future inline hints (telemetry vs setpoints vs automation inactive). Track implementation as **separate UX tickets**; tour §4 points here — **implementation still open**. |
 
 **Artifact:** [`docs/operator-tour.md`](../operator-tour.md).
@@ -75,4 +75,4 @@ Phase 25 plans should **assume** this sit-in stream has at least **operator tour
 | 2026-04-21 | §3: [`tasks-first-operator-guide.md`](../tasks-first-operator-guide.md) (golden path, automation×tasks, offline queue); Tasks.vue HelpTip. |
 | 2026-04-21 | §4: Checklist + multi-device notes; Fertigation **tab↔URL** fix + [bugfix plan](../plans/bugfix_fertigation_tab_router_sync.plan.md). |
 | 2026-04-21 | §4: Bugfix doc marked closed; noted **no mandatory Pi/API/UI test updates** (UI-only fix); optional Vitest/smoke follow-ups. |
-| 2026-04-21 | Intro: **Where effort goes** — dormant sit-in ⇒ prioritize **current phase**; reopen sit-in when operator UX issues surface. |
+| 2026-05-13 | §1: Added in-app **Guide** (`/operator-guide`) — glossary + walk (Phase 26 WS1 v1); complements operator-tour.md. |

@@ -128,6 +128,7 @@ const drawerNavGroups = [
   {
     label: 'System',
     items: [
+      { to: '/operator-guide', icon: '📖', label: 'Guide' },
       { to: '/catalog',  icon: '📚', label: 'Catalog' },
       { to: '/settings', icon: '⚙️', label: 'Settings' },
     ],
