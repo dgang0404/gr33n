@@ -48,6 +48,8 @@ Every HTTP request emits one structured **`request`** line (`log/slog`) after th
 
 Set **`LOG_FORMAT=json`** for JSON lines (log aggregation–friendly).
 
+**Deeper:** retention vs Postgres time-series pruning, Docker/systemd capture, Loki sketch, archival — **[operator-logging-runbook.md](operator-logging-runbook.md)**.
+
 Automation worker:
 
 - **`automation worker tick failed`** — `phase` is `list_schedules`, `list_rules`, or `list_programs`; includes **`err`**.
@@ -61,3 +63,7 @@ Automation worker:
 - Access logger: `cmd/api/request_log.go`
 - Route wiring (logging wraps each handler): `cmd/api/routes.go`
 - Fertigation tab ↔ URL sync: `ui/src/views/Fertigation.vue` (`selectTab`, `watch route.query.tab`)
+
+## Operational logging (production)
+
+For Docker/systemd log rotation, aggregation (e.g. Loki), separating **app logs** from **DB retention**, and archival exports, see **[operator-logging-runbook.md](operator-logging-runbook.md)**.

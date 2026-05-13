@@ -1,3 +1,5 @@
+# Local dev stack. json-file logging limits per service → bounded host disk use;
+# see docs/operator-logging-runbook.md for aggregation / archival.
 services:
   db:
     build:
@@ -22,6 +24,11 @@ services:
       interval: 5s
       timeout: 3s
       retries: 5
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "5"
 
   api:
     build:
@@ -39,6 +46,11 @@ services:
       AUTOMATION_SIMULATION_MODE: "true"
     ports:
       - "8080:8080"
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "5"
 
   ui:
     image: node:22-alpine
@@ -54,6 +66,11 @@ services:
     volumes:
       - ./ui:/app
       - ui_modules:/app/node_modules
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "5"
 
 volumes:
   pgdata:

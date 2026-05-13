@@ -11,7 +11,7 @@ todos:
     content: "WS1: Tutorial + glossary — v1 shipped (/operator-guide, nav, dashboard hints); follow-up: overlay tour + more empty states"
     status: pending
   - id: ws2-obs-log-management
-    content: "WS2: Operational log strategy—aggregation (Docker/journal/Loki), retention vs Timescale row pruning, archival export; document slog baseline"
+    content: "WS2: Operational logs — v1 runbook + Compose json-file rotation; follow-up K8s/Promtail overlays"
     status: pending
   - id: ws3-rag-education-boundary
     content: "WS3: Define what may enter RAG (domain DB vs ops logs)—sanitization, farm scope, consent if summarizing HTTP/automation traces"
@@ -23,7 +23,7 @@ isProject: false
 
 ## Status
 
-**Active — WS1 v1 landed in-app** (glossary + suggested walk + dashboard empty hints). WS2–WS3 remain planning. Complements **[sit-in operator experience](../workstreams/sit-in-operator-experience.md)**.
+**Active — WS1 v1 in-app; WS2 v1 runbook + Compose log rotation.** WS3 planning.
 
 ## WS1 — Tutorial + glossary (partial)
 
@@ -34,6 +34,16 @@ isProject: false
 - **Dashboard** — HelpTip links to Guide; quick action **Operator guide**; short “why empty” lines on tasks, alerts, schedules, fertigation, sensors, zones, devices widgets.
 
 **Follow-up (still WS1 scope):** richer guided tour (overlay / checklist persistence), empty-state copy on **Schedules**, **Sensors**, **Automation**, etc.; optional deep-link from HelpTips on those pages.
+
+## WS2 — Operational logs (partial)
+
+**Shipped (v1):**
+
+- **[`operator-logging-runbook.md`](../operator-logging-runbook.md)** — **`slog`** baseline recap (**`LOG_FORMAT`**, **`AUTH_DEBUG_LOG`**, request + automation + RAG pointers); **application logs vs Timescale / DB retention**; Docker Compose **json-file** rotation; systemd **journald**; optional **Loki / agents** sketch; **archival** (`docker logs`, `journalctl` export); correlation checklist.
+- **`docker-compose.yml`** — **`logging`** (`json-file`, `max-size` / `max-file`) on **`db`**, **`api`**, **`ui`**.
+- Cross-links from **[`INSTALL.md`](../../INSTALL.md)** (observability table) and **[`operator-troubleshooting.md`](../operator-troubleshooting.md)**.
+
+**Follow-up:** Kubernetes-specific notes; concrete Promtail/Loki **example** compose overlay if operators request copy-paste.
 
 ## Goals
 
@@ -62,6 +72,7 @@ Static **tutorial** copy + **glossary** remain the right default for teaching; *
 ## References
 
 - [Sit-in workstream](../workstreams/sit-in-operator-experience.md)
+- [Operator logging runbook](../operator-logging-runbook.md) — Phase 26 WS2
 - [RAG scope and threat model](../rag-scope-and-threat-model.md)
 - [Phase 25 — RAG operations and expansion](phase_25_rag_operations_and_expansion.plan.md)
 

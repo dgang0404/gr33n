@@ -514,3 +514,4 @@ Operator-facing constraints (PII, secrets, Insert Commons boundaries) are docume
 - For **RAG scope, data classes, and LLM egress**: [`rag-scope-and-threat-model.md`](rag-scope-and-threat-model.md).
 - For **RAG CI / DB parity**: [`rag-ci-and-staging-parity.md`](rag-ci-and-staging-parity.md).
 - For **schema ER diagram (text + Mermaid)** including **`rag_embedding_chunks`**: [`schema-erd-text.md`](schema-erd-text.md).
+- For **API operational logs** (Docker / journald / archival vs DB retention): [`operator-logging-runbook.md`](operator-logging-runbook.md).

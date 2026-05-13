@@ -69,6 +69,7 @@ Empty lists usually mean one of: **no data yet**, **wrong farm selected**, **tel
 |-----|-----|
 | [local-operator-bootstrap.md](local-operator-bootstrap.md) | First-time env, DB, seed, URLs |
 | [operator-troubleshooting.md](operator-troubleshooting.md) | 401 / empty farms / reading logs |
+| [operator-logging-runbook.md](operator-logging-runbook.md) | Capture & retention for **`slog`** — Compose rotation, Loki sketch; **logs ≠ hypertable pruning** |
 | [tasks-first-operator-guide.md](tasks-first-operator-guide.md) | Morning ops path, tasks vs automation rules, offline queue |
 | [database-schema-overview.md](database-schema-overview.md) | Where major tables live |
 | [workflow-guide.md](workflow-guide.md) | Deeper workflows (incl. Insert Commons, RAG pointers) |

@@ -29,8 +29,9 @@
 | **Auth debug** | **Done:** **`AUTH_DEBUG_LOG=true`** — `auth_rejected` with **`reason`** (`missing_x_api_key`, `jwt_invalid`, …); **never** logs token or API key value. `cmd/api/auth.go`. |
 | **Automation worker** | **Done:** `slog.Warn` on tick **list** failures (`phase` = `list_schedules` / `list_rules` / `list_programs`); **`automation schedule run`** / **`automation rule run`** on outcomes (`schedule_id` / `rule_id`, `status`); **Warn** when schedule `status=failed` or rule `status=failed`. |
 | **Runbook doc** | **Done:** [`docs/operator-troubleshooting.md`](../operator-troubleshooting.md) — login / 401 / empty farms / reading logs; linked from [local-operator-bootstrap.md](../local-operator-bootstrap.md). |
+| **Log aggregation / archival** | **Done (v1):** [`docs/operator-logging-runbook.md`](../operator-logging-runbook.md) — slog baseline, **`LOG_FORMAT`**, Docker **json-file** rotation (Compose), journald, Loki sketch, archival exports; **DB retention ≠ log retention**. Phase 26 WS2. |
 
-**Related:** [INSTALL.md](../../INSTALL.md) § Optional: observability (`LOG_FORMAT`, `AUTH_DEBUG_LOG`).
+**Related:** [INSTALL.md](../../INSTALL.md) § Optional: observability (`LOG_FORMAT`, `AUTH_DEBUG_LOG`). Production capture and retention: **[operator-logging-runbook.md](../operator-logging-runbook.md)**.
 
 ---
 
@@ -76,3 +77,4 @@ Phase 25 plans should **assume** this sit-in stream has at least **operator tour
 | 2026-04-21 | §4: Checklist + multi-device notes; Fertigation **tab↔URL** fix + [bugfix plan](../plans/bugfix_fertigation_tab_router_sync.plan.md). |
 | 2026-04-21 | §4: Bugfix doc marked closed; noted **no mandatory Pi/API/UI test updates** (UI-only fix); optional Vitest/smoke follow-ups. |
 | 2026-05-13 | §1: Added in-app **Guide** (`/operator-guide`) — glossary + walk (Phase 26 WS1 v1); complements operator-tour.md. |
+| 2026-05-13 | §2: **[operator-logging-runbook.md](../operator-logging-runbook.md)** — Compose log rotation, aggregation sketch, archival; Phase 26 WS2 v1. |
