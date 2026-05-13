@@ -14,7 +14,7 @@ todos:
     content: "WS2: Operational logs — runbook + json-file rotation + Promtail/Loki/Grafana compose overlay; optional K8s notes later"
     status: pending
   - id: ws3-rag-education-boundary
-    content: "WS3: Define what may enter RAG (domain DB vs ops logs)—sanitization, farm scope, consent if summarizing HTTP/automation traces"
+    content: "WS3: RAG vs education vs ops logs — v1 in rag-scope §9 + workflow §10.6 + Knowledge HelpTip; follow-up help-library / incident domain"
     status: pending
 isProject: false
 ---
@@ -23,7 +23,7 @@ isProject: false
 
 ## Status
 
-**Active — WS1 v1 in-app; WS2 runbook + Compose rotation + optional Loki/Promtail/Grafana overlay.** WS3 planning.
+**Phase 26 — WS1–WS3 v1 documented/shipped in-repo** (Guide, logging runbook + Loki overlay, RAG vs education vs logs in **`rag-scope-and-threat-model.md` §9**). Remaining: WS1/WS2 polish per follow-ups; Phase **27** when ready.
 
 ## WS1 — Tutorial + glossary (partial)
 
@@ -47,6 +47,16 @@ isProject: false
 
 **Follow-up:** Kubernetes-specific notes only if we ship K8s manifests later.
 
+## WS3 — RAG education boundary (partial)
+
+**Shipped (v1):**
+
+- **[`rag-scope-and-threat-model.md`](../rag-scope-and-threat-model.md) §9** — **Static education** (Guide, tour, glossary) vs **farm-grounded RAG** (checklist-approved DB domains only) vs **operational / HTTP logs** (out of scope for `rag-ingest` by default); future summarized-incidents criteria.
+- **[`workflow-guide.md`](../workflow-guide.md)** §10.6 — short pointer to §9.
+- **Knowledge UI** — HelpTip clarifies DB-backed scope + **`rag-scope` §9** path.
+
+**Follow-up:** Product decision if **help-library** chunks ever get embedded; any **curated incident** domain for Knowledge.
+
 ## Goals
 
 1. **Tutorial system** — Guided paths in-product (or linked docs) so operators learn zones → sensors/controls → schedules/rules → tasks → fertigation without guessing. Align with **[operator-tour.md](../operator-tour.md)** and expand **“why empty?”** hints (sit-in §1).
@@ -60,11 +70,7 @@ isProject: false
 
 ## RAG and logs (deliberate boundary)
 
-- **Current RAG** ingests **farm-scoped domain text** from approved tables (tasks, cycles, automation narrative fields, etc.) per **[rag-scope-and-threat-model.md](../rag-scope-and-threat-model.md)**.
-- **Raw HTTP access logs** are usually a **poor default** for RAG: paths, ids, and errors can touch **PII** or security-sensitive patterns; they are also noisy versus curated domain copy.
-- **If** the product later wants “what broke last week?” style answers in **Knowledge**, treat that as **WS3**: explicit **allowlist**, **redaction**, **farm** or **deployment** scope, and possibly **summarized** operational events—not verbatim request logs unless audited for privacy.
-
-Static **tutorial** copy + **glossary** remain the right default for teaching; **RAG** stays strongest on **what your farm’s data says**, with optional synthesis—same split as Phase 25 docs.
+**Authoritative (Phase 26 WS3 v1):** **[`rag-scope-and-threat-model.md`](../rag-scope-and-threat-model.md) §9** — static education vs DB RAG vs stdout/Loki logs; raw HTTP lines stay **out** of ingestion unless a future product pass adds allowlists + redaction.
 
 ## Preconditions
 

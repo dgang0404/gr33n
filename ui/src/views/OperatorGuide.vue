@@ -88,7 +88,7 @@ const glossary = [
   },
   {
     term: 'Knowledge (RAG)',
-    body: 'Semantic search over indexed farm text chunks; optional LLM answer when the API is configured. Nothing trains on your data by default.',
+    body: 'Semantic search over indexed farm text chunks from approved database domains (via rag-ingest); optional LLM answer when the API is configured. Not the same as static Help/Guide copy or Docker/API logs — see docs/rag-scope-and-threat-model.md §9.',
   },
   {
     term: 'Operational logs',

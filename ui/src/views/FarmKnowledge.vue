@@ -5,8 +5,9 @@
         Farm knowledge
         <HelpTip position="bottom">
           <strong>Semantic search</strong> over text the farm has already indexed (tasks, automation runs, etc.).
-          Results come from your database — not the open web. <strong>Ask (LLM)</strong> only appears if the API has
-          embedding and optional chat model env vars configured (see <code class="text-gr33n-400">INSTALL.md</code>).
+          Results come from your database — not the open web, not API access logs. Static how-to lives under <strong>System → Guide</strong>.
+          <strong>Ask (LLM)</strong> only appears if the API has embedding and optional chat model env vars configured (see <code class="text-gr33n-400">INSTALL.md</code>).
+          Scope: <code class="text-zinc-500 text-[10px]">docs/rag-scope-and-threat-model.md</code> §9.
         </HelpTip>
       </h1>
       <p class="text-sm text-zinc-500">

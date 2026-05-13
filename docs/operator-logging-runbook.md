@@ -4,6 +4,8 @@
 
 **Not in scope here:** TimescaleDB **hypertable retention** (sensor readings, time-series pruning). That deletes **database rows**, not application stdout. See **[workflow-guide.md](workflow-guide.md)** and DB operator docs for table-level policies. Phase 26 separates **log retention** from **data retention** deliberately.
 
+**RAG vs logs:** Operational logs are **not** farm Knowledge ingest by default — see **[rag-scope-and-threat-model.md](rag-scope-and-threat-model.md) §9**.
+
 ---
 
 ## 1. Baseline — what the API emits today

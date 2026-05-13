@@ -452,6 +452,8 @@ Ingestion from operational tables is via the **`rag-ingest`** CLI (see repo `cmd
 Operator-facing constraints (PII, secrets, Insert Commons boundaries) are documented in
 [`rag-scope-and-threat-model.md`](rag-scope-and-threat-model.md).
 
+**Education vs ops logs (Phase 26 WS3):** In-app **Guide** and markdown docs teach **how gr33n works**; **Knowledge** retrieves **farm DB text** ingested via **`rag-ingest`** only. **HTTP / structured application logs** are for observability stacks ([**`operator-logging-runbook.md`**](operator-logging-runbook.md)), **not** default embedding sources — authoritative split in **`rag-scope-and-threat-model.md` §9**.
+
 **Rate limits (Phase 25 WS5):** `RAG_SYNTHESIS_MAX_PER_MINUTE` (default 30) caps **`POST /rag/answer`** per API process. Set **`RAG_SYNTHESIS_MAX_PER_MINUTE_PER_FARM`** to give each `farm_id` its own per-minute bucket on shared deployments (replaces the global-only counter when set). Integration tests with mocked embedding/LLM live in **`internal/handler/rag/handler_integration_test.go`** (require `DATABASE_URL`).
 
 **CI / staging / prod parity (Phase 25 WS4):** GitHub Actions builds the same Compose **`db`** image (Timescale + PostGIS + pgvector), runs **`bootstrap-local.sh --seed`**, asserts **`vector`** + **`rag_embedding_chunks`**, then **`go test -tags dev ./...`**. For staging and production, mirror that extension stack and migration path — see **[`rag-ci-and-staging-parity.md`](rag-ci-and-staging-parity.md)**.

@@ -6,7 +6,7 @@
 
 **Where effort goes:** When **no sit-in items** are actively in flight (nothing queued here beyond standing maintenance), treat the team as **back on the current calendar phase** (e.g. Phase 25 RAG operations)—this stream does **not** block phase work. **Reopen** sit-in any time operator pain shows up (broken flows, unclear dashboards, logging gaps, onboarding gaps): add bullets under the right section or link a bugfix plan, same as the Fertigation tab sync fix.
 
-**Phase 26 (when scoped):** fuller **operator tutorial + glossary** + observability evolution (log aggregation/archival, boundary with DB retention) and an explicit **RAG education layer** (static help vs farm-grounded answers)—see **[Phase 26 plan](../plans/phase_26_operator_tutorial_observability_rag.plan.md)**.
+**Phase 26:** fuller **operator tutorial + glossary** (WS1 v1 **Guide**), **observability** (WS2 runbook + optional **Loki** overlay), and explicit **RAG vs education vs logs** (WS3 v1 **`rag-scope-and-threat-model.md` §9**) — see **[Phase 26 plan](../plans/phase_26_operator_tutorial_observability_rag.plan.md)**.
 
 ---
 
@@ -79,3 +79,4 @@ Phase 25 plans should **assume** this sit-in stream has at least **operator tour
 | 2026-05-13 | §1: Added in-app **Guide** (`/operator-guide`) — glossary + walk (Phase 26 WS1 v1); complements operator-tour.md. |
 | 2026-05-13 | §2: **[operator-logging-runbook.md](../operator-logging-runbook.md)** — Compose json-file rotation + runbook (Phase 26 WS2 v1). |
 | 2026-05-13 | §2: **`docker-compose.logging.yml`** — Promtail + Loki + Grafana overlay + **`make compose-logging-*`** (Phase 26 WS2 follow-up). |
+| 2026-05-13 | Phase **26 WS3** v1: **[rag-scope-and-threat-model.md §9](../rag-scope-and-threat-model.md)** — static Guide vs DB RAG vs ops logs; workflow §10.6 + Knowledge HelpTip. |
