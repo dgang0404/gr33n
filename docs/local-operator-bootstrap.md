@@ -86,7 +86,7 @@ Or one line including servers: **`make restart-local-serve`** (same as `./script
 3. **Verify without guessing:** **`make check-stack`** (runs [`scripts/check-local-stack.sh`](../scripts/check-local-stack.sh)) — connects with `DATABASE_URL`, checks `vector`, optionally curls `/health`. After a reboot you can use **`make restart-local`** (starts Compose **`db`** only + waits + **`make db-sanity-report`**) before **`make dev-auth-test`**.
 4. **UI → API:** [`ui/.env.example`](../ui/.env.example) → `ui/.env` with `VITE_API_URL=http://localhost:8080` if you changed the API port.
 5. **Auth test mode:** `JWT_SECRET` and `PI_API_KEY` must be set in `.env` when using **`make dev-auth-test`** (see `.env.example`).
-6. **Operational logs (production / LAN):** Set **`LOG_FORMAT=json`** when piping logs to a stack; **`docker-compose.yml`** rotates **json-file** logs per service — details **[operator-logging-runbook.md](operator-logging-runbook.md)**.
+6. **Operational logs (production / LAN):** Set **`LOG_FORMAT=json`** when piping logs to a stack; **`docker-compose.yml`** rotates **json-file** logs per service; optional **`make compose-logging-up`** merges **`docker-compose.logging.yml`** (Loki + Promtail + Grafana demo stack). Details **[operator-logging-runbook.md](operator-logging-runbook.md)**.
 
 ## Order of operations
 

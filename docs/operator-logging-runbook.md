@@ -1,6 +1,6 @@
 # Operator logging runbook — capture, retention, archival
 
-**Audience:** Operators running the **Go API** (`cmd/api`) on Docker, systemd, or Kubernetes — anyone who needs **request traces**, **automation outcomes**, and **auth failures** beyond a scrolling terminal.
+**Audience:** Operators running the **Go API** (`cmd/api`) on **Docker Compose**, systemd, or bare processes — anyone who needs **request traces**, **automation outcomes**, and **auth failures** beyond a scrolling terminal.
 
 **Not in scope here:** TimescaleDB **hypertable retention** (sensor readings, time-series pruning). That deletes **database rows**, not application stdout. See **[workflow-guide.md](workflow-guide.md)** and DB operator docs for table-level policies. Phase 26 separates **log retention** from **data retention** deliberately.
 
@@ -49,7 +49,7 @@ logging:
 
 The repo **`docker-compose.yml`** applies this pattern to **`api`**, **`ui`**, and **`db`** so default Compose runs get bounded json-file rotation without extra agents.
 
-For **central aggregation**, add a **logging driver plugin** (e.g. Loki Docker driver) or run **Promtail** / **Fluent Bit** on the host reading **`/var/lib/docker/containers/...`** — vendor-specific; keep **`LOG_FORMAT=json`** first.
+For **central aggregation**, add a **logging driver plugin** or run **Promtail → Loki** (see **§2d** below).
 
 ### 2b. systemd (bare metal / Pi hosting API only)
 
@@ -72,14 +72,53 @@ LOG_FORMAT=json AUTH_MODE=dev go run -tags dev ./cmd/api/ 2>&1 | tee -a /var/log
 
 Rotate **`tee`** targets with **logrotate** or ship the file to object storage.
 
+### 2d. Promtail + Loki + Grafana (optional Compose overlay)
+
+The repo ships **`docker-compose.logging.yml`** — merge it with the main stack for a **small searchable log backend** (still not “inside” the Go binary; Loki is a sidecar stack).
+
+```bash
+# From repo root (Linux host Docker Engine recommended)
+docker compose -f docker-compose.yml -f docker-compose.logging.yml up -d
+# or: make compose-logging-up
+```
+
+What it does:
+
+| Piece | Role |
+|-------|------|
+| **Loki** | Stores log streams (label-indexed); UI API on **`:3100`**. |
+| **Promtail** | Reads **Docker** container logs via **`docker.sock`** + **`/var/lib/docker/containers`** and pushes to Loki. |
+| **Grafana** | **`:3000`** — Explore → Loki queries. Default login **`admin` / `admin`** (change for anything beyond local demo). |
+| **`api` env merge** | Overlay sets **`LOG_FORMAT=json`** so each line is JSON-friendly in Loki/Grafana. |
+
+**Try in Grafana Explore (Loki):**
+
+```logql
+{compose_project="<your-compose-project>"} |= `request`
+```
+
+Compose project label usually matches the directory name (e.g. `gr33n-platform`). Filter by container:
+
+```logql
+{container=~".*api.*"}
+```
+
+**Platform notes:**
+
+- **Linux + Docker Engine:** typical happy path for Promtail bind mounts.
+- **Docker Desktop (Mac/Windows):** `/var/lib/docker/containers` on the host often **does not** match Linux paths; Promtail may fail to read files. Prefer **WSL2/Linux VM**, **remote Docker**, or skip this overlay and use hosted logging.
+- **Port `:3000`:** Grafana defaults here; change the published port in **`docker-compose.logging.yml`** if `3000` is taken.
+
+Config files: **`logging/promtail-config.yml`**, **`logging/grafana/provisioning/`**.
+
 ---
 
 ## 3. Aggregation stacks (optional)
 
 Operators who want search and dashboards typically:
 
-1. Emit **`LOG_FORMAT=json`** from every API replica.
-2. Ship lines with **Promtail → Loki → Grafana**, **Fluent Bit → OpenSearch**, or a hosted agent.
+1. Emit **`LOG_FORMAT=json`** from every API replica (the **`docker-compose.logging.yml`** overlay sets this on **`api`** automatically — §2d).
+2. Ship lines with **Promtail → Loki → Grafana** (repo overlay §2d), **Fluent Bit → OpenSearch**, or a hosted agent.
 3. Index on **`request_id`**, **`farm_id`**, **`path`**, **`status`**, **`schedule_id`**, **`rule_id`** as needed.
 
 **Privacy:** Access logs include **paths** and ids — treat aggregated logs like **security-sensitive** data (RBAC on Grafana, encrypted buckets).
@@ -117,6 +156,7 @@ Push archives to **S3-compatible** cold storage with lifecycle rules (Glacier, e
 | [local-operator-bootstrap.md](local-operator-bootstrap.md) | Local URLs, Compose DB |
 | [sit-in-operator-experience.md](workstreams/sit-in-operator-experience.md) | Logging workstream context |
 | [phase_26_operator_tutorial_observability_rag.plan.md](plans/phase_26_operator_tutorial_observability_rag.plan.md) | Phase 26 WS2 scope |
+| **Compose overlay:** `docker-compose.logging.yml` | Merge with `docker-compose.yml` — Loki + Promtail + Grafana |
 
 ---
 

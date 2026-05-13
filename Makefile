@@ -1,4 +1,4 @@
-.PHONY: run run-receiver build build-receiver test seed sqlc ui dev dev-auth-test rag-ingest-help compose-db-up compose-db-status setup-compose-dev dev-stack local-up restart-local restart-local-serve db-sanity-report check-stack clean lint bootstrap-local bootstrap-local-docker install-deps-debian install-pi-edge-deps first-clone first-clone-docker first-clone-install-deps audit-openapi
+.PHONY: run run-receiver build build-receiver test seed sqlc ui dev dev-auth-test rag-ingest-help compose-db-up compose-db-status compose-logging-up compose-logging-down setup-compose-dev dev-stack local-up restart-local restart-local-serve db-sanity-report check-stack clean lint bootstrap-local bootstrap-local-docker install-deps-debian install-pi-edge-deps first-clone first-clone-docker first-clone-install-deps audit-openapi
 
 # dash (common default /bin/sh) can report "wait: No child processes" for dev / dev-auth-test;
 # bash handles background jobs + wait reliably.
@@ -99,6 +99,12 @@ compose-db-up: ## Start only the Postgres image from docker-compose.yml (Timesca
 
 compose-db-status: ## Show docker compose db container status
 	docker compose ps db
+
+compose-logging-up: ## Optional Loki + Promtail + Grafana (merge docker-compose.logging.yml); Linux Docker Engine recommended
+	docker compose -f docker-compose.yml -f docker-compose.logging.yml up -d
+
+compose-logging-down: ## Stop merged stack including logging services (use `docker compose down -v` manually to drop Loki/Grafana volumes)
+	docker compose -f docker-compose.yml -f docker-compose.logging.yml down
 
 setup-compose-dev: ## Alias for dev-stack — Docker db + bootstrap --seed + check-stack (see scripts/dev-stack.sh)
 	@./scripts/dev-stack.sh

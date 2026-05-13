@@ -11,7 +11,7 @@ todos:
     content: "WS1: Tutorial + glossary — v1 shipped (/operator-guide, nav, dashboard hints); follow-up: overlay tour + more empty states"
     status: pending
   - id: ws2-obs-log-management
-    content: "WS2: Operational logs — v1 runbook + Compose json-file rotation; follow-up K8s/Promtail overlays"
+    content: "WS2: Operational logs — runbook + json-file rotation + Promtail/Loki/Grafana compose overlay; optional K8s notes later"
     status: pending
   - id: ws3-rag-education-boundary
     content: "WS3: Define what may enter RAG (domain DB vs ops logs)—sanitization, farm scope, consent if summarizing HTTP/automation traces"
@@ -23,7 +23,7 @@ isProject: false
 
 ## Status
 
-**Active — WS1 v1 in-app; WS2 v1 runbook + Compose log rotation.** WS3 planning.
+**Active — WS1 v1 in-app; WS2 runbook + Compose rotation + optional Loki/Promtail/Grafana overlay.** WS3 planning.
 
 ## WS1 — Tutorial + glossary (partial)
 
@@ -41,9 +41,11 @@ isProject: false
 
 - **[`operator-logging-runbook.md`](../operator-logging-runbook.md)** — **`slog`** baseline recap (**`LOG_FORMAT`**, **`AUTH_DEBUG_LOG`**, request + automation + RAG pointers); **application logs vs Timescale / DB retention**; Docker Compose **json-file** rotation; systemd **journald**; optional **Loki / agents** sketch; **archival** (`docker logs`, `journalctl` export); correlation checklist.
 - **`docker-compose.yml`** — **`logging`** (`json-file`, `max-size` / `max-file`) on **`db`**, **`api`**, **`ui`**.
+- **`docker-compose.logging.yml`** — merge overlay: **Loki** + **Promtail** + **Grafana**; sets **`LOG_FORMAT=json`** on **`api`**; configs under **`logging/`**.
+- **`make compose-logging-up`** / **`compose-logging-down`** — convenience wrappers.
 - Cross-links from **[`INSTALL.md`](../../INSTALL.md)** (observability table) and **[`operator-troubleshooting.md`](../operator-troubleshooting.md)**.
 
-**Follow-up:** Kubernetes-specific notes; concrete Promtail/Loki **example** compose overlay if operators request copy-paste.
+**Follow-up:** Kubernetes-specific notes only if we ship K8s manifests later.
 
 ## Goals
 

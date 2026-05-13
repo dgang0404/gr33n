@@ -1,0 +1,59 @@
+# Optional overlay: Grafana Loki + Promtail (+ Grafana UI) for searchable container logs.
+# Merge with the main stack — does not replace docker-compose.yml.
+#
+# Usage (repo root, Linux host Docker recommended):
+#   docker compose -f docker-compose.yml -f docker-compose.logging.yml up -d
+# Or: make compose-logging-up
+#
+# Then open Grafana http://localhost:3000  (admin / admin — change or disable anon in prod)
+# → Explore → query Loki e.g. {compose_project="gr33n-platform"} |= `` 
+#
+# This overlay sets LOG_FORMAT=json on the api service so lines parse cleanly in Loki.
+#
+# Docker Desktop (Mac/Windows): bind-mounting /var/lib/docker/containers often fails or differs;
+# use a Linux VM/WSL2 with Docker, or ship logs another way — see docs/operator-logging-runbook.md.
+
+services:
+  api:
+    environment:
+      LOG_FORMAT: json
+
+  loki:
+    image: grafana/loki:3.4.2
+    restart: unless-stopped
+    ports:
+      - "3100:3100"
+    command: -config.file=/etc/loki/local-config.yaml
+    volumes:
+      - loki_gr33n:/loki
+
+  promtail:
+    image: grafana/promtail:3.4.2
+    restart: unless-stopped
+    depends_on:
+      - loki
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - ./logging/promtail-config.yml:/etc/promtail/config.yml:ro
+    command: -config.file=/etc/promtail/config.yml
+
+  grafana:
+    image: grafana/grafana:11.5.2
+    restart: unless-stopped
+    depends_on:
+      - loki
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_INSTALL_PLUGINS: ""
+    volumes:
+      - ./logging/grafana/provisioning:/etc/grafana/provisioning:ro
+      - grafana_gr33n:/var/lib/grafana
+
+volumes:
+  loki_gr33n:
+  grafana_gr33n:

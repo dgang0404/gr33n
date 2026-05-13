@@ -45,7 +45,7 @@
     <section class="rounded-xl border border-zinc-800 bg-zinc-950/50 px-4 py-3 text-xs text-zinc-500 space-y-2">
       <p><strong class="text-zinc-400">Why lists look empty</strong> — wrong farm selected, no data yet, telemetry not reaching the API (Pi / URL / key), or automation not configured. Compare <strong class="text-zinc-300">setpoints</strong> (targets) to <strong class="text-zinc-300">live readings</strong>.</p>
       <p>For install and logs see <strong class="text-zinc-400">docs/local-operator-bootstrap.md</strong> and <strong class="text-zinc-400">docs/operator-troubleshooting.md</strong> in the repo.</p>
-      <p>For Docker/systemd capture, rotation, and archival (vs Timescale row pruning): <strong class="text-zinc-400">docs/operator-logging-runbook.md</strong>.</p>
+      <p>For Docker/systemd capture, rotation, Loki demo stack (<strong class="text-zinc-400">docker-compose.logging.yml</strong>), and archival (vs Timescale row pruning): <strong class="text-zinc-400">docs/operator-logging-runbook.md</strong>.</p>
     </section>
   </div>
 </template>
