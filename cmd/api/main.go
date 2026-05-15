@@ -16,6 +16,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
+	"gr33n-api/internal/ai"
 	automationworker "gr33n-api/internal/automation"
 	"gr33n-api/internal/filestorage"
 	"gr33n-api/internal/pgxutil"
@@ -113,11 +114,28 @@ func main() {
 	worker := automationworker.NewWorker(pool, simulationMode, workerOpts...)
 	go worker.Start(context.Background())
 	log.Printf("🧠 Automation worker started (simulation_mode=%v)", simulationMode)
+
+	aiCfg := ai.LoadConfigFromEnv()
+	log.Printf("AI_ENABLED=%v (set AI_ENABLED=false for Lite mode — no synthesis or /v1/chat)", aiCfg.Enabled)
+	if aiCfg.Enabled {
+		model := strings.TrimSpace(getEnv("LLM_MODEL", ""))
+		base := strings.TrimSpace(getEnv("LLM_BASE_URL", ""))
+		if model != "" && base != "" {
+			ctxVerify, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+			err := ai.VerifyChatBackend(ctxVerify, base, strings.TrimSpace(getEnv("LLM_API_KEY", "")))
+			cancel()
+			if err != nil {
+				log.Fatalf("AI_ENABLED=true but LLM backend unreachable at %s: %v", base, err)
+			}
+			slog.Info("llm backend reachable", "base_url", strings.TrimSuffix(base, "/"))
+		}
+	}
+
 	fileStore, fileCfg, err := filestorage.NewFromEnv(context.Background())
 	if err != nil {
 		log.Fatalf("file storage init: %v", err)
 	}
-	registerRoutes(mux, pool, worker, pushDispatch, adminUser, adminHash, hashFilePath, fileStore, fileCfg, adminBindUserID, adminBindEmail)
+	registerRoutes(mux, pool, worker, pushDispatch, adminUser, adminHash, hashFilePath, fileStore, fileCfg, adminBindUserID, adminBindEmail, aiCfg)
 	log.Printf("FILE_STORAGE_BACKEND=%s", fileCfg.Backend)
 	if fileCfg.Backend == "local" {
 		log.Printf("FILE_STORAGE_DIR=%s", fileCfg.LocalRoot)

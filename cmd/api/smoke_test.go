@@ -14,6 +14,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"golang.org/x/crypto/bcrypt"
 
+	"gr33n-api/internal/ai"
 	automationworker "gr33n-api/internal/automation"
 	db "gr33n-api/internal/db"
 	"gr33n-api/internal/filestorage"
@@ -414,7 +415,7 @@ func TestMain(m *testing.M) {
 		os.Exit(1)
 	}
 	seedUID := uuid.MustParse(smokeDevUserUUID)
-	registerRoutes(mux, pool, worker, nil, "admin", nil, "", store, filestorage.Config{Backend: "local"}, seedUID, smokeDevEmail)
+	registerRoutes(mux, pool, worker, nil, "admin", nil, "", store, filestorage.Config{Backend: "local"}, seedUID, smokeDevEmail, ai.LoadConfigFromEnv())
 	testServer = httptest.NewServer(corsMiddleware(mux))
 
 	code := m.Run()

@@ -12,10 +12,10 @@ todos:
     content: "WS1: Ollama server setup — install, GPU config, model pull, health endpoint, systemd service, intranet DNS alias"
     status: pending
   - id: ws2-ai-toggle
-    content: "WS2: AI_ENABLED toggle — env var, feature-flag middleware, graceful degradation, Lite vs Full capability matrix"
-    status: pending
+    content: "WS2: AI_ENABLED — env, GET /capabilities, startup LLM reachability when configured; gates rag/answer + strips LLM client when off; POST /v1/chat stub (503/501)"
+    status: completed
   - id: ws3-generation-client
-    content: "WS3: Go LLM client — OpenAI-compatible HTTP client targeting Ollama, streaming support, timeout/retry, context window budget"
+    content: "WS3: Go LLM client — streaming ChatStream + retry; timeout via LLM_TIMEOUT_SECONDS (non-stream path wired)"
     status: pending
   - id: ws4-farm-guardian-persona
     content: "WS4: Farm Guardian system prompt — persona definition, domain grounding, RAG context injection, response constraints"
@@ -33,7 +33,18 @@ isProject: false
 
 ## Status
 
-**Planning stub** — refine scope before execution. Requires **Phase 25** (RAG pipeline stable) and **Phase 26** (content boundary, glossary, WS3 allowlist finalized) as hard preconditions.
+**In progress (Phase 27)** — Preconditions met (Phase 25 RAG + Phase 26 boundary/glossary).
+
+**Shipped in-repo:**
+
+- **`AI_ENABLED`** — Parsed in `internal/ai`; **unset → on** (backward compatible). Explicit **`false`** / **`0`** / **`no`** / **`off`** → Lite mode (no LLM client wiring for synthesis).
+- **`cmd/api` startup** — When AI is on and **`LLM_BASE_URL`** + **`LLM_MODEL`** are set, **`GET {LLM_BASE_URL}/models`** must succeed or the process **exits** (clear failure vs silent degradation).
+- **`GET /capabilities`** — Public JSON `{"ai_enabled": bool}` for UI (Phase 27 WS6 settings indicator).
+- **`POST /v1/chat`** — JWT-protected; **503** when AI off; **501** stub when AI on until WS5 pipeline lands.
+- **`POST /farms/{id}/rag/answer`** — Same **503** message when AI off (generation path only; **search** still works if embeddings are configured).
+- **`LLM_TIMEOUT_SECONDS`** — Chat HTTP client timeout (default 120s).
+
+**Still open:** Ollama infra doc (WS1), streaming client + persona + full chat API + UI.
 
 ---
 
@@ -384,7 +395,7 @@ No broken UI, no error state — just an honest, clean message.
 
 - **Phase 25 complete**: RAG ingestion pipeline stable, pgvector populated with farm-scoped domain data, embedding model chosen and deployed
 - **Phase 26 WS1 complete**: Glossary finalized — Farm Guardian system prompt references these terms directly
-- **Phase 26 WS3 complete**: RAG allowlist defined — the chat endpoint only retrieves from approved tables
+- **Phase 26 WS3 complete**: **`rag-scope-and-threat-model.md` §9** — education vs DB RAG vs ops logs boundary documented
 - **Inference server provisioned**: RTX 3090+ box on the farm intranet, Ollama installed, `llama3.1:70b-instruct-q4_K_M` pulled and verified
 
 ---
@@ -398,4 +409,4 @@ No broken UI, no error state — just an honest, clean message.
 
 ---
 
-*Created as a planning stub — split or rename workstreams when implementation starts.*
+*Phase 27 execution started — WS2 baseline in code; remaining WS tracked above.*

@@ -8,14 +8,18 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"gr33n-api/internal/ai"
 	automationworker "gr33n-api/internal/automation"
 	db "gr33n-api/internal/db"
 	"gr33n-api/internal/filestorage"
 	actuatorhandler "gr33n-api/internal/handler/actuator"
 	alerthandler "gr33n-api/internal/handler/alert"
+	animalhandler "gr33n-api/internal/handler/animal"
+	aquaponicshandler "gr33n-api/internal/handler/aquaponics"
 	audithandler "gr33n-api/internal/handler/audit"
 	authhandler "gr33n-api/internal/handler/auth"
 	automationhandler "gr33n-api/internal/handler/automation"
+	chathandler "gr33n-api/internal/handler/chat"
 	commonscataloghandler "gr33n-api/internal/handler/commonscatalog"
 	costhandler "gr33n-api/internal/handler/cost"
 	cropcyclehandler "gr33n-api/internal/handler/cropcycle"
@@ -25,22 +29,20 @@ import (
 	fileattachhandler "gr33n-api/internal/handler/fileattach"
 	nfhandler "gr33n-api/internal/handler/naturalfarming"
 	organizationhandler "gr33n-api/internal/handler/organization"
+	planthandler "gr33n-api/internal/handler/plants"
 	profilehandler "gr33n-api/internal/handler/profile"
+	raghandler "gr33n-api/internal/handler/rag"
 	recipehandler "gr33n-api/internal/handler/recipe"
 	sensorhandler "gr33n-api/internal/handler/sensor"
-	ssehandler "gr33n-api/internal/handler/sse"
-	animalhandler "gr33n-api/internal/handler/animal"
-	aquaponicshandler "gr33n-api/internal/handler/aquaponics"
-	planthandler "gr33n-api/internal/handler/plants"
-	raghandler "gr33n-api/internal/handler/rag"
 	setpointhandler "gr33n-api/internal/handler/setpoint"
+	ssehandler "gr33n-api/internal/handler/sse"
 	taskhandler "gr33n-api/internal/handler/task"
 	zonehandler "gr33n-api/internal/handler/zone"
 	"gr33n-api/internal/httputil"
 	"gr33n-api/internal/pushnotify"
 )
 
-func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationworker.Worker, pushDispatch *pushnotify.Dispatcher, adminUser string, adminHash []byte, hashFilePath string, fileStore filestorage.Store, fileCfg filestorage.Config, adminBindUserID uuid.UUID, adminBindEmail string) {
+func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationworker.Worker, pushDispatch *pushnotify.Dispatcher, adminUser string, adminHash []byte, hashFilePath string, fileStore filestorage.Store, fileCfg filestorage.Config, adminBindUserID uuid.UUID, adminBindEmail string, aiCfg ai.Config) {
 	farm := farmhandler.NewHandler(pool)
 	org := organizationhandler.NewHandler(pool)
 	audit := audithandler.NewHandler(pool)
@@ -58,7 +60,8 @@ func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationwo
 	nf := nfhandler.NewHandler(pool)
 	recipe := recipehandler.NewHandler(pool)
 	cropcycle := cropcyclehandler.NewHandler(pool)
-	rag := raghandler.NewHandler(pool)
+	rag := raghandler.NewHandler(pool, aiCfg.Enabled)
+	aichat := chathandler.NewHandler(aiCfg)
 	plants := planthandler.NewHandler(pool)
 	animals := animalhandler.NewHandler(pool)
 	aquaponics := aquaponicshandler.NewHandler(pool)
@@ -104,6 +107,9 @@ func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationwo
 	mux.Handle("GET /auth/mode", withRequestLog("public", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteJSON(w, http.StatusOK, map[string]string{"mode": authMode})
 	})))
+	mux.Handle("GET /capabilities", withRequestLog("public", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		httputil.WriteJSON(w, http.StatusOK, map[string]bool{"ai_enabled": aiCfg.Enabled})
+	})))
 
 	// ── Pi routes — API key required ─────────────────────────────────────────
 	mux.Handle("POST /sensors/{id}/readings", piChain(http.HandlerFunc(sensor.PostReading)))
@@ -116,6 +122,9 @@ func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationwo
 
 	// Auth — password change (JWT protected so you must be logged in)
 	mux.Handle("PATCH /auth/password", jwt(http.HandlerFunc(auth.ChangePassword)))
+
+	// Phase 27 — Farm Guardian (stub; full pipeline in later WS)
+	mux.Handle("POST /v1/chat", jwt(http.HandlerFunc(aichat.PostV1)))
 
 	// Units
 	mux.Handle("GET /units", jwt(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

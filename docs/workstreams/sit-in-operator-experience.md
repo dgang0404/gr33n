@@ -64,6 +64,14 @@ Phase 25 plans should **assume** this sit-in stream has at least **operator tour
 
 ---
 
+## 6. Phase 27 — Farm Guardian (calendar phase)
+
+**Phase 26** remains the operator-tutorial / logging / RAG-education boundary track — **done enough for v1**.
+
+**Phase 27** (Farm Guardian AI layer) continues from **[phase_27_farm_guardian_ai_layer.md](../plans/phase_27_farm_guardian_ai_layer.md)** — e.g. **`AI_ENABLED`**, **`GET /capabilities`**, **`POST /v1/chat`** (stub → full RAG-backed chat). This section links the calendar phase without moving Phase 27 tasks into the sit-in backlog unless operator UX explicitly needs it.
+
+---
+
 ## Changelog
 
 | Date | Note |
@@ -80,3 +88,4 @@ Phase 25 plans should **assume** this sit-in stream has at least **operator tour
 | 2026-05-13 | §2: **[operator-logging-runbook.md](../operator-logging-runbook.md)** — Compose json-file rotation + runbook (Phase 26 WS2 v1). |
 | 2026-05-13 | §2: **`docker-compose.logging.yml`** — Promtail + Loki + Grafana overlay + **`make compose-logging-*`** (Phase 26 WS2 follow-up). |
 | 2026-05-13 | Phase **26 WS3** v1: **[rag-scope-and-threat-model.md §9](../rag-scope-and-threat-model.md)** — static Guide vs DB RAG vs ops logs; workflow §10.6 + Knowledge HelpTip. |
+| 2026-05-15 | §6: **[Phase 27](../plans/phase_27_farm_guardian_ai_layer.md)** pointer — Farm Guardian / `AI_ENABLED` / capabilities API (calendar phase; not sit-in backlog unless UX asks). |

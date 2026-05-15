@@ -155,14 +155,18 @@ Add this to your `~/.bashrc` or `~/.zshrc` to avoid typing it every time.
 
 | Variable | Used for | Notes |
 |----------|----------|--------|
+| `AI_ENABLED` | `POST /farms/{id}/rag/answer`, `POST /v1/chat` | When **`false`**, runs **Lite mode**: no synthesis and chat returns **503**. When **unset**, defaults **on** (backward compatible). **`GET /capabilities`** exposes `ai_enabled`. |
 | `EMBEDDING_API_KEY` | `GET/POST /farms/{id}/rag/search` and `/rag/answer` | OpenAI-compatible `/v1/embeddings` (see also `EMBEDDING_BASE_URL`, `EMBEDDING_MODEL`) |
 | `LLM_BASE_URL` | `POST /farms/{id}/rag/answer` | OpenAI-compatible base URL, e.g. `https://api.openai.com/v1` or `http://127.0.0.1:1234/v1` (LM Studio) |
 | `LLM_MODEL` | Answer synthesis | Chat model id (required with `LLM_BASE_URL` for answers) |
 | `LLM_API_KEY` | Answer synthesis | Set if the chat server requires `Authorization: Bearer`; many local servers need no key |
 | `LLM_TEMPERATURE` | Answer synthesis | Default `0.2` |
 | `LLM_MAX_TOKENS` | Answer synthesis | Default `1024` |
+| `LLM_TIMEOUT_SECONDS` | Answer synthesis | Chat HTTP client timeout; default **120** |
 | `RAG_SYNTHESIS_MAX_PER_MINUTE` | Answer endpoint | Default `30` requests/minute per API process (rolling minute window). |
 | `RAG_SYNTHESIS_MAX_PER_MINUTE_PER_FARM` | Answer endpoint | Optional. When set to an integer **>0**, each `farm_id` gets its own cap per minute (replaces the global-only limiter). Use on shared deployments for fairness. |
+
+When **`AI_ENABLED=true`** and both **`LLM_BASE_URL`** and **`LLM_MODEL`** are set, `cmd/api` **verifies** the backend with `GET {LLM_BASE_URL}/models` at startup and **exits** if that check fails (see Phase 27 plan).
 
 ### Optional: observability (sit-in logging)
 

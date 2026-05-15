@@ -62,6 +62,20 @@ func maxTokensFromEnv() int {
 
 // NewChatClientFromEnv requires LLM_MODEL and LLM_BASE_URL (no implicit default URL so operators
 // opt in to a specific endpoint — local LM Studio vs cloud).
+func timeoutFromEnv() time.Duration {
+	s := strings.TrimSpace(os.Getenv("LLM_TIMEOUT_SECONDS"))
+	if s == "" {
+		return DefaultTimeout
+	}
+	n, err := strconv.Atoi(s)
+	if err != nil || n < 1 {
+		return DefaultTimeout
+	}
+	return time.Duration(n) * time.Second
+}
+
+// NewChatClientFromEnv requires LLM_MODEL and LLM_BASE_URL (no implicit default URL so operators
+// opt in to a specific endpoint — local LM Studio vs cloud).
 func NewChatClientFromEnv() (*Client, error) {
 	model := strings.TrimSpace(os.Getenv("LLM_MODEL"))
 	base := strings.TrimSpace(os.Getenv("LLM_BASE_URL"))
@@ -75,7 +89,7 @@ func NewChatClientFromEnv() (*Client, error) {
 		Model:       model,
 		Temperature: temperatureFromEnv(),
 		MaxTokens:   maxTokensFromEnv(),
-		HTTPClient:  &http.Client{Timeout: DefaultTimeout},
+		HTTPClient:  &http.Client{Timeout: timeoutFromEnv()},
 	}, nil
 }
 

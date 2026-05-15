@@ -34,22 +34,26 @@ const (
 )
 
 type Handler struct {
-	q         *db.Queries
-	embedder  embed.Embedder
-	llm       llm.ChatCompleter
-	synthGate synthesisLimiter
+	q                *db.Queries
+	embedder         embed.Embedder
+	llm              llm.ChatCompleter
+	synthGate        synthesisLimiter
+	synthesisAllowed bool // false when AI_ENABLED=false (Phase 27 Lite)
 }
 
-func NewHandler(pool *pgxpool.Pool) *Handler {
+func NewHandler(pool *pgxpool.Pool, synthesisAllowed bool) *Handler {
 	h := &Handler{
-		q:         db.New(pool),
-		synthGate: newSynthGateFromEnv(),
+		q:                db.New(pool),
+		synthGate:        newSynthGateFromEnv(),
+		synthesisAllowed: synthesisAllowed,
 	}
 	if emb, err := embed.NewOpenAICompatibleFromEnv(); err == nil {
 		h.embedder = emb
 	}
-	if c, err := llm.NewChatClientFromEnv(); err == nil {
-		h.llm = c
+	if synthesisAllowed {
+		if c, err := llm.NewChatClientFromEnv(); err == nil {
+			h.llm = c
+		}
 	}
 	return h
 }
@@ -186,6 +190,10 @@ func (h *Handler) Answer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if !farmauthz.RequireFarmMember(w, r, h.q, farmID) {
+		return
+	}
+	if !h.synthesisAllowed {
+		httputil.WriteError(w, http.StatusServiceUnavailable, "AI features are disabled on this installation")
 		return
 	}
 	if h.embedder == nil {
@@ -416,9 +424,10 @@ func NewHandlerForTest(pool *pgxpool.Pool, emb embed.Embedder, chat llm.ChatComp
 		gate = allowAllSynth{}
 	}
 	return &Handler{
-		q:         db.New(pool),
-		embedder:  emb,
-		llm:       chat,
-		synthGate: gate,
+		q:                db.New(pool),
+		embedder:         emb,
+		llm:              chat,
+		synthGate:        gate,
+		synthesisAllowed: true,
 	}
 }
