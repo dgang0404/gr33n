@@ -297,3 +297,61 @@ func TestPostV1_StreamErrorMidstream(t *testing.T) {
 		t.Fatalf("expected stream termination, got %s", body)
 	}
 }
+
+// fakeUsageStreamingLLM implements UsageAwareStreamingChatCompleter so the
+// handler picks the usage-aware streaming branch (Phase 27 WS5 follow-up).
+type fakeUsageStreamingLLM struct {
+	deltas []string
+	usage  llm.Usage
+	called bool
+}
+
+func (f *fakeUsageStreamingLLM) ChatCompletion(_ context.Context, _, _ string) (string, error) {
+	return strings.Join(f.deltas, ""), nil
+}
+func (f *fakeUsageStreamingLLM) ChatCompletionMessages(_ context.Context, _ []llm.Message) (string, error) {
+	return strings.Join(f.deltas, ""), nil
+}
+func (f *fakeUsageStreamingLLM) ModelLabel() string { return "fake-usage-streamer" }
+func (f *fakeUsageStreamingLLM) ChatCompletionStream(_ context.Context, _, _ string, onDelta func(string)) error {
+	_, err := f.ChatCompletionStreamMessagesWithUsage(nil, nil, onDelta)
+	return err
+}
+func (f *fakeUsageStreamingLLM) ChatCompletionStreamMessages(_ context.Context, _ []llm.Message, onDelta func(string)) error {
+	_, err := f.ChatCompletionStreamMessagesWithUsage(nil, nil, onDelta)
+	return err
+}
+func (f *fakeUsageStreamingLLM) ChatCompletionStreamMessagesWithUsage(_ context.Context, _ []llm.Message, onDelta func(string)) (llm.Usage, error) {
+	f.called = true
+	for _, d := range f.deltas {
+		onDelta(d)
+	}
+	return f.usage, nil
+}
+
+func TestPostV1_StreamUsageFlowsToDoneEvent(t *testing.T) {
+	fl := &fakeUsageStreamingLLM{
+		deltas: []string{"Hello", " ", "world"},
+		usage:  llm.Usage{PromptTokens: 42, CompletionTokens: 8, TotalTokens: 50},
+	}
+	h := NewHandlerWithDeps(ai.Config{Enabled: true}, nil, fl, nil)
+	const sid = "33333333-3333-4333-8333-333333333333"
+	rec := doPost(t, h, `{"message":"hi","stream":true,"session_id":"`+sid+`"}`)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("want 200, got %d: %s", rec.Code, rec.Body.String())
+	}
+	if !fl.called {
+		t.Fatal("usage-aware streaming branch was not selected")
+	}
+	body := rec.Body.String()
+	for _, want := range []string{
+		`event: done`,
+		`"prompt_tokens":42`,
+		`"completion_tokens":8`,
+		`"answer":"Hello world"`,
+	} {
+		if !strings.Contains(body, want) {
+			t.Fatalf("body missing %q\nfull body:\n%s", want, body)
+		}
+	}
+}

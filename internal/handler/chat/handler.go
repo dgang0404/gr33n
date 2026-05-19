@@ -218,12 +218,25 @@ func (h *Handler) PostV1(w http.ResponseWriter, r *http.Request) {
 	messages := buildMessages(system, history, user)
 
 	if pb.Stream {
-		streamer, ok := h.llm.(llm.MessagesStreamingChatCompleter)
-		if !ok {
+		// Pick the most capable streaming surface. Phase 27 WS5 follow-up:
+		// UsageAwareStreamingChatCompleter (preferred) returns the OpenAI-style
+		// usage block from the terminal SSE chunk so we can persist tokens for
+		// streaming turns too. Older clients that only implement the legacy
+		// interface still work — the adapter returns Usage{} and the streaming
+		// turn lands with zero tokens (matches pre-follow-up behaviour).
+		var stream streamFn
+		if usageAware, ok := h.llm.(llm.UsageAwareStreamingChatCompleter); ok {
+			stream = usageAware.ChatCompletionStreamMessagesWithUsage
+		} else if legacy, ok := h.llm.(llm.MessagesStreamingChatCompleter); ok {
+			stream = func(ctx context.Context, messages []llm.Message, onDelta func(string)) (llm.Usage, error) {
+				err := legacy.ChatCompletionStreamMessages(ctx, messages, onDelta)
+				return llm.Usage{}, err
+			}
+		} else {
 			httputil.WriteError(w, http.StatusNotImplemented, "configured LLM client does not support streaming")
 			return
 		}
-		h.streamResponse(w, r, streamer, messages, farmID, grounded, chunks, sessionID, userID, hasUser, question)
+		h.streamResponse(w, r, stream, messages, farmID, grounded, chunks, sessionID, userID, hasUser, question)
 		return
 	}
 
@@ -283,10 +296,15 @@ func (h *Handler) PostV1(w http.ResponseWriter, r *http.Request) {
 	httputil.WriteJSON(w, http.StatusOK, resp)
 }
 
+// streamFn is the per-request streaming closure used by streamResponse — it
+// wraps either UsageAwareStreamingChatCompleter or the legacy
+// MessagesStreamingChatCompleter into a single signature.
+type streamFn func(ctx context.Context, messages []llm.Message, onDelta func(string)) (llm.Usage, error)
+
 func (h *Handler) streamResponse(
 	w http.ResponseWriter,
 	r *http.Request,
-	streamer llm.MessagesStreamingChatCompleter,
+	stream streamFn,
 	messages []llm.Message,
 	farmID int64,
 	grounded bool,
@@ -323,7 +341,7 @@ func (h *Handler) streamResponse(
 		sendEvent("delta", map[string]string{"text": delta})
 	}
 
-	streamErr := streamer.ChatCompletionStreamMessages(r.Context(), messages, onDelta)
+	usage, streamErr := stream(r.Context(), messages, onDelta)
 	if streamErr != nil {
 		if errors.Is(streamErr, r.Context().Err()) {
 			return
@@ -337,10 +355,12 @@ func (h *Handler) streamResponse(
 
 	answer := collected.String()
 	done := postResponse{
-		Answer:    answer,
-		LLMModel:  h.llm.ModelLabel(),
-		Grounded:  grounded,
-		SessionID: sessionID.String(),
+		Answer:           answer,
+		LLMModel:         h.llm.ModelLabel(),
+		Grounded:         grounded,
+		SessionID:        sessionID.String(),
+		PromptTokens:     usage.PromptTokens,
+		CompletionTokens: usage.CompletionTokens,
 	}
 	if grounded {
 		done.Citations = synthesis.BuildCitations(answer, chunks)
@@ -350,9 +370,11 @@ func (h *Handler) streamResponse(
 		}
 	}
 
-	// Streaming backends rarely surface token usage today; leave Usage{} and
-	// rely on the request-side token estimate landing in a follow-up.
-	if turnIdx, perr := h.persistTurn(r.Context(), sessionID, userID, hasUser, farmID, grounded, question, answer, done.Citations, len(chunks), llm.Usage{}); perr == nil {
+	// Phase 27 WS5 follow-up: backends that support stream_options.include_usage
+	// (OpenAI + recent Ollama) return real token counts; older Ollama builds
+	// leave usage zero and the row still lands so the UI sidebar count stays
+	// honest about "this session had N streaming turns".
+	if turnIdx, perr := h.persistTurn(r.Context(), sessionID, userID, hasUser, farmID, grounded, question, answer, done.Citations, len(chunks), usage); perr == nil {
 		done.TurnIndex = turnIdx
 	}
 
@@ -367,6 +389,8 @@ func (h *Handler) streamResponse(
 		"grounded", grounded,
 		"context_chunks", len(chunks),
 		"citations", len(done.Citations),
+		"prompt_tokens", usage.PromptTokens,
+		"completion_tokens", usage.CompletionTokens,
 	)
 }
 

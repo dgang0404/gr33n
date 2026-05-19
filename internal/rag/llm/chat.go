@@ -292,20 +292,43 @@ type MessagesStreamingChatCompleter interface {
 	ChatCompletionStreamMessages(ctx context.Context, messages []Message, onDelta func(string)) error
 }
 
-type sseStreamRequest struct {
-	Model       string    `json:"model"`
-	Messages    []Message `json:"messages"`
-	Temperature float64   `json:"temperature,omitempty"`
-	MaxTokens   int       `json:"max_tokens,omitempty"`
-	Stream      bool      `json:"stream"`
+// UsageAwareStreamingChatCompleter is the multi-turn streaming surface that
+// also returns the OpenAI-style token-usage block from the terminal SSE
+// chunk (Phase 27 WS5 follow-up — stream_options.include_usage).
+// Implementations that don't get usage from the upstream return Usage{}
+// with nil error — callers must treat zero usage as "not reported" rather
+// than "zero tokens used".
+type UsageAwareStreamingChatCompleter interface {
+	ChatCompletionStreamMessagesWithUsage(ctx context.Context, messages []Message, onDelta func(string)) (Usage, error)
 }
 
+type sseStreamRequest struct {
+	Model         string            `json:"model"`
+	Messages      []Message         `json:"messages"`
+	Temperature   float64           `json:"temperature,omitempty"`
+	MaxTokens     int               `json:"max_tokens,omitempty"`
+	Stream        bool              `json:"stream"`
+	StreamOptions *sseStreamOptions `json:"stream_options,omitempty"`
+}
+
+// sseStreamOptions opts in to the terminal-usage chunk that OpenAI-compatible
+// servers emit when stream_options.include_usage is true. Ollama (>= 0.3.x)
+// honours the same field; servers that don't recognise it ignore extra JSON.
+type sseStreamOptions struct {
+	IncludeUsage bool `json:"include_usage"`
+}
+
+// sseChunk is one parsed `data: {...}` event. The terminal usage chunk has
+// `choices: []` and a populated `usage` block — i.e. no delta to forward but
+// authoritative token counts. Non-terminal chunks carry deltas and (on most
+// backends) leave usage at zero / null.
 type sseChunk struct {
 	Choices []struct {
 		Delta struct {
 			Content string `json:"content"`
 		} `json:"delta"`
 	} `json:"choices"`
+	Usage *Usage `json:"usage,omitempty"`
 	Error *struct {
 		Message string `json:"message"`
 	} `json:"error"`
@@ -322,32 +345,44 @@ func (c *Client) ChatCompletionStream(ctx context.Context, system, user string, 
 }
 
 // ChatCompletionStreamMessages streams tokens from /v1/chat/completions with the
-// given multi-turn messages slice. Ollama and OpenAI both emit Server-Sent
-// Events shaped as `data: {…}\n\n` followed by a terminal `data: [DONE]\n\n`.
-// We parse line-by-line and invoke onDelta with each non-empty content delta.
+// given multi-turn messages slice. Thin wrapper that discards token usage —
+// callers that need usage should use ChatCompletionStreamMessagesWithUsage.
+func (c *Client) ChatCompletionStreamMessages(ctx context.Context, messages []Message, onDelta func(string)) error {
+	_, err := c.ChatCompletionStreamMessagesWithUsage(ctx, messages, onDelta)
+	return err
+}
+
+// ChatCompletionStreamMessagesWithUsage streams tokens from
+// /v1/chat/completions and returns the OpenAI-style token-usage block when
+// the server emits one in the terminal SSE chunk. Phase 27 WS5 follow-up:
+// the request body now sets `stream_options.include_usage: true`, which
+// causes the upstream to send a final `data: {...usage: {...}}` chunk just
+// before `data: [DONE]`. Servers that don't recognise the field ignore it
+// and the returned Usage stays zero — backwards compatible.
 //
 // Retry semantics (Phase 27 WS3 follow-up): the **connect + status-check**
 // phase is retried per c.Retry, since failing there hasn't emitted any
 // content to the caller yet. Once the body has streamed at least one delta
 // to onDelta, retrying would duplicate visible text — so any later error
 // surfaces directly.
-func (c *Client) ChatCompletionStreamMessages(ctx context.Context, messages []Message, onDelta func(string)) error {
+func (c *Client) ChatCompletionStreamMessagesWithUsage(ctx context.Context, messages []Message, onDelta func(string)) (Usage, error) {
 	if onDelta == nil {
-		return errors.New("onDelta callback required")
+		return Usage{}, errors.New("onDelta callback required")
 	}
 	if len(messages) == 0 {
-		return errors.New("messages required")
+		return Usage{}, errors.New("messages required")
 	}
 	body := sseStreamRequest{
-		Model:       c.Model,
-		Messages:    messages,
-		Temperature: c.Temperature,
-		MaxTokens:   c.MaxTokens,
-		Stream:      true,
+		Model:         c.Model,
+		Messages:      messages,
+		Temperature:   c.Temperature,
+		MaxTokens:     c.MaxTokens,
+		Stream:        true,
+		StreamOptions: &sseStreamOptions{IncludeUsage: true},
 	}
 	raw, err := json.Marshal(body)
 	if err != nil {
-		return err
+		return Usage{}, err
 	}
 
 	// openStream is fully replayable — it doesn't read or forward any SSE
@@ -365,15 +400,16 @@ func (c *Client) ChatCompletionStreamMessages(ctx context.Context, messages []Me
 		return nil
 	})
 	if connectErr != nil {
-		return connectErr
+		return Usage{}, connectErr
 	}
 	defer resp.Body.Close()
 
+	var usage Usage
 	br := bufio.NewReader(resp.Body)
 	for {
 		select {
 		case <-ctx.Done():
-			return ctx.Err()
+			return usage, ctx.Err()
 		default:
 		}
 		line, err := br.ReadString('\n')
@@ -384,7 +420,7 @@ func (c *Client) ChatCompletionStreamMessages(ctx context.Context, messages []Me
 			} else {
 				data := strings.TrimSpace(strings.TrimPrefix(payload, "data:"))
 				if data == "[DONE]" {
-					return nil
+					return usage, nil
 				}
 				var chunk sseChunk
 				if jerr := json.Unmarshal([]byte(data), &chunk); jerr != nil {
@@ -392,7 +428,14 @@ func (c *Client) ChatCompletionStreamMessages(ctx context.Context, messages []Me
 					continue
 				}
 				if chunk.Error != nil && chunk.Error.Message != "" {
-					return errors.New(chunk.Error.Message)
+					return usage, errors.New(chunk.Error.Message)
+				}
+				// Most backends only populate usage on the terminal chunk
+				// (choices: [] + usage: {...}). We refresh on every chunk
+				// that carries non-zero usage so partial usage updates work
+				// too — last-write-wins matches OpenAI's contract.
+				if chunk.Usage != nil && (chunk.Usage.PromptTokens > 0 || chunk.Usage.CompletionTokens > 0 || chunk.Usage.TotalTokens > 0) {
+					usage = *chunk.Usage
 				}
 				for _, ch := range chunk.Choices {
 					if ch.Delta.Content != "" {
@@ -403,9 +446,9 @@ func (c *Client) ChatCompletionStreamMessages(ctx context.Context, messages []Me
 		}
 		if err != nil {
 			if errors.Is(err, io.EOF) {
-				return nil
+				return usage, nil
 			}
-			return err
+			return usage, err
 		}
 	}
 }

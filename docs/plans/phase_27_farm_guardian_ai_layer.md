@@ -91,6 +91,12 @@ isProject: false
 - **UI `/chat` sidebar** — per-session pencil (✎) and ✕ buttons that appear on hover, wired to the new endpoints. Token totals render as `<n> tok` chips with a prompt/completion tooltip. Transcript turns also show per-turn token chips. Sessions display their title when set, otherwise fall back to the first user message.
 - **Smoke harness** — `initMigrations` now applies the Phase 27 migrations (`20260519_phase27_conversation_turns.sql` + `20260520_phase27_session_metadata.sql`) so tests stay self-contained on fresh DBs.
 
+### Shipped after WS5 follow-up (streaming token usage)
+
+- **`internal/rag/llm/chat.go`** — streaming request body now sets `stream_options: {"include_usage": true}` so OpenAI-compatible servers (OpenAI + recent Ollama) emit a terminal SSE chunk with the canonical token-usage block before `data: [DONE]`. New `ChatCompletionStreamMessagesWithUsage` parses any chunk carrying non-zero usage (last-write-wins, matches the OpenAI contract). The legacy `ChatCompletionStreamMessages` is now a thin wrapper that discards usage — back-compat for any caller still on the old signature. New `UsageAwareStreamingChatCompleter` interface exposes the surface.
+- **`internal/handler/chat/handler.go`** — streaming path now prefers `UsageAwareStreamingChatCompleter` and falls back to the legacy interface via a local `streamFn` adapter that returns `Usage{}`. Token counts flow into the SSE `done` event payload (`prompt_tokens` + `completion_tokens`) and into the persisted `conversation_turns` row, closing the asymmetry where non-streaming turns recorded usage and streaming turns didn't. Backends that don't honour `include_usage` still work — the row lands with zero tokens, same as before.
+- **Tests** — `internal/rag/llm/chat_stream_usage_test.go` covers the contract: terminal usage chunk parsed into the return value, request body asserted to carry `stream_options.include_usage`, backward-compat when the server emits no usage chunk, legacy method still works. `internal/handler/chat/handler_test.go` adds `fakeUsageStreamingLLM` + a happy-path test asserting the `done` SSE event contains `prompt_tokens` / `completion_tokens` and the usage-aware branch was selected.
+
 ### Shipped after WS5 follow-up (TTL pruning for conversation history)
 
 - **`db/queries/conversation_turns.sql`** + manually maintained `internal/db/conversation_turns.sql.go` — `DeleteStaleConversationTurns(cutoff)` removes turns from sessions whose `MAX(created_at)` is older than cutoff; `DeleteStaleConversationSessions(cutoff)` drops the matching session metadata rows. Cutoff is computed in Go (`NOW() - TTL`) so the SQL is parameter-only and portable.
@@ -115,7 +121,7 @@ isProject: false
 
 ### Still open
 
-- **WS5 follow-up** — Per-user / per-farm cost guards on accumulated token usage; streaming token usage via `stream_options.include_usage`.
+- **WS5 follow-up** — Per-user / per-farm cost guards on accumulated token usage (rolling-window cap on `conversation_turns.prompt_tokens + completion_tokens` → 429 on `/v1/chat`).
 
 ---
 
