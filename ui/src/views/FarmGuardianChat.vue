@@ -183,11 +183,74 @@
         </div>
       </div>
     </section>
+
+    <!-- Inline rename modal (Phase 27 WS6 follow-up) — replaces window.prompt. -->
+    <div
+      v-if="renameTarget"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="rename-modal-title"
+      data-test="chat-rename-modal"
+      class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4"
+      @click.self="closeRename"
+      @keydown.esc="closeRename"
+    >
+      <form
+        class="w-full max-w-md bg-zinc-900 border border-zinc-800 rounded-xl shadow-2xl p-5 space-y-4"
+        @submit.prevent="submitRename"
+      >
+        <h2 id="rename-modal-title" class="text-sm font-semibold text-zinc-100">
+          Rename session
+        </h2>
+        <p class="text-xs text-zinc-500 truncate" :title="renameTarget.first_user_message || ''">
+          {{ renameTarget.first_user_message || 'New conversation' }}
+        </p>
+        <input
+          ref="renameInputRef"
+          v-model="renameDraft"
+          type="text"
+          maxlength="120"
+          placeholder="Custom title (leave blank to clear)"
+          data-test="chat-rename-input"
+          class="w-full bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-600 focus:outline-none focus:ring-1 focus:ring-gr33n-600"
+          @keydown.esc.prevent="closeRename"
+        />
+        <p class="text-[10px] text-zinc-600">
+          Empty title falls back to the first message. Max 120 characters.
+        </p>
+        <p
+          v-if="renameError"
+          data-test="chat-rename-error"
+          class="text-xs text-red-400 bg-red-950/50 border border-red-900 rounded px-2 py-1"
+        >
+          {{ renameError }}
+        </p>
+        <div class="flex justify-end gap-2 pt-1">
+          <button
+            type="button"
+            data-test="chat-rename-cancel"
+            class="px-3 py-1.5 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-sm"
+            :disabled="renameSubmitting"
+            @click="closeRename"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            data-test="chat-rename-save"
+            class="px-3 py-1.5 rounded bg-green-900/60 hover:bg-green-900/80 border border-green-800 text-green-200 text-sm disabled:opacity-40"
+            :disabled="renameSubmitting"
+          >
+            {{ renameSubmitting ? 'Saving…' : 'Save' }}
+          </button>
+        </div>
+      </form>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { onMounted, ref } from 'vue'
+import { nextTick, onMounted, ref } from 'vue'
 import HelpTip from '../components/HelpTip.vue'
 import api from '../api'
 import { useFarmContextStore } from '../stores/farmContext'
@@ -207,6 +270,13 @@ const errorMessage = ref('')
 const sessionId = ref('')
 const transcript = ref([]) // [{turn_index, user_message, assistant_message, llm_model, grounded, context_count, citations, farm_id}]
 const sessions = ref([])
+
+// Inline rename modal state (Phase 27 WS6 follow-up).
+const renameTarget = ref(null) // session row currently being renamed
+const renameDraft = ref('')
+const renameSubmitting = ref(false)
+const renameError = ref('')
+const renameInputRef = ref(null)
 
 onMounted(async () => {
   if (!capabilities.loaded) await capabilities.fetch()
@@ -250,16 +320,48 @@ function sessionLabel(s) {
   return 'Untitled'
 }
 
-async function renameSession(s) {
+function renameSession(s) {
   if (streaming.value) return
-  const next = window.prompt('Rename session:', s.title || s.first_user_message || '')
-  if (next === null) return
+  renameTarget.value = s
+  renameDraft.value = s.title || ''
+  renameError.value = ''
+  renameSubmitting.value = false
+  nextTick(() => {
+    const el = renameInputRef.value
+    if (el && typeof el.focus === 'function') {
+      el.focus()
+      if (typeof el.select === 'function') el.select()
+    }
+  })
+}
+
+function closeRename() {
+  if (renameSubmitting.value) return
+  renameTarget.value = null
+  renameDraft.value = ''
+  renameError.value = ''
+}
+
+async function submitRename() {
+  if (!renameTarget.value || renameSubmitting.value) return
+  const target = renameTarget.value
+  // Send the raw draft (empty string clears the title — backend treats
+  // whitespace-only as null and the UI falls back to the first user message).
+  const payload = { title: renameDraft.value }
+  renameSubmitting.value = true
+  renameError.value = ''
   try {
-    const r = await api.patch('/v1/chat/sessions/' + s.session_id, { title: next })
-    const i = sessions.value.findIndex((x) => x.session_id === s.session_id)
-    if (i !== -1) sessions.value[i] = { ...sessions.value[i], title: r.data?.title ?? null }
+    const r = await api.patch('/v1/chat/sessions/' + target.session_id, payload)
+    const i = sessions.value.findIndex((x) => x.session_id === target.session_id)
+    if (i !== -1) {
+      sessions.value[i] = { ...sessions.value[i], title: r.data?.title ?? null }
+    }
+    renameTarget.value = null
+    renameDraft.value = ''
   } catch (e) {
-    errorMessage.value = e.message || 'rename failed'
+    renameError.value = (e && (e.response?.data?.error || e.message)) || 'rename failed'
+  } finally {
+    renameSubmitting.value = false
   }
 }
 

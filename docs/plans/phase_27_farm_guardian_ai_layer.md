@@ -91,6 +91,11 @@ isProject: false
 - **UI `/chat` sidebar** — per-session pencil (✎) and ✕ buttons that appear on hover, wired to the new endpoints. Token totals render as `<n> tok` chips with a prompt/completion tooltip. Transcript turns also show per-turn token chips. Sessions display their title when set, otherwise fall back to the first user message.
 - **Smoke harness** — `initMigrations` now applies the Phase 27 migrations (`20260519_phase27_conversation_turns.sql` + `20260520_phase27_session_metadata.sql`) so tests stay self-contained on fresh DBs.
 
+### Shipped after WS6 follow-up (inline rename modal)
+
+- **`ui/src/views/FarmGuardianChat.vue`** — replaces the `window.prompt` rename flow with an in-page modal (`<dialog>`-style overlay, role/aria wired, click-outside + Esc to close, autofocus + select on open, max-length 120 with helper copy, empty input clears the title and falls back to the first user message). Submit goes through the form (Enter or the Save button both work) so keyboard-only operators never need the mouse. API errors render **inside** the modal instead of in the page error strip, and the modal stays open so the operator can correct the title.
+- **`ui/src/__tests__/chat-rename-modal.test.js`** — mounts the chat panel against a mocked `/capabilities` + `/v1/chat/sessions` seed, then exercises: modal opens pre-filled, `window.prompt` is **never** called, save PATCHes the right body and closes, cancel discards the draft, server errors stay in the modal with the original title intact, empty title clears (UI falls back to the first message).
+
 ### Shipped after WS3 follow-up (retry / backoff)
 
 - **`internal/rag/llm/retry.go`** — `RetryConfig{MaxAttempts, InitialBackoff, MaxBackoff, Sleeper}` + `retryConfigFromEnv()` reading **`LLM_RETRY_MAX_ATTEMPTS`** (default 3, clamped 1..8) and **`LLM_RETRY_BACKOFF_MS`** (default 500ms, clamped 10ms..30s). `IsTransientLLMError` classifies retryable failures: HTTP 408/425/429/5xx (via the new `*HTTPStatusError` carrying status + truncated body), `context.DeadlineExceeded` (per-attempt timeout), `net.Error` / `*url.Error`. Caller `context.Canceled` is **never** retried.
@@ -102,7 +107,7 @@ isProject: false
 ### Still open
 
 - **WS5 follow-up** — Pruning / TTL job for stale sessions; per-user / per-farm cost guards on accumulated token usage; streaming token usage via `stream_options.include_usage`.
-- **WS6 follow-up** — Inline rename instead of `window.prompt`; bulk delete for the sessions list.
+- **WS6 follow-up** — Bulk delete for the sessions list (multi-select + confirm).
 
 ---
 
