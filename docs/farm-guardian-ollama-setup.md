@@ -25,6 +25,57 @@
 - The API performs a **startup probe** against **`GET {LLM_BASE_URL}/models`** when `AI_ENABLED=true` **and** `LLM_BASE_URL` + `LLM_MODEL` are set. If the probe fails, the API process exits with a clear error — no silent degradation.
 - Ollama also exposes a native `/api/tags` endpoint that returns the same shape. The Go API uses the OpenAI-compatible `/v1/models` path for portability.
 
+### 1.1 Where Farm Guardian's knowledge comes from
+
+In Full mode the whole conversation stays on the farm intranet — no public-internet hop in the chat path:
+
+```
+┌───────────────────────────────── Farm intranet ────────────────────────────────┐
+│                                                                                │
+│  Pi clients ──HTTPS──▶ Go API (cmd/api)                                        │
+│                          │                                                     │
+│                          ├──▶ Postgres + pgvector + Timescale (your farm data) │
+│                          │                                                     │
+│                          └──▶ Ollama  (Llama 3.1 70B Q4, GPU box on intranet)  │
+│                                                                                │
+│  Browser ──HTTPS──▶ Vue UI ──▶ Go API (same as Pi)                             │
+└────────────────────────────────────────────────────────────────────────────────┘
+                       (no traffic leaves the LAN in Full mode)
+```
+
+The only **outside** calls a Full-mode install ever makes are:
+
+- **First-time setup only** — `ollama pull llama3.1:70b-instruct-q4_K_M` downloads the model weights from `ollama.com`. After that the weights live in `/var/lib/ollama` and nothing in the chat path leaves the LAN.
+- **OS / package updates** — outside the platform's responsibility.
+- **Opt-in cloud LLM** — if you swap `LLM_BASE_URL` to OpenAI / Anthropic / Mistral, *those* requests leave the LAN. Production Full mode points at the on-farm Ollama and does not.
+
+Farm Guardian's answers are stacked from three knowledge layers at request time:
+
+| Layer | What it is | Source | Updated when |
+|-------|------------|--------|---------------|
+| **1. General knowledge** | Plant biology, hydroponics, agronomy terms, fertilizer chemistry, etc. | Baked into Llama 3.1 70B's weights at training time. | Frozen at model-release. Static until you pull a new tag. |
+| **2. Per-farm RAG corpus** | This farm's `zones`, `sensors`, `schedules`, `rules`, `alerts`, `crop_cycles`, `fertigation_programs`, `automation_events`, `tasks` etc., chunked → embedded → stored in `pgvector`. | Phase 25 `rag-ingest` pipeline. | Whenever you re-run ingest (cron, or after schema changes). |
+| **3. Live farm snapshot** | A fresh DB query at request time — zones, active crop cycles, unread-alerts count. | `internal/farmguardian/snapshot.go` (Phase 27 WS4 follow-up). | Every single chat turn. |
+
+So when an operator asks *"why did zone 3 alert this morning?"*:
+
+1. Llama already knows what *alert* / *zone* / *high-temp event* mean in general — **layer 1**.
+2. RAG pulls the specific `automation_events` row for *your* zone 3 at 07:14 — **layer 2**.
+3. The snapshot tells the model *"here are your 4 zones right now, 2 active cycles, 1 unread alert"* — **layer 3**.
+
+The persona prompt (see `internal/farmguardian/persona.go`) explicitly instructs the model to **only draw on the farm data provided** and to say so when the answer isn't in the context — so it won't invent sensor readings.
+
+### 1.2 Do you need to add agricultural training data?
+
+**For v1, no.** Llama 3.1 70B already has solid baseline agricultural knowledge from its training set, and the per-farm RAG chunks supply the *specific* data this farm needs answered — sensor history, alert reasons, schedule definitions. The persona prompt keeps the model from extrapolating beyond what your DB says.
+
+**Where it would help — future extension:**
+
+- **Static reference corpus** — USDA / university extension docs, IPM diagnosis guides, deficiency-symptom tables, fertilizer compatibility charts, crop phenology calendars. These can be ingested as a **separate** RAG corpus alongside the per-farm DB chunks. The boundary is already documented in [`rag-scope-and-threat-model.md` §9](rag-scope-and-threat-model.md) (Phase 26 WS3): **farm DB RAG** (private, per-farm) vs **education corpus** (shared static reference) vs **operational logs** (never ingested).
+- **Fine-tuning Llama on ag data** — heavier lift (training pipeline + curated dataset). Almost certainly overkill until you have real operators using v1 and can see specifically where the model is weak.
+
+Recommendation: ship v1 as-is, see what farmers actually ask, and if you see repeated *"I don't know"* in a specific area (say, IPM diagnoses), curate a focused static reference corpus for that topic and run it through the Phase 25 ingest pipeline. Cheap, targeted, no fine-tuning required.
+
 ---
 
 ## 2. Hardware minimum (Full mode)

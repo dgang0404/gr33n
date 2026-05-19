@@ -33,16 +33,69 @@
       <aside class="bg-zinc-900 border border-zinc-800 rounded-xl p-4 space-y-3 max-h-[36rem] overflow-y-auto" data-test="chat-sessions">
         <div class="flex items-center justify-between">
           <h2 class="text-xs uppercase tracking-widest text-zinc-500">Sessions</h2>
-          <button
-            type="button"
-            data-test="chat-new-session"
-            class="text-xs px-2 py-1 rounded bg-zinc-800 text-zinc-200 hover:bg-zinc-700"
-            :disabled="streaming"
-            @click="newSession"
-          >
-            New
-          </button>
+          <div class="flex items-center gap-1">
+            <button
+              v-if="!selectMode"
+              type="button"
+              data-test="chat-bulk-select"
+              class="text-xs px-2 py-1 rounded bg-zinc-800 text-zinc-200 hover:bg-zinc-700 disabled:opacity-40"
+              :disabled="streaming || !sessions.length"
+              @click="enterSelectMode"
+            >
+              Select
+            </button>
+            <button
+              type="button"
+              data-test="chat-new-session"
+              class="text-xs px-2 py-1 rounded bg-zinc-800 text-zinc-200 hover:bg-zinc-700"
+              :disabled="streaming || selectMode"
+              @click="newSession"
+            >
+              New
+            </button>
+          </div>
         </div>
+
+        <!-- Selection toolbar — only visible in select mode (Phase 27 WS6 follow-up). -->
+        <div
+          v-if="selectMode"
+          data-test="chat-bulk-toolbar"
+          class="flex items-center justify-between gap-2 rounded bg-zinc-950 border border-zinc-800 px-2 py-1.5 text-[11px] text-zinc-300"
+        >
+          <span data-test="chat-bulk-count">
+            <strong>{{ selectedIds.length }}</strong> of {{ sessions.length }} selected
+          </span>
+          <div class="flex items-center gap-1">
+            <button
+              type="button"
+              class="px-2 py-0.5 rounded bg-zinc-800 hover:bg-zinc-700"
+              data-test="chat-bulk-select-all"
+              :disabled="bulkSubmitting || !sessions.length"
+              @click="selectAll"
+            >
+              Select all
+            </button>
+            <button
+              type="button"
+              class="px-2 py-0.5 rounded bg-zinc-800 hover:bg-zinc-700"
+              data-test="chat-bulk-cancel"
+              :disabled="bulkSubmitting"
+              @click="exitSelectMode"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              class="px-2 py-0.5 rounded bg-red-950/60 border border-red-900 hover:bg-red-900/60 text-red-200 disabled:opacity-40"
+              data-test="chat-bulk-delete"
+              :disabled="bulkSubmitting || !selectedIds.length"
+              @click="openBulkConfirm"
+            >
+              Delete {{ selectedIds.length || '' }}
+            </button>
+          </div>
+        </div>
+
         <p v-if="!sessions.length" class="text-xs text-zinc-600 italic">
           No saved sessions yet. Send your first message to start one.
         </p>
@@ -51,10 +104,29 @@
             v-for="s in sessions"
             :key="s.session_id"
             class="rounded p-2 text-xs space-y-1 group relative"
-            :class="s.session_id === sessionId ? 'bg-green-900/40 border border-green-800 text-green-100' : 'hover:bg-zinc-800 text-zinc-300 border border-transparent'"
+            :class="[
+              s.session_id === sessionId && !selectMode ? 'bg-green-900/40 border border-green-800 text-green-100' : 'hover:bg-zinc-800 text-zinc-300 border border-transparent',
+              isSelected(s.session_id) ? 'ring-1 ring-red-800' : '',
+            ]"
           >
-            <div class="flex items-center justify-between gap-2 cursor-pointer" @click="loadSession(s.session_id)">
-              <span class="font-medium truncate" :title="sessionLabel(s)">{{ sessionLabel(s) }}</span>
+            <div
+              class="flex items-center justify-between gap-2"
+              :class="selectMode ? 'cursor-default' : 'cursor-pointer'"
+              @click="selectMode ? toggleSelection(s.session_id) : loadSession(s.session_id)"
+            >
+              <div class="flex items-center gap-2 min-w-0">
+                <input
+                  v-if="selectMode"
+                  type="checkbox"
+                  class="rounded bg-zinc-800 border-zinc-700 shrink-0"
+                  data-test="chat-session-checkbox"
+                  :checked="isSelected(s.session_id)"
+                  :disabled="bulkSubmitting"
+                  @click.stop
+                  @change="toggleSelection(s.session_id)"
+                />
+                <span class="font-medium truncate" :title="sessionLabel(s)">{{ sessionLabel(s) }}</span>
+              </div>
               <span class="text-[10px] text-zinc-500 shrink-0">{{ s.turn_count }} turn{{ s.turn_count === 1 ? '' : 's' }}</span>
             </div>
             <div class="text-[10px] text-zinc-500 flex items-center justify-between gap-1">
@@ -69,7 +141,10 @@
                   {{ (s.total_prompt_tokens || 0) + (s.total_completion_tokens || 0) }} tok
                 </span>
               </div>
-              <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
+              <div
+                v-if="!selectMode"
+                class="flex items-center gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity"
+              >
                 <button
                   type="button"
                   class="px-1.5 py-0.5 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-300"
@@ -184,6 +259,57 @@
       </div>
     </section>
 
+    <!-- Bulk-delete confirmation modal (Phase 27 WS6 follow-up). -->
+    <div
+      v-if="bulkConfirming"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="bulk-delete-title"
+      data-test="chat-bulk-confirm"
+      class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4"
+      @click.self="cancelBulkConfirm"
+      @keydown.esc="cancelBulkConfirm"
+    >
+      <form
+        class="w-full max-w-md bg-zinc-900 border border-zinc-800 rounded-xl shadow-2xl p-5 space-y-4"
+        @submit.prevent="submitBulkDelete"
+      >
+        <h2 id="bulk-delete-title" class="text-sm font-semibold text-zinc-100">
+          Delete {{ selectedIds.length }} session{{ selectedIds.length === 1 ? '' : 's' }}?
+        </h2>
+        <p class="text-xs text-zinc-400">
+          Every turn in the selected conversation{{ selectedIds.length === 1 ? '' : 's' }} will be
+          permanently removed. This cannot be undone.
+        </p>
+        <p
+          v-if="bulkError"
+          data-test="chat-bulk-error"
+          class="text-xs text-red-400 bg-red-950/50 border border-red-900 rounded px-2 py-1"
+        >
+          {{ bulkError }}
+        </p>
+        <div class="flex justify-end gap-2 pt-1">
+          <button
+            type="button"
+            data-test="chat-bulk-confirm-cancel"
+            class="px-3 py-1.5 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-sm"
+            :disabled="bulkSubmitting"
+            @click="cancelBulkConfirm"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            data-test="chat-bulk-confirm-delete"
+            class="px-3 py-1.5 rounded bg-red-950/70 hover:bg-red-900/80 border border-red-900 text-red-100 text-sm disabled:opacity-40"
+            :disabled="bulkSubmitting"
+          >
+            {{ bulkSubmitting ? 'Deleting…' : `Delete ${selectedIds.length}` }}
+          </button>
+        </div>
+      </form>
+    </div>
+
     <!-- Inline rename modal (Phase 27 WS6 follow-up) — replaces window.prompt. -->
     <div
       v-if="renameTarget"
@@ -277,6 +403,90 @@ const renameDraft = ref('')
 const renameSubmitting = ref(false)
 const renameError = ref('')
 const renameInputRef = ref(null)
+
+// Bulk-delete state (Phase 27 WS6 follow-up — multi-select on the sidebar).
+const selectMode = ref(false)
+const selectedIds = ref([]) // array of session_id strings currently checked
+const bulkConfirming = ref(false)
+const bulkSubmitting = ref(false)
+const bulkError = ref('')
+
+function isSelected(id) {
+  return selectedIds.value.includes(id)
+}
+
+function toggleSelection(id) {
+  if (isSelected(id)) {
+    selectedIds.value = selectedIds.value.filter((x) => x !== id)
+  } else {
+    selectedIds.value = [...selectedIds.value, id]
+  }
+}
+
+function enterSelectMode() {
+  if (streaming.value) return
+  selectMode.value = true
+  selectedIds.value = []
+}
+
+function exitSelectMode() {
+  selectMode.value = false
+  selectedIds.value = []
+  bulkConfirming.value = false
+  bulkError.value = ''
+}
+
+function selectAll() {
+  selectedIds.value = sessions.value.map((s) => s.session_id)
+}
+
+function openBulkConfirm() {
+  if (!selectedIds.value.length || bulkSubmitting.value) return
+  bulkError.value = ''
+  bulkConfirming.value = true
+}
+
+function cancelBulkConfirm() {
+  if (bulkSubmitting.value) return
+  bulkConfirming.value = false
+  bulkError.value = ''
+}
+
+async function submitBulkDelete() {
+  if (!selectedIds.value.length || bulkSubmitting.value) return
+  bulkSubmitting.value = true
+  bulkError.value = ''
+  const ids = [...selectedIds.value]
+  try {
+    const results = await Promise.allSettled(
+      ids.map((id) => api.delete('/v1/chat/sessions/' + id)),
+    )
+    const succeeded = []
+    const failed = []
+    results.forEach((r, i) => {
+      if (r.status === 'fulfilled') succeeded.push(ids[i])
+      else failed.push(ids[i])
+    })
+    if (succeeded.length) {
+      sessions.value = sessions.value.filter((s) => !succeeded.includes(s.session_id))
+      if (succeeded.includes(sessionId.value)) {
+        sessionId.value = ''
+        transcript.value = []
+      }
+    }
+    if (failed.length) {
+      // Keep failed rows selected so the operator can retry.
+      selectedIds.value = failed
+      bulkError.value = `Failed to delete ${failed.length} of ${ids.length} session${ids.length === 1 ? '' : 's'}.`
+      return
+    }
+    exitSelectMode()
+  } catch (e) {
+    bulkError.value = (e && (e.response?.data?.error || e.message)) || 'bulk delete failed'
+  } finally {
+    bulkSubmitting.value = false
+  }
+}
 
 onMounted(async () => {
   if (!capabilities.loaded) await capabilities.fetch()

@@ -24,7 +24,7 @@ todos:
     content: "WS5: Chat API endpoint — POST /v1/chat with optional farm_id RAG injection, streaming SSE, citations, DB-backed conversation_turns + multi-turn replay, GET /v1/chat/sessions[/{id}] history endpoints."
     status: completed
   - id: ws6-ui-chat
-    content: "WS6: Operator UI — /capabilities store, Settings Lite/Full label, Knowledge Ask-LLM gating, /chat panel with streaming + citations + persistent session sidebar + multi-turn transcript"
+    content: "WS6: Operator UI — /capabilities store, Settings Lite/Full label, Knowledge Ask-LLM gating, /chat panel with streaming + citations + persistent session sidebar + multi-turn transcript + inline rename modal + bulk-delete"
     status: completed
 isProject: false
 ---
@@ -91,10 +91,12 @@ isProject: false
 - **UI `/chat` sidebar** — per-session pencil (✎) and ✕ buttons that appear on hover, wired to the new endpoints. Token totals render as `<n> tok` chips with a prompt/completion tooltip. Transcript turns also show per-turn token chips. Sessions display their title when set, otherwise fall back to the first user message.
 - **Smoke harness** — `initMigrations` now applies the Phase 27 migrations (`20260519_phase27_conversation_turns.sql` + `20260520_phase27_session_metadata.sql`) so tests stay self-contained on fresh DBs.
 
-### Shipped after WS6 follow-up (inline rename modal)
+### Shipped after WS6 follow-up (inline rename modal + bulk delete)
 
 - **`ui/src/views/FarmGuardianChat.vue`** — replaces the `window.prompt` rename flow with an in-page modal (`<dialog>`-style overlay, role/aria wired, click-outside + Esc to close, autofocus + select on open, max-length 120 with helper copy, empty input clears the title and falls back to the first user message). Submit goes through the form (Enter or the Save button both work) so keyboard-only operators never need the mouse. API errors render **inside** the modal instead of in the page error strip, and the modal stays open so the operator can correct the title.
 - **`ui/src/__tests__/chat-rename-modal.test.js`** — mounts the chat panel against a mocked `/capabilities` + `/v1/chat/sessions` seed, then exercises: modal opens pre-filled, `window.prompt` is **never** called, save PATCHes the right body and closes, cancel discards the draft, server errors stay in the modal with the original title intact, empty title clears (UI falls back to the first message).
+- **Bulk delete** — `Select` button in the sessions sidebar header flips a **select mode** that swaps per-row ✎/✕ for a checkbox + a top toolbar (`N of M selected · Select all · Cancel · Delete N`). The Delete button opens an aria-wired confirm modal; submitting fans out `Promise.allSettled` DELETEs. Succeeded rows drop out of the sidebar; if the active session was among them the transcript is cleared. Failed rows stay selected so the operator can retry without re-picking, and an inline error reports `Failed to delete N of M`. Cancel exits select mode without firing any DELETE.
+- **`ui/src/__tests__/chat-bulk-delete.test.js`** — covers entering select mode (checkboxes appear, ✎/✕ hide), live selection count, full-confirm-flow with the active session deleted (transcript cleared), partial-failure path (modal stays open, only failed row stays selected), Cancel discards selection, Select all picks every row.
 
 ### Shipped after WS3 follow-up (retry / backoff)
 
@@ -107,7 +109,6 @@ isProject: false
 ### Still open
 
 - **WS5 follow-up** — Pruning / TTL job for stale sessions; per-user / per-farm cost guards on accumulated token usage; streaming token usage via `stream_options.include_usage`.
-- **WS6 follow-up** — Bulk delete for the sessions list (multi-select + confirm).
 
 ---
 
