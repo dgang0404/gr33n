@@ -14,6 +14,7 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
+	"strconv"
 	"strings"
 	"unicode/utf8"
 
@@ -42,10 +43,11 @@ const MaxRecentSessions = 50
 
 // Handler exposes Phase 27 Farm Guardian routes.
 type Handler struct {
-	cfg      ai.Config
-	q        *db.Queries
-	llm      llm.ChatCompleter
-	embedder embed.Embedder
+	cfg       ai.Config
+	q         *db.Queries
+	llm       llm.ChatCompleter
+	embedder  embed.Embedder
+	costGuard farmguardian.CostGuardConfig // zero value = disabled
 }
 
 // NewHandler wires the configured chat + embedding clients when AI is enabled.
@@ -60,14 +62,23 @@ func NewHandler(pool *pgxpool.Pool, cfg ai.Config) *Handler {
 		if e, err := embed.NewOpenAICompatibleFromEnv(); err == nil {
 			h.embedder = e
 		}
+		h.costGuard = farmguardian.LoadCostGuardConfigFromEnv()
 	}
 	return h
 }
 
 // NewHandlerWithDeps is the test seam — inject any chat client or embedder
-// (real or mock) without depending on env vars or a real pool.
+// (real or mock) without depending on env vars or a real pool. Tests can
+// further configure cost guards via WithCostGuard.
 func NewHandlerWithDeps(cfg ai.Config, q *db.Queries, client llm.ChatCompleter, embedder embed.Embedder) *Handler {
 	return &Handler{cfg: cfg, q: q, llm: client, embedder: embedder}
+}
+
+// WithCostGuard overrides the cost-guard config on h and returns h so the
+// call can chain. Phase 27 WS5 follow-up test seam.
+func (h *Handler) WithCostGuard(cfg farmguardian.CostGuardConfig) *Handler {
+	h.costGuard = cfg
+	return h
 }
 
 type postBody struct {
@@ -199,6 +210,14 @@ func (h *Handler) PostV1(w http.ResponseWriter, r *http.Request) {
 	sessionID, sessionErr := parseOrNewSession(pb.SessionID)
 	if sessionErr != nil {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid session_id")
+		return
+	}
+
+	// Cost-guard check happens after we resolve user + farm but before we
+	// touch the LLM. Returning early avoids spending tokens just to reject
+	// the turn. Fails open when the DB lookup itself errors so a transient
+	// Postgres hiccup doesn't take chat offline. Phase 27 WS5 follow-up.
+	if !h.checkCostBudget(r.Context(), w, userID, hasUser, farmID) {
 		return
 	}
 
@@ -392,6 +411,53 @@ func (h *Handler) streamResponse(
 		"prompt_tokens", usage.PromptTokens,
 		"completion_tokens", usage.CompletionTokens,
 	)
+}
+
+// checkCostBudget runs the per-user / per-farm rolling-window cap. Returns
+// true when the request is allowed to continue; false when a 429 has already
+// been written and the caller should return. Fails open (returns true) when
+// guards are disabled, there's no authenticated user, no DB, or the DB
+// lookup errors — operator-facing errors take priority over budget
+// enforcement. Phase 27 WS5 follow-up.
+func (h *Handler) checkCostBudget(ctx context.Context, w http.ResponseWriter, userID uuid.UUID, hasUser bool, farmID int64) bool {
+	if !h.costGuard.AnyEnabled() {
+		return true
+	}
+	if !hasUser || h.q == nil {
+		return true
+	}
+	decision, err := farmguardian.CheckBudget(ctx, h.q, h.costGuard, userID, farmID)
+	if err != nil {
+		slog.Warn("chat cost guard query failed", "user_id", userID, "farm_id", farmID, "err", err)
+		return true
+	}
+	if decision.Allowed {
+		return true
+	}
+	retrySec := int(decision.RetryAfter.Seconds())
+	if retrySec < 1 {
+		retrySec = 1
+	}
+	w.Header().Set("Retry-After", strconv.Itoa(retrySec))
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusTooManyRequests)
+	body, _ := json.Marshal(map[string]any{
+		"error":               "chat token budget exceeded; try again later",
+		"reason":              decision.Reason,
+		"used_tokens":         decision.UsedTokens,
+		"max_tokens":          decision.MaxTokens,
+		"window_seconds":      decision.WindowSeconds,
+		"retry_after_seconds": retrySec,
+	})
+	_, _ = w.Write(body)
+	slog.Info("chat cost guard rejected request",
+		"user_id", userID,
+		"farm_id", farmID,
+		"reason", decision.Reason,
+		"used_tokens", decision.UsedTokens,
+		"max_tokens", decision.MaxTokens,
+	)
+	return false
 }
 
 func (h *Handler) retrieveChunks(ctx context.Context, farmID int64, query string, topK int) ([]db.SearchRagNearestNeighborsFilteredRow, error) {

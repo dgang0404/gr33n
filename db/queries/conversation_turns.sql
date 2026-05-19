@@ -159,3 +159,28 @@ WHERE session_id IN (
 -- zero in lockstep with the turn data.
 DELETE FROM gr33ncore.conversation_sessions
 WHERE updated_at < sqlc.arg(cutoff);
+
+-- name: SumChatTokensSinceForUser :one
+-- Phase 27 WS5 follow-up — cost guards. Rolling-window token total for a
+-- single user across every session they own. `since` is the window start
+-- computed in Go (NOW() - window) so the SQL is parameter-only and the
+-- caller decides on the window length.
+SELECT
+    COALESCE(SUM(prompt_tokens), 0)::bigint     AS prompt_tokens,
+    COALESCE(SUM(completion_tokens), 0)::bigint AS completion_tokens,
+    COALESCE(SUM(prompt_tokens + completion_tokens), 0)::bigint AS total_tokens
+FROM gr33ncore.conversation_turns
+WHERE user_id = sqlc.arg(user_id)
+  AND created_at >= sqlc.arg(since);
+
+-- name: SumChatTokensSinceForFarm :one
+-- Phase 27 WS5 follow-up — cost guards. Rolling-window token total for a
+-- single farm across every user who chatted with that farm's data. Plain
+-- (non-grounded) turns have farm_id IS NULL and are excluded.
+SELECT
+    COALESCE(SUM(prompt_tokens), 0)::bigint     AS prompt_tokens,
+    COALESCE(SUM(completion_tokens), 0)::bigint AS completion_tokens,
+    COALESCE(SUM(prompt_tokens + completion_tokens), 0)::bigint AS total_tokens
+FROM gr33ncore.conversation_turns
+WHERE farm_id = sqlc.arg(farm_id)
+  AND created_at >= sqlc.arg(since);

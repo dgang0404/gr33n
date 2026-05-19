@@ -119,9 +119,17 @@ isProject: false
 - **Streaming connect** — `ChatCompletionStreamMessages` retries only the **connect + status-check** phase (factored into `openStream`). Once the SSE body has yielded any delta to the caller, mid-stream errors fall through directly — replaying after visible content would duplicate text.
 - **Tests** — `retry_test.go` covers the classifier (every HTTP code we care about + net error + canceled vs deadline), `retryOp` (transient retried, permanent not retried, max-attempts honoured, ctx cancel during backoff), an `httptest`-backed end-to-end non-streaming "503, 503, 200" round-trip with usage assertions, an end-to-end SSE "503 → 200 + delta + [DONE]" connect-retry round-trip, and env clamp behaviour.
 
+### Shipped after WS5 follow-up (cost guards)
+
+- **`db/queries/conversation_turns.sql`** + `internal/db/conversation_turns.sql.go` — `SumChatTokensSinceForUser(user_id, since)` and `SumChatTokensSinceForFarm(farm_id, since)` each return `{prompt_tokens, completion_tokens, total_tokens}` for the window. Sums are coalesced to `0::bigint` so callers never have to handle SQL NULLs.
+- **`internal/farmguardian/cost_guard.go`** — `CostGuardConfig{Window, PerUserMaxTokens, PerFarmMaxTokens}` + `LoadCostGuardConfigFromEnv()` reading **`CHAT_COST_WINDOW_HOURS`** (default 1, clamp 1..168), **`CHAT_COST_MAX_TOKENS_PER_USER`** / **`CHAT_COST_MAX_TOKENS_PER_FARM`** (default 0 = disabled, clamp 0..100_000_000). `CheckBudget` returns a `Decision{Allowed, Reason, UsedTokens, MaxTokens, WindowSeconds, RetryAfter}`; per-user takes precedence over per-farm so a runaway user can't hide behind a quiet farm. Disabled config short-circuits without touching the DB.
+- **`internal/handler/chat/handler.go`** — `PostV1` runs `checkCostBudget` immediately after resolving `user_id` + `farm_id` and before any LLM work, so over-budget requests cost nothing. Response is **HTTP 429** with `Retry-After` (in seconds, = window length) and a JSON body `{error, reason: "per_user"|"per_farm", used_tokens, max_tokens, window_seconds, retry_after_seconds}`. Fails open (allows the request) when the SUM query itself errors so a Postgres hiccup never takes chat offline; the failure is logged at WARN.
+- **Tests** — `cost_guard_test.go` covers env parsing/clamping and `CheckBudget` against a fake querier (allowed below cap, per-user fires first, per-farm fires when user is fine, farm dimension skipped when `farm_id=0`, error propagation). `cmd/api/smoke_cost_guard_test.go` pins the SQL contract against a real Postgres: rolled-up totals across sessions, per-farm rollup on grounded turns, and confirms the `created_at >= since` clause excludes ancient turns.
+- **Docs** — `INSTALL.md` env reference + `.env.example` block + `docs/workstreams/sit-in-operator-experience.md` changelog entry.
+
 ### Still open
 
-- **WS5 follow-up** — Per-user / per-farm cost guards on accumulated token usage (rolling-window cap on `conversation_turns.prompt_tokens + completion_tokens` → 429 on `/v1/chat`).
+_None — Phase 27 backend slices are complete. Future ideas (operator dashboard for token usage, alert-channel hook for budget rejections) are sit-in-experience scope and will land via that workstream document._
 
 ---
 

@@ -397,3 +397,56 @@ func (q *Queries) DeleteStaleConversationSessions(ctx context.Context, cutoff ti
 	}
 	return res.RowsAffected(), nil
 }
+
+// ──────────────────────────────────────────────────────────────────────────
+// Cost guards (Phase 27 WS5 follow-up)
+// ──────────────────────────────────────────────────────────────────────────
+
+// ChatTokenTotals is the rolling-window token snapshot returned by the
+// SumChatTokensSinceFor* queries. All three counts are clamped to >= 0.
+type ChatTokenTotals struct {
+	PromptTokens     int64 `db:"prompt_tokens" json:"prompt_tokens"`
+	CompletionTokens int64 `db:"completion_tokens" json:"completion_tokens"`
+	TotalTokens      int64 `db:"total_tokens" json:"total_tokens"`
+}
+
+const sumChatTokensSinceForUser = `-- name: SumChatTokensSinceForUser :one
+SELECT
+    COALESCE(SUM(prompt_tokens), 0)::bigint     AS prompt_tokens,
+    COALESCE(SUM(completion_tokens), 0)::bigint AS completion_tokens,
+    COALESCE(SUM(prompt_tokens + completion_tokens), 0)::bigint AS total_tokens
+FROM gr33ncore.conversation_turns
+WHERE user_id = $1
+  AND created_at >= $2
+`
+
+// SumChatTokensSinceForUser returns the rolling-window token total for a
+// single user across every session they own.
+func (q *Queries) SumChatTokensSinceForUser(ctx context.Context, userID uuid.UUID, since time.Time) (ChatTokenTotals, error) {
+	var t ChatTokenTotals
+	err := q.db.QueryRow(ctx, sumChatTokensSinceForUser, userID, since).Scan(
+		&t.PromptTokens, &t.CompletionTokens, &t.TotalTokens,
+	)
+	return t, err
+}
+
+const sumChatTokensSinceForFarm = `-- name: SumChatTokensSinceForFarm :one
+SELECT
+    COALESCE(SUM(prompt_tokens), 0)::bigint     AS prompt_tokens,
+    COALESCE(SUM(completion_tokens), 0)::bigint AS completion_tokens,
+    COALESCE(SUM(prompt_tokens + completion_tokens), 0)::bigint AS total_tokens
+FROM gr33ncore.conversation_turns
+WHERE farm_id = $1
+  AND created_at >= $2
+`
+
+// SumChatTokensSinceForFarm returns the rolling-window token total for a
+// single farm across every user who chatted with that farm's data. Plain
+// (non-grounded) turns are excluded because their farm_id is NULL.
+func (q *Queries) SumChatTokensSinceForFarm(ctx context.Context, farmID int64, since time.Time) (ChatTokenTotals, error) {
+	var t ChatTokenTotals
+	err := q.db.QueryRow(ctx, sumChatTokensSinceForFarm, farmID, since).Scan(
+		&t.PromptTokens, &t.CompletionTokens, &t.TotalTokens,
+	)
+	return t, err
+}

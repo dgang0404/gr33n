@@ -168,6 +168,9 @@ Add this to your `~/.bashrc` or `~/.zshrc` to avoid typing it every time.
 | `CHAT_SESSION_TTL_DAYS` | `/v1/chat` history retention | Sessions whose newest turn is older than this are pruned by a background loop. Default **30**, clamped **0..3650**. **0** disables pruning (history grows forever). |
 | `CHAT_SESSION_PRUNE_INTERVAL_HOURS` | Prune loop cadence | How often the loop runs after the startup delay. Default **24**, clamped **1..168**. |
 | `CHAT_SESSION_PRUNE_STARTUP_DELAY_SECONDS` | Prune loop startup | Delay before the first prune at API boot. Default **30**, clamped **0..600**. Lets RAG ingest / automation worker settle before the loop touches the chat tables. |
+| `CHAT_COST_WINDOW_HOURS` | `/v1/chat` cost guards | Rolling-window length for token accumulation. Default **1**, clamped **1..168**. |
+| `CHAT_COST_MAX_TOKENS_PER_USER` | `/v1/chat` cost guards | Total prompt+completion tokens a single user may burn within the window before `POST /v1/chat` returns **429** with `Retry-After`. Default **0** (disabled). Clamped **0..100_000_000**. |
+| `CHAT_COST_MAX_TOKENS_PER_FARM` | `/v1/chat` cost guards | Same as above but per `farm_id` (only enforced on grounded turns that carry a farm_id). Default **0** (disabled). Clamped **0..100_000_000**. |
 | `RAG_SYNTHESIS_MAX_PER_MINUTE` | Answer endpoint | Default `30` requests/minute per API process (rolling minute window). |
 | `RAG_SYNTHESIS_MAX_PER_MINUTE_PER_FARM` | Answer endpoint | Optional. When set to an integer **>0**, each `farm_id` gets its own cap per minute (replaces the global-only limiter). Use on shared deployments for fairness. |
 
