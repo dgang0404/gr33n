@@ -21,10 +21,10 @@ todos:
     content: "WS4: Farm Guardian system prompt — persona + BuildUserMessage + RAG context injection on /v1/chat (live farm-snapshot block still pending)"
     status: completed
   - id: ws5-chat-api
-    content: "WS5: Chat API endpoint — POST /v1/chat with optional farm_id RAG injection, streaming SSE (`stream:true`), citations, session_id echo. DB-backed conversation_turns still pending."
+    content: "WS5: Chat API endpoint — POST /v1/chat with optional farm_id RAG injection, streaming SSE, citations, DB-backed conversation_turns + multi-turn replay, GET /v1/chat/sessions[/{id}] history endpoints."
     status: completed
   - id: ws6-ui-chat
-    content: "WS6: Operator UI — /capabilities store, Settings Lite/Full label, Knowledge Ask-LLM gating, /chat Farm Guardian panel with streaming + citations (history view pending)"
+    content: "WS6: Operator UI — /capabilities store, Settings Lite/Full label, Knowledge Ask-LLM gating, /chat panel with streaming + citations + persistent session sidebar + multi-turn transcript"
     status: completed
 isProject: false
 ---
@@ -59,12 +59,26 @@ isProject: false
 - **UI** —
   - `/chat` (sidebar: **Guardian**) — single-turn panel with streaming text, citation list, **Use farm context** checkbox (gated by the farm context store), Lite-mode banner driven by the capabilities store.
 
+### Shipped after WS5 v3 (multi-turn history)
+
+- **`db/migrations/20260519_phase27_conversation_turns.sql`** + matching schema entry — `gr33ncore.conversation_turns` (session_id UUID, user_id FK auth.users, optional farm_id, monotonic turn_index, user/assistant messages, llm_model, grounded, context_count, citations JSONB, created_at) with the indexes needed by both lookups.
+- **`db/queries/conversation_turns.sql`** + hand-maintained `internal/db/conversation_turns.sql.go` — `InsertConversationTurn`, `ListConversationTurnsBySession`, `ListRecentConversationSessions` (LATERAL joins to keep first/last messages strongly typed instead of `interface{}`).
+- **`internal/rag/llm`** — public `Message` type + `ChatCompletionMessages` / `ChatCompletionStreamMessages` for multi-turn; existing single-turn entry points stay as thin wrappers; new `MessagesChatCompleter` and `MessagesStreamingChatCompleter` interfaces.
+- **`POST /v1/chat`** now:
+  - Validates `session_id` as a UUID (generates a fresh one when omitted).
+  - Loads prior turns for `(session_id, user_id)` and replays up to `MaxHistoryTurns = 20` `(user, assistant)` pairs into the prompt **after** the persona / RAG system message and **before** the current user turn.
+  - Persists every successful turn (streaming or not) with monotonic `turn_index` via `COALESCE(MAX+1, 0)`.
+  - Returns the assigned `turn_index` in the JSON response and the SSE `done` event.
+- **`GET /v1/chat/sessions`** — most-recently-active sessions for the caller (cap `MaxRecentSessions = 50`).
+- **`GET /v1/chat/sessions/{session_id}`** — full ordered turn history for the caller; returns 400 on bad UUID, scoped by `user_id` so a session_id guess cannot leak another operator's chat.
+- **UI `/chat`** — sidebar with persistent session list (active-state highlight, first user message preview, turn count, grounded chip, last-active timestamp, **New** button) + scrollable multi-turn transcript with per-turn citations; replaces the single-turn answer card.
+
 ### Still open
 
 - **WS3 follow-up** — Retry / backoff policy on transient LLM failures.
 - **WS4 follow-up** — Live farm-snapshot block (open alerts / active cycle / zone summary) appended to `BuildUserMessage`.
-- **WS5 follow-up** — `conversation_turns` table + multi-turn history (DB migration, sqlc, persistence wired into `/v1/chat`).
-- **WS6 follow-up** — Conversation list / resume UI, plus token usage display.
+- **WS5 follow-up** — Pruning / TTL job for stale sessions; explicit "delete session" + "rename session" endpoints; token-usage accounting per turn.
+- **WS6 follow-up** — Token usage chips in the transcript, draft autosave, delete/rename controls in the session sidebar.
 
 ---
 

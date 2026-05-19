@@ -1733,6 +1733,39 @@ CREATE TRIGGER trg_rag_embedding_chunks_updated_at
     FOR EACH ROW EXECUTE FUNCTION gr33ncore.set_updated_at();
 
 -- ============================================================
+-- Phase 27 WS5 follow-up — conversation_turns (Farm Guardian history)
+-- ============================================================
+CREATE TABLE IF NOT EXISTS gr33ncore.conversation_turns (
+    id                  BIGSERIAL PRIMARY KEY,
+    session_id          UUID NOT NULL,
+    user_id             UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    farm_id             BIGINT NULL REFERENCES gr33ncore.farms(id) ON DELETE CASCADE,
+    turn_index          INTEGER NOT NULL CHECK (turn_index >= 0),
+    user_message        TEXT NOT NULL,
+    assistant_message   TEXT NOT NULL,
+    llm_model           TEXT NOT NULL,
+    grounded            BOOLEAN NOT NULL DEFAULT false,
+    context_count       INTEGER NOT NULL DEFAULT 0 CHECK (context_count >= 0),
+    citations           JSONB NOT NULL DEFAULT '[]'::jsonb,
+    created_at          TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    CONSTRAINT uq_conversation_turns_session_index UNIQUE (session_id, turn_index)
+);
+
+COMMENT ON TABLE gr33ncore.conversation_turns IS
+  'Per-session (user_message, assistant_message) history for Farm Guardian (Phase 27 WS5). '
+  'Same farm_id trust boundary as gr33ncore.rag_embedding_chunks.';
+
+CREATE INDEX IF NOT EXISTS idx_conversation_turns_user_recent
+    ON gr33ncore.conversation_turns (user_id, created_at DESC);
+
+CREATE INDEX IF NOT EXISTS idx_conversation_turns_session
+    ON gr33ncore.conversation_turns (session_id, turn_index);
+
+CREATE INDEX IF NOT EXISTS idx_conversation_turns_farm
+    ON gr33ncore.conversation_turns (farm_id)
+    WHERE farm_id IS NOT NULL;
+
+-- ============================================================
 -- MIGRATION NOTES (read before running)
 -- ============================================================
 -- 1. auth schema bootstrap at the top is for LOCAL DEV ONLY.

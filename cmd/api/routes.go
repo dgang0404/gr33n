@@ -123,8 +123,10 @@ func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationwo
 	// Auth — password change (JWT protected so you must be logged in)
 	mux.Handle("PATCH /auth/password", jwt(http.HandlerFunc(auth.ChangePassword)))
 
-	// Phase 27 — Farm Guardian (stub; full pipeline in later WS)
+	// Phase 27 — Farm Guardian chat + session history
 	mux.Handle("POST /v1/chat", jwt(http.HandlerFunc(aichat.PostV1)))
+	mux.Handle("GET /v1/chat/sessions", jwt(http.HandlerFunc(aichat.ListSessions)))
+	mux.Handle("GET /v1/chat/sessions/{session_id}", jwt(http.HandlerFunc(aichat.GetSession)))
 
 	// Units
 	mux.Handle("GET /units", jwt(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

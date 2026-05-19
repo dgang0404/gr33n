@@ -78,3 +78,24 @@ func TestV1ChatRejectsEmptyMessage(t *testing.T) {
 		t.Fatalf("expected 400 or 503, got %d", resp.StatusCode)
 	}
 }
+
+// Phase 27 WS5 follow-up — session history endpoints (auth + empty-list shape).
+
+func TestV1ChatSessionsUnauthorized(t *testing.T) {
+	resp := get(t, "/v1/chat/sessions")
+	defer resp.Body.Close()
+	expectStatus(t, resp, http.StatusUnauthorized)
+}
+
+func TestV1ChatGetSessionUnauthorized(t *testing.T) {
+	resp := get(t, "/v1/chat/sessions/11111111-1111-4111-8111-111111111111")
+	defer resp.Body.Close()
+	expectStatus(t, resp, http.StatusUnauthorized)
+}
+
+func TestV1ChatGetSessionRejectsBadUUID(t *testing.T) {
+	tok := smokeJWT(t)
+	resp := authGet(t, tok, "/v1/chat/sessions/not-a-uuid")
+	defer resp.Body.Close()
+	expectStatus(t, resp, http.StatusBadRequest)
+}

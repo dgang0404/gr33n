@@ -94,32 +94,52 @@ func NewChatClientFromEnv() (*Client, error) {
 	}, nil
 }
 
-type chatMessage struct {
+// Message is a single role + content entry in an OpenAI-style chat history.
+// Use "system", "user", or "assistant" for Role. Phase 27 WS5 follow-up uses
+// this for multi-turn requests (history + current user message).
+type Message struct {
 	Role    string `json:"role"`
 	Content string `json:"content"`
 }
 
+type chatMessage = Message
+
 type chatRequest struct {
-	Model       string        `json:"model"`
-	Messages    []chatMessage `json:"messages"`
-	Temperature float64       `json:"temperature,omitempty"`
-	MaxTokens   int           `json:"max_tokens,omitempty"`
+	Model       string    `json:"model"`
+	Messages    []Message `json:"messages"`
+	Temperature float64   `json:"temperature,omitempty"`
+	MaxTokens   int       `json:"max_tokens,omitempty"`
 }
 
 type chatResponse struct {
 	Choices []struct {
-		Message chatMessage `json:"message"`
+		Message Message `json:"message"`
 	} `json:"choices"`
 	Error *struct {
 		Message string `json:"message"`
 	} `json:"error"`
 }
 
-// ChatCompletion runs a single turn (system + user).
+// ChatCompletion runs a single turn (system + user). Equivalent to
+// ChatCompletionMessages with a two-element slice; preserved for callers that
+// don't need multi-turn history.
 func (c *Client) ChatCompletion(ctx context.Context, system, user string) (string, error) {
+	return c.ChatCompletionMessages(ctx, []Message{
+		{Role: "system", Content: system},
+		{Role: "user", Content: user},
+	})
+}
+
+// ChatCompletionMessages runs a multi-turn completion. Messages are passed
+// through verbatim — callers are responsible for the system / history /
+// current-user ordering. Phase 27 WS5 uses this for session history replay.
+func (c *Client) ChatCompletionMessages(ctx context.Context, messages []Message) (string, error) {
+	if len(messages) == 0 {
+		return "", errors.New("messages required")
+	}
 	body := chatRequest{
 		Model:       c.Model,
-		Messages:    []chatMessage{{Role: "system", Content: system}, {Role: "user", Content: user}},
+		Messages:    messages,
 		Temperature: c.Temperature,
 		MaxTokens:   c.MaxTokens,
 	}
@@ -185,6 +205,11 @@ type ChatCompleter interface {
 	ModelLabel() string
 }
 
+// MessagesChatCompleter is the multi-turn non-streaming surface (Phase 27 WS5 follow-up).
+type MessagesChatCompleter interface {
+	ChatCompletionMessages(ctx context.Context, messages []Message) (string, error)
+}
+
 // StreamingChatCompleter is the optional Phase 27 WS5 v3 streaming surface.
 // ChatCompletionStream runs a single turn (system + user) and invokes onDelta
 // for each incremental text token returned by the OpenAI-compatible SSE stream.
@@ -198,12 +223,17 @@ type StreamingChatCompleter interface {
 	ChatCompletionStream(ctx context.Context, system, user string, onDelta func(string)) error
 }
 
+// MessagesStreamingChatCompleter is the multi-turn streaming surface.
+type MessagesStreamingChatCompleter interface {
+	ChatCompletionStreamMessages(ctx context.Context, messages []Message, onDelta func(string)) error
+}
+
 type sseStreamRequest struct {
-	Model       string        `json:"model"`
-	Messages    []chatMessage `json:"messages"`
-	Temperature float64       `json:"temperature,omitempty"`
-	MaxTokens   int           `json:"max_tokens,omitempty"`
-	Stream      bool          `json:"stream"`
+	Model       string    `json:"model"`
+	Messages    []Message `json:"messages"`
+	Temperature float64   `json:"temperature,omitempty"`
+	MaxTokens   int       `json:"max_tokens,omitempty"`
+	Stream      bool      `json:"stream"`
 }
 
 type sseChunk struct {
@@ -218,16 +248,29 @@ type sseChunk struct {
 }
 
 // ChatCompletionStream streams tokens from /v1/chat/completions with `stream: true`.
-// Ollama and OpenAI both emit Server-Sent Events shaped as `data: {…}\n\n` followed
-// by a terminal `data: [DONE]\n\n`. We parse line-by-line and invoke onDelta with
-// each non-empty content delta.
+// Convenience wrapper for the single-turn (system + user) case; delegates to
+// ChatCompletionStreamMessages.
 func (c *Client) ChatCompletionStream(ctx context.Context, system, user string, onDelta func(string)) error {
+	return c.ChatCompletionStreamMessages(ctx, []Message{
+		{Role: "system", Content: system},
+		{Role: "user", Content: user},
+	}, onDelta)
+}
+
+// ChatCompletionStreamMessages streams tokens from /v1/chat/completions with the
+// given multi-turn messages slice. Ollama and OpenAI both emit Server-Sent
+// Events shaped as `data: {…}\n\n` followed by a terminal `data: [DONE]\n\n`.
+// We parse line-by-line and invoke onDelta with each non-empty content delta.
+func (c *Client) ChatCompletionStreamMessages(ctx context.Context, messages []Message, onDelta func(string)) error {
 	if onDelta == nil {
 		return errors.New("onDelta callback required")
 	}
+	if len(messages) == 0 {
+		return errors.New("messages required")
+	}
 	body := sseStreamRequest{
 		Model:       c.Model,
-		Messages:    []chatMessage{{Role: "system", Content: system}, {Role: "user", Content: user}},
+		Messages:    messages,
 		Temperature: c.Temperature,
 		MaxTokens:   c.MaxTokens,
 		Stream:      true,
