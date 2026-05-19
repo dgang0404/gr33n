@@ -16,7 +16,7 @@ todos:
     status: completed
   - id: ws3-guardian-analytics
     content: "WS3: Guardian ↔ crop cycle integration — Guardian can answer questions about the current/historical cycles; snapshot includes active-cycle summary metrics when farm_id present"
-    status: pending
+    status: completed
   - id: ws4-guardian-alerts
     content: "WS4: Guardian alert integration — Guardian can explain unread alerts (rule triggered, sensor threshold, what to do); alert context injected into grounded snapshot"
     status: pending
@@ -234,9 +234,17 @@ Start with WS1: GET /crop-cycles/{id}/summary and GET /farms/{id}/crop-cycles/co
 - **`ui/src/views/Fertigation.vue`** — added a **Summary →** router-link to every crop-cycle card (in the Crop Cycles tab) for one-click drill-in.
 - **Tests** — `ui/src/__tests__/crop-cycle-analytics.test.js` (10 new tests): store methods (compare query-string join + empty-ids short-circuit), summary view (header + four cards + error path), compare view (empty state, table rendering after selection, 5-cycle cap, "select a farm" hint). All 40 UI tests pass.
 
+### WS3 — Guardian ↔ crop cycle integration (shipped 2026-05-19)
+
+- **`internal/farmguardian/cycle_analytics.go`** — new `CycleAnalytics` struct + `fetchCycleAnalytics(q, cycle)` helper that reuses the Phase 28 WS1 `GetFertigationAggregatesByCropCycle` + `GetCostTotalsByCropCycle` queries so the numbers Guardian sees match what the operator sees in `CropCycleSummary.vue`. Computes `liters/day`, `grams/day`, `grams/liter`, and `cost_per_gram` derived ratios in the same single-currency-only guard pattern the WS1 handler uses.
+- **`internal/farmguardian/format.go`** — prompt-budget-aware number formatters (`formatLiters`, `formatEC`, `formatPH`, `formatMoney`, `formatGrams`, `formatGramsPerDay`). Whole-liter values render without a decimal so "980L" not "980.0L"; EC + pH at 2 decimals (operator-canonical resolution).
+- **`internal/farmguardian/snapshot.go`** — extended `ActiveCycle` with `ID` + `Analytics CycleAnalytics`. `BuildSnapshot` now populates analytics for the first **`SnapshotMaxAnalyticsCycles` = 3** active cycles in `started_at DESC` order. Per-cycle failures log at WARN and continue (the cycle still appears in the snapshot without metrics). `Render` indents a `metrics:` line under each cycle bullet that has analytics.
+- **Prompt output shape** — Guardian's system prompt now includes lines like `metrics: feed: 142 events / 980L (14.7L/d); EC 1.62 (1.12–2.05); pH 6.10; cost: 312.40 USD; yield: 412g (6.06g/d); cost/g: 0.76 USD` beneath each active cycle, so "how's my flower run going?" gets a concrete answer.
+- **Bounded prompt cost** — `SnapshotMaxAnalyticsCycles = 3` keeps the analytics block ≤200 tokens even on farms with 10+ active cycles. Older cycles still render their basic name/strain/stage line.
+- **Tests** — `internal/farmguardian/cycle_analytics_test.go` (7 unit tests: Empty/Render/cost-omit-on-mixed-currency/formatters) + `cmd/api/smoke_phase28_ws3_test.go` (2 real-DB smokes: attaches analytics to a seeded cycle with verifiable fertigation+cost data; budget cap is honoured when more than N cycles are active). All farmguardian + chat tests green.
+
 ### Still open
 
-- **WS3** — Guardian ↔ crop cycle integration
 - **WS4** — Guardian ↔ alert integration
 - **WS5** — Token-usage dashboard
 - **WS6** — OpenAPI parity (Phases 24–28)

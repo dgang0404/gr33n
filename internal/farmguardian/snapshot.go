@@ -3,6 +3,7 @@ package farmguardian
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"sort"
 	"strings"
 
@@ -28,12 +29,19 @@ type Snapshot struct {
 	UnreadAlerts int64
 }
 
-// ActiveCycle is a single in-flight grow cycle entry.
+// ActiveCycle is a single in-flight grow cycle entry. Analytics is
+// optional — populated by BuildSnapshot for the first
+// SnapshotMaxAnalyticsCycles cycles (Phase 28 WS3) and left zero for the
+// rest so the prompt stays bounded on farms running many cycles in
+// parallel. ID is exposed so future UI deep-links (e.g. "open the
+// CropCycleSummary view for cycle 42") have a stable target.
 type ActiveCycle struct {
-	Name     string
-	ZoneName string
-	Strain   string
-	Stage    string
+	ID        int64
+	Name      string
+	ZoneName  string
+	Strain    string
+	Stage     string
+	Analytics CycleAnalytics
 }
 
 // IsEmpty returns true when there's nothing useful to render (avoids a noisy
@@ -94,6 +102,11 @@ func (s Snapshot) Render() string {
 				b.WriteString(")")
 			}
 			b.WriteString("\n")
+			if line := c.Analytics.renderLine(); line != "" {
+				b.WriteString("    metrics: ")
+				b.WriteString(line)
+				b.WriteString("\n")
+			}
 		}
 		if extra > 0 {
 			b.WriteString(fmt.Sprintf("  - (+ %d more active cycles)\n", extra))
@@ -142,11 +155,18 @@ func BuildSnapshot(ctx context.Context, q *db.Queries, farmID int64) (Snapshot, 
 		for _, z := range zones {
 			zoneByID[z.ID] = z.Name
 		}
+		// Collect the active subset first so we can decide which ones
+		// get analytics. We bound the analytics population at
+		// SnapshotMaxAnalyticsCycles to keep prompt cost predictable.
+		actives := make([]db.Gr33nfertigationCropCycle, 0, len(cycles))
 		for _, c := range cycles {
-			if !c.IsActive {
-				continue
+			if c.IsActive {
+				actives = append(actives, c)
 			}
-			ac := ActiveCycle{Name: c.Name}
+		}
+		analyticsBudget := SnapshotMaxAnalyticsCycles
+		for _, c := range actives {
+			ac := ActiveCycle{ID: c.ID, Name: c.Name}
 			if name, ok := zoneByID[c.ZoneID]; ok {
 				ac.ZoneName = name
 			}
@@ -155,6 +175,15 @@ func BuildSnapshot(ctx context.Context, q *db.Queries, farmID int64) (Snapshot, 
 			}
 			if c.CurrentStage.Valid {
 				ac.Stage = string(c.CurrentStage.Gr33nfertigationGrowthStageEnum)
+			}
+			if analyticsBudget > 0 {
+				if a, aerr := fetchCycleAnalytics(ctx, q, c); aerr == nil {
+					ac.Analytics = a
+				} else {
+					slog.Warn("farm guardian cycle analytics failed",
+						"farm_id", farmID, "cycle_id", c.ID, "err", aerr)
+				}
+				analyticsBudget--
 			}
 			s.ActiveCycles = append(s.ActiveCycles, ac)
 		}
