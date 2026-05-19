@@ -15,7 +15,7 @@ todos:
     content: "WS2: AI_ENABLED — env, GET /capabilities, startup LLM reachability when configured; gates rag/answer + strips LLM client when off; POST /v1/chat stub (503/501)"
     status: completed
   - id: ws3-generation-client
-    content: "WS3: Go LLM client — SSE ChatCompletionStream + LLM_TIMEOUT_SECONDS; retry policy still pending"
+    content: "WS3: Go LLM client — SSE ChatCompletionStream + LLM_TIMEOUT_SECONDS + retry/backoff on transient LLM failures (LLM_RETRY_MAX_ATTEMPTS, LLM_RETRY_BACKOFF_MS)"
     status: completed
   - id: ws4-farm-guardian-persona
     content: "WS4: Farm Guardian system prompt — persona + BuildUserMessage + RAG context injection + live farm-state snapshot block (zones / active cycles / unread alerts) on /v1/chat"
@@ -91,9 +91,16 @@ isProject: false
 - **UI `/chat` sidebar** — per-session pencil (✎) and ✕ buttons that appear on hover, wired to the new endpoints. Token totals render as `<n> tok` chips with a prompt/completion tooltip. Transcript turns also show per-turn token chips. Sessions display their title when set, otherwise fall back to the first user message.
 - **Smoke harness** — `initMigrations` now applies the Phase 27 migrations (`20260519_phase27_conversation_turns.sql` + `20260520_phase27_session_metadata.sql`) so tests stay self-contained on fresh DBs.
 
+### Shipped after WS3 follow-up (retry / backoff)
+
+- **`internal/rag/llm/retry.go`** — `RetryConfig{MaxAttempts, InitialBackoff, MaxBackoff, Sleeper}` + `retryConfigFromEnv()` reading **`LLM_RETRY_MAX_ATTEMPTS`** (default 3, clamped 1..8) and **`LLM_RETRY_BACKOFF_MS`** (default 500ms, clamped 10ms..30s). `IsTransientLLMError` classifies retryable failures: HTTP 408/425/429/5xx (via the new `*HTTPStatusError` carrying status + truncated body), `context.DeadlineExceeded` (per-attempt timeout), `net.Error` / `*url.Error`. Caller `context.Canceled` is **never** retried.
+- **Backoff** — exponential `initial * 2^(N-1)` capped at `MaxBackoff` (default 10s) with ±25% jitter so a fleet of restarted Pis doesn't thunder the LLM at the same millisecond.
+- **Non-streaming** — `ChatCompletionMessagesWithUsage` retries the full request body each attempt (the body is buffered; each retry is a fresh `bytes.Reader`). Caller sees only the first success or the final error.
+- **Streaming connect** — `ChatCompletionStreamMessages` retries only the **connect + status-check** phase (factored into `openStream`). Once the SSE body has yielded any delta to the caller, mid-stream errors fall through directly — replaying after visible content would duplicate text.
+- **Tests** — `retry_test.go` covers the classifier (every HTTP code we care about + net error + canceled vs deadline), `retryOp` (transient retried, permanent not retried, max-attempts honoured, ctx cancel during backoff), an `httptest`-backed end-to-end non-streaming "503, 503, 200" round-trip with usage assertions, an end-to-end SSE "503 → 200 + delta + [DONE]" connect-retry round-trip, and env clamp behaviour.
+
 ### Still open
 
-- **WS3 follow-up** — Retry / backoff policy on transient LLM failures.
 - **WS5 follow-up** — Pruning / TTL job for stale sessions; per-user / per-farm cost guards on accumulated token usage; streaming token usage via `stream_options.include_usage`.
 - **WS6 follow-up** — Inline rename instead of `window.prompt`; bulk delete for the sessions list.
 
@@ -302,10 +309,11 @@ func (c *Client) ChatStream(ctx context.Context, messages []Message, onToken fun
 ### Context Window Budget
 Each request must stay within `LLM_MAX_CONTEXT_TOKENS`. The prompt assembly step (WS4/WS5) is responsible for trimming RAG chunks to fit. Never silently truncate mid-chunk — drop the least-relevant chunks first (lowest cosine similarity score).
 
-### Retry Policy
-- Single retry on network error (not on model error or timeout)
-- No retry on `context.Canceled` (user navigated away)
-- Log all errors with slog at `WARN` level including model, token budget, and duration
+### Retry Policy (shipped — WS3 follow-up)
+- `LLM_RETRY_MAX_ATTEMPTS` (default 3, clamped 1..8) total tries including the first attempt.
+- `LLM_RETRY_BACKOFF_MS` (default 500, clamped 10..30000) initial backoff. Exponential doubling up to a 10s cap with ±25% jitter.
+- Retryable: HTTP 408/425/429/5xx, per-attempt `context.DeadlineExceeded` (the request-level timeout, not the caller's), `net.Error` / `*url.Error` (DNS, connect, reset, dropped conn).
+- Never retried: `context.Canceled` (operator gave up), HTTP 4xx other than the above (bad input, auth — replaying won't help), JSON decode errors, mid-stream SSE failures after the first delta has been forwarded to the caller.
 
 ---
 

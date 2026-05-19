@@ -163,6 +163,8 @@ Add this to your `~/.bashrc` or `~/.zshrc` to avoid typing it every time.
 | `LLM_TEMPERATURE` | Answer synthesis | Default `0.2` |
 | `LLM_MAX_TOKENS` | Answer synthesis | Default `1024` |
 | `LLM_TIMEOUT_SECONDS` | Answer synthesis | Chat HTTP client timeout; default **120** |
+| `LLM_RETRY_MAX_ATTEMPTS` | Answer synthesis + `/v1/chat` | Total tries including the first attempt; default **3**, clamped **1..8**. **1** disables retry. Retries HTTP 408/425/429/5xx, per-attempt timeout, network errors. Never retries caller cancellation or other 4xx. |
+| `LLM_RETRY_BACKOFF_MS` | Answer synthesis + `/v1/chat` | Initial backoff in ms; default **500**, clamped **10..30000**. Exponential doubling up to 10s with ±25% jitter. |
 | `RAG_SYNTHESIS_MAX_PER_MINUTE` | Answer endpoint | Default `30` requests/minute per API process (rolling minute window). |
 | `RAG_SYNTHESIS_MAX_PER_MINUTE_PER_FARM` | Answer endpoint | Optional. When set to an integer **>0**, each `farm_id` gets its own cap per minute (replaces the global-only limiter). Use on shared deployments for fairness. |
 

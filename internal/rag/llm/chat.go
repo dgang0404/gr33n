@@ -26,6 +26,10 @@ type Client struct {
 	Temperature float64
 	MaxTokens   int
 	HTTPClient  *http.Client
+	// Retry controls transient-failure backoff. Zero value disables retry.
+	// Defaults populated by NewChatClientFromEnv (LLM_RETRY_MAX_ATTEMPTS /
+	// LLM_RETRY_BACKOFF_MS). Phase 27 WS3 follow-up.
+	Retry RetryConfig
 }
 
 func temperatureFromEnv() float64 {
@@ -91,6 +95,7 @@ func NewChatClientFromEnv() (*Client, error) {
 		Temperature: temperatureFromEnv(),
 		MaxTokens:   maxTokensFromEnv(),
 		HTTPClient:  &http.Client{Timeout: timeoutFromEnv()},
+		Retry:       retryConfigFromEnv(),
 	}, nil
 }
 
@@ -152,6 +157,11 @@ func (c *Client) ChatCompletionMessages(ctx context.Context, messages []Message)
 // ChatCompletionMessagesWithUsage is the canonical non-streaming path. It
 // returns both the answer text and the OpenAI-style token usage block when
 // the backend reports it (Usage{} on backends that don't).
+//
+// Transient failures (HTTP 408/425/429/5xx, net.OpError, per-attempt
+// DeadlineExceeded) are retried per c.Retry with exponential backoff +
+// jitter. Caller cancellation (ctx.Done()) short-circuits between attempts
+// and is never retried. Phase 27 WS3 follow-up.
 func (c *Client) ChatCompletionMessagesWithUsage(ctx context.Context, messages []Message) (string, Usage, error) {
 	if len(messages) == 0 {
 		return "", Usage{}, errors.New("messages required")
@@ -166,6 +176,28 @@ func (c *Client) ChatCompletionMessagesWithUsage(ctx context.Context, messages [
 	if err != nil {
 		return "", Usage{}, err
 	}
+
+	var (
+		answer string
+		usage  Usage
+	)
+	rerr := retryOp(ctx, c.Retry, func(_ int) error {
+		a, u, err := c.doChatOnce(ctx, raw)
+		if err != nil {
+			return err
+		}
+		answer, usage = a, u
+		return nil
+	})
+	if rerr != nil {
+		return "", Usage{}, rerr
+	}
+	return answer, usage, nil
+}
+
+// doChatOnce performs a single non-streaming HTTP attempt. The retry loop
+// decides what to do with the error.
+func (c *Client) doChatOnce(ctx context.Context, raw []byte) (string, Usage, error) {
 	url := c.BaseURL + "/chat/completions"
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(raw))
 	if err != nil {
@@ -189,7 +221,10 @@ func (c *Client) ChatCompletionMessagesWithUsage(ctx context.Context, messages [
 		return "", Usage{}, err
 	}
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return "", Usage{}, fmt.Errorf("chat HTTP %d: %s", resp.StatusCode, truncateErr(respBody, 512))
+		return "", Usage{}, &HTTPStatusError{
+			StatusCode: resp.StatusCode,
+			Body:       truncateErr(respBody, 512),
+		}
 	}
 	var parsed chatResponse
 	if err := json.Unmarshal(respBody, &parsed); err != nil {
@@ -290,6 +325,12 @@ func (c *Client) ChatCompletionStream(ctx context.Context, system, user string, 
 // given multi-turn messages slice. Ollama and OpenAI both emit Server-Sent
 // Events shaped as `data: {…}\n\n` followed by a terminal `data: [DONE]\n\n`.
 // We parse line-by-line and invoke onDelta with each non-empty content delta.
+//
+// Retry semantics (Phase 27 WS3 follow-up): the **connect + status-check**
+// phase is retried per c.Retry, since failing there hasn't emitted any
+// content to the caller yet. Once the body has streamed at least one delta
+// to onDelta, retrying would duplicate visible text — so any later error
+// surfaces directly.
 func (c *Client) ChatCompletionStreamMessages(ctx context.Context, messages []Message, onDelta func(string)) error {
 	if onDelta == nil {
 		return errors.New("onDelta callback required")
@@ -308,29 +349,25 @@ func (c *Client) ChatCompletionStreamMessages(ctx context.Context, messages []Me
 	if err != nil {
 		return err
 	}
-	url := c.BaseURL + "/chat/completions"
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(raw))
-	if err != nil {
-		return err
-	}
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Accept", "text/event-stream")
-	if c.APIKey != "" {
-		req.Header.Set("Authorization", "Bearer "+c.APIKey)
-	}
-	client := c.HTTPClient
-	if client == nil {
-		client = http.DefaultClient
-	}
-	resp, err := client.Do(req)
-	if err != nil {
-		return err
+
+	// openStream is fully replayable — it doesn't read or forward any SSE
+	// chunks before returning. Once we leave the retry loop with a healthy
+	// response, mid-stream errors fall through directly to the caller
+	// because retrying after deltas have been forwarded would duplicate
+	// visible text.
+	var resp *http.Response
+	connectErr := retryOp(ctx, c.Retry, func(_ int) error {
+		r, err := c.openStream(ctx, raw)
+		if err != nil {
+			return err
+		}
+		resp = r
+		return nil
+	})
+	if connectErr != nil {
+		return connectErr
 	}
 	defer resp.Body.Close()
-	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		preview, _ := io.ReadAll(io.LimitReader(resp.Body, 512))
-		return fmt.Errorf("chat stream HTTP %d: %s", resp.StatusCode, truncateErr(preview, 512))
-	}
 
 	br := bufio.NewReader(resp.Body)
 	for {
@@ -371,4 +408,36 @@ func (c *Client) ChatCompletionStreamMessages(ctx context.Context, messages []Me
 			return err
 		}
 	}
+}
+
+// openStream performs one streaming connect + status check. It returns the
+// response with the body open on success so the caller can read SSE chunks.
+func (c *Client) openStream(ctx context.Context, raw []byte) (*http.Response, error) {
+	url := c.BaseURL + "/chat/completions"
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(raw))
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Accept", "text/event-stream")
+	if c.APIKey != "" {
+		req.Header.Set("Authorization", "Bearer "+c.APIKey)
+	}
+	client := c.HTTPClient
+	if client == nil {
+		client = http.DefaultClient
+	}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		preview, _ := io.ReadAll(io.LimitReader(resp.Body, 512))
+		resp.Body.Close()
+		return nil, &HTTPStatusError{
+			StatusCode: resp.StatusCode,
+			Body:       truncateErr(preview, 512),
+		}
+	}
+	return resp, nil
 }
