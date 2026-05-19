@@ -1,0 +1,219 @@
+<!--
+  Phase 28 WS2 — Crop Cycle Summary.
+
+  Renders the response of GET /crop-cycles/{id}/summary as four metric
+  cards (fertigation, cost, yield, stages) plus a header strip. Includes
+  a CSV download (opens /crop-cycles/{id}/summary.csv with the JWT
+  attached via the same axios instance behind a query string).
+-->
+<template>
+  <div class="p-6 max-w-5xl">
+    <div class="flex items-center justify-between mb-4">
+      <div class="flex items-center gap-2">
+        <router-link to="/fertigation" class="text-xs text-zinc-400 hover:text-zinc-200">← Fertigation</router-link>
+        <h1 class="text-xl font-semibold text-white ml-3">
+          Crop cycle summary
+          <HelpTip position="bottom">
+            Per-cycle rollup: fertigation history, cost totals tagged to the cycle, yield metrics and stage info.
+            Most rows roll up rows where <code>crop_cycle_id</code> matches this cycle. Numbers may differ from the
+            zone-wide totals because zone-tagged costs that don't link to a cycle are excluded here.
+          </HelpTip>
+        </h1>
+      </div>
+      <div class="flex items-center gap-3">
+        <a
+          v-if="cycleId"
+          :href="csvUrl"
+          target="_blank"
+          rel="noopener"
+          class="text-xs font-medium px-3 py-1.5 rounded-lg bg-zinc-900 text-zinc-300 border border-zinc-700 hover:bg-zinc-800"
+        >Download CSV</a>
+        <router-link
+          v-if="summary && summary.cycle"
+          :to="{ name: 'crop-cycle-compare', params: { fid: summary.cycle.farm_id } }"
+          class="text-xs font-medium px-3 py-1.5 rounded-lg bg-green-900/50 text-green-400 border border-green-800 hover:bg-green-900/70"
+        >Compare ↔</router-link>
+      </div>
+    </div>
+
+    <div v-if="loading" class="text-zinc-400 text-sm">Loading summary…</div>
+    <div v-else-if="loadError" class="text-red-400 text-sm">{{ loadError }}</div>
+
+    <template v-else-if="summary">
+      <!-- Header strip -->
+      <section data-test="summary-header" class="bg-zinc-800 border border-zinc-700 rounded-xl p-5 mb-5">
+        <div class="flex flex-wrap items-center gap-x-6 gap-y-2">
+          <div>
+            <p class="text-zinc-500 text-[11px] uppercase tracking-wide">Cycle</p>
+            <p class="text-white text-base font-medium">{{ summary.cycle.name }}</p>
+          </div>
+          <div v-if="summary.cycle.strain_or_variety">
+            <p class="text-zinc-500 text-[11px] uppercase tracking-wide">Strain</p>
+            <p class="text-white text-sm">{{ summary.cycle.strain_or_variety }}</p>
+          </div>
+          <div>
+            <p class="text-zinc-500 text-[11px] uppercase tracking-wide">Stage</p>
+            <p class="text-white text-sm">{{ currentStageLabel }}</p>
+          </div>
+          <div>
+            <p class="text-zinc-500 text-[11px] uppercase tracking-wide">Duration</p>
+            <p class="text-white text-sm">{{ summary.duration_days }} day{{ summary.duration_days === 1 ? '' : 's' }}</p>
+          </div>
+          <div>
+            <p class="text-zinc-500 text-[11px] uppercase tracking-wide">Status</p>
+            <p :class="summary.cycle.is_active ? 'text-emerald-400' : 'text-zinc-300'" class="text-sm">
+              {{ summary.cycle.is_active ? 'Active' : 'Harvested' }}
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <!-- Fertigation -->
+        <section data-test="card-fertigation" class="bg-zinc-800 border border-zinc-700 rounded-xl p-5">
+          <h2 class="text-white text-sm font-semibold flex items-center gap-2 mb-3">
+            💧 Fertigation
+            <HelpTip>Rolls up every fertigation_event with this <code>crop_cycle_id</code>. EC averages use the <em>after-feed</em> reading so the number reflects what the plants experienced.</HelpTip>
+          </h2>
+          <div class="grid grid-cols-2 gap-3 text-sm">
+            <Metric label="Events"          :value="summary.fertigation.event_count" />
+            <Metric label="Liters delivered" :value="fmt(summary.fertigation.total_liters)" suffix=" L" />
+            <Metric label="Avg EC"          :value="fmt(summary.fertigation.avg_ec_mscm)" suffix=" mS/cm" />
+            <Metric label="Avg pH"          :value="fmt(summary.fertigation.avg_ph)" />
+            <Metric label="EC min / max"    :value="`${fmt(summary.fertigation.min_ec_mscm)} / ${fmt(summary.fertigation.max_ec_mscm)}`" />
+          </div>
+        </section>
+
+        <!-- Cost -->
+        <section data-test="card-cost" class="bg-zinc-800 border border-zinc-700 rounded-xl p-5">
+          <h2 class="text-white text-sm font-semibold flex items-center gap-2 mb-3">
+            💰 Cost
+            <HelpTip>Only cost_transactions explicitly linked to this cycle. Zone-level costs that don't reference the cycle are excluded.</HelpTip>
+          </h2>
+          <div v-if="!summary.cost.totals.length" class="text-zinc-500 text-xs">No costs tagged to this cycle yet.</div>
+          <div v-else class="space-y-3">
+            <div v-for="t in summary.cost.totals" :key="t.currency" class="grid grid-cols-3 gap-3 text-sm">
+              <Metric label="Expenses" :value="fmt(t.total_expenses)" :suffix="' ' + t.currency" />
+              <Metric label="Income"   :value="fmt(t.total_income)"   :suffix="' ' + t.currency" />
+              <Metric label="Net"      :value="fmt(t.net)"            :suffix="' ' + t.currency" />
+            </div>
+            <div v-if="summary.cost.by_category.length" class="border-t border-zinc-700 pt-3">
+              <p class="text-zinc-500 text-[11px] uppercase tracking-wide mb-2">By category</p>
+              <ul class="text-xs text-zinc-300 space-y-1">
+                <li v-for="row in summary.cost.by_category" :key="row.category + row.currency" class="flex items-center justify-between">
+                  <span>{{ row.category }} <span class="text-zinc-500">({{ row.tx_count }} tx)</span></span>
+                  <span class="font-mono">{{ fmt(row.expense - row.income) }} {{ row.currency }}</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </section>
+
+        <!-- Yield -->
+        <section data-test="card-yield" class="bg-zinc-800 border border-zinc-700 rounded-xl p-5">
+          <h2 class="text-white text-sm font-semibold flex items-center gap-2 mb-3">
+            🌾 Yield
+            <HelpTip><code>cost_per_gram</code> is only emitted when the cycle has costs in a single currency — mixing currencies blindly would be misleading.</HelpTip>
+          </h2>
+          <div v-if="!summary.yield.grams" class="text-zinc-500 text-xs">No yield recorded yet (set <code>yield_grams</code> on the cycle).</div>
+          <div v-else class="grid grid-cols-2 gap-3 text-sm">
+            <Metric label="Yield"            :value="fmt(summary.yield.grams)" suffix=" g" />
+            <Metric label="g per liter"      :value="optFmt(summary.yield.grams_per_liter)" />
+            <Metric label="g per day"        :value="optFmt(summary.yield.grams_per_day)" />
+            <Metric label="Cost per gram"    :value="optFmt(summary.yield.cost_per_gram, 'mixed currencies')" />
+          </div>
+        </section>
+
+        <!-- Stages -->
+        <section data-test="card-stages" class="bg-zinc-800 border border-zinc-700 rounded-xl p-5">
+          <h2 class="text-white text-sm font-semibold flex items-center gap-2 mb-3">
+            ⏳ Stage timeline
+            <HelpTip>
+              The schema only stores <code>current_stage</code> right now, so the timeline shows a single entry pinned to <code>started_at</code>.
+              A future migration can add a real stage_transitions table and the same endpoint will start returning full history without breaking the contract.
+            </HelpTip>
+          </h2>
+          <ol class="border-l border-zinc-700 ml-2 space-y-3">
+            <li v-for="(s, idx) in summary.stages" :key="idx" class="pl-4 relative">
+              <span class="absolute -left-1.5 top-1 w-3 h-3 rounded-full bg-emerald-500/70"></span>
+              <p class="text-white text-sm">{{ s.stage }}</p>
+              <p class="text-zinc-500 text-xs">{{ s.entered_at || '—' }}</p>
+            </li>
+          </ol>
+          <p v-if="!summary.stage_history_supported" class="text-amber-400/80 text-[11px] mt-3">
+            Stage history is a single-row stand-in until the schema records transitions explicitly.
+          </p>
+        </section>
+      </div>
+    </template>
+  </div>
+</template>
+
+<script setup>
+import { ref, computed, onMounted, watch } from 'vue'
+import { useRoute } from 'vue-router'
+import { useFarmStore } from '../stores/farm'
+import HelpTip from '../components/HelpTip.vue'
+import Metric from '../components/MetricChip.vue'
+
+const route = useRoute()
+const store = useFarmStore()
+
+const cycleId = computed(() => Number(route.params.id))
+const summary = ref(null)
+const loading = ref(false)
+const loadError = ref('')
+
+const csvUrl = computed(() => {
+  if (!cycleId.value) return '#'
+  // Same axios baseURL the store uses. Operators paste this into a new tab
+  // and the browser inherits the JWT cookie / localStorage token via the
+  // Authorization header injected by axios — but this `target="_blank"`
+  // link is downloaded directly by the browser, so we attach the token
+  // here as a query param ONLY if we don't already get cookies. Today
+  // the API accepts the same token on SSE via `?token=`, so reuse that
+  // convention.
+  const base = import.meta.env.VITE_API_URL ?? 'http://localhost:8080'
+  const tok = localStorage.getItem('gr33n_token') ?? ''
+  return `${base}/crop-cycles/${cycleId.value}/summary.csv?token=${encodeURIComponent(tok)}`
+})
+
+const currentStageLabel = computed(() => {
+  if (!summary.value || !summary.value.cycle) return '—'
+  const s = summary.value.cycle.current_stage
+  if (!s) return '—'
+  if (typeof s === 'string') return s
+  // sqlc emits a NullEnum shape like { Gr33nfertigationGrowthStageEnum: "veg", Valid: true }
+  if (s.Valid && s.Gr33nfertigationGrowthStageEnum) return s.Gr33nfertigationGrowthStageEnum
+  return '—'
+})
+
+function fmt(n) {
+  if (n == null || Number.isNaN(Number(n))) return '0'
+  const num = Number(n)
+  if (Math.abs(num) >= 100) return num.toFixed(0)
+  if (Math.abs(num) >= 10) return num.toFixed(1)
+  return num.toFixed(2)
+}
+
+function optFmt(n, fallback = '—') {
+  if (n == null) return fallback
+  return fmt(n)
+}
+
+async function load() {
+  if (!cycleId.value) return
+  loading.value = true
+  loadError.value = ''
+  try {
+    summary.value = await store.loadCropCycleSummary(cycleId.value)
+  } catch (err) {
+    loadError.value = err?.response?.data?.error || err?.message || 'Failed to load cycle summary'
+  } finally {
+    loading.value = false
+  }
+}
+
+onMounted(load)
+watch(cycleId, load)
+</script>

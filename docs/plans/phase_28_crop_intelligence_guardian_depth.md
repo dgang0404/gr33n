@@ -13,7 +13,7 @@ todos:
     status: completed
   - id: ws2-analytics-ui
     content: "WS2: CropCycleSummary.vue + CropCycleCompare.vue — metric cards, stage timeline, compare columns, SideNav entry, link from cycle list"
-    status: pending
+    status: completed
   - id: ws3-guardian-analytics
     content: "WS3: Guardian ↔ crop cycle integration — Guardian can answer questions about the current/historical cycles; snapshot includes active-cycle summary metrics when farm_id present"
     status: pending
@@ -223,9 +223,19 @@ Start with WS1: GET /crop-cycles/{id}/summary and GET /farms/{id}/crop-cycles/co
 - **`MaxCompareCycles = 5`** caps the compare endpoint; deduplicates ids client-side so a duplicated id doesn't burn a slot.
 - **Smoke tests** (`cmd/api/smoke_phase28_ws1_test.go`) — happy path JSON, 404, CSV header + USD row, 2-way compare, foreign-farm rejection, too-many ids, missing-ids. All 7 tests green against real Postgres.
 
+### WS2 — Crop analytics UI pages (shipped 2026-05-19)
+
+- **`ui/src/views/CropCycleSummary.vue`** — header strip (name, strain, stage, duration, status) + four metric cards (Fertigation, Cost, Yield, Stage timeline) + CSV download button + Compare ↔ deep-link. HelpTips on each card explain what the number includes (e.g. "EC averages use the after-feed reading" and "cost_per_gram only when one currency").
+- **`ui/src/views/CropCycleCompare.vue`** — picker grid (checkbox per crop cycle, capped at 5 with disabled state past the limit), side-by-side compare table where columns are cycles and rows are metrics. Best column highlighted emerald, worst amber. `better: 'higher'` for yield/duration/liters, `better: 'lower'` for cost-per-gram and expenses. Rows where every cycle has `null` are filtered out so the table stays compact.
+- **`ui/src/components/MetricChip.vue`** — small reusable labelled-value chip used by both views.
+- **`ui/src/stores/farm.js`** — new `loadCropCycleSummary(id)` + `loadCropCycleCompare(farmId, ids)` methods. The compare helper short-circuits to `{cycles: []}` when `ids` is empty so the view doesn't make a 400-bound HTTP request on mount.
+- **Router** — `/crop-cycles/:id/summary` (named `crop-cycle-summary`) + `/farms/:fid/crop-cycles/compare` (named `crop-cycle-compare`).
+- **`ui/src/components/SideNav.vue`** — new **Analytics** entry under Monitor (📊). The route is computed from `farmContext.farmId` so it always lands on the current farm.
+- **`ui/src/views/Fertigation.vue`** — added a **Summary →** router-link to every crop-cycle card (in the Crop Cycles tab) for one-click drill-in.
+- **Tests** — `ui/src/__tests__/crop-cycle-analytics.test.js` (10 new tests): store methods (compare query-string join + empty-ids short-circuit), summary view (header + four cards + error path), compare view (empty state, table rendering after selection, 5-cycle cap, "select a farm" hint). All 40 UI tests pass.
+
 ### Still open
 
-- **WS2** — UI pages
 - **WS3** — Guardian ↔ crop cycle integration
 - **WS4** — Guardian ↔ alert integration
 - **WS5** — Token-usage dashboard

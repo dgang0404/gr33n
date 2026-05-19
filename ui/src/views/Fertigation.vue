@@ -462,6 +462,11 @@
             </select>
             <button type="button" @click="patchStage(c)" :disabled="saving"
               class="text-xs px-2 py-1 rounded bg-zinc-800 text-zinc-300 hover:bg-zinc-700">Set stage</button>
+            <router-link
+              :to="{ name: 'crop-cycle-summary', params: { id: c.id } }"
+              class="text-xs px-2 py-1 rounded bg-green-900/40 border border-green-800 text-green-300 hover:bg-green-900/60"
+              data-test="cycle-summary-link"
+            >Summary →</router-link>
             <button type="button" @click="startEditCycle(c)" class="text-xs text-zinc-500 hover:text-zinc-300">Edit</button>
             <button type="button" @click="deleteCycle(c)" class="text-xs text-red-500 hover:text-red-400">Deactivate</button>
           </div>

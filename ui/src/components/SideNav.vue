@@ -92,7 +92,16 @@ function onFarmSelect(ev) {
   farmContext.selectFarm(id)
 }
 
-const navGroups = [
+// Phase 28 WS2 — the Analytics nav entry needs to know the current farm
+// so the Compare page lands on the right /farms/:fid/crop-cycles/compare
+// URL. When no farm is selected we still surface the entry — the page
+// itself shows an "Select a farm" prompt rather than 404'ing.
+const cycleCompareRoute = computed(() => {
+  const fid = farmContext.farmId
+  return fid ? `/farms/${fid}/crop-cycles/compare` : '/farms/0/crop-cycles/compare'
+})
+
+const navGroups = computed(() => [
   {
     label: 'Operate',
     items: [
@@ -126,6 +135,7 @@ const navGroups = [
     items: [
       { to: '/alerts', icon: '🔔', label: 'Alerts' },
       { to: '/costs',  icon: '💰', label: 'Costs'  },
+      { to: cycleCompareRoute.value, icon: '📊', label: 'Analytics', navTitle: 'Crop cycle analytics — per-cycle summary & multi-cycle compare (Phase 28).' },
       { to: '/farm-knowledge', icon: '🔎', label: 'Knowledge', navTitle: 'Farm knowledge — semantic search & Ask (LLM); requires API embedding / LLM env' },
       { to: '/chat', icon: '🤖', label: 'Guardian', navTitle: 'Farm Guardian chat — streaming answers (Phase 27). Requires AI_ENABLED on the API.' },
     ],
@@ -138,5 +148,5 @@ const navGroups = [
       { to: '/settings', icon: '⚙️', label: 'Settings' },
     ],
   },
-]
+])
 </script>

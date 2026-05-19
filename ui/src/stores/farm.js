@@ -897,6 +897,24 @@ export const useFarmStore = defineStore('farm', {
       await api.delete(`/crop-cycles/${id}`)
     },
 
+    // ── Crop cycle analytics (Phase 28 WS1) ──────────────────────────────
+    // Surface returned shape matches the Go cycleSummary struct:
+    //   { cycle, duration_days, fertigation, cost, yield, stages, stage_history_supported }
+    async loadCropCycleSummary(id) {
+      const r = await api.get(`/crop-cycles/${id}/summary`)
+      return r.data
+    },
+
+    // ids: array of cycle ids; the backend caps it at 5 server-side.
+    async loadCropCycleCompare(farmId, ids) {
+      if (!Array.isArray(ids) || !ids.length) {
+        return { cycles: [] }
+      }
+      const qs = ids.map((n) => String(n)).join(',')
+      const r = await api.get(`/farms/${farmId}/crop-cycles/compare?ids=${qs}`)
+      return r.data
+    },
+
     async loadRecipes(farmId) {
       const r = await api.get(`/farms/${farmId}/naturalfarming/recipes`)
       return Array.isArray(r.data) ? r.data : []

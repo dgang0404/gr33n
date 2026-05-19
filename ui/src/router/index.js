@@ -21,6 +21,8 @@ import Settings from '../views/Settings.vue'
 import FarmKnowledge from '../views/FarmKnowledge.vue'
 import FarmGuardianChat from '../views/FarmGuardianChat.vue'
 import OperatorGuide from '../views/OperatorGuide.vue'
+import CropCycleSummary from '../views/CropCycleSummary.vue'
+import CropCycleCompare from '../views/CropCycleCompare.vue'
 import Login from '../views/Login.vue'
 
 const routes = [
@@ -48,6 +50,9 @@ const routes = [
   { path: '/chat',         component: FarmGuardianChat, name: 'farm-guardian-chat' },
   { path: '/settings',     component: Settings,     name: 'settings' },
   { path: '/operator-guide', component: OperatorGuide, name: 'operator-guide' },
+  // Phase 28 WS2 — crop cycle analytics
+  { path: '/crop-cycles/:id/summary', component: CropCycleSummary, name: 'crop-cycle-summary' },
+  { path: '/farms/:fid/crop-cycles/compare', component: CropCycleCompare, name: 'crop-cycle-compare' },
 ]
 
 const router = createRouter({
