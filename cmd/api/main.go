@@ -18,6 +18,8 @@ import (
 	"github.com/joho/godotenv"
 	"gr33n-api/internal/ai"
 	automationworker "gr33n-api/internal/automation"
+	db "gr33n-api/internal/db"
+	"gr33n-api/internal/farmguardian"
 	"gr33n-api/internal/filestorage"
 	"gr33n-api/internal/pgxutil"
 	"gr33n-api/internal/pushnotify"
@@ -128,6 +130,18 @@ func main() {
 				log.Fatalf("AI_ENABLED=true but LLM backend unreachable at %s: %v", base, err)
 			}
 			slog.Info("llm backend reachable", "base_url", strings.TrimSuffix(base, "/"))
+		}
+
+		// Phase 27 WS5 follow-up — TTL prune loop for conversation history.
+		// Only runs when chat is enabled; no point pruning a feature the
+		// operator turned off. CHAT_SESSION_TTL_DAYS=0 disables the loop.
+		pruneCfg := farmguardian.LoadPruneConfigFromEnv()
+		if pruneCfg.Enabled() {
+			log.Printf("🧹 Chat session prune loop: ttl=%dd interval=%v startup_delay=%v",
+				pruneCfg.TTLDays, pruneCfg.Interval, pruneCfg.StartupDelay)
+			go farmguardian.StartPruneLoop(context.Background(), db.New(pool), pruneCfg, slog.Default())
+		} else {
+			log.Printf("🧹 Chat session prune loop: disabled (CHAT_SESSION_TTL_DAYS=%d)", pruneCfg.TTLDays)
 		}
 	}
 

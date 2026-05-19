@@ -165,6 +165,9 @@ Add this to your `~/.bashrc` or `~/.zshrc` to avoid typing it every time.
 | `LLM_TIMEOUT_SECONDS` | Answer synthesis | Chat HTTP client timeout; default **120** |
 | `LLM_RETRY_MAX_ATTEMPTS` | Answer synthesis + `/v1/chat` | Total tries including the first attempt; default **3**, clamped **1..8**. **1** disables retry. Retries HTTP 408/425/429/5xx, per-attempt timeout, network errors. Never retries caller cancellation or other 4xx. |
 | `LLM_RETRY_BACKOFF_MS` | Answer synthesis + `/v1/chat` | Initial backoff in ms; default **500**, clamped **10..30000**. Exponential doubling up to 10s with ±25% jitter. |
+| `CHAT_SESSION_TTL_DAYS` | `/v1/chat` history retention | Sessions whose newest turn is older than this are pruned by a background loop. Default **30**, clamped **0..3650**. **0** disables pruning (history grows forever). |
+| `CHAT_SESSION_PRUNE_INTERVAL_HOURS` | Prune loop cadence | How often the loop runs after the startup delay. Default **24**, clamped **1..168**. |
+| `CHAT_SESSION_PRUNE_STARTUP_DELAY_SECONDS` | Prune loop startup | Delay before the first prune at API boot. Default **30**, clamped **0..600**. Lets RAG ingest / automation worker settle before the loop touches the chat tables. |
 | `RAG_SYNTHESIS_MAX_PER_MINUTE` | Answer endpoint | Default `30` requests/minute per API process (rolling minute window). |
 | `RAG_SYNTHESIS_MAX_PER_MINUTE_PER_FARM` | Answer endpoint | Optional. When set to an integer **>0**, each `farm_id` gets its own cap per minute (replaces the global-only limiter). Use on shared deployments for fairness. |
 

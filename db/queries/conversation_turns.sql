@@ -138,3 +138,24 @@ WHERE session_id = sqlc.arg(session_id)
 DELETE FROM gr33ncore.conversation_sessions
 WHERE id = sqlc.arg(id)
   AND user_id = sqlc.arg(user_id);
+
+-- name: DeleteStaleConversationTurns :execrows
+-- Phase 27 WS5 follow-up — TTL pruning. Removes turns belonging to sessions
+-- whose latest activity (MAX(created_at) per session) is older than the
+-- cutoff. Cutoff is computed in Go (NOW() - ttl) so the SQL is parameter-only
+-- and portable across timezones.
+DELETE FROM gr33ncore.conversation_turns
+WHERE session_id IN (
+    SELECT session_id
+    FROM gr33ncore.conversation_turns
+    GROUP BY session_id
+    HAVING MAX(created_at) < sqlc.arg(cutoff)
+);
+
+-- name: DeleteStaleConversationSessions :execrows
+-- Phase 27 WS5 follow-up — TTL pruning. Drops session metadata rows whose
+-- last activity (updated_at) is older than the cutoff. Run AFTER
+-- DeleteStaleConversationTurns so the visible-to-the-API row count flips to
+-- zero in lockstep with the turn data.
+DELETE FROM gr33ncore.conversation_sessions
+WHERE updated_at < sqlc.arg(cutoff);

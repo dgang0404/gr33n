@@ -91,6 +91,13 @@ isProject: false
 - **UI `/chat` sidebar** — per-session pencil (✎) and ✕ buttons that appear on hover, wired to the new endpoints. Token totals render as `<n> tok` chips with a prompt/completion tooltip. Transcript turns also show per-turn token chips. Sessions display their title when set, otherwise fall back to the first user message.
 - **Smoke harness** — `initMigrations` now applies the Phase 27 migrations (`20260519_phase27_conversation_turns.sql` + `20260520_phase27_session_metadata.sql`) so tests stay self-contained on fresh DBs.
 
+### Shipped after WS5 follow-up (TTL pruning for conversation history)
+
+- **`db/queries/conversation_turns.sql`** + manually maintained `internal/db/conversation_turns.sql.go` — `DeleteStaleConversationTurns(cutoff)` removes turns from sessions whose `MAX(created_at)` is older than cutoff; `DeleteStaleConversationSessions(cutoff)` drops the matching session metadata rows. Cutoff is computed in Go (`NOW() - TTL`) so the SQL is parameter-only and portable.
+- **`internal/farmguardian/prune.go`** — `PruneConfig{TTLDays, Interval, StartupDelay}` + `LoadPruneConfigFromEnv()` reading **`CHAT_SESSION_TTL_DAYS`** (default 30, clamp 0..3650, **0 disables**), **`CHAT_SESSION_PRUNE_INTERVAL_HOURS`** (default 24, clamp 1..168), **`CHAT_SESSION_PRUNE_STARTUP_DELAY_SECONDS`** (default 30, clamp 0..600). `PruneOnce` runs the two DELETEs sequentially (turns first so the visible row count drops before the metadata side), returns `{TurnsDeleted, SessionsDeleted, Cutoff, Duration}` for logging. Turn-pass errors short-circuit so we never orphan dangling metadata. `StartPruneLoop` sleeps the startup delay (ctx-aware), runs the opening prune, then ticks on `Interval` until ctx is done.
+- **`cmd/api/main.go`** — spawns `farmguardian.StartPruneLoop(...)` as a goroutine **only when `AI_ENABLED=true`** (no point pruning a feature the operator turned off) and `PruneConfig.Enabled()` (TTL > 0). Logs a one-line summary at boot: `🧹 Chat session prune loop: ttl=30d interval=24h0m0s startup_delay=30s`. Per-prune outcomes log via `slog.Info` only when something was removed — quiet happy path keeps small installs from drowning in 30-day no-op lines.
+- **Tests** — `internal/farmguardian/prune_test.go` covers env defaults + clamps + garbage-fallback + `Enabled()` semantics, `PruneOnce` happy path + turn-error short-circuit, `StartPruneLoop` disabled-returns-immediately, ctx-cancel-during-startup-delay, and opening-prune-then-cancel. `cmd/api/smoke_prune_test.go` exercises the real-DB path: seeds a 100-day-old session + a fresh session, runs `PruneOnce` with a 30-day TTL, verifies the stale one is gone (turn + metadata) and the fresh one survives.
+
 ### Shipped after WS6 follow-up (inline rename modal + bulk delete)
 
 - **`ui/src/views/FarmGuardianChat.vue`** — replaces the `window.prompt` rename flow with an in-page modal (`<dialog>`-style overlay, role/aria wired, click-outside + Esc to close, autofocus + select on open, max-length 120 with helper copy, empty input clears the title and falls back to the first user message). Submit goes through the form (Enter or the Save button both work) so keyboard-only operators never need the mouse. API errors render **inside** the modal instead of in the page error strip, and the modal stays open so the operator can correct the title.
@@ -108,7 +115,7 @@ isProject: false
 
 ### Still open
 
-- **WS5 follow-up** — Pruning / TTL job for stale sessions; per-user / per-farm cost guards on accumulated token usage; streaming token usage via `stream_options.include_usage`.
+- **WS5 follow-up** — Per-user / per-farm cost guards on accumulated token usage; streaming token usage via `stream_options.include_usage`.
 
 ---
 

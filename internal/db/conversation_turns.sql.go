@@ -357,3 +357,43 @@ func (q *Queries) DeleteConversationSession(ctx context.Context, arg DeleteConve
 	}
 	return res.RowsAffected(), nil
 }
+
+// ──────────────────────────────────────────────────────────────────────────
+// TTL pruning (Phase 27 WS5 follow-up)
+// ──────────────────────────────────────────────────────────────────────────
+
+const deleteStaleConversationTurns = `-- name: DeleteStaleConversationTurns :execrows
+DELETE FROM gr33ncore.conversation_turns
+WHERE session_id IN (
+    SELECT session_id
+    FROM gr33ncore.conversation_turns
+    GROUP BY session_id
+    HAVING MAX(created_at) < $1
+)
+`
+
+// DeleteStaleConversationTurns removes turns belonging to sessions whose
+// latest activity is older than cutoff. Returns the number of rows removed.
+func (q *Queries) DeleteStaleConversationTurns(ctx context.Context, cutoff time.Time) (int64, error) {
+	res, err := q.db.Exec(ctx, deleteStaleConversationTurns, cutoff)
+	if err != nil {
+		return 0, err
+	}
+	return res.RowsAffected(), nil
+}
+
+const deleteStaleConversationSessions = `-- name: DeleteStaleConversationSessions :execrows
+DELETE FROM gr33ncore.conversation_sessions
+WHERE updated_at < $1
+`
+
+// DeleteStaleConversationSessions drops session metadata rows whose
+// updated_at is older than cutoff. Run AFTER DeleteStaleConversationTurns so
+// the per-session row count flips to zero in lockstep with the turn data.
+func (q *Queries) DeleteStaleConversationSessions(ctx context.Context, cutoff time.Time) (int64, error) {
+	res, err := q.db.Exec(ctx, deleteStaleConversationSessions, cutoff)
+	if err != nil {
+		return 0, err
+	}
+	return res.RowsAffected(), nil
+}
