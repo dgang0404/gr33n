@@ -534,7 +534,7 @@ Pi clients ──HTTPS──▶ Go API
 Browser ──HTTPS──▶ Vue UI ──▶ Go API  (same as Pi)
 ```
 
-See [`docs/farm-guardian-ollama-setup.md`](docs/farm-guardian-ollama-setup.md) for install/setup and [`INSTALL.md`](INSTALL.md) for all `AI_*` / `LLM_*` / `CHAT_*` env vars.
+See [`docs/farm-guardian-architecture.md`](docs/farm-guardian-architecture.md) for the request flow + three-knowledge-layer breakdown, [`docs/farm-guardian-ollama-setup.md`](docs/farm-guardian-ollama-setup.md) for install/setup, and [`INSTALL.md`](INSTALL.md) for all `AI_*` / `LLM_*` / `CHAT_*` env vars.
 
 - AI is modular and never mandatory — `AI_ENABLED=false` produces a clean Lite deployment.
 - No cloud calls, no training on your data, no opt-in required for basic operation.

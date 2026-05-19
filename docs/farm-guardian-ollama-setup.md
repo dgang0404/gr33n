@@ -2,6 +2,8 @@
 
 **Audience:** Operators standing up the on-farm inference server for **Farm Guardian** (`POST /v1/chat`) and RAG answer synthesis (`POST /farms/{id}/rag/answer`).
 
+**Companion doc:** If you want to understand **what happens inside** a chat request once Ollama is up (UI → handler → RAG → snapshot → LLM → persistence) and the cost-guard rationale, read **[`farm-guardian-architecture.md`](farm-guardian-architecture.md)** alongside this runbook.
+
 **Scope:** Single on-prem inference host running **Ollama** on the farm intranet, called by the gr33n Go API. This is the **Full mode** path described in [phase_27_farm_guardian_ai_layer.md](plans/phase_27_farm_guardian_ai_layer.md). For the **Lite mode** alternative (no LLM), set **`AI_ENABLED=false`** on the API and skip this whole document.
 
 **Not in scope:** Kubernetes manifests, multi-node inference clusters, GPU pooling. Phase 27 deliberately stays on **Compose + systemd** (see [Phase 26 logging runbook](operator-logging-runbook.md) — same posture).

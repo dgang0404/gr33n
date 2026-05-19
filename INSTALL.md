@@ -176,7 +176,7 @@ Add this to your `~/.bashrc` or `~/.zshrc` to avoid typing it every time.
 
 When **`AI_ENABLED=true`** and both **`LLM_BASE_URL`** and **`LLM_MODEL`** are set, `cmd/api` **verifies** the backend with `GET {LLM_BASE_URL}/models` at startup and **exits** if that check fails (see Phase 27 plan).
 
-Full on-prem **Ollama** setup — install, systemd override, model pull, intranet DNS — is in **[docs/farm-guardian-ollama-setup.md](docs/farm-guardian-ollama-setup.md)** (Phase 27 WS1).
+Full on-prem **Ollama** setup — install, systemd override, model pull, intranet DNS — is in **[docs/farm-guardian-ollama-setup.md](docs/farm-guardian-ollama-setup.md)** (Phase 27 WS1). For the **request-flow** explainer (UI → handler → RAG → snapshot → LLM → SSE → persistence) and the cost-guard reasoning, see **[docs/farm-guardian-architecture.md](docs/farm-guardian-architecture.md)**.
 
 ### Optional: observability (sit-in logging)
 
