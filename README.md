@@ -7,7 +7,7 @@ An open-source agricultural operating system designed to reclaim data, land, and
 [![Vue](https://img.shields.io/badge/Vue-3-4FC08D?logo=vue.js)](https://vuejs.org)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-14+-336791?logo=postgresql)](https://postgresql.org)
 
-**Current focus:** **Phase 21 — crop-cycle analytics** ([plan](docs/plans/phase_21_crop_cycle_analytics.plan.md)): summary / compare / UI / CSV per plan (today only **`GET /crop-cycles/{id}/cost-summary`** from Phase 20.7). **Phase 23 — stabilization** is **closed** on `main` ([exit sign-off](docs/plans/phase_23_stabilization_sprint.plan.md#exit-sign-off)). **Phase 24 — RAG retrieval** ([plan](docs/plans/phase_24_rag_retrieval_system.plan.md)) and **Phase 25 — RAG operations & expansion** ([plan](docs/plans/phase_25_rag_operations_and_expansion.plan.md)) are **shipped on `main`** (pgvector, `/rag/search` + `/rag/answer`, `rag-ingest`, CI parity, Knowledge UI). **Pi / edge field validation** remains a parallel activity: real Pi or MQTT bridge with `PI_API_KEY`, base64-decode `config` from `GET /farms/{id}/devices`, then confirm readings and **`actuator_events`** ([`pi_client/gr33n_client.py`](pi_client/gr33n_client.py), [`docs/pi-integration-guide.md`](docs/pi-integration-guide.md), [`cmd/api/smoke_pi_contract_test.go`](cmd/api/smoke_pi_contract_test.go)). Key playbooks: [`docs/workflow-guide.md`](docs/workflow-guide.md), [`docs/mqtt-edge-operator-playbook.md`](docs/mqtt-edge-operator-playbook.md), [`docs/insert-commons-pipeline-runbook.md`](docs/insert-commons-pipeline-runbook.md), [`docs/insert-commons-receiver-playbook.md`](docs/insert-commons-receiver-playbook.md), [`docs/notifications-operator-playbook.md`](docs/notifications-operator-playbook.md), [`docs/domain-modules-operator-playbook.md`](docs/domain-modules-operator-playbook.md), [`docs/mobile-distribution.md`](docs/mobile-distribution.md), [`docs/audit-events-operator-playbook.md`](docs/audit-events-operator-playbook.md), [`docs/terminology-guideline.md`](docs/terminology-guideline.md), [`docs/phase-13-operator-documentation.md`](docs/phase-13-operator-documentation.md), [`docs/phase-14-operator-documentation.md`](docs/phase-14-operator-documentation.md).
+**Current focus:** **Phase 27 — Farm Guardian AI layer** is **shipped on `main`** ([plan](docs/plans/phase_27_farm_guardian_ai_layer.md)): on-premise Llama 3.1 70B via Ollama, `AI_ENABLED` toggle, `/capabilities` API, streaming `POST /v1/chat` with multi-turn history + RAG grounding + live farm-state snapshot, session management, token usage tracking, cost guards, and the `/chat` UI panel. **Phase 26 — operator tutorial, observability, RAG scope** is also **shipped** ([plan](docs/plans/phase_26_operator_tutorial_observability_rag.plan.md)). **Phase 28 — crop intelligence & Guardian depth** is next ([plan](docs/plans/phase_28_crop_intelligence_guardian_depth.md)). **Pi / edge field validation** remains a parallel activity: real Pi or MQTT bridge with `PI_API_KEY`, base64-decode `config` from `GET /farms/{id}/devices`, then confirm readings and **`actuator_events`** ([`pi_client/gr33n_client.py`](pi_client/gr33n_client.py), [`docs/pi-integration-guide.md`](docs/pi-integration-guide.md), [`cmd/api/smoke_pi_contract_test.go`](cmd/api/smoke_pi_contract_test.go)). Key playbooks: [`docs/workflow-guide.md`](docs/workflow-guide.md), [`docs/mqtt-edge-operator-playbook.md`](docs/mqtt-edge-operator-playbook.md), [`docs/farm-guardian-ollama-setup.md`](docs/farm-guardian-ollama-setup.md), [`docs/insert-commons-pipeline-runbook.md`](docs/insert-commons-pipeline-runbook.md), [`docs/insert-commons-receiver-playbook.md`](docs/insert-commons-receiver-playbook.md), [`docs/notifications-operator-playbook.md`](docs/notifications-operator-playbook.md), [`docs/domain-modules-operator-playbook.md`](docs/domain-modules-operator-playbook.md), [`docs/mobile-distribution.md`](docs/mobile-distribution.md), [`docs/audit-events-operator-playbook.md`](docs/audit-events-operator-playbook.md), [`docs/terminology-guideline.md`](docs/terminology-guideline.md), [`docs/phase-13-operator-documentation.md`](docs/phase-13-operator-documentation.md), [`docs/phase-14-operator-documentation.md`](docs/phase-14-operator-documentation.md).
 
 ---
 
@@ -214,6 +214,7 @@ Base URL: `http://localhost:8080` — authoritative request/response schemas in 
 | POST | `/auth/login` | Authenticate & receive JWT |
 | POST | `/auth/register` | Register a new account or set password for an **invited** user (existing email with no password yet) |
 | GET | `/auth/mode` | Current auth mode (dev / production / auth_test) |
+| GET | `/capabilities` | Feature flags — `{"ai_enabled": bool}`. Read by the UI at startup to gate Farm Guardian / Knowledge Ask-LLM. |
 
 ### Pi routes (API key)
 
@@ -392,6 +393,27 @@ Integration tests under `cmd/api/` (`TestMain` in [`cmd/api/smoke_test.go`](cmd/
 | PATCH | `/alerts/:id/read` | Mark alert read |
 | PATCH | `/alerts/:id/acknowledge` | Acknowledge alert |
 
+#### Farm Guardian chat (Phase 27, JWT)
+
+`AI_ENABLED=true` required; `LLM_BASE_URL` + `LLM_MODEL` required for the chat endpoint. `POST /v1/chat` returns **503** in Lite mode and **429** when rolling-window cost guards fire (`CHAT_COST_MAX_TOKENS_PER_USER` / `CHAT_COST_MAX_TOKENS_PER_FARM`).
+
+| Method | Path | Description |
+|--------|------|-------------|
+| POST | `/v1/chat` | Send a message to Farm Guardian. Optional `farm_id` → RAG grounding + live snapshot. Optional `session_id` (UUID) for multi-turn context replay. Optional `"stream": true` for SSE streaming. Response includes `answer`, `grounded`, `citations`, `session_id`, `turn_index`, `prompt_tokens`, `completion_tokens`. |
+| GET | `/v1/chat/sessions` | List recent conversation sessions (up to 50, latest-first). |
+| GET | `/v1/chat/sessions/:id` | Full ordered turn history for a session. |
+| PATCH | `/v1/chat/sessions/:id` | Rename session (`{"title": "..."}`, empty string clears). |
+| DELETE | `/v1/chat/sessions/:id` | Delete session and all its turns. |
+
+#### RAG — farm knowledge (Phase 24–25, JWT)
+
+`pgvector` + embeddings required for search; `AI_ENABLED=true` + LLM configured required for answer synthesis.
+
+| Method | Path | Description |
+|--------|------|-------------|
+| POST | `/farms/:id/rag/search` | Semantic nearest-neighbour search over farm knowledge chunks. |
+| POST | `/farms/:id/rag/answer` | Retrieve top-K chunks then synthesise an LLM answer (Lite mode: 503 for synthesis; search still works). |
+
 #### Natural farming — inputs & batches
 
 | Method | Path | Description |
@@ -492,19 +514,31 @@ MCUs can publish to an on-farm **MQTT broker**; a **bridge** process subscribes 
 
 ## 🔄 AI Augmentation with Consent
 
-gr33n doesn't replace farm.chat — it augments it.
+gr33n's AI layer runs **fully on your intranet** — no data leaves the LAN in Full mode. Knowledge is never sent to cloud APIs.
 
-For users who choose to integrate local AI, gr33n offers schema-guided intelligence via LM Studio and gr33n_inserts. This AI layer respects user autonomy and privacy:
+**Farm Guardian** (Phase 27) is a conversational assistant powered by **Llama 3.1 70B Q4** running on an on-premise GPU box via [Ollama](https://ollama.ai). It layers three knowledge sources:
 
-- AI is modular, never mandatory.
-- Prompts are schema-aligned, not generic.
-- Control is user-directed, through defined integration tiers.
+1. **Llama weights** — general agricultural, scientific, and world knowledge baked in during training.
+2. **Your farm's RAG corpus** — anything you've ingested into `POST /farms/{id}/rag/ingest` (sensor notes, crop logs, manuals, etc.) retrieved at query time via pgvector similarity search.
+3. **Live farm-state snapshot** — zones, active crop cycles, and unread alerts pulled from the DB at the start of every grounded turn so answers reflect _right now_, not a stale index.
 
-| Mode | AI Role | User Control |
-|------|---------|-------------|
-| Ambient | Passive suggestions | Low (opt-in cues) |
-| Reactive | Triggered by schema events | Medium (configurable) |
-| Sovereign | Fully directed by user input | High (full control) |
+The AI features are gated by `AI_ENABLED` (default on) and degrade gracefully: in **Lite mode** (no LLM configured) `POST /v1/chat` returns 503 and the "Ask (LLM)" button in the Knowledge UI is disabled with an explanation. In **Full mode**, Guardian is available at `/chat` in the sidebar.
+
+All AI calls remain inside your farm's intranet:
+
+```
+Pi clients ──HTTPS──▶ Go API
+                        ├──▶ Postgres + pgvector  (farm data + RAG corpus)
+                        └──▶ Ollama  (Llama 3.1 70B Q4, GPU box on intranet)
+
+Browser ──HTTPS──▶ Vue UI ──▶ Go API  (same as Pi)
+```
+
+See [`docs/farm-guardian-ollama-setup.md`](docs/farm-guardian-ollama-setup.md) for install/setup and [`INSTALL.md`](INSTALL.md) for all `AI_*` / `LLM_*` / `CHAT_*` env vars.
+
+- AI is modular and never mandatory — `AI_ENABLED=false` produces a clean Lite deployment.
+- No cloud calls, no training on your data, no opt-in required for basic operation.
+- Cost guards (`CHAT_COST_MAX_TOKENS_PER_USER` / `_PER_FARM`) prevent runaway token usage on shared deployments.
 
 ---
 
@@ -533,6 +567,9 @@ A phase-by-phase ledger of what's live on `main`. Each row links to the governin
 | **23** | **Stabilization sprint** — CI gates, smoke + `DATABASE_URL` docs, OpenAPI parity, Pi/API key runbook, workflow + MQTT accuracy, worker monitoring docs | ✅ Done (2026-04-18) | [plan](docs/plans/phase_23_stabilization_sprint.plan.md) · [exit sign-off](docs/plans/phase_23_stabilization_sprint.plan.md#exit-sign-off) |
 | **24** | **RAG retrieval system** — embeddings + farm-scoped retrieval API (+ optional LLM synthesis); builds on [20.95 RAG-prep](docs/plans/phase_20_95_rag_prep_and_housekeeping.plan.md) | ✅ Done | [plan](docs/plans/phase_24_rag_retrieval_system.plan.md) |
 | **25** | **RAG operations & expansion** — ingest breadth, incremental re-embed, CI/pgvector parity, integration tests + synthesis limits, UX/docs ([schema ERD text](docs/schema-erd-text.md)) | ✅ Done | [plan](docs/plans/phase_25_rag_operations_and_expansion.plan.md) |
+| **26** | **Operator tutorial, observability, RAG scope** — operator-guide UI, Loki/Promtail/Grafana logging overlay, RAG scope/threat-model, LLM retry/backoff, Ollama setup runbook | ✅ Done | [plan](docs/plans/phase_26_operator_tutorial_observability_rag.plan.md) |
+| **27** | **Farm Guardian AI layer** — on-premise Llama 3.1 70B via Ollama, `AI_ENABLED` + `/capabilities`, streaming `POST /v1/chat`, multi-turn history + RAG grounding + live farm-state snapshot, session CRUD, token usage, cost guards, `/chat` UI panel with session sidebar + bulk-delete | ✅ Done | [plan](docs/plans/phase_27_farm_guardian_ai_layer.md) |
+| **28** | **Crop intelligence & Guardian depth** — close Phase 21 crop-cycle analytics gap, Guardian ↔ cycle integration, alert-hook on budget rejections, OpenAPI parity for Phases 26–27 | 🚧 Up next | [plan](docs/plans/phase_28_crop_intelligence_guardian_depth.md) |
 
 ### Phase 23 exit sign-off
 
@@ -547,14 +584,15 @@ Stabilization sprint **closed** on **`main`** **2026-04-18**. Criterion-by-crite
 
 **In flight / next up** (priority order):
 
-- [x] **Phase 23 — stabilization** — [`docs/plans/phase_23_stabilization_sprint.plan.md`](docs/plans/phase_23_stabilization_sprint.plan.md) — **done**; [exit sign-off](docs/plans/phase_23_stabilization_sprint.plan.md#exit-sign-off).
-- [ ] **Phase 21 — crop cycle analytics** — [`docs/plans/phase_21_crop_cycle_analytics.plan.md`](docs/plans/phase_21_crop_cycle_analytics.plan.md): summary / compare / UI / CSV (distinct from 20.7 `cost-summary` only).
-- [x] **Phase 24 — RAG retrieval** — [`docs/plans/phase_24_rag_retrieval_system.plan.md`](docs/plans/phase_24_rag_retrieval_system.plan.md): vectors + farm-scoped API + optional LLM synthesis; Knowledge UI (**Monitor → Knowledge**).
-- [x] **Phase 25 — RAG operations & expansion** — [`docs/plans/phase_25_rag_operations_and_expansion.plan.md`](docs/plans/phase_25_rag_operations_and_expansion.plan.md): CI parity, ingest breadth, incremental re-embed, limits/tests, docs/UX polish.
-- [x] **Pi ↔ API contract pass** — smoke tests `TestPiContract*` in [`cmd/api/smoke_pi_contract_test.go`](cmd/api/smoke_pi_contract_test.go): enqueue `pending_command` → Pi-key `GET /farms/1/devices` (base64 `config` decode) → `POST /actuators/{id}/events` with `triggered_by_schedule_id`, `program_id` (→ `meta_data`), `triggered_by_rule_id`, `parameters_sent` → `DELETE` pending. [`pi_client/gr33n_client.py`](pi_client/gr33n_client.py) forwards `rule_id` / `program_id` / `schedule_id` and decodes real API `config`. `requireAPIKey` injects `PiEdgeAuth` context so `RecordEvent` can authorize like `GET /farms/{id}/devices`.
+- [x] **Phase 23 — stabilization** — **done**; [exit sign-off](docs/plans/phase_23_stabilization_sprint.plan.md#exit-sign-off).
+- [x] **Phase 24 — RAG retrieval** — vectors + farm-scoped API + optional LLM synthesis; Knowledge UI.
+- [x] **Phase 25 — RAG operations & expansion** — CI parity, ingest breadth, incremental re-embed, limits/tests, docs/UX polish.
+- [x] **Phase 26 — operator tutorial, observability, RAG scope** — guide UI, Loki overlay, RAG boundary doc, LLM retry, Ollama runbook.
+- [x] **Phase 27 — Farm Guardian AI layer** — streaming chat, multi-turn history, RAG grounding, live snapshot, session management, cost guards.
+- [x] **Pi ↔ API contract pass** — smoke tests `TestPiContract*` in [`cmd/api/smoke_pi_contract_test.go`](cmd/api/smoke_pi_contract_test.go): enqueue `pending_command` → Pi-key `GET /farms/1/devices` → `POST /actuators/{id}/events` → `DELETE` pending.
+- [ ] **Phase 28 — crop intelligence & Guardian depth** — [`docs/plans/phase_28_crop_intelligence_guardian_depth.md`](docs/plans/phase_28_crop_intelligence_guardian_depth.md): close Phase 21 crop-cycle analytics gap, Guardian ↔ cycles integration, alert-hooks, OpenAPI parity.
 - [ ] **Deprecate `programs.metadata.steps`** — after N deploys with zero fallback warnings, promote `action_source` checks to hard errors and drop the column.
-- [ ] **Program "run now" API** — explicit trigger for unscheduled / ad-hoc programs (today only schedule-bound programs fire via the tick).
-- [ ] **AI augmentation / LM Studio integration** for insert-sharing recommendations.
+- [ ] **Program "run now" API** — explicit trigger for unscheduled / ad-hoc programs.
 - [ ] **Mobile distribution polish** — Capacitor packaging, store submission checklist.
 
 ## Project Roadmap
@@ -590,6 +628,9 @@ Stabilization sprint **closed** on **`main`** **2026-04-18**. Criterion-by-crite
 - [x] Phase 23 — stabilization sprint (CI, smoke, OpenAPI parity, docs, small fixes) — [plan](docs/plans/phase_23_stabilization_sprint.plan.md) · [exit sign-off](docs/plans/phase_23_stabilization_sprint.plan.md#exit-sign-off)
 - [x] Phase 24 — RAG retrieval system (vectors + farm-scoped API + optional LLM) — [plan](docs/plans/phase_24_rag_retrieval_system.plan.md)
 - [x] Phase 25 — RAG operations & expansion (ingest breadth, incremental re-embed, CI parity, limits, UX/docs) — [plan](docs/plans/phase_25_rag_operations_and_expansion.plan.md)
+- [x] Phase 26 — operator tutorial, observability, RAG scope (guide UI, Loki overlay, RAG boundary, LLM retry, Ollama runbook) — [plan](docs/plans/phase_26_operator_tutorial_observability_rag.plan.md)
+- [x] Phase 27 — Farm Guardian AI layer (streaming chat, multi-turn sessions, RAG grounding + live snapshot, cost guards, `/chat` UI panel) — [plan](docs/plans/phase_27_farm_guardian_ai_layer.md)
+- [ ] Phase 28 — crop intelligence & Guardian depth (Phase 21 crop analytics, Guardian ↔ cycles, alert hooks, OpenAPI parity) — [plan](docs/plans/phase_28_crop_intelligence_guardian_depth.md)
 
 ---
 
