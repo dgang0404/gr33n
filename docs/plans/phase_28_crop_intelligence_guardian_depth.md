@@ -10,7 +10,7 @@ overview: >
 todos:
   - id: ws1-crop-analytics
     content: "WS1: Crop cycle analytics API — GET /crop-cycles/{id}/summary + GET /farms/{id}/crop-cycles/compare?ids=… + CSV exports (closes Phase 21 backlog)"
-    status: pending
+    status: completed
   - id: ws2-analytics-ui
     content: "WS2: CropCycleSummary.vue + CropCycleCompare.vue — metric cards, stage timeline, compare columns, SideNav entry, link from cycle list"
     status: pending
@@ -208,3 +208,25 @@ Implement Phase 28 per @docs/plans/phase_28_crop_intelligence_guardian_depth.md.
 
 Start with WS1: GET /crop-cycles/{id}/summary and GET /farms/{id}/crop-cycles/compare. Follow the shapes in the plan doc. Auth: JWT + farm member. Add the two endpoints to openapi.yaml at the same time (partial WS6). Run `go test ./cmd/api/...` and check `make audit-openapi` is still clean before moving to WS2.
 ```
+
+---
+
+## Shipped notes
+
+### WS1 — Crop cycle analytics API (shipped 2026-05-19)
+
+- **`db/queries/crop_cycles.sql`** — `GetFertigationAggregatesByCropCycle` rolls up `fertigation_events` per cycle: `event_count`, `total_liters`, `avg/min/max ec_after_mscm`, `avg_ph` (blended pre + post). All COALESCEd to zero so empty cycles never serialise NULLs.
+- **`internal/db/crop_cycle_analytics.sql.go`** — hand-written Go binding (same pattern Phase 27 used for `conversation_turns`) to avoid a repo-wide sqlc regen. Folds back cleanly next routine sqlc pass.
+- **`internal/handler/cropcycle/analytics.go`** — `Summary` (GET `/crop-cycles/{id}/summary`) and `Compare` (GET `/farms/{id}/crop-cycles/compare?ids=…`) handlers, JWT + farm-member auth, one SQL call per sub-block (fertigation, costs, yield, stages). Reuses the existing `GetCostTotalsByCropCycle` query for costs. Stage history is a single-row stand-in (the schema only stores `current_stage`); `stage_history_supported: false` is exposed so the UI / OpenAPI consumers know the limitation.
+- **Cost-per-gram** is only emitted when the cycle has costs in exactly one currency — mixing currencies blindly is misleading, and the JSON `cost.totals` already breaks it out per-currency anyway.
+- **CSV exports** — `/summary.csv` and `/compare.csv` ride the same handlers via a `.csv` suffix check; emits a single wide row per cycle so spreadsheets work without nested JSON. `MIXED:` sentinel currency for multi-currency cycles directs operators back to the JSON view.
+- **`MaxCompareCycles = 5`** caps the compare endpoint; deduplicates ids client-side so a duplicated id doesn't burn a slot.
+- **Smoke tests** (`cmd/api/smoke_phase28_ws1_test.go`) — happy path JSON, 404, CSV header + USD row, 2-way compare, foreign-farm rejection, too-many ids, missing-ids. All 7 tests green against real Postgres.
+
+### Still open
+
+- **WS2** — UI pages
+- **WS3** — Guardian ↔ crop cycle integration
+- **WS4** — Guardian ↔ alert integration
+- **WS5** — Token-usage dashboard
+- **WS6** — OpenAPI parity (Phases 24–28)

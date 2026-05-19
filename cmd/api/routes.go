@@ -272,6 +272,12 @@ func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationwo
 	mux.Handle("GET /crop-cycles/{id}", jwt(http.HandlerFunc(cropcycle.Get)))
 	mux.Handle("PUT /crop-cycles/{id}", jwt(http.HandlerFunc(cropcycle.Update)))
 	mux.Handle("DELETE /crop-cycles/{id}", jwt(http.HandlerFunc(cropcycle.Delete)))
+	// Phase 28 WS1 — crop cycle analytics. .csv suffix routes share the same
+	// handler; the handler switches output mode on the URL path.
+	mux.Handle("GET /crop-cycles/{id}/summary", jwt(http.HandlerFunc(cropcycle.Summary)))
+	mux.Handle("GET /crop-cycles/{id}/summary.csv", jwt(http.HandlerFunc(cropcycle.Summary)))
+	mux.Handle("GET /farms/{id}/crop-cycles/compare", jwt(http.HandlerFunc(cropcycle.Compare)))
+	mux.Handle("GET /farms/{id}/crop-cycles/compare.csv", jwt(http.HandlerFunc(cropcycle.Compare)))
 
 	// Plants (crop tracking)
 	mux.Handle("GET /farms/{id}/plants", jwt(http.HandlerFunc(plants.List)))

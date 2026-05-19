@@ -55,3 +55,22 @@ UPDATE gr33nfertigation.crop_cycles SET is_active = FALSE, updated_at = NOW() WH
 SELECT * FROM gr33nfertigation.crop_cycles
 WHERE zone_id = $1 AND is_active = TRUE
 LIMIT 1;
+
+-- name: GetFertigationAggregatesByCropCycle :one
+-- Phase 28 WS1 — rolling fertigation stats for the cycle-summary endpoint.
+-- COALESCE keeps the JSON shape stable (zeros instead of NULLs) when a
+-- cycle has no events yet. EC after-feed is the canonical "what the plants
+-- actually experienced" reading; pH average blends pre + post so the
+-- number reflects the working solution, not just the freshly-mixed batch.
+SELECT
+    COUNT(*)::bigint                                                  AS event_count,
+    COALESCE(SUM(volume_applied_liters), 0)::numeric                  AS total_liters,
+    COALESCE(AVG(ec_after_mscm), 0)::numeric                          AS avg_ec_mscm,
+    COALESCE(MIN(ec_after_mscm), 0)::numeric                          AS min_ec_mscm,
+    COALESCE(MAX(ec_after_mscm), 0)::numeric                          AS max_ec_mscm,
+    COALESCE(AVG((COALESCE(ph_before,0) + COALESCE(ph_after,0)) / NULLIF(
+        ((CASE WHEN ph_before IS NULL THEN 0 ELSE 1 END) +
+         (CASE WHEN ph_after  IS NULL THEN 0 ELSE 1 END)), 0
+    )), 0)::numeric                                                   AS avg_ph
+FROM gr33nfertigation.fertigation_events
+WHERE crop_cycle_id = $1;
