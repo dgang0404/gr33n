@@ -12,6 +12,10 @@ import (
 	"github.com/google/uuid"
 )
 
+// ──────────────────────────────────────────────────────────────────────────
+// gr33ncore.conversation_turns
+// ──────────────────────────────────────────────────────────────────────────
+
 const insertConversationTurn = `-- name: InsertConversationTurn :one
 INSERT INTO gr33ncore.conversation_turns (
     session_id,
@@ -23,7 +27,9 @@ INSERT INTO gr33ncore.conversation_turns (
     llm_model,
     grounded,
     context_count,
-    citations
+    citations,
+    prompt_tokens,
+    completion_tokens
 ) VALUES (
     $1,
     $2,
@@ -39,7 +45,9 @@ INSERT INTO gr33ncore.conversation_turns (
     $6,
     $7,
     $8,
-    $9
+    $9,
+    $10,
+    $11
 )
 RETURNING id, session_id, user_id, farm_id, turn_index, created_at
 `
@@ -54,6 +62,8 @@ type InsertConversationTurnParams struct {
 	Grounded         bool      `db:"grounded" json:"grounded"`
 	ContextCount     int32     `db:"context_count" json:"context_count"`
 	Citations        []byte    `db:"citations" json:"citations"`
+	PromptTokens     int32     `db:"prompt_tokens" json:"prompt_tokens"`
+	CompletionTokens int32     `db:"completion_tokens" json:"completion_tokens"`
 }
 
 type InsertConversationTurnRow struct {
@@ -79,6 +89,8 @@ func (q *Queries) InsertConversationTurn(ctx context.Context, arg InsertConversa
 		arg.Grounded,
 		arg.ContextCount,
 		arg.Citations,
+		arg.PromptTokens,
+		arg.CompletionTokens,
 	)
 	var i InsertConversationTurnRow
 	err := row.Scan(
@@ -103,6 +115,8 @@ SELECT
     grounded,
     context_count,
     citations,
+    prompt_tokens,
+    completion_tokens,
     created_at
 FROM gr33ncore.conversation_turns
 WHERE session_id = $1
@@ -125,11 +139,11 @@ type ListConversationTurnsBySessionRow struct {
 	Grounded         bool      `db:"grounded" json:"grounded"`
 	ContextCount     int32     `db:"context_count" json:"context_count"`
 	Citations        []byte    `db:"citations" json:"citations"`
+	PromptTokens     int32     `db:"prompt_tokens" json:"prompt_tokens"`
+	CompletionTokens int32     `db:"completion_tokens" json:"completion_tokens"`
 	CreatedAt        time.Time `db:"created_at" json:"created_at"`
 }
 
-// ListConversationTurnsBySession returns ordered history for a session, scoped
-// to the calling user so a session_id guess can't leak another operator's chat.
 func (q *Queries) ListConversationTurnsBySession(ctx context.Context, arg ListConversationTurnsBySessionParams) ([]ListConversationTurnsBySessionRow, error) {
 	rows, err := q.db.Query(ctx, listConversationTurnsBySession, arg.SessionID, arg.UserID)
 	if err != nil {
@@ -149,6 +163,8 @@ func (q *Queries) ListConversationTurnsBySession(ctx context.Context, arg ListCo
 			&i.Grounded,
 			&i.ContextCount,
 			&i.Citations,
+			&i.PromptTokens,
+			&i.CompletionTokens,
 			&i.CreatedAt,
 		); err != nil {
 			return nil, err
@@ -167,15 +183,20 @@ SELECT
     agg.turn_count::int          AS turn_count,
     agg.last_turn_at              AS last_turn_at,
     agg.any_grounded              AS any_grounded,
+    agg.total_prompt_tokens       AS total_prompt_tokens,
+    agg.total_completion_tokens   AS total_completion_tokens,
     first_t.user_message          AS first_user_message,
     last_t.assistant_message      AS last_assistant_message,
-    last_t.farm_id                AS last_farm_id
+    last_t.farm_id                AS last_farm_id,
+    sess.title                    AS title
 FROM (
     SELECT
         session_id,
-        COUNT(*)        AS turn_count,
-        MAX(created_at) AS last_turn_at,
-        BOOL_OR(grounded) AS any_grounded
+        COUNT(*)                  AS turn_count,
+        MAX(created_at)           AS last_turn_at,
+        BOOL_OR(grounded)         AS any_grounded,
+        SUM(prompt_tokens)::int   AS total_prompt_tokens,
+        SUM(completion_tokens)::int AS total_completion_tokens
     FROM gr33ncore.conversation_turns
     WHERE user_id = $1
     GROUP BY session_id
@@ -196,6 +217,8 @@ JOIN LATERAL (
     ORDER BY turn_index DESC
     LIMIT 1
 ) last_t ON true
+LEFT JOIN gr33ncore.conversation_sessions sess
+    ON sess.id = agg.session_id AND sess.user_id = $1
 ORDER BY agg.last_turn_at DESC
 LIMIT $2
 `
@@ -206,18 +229,18 @@ type ListRecentConversationSessionsParams struct {
 }
 
 type ListRecentConversationSessionsRow struct {
-	SessionID            uuid.UUID `db:"session_id" json:"session_id"`
-	TurnCount            int32     `db:"turn_count" json:"turn_count"`
-	LastTurnAt           time.Time `db:"last_turn_at" json:"last_turn_at"`
-	AnyGrounded          bool      `db:"any_grounded" json:"any_grounded"`
-	FirstUserMessage     string    `db:"first_user_message" json:"first_user_message"`
-	LastAssistantMessage string    `db:"last_assistant_message" json:"last_assistant_message"`
-	LastFarmID           *int64    `db:"last_farm_id" json:"last_farm_id"`
+	SessionID             uuid.UUID `db:"session_id" json:"session_id"`
+	TurnCount             int32     `db:"turn_count" json:"turn_count"`
+	LastTurnAt            time.Time `db:"last_turn_at" json:"last_turn_at"`
+	AnyGrounded           bool      `db:"any_grounded" json:"any_grounded"`
+	TotalPromptTokens     int32     `db:"total_prompt_tokens" json:"total_prompt_tokens"`
+	TotalCompletionTokens int32     `db:"total_completion_tokens" json:"total_completion_tokens"`
+	FirstUserMessage      string    `db:"first_user_message" json:"first_user_message"`
+	LastAssistantMessage  string    `db:"last_assistant_message" json:"last_assistant_message"`
+	LastFarmID            *int64    `db:"last_farm_id" json:"last_farm_id"`
+	Title                 *string   `db:"title" json:"title"`
 }
 
-// ListRecentConversationSessions returns one row per distinct session_id for
-// the calling user, most recently active first.
-// Used by the UI to populate the session picker / history view.
 func (q *Queries) ListRecentConversationSessions(ctx context.Context, arg ListRecentConversationSessionsParams) ([]ListRecentConversationSessionsRow, error) {
 	rows, err := q.db.Query(ctx, listRecentConversationSessions, arg.UserID, arg.MatchLimit)
 	if err != nil {
@@ -232,9 +255,12 @@ func (q *Queries) ListRecentConversationSessions(ctx context.Context, arg ListRe
 			&i.TurnCount,
 			&i.LastTurnAt,
 			&i.AnyGrounded,
+			&i.TotalPromptTokens,
+			&i.TotalCompletionTokens,
 			&i.FirstUserMessage,
 			&i.LastAssistantMessage,
 			&i.LastFarmID,
+			&i.Title,
 		); err != nil {
 			return nil, err
 		}
@@ -244,4 +270,90 @@ func (q *Queries) ListRecentConversationSessions(ctx context.Context, arg ListRe
 		return nil, err
 	}
 	return items, nil
+}
+
+// ──────────────────────────────────────────────────────────────────────────
+// gr33ncore.conversation_sessions
+// ──────────────────────────────────────────────────────────────────────────
+
+const upsertConversationSession = `-- name: UpsertConversationSession :exec
+INSERT INTO gr33ncore.conversation_sessions (id, user_id)
+VALUES ($1, $2)
+ON CONFLICT (id) DO UPDATE
+    SET updated_at = NOW()
+`
+
+type UpsertConversationSessionParams struct {
+	ID     uuid.UUID `db:"id" json:"id"`
+	UserID uuid.UUID `db:"user_id" json:"user_id"`
+}
+
+func (q *Queries) UpsertConversationSession(ctx context.Context, arg UpsertConversationSessionParams) error {
+	_, err := q.db.Exec(ctx, upsertConversationSession, arg.ID, arg.UserID)
+	return err
+}
+
+const updateConversationSessionTitle = `-- name: UpdateConversationSessionTitle :one
+UPDATE gr33ncore.conversation_sessions
+SET title = $1
+WHERE id = $2
+  AND user_id = $3
+RETURNING id, title, updated_at
+`
+
+type UpdateConversationSessionTitleParams struct {
+	Title  *string   `db:"title" json:"title"`
+	ID     uuid.UUID `db:"id" json:"id"`
+	UserID uuid.UUID `db:"user_id" json:"user_id"`
+}
+
+type UpdateConversationSessionTitleRow struct {
+	ID        uuid.UUID `db:"id" json:"id"`
+	Title     *string   `db:"title" json:"title"`
+	UpdatedAt time.Time `db:"updated_at" json:"updated_at"`
+}
+
+func (q *Queries) UpdateConversationSessionTitle(ctx context.Context, arg UpdateConversationSessionTitleParams) (UpdateConversationSessionTitleRow, error) {
+	row := q.db.QueryRow(ctx, updateConversationSessionTitle, arg.Title, arg.ID, arg.UserID)
+	var i UpdateConversationSessionTitleRow
+	err := row.Scan(&i.ID, &i.Title, &i.UpdatedAt)
+	return i, err
+}
+
+const deleteConversationTurnsBySession = `-- name: DeleteConversationTurnsBySession :exec
+DELETE FROM gr33ncore.conversation_turns
+WHERE session_id = $1
+  AND user_id    = $2
+`
+
+type DeleteConversationTurnsBySessionParams struct {
+	SessionID uuid.UUID `db:"session_id" json:"session_id"`
+	UserID    uuid.UUID `db:"user_id" json:"user_id"`
+}
+
+func (q *Queries) DeleteConversationTurnsBySession(ctx context.Context, arg DeleteConversationTurnsBySessionParams) error {
+	_, err := q.db.Exec(ctx, deleteConversationTurnsBySession, arg.SessionID, arg.UserID)
+	return err
+}
+
+const deleteConversationSession = `-- name: DeleteConversationSession :execrows
+DELETE FROM gr33ncore.conversation_sessions
+WHERE id = $1
+  AND user_id = $2
+`
+
+type DeleteConversationSessionParams struct {
+	ID     uuid.UUID `db:"id" json:"id"`
+	UserID uuid.UUID `db:"user_id" json:"user_id"`
+}
+
+// DeleteConversationSession returns the number of rows removed (0 when the
+// session never had a metadata row — that's fine, callers still delete turns
+// independently).
+func (q *Queries) DeleteConversationSession(ctx context.Context, arg DeleteConversationSessionParams) (int64, error) {
+	res, err := q.db.Exec(ctx, deleteConversationSession, arg.ID, arg.UserID)
+	if err != nil {
+		return 0, err
+	}
+	return res.RowsAffected(), nil
 }

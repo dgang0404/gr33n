@@ -16,6 +16,7 @@ import (
 
 type fakeLLM struct {
 	reply        string
+	usage        llm.Usage
 	failWith     error
 	lastUser     string
 	lastSys      string
@@ -43,6 +44,18 @@ func (f *fakeLLM) ChatCompletionMessages(_ context.Context, messages []llm.Messa
 		return "", f.failWith
 	}
 	return f.reply, nil
+}
+func (f *fakeLLM) ChatCompletionMessagesWithUsage(_ context.Context, messages []llm.Message) (string, llm.Usage, error) {
+	f.callCount++
+	f.lastMessages = messages
+	if len(messages) > 0 {
+		f.lastSys = messages[0].Content
+		f.lastUser = messages[len(messages)-1].Content
+	}
+	if f.failWith != nil {
+		return "", llm.Usage{}, f.failWith
+	}
+	return f.reply, f.usage, nil
 }
 func (f *fakeLLM) ModelLabel() string { return "fake-model" }
 
@@ -147,6 +160,25 @@ func TestPostV1_InvalidSessionID400(t *testing.T) {
 	rec := doPost(t, h, `{"message":"hi","session_id":"not-a-uuid"}`)
 	if rec.Code != http.StatusBadRequest {
 		t.Fatalf("want 400, got %d", rec.Code)
+	}
+}
+
+func TestPostV1_ReturnsTokenUsage(t *testing.T) {
+	fl := &fakeLLM{
+		reply: "ok",
+		usage: llm.Usage{PromptTokens: 42, CompletionTokens: 17, TotalTokens: 59},
+	}
+	h := NewHandlerWithDeps(ai.Config{Enabled: true}, nil, fl, nil)
+	rec := doPost(t, h, `{"message":"hi"}`)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("want 200, got %d: %s", rec.Code, rec.Body.String())
+	}
+	var resp postResponse
+	if err := json.NewDecoder(rec.Body).Decode(&resp); err != nil {
+		t.Fatal(err)
+	}
+	if resp.PromptTokens != 42 || resp.CompletionTokens != 17 {
+		t.Fatalf("expected token usage to flow through, got %+v", resp)
 	}
 }
 

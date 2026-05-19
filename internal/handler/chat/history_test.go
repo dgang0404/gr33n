@@ -1,6 +1,7 @@
 package chat
 
 import (
+	"strings"
 	"testing"
 
 	db "gr33n-api/internal/db"
@@ -91,6 +92,30 @@ func TestBuildMessages_NoHistory(t *testing.T) {
 	}
 	if got[1].Role != "user" || got[1].Content != "user-x" {
 		t.Fatalf("user slot wrong: %+v", got[1])
+	}
+}
+
+func TestNormaliseTitle(t *testing.T) {
+	if got := normaliseTitle(nil); got != nil {
+		t.Fatalf("nil in → nil out, got %v", got)
+	}
+	empty := "   "
+	if got := normaliseTitle(&empty); got != nil {
+		t.Fatalf("whitespace → nil, got %v", got)
+	}
+	plain := "  My Sunday morning chat  "
+	got := normaliseTitle(&plain)
+	if got == nil || *got != "My Sunday morning chat" {
+		t.Fatalf("expected trimmed, got %v", got)
+	}
+	long := strings.Repeat("a", 200)
+	got = normaliseTitle(&long)
+	if got == nil {
+		t.Fatal("expected non-nil for long input")
+	}
+	// 120 a's + the ellipsis rune.
+	if !strings.HasSuffix(*got, "…") {
+		t.Fatalf("expected ellipsis suffix, got %q", *got)
 	}
 }
 

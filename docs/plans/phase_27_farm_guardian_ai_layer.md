@@ -78,11 +78,24 @@ isProject: false
 - **`internal/farmguardian/snapshot.go`** — `Snapshot{ZoneCount, ZoneNames, ActiveCycles, UnreadAlerts}` plus `BuildSnapshot(ctx, q, farmID)` (zones + crop cycles + unread-alerts count, best-effort: a failing sub-query never blocks the chat turn) and a prompt-ready `PromptBlock()` that prepends a header so the model knows the snapshot is background context and is not subject to the `[n]` citation rule.
 - **`POST /v1/chat` grounded path** — system message now layers as `persona → live farm snapshot → synthesis instructions`. Plain (no `farm_id`) turns are unchanged. Cap of 12 zone names and 8 active cycles in the rendered block keeps the prompt budget predictable for larger farms.
 
+### Shipped after WS4 follow-up (session lifecycle + token usage)
+
+- **`db/migrations/20260520_phase27_session_metadata.sql`** — new `gr33ncore.conversation_sessions` (id UUID PK, user_id FK auth.users, nullable title, created_at/updated_at + `set_updated_at` trigger). Adds `prompt_tokens` + `completion_tokens` columns to `conversation_turns`.
+- **Queries** — `UpsertConversationSession` (touch on every turn), `UpdateConversationSessionTitle` (returns row), `DeleteConversationTurnsBySession`, `DeleteConversationSession`. `InsertConversationTurn` extended to record token usage; `ListRecentConversationSessions` LEFT JOINs sessions for title and SUMs token usage across the session.
+- **LLM client** — new `llm.Usage{PromptTokens, CompletionTokens, TotalTokens}` and `ChatCompletionMessagesWithUsage`; new `UsageAwareChatCompleter` interface. Old `ChatCompletion` / `ChatCompletionMessages` are thin wrappers that discard usage.
+- **`POST /v1/chat`** — captures token usage on the non-streaming path (streaming Usage{} is logged; full streaming usage capture lives behind `stream_options.include_usage` and is deferred). `prompt_tokens` + `completion_tokens` flow into both the JSON response and the persisted row.
+- **New endpoints**:
+  - `PATCH /v1/chat/sessions/{session_id}` — `{ "title": "…" }`. Whitespace-only / null title clears it (UI falls back to the first user message). 120-rune cap with ellipsis. 404 when the session doesn't belong to the caller.
+  - `DELETE /v1/chat/sessions/{session_id}` — removes all turns + the metadata row; idempotent (204 even for non-existent UUIDs so the API doesn't confirm session existence to outsiders).
+- **`GET /v1/chat/sessions`** — now returns `title`, `total_prompt_tokens`, `total_completion_tokens` per session.
+- **UI `/chat` sidebar** — per-session pencil (✎) and ✕ buttons that appear on hover, wired to the new endpoints. Token totals render as `<n> tok` chips with a prompt/completion tooltip. Transcript turns also show per-turn token chips. Sessions display their title when set, otherwise fall back to the first user message.
+- **Smoke harness** — `initMigrations` now applies the Phase 27 migrations (`20260519_phase27_conversation_turns.sql` + `20260520_phase27_session_metadata.sql`) so tests stay self-contained on fresh DBs.
+
 ### Still open
 
 - **WS3 follow-up** — Retry / backoff policy on transient LLM failures.
-- **WS5 follow-up** — Pruning / TTL job for stale sessions; explicit "delete session" + "rename session" endpoints; token-usage accounting per turn.
-- **WS6 follow-up** — Token usage chips in the transcript, draft autosave, delete/rename controls in the session sidebar.
+- **WS5 follow-up** — Pruning / TTL job for stale sessions; per-user / per-farm cost guards on accumulated token usage; streaming token usage via `stream_options.include_usage`.
+- **WS6 follow-up** — Inline rename instead of `window.prompt`; bulk delete for the sessions list.
 
 ---
 

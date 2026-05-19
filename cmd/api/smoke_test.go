@@ -349,6 +349,22 @@ ALTER TABLE gr33ncore.farms ADD COLUMN IF NOT EXISTS organization_id BIGINT
 	if _, err := pool.Exec(ctx, string(phase22BackfillSweepSQL)); err != nil {
 		return err
 	}
+	// Phase 27 — Farm Guardian DB-backed history (conversation_turns) and
+	// session metadata (titles + token usage).
+	phase27TurnsSQL, err := os.ReadFile(filepath.Join("..", "..", "db", "migrations", "20260519_phase27_conversation_turns.sql"))
+	if err != nil {
+		return err
+	}
+	if _, err := pool.Exec(ctx, string(phase27TurnsSQL)); err != nil {
+		return err
+	}
+	phase27SessionMetaSQL, err := os.ReadFile(filepath.Join("..", "..", "db", "migrations", "20260520_phase27_session_metadata.sql"))
+	if err != nil {
+		return err
+	}
+	if _, err := pool.Exec(ctx, string(phase27SessionMetaSQL)); err != nil {
+		return err
+	}
 	return nil
 }
 

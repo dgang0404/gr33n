@@ -15,6 +15,7 @@ import (
 	"log/slog"
 	"net/http"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -83,14 +84,16 @@ type postBody struct {
 }
 
 type postResponse struct {
-	Answer       string               `json:"answer"`
-	LLMModel     string               `json:"llm_model"`
-	Grounded     bool                 `json:"grounded"`
-	Citations    []synthesis.Citation `json:"citations,omitempty"`
-	ContextCount int                  `json:"context_count"`
-	EmbeddingID  string               `json:"embedding_model_id,omitempty"`
-	SessionID    string               `json:"session_id,omitempty"`
-	TurnIndex    int32                `json:"turn_index"`
+	Answer           string               `json:"answer"`
+	LLMModel         string               `json:"llm_model"`
+	Grounded         bool                 `json:"grounded"`
+	Citations        []synthesis.Citation `json:"citations,omitempty"`
+	ContextCount     int                  `json:"context_count"`
+	EmbeddingID      string               `json:"embedding_model_id,omitempty"`
+	SessionID        string               `json:"session_id,omitempty"`
+	TurnIndex        int32                `json:"turn_index"`
+	PromptTokens     int                  `json:"prompt_tokens"`
+	CompletionTokens int                  `json:"completion_tokens"`
 }
 
 // PostV1 handles POST /v1/chat — JWT required by route wiring.
@@ -224,11 +227,16 @@ func (h *Handler) PostV1(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	mc, ok := h.llm.(llm.MessagesChatCompleter)
-	var answer string
-	if ok {
-		answer, err = mc.ChatCompletionMessages(r.Context(), messages)
-	} else {
+	var (
+		answer string
+		usage  llm.Usage
+	)
+	switch client := h.llm.(type) {
+	case llm.UsageAwareChatCompleter:
+		answer, usage, err = client.ChatCompletionMessagesWithUsage(r.Context(), messages)
+	case llm.MessagesChatCompleter:
+		answer, err = client.ChatCompletionMessages(r.Context(), messages)
+	default:
 		// Legacy fallback — shouldn't happen for *llm.Client but keeps mocks honest.
 		answer, err = h.llm.ChatCompletion(r.Context(), system, user)
 	}
@@ -242,10 +250,12 @@ func (h *Handler) PostV1(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp := postResponse{
-		Answer:    answer,
-		LLMModel:  h.llm.ModelLabel(),
-		Grounded:  grounded,
-		SessionID: sessionID.String(),
+		Answer:           answer,
+		LLMModel:         h.llm.ModelLabel(),
+		Grounded:         grounded,
+		SessionID:        sessionID.String(),
+		PromptTokens:     usage.PromptTokens,
+		CompletionTokens: usage.CompletionTokens,
 	}
 	if grounded {
 		resp.Citations = synthesis.BuildCitations(answer, chunks)
@@ -255,7 +265,7 @@ func (h *Handler) PostV1(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	if turnIdx, perr := h.persistTurn(r.Context(), sessionID, userID, hasUser, farmID, grounded, question, answer, resp.Citations, len(chunks)); perr == nil {
+	if turnIdx, perr := h.persistTurn(r.Context(), sessionID, userID, hasUser, farmID, grounded, question, answer, resp.Citations, len(chunks), usage); perr == nil {
 		resp.TurnIndex = turnIdx
 	}
 
@@ -267,6 +277,8 @@ func (h *Handler) PostV1(w http.ResponseWriter, r *http.Request) {
 		"context_chunks", len(chunks),
 		"citations", len(resp.Citations),
 		"history_turns", len(history)/2,
+		"prompt_tokens", usage.PromptTokens,
+		"completion_tokens", usage.CompletionTokens,
 	)
 	httputil.WriteJSON(w, http.StatusOK, resp)
 }
@@ -338,7 +350,9 @@ func (h *Handler) streamResponse(
 		}
 	}
 
-	if turnIdx, perr := h.persistTurn(r.Context(), sessionID, userID, hasUser, farmID, grounded, question, answer, done.Citations, len(chunks)); perr == nil {
+	// Streaming backends rarely surface token usage today; leave Usage{} and
+	// rely on the request-side token estimate landing in a follow-up.
+	if turnIdx, perr := h.persistTurn(r.Context(), sessionID, userID, hasUser, farmID, grounded, question, answer, done.Citations, len(chunks), llm.Usage{}); perr == nil {
 		done.TurnIndex = turnIdx
 	}
 
@@ -376,7 +390,9 @@ func (h *Handler) retrieveChunks(ctx context.Context, farmID int64, query string
 
 // persistTurn inserts the just-completed (user, assistant) pair when we have
 // authenticated state and a DB. Returns the assigned turn_index or -1 if the
-// turn was not persisted (so the caller can omit it from the response).
+// turn was not persisted (so the caller can omit it from the response). Also
+// upserts the matching conversation_sessions row so updated_at tracks the
+// latest activity (used for sidebar ordering).
 func (h *Handler) persistTurn(
 	ctx context.Context,
 	sessionID uuid.UUID,
@@ -387,6 +403,7 @@ func (h *Handler) persistTurn(
 	question, answer string,
 	citations []synthesis.Citation,
 	contextCount int,
+	usage llm.Usage,
 ) (int32, error) {
 	if !hasUser || h.q == nil {
 		return -1, nil
@@ -412,10 +429,18 @@ func (h *Handler) persistTurn(
 		Grounded:         grounded,
 		ContextCount:     int32(contextCount),
 		Citations:        citationsJSON,
+		PromptTokens:     int32(usage.PromptTokens),
+		CompletionTokens: int32(usage.CompletionTokens),
 	})
 	if err != nil {
 		slog.Warn("conversation_turns insert failed", "session_id", sessionID, "err", err)
 		return -1, err
+	}
+	if uerr := h.q.UpsertConversationSession(ctx, db.UpsertConversationSessionParams{
+		ID:     sessionID,
+		UserID: userID,
+	}); uerr != nil {
+		slog.Warn("conversation_sessions upsert failed", "session_id", sessionID, "err", uerr)
 	}
 	return row.TurnIndex, nil
 }
@@ -464,13 +489,16 @@ func buildMessages(system string, history []llm.Message, currentUser string) []l
 // ──────────────────────────────────────────────────────────────────────────
 
 type sessionSummary struct {
-	SessionID            string `json:"session_id"`
-	TurnCount            int32  `json:"turn_count"`
-	LastTurnAt           string `json:"last_turn_at"`
-	AnyGrounded          bool   `json:"any_grounded"`
-	FirstUserMessage     string `json:"first_user_message"`
-	LastAssistantMessage string `json:"last_assistant_message"`
-	LastFarmID           *int64 `json:"last_farm_id,omitempty"`
+	SessionID             string  `json:"session_id"`
+	Title                 *string `json:"title,omitempty"`
+	TurnCount             int32   `json:"turn_count"`
+	LastTurnAt            string  `json:"last_turn_at"`
+	AnyGrounded           bool    `json:"any_grounded"`
+	FirstUserMessage      string  `json:"first_user_message"`
+	LastAssistantMessage  string  `json:"last_assistant_message"`
+	LastFarmID            *int64  `json:"last_farm_id,omitempty"`
+	TotalPromptTokens     int32   `json:"total_prompt_tokens"`
+	TotalCompletionTokens int32   `json:"total_completion_tokens"`
 }
 
 type sessionTurn struct {
@@ -482,6 +510,8 @@ type sessionTurn struct {
 	ContextCount     int32                `json:"context_count"`
 	Citations        []synthesis.Citation `json:"citations,omitempty"`
 	FarmID           *int64               `json:"farm_id,omitempty"`
+	PromptTokens     int32                `json:"prompt_tokens"`
+	CompletionTokens int32                `json:"completion_tokens"`
 	CreatedAt        string               `json:"created_at"`
 }
 
@@ -509,13 +539,16 @@ func (h *Handler) ListSessions(w http.ResponseWriter, r *http.Request) {
 	out := make([]sessionSummary, 0, len(rows))
 	for _, row := range rows {
 		out = append(out, sessionSummary{
-			SessionID:            row.SessionID.String(),
-			TurnCount:            row.TurnCount,
-			LastTurnAt:           row.LastTurnAt.UTC().Format("2006-01-02T15:04:05Z"),
-			AnyGrounded:          row.AnyGrounded,
-			FirstUserMessage:     row.FirstUserMessage,
-			LastAssistantMessage: row.LastAssistantMessage,
-			LastFarmID:           row.LastFarmID,
+			SessionID:             row.SessionID.String(),
+			Title:                 row.Title,
+			TurnCount:             row.TurnCount,
+			LastTurnAt:            row.LastTurnAt.UTC().Format("2006-01-02T15:04:05Z"),
+			AnyGrounded:           row.AnyGrounded,
+			FirstUserMessage:      row.FirstUserMessage,
+			LastAssistantMessage:  row.LastAssistantMessage,
+			LastFarmID:            row.LastFarmID,
+			TotalPromptTokens:     row.TotalPromptTokens,
+			TotalCompletionTokens: row.TotalCompletionTokens,
 		})
 	}
 	httputil.WriteJSON(w, http.StatusOK, map[string]any{"sessions": out})
@@ -563,6 +596,8 @@ func (h *Handler) GetSession(w http.ResponseWriter, r *http.Request) {
 			ContextCount:     row.ContextCount,
 			Citations:        cites,
 			FarmID:           row.FarmID,
+			PromptTokens:     row.PromptTokens,
+			CompletionTokens: row.CompletionTokens,
 			CreatedAt:        row.CreatedAt.UTC().Format("2006-01-02T15:04:05Z"),
 		})
 	}
@@ -570,4 +605,124 @@ func (h *Handler) GetSession(w http.ResponseWriter, r *http.Request) {
 		"session_id": sessionID.String(),
 		"turns":      out,
 	})
+}
+
+// PatchSession handles PATCH /v1/chat/sessions/{session_id} — operator rename.
+// Empty / whitespace-only title resets to NULL so the UI falls back to the
+// first user message.
+func (h *Handler) PatchSession(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPatch {
+		httputil.WriteError(w, http.StatusMethodNotAllowed, "method not allowed")
+		return
+	}
+	userID, ok := authctx.UserID(r.Context())
+	if !ok {
+		httputil.WriteError(w, http.StatusUnauthorized, "authentication required")
+		return
+	}
+	sessionID, err := uuid.Parse(r.PathValue("session_id"))
+	if err != nil {
+		httputil.WriteError(w, http.StatusBadRequest, "invalid session_id")
+		return
+	}
+
+	body, err := io.ReadAll(io.LimitReader(r.Body, 4<<10))
+	if err != nil {
+		httputil.WriteError(w, http.StatusBadRequest, "invalid body")
+		return
+	}
+	var patch struct {
+		Title *string `json:"title"`
+	}
+	if len(body) > 0 {
+		if jerr := json.Unmarshal(body, &patch); jerr != nil {
+			httputil.WriteError(w, http.StatusBadRequest, "invalid JSON")
+			return
+		}
+	}
+
+	titlePtr := normaliseTitle(patch.Title)
+
+	row, err := h.q.UpdateConversationSessionTitle(r.Context(), db.UpdateConversationSessionTitleParams{
+		Title:  titlePtr,
+		ID:     sessionID,
+		UserID: userID,
+	})
+	if err != nil {
+		// UPDATE … RETURNING with zero matched rows surfaces as pgx.ErrNoRows
+		// (Scan never executes). Map it to 404 so the UI can react cleanly.
+		if isNoRowsErr(err) {
+			httputil.WriteError(w, http.StatusNotFound, "session not found")
+			return
+		}
+		slog.Warn("session rename failed", "session_id", sessionID, "err", err)
+		httputil.WriteError(w, http.StatusInternalServerError, "rename failed")
+		return
+	}
+	httputil.WriteJSON(w, http.StatusOK, map[string]any{
+		"session_id": row.ID.String(),
+		"title":      row.Title,
+		"updated_at": row.UpdatedAt.UTC().Format("2006-01-02T15:04:05Z"),
+	})
+}
+
+// DeleteSession handles DELETE /v1/chat/sessions/{session_id} — removes every
+// turn for the (session_id, user_id) pair plus the metadata row. Idempotent:
+// re-deleting the same session id returns 204 either way (no information leak
+// about whether the row ever existed).
+func (h *Handler) DeleteSession(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodDelete {
+		httputil.WriteError(w, http.StatusMethodNotAllowed, "method not allowed")
+		return
+	}
+	userID, ok := authctx.UserID(r.Context())
+	if !ok {
+		httputil.WriteError(w, http.StatusUnauthorized, "authentication required")
+		return
+	}
+	sessionID, err := uuid.Parse(r.PathValue("session_id"))
+	if err != nil {
+		httputil.WriteError(w, http.StatusBadRequest, "invalid session_id")
+		return
+	}
+	if derr := h.q.DeleteConversationTurnsBySession(r.Context(), db.DeleteConversationTurnsBySessionParams{
+		SessionID: sessionID,
+		UserID:    userID,
+	}); derr != nil {
+		slog.Warn("session delete turns failed", "session_id", sessionID, "err", derr)
+		httputil.WriteError(w, http.StatusInternalServerError, "delete failed")
+		return
+	}
+	if _, derr := h.q.DeleteConversationSession(r.Context(), db.DeleteConversationSessionParams{
+		ID:     sessionID,
+		UserID: userID,
+	}); derr != nil {
+		slog.Warn("session delete metadata failed", "session_id", sessionID, "err", derr)
+		// Turns already gone — surface a softer message rather than 500.
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
+// normaliseTitle trims whitespace and treats "" as "clear the title".
+func normaliseTitle(in *string) *string {
+	if in == nil {
+		return nil
+	}
+	t := strings.TrimSpace(*in)
+	if t == "" {
+		return nil
+	}
+	if utf8.RuneCountInString(t) > 120 {
+		// Trim to the first 120 runes (byte-safe).
+		out := []rune(t)[:120]
+		t = string(out) + "…"
+	}
+	return &t
+}
+
+// isNoRowsErr matches the pgx error returned by Scan when an UPDATE … RETURNING
+// touched zero rows. Avoids depending on a specific pgx import path at this
+// layer.
+func isNoRowsErr(err error) bool {
+	return err != nil && (err.Error() == "no rows in result set" || strings.Contains(err.Error(), "no rows in result set"))
 }

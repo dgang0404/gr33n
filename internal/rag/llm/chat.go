@@ -104,6 +104,15 @@ type Message struct {
 
 type chatMessage = Message
 
+// Usage captures the token accounting OpenAI-compatible servers return on
+// each completion. Zero values are valid — backends that don't report usage
+// (some Ollama builds, mocks) just leave the counters at 0.
+type Usage struct {
+	PromptTokens     int `json:"prompt_tokens"`
+	CompletionTokens int `json:"completion_tokens"`
+	TotalTokens      int `json:"total_tokens"`
+}
+
 type chatRequest struct {
 	Model       string    `json:"model"`
 	Messages    []Message `json:"messages"`
@@ -115,6 +124,7 @@ type chatResponse struct {
 	Choices []struct {
 		Message Message `json:"message"`
 	} `json:"choices"`
+	Usage *Usage `json:"usage,omitempty"`
 	Error *struct {
 		Message string `json:"message"`
 	} `json:"error"`
@@ -124,18 +134,27 @@ type chatResponse struct {
 // ChatCompletionMessages with a two-element slice; preserved for callers that
 // don't need multi-turn history.
 func (c *Client) ChatCompletion(ctx context.Context, system, user string) (string, error) {
-	return c.ChatCompletionMessages(ctx, []Message{
+	answer, _, err := c.ChatCompletionMessagesWithUsage(ctx, []Message{
 		{Role: "system", Content: system},
 		{Role: "user", Content: user},
 	})
+	return answer, err
 }
 
 // ChatCompletionMessages runs a multi-turn completion. Messages are passed
 // through verbatim — callers are responsible for the system / history /
 // current-user ordering. Phase 27 WS5 uses this for session history replay.
 func (c *Client) ChatCompletionMessages(ctx context.Context, messages []Message) (string, error) {
+	answer, _, err := c.ChatCompletionMessagesWithUsage(ctx, messages)
+	return answer, err
+}
+
+// ChatCompletionMessagesWithUsage is the canonical non-streaming path. It
+// returns both the answer text and the OpenAI-style token usage block when
+// the backend reports it (Usage{} on backends that don't).
+func (c *Client) ChatCompletionMessagesWithUsage(ctx context.Context, messages []Message) (string, Usage, error) {
 	if len(messages) == 0 {
-		return "", errors.New("messages required")
+		return "", Usage{}, errors.New("messages required")
 	}
 	body := chatRequest{
 		Model:       c.Model,
@@ -145,12 +164,12 @@ func (c *Client) ChatCompletionMessages(ctx context.Context, messages []Message)
 	}
 	raw, err := json.Marshal(body)
 	if err != nil {
-		return "", err
+		return "", Usage{}, err
 	}
 	url := c.BaseURL + "/chat/completions"
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(raw))
 	if err != nil {
-		return "", err
+		return "", Usage{}, err
 	}
 	req.Header.Set("Content-Type", "application/json")
 	if c.APIKey != "" {
@@ -162,27 +181,31 @@ func (c *Client) ChatCompletionMessages(ctx context.Context, messages []Message)
 	}
 	resp, err := client.Do(req)
 	if err != nil {
-		return "", err
+		return "", Usage{}, err
 	}
 	defer resp.Body.Close()
 	respBody, err := io.ReadAll(io.LimitReader(resp.Body, 4<<20))
 	if err != nil {
-		return "", err
+		return "", Usage{}, err
 	}
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return "", fmt.Errorf("chat HTTP %d: %s", resp.StatusCode, truncateErr(respBody, 512))
+		return "", Usage{}, fmt.Errorf("chat HTTP %d: %s", resp.StatusCode, truncateErr(respBody, 512))
 	}
 	var parsed chatResponse
 	if err := json.Unmarshal(respBody, &parsed); err != nil {
-		return "", fmt.Errorf("chat decode: %w", err)
+		return "", Usage{}, fmt.Errorf("chat decode: %w", err)
 	}
 	if parsed.Error != nil && parsed.Error.Message != "" {
-		return "", errors.New(parsed.Error.Message)
+		return "", Usage{}, errors.New(parsed.Error.Message)
 	}
 	if len(parsed.Choices) == 0 || parsed.Choices[0].Message.Content == "" {
-		return "", errors.New("empty chat response")
+		return "", Usage{}, errors.New("empty chat response")
 	}
-	return strings.TrimSpace(parsed.Choices[0].Message.Content), nil
+	var u Usage
+	if parsed.Usage != nil {
+		u = *parsed.Usage
+	}
+	return strings.TrimSpace(parsed.Choices[0].Message.Content), u, nil
 }
 
 // ModelLabel returns the configured chat model id for API responses.
@@ -208,6 +231,12 @@ type ChatCompleter interface {
 // MessagesChatCompleter is the multi-turn non-streaming surface (Phase 27 WS5 follow-up).
 type MessagesChatCompleter interface {
 	ChatCompletionMessages(ctx context.Context, messages []Message) (string, error)
+}
+
+// UsageAwareChatCompleter is the optional non-streaming surface that returns
+// token accounting alongside the answer. Phase 27 WS5 token-usage slice.
+type UsageAwareChatCompleter interface {
+	ChatCompletionMessagesWithUsage(ctx context.Context, messages []Message) (string, Usage, error)
 }
 
 // StreamingChatCompleter is the optional Phase 27 WS5 v3 streaming surface.

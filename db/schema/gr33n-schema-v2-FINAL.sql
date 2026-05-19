@@ -1747,9 +1747,27 @@ CREATE TABLE IF NOT EXISTS gr33ncore.conversation_turns (
     grounded            BOOLEAN NOT NULL DEFAULT false,
     context_count       INTEGER NOT NULL DEFAULT 0 CHECK (context_count >= 0),
     citations           JSONB NOT NULL DEFAULT '[]'::jsonb,
+    prompt_tokens       INTEGER NOT NULL DEFAULT 0 CHECK (prompt_tokens     >= 0),
+    completion_tokens   INTEGER NOT NULL DEFAULT 0 CHECK (completion_tokens >= 0),
     created_at          TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     CONSTRAINT uq_conversation_turns_session_index UNIQUE (session_id, turn_index)
 );
+
+CREATE TABLE IF NOT EXISTS gr33ncore.conversation_sessions (
+    id          UUID PRIMARY KEY,
+    user_id     UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    title       TEXT NULL,
+    created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_conversation_sessions_user_updated
+    ON gr33ncore.conversation_sessions (user_id, updated_at DESC);
+
+DROP TRIGGER IF EXISTS trg_conversation_sessions_updated_at ON gr33ncore.conversation_sessions;
+CREATE TRIGGER trg_conversation_sessions_updated_at
+    BEFORE UPDATE ON gr33ncore.conversation_sessions
+    FOR EACH ROW EXECUTE FUNCTION gr33ncore.set_updated_at();
 
 COMMENT ON TABLE gr33ncore.conversation_turns IS
   'Per-session (user_message, assistant_message) history for Farm Guardian (Phase 27 WS5). '

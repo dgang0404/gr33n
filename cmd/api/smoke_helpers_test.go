@@ -225,6 +225,34 @@ func postNoAuth(path string, body any) *http.Response {
 	return resp
 }
 
+// patchNoAuth issues PATCH without a bearer (asserts 401 on protected routes).
+func patchNoAuth(path string, body any) *http.Response {
+	b, _ := json.Marshal(body)
+	req, err := http.NewRequest(http.MethodPatch, testServer.URL+path, bytes.NewReader(b))
+	if err != nil {
+		panic(err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		panic(err)
+	}
+	return resp
+}
+
+// deleteNoAuth issues DELETE without a bearer (asserts 401 on protected routes).
+func deleteNoAuth(path string) *http.Response {
+	req, err := http.NewRequest(http.MethodDelete, testServer.URL+path, nil)
+	if err != nil {
+		panic(err)
+	}
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		panic(err)
+	}
+	return resp
+}
+
 // piGet performs GET with X-API-Key (Pi edge auth).
 func piGet(t *testing.T, path string) *http.Response {
 	t.Helper()

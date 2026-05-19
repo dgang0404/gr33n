@@ -35,6 +35,7 @@
           <h2 class="text-xs uppercase tracking-widest text-zinc-500">Sessions</h2>
           <button
             type="button"
+            data-test="chat-new-session"
             class="text-xs px-2 py-1 rounded bg-zinc-800 text-zinc-200 hover:bg-zinc-700"
             :disabled="streaming"
             @click="newSession"
@@ -49,17 +50,47 @@
           <li
             v-for="s in sessions"
             :key="s.session_id"
-            class="rounded p-2 cursor-pointer text-xs space-y-1"
+            class="rounded p-2 text-xs space-y-1 group relative"
             :class="s.session_id === sessionId ? 'bg-green-900/40 border border-green-800 text-green-100' : 'hover:bg-zinc-800 text-zinc-300 border border-transparent'"
-            @click="loadSession(s.session_id)"
           >
-            <div class="flex items-center justify-between gap-2">
-              <span class="font-medium truncate">{{ s.first_user_message || 'Untitled' }}</span>
+            <div class="flex items-center justify-between gap-2 cursor-pointer" @click="loadSession(s.session_id)">
+              <span class="font-medium truncate" :title="sessionLabel(s)">{{ sessionLabel(s) }}</span>
               <span class="text-[10px] text-zinc-500 shrink-0">{{ s.turn_count }} turn{{ s.turn_count === 1 ? '' : 's' }}</span>
             </div>
-            <div class="text-[10px] text-zinc-500 flex items-center gap-1">
-              <span v-if="s.any_grounded" class="text-gr33n-500">grounded</span>
-              <span>{{ formatTime(s.last_turn_at) }}</span>
+            <div class="text-[10px] text-zinc-500 flex items-center justify-between gap-1">
+              <div class="flex items-center gap-2">
+                <span v-if="s.any_grounded" class="text-gr33n-500">grounded</span>
+                <span>{{ formatTime(s.last_turn_at) }}</span>
+                <span
+                  v-if="(s.total_prompt_tokens || 0) + (s.total_completion_tokens || 0) > 0"
+                  class="text-zinc-600"
+                  :title="`prompt ${s.total_prompt_tokens} · completion ${s.total_completion_tokens}`"
+                >
+                  {{ (s.total_prompt_tokens || 0) + (s.total_completion_tokens || 0) }} tok
+                </span>
+              </div>
+              <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
+                <button
+                  type="button"
+                  class="px-1.5 py-0.5 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-300"
+                  :disabled="streaming"
+                  data-test="chat-session-rename"
+                  :title="'Rename session'"
+                  @click.stop="renameSession(s)"
+                >
+                  ✎
+                </button>
+                <button
+                  type="button"
+                  class="px-1.5 py-0.5 rounded bg-zinc-800 hover:bg-red-900/60 text-zinc-300 hover:text-red-200"
+                  :disabled="streaming"
+                  data-test="chat-session-delete"
+                  :title="'Delete session'"
+                  @click.stop="deleteSession(s)"
+                >
+                  ✕
+                </button>
+              </div>
             </div>
           </li>
         </ul>
@@ -86,6 +117,14 @@
               <span class="whitespace-pre-wrap">{{ t.assistant_message }}</span>
               <div class="mt-1 text-[10px] text-zinc-600">
                 {{ t.llm_model }}<span v-if="t.grounded"> · grounded · {{ t.context_count }} chunks</span>
+                <span
+                  v-if="(t.prompt_tokens || 0) + (t.completion_tokens || 0) > 0"
+                  class="ml-2"
+                  data-test="chat-turn-tokens"
+                  :title="`prompt ${t.prompt_tokens} · completion ${t.completion_tokens}`"
+                >
+                  · {{ (t.prompt_tokens || 0) + (t.completion_tokens || 0) }} tok
+                </span>
               </div>
             </div>
             <ul v-if="t.citations?.length" class="space-y-1 pl-6">
@@ -203,6 +242,40 @@ function newSession() {
   transcript.value = []
   streamingText.value = ''
   errorMessage.value = ''
+}
+
+function sessionLabel(s) {
+  if (s.title && s.title.trim()) return s.title
+  if (s.first_user_message && s.first_user_message.trim()) return s.first_user_message
+  return 'Untitled'
+}
+
+async function renameSession(s) {
+  if (streaming.value) return
+  const next = window.prompt('Rename session:', s.title || s.first_user_message || '')
+  if (next === null) return
+  try {
+    const r = await api.patch('/v1/chat/sessions/' + s.session_id, { title: next })
+    const i = sessions.value.findIndex((x) => x.session_id === s.session_id)
+    if (i !== -1) sessions.value[i] = { ...sessions.value[i], title: r.data?.title ?? null }
+  } catch (e) {
+    errorMessage.value = e.message || 'rename failed'
+  }
+}
+
+async function deleteSession(s) {
+  if (streaming.value) return
+  if (!window.confirm('Delete this session? This cannot be undone.')) return
+  try {
+    await api.delete('/v1/chat/sessions/' + s.session_id)
+    sessions.value = sessions.value.filter((x) => x.session_id !== s.session_id)
+    if (sessionId.value === s.session_id) {
+      sessionId.value = ''
+      transcript.value = []
+    }
+  } catch (e) {
+    errorMessage.value = e.message || 'delete failed'
+  }
 }
 
 function apiBaseURL() {

@@ -99,3 +99,38 @@ func TestV1ChatGetSessionRejectsBadUUID(t *testing.T) {
 	defer resp.Body.Close()
 	expectStatus(t, resp, http.StatusBadRequest)
 }
+
+func TestV1ChatPatchSessionUnauthorized(t *testing.T) {
+	resp := patchNoAuth("/v1/chat/sessions/11111111-1111-4111-8111-111111111111", map[string]any{"title": "x"})
+	defer resp.Body.Close()
+	expectStatus(t, resp, http.StatusUnauthorized)
+}
+
+func TestV1ChatPatchSessionRejectsBadUUID(t *testing.T) {
+	tok := smokeJWT(t)
+	resp := authPatch(t, tok, "/v1/chat/sessions/not-a-uuid", map[string]any{"title": "x"})
+	defer resp.Body.Close()
+	expectStatus(t, resp, http.StatusBadRequest)
+}
+
+func TestV1ChatPatchSessionNotFound(t *testing.T) {
+	tok := smokeJWT(t)
+	// Valid UUID but no row exists in the smoke DB.
+	resp := authPatch(t, tok, "/v1/chat/sessions/aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee", map[string]any{"title": "x"})
+	defer resp.Body.Close()
+	expectStatus(t, resp, http.StatusNotFound)
+}
+
+func TestV1ChatDeleteSessionUnauthorized(t *testing.T) {
+	resp := deleteNoAuth("/v1/chat/sessions/11111111-1111-4111-8111-111111111111")
+	defer resp.Body.Close()
+	expectStatus(t, resp, http.StatusUnauthorized)
+}
+
+func TestV1ChatDeleteSessionIdempotent(t *testing.T) {
+	tok := smokeJWT(t)
+	// Deleting a session that doesn't exist still returns 204 — DELETE is idempotent.
+	resp := authDelete(t, tok, "/v1/chat/sessions/aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee")
+	defer resp.Body.Close()
+	expectStatus(t, resp, http.StatusNoContent)
+}
