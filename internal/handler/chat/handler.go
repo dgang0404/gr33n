@@ -170,7 +170,23 @@ func (h *Handler) PostV1(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		grounded = true
-		system = farmguardian.SystemPrompt() + "\n\n" + synthesis.SystemPrompt()
+
+		// Live farm-state snapshot (WS4 follow-up). Best-effort: a snapshot
+		// failure is logged but never blocks the chat turn.
+		snapshotBlock := ""
+		if h.q != nil {
+			snap, serr := farmguardian.BuildSnapshot(r.Context(), h.q, farmID)
+			if serr != nil {
+				slog.Warn("farm guardian snapshot failed", "farm_id", farmID, "err", serr)
+			}
+			snapshotBlock = snap.PromptBlock()
+		}
+
+		system = farmguardian.SystemPrompt() + "\n\n"
+		if snapshotBlock != "" {
+			system += snapshotBlock + "\n\n"
+		}
+		system += synthesis.SystemPrompt()
 		user = synthesis.BuildUserMessage(question, chunks)
 	}
 

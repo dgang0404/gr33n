@@ -18,7 +18,7 @@ todos:
     content: "WS3: Go LLM client — SSE ChatCompletionStream + LLM_TIMEOUT_SECONDS; retry policy still pending"
     status: completed
   - id: ws4-farm-guardian-persona
-    content: "WS4: Farm Guardian system prompt — persona + BuildUserMessage + RAG context injection on /v1/chat (live farm-snapshot block still pending)"
+    content: "WS4: Farm Guardian system prompt — persona + BuildUserMessage + RAG context injection + live farm-state snapshot block (zones / active cycles / unread alerts) on /v1/chat"
     status: completed
   - id: ws5-chat-api
     content: "WS5: Chat API endpoint — POST /v1/chat with optional farm_id RAG injection, streaming SSE, citations, DB-backed conversation_turns + multi-turn replay, GET /v1/chat/sessions[/{id}] history endpoints."
@@ -73,10 +73,14 @@ isProject: false
 - **`GET /v1/chat/sessions/{session_id}`** — full ordered turn history for the caller; returns 400 on bad UUID, scoped by `user_id` so a session_id guess cannot leak another operator's chat.
 - **UI `/chat`** — sidebar with persistent session list (active-state highlight, first user message preview, turn count, grounded chip, last-active timestamp, **New** button) + scrollable multi-turn transcript with per-turn citations; replaces the single-turn answer card.
 
+### Shipped after WS5 follow-up (live farm snapshot)
+
+- **`internal/farmguardian/snapshot.go`** — `Snapshot{ZoneCount, ZoneNames, ActiveCycles, UnreadAlerts}` plus `BuildSnapshot(ctx, q, farmID)` (zones + crop cycles + unread-alerts count, best-effort: a failing sub-query never blocks the chat turn) and a prompt-ready `PromptBlock()` that prepends a header so the model knows the snapshot is background context and is not subject to the `[n]` citation rule.
+- **`POST /v1/chat` grounded path** — system message now layers as `persona → live farm snapshot → synthesis instructions`. Plain (no `farm_id`) turns are unchanged. Cap of 12 zone names and 8 active cycles in the rendered block keeps the prompt budget predictable for larger farms.
+
 ### Still open
 
 - **WS3 follow-up** — Retry / backoff policy on transient LLM failures.
-- **WS4 follow-up** — Live farm-snapshot block (open alerts / active cycle / zone summary) appended to `BuildUserMessage`.
 - **WS5 follow-up** — Pruning / TTL job for stale sessions; explicit "delete session" + "rename session" endpoints; token-usage accounting per turn.
 - **WS6 follow-up** — Token usage chips in the transcript, draft autosave, delete/rename controls in the session sidebar.
 
