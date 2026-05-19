@@ -55,6 +55,26 @@ WHERE farm_id = $1;
 SELECT COUNT(*) FROM gr33ncore.alerts_notifications
 WHERE farm_id = $1 AND is_read = FALSE;
 
+-- Phase 28 WS4 — Farm Guardian snapshot. Returns the top N most-urgent
+-- unread alerts for a farm so the live snapshot can include enough
+-- detail for the LLM to *explain* an alert (severity / subject /
+-- short message / source / age) rather than just acknowledge that it
+-- exists. Ordering is severity DESC then created_at DESC so critical
+-- + recent wins both axes; NULL severities sort last.
+-- name: ListRecentUnreadAlertsByFarm :many
+SELECT
+    id,
+    severity,
+    subject_rendered,
+    message_text_rendered,
+    triggering_event_source_type,
+    triggering_event_source_id,
+    created_at
+FROM gr33ncore.alerts_notifications
+WHERE farm_id = $1 AND is_read = FALSE
+ORDER BY severity DESC NULLS LAST, created_at DESC
+LIMIT $2;
+
 -- name: MarkAlertRead :one
 UPDATE gr33ncore.alerts_notifications
 SET is_read = TRUE, read_at = NOW(), status = 'read_by_user'

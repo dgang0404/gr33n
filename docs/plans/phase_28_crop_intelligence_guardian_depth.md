@@ -19,7 +19,7 @@ todos:
     status: completed
   - id: ws4-guardian-alerts
     content: "WS4: Guardian alert integration — Guardian can explain unread alerts (rule triggered, sensor threshold, what to do); alert context injected into grounded snapshot"
-    status: pending
+    status: completed
   - id: ws5-cost-dashboard
     content: "WS5: Token-usage dashboard — operator-visible per-user/per-farm rolling totals in Settings; alert hook that fires a notification when >80% of budget is consumed"
     status: pending
@@ -243,8 +243,16 @@ Start with WS1: GET /crop-cycles/{id}/summary and GET /farms/{id}/crop-cycles/co
 - **Bounded prompt cost** — `SnapshotMaxAnalyticsCycles = 3` keeps the analytics block ≤200 tokens even on farms with 10+ active cycles. Older cycles still render their basic name/strain/stage line.
 - **Tests** — `internal/farmguardian/cycle_analytics_test.go` (7 unit tests: Empty/Render/cost-omit-on-mixed-currency/formatters) + `cmd/api/smoke_phase28_ws3_test.go` (2 real-DB smokes: attaches analytics to a seeded cycle with verifiable fertigation+cost data; budget cap is honoured when more than N cycles are active). All farmguardian + chat tests green.
 
+### WS4 — Guardian ↔ alert integration (shipped 2026-05-19)
+
+- **`db/queries/alerts.sql`** — new `ListRecentUnreadAlertsByFarm` query returns the top-N unread alerts ordered by `severity DESC NULLS LAST, created_at DESC`. Critical + recent wins both axes; the LIMIT is supplied by the caller (3 in the snapshot path).
+- **`internal/db/alerts_guardian.sql.go`** — hand-written Go binding (same sqlc-bypass pattern Phase 27/28 has been using) projects the row into `RecentUnreadAlertSummary` with only the fields Guardian needs: `id`, `severity`, `subject_rendered`, `message_text_rendered`, `triggering_event_source_type`, `triggering_event_source_id`, `created_at`. The wide row (delivery_attempts, html bodies, etc.) is intentionally omitted to keep prompt budgets predictable.
+- **`internal/farmguardian/snapshot.go`** — `Snapshot` gained `UnreadAlertDetails []UnreadAlertDetail`. New `UnreadAlertDetail` struct exposes the rendered fields plus a `TriggeredAt time.Time` for the age humaniser. `BuildSnapshot` only fires the list query when `UnreadAlerts > 0` (saves a round-trip on quiet farms); failures fall through to "just the count" so a transient alerts-table hiccup never strips the snapshot. `Render` adds a `- [severity] subject (source #id, Xh ago)` line per alert and an indented `detail: …` line for the message snippet. A `(+ N more unread alerts)` tail accurately reflects `UnreadAlerts - rendered` (not the trimmed slice length, which would always be ≤ cap).
+- **Constants** — `SnapshotMaxAlertDetails = 3` caps how many alerts get full detail; `AlertMessageSnippetMax = 160` runes caps the message-text snippet so a 5KB markdown template can't blow the prompt. `humanizeAge` emits "just now / Xm ago / Xh ago / Xd ago" so the LLM doesn't have to do time math from raw timestamps.
+- **Prompt output shape** — Guardian now sees lines like `[high] Humidity threshold breach — Flower Room (sensor_reading #4242, 4h ago)` with the rendered message body folded onto the indented `detail:` line beneath. The LLM can now answer "why is my humidity alert firing?" with real numbers instead of "I don't know which alerts you mean."
+- **Tests** — 4 new unit tests in `internal/farmguardian/snapshot_test.go` (alert lines render, "+ N more" reflects total vs rendered, message snippet cap, `humanizeAge` table) + 2 real-DB smokes in `cmd/api/smoke_phase28_ws4_test.go` (attach path uses critical+now to guarantee ranking despite the smoke DB's accumulated test alerts; cap-budget test seeds 5 critical alerts and asserts only 3 details + the "+N more" marker). Existing chat/farmguardian tests untouched and green.
+
 ### Still open
 
-- **WS4** — Guardian ↔ alert integration
 - **WS5** — Token-usage dashboard
 - **WS6** — OpenAPI parity (Phases 24–28)

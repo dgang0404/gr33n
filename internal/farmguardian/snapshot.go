@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"sort"
 	"strings"
+	"time"
 
 	db "gr33n-api/internal/db"
 )
@@ -17,16 +18,44 @@ const SnapshotMaxZones = 12
 // SnapshotMaxCycles caps how many active crop cycles render in full.
 const SnapshotMaxCycles = 8
 
+// SnapshotMaxAlertDetails caps how many unread alerts get full detail
+// (severity, subject, source, age) rendered into the prompt. The
+// surviving alerts beyond the cap are still represented by the
+// UnreadAlerts count so the LLM knows there are more. Phase 28 WS4.
+const SnapshotMaxAlertDetails = 3
+
+// AlertMessageSnippetMax caps how many characters of an alert's
+// rendered message body get folded into the prompt. The message can be
+// arbitrarily long (operator templates support markdown) so we trim to
+// keep the snapshot's token budget predictable.
+const AlertMessageSnippetMax = 160
+
 // Snapshot is the live farm-state block injected into the Farm Guardian
 // system prompt on grounded turns. It is intentionally tiny — operators
 // want orientation cues ("3 zones, A B C; active cycle TomatoVeg in zone B;
 // 2 unread alerts"), not a data dump.
 type Snapshot struct {
-	FarmID       int64
-	ZoneCount    int
-	ZoneNames    []string
-	ActiveCycles []ActiveCycle
-	UnreadAlerts int64
+	FarmID             int64
+	ZoneCount          int
+	ZoneNames          []string
+	ActiveCycles       []ActiveCycle
+	UnreadAlerts       int64
+	UnreadAlertDetails []UnreadAlertDetail
+}
+
+// UnreadAlertDetail is the prompt-ready projection of a single unread
+// alert. Populated by BuildSnapshot for the first
+// SnapshotMaxAlertDetails alerts ordered by severity DESC, created_at
+// DESC. Optional fields are kept as empty strings rather than pointers
+// so the renderer stays branch-light. Phase 28 WS4.
+type UnreadAlertDetail struct {
+	ID          int64
+	Severity    string // "low" / "medium" / "high" / "critical" / "" if NULL
+	Subject     string // subject_rendered (trimmed)
+	Message     string // message_text_rendered (trimmed, capped at AlertMessageSnippetMax)
+	SourceType  string // e.g. "sensor_reading", "automation_rule", "automation_program"
+	SourceID    int64  // 0 when source ID is NULL
+	TriggeredAt time.Time
 }
 
 // ActiveCycle is a single in-flight grow cycle entry. Analytics is
@@ -114,8 +143,92 @@ func (s Snapshot) Render() string {
 	}
 	if s.UnreadAlerts > 0 {
 		b.WriteString(fmt.Sprintf("- Unread alerts: %d\n", s.UnreadAlerts))
+		details := s.UnreadAlertDetails
+		// Defensive trim — BuildSnapshot already LIMITs to
+		// SnapshotMaxAlertDetails at the SQL layer, but a caller could
+		// construct a Snapshot directly (tests, future plumbing).
+		if len(details) > SnapshotMaxAlertDetails {
+			details = details[:SnapshotMaxAlertDetails]
+		}
+		// "+ N more unread alerts" reflects the gap between the total
+		// unread count and how many details we rendered — not the
+		// (possibly trimmed) detail slice. With UnreadAlerts=28000 and
+		// details=3 the operator must see that the rest exist.
+		extra := int(s.UnreadAlerts) - len(details)
+		if extra < 0 {
+			extra = 0
+		}
+		for _, a := range details {
+			b.WriteString("  - ")
+			if a.Severity != "" {
+				b.WriteString("[")
+				b.WriteString(a.Severity)
+				b.WriteString("] ")
+			}
+			if a.Subject != "" {
+				b.WriteString(a.Subject)
+			} else {
+				b.WriteString(fmt.Sprintf("alert #%d", a.ID))
+			}
+			meta := []string{}
+			if a.SourceType != "" {
+				if a.SourceID > 0 {
+					meta = append(meta, fmt.Sprintf("%s #%d", a.SourceType, a.SourceID))
+				} else {
+					meta = append(meta, a.SourceType)
+				}
+			}
+			if !a.TriggeredAt.IsZero() {
+				meta = append(meta, humanizeAge(timeSince(a.TriggeredAt)))
+			}
+			if len(meta) > 0 {
+				b.WriteString(" (")
+				b.WriteString(strings.Join(meta, ", "))
+				b.WriteString(")")
+			}
+			b.WriteString("\n")
+			if a.Message != "" {
+				// Defensive cap — toUnreadAlertDetail already trims,
+				// but callers constructing the struct directly (tests,
+				// future plumbing) shouldn't be able to blow the
+				// prompt budget by stuffing a 5K-char Message in.
+				msg := a.Message
+				if r := []rune(msg); len(r) > AlertMessageSnippetMax {
+					msg = string(r[:AlertMessageSnippetMax]) + "…"
+				}
+				b.WriteString("    detail: ")
+				b.WriteString(msg)
+				b.WriteString("\n")
+			}
+		}
+		if extra > 0 {
+			b.WriteString(fmt.Sprintf("  - (+ %d more unread alerts)\n", extra))
+		}
 	}
 	return strings.TrimRight(b.String(), "\n")
+}
+
+// timeSince is a small indirection so tests can freeze the clock the
+// same way nowFunc lets them stub the analytics duration math.
+var timeSince = func(t time.Time) time.Duration { return nowFunc().Sub(t) }
+
+// humanizeAge renders a duration in a way operators read fluently in an
+// alert summary: "12m ago", "4h ago", "3d ago". The LLM uses this to
+// say "triggered 4h ago" without doing time math from a raw timestamp.
+func humanizeAge(d time.Duration) string {
+	if d < 0 {
+		d = 0
+	}
+	if d < time.Minute {
+		return "just now"
+	}
+	if d < time.Hour {
+		return fmt.Sprintf("%dm ago", int(d/time.Minute))
+	}
+	if d < 24*time.Hour {
+		return fmt.Sprintf("%dh ago", int(d/time.Hour))
+	}
+	return fmt.Sprintf("%dd ago", int(d/(24*time.Hour)))
 }
 
 // PromptBlock wraps Render with a fixed header used by the chat handler.
@@ -193,5 +306,55 @@ func BuildSnapshot(ctx context.Context, q *db.Queries, farmID int64) (Snapshot, 
 		s.UnreadAlerts = cnt
 	}
 
+	// Phase 28 WS4 — pull the top N unread alerts with enough detail
+	// for Guardian to explain them. Best-effort: if the query fails,
+	// we still keep the count from CountUnreadAlertsByFarm so the
+	// snapshot is not silently impoverished.
+	if s.UnreadAlerts > 0 {
+		alerts, alErr := q.ListRecentUnreadAlertsByFarm(ctx, farmID, int32(SnapshotMaxAlertDetails))
+		if alErr != nil {
+			slog.Warn("farm guardian unread alert details failed",
+				"farm_id", farmID, "err", alErr)
+		} else {
+			s.UnreadAlertDetails = make([]UnreadAlertDetail, 0, len(alerts))
+			for _, a := range alerts {
+				s.UnreadAlertDetails = append(s.UnreadAlertDetails, toUnreadAlertDetail(a))
+			}
+		}
+	}
+
 	return s, nil
+}
+
+// toUnreadAlertDetail projects a DB row into the prompt-ready struct.
+// Trims whitespace, caps the message snippet at AlertMessageSnippetMax,
+// and converts the enum + nullable IDs into safer plain types.
+func toUnreadAlertDetail(a db.RecentUnreadAlertSummary) UnreadAlertDetail {
+	out := UnreadAlertDetail{
+		ID:          a.ID,
+		TriggeredAt: a.CreatedAt,
+	}
+	if a.Severity.Valid {
+		out.Severity = string(a.Severity.Gr33ncoreNotificationPriorityEnum)
+	}
+	if a.SubjectRendered != nil {
+		out.Subject = strings.TrimSpace(*a.SubjectRendered)
+	}
+	if a.MessageTextRendered != nil {
+		msg := strings.TrimSpace(*a.MessageTextRendered)
+		// Collapse interior whitespace (newlines, tabs) so the
+		// prompt block stays single-line per alert.
+		msg = strings.Join(strings.Fields(msg), " ")
+		if len(msg) > AlertMessageSnippetMax {
+			msg = msg[:AlertMessageSnippetMax] + "…"
+		}
+		out.Message = msg
+	}
+	if a.TriggeringEventSourceType != nil {
+		out.SourceType = strings.TrimSpace(*a.TriggeringEventSourceType)
+	}
+	if a.TriggeringEventSourceID != nil {
+		out.SourceID = *a.TriggeringEventSourceID
+	}
+	return out
 }

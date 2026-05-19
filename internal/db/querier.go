@@ -32,6 +32,7 @@ type Querier interface {
 	CountRagChunksByFarm(ctx context.Context, farmID int64) (int64, error)
 	CountTasksByStatusForFarm(ctx context.Context, farmID int64) ([]CountTasksByStatusForFarmRow, error)
 	CountUnreadAlertsByFarm(ctx context.Context, farmID int64) (int64, error)
+	ListRecentUnreadAlertsByFarm(ctx context.Context, farmID int64, limit int32) ([]RecentUnreadAlertSummary, error)
 	// ============================================================
 	// Queries: gr33ncore.actuators + actuator_events
 	// ============================================================
