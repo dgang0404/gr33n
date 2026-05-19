@@ -88,5 +88,6 @@ Phase 25 plans should **assume** this sit-in stream has at least **operator tour
 | 2026-05-13 | §2: **[operator-logging-runbook.md](../operator-logging-runbook.md)** — Compose json-file rotation + runbook (Phase 26 WS2 v1). |
 | 2026-05-13 | §2: **`docker-compose.logging.yml`** — Promtail + Loki + Grafana overlay + **`make compose-logging-*`** (Phase 26 WS2 follow-up). |
 | 2026-05-13 | Phase **26 WS3** v1: **[rag-scope-and-threat-model.md §9](../rag-scope-and-threat-model.md)** — static Guide vs DB RAG vs ops logs; workflow §10.6 + Knowledge HelpTip. |
+| 2026-05-18 | Phase **27 WS1 + WS3 stream + WS5 v2/v3 + WS6 chat panel**: **[farm-guardian-ollama-setup.md](../farm-guardian-ollama-setup.md)** runbook; SSE `ChatCompletionStream`; `/v1/chat` accepts `farm_id` + `stream` + `session_id` with citations; new **/chat** Guardian UI page (streaming + Lite banner). |
 | 2026-05-15 | §6: **[Phase 27](../plans/phase_27_farm_guardian_ai_layer.md)** pointer — Farm Guardian / `AI_ENABLED` / capabilities API (calendar phase; not sit-in backlog unless UX asks). |
 | 2026-05-18 | §6: **Phase 27 WS4/WS5/WS6 v1** — `internal/farmguardian` persona, `POST /v1/chat` non-streaming with 503 Lite, `/capabilities` Pinia store, Settings Lite/Full label, FarmKnowledge Ask-LLM gating. |

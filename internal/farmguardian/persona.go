@@ -19,6 +19,9 @@ const (
 	// MaxMessageRunes caps user input. The full prompt budget is enforced by
 	// the LLM client; this limit just prevents pathological requests.
 	MaxMessageRunes = 4000
+	// RAGTopK is the default number of chunks pulled for grounded /v1/chat turns.
+	// Matches Phase 25 rag/answer's defaultAnswerContext (8) so behaviour is consistent.
+	RAGTopK = 8
 )
 
 // SystemPrompt returns the Farm Guardian persona contract used as the

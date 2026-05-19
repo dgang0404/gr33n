@@ -61,7 +61,7 @@ func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationwo
 	recipe := recipehandler.NewHandler(pool)
 	cropcycle := cropcyclehandler.NewHandler(pool)
 	rag := raghandler.NewHandler(pool, aiCfg.Enabled)
-	aichat := chathandler.NewHandler(aiCfg)
+	aichat := chathandler.NewHandler(pool, aiCfg)
 	plants := planthandler.NewHandler(pool)
 	animals := animalhandler.NewHandler(pool)
 	aquaponics := aquaponicshandler.NewHandler(pool)

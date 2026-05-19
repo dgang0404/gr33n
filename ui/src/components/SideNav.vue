@@ -127,6 +127,7 @@ const navGroups = [
       { to: '/alerts', icon: '🔔', label: 'Alerts' },
       { to: '/costs',  icon: '💰', label: 'Costs'  },
       { to: '/farm-knowledge', icon: '🔎', label: 'Knowledge', navTitle: 'Farm knowledge — semantic search & Ask (LLM); requires API embedding / LLM env' },
+      { to: '/chat', icon: '🤖', label: 'Guardian', navTitle: 'Farm Guardian chat — streaming answers (Phase 27). Requires AI_ENABLED on the API.' },
     ],
   },
   {

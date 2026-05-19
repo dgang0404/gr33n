@@ -9,22 +9,22 @@ overview: >
   and Phase 26 content boundary/glossary work.
 todos:
   - id: ws1-ollama-infra
-    content: "WS1: Ollama server setup — install, GPU config, model pull, health endpoint, systemd service, intranet DNS alias"
-    status: pending
+    content: "WS1: Ollama server setup — install, GPU config, model pull, systemd override, intranet DNS, smoke test (docs/farm-guardian-ollama-setup.md)"
+    status: completed
   - id: ws2-ai-toggle
     content: "WS2: AI_ENABLED — env, GET /capabilities, startup LLM reachability when configured; gates rag/answer + strips LLM client when off; POST /v1/chat stub (503/501)"
     status: completed
   - id: ws3-generation-client
-    content: "WS3: Go LLM client — streaming ChatStream + retry; timeout via LLM_TIMEOUT_SECONDS (non-stream path wired)"
-    status: pending
+    content: "WS3: Go LLM client — SSE ChatCompletionStream + LLM_TIMEOUT_SECONDS; retry policy still pending"
+    status: completed
   - id: ws4-farm-guardian-persona
-    content: "WS4: Farm Guardian system prompt — internal/farmguardian persona + BuildUserMessage v1 (RAG/snapshot injection still pending)"
+    content: "WS4: Farm Guardian system prompt — persona + BuildUserMessage + RAG context injection on /v1/chat (live farm-snapshot block still pending)"
     status: completed
   - id: ws5-chat-api
-    content: "WS5: Chat API endpoint — POST /v1/chat non-streaming answer with persona; AI off/LLM not configured → 503. Session history + RAG injection pending."
+    content: "WS5: Chat API endpoint — POST /v1/chat with optional farm_id RAG injection, streaming SSE (`stream:true`), citations, session_id echo. DB-backed conversation_turns still pending."
     status: completed
   - id: ws6-ui-chat
-    content: "WS6: Operator UI — /capabilities Pinia store, Settings Lite/Full label, FarmKnowledge Ask-LLM gating in Lite mode (chat panel still pending)"
+    content: "WS6: Operator UI — /capabilities store, Settings Lite/Full label, Knowledge Ask-LLM gating, /chat Farm Guardian panel with streaming + citations (history view pending)"
     status: completed
 isProject: false
 ---
@@ -48,13 +48,23 @@ isProject: false
 - **`LLM_TIMEOUT_SECONDS`** — Chat HTTP client timeout (default 120s).
 - **UI** — `ui/src/stores/capabilities.js` Pinia store auto-loads `/capabilities` at app start; **Settings → AI features** shows a read-only **Lite / Full** label; **Farm knowledge → Ask (LLM)** is disabled with a clear note when AI is off.
 
+### Shipped after the v1 cut (WS1 doc + WS3 stream + WS5 v2/v3 + WS6 chat panel)
+
+- **`docs/farm-guardian-ollama-setup.md`** — Compose + systemd operator runbook for Ollama (WS1, no K8s).
+- **`internal/rag/llm`** — `StreamingChatCompleter` interface + `ChatCompletionStream` that parses OpenAI-compatible SSE chunks (`data: {…}\n\n` … `data: [DONE]`), forwards content deltas, surfaces upstream `error.message`, honours `ctx.Done()`.
+- **`POST /v1/chat`** —
+  - Optional **`farm_id`** triggers JWT farm-membership check + pgvector retrieval (`farmguardian.RAGTopK`) + grounded prompt (persona + `synthesis.SystemPrompt()` + `synthesis.BuildUserMessage`).
+  - Optional **`stream: true`** switches the response to `text/event-stream` with `event: delta` / `event: done` / `event: error` blocks ending in `data: [DONE]`.
+  - Response (and `done` event) include **`citations`** (`[ref, chunk_id, source_type, source_id, excerpt]`), **`context_count`**, **`embedding_model_id`**, and the echoed **`session_id`** for client correlation.
+- **UI** —
+  - `/chat` (sidebar: **Guardian**) — single-turn panel with streaming text, citation list, **Use farm context** checkbox (gated by the farm context store), Lite-mode banner driven by the capabilities store.
+
 ### Still open
 
-- **WS1** — Ollama infra checklist (operator doc, no K8s).
-- **WS3 follow-up** — Streaming `ChatStream` + retry policy (currently non-streaming only).
-- **WS4 follow-up** — RAG context injection + live farm snapshot in `BuildUserMessage`.
-- **WS5 follow-up** — `session_id` + `conversation_turns` table + source attribution; full streaming SSE response.
-- **WS6 follow-up** — Dedicated chat panel/route with streaming token display.
+- **WS3 follow-up** — Retry / backoff policy on transient LLM failures.
+- **WS4 follow-up** — Live farm-snapshot block (open alerts / active cycle / zone summary) appended to `BuildUserMessage`.
+- **WS5 follow-up** — `conversation_turns` table + multi-turn history (DB migration, sqlc, persistence wired into `/v1/chat`).
+- **WS6 follow-up** — Conversation list / resume UI, plus token usage display.
 
 ---
 

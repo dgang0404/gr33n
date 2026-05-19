@@ -2,6 +2,7 @@
 package llm
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"encoding/json"
@@ -182,4 +183,120 @@ type ChatCompleter interface {
 	ChatCompletion(ctx context.Context, system, user string) (string, error)
 	// ModelLabel identifies the chat model in JSON responses (e.g. OpenAI model id).
 	ModelLabel() string
+}
+
+// StreamingChatCompleter is the optional Phase 27 WS5 v3 streaming surface.
+// ChatCompletionStream runs a single turn (system + user) and invokes onDelta
+// for each incremental text token returned by the OpenAI-compatible SSE stream.
+// Implementations must:
+//   - honour ctx cancellation (return immediately when the caller disconnects);
+//   - never call onDelta after returning;
+//   - return a non-nil error on non-2xx HTTP, malformed SSE, or transport failure.
+//
+// On success the full text was streamed via onDelta and the call returns nil.
+type StreamingChatCompleter interface {
+	ChatCompletionStream(ctx context.Context, system, user string, onDelta func(string)) error
+}
+
+type sseStreamRequest struct {
+	Model       string        `json:"model"`
+	Messages    []chatMessage `json:"messages"`
+	Temperature float64       `json:"temperature,omitempty"`
+	MaxTokens   int           `json:"max_tokens,omitempty"`
+	Stream      bool          `json:"stream"`
+}
+
+type sseChunk struct {
+	Choices []struct {
+		Delta struct {
+			Content string `json:"content"`
+		} `json:"delta"`
+	} `json:"choices"`
+	Error *struct {
+		Message string `json:"message"`
+	} `json:"error"`
+}
+
+// ChatCompletionStream streams tokens from /v1/chat/completions with `stream: true`.
+// Ollama and OpenAI both emit Server-Sent Events shaped as `data: {…}\n\n` followed
+// by a terminal `data: [DONE]\n\n`. We parse line-by-line and invoke onDelta with
+// each non-empty content delta.
+func (c *Client) ChatCompletionStream(ctx context.Context, system, user string, onDelta func(string)) error {
+	if onDelta == nil {
+		return errors.New("onDelta callback required")
+	}
+	body := sseStreamRequest{
+		Model:       c.Model,
+		Messages:    []chatMessage{{Role: "system", Content: system}, {Role: "user", Content: user}},
+		Temperature: c.Temperature,
+		MaxTokens:   c.MaxTokens,
+		Stream:      true,
+	}
+	raw, err := json.Marshal(body)
+	if err != nil {
+		return err
+	}
+	url := c.BaseURL + "/chat/completions"
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(raw))
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Accept", "text/event-stream")
+	if c.APIKey != "" {
+		req.Header.Set("Authorization", "Bearer "+c.APIKey)
+	}
+	client := c.HTTPClient
+	if client == nil {
+		client = http.DefaultClient
+	}
+	resp, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		preview, _ := io.ReadAll(io.LimitReader(resp.Body, 512))
+		return fmt.Errorf("chat stream HTTP %d: %s", resp.StatusCode, truncateErr(preview, 512))
+	}
+
+	br := bufio.NewReader(resp.Body)
+	for {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		default:
+		}
+		line, err := br.ReadString('\n')
+		if len(line) > 0 {
+			payload := strings.TrimSpace(line)
+			if payload == "" || !strings.HasPrefix(payload, "data:") {
+				// SSE comments / blank separators — ignore.
+			} else {
+				data := strings.TrimSpace(strings.TrimPrefix(payload, "data:"))
+				if data == "[DONE]" {
+					return nil
+				}
+				var chunk sseChunk
+				if jerr := json.Unmarshal([]byte(data), &chunk); jerr != nil {
+					// Don't fail the whole stream on a single odd line — log via err once at end.
+					continue
+				}
+				if chunk.Error != nil && chunk.Error.Message != "" {
+					return errors.New(chunk.Error.Message)
+				}
+				for _, ch := range chunk.Choices {
+					if ch.Delta.Content != "" {
+						onDelta(ch.Delta.Content)
+					}
+				}
+			}
+		}
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				return nil
+			}
+			return err
+		}
+	}
 }
