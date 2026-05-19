@@ -89,3 +89,4 @@ Phase 25 plans should **assume** this sit-in stream has at least **operator tour
 | 2026-05-13 | §2: **`docker-compose.logging.yml`** — Promtail + Loki + Grafana overlay + **`make compose-logging-*`** (Phase 26 WS2 follow-up). |
 | 2026-05-13 | Phase **26 WS3** v1: **[rag-scope-and-threat-model.md §9](../rag-scope-and-threat-model.md)** — static Guide vs DB RAG vs ops logs; workflow §10.6 + Knowledge HelpTip. |
 | 2026-05-15 | §6: **[Phase 27](../plans/phase_27_farm_guardian_ai_layer.md)** pointer — Farm Guardian / `AI_ENABLED` / capabilities API (calendar phase; not sit-in backlog unless UX asks). |
+| 2026-05-18 | §6: **Phase 27 WS4/WS5/WS6 v1** — `internal/farmguardian` persona, `POST /v1/chat` non-streaming with 503 Lite, `/capabilities` Pinia store, Settings Lite/Full label, FarmKnowledge Ask-LLM gating. |

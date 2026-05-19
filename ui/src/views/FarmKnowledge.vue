@@ -83,13 +83,24 @@
           </button>
           <button
             type="button"
-            :disabled="answerLoading || !query.trim()"
+            data-test="ask-llm-button"
+            :disabled="answerLoading || !query.trim() || capabilities.isLite"
+            :title="capabilities.isLite ? 'AI is disabled on this installation (Lite mode) — set AI_ENABLED=true and restart the API.' : ''"
             @click="runAnswer"
             class="px-4 py-2 rounded-lg bg-zinc-800 text-gr33n-400 border border-zinc-600 hover:bg-zinc-700 disabled:opacity-40 text-sm font-medium"
           >
-            {{ answerLoading ? 'Asking…' : 'Ask (LLM)' }}
+            {{ answerLoading ? 'Asking…' : (capabilities.isLite ? 'Ask (LLM) — Lite mode' : 'Ask (LLM)') }}
           </button>
         </div>
+        <p
+          v-if="capabilities.isLite"
+          data-test="ask-llm-lite-note"
+          class="text-amber-200/90 text-xs bg-amber-950/40 border border-amber-900/70 rounded-lg px-3 py-2"
+        >
+          Farm Guardian and answer synthesis are off on this installation.
+          Search still works; the API runs in <strong>Lite mode</strong>.
+          See <code class="text-gr33n-400">docs/plans/phase_27_farm_guardian_ai_layer.md</code>.
+        </p>
         <div
           v-if="searchFeedback"
           class="text-sm rounded-lg px-3 py-2 border"
@@ -168,12 +179,17 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import api from '../api'
 import HelpTip from '../components/HelpTip.vue'
 import { useFarmContextStore } from '../stores/farmContext'
+import { useCapabilitiesStore } from '../stores/capabilities'
 
 const farmContext = useFarmContextStore()
+const capabilities = useCapabilitiesStore()
+onMounted(() => {
+  if (!capabilities.loaded) capabilities.fetch()
+})
 
 const query = ref('')
 const moduleFilter = ref('')

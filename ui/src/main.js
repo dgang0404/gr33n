@@ -6,6 +6,7 @@ import App from './App.vue'
 import './style.css'
 import { setUnauthorizedHandler } from './api/index.js'
 import { useAuthStore } from './stores/auth'
+import { useCapabilitiesStore } from './stores/capabilities'
 
 const pinia = createPinia()
 const app = createApp(App).use(pinia).use(router)
@@ -15,6 +16,8 @@ setUnauthorizedHandler(() => {
 })
 
 app.mount('#app')
+
+useCapabilitiesStore().fetch().catch(() => { /* surfaced via fetchError */ })
 
 if (Capacitor.isNativePlatform()) {
   import('@capacitor/app').then(({ App }) => {

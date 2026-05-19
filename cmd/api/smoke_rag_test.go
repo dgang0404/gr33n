@@ -58,9 +58,23 @@ func TestV1ChatUnauthorized(t *testing.T) {
 	expectStatus(t, resp, http.StatusUnauthorized)
 }
 
-func TestV1ChatStubWhenAIEnabled(t *testing.T) {
+func TestV1ChatRequiresLLMConfigured(t *testing.T) {
 	tok := smokeJWT(t)
 	resp := authPost(t, tok, "/v1/chat", map[string]any{"message": "hi"})
 	defer resp.Body.Close()
-	expectStatus(t, resp, http.StatusNotImplemented)
+	// AI defaults on, but smoke tests do not configure LLM_BASE_URL/LLM_MODEL —
+	// the handler returns 503 with a config hint (Phase 27 WS5 v1).
+	expectStatus(t, resp, http.StatusServiceUnavailable)
+}
+
+func TestV1ChatRejectsEmptyMessage(t *testing.T) {
+	// Even without LLM configured the empty-body path 503s on missing config first,
+	// so we only assert this when AI is on. Both ordering rules are covered by
+	// internal/handler/chat unit tests; this just keeps the smoke surface honest.
+	tok := smokeJWT(t)
+	resp := authPost(t, tok, "/v1/chat", map[string]any{})
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusBadRequest && resp.StatusCode != http.StatusServiceUnavailable {
+		t.Fatalf("expected 400 or 503, got %d", resp.StatusCode)
+	}
 }

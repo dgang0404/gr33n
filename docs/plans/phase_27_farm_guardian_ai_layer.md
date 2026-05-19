@@ -18,14 +18,14 @@ todos:
     content: "WS3: Go LLM client — streaming ChatStream + retry; timeout via LLM_TIMEOUT_SECONDS (non-stream path wired)"
     status: pending
   - id: ws4-farm-guardian-persona
-    content: "WS4: Farm Guardian system prompt — persona definition, domain grounding, RAG context injection, response constraints"
-    status: pending
+    content: "WS4: Farm Guardian system prompt — internal/farmguardian persona + BuildUserMessage v1 (RAG/snapshot injection still pending)"
+    status: completed
   - id: ws5-chat-api
-    content: "WS5: Chat API endpoint — POST /v1/chat, session context, RAG retrieval → prompt assembly → generation pipeline"
-    status: pending
+    content: "WS5: Chat API endpoint — POST /v1/chat non-streaming answer with persona; AI off/LLM not configured → 503. Session history + RAG injection pending."
+    status: completed
   - id: ws6-ui-chat
-    content: "WS6: Operator chat UI — conversation panel, streaming token display, source attribution (RAG citations), AI toggle in settings"
-    status: pending
+    content: "WS6: Operator UI — /capabilities Pinia store, Settings Lite/Full label, FarmKnowledge Ask-LLM gating in Lite mode (chat panel still pending)"
+    status: completed
 isProject: false
 ---
 
@@ -35,16 +35,26 @@ isProject: false
 
 **In progress (Phase 27)** — Preconditions met (Phase 25 RAG + Phase 26 boundary/glossary).
 
-**Shipped in-repo:**
+### Shipped in-repo (WS2 + WS4 v1 + WS5 v1 + WS6 v1)
 
-- **`AI_ENABLED`** — Parsed in `internal/ai`; **unset → on** (backward compatible). Explicit **`false`** / **`0`** / **`no`** / **`off`** → Lite mode (no LLM client wiring for synthesis).
+- **`AI_ENABLED`** — Parsed in **`internal/ai`**; **unset → on** (backward compatible). Explicit **`false` / `0` / `no` / `off`** → Lite mode (no LLM client wiring for synthesis or chat).
 - **`cmd/api` startup** — When AI is on and **`LLM_BASE_URL`** + **`LLM_MODEL`** are set, **`GET {LLM_BASE_URL}/models`** must succeed or the process **exits** (clear failure vs silent degradation).
-- **`GET /capabilities`** — Public JSON `{"ai_enabled": bool}` for UI (Phase 27 WS6 settings indicator).
-- **`POST /v1/chat`** — JWT-protected; **503** when AI off; **501** stub when AI on until WS5 pipeline lands.
+- **`GET /capabilities`** — Public JSON `{"ai_enabled": bool}` consumed by the UI.
+- **`POST /v1/chat`** — JWT-protected non-streaming chat:
+  - **AI off** → **503** `AI features are disabled on this installation`.
+  - **LLM not configured** → **503** with `set LLM_BASE_URL and LLM_MODEL` hint.
+  - **Happy path** → `{ "answer": "...", "llm_model": "..." }` using the Farm Guardian **persona** (`internal/farmguardian`).
 - **`POST /farms/{id}/rag/answer`** — Same **503** message when AI off (generation path only; **search** still works if embeddings are configured).
 - **`LLM_TIMEOUT_SECONDS`** — Chat HTTP client timeout (default 120s).
+- **UI** — `ui/src/stores/capabilities.js` Pinia store auto-loads `/capabilities` at app start; **Settings → AI features** shows a read-only **Lite / Full** label; **Farm knowledge → Ask (LLM)** is disabled with a clear note when AI is off.
 
-**Still open:** Ollama infra doc (WS1), streaming client + persona + full chat API + UI.
+### Still open
+
+- **WS1** — Ollama infra checklist (operator doc, no K8s).
+- **WS3 follow-up** — Streaming `ChatStream` + retry policy (currently non-streaming only).
+- **WS4 follow-up** — RAG context injection + live farm snapshot in `BuildUserMessage`.
+- **WS5 follow-up** — `session_id` + `conversation_turns` table + source attribution; full streaming SSE response.
+- **WS6 follow-up** — Dedicated chat panel/route with streaming token display.
 
 ---
 
@@ -409,4 +419,4 @@ No broken UI, no error state — just an honest, clean message.
 
 ---
 
-*Phase 27 execution started — WS2 baseline in code; remaining WS tracked above.*
+*Phase 27 execution: WS2 + WS4 v1 + WS5 v1 + WS6 v1 in code. Streaming, RAG injection, sessions, and Ollama infra doc tracked above.*

@@ -651,6 +651,39 @@
       </div>
     </section>
 
+    <!-- AI features (Phase 27 WS6) -->
+    <section class="bg-zinc-800 border border-zinc-700 rounded-xl p-5 mb-5">
+      <h2 class="text-white font-semibold mb-3 flex items-center gap-2">
+        <span>🧠</span> AI features
+      </h2>
+      <p class="text-zinc-400 text-sm mb-3">
+        Farm Guardian and RAG answer synthesis depend on the server-side
+        <code class="bg-zinc-700 px-1.5 py-0.5 rounded text-green-400 text-xs">AI_ENABLED</code>
+        env var. Disabling AI requires a server restart — this is an
+        infrastructure setting, not a per-operator toggle.
+      </p>
+      <div class="flex items-center gap-3 text-sm">
+        <span class="text-zinc-500 text-xs uppercase tracking-wide">Mode</span>
+        <span v-if="!capabilities.loaded" class="text-zinc-500">Loading…</span>
+        <span
+          v-else-if="capabilities.aiEnabled"
+          data-test="ai-mode-label"
+          class="px-2 py-0.5 rounded-md bg-green-900/40 border border-green-800 text-green-300 text-xs font-semibold"
+        >Full — AI enabled</span>
+        <span
+          v-else
+          data-test="ai-mode-label"
+          class="px-2 py-0.5 rounded-md bg-zinc-900 border border-zinc-600 text-zinc-300 text-xs font-semibold"
+        >Lite — AI disabled</span>
+      </div>
+      <p v-if="capabilities.fetchError" class="text-amber-300/80 text-xs mt-2">
+        Could not read <code class="text-zinc-400">/capabilities</code>: {{ capabilities.fetchError }} — treating as AI on.
+      </p>
+      <p class="text-zinc-500 text-xs mt-3">
+        Plan: <code class="text-gr33n-400">docs/plans/phase_27_farm_guardian_ai_layer.md</code>.
+      </p>
+    </section>
+
     <!-- Pi connection info -->
     <section class="bg-zinc-800 border border-zinc-700 rounded-xl p-5 mb-5">
       <h2 class="text-white font-semibold mb-3 flex items-center gap-2">
@@ -729,6 +762,7 @@ import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { useFarmStore } from '../stores/farm'
 import { useFarmContextStore } from '../stores/farmContext'
+import { useCapabilitiesStore } from '../stores/capabilities'
 import api from '../api'
 import {
   BOOTSTRAP_STARTER_OPTIONS,
@@ -740,6 +774,7 @@ const router = useRouter()
 const auth   = useAuthStore()
 const farmStore = useFarmStore()
 const farmContext = useFarmContextStore()
+const capabilities = useCapabilitiesStore()
 
 const starterPackOptions = BOOTSTRAP_STARTER_OPTIONS
 
@@ -1446,6 +1481,7 @@ onMounted(() => {
   loadFarmSharing()
   loadPushState()
   loadMyHourlyRate()
+  if (!capabilities.loaded) capabilities.fetch()
 })
 watch(() => farmContext.farmId, () => {
   loadOrgs()
