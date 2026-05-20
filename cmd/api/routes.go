@@ -129,6 +129,8 @@ func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationwo
 	mux.Handle("GET /v1/chat/sessions/{session_id}", jwt(http.HandlerFunc(aichat.GetSession)))
 	mux.Handle("PATCH /v1/chat/sessions/{session_id}", jwt(http.HandlerFunc(aichat.PatchSession)))
 	mux.Handle("DELETE /v1/chat/sessions/{session_id}", jwt(http.HandlerFunc(aichat.DeleteSession)))
+	// Phase 28 WS5 — operator-facing token-usage dashboard
+	mux.Handle("GET /v1/chat/usage", jwt(http.HandlerFunc(aichat.GetUsage)))
 
 	// Units
 	mux.Handle("GET /units", jwt(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

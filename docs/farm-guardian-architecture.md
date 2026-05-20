@@ -145,6 +145,8 @@ The **cost guard** is a rolling-window cap on accumulated token usage that preve
 - Small team (3–10 staff sharing one Ollama box) → consider `CHAT_COST_MAX_TOKENS_PER_USER=20000` to catch scripted abuse.
 - Multi-farm shared deployment → also set `CHAT_COST_MAX_TOKENS_PER_FARM` so one farm's runaway can't starve the others.
 
+**Operator visibility (Phase 28 WS5):** `GET /v1/chat/usage` returns the caller's rolling-window totals + remaining budget; `?farm_id=N` adds per-farm totals (farm-member-gated). The **Settings → Guardian usage** card renders two-tier progress bars and shifts to amber at 80 %, red at 100 %. Crossing 80 % of the per-user cap fires a one-shot `chat_budget_warning` alert into `gr33ncore.alerts_notifications` (debounced once per window) so the warning surfaces through the existing alert channel without operators having to poll the usage endpoint.
+
 The full table of token-related env vars (LLM timeouts, retry, chat history TTL, cost guards) lives in [`INSTALL.md`](../INSTALL.md).
 
 ---

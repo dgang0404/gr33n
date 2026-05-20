@@ -22,7 +22,7 @@ todos:
     status: completed
   - id: ws5-cost-dashboard
     content: "WS5: Token-usage dashboard — operator-visible per-user/per-farm rolling totals in Settings; alert hook that fires a notification when >80% of budget is consumed"
-    status: pending
+    status: completed
   - id: ws6-openapi-parity
     content: "WS6: OpenAPI parity for Phase 26–27 endpoints — /capabilities, /v1/chat, /v1/chat/sessions, /farms/{id}/rag/search, /farms/{id}/rag/answer all documented in openapi.yaml"
     status: pending
@@ -252,7 +252,15 @@ Start with WS1: GET /crop-cycles/{id}/summary and GET /farms/{id}/crop-cycles/co
 - **Prompt output shape** — Guardian now sees lines like `[high] Humidity threshold breach — Flower Room (sensor_reading #4242, 4h ago)` with the rendered message body folded onto the indented `detail:` line beneath. The LLM can now answer "why is my humidity alert firing?" with real numbers instead of "I don't know which alerts you mean."
 - **Tests** — 4 new unit tests in `internal/farmguardian/snapshot_test.go` (alert lines render, "+ N more" reflects total vs rendered, message snippet cap, `humanizeAge` table) + 2 real-DB smokes in `cmd/api/smoke_phase28_ws4_test.go` (attach path uses critical+now to guarantee ranking despite the smoke DB's accumulated test alerts; cap-budget test seeds 5 critical alerts and asserts only 3 details + the "+N more" marker). Existing chat/farmguardian tests untouched and green.
 
+### WS5 — Token-usage dashboard (shipped 2026-05-20)
+
+- **`GET /v1/chat/usage`** (`internal/handler/chat/usage.go`) — JWT-gated endpoint returning rolling-window token totals. User dimension is always present; per-farm dimension is opt-in via `?farm_id=N` and gated by farm-member auth so multi-farm deployments don't leak utilisation across operators. Response includes `pct_used` (rounded to 4 decimals), `remaining_tokens`, and `warning_threshold_pct: 0.80` so the UI can render the 80% threshold marker without hard-coding it. Returns **503** when `AI_ENABLED=false`. SUM-query failures fall back to zeros + WARN log (the endpoint never 500s on a transient hiccup).
+- **80% warning hook** (`internal/farmguardian/budget_warning.go`) — `MaybeFireBudgetWarning` runs *after* every successful conversation-turn insert in `persistTurn`. Threshold = **`WarningThresholdPct = 0.80`** of the per-user cap. Inserts a `gr33ncore.alerts_notifications` row with `severity=medium`, `triggering_event_source_type='chat_budget_warning'`, `recipient_user_id` = the caller, `subject_rendered="Chat token budget at N%"`. Skipped entirely when: per-user cap is 0 (disabled), the just-finished turn is ungrounded (no `farm_id` → alerts table requires non-null), or an existing warning row in the current window says "already fired" (debounce). DB errors are best-effort — the chat turn keeps flowing even if the alert insert fails.
+- **`db/queries/alerts.sql` + `internal/db/alerts_guardian.sql.go`** — new `GetRecentChatBudgetWarningForUser(recipient, since)` query is the debounce lookup, hand-written binding (sqlc-bypass pattern) folds back into `alerts.sql.go` cleanly at the next sqlc pass.
+- **Settings.vue Guardian-usage card** — calls the new endpoint with the current farm_id, renders two compact progress bars (per-user + per-farm) with `bg-emerald-500` below 80%, `bg-amber-400` at 80–100%, `bg-red-500` over 100%. The card hides itself when `ai_enabled=false`, when neither cap is configured AND the user has zero usage, and when the API errors (an inline amber "Couldn't read usage" message renders instead). `chatUsage.load` is called on mount + every farm switch.
+- **`ui/src/stores/chatUsage.js`** — Pinia store with `hasAnyCap` / `nearLimit` / `atLimit` derived getters. `load({ farmId })` short-circuits the query-string entirely when `farmId` is 0 / NaN / undefined so the card never sends a malformed request. Treats HTTP 503 specially → flips `aiEnabled` so the card hides on Lite-mode servers without flagging an error.
+- **Tests** — 9 unit tests (`internal/farmguardian/budget_warning_test.go`) cover the threshold, debounce hit, debounce-lookup-error fail-closed, SUM-error fail-open, CreateAlert-error fail-open, nil-querier programmer-mistake. 8 real-DB smoke tests (`cmd/api/smoke_phase28_ws5_test.go`) cover the endpoint contract (user / farm / invalid id / foreign farm / no auth / shape) AND the warning hook (fires at 95% → exactly one alert row with the right shape, second call debounces → still exactly one row, below-threshold → zero rows). 11 new Vitest cases (`ui/src/__tests__/chat-usage.test.js`) cover the store loader, derived getters, NaN-ish farmId guard, 503-as-disabled, and 5xx-doesn't-flip-aiEnabled.
+
 ### Still open
 
-- **WS5** — Token-usage dashboard
 - **WS6** — OpenAPI parity (Phases 24–28)

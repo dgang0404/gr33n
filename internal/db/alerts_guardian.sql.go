@@ -10,6 +10,8 @@ package db
 import (
 	"context"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 const listRecentUnreadAlertsByFarm = `-- name: ListRecentUnreadAlertsByFarm :many
@@ -41,6 +43,30 @@ type RecentUnreadAlertSummary struct {
 	TriggeringEventSourceType *string                               `db:"triggering_event_source_type" json:"triggering_event_source_type"`
 	TriggeringEventSourceID   *int64                                `db:"triggering_event_source_id" json:"triggering_event_source_id"`
 	CreatedAt                 time.Time                             `db:"created_at" json:"created_at"`
+}
+
+const getRecentChatBudgetWarningForUser = `-- name: GetRecentChatBudgetWarningForUser :one
+SELECT id FROM gr33ncore.alerts_notifications
+WHERE recipient_user_id = $1
+  AND triggering_event_source_type = 'chat_budget_warning'
+  AND created_at >= $2
+ORDER BY created_at DESC
+LIMIT 1
+`
+
+// GetRecentChatBudgetWarningForUser returns the id of the most recent
+// chat-budget-warning alert dispatched to a user inside a window. The
+// chat handler uses this to debounce — at most one warning per user
+// per cost-guard window — so a user who keeps chatting after crossing
+// 80% utilisation doesn't get a wall of identical notifications. Phase
+// 28 WS5.
+//
+// Returns sql.ErrNoRows when no warning has been fired in the window —
+// callers should treat that as "go ahead and create the warning".
+func (q *Queries) GetRecentChatBudgetWarningForUser(ctx context.Context, recipientUserID uuid.UUID, since time.Time) (int64, error) {
+	var id int64
+	err := q.db.QueryRow(ctx, getRecentChatBudgetWarningForUser, recipientUserID, since).Scan(&id)
+	return id, err
 }
 
 // ListRecentUnreadAlertsByFarm returns the top `limit` unread alerts for

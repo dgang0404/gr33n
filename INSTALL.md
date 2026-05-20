@@ -171,6 +171,8 @@ Add this to your `~/.bashrc` or `~/.zshrc` to avoid typing it every time.
 | `CHAT_COST_WINDOW_HOURS` | `/v1/chat` cost guards | Rolling-window length for token accumulation. Default **1**, clamped **1..168**. |
 | `CHAT_COST_MAX_TOKENS_PER_USER` | `/v1/chat` cost guards | Total prompt+completion tokens a single user may burn within the window before `POST /v1/chat` returns **429** with `Retry-After`. Default **0** (disabled). Clamped **0..100_000_000**. |
 | `CHAT_COST_MAX_TOKENS_PER_FARM` | `/v1/chat` cost guards | Same as above but per `farm_id` (only enforced on grounded turns that carry a farm_id). Default **0** (disabled). Clamped **0..100_000_000**. |
+
+**Operator-facing usage dashboard** (Phase 28 WS5): when `AI_ENABLED=true`, **`GET /v1/chat/usage`** (JWT) returns the caller's rolling-window totals + remaining budget. Pass `?farm_id=N` to additionally include per-farm totals (farm-member auth required). The Settings → **Guardian usage** card calls this endpoint and renders progress bars. Crossing **80 %** of the per-user cap fires a one-shot `chat_budget_warning` alert into `gr33ncore.alerts_notifications` so the existing alerts UI surfaces the warning without operators having to poll the endpoint.
 | `RAG_SYNTHESIS_MAX_PER_MINUTE` | Answer endpoint | Default `30` requests/minute per API process (rolling minute window). |
 | `RAG_SYNTHESIS_MAX_PER_MINUTE_PER_FARM` | Answer endpoint | Optional. When set to an integer **>0**, each `farm_id` gets its own cap per minute (replaces the global-only limiter). Use on shared deployments for fairness. |
 

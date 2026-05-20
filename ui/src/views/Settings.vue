@@ -684,6 +684,86 @@
       </p>
     </section>
 
+    <!-- Phase 28 WS5 — Guardian token usage / rolling-window budget -->
+    <section
+      v-if="capabilities.aiEnabled && (chatUsage.hasAnyCap || chatUsage.user.used_tokens > 0)"
+      class="bg-zinc-800 border border-zinc-700 rounded-xl p-5 mb-5"
+      data-test="guardian-usage-card"
+    >
+      <h2 class="text-white font-semibold mb-3 flex items-center gap-2">
+        <span>📊</span> Guardian usage
+      </h2>
+      <p class="text-zinc-400 text-sm mb-4">
+        Rolling-window token totals for Farm Guardian chat. Caps are configured
+        on the API via
+        <code class="bg-zinc-700 px-1.5 py-0.5 rounded text-green-400 text-xs">CHAT_COST_MAX_TOKENS_PER_USER</code>
+        and
+        <code class="bg-zinc-700 px-1.5 py-0.5 rounded text-green-400 text-xs">CHAT_COST_MAX_TOKENS_PER_FARM</code>.
+        Going over a cap returns HTTP 429 on
+        <code class="bg-zinc-700 px-1.5 py-0.5 rounded text-green-400 text-xs">POST /v1/chat</code>;
+        crossing 80 % of the per-user cap fires a one-shot warning alert.
+      </p>
+
+      <div v-if="!chatUsage.fetched" class="text-zinc-500 text-sm">Loading…</div>
+      <div v-else-if="chatUsage.error" class="text-amber-300/80 text-xs mb-3">
+        Couldn’t read usage: {{ chatUsage.error }}
+      </div>
+
+      <!-- User dimension -->
+      <div v-if="chatUsage.fetched" class="mb-3" data-test="guardian-usage-user">
+        <div class="flex items-baseline justify-between text-sm">
+          <div class="text-zinc-300 font-medium">You</div>
+          <div class="text-zinc-400 text-xs">
+            {{ chatUsage.user.used_tokens.toLocaleString() }}
+            <span v-if="chatUsage.user.max_tokens > 0">
+              / {{ chatUsage.user.max_tokens.toLocaleString() }}
+              tokens · last {{ chatUsage.windowHours }}h
+            </span>
+            <span v-else>tokens · last {{ chatUsage.windowHours }}h · uncapped</span>
+          </div>
+        </div>
+        <div class="mt-1.5 h-2 w-full bg-zinc-900 border border-zinc-700 rounded overflow-hidden">
+          <div
+            class="h-full transition-all"
+            :class="userBarColor"
+            :style="{ width: userBarWidth }"
+          />
+        </div>
+      </div>
+
+      <!-- Farm dimension — only when ?farm_id was supplied and farm has a cap -->
+      <div
+        v-if="chatUsage.fetched && chatUsage.farm && (chatUsage.farm.max_tokens > 0 || chatUsage.farm.used_tokens > 0)"
+        data-test="guardian-usage-farm"
+      >
+        <div class="flex items-baseline justify-between text-sm">
+          <div class="text-zinc-300 font-medium">This farm</div>
+          <div class="text-zinc-400 text-xs">
+            {{ chatUsage.farm.used_tokens.toLocaleString() }}
+            <span v-if="chatUsage.farm.max_tokens > 0">
+              / {{ chatUsage.farm.max_tokens.toLocaleString() }}
+              tokens · last {{ chatUsage.windowHours }}h
+            </span>
+            <span v-else>tokens · last {{ chatUsage.windowHours }}h · uncapped</span>
+          </div>
+        </div>
+        <div class="mt-1.5 h-2 w-full bg-zinc-900 border border-zinc-700 rounded overflow-hidden">
+          <div
+            class="h-full transition-all"
+            :class="farmBarColor"
+            :style="{ width: farmBarWidth }"
+          />
+        </div>
+      </div>
+
+      <p class="text-zinc-600 text-xs mt-3">
+        Source:
+        <code class="text-zinc-500">GET /v1/chat/usage</code>
+        (Phase 28 WS5). Warnings appear under the farm’s Alerts page as
+        <code class="text-zinc-500">chat_budget_warning</code>.
+      </p>
+    </section>
+
     <!-- Pi connection info -->
     <section class="bg-zinc-800 border border-zinc-700 rounded-xl p-5 mb-5">
       <h2 class="text-white font-semibold mb-3 flex items-center gap-2">
@@ -763,6 +843,7 @@ import { useAuthStore } from '../stores/auth'
 import { useFarmStore } from '../stores/farm'
 import { useFarmContextStore } from '../stores/farmContext'
 import { useCapabilitiesStore } from '../stores/capabilities'
+import { useChatUsageStore } from '../stores/chatUsage'
 import api from '../api'
 import {
   BOOTSTRAP_STARTER_OPTIONS,
@@ -775,6 +856,27 @@ const auth   = useAuthStore()
 const farmStore = useFarmStore()
 const farmContext = useFarmContextStore()
 const capabilities = useCapabilitiesStore()
+const chatUsage = useChatUsageStore()
+
+// ── Phase 28 WS5 — Guardian usage card helpers ─────────────────────────
+// Bar width is the rendered fraction. Empty caps stay at 0 so the bar
+// reads as "no cap configured" without misleading 100%.
+function pctWidth(d) {
+  if (!d || !d.max_tokens) return '0%'
+  const pct = Math.min(1, Math.max(0, Number(d.pct_used || 0)))
+  return `${(pct * 100).toFixed(1)}%`
+}
+function pctColor(d) {
+  if (!d || !d.max_tokens) return 'bg-zinc-700'
+  const p = Number(d.pct_used || 0)
+  if (p >= 1) return 'bg-red-500'
+  if (p >= 0.8) return 'bg-amber-400'
+  return 'bg-emerald-500'
+}
+const userBarWidth = computed(() => pctWidth(chatUsage.user))
+const userBarColor = computed(() => pctColor(chatUsage.user))
+const farmBarWidth = computed(() => pctWidth(chatUsage.farm))
+const farmBarColor = computed(() => pctColor(chatUsage.farm))
 
 const starterPackOptions = BOOTSTRAP_STARTER_OPTIONS
 
@@ -1482,11 +1584,13 @@ onMounted(() => {
   loadPushState()
   loadMyHourlyRate()
   if (!capabilities.loaded) capabilities.fetch()
+  chatUsage.load({ farmId: farmContext.farmId })
 })
-watch(() => farmContext.farmId, () => {
+watch(() => farmContext.farmId, (fid) => {
   loadOrgs()
   loadMembers()
   loadFarmSharing()
+  chatUsage.load({ farmId: fid })
 })
 
 watch(canViewInsertCommons, (ok) => {

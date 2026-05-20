@@ -532,6 +532,23 @@ func (h *Handler) persistTurn(
 	}); uerr != nil {
 		slog.Warn("conversation_sessions upsert failed", "session_id", sessionID, "err", uerr)
 	}
+	// Phase 28 WS5 — fire the chat-budget-warning alert when the
+	// just-persisted turn pushes the user across 80% of their cap.
+	// Best-effort: the helper swallows DB errors so a transient hiccup
+	// here never breaks the chat turn.
+	if h.costGuard.PerUserMaxTokens > 0 && farmID > 0 {
+		if res, werr := farmguardian.MaybeFireBudgetWarning(ctx, h.q, h.costGuard, userID, farmID); werr != nil {
+			slog.Warn("chat budget warning failed", "user_id", userID, "farm_id", farmID, "err", werr)
+		} else if res.Fired {
+			slog.Info("chat budget warning fired",
+				"user_id", userID, "farm_id", farmID,
+				"pct_used", res.PctUsed,
+				"used_tokens", res.UsedTokens,
+				"max_tokens", res.MaxTokens,
+				"alert_id", res.AlertID,
+			)
+		}
+	}
 	return row.TurnIndex, nil
 }
 

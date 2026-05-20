@@ -55,6 +55,18 @@ WHERE farm_id = $1;
 SELECT COUNT(*) FROM gr33ncore.alerts_notifications
 WHERE farm_id = $1 AND is_read = FALSE;
 
+-- Phase 28 WS5 — debounce lookup for the chat-budget-warning alert. The
+-- chat handler fires at most one warning per user per cost-guard
+-- window; this query is how it decides whether a warning already
+-- exists. Source-type is the literal 'chat_budget_warning' string.
+-- name: GetRecentChatBudgetWarningForUser :one
+SELECT id FROM gr33ncore.alerts_notifications
+WHERE recipient_user_id = $1
+  AND triggering_event_source_type = 'chat_budget_warning'
+  AND created_at >= $2
+ORDER BY created_at DESC
+LIMIT 1;
+
 -- Phase 28 WS4 — Farm Guardian snapshot. Returns the top N most-urgent
 -- unread alerts for a farm so the live snapshot can include enough
 -- detail for the LLM to *explain* an alert (severity / subject /
