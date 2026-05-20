@@ -107,7 +107,9 @@ Run from repo root: `go test -tags dev ./cmd/api/...` (or `make test`, which inc
 |---------------|--------|
 | **`DATABASE_URL`** | Must point at Postgres that already has **full schema** (`db/schema/gr33n-schema-v2-FINAL.sql`) and **migrations** applied (same order as bootstrap). Export it in the shell before `go test`, or rely on the Makefile default `DB_URL` when you run `make test`. |
 | **`-tags dev`** | Required so `auth_test` mode is allowed (`make test` sets this). |
-| **Seed data** | Recommended: [`db/seeds/master_seed.sql`](../db/seeds/master_seed.sql) (demo **farm_id = 1**, sensors, NF inputs, alerts, etc.). A few tests **skip** if expected rows are missing (e.g. “no sensors in seed”, “no NF inputs in seed data”). |
+| **Seed data** | Recommended: [`db/seeds/master_seed.sql`](../db/seeds/master_seed.sql) (demo **farm_id = 1**, sensors, NF inputs, crop cycles, etc.). A few tests **skip** if expected rows are missing (e.g. “no sensors in seed”, “no NF inputs in seed data”). |
+| **Smoke pollution** | Repeated `make test` against one DB accumulates junk (extra `bootstrap_farm_*` rows, `ph208_zone_*`, mass automation-rule alerts). For a clean Guardian demo, reset with `make dev-stack` or a fresh Compose volume + bootstrap. |
+| **OpenAPI parity** | `make audit-openapi` (shell diff) **and** `go test ./cmd/api/ -run TestOpenAPI_AllRoutesDocumented` (Go guard in [`openapi_parity_test.go`](../cmd/api/openapi_parity_test.go)). Both should pass before push. |
 | **No database** | If the pool cannot open or ping, `TestMain` prints a **stderr hint** and exits **0** locally (so `go test ./...` without Postgres does not fail every package). In **CI** (`CI=true` or `GITHUB_ACTIONS`), the same condition exits **1** so a forgotten DB service does not look green. |
 | **Unset `DATABASE_URL`** | Tests use a **Linux peer-auth default** (`postgres://davidg@/gr33n?host=/var/run/postgresql`). Override with `DATABASE_URL` if your user or socket path differs. |
 
@@ -130,6 +132,25 @@ Farm-side pipeline and **strict ingest JSON** (only six top-level keys; no extra
 ## OpenAPI route audit
 
 From the repo root, `make audit-openapi` runs [`scripts/openapi_route_diff.sh`](../scripts/openapi_route_diff.sh). It diffs **(HTTP method, path)** pairs from [`cmd/api/routes.go`](../cmd/api/routes.go) against [`openapi.yaml`](../openapi.yaml) and exits non-zero on any mismatch — run it after you add or rename HTTP routes.
+
+Additionally, **`go test ./cmd/api/ -run TestOpenAPI_AllRoutesDocumented`** ([`cmd/api/openapi_parity_test.go`](../cmd/api/openapi_parity_test.go)) runs as part of `make test` and enforces the same contract from Go — catches drift even if the shell script is skipped.
+
+## Guardian-ready demo (after seed)
+
+Farm Guardian layers three knowledge sources ([`farm-guardian-architecture.md`](farm-guardian-architecture.md)):
+
+1. **Llama weights** — install Ollama + pull model ([`farm-guardian-ollama-setup.md`](farm-guardian-ollama-setup.md)).
+2. **RAG corpus** — seed loads operational rows but **not** embeddings. After `make seed`, run **`rag-ingest`** for farm 1 (needs `EMBEDDING_API_KEY`):
+
+   ```bash
+   go run ./cmd/rag-ingest -farm-id 1 \
+     -crop-cycles -programs -schedules -automation-rules -executable-actions \
+     -inventory-definitions -inventory-batches -cost-transactions -alerts -tasks
+   ```
+
+3. **Live snapshot** — built automatically on each grounded chat turn (zones, active cycles, unread alerts).
+
+If your DB has been used for smoke tests for weeks, you may see hundreds of thousands of stale automation alerts and extra test farms — reset with **`make dev-stack`** for a clean demo farm.
 
 **Edge vs dashboard auth in the spec:** paths wrapped with `requireAPIKey` in `routes.go` are **Pi / bridge** calls using header **`X-API-Key`** (same secret as `PI_API_KEY` in `.env`). `GET /farms/{id}/devices` uses **`requireJWTOrPiEdge`**: OpenAPI lists **both** `bearerAuth` and `apiKeyAuth` so operators know the Pi may poll device `config` (including `pending_command`) with the API key while the dashboard uses a JWT.
 
