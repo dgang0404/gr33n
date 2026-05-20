@@ -24,6 +24,7 @@ todos:
     content: "WS5: Token-usage dashboard — operator-visible per-user/per-farm rolling totals in Settings; alert hook that fires a notification when >80% of budget is consumed"
     status: completed
   - id: ws6-openapi-parity
+    status: completed
     content: "WS6: OpenAPI parity for Phase 26–27 endpoints — /capabilities, /v1/chat, /v1/chat/sessions, /farms/{id}/rag/search, /farms/{id}/rag/answer all documented in openapi.yaml"
     status: pending
 isProject: false
@@ -261,6 +262,21 @@ Start with WS1: GET /crop-cycles/{id}/summary and GET /farms/{id}/crop-cycles/co
 - **`ui/src/stores/chatUsage.js`** — Pinia store with `hasAnyCap` / `nearLimit` / `atLimit` derived getters. `load({ farmId })` short-circuits the query-string entirely when `farmId` is 0 / NaN / undefined so the card never sends a malformed request. Treats HTTP 503 specially → flips `aiEnabled` so the card hides on Lite-mode servers without flagging an error.
 - **Tests** — 9 unit tests (`internal/farmguardian/budget_warning_test.go`) cover the threshold, debounce hit, debounce-lookup-error fail-closed, SUM-error fail-open, CreateAlert-error fail-open, nil-querier programmer-mistake. 8 real-DB smoke tests (`cmd/api/smoke_phase28_ws5_test.go`) cover the endpoint contract (user / farm / invalid id / foreign farm / no auth / shape) AND the warning hook (fires at 95% → exactly one alert row with the right shape, second call debounces → still exactly one row, below-threshold → zero rows). 11 new Vitest cases (`ui/src/__tests__/chat-usage.test.js`) cover the store loader, derived getters, NaN-ish farmId guard, 503-as-disabled, and 5xx-doesn't-flip-aiEnabled.
 
+### WS6 — OpenAPI parity (shipped 2026-05-20)
+
+- **`openapi.yaml` bumped to `0.3.0`** with a Phase 24–28 changelog block in `info.description` pointing at every new area (rag, crop-cycle-analytics, chat, capabilities) and a back-link to `docs/farm-guardian-architecture.md` for the request-flow primer.
+- **New tags:** `crop-cycle-analytics`, `chat`, `capabilities`.
+- **New path entries** (all matching the live `cmd/api/routes.go` registrations):
+  - `GET /capabilities` (Phase 27 WS6)
+  - `GET /crop-cycles/{id}/summary` + `GET /crop-cycles/{id}/summary.csv` (Phase 28 WS1)
+  - `GET /farms/{id}/crop-cycles/compare` + `GET /farms/{id}/crop-cycles/compare.csv` (Phase 28 WS1)
+  - `POST /v1/chat` (Phase 27 WS5 v1–v4 + Phase 28 WS5 cost guard) — documents both the JSON and `text/event-stream` response variants, the full 400/401/403/405/429/501/502/503/504 matrix, and references the `Retry-After` header.
+  - `GET /v1/chat/sessions`, `GET|PATCH|DELETE /v1/chat/sessions/{session_id}` (Phase 27 WS4)
+  - `GET /v1/chat/usage` (Phase 28 WS5)
+- **New schema components** (24 in total): `Capabilities`, `ChatRequest`, `ChatCitation`, `ChatResponse`, `ChatStreamEvent`, `ChatCostGuardError`, `ChatSessionSummary`, `ChatSessionListResponse`, `ChatSessionTurn`, `ChatSessionDetailResponse`, `ChatSessionPatchRequest`, `ChatSessionPatchResponse`, `ChatUsageDimension`, `ChatUsageFarmDimension`, `ChatUsageResponse`, `CropCycleSummaryFertigation`, `CropCycleSummaryCostTotal`, `CropCycleSummaryCostCategory`, `CropCycleSummaryCost`, `CropCycleSummaryYield`, `CropCycleSummaryStage`, `CropCycleSummary`, `CropCycleCompareResponse`, plus a new reusable `SessionID` UUID path parameter.
+- **Parity guard** (`cmd/api/openapi_parity_test.go`) — runs as part of the smoke suite. Scrapes every `mux.Handle("METHOD /path", …)` line out of `routes.go` and confirms each one has a matching `<path>:` entry plus the right verb block in `openapi.yaml`. **130 paths × 159 schemas** at WS6 ship; the test fails loudly on future drift. Allow-list (`routesIntentionallyUndocumented`) is empty — everything must be documented.
+- **YAML parse** validated with PyYAML (130 paths, 159 schemas). Strict OpenAPI 3.0.3 validation reports the same pre-existing description-on-response gap in `/farms/{id}/bootstrap-template` that's been there since Phase 13; my new path entries follow the established house style (`{$ref}` style for shared 4xx responses, full inline blocks elsewhere).
+
 ### Still open
 
-- **WS6** — OpenAPI parity (Phases 24–28)
+Phase 28 is **complete** — WS1 ✅ WS2 ✅ WS3 ✅ WS4 ✅ WS5 ✅ WS6 ✅. Suggested follow-ups for Phase 29 live in `docs/workstreams/sit-in-operator-experience.md`.

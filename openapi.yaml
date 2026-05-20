@@ -1,7 +1,7 @@
 openapi: "3.0.3"
 info:
   title: gr33n API
-  version: "0.2.0"
+  version: "0.3.0"
   description: |
     Local-first automated agriculture platform API.
     All endpoints run on localhost:8080 by default.
@@ -13,9 +13,15 @@ info:
     - In `AUTH_MODE=dev` (dev-tagged build only), auth is bypassed.
     - `AUTH_MODE=auth_test` enforces the same auth as production on a dev-tagged build only.
 
-    **Operator docs:** Phase 13 index — `docs/phase-13-operator-documentation.md`. **Phase 14 index** — `docs/phase-14-operator-documentation.md`. Farm audit trail — `docs/audit-events-operator-playbook.md`. Insert Commons pipeline — `docs/insert-commons-pipeline-runbook.md`; receiver — `docs/insert-commons-receiver-playbook.md`. Commons catalog (gr33n_inserts) — `docs/commons-catalog-operator-playbook.md`. Receipt storage cutover — `docs/receipt-storage-cutover-runbook.md`. Push alerts (FCM) — `docs/notifications-operator-playbook.md`. Domain module stubs (DB only; no API yet) — `docs/domain-modules-operator-playbook.md`. Optional mobile wrapper — `docs/mobile-distribution.md`.
+    **Operator docs:** Phase 13 index — `docs/phase-13-operator-documentation.md`. **Phase 14 index** — `docs/phase-14-operator-documentation.md`. Farm audit trail — `docs/audit-events-operator-playbook.md`. Insert Commons pipeline — `docs/insert-commons-pipeline-runbook.md`; receiver — `docs/insert-commons-receiver-playbook.md`. Commons catalog (gr33n_inserts) — `docs/commons-catalog-operator-playbook.md`. Receipt storage cutover — `docs/receipt-storage-cutover-runbook.md`. Push alerts (FCM) — `docs/notifications-operator-playbook.md`. Domain module stubs (DB only; no API yet) — `docs/domain-modules-operator-playbook.md`. Optional mobile wrapper — `docs/mobile-distribution.md`. Farm Guardian (Phase 27+) request flow + cost-guard reasoning — `docs/farm-guardian-architecture.md`.
 
     **Phase 13 API areas:** `organizations` (multi-farm grouping, usage summary), `farms` (Insert Commons opt-in/sync/history, farm-scoped audit events), `costs` / attachments (finance mappings, exports, receipts).
+
+    **Phase 24–28 API areas (added in 0.3.0):**
+    - `rag` (Phase 24) — `/farms/{id}/rag/search`, `/farms/{id}/rag/answer` for semantic retrieval and grounded answers with citations.
+    - `crop-cycle-analytics` (Phase 28 WS1) — `/crop-cycles/{id}/summary[.csv]` and `/farms/{id}/crop-cycles/compare[.csv]` for per-cycle and side-by-side fertigation / cost / yield analytics. CSV variants share the same builder; pick output mode by URL suffix.
+    - `chat` (Phase 27 WS5 + Phase 28 WS5) — `POST /v1/chat` (Farm Guardian conversational chat, optionally grounded by farm RAG corpus + live snapshot, optionally streaming via SSE), session history endpoints under `/v1/chat/sessions`, and the operator-facing `GET /v1/chat/usage` rolling-window token-budget dashboard. The 80 % warning hook fires `chat_budget_warning` alerts through the existing alert channel — no new push transport.
+    - `GET /capabilities` (Phase 27 WS6) — surfaces `AI_ENABLED` so the UI hides LLM-backed actions cleanly on Lite-mode servers.
   license:
     name: AGPL-3.0
     url: https://www.gnu.org/licenses/agpl-3.0
@@ -63,6 +69,12 @@ tags:
     description: User profiles and farm membership management
   - name: rag
     description: Farm-scoped vector retrieval over embedded operational text (Phase 24)
+  - name: crop-cycle-analytics
+    description: Per-cycle and side-by-side analytics — fertigation, cost, yield, stage history (Phase 28 WS1). JSON + CSV.
+  - name: chat
+    description: Farm Guardian conversational chat (Phase 27) — turn endpoint, session history, token-usage dashboard. Optional RAG grounding + live farm-state snapshot when `farm_id` is supplied.
+  - name: capabilities
+    description: Public server capability flags (Phase 27 WS6) — UI gating hint for AI features.
 
 paths:
 
@@ -130,6 +142,23 @@ paths:
                 type: object
                 properties:
                   mode: { type: string, enum: [dev, auth_test, production] }
+
+  /capabilities:
+    get:
+      tags: [capabilities]
+      summary: Public server capability flags (Phase 27 WS6)
+      description: >
+        Public, unauthenticated endpoint the UI calls on boot to decide whether
+        to render LLM-backed actions (Farm Guardian chat, RAG answer synthesis,
+        Guardian-usage card). Mirrors the server-side `AI_ENABLED` env var.
+        Older API builds without this endpoint should be treated as AI on
+        (back-compat). See `docs/plans/phase_27_farm_guardian_ai_layer.md`.
+      responses:
+        "200":
+          description: Capability flags
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Capabilities" }
 
   /auth/password:
     patch:
@@ -2342,6 +2371,123 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/CropCycle" }
 
+  # ── Crop-cycle analytics (Phase 28 WS1) ────────────────────
+
+  /crop-cycles/{id}/summary:
+    get:
+      tags: [crop-cycle-analytics]
+      summary: Per-cycle analytics summary (fertigation + cost + yield + stages)
+      description: >
+        Returns the full per-cycle story: fertigation aggregates (event count,
+        total litres, EC min/avg/max, average pH), cost totals broken down
+        per-currency and per-category, yield metrics (grams, grams/L,
+        grams/day, cost/g — the latter only when a single currency was used
+        for all expenses), and stage history. `stage_history_supported` flags
+        whether the schema can produce a real timeline (currently a single
+        stand-in row — `current_stage` entered at `started_at`). JWT + farm
+        member (farm resolved from the cycle row).
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CropCycleSummary" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "403":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /crop-cycles/{id}/summary.csv:
+    get:
+      tags: [crop-cycle-analytics]
+      summary: Per-cycle summary in CSV form (same data, flat columns)
+      description: >
+        Same data as `/crop-cycles/{id}/summary` flattened to a single CSV row
+        with one column per leaf field (cycle metadata, fertigation
+        aggregates, top-line cost totals for the dominant currency, yield
+        metrics). Cost-per-category and stage history are intentionally
+        omitted from the CSV to keep the column set stable for spreadsheet
+        consumers. Disposition header: `attachment;
+        filename="crop-cycle-{id}-summary.csv"`. JWT + farm member.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      responses:
+        "200":
+          description: CSV summary
+          content:
+            text/csv:
+              schema: { type: string, format: binary }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "403":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /farms/{id}/crop-cycles/compare:
+    get:
+      tags: [crop-cycle-analytics]
+      summary: Side-by-side compare for up to five crop cycles
+      description: >
+        Returns a `{cycles: [CropCycleSummary]}` payload, one entry per id in
+        the `ids` query parameter (comma-separated, capped at **5**, dedupe
+        applied in order). All ids must belong to the farm — a 400 fires
+        otherwise. The UI does the actual side-by-side rendering; the API
+        just guarantees parallel structures.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+        - name: ids
+          in: query
+          required: true
+          description: Comma-separated crop cycle ids (capped at 5). Duplicates are removed in first-seen order.
+          schema:
+            type: string
+            example: "12,17,23"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CropCycleCompareResponse" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "403":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+
+  /farms/{id}/crop-cycles/compare.csv:
+    get:
+      tags: [crop-cycle-analytics]
+      summary: Compare endpoint in CSV form (one row per cycle)
+      description: >
+        Same parallel ordering and validation as
+        `/farms/{id}/crop-cycles/compare`, rendered as a CSV with one row per
+        cycle and one column per leaf field. Disposition header:
+        `attachment; filename="farm-{id}-crop-cycles-compare.csv"`.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+        - name: ids
+          in: query
+          required: true
+          schema: { type: string, example: "12,17,23" }
+      responses:
+        "200":
+          description: CSV compare
+          content:
+            text/csv:
+              schema: { type: string, format: binary }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "403":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+
   # ── Plants ─────────────────────────────────────────────────
 
   /farms/{id}/plants:
@@ -3787,6 +3933,216 @@ paths:
       responses:
         "204": { description: Removed }
 
+  # ── Farm Guardian chat (Phase 27 + Phase 28 WS5) ───────────
+
+  /v1/chat:
+    post:
+      tags: [chat]
+      summary: Farm Guardian chat turn (optionally grounded by farm RAG corpus)
+      description: >
+        Single conversational turn. **Plain mode** (no `farm_id`) just sends
+        the message to the configured LLM with the Guardian persona. **Grounded
+        mode** (`farm_id` supplied) runs the same retrieval as `/rag/answer`,
+        layers the live farm-state snapshot (zones, active cycles, unread
+        alerts) on top of the persona, and returns inline citations to the
+        retrieved chunks. The handler replays up to **20 prior turns** when
+        `session_id` is set so multi-turn context survives across requests.
+
+        Each successful turn is persisted to `gr33ncore.conversation_turns`
+        (turn_index assigned via SQL `COALESCE(MAX+1, 0)`) and the matching
+        `conversation_sessions.updated_at` is bumped so the sidebar can sort
+        by recency.
+
+        **Streaming:** set `stream: true` to receive Server-Sent Events
+        (`Content-Type: text/event-stream`). Events are JSON-encoded with
+        types `token`, `done`, and `error`. The terminal `done` event carries
+        citations + usage. Non-streaming clients receive the full response as
+        a single JSON document instead.
+
+        **Cost guard:** rolling-window per-user / per-farm token caps
+        (`CHAT_COST_MAX_TOKENS_PER_USER` / `_PER_FARM`) return **429** with a
+        `Retry-After` header pointing at the end of the current window. The
+        80 % warning hook fires a `chat_budget_warning` alert; see
+        `/v1/chat/usage` for the operator dashboard.
+
+        See `docs/farm-guardian-architecture.md` for the four-stage request
+        flow and three-knowledge-layer breakdown.
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ChatRequest" }
+      responses:
+        "200":
+          description: Single-turn answer (non-streaming) or initial SSE stream (streaming).
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ChatResponse" }
+            text/event-stream:
+              schema: { $ref: "#/components/schemas/ChatStreamEvent" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403":
+          description: Caller is not a member of the supplied `farm_id`
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "405":
+          description: Method not allowed (only POST)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "429":
+          description: Cost-guard cap exceeded (per-user or per-farm). `Retry-After` header is in seconds.
+          headers:
+            Retry-After:
+              schema: { type: integer }
+              description: Seconds until the rolling window expires.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ChatCostGuardError" }
+        "501":
+          description: Streaming requested but the configured LLM client doesn't support streaming.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "502":
+          description: Retrieval or LLM provider error.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "503":
+          description: AI is disabled at the server (`AI_ENABLED=false`) or LLM / embedder isn't configured.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "504":
+          description: LLM request timed out.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+
+  /v1/chat/sessions:
+    get:
+      tags: [chat]
+      summary: List the caller's recent chat sessions (sidebar)
+      description: >
+        Returns the calling user's most recently active conversation sessions
+        (capped at **50**). Ordered by `updated_at DESC`. Each entry includes
+        rollups (`turn_count`, `total_prompt_tokens`, `total_completion_tokens`,
+        whether any turn was `grounded`, the first user message, and the last
+        assistant message preview) so the sidebar can render without a second
+        request.
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ChatSessionListResponse" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /v1/chat/sessions/{session_id}:
+    get:
+      tags: [chat]
+      summary: Get the ordered turn history for a session
+      description: >
+        Returns every turn for `(session_id, calling user)` in chronological
+        order. Turns include the user message, assistant message, model
+        label, grounded flag, citations (when grounded), and per-turn token
+        usage. Older turns are still visible here even when they've fallen
+        out of the LLM context window.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/SessionID" }
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ChatSessionDetailResponse" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+    patch:
+      tags: [chat]
+      summary: Rename a session (operator-supplied title)
+      description: >
+        Sets / clears the session's display title. Whitespace-only or empty
+        titles clear the title (the UI falls back to the first user
+        message). Titles longer than 120 runes are trimmed and ellipsised
+        on the server side.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/SessionID" }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ChatSessionPatchRequest" }
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ChatSessionPatchResponse" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    delete:
+      tags: [chat]
+      summary: Delete a session and all its turns
+      description: >
+        Idempotent — repeated DELETEs return 204 either way (no information
+        leak about whether the session existed). Removes every turn for
+        `(session_id, calling user)` and the session metadata row.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/SessionID" }
+      responses:
+        "204": { description: Session removed (or never existed). }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /v1/chat/usage:
+    get:
+      tags: [chat]
+      summary: Rolling-window token-usage dashboard (Phase 28 WS5)
+      description: >
+        Returns the caller's per-user rolling-window token totals (always
+        present) plus optional per-farm totals when `farm_id` is supplied.
+        The user dimension is always returned even when the per-user cap is
+        disabled (max_tokens=0) so operators can see raw consumption. The
+        farm dimension requires farm membership.
+
+        `pct_used` is rounded to 4 decimals; `remaining_tokens` is clamped to
+        zero once consumption meets/exceeds the cap. `warning_threshold_pct`
+        is the fraction at which `chat_budget_warning` alerts fire (0.80).
+
+        The Settings → **Guardian usage** card calls this endpoint on mount
+        and on every farm switch.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: farm_id
+          in: query
+          required: false
+          schema: { type: integer, format: int64, minimum: 1 }
+          description: When supplied, response includes a `farm` dimension scoped to grounded turns for that farm.
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ChatUsageResponse" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403":
+          description: Caller is not a member of the supplied `farm_id`
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "503":
+          description: AI is disabled at the server (`AI_ENABLED=false`).
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+
 components:
 
   securitySchemes:
@@ -3810,6 +4166,12 @@ components:
       in: path
       required: true
       schema: { type: integer, format: int64 }
+    SessionID:
+      name: session_id
+      in: path
+      required: true
+      description: Chat session UUID (assigned on the first turn; returned by `POST /v1/chat`).
+      schema: { type: string, format: uuid }
 
   responses:
     BadRequest:
@@ -3907,6 +4269,329 @@ components:
         embedding_model_id: { type: string }
         llm_model: { type: string }
         context_count: { type: integer, description: Number of chunks retrieved for this answer }
+
+    # ── Capabilities (Phase 27 WS6) ──────────────────────────────────
+
+    Capabilities:
+      type: object
+      required: [ai_enabled]
+      properties:
+        ai_enabled:
+          type: boolean
+          description: Mirrors the API's `AI_ENABLED` env var. When `false`, the UI hides LLM-backed actions (Farm Guardian chat, RAG answer synthesis, Guardian-usage card).
+
+    # ── Farm Guardian chat (Phase 27 WS5 + Phase 28 WS5) ─────────────
+
+    ChatRequest:
+      type: object
+      required: [message]
+      properties:
+        message:
+          type: string
+          description: User-supplied prompt. Trimmed + whitespace-collapsed by the server (`farmguardian.BuildUserMessage`).
+        farm_id:
+          type: integer
+          format: int64
+          nullable: true
+          description: When supplied, switches the turn to the grounded path — runs RAG retrieval, attaches the live farm-state snapshot, requires farm membership.
+        session_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: Existing session UUID for multi-turn context. Omit to start a new session — the server allocates and returns a fresh UUID.
+        stream:
+          type: boolean
+          default: false
+          description: When `true`, response is `text/event-stream` (SSE) instead of a single JSON document.
+
+    ChatCitation:
+      type: object
+      required: [ref, chunk_id, source_type, source_id, excerpt]
+      properties:
+        ref:
+          type: integer
+          description: "1-based index referenced inline by the assistant message (e.g. `[1]`)."
+        chunk_id: { type: integer, format: int64 }
+        source_type: { type: string }
+        source_id: { type: integer, format: int64 }
+        excerpt:
+          type: string
+          description: Truncated chunk text for UI display.
+
+    ChatResponse:
+      type: object
+      required: [answer, llm_model, grounded, session_id, turn_index, prompt_tokens, completion_tokens, context_count]
+      properties:
+        answer: { type: string }
+        llm_model:
+          type: string
+          description: "Model label the API reported to the client (`llm.ChatCompleter.ModelLabel`)."
+        grounded:
+          type: boolean
+          description: "`true` when the turn ran the RAG + snapshot path."
+        session_id: { type: string, format: uuid }
+        turn_index:
+          type: integer
+          description: "0-based ordinal assigned by SQL `COALESCE(MAX+1, 0)`. `-1` when the turn was not persisted (dev-bypass requests)."
+        citations:
+          type: array
+          description: Inline references. Only present for grounded turns.
+          items: { $ref: "#/components/schemas/ChatCitation" }
+        context_count:
+          type: integer
+          description: Number of chunks fed to the LLM (0 for plain turns).
+        embedding_model_id:
+          type: string
+          description: Embedding model used for retrieval (grounded turns only).
+        prompt_tokens:
+          type: integer
+          description: Tokens accounted to the prompt for this turn. 0 for streaming clients that don't surface usage.
+        completion_tokens:
+          type: integer
+          description: Tokens accounted to the completion for this turn.
+
+    ChatStreamEvent:
+      type: object
+      description: >
+        Logical shape of a single SSE event sent on a streaming chat. The
+        actual wire format is `event: <type>\ndata: <json>\n\n`. Three
+        types: `token` (incremental text delta), `done` (terminal event
+        carrying citations + usage + session_id + turn_index), and `error`
+        (terminal error event with a human-readable message).
+      properties:
+        type:
+          type: string
+          enum: [token, done, error]
+        delta:
+          type: string
+          description: Present on `token` events.
+        answer:
+          type: string
+          description: Final answer text. Present on `done`.
+        session_id: { type: string, format: uuid, description: Present on `done`. }
+        turn_index: { type: integer, description: Present on `done`. }
+        grounded: { type: boolean, description: Present on `done`. }
+        citations:
+          type: array
+          items: { $ref: "#/components/schemas/ChatCitation" }
+          description: Present on `done` (grounded turns only).
+        context_count: { type: integer, description: Present on `done`. }
+        llm_model: { type: string, description: Present on `done`. }
+        prompt_tokens: { type: integer, description: Present on `done`. }
+        completion_tokens: { type: integer, description: Present on `done`. }
+        error: { type: string, description: Present on `error`. }
+
+    ChatCostGuardError:
+      type: object
+      description: 429 body when the per-user or per-farm cap is exhausted. The `Retry-After` header carries the same value.
+      properties:
+        error: { type: string, example: "chat token budget exceeded; try again later" }
+        reason: { type: string, enum: [per_user, per_farm], description: Which cap fired. }
+        used_tokens: { type: integer, format: int64 }
+        max_tokens: { type: integer, format: int64 }
+        window_seconds: { type: integer, format: int64 }
+        retry_after_seconds: { type: integer }
+
+    ChatSessionSummary:
+      type: object
+      description: Sidebar-friendly rollup. `title` is operator-set; UIs fall back to `first_user_message` when null.
+      properties:
+        session_id: { type: string, format: uuid }
+        title: { type: string, nullable: true }
+        turn_count: { type: integer }
+        last_turn_at: { type: string, format: date-time }
+        any_grounded: { type: boolean, description: True when any turn in this session ran the RAG / snapshot path. }
+        first_user_message: { type: string, nullable: true }
+        last_assistant_message: { type: string, nullable: true }
+        last_farm_id: { type: integer, format: int64, nullable: true }
+        total_prompt_tokens: { type: integer, format: int64 }
+        total_completion_tokens: { type: integer, format: int64 }
+
+    ChatSessionListResponse:
+      type: object
+      required: [sessions]
+      properties:
+        sessions:
+          type: array
+          items: { $ref: "#/components/schemas/ChatSessionSummary" }
+
+    ChatSessionTurn:
+      type: object
+      properties:
+        turn_index: { type: integer }
+        user_message: { type: string }
+        assistant_message: { type: string }
+        llm_model: { type: string }
+        grounded: { type: boolean }
+        context_count: { type: integer }
+        citations:
+          type: array
+          items: { $ref: "#/components/schemas/ChatCitation" }
+        farm_id: { type: integer, format: int64, nullable: true }
+        prompt_tokens: { type: integer }
+        completion_tokens: { type: integer }
+        created_at: { type: string, format: date-time }
+
+    ChatSessionDetailResponse:
+      type: object
+      required: [session_id, turns]
+      properties:
+        session_id: { type: string, format: uuid }
+        turns:
+          type: array
+          items: { $ref: "#/components/schemas/ChatSessionTurn" }
+
+    ChatSessionPatchRequest:
+      type: object
+      description: 'Send `{title: null}` or `{title: ""}` to clear the title.'
+      properties:
+        title: { type: string, nullable: true, maxLength: 120 }
+
+    ChatSessionPatchResponse:
+      type: object
+      required: [session_id, updated_at]
+      properties:
+        session_id: { type: string, format: uuid }
+        title: { type: string, nullable: true }
+        updated_at: { type: string, format: date-time }
+
+    ChatUsageDimension:
+      type: object
+      description: Per-user or per-farm rolling-window usage block.
+      required: [used_tokens, max_tokens, remaining_tokens, pct_used]
+      properties:
+        used_tokens:
+          type: integer
+          format: int64
+          description: Total `prompt_tokens + completion_tokens` consumed in the window.
+        max_tokens:
+          type: integer
+          format: int64
+          description: Configured cap. `0` means the cap is disabled for this dimension.
+        remaining_tokens:
+          type: integer
+          format: int64
+          description: Clamped to zero once `used_tokens >= max_tokens`. `0` when uncapped.
+        pct_used:
+          type: number
+          format: float
+          minimum: 0
+          description: "`used_tokens / max_tokens` rounded to 4 decimals. `0` when uncapped."
+        warning_threshold_pct:
+          type: number
+          format: float
+          description: Fraction at which the `chat_budget_warning` alert fires (currently `0.80`). Present only on the user dimension when the cap is configured.
+
+    ChatUsageFarmDimension:
+      allOf:
+        - $ref: "#/components/schemas/ChatUsageDimension"
+        - type: object
+          required: [farm_id]
+          properties:
+            farm_id: { type: integer, format: int64 }
+
+    ChatUsageResponse:
+      type: object
+      required: [window_hours, ai_enabled, user]
+      properties:
+        window_hours:
+          type: integer
+          description: Cost-guard window length. `CHAT_COST_WINDOW_HOURS`, default 1, clamped 1..168.
+        ai_enabled: { type: boolean }
+        user: { $ref: "#/components/schemas/ChatUsageDimension" }
+        farm:
+          $ref: "#/components/schemas/ChatUsageFarmDimension"
+
+    # ── Crop-cycle analytics (Phase 28 WS1) ──────────────────────────
+
+    CropCycleSummaryFertigation:
+      type: object
+      properties:
+        event_count: { type: integer, format: int64 }
+        total_liters: { type: number, format: double }
+        avg_ec_mscm: { type: number, format: double }
+        min_ec_mscm: { type: number, format: double }
+        max_ec_mscm: { type: number, format: double }
+        avg_ph: { type: number, format: double }
+
+    CropCycleSummaryCostTotal:
+      type: object
+      required: [currency, total_income, total_expenses, net]
+      properties:
+        currency: { type: string, example: USD }
+        total_income: { type: number, format: double }
+        total_expenses: { type: number, format: double }
+        net: { type: number, format: double }
+
+    CropCycleSummaryCostCategory:
+      type: object
+      required: [category, currency, income, expense, net, tx_count]
+      properties:
+        category: { type: string }
+        currency: { type: string }
+        income: { type: number, format: double }
+        expense: { type: number, format: double }
+        net: { type: number, format: double }
+        tx_count: { type: integer, format: int64 }
+
+    CropCycleSummaryCost:
+      type: object
+      properties:
+        totals:
+          type: array
+          items: { $ref: "#/components/schemas/CropCycleSummaryCostTotal" }
+        by_category:
+          type: array
+          items: { $ref: "#/components/schemas/CropCycleSummaryCostCategory" }
+
+    CropCycleSummaryYield:
+      type: object
+      description: >
+        `grams_per_liter`, `grams_per_day`, and `cost_per_gram` are nullable
+        when the underlying inputs are missing (no harvest yet, no
+        fertigation events, multiple currencies in cost rows, …).
+      properties:
+        grams: { type: number, format: double }
+        grams_per_liter: { type: number, format: double, nullable: true }
+        grams_per_day: { type: number, format: double, nullable: true }
+        cost_per_gram: { type: number, format: double, nullable: true }
+
+    CropCycleSummaryStage:
+      type: object
+      required: [stage]
+      properties:
+        stage: { $ref: "#/components/schemas/GrowthStageEnum" }
+        entered_at:
+          type: string
+          format: date-time
+          description: When the cycle entered this stage. Currently the cycle's `started_at` (single stand-in row); the timeline becomes real once schema-level stage history lands.
+
+    CropCycleSummary:
+      type: object
+      required: [cycle, duration_days, fertigation, cost, yield, stages, stage_history_supported]
+      properties:
+        cycle: { $ref: "#/components/schemas/CropCycle" }
+        duration_days:
+          type: integer
+          format: int64
+          description: Days from `started_at` to `harvested_at` (or now if the cycle is still active).
+        fertigation: { $ref: "#/components/schemas/CropCycleSummaryFertigation" }
+        cost: { $ref: "#/components/schemas/CropCycleSummaryCost" }
+        yield: { $ref: "#/components/schemas/CropCycleSummaryYield" }
+        stages:
+          type: array
+          items: { $ref: "#/components/schemas/CropCycleSummaryStage" }
+        stage_history_supported:
+          type: boolean
+          description: "`false` while the schema can only produce the stand-in single-row history. The UI surfaces this so operators don't read the timeline as definitive."
+
+    CropCycleCompareResponse:
+      type: object
+      required: [cycles]
+      properties:
+        cycles:
+          type: array
+          items: { $ref: "#/components/schemas/CropCycleSummary" }
 
     FileAttachmentDownloadTarget:
       type: object
