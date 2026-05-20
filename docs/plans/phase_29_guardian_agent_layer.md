@@ -18,8 +18,8 @@ todos:
     content: "WS4: Audit + RBAC — every confirmed action writes farm audit event; viewer role cannot confirm writes; cost guard applies to tool rounds"
     status: pending
   - id: ws5-guardian-bootstrap
-    content: "WS5: Guardian-ready bootstrap — make dev-stack-fresh-rag or post-seed hook; optional seed alert samples; document in bootstrap guide"
-    status: pending
+    content: "WS5: Guardian-ready bootstrap — dev-stack-fresh-rag + rag-ingest-demo (done); optional seed alert samples (open); bootstrap doc updated"
+    status: in_progress
   - id: ws6-openapi-and-tests
     content: "WS6: OpenAPI + tests — document POST /v1/chat tool proposal/confirm shapes; Vitest for slide-out; smoke for one confirmed action path"
     status: pending
