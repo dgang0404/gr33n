@@ -1,4 +1,4 @@
-.PHONY: run run-receiver build build-receiver test seed sqlc ui dev dev-auth-test rag-ingest-help compose-db-up compose-db-status compose-logging-up compose-logging-down setup-compose-dev dev-stack dev-stack-fresh local-up restart-local restart-local-serve db-sanity-report check-stack clean lint bootstrap-local bootstrap-local-docker install-deps-debian install-pi-edge-deps first-clone first-clone-docker first-clone-install-deps audit-openapi
+.PHONY: run run-receiver build build-receiver test seed sqlc ui dev dev-auth-test rag-ingest-help rag-ingest-demo compose-db-up compose-db-status compose-logging-up compose-logging-down setup-compose-dev dev-stack dev-stack-fresh dev-stack-fresh-rag local-up restart-local restart-local-serve db-sanity-report check-stack clean lint bootstrap-local bootstrap-local-docker install-deps-debian install-pi-edge-deps first-clone first-clone-docker first-clone-install-deps audit-openapi
 
 # dash (common default /bin/sh) can report "wait: No child processes" for dev / dev-auth-test;
 # bash handles background jobs + wait reliably.
@@ -114,6 +114,12 @@ dev-stack: ## Idempotent: Compose db + migrations + seed + verify (existing DB: 
 
 dev-stack-fresh: ## Wipe Compose DB volumes + full bootstrap + seed (destructive — clean Guardian demo)
 	@./scripts/dev-stack.sh --reset-volumes --quick
+
+dev-stack-fresh-rag: ## dev-stack-fresh + rag-ingest demo farm (skip ingest if EMBEDDING_API_KEY unset)
+	@./scripts/dev-stack.sh --reset-volumes --quick --rag-ingest
+
+rag-ingest-demo: ## Index farm_id=1 for Guardian RAG (needs EMBEDDING_API_KEY; no-op with skip message if unset)
+	@./scripts/rag-ingest-demo.sh
 
 local-up: ## dev-stack then API + UI (same as ./scripts/dev-stack.sh --serve)
 	@./scripts/dev-stack.sh --serve

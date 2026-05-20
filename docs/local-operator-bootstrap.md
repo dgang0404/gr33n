@@ -140,17 +140,11 @@ Additionally, **`go test ./cmd/api/ -run TestOpenAPI_AllRoutesDocumented`** ([`c
 Farm Guardian layers three knowledge sources ([`farm-guardian-architecture.md`](farm-guardian-architecture.md)):
 
 1. **Llama weights** — install Ollama + pull model ([`farm-guardian-ollama-setup.md`](farm-guardian-ollama-setup.md)).
-2. **RAG corpus** — seed loads operational rows but **not** embeddings. After `make seed`, run **`rag-ingest`** for farm 1 (needs `EMBEDDING_API_KEY`):
-
-   ```bash
-   go run ./cmd/rag-ingest -farm-id 1 \
-     -crop-cycles -programs -schedules -automation-rules -executable-actions \
-     -inventory-definitions -inventory-batches -cost-transactions -alerts -tasks
-   ```
+2. **RAG corpus** — seed loads operational rows but **not** embeddings. After `make seed`, run **`make rag-ingest-demo`** (needs `EMBEDDING_API_KEY`; skips with a message if unset). One-shot fresh demo with embeddings: **`make dev-stack-fresh-rag`**.
 
 3. **Live snapshot** — built automatically on each grounded chat turn (zones, active cycles, unread alerts).
 
-If your DB has been used for smoke tests for weeks, you may see hundreds of thousands of stale automation alerts and extra test farms — reset with **`make dev-stack`** for a clean demo farm.
+If your DB has been used for smoke tests for weeks, you may see hundreds of thousands of stale automation alerts and extra test farms — reset with **`make dev-stack-fresh`** for a clean demo farm.
 
 **Edge vs dashboard auth in the spec:** paths wrapped with `requireAPIKey` in `routes.go` are **Pi / bridge** calls using header **`X-API-Key`** (same secret as `PI_API_KEY` in `.env`). `GET /farms/{id}/devices` uses **`requireJWTOrPiEdge`**: OpenAPI lists **both** `bearerAuth` and `apiKeyAuth` so operators know the Pi may poll device `config` (including `pending_command`) with the API key while the dashboard uses a JWT.
 

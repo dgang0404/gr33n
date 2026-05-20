@@ -8,6 +8,7 @@
 #   ./scripts/dev-stack.sh --reset-volumes      # wipe Compose volumes (DESTROYS DB DATA)
 #   ./scripts/dev-stack.sh --quick              # docker compose build uses cache (faster rebuilds)
 #   ./scripts/dev-stack.sh --skip-seed          # only bring DB up + migrations from bootstrap without seed
+#   ./scripts/dev-stack.sh --rag-ingest         # after seed, run scripts/rag-ingest-demo.sh (skip if no EMBEDDING_API_KEY)
 #
 # Requires: .env with DATABASE_URL matching Compose (see .env.example).
 set -euo pipefail
@@ -19,6 +20,7 @@ SERVE=0
 RESET_VOL=0
 QUICK=0
 SKIP_SEED=0
+RAG_INGEST=0
 
 usage() {
   cat <<'EOF'
@@ -29,6 +31,7 @@ Usage: scripts/dev-stack.sh [options]
   --reset-volumes  docker compose down -v first (wipes DB volumes — use for clean demo / smoke pollution)
   --quick       Use cached Docker layers (omit db --no-cache rebuild)
   --skip-seed   Bootstrap schema/migrations without master_seed.sql
+  --rag-ingest  After seed, index demo farm into RAG (scripts/rag-ingest-demo.sh; skips if EMBEDDING_API_KEY unset)
   -h, --help    This message
 
 Requires .env with DATABASE_URL matching Docker Compose (see .env.example).
@@ -42,6 +45,7 @@ while [[ $# -gt 0 ]]; do
     --reset-volumes) RESET_VOL=1 ;;
     --quick) QUICK=1 ;;
     --skip-seed) SKIP_SEED=1 ;;
+    --rag-ingest) RAG_INGEST=1 ;;
     -h|--help) usage ;;
     *)
       echo "unknown option: $1" >&2
@@ -116,6 +120,10 @@ else
   ./scripts/bootstrap-local.sh --seed
 fi
 
+if [[ "$RAG_INGEST" -eq 1 && "$SKIP_SEED" -eq 0 ]]; then
+  ./scripts/rag-ingest-demo.sh
+fi
+
 echo "==> check-stack"
 ./scripts/check-local-stack.sh || {
   echo "" >&2
@@ -131,4 +139,5 @@ fi
 
 echo "Next:"
 echo "  make dev-auth-test          # API + UI"
+echo "  ./scripts/rag-ingest-demo.sh   # Guardian RAG corpus for farm 1 (needs EMBEDDING_API_KEY)"
 echo "  curl -s http://localhost:8080/health"

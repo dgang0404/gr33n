@@ -152,9 +152,9 @@ Reject confirm when JWT user lacks role — return 403 with plain message Guardi
 Close the gap discovered in local dev triage ([`local_dev_bugfix_todo.md`](./local_dev_bugfix_todo.md)):
 
 1. **`make dev-stack-fresh`** — already ships clean demo DB (fixed 2026-05-20)
-2. **`make dev-stack-fresh-rag`** (new) — fresh stack + `rag-ingest` for farm 1 when `EMBEDDING_API_KEY` set
-3. **Optional seed alerts** — 2–3 realistic unread alerts (sensor threshold, inventory low) so Guardian alert explainers have something to show without smoke pollution
-4. Bootstrap doc section: "Guardian demo in 3 commands"
+2. **`make dev-stack-fresh-rag`** — fresh stack + `rag-ingest` for farm 1 when `EMBEDDING_API_KEY` set (**done** 2026-05-20: `scripts/rag-ingest-demo.sh`, `make rag-ingest-demo`, `--rag-ingest` on dev-stack)
+3. **Optional seed alerts** — 2–3 realistic unread alerts (sensor threshold, inventory low) so Guardian alert explainers have something to show without smoke pollution (**open**)
+4. Bootstrap doc section: "Guardian demo in 3 commands" (**done** — see `docs/local-operator-bootstrap.md`)
 
 ---
 

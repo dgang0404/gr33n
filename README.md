@@ -487,18 +487,17 @@ The master seed loads a **demo farm** (`farm_id = 1`, **gr33n Demo Farm**) with 
 
 Apply once: `make seed` or `psql -d gr33n -f db/seeds/master_seed.sql`.
 
-**Farm Guardian needs a RAG corpus too.** The seed loads operational rows (zones, cycles, NF inputs, …) but **does not** pre-populate `gr33ncore.rag_embedding_chunks`. After seeding, run **`rag-ingest`** once so Guardian can cite your farm data:
+**Farm Guardian needs a RAG corpus too.** The seed loads operational rows (zones, cycles, NF inputs, …) but **does not** pre-populate `gr33ncore.rag_embedding_chunks`. After seeding, run **`make rag-ingest-demo`** (or **`make dev-stack-fresh-rag`** for wipe + seed + ingest):
 
 ```bash
-# Requires EMBEDDING_API_KEY in .env (see INSTALL.md)
-go run ./cmd/rag-ingest -farm-id 1 \
-  -crop-cycles -programs -schedules -automation-rules -executable-actions \
-  -inventory-definitions -inventory-batches -cost-transactions -alerts -tasks
+make rag-ingest-demo   # needs EMBEDDING_API_KEY in .env; skips cleanly if unset
+# or one-shot fresh demo with embeddings:
+make dev-stack-fresh-rag
 ```
 
 See [`docs/farm-guardian-architecture.md`](docs/farm-guardian-architecture.md) for the three knowledge layers (Llama weights + RAG corpus + live snapshot).
 
-**Smoke-test pollution:** Running `make test` against a long-lived dev DB accumulates junk rows. For a clean Guardian demo, use **`make dev-stack-fresh`** (wipes the Compose volume) then `rag-ingest`. For day-to-day migration updates on an existing DB, **`make dev-stack`** is idempotent.
+**Smoke-test pollution:** Running `make test` against a long-lived dev DB accumulates junk rows. For a clean Guardian demo, use **`make dev-stack-fresh`** or **`make dev-stack-fresh-rag`**. For day-to-day migration updates on an existing DB, **`make dev-stack`** is idempotent.
 
 ---
 
@@ -511,6 +510,8 @@ make bootstrap-local-docker  # Same, but start stack with docker compose
 make compose-db-up   # Postgres only — docker-compose db (Timescale + pgvector); pair .env DATABASE_URL with INSTALL.md §2 / .env.example
 make dev-stack       # Idempotent: migrations + seed on existing DB (auto-skips schema)
 make dev-stack-fresh # Wipe Compose volume + full bootstrap + seed (clean Guardian demo)
+make dev-stack-fresh-rag  # Same + rag-ingest demo farm when EMBEDDING_API_KEY is set
+make rag-ingest-demo   # Index farm_id=1 only (skip message if no embedding key)
 make local-up        # dev-stack then API + UI (same as ./scripts/dev-stack.sh --serve)
 make restart-local   # After reboot: Compose db + wait + sanity report (no migrations)
 make restart-local-serve  # restart-local then API + UI (make dev-auth-test)
