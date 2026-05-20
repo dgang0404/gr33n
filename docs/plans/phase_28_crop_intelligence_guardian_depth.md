@@ -25,8 +25,7 @@ todos:
     status: completed
   - id: ws6-openapi-parity
     status: completed
-    content: "WS6: OpenAPI parity for Phase 26–27 endpoints — /capabilities, /v1/chat, /v1/chat/sessions, /farms/{id}/rag/search, /farms/{id}/rag/answer all documented in openapi.yaml"
-    status: pending
+    content: "WS6: OpenAPI parity for Phases 24–28 — openapi.yaml 0.3.0 + route parity test"
 isProject: false
 ---
 

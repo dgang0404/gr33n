@@ -64,6 +64,18 @@ else
   DATABASE_URL="${DATABASE_URL:-postgres://${USER}@/gr33n?host=/var/run/postgresql}"
   export DATABASE_URL
 
+  # When the monolithic schema file was applied on a previous run, re-applying
+  # it stops on CREATE TYPE (no IF NOT EXISTS on enums). dev-stack and
+  # bootstrap are meant to be re-runnable — auto-skip the big schema file when
+  # core types already exist, then still apply migrations + optional seed.
+  schema_already_provisioned() {
+    psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -tAc \
+      "SELECT 1 FROM pg_type t
+       JOIN pg_namespace n ON n.oid = t.typnamespace
+       WHERE n.nspname = 'gr33ncore' AND t.typname = 'farm_scale_tier_enum'
+       LIMIT 1;" 2>/dev/null | grep -q 1
+  }
+
   echo "==> Checking database connection ($DATABASE_URL)"
   # Avoid racing `docker compose up -d db` — first init can take 30–60s.
   max_waits=60
@@ -92,6 +104,12 @@ EOF
     echo "    waiting for Postgres (${n}/${max_waits})..."
     sleep 2
   done
+
+  if [[ "$SKIP_SCHEMA" -eq 0 ]] && schema_already_provisioned; then
+    echo "==> Core schema already present — skipping db/schema/gr33n-schema-v2-FINAL.sql (migrations still run)."
+    echo "    For a wipe + full re-apply: ./scripts/dev-stack.sh --reset-volumes"
+    SKIP_SCHEMA=1
+  fi
 
   if [[ "$SKIP_SCHEMA" -eq 0 ]]; then
     echo "==> Applying db/schema/gr33n-schema-v2-FINAL.sql"

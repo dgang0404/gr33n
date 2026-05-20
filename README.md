@@ -498,7 +498,7 @@ go run ./cmd/rag-ingest -farm-id 1 \
 
 See [`docs/farm-guardian-architecture.md`](docs/farm-guardian-architecture.md) for the three knowledge layers (Llama weights + RAG corpus + live snapshot).
 
-**Smoke-test pollution:** Running `make test` against a long-lived dev DB accumulates junk rows (extra farms named `bootstrap_farm_*`, `ph208_zone_*`, hundreds of thousands of automation-rule alerts). For a clean Guardian demo, use a fresh DB: `make dev-stack` (bootstrap + seed) or reset the Compose volume and re-run bootstrap. See [`docs/local-operator-bootstrap.md`](docs/local-operator-bootstrap.md).
+**Smoke-test pollution:** Running `make test` against a long-lived dev DB accumulates junk rows. For a clean Guardian demo, use **`make dev-stack-fresh`** (wipes the Compose volume) then `rag-ingest`. For day-to-day migration updates on an existing DB, **`make dev-stack`** is idempotent.
 
 ---
 
@@ -509,8 +509,9 @@ make help       # Show all targets
 make bootstrap-local  # Guided DB + env + UI deps (see docs/local-operator-bootstrap.md)
 make bootstrap-local-docker  # Same, but start stack with docker compose
 make compose-db-up   # Postgres only — docker-compose db (Timescale + pgvector); pair .env DATABASE_URL with INSTALL.md §2 / .env.example
-make dev-stack       # Reliable: Compose db + bootstrap --seed + check-stack; auto sg docker fallback (see scripts/dev-stack.sh)
-make local-up        # dev-stack then API + UI (same as scripts/dev-stack.sh --serve)
+make dev-stack       # Idempotent: migrations + seed on existing DB (auto-skips schema)
+make dev-stack-fresh # Wipe Compose volume + full bootstrap + seed (clean Guardian demo)
+make local-up        # dev-stack then API + UI (same as ./scripts/dev-stack.sh --serve)
 make restart-local   # After reboot: Compose db + wait + sanity report (no migrations)
 make restart-local-serve  # restart-local then API + UI (make dev-auth-test)
 make check-stack     # Verify DATABASE_URL + pgvector + optional API /health (see docs/local-operator-bootstrap.md)
@@ -619,7 +620,7 @@ A phase-by-phase ledger of what's live on `main`. Each row links to the governin
 | **26** | **Operator tutorial, observability, RAG scope** — operator-guide UI, Loki/Promtail/Grafana logging overlay, RAG scope/threat-model, LLM retry/backoff, Ollama setup runbook | ✅ Done | [plan](docs/plans/phase_26_operator_tutorial_observability_rag.plan.md) |
 | **27** | **Farm Guardian AI layer** — on-premise Llama 3.1 70B via Ollama, `AI_ENABLED` + `/capabilities`, streaming `POST /v1/chat`, multi-turn history + RAG grounding + live farm-state snapshot, session CRUD, token usage, cost guards, `/chat` UI panel with session sidebar + bulk-delete | ✅ Done | [plan](docs/plans/phase_27_farm_guardian_ai_layer.md) |
 | **28** | **Crop intelligence & Guardian depth** — crop-cycle analytics, Guardian ↔ cycles + alerts, token-usage dashboard, 80% budget warnings, OpenAPI 0.3.0 | ✅ Done | [plan](docs/plans/phase_28_crop_intelligence_guardian_depth.md) |
-| **29** | **Guardian agent layer** (candidate) — tool-calling actions with confirmation, global slide-out panel, richer seed + RAG bootstrap | 📋 Plan TBD | — |
+| **29** | **Guardian agent layer** (candidate) — tool-calling actions with confirmation, global slide-out panel, Guardian-ready bootstrap | 📋 Plan ready | [plan](docs/plans/phase_29_guardian_agent_layer.md) |
 
 ### Phase 23 exit sign-off
 
@@ -682,7 +683,7 @@ Stabilization sprint **closed** on **`main`** **2026-04-18**. Criterion-by-crite
 - [x] Phase 26 — operator tutorial, observability, RAG scope (guide UI, Loki overlay, RAG boundary, LLM retry, Ollama runbook) — [plan](docs/plans/phase_26_operator_tutorial_observability_rag.plan.md)
 - [x] Phase 27 — Farm Guardian AI layer (streaming chat, multi-turn sessions, RAG grounding + live snapshot, cost guards, `/chat` UI panel) — [plan](docs/plans/phase_27_farm_guardian_ai_layer.md)
 - [x] Phase 28 — crop intelligence & Guardian depth (crop analytics, Guardian ↔ cycles/alerts, usage dashboard, OpenAPI 0.3.0) — [plan](docs/plans/phase_28_crop_intelligence_guardian_depth.md)
-- [ ] Phase 29 — Guardian agent layer (tool actions, global slide-out, seed/RAG bootstrap) — plan TBD
+- [ ] Phase 29 — Guardian agent layer (tool actions, global slide-out, bootstrap) — [plan](docs/plans/phase_29_guardian_agent_layer.md)
 
 ---
 

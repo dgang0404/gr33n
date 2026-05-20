@@ -49,11 +49,16 @@ VALUES (
 ) ON CONFLICT (farm_id, user_id) DO NOTHING;
 
 INSERT INTO gr33ncore.zones (farm_id, name, description, zone_type)
-VALUES
-    (1, 'Veg Room',        'Vegetative growth stage. 18/6 light, JLF+JMS feeding.',           'indoor'),
-    (1, 'Flower Room',     'Flowering and fruiting stage. 12/12 light, FFJ+WCA program.',     'indoor'),
-    (1, 'Outdoor Garden',  'Outdoor raised beds and garden rows. Natural light. JADAM soil program.', 'outdoor')
-ON CONFLICT DO NOTHING;
+SELECT 1, v.name, v.description, v.zone_type
+FROM (VALUES
+    ('Veg Room',        'Vegetative growth stage. 18/6 light, JLF+JMS feeding.',           'indoor'),
+    ('Flower Room',     'Flowering and fruiting stage. 12/12 light, FFJ+WCA program.',     'indoor'),
+    ('Outdoor Garden',  'Outdoor raised beds and garden rows. Natural light. JADAM soil program.', 'outdoor')
+) AS v(name, description, zone_type)
+WHERE NOT EXISTS (
+    SELECT 1 FROM gr33ncore.zones z
+    WHERE z.farm_id = 1 AND z.name = v.name AND z.deleted_at IS NULL
+);
 
 -- ===========================================================================
 -- SECTION 1: JADAM INPUT DEFINITIONS
@@ -399,36 +404,39 @@ END $$;
 
 INSERT INTO gr33ncore.schedules
     (farm_id, name, description, schedule_type, cron_expression, timezone, is_active)
-VALUES
-(1, 'Light ON 24/0 Continuous',
+SELECT 1, v.name, v.description, v.schedule_type, v.cron_expression, v.timezone, v.is_active
+FROM (VALUES
+('Light ON 24/0 Continuous',
  'Lights always on. Seedling propagation, cloning, autoflowering varieties.',
  'lighting', '0 0 * * *', 'America/New_York', false),
 
-(1, 'Light ON 18/6 Veg',
+('Light ON 18/6 Veg',
  'Lights on at 06:00. 18 hours on for active vegetative growth.',
  'lighting', '0 6 * * *', 'America/New_York', false),
 
-(1, 'Light OFF 18/6 Veg',
+('Light OFF 18/6 Veg',
  'Lights off at midnight. 6 hours dark.',
  'lighting', '0 0 * * *', 'America/New_York', false),
 
-(1, 'Light ON 16/8 Moderate Veg',
+('Light ON 16/8 Moderate Veg',
  'Lights on at 06:00. 16 hours on — good energy balance vs 18/6.',
  'lighting', '0 6 * * *', 'America/New_York', false),
 
-(1, 'Light OFF 16/8 Moderate Veg',
+('Light OFF 16/8 Moderate Veg',
  'Lights off at 22:00. 8 hours dark.',
  'lighting', '0 22 * * *', 'America/New_York', false),
 
-(1, 'Light ON 12/12 Flower',
+('Light ON 12/12 Flower',
  'Lights on at 06:00. 12 hours on triggers flowering in photoperiod plants.',
  'lighting', '0 6 * * *', 'America/New_York', false),
 
-(1, 'Light OFF 12/12 Flower',
+('Light OFF 12/12 Flower',
  'Lights off at 18:00. 12 hours uninterrupted dark — critical for flowering.',
  'lighting', '0 18 * * *', 'America/New_York', false)
-
-ON CONFLICT DO NOTHING;
+) AS v(name, description, schedule_type, cron_expression, timezone, is_active)
+WHERE NOT EXISTS (
+    SELECT 1 FROM gr33ncore.schedules s WHERE s.farm_id = 1 AND s.name = v.name
+);
 
 -- ===========================================================================
 -- SECTION 4: WATERING SCHEDULES
@@ -437,45 +445,47 @@ ON CONFLICT DO NOTHING;
 
 INSERT INTO gr33ncore.schedules
     (farm_id, name, description, schedule_type, cron_expression, timezone, is_active)
-VALUES
-
-(1, 'Water Early Veg Every 2 Days',
+SELECT 1, v.name, v.description, v.schedule_type, v.cron_expression, v.timezone, v.is_active
+FROM (VALUES
+('Water Early Veg Every 2 Days',
  'Early veg. ~300mL per plant every 2 days. Allow slight dry-back between '
  'waterings to encourage roots to chase moisture downward. '
  'Zone: Veg Room. Light: 18/6.',
  'irrigation', '0 8 1-31/2 * *', 'America/New_York', false),
 
-(1, 'Water Late Veg Daily',
+('Water Late Veg Daily',
  'Late veg with larger root zone. ~750mL per plant daily. '
  'Increase if wilting occurs before next scheduled watering. '
  'Zone: Veg Room. Light: 18/6 or 16/8.',
  'irrigation', '0 8 * * *', 'America/New_York', true),
 
-(1, 'Water Early Flower Daily',
+('Water Early Flower Daily',
  'First 2 weeks of flowering. ~900mL per plant daily. Slight stress during '
  'stretch week is OK — builds stem density. '
  'Zone: Flower Room. Light: 12/12.',
  'irrigation', '0 8 * * *', 'America/New_York', true),
 
-(1, 'Water Peak Flower 2x Daily',
+('Water Peak Flower 2x Daily',
  'Mid to late flowering — maximum demand. ~1.5L per plant twice daily. '
  'Never let medium go fully dry during peak flower. Watch for leaf curl. '
  'Zone: Flower Room. Light: 12/12.',
  'irrigation', '0 8,18 * * *', 'America/New_York', false),
 
-(1, 'Water Flush Week 2x Daily',
+('Water Flush Week 2x Daily',
  'Final 7-14 days before harvest. Plain pH-adjusted water only — no nutrients. '
  '~2L per plant twice daily. 1.5-2x pot volume per session to clear salts. '
  'Zone: Flower Room. Light: 12/12.',
  'irrigation', '0 8,18 * * *', 'America/New_York', false),
 
-(1, 'Water Outdoor Garden Daily',
+('Water Outdoor Garden Daily',
  'Morning irrigation for outdoor garden beds. ~3L per sqm. '
  'Disable during rain periods. Increase in heat waves. '
  'Apply JLF soil drench here. Zone: Outdoor Garden.',
  'irrigation', '0 7 * * *', 'America/New_York', true)
-
-ON CONFLICT DO NOTHING;
+) AS v(name, description, schedule_type, cron_expression, timezone, is_active)
+WHERE NOT EXISTS (
+    SELECT 1 FROM gr33ncore.schedules s WHERE s.farm_id = 1 AND s.name = v.name
+);
 
 -- ===========================================================================
 -- SECTION 4C: DEMO DEVICES + ACTUATORS + SCHEDULE ACTIONS
@@ -485,7 +495,7 @@ INSERT INTO gr33ncore.devices
     (farm_id, zone_id, name, device_uid, device_type, status, config)
 SELECT
     1,
-    (SELECT id FROM gr33ncore.zones WHERE farm_id = 1 AND name = 'Veg Room'),
+    (SELECT id FROM gr33ncore.zones WHERE farm_id = 1 AND name = 'Veg Room' AND deleted_at IS NULL ORDER BY id LIMIT 1),
     'Veg Relay Controller',
     'demo-veg-relay-01',
     'relay_controller',
@@ -499,7 +509,7 @@ INSERT INTO gr33ncore.devices
     (farm_id, zone_id, name, device_uid, device_type, status, config)
 SELECT
     1,
-    (SELECT id FROM gr33ncore.zones WHERE farm_id = 1 AND name = 'Flower Room'),
+    (SELECT id FROM gr33ncore.zones WHERE farm_id = 1 AND name = 'Flower Room' AND deleted_at IS NULL ORDER BY id LIMIT 1),
     'Flower Relay Controller',
     'demo-flower-relay-01',
     'relay_controller',
@@ -596,7 +606,7 @@ INSERT INTO gr33nfertigation.reservoirs
     (farm_id, zone_id, name, description, capacity_liters, current_volume_liters, status)
 SELECT
     1,
-    (SELECT id FROM gr33ncore.zones WHERE farm_id = 1 AND name = 'Veg Room'),
+    (SELECT id FROM gr33ncore.zones WHERE farm_id = 1 AND name = 'Veg Room' AND deleted_at IS NULL ORDER BY id LIMIT 1),
     'Main Nutrient Reservoir',
     'Primary fertigation reservoir for demo farm programs.',
     500.00,
@@ -817,23 +827,23 @@ ORDER BY 1;
 
 -- ── Sensor → Zone assignments ─────────────────────────────────────────────
 -- Assigned 2026-03-05. Zone IDs match gr33n Demo Farm (farm_id = 1).
-UPDATE gr33ncore.sensors SET zone_id = (SELECT id FROM gr33ncore.zones WHERE farm_id = 1 AND name = 'Veg Room')      WHERE farm_id = 1 AND name = 'Root Zone Temp';
-UPDATE gr33ncore.sensors SET zone_id = (SELECT id FROM gr33ncore.zones WHERE farm_id = 1 AND name = 'Veg Room')      WHERE farm_id = 1 AND name = 'Air Temp Indoor';
-UPDATE gr33ncore.sensors SET zone_id = (SELECT id FROM gr33ncore.zones WHERE farm_id = 1 AND name = 'Veg Room')      WHERE farm_id = 1 AND name = 'Media Moisture Indoor';
-UPDATE gr33ncore.sensors SET zone_id = (SELECT id FROM gr33ncore.zones WHERE farm_id = 1 AND name = 'Outdoor Garden')  WHERE farm_id = 1 AND name = 'Soil Moisture Outdoor';
-UPDATE gr33ncore.sensors SET zone_id = (SELECT id FROM gr33ncore.zones WHERE farm_id = 1 AND name = 'Flower Room')    WHERE farm_id = 1 AND name = 'Air Humidity Indoor';
-UPDATE gr33ncore.sensors SET zone_id = (SELECT id FROM gr33ncore.zones WHERE farm_id = 1 AND name = 'Veg Room')       WHERE farm_id = 1 AND name = 'CO2 Sensor Indoor';
-UPDATE gr33ncore.sensors SET zone_id = (SELECT id FROM gr33ncore.zones WHERE farm_id = 1 AND name = 'Veg Room')       WHERE farm_id = 1 AND name = 'Lux Sensor Indoor';
-UPDATE gr33ncore.sensors SET zone_id = (SELECT id FROM gr33ncore.zones WHERE farm_id = 1 AND name = 'Flower Room')    WHERE farm_id = 1 AND name = 'PAR Sensor Indoor';
-UPDATE gr33ncore.sensors SET zone_id = (SELECT id FROM gr33ncore.zones WHERE farm_id = 1 AND name = 'Veg Room')      WHERE farm_id = 1 AND name = 'EC Sensor';
-UPDATE gr33ncore.sensors SET zone_id = (SELECT id FROM gr33ncore.zones WHERE farm_id = 1 AND name = 'Veg Room')      WHERE farm_id = 1 AND name = 'pH Sensor';
+UPDATE gr33ncore.sensors SET zone_id = (SELECT id FROM gr33ncore.zones WHERE farm_id = 1 AND name = 'Veg Room' AND deleted_at IS NULL ORDER BY id LIMIT 1)      WHERE farm_id = 1 AND name = 'Root Zone Temp';
+UPDATE gr33ncore.sensors SET zone_id = (SELECT id FROM gr33ncore.zones WHERE farm_id = 1 AND name = 'Veg Room' AND deleted_at IS NULL ORDER BY id LIMIT 1)      WHERE farm_id = 1 AND name = 'Air Temp Indoor';
+UPDATE gr33ncore.sensors SET zone_id = (SELECT id FROM gr33ncore.zones WHERE farm_id = 1 AND name = 'Veg Room' AND deleted_at IS NULL ORDER BY id LIMIT 1)      WHERE farm_id = 1 AND name = 'Media Moisture Indoor';
+UPDATE gr33ncore.sensors SET zone_id = (SELECT id FROM gr33ncore.zones WHERE farm_id = 1 AND name = 'Outdoor Garden' AND deleted_at IS NULL ORDER BY id LIMIT 1)  WHERE farm_id = 1 AND name = 'Soil Moisture Outdoor';
+UPDATE gr33ncore.sensors SET zone_id = (SELECT id FROM gr33ncore.zones WHERE farm_id = 1 AND name = 'Flower Room' AND deleted_at IS NULL ORDER BY id LIMIT 1)    WHERE farm_id = 1 AND name = 'Air Humidity Indoor';
+UPDATE gr33ncore.sensors SET zone_id = (SELECT id FROM gr33ncore.zones WHERE farm_id = 1 AND name = 'Veg Room' AND deleted_at IS NULL ORDER BY id LIMIT 1)       WHERE farm_id = 1 AND name = 'CO2 Sensor Indoor';
+UPDATE gr33ncore.sensors SET zone_id = (SELECT id FROM gr33ncore.zones WHERE farm_id = 1 AND name = 'Veg Room' AND deleted_at IS NULL ORDER BY id LIMIT 1)       WHERE farm_id = 1 AND name = 'Lux Sensor Indoor';
+UPDATE gr33ncore.sensors SET zone_id = (SELECT id FROM gr33ncore.zones WHERE farm_id = 1 AND name = 'Flower Room' AND deleted_at IS NULL ORDER BY id LIMIT 1)    WHERE farm_id = 1 AND name = 'PAR Sensor Indoor';
+UPDATE gr33ncore.sensors SET zone_id = (SELECT id FROM gr33ncore.zones WHERE farm_id = 1 AND name = 'Veg Room' AND deleted_at IS NULL ORDER BY id LIMIT 1)      WHERE farm_id = 1 AND name = 'EC Sensor';
+UPDATE gr33ncore.sensors SET zone_id = (SELECT id FROM gr33ncore.zones WHERE farm_id = 1 AND name = 'Veg Room' AND deleted_at IS NULL ORDER BY id LIMIT 1)      WHERE farm_id = 1 AND name = 'pH Sensor';
 
 INSERT INTO gr33ncore.tasks
   (farm_id, zone_id, schedule_id, title, description, task_type, status, priority, due_date)
 SELECT
   1,
-  (SELECT id FROM gr33ncore.zones WHERE farm_id=1 AND name = z AND deleted_at IS NULL),
-  (SELECT id FROM gr33ncore.schedules WHERE farm_id=1 AND name = sched),
+  (SELECT id FROM gr33ncore.zones WHERE farm_id=1 AND name = z AND deleted_at IS NULL ORDER BY id LIMIT 1),
+  (SELECT id FROM gr33ncore.schedules WHERE farm_id=1 AND name = sched ORDER BY id LIMIT 1),
   title, description, task_type,
   status::gr33ncore.task_status_enum,
   priority,
@@ -908,7 +918,7 @@ INSERT INTO gr33nfertigation.reservoirs
     (farm_id, zone_id, name, description, capacity_liters, current_volume_liters, status)
 SELECT
     1,
-    (SELECT id FROM gr33ncore.zones WHERE farm_id = 1 AND name = 'Flower Room'),
+    (SELECT id FROM gr33ncore.zones WHERE farm_id = 1 AND name = 'Flower Room' AND deleted_at IS NULL ORDER BY id LIMIT 1),
     'Flower Nutrient Reservoir',
     'Dedicated tank for 12/12 flower feeding (FFJ+WCA-style program). Keep separate from veg JLF+JMS tank.',
     400.00,
@@ -920,7 +930,7 @@ INSERT INTO gr33nfertigation.reservoirs
     (farm_id, zone_id, name, description, capacity_liters, current_volume_liters, status)
 SELECT
     1,
-    (SELECT id FROM gr33ncore.zones WHERE farm_id = 1 AND name = 'Outdoor Garden'),
+    (SELECT id FROM gr33ncore.zones WHERE farm_id = 1 AND name = 'Outdoor Garden' AND deleted_at IS NULL ORDER BY id LIMIT 1),
     'Outdoor Drench Tank',
     'JLF soil drench tank for outdoor raised beds. Fill-and-apply, no recirculation.',
     200.00,
@@ -1308,8 +1318,8 @@ INSERT INTO gr33ncore.tasks
  (farm_id, zone_id, schedule_id, title, description, task_type, status, priority, due_date)
 SELECT
   1,
-  (SELECT id FROM gr33ncore.zones WHERE farm_id = 1 AND name = z AND deleted_at IS NULL),
-  (SELECT id FROM gr33ncore.schedules WHERE farm_id = 1 AND name = sched),
+  (SELECT id FROM gr33ncore.zones WHERE farm_id = 1 AND name = z AND deleted_at IS NULL ORDER BY id LIMIT 1),
+  (SELECT id FROM gr33ncore.schedules WHERE farm_id = 1 AND name = sched ORDER BY id LIMIT 1),
   title, description, task_type,
   status::gr33ncore.task_status_enum,
   priority,

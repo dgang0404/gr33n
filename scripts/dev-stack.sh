@@ -26,7 +26,7 @@ Usage: scripts/dev-stack.sh [options]
 
   (default)     Build/start Compose db, wait for Postgres, bootstrap --seed, check-stack
   --serve       Then run make dev-auth-test (API + UI)
-  --reset-volumes  docker compose down -v first (wipes DB volumes for this project)
+  --reset-volumes  docker compose down -v first (wipes DB volumes — use for clean demo / smoke pollution)
   --quick       Use cached Docker layers (omit db --no-cache rebuild)
   --skip-seed   Bootstrap schema/migrations without master_seed.sql
   -h, --help    This message
