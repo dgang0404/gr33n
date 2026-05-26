@@ -45,7 +45,12 @@
             </router-link>
           </div>
         </div>
-        <div class="flex items-center gap-2 shrink-0 self-end sm:self-auto">
+        <div class="flex items-center gap-2 shrink-0 self-end sm:self-auto flex-wrap justify-end">
+          <AskGuardianButton
+            v-if="!a.is_read"
+            :prefilled-message="`Explain alert #${a.id} and suggest next steps`"
+            :context-ref="{ type: 'alert', id: a.id }"
+          />
           <button @click="openCreateTask(a)"
             class="text-xs text-blue-300 hover:text-blue-200 border border-blue-800 rounded px-2 py-1 transition-colors">
             Create task
@@ -132,6 +137,7 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useFarmStore } from '../stores/farm'
 import { useFarmContextStore } from '../stores/farmContext'
+import AskGuardianButton from '../components/AskGuardianButton.vue'
 
 const farmStore = useFarmStore()
 const farmContext = useFarmContextStore()

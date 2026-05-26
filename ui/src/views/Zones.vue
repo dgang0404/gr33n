@@ -67,6 +67,10 @@
           </div>
         </router-link>
         <div class="flex gap-2 mt-3 pt-3 border-t border-zinc-800">
+          <AskGuardianButton
+            :prefilled-message="`What's the current status of ${zone.name}?`"
+            :context-ref="{ type: 'zone', id: zone.id, name: zone.name }"
+          />
           <button @click.prevent="startEdit(zone)"
             class="text-xs text-zinc-400 hover:text-zinc-200">Edit</button>
           <button @click.prevent="confirmDelete(zone)"
@@ -81,6 +85,7 @@
 import { ref, onMounted } from 'vue'
 import { useFarmStore } from '../stores/farm'
 import { useFarmContextStore } from '../stores/farmContext'
+import AskGuardianButton from '../components/AskGuardianButton.vue'
 
 const store = useFarmStore()
 const farmContext = useFarmContextStore()

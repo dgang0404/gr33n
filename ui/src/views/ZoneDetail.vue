@@ -7,9 +7,18 @@
         <h1 class="text-xl font-semibold text-white mt-1">{{ zone?.name || 'Zone' }}</h1>
         <p class="text-zinc-500 text-sm">{{ zone?.description || 'No description' }}</p>
       </div>
-      <span :class="zoneBadge(zone?.zone_type)" class="text-xs font-medium px-2 py-1 rounded-full capitalize">
-        {{ zone?.zone_type || 'unknown' }}
-      </span>
+      <div class="flex items-center gap-3">
+        <AskGuardianButton
+          v-if="zone"
+          variant="primary"
+          size="sm"
+          :prefilled-message="`What's the current status of ${zone.name}?`"
+          :context-ref="{ type: 'zone', id: zone.id, name: zone.name }"
+        />
+        <span :class="zoneBadge(zone?.zone_type)" class="text-xs font-medium px-2 py-1 rounded-full capitalize">
+          {{ zone?.zone_type || 'unknown' }}
+        </span>
+      </div>
     </div>
 
     <div v-if="!zone" class="text-zinc-500 text-sm">Zone not found.</div>
@@ -215,6 +224,7 @@ import { useFarmStore } from '../stores/farm'
 import { useFarmContextStore } from '../stores/farmContext'
 import HelpTip from '../components/HelpTip.vue'
 import SensorTile from '../components/SensorTile.vue'
+import AskGuardianButton from '../components/AskGuardianButton.vue'
 
 const route = useRoute()
 const store = useFarmStore()

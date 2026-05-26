@@ -21,6 +21,13 @@
         </h1>
       </div>
       <div class="flex items-center gap-3">
+        <AskGuardianButton
+          v-if="cycleId"
+          variant="primary"
+          size="sm"
+          :prefilled-message="'Summarize this cycle and compare to typical flower targets'"
+          :context-ref="{ type: 'crop_cycle', id: cycleId }"
+        />
         <a
           v-if="cycleId"
           :href="csvUrl"
@@ -155,6 +162,7 @@ import { useRoute } from 'vue-router'
 import { useFarmStore } from '../stores/farm'
 import HelpTip from '../components/HelpTip.vue'
 import Metric from '../components/MetricChip.vue'
+import AskGuardianButton from '../components/AskGuardianButton.vue'
 
 const route = useRoute()
 const store = useFarmStore()

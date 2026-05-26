@@ -84,6 +84,9 @@ func (h *Handler) WithCostGuard(cfg farmguardian.CostGuardConfig) *Handler {
 type postBody struct {
 	Message string `json:"message"`
 	FarmID  *int64 `json:"farm_id"`
+	// ContextRef is the UI "Ask Guardian" anchor (Phase 29 WS6) — alert,
+	// crop cycle, or zone the operator opened the drawer from.
+	ContextRef *farmguardian.ContextRef `json:"context_ref,omitempty"`
 	// SessionID is an opaque identifier the client can use to correlate turns.
 	// When empty the handler generates a fresh UUID and returns it. When
 	// supplied, prior turns in that session (owned by the same user) are
@@ -193,6 +196,11 @@ func (h *Handler) PostV1(w http.ResponseWriter, r *http.Request) {
 		system = farmguardian.SystemPrompt() + "\n\n"
 		if snapshotBlock != "" {
 			system += snapshotBlock + "\n\n"
+		}
+		if pb.ContextRef != nil && h.q != nil {
+			if focus := farmguardian.ContextRefPromptBlock(r.Context(), h.q, farmID, *pb.ContextRef); focus != "" {
+				system += focus + "\n\n"
+			}
 		}
 
 		if h.embedder != nil {

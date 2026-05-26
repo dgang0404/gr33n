@@ -688,6 +688,9 @@ async function send() {
   if (useFarmContext.value && farmContext.farmId) {
     body.farm_id = Number(farmContext.farmId)
   }
+  if (guardianPanel.contextRef) {
+    body.context_ref = guardianPanel.contextRef
+  }
 
   const token = localStorage.getItem('gr33n_token') ?? ''
   try {

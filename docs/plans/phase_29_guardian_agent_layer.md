@@ -23,7 +23,7 @@ todos:
     status: completed
   - id: ws6-contextual-entry-points
     content: "WS6: Contextual Ask Guardian — prefill + open drawer from Alerts, CropCycleSummary, zone cards; pass contextRef in store for richer prompts"
-    status: pending
+    status: completed
   - id: ws7-demo-bootstrap
     content: "WS7: Guardian demo bootstrap — 2–3 realistic unread seed alerts; verify make dev-stack-fresh-rag path; Guardian demo in 3 commands section in bootstrap doc"
     status: completed
@@ -40,7 +40,7 @@ isProject: false
 
 ## Status
 
-**In progress (WS1–WS5 + WS7 shipped).** Guardian propose→confirm path is end-to-end with audit + RBAC. WS6 contextual entry points and WS8–WS9 remain.
+**In progress (WS1–WS6 + WS7 shipped).** Guardian propose→confirm path is end-to-end with audit + RBAC. WS8–WS9 remain.
 
 **Preconditions (already met):**
 
@@ -408,3 +408,11 @@ Add openapi.yaml entries as you add routes (partial WS8). Run go test ./cmd/api/
 - **`ui/src/views/FarmGuardianChat.vue`** — thin wrapper around `GuardianChatPanel` full layout.
 - **`App.vue`**, **`SideNav.vue`** (Guardian button toggles drawer), **`TopBar.vue`** (✨ toggle when AI enabled).
 - **Vitest** — `ui/src/__tests__/guardian-panel.test.js` (store, drawer teleported mount, farm_id in chat POST, route preserved on toggle).
+
+### WS6 — Contextual Ask Guardian entry points (shipped 2026-05-20)
+
+- **`ui/src/components/AskGuardianButton.vue`** — reusable ✨ trigger; opens drawer with prefilled prompt + `contextRef`.
+- **Entry points** — unread rows on `Alerts.vue`; header on `CropCycleSummary.vue`; zone cards on `Zones.vue` + header on `ZoneDetail.vue`.
+- **`internal/farmguardian/context_ref.go`** — `ContextRefPromptBlock` injects focused alert/cycle/zone detail into grounded system prompt when `context_ref` is POSTed.
+- **`GuardianChatPanel.vue`** — sends `context_ref` on `/v1/chat`; clears prefill after send.
+- **Vitest** — `ui/src/__tests__/guardian-context-entry.test.js`.
