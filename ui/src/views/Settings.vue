@@ -680,7 +680,13 @@
         Could not read <code class="text-zinc-400">/capabilities</code>: {{ capabilities.fetchError }} — treating as AI on.
       </p>
       <p class="text-zinc-500 text-xs mt-3">
-        Plan: <code class="text-gr33n-400">docs/plans/phase_27_farm_guardian_ai_layer.md</code>.
+        Guardian proposes changes; you confirm. Confirmed actions appear in the farm audit log
+        (<code class="text-zinc-400">guardian_tool_executed</code>).
+        See <code class="text-gr33n-400">docs/farm-guardian-architecture.md</code> §7.
+      </p>
+      <p class="text-zinc-500 text-xs mt-2">
+        Plans: Phase 27 chat layer · Phase 29 confirmed actions —
+        <code class="text-gr33n-400">docs/plans/phase_29_guardian_agent_layer.md</code>.
       </p>
     </section>
 

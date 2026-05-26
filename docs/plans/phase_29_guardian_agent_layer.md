@@ -32,7 +32,7 @@ todos:
     status: completed
   - id: ws9-operator-docs
     content: "WS9: Operator + architecture docs — agent flow diagram in farm-guardian-architecture.md; README Phase 29 link; operator-tour confirmed-actions demo script"
-    status: pending
+    status: completed
 isProject: false
 ---
 
@@ -40,7 +40,7 @@ isProject: false
 
 ## Status
 
-**In progress (WS1–WS8 + WS7 shipped).** Guardian propose→confirm path is end-to-end with audit + RBAC. WS9 operator docs remain.
+**Shipped (WS1–WS9).** Guardian propose→confirm path is end-to-end with audit + RBAC, OpenAPI 0.4.0, and operator docs. Phase 30 expands the tool registry and PR inbox.
 
 **Preconditions (already met):**
 
@@ -330,13 +330,13 @@ Phase 30 is the **Guardian change-request (PR) queue** — expanded confirm tool
 
 ## Definition of done (phase ship)
 
-- [ ] Guardian drawer opens from any authenticated page; `/chat` still works
-- [ ] Operator can get a proposal + confirm **ack/read alert** without leaving Alerts context
-- [ ] Viewer cannot confirm writes (403 or disabled UI)
-- [ ] Confirmed actions appear in `GET /farms/{id}/audit-events`
-- [ ] `make dev-stack-fresh` + seed → 3 demo alerts → manual demo script works
-- [ ] `make audit-openapi` green at 0.4.0; smoke_phase29 passes
-- [ ] Architecture + operator docs updated
+- [x] Guardian drawer opens from any authenticated page; `/chat` still works
+- [x] Operator can get a proposal + confirm **ack/read alert** without leaving Alerts context
+- [x] Viewer cannot confirm writes (403 or disabled UI)
+- [x] Confirmed actions appear in `GET /farms/{id}/audit-events`
+- [x] `make dev-stack-fresh` + seed → 3 demo alerts → manual demo script works
+- [x] `make audit-openapi` green at 0.4.0; smoke_phase29 passes
+- [x] Architecture + operator docs updated
 
 ---
 
@@ -422,3 +422,11 @@ Add openapi.yaml entries as you add routes (partial WS8). Run go test ./cmd/api/
 - **`openapi.yaml` 0.4.0** — `POST /v1/chat/confirm`, `GuardianActionProposal`, `GuardianContextRef`, `ChatConfirmRequest/Response`; `proposals[]` on chat responses and SSE `done`; `context_ref` on `ChatRequest`.
 - **`cmd/api/smoke_phase29_test.go`** — confirm auth/validation smokes; full chat→proposal→confirm→audit E2E when LLM is configured (skips gracefully otherwise). Complements `smoke_phase29_ws3/ws5_test.go`.
 - **Vitest** — `guardian-panel.test.js`, `guardian-proposal.test.js`, `guardian-chat-proposals.test.js` (WS4 + WS1 coverage gate).
+
+### WS9 — Operator + architecture docs (shipped 2026-05-20)
+
+- **`docs/farm-guardian-architecture.md`** — §7 Agent actions (propose→confirm diagram, v1 tool table, audit pointer); code map + phase ledger updated.
+- **`README.md`** — Phase 29 shipped; Guardian section reflects confirmed ack/read scope; roadmap checkboxes.
+- **`docs/operator-tour.md`** — §6 **Guardian can act (with your OK)** demo script (Alerts → Ask Guardian → Confirm).
+- **`docs/local-operator-bootstrap.md`** — Guardian demo box includes ack confirm step; links to architecture §7.
+- **`ui/src/views/Settings.vue`** + **`GuardianDrawer.vue`** — scope note: proposes / you confirm / audit log.

@@ -5,7 +5,9 @@
 **Companion docs:**
 - [`farm-guardian-ollama-setup.md`](farm-guardian-ollama-setup.md) — operator install runbook for the inference host (Ollama).
 - [`rag-scope-and-threat-model.md`](rag-scope-and-threat-model.md) — privacy & scope boundaries (what RAG indexes, what it doesn't).
-- [`plans/phase_27_farm_guardian_ai_layer.md`](plans/phase_27_farm_guardian_ai_layer.md) — the calendar plan that shipped this layer.
+- [`plans/phase_27_farm_guardian_ai_layer.md`](plans/phase_27_farm_guardian_ai_layer.md) — the calendar plan that shipped the chat layer.
+- [`plans/phase_29_guardian_agent_layer.md`](plans/phase_29_guardian_agent_layer.md) — confirmed agent actions (propose → confirm).
+- [`audit-events-operator-playbook.md`](audit-events-operator-playbook.md) — `guardian_tool_executed` audit rows after Confirm.
 
 ---
 
@@ -53,8 +55,11 @@ What happens when an operator types **"how is my flower room cycle going?"** in 
    ├── Stream deltas to UI        as SSE events ("delta", "done")
    ├── On 'done':
    │   ├── Persist the turn       to conversation_turns (with prompt/completion tokens)
+   │   ├── Rule-assisted proposals (Phase 29) when grounded + ack/read intent
    │   └── Update session         conversation_sessions.updated_at → sidebar reorder
    └── Log structured             slog "farm guardian chat streamed" with usage
+
+**Phase 29 UI:** operators open Guardian from any page via the **slide-out drawer** (sidebar ✨, TopBar pill, or right-edge tab) — `/chat` remains the full-page view. **Ask Guardian** buttons on Alerts, crop-cycle summary, and zone cards prefill the drawer with contextual prompts.
 ```
 
 No step in this flow touches the public internet in Full mode. The model lives on the intranet GPU box; the embeddings live in your local Postgres; the snapshot is a local DB query.
@@ -160,11 +165,15 @@ For the developer reader, here's the actual module layout:
 | Module / file | Role |
 |---------------|------|
 | `cmd/api/main.go` | Loads `ai.Config`, verifies LLM reachability on boot, spawns the prune loop goroutine. |
-| `cmd/api/routes.go` | Registers `/v1/chat`, `/v1/chat/sessions[/{id}]`, `/capabilities`, RAG endpoints. |
+| `cmd/api/routes.go` | Registers `/v1/chat`, `/v1/chat/confirm`, `/v1/chat/sessions[/{id}]`, `/capabilities`, RAG endpoints. |
 | `internal/ai/config.go` | Parses `AI_ENABLED`, runs the startup LLM reachability check. |
 | `internal/handler/chat/handler.go` | The orchestrator — receives `POST /v1/chat`, runs every step in §2 above. |
+| `internal/handler/chat/confirm.go` | `POST /v1/chat/confirm` — replays frozen proposals, RBAC, audit (Phase 29). |
 | `internal/farmguardian/persona.go` | The system prompt that defines Guardian's voice + constraints. |
 | `internal/farmguardian/snapshot.go` | Live farm-state snapshot builder (zones / cycles / alerts). |
+| `internal/farmguardian/context_ref.go` | Contextual focus block from `context_ref` (Ask Guardian entry points, Phase 29 WS6). |
+| `internal/farmguardian/proposals.go` | Rule-assisted proposal builder + `gr33ncore.guardian_action_proposals` insert. |
+| `internal/farmguardian/tools/` | In-process tool registry (`ack_alert`, `mark_alert_read`) executed on Confirm. |
 | `internal/farmguardian/cost_guard.go` | Rolling-window token cap → 429 decision. |
 | `internal/farmguardian/prune.go` | Background goroutine that TTL-prunes old chat sessions. |
 | `internal/rag/llm/chat.go` | HTTP client to Ollama (streaming SSE, retries, usage capture). |
@@ -177,7 +186,12 @@ For the developer reader, here's the actual module layout:
 
 | File | Role |
 |------|------|
-| `ui/src/views/FarmGuardianChat.vue` | The `/chat` panel — session sidebar, multi-turn transcript, streaming, rename/delete/bulk-delete. |
+| `ui/src/views/FarmGuardianChat.vue` | Full-page `/chat` — session sidebar, multi-turn transcript, streaming. |
+| `ui/src/components/GuardianDrawer.vue` | Global slide-out panel on every route (Phase 29 WS1). |
+| `ui/src/components/GuardianChatPanel.vue` | Shared chat body (drawer + full page); proposal cards inline. |
+| `ui/src/components/GuardianActionProposal.vue` | Confirm / Dismiss card for `proposals[]` (Phase 29 WS4). |
+| `ui/src/components/AskGuardianButton.vue` | Contextual entry points — Alerts, cycles, zones (Phase 29 WS6). |
+| `ui/src/stores/guardianPanel.js` | Drawer open/close, prefilled prompts, `contextRef`, active session. |
 | `ui/src/views/FarmKnowledge.vue` | The `/farm-knowledge` page — RAG search + Ask-LLM (synthesis). |
 | `ui/src/stores/capabilities.js` | Loads `/capabilities` at app start; gates AI UI in Lite mode. |
 | `ui/src/components/SideNav.vue` | "Guardian" + "Knowledge" entries under Monitor. |
@@ -190,10 +204,72 @@ For the developer reader, here's the actual module layout:
 | `gr33ncore.farm_knowledge_chunks` | 24 | Per-chunk content + `embedding vector(1536)` for kNN. |
 | `gr33ncore.conversation_sessions` | 27 | Chat session metadata (title, owner, timestamps). |
 | `gr33ncore.conversation_turns` | 27 | Each user/assistant exchange (messages, citations, token usage, grounded flag). |
+| `gr33ncore.guardian_action_proposals` | 29 | Frozen propose→confirm payloads (tool, args, TTL, status, result). |
 
 ---
 
-## 6. Why this design (vs alternatives)
+## 7. Agent actions (Phase 29) — propose → confirm
+
+Phase 27–28 shipped Guardian as **read-only** Q&A. Phase 29 adds **confirmed writes** — Guardian never mutates farm state silently.
+
+### 7.1 Operator mental model
+
+| Layer | Who acts | Example |
+|-------|----------|---------|
+| **Chat advice** | Guardian (read-only) | "Humidity is high — check dehumidifier drain." |
+| **Automation rules** | System (autonomous) | Rule fires → alert or actuator command per schedule. |
+| **Guardian proposals** | Operator confirms | Card: "Acknowledge humidity alert" → **Confirm** → DB write + audit row. |
+
+Guardian **proposes**; the operator **confirms**. Viewers may chat and see proposal cards but **Confirm is disabled** (403 server-side if they bypass the UI). Confirmed actions require `FarmCaps.Operate` (operator / worker / agronomist / manager / owner).
+
+**Phase 29 v1 tools** (registry in `internal/farmguardian/tools/registry.go`):
+
+| Tool ID | Effect | REST equivalent |
+|---------|--------|-----------------|
+| `ack_alert` | Acknowledge alert | `PATCH /alerts/{id}/acknowledge` |
+| `mark_alert_read` | Mark alert read | `PATCH /alerts/{id}/read` |
+
+More tools (create task from alert, cycle stage, schedules, Pi actuators) are **Phase 30** — still propose→confirm, not autonomous. See [`plans/phase_30_guardian_change_requests.plan.md`](plans/phase_30_guardian_change_requests.plan.md).
+
+### 7.2 Request flow (propose → confirm)
+
+```mermaid
+sequenceDiagram
+  participant Op as Operator
+  participant UI as Guardian drawer
+  participant Chat as POST /v1/chat
+  participant DB as Postgres
+  participant Confirm as POST /v1/chat/confirm
+
+  Op->>UI: "acknowledge the humidity alert"
+  UI->>Chat: message + farm_id (+ optional context_ref)
+  Chat->>DB: snapshot + LLM turn
+  Chat->>DB: INSERT guardian_action_proposals (frozen args, 5m TTL)
+  Chat-->>UI: answer + proposals[]
+  UI-->>Op: proposal card (Confirm / Dismiss)
+  Op->>Confirm: { proposal_id }
+  Confirm->>DB: load proposal, verify user + Operate cap
+  Confirm->>DB: execute tool (same logic as dashboard)
+  Confirm->>DB: user_activity_log (guardian_tool_executed)
+  Confirm-->>UI: summary + result
+```
+
+**Safety properties:**
+
+- **Frozen args** — Confirm body accepts only `proposal_id`; args come from the DB row at propose time (no client tampering).
+- **TTL** — Default 5 minutes; expired proposals return **410 Gone**.
+- **Idempotency** — Second Confirm on an already-confirmed proposal returns **200** with cached result.
+- **Audit** — Every successful confirm writes `action_type: guardian_tool_executed` with `details.tool_id`, `details.proposal_id`, frozen `details.args`. See [`audit-events-operator-playbook.md`](audit-events-operator-playbook.md).
+
+**Proposal detection (v1):** rule-assisted — when a grounded turn mentions ack/read intent and the snapshot lists unread alerts, the handler templates a proposal without relying on the LLM to emit valid JSON.
+
+**Contextual entry points (WS6):** Alerts, crop-cycle summary, and zone views expose **✨ Ask Guardian**, which opens the drawer with a prefilled question and optional `context_ref` for a focused prompt block.
+
+OpenAPI: **`openapi.yaml` 0.4.0** documents `proposals[]`, `POST /v1/chat/confirm`, and `GuardianActionProposal` shapes.
+
+---
+
+## 8. Why this design (vs alternatives)
 
 A few common questions:
 
@@ -214,7 +290,7 @@ No. The RAG search is hard-filtered by `farm_id` at the SQL level. The snapshot 
 
 ---
 
-## 7. Phase ledger
+## 9. Phase ledger
 
 The layer was built incrementally across these phases:
 
@@ -223,3 +299,4 @@ The layer was built incrementally across these phases:
 - **Phase 26** — Operator tutorial, observability, RAG scope/threat-model doc, LLM retry/backoff.
 - **Phase 27** — Farm Guardian AI layer (chat endpoint, multi-turn history, snapshot, sessions, streaming, cost guards, `/chat` UI panel). Closed 2026-05-19.
 - **Phase 28** — Crop intelligence & Guardian depth. WS3 extends the snapshot with active-cycle analytics; WS4 adds alert detail; WS5 surfaces token-usage to operators. See [`plans/phase_28_crop_intelligence_guardian_depth.md`](plans/phase_28_crop_intelligence_guardian_depth.md).
+- **Phase 29** — Guardian agent layer. Global slide-out drawer, rule-assisted proposals, `POST /v1/chat/confirm`, alert ack/read tools, audit + RBAC, contextual Ask Guardian entry points, OpenAPI 0.4.0. Closed 2026-05-20. See [`plans/phase_29_guardian_agent_layer.md`](plans/phase_29_guardian_agent_layer.md).

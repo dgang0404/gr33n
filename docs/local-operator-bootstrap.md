@@ -153,11 +153,12 @@ From the repo root (destructive DB wipe — use only when you want a clean demo 
 ```bash
 make dev-stack-fresh-rag    # or: make dev-stack-fresh  (skip RAG if EMBEDDING_API_KEY unset)
 make restart-local-serve    # API + UI (or: make dev-auth-test in one terminal)
-# Dashboard → select gr33n Demo Farm → toggle Guardian (sidebar or ✨) → ask:
-#   "What unread alerts do I have?" or "Explain the humidity alert in Flower Room"
+# Dashboard → select gr33n Demo Farm → toggle Guardian (sidebar, ✨ TopBar, or right-edge tab)
+# 1) Ask: "What unread alerts do I have?" or use ✨ Ask Guardian on the humidity alert row
+# 2) Then: "acknowledge the humidity alert" → proposal card → Confirm
 ```
 
-With **AI_ENABLED** and Ollama running, grounded chat includes the three seed alerts in the live snapshot. Phase 29 **confirm actions** (ack/read alert) land in a later work stream — see [Phase 29 plan](plans/phase_29_guardian_agent_layer.md).
+With **AI_ENABLED** and Ollama running, grounded chat includes the three seed alerts in the live snapshot. **Confirmed actions** (ack/read alert) ship in Phase 29 — proposal card + `POST /v1/chat/confirm`; audit rows appear as `guardian_tool_executed`. See [operator tour §6](operator-tour.md#6-farm-guardian-can-act-with-your-ok) and [farm-guardian-architecture §7](farm-guardian-architecture.md#7-agent-actions-phase-29--propose--confirm).
 
 If your DB has been used for smoke tests for weeks, you may see hundreds of thousands of stale automation alerts and extra test farms — reset with **`make dev-stack-fresh`** for a clean demo farm.
 

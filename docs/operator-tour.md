@@ -26,6 +26,7 @@ Think **physical layout → signals → automation → work tracking → feeding
 | **4. Schedules & rules** | `/schedules`, `/automation` | **Schedules** = time-based cadence (cron-like) tied to actions or fertigation windows. **Rules** (Automation) = conditions + actions (e.g. “if humidity low → open mist”). |
 | **5. Tasks** | `/tasks` | Human **work items**: inspections, harvest prep, fixes — often the day-to-day spine (see sit-in “tasks-first”). |
 | **6. Fertigation** | `/fertigation` | Programs, mixing logs, reservoirs, recipes — ties schedules + inventory-style inputs to delivery. |
+| **7. Guardian (optional AI)** | Slide-out drawer (any page), `/chat`, `/alerts` | **Farm Guardian** — grounded Q&A over your farm snapshot + RAG corpus. Phase 29: Guardian can **propose** alert ack/read actions; you **Confirm** in the chat transcript (see [§6](#6-farm-guardian-can-act-with-your-ok)). |
 
 **Around the edges (same session):** **Alerts** (`/alerts`), **Costs** (`/costs`), **Knowledge** (`/farm-knowledge` — farm-scoped RAG), **Plants / Animals / Aquaponics** when those modules matter, **Settings** / **Catalog** for account and reference data.
 
@@ -63,11 +64,33 @@ Empty lists usually mean one of: **no data yet**, **wrong farm selected**, **tel
 
 ---
 
-## 5. Related docs
+## 6. Farm Guardian can act (with your OK)
+
+**Requires:** `AI_ENABLED=true`, LLM configured ([`farm-guardian-ollama-setup.md`](farm-guardian-ollama-setup.md)), demo farm selected.
+
+Guardian is **not autonomous** — it advises in chat and may show **action proposal cards** when you ask it to acknowledge or mark alerts read. Nothing changes in the database until you tap **Confirm**.
+
+**Suggested demo path (Phase 29):**
+
+1. Open **Alerts** (`/alerts`) — seeded demo farm has three unread alerts after `make dev-stack-fresh`.
+2. On the humidity row, click **✨ Ask Guardian** (or open the drawer from the sidebar / TopBar / right-edge tab).
+3. Send (or edit) the prefilled question, e.g. *"Explain alert #… and suggest next steps"* or *"acknowledge the humidity alert"*.
+4. When a **proposal card** appears, read the summary → **Confirm** (operators only; viewers see a disabled button).
+5. Return to **Alerts** — the row shows ACK; optional: **Settings → Audit** or farm audit events for `guardian_tool_executed`.
+
+**Scope at Phase 29 ship:** confirmed writes are **alert acknowledge** and **mark read** only. Schedules, programs, GPIO, and config patches are **Phase 30** (still Confirm-only). Automation **rules** remain the autonomous safety layer — separate from Guardian.
+
+Architecture: [`farm-guardian-architecture.md`](farm-guardian-architecture.md) §7 · Bootstrap: [`local-operator-bootstrap.md`](local-operator-bootstrap.md#guardian-agent-demo-in-3-commands) · Plan: [`plans/phase_29_guardian_agent_layer.md`](plans/phase_29_guardian_agent_layer.md).
+
+---
+
+## 7. Related docs
 
 | Doc | Use |
 |-----|-----|
-| [local-operator-bootstrap.md](local-operator-bootstrap.md) | First-time env, DB, seed, URLs |
+| [local-operator-bootstrap.md](local-operator-bootstrap.md) | First-time env, DB, seed, URLs, Guardian agent demo |
+| [farm-guardian-architecture.md](farm-guardian-architecture.md) | Guardian request flow, propose→confirm, audit |
+| [audit-events-operator-playbook.md](audit-events-operator-playbook.md) | `guardian_tool_executed` after Confirm |
 | [operator-troubleshooting.md](operator-troubleshooting.md) | 401 / empty farms / reading logs |
 | [operator-logging-runbook.md](operator-logging-runbook.md) | Capture & retention for **`slog`** — Compose rotation, Loki sketch; **logs ≠ hypertable pruning** |
 | [tasks-first-operator-guide.md](tasks-first-operator-guide.md) | Morning ops path, tasks vs automation rules, offline queue |
