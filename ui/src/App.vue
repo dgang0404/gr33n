@@ -69,12 +69,16 @@
         <div class="flex-1 bg-black/60" @click="drawerOpen = false" />
       </div>
     </Transition>
+
+    <!-- Phase 29 WS1 — global Farm Guardian slide-out -->
+    <GuardianDrawer v-if="auth.token" />
   </div>
 </template>
 
 <script setup>
 import SideNav from './components/SideNav.vue'
 import TopBar  from './components/TopBar.vue'
+import GuardianDrawer from './components/GuardianDrawer.vue'
 import { useFarmStore } from './stores/farm'
 import { useFarmContextStore } from './stores/farmContext'
 import { useAuthStore } from './stores/auth'

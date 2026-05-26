@@ -653,7 +653,8 @@ const (
 	Gr33ncoreUserActionTypeEnumChangeSetting Gr33ncoreUserActionTypeEnum = "change_setting"
 	Gr33ncoreUserActionTypeEnumSystemEvent   Gr33ncoreUserActionTypeEnum = "system_event"
 	Gr33ncoreUserActionTypeEnumExportData    Gr33ncoreUserActionTypeEnum = "export_data"
-	Gr33ncoreUserActionTypeEnumImportData    Gr33ncoreUserActionTypeEnum = "import_data"
+	Gr33ncoreUserActionTypeEnumImportData           Gr33ncoreUserActionTypeEnum = "import_data"
+	Gr33ncoreUserActionTypeEnumGuardianToolExecuted Gr33ncoreUserActionTypeEnum = "guardian_tool_executed"
 )
 
 func (e *Gr33ncoreUserActionTypeEnum) Scan(src interface{}) error {

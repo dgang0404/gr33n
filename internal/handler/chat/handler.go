@@ -95,16 +95,17 @@ type postBody struct {
 }
 
 type postResponse struct {
-	Answer           string               `json:"answer"`
-	LLMModel         string               `json:"llm_model"`
-	Grounded         bool                 `json:"grounded"`
-	Citations        []synthesis.Citation `json:"citations,omitempty"`
-	ContextCount     int                  `json:"context_count"`
-	EmbeddingID      string               `json:"embedding_model_id,omitempty"`
-	SessionID        string               `json:"session_id,omitempty"`
-	TurnIndex        int32                `json:"turn_index"`
-	PromptTokens     int                  `json:"prompt_tokens"`
-	CompletionTokens int                  `json:"completion_tokens"`
+	Answer           string                      `json:"answer"`
+	LLMModel         string                      `json:"llm_model"`
+	Grounded         bool                        `json:"grounded"`
+	Citations        []synthesis.Citation        `json:"citations,omitempty"`
+	ContextCount     int                         `json:"context_count"`
+	EmbeddingID      string                      `json:"embedding_model_id,omitempty"`
+	SessionID        string                      `json:"session_id,omitempty"`
+	TurnIndex        int32                       `json:"turn_index"`
+	PromptTokens     int                         `json:"prompt_tokens"`
+	CompletionTokens int                         `json:"completion_tokens"`
+	Proposals        []farmguardian.ActionProposal `json:"proposals,omitempty"`
 }
 
 // PostV1 handles POST /v1/chat — JWT required by route wiring.
@@ -161,6 +162,7 @@ func (h *Handler) PostV1(w http.ResponseWriter, r *http.Request) {
 		system   = farmguardian.SystemPrompt()
 		user     = question
 		farmID   int64
+		liveSnap farmguardian.Snapshot
 	)
 
 	if pb.FarmID != nil {
@@ -192,8 +194,10 @@ func (h *Handler) PostV1(w http.ResponseWriter, r *http.Request) {
 			snap, serr := farmguardian.BuildSnapshot(r.Context(), h.q, farmID)
 			if serr != nil {
 				slog.Warn("farm guardian snapshot failed", "farm_id", farmID, "err", serr)
+			} else {
+				liveSnap = snap
 			}
-			snapshotBlock = snap.PromptBlock()
+			snapshotBlock = liveSnap.PromptBlock()
 		}
 
 		system = farmguardian.SystemPrompt() + "\n\n"
@@ -255,7 +259,7 @@ func (h *Handler) PostV1(w http.ResponseWriter, r *http.Request) {
 			httputil.WriteError(w, http.StatusNotImplemented, "configured LLM client does not support streaming")
 			return
 		}
-		h.streamResponse(w, r, stream, messages, farmID, grounded, chunks, sessionID, userID, hasUser, question)
+		h.streamResponse(w, r, stream, messages, farmID, grounded, chunks, sessionID, userID, hasUser, question, liveSnap)
 		return
 	}
 
@@ -300,6 +304,7 @@ func (h *Handler) PostV1(w http.ResponseWriter, r *http.Request) {
 	if turnIdx, perr := h.persistTurn(r.Context(), sessionID, userID, hasUser, farmID, grounded, question, answer, resp.Citations, len(chunks), usage); perr == nil {
 		resp.TurnIndex = turnIdx
 	}
+	h.attachProposals(r.Context(), farmID, hasUser, userID, sessionID, question, liveSnap, &resp)
 
 	slog.Info("farm guardian chat completed",
 		"farm_id", farmID,
@@ -332,6 +337,7 @@ func (h *Handler) streamResponse(
 	userID uuid.UUID,
 	hasUser bool,
 	question string,
+	liveSnap farmguardian.Snapshot,
 ) {
 	flusher, ok := w.(http.Flusher)
 	if !ok {
@@ -396,6 +402,7 @@ func (h *Handler) streamResponse(
 	if turnIdx, perr := h.persistTurn(r.Context(), sessionID, userID, hasUser, farmID, grounded, question, answer, done.Citations, len(chunks), usage); perr == nil {
 		done.TurnIndex = turnIdx
 	}
+	h.attachProposals(r.Context(), farmID, hasUser, userID, sessionID, question, liveSnap, &done)
 
 	sendEvent("done", done)
 	_, _ = w.Write([]byte("data: [DONE]\n\n"))

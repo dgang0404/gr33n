@@ -1,6 +1,7 @@
 -- =============================================================================
--- gr33n Master Seed File  v1.005
+-- gr33n Master Seed File  v1.006
 -- + Demo input_batches (inventory), flower reservoir + fertigation program,
+--   Phase 29 WS7 — three unread Guardian demo alerts (farm 1).
 --   mixing_events + components, crop_cycles, protocol tasks (18/6 veg vs 12/12 flower).
 -- v1.004: schedules table has no metadata column — notes moved to description
 -- =============================================================================
@@ -897,7 +898,10 @@ FROM (VALUES
      'FFJ for 12/12 flowering phase — use in lighter feed or foliar per recipe.'),
     ('SEED-WCA-001',      DATE '2026-01-20', DATE '2026-02-10', 12.0::numeric, 10.0::numeric,
      'Flower Room — bench',
-     'WCA (eggshell vinegar calcium). Pairs with FFJ during flower.')
+     'WCA (eggshell vinegar calcium). Pairs with FFJ during flower.'),
+    ('SEED-OHN-001',      DATE '2026-03-01', DATE '2026-03-20', 5.0::numeric,  0.35::numeric,
+     'Veg Room — concentrate shelf',
+     'OHN (Oriental Herbal Nutrient). Demo lot — remaining below 0.5 L reorder threshold.')
 ) AS v(batch_identifier, started, ready, qty_l, remaining_l, location, notes)
 JOIN gr33ncore.units u ON u.name = 'liter'
 JOIN gr33nnaturalfarming.input_definitions d
@@ -908,6 +912,7 @@ JOIN gr33nnaturalfarming.input_definitions d
    OR (v.batch_identifier = 'SEED-JMS-001' AND d.name LIKE 'JMS%')
    OR (v.batch_identifier = 'SEED-FFJ-001' AND d.name LIKE 'FFJ%')
    OR (v.batch_identifier = 'SEED-WCA-001' AND d.name LIKE 'WCA%')
+   OR (v.batch_identifier = 'SEED-OHN-001' AND d.name LIKE 'OHN%')
  )
 WHERE NOT EXISTS (
  SELECT 1 FROM gr33nnaturalfarming.input_batches b
@@ -1339,4 +1344,91 @@ WHERE NOT EXISTS (
   SELECT 1 FROM gr33ncore.tasks o
   WHERE o.farm_id = 1 AND o.deleted_at IS NULL AND o.title = t.title
 );
+
+-- ===========================================================================
+-- SECTION 9: GUARDIAN DEMO ALERTS (Phase 29 WS7)
+-- Three unread alerts for farm 1 so Guardian live snapshot + drawer demos work
+-- after `make dev-stack-fresh` without manual SQL. Idempotent on subject line.
+-- ===========================================================================
+
+INSERT INTO gr33ncore.alerts_notifications (
+    farm_id, triggering_event_source_type, triggering_event_source_id,
+    severity, subject_rendered, message_text_rendered,
+    status, is_read, is_acknowledged, created_at
+)
+SELECT
+    1,
+    'input_batch',
+    b.id,
+    'medium'::gr33ncore.notification_priority_enum,
+    'OHN batch below minimum — reorder or brew soon',
+    'Batch SEED-OHN-001 has 0.35 L remaining (threshold 0.5 L). '
+    || 'OHN (Oriental Herbal Nutrient) is used for immunity drenches at 1:1000. '
+    || 'Brew a fresh batch or adjust the reorder point in Inventory.',
+    'pending',
+    FALSE,
+    FALSE,
+    NOW() - INTERVAL '3 hours'
+FROM gr33nnaturalfarming.input_batches b
+WHERE b.farm_id = 1
+  AND b.batch_identifier = 'SEED-OHN-001'
+  AND b.deleted_at IS NULL
+  AND NOT EXISTS (
+    SELECT 1 FROM gr33ncore.alerts_notifications a
+    WHERE a.farm_id = 1
+      AND a.subject_rendered = 'OHN batch below minimum — reorder or brew soon'
+  );
+
+INSERT INTO gr33ncore.alerts_notifications (
+    farm_id, triggering_event_source_type, triggering_event_source_id,
+    severity, subject_rendered, message_text_rendered,
+    status, is_read, is_acknowledged, created_at
+)
+SELECT
+    1,
+    'sensor',
+    s.id,
+    'high'::gr33ncore.notification_priority_enum,
+    'Humidity high — Flower Room',
+    'Air Humidity Indoor read 72.4% RH (alert threshold 65% for late flower). '
+    || 'Zone: Flower Room. Consider dehumidification or increased airflow before powdery mildew risk.',
+    'pending',
+    FALSE,
+    FALSE,
+    NOW() - INTERVAL '45 minutes'
+FROM gr33ncore.sensors s
+WHERE s.farm_id = 1
+  AND s.name = 'Air Humidity Indoor'
+  AND s.deleted_at IS NULL
+  AND NOT EXISTS (
+    SELECT 1 FROM gr33ncore.alerts_notifications a
+    WHERE a.farm_id = 1
+      AND a.subject_rendered = 'Humidity high — Flower Room'
+  );
+
+INSERT INTO gr33ncore.alerts_notifications (
+    farm_id, triggering_event_source_type, triggering_event_source_id,
+    severity, subject_rendered, message_text_rendered,
+    status, is_read, is_acknowledged, created_at
+)
+SELECT
+    1,
+    'schedule',
+    sch.id,
+    'low'::gr33ncore.notification_priority_enum,
+    'Light schedule change in 48 hours — Flower Room',
+    'Photoperiod transition reminder: Light OFF 12/12 Flower fires in ~48 hours (18:00 America/New_York). '
+    || 'Confirm timers and blackout curtains in Flower Room before the flip.',
+    'pending',
+    FALSE,
+    FALSE,
+    NOW() - INTERVAL '90 minutes'
+FROM gr33ncore.schedules sch
+WHERE sch.farm_id = 1
+  AND sch.name = 'Light OFF 12/12 Flower'
+  AND NOT EXISTS (
+    SELECT 1 FROM gr33ncore.alerts_notifications a
+    WHERE a.farm_id = 1
+      AND a.subject_rendered = 'Light schedule change in 48 hours — Flower Room'
+  );
 

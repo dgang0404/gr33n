@@ -537,6 +537,11 @@ type Querier interface {
 	// ============================================================
 	UpsertUserPushToken(ctx context.Context, arg UpsertUserPushTokenParams) (Gr33ncoreUserPushToken, error)
 	UserHasFarmAccess(ctx context.Context, arg UserHasFarmAccessParams) (*bool, error)
+	// Phase 29 WS3 — Guardian propose → confirm
+	InsertGuardianProposal(ctx context.Context, arg InsertGuardianProposalParams) (Gr33ncoreGuardianActionProposal, error)
+	GetGuardianProposalByID(ctx context.Context, proposalID uuid.UUID) (Gr33ncoreGuardianActionProposal, error)
+	ConfirmGuardianProposal(ctx context.Context, arg ConfirmGuardianProposalParams) (Gr33ncoreGuardianActionProposal, error)
+	ExpireStaleGuardianProposals(ctx context.Context) error
 }
 
 var _ Querier = (*Queries)(nil)

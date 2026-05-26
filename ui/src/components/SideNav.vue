@@ -26,16 +26,34 @@
       <div v-for="group in navGroups" :key="group.label">
         <p v-if="!collapsed" class="px-3 mb-1 text-[10px] uppercase tracking-widest text-gray-600 font-semibold">{{ group.label }}</p>
         <div class="space-y-0.5">
-          <RouterLink
-            v-for="item in group.items" :key="item.to" :to="item.to"
-            class="flex items-center rounded-lg text-sm text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
-            :class="collapsed ? 'justify-center px-0 py-2' : 'gap-3 px-3 py-2'"
-            active-class="bg-gr33n-900 text-gr33n-400 font-semibold"
-            :title="item.navTitle ?? (collapsed ? item.label : undefined)"
-          >
-            <span class="text-lg shrink-0">{{ item.icon }}</span>
-            <span v-if="!collapsed">{{ item.label }}</span>
-          </RouterLink>
+          <template v-for="item in group.items" :key="item.to ?? item.label">
+            <button
+              v-if="item.action === 'guardian'"
+              type="button"
+              class="w-full flex items-center rounded-lg text-sm text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
+              :class="[
+                collapsed ? 'justify-center px-0 py-2' : 'gap-3 px-3 py-2',
+                guardianPanel.open ? 'bg-gr33n-900 text-gr33n-400 font-semibold' : '',
+              ]"
+              :title="item.navTitle ?? (collapsed ? item.label : undefined)"
+              data-test="sidenav-guardian-toggle"
+              @click="guardianPanel.toggle()"
+            >
+              <span class="text-lg shrink-0">{{ item.icon }}</span>
+              <span v-if="!collapsed">{{ item.label }}</span>
+            </button>
+            <RouterLink
+              v-else
+              :to="item.to"
+              class="flex items-center rounded-lg text-sm text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
+              :class="collapsed ? 'justify-center px-0 py-2' : 'gap-3 px-3 py-2'"
+              active-class="bg-gr33n-900 text-gr33n-400 font-semibold"
+              :title="item.navTitle ?? (collapsed ? item.label : undefined)"
+            >
+              <span class="text-lg shrink-0">{{ item.icon }}</span>
+              <span v-if="!collapsed">{{ item.label }}</span>
+            </RouterLink>
+          </template>
         </div>
       </div>
     </nav>
@@ -65,9 +83,11 @@
 import { ref, computed, onMounted } from 'vue'
 import { useFarmContextStore } from '../stores/farmContext'
 import { useAuthStore } from '../stores/auth'
+import { useGuardianPanelStore } from '../stores/guardianPanel'
 
 const farmContext = useFarmContextStore()
 const auth = useAuthStore()
+const guardianPanel = useGuardianPanelStore()
 
 const STORAGE_KEY = 'gr33n_sidebar_collapsed'
 const collapsed = ref(localStorage.getItem(STORAGE_KEY) === '1')
@@ -137,7 +157,7 @@ const navGroups = computed(() => [
       { to: '/costs',  icon: '💰', label: 'Costs'  },
       { to: cycleCompareRoute.value, icon: '📊', label: 'Analytics', navTitle: 'Crop cycle analytics — per-cycle summary & multi-cycle compare (Phase 28).' },
       { to: '/farm-knowledge', icon: '🔎', label: 'Knowledge', navTitle: 'Farm knowledge — semantic search & Ask (LLM); requires API embedding / LLM env' },
-      { to: '/chat', icon: '🤖', label: 'Guardian', navTitle: 'Farm Guardian chat — streaming answers (Phase 27). Requires AI_ENABLED on the API.' },
+      { action: 'guardian', icon: '🤖', label: 'Guardian', navTitle: 'Farm Guardian — slide-out assistant on any page (Phase 29). Full chat at /chat. Requires AI_ENABLED.' },
     ],
   },
   {

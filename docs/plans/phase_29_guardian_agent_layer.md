@@ -8,25 +8,25 @@ overview: >
 todos:
   - id: ws1-slide-out-panel
     content: "WS1: Global Guardian slide-out — Pinia store + GuardianDrawer.vue, toggle from SideNav/TopBar on any route, preserve farm context + session_id, mobile bottom sheet"
-    status: pending
+    status: completed
   - id: ws2-tool-registry
     content: "WS2: Tool registry + executor — v1 tools (ack/read alert, create task, patch cycle stage, read-only list/summarize); map to existing REST handlers via farmauthz Operate cap"
-    status: pending
+    status: completed
   - id: ws3-propose-confirm-flow
     content: "WS3: Propose → confirm backend — extend SSE done payload with proposals[], POST /v1/chat/confirm, server-side proposal store with TTL + idempotency"
-    status: pending
+    status: completed
   - id: ws4-proposal-card-ui
     content: "WS4: Proposal card UI — GuardianActionProposal.vue in chat transcript; Confirm/Dismiss; viewer role shows disabled Confirm; optimistic refresh of alerts/tasks after success"
-    status: pending
+    status: completed
   - id: ws5-audit-and-rbac
     content: "WS5: Audit + RBAC — every confirmed action writes user_activity_log via internal/auditlog; RequireFarmCaps Operate gate; cost guard counts confirm round"
-    status: pending
+    status: completed
   - id: ws6-contextual-entry-points
     content: "WS6: Contextual Ask Guardian — prefill + open drawer from Alerts, CropCycleSummary, zone cards; pass contextRef in store for richer prompts"
     status: pending
   - id: ws7-demo-bootstrap
     content: "WS7: Guardian demo bootstrap — 2–3 realistic unread seed alerts; verify make dev-stack-fresh-rag path; Guardian demo in 3 commands section in bootstrap doc"
-    status: pending
+    status: completed
   - id: ws8-openapi-and-tests
     content: "WS8: OpenAPI + tests — openapi.yaml 0.4.0 (confirm endpoint + proposal shapes); smoke propose→confirm ack_alert; Vitest drawer + proposal card"
     status: pending
@@ -40,7 +40,7 @@ isProject: false
 
 ## Status
 
-**Not started.** Phase 28 (read-only Guardian depth + crop analytics) is shipped on `main`. Phase 29 is the next slice.
+**In progress (WS1–WS5 + WS7 shipped).** Guardian propose→confirm path is end-to-end with audit + RBAC. WS6 contextual entry points and WS8–WS9 remain.
 
 **Preconditions (already met):**
 
@@ -362,4 +362,40 @@ Add openapi.yaml entries as you add routes (partial WS8). Run go test ./cmd/api/
 
 ## Shipped notes
 
-*(None yet — append per-WS notes here as work lands, same pattern as Phase 28.)*
+### WS5 — Audit + RBAC (shipped 2026-05-20)
+
+- **`guardian_tool_executed`** — new `user_action_type_enum` value + migration `20260522_phase29_guardian_audit_enum.sql`.
+- **`POST /v1/chat/confirm`** — `RequireFarmOperate` gate (403 for viewer); `checkCostBudget` on confirm; audit success/failure with `details.kind: guardian_tool_executed`.
+- **`docs/audit-events-operator-playbook.md`** — documents the new action type.
+- **Smoke** — `smoke_phase29_ws5_test.go` (viewer 403, audit row on confirm).
+
+### WS4 — Proposal card UI (shipped 2026-05-20)
+
+- **`GuardianActionProposal.vue`** — inline card: summary, tool label, target id, Confirm/Dismiss; done chip + link to Alerts after success.
+- **`GuardianChatPanel.vue`** — renders `proposals[]` from SSE `done`; refreshes unread count + alert list via `farmStore` after ack/read.
+- **`useFarmOperate.js`** — disables Confirm for viewer/finance roles (tooltip: Operators only).
+- **Vitest** — `guardian-proposal.test.js`, `guardian-chat-proposals.test.js`.
+
+### WS2 + WS3 — Tool registry + propose→confirm (shipped 2026-05-20)
+
+- **`internal/farmguardian/tools/`** — registry + in-process executor; v1 write tools `ack_alert`, `mark_alert_read` (farm-scoped args).
+- **`internal/farmguardian/proposals.go`** — rule-assisted proposals when grounded chat mentions ack/read + snapshot has unread alerts; 5-minute TTL.
+- **`gr33ncore.guardian_action_proposals`** — migration `20260521_phase29_guardian_proposals.sql` + schema + hand-written queries.
+- **`POST /v1/chat/confirm`** — frozen-args replay, Operate cap, idempotent re-confirm, audit via `execute_action`.
+- **Chat `done` payload** — `proposals[]` on streaming and non-streaming turns.
+- **Tests** — `proposals_test.go`, `smoke_phase29_ws3_test.go` (confirm ack on seeded humidity alert).
+
+### WS7 — Guardian demo bootstrap (shipped 2026-05-20)
+
+- **`db/seeds/master_seed.sql` v1.006** — `SEED-OHN-001` batch (0.35 L remaining) plus three idempotent unread alerts for farm 1: medium inventory (OHN), high humidity (Flower Room / Air Humidity Indoor sensor), low schedule reminder (Light OFF 12/12 Flower).
+- **`docs/local-operator-bootstrap.md`** — **Guardian agent demo in 3 commands** box (`dev-stack-fresh-rag` → `restart-local-serve` → drawer prompt).
+- **`cmd/api/smoke_phase29_ws7_test.go`** — asserts all three seed subjects exist unread on farm 1.
+
+### WS1 — Global slide-out panel (shipped 2026-05-20)
+
+- **`ui/src/stores/guardianPanel.js`** — Pinia store: `open`, `toggle`, `openDrawer`, `prefilledMessage`, `contextRef`, `activeSessionId` (shared across drawer and `/chat`).
+- **`ui/src/components/GuardianChatPanel.vue`** — extracted chat body; `layout="full"` (session sidebar) vs `layout="compact"` (dropdown picker). Farm context defaults **on** when a farm is selected.
+- **`ui/src/components/GuardianDrawer.vue`** — Teleport to body; right rail on `md+`, bottom sheet on mobile; z-index 40; footer scope note; link to full `/chat` page.
+- **`ui/src/views/FarmGuardianChat.vue`** — thin wrapper around `GuardianChatPanel` full layout.
+- **`App.vue`**, **`SideNav.vue`** (Guardian button toggles drawer), **`TopBar.vue`** (✨ toggle when AI enabled).
+- **Vitest** — `ui/src/__tests__/guardian-panel.test.js` (store, drawer teleported mount, farm_id in chat POST, route preserved on toggle).

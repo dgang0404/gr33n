@@ -57,7 +57,7 @@ Each row includes at least:
 |--------|---------|
 | `id` | Monotonic id within the hypertable chunk |
 | `activity_time` | When the action occurred (server clock) |
-| `action_type` | One of `gr33ncore.user_action_type_enum` values (for example `change_setting`, `export_data`, `delete_record`, `execute_action`, `create_record`, `update_record`) |
+| `action_type` | One of `gr33ncore.user_action_type_enum` values (for example `change_setting`, `export_data`, `delete_record`, `execute_action`, `guardian_tool_executed`, `create_record`, `update_record`) |
 | `details` | JSON object; always includes a stable `kind` string for machine filtering where implemented |
 | `user_id` | Actor when the request was authenticated with a user JWT |
 | `target_module_schema` / `target_table_name` / `target_record_id` | Optional pointer to the primary record touched |
@@ -87,6 +87,7 @@ These `details.kind` values are written by the API today (list may grow in later
 | `organization_updated` | `change_setting` | Org name / plan / billing fields; `details.organization_id` |
 | `organization_member_added` | `change_setting` | User added to org; `details.organization_id`; `details.role` is org role |
 | `farm_organization_changed` | `update_record` | Farm linked or unlinked from an org (`PATCH /farms/{id}/organization`); `details.organization_id` / `previous_organization_id` |
+| `guardian_tool_executed` | `guardian_tool_executed` | Phase 29 — operator confirmed a Farm Guardian action (`POST /v1/chat/confirm`); `details.tool_id`, `details.proposal_id`, frozen `details.args`, optional `details.result` on success |
 
 Operations that are **not** yet mirrored into this log (for example JWT secret rotation, Pi API key rotation, storage env changes) should continue to use **external** operator evidence as described in the receipt storage runbook.
 

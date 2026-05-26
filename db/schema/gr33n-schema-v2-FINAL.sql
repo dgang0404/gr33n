@@ -212,7 +212,7 @@ CREATE TYPE gr33ncore.cost_category_enum         AS ENUM (
 );
 CREATE TYPE gr33ncore.validation_rule_type_enum  AS ENUM ('range_check','required_field','format_validation','regex_match','lookup_in_list','cross_field_comparison','custom_function_check');
 CREATE TYPE gr33ncore.validation_severity_enum   AS ENUM ('warning','error','critical_stop');
-CREATE TYPE gr33ncore.user_action_type_enum      AS ENUM ('login_success','login_failure','logout','create_record','view_record','update_record','delete_record','list_records','execute_action','change_setting','system_event','export_data','import_data');
+CREATE TYPE gr33ncore.user_action_type_enum      AS ENUM ('login_success','login_failure','logout','create_record','view_record','update_record','delete_record','list_records','execute_action','change_setting','system_event','export_data','import_data','guardian_tool_executed');
 
 -- ============================================================
 -- TABLES
@@ -1782,6 +1782,36 @@ CREATE INDEX IF NOT EXISTS idx_conversation_turns_session
 CREATE INDEX IF NOT EXISTS idx_conversation_turns_farm
     ON gr33ncore.conversation_turns (farm_id)
     WHERE farm_id IS NOT NULL;
+
+-- Phase 29 WS3 — Guardian action proposals (propose → confirm)
+DO $$ BEGIN
+    CREATE TYPE gr33ncore.guardian_proposal_status_enum AS ENUM (
+        'pending', 'confirmed', 'dismissed', 'expired'
+    );
+EXCEPTION
+    WHEN duplicate_object THEN NULL;
+END $$;
+
+CREATE TABLE IF NOT EXISTS gr33ncore.guardian_action_proposals (
+    proposal_id   UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id       UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    farm_id       BIGINT NOT NULL REFERENCES gr33ncore.farms(id) ON DELETE CASCADE,
+    session_id    UUID NULL,
+    tool_id       TEXT NOT NULL,
+    args          JSONB NOT NULL DEFAULT '{}'::jsonb,
+    summary       TEXT NOT NULL,
+    status        gr33ncore.guardian_proposal_status_enum NOT NULL DEFAULT 'pending',
+    result        JSONB NULL,
+    created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    expires_at    TIMESTAMPTZ NOT NULL,
+    confirmed_at  TIMESTAMPTZ NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_guardian_proposals_user_status
+    ON gr33ncore.guardian_action_proposals (user_id, status, expires_at DESC);
+
+CREATE INDEX IF NOT EXISTS idx_guardian_proposals_farm
+    ON gr33ncore.guardian_action_proposals (farm_id, created_at DESC);
 
 -- ============================================================
 -- MIGRATION NOTES (read before running)
