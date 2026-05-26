@@ -12,7 +12,7 @@ func RiskTierForTool(toolID string, args map[string]any) string {
 	switch toolID {
 	case "mark_alert_read", "ack_alert":
 		return RiskLow
-	case "apply_bootstrap_template":
+	case "apply_bootstrap_template", "enqueue_actuator_command":
 		return RiskHigh
 	case "patch_rule":
 		if isActive, ok := args["is_active"].(bool); ok && !isActive {

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"strings"
@@ -116,11 +117,12 @@ func (h *Handler) PostConfirm(w http.ResponseWriter, r *http.Request) {
 		_ = json.Unmarshal(prop.Args, &args)
 	}
 	result, execErr := tools.Execute(ctx, prop.ToolID, args, tools.ExecutorDeps{
-		Q:       h.q,
-		UserID:  userID,
-		HasUser: true,
-		FarmID:  prop.FarmID,
-		Request: r,
+		Q:          h.q,
+		UserID:     userID,
+		HasUser:    true,
+		FarmID:     prop.FarmID,
+		ProposalID: pid,
+		Request:    r,
 	})
 	if execErr != nil {
 		h.auditToolFailure(r, prop, args, execErr.Error())
@@ -159,11 +161,7 @@ func (h *Handler) auditToolExecution(r *http.Request, prop db.Gr33ncoreGuardianA
 		"args":        args,
 		"result":      result,
 	}
-	table := strPtr("alerts_notifications")
-	recID := strPtr("")
-	if id, ok := args["alert_id"]; ok {
-		recID = strPtr(formatAnyInt(id))
-	}
+	table, recID := auditTargetForTool(prop.ToolID, args, result)
 	auditlog.Submit(r.Context(), h.q, r, auditlog.Event{
 		FarmID:         auditlog.FarmIDPtr(prop.FarmID),
 		Action:         db.Gr33ncoreUserActionTypeEnumGuardianToolExecuted,
@@ -182,11 +180,7 @@ func (h *Handler) auditToolFailure(r *http.Request, prop db.Gr33ncoreGuardianAct
 		"proposal_id": prop.ProposalID.String(),
 		"args":        args,
 	}
-	table := strPtr("alerts_notifications")
-	recID := strPtr("")
-	if id, ok := args["alert_id"]; ok {
-		recID = strPtr(formatAnyInt(id))
-	}
+	table, recID := auditTargetForTool(prop.ToolID, args, nil)
 	st := "failure"
 	auditlog.Submit(r.Context(), h.q, r, auditlog.Event{
 		FarmID:         auditlog.FarmIDPtr(prop.FarmID),
@@ -234,6 +228,18 @@ func successSummary(toolID string, result any) string {
 		return "Configuration updated."
 	case "apply_bootstrap_template":
 		return "Bootstrap template applied."
+	case "enqueue_actuator_command":
+		if m, ok := result.(map[string]any); ok {
+			cmd, _ := m["command"].(string)
+			name, _ := m["actuator_name"].(string)
+			if name != "" && cmd != "" {
+				return fmt.Sprintf("Queued %q for %s — Pi will run on next poll.", cmd, name)
+			}
+			if id, ok := m["actuator_id"]; ok {
+				return "Actuator command queued (#" + formatAnyInt(id) + ")."
+			}
+		}
+		return "Actuator command queued for Pi pickup."
 	default:
 		return "Action completed."
 	}
@@ -244,6 +250,42 @@ func strPtr(s string) *string {
 		return nil
 	}
 	return &s
+}
+
+func auditTargetForTool(toolID string, args map[string]any, result any) (*string, *string) {
+	switch toolID {
+	case "enqueue_actuator_command":
+		table := strPtr("devices")
+		recID := strPtr("")
+		if id, ok := args["device_id"]; ok {
+			recID = strPtr(formatAnyInt(id))
+		} else if result != nil {
+			if m, ok := result.(map[string]any); ok {
+				if id, ok := m["device_id"]; ok {
+					recID = strPtr(formatAnyInt(id))
+				}
+			}
+		}
+		return table, recID
+	case "create_task", "create_task_from_alert":
+		table := strPtr("tasks")
+		recID := strPtr("")
+		if result != nil {
+			if m, ok := result.(map[string]any); ok {
+				if id, ok := m["task_id"]; ok {
+					recID = strPtr(formatAnyInt(id))
+				}
+			}
+		}
+		return table, recID
+	default:
+		table := strPtr("alerts_notifications")
+		recID := strPtr("")
+		if id, ok := args["alert_id"]; ok {
+			recID = strPtr(formatAnyInt(id))
+		}
+		return table, recID
+	}
 }
 
 func formatAnyInt(v any) string {

@@ -12,6 +12,7 @@ func TestRiskTierForTool(t *testing.T) {
 		{"ack_alert", nil, RiskLow},
 		{"create_task", map[string]any{"title": "x"}, RiskMedium},
 		{"apply_bootstrap_template", map[string]any{"template": "x"}, RiskHigh},
+		{"enqueue_actuator_command", map[string]any{"command": "on"}, RiskHigh},
 		{"patch_rule", map[string]any{"is_active": false}, RiskHigh},
 		{"patch_rule", map[string]any{"is_active": true}, RiskMedium},
 	}

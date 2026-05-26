@@ -29,6 +29,7 @@ info:
     **Phase 30 API areas (added in 0.4.1):**
     - `chat` (Phase 30 WS1) — **`GET /v1/chat/proposals`** lists the caller's frozen proposals for the pending inbox (`?farm_id=`, `?status=pending`, pagination). Same confirm path as Phase 29.
     - `chat` (Phase 30 WS2) — proposals include **`risk_tier`** (`low` | `medium` | `high`) for inbox/card UX warnings.
+    - `chat` (Phase 30 WS4) — **`enqueue_actuator_command`** tool queues `devices.config.pending_command` on Confirm (Pi polls `GET /farms/{id}/devices`); never direct GPIO from chat.
   license:
     name: AGPL-3.0
     url: https://www.gnu.org/licenses/agpl-3.0

@@ -23,11 +23,12 @@ type Tool struct {
 
 // ExecutorDeps carries auth + persistence handles for tool execution.
 type ExecutorDeps struct {
-	Q       db.Querier
-	UserID  uuid.UUID
-	HasUser bool
-	FarmID  int64 // proposal farm scope
-	Request *http.Request
+	Q          db.Querier
+	UserID     uuid.UUID
+	HasUser    bool
+	FarmID     int64 // proposal farm scope
+	ProposalID uuid.UUID
+	Request    *http.Request
 }
 
 // registry is the Guardian tool catalog (Phase 29–30).
@@ -86,6 +87,12 @@ var registry = map[string]Tool{
 		RequiresOperate: false,
 		RequiresAdmin:   true,
 		Execute:         execApplyBootstrapTemplate,
+	},
+	"enqueue_actuator_command": {
+		ID:              "enqueue_actuator_command",
+		Description:     "Queue Pi actuator command on device pending_command (no immediate GPIO)",
+		RequiresOperate: true,
+		Execute:         execEnqueueActuatorCommand,
 	},
 }
 

@@ -132,6 +132,7 @@ const TOOL_LABELS = {
   patch_fertigation_program: 'Patch fertigation program',
   patch_rule: 'Patch automation rule',
   apply_bootstrap_template: 'Apply bootstrap template',
+  enqueue_actuator_command: 'Queue Pi actuator command',
 }
 
 const riskTier = computed(() => (local.risk_tier || 'medium').toLowerCase())
@@ -185,6 +186,12 @@ const targetHint = computed(() => {
   if (programId != null) return `program #${programId}`
   const ruleId = local.args?.rule_id
   if (ruleId != null) return `rule #${ruleId}`
+  const deviceId = local.args?.device_id
+  if (deviceId != null) {
+    const actId = local.args?.actuator_id
+    if (actId != null) return `device #${deviceId} · actuator #${actId}`
+    return `device #${deviceId}`
+  }
   return ''
 })
 

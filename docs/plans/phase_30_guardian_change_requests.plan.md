@@ -19,7 +19,7 @@ todos:
     status: completed
   - id: ws4-actuator-pr-tool
     content: "WS4: Actuator PR tool — enqueue_actuator_command → device pending_command JSON; frozen args; audit; no auto-execute without Confirm"
-    status: pending
+    status: completed
   - id: ws5-zone-images
     content: "WS5: Zone images — attach photos to zones (file storage + zone meta_data or link table); show in Zone UI + pass URLs into Guardian snapshot"
     status: pending
@@ -42,7 +42,7 @@ isProject: false
 
 ## Status
 
-**In progress.** Phase 29 foundation shipped. **WS1**, **WS2**, **WS9**, and **WS3** landed 2026-05-26. Phase 31 validates that confirmed **actuator PRs** reach real Pi GPIO.
+**In progress.** Phase 29 foundation shipped. **WS1–WS4** and **WS9** landed 2026-05-26. Phase 31 validates that confirmed **actuator PRs** reach real Pi GPIO.
 
 ---
 

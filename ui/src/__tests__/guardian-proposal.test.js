@@ -64,6 +64,17 @@ describe('GuardianActionProposal (Phase 29 WS4)', () => {
     expect(btn.attributes('title')).toContain('Operators only')
   })
 
+  it('shows high-risk warning for actuator enqueue', () => {
+    const wrapper = mountCard({
+      risk_tier: 'high',
+      tool: 'enqueue_actuator_command',
+      args: { device_id: 1, actuator_id: 2, command: 'on' },
+      summary: 'Turn on Veg Room Grow Light',
+    })
+    expect(wrapper.find('[data-test="guardian-proposal-high-warning"]').exists()).toBe(true)
+    expect(wrapper.text()).toContain('device #1')
+  })
+
   it('shows high-risk warning copy and red styling', () => {
     const wrapper = mountCard({
       risk_tier: 'high',
