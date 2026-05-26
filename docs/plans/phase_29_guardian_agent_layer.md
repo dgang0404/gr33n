@@ -29,7 +29,7 @@ todos:
     status: completed
   - id: ws8-openapi-and-tests
     content: "WS8: OpenAPI + tests — openapi.yaml 0.4.0 (confirm endpoint + proposal shapes); smoke propose→confirm ack_alert; Vitest drawer + proposal card"
-    status: pending
+    status: completed
   - id: ws9-operator-docs
     content: "WS9: Operator + architecture docs — agent flow diagram in farm-guardian-architecture.md; README Phase 29 link; operator-tour confirmed-actions demo script"
     status: pending
@@ -40,7 +40,7 @@ isProject: false
 
 ## Status
 
-**In progress (WS1–WS6 + WS7 shipped).** Guardian propose→confirm path is end-to-end with audit + RBAC. WS8–WS9 remain.
+**In progress (WS1–WS8 + WS7 shipped).** Guardian propose→confirm path is end-to-end with audit + RBAC. WS9 operator docs remain.
 
 **Preconditions (already met):**
 
@@ -416,3 +416,9 @@ Add openapi.yaml entries as you add routes (partial WS8). Run go test ./cmd/api/
 - **`internal/farmguardian/context_ref.go`** — `ContextRefPromptBlock` injects focused alert/cycle/zone detail into grounded system prompt when `context_ref` is POSTed.
 - **`GuardianChatPanel.vue`** — sends `context_ref` on `/v1/chat`; clears prefill after send.
 - **Vitest** — `ui/src/__tests__/guardian-context-entry.test.js`.
+
+### WS8 — OpenAPI + tests (shipped 2026-05-20)
+
+- **`openapi.yaml` 0.4.0** — `POST /v1/chat/confirm`, `GuardianActionProposal`, `GuardianContextRef`, `ChatConfirmRequest/Response`; `proposals[]` on chat responses and SSE `done`; `context_ref` on `ChatRequest`.
+- **`cmd/api/smoke_phase29_test.go`** — confirm auth/validation smokes; full chat→proposal→confirm→audit E2E when LLM is configured (skips gracefully otherwise). Complements `smoke_phase29_ws3/ws5_test.go`.
+- **Vitest** — `guardian-panel.test.js`, `guardian-proposal.test.js`, `guardian-chat-proposals.test.js` (WS4 + WS1 coverage gate).

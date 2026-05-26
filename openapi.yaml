@@ -1,7 +1,7 @@
 openapi: "3.0.3"
 info:
   title: gr33n API
-  version: "0.3.0"
+  version: "0.4.0"
   description: |
     Local-first automated agriculture platform API.
     All endpoints run on localhost:8080 by default.
@@ -22,6 +22,9 @@ info:
     - `crop-cycle-analytics` (Phase 28 WS1) — `/crop-cycles/{id}/summary[.csv]` and `/farms/{id}/crop-cycles/compare[.csv]` for per-cycle and side-by-side fertigation / cost / yield analytics. CSV variants share the same builder; pick output mode by URL suffix.
     - `chat` (Phase 27 WS5 + Phase 28 WS5) — `POST /v1/chat` (Farm Guardian conversational chat, optionally grounded by farm RAG corpus + live snapshot, optionally streaming via SSE), session history endpoints under `/v1/chat/sessions`, and the operator-facing `GET /v1/chat/usage` rolling-window token-budget dashboard. The 80 % warning hook fires `chat_budget_warning` alerts through the existing alert channel — no new push transport.
     - `GET /capabilities` (Phase 27 WS6) — surfaces `AI_ENABLED` so the UI hides LLM-backed actions cleanly on Lite-mode servers.
+
+    **Phase 29 API areas (added in 0.4.0):**
+    - `chat` (Phase 29) — grounded `POST /v1/chat` turns may return `proposals[]` (rule-assisted alert ack/read actions). Operators confirm writes via **`POST /v1/chat/confirm`** with a frozen `proposal_id` — args are replayed server-side, never re-supplied by the client. Confirmed tools write `guardian_tool_executed` rows to the farm audit log.
   license:
     name: AGPL-3.0
     url: https://www.gnu.org/licenses/agpl-3.0
@@ -72,7 +75,7 @@ tags:
   - name: crop-cycle-analytics
     description: Per-cycle and side-by-side analytics — fertigation, cost, yield, stage history (Phase 28 WS1). JSON + CSV.
   - name: chat
-    description: Farm Guardian conversational chat (Phase 27) — turn endpoint, session history, token-usage dashboard. Optional RAG grounding + live farm-state snapshot when `farm_id` is supplied.
+    description: Farm Guardian conversational chat (Phase 27–29) — turn endpoint, session history, token-usage dashboard, and confirmed agent actions. Optional RAG grounding + live farm-state snapshot when `farm_id` is supplied. Grounded turns may return `proposals[]`; confirm via `POST /v1/chat/confirm`.
   - name: capabilities
     description: Public server capability flags (Phase 27 WS6) — UI gating hint for AI features.
 
@@ -3933,7 +3936,7 @@ paths:
       responses:
         "204": { description: Removed }
 
-  # ── Farm Guardian chat (Phase 27 + Phase 28 WS5) ───────────
+  # ── Farm Guardian chat (Phase 27 + Phase 28 WS5 + Phase 29) ─
 
   /v1/chat:
     post:
@@ -3942,11 +3945,23 @@ paths:
       description: >
         Single conversational turn. **Plain mode** (no `farm_id`) just sends
         the message to the configured LLM with the Guardian persona. **Grounded
-        mode** (`farm_id` supplied) runs the same retrieval as `/rag/answer`,
-        layers the live farm-state snapshot (zones, active cycles, unread
-        alerts) on top of the persona, and returns inline citations to the
-        retrieved chunks. The handler replays up to **20 prior turns** when
-        `session_id` is set so multi-turn context survives across requests.
+        mode** (`farm_id` supplied) attaches the live farm-state snapshot
+        (zones, active cycles, unread alerts). When an embedder is configured,
+        the handler also runs the same RAG retrieval as `/rag/answer` and
+        returns inline citations to the retrieved chunks. Without an embedder,
+        snapshot-only grounding still works (no retrieval error). The handler
+        replays up to **20 prior turns** when `session_id` is set so multi-turn
+        context survives across requests.
+
+        **Contextual focus (Phase 29 WS6):** optional `context_ref` (`alert`,
+        `crop_cycle`, or `zone`) injects a focused background block for the
+        entity the operator opened the Guardian drawer from.
+
+        **Agent proposals (Phase 29):** on grounded turns, when the operator
+        message matches alert ack/read intent and the snapshot lists unread
+        alerts, the terminal response includes `proposals[]` — frozen action
+        cards the operator confirms via `POST /v1/chat/confirm`. Proposals are
+        persisted server-side with a 5-minute TTL.
 
         Each successful turn is persisted to `gr33ncore.conversation_turns`
         (turn_index assigned via SQL `COALESCE(MAX+1, 0)`) and the matching
@@ -3955,15 +3970,17 @@ paths:
 
         **Streaming:** set `stream: true` to receive Server-Sent Events
         (`Content-Type: text/event-stream`). Events are JSON-encoded with
-        types `token`, `done`, and `error`. The terminal `done` event carries
-        citations + usage. Non-streaming clients receive the full response as
-        a single JSON document instead.
+        types `delta`, `done`, and `error`. The terminal `done` event carries
+        citations, usage, session metadata, and optional `proposals[]`.
+        Non-streaming clients receive the full response as a single JSON
+        document instead.
 
         **Cost guard:** rolling-window per-user / per-farm token caps
         (`CHAT_COST_MAX_TOKENS_PER_USER` / `_PER_FARM`) return **429** with a
         `Retry-After` header pointing at the end of the current window. The
         80 % warning hook fires a `chat_budget_warning` alert; see
-        `/v1/chat/usage` for the operator dashboard.
+        `/v1/chat/usage` for the operator dashboard. Confirm rounds count
+        toward the same budget.
 
         See `docs/farm-guardian-architecture.md` for the four-stage request
         flow and three-knowledge-layer breakdown.
@@ -4022,6 +4039,66 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Error" }
+
+  /v1/chat/confirm:
+    post:
+      tags: [chat]
+      summary: Confirm a frozen Guardian action proposal (Phase 29)
+      description: >
+        Executes a server-persisted proposal created during a grounded chat
+        turn. The request body accepts **only** `proposal_id` — tool args are
+        replayed from `gr33ncore.guardian_action_proposals`, not from the
+        client, so operators cannot tamper with frozen payloads.
+
+        Write tools (`ack_alert`, `mark_alert_read`, …) require
+        `FarmCaps.Operate` on the proposal's farm. Viewers receive **403**.
+        Expired or already-handled proposals return **410 Gone**. A second
+        confirm on an already-confirmed proposal is **idempotent** (200 with
+        cached result).
+
+        Successful confirms append `guardian_tool_executed` rows to
+        `gr33ncore.user_activity_log` (visible via `GET /farms/{id}/audit-events`).
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ChatConfirmRequest" }
+      responses:
+        "200":
+          description: Tool executed (or idempotent replay of a prior confirm).
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ChatConfirmResponse" }
+        "400":
+          description: Invalid JSON, unknown tool, or tool execution error.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403":
+          description: Proposal belongs to another user, or caller lacks Operate cap.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "404":
+          description: Unknown proposal_id.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "410":
+          description: Proposal expired, dismissed, or no longer confirmable.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "429":
+          description: Cost-guard cap exceeded (confirm counts as a chat turn).
+          headers:
+            Retry-After:
+              schema: { type: integer }
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ChatCostGuardError" }
 
   /v1/chat/sessions:
     get:
@@ -4280,7 +4357,69 @@ components:
           type: boolean
           description: Mirrors the API's `AI_ENABLED` env var. When `false`, the UI hides LLM-backed actions (Farm Guardian chat, RAG answer synthesis, Guardian-usage card).
 
-    # ── Farm Guardian chat (Phase 27 WS5 + Phase 28 WS5) ─────────────
+    # ── Farm Guardian chat (Phase 27 WS5 + Phase 28 WS5 + Phase 29) ─
+
+    GuardianContextRef:
+      type: object
+      description: UI anchor for contextual Ask Guardian entry points (Phase 29 WS6).
+      required: [type, id]
+      properties:
+        type:
+          type: string
+          enum: [alert, crop_cycle, zone]
+          description: Entity type the operator opened the drawer from.
+        id:
+          type: integer
+          format: int64
+          minimum: 1
+          description: Primary key of the alert, crop cycle, or zone.
+        name:
+          type: string
+          description: Optional display hint (zone name) when the server should not re-fetch.
+
+    GuardianActionProposal:
+      type: object
+      description: Frozen write proposal returned on chat `done` / non-streaming responses (Phase 29).
+      required: [proposal_id, tool, args, summary, expires_at]
+      properties:
+        proposal_id:
+          type: string
+          format: uuid
+          description: Opaque id passed to `POST /v1/chat/confirm`.
+        tool:
+          type: string
+          description: Registered tool id (e.g. `ack_alert`, `mark_alert_read`).
+        args:
+          type: object
+          additionalProperties: true
+          description: Frozen tool arguments stored server-side at propose time.
+        summary:
+          type: string
+          description: Human-readable card label for the operator UI.
+        expires_at:
+          type: string
+          format: date-time
+          description: UTC expiry — confirm returns 410 after this timestamp.
+
+    ChatConfirmRequest:
+      type: object
+      required: [proposal_id]
+      properties:
+        proposal_id:
+          type: string
+          format: uuid
+
+    ChatConfirmResponse:
+      type: object
+      required: [summary]
+      properties:
+        summary:
+          type: string
+          description: Short operator-facing confirmation message.
+        result:
+          type: object
+          additionalProperties: true
+          description: Tool-specific result payload (e.g. `{alert_id, is_acknowledged}`).
 
     ChatRequest:
       type: object
@@ -4303,6 +4442,11 @@ components:
           type: boolean
           default: false
           description: When `true`, response is `text/event-stream` (SSE) instead of a single JSON document.
+        context_ref:
+          nullable: true
+          allOf:
+            - { $ref: "#/components/schemas/GuardianContextRef" }
+          description: Optional contextual focus from Ask Guardian entry points (Phase 29 WS6).
 
     ChatCitation:
       type: object
@@ -4349,6 +4493,10 @@ components:
         completion_tokens:
           type: integer
           description: Tokens accounted to the completion for this turn.
+        proposals:
+          type: array
+          description: Rule-assisted action proposals (grounded turns only, Phase 29).
+          items: { $ref: "#/components/schemas/GuardianActionProposal" }
 
     ChatStreamEvent:
       type: object
@@ -4379,6 +4527,10 @@ components:
         llm_model: { type: string, description: Present on `done`. }
         prompt_tokens: { type: integer, description: Present on `done`. }
         completion_tokens: { type: integer, description: Present on `done`. }
+        proposals:
+          type: array
+          items: { $ref: "#/components/schemas/GuardianActionProposal" }
+          description: Present on `done` when rule-assisted proposals were created (Phase 29).
         error: { type: string, description: Present on `error`. }
 
     ChatCostGuardError:
