@@ -42,20 +42,34 @@ func BuildRuleAssistedProposals(
 	question string,
 	snap Snapshot,
 ) ([]ActionProposal, error) {
-	if q == nil || farmID <= 0 || len(snap.UnreadAlertDetails) == 0 {
+	if q == nil || farmID <= 0 {
 		return nil, nil
 	}
-	toolID, ok := matchAlertToolIntent(question)
+
+	var toolID string
+	var args map[string]any
+	var summary string
+	var ok bool
+
+	if len(snap.UnreadAlertDetails) > 0 {
+		toolID, ok = matchAlertToolIntent(question)
+		if ok {
+			alert := pickAlertForIntent(question, snap.UnreadAlertDetails)
+			if alert.ID == 0 {
+				return nil, nil
+			}
+			args = map[string]any{"alert_id": alert.ID}
+			summary = proposalSummary(toolID, alert)
+		}
+	}
 	if !ok {
-		return nil, nil
+		toolID, args, summary, ok = matchConfigToolIntent(question, snap)
+		if !ok {
+			return nil, nil
+		}
 	}
-	alert := pickAlertForIntent(question, snap.UnreadAlertDetails)
-	if alert.ID == 0 {
-		return nil, nil
-	}
-	args := map[string]any{"alert_id": alert.ID}
+
 	argsJSON, _ := json.Marshal(args)
-	summary := proposalSummary(toolID, alert)
 	expires := time.Now().UTC().Add(ProposalTTL)
 	var sessPtr *uuid.UUID
 	if sessionID != uuid.Nil {

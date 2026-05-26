@@ -16,7 +16,7 @@ todos:
     status: pending
   - id: ws3-config-tools
     content: "WS3: Configuration tools — create_task_from_alert, update_cycle_stage, patch schedule/program/rule (scoped patches); rule-assisted + LLM proposals"
-    status: pending
+    status: completed
   - id: ws4-actuator-pr-tool
     content: "WS4: Actuator PR tool — enqueue_actuator_command → device pending_command JSON; frozen args; audit; no auto-execute without Confirm"
     status: pending
@@ -42,7 +42,7 @@ isProject: false
 
 ## Status
 
-**In progress.** Phase 29 foundation shipped. **WS1** (pending inbox) and **WS9** (platform self-knowledge prompt) landed 2026-05-26. Phase 31 validates that confirmed **actuator PRs** reach real Pi GPIO.
+**In progress.** Phase 29 foundation shipped. **WS1**, **WS9**, and **WS3** (config tools + rule-assisted create_task) landed 2026-05-26. Phase 31 validates that confirmed **actuator PRs** reach real Pi GPIO.
 
 ---
 

@@ -101,6 +101,9 @@ func (h *Handler) PostConfirm(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusBadRequest, err.Error())
 		return
 	}
+	if tool.RequiresAdmin && !farmauthz.RequireFarmAdmin(w, r, h.q, prop.FarmID) {
+		return
+	}
 	if tool.RequiresOperate && !farmauthz.RequireFarmOperate(w, r, h.q, prop.FarmID) {
 		return
 	}
@@ -213,6 +216,24 @@ func successSummary(toolID string, result any) string {
 			}
 		}
 		return "Alert marked read."
+	case "create_task", "create_task_from_alert":
+		if m, ok := result.(map[string]any); ok {
+			if id, ok := m["task_id"]; ok {
+				return "Task created (#" + formatAnyInt(id) + ")."
+			}
+		}
+		return "Task created."
+	case "update_cycle_stage":
+		if m, ok := result.(map[string]any); ok {
+			if stage, ok := m["current_stage"].(string); ok && stage != "" {
+				return "Crop cycle stage updated to " + stage + "."
+			}
+		}
+		return "Crop cycle stage updated."
+	case "patch_schedule", "patch_fertigation_program", "patch_rule":
+		return "Configuration updated."
+	case "apply_bootstrap_template":
+		return "Bootstrap template applied."
 	default:
 		return "Action completed."
 	}

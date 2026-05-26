@@ -97,7 +97,12 @@ const TOOL_LABELS = {
   ack_alert: 'Acknowledge alert',
   mark_alert_read: 'Mark alert read',
   create_task_from_alert: 'Create task from alert',
+  create_task: 'Create task',
   update_cycle_stage: 'Update crop cycle stage',
+  patch_schedule: 'Patch schedule',
+  patch_fertigation_program: 'Patch fertigation program',
+  patch_rule: 'Patch automation rule',
+  apply_bootstrap_template: 'Apply bootstrap template',
 }
 
 const isExpired = computed(() => {
@@ -124,7 +129,7 @@ const targetHint = computed(() => {
 })
 
 const followUpLink = computed(() => {
-  if (local.tool === 'create_task_from_alert' && local.result?.task_id) {
+  if ((local.tool === 'create_task_from_alert' || local.tool === 'create_task') && local.result?.task_id) {
     return '/tasks'
   }
   if (local.args?.alert_id) return '/alerts'
@@ -132,7 +137,7 @@ const followUpLink = computed(() => {
 })
 
 const followUpLabel = computed(() => {
-  if (local.tool === 'create_task_from_alert' && local.result?.task_id) {
+  if ((local.tool === 'create_task_from_alert' || local.tool === 'create_task') && local.result?.task_id) {
     return `View task #${local.result.task_id}`
   }
   if (local.args?.alert_id) return 'View alerts'
