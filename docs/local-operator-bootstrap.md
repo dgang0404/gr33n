@@ -161,6 +161,8 @@ With **AI_ENABLED** and Ollama running, grounded chat includes the three seed al
 
 If your DB has been used for smoke tests for weeks, you may see hundreds of thousands of stale automation alerts and extra test farms — reset with **`make dev-stack-fresh`** for a clean demo farm.
 
+**Multi-site / enterprise (hypothetical):** how 500 warehouse-scale sites map onto org/farm/zone + commons recipe packs — no core software changes required: [`hypothetical-enterprise-topology.md`](hypothetical-enterprise-topology.md). **Phase 30** — Guardian PR queue (config + Pi via confirm): [`plans/phase_30_guardian_change_requests.plan.md`](plans/phase_30_guardian_change_requests.plan.md). **Phase 31** — Pi/breadboard field validation: [`plans/phase_31_field_validation_and_edge.plan.md`](plans/phase_31_field_validation_and_edge.plan.md).
+
 **Edge vs dashboard auth in the spec:** paths wrapped with `requireAPIKey` in `routes.go` are **Pi / bridge** calls using header **`X-API-Key`** (same secret as `PI_API_KEY` in `.env`). `GET /farms/{id}/devices` uses **`requireJWTOrPiEdge`**: OpenAPI lists **both** `bearerAuth` and `apiKeyAuth` so operators know the Pi may poll device `config` (including `pending_command`) with the API key while the dashboard uses a JWT.
 
 ## Security notes

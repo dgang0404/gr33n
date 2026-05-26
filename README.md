@@ -644,6 +644,8 @@ Stabilization sprint **closed** on **`main`** **2026-04-18**. Criterion-by-crite
 - [x] **Pi ↔ API contract pass** — smoke tests `TestPiContract*` in [`cmd/api/smoke_pi_contract_test.go`](cmd/api/smoke_pi_contract_test.go): enqueue `pending_command` → Pi-key `GET /farms/1/devices` → `POST /actuators/{id}/events` → `DELETE` pending.
 - [x] **Phase 28 — crop intelligence & Guardian depth** — crop analytics, Guardian snapshot depth, usage dashboard, OpenAPI 0.3.0.
 - [ ] **Phase 29 — Guardian agent layer** — confirmed actions, slide-out UX, contextual entry points, demo bootstrap — [plan](docs/plans/phase_29_guardian_agent_layer.md)
+- [ ] **Phase 30 — Guardian change requests (PR queue)** — config + actuator proposals, pending inbox, zone photos / optional vision — [plan](docs/plans/phase_30_guardian_change_requests.plan.md)
+- [ ] **Phase 31 — field validation & safe edge** — Pi/breadboard loop, proves confirmed actuator PRs reach GPIO — [plan](docs/plans/phase_31_field_validation_and_edge.plan.md) · [enterprise topology sketch](docs/hypothetical-enterprise-topology.md)
 - [ ] **Deprecate `programs.metadata.steps`** — after N deploys with zero fallback warnings, promote `action_source` checks to hard errors and drop the column.
 - [ ] **Program "run now" API** — explicit trigger for unscheduled / ad-hoc programs.
 - [ ] **Mobile distribution polish** — Capacitor packaging, store submission checklist.
@@ -685,6 +687,8 @@ Stabilization sprint **closed** on **`main`** **2026-04-18**. Criterion-by-crite
 - [x] Phase 27 — Farm Guardian AI layer (streaming chat, multi-turn sessions, RAG grounding + live snapshot, cost guards, `/chat` UI panel) — [plan](docs/plans/phase_27_farm_guardian_ai_layer.md)
 - [x] Phase 28 — crop intelligence & Guardian depth (crop analytics, Guardian ↔ cycles/alerts, usage dashboard, OpenAPI 0.3.0) — [plan](docs/plans/phase_28_crop_intelligence_guardian_depth.md)
 - [ ] Phase 29 — Guardian agent layer (tool actions, global slide-out, bootstrap) — [plan](docs/plans/phase_29_guardian_agent_layer.md)
+- [ ] Phase 30 — Guardian PR queue (config agent, actuator proposals, zone vision) — [plan](docs/plans/phase_30_guardian_change_requests.plan.md)
+- [ ] Phase 31 — field validation & edge (Pi loop, safe actuator, recipe packs) — [plan](docs/plans/phase_31_field_validation_and_edge.plan.md) · [enterprise sketch](docs/hypothetical-enterprise-topology.md)
 
 ---
 

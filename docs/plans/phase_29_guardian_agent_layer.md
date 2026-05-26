@@ -296,12 +296,21 @@ Close gaps from local dev triage ([`local_dev_bugfix_todo.md`](./local_dev_bugfi
 
 ## Out of scope (Phase 30+)
 
-- Autonomous scheduling ("run this every morning without asking")
-- Pi / actuator control via Guardian
+Phase 30 is the **Guardian change-request (PR) queue** — expanded confirm tools, config patches, actuator enqueue via `pending_command`, optional zone vision. See [`phase_30_guardian_change_requests.plan.md`](phase_30_guardian_change_requests.plan.md). Phase 31 is **field / Pi bench validation** — [`phase_31_field_validation_and_edge.plan.md`](phase_31_field_validation_and_edge.plan.md).
+
+**Not in Phase 29 (defer to Phase 30–31):**
+
+- Full farm configuration agent (schedules, programs, Pi) — Phase 30 PR inbox
+- Direct Pi / actuator control without proposal + Confirm — Phase 30 `enqueue_actuator_command` PR
+- Zone photos + vision-based PRs — Phase 30 WS5–WS6
+- Autonomous scheduling ("run this every morning without asking") — never; use **alerts + rules**
 - Multi-farm agent routing in one chat thread
 - Cloud LLM fallback
 - Native Ollama `/api/chat` tool-calling API (revisit when model stack supports it reliably)
 - Guardian-initiated push notifications
+- **500-site enterprise fleet management** — hypothetical only: [`docs/hypothetical-enterprise-topology.md`](../hypothetical-enterprise-topology.md)
+
+**Operator expectations at Phase 29 ship:** Guardian **advises** on defoliation, plumbing, setup (chat); **confirmed writes** are alert ack/read only. Copilot vs actor split is documented fully in Phase 30 WS7.
 
 ---
 
