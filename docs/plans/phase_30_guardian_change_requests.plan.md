@@ -5,7 +5,8 @@ overview: >
   autonomous: a pending-request inbox (like pull requests) for schedules, programs,
   tasks, and Pi actuator commands. Optional zone photos + vision model for agronomic
   feedback—all changes require explicit operator Confirm; alerts/automation rules
-  remain the autonomous safety layer.
+  remain the autonomous safety layer. WS9 injects platform self-knowledge into the
+  persona so Guardian knows it runs on-prem (not generic cloud SaaS).
 todos:
   - id: ws1-pr-inbox-ui
     content: "WS1: Pending requests inbox — list open Guardian proposals (pending/expired); drawer tab + optional /guardian/requests; badge count in TopBar"
@@ -27,6 +28,9 @@ todos:
     status: pending
   - id: ws7-operator-expectations-doc
     content: "WS7: Operator expectations — what Guardian is/isn't at ship; copilot vs actor; human tasks (defoliation, plumbing); alerts vs PRs"
+    status: pending
+  - id: ws9-persona-platform-context
+    content: "WS9: Persona platform self-knowledge — inject PlatformContextBlock into system prompt (on-prem/Lite, no SaaS, PR confirm model, tool list); warm steward voice; stops cloud/pricing hallucinations"
     status: pending
   - id: ws8-openapi-tests
     content: "WS8: OpenAPI + smokes — list proposals API; confirm actuator PR; Vitest inbox; vision skipped in CI unless env set"
@@ -164,6 +168,7 @@ Future AI ("what changed last week?") can RAG-ingest audit rows + proposal table
 | **WS5** | Zone images | zone photo upload + snapshot links |
 | **WS6** | Vision chat | multimodal LLM path; optional |
 | **WS7** | Docs | operator expectations, architecture diagram |
+| **WS9** | Persona self-knowledge | `PlatformContextBlock` in system prompt — Guardian knows how gr33n runs |
 | **WS8** | OpenAPI + tests | smokes, Vitest |
 
 ---
@@ -296,6 +301,52 @@ Add to [`farm-guardian-architecture.md`](../farm-guardian-architecture.md) and o
 - PR inbox workflow
 - Vision limits disclaimer
 - Link Phase 31 for Pi bench validation
+- Cross-link **WS9** persona block (operator-facing summary of what Guardian will say about itself)
+
+---
+
+### WS9 — Persona platform self-knowledge (“know thyself, druid”)
+
+**Problem:** Without platform facts in the system prompt, local Llama falls back to generic “cloud AI assistant” answers (pricing reps, internet required, etc.) — see local operator smoke chats. Pasting corrections in chat is **farm-local test only**; the repo needs a **durable injected block**.
+
+**Goal:** Guardian speaks like a **calm farm steward** (wise, practical — your “dope druid” energy) but **never lies about deployment**. It knows what it is inside gr33n.
+
+**Implementation sketch:**
+
+```go
+// internal/farmguardian/platform_context.go
+func PlatformContextBlock(cfg ai.Config, toolIDs []string) string
+```
+
+Appended to `SystemPrompt()` on every `/v1/chat` turn (plain + grounded):
+
+| Topic | What the block must state |
+|-------|---------------------------|
+| **Identity** | Feature of the **gr33n platform** on the operator’s network — not a separate cloud product |
+| **Full vs Lite** | `AI_ENABLED` + LLM configured → local/OpenAI-compatible inference; Lite → chat unavailable |
+| **Internet** | Full mode on-prem: chat path stays on **LAN/intranet** unless operator pointed `LLM_BASE_URL` at a cloud vendor **by choice** |
+| **Cost** | No Guardian subscription; optional token **budget caps**; inference cost = operator hardware/power |
+| **Grounding** | Farm snapshot when `farm_id` set; RAG chunks optional; “0 chunks” ≠ offline |
+| **Writes** | **Propose → Confirm** only; list registered **tool IDs** dynamically from [`tools.IDs()`](../../internal/farmguardian/tools/registry.go) |
+| **Autonomy** | **Rules/alerts** automate; Guardian does **not** silently run schedules or GPIO |
+| **Human work** | Defoliation, plumbing, harvest — guidance + tasks, not replacement |
+| **Phase horizon** | One sentence: PR inbox expands config + Pi commands (still Confirm) |
+
+**Tone rules (steward / druid, not corporate bot):**
+
+- Short paragraphs; farm metaphors OK (“tend the snapshot,” “the row won’t change until you Confirm the request”).
+- Still obey existing persona hard constraints (no “I am an LLM,” no model name, no invented farm rows).
+- Never mention sales reps, accounts, or SaaS pricing.
+
+**Maintainability:** optional companion doc [`docs/farm-guardian-persona-platform-context.md`](../farm-guardian-persona-platform-context.md) mirrors the block for operators/docs reviewers; **source of truth is Go** (single build artifact).
+
+**Acceptance:**
+
+- Unit test: `PlatformContextBlock` contains `on-prem`, `Confirm`, `not autonomous`, and current tool IDs.
+- Manual: ask “do you need the internet?” / “what does gr33n charge?” — answer matches platform facts (local chat test on demo farm).
+- Token budget: block capped (~400–600 tokens); tool list truncated if registry grows.
+
+**Not in WS9:** per-farm custom persona files, fine-tuned weights, or replacing [`persona.go`](../../internal/farmguardian/persona.go) glossary.
 
 ---
 
@@ -321,14 +372,15 @@ Add to [`farm-guardian-architecture.md`](../farm-guardian-architecture.md) and o
 
 ## Suggested implementation order
 
-1. **WS1** — inbox (unblocks "PR queue" UX immediately)
-2. **WS2** — risk tiers
-3. **WS3** — medium config tools (tasks, cycle stage, then schedule/program)
-4. **WS4** — actuator PR tool
-5. **WS5** — zone photos
-6. **WS6** — vision (optional / follow-up)
-7. **WS8** — OpenAPI + smokes alongside WS3–WS4
-8. **WS7** — doc pass at end
+1. **WS9** — persona platform block (quick win; stops “cloud SaaS” hallucinations before more tools ship)
+2. **WS1** — inbox (unblocks "PR queue" UX immediately)
+3. **WS2** — risk tiers
+4. **WS3** — medium config tools (tasks, cycle stage, then schedule/program)
+5. **WS4** — actuator PR tool
+6. **WS5** — zone photos
+7. **WS6** — vision (optional / follow-up)
+8. **WS8** — OpenAPI + smokes alongside WS3–WS4
+9. **WS7** — doc pass at end (includes WS9 operator summary)
 
 Phase 29 **WS6–WS9** should complete first.
 
@@ -342,6 +394,7 @@ Phase 29 **WS6–WS9** should complete first.
 - [ ] Zone photos attachable; snapshot references them
 - [ ] Vision chat documented as optional; agronomic disclaimer in UI
 - [ ] Docs: Guardian is not autonomous; alerts remain separate
+- [ ] **WS9:** Platform self-knowledge in system prompt; passes “internet / pricing” smoke Q&A
 - [ ] Phase 31 can bench-test actuator PR → Pi
 
 ---
