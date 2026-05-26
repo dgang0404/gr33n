@@ -64,6 +64,30 @@ describe('GuardianActionProposal (Phase 29 WS4)', () => {
     expect(btn.attributes('title')).toContain('Operators only')
   })
 
+  it('shows high-risk warning copy and red styling', () => {
+    const wrapper = mountCard({
+      risk_tier: 'high',
+      tool: 'apply_bootstrap_template',
+      args: { template: 'jadam_indoor_photoperiod_v1' },
+      summary: 'Apply bootstrap: jadam_indoor_photoperiod_v1',
+    })
+    expect(wrapper.find('[data-test="guardian-proposal-high-warning"]').exists()).toBe(true)
+    expect(wrapper.find('[data-test="guardian-proposal-risk-badge"]').text()).toContain('high')
+    expect(wrapper.find('[data-test="guardian-proposal-card"]').classes().join(' ')).toMatch(/red/)
+  })
+
+  it('shows medium-tier diff summary of frozen args', () => {
+    const wrapper = mountCard({
+      risk_tier: 'medium',
+      tool: 'create_task',
+      args: { title: 'Check humidity', zone_id: 2 },
+      summary: 'Create task: Check humidity',
+    })
+    expect(wrapper.find('[data-test="guardian-proposal-diff"]').exists()).toBe(true)
+    expect(wrapper.text()).toContain('title: Check humidity')
+    expect(wrapper.find('[data-test="guardian-proposal-high-warning"]').exists()).toBe(false)
+  })
+
   it('POST /v1/chat/confirm on Confirm and shows done state', async () => {
     api.post.mockResolvedValueOnce({
       data: { summary: 'Alert acknowledged (#4).', result: { alert_id: 4, is_acknowledged: true } },

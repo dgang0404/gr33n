@@ -72,6 +72,7 @@ function normalizeForCard(p) {
     tool: p.tool,
     args: p.args,
     summary: p.summary,
+    risk_tier: p.risk_tier || 'medium',
     expires_at: p.expires_at,
     status: p.status === 'pending' ? 'pending' : p.status,
   }

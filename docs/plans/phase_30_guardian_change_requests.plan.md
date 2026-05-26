@@ -13,7 +13,7 @@ todos:
     status: completed
   - id: ws2-risk-tiers
     content: "WS2: Risk tiers on proposals — low/medium/high; high-tier (actuator, delete) requires Operate + optional stricter cap; extend guardian_action_proposals metadata"
-    status: pending
+    status: completed
   - id: ws3-config-tools
     content: "WS3: Configuration tools — create_task_from_alert, update_cycle_stage, patch schedule/program/rule (scoped patches); rule-assisted + LLM proposals"
     status: completed
@@ -42,7 +42,7 @@ isProject: false
 
 ## Status
 
-**In progress.** Phase 29 foundation shipped. **WS1**, **WS9**, and **WS3** (config tools + rule-assisted create_task) landed 2026-05-26. Phase 31 validates that confirmed **actuator PRs** reach real Pi GPIO.
+**In progress.** Phase 29 foundation shipped. **WS1**, **WS2**, **WS9**, and **WS3** landed 2026-05-26. Phase 31 validates that confirmed **actuator PRs** reach real Pi GPIO.
 
 ---
 

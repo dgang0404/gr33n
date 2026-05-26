@@ -1,7 +1,6 @@
 package chat
 
 import (
-	"encoding/json"
 	"net/http"
 	"strconv"
 	"strings"
@@ -10,6 +9,7 @@ import (
 	"gr33n-api/internal/authctx"
 	"gr33n-api/internal/farmauthz"
 	db "gr33n-api/internal/db"
+	"gr33n-api/internal/farmguardian"
 	"gr33n-api/internal/httputil"
 )
 
@@ -24,6 +24,7 @@ type proposalListItem struct {
 	Tool       string         `json:"tool"`
 	Args       map[string]any `json:"args"`
 	Summary    string         `json:"summary"`
+	RiskTier   string         `json:"risk_tier"`
 	ExpiresAt  time.Time      `json:"expires_at"`
 	CreatedAt  time.Time      `json:"created_at"`
 	FarmID     int64          `json:"farm_id"`
@@ -138,19 +139,14 @@ func (h *Handler) ListProposals(w http.ResponseWriter, r *http.Request) {
 }
 
 func rowToProposalListItem(row db.Gr33ncoreGuardianActionProposal) proposalListItem {
-	var args map[string]any
-	if len(row.Args) > 0 {
-		_ = json.Unmarshal(row.Args, &args)
-	}
-	if args == nil {
-		args = map[string]any{}
-	}
+	ap := farmguardian.ActionProposalFromRow(row)
 	return proposalListItem{
-		ProposalID: row.ProposalID.String(),
-		Tool:       row.ToolID,
-		Args:       args,
-		Summary:    row.Summary,
-		ExpiresAt:  row.ExpiresAt,
+		ProposalID: ap.ProposalID,
+		Tool:       ap.Tool,
+		Args:       ap.Args,
+		Summary:    ap.Summary,
+		RiskTier:   ap.RiskTier,
+		ExpiresAt:  ap.ExpiresAt,
 		CreatedAt:  row.CreatedAt,
 		FarmID:     row.FarmID,
 		Status:     string(row.Status),

@@ -1800,6 +1800,7 @@ CREATE TABLE IF NOT EXISTS gr33ncore.guardian_action_proposals (
     tool_id       TEXT NOT NULL,
     args          JSONB NOT NULL DEFAULT '{}'::jsonb,
     summary       TEXT NOT NULL,
+    risk_tier     TEXT NOT NULL DEFAULT 'medium' CHECK (risk_tier IN ('low', 'medium', 'high')),
     status        gr33ncore.guardian_proposal_status_enum NOT NULL DEFAULT 'pending',
     result        JSONB NULL,
     created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),

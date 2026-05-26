@@ -2,8 +2,8 @@
 
 -- name: InsertGuardianProposal :one
 INSERT INTO gr33ncore.guardian_action_proposals (
-    user_id, farm_id, session_id, tool_id, args, summary, expires_at
-) VALUES ($1, $2, $3, $4, $5::jsonb, $6, $7)
+    user_id, farm_id, session_id, tool_id, args, summary, risk_tier, expires_at
+) VALUES ($1, $2, $3, $4, $5::jsonb, $6, $7, $8)
 RETURNING *;
 
 -- name: GetGuardianProposalByID :one

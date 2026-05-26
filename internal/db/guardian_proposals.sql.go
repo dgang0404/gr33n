@@ -15,32 +15,33 @@ import (
 type Gr33ncoreGuardianProposalStatusEnum string
 
 const (
-	Gr33ncoreGuardianProposalStatusEnumPending    Gr33ncoreGuardianProposalStatusEnum = "pending"
-	Gr33ncoreGuardianProposalStatusEnumConfirmed  Gr33ncoreGuardianProposalStatusEnum = "confirmed"
-	Gr33ncoreGuardianProposalStatusEnumDismissed  Gr33ncoreGuardianProposalStatusEnum = "dismissed"
-	Gr33ncoreGuardianProposalStatusEnumExpired    Gr33ncoreGuardianProposalStatusEnum = "expired"
+	Gr33ncoreGuardianProposalStatusEnumPending   Gr33ncoreGuardianProposalStatusEnum = "pending"
+	Gr33ncoreGuardianProposalStatusEnumConfirmed Gr33ncoreGuardianProposalStatusEnum = "confirmed"
+	Gr33ncoreGuardianProposalStatusEnumDismissed Gr33ncoreGuardianProposalStatusEnum = "dismissed"
+	Gr33ncoreGuardianProposalStatusEnumExpired   Gr33ncoreGuardianProposalStatusEnum = "expired"
 )
 
 type Gr33ncoreGuardianActionProposal struct {
-	ProposalID  uuid.UUID                             `db:"proposal_id" json:"proposal_id"`
-	UserID      uuid.UUID                             `db:"user_id" json:"user_id"`
-	FarmID      int64                                 `db:"farm_id" json:"farm_id"`
-	SessionID   *uuid.UUID                            `db:"session_id" json:"session_id,omitempty"`
-	ToolID      string                                `db:"tool_id" json:"tool_id"`
-	Args        json.RawMessage                       `db:"args" json:"args"`
-	Summary     string                                `db:"summary" json:"summary"`
-	Status      Gr33ncoreGuardianProposalStatusEnum   `db:"status" json:"status"`
-	Result      json.RawMessage                       `db:"result" json:"result,omitempty"`
-	CreatedAt   time.Time                             `db:"created_at" json:"created_at"`
-	ExpiresAt   time.Time                             `db:"expires_at" json:"expires_at"`
-	ConfirmedAt *time.Time                            `db:"confirmed_at" json:"confirmed_at,omitempty"`
+	ProposalID  uuid.UUID                           `db:"proposal_id" json:"proposal_id"`
+	UserID      uuid.UUID                           `db:"user_id" json:"user_id"`
+	FarmID      int64                               `db:"farm_id" json:"farm_id"`
+	SessionID   *uuid.UUID                          `db:"session_id" json:"session_id,omitempty"`
+	ToolID      string                              `db:"tool_id" json:"tool_id"`
+	Args        json.RawMessage                     `db:"args" json:"args"`
+	Summary     string                              `db:"summary" json:"summary"`
+	RiskTier    string                              `db:"risk_tier" json:"risk_tier"`
+	Status      Gr33ncoreGuardianProposalStatusEnum `db:"status" json:"status"`
+	Result      json.RawMessage                     `db:"result" json:"result,omitempty"`
+	CreatedAt   time.Time                           `db:"created_at" json:"created_at"`
+	ExpiresAt   time.Time                           `db:"expires_at" json:"expires_at"`
+	ConfirmedAt *time.Time                          `db:"confirmed_at" json:"confirmed_at,omitempty"`
 }
 
 const insertGuardianProposal = `-- name: InsertGuardianProposal :one
 INSERT INTO gr33ncore.guardian_action_proposals (
-    user_id, farm_id, session_id, tool_id, args, summary, expires_at
-) VALUES ($1, $2, $3, $4, $5::jsonb, $6, $7)
-RETURNING proposal_id, user_id, farm_id, session_id, tool_id, args, summary, status, result, created_at, expires_at, confirmed_at
+    user_id, farm_id, session_id, tool_id, args, summary, risk_tier, expires_at
+) VALUES ($1, $2, $3, $4, $5::jsonb, $6, $7, $8)
+RETURNING proposal_id, user_id, farm_id, session_id, tool_id, args, summary, risk_tier, status, result, created_at, expires_at, confirmed_at
 `
 
 type InsertGuardianProposalParams struct {
@@ -50,6 +51,7 @@ type InsertGuardianProposalParams struct {
 	ToolID    string          `db:"tool_id" json:"tool_id"`
 	Args      json.RawMessage `db:"args" json:"args"`
 	Summary   string          `db:"summary" json:"summary"`
+	RiskTier  string          `db:"risk_tier" json:"risk_tier"`
 	ExpiresAt time.Time       `db:"expires_at" json:"expires_at"`
 }
 
@@ -63,6 +65,7 @@ func scanGuardianProposal(row pgx.Row) (Gr33ncoreGuardianActionProposal, error) 
 		&i.ToolID,
 		&i.Args,
 		&i.Summary,
+		&i.RiskTier,
 		&i.Status,
 		&i.Result,
 		&i.CreatedAt,
@@ -74,13 +77,13 @@ func scanGuardianProposal(row pgx.Row) (Gr33ncoreGuardianActionProposal, error) 
 
 func (q *Queries) InsertGuardianProposal(ctx context.Context, arg InsertGuardianProposalParams) (Gr33ncoreGuardianActionProposal, error) {
 	row := q.db.QueryRow(ctx, insertGuardianProposal,
-		arg.UserID, arg.FarmID, arg.SessionID, arg.ToolID, arg.Args, arg.Summary, arg.ExpiresAt,
+		arg.UserID, arg.FarmID, arg.SessionID, arg.ToolID, arg.Args, arg.Summary, arg.RiskTier, arg.ExpiresAt,
 	)
 	return scanGuardianProposal(row)
 }
 
 const getGuardianProposalByID = `-- name: GetGuardianProposalByID :one
-SELECT proposal_id, user_id, farm_id, session_id, tool_id, args, summary, status, result, created_at, expires_at, confirmed_at
+SELECT proposal_id, user_id, farm_id, session_id, tool_id, args, summary, risk_tier, status, result, created_at, expires_at, confirmed_at
 FROM gr33ncore.guardian_action_proposals WHERE proposal_id = $1
 `
 
@@ -98,7 +101,7 @@ WHERE proposal_id = $1
   AND user_id = $3
   AND status = 'pending'
   AND expires_at > NOW()
-RETURNING proposal_id, user_id, farm_id, session_id, tool_id, args, summary, status, result, created_at, expires_at, confirmed_at
+RETURNING proposal_id, user_id, farm_id, session_id, tool_id, args, summary, risk_tier, status, result, created_at, expires_at, confirmed_at
 `
 
 type ConfirmGuardianProposalParams struct {
@@ -124,7 +127,7 @@ func (q *Queries) ExpireStaleGuardianProposals(ctx context.Context) error {
 }
 
 const listGuardianProposalsByUser = `-- name: ListGuardianProposalsByUser :many
-SELECT proposal_id, user_id, farm_id, session_id, tool_id, args, summary, status, result, created_at, expires_at, confirmed_at
+SELECT proposal_id, user_id, farm_id, session_id, tool_id, args, summary, risk_tier, status, result, created_at, expires_at, confirmed_at
 FROM gr33ncore.guardian_action_proposals
 WHERE user_id = $1
   AND ($2::bigint IS NULL OR farm_id = $2::bigint)

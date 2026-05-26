@@ -161,8 +161,8 @@ func buildTestProposalForUser(ctx context.Context, userID uuid.UUID, alertID int
 	var pid string
 	err := testPool.QueryRow(ctx, `
 INSERT INTO gr33ncore.guardian_action_proposals
-    (user_id, farm_id, tool_id, args, summary, expires_at)
-VALUES ($1, 1, $2, $3::jsonb, $4, NOW() + INTERVAL '5 minutes')
+    (user_id, farm_id, tool_id, args, summary, risk_tier, expires_at)
+VALUES ($1, 1, $2, $3::jsonb, $4, 'low', NOW() + INTERVAL '5 minutes')
 RETURNING proposal_id::text`,
 		userID, toolID, args, summary,
 	).Scan(&pid)

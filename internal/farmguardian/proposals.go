@@ -11,6 +11,7 @@ import (
 	"github.com/google/uuid"
 
 	db "gr33n-api/internal/db"
+	"gr33n-api/internal/farmguardian/tools"
 )
 
 // ProposalTTL is how long a frozen proposal stays confirmable.
@@ -22,6 +23,7 @@ type ActionProposal struct {
 	Tool       string         `json:"tool"`
 	Args       map[string]any `json:"args"`
 	Summary    string         `json:"summary"`
+	RiskTier   string         `json:"risk_tier"`
 	ExpiresAt  time.Time      `json:"expires_at"`
 }
 
@@ -83,18 +85,13 @@ func BuildRuleAssistedProposals(
 		ToolID:    toolID,
 		Args:      argsJSON,
 		Summary:   summary,
+		RiskTier:  tools.RiskTierForTool(toolID, args),
 		ExpiresAt: expires,
 	})
 	if err != nil {
 		return nil, err
 	}
-	return []ActionProposal{{
-		ProposalID: row.ProposalID.String(),
-		Tool:       toolID,
-		Args:       args,
-		Summary:    summary,
-		ExpiresAt:  row.ExpiresAt,
-	}}, nil
+	return []ActionProposal{ActionProposalFromRow(row)}, nil
 }
 
 func matchAlertToolIntent(question string) (string, bool) {

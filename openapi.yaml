@@ -1,7 +1,7 @@
 openapi: "3.0.3"
 info:
   title: gr33n API
-  version: "0.4.1"
+  version: "0.4.2"
   description: |
     Local-first automated agriculture platform API.
     All endpoints run on localhost:8080 by default.
@@ -28,6 +28,7 @@ info:
 
     **Phase 30 API areas (added in 0.4.1):**
     - `chat` (Phase 30 WS1) — **`GET /v1/chat/proposals`** lists the caller's frozen proposals for the pending inbox (`?farm_id=`, `?status=pending`, pagination). Same confirm path as Phase 29.
+    - `chat` (Phase 30 WS2) — proposals include **`risk_tier`** (`low` | `medium` | `high`) for inbox/card UX warnings.
   license:
     name: AGPL-3.0
     url: https://www.gnu.org/licenses/agpl-3.0
@@ -4432,7 +4433,7 @@ components:
     GuardianActionProposal:
       type: object
       description: Frozen write proposal returned on chat `done` / non-streaming responses (Phase 29).
-      required: [proposal_id, tool, args, summary, expires_at]
+      required: [proposal_id, tool, args, summary, risk_tier, expires_at]
       properties:
         proposal_id:
           type: string
@@ -4448,6 +4449,12 @@ components:
         summary:
           type: string
           description: Human-readable card label for the operator UI.
+        risk_tier:
+          type: string
+          enum: [low, medium, high]
+          description: >
+            Impact tier for operator UX — `low` (read/ack), `medium` (tasks/config patches),
+            `high` (bootstrap, actuators, disable rule). Set at propose time from the tool registry.
         expires_at:
           type: string
           format: date-time
