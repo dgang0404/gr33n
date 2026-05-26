@@ -24,3 +24,17 @@ RETURNING *;
 UPDATE gr33ncore.guardian_action_proposals
 SET status = 'expired'
 WHERE status = 'pending' AND expires_at <= NOW();
+
+-- name: ListGuardianProposalsByUser :many
+SELECT * FROM gr33ncore.guardian_action_proposals
+WHERE user_id = $1
+  AND (sqlc.narg('farm_id')::bigint IS NULL OR farm_id = sqlc.narg('farm_id')::bigint)
+  AND (sqlc.narg('status')::text IS NULL OR status::text = sqlc.narg('status')::text)
+ORDER BY created_at DESC
+LIMIT $2 OFFSET $3;
+
+-- name: CountGuardianProposalsByUser :one
+SELECT COUNT(*)::bigint FROM gr33ncore.guardian_action_proposals
+WHERE user_id = $1
+  AND (sqlc.narg('farm_id')::bigint IS NULL OR farm_id = sqlc.narg('farm_id')::bigint)
+  AND (sqlc.narg('status')::text IS NULL OR status::text = sqlc.narg('status')::text);

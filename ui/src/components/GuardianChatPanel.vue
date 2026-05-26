@@ -348,6 +348,7 @@ import { useFarmOperate } from '../composables/useFarmOperate'
 import { useFarmContextStore } from '../stores/farmContext'
 import { useFarmStore } from '../stores/farm'
 import { useGuardianPanelStore } from '../stores/guardianPanel'
+import { useGuardianProposalsStore } from '../stores/guardianProposals'
 const props = defineProps({
   /** `full` — sidebar session list (page). `compact` — dropdown (drawer). */
   layout: {
@@ -362,6 +363,7 @@ const maxHistoryTurns = 20
 const farmContext = useFarmContextStore()
 const farmStore = useFarmStore()
 const guardianPanel = useGuardianPanelStore()
+const guardianProposals = useGuardianProposalsStore()
 const farmIdRef = computed(() => farmContext.farmId)
 const { canOperate } = useFarmOperate(farmIdRef)
 
@@ -660,11 +662,15 @@ function onProposalConfirmed({ proposal, summary, result }) {
     result,
     error: '',
   })
+  guardianProposals.removeProposal(proposal.proposal_id)
+  if (farmContext.farmId) guardianProposals.refreshPendingCount(farmContext.farmId)
   refreshAfterAlertAction(proposal, result)
 }
 
 function onProposalDismissed({ proposal }) {
   patchProposal(proposal.proposal_id, { status: 'dismissed', error: '' })
+  guardianProposals.removeProposal(proposal.proposal_id)
+  if (farmContext.farmId) guardianProposals.refreshPendingCount(farmContext.farmId)
 }
 
 function onProposalError({ proposal, error }) {
@@ -725,6 +731,9 @@ async function send() {
       })
       message.value = ''
       guardianPanel.clearPrefill()
+      if (finalEvent.proposals?.length && farmContext.farmId) {
+        await guardianProposals.refreshPendingCount(farmContext.farmId)
+      }
       await refreshSessions()
     }
   } catch (e) {

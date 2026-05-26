@@ -51,6 +51,13 @@
           <span class="text-base leading-none guardian-topbar-icon" aria-hidden="true">✨</span>
           <span class="hidden sm:inline">Guardian</span>
           <span class="sr-only sm:hidden">Farm Guardian</span>
+          <span
+            v-if="guardianProposals.pendingCount > 0"
+            class="min-w-[1.125rem] h-[1.125rem] px-1 rounded-full bg-amber-500 text-[10px] font-bold text-amber-950 flex items-center justify-center"
+            data-test="topbar-guardian-pending-badge"
+          >
+            {{ guardianProposals.pendingCount > 9 ? '9+' : guardianProposals.pendingCount }}
+          </span>
         </button>
         <RouterLink to="/alerts" class="relative text-gray-400 hover:text-white transition-colors" title="Alerts">
           <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -80,6 +87,7 @@ import { useFarmStore } from '../stores/farm'
 import { useFarmContextStore } from '../stores/farmContext'
 import { useCapabilitiesStore } from '../stores/capabilities'
 import { useGuardianPanelStore } from '../stores/guardianPanel'
+import { useGuardianProposalsStore } from '../stores/guardianProposals'
 import api from '../api'
 
 defineEmits(['toggle-drawer'])
@@ -90,6 +98,7 @@ const farmStore = useFarmStore()
 const farmContext = useFarmContextStore()
 const capabilities = useCapabilitiesStore()
 const guardianPanel = useGuardianPanelStore()
+const guardianProposals = useGuardianProposalsStore()
 
 const showGuardianButton = computed(() => capabilities.loaded && !capabilities.isLite)
 const apiOk = ref(true)
@@ -108,6 +117,8 @@ const labels = {
   '/catalog': 'Catalog',
   '/costs': 'Costs',
   '/settings': 'Settings',
+  '/chat': 'Farm Guardian',
+  '/guardian/requests': 'Guardian requests',
 }
 const title = computed(() => {
   if (route.path.startsWith('/zones/')) return 'Zone Details'
@@ -124,11 +135,17 @@ onMounted(async () => {
     catch { apiOk.value = false }
     if (farmContext.farmId) {
       try { await farmStore.countUnreadAlerts(farmContext.farmId) } catch {}
+      if (showGuardianButton.value) {
+        try { await guardianProposals.refreshPendingCount(farmContext.farmId) } catch {}
+      }
     }
   }, 5000)
   now.value = new Date().toLocaleTimeString()
   if (farmContext.farmId) {
     try { await farmStore.countUnreadAlerts(farmContext.farmId) } catch {}
+    if (showGuardianButton.value) {
+      try { await guardianProposals.refreshPendingCount(farmContext.farmId) } catch {}
+    }
   }
 })
 onUnmounted(() => clearInterval(tick))

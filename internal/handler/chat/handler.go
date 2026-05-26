@@ -163,7 +163,7 @@ func (h *Handler) PostV1(w http.ResponseWriter, r *http.Request) {
 	var (
 		grounded bool
 		chunks   []db.SearchRagNearestNeighborsFilteredRow
-		system   = farmguardian.SystemPrompt()
+		system   = farmguardian.ChatSystemPrompt(h.cfg, h.llm != nil)
 		user     = question
 		farmID   int64
 		liveSnap farmguardian.Snapshot
@@ -193,7 +193,7 @@ func (h *Handler) PostV1(w http.ResponseWriter, r *http.Request) {
 			snapshotBlock = liveSnap.PromptBlock()
 		}
 
-		system = farmguardian.SystemPrompt() + "\n\n"
+		system = farmguardian.ChatSystemPrompt(h.cfg, h.llm != nil) + "\n\n"
 		if snapshotBlock != "" {
 			system += snapshotBlock + "\n\n"
 		}

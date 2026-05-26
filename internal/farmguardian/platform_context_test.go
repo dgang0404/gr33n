@@ -1,0 +1,59 @@
+package farmguardian
+
+import (
+	"strings"
+	"testing"
+	"unicode/utf8"
+
+	"gr33n-api/internal/ai"
+	"gr33n-api/internal/farmguardian/tools"
+)
+
+func TestPlatformContextBlock_ContainsRequiredFacts(t *testing.T) {
+	block := PlatformContextBlock(ai.Config{Enabled: true}, true, tools.IDs())
+	for _, want := range []string{
+		"on-prem",
+		"Confirm",
+		"not autonomous",
+		"ack_alert",
+		"mark_alert_read",
+		"subscription",
+		"LAN/intranet",
+	} {
+		if !strings.Contains(block, want) {
+			t.Fatalf("platform block missing %q:\n%s", want, block)
+		}
+	}
+}
+
+func TestPlatformContextBlock_LiteMode(t *testing.T) {
+	block := PlatformContextBlock(ai.Config{Enabled: false}, false, nil)
+	if !strings.Contains(block, "Lite mode") {
+		t.Fatal("expected Lite mode wording")
+	}
+}
+
+func TestPlatformContextBlock_TruncatesLongToolList(t *testing.T) {
+	many := make([]string, 20)
+	for i := range many {
+		many[i] = "tool_" + strings.Repeat("x", 2)
+	}
+	block := PlatformContextBlock(ai.Config{Enabled: true}, true, many)
+	if !strings.Contains(block, "(+") {
+		t.Fatal("expected truncation marker for long tool list")
+	}
+}
+
+func TestChatSystemPrompt_IncludesPersonaAndPlatform(t *testing.T) {
+	full := ChatSystemPrompt(ai.Config{Enabled: true}, true)
+	if !strings.Contains(full, "Farm Guardian") {
+		t.Fatal("missing persona")
+	}
+	if !strings.Contains(full, "Platform context") {
+		t.Fatal("missing platform block")
+	}
+	// WS9 acceptance: block stays roughly bounded (~400–600 tokens ≈ 2–3k runes).
+	if utf8.RuneCountInString(PlatformContextBlock(ai.Config{Enabled: true}, true, tools.IDs())) > 3500 {
+		t.Fatal("platform block grew too large for token budget")
+	}
+}

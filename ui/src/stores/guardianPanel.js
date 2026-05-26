@@ -9,6 +9,7 @@ import { defineStore } from 'pinia'
 export const useGuardianPanelStore = defineStore('guardianPanel', {
   state: () => ({
     open: false,
+    drawerTab: 'chat', // 'chat' | 'pending' — Phase 30 WS1
     prefilledMessage: '',
     contextRef: null, // { type: 'alert'|'crop_cycle'|'zone', id, ... } — WS6
     activeSessionId: '',
@@ -21,9 +22,20 @@ export const useGuardianPanelStore = defineStore('guardianPanel', {
 
     openDrawer(opts = {}) {
       this.open = true
+      if (opts.tab === 'pending') this.drawerTab = 'pending'
+      else if (opts.tab === 'chat') this.drawerTab = 'chat'
       if (opts.prefilledMessage != null) this.prefilledMessage = opts.prefilledMessage
       if (opts.contextRef != null) this.contextRef = opts.contextRef
       if (opts.activeSessionId != null) this.activeSessionId = opts.activeSessionId
+    },
+
+    openPendingTab() {
+      this.open = true
+      this.drawerTab = 'pending'
+    },
+
+    setDrawerTab(tab) {
+      if (tab === 'pending' || tab === 'chat') this.drawerTab = tab
     },
 
     close() {

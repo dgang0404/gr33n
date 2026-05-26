@@ -81,8 +81,49 @@
               Farm Guardian is not available on this installation (Lite mode).
             </section>
 
-            <div v-else class="flex-1 min-h-0 overflow-y-auto px-4 py-3">
-              <GuardianChatPanel layout="compact" />
+            <div v-else class="flex-1 min-h-0 flex flex-col min-w-0">
+              <nav
+                class="flex shrink-0 border-b border-zinc-800 px-4 gap-1"
+                aria-label="Guardian panels"
+                data-test="guardian-drawer-tabs"
+              >
+                <button
+                  type="button"
+                  class="px-3 py-2 text-xs font-medium border-b-2 -mb-px transition-colors"
+                  :class="guardianPanel.drawerTab === 'chat'
+                    ? 'border-green-500 text-green-300'
+                    : 'border-transparent text-zinc-500 hover:text-zinc-300'"
+                  data-test="guardian-tab-chat"
+                  @click="guardianPanel.setDrawerTab('chat')"
+                >
+                  Chat
+                </button>
+                <button
+                  type="button"
+                  class="px-3 py-2 text-xs font-medium border-b-2 -mb-px transition-colors flex items-center gap-1.5"
+                  :class="guardianPanel.drawerTab === 'pending'
+                    ? 'border-green-500 text-green-300'
+                    : 'border-transparent text-zinc-500 hover:text-zinc-300'"
+                  data-test="guardian-tab-pending"
+                  @click="guardianPanel.setDrawerTab('pending')"
+                >
+                  Pending
+                  <span
+                    v-if="proposalsStore.pendingCount > 0"
+                    class="min-w-[1.125rem] h-[1.125rem] px-1 rounded-full bg-amber-600 text-[10px] font-bold text-amber-950 flex items-center justify-center"
+                    data-test="guardian-drawer-pending-badge"
+                  >
+                    {{ proposalsStore.pendingCount > 9 ? '9+' : proposalsStore.pendingCount }}
+                  </span>
+                </button>
+              </nav>
+              <div class="flex-1 min-h-0 overflow-y-auto px-4 py-3">
+                <GuardianChatPanel v-show="guardianPanel.drawerTab === 'chat'" layout="compact" />
+                <GuardianRequestsInbox
+                  v-show="guardianPanel.drawerTab === 'pending'"
+                  :show-full-page-link="true"
+                />
+              </div>
             </div>
 
             <footer class="px-4 py-2 border-t border-zinc-800 text-[10px] text-zinc-600 shrink-0">
@@ -98,13 +139,16 @@
 <script setup>
 import { onMounted, watch } from 'vue'
 import GuardianChatPanel from './GuardianChatPanel.vue'
+import GuardianRequestsInbox from './GuardianRequestsInbox.vue'
 import { useCapabilitiesStore } from '../stores/capabilities'
 import { useFarmContextStore } from '../stores/farmContext'
 import { useGuardianPanelStore } from '../stores/guardianPanel'
+import { useGuardianProposalsStore } from '../stores/guardianProposals'
 
 const guardianPanel = useGuardianPanelStore()
 const farmContext = useFarmContextStore()
 const capabilities = useCapabilitiesStore()
+const proposalsStore = useGuardianProposalsStore()
 
 onMounted(async () => {
   if (!capabilities.loaded) await capabilities.fetch()
@@ -114,6 +158,18 @@ watch(
   () => guardianPanel.open,
   async (isOpen) => {
     if (isOpen && !capabilities.loaded) await capabilities.fetch()
+    if (isOpen && farmContext.farmId) {
+      await proposalsStore.refreshPendingCount(farmContext.farmId)
+    }
   },
+)
+
+watch(
+  () => farmContext.farmId,
+  (id) => {
+    if (id) proposalsStore.refreshPendingCount(id)
+    else proposalsStore.pendingCount = 0
+  },
+  { immediate: true },
 )
 </script>

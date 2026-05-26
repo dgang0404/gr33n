@@ -122,3 +122,60 @@ func (q *Queries) ExpireStaleGuardianProposals(ctx context.Context) error {
 	_, err := q.db.Exec(ctx, expireStaleGuardianProposals)
 	return err
 }
+
+const listGuardianProposalsByUser = `-- name: ListGuardianProposalsByUser :many
+SELECT proposal_id, user_id, farm_id, session_id, tool_id, args, summary, status, result, created_at, expires_at, confirmed_at
+FROM gr33ncore.guardian_action_proposals
+WHERE user_id = $1
+  AND ($2::bigint IS NULL OR farm_id = $2::bigint)
+  AND ($3::text IS NULL OR status::text = $3::text)
+ORDER BY created_at DESC
+LIMIT $4 OFFSET $5
+`
+
+type ListGuardianProposalsByUserParams struct {
+	UserID uuid.UUID `db:"user_id" json:"user_id"`
+	FarmID *int64    `db:"farm_id" json:"farm_id"`
+	Status *string   `db:"status" json:"status"`
+	Limit  int32     `db:"limit" json:"limit"`
+	Offset int32     `db:"offset" json:"offset"`
+}
+
+func (q *Queries) ListGuardianProposalsByUser(ctx context.Context, arg ListGuardianProposalsByUserParams) ([]Gr33ncoreGuardianActionProposal, error) {
+	rows, err := q.db.Query(ctx, listGuardianProposalsByUser,
+		arg.UserID, arg.FarmID, arg.Status, arg.Limit, arg.Offset,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Gr33ncoreGuardianActionProposal
+	for rows.Next() {
+		i, err := scanGuardianProposal(rows)
+		if err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	return items, rows.Err()
+}
+
+const countGuardianProposalsByUser = `-- name: CountGuardianProposalsByUser :one
+SELECT COUNT(*)::bigint FROM gr33ncore.guardian_action_proposals
+WHERE user_id = $1
+  AND ($2::bigint IS NULL OR farm_id = $2::bigint)
+  AND ($3::text IS NULL OR status::text = $3::text)
+`
+
+type CountGuardianProposalsByUserParams struct {
+	UserID uuid.UUID `db:"user_id" json:"user_id"`
+	FarmID *int64    `db:"farm_id" json:"farm_id"`
+	Status *string   `db:"status" json:"status"`
+}
+
+func (q *Queries) CountGuardianProposalsByUser(ctx context.Context, arg CountGuardianProposalsByUserParams) (int64, error) {
+	row := q.db.QueryRow(ctx, countGuardianProposalsByUser, arg.UserID, arg.FarmID, arg.Status)
+	var n int64
+	err := row.Scan(&n)
+	return n, err
+}

@@ -1,7 +1,7 @@
 openapi: "3.0.3"
 info:
   title: gr33n API
-  version: "0.4.0"
+  version: "0.4.1"
   description: |
     Local-first automated agriculture platform API.
     All endpoints run on localhost:8080 by default.
@@ -25,6 +25,9 @@ info:
 
     **Phase 29 API areas (added in 0.4.0):**
     - `chat` (Phase 29) — grounded `POST /v1/chat` turns may return `proposals[]` (rule-assisted alert ack/read actions). Operators confirm writes via **`POST /v1/chat/confirm`** with a frozen `proposal_id` — args are replayed server-side, never re-supplied by the client. Confirmed tools write `guardian_tool_executed` rows to the farm audit log.
+
+    **Phase 30 API areas (added in 0.4.1):**
+    - `chat` (Phase 30 WS1) — **`GET /v1/chat/proposals`** lists the caller's frozen proposals for the pending inbox (`?farm_id=`, `?status=pending`, pagination). Same confirm path as Phase 29.
   license:
     name: AGPL-3.0
     url: https://www.gnu.org/licenses/agpl-3.0
@@ -4040,6 +4043,55 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/Error" }
 
+  /v1/chat/proposals:
+    get:
+      tags: [chat]
+      summary: List Guardian action proposals (Phase 30 WS1 inbox)
+      description: >
+        Returns frozen proposals for the authenticated user. When `farm_id` is
+        supplied, the caller must be a member of that farm. Defaults to
+        `status=pending` (stale pending rows are marked `expired` before the
+        query). Use for the Guardian pending-requests inbox and TopBar badge count.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: farm_id
+          in: query
+          required: false
+          schema: { type: integer, format: int64 }
+          description: Scope list to one farm (farm-member gated).
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [pending, expired, confirmed, dismissed]
+            default: pending
+        - name: limit
+          in: query
+          required: false
+          schema: { type: integer, minimum: 1, maximum: 100, default: 50 }
+        - name: offset
+          in: query
+          required: false
+          schema: { type: integer, minimum: 0, default: 0 }
+      responses:
+        "200":
+          description: Paginated proposal list.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/GuardianProposalListResponse" }
+        "400":
+          description: Invalid farm_id, status, limit, or offset.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403":
+          description: Caller is not a member of the requested farm.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+
   /v1/chat/confirm:
     post:
       tags: [chat]
@@ -4400,6 +4452,33 @@ components:
           type: string
           format: date-time
           description: UTC expiry — confirm returns 410 after this timestamp.
+
+    GuardianProposalListItem:
+      allOf:
+        - $ref: "#/components/schemas/GuardianActionProposal"
+        - type: object
+          required: [created_at, farm_id, status]
+          properties:
+            created_at:
+              type: string
+              format: date-time
+            farm_id:
+              type: integer
+              format: int64
+            status:
+              type: string
+              enum: [pending, expired, confirmed, dismissed]
+
+    GuardianProposalListResponse:
+      type: object
+      required: [proposals, total, limit, offset]
+      properties:
+        proposals:
+          type: array
+          items: { $ref: "#/components/schemas/GuardianProposalListItem" }
+        total: { type: integer, format: int64 }
+        limit: { type: integer }
+        offset: { type: integer }
 
     ChatConfirmRequest:
       type: object

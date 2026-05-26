@@ -1,0 +1,158 @@
+package chat
+
+import (
+	"encoding/json"
+	"net/http"
+	"strconv"
+	"strings"
+	"time"
+
+	"gr33n-api/internal/authctx"
+	"gr33n-api/internal/farmauthz"
+	db "gr33n-api/internal/db"
+	"gr33n-api/internal/httputil"
+)
+
+const (
+	defaultProposalListLimit = 50
+	maxProposalListLimit     = 100
+)
+
+// proposalListItem is the inbox/card shape for GET /v1/chat/proposals (Phase 30 WS1).
+type proposalListItem struct {
+	ProposalID string         `json:"proposal_id"`
+	Tool       string         `json:"tool"`
+	Args       map[string]any `json:"args"`
+	Summary    string         `json:"summary"`
+	ExpiresAt  time.Time      `json:"expires_at"`
+	CreatedAt  time.Time      `json:"created_at"`
+	FarmID     int64          `json:"farm_id"`
+	Status     string         `json:"status"`
+}
+
+type proposalListResponse struct {
+	Proposals []proposalListItem `json:"proposals"`
+	Total     int64              `json:"total"`
+	Limit     int32              `json:"limit"`
+	Offset    int32              `json:"offset"`
+}
+
+// ListProposals handles GET /v1/chat/proposals — caller's frozen proposals (Phase 30 WS1).
+func (h *Handler) ListProposals(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		httputil.WriteError(w, http.StatusMethodNotAllowed, "method not allowed")
+		return
+	}
+	if h.q == nil {
+		httputil.WriteError(w, http.StatusInternalServerError, "database unavailable")
+		return
+	}
+	userID, hasUser := authctx.UserID(r.Context())
+	if !hasUser {
+		httputil.WriteError(w, http.StatusUnauthorized, "authentication required")
+		return
+	}
+
+	ctx := r.Context()
+	_ = h.q.ExpireStaleGuardianProposals(ctx)
+
+	var farmIDPtr *int64
+	if raw := strings.TrimSpace(r.URL.Query().Get("farm_id")); raw != "" {
+		farmID, err := strconv.ParseInt(raw, 10, 64)
+		if err != nil || farmID <= 0 {
+			httputil.WriteError(w, http.StatusBadRequest, "invalid farm_id")
+			return
+		}
+		if !farmauthz.RequireFarmMember(w, r, h.q, farmID) {
+			return
+		}
+		farmIDPtr = &farmID
+	}
+
+	status := strings.TrimSpace(r.URL.Query().Get("status"))
+	if status == "" {
+		status = "pending"
+	}
+	switch status {
+	case "pending", "expired", "confirmed", "dismissed":
+	default:
+		httputil.WriteError(w, http.StatusBadRequest, "invalid status")
+		return
+	}
+	statusPtr := &status
+
+	limit := int32(defaultProposalListLimit)
+	if raw := strings.TrimSpace(r.URL.Query().Get("limit")); raw != "" {
+		n, err := strconv.ParseInt(raw, 10, 32)
+		if err != nil || n < 1 {
+			httputil.WriteError(w, http.StatusBadRequest, "invalid limit")
+			return
+		}
+		if n > maxProposalListLimit {
+			n = maxProposalListLimit
+		}
+		limit = int32(n)
+	}
+	offset := int32(0)
+	if raw := strings.TrimSpace(r.URL.Query().Get("offset")); raw != "" {
+		n, err := strconv.ParseInt(raw, 10, 32)
+		if err != nil || n < 0 {
+			httputil.WriteError(w, http.StatusBadRequest, "invalid offset")
+			return
+		}
+		offset = int32(n)
+	}
+
+	listParams := db.ListGuardianProposalsByUserParams{
+		UserID: userID,
+		FarmID: farmIDPtr,
+		Status: statusPtr,
+		Limit:  limit,
+		Offset: offset,
+	}
+	rows, err := h.q.ListGuardianProposalsByUser(ctx, listParams)
+	if err != nil {
+		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	total, err := h.q.CountGuardianProposalsByUser(ctx, db.CountGuardianProposalsByUserParams{
+		UserID: userID,
+		FarmID: farmIDPtr,
+		Status: statusPtr,
+	})
+	if err != nil {
+		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	items := make([]proposalListItem, 0, len(rows))
+	for _, row := range rows {
+		items = append(items, rowToProposalListItem(row))
+	}
+	httputil.WriteJSON(w, http.StatusOK, proposalListResponse{
+		Proposals: items,
+		Total:     total,
+		Limit:     limit,
+		Offset:    offset,
+	})
+}
+
+func rowToProposalListItem(row db.Gr33ncoreGuardianActionProposal) proposalListItem {
+	var args map[string]any
+	if len(row.Args) > 0 {
+		_ = json.Unmarshal(row.Args, &args)
+	}
+	if args == nil {
+		args = map[string]any{}
+	}
+	return proposalListItem{
+		ProposalID: row.ProposalID.String(),
+		Tool:       row.ToolID,
+		Args:       args,
+		Summary:    row.Summary,
+		ExpiresAt:  row.ExpiresAt,
+		CreatedAt:  row.CreatedAt,
+		FarmID:     row.FarmID,
+		Status:     string(row.Status),
+	}
+}

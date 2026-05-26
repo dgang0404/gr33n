@@ -10,7 +10,7 @@ overview: >
 todos:
   - id: ws1-pr-inbox-ui
     content: "WS1: Pending requests inbox — list open Guardian proposals (pending/expired); drawer tab + optional /guardian/requests; badge count in TopBar"
-    status: pending
+    status: completed
   - id: ws2-risk-tiers
     content: "WS2: Risk tiers on proposals — low/medium/high; high-tier (actuator, delete) requires Operate + optional stricter cap; extend guardian_action_proposals metadata"
     status: pending
@@ -31,7 +31,7 @@ todos:
     status: pending
   - id: ws9-persona-platform-context
     content: "WS9: Persona platform self-knowledge — inject PlatformContextBlock into system prompt (on-prem/Lite, no SaaS, PR confirm model, tool list); warm steward voice; stops cloud/pricing hallucinations"
-    status: pending
+    status: completed
   - id: ws8-openapi-tests
     content: "WS8: OpenAPI + smokes — list proposals API; confirm actuator PR; Vitest inbox; vision skipped in CI unless env set"
     status: pending
@@ -42,7 +42,7 @@ isProject: false
 
 ## Status
 
-**Not started.** Depends on Phase 29 **WS3–WS5** (proposal store + confirm + card UI) being stable. Phase 31 validates that confirmed **actuator PRs** reach real Pi GPIO.
+**In progress.** Phase 29 foundation shipped. **WS1** (pending inbox) and **WS9** (platform self-knowledge prompt) landed 2026-05-26. Phase 31 validates that confirmed **actuator PRs** reach real Pi GPIO.
 
 ---
 
