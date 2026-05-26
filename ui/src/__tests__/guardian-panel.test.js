@@ -16,9 +16,11 @@ vi.mock('../api', () => ({
 import api from '../api'
 import App from '../App.vue'
 import GuardianDrawer from '../components/GuardianDrawer.vue'
+import GuardianEdgeTab from '../components/GuardianEdgeTab.vue'
 import GuardianChatPanel from '../components/GuardianChatPanel.vue'
 import { useGuardianPanelStore } from '../stores/guardianPanel'
 import { useFarmContextStore } from '../stores/farmContext'
+import { useCapabilitiesStore } from '../stores/capabilities'
 
 const router = createRouter({
   history: createMemoryHistory(),
@@ -172,5 +174,31 @@ describe('Phase 29 WS1 — drawer on any route', () => {
 
     wrapper.unmount()
     vi.unstubAllGlobals()
+  })
+})
+
+describe('Phase 29 WS1 — GuardianEdgeTab', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia())
+    vi.clearAllMocks()
+    stubCapabilities()
+    document.body.innerHTML = ''
+  })
+
+  it('renders edge tab when AI is enabled and drawer is closed', async () => {
+    await useCapabilitiesStore().fetch()
+    const wrapper = mount(GuardianEdgeTab, { attachTo: document.body })
+    await flushPromises()
+    expect(document.body.querySelector('[data-test="guardian-edge-tab"]')).not.toBeNull()
+    wrapper.unmount()
+  })
+
+  it('hides edge tab while drawer is open', async () => {
+    await useCapabilitiesStore().fetch()
+    useGuardianPanelStore().openDrawer()
+    const wrapper = mount(GuardianEdgeTab, { attachTo: document.body })
+    await flushPromises()
+    expect(document.body.querySelector('[data-test="guardian-edge-tab"]')).toBeNull()
+    wrapper.unmount()
   })
 })

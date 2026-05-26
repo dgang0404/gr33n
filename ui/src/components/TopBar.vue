@@ -40,14 +40,17 @@
         <button
           v-if="showGuardianButton"
           type="button"
-          class="text-gray-400 hover:text-green-400 transition-colors"
+          class="flex items-center gap-1.5 rounded-lg border px-2 py-1 text-xs font-semibold transition-all duration-200"
+          :class="guardianPanel.open
+            ? 'border-green-500/70 bg-green-950/70 text-green-300 shadow-sm shadow-green-900/30'
+            : 'border-green-800/50 bg-green-950/40 text-green-400 hover:border-green-600/60 hover:bg-green-900/50 hover:text-green-300 guardian-topbar-btn'"
           title="Farm Guardian"
           data-test="topbar-guardian-toggle"
-          :class="guardianPanel.open ? 'text-green-400' : ''"
           @click="guardianPanel.toggle()"
         >
-          <span class="text-lg leading-none" aria-hidden="true">✨</span>
-          <span class="sr-only">Farm Guardian</span>
+          <span class="text-base leading-none guardian-topbar-icon" aria-hidden="true">✨</span>
+          <span class="hidden sm:inline">Guardian</span>
+          <span class="sr-only sm:hidden">Farm Guardian</span>
         </button>
         <RouterLink to="/alerts" class="relative text-gray-400 hover:text-white transition-colors" title="Alerts">
           <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -130,3 +133,17 @@ onMounted(async () => {
 })
 onUnmounted(() => clearInterval(tick))
 </script>
+
+<style scoped>
+.guardian-topbar-btn:hover .guardian-topbar-icon {
+  animation: guardian-wiggle 0.45s ease-in-out;
+}
+
+@keyframes guardian-wiggle {
+  0%, 100% { transform: rotate(0deg) scale(1); }
+  20% { transform: rotate(-8deg) scale(1.08); }
+  40% { transform: rotate(8deg) scale(1.08); }
+  60% { transform: rotate(-4deg) scale(1.04); }
+  80% { transform: rotate(4deg) scale(1.04); }
+}
+</style>

@@ -70,7 +70,8 @@
       </div>
     </Transition>
 
-    <!-- Phase 29 WS1 — global Farm Guardian slide-out -->
+    <!-- Phase 29 WS1 — global Farm Guardian slide-out + right-edge trigger -->
+    <GuardianEdgeTab v-if="auth.token" :compact="isMobile" />
     <GuardianDrawer v-if="auth.token" />
   </div>
 </template>
@@ -79,6 +80,7 @@
 import SideNav from './components/SideNav.vue'
 import TopBar  from './components/TopBar.vue'
 import GuardianDrawer from './components/GuardianDrawer.vue'
+import GuardianEdgeTab from './components/GuardianEdgeTab.vue'
 import { useFarmStore } from './stores/farm'
 import { useFarmContextStore } from './stores/farmContext'
 import { useAuthStore } from './stores/auth'
@@ -92,6 +94,12 @@ const push = usePush()
 let evtSource = null
 
 const drawerOpen = ref(false)
+const isMobile = ref(false)
+
+function syncMobile() {
+  if (typeof window === 'undefined' || !window.matchMedia) return
+  isMobile.value = window.matchMedia('(max-width: 767px)').matches
+}
 
 const mobileNav = [
   { to: '/',           icon: '🌿', label: 'Home' },
@@ -181,6 +189,8 @@ async function bootstrapFarmData() {
 onMounted(() => {
   bootstrapFarmData()
   if (localStorage.getItem('gr33n_token')) push.init()
+  syncMobile()
+  window.addEventListener('resize', syncMobile)
 })
 
 watch(
@@ -192,5 +202,6 @@ watch(
 
 onUnmounted(() => {
   if (evtSource) evtSource.close()
+  window.removeEventListener('resize', syncMobile)
 })
 </script>

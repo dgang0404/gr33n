@@ -154,8 +154,9 @@ func (h *Handler) PostV1(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Resolve grounded vs plain path. Plain path needs only an LLM; grounded
-	// path also requires farm membership + embedder.
+	// Resolve grounded vs plain path. Plain path needs only an LLM. When farm_id
+	// is set we always attach the live snapshot; RAG chunk retrieval is optional
+	// and only runs when an embedder is configured (EMBEDDING_API_KEY).
 	var (
 		grounded bool
 		chunks   []db.SearchRagNearestNeighborsFilteredRow
@@ -172,17 +173,6 @@ func (h *Handler) PostV1(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		if !farmauthz.RequireFarmMember(w, r, h.q, farmID) {
-			return
-		}
-		if h.embedder == nil {
-			httputil.WriteError(w, http.StatusServiceUnavailable, "RAG retrieval is not configured (set EMBEDDING_API_KEY)")
-			return
-		}
-		var rerr error
-		chunks, rerr = h.retrieveChunks(r.Context(), farmID, question, farmguardian.RAGTopK)
-		if rerr != nil {
-			slog.Warn("farm guardian retrieval failed", "farm_id", farmID, "err", rerr)
-			httputil.WriteError(w, http.StatusBadGateway, "retrieval failed")
 			return
 		}
 		grounded = true
@@ -204,8 +194,18 @@ func (h *Handler) PostV1(w http.ResponseWriter, r *http.Request) {
 		if snapshotBlock != "" {
 			system += snapshotBlock + "\n\n"
 		}
-		system += synthesis.SystemPrompt()
-		user = synthesis.BuildUserMessage(question, chunks)
+
+		if h.embedder != nil {
+			var rerr error
+			chunks, rerr = h.retrieveChunks(r.Context(), farmID, question, farmguardian.RAGTopK)
+			if rerr != nil {
+				slog.Warn("farm guardian retrieval failed", "farm_id", farmID, "err", rerr)
+				httputil.WriteError(w, http.StatusBadGateway, "retrieval failed")
+				return
+			}
+			system += synthesis.SystemPrompt()
+			user = synthesis.BuildUserMessage(question, chunks)
+		}
 	}
 
 	// Resolve / validate session_id and load any prior history (DB only when
