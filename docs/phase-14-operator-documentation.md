@@ -31,6 +31,7 @@ This page is the **Phase 14** counterpart to [`phase-13-operator-documentation.m
 | Push / FCM (alerts) | [`notifications-operator-playbook.md`](notifications-operator-playbook.md) |
 | Domain module stubs (crops / animals / aquaponics) | [`domain-modules-operator-playbook.md`](domain-modules-operator-playbook.md) |
 | Hypothetical multi-site / enterprise topology (sketch) | [`hypothetical-enterprise-topology.md`](hypothetical-enterprise-topology.md) |
+| Hardware sizing (API, DB, Ollama, RAG, chat) | [`recommended-hardware-and-sizing.md`](recommended-hardware-and-sizing.md) |
 | Phase 30 — Guardian PR queue (plan) | [`plans/phase_30_guardian_change_requests.plan.md`](plans/phase_30_guardian_change_requests.plan.md) |
 | Phase 31 — field validation & edge (plan) | [`plans/phase_31_field_validation_and_edge.plan.md`](plans/phase_31_field_validation_and_edge.plan.md) |
 

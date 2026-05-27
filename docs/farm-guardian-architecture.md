@@ -3,6 +3,7 @@
 **Audience:** Developers, operators, and anyone curious about *how* Farm Guardian actually answers a chat message.
 
 **Companion docs:**
+- [`recommended-hardware-and-sizing.md`](recommended-hardware-and-sizing.md) — GPU/RAM profiles; when chat will feel laggy.
 - [`farm-guardian-ollama-setup.md`](farm-guardian-ollama-setup.md) — operator install runbook for the inference host (Ollama).
 - [`rag-scope-and-threat-model.md`](rag-scope-and-threat-model.md) — privacy & scope boundaries (what RAG indexes, what it doesn't).
 - [`plans/phase_27_farm_guardian_ai_layer.md`](plans/phase_27_farm_guardian_ai_layer.md) — the calendar plan that shipped the chat layer.

@@ -160,6 +160,8 @@ make restart-local-serve    # API + UI (or: make dev-auth-test in one terminal)
 
 With **AI_ENABLED** and Ollama running, grounded chat includes the three seed alerts in the live snapshot. **Confirmed actions** (ack/read alert) ship in Phase 29 — proposal card + `POST /v1/chat/confirm`; audit rows appear as `guardian_tool_executed`. See [operator tour §6](operator-tour.md#6-farm-guardian-can-act-with-your-ok) and [farm-guardian-architecture §7](farm-guardian-architecture.md#7-agent-actions-phase-29--propose--confirm).
 
+**Hardware expectations:** Guardian chat is GPU/LLM-bound on weak laptops — see [recommended-hardware-and-sizing.md](recommended-hardware-and-sizing.md) (dev vs production profiles, Lite mode without GPU).
+
 If your DB has been used for smoke tests for weeks, you may see hundreds of thousands of stale automation alerts and extra test farms — reset with **`make dev-stack-fresh`** for a clean demo farm.
 
 **Multi-site / enterprise (hypothetical):** how 500 warehouse-scale sites map onto org/farm/zone + commons recipe packs — no core software changes required: [`hypothetical-enterprise-topology.md`](hypothetical-enterprise-topology.md). **Phase 30** — Guardian PR queue (config + Pi via confirm): [`plans/phase_30_guardian_change_requests.plan.md`](plans/phase_30_guardian_change_requests.plan.md). **Phase 31** — Pi/breadboard field validation: [`plans/phase_31_field_validation_and_edge.plan.md`](plans/phase_31_field_validation_and_edge.plan.md).

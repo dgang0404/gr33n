@@ -82,6 +82,8 @@ Recommendation: ship v1 as-is, see what farmers actually ask, and if you see rep
 
 ## 2. Hardware minimum (Full mode)
 
+**Full-stack sizing** (API, UI, Postgres, RAG, automation, Pi edge): see **[recommended-hardware-and-sizing.md](recommended-hardware-and-sizing.md)** for deployment profiles and lag expectations.
+
 | Resource | Recommended | Notes |
 |----------|-------------|--------|
 | GPU | **RTX 3090 (24 GB VRAM)** or equivalent | Required for Llama 3.1 70B Q4. Smaller models (7B/13B Q4) run on 12 GB cards if you accept lower quality. |
