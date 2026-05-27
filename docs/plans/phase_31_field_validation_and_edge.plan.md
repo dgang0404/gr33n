@@ -183,6 +183,7 @@ Parallel activity (README already says this): Pi / MQTT validation can start **b
 
 ## Out of scope (Phase 32+)
 
+- **Conversational grow setup PRs** (plant + cycle + fertigation bundle) — see [`phase_32_guardian_grow_setup_prs.plan.md`](phase_32_guardian_grow_setup_prs.plan.md)
 - Automatic multi-farm recipe broadcast in core API
 - Hardware certification, UL listings, proprietary controller marketplace
 - 500-site performance guarantees
