@@ -26,7 +26,8 @@ Think **physical layout → signals → automation → work tracking → feeding
 | **4. Schedules & rules** | `/schedules`, `/automation` | **Schedules** = time-based cadence (cron-like) tied to actions or fertigation windows. **Rules** (Automation) = conditions + actions (e.g. “if humidity low → open mist”). |
 | **5. Tasks** | `/tasks` | Human **work items**: inspections, harvest prep, fixes — often the day-to-day spine (see sit-in “tasks-first”). |
 | **6. Fertigation** | `/fertigation` | Programs, mixing logs, reservoirs, recipes — ties schedules + inventory-style inputs to delivery. |
-| **7. Guardian (optional AI)** | Slide-out drawer (any page), `/chat`, `/alerts` | **Farm Guardian** — grounded Q&A over your farm snapshot + RAG corpus. Phase 29: Guardian can **propose** alert ack/read actions; you **Confirm** in the chat transcript (see [§6](#6-farm-guardian-can-act-with-your-ok)). |
+| **7. Guardian (optional AI)** | Drawer, `/chat`, `/guardian/requests`, `/alerts` | **Farm Guardian** — grounded Q&A + **change requests** (propose → Confirm). See [§6](#6-farm-guardian-change-requests-with-your-ok). |
+| **7b. Zone photos (optional)** | `/zones/:id` | Reference / walkthrough photos per zone; Guardian sees them in the farm snapshot ([architecture §7.4](farm-guardian-architecture.md#74-zone-reference-photos-phase-30-ws5)). |
 
 **Around the edges (same session):** **Alerts** (`/alerts`), **Costs** (`/costs`), **Knowledge** (`/farm-knowledge` — farm-scoped RAG), **Plants / Animals / Aquaponics** when those modules matter, **Settings** / **Catalog** for account and reference data.
 
@@ -64,23 +65,54 @@ Empty lists usually mean one of: **no data yet**, **wrong farm selected**, **tel
 
 ---
 
-## 6. Farm Guardian can act (with your OK)
+## 6. Farm Guardian change requests (with your OK)
 
 **Requires:** `AI_ENABLED=true`, LLM configured ([`farm-guardian-ollama-setup.md`](farm-guardian-ollama-setup.md)), demo farm selected.
 
-Guardian is **not autonomous** — it advises in chat and may show **action proposal cards** when you ask it to acknowledge or mark alerts read. Nothing changes in the database until you tap **Confirm**.
+Guardian is **not autonomous**. It is a **copilot** in chat and an **actor** only after you **Confirm** a change request (like approving a pull request). **Automation rules and alerts** are a separate layer — they run without chat and are not Guardian PRs.
 
-**Suggested demo path (Phase 29):**
+### Copilot vs actor vs automation
 
-1. Open **Alerts** (`/alerts`) — seeded demo farm has three unread alerts after `make dev-stack-fresh`.
-2. On the humidity row, click **✨ Ask Guardian** (or open the drawer from the sidebar / TopBar / right-edge tab).
-3. Send (or edit) the prefilled question, e.g. *"Explain alert #… and suggest next steps"* or *"acknowledge the humidity alert"*.
-4. When a **proposal card** appears, read the summary → **Confirm** (operators only; viewers see a disabled button).
-5. Return to **Alerts** — the row shows ACK; optional: **Settings → Audit** or farm audit events for `guardian_tool_executed`.
+| Layer | You | System |
+|-------|-----|--------|
+| **Chat (copilot)** | Read answers, optional photos on zones | Guardian explains snapshot + RAG; may show proposal cards |
+| **Confirm (actor)** | Tap **Confirm** on a card or inbox row | One frozen change: ack alert, create task, patch schedule, enqueue Pi command, … |
+| **Rules (automation)** | Configure rules/schedules | Worker fires alerts or actuation on readings — no Confirm in chat |
 
-**Scope at Phase 29 ship:** confirmed writes are **alert acknowledge** and **mark read** only. Schedules, programs, GPIO, and config patches are **Phase 30** (still Confirm-only). Automation **rules** remain the autonomous safety layer — separate from Guardian.
+Nothing in the database changes from Guardian until you **Confirm** (or you edit the dashboard directly). **Dismiss** or wait for expiry if a proposal is wrong.
 
-Architecture: [`farm-guardian-architecture.md`](farm-guardian-architecture.md) §7 · Bootstrap: [`local-operator-bootstrap.md`](local-operator-bootstrap.md#guardian-agent-demo-in-3-commands) · Plan: [`plans/phase_29_guardian_agent_layer.md`](plans/phase_29_guardian_agent_layer.md).
+### PR inbox workflow
+
+1. Ask Guardian to do something (or accept a rule-assisted proposal, e.g. ack an alert).
+2. A **proposal card** appears in the chat transcript (summary + risk tier + frozen args).
+3. Review later: Guardian drawer → **Pending** tab, or **`/guardian/requests`** (TopBar badge shows count).
+4. **Confirm** (needs **Operate** role) or **Dismiss**. High-risk cards (actuator, bootstrap, disable rule) deserve extra care.
+5. Check the result (Alerts, Tasks, Devices) and optional audit `guardian_tool_executed`.
+
+Full operator contract: [`farm-guardian-architecture.md` §8](farm-guardian-architecture.md#8-operator-expectations-at-phase-30-ship).
+
+### What Confirm can do at Phase 30 ship
+
+Includes alert ack/read, **create task**, cycle stage, schedule/program/rule patches, **zone reference photos** (upload on zone page — Guardian sees them in snapshot), and **enqueue actuator command** (writes `pending_command` for the Pi — GPIO happens on the edge, validated in **Phase 31**).
+
+### Vision and photos — what to expect
+
+- **Zone photos (shipped):** upload on **Zone detail**; Guardian knows photos exist and can discuss walkthrough context.
+- **Leaf/crop image analysis (optional):** needs a **multimodal** LLM; treat answers as **hypotheses**, not certified diagnosis. Prefer **create task** over silent config changes.
+
+### Platform facts (what Guardian should say about itself)
+
+On-prem gr33n, not a cloud subscription; Lite vs Full; LAN inference when configured; **Propose → Confirm** for writes. Operator mirror: [`farm-guardian-persona-platform-context.md`](farm-guardian-persona-platform-context.md).
+
+### Suggested demo path
+
+1. **Alerts** — seeded demo farm has unread alerts after `make dev-stack-fresh`.
+2. **✨ Ask Guardian** on a humidity row (or open the drawer).
+3. Ask to acknowledge the alert → **Confirm** the proposal card.
+4. Open **`/guardian/requests`** or drawer **Pending** to see the inbox pattern.
+5. Optional: **Zones** → add a reference photo → ask Guardian about that zone.
+
+Architecture: [`farm-guardian-architecture.md`](farm-guardian-architecture.md) §7–§8 · Bootstrap: [`local-operator-bootstrap.md`](local-operator-bootstrap.md#guardian-ready-demo-after-seed) · Phase 30 plan: [`plans/phase_30_guardian_change_requests.plan.md`](plans/phase_30_guardian_change_requests.plan.md) · Pi validation: [`plans/phase_31_field_validation_and_edge.plan.md`](plans/phase_31_field_validation_and_edge.plan.md).
 
 ---
 
@@ -89,7 +121,10 @@ Architecture: [`farm-guardian-architecture.md`](farm-guardian-architecture.md) �
 | Doc | Use |
 |-----|-----|
 | [local-operator-bootstrap.md](local-operator-bootstrap.md) | First-time env, DB, seed, URLs, Guardian agent demo |
-| [farm-guardian-architecture.md](farm-guardian-architecture.md) | Guardian request flow, propose→confirm, audit |
+| [farm-guardian-architecture.md](farm-guardian-architecture.md) | Request flow, PR inbox, operator expectations (§8) |
+| [farm-guardian-persona-platform-context.md](farm-guardian-persona-platform-context.md) | What Guardian is told about on-prem gr33n (WS9) |
+| [plans/phase_30_guardian_change_requests.plan.md](plans/phase_30_guardian_change_requests.plan.md) | Phase 30 PR queue (shipped scope) |
+| [plans/phase_31_field_validation_and_edge.plan.md](plans/phase_31_field_validation_and_edge.plan.md) | Pi / breadboard validation after actuator PRs |
 | [audit-events-operator-playbook.md](audit-events-operator-playbook.md) | `guardian_tool_executed` after Confirm |
 | [operator-troubleshooting.md](operator-troubleshooting.md) | 401 / empty farms / reading logs |
 | [operator-logging-runbook.md](operator-logging-runbook.md) | Capture & retention for **`slog`** — Compose rotation, Loki sketch; **logs ≠ hypertable pruning** |

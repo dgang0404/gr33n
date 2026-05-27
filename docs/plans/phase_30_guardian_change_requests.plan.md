@@ -28,7 +28,7 @@ todos:
     status: pending
   - id: ws7-operator-expectations-doc
     content: "WS7: Operator expectations — what Guardian is/isn't at ship; copilot vs actor; human tasks (defoliation, plumbing); alerts vs PRs"
-    status: pending
+    status: completed
   - id: ws9-persona-platform-context
     content: "WS9: Persona platform self-knowledge — inject PlatformContextBlock into system prompt (on-prem/Lite, no SaaS, PR confirm model, tool list); warm steward voice; stops cloud/pricing hallucinations"
     status: completed
@@ -42,7 +42,7 @@ isProject: false
 
 ## Status
 
-**In progress.** Phase 29 foundation shipped. **WS1–WS5** and **WS9** landed 2026-05-26. Phase 31 validates that confirmed **actuator PRs** reach real Pi GPIO.
+**In progress.** Phase 29 foundation shipped. **WS1–WS5**, **WS7**, and **WS9** landed 2026-05-26. Phase 31 validates that confirmed **actuator PRs** reach real Pi GPIO.
 
 ---
 

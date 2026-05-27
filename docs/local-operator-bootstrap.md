@@ -158,7 +158,7 @@ make restart-local-serve    # API + UI (or: make dev-auth-test in one terminal)
 # 2) Then: "acknowledge the humidity alert" → proposal card → Confirm
 ```
 
-With **AI_ENABLED** and Ollama running, grounded chat includes the three seed alerts in the live snapshot. **Confirmed actions** (ack/read alert) ship in Phase 29 — proposal card + `POST /v1/chat/confirm`; audit rows appear as `guardian_tool_executed`. See [operator tour §6](operator-tour.md#6-farm-guardian-can-act-with-your-ok) and [farm-guardian-architecture §7](farm-guardian-architecture.md#7-agent-actions-phase-29--propose--confirm).
+With **AI_ENABLED** and Ollama running, grounded chat includes the three seed alerts in the live snapshot. **Change requests** use proposal cards + **Confirm** (`POST /v1/chat/confirm`); pending items also appear in the drawer **Pending** tab and **`/guardian/requests`**. Audit rows: `guardian_tool_executed`. See [operator tour §6](operator-tour.md#6-farm-guardian-change-requests-with-your-ok) and [farm-guardian-architecture §8](farm-guardian-architecture.md#8-operator-expectations-at-phase-30-ship).
 
 **Hardware expectations:** Guardian chat is GPU/LLM-bound on weak laptops — see [recommended-hardware-and-sizing.md](recommended-hardware-and-sizing.md) (dev vs production profiles, Lite mode without GPU).
 

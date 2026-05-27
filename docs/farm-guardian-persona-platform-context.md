@@ -16,10 +16,12 @@ Every `POST /v1/chat` turn uses `ChatSystemPrompt()` = persona + platform block.
 | **Internet** | On-prem `LLM_BASE_URL` → chat usually stays on **LAN**; cloud LLM URLs are the operator's choice. |
 | **Cost** | No Guardian subscription; optional token budget caps; inference cost is your hardware/power. |
 | **Grounding** | Farm snapshot when a farm is selected; RAG chunks optional; zero chunks ≠ offline. |
-| **Writes** | **Propose → Confirm** only; tool list comes from the live registry (`ack_alert`, `mark_alert_read`, …). |
+| **Writes** | **Propose → Confirm** only; tool list comes from the live registry (alerts, tasks, schedules, programs, rules, bootstrap template, actuator enqueue). |
 | **Autonomy** | Rules/alerts automate; Guardian does **not** silently change schedules or GPIO. |
 | **Human work** | Defoliation, plumbing, harvest — guidance and tasks, not replacement. |
-| **Horizon** | Pending inbox expands to config + Pi commands — still Confirm-only. |
+| **PR inbox** | Pending tab + `/guardian/requests`; high/medium/low risk tiers on cards. |
+| **Zone photos** | Reference photos per zone; snapshot mentions them; vision analysis is optional (WS6). |
+| **Pi commands** | `enqueue_actuator_command` sets `pending_command` only — Phase 31 proves hardware execution. |
 
 ## Tone
 
@@ -27,5 +29,7 @@ Calm **farm steward**: short paragraphs, practical metaphors OK. Still: no model
 
 ## Related
 
-- [Farm Guardian architecture](farm-guardian-architecture.md)
-- [Phase 30 plan — WS9](plans/phase_30_guardian_change_requests.plan.md)
+- [Farm Guardian architecture](farm-guardian-architecture.md) — §8 operator expectations
+- [Operator tour §6](operator-tour.md#6-farm-guardian-change-requests-with-your-ok) — narrative PR workflow
+- [Phase 30 plan](plans/phase_30_guardian_change_requests.plan.md)
+- [Phase 31 — field validation](plans/phase_31_field_validation_and_edge.plan.md)

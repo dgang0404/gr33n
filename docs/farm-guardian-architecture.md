@@ -8,6 +8,8 @@
 - [`rag-scope-and-threat-model.md`](rag-scope-and-threat-model.md) — privacy & scope boundaries (what RAG indexes, what it doesn't).
 - [`plans/phase_27_farm_guardian_ai_layer.md`](plans/phase_27_farm_guardian_ai_layer.md) — the calendar plan that shipped the chat layer.
 - [`plans/phase_29_guardian_agent_layer.md`](plans/phase_29_guardian_agent_layer.md) — confirmed agent actions (propose → confirm).
+- [`plans/phase_30_guardian_change_requests.plan.md`](plans/phase_30_guardian_change_requests.plan.md) — PR queue (config tools, risk tiers, zone photos, actuator enqueue).
+- [`farm-guardian-persona-platform-context.md`](farm-guardian-persona-platform-context.md) — operator mirror of what Guardian is told about gr33n (WS9).
 - [`audit-events-operator-playbook.md`](audit-events-operator-playbook.md) — `guardian_tool_executed` audit rows after Confirm.
 
 ---
@@ -166,7 +168,7 @@ For the developer reader, here's the actual module layout:
 | Module / file | Role |
 |---------------|------|
 | `cmd/api/main.go` | Loads `ai.Config`, verifies LLM reachability on boot, spawns the prune loop goroutine. |
-| `cmd/api/routes.go` | Registers `/v1/chat`, `/v1/chat/confirm`, `/v1/chat/sessions[/{id}]`, `/capabilities`, RAG endpoints. |
+| `cmd/api/routes.go` | Registers `/v1/chat`, `/v1/chat/proposals`, `/v1/chat/confirm`, `/v1/chat/sessions[/{id}]`, zone photo routes, `/capabilities`, RAG endpoints. |
 | `internal/ai/config.go` | Parses `AI_ENABLED`, runs the startup LLM reachability check. |
 | `internal/handler/chat/handler.go` | The orchestrator — receives `POST /v1/chat`, runs every step in §2 above. |
 | `internal/handler/chat/confirm.go` | `POST /v1/chat/confirm` — replays frozen proposals, RBAC, audit (Phase 29). |
@@ -174,7 +176,11 @@ For the developer reader, here's the actual module layout:
 | `internal/farmguardian/snapshot.go` | Live farm-state snapshot builder (zones / cycles / alerts). |
 | `internal/farmguardian/context_ref.go` | Contextual focus block from `context_ref` (Ask Guardian entry points, Phase 29 WS6). |
 | `internal/farmguardian/proposals.go` | Rule-assisted proposal builder + `gr33ncore.guardian_action_proposals` insert. |
-| `internal/farmguardian/tools/` | In-process tool registry (`ack_alert`, `mark_alert_read`) executed on Confirm. |
+| `internal/farmguardian/proposals_config.go` | Rule-assisted config/task proposals (Phase 30 WS3). |
+| `internal/farmguardian/platform_context.go` | Platform self-knowledge block appended to system prompt (WS9). |
+| `internal/farmguardian/tools/` | In-process tool registry; all writes executed on Confirm. |
+| `internal/handler/chat/proposals.go` | `GET /v1/chat/proposals` inbox API (WS1). |
+| `internal/handler/fileattach/zone_photos.go` | Zone reference photo upload/list/delete (WS5). |
 | `internal/farmguardian/cost_guard.go` | Rolling-window token cap → 429 decision. |
 | `internal/farmguardian/prune.go` | Background goroutine that TTL-prunes old chat sessions. |
 | `internal/rag/llm/chat.go` | HTTP client to Ollama (streaming SSE, retries, usage capture). |
@@ -190,7 +196,8 @@ For the developer reader, here's the actual module layout:
 | `ui/src/views/FarmGuardianChat.vue` | Full-page `/chat` — session sidebar, multi-turn transcript, streaming. |
 | `ui/src/components/GuardianDrawer.vue` | Global slide-out panel on every route (Phase 29 WS1). |
 | `ui/src/components/GuardianChatPanel.vue` | Shared chat body (drawer + full page); proposal cards inline. |
-| `ui/src/components/GuardianActionProposal.vue` | Confirm / Dismiss card for `proposals[]` (Phase 29 WS4). |
+| `ui/src/components/GuardianActionProposal.vue` | Confirm / Dismiss card; risk-tier warnings (Phase 30 WS2). |
+| `ui/src/components/GuardianRequestsInbox.vue` | Pending PR list + `/guardian/requests` (WS1). |
 | `ui/src/components/AskGuardianButton.vue` | Contextual entry points — Alerts, cycles, zones (Phase 29 WS6). |
 | `ui/src/stores/guardianPanel.js` | Drawer open/close, prefilled prompts, `contextRef`, active session. |
 | `ui/src/views/FarmKnowledge.vue` | The `/farm-knowledge` page — RAG search + Ask-LLM (synthesis). |
@@ -223,14 +230,22 @@ Phase 27–28 shipped Guardian as **read-only** Q&A. Phase 29 adds **confirmed w
 
 Guardian **proposes**; the operator **confirms**. Viewers may chat and see proposal cards but **Confirm is disabled** (403 server-side if they bypass the UI). Confirmed actions require `FarmCaps.Operate` (operator / worker / agronomist / manager / owner).
 
-**Phase 29 v1 tools** (registry in `internal/farmguardian/tools/registry.go`):
+**Confirmed tools at Phase 30 ship** (registry in `internal/farmguardian/tools/registry.go`):
 
-| Tool ID | Effect | REST equivalent |
-|---------|--------|-----------------|
-| `ack_alert` | Acknowledge alert | `PATCH /alerts/{id}/acknowledge` |
-| `mark_alert_read` | Mark alert read | `PATCH /alerts/{id}/read` |
+| Tool ID | Risk tier | Effect (summary) |
+|---------|-----------|------------------|
+| `ack_alert` | low | Acknowledge alert |
+| `mark_alert_read` | low | Mark alert read |
+| `create_task` | medium | Create a farm task |
+| `create_task_from_alert` | medium | Create task from alert |
+| `update_cycle_stage` | medium | Patch crop cycle growth stage |
+| `patch_schedule` | medium | Patch schedule name, cron, or active flag |
+| `patch_fertigation_program` | medium | Patch program EC target, volume, or active |
+| `patch_rule` | medium (high if disabling) | Patch rule active flag or threshold |
+| `apply_bootstrap_template` | high | Apply farm bootstrap template (admin only) |
+| `enqueue_actuator_command` | high | Write `pending_command` on device config (Pi picks up later) |
 
-More tools (create task from alert, cycle stage, schedules, Pi actuators) are **Phase 30** — still propose→confirm, not autonomous. See [`plans/phase_30_guardian_change_requests.plan.md`](plans/phase_30_guardian_change_requests.plan.md).
+Every tool still runs only after **Confirm** — same frozen-args, TTL, and audit path as Phase 29. See [§7.3](#73-phase-30--change-request-pr-inbox) and [§8](#8-operator-expectations-at-phase-30-ship).
 
 ### 7.2 Request flow (propose → confirm)
 
@@ -266,11 +281,104 @@ sequenceDiagram
 
 **Contextual entry points (WS6):** Alerts, crop-cycle summary, and zone views expose **✨ Ask Guardian**, which opens the drawer with a prefilled question and optional `context_ref` for a focused prompt block.
 
-OpenAPI: **`openapi.yaml` 0.4.0** documents `proposals[]`, `POST /v1/chat/confirm`, and `GuardianActionProposal` shapes.
+OpenAPI: **`openapi.yaml` 0.4.2** documents `proposals[]` (with `risk_tier`), `GET /v1/chat/proposals`, `POST /v1/chat/confirm`, and `GuardianActionProposal` shapes.
+
+### 7.3 Phase 30 — Change request (PR) inbox
+
+Phase 30 treats every Guardian write like a **pull request**: propose in chat → review in an inbox → Confirm or Dismiss → audit row.
+
+| Surface | Route / API | Purpose |
+|---------|-------------|---------|
+| **Inline cards** | Chat drawer / `/chat` transcript | Proposal appears after a grounded turn; **Confirm** / **Dismiss** on the card |
+| **Pending tab** | Guardian drawer → **Pending** | Same list scoped to open proposals for the selected farm |
+| **Full inbox** | `/guardian/requests` | Paginated pending (and optional status filter) via `GET /v1/chat/proposals` |
+| **TopBar badge** | Any page | Count of pending proposals for the active farm |
+
+**Workflow:**
+
+1. Operator asks Guardian to change something (or accepts a rule-assisted proposal after ack/read intent).
+2. Handler inserts `gr33ncore.guardian_action_proposals` with **frozen args**, `risk_tier`, and a short **summary** (default TTL 5 minutes).
+3. Proposal stays **pending** until Confirm, Dismiss, or expiry (**410 Gone** on stale Confirm).
+4. **Confirm** replays args from the DB row only (`proposal_id` in body — no client-side arg tampering).
+5. **Dismiss** marks the proposal dismissed without executing the tool.
+
+High-tier cards (actuator enqueue, bootstrap template, disabling a rule) show stronger UI warnings; medium-tier cards can show a frozen-args diff. Operators need **Operate** capability to Confirm; viewers may chat but Confirm is disabled server-side.
+
+### 7.4 Zone reference photos (Phase 30 WS5)
+
+Operators attach **walkthrough / reference photos** per zone (`POST /zones/{id}/photos`). Attachment IDs live in `zones.meta_data.photo_attachment_ids`. The live snapshot and zone **Ask Guardian** context mention that photos exist and the latest attachment id — Guardian can discuss them in prose without claiming pixel-level diagnosis unless a vision model is configured (WS6, optional).
+
+### 7.5 Actuator commands vs automation (Phase 30 WS4 → Phase 31)
+
+`enqueue_actuator_command` does **not** flip GPIO from the API process. Confirm writes a JSON **`pending_command`** on the device row; the **Pi / edge client** is responsible for executing it and logging `actuator_events`. That matches the safety model: Guardian is a **configuration agent**, not an autopilot.
+
+**Phase 31** ([`plans/phase_31_field_validation_and_edge.plan.md`](plans/phase_31_field_validation_and_edge.plan.md)) documents breadboard validation, safe relay tests, and proving that confirmed PRs actually reach hardware — software-only installs stop at `pending_command` in the DB.
 
 ---
 
-## 8. Why this design (vs alternatives)
+## 8. Operator expectations at Phase 30 ship
+
+This section is the operator-facing contract: what to expect from Guardian on a real farm, and what **not** to treat it as.
+
+### 8.1 Three layers — copilot, actor, automation
+
+| Layer | Who decides | What happens | Example |
+|-------|-------------|--------------|---------|
+| **Copilot (chat)** | Operator reads; Guardian suggests | Q&A, explanations, walkthroughs, **proposals** — no silent DB writes | "Why is Flower Room RH high?" |
+| **Actor (confirmed PRs)** | Operator taps **Confirm** | One frozen change per proposal: task, schedule patch, alert ack, `pending_command`, … | Card: "Create task: check dehumidifier drain" → Confirm |
+| **Automation (rules & alerts)** | System (your configured rules) | Worker evaluates sensors/schedules; fires alerts or actuation **without** chat | Rule: RH &lt; 40% → mist valve ON |
+
+Guardian **never** replaces the automation worker. Rules and alerts stay the **always-on safety layer**. Guardian PRs are **intentional, reviewed changes** — closer to approving a pull request than to autopilot.
+
+### 8.2 What Guardian is / isn't
+
+| Guardian **is** | Guardian **is not** |
+|-----------------|---------------------|
+| On-prem copilot tied to **your** farm snapshot + optional RAG | A separate cloud SaaS product or subscription chatbot |
+| PR author for config, tasks, and Pi **enqueue** (after Confirm) | Autonomous scheduler or silent GPIO driver |
+| Steward voice: practical guidance + metaphors | Certified agronomist, IPM authority, or legal compliance sign-off |
+| Helper for **human work** (defoliation, plumbing, harvest) via chat + optional `create_task` PRs | A robot that performs physical work |
+| Aware of zone reference photos on file (WS5) | Guaranteed vision diagnosis without a multimodal model (WS6) |
+
+### 8.3 Platform self-knowledge (WS9)
+
+Guardian's system prompt includes a **platform context block** (`internal/farmguardian/platform_context.go`) so local models do not hallucinate cloud pricing, mandatory internet, or SaaS accounts. Operator-readable mirror: [`farm-guardian-persona-platform-context.md`](farm-guardian-persona-platform-context.md).
+
+In chat, Guardian should correctly say, among other things:
+
+- It runs as part of **gr33n on your network** (Full vs Lite, optional LAN-only LLM).
+- **No Guardian subscription** — cost is your hardware/power; optional token budget caps exist.
+- **Propose → Confirm** only for writes; tool IDs come from the live registry.
+- **Rules/alerts automate**; Guardian does not silently run schedules or GPIO.
+
+### 8.4 Vision and zone photos — limits
+
+| Capability | Phase 30 ship | Notes |
+|------------|---------------|-------|
+| Store & show zone photos | Yes (WS5) | Zone detail gallery; snapshot lists zones with photos |
+| Guardian knows photos exist | Yes | Snapshot + zone context; prose about walkthroughs |
+| Pixel-level "what's wrong with these leaves?" | Optional (WS6) | Needs multimodal model (`LLM_VISION_*` or Ollama vision tag) |
+| Auto rule/program change from an image | No | Even with vision, destructive changes should go through **Confirm** |
+
+Treat vision output as **hypotheses** — good for flags ("possible wilting — check irrigation"), not as sole authority. Prefer a **`create_task`** PR over silent config changes when an image raises concern.
+
+### 8.5 PR inbox — operator checklist
+
+1. Select the correct **farm** (proposals are farm-scoped).
+2. Open Guardian → **Pending** tab or `/guardian/requests` when you did not Confirm inline.
+3. Read **summary**, **risk tier**, and frozen args (medium/high).
+4. **Confirm** only if you intend the change; **Dismiss** if the proposal is wrong or stale.
+5. For **high** tier (actuator, bootstrap, disable rule): verify device/zone names match intent before Confirm.
+6. After Confirm, check **Alerts**, **Tasks**, or **Devices** as appropriate; audit shows `guardian_tool_executed`.
+7. For actuator PRs: confirm `pending_command` on the device; **Phase 31** covers Pi actually executing it on hardware.
+
+### 8.6 Phase 31 — field validation
+
+Software on a laptop can prove propose→confirm→`pending_command`. **Phase 31** proves the edge story: Pi posts readings, dashboard Live Sensors update, confirmed PR or rule → relay → `actuator_events`, and documented E-stop / safe-test checklists. See [`plans/phase_31_field_validation_and_edge.plan.md`](plans/phase_31_field_validation_and_edge.plan.md).
+
+---
+
+## 9. Why this design (vs alternatives)
 
 A few common questions:
 
@@ -291,7 +399,7 @@ No. The RAG search is hard-filtered by `farm_id` at the SQL level. The snapshot 
 
 ---
 
-## 9. Phase ledger
+## 10. Phase ledger
 
 The layer was built incrementally across these phases:
 
@@ -301,3 +409,4 @@ The layer was built incrementally across these phases:
 - **Phase 27** — Farm Guardian AI layer (chat endpoint, multi-turn history, snapshot, sessions, streaming, cost guards, `/chat` UI panel). Closed 2026-05-19.
 - **Phase 28** — Crop intelligence & Guardian depth. WS3 extends the snapshot with active-cycle analytics; WS4 adds alert detail; WS5 surfaces token-usage to operators. See [`plans/phase_28_crop_intelligence_guardian_depth.md`](plans/phase_28_crop_intelligence_guardian_depth.md).
 - **Phase 29** — Guardian agent layer. Global slide-out drawer, rule-assisted proposals, `POST /v1/chat/confirm`, alert ack/read tools, audit + RBAC, contextual Ask Guardian entry points, OpenAPI 0.4.0. Closed 2026-05-20. See [`plans/phase_29_guardian_agent_layer.md`](plans/phase_29_guardian_agent_layer.md).
+- **Phase 30** — Change requests (PR queue). Pending inbox UI, risk tiers, config tools, zone photos, `enqueue_actuator_command`, platform persona block (WS9). Operator expectations: [§8](#8-operator-expectations-at-phase-30-ship). See [`plans/phase_30_guardian_change_requests.plan.md`](plans/phase_30_guardian_change_requests.plan.md).

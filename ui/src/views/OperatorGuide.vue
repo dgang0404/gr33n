@@ -21,9 +21,11 @@
         <li><router-link class="text-gr33n-400 hover:underline" to="/schedules">Schedules</router-link> · <router-link class="text-gr33n-400 hover:underline" to="/automation">Rules</router-link></li>
         <li><router-link class="text-gr33n-400 hover:underline" to="/tasks">Tasks</router-link></li>
         <li><router-link class="text-gr33n-400 hover:underline" to="/fertigation">Fertigation</router-link></li>
+        <li><router-link class="text-gr33n-400 hover:underline" to="/chat">Farm Guardian</router-link> — optional AI; change requests need Confirm (see glossary)</li>
       </ol>
       <p class="text-xs text-zinc-600 pt-2">
         Also: <router-link class="text-gr33n-500 hover:underline" to="/alerts">Alerts</router-link>,
+        <router-link class="text-gr33n-500 hover:underline" to="/guardian/requests">Guardian requests</router-link>,
         <router-link class="text-gr33n-500 hover:underline" to="/costs">Costs</router-link>,
         <router-link class="text-gr33n-500 hover:underline" to="/farm-knowledge">Knowledge</router-link> (RAG).
       </p>
@@ -85,6 +87,10 @@ const glossary = [
   {
     term: 'Automation run',
     body: 'One execution of a schedule, rule, or program tick — success / partial / failed with details for auditing.',
+  },
+  {
+    term: 'Farm Guardian',
+    body: 'On-prem copilot chat (snapshot + optional RAG). It proposes changes like pull requests — tasks, alert ack, schedule patches, Pi pending_command — but nothing writes until you Confirm. Automation rules/alerts run separately without chat. See docs/operator-tour.md §6 and docs/farm-guardian-architecture.md §8.',
   },
   {
     term: 'Knowledge (RAG)',
