@@ -281,7 +281,7 @@ sequenceDiagram
 
 **Contextual entry points (WS6):** Alerts, crop-cycle summary, and zone views expose **✨ Ask Guardian**, which opens the drawer with a prefilled question and optional `context_ref` for a focused prompt block.
 
-OpenAPI: **`openapi.yaml` 0.4.2** documents `proposals[]` (with `risk_tier`), `GET /v1/chat/proposals`, `POST /v1/chat/confirm`, and `GuardianActionProposal` shapes.
+OpenAPI: **`openapi.yaml` 0.4.3** documents `proposals[]` (with `risk_tier`), `GET /v1/chat/proposals`, zone photo routes, vision `attachment_ids`, `vision_chat_enabled` on `/capabilities`, and `POST /v1/chat/confirm`.
 
 ### 7.3 Phase 30 — Change request (PR) inbox
 

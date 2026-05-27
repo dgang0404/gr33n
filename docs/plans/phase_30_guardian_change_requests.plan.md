@@ -34,7 +34,7 @@ todos:
     status: completed
   - id: ws8-openapi-tests
     content: "WS8: OpenAPI + smokes — list proposals API; confirm actuator PR; Vitest inbox; vision skipped in CI unless env set"
-    status: pending
+    status: completed
 isProject: false
 ---
 
@@ -42,7 +42,7 @@ isProject: false
 
 ## Status
 
-**In progress.** Phase 29 foundation shipped. **WS1–WS7** and **WS9** landed 2026-05-26 (**WS6** vision optional via `LLM_VISION_*`). Phase 31 validates that confirmed **actuator PRs** reach real Pi GPIO.
+**Shipped (2026-05-26).** Phase 29 foundation + Phase 30 **WS1–WS9** (PR queue, risk tiers, config/actuator tools, zone photos, optional vision, operator docs, OpenAPI 0.4.3). Phase 31 validates that confirmed **actuator PRs** reach real Pi GPIO.
 
 ---
 
@@ -388,13 +388,13 @@ Phase 29 **WS6–WS9** should complete first.
 
 ## Definition of done (phase ship)
 
-- [ ] Pending Guardian PRs listable outside chat thread
-- [ ] Operator can confirm **task**, **schedule/program patch**, and **actuator enqueue** PRs with audit trail
-- [ ] High-tier PRs show clear warning; viewers cannot confirm
-- [ ] Zone photos attachable; snapshot references them
-- [ ] Vision chat documented as optional; agronomic disclaimer in UI
-- [ ] Docs: Guardian is not autonomous; alerts remain separate
-- [ ] **WS9:** Platform self-knowledge in system prompt; passes “internet / pricing” smoke Q&A
+- [x] Pending Guardian PRs listable outside chat thread
+- [x] Operator can confirm **task**, **schedule/program patch**, and **actuator enqueue** PRs with audit trail
+- [x] High-tier PRs show clear warning; viewers cannot confirm
+- [x] Zone photos attachable; snapshot references them
+- [x] Vision chat documented as optional; agronomic disclaimer in UI
+- [x] Docs: Guardian is not autonomous; alerts remain separate
+- [x] **WS9:** Platform self-knowledge in system prompt; passes “internet / pricing” smoke Q&A
 - [ ] Phase 31 can bench-test actuator PR → Pi
 
 ---

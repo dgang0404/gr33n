@@ -1,7 +1,7 @@
 openapi: "3.0.3"
 info:
   title: gr33n API
-  version: "0.4.2"
+  version: "0.4.3"
   description: |
     Local-first automated agriculture platform API.
     All endpoints run on localhost:8080 by default.
@@ -30,6 +30,7 @@ info:
     - `chat` (Phase 30 WS1) — **`GET /v1/chat/proposals`** lists the caller's frozen proposals for the pending inbox (`?farm_id=`, `?status=pending`, pagination). Same confirm path as Phase 29.
     - `chat` (Phase 30 WS2) — proposals include **`risk_tier`** (`low` | `medium` | `high`) for inbox/card UX warnings.
     - `chat` (Phase 30 WS4) — **`enqueue_actuator_command`** tool queues `devices.config.pending_command` on Confirm (Pi polls `GET /farms/{id}/devices`); never direct GPIO from chat.
+    - `zones` (Phase 30 WS5–WS6) — **`/zones/{id}/photos`** reference-photo upload/list; chat accepts **`attachment_ids`** when `LLM_VISION_MODEL` is set (`vision_chat_enabled` on `/capabilities`).
   license:
     name: AGPL-3.0
     url: https://www.gnu.org/licenses/agpl-3.0
@@ -797,6 +798,100 @@ paths:
       responses:
         "204": { description: Deleted }
         "404": { $ref: "#/components/responses/NotFound" }
+
+  /zones/{id}/photos:
+    get:
+      tags: [zones]
+      summary: List zone reference photos (Phase 30 WS5)
+      description: >
+        Returns file attachments linked to the zone via `zones.meta_data.photo_attachment_ids`.
+        Requires farm membership on the zone's farm.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      responses:
+        "200":
+          description: Zone id and photo metadata list.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ZonePhotoListResponse" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403":
+          description: Caller is not a member of the zone's farm.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    post:
+      tags: [zones]
+      summary: Upload a zone reference photo (Phase 30 WS5)
+      description: >
+        Multipart upload (JPEG, PNG, or WebP, max 8 MiB). Appends the new
+        `file_attachments` id to `zones.meta_data.photo_attachment_ids`.
+        Requires `FarmCaps.Operate` on the zone's farm.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        "201":
+          description: Attachment created and zone updated.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ZonePhotoUploadResponse" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403":
+          description: Caller lacks Operate on the zone's farm.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /zones/{id}/photos/{attachment_id}:
+    delete:
+      tags: [zones]
+      summary: Remove a zone reference photo link (Phase 30 WS5)
+      description: >
+        Removes the attachment id from zone `meta_data` and deletes the blob when
+        unreferenced. Requires `FarmCaps.Operate` on the zone's farm.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+        - name: attachment_id
+          in: path
+          required: true
+          schema: { type: integer, format: int64, minimum: 1 }
+      responses:
+        "200":
+          description: Zone updated after unlink.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  zone: { $ref: "#/components/schemas/Zone" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403":
+          description: Caller lacks Operate on the zone's farm.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "404":
+          description: Zone or photo link not found.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
 
   # ── Sensors ────────────────────────────────────────────────
 
@@ -3208,7 +3303,10 @@ paths:
   /file-attachments/{id}/content:
     get:
       tags: [costs]
-      summary: Download receipt bytes (requires cost read role on attachment farm)
+      summary: Download attachment bytes (cost receipt or zone photo)
+      description: >
+        Streams attachment content. Cost receipts require cost read on the farm;
+        zone reference photos (`file_type=zone_photo`) require farm membership.
       security: [{ bearerAuth: [] }]
       parameters:
         - { $ref: "#/components/parameters/ID" }
@@ -3962,11 +4060,15 @@ paths:
         `crop_cycle`, or `zone`) injects a focused background block for the
         entity the operator opened the Guardian drawer from.
 
-        **Agent proposals (Phase 29):** on grounded turns, when the operator
-        message matches alert ack/read intent and the snapshot lists unread
-        alerts, the terminal response includes `proposals[]` — frozen action
-        cards the operator confirms via `POST /v1/chat/confirm`. Proposals are
-        persisted server-side with a 5-minute TTL.
+        **Agent proposals (Phase 29–30):** grounded turns may return `proposals[]`
+        — frozen change requests (alert ack/read, tasks, schedule/program/rule
+        patches, actuator enqueue, …) confirmed via `POST /v1/chat/confirm`.
+        Each proposal carries `risk_tier` (`low` | `medium` | `high`). Persisted
+        server-side with a 5-minute TTL.
+
+        **Vision (Phase 30 WS6):** optional `attachment_ids` (zone reference photo
+        file attachment ids, max 3) require `farm_id` and `LLM_VISION_MODEL`.
+        Sets `vision_used` on the response when a multimodal model runs.
 
         Each successful turn is persisted to `gr33ncore.conversation_turns`
         (turn_index assigned via SQL `COALESCE(MAX+1, 0)`) and the matching
@@ -4104,8 +4206,10 @@ paths:
         replayed from `gr33ncore.guardian_action_proposals`, not from the
         client, so operators cannot tamper with frozen payloads.
 
-        Write tools (`ack_alert`, `mark_alert_read`, …) require
-        `FarmCaps.Operate` on the proposal's farm. Viewers receive **403**.
+        Write tools (`ack_alert`, `mark_alert_read`, `create_task`, schedule/program/rule
+        patches, `enqueue_actuator_command`, …) require `FarmCaps.Operate` on the
+        proposal's farm (`apply_bootstrap_template` requires farm admin). Viewers
+        receive **403**.
         Expired or already-handled proposals return **410 Gone**. A second
         confirm on an already-confirmed proposal is **idempotent** (200 with
         cached result).
@@ -4405,11 +4509,46 @@ components:
 
     Capabilities:
       type: object
-      required: [ai_enabled]
+      required: [ai_enabled, vision_chat_enabled]
       properties:
         ai_enabled:
           type: boolean
           description: Mirrors the API's `AI_ENABLED` env var. When `false`, the UI hides LLM-backed actions (Farm Guardian chat, RAG answer synthesis, Guardian-usage card).
+        vision_chat_enabled:
+          type: boolean
+          description: >
+            `true` when `LLM_VISION_MODEL` and a base URL (`LLM_VISION_BASE_URL` or
+            `LLM_BASE_URL`) are configured — enables multimodal `/v1/chat` with
+            `attachment_ids` (Phase 30 WS6).
+
+    ZonePhotoItem:
+      type: object
+      properties:
+        id: { type: integer, format: int64 }
+        file_name: { type: string }
+        file_type: { type: string }
+        mime_type: { type: string, nullable: true }
+        file_size_bytes: { type: integer, format: int64, nullable: true }
+        created_at: { type: string, format: date-time }
+        content_url: { type: string, description: "Proxied GET path under /file-attachments/{id}/content" }
+        download_url: { type: string, description: "GET /file-attachments/{id}/download" }
+
+    ZonePhotoListResponse:
+      type: object
+      required: [zone_id, photos]
+      properties:
+        zone_id: { type: integer, format: int64 }
+        photos:
+          type: array
+          items: { $ref: "#/components/schemas/ZonePhotoItem" }
+
+    ZonePhotoUploadResponse:
+      type: object
+      properties:
+        file_attachment:
+          type: object
+          additionalProperties: true
+        zone: { $ref: "#/components/schemas/Zone" }
 
     # ── Farm Guardian chat (Phase 27 WS5 + Phase 28 WS5 + Phase 29) ─
 
@@ -4534,6 +4673,13 @@ components:
           allOf:
             - { $ref: "#/components/schemas/GuardianContextRef" }
           description: Optional contextual focus from Ask Guardian entry points (Phase 29 WS6).
+        attachment_ids:
+          type: array
+          maxItems: 3
+          items: { type: integer, format: int64, minimum: 1 }
+          description: >
+            Zone reference photo attachment ids for a multimodal turn (Phase 30 WS6).
+            Requires `farm_id` and vision LLM configuration. JPEG/PNG/WebP only.
 
     ChatCitation:
       type: object
@@ -4584,6 +4730,13 @@ components:
           type: array
           description: Rule-assisted action proposals (grounded turns only, Phase 29).
           items: { $ref: "#/components/schemas/GuardianActionProposal" }
+        vision_used:
+          type: boolean
+          description: True when this turn used the vision LLM with attached images (Phase 30 WS6).
+        attachment_ids:
+          type: array
+          items: { type: integer, format: int64 }
+          description: Echo of zone photo ids sent on the request (when any).
 
     ChatStreamEvent:
       type: object
@@ -4618,6 +4771,13 @@ components:
           type: array
           items: { $ref: "#/components/schemas/GuardianActionProposal" }
           description: Present on `done` when rule-assisted proposals were created (Phase 29).
+        vision_used:
+          type: boolean
+          description: Present on `done` when vision attachments were processed (Phase 30 WS6).
+        attachment_ids:
+          type: array
+          items: { type: integer, format: int64 }
+          description: Present on `done` when images were attached.
         error: { type: string, description: Present on `error`. }
 
     ChatCostGuardError:

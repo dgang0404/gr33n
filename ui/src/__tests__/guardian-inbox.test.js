@@ -42,6 +42,7 @@ describe('Phase 30 WS1 — guardian inbox', () => {
             tool: 'ack_alert',
             args: { alert_id: 9 },
             summary: 'Acknowledge: humidity',
+            risk_tier: 'low',
             expires_at: new Date(Date.now() + 60000).toISOString(),
             created_at: new Date().toISOString(),
             farm_id: 1,
@@ -67,6 +68,7 @@ describe('Phase 30 WS1 — guardian inbox', () => {
     })
     expect(wrapper.find('[data-test="guardian-inbox-list"]').exists()).toBe(true)
     expect(wrapper.find('[data-test="guardian-proposal-card"]').exists()).toBe(true)
+    expect(wrapper.find('[data-test="guardian-proposal-risk-badge"]').text()).toContain('low')
   })
 
   it('shows empty state when no pending proposals', async () => {
