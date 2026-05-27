@@ -1,0 +1,58 @@
+# Laptop / breadboard stub loop — Phase 31 WS1
+# Hardware drivers are stubbed off-Pi; same daemon posts mock readings to the API.
+#
+# Sensor IDs below match a fresh `make dev-stack-fresh` (master_seed.sql insert order).
+# If Live Sensors still show NO DATA, run from repo root:
+#   ./scripts/print-demo-sensor-ids.sh
+# and align sensor_id values here (duplicate seed runs can shift ids).
+
+api:
+  base_url: "http://localhost:8080"
+  timeout_seconds: 5
+  api_key: ""   # copy PI_API_KEY from repo root .env (required for AUTH_MODE=auth_test)
+
+farm:
+  farm_id: 1    # gr33n Demo Farm
+
+sensors:
+  - sensor_id: 3
+    sensor_type: temperature
+    source: dht22
+    pin: 4
+    interval_seconds: 5       # fast for demo; use 60 on a real Pi
+
+  - sensor_id: 5
+    sensor_type: humidity
+    source: dht22
+    pin: 4
+    interval_seconds: 5
+
+  - sensor_id: 1
+    sensor_type: par
+    source: bh1750
+    interval_seconds: 10
+
+  - sensor_id: 8
+    sensor_type: ec
+    source: ads1115
+    channel: 1
+    interval_seconds: 10
+
+  - sensor_id: 9
+    sensor_type: ph
+    source: ads1115
+    channel: 2
+    interval_seconds: 10
+
+  - sensor_id: 10
+    sensor_type: co2
+    source: mhz19
+    port: "/dev/ttyS0"
+    interval_seconds: 10
+
+# Sensor-only demo — actuators need real device_id rows from the DB (see pi-integration-guide.md).
+actuators: []
+
+schedule_poll_interval_seconds: 30
+offline_queue_path: ".gr33n-edge-queue.db"
+offline_flush_interval_seconds: 30

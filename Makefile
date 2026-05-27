@@ -1,4 +1,4 @@
-.PHONY: run run-receiver build build-receiver test seed sqlc ui dev dev-auth-test rag-ingest-help rag-ingest-demo compose-db-up compose-db-status compose-logging-up compose-logging-down setup-compose-dev dev-stack dev-stack-fresh dev-stack-fresh-rag local-up restart-local restart-local-serve db-sanity-report check-stack clean lint bootstrap-local bootstrap-local-docker install-deps-debian install-pi-edge-deps first-clone first-clone-docker first-clone-install-deps audit-openapi
+.PHONY: run run-receiver build build-receiver test seed sqlc ui dev dev-auth-test rag-ingest-help rag-ingest-demo compose-db-up compose-db-status compose-logging-up compose-logging-down setup-compose-dev dev-stack dev-stack-fresh dev-stack-fresh-rag local-up restart-local restart-local-serve db-sanity-report check-stack clean lint bootstrap-local bootstrap-local-docker install-deps-debian install-pi-edge-deps first-clone first-clone-docker first-clone-install-deps audit-openapi edge-smoke-help
 
 # dash (common default /bin/sh) can report "wait: No child processes" for dev / dev-auth-test;
 # bash handles background jobs + wait reliably.
@@ -93,6 +93,22 @@ sqlc: ## Regenerate sqlc Go code from SQL queries
 
 rag-ingest-help: ## Show rag-ingest CLI flags (farm-scoped embedding; see docs/workflow-guide.md §10.6)
 	@$(GO) run ./cmd/rag-ingest -help
+
+edge-smoke-help: ## Phase 31 WS1 — print laptop stub loop commands (pi_client → dashboard Live Sensors)
+	@echo "Edge loop in 5 commands (stub readings → dashboard Live Sensors)"
+	@echo "Full notes: docs/local-operator-bootstrap.md § Edge loop in 5 commands"
+	@echo ""
+	@echo "  1. make dev-stack                 # once: Compose db + schema + master_seed"
+	@echo "  2. make dev-auth-test             # terminal 1: API + UI (JWT_SECRET + PI_API_KEY in .env)"
+	@echo "  3. ./scripts/print-demo-sensor-ids.sh   # confirm sensor_id ↔ master_seed names"
+	@echo "  4. ./scripts/run-edge-stub-client.sh"
+	@echo "     # or manual: cd pi_client && cp config.demo-stub.yaml config.yaml"
+	@echo "     # set api.api_key = PI_API_KEY from .env, then python3 gr33n_client.py"
+	@echo "  5. Dashboard → gr33n Demo Farm → Live Sensors (SSE; values within ~1s)"
+	@echo ""
+	@echo "Automation stays off the GPIO path by default: AUTOMATION_SIMULATION_MODE=true"
+	@echo "  in .env simulates actuator rules in the API; pi_client only posts readings."
+	@echo "  Set AUTOMATION_SIMULATION_MODE=false when testing pending_command → GPIO (Phase 31 WS3)."
 
 compose-db-up: ## Start only the Postgres image from docker-compose.yml (Timescale + pgvector build)
 	docker compose up -d db --build

@@ -99,6 +99,26 @@ Or one line including servers: **`make restart-local-serve`** (same as `./script
 5. **Optional: Insert Commons receiver** — `make run-receiver`; env and migrations: [`insert-commons-receiver-playbook.md`](insert-commons-receiver-playbook.md).
 6. **Optional: Pi client / MQTT** — OS packages: [`scripts/install-pi-edge-deps.sh`](../scripts/install-pi-edge-deps.sh). Then [`pi_client/setup.sh`](../pi_client/setup.sh), [`mqtt-edge-operator-playbook.md`](mqtt-edge-operator-playbook.md). Full topologies (edge vs all-on-Pi vs split servers): [`raspberry-pi-and-deployment-topology.md`](raspberry-pi-and-deployment-topology.md). Python deps: `pi_client/requirements.txt`.
 
+### Edge loop in 5 commands (Phase 31 WS1)
+
+Prove the **field path on a laptop** before wiring a Pi: `pi_client` uses **stub drivers** when GPIO libraries are absent, posts readings with **`X-API-Key`**, and the dashboard **Live Sensors** card updates via SSE (`GET /farms/{id}/sensors/stream`).
+
+| Step | Command |
+|------|---------|
+| 1 | `make dev-stack` — DB, schema, [`master_seed.sql`](../db/seeds/master_seed.sql) (demo **farm_id = 1**) |
+| 2 | `make dev-auth-test` — API + UI in one terminal; requires **`JWT_SECRET`** and **`PI_API_KEY`** in [`.env`](../.env.example) |
+| 3 | `./scripts/print-demo-sensor-ids.sh` — list numeric **`sensor_id`** values for master_seed sensor names (re-run if you seeded more than once) |
+| 4 | `./scripts/run-edge-stub-client.sh` — resolves **`sensor_id`** from DB names, installs Python deps, runs stub **`pi_client`** (or manual: `cp config.demo-stub.yaml` + edit **`api.api_key`**) |
+| 5 | Open **http://localhost:5173** → **gr33n Demo Farm** → confirm **Live Sensors** show values (not **NO DATA**) within ~1s |
+
+Shortcut: **`make edge-smoke-help`** prints the same steps.
+
+**Sensor IDs:** [`pi_client/config.demo-stub.yaml`](../pi_client/config.demo-stub.yaml) maps **`sensor_id`** to master_seed names for a **fresh** `make dev-stack-fresh` (e.g. **3** = Air Temp Indoor, **5** = Air Humidity Indoor). Duplicate seed runs can shift ids — align with step 3 or use a clean volume via **`make dev-stack-fresh`**.
+
+**Automation simulation (off path for WS1):** [`.env.example`](../.env.example) sets **`AUTOMATION_SIMULATION_MODE=true`**. The automation worker then records **simulated** actuator events and does **not** enqueue **`pending_command`** on devices. That is intentional for laptop demos: **`pi_client`** supplies **real ingest** for readings only. To exercise GPIO / **`pending_command`** round-trip (Phase 31 WS3), set **`AUTOMATION_SIMULATION_MODE=false`** and bind actuators to real **`device_id`** rows — see [`pi-integration-guide.md`](pi-integration-guide.md).
+
+**Verify without the UI:** after step 4, log in via the dashboard once, then `GET /sensors/{id}/readings/latest` with a JWT returns the stub value (Pi key alone is ingest-only).
+
 ## API integration smoke tests
 
 Run from repo root: `go test -tags dev ./cmd/api/...` (or `make test`, which includes this package). The `cmd/api` tests build an in-memory `httptest` server wired like production, with **`AUTH_MODE=auth_test`** and fixed test-only `JWT_SECRET` / `PI_API_KEY` (not read from your `.env`).

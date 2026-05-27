@@ -9,7 +9,7 @@ overview: >
 todos:
   - id: ws1-breadboard-smoke
     content: "WS1: Breadboard / stub loop — document + optional smoke: pi_client on laptop posts readings; dashboard Live Sensors shows data; automation simulation off path documented"
-    status: pending
+    status: completed
   - id: ws2-pi-contract-field
     content: "WS2: Pi field checklist — extend pi-integration-guide with warehouse-room wiring sketch, one-relay-safe-test, offline queue drill; align with TestPiContract* smokes"
     status: pending
@@ -38,7 +38,7 @@ isProject: false
 
 ## Status
 
-**Not started.** Phase 29 (Guardian agent layer) should reach **WS6–WS9** ship criteria first. Phase 30 (Guardian change requests) can land before or in parallel with Phase 31 WS1 — field bench work validates that **confirmed PRs** reach real GPIO.
+**In progress (WS1 shipped).** Phase 29 (Guardian agent layer) should reach **WS6–WS9** ship criteria first. Phase 30 (Guardian change requests) can land before or in parallel with Phase 31 WS1 — field bench work validates that **confirmed PRs** reach real GPIO.
 
 **Preconditions (already met or in progress):**
 

@@ -88,14 +88,16 @@ DEFAULT_CONFIG = {
         'api_key': '',
     },
     'farm': {'farm_id': 1},
+    # sensor_id values align with master_seed.sql on a fresh dev-stack-fresh DB
+    # (1 PAR, 3 Air Temp, 5 Air Humidity, 6 Soil Outdoor, 8 EC, 9 pH, 10 CO2).
     'sensors': [
-        {'sensor_id': 1, 'sensor_type': 'temperature',   'source': 'dht22',   'pin': 4,  'interval_seconds': 60},
-        {'sensor_id': 2, 'sensor_type': 'humidity',      'source': 'dht22',   'pin': 4,  'interval_seconds': 60},
-        {'sensor_id': 3, 'sensor_type': 'soil_moisture', 'source': 'ads1115', 'channel': 0, 'interval_seconds': 300},
-        {'sensor_id': 4, 'sensor_type': 'co2',           'source': 'mhz19',   'port': '/dev/ttyS0', 'interval_seconds': 60},
-        {'sensor_id': 5, 'sensor_type': 'ec',            'source': 'ads1115', 'channel': 1, 'interval_seconds': 60},
-        {'sensor_id': 6, 'sensor_type': 'ph',            'source': 'ads1115', 'channel': 2, 'interval_seconds': 60},
-        {'sensor_id': 7, 'sensor_type': 'par',           'source': 'bh1750',  'interval_seconds': 60},
+        {'sensor_id': 3,  'sensor_type': 'temperature',   'source': 'dht22',   'pin': 4,  'interval_seconds': 60},
+        {'sensor_id': 5,  'sensor_type': 'humidity',      'source': 'dht22',   'pin': 4,  'interval_seconds': 60},
+        {'sensor_id': 6,  'sensor_type': 'soil_moisture', 'source': 'ads1115', 'channel': 0, 'interval_seconds': 300},
+        {'sensor_id': 10, 'sensor_type': 'co2',           'source': 'mhz19',   'port': '/dev/ttyS0', 'interval_seconds': 60},
+        {'sensor_id': 8,  'sensor_type': 'ec',            'source': 'ads1115', 'channel': 1, 'interval_seconds': 60},
+        {'sensor_id': 9,  'sensor_type': 'ph',            'source': 'ads1115', 'channel': 2, 'interval_seconds': 60},
+        {'sensor_id': 1,  'sensor_type': 'par',           'source': 'bh1750',  'interval_seconds': 60},
     ],
     'actuators': [
         {'actuator_id': 1, 'device_id': 1, 'device_type': 'light',      'gpio_pin': 17},
