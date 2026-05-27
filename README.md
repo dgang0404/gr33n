@@ -7,7 +7,7 @@ An open-source agricultural operating system designed to reclaim data, land, and
 [![Vue](https://img.shields.io/badge/Vue-3-4FC08D?logo=vue.js)](https://vuejs.org)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-14+-336791?logo=postgresql)](https://postgresql.org)
 
-**Current focus:** **Phase 29 — Guardian agent layer** is **shipped on `main`** ([plan](docs/plans/phase_29_guardian_agent_layer.md)): global slide-out drawer, rule-assisted propose→confirm for alert ack/read, audit + RBAC, contextual **Ask Guardian** entry points, demo seed alerts, and **OpenAPI 0.4.0**. **Phase 28 — crop intelligence & Guardian depth** is also **shipped** ([plan](docs/plans/phase_28_crop_intelligence_guardian_depth.md)). **Phase 30** (Guardian change-request PR queue — config + Pi via confirm) is the natural next slice — [plan](docs/plans/phase_30_guardian_change_requests.plan.md). **Pi / edge field validation** (Phase 31) remains a parallel activity: real Pi or MQTT bridge with `PI_API_KEY`, base64-decode `config` from `GET /farms/{id}/devices`, then confirm readings and **`actuator_events`** ([`pi_client/gr33n_client.py`](pi_client/gr33n_client.py), [`docs/pi-integration-guide.md`](docs/pi-integration-guide.md), [`cmd/api/smoke_pi_contract_test.go`](cmd/api/smoke_pi_contract_test.go)). Key playbooks: [`docs/workflow-guide.md`](docs/workflow-guide.md), [`docs/farm-guardian-architecture.md`](docs/farm-guardian-architecture.md), [`docs/mqtt-edge-operator-playbook.md`](docs/mqtt-edge-operator-playbook.md), [`docs/farm-guardian-ollama-setup.md`](docs/farm-guardian-ollama-setup.md), [`docs/local-operator-bootstrap.md`](docs/local-operator-bootstrap.md), [`docs/insert-commons-pipeline-runbook.md`](docs/insert-commons-pipeline-runbook.md), [`docs/insert-commons-receiver-playbook.md`](docs/insert-commons-receiver-playbook.md), [`docs/notifications-operator-playbook.md`](docs/notifications-operator-playbook.md), [`docs/domain-modules-operator-playbook.md`](docs/domain-modules-operator-playbook.md), [`docs/mobile-distribution.md`](docs/mobile-distribution.md), [`docs/audit-events-operator-playbook.md`](docs/audit-events-operator-playbook.md), [`docs/terminology-guideline.md`](docs/terminology-guideline.md), [`docs/phase-13-operator-documentation.md`](docs/phase-13-operator-documentation.md), [`docs/phase-14-operator-documentation.md`](docs/phase-14-operator-documentation.md).
+**Current focus:** **Phase 30 — Guardian change requests (PR queue)** is **shipped on `main`** ([plan](docs/plans/phase_30_guardian_change_requests.plan.md)): pending inbox (`/guardian/requests` + drawer **Pending** tab), risk tiers, config tools (tasks, cycle stage, schedule/program/rule patches), **`enqueue_actuator_command`** → Pi `pending_command`, zone reference photos, optional vision chat, **OpenAPI 0.4.3**. **Phase 31 — field validation & safe edge** is **in progress** ([plan](docs/plans/phase_31_field_validation_and_edge.plan.md)): **WS1** laptop stub loop (`make edge-smoke-help`, [`scripts/run-edge-stub-client.sh`](scripts/run-edge-stub-client.sh)) posts readings → dashboard **Live Sensors**; Pi checklist + actuator bench follow. **Phase 32** (conversational grow-setup PR bundles — plant + cycle + fertigation) is **planned** — [plan](docs/plans/phase_32_guardian_grow_setup_prs.plan.md). After `git pull`, run **`./scripts/bootstrap-local.sh --skip-schema`** (or **`make dev-stack`**) so migrations such as `guardian_action_proposals.risk_tier` apply. Pi / edge: [`pi_client/gr33n_client.py`](pi_client/gr33n_client.py), [`docs/pi-integration-guide.md`](docs/pi-integration-guide.md), [`cmd/api/smoke_pi_contract_test.go`](cmd/api/smoke_pi_contract_test.go). Key playbooks: [`docs/workflow-guide.md`](docs/workflow-guide.md), [`docs/farm-guardian-architecture.md`](docs/farm-guardian-architecture.md), [`docs/mqtt-edge-operator-playbook.md`](docs/mqtt-edge-operator-playbook.md), [`docs/farm-guardian-ollama-setup.md`](docs/farm-guardian-ollama-setup.md), [`docs/local-operator-bootstrap.md`](docs/local-operator-bootstrap.md), [`docs/hypothetical-enterprise-topology.md`](docs/hypothetical-enterprise-topology.md), [`docs/insert-commons-pipeline-runbook.md`](docs/insert-commons-pipeline-runbook.md), [`docs/insert-commons-receiver-playbook.md`](docs/insert-commons-receiver-playbook.md), [`docs/notifications-operator-playbook.md`](docs/notifications-operator-playbook.md), [`docs/domain-modules-operator-playbook.md`](docs/domain-modules-operator-playbook.md), [`docs/mobile-distribution.md`](docs/mobile-distribution.md), [`docs/audit-events-operator-playbook.md`](docs/audit-events-operator-playbook.md), [`docs/terminology-guideline.md`](docs/terminology-guideline.md), [`docs/phase-13-operator-documentation.md`](docs/phase-13-operator-documentation.md), [`docs/phase-14-operator-documentation.md`](docs/phase-14-operator-documentation.md).
 
 ---
 
@@ -410,13 +410,15 @@ Integration tests under `cmd/api/` (`TestMain` in [`cmd/api/smoke_test.go`](cmd/
 | PATCH | `/alerts/:id/read` | Mark alert read |
 | PATCH | `/alerts/:id/acknowledge` | Acknowledge alert |
 
-#### Farm Guardian chat (Phase 27, JWT)
+#### Farm Guardian chat (Phase 27–30, JWT)
 
 `AI_ENABLED=true` required; `LLM_BASE_URL` + `LLM_MODEL` required for the chat endpoint. `POST /v1/chat` returns **503** in Lite mode and **429** when rolling-window cost guards fire (`CHAT_COST_MAX_TOKENS_PER_USER` / `CHAT_COST_MAX_TOKENS_PER_FARM`).
 
 | Method | Path | Description |
 |--------|------|-------------|
-| POST | `/v1/chat` | Send a message to Farm Guardian. Optional `farm_id` → RAG grounding + live snapshot. Optional `session_id` (UUID) for multi-turn context replay. Optional `"stream": true` for SSE streaming. Response includes `answer`, `grounded`, `citations`, `session_id`, `turn_index`, `prompt_tokens`, `completion_tokens`. |
+| POST | `/v1/chat` | Send a message to Farm Guardian. Optional `farm_id` → RAG grounding + live snapshot. Optional `session_id` (UUID) for multi-turn context replay. Optional `context_ref` (alert / crop cycle / zone from **Ask Guardian**). Optional `attachment_ids` for zone photos (vision). Optional `"stream": true` for SSE streaming. Response includes `answer`, `grounded`, `citations`, `proposals[]`, `session_id`, `turn_index`, `prompt_tokens`, `completion_tokens`. |
+| POST | `/v1/chat/confirm` | Execute a frozen change request (`{"proposal_id": "..."}`). Requires Operate role for write tools. |
+| GET | `/v1/chat/proposals` | Pending change-request inbox (`?farm_id=`, `?status=pending`, pagination). Same queue as `/guardian/requests`. |
 | GET | `/v1/chat/sessions` | List recent conversation sessions (up to 50, latest-first). |
 | GET | `/v1/chat/sessions/:id` | Full ordered turn history for a session. |
 | PATCH | `/v1/chat/sessions/:id` | Rename session (`{"title": "..."}`, empty string clears). |
@@ -511,6 +513,8 @@ make compose-db-up   # Postgres only — docker-compose db (Timescale + pgvector
 make dev-stack       # Idempotent: migrations + seed on existing DB (auto-skips schema)
 make dev-stack-fresh # Wipe Compose volume + full bootstrap + seed (clean Guardian demo)
 make dev-stack-fresh-rag  # Same + rag-ingest demo farm when EMBEDDING_API_KEY is set
+make edge-smoke-help # Phase 31 WS1 — print laptop stub loop (pi_client → Live Sensors)
+make run-auth-test # API with AUTH_MODE=auth_test (JWT + PI_API_KEY; restart after git pull)
 make rag-ingest-demo   # Index farm_id=1 only (skip message if no embedding key)
 make local-up        # dev-stack then API + UI (same as ./scripts/dev-stack.sh --serve)
 make restart-local   # After reboot: Compose db + wait + sanity report (no migrations)
@@ -563,7 +567,7 @@ MCUs can publish to an on-farm **MQTT broker**; a **bridge** process subscribes 
 
 gr33n's AI layer runs **fully on your intranet** — no data leaves the LAN in Full mode. Knowledge is never sent to cloud APIs.
 
-**Farm Guardian** (Phase 27) is a conversational assistant powered by **Llama 3.1 70B Q4** running on an on-premise GPU box via [Ollama](https://ollama.ai). It layers three knowledge sources:
+**Farm Guardian** (Phase 27+) is a conversational assistant powered by **Llama** (e.g. `llama3.1:8b` on a laptop or **70B Q4** on a GPU box) via [Ollama](https://ollama.ai). It layers three knowledge sources:
 
 1. **Llama weights** — general agricultural, scientific, and world knowledge baked in during training.
 2. **Your farm's RAG corpus** — anything you've ingested into `POST /farms/{id}/rag/ingest` (sensor notes, crop logs, manuals, etc.) retrieved at query time via pgvector similarity search.
@@ -571,16 +575,18 @@ gr33n's AI layer runs **fully on your intranet** — no data leaves the LAN in F
 
 The AI features are gated by `AI_ENABLED` (default on) and degrade gracefully: in **Lite mode** (no LLM configured) `POST /v1/chat` returns 503 and the "Ask (LLM)" button in the Knowledge UI is disabled with an explanation. In **Full mode**, Guardian is available from the **global slide-out drawer** on any page (sidebar, TopBar ✨, right-edge tab) and at `/chat`.
 
-**What Guardian does today (Phase 27–29):** conversational Q&A — explain alerts, compare crop cycles, cite your RAG corpus, and read the live farm snapshot. **Phase 29** adds **confirmed agent actions**: Guardian may propose alert **acknowledge** or **mark read**; the operator taps **Confirm** on an inline card (`POST /v1/chat/confirm`). Nothing writes without your OK. Viewers can chat but cannot confirm. All confirmed actions log `guardian_tool_executed` to the farm audit trail. Guardian does **not** change schedules, programs, or actuators autonomously — that scope is Phase 30 (still Confirm-only).
+**What Guardian does today (Phase 27–30):** conversational Q&A — explain alerts, compare crop cycles, cite your RAG corpus, and read the live farm snapshot (not a mirror of every UI screen — see architecture doc). **Phase 29** adds alert **ack** / **mark read** via propose→confirm. **Phase 30** adds the **change-request inbox** (`/guardian/requests`), risk tiers, config tools (tasks, cycle stage, schedule/program/rule patches), **`enqueue_actuator_command`** (Pi `pending_command` after Confirm), zone reference photos, and optional vision chat. Nothing writes without **Confirm**; viewers can chat but cannot confirm. All confirmed actions log `guardian_tool_executed`. Automation **rules/alerts** still run autonomously — Guardian PRs are intentional, reviewed changes only.
 
-**What comes next (Phase 30):** expanded PR-queue tools (tasks, cycle stage, schedules, Pi actuator enqueue) — [plan](docs/plans/phase_30_guardian_change_requests.plan.md).
+**In progress (Phase 31):** prove the edge loop — laptop stub readings → dashboard **Live Sensors** (`make edge-smoke-help`); Pi checklist + one safe actuator bench test — [plan](docs/plans/phase_31_field_validation_and_edge.plan.md).
+
+**Planned (Phase 32):** conversational **grow setup** PR bundles (plant + cycle + fertigation from chat) — [plan](docs/plans/phase_32_guardian_grow_setup_prs.plan.md).
 
 All AI calls remain inside your farm's intranet:
 
 ```
 Pi clients ──HTTPS──▶ Go API
                         ├──▶ Postgres + pgvector  (farm data + RAG corpus)
-                        └──▶ Ollama  (Llama 3.1 70B Q4, GPU box on intranet)
+                        └──▶ Ollama  (local LLM, e.g. llama3.1:8b on laptop or 70B on GPU box)
 
 Browser ──HTTPS──▶ Vue UI ──▶ Go API  (same as Pi)
 ```
@@ -621,7 +627,10 @@ A phase-by-phase ledger of what's live on `main`. Each row links to the governin
 | **26** | **Operator tutorial, observability, RAG scope** — operator-guide UI, Loki/Promtail/Grafana logging overlay, RAG scope/threat-model, LLM retry/backoff, Ollama setup runbook | ✅ Done | [plan](docs/plans/phase_26_operator_tutorial_observability_rag.plan.md) |
 | **27** | **Farm Guardian AI layer** — on-premise Llama 3.1 70B via Ollama, `AI_ENABLED` + `/capabilities`, streaming `POST /v1/chat`, multi-turn history + RAG grounding + live farm-state snapshot, session CRUD, token usage, cost guards, `/chat` UI panel with session sidebar + bulk-delete | ✅ Done | [plan](docs/plans/phase_27_farm_guardian_ai_layer.md) |
 | **28** | **Crop intelligence & Guardian depth** — crop-cycle analytics, Guardian ↔ cycles + alerts, token-usage dashboard, 80% budget warnings, OpenAPI 0.3.0 | ✅ Done | [plan](docs/plans/phase_28_crop_intelligence_guardian_depth.md) |
-| **29** | **Guardian agent layer** (candidate) — tool-calling actions with confirmation, global slide-out panel, Guardian-ready bootstrap | 📋 Plan ready | [plan](docs/plans/phase_29_guardian_agent_layer.md) |
+| **29** | **Guardian agent layer** — propose→confirm alert ack/read, slide-out drawer, Ask Guardian entry points, OpenAPI 0.4.0 | ✅ Done | [plan](docs/plans/phase_29_guardian_agent_layer.md) |
+| **30** | **Guardian change requests (PR queue)** — pending inbox, risk tiers, config + actuator tools, zone photos, optional vision, OpenAPI 0.4.3 | ✅ Done | [plan](docs/plans/phase_30_guardian_change_requests.plan.md) |
+| **31** | **Field validation & safe edge** — stub/Pi readings → dashboard; actuator bench; MQTT pattern; enterprise script stubs | 🚧 In progress (WS1 shipped) | [plan](docs/plans/phase_31_field_validation_and_edge.plan.md) · [enterprise topology](docs/hypothetical-enterprise-topology.md) |
+| **32** | **Guardian grow setup PRs** — conversational plant + cycle + fertigation bundles (Confirm-only) | 📋 Plan ready | [plan](docs/plans/phase_32_guardian_grow_setup_prs.plan.md) |
 
 ### Phase 23 exit sign-off
 
@@ -644,8 +653,9 @@ Stabilization sprint **closed** on **`main`** **2026-04-18**. Criterion-by-crite
 - [x] **Pi ↔ API contract pass** — smoke tests `TestPiContract*` in [`cmd/api/smoke_pi_contract_test.go`](cmd/api/smoke_pi_contract_test.go): enqueue `pending_command` → Pi-key `GET /farms/1/devices` → `POST /actuators/{id}/events` → `DELETE` pending.
 - [x] **Phase 28 — crop intelligence & Guardian depth** — crop analytics, Guardian snapshot depth, usage dashboard, OpenAPI 0.3.0.
 - [x] **Phase 29 — Guardian agent layer** — propose→confirm alert ack/read, slide-out drawer, contextual entry points, OpenAPI 0.4.0 — [plan](docs/plans/phase_29_guardian_agent_layer.md)
-- [ ] **Phase 30 — Guardian change requests (PR queue)** — config + actuator proposals, pending inbox, zone photos / optional vision — [plan](docs/plans/phase_30_guardian_change_requests.plan.md)
-- [ ] **Phase 31 — field validation & safe edge** — Pi/breadboard loop, proves confirmed actuator PRs reach GPIO — [plan](docs/plans/phase_31_field_validation_and_edge.plan.md) · [enterprise topology sketch](docs/hypothetical-enterprise-topology.md)
+- [x] **Phase 30 — Guardian change requests (PR queue)** — inbox, risk tiers, config + actuator tools, zone photos, vision, OpenAPI 0.4.3 — [plan](docs/plans/phase_30_guardian_change_requests.plan.md)
+- [ ] **Phase 31 — field validation & safe edge** — WS1 stub loop shipped; Pi checklist + actuator bench — [plan](docs/plans/phase_31_field_validation_and_edge.plan.md) · [enterprise topology sketch](docs/hypothetical-enterprise-topology.md)
+- [ ] **Phase 32 — Guardian grow setup PRs** — plant + cycle + fertigation bundles from chat — [plan](docs/plans/phase_32_guardian_grow_setup_prs.plan.md)
 - [ ] **Deprecate `programs.metadata.steps`** — after N deploys with zero fallback warnings, promote `action_source` checks to hard errors and drop the column.
 - [ ] **Program "run now" API** — explicit trigger for unscheduled / ad-hoc programs.
 - [ ] **Mobile distribution polish** — Capacitor packaging, store submission checklist.
@@ -687,8 +697,9 @@ Stabilization sprint **closed** on **`main`** **2026-04-18**. Criterion-by-crite
 - [x] Phase 27 — Farm Guardian AI layer (streaming chat, multi-turn sessions, RAG grounding + live snapshot, cost guards, `/chat` UI panel) — [plan](docs/plans/phase_27_farm_guardian_ai_layer.md)
 - [x] Phase 28 — crop intelligence & Guardian depth (crop analytics, Guardian ↔ cycles/alerts, usage dashboard, OpenAPI 0.3.0) — [plan](docs/plans/phase_28_crop_intelligence_guardian_depth.md)
 - [x] Phase 29 — Guardian agent layer (propose→confirm, slide-out drawer, Ask Guardian entry points, OpenAPI 0.4.0) — [plan](docs/plans/phase_29_guardian_agent_layer.md)
-- [ ] Phase 30 — Guardian PR queue (config agent, actuator proposals, zone vision) — [plan](docs/plans/phase_30_guardian_change_requests.plan.md)
-- [ ] Phase 31 — field validation & edge (Pi loop, safe actuator, recipe packs) — [plan](docs/plans/phase_31_field_validation_and_edge.plan.md) · [enterprise sketch](docs/hypothetical-enterprise-topology.md)
+- [x] Phase 30 — Guardian PR queue (inbox, risk tiers, config + actuator tools, zone photos, vision, OpenAPI 0.4.3) — [plan](docs/plans/phase_30_guardian_change_requests.plan.md)
+- [ ] Phase 31 — field validation & edge (WS1 stub loop; Pi + actuator bench) — [plan](docs/plans/phase_31_field_validation_and_edge.plan.md) · [enterprise sketch](docs/hypothetical-enterprise-topology.md)
+- [ ] Phase 32 — Guardian grow setup PRs (plant + cycle + fertigation bundles) — [plan](docs/plans/phase_32_guardian_grow_setup_prs.plan.md)
 
 ---
 
