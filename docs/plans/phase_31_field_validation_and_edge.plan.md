@@ -112,6 +112,8 @@ Parallel activity (README already says this): Pi / MQTT validation can start **b
 
 **Acceptance:** Checklist is copy-pasteable; links to existing smokes.
 
+**Shipped:** [`pi-integration-guide.md`](../pi-integration-guide.md) **§8** — safety table, three-tier zone naming + wiring sketches, copy-paste checklist (steps 0–9), offline queue drill (§8.5), one-relay bench (§8.6), `TestPiContract*` table (§8.7), troubleshooting (§8.8). Cross-links: [`local-operator-bootstrap.md`](../local-operator-bootstrap.md), [`raspberry-pi-and-deployment-topology.md`](../raspberry-pi-and-deployment-topology.md).
+
 ---
 
 ### WS3 — Safe actuator story

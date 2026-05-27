@@ -226,6 +226,50 @@ Enterprise-scale naming patterns: [`hypothetical-enterprise-topology.md`](hypoth
 
 Create zones in the dashboard (**Zones**) or via seed/template **before** editing `config.yaml` — run [`scripts/print-demo-sensor-ids.sh`](../scripts/print-demo-sensor-ids.sh) or `./scripts/run-edge-stub-client.sh` on a laptop to confirm **`sensor_id`** values match DB names.
 
+#### Wiring sketch — room layout (logical, not electrical)
+
+One **plastic room**, **one Pi**, **three shelf tiers** — sensors and relays per tier (names illustrative):
+
+```
+                    ┌── Plastic room (farm_id=1) ──────────────────┐
+                    │  Tier 3  zone "Room A — Tier 3"               │
+                    │    [DHT22] [PAR]     relay CH3 → light strip  │
+                    │  ───────────────────────────────────────────  │
+                    │  Tier 2  zone "Room A — Tier 2"               │
+                    │    [DHT22] [PAR]     relay CH2 → light strip  │
+                    │  ───────────────────────────────────────────  │
+                    │  Tier 1  zone "Room A — Tier 1"               │
+                    │    [DHT22] [EC/pH]   relay CH1 → pump (rated) │
+                    │                                               │
+                    │  Raspberry Pi (device_uid) — edge_gateway     │
+                    │    I2C/SPI → sensors   GPIO → relay module    │
+                    └───────────────────────────────────────────────┘
+                              │ HTTP + X-API-Key
+                              ▼
+                    LAN server (Postgres + API + UI)
+```
+
+Wire **one channel first** (§8.6) before copying this layout to all three tiers.
+
+#### Wiring sketch — bench actuator proof (LED, no mains)
+
+Safe first GPIO test — matches default **`gpio_pin: 17`** in [`pi_client/config.yaml`](../pi_client/config.yaml). Client uses **`active_high=False`** (common on optocoupler relay boards).
+
+**Option A — LED directly (simplest):**
+
+```
+Pi BCM 17 ──[330 Ω]──►|── LED ──► GND
+```
+
+**Option B — 3.3 V relay module (prep for WS3):**
+
+```
+Pi 3.3 V ──► relay VCC          Pi GND ──► relay GND
+Pi BCM 17 ──► relay IN          (module switches separate 5 V load — fan/LED on COM/NO)
+```
+
+Do **not** wire mains AC to the breadboard. Rated enclosures only for line-voltage loads.
+
 ### 8.3 Copy-paste field checklist
 
 Use this on first deploy; tick items in order.
