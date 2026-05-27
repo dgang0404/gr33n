@@ -57,7 +57,7 @@ func TestReplayHistory_InterleavesUserAssistant(t *testing.T) {
 		t.Fatalf("len=%d want %d", len(got), len(want))
 	}
 	for i := range want {
-		if got[i] != want[i] {
+		if got[i].Role != want[i].Role || got[i].TextContent() != want[i].TextContent() {
 			t.Fatalf("msg %d: got %+v want %+v", i, got[i], want[i])
 		}
 	}
@@ -83,7 +83,7 @@ func TestReplayHistory_DropsOldestWhenOverCap(t *testing.T) {
 }
 
 func TestBuildMessages_NoHistory(t *testing.T) {
-	got := buildMessages("system-x", nil, "user-x")
+	got := buildMessages("system-x", nil, llm.Message{Role: "user", Content: "user-x"})
 	if len(got) != 2 {
 		t.Fatalf("expected 2 messages, got %d", len(got))
 	}
@@ -124,7 +124,7 @@ func TestBuildMessages_WithHistory(t *testing.T) {
 		{Role: "user", Content: "prev-u"},
 		{Role: "assistant", Content: "prev-a"},
 	}
-	got := buildMessages("sys", hist, "now")
+	got := buildMessages("sys", hist, llm.Message{Role: "user", Content: "now"})
 	if len(got) != 4 {
 		t.Fatalf("expected 4 (system + 2 history + current user), got %d", len(got))
 	}

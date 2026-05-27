@@ -242,6 +242,33 @@ Expected status mapping (see [phase_27_farm_guardian_ai_layer.md](plans/phase_27
 
 ---
 
+## 4.3 Optional — vision chat (Phase 30 WS6)
+
+Zone reference photos (WS5) can be attached to a grounded chat turn when a **multimodal** model is configured. Text-only tags such as `llama3.1:8b` cannot interpret pixels.
+
+| Env var | Purpose |
+|---------|---------|
+| `LLM_VISION_MODEL` | Vision model id (e.g. `llava`, `llama3.2-vision`) — **required** to enable vision |
+| `LLM_VISION_BASE_URL` | Optional; defaults to `LLM_BASE_URL` |
+| `LLM_VISION_API_KEY` | Optional; defaults to `LLM_API_KEY` |
+
+Example (same Ollama host as text chat):
+
+```bash
+ollama pull llava
+# .env
+LLM_VISION_MODEL=llava
+# LLM_VISION_BASE_URL=http://ollama.farm.local:11434/v1   # omit to reuse LLM_BASE_URL
+```
+
+`GET /capabilities` returns `vision_chat_enabled: true` when `LLM_VISION_MODEL` and a base URL resolve. The Guardian drawer (zone **Ask Guardian** context) shows photo chips; `POST /v1/chat` accepts `attachment_ids` (zone `file_attachments` ids, max 3).
+
+**Operator expectations:** vision output is **advisory** — flag possible issues, suggest checks, prefer **`create_task`** proposals over silent config changes. See [farm-guardian-architecture.md §8.4](farm-guardian-architecture.md#84-vision-and-zone-photos--limits).
+
+CI smokes skip live vision unless `GR33N_VISION_TEST=1`.
+
+---
+
 ## 5. Operational hygiene
 
 | Concern | Action |

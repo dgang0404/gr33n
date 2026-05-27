@@ -28,6 +28,7 @@ import (
 	"gr33n-api/internal/farmauthz"
 	"gr33n-api/internal/farmguardian"
 	"gr33n-api/internal/httputil"
+	"gr33n-api/internal/filestorage"
 	"gr33n-api/internal/rag/embed"
 	"gr33n-api/internal/rag/llm"
 	"gr33n-api/internal/rag/synthesis"
@@ -46,6 +47,8 @@ type Handler struct {
 	cfg       ai.Config
 	q         *db.Queries
 	llm       llm.ChatCompleter
+	visionLLM llm.ChatCompleter // optional multimodal client (Phase 30 WS6)
+	fileStore filestorage.Store
 	embedder  embed.Embedder
 	costGuard farmguardian.CostGuardConfig // zero value = disabled
 }
@@ -53,11 +56,14 @@ type Handler struct {
 // NewHandler wires the configured chat + embedding clients when AI is enabled.
 // When AI is off, both stay nil and POST /v1/chat answers 503 — same contract
 // as POST /farms/{id}/rag/answer in Lite mode.
-func NewHandler(pool *pgxpool.Pool, cfg ai.Config) *Handler {
-	h := &Handler{cfg: cfg, q: db.New(pool)}
+func NewHandler(pool *pgxpool.Pool, cfg ai.Config, fileStore filestorage.Store) *Handler {
+	h := &Handler{cfg: cfg, q: db.New(pool), fileStore: fileStore}
 	if cfg.Enabled {
 		if c, err := llm.NewChatClientFromEnv(); err == nil {
 			h.llm = c
+		}
+		if c, err := llm.NewVisionChatClientFromEnv(); err == nil {
+			h.visionLLM = c
 		}
 		if e, err := embed.NewOpenAICompatibleFromEnv(); err == nil {
 			h.embedder = e
@@ -72,6 +78,18 @@ func NewHandler(pool *pgxpool.Pool, cfg ai.Config) *Handler {
 // further configure cost guards via WithCostGuard.
 func NewHandlerWithDeps(cfg ai.Config, q *db.Queries, client llm.ChatCompleter, embedder embed.Embedder) *Handler {
 	return &Handler{cfg: cfg, q: q, llm: client, embedder: embedder}
+}
+
+// WithVisionLLM sets the multimodal client for tests (Phase 30 WS6).
+func (h *Handler) WithVisionLLM(client llm.ChatCompleter) *Handler {
+	h.visionLLM = client
+	return h
+}
+
+// WithFileStore sets file storage for vision attachment resolution in tests.
+func (h *Handler) WithFileStore(store filestorage.Store) *Handler {
+	h.fileStore = store
+	return h
 }
 
 // WithCostGuard overrides the cost-guard config on h and returns h so the
@@ -95,6 +113,9 @@ type postBody struct {
 	// Stream switches the response to Server-Sent Events when the LLM client
 	// supports streaming (Phase 27 WS5 v3).
 	Stream bool `json:"stream"`
+	// AttachmentIDs lists zone reference photo file_attachments to include in a
+	// multimodal user turn (Phase 30 WS6). Requires farm_id and vision LLM config.
+	AttachmentIDs []int64 `json:"attachment_ids,omitempty"`
 }
 
 type postResponse struct {
@@ -109,6 +130,8 @@ type postResponse struct {
 	PromptTokens     int                         `json:"prompt_tokens"`
 	CompletionTokens int                         `json:"completion_tokens"`
 	Proposals        []farmguardian.ActionProposal `json:"proposals,omitempty"`
+	VisionUsed       bool                          `json:"vision_used,omitempty"`
+	AttachmentIDs    []int64                       `json:"attachment_ids,omitempty"`
 }
 
 // PostV1 handles POST /v1/chat — JWT required by route wiring.
@@ -246,7 +269,34 @@ func (h *Handler) PostV1(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	messages := buildMessages(system, history, user)
+	attachmentIDs := attachmentIDsFromRequest(pb.AttachmentIDs)
+	if len(attachmentIDs) > 0 && farmID <= 0 {
+		httputil.WriteError(w, http.StatusBadRequest, "attachment_ids require farm_id")
+		return
+	}
+	if len(attachmentIDs) > 0 && h.visionLLM == nil {
+		httputil.WriteError(w, http.StatusServiceUnavailable, "vision chat is not configured (set LLM_VISION_MODEL and LLM_BASE_URL or LLM_VISION_BASE_URL)")
+		return
+	}
+
+	var visionImages []llm.ImageAttachment
+	if len(attachmentIDs) > 0 {
+		var verr error
+		visionImages, verr = h.resolveVisionAttachments(r.Context(), farmID, attachmentIDs)
+		if verr != nil {
+			httputil.WriteError(w, http.StatusBadRequest, verr.Error())
+			return
+		}
+		system += "\n\n" + farmguardian.VisionContextBlock()
+	}
+
+	chatClient := h.llm
+	if len(visionImages) > 0 {
+		chatClient = h.visionLLM
+	}
+
+	currentUser := llm.UserMessageWithImages(user, visionImages)
+	messages := buildMessages(system, history, currentUser)
 
 	if pb.Stream {
 		// Pick the most capable streaming surface. Phase 27 WS5 follow-up:
@@ -256,9 +306,9 @@ func (h *Handler) PostV1(w http.ResponseWriter, r *http.Request) {
 		// interface still work — the adapter returns Usage{} and the streaming
 		// turn lands with zero tokens (matches pre-follow-up behaviour).
 		var stream streamFn
-		if usageAware, ok := h.llm.(llm.UsageAwareStreamingChatCompleter); ok {
+		if usageAware, ok := chatClient.(llm.UsageAwareStreamingChatCompleter); ok {
 			stream = usageAware.ChatCompletionStreamMessagesWithUsage
-		} else if legacy, ok := h.llm.(llm.MessagesStreamingChatCompleter); ok {
+		} else if legacy, ok := chatClient.(llm.MessagesStreamingChatCompleter); ok {
 			stream = func(ctx context.Context, messages []llm.Message, onDelta func(string)) (llm.Usage, error) {
 				err := legacy.ChatCompletionStreamMessages(ctx, messages, onDelta)
 				return llm.Usage{}, err
@@ -267,7 +317,7 @@ func (h *Handler) PostV1(w http.ResponseWriter, r *http.Request) {
 			httputil.WriteError(w, http.StatusNotImplemented, "configured LLM client does not support streaming")
 			return
 		}
-		h.streamResponse(w, r, stream, messages, farmID, grounded, chunks, sessionID, userID, hasUser, question, liveSnap)
+		h.streamResponse(w, r, stream, chatClient, messages, farmID, grounded, chunks, sessionID, userID, hasUser, question, liveSnap, len(visionImages) > 0, attachmentIDs)
 		return
 	}
 
@@ -275,14 +325,14 @@ func (h *Handler) PostV1(w http.ResponseWriter, r *http.Request) {
 		answer string
 		usage  llm.Usage
 	)
-	switch client := h.llm.(type) {
+	switch client := chatClient.(type) {
 	case llm.UsageAwareChatCompleter:
 		answer, usage, err = client.ChatCompletionMessagesWithUsage(r.Context(), messages)
 	case llm.MessagesChatCompleter:
 		answer, err = client.ChatCompletionMessages(r.Context(), messages)
 	default:
 		// Legacy fallback — shouldn't happen for *llm.Client but keeps mocks honest.
-		answer, err = h.llm.ChatCompletion(r.Context(), system, user)
+		answer, err = chatClient.ChatCompletion(r.Context(), system, user)
 	}
 	if err != nil {
 		if errors.Is(err, r.Context().Err()) {
@@ -295,11 +345,13 @@ func (h *Handler) PostV1(w http.ResponseWriter, r *http.Request) {
 
 	resp := postResponse{
 		Answer:           answer,
-		LLMModel:         h.llm.ModelLabel(),
+		LLMModel:         chatClient.ModelLabel(),
 		Grounded:         grounded,
 		SessionID:        sessionID.String(),
 		PromptTokens:     usage.PromptTokens,
 		CompletionTokens: usage.CompletionTokens,
+		VisionUsed:       len(visionImages) > 0,
+		AttachmentIDs:    attachmentIDs,
 	}
 	if grounded {
 		resp.Citations = synthesis.BuildCitations(answer, chunks)
@@ -317,7 +369,8 @@ func (h *Handler) PostV1(w http.ResponseWriter, r *http.Request) {
 	slog.Info("farm guardian chat completed",
 		"farm_id", farmID,
 		"session_id", sessionID,
-		"model", h.llm.ModelLabel(),
+		"model", chatClient.ModelLabel(),
+		"vision", len(visionImages) > 0,
 		"grounded", grounded,
 		"context_chunks", len(chunks),
 		"citations", len(resp.Citations),
@@ -337,6 +390,7 @@ func (h *Handler) streamResponse(
 	w http.ResponseWriter,
 	r *http.Request,
 	stream streamFn,
+	chatClient llm.ChatCompleter,
 	messages []llm.Message,
 	farmID int64,
 	grounded bool,
@@ -346,6 +400,8 @@ func (h *Handler) streamResponse(
 	hasUser bool,
 	question string,
 	liveSnap farmguardian.Snapshot,
+	visionUsed bool,
+	attachmentIDs []int64,
 ) {
 	flusher, ok := w.(http.Flusher)
 	if !ok {
@@ -389,11 +445,13 @@ func (h *Handler) streamResponse(
 	answer := collected.String()
 	done := postResponse{
 		Answer:           answer,
-		LLMModel:         h.llm.ModelLabel(),
+		LLMModel:         chatClient.ModelLabel(),
 		Grounded:         grounded,
 		SessionID:        sessionID.String(),
 		PromptTokens:     usage.PromptTokens,
 		CompletionTokens: usage.CompletionTokens,
+		VisionUsed:       visionUsed,
+		AttachmentIDs:    attachmentIDs,
 	}
 	if grounded {
 		done.Citations = synthesis.BuildCitations(answer, chunks)
@@ -419,7 +477,8 @@ func (h *Handler) streamResponse(
 	slog.Info("farm guardian chat streamed",
 		"farm_id", farmID,
 		"session_id", sessionID,
-		"model", h.llm.ModelLabel(),
+		"model", chatClient.ModelLabel(),
+		"vision", visionUsed,
 		"grounded", grounded,
 		"context_chunks", len(chunks),
 		"citations", len(done.Citations),
@@ -598,11 +657,11 @@ func replayHistory(rows []db.ListConversationTurnsBySessionRow, maxTurns int) []
 // buildMessages assembles the final OpenAI-style messages slice (system, then
 // history pairs, then current user message). When history is empty this
 // matches the v1 / v2 shape exactly so existing callers and tests are unchanged.
-func buildMessages(system string, history []llm.Message, currentUser string) []llm.Message {
+func buildMessages(system string, history []llm.Message, currentUser llm.Message) []llm.Message {
 	out := make([]llm.Message, 0, 2+len(history))
 	out = append(out, llm.Message{Role: "system", Content: system})
 	out = append(out, history...)
-	out = append(out, llm.Message{Role: "user", Content: currentUser})
+	out = append(out, currentUser)
 	return out
 }
 

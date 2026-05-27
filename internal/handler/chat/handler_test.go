@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	"gr33n-api/internal/ai"
+	"gr33n-api/internal/authctx"
 	"gr33n-api/internal/rag/llm"
 )
 
@@ -37,8 +38,8 @@ func (f *fakeLLM) ChatCompletionMessages(_ context.Context, messages []llm.Messa
 	f.callCount++
 	f.lastMessages = messages
 	if len(messages) > 0 {
-		f.lastSys = messages[0].Content
-		f.lastUser = messages[len(messages)-1].Content
+		f.lastSys = messages[0].TextContent()
+		f.lastUser = messages[len(messages)-1].TextContent()
 	}
 	if f.failWith != nil {
 		return "", f.failWith
@@ -49,8 +50,8 @@ func (f *fakeLLM) ChatCompletionMessagesWithUsage(_ context.Context, messages []
 	f.callCount++
 	f.lastMessages = messages
 	if len(messages) > 0 {
-		f.lastSys = messages[0].Content
-		f.lastUser = messages[len(messages)-1].Content
+		f.lastSys = messages[0].TextContent()
+		f.lastUser = messages[len(messages)-1].TextContent()
 	}
 	if f.failWith != nil {
 		return "", llm.Usage{}, f.failWith
@@ -75,6 +76,29 @@ func TestPostV1_AIDisabled503(t *testing.T) {
 	}
 	if !strings.Contains(rec.Body.String(), "disabled") {
 		t.Fatalf("expected disabled message, got %s", rec.Body.String())
+	}
+}
+
+func TestPostV1_VisionAttachmentsWithoutVisionClient503(t *testing.T) {
+	h := NewHandlerWithDeps(ai.Config{Enabled: true}, nil, &fakeLLM{reply: "ok"}, nil)
+	req := httptest.NewRequest(http.MethodPost, "/v1/chat", bytes.NewBufferString(`{"message":"leaves?","farm_id":1,"attachment_ids":[42]}`))
+	req = req.WithContext(authctx.WithFarmAuthzSkip(context.Background(), true))
+	rec := httptest.NewRecorder()
+	h.PostV1(rec, req)
+	if rec.Code != http.StatusServiceUnavailable {
+		t.Fatalf("want 503, got %d: %s", rec.Code, rec.Body.String())
+	}
+	if !strings.Contains(rec.Body.String(), "vision") {
+		t.Fatalf("expected vision config hint, got %s", rec.Body.String())
+	}
+}
+
+func TestPostV1_VisionAttachmentsRequireFarmID400(t *testing.T) {
+	h := NewHandlerWithDeps(ai.Config{Enabled: true}, nil, &fakeLLM{reply: "ok"}, nil).
+		WithVisionLLM(&fakeLLM{reply: "vision"})
+	rec := doPost(t, h, `{"message":"leaves?","attachment_ids":[42]}`)
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("want 400, got %d: %s", rec.Code, rec.Body.String())
 	}
 }
 

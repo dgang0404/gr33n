@@ -133,6 +133,9 @@
           <div class="text-zinc-300 text-sm" data-test="chat-user-turn">
             <span class="text-[10px] uppercase tracking-widest text-zinc-500 mr-2">you</span>
             <span class="whitespace-pre-wrap">{{ t.user_message }}</span>
+            <span v-if="t.attachment_ids?.length" class="text-zinc-500 text-[10px] ml-1">
+              · {{ t.attachment_ids.length }} photo{{ t.attachment_ids.length === 1 ? '' : 's' }}
+            </span>
           </div>
           <div class="text-zinc-100 text-sm" data-test="chat-assistant-turn">
             <span class="text-[10px] uppercase tracking-widest text-green-500 mr-2">guardian</span>
@@ -185,6 +188,57 @@
           layout === 'compact' ? 'p-3' : 'p-5 space-y-4',
         ]"
       >
+        <div
+          v-if="useFarmContext && farmContext.farmId && capabilities.visionChatEnabled && zoneContextId"
+          class="rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 space-y-2"
+          data-test="chat-vision-attach"
+        >
+          <div class="flex items-center justify-between gap-2">
+            <p class="text-xs text-zinc-400">Zone photos (vision)</p>
+            <label class="text-[10px] text-green-600 hover:text-green-400 cursor-pointer">
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                class="hidden"
+                :disabled="photoUploading || streaming"
+                @change="onChatPhotoSelected"
+              />
+              {{ photoUploading ? 'Uploading…' : '+ Upload' }}
+            </label>
+          </div>
+          <p v-if="!zonePhotos.length" class="text-[10px] text-zinc-600">
+            Attach reference photos from this zone, or upload one, then ask about leaves or layout.
+          </p>
+          <div v-else class="flex flex-wrap gap-2">
+            <button
+              v-for="p in zonePhotos"
+              :key="p.id"
+              type="button"
+              class="relative w-14 h-14 rounded border overflow-hidden transition-colors"
+              :class="isAttachmentSelected(p.id) ? 'border-green-600 ring-1 ring-green-700' : 'border-zinc-700 hover:border-zinc-500'"
+              :title="p.file_name"
+              @click="toggleAttachment(p.id)"
+            >
+              <img
+                v-if="photoThumbUrls[p.id]"
+                :src="photoThumbUrls[p.id]"
+                :alt="p.file_name || 'Zone photo'"
+                class="w-full h-full object-cover"
+              />
+              <span v-else class="text-[9px] text-zinc-500 p-1">#{{ p.id }}</span>
+            </button>
+          </div>
+          <p v-if="selectedAttachmentIds.length" class="text-[10px] text-zinc-500">
+            {{ selectedAttachmentIds.length }} selected (max 3 per message)
+          </p>
+        </div>
+        <p
+          v-if="capabilities.visionChatEnabled && useFarmContext"
+          class="text-[10px] text-zinc-600 leading-relaxed"
+          data-test="chat-vision-disclaimer"
+        >
+          Image analysis is advisory only — hypotheses, not certified diagnosis. Any change still needs Confirm.
+        </p>
         <div class="flex flex-col gap-2">
           <label class="text-xs text-zinc-400">Your message</label>
           <textarea
@@ -341,7 +395,7 @@
 </template>
 
 <script setup>
-import { computed, nextTick, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import api from '../api'
 import GuardianActionProposal from './GuardianActionProposal.vue'
 import { useFarmOperate } from '../composables/useFarmOperate'
@@ -349,6 +403,7 @@ import { useFarmContextStore } from '../stores/farmContext'
 import { useFarmStore } from '../stores/farm'
 import { useGuardianPanelStore } from '../stores/guardianPanel'
 import { useGuardianProposalsStore } from '../stores/guardianProposals'
+import { useCapabilitiesStore } from '../stores/capabilities'
 const props = defineProps({
   /** `full` — sidebar session list (page). `compact` — dropdown (drawer). */
   layout: {
@@ -364,7 +419,17 @@ const farmContext = useFarmContextStore()
 const farmStore = useFarmStore()
 const guardianPanel = useGuardianPanelStore()
 const guardianProposals = useGuardianProposalsStore()
+const capabilities = useCapabilitiesStore()
 const farmIdRef = computed(() => farmContext.farmId)
+const zoneContextId = computed(() => {
+  const ref = guardianPanel.contextRef
+  if (!ref || ref.type !== 'zone' || !ref.id) return null
+  return Number(ref.id)
+})
+const zonePhotos = ref([])
+const photoThumbUrls = ref({})
+const photoUploading = ref(false)
+const selectedAttachmentIds = ref([])
 const { canOperate } = useFarmOperate(farmIdRef)
 
 const message = ref('')
@@ -398,8 +463,14 @@ watch(
   () => farmContext.farmId,
   (id) => {
     if (id) useFarmContext.value = true
+    void loadZonePhotosForChat()
   },
 )
+
+watch(zoneContextId, () => {
+  selectedAttachmentIds.value = []
+  void loadZonePhotosForChat()
+})
 
 watch(
   () => guardianPanel.prefilledMessage,
@@ -682,6 +753,72 @@ function apiBaseURL() {
   return import.meta.env.VITE_API_URL ?? 'http://localhost:8080'
 }
 
+function isAttachmentSelected(id) {
+  return selectedAttachmentIds.value.includes(id)
+}
+
+function toggleAttachment(id) {
+  const i = selectedAttachmentIds.value.indexOf(id)
+  if (i >= 0) {
+    selectedAttachmentIds.value = selectedAttachmentIds.value.filter((x) => x !== id)
+    return
+  }
+  if (selectedAttachmentIds.value.length >= 3) return
+  selectedAttachmentIds.value = [...selectedAttachmentIds.value, id]
+}
+
+function revokeChatPhotoThumbs() {
+  for (const url of Object.values(photoThumbUrls.value)) {
+    if (url) URL.revokeObjectURL(url)
+  }
+  photoThumbUrls.value = {}
+}
+
+async function loadZonePhotosForChat() {
+  revokeChatPhotoThumbs()
+  zonePhotos.value = []
+  const zid = zoneContextId.value
+  if (!zid || !capabilities.visionChatEnabled) return
+  try {
+    const r = await api.get(`/zones/${zid}/photos`)
+    zonePhotos.value = r.data?.photos ?? []
+    const thumbs = {}
+    await Promise.all(zonePhotos.value.map(async (p) => {
+      try {
+        const img = await api.get(`/file-attachments/${p.id}/content`, { responseType: 'blob' })
+        thumbs[p.id] = URL.createObjectURL(img.data)
+      } catch { /* optional thumb */ }
+    }))
+    photoThumbUrls.value = thumbs
+  } catch {
+    zonePhotos.value = []
+  }
+}
+
+async function onChatPhotoSelected(ev) {
+  const file = ev.target?.files?.[0]
+  ev.target.value = ''
+  const zid = zoneContextId.value
+  if (!file || !zid || photoUploading.value) return
+  photoUploading.value = true
+  try {
+    const fd = new FormData()
+    fd.append('file', file)
+    const r = await api.post(`/zones/${zid}/photos`, fd)
+    const att = r.data?.file_attachment
+    if (att?.id) {
+      await loadZonePhotosForChat()
+      if (selectedAttachmentIds.value.length < 3) {
+        selectedAttachmentIds.value = [...selectedAttachmentIds.value, att.id]
+      }
+    }
+  } catch (e) {
+    errorMessage.value = e.response?.data?.error || e.message || 'Photo upload failed'
+  } finally {
+    photoUploading.value = false
+  }
+}
+
 async function send() {
   if (!message.value.trim()) return
   if (useFarmContext.value && !farmContext.farmId) return
@@ -690,6 +827,7 @@ async function send() {
   streaming.value = true
 
   const userMessage = message.value.trim()
+  const attachedIds = [...selectedAttachmentIds.value]
   const body = { message: userMessage, stream: true }
   if (sessionId.value) body.session_id = sessionId.value
   if (useFarmContext.value && farmContext.farmId) {
@@ -697,6 +835,9 @@ async function send() {
   }
   if (guardianPanel.contextRef) {
     body.context_ref = guardianPanel.contextRef
+  }
+  if (attachedIds.length) {
+    body.attachment_ids = attachedIds
   }
 
   const token = localStorage.getItem('gr33n_token') ?? ''
@@ -729,8 +870,11 @@ async function send() {
         citations: Array.isArray(finalEvent.citations) ? finalEvent.citations : [],
         proposals: normalizeProposals(finalEvent.proposals),
         farm_id: body.farm_id ?? null,
+        attachment_ids: attachedIds,
+        vision_used: !!finalEvent.vision_used,
       })
       message.value = ''
+      selectedAttachmentIds.value = []
       guardianPanel.clearPrefill()
       if (finalEvent.proposals?.length && farmContext.farmId) {
         await guardianProposals.refreshPendingCount(farmContext.farmId)
@@ -784,6 +928,8 @@ function handleSSEBlock(block) {
   }
   return null
 }
+
+onUnmounted(revokeChatPhotoThumbs)
 
 onMounted(async () => {
   await refreshSessions()

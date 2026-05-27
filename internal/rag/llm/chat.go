@@ -79,6 +79,32 @@ func timeoutFromEnv() time.Duration {
 	return time.Duration(n) * time.Second
 }
 
+// NewVisionChatClientFromEnv builds a client for multimodal turns (Phase 30 WS6).
+// Requires LLM_VISION_MODEL and a base URL (LLM_VISION_BASE_URL or LLM_BASE_URL).
+func NewVisionChatClientFromEnv() (*Client, error) {
+	model := strings.TrimSpace(os.Getenv("LLM_VISION_MODEL"))
+	base := strings.TrimSpace(os.Getenv("LLM_VISION_BASE_URL"))
+	if base == "" {
+		base = strings.TrimSpace(os.Getenv("LLM_BASE_URL"))
+	}
+	if model == "" || base == "" {
+		return nil, errors.New("vision chat requires LLM_VISION_MODEL and LLM_BASE_URL or LLM_VISION_BASE_URL")
+	}
+	key := strings.TrimSpace(os.Getenv("LLM_VISION_API_KEY"))
+	if key == "" {
+		key = strings.TrimSpace(os.Getenv("LLM_API_KEY"))
+	}
+	return &Client{
+		BaseURL:     strings.TrimSuffix(base, "/"),
+		APIKey:      key,
+		Model:       model,
+		Temperature: temperatureFromEnv(),
+		MaxTokens:   maxTokensFromEnv(),
+		HTTPClient:  &http.Client{Timeout: timeoutFromEnv()},
+		Retry:       retryConfigFromEnv(),
+	}, nil
+}
+
 // NewChatClientFromEnv requires LLM_MODEL and LLM_BASE_URL (no implicit default URL so operators
 // opt in to a specific endpoint — local LM Studio vs cloud).
 func NewChatClientFromEnv() (*Client, error) {
@@ -98,16 +124,6 @@ func NewChatClientFromEnv() (*Client, error) {
 		Retry:       retryConfigFromEnv(),
 	}, nil
 }
-
-// Message is a single role + content entry in an OpenAI-style chat history.
-// Use "system", "user", or "assistant" for Role. Phase 27 WS5 follow-up uses
-// this for multi-turn requests (history + current user message).
-type Message struct {
-	Role    string `json:"role"`
-	Content string `json:"content"`
-}
-
-type chatMessage = Message
 
 // Usage captures the token accounting OpenAI-compatible servers return on
 // each completion. Zero values are valid — backends that don't report usage
@@ -233,14 +249,18 @@ func (c *Client) doChatOnce(ctx context.Context, raw []byte) (string, Usage, err
 	if parsed.Error != nil && parsed.Error.Message != "" {
 		return "", Usage{}, errors.New(parsed.Error.Message)
 	}
-	if len(parsed.Choices) == 0 || parsed.Choices[0].Message.Content == "" {
+	if len(parsed.Choices) == 0 {
+		return "", Usage{}, errors.New("empty chat response")
+	}
+	answer := strings.TrimSpace(parsed.Choices[0].Message.TextContent())
+	if answer == "" {
 		return "", Usage{}, errors.New("empty chat response")
 	}
 	var u Usage
 	if parsed.Usage != nil {
 		u = *parsed.Usage
 	}
-	return strings.TrimSpace(parsed.Choices[0].Message.Content), u, nil
+	return answer, u, nil
 }
 
 // ModelLabel returns the configured chat model id for API responses.

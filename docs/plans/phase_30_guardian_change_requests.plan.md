@@ -25,7 +25,7 @@ todos:
     status: completed
   - id: ws6-vision-chat
     content: "WS6: Vision chat (optional) — multimodal LLM env (e.g. llava via Ollama); attach zone photo to chat turn; proposals still confirm-only; agronomic disclaimer"
-    status: pending
+    status: completed
   - id: ws7-operator-expectations-doc
     content: "WS7: Operator expectations — what Guardian is/isn't at ship; copilot vs actor; human tasks (defoliation, plumbing); alerts vs PRs"
     status: completed
@@ -42,7 +42,7 @@ isProject: false
 
 ## Status
 
-**In progress.** Phase 29 foundation shipped. **WS1–WS5**, **WS7**, and **WS9** landed 2026-05-26. Phase 31 validates that confirmed **actuator PRs** reach real Pi GPIO.
+**In progress.** Phase 29 foundation shipped. **WS1–WS7** and **WS9** landed 2026-05-26 (**WS6** vision optional via `LLM_VISION_*`). Phase 31 validates that confirmed **actuator PRs** reach real Pi GPIO.
 
 ---
 

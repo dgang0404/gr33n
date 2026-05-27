@@ -165,6 +165,9 @@ Add this to your `~/.bashrc` or `~/.zshrc` to avoid typing it every time.
 | `LLM_TIMEOUT_SECONDS` | Answer synthesis | Chat HTTP client timeout; default **120** |
 | `LLM_RETRY_MAX_ATTEMPTS` | Answer synthesis + `/v1/chat` | Total tries including the first attempt; default **3**, clamped **1..8**. **1** disables retry. Retries HTTP 408/425/429/5xx, per-attempt timeout, network errors. Never retries caller cancellation or other 4xx. |
 | `LLM_RETRY_BACKOFF_MS` | Answer synthesis + `/v1/chat` | Initial backoff in ms; default **500**, clamped **10..30000**. Exponential doubling up to 10s with ±25% jitter. |
+| `LLM_VISION_MODEL` | `/v1/chat` with `attachment_ids` | Optional multimodal model (e.g. `llava`). When set, `GET /capabilities` exposes `vision_chat_enabled`. Uses `LLM_VISION_BASE_URL` or `LLM_BASE_URL`. |
+| `LLM_VISION_BASE_URL` | Vision chat | Optional; defaults to `LLM_BASE_URL`. |
+| `LLM_VISION_API_KEY` | Vision chat | Optional; defaults to `LLM_API_KEY`. |
 | `CHAT_SESSION_TTL_DAYS` | `/v1/chat` history retention | Sessions whose newest turn is older than this are pruned by a background loop. Default **30**, clamped **0..3650**. **0** disables pruning (history grows forever). |
 | `CHAT_SESSION_PRUNE_INTERVAL_HOURS` | Prune loop cadence | How often the loop runs after the startup delay. Default **24**, clamped **1..168**. |
 | `CHAT_SESSION_PRUNE_STARTUP_DELAY_SECONDS` | Prune loop startup | Delay before the first prune at API boot. Default **30**, clamped **0..600**. Lets RAG ingest / automation worker settle before the loop touches the chat tables. |

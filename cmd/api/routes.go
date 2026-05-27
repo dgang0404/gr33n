@@ -61,7 +61,7 @@ func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationwo
 	recipe := recipehandler.NewHandler(pool)
 	cropcycle := cropcyclehandler.NewHandler(pool)
 	rag := raghandler.NewHandler(pool, aiCfg.Enabled)
-	aichat := chathandler.NewHandler(pool, aiCfg)
+	aichat := chathandler.NewHandler(pool, aiCfg, fileStore)
 	plants := planthandler.NewHandler(pool)
 	animals := animalhandler.NewHandler(pool)
 	aquaponics := aquaponicshandler.NewHandler(pool)
@@ -108,7 +108,10 @@ func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationwo
 		httputil.WriteJSON(w, http.StatusOK, map[string]string{"mode": authMode})
 	})))
 	mux.Handle("GET /capabilities", withRequestLog("public", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		httputil.WriteJSON(w, http.StatusOK, map[string]bool{"ai_enabled": aiCfg.Enabled})
+		httputil.WriteJSON(w, http.StatusOK, map[string]bool{
+			"ai_enabled":         aiCfg.Enabled,
+			"vision_chat_enabled": ai.VisionConfigured(),
+		})
 	})))
 
 	// ── Pi routes — API key required ─────────────────────────────────────────

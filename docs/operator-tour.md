@@ -98,7 +98,7 @@ Includes alert ack/read, **create task**, cycle stage, schedule/program/rule pat
 ### Vision and photos — what to expect
 
 - **Zone photos (shipped):** upload on **Zone detail**; Guardian knows photos exist and can discuss walkthrough context.
-- **Leaf/crop image analysis (optional):** needs a **multimodal** LLM; treat answers as **hypotheses**, not certified diagnosis. Prefer **create task** over silent config changes.
+- **Leaf/crop image analysis (optional, WS6):** set `LLM_VISION_MODEL` (e.g. `llava` on Ollama); attach zone photos in the Guardian drawer when asking from a zone; treat answers as **hypotheses**, not certified diagnosis. Prefer **create task** over silent config changes.
 
 ### Platform facts (what Guardian should say about itself)
 
