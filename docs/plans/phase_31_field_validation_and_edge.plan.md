@@ -12,7 +12,7 @@ todos:
     status: completed
   - id: ws2-pi-contract-field
     content: "WS2: Pi field checklist — extend pi-integration-guide with warehouse-room wiring sketch, one-relay-safe-test, offline queue drill; align with TestPiContract* smokes"
-    status: pending
+    status: completed
   - id: ws3-one-actuator-story
     content: "WS3: Safe actuator story — end-to-end: Phase 30 PR confirm OR rule → pending_command → Pi executes → actuator_events → audit; E-stop checklist (doc)"
     status: pending
@@ -38,7 +38,7 @@ isProject: false
 
 ## Status
 
-**In progress (WS1 shipped).** Phase 29 (Guardian agent layer) should reach **WS6–WS9** ship criteria first. Phase 30 (Guardian change requests) can land before or in parallel with Phase 31 WS1 — field bench work validates that **confirmed PRs** reach real GPIO.
+**In progress (WS1–WS2 shipped).** Phase 29 (Guardian agent layer) should reach **WS6–WS9** ship criteria first. Phase 30 (Guardian change requests) can land before or in parallel with Phase 31 WS1 — field bench work validates that **confirmed PRs** reach real GPIO.
 
 **Preconditions (already met or in progress):**
 
@@ -74,7 +74,7 @@ Parallel activity (README already says this): Pi / MQTT validation can start **b
 | WS | Focus | Primary artifacts |
 |----|-------|-------------------|
 | **WS1** | Laptop/breadboard loop | Docs + optional `make edge-smoke-help`; dashboard shows non-404 readings |
-| **WS2** | Pi field checklist | [`docs/pi-integration-guide.md`](../pi-integration-guide.md), wiring annex |
+| **WS2** | Pi field checklist | [`docs/pi-integration-guide.md`](../pi-integration-guide.md) §8, wiring annex |
 | **WS3** | One safe actuator E2E | Phase 30 PR → pending_command → Pi → event; safety checklist doc |
 | **WS4** | MQTT multi-zone pattern | [`docs/mqtt-edge-operator-playbook.md`](../mqtt-edge-operator-playbook.md) extension |
 | **WS5** | Recipe pack demo | Sample catalog JSON + import script stub |

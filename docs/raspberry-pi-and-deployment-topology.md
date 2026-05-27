@@ -105,7 +105,7 @@ Network rules: Pis and dashboards only need routes to **API :443/:8080** (TLS in
 | Pi OS apt (edge only) | [`scripts/install-pi-edge-deps.sh`](../scripts/install-pi-edge-deps.sh) |
 | Debian/Ubuntu dev server (Postgres + Node, not Go) | [`scripts/install-system-deps-debian.sh`](../scripts/install-system-deps-debian.sh), [`INSTALL.md`](../INSTALL.md) |
 | First clone / bootstrap | [`scripts/setup-first-clone.sh`](../scripts/setup-first-clone.sh), [`local-operator-bootstrap.md`](local-operator-bootstrap.md) |
-| Pi ↔ API protocol | [`pi-integration-guide.md`](pi-integration-guide.md) |
+| Pi ↔ API protocol | [`pi-integration-guide.md`](pi-integration-guide.md) · **§8 field checklist** (Phase 31 WS2) |
 | MQTT | [`mqtt-edge-operator-playbook.md`](mqtt-edge-operator-playbook.md) |
 | Workflow diagram | [`workflow-guide.md`](workflow-guide.md) §1 |
 

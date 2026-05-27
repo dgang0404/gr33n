@@ -7,6 +7,8 @@
 > - MQTT edge playbook: [`mqtt-edge-operator-playbook.md`](mqtt-edge-operator-playbook.md) — when you run the MQTT → API bridge instead of (or alongside) direct HTTP.
 > - Operator workflow narrative: [`workflow-guide.md`](workflow-guide.md) — how the pieces connect end-to-end.
 > - **Hardware layout & scaling:** [`raspberry-pi-and-deployment-topology.md`](raspberry-pi-and-deployment-topology.md) — Pi OS packages, full stack on one Pi, splitting DB/API/UI onto servers or containers as the farm grows.
+> - **Laptop stub loop first (Phase 31 WS1):** [`local-operator-bootstrap.md`](local-operator-bootstrap.md) — *Edge loop in 5 commands* before wiring GPIO.
+> - **Enterprise zone naming (hypothetical):** [`hypothetical-enterprise-topology.md`](hypothetical-enterprise-topology.md) — one plastic room → multiple zones.
 
 ---
 
@@ -188,3 +190,133 @@ So today **`PI_API_KEY` is a single shared farm-network secret**, not a per-devi
 5. **Revoke old material:** delete the previous secret from config repos, shell history, and chat logs.
 
 `AUTH_MODE=dev` (with a **`-tags dev`** build) bypasses key/JWT checks for local development — **never** use that combination on an internet-exposed host.
+
+---
+
+## 8. Field checklist — first Pi on a real bench (Phase 31 WS2)
+
+**Goal:** An operator with a Raspberry Pi knows **exactly** what to wire and configure first — before mains-powered pumps or warehouse-scale rollouts.
+
+**Prerequisites:** Complete the **laptop stub loop** once ([`local-operator-bootstrap.md` — Edge loop in 5 commands](local-operator-bootstrap.md)) so API, `PI_API_KEY`, and sensor IDs are proven before GPIO.
+
+### 8.1 Safety (read before GPIO)
+
+| Rule | Why |
+|------|-----|
+| **No mains AC on a breadboard** | Bench work is **3.3 V / 5 V logic only** — DHT22, I2C, **3.3 V relay modules**, **LED + resistor** for actuator proof. |
+| **Mains loads through rated enclosures** | Pumps, contactors, and line-voltage lighting belong in **listed relay panels** with fuses, strain relief, and physical E-stop — not on the Pi desk. |
+| **Fail-safe defaults** | Many optocoupler relay boards are **active-LOW** (gr33n client uses `active_high=False`). Power loss should **de-energize** loads that can flood or overheat — **operator wiring responsibility**; software v1 does not cut GPIO on comms loss. |
+| **One relay / one load first** | Prove **`pending_command`** with an **LED or small 5 V fan** before a solenoid or pump (Phase 31 WS3). |
+| **E-stop story** | Keep a manual way to cut power to the load under test; document who is allowed to Confirm Guardian actuator PRs on production farms. |
+
+gr33n documents safe paths; it does **not** certify hardware. See also [`recommended-hardware-and-sizing.md`](recommended-hardware-and-sizing.md) (edge vs central server).
+
+### 8.2 Zone naming — one plastic room, three tiers (example)
+
+For a single **plastic grow room** with **three vertical shelves**, pick **one convention** and keep sensor/actuator IDs aligned in [`pi_client/config.yaml`](../pi_client/config.yaml) and the dashboard:
+
+| Physical layout | gr33n mapping (recommended for independent EC/light per tier) |
+|-----------------|------------------------------------------------------------------|
+| Room envelope | One **`farm_id`** (e.g. demo **gr33n Demo Farm** = `1`) |
+| Bottom / middle / top shelf | Three **`zones`**, e.g. `Room A — Tier 1`, `Room A — Tier 2`, `Room A — Tier 3` |
+| One Pi per room | One **`devices`** row + actuators per relay channel; sensors tagged to tier **`zone_id`** |
+| Alternative (single zone) | One zone + three **`sensor_id`** rows (PAR/temp/humidity per shelf) — simpler UI, less per-tier automation |
+
+Enterprise-scale naming patterns: [`hypothetical-enterprise-topology.md`](hypothetical-enterprise-topology.md) (*Plastic grow room → zones*).
+
+Create zones in the dashboard (**Zones**) or via seed/template **before** editing `config.yaml` — run [`scripts/print-demo-sensor-ids.sh`](../scripts/print-demo-sensor-ids.sh) or `./scripts/run-edge-stub-client.sh` on a laptop to confirm **`sensor_id`** values match DB names.
+
+### 8.3 Copy-paste field checklist
+
+Use this on first deploy; tick items in order.
+
+```
+[ ] 0. Laptop stub loop OK — make edge-smoke-help; dashboard Live Sensors show values
+[ ] 1. Server — API reachable on LAN (https:// or http://); AUTH_MODE=production or auth_test;
+       PI_API_KEY set on API; JWT_SECRET set; firewall allows Pi → API port only (not Postgres to internet)
+[ ] 2. Pi OS — Raspberry Pi OS (64-bit); SSH; NTP/chrony (correct reading_time UTC)
+[ ] 3. Packages — from repo on Pi: ./scripts/install-pi-edge-deps.sh
+       (see docs/raspberry-pi-and-deployment-topology.md §2)
+[ ] 4. Pi client — cd pi_client && ./setup.sh; edit config.yaml:
+       api.base_url = http://<api-lan-ip>:8080
+       api.api_key  = <same as server PI_API_KEY>
+       farm.farm_id = <your farm>
+       sensors[]    = sensor_id values from DB (print-demo-sensor-ids.sh)
+       actuators[]  = device_id / actuator_id from dashboard Devices (after WS3 bench device exists)
+[ ] 5. systemd — sudo systemctl enable --now gr33n; journalctl -u gr33n -f
+[ ] 6. Readings — dashboard Live Sensors update within ~1 interval; Devices show online after heartbeat
+[ ] 7. Offline queue drill — stop API 2 min; client logs queue; start API; readings flush via batch (§8.5)
+[ ] 8. One-relay safe test — LED on GPIO via pending_command (§8.6); then consider real load in enclosure
+[ ] 9. Contract smokes green — make test (TestPiContract*) on CI/dev DB documents same HTTP shapes (§8.7)
+```
+
+### 8.4 Power, network, and secrets
+
+| Topic | Check |
+|-------|--------|
+| **Pi power** | Official **5 V / 3 A+** PSU (USB-C Pi 4/5); avoid undersized phone chargers under sensor + Wi-Fi load. |
+| **Relay module** | **3.3 V logic**, separate **5 V** relay coil supply if the board requires it; common ground with Pi. |
+| **`PI_API_KEY`** | Same secret on API **and** `pi_client/config.yaml` (or MQTT bridge env). Rotate per [§7](#7-pi-api-key-security-middleware-and-least-privilege). |
+| **LAN firewall** | Pi → **API port only**; do not expose Postgres or Ollama to the field VLAN unless intentional. |
+| **TLS** | Production: reverse proxy (Caddy/nginx) with TLS in front of API; set `api.base_url` to `https://…`. |
+| **Wi-Fi vs Ethernet** | Prefer **Ethernet** on greenhouse edges; if Wi-Fi, expect offline queue use during drops. |
+
+Topology ladder (edge-only Pi vs all-on-one-Pi): [`raspberry-pi-and-deployment-topology.md`](raspberry-pi-and-deployment-topology.md).
+
+### 8.5 Offline queue drill (operator)
+
+Confirms [`offline_queue_path`](../pi_client/gr33n_client.py) behavior before you rely on it in the field.
+
+1. Pi client running; dashboard shows live readings.
+2. **Stop the API** (or block Pi → API with firewall) for **2–3 minutes**.
+3. Confirm client still runs — readings accumulate in SQLite (`/var/lib/gr33n/queue.db` or path in config).
+4. **Restore API**; within **`offline_flush_interval_seconds`** (default 60), queued rows post via **`POST /sensors/readings/batch`**.
+5. Dashboard catches up; no duplicate manual steps required.
+
+Unit coverage: `test_gr33n_client.py` (offline queue + batch flush).
+
+### 8.6 One-relay safe test (bench, before WS3 E2E)
+
+Minimal GPIO proof **without** Guardian or automation worker:
+
+1. Wire **one LED + resistor** (or 3.3 V relay module input) to the GPIO pin in `config.yaml` `actuators[].gpio_pin` (default **BCM 17**).
+2. Ensure a **`devices`** + **`actuators`** row exists in the dashboard for that `device_id` / `actuator_id`.
+3. From API (JWT **Operate**), enqueue pending command on the device — same shape the automation worker uses — or wait for Phase 31 WS3 script / confirmed Guardian PR.
+4. Pi polls **`GET /farms/{id}/devices`** with **`X-API-Key`** → sees **`config.pending_command`** (base64 JSON in API responses — client decodes automatically).
+5. Client executes → **`POST /actuators/{id}/events`** → **`DELETE /devices/{id}/pending-command`**.
+
+Full narrative + Guardian PR path: Phase 31 WS3 ([`phase_31_field_validation_and_edge.plan.md`](plans/phase_31_field_validation_and_edge.plan.md)).
+
+### 8.7 API contract smokes (same shapes as the Pi)
+
+Run on a dev machine with Postgres + seed; documents the HTTP contract the Pi must speak:
+
+```bash
+export DATABASE_URL='postgres://gr33n:gr33n@127.0.0.1:5433/gr33n?sslmode=disable'
+make test   # includes cmd/api — tags dev
+# Or narrow:
+go test -tags dev ./cmd/api/ -run TestPiContract
+```
+
+| Test | What it proves for field ops |
+|------|------------------------------|
+| `TestPiContractScheduleAndProgramFeedback` | `pending_command` with schedule + program → Pi POST event with provenance |
+| `TestPiContractRuleFeedback` | Rule-triggered pending → actuator event + audit fields |
+| `TestPiContractRejectRuleAndProgramTogether` | Invalid dual provenance rejected (Pi should not send both) |
+| `TestPiContractRejectUnknownSchedule` | Bad schedule id rejected |
+
+Source: [`cmd/api/smoke_pi_contract_test.go`](../cmd/api/smoke_pi_contract_test.go).
+
+Python client contract (no DB): `cd pi_client && python3 -m pytest test_gr33n_client.py -v`.
+
+### 8.8 When something fails
+
+| Symptom | Check |
+|---------|--------|
+| **401 / 403** on readings | `PI_API_KEY` mismatch; API restarted after `.env` change? |
+| **404** on sensor post | Wrong **`sensor_id`** — run `print-demo-sensor-ids.sh` |
+| **Devices stay offline** | Heartbeat uses `device_id` from actuators config; PATCH path reachable? |
+| **pending_command never clears** | `GET /farms/{id}/devices` returns config? Actuator `device_id` matches config? |
+| **Queue grows forever** | API down or batch POST failing — see §8.5 |
+
+Broader ops: [`operator-troubleshooting.md`](operator-troubleshooting.md), [`mqtt-edge-operator-playbook.md`](mqtt-edge-operator-playbook.md) if using MQTT instead of direct HTTP.

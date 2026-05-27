@@ -514,6 +514,7 @@ make dev-stack       # Idempotent: migrations + seed on existing DB (auto-skips 
 make dev-stack-fresh # Wipe Compose volume + full bootstrap + seed (clean Guardian demo)
 make dev-stack-fresh-rag  # Same + rag-ingest demo farm when EMBEDDING_API_KEY is set
 make edge-smoke-help # Phase 31 WS1 — print laptop stub loop (pi_client → Live Sensors)
+# Pi field checklist (Phase 31 WS2): docs/pi-integration-guide.md §8
 make run-auth-test # API with AUTH_MODE=auth_test (JWT + PI_API_KEY; restart after git pull)
 make rag-ingest-demo   # Index farm_id=1 only (skip message if no embedding key)
 make local-up        # dev-stack then API + UI (same as ./scripts/dev-stack.sh --serve)

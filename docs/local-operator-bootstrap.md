@@ -113,6 +113,8 @@ Prove the **field path on a laptop** before wiring a Pi: `pi_client` uses **stub
 
 Shortcut: **`make edge-smoke-help`** prints the same steps.
 
+**Real Pi on a bench:** after the stub loop works, follow **[`pi-integration-guide.md` §8 — Field checklist](pi-integration-guide.md#8-field-checklist--first-pi-on-a-real-bench-phase-31-ws2)** (power, relay safety, `PI_API_KEY`, three-tier zone naming, offline queue drill, `TestPiContract*` links).
+
 **Sensor IDs:** [`pi_client/config.demo-stub.yaml`](../pi_client/config.demo-stub.yaml) maps **`sensor_id`** to master_seed names for a **fresh** `make dev-stack-fresh` (e.g. **3** = Air Temp Indoor, **5** = Air Humidity Indoor). Duplicate seed runs can shift ids — align with step 3 or use a clean volume via **`make dev-stack-fresh`**.
 
 **Automation simulation (off path for WS1):** [`.env.example`](../.env.example) sets **`AUTOMATION_SIMULATION_MODE=true`**. The automation worker then records **simulated** actuator events and does **not** enqueue **`pending_command`** on devices. That is intentional for laptop demos: **`pi_client`** supplies **real ingest** for readings only. To exercise GPIO / **`pending_command`** round-trip (Phase 31 WS3), set **`AUTOMATION_SIMULATION_MODE=false`** and bind actuators to real **`device_id`** rows — see [`pi-integration-guide.md`](pi-integration-guide.md).
