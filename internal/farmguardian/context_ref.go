@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	db "gr33n-api/internal/db"
+	"gr33n-api/internal/zonephotos"
 )
 
 // ContextRef is the UI "Ask Guardian" anchor — which alert, cycle, or zone
@@ -142,6 +143,14 @@ func renderZoneContext(ctx context.Context, q *db.Queries, farmID, zoneID int64,
 	sensors, _ := q.ListSensorsByZone(ctx, &zoneID)
 	if len(sensors) > 0 {
 		b.WriteString(fmt.Sprintf("Sensors in zone: %d", len(sensors)))
+	}
+	if meta, _, err := zonephotos.ParseMeta(z.MetaData); err == nil && len(meta.PhotoAttachmentIDs) > 0 {
+		b.WriteByte('\n')
+		b.WriteString(fmt.Sprintf("Reference photos on file: %d", len(meta.PhotoAttachmentIDs)))
+		if latest := zonephotos.LatestID(meta); latest > 0 {
+			b.WriteString(fmt.Sprintf(" (latest attachment #%d)", latest))
+		}
+		b.WriteString(". Ask about this zone's walkthrough photos; pixel-level analysis requires a vision-capable model.")
 	}
 	return strings.TrimSpace(b.String())
 }

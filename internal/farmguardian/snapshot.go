@@ -9,6 +9,7 @@ import (
 	"time"
 
 	db "gr33n-api/internal/db"
+	"gr33n-api/internal/zonephotos"
 )
 
 // SnapshotMaxZones caps how many zone names get rendered into the prompt.
@@ -41,6 +42,15 @@ type Snapshot struct {
 	ActiveCycles       []ActiveCycle
 	UnreadAlerts       int64
 	UnreadAlertDetails []UnreadAlertDetail
+	ZonePhotoHints     []ZonePhotoHint
+}
+
+// ZonePhotoHint tells the model which zones have operator reference photos on file.
+type ZonePhotoHint struct {
+	ZoneID             int64
+	ZoneName           string
+	PhotoCount         int
+	LatestAttachmentID int64
 }
 
 // UnreadAlertDetail is the prompt-ready projection of a single unread
@@ -205,6 +215,23 @@ func (s Snapshot) Render() string {
 			b.WriteString(fmt.Sprintf("  - (+ %d more unread alerts)\n", extra))
 		}
 	}
+	if len(s.ZonePhotoHints) > 0 {
+		b.WriteString("- Zone reference photos on file:\n")
+		for _, h := range s.ZonePhotoHints {
+			b.WriteString("  - ")
+			b.WriteString(h.ZoneName)
+			b.WriteString(fmt.Sprintf(" (%d photo", h.PhotoCount))
+			if h.PhotoCount != 1 {
+				b.WriteString("s")
+			}
+			b.WriteString(")")
+			if h.LatestAttachmentID > 0 {
+				b.WriteString(fmt.Sprintf("; latest attachment #%d (/file-attachments/%d/content)", h.LatestAttachmentID, h.LatestAttachmentID))
+			}
+			b.WriteString("\n")
+		}
+		b.WriteString("  - Operators can ask Guardian about a zone's walkthrough photos; image analysis needs a vision model (optional WS6).\n")
+	}
 	return strings.TrimRight(b.String(), "\n")
 }
 
@@ -258,8 +285,19 @@ func BuildSnapshot(ctx context.Context, q *db.Queries, farmID int64) (Snapshot, 
 		s.ZoneNames = make([]string, 0, len(zones))
 		for _, z := range zones {
 			s.ZoneNames = append(s.ZoneNames, z.Name)
+			if meta, _, mErr := zonephotos.ParseMeta(z.MetaData); mErr == nil && len(meta.PhotoAttachmentIDs) > 0 {
+				s.ZonePhotoHints = append(s.ZonePhotoHints, ZonePhotoHint{
+					ZoneID:             z.ID,
+					ZoneName:           z.Name,
+					PhotoCount:         len(meta.PhotoAttachmentIDs),
+					LatestAttachmentID: zonephotos.LatestID(meta),
+				})
+			}
 		}
 		sort.Strings(s.ZoneNames)
+		sort.Slice(s.ZonePhotoHints, func(i, j int) bool {
+			return s.ZonePhotoHints[i].ZoneName < s.ZonePhotoHints[j].ZoneName
+		})
 	}
 
 	cycles, cErr := q.ListCropCyclesByFarm(ctx, farmID)

@@ -46,6 +46,55 @@
         </div>
       </div>
 
+      <!-- Zone reference photos (Phase 30 WS5) -->
+      <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="text-sm font-semibold text-white">Reference photos</h2>
+          <label class="text-xs text-green-600 hover:text-green-400 cursor-pointer">
+            <input
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              class="hidden"
+              :disabled="photoUploading"
+              @change="onPhotoSelected"
+            />
+            {{ photoUploading ? 'Uploading…' : '+ Add photo' }}
+          </label>
+        </div>
+        <p v-if="photoError" class="text-red-400 text-xs mb-2">{{ photoError }}</p>
+        <p v-if="photosLoading" class="text-zinc-500 text-sm">Loading photos…</p>
+        <p v-else-if="!zonePhotos.length" class="text-zinc-500 text-sm">
+          Walkthrough or crop reference photos for this zone. Farm Guardian sees them in the farm snapshot.
+        </p>
+        <div v-else class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+          <div
+            v-for="p in zonePhotos"
+            :key="p.id"
+            class="bg-zinc-950 border border-zinc-800 rounded-lg overflow-hidden group"
+          >
+            <button type="button" class="block w-full aspect-square" @click="openPhoto(p)">
+              <img
+                :src="photoThumbUrl(p)"
+                :alt="p.file_name || 'Zone photo'"
+                class="w-full h-full object-cover"
+                loading="lazy"
+              />
+            </button>
+            <div class="px-2 py-1.5 flex items-center justify-between gap-1">
+              <p class="text-zinc-500 text-[10px] truncate flex-1">{{ p.file_name }}</p>
+              <button
+                type="button"
+                class="text-zinc-600 hover:text-red-400 text-[10px] shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                :disabled="photoDeleting[p.id]"
+                @click="removePhoto(p)"
+              >
+                Remove
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- Live Sensor Readings -->
       <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
         <h2 class="text-sm font-semibold text-white mb-3">Live Readings</h2>
@@ -217,7 +266,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import api from '../api'
 import { useFarmStore } from '../stores/farm'
@@ -230,6 +279,12 @@ const route = useRoute()
 const store = useFarmStore()
 const farmContext = useFarmContextStore()
 const toggling = ref({})
+const zonePhotos = ref([])
+const photoThumbUrls = ref({})
+const photosLoading = ref(false)
+const photoUploading = ref(false)
+const photoDeleting = ref({})
+const photoError = ref('')
 
 const programs = ref([])
 const events = ref([])
@@ -303,8 +358,92 @@ onMounted(async () => {
     const res = await api.get(`/farms/${fid}/setpoints`, { params: { zone_id: zoneId.value } })
     setpoints.value = res.data ?? []
   } catch { setpoints.value = [] }
-  await loadEvents()
+  await Promise.all([loadEvents(), loadZonePhotos()])
 })
+
+function photoThumbUrl(p) {
+  return photoThumbUrls.value[p.id] || ''
+}
+
+function revokePhotoThumbUrls() {
+  for (const url of Object.values(photoThumbUrls.value)) {
+    if (url) URL.revokeObjectURL(url)
+  }
+  photoThumbUrls.value = {}
+}
+
+async function loadZonePhotos() {
+  photosLoading.value = true
+  photoError.value = ''
+  revokePhotoThumbUrls()
+  try {
+    const r = await api.get(`/zones/${zoneId.value}/photos`)
+    zonePhotos.value = r.data?.photos ?? []
+    const thumbs = {}
+    await Promise.all(zonePhotos.value.map(async (p) => {
+      try {
+        const img = await api.get(`/file-attachments/${p.id}/content`, { responseType: 'blob' })
+        thumbs[p.id] = URL.createObjectURL(img.data)
+      } catch { /* thumbnail optional */ }
+    }))
+    photoThumbUrls.value = thumbs
+  } catch (e) {
+    zonePhotos.value = []
+    photoError.value = e.response?.data?.error || e.message || 'Could not load photos'
+  } finally {
+    photosLoading.value = false
+  }
+}
+
+onUnmounted(revokePhotoThumbUrls)
+
+async function onPhotoSelected(ev) {
+  const file = ev.target?.files?.[0]
+  ev.target.value = ''
+  if (!file || !zone.value) return
+  photoUploading.value = true
+  photoError.value = ''
+  try {
+    const fd = new FormData()
+    fd.append('file', file)
+    await api.post(`/zones/${zoneId.value}/photos`, fd)
+    if (farmId.value) await store.loadAll(farmId.value)
+    await loadZonePhotos()
+  } catch (e) {
+    photoError.value = e.response?.data?.error || e.message || 'Upload failed'
+  } finally {
+    photoUploading.value = false
+  }
+}
+
+async function openPhoto(p) {
+  try {
+    const r = await api.get(`/file-attachments/${p.id}/download`)
+    const url = String(r.data?.url || '')
+    if (!url) throw new Error('Missing download URL')
+    const finalUrl = url.startsWith('http://') || url.startsWith('https://')
+      ? url
+      : `${api.defaults.baseURL}${url}`
+    window.open(finalUrl, '_blank', 'noopener')
+  } catch (e) {
+    photoError.value = e.response?.data?.error || e.message || 'Could not open photo'
+  }
+}
+
+async function removePhoto(p) {
+  if (!p?.id || photoDeleting.value[p.id]) return
+  photoDeleting.value[p.id] = true
+  photoError.value = ''
+  try {
+    await api.delete(`/zones/${zoneId.value}/photos/${p.id}`)
+    if (farmId.value) await store.loadAll(farmId.value)
+    await loadZonePhotos()
+  } catch (e) {
+    photoError.value = e.response?.data?.error || e.message || 'Could not remove photo'
+  } finally {
+    photoDeleting.value[p.id] = false
+  }
+}
 
 function actuatorName(id) {
   return store.actuators.find(a => a.id === id)?.name || `Actuator ${id}`

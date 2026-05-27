@@ -190,7 +190,13 @@ func (h *Handler) logReceiptAudit(r *http.Request, farmID, attachmentID int64, k
 	})
 }
 
-func (h *Handler) logReceiptAccess(r *http.Request, att db.Gr33ncoreFileAttachment, endpoint string) {
+func (h *Handler) logAttachmentAccess(r *http.Request, att db.Gr33ncoreFileAttachment, endpoint string) {
+	kind := "file_attachment_access"
+	if att.RelatedTableName == "cost_transactions" {
+		kind = "cost_receipt_access"
+	} else if att.RelatedTableName == "zones" {
+		kind = "zone_photo_access"
+	}
 	mod := "gr33ncore"
 	tbl := "file_attachments"
 	aid := strconv.FormatInt(att.ID, 10)
@@ -201,7 +207,7 @@ func (h *Handler) logReceiptAccess(r *http.Request, att db.Gr33ncoreFileAttachme
 		TargetTable:    &tbl,
 		TargetRecordID: &aid,
 		Details: map[string]any{
-			"kind":          "cost_receipt_access",
+			"kind":          kind,
 			"endpoint":      endpoint,
 			"file_type":     att.FileType,
 			"related_table": att.RelatedTableName,
@@ -215,7 +221,7 @@ func (h *Handler) Download(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		return
 	}
-	h.logReceiptAccess(r, att, "content")
+	h.logAttachmentAccess(r, att, "content")
 	rc, err := h.store.Open(r.Context(), att.StoragePath)
 	if err != nil {
 		httputil.WriteError(w, http.StatusNotFound, "stored file missing")
@@ -238,7 +244,7 @@ func (h *Handler) DownloadTarget(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		return
 	}
-	h.logReceiptAccess(r, att, "download")
+	h.logAttachmentAccess(r, att, "download")
 	url, err := h.store.DownloadURL(r.Context(), att.StoragePath, att.FileName, contentType(att), h.downloadURLTTL)
 	if err != nil {
 		// Local storage and any non-presigning backends continue to use the proxied content endpoint.
@@ -279,12 +285,22 @@ func (h *Handler) loadReadableAttachment(w http.ResponseWriter, r *http.Request)
 		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
 		return db.Gr33ncoreFileAttachment{}, err
 	}
-	if att.RelatedTableName != "cost_transactions" {
+	switch att.RelatedTableName {
+	case "cost_transactions":
+		if !farmauthz.RequireCostRead(w, r, h.q, att.FarmID) {
+			return db.Gr33ncoreFileAttachment{}, errors.New("forbidden")
+		}
+	case "zones":
+		if att.FileType != "zone_photo" {
+			httputil.WriteError(w, http.StatusNotFound, "attachment not found")
+			return db.Gr33ncoreFileAttachment{}, errors.New("unsupported attachment type")
+		}
+		if !farmauthz.RequireFarmMember(w, r, h.q, att.FarmID) {
+			return db.Gr33ncoreFileAttachment{}, errors.New("forbidden")
+		}
+	default:
 		httputil.WriteError(w, http.StatusNotFound, "attachment not found")
 		return db.Gr33ncoreFileAttachment{}, errors.New("unsupported attachment table")
-	}
-	if !farmauthz.RequireCostRead(w, r, h.q, att.FarmID) {
-		return db.Gr33ncoreFileAttachment{}, errors.New("forbidden")
 	}
 	return att, nil
 }

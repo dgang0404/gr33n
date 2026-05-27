@@ -326,6 +326,9 @@ func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationwo
 	mux.Handle("PUT /energy-prices/{id}", jwt(http.HandlerFunc(cost.UpdateEnergyPrice)))
 	mux.Handle("DELETE /energy-prices/{id}", jwt(http.HandlerFunc(cost.DeleteEnergyPrice)))
 	mux.Handle("POST /farms/{id}/cost-receipts", jwt(http.HandlerFunc(files.UploadCostReceipt)))
+	mux.Handle("POST /zones/{id}/photos", jwt(http.HandlerFunc(files.UploadZonePhoto)))
+	mux.Handle("GET /zones/{id}/photos", jwt(http.HandlerFunc(files.ListZonePhotos)))
+	mux.Handle("DELETE /zones/{id}/photos/{attachment_id}", jwt(http.HandlerFunc(files.DeleteZonePhoto)))
 	mux.Handle("GET /file-attachments/{id}/download", jwt(http.HandlerFunc(files.DownloadTarget)))
 	mux.Handle("GET /file-attachments/{id}/content", jwt(http.HandlerFunc(files.Download)))
 

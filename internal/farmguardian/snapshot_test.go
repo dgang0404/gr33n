@@ -31,6 +31,27 @@ func TestSnapshot_RenderEmptyReturnsEmpty(t *testing.T) {
 	}
 }
 
+func TestSnapshot_RenderZonePhotos(t *testing.T) {
+	s := Snapshot{
+		ZoneCount: 1,
+		ZoneNames: []string{"Flower Room"},
+		ZonePhotoHints: []ZonePhotoHint{{
+			ZoneName: "Flower Room", PhotoCount: 2, LatestAttachmentID: 99,
+		}},
+	}
+	got := s.Render()
+	for _, want := range []string{
+		"Zone reference photos on file:",
+		"Flower Room (2 photos)",
+		"attachment #99",
+		"walkthrough photos",
+	} {
+		if !strings.Contains(got, want) {
+			t.Fatalf("render missing %q:\n%s", want, got)
+		}
+	}
+}
+
 func TestSnapshot_RenderZonesAndAlerts(t *testing.T) {
 	s := Snapshot{
 		ZoneCount:    3,

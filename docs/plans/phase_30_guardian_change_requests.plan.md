@@ -22,7 +22,7 @@ todos:
     status: completed
   - id: ws5-zone-images
     content: "WS5: Zone images — attach photos to zones (file storage + zone meta_data or link table); show in Zone UI + pass URLs into Guardian snapshot"
-    status: pending
+    status: completed
   - id: ws6-vision-chat
     content: "WS6: Vision chat (optional) — multimodal LLM env (e.g. llava via Ollama); attach zone photo to chat turn; proposals still confirm-only; agronomic disclaimer"
     status: pending
@@ -42,7 +42,7 @@ isProject: false
 
 ## Status
 
-**In progress.** Phase 29 foundation shipped. **WS1–WS4** and **WS9** landed 2026-05-26. Phase 31 validates that confirmed **actuator PRs** reach real Pi GPIO.
+**In progress.** Phase 29 foundation shipped. **WS1–WS5** and **WS9** landed 2026-05-26. Phase 31 validates that confirmed **actuator PRs** reach real Pi GPIO.
 
 ---
 
