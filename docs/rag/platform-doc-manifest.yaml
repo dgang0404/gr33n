@@ -1,0 +1,27 @@
+# Curated operator markdown for Guardian platform_doc RAG (Phase 32 WS8).
+# Paths are relative to the repo docs/ directory.
+# Re-run: ./scripts/rag-ingest-platform-docs.sh (idempotent per doc path).
+version: 1
+
+include:
+  - operator-tour.md
+  - local-operator-bootstrap.md
+  - workflow-guide.md
+  - pi-integration-guide.md
+  - operator-troubleshooting.md
+  - farm-guardian-architecture.md
+  - farm-guardian-persona-platform-context.md
+  - farm-guardian-ollama-setup.md
+  - audit-events-operator-playbook.md
+  - rag-scope-and-threat-model.md
+  - recommended-hardware-and-sizing.md
+  - tasks-first-operator-guide.md
+  - phase-14-operator-documentation.md
+  - phase-13-operator-documentation.md
+
+# Safety filter when expanding to directory globs later (explicit include list today).
+exclude_globs:
+  - "**/.env*"
+  - "**/.env.example"
+  - "**/openapi.yaml"
+  - "**/plans/phase_*_*.plan.md"

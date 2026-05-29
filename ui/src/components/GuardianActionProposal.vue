@@ -50,9 +50,13 @@
         class="text-xs text-red-300/95 bg-red-950/40 border border-red-900/60 rounded-md px-2.5 py-2"
         data-test="guardian-proposal-high-warning"
       >
-        High-impact change — review frozen args carefully before Confirm. This can alter farm
-        configuration, disable automation, or apply a bootstrap template.
+        {{ highRiskWarning }}
       </p>
+
+      <SetupPackProposalCard
+        v-if="isSetupPack"
+        :args="local.args"
+      />
 
       <p
         v-else-if="isMediumRisk && diffSummary"
@@ -95,6 +99,8 @@
 <script setup>
 import { computed, reactive, ref, watch } from 'vue'
 import api from '../api'
+import SetupPackProposalCard from './SetupPackProposalCard.vue'
+import { SETUP_PACK_HIGH_RISK_COPY } from '../lib/guardianSetupPack.js'
 
 const props = defineProps({
   proposal: { type: Object, required: true },
@@ -133,11 +139,21 @@ const TOOL_LABELS = {
   patch_rule: 'Patch automation rule',
   apply_bootstrap_template: 'Apply bootstrap template',
   enqueue_actuator_command: 'Queue Pi actuator command',
+  create_plant: 'Create plant',
+  create_crop_cycle: 'Start crop cycle',
+  create_fertigation_program: 'Create fertigation program',
+  apply_grow_setup_pack: 'Apply grow setup pack',
 }
 
 const riskTier = computed(() => (local.risk_tier || 'medium').toLowerCase())
+const isSetupPack = computed(() => local.tool === 'apply_grow_setup_pack')
 const isHighRisk = computed(() => riskTier.value === 'high')
 const isMediumRisk = computed(() => riskTier.value === 'medium')
+
+const highRiskWarning = computed(() => {
+  if (isSetupPack.value) return SETUP_PACK_HIGH_RISK_COPY
+  return 'High-impact change — review frozen args carefully before Confirm. This can alter farm configuration, disable automation, or apply a bootstrap template.'
+})
 
 const isExpired = computed(() => {
   if (!local.expires_at) return false
@@ -176,6 +192,11 @@ const confirmButtonClass = computed(() => {
 const diffSummary = computed(() => formatDiffSummary(local.tool, local.args))
 
 const targetHint = computed(() => {
+  if (isSetupPack.value) {
+    const zone = local.args?.zone_name
+    if (zone) return String(zone)
+    if (local.args?.zone_id != null) return `zone #${local.args.zone_id}`
+  }
   const id = local.args?.alert_id
   if (id != null) return `alert #${id}`
   const cycleId = local.args?.crop_cycle_id ?? local.args?.cycle_id
@@ -196,6 +217,9 @@ const targetHint = computed(() => {
 })
 
 const followUpLink = computed(() => {
+  if (local.tool === 'apply_grow_setup_pack') {
+    return '/plants'
+  }
   if ((local.tool === 'create_task_from_alert' || local.tool === 'create_task') && local.result?.task_id) {
     return '/tasks'
   }
@@ -204,6 +228,9 @@ const followUpLink = computed(() => {
 })
 
 const followUpLabel = computed(() => {
+  if (local.tool === 'apply_grow_setup_pack') {
+    return 'View plants'
+  }
   if ((local.tool === 'create_task_from_alert' || local.tool === 'create_task') && local.result?.task_id) {
     return `View task #${local.result.task_id}`
   }

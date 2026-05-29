@@ -8,6 +8,7 @@ import (
 	"net/http"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 
 	db "gr33n-api/internal/db"
 )
@@ -24,11 +25,17 @@ type Tool struct {
 // ExecutorDeps carries auth + persistence handles for tool execution.
 type ExecutorDeps struct {
 	Q          db.Querier
+	Pool       DBPool // optional; transactional tools (setup pack)
 	UserID     uuid.UUID
 	HasUser    bool
 	FarmID     int64 // proposal farm scope
 	ProposalID uuid.UUID
 	Request    *http.Request
+}
+
+// DBPool begins transactions for atomic Guardian bundles (Phase 32 WS3).
+type DBPool interface {
+	Begin(ctx context.Context) (pgx.Tx, error)
 }
 
 // registry is the Guardian tool catalog (Phase 29–30).
@@ -93,6 +100,30 @@ var registry = map[string]Tool{
 		Description:     "Queue Pi actuator command on device pending_command (no immediate GPIO)",
 		RequiresOperate: true,
 		Execute:         execEnqueueActuatorCommand,
+	},
+	"create_plant": {
+		ID:              "create_plant",
+		Description:     "Create a plant catalog row (POST /farms/{id}/plants)",
+		RequiresOperate: true,
+		Execute:         execCreatePlant,
+	},
+	"create_crop_cycle": {
+		ID:              "create_crop_cycle",
+		Description:     "Start an active crop cycle in a zone (POST /farms/{id}/crop-cycles)",
+		RequiresOperate: true,
+		Execute:         execCreateCropCycle,
+	},
+	"create_fertigation_program": {
+		ID:              "create_fertigation_program",
+		Description:     "Create a fertigation program for a zone (POST /farms/{id}/fertigation/programs)",
+		RequiresOperate: true,
+		Execute:         execCreateFertigationProgram,
+	},
+	"apply_grow_setup_pack": {
+		ID:              "apply_grow_setup_pack",
+		Description:     "Atomic grow setup: plant + crop cycle + fertigation program (Phase 32)",
+		RequiresOperate: true,
+		Execute:         execApplyGrowSetupPack,
 	},
 }
 

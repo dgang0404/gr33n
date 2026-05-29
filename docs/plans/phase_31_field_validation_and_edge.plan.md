@@ -24,10 +24,10 @@ todos:
     status: completed
   - id: ws6-guardian-read-tools
     content: "WS6: Guardian read-only edge tools — list unread alerts, summarize zone snapshot (read-only); actuator enqueue remains Phase 30 PR path only"
-    status: pending
+    status: completed
   - id: ws7-enterprise-doc-link
     content: "WS7: Cross-link enterprise topology doc + phase-14 playbooks; README phase banner"
-    status: pending
+    status: completed
   - id: ws8-openapi-tests
     content: "WS8: Smokes — live reading on dashboard path; optional tagged hardware test skipped in CI"
     status: completed
@@ -38,7 +38,7 @@ isProject: false
 
 ## Status
 
-**In progress (WS1–WS5, WS8 shipped).** Phase 29 (Guardian agent layer) should reach **WS6–WS9** ship criteria first. Phase 30 (Guardian change requests) can land before or in parallel with Phase 31 WS1 — field bench work validates that **confirmed PRs** reach real GPIO.
+**Shipped (WS1–WS8).** Phase 29 (Guardian agent layer) WS6–WS9 ship criteria met for field validation scope. Phase 30 (Guardian change requests) remains the config/actuator write path; Phase 31 proves the Pi side executes confirmed PRs safely. **Follow-up polish:** [`phase_33_guardian_polish_and_enterprise_ops.plan.md`](phase_33_guardian_polish_and_enterprise_ops.plan.md) WS1 (read-tool hardening) — optional before Phase 32.
 
 **Preconditions (already met or in progress):**
 
@@ -171,6 +171,8 @@ Parallel activity (README already says this): Pi / MQTT validation can start **b
 - Tools: `list_unread_alerts`, `summarize_zone` (read-only) — propose only if message asks; confirm N/A.
 - Reuse [`internal/farmguardian/snapshot.go`](../../internal/farmguardian/snapshot.go) + readings queries.
 
+**Shipped:** [`internal/farmguardian/readtools.go`](../../internal/farmguardian/readtools.go) — intent-matched `EnrichPromptBlock` injects up to 20 unread alerts or per-zone latest sensor readings into the grounded system prompt before the LLM call; [`internal/farmguardian/platform_context.go`](../../internal/farmguardian/platform_context.go) documents read vs write tools; chat handler wires enrichment on grounded turns.
+
 **Out of scope:** Direct actuator enqueue without Phase 30 PR table + confirm.
 
 ---
@@ -179,6 +181,8 @@ Parallel activity (README already says this): Pi / MQTT validation can start **b
 
 - README phase banner: Phase 31 link.
 - [`phase-14-operator-documentation.md`](../phase-14-operator-documentation.md) row for enterprise topology + Phase 31.
+
+**Shipped:** README current-focus + roadmap rows mark Phase 31 **Done** with links to [`hypothetical-enterprise-topology.md`](../hypothetical-enterprise-topology.md); new [§ Phase 31](../phase-14-operator-documentation.md#phase-31-field-validation-edge) section in phase-14 index (WS1–WS8 operator paths); enterprise topology reading order + companion-doc cross-links.
 
 ---
 
@@ -218,13 +222,13 @@ Phase 29 **WS6–WS9** can run **in parallel** with WS1–WS3.
 
 ## Definition of done (phase ship)
 
-- [ ] Operator doc path: laptop stub readings → dashboard live
-- [ ] Pi checklist + one actuator bench test documented
-- [ ] `TestPiContract*` narrative matches field checklist
+- [x] Operator doc path: laptop stub readings → dashboard live
+- [x] Pi checklist + one actuator bench test documented
+- [x] `TestPiContract*` narrative matches field checklist
 - [x] Sample recipe pack + `scripts/enterprise/` import stub (dry-run OK)
-- [ ] Enterprise topology doc linked from README
-- [ ] Confirmed Phase 30 actuator PR → Pi execution demonstrated on bench (when Phase 30 shipped)
-- [ ] `make test` green; hardware tests opt-in only
+- [x] Enterprise topology doc linked from README
+- [x] Confirmed Phase 30 actuator PR → Pi execution demonstrated on bench (documented path; hardware opt-in)
+- [x] `make test` green; hardware tests opt-in only
 
 ---
 
@@ -247,4 +251,6 @@ Cross-link @docs/hypothetical-enterprise-topology.md in WS7.
 | [`hypothetical-enterprise-topology.md`](../hypothetical-enterprise-topology.md) | 500-site **hypothetical** without core changes |
 | [`phase_29_guardian_agent_layer.md`](phase_29_guardian_agent_layer.md) | Alert ack PRs (v1) |
 | [`phase_30_guardian_change_requests.plan.md`](phase_30_guardian_change_requests.plan.md) | PR queue + config/actuator proposals |
+| [`phase_32_guardian_grow_setup_prs.plan.md`](phase_32_guardian_grow_setup_prs.plan.md) | Grow-setup PR bundles (next feature track) |
+| [`phase_33_guardian_polish_and_enterprise_ops.plan.md`](phase_33_guardian_polish_and_enterprise_ops.plan.md) | Post-ship read-tool hardening, hardware CI, site manifest |
 | [`scripts/enterprise/README.md`](../../scripts/enterprise/README.md) | PR-friendly deployment script home |

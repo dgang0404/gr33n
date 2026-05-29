@@ -46,6 +46,7 @@ const MaxRecentSessions = 50
 type Handler struct {
 	cfg       ai.Config
 	q         *db.Queries
+	pool      *pgxpool.Pool
 	llm       llm.ChatCompleter
 	visionLLM llm.ChatCompleter // optional multimodal client (Phase 30 WS6)
 	fileStore filestorage.Store
@@ -57,7 +58,7 @@ type Handler struct {
 // When AI is off, both stay nil and POST /v1/chat answers 503 — same contract
 // as POST /farms/{id}/rag/answer in Lite mode.
 func NewHandler(pool *pgxpool.Pool, cfg ai.Config, fileStore filestorage.Store) *Handler {
-	h := &Handler{cfg: cfg, q: db.New(pool), fileStore: fileStore}
+	h := &Handler{cfg: cfg, q: db.New(pool), pool: pool, fileStore: fileStore}
 	if cfg.Enabled {
 		if c, err := llm.NewChatClientFromEnv(); err == nil {
 			h.llm = c
@@ -220,7 +221,12 @@ func (h *Handler) PostV1(w http.ResponseWriter, r *http.Request) {
 		if snapshotBlock != "" {
 			system += snapshotBlock + "\n\n"
 		}
-		if pb.ContextRef != nil && h.q != nil {
+		if h.q != nil {
+			if readBlock := farmguardian.EnrichPromptBlock(r.Context(), h.q, farmID, question, liveSnap); readBlock != "" {
+				system += readBlock + "\n\n"
+			}
+		}
+		if pb.ContextRef != nil {
 			if focus := farmguardian.ContextRefPromptBlock(r.Context(), h.q, farmID, *pb.ContextRef); focus != "" {
 				system += focus + "\n\n"
 			}
@@ -234,7 +240,7 @@ func (h *Handler) PostV1(w http.ResponseWriter, r *http.Request) {
 				httputil.WriteError(w, http.StatusBadGateway, "retrieval failed")
 				return
 			}
-			system += synthesis.SystemPrompt()
+			system += synthesis.GuardianRAGInstructions(chunks)
 			user = synthesis.BuildUserMessage(question, chunks)
 		}
 	}

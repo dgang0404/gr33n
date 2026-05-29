@@ -19,6 +19,15 @@ const SnapshotMaxZones = 12
 // SnapshotMaxCycles caps how many active crop cycles render in full.
 const SnapshotMaxCycles = 8
 
+// SnapshotMaxPlantNames caps plant display names in the live snapshot (Phase 32 WS1).
+const SnapshotMaxPlantNames = 8
+
+// SnapshotMaxProgramsPerZone caps active program names listed per zone in the snapshot.
+const SnapshotMaxProgramsPerZone = 4
+
+// SnapshotMaxProgramZones caps how many zones get a programs-by-zone line.
+const SnapshotMaxProgramZones = 8
+
 // SnapshotMaxAlertDetails caps how many unread alerts get full detail
 // (severity, subject, source, age) rendered into the prompt. The
 // surviving alerts beyond the cap are still represented by the
@@ -39,10 +48,20 @@ type Snapshot struct {
 	FarmID             int64
 	ZoneCount          int
 	ZoneNames          []string
+	PlantCount         int
+	PlantNames         []string
+	ProgramsByZone     []ZoneProgramsSummary
 	ActiveCycles       []ActiveCycle
 	UnreadAlerts       int64
 	UnreadAlertDetails []UnreadAlertDetail
 	ZonePhotoHints     []ZonePhotoHint
+}
+
+// ZoneProgramsSummary lists active fertigation program names targeting a zone.
+type ZoneProgramsSummary struct {
+	ZoneID   int64
+	ZoneName string
+	Programs []string
 }
 
 // ZonePhotoHint tells the model which zones have operator reference photos on file.
@@ -86,7 +105,8 @@ type ActiveCycle struct {
 // IsEmpty returns true when there's nothing useful to render (avoids a noisy
 // "Current farm snapshot:" header with zero bullets).
 func (s Snapshot) IsEmpty() bool {
-	return s.ZoneCount == 0 && len(s.ActiveCycles) == 0 && s.UnreadAlerts == 0
+	return s.ZoneCount == 0 && len(s.ActiveCycles) == 0 && s.UnreadAlerts == 0 &&
+		s.PlantCount == 0 && len(s.ProgramsByZone) == 0
 }
 
 // Render returns the prompt-ready text block (no trailing newline). Empty
@@ -112,6 +132,55 @@ func (s Snapshot) Render() string {
 			b.WriteString(fmt.Sprintf(" (+ %d more)", extra))
 		}
 		b.WriteString("\n")
+	}
+	if s.PlantCount > 0 {
+		names := s.PlantNames
+		extra := 0
+		if len(names) > SnapshotMaxPlantNames {
+			extra = s.PlantCount - SnapshotMaxPlantNames
+			names = names[:SnapshotMaxPlantNames]
+		}
+		b.WriteString(fmt.Sprintf("- Plants (%d):", s.PlantCount))
+		if len(names) > 0 {
+			b.WriteString(" ")
+			b.WriteString(strings.Join(names, ", "))
+		}
+		if extra > 0 {
+			b.WriteString(fmt.Sprintf(" (+ %d more)", extra))
+		}
+		b.WriteString("\n")
+	}
+	if len(s.ProgramsByZone) > 0 {
+		byZone := s.ProgramsByZone
+		extraZones := 0
+		if len(byZone) > SnapshotMaxProgramZones {
+			extraZones = len(byZone) - SnapshotMaxProgramZones
+			byZone = byZone[:SnapshotMaxProgramZones]
+		}
+		b.WriteString("- Active fertigation programs by zone:\n")
+		for _, zp := range byZone {
+			b.WriteString("  - ")
+			b.WriteString(zp.ZoneName)
+			progs := zp.Programs
+			extraProgs := 0
+			if len(progs) > SnapshotMaxProgramsPerZone {
+				extraProgs = len(progs) - SnapshotMaxProgramsPerZone
+				progs = progs[:SnapshotMaxProgramsPerZone]
+			}
+			if len(progs) > 0 {
+				b.WriteString(": ")
+				b.WriteString(strings.Join(progs, ", "))
+			} else {
+				b.WriteString(": (none active)")
+			}
+			if extraProgs > 0 {
+				b.WriteString(fmt.Sprintf(" (+ %d more programs)", extraProgs))
+			}
+			b.WriteString("\n")
+		}
+		if extraZones > 0 {
+			b.WriteString(fmt.Sprintf("  - (+ %d more zones with programs)\n", extraZones))
+		}
 	}
 	if len(s.ActiveCycles) > 0 {
 		cycles := s.ActiveCycles
@@ -338,6 +407,65 @@ func BuildSnapshot(ctx context.Context, q *db.Queries, farmID int64) (Snapshot, 
 			}
 			s.ActiveCycles = append(s.ActiveCycles, ac)
 		}
+	}
+
+	if plants, pErr := q.ListPlantsByFarm(ctx, farmID); pErr == nil {
+		s.PlantCount = len(plants)
+		s.PlantNames = make([]string, 0, len(plants))
+		for _, p := range plants {
+			name := strings.TrimSpace(p.DisplayName)
+			if p.VarietyOrCultivar != nil && strings.TrimSpace(*p.VarietyOrCultivar) != "" {
+				name += " (" + strings.TrimSpace(*p.VarietyOrCultivar) + ")"
+			}
+			if name != "" {
+				s.PlantNames = append(s.PlantNames, name)
+			}
+		}
+		sort.Strings(s.PlantNames)
+	} else {
+		slog.Warn("farm guardian plants summary failed", "farm_id", farmID, "err", pErr)
+	}
+
+	if programs, prErr := q.ListProgramsByFarm(ctx, farmID); prErr == nil {
+		zoneByID := make(map[int64]string, len(zones))
+		for _, z := range zones {
+			zoneByID[z.ID] = z.Name
+		}
+		type zoneBucket struct {
+			zoneID   int64
+			zoneName string
+			programs []string
+		}
+		buckets := make(map[int64]*zoneBucket)
+		for _, p := range programs {
+			if !p.IsActive || p.TargetZoneID == nil {
+				continue
+			}
+			zid := *p.TargetZoneID
+			b, ok := buckets[zid]
+			if !ok {
+				name := zoneByID[zid]
+				if name == "" {
+					name = fmt.Sprintf("zone #%d", zid)
+				}
+				b = &zoneBucket{zoneID: zid, zoneName: name}
+				buckets[zid] = b
+			}
+			b.programs = append(b.programs, strings.TrimSpace(p.Name))
+		}
+		for _, b := range buckets {
+			sort.Strings(b.programs)
+			s.ProgramsByZone = append(s.ProgramsByZone, ZoneProgramsSummary{
+				ZoneID:   b.zoneID,
+				ZoneName: b.zoneName,
+				Programs: b.programs,
+			})
+		}
+		sort.Slice(s.ProgramsByZone, func(i, j int) bool {
+			return s.ProgramsByZone[i].ZoneName < s.ProgramsByZone[j].ZoneName
+		})
+	} else {
+		slog.Warn("farm guardian programs-by-zone failed", "farm_id", farmID, "err", prErr)
 	}
 
 	if cnt, aErr := q.CountUnreadAlertsByFarm(ctx, farmID); aErr == nil {

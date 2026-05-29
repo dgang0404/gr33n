@@ -12,6 +12,98 @@ import (
 	db "gr33n-api/internal/db"
 )
 
+func execCreateFertigationProgram(ctx context.Context, deps ExecutorDeps, args map[string]any) (any, error) {
+	if deps.FarmID <= 0 {
+		return nil, errors.New("farm_id required in proposal scope")
+	}
+	name, err := stringFromArgs(args, "name")
+	if err != nil {
+		return nil, err
+	}
+	targetZoneID, err := int64FromArgs(args, "target_zone_id")
+	if err != nil {
+		return nil, err
+	}
+	totalVolF, err := float64FromArgs(args, "total_volume_liters")
+	if err != nil {
+		return nil, err
+	}
+	ecLowF, err := float64FromArgs(args, "ec_trigger_low")
+	if err != nil {
+		return nil, err
+	}
+	phLowF, err := float64FromArgs(args, "ph_trigger_low")
+	if err != nil {
+		return nil, err
+	}
+	phHighF, err := float64FromArgs(args, "ph_trigger_high")
+	if err != nil {
+		return nil, err
+	}
+
+	z, err := deps.Q.GetZoneByID(ctx, targetZoneID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, fmt.Errorf("zone %d not found", targetZoneID)
+		}
+		return nil, err
+	}
+	if err := ensureFarmScope(z.FarmID, deps.FarmID); err != nil {
+		return nil, err
+	}
+
+	totalVol, err := numericFromFloat64(totalVolF)
+	if err != nil {
+		return nil, fmt.Errorf("invalid total_volume_liters")
+	}
+	ecLow, err := numericFromFloat64(ecLowF)
+	if err != nil {
+		return nil, fmt.Errorf("invalid ec_trigger_low")
+	}
+	phLow, err := numericFromFloat64(phLowF)
+	if err != nil {
+		return nil, fmt.Errorf("invalid ph_trigger_low")
+	}
+	phHigh, err := numericFromFloat64(phHighF)
+	if err != nil {
+		return nil, fmt.Errorf("invalid ph_trigger_high")
+	}
+
+	isActive := true
+	if v, err := optionalBoolFromArgs(args, "is_active"); err != nil {
+		return nil, err
+	} else if v != nil {
+		isActive = *v
+	}
+	desc, err := optionalStringFromArgs(args, "description")
+	if err != nil {
+		return nil, err
+	}
+
+	zoneID := targetZoneID
+	row, err := deps.Q.CreateProgram(ctx, db.CreateProgramParams{
+		FarmID:            deps.FarmID,
+		Name:              name,
+		Description:       desc,
+		TargetZoneID:      &zoneID,
+		TotalVolumeLiters: totalVol,
+		EcTriggerLow:      ecLow,
+		PhTriggerLow:      phLow,
+		PhTriggerHigh:     phHigh,
+		IsActive:          isActive,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return map[string]any{
+		"program_id":          row.ID,
+		"name":                row.Name,
+		"target_zone_id":      targetZoneID,
+		"total_volume_liters": totalVolF,
+		"is_active":           row.IsActive,
+	}, nil
+}
+
 func execPatchFertigationProgram(ctx context.Context, deps ExecutorDeps, args map[string]any) (any, error) {
 	programID, err := int64FromArgs(args, "program_id")
 	if err != nil {

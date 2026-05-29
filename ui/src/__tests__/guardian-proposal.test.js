@@ -134,3 +134,60 @@ describe('GuardianActionProposal (Phase 29 WS4)', () => {
     expect(wrapper.emitted('error')[0][0].error).toContain('expired')
   })
 })
+
+describe('GuardianActionProposal — setup pack (Phase 32 WS5)', () => {
+  const setupPackArgs = {
+    profile: 'house_plant',
+    zone_id: 12,
+    zone_name: 'Living Room',
+    plant: { display_name: 'Philodendron', variety_or_cultivar: 'heartleaf' },
+    cycle: { name: 'Philodendron — Living Room', current_stage: 'vegetative', started_at: '2026-05-27' },
+    program: {
+      name: 'Philodendron light feed',
+      total_volume_liters: 0.5,
+      ec_trigger_low: 0.8,
+      ph_trigger_low: 5.8,
+      ph_trigger_high: 6.5,
+    },
+    optional_task: { title: 'Monitor new Philodendron — first two weeks' },
+  }
+
+  beforeEach(() => {
+    setActivePinia(createPinia())
+    vi.clearAllMocks()
+  })
+
+  function mountSetupPack(canOperate = true) {
+    return mount(GuardianActionProposal, {
+      props: {
+        proposal: {
+          ...baseProposal,
+          tool: 'apply_grow_setup_pack',
+          risk_tier: 'high',
+          summary: 'Setup pack: Philodendron in Living Room (plant + cycle + program)',
+          args: setupPackArgs,
+        },
+        canOperate,
+      },
+      global: { plugins: [router] },
+    })
+  }
+
+  it('renders setup pack bundle diff and high-tier warning', () => {
+    const wrapper = mountSetupPack()
+    expect(wrapper.find('[data-test="setup-pack-proposal-card"]').exists()).toBe(true)
+    expect(wrapper.find('[data-test="guardian-proposal-high-warning"]').exists()).toBe(true)
+    expect(wrapper.text()).toContain('plant, active crop cycle, and fertigation program')
+    const steps = wrapper.findAll('[data-test="setup-pack-step"]')
+    expect(steps.length).toBeGreaterThanOrEqual(4)
+    expect(wrapper.text()).toContain('Philodendron')
+    expect(wrapper.text()).toContain('0.5L')
+    expect(wrapper.text()).toContain('pH 5.8–6.5')
+    expect(wrapper.find('[data-test="guardian-proposal-diff"]').exists()).toBe(false)
+  })
+
+  it('disables Confirm for viewer role on setup pack', () => {
+    const wrapper = mountSetupPack(false)
+    expect(wrapper.find('[data-test="guardian-proposal-confirm"]').attributes('disabled')).toBeDefined()
+  })
+})

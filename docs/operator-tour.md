@@ -91,9 +91,43 @@ Nothing in the database changes from Guardian until you **Confirm** (or you edit
 
 Full operator contract: [`farm-guardian-architecture.md` §8](farm-guardian-architecture.md#8-operator-expectations-at-phase-30-ship).
 
-### What Confirm can do at Phase 30 ship
+### What Confirm can do (Phase 32)
 
-Includes alert ack/read, **create task**, cycle stage, schedule/program/rule patches, **zone reference photos** (upload on zone page — Guardian sees them in snapshot), and **enqueue actuator command** (writes `pending_command` for the Pi — GPIO happens on the edge, validated in **Phase 31**).
+Includes everything from Phase 30 — alert ack/read, **create task**, cycle stage, schedule/program/rule patches, zone reference photos, **enqueue actuator command** — plus grow onboarding tools:
+
+| Tool | Tier | What Confirm does |
+|------|------|-------------------|
+| `create_plant` | medium | Adds one plant catalog row |
+| `create_crop_cycle` | medium | Starts an active cycle in a zone (fails if zone already busy) |
+| `create_fertigation_program` | medium | Creates a fertigation program for a zone |
+| `apply_grow_setup_pack` | **high** | One transaction: optional plant + cycle + program + optional monitor task |
+
+**Guardian never silently adds plants.** Chat may show a setup-pack card; rows appear only after you **Confirm**. To do the same steps manually, use **Plants** (`/plants`), **Crop cycles**, and **Fertigation** without Guardian.
+
+### 6b. Grow setup via Guardian (Phase 32)
+
+**Requires:** demo or real farm with at least one **empty zone** (no active crop cycle), Guardian enabled, **Operate** role.
+
+This walkthrough uses a house-plant example; the same flow works for commercial zones with different default program volumes.
+
+1. **Create or pick a zone** — `/zones` → e.g. "Living Room" (indoor). Confirm the zone has **no active cycle** on the zone detail page.
+2. **Open Guardian** — drawer (✨) or `/chat`; select the correct farm.
+3. **Ask in plain language**, naming the plant and zone, e.g.  
+   *"add my philodendron to Living Room with a light fertigation program"*
+4. **Review the setup pack card** — numbered bundle: plant display name, zone, cycle stage, program EC/pH/volume, optional monitor task. **High-tier** warning: creates multiple records at once.
+5. **Confirm** (or **Dismiss** if anything looks wrong). Viewers see the card but cannot Confirm.
+6. **Verify after Confirm:**
+   - **Plants** (`/plants`) — new catalog row
+   - **Zone detail** — active crop cycle
+   - **Fertigation** — new program; cycle may show linked primary program
+   - **Tasks** — optional "Monitor new …" task
+   - Audit log — `guardian_tool_executed` with `tool_id: apply_grow_setup_pack`
+
+**When no card appears:** zone name not in the snapshot, zone already has an active cycle, plant name already on the farm, or the message did not match setup intent — ask Guardian to list zones/plants or use the manual UI.
+
+**Bootstrap vs setup pack:** `apply_bootstrap_template` seeds a **blank farm** (admin only). The setup pack adds **one grow** to an existing zone — different tool, same Confirm discipline.
+
+Architecture detail: [`farm-guardian-architecture.md` §7.6](farm-guardian-architecture.md#76-grow-setup-prs-phase-32).
 
 ### Vision and photos — what to expect
 
@@ -110,9 +144,10 @@ On-prem gr33n, not a cloud subscription; Lite vs Full; LAN inference when config
 2. **✨ Ask Guardian** on a humidity row (or open the drawer).
 3. Ask to acknowledge the alert → **Confirm** the proposal card.
 4. Open **`/guardian/requests`** or drawer **Pending** to see the inbox pattern.
-5. Optional: **Zones** → add a reference photo → ask Guardian about that zone.
+5. Optional — **grow setup:** empty zone + *"add my philodendron to {zone} with a light fertigation program"* → review setup pack card → Confirm → check `/plants` and `/fertigation` ([§6b](#6b-grow-setup-via-guardian-phase-32)).
+6. Optional: **Zones** → add a reference photo → ask Guardian about that zone.
 
-Architecture: [`farm-guardian-architecture.md`](farm-guardian-architecture.md) §7–§8 · Bootstrap: [`local-operator-bootstrap.md`](local-operator-bootstrap.md#guardian-ready-demo-after-seed) · Phase 30 plan: [`plans/phase_30_guardian_change_requests.plan.md`](plans/phase_30_guardian_change_requests.plan.md) · Pi validation: [`plans/phase_31_field_validation_and_edge.plan.md`](plans/phase_31_field_validation_and_edge.plan.md).
+Architecture: [`farm-guardian-architecture.md`](farm-guardian-architecture.md) §7–§8 · Platform doc RAG: `make rag-ingest-platform-docs` · Bootstrap: [`local-operator-bootstrap.md`](local-operator-bootstrap.md#guardian-ready-demo-after-seed) · Phase 32 grow setup: [`plans/phase_32_guardian_grow_setup_prs.plan.md`](plans/phase_32_guardian_grow_setup_prs.plan.md) · Pi validation: [`plans/phase_31_field_validation_and_edge.plan.md`](plans/phase_31_field_validation_and_edge.plan.md).
 
 ---
 
@@ -123,7 +158,7 @@ Architecture: [`farm-guardian-architecture.md`](farm-guardian-architecture.md) �
 | [local-operator-bootstrap.md](local-operator-bootstrap.md) | First-time env, DB, seed, URLs, Guardian agent demo |
 | [farm-guardian-architecture.md](farm-guardian-architecture.md) | Request flow, PR inbox, operator expectations (§8) |
 | [farm-guardian-persona-platform-context.md](farm-guardian-persona-platform-context.md) | What Guardian is told about on-prem gr33n (WS9) |
-| [plans/phase_30_guardian_change_requests.plan.md](plans/phase_30_guardian_change_requests.plan.md) | Phase 30 PR queue (shipped scope) |
+| [plans/phase_32_guardian_grow_setup_prs.plan.md](plans/phase_32_guardian_grow_setup_prs.plan.md) | Grow setup PR bundle (Phase 32) |
 | [plans/phase_31_field_validation_and_edge.plan.md](plans/phase_31_field_validation_and_edge.plan.md) | Pi / breadboard validation after actuator PRs |
 | [audit-events-operator-playbook.md](audit-events-operator-playbook.md) | `guardian_tool_executed` after Confirm |
 | [operator-troubleshooting.md](operator-troubleshooting.md) | 401 / empty farms / reading logs |

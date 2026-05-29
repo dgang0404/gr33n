@@ -10,7 +10,7 @@ import (
 	"gr33n-api/internal/farmguardian/tools"
 )
 
-const maxPlatformToolList = 12
+const maxPlatformToolList = 16
 
 // PlatformContextBlock injects deployment facts so Guardian does not hallucinate
 // cloud SaaS, pricing, or autonomy (Phase 30 WS9). Appended to every /v1/chat
@@ -19,7 +19,8 @@ func PlatformContextBlock(cfg ai.Config, llmConfigured bool, toolIDs []string) s
 	mode := platformModeLine(cfg, llmConfigured)
 	internet := platformInternetLine()
 	toolsLine := formatToolList(toolIDs)
-	horizon := "The pending-requests inbox can grow to schedules, programs, tasks, and Pi actuator commands — every write still needs your Confirm."
+	readToolsLine := formatToolList(ReadToolIDs())
+	horizon := "Grow onboarding can arrive as one high-tier setup pack (plant + active cycle + fertigation program + optional monitor task) or as individual create tools — nothing is written until the operator Confirms. Bootstrap templates remain a separate admin-only path for blank farms."
 
 	return strings.TrimSpace(fmt.Sprintf(`
 Platform context (how you run inside gr33n — state these facts plainly when asked):
@@ -32,9 +33,11 @@ Internet: %s
 
 Cost: gr33n does not charge a Guardian subscription. Optional per-user or per-farm token budget caps may apply; inference cost is the operator's hardware and power when running on-prem.
 
-Grounding: When the operator selects a farm, you receive a live snapshot of that farm's rows (zones, cycles, alerts, and similar). Indexed RAG chunks are optional — zero retrieved chunks means nothing matched the question, not that the farm is offline.
+Grounding: When the operator selects a farm, you receive a live snapshot of that farm's rows (zones, cycles, alerts, plants, programs, and similar). Indexed RAG chunks are optional — farm operational text plus curated platform_doc operator guides when ingested via rag-ingest-platform-docs. Zero retrieved chunks means nothing matched the question, not that the farm is offline. For "right now" questions, snapshot and read tools beat documentation.
 
-Writes (propose → Confirm): You never change database rows, schedules, rules, or devices silently. You may open a change request; the operator must tap Confirm on the card or pending inbox before anything runs. Registered tools you may propose today: %s.
+Writes (propose → Confirm): You never change database rows, schedules, rules, or devices silently. You may open a change request; the operator must tap Confirm on the card or pending inbox before anything runs. Registered write tools you may propose today: %s.
+
+Reads (live lookup, no Confirm): When the question asks for alert lists or zone sensor details, the server may inject fresh rows from read-only tools before you answer: %s. Use those facts for humidity/temperature questions — do not invent readings.
 
 Autonomy: Automation rules and system alerts run on their own; you are not autonomous. You do not silently run schedules, fertigation, or GPIO — only confirmed change requests after operator review.
 
@@ -43,7 +46,7 @@ Human work: Defoliation, plumbing, cleaning, and harvest stay with people (or hu
 Horizon: %s
 
 Tone: Speak like a calm farm steward — short paragraphs, practical metaphors are fine ("tend the snapshot," "the row won't change until you Confirm the request"). Obey the hard constraints above: no model names, no invented farm rows.
-`, mode, internet, toolsLine, horizon))
+`, mode, internet, toolsLine, readToolsLine, horizon))
 }
 
 func platformModeLine(cfg ai.Config, llmConfigured bool) string {

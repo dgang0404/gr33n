@@ -1,7 +1,7 @@
 openapi: "3.0.3"
 info:
   title: gr33n API
-  version: "0.4.3"
+  version: "0.4.4"
   description: |
     Local-first automated agriculture platform API.
     All endpoints run on localhost:8080 by default.
@@ -31,6 +31,9 @@ info:
     - `chat` (Phase 30 WS2) — proposals include **`risk_tier`** (`low` | `medium` | `high`) for inbox/card UX warnings.
     - `chat` (Phase 30 WS4) — **`enqueue_actuator_command`** tool queues `devices.config.pending_command` on Confirm (Pi polls `GET /farms/{id}/devices`); never direct GPIO from chat.
     - `zones` (Phase 30 WS5–WS6) — **`/zones/{id}/photos`** reference-photo upload/list; chat accepts **`attachment_ids`** when `LLM_VISION_MODEL` is set (`vision_chat_enabled` on `/capabilities`).
+
+    **Phase 32 API areas (added in 0.4.4):**
+    - `chat` (Phase 32) — grow onboarding write tools confirmed via the same **`POST /v1/chat/confirm`** path: **`create_plant`**, **`create_crop_cycle`**, **`create_fertigation_program`** (medium tier), and **`apply_grow_setup_pack`** (high tier — single transaction: plant + active cycle + program + optional monitor task). Grounded chat may return a frozen setup-pack proposal when rule-assisted intent matches zone + plant in the live snapshot. See **`GuardianGrowSetupPackArgs`** and related schemas under `components.schemas`.
   license:
     name: AGPL-3.0
     url: https://www.gnu.org/licenses/agpl-3.0
@@ -4060,11 +4063,13 @@ paths:
         `crop_cycle`, or `zone`) injects a focused background block for the
         entity the operator opened the Guardian drawer from.
 
-        **Agent proposals (Phase 29–30):** grounded turns may return `proposals[]`
+        **Agent proposals (Phase 29–32):** grounded turns may return `proposals[]`
         — frozen change requests (alert ack/read, tasks, schedule/program/rule
-        patches, actuator enqueue, …) confirmed via `POST /v1/chat/confirm`.
-        Each proposal carries `risk_tier` (`low` | `medium` | `high`). Persisted
-        server-side with a 5-minute TTL.
+        patches, actuator enqueue, grow setup pack, …) confirmed via
+        `POST /v1/chat/confirm`. Each proposal carries `risk_tier`
+        (`low` | `medium` | `high`). Persisted server-side with a 5-minute TTL.
+        Phase 32 **`apply_grow_setup_pack`** bundles plant, crop cycle, fertigation
+        program, and optional task args — see `GuardianGrowSetupPackArgs`.
 
         **Vision (Phase 30 WS6):** optional `attachment_ids` (zone reference photo
         file attachment ids, max 3) require `farm_id` and `LLM_VISION_MODEL`.
@@ -4207,9 +4212,9 @@ paths:
         client, so operators cannot tamper with frozen payloads.
 
         Write tools (`ack_alert`, `mark_alert_read`, `create_task`, schedule/program/rule
-        patches, `enqueue_actuator_command`, …) require `FarmCaps.Operate` on the
-        proposal's farm (`apply_bootstrap_template` requires farm admin). Viewers
-        receive **403**.
+        patches, `enqueue_actuator_command`, Phase 32 grow creates / `apply_grow_setup_pack`,
+        …) require `FarmCaps.Operate` on the proposal's farm (`apply_bootstrap_template`
+        requires farm admin). Viewers receive **403**.
         Expired or already-handled proposals return **410 Gone**. A second
         confirm on an already-confirmed proposal is **idempotent** (200 with
         cached result).
@@ -4554,21 +4559,223 @@ components:
 
     GuardianContextRef:
       type: object
-      description: UI anchor for contextual Ask Guardian entry points (Phase 29 WS6).
-      required: [type, id]
+      description: UI anchor for contextual Ask Guardian entry points (Phase 29 WS6) and passive route context (Phase 32 WS1).
+      required: [type]
       properties:
         type:
           type: string
-          enum: [alert, crop_cycle, zone]
-          description: Entity type the operator opened the drawer from.
+          enum: [alert, crop_cycle, zone, route]
+          description: Entity type the operator opened the drawer from, or `route` for the current dashboard screen.
         id:
           type: integer
           format: int64
           minimum: 1
-          description: Primary key of the alert, crop cycle, or zone.
+          description: Primary key of the alert, crop cycle, or zone. Omit for `route`.
+        path:
+          type: string
+          description: Vue route path (e.g. `/fertigation`) when `type` is `route`.
         name:
           type: string
-          description: Optional display hint (zone name) when the server should not re-fetch.
+          description: Optional display hint (zone name or screen label) when the server should not re-fetch.
+
+    GuardianCreatePlantArgs:
+      type: object
+      description: Frozen args for `create_plant` (Phase 32, medium tier).
+      required: [display_name]
+      properties:
+        display_name:
+          type: string
+          description: Farm-scoped plant display name (unique per farm, case-insensitive).
+        variety_or_cultivar:
+          type: string
+          description: Optional cultivar or variety label.
+        meta:
+          type: object
+          additionalProperties: true
+          description: Optional JSON metadata stored on the plant row.
+
+    GuardianCreateCropCycleArgs:
+      type: object
+      description: Frozen args for `create_crop_cycle` (Phase 32, medium tier).
+      required: [zone_id, name, strain_or_variety, current_stage, started_at]
+      properties:
+        zone_id:
+          type: integer
+          format: int64
+          minimum: 1
+        name:
+          type: string
+        strain_or_variety:
+          type: string
+        current_stage:
+          type: string
+          description: Growth stage enum value (e.g. `vegetative`, `late_veg`).
+        started_at:
+          type: string
+          format: date
+          description: ISO date (`YYYY-MM-DD`) when the cycle started.
+        cycle_notes:
+          type: string
+        is_active:
+          type: boolean
+          default: true
+          description: When true (default), rejects zones that already have an active cycle.
+
+    GuardianCreateFertigationProgramArgs:
+      type: object
+      description: Frozen args for `create_fertigation_program` (Phase 32, medium tier).
+      required: [name, target_zone_id, total_volume_liters, ec_trigger_low, ph_trigger_low, ph_trigger_high]
+      properties:
+        name:
+          type: string
+        target_zone_id:
+          type: integer
+          format: int64
+          minimum: 1
+        total_volume_liters:
+          type: number
+          format: double
+          minimum: 0
+        ec_trigger_low:
+          type: number
+          format: double
+        ph_trigger_low:
+          type: number
+          format: double
+        ph_trigger_high:
+          type: number
+          format: double
+        is_active:
+          type: boolean
+          default: true
+        description:
+          type: string
+
+    GuardianGrowSetupPlantArgs:
+      type: object
+      description: Plant section inside `apply_grow_setup_pack` (optional — commercial profiles may omit).
+      required: [display_name]
+      properties:
+        display_name:
+          type: string
+        variety_or_cultivar:
+          type: string
+        notes:
+          type: string
+          description: Stored under plant `meta.notes`.
+
+    GuardianGrowSetupCycleArgs:
+      type: object
+      description: Crop cycle section inside `apply_grow_setup_pack`.
+      required: [name, current_stage, started_at]
+      properties:
+        name:
+          type: string
+        current_stage:
+          type: string
+        started_at:
+          type: string
+          format: date
+        strain_or_variety:
+          type: string
+          description: Defaults to plant variety or display name when omitted.
+        cycle_notes:
+          type: string
+
+    GuardianGrowSetupProgramArgs:
+      type: object
+      description: Fertigation program section inside `apply_grow_setup_pack`.
+      required: [name, total_volume_liters, ec_trigger_low, ph_trigger_low, ph_trigger_high]
+      properties:
+        name:
+          type: string
+        total_volume_liters:
+          type: number
+          format: double
+        ec_trigger_low:
+          type: number
+          format: double
+        ph_trigger_low:
+          type: number
+          format: double
+        ph_trigger_high:
+          type: number
+          format: double
+        is_active:
+          type: boolean
+          default: true
+        description:
+          type: string
+
+    GuardianGrowSetupTaskArgs:
+      type: object
+      description: Optional monitor task created after the transactional bundle commits.
+      required: [title]
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+
+    GuardianGrowSetupPackArgs:
+      type: object
+      description: >
+        Frozen args for `apply_grow_setup_pack` (Phase 32, **high** tier). Executes
+        plant create (optional), crop cycle create, fertigation program create,
+        links `primary_program_id` on the new cycle, and optionally creates a
+        general monitor task — all in one database transaction on Confirm.
+      required: [zone_id, cycle, program]
+      properties:
+        profile:
+          type: string
+          enum: [house_plant, commercial_zone]
+          description: Template hint used by the UI card and rule-assisted matcher.
+        zone_id:
+          type: integer
+          format: int64
+          minimum: 1
+        zone_name:
+          type: string
+          description: Display hint for proposal cards; resolved from DB when omitted.
+        plant:
+          $ref: "#/components/schemas/GuardianGrowSetupPlantArgs"
+        cycle:
+          $ref: "#/components/schemas/GuardianGrowSetupCycleArgs"
+        program:
+          $ref: "#/components/schemas/GuardianGrowSetupProgramArgs"
+        optional_task:
+          $ref: "#/components/schemas/GuardianGrowSetupTaskArgs"
+
+    GuardianGrowSetupPackResult:
+      type: object
+      description: Tool-specific `result` payload from confirming `apply_grow_setup_pack`.
+      properties:
+        profile:
+          type: string
+        zone_id:
+          type: integer
+          format: int64
+        zone_name:
+          type: string
+        plant:
+          type: object
+          additionalProperties: true
+          description: `{ plant_id, display_name, … }` when a plant was created.
+        cycle:
+          type: object
+          additionalProperties: true
+          description: `{ crop_cycle_id, … }` for the new active cycle.
+        program:
+          type: object
+          additionalProperties: true
+          description: `{ program_id, … }` for the new fertigation program.
+        primary_program_linked:
+          type: boolean
+          description: True when `crop_cycles.primary_program_id` was set to the new program.
+        optional_task:
+          type: object
+          additionalProperties: true
+          description: Present when `optional_task` was supplied in frozen args.
 
     GuardianActionProposal:
       type: object
@@ -4581,11 +4788,17 @@ components:
           description: Opaque id passed to `POST /v1/chat/confirm`.
         tool:
           type: string
-          description: Registered tool id (e.g. `ack_alert`, `mark_alert_read`).
+          description: >
+            Registered tool id (e.g. `ack_alert`, `mark_alert_read`, `create_plant`,
+            `create_crop_cycle`, `create_fertigation_program`, `apply_grow_setup_pack`).
         args:
           type: object
           additionalProperties: true
-          description: Frozen tool arguments stored server-side at propose time.
+          description: >
+            Frozen tool arguments stored server-side at propose time. Phase 32 grow
+            tools use `GuardianCreatePlantArgs`, `GuardianCreateCropCycleArgs`,
+            `GuardianCreateFertigationProgramArgs`, or `GuardianGrowSetupPackArgs`
+            shapes depending on `tool`.
         summary:
           type: string
           description: Human-readable card label for the operator UI.
@@ -4645,7 +4858,9 @@ components:
         result:
           type: object
           additionalProperties: true
-          description: Tool-specific result payload (e.g. `{alert_id, is_acknowledged}`).
+          description: >
+            Tool-specific result payload (e.g. `{alert_id, is_acknowledged}` for
+            alert tools, `GuardianGrowSetupPackResult` fields for setup pack confirms).
 
     ChatRequest:
       type: object

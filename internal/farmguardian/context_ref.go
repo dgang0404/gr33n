@@ -9,21 +9,27 @@ import (
 	"gr33n-api/internal/zonephotos"
 )
 
-// ContextRef is the UI "Ask Guardian" anchor — which alert, cycle, or zone
-// the operator opened the drawer from (Phase 29 WS6).
+// ContextRef is the UI "Ask Guardian" anchor — which alert, cycle, zone, or
+// dashboard route the operator opened the drawer from (Phase 29 WS6, route Phase 32 WS1).
 type ContextRef struct {
 	Type string `json:"type"`
-	ID   int64  `json:"id"`
+	ID   int64  `json:"id,omitempty"`
 	Name string `json:"name,omitempty"`
+	Path string `json:"path,omitempty"`
 }
 
 // BuildContextRefBlock loads the referenced row and renders a focused prompt
 // block. Best-effort: empty string when lookup fails or farm scope mismatches.
+// Route refs need no DB row — only path (and optional name hint).
 func BuildContextRefBlock(ctx context.Context, q *db.Queries, farmID int64, ref ContextRef) string {
+	refType := strings.ToLower(strings.TrimSpace(ref.Type))
+	switch refType {
+	case "route":
+		return renderRouteContext(ref.Path, ref.Name)
+	}
 	if q == nil || farmID <= 0 || ref.ID <= 0 {
 		return ""
 	}
-	refType := strings.ToLower(strings.TrimSpace(ref.Type))
 	switch refType {
 	case "alert":
 		return renderAlertContext(ctx, q, farmID, ref.ID)
@@ -34,6 +40,64 @@ func BuildContextRefBlock(ctx context.Context, q *db.Queries, farmID int64, ref 
 	default:
 		return ""
 	}
+}
+
+func renderRouteContext(path, nameHint string) string {
+	path = strings.TrimSpace(path)
+	if path == "" {
+		return ""
+	}
+	label := strings.TrimSpace(nameHint)
+	if label == "" {
+		label = routeLabelFromPath(path)
+	}
+	var b strings.Builder
+	b.WriteString("Operator UI context — viewing: " + label)
+	b.WriteString("\nRoute path: " + path)
+	b.WriteString("\nPrefer setup/how-to guidance for this screen; live rows still come from the snapshot and read tools only.")
+	return b.String()
+}
+
+func routeLabelFromPath(path string) string {
+	if label, ok := knownRouteLabels[path]; ok {
+		return label
+	}
+	switch {
+	case strings.HasPrefix(path, "/zones/"):
+		return "Zone detail"
+	case strings.HasPrefix(path, "/sensors/"):
+		return "Sensor detail"
+	case strings.Contains(path, "/crop-cycles/") && strings.HasSuffix(path, "/summary"):
+		return "Crop cycle summary"
+	case strings.Contains(path, "/crop-cycles/compare"):
+		return "Crop cycle compare"
+	default:
+		return path
+	}
+}
+
+var knownRouteLabels = map[string]string{
+	"/":                  "Dashboard",
+	"/zones":             "Zones",
+	"/sensors":           "Sensors",
+	"/actuators":         "Actuators",
+	"/schedules":         "Schedules",
+	"/automation":        "Automation",
+	"/setpoints":         "Setpoints",
+	"/tasks":             "Tasks",
+	"/fertigation":       "Fertigation",
+	"/inventory":         "Inventory",
+	"/costs":             "Costs",
+	"/alerts":            "Alerts",
+	"/plants":            "Plants",
+	"/animals":           "Animals",
+	"/aquaponics":        "Aquaponics",
+	"/catalog":           "Commons catalog",
+	"/farm-knowledge":    "Farm knowledge",
+	"/chat":              "Farm Guardian chat",
+	"/guardian/requests": "Guardian change requests",
+	"/settings":          "Settings",
+	"/operator-guide":    "Operator guide",
 }
 
 func renderAlertContext(ctx context.Context, q *db.Queries, farmID, alertID int64) string {

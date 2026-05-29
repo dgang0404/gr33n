@@ -74,6 +74,34 @@ func TestSnapshot_RenderZonesAndAlerts(t *testing.T) {
 	}
 }
 
+func TestSnapshot_RenderPlantsAndPrograms(t *testing.T) {
+	s := Snapshot{
+		PlantCount: 2,
+		PlantNames: []string{"Philodendron (heartleaf)", "Tomato"},
+		ProgramsByZone: []ZoneProgramsSummary{{
+			ZoneName: "Veg Room",
+			Programs: []string{"Veg Daily JLF Program"},
+		}},
+	}
+	got := s.Render()
+	for _, want := range []string{
+		"Plants (2):",
+		"Philodendron (heartleaf)",
+		"Active fertigation programs by zone:",
+		"Veg Room: Veg Daily JLF Program",
+	} {
+		if !strings.Contains(got, want) {
+			t.Fatalf("render missing %q:\n%s", want, got)
+		}
+	}
+}
+
+func TestSnapshot_IsEmptyIncludesPlants(t *testing.T) {
+	if (Snapshot{PlantCount: 1}).IsEmpty() {
+		t.Fatal("snapshot with plants is not empty")
+	}
+}
+
 func TestSnapshot_TruncatesZones(t *testing.T) {
 	names := []string{}
 	for i := 0; i < SnapshotMaxZones+5; i++ {

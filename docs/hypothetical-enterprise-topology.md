@@ -5,7 +5,7 @@
 
 This document maps **existing** gr33n nouns (organization, farm, zone, fertigation program, commons catalog, Pi edge) onto a large deployment **without** rewriting the platform. Treat it as a thought experiment and integration guide.
 
-**Companion docs:** [`raspberry-pi-and-deployment-topology.md`](raspberry-pi-and-deployment-topology.md), [`pi-integration-guide.md`](pi-integration-guide.md), [`mqtt-edge-operator-playbook.md`](mqtt-edge-operator-playbook.md), [`commons-catalog-operator-playbook.md`](commons-catalog-operator-playbook.md), [`insert-commons-pipeline-runbook.md`](insert-commons-pipeline-runbook.md), [`offline-or-intranet-deployment.md`](offline-or-intranet-deployment.md).
+**Companion docs:** [`raspberry-pi-and-deployment-topology.md`](raspberry-pi-and-deployment-topology.md), [`pi-integration-guide.md`](pi-integration-guide.md), [`mqtt-edge-operator-playbook.md`](mqtt-edge-operator-playbook.md), [`commons-catalog-operator-playbook.md`](commons-catalog-operator-playbook.md), [`insert-commons-pipeline-runbook.md`](insert-commons-pipeline-runbook.md), [`offline-or-intranet-deployment.md`](offline-or-intranet-deployment.md), [`phase-14-operator-documentation.md`](phase-14-operator-documentation.md#phase-31-field-validation-edge) (Phase 31 operator index), [`scripts/enterprise/README.md`](../scripts/enterprise/README.md).
 
 ---
 
@@ -112,9 +112,10 @@ Multi-master **live sync** between 500 Postgres instances is **not** in scope to
 | Pi HTTP + offline queue | ✅ | Fleet monitoring, key rotation |
 | MQTT batch ingest | ✅ | Broker HA, topic conventions — [room-scale pattern](mqtt-edge-operator-playbook.md#room-scale-warehouse-pattern-phase-31-ws4) (Phase 31 WS4) |
 | Commons catalog import | ✅ | Curator workflow for packs |
-| Guardian confirm actions | ✅ (Phase 29) | Per-site LLM capacity planning |
+| Guardian confirm actions | ✅ (Phase 30 PR queue) | Per-site LLM capacity planning |
+| Guardian live zone/alert reads | ✅ (Phase 31 WS6) | Same per-farm scope as chat |
 | Instant global recipe push | ❌ | Scripts / MES layer |
-| Guardian → actuators | Phase 30 PR (`enqueue_actuator_command` → Confirm) | Phase 31 bench proves Pi executes |
+| Guardian → actuators | Phase 30 PR (`enqueue_actuator_command` → Confirm) | Phase 31 bench proves Pi executes — [`pi-integration-guide.md` §9](pi-integration-guide.md#9-safe-actuator-e2e--pending_command-round-trip-phase-31-ws3) |
 
 ---
 
@@ -128,7 +129,7 @@ Large integrators will eventually want **repeatable** site bring-up:
 - Import commons pack version pin  
 - Smoke: `GET /health`, one reading POST, one pending_command round-trip  
 
-**Repository convention:** optional helpers live under [`scripts/enterprise/`](../scripts/enterprise/README.md). The core team does not need to ship a full 500-site suite for the platform to be valid.
+**Repository convention:** optional helpers live under [`scripts/enterprise/`](../scripts/enterprise/README.md). Phase 33 WS5 adds a **`site-manifest.yaml`** bring-up stub (farm + zones + recipe pack pin). The core team does not need to ship a full 500-site suite for the platform to be valid.
 
 ### AGPL and pull requests (why this matters)
 
@@ -158,11 +159,15 @@ gr33n wins on **sovereignty and transparency**; it does not try to out-Deere Dee
 ## Suggested reading order for integrators
 
 1. [`local-operator-bootstrap.md`](local-operator-bootstrap.md) — one laptop demo  
-2. [`pi-integration-guide.md`](pi-integration-guide.md) — close the Pi loop  
+2. [`pi-integration-guide.md`](pi-integration-guide.md) — close the Pi loop (§8 field checklist, §9 actuator bench)  
 3. [`plans/phase_30_guardian_change_requests.plan.md`](plans/phase_30_guardian_change_requests.plan.md) — **Guardian PR queue** (config + Pi via confirm, not autonomous)  
-4. [`plans/phase_31_field_validation_and_edge.plan.md`](plans/phase_31_field_validation_and_edge.plan.md) — **field / Pi validation**  
-4. This doc — scale-out thought experiment  
-5. [`commons-catalog-operator-playbook.md`](commons-catalog-operator-playbook.md) — recipe pack provenance; Phase 31 WS5 [`import-recipe-pack.sh`](../scripts/enterprise/import-recipe-pack.sh) demo  
+4. [`plans/phase_31_field_validation_and_edge.plan.md`](plans/phase_31_field_validation_and_edge.plan.md) — **field / Pi validation** (shipped artifacts indexed in [`phase-14-operator-documentation.md` § Phase 31](phase-14-operator-documentation.md#phase-31-field-validation-edge))  
+5. This doc — scale-out thought experiment  
+6. [`commons-catalog-operator-playbook.md`](commons-catalog-operator-playbook.md) — recipe pack provenance; Phase 31 WS5 [`import-recipe-pack.sh`](../scripts/enterprise/import-recipe-pack.sh) demo  
+7. [`mqtt-edge-operator-playbook.md`](mqtt-edge-operator-playbook.md#room-scale-warehouse-pattern-phase-31-ws4) — room-scale MQTT ingest for multi-zone warehouses  
+8. [`plans/phase_33_guardian_polish_and_enterprise_ops.plan.md`](plans/phase_33_guardian_polish_and_enterprise_ops.plan.md) — site manifest + read-tool polish (optional before Phase 32)
+
+**README entry point:** [Phase 31 row](../README.md) in the roadmap table links here for multi-site integrators.
 
 ---
 
@@ -170,4 +175,6 @@ gr33n wins on **sovereignty and transparency**; it does not try to out-Deere Dee
 
 | Date | Note |
 |------|------|
+| 2026-05-27 | Phase 33 plan — site manifest WS5, read-tool hardening; reading order step 8 |
+| 2026-05-27 | Phase 31 WS7 — cross-links to phase-14 index, README roadmap, Guardian read tools row |
 | 2026-05-26 | Starter sketch — central HQ vs frontier autonomy, commons promotion, AGPL/PR note, `scripts/enterprise/` hook |

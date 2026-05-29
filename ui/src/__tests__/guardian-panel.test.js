@@ -69,6 +69,18 @@ describe('Phase 29 WS1 — guardian panel store', () => {
     expect(panel.contextRef).toEqual({ type: 'alert', id: 42 })
     expect(panel.activeSessionId).toBe('sess-abc')
   })
+
+  it('chatContextRef prefers entity ref over route ref', () => {
+    const panel = useGuardianPanelStore()
+    panel.setRouteFromRouter({ path: '/plants', meta: {} })
+    expect(panel.chatContextRef()).toEqual({
+      type: 'route',
+      path: '/plants',
+      name: 'Plants',
+    })
+    panel.contextRef = { type: 'zone', id: 3, name: 'Veg Room' }
+    expect(panel.chatContextRef()).toEqual({ type: 'zone', id: 3, name: 'Veg Room' })
+  })
 })
 
 describe('Phase 29 WS1 — GuardianDrawer', () => {

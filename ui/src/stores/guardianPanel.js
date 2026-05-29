@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia'
+import { routeContextRefFromRoute } from '../lib/guardianRouteRef.js'
 
 /**
  * Phase 29 WS1 — global Farm Guardian slide-out panel state.
@@ -12,6 +13,7 @@ export const useGuardianPanelStore = defineStore('guardianPanel', {
     drawerTab: 'chat', // 'chat' | 'pending' — Phase 30 WS1
     prefilledMessage: '',
     contextRef: null, // { type: 'alert'|'crop_cycle'|'zone', id, ... } — WS6
+    routeRef: null, // { type: 'route', path, name } — Phase 32 WS1
     activeSessionId: '',
   }),
 
@@ -45,6 +47,16 @@ export const useGuardianPanelStore = defineStore('guardianPanel', {
     clearPrefill() {
       this.prefilledMessage = ''
       this.contextRef = null
+    },
+
+    /** Sync current Vue route for grounded chat honesty (Phase 32 WS1). */
+    setRouteFromRouter(route) {
+      this.routeRef = routeContextRefFromRoute(route)
+    },
+
+    /** Entity Ask Guardian ref wins over passive route ref for this turn. */
+    chatContextRef() {
+      return this.contextRef ?? this.routeRef
     },
 
     setActiveSessionId(id) {

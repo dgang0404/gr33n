@@ -38,7 +38,7 @@ isProject: false
 
 ## Status
 
-**Not started.** Depends on **Phase 30** (PR queue + tools registry) shipped. **Phase 31** (field validation + WS6 read tools) can run in parallel but WS1 here subsumes/expands WS6 read coverage for grow domains.
+**Not started.** Depends on **Phase 30** (PR queue + tools registry) shipped. **Phase 31** (field validation + WS6 read tools) shipped. **Recommended:** run **Phase 33 WS1** (read-tool hardening + doc parity) before or in parallel with WS2 here — see [`phase_33_guardian_polish_and_enterprise_ops.plan.md`](phase_33_guardian_polish_and_enterprise_ops.plan.md). Phase 32 WS1 subsumes/expands Phase 31 read coverage for **grow** domains (`list_plants`, fertigation-aware zone summary).
 
 **Preconditions:**
 
@@ -338,13 +338,17 @@ Operator chat ("add philodendron to Living Room, RO water, light fertigation")
 |-------|----------------|
 | **29** | Propose→confirm foundation |
 | **30** | PR queue, risk tiers, patch tools — **prerequisite** |
-| **31** | Edge/Pi validation; WS6 read tools overlap WS1 — merge or implement WS1 here first |
+| **31** | Edge/Pi validation; WS6 `list_unread_alerts` + `summarize_zone` — Phase 33 WS1 hardens; WS1 here adds grow-domain reads |
+| **33** | Read-tool polish, hardware CI, site manifest — **WS1 optional preamble** |
 | **15** | Whole-farm templates — complementary, not replaced |
 
 ---
 
-## Out of scope (Phase 33+)
+## Out of scope (defer to Phase 33 or later)
 
+- Read-tool intent guards, context_ref dedup, read audit — **Phase 33 WS1–WS3**
+- Hardware CI gate (`GR33N_HARDWARE_TEST=1`) — **Phase 33 WS4**
+- Enterprise `site-manifest.yaml` provisioner — **Phase 33 WS5**
 - Autonomous recurring fertigation ("feed every Tuesday" without Confirm)
 - LLM direct SQL or arbitrary API proxy
 - Bulk import / multi-farm plant broadcast
@@ -358,14 +362,15 @@ Operator chat ("add philodendron to Living Room, RO water, light fertigation")
 
 ## Suggested implementation order
 
-0. **WS8** (optional first) — platform doc RAG if persona/how-to testing is blocked on knowledge gaps
-1. **WS2** — single create tools (testable in isolation via manual proposal insert)
-2. **WS1** — read snapshot (unblocks safe WS4 matching)
-3. **WS3** — setup pack transaction
-4. **WS4** — intent generation + house_plant template
-5. **WS5** — Confirm UX
-6. **WS7** — smokes
-7. **WS6** — doc pass (includes WS8 ingest runbook)
+0. **Phase 33 WS1** (optional, ~1 session) — read-tool hardening if Phase 31 WS6 is on `main`
+1. **WS8** (optional first) — platform doc RAG if persona/how-to testing is blocked on knowledge gaps
+2. **WS2** — single create tools (testable in isolation via manual proposal insert)
+3. **WS1** — read snapshot (unblocks safe WS4 matching)
+4. **WS3** — setup pack transaction
+5. **WS4** — intent generation + house_plant template
+6. **WS5** — Confirm UX
+7. **WS7** — smokes
+8. **WS6** — doc pass (includes WS8 ingest runbook)
 
 ---
 
@@ -399,7 +404,8 @@ Do not bypass Confirm; no autonomous writes.
 | Doc | Role |
 |-----|------|
 | [`phase_30_guardian_change_requests.plan.md`](phase_30_guardian_change_requests.plan.md) | PR queue prerequisite |
-| [`phase_31_field_validation_and_edge.plan.md`](phase_31_field_validation_and_edge.plan.md) | Edge validation; WS6 read overlap |
+| [`phase_31_field_validation_and_edge.plan.md`](phase_31_field_validation_and_edge.plan.md) | Edge validation; read tools origin |
+| [`phase_33_guardian_polish_and_enterprise_ops.plan.md`](phase_33_guardian_polish_and_enterprise_ops.plan.md) | WS1 hardening preamble; enterprise manifest |
 | [`phase_15_farm_onboarding.plan.md`](phase_15_farm_onboarding.plan.md) | Whole-farm templates |
 | [`farm-guardian-architecture.md`](../farm-guardian-architecture.md) | Request flow + blind spots |
 | [`domain-modules-operator-playbook.md`](../domain-modules-operator-playbook.md) | Plants module |

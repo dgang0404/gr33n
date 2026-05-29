@@ -122,6 +122,7 @@ fi
 
 if [[ "$RAG_INGEST" -eq 1 && "$SKIP_SEED" -eq 0 ]]; then
   ./scripts/rag-ingest-demo.sh
+  ./scripts/rag-ingest-platform-docs.sh
 fi
 
 echo "==> check-stack"
@@ -140,4 +141,5 @@ fi
 echo "Next:"
 echo "  make dev-auth-test          # API + UI"
 echo "  ./scripts/rag-ingest-demo.sh   # Guardian RAG corpus for farm 1 (needs EMBEDDING_API_KEY)"
+echo "  ./scripts/rag-ingest-platform-docs.sh   # Operator platform docs for Guardian how-to citations"
 echo "  curl -s http://localhost:8080/health"

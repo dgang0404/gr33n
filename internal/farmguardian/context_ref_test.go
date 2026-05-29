@@ -13,6 +13,7 @@ func TestBuildContextRefBlock_InvalidInput(t *testing.T) {
 		{"zero id", ContextRef{Type: "alert", ID: 0}},
 		{"unknown type", ContextRef{Type: "task", ID: 1}},
 		{"empty type", ContextRef{Type: "", ID: 1}},
+		{"route empty path", ContextRef{Type: "route", Path: ""}},
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
@@ -20,6 +21,30 @@ func TestBuildContextRefBlock_InvalidInput(t *testing.T) {
 				t.Fatalf("expected empty, got %q", got)
 			}
 		})
+	}
+}
+
+func TestBuildContextRefBlock_Route(t *testing.T) {
+	ref := ContextRef{Type: "route", Path: "/fertigation", Name: "Fertigation"}
+	got := BuildContextRefBlock(t.Context(), nil, 0, ref)
+	for _, want := range []string{
+		"Operator UI context — viewing: Fertigation",
+		"Route path: /fertigation",
+	} {
+		if !strings.Contains(got, want) {
+			t.Fatalf("route block missing %q:\n%s", want, got)
+		}
+	}
+}
+
+func TestContextRefPromptBlock_RouteWithoutFarm(t *testing.T) {
+	ref := ContextRef{Type: "route", Path: "/plants", Name: "Plants"}
+	got := ContextRefPromptBlock(t.Context(), nil, 0, ref)
+	if !strings.HasPrefix(got, "Contextual focus") {
+		t.Fatalf("expected wrapper, got %q", got)
+	}
+	if !strings.Contains(got, "Plants") {
+		t.Fatalf("expected screen label in block: %q", got)
 	}
 }
 

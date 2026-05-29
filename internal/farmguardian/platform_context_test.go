@@ -16,7 +16,11 @@ func TestPlatformContextBlock_ContainsRequiredFacts(t *testing.T) {
 		"Confirm",
 		"not autonomous",
 		"ack_alert",
-		"mark_alert_read",
+		"list_unread_alerts",
+		"summarize_zone",
+		"list_plants",
+		"summarize_zone_fertigation",
+		"Reads (live lookup, no Confirm)",
 		"subscription",
 		"LAN/intranet",
 	} {

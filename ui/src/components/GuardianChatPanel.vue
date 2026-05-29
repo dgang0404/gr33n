@@ -833,8 +833,9 @@ async function send() {
   if (useFarmContext.value && farmContext.farmId) {
     body.farm_id = Number(farmContext.farmId)
   }
-  if (guardianPanel.contextRef) {
-    body.context_ref = guardianPanel.contextRef
+  const chatContextRef = guardianPanel.chatContextRef()
+  if (chatContextRef) {
+    body.context_ref = chatContextRef
   }
   if (attachedIds.length) {
     body.attachment_ids = attachedIds

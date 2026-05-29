@@ -34,6 +34,9 @@ func main() {
 		doInputs     = flag.Bool("inventory-definitions", false, "index gr33nnaturalfarming.input_definitions (no unit cost)")
 		doBatches    = flag.Bool("inventory-batches", false, "index gr33nnaturalfarming.input_batches (no qty / cost numerics)")
 		doAlerts     = flag.Bool("alerts", false, "index gr33ncore.alerts_notifications")
+		doPlatform   = flag.Bool("platform-docs", false, "index curated operator markdown from docs/rag/platform-doc-manifest.yaml (source_type platform_doc)")
+		manifestPath = flag.String("manifest", "", "platform doc manifest path (default docs/rag/platform-doc-manifest.yaml)")
+		repoRoot     = flag.String("repo-root", ".", "repo root for platform-docs manifest resolution")
 		batchRuns    = flag.Int("run-batch-size", 500, "cursor batch size for automation runs")
 		startAfterID = flag.Int64("runs-after-id", 0, "only automation runs with id > this")
 		batchCosts   = flag.Int("cost-batch-size", 500, "cursor batch size for cost transactions")
@@ -48,8 +51,23 @@ func main() {
 	if *farmID <= 0 {
 		log.Fatal("-farm-id is required")
 	}
-	if !*doTasks && !*doRuns && !*doCycles && !*doPrograms && !*doSchedules && !*doRules && !*doActions && !*doCosts && !*doInputs && !*doBatches && !*doAlerts {
+	if !*doTasks && !*doRuns && !*doCycles && !*doPrograms && !*doSchedules && !*doRules && !*doActions && !*doCosts && !*doInputs && !*doBatches && !*doAlerts && !*doPlatform {
 		log.Fatal("specify at least one ingest flag (see -help)")
+	}
+
+	onlyPlatform := *doPlatform && !*doTasks && !*doRuns && !*doCycles && !*doPrograms && !*doSchedules && !*doRules && !*doActions && !*doCosts && !*doInputs && !*doBatches && !*doAlerts
+	if *dryRun && *doPlatform {
+		dry, err := ingest.DryRunPlatformDocs(*repoRoot, *manifestPath)
+		if err != nil {
+			log.Fatal(err)
+		}
+		fmt.Printf("dry-run farm=%d platform_docs files=%d estimated_chunks=%d\n", *farmID, len(dry.Files), dry.TotalChunks)
+		for _, f := range dry.Files {
+			fmt.Printf("  %s source_id=%d bytes=%d chunks=%d\n", f.RelPath, f.SourceID, f.Bytes, f.Chunks)
+		}
+		if onlyPlatform {
+			return
+		}
 	}
 
 	updatedAfterEffective := *updatedAfter
@@ -338,6 +356,13 @@ func main() {
 			log.Fatalf("alerts: %v", err)
 		}
 		log.Printf("embedded alerts_notifications: %d", n)
+	}
+	if *doPlatform {
+		n, err := w.IngestPlatformDocs(ctx, *farmID, *repoRoot, *manifestPath)
+		if err != nil {
+			log.Fatalf("platform_docs: %v", err)
+		}
+		log.Printf("embedded platform_docs: %d", n)
 	}
 }
 

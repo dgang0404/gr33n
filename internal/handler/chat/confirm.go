@@ -118,6 +118,7 @@ func (h *Handler) PostConfirm(w http.ResponseWriter, r *http.Request) {
 	}
 	result, execErr := tools.Execute(ctx, prop.ToolID, args, tools.ExecutorDeps{
 		Q:          h.q,
+		Pool:       h.pool,
 		UserID:     userID,
 		HasUser:    true,
 		FarmID:     prop.FarmID,
@@ -224,6 +225,29 @@ func successSummary(toolID string, result any) string {
 			}
 		}
 		return "Crop cycle stage updated."
+	case "create_plant":
+		if m, ok := result.(map[string]any); ok {
+			if name, ok := m["display_name"].(string); ok && name != "" {
+				return "Plant created: " + name + "."
+			}
+		}
+		return "Plant created."
+	case "create_crop_cycle":
+		if m, ok := result.(map[string]any); ok {
+			if name, ok := m["name"].(string); ok && name != "" {
+				return "Crop cycle started: " + name + "."
+			}
+		}
+		return "Crop cycle created."
+	case "create_fertigation_program":
+		if m, ok := result.(map[string]any); ok {
+			if name, ok := m["name"].(string); ok && name != "" {
+				return "Fertigation program created: " + name + "."
+			}
+		}
+		return "Fertigation program created."
+	case "apply_grow_setup_pack":
+		return "Grow setup pack applied — plant, crop cycle, and fertigation program created."
 	case "patch_schedule", "patch_fertigation_program", "patch_rule":
 		return "Configuration updated."
 	case "apply_bootstrap_template":
@@ -274,6 +298,52 @@ func auditTargetForTool(toolID string, args map[string]any, result any) (*string
 			if m, ok := result.(map[string]any); ok {
 				if id, ok := m["task_id"]; ok {
 					recID = strPtr(formatAnyInt(id))
+				}
+			}
+		}
+		return table, recID
+	case "create_plant":
+		table := strPtr("plants")
+		recID := strPtr("")
+		if result != nil {
+			if m, ok := result.(map[string]any); ok {
+				if id, ok := m["plant_id"]; ok {
+					recID = strPtr(formatAnyInt(id))
+				}
+			}
+		}
+		return table, recID
+	case "create_crop_cycle":
+		table := strPtr("crop_cycles")
+		recID := strPtr("")
+		if result != nil {
+			if m, ok := result.(map[string]any); ok {
+				if id, ok := m["crop_cycle_id"]; ok {
+					recID = strPtr(formatAnyInt(id))
+				}
+			}
+		}
+		return table, recID
+	case "create_fertigation_program":
+		table := strPtr("programs")
+		recID := strPtr("")
+		if result != nil {
+			if m, ok := result.(map[string]any); ok {
+				if id, ok := m["program_id"]; ok {
+					recID = strPtr(formatAnyInt(id))
+				}
+			}
+		}
+		return table, recID
+	case "apply_grow_setup_pack":
+		table := strPtr("crop_cycles")
+		recID := strPtr("")
+		if result != nil {
+			if m, ok := result.(map[string]any); ok {
+				if cycle, ok := m["cycle"].(map[string]any); ok {
+					if id, ok := cycle["crop_cycle_id"]; ok {
+						recID = strPtr(formatAnyInt(id))
+					}
 				}
 			}
 		}

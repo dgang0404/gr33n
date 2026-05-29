@@ -177,4 +177,76 @@ describe('Phase 29 WS6 — GuardianChatPanel context_ref POST', () => {
 
     vi.unstubAllGlobals()
   })
+
+  it('includes route context_ref when no Ask Guardian entity ref is set', async () => {
+    const farmContext = useFarmContextStore()
+    farmContext.farmId = 1
+    farmContext.farms = [{ id: 1, name: 'Demo Farm' }]
+
+    const panel = useGuardianPanelStore()
+    panel.setRouteFromRouter({ path: '/fertigation', meta: {} })
+
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      body: {
+        getReader: () => ({
+          read: async () => ({ done: true, value: undefined }),
+        }),
+      },
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    const wrapper = mount(GuardianChatPanel, { props: { layout: 'compact' } })
+    await flushPromises()
+
+    await wrapper.find('[data-test="chat-message-input"]').setValue('How do I add a program?')
+    await wrapper.find('[data-test="chat-send-button"]').trigger('click')
+    await flushPromises()
+
+    const [, opts] = fetchMock.mock.calls[0]
+    const body = JSON.parse(opts.body)
+    expect(body.context_ref).toEqual({
+      type: 'route',
+      path: '/fertigation',
+      name: 'Fertigation',
+    })
+
+    vi.unstubAllGlobals()
+  })
+
+  it('prefers Ask Guardian entity contextRef over routeRef', async () => {
+    const farmContext = useFarmContextStore()
+    farmContext.farmId = 1
+    farmContext.farms = [{ id: 1, name: 'Demo Farm' }]
+
+    const panel = useGuardianPanelStore()
+    panel.setRouteFromRouter({ path: '/fertigation', meta: {} })
+    panel.openDrawer({
+      prefilledMessage: 'Explain alert #42',
+      contextRef: { type: 'alert', id: 42 },
+    })
+
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      body: {
+        getReader: () => ({
+          read: async () => ({ done: true, value: undefined }),
+        }),
+      },
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    const wrapper = mount(GuardianChatPanel, { props: { layout: 'compact' } })
+    await flushPromises()
+
+    await wrapper.find('[data-test="chat-message-input"]').setValue('Explain alert #42')
+    await wrapper.find('[data-test="chat-send-button"]').trigger('click')
+    await flushPromises()
+
+    const [, opts] = fetchMock.mock.calls[0]
+    const body = JSON.parse(opts.body)
+    expect(body.context_ref).toEqual({ type: 'alert', id: 42 })
+
+    vi.unstubAllGlobals()
+  })
 })

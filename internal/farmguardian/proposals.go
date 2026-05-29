@@ -65,6 +65,14 @@ func BuildRuleAssistedProposals(
 		}
 	}
 	if !ok {
+		if packArgs, packSummary, okPack := matchSetupPackIntent(ctx, q, farmID, question, snap); okPack {
+			toolID = "apply_grow_setup_pack"
+			args = packArgs
+			summary = packSummary
+			ok = true
+		}
+	}
+	if !ok {
 		toolID, args, summary, ok = matchConfigToolIntent(question, snap)
 		if !ok {
 			return nil, nil

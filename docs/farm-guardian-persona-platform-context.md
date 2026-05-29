@@ -16,7 +16,9 @@ Every `POST /v1/chat` turn uses `ChatSystemPrompt()` = persona + platform block.
 | **Internet** | On-prem `LLM_BASE_URL` → chat usually stays on **LAN**; cloud LLM URLs are the operator's choice. |
 | **Cost** | No Guardian subscription; optional token budget caps; inference cost is your hardware/power. |
 | **Grounding** | Farm snapshot when a farm is selected; RAG chunks optional; zero chunks ≠ offline. Phase 32 **WS8** adds curated **platform doc** corpus (`docs/` operator guides) via `rag-ingest-platform-docs`. |
-| **Writes** | **Propose → Confirm** only; tool list comes from the live registry (alerts, tasks, schedules, programs, rules, bootstrap template, actuator enqueue). |
+| **Reads (live lookup, no Confirm)** | When your question asks for alert lists, plant catalog, zone sensors, or fertigation details, the server may inject fresh rows before the LLM answers: **`list_unread_alerts`**, **`summarize_zone`**, **`list_plants`**, **`summarize_zone_fertigation`**. These never open a Confirm card. |
+| **Writes** | **Propose → Confirm** only; write tool list comes from the live registry (alerts, tasks, schedules, programs, rules, plants, crop cycles, grow setup pack, bootstrap template, actuator enqueue). |
+| **Grow setup pack** | **`apply_grow_setup_pack`** (high tier) — one Confirm creates optional plant + active cycle + fertigation program + optional monitor task. Individual **`create_plant`**, **`create_crop_cycle`**, **`create_fertigation_program`** (medium) for step-by-step PRs. **Nothing is written until Confirm.** |
 | **Autonomy** | Rules/alerts automate; Guardian does **not** silently change schedules or GPIO. |
 | **Human work** | Defoliation, plumbing, harvest — guidance and tasks, not replacement. |
 | **PR inbox** | Pending tab + `/guardian/requests`; high/medium/low risk tiers on cards. |
@@ -31,5 +33,5 @@ Calm **farm steward**: short paragraphs, practical metaphors OK. Still: no model
 
 - [Farm Guardian architecture](farm-guardian-architecture.md) — §8 operator expectations
 - [Operator tour §6](operator-tour.md#6-farm-guardian-change-requests-with-your-ok) — narrative PR workflow
-- [Phase 30 plan](plans/phase_30_guardian_change_requests.plan.md)
+- [Phase 32 — grow setup PRs](plans/phase_32_guardian_grow_setup_prs.plan.md)
 - [Phase 31 — field validation](plans/phase_31_field_validation_and_edge.plan.md)

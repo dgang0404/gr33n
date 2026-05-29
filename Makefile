@@ -1,4 +1,4 @@
-.PHONY: run run-receiver build build-receiver test seed sqlc ui dev dev-auth-test rag-ingest-help rag-ingest-demo compose-db-up compose-db-status compose-logging-up compose-logging-down setup-compose-dev dev-stack dev-stack-fresh dev-stack-fresh-rag local-up restart-local restart-local-serve db-sanity-report check-stack clean lint bootstrap-local bootstrap-local-docker install-deps-debian install-pi-edge-deps first-clone first-clone-docker first-clone-install-deps audit-openapi edge-smoke-help edge-actuator-smoke-help recipe-pack-import-help
+.PHONY: run run-receiver build build-receiver test seed sqlc ui dev dev-auth-test rag-ingest-help rag-ingest-demo rag-ingest-platform-docs compose-db-up compose-db-status compose-logging-up compose-logging-down setup-compose-dev dev-stack dev-stack-fresh dev-stack-fresh-rag local-up restart-local restart-local-serve db-sanity-report check-stack clean lint bootstrap-local bootstrap-local-docker install-deps-debian install-pi-edge-deps first-clone first-clone-docker first-clone-install-deps audit-openapi edge-smoke-help edge-actuator-smoke-help recipe-pack-import-help
 
 # dash (common default /bin/sh) can report "wait: No child processes" for dev / dev-auth-test;
 # bash handles background jobs + wait reliably.
@@ -160,6 +160,9 @@ dev-stack-fresh-rag: ## dev-stack-fresh + rag-ingest demo farm (skip ingest if E
 
 rag-ingest-demo: ## Index farm_id=1 for Guardian RAG (needs EMBEDDING_API_KEY; no-op with skip message if unset)
 	@./scripts/rag-ingest-demo.sh
+
+rag-ingest-platform-docs: ## Index operator platform docs for farm 1 (needs EMBEDDING_API_KEY; dry-run without key via --dry-run)
+	@./scripts/rag-ingest-platform-docs.sh
 
 local-up: ## dev-stack then API + UI (same as ./scripts/dev-stack.sh --serve)
 	@./scripts/dev-stack.sh --serve

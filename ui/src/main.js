@@ -7,9 +7,14 @@ import './style.css'
 import { setUnauthorizedHandler } from './api/index.js'
 import { useAuthStore } from './stores/auth'
 import { useCapabilitiesStore } from './stores/capabilities'
+import { useGuardianPanelStore } from './stores/guardianPanel'
 
 const pinia = createPinia()
 const app = createApp(App).use(pinia).use(router)
+
+router.afterEach((to) => {
+  useGuardianPanelStore().setRouteFromRouter(to)
+})
 
 setUnauthorizedHandler(() => {
   useAuthStore().logout()
