@@ -67,3 +67,21 @@ Automation worker:
 ## Operational logging (production)
 
 For Docker/systemd log rotation, aggregation (e.g. Loki), separating **app logs** from **DB retention**, and archival exports, see **[operator-logging-runbook.md](operator-logging-runbook.md)**.
+
+---
+
+## 5. Edge actuator safety (Phase 31 WS3)
+
+gr33n **v1 does not cut GPIO when comms drop** — the Pi client stops receiving new commands, but relays stay in their last state. **Operator wiring** must fail-safe (de-energize pumps/solenoids on power loss where flood or overheat risk exists).
+
+| Risk | Mitigation (operator responsibility) |
+|------|--------------------------------------|
+| **Flood / over-watering** | Fail-safe **closed** solenoids; manual E-stop on irrigation circuits; test **`off`** command before leaving bench |
+| **Heat / fire** | Do not drive mains loads from breadboard; listed enclosures, fuses, thermal limits on lighting |
+| **Runaway on comms loss** | Assume last GPIO state persists; use hardware timers or contactors that drop out without hold power |
+| **Unauthorized Confirm** | Restrict **Operate** role; high-tier Guardian actuator PRs show warning banner — only trusted operators Confirm |
+| **Wrong device_id in config** | Run [`print-demo-actuator-ids.sh`](../scripts/print-demo-actuator-ids.sh); **`device_id`** in `pi_client` must match the DB row that receives **`pending_command`** |
+
+**Bench checklist:** one LED or 5 V fan first → [`pi-integration-guide.md` §8–§9](pi-integration-guide.md#8-field-checklist--first-pi-on-a-real-bench-phase-31-ws2) → `./scripts/run-edge-actuator-smoke.sh --direct` before mains loads.
+
+**E-stop story:** keep a physical power cut for the load under test; document who may Confirm actuator PRs on production farms. Software audit: confirmed PR → `pending_command` → `actuator_events` with `meta_data.proposal_id` when sourced from Guardian.

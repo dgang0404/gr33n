@@ -4,7 +4,8 @@ overview: >
   Close the gap between "Guardian explains setup" and "Guardian opens a change request
   you can Confirm." Enable conversational, multi-step grow onboarding PRs — add plant,
   start cycle in zone, create/link fertigation program — without autonomous writes.
-  Reuses Phase 30 PR queue; extends tools, snapshot reads, and proposal generation.
+  Reuses Phase 30 PR queue; extends tools, snapshot reads, proposal generation, and
+  platform doc RAG (WS8) so Guardian can answer how-to questions from the operator corpus.
 todos:
   - id: ws1-read-layer
     content: "WS1: Read layer — expand live snapshot (plants, programs per zone); read-only tools list_plants, summarize_zone_fertigation; optional route context from UI"
@@ -26,6 +27,9 @@ todos:
     status: pending
   - id: ws7-openapi-tests
     content: "WS7: OpenAPI + smokes — setup pack propose→confirm; Vitest bundle card; no silent partial apply on validation failure"
+    status: pending
+  - id: ws8-knowledge-depth
+    content: "WS8: Guardian knowledge depth — curated platform docs/ RAG corpus + ingest script; persona cites corpus for how-to; farm-scoped chunks for operator Q&A"
     status: pending
 isProject: false
 ---
@@ -143,6 +147,7 @@ Operator chat ("add philodendron to Living Room, RO water, light fertigation")
 | **WS5** | Confirm UX | `SetupPackProposalCard.vue`; diff summary |
 | **WS6** | Docs | Operator guide + architecture blind-spot table update |
 | **WS7** | Tests | Smokes: philodendron bundle; rollback on zone conflict |
+| **WS8** | Knowledge depth | Platform `docs/` RAG pack + ingest script; persona/RAG instructions |
 
 ---
 
@@ -287,6 +292,46 @@ Operator chat ("add philodendron to Living Room, RO water, light fertigation")
 
 ---
 
+### WS8 — Guardian knowledge depth (platform doc RAG)
+
+**Goal:** Operators can ask Guardian **how gr33n works** — Pi setup, Guardian PR inbox, fertigation workflows, troubleshooting — and get answers **grounded in your indexed doc corpus**, not only generic Llama weights or the live snapshot.
+
+**Problem today:**
+
+- Persona + platform block (`persona.go`, `platform_context.go`) cover **tone and high-level product facts** — not the full [`docs/`](../) tree.
+- RAG is **opt-in per farm** via [`cmd/rag-ingest`](../../cmd/rag-ingest) / [`scripts/rag-ingest-demo.sh`](../../scripts/rag-ingest-demo.sh) — demo ingest indexes **operational farm text**, not platform operator guides.
+- Without WS8, questions like *"how do I run the Pi field checklist?"* or *"what does Confirm do on a high-tier actuator PR?"* rely on model guesswork unless the operator reads markdown manually.
+
+**Tasks:**
+
+1. **Curated doc manifest** — `docs/rag/platform-doc-manifest.yaml` (or similar) listing paths to index:
+   - Operator-facing: [`operator-tour.md`](../operator-tour.md), [`local-operator-bootstrap.md`](../local-operator-bootstrap.md), [`workflow-guide.md`](../workflow-guide.md), [`pi-integration-guide.md`](../pi-integration-guide.md), [`operator-troubleshooting.md`](../operator-troubleshooting.md), [`farm-guardian-architecture.md`](../farm-guardian-architecture.md), [`farm-guardian-persona-platform-context.md`](../farm-guardian-persona-platform-context.md), [`farm-guardian-ollama-setup.md`](../farm-guardian-ollama-setup.md), phase **operator** plans (14, 26, 30 summaries — not raw dev todos).
+   - Exclude: secrets, `.env` examples with placeholders, generated OpenAPI blobs, internal agent plans marked dev-only (configurable `exclude_globs`).
+2. **Ingest script** — `scripts/rag-ingest-platform-docs.sh`:
+   - Calls `cmd/rag-ingest` with `source_type=platform_doc` (or extend existing enum) per farm_id (default demo farm **1** for dev; production: ingest once per farm or shared template farm — document choice).
+   - `--dry-run` prints file list + chunk count estimate.
+   - Idempotent re-run (same source_id replaces chunks).
+3. **Makefile** — `rag-ingest-platform-docs` + `make dev-stack-fresh-rag` optional hook (after demo ingest).
+4. **Persona / prompt** — extend grounded chat instructions: when RAG chunks present with `platform_doc`, prefer citing them for **how-to / troubleshooting**; still never invent live sensor values (snapshot wins for "right now").
+5. **Operator doc** — WS6 section: *"What Guardian knows"* = snapshot + RAG corpus + weights; link ingest commands.
+6. **Smoke** — with `EMBEDDING_API_KEY` + seeded chunks, grounded `/v1/chat` question *"How do I confirm a Guardian actuator PR?"* returns answer with citation to architecture or operator-tour chunk (assert `context_count > 0` + citation source in smoke).
+
+**Not in scope (WS8):**
+
+- Indexing the entire git repo including `internal/` Go source (use architecture docs instead).
+- Auto-ingest on every `git pull` (operator runs ingest deliberately).
+- Replacing Phase 32 WS1 **live** reads (plants/programs) — RAG is **documentation**; snapshot/tools are **database truth**.
+
+**Acceptance:**
+
+- `./scripts/rag-ingest-platform-docs.sh --dry-run` lists ≥ N markdown files from manifest.
+- After ingest on farm 1, grounded chat cites platform doc for a Pi/Guardian how-to smoke question.
+- [`farm-guardian-architecture.md`](../farm-guardian-architecture.md) §3.2 updated with platform doc layer vs farm notes vs snapshot.
+
+**Relationship to WS1:** WS1 = **live DB reads** for setup; WS8 = **static operator knowledge**. Both reduce blind spots; implement **WS8 early** if persona/how-to testing is the priority (parallel with WS2).
+
+---
+
 ## Relationship to other phases
 
 | Phase | Relationship |
@@ -307,18 +352,20 @@ Operator chat ("add philodendron to Living Room, RO water, light fertigation")
 - Auto-create sensors/actuators/hardware registry from chat
 - Full UI parity snapshot (every dashboard widget)
 - Replacing human repotting, plumbing, harvest
+- **Whole-repo code indexing** — Phase 32 WS8 covers **curated operator docs**, not every Go/SQL file
 
 ---
 
 ## Suggested implementation order
 
+0. **WS8** (optional first) — platform doc RAG if persona/how-to testing is blocked on knowledge gaps
 1. **WS2** — single create tools (testable in isolation via manual proposal insert)
 2. **WS1** — read snapshot (unblocks safe WS4 matching)
 3. **WS3** — setup pack transaction
 4. **WS4** — intent generation + house_plant template
 5. **WS5** — Confirm UX
 6. **WS7** — smokes
-7. **WS6** — doc pass
+7. **WS6** — doc pass (includes WS8 ingest runbook)
 
 ---
 
@@ -329,6 +376,7 @@ Operator chat ("add philodendron to Living Room, RO water, light fertigation")
 - [ ] Snapshot lists existing plants/programs so duplicate proposals are reduced
 - [ ] High-tier warning on setup pack Confirm
 - [ ] Docs explain setup PR vs Phase 15 bootstrap vs manual Plants/Fertigation UI
+- [ ] Platform doc RAG pack ingestible; grounded chat cites operator docs for how-to (WS8)
 - [ ] `make test` green; OpenAPI documents new tool + bundle args
 
 ---

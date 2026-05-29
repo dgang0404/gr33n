@@ -45,7 +45,7 @@ isProject: false
   - **LLM not configured** → **503** with `set LLM_BASE_URL and LLM_MODEL` hint.
   - **Happy path** → `{ "answer": "...", "llm_model": "..." }` using the Farm Guardian **persona** (`internal/farmguardian`).
 - **`POST /farms/{id}/rag/answer`** — Same **503** message when AI off (generation path only; **search** still works if embeddings are configured).
-- **`LLM_TIMEOUT_SECONDS`** — Chat HTTP client timeout (default 120s).
+- **`LLM_TIMEOUT_SECONDS`** — Chat HTTP client timeout (default 666s).
 - **UI** — `ui/src/stores/capabilities.js` Pinia store auto-loads `/capabilities` at app start; **Settings → AI features** shows a read-only **Lite / Full** label; **Farm knowledge → Ask (LLM)** is disabled with a clear note when AI is off.
 
 ### Shipped after the v1 cut (WS1 doc + WS3 stream + WS5 v2/v3 + WS6 chat panel)
@@ -243,7 +243,7 @@ Ollama exposes `GET /api/tags` — use this for the API's health check dependenc
 AI_ENABLED=true                          # Master switch
 LLM_BASE_URL=http://ollama.farm.local:11434  # Ollama intranet URL
 LLM_MODEL=llama3.1:70b-instruct-q4_K_M  # Exact model tag
-LLM_TIMEOUT_SECONDS=120                  # Generation timeout
+LLM_TIMEOUT_SECONDS=666                  # Generation timeout (default)
 LLM_MAX_CONTEXT_TOKENS=8192             # Budget per request
 ```
 

@@ -15,7 +15,7 @@ Every `POST /v1/chat` turn uses `ChatSystemPrompt()` = persona + platform block.
 | **Full vs Lite** | `AI_ENABLED` + configured LLM → chat works; Lite or missing LLM → chat unavailable, farm ops still run. |
 | **Internet** | On-prem `LLM_BASE_URL` → chat usually stays on **LAN**; cloud LLM URLs are the operator's choice. |
 | **Cost** | No Guardian subscription; optional token budget caps; inference cost is your hardware/power. |
-| **Grounding** | Farm snapshot when a farm is selected; RAG chunks optional; zero chunks ≠ offline. |
+| **Grounding** | Farm snapshot when a farm is selected; RAG chunks optional; zero chunks ≠ offline. Phase 32 **WS8** adds curated **platform doc** corpus (`docs/` operator guides) via `rag-ingest-platform-docs`. |
 | **Writes** | **Propose → Confirm** only; tool list comes from the live registry (alerts, tasks, schedules, programs, rules, bootstrap template, actuator enqueue). |
 | **Autonomy** | Rules/alerts automate; Guardian does **not** silently change schedules or GPIO. |
 | **Human work** | Defoliation, plumbing, harvest — guidance and tasks, not replacement. |

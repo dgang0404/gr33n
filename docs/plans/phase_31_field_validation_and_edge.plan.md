@@ -15,7 +15,7 @@ todos:
     status: completed
   - id: ws3-one-actuator-story
     content: "WS3: Safe actuator story — end-to-end: Phase 30 PR confirm OR rule → pending_command → Pi executes → actuator_events → audit; E-stop checklist (doc)"
-    status: pending
+    status: completed
   - id: ws4-mqtt-room-scale
     content: "WS4: MQTT room-scale pattern — topic convention for multi-zone warehouse; bridge config example; batch ingest load note (not performance guarantee)"
     status: pending
@@ -30,7 +30,7 @@ todos:
     status: pending
   - id: ws8-openapi-tests
     content: "WS8: Smokes — live reading on dashboard path; optional tagged hardware test skipped in CI"
-    status: pending
+    status: completed
 isProject: false
 ---
 
@@ -38,7 +38,7 @@ isProject: false
 
 ## Status
 
-**In progress (WS1–WS2 shipped).** Phase 29 (Guardian agent layer) should reach **WS6–WS9** ship criteria first. Phase 30 (Guardian change requests) can land before or in parallel with Phase 31 WS1 — field bench work validates that **confirmed PRs** reach real GPIO.
+**In progress (WS1–WS3, WS8 shipped).** Phase 29 (Guardian agent layer) should reach **WS6–WS9** ship criteria first. Phase 30 (Guardian change requests) can land before or in parallel with Phase 31 WS1 — field bench work validates that **confirmed PRs** reach real GPIO.
 
 **Preconditions (already met or in progress):**
 
@@ -127,6 +127,8 @@ Parallel activity (README already says this): Pi / MQTT validation can start **b
 
 **Acceptance:** Reproduce [`TestPiContract*`](../../cmd/api/smoke_pi_contract_test.go) on a bench; audit row or actuator_events row visible.
 
+**Shipped:** [`pi-integration-guide.md`](../pi-integration-guide.md) **§9**; scripts [`run-edge-actuator-smoke.sh`](../../scripts/run-edge-actuator-smoke.sh), [`run-edge-actuator-client.sh`](../../scripts/run-edge-actuator-client.sh), [`enqueue-demo-pending-command.sh`](../../scripts/enqueue-demo-pending-command.sh); safety [operator-troubleshooting.md §5](../operator-troubleshooting.md#5-edge-actuator-safety-phase-31-ws3); `make edge-actuator-smoke-help`; pi_client passes `proposal_id` in actuator event `meta_data` for Guardian PRs.
+
 ---
 
 ### WS4 — MQTT room-scale pattern
@@ -181,11 +183,13 @@ Parallel activity (README already says this): Pi / MQTT validation can start **b
 - Smoke: after WS1 path, assert `GET /sensors/{id}/readings/latest` ≠ 404 for seeded sensor when client posted.
 - Tag live-GPIO tests `@hardware` — skipped unless `GR33N_HARDWARE_TEST=1`.
 
+**Shipped:** [`cmd/api/smoke_phase31_ws8_test.go`](../../cmd/api/smoke_phase31_ws8_test.go).
+
 ---
 
 ## Out of scope (Phase 32+)
 
-- **Conversational grow setup PRs** (plant + cycle + fertigation bundle) — see [`phase_32_guardian_grow_setup_prs.plan.md`](phase_32_guardian_grow_setup_prs.plan.md)
+- **Conversational grow setup PRs** (plant + cycle + fertigation bundle) — see [`phase_32_guardian_grow_setup_prs.plan.md`](phase_32_guardian_grow_setup_prs.plan.md) (WS2–WS5 writes; **WS8** platform doc RAG for how-to answers)
 - Automatic multi-farm recipe broadcast in core API
 - Hardware certification, UL listings, proprietary controller marketplace
 - 500-site performance guarantees

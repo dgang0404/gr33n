@@ -325,11 +325,11 @@ Minimal GPIO proof **without** Guardian or automation worker:
 
 1. Wire **one LED + resistor** (or 3.3 V relay module input) to the GPIO pin in `config.yaml` `actuators[].gpio_pin` (default **BCM 17**).
 2. Ensure a **`devices`** + **`actuators`** row exists in the dashboard for that `device_id` / `actuator_id`.
-3. From API (JWT **Operate**), enqueue pending command on the device — same shape the automation worker uses — or wait for Phase 31 WS3 script / confirmed Guardian PR.
+3. Enqueue **`pending_command`** — automation rule, confirmed Guardian PR, or bench script (§9).
 4. Pi polls **`GET /farms/{id}/devices`** with **`X-API-Key`** → sees **`config.pending_command`** (base64 JSON in API responses — client decodes automatically).
 5. Client executes → **`POST /actuators/{id}/events`** → **`DELETE /devices/{id}/pending-command`**.
 
-Full narrative + Guardian PR path: Phase 31 WS3 ([`phase_31_field_validation_and_edge.plan.md`](plans/phase_31_field_validation_and_edge.plan.md)).
+Full E2E walkthrough: **§9** below.
 
 ### 8.7 API contract smokes (same shapes as the Pi)
 
@@ -364,3 +364,93 @@ Python client contract (no DB): `cd pi_client && python3 -m pytest test_gr33n_cl
 | **Queue grows forever** | API down or batch POST failing — see §8.5 |
 
 Broader ops: [`operator-troubleshooting.md`](operator-troubleshooting.md), [`mqtt-edge-operator-playbook.md`](mqtt-edge-operator-playbook.md) if using MQTT instead of direct HTTP.
+
+---
+
+## 9. Safe actuator E2E — pending_command round-trip (Phase 31 WS3)
+
+**Goal:** Prove one relay or LED path end-to-end: something enqueues **`devices.config.pending_command`** → **`pi_client`** polls → GPIO (or stub) → **`POST /actuators/{id}/events`** → **`DELETE /devices/{id}/pending-command`**.
+
+This matches [`TestPiContract*`](../../cmd/api/smoke_pi_contract_test.go) and Phase 30 **`enqueue_actuator_command`** after Confirm.
+
+### 9.1 Preconditions
+
+| Item | Why |
+|------|-----|
+| API up with **`PI_API_KEY`** | Pi routes need matching key ([§7](#7-pi-api-key-security-middleware-and-least-privilege)) |
+| **`demo-veg-relay-01`** seeded | Master seed device + **Veg Room Grow Light** actuator ([`print-demo-actuator-ids.sh`](../scripts/print-demo-actuator-ids.sh)) |
+| **`AUTOMATION_SIMULATION_MODE=false`** (optional) | Simulation mode skips real **`pending_command`** enqueue from the worker — use direct/G Guardian enqueue for bench |
+| Safety read | [§8.1](#81-safety-read-before-gpio) + [operator-troubleshooting §5](operator-troubleshooting.md#5-edge-actuator-safety-phase-31-ws3) |
+
+### 9.2 Automated smoke (laptop or Pi)
+
+Terminal 1 — API (if not already running):
+
+```bash
+make dev-auth-test
+```
+
+Terminal 2 — one-shot E2E (starts pi_client, enqueues, verifies event):
+
+```bash
+./scripts/run-edge-actuator-smoke.sh --direct
+# Guardian PR path (Confirm → pending_command):
+./scripts/run-edge-actuator-smoke.sh --guardian
+```
+
+Success prints the latest **`gr33ncore.actuator_events`** row and confirms **`pending_command`** was cleared.
+
+### 9.3 Manual two-terminal bench (real GPIO)
+
+**Terminal A** — actuator-only client (polls every 5s by default):
+
+```bash
+./scripts/run-edge-actuator-client.sh
+# Optional: GR33N_GPIO_PIN=17 GR33N_SCHEDULE_POLL_SECONDS=5
+```
+
+**Terminal B** — enqueue after client is running:
+
+```bash
+./scripts/enqueue-demo-pending-command.sh on
+# Turn off:
+./scripts/enqueue-demo-pending-command.sh off
+# Clear without executing:
+./scripts/enqueue-demo-pending-command.sh --clear
+```
+
+**Verify:**
+
+- Client log: `Executing scheduled command 'on' for device_id=…`
+- Dashboard **Devices** → device stays **online**; pending clears on next poll
+- DB or API: `GET /actuators/{id}/events` shows new row with `reported_by: pi_client` in `meta_data`
+
+### 9.4 Guardian PR path (production-shaped)
+
+1. Dashboard → **Guardian** → ask to turn on a grow light (or open an actuator PR from inbox).
+2. **Confirm** the high-tier proposal — executes **`enqueue_actuator_command`** → writes **`pending_command`** with `source: guardian` and `proposal_id`.
+3. Pi client running on the bench picks it up on the next **`schedule_poll_interval_seconds`** tick.
+4. Event posts with **`source: manual_api_call`** and `meta_data.proposal_id` for audit join back to the PR.
+
+Automated equivalent: `./scripts/run-edge-actuator-smoke.sh --guardian`.
+
+### 9.5 Flow diagram
+
+```
+  Automation worker / Guardian Confirm / bench script
+              │
+              ▼
+   devices.config.pending_command  (JSON: command, actuator_id, …)
+              │
+              ▼
+   pi_client GET /farms/{id}/devices  (X-API-Key)
+              │
+              ▼
+   GPIO execute (LED / relay)  — stubbed off-Pi
+              │
+              ├── POST /actuators/{id}/events
+              └── DELETE /devices/{id}/pending-command
+```
+
+Help text only: **`make edge-actuator-smoke-help`**.
+

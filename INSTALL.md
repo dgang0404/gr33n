@@ -162,7 +162,7 @@ Add this to your `~/.bashrc` or `~/.zshrc` to avoid typing it every time.
 | `LLM_API_KEY` | Answer synthesis | Set if the chat server requires `Authorization: Bearer`; many local servers need no key |
 | `LLM_TEMPERATURE` | Answer synthesis | Default `0.2` |
 | `LLM_MAX_TOKENS` | Answer synthesis | Default `1024` |
-| `LLM_TIMEOUT_SECONDS` | Answer synthesis | Chat HTTP client timeout; default **120** |
+| `LLM_TIMEOUT_SECONDS` | Answer synthesis | Chat HTTP client timeout; default **666** |
 | `LLM_RETRY_MAX_ATTEMPTS` | Answer synthesis + `/v1/chat` | Total tries including the first attempt; default **3**, clamped **1..8**. **1** disables retry. Retries HTTP 408/425/429/5xx, per-attempt timeout, network errors. Never retries caller cancellation or other 4xx. |
 | `LLM_RETRY_BACKOFF_MS` | Answer synthesis + `/v1/chat` | Initial backoff in ms; default **500**, clamped **10..30000**. Exponential doubling up to 10s with ±25% jitter. |
 | `LLM_VISION_MODEL` | `/v1/chat` with `attachment_ids` | Optional multimodal model (e.g. `llava`). When set, `GET /capabilities` exposes `vision_chat_enabled`. Uses `LLM_VISION_BASE_URL` or `LLM_BASE_URL`. |

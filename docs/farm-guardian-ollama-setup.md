@@ -178,7 +178,7 @@ AI_ENABLED=true
 LLM_BASE_URL=http://ollama.farm.local:11434/v1
 LLM_MODEL=llama3.1:70b-instruct-q4_K_M
 LLM_API_KEY=                     # leave empty for intranet Ollama
-LLM_TIMEOUT_SECONDS=120          # default 120; raise for 70B on slow GPUs
+LLM_TIMEOUT_SECONDS=666          # default 666; lower only if you want faster fail on hung LLM
 LLM_TEMPERATURE=0.2              # default 0.2; existing Phase 24/25 knob
 LLM_MAX_TOKENS=1024              # default 1024; existing Phase 24/25 knob
 ```

@@ -490,6 +490,60 @@ class TestScheduleLoopDictCommand(unittest.TestCase):
         finally:
             server.shutdown()
 
+    def test_guardian_pending_uses_manual_api_call_and_proposal_meta(self):
+        posted = []
+
+        class GuardianHandler(BaseHTTPRequestHandler):
+            def log_message(self, *args): pass
+            def do_GET(self):
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json")
+                self.end_headers()
+                if self.path == "/health":
+                    self.wfile.write(b'{"status":"ok"}')
+                elif "/devices" in self.path:
+                    self.wfile.write(json.dumps([
+                        {"id": 7, "config": {"pending_command": {
+                            "command": "on",
+                            "source": "guardian",
+                            "proposal_id": "prop-123",
+                            "reason": "operator inspection",
+                        }}},
+                    ]).encode())
+            def do_POST(self):
+                length = int(self.headers.get("Content-Length", 0))
+                body = self.rfile.read(length)
+                posted.append(json.loads(body.decode()))
+                self.send_response(201)
+                self.end_headers()
+                self.wfile.write(b'{"id":1}')
+            def do_DELETE(self):
+                self.send_response(204)
+                self.end_headers()
+
+        server = HTTPServer(("127.0.0.1", 18085), GuardianHandler)
+        threading.Thread(target=server.serve_forever, daemon=True).start()
+        try:
+            api = client.Gr33nApiClient("http://127.0.0.1:18085", 1, timeout=3)
+            actuator = client.ActuatorController({"actuator_id": 9, "device_id": 7, "device_type": "light", "gpio_pin": 17})
+            device = api.get_devices()[0]
+            pending = device["config"]["pending_command"]
+            cmd = pending["command"]
+            actuator.execute(cmd)
+            meta = {}
+            if pending.get("proposal_id"):
+                meta["proposal_id"] = pending["proposal_id"]
+            if pending.get("reason"):
+                meta["reason"] = pending["reason"]
+            src = "manual_api_call" if pending.get("source") == "guardian" else "schedule_trigger"
+            api.post_actuator_event(actuator.actuator_id, cmd, src, meta_data=meta or None)
+            api.clear_pending_command(device["id"])
+            self.assertEqual(len(posted), 1)
+            self.assertEqual(posted[0]["source"], "manual_api_call")
+            self.assertEqual(posted[0]["meta_data"]["proposal_id"], "prop-123")
+        finally:
+            server.shutdown()
+
 
 class TestHeartbeat(unittest.TestCase):
     """Test that heartbeat logic patches status for every configured device."""

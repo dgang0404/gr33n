@@ -1,4 +1,4 @@
-.PHONY: run run-receiver build build-receiver test seed sqlc ui dev dev-auth-test rag-ingest-help rag-ingest-demo compose-db-up compose-db-status compose-logging-up compose-logging-down setup-compose-dev dev-stack dev-stack-fresh dev-stack-fresh-rag local-up restart-local restart-local-serve db-sanity-report check-stack clean lint bootstrap-local bootstrap-local-docker install-deps-debian install-pi-edge-deps first-clone first-clone-docker first-clone-install-deps audit-openapi edge-smoke-help
+.PHONY: run run-receiver build build-receiver test seed sqlc ui dev dev-auth-test rag-ingest-help rag-ingest-demo compose-db-up compose-db-status compose-logging-up compose-logging-down setup-compose-dev dev-stack dev-stack-fresh dev-stack-fresh-rag local-up restart-local restart-local-serve db-sanity-report check-stack clean lint bootstrap-local bootstrap-local-docker install-deps-debian install-pi-edge-deps first-clone first-clone-docker first-clone-install-deps audit-openapi edge-smoke-help edge-actuator-smoke-help
 
 # dash (common default /bin/sh) can report "wait: No child processes" for dev / dev-auth-test;
 # bash handles background jobs + wait reliably.
@@ -109,6 +109,21 @@ edge-smoke-help: ## Phase 31 WS1 — print laptop stub loop commands (pi_client 
 	@echo "Automation stays off the GPIO path by default: AUTOMATION_SIMULATION_MODE=true"
 	@echo "  in .env simulates actuator rules in the API; pi_client only posts readings."
 	@echo "  Set AUTOMATION_SIMULATION_MODE=false when testing pending_command → GPIO (Phase 31 WS3)."
+
+edge-actuator-smoke-help: ## Phase 31 WS3 — print safe actuator E2E commands (pending_command → pi_client → events)
+	@echo "Safe actuator round-trip (Phase 31 WS3)"
+	@echo "Full narrative: docs/pi-integration-guide.md §9"
+	@echo "Safety: docs/operator-troubleshooting.md §5"
+	@echo ""
+	@echo "  1. make dev-auth-test                 # API + PI_API_KEY"
+	@echo "  2. ./scripts/print-demo-actuator-ids.sh"
+	@echo "  3. ./scripts/run-edge-actuator-smoke.sh --direct"
+	@echo "     # or manual:"
+	@echo "     terminal A: ./scripts/run-edge-actuator-client.sh"
+	@echo "     terminal B: ./scripts/enqueue-demo-pending-command.sh on"
+	@echo "  4. Guardian path: ./scripts/run-edge-actuator-smoke.sh --guardian"
+	@echo ""
+	@echo "Ids: demo-veg-relay-01 + Veg Room Grow Light (master_seed)"
 
 compose-db-up: ## Start only the Postgres image from docker-compose.yml (Timescale + pgvector build)
 	docker compose up -d db --build

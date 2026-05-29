@@ -51,4 +51,6 @@ coverage/
 # gr33n local
 .gr33n/
 pi_client/.edge-stub.generated.yaml
+pi_client/.edge-actuator.generated.yaml
 pi_client/.gr33n-edge-queue.db
+pi_client/.gr33n-edge-actuator-queue.db

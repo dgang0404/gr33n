@@ -644,11 +644,19 @@ class Gr33nPiClient:
                 if isinstance(pending, dict):
                     cmd      = pending.get('command', '')
                     sched_id = pending.get('schedule_id')
-                    rule_id = pending.get('rule_id')
-                    prog_id = pending.get('program_id')
+                    rule_id  = pending.get('rule_id')
+                    prog_id  = pending.get('program_id')
+                    pending_source = pending.get('source')
+                    proposal_id = pending.get('proposal_id')
+                    reason = pending.get('reason')
                 else:
                     cmd      = str(pending)
                     sched_id = config.get('pending_schedule_id')
+                    rule_id = None
+                    prog_id = None
+                    pending_source = None
+                    proposal_id = None
+                    reason = None
                 if not cmd:
                     continue
                 actuator = actuator_by_device.get(did)
@@ -657,11 +665,22 @@ class Gr33nPiClient:
                     continue
                 log.info('Executing scheduled command %r for device_id=%s', cmd, did)
                 actuator.execute(cmd)
-                src = 'automation_rule_trigger' if rule_id is not None else 'schedule_trigger'
+                if rule_id is not None:
+                    src = 'automation_rule_trigger'
+                elif pending_source == 'guardian':
+                    src = 'manual_api_call'
+                else:
+                    src = 'schedule_trigger'
+                meta = {}
+                if proposal_id:
+                    meta['proposal_id'] = proposal_id
+                if reason:
+                    meta['reason'] = reason
                 self.api.post_actuator_event(
                     actuator_id=actuator.actuator_id, command=cmd,
                     source=src, schedule_id=sched_id, rule_id=rule_id,
                     program_id=prog_id,
+                    meta_data=meta or None,
                 )
                 self.api.clear_pending_command(did)
                 self.api.patch_device_status(did, 'online')
