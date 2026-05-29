@@ -146,7 +146,7 @@ A Fortune-scale deployment that **customizes the platform** without publishing s
 | | Big Ag / OEM cloud (FieldView, Operations Center, vertical MES vendors) | gr33n at hypothetical 500 sites |
 |--|--|--|
 | Control | Vendor cloud, prescriptions, dealer lock-in | Your DB, your LAN, your packs |
-| Recipe rollout | Central push, often proprietary | Catalog import + your scripts |
+| Recipe rollout | Central push, often proprietary | Catalog import + [`scripts/enterprise/import-recipe-pack.sh`](../scripts/enterprise/import-recipe-pack.sh) (Phase 31 WS5 demo) |
 | Edge | Certified controllers | Pi + your wiring |
 | Scale polish | Decades of enterprise SE | Integrator + [`scripts/enterprise/`](../scripts/enterprise/README.md) |
 | Guardian | N/A or black-box automation | Propose → confirm → audit |
@@ -162,7 +162,7 @@ gr33n wins on **sovereignty and transparency**; it does not try to out-Deere Dee
 3. [`plans/phase_30_guardian_change_requests.plan.md`](plans/phase_30_guardian_change_requests.plan.md) — **Guardian PR queue** (config + Pi via confirm, not autonomous)  
 4. [`plans/phase_31_field_validation_and_edge.plan.md`](plans/phase_31_field_validation_and_edge.plan.md) — **field / Pi validation**  
 4. This doc — scale-out thought experiment  
-5. [`commons-catalog-operator-playbook.md`](commons-catalog-operator-playbook.md) — recipe pack provenance  
+5. [`commons-catalog-operator-playbook.md`](commons-catalog-operator-playbook.md) — recipe pack provenance; Phase 31 WS5 [`import-recipe-pack.sh`](../scripts/enterprise/import-recipe-pack.sh) demo  
 
 ---
 

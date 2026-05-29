@@ -18,7 +18,7 @@ Phase 14 **WS3** introduces a **published catalog** of contribution-style packs:
 - **`gr33ncore.commons_catalog_entries`** — curator-published rows (`slug`, `title`, `summary`, `body` JSONB, `contributor_*`, `license_spdx`, `tags`, `published`).
 - **`gr33ncore.farm_commons_catalog_imports`** — `(farm_id, catalog_entry_id)` unique; `imported_by`, `imported_at`, optional `note`.
 
-Apply **`db/migrations/20260426_commons_catalog.sql`** (includes one demo documentation pack).
+Apply **`db/migrations/20260426_commons_catalog.sql`** (includes one demo documentation pack). Phase 31 WS5 adds **`20260527_phase31_commons_recipe_pack_v7.sql`** (fertigation recipe pack demo) — promote with [`scripts/enterprise/import-recipe-pack.sh`](../../scripts/enterprise/import-recipe-pack.sh).
 
 ## Licensing and attribution
 

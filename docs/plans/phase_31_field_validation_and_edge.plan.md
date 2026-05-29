@@ -21,7 +21,7 @@ todos:
     status: completed
   - id: ws5-recipe-pack-demo
     content: "WS5: Recipe pack promotion demo — sample commons catalog body for fertigation program v1→v2; script stub in scripts/enterprise/ importing to two farm_ids"
-    status: pending
+    status: completed
   - id: ws6-guardian-read-tools
     content: "WS6: Guardian read-only edge tools — list unread alerts, summarize zone snapshot (read-only); actuator enqueue remains Phase 30 PR path only"
     status: pending
@@ -38,7 +38,7 @@ isProject: false
 
 ## Status
 
-**In progress (WS1–WS4, WS8 shipped).** Phase 29 (Guardian agent layer) should reach **WS6–WS9** ship criteria first. Phase 30 (Guardian change requests) can land before or in parallel with Phase 31 WS1 — field bench work validates that **confirmed PRs** reach real GPIO.
+**In progress (WS1–WS5, WS8 shipped).** Phase 29 (Guardian agent layer) should reach **WS6–WS9** ship criteria first. Phase 30 (Guardian change requests) can land before or in parallel with Phase 31 WS1 — field bench work validates that **confirmed PRs** reach real GPIO.
 
 **Preconditions (already met or in progress):**
 
@@ -158,6 +158,8 @@ Parallel activity (README already says this): Pi / MQTT validation can start **b
 
 **Acceptance:** `import-recipe-pack.sh --dry-run` prints actions; real run requires local API + JWT.
 
+**Shipped:** migration [`20260527_phase31_commons_recipe_pack_v7.sql`](../../db/migrations/20260527_phase31_commons_recipe_pack_v7.sql); [`sample-recipe-pack-v7.body.json`](../../scripts/enterprise/sample-recipe-pack-v7.body.json); [`import-recipe-pack.sh`](../../scripts/enterprise/import-recipe-pack.sh); [`scripts/enterprise/README.md`](../../scripts/enterprise/README.md).
+
 ---
 
 ### WS6 — Guardian read-only edge tools
@@ -219,7 +221,7 @@ Phase 29 **WS6–WS9** can run **in parallel** with WS1–WS3.
 - [ ] Operator doc path: laptop stub readings → dashboard live
 - [ ] Pi checklist + one actuator bench test documented
 - [ ] `TestPiContract*` narrative matches field checklist
-- [ ] Sample recipe pack + `scripts/enterprise/` import stub (dry-run OK)
+- [x] Sample recipe pack + `scripts/enterprise/` import stub (dry-run OK)
 - [ ] Enterprise topology doc linked from README
 - [ ] Confirmed Phase 30 actuator PR → Pi execution demonstrated on bench (when Phase 30 shipped)
 - [ ] `make test` green; hardware tests opt-in only

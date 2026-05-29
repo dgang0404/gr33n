@@ -1,4 +1,4 @@
-.PHONY: run run-receiver build build-receiver test seed sqlc ui dev dev-auth-test rag-ingest-help rag-ingest-demo compose-db-up compose-db-status compose-logging-up compose-logging-down setup-compose-dev dev-stack dev-stack-fresh dev-stack-fresh-rag local-up restart-local restart-local-serve db-sanity-report check-stack clean lint bootstrap-local bootstrap-local-docker install-deps-debian install-pi-edge-deps first-clone first-clone-docker first-clone-install-deps audit-openapi edge-smoke-help edge-actuator-smoke-help
+.PHONY: run run-receiver build build-receiver test seed sqlc ui dev dev-auth-test rag-ingest-help rag-ingest-demo compose-db-up compose-db-status compose-logging-up compose-logging-down setup-compose-dev dev-stack dev-stack-fresh dev-stack-fresh-rag local-up restart-local restart-local-serve db-sanity-report check-stack clean lint bootstrap-local bootstrap-local-docker install-deps-debian install-pi-edge-deps first-clone first-clone-docker first-clone-install-deps audit-openapi edge-smoke-help edge-actuator-smoke-help recipe-pack-import-help
 
 # dash (common default /bin/sh) can report "wait: No child processes" for dev / dev-auth-test;
 # bash handles background jobs + wait reliably.
@@ -124,6 +124,15 @@ edge-actuator-smoke-help: ## Phase 31 WS3 — print safe actuator E2E commands (
 	@echo "  4. Guardian path: ./scripts/run-edge-actuator-smoke.sh --guardian"
 	@echo ""
 	@echo "Ids: demo-veg-relay-01 + Veg Room Grow Light (master_seed)"
+
+recipe-pack-import-help: ## Phase 31 WS5 — print recipe pack promotion commands (commons catalog → farms)
+	@echo "Recipe Pack v7 demo promotion (Phase 31 WS5)"
+	@echo "Docs: scripts/enterprise/README.md · docs/hypothetical-enterprise-topology.md"
+	@echo ""
+	@echo "  1. Apply migration: db/migrations/20260527_phase31_commons_recipe_pack_v7.sql"
+	@echo "  2. make dev-auth-test"
+	@echo "  3. ./scripts/enterprise/import-recipe-pack.sh --dry-run"
+	@echo "  4. ./scripts/enterprise/import-recipe-pack.sh --farm-ids 1,2"
 
 compose-db-up: ## Start only the Postgres image from docker-compose.yml (Timescale + pgvector build)
 	docker compose up -d db --build

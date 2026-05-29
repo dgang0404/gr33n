@@ -1,6 +1,6 @@
 # Enterprise deployment helpers (community extension)
 
-**Status:** Placeholder — no required scripts ship with the core platform yet.
+**Status:** Phase 31 WS5 ships a **demo** recipe-pack promotion stub. Larger multi-site suites remain community contributions.
 
 Large multi-site operators (see [`docs/hypothetical-enterprise-topology.md`](../../docs/hypothetical-enterprise-topology.md)) often need **repeatable bring-up**:
 
@@ -8,6 +8,30 @@ Large multi-site operators (see [`docs/hypothetical-enterprise-topology.md`](../
 - Pi `config.yaml` generation from a device manifest  
 - Commons catalog pack import across many `farm_id`s  
 - Post-deploy smoke (health, one reading, one actuator round-trip)
+
+## Shipped (Phase 31 WS5)
+
+| Tool | Purpose |
+|------|---------|
+| [`import-recipe-pack.sh`](import-recipe-pack.sh) | Promote **Recipe Pack v7** demo to comma-separated `farm_id`s via public API |
+| [`sample-recipe-pack-v7.body.json`](sample-recipe-pack-v7.body.json) | Opaque `commons_catalog_entries.body` mirror (fertigation program defs + readme) |
+| [`db/migrations/20260527_phase31_commons_recipe_pack_v7.sql`](../../db/migrations/20260527_phase31_commons_recipe_pack_v7.sql) | Publishes catalog slug `gr33n-recipe-pack-v7-lettuce-veg` |
+
+### Quick start
+
+```bash
+# After migrate + API up (make dev-auth-test)
+./scripts/enterprise/import-recipe-pack.sh --dry-run
+./scripts/enterprise/import-recipe-pack.sh --farm-ids 1
+# Multi-site (when farms exist):
+./scripts/enterprise/import-recipe-pack.sh --farm-ids 1,2,3
+```
+
+**Idempotency:** catalog import upserts per farm+entry; programs skip when **`name`** already exists. Programs import **`is_active: false`** — enable in UI after review.
+
+**Auth:** farm **admin** JWT (`POST /farms/{id}/commons/catalog-imports`); **Operate** for program create.
+
+See [`docs/commons-catalog-operator-playbook.md`](../../docs/commons-catalog-operator-playbook.md) for catalog semantics (import records audit — does not auto-run SQL).
 
 ## Contributing
 
