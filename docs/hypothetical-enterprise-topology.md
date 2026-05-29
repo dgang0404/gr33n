@@ -110,7 +110,7 @@ Multi-master **live sync** between 500 Postgres instances is **not** in scope to
 | Zones / sensors / actuators / rules | ✅ | Device provisioning at volume |
 | Fertigation programs | ✅ | Promotion pipeline (scripts) |
 | Pi HTTP + offline queue | ✅ | Fleet monitoring, key rotation |
-| MQTT batch ingest | ✅ | Broker HA, topic conventions |
+| MQTT batch ingest | ✅ | Broker HA, topic conventions — [room-scale pattern](mqtt-edge-operator-playbook.md#room-scale-warehouse-pattern-phase-31-ws4) (Phase 31 WS4) |
 | Commons catalog import | ✅ | Curator workflow for packs |
 | Guardian confirm actions | ✅ (Phase 29) | Per-site LLM capacity planning |
 | Instant global recipe push | ❌ | Scripts / MES layer |

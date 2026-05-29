@@ -60,3 +60,30 @@ def test_resolve_sensor_id_numeric_slug():
     assert bridge.resolve_sensor_id(m, "d", "101") == 101
     assert bridge.resolve_sensor_id(m, "d", "hum") == 9
     assert bridge.resolve_sensor_id(m, "d", "unknown") is None
+
+
+def test_parse_room_scale_topic_ok():
+    assert bridge.parse_room_scale_topic(
+        "gr33n/farm/1/zone/12/sensor/101", 1
+    ) == (12, "101")
+    assert bridge.parse_room_scale_topic(
+        "gr33n/farm/1/zone/3/sensor/par", 1
+    ) == (3, "par")
+
+
+def test_parse_room_scale_topic_wrong_farm():
+    assert bridge.parse_room_scale_topic("gr33n/farm/99/zone/1/sensor/2", 1) is None
+
+
+def test_zone_sensor_map_from_data():
+    m = bridge.zone_sensor_map_from_data(
+        {"zone_sensor_map": [{"zone_id": 2, "slug": "rh", "sensor_id": 8}]}
+    )
+    assert m == {(2, "rh"): 8}
+
+
+def test_resolve_room_sensor_id():
+    m = {(2, "rh"): 8}
+    assert bridge.resolve_room_sensor_id(m, 2, "101") == 101
+    assert bridge.resolve_room_sensor_id(m, 2, "rh") == 8
+    assert bridge.resolve_room_sensor_id(m, 2, "missing") is None

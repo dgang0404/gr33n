@@ -1,0 +1,29 @@
+# Room-scale MQTT map — three-tier plastic room (Phase 31 WS4)
+#
+# Topic shape (MQTT_TOPIC_LAYOUT=room):
+#   gr33n/farm/<farm_id>/zone/<zone_id>/sensor/<slug_or_sensor_id>
+#
+# Resolve zone_id values from the dashboard or:
+#   psql ... -c "SELECT id, name FROM gr33ncore.zones WHERE farm_id=1 AND deleted_at IS NULL"
+#
+# Numeric <slug_or_sensor_id> in the topic skips YAML (e.g. .../sensor/3 → sensor_id 3).
+
+zone_sensor_map:
+  - zone_id: 1
+    slug: air_temp
+    sensor_id: 3
+  - zone_id: 1
+    slug: air_humidity
+    sensor_id: 5
+  - zone_id: 2
+    slug: air_temp
+    sensor_id: 3
+  - zone_id: 2
+    slug: par
+    sensor_id: 1
+
+# Optional: keep device_uid layout rows in the same file for mixed deployments.
+# sensor_map:
+#   - device_uid: room-a-gateway
+#     slug: temp
+#     sensor_id: 3

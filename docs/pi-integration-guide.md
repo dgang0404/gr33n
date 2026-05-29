@@ -4,7 +4,7 @@
 >
 > **Companion docs:**
 > - API spec: [`openapi.yaml`](../openapi.yaml) — source of truth for every route used below.
-> - MQTT edge playbook: [`mqtt-edge-operator-playbook.md`](mqtt-edge-operator-playbook.md) — when you run the MQTT → API bridge instead of (or alongside) direct HTTP.
+> - MQTT edge playbook: [`mqtt-edge-operator-playbook.md`](mqtt-edge-operator-playbook.md) — MQTT → API bridge; **room-scale warehouse topics (Phase 31 WS4)** in § Room-scale pattern.
 > - Operator workflow narrative: [`workflow-guide.md`](workflow-guide.md) — how the pieces connect end-to-end.
 > - **Hardware layout & scaling:** [`raspberry-pi-and-deployment-topology.md`](raspberry-pi-and-deployment-topology.md) — Pi OS packages, full stack on one Pi, splitting DB/API/UI onto servers or containers as the farm grows.
 > - **Laptop stub loop first (Phase 31 WS1):** [`local-operator-bootstrap.md`](local-operator-bootstrap.md) — *Edge loop in 5 commands* before wiring GPIO.
@@ -222,7 +222,7 @@ For a single **plastic grow room** with **three vertical shelves**, pick **one c
 | One Pi per room | One **`devices`** row + actuators per relay channel; sensors tagged to tier **`zone_id`** |
 | Alternative (single zone) | One zone + three **`sensor_id`** rows (PAR/temp/humidity per shelf) — simpler UI, less per-tier automation |
 
-Enterprise-scale naming patterns: [`hypothetical-enterprise-topology.md`](hypothetical-enterprise-topology.md) (*Plastic grow room → zones*).
+Enterprise-scale naming patterns: [`hypothetical-enterprise-topology.md`](hypothetical-enterprise-topology.md) (*Plastic grow room → zones*). **MQTT room-scale ingest:** same three zones can publish on `gr33n/farm/{farm_id}/zone/{zone_id}/sensor/{id}` — [`mqtt-edge-operator-playbook.md`](mqtt-edge-operator-playbook.md#room-scale-warehouse-pattern-phase-31-ws4).
 
 Create zones in the dashboard (**Zones**) or via seed/template **before** editing `config.yaml` — run [`scripts/print-demo-sensor-ids.sh`](../scripts/print-demo-sensor-ids.sh) or `./scripts/run-edge-stub-client.sh` on a laptop to confirm **`sensor_id`** values match DB names.
 

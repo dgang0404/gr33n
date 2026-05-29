@@ -32,12 +32,22 @@ gr33n does **not** embed a broker; operators pick one and configure the bridge.
 
 ## Suggested topic layout (convention, not enforced)
 
-Use a stable prefix so ACLs are simple:
+Two layouts are supported by [`mqtt_telemetry_bridge.py`](../pi_client/mqtt_telemetry_bridge.py) (`MQTT_TOPIC_LAYOUT`):
+
+**Device gateway (default)** — one edge host per `device_uid`:
 
 ```text
 gr33n/<farm_id>/<device_uid>/telemetry/<sensor_slug|sensor_id>
 gr33n/<farm_id>/<device_uid>/cmd/<name>          # optional: downstream commands from bridge to MCU
 ```
+
+**Room-scale warehouse (Phase 31 WS4)** — zone-centric multi-shelf rooms:
+
+```text
+gr33n/farm/<farm_id>/zone/<zone_id>/sensor/<sensor_id_or_slug>
+```
+
+See [Room-scale warehouse pattern](#room-scale-warehouse-pattern-phase-31-ws4) below for env, batching, and ACL examples.
 
 - **`device_uid`** matches `gr33ncore.devices.device_uid` when possible.
 - Payloads should stay small. Example JSON: `{"v":22.5,"t":"2026-04-16T12:00:00Z"}` or even a single float string for ultra-constrained nodes.
@@ -53,7 +63,9 @@ Maintained script: **[`pi_client/mqtt_telemetry_bridge.py`](../pi_client/mqtt_te
 | Artifact | Purpose |
 |----------|---------|
 | [`mqtt_bridge_map.example.yaml`](../pi_client/mqtt_bridge_map.example.yaml) | YAML `(device_uid, slug) → sensor_id` |
+| [`mqtt_bridge_map.room-scale.example.yaml`](../pi_client/mqtt_bridge_map.room-scale.example.yaml) | Phase 31 WS4 — `zone_sensor_map` for room layout |
 | [`mqtt-bridge.example.env`](../pi_client/mqtt-bridge.example.env) | Environment template for production |
+| [`mqtt-bridge.room-scale.example.env`](../pi_client/mqtt-bridge.room-scale.example.env) | Room-scale warehouse env template (WS4) |
 | [`mqtt-bridge.example.service`](../pi_client/mqtt-bridge.example.service) | systemd unit sketch |
 
 Run (development):
@@ -64,9 +76,109 @@ export MQTT_HOST=127.0.0.1 MQTT_PORT=1883
 python3 pi_client/mqtt_telemetry_bridge.py --sensor-map pi_client/mqtt_bridge_map.example.yaml
 ```
 
-Optional **`MQTT_BATCH_MS`**: coalesce readings for that many milliseconds (still caps at **64** readings per HTTP request). **`MQTT_TOPIC_PREFIX`**: defaults to `gr33n` if you need a different first path segment.
+Optional **`MQTT_BATCH_MS`**: coalesce readings for that many milliseconds (still caps at **64** readings per HTTP request). **`MQTT_TOPIC_PREFIX`**: defaults to `gr33n` if you need a different first path segment. **`MQTT_TOPIC_LAYOUT`**: `device` (default) or `room` for warehouse zone topics (Phase 31 WS4).
 
 Unit tests (no broker): `python3 -m pytest pi_client/test_mqtt_telemetry_bridge.py -v`
+
+---
+
+## Room-scale warehouse pattern (Phase 31 WS4)
+
+**Goal:** A plastic room with **many MCUs** (one per shelf tier or sensor cluster) publishes telemetry without custom HTTP code on each node — one **bridge** batches into gr33n.
+
+### When to use which topic layout
+
+| Layout | Topic example | Best for |
+|--------|---------------|----------|
+| **device** (default) | `gr33n/1/gw-a/telemetry/temp` | Pi gateway, single `device_uid`, slug map |
+| **room** (WS4) | `gr33n/farm/1/zone/12/sensor/101` | Warehouse shelves mapped to **`zone_id`**; ACL per zone |
+
+Both layouts hit the same API: **`POST /sensors/readings/batch`** (max **64** readings per request — see `maxBatchReadings` in `internal/handler/sensor/handler.go`).
+
+### Room topic convention
+
+```text
+<prefix>/farm/<farm_id>/zone/<zone_id>/sensor/<sensor_id_or_slug>
+```
+
+- **`farm_id`** must match **`GR33N_FARM_ID`** on the bridge (misconfigured publishers are dropped).
+- **`zone_id`** matches `gr33ncore.zones.id` — aligns with Phase 31 three-tier room naming ([`pi-integration-guide.md` §8.2](pi-integration-guide.md#82-zone-naming--one-plastic-room-three-tiers-example)).
+- **`sensor_id_or_slug`**: if all digits, treated as `gr33ncore.sensors.id`; otherwise lookup **`zone_sensor_map`** in YAML.
+
+Example MCU publish (QoS 1 recommended):
+
+```text
+Topic: gr33n/farm/1/zone/2/sensor/par
+Payload: {"v": 420.0, "t": "2026-05-27T12:00:00Z"}
+```
+
+Or publish numeric sensor id directly (no YAML row required):
+
+```text
+Topic: gr33n/farm/1/zone/2/sensor/1
+Payload: 380.5
+```
+
+### Load and batching (not a performance guarantee)
+
+Illustrative math for ops planning only:
+
+| Scenario | Raw MQTT msg/s | With `MQTT_BATCH_MS=250` |
+|----------|----------------|---------------------------|
+| 3 zones × 4 sensors × 1 Hz | 12 | ~4–5 HTTP batch POSTs/s (well under API limits) |
+| 20 zones × 10 sensors × 1 Hz | 200 | ~8+ POSTs/s — tune batch window; watch API CPU |
+
+Rules of thumb:
+
+- Set **`MQTT_BATCH_MS=250`** (or 500) on busy rooms so the bridge coalesces before HTTP.
+- Each batch caps at **64** readings; overflow spills to the next POST automatically.
+- gr33n does **not** ship a broker — Mosquitto, HiveMQ, AWS IoT Core, etc. are interchangeable.
+
+### Example env block (room layout)
+
+Copy [`pi_client/mqtt-bridge.room-scale.example.env`](../pi_client/mqtt-bridge.room-scale.example.env):
+
+```bash
+export GR33N_API_URL=http://192.168.1.50:8080
+export GR33N_FARM_ID=1
+export PI_API_KEY=your-shared-edge-secret
+export MQTT_HOST=127.0.0.1
+export MQTT_PORT=1883
+export MQTT_TOPIC_LAYOUT=room
+export MQTT_TOPIC_PREFIX=gr33n
+export MQTT_SENSOR_MAP_PATH=pi_client/mqtt_bridge_map.room-scale.example.yaml
+export MQTT_BATCH_MS=250
+
+python3 pi_client/mqtt_telemetry_bridge.py \
+  --topic-layout room \
+  --sensor-map "$MQTT_SENSOR_MAP_PATH"
+```
+
+YAML map: [`mqtt_bridge_map.room-scale.example.yaml`](../pi_client/mqtt_bridge_map.room-scale.example.yaml) (`zone_sensor_map` rows).
+
+### Broker ACL sketch (Mosquitto)
+
+Per-shelf MCU credentials publish **only** to their zone:
+
+```text
+user tier2-mcu
+topic write gr33n/farm/1/zone/2/sensor/#
+```
+
+Bridge service account subscribes:
+
+```text
+user gr33n-bridge
+topic read gr33n/farm/1/zone/+/sensor/+
+```
+
+### Actuator / tasking (unchanged)
+
+MQTT WS4 covers **telemetry ingest** only. **`pending_command`** still flows through **`GET /farms/{id}/devices`** on the Pi client or a bridge extension — see [Tasking and schedules](#tasking-and-schedules) above and Phase 31 WS3 ([`pi-integration-guide.md` §9](pi-integration-guide.md#9-safe-actuator-e2e--pending_command-round-trip-phase-31-ws3)).
+
+Enterprise topology context: [`hypothetical-enterprise-topology.md`](hypothetical-enterprise-topology.md).
+
+---
 
 ## Security checklist
 

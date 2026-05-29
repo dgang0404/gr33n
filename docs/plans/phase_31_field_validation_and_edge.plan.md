@@ -18,7 +18,7 @@ todos:
     status: completed
   - id: ws4-mqtt-room-scale
     content: "WS4: MQTT room-scale pattern — topic convention for multi-zone warehouse; bridge config example; batch ingest load note (not performance guarantee)"
-    status: pending
+    status: completed
   - id: ws5-recipe-pack-demo
     content: "WS5: Recipe pack promotion demo — sample commons catalog body for fertigation program v1→v2; script stub in scripts/enterprise/ importing to two farm_ids"
     status: pending
@@ -38,7 +38,7 @@ isProject: false
 
 ## Status
 
-**In progress (WS1–WS3, WS8 shipped).** Phase 29 (Guardian agent layer) should reach **WS6–WS9** ship criteria first. Phase 30 (Guardian change requests) can land before or in parallel with Phase 31 WS1 — field bench work validates that **confirmed PRs** reach real GPIO.
+**In progress (WS1–WS4, WS8 shipped).** Phase 29 (Guardian agent layer) should reach **WS6–WS9** ship criteria first. Phase 30 (Guardian change requests) can land before or in parallel with Phase 31 WS1 — field bench work validates that **confirmed PRs** reach real GPIO.
 
 **Preconditions (already met or in progress):**
 
@@ -141,6 +141,8 @@ Parallel activity (README already says this): Pi / MQTT validation can start **b
 - Bridge env vars documented; batch endpoint limits noted in playbook.
 
 **Acceptance:** One markdown section + example env block; no broker vendor lock-in.
+
+**Shipped:** [`mqtt-edge-operator-playbook.md`](../mqtt-edge-operator-playbook.md) § *Room-scale warehouse pattern*; `MQTT_TOPIC_LAYOUT=room` in [`mqtt_telemetry_bridge.py`](../../pi_client/mqtt_telemetry_bridge.py); [`mqtt_bridge_map.room-scale.example.yaml`](../../pi_client/mqtt_bridge_map.room-scale.example.yaml), [`mqtt-bridge.room-scale.example.env`](../../pi_client/mqtt-bridge.room-scale.example.env); tests in `test_mqtt_telemetry_bridge.py`.
 
 ---
 

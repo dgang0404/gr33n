@@ -11,7 +11,8 @@ holds X-API-Key. See docs/mqtt-edge-operator-playbook.md.
 Environment (typical):
   GR33N_API_URL, GR33N_FARM_ID, PI_API_KEY (or MQTT_BRIDGE_API_KEY),
   MQTT_HOST, MQTT_PORT, optional MQTT_USER / MQTT_PASS,
-  MQTT_SENSOR_MAP_PATH (YAML), optional MQTT_TOPIC_PREFIX (default gr33n).
+  MQTT_SENSOR_MAP_PATH (YAML), optional MQTT_TOPIC_PREFIX (default gr33n),
+  optional MQTT_TOPIC_LAYOUT=device|room (Phase 31 WS4 room-scale warehouse).
 """
 
 from __future__ import annotations
@@ -71,6 +72,39 @@ def parse_telemetry_topic(
     return device_uid, slug
 
 
+def parse_room_scale_topic(
+    topic: str, expected_farm_id: int, prefix: str = "gr33n"
+) -> Optional[tuple[int, str]]:
+    """
+    Room-scale warehouse layout (Phase 31 WS4):
+    <prefix>/farm/<farm_id>/zone/<zone_id>/sensor/<sensor_id_or_slug>
+
+    Returns (zone_id, sensor_id_or_slug) or None if pattern / farm id mismatch.
+    """
+    parts = topic.split("/")
+    if len(parts) < 7:
+        return None
+    if parts[0] != prefix or parts[1] != "farm" or parts[3] != "zone" or parts[5] != "sensor":
+        return None
+    try:
+        farm_in_topic = int(parts[2])
+        zone_id = int(parts[4])
+    except ValueError:
+        return None
+    if farm_in_topic != expected_farm_id:
+        LOG.warning(
+            "dropping message: topic farm_id=%s != GR33N_FARM_ID=%s (%s)",
+            farm_in_topic,
+            expected_farm_id,
+            topic,
+        )
+        return None
+    sensor_part = "/".join(parts[6:])
+    if not sensor_part:
+        return None
+    return zone_id, sensor_part
+
+
 def extract_value(payload: bytes) -> Optional[float]:
     """Parse MCU payload: JSON {v|value_raw|value}, or plain float string."""
     if not payload:
@@ -102,6 +136,12 @@ def load_sensor_map(path: str) -> dict[tuple[str, str], int]:
     return sensor_map_from_data(data)
 
 
+def load_zone_sensor_map(path: str) -> dict[tuple[int, str], int]:
+    with open(path, encoding="utf-8") as f:
+        data = yaml.safe_load(f)
+    return zone_sensor_map_from_data(data)
+
+
 def sensor_map_from_data(data: Any) -> dict[tuple[str, str], int]:
     if not data or not isinstance(data, dict):
         return {}
@@ -118,12 +158,36 @@ def sensor_map_from_data(data: Any) -> dict[tuple[str, str], int]:
     return out
 
 
+def zone_sensor_map_from_data(data: Any) -> dict[tuple[int, str], int]:
+    if not data or not isinstance(data, dict):
+        return {}
+    out: dict[tuple[int, str], int] = {}
+    for row in data.get("zone_sensor_map", []) or []:
+        if not isinstance(row, dict):
+            continue
+        zid = row.get("zone_id")
+        slug = str(row.get("slug", "")).strip()
+        sid = row.get("sensor_id")
+        if zid is None or not slug or sid is None:
+            continue
+        out[(int(zid), slug)] = int(sid)
+    return out
+
+
 def resolve_sensor_id(
     mapping: dict[tuple[str, str], int], device_uid: str, slug: str
 ) -> Optional[int]:
     if slug.isdigit():
         return int(slug)
     return mapping.get((device_uid, slug))
+
+
+def resolve_room_sensor_id(
+    mapping: dict[tuple[int, str], int], zone_id: int, slug_or_id: str
+) -> Optional[int]:
+    if slug_or_id.isdigit():
+        return int(slug_or_id)
+    return mapping.get((zone_id, slug_or_id))
 
 
 def _api_key() -> str:
@@ -141,13 +205,17 @@ class Bridge:
         farm_id: int,
         api_key: str,
         sensor_map: dict[tuple[str, str], int],
+        zone_sensor_map: dict[tuple[int, str], int] | None = None,
         topic_prefix: str = "gr33n",
+        topic_layout: str = "device",
         batch_ms: int = 0,
     ):
         self.api_url = api_url.rstrip("/")
         self.farm_id = farm_id
         self.sensor_map = sensor_map
+        self.zone_sensor_map = zone_sensor_map or {}
         self.topic_prefix = topic_prefix
+        self.topic_layout = topic_layout
         self.batch_ms = max(0, batch_ms)
         self._session = requests.Session()
         self._session.headers.update(
@@ -223,16 +291,29 @@ class Bridge:
 
     def on_message(self, _c: Any, _u: Any, msg: Any) -> None:
         topic = getattr(msg, "topic", "") or ""
-        parsed = parse_telemetry_topic(
-            topic, self.farm_id, prefix=self.topic_prefix
-        )
-        if not parsed:
-            return
-        device_uid, slug = parsed
-        sid = resolve_sensor_id(self.sensor_map, device_uid, slug)
-        if sid is None:
-            LOG.debug("no sensor mapping for device_uid=%s slug=%s", device_uid, slug)
-            return
+        sid: Optional[int] = None
+        if self.topic_layout == "room":
+            parsed = parse_room_scale_topic(
+                topic, self.farm_id, prefix=self.topic_prefix
+            )
+            if not parsed:
+                return
+            zone_id, slug = parsed
+            sid = resolve_room_sensor_id(self.zone_sensor_map, zone_id, slug)
+            if sid is None:
+                LOG.debug("no zone sensor mapping for zone_id=%s slug=%s", zone_id, slug)
+                return
+        else:
+            parsed = parse_telemetry_topic(
+                topic, self.farm_id, prefix=self.topic_prefix
+            )
+            if not parsed:
+                return
+            device_uid, slug = parsed
+            sid = resolve_sensor_id(self.sensor_map, device_uid, slug)
+            if sid is None:
+                LOG.debug("no sensor mapping for device_uid=%s slug=%s", device_uid, slug)
+                return
         val = extract_value(msg.payload)
         if val is None:
             LOG.warning("unparseable payload on %s", topic)
@@ -266,6 +347,12 @@ def main() -> None:
         default=int(os.environ.get("MQTT_BATCH_MS", "0")),
         help="If >0, coalesce readings for this many ms (max %d per POST)" % _MAX_BATCH,
     )
+    parser.add_argument(
+        "--topic-layout",
+        default=os.environ.get("MQTT_TOPIC_LAYOUT", "device"),
+        choices=("device", "room"),
+        help="Topic convention: device (default) or room-scale warehouse (Phase 31 WS4)",
+    )
     args = parser.parse_args()
 
     api_url = os.environ.get("GR33N_API_URL", "").strip()
@@ -281,8 +368,15 @@ def main() -> None:
         sys.exit(1)
 
     farm_id = int(farm_s)
+    topic_layout = (args.topic_layout or "device").strip().lower()
     sensor_map = load_sensor_map(map_path)
-    if not sensor_map:
+    zone_sensor_map = load_zone_sensor_map(map_path)
+    if topic_layout == "room":
+        if not zone_sensor_map:
+            LOG.warning(
+                "zone_sensor_map is empty — only numeric sensor ids in topics will work"
+            )
+    elif not sensor_map:
         LOG.warning("sensor_map is empty — only numeric telemetry slugs will work")
 
     bridge = Bridge(
@@ -290,7 +384,9 @@ def main() -> None:
         farm_id=farm_id,
         api_key=key,
         sensor_map=sensor_map,
+        zone_sensor_map=zone_sensor_map,
         topic_prefix=args.topic_prefix.strip() or "gr33n",
+        topic_layout=topic_layout,
         batch_ms=args.batch_ms,
     )
 
@@ -300,7 +396,11 @@ def main() -> None:
     password = os.environ.get("MQTT_PASS", "").strip() or None
     use_tls = os.environ.get("MQTT_USE_TLS", "").strip() in ("1", "true", "yes")
 
-    topic = f"{bridge.topic_prefix}/+/+/telemetry/#"
+    prefix = bridge.topic_prefix
+    if topic_layout == "room":
+        topic = f"{prefix}/farm/{farm_id}/zone/+/sensor/+"
+    else:
+        topic = f"{prefix}/+/+/telemetry/#"
     client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
     if user:
         client.username_pw_set(user, password)
@@ -326,10 +426,11 @@ def main() -> None:
     client.connect(host, port, keepalive=60)
     client.subscribe(topic, qos=1)
     LOG.info(
-        "subscribed %s → %s farm_id=%s (batch_ms=%s)",
+        "subscribed %s → %s farm_id=%s layout=%s (batch_ms=%s)",
         topic,
         api_url,
         farm_id,
+        topic_layout,
         bridge.batch_ms,
     )
     client.loop_forever()
