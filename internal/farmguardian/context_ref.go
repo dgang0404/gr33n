@@ -204,9 +204,11 @@ func renderZoneContext(ctx context.Context, q *db.Queries, farmID, zoneID int64,
 	if z.Description != nil && strings.TrimSpace(*z.Description) != "" {
 		b.WriteString("Description: " + strings.TrimSpace(*z.Description) + "\n")
 	}
-	sensors, _ := q.ListSensorsByZone(ctx, &zoneID)
-	if len(sensors) > 0 {
-		b.WriteString(fmt.Sprintf("Sensors in zone: %d", len(sensors)))
+	// Phase 33 WS2: carry the same latest sensor readings summarize_zone would
+	// render, so this focus block is the single, complete zone block for the
+	// turn (EnrichPromptBlock skips summarize_zone for this zone).
+	if readings, rerr := renderZoneSensorReadings(ctx, q, zoneID); rerr == nil && readings != "" {
+		b.WriteString(readings)
 	}
 	if meta, _, err := zonephotos.ParseMeta(z.MetaData); err == nil && len(meta.PhotoAttachmentIDs) > 0 {
 		b.WriteByte('\n')

@@ -49,7 +49,7 @@ func TestPhase32WS1_EnrichSummarizeZoneFertigation(t *testing.T) {
 	if err != nil {
 		t.Fatalf("BuildSnapshot: %v", err)
 	}
-	block := farmguardian.EnrichPromptBlock(ctx, q, 1, "what fertigation program runs in Veg Room?", snap)
+	block := farmguardian.EnrichPromptBlock(ctx, q, 1, "what fertigation program runs in Veg Room?", snap, nil)
 	if block == "" {
 		t.Fatal("expected read-tool enrichment for fertigation question")
 	}
@@ -76,7 +76,7 @@ func TestPhase32WS1_ListPlantsEmptyFarm(t *testing.T) {
 	if err != nil {
 		t.Fatalf("BuildSnapshot: %v", err)
 	}
-	block := farmguardian.EnrichPromptBlock(ctx, q, 1, "list my plants", snap)
+	block := farmguardian.EnrichPromptBlock(ctx, q, 1, "list my plants", snap, nil)
 	if block == "" {
 		t.Fatal("expected list_plants enrichment block")
 	}

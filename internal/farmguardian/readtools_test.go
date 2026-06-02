@@ -88,7 +88,7 @@ func TestFormatSensorReading(t *testing.T) {
 }
 
 func TestEnrichPromptBlock_NoQueries(t *testing.T) {
-	if got := EnrichPromptBlock(nil, nil, 1, "list unread alerts", Snapshot{}); got != "" {
+	if got := EnrichPromptBlock(nil, nil, 1, "list unread alerts", Snapshot{}, nil); got != "" {
 		t.Fatalf("expected empty block without querier, got %q", got)
 	}
 }

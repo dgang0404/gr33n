@@ -222,7 +222,7 @@ func (h *Handler) PostV1(w http.ResponseWriter, r *http.Request) {
 			system += snapshotBlock + "\n\n"
 		}
 		if h.q != nil {
-			if readBlock := farmguardian.EnrichPromptBlock(r.Context(), h.q, farmID, question, liveSnap); readBlock != "" {
+			if readBlock := farmguardian.EnrichPromptBlock(r.Context(), h.q, farmID, question, liveSnap, pb.ContextRef); readBlock != "" {
 				system += readBlock + "\n\n"
 			}
 		}

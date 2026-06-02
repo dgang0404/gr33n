@@ -23,7 +23,7 @@ func TestPhase33WS1_EnrichSummarizeZoneHumidity(t *testing.T) {
 	if err != nil {
 		t.Fatalf("BuildSnapshot: %v", err)
 	}
-	block := farmguardian.EnrichPromptBlock(ctx, q, 1, "what's the humidity in Flower Room?", snap)
+	block := farmguardian.EnrichPromptBlock(ctx, q, 1, "what's the humidity in Flower Room?", snap, nil)
 	if block == "" {
 		t.Fatal("expected read-tool enrichment block for humidity question")
 	}
@@ -48,7 +48,7 @@ func TestPhase33WS1_AckIntentSkipsSummarizeZone(t *testing.T) {
 		t.Fatalf("BuildSnapshot: %v", err)
 	}
 	question := "Please acknowledge the humidity alert in Flower Room"
-	block := farmguardian.EnrichPromptBlock(ctx, q, 1, question, snap)
+	block := farmguardian.EnrichPromptBlock(ctx, q, 1, question, snap, nil)
 	if strings.Contains(block, "summarize_zone") {
 		t.Fatalf("ack intent must not inject summarize_zone:\n%s", block)
 	}

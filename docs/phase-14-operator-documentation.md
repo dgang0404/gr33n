@@ -41,6 +41,17 @@ Cross-linked from Phase 14 because enterprise scale-out and MQTT edge patterns s
 | **32** | Grow-setup PR bundles + platform doc RAG | [`phase_32_guardian_grow_setup_prs.plan.md`](plans/phase_32_guardian_grow_setup_prs.plan.md) |
 | **33 WS2–WS5** | context_ref dedup, read audit, hardware CI, site manifest | Same Phase 33 plan |
 
+## Phases 34–36 — Guardian polish + grow environment (planned)
+
+| Phase | Focus | Plan |
+|-------|--------|------|
+| **34** | PR revise loop, operator-supplied blind-spot facts, impact explanations | [`phase_34_guardian_pr_iteration.plan.md`](plans/phase_34_guardian_pr_iteration.plan.md) |
+| **35** | Lighting domain — photoperiod programs, presets (22/2, 18/6, 12/12), timer UX, schedule-action API, TZ | [`phase_35_lighting_domain.plan.md`](plans/phase_35_lighting_domain.plan.md) |
+| **36** | Greenhouse climate — shade/UV screens, panels, fans (core zone profile + typed actuators) | [`phase_36_greenhouse_climate.plan.md`](plans/phase_36_greenhouse_climate.plan.md) |
+| **37** | Offline field assistant — Guardian walks a non-IT worker through Pi wiring / plumbing, trades knowledge, safety gating, no internet | [`phase_37_guardian_offline_field_assistant.plan.md`](plans/phase_37_guardian_offline_field_assistant.plan.md) |
+
+Recommended order: **34 → 35 → 36 → 37** (35 and 36 can overlap after Phase 35 WS4 timezone fix; 37's corpus + offline self-check can start any time).
+
 ## Quick links
 
 | Topic | Doc |
@@ -66,7 +77,11 @@ Cross-linked from Phase 14 because enterprise scale-out and MQTT edge patterns s
 | Phase 31 — field validation & edge (plan) | [`plans/phase_31_field_validation_and_edge.plan.md`](plans/phase_31_field_validation_and_edge.plan.md) · [operator index § Phase 31](#phase-31-field-validation-edge) |
 | Phase 32 — Guardian grow setup PRs (plan) | [`plans/phase_32_guardian_grow_setup_prs.plan.md`](plans/phase_32_guardian_grow_setup_prs.plan.md) — setup pack + platform doc RAG |
 | Phase 33 — Guardian polish & enterprise ops (plan) | [`plans/phase_33_guardian_polish_and_enterprise_ops.plan.md`](plans/phase_33_guardian_polish_and_enterprise_ops.plan.md) — read-tool hardening, hardware CI, site manifest |
+| Phase 34 — Guardian PR iteration (plan) | [`plans/phase_34_guardian_pr_iteration.plan.md`](plans/phase_34_guardian_pr_iteration.plan.md) — revise/supersede loop, operator-stated facts |
+| Phase 35 — Lighting domain (plan) | [`plans/phase_35_lighting_domain.plan.md`](plans/phase_35_lighting_domain.plan.md) — photoperiod programs, presets, PhotoperiodClockEditor |
+| Phase 36 — Greenhouse climate (plan) | [`plans/phase_36_greenhouse_climate.plan.md`](plans/phase_36_greenhouse_climate.plan.md) — shade, panels, fans on zones |
+| Phase 37 — Guardian offline field assistant (plan) | [`plans/phase_37_guardian_offline_field_assistant.plan.md`](plans/phase_37_guardian_offline_field_assistant.plan.md) — Pi wiring / plumbing walkthroughs, trades corpus, safety gating, offline |
 
 ## Using this in a new chat
 
-Reference `@docs/phase-14-operator-documentation.md` for Phase 14 deliverables and the **[Phase 31 field validation index](phase-14-operator-documentation.md#phase-31-field-validation-edge)**. For **next engineering work**, default to **[Phase 33 WS1](plans/phase_33_guardian_polish_and_enterprise_ops.plan.md)** (optional hardening) then **[Phase 32](plans/phase_32_guardian_grow_setup_prs.plan.md)** (grow-setup PR bundles). For **first-time local setup**, use **[`local-operator-bootstrap.md`](local-operator-bootstrap.md)** (`make bootstrap-local`).
+Reference `@docs/phase-14-operator-documentation.md` for Phase 14 deliverables and the **[Phase 31 field validation index](phase-14-operator-documentation.md#phase-31-field-validation-edge)**. For **next engineering work** after Phase 32/33, see **[Phases 34–36](#phases-3436--guardian-polish--grow-environment-planned)** (Guardian PR iteration → lighting → greenhouse). For **first-time local setup**, use **[`local-operator-bootstrap.md`](local-operator-bootstrap.md)** (`make bootstrap-local`).

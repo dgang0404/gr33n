@@ -10,8 +10,8 @@ todos:
     content: "WS1: Read tools hardening — exclude alert write intents from summarize_zone; smoke grounded chat → summarize_zone in prompt; persona mirror + architecture §10 Phase 31 read tools"
     status: completed
   - id: ws2-context-ref-dedup
-    content: "WS2: context_ref dedup — skip summarize_zone when zone focus block already injected from Ask Guardian zone entry point"
-    status: pending
+    content: "WS2: context_ref dedup — skip summarize_zone when zone focus block already injected from Ask Guardian zone entry point; enrich focus block with readings so it is the single zone block"
+    status: completed
   - id: ws3-read-tool-audit
     content: "WS3: Read-tool audit — optional info-level guardian_tool_read log (tool_id, farm_id, zone_id); document in audit playbook"
     status: pending
@@ -31,7 +31,7 @@ isProject: false
 
 ## Status
 
-**In progress (WS1 shipped).** **WS1** closes Phase 31 read-tool post-ship gaps. **WS2–WS5** defer until after Phase 32 grow-setup PRs when read layer is stable.
+**In progress (WS1 + WS2 shipped).** **WS1** closes Phase 31 read-tool post-ship gaps; **WS2** dedups the zone Ask-Guardian focus block. **WS3–WS5** defer (parallel / after Phase 32 grow-setup PRs).
 
 **Preconditions (met):**
 
@@ -111,6 +111,10 @@ Phase 31 (edge + read tools) ──► Phase 33 WS1 (hardening) ──► Phase 
 
 - Pass optional `ContextRef` into `EnrichPromptBlock` (or skip summarize when handler already appended zone focus block).
 - Skip `summarize_zone` when `ref.Type == "zone"` and resolved zone matches `ref.ID`.
+
+**As-built (deviation, approved):** The zone focus block (`renderZoneContext`) previously only printed a sensor *count*, so literally skipping `summarize_zone` would have dropped readings and regressed WS1. Instead: extracted `renderZoneSensorReadings` (shared helper), **enriched the focus block to carry the same latest readings**, then skip `summarize_zone` for that zone. Result is exactly **one** zone block that still includes readings.
+
+**Shipped:** `EnrichPromptBlock` takes `*ContextRef`; `zoneContextRefCovers` gates the skip; `renderZoneSensorReadings` shared by `summarize_zone` + zone focus block; handler passes `pb.ContextRef`; smokes [`cmd/api/smoke_phase33_ws2_test.go`](../../cmd/api/smoke_phase33_ws2_test.go) (matching zone ref skips summarize_zone + focus carries readings; non-zone ref keeps summarize_zone). `go build`, `go vet`, and `go test ./internal/farmguardian/...` green.
 
 **Acceptance:** Open Guardian from zone card + ask about humidity → one zone block, not two identical sensor lists.
 
@@ -211,7 +215,7 @@ Phase 31 (edge + read tools) ──► Phase 33 WS1 (hardening) ──► Phase 
 ## Definition of done (phase ship)
 
 - [ ] WS1 intent guard + smoke + persona/architecture doc parity
-- [ ] WS2 context_ref dedup (or documented defer with issue)
+- [x] WS2 context_ref dedup (zone focus block enriched with readings; summarize_zone skipped for that zone)
 - [ ] WS4 hardware gate documented; default CI unchanged
 - [ ] WS6 README + phase-14 cross-links
 - [ ] WS3 or WS5 at least one shipped (audit **or** manifest stub) — both optional for minimal ship if WS1+WS6 done

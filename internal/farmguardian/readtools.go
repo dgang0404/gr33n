@@ -47,7 +47,12 @@ func ReadToolIDs() []string {
 // EnrichPromptBlock runs matching read-only tools and returns extra system
 // prompt text. Best-effort: query failures are logged; empty string means no
 // enrichment for this turn.
-func EnrichPromptBlock(ctx context.Context, q db.Querier, farmID int64, question string, snap Snapshot) string {
+//
+// ref is the optional UI "Ask Guardian" anchor for this turn. When it points at
+// a zone, the handler already injects an (enriched) zone focus block via
+// ContextRefPromptBlock, so summarize_zone is skipped for that same zone to
+// avoid a duplicate sensor dump (Phase 33 WS2).
+func EnrichPromptBlock(ctx context.Context, q db.Querier, farmID int64, question string, snap Snapshot, ref *ContextRef) string {
 	if q == nil || farmID <= 0 {
 		return ""
 	}
@@ -71,7 +76,11 @@ func EnrichPromptBlock(ctx context.Context, q db.Querier, farmID int64, question
 
 	if shouldRunSummarizeZoneReadIntent(question) {
 		if zone, ok := resolveZoneForSummary(ctx, q, farmID, question, snap); ok {
-			if block, err := renderSummarizeZone(ctx, q, farmID, zone); err != nil {
+			if zoneContextRefCovers(ref, zone) {
+				// Phase 33 WS2: the zone Ask Guardian focus block already carries
+				// this zone's latest readings — skip the duplicate summarize_zone dump.
+				slog.Debug("farm guardian skip summarize_zone (zone context_ref dedup)", "farm_id", farmID, "zone_id", zone.ID)
+			} else if block, err := renderSummarizeZone(ctx, q, farmID, zone); err != nil {
 				slog.Warn("farm guardian read tool failed", "tool", "summarize_zone", "farm_id", farmID, "zone_id", zone.ID, "err", err)
 			} else if block != "" {
 				blocks = append(blocks, block)
@@ -399,14 +408,25 @@ func renderSummarizeZone(ctx context.Context, q db.Querier, farmID int64, zone d
 		}
 	}
 
-	zoneID := zone.ID
-	sensors, err := q.ListSensorsByZone(ctx, &zoneID)
+	readings, err := renderZoneSensorReadings(ctx, q, zone.ID)
+	if err != nil {
+		return "", err
+	}
+	b.WriteString(readings)
+	return b.String(), nil
+}
+
+// renderZoneSensorReadings returns the "Latest sensor readings" block for a
+// zone (or a "none configured" line). Shared by summarize_zone and the zone
+// context_ref focus block so both render identical, deduped readings (WS2).
+func renderZoneSensorReadings(ctx context.Context, q db.Querier, zoneID int64) (string, error) {
+	zID := zoneID
+	sensors, err := q.ListSensorsByZone(ctx, &zID)
 	if err != nil {
 		return "", err
 	}
 	if len(sensors) == 0 {
-		b.WriteString("Sensors: none configured in this zone.")
-		return b.String(), nil
+		return "Sensors: none configured in this zone.", nil
 	}
 
 	type readingLine struct {
@@ -433,6 +453,7 @@ func renderSummarizeZone(ctx context.Context, q db.Querier, farmID int64, zone d
 	}
 	sort.Slice(lines, func(i, j int) bool { return lines[i].sortKey < lines[j].sortKey })
 
+	var b strings.Builder
 	b.WriteString("Latest sensor readings:")
 	extra := 0
 	if len(lines) > ReadToolsMaxSensorReadings {
@@ -447,6 +468,18 @@ func renderSummarizeZone(ctx context.Context, q db.Querier, farmID int64, zone d
 		b.WriteString(fmt.Sprintf("\n(+ %d more sensors not listed)", extra))
 	}
 	return b.String(), nil
+}
+
+// zoneContextRefCovers reports whether the turn's context_ref is a zone anchor
+// that resolves to the same zone summarize_zone would render (Phase 33 WS2).
+func zoneContextRefCovers(ref *ContextRef, zone db.Gr33ncoreZone) bool {
+	if ref == nil {
+		return false
+	}
+	if strings.ToLower(strings.TrimSpace(ref.Type)) != "zone" {
+		return false
+	}
+	return ref.ID > 0 && ref.ID == zone.ID
 }
 
 func renderSummarizeZoneFertigation(ctx context.Context, q db.Querier, farmID int64, zone db.Gr33ncoreZone) (string, error) {
