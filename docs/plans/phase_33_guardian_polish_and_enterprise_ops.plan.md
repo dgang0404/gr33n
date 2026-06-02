@@ -22,8 +22,8 @@ todos:
     content: "WS5: Enterprise site manifest — site-manifest.example.yaml + apply-site-manifest.sh (--dry-run + apply: org/farm/zones/recipe pack/Pi hints)"
     status: completed
   - id: ws6-docs-roadmap
-    content: "WS6: Docs — README + phase-14 roadmap row; cross-link Phase 31/32/33; hypothetical-enterprise-topology manifest section"
-    status: pending
+    content: "WS6: Docs — README roadmap rows (32/33 shipped, 34-37 planned); phase-14 link; phase-31 Related cross-link"
+    status: completed
 isProject: false
 ---
 
@@ -31,7 +31,7 @@ isProject: false
 
 ## Status
 
-**In progress (WS1 + WS2 shipped).** **WS1** closes Phase 31 read-tool post-ship gaps; **WS2** dedups the zone Ask-Guardian focus block. **WS3–WS5** defer (parallel / after Phase 32 grow-setup PRs).
+**Shipped (WS1–WS6).** WS1 read-tool hardening; WS2 `context_ref` zone dedup (focus block enriched with readings); WS3 read-tool usage info log; WS4 `@hardware` build-tag test lane; WS5 enterprise site manifest stub; WS6 README/phase-14/phase-31 roadmap docs.
 
 **Preconditions (met):**
 
@@ -185,6 +185,8 @@ Phase 31 (edge + read tools) ──► Phase 33 WS1 (hardening) ──► Phase 
 
 **Acceptance:** New chat prompt `@phase_33_guardian_polish_and_enterprise_ops.plan.md` resolves.
 
+**Shipped:** [`README.md`](../../README.md) roadmap updated (Phase 32 + 33 marked shipped; Phases 34–37 planned rows); [`phase-14-operator-documentation.md`](../phase-14-operator-documentation.md) links this plan + the `@hardware` lane; [`phase_31_field_validation_and_edge.plan.md`](phase_31_field_validation_and_edge.plan.md) Related table points here.
+
 ---
 
 ## Relationship to other phases
@@ -220,10 +222,10 @@ Phase 31 (edge + read tools) ──► Phase 33 WS1 (hardening) ──► Phase 
 
 ## Definition of done (phase ship)
 
-- [ ] WS1 intent guard + smoke + persona/architecture doc parity
+- [x] WS1 intent guard + smoke + persona/architecture doc parity
 - [x] WS2 context_ref dedup (zone focus block enriched with readings; summarize_zone skipped for that zone)
 - [x] WS4 hardware gate (build tag `hardware` + env) documented; default CI unchanged; manual `hardware-smoke` lane
-- [ ] WS6 README + phase-14 cross-links
+- [x] WS6 README + phase-14 cross-links
 - [x] WS3 + WS5 both shipped (read audit log **and** site manifest stub)
 
 **Minimal ship:** WS1 + WS6 only — still worth tagging a release note.

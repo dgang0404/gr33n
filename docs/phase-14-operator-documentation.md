@@ -39,7 +39,7 @@ Cross-linked from Phase 14 because enterprise scale-out and MQTT edge patterns s
 |-------|--------|------|
 | **33 WS1** (optional first) | Read-tool hardening, persona/architecture doc parity | [`phase_33_guardian_polish_and_enterprise_ops.plan.md`](plans/phase_33_guardian_polish_and_enterprise_ops.plan.md) |
 | **32** | Grow-setup PR bundles + platform doc RAG | [`phase_32_guardian_grow_setup_prs.plan.md`](plans/phase_32_guardian_grow_setup_prs.plan.md) |
-| **33 WS2–WS5** | context_ref dedup, read audit, hardware CI, site manifest | Same Phase 33 plan |
+| **33 (shipped)** | context_ref dedup, read-tool audit log, @hardware lane, site manifest | Same Phase 33 plan |
 
 ## Phases 34–36 — Guardian polish + grow environment (planned)
 
