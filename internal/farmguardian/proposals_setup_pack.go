@@ -197,7 +197,7 @@ func buildSetupPackArgs(profile string, zoneID int64, zoneName, plantName string
 	ecLow := 0.8
 	phLo := 5.8
 	phHi := 6.5
-	stage := "vegetative"
+	stage := "early_veg"
 
 	if profile == "commercial_zone" {
 		programName = plantName + " feed program"

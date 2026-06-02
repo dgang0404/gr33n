@@ -87,7 +87,7 @@ func execCreateCropCycle(ctx context.Context, deps ExecutorDeps, args map[string
 		"name":              row.Name,
 		"zone_id":           row.ZoneID,
 		"strain_or_variety": strain,
-		"current_stage":     strings.TrimSpace(stage),
+		"current_stage":     string(canonicalGrowthStage(stage)),
 	}, nil
 }
 
@@ -134,22 +134,65 @@ func execUpdateCycleStage(ctx context.Context, deps ExecutorDeps, args map[strin
 		return nil, err
 	}
 	return map[string]any{
-		"crop_cycle_id":  row.ID,
-		"current_stage":  strings.TrimSpace(stage),
-		"cycle_name":     row.Name,
+		"crop_cycle_id": row.ID,
+		"current_stage": string(canonicalGrowthStage(stage)),
+		"cycle_name":    row.Name,
 	}, nil
 }
 
-func parseGrowthStage(s string) db.NullGr33nfertigationGrowthStageEnum {
-	s = strings.TrimSpace(s)
-	if s == "" {
-		return db.NullGr33nfertigationGrowthStageEnum{
-			Gr33nfertigationGrowthStageEnum: db.Gr33nfertigationGrowthStageEnumSeedling,
-			Valid:                           true,
-		}
+// growthStageAliases maps canonical enum values *and* common operator/Guardian
+// phrasings (e.g. "vegetative", "flower", "drying") to a valid
+// gr33nfertigation.growth_stage_enum member. The DB enum has no "vegetative" /
+// "flower" / "drying" values, so a raw passthrough would fail on Confirm with
+// SQLSTATE 22P02. Normalizing here keeps every write path (create + advance)
+// safe regardless of how the stage was phrased.
+var growthStageAliases = map[string]db.Gr33nfertigationGrowthStageEnum{
+	// canonical identities
+	"clone":        db.Gr33nfertigationGrowthStageEnumClone,
+	"seedling":     db.Gr33nfertigationGrowthStageEnumSeedling,
+	"early_veg":    db.Gr33nfertigationGrowthStageEnumEarlyVeg,
+	"late_veg":     db.Gr33nfertigationGrowthStageEnumLateVeg,
+	"transition":   db.Gr33nfertigationGrowthStageEnumTransition,
+	"early_flower": db.Gr33nfertigationGrowthStageEnumEarlyFlower,
+	"mid_flower":   db.Gr33nfertigationGrowthStageEnumMidFlower,
+	"late_flower":  db.Gr33nfertigationGrowthStageEnumLateFlower,
+	"flush":        db.Gr33nfertigationGrowthStageEnumFlush,
+	"harvest":      db.Gr33nfertigationGrowthStageEnumHarvest,
+	"dry_cure":     db.Gr33nfertigationGrowthStageEnumDryCure,
+	// loose synonyms
+	"veg":         db.Gr33nfertigationGrowthStageEnumEarlyVeg,
+	"vegetative":  db.Gr33nfertigationGrowthStageEnumEarlyVeg,
+	"vegetation":  db.Gr33nfertigationGrowthStageEnumEarlyVeg,
+	"flower":      db.Gr33nfertigationGrowthStageEnumEarlyFlower,
+	"flowering":   db.Gr33nfertigationGrowthStageEnumEarlyFlower,
+	"bloom":       db.Gr33nfertigationGrowthStageEnumEarlyFlower,
+	"blooming":    db.Gr33nfertigationGrowthStageEnumEarlyFlower,
+	"dry":         db.Gr33nfertigationGrowthStageEnumDryCure,
+	"drying":      db.Gr33nfertigationGrowthStageEnumDryCure,
+	"cure":        db.Gr33nfertigationGrowthStageEnumDryCure,
+	"curing":      db.Gr33nfertigationGrowthStageEnumDryCure,
+	"flushing":    db.Gr33nfertigationGrowthStageEnumFlush,
+	"harvesting":  db.Gr33nfertigationGrowthStageEnumHarvest,
+	"cutting":     db.Gr33nfertigationGrowthStageEnumClone,
+	"sprout":      db.Gr33nfertigationGrowthStageEnumSeedling,
+	"germination": db.Gr33nfertigationGrowthStageEnumSeedling,
+}
+
+// canonicalGrowthStage resolves a free-text stage to a valid enum value,
+// falling back to "seedling" for empty or unrecognized input.
+func canonicalGrowthStage(s string) db.Gr33nfertigationGrowthStageEnum {
+	key := strings.ToLower(strings.TrimSpace(s))
+	key = strings.ReplaceAll(key, " ", "_")
+	key = strings.ReplaceAll(key, "-", "_")
+	if v, ok := growthStageAliases[key]; ok {
+		return v
 	}
+	return db.Gr33nfertigationGrowthStageEnumSeedling
+}
+
+func parseGrowthStage(s string) db.NullGr33nfertigationGrowthStageEnum {
 	return db.NullGr33nfertigationGrowthStageEnum{
-		Gr33nfertigationGrowthStageEnum: db.Gr33nfertigationGrowthStageEnum(s),
+		Gr33nfertigationGrowthStageEnum: canonicalGrowthStage(s),
 		Valid:                           true,
 	}
 }

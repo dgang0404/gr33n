@@ -118,15 +118,17 @@ func pickCycleStageForIntent(question string, snap Snapshot) (ActiveCycle, strin
 }
 
 func inferStageKeyword(lower string) string {
+	// Values must be valid gr33nfertigation.growth_stage_enum members so the
+	// resulting advance-stage proposal applies cleanly on Confirm.
 	stages := []struct{ kw, stage string }{
-		{"flower", "flower"},
-		{"bloom", "flower"},
-		{"veg", "vegetative"},
-		{"vegetative", "vegetative"},
+		{"flower", "early_flower"},
+		{"bloom", "early_flower"},
+		{"veg", "early_veg"},
+		{"vegetative", "early_veg"},
 		{"harvest", "harvest"},
 		{"seedling", "seedling"},
 		{"clone", "clone"},
-		{"dry", "drying"},
+		{"dry", "dry_cure"},
 	}
 	for _, s := range stages {
 		if strings.Contains(lower, s.kw) {

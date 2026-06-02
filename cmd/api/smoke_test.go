@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"sort"
 	"testing"
 	"time"
 
@@ -49,7 +50,8 @@ func (n *recordingNotifier) countForRule(ruleID int64) int {
 }
 
 func bootstrapSmokeAuth(pool *pgxpool.Pool) error {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	// Generous timeout: a fresh dev DB applies the full migrations set here.
+	ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
 	defer cancel()
 	hash, err := bcrypt.GenerateFromPassword([]byte(smokeDevPass), bcrypt.DefaultCost)
 	if err != nil {
@@ -188,182 +190,33 @@ ALTER TABLE gr33ncore.farms ADD COLUMN IF NOT EXISTS organization_id BIGINT
 `); err != nil {
 		return err
 	}
-	bootstrapSQL, err := os.ReadFile(filepath.Join("..", "..", "db", "migrations", "20260423_farm_bootstrap_templates.sql"))
+	// Apply every db/migrations/*.sql in filename order, mirroring
+	// scripts/bootstrap-local.sh. Migrations are written idempotently
+	// (IF NOT EXISTS / DO-block enum guards), so re-applying on a DB that
+	// bootstrap-local already migrated is a no-op, while a dev DB that only has
+	// the base schema is brought fully up to date here. This loop replaces a
+	// hand-maintained file list that drifted at Phase 27 (20260520) and left
+	// Phase 29/30+ tables — e.g. guardian_action_proposals, rag_embedding_chunks
+	// — missing, causing relation-does-not-exist smoke failures (Phase 33 follow-up).
+	migrationFiles, err := filepath.Glob(filepath.Join("..", "..", "db", "migrations", "*.sql"))
 	if err != nil {
 		return err
 	}
-	if _, err := pool.Exec(ctx, string(bootstrapSQL)); err != nil {
-		return err
-	}
-	orgBootstrapSQL, err := os.ReadFile(filepath.Join("..", "..", "db", "migrations", "20260424_organization_default_bootstrap_template.sql"))
-	if err != nil {
-		return err
-	}
-	if _, err := pool.Exec(ctx, string(orgBootstrapSQL)); err != nil {
-		return err
-	}
-	commonsCatalogSQL, err := os.ReadFile(filepath.Join("..", "..", "db", "migrations", "20260426_commons_catalog.sql"))
-	if err != nil {
-		return err
-	}
-	if _, err := pool.Exec(ctx, string(commonsCatalogSQL)); err != nil {
-		return err
-	}
-	pushTokSQL, err := os.ReadFile(filepath.Join("..", "..", "db", "migrations", "20260427_user_push_tokens.sql"))
-	if err != nil {
-		return err
-	}
-	if _, err := pool.Exec(ctx, string(pushTokSQL)); err != nil {
-		return err
-	}
-	domainModsSQL, err := os.ReadFile(filepath.Join("..", "..", "db", "migrations", "20260428_phase14_domain_module_stubs.sql"))
-	if err != nil {
-		return err
-	}
-	if _, err := pool.Exec(ctx, string(domainModsSQL)); err != nil {
-		return err
-	}
-	bootstrapFertSQL, err := os.ReadFile(filepath.Join("..", "..", "db", "migrations", "20260429_bootstrap_fertigation_inventory_tasks.sql"))
-	if err != nil {
-		return err
-	}
-	if _, err := pool.Exec(ctx, string(bootstrapFertSQL)); err != nil {
-		return err
-	}
-	alertDurSQL, err := os.ReadFile(filepath.Join("..", "..", "db", "migrations", "20260430_phase19_alert_duration_cooldown.sql"))
-	if err != nil {
-		return err
-	}
-	if _, err := pool.Exec(ctx, string(alertDurSQL)); err != nil {
-		return err
-	}
-	sourceAlertSQL, err := os.ReadFile(filepath.Join("..", "..", "db", "migrations", "20260501_phase19_task_source_alert.sql"))
-	if err != nil {
-		return err
-	}
-	if _, err := pool.Exec(ctx, string(sourceAlertSQL)); err != nil {
-		return err
-	}
-	precondSQL, err := os.ReadFile(filepath.Join("..", "..", "db", "migrations", "20260502_phase19_schedule_preconditions.sql"))
-	if err != nil {
-		return err
-	}
-	if _, err := pool.Exec(ctx, string(precondSQL)); err != nil {
-		return err
-	}
-	sourceRuleSQL, err := os.ReadFile(filepath.Join("..", "..", "db", "migrations", "20260503_phase20_task_source_rule.sql"))
-	if err != nil {
-		return err
-	}
-	if _, err := pool.Exec(ctx, string(sourceRuleSQL)); err != nil {
-		return err
-	}
-	phase205SQL, err := os.ReadFile(filepath.Join("..", "..", "db", "migrations", "20260504_phase205_husbandry_climate_bootstraps.sql"))
-	if err != nil {
-		return err
-	}
-	if _, err := pool.Exec(ctx, string(phase205SQL)); err != nil {
-		return err
-	}
-	phase2095LaborSQL, err := os.ReadFile(filepath.Join("..", "..", "db", "migrations", "20260505_phase2095_labor_schema.sql"))
-	if err != nil {
-		return err
-	}
-	if _, err := pool.Exec(ctx, string(phase2095LaborSQL)); err != nil {
-		return err
-	}
-	phase2095CostEnergySQL, err := os.ReadFile(filepath.Join("..", "..", "db", "migrations", "20260506_phase2095_cost_energy_columns.sql"))
-	if err != nil {
-		return err
-	}
-	if _, err := pool.Exec(ctx, string(phase2095CostEnergySQL)); err != nil {
-		return err
-	}
-	phase2095ExecActProgramSQL, err := os.ReadFile(filepath.Join("..", "..", "db", "migrations", "20260507_phase2095_executable_actions_program_id.sql"))
-	if err != nil {
-		return err
-	}
-	if _, err := pool.Exec(ctx, string(phase2095ExecActProgramSQL)); err != nil {
-		return err
-	}
-	phase2095AnimalAquaSQL, err := os.ReadFile(filepath.Join("..", "..", "db", "migrations", "20260508_phase2095_animal_aquaponics_scope.sql"))
-	if err != nil {
-		return err
-	}
-	if _, err := pool.Exec(ctx, string(phase2095AnimalAquaSQL)); err != nil {
-		return err
-	}
-	phase206SetpointsSQL, err := os.ReadFile(filepath.Join("..", "..", "db", "migrations", "20260509_phase206_zone_setpoints.sql"))
-	if err != nil {
-		return err
-	}
-	if _, err := pool.Exec(ctx, string(phase206SetpointsSQL)); err != nil {
-		return err
-	}
-	phase207TaskConsumptionsSQL, err := os.ReadFile(filepath.Join("..", "..", "db", "migrations", "20260510_phase207_task_input_consumptions.sql"))
-	if err != nil {
-		return err
-	}
-	if _, err := pool.Exec(ctx, string(phase207TaskConsumptionsSQL)); err != nil {
-		return err
-	}
-	phase208AnimalHusbandrySQL, err := os.ReadFile(filepath.Join("..", "..", "db", "migrations", "20260512_phase208_animal_husbandry.sql"))
-	if err != nil {
-		return err
-	}
-	if _, err := pool.Exec(ctx, string(phase208AnimalHusbandrySQL)); err != nil {
-		return err
-	}
-	phase208BootstrapUpgradeSQL, err := os.ReadFile(filepath.Join("..", "..", "db", "migrations", "20260513_phase208_bootstrap_upgrade.sql"))
-	if err != nil {
-		return err
-	}
-	if _, err := pool.Exec(ctx, string(phase208BootstrapUpgradeSQL)); err != nil {
-		return err
-	}
-	phase209LaborAutocostSQL, err := os.ReadFile(filepath.Join("..", "..", "db", "migrations", "20260514_phase209_labor_autocost.sql"))
-	if err != nil {
-		return err
-	}
-	if _, err := pool.Exec(ctx, string(phase209LaborAutocostSQL)); err != nil {
-		return err
-	}
-	phase209ProgramBackfillSQL, err := os.ReadFile(filepath.Join("..", "..", "db", "migrations", "20260515_phase209_program_actions_backfill.sql"))
-	if err != nil {
-		return err
-	}
-	if _, err := pool.Exec(ctx, string(phase209ProgramBackfillSQL)); err != nil {
-		return err
-	}
-	phase22ProgramRunsSQL, err := os.ReadFile(filepath.Join("..", "..", "db", "migrations", "20260516_phase22_program_runs.sql"))
-	if err != nil {
-		return err
-	}
-	if _, err := pool.Exec(ctx, string(phase22ProgramRunsSQL)); err != nil {
-		return err
-	}
-	phase22BackfillSweepSQL, err := os.ReadFile(filepath.Join("..", "..", "db", "migrations", "20260517_phase22_program_actions_backfill_sweep.sql"))
-	if err != nil {
-		return err
-	}
-	if _, err := pool.Exec(ctx, string(phase22BackfillSweepSQL)); err != nil {
-		return err
-	}
-	// Phase 27 — Farm Guardian DB-backed history (conversation_turns) and
-	// session metadata (titles + token usage).
-	phase27TurnsSQL, err := os.ReadFile(filepath.Join("..", "..", "db", "migrations", "20260519_phase27_conversation_turns.sql"))
-	if err != nil {
-		return err
-	}
-	if _, err := pool.Exec(ctx, string(phase27TurnsSQL)); err != nil {
-		return err
-	}
-	phase27SessionMetaSQL, err := os.ReadFile(filepath.Join("..", "..", "db", "migrations", "20260520_phase27_session_metadata.sql"))
-	if err != nil {
-		return err
-	}
-	if _, err := pool.Exec(ctx, string(phase27SessionMetaSQL)); err != nil {
-		return err
+	sort.Strings(migrationFiles)
+	for _, f := range migrationFiles {
+		sqlBytes, rerr := os.ReadFile(f)
+		if rerr != nil {
+			return fmt.Errorf("read migration %s: %w", filepath.Base(f), rerr)
+		}
+		// Best-effort, log-and-continue: a single migration that needs an
+		// optional extension absent from this cluster (e.g. pgvector for the
+		// RAG migration) should not abort the whole smoke harness. CI applies
+		// migrations strictly via scripts/bootstrap-local.sh (ON_ERROR_STOP)
+		// before tests run, so real migration breakage still fails CI there;
+		// here we only need the tables a given dev DB can actually support.
+		if _, eerr := pool.Exec(ctx, string(sqlBytes)); eerr != nil {
+			fmt.Fprintf(os.Stderr, "smoke bootstrap: skipping migration %s: %v\n", filepath.Base(f), eerr)
+		}
 	}
 	return nil
 }
