@@ -16,6 +16,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 
+	"gr33n-api/internal/authctx"
 	db "gr33n-api/internal/db"
 )
 
@@ -63,6 +64,7 @@ func EnrichPromptBlock(ctx context.Context, q db.Querier, farmID int64, question
 			slog.Warn("farm guardian read tool failed", "tool", "list_unread_alerts", "farm_id", farmID, "err", err)
 		} else if block != "" {
 			blocks = append(blocks, block)
+			logReadToolUse(ctx, "list_unread_alerts", farmID)
 		}
 	}
 
@@ -71,6 +73,7 @@ func EnrichPromptBlock(ctx context.Context, q db.Querier, farmID int64, question
 			slog.Warn("farm guardian read tool failed", "tool", "list_plants", "farm_id", farmID, "err", err)
 		} else if block != "" {
 			blocks = append(blocks, block)
+			logReadToolUse(ctx, "list_plants", farmID)
 		}
 	}
 
@@ -84,6 +87,7 @@ func EnrichPromptBlock(ctx context.Context, q db.Querier, farmID int64, question
 				slog.Warn("farm guardian read tool failed", "tool", "summarize_zone", "farm_id", farmID, "zone_id", zone.ID, "err", err)
 			} else if block != "" {
 				blocks = append(blocks, block)
+				logReadToolUse(ctx, "summarize_zone", farmID, "zone_id", zone.ID)
 			}
 		}
 	}
@@ -94,6 +98,7 @@ func EnrichPromptBlock(ctx context.Context, q db.Querier, farmID int64, question
 				slog.Warn("farm guardian read tool failed", "tool", "summarize_zone_fertigation", "farm_id", farmID, "zone_id", zone.ID, "err", err)
 			} else if block != "" {
 				blocks = append(blocks, block)
+				logReadToolUse(ctx, "summarize_zone_fertigation", farmID, "zone_id", zone.ID)
 			}
 		}
 	}
@@ -102,6 +107,18 @@ func EnrichPromptBlock(ctx context.Context, q db.Querier, farmID int64, question
 		return ""
 	}
 	return "Live read-tool results (background — do not cite as [n]):\n" + strings.Join(blocks, "\n\n")
+}
+
+// logReadToolUse emits a structured info log when a read-only tool enriches a
+// grounded turn (Phase 33 WS3). This is observability only — no Confirm, no DB
+// audit row. user_id is included when the turn was authenticated with a user JWT.
+func logReadToolUse(ctx context.Context, toolID string, farmID int64, extra ...any) {
+	attrs := []any{"event", "guardian_tool_read", "tool_id", toolID, "farm_id", farmID}
+	if uid, ok := authctx.UserID(ctx); ok {
+		attrs = append(attrs, "user_id", uid.String())
+	}
+	attrs = append(attrs, extra...)
+	slog.Info("farm guardian read tool used", attrs...)
 }
 
 func matchListUnreadAlertsIntent(question string) bool {

@@ -91,6 +91,24 @@ These `details.kind` values are written by the API today (list may grow in later
 
 Operations that are **not** yet mirrored into this log (for example JWT secret rotation, Pi API key rotation, storage env changes) should continue to use **external** operator evidence as described in the receipt storage runbook.
 
+### Guardian read-tool usage (info log, not persisted) — Phase 33 WS3
+
+Read-only Guardian tools that enrich a grounded chat turn (`list_unread_alerts`, `list_plants`, `summarize_zone`, `summarize_zone_fertigation`) are **not** write actions and do **not** create `user_activity_log` rows or require Confirm. Instead, each firing emits a structured **application info log** (`slog`) so enterprise operators can answer *"who asked Guardian about Flower Room humidity yesterday?"* from their log pipeline (Loki / `docker logs` / journald):
+
+```
+level=INFO msg="farm guardian read tool used" event=guardian_tool_read tool_id=summarize_zone farm_id=1 user_id=<uuid> zone_id=3
+```
+
+| Field | Meaning |
+|-------|---------|
+| `event` | Always `guardian_tool_read` (filter key) |
+| `tool_id` | `list_unread_alerts` \| `list_plants` \| `summarize_zone` \| `summarize_zone_fertigation` |
+| `farm_id` | Farm scope of the turn |
+| `user_id` | Actor when the turn used a user JWT (omitted for dev-bypass / unauthenticated) |
+| `zone_id` | Present for the zone summary tools |
+
+This is observability only; persisting read history to a queryable DB table is intentionally **out of scope** (revisit if an enterprise requires retained read trails).
+
 ## Storage and retention
 
 - Physical table: `gr33ncore.user_activity_log` (hypertable on `activity_time` when TimescaleDB is enabled in your deployment).

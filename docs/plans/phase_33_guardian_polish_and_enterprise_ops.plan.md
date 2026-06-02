@@ -13,8 +13,8 @@ todos:
     content: "WS2: context_ref dedup — skip summarize_zone when zone focus block already injected from Ask Guardian zone entry point; enrich focus block with readings so it is the single zone block"
     status: completed
   - id: ws3-read-tool-audit
-    content: "WS3: Read-tool audit — optional info-level guardian_tool_read log (tool_id, farm_id, zone_id); document in audit playbook"
-    status: pending
+    content: "WS3: Read-tool audit — info-level guardian_tool_read log (tool_id, farm_id, user_id, zone_id); document in audit playbook"
+    status: completed
   - id: ws4-hardware-ci-lane
     content: "WS4: @hardware CI lane — tag actuator/GPIO smokes; skip unless GR33N_HARDWARE_TEST=1; document in INSTALL + phase-14"
     status: pending
@@ -131,6 +131,8 @@ Phase 31 (edge + read tools) ──► Phase 33 WS1 (hardening) ──► Phase 
 - Row in [`audit-events-operator-playbook.md`](../audit-events-operator-playbook.md) or Guardian architecture § audit.
 
 **Acceptance:** Log line visible in Loki/docker logs on read-tool turn; no Confirm required.
+
+**Shipped:** `logReadToolUse` emits `slog.Info` (`event=guardian_tool_read`, `tool_id`, `farm_id`, `user_id` from `authctx` when present, `zone_id` for zone tools) per fired read tool in [`EnrichPromptBlock`](../../internal/farmguardian/readtools.go); documented in [`audit-events-operator-playbook.md`](../audit-events-operator-playbook.md) § Guardian read-tool usage. No DB audit row / enum migration (deferred per plan).
 
 **Not in scope:** Persisting read history to DB table (v2 if needed).
 
