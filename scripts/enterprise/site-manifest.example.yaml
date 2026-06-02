@@ -1,0 +1,41 @@
+# Phase 33 WS5 — Enterprise site manifest (illustrative).
+#
+# Describes one warehouse/site so an integrator can stand it up with a single
+# command: create the farm (optionally under an org), create its zones, pin a
+# commons recipe pack, and print Pi/edge wiring hints + smoke commands.
+#
+# Apply:   ./scripts/enterprise/apply-site-manifest.sh --dry-run \
+#            --manifest scripts/enterprise/site-manifest.example.yaml
+# Real:    drop --dry-run (needs API up + farm-admin JWT). Requires python3 + PyYAML.
+#
+# This is a STARTING POINT, not a 500-site provisioner — see
+# docs/hypothetical-enterprise-topology.md for the larger picture.
+
+# Optional org the farm should belong to. Omit for a standalone farm.
+org_slug: north-warehouse-co
+
+farm_name: "North Warehouse — Bay 3"
+
+# Zones to create. type maps to gr33ncore.zones.zone_type (free text;
+# common values: indoor, greenhouse, nursery, seedling, veg, flower, storage).
+zones:
+  - name: "Veg Room A"
+    type: veg
+  - name: "Flower Room A"
+    type: flower
+  - name: "Propagation"
+    type: seedling
+
+# Commons Recipe Pack to import into the new farm (see import-recipe-pack.sh).
+# Omit to skip recipe import.
+recipe_pack_slug: gr33n-recipe-pack-v7-lettuce-veg
+
+# Informational only — printed for the installer; not provisioned by the API.
+# Pairs with the Phase 37 guided Pi-wiring procedures.
+pi_device_hints:
+  - device_uid: north-bay3-pi-01
+    role: "sensors + veg relay"
+    zone: "Veg Room A"
+  - device_uid: north-bay3-pi-02
+    role: "flower relay + exhaust fan"
+    zone: "Flower Room A"

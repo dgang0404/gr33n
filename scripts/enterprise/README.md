@@ -31,6 +31,24 @@ Large multi-site operators (see [`docs/hypothetical-enterprise-topology.md`](../
 
 **Auth:** farm **admin** JWT (`POST /farms/{id}/commons/catalog-imports`); **Operate** for program create.
 
+## Shipped (Phase 33 WS5) — site manifest
+
+| Tool | Purpose |
+|------|---------|
+| [`apply-site-manifest.sh`](apply-site-manifest.sh) | Stand up a site from YAML: create farm (optional org), zones, import a recipe pack, print Pi wiring hints |
+| [`site-manifest.example.yaml`](site-manifest.example.yaml) | Illustrative schema: `org_slug`, `farm_name`, `zones[]` (name/type), `recipe_pack_slug`, `pi_device_hints` |
+
+```bash
+# Plan only (no JWT, no HTTP):
+./scripts/enterprise/apply-site-manifest.sh --dry-run \
+  --manifest scripts/enterprise/site-manifest.example.yaml
+
+# Real run (API up + farm-admin JWT; needs python3 + PyYAML):
+./scripts/enterprise/apply-site-manifest.sh --manifest path/to/site.yaml
+```
+
+**Scope:** a starting-point stub (single site), not a 500-site Ansible suite — extend per your fleet. Zones skip when the name already exists; the recipe pack slug must be published in the commons catalog. Pi device hints are **informational** (provision on-site; pairs with the Phase 37 guided wiring procedures).
+
 See [`docs/commons-catalog-operator-playbook.md`](../../docs/commons-catalog-operator-playbook.md) for catalog semantics (import records audit — does not auto-run SQL).
 
 ## Contributing

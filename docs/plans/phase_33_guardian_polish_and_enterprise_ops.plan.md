@@ -19,8 +19,8 @@ todos:
     content: "WS4: @hardware CI lane — build-tag GPIO smoke (hardware); GR33N_HARDWARE_TEST=1 runs the bench script; manual workflow_dispatch CI job; INSTALL + phase-14 docs"
     status: completed
   - id: ws5-enterprise-site-manifest
-    content: "WS5: Enterprise site manifest — site-manifest.yaml schema + script stub under scripts/enterprise/ (farm, zones, recipe pack pin, smoke hooks)"
-    status: pending
+    content: "WS5: Enterprise site manifest — site-manifest.example.yaml + apply-site-manifest.sh (--dry-run + apply: org/farm/zones/recipe pack/Pi hints)"
+    status: completed
   - id: ws6-docs-roadmap
     content: "WS6: Docs — README + phase-14 roadmap row; cross-link Phase 31/32/33; hypothetical-enterprise-topology manifest section"
     status: pending
@@ -167,6 +167,8 @@ Phase 31 (edge + read tools) ──► Phase 33 WS1 (hardening) ──► Phase 
 
 **Acceptance:** `--dry-run` prints POST/import steps; real run needs local API + admin JWT.
 
+**Shipped:** [`scripts/enterprise/site-manifest.example.yaml`](../../scripts/enterprise/site-manifest.example.yaml) (org_slug, farm_name, zones[], recipe_pack_slug, pi_device_hints) + [`scripts/enterprise/apply-site-manifest.sh`](../../scripts/enterprise/apply-site-manifest.sh) with `--dry-run` (no JWT/HTTP) and apply (POST /farms, /farms/{id}/zones, /farms/{id}/commons/catalog-imports; zones idempotent by name). README WS5 section + topology cross-link.
+
 **Not in scope:** Full 500-site Ansible suite (community PRs welcome).
 
 ---
@@ -222,7 +224,7 @@ Phase 31 (edge + read tools) ──► Phase 33 WS1 (hardening) ──► Phase 
 - [x] WS2 context_ref dedup (zone focus block enriched with readings; summarize_zone skipped for that zone)
 - [x] WS4 hardware gate (build tag `hardware` + env) documented; default CI unchanged; manual `hardware-smoke` lane
 - [ ] WS6 README + phase-14 cross-links
-- [ ] WS3 or WS5 at least one shipped (audit **or** manifest stub) — both optional for minimal ship if WS1+WS6 done
+- [x] WS3 + WS5 both shipped (read audit log **and** site manifest stub)
 
 **Minimal ship:** WS1 + WS6 only — still worth tagging a release note.
 
