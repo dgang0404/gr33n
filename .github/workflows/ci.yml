@@ -7,6 +7,7 @@ on:
   push:
     branches: [main]
   pull_request:
+  workflow_dispatch:
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
@@ -75,3 +76,23 @@ jobs:
       - name: Install UI deps and test
         working-directory: ui
         run: npm ci --legacy-peer-deps && npm test -- --run
+
+  # Phase 33 WS4 — opt-in @hardware lane. Drives real GPIO via the
+  # `hardware` build tag. NEVER runs on push/PR; trigger manually from the
+  # Actions tab ("Run workflow"). Requires a self-hosted runner labeled
+  # `gr33n-hardware` wired to a Pi + seeded demo-veg-relay-01 with the API up.
+  hardware-smoke:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: [self-hosted, gr33n-hardware]
+    timeout-minutes: 30
+    env:
+      GR33N_HARDWARE_TEST: "1"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Hardware actuator GPIO round-trip
+        run: go test -tags 'dev hardware' -run Hardware ./cmd/api/ -count=1 -v

@@ -16,8 +16,8 @@ todos:
     content: "WS3: Read-tool audit — info-level guardian_tool_read log (tool_id, farm_id, user_id, zone_id); document in audit playbook"
     status: completed
   - id: ws4-hardware-ci-lane
-    content: "WS4: @hardware CI lane — tag actuator/GPIO smokes; skip unless GR33N_HARDWARE_TEST=1; document in INSTALL + phase-14"
-    status: pending
+    content: "WS4: @hardware CI lane — build-tag GPIO smoke (hardware); GR33N_HARDWARE_TEST=1 runs the bench script; manual workflow_dispatch CI job; INSTALL + phase-14 docs"
+    status: completed
   - id: ws5-enterprise-site-manifest
     content: "WS5: Enterprise site manifest — site-manifest.yaml schema + script stub under scripts/enterprise/ (farm, zones, recipe pack pin, smoke hooks)"
     status: pending
@@ -150,6 +150,8 @@ Phase 31 (edge + read tools) ──► Phase 33 WS1 (hardening) ──► Phase 
 
 **Acceptance:** Default `make test` skips GPIO tests; `GR33N_HARDWARE_TEST=1 make test` runs them when Pi/bench attached.
 
+**Shipped:** Live GPIO E2E moved to [`cmd/api/smoke_hardware_test.go`](../../cmd/api/smoke_hardware_test.go) behind `//go:build hardware` (excluded from `make test` / CI `-tags dev`). With `GR33N_HARDWARE_TEST=1` it actually runs [`scripts/run-edge-actuator-smoke.sh`](../../scripts/run-edge-actuator-smoke.sh) (no longer a no-op double-skip). Manual `hardware-smoke` job in [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml) (`workflow_dispatch`, self-hosted `gr33n-hardware` runner). Run cmd documented in [`INSTALL.md`](../../INSTALL.md) §6 + phase-14 index.
+
 ---
 
 ### WS5 — Enterprise site manifest
@@ -218,7 +220,7 @@ Phase 31 (edge + read tools) ──► Phase 33 WS1 (hardening) ──► Phase 
 
 - [ ] WS1 intent guard + smoke + persona/architecture doc parity
 - [x] WS2 context_ref dedup (zone focus block enriched with readings; summarize_zone skipped for that zone)
-- [ ] WS4 hardware gate documented; default CI unchanged
+- [x] WS4 hardware gate (build tag `hardware` + env) documented; default CI unchanged; manual `hardware-smoke` lane
 - [ ] WS6 README + phase-14 cross-links
 - [ ] WS3 or WS5 at least one shipped (audit **or** manifest stub) — both optional for minimal ship if WS1+WS6 done
 

@@ -227,6 +227,28 @@ curl "http://localhost:8080/units?type=temperature"
 curl http://localhost:8080/devices
 ```
 
+### Go tests and the `@hardware` lane (Phase 33 WS4)
+
+```bash
+# Default suite (includes cmd/api smoke tests; auth-bypass via the dev tag).
+# GPIO / live-hardware tests are NOT compiled here.
+make test            # == go test -tags dev ./... -v -count=1
+```
+
+Live GPIO / edge-hardware tests live behind the **`hardware` build tag** and are
+excluded from `make test` and CI by default. Run them only on a Raspberry Pi /
+relay bench with the API running, `PI_API_KEY` set, and the seeded
+`demo-veg-relay-01` actuator:
+
+```bash
+GR33N_HARDWARE_TEST=1 go test -tags 'dev hardware' -run Hardware ./cmd/api/ -count=1 -v
+```
+
+This drives the real `pending_command → pi_client → actuator_events → clear`
+round-trip via [`scripts/run-edge-actuator-smoke.sh`](scripts/run-edge-actuator-smoke.sh).
+In CI it is a **manual** `hardware-smoke` job (`workflow_dispatch`, self-hosted
+`gr33n-hardware` runner) — it never runs on push/PR.
+
 ---
 
 ## 7. Code generation (sqlc)

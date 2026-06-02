@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"os"
 	"testing"
 	"time"
 
@@ -138,9 +137,6 @@ FROM gr33ncore.devices WHERE id = $1`, deviceID).Scan(&stillPending)
 	}
 }
 
-func TestPhase31WS8_HardwareActuatorGPIO(t *testing.T) {
-	if os.Getenv("GR33N_HARDWARE_TEST") != "1" {
-		t.Skip("live GPIO bench — set GR33N_HARDWARE_TEST=1; see scripts/run-edge-actuator-smoke.sh")
-	}
-	t.Skip("hardware GPIO E2E is operator-driven on a Pi bench — scripts/run-edge-actuator-smoke.sh")
-}
+// Live GPIO E2E moved to the @hardware lane (build tag `hardware`):
+// cmd/api/smoke_hardware_test.go. Default `make test` / CI (`-tags dev`) never
+// compile it. See Phase 33 WS4.
