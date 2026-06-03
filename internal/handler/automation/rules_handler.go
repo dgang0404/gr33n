@@ -361,6 +361,17 @@ func (h *Handler) CreateAutomationRule(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusBadRequest, err.Error())
 		return
 	}
+	if body.IsActive {
+		check := db.Gr33ncoreAutomationRule{
+			FarmID:               farmID,
+			Name:                 body.Name,
+			TriggerConfiguration: trigCfg,
+		}
+		if err := ValidateGreenhouseRuleActivation(r.Context(), h.q, check); err != nil {
+			httputil.WriteError(w, http.StatusBadRequest, err.Error())
+			return
+		}
+	}
 	logic, conds, err := parseRuleConditions(r.Context(), h.q, farmID, body.ConditionLogic, body.Conditions)
 	if err != nil {
 		httputil.WriteError(w, http.StatusBadRequest, err.Error())
@@ -440,6 +451,15 @@ func (h *Handler) UpdateAutomationRule(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusBadRequest, err.Error())
 		return
 	}
+	if body.IsActive {
+		check := rule
+		check.Name = body.Name
+		check.TriggerConfiguration = trigCfg
+		if err := ValidateGreenhouseRuleActivation(r.Context(), h.q, check); err != nil {
+			httputil.WriteError(w, http.StatusBadRequest, err.Error())
+			return
+		}
+	}
 	logic, conds, err := parseRuleConditions(r.Context(), h.q, rule.FarmID, body.ConditionLogic, body.Conditions)
 	if err != nil {
 		httputil.WriteError(w, http.StatusBadRequest, err.Error())
@@ -489,6 +509,12 @@ func (h *Handler) UpdateAutomationRuleActive(w http.ResponseWriter, r *http.Requ
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid request body")
 		return
+	}
+	if body.IsActive {
+		if err := ValidateGreenhouseRuleActivation(r.Context(), h.q, rule); err != nil {
+			httputil.WriteError(w, http.StatusBadRequest, err.Error())
+			return
+		}
 	}
 	row, err := h.q.UpdateAutomationRuleActive(r.Context(), db.UpdateAutomationRuleActiveParams{
 		ID:       id,

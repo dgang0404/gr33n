@@ -16,21 +16,24 @@ todos:
   - id: ws3-automation-templates
     content: "WS3: Automation templates — high-lux deploy shade, high-temp fan, night retract; POST /farms/{id}/automation/rule-templates/greenhouse + bootstrap rules (0916aba)"
     status: done
+  - id: ws4-prep-command-api
+    content: "WS4-prep: POST /actuators/{id}/command, list valid_commands, Pi deploy/retract, Guardian shared validation"
+    status: done
   - id: ws4-ui-greenhouse-tab
     content: "WS4: Greenhouse UI — ZoneDetail Greenhouse tab: climate profile, actuator cards, manual override + rule status"
-    status: pending
+    status: done
   - id: ws5-bootstrap-to-core
     content: "WS5: Bootstrap → core — greenhouse_climate_v1 v2: zone_type=greenhouse, typed actuators, lux sensor, meta profile (20260603_phase36_greenhouse_climate_v2.sql, 0916aba)"
     status: done
   - id: ws6-sensors-interlocks
     content: "WS6: Sensor interlocks — schedule/rule preconditions for lux, temp, humidity; document when sensors missing (operator override only)"
-    status: pending
+    status: done
   - id: ws7-guardian-read
     content: "WS7: Guardian — summarize_zone_greenhouse_climate read tool; enqueue_actuator_command deploy/retract/open/close/stop (f686d76)"
     status: done
   - id: ws8-docs-tests
     content: "WS8: Docs + tests — OC-36B done (operator-tour §5b, OpenAPI, architecture §7.0c); OC-36C smokes pending"
-    status: pending
+    status: done
 isProject: false
 ---
 
@@ -38,7 +41,7 @@ isProject: false
 
 ## Status
 
-**In progress — backend + OC-36B shipped (WS1–WS3, WS5, WS7, docs).** Commits `999bff1`, `0916aba`, `f686d76` (implementation); plan/closure docs through OC-36B. **Open:** WS4 (ZoneDetail Greenhouse tab), WS6 (missing-sensor UX), **OC-36C** (smokes). Track rollup in [`phase_35_37_operational_closure.plan.md`](phase_35_37_operational_closure.plan.md).
+**Shipped on `main`.** WS1–WS7 + WS4 UI + OC-36B docs + **WS6** interlocks + **OC-36C** smokes (`smoke_phase36_oc36c_test.go`). Track rollup in [`phase_35_37_operational_closure.plan.md`](phase_35_37_operational_closure.plan.md).
 
 Depends on **zones**, **actuators**, **automation_rules** + **schedules** worker. **Complements Phase 35** (supplemental lighting vs **blocking** sun). Phase 35 WS4 timezone fix is available for future cron-based night retract (bootstrap still uses temp proxy rule today).
 
@@ -49,7 +52,7 @@ Depends on **zones**, **actuators**, **automation_rules** + **schedules** worker
 - Rules worker + predicates ([`internal/automation/rules.go`](../../internal/automation/rules.go), [`predicates.go`](../../internal/automation/predicates.go))
 - Lux/temp/humidity sensor types in seed and bootstrap
 
-**Remaining gap:** No **Greenhouse** tab on ZoneDetail (WS4), no missing-sensor banners (WS6), no integration smokes (OC-36C). Operator walkthrough: [operator-tour §5b](../operator-tour.md#5b-greenhouse-shade-vents-and-fans-phase-36). Apply migration `20260603_phase36_greenhouse_climate_v2.sql` on each environment before re-running bootstrap.
+**Remaining gap:** WS6 template guards (banners in Greenhouse tab are partial), **OC-36C** integration smokes. Operator walkthrough: [operator-tour §5b](../operator-tour.md#5b-greenhouse-shade-vents-and-fans-phase-36). Apply migration `20260603_phase36_greenhouse_climate_v2.sql` on each environment before re-running bootstrap.
 
 ---
 
@@ -112,11 +115,11 @@ Operator / Guardian
 | **WS1** | Zone climate profile | `zone.meta_data` schema; validation in zone handler | ✅ |
 | **WS2** | Actuator taxonomy | taxonomy + POST/GET actuators; OpenAPI → WS8 | ✅ backend |
 | **WS3** | Automation templates | rule templates API + bootstrap rules | ✅ |
-| **WS4** | Greenhouse UI | ZoneDetail tab; actuator cards with typed commands | pending |
+| **WS4** | Greenhouse UI | ZoneDetail tab; `POST /actuators/{id}/command`; `ZoneGreenhouseTab.vue` | ✅ |
 | **WS5** | Bootstrap → core | `20260603_phase36_greenhouse_climate_v2.sql` | ✅ |
-| **WS6** | Sensor interlocks | preconditions; missing-sensor UX | pending |
+| **WS6** | Sensor interlocks | preconditions; missing-sensor UX | ✅ |
 | **WS7** | Guardian | `summarize_zone_greenhouse_climate`; extended enqueue | ✅ |
-| **WS8** | Docs + tests | operator-tour §5b + OpenAPI (OC-36B ✅); smokes (OC-36C) | partial |
+| **WS8** | Docs + tests | operator-tour §5b + OpenAPI (OC-36B ✅); smokes (OC-36C ✅) | ✅ |
 
 ---
 
@@ -178,7 +181,11 @@ Operator / Guardian
 
 **Acceptance:** Smoke: inject sensor reading above threshold → rule fires → `actuator_events` row; cooldown blocks re-fire. → **WS8** smokes.
 
-### WS4 — Greenhouse UI tab (pending)
+### WS4 — Greenhouse UI tab ✅
+
+**WS4-prep:** `POST /actuators/{id}/command` → `pending_command` (`source: operator`); farm list includes `valid_commands`; Pi maps `deploy`/`retract`; Guardian uses shared `CommandAllowed`.
+
+**Shipped:** [`ui/src/components/ZoneGreenhouseTab.vue`](../../ui/src/components/ZoneGreenhouseTab.vue) — profile form, climate sensors, typed manual commands, GH rules list; [`ZoneDetail.vue`](../../ui/src/views/ZoneDetail.vue) Overview | Greenhouse tabs when `zone_type=greenhouse`.
 
 **Tasks:**
 
@@ -247,9 +254,11 @@ For the **generic grow program** mental model, document in WS8 how phases fit:
 |------|----------------|
 | Soil / amendments | Inventory (`input_definitions` / batches) — largely done; worm casting = new definition row |
 | Fertigation | `gr33nfertigation.programs` + JADAM seed |
-| Plain watering (RO/well) | **Future slice** — `water_source` on program or separate irrigation_program (not 36) |
+| Plain watering (RO/well) | **Future** — Phase 39b or 40 (`irrigation_program`); not 36 |
 | Lighting | Phase 35 |
 | Greenhouse shade/fans/panels | Phase 36 (this) |
+| Zone UI (Water/Light/Climate) | Phase 38 |
+| Edge mix + command queue | Phase 39 |
 
 ---
 
@@ -272,11 +281,11 @@ WS1 → WS2 → WS5 → WS3 → WS6 → WS4 → WS7 → WS8. WS5 early so demo f
 
 - [x] Greenhouse zones carry `greenhouse_climate` profile; typed actuators validated (API + bootstrap v2)
 - [x] Rule templates for high sun / high temp / night retract (SQL + HTTP clone endpoint; rules inactive by default)
-- [ ] ZoneDetail Greenhouse tab + manual typed commands (WS4)
+- [x] ZoneDetail Greenhouse tab + manual typed commands (WS4 + WS4-prep `POST …/command`)
 - [x] Bootstrap `greenhouse_climate_v1` uses core types + profile (apply migration first)
-- [ ] Missing-sensor honesty in UI (WS6); Guardian read tool ✅
+- [x] Missing-sensor honesty in UI (WS6); Guardian read tool ✅
 - [x] Operator docs + OpenAPI (OC-36B)
-- [ ] Integration smokes (OC-36C)
+- [x] Integration smokes (OC-36C)
 
 ---
 

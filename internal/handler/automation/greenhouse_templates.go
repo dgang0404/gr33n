@@ -27,7 +27,9 @@ import (
 //	  "shade_actuator_id": 20,    // optional — enables deploy/retract rules
 //	  "fan_actuator_id": 21,       // optional — enables high-temp fan rule
 //	  "lux_sensor_id": 5,          // optional — enables high-lux shade rule
-//	  "temp_sensor_id": 3          // optional — enables high-temp + night retract
+//	  "temp_sensor_id": 3,         // optional — enables high-temp + night retract
+//	  "allow_missing_lux_sensor": false,  // WS6: must be true to skip high-lux when no lux_sensor_id
+//	  "allow_missing_temp_sensor": false  // WS6: must be true to skip temp-driven rules when no temp_sensor_id
 //	}
 func (h *Handler) ApplyGreenhouseRuleTemplates(w http.ResponseWriter, r *http.Request) {
 	farmID, err := httputil.PathID(r.URL.Path, 2)
@@ -40,11 +42,13 @@ func (h *Handler) ApplyGreenhouseRuleTemplates(w http.ResponseWriter, r *http.Re
 	}
 
 	var body struct {
-		ZoneID          int64  `json:"zone_id"`
-		ShadeActuatorID *int64 `json:"shade_actuator_id"`
-		FanActuatorID   *int64 `json:"fan_actuator_id"`
-		LuxSensorID     *int64 `json:"lux_sensor_id"`
-		TempSensorID    *int64 `json:"temp_sensor_id"`
+		ZoneID                int64  `json:"zone_id"`
+		ShadeActuatorID       *int64 `json:"shade_actuator_id"`
+		FanActuatorID         *int64 `json:"fan_actuator_id"`
+		LuxSensorID           *int64 `json:"lux_sensor_id"`
+		TempSensorID          *int64 `json:"temp_sensor_id"`
+		AllowMissingLuxSensor bool   `json:"allow_missing_lux_sensor"`
+		AllowMissingTempSensor bool  `json:"allow_missing_temp_sensor"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid request body")
@@ -86,10 +90,24 @@ func (h *Handler) ApplyGreenhouseRuleTemplates(w http.ResponseWriter, r *http.Re
 			return
 		}
 	}
-	// Validate sensors belong to this farm when provided.
+	skipped, err := planGreenhouseTemplateSkips(
+		body.ShadeActuatorID, body.FanActuatorID,
+		body.LuxSensorID, body.TempSensorID,
+		body.AllowMissingLuxSensor, body.AllowMissingTempSensor,
+	)
+	if err != nil {
+		httputil.WriteError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	// Validate sensors belong to this farm and match expected types when provided.
 	if body.LuxSensorID != nil {
 		if msg, ok := checkSensorFarm(ctx, h.q, farmID, *body.LuxSensorID, "lux_sensor_id"); !ok {
 			httputil.WriteError(w, http.StatusBadRequest, msg)
+			return
+		}
+		if err := validateTemplateLuxSensor(ctx, h.q, farmID, *body.LuxSensorID); err != nil {
+			httputil.WriteError(w, http.StatusBadRequest, err.Error())
 			return
 		}
 	}
@@ -98,6 +116,16 @@ func (h *Handler) ApplyGreenhouseRuleTemplates(w http.ResponseWriter, r *http.Re
 			httputil.WriteError(w, http.StatusBadRequest, msg)
 			return
 		}
+		if err := validateTemplateTempSensor(ctx, h.q, farmID, *body.TempSensorID); err != nil {
+			httputil.WriteError(w, http.StatusBadRequest, err.Error())
+			return
+		}
+	}
+
+	interlocks, err := ZoneSensorInterlocks(ctx, h.q, body.ZoneID)
+	if err != nil {
+		httputil.WriteError(w, http.StatusInternalServerError, "failed to evaluate zone sensors")
+		return
 	}
 
 	result, err := h.q.ApplyGreenhouseRuleTemplates(ctx,
@@ -112,6 +140,24 @@ func (h *Handler) ApplyGreenhouseRuleTemplates(w http.ResponseWriter, r *http.Re
 	if errMsg, ok := result["error"]; ok {
 		httputil.WriteError(w, http.StatusBadRequest, fmt.Sprintf("%v", errMsg))
 		return
+	}
+
+	result["skipped_rule_families"] = skipped
+	result["zone_sensor_interlocks"] = interlocks
+	result["required_sensors"] = map[string]any{
+		ghRuleFamilyHighLux: map[string]any{
+			"sensor_types": []string{"lux", "par"},
+			"field":        "lux_sensor_id",
+		},
+		ghRuleFamilyHighTemp: map[string]any{
+			"sensor_types": []string{"temperature", "air_temperature"},
+			"field":        "temp_sensor_id",
+		},
+		ghRuleFamilyNightRetract: map[string]any{
+			"sensor_types": []string{"temperature"},
+			"field":        "temp_sensor_id",
+			"note":         "Night retract uses temp proxy; cron schedules may add preconditions on the same temp sensor",
+		},
 	}
 
 	httputil.WriteJSON(w, http.StatusCreated, result)

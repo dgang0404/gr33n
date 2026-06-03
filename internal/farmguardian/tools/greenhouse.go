@@ -33,6 +33,8 @@ func execSummarizeZoneGreenhouseClimate(ctx context.Context, deps ExecutorDeps, 
 		zoneType = *zone.ZoneType
 	}
 
+	interlocks, _ := zoneSensorInterlocksForGuardian(ctx, deps.Q, zoneID)
+
 	// Parse greenhouse_climate profile from meta_data.
 	var profile map[string]any
 	profileMissing := false
@@ -190,6 +192,15 @@ func execSummarizeZoneGreenhouseClimate(ctx context.Context, deps ExecutorDeps, 
 		if notes != "" {
 			lines = append(lines, "  Notes: "+notes)
 		}
+		if pol == "auto" && !interlocks.HasLux {
+			lines = append(lines, "  ⚠ No lux/PAR sensor in zone — do not propose high-lux auto-shade rules unless the operator states they have no lux meter. Use manual policy or operator override.")
+		}
+		if pol == "auto" && !interlocks.HasTemp {
+			lines = append(lines, "  ⚠ No temperature sensor in zone — high-temp fan and night-retract rules need temp_sensor_id when applying templates.")
+		}
+	}
+	if !interlocks.HasLux {
+		lines = append(lines, "  Sensor interlock: lux/PAR absent in zone.")
 	}
 	if len(actuators) == 0 {
 		lines = append(lines, "  No linked actuators in profile.")
@@ -230,7 +241,8 @@ func execSummarizeZoneGreenhouseClimate(ctx context.Context, deps ExecutorDeps, 
 			"name":      zone.Name,
 			"zone_type": zoneType,
 		},
-		"profile":         profile,
+		"sensor_interlocks": interlocks,
+		"profile":           profile,
 		"profile_missing": profileMissing,
 		"actuators":       actuators,
 		"rules":           ghRules,
@@ -258,4 +270,35 @@ func orNA(s string) string {
 		return "not set"
 	}
 	return s
+}
+
+type guardianZoneInterlocks struct {
+	HasLux      bool `json:"has_lux_or_par"`
+	HasTemp     bool `json:"has_temperature"`
+	HasHumidity bool `json:"has_humidity"`
+}
+
+func zoneSensorInterlocksForGuardian(ctx context.Context, q db.Querier, zoneID int64) (guardianZoneInterlocks, error) {
+	zid := zoneID
+	sensors, err := q.ListSensorsByZone(ctx, &zid)
+	if err != nil {
+		return guardianZoneInterlocks{}, err
+	}
+	var st guardianZoneInterlocks
+	for _, s := range sensors {
+		if s.DeletedAt.Valid {
+			continue
+		}
+		t := strings.ToLower(s.SensorType)
+		if t == "lux" || strings.Contains(t, "lux") || t == "par" || strings.Contains(t, "par") {
+			st.HasLux = true
+		}
+		if strings.Contains(t, "temp") {
+			st.HasTemp = true
+		}
+		if strings.Contains(t, "humid") || t == "rh" {
+			st.HasHumidity = true
+		}
+	}
+	return st, nil
 }

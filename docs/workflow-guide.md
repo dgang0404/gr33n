@@ -83,6 +83,10 @@ Operator flow for controlling an actuator:
    - **`DELETE /devices/{id}/pending-command`** — clears the slot so the command does not repeat.
 6. The API fans this out: actuator state, **`GET /schedules/{id}/actuator-events`**, and **`gr33ncore.automation_runs`** / program run rows stay joinable for audit.
 
+**Single pending slot (Phase 38 — queue in Phase 39):** `SetDevicePendingCommand` stores **one** JSON object at `devices.config.pending_command`. If the automation worker (schedule, rule, or fertigation program tick), **`enqueue_actuator_command`** (Guardian Confirm), and **`POST /actuators/{id}/command`** (operator) all write within the same Pi poll interval, **the last writer wins** and earlier commands are dropped. Safe today: one dominant writer per device per minute, or staggered manual tests. **Phase 39** adds a FIFO **`device_commands`** queue so mix steps + irrigate pulse can run in order.
+
+**Timed pulse (Phase 38):** operator or program enqueue may include **`duration_seconds`** on `pending_command` (pumps/relays). The Pi runs **on → wait → off** ([`pi-integration-guide.md`](pi-integration-guide.md)). This is **not** multi-step nutrient dosing.
+
 The **Schedules** page shows each automation run side-by-side with the actuator events it caused — this is the audit trail for "did the light actually come on at 06:00?".
 
 ### Field edge troubleshooting for Pi and MQTT
@@ -210,6 +214,16 @@ When an operator mixes a fresh batch of nutrient solution, they record a **mixin
 - optional **components** — per-input draws like "added 250 ml of FPJ batch #17". Components subtract from natural-farming input inventory so you can see real consumption over a crop cycle.
 
 Line items per mixing event are available at `GET /farms/{id}/fertigation/mixing-events/{mid}/components`.
+
+**Manual mixing vs automated edge (Guardian / operators):**
+
+| Mode | Today (shipped) | Planned (Phase 39) |
+|------|-----------------|---------------------|
+| **Operator mixes by hand** | **Fertigation → Mixing log** or `POST /farms/{id}/fertigation/mixing-events` with components, measured EC/pH, reservoir | Same — remains the audit trail |
+| **Program fires on schedule** | Worker runs **`control_actuator`** (often `on`) and may pass **`run_duration_seconds`** as **`duration_seconds`** on `pending_command` — **irrigation pump pulse only** | Queue **`mix_batch`** (recipe + base water EC + target → per-channel pump seconds) **then** irrigate pulse |
+| **EC math on the Pi** | **Not implemented** — cloud has recipes, EC targets, and programs; Pi does not compute doses | Cloud **`MixPlan`** → edge executes steps |
+
+Until Phase 39 ships, tell operators and Guardian users: **log mixes in the UI**; do not promise automatic nutrient dosing from programs alone.
 
 ### Fertigation events (what the zone received)
 

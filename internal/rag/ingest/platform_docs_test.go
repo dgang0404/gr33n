@@ -96,6 +96,28 @@ func TestOperatorTourChunksIncludeGreenhouseClimate(t *testing.T) {
 	}
 }
 
+// TestOperatorTourChunksIncludePlantNeedsPhase38 ensures §4a is chunk-visible for Guardian RAG.
+func TestOperatorTourChunksIncludePlantNeedsPhase38(t *testing.T) {
+	repoRoot := filepath.Clean(filepath.Join("..", "..", ".."))
+	path := filepath.Join(repoRoot, "docs", "operator-tour.md")
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("read operator-tour: %v", err)
+	}
+	joined := strings.Join(chunkMarkdown(string(data)), "\n")
+	for _, needle := range []string{
+		"4a. Plant needs",
+		"Water / Light / Climate",
+		"last write wins",
+		"duration_seconds",
+		"Phase 39",
+	} {
+		if !strings.Contains(joined, needle) {
+			t.Fatalf("operator-tour chunks missing %q", needle)
+		}
+	}
+}
+
 func TestPatternPlaybooksInManifest(t *testing.T) {
 	repoRoot := filepath.Clean(filepath.Join("..", "..", ".."))
 	m, err := LoadPlatformDocManifest(repoRoot, "")

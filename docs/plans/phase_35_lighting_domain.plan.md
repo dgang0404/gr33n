@@ -93,6 +93,7 @@ Operator picks preset "18/6 Veg" + zone + grow light actuator
 
 Worker (30s tick, TZ-aware)
    └─► schedule fires → pending_command → Pi → actuator_events
+   (Phase 39 WS1: enqueue via device_commands queue — same ON/OFF payload, no last-write-wins)
 
 UI PhotoperiodClockEditor
    └─► edit start · end · duration (any two compute the third) → PATCH lighting_program → regenerate crons
