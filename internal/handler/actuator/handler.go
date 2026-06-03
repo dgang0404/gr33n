@@ -27,6 +27,114 @@ func NewHandler(pool *pgxpool.Pool) *Handler {
 	return &Handler{q: db.New(pool)}
 }
 
+// POST /farms/{id}/actuators
+func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
+	farmID, err := httputil.PathID(r.URL.Path, 2)
+	if err != nil {
+		httputil.WriteError(w, http.StatusBadRequest, "invalid farm id")
+		return
+	}
+	if !farmauthz.RequireFarmOperate(w, r, h.q, farmID) {
+		return
+	}
+
+	var body struct {
+		Name               string          `json:"name"`
+		ActuatorType       string          `json:"actuator_type"`
+		ZoneID             *int64          `json:"zone_id"`
+		DeviceID           *int64          `json:"device_id"`
+		HardwareIdentifier *string         `json:"hardware_identifier"`
+		FeedbackSensorID   *int64          `json:"feedback_sensor_id"`
+		Config             json.RawMessage `json:"config"`
+		MetaData           json.RawMessage `json:"meta_data"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		httputil.WriteError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+	if body.Name == "" {
+		httputil.WriteError(w, http.StatusBadRequest, "name is required")
+		return
+	}
+	if body.ActuatorType == "" {
+		httputil.WriteError(w, http.StatusBadRequest, "actuator_type is required")
+		return
+	}
+
+	// Validate per-type config when type is known.
+	if err := ValidateActuatorConfig(body.ActuatorType, body.Config); err != nil {
+		httputil.WriteError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	cfg := json.RawMessage(`{}`)
+	if len(body.Config) > 0 {
+		cfg = body.Config
+	}
+	meta := json.RawMessage(`{}`)
+	if len(body.MetaData) > 0 {
+		meta = body.MetaData
+	}
+
+	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+	defer cancel()
+
+	row, err := h.q.CreateActuator(ctx, db.CreateActuatorParams{
+		FarmID:             farmID,
+		ZoneID:             body.ZoneID,
+		DeviceID:           body.DeviceID,
+		Name:               body.Name,
+		ActuatorType:       body.ActuatorType,
+		HardwareIdentifier: body.HardwareIdentifier,
+		FeedbackSensorID:   body.FeedbackSensorID,
+		Config:             cfg,
+		MetaData:           meta,
+	})
+	if err != nil {
+		httputil.WriteError(w, http.StatusInternalServerError, "failed to create actuator")
+		return
+	}
+
+	// Attach valid_commands hint so callers know the typed command vocabulary.
+	type createResponse struct {
+		db.Gr33ncoreActuator
+		ValidCommands []string `json:"valid_commands"`
+	}
+	httputil.WriteJSON(w, http.StatusCreated, createResponse{
+		Gr33ncoreActuator: row,
+		ValidCommands:     ValidCommands(row.ActuatorType),
+	})
+}
+
+// GET /actuators/{id}
+func (h *Handler) Get(w http.ResponseWriter, r *http.Request) {
+	actuatorID, err := httputil.PathID(r.URL.Path, 2)
+	if err != nil {
+		httputil.WriteError(w, http.StatusBadRequest, "invalid actuator id")
+		return
+	}
+	a0, err := h.q.GetActuatorByID(r.Context(), actuatorID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			httputil.WriteError(w, http.StatusNotFound, "actuator not found")
+			return
+		}
+		httputil.WriteError(w, http.StatusInternalServerError, "failed to load actuator")
+		return
+	}
+	if !farmauthz.RequireFarmMember(w, r, h.q, a0.FarmID) {
+		return
+	}
+	type getResponse struct {
+		db.Gr33ncoreActuator
+		ValidCommands []string `json:"valid_commands"`
+	}
+	httputil.WriteJSON(w, http.StatusOK, getResponse{
+		Gr33ncoreActuator: a0,
+		ValidCommands:     ValidCommands(a0.ActuatorType),
+	})
+}
+
 // GET /farms/{id}/actuators
 func (h *Handler) ListByFarm(w http.ResponseWriter, r *http.Request) {
 	farmID, err := httputil.PathID(r.URL.Path, 2)

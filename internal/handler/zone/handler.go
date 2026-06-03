@@ -79,6 +79,17 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 	if !farmauthz.RequireFarmOperate(w, r, h.q, farmID) {
 		return
 	}
+
+	// Validate greenhouse_climate profile when zone_type=greenhouse.
+	if params.ZoneType != nil && *params.ZoneType == "greenhouse" {
+		if gcRaw, err := ExtractGreenhouseClimate(params.MetaData); err == nil && len(gcRaw) > 0 {
+			if _, _, verr := ValidateGreenhouseClimate(gcRaw); verr != nil {
+				httputil.WriteError(w, http.StatusBadRequest, verr.Error())
+				return
+			}
+		}
+	}
+
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()
 
@@ -113,6 +124,21 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 	}
 	if !farmauthz.RequireFarmOperate(w, r, h.q, z0.FarmID) {
 		return
+	}
+
+	// Validate greenhouse_climate profile when zone_type=greenhouse.
+	// Use the incoming zone_type if supplied; fall back to the existing value.
+	zoneType := z0.ZoneType
+	if params.ZoneType != nil {
+		zoneType = params.ZoneType
+	}
+	if zoneType != nil && *zoneType == "greenhouse" {
+		if gcRaw, err := ExtractGreenhouseClimate(params.MetaData); err == nil && len(gcRaw) > 0 {
+			if _, _, verr := ValidateGreenhouseClimate(gcRaw); verr != nil {
+				httputil.WriteError(w, http.StatusBadRequest, verr.Error())
+				return
+			}
+		}
 	}
 
 	zone, err := h.q.UpdateZone(ctx, params)
