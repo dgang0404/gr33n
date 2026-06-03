@@ -13,9 +13,18 @@ import (
 	db "gr33n-api/internal/db"
 )
 
+// allowedActuatorCommands are the commands Guardian may enqueue via pending_command.
+// Phase 36 WS7 extends the set to include greenhouse motor verbs (deploy/retract
+// for shade_screen, open/close for ridge_vent and glazing_panel).
+// The Pi client maps these onto the same GPIO on/off logic with the configured polarity.
 var allowedActuatorCommands = map[string]struct{}{
-	"on":  {},
-	"off": {},
+	"on":      {},
+	"off":     {},
+	"deploy":  {},
+	"retract": {},
+	"open":    {},
+	"close":   {},
+	"stop":    {},
 }
 
 func execEnqueueActuatorCommand(ctx context.Context, deps ExecutorDeps, args map[string]any) (any, error) {
@@ -33,7 +42,7 @@ func execEnqueueActuatorCommand(ctx context.Context, deps ExecutorDeps, args map
 	}
 	command = strings.ToLower(strings.TrimSpace(command))
 	if _, ok := allowedActuatorCommands[command]; !ok {
-		return nil, fmt.Errorf("command must be on or off")
+		return nil, fmt.Errorf("command must be one of: on, off, deploy, retract, open, close, stop")
 	}
 	reason, _ := optionalStringFromArgs(args, "reason")
 

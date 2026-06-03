@@ -131,6 +131,15 @@ var registry = map[string]Tool{
 		Description: "Read-only: list active lighting programs for this farm (optionally filtered by zone_id). Returns photoperiod, ON/OFF schedule IDs, actuator, timezone.",
 		Execute:     execSummarizeZoneLighting,
 	},
+	// Phase 36 WS7 — greenhouse climate read tool
+	"summarize_zone_greenhouse_climate": {
+		ID: "summarize_zone_greenhouse_climate",
+		Description: "Read-only: summarize the greenhouse climate profile for a zone (zone_id required). " +
+			"Returns greenhouse_climate meta_data profile, linked actuator states (shade/vent/fan), " +
+			"active GH automation rules, and recent shade/fan events (48 h). " +
+			"Use enqueue_actuator_command with command=deploy|retract|open|close to propose manual actuator control.",
+		Execute: execSummarizeZoneGreenhouseClimate,
+	},
 }
 
 // Lookup returns a registered tool or an error.
