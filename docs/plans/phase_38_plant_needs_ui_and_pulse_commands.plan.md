@@ -45,6 +45,7 @@ isProject: false
 | [phase_35_lighting_domain.plan.md](phase_35_lighting_domain.plan.md) | Light need |
 | [phase_36_greenhouse_climate.plan.md](phase_36_greenhouse_climate.plan.md) | Air/climate need |
 | [phase_39_edge_fertigation_execution.plan.md](phase_39_edge_fertigation_execution.plan.md) | **Next:** mix jobs + device command queue (fixes last-write-wins); automated recipe→Pi |
+| [phase_40_unified_farmer_ux_zone_cockpit.plan.md](phase_40_unified_farmer_ux_zone_cockpit.plan.md) | **After 39:** zone cockpit — inline setpoints, alerts, today strip (not DB-shaped UI) |
 | [operator-tour.md](../operator-tour.md) | § Plant needs (Phase 38) |
 
 ## Not in Phase 38

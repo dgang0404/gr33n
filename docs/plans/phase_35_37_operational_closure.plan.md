@@ -36,6 +36,12 @@ todos:
   - id: oc-39-closure
     content: "OC-39: Phase 39 WS8 — device_commands queue smokes, mix plan unit tests, pi-integration-guide queue+mix_batch, operator-tour automated mix"
     status: pending
+  - id: bug-guardian-nav
+    content: "BUG (pre-40): Guardian edge tab + sidebar overlap — see phase_40 plan bug-guardian-nav"
+    status: pending
+  - id: oc-40-closure
+    content: "OC-40: Phase 40 WS8 — zone cockpit operator-tour §4b, architecture §7.0f, Vitest inline setpoints + Today strip"
+    status: pending
 isProject: false
 ---
 
@@ -182,6 +188,20 @@ Feature detail: [`phase_38_plant_needs_ui_and_pulse_commands.plan.md`](phase_38_
 ## Phase 39 — Edge fertigation execution
 
 Feature detail: [`phase_39_edge_fertigation_execution.plan.md`](phase_39_edge_fertigation_execution.plan.md). **OC-39** when WS8 lands.
+
+---
+
+## Phase 40 — Unified farmer UX (zone cockpit)
+
+Feature detail: [`phase_40_unified_farmer_ux_zone_cockpit.plan.md`](phase_40_unified_farmer_ux_zone_cockpit.plan.md). **Planned** after Phase 38; **WS5** best after Phase 39 queue.
+
+| Area | Status | Notes |
+|------|--------|-------|
+| Guardian nav hotfix | ⏳ | `bug-guardian-nav` — edge tab vs sidebar; do before WS7 |
+| Today strip + inline setpoints | ⏳ | WS1–WS2 |
+| Zone rules/schedules/alerts | ⏳ | WS3–WS4 |
+| Water grow story | ⏳ | WS5 — extends 39 WS7 |
+| OC-40 docs/tests | ⏳ | WS8 |
 
 | Area | Depends on | Notes |
 |------|------------|-------|

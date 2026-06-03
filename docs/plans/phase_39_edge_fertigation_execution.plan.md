@@ -320,6 +320,7 @@ Table `gr33ncore.device_commands`:
 - Plain-water-only `irrigation_program` entity (39b)
 - CO₂ / cooling pad / weather API
 - Replacing manual mixing UI — manual path stays for labs without edge hardware
+- **Unified zone cockpit** (inline setpoints, zone alerts, today's schedule) — **[Phase 40](phase_40_unified_farmer_ux_zone_cockpit.plan.md)**
 
 ---
 

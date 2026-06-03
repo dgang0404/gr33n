@@ -51,8 +51,9 @@ Cross-linked from Phase 14 because enterprise scale-out and MQTT edge patterns s
 | **37** | **Offline field assistant** (**shipped**) — `field_guide` RAG, guided procedures, safety stops, LLM-down degrade, print checklists, background Guardian chat | [`phase_37_guardian_offline_field_assistant.plan.md`](plans/phase_37_guardian_offline_field_assistant.plan.md) · [operator-tour §6d](operator-tour.md#6d-first-field-install-with-guardian-offline-phase-37) · [architecture §7.0e](farm-guardian-architecture.md#70e-offline-field-assistant-phase-37) |
 | **38** | **Plant-needs UI** (**shipped**) — Zones → **Water / Light / Climate**; Advanced nav; **`duration_seconds`** pump pulse on `pending_command` | [`phase_38_plant_needs_ui_and_pulse_commands.plan.md`](plans/phase_38_plant_needs_ui_and_pulse_commands.plan.md) · [operator-tour §4a](operator-tour.md#4a-plant-needs-per-zone-phase-38) · [architecture §7.0d](farm-guardian-architecture.md#70d-plant-needs-ui--pulse-phase-38) |
 | **39** | **Edge fertigation** — FIFO `device_commands` queue, `mix_batch`, Pi mix executor (fixes last-write-wins) | [`phase_39_edge_fertigation_execution.plan.md`](plans/phase_39_edge_fertigation_execution.plan.md) · [operator-tour §4a](operator-tour.md#4a-plant-needs-per-zone-phase-38) (queue honesty) |
+| **40** | **Unified farmer UX** — zone cockpit: inline setpoints, today's schedule, zone alerts, grow story on Water (not DB-shaped UI) | [`phase_40_unified_farmer_ux_zone_cockpit.plan.md`](plans/phase_40_unified_farmer_ux_zone_cockpit.plan.md) |
 
-Rollup: [`phase_35_37_operational_closure.plan.md`](plans/phase_35_37_operational_closure.plan.md) (now spans **35–39**). After operator-doc edits, re-ingest Guardian RAG: **`make rag-ingest-platform-docs`** and **`make rag-ingest-field-guides`** (Phase 37 field corpus).
+Rollup: [`phase_35_37_operational_closure.plan.md`](plans/phase_35_37_operational_closure.plan.md) (spans **35–40**). After operator-doc edits, re-ingest Guardian RAG: **`make rag-ingest-platform-docs`** and **`make rag-ingest-field-guides`** (Phase 37 field corpus).
 
 ## Quick links
 
@@ -84,7 +85,8 @@ Rollup: [`phase_35_37_operational_closure.plan.md`](plans/phase_35_37_operationa
 | Phase 36 — Greenhouse climate (plan) | [`plans/phase_36_greenhouse_climate.plan.md`](plans/phase_36_greenhouse_climate.plan.md) — shipped (interlocks + smokes) |
 | Phase 38 — Plant-needs UI + pulse (plan) | [`plans/phase_38_plant_needs_ui_and_pulse_commands.plan.md`](plans/phase_38_plant_needs_ui_and_pulse_commands.plan.md) — Zones Water/Light/Climate; `duration_seconds` |
 | Phase 39 — Edge fertigation execution (plan) | [`plans/phase_39_edge_fertigation_execution.plan.md`](plans/phase_39_edge_fertigation_execution.plan.md) — command queue + automated mix |
-| Phase 35–39 operational closure | [`plans/phase_35_37_operational_closure.plan.md`](plans/phase_35_37_operational_closure.plan.md) — OC-35–38 closed; **Phase 39** next |
+| Phase 40 — Unified farmer UX / zone cockpit (plan) | [`plans/phase_40_unified_farmer_ux_zone_cockpit.plan.md`](plans/phase_40_unified_farmer_ux_zone_cockpit.plan.md) — inline setpoints, zone alerts, today strip; **bug-guardian-nav** hotfix |
+| Phase 35–40 operational closure | [`plans/phase_35_37_operational_closure.plan.md`](plans/phase_35_37_operational_closure.plan.md) — OC-35–38 closed; **39** then **40** |
 | Phase 37 — Guardian offline field assistant (plan) | [`plans/phase_37_guardian_offline_field_assistant.plan.md`](plans/phase_37_guardian_offline_field_assistant.plan.md) — Pi wiring / plumbing walkthroughs, trades corpus, safety gating, offline |
 | Pi pending_command + pulse | [`pi-integration-guide.md`](pi-integration-guide.md) §1.1 |
 | Workflow — single slot + manual mix | [`workflow-guide.md`](workflow-guide.md) |
