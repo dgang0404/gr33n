@@ -23,8 +23,8 @@ todos:
     content: "WS5: Timer UX — PhotoperiodClockEditor (start/end/duration linked); LightingProgramForm + zone Lighting tab"
     status: done
   - id: ws6-migrate-seed
-    content: "WS6: Migration path — master_seed lighting_program wrap done; still TODO jadam_indoor_photoperiod_v1 bootstrap → lighting_program (see phase_35_37_operational_closure.plan.md OC-35)"
-    status: pending
+    content: "WS6: Migration path — master_seed lighting_program wrap done; jadam_indoor_photoperiod_v1 bootstrap upgraded (OC-35A, 20260603_phase35_oc35a_bootstrap_lighting_programs.sql)"
+    status: done
   - id: ws7-guardian-read
     content: "WS7: Guardian read — summarize_zone_lighting read tool; optional create_lighting_program propose tool (medium tier) — defer full revise to Phase 34"
     status: done

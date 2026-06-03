@@ -8,7 +8,7 @@ overview: >
 todos:
   - id: oc-35-seed-bootstrap
     content: "OC-35A: jadam_indoor_photoperiod_v1 bootstrap → lighting_program + paired schedules (Phase 35 WS6 remainder)"
-    status: pending
+    status: done
   - id: oc-35-docs-openapi
     content: "OC-35B: operator-tour 18/6 lighting walkthrough; OpenAPI LightingProgram + schedule-action paths; architecture grow-stack note (Phase 35 WS8)"
     status: pending
