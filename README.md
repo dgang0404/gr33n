@@ -7,7 +7,7 @@ An open-source agricultural operating system designed to reclaim data, land, and
 [![Vue](https://img.shields.io/badge/Vue-3-4FC08D?logo=vue.js)](https://vuejs.org)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-14+-336791?logo=postgresql)](https://postgresql.org)
 
-**Current focus:** **Phase 31 — field validation & safe edge** is **shipped on `main`** ([plan](docs/plans/phase_31_field_validation_and_edge.plan.md)). **Shipped since:** **Phase 32** grow-setup PR bundles + platform doc RAG ([plan](docs/plans/phase_32_guardian_grow_setup_prs.plan.md)) and **Phase 33** Guardian polish + enterprise ops (read-tool hardening, `context_ref` dedup, read-tool audit log, `@hardware` test lane, site manifest — [plan](docs/plans/phase_33_guardian_polish_and_enterprise_ops.plan.md)). **Next (planned):** **Phase 34** Guardian PR iteration → **35** lighting → **36** greenhouse → **37** offline field assistant. **Phase 30 — Guardian change requests (PR queue)** remains the config/actuator write path ([plan](docs/plans/phase_30_guardian_change_requests.plan.md)). Multi-site integrator sketch: [`hypothetical-enterprise-topology.md`](docs/hypothetical-enterprise-topology.md). After `git pull`, run **`./scripts/bootstrap-local.sh --skip-schema`** (or **`make dev-stack`**) so migrations apply. Pi / edge: [`pi_client/gr33n_client.py`](pi_client/gr33n_client.py), [`docs/pi-integration-guide.md`](docs/pi-integration-guide.md), [`cmd/api/smoke_pi_contract_test.go`](cmd/api/smoke_pi_contract_test.go). Key playbooks: [`docs/workflow-guide.md`](docs/workflow-guide.md), [`docs/farm-guardian-architecture.md`](docs/farm-guardian-architecture.md), [`docs/mqtt-edge-operator-playbook.md`](docs/mqtt-edge-operator-playbook.md), [`docs/farm-guardian-ollama-setup.md`](docs/farm-guardian-ollama-setup.md), [`docs/local-operator-bootstrap.md`](docs/local-operator-bootstrap.md), [`docs/phase-14-operator-documentation.md`](docs/phase-14-operator-documentation.md), [`docs/hypothetical-enterprise-topology.md`](docs/hypothetical-enterprise-topology.md), [`docs/insert-commons-pipeline-runbook.md`](docs/insert-commons-pipeline-runbook.md), [`docs/insert-commons-receiver-playbook.md`](docs/insert-commons-receiver-playbook.md), [`docs/notifications-operator-playbook.md`](docs/notifications-operator-playbook.md), [`docs/domain-modules-operator-playbook.md`](docs/domain-modules-operator-playbook.md), [`docs/mobile-distribution.md`](docs/mobile-distribution.md), [`docs/audit-events-operator-playbook.md`](docs/audit-events-operator-playbook.md), [`docs/terminology-guideline.md`](docs/terminology-guideline.md), [`docs/phase-13-operator-documentation.md`](docs/phase-13-operator-documentation.md).
+**Current focus:** **Phase 36 — greenhouse climate** is **in progress on `main`** (backend + docs shipped; Greenhouse UI tab + smokes open — [plan](docs/plans/phase_36_greenhouse_climate.plan.md)). **Shipped since Phase 31:** field validation & edge ([plan](docs/plans/phase_31_field_validation_and_edge.plan.md)); **32** grow-setup PRs + platform doc RAG; **33** Guardian polish; **34** PR revise loop + operator blind-spot facts; **35** lighting programs + photoperiod UI ([plan](docs/plans/phase_35_lighting_domain.plan.md)). **Next (planned):** **37** offline field assistant. Guardian **writes** still go through propose→**Confirm** ([Phase 30](docs/plans/phase_30_guardian_change_requests.plan.md)). Multi-site sketch: [`hypothetical-enterprise-topology.md`](docs/hypothetical-enterprise-topology.md). After `git pull`, run **`./scripts/bootstrap-local.sh --skip-schema`** (or **`make dev-stack`**) so migrations apply. Pi / edge: [`pi_client/gr33n_client.py`](pi_client/gr33n_client.py), [`docs/pi-integration-guide.md`](docs/pi-integration-guide.md). Operator index: [`docs/phase-14-operator-documentation.md`](docs/phase-14-operator-documentation.md) · closure rollup: [`docs/plans/phase_35_37_operational_closure.plan.md`](docs/plans/phase_35_37_operational_closure.plan.md).
 
 ---
 
@@ -517,6 +517,7 @@ make edge-smoke-help # Phase 31 WS1 — print laptop stub loop (pi_client → Li
 # Pi field checklist (Phase 31 WS2): docs/pi-integration-guide.md §8
 make run-auth-test # API with AUTH_MODE=auth_test (JWT + PI_API_KEY; restart after git pull)
 make rag-ingest-demo   # Index farm_id=1 only (skip message if no embedding key)
+make rag-ingest-platform-docs  # Curated operator docs (tour, playbooks, phase guides) for Guardian RAG
 make local-up        # dev-stack then API + UI (same as ./scripts/dev-stack.sh --serve)
 make restart-local   # After reboot: Compose db + wait + sanity report (no migrations)
 make restart-local-serve  # restart-local then API + UI (make dev-auth-test)
@@ -576,15 +577,21 @@ gr33n's AI layer runs **fully on your intranet** — no data leaves the LAN in F
 
 The AI features are gated by `AI_ENABLED` (default on) and degrade gracefully: in **Lite mode** (no LLM configured) `POST /v1/chat` returns 503 and the "Ask (LLM)" button in the Knowledge UI is disabled with an explanation. In **Full mode**, Guardian is available from the **global slide-out drawer** on any page (sidebar, TopBar ✨, right-edge tab) and at `/chat`.
 
-**What Guardian does today (Phase 27–30):** conversational Q&A — explain alerts, compare crop cycles, cite your RAG corpus, and read the live farm snapshot (not a mirror of every UI screen — see architecture doc). **Phase 29** adds alert **ack** / **mark read** via propose→confirm. **Phase 30** adds the **change-request inbox** (`/guardian/requests`), risk tiers, config tools (tasks, cycle stage, schedule/program/rule patches), **`enqueue_actuator_command`** (Pi `pending_command` after Confirm), zone reference photos, and optional vision chat. Nothing writes without **Confirm**; viewers can chat but cannot confirm. All confirmed actions log `guardian_tool_executed`. Automation **rules/alerts** still run autonomously — Guardian PRs are intentional, reviewed changes only.
+**What Guardian does today (Phase 27–35, Phase 36 backend):** conversational Q&A grounded on your farm snapshot, optional **RAG** (farm rows + curated platform docs via `make rag-ingest-platform-docs`), and **read tools** (zones, alerts, fertigation, lighting, greenhouse climate). **Writes** always use propose→**Confirm** — nothing hits the DB until you approve.
 
-**Shipped (Phase 31):** prove the edge loop — laptop stub readings → dashboard **Live Sensors** (`make edge-smoke-help`); Pi field checklist + safe actuator bench; MQTT room-scale ingest; recipe-pack promotion demo; Guardian read-only zone/alert lookups — [plan](docs/plans/phase_31_field_validation_and_edge.plan.md) · [enterprise topology](docs/hypothetical-enterprise-topology.md) · [phase-14 index](docs/phase-14-operator-documentation.md#phase-31-field-validation-edge).
+| Phase | Guardian capability (shipped) |
+|-------|------------------------------|
+| **27–28** | Streaming chat, sessions, live snapshot, crop-cycle context |
+| **29** | Alert **ack** / **mark read** via propose→confirm (not autonomous) |
+| **30** | **PR inbox** (`/guardian/requests`), risk tiers, config patches, **`enqueue_actuator_command`** → Pi `pending_command`, zone photos, optional vision |
+| **31** | Read-only zone / alert / plant lookups from chat |
+| **32** | **Grow setup pack** (plant + cycle + fertigation bundle) + platform doc RAG corpus |
+| **33** | Read-tool hardening, `context_ref` dedup, read-tool audit log |
+| **34** | **Revise** a pending PR in-session; **operator-stated facts** (labeled, not sensor readings); impact explanations on cards |
+| **35** | **`summarize_zone_lighting`** — photoperiod programs (separate from greenhouse shade) |
+| **36** *(partial)* | **`summarize_zone_greenhouse_climate`**; actuator commands `deploy`/`retract`/`open`/`close` via Confirm — [operator tour §5b](docs/operator-tour.md#5b-greenhouse-shade-vents-and-fans-phase-36) |
 
-**Shipped (Phase 32):** conversational **grow setup** PR bundles (plant + cycle + fertigation from chat) + platform doc RAG — [plan](docs/plans/phase_32_guardian_grow_setup_prs.plan.md).
-
-**Shipped (Phase 33):** Guardian read-tool hardening, `context_ref` zone dedup, read-tool usage audit log, `@hardware` build-tag test lane, enterprise site manifest — [plan](docs/plans/phase_33_guardian_polish_and_enterprise_ops.plan.md).
-
-**Planned (Phases 34–37):** Guardian PR iteration + operator blind-spot facts (34), first-class lighting domain (35), greenhouse climate (36), and an offline field assistant that walks a non-IT operator through Pi wiring / plumbing (37) — see [`docs/phase-14-operator-documentation.md`](docs/phase-14-operator-documentation.md).
+Viewers can chat but cannot **Confirm**. Confirmed actions log `guardian_tool_executed`. Automation **rules/alerts** still run without chat — Guardian PRs are intentional, reviewed changes only. Architecture: [`docs/farm-guardian-architecture.md`](docs/farm-guardian-architecture.md). **In progress:** Phase 36 Greenhouse UI tab + integration smokes — [plan](docs/plans/phase_36_greenhouse_climate.plan.md). **Planned:** Phase 37 offline field assistant — [`docs/phase-14-operator-documentation.md`](docs/phase-14-operator-documentation.md).
 
 All AI calls remain inside your farm's intranet:
 
@@ -635,8 +642,12 @@ A phase-by-phase ledger of what's live on `main`. Each row links to the governin
 | **29** | **Guardian agent layer** — propose→confirm alert ack/read, slide-out drawer, Ask Guardian entry points, OpenAPI 0.4.0 | ✅ Done | [plan](docs/plans/phase_29_guardian_agent_layer.md) |
 | **30** | **Guardian change requests (PR queue)** — pending inbox, risk tiers, config + actuator tools, zone photos, optional vision, OpenAPI 0.4.3 | ✅ Done | [plan](docs/plans/phase_30_guardian_change_requests.plan.md) |
 | **31** | **Field validation & safe edge** — stub/Pi readings → dashboard; actuator bench; MQTT pattern; enterprise script stubs; Guardian read tools | ✅ Done | [plan](docs/plans/phase_31_field_validation_and_edge.plan.md) · [enterprise topology](docs/hypothetical-enterprise-topology.md) · [phase-14 index](docs/phase-14-operator-documentation.md#phase-31-field-validation-edge) |
-| **32** | **Guardian grow setup PRs** — conversational plant + cycle + fertigation bundles (Confirm-only) + platform doc RAG | 📋 Plan ready | [plan](docs/plans/phase_32_guardian_grow_setup_prs.plan.md) |
-| **33** | **Guardian polish & enterprise ops** — read-tool hardening, context_ref dedup, hardware CI, site manifest | 📋 Plan ready | [plan](docs/plans/phase_33_guardian_polish_and_enterprise_ops.plan.md) |
+| **32** | **Guardian grow setup PRs** — conversational plant + cycle + fertigation bundles (Confirm-only) + platform doc RAG | ✅ Done | [plan](docs/plans/phase_32_guardian_grow_setup_prs.plan.md) |
+| **33** | **Guardian polish & enterprise ops** — read-tool hardening, context_ref dedup, hardware CI, site manifest | ✅ Done | [plan](docs/plans/phase_33_guardian_polish_and_enterprise_ops.plan.md) |
+| **34** | **Guardian PR iteration** — revise/supersede pending PRs, operator blind-spot facts, impact explanations | ✅ Done | [plan](docs/plans/phase_34_guardian_pr_iteration.plan.md) |
+| **35** | **Lighting domain** — `lighting_programs`, presets (22/2, 18/6, 12/12), PhotoperiodClockEditor, TZ-aware worker | ✅ Done | [plan](docs/plans/phase_35_lighting_domain.plan.md) |
+| **36** | **Greenhouse climate** — `greenhouse_climate` zone profile, typed actuators, rule templates, Guardian read (UI/smokes open) | 🚧 In progress | [plan](docs/plans/phase_36_greenhouse_climate.plan.md) |
+| **37** | **Guardian offline field assistant** — Pi wiring / plumbing walkthroughs, trades corpus, safety gating | 📋 Planned | [plan](docs/plans/phase_37_guardian_offline_field_assistant.plan.md) |
 
 ### Phase 23 exit sign-off
 
@@ -663,9 +674,9 @@ Stabilization sprint **closed** on **`main`** **2026-04-18**. Criterion-by-crite
 - [x] **Phase 31 — field validation & safe edge** — stub loop, Pi checklist, actuator bench, MQTT room-scale, recipe-pack demo, Guardian read tools — [plan](docs/plans/phase_31_field_validation_and_edge.plan.md) · [enterprise topology](docs/hypothetical-enterprise-topology.md) · [phase-14 index](docs/phase-14-operator-documentation.md#phase-31-field-validation-edge)
 - [x] **Phase 32 — Guardian grow setup PRs** — plant + cycle + fertigation bundles from chat + platform doc RAG — [plan](docs/plans/phase_32_guardian_grow_setup_prs.plan.md)
 - [x] **Phase 33 — Guardian polish & enterprise ops** — read-tool hardening, context_ref dedup, read audit log, @hardware lane, site manifest — [plan](docs/plans/phase_33_guardian_polish_and_enterprise_ops.plan.md)
-- [ ] **Phase 34 — Guardian PR iteration** — revise/supersede a pending PR + operator-stated blind-spot facts — [plan](docs/plans/phase_34_guardian_pr_iteration.plan.md)
-- [ ] **Phase 35 — Lighting domain** — photoperiod programs, presets (22/2, 18/6, 12/12), timer UX — [plan](docs/plans/phase_35_lighting_domain.plan.md)
-- [ ] **Phase 36 — Greenhouse climate** — shade/UV screens, panels, fans as core zone concepts — [plan](docs/plans/phase_36_greenhouse_climate.plan.md)
+- [x] **Phase 34 — Guardian PR iteration** — revise/supersede pending PR + operator-stated blind-spot facts — [plan](docs/plans/phase_34_guardian_pr_iteration.plan.md)
+- [x] **Phase 35 — Lighting domain** — photoperiod programs, presets (22/2, 18/6, 12/12), `/lighting` UI — [plan](docs/plans/phase_35_lighting_domain.plan.md) · [operator tour §5](docs/operator-tour.md#5-set-up-186-vegetative-lights-phase-35)
+- [ ] **Phase 36 — Greenhouse climate** — backend + docs shipped; Greenhouse UI tab + smokes — [plan](docs/plans/phase_36_greenhouse_climate.plan.md) · [operator tour §5b](docs/operator-tour.md#5b-greenhouse-shade-vents-and-fans-phase-36)
 - [ ] **Phase 37 — Guardian offline field assistant** — Pi wiring / plumbing walkthroughs, trades corpus, safety gating, offline — [plan](docs/plans/phase_37_guardian_offline_field_assistant.plan.md)
 - [ ] **Deprecate `programs.metadata.steps`** — after N deploys with zero fallback warnings, promote `action_source` checks to hard errors and drop the column.
 - [ ] **Program "run now" API** — explicit trigger for unscheduled / ad-hoc programs.
@@ -712,9 +723,9 @@ Stabilization sprint **closed** on **`main`** **2026-04-18**. Criterion-by-crite
 - [x] Phase 31 — field validation & edge (stub loop, Pi checklist, actuator bench, MQTT, enterprise scripts, Guardian read tools) — [plan](docs/plans/phase_31_field_validation_and_edge.plan.md) · [enterprise topology](docs/hypothetical-enterprise-topology.md) · [phase-14 index](docs/phase-14-operator-documentation.md#phase-31-field-validation-edge)
 - [x] Phase 32 — Guardian grow setup PRs (plant + cycle + fertigation bundles + platform doc RAG) — [plan](docs/plans/phase_32_guardian_grow_setup_prs.plan.md)
 - [x] Phase 33 — Guardian polish & enterprise ops (read-tool hardening, context_ref dedup, read audit log, @hardware lane, site manifest) — [plan](docs/plans/phase_33_guardian_polish_and_enterprise_ops.plan.md)
-- [ ] Phase 34 — Guardian PR iteration & blind-spot inputs — [plan](docs/plans/phase_34_guardian_pr_iteration.plan.md)
-- [ ] Phase 35 — Lighting domain (photoperiod, presets, timer UX) — [plan](docs/plans/phase_35_lighting_domain.plan.md)
-- [ ] Phase 36 — Greenhouse climate (shade, panels, fans) — [plan](docs/plans/phase_36_greenhouse_climate.plan.md)
+- [x] Phase 34 — Guardian PR iteration & blind-spot inputs — [plan](docs/plans/phase_34_guardian_pr_iteration.plan.md)
+- [x] Phase 35 — Lighting domain (photoperiod, presets, `/lighting` UI) — [plan](docs/plans/phase_35_lighting_domain.plan.md)
+- [ ] Phase 36 — Greenhouse climate (shade, panels, fans; backend shipped) — [plan](docs/plans/phase_36_greenhouse_climate.plan.md)
 - [ ] Phase 37 — Guardian offline field assistant (Pi wiring/plumbing, offline) — [plan](docs/plans/phase_37_guardian_offline_field_assistant.plan.md)
 
 ---
