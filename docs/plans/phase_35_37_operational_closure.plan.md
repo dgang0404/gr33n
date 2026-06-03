@@ -15,8 +15,14 @@ todos:
   - id: oc-35-tests
     content: "OC-35C: cmd/api smoke preset apply + TZ cron; Vitest PhotoperiodClockEditor linked fields (Phase 35 WS8)"
     status: done
-  - id: oc-36-closure
-    content: "OC-36: Phase 36 WS8 — greenhouse operator-tour, OpenAPI, bootstrap greenhouse_climate_v1 → core types, smokes (defer until WS1–WS7 land)"
+  - id: oc-36-bootstrap
+    content: "OC-36A: greenhouse_climate_v1 bootstrap v2 → zone_type=greenhouse, typed actuators, meta profile, lux rules (20260603_phase36_greenhouse_climate_v2.sql, 0916aba)"
+    status: done
+  - id: oc-36-docs-openapi
+    content: "OC-36B: operator-tour greenhouse section; OpenAPI greenhouse_climate + POST actuators + rule-templates; architecture grow-stack §7.0c (Phase 36 WS8)"
+    status: pending
+  - id: oc-36-tests
+    content: "OC-36C: cmd/api smokes — bootstrap apply, rule fire + cooldown, manual shade deploy via pending_command (Phase 36 WS8)"
     status: pending
   - id: oc-37-closure
     content: "OC-37: Phase 37 WS8 — offline field walkthrough, procedure OpenAPI, field_guide corpus ingest smoke, safety-stop smokes (defer until WS1–WS7 land)"
@@ -82,21 +88,38 @@ Use this table when marking a phase shipped:
 
 ## Current git snapshot
 
-Phase 35 landed in commits `06e281d` (core + Guardian UX), `362c0ac` (OC-35A bootstrap), `9a19048` (plan status), `e09d4f4` (OC-35B/C docs/tests). Working tree should be clean before starting Phase 36.
+Phase 35 shipped: `06e281d`, `362c0ac`, `9a19048`, `e09d4f4`. Phase 36 backend: `999bff1` (WS1+WS2), `0916aba` (WS3+WS5), `f686d76` (WS7), `46ecdbb` (plan status). **Open:** WS4 UI, WS6 interlocks, OC-36B/C.
 
 ---
 
 ## Phase 36 — Greenhouse climate
 
-Closure is already **WS8** in [`phase_36_greenhouse_climate.plan.md`](phase_36_greenhouse_climate.plan.md). Map to this doc as **OC-36**:
+Feature detail: [`phase_36_greenhouse_climate.plan.md`](phase_36_greenhouse_climate.plan.md). Closure maps to **OC-36A–C** (mirrors OC-35A–C).
 
-| When | Work |
-|------|------|
-| After WS1–WS4 (core + UI) | OpenAPI for zone climate profile + typed actuators |
-| WS5 (bootstrap → core) | **`greenhouse_climate_v1` bootstrap** uses core types — same pattern as OC-35A |
-| WS8 | operator-tour greenhouse section, architecture “block sun ≠ add light” cross-link to Phase 35, smokes for shade rule + manual command |
+### Shipped (implementation)
 
-**Do not** fold Phase 36 bootstrap into Phase 35 closure — different domain, same checklist.
+| Area | Status | Notes |
+|------|--------|-------|
+| Zone climate profile (WS1) | ✅ | `meta_data.greenhouse_climate`; validation on zone POST/PUT when `zone_type=greenhouse` |
+| Actuator taxonomy (WS2) | ✅ | `shade_screen`, `ridge_vent`, fans; `POST/GET /farms/{id}/actuators`, `GET /actuators/{id}` + `valid_commands` |
+| Automation templates (WS3) | ✅ | `POST /farms/{id}/automation/rule-templates/greenhouse`; bootstrap lux/temp/vent rules (inactive) |
+| Bootstrap → core (WS5) | ✅ | **OC-36A** — [`20260603_phase36_greenhouse_climate_v2.sql`](../../db/migrations/20260603_phase36_greenhouse_climate_v2.sql) |
+| Guardian read (WS7) | ✅ | `summarize_zone_greenhouse_climate`; `enqueue_actuator_command` deploy/retract/open/close/stop |
+| **Greenhouse UI (WS4)** | ⏳ | ZoneDetail tab, typed command buttons, sensor strip |
+| **Sensor interlocks (WS6)** | ⏳ | Missing lux/PAR banner; template guard without override |
+| **Demo seed** | ⏳ | Bootstrap apply suffices for new farms; `master_seed.sql` greenhouse row optional |
+| **Unit tests** | ✅ partial | `greenhouse_test.go`, `taxonomy_test.go` |
+| **Smokes / Vitest** | ⏳ | **OC-36C** |
+| **OpenAPI / operator-tour** | ⏳ | **OC-36B** |
+| **Architecture** | ⏳ partial | §7.0c draft in `farm-guardian-architecture.md` — expand when OC-36B closes |
+
+### Phase 36 — status
+
+**In progress.** WS1–WS3, WS5, WS7 + **OC-36A** closed. **OC-36B** (operator-tour, OpenAPI, architecture cross-link to Phase 35 “block sun ≠ add light”) and **OC-36C** (smokes) remain with **WS4** and **WS6**.
+
+Apply migration `20260603_phase36_greenhouse_climate_v2.sql` before re-running `greenhouse_climate_v1` bootstrap on existing dev DBs.
+
+**Do not** fold Phase 36 into Phase 35 closure — different domain, same checklist pattern.
 
 ---
 
@@ -114,9 +137,9 @@ Closure is **WS8** in [`phase_37_guardian_offline_field_assistant.plan.md`](phas
 
 Before marking the 35–37 arc complete:
 
-1. Confirm **OC-35A–C** closed (lighting bootstrap + docs + smokes).
+1. Confirm **OC-35A–C** and **OC-36B–C** closed (lighting + greenhouse operator docs/smokes).
 2. Re-run platform doc RAG ingest so new operator-tour sections are searchable (Phase 32 WS8 script).
-3. README / phase-14 roadmap row: Phases 35–37 shipped with closure notes.
+3. README / phase-14 roadmap row: Phases 35–37 shipped with closure notes (Phase 36 marks shipped when WS4 + WS6 + OC-36B/C land).
 
 ---
 
@@ -126,10 +149,11 @@ Before marking the 35–37 arc complete:
 Phase 35 code PR  ──► OC-35A bootstrap (same sprint or +1)
                    ──► OC-35B + OC-35C docs/tests (before Phase 36 UI references lighting)
 
-Phase 36 WS1–7   ──► OC-36 inline with WS5 + WS8
+Phase 36 WS1–3,5,7 ──► OC-36A ✅
+                   ──► WS4 + WS6 + OC-36B + OC-36C (remaining ship)
 
 Phase 37 WS1–7   ──► OC-37 inline with WS8
-                   ──► OC-37E final sweep (all deferred 35 items verified)
+                   ──► OC-37E final sweep (OC-35A–C + OC-36B–C verified; RAG ingest)
 ```
 
 **Rule:** Feature WS8 stays in each phase plan; **this doc** is the cross-phase backlog so deferred items are not lost when a phase plan todo is marked `done` too early.
@@ -141,6 +165,6 @@ Phase 37 WS1–7   ──► OC-37 inline with WS8
 | Doc | Use |
 |-----|-----|
 | [phase_35_lighting_domain.plan.md](phase_35_lighting_domain.plan.md) | Feature scope — **shipped** (WS1–WS8) |
-| [phase_36_greenhouse_climate.plan.md](phase_36_greenhouse_climate.plan.md) | WS8 = OC-36 |
+| [phase_36_greenhouse_climate.plan.md](phase_36_greenhouse_climate.plan.md) | **In progress** — WS8 = OC-36B + OC-36C; OC-36A done |
 | [phase_37_guardian_offline_field_assistant.plan.md](phase_37_guardian_offline_field_assistant.plan.md) | WS8 = OC-37 + OC-37E sweep |
 | [phase_32_guardian_grow_setup_prs.plan.md](phase_32_guardian_grow_setup_prs.plan.md) | Reference closure pattern (WS7 OpenAPI + WS8 RAG) |

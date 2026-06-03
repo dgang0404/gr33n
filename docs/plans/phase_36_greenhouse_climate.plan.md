@@ -285,7 +285,7 @@ WS1 → WS2 → WS5 → WS3 → WS6 → WS4 → WS7 → WS8. WS5 early so demo f
 | Doc | Use |
 |-----|-----|
 | [phase_35_lighting_domain.plan.md](phase_35_lighting_domain.plan.md) | Supplemental photoperiod |
-| [phase_35_37_operational_closure.plan.md](phase_35_37_operational_closure.plan.md) | WS8 seed/docs/smokes rollup (OC-36) |
+| [phase_35_37_operational_closure.plan.md](phase_35_37_operational_closure.plan.md) | OC-36A ✅ bootstrap; OC-36B/C = WS8 docs/smokes |
 | [phase_34_guardian_pr_iteration.plan.md](phase_34_guardian_pr_iteration.plan.md) | Operator blind-spot facts |
 | [phase_32_guardian_grow_setup_prs.plan.md](phase_32_guardian_grow_setup_prs.plan.md) | Zone + cycle setup |
 | [20260504_phase205_husbandry_climate_bootstraps.sql](../../db/migrations/20260504_phase205_husbandry_climate_bootstraps.sql) | Original `greenhouse_climate_v1` bootstrap |

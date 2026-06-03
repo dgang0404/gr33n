@@ -47,13 +47,17 @@
 
 ## Greenhouse / tent climate (`greenhouse_climate_v1`)
 
-**Best for:** controlled environment agriculture — fans, humidifier, dehumidifier, shade motor, optional CO₂.
+**Best for:** controlled environment agriculture — shade screen, ridge vent, exhaust/circulation fans, humidifier, dehumidifier, optional CO₂. **Complements** supplemental lighting ([Phase 35](plans/phase_35_lighting_domain.plan.md)) — blocking sun is not the same control as adding light.
 
-**What you get:** zone **Greenhouse**; sensors air temp, RH, CO₂, **dew point**, **VPD** (stored in **pascals** in the template so a ~1.5 kPa “high VPD” threshold is `1500` — align your Pi or UI labels accordingly); actuators exhaust fan, humidifier, dehumidifier, shade motor, CO₂ injector; several threshold→actuator rules (inactive); weekly CO₂ checklist task.
+**What you get (after migration `20260603_phase36_greenhouse_climate_v2.sql`):** zone **Greenhouse** with `zone_type=greenhouse` and `meta_data.greenhouse_climate` profile (cover type, linked actuator ids, `automation_policy`); sensors air temp, RH, CO₂, **dew point**, **VPD**, **lux**; typed actuators **shade_screen**, **ridge_vent**, **exhaust_fan**, **circulation_fan**, humidifier, dehumidifier, CO₂ injector; threshold rules including high-lux → deploy shade and high-temp → fan (all **inactive** by default); weekly CO₂ checklist task.
 
-**Derived channels on the Pi:** you do **not** need a physical “dew point probe” if the Pi already reads temperature and humidity. Configure a **`source: derived`** sensor in `pi_client/config.yaml` (see [pi-integration-guide.md](pi-integration-guide.md) and `pi_client/gr33n_client.py`) so **dew_point** / **vpd** / **heat_index** are computed at the edge and posted like any other sensor. Register matching sensor rows in the UI with the same `sensor_type` strings the rules use (`dew_point`, `vpd`).
+**Legacy farms:** older bootstrap applies may still have `shade_cloth_motor` and `zone_type=indoor`; re-apply `greenhouse_climate_v1` after the Phase 36 migration to pick up typed actuators and the climate profile (idempotent).
 
-**Tuning:** VPD and dew-point targets are crop- and stage-specific (flower vs. veg vs. dry/cure). Start with rules off; log readings for a week; then set thresholds and enable one rule at a time.
+**API (operators / integrators):** `PUT /zones/{id}` with `meta_data.greenhouse_climate`; `POST /farms/{id}/actuators` with types like `shade_screen`; clone rules via `POST /farms/{id}/automation/rule-templates/greenhouse`. Commands (`deploy`, `retract`, `open`, `close`) reach the Pi through existing **`pending_command`** — map motor verbs to relay polarity in Pi config.
+
+**Derived channels on the Pi:** you do **not** need a physical “dew point probe” if the Pi already reads temperature and humidity. Configure a **`source: derived`** sensor in `pi_client/config.yaml` (see [pi-integration-guide.md](pi-integration-guide.md) and `pi_client/gr33n_client.py`) so **dew_point** / **vpd** / **heat_index** are computed at the edge and posted like any other sensor. Register matching sensor rows in the UI with the same `sensor_type` strings the rules use (`dew_point`, `vpd`, `lux`).
+
+**Tuning:** VPD, dew-point, and lux thresholds are crop- and glazing-specific. Start with rules off; log readings for a week; then set thresholds and enable one rule at a time. Without a lux sensor, do not enable the high-lux shade rule until a meter is installed (WS6 UI banner — planned).
 
 ---
 

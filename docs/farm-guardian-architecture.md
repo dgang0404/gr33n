@@ -256,6 +256,7 @@ Before the LLM call on grounded turns, [`readtools.go`](../../internal/farmguard
 | `list_plants` | List/show plant catalog intent | Up to 20 plant rows (display name, variety) |
 | `summarize_zone_fertigation` | Fertigation/feeding/program intent + resolved zone | Active programs, EC/pH triggers, linked cycle hints for that zone |
 | `summarize_zone_lighting` | Light/photoperiod/18-6/12-12 intent + resolved zone (optional) | Active `lighting_programs`, ON/OFF hours, anchor times, linked schedule ids |
+| `summarize_zone_greenhouse_climate` | Shade/deploy/greenhouse/vent/fan intent + `zone_id` | `greenhouse_climate` profile, linked actuator states, active `GH —` rules, recent shade/fan events (48 h) |
 
 These are **not** proposal tools — no Confirm card. Alert **write** intents (`ack_alert`, `mark_alert_read`) and alert-list questions skip `summarize_zone` (Phase 33 WS1). Write tools remain in [§7.1](#71-operator-mental-model).
 
@@ -272,6 +273,20 @@ Operators configure photoperiod through **`lighting_programs`** (UI: `/lighting`
 Guardian **`summarize_zone_lighting`** ([`tools/lighting.go`](../../internal/farmguardian/tools/lighting.go)) answers “what’s the light schedule?” without proposing changes. Optional **`create_lighting_program`** propose tool remains deferred — use Lighting UI or grow-setup PRs for writes.
 
 **Legacy:** pre-Phase-35 farms may still have inactive **Light ON/OFF** orphan schedules; **`lighting_programs`** is the canonical model for new setup and bootstrap (see [operator-tour §5](operator-tour.md#5-set-up-186-vegetative-lights-phase-35)).
+
+### 7.0c Grow environment stack (Phase 36 greenhouse climate)
+
+Operators manage **blocking sun / heat / vents** separately from supplemental light:
+
+| Layer | Operator-facing | Execution |
+|-------|-----------------|-----------|
+| **Zone profile** | `zone_type=greenhouse` + `meta_data.greenhouse_climate` (cover type, actuator refs, `automation_policy`) | Validated on zone PUT/POST |
+| **Typed actuators** | `shade_screen`, `ridge_vent`, `exhaust_fan`, `circulation_fan` | `control_actuator` + existing `pending_command` / Pi path |
+| **Rules** | High lux → deploy shade; high temp → fan; night retract (temp proxy or cron later) | Worker predicates; bootstrap + `POST .../rule-templates/greenhouse` |
+
+Guardian **`summarize_zone_greenhouse_climate`** ([`tools/greenhouse.go`](../../internal/farmguardian/tools/greenhouse.go)) answers “is shade deployed?” / “what’s the GH profile?” without proposing changes. Manual motor control uses **`enqueue_actuator_command`** with `deploy` / `retract` / `open` / `close` / `stop` (Confirm tier) — same pending_command path as lights.
+
+**Block sun ≠ add light:** on the same zone, use **lighting_programs** (Phase 35) for photoperiod and **greenhouse_climate** (Phase 36) for shade and ventilation. Operator-tour greenhouse walkthrough — **OC-36B** (planned).
 
 ### 7.1 Operator mental model
 
