@@ -393,8 +393,8 @@ func BuildSnapshot(ctx context.Context, q *db.Queries, farmID int64) (Snapshot, 
 			if c.StrainOrVariety != nil {
 				ac.Strain = *c.StrainOrVariety
 			}
-			if c.CurrentStage.Valid {
-				ac.Stage = string(c.CurrentStage.Gr33nfertigationGrowthStageEnum)
+			if c.CurrentStage != nil {
+				ac.Stage = string(*c.CurrentStage)
 			}
 			if analyticsBudget > 0 {
 				if a, aerr := fetchCycleAnalytics(ctx, q, c); aerr == nil {
@@ -477,7 +477,7 @@ func BuildSnapshot(ctx context.Context, q *db.Queries, farmID int64) (Snapshot, 
 	// we still keep the count from CountUnreadAlertsByFarm so the
 	// snapshot is not silently impoverished.
 	if s.UnreadAlerts > 0 {
-		alerts, alErr := q.ListRecentUnreadAlertsByFarm(ctx, farmID, int32(SnapshotMaxAlertDetails))
+		alerts, alErr := q.ListRecentUnreadAlertsByFarm(ctx, db.ListRecentUnreadAlertsByFarmParams{FarmID: farmID, Limit: int32(SnapshotMaxAlertDetails)})
 		if alErr != nil {
 			slog.Warn("farm guardian unread alert details failed",
 				"farm_id", farmID, "err", alErr)
@@ -495,13 +495,13 @@ func BuildSnapshot(ctx context.Context, q *db.Queries, farmID int64) (Snapshot, 
 // toUnreadAlertDetail projects a DB row into the prompt-ready struct.
 // Trims whitespace, caps the message snippet at AlertMessageSnippetMax,
 // and converts the enum + nullable IDs into safer plain types.
-func toUnreadAlertDetail(a db.RecentUnreadAlertSummary) UnreadAlertDetail {
+func toUnreadAlertDetail(a db.ListRecentUnreadAlertsByFarmRow) UnreadAlertDetail {
 	out := UnreadAlertDetail{
 		ID:          a.ID,
 		TriggeredAt: a.CreatedAt,
 	}
-	if a.Severity.Valid {
-		out.Severity = string(a.Severity.Gr33ncoreNotificationPriorityEnum)
+	if a.Severity != nil {
+		out.Severity = string(*a.Severity)
 	}
 	if a.SubjectRendered != nil {
 		out.Subject = strings.TrimSpace(*a.SubjectRendered)

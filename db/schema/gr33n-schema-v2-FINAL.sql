@@ -225,7 +225,7 @@ CREATE TABLE IF NOT EXISTS gr33ncore.profiles (
     email      TEXT UNIQUE NOT NULL,
     avatar_url TEXT,
     role       gr33ncore.user_role_enum DEFAULT 'user' NOT NULL,
-    preferences JSONB DEFAULT '{}'::jsonb,
+    preferences JSONB NOT NULL DEFAULT '{}'::jsonb,
     hourly_rate          NUMERIC(10,2) CHECK (hourly_rate IS NULL OR hourly_rate >= 0),
     hourly_rate_currency CHAR(3) CHECK (hourly_rate_currency IS NULL OR hourly_rate_currency ~ '^[A-Z]{3}$'),
     created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
@@ -398,7 +398,7 @@ CREATE TABLE IF NOT EXISTS gr33ncore.farm_memberships (
     farm_id      BIGINT NOT NULL REFERENCES gr33ncore.farms(id)    ON DELETE CASCADE,
     user_id      UUID   NOT NULL REFERENCES gr33ncore.profiles(user_id) ON DELETE CASCADE,
     role_in_farm gr33ncore.farm_member_role_enum NOT NULL,
-    permissions  JSONB  DEFAULT '{}'::jsonb,
+    permissions  JSONB NOT NULL  DEFAULT '{}'::jsonb,
     joined_at    TIMESTAMPTZ DEFAULT NOW() NOT NULL,
     PRIMARY KEY (farm_id, user_id)
 );
@@ -408,7 +408,7 @@ CREATE TABLE IF NOT EXISTS gr33ncore.farm_active_modules (
     farm_id            BIGINT NOT NULL REFERENCES gr33ncore.farms(id) ON DELETE CASCADE,
     module_schema_name TEXT   NOT NULL,
     is_enabled         BOOLEAN DEFAULT TRUE NOT NULL,
-    configuration      JSONB   DEFAULT '{}'::jsonb,
+    configuration      JSONB NOT NULL   DEFAULT '{}'::jsonb,
     activated_at       TIMESTAMPTZ DEFAULT NOW() NOT NULL,
     PRIMARY KEY (farm_id, module_schema_name)
 );
@@ -423,7 +423,7 @@ CREATE TABLE IF NOT EXISTS gr33ncore.zones (
     zone_type      TEXT,
     area_sqm       NUMERIC(12,2),
     boundary_gis   GEOMETRY(Polygon,4326),
-    meta_data      JSONB  DEFAULT '{}'::jsonb,
+    meta_data      JSONB NOT NULL  DEFAULT '{}'::jsonb,
     created_at     TIMESTAMPTZ DEFAULT NOW() NOT NULL,
     updated_at     TIMESTAMPTZ DEFAULT NOW() NOT NULL,
     updated_by_user_id UUID REFERENCES gr33ncore.profiles(user_id) ON DELETE SET NULL,
@@ -446,8 +446,8 @@ CREATE TABLE IF NOT EXISTS gr33ncore.devices (
     status             gr33ncore.device_status_enum DEFAULT 'unknown' NOT NULL,
     last_heartbeat     TIMESTAMPTZ,
     api_key            TEXT   UNIQUE,
-    config             JSONB  DEFAULT '{}'::jsonb,
-    meta_data          JSONB  DEFAULT '{}'::jsonb,
+    config             JSONB NOT NULL  DEFAULT '{}'::jsonb,
+    meta_data          JSONB NOT NULL  DEFAULT '{}'::jsonb,
     created_at         TIMESTAMPTZ DEFAULT NOW() NOT NULL,
     updated_at         TIMESTAMPTZ DEFAULT NOW() NOT NULL,
     updated_by_user_id UUID   REFERENCES gr33ncore.profiles(user_id) ON DELETE SET NULL,
@@ -478,8 +478,8 @@ CREATE TABLE IF NOT EXISTS gr33ncore.sensors (
     is_calibrated            BOOLEAN DEFAULT FALSE,
     last_calibration_date    DATE,
     calibration_data         JSONB,
-    config                   JSONB   DEFAULT '{}'::jsonb,
-    meta_data                JSONB   DEFAULT '{}'::jsonb,
+    config                   JSONB NOT NULL   DEFAULT '{}'::jsonb,
+    meta_data                JSONB NOT NULL   DEFAULT '{}'::jsonb,
     created_at               TIMESTAMPTZ DEFAULT NOW() NOT NULL,
     updated_at               TIMESTAMPTZ DEFAULT NOW() NOT NULL,
     updated_by_user_id       UUID    REFERENCES gr33ncore.profiles(user_id) ON DELETE SET NULL,
@@ -504,7 +504,7 @@ CREATE TABLE IF NOT EXISTS gr33ncore.sensor_readings (
         CHECK (battery_level_percent IS NULL OR (battery_level_percent >= 0 AND battery_level_percent <= 100)),
     signal_strength_dbm   INTEGER,
     is_valid              BOOLEAN     DEFAULT TRUE,
-    meta_data             JSONB       DEFAULT '{}'::jsonb,
+    meta_data             JSONB NOT NULL       DEFAULT '{}'::jsonb,
     PRIMARY KEY (reading_time, sensor_id)  -- FIX #4: time col first
 );
 
@@ -558,8 +558,8 @@ CREATE TABLE IF NOT EXISTS gr33ncore.actuators (
     last_known_state_time  TIMESTAMPTZ,
     last_command_sent_time TIMESTAMPTZ,
     feedback_sensor_id     BIGINT     REFERENCES gr33ncore.sensors(id) ON DELETE SET NULL,
-    config                 JSONB      DEFAULT '{}'::jsonb,
-    meta_data              JSONB      DEFAULT '{}'::jsonb,
+    config                 JSONB NOT NULL      DEFAULT '{}'::jsonb,
+    meta_data              JSONB NOT NULL      DEFAULT '{}'::jsonb,
     created_at             TIMESTAMPTZ DEFAULT NOW() NOT NULL,
     updated_at             TIMESTAMPTZ DEFAULT NOW() NOT NULL,
     updated_by_user_id     UUID       REFERENCES gr33ncore.profiles(user_id) ON DELETE SET NULL,
@@ -586,7 +586,7 @@ CREATE TABLE IF NOT EXISTS gr33ncore.actuator_events (
     execution_status               gr33ncore.actuator_execution_status_enum,
     resulting_state_numeric_actual NUMERIC,
     resulting_state_text_actual    TEXT,
-    meta_data                      JSONB DEFAULT '{}'::jsonb,
+    meta_data                      JSONB NOT NULL DEFAULT '{}'::jsonb,
     PRIMARY KEY (event_time, actuator_id)  -- FIX #4: time col first
 );
 
@@ -602,7 +602,7 @@ CREATE TABLE IF NOT EXISTS gr33ncore.schedules (
     is_active                  BOOLEAN DEFAULT TRUE NOT NULL,
     last_triggered_time        TIMESTAMPTZ,
     next_expected_trigger_time TIMESTAMPTZ,
-    meta_data                  JSONB  DEFAULT '{}'::jsonb,
+    meta_data                  JSONB NOT NULL  DEFAULT '{}'::jsonb,
     preconditions              JSONB  NOT NULL DEFAULT '[]'::jsonb
         CHECK (jsonb_typeof(preconditions) = 'array'),
     created_at                 TIMESTAMPTZ DEFAULT NOW() NOT NULL,
@@ -624,7 +624,7 @@ CREATE TABLE IF NOT EXISTS gr33ncore.automation_rules (
     trigger_source       gr33ncore.automation_trigger_source_enum NOT NULL,
     trigger_configuration JSONB NOT NULL,
     condition_logic      TEXT  DEFAULT 'ALL' CHECK (condition_logic IN ('ALL','ANY')),
-    conditions_jsonb     JSONB DEFAULT '[]'::jsonb,
+    conditions_jsonb     JSONB NOT NULL DEFAULT '[]'::jsonb,
     last_evaluated_time  TIMESTAMPTZ,
     last_triggered_time  TIMESTAMPTZ,
     cooldown_period_seconds INTEGER DEFAULT 0,
@@ -674,7 +674,7 @@ CREATE TABLE IF NOT EXISTS gr33ncore.automation_runs (
     -- executable_actions.program_id / chk_executable_action_parent).
     status          TEXT NOT NULL CHECK (status IN ('success', 'partial_success', 'failed', 'skipped')),
     message         TEXT,
-    details         JSONB DEFAULT '{}'::jsonb,
+    details         JSONB NOT NULL DEFAULT '{}'::jsonb,
     executed_at     TIMESTAMPTZ DEFAULT NOW() NOT NULL
 );
 
@@ -725,7 +725,7 @@ CREATE TABLE IF NOT EXISTS gr33ncore.alerts_notifications (
     subject_rendered         TEXT,
     message_text_rendered    TEXT,
     message_html_rendered    TEXT,
-    delivery_attempts        JSONB  DEFAULT '{}'::jsonb,
+    delivery_attempts        JSONB NOT NULL  DEFAULT '{}'::jsonb,
     status                   gr33ncore.notification_status_enum DEFAULT 'pending',
     is_read                  BOOLEAN DEFAULT FALSE,
     read_at                  TIMESTAMPTZ,
@@ -826,7 +826,7 @@ CREATE TABLE IF NOT EXISTS gr33ncore.system_logs (
     event_type       TEXT,
     message          TEXT   NOT NULL,
     source_component TEXT,
-    context_data     JSONB  DEFAULT '{}'::jsonb,
+    context_data     JSONB NOT NULL  DEFAULT '{}'::jsonb,
     created_at       TIMESTAMPTZ DEFAULT NOW() NOT NULL,
     PRIMARY KEY (log_time, id)
 );
@@ -1007,7 +1007,7 @@ CREATE TABLE IF NOT EXISTS gr33ncore.user_activity_log (
     session_id               TEXT,
     status                   TEXT CHECK (status IN ('success','failure','pending')),
     failure_reason           TEXT,
-    details                  JSONB DEFAULT '{}'::jsonb,
+    details                  JSONB NOT NULL DEFAULT '{}'::jsonb,
     created_at               TIMESTAMPTZ DEFAULT NOW() NOT NULL,
     PRIMARY KEY (activity_time, id)
 );
@@ -1233,7 +1233,7 @@ CREATE TABLE IF NOT EXISTS gr33nnaturalfarming.application_recipes (
     description             TEXT,
     target_application_type gr33nnaturalfarming.application_target_enum NOT NULL,
     dilution_ratio          TEXT,
-    components              JSONB  DEFAULT '{}'::jsonb,
+    components              JSONB NOT NULL  DEFAULT '{}'::jsonb,
     instructions            TEXT,
     frequency_guidelines    TEXT,
     target_crop_categories  TEXT[],
@@ -1344,7 +1344,7 @@ CREATE TABLE IF NOT EXISTS gr33nfertigation.reservoirs (
     last_ec_mscm            NUMERIC(6,3) CHECK (last_ec_mscm >= 0),
     last_ph                 NUMERIC(4,2) CHECK (last_ph >= 0 AND last_ph <= 14),
     last_reading_time       TIMESTAMPTZ,
-    metadata                JSONB DEFAULT '{}',
+    metadata                JSONB NOT NULL DEFAULT '{}',
     created_at              TIMESTAMPTZ DEFAULT NOW() NOT NULL,
     updated_at              TIMESTAMPTZ DEFAULT NOW() NOT NULL,
     deleted_at              TIMESTAMPTZ DEFAULT NULL,
@@ -1421,7 +1421,7 @@ CREATE TABLE IF NOT EXISTS gr33nfertigation.programs (
     ph_trigger_low              NUMERIC(4,2) CHECK (ph_trigger_low >= 0 AND ph_trigger_low <= 14),
     ph_trigger_high             NUMERIC(4,2) CHECK (ph_trigger_high >= 0 AND ph_trigger_high <= 14),
     is_active                   BOOLEAN DEFAULT TRUE NOT NULL,
-    metadata                    JSONB DEFAULT '{}',
+    metadata                    JSONB NOT NULL DEFAULT '{}',
     -- Phase 22 WS1 — worker stamps last_triggered_time on successful
     -- program fires, mirroring schedules/rules so the tick can skip
     -- "already fired this minute" without scanning automation_runs.
@@ -1509,7 +1509,7 @@ CREATE TABLE IF NOT EXISTS gr33nfertigation.fertigation_events (
     triggered_by_user_id        UUID REFERENCES gr33ncore.profiles(user_id) ON DELETE SET NULL,
     plant_response              TEXT,
     notes                       TEXT,
-    metadata                    JSONB DEFAULT '{}',
+    metadata                    JSONB NOT NULL DEFAULT '{}',
     created_at                  TIMESTAMPTZ DEFAULT NOW() NOT NULL
 );
 

@@ -104,8 +104,8 @@ func PriorityRankDB(p db.Gr33ncoreNotificationPriorityEnum) int {
 
 func AlertMeetsMinPriority(alert db.Gr33ncoreAlertsNotification, minPriority string) bool {
 	ar := PriorityRankDB(db.Gr33ncoreNotificationPriorityEnumMedium)
-	if alert.Severity.Valid {
-		ar = PriorityRankDB(alert.Severity.Gr33ncoreNotificationPriorityEnum)
+	if alert.Severity != nil {
+		ar = PriorityRankDB(*alert.Severity)
 	}
 	return ar >= PriorityRankString(minPriority)
 }

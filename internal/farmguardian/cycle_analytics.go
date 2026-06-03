@@ -132,16 +132,16 @@ func fetchCycleAnalytics(ctx context.Context, q *db.Queries, cycle db.Gr33nferti
 	out.DurationDays = durationDaysSinceStart(cycle.StartedAt, cycle.HarvestedAt)
 	out.YieldGrams = numericToFloat64(cycle.YieldGrams)
 
-	fert, err := q.GetFertigationAggregatesByCropCycle(ctx, cycle.ID)
+	fert, err := q.GetFertigationAggregatesByCropCycle(ctx, &cycle.ID)
 	if err != nil {
 		return out, err
 	}
 	out.EventCount = fert.EventCount
 	out.TotalLiters = numericToFloat64(fert.TotalLiters)
-	out.AvgECmSCm = numericToFloat64(fert.AvgECmSCm)
-	out.MinECmSCm = numericToFloat64(fert.MinECmSCm)
-	out.MaxECmSCm = numericToFloat64(fert.MaxECmSCm)
-	out.AvgPH = numericToFloat64(fert.AvgPH)
+	out.AvgECmSCm = numericToFloat64(fert.AvgEcMscm)
+	out.MinECmSCm = numericToFloat64(fert.MinEcMscm)
+	out.MaxECmSCm = numericToFloat64(fert.MaxEcMscm)
+	out.AvgPH = numericToFloat64(fert.AvgPh)
 
 	if out.DurationDays > 0 && out.TotalLiters > 0 {
 		v := out.TotalLiters / float64(out.DurationDays)

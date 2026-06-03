@@ -201,17 +201,17 @@ func (h *Handler) buildSummary(r *http.Request, cycle db.Gr33nfertigationCropCyc
 	out := cycleSummary{Cycle: cycle}
 	out.DurationDays = durationDays(cycle.StartedAt, cycle.HarvestedAt)
 
-	fert, err := h.q.GetFertigationAggregatesByCropCycle(r.Context(), cycle.ID)
+	fert, err := h.q.GetFertigationAggregatesByCropCycle(r.Context(), &cycle.ID)
 	if err != nil {
 		return out, err
 	}
 	out.Fertigation = summaryFertigation{
 		EventCount:  fert.EventCount,
 		TotalLiters: numericToFloat64(fert.TotalLiters),
-		AvgECmSCm:   numericToFloat64(fert.AvgECmSCm),
-		MinECmSCm:   numericToFloat64(fert.MinECmSCm),
-		MaxECmSCm:   numericToFloat64(fert.MaxECmSCm),
-		AvgPH:       numericToFloat64(fert.AvgPH),
+		AvgECmSCm:   numericToFloat64(fert.AvgEcMscm),
+		MinECmSCm:   numericToFloat64(fert.MinEcMscm),
+		MaxECmSCm:   numericToFloat64(fert.MaxEcMscm),
+		AvgPH:       numericToFloat64(fert.AvgPh),
 	}
 
 	cycleIDForCosts := cycle.ID
@@ -254,13 +254,13 @@ func (h *Handler) buildSummary(r *http.Request, cycle db.Gr33nfertigationCropCyc
 	// stage_history_supported = false. A future migration can add a real
 	// stage_transitions table and flip this without a contract break.
 	out.Stages = []summaryStage{}
-	if cycle.CurrentStage.Valid {
+	if cycle.CurrentStage != nil {
 		entered := ""
 		if cycle.StartedAt.Valid {
 			entered = cycle.StartedAt.Time.Format("2006-01-02")
 		}
 		out.Stages = append(out.Stages, summaryStage{
-			Stage:     string(cycle.CurrentStage.Gr33nfertigationGrowthStageEnum),
+			Stage:     string(*cycle.CurrentStage),
 			EnteredAt: entered,
 		})
 	}
@@ -358,8 +358,8 @@ func writeSummaryCSV(w http.ResponseWriter, summaries []cycleSummary, filename s
 			strain = *s.Cycle.StrainOrVariety
 		}
 		stage := ""
-		if s.Cycle.CurrentStage.Valid {
-			stage = string(s.Cycle.CurrentStage.Gr33nfertigationGrowthStageEnum)
+		if s.Cycle.CurrentStage != nil {
+			stage = string(*s.Cycle.CurrentStage)
 		}
 		expenses, income, net, currency := costSummaryForCSV(s.Cost)
 		_ = cw.Write([]string{

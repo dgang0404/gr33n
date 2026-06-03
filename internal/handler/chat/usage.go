@@ -130,7 +130,7 @@ func (h *Handler) GetUsage(w http.ResponseWriter, r *http.Request) {
 // a transient SUM query hiccup.
 func buildUserDimension(r *http.Request, q *db.Queries, userID uuid.UUID, cfg farmguardian.CostGuardConfig) usageDimension {
 	since := time.Now().Add(-cfg.Window)
-	totals, err := q.SumChatTokensSinceForUser(r.Context(), userID, since)
+	totals, err := q.SumChatTokensSinceForUser(r.Context(), db.SumChatTokensSinceForUserParams{UserID: userID, Since: since})
 	if err != nil {
 		slog.Warn("chat usage per-user totals failed", "user_id", userID, "err", err)
 		return usageDimension{MaxTokens: cfg.PerUserMaxTokens}
@@ -157,7 +157,7 @@ func buildUserDimension(r *http.Request, q *db.Queries, userID uuid.UUID, cfg fa
 // guard's per-farm check uses.
 func buildFarmDimension(r *http.Request, q *db.Queries, farmID int64, cfg farmguardian.CostGuardConfig) usageFarmDimension {
 	since := time.Now().Add(-cfg.Window)
-	totals, err := q.SumChatTokensSinceForFarm(r.Context(), farmID, since)
+	totals, err := q.SumChatTokensSinceForFarm(r.Context(), db.SumChatTokensSinceForFarmParams{FarmID: &farmID, Since: since})
 	if err != nil {
 		slog.Warn("chat usage per-farm totals failed", "farm_id", farmID, "err", err)
 		return usageFarmDimension{FarmID: farmID, usageDimension: usageDimension{MaxTokens: cfg.PerFarmMaxTokens}}

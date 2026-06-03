@@ -80,7 +80,7 @@ func (h *Handler) PostConfirm(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if prop.Status == db.Gr33ncoreGuardianProposalStatusEnumConfirmed {
+	if prop.Status == "confirmed" {
 		var cached any
 		if len(prop.Result) > 0 {
 			_ = json.Unmarshal(prop.Result, &cached)
@@ -88,7 +88,7 @@ func (h *Handler) PostConfirm(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteJSON(w, http.StatusOK, confirmResponse{Result: cached, Summary: prop.Summary})
 		return
 	}
-	if prop.Status != db.Gr33ncoreGuardianProposalStatusEnumPending {
+	if prop.Status != "pending" {
 		httputil.WriteError(w, http.StatusGone, "proposal is no longer confirmable")
 		return
 	}
@@ -134,7 +134,7 @@ func (h *Handler) PostConfirm(w http.ResponseWriter, r *http.Request) {
 	resultJSON, _ := json.Marshal(result)
 	confirmed, err := h.q.ConfirmGuardianProposal(ctx, db.ConfirmGuardianProposalParams{
 		ProposalID: pid,
-		Result:     resultJSON,
+		Column2:    resultJSON,
 		UserID:     userID,
 	})
 	if err != nil {

@@ -584,19 +584,15 @@ func (h *Handler) CreateEvent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var growthStage db.NullGr33nfertigationGrowthStageEnum
+	var growthStage *db.Gr33nfertigationGrowthStageEnum
 	if req.GrowthStage != nil {
-		growthStage = db.NullGr33nfertigationGrowthStageEnum{
-			Gr33nfertigationGrowthStageEnum: db.Gr33nfertigationGrowthStageEnum(*req.GrowthStage),
-			Valid:                           true,
-		}
+		v := db.Gr33nfertigationGrowthStageEnum(*req.GrowthStage)
+		growthStage = &v
 	}
-	var triggerSource db.NullGr33nfertigationProgramTriggerEnum
+	var triggerSource *db.Gr33nfertigationProgramTriggerEnum
 	if req.TriggerSource != nil {
-		triggerSource = db.NullGr33nfertigationProgramTriggerEnum{
-			Gr33nfertigationProgramTriggerEnum: db.Gr33nfertigationProgramTriggerEnum(*req.TriggerSource),
-			Valid:                              true,
-		}
+		v := db.Gr33nfertigationProgramTriggerEnum(*req.TriggerSource)
+		triggerSource = &v
 	}
 
 	metadata := req.Metadata

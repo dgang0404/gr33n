@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
 
 	db "gr33n-api/internal/db"
 	"gr33n-api/internal/farmguardian/tools"
@@ -81,17 +82,16 @@ func BuildRuleAssistedProposals(
 
 	argsJSON, _ := json.Marshal(args)
 	expires := time.Now().UTC().Add(ProposalTTL)
-	var sessPtr *uuid.UUID
+	var sessUUID pgtype.UUID
 	if sessionID != uuid.Nil {
-		s := sessionID
-		sessPtr = &s
+		sessUUID = pgtype.UUID{Bytes: sessionID, Valid: true}
 	}
 	row, err := q.InsertGuardianProposal(ctx, db.InsertGuardianProposalParams{
 		UserID:    userID,
 		FarmID:    farmID,
-		SessionID: sessPtr,
+		SessionID: sessUUID,
 		ToolID:    toolID,
-		Args:      argsJSON,
+		Column5:   argsJSON,
 		Summary:   summary,
 		RiskTier:  tools.RiskTierForTool(toolID, args),
 		ExpiresAt: expires,

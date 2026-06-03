@@ -242,8 +242,8 @@ func evaluateSetpointPredicate(ctx context.Context, q *db.Queries, scope ScopeCo
 		if err == nil {
 			id := cycle.ID
 			cycleID = &id
-			if cycle.CurrentStage.Valid {
-				s := string(cycle.CurrentStage.Gr33nfertigationGrowthStageEnum)
+			if cycle.CurrentStage != nil {
+				s := string(*cycle.CurrentStage)
 				stage = &s
 			}
 		} else if !errors.Is(err, pgx.ErrNoRows) {

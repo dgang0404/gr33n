@@ -190,9 +190,7 @@ func canonicalGrowthStage(s string) db.Gr33nfertigationGrowthStageEnum {
 	return db.Gr33nfertigationGrowthStageEnumSeedling
 }
 
-func parseGrowthStage(s string) db.NullGr33nfertigationGrowthStageEnum {
-	return db.NullGr33nfertigationGrowthStageEnum{
-		Gr33nfertigationGrowthStageEnum: canonicalGrowthStage(s),
-		Valid:                           true,
-	}
+func parseGrowthStage(s string) *db.Gr33nfertigationGrowthStageEnum {
+	v := canonicalGrowthStage(s)
+	return &v
 }

@@ -38,8 +38,8 @@ const ChatBudgetWarningSourceType = "chat_budget_warning"
 // needs — split out so tests can stub it without faking every method on
 // Queries. Methods mirror the real signatures verbatim.
 type budgetWarningQuerier interface {
-	SumChatTokensSinceForUser(ctx context.Context, userID uuid.UUID, since time.Time) (db.ChatTokenTotals, error)
-	GetRecentChatBudgetWarningForUser(ctx context.Context, recipientUserID uuid.UUID, since time.Time) (int64, error)
+	SumChatTokensSinceForUser(ctx context.Context, arg db.SumChatTokensSinceForUserParams) (db.SumChatTokensSinceForUserRow, error)
+	GetRecentChatBudgetWarningForUser(ctx context.Context, arg db.GetRecentChatBudgetWarningForUserParams) (int64, error)
 	CreateAlert(ctx context.Context, arg db.CreateAlertParams) (db.Gr33ncoreAlertsNotification, error)
 }
 
@@ -107,7 +107,7 @@ func MaybeFireBudgetWarning(
 
 	since := time.Now().Add(-cfg.Window)
 
-	totals, err := q.SumChatTokensSinceForUser(ctx, userID, since)
+	totals, err := q.SumChatTokensSinceForUser(ctx, db.SumChatTokensSinceForUserParams{UserID: userID, Since: since})
 	if err != nil {
 		// Best-effort — the cost guard itself will catch the user at
 		// the hard cap on the next turn even if we miss the 80%
@@ -127,7 +127,10 @@ func MaybeFireBudgetWarning(
 	// Debounce — only one warning per user per window. We DON'T treat
 	// a non-pgx.ErrNoRows error as "go ahead and fire": if the lookup
 	// itself errors we'd rather skip the warning than risk spamming.
-	if _, derr := q.GetRecentChatBudgetWarningForUser(ctx, userID, since); derr == nil {
+	if _, derr := q.GetRecentChatBudgetWarningForUser(ctx, db.GetRecentChatBudgetWarningForUserParams{
+		RecipientUserID: pgtype.UUID{Bytes: userID, Valid: true},
+		CreatedAt:       since,
+	}); derr == nil {
 		// Existing warning in-window → debounce hit.
 		return WarningResult{
 			PctUsed:    pct,
@@ -148,16 +151,13 @@ func MaybeFireBudgetWarning(
 		totals.TotalTokens, cfg.PerUserMaxTokens, int(cfg.Window/time.Hour),
 	)
 	srcType := ChatBudgetWarningSourceType
-	severity := db.NullGr33ncoreNotificationPriorityEnum{
-		Gr33ncoreNotificationPriorityEnum: db.Gr33ncoreNotificationPriorityEnumMedium,
-		Valid:                             true,
-	}
+	severityVal := db.Gr33ncoreNotificationPriorityEnumMedium
 	row, ierr := q.CreateAlert(ctx, db.CreateAlertParams{
 		FarmID:                    farmID,
 		RecipientUserID:           pgtype.UUID{Bytes: userID, Valid: true},
 		TriggeringEventSourceType: &srcType,
 		TriggeringEventSourceID:   nil,
-		Severity:                  severity,
+		Severity:                  &severityVal,
 		SubjectRendered:           &subject,
 		MessageTextRendered:       &message,
 	})

@@ -30,17 +30,14 @@ func numericFromFloat64(v float64) (pgtype.Numeric, error) {
 	return n, err
 }
 
-func parseGrowthStage(s string) db.NullGr33nfertigationGrowthStageEnum {
+func parseGrowthStage(s string) *db.Gr33nfertigationGrowthStageEnum {
+	var v db.Gr33nfertigationGrowthStageEnum
 	if strings.TrimSpace(s) == "" {
-		return db.NullGr33nfertigationGrowthStageEnum{
-			Gr33nfertigationGrowthStageEnum: db.Gr33nfertigationGrowthStageEnumSeedling,
-			Valid:                           true,
-		}
+		v = db.Gr33nfertigationGrowthStageEnumSeedling
+	} else {
+		v = db.Gr33nfertigationGrowthStageEnum(strings.TrimSpace(s))
 	}
-	return db.NullGr33nfertigationGrowthStageEnum{
-		Gr33nfertigationGrowthStageEnum: db.Gr33nfertigationGrowthStageEnum(strings.TrimSpace(s)),
-		Valid:                           true,
-	}
+	return &v
 }
 
 func parseDate(s string) (pgtype.Date, error) {

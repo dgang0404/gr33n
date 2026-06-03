@@ -149,6 +149,6 @@ func rowToProposalListItem(row db.Gr33ncoreGuardianActionProposal) proposalListI
 		ExpiresAt:  ap.ExpiresAt,
 		CreatedAt:  row.CreatedAt,
 		FarmID:     row.FarmID,
-		Status:     string(row.Status),
+		Status:     row.Status,
 	}
 }

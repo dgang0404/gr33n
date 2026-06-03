@@ -537,11 +537,8 @@ func (w *Worker) executeAction(ctx context.Context, schedule db.Gr33ncoreSchedul
 			TriggeredByScheduleID: &schedule.ID,
 			TriggeredByRuleID:     nil,
 			Source:                source,
-			ExecutionStatus: db.NullGr33ncoreActuatorExecutionStatusEnum{
-				Gr33ncoreActuatorExecutionStatusEnum: status,
-				Valid:                                true,
-			},
-			MetaData: []byte(`{}`),
+		ExecutionStatus: &status,
+		MetaData:        []byte(`{}`),
 		})
 		if err != nil {
 			return err
@@ -591,24 +588,21 @@ func (w *Worker) executeAction(ctx context.Context, schedule db.Gr33ncoreSchedul
 		phBeforeN, _ := numericFromFloat(phBefore)
 		phAfterN, _ := numericFromFloat(phAfter)
 
-		trigger := db.NullGr33nfertigationProgramTriggerEnum{
-			Gr33nfertigationProgramTriggerEnum: db.Gr33nfertigationProgramTriggerEnumScheduleCron,
-			Valid:                              true,
-		}
+		triggerVal := db.Gr33nfertigationProgramTriggerEnumScheduleCron
 		_, err = w.q.CreateFertigationEvent(ctx, db.CreateFertigationEventParams{
 			FarmID:              schedule.FarmID,
 			ProgramID:           nil,
 			ReservoirID:         nil,
 			ZoneID:              zoneID,
 			AppliedAt:           now,
-			GrowthStage:         db.NullGr33nfertigationGrowthStageEnum{},
+			GrowthStage:         nil,
 			VolumeAppliedLiters: volN,
 			RunDurationSeconds:  nil,
 			EcBeforeMscm:        ecBeforeN,
 			EcAfterMscm:         ecAfterN,
 			PhBefore:            phBeforeN,
 			PhAfter:             phAfterN,
-			TriggerSource:       trigger,
+			TriggerSource:       &triggerVal,
 			Notes:               ptr("fertigation event created by automation worker"),
 			Metadata:            []byte(`{"source":"automation_worker"}`),
 		})

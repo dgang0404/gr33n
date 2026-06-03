@@ -369,11 +369,8 @@ func (w *Worker) dispatchProgramActuator(
 		TriggeredByScheduleID: &schedule.ID,
 		TriggeredByRuleID:     nil,
 		Source:                db.Gr33ncoreActuatorEventSourceEnumScheduleTrigger,
-		ExecutionStatus: db.NullGr33ncoreActuatorExecutionStatusEnum{
-			Gr33ncoreActuatorExecutionStatusEnum: status,
-			Valid:                                true,
-		},
-		MetaData: meta,
+		ExecutionStatus: &status,
+		MetaData:        meta,
 	}); err != nil {
 		return fmt.Errorf("action %d: insert actuator event: %w", action.ID, err)
 	}
@@ -515,12 +512,9 @@ func (w *Worker) dispatchProgramSendNotification(
 	subject := renderTemplate(tmpl.SubjectTemplate, vars, "Automation program "+p.Name)
 	body := renderTemplate(tmpl.BodyTemplateText, vars, "")
 
-	severity := db.NullGr33ncoreNotificationPriorityEnum{
-		Gr33ncoreNotificationPriorityEnum: db.Gr33ncoreNotificationPriorityEnumMedium,
-		Valid:                             true,
-	}
-	if tmpl.DefaultPriority.Valid {
-		severity = tmpl.DefaultPriority
+	severityVal := db.Gr33ncoreNotificationPriorityEnumMedium
+	if tmpl.DefaultPriority != nil {
+		severityVal = *tmpl.DefaultPriority
 	}
 
 	progID := p.ID
@@ -528,7 +522,7 @@ func (w *Worker) dispatchProgramSendNotification(
 		FarmID:                  p.FarmID,
 		NotificationTemplateID:  &tmpl.ID,
 		TriggeringEventSourceID: &progID,
-		Severity:                severity,
+		Severity:                &severityVal,
 		SubjectRendered:         &subject,
 		MessageTextRendered:     &body,
 	})

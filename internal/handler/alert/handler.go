@@ -201,8 +201,8 @@ func (h *Handler) CreateTaskFromAlert(w http.ResponseWriter, r *http.Request) {
 			httputil.WriteError(w, http.StatusBadRequest, "priority must be 0\u20133")
 			return
 		}
-	} else if alertRow.Severity.Valid {
-		switch alertRow.Severity.Gr33ncoreNotificationPriorityEnum {
+	} else if alertRow.Severity != nil {
+		switch *alertRow.Severity {
 		case "critical":
 			priority = 3
 		case "high":

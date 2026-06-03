@@ -876,10 +876,7 @@ func (h *Handler) evaluateThresholds(ctx context.Context, sensorID int64, valueR
 		FarmID:                    sensor.FarmID,
 		TriggeringEventSourceType: &srcType,
 		TriggeringEventSourceID:   &sensorID,
-		Severity: db.NullGr33ncoreNotificationPriorityEnum{
-			Gr33ncoreNotificationPriorityEnum: severity,
-			Valid:                             true,
-		},
+		Severity: &severity,
 		SubjectRendered:     &subject,
 		MessageTextRendered: &msg,
 	})

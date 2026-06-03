@@ -9,28 +9,28 @@ overview: >
 todos:
   - id: ws1-read-layer
     content: "WS1: Read layer — expand live snapshot (plants, programs per zone); read-only tools list_plants, summarize_zone_fertigation; optional route context from UI"
-    status: pending
+    status: done
   - id: ws2-create-tools
     content: "WS2: Create tools — create_plant, create_crop_cycle, create_fertigation_program (allowlisted fields); map to existing handlers; medium/high risk tiers"
-    status: pending
+    status: done
   - id: ws3-setup-pack-pr
     content: "WS3: Setup pack PR — single frozen bundle (plant + cycle + program) or linked proposal group; one Confirm card with step diff; transactional execute"
-    status: pending
+    status: done
   - id: ws4-intent-generation
     content: "WS4: Intent → proposal — structured extraction / setup templates from chat (beyond Phase 29 regex); house-plant vs commercial zone profiles"
-    status: pending
+    status: done
   - id: ws5-confirm-ux
     content: "WS5: Confirm UX — SetupPackProposalCard; show created rows preview; dismiss partial bundle rules"
-    status: pending
+    status: done
   - id: ws6-operator-docs
     content: "WS6: Operator docs — what Guardian can propose vs manual UI; house plant example; link farm-guardian-architecture § blind spots"
-    status: pending
+    status: done
   - id: ws7-openapi-tests
     content: "WS7: OpenAPI + smokes — setup pack propose→confirm; Vitest bundle card; no silent partial apply on validation failure"
-    status: pending
+    status: done
   - id: ws8-knowledge-depth
     content: "WS8: Guardian knowledge depth — curated platform docs/ RAG corpus + ingest script; persona cites corpus for how-to; farm-scoped chunks for operator Q&A"
-    status: pending
+    status: done
 isProject: false
 ---
 
@@ -38,7 +38,7 @@ isProject: false
 
 ## Status
 
-**Not started.** Depends on **Phase 30** (PR queue + tools registry) shipped. **Phase 31** (field validation + WS6 read tools) shipped. **Recommended:** run **Phase 33 WS1** (read-tool hardening + doc parity) before or in parallel with WS2 here — see [`phase_33_guardian_polish_and_enterprise_ops.plan.md`](phase_33_guardian_polish_and_enterprise_ops.plan.md). Phase 32 WS1 subsumes/expands Phase 31 read coverage for **grow** domains (`list_plants`, fertigation-aware zone summary).
+**Shipped.** All eight workstreams complete. Phase 32 delivered the full Guardian grow-setup PR flow: live snapshot expanded with plants and fertigation programs (WS1), three write tools (`create_plant`, `create_crop_cycle`, `create_fertigation_program`) registered with medium/high risk tiers (WS2), transactional `apply_grow_setup_pack` bundle tool (WS3), rule-assisted intent matching for setup phrases (WS4), `SetupPackProposalCard` confirm UX (WS5), operator docs updated (WS6), smoke tests and OpenAPI coverage (WS7), and platform RAG corpus ingest script with docs indexed (WS8). See also **Phase 33** for Polish & Enterprise Ops built on top of this phase.
 
 **Preconditions:**
 
@@ -376,13 +376,15 @@ Operator chat ("add philodendron to Living Room, RO water, light fertigation")
 
 ## Definition of done (phase ship)
 
-- [ ] Operator can ask for **house plant + zone + fertigation** setup in chat and receive **one** pending setup pack PR
-- [ ] Confirm atomically creates plant, cycle, program (or clear error, no partial state)
-- [ ] Snapshot lists existing plants/programs so duplicate proposals are reduced
-- [ ] High-tier warning on setup pack Confirm
-- [ ] Docs explain setup PR vs Phase 15 bootstrap vs manual Plants/Fertigation UI
-- [ ] Platform doc RAG pack ingestible; grounded chat cites operator docs for how-to (WS8)
-- [ ] `make test` green; OpenAPI documents new tool + bundle args
+- [x] Operator can ask for **house plant + zone + fertigation** setup in chat and receive **one** pending setup pack PR
+- [x] Confirm atomically creates plant, cycle, program (or clear error, no partial state)
+- [x] Snapshot lists existing plants/programs so duplicate proposals are reduced
+- [x] High-tier warning on setup pack Confirm
+- [x] Docs explain setup PR vs Phase 15 bootstrap vs manual Plants/Fertigation UI
+- [x] Platform doc RAG pack ingestible; grounded chat cites operator docs for how-to (WS8)
+- [x] `make test` green; OpenAPI documents new tool + bundle args
+
+**Phase shipped.** All criteria met. See Phase 33 for post-ship polish and Phase 34 for iterative PR refinement.
 
 ---
 

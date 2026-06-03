@@ -78,10 +78,7 @@ func (w *Worker) maybeFireLowStock(ctx context.Context, b db.ListLowStockBatches
 	subject := fmt.Sprintf("Inventory low: %s at %.2f (threshold %.2f)", name, remaining, threshold)
 	body := fmt.Sprintf("Batch %d of %s has dropped below its low-stock threshold. Remaining: %.2f, threshold: %.2f.",
 		b.ID, name, remaining, threshold)
-	severity := db.NullGr33ncoreNotificationPriorityEnum{
-		Gr33ncoreNotificationPriorityEnum: db.Gr33ncoreNotificationPriorityEnumMedium,
-		Valid:                             true,
-	}
+	severityVal := db.Gr33ncoreNotificationPriorityEnumMedium
 	sourceType := lowStockSourceType
 	sourceID := b.ID
 
@@ -90,7 +87,7 @@ func (w *Worker) maybeFireLowStock(ctx context.Context, b db.ListLowStockBatches
 		RecipientUserID:           pgtype.UUID{},
 		TriggeringEventSourceType: &sourceType,
 		TriggeringEventSourceID:   &sourceID,
-		Severity:                  severity,
+		Severity:                  &severityVal,
 		SubjectRendered:           &subject,
 		MessageTextRendered:       &body,
 	})

@@ -77,14 +77,14 @@ SELECT
 FROM (
     SELECT
         session_id,
-        COUNT(*)                  AS turn_count,
-        MAX(created_at)           AS last_turn_at,
-        BOOL_OR(grounded)         AS any_grounded,
-        SUM(prompt_tokens)::int   AS total_prompt_tokens,
-        SUM(completion_tokens)::int AS total_completion_tokens
-    FROM gr33ncore.conversation_turns
-    WHERE user_id = sqlc.arg(user_id)
-    GROUP BY session_id
+        COUNT(*)                             AS turn_count,
+        MAX(ct.created_at)::timestamptz       AS last_turn_at,
+        BOOL_OR(grounded)                    AS any_grounded,
+        SUM(prompt_tokens)::int              AS total_prompt_tokens,
+        SUM(completion_tokens)::int          AS total_completion_tokens
+    FROM gr33ncore.conversation_turns ct
+    WHERE ct.user_id = sqlc.arg(user_id)
+    GROUP BY ct.session_id
 ) agg
 JOIN LATERAL (
     SELECT user_message
@@ -146,10 +146,10 @@ WHERE id = sqlc.arg(id)
 -- and portable across timezones.
 DELETE FROM gr33ncore.conversation_turns
 WHERE session_id IN (
-    SELECT session_id
-    FROM gr33ncore.conversation_turns
-    GROUP BY session_id
-    HAVING MAX(created_at) < sqlc.arg(cutoff)
+    SELECT ct.session_id
+    FROM gr33ncore.conversation_turns ct
+    GROUP BY ct.session_id
+    HAVING MAX(ct.created_at) < sqlc.arg(cutoff)
 );
 
 -- name: DeleteStaleConversationSessions :execrows

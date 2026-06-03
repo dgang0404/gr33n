@@ -75,8 +75,8 @@ func TestLoadCostGuardConfigFromEnv_ParsesAndClamps(t *testing.T) {
 // fakeCostQuerier lets the unit tests stub out the two SUM queries without
 // reaching into a real DB.
 type fakeCostQuerier struct {
-	userTotals  db.ChatTokenTotals
-	farmTotals  db.ChatTokenTotals
+	userTotals  db.SumChatTokensSinceForUserRow
+	farmTotals  db.SumChatTokensSinceForFarmRow
 	userErr     error
 	farmErr     error
 	userCalls   int
@@ -87,17 +87,19 @@ type fakeCostQuerier struct {
 	lastFarmSin time.Time
 }
 
-func (f *fakeCostQuerier) SumChatTokensSinceForUser(_ context.Context, userID uuid.UUID, since time.Time) (db.ChatTokenTotals, error) {
+func (f *fakeCostQuerier) SumChatTokensSinceForUser(_ context.Context, arg db.SumChatTokensSinceForUserParams) (db.SumChatTokensSinceForUserRow, error) {
 	f.userCalls++
-	f.lastUserID = userID
-	f.lastUserSin = since
+	f.lastUserID = arg.UserID
+	f.lastUserSin = arg.Since
 	return f.userTotals, f.userErr
 }
 
-func (f *fakeCostQuerier) SumChatTokensSinceForFarm(_ context.Context, farmID int64, since time.Time) (db.ChatTokenTotals, error) {
+func (f *fakeCostQuerier) SumChatTokensSinceForFarm(_ context.Context, arg db.SumChatTokensSinceForFarmParams) (db.SumChatTokensSinceForFarmRow, error) {
 	f.farmCalls++
-	f.lastFarmID = farmID
-	f.lastFarmSin = since
+	if arg.FarmID != nil {
+		f.lastFarmID = *arg.FarmID
+	}
+	f.lastFarmSin = arg.Since
 	return f.farmTotals, f.farmErr
 }
 
@@ -117,7 +119,7 @@ func TestCheckBudget_DisabledSkipsDB(t *testing.T) {
 
 func TestCheckBudget_PerUserOver(t *testing.T) {
 	fq := &fakeCostQuerier{
-		userTotals: db.ChatTokenTotals{TotalTokens: 5_001},
+		userTotals: db.SumChatTokensSinceForUserRow{TotalTokens: 5_001},
 	}
 	cfg := CostGuardConfig{
 		Window:           time.Hour,
@@ -156,8 +158,8 @@ func TestCheckBudget_PerUserOver(t *testing.T) {
 
 func TestCheckBudget_PerFarmOver(t *testing.T) {
 	fq := &fakeCostQuerier{
-		userTotals: db.ChatTokenTotals{TotalTokens: 1_000}, // under cap
-		farmTotals: db.ChatTokenTotals{TotalTokens: 75_000},
+		userTotals: db.SumChatTokensSinceForUserRow{TotalTokens: 1_000}, // under cap
+		farmTotals: db.SumChatTokensSinceForFarmRow{TotalTokens: 75_000},
 	}
 	cfg := CostGuardConfig{
 		Window:           2 * time.Hour,
@@ -184,7 +186,7 @@ func TestCheckBudget_PerFarmOver(t *testing.T) {
 
 func TestCheckBudget_PerFarmSkippedWithoutFarm(t *testing.T) {
 	fq := &fakeCostQuerier{
-		farmTotals: db.ChatTokenTotals{TotalTokens: 999_999}, // would blow farm cap...
+		farmTotals: db.SumChatTokensSinceForFarmRow{TotalTokens: 999_999}, // would blow farm cap...
 	}
 	cfg := CostGuardConfig{
 		Window:           time.Hour,
@@ -204,8 +206,8 @@ func TestCheckBudget_PerFarmSkippedWithoutFarm(t *testing.T) {
 
 func TestCheckBudget_AllowedBelowCap(t *testing.T) {
 	fq := &fakeCostQuerier{
-		userTotals: db.ChatTokenTotals{TotalTokens: 200},
-		farmTotals: db.ChatTokenTotals{TotalTokens: 300},
+		userTotals: db.SumChatTokensSinceForUserRow{TotalTokens: 200},
+		farmTotals: db.SumChatTokensSinceForFarmRow{TotalTokens: 300},
 	}
 	cfg := CostGuardConfig{
 		Window:           time.Hour,

@@ -119,8 +119,8 @@ type Decision struct {
 // costQuerier is the slice of *db.Queries the guard actually needs so
 // tests can supply a fake without faking every Queries method.
 type costQuerier interface {
-	SumChatTokensSinceForUser(ctx context.Context, userID uuid.UUID, since time.Time) (db.ChatTokenTotals, error)
-	SumChatTokensSinceForFarm(ctx context.Context, farmID int64, since time.Time) (db.ChatTokenTotals, error)
+	SumChatTokensSinceForUser(ctx context.Context, arg db.SumChatTokensSinceForUserParams) (db.SumChatTokensSinceForUserRow, error)
+	SumChatTokensSinceForFarm(ctx context.Context, arg db.SumChatTokensSinceForFarmParams) (db.SumChatTokensSinceForFarmRow, error)
 }
 
 // CheckBudget runs the rolling-window queries the config asks for and
@@ -139,7 +139,7 @@ func CheckBudget(ctx context.Context, q costQuerier, cfg CostGuardConfig, userID
 	since := time.Now().Add(-cfg.Window)
 
 	if cfg.PerUserMaxTokens > 0 {
-		totals, err := q.SumChatTokensSinceForUser(ctx, userID, since)
+		totals, err := q.SumChatTokensSinceForUser(ctx, db.SumChatTokensSinceForUserParams{UserID: userID, Since: since})
 		if err != nil {
 			return Decision{}, err
 		}
@@ -155,7 +155,7 @@ func CheckBudget(ctx context.Context, q costQuerier, cfg CostGuardConfig, userID
 		}
 	}
 	if cfg.PerFarmMaxTokens > 0 && farmID > 0 {
-		totals, err := q.SumChatTokensSinceForFarm(ctx, farmID, since)
+		totals, err := q.SumChatTokensSinceForFarm(ctx, db.SumChatTokensSinceForFarmParams{FarmID: &farmID, Since: since})
 		if err != nil {
 			return Decision{}, err
 		}

@@ -256,11 +256,8 @@ func (h *Handler) RecordEvent(w http.ResponseWriter, r *http.Request) {
 		TriggeredByScheduleID: body.TriggeredByScheduleID,
 		TriggeredByRuleID:     body.TriggeredByRuleID,
 		Source:                src,
-		ExecutionStatus: db.NullGr33ncoreActuatorExecutionStatusEnum{
-			Gr33ncoreActuatorExecutionStatusEnum: status,
-			Valid:                                true,
-		},
-		MetaData: metaBytes,
+		ExecutionStatus: &status,
+		MetaData:        metaBytes,
 	})
 	if err != nil {
 		httputil.WriteError(w, http.StatusInternalServerError, "failed to record actuator event")

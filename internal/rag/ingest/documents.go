@@ -96,9 +96,9 @@ func CropCycleDocument(c db.Gr33nfertigationCropCycle) string {
 		b.WriteString(strings.TrimSpace(*c.StrainOrVariety))
 		b.WriteByte('\n')
 	}
-	if c.CurrentStage.Valid {
+	if c.CurrentStage != nil {
 		b.WriteString("stage: ")
-		b.WriteString(string(c.CurrentStage.Gr33nfertigationGrowthStageEnum))
+		b.WriteString(string(*c.CurrentStage))
 		b.WriteByte('\n')
 	}
 	if c.IsActive {
@@ -498,14 +498,14 @@ func InputBatchDocument(batch db.Gr33nnaturalfarmingInputBatch) string {
 func AlertNotificationDocument(a db.Gr33ncoreAlertsNotification) string {
 	var b strings.Builder
 	b.WriteString("alert_notification\n")
-	if a.Severity.Valid {
+	if a.Severity != nil {
 		b.WriteString("severity: ")
-		b.WriteString(string(a.Severity.Gr33ncoreNotificationPriorityEnum))
+		b.WriteString(string(*a.Severity))
 		b.WriteByte('\n')
 	}
-	if a.Status.Valid {
+	if a.Status != nil {
 		b.WriteString("status: ")
-		b.WriteString(string(a.Status.Gr33ncoreNotificationStatusEnum))
+		b.WriteString(string(*a.Status))
 		b.WriteByte('\n')
 	}
 	if a.TriggeringEventSourceType != nil && strings.TrimSpace(*a.TriggeringEventSourceType) != "" {

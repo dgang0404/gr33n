@@ -145,8 +145,8 @@ func createTaskFromAlertRow(ctx context.Context, deps ExecutorDeps, alertID int6
 	priority := int32(1)
 	if overrides.Priority != nil {
 		priority = *overrides.Priority
-	} else if alertRow.Severity.Valid {
-		switch alertRow.Severity.Gr33ncoreNotificationPriorityEnum {
+	} else if alertRow.Severity != nil {
+		switch *alertRow.Severity {
 		case "critical":
 			priority = 3
 		case "high":

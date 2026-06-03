@@ -74,6 +74,10 @@ sql:
             go_type:
               import: "gr33n-api/internal/platform/commontypes"
               type: "FarmScaleTierEnum"
+          - db_type: "gr33ncore.guardian_proposal_status_enum"
+            go_type: "string"
+          - db_type: "jsonb"
+            go_type: "encoding/json.RawMessage"
           - db_type: "vector"
             go_type:
               import: "github.com/pgvector/pgvector-go"

@@ -421,11 +421,8 @@ func (w *Worker) dispatchRuleActuator(ctx context.Context, rule db.Gr33ncoreAuto
 		TriggeredByScheduleID: nil,
 		TriggeredByRuleID:     &rule.ID,
 		Source:                db.Gr33ncoreActuatorEventSourceEnumAutomationRuleTrigger,
-		ExecutionStatus: db.NullGr33ncoreActuatorExecutionStatusEnum{
-			Gr33ncoreActuatorExecutionStatusEnum: status,
-			Valid:                                true,
-		},
-		MetaData: []byte(`{}`),
+		ExecutionStatus: &status,
+		MetaData:        []byte(`{}`),
 	}); err != nil {
 		return fmt.Errorf("action %d: insert actuator event: %w", action.ID, err)
 	}
@@ -570,12 +567,9 @@ func (w *Worker) dispatchRuleSendNotification(ctx context.Context, rule db.Gr33n
 	subject := renderTemplate(tmpl.SubjectTemplate, vars, "Automation rule "+rule.Name)
 	body := renderTemplate(tmpl.BodyTemplateText, vars, "")
 
-	severity := db.NullGr33ncoreNotificationPriorityEnum{
-		Gr33ncoreNotificationPriorityEnum: db.Gr33ncoreNotificationPriorityEnumMedium,
-		Valid:                             true,
-	}
-	if tmpl.DefaultPriority.Valid {
-		severity = tmpl.DefaultPriority
+	severityVal := db.Gr33ncoreNotificationPriorityEnumMedium
+	if tmpl.DefaultPriority != nil {
+		severityVal = *tmpl.DefaultPriority
 	}
 
 	ruleID := rule.ID
@@ -583,7 +577,7 @@ func (w *Worker) dispatchRuleSendNotification(ctx context.Context, rule db.Gr33n
 		FarmID:                  rule.FarmID,
 		NotificationTemplateID:  &tmpl.ID,
 		TriggeringEventSourceID: &ruleID,
-		Severity:                severity,
+		Severity:                &severityVal,
 		SubjectRendered:         &subject,
 		MessageTextRendered:     &body,
 	})

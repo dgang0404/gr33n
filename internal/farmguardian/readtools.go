@@ -327,7 +327,7 @@ func renderListUnreadAlerts(ctx context.Context, q db.Querier, farmID int64) (st
 	}
 
 	limit := int32(ReadToolsMaxAlerts)
-	alerts, err := q.ListRecentUnreadAlertsByFarm(ctx, farmID, limit)
+	alerts, err := q.ListRecentUnreadAlertsByFarm(ctx, db.ListRecentUnreadAlertsByFarmParams{FarmID: farmID, Limit: limit})
 	if err != nil {
 		return "", err
 	}
@@ -415,8 +415,8 @@ func renderSummarizeZone(ctx context.Context, q db.Querier, farmID int64, zone d
 			if c.StrainOrVariety != nil && strings.TrimSpace(*c.StrainOrVariety) != "" {
 				line += " — " + strings.TrimSpace(*c.StrainOrVariety)
 			}
-			if c.CurrentStage.Valid {
-				line += " (stage: " + string(c.CurrentStage.Gr33nfertigationGrowthStageEnum) + ")"
+			if c.CurrentStage != nil {
+				line += " (stage: " + string(*c.CurrentStage) + ")"
 			}
 			active = append(active, line)
 		}
@@ -564,8 +564,8 @@ func renderSummarizeZoneFertigation(ctx context.Context, q db.Querier, farmID in
 			if c.StrainOrVariety != nil && strings.TrimSpace(*c.StrainOrVariety) != "" {
 				line += " — " + strings.TrimSpace(*c.StrainOrVariety)
 			}
-			if c.CurrentStage.Valid {
-				line += " (stage: " + string(c.CurrentStage.Gr33nfertigationGrowthStageEnum) + ")"
+			if c.CurrentStage != nil {
+				line += " (stage: " + string(*c.CurrentStage) + ")"
 			}
 			if c.PrimaryProgramID != nil {
 				if p, ok := programByID[*c.PrimaryProgramID]; ok {

@@ -105,7 +105,7 @@ func renderAlertContext(ctx context.Context, q *db.Queries, farmID, alertID int6
 	if err != nil || a.FarmID != farmID {
 		return ""
 	}
-	detail := toUnreadAlertDetail(db.RecentUnreadAlertSummary{
+	detail := toUnreadAlertDetail(db.ListRecentUnreadAlertsByFarmRow{
 		ID:                        a.ID,
 		Severity:                  a.Severity,
 		SubjectRendered:           a.SubjectRendered,
@@ -157,8 +157,8 @@ func renderCropCycleContext(ctx context.Context, q *db.Queries, farmID, cycleID 
 	if c.StrainOrVariety != nil {
 		ac.Strain = *c.StrainOrVariety
 	}
-	if c.CurrentStage.Valid {
-		ac.Stage = string(c.CurrentStage.Gr33nfertigationGrowthStageEnum)
+	if c.CurrentStage != nil {
+		ac.Stage = string(*c.CurrentStage)
 	}
 	if a, aerr := fetchCycleAnalytics(ctx, q, c); aerr == nil {
 		ac.Analytics = a

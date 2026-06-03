@@ -71,7 +71,7 @@ VALUES ($1, $2, $3, 'q', 'a', 'test-model', false, 0, '[]'::jsonb, $4, $5)`,
 	q := db.New(testPool)
 
 	// Sanity: the SUM query rolls up across sessions for the same user.
-	totals, err := q.SumChatTokensSinceForUser(ctx, userID, time.Now().Add(-time.Hour))
+	totals, err := q.SumChatTokensSinceForUser(ctx, db.SumChatTokensSinceForUserParams{UserID: userID, Since: time.Now().Add(-time.Hour)})
 	if err != nil {
 		t.Fatalf("SumChatTokensSinceForUser: %v", err)
 	}
@@ -171,7 +171,8 @@ VALUES ($1, $2, $3, $4, 'q', 'a', 'test-model', true, 0, '[]'::jsonb, 1000, 200)
 	}
 
 	q := db.New(testPool)
-	farmTotals, err := q.SumChatTokensSinceForFarm(ctx, farmID, time.Now().Add(-time.Hour))
+	farmIDPtr := farmID
+	farmTotals, err := q.SumChatTokensSinceForFarm(ctx, db.SumChatTokensSinceForFarmParams{FarmID: &farmIDPtr, Since: time.Now().Add(-time.Hour)})
 	if err != nil {
 		t.Fatalf("SumChatTokensSinceForFarm: %v", err)
 	}
@@ -253,7 +254,7 @@ VALUES ($1, $2, 1, 'q', 'a', 'test-model', false, 0, '[]'::jsonb, 50, 50)`,
 
 	q := db.New(testPool)
 
-	totals, err := q.SumChatTokensSinceForUser(ctx, userID, time.Now().Add(-time.Hour))
+	totals, err := q.SumChatTokensSinceForUser(ctx, db.SumChatTokensSinceForUserParams{UserID: userID, Since: time.Now().Add(-time.Hour)})
 	if err != nil {
 		t.Fatalf("SumChatTokensSinceForUser: %v", err)
 	}

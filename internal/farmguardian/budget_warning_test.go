@@ -20,7 +20,7 @@ import (
 )
 
 type fakeWarningQuerier struct {
-	totals         db.ChatTokenTotals
+	totals         db.SumChatTokensSinceForUserRow
 	totalsErr      error
 	existing       bool // GetRecent returns id=1 when true
 	existingErr    error
@@ -32,12 +32,12 @@ type fakeWarningQuerier struct {
 	createAlertCnt int
 }
 
-func (f *fakeWarningQuerier) SumChatTokensSinceForUser(_ context.Context, _ uuid.UUID, _ time.Time) (db.ChatTokenTotals, error) {
+func (f *fakeWarningQuerier) SumChatTokensSinceForUser(_ context.Context, _ db.SumChatTokensSinceForUserParams) (db.SumChatTokensSinceForUserRow, error) {
 	f.sumCalls++
 	return f.totals, f.totalsErr
 }
 
-func (f *fakeWarningQuerier) GetRecentChatBudgetWarningForUser(_ context.Context, _ uuid.UUID, _ time.Time) (int64, error) {
+func (f *fakeWarningQuerier) GetRecentChatBudgetWarningForUser(_ context.Context, _ db.GetRecentChatBudgetWarningForUserParams) (int64, error) {
 	f.getRecentCalls++
 	if f.existingErr != nil {
 		return 0, f.existingErr
@@ -99,7 +99,7 @@ func TestMaybeFireBudgetWarning_NoFarmNoOp(t *testing.T) {
 
 func TestMaybeFireBudgetWarning_BelowThresholdNoOp(t *testing.T) {
 	f := &fakeWarningQuerier{
-		totals: db.ChatTokenTotals{TotalTokens: 500},
+		totals: db.SumChatTokensSinceForUserRow{TotalTokens: 500},
 	}
 	cfg := CostGuardConfig{Window: time.Hour, PerUserMaxTokens: 1000}
 	res, err := MaybeFireBudgetWarning(context.Background(), f, cfg, makeUser(t), 7)
@@ -119,7 +119,7 @@ func TestMaybeFireBudgetWarning_BelowThresholdNoOp(t *testing.T) {
 
 func TestMaybeFireBudgetWarning_AboveThresholdFires(t *testing.T) {
 	f := &fakeWarningQuerier{
-		totals: db.ChatTokenTotals{TotalTokens: 850},
+		totals: db.SumChatTokensSinceForUserRow{TotalTokens: 850},
 	}
 	cfg := CostGuardConfig{Window: time.Hour, PerUserMaxTokens: 1000}
 	u := makeUser(t)
@@ -162,7 +162,7 @@ func TestMaybeFireBudgetWarning_AboveThresholdFires(t *testing.T) {
 
 func TestMaybeFireBudgetWarning_DebounceHit(t *testing.T) {
 	f := &fakeWarningQuerier{
-		totals:   db.ChatTokenTotals{TotalTokens: 900},
+		totals:   db.SumChatTokensSinceForUserRow{TotalTokens: 900},
 		existing: true,
 	}
 	cfg := CostGuardConfig{Window: time.Hour, PerUserMaxTokens: 1000}
@@ -182,7 +182,7 @@ func TestMaybeFireBudgetWarning_DebounceLookupErrorFailsClosed(t *testing.T) {
 	// If the debounce query itself fails, we'd rather skip the warning
 	// (fail closed) than risk spamming on transient errors.
 	f := &fakeWarningQuerier{
-		totals:      db.ChatTokenTotals{TotalTokens: 900},
+		totals:      db.SumChatTokensSinceForUserRow{TotalTokens: 900},
 		existingErr: errors.New("boom"),
 	}
 	cfg := CostGuardConfig{Window: time.Hour, PerUserMaxTokens: 1000}
@@ -214,7 +214,7 @@ func TestMaybeFireBudgetWarning_SumErrorFailsOpen(t *testing.T) {
 
 func TestMaybeFireBudgetWarning_CreateAlertErrorFailsOpen(t *testing.T) {
 	f := &fakeWarningQuerier{
-		totals:    db.ChatTokenTotals{TotalTokens: 950},
+		totals:    db.SumChatTokensSinceForUserRow{TotalTokens: 950},
 		createErr: errors.New("alert insert boom"),
 	}
 	cfg := CostGuardConfig{Window: time.Hour, PerUserMaxTokens: 1000}
