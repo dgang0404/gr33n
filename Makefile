@@ -164,6 +164,9 @@ rag-ingest-demo: ## Index farm_id=1 for Guardian RAG (needs EMBEDDING_API_KEY; n
 rag-ingest-platform-docs: ## Index operator platform docs for farm 1 (needs EMBEDDING_API_KEY; dry-run without key via --dry-run)
 	@./scripts/rag-ingest-platform-docs.sh
 
+rag-ingest-platform-docs-dry-run: ## List manifest files + chunk estimates (no API key required)
+	@./scripts/rag-ingest-platform-docs.sh --dry-run
+
 local-up: ## dev-stack then API + UI (same as ./scripts/dev-stack.sh --serve)
 	@./scripts/dev-stack.sh --serve
 

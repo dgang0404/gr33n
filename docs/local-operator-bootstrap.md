@@ -166,6 +166,8 @@ Farm Guardian layers three knowledge sources ([`farm-guardian-architecture.md`](
 1. **Llama weights** — install Ollama + pull model ([`farm-guardian-ollama-setup.md`](farm-guardian-ollama-setup.md)).
 2. **RAG corpus** — seed loads operational rows but **not** embeddings. After `make seed`, run **`make rag-ingest-demo`** (needs `EMBEDDING_API_KEY`; skips with a message if unset). One-shot fresh demo with embeddings: **`make dev-stack-fresh-rag`**.
 
+   **Platform how-to docs** (Confirm workflow, Pi setup, operator tour, **greenhouse climate §5b**, lighting §5) are a separate index: **`make rag-ingest-platform-docs`**. Re-run whenever you change curated markdown in [`docs/rag/platform-doc-manifest.yaml`](rag/platform-doc-manifest.yaml) — ingest is idempotent per file. Dry-run without API key: `./scripts/rag-ingest-platform-docs.sh --dry-run`.
+
 3. **Live snapshot** — built automatically on each grounded chat turn (zones, active cycles, unread alerts).
 
 **Phase 29 WS7 — sample unread alerts:** [`db/seeds/master_seed.sql`](../db/seeds/master_seed.sql) inserts three unread `alerts_notifications` rows for demo **farm_id = 1** (OHN inventory low, Flower Room humidity high, 12/12 light transition reminder). Re-run **`make seed`** or **`make dev-stack-fresh`** to apply; subjects are idempotent.

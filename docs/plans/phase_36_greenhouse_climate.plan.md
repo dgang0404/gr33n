@@ -233,7 +233,7 @@ Operator / Guardian
 **Remaining (OC-36C):**
 
 - Smokes: bootstrap apply, rule fire + cooldown, manual shade deploy via `pending_command`
-- Optional: RAG re-ingest after operator-tour change (OC-37E sweep)
+- RAG: re-run `make rag-ingest-platform-docs` after doc edits (`pattern-playbooks.md` + operator-tour §5b in manifest; OC-37E sweep for full corpus)
 
 **Acceptance:** Docs in phase-14 index; `go test` green for new smokes.
 

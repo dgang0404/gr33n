@@ -1,10 +1,17 @@
 # Curated operator markdown for Guardian platform_doc RAG (Phase 32 WS8).
 # Paths are relative to the repo docs/ directory.
-# Re-run: ./scripts/rag-ingest-platform-docs.sh (idempotent per doc path).
+#
+# Re-run after operator-doc edits (idempotent per file — replaces chunks for that source_id):
+#   make rag-ingest-platform-docs
+#   ./scripts/rag-ingest-platform-docs.sh --dry-run
+#
+# Phase 36 greenhouse walkthrough: operator-tour.md §5b; bootstrap detail in pattern-playbooks.md.
+# Plans under docs/plans/ are excluded via exclude_globs.
 version: 1
 
 include:
   - operator-tour.md
+  - pattern-playbooks.md
   - local-operator-bootstrap.md
   - workflow-guide.md
   - pi-integration-guide.md

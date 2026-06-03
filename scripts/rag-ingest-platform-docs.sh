@@ -53,6 +53,9 @@ if [[ "$DRY_RUN" -eq 1 ]]; then
     -platform-docs \
     -repo-root "$ROOT" \
     -dry-run
+  if grep -q '5b. Greenhouse shade' "$ROOT/docs/operator-tour.md" 2>/dev/null; then
+    echo "    (operator-tour.md includes Phase 36 §5b — re-run without --dry-run to refresh embeddings)"
+  fi
   exit 0
 fi
 
@@ -81,3 +84,4 @@ go run ./cmd/rag-ingest \
   -platform-docs \
   -repo-root "$ROOT"
 echo "==> rag-ingest platform docs done."
+echo "    Guardian can cite platform_doc chunks (operator tour, greenhouse §5b, architecture, Pi guide, …)."
