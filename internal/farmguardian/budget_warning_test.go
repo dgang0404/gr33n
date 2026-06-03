@@ -146,7 +146,7 @@ func TestMaybeFireBudgetWarning_AboveThresholdFires(t *testing.T) {
 	if got.TriggeringEventSourceType == nil || *got.TriggeringEventSourceType != ChatBudgetWarningSourceType {
 		t.Errorf("expected source_type=%q, got %v", ChatBudgetWarningSourceType, got.TriggeringEventSourceType)
 	}
-	if !got.Severity.Valid || got.Severity.Gr33ncoreNotificationPriorityEnum != db.Gr33ncoreNotificationPriorityEnumMedium {
+	if got.Severity == nil || *got.Severity != db.Gr33ncoreNotificationPriorityEnumMedium {
 		t.Errorf("expected severity=medium, got %+v", got.Severity)
 	}
 	if got.SubjectRendered == nil || *got.SubjectRendered != "Chat token budget at 85%" {

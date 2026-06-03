@@ -4219,6 +4219,13 @@ paths:
         confirm on an already-confirmed proposal is **idempotent** (200 with
         cached result).
 
+        **Phase 34 (revise loop):** a correction turn in the same session supersedes
+        the live draft and creates a new frozen revision; only the latest pending
+        revision is confirmable. Confirming a **superseded** proposal returns **410
+        Gone** with `live_proposal_id` (+ `live_revision`) pointing at the confirmable
+        draft. Confirms record `revision` and `root_proposal_id` on the audit, plus any
+        `operator_provided` blind-spot facts.
+
         Successful confirms append `guardian_tool_executed` rows to
         `gr33ncore.user_activity_log` (visible via `GET /farms/{id}/audit-events`).
       security: [{ bearerAuth: [] }]
@@ -4250,10 +4257,13 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/Error" }
         "410":
-          description: Proposal expired, dismissed, or no longer confirmable.
+          description: >
+            Proposal expired, dismissed, or superseded by a later revision. When
+            superseded, the body includes `live_proposal_id` and `live_revision`
+            pointing at the confirmable draft (Phase 34).
           content:
             application/json:
-              schema: { $ref: "#/components/schemas/Error" }
+              schema: { $ref: "#/components/schemas/GuardianProposalGone" }
         "429":
           description: Cost-guard cap exceeded (confirm counts as a chat turn).
           headers:
@@ -4812,6 +4822,67 @@ components:
           type: string
           format: date-time
           description: UTC expiry — confirm returns 410 after this timestamp.
+        revision:
+          type: integer
+          minimum: 1
+          description: >
+            Phase 34 — 1-based revision number within a supersede chain. A correction
+            turn produces a new frozen row (revision N+1) that supersedes the prior;
+            only the latest pending revision is confirmable.
+        supersedes_proposal_id:
+          type: string
+          format: uuid
+          description: Phase 34 — the proposal id this revision replaces (absent on the first draft).
+        impact_summary:
+          type: array
+          items: { type: string }
+          description: >
+            Phase 34 — ordered, plain-language "if you Confirm, this will…" lines, scaled
+            by risk tier. High-tier proposals lead with the most impactful/irreversible step.
+        operator_provided:
+          type: array
+          description: >
+            Phase 34 — ground-truth values the operator asserted that Guardian cannot
+            sense (blind spots). Stored in proposal meta and surfaced as operator-stated,
+            never written as a sensor measurement.
+          items:
+            $ref: "#/components/schemas/GuardianOperatorFact"
+
+    GuardianOperatorFact:
+      type: object
+      required: [field, basis]
+      description: An unsensed value supplied by the operator (Phase 34 WS3).
+      properties:
+        field:
+          type: string
+          description: Logical field name, e.g. `rh_pct`, `water_source`.
+        value:
+          description: Operator-stated value (number or string).
+        basis:
+          type: string
+          enum: [operator_stated]
+          description: Always `operator_stated` — distinguishes assertions from measurements.
+        label:
+          type: string
+          description: Human label, e.g. "RH 60% (operator-stated, not measured)".
+        turn_ref:
+          type: string
+          description: Optional reference to the chat turn that asserted the fact.
+
+    GuardianProposalGone:
+      type: object
+      required: [error]
+      description: 410 body when confirming an expired/dismissed/superseded proposal (Phase 34).
+      properties:
+        error:
+          type: string
+        live_proposal_id:
+          type: string
+          format: uuid
+          description: Present when the proposal was superseded — the latest confirmable revision.
+        live_revision:
+          type: integer
+          description: Revision number of `live_proposal_id`.
 
     GuardianProposalListItem:
       allOf:
@@ -4827,7 +4898,10 @@ components:
               format: int64
             status:
               type: string
-              enum: [pending, expired, confirmed, dismissed]
+              enum: [pending, expired, confirmed, dismissed, superseded]
+              description: >
+                `superseded` (Phase 34) marks a draft replaced by a later revision —
+                rendered muted and not confirmable.
 
     GuardianProposalListResponse:
       type: object

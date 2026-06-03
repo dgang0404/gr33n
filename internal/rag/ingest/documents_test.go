@@ -33,10 +33,7 @@ func TestCropCycleDocument(t *testing.T) {
 		Name:        "Basil Block A",
 		IsActive:    true,
 		StartedAt:   pgtype.Date{Valid: true, Time: time.Date(2025, 3, 15, 0, 0, 0, 0, time.UTC)},
-		CurrentStage: db.NullGr33nfertigationGrowthStageEnum{
-			Valid:                           true,
-			Gr33nfertigationGrowthStageEnum: db.Gr33nfertigationGrowthStageEnumLateVeg,
-		},
+		CurrentStage: ptrGrowthStage(db.Gr33nfertigationGrowthStageEnumLateVeg),
 	}
 	out := CropCycleDocument(c)
 	if out == "" || len(out) < 20 {
@@ -160,6 +157,14 @@ func TestCostTransactionDocumentOmitsMoney(t *testing.T) {
 
 func ptrStr(s string) *string { return &s }
 
+func ptrGrowthStage(v db.Gr33nfertigationGrowthStageEnum) *db.Gr33nfertigationGrowthStageEnum {
+	return &v
+}
+
+func ptrNotificationPriority(v db.Gr33ncoreNotificationPriorityEnum) *db.Gr33ncoreNotificationPriorityEnum {
+	return &v
+}
+
 func TestInputDefinitionDocumentOmitsUnitCost(t *testing.T) {
 	cost := pgtype.Numeric{}
 	_ = cost.Scan("99.99")
@@ -189,7 +194,7 @@ func TestAlertNotificationDocumentOmitsRecipient(t *testing.T) {
 		FarmID:              1,
 		SubjectRendered:     &sub,
 		MessageTextRendered:   &msg,
-		Severity:            db.NullGr33ncoreNotificationPriorityEnum{Valid: true, Gr33ncoreNotificationPriorityEnum: db.Gr33ncoreNotificationPriorityEnumHigh},
+		Severity:            ptrNotificationPriority(db.Gr33ncoreNotificationPriorityEnumHigh),
 		TriggeringEventSourceType: ptrStr("sensor_threshold"),
 		TriggeringEventSourceID:   ptrInt64(55),
 	}

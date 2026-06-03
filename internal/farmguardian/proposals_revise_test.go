@@ -1,0 +1,138 @@
+package farmguardian
+
+import "testing"
+
+func setupPackArgsFixture() map[string]any {
+	return map[string]any{
+		"profile":   "house_plant",
+		"zone_id":   int64(12),
+		"zone_name": "Tent A",
+		"plant":     map[string]any{"display_name": "Philodendron"},
+		"cycle":     map[string]any{"name": "Philodendron — Tent A", "current_stage": "early_veg"},
+		"program": map[string]any{
+			"name":                "Philodendron light feed",
+			"total_volume_liters": 0.5,
+			"ec_trigger_low":      0.8,
+			"ph_trigger_low":      5.8,
+			"ph_trigger_high":     6.5,
+		},
+	}
+}
+
+func TestApplyRevisionDeltas_SetupPackVolume(t *testing.T) {
+	prior := setupPackArgsFixture()
+	next, changed := applyRevisionDeltas("apply_grow_setup_pack", prior, "no, use 0.3 L not 0.5")
+	if !changed {
+		t.Fatal("expected changed=true for volume correction")
+	}
+	prog := next["program"].(map[string]any)
+	if prog["total_volume_liters"].(float64) != 0.3 {
+		t.Fatalf("volume = %#v want 0.3", prog["total_volume_liters"])
+	}
+	// Prior must be untouched (frozen args rebuilt, not mutated in place).
+	if setupPackArgsFixture()["program"].(map[string]any)["total_volume_liters"].(float64) != 0.5 {
+		t.Fatal("fixture sanity")
+	}
+	if prior["program"].(map[string]any)["total_volume_liters"].(float64) != 0.5 {
+		t.Fatal("prior args were mutated by applyRevisionDeltas")
+	}
+}
+
+func TestApplyRevisionDeltas_SetupPackStageAndPH(t *testing.T) {
+	next, changed := applyRevisionDeltas("apply_grow_setup_pack", setupPackArgsFixture(),
+		"make the cycle flower and use pH 5.5-6.2")
+	if !changed {
+		t.Fatal("expected changed=true")
+	}
+	cycle := next["cycle"].(map[string]any)
+	if cycle["current_stage"] != "early_flower" {
+		t.Fatalf("stage = %v want early_flower", cycle["current_stage"])
+	}
+	prog := next["program"].(map[string]any)
+	if prog["ph_trigger_low"].(float64) != 5.5 || prog["ph_trigger_high"].(float64) != 6.2 {
+		t.Fatalf("pH = %v/%v want 5.5/6.2", prog["ph_trigger_low"], prog["ph_trigger_high"])
+	}
+}
+
+func TestApplyRevisionDeltas_NoActionableChange(t *testing.T) {
+	_, changed := applyRevisionDeltas("apply_grow_setup_pack", setupPackArgsFixture(),
+		"what does this do again?")
+	if changed {
+		t.Fatal("expected changed=false for a non-correction turn")
+	}
+}
+
+func TestExtractOperatorFacts_RH(t *testing.T) {
+	facts := extractOperatorFacts("there's no humidity sensor in Tent A — assume RH around 60%")
+	if len(facts) != 1 {
+		t.Fatalf("got %d facts want 1: %#v", len(facts), facts)
+	}
+	f := facts[0]
+	if f.Field != "rh_pct" || f.Basis != "operator_stated" {
+		t.Fatalf("fact = %#v", f)
+	}
+	if f.Value.(int) != 60 {
+		t.Fatalf("value = %#v want 60", f.Value)
+	}
+	if f.Label == "" || !contains(f.Label, "operator-stated") {
+		t.Fatalf("label must mark operator-stated: %q", f.Label)
+	}
+}
+
+func TestExtractOperatorFacts_WaterSource(t *testing.T) {
+	facts := extractOperatorFacts("water source is well water on this line")
+	if len(facts) != 1 || facts[0].Field != "water_source" || facts[0].Value != "well" {
+		t.Fatalf("facts = %#v", facts)
+	}
+}
+
+func TestExtractOperatorFacts_NoneWithoutCue(t *testing.T) {
+	if facts := extractOperatorFacts("set EC to 1.0"); len(facts) != 0 {
+		t.Fatalf("expected no facts, got %#v", facts)
+	}
+}
+
+func TestMergeOperatorFacts_LaterOverrides(t *testing.T) {
+	prior := []OperatorFact{{Field: "rh_pct", Value: 55, Basis: "operator_stated"}}
+	next := []OperatorFact{{Field: "rh_pct", Value: 60, Basis: "operator_stated"}}
+	merged := mergeOperatorFacts(prior, next)
+	if len(merged) != 1 || merged[0].Value != 60 {
+		t.Fatalf("merged = %#v", merged)
+	}
+}
+
+func TestImpactSummary_PatchFertigation(t *testing.T) {
+	lines := ImpactSummary("patch_fertigation_program", map[string]any{
+		"program_id":          float64(7),
+		"total_volume_liters": 0.3,
+	}, nil)
+	if len(lines) == 0 || !contains(lines[0], "0.3") || !contains(lines[0], "no run triggered now") {
+		t.Fatalf("impact = %#v", lines)
+	}
+}
+
+func TestImpactSummary_AppendsOperatorFacts(t *testing.T) {
+	lines := ImpactSummary("create_plant", map[string]any{"display_name": "Basil"}, []OperatorFact{
+		{Field: "rh_pct", Value: 60, Basis: "operator_stated", Label: "RH 60% (operator-stated, not measured)"},
+	})
+	joined := ""
+	for _, l := range lines {
+		joined += l + "\n"
+	}
+	if !contains(joined, "Basil") || !contains(joined, "operator-stated") {
+		t.Fatalf("impact = %#v", lines)
+	}
+}
+
+func contains(s, sub string) bool {
+	return len(s) >= len(sub) && (s == sub || indexOf(s, sub) >= 0)
+}
+
+func indexOf(s, sub string) int {
+	for i := 0; i+len(sub) <= len(s); i++ {
+		if s[i:i+len(sub)] == sub {
+			return i
+		}
+	}
+	return -1
+}

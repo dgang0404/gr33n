@@ -10,28 +10,28 @@ overview: >
 todos:
   - id: ws1-supersede-model
     content: "WS1: Supersede model — proposal revision chain (supersedes_proposal_id / status=superseded); one live proposal per thread; TTL refresh on revise"
-    status: pending
+    status: completed
   - id: ws2-revise-intent
     content: "WS2: Revise intent — detect correction turns against active proposal; rebuild frozen args from prior + delta"
-    status: pending
+    status: completed
   - id: ws3-operator-facts
     content: "WS3: Operator-supplied facts — accept operator assertions Guardian cannot sense, labeled operator_provided (not measured)"
-    status: pending
+    status: completed
   - id: ws4-impact-explanation
     content: "WS4: Impact explanation — plain-language 'if you Confirm, this will…' block for every tool/risk tier"
-    status: pending
+    status: completed
   - id: ws5-revise-ux
     content: "WS5: Revise UX — card shows revision N, Refine affordance, diff vs prior draft, superseded badge"
-    status: pending
+    status: completed
   - id: ws6-confirm-guard
     content: "WS6: Confirm safety — only the latest live proposal is confirmable; superseded/expired → 410; audit revision lineage"
-    status: pending
+    status: completed
   - id: ws7-openapi-tests
     content: "WS7: OpenAPI + tests — revision fields + revise flow; Go smokes; Vitest revise card"
-    status: pending
+    status: completed
   - id: ws8-docs
     content: "WS8: Docs — architecture revise loop + blind-spot facts; operator-tour refine walkthrough; persona note"
-    status: pending
+    status: completed
 isProject: false
 ---
 
@@ -39,7 +39,9 @@ isProject: false
 
 ## Status
 
-**Not started.** Depends on **Phase 29/30** (PR queue + `guardian_action_proposals` + Confirm path) and **Phase 32** (setup-pack card / bundle diff UI reused as the impact-explanation base).
+**Shipped (WS1–WS8).** Supersede chain + `meta`/`superseded` migration and sqlc (WS1); `tryReviseActiveProposal` delta-merge + revision router (WS2); `operator_provided` blind-spot facts (WS3); backend `impact.go` + `guardianImpact.js` impact explanation (WS4); revise UX — revision badge, Refine, diff vs prior, superseded state (WS5); confirm-safety 410 + `live_proposal_id` + audit lineage (WS6); OpenAPI fields + Go smoke (`smoke_phase34_revise_confirm_test.go`) + Vitest (WS7); architecture §7.7, operator-tour §6c, persona mirror (WS8). Full `go test ./...` and Vitest green.
+
+Depends on **Phase 29/30** (PR queue + `guardian_action_proposals` + Confirm path) and **Phase 32** (setup-pack card / bundle diff UI reused as the impact-explanation base).
 
 **Preconditions:**
 
@@ -228,19 +230,107 @@ WS1 (model) → WS2 (revise) → WS3 (operator facts) → WS4 (impact) → WS5 (
 
 ## Definition of done (phase ship)
 
-- [ ] Migration adds revision/supersede columns + `superseded` status; sqlc queries generated
-- [ ] Correction turns produce a revised, frozen, validated proposal that supersedes the prior
-- [ ] Operator-supplied facts stored + displayed as `operator_provided`, never as measurements
-- [ ] Every card shows a plain-language "if you Confirm" impact block
-- [ ] Confirm rejects superseded (410); audits revision lineage
-- [ ] OpenAPI updated; Go + Vitest smokes green
-- [ ] Architecture + operator-tour + persona docs updated
+- [x] Migration adds revision/supersede columns + `superseded` status; sqlc queries generated
+- [x] Correction turns produce a revised, frozen, validated proposal that supersedes the prior
+- [x] Operator-supplied facts stored + displayed as `operator_provided`, never as measurements
+- [x] Every card shows a plain-language "if you Confirm" impact block
+- [x] Confirm rejects superseded (410); audits revision lineage
+- [x] OpenAPI updated; Go + Vitest smokes green
+- [x] Architecture + operator-tour + persona docs updated
+
+---
+
+## Preconditions checklist (verified on `main`)
+
+| Prerequisite | Status | Anchor |
+|--------------|--------|--------|
+| `guardian_action_proposals` + TTL + risk tier | ✅ | [`20260521_phase29_guardian_proposals.sql`](../../db/migrations/20260521_phase29_guardian_proposals.sql), [`20260526_phase30_guardian_proposal_risk_tier.sql`](../../db/migrations/20260526_phase30_guardian_proposal_risk_tier.sql) |
+| Confirm replay path | ✅ | [`internal/handler/chat/confirm.go`](../../internal/handler/chat/confirm.go) — non-`pending` already → **410 Gone** |
+| Rule-assisted propose | ✅ | [`internal/farmguardian/proposals.go`](../../internal/farmguardian/proposals.go) → `attachProposals` in chat handler |
+| Setup pack builder + card | ✅ | [`proposals_setup_pack.go`](../../internal/farmguardian/proposals_setup_pack.go), [`SetupPackProposalCard.vue`](../../ui/src/components/SetupPackProposalCard.vue), [`guardianSetupPack.js`](../../ui/src/lib/guardianSetupPack.js) |
+| Proposal card + smokes | ✅ | [`GuardianActionProposal.vue`](../../ui/src/components/GuardianActionProposal.vue), `cmd/api/smoke_phase32_*`, `insertGuardianProposalWithRisk` in [`smoke_phase32_ws2_test.go`](../../cmd/api/smoke_phase32_ws2_test.go) |
+| Phases 32–33 shipped | ✅ | No `supersedes` / `revision` / `operator_provided` in codebase yet — green field |
+
+**Not present today (Phase 34 delivers):** `meta` JSONB on proposals, `superseded` enum value, session-scoped “latest pending” query, `proposals_revise.go`, `guardianImpact.js`, revise UX on the card.
+
+---
+
+## Implementation decisions (resolve in WS1, do not bikeshed mid-phase)
+
+1. **`meta` column** — add `meta JSONB NOT NULL DEFAULT '{}'::jsonb` on `guardian_action_proposals` in the Phase 34 migration. Store `operator_provided[]` there only; never mirror into `args` as if measured.
+2. **Chain identity** — `supersedes_proposal_id` points at the immediate parent; expose `root_proposal_id` in API/audit as the first row in the chain (walk parents or store on insert).
+3. **Session gate for revise** — new sqlc: `GetLatestPendingProposalBySession(user_id, session_id)` (or farm+session). WS2 calls this before `matchReviseIntent`; if none, fall through to normal propose.
+4. **Revision cap** — `const MaxProposalRevisions = 8` in `farmguardian`; at cap return a chat error (“start a new request”) instead of another supersede.
+5. **TTL on revise** — reset `expires_at` to `NOW() + ProposalTTL` on each successor (same 5m constant unless product asks otherwise).
+6. **410 body** — on confirm of superseded proposal, include `live_proposal_id` in JSON error detail so the UI can link to rev N.
+7. **Enum migration** — `ALTER TYPE gr33ncore.guardian_proposal_status_enum ADD VALUE IF NOT EXISTS 'superseded';` in migration; regenerate sqlc + bump [`db/schema/gr33n-schema-v2-FINAL.sql`](../../db/schema/gr33n-schema-v2-FINAL.sql) if that file is maintained in-repo for this enum.
+8. **Impact field** — prefer `impact_summary` on `ActionProposal` / OpenAPI (server-built in WS4) over pushing all copy client-only.
+
+---
+
+## Golden-path scenario (WS7 smoke + manual demo)
+
+Use the Phase 32 house-plant setup pack as the revise fixture (0.5 L default in [`proposals_setup_pack.go`](../../internal/farmguardian/proposals_setup_pack.go)):
+
+1. Grounded chat: *"add philodendron to Tent A with a light feed"* → proposal P1 (`apply_grow_setup_pack`, rev 1).
+2. Same `session_id`: *"use 0.3 L not 0.5"* → P1 `superseded`, P2 pending with `program.total_volume_liters: 0.3`, `revision: 2`.
+3. Same session: *"no humidity sensor — assume RH around 60%"* → P2 superseded, P3 with `meta.operator_provided` entry; card shows operator-stated RH.
+4. `POST /v1/chat/confirm` with P1 → **410** + `live_proposal_id` = P3.
+5. Confirm P3 → **200**; audit `guardian_tool_executed` includes `revision`, `root_proposal_id`, `operator_provided`.
+
+Reuse `housePlantSetupPackArgs` / `insertGuardianProposalWithRisk` patterns from Phase 32 smokes; add `smoke_phase34_revise_confirm_test.go` (and Vitest mirror in [`guardian-proposal.test.js`](../../ui/src/__tests__/guardian-proposal.test.js)).
+
+---
+
+## Agent kickoff (Opus / high-reasoning model)
+
+**Model:** Claude Opus (or equivalent) with full repo access. Work on a feature branch off `main`; run `make test` after each WS.
+
+```text
+Implement Phase 34 from @docs/plans/phase_34_guardian_pr_iteration.plan.md.
+
+Order: WS1 → WS2 → WS3 → WS4 (may parallel with WS2/3) → WS5 → WS6 → WS7 → WS8.
+Follow "Implementation decisions" in the plan — especially meta JSONB, session pending lookup, MaxProposalRevisions, 410 live_proposal_id.
+
+WS1: Migration db/migrations/20260602_phase34_guardian_proposal_revision.sql (date may shift):
+  supersedes_proposal_id, revision, meta, status superseded; sqlc SupersedeProposal,
+  GetLatestPendingProposalBySession, GetLatestLiveInChain, ListProposalChain; make sqlc.
+
+WS2: internal/farmguardian/proposals_revise.go — matchReviseIntent before fresh propose in
+  BuildRuleAssistedProposals; delta-merge frozen args; re-validate with existing tool validators;
+  setup-pack section deltas (plant/cycle/program/task). Ambiguous → clarifying chat, no guess.
+
+WS3: operator_provided in meta only; label in summary/prompt/card.
+
+WS4: backend impact helper per tool; ui/src/lib/guardianImpact.js generalized from guardianSetupPack.js.
+
+WS5–6: GuardianActionProposal.vue revision badge, Refine prefill, diff vs prior, superseded state;
+  confirm.go latest-live + audit lineage.
+
+WS7: openapi GuardianActionProposal fields; smoke_phase34_*; Vitest revise card.
+
+WS8: farm-guardian-architecture §7.7, operator-tour refine walkthrough, persona mirror.
+
+Invariants: never write DB except via Confirm; revisions are new INSERT rows; only latest pending confirmable.
+Do not start Phase 35. Commit per WS or one squashed commit at end — ask operator preference if unclear.
+```
+
+**Touch list (expected diffs):**
+
+| Area | Files |
+|------|--------|
+| DB | `db/migrations/20260602_phase34_*.sql`, `db/queries/guardian_proposals.sql`, `internal/db/*.go` |
+| Revise | `internal/farmguardian/proposals.go`, `proposals_revise.go`, `proposals_revise_test.go` |
+| Chat | `internal/handler/chat/confirm.go`, `proposals.go` |
+| UI | `GuardianActionProposal.vue`, `guardianImpact.js`, `guardianProposals.js`, tests |
+| Contract | `openapi.yaml` |
+| Docs | `docs/farm-guardian-architecture.md`, `docs/operator-tour.md`, persona doc if present |
 
 ---
 
 ## Using this plan in a new chat
 
-> Implement Phase 34 from `docs/plans/phase_34_guardian_pr_iteration.plan.md`. Start with WS1 (supersede migration + sqlc), then WS2 revise intent. Reuse `guardian_action_proposals`, the rule-assisted proposal builders, and the Phase 32 setup-pack card. Never relax the Confirm gate — revisions are new frozen rows; only the latest live one is confirmable. Operator-supplied facts must be labeled `operator_provided`, never written as sensor readings.
+> Implement Phase 34 from `docs/plans/phase_34_guardian_pr_iteration.plan.md`. Start with WS1 (supersede migration + sqlc), then WS2 revise intent. Reuse `guardian_action_proposals`, the rule-assisted proposal builders, and the Phase 32 setup-pack card. Never relax the Confirm gate — revisions are new frozen rows; only the latest live one is confirmable. Operator-supplied facts must be labeled `operator_provided`, never written as sensor readings. Use the **Agent kickoff** and **Implementation decisions** sections above.
 
 ---
 

@@ -252,6 +252,11 @@ type Querier interface {
 	// regardless of ack status. Used by the sensor threshold evaluator to enforce per-sensor
 	// cooldown windows.
 	GetLatestAlertCreatedAtForSource(ctx context.Context, arg GetLatestAlertCreatedAtForSourceParams) (time.Time, error)
+	// Phase 34 — given any proposal in a chain, return the newest still-pending revision
+	// (its live successor), used to point a 410 at the confirmable draft.
+	GetLatestLiveInChain(ctx context.Context, proposalID uuid.UUID) (Gr33ncoreGuardianActionProposal, error)
+	// Phase 34 — the one live draft a correction turn should revise.
+	GetLatestPendingProposalBySession(ctx context.Context, arg GetLatestPendingProposalBySessionParams) (Gr33ncoreGuardianActionProposal, error)
 	GetLatestReadingBySensor(ctx context.Context, sensorID int64) (Gr33ncoreSensorReading, error)
 	// Phase 20.6 WS3 — setpoint-typed predicates key off `sensor_type`
 	// (e.g. "dew_point") rather than a specific sensor_id, so the evaluator
@@ -275,6 +280,8 @@ type Querier interface {
 	// Queries: gr33ncore.profiles
 	// ============================================================
 	GetProfileByUserID(ctx context.Context, userID uuid.UUID) (Gr33ncoreProfile, error)
+	// Phase 34 — walk parent pointers to the first draft (revision 1) for audit lineage.
+	GetProposalChainRoot(ctx context.Context, proposalID uuid.UUID) (uuid.UUID, error)
 	GetPublishedCommonsCatalogEntryBySlug(ctx context.Context, slug string) (GetPublishedCommonsCatalogEntryBySlugRow, error)
 	// Phase 28 WS5 — debounce lookup for the chat-budget-warning alert. The
 	// chat handler fires at most one warning per user per cost-guard
@@ -309,6 +316,7 @@ type Querier interface {
 	InsertConversationTurn(ctx context.Context, arg InsertConversationTurnParams) (InsertConversationTurnRow, error)
 	InsertCostTransactionIdempotency(ctx context.Context, arg InsertCostTransactionIdempotencyParams) error
 	// Phase 29 WS3 — Guardian action proposals (propose → confirm).
+	// Phase 34 — revise/supersede chain + operator-supplied facts in meta.
 	InsertGuardianProposal(ctx context.Context, arg InsertGuardianProposalParams) (Gr33ncoreGuardianActionProposal, error)
 	// ============================================================
 	// Queries: gr33ncore.insert_commons_bundles (approval + export)
@@ -545,6 +553,8 @@ type Querier interface {
 	// caller decides on the window length.
 	SumChatTokensSinceForUser(ctx context.Context, arg SumChatTokensSinceForUserParams) (SumChatTokensSinceForUserRow, error)
 	SumLifecycleDeltasByGroup(ctx context.Context, animalGroupID int64) (int64, error)
+	// Phase 34 — mark a still-pending proposal as replaced by a later revision.
+	SupersedeProposal(ctx context.Context, arg SupersedeProposalParams) (Gr33ncoreGuardianActionProposal, error)
 	UpdateActuatorState(ctx context.Context, arg UpdateActuatorStateParams) (Gr33ncoreActuator, error)
 	UpdateAnimalGroup(ctx context.Context, arg UpdateAnimalGroupParams) (Gr33nanimalsAnimalGroup, error)
 	UpdateAquaponicsLoop(ctx context.Context, arg UpdateAquaponicsLoopParams) (Gr33naquaponicsLoop, error)

@@ -191,3 +191,96 @@ describe('GuardianActionProposal — setup pack (Phase 32 WS5)', () => {
     expect(wrapper.find('[data-test="guardian-proposal-confirm"]').attributes('disabled')).toBeDefined()
   })
 })
+
+describe('GuardianActionProposal — revise loop (Phase 34 WS5)', () => {
+  const rev1Program = {
+    name: 'Philodendron light feed',
+    total_volume_liters: 0.5,
+    ec_trigger_low: 0.8,
+    ph_trigger_low: 5.8,
+    ph_trigger_high: 6.5,
+  }
+  const rev2Args = {
+    profile: 'house_plant',
+    zone_id: 12,
+    zone_name: 'Tent A',
+    plant: { display_name: 'Philodendron' },
+    cycle: { name: 'Philodendron — Tent A', current_stage: 'early_veg', started_at: '2026-06-02' },
+    program: { ...rev1Program, total_volume_liters: 0.3 },
+    optional_task: { title: 'Monitor new Philodendron — first two weeks' },
+  }
+
+  beforeEach(() => {
+    setActivePinia(createPinia())
+    vi.clearAllMocks()
+  })
+
+  function mountRevision(overrides = {}, canOperate = true) {
+    return mount(GuardianActionProposal, {
+      props: {
+        proposal: {
+          ...baseProposal,
+          tool: 'apply_grow_setup_pack',
+          risk_tier: 'high',
+          summary: 'Setup pack: Philodendron in Tent A (plant + cycle + program)',
+          args: rev2Args,
+          revision: 2,
+          supersedes_proposal_id: '550e8400-e29b-41d4-a716-446655440099',
+          previous_args: { ...rev2Args, program: rev1Program },
+          ...overrides,
+        },
+        canOperate,
+      },
+      global: { plugins: [router] },
+    })
+  }
+
+  it('renders the revision badge and diff vs the previous revision', () => {
+    const wrapper = mountRevision()
+    expect(wrapper.find('[data-test="guardian-proposal-revision-badge"]').text()).toContain('Revision 2')
+    const diff = wrapper.find('[data-test="guardian-proposal-revision-diff"]')
+    expect(diff.exists()).toBe(true)
+    expect(diff.text()).toContain('program.total_volume_liters')
+    expect(diff.text()).toContain('0.5')
+    expect(diff.text()).toContain('0.3')
+  })
+
+  it('renders a Refine affordance that emits refine', async () => {
+    const wrapper = mountRevision()
+    const btn = wrapper.find('[data-test="guardian-proposal-refine"]')
+    expect(btn.exists()).toBe(true)
+    await btn.trigger('click')
+    expect(wrapper.emitted('refine')).toBeTruthy()
+  })
+
+  it('labels operator-stated facts and never as measurements', () => {
+    const wrapper = mountRevision({
+      operator_provided: [
+        { field: 'rh_pct', value: 60, basis: 'operator_stated', label: 'RH 60% (operator-stated, not measured)' },
+      ],
+    })
+    const facts = wrapper.find('[data-test="guardian-proposal-operator-facts"]')
+    expect(facts.exists()).toBe(true)
+    expect(facts.text()).toContain('RH 60% (operator-stated, not measured)')
+  })
+
+  it('shows an impact block on a non-setup-pack card', () => {
+    const wrapper = mountRevision({
+      tool: 'patch_fertigation_program',
+      risk_tier: 'medium',
+      args: { program_id: 7, total_volume_liters: 0.3 },
+      previous_args: undefined,
+      impact_summary: ['Update fertigation program: volume → 0.3L (no run triggered now)'],
+    })
+    const impact = wrapper.find('[data-test="guardian-proposal-impact"]')
+    expect(impact.exists()).toBe(true)
+    expect(impact.text()).toContain('If you Confirm')
+    expect(impact.text()).toContain('volume → 0.3L')
+  })
+
+  it('renders a muted superseded state with Confirm hidden', () => {
+    const wrapper = mountRevision({ status: 'superseded' })
+    expect(wrapper.find('[data-test="guardian-proposal-superseded"]').exists()).toBe(true)
+    expect(wrapper.find('[data-test="guardian-proposal-confirm"]').exists()).toBe(false)
+  })
+})

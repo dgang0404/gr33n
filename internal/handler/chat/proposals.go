@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"gr33n-api/internal/authctx"
-	"gr33n-api/internal/farmauthz"
 	db "gr33n-api/internal/db"
+	"gr33n-api/internal/farmauthz"
 	"gr33n-api/internal/farmguardian"
 	"gr33n-api/internal/httputil"
 )
@@ -18,7 +18,8 @@ const (
 	maxProposalListLimit     = 100
 )
 
-// proposalListItem is the inbox/card shape for GET /v1/chat/proposals (Phase 30 WS1).
+// proposalListItem is the inbox/card shape for GET /v1/chat/proposals (Phase 30 WS1;
+// revision lineage + blind-spot facts + impact added Phase 34).
 type proposalListItem struct {
 	ProposalID string         `json:"proposal_id"`
 	Tool       string         `json:"tool"`
@@ -29,6 +30,11 @@ type proposalListItem struct {
 	CreatedAt  time.Time      `json:"created_at"`
 	FarmID     int64          `json:"farm_id"`
 	Status     string         `json:"status"`
+
+	Revision             int                         `json:"revision,omitempty"`
+	SupersedesProposalID string                      `json:"supersedes_proposal_id,omitempty"`
+	OperatorProvided     []farmguardian.OperatorFact `json:"operator_provided,omitempty"`
+	ImpactSummary        []string                    `json:"impact_summary,omitempty"`
 }
 
 type proposalListResponse struct {
@@ -75,7 +81,7 @@ func (h *Handler) ListProposals(w http.ResponseWriter, r *http.Request) {
 		status = "pending"
 	}
 	switch status {
-	case "pending", "expired", "confirmed", "dismissed":
+	case "pending", "expired", "confirmed", "dismissed", "superseded":
 	default:
 		httputil.WriteError(w, http.StatusBadRequest, "invalid status")
 		return
@@ -141,14 +147,18 @@ func (h *Handler) ListProposals(w http.ResponseWriter, r *http.Request) {
 func rowToProposalListItem(row db.Gr33ncoreGuardianActionProposal) proposalListItem {
 	ap := farmguardian.ActionProposalFromRow(row)
 	return proposalListItem{
-		ProposalID: ap.ProposalID,
-		Tool:       ap.Tool,
-		Args:       ap.Args,
-		Summary:    ap.Summary,
-		RiskTier:   ap.RiskTier,
-		ExpiresAt:  ap.ExpiresAt,
-		CreatedAt:  row.CreatedAt,
-		FarmID:     row.FarmID,
-		Status:     row.Status,
+		ProposalID:           ap.ProposalID,
+		Tool:                 ap.Tool,
+		Args:                 ap.Args,
+		Summary:              ap.Summary,
+		RiskTier:             ap.RiskTier,
+		ExpiresAt:            ap.ExpiresAt,
+		CreatedAt:            row.CreatedAt,
+		FarmID:               row.FarmID,
+		Status:               row.Status,
+		Revision:             ap.Revision,
+		SupersedesProposalID: ap.SupersedesProposalID,
+		OperatorProvided:     ap.OperatorProvided,
+		ImpactSummary:        ap.ImpactSummary,
 	}
 }

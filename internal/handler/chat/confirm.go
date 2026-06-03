@@ -88,6 +88,16 @@ func (h *Handler) PostConfirm(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteJSON(w, http.StatusOK, confirmResponse{Result: cached, Summary: prop.Summary})
 		return
 	}
+	if prop.Status == "superseded" {
+		// Phase 34 WS6 — a revised draft replaced this one; point the operator at it.
+		body := map[string]any{"error": "proposal was revised — confirm the latest revision"}
+		if live, lerr := h.q.GetLatestLiveInChain(ctx, pid); lerr == nil {
+			body["live_proposal_id"] = live.ProposalID.String()
+			body["live_revision"] = live.Revision
+		}
+		httputil.WriteJSON(w, http.StatusGone, body)
+		return
+	}
 	if prop.Status != "pending" {
 		httputil.WriteError(w, http.StatusGone, "proposal is no longer confirmable")
 		return
@@ -161,6 +171,21 @@ func (h *Handler) auditToolExecution(r *http.Request, prop db.Gr33ncoreGuardianA
 		"proposal_id": prop.ProposalID.String(),
 		"args":        args,
 		"result":      result,
+	}
+	// Phase 34 — record revision lineage and operator-supplied facts on the audit.
+	if prop.Revision > 1 || prop.SupersedesProposalID.Valid {
+		details["revision"] = prop.Revision
+		if root, rerr := h.q.GetProposalChainRoot(r.Context(), prop.ProposalID); rerr == nil {
+			details["root_proposal_id"] = root.String()
+		}
+	}
+	if len(prop.Meta) > 0 {
+		var meta map[string]any
+		if json.Unmarshal(prop.Meta, &meta) == nil {
+			if facts, ok := meta["operator_provided"]; ok {
+				details["operator_provided"] = facts
+			}
+		}
 	}
 	table, recID := auditTargetForTool(prop.ToolID, args, result)
 	auditlog.Submit(r.Context(), h.q, r, auditlog.Event{

@@ -1784,28 +1784,33 @@ CREATE INDEX IF NOT EXISTS idx_conversation_turns_farm
     WHERE farm_id IS NOT NULL;
 
 -- Phase 29 WS3 — Guardian action proposals (propose → confirm)
+-- Phase 34 — adds 'superseded' for revised proposals (see revision/supersedes columns below).
 DO $$ BEGIN
     CREATE TYPE gr33ncore.guardian_proposal_status_enum AS ENUM (
-        'pending', 'confirmed', 'dismissed', 'expired'
+        'pending', 'confirmed', 'dismissed', 'expired', 'superseded'
     );
 EXCEPTION
     WHEN duplicate_object THEN NULL;
 END $$;
 
 CREATE TABLE IF NOT EXISTS gr33ncore.guardian_action_proposals (
-    proposal_id   UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id       UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-    farm_id       BIGINT NOT NULL REFERENCES gr33ncore.farms(id) ON DELETE CASCADE,
-    session_id    UUID NULL,
-    tool_id       TEXT NOT NULL,
-    args          JSONB NOT NULL DEFAULT '{}'::jsonb,
-    summary       TEXT NOT NULL,
-    risk_tier     TEXT NOT NULL DEFAULT 'medium' CHECK (risk_tier IN ('low', 'medium', 'high')),
-    status        gr33ncore.guardian_proposal_status_enum NOT NULL DEFAULT 'pending',
-    result        JSONB NULL,
-    created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    expires_at    TIMESTAMPTZ NOT NULL,
-    confirmed_at  TIMESTAMPTZ NULL
+    proposal_id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id                UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    farm_id                BIGINT NOT NULL REFERENCES gr33ncore.farms(id) ON DELETE CASCADE,
+    session_id             UUID NULL,
+    tool_id                TEXT NOT NULL,
+    args                   JSONB NOT NULL DEFAULT '{}'::jsonb,
+    summary                TEXT NOT NULL,
+    risk_tier              TEXT NOT NULL DEFAULT 'medium' CHECK (risk_tier IN ('low', 'medium', 'high')),
+    status                 gr33ncore.guardian_proposal_status_enum NOT NULL DEFAULT 'pending',
+    result                 JSONB NULL,
+    -- Phase 34 — supersede chain + blind-spot facts.
+    supersedes_proposal_id UUID NULL REFERENCES gr33ncore.guardian_action_proposals (proposal_id) ON DELETE SET NULL,
+    revision               INT NOT NULL DEFAULT 1,
+    meta                   JSONB NOT NULL DEFAULT '{}'::jsonb,
+    created_at             TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    expires_at             TIMESTAMPTZ NOT NULL,
+    confirmed_at           TIMESTAMPTZ NULL
 );
 
 CREATE INDEX IF NOT EXISTS idx_guardian_proposals_user_status
@@ -1813,6 +1818,14 @@ CREATE INDEX IF NOT EXISTS idx_guardian_proposals_user_status
 
 CREATE INDEX IF NOT EXISTS idx_guardian_proposals_farm
     ON gr33ncore.guardian_action_proposals (farm_id, created_at DESC);
+
+CREATE INDEX IF NOT EXISTS idx_guardian_proposals_session_live
+    ON gr33ncore.guardian_action_proposals (user_id, session_id, status, revision DESC)
+    WHERE session_id IS NOT NULL;
+
+CREATE INDEX IF NOT EXISTS idx_guardian_proposals_supersedes
+    ON gr33ncore.guardian_action_proposals (supersedes_proposal_id)
+    WHERE supersedes_proposal_id IS NOT NULL;
 
 -- ============================================================
 -- MIGRATION NOTES (read before running)

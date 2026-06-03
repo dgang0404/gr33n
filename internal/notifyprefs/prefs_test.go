@@ -35,19 +35,15 @@ func TestSetNotify_preservesOtherKeys(t *testing.T) {
 }
 
 func TestAlertMeetsMinPriority(t *testing.T) {
-	a := db.Gr33ncoreAlertsNotification{
-		Severity: db.NullGr33ncoreNotificationPriorityEnum{
-			Gr33ncoreNotificationPriorityEnum: db.Gr33ncoreNotificationPriorityEnumHigh,
-			Valid:                             true,
-		},
-	}
+	high := db.Gr33ncoreNotificationPriorityEnumHigh
+	a := db.Gr33ncoreAlertsNotification{Severity: &high}
 	if !AlertMeetsMinPriority(a, "medium") {
 		t.Fatal("high should meet medium")
 	}
 	if AlertMeetsMinPriority(a, "critical") {
 		t.Fatal("high should not meet critical")
 	}
-	b := db.Gr33ncoreAlertsNotification{Severity: db.NullGr33ncoreNotificationPriorityEnum{Valid: false}}
+	b := db.Gr33ncoreAlertsNotification{Severity: nil}
 	if !AlertMeetsMinPriority(b, "low") {
 		t.Fatal("default medium meets low")
 	}

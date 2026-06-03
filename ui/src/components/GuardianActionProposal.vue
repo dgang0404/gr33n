@@ -23,6 +23,12 @@
       <p class="text-zinc-500 text-xs italic" data-test="guardian-proposal-dismissed">Dismissed</p>
     </template>
 
+    <template v-else-if="uiStatus === 'superseded'">
+      <p class="text-zinc-500 text-xs italic" data-test="guardian-proposal-superseded">
+        Superseded{{ local.revision ? ` — replaced by a newer revision` : '' }}
+      </p>
+    </template>
+
     <template v-else>
       <div class="flex items-start justify-between gap-2">
         <div class="min-w-0">
@@ -35,6 +41,13 @@
               data-test="guardian-proposal-risk-badge"
             >
               {{ riskTier }}
+            </span>
+            <span
+              v-if="revisionLabelText"
+              class="text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded border border-violet-700 text-violet-300 bg-violet-950/40"
+              data-test="guardian-proposal-revision-badge"
+            >
+              {{ revisionLabelText }}
             </span>
           </div>
           <p class="text-zinc-100 font-medium mt-0.5">{{ local.summary }}</p>
@@ -66,6 +79,40 @@
         {{ diffSummary }}
       </p>
 
+      <div
+        v-if="impactLines.length && !isSetupPack"
+        class="text-[11px] text-zinc-200 bg-zinc-900/50 border border-zinc-800 rounded-md px-2.5 py-1.5 space-y-0.5"
+        data-test="guardian-proposal-impact"
+      >
+        <p class="text-[10px] uppercase tracking-wider text-zinc-400">If you Confirm, this will…</p>
+        <ul class="space-y-0.5">
+          <li v-for="(line, i) in impactLines" :key="i" class="flex gap-1.5">
+            <span class="text-zinc-500 shrink-0">·</span>
+            <span>{{ line }}</span>
+          </li>
+        </ul>
+      </div>
+
+      <div
+        v-if="operatorFacts.length"
+        class="text-[11px] text-emerald-200/90 bg-emerald-950/20 border border-emerald-900/40 rounded-md px-2.5 py-1.5 space-y-0.5"
+        data-test="guardian-proposal-operator-facts"
+      >
+        <p class="text-[10px] uppercase tracking-wider text-emerald-400/80">Operator-stated (not measured)</p>
+        <ul class="space-y-0.5">
+          <li v-for="(f, i) in operatorFacts" :key="i">{{ f.label || `${f.field}: ${f.value}` }}</li>
+        </ul>
+      </div>
+
+      <div
+        v-if="revisionDiff.length"
+        class="text-[11px] text-violet-200/90 bg-violet-950/20 border border-violet-900/40 rounded-md px-2.5 py-1.5 font-mono"
+        data-test="guardian-proposal-revision-diff"
+      >
+        <p class="font-sans text-[10px] uppercase tracking-wider text-violet-400/80 mb-0.5">Changed from previous revision</p>
+        <p v-for="(d, i) in revisionDiff" :key="i">{{ d }}</p>
+      </div>
+
       <p v-if="uiError" data-test="guardian-proposal-error" class="text-xs text-red-400">
         {{ uiError }}
       </p>
@@ -80,6 +127,16 @@
           @click="onConfirm"
         >
           {{ confirming ? 'Confirming…' : 'Confirm' }}
+        </button>
+        <button
+          type="button"
+          data-test="guardian-proposal-refine"
+          class="px-3 py-1.5 rounded-lg bg-violet-900/50 text-violet-200 border border-violet-800 hover:bg-violet-900/70 text-xs disabled:opacity-40"
+          :disabled="confirming || !canOperate || isExpired"
+          :title="confirmTitle"
+          @click="onRefine"
+        >
+          Refine
         </button>
         <button
           type="button"
@@ -101,13 +158,14 @@ import { computed, reactive, ref, watch } from 'vue'
 import api from '../api'
 import SetupPackProposalCard from './SetupPackProposalCard.vue'
 import { SETUP_PACK_HIGH_RISK_COPY } from '../lib/guardianSetupPack.js'
+import { impactForProposal, revisionLabel } from '../lib/guardianImpact.js'
 
 const props = defineProps({
   proposal: { type: Object, required: true },
   canOperate: { type: Boolean, default: true },
 })
 
-const emit = defineEmits(['confirmed', 'dismissed', 'error'])
+const emit = defineEmits(['confirmed', 'dismissed', 'error', 'refine'])
 
 const confirming = ref(false)
 const local = reactive({ ...props.proposal })
@@ -190,6 +248,12 @@ const confirmButtonClass = computed(() => {
 })
 
 const diffSummary = computed(() => formatDiffSummary(local.tool, local.args))
+
+const revisionLabelText = computed(() => revisionLabel(local))
+const impact = computed(() => impactForProposal(local))
+const impactLines = computed(() => impact.value.lines)
+const operatorFacts = computed(() => impact.value.facts)
+const revisionDiff = computed(() => computeArgsDiff(local.previous_args, local.args))
 
 const targetHint = computed(() => {
   if (isSetupPack.value) {
@@ -288,5 +352,36 @@ function onDismiss() {
   uiStatus.value = 'dismissed'
   uiError.value = ''
   emit('dismissed', { proposal: props.proposal })
+}
+
+function onRefine() {
+  if (confirming.value || !props.canOperate || isExpired.value) return
+  emit('refine', { proposal: props.proposal })
+}
+
+// computeArgsDiff renders "path: old → new" lines between two frozen arg objects,
+// recursing one level into nested sections (setup-pack plant/cycle/program).
+function computeArgsDiff(prev, next) {
+  if (!prev || !next || typeof prev !== 'object' || typeof next !== 'object') return []
+  const out = []
+  const walk = (a, b, prefix) => {
+    const keys = new Set([...Object.keys(a || {}), ...Object.keys(b || {})])
+    for (const k of keys) {
+      const av = a ? a[k] : undefined
+      const bv = b ? b[k] : undefined
+      const path = prefix ? `${prefix}.${k}` : k
+      const aObj = av && typeof av === 'object'
+      const bObj = bv && typeof bv === 'object'
+      if (aObj || bObj) {
+        walk(aObj ? av : {}, bObj ? bv : {}, path)
+        continue
+      }
+      if (av !== bv) {
+        out.push(`${path}: ${av ?? '∅'} → ${bv ?? '∅'}`)
+      }
+    }
+  }
+  walk(prev, next, '')
+  return out
 }
 </script>

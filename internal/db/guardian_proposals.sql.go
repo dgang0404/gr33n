@@ -23,7 +23,7 @@ WHERE proposal_id = $1
   AND user_id = $3
   AND status = 'pending'
   AND expires_at > NOW()
-RETURNING proposal_id, user_id, farm_id, session_id, tool_id, args, summary, risk_tier, status, result, created_at, expires_at, confirmed_at
+RETURNING proposal_id, user_id, farm_id, session_id, tool_id, args, summary, risk_tier, status, result, supersedes_proposal_id, revision, meta, created_at, expires_at, confirmed_at
 `
 
 type ConfirmGuardianProposalParams struct {
@@ -46,6 +46,9 @@ func (q *Queries) ConfirmGuardianProposal(ctx context.Context, arg ConfirmGuardi
 		&i.RiskTier,
 		&i.Status,
 		&i.Result,
+		&i.SupersedesProposalID,
+		&i.Revision,
+		&i.Meta,
 		&i.CreatedAt,
 		&i.ExpiresAt,
 		&i.ConfirmedAt,
@@ -85,7 +88,7 @@ func (q *Queries) ExpireStaleGuardianProposals(ctx context.Context) error {
 }
 
 const getGuardianProposalByID = `-- name: GetGuardianProposalByID :one
-SELECT proposal_id, user_id, farm_id, session_id, tool_id, args, summary, risk_tier, status, result, created_at, expires_at, confirmed_at FROM gr33ncore.guardian_action_proposals WHERE proposal_id = $1
+SELECT proposal_id, user_id, farm_id, session_id, tool_id, args, summary, risk_tier, status, result, supersedes_proposal_id, revision, meta, created_at, expires_at, confirmed_at FROM gr33ncore.guardian_action_proposals WHERE proposal_id = $1
 `
 
 func (q *Queries) GetGuardianProposalByID(ctx context.Context, proposalID uuid.UUID) (Gr33ncoreGuardianActionProposal, error) {
@@ -102,6 +105,9 @@ func (q *Queries) GetGuardianProposalByID(ctx context.Context, proposalID uuid.U
 		&i.RiskTier,
 		&i.Status,
 		&i.Result,
+		&i.SupersedesProposalID,
+		&i.Revision,
+		&i.Meta,
 		&i.CreatedAt,
 		&i.ExpiresAt,
 		&i.ConfirmedAt,
@@ -109,36 +115,152 @@ func (q *Queries) GetGuardianProposalByID(ctx context.Context, proposalID uuid.U
 	return i, err
 }
 
+const getLatestLiveInChain = `-- name: GetLatestLiveInChain :one
+WITH RECURSIVE descendants AS (
+    SELECT a0.proposal_id, a0.supersedes_proposal_id, a0.status, a0.revision
+    FROM gr33ncore.guardian_action_proposals a0
+    WHERE a0.proposal_id = $1
+    UNION ALL
+    SELECT p.proposal_id, p.supersedes_proposal_id, p.status, p.revision
+    FROM gr33ncore.guardian_action_proposals p
+    JOIN descendants d ON p.supersedes_proposal_id = d.proposal_id
+)
+SELECT g.proposal_id, g.user_id, g.farm_id, g.session_id, g.tool_id, g.args, g.summary, g.risk_tier, g.status, g.result, g.supersedes_proposal_id, g.revision, g.meta, g.created_at, g.expires_at, g.confirmed_at FROM gr33ncore.guardian_action_proposals g
+JOIN descendants d2 ON d2.proposal_id = g.proposal_id
+WHERE g.status = 'pending'
+ORDER BY g.revision DESC
+LIMIT 1
+`
+
+// Phase 34 — given any proposal in a chain, return the newest still-pending revision
+// (its live successor), used to point a 410 at the confirmable draft.
+func (q *Queries) GetLatestLiveInChain(ctx context.Context, proposalID uuid.UUID) (Gr33ncoreGuardianActionProposal, error) {
+	row := q.db.QueryRow(ctx, getLatestLiveInChain, proposalID)
+	var i Gr33ncoreGuardianActionProposal
+	err := row.Scan(
+		&i.ProposalID,
+		&i.UserID,
+		&i.FarmID,
+		&i.SessionID,
+		&i.ToolID,
+		&i.Args,
+		&i.Summary,
+		&i.RiskTier,
+		&i.Status,
+		&i.Result,
+		&i.SupersedesProposalID,
+		&i.Revision,
+		&i.Meta,
+		&i.CreatedAt,
+		&i.ExpiresAt,
+		&i.ConfirmedAt,
+	)
+	return i, err
+}
+
+const getLatestPendingProposalBySession = `-- name: GetLatestPendingProposalBySession :one
+SELECT proposal_id, user_id, farm_id, session_id, tool_id, args, summary, risk_tier, status, result, supersedes_proposal_id, revision, meta, created_at, expires_at, confirmed_at FROM gr33ncore.guardian_action_proposals
+WHERE user_id = $1
+  AND session_id = $2
+  AND status = 'pending'
+  AND expires_at > NOW()
+ORDER BY revision DESC, created_at DESC
+LIMIT 1
+`
+
+type GetLatestPendingProposalBySessionParams struct {
+	UserID    uuid.UUID   `db:"user_id" json:"user_id"`
+	SessionID pgtype.UUID `db:"session_id" json:"session_id"`
+}
+
+// Phase 34 — the one live draft a correction turn should revise.
+func (q *Queries) GetLatestPendingProposalBySession(ctx context.Context, arg GetLatestPendingProposalBySessionParams) (Gr33ncoreGuardianActionProposal, error) {
+	row := q.db.QueryRow(ctx, getLatestPendingProposalBySession, arg.UserID, arg.SessionID)
+	var i Gr33ncoreGuardianActionProposal
+	err := row.Scan(
+		&i.ProposalID,
+		&i.UserID,
+		&i.FarmID,
+		&i.SessionID,
+		&i.ToolID,
+		&i.Args,
+		&i.Summary,
+		&i.RiskTier,
+		&i.Status,
+		&i.Result,
+		&i.SupersedesProposalID,
+		&i.Revision,
+		&i.Meta,
+		&i.CreatedAt,
+		&i.ExpiresAt,
+		&i.ConfirmedAt,
+	)
+	return i, err
+}
+
+const getProposalChainRoot = `-- name: GetProposalChainRoot :one
+WITH RECURSIVE ancestors AS (
+    SELECT a0.proposal_id, a0.supersedes_proposal_id, a0.revision
+    FROM gr33ncore.guardian_action_proposals a0
+    WHERE a0.proposal_id = $1
+    UNION ALL
+    SELECT p.proposal_id, p.supersedes_proposal_id, p.revision
+    FROM gr33ncore.guardian_action_proposals p
+    JOIN ancestors a ON a.supersedes_proposal_id = p.proposal_id
+)
+SELECT ancestors.proposal_id FROM ancestors ORDER BY ancestors.revision ASC LIMIT 1
+`
+
+// Phase 34 — walk parent pointers to the first draft (revision 1) for audit lineage.
+func (q *Queries) GetProposalChainRoot(ctx context.Context, proposalID uuid.UUID) (uuid.UUID, error) {
+	row := q.db.QueryRow(ctx, getProposalChainRoot, proposalID)
+	var proposal_id uuid.UUID
+	err := row.Scan(&proposal_id)
+	return proposal_id, err
+}
+
 const insertGuardianProposal = `-- name: InsertGuardianProposal :one
 
 INSERT INTO gr33ncore.guardian_action_proposals (
-    user_id, farm_id, session_id, tool_id, args, summary, risk_tier, expires_at
-) VALUES ($1, $2, $3, $4, $5::jsonb, $6, $7, $8)
-RETURNING proposal_id, user_id, farm_id, session_id, tool_id, args, summary, risk_tier, status, result, created_at, expires_at, confirmed_at
+    user_id, farm_id, session_id, tool_id, args, summary, risk_tier, expires_at,
+    meta, supersedes_proposal_id, revision
+) VALUES (
+    $1, $2, $3, $4,
+    $5::jsonb, $6, $7, $8,
+    $9::jsonb, $10, $11
+)
+RETURNING proposal_id, user_id, farm_id, session_id, tool_id, args, summary, risk_tier, status, result, supersedes_proposal_id, revision, meta, created_at, expires_at, confirmed_at
 `
 
 type InsertGuardianProposalParams struct {
-	UserID    uuid.UUID       `db:"user_id" json:"user_id"`
-	FarmID    int64           `db:"farm_id" json:"farm_id"`
-	SessionID pgtype.UUID     `db:"session_id" json:"session_id"`
-	ToolID    string          `db:"tool_id" json:"tool_id"`
-	Column5   json.RawMessage `db:"column_5" json:"column_5"`
-	Summary   string          `db:"summary" json:"summary"`
-	RiskTier  string          `db:"risk_tier" json:"risk_tier"`
-	ExpiresAt time.Time       `db:"expires_at" json:"expires_at"`
+	UserID               uuid.UUID       `db:"user_id" json:"user_id"`
+	FarmID               int64           `db:"farm_id" json:"farm_id"`
+	SessionID            pgtype.UUID     `db:"session_id" json:"session_id"`
+	ToolID               string          `db:"tool_id" json:"tool_id"`
+	Args                 json.RawMessage `db:"args" json:"args"`
+	Summary              string          `db:"summary" json:"summary"`
+	RiskTier             string          `db:"risk_tier" json:"risk_tier"`
+	ExpiresAt            time.Time       `db:"expires_at" json:"expires_at"`
+	Meta                 json.RawMessage `db:"meta" json:"meta"`
+	SupersedesProposalID pgtype.UUID     `db:"supersedes_proposal_id" json:"supersedes_proposal_id"`
+	Revision             int32           `db:"revision" json:"revision"`
 }
 
 // Phase 29 WS3 — Guardian action proposals (propose → confirm).
+// Phase 34 — revise/supersede chain + operator-supplied facts in meta.
 func (q *Queries) InsertGuardianProposal(ctx context.Context, arg InsertGuardianProposalParams) (Gr33ncoreGuardianActionProposal, error) {
 	row := q.db.QueryRow(ctx, insertGuardianProposal,
 		arg.UserID,
 		arg.FarmID,
 		arg.SessionID,
 		arg.ToolID,
-		arg.Column5,
+		arg.Args,
 		arg.Summary,
 		arg.RiskTier,
 		arg.ExpiresAt,
+		arg.Meta,
+		arg.SupersedesProposalID,
+		arg.Revision,
 	)
 	var i Gr33ncoreGuardianActionProposal
 	err := row.Scan(
@@ -152,6 +274,9 @@ func (q *Queries) InsertGuardianProposal(ctx context.Context, arg InsertGuardian
 		&i.RiskTier,
 		&i.Status,
 		&i.Result,
+		&i.SupersedesProposalID,
+		&i.Revision,
+		&i.Meta,
 		&i.CreatedAt,
 		&i.ExpiresAt,
 		&i.ConfirmedAt,
@@ -160,7 +285,7 @@ func (q *Queries) InsertGuardianProposal(ctx context.Context, arg InsertGuardian
 }
 
 const listGuardianProposalsByUser = `-- name: ListGuardianProposalsByUser :many
-SELECT proposal_id, user_id, farm_id, session_id, tool_id, args, summary, risk_tier, status, result, created_at, expires_at, confirmed_at FROM gr33ncore.guardian_action_proposals
+SELECT proposal_id, user_id, farm_id, session_id, tool_id, args, summary, risk_tier, status, result, supersedes_proposal_id, revision, meta, created_at, expires_at, confirmed_at FROM gr33ncore.guardian_action_proposals
 WHERE user_id = $1
   AND ($4::bigint IS NULL OR farm_id = $4::bigint)
   AND ($5::text IS NULL OR status::text = $5::text)
@@ -202,6 +327,9 @@ func (q *Queries) ListGuardianProposalsByUser(ctx context.Context, arg ListGuard
 			&i.RiskTier,
 			&i.Status,
 			&i.Result,
+			&i.SupersedesProposalID,
+			&i.Revision,
+			&i.Meta,
 			&i.CreatedAt,
 			&i.ExpiresAt,
 			&i.ConfirmedAt,
@@ -214,4 +342,43 @@ func (q *Queries) ListGuardianProposalsByUser(ctx context.Context, arg ListGuard
 		return nil, err
 	}
 	return items, nil
+}
+
+const supersedeProposal = `-- name: SupersedeProposal :one
+UPDATE gr33ncore.guardian_action_proposals
+SET status = 'superseded'
+WHERE proposal_id = $1
+  AND user_id = $2
+  AND status = 'pending'
+RETURNING proposal_id, user_id, farm_id, session_id, tool_id, args, summary, risk_tier, status, result, supersedes_proposal_id, revision, meta, created_at, expires_at, confirmed_at
+`
+
+type SupersedeProposalParams struct {
+	ProposalID uuid.UUID `db:"proposal_id" json:"proposal_id"`
+	UserID     uuid.UUID `db:"user_id" json:"user_id"`
+}
+
+// Phase 34 — mark a still-pending proposal as replaced by a later revision.
+func (q *Queries) SupersedeProposal(ctx context.Context, arg SupersedeProposalParams) (Gr33ncoreGuardianActionProposal, error) {
+	row := q.db.QueryRow(ctx, supersedeProposal, arg.ProposalID, arg.UserID)
+	var i Gr33ncoreGuardianActionProposal
+	err := row.Scan(
+		&i.ProposalID,
+		&i.UserID,
+		&i.FarmID,
+		&i.SessionID,
+		&i.ToolID,
+		&i.Args,
+		&i.Summary,
+		&i.RiskTier,
+		&i.Status,
+		&i.Result,
+		&i.SupersedesProposalID,
+		&i.Revision,
+		&i.Meta,
+		&i.CreatedAt,
+		&i.ExpiresAt,
+		&i.ConfirmedAt,
+	)
+	return i, err
 }

@@ -401,6 +401,43 @@ Operator walkthrough: [`operator-tour.md` §6b](operator-tour.md#6b-grow-setup-v
 
 ---
 
+### 7.7 PR iteration & blind-spot facts (Phase 34)
+
+A Guardian proposal is no longer single-shot. Within a chat **session**, a correction turn against the live draft **revises** it instead of forcing a Dismiss + re-ask — and the operator can supply ground truth Guardian cannot sense. The Confirm gate is untouched: every revision is still a new **frozen, server-replayed, audited** row; only the latest pending revision is confirmable.
+
+#### Revise / supersede loop
+
+```
+"add philodendron to Tent A with a light feed"   → propose P1 (revision 1, pending)
+"no, use 0.3 L not 0.5"                           → P1 → superseded; propose P2 (revision 2,
+                                                     supersedes P1, program.total_volume_liters = 0.3)
+"no humidity sensor in Tent A — assume RH ~60%"   → P2 → superseded; propose P3 (revision 3,
+                                                     meta.operator_provided += {rh_pct: 60})
+Confirm P1  → 410 Gone { live_proposal_id: P3 }    (only the latest live draft is confirmable)
+Confirm P3  → 200; audit records revision + root_proposal_id + operator_provided
+```
+
+- **One live draft per session** — `guardian_action_proposals.supersedes_proposal_id` + `revision` form the chain; `SupersedeProposal` flips the prior to `superseded` and the successor inherits scope with a **refreshed TTL** so a long refine conversation can't expire mid-thread.
+- **Detection** — `tryReviseActiveProposal` ([`internal/farmguardian/proposals_revise.go`](../internal/farmguardian/proposals_revise.go)) runs before fresh matching when `GetLatestPendingProposalBySession` returns a live draft. It delta-merges only the corrected fields onto the prior frozen args (volume, EC, pH range, stage; per-section for setup-pack bundles) and re-uses the same tool validation. A turn with no extractable delta or fact falls through — **no silent wrong revise**.
+- **Bounded chains** — `MaxProposalRevisions` (8) caps a chain; beyond it Guardian asks the operator to start a fresh request.
+- **Confirm safety** — [`confirm.go`](../internal/handler/chat/confirm.go) rejects a `superseded` proposal with **410 Gone** + `live_proposal_id`/`live_revision`; confirming the latest records `revision` and `root_proposal_id` in the `guardian_tool_executed` audit details.
+
+#### Operator-supplied (blind-spot) facts
+
+Guardian reads sensed + DB state; it **cannot** sense hardware that isn't installed. The operator holds that ground truth. Assertions like *"no humidity sensor — assume RH ~60%"* or *"water source is well water"* are parsed into `meta.operator_provided[]` = `{field, value, basis: "operator_stated", label}` and surfaced everywhere as **operator-stated, not measured** — on the card, and in the confirm audit. They are **never** merged into a field that implies a live measurement, so the audit trail never confuses an assertion with a sensor reading.
+
+#### Impact explanation ("if you Confirm, this will…")
+
+Every card answers *what happens if I accept this?* in plain language, scaled by risk tier. The backend builds an ordered `impact_summary` per tool ([`internal/farmguardian/impact.go`](../internal/farmguardian/impact.go)); the UI renders it ([`ui/src/lib/guardianImpact.js`](../ui/src/lib/guardianImpact.js), generalized from the Phase 32 setup-pack formatter) and leads high-tier cards with the most impactful/irreversible step. Example: a `patch_fertigation_program` card reads *"Update fertigation program: volume → 0.3L (no run triggered now)"*.
+
+The card ([`GuardianActionProposal.vue`](../ui/src/components/GuardianActionProposal.vue)) shows a **Revision N** badge, a **Refine** affordance, a **diff vs the previous revision**, and renders superseded drafts muted with Confirm disabled. Viewers can read revisions and impact but cannot Confirm or Refine into a write (server-enforced Operate cap).
+
+Operator walkthrough: [`operator-tour.md` §6c](operator-tour.md#6c-refine-a-guardian-request-phase-34).
+
+**Hard invariant preserved:** nothing writes to the database until **Confirm**, and **Guardian cannot silently write** — iteration only changes *which* frozen draft is live.
+
+---
+
 ## 8. Operator expectations at Phase 30 ship
 
 This section is the operator-facing contract: what to expect from Guardian on a real farm, and what **not** to treat it as.
@@ -422,6 +459,7 @@ Guardian **never** replaces the automation worker. Rules and alerts stay the **a
 | On-prem copilot tied to **your** farm snapshot + optional RAG | A separate cloud SaaS product or subscription chatbot |
 | PR author for config, tasks, grow setup bundles, and Pi **enqueue** (after Confirm) | Autonomous scheduler or silent GPIO driver |
 | Able to **propose** plant + cycle + program setup packs | Able to **silently** insert plants or start cycles without Confirm |
+| Able to **revise** a pending proposal before Confirm and use **operator-stated** facts it can't sense (labeled, never as measurements) | Able to write any revision silently — every revision is a new frozen, Confirm-gated row |
 | Steward voice: practical guidance + metaphors | Certified agronomist, IPM authority, or legal compliance sign-off |
 | Helper for **human work** (defoliation, plumbing, harvest) via chat + optional `create_task` PRs | A robot that performs physical work |
 | Aware of zone reference photos on file (WS5) | Guaranteed vision diagnosis without a multimodal model (WS6) |
@@ -510,3 +548,4 @@ The layer was built incrementally across these phases:
 - **Phase 31** — Field validation & read tools. Edge loop docs + `list_unread_alerts` / `summarize_zone` live lookups (Confirm N/A). See [`plans/phase_31_field_validation_and_edge.plan.md`](plans/phase_31_field_validation_and_edge.plan.md).
 - **Phase 32** — Grow setup PRs + platform doc RAG. Read/create tools, setup pack, `rag-ingest-platform-docs`, Guardian citation rules for `platform_doc`. See [`plans/phase_32_guardian_grow_setup_prs.plan.md`](plans/phase_32_guardian_grow_setup_prs.plan.md).
 - **Phase 33 WS1** — Read-tool hardening (alert-write intent guards, smokes, doc parity). See [`plans/phase_33_guardian_polish_and_enterprise_ops.plan.md`](plans/phase_33_guardian_polish_and_enterprise_ops.plan.md).
+- **Phase 34** — PR iteration & blind-spot inputs. Revise/supersede a pending proposal within a session, operator-stated facts (`operator_provided`), and a plain-language impact explanation on every card. See [§7.7](#77-pr-iteration--blind-spot-facts-phase-34) and [`plans/phase_34_guardian_pr_iteration.plan.md`](plans/phase_34_guardian_pr_iteration.plan.md).

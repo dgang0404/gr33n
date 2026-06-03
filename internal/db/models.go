@@ -1507,19 +1507,22 @@ type Gr33ncoreFileAttachment struct {
 }
 
 type Gr33ncoreGuardianActionProposal struct {
-	ProposalID  uuid.UUID          `db:"proposal_id" json:"proposal_id"`
-	UserID      uuid.UUID          `db:"user_id" json:"user_id"`
-	FarmID      int64              `db:"farm_id" json:"farm_id"`
-	SessionID   pgtype.UUID        `db:"session_id" json:"session_id"`
-	ToolID      string             `db:"tool_id" json:"tool_id"`
-	Args        json.RawMessage    `db:"args" json:"args"`
-	Summary     string             `db:"summary" json:"summary"`
-	RiskTier    string             `db:"risk_tier" json:"risk_tier"`
-	Status      string             `db:"status" json:"status"`
-	Result      []byte             `db:"result" json:"result"`
-	CreatedAt   time.Time          `db:"created_at" json:"created_at"`
-	ExpiresAt   time.Time          `db:"expires_at" json:"expires_at"`
-	ConfirmedAt pgtype.Timestamptz `db:"confirmed_at" json:"confirmed_at"`
+	ProposalID           uuid.UUID          `db:"proposal_id" json:"proposal_id"`
+	UserID               uuid.UUID          `db:"user_id" json:"user_id"`
+	FarmID               int64              `db:"farm_id" json:"farm_id"`
+	SessionID            pgtype.UUID        `db:"session_id" json:"session_id"`
+	ToolID               string             `db:"tool_id" json:"tool_id"`
+	Args                 json.RawMessage    `db:"args" json:"args"`
+	Summary              string             `db:"summary" json:"summary"`
+	RiskTier             string             `db:"risk_tier" json:"risk_tier"`
+	Status               string             `db:"status" json:"status"`
+	Result               []byte             `db:"result" json:"result"`
+	SupersedesProposalID pgtype.UUID        `db:"supersedes_proposal_id" json:"supersedes_proposal_id"`
+	Revision             int32              `db:"revision" json:"revision"`
+	Meta                 json.RawMessage    `db:"meta" json:"meta"`
+	CreatedAt            time.Time          `db:"created_at" json:"created_at"`
+	ExpiresAt            time.Time          `db:"expires_at" json:"expires_at"`
+	ConfirmedAt          pgtype.Timestamptz `db:"confirmed_at" json:"confirmed_at"`
 }
 
 type Gr33ncoreInsertCommonsBundle struct {

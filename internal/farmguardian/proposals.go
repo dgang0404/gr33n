@@ -18,7 +18,12 @@ import (
 // ProposalTTL is how long a frozen proposal stays confirmable.
 const ProposalTTL = 5 * time.Minute
 
-// ActionProposal is returned on chat `done` and confirm flows (Phase 29 WS3).
+// MaxProposalRevisions caps a single supersede chain so a refine conversation
+// cannot grow unbounded (Phase 34 WS1/WS2).
+const MaxProposalRevisions = 8
+
+// ActionProposal is returned on chat `done` and confirm flows (Phase 29 WS3;
+// revision lineage + blind-spot facts + impact added Phase 34).
 type ActionProposal struct {
 	ProposalID string         `json:"proposal_id"`
 	Tool       string         `json:"tool"`
@@ -26,6 +31,28 @@ type ActionProposal struct {
 	Summary    string         `json:"summary"`
 	RiskTier   string         `json:"risk_tier"`
 	ExpiresAt  time.Time      `json:"expires_at"`
+	// Phase 34 — revise/supersede + operator-supplied facts + impact explanation.
+	Revision             int            `json:"revision,omitempty"`
+	SupersedesProposalID string         `json:"supersedes_proposal_id,omitempty"`
+	Status               string         `json:"status,omitempty"`
+	OperatorProvided     []OperatorFact `json:"operator_provided,omitempty"`
+	ImpactSummary        []string       `json:"impact_summary,omitempty"`
+}
+
+// OperatorFact is a ground-truth value the operator asserts that Guardian cannot
+// sense (Phase 34 WS3). It is stored in proposal meta and labeled in the UI/audit
+// as operator-stated, never merged into args as if it were a measurement.
+type OperatorFact struct {
+	Field   string `json:"field"`
+	Value   any    `json:"value"`
+	Basis   string `json:"basis"` // always "operator_stated"
+	Label   string `json:"label"` // e.g. "RH 60% (operator-stated, not measured)"
+	TurnRef string `json:"turn_ref,omitempty"`
+}
+
+// proposalMeta is the JSONB shape persisted in guardian_action_proposals.meta.
+type proposalMeta struct {
+	OperatorProvided []OperatorFact `json:"operator_provided,omitempty"`
 }
 
 var (
@@ -34,8 +61,10 @@ var (
 	readIntent     = regexp.MustCompile(`(?i)\b(mark\s+.*read|read)\b.*\balert\b|\balert\b.*\b(mark\s+.*read|read)\b`)
 )
 
-// BuildRuleAssistedProposals templates a single low-risk write when the operator
-// message matches action intent and the snapshot lists unread alerts (v1).
+// BuildRuleAssistedProposals templates a single reviewed write when the operator
+// message matches action intent. When an active pending proposal exists in the
+// session and the turn reads as a correction, it revises that draft (Phase 34 WS2)
+// instead of starting over; otherwise it builds a fresh proposal (Phase 29/32).
 func BuildRuleAssistedProposals(
 	ctx context.Context,
 	q db.Querier,
@@ -49,57 +78,114 @@ func BuildRuleAssistedProposals(
 		return nil, nil
 	}
 
-	var toolID string
-	var args map[string]any
-	var summary string
-	var ok bool
-
-	if len(snap.UnreadAlertDetails) > 0 {
-		toolID, ok = matchAlertToolIntent(question)
-		if ok {
-			alert := pickAlertForIntent(question, snap.UnreadAlertDetails)
-			if alert.ID == 0 {
-				return nil, nil
-			}
-			args = map[string]any{"alert_id": alert.ID}
-			summary = proposalSummary(toolID, alert)
-		}
-	}
-	if !ok {
-		if packArgs, packSummary, okPack := matchSetupPackIntent(ctx, q, farmID, question, snap); okPack {
-			toolID = "apply_grow_setup_pack"
-			args = packArgs
-			summary = packSummary
-			ok = true
-		}
-	}
-	if !ok {
-		toolID, args, summary, ok = matchConfigToolIntent(question, snap)
-		if !ok {
-			return nil, nil
-		}
-	}
-
-	argsJSON, _ := json.Marshal(args)
-	expires := time.Now().UTC().Add(ProposalTTL)
-	var sessUUID pgtype.UUID
+	// Phase 34 — a correction turn against the live draft revises it in place.
 	if sessionID != uuid.Nil {
-		sessUUID = pgtype.UUID{Bytes: sessionID, Valid: true}
+		if revised, handled, err := tryReviseActiveProposal(ctx, q, userID, sessionID, question, snap); err != nil {
+			return nil, err
+		} else if handled {
+			return revised, nil
+		}
 	}
-	row, err := q.InsertGuardianProposal(ctx, db.InsertGuardianProposalParams{
-		UserID:    userID,
-		FarmID:    farmID,
-		SessionID: sessUUID,
-		ToolID:    toolID,
-		Column5:   argsJSON,
-		Summary:   summary,
-		RiskTier:  tools.RiskTierForTool(toolID, args),
-		ExpiresAt: expires,
+
+	toolID, args, summary, ok := matchFreshProposal(ctx, q, farmID, question, snap)
+	if !ok {
+		return nil, nil
+	}
+
+	row, err := insertProposal(ctx, q, insertProposalInput{
+		userID:    userID,
+		farmID:    farmID,
+		sessionID: sessionID,
+		toolID:    toolID,
+		args:      args,
+		summary:   summary,
+		revision:  1,
 	})
 	if err != nil {
 		return nil, err
 	}
 	return []ActionProposal{ActionProposalFromRow(row)}, nil
+}
+
+// matchFreshProposal runs the Phase 29/30/32 intent matchers for a brand-new draft.
+func matchFreshProposal(
+	ctx context.Context,
+	q db.Querier,
+	farmID int64,
+	question string,
+	snap Snapshot,
+) (toolID string, args map[string]any, summary string, ok bool) {
+	if len(snap.UnreadAlertDetails) > 0 {
+		toolID, ok = matchAlertToolIntent(question)
+		if ok {
+			alert := pickAlertForIntent(question, snap.UnreadAlertDetails)
+			if alert.ID == 0 {
+				return "", nil, "", false
+			}
+			args = map[string]any{"alert_id": alert.ID}
+			summary = proposalSummary(toolID, alert)
+			return toolID, args, summary, true
+		}
+	}
+	if packArgs, packSummary, okPack := matchSetupPackIntent(ctx, q, farmID, question, snap); okPack {
+		return "apply_grow_setup_pack", packArgs, packSummary, true
+	}
+	return matchConfigToolIntent(question, snap)
+}
+
+// insertProposalInput carries the fields for one frozen proposal row.
+type insertProposalInput struct {
+	userID     uuid.UUID
+	farmID     int64
+	sessionID  uuid.UUID
+	toolID     string
+	args       map[string]any
+	summary    string
+	revision   int32
+	supersedes uuid.UUID // uuid.Nil for a first draft
+	facts      []OperatorFact
+}
+
+func insertProposal(ctx context.Context, q db.Querier, in insertProposalInput) (db.Gr33ncoreGuardianActionProposal, error) {
+	argsJSON, _ := json.Marshal(in.args)
+	metaJSON := marshalProposalMeta(in.facts)
+	expires := time.Now().UTC().Add(ProposalTTL)
+	var sessUUID pgtype.UUID
+	if in.sessionID != uuid.Nil {
+		sessUUID = pgtype.UUID{Bytes: in.sessionID, Valid: true}
+	}
+	var supersedes pgtype.UUID
+	if in.supersedes != uuid.Nil {
+		supersedes = pgtype.UUID{Bytes: in.supersedes, Valid: true}
+	}
+	rev := in.revision
+	if rev < 1 {
+		rev = 1
+	}
+	return q.InsertGuardianProposal(ctx, db.InsertGuardianProposalParams{
+		UserID:               in.userID,
+		FarmID:               in.farmID,
+		SessionID:            sessUUID,
+		ToolID:               in.toolID,
+		Args:                 argsJSON,
+		Summary:              in.summary,
+		RiskTier:             tools.RiskTierForTool(in.toolID, in.args),
+		ExpiresAt:            expires,
+		Meta:                 metaJSON,
+		SupersedesProposalID: supersedes,
+		Revision:             rev,
+	})
+}
+
+func marshalProposalMeta(facts []OperatorFact) []byte {
+	if len(facts) == 0 {
+		return []byte("{}")
+	}
+	b, err := json.Marshal(proposalMeta{OperatorProvided: facts})
+	if err != nil || len(b) == 0 {
+		return []byte("{}")
+	}
+	return b
 }
 
 func matchAlertToolIntent(question string) (string, bool) {
