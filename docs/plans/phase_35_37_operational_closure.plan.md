@@ -68,31 +68,21 @@ Use this table when marking a phase shipped:
 | TZ-aware worker | ✅ | `shouldTriggerNow(expr, tz, …)` + unit test |
 | UI | ✅ | `PhotoperiodClockEditor.vue`, `LightingPrograms.vue`, `/lighting` route |
 | Guardian read | ✅ | `summarize_zone_lighting` (no `create_lighting_program` propose tool yet) |
-| **Demo seed** | ⚠️ partial | `master_seed.sql` Section 3B wraps 18/6 in `lighting_programs` |
+| **Demo seed** | ✅ | `master_seed.sql` Section 3B wraps 18/6 in `lighting_programs` |
 | **Bootstrap** | ✅ | `jadam_indoor_photoperiod_v1` → `lighting_programs` (OC-35A migration) |
 | **Unit tests** | ✅ | `handler_test.go`, `worker_test.go` TZ case |
 | **Smokes / Vitest** | ✅ | `smoke_phase35_lighting_test.go`; `photoperiod-clock-editor.test.js` |
 | **OpenAPI / operator-tour** | ✅ | `LightingProgram` schemas; operator-tour §5; architecture §7.0b |
 
-### OC-35 tasks (close before calling Phase 35 shipped)
+## Phase 35 — status
 
-**OC-35A — Bootstrap (Phase 35 WS6 remainder)**
+**Shipped.** OC-35A–C closed; WS1–WS8 complete. Optional follow-up: RAG re-ingest of operator-tour §5 (part of OC-37E sweep).
 
-- Update `gr33ncore._bootstrap_jadam_indoor_photoperiod_v1` to create one `lighting_program` + generated ON/OFF schedules + actions (same transactional pattern as handler).
-- Keep idempotent `NOT EXISTS` guards; legacy farms with orphan schedules may coexist (document in operator-tour one-liner).
+---
 
-**OC-35B — Docs + OpenAPI (Phase 35 WS8)**
+## Current git snapshot
 
-- `docs/operator-tour.md` — “Set up 18/6 lights” using preset + PhotoperiodClockEditor (`/lighting`).
-- `openapi.yaml` — `LightingProgram`, preset list, `/farms/{id}/lighting-programs`, `/lighting-programs/from-preset`, schedule-action paths.
-- `docs/farm-guardian-architecture.md` — lighting in grow environment stack; cite `summarize_zone_lighting`.
-
-**OC-35C — Tests (Phase 35 WS8)**
-
-- `cmd/api/smoke_phase35_lighting_test.go` — create from preset → list → deactivate; optional TZ assertion via worker unit test (already covered) or schedule metadata check.
-- `ui/src/__tests__/photoperiod-clock-editor.test.js` — duration 18h updates end; preset chip sets 12/12.
-
-**Suggested timing:** OC-35A can land immediately after Phase 35 code PR merges; OC-35B/C in the same PR or follow-up before Phase 36 starts (greenhouse docs will reference supplemental vs blocking light).
+Phase 35 landed in commits `06e281d` (core + Guardian UX), `362c0ac` (OC-35A bootstrap), `9a19048` (plan status), `e09d4f4` (OC-35B/C docs/tests). Working tree should be clean before starting Phase 36.
 
 ---
 
@@ -143,17 +133,6 @@ Phase 37 WS1–7   ──► OC-37 inline with WS8
 ```
 
 **Rule:** Feature WS8 stays in each phase plan; **this doc** is the cross-phase backlog so deferred items are not lost when a phase plan todo is marked `done` too early.
-
----
-
-## Current git snapshot (Phase 35 — illustrative)
-
-Uncommitted work typically includes:
-
-- **Untracked:** migration, `lighting_programs.sql`, sqlc output, `internal/handler/lighting/`, Guardian tool, UI components.
-- **Modified, not staged:** routes, schema, `master_seed.sql`, worker, automation handler, SideNav, router, plan status.
-
-Closure PR should `git add` the full set above plus OC-35B/C artifacts when ready.
 
 ---
 
