@@ -91,6 +91,25 @@ func (q *Queries) DeleteStaleConversationTurns(ctx context.Context, cutoff time.
 	return result.RowsAffected(), nil
 }
 
+const getConversationSessionMeta = `-- name: GetConversationSessionMeta :one
+SELECT meta
+FROM gr33ncore.conversation_sessions
+WHERE id = $1
+  AND user_id = $2
+`
+
+type GetConversationSessionMetaParams struct {
+	ID     uuid.UUID `db:"id" json:"id"`
+	UserID uuid.UUID `db:"user_id" json:"user_id"`
+}
+
+func (q *Queries) GetConversationSessionMeta(ctx context.Context, arg GetConversationSessionMetaParams) (json.RawMessage, error) {
+	row := q.db.QueryRow(ctx, getConversationSessionMeta, arg.ID, arg.UserID)
+	var meta json.RawMessage
+	err := row.Scan(&meta)
+	return meta, err
+}
+
 const insertConversationTurn = `-- name: InsertConversationTurn :one
 
 INSERT INTO gr33ncore.conversation_turns (
@@ -415,6 +434,24 @@ func (q *Queries) SumChatTokensSinceForUser(ctx context.Context, arg SumChatToke
 	var i SumChatTokensSinceForUserRow
 	err := row.Scan(&i.PromptTokens, &i.CompletionTokens, &i.TotalTokens)
 	return i, err
+}
+
+const updateConversationSessionMeta = `-- name: UpdateConversationSessionMeta :exec
+UPDATE gr33ncore.conversation_sessions
+SET meta = $1
+WHERE id = $2
+  AND user_id = $3
+`
+
+type UpdateConversationSessionMetaParams struct {
+	Meta   json.RawMessage `db:"meta" json:"meta"`
+	ID     uuid.UUID       `db:"id" json:"id"`
+	UserID uuid.UUID       `db:"user_id" json:"user_id"`
+}
+
+func (q *Queries) UpdateConversationSessionMeta(ctx context.Context, arg UpdateConversationSessionMetaParams) error {
+	_, err := q.db.Exec(ctx, updateConversationSessionMeta, arg.Meta, arg.ID, arg.UserID)
+	return err
 }
 
 const updateConversationSessionTitle = `-- name: UpdateConversationSessionTitle :one

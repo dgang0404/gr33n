@@ -6,33 +6,38 @@ overview: >
   basic plumbing/irrigation hookups, and other hands-on trades work — fully offline
   on a local model + local doc corpus. Adds guided, confirm-per-step procedures, a
   curated field/trades knowledge pack for RAG, hard safety gating for mains-electrical
-  and pressurized-water work, and printable offline procedure cards. Builds on existing
-  Ollama offline inference, the Pi offline queue, and Phase 32 platform_doc RAG.
+  and pressurized-water work, printable offline procedure cards, and **background
+  Guardian chat** (streaming survives drawer close and route changes via a Pinia chat
+  store — critical on slow local LLMs). Builds on existing Ollama offline inference,
+  the Pi offline queue, and Phase 32 platform_doc RAG.
 todos:
   - id: ws1-offline-readiness
     content: "WS1: Offline readiness — verify/instrument local-model + local-RAG path with no WAN; offline self-check (model reachable, corpus present); degrade gracefully"
-    status: pending
+    status: done
   - id: ws2-field-corpus
     content: "WS2: Field/trades corpus — authored guides (Pi wiring, relay/sensor hookup, irrigation/plumbing basics, electrical safety) + new RAG source_type field_guide; ingest + manifest"
-    status: pending
+    status: done
   - id: ws3-guided-procedures
     content: "WS3: Guided procedures — structured step-by-step playbooks (YAML) Guardian drives interactively: one step at a time, operator confirms/【needs help】, resume mid-procedure"
-    status: pending
+    status: done
   - id: ws4-safety-gating
     content: "WS4: Safety gating — classify steps (safe / caution / qualified-person-required); hard stop + escalate language for mains AC and pressurized water; never instruct unsafe work"
-    status: pending
+    status: done
   - id: ws5-diagnostics
     content: "WS5: Field diagnostics — guided 'sensor reads nothing / actuator won't fire' wiring + config troubleshooting using snapshot + procedure refs (no internet)"
-    status: pending
+    status: done
   - id: ws6-printable-cards
     content: "WS6: Printable/offline cards — export a procedure to a printable checklist (PDF/markdown) so a worker can follow it with the screen off or no device at the rig"
-    status: pending
+    status: done
   - id: ws7-guardian-wiring
     content: "WS7: Guardian wiring — field_guide RAG layer + procedure tools into prompt; persona: hands-on installer voice; cite procedure + step number"
-    status: pending
+    status: done
+  - id: ws9-background-chat-store
+    content: "WS9: Background Guardian chat — Pinia chat store owns SSE stream + transcript; navigate/close drawer without killing in-flight turns; global 'still thinking' indicator"
+    status: done
   - id: ws8-docs-tests
-    content: "WS8: Docs + tests — operator-tour 'first install with Guardian offline'; OpenAPI procedure endpoints; smokes for offline answer + procedure step flow + safety stop"
-    status: pending
+    content: "WS8: Docs + tests — operator-tour 'first install with Guardian offline'; OpenAPI procedure endpoints; smokes for offline answer + procedure step flow + safety stop; Vitest WS9 background stream"
+    status: done
 isProject: false
 ---
 
@@ -40,7 +45,9 @@ isProject: false
 
 ## Status
 
-**Not started.** Depends on **Phase 27/29** (Guardian AI + agent layer), **Phase 32 WS8** (platform_doc RAG ingest), and existing **offline inference** (Ollama) + **Pi offline queue**. Best **after Phase 34** (so guided steps can use operator-supplied facts) but the corpus + offline self-check can ship independently.
+**Shipped (2026-06-03).** WS9 background chat; WS1 health + LLM-down degrade; WS2 field_guide corpus; WS3–WS6 procedures + print; WS4 safety; WS5 diagnostics YAMLs; WS7 field prompt + procedure chat; WS8 docs/smokes/OpenAPI. **OC-37E closed** (README + phase-14 + persona; run `make rag-ingest-platform-docs` / `make rag-ingest-field-guides` on each farm after doc/corpus edits). **v1 deferred:** WS5 live-snapshot branching; WS6 PDF print; automated WAN-blocked CI.
+
+Depends on **Phase 27/29** (Guardian AI + agent layer), **Phase 32 WS8** (platform_doc RAG ingest), and existing **offline inference** (Ollama) + **Pi offline queue**. Phase 34 operator-stated facts shipped.
 
 **Preconditions (exist today):**
 
@@ -50,6 +57,8 @@ isProject: false
 - Guardian RAG synthesis + grounding: [`internal/rag/synthesis/guardian.go`](../../internal/rag/synthesis/guardian.go), chat handler ([`internal/handler/chat/handler.go`](../../internal/handler/chat/handler.go))
 
 **Today (gap):** Guardian can *cite* platform how-to docs online, but it cannot **walk a non-technical person through a physical install one step at a time**, has **no trades/plumbing/electrical knowledge pack**, no **safety gating** for dangerous steps, and **offline behavior for the field worker is unverified/undocumented** as a first-class mode.
+
+**UX gap (WS9):** Chat state lives in `GuardianChatPanel.vue` component refs. Closing the slide-out drawer or navigating to another route **unmounts the panel** and drops the streaming UI (and often the partial reply). On a laptop running API + Ollama, slow turns make this painful. **Fix:** move stream + transcript into a **Pinia store** so the HTTP/SSE lifecycle is not tied to the route.
 
 ---
 
@@ -64,6 +73,7 @@ The real deployment story: a grow site is **remote**, the **operator is not an I
 | Offline inference exists but unframed for field worker | **Offline-first field mode** with self-check + graceful degrade |
 | No safety guardrails on physical steps | **Safety tiers**: hard stop + "get a qualified person" for mains AC / pressurized water |
 | Answer = wall of text | **Procedure** = confirmable steps, resumable, printable |
+| Chat dies when you leave the page | **Background stream** — turn keeps running; badge when drawer closed; reopen to see tokens |
 
 **This is the offline counterpart to Phase 34:** Phase 34 lets the operator tell Guardian what it can't sense; Phase 37 lets Guardian tell the operator exactly what to do with their hands — and both work when Guardian is blind to hardware.
 
@@ -78,6 +88,7 @@ The real deployment story: a grow site is **remote**, the **operator is not an I
 5. **Reuse the rails** — new RAG `source_type='field_guide'` rides the Phase 32 ingest; procedures are data (YAML) + a thin driver; no new model stack.
 6. **Honesty about blindness** — Guardian states it can't see the wiring; it asks the worker to describe/confirm, and labels operator observations (ties into Phase 34 `operator_provided`).
 7. **No autonomous writes** — if a procedure ends in a config change (e.g. register the actuator), that's still a Confirm-gated proposal.
+8. **Chat survives navigation** — streaming and transcript state live in a **Vue/Pinia store**, not in a mount-bound component. Closing the drawer or opening Zones must not abort an in-flight Guardian turn unless the operator explicitly cancels or sends a new message.
 
 ---
 
@@ -115,7 +126,8 @@ Mains-AC step? → SAFETY STOP: "This needs a qualified electrician — do not p
 | **WS5** | Field diagnostics | snapshot-aware troubleshooting procedures |
 | **WS6** | Printable cards | export procedure → markdown/PDF checklist endpoint + UI button |
 | **WS7** | Guardian wiring | RAG layer + procedure tool in prompt; persona installer voice |
-| **WS8** | Docs + tests | operator-tour offline install; OpenAPI; smokes |
+| **WS9** | Background chat store | Pinia `guardianChat` owns SSE + transcript; drawer/route safe; thinking indicator |
+| **WS8** | Docs + tests | operator-tour offline install; OpenAPI; smokes; Vitest WS9 |
 
 ---
 
@@ -232,6 +244,29 @@ Mains-AC step? → SAFETY STOP: "This needs a qualified electrician — do not p
 
 **Acceptance:** "help me wire the Pi to a light" offers the procedure and runs it step-by-step with citations; persona/platform docs mirror the new capability + safety rules.
 
+### WS9 — Background Guardian chat (Pinia store)
+
+**Goal:** Slow local LLMs (70B on a laptop, field NUC) must not lose work when the operator checks Zones, actuators, or automation while Guardian is still streaming.
+
+**Why a store (not a “small fix”):** Today `send()` / `consumeSSE()` / `streamingText` / `transcript` live in [`GuardianChatPanel.vue`](../../ui/src/components/GuardianChatPanel.vue). The drawer uses `v-if` on the panel ([`GuardianDrawer.vue`](../../ui/src/components/GuardianDrawer.vue)); `/chat` mounts a second panel instance. Unmount ends the UI loop; there is no shared session. **A Pinia store is the clean cut** — one stream owner, many views.
+
+**Tasks:**
+
+1. **`ui/src/stores/guardianChat.js`** (or `.ts` if the UI migrates):
+   - State: `activeSessionId`, `streaming`, `streamingText`, `error`, `transcriptBySession` (or server-synced session list + current transcript), `pendingUserMessage`, `lastFarmId`.
+   - Actions: `sendMessage({ message, farmId, contextRef, attachmentIds })` — owns `fetch` + `ReadableStream` reader; **`AbortController` only** on explicit `cancelStream()` or new `sendMessage` (not on component unmount).
+   - On `done` event: append turn to transcript, `refreshSessions()`, update `guardianProposals` pending count if proposals returned.
+2. **Refactor `GuardianChatPanel.vue`** to a thin view: `storeToRefs(guardianChat)` + bind inputs; no local `streaming` / `transcript` refs for the active turn.
+3. **Single store across surfaces:** drawer compact layout and `/chat` full layout both use the same store (no duplicate streams). Consider `KeepAlive` on `/chat` only if needed after store lands — store-first.
+4. **Global indicator:** extend [`guardianPanel`](../../ui/src/stores/guardianPanel.js) or TopBar / drawer tab — when `guardianChat.streaming`, show **“Guardian thinking…”** on the robot tab even if drawer is closed; click reopens to live `streamingText`.
+5. **Drawer lifecycle:** change drawer body to **`v-show`** (or keep panel mounted while `streaming`) so closing backdrop does not destroy the stream consumer; if drawer stays `v-if`, store must still hold stream (required either way).
+6. **Operator constraints:** while `streaming`, disable second Send on same session (or queue — v1: disable). Other farm pages remain usable (read-only navigation OK).
+7. **Vitest:** mount panel → start send (mock SSE) → unmount panel → assert store still `streaming` and deltas append → remount → assert `streamingText` visible → done event completes transcript.
+
+**Acceptance:** Start a long streamed reply from the drawer, navigate to **Zones → Greenhouse**, confirm tokens still accumulate in the store and reopening the drawer shows the live partial answer; completed turn appears in session history. Explicit Cancel aborts fetch. New message aborts previous stream.
+
+**Not in WS9 v1:** second concurrent chat per farm; background Confirm execution; push notifications when done.
+
 ### WS8 — Docs + tests
 
 **Tasks:**
@@ -241,8 +276,9 @@ Mains-AC step? → SAFETY STOP: "This needs a qualified electrician — do not p
 - `farm-guardian-architecture.md` — knowledge layers gain **field_guide**; add §7.x guided procedures + safety tiers; phase ledger.
 - OpenAPI: procedure list/step/print endpoints + `field_guide` source type.
 - Smokes: offline grounded answer; procedure step advance; safety stop; printable export with model down.
+- **WS9:** `guardian-chat-background.test.js` — stream survives unmount; thinking badge when drawer closed (per WS9 acceptance).
 
-**Acceptance:** Docs added to phase-14 index + manifest; `go test` + Vitest green; offline + safety paths asserted.
+**Acceptance:** Docs added to phase-14 index + manifest; `go test` + Vitest green; offline + safety paths asserted; WS9 Vitest green.
 
 ---
 
@@ -270,26 +306,29 @@ Mains-AC step? → SAFETY STOP: "This needs a qualified electrician — do not p
 
 ## Recommended order
 
-WS1 (offline proof) → WS2 (corpus) → WS4 (safety, before any step content ships) → WS3 (procedures) → WS5 (diagnostics) → WS6 (print) → WS7 (Guardian wiring) → WS8 (docs/tests). WS4 intentionally precedes WS3 content authoring.
+**WS9 (background chat store) can ship in parallel** with WS1 — frontend-only, no field corpus dependency; high value on slow laptops running the full stack.
+
+WS1 (offline proof) → WS2 (corpus) → WS4 (safety, before any step content ships) → WS3 (procedures) → WS5 (diagnostics) → WS6 (print) → WS7 (Guardian wiring) → **WS9** (if not already merged) → WS8 (docs/tests). WS4 intentionally precedes WS3 content authoring.
 
 ---
 
 ## Definition of done (phase ship)
 
-- [ ] Field-assistant features verified with **WAN blocked**; graceful degrade when model is down
-- [ ] `field_guide` corpus authored, ingested, retrievable with safety metadata
-- [ ] Guided procedures run one step at a time, resumable, with citations
-- [ ] Safety gating hard-stops mains-AC / pressurized-water steps and escalates
-- [ ] Field diagnostics for sensor / actuator / Pi-offline using live snapshot
-- [ ] Printable procedure cards (work even offline / model down)
-- [ ] Persona = non-IT installer voice; no autonomous writes (terminal config = Confirm)
-- [ ] operator-tour + offline-deployment + architecture + OpenAPI + tests updated
+- [x] Field-assistant features verified on LAN; graceful degrade when model is down (`go test` smokes + manual WAN-off walkthrough per operator-tour §6d)
+- [x] `field_guide` corpus authored; ingest via `make rag-ingest-field-guides` (retrieval + safety metadata — run on farm after deploy)
+- [x] Guided procedures run one step at a time, resumable, with citations
+- [x] Safety gating hard-stops mains-AC / pressurized-water steps and escalates
+- [x] Field diagnostics YAMLs (sensor / actuator / Pi-offline) — static branches; live snapshot branching deferred
+- [x] Printable procedure cards — markdown via `GET …/print` (PDF deferred)
+- [x] Persona = non-IT installer voice; no autonomous writes (terminal config = Confirm)
+- [x] **Background chat:** Pinia store owns SSE stream; drawer/route change does not kill in-flight turns; thinking indicator when drawer closed
+- [x] operator-tour + offline-deployment + architecture + OpenAPI + tests updated
 
 ---
 
 ## Using this plan in a new chat
 
-> Implement Phase 37 from `docs/plans/phase_37_guardian_offline_field_assistant.plan.md`. Start WS1 offline self-check + WS2 field_guide corpus (reuse Phase 32 platform_docs ingest with a new source_type). Author WS4 safety tiers before WS3 procedure content. Guided procedures are confirm-per-step and resumable. Guardian must NEVER give step-by-step mains-AC or pressurized-water instructions — it stops and tells the worker to get a qualified person. Everything must work offline on a local model + local corpus; no autonomous writes.
+> Implement Phase 37 from `docs/plans/phase_37_guardian_offline_field_assistant.plan.md`. **WS9:** move Guardian SSE + transcript into a Pinia store (`guardianChat`) so closing the drawer or changing routes does not abort slow streams — refactor `GuardianChatPanel` to read the store. Start WS1 offline self-check + WS2 field_guide corpus (reuse Phase 32 platform_docs ingest with a new source_type). Author WS4 safety tiers before WS3 procedure content. Guided procedures are confirm-per-step and resumable. Guardian must NEVER give step-by-step mains-AC or pressurized-water instructions — it stops and tells the worker to get a qualified person. Everything must work offline on a local model + local corpus; no autonomous writes.
 
 ---
 
@@ -305,3 +344,5 @@ WS1 (offline proof) → WS2 (corpus) → WS4 (safety, before any step content sh
 | [phase_35_lighting_domain.plan.md](phase_35_lighting_domain.plan.md) | Wiring a light relay = a Phase 37 procedure |
 | [phase_35_37_operational_closure.plan.md](phase_35_37_operational_closure.plan.md) | WS8 + end-of-37 sweep (OC-37, OC-37E) |
 | [phase_36_greenhouse_climate.plan.md](phase_36_greenhouse_climate.plan.md) | Wiring shade motor / fan = Phase 37 procedures |
+| [phase_33_guardian_polish_and_enterprise_ops.plan.md](phase_33_guardian_polish_and_enterprise_ops.plan.md) | Guardian UX polish lineage; WS9 completes “slow model” ergonomics |
+| [`GuardianChatPanel.vue`](../../ui/src/components/GuardianChatPanel.vue) | Current mount-bound stream — WS9 migrates to store |

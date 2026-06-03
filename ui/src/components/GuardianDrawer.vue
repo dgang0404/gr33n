@@ -85,6 +85,7 @@
               <GuardianTabNav
                 :model-value="guardianPanel.drawerTab"
                 :pending-count="proposalsStore.pendingCount"
+                :chat-streaming="guardianChat.streaming"
                 class="px-4"
                 compact
                 @update:model-value="guardianPanel.setDrawerTab"
@@ -115,10 +116,12 @@ import GuardianRequestsInbox from './GuardianRequestsInbox.vue'
 import GuardianTabNav from './GuardianTabNav.vue'
 import { useCapabilitiesStore } from '../stores/capabilities'
 import { useFarmContextStore } from '../stores/farmContext'
+import { useGuardianChatStore } from '../stores/guardianChat'
 import { useGuardianPanelStore } from '../stores/guardianPanel'
 import { useGuardianProposalsStore } from '../stores/guardianProposals'
 
 const guardianPanel = useGuardianPanelStore()
+const guardianChat = useGuardianChatStore()
 const farmContext = useFarmContextStore()
 const capabilities = useCapabilitiesStore()
 const proposalsStore = useGuardianProposalsStore()

@@ -167,6 +167,12 @@ rag-ingest-platform-docs: ## Index operator platform docs for farm 1 (needs EMBE
 rag-ingest-platform-docs-dry-run: ## List manifest files + chunk estimates (no API key required)
 	@./scripts/rag-ingest-platform-docs.sh --dry-run
 
+rag-ingest-field-guides: ## Index field/trades guides for farm 1 (Phase 37; needs EMBEDDING_API_KEY)
+	@./scripts/rag-ingest-field-guides.sh
+
+rag-ingest-field-guides-dry-run: ## List field-guide manifest + chunk estimates (no API key)
+	@./scripts/rag-ingest-field-guides.sh --dry-run
+
 local-up: ## dev-stack then API + UI (same as ./scripts/dev-stack.sh --serve)
 	@./scripts/dev-stack.sh --serve
 

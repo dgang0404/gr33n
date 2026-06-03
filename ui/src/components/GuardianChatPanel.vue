@@ -163,6 +163,14 @@
               <p class="mt-1 text-zinc-500">{{ c.excerpt }}</p>
             </li>
           </ul>
+          <p
+            v-if="t.field_degraded"
+            class="text-[10px] text-amber-300/90 px-3"
+            data-test="chat-field-degraded-banner"
+          >
+            LLM offline — showing authored procedure steps only.
+          </p>
+          <GuardianProcedureCard v-if="t.procedure" :procedure="t.procedure" class="pl-6" />
           <div v-if="t.proposals?.length" class="pl-6 space-y-2" data-test="chat-turn-proposals">
             <GuardianActionProposal
               v-for="p in t.proposals"
@@ -175,7 +183,7 @@
             />
           </div>
         </article>
-        <div v-if="streaming" class="text-zinc-100 text-sm" data-test="chat-streaming-row">
+        <div v-if="streaming" class="text-zinc-100 text-sm space-y-2" data-test="chat-streaming-row">
           <span class="text-[10px] uppercase tracking-widest text-green-500 mr-2">guardian</span>
           <span class="whitespace-pre-wrap">{{ streamingText }}<span class="text-zinc-500 animate-pulse">▍</span></span>
         </div>
@@ -396,11 +404,14 @@
 
 <script setup>
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
+import { storeToRefs } from 'pinia'
 import api from '../api'
 import GuardianActionProposal from './GuardianActionProposal.vue'
+import GuardianProcedureCard from './GuardianProcedureCard.vue'
 import { useFarmOperate } from '../composables/useFarmOperate'
 import { useFarmContextStore } from '../stores/farmContext'
 import { useFarmStore } from '../stores/farm'
+import { useGuardianChatStore } from '../stores/guardianChat'
 import { useGuardianPanelStore } from '../stores/guardianPanel'
 import { useGuardianProposalsStore } from '../stores/guardianProposals'
 import { useCapabilitiesStore } from '../stores/capabilities'
@@ -418,6 +429,8 @@ const maxHistoryTurns = 20
 const farmContext = useFarmContextStore()
 const farmStore = useFarmStore()
 const guardianPanel = useGuardianPanelStore()
+const guardianChat = useGuardianChatStore()
+const { streaming, streamingText, error: errorMessage, transcript } = storeToRefs(guardianChat)
 const guardianProposals = useGuardianProposalsStore()
 const capabilities = useCapabilitiesStore()
 const farmIdRef = computed(() => farmContext.farmId)
@@ -434,9 +447,6 @@ const { canOperate } = useFarmOperate(farmIdRef)
 
 const message = ref('')
 const useFarmContext = ref(!!farmContext.farmId)
-const streaming = ref(false)
-const streamingText = ref('')
-const errorMessage = ref('')
 const messageInputRef = ref(null)
 
 const sessionId = computed({
@@ -444,7 +454,6 @@ const sessionId = computed({
   set: (v) => guardianPanel.setActiveSessionId(v),
 })
 
-const transcript = ref([])
 const sessions = ref([])
 
 const renameTarget = ref(null)
@@ -550,7 +559,7 @@ async function submitBulkDelete() {
       sessions.value = sessions.value.filter((s) => !succeeded.includes(s.session_id))
       if (succeeded.includes(sessionId.value)) {
         sessionId.value = ''
-        transcript.value = []
+        guardianChat.clearTranscript()
       }
     }
     if (failed.length) {
@@ -580,8 +589,8 @@ async function loadSession(id) {
   try {
     const r = await api.get('/v1/chat/sessions/' + id)
     sessionId.value = id
-    transcript.value = Array.isArray(r.data?.turns) ? r.data.turns : []
-    errorMessage.value = ''
+    guardianChat.setTranscript(r.data?.turns)
+    guardianChat.clearError()
   } catch (e) {
     errorMessage.value = e.message || 'failed to load session'
   }
@@ -599,9 +608,7 @@ function onCompactSessionChange(ev) {
 function newSession() {
   if (streaming.value) return
   sessionId.value = ''
-  transcript.value = []
-  streamingText.value = ''
-  errorMessage.value = ''
+  guardianChat.clearTranscript()
 }
 
 function sessionLabel(s) {
@@ -661,7 +668,7 @@ async function deleteSession(s) {
     sessions.value = sessions.value.filter((x) => x.session_id !== s.session_id)
     if (sessionId.value === s.session_id) {
       sessionId.value = ''
-      transcript.value = []
+      guardianChat.clearTranscript()
     }
   } catch (e) {
     errorMessage.value = e.message || 'delete failed'
@@ -691,19 +698,8 @@ function normalizeProposals(raw) {
   }))
 }
 
-function findProposalTurn(proposalId) {
-  for (const t of transcript.value) {
-    if (!t.proposals) continue
-    const i = t.proposals.findIndex((p) => p.proposal_id === proposalId)
-    if (i >= 0) return { turn: t, index: i }
-  }
-  return null
-}
-
 function patchProposal(proposalId, patch) {
-  const hit = findProposalTurn(proposalId)
-  if (!hit) return
-  hit.turn.proposals[hit.index] = { ...hit.turn.proposals[hit.index], ...patch }
+  guardianChat.patchProposal(proposalId, patch)
 }
 
 async function refreshAfterAlertAction(proposal, result) {
@@ -747,10 +743,6 @@ function onProposalDismissed({ proposal }) {
 
 function onProposalError({ proposal, error }) {
   patchProposal(proposal.proposal_id, { error: error || 'Confirm failed' })
-}
-
-function apiBaseURL() {
-  return import.meta.env.VITE_API_URL ?? 'http://localhost:8080'
 }
 
 function isAttachmentSelected(id) {
@@ -822,112 +814,43 @@ async function onChatPhotoSelected(ev) {
 async function send() {
   if (!message.value.trim()) return
   if (useFarmContext.value && !farmContext.farmId) return
-  errorMessage.value = ''
-  streamingText.value = ''
-  streaming.value = true
+  guardianChat.clearError()
 
-  const userMessage = message.value.trim()
   const attachedIds = [...selectedAttachmentIds.value]
-  const body = { message: userMessage, stream: true }
-  if (sessionId.value) body.session_id = sessionId.value
-  if (useFarmContext.value && farmContext.farmId) {
-    body.farm_id = Number(farmContext.farmId)
-  }
-  const chatContextRef = guardianPanel.chatContextRef()
-  if (chatContextRef) {
-    body.context_ref = chatContextRef
-  }
-  if (attachedIds.length) {
-    body.attachment_ids = attachedIds
-  }
+  const farmId = useFarmContext.value && farmContext.farmId ? Number(farmContext.farmId) : null
+  const result = await guardianChat.sendMessage({
+    message: message.value,
+    farmId,
+    sessionId: sessionId.value || undefined,
+    contextRef: guardianPanel.chatContextRef(),
+    attachmentIds: attachedIds,
+  })
+  if (!result?.finalEvent) return
 
-  const token = localStorage.getItem('gr33n_token') ?? ''
-  try {
-    const resp = await fetch(apiBaseURL() + '/v1/chat', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'text/event-stream',
-        ...(token ? { Authorization: 'Bearer ' + token } : {}),
-      },
-      body: JSON.stringify(body),
-    })
-    if (!resp.ok || !resp.body) {
-      let text = `HTTP ${resp.status}`
-      try { text = (await resp.json()).error || text } catch {}
-      errorMessage.value = text
-      return
-    }
-    const finalEvent = await consumeSSE(resp.body)
-    if (finalEvent) {
-      sessionId.value = finalEvent.session_id || sessionId.value
-      transcript.value.push({
-        turn_index: finalEvent.turn_index,
-        user_message: userMessage,
-        assistant_message: finalEvent.answer || streamingText.value,
-        llm_model: finalEvent.llm_model || '',
-        grounded: !!finalEvent.grounded,
-        context_count: finalEvent.context_count || 0,
-        citations: Array.isArray(finalEvent.citations) ? finalEvent.citations : [],
-        proposals: normalizeProposals(finalEvent.proposals),
-        farm_id: body.farm_id ?? null,
-        attachment_ids: attachedIds,
-        vision_used: !!finalEvent.vision_used,
-      })
-      message.value = ''
-      selectedAttachmentIds.value = []
-      guardianPanel.clearPrefill()
-      if (finalEvent.proposals?.length && farmContext.farmId) {
-        await guardianProposals.refreshPendingCount(farmContext.farmId)
-      }
-      await refreshSessions()
-    }
-  } catch (e) {
-    errorMessage.value = e.message || 'chat failed'
-  } finally {
-    streaming.value = false
-    streamingText.value = ''
+  const { finalEvent, userMessage, attachedIds: sentIds, body } = result
+  sessionId.value = finalEvent.session_id || sessionId.value
+  guardianChat.appendTurn({
+    turn_index: finalEvent.turn_index,
+    user_message: userMessage,
+    assistant_message: finalEvent.answer || streamingText.value,
+    llm_model: finalEvent.llm_model || '',
+    grounded: !!finalEvent.grounded,
+    context_count: finalEvent.context_count || 0,
+    citations: Array.isArray(finalEvent.citations) ? finalEvent.citations : [],
+    proposals: normalizeProposals(finalEvent.proposals),
+    procedure: finalEvent.procedure ?? null,
+    field_degraded: !!finalEvent.field_degraded,
+    farm_id: body.farm_id ?? null,
+    attachment_ids: sentIds,
+    vision_used: !!finalEvent.vision_used,
+  })
+  message.value = ''
+  selectedAttachmentIds.value = []
+  guardianPanel.clearPrefill()
+  if (finalEvent.proposals?.length && farmContext.farmId) {
+    await guardianProposals.refreshPendingCount(farmContext.farmId)
   }
-}
-
-async function consumeSSE(stream) {
-  const reader = stream.getReader()
-  const decoder = new TextDecoder()
-  let buf = ''
-  let done = null
-  for (;;) {
-    const { value, done: end } = await reader.read()
-    if (end) break
-    buf += decoder.decode(value, { stream: true })
-    const events = buf.split('\n\n')
-    buf = events.pop() ?? ''
-    for (const block of events) {
-      const result = handleSSEBlock(block)
-      if (result) done = result
-    }
-  }
-  return done
-}
-
-function handleSSEBlock(block) {
-  let eventType = 'message'
-  let data = ''
-  for (const line of block.split('\n')) {
-    if (line.startsWith('event:')) eventType = line.slice(6).trim()
-    else if (line.startsWith('data:')) data += (data ? '\n' : '') + line.slice(5).trim()
-  }
-  if (!data) return null
-  if (data === '[DONE]') return null
-  let parsed
-  try { parsed = JSON.parse(data) } catch { return null }
-  if (eventType === 'delta' && typeof parsed.text === 'string') {
-    streamingText.value += parsed.text
-  } else if (eventType === 'done') {
-    return parsed
-  } else if (eventType === 'error') {
-    errorMessage.value = parsed.error || 'LLM request failed'
-  }
-  return null
+  await refreshSessions()
 }
 
 onUnmounted(revokeChatPhotoThumbs)

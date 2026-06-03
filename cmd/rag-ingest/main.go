@@ -35,7 +35,9 @@ func main() {
 		doBatches    = flag.Bool("inventory-batches", false, "index gr33nnaturalfarming.input_batches (no qty / cost numerics)")
 		doAlerts     = flag.Bool("alerts", false, "index gr33ncore.alerts_notifications")
 		doPlatform   = flag.Bool("platform-docs", false, "index curated operator markdown from docs/rag/platform-doc-manifest.yaml (source_type platform_doc)")
+		doFieldGuide = flag.Bool("field-guides", false, "index field/trades markdown from docs/rag/field-guide-manifest.yaml (source_type field_guide)")
 		manifestPath = flag.String("manifest", "", "platform doc manifest path (default docs/rag/platform-doc-manifest.yaml)")
+		fieldManifest = flag.String("field-manifest", "", "field guide manifest path (default docs/rag/field-guide-manifest.yaml)")
 		repoRoot     = flag.String("repo-root", ".", "repo root for platform-docs manifest resolution")
 		batchRuns    = flag.Int("run-batch-size", 500, "cursor batch size for automation runs")
 		startAfterID = flag.Int64("runs-after-id", 0, "only automation runs with id > this")
@@ -51,11 +53,12 @@ func main() {
 	if *farmID <= 0 {
 		log.Fatal("-farm-id is required")
 	}
-	if !*doTasks && !*doRuns && !*doCycles && !*doPrograms && !*doSchedules && !*doRules && !*doActions && !*doCosts && !*doInputs && !*doBatches && !*doAlerts && !*doPlatform {
+	if !*doTasks && !*doRuns && !*doCycles && !*doPrograms && !*doSchedules && !*doRules && !*doActions && !*doCosts && !*doInputs && !*doBatches && !*doAlerts && !*doPlatform && !*doFieldGuide {
 		log.Fatal("specify at least one ingest flag (see -help)")
 	}
 
-	onlyPlatform := *doPlatform && !*doTasks && !*doRuns && !*doCycles && !*doPrograms && !*doSchedules && !*doRules && !*doActions && !*doCosts && !*doInputs && !*doBatches && !*doAlerts
+	onlyPlatform := *doPlatform && !*doFieldGuide && !*doTasks && !*doRuns && !*doCycles && !*doPrograms && !*doSchedules && !*doRules && !*doActions && !*doCosts && !*doInputs && !*doBatches && !*doAlerts
+	onlyField := *doFieldGuide && !*doPlatform && !*doTasks && !*doRuns && !*doCycles && !*doPrograms && !*doSchedules && !*doRules && !*doActions && !*doCosts && !*doInputs && !*doBatches && !*doAlerts
 	if *dryRun && *doPlatform {
 		dry, err := ingest.DryRunPlatformDocs(*repoRoot, *manifestPath)
 		if err != nil {
@@ -66,6 +69,19 @@ func main() {
 			fmt.Printf("  %s source_id=%d bytes=%d chunks=%d\n", f.RelPath, f.SourceID, f.Bytes, f.Chunks)
 		}
 		if onlyPlatform {
+			return
+		}
+	}
+	if *dryRun && *doFieldGuide {
+		dry, err := ingest.DryRunFieldGuides(*repoRoot, *fieldManifest)
+		if err != nil {
+			log.Fatal(err)
+		}
+		fmt.Printf("dry-run farm=%d field_guides files=%d estimated_chunks=%d\n", *farmID, len(dry.Files), dry.TotalChunks)
+		for _, f := range dry.Files {
+			fmt.Printf("  %s source_id=%d domain=%s safety=%s bytes=%d chunks=%d\n", f.RelPath, f.SourceID, f.Domain, f.Safety, f.Bytes, f.Chunks)
+		}
+		if onlyField {
 			return
 		}
 	}
@@ -363,6 +379,13 @@ func main() {
 			log.Fatalf("platform_docs: %v", err)
 		}
 		log.Printf("embedded platform_docs: %d", n)
+	}
+	if *doFieldGuide {
+		n, err := w.IngestFieldGuides(ctx, *farmID, *repoRoot, *fieldManifest)
+		if err != nil {
+			log.Fatalf("field_guides: %v", err)
+		}
+		log.Printf("embedded field_guides: %d", n)
 	}
 }
 

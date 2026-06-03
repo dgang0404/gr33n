@@ -27,6 +27,25 @@ func (q *Queries) CountRagChunksByFarm(ctx context.Context, farmID int64) (int64
 	return cnt, err
 }
 
+const countRagChunksByFarmSourceType = `-- name: CountRagChunksByFarmSourceType :one
+SELECT COUNT(*)::bigint AS cnt
+FROM gr33ncore.rag_embedding_chunks
+WHERE farm_id = $1
+  AND source_type = $2
+`
+
+type CountRagChunksByFarmSourceTypeParams struct {
+	FarmID     int64  `db:"farm_id" json:"farm_id"`
+	SourceType string `db:"source_type" json:"source_type"`
+}
+
+func (q *Queries) CountRagChunksByFarmSourceType(ctx context.Context, arg CountRagChunksByFarmSourceTypeParams) (int64, error) {
+	row := q.db.QueryRow(ctx, countRagChunksByFarmSourceType, arg.FarmID, arg.SourceType)
+	var cnt int64
+	err := row.Scan(&cnt)
+	return cnt, err
+}
+
 const deleteRagChunksByFarmAndSourceType = `-- name: DeleteRagChunksByFarmAndSourceType :exec
 DELETE FROM gr33ncore.rag_embedding_chunks
 WHERE farm_id = $1

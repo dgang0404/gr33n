@@ -1,0 +1,17 @@
+# Curated field/trades guides for Guardian field_guide RAG (Phase 37 WS2).
+# Paths are relative to docs/field-guides/.
+#
+#   ./scripts/rag-ingest-field-guides.sh
+#   ./scripts/rag-ingest-field-guides.sh --dry-run
+version: 1
+
+include:
+  - pi-wiring-basics.md
+  - relay-and-actuator-wiring.md
+  - sensor-install-and-calibration.md
+  - irrigation-and-plumbing-basics.md
+  - electrical-safety.md
+  - field-troubleshooting.md
+
+exclude_globs:
+  - "procedures/**"

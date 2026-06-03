@@ -288,6 +288,46 @@ Guardian **`summarize_zone_greenhouse_climate`** ([`tools/greenhouse.go`](../../
 
 **Block sun ≠ add light:** on the same zone, use **lighting_programs** (Phase 35) for photoperiod and **greenhouse_climate** (Phase 36) for shade and ventilation. Operator walkthrough: [operator-tour §5b](operator-tour.md#5b-greenhouse-shade-vents-and-fans-phase-36). OpenAPI: `GreenhouseClimate`, `POST /farms/{id}/actuators`, `POST .../rule-templates/greenhouse`.
 
+### 7.0d Plant-needs UI + pulse (Phase 38)
+
+Operators navigate by **what the plant needs**, not by database table names:
+
+| Need | Where in UI | Guardian guidance |
+|------|-------------|-------------------|
+| **Water & feeding** | **Zones → Water** tab; `/fertigation` for programs | Prefer **`summarize_zone_fertigation`** + zone Water tab over scattering Schedules/Sensors links |
+| **Light** | **Zones → Light** tab; `/lighting` | **`summarize_zone_lighting`** for photoperiod |
+| **Air & climate** | **Zones → Climate** tab (greenhouse profile inside when `zone_type=greenhouse`) | **`summarize_zone_greenhouse_climate`** for shade/fans; do not conflate with lighting |
+
+Sidebar **Advanced** (Rules, Setpoints, Controls, Sensors) remains for power users and debugging.
+
+**Timed pump pulse (shipped):** `POST /actuators/{id}/command` may include **`duration_seconds`** (pumps/relays) — Pi runs **on → wait → off**. Fertigation programs can pass **`run_duration_seconds`** on automated `on` when simulation is off.
+
+**Not shipped (do not tell operators it works today):**
+
+- **Device command queue** — still **one `pending_command` slot per device**; concurrent schedule + program + Confirm can **overwrite** (last write wins). Planned **Phase 39 WS1**.
+- **Automated Pi mixing** — operators log mixes via **`POST …/mixing-events`**; no **`mix_batch`** on the edge yet. Planned **Phase 39** (recipe + base EC → edge steps).
+
+When answering “how do I run my room?”, direct operators to **Zones → Water / Light / Climate** first, then Advanced pages. Operator walkthrough: [operator-tour §4a](operator-tour.md#4a-plant-needs-per-zone-phase-38).
+
+### 7.0e Offline field assistant (Phase 37)
+
+Physical install guidance for **non-IT operators** at sites with **no WAN** (or local-only LLM). Knowledge layers:
+
+| Layer | Source | Used for |
+|-------|--------|----------|
+| **field_guide RAG** | `docs/field-guides/*.md` ingested (`source_type=field_guide`) | Pi wiring, relays, sensors, plumbing basics, electrical safety boundaries |
+| **Guided procedures** | `docs/field-guides/procedures/*.yaml` | One step at a time: `start procedure <id>`, operator replies `done` / `help` / `stop procedure` |
+| **Safety gating** | Authored tiers + chat intercept | Hard stop on mains AC / pressurized water asks; `qualified_person_required` steps halt the procedure |
+| **Static print** | `GET /v1/field-guides/procedures/{id}/print` | Markdown checklist when the screen is off or the LLM is down |
+
+**Session state:** active procedure progress lives in `conversation_sessions.meta.active_procedure` (`id`, `step_n`, `status`).
+
+**WS1 degrade:** when `LLM_BASE_URL` is LAN/loopback and the model is unreachable, field-related chat returns **procedure + print path** (`field_degraded: true`, `llm_model: field-degrade`) instead of HTTP 502. Procedure-only turns use `llm_model: field-procedure`. RAG retrieval failure on local endpoints does **not** block chat (snapshot + procedures still work).
+
+**Health:** `GET /v1/chat/health?farm_id=` — `field_assistant.field_mode`, `llm_reachable`, chunk counts.
+
+Operator walkthrough: [operator-tour §6d](operator-tour.md#6d-first-field-install-with-guardian-offline-phase-37). Deploy notes: [offline-or-intranet-deployment.md](offline-or-intranet-deployment.md#field-assistant-mode-phase-37).
+
 ### 7.1 Operator mental model
 
 | Layer | Who acts | Example |
@@ -314,7 +354,7 @@ Guardian **proposes**; the operator **confirms**. Viewers may chat and see propo
 | `create_crop_cycle` | medium | Start an active crop cycle in a zone (rejects busy zones) |
 | `create_fertigation_program` | medium | Create a fertigation program for a zone |
 | `apply_bootstrap_template` | high | Apply farm bootstrap template (admin only) |
-| `enqueue_actuator_command` | high | Write `pending_command` on device config (Pi picks up later) |
+| `enqueue_actuator_command` | high | Write `pending_command` on device config (Pi picks up later); optional `duration_seconds` pulse for pumps — **one slot per device** until Phase 39 queue |
 | `apply_grow_setup_pack` | high | **Transactional bundle:** optional plant + active cycle + program + optional monitor task |
 
 Every tool still runs only after **Confirm** — same frozen-args, TTL, and audit path as Phase 29. **Guardian cannot silently add plants, cycles, or programs** — chat may *propose* them; database rows appear only after the operator Confirms. See [§7.3](#73-phase-30--change-request-pr-inbox), [§7.6](#76-grow-setup-prs-phase-32), and [§8](#8-operator-expectations-at-phase-30-ship).
@@ -579,3 +619,4 @@ The layer was built incrementally across these phases:
 - **Phase 32** — Grow setup PRs + platform doc RAG. Read/create tools, setup pack, `rag-ingest-platform-docs`, Guardian citation rules for `platform_doc`. See [`plans/phase_32_guardian_grow_setup_prs.plan.md`](plans/phase_32_guardian_grow_setup_prs.plan.md).
 - **Phase 33 WS1** — Read-tool hardening (alert-write intent guards, smokes, doc parity). See [`plans/phase_33_guardian_polish_and_enterprise_ops.plan.md`](plans/phase_33_guardian_polish_and_enterprise_ops.plan.md).
 - **Phase 34** — PR iteration & blind-spot inputs. Revise/supersede a pending proposal within a session, operator-stated facts (`operator_provided`), and a plain-language impact explanation on every card. See [§7.7](#77-pr-iteration--blind-spot-facts-phase-34) and [`plans/phase_34_guardian_pr_iteration.plan.md`](plans/phase_34_guardian_pr_iteration.plan.md).
+- **Phase 37** — Offline field assistant: `field_guide` RAG, guided procedures, safety gating, WS1 degrade, static print. See [§7.0e](#70e-offline-field-assistant-phase-37) and [`plans/phase_37_guardian_offline_field_assistant.plan.md`](plans/phase_37_guardian_offline_field_assistant.plan.md).

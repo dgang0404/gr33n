@@ -5,7 +5,8 @@
 #   make rag-ingest-platform-docs
 #   ./scripts/rag-ingest-platform-docs.sh --dry-run
 #
-# Phase 36 greenhouse walkthrough: operator-tour.md §5b; bootstrap detail in pattern-playbooks.md.
+# Phase 36 greenhouse: operator-tour.md §5b; Phase 38 plant-needs §4a + architecture §7.0d; pulse §1.1 in pi-integration-guide.md.
+# Phase 37: operator-tour.md §6d offline field install; architecture §7.0e; offline-or-intranet-deployment.md field assistant section.
 # Plans under docs/plans/ are excluded via exclude_globs.
 version: 1
 
@@ -25,6 +26,7 @@ include:
   - tasks-first-operator-guide.md
   - phase-14-operator-documentation.md
   - phase-13-operator-documentation.md
+  - offline-or-intranet-deployment.md
 
 # Safety filter when expanding to directory globs later (explicit include list today).
 exclude_globs:

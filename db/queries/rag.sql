@@ -41,6 +41,12 @@ SELECT COUNT(*)::bigint AS cnt
 FROM gr33ncore.rag_embedding_chunks
 WHERE farm_id = $1;
 
+-- name: CountRagChunksByFarmSourceType :one
+SELECT COUNT(*)::bigint AS cnt
+FROM gr33ncore.rag_embedding_chunks
+WHERE farm_id = $1
+  AND source_type = $2;
+
 -- Farm-scoped nearest-neighbor search (caller supplies query embedding; WS4 retrieval API).
 -- name: SearchRagNearestNeighbors :many
 SELECT

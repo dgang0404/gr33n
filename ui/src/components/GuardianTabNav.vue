@@ -15,6 +15,13 @@
       @click="$emit('update:modelValue', 'chat')"
     >
       Chat
+      <span
+        v-if="chatStreaming"
+        class="text-[10px] font-normal text-green-400/90 normal-case tracking-normal"
+        data-test="guardian-tab-thinking"
+      >
+        thinking…
+      </span>
     </button>
     <button
       type="button"
@@ -41,6 +48,7 @@
 defineProps({
   modelValue: { type: String, required: true },
   pendingCount: { type: Number, default: 0 },
+  chatStreaming: { type: Boolean, default: false },
   compact: { type: Boolean, default: false },
 })
 

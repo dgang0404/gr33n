@@ -1323,11 +1323,12 @@ type Gr33ncoreCommonsCatalogEntry struct {
 }
 
 type Gr33ncoreConversationSession struct {
-	ID        uuid.UUID `db:"id" json:"id"`
-	UserID    uuid.UUID `db:"user_id" json:"user_id"`
-	Title     *string   `db:"title" json:"title"`
-	CreatedAt time.Time `db:"created_at" json:"created_at"`
-	UpdatedAt time.Time `db:"updated_at" json:"updated_at"`
+	ID        uuid.UUID       `db:"id" json:"id"`
+	UserID    uuid.UUID       `db:"user_id" json:"user_id"`
+	Title     *string         `db:"title" json:"title"`
+	Meta      json.RawMessage `db:"meta" json:"meta"`
+	CreatedAt time.Time       `db:"created_at" json:"created_at"`
+	UpdatedAt time.Time       `db:"updated_at" json:"updated_at"`
 }
 
 // Per-session (user_message, assistant_message) history for Farm Guardian (Phase 27 WS5). Same farm_id trust boundary as gr33ncore.rag_embedding_chunks.

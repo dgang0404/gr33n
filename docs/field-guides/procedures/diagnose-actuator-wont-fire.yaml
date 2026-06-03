@@ -1,0 +1,23 @@
+id: diagnose-actuator-wont-fire
+title: Diagnose an actuator that will not fire
+domain: actuator
+offline_ok: true
+steps:
+  - n: 1
+    safety_tier: safe
+    say: "In gr33n, check whether a command is queued on the device (pending_command). If empty, send a manual test from the actuator or zone screen."
+    confirm: "You sent a test command from gr33n?"
+  - n: 2
+    safety_tier: safe
+    say: "Confirm the Pi is online (recent heartbeat). Offline Pis keep commands in the local SQLite queue until the API is reachable."
+    confirm: "Pi heartbeat is recent?"
+    ref: field-troubleshooting.md
+  - n: 3
+    safety_tier: caution
+    say: "Verify relay IN is on the GPIO pin configured for this actuator in gr33n. A pin mismatch is the most common fix."
+    confirm: "GPIO matches gr33n config?"
+    ref: relay-and-actuator-wiring.md
+  - n: 4
+    safety_tier: safe
+    say: "Listen for a relay click. If the control side works but the load never energizes, the switched mains side needs a licensed electrician."
+    confirm: "Relay clicks on control side?"

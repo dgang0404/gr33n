@@ -6,6 +6,7 @@ package db
 
 import (
 	"context"
+	"encoding/json"
 	"time"
 
 	"github.com/google/uuid"
@@ -32,6 +33,7 @@ type Querier interface {
 	CountGuardianProposalsByUser(ctx context.Context, arg CountGuardianProposalsByUserParams) (int64, error)
 	CountInsertCommonsSyncAttemptsSince(ctx context.Context, arg CountInsertCommonsSyncAttemptsSinceParams) (int64, error)
 	CountRagChunksByFarm(ctx context.Context, farmID int64) (int64, error)
+	CountRagChunksByFarmSourceType(ctx context.Context, arg CountRagChunksByFarmSourceTypeParams) (int64, error)
 	CountTasksByStatusForFarm(ctx context.Context, farmID int64) ([]CountTasksByStatusForFarmRow, error)
 	CountUnreadAlertsByFarm(ctx context.Context, farmID int64) (int64, error)
 	// ============================================================
@@ -200,6 +202,7 @@ type Querier interface {
 	GetAutomationRunByDetails(ctx context.Context, arg GetAutomationRunByDetailsParams) (Gr33ncoreAutomationRun, error)
 	GetAutomationRunByProgramAndDetails(ctx context.Context, arg GetAutomationRunByProgramAndDetailsParams) (Gr33ncoreAutomationRun, error)
 	GetBaseUnitForType(ctx context.Context, unitType string) (Gr33ncoreUnit, error)
+	GetConversationSessionMeta(ctx context.Context, arg GetConversationSessionMetaParams) (json.RawMessage, error)
 	GetCostCategoryTotalsByFarm(ctx context.Context, farmID int64) ([]GetCostCategoryTotalsByFarmRow, error)
 	GetCostCategoryTotalsByFarmForYear(ctx context.Context, arg GetCostCategoryTotalsByFarmForYearParams) ([]GetCostCategoryTotalsByFarmForYearRow, error)
 	GetCostSummaryByFarm(ctx context.Context, farmID int64) (GetCostSummaryByFarmRow, error)
@@ -569,6 +572,7 @@ type Querier interface {
 	UpdateAuthUserPasswordHash(ctx context.Context, arg UpdateAuthUserPasswordHashParams) error
 	UpdateAutomationRule(ctx context.Context, arg UpdateAutomationRuleParams) (Gr33ncoreAutomationRule, error)
 	UpdateAutomationRuleActive(ctx context.Context, arg UpdateAutomationRuleActiveParams) (Gr33ncoreAutomationRule, error)
+	UpdateConversationSessionMeta(ctx context.Context, arg UpdateConversationSessionMetaParams) error
 	// Operator rename. Returns the row so the API can confirm ownership in one
 	// query — RowsAffected = 0 means "not found / not yours" → 404.
 	UpdateConversationSessionTitle(ctx context.Context, arg UpdateConversationSessionTitleParams) (UpdateConversationSessionTitleRow, error)

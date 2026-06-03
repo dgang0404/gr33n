@@ -20,6 +20,7 @@ import (
 	authhandler "gr33n-api/internal/handler/auth"
 	automationhandler "gr33n-api/internal/handler/automation"
 	chathandler "gr33n-api/internal/handler/chat"
+	fieldguideshandler "gr33n-api/internal/handler/fieldguides"
 	commonscataloghandler "gr33n-api/internal/handler/commonscatalog"
 	costhandler "gr33n-api/internal/handler/cost"
 	cropcyclehandler "gr33n-api/internal/handler/cropcycle"
@@ -63,6 +64,7 @@ func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationwo
 	cropcycle := cropcyclehandler.NewHandler(pool)
 	rag := raghandler.NewHandler(pool, aiCfg.Enabled)
 	aichat := chathandler.NewHandler(pool, aiCfg, fileStore)
+	fieldGuides := fieldguideshandler.NewHandler("")
 	plants := planthandler.NewHandler(pool)
 	animals := animalhandler.NewHandler(pool)
 	aquaponics := aquaponicshandler.NewHandler(pool)
@@ -129,6 +131,7 @@ func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationwo
 	mux.Handle("PATCH /auth/password", jwt(http.HandlerFunc(auth.ChangePassword)))
 
 	// Phase 27 — Farm Guardian chat + session history
+	mux.Handle("GET /v1/chat/health", jwt(http.HandlerFunc(aichat.GetHealth)))
 	mux.Handle("POST /v1/chat", jwt(http.HandlerFunc(aichat.PostV1)))
 	mux.Handle("POST /v1/chat/confirm", jwt(http.HandlerFunc(aichat.PostConfirm)))
 	mux.Handle("GET /v1/chat/proposals", jwt(http.HandlerFunc(aichat.ListProposals)))
@@ -138,6 +141,11 @@ func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationwo
 	mux.Handle("DELETE /v1/chat/sessions/{session_id}", jwt(http.HandlerFunc(aichat.DeleteSession)))
 	// Phase 28 WS5 — operator-facing token-usage dashboard
 	mux.Handle("GET /v1/chat/usage", jwt(http.HandlerFunc(aichat.GetUsage)))
+
+	// Phase 37 — field guide procedures (static; works without LLM for print/list)
+	mux.Handle("GET /v1/field-guides/procedures", jwt(http.HandlerFunc(fieldGuides.ListProcedures)))
+	mux.Handle("GET /v1/field-guides/procedures/{id}", jwt(http.HandlerFunc(fieldGuides.GetProcedure)))
+	mux.Handle("GET /v1/field-guides/procedures/{id}/print", jwt(http.HandlerFunc(fieldGuides.PrintProcedure)))
 
 	// Units
 	mux.Handle("GET /units", jwt(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

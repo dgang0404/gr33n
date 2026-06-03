@@ -1,6 +1,7 @@
 package synthesis
 
 import (
+	"strings"
 	"testing"
 
 	db "gr33n-api/internal/db"
@@ -32,5 +33,18 @@ func TestGuardianRAGInstructionsIncludesPlatformDocHint(t *testing.T) {
 	}
 	if len(withDoc) <= len(base) {
 		t.Fatal("expected longer instructions with platform_doc chunks")
+	}
+}
+
+func TestGuardianRAGInstructionsIncludesFieldGuideHint(t *testing.T) {
+	base := GuardianRAGInstructions(nil)
+	withField := GuardianRAGInstructions([]db.SearchRagNearestNeighborsFilteredRow{
+		{SourceType: "field_guide"},
+	})
+	if withField == base {
+		t.Fatal("expected extra field_guide guidance")
+	}
+	if !strings.Contains(withField, "field_guide") {
+		t.Fatal("expected field_guide grounding text")
 	}
 }

@@ -1,0 +1,23 @@
+id: diagnose-sensor-no-reading
+title: Diagnose a sensor with no reading
+domain: sensor
+offline_ok: true
+steps:
+  - n: 1
+    safety_tier: safe
+    say: "Check the Pi power LED is on and the device shows recent heartbeat in gr33n (Farm → Devices). If offline, fix connectivity first."
+    confirm: "Pi is powered and online in gr33n?"
+  - n: 2
+    safety_tier: safe
+    say: "Verify the sensor exists on the correct farm and zone in gr33n. Wrong farm_id in the Pi client is a common cause of missing rows."
+    confirm: "Sensor row exists for this zone?"
+    ref: field-troubleshooting.md
+  - n: 3
+    safety_tier: caution
+    say: "With power off, check 3-wire hookup: VCC, GND, and data to the GPIO configured in gr33n. Re-seat each screw terminal."
+    confirm: "Wiring matches the configured GPIO?"
+    ref: sensor-install-and-calibration.md
+  - n: 4
+    safety_tier: safe
+    say: "Power on and watch for readings. If still flat, the probe or board may be faulty — note model and replace or calibrate per manufacturer."
+    confirm: "Reading appears or you will replace the probe?"

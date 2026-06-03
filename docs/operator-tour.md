@@ -21,8 +21,8 @@ Think **physical layout → signals → automation → work tracking → feeding
 | Step | Where in the app | What you are doing |
 |------|------------------|--------------------|
 | **1. Farm home** | `/` Dashboard | Orient: counts, quick links to tasks / schedules / fertigation; optional widgets for today’s work and alerts. |
-| **2. Zones** | `/zones`, `/zones/:id` | Define **grow areas** (rooms, benches, beds). Sensors and actuators are attached **to zones** (directly or via devices). Crop cycles and many logs hang off zones. |
-| **3. Sensors & controls** | `/sensors`, `/sensors/:id`, `/actuators`, `/setpoints` | **Sensors** ingest readings (from Pi, gateways, or manual). **Actuators** are what automation turns on/off (valves, lights, pumps). **Setpoints** are **targets** (e.g. climate band) the product can compare to live readings — different from a raw sensor row. |
+| **2. Zones (plant needs)** | `/zones`, `/zones/:id` | Define **grow areas** (rooms, benches, beds). Open a zone → **Water / Light / Climate** tabs show what the plant needs in one place (Phase 38). |
+| **3. Sensors & controls (advanced)** | `/sensors`, `/actuators`, `/setpoints` under **Advanced** in the nav | Farm-wide device lists. Prefer the **zone** tabs first; use Advanced when wiring many sensors or debugging. |
 | **4. Schedules & rules** | `/schedules`, `/automation` | **Schedules** = time-based cadence (cron-like) tied to actions or fertigation windows. **Rules** (Automation) = conditions + actions (e.g. “if humidity low → open mist”). |
 | **4b. Lighting (photoperiod)** | `/lighting` | **Lighting programs** — first-class 18/6, 12/12, or custom ON/OFF photoperiods for grow lights. One program owns a paired schedule + `control_actuator` actions (see [§5](#5-set-up-186-vegetative-lights-phase-35)). |
 | **4c. Greenhouse climate** | `/zones/:id`, `/actuators`, `/automation` | **Shade, vents, fans** on `zone_type=greenhouse` — profile in zone meta, typed actuators, lux/temp rules. **Not** supplemental light (see [§5b](#5b-greenhouse-shade-vents-and-fans-phase-36)). |
@@ -32,6 +32,28 @@ Think **physical layout → signals → automation → work tracking → feeding
 | **7b. Zone photos (optional)** | `/zones/:id` | Reference / walkthrough photos per zone; Guardian sees them in the farm snapshot ([architecture §7.4](farm-guardian-architecture.md#74-zone-reference-photos-phase-30-ws5)). |
 
 **Around the edges (same session):** **Alerts** (`/alerts`), **Costs** (`/costs`), **Knowledge** (`/farm-knowledge` — farm-scoped RAG), **Plants / Animals / Aquaponics** when those modules matter, **Settings** / **Catalog** for account and reference data.
+
+---
+
+## 4a. Plant needs per zone (Phase 38)
+
+Operators think in **what the plant needs**, not database table names:
+
+| Need | Zone tab | Typical hardware | Operator pages |
+|------|----------|------------------|----------------|
+| **Water & feeding** | Water | EC/pH/moisture sensors, irrigation pump | `/fertigation`, schedules on the program |
+| **Light** | Light | Grow lights, optional lux/PAR | `/lighting` photoperiod programs |
+| **Air & climate** | Climate | Temp/humidity, fans, vents, shade (greenhouse) | `/automation` rules, `/setpoints` targets |
+
+Each tab shows the **connection chain**: live **reading** → **target band** (setpoint) → **schedule or rule** → **pump/light/fan** → **device online**.
+
+**Timed pump runs:** most microcontrollers are on/off relays. Use **Run pulse** (N seconds) on a pump in the zone Water tab or on **Controls** — the Pi runs **on → wait → off**. Fertigation programs can set `run_duration_seconds` so automated feeds use the same pulse.
+
+**Navigation:** sidebar **Grow** (zones, fertigation) and **Operate** (tasks, schedules, lighting) are the day-to-day path; **Advanced** holds Rules, Setpoints, Controls, and Sensors for power users.
+
+**Edge commands (important):** automation, Guardian Confirm, and manual **Controls** all write **`pending_command`** on a device. Today there is **only one slot per device** — if a schedule, fertigation program, and operator all enqueue within the same poll window, **the last write wins** and earlier commands can be lost. Use **Run pulse** for timed pump runs (Phase 38); do not assume the Pi is running a full multi-step nutrient mix automatically.
+
+**Automated mixing on the Pi:** **not available yet.** Operators record what went into the tank via **Fertigation → Mixing log** (API `POST …/mixing-events`). A future **Phase 39** will add a device **command queue** and **`mix_batch`** steps (recipe + base reservoir EC → pump seconds on the edge). Until then, Guardian and docs should treat fertigation programs as **pulse irrigation + logging**, not EC dosing hardware.
 
 ---
 
@@ -57,7 +79,7 @@ flowchart LR
 
 **Reading path:** Hardware → (optional Pi / `gr33n_client.py`) → `POST` readings → API → `sensor_readings` (and related). The UI can subscribe to **SSE** live readings for the selected farm (`/farms/{id}/sensors/stream`) so charts update without polling everything.
 
-**Actuation path:** Rules / schedules → worker + DB state → commands toward **actuators** (exact wiring depends on device integration — treat API + worker as the logical control plane).
+**Actuation path:** Rules / schedules / fertigation programs → worker or operator → **`pending_command`** on the device row → Pi poll → GPIO → **`actuator_events`**. One pending slot per device today (see §4a). Phase 39 will add a FIFO **command queue** for multi-step mix + irrigate.
 
 ---
 
@@ -94,9 +116,10 @@ Greenhouse **climate control** (blocking sun, heat relief, ventilation) is separ
 ### Quick start (bootstrap farm)
 
 1. **Settings → apply template** `greenhouse_climate_v1` (or create farm with that bootstrap). Requires migration `20260603_phase36_greenhouse_climate_v2.sql` on the API database first.
-2. Open **Zones** → **Greenhouse** — confirm `zone_type` is **greenhouse** and note actuators: **GH shade screen**, **GH ridge vent**, **GH exhaust fan**, **GH circulation fan**, plus humidity/CO₂ gear.
+2. Open **Zones** → your greenhouse zone → **Climate** tab (all zones have Water / Light / Climate tabs since Phase 38). For `zone_type=greenhouse`, the Climate tab includes the **greenhouse climate profile**, typed shade/vent/fan controls, and GH rules. Confirm actuators: **GH shade screen**, **GH ridge vent**, **GH exhaust fan**, **GH circulation fan**, plus humidity/CO₂ gear.
 3. **Automation** (`/automation`) — find rules prefixed **`GH —`** (high lux → deploy shade, hot → fan, night retract proxy). All start **inactive**; tune thresholds, then enable one rule at a time.
 4. **Sensors** — bootstrap adds **GH lux**, temp, RH, dew point, VPD. Without a lux meter wired on the Pi, do **not** enable the high-lux shade rule until readings exist.
+5. **Clone GH templates** (Climate tab) — `POST /farms/{id}/automation/rule-templates/greenhouse` requires **`lux_sensor_id`** when linking a shade actuator unless **`allow_missing_lux_sensor`** is true (skips high-lux family). The API blocks **activating** `GH — High lux` rules without a valid lux/PAR sensor unless **`sensor_interlock_override`** is set in `trigger_configuration`.
 
 ### Profile and actuators (API / integrators)
 
@@ -127,7 +150,7 @@ Clone inactive template rules for another zone: **`POST /farms/{id}/automation/r
 
 ### Manual and Guardian control
 
-**Execution path:** rules and Guardian write **`pending_command`** on the device; the Pi client executes on GPIO (same as lights and pumps). Motor verbs map to relay on/off using actuator **config** polarity.
+**Execution path:** rules and Guardian write **`pending_command`** on the device; the Pi client executes on GPIO (same as lights and pumps). Motor verbs map to relay on/off using actuator **config** polarity. Only **one** pending command per device at a time — avoid overlapping automation and manual enqueue on the same Pi device (Phase 39 command queue will fix this).
 
 | Intent | Typical command | Guardian / API |
 |--------|-----------------|----------------|
@@ -140,9 +163,9 @@ Clone inactive template rules for another zone: **`POST /farms/{id}/automation/r
 
 **Guardian write:** propose **`enqueue_actuator_command`** with `command: deploy` (or `retract`, `open`, `close`, `stop`) — review the card, then **Confirm**.
 
-### UI note (WS4)
+### UI (Phase 36 + Phase 38)
 
-A dedicated **Greenhouse** tab on zone detail (profile form, sensor strip, typed command buttons) is planned in Phase 36 WS4. Until then, use **Zones** (edit meta via API or future form), **Controls** (`/actuators`), and **Automation** for the same data.
+Open **Zones** → greenhouse zone → **Climate** tab: edit `greenhouse_climate` profile, view climate sensors, send typed commands (**deploy** / **retract** / **on** / **off** via `POST /actuators/{id}/command` or **Run pulse** where applicable → Pi `pending_command`), and review **GH —** rules. **Overview** tab shows farm-wide KPIs and photos; use **Climate** for motor commands and GH automation — not the legacy single-page scroll only.
 
 **Pattern detail:** [`pattern-playbooks.md`](pattern-playbooks.md) · Architecture: [`farm-guardian-architecture.md`](farm-guardian-architecture.md#70c-grow-environment-stack-phase-36-greenhouse-climate) · Plan: [`plans/phase_36_greenhouse_climate.plan.md`](plans/phase_36_greenhouse_climate.plan.md)
 
@@ -229,6 +252,25 @@ A proposal is no longer one-shot. If a draft is *close but not quite right*, cor
 
 Architecture detail: [`farm-guardian-architecture.md` §7.7](farm-guardian-architecture.md#77-pr-iteration--blind-spot-facts-phase-34).
 
+### 6d. First field install with Guardian, offline (Phase 37)
+
+**Requires:** `AI_ENABLED=true`, demo or real farm selected, **Operate** optional for procedure-only turns (Confirm still needed for write proposals).
+
+Use this walkthrough on a **single box** (Postgres + API + UI + Ollama on one NUC/Pi) or any LAN deployment where `LLM_BASE_URL` points at local inference. See [`offline-or-intranet-deployment.md`](offline-or-intranet-deployment.md#field-assistant-mode-phase-37).
+
+1. **Check readiness** — `GET /v1/chat/health?farm_id=1` (or Settings / Guardian when wired). Confirm `field_mode` and `procedures_available` are true after migrations + repo checkout.
+2. **Ingest field knowledge (once)** — `make rag-ingest-field-guides` and `make rag-ingest-platform-docs` when `EMBEDDING_API_KEY` is set (optional for procedures; required for grounded doc citations).
+3. **Open Guardian** — drawer (✨) or `/chat`; select your farm.
+4. **Start a wiring walkthrough** — type: `start procedure wire-pi-relay-light`. Guardian shows **step 1 only** (unplug the light). Reply `done` to advance; use `help` or `repeat` anytime.
+5. **Hit the safety stop** — on step 3 (mains / load side), Guardian **stops** and tells you to use a **licensed electrician**. This is intentional — it will not coach line-voltage wiring in chat.
+6. **Print a checklist** — use **Print checklist** on the procedure card, or open `/v1/field-guides/procedures/wire-pi-relay-light/print` (works **without** the LLM).
+7. **Degrade drill** — stop Ollama (or set a bad `LLM_BASE_URL`), then ask: `help me wire the pi to a light`. You should still get step 1 + print link (`field_degraded` in the API), not a hard error.
+8. **Register hardware in gr33n (optional)** — after low-voltage wiring, ask Guardian to propose registering an actuator; **Confirm** the change request (same PR rules as §6).
+
+**Diagnostics:** `start procedure diagnose-sensor-no-reading`, `diagnose-actuator-wont-fire`, or `diagnose-pi-offline` for symptom-based checklists.
+
+Architecture: [`farm-guardian-architecture.md` §7.0e](farm-guardian-architecture.md#70e-offline-field-assistant-phase-37) · Plan: [`plans/phase_37_guardian_offline_field_assistant.plan.md`](plans/phase_37_guardian_offline_field_assistant.plan.md)
+
 ### Vision and photos — what to expect
 
 - **Zone photos (shipped):** upload on **Zone detail**; Guardian knows photos exist and can discuss walkthrough context.
@@ -259,6 +301,8 @@ Architecture: [`farm-guardian-architecture.md`](farm-guardian-architecture.md) �
 | [farm-guardian-architecture.md](farm-guardian-architecture.md) | Request flow, PR inbox, operator expectations (§8) |
 | [farm-guardian-persona-platform-context.md](farm-guardian-persona-platform-context.md) | What Guardian is told about on-prem gr33n (WS9) |
 | [plans/phase_35_lighting_domain.plan.md](plans/phase_35_lighting_domain.plan.md) | Photoperiod programs, presets, `/lighting` UI (Phase 35) |
+| [plans/phase_38_plant_needs_ui_and_pulse_commands.plan.md](plans/phase_38_plant_needs_ui_and_pulse_commands.plan.md) | Zone Water/Light/Climate tabs, timed pump pulses (Phase 38) |
+| [plans/phase_39_edge_fertigation_execution.plan.md](plans/phase_39_edge_fertigation_execution.plan.md) | Planned: device command queue, automated mix on Pi (Phase 39) |
 | [plans/phase_36_greenhouse_climate.plan.md](plans/phase_36_greenhouse_climate.plan.md) | Greenhouse profile, typed actuators, shade/fan rules (Phase 36) |
 | [pattern-playbooks.md](pattern-playbooks.md) | `greenhouse_climate_v1` bootstrap pattern |
 | [plans/phase_32_guardian_grow_setup_prs.plan.md](plans/phase_32_guardian_grow_setup_prs.plan.md) | Grow setup PR bundle (Phase 32) |

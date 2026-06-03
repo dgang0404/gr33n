@@ -1,0 +1,22 @@
+id: diagnose-pi-offline
+title: Diagnose a Pi that shows offline in gr33n
+domain: pi
+offline_ok: true
+steps:
+  - n: 1
+    safety_tier: safe
+    say: "Check power and Ethernet/Wi‑Fi link lights on the Pi and upstream router. The site LAN must reach the gr33n API host."
+    confirm: "Network link looks healthy?"
+  - n: 2
+    safety_tier: safe
+    say: "On the Pi, confirm API URL, farm_id, and device API key match gr33n. A 401 usually means a wrong or revoked key."
+    confirm: "Client env matches this farm?"
+    ref: field-troubleshooting.md
+  - n: 3
+    safety_tier: safe
+    say: "If the WAN is down, the Pi should still queue readings locally. Check offline queue depth once the API is reachable again."
+    confirm: "You will inspect the offline queue when back online?"
+  - n: 4
+    safety_tier: safe
+    say: "Restart the gr33n client service after fixing config. Wait for heartbeat in gr33n before testing actuators."
+    confirm: "Heartbeat returned after restart?"

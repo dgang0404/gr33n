@@ -1,0 +1,23 @@
+id: wire-pi-relay-light
+title: Wire a Pi to a relay for a grow light
+domain: pi
+offline_ok: true
+steps:
+  - n: 1
+    safety_tier: safe
+    say: "Unplug the grow light from the wall outlet before touching any wires."
+    confirm: "Light is unplugged from the wall?"
+  - n: 2
+    safety_tier: caution
+    say: "Connect the relay control board: IN to GPIO 17 (physical pin 11), VCC to 5V (pin 2), GND to GND (pin 6). Use the gr33n Pi integration guide pinout if your board labels differ."
+    confirm: "All three control wires (IN, VCC, GND) are connected?"
+    ref: relay-and-actuator-wiring.md
+  - n: 3
+    safety_tier: qualified_person_required
+    say: "The relay's switched terminals (COM / NO / NC) may carry the grow light's AC mains. That is line-voltage work."
+    stop_unless_qualified: true
+    confirm: "A licensed electrician will wire the load side?"
+  - n: 4
+    safety_tier: safe
+    say: "Power the Pi back on. In gr33n, confirm the actuator uses the same GPIO you wired. Send a test command and listen for the relay click."
+    confirm: "Relay clicks on test command?"

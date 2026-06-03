@@ -1132,12 +1132,12 @@ paths:
         - { $ref: "#/components/parameters/ID" }
       responses:
         "200":
-          description: List of actuators
+          description: List of actuators (each includes valid_commands for its type)
           content:
             application/json:
               schema:
                 type: array
-                items: { $ref: "#/components/schemas/Actuator" }
+                items: { $ref: "#/components/schemas/ActuatorWithCommands" }
     post:
       tags: [actuators]
       summary: Create an actuator (Phase 36)
@@ -1175,6 +1175,34 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/ActuatorWithCommands" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /actuators/{id}/command:
+    post:
+      tags: [actuators]
+      summary: Enqueue manual actuator command (Phase 36 WS4-prep; Phase 38 pulse)
+      description: >
+        Writes `devices.config.pending_command` for the actuator's device.
+        The Pi client polls and executes on GPIO. Command must be in
+        `valid_commands` for the actuator's type (e.g. deploy/retract for
+        shade_screen). Optional `duration_seconds` (Phase 38) runs pumps/relays
+        on for N seconds then off on the edge. Requires `device_id` on the actuator
+        and farm operate role.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ActuatorCommandEnqueue" }
+      responses:
+        "202":
+          description: Command queued on device
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ActuatorCommandEnqueueResult" }
+        "400": { $ref: "#/components/responses/BadRequest" }
         "404": { $ref: "#/components/responses/NotFound" }
 
   /lighting-programs/presets:
@@ -4320,6 +4348,81 @@ paths:
 
   # ── Farm Guardian chat (Phase 27 + Phase 28 WS5 + Phase 29) ─
 
+  /v1/chat/health:
+    get:
+      tags: [chat]
+      summary: Field assistant readiness (Phase 37)
+      description: Reports offline field mode, LLM reachability, and optional RAG chunk counts for `field_guide` / `platform_doc` when `farm_id` is set.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: farm_id
+          in: query
+          schema: { type: integer, format: int64, minimum: 1 }
+      responses:
+        "200":
+          description: Health snapshot
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ai_enabled: { type: boolean }
+                  chat_configured: { type: boolean }
+                  field_assistant: { type: object, additionalProperties: true }
+
+  /v1/field-guides/procedures:
+    get:
+      tags: [chat]
+      summary: List guided field procedures (Phase 37)
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          description: Procedure catalog
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  procedures:
+                    type: array
+                    items: { $ref: "#/components/schemas/FieldProcedureSummary" }
+
+  /v1/field-guides/procedures/{id}:
+    get:
+      tags: [chat]
+      summary: Get one field procedure definition
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Full procedure YAML shape as JSON
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/FieldProcedure" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /v1/field-guides/procedures/{id}/print:
+    get:
+      tags: [chat]
+      summary: Printable procedure checklist (markdown, Phase 37 WS6)
+      description: Static render — works without LLM.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Markdown checklist
+          content:
+            text/markdown:
+              schema: { type: string }
+
   /v1/chat:
     post:
       tags: [chat]
@@ -5302,6 +5405,51 @@ components:
           type: array
           items: { type: integer, format: int64 }
           description: Echo of zone photo ids sent on the request (when any).
+        procedure:
+          $ref: "#/components/schemas/FieldProcedureTurn"
+          description: Present when the turn was handled by the guided procedure driver (no LLM).
+        field_degraded:
+          type: boolean
+          description: True when the turn used WS1 offline degrade (LLM unreachable; static procedure path).
+
+    FieldProcedureSummary:
+      type: object
+      properties:
+        id: { type: string }
+        title: { type: string }
+        domain: { type: string }
+        offline_ok: { type: boolean }
+        step_count: { type: integer }
+
+    FieldProcedure:
+      type: object
+      properties:
+        id: { type: string }
+        title: { type: string }
+        domain: { type: string }
+        offline_ok: { type: boolean }
+        steps:
+          type: array
+          items:
+            type: object
+            properties:
+              n: { type: integer }
+              safety_tier: { type: string }
+              say: { type: string }
+              confirm: { type: string }
+              ref: { type: string }
+
+    FieldProcedureTurn:
+      type: object
+      properties:
+        procedure_id: { type: string }
+        title: { type: string }
+        step_n: { type: integer }
+        step_total: { type: integer }
+        safety_tier: { type: string }
+        status: { type: string }
+        safety_stopped: { type: boolean }
+        print_path: { type: string }
 
     ChatStreamEvent:
       type: object
@@ -6145,6 +6293,42 @@ components:
                 Typed command vocabulary for this actuator_type (e.g. deploy,
                 retract, stop for shade_screen; on/off for exhaust_fan).
 
+    ActuatorCommandEnqueue:
+      type: object
+      required: [command]
+      properties:
+        command:
+          type: string
+          example: deploy
+          description: Must match valid_commands for the actuator type
+        reason:
+          type: string
+          nullable: true
+          description: Optional operator note stored on pending_command
+        duration_seconds:
+          type: integer
+          minimum: 1
+          maximum: 3600
+          nullable: true
+          description: >
+            Phase 38 — timed pulse for pump/relay/valve types. Pi turns on, waits,
+            then turns off. Fertigation programs pass the same field from run_duration_seconds.
+
+    ActuatorCommandEnqueueResult:
+      type: object
+      properties:
+        device_id: { type: integer }
+        actuator_id: { type: integer }
+        command: { type: string }
+        duration_seconds: { type: integer, nullable: true }
+        pulse_supported: { type: boolean }
+        pending_command: { type: object }
+        actuator_name: { type: string }
+        device_name: { type: string }
+        valid_commands:
+          type: array
+          items: { type: string }
+
     GreenhouseRuleTemplatesApply:
       type: object
       required: [zone_id]
@@ -6166,11 +6350,31 @@ components:
           type: integer
           nullable: true
           description: Air temp sensor for fan + night retract rules
+        allow_missing_lux_sensor:
+          type: boolean
+          default: false
+          description: When true, skip high-lux shade template if lux_sensor_id omitted (WS6 interlock)
+        allow_missing_temp_sensor:
+          type: boolean
+          default: false
+          description: When true, skip temp-driven templates if temp_sensor_id omitted (WS6 interlock)
 
     GreenhouseRuleTemplatesResult:
       type: object
       properties:
         rules_created: { type: integer }
+        skipped_rule_families:
+          type: array
+          items: { type: string }
+        zone_sensor_interlocks:
+          type: object
+          properties:
+            has_lux_or_par: { type: boolean }
+            has_temperature: { type: boolean }
+            has_humidity: { type: boolean }
+        required_sensors:
+          type: object
+          additionalProperties: true
         zone_id: { type: integer }
         error: { type: string, description: Present when farm or zone invalid }
 

@@ -23,4 +23,29 @@ Point **`DATABASE_URL`** at whichever host runs Postgres; point **`EMBEDDING_BAS
 
 ---
 
-*Changelog: stub added 2026-04-21 — extend with your farm’s IPs, hostnames, and ops runbook.*
+## Field assistant mode (Phase 37)
+
+When the grow site has **no WAN** (or you choose not to use cloud LLMs), point inference at **loopback or a private LAN** address:
+
+| Variable | Typical field value | Purpose |
+|----------|---------------------|---------|
+| `LLM_BASE_URL` | `http://127.0.0.1:11434/v1` | Ollama on the same NUC/Pi as the API |
+| `LLM_MODEL` | e.g. `llama3.2` | Chat model name |
+| `EMBEDDING_BASE_URL` | same host as LLM | Local embeddings for RAG |
+| `EMBEDDING_API_KEY` | any non-empty string | Required by the embed client |
+| `GR33N_REPO_ROOT` | path to gr33n checkout | Loads `docs/field-guides/procedures/*.yaml` |
+
+**Health:** `GET /v1/chat/health?farm_id=1` — `field_assistant.field_mode`, `llm_reachable`, chunk counts.
+
+**Graceful degrade:** if the local LLM is down, field install chat still works via **guided procedures** (`start procedure wire-pi-relay-light`, `done`, `list procedures`) and **static print** (`GET /v1/field-guides/procedures/{id}/print`).
+
+```bash
+make rag-ingest-platform-docs
+make rag-ingest-field-guides
+```
+
+**Single-box smoke:** Postgres + API + UI + Ollama on one host; stop Ollama to verify procedure degrade in chat.
+
+---
+
+*Changelog: stub 2026-04-21 — Phase 37 field assistant 2026-06-03.*

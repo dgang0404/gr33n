@@ -116,6 +116,18 @@ VALUES (sqlc.arg(id), sqlc.arg(user_id))
 ON CONFLICT (id) DO UPDATE
     SET updated_at = NOW();
 
+-- name: GetConversationSessionMeta :one
+SELECT meta
+FROM gr33ncore.conversation_sessions
+WHERE id = sqlc.arg(id)
+  AND user_id = sqlc.arg(user_id);
+
+-- name: UpdateConversationSessionMeta :exec
+UPDATE gr33ncore.conversation_sessions
+SET meta = sqlc.arg(meta)
+WHERE id = sqlc.arg(id)
+  AND user_id = sqlc.arg(user_id);
+
 -- name: UpdateConversationSessionTitle :one
 -- Operator rename. Returns the row so the API can confirm ownership in one
 -- query — RowsAffected = 0 means "not found / not yours" → 404.

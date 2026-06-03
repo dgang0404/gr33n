@@ -23,23 +23,29 @@ todos:
     status: done
   - id: oc-36-tests
     content: "OC-36C: cmd/api smokes — bootstrap apply, rule fire + cooldown, manual shade deploy via pending_command (Phase 36 WS8)"
-    status: pending
+    status: done
   - id: oc-37-closure
-    content: "OC-37: Phase 37 WS8 — offline field walkthrough, procedure OpenAPI, field_guide corpus ingest smoke, safety-stop smokes (defer until WS1–WS7 land)"
-    status: pending
+    content: "OC-37: Phase 37 WS8 — offline field walkthrough, procedure OpenAPI, field_guide corpus ingest smoke, safety-stop smokes"
+    status: done
   - id: oc-37-final-sweep
     content: "OC-37E: End-of-37 sweep — verify OC-35A–C closed; platform-doc RAG manifest includes new operator-tour sections; README roadmap"
+    status: done
+  - id: oc-38-closure
+    content: "OC-38: Phase 38 shipped — plant-needs zone tabs, nav Advanced group, pulse duration_seconds (no schema migration)"
+    status: done
+  - id: oc-39-closure
+    content: "OC-39: Phase 39 WS8 — device_commands queue smokes, mix plan unit tests, pi-integration-guide queue+mix_batch, operator-tour automated mix"
     status: pending
 isProject: false
 ---
 
-# Phase 35–37 operational closure (seed, bootstrap, docs, tests)
+# Phase 35–39 operational closure (seed, bootstrap, docs, tests)
 
 ## Why this doc exists
 
 Feature phases often land **code first** (schema, API, UI, worker) while **seed data**, **bootstrap templates**, **operator-tour**, **OpenAPI**, and **integration smokes** trail behind. That leaves uncommitted or “invisible” files in git and a false sense of completion.
 
-This plan is the **rollup tracker** for closure work across Phases **35 → 37**. Each feature phase keeps its own **WS8** (or WS5 bootstrap + WS8 docs in Phase 36). This doc says **what is done, what is deferred, and when to close it**.
+This plan is the **rollup tracker** for closure work across Phases **35 → 39**. Each feature phase keeps its own **WS8** (or WS5 bootstrap + WS8 docs in Phase 36). This doc says **what is done, what is deferred, and when to close it**.
 
 ---
 
@@ -109,13 +115,13 @@ Feature detail: [`phase_36_greenhouse_climate.plan.md`](phase_36_greenhouse_clim
 | **Sensor interlocks (WS6)** | ⏳ | Missing lux/PAR banner; template guard without override |
 | **Demo seed** | ⏳ | Bootstrap apply suffices for new farms; `master_seed.sql` greenhouse row optional |
 | **Unit tests** | ✅ partial | `greenhouse_test.go`, `taxonomy_test.go` |
-| **Smokes / Vitest** | ⏳ | **OC-36C** |
+| **Smokes / Vitest** | ✅ | **OC-36C** — `smoke_phase36_oc36c_test.go` (+ WS4-prep pending_command) |
 | **OpenAPI / operator-tour** | ✅ | **OC-36B** — operator-tour §5b; OpenAPI paths/schemas |
 | **Architecture** | ✅ | §7.0c in `farm-guardian-architecture.md` + operator-tour cross-links |
 
 ### Phase 36 — status
 
-**In progress.** WS1–WS3, WS5, WS7 + **OC-36A** + **OC-36B** closed. **OC-36C** (smokes) remains with **WS4** (Greenhouse UI tab) and **WS6** (missing-sensor UX).
+**Shipped.** WS1–WS7, WS4 UI, **WS6** interlocks, **OC-36A–C** closed.
 
 Apply migration `20260603_phase36_greenhouse_climate_v2.sql` before re-running `greenhouse_climate_v1` bootstrap on existing dev DBs.
 
@@ -131,15 +137,14 @@ Closure is **WS8** in [`phase_37_guardian_offline_field_assistant.plan.md`](phas
 |------|------|
 | After WS2 (field corpus) | Ingest `field_guide` sources; extend platform-doc manifest |
 | After WS3–WS4 (procedures + safety) | OpenAPI procedure endpoints; smokes for step flow + safety hard-stop |
+| After WS9 (background chat) | Vitest `guardian-chat-background.test.js`; operator-tour note: stream continues while browsing farm pages |
 | WS8 | operator-tour “first install with Guardian offline”; link Pi wiring procedure to Phase 35 actuator path |
 
-**OC-37E — End-of-37 sweep**
+**OC-37E — End-of-37 sweep** ✅ (2026-06-03)
 
-Before marking the 35–37 arc complete:
-
-1. Confirm **OC-35A–C** and **OC-36B–C** closed (lighting + greenhouse operator docs/smokes).
-2. Re-run platform doc RAG ingest so new operator-tour sections are searchable (Phase 32 WS8 script).
-3. README / phase-14 roadmap row: Phases 35–37 shipped with closure notes (Phase 36 marks shipped when WS4 + WS6 + OC-36B/C land).
+1. **OC-35A–C** and **OC-36B–C** closed (lighting + greenhouse operator docs/smokes).
+2. Re-run **`make rag-ingest-platform-docs`** and **`make rag-ingest-field-guides`** on each farm after operator-doc / field-guide edits (requires `EMBEDDING_API_KEY` / LAN embedding endpoint).
+3. README + phase-14: Phases **35–37 shipped**; Phase 38/39 tracked separately.
 
 ---
 
@@ -152,6 +157,7 @@ Phase 35 code PR  ──► OC-35A bootstrap (same sprint or +1)
 Phase 36 WS1–3,5,7 ──► OC-36A + OC-36B ✅
                    ──► WS4 + WS6 + OC-36C (remaining ship)
 
+Phase 37 WS9     ──► Pinia guardianChat (can land before WS1 — no backend dependency)
 Phase 37 WS1–7   ──► OC-37 inline with WS8
                    ──► OC-37E final sweep (OC-35A–C + OC-36B–C verified; RAG ingest)
 ```
@@ -160,11 +166,41 @@ Phase 37 WS1–7   ──► OC-37 inline with WS8
 
 ---
 
+## Phase 38 — Plant-needs UI + pulse
+
+Feature detail: [`phase_38_plant_needs_ui_and_pulse_commands.plan.md`](phase_38_plant_needs_ui_and_pulse_commands.plan.md). **OC-38: done.**
+
+| Area | Status | Notes |
+|------|--------|-------|
+| Zone Water/Light/Climate tabs | ✅ | All zones; connection cards |
+| Nav Grow / Advanced | ✅ | [`navGroups.js`](../../ui/src/lib/navGroups.js) |
+| `duration_seconds` on pending_command | ✅ | **No DB migration**; JSONB only |
+| Command queue | ❌ | **Deferred to Phase 39 WS1** |
+
+---
+
+## Phase 39 — Edge fertigation execution
+
+Feature detail: [`phase_39_edge_fertigation_execution.plan.md`](phase_39_edge_fertigation_execution.plan.md). **OC-39** when WS8 lands.
+
+| Area | Depends on | Notes |
+|------|------------|-------|
+| `device_commands` queue | WS1 | **Fixes last-write-wins** for all actuators + mix |
+| Mix calculator + `mix_batch` | WS2–WS3 | Recipe + base EC + target |
+| Pi executor + program pipeline | WS4–WS5 | After queue |
+| Schema migration | WS1 | First grow-stack migration since 38 (additive) |
+
+**Stack rule:** 35/36/38 keep working during 39; migrate writers to queue with `pending_command` head mirror for one Pi release.
+
+---
+
 ## Related
 
 | Doc | Use |
 |-----|-----|
 | [phase_35_lighting_domain.plan.md](phase_35_lighting_domain.plan.md) | Feature scope — **shipped** (WS1–WS8) |
-| [phase_36_greenhouse_climate.plan.md](phase_36_greenhouse_climate.plan.md) | **In progress** — WS8 = OC-36B + OC-36C; OC-36A done |
+| [phase_36_greenhouse_climate.plan.md](phase_36_greenhouse_climate.plan.md) | **Shipped** — WS6 + OC-36C done |
 | [phase_37_guardian_offline_field_assistant.plan.md](phase_37_guardian_offline_field_assistant.plan.md) | WS8 = OC-37 + OC-37E sweep |
+| [phase_38_plant_needs_ui_and_pulse_commands.plan.md](phase_38_plant_needs_ui_and_pulse_commands.plan.md) | **Shipped** — UI + pulse |
+| [phase_39_edge_fertigation_execution.plan.md](phase_39_edge_fertigation_execution.plan.md) | **Next** — queue + automated mix |
 | [phase_32_guardian_grow_setup_prs.plan.md](phase_32_guardian_grow_setup_prs.plan.md) | Reference closure pattern (WS7 OpenAPI + WS8 RAG) |

@@ -1794,6 +1794,7 @@ CREATE TABLE IF NOT EXISTS gr33ncore.conversation_sessions (
     id          UUID PRIMARY KEY,
     user_id     UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
     title       TEXT NULL,
+    meta        JSONB NOT NULL DEFAULT '{}'::jsonb,
     created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );

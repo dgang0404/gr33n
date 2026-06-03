@@ -14,6 +14,7 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 	"unicode/utf8"
@@ -27,6 +28,7 @@ import (
 	db "gr33n-api/internal/db"
 	"gr33n-api/internal/farmauthz"
 	"gr33n-api/internal/farmguardian"
+	"gr33n-api/internal/farmguardian/procedures"
 	"gr33n-api/internal/httputil"
 	"gr33n-api/internal/filestorage"
 	"gr33n-api/internal/rag/embed"
@@ -131,6 +133,8 @@ type postResponse struct {
 	PromptTokens     int                         `json:"prompt_tokens"`
 	CompletionTokens int                         `json:"completion_tokens"`
 	Proposals        []farmguardian.ActionProposal `json:"proposals,omitempty"`
+	Procedure        *procedures.TurnPayload       `json:"procedure,omitempty"`
+	FieldDegraded    bool                          `json:"field_degraded,omitempty"`
 	VisionUsed       bool                          `json:"vision_used,omitempty"`
 	AttachmentIDs    []int64                       `json:"attachment_ids,omitempty"`
 }
@@ -153,10 +157,6 @@ func (h *Handler) PostV1(w http.ResponseWriter, r *http.Request) {
 	}
 	if !h.cfg.Enabled {
 		httputil.WriteError(w, http.StatusServiceUnavailable, "AI features are disabled on this installation")
-		return
-	}
-	if h.llm == nil {
-		httputil.WriteError(w, http.StatusServiceUnavailable, "Farm Guardian chat is not configured (set LLM_BASE_URL and LLM_MODEL)")
 		return
 	}
 
@@ -237,11 +237,19 @@ func (h *Handler) PostV1(w http.ResponseWriter, r *http.Request) {
 			chunks, rerr = h.retrieveChunks(r.Context(), farmID, question, farmguardian.RAGTopK)
 			if rerr != nil {
 				slog.Warn("farm guardian retrieval failed", "farm_id", farmID, "err", rerr)
-				httputil.WriteError(w, http.StatusBadGateway, "retrieval failed")
-				return
+				if !farmguardian.IsLocalInferenceURL(strings.TrimSpace(os.Getenv("LLM_BASE_URL"))) {
+					httputil.WriteError(w, http.StatusBadGateway, "retrieval failed")
+					return
+				}
+				// Phase 37 WS1 — offline field mode: snapshot + procedures still work without RAG.
+			} else {
+				system += synthesis.GuardianRAGInstructions(chunks)
+				user = synthesis.BuildUserMessage(question, chunks)
 			}
-			system += synthesis.GuardianRAGInstructions(chunks)
-			user = synthesis.BuildUserMessage(question, chunks)
+		}
+		if farmguardian.IsLocalInferenceURL(strings.TrimSpace(os.Getenv("LLM_BASE_URL"))) ||
+			synthesis.HasFieldGuideChunks(chunks) {
+			system += "\n\n" + farmguardian.FieldAssistantPromptBlock()
 		}
 	}
 
@@ -259,6 +267,27 @@ func (h *Handler) PostV1(w http.ResponseWriter, r *http.Request) {
 	// the turn. Fails open when the DB lookup itself errors so a transient
 	// Postgres hiccup doesn't take chat offline. Phase 27 WS5 follow-up.
 	if !h.checkCostBudget(r.Context(), w, userID, hasUser, farmID) {
+		return
+	}
+
+	if h.tryProcedureOrSafetyTurn(w, r, question, pb, sessionID, userID, hasUser, farmID, pb.Stream) {
+		return
+	}
+	if h.tryFieldDegradeTurn(w, r, question, pb, sessionID, userID, hasUser, farmID, pb.Stream) {
+		return
+	}
+
+	if h.llm == nil {
+		msg := "Farm Guardian chat is not configured (set LLM_BASE_URL and LLM_MODEL)"
+		if procedures.IsFieldRelatedQuestion(question) {
+			msg = "LLM not configured; for field install use: start procedure wire-pi-relay-light (or list procedures)"
+		}
+		httputil.WriteError(w, http.StatusServiceUnavailable, msg)
+		return
+	}
+	if h.fieldDegradeEligible() && !h.llmReachable(r.Context()) {
+		httputil.WriteError(w, http.StatusServiceUnavailable,
+			"local LLM is unreachable; for physical install use: start procedure <id> or GET /v1/field-guides/procedures/{id}/print")
 		return
 	}
 
@@ -345,6 +374,10 @@ func (h *Handler) PostV1(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		slog.Warn("farm guardian chat failed", "farm_id", farmID, "grounded", grounded, "err", err)
+		ResetLLMReachabilityCache()
+		if h.tryFieldDegradeTurn(w, r, question, pb, sessionID, userID, hasUser, farmID, pb.Stream) {
+			return
+		}
 		httputil.WriteError(w, http.StatusBadGateway, "LLM request failed")
 		return
 	}
@@ -442,6 +475,7 @@ func (h *Handler) streamResponse(
 			return
 		}
 		slog.Warn("farm guardian stream failed", "farm_id", farmID, "err", streamErr)
+		ResetLLMReachabilityCache()
 		sendEvent("error", map[string]string{"error": "LLM request failed"})
 		_, _ = w.Write([]byte("data: [DONE]\n\n"))
 		flusher.Flush()

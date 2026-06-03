@@ -3,7 +3,7 @@
     <button
       v-if="visible && !guardianPanel.open"
       type="button"
-      class="guardian-edge-tab fixed z-30 flex items-center gap-2 rounded-l-xl border border-r-0 border-green-700/60 bg-zinc-950/95 text-green-400 shadow-lg shadow-black/40 backdrop-blur-sm transition-[transform,box-shadow,background-color] duration-200 ease-out hover:bg-green-950/90 hover:shadow-green-900/30 focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950"
+      class="guardian-edge-tab fixed z-30 flex items-center gap-2 rounded-l-xl relative border border-r-0 border-green-700/60 bg-zinc-950/95 text-green-400 shadow-lg shadow-black/40 backdrop-blur-sm transition-[transform,box-shadow,background-color] duration-200 ease-out hover:bg-green-950/90 hover:shadow-green-900/30 focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950"
       :class="compact ? 'guardian-edge-tab--compact right-0 top-[4.75rem] px-2 py-2' : 'guardian-edge-tab--center right-0 top-1/2 px-2.5 py-3'"
       title="Farm Guardian"
       aria-label="Open Farm Guardian"
@@ -15,14 +15,21 @@
         class="text-xs font-semibold tracking-wide uppercase hidden sm:inline"
         style="writing-mode: vertical-rl; text-orientation: mixed;"
       >
-        Guardian
+        {{ guardianChat.streaming ? 'Thinking…' : 'Guardian' }}
       </span>
+      <span
+        v-if="guardianChat.streaming"
+        class="absolute -top-1 -left-1 h-2.5 w-2.5 rounded-full bg-green-500 animate-pulse"
+        data-test="guardian-edge-thinking"
+        aria-hidden="true"
+      />
     </button>
   </Teleport>
 </template>
 
 <script setup>
 import { computed, onMounted } from 'vue'
+import { useGuardianChatStore } from '../stores/guardianChat'
 import { useGuardianPanelStore } from '../stores/guardianPanel'
 import { useCapabilitiesStore } from '../stores/capabilities'
 
@@ -32,6 +39,7 @@ defineProps({
 })
 
 const guardianPanel = useGuardianPanelStore()
+const guardianChat = useGuardianChatStore()
 const capabilities = useCapabilitiesStore()
 
 const visible = computed(() => capabilities.loaded && !capabilities.isLite)
