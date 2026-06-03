@@ -517,14 +517,19 @@ class SensorReader:
 
 # --- ACTUATOR CONTROLLER ----------------------------------------------------
 class ActuatorController:
+    ON_COMMANDS = frozenset(('on', 'actuator_on', 'turn_on', 'open', 'start', 'deploy', 'dispense'))
+    OFF_COMMANDS = frozenset(('off', 'actuator_off', 'turn_off', 'close', 'stop', 'retract'))
+
     def __init__(self, cfg: dict):
         self.actuator_id = cfg['actuator_id']
         self.device_id   = cfg.get('device_id', cfg['actuator_id'])
         self.device_type = cfg['device_type']
         self.gpio_pin    = cfg['gpio_pin']
+        self.max_run_seconds = cfg.get('max_run_seconds')
         # active_high=False for common optocoupler relay boards (LOW = ON)
         self._gpio  = OutputDevice(self.gpio_pin, active_high=False, initial_value=False)
         self._state = False
+        self._pulse_lock = threading.Lock()
         log.info('Actuator %s (%s) bound to GPIO pin %s',
                  self.actuator_id, self.device_type, self.gpio_pin)
 
@@ -536,11 +541,42 @@ class ActuatorController:
         self._gpio.off(); self._state = False
         log.info('Actuator %s (%s) -> OFF', self.actuator_id, self.device_type)
 
-    def execute(self, command: str):
+    def _effective_pulse_seconds(self, duration_seconds):
+        """Cap pulse length by server duration and local max_run_seconds."""
+        try:
+            d = int(duration_seconds)
+        except (TypeError, ValueError):
+            return None
+        if d <= 0:
+            return None
+        cap = d
+        if self.max_run_seconds is not None:
+            try:
+                cap = min(cap, int(self.max_run_seconds))
+            except (TypeError, ValueError):
+                pass
+        return min(cap, 3600)
+
+    def execute(self, command: str, duration_seconds=None):
         cmd = command.strip().lower()
-        if cmd in ('on', 'actuator_on', 'turn_on', 'open', 'start'):
+        pulse_s = self._effective_pulse_seconds(duration_seconds)
+        if pulse_s and cmd in self.ON_COMMANDS:
+            def _run_pulse():
+                with self._pulse_lock:
+                    try:
+                        self.turn_on()
+                        time.sleep(pulse_s)
+                    finally:
+                        self.turn_off()
+                log.info('Actuator %s pulse %ds complete', self.actuator_id, pulse_s)
+            threading.Thread(target=_run_pulse, name=f'pulse-{self.actuator_id}', daemon=True).start()
+            log.info('Actuator %s (%s) pulse ON for %ds', self.actuator_id, self.device_type, pulse_s)
+            return
+        # deploy/retract (Phase 36 shade_screen) map to relay on/off; polarity
+        # inversion for normally-open motors can be added via actuator config later.
+        if cmd in self.ON_COMMANDS:
             self.turn_on()
-        elif cmd in ('off', 'actuator_off', 'turn_off', 'close', 'stop'):
+        elif cmd in self.OFF_COMMANDS:
             self.turn_off()
         else:
             log.warning('Unknown command %r for actuator %s', command, self.actuator_id)
@@ -649,6 +685,7 @@ class Gr33nPiClient:
                     pending_source = pending.get('source')
                     proposal_id = pending.get('proposal_id')
                     reason = pending.get('reason')
+                    duration_seconds = pending.get('duration_seconds')
                 else:
                     cmd      = str(pending)
                     sched_id = config.get('pending_schedule_id')
@@ -657,6 +694,7 @@ class Gr33nPiClient:
                     pending_source = None
                     proposal_id = None
                     reason = None
+                    duration_seconds = None
                 if not cmd:
                     continue
                 actuator = actuator_by_device.get(did)
@@ -664,10 +702,10 @@ class Gr33nPiClient:
                     log.debug('No local actuator for device_id=%s', did)
                     continue
                 log.info('Executing scheduled command %r for device_id=%s', cmd, did)
-                actuator.execute(cmd)
+                actuator.execute(cmd, duration_seconds=duration_seconds)
                 if rule_id is not None:
                     src = 'automation_rule_trigger'
-                elif pending_source == 'guardian':
+                elif pending_source in ('guardian', 'operator'):
                     src = 'manual_api_call'
                 else:
                     src = 'schedule_trigger'
@@ -676,6 +714,8 @@ class Gr33nPiClient:
                     meta['proposal_id'] = proposal_id
                 if reason:
                     meta['reason'] = reason
+                if duration_seconds:
+                    meta['duration_seconds'] = duration_seconds
                 self.api.post_actuator_event(
                     actuator_id=actuator.actuator_id, command=cmd,
                     source=src, schedule_id=sched_id, rule_id=rule_id,

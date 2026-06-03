@@ -16,6 +16,7 @@ import (
 	"github.com/robfig/cron/v3"
 
 	db "gr33n-api/internal/db"
+	acthandler "gr33n-api/internal/handler/actuator"
 	"gr33n-api/internal/platform/commontypes"
 )
 
@@ -376,12 +377,24 @@ func (w *Worker) dispatchProgramActuator(
 	}
 
 	if !w.simulation && actuator.DeviceID != nil {
-		pendingJSON, _ := json.Marshal(map[string]any{
-			"command":     command,
-			"program_id":  p.ID,
-			"schedule_id": schedule.ID,
+		var dur *int
+		if p.RunDurationSeconds != nil && *p.RunDurationSeconds > 0 && command == "on" {
+			d := int(*p.RunDurationSeconds)
+			dur = &d
+		}
+		progID := p.ID
+		schedID := schedule.ID
+		pendingJSON, err := acthandler.BuildPendingCommandJSONFull(acthandler.PendingCommandInput{
+			ActuatorID:      *action.TargetActuatorID,
+			Command:         command,
+			Source:          "schedule",
+			DurationSeconds: dur,
+			ScheduleID:      &schedID,
+			ProgramID:       &progID,
 		})
-		if err := w.q.SetDevicePendingCommand(ctx, db.SetDevicePendingCommandParams{
+		if err != nil {
+			log.Printf("program %d action %d: build pending command: %v", p.ID, action.ID, err)
+		} else if err := w.q.SetDevicePendingCommand(ctx, db.SetDevicePendingCommandParams{
 			ID:      *actuator.DeviceID,
 			Column2: pendingJSON,
 		}); err != nil {

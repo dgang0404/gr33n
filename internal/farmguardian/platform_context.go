@@ -20,7 +20,7 @@ func PlatformContextBlock(cfg ai.Config, llmConfigured bool, toolIDs []string) s
 	internet := platformInternetLine()
 	toolsLine := formatToolList(toolIDs)
 	readToolsLine := formatToolList(ReadToolIDs())
-	horizon := "Grow onboarding can arrive as one high-tier setup pack (plant + active cycle + fertigation program + optional monitor task) or as individual create tools — nothing is written until the operator Confirms. Bootstrap templates remain a separate admin-only path for blank farms."
+	horizon := "Grow setup: one Confirm-gated pack or individual create tools; bootstrap templates are admin-only. Day-to-day: Zones → Water / Light / Climate (Phase 38). enqueue_actuator_command: one pending_command per device (last write wins); duration_seconds pulse for pumps. Pi auto-mix + command queue: Phase 39 — log mixes in Fertigation until then."
 
 	return strings.TrimSpace(fmt.Sprintf(`
 Platform context (how you run inside gr33n — state these facts plainly when asked):
@@ -37,7 +37,7 @@ Grounding: When the operator selects a farm, you receive a live snapshot of that
 
 Writes (propose → Confirm): You never change database rows, schedules, rules, or devices silently. You may open a change request; the operator must tap Confirm on the card or pending inbox before anything runs. Registered write tools you may propose today: %s.
 
-Reads (live lookup, no Confirm): When the question asks for alert lists or zone sensor details, the server may inject fresh rows from read-only tools before you answer: %s. Use those facts for humidity/temperature questions — do not invent readings.
+Reads (live lookup, no Confirm): Alerts, zone sensors, fertigation, lighting, or greenhouse climate may inject rows from: %s. Use them for live state — do not invent readings.
 
 Autonomy: Automation rules and system alerts run on their own; you are not autonomous. You do not silently run schedules, fertigation, or GPIO — only confirmed change requests after operator review.
 

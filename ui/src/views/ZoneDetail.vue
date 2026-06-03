@@ -1,11 +1,13 @@
 <template>
   <div class="p-6 space-y-6">
-    <!-- Header -->
     <div class="flex items-center justify-between">
       <div>
         <router-link to="/zones" class="text-xs text-zinc-500 hover:text-zinc-300">&larr; Back to zones</router-link>
         <h1 class="text-xl font-semibold text-white mt-1">{{ zone?.name || 'Zone' }}</h1>
         <p class="text-zinc-500 text-sm">{{ zone?.description || 'No description' }}</p>
+        <p class="text-zinc-600 text-xs mt-1">
+          What this zone needs: water & feeding, light, and air/climate — use the tabs below.
+        </p>
       </div>
       <div class="flex items-center gap-3">
         <AskGuardianButton
@@ -24,258 +26,172 @@
     <div v-if="!zone" class="text-zinc-500 text-sm">Zone not found.</div>
 
     <template v-else>
-      <!-- KPI row -->
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
-          <p class="text-zinc-400 text-xs mb-1">Sensors</p>
-          <p class="text-white text-2xl font-semibold">{{ sensors.length }}</p>
-        </div>
-        <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
-          <p class="text-zinc-400 text-xs mb-1">Actuators</p>
-          <p class="text-white text-2xl font-semibold">{{ actuators.length }}</p>
-        </div>
-        <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
-          <p class="text-zinc-400 text-xs mb-1">Active Program</p>
-          <p class="text-white text-sm font-medium truncate">{{ activeProgram?.name || 'None' }}</p>
-        </div>
-        <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
-          <p class="text-zinc-400 text-xs mb-1">Last Fertigation</p>
-          <p class="text-white text-sm font-medium truncate">
-            {{ latestEvent ? `${formatTime(latestEvent.applied_at)} · ${latestEvent.volume_applied_liters || '0'}L` : 'None' }}
-          </p>
-        </div>
+      <div class="flex flex-wrap gap-1 border-b border-zinc-800">
+        <button
+          v-for="tab in zoneTabs"
+          :key="tab.id"
+          type="button"
+          class="px-4 py-2 text-sm font-medium rounded-t-lg transition-colors"
+          :class="activeTab === tab.id ? 'bg-zinc-800 text-white' : 'text-zinc-500 hover:text-zinc-300'"
+          @click="activeTab = tab.id"
+        >
+          {{ tab.icon }} {{ tab.label }}
+        </button>
       </div>
 
-      <!-- Zone reference photos (Phase 30 WS5) -->
-      <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
-        <div class="flex items-center justify-between mb-3">
-          <h2 class="text-sm font-semibold text-white">Reference photos</h2>
-          <label class="text-xs text-green-600 hover:text-green-400 cursor-pointer">
-            <input
-              type="file"
-              accept="image/jpeg,image/png,image/webp"
-              class="hidden"
-              :disabled="photoUploading"
-              @change="onPhotoSelected"
-            />
-            {{ photoUploading ? 'Uploading…' : '+ Add photo' }}
-          </label>
-        </div>
-        <p v-if="photoError" class="text-red-400 text-xs mb-2">{{ photoError }}</p>
-        <p v-if="photosLoading" class="text-zinc-500 text-sm">Loading photos…</p>
-        <p v-else-if="!zonePhotos.length" class="text-zinc-500 text-sm">
-          Walkthrough or crop reference photos for this zone. Farm Guardian sees them in the farm snapshot.
-        </p>
-        <div v-else class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-          <div
-            v-for="p in zonePhotos"
-            :key="p.id"
-            class="bg-zinc-950 border border-zinc-800 rounded-lg overflow-hidden group"
+      <ZoneNeedSection
+        v-if="activeTab === PLANT_NEEDS.water"
+        :need="PLANT_NEEDS.water"
+        :zone-id="zoneId"
+        :farm-id="farmId"
+        :zone="zone"
+        :sensors="sensors"
+        :actuators="actuators"
+        :setpoints="zoneSetpoints"
+        :schedules="schedules"
+        :rules="rules"
+        :programs="programs"
+        :active-program="activeProgram"
+        :actuator-events="actuatorEvents"
+        :toggling="toggling"
+        @toggle-actuator="toggleActuator"
+        @refresh-events="loadEvents"
+      />
+
+      <ZoneNeedSection
+        v-else-if="activeTab === PLANT_NEEDS.light"
+        :need="PLANT_NEEDS.light"
+        :zone-id="zoneId"
+        :farm-id="farmId"
+        :zone="zone"
+        :sensors="sensors"
+        :actuators="actuators"
+        :setpoints="zoneSetpoints"
+        :schedules="schedules"
+        :rules="rules"
+        :lighting-programs="lightingPrograms"
+        :actuator-events="actuatorEvents"
+        :toggling="toggling"
+        @toggle-actuator="toggleActuator"
+        @refresh-events="loadEvents"
+      />
+
+      <ZoneNeedSection
+        v-else-if="activeTab === PLANT_NEEDS.air"
+        :need="PLANT_NEEDS.air"
+        :zone-id="zoneId"
+        :farm-id="farmId"
+        :zone="zone"
+        :is-greenhouse="isGreenhouse"
+        :sensors="sensors"
+        :actuators="actuators"
+        :setpoints="zoneSetpoints"
+        :schedules="schedules"
+        :rules="rules"
+        :actuator-events="actuatorEvents"
+        :toggling="toggling"
+        @toggle-actuator="toggleActuator"
+        @refresh-events="loadEvents"
+      />
+
+      <template v-else>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <button
+            type="button"
+            class="bg-zinc-900 border border-zinc-800 rounded-xl p-4 text-left hover:border-green-800/50 transition-colors"
+            @click="activeTab = PLANT_NEEDS.water"
           >
-            <button type="button" class="block w-full aspect-square" @click="openPhoto(p)">
-              <img
-                :src="photoThumbUrl(p)"
-                :alt="p.file_name || 'Zone photo'"
-                class="w-full h-full object-cover"
-                loading="lazy"
-              />
-            </button>
-            <div class="px-2 py-1.5 flex items-center justify-between gap-1">
-              <p class="text-zinc-500 text-[10px] truncate flex-1">{{ p.file_name }}</p>
-              <button
-                type="button"
-                class="text-zinc-600 hover:text-red-400 text-[10px] shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                :disabled="photoDeleting[p.id]"
-                @click="removePhoto(p)"
-              >
-                Remove
-              </button>
-            </div>
+            <p class="text-zinc-400 text-xs mb-1">💧 Water</p>
+            <p class="text-white text-sm">{{ waterSummary }}</p>
+          </button>
+          <button
+            type="button"
+            class="bg-zinc-900 border border-zinc-800 rounded-xl p-4 text-left hover:border-green-800/50 transition-colors"
+            @click="activeTab = PLANT_NEEDS.light"
+          >
+            <p class="text-zinc-400 text-xs mb-1">💡 Light</p>
+            <p class="text-white text-sm">{{ lightSummary }}</p>
+          </button>
+          <button
+            type="button"
+            class="bg-zinc-900 border border-zinc-800 rounded-xl p-4 text-left hover:border-green-800/50 transition-colors"
+            @click="activeTab = PLANT_NEEDS.air"
+          >
+            <p class="text-zinc-400 text-xs mb-1">🌬️ Climate</p>
+            <p class="text-white text-sm">{{ airSummary }}</p>
+          </button>
+          <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
+            <p class="text-zinc-400 text-xs mb-1">Open tasks</p>
+            <p class="text-white text-2xl font-semibold">{{ zoneTasks.length }}</p>
           </div>
         </div>
-      </div>
 
-      <!-- Live Sensor Readings -->
-      <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
-        <h2 class="text-sm font-semibold text-white mb-3">Live Readings</h2>
-        <p v-if="!sensors.length" class="text-zinc-500 text-sm">No sensors assigned to this zone.</p>
-        <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-          <SensorTile
-            v-for="s in sensors" :key="s.id"
-            :sensor="s"
-            :reading="store.readings[s.id]"
-          />
-        </div>
-      </div>
-
-      <!-- Actuator Controls (Quick Actions) -->
-      <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
-        <h2 class="text-sm font-semibold text-white mb-3">Controls</h2>
-        <p v-if="!actuators.length" class="text-zinc-500 text-sm">No actuators assigned to this zone.</p>
-        <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          <div
-            v-for="a in actuators" :key="a.id"
-            class="bg-zinc-950 border rounded-lg p-3 flex items-center justify-between gap-3 transition-colors"
-            :class="a.current_state_text === 'online' ? 'border-green-800/70' : 'border-zinc-800'"
-          >
-            <div class="flex items-center gap-2 min-w-0">
-              <span class="text-lg shrink-0">{{ actuatorIcon(a.actuator_type) }}</span>
-              <div class="min-w-0">
-                <p class="text-white text-sm font-medium truncate">{{ a.name }}</p>
-                <p class="text-zinc-500 text-xs capitalize">{{ a.actuator_type }}</p>
+        <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
+          <div class="flex items-center justify-between mb-3">
+            <h2 class="text-sm font-semibold text-white">Reference photos</h2>
+            <label class="text-xs text-green-600 hover:text-green-400 cursor-pointer">
+              <input type="file" accept="image/jpeg,image/png,image/webp" class="hidden" :disabled="photoUploading" @change="onPhotoSelected" />
+              {{ photoUploading ? 'Uploading…' : '+ Add photo' }}
+            </label>
+          </div>
+          <p v-if="photoError" class="text-red-400 text-xs mb-2">{{ photoError }}</p>
+          <p v-else-if="photosLoading" class="text-zinc-500 text-sm">Loading photos…</p>
+          <p v-else-if="!zonePhotos.length" class="text-zinc-500 text-sm">Walkthrough or crop reference photos for this zone.</p>
+          <div v-else class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+            <div v-for="p in zonePhotos" :key="p.id" class="bg-zinc-950 border border-zinc-800 rounded-lg overflow-hidden group">
+              <button type="button" class="block w-full aspect-square" @click="openPhoto(p)">
+                <img :src="photoThumbUrl(p)" :alt="p.file_name || 'Zone photo'" class="w-full h-full object-cover" loading="lazy" />
+              </button>
+              <div class="px-2 py-1.5 flex items-center justify-between gap-1">
+                <p class="text-zinc-500 text-[10px] truncate flex-1">{{ p.file_name }}</p>
+                <button type="button" class="text-zinc-600 hover:text-red-400 text-[10px] shrink-0" :disabled="photoDeleting[p.id]" @click="removePhoto(p)">Remove</button>
               </div>
             </div>
-            <button
-              @click="toggleActuator(a)"
-              :disabled="toggling[a.id]"
-              class="relative shrink-0 w-11 h-6 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-green-600 disabled:opacity-40"
-              :class="a.current_state_text === 'online' ? 'bg-green-600' : 'bg-zinc-700'"
-              :title="a.current_state_text === 'online' ? 'Turn off' : 'Turn on'"
-            >
-              <span
-                class="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200"
-                :class="a.current_state_text === 'online' ? 'translate-x-5' : 'translate-x-0'"
-              />
-            </button>
           </div>
         </div>
-      </div>
 
-      <!-- Recent Actuator Events -->
-      <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
-        <div class="flex items-center justify-between mb-3">
-          <h2 class="text-sm font-semibold text-white">Recent Actuator Events</h2>
-          <button @click="loadEvents" class="text-xs text-zinc-500 hover:text-zinc-300">Refresh</button>
-        </div>
-        <p v-if="eventsLoading" class="text-zinc-500 text-sm">Loading events…</p>
-        <p v-else-if="!actuatorEvents.length" class="text-zinc-500 text-sm">No recent events.</p>
-        <div v-else class="space-y-2 max-h-64 overflow-y-auto">
-          <div v-for="ev in actuatorEvents" :key="ev.event_time + '-' + ev.actuator_id"
-            class="bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 flex items-center justify-between gap-2"
-          >
-            <div class="min-w-0">
-              <p class="text-zinc-200 text-xs font-medium truncate">
-                {{ actuatorName(ev.actuator_id) }}
-                <span class="text-zinc-500">→ {{ ev.command_sent || 'unknown' }}</span>
-              </p>
-              <p class="text-zinc-600 text-xs">{{ ev.source }} · {{ formatTime(ev.event_time) }}</p>
+        <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
+          <div class="flex items-center justify-between mb-3">
+            <h2 class="text-sm font-semibold text-white">Schedules & tasks</h2>
+            <div class="flex gap-3">
+              <router-link to="/schedules" class="text-xs text-green-600 hover:text-green-400">Schedules →</router-link>
+              <router-link to="/tasks" class="text-xs text-green-600 hover:text-green-400">Tasks →</router-link>
             </div>
-            <span class="shrink-0 text-xs px-2 py-0.5 rounded"
-              :class="eventStatusClass(ev.execution_status)">
-              {{ shortStatus(ev.execution_status) }}
-            </span>
           </div>
-        </div>
-      </div>
-
-      <!-- Fertigation Summary -->
-      <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
-        <div class="flex items-center justify-between mb-3">
-          <h2 class="text-sm font-semibold text-white">Fertigation</h2>
-          <router-link to="/fertigation" class="text-xs text-green-600 hover:text-green-400">Open Fertigation →</router-link>
-        </div>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <div class="bg-zinc-950 border border-zinc-800 rounded-lg p-3">
-            <p class="text-zinc-400 text-xs mb-1">Active Program</p>
-            <p class="text-zinc-200 text-sm">{{ activeProgram?.name || 'None' }}</p>
-            <p v-if="activeProgram" class="text-zinc-600 text-xs mt-1">
-              Vol: {{ activeProgram.total_volume_liters || '—' }}L
-            </p>
-          </div>
-          <div class="bg-zinc-950 border border-zinc-800 rounded-lg p-3">
-            <p class="text-zinc-400 text-xs mb-1">Recent Events ({{ zoneEvents.length }})</p>
-            <div v-if="!zoneEvents.length" class="text-zinc-500 text-sm">No events</div>
-            <div v-else class="space-y-1 max-h-32 overflow-y-auto">
-              <p v-for="e in zoneEvents.slice(0, 5)" :key="e.id"
-                class="text-zinc-300 text-xs">
-                {{ formatTime(e.applied_at) }} · {{ e.volume_applied_liters || '0' }}L
-                <span v-if="e.ec_after_mscm" class="text-zinc-500">· EC {{ e.ec_after_mscm }}</span>
-              </p>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div class="bg-zinc-950 border border-zinc-800 rounded-lg p-3">
+              <p class="text-zinc-400 text-xs mb-1">Irrigation schedule</p>
+              <p v-if="zoneSchedule" class="text-zinc-200 text-sm">{{ zoneSchedule.name }}</p>
+              <p v-else class="text-zinc-500 text-sm">None linked</p>
+            </div>
+            <div class="bg-zinc-950 border border-zinc-800 rounded-lg p-3">
+              <p class="text-zinc-400 text-xs mb-1">Open tasks ({{ zoneTasks.length }})</p>
+              <p v-for="t in zoneTasks.slice(0, 3)" :key="t.id" class="text-zinc-300 text-xs truncate">{{ t.title }}</p>
             </div>
           </div>
         </div>
-      </div>
-
-      <!-- Setpoints for this zone (Phase 20.6) -->
-      <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
-        <div class="flex items-center justify-between mb-3">
-          <h2 class="text-sm font-semibold text-white flex items-center gap-2">
-            Setpoints
-            <HelpTip>
-              Ideal environment per sensor type and growth stage. Rule-engine
-              predicates of type <code>setpoint</code> resolve these rows at every
-              tick using the precedence <strong>cycle + stage → cycle (any) → zone +
-              stage → zone (any)</strong>. Edit here for quick tweaks, or use the
-              dedicated Setpoints page for bulk management.
-            </HelpTip>
-          </h2>
-          <router-link to="/setpoints" class="text-xs text-green-600 hover:text-green-400">Manage →</router-link>
-        </div>
-        <p v-if="!zoneSetpoints.length" class="text-zinc-500 text-sm">
-          No setpoints configured for this zone yet. Add one from the Setpoints page to
-          make stage-aware rules possible.
-        </p>
-        <div v-else class="space-y-1 max-h-48 overflow-y-auto">
-          <div v-for="sp in zoneSetpoints" :key="sp.id"
-            class="bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 flex items-center justify-between gap-2"
-          >
-            <div class="min-w-0 text-xs">
-              <span class="text-zinc-200 font-medium">{{ sp.sensor_type }}</span>
-              <span class="text-zinc-500"> · {{ sp.stage || 'any stage' }}</span>
-              <span v-if="sp.crop_cycle_id" class="text-indigo-400"> · cycle override</span>
-            </div>
-            <div class="text-zinc-400 text-xs whitespace-nowrap">
-              <span v-if="sp.min_value != null">min {{ sp.min_value }}</span>
-              <span v-if="sp.ideal_value != null" class="ml-1">· ideal {{ sp.ideal_value }}</span>
-              <span v-if="sp.max_value != null" class="ml-1">· max {{ sp.max_value }}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Schedules & Tasks for this zone -->
-      <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
-        <div class="flex items-center justify-between mb-3">
-          <h2 class="text-sm font-semibold text-white">Schedules & Tasks</h2>
-          <div class="flex gap-3">
-            <router-link to="/schedules" class="text-xs text-green-600 hover:text-green-400">Schedules →</router-link>
-            <router-link to="/tasks" class="text-xs text-green-600 hover:text-green-400">Tasks →</router-link>
-          </div>
-        </div>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <div class="bg-zinc-950 border border-zinc-800 rounded-lg p-3">
-            <p class="text-zinc-400 text-xs mb-1">Irrigation Schedule</p>
-            <p v-if="zoneSchedule" class="text-zinc-200 text-sm">{{ zoneSchedule.name }}</p>
-            <p v-if="zoneSchedule" class="text-zinc-600 text-xs mt-0.5">{{ zoneSchedule.cron_expression }} · {{ zoneSchedule.is_active ? 'active' : 'inactive' }}</p>
-            <p v-else class="text-zinc-500 text-sm">None linked</p>
-          </div>
-          <div class="bg-zinc-950 border border-zinc-800 rounded-lg p-3">
-            <p class="text-zinc-400 text-xs mb-1">Open Tasks ({{ zoneTasks.length }})</p>
-            <div v-if="!zoneTasks.length" class="text-zinc-500 text-sm">No tasks</div>
-            <div v-else class="space-y-1 max-h-32 overflow-y-auto">
-              <p v-for="t in zoneTasks.slice(0, 5)" :key="t.id" class="text-zinc-300 text-xs">
-                <span class="capitalize px-1 py-0.5 rounded text-[10px]" :class="t.status === 'in_progress' ? 'bg-blue-900/50 text-blue-300' : 'bg-zinc-800 text-zinc-400'">{{ t.status?.replace(/_/g, ' ') }}</span>
-                {{ t.title }}
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
+      </template>
     </template>
   </div>
 </template>
 
 <script setup>
-import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import api from '../api'
 import { useFarmStore } from '../stores/farm'
 import { useFarmContextStore } from '../stores/farmContext'
-import HelpTip from '../components/HelpTip.vue'
-import SensorTile from '../components/SensorTile.vue'
+import {
+  PLANT_NEEDS,
+  NEED_META,
+  sensorPlantNeed,
+  actuatorPlantNeed,
+} from '../lib/plantNeeds.js'
 import AskGuardianButton from '../components/AskGuardianButton.vue'
+import ZoneNeedSection from '../components/ZoneNeedSection.vue'
 
 const route = useRoute()
+const activeTab = ref('overview')
 const store = useFarmStore()
 const farmContext = useFarmContextStore()
 const toggling = ref({})
@@ -293,30 +209,54 @@ const eventsLoading = ref(false)
 const schedules = ref([])
 const tasks = ref([])
 const setpoints = ref([])
-const zoneSetpoints = computed(() => setpoints.value)
+const rules = ref([])
+const lightingPrograms = ref([])
+
+const zoneTabs = [
+  { id: 'overview', icon: '📋', label: 'Overview' },
+  { id: PLANT_NEEDS.water, icon: NEED_META[PLANT_NEEDS.water].icon, label: NEED_META[PLANT_NEEDS.water].shortLabel },
+  { id: PLANT_NEEDS.light, icon: NEED_META[PLANT_NEEDS.light].icon, label: NEED_META[PLANT_NEEDS.light].shortLabel },
+  { id: PLANT_NEEDS.air, icon: NEED_META[PLANT_NEEDS.air].icon, label: NEED_META[PLANT_NEEDS.air].shortLabel },
+]
 
 const farmId = computed(() => farmContext.farmId)
 const zoneId = computed(() => Number(route.params.id))
 const zone = computed(() => store.zones.find(z => z.id === zoneId.value))
+const isGreenhouse = computed(() => String(zone.value?.zone_type || '').toLowerCase() === 'greenhouse')
 const sensors = computed(() => store.sensorsByZone(zoneId.value))
 const actuators = computed(() => store.actuatorsByZone(zoneId.value))
+const zoneSetpoints = computed(() => setpoints.value)
 const activeProgram = computed(() =>
-  programs.value.find(p => p.target_zone_id === zoneId.value && p.is_active)
+  programs.value.find(p => p.target_zone_id === zoneId.value && p.is_active),
 )
 const zoneEvents = computed(() =>
-  events.value
-    .filter(e => e.zone_id === zoneId.value)
-    .sort((a, b) => new Date(b.applied_at) - new Date(a.applied_at))
+  events.value.filter(e => e.zone_id === zoneId.value).sort((a, b) => new Date(b.applied_at) - new Date(a.applied_at)),
 )
-const latestEvent = computed(() => zoneEvents.value[0] || null)
 const zoneSchedule = computed(() => {
   const prog = activeProgram.value
   if (!prog?.schedule_id) return null
   return schedules.value.find(s => s.id === prog.schedule_id) || null
 })
 const zoneTasks = computed(() =>
-  tasks.value.filter(t => t.zone_id === zoneId.value && t.status !== 'completed' && t.status !== 'cancelled')
+  tasks.value.filter(t => t.zone_id === zoneId.value && t.status !== 'completed' && t.status !== 'cancelled'),
 )
+
+const waterSummary = computed(() => {
+  const n = sensors.value.filter(s => sensorPlantNeed(s.sensor_type) === PLANT_NEEDS.water).length
+  return activeProgram.value?.name || `${n} sensor(s)`
+})
+const lightSummary = computed(() => {
+  const lp = lightingPrograms.value.filter(l => l.zone_id === zoneId.value && l.is_active)
+  return lp[0]?.name || `${actuators.value.filter(a => actuatorPlantNeed(a.actuator_type) === PLANT_NEEDS.light).length} light(s)`
+})
+const airSummary = computed(() => {
+  const n = sensors.value.filter(s => sensorPlantNeed(s.sensor_type) === PLANT_NEEDS.air).length
+  return isGreenhouse.value ? `Greenhouse · ${n} sensor(s)` : `${n} sensor(s)`
+})
+
+watch(() => route.query.tab, (t) => {
+  if (t && zoneTabs.some(z => z.id === t)) activeTab.value = t
+}, { immediate: true })
 
 async function loadEvents() {
   eventsLoading.value = true
@@ -328,8 +268,11 @@ async function loadEvents() {
     }
     all.sort((a, b) => new Date(b.event_time) - new Date(a.event_time))
     actuatorEvents.value = all.slice(0, 30)
-  } catch { actuatorEvents.value = [] }
-  finally { eventsLoading.value = false }
+  } catch {
+    actuatorEvents.value = []
+  } finally {
+    eventsLoading.value = false
+  }
 }
 
 async function toggleActuator(a) {
@@ -357,7 +300,20 @@ onMounted(async () => {
   try {
     const res = await api.get(`/farms/${fid}/setpoints`, { params: { zone_id: zoneId.value } })
     setpoints.value = res.data ?? []
-  } catch { setpoints.value = [] }
+  } catch {
+    setpoints.value = []
+  }
+  try {
+    rules.value = await store.loadAutomationRules(fid)
+  } catch {
+    rules.value = []
+  }
+  try {
+    const lr = await api.get(`/farms/${fid}/lighting-programs`)
+    lightingPrograms.value = lr.data?.programs ?? lr.data ?? []
+  } catch {
+    lightingPrograms.value = []
+  }
   await Promise.all([loadEvents(), loadZonePhotos()])
 })
 
@@ -384,7 +340,7 @@ async function loadZonePhotos() {
       try {
         const img = await api.get(`/file-attachments/${p.id}/content`, { responseType: 'blob' })
         thumbs[p.id] = URL.createObjectURL(img.data)
-      } catch { /* thumbnail optional */ }
+      } catch { /* optional */ }
     }))
     photoThumbUrls.value = thumbs
   } catch (e) {
@@ -445,22 +401,6 @@ async function removePhoto(p) {
   }
 }
 
-function actuatorName(id) {
-  return store.actuators.find(a => a.id === id)?.name || `Actuator ${id}`
-}
-
-const ACTUATOR_ICONS = {
-  pump: '🔧', fan: '🌀', light: '💡', valve: '🚰',
-  heater: '🔥', cooler: '❄️', humidifier: '💨', co2: '🫧',
-  relay: '⚡', controller: '🖥', default: '⚙️'
-}
-function actuatorIcon(type) {
-  if (!type) return ACTUATOR_ICONS.default
-  const k = type.toLowerCase()
-  for (const [n, i] of Object.entries(ACTUATOR_ICONS)) { if (k.includes(n)) return i }
-  return ACTUATOR_ICONS.default
-}
-
 const BADGE = {
   indoor: 'bg-indigo-900/60 text-indigo-300',
   outdoor: 'bg-emerald-900/60 text-emerald-300',
@@ -473,32 +413,5 @@ function zoneBadge(type) {
     if (k.includes(name)) return cls
   }
   return 'bg-zinc-800 text-zinc-400'
-}
-
-function formatTime(ts) {
-  if (!ts) return '—'
-  const d = new Date(ts)
-  const mins = Math.floor((Date.now() - d) / 60000)
-  if (mins < 1) return 'just now'
-  if (mins < 60) return `${mins}m ago`
-  const hrs = Math.floor(mins / 60)
-  if (hrs < 24) return `${hrs}h ago`
-  return d.toLocaleDateString()
-}
-
-const EVENT_STATUS = {
-  execution_completed_success_on_device: 'bg-green-900/50 text-green-300',
-  pending_confirmation_from_feedback: 'bg-yellow-900/50 text-yellow-300',
-}
-function eventStatusClass(s) {
-  if (!s) return 'bg-zinc-800 text-zinc-400'
-  return EVENT_STATUS[s] ?? 'bg-zinc-800 text-zinc-400'
-}
-function shortStatus(s) {
-  if (!s) return '—'
-  if (s.includes('success')) return 'OK'
-  if (s.includes('pending')) return 'pending'
-  if (s.includes('fail')) return 'failed'
-  return s.split('_').slice(0, 2).join(' ')
 }
 </script>

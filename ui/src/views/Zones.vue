@@ -1,12 +1,16 @@
 <template>
   <div class="p-6">
-    <div class="flex items-center justify-between mb-6">
+    <div class="flex items-center justify-between mb-2">
       <h1 class="text-xl font-semibold text-white">Zones</h1>
       <button @click="showCreateForm = true"
         class="px-3 py-1.5 bg-green-700 hover:bg-green-600 text-white text-xs rounded-lg">
         + New Zone
       </button>
     </div>
+    <p class="text-zinc-500 text-sm mb-6 max-w-2xl">
+      Open a zone to manage <strong class="text-zinc-400">water</strong>, <strong class="text-zinc-400">light</strong>,
+      and <strong class="text-zinc-400">climate</strong> in one place.
+    </p>
 
     <!-- Create / Edit modal -->
     <div v-if="showCreateForm || editZone" class="mb-6 bg-zinc-900 border border-zinc-800 rounded-xl p-4">

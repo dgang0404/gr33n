@@ -10,6 +10,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -64,11 +65,17 @@ func NewOpenAICompatibleFromEnv() (*Client, error) {
 		}
 		dim = parsed
 	}
+	timeout := 120 * time.Second
+	if s := strings.TrimSpace(os.Getenv("EMBEDDING_TIMEOUT_SECONDS")); s != "" {
+		if sec, err := strconv.Atoi(s); err == nil && sec > 0 {
+			timeout = time.Duration(sec) * time.Second
+		}
+	}
 	c := &Client{
 		BaseURL: strings.TrimSuffix(base, "/"),
 		APIKey:  apiKey,
 		Model:   model,
-		Client:  &http.Client{Timeout: 120 * time.Second},
+		Client:  &http.Client{Timeout: timeout},
 		Dim:     dim,
 	}
 	return c, nil

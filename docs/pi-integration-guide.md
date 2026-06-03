@@ -19,11 +19,28 @@ The Pi client is a single-process Python program that:
 1. **Reads sensors** on a per-sensor interval (temperature, humidity, EC, pH, CO₂, PAR, soil moisture). Hardware drivers are auto-stubbed on non-Pi hosts, so the exact same file runs on a dev laptop for tests.
 2. **Posts readings** to the API (one-shot or batched).
 3. **Reports device status** (online / offline / error) on a heartbeat.
-4. **Polls for pending commands** (`GET /farms/{id}/devices` → `config.pending_command`) and executes them via GPIO.
+4. **Polls for pending commands** (`GET /farms/{id}/devices` → `config.pending_command`) and executes them via GPIO (instant on/off, **deploy/retract**, or **timed pulse** — see §1.1).
 5. **Reports actuator events** (what it actually did and when), then clears the pending command.
 6. **Falls back offline** — any failed POST is stored in a local SQLite queue (`offline_queue_path`) and flushed later via the batch endpoint.
 
 All API calls go over plain HTTP(S); there is no long-lived socket. Authentication is a pre-shared **API key** sent as the **`X-API-Key`** HTTP header on every request (same spelling the server reads in `cmd/api/auth.go`; header names are case-insensitive, but examples below use this form). The API validates it with **`requireAPIKey`** middleware (`cmd/api/routes.go`).
+
+### 1.1 Pending commands — shape, pulse, and one slot per device
+
+**Payload** (JSON inside `devices.config.pending_command` after base64-decode on the wire):
+
+| Field | Purpose |
+|-------|---------|
+| `command` | `on`, `off`, `deploy`, `retract`, `open`, `close`, … per actuator type |
+| `actuator_id` | Which relay/pump on this device |
+| `duration_seconds` | **Phase 38** — optional; Pi runs **on → wait N s → off** (pumps, relays, valves) |
+| `schedule_id`, `rule_id`, `program_id`, `source`, `reason` | Provenance for `actuator_events` |
+
+Writers: automation worker (schedules, rules, fertigation programs), **`POST /actuators/{id}/command`** (operator), Guardian **`enqueue_actuator_command`** after Confirm.
+
+**One slot per device (important):** the API stores **at most one** `pending_command` per device row. Concurrent writes in the same poll window **overwrite** each other (**last write wins**). Do not rely on schedule + program + manual enqueue all landing on one Pi without coordination. **Phase 39** adds a FIFO **`device_commands`** queue and **`mix_batch`** multi-step mix — see [operator-tour §4a](operator-tour.md#4a-plant-needs-per-zone-phase-38).
+
+**Not on the Pi today:** automated nutrient **mixing** from recipe/EC math — operators log mixes via the API/UI; edge mix execution is planned Phase 39.
 
 ---
 
@@ -361,7 +378,9 @@ Python client contract (no DB): `cd pi_client && python3 -m pytest test_gr33n_cl
 | **404** on sensor post | Wrong **`sensor_id`** — run `print-demo-sensor-ids.sh` |
 | **Devices stay offline** | Heartbeat uses `device_id` from actuators config; PATCH path reachable? |
 | **pending_command never clears** | `GET /farms/{id}/devices` returns config? Actuator `device_id` matches config? |
-| **Queue grows forever** | API down or batch POST failing — see §8.5 |
+| **Command “lost” after automation + manual test** | **Last write wins** on single `pending_command` slot — see §1.1; Phase 39 queue |
+| **Pulse ignored** | Confirm `duration_seconds` in pending JSON; pump/relay actuator type; check Pi log for pulse thread |
+| **Queue grows forever** | API down or batch POST failing — see §8.5 (sensor offline SQLite queue, not actuator command queue) |
 
 Broader ops: [`operator-troubleshooting.md`](operator-troubleshooting.md), [`mqtt-edge-operator-playbook.md`](mqtt-edge-operator-playbook.md) if using MQTT instead of direct HTTP.
 
@@ -440,13 +459,13 @@ Automated equivalent: `./scripts/run-edge-actuator-smoke.sh --guardian`.
   Automation worker / Guardian Confirm / bench script
               │
               ▼
-   devices.config.pending_command  (JSON: command, actuator_id, …)
+   devices.config.pending_command  (JSON: command, actuator_id, optional duration_seconds, …)
               │
               ▼
    pi_client GET /farms/{id}/devices  (X-API-Key)
               │
               ▼
-   GPIO execute (LED / relay)  — stubbed off-Pi
+   GPIO execute (instant or pulse on→off)  — stubbed off-Pi
               │
               ├── POST /actuators/{id}/events
               └── DELETE /devices/{id}/pending-command

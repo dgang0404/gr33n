@@ -1,14 +1,18 @@
 <template>
   <div class="p-6">
-    <div class="flex items-center justify-between mb-6">
-      <h1 class="text-xl font-semibold text-white">Controls (Actuators)</h1>
+    <div class="flex items-center justify-between mb-2">
+      <h1 class="text-xl font-semibold text-white">Controls</h1>
       <span class="text-xs text-zinc-500">{{ store.actuators.length }} actuators</span>
     </div>
+    <p class="text-zinc-500 text-sm mb-6 max-w-2xl">
+      Manual switches for pumps, lights, and fans. For a connected view (sensor → target → automation),
+      open a <router-link to="/zones" class="text-green-600 hover:text-green-400">zone</router-link>
+      and use the Water / Light / Climate tabs.
+    </p>
 
     <div v-if="store.loading" class="text-zinc-400 text-sm">Loading controls…</div>
     <div v-else-if="!store.actuators.length" class="text-zinc-500 text-sm">
-      No actuators found. This usually means no control hardware is registered yet.
-      You can still run in simulation mode until a Pi/device is connected.
+      No actuators found. Register hardware in Settings or apply a starter pack.
     </div>
 
     <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
@@ -24,9 +28,9 @@
             <div class="min-w-0">
               <p class="text-white text-sm font-medium truncate">{{ actuator.name }}</p>
               <p class="text-zinc-500 text-xs capitalize">{{ actuator.actuator_type }}</p>
+              <p class="text-zinc-600 text-[10px]">{{ needLabel(actuator.actuator_type) }}</p>
             </div>
           </div>
-          <!-- Toggle -->
           <button
             @click="toggle(actuator)"
             :disabled="toggling[actuator.id]"
@@ -42,12 +46,21 @@
         </div>
 
         <div class="flex items-center justify-between text-xs">
-          <span class="text-zinc-400 truncate">{{ zoneName(actuator.zone_id) }}</span>
+          <router-link
+            v-if="actuator.zone_id"
+            :to="`/zones/${actuator.zone_id}`"
+            class="text-green-600 hover:text-green-400 truncate"
+          >
+            {{ zoneName(actuator.zone_id) }}
+          </router-link>
+          <span v-else class="text-zinc-400 truncate">Unassigned</span>
           <span :class="statusBadge(actuator.current_state_text || 'offline')"
             class="shrink-0 ml-2 px-2 py-0.5 rounded-full font-medium">
             {{ (actuator.current_state_text || 'offline').replaceAll('_', ' ') }}
           </span>
         </div>
+
+        <ActuatorPulseControl :actuator="actuator" />
 
         <p v-if="actuator.last_known_state_time" class="text-zinc-600 text-xs">
           Last state update {{ timeAgo(actuator.last_known_state_time) }}
@@ -61,6 +74,8 @@
 import { ref, onMounted } from 'vue'
 import { useFarmStore } from '../stores/farm'
 import { useFarmContextStore } from '../stores/farmContext'
+import { actuatorPlantNeed, NEED_META } from '../lib/plantNeeds.js'
+import ActuatorPulseControl from '../components/ActuatorPulseControl.vue'
 
 const store = useFarmStore()
 const farmContext = useFarmContextStore()
@@ -75,6 +90,10 @@ async function toggle(actuator) {
 function zoneName(id) {
   if (!id) return 'Unassigned'
   return store.zones.find(z => z.id === id)?.name ?? `Zone ${id}`
+}
+function needLabel(actuatorType) {
+  const need = actuatorPlantNeed(actuatorType)
+  return NEED_META[need]?.label ?? ''
 }
 const DEVICE_ICONS = { pump:'🔧', fan:'🌀', light:'💡', valve:'🚰',
   heater:'🔥', cooler:'❄️', humidifier:'💨', co2:'🫧',

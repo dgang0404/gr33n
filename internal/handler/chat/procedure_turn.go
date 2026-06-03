@@ -46,6 +46,9 @@ func (h *Handler) tryProcedureOrSafetyTurn(
 		return false
 	}
 	if hasUser && h.q != nil {
+		_ = h.q.UpsertConversationSession(r.Context(), db.UpsertConversationSessionParams{
+			ID: sessionID, UserID: userID,
+		})
 		_ = h.q.UpdateConversationSessionMeta(r.Context(), db.UpdateConversationSessionMetaParams{
 			ID:     sessionID,
 			UserID: userID,

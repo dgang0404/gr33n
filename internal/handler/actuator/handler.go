@@ -95,15 +95,7 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Attach valid_commands hint so callers know the typed command vocabulary.
-	type createResponse struct {
-		db.Gr33ncoreActuator
-		ValidCommands []string `json:"valid_commands"`
-	}
-	httputil.WriteJSON(w, http.StatusCreated, createResponse{
-		Gr33ncoreActuator: row,
-		ValidCommands:     ValidCommands(row.ActuatorType),
-	})
+	httputil.WriteJSON(w, http.StatusCreated, wrapActuatorWithCommands(row))
 }
 
 // GET /actuators/{id}
@@ -125,14 +117,7 @@ func (h *Handler) Get(w http.ResponseWriter, r *http.Request) {
 	if !farmauthz.RequireFarmMember(w, r, h.q, a0.FarmID) {
 		return
 	}
-	type getResponse struct {
-		db.Gr33ncoreActuator
-		ValidCommands []string `json:"valid_commands"`
-	}
-	httputil.WriteJSON(w, http.StatusOK, getResponse{
-		Gr33ncoreActuator: a0,
-		ValidCommands:     ValidCommands(a0.ActuatorType),
-	})
+	httputil.WriteJSON(w, http.StatusOK, wrapActuatorWithCommands(a0))
 }
 
 // GET /farms/{id}/actuators
@@ -153,7 +138,11 @@ func (h *Handler) ListByFarm(w http.ResponseWriter, r *http.Request) {
 	if rows == nil {
 		rows = []db.Gr33ncoreActuator{}
 	}
-	httputil.WriteJSON(w, http.StatusOK, rows)
+	out := make([]actuatorWithCommands, len(rows))
+	for i, row := range rows {
+		out[i] = wrapActuatorWithCommands(row)
+	}
+	httputil.WriteJSON(w, http.StatusOK, out)
 }
 
 // PATCH /actuators/{id}/state

@@ -13,6 +13,7 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 
 	db "gr33n-api/internal/db"
+	acthandler "gr33n-api/internal/handler/actuator"
 	"gr33n-api/internal/platform/commontypes"
 )
 
@@ -431,11 +432,16 @@ func (w *Worker) dispatchRuleActuator(ctx context.Context, rule db.Gr33ncoreAuto
 	// so the Pi client can pick it up on its next poll. Best-effort —
 	// the rule still counts as "fired" even if the device is offline.
 	if !w.simulation && actuator.DeviceID != nil {
-		pendingJSON, _ := json.Marshal(map[string]any{
-			"command": command,
-			"rule_id": rule.ID,
+		ruleID := rule.ID
+		pendingJSON, err := acthandler.BuildPendingCommandJSONFull(acthandler.PendingCommandInput{
+			ActuatorID: *action.TargetActuatorID,
+			Command:    command,
+			Source:     "rule",
+			RuleID:     &ruleID,
 		})
-		if err := w.q.SetDevicePendingCommand(ctx, db.SetDevicePendingCommandParams{
+		if err != nil {
+			log.Printf("rule %d action %d: build pending command: %v", rule.ID, action.ID, err)
+		} else if err := w.q.SetDevicePendingCommand(ctx, db.SetDevicePendingCommandParams{
 			ID:      *actuator.DeviceID,
 			Column2: pendingJSON,
 		}); err != nil {

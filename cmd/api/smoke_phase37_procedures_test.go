@@ -2,6 +2,7 @@
 package main
 
 import (
+	"io"
 	"net/http"
 	"strings"
 	"testing"
@@ -74,8 +75,8 @@ func TestPhase37_ProcedurePrintStatic(t *testing.T) {
 	if ct := resp.Header.Get("Content-Type"); !strings.Contains(ct, "text/markdown") {
 		t.Fatalf("content-type: %s", ct)
 	}
-	raw := readBodyPreview(resp)
-	if !strings.Contains(raw, "Step 1") || !strings.Contains(strings.ToLower(raw), "qualified") {
-		t.Fatalf("unexpected print body: %s", raw)
+	raw, _ := io.ReadAll(resp.Body)
+	if !strings.Contains(string(raw), "Step 1") || !strings.Contains(strings.ToLower(string(raw)), "qualified") {
+		t.Fatalf("unexpected print body: %s", string(raw))
 	}
 }

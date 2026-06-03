@@ -76,6 +76,7 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useFarmContextStore } from '../stores/farmContext'
 import { useAuthStore } from '../stores/auth'
 import { useGuardianProposalsStore } from '../stores/guardianProposals'
+import { buildNavGroups } from '../lib/navGroups.js'
 
 const farmContext = useFarmContextStore()
 const auth = useAuthStore()
@@ -122,53 +123,5 @@ const cycleCompareRoute = computed(() => {
   return fid ? `/farms/${fid}/crop-cycles/compare` : '/farms/0/crop-cycles/compare'
 })
 
-const navGroups = computed(() => [
-  {
-    label: 'Operate',
-    items: [
-      { to: '/',          icon: '🌿', label: 'Dashboard'  },
-      { to: '/tasks',     icon: '✅', label: 'Tasks'      },
-      { to: '/schedules', icon: '📅', label: 'Schedules'  },
-      { to: '/lighting',  icon: '💡', label: 'Lighting', navTitle: 'Lighting programs — photoperiod presets, ON/OFF schedule pairs (Phase 35)' },
-      { to: '/automation', icon: '🤖', label: 'Rules'     },
-      { to: '/setpoints', icon: '🎯', label: 'Setpoints' },
-      { to: '/actuators', icon: '⚡', label: 'Controls'   },
-      { to: '/sensors',   icon: '📡', label: 'Sensors'    },
-    ],
-  },
-  {
-    label: 'Grow',
-    items: [
-      { to: '/zones',       icon: '🗂️', label: 'Zones'       },
-      { to: '/plants',      icon: '🌱', label: 'Plants'      },
-      { to: '/fertigation', icon: '💧', label: 'Fertigation' },
-      { to: '/inventory',   icon: '🧪', label: 'Inventory'   },
-    ],
-  },
-  {
-    label: 'Livestock',
-    items: [
-      { to: '/animals',    icon: '🐔', label: 'Animals'    },
-      { to: '/aquaponics', icon: '🐟', label: 'Aquaponics' },
-    ],
-  },
-  {
-    label: 'Monitor',
-    items: [
-      { to: '/alerts', icon: '🔔', label: 'Alerts' },
-      { to: '/costs',  icon: '💰', label: 'Costs'  },
-      { to: cycleCompareRoute.value, icon: '📊', label: 'Analytics', navTitle: 'Crop cycle analytics — per-cycle summary & multi-cycle compare (Phase 28).' },
-      { to: '/farm-knowledge', icon: '🔎', label: 'Knowledge', navTitle: 'Farm knowledge — semantic search & Ask (LLM); requires API embedding / LLM env' },
-      { to: '/chat', icon: '🤖', label: 'Guardian', navTitle: 'Farm Guardian — chat and pending change requests' },
-    ],
-  },
-  {
-    label: 'System',
-    items: [
-      { to: '/operator-guide', icon: '📖', label: 'Guide', navTitle: 'Operator walkthrough + glossary (Phase 26)' },
-      { to: '/catalog',  icon: '📚', label: 'Catalog'  },
-      { to: '/settings', icon: '⚙️', label: 'Settings' },
-    ],
-  },
-])
+const navGroups = computed(() => buildNavGroups(cycleCompareRoute.value))
 </script>

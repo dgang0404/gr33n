@@ -5,27 +5,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"strings"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 
 	db "gr33n-api/internal/db"
+	acthandler "gr33n-api/internal/handler/actuator"
 )
-
-// allowedActuatorCommands are the commands Guardian may enqueue via pending_command.
-// Phase 36 WS7 extends the set to include greenhouse motor verbs (deploy/retract
-// for shade_screen, open/close for ridge_vent and glazing_panel).
-// The Pi client maps these onto the same GPIO on/off logic with the configured polarity.
-var allowedActuatorCommands = map[string]struct{}{
-	"on":      {},
-	"off":     {},
-	"deploy":  {},
-	"retract": {},
-	"open":    {},
-	"close":   {},
-	"stop":    {},
-}
 
 func execEnqueueActuatorCommand(ctx context.Context, deps ExecutorDeps, args map[string]any) (any, error) {
 	deviceID, err := int64FromArgs(args, "device_id")
@@ -40,10 +26,7 @@ func execEnqueueActuatorCommand(ctx context.Context, deps ExecutorDeps, args map
 	if err != nil {
 		return nil, err
 	}
-	command = strings.ToLower(strings.TrimSpace(command))
-	if _, ok := allowedActuatorCommands[command]; !ok {
-		return nil, fmt.Errorf("command must be one of: on, off, deploy, retract, open, close, stop")
-	}
+	command = acthandler.NormalizeCommand(command)
 	reason, _ := optionalStringFromArgs(args, "reason")
 
 	actuator, err := deps.Q.GetActuatorByID(ctx, actuatorID)
@@ -55,6 +38,10 @@ func execEnqueueActuatorCommand(ctx context.Context, deps ExecutorDeps, args map
 	}
 	if err := ensureFarmScope(actuator.FarmID, deps.FarmID); err != nil {
 		return nil, err
+	}
+	if !acthandler.CommandAllowed(actuator.ActuatorType, command) {
+		return nil, fmt.Errorf("command %q is not valid for actuator_type %q; valid: %v",
+			command, actuator.ActuatorType, acthandler.ValidCommands(actuator.ActuatorType))
 	}
 	if actuator.DeviceID == nil || *actuator.DeviceID != deviceID {
 		return nil, errors.New("actuator is not attached to the given device_id")
@@ -71,10 +58,13 @@ func execEnqueueActuatorCommand(ctx context.Context, deps ExecutorDeps, args map
 		return nil, err
 	}
 
-	pending := map[string]any{
-		"command":     command,
-		"actuator_id": actuatorID,
-		"source":      "guardian",
+	pendingJSON, err := acthandler.BuildPendingCommandJSON(actuatorID, command, "guardian", "")
+	if err != nil {
+		return nil, err
+	}
+	var pending map[string]any
+	if err := json.Unmarshal(pendingJSON, &pending); err != nil {
+		return nil, err
 	}
 	if reason != nil && *reason != "" {
 		pending["reason"] = *reason
@@ -82,7 +72,7 @@ func execEnqueueActuatorCommand(ctx context.Context, deps ExecutorDeps, args map
 	if deps.ProposalID != uuid.Nil {
 		pending["proposal_id"] = deps.ProposalID.String()
 	}
-	pendingJSON, err := json.Marshal(pending)
+	pendingJSON, err = json.Marshal(pending)
 	if err != nil {
 		return nil, err
 	}

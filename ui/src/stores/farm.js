@@ -1221,5 +1221,16 @@ export const useFarmStore = defineStore('farm', {
       if (idx >= 0) this.actuators[idx] = r.data
       return r.data
     },
+
+    /** Phase 36 — queue Pi pending_command (deploy/retract/on/off per valid_commands). */
+    async enqueueActuatorCommand(actuatorId, command, reason = '', durationSeconds = null) {
+      const body = { command }
+      if (reason) body.reason = reason
+      if (durationSeconds != null && durationSeconds > 0) {
+        body.duration_seconds = Math.round(durationSeconds)
+      }
+      const r = await api.post(`/actuators/${actuatorId}/command`, body)
+      return r.data
+    },
   },
 })

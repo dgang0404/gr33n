@@ -19,6 +19,7 @@ import (
 	"github.com/robfig/cron/v3"
 
 	db "gr33n-api/internal/db"
+	acthandler "gr33n-api/internal/handler/actuator"
 )
 
 type Status struct {
@@ -562,14 +563,19 @@ func (w *Worker) executeAction(ctx context.Context, schedule db.Gr33ncoreSchedul
 		if !w.simulation {
 			actuator, lookupErr := w.q.GetActuatorByID(ctx, *action.TargetActuatorID)
 			if lookupErr == nil && actuator.DeviceID != nil {
-				pendingJSON, _ := json.Marshal(map[string]any{
-					"command":     command,
-					"schedule_id": schedule.ID,
+				schedID := schedule.ID
+				pendingJSON, err := acthandler.BuildPendingCommandJSONFull(acthandler.PendingCommandInput{
+					ActuatorID: *action.TargetActuatorID,
+					Command:    command,
+					Source:     "schedule",
+					ScheduleID: &schedID,
 				})
-				_ = w.q.SetDevicePendingCommand(ctx, db.SetDevicePendingCommandParams{
-					ID:      *actuator.DeviceID,
-					Column2: pendingJSON,
-				})
+				if err == nil {
+					_ = w.q.SetDevicePendingCommand(ctx, db.SetDevicePendingCommandParams{
+						ID:      *actuator.DeviceID,
+						Column2: pendingJSON,
+					})
+				}
 			}
 		}
 		return nil

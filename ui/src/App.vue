@@ -85,7 +85,8 @@ import { useFarmStore } from './stores/farm'
 import { useFarmContextStore } from './stores/farmContext'
 import { useAuthStore } from './stores/auth'
 import { usePush } from './composables/usePush'
-import { onMounted, onUnmounted, ref, watch } from 'vue'
+import { onMounted, onUnmounted, ref, watch, computed } from 'vue'
+import { buildNavGroups, mobileBottomNav } from './lib/navGroups.js'
 
 const store = useFarmStore()
 const farmContext = useFarmContextStore()
@@ -101,51 +102,13 @@ function syncMobile() {
   isMobile.value = window.matchMedia('(max-width: 767px)').matches
 }
 
-const mobileNav = [
-  { to: '/',           icon: '🌿', label: 'Home' },
-  { to: '/tasks',      icon: '✅', label: 'Tasks' },
-  { to: '/zones',      icon: '🗂️', label: 'Zones' },
-  { to: '/alerts',     icon: '🔔', label: 'Alerts' },
-  { to: '/settings',   icon: '⚙️', label: 'More' },
-]
+const mobileNav = mobileBottomNav
 
-const drawerNavGroups = [
-  {
-    label: 'Operate',
-    items: [
-      { to: '/',          icon: '🌿', label: 'Dashboard' },
-      { to: '/tasks',     icon: '✅', label: 'Tasks' },
-      { to: '/schedules', icon: '📅', label: 'Schedules' },
-      { to: '/actuators', icon: '⚡', label: 'Controls' },
-      { to: '/sensors',   icon: '📡', label: 'Sensors' },
-    ],
-  },
-  {
-    label: 'Grow',
-    items: [
-      { to: '/zones',       icon: '🗂️', label: 'Zones' },
-      { to: '/plants',      icon: '🌱', label: 'Plants' },
-      { to: '/fertigation', icon: '💧', label: 'Fertigation' },
-      { to: '/inventory',   icon: '🧪', label: 'Inventory' },
-    ],
-  },
-  {
-    label: 'Monitor',
-    items: [
-      { to: '/alerts', icon: '🔔', label: 'Alerts' },
-      { to: '/costs',  icon: '💰', label: 'Costs' },
-      { to: '/farm-knowledge', icon: '🔎', label: 'Knowledge' },
-    ],
-  },
-  {
-    label: 'System',
-    items: [
-      { to: '/operator-guide', icon: '📖', label: 'Guide' },
-      { to: '/catalog',  icon: '📚', label: 'Catalog' },
-      { to: '/settings', icon: '⚙️', label: 'Settings' },
-    ],
-  },
-]
+const drawerNavGroups = computed(() => {
+  const fid = farmContext.farmId
+  const compare = fid ? `/farms/${fid}/crop-cycles/compare` : '/farms/0/crop-cycles/compare'
+  return buildNavGroups(compare)
+})
 
 function connectSSE(farmId) {
   if (evtSource) evtSource.close()
