@@ -30,7 +30,7 @@ todos:
     status: done
   - id: ws8-docs-tests
     content: "WS8: Docs + tests — operator-tour lighting section; OpenAPI; smokes for preset apply + cron fire in TZ"
-    status: pending
+    status: done
 isProject: false
 ---
 
@@ -38,7 +38,7 @@ isProject: false
 
 ## Status
 
-**In progress — core shipped, closure pending.** WS1–WS5 and WS7 landed (schema, API, TZ worker, presets, schedule-actions, UI, Guardian read). **WS6 partial:** `master_seed.sql` wraps the demo 18/6 pair in `lighting_programs`; **`jadam_indoor_photoperiod_v1` bootstrap still emits orphan schedules.** **WS8 not started:** operator-tour, OpenAPI, integration smokes, Vitest. Track remaining closure in [`phase_35_37_operational_closure.plan.md`](phase_35_37_operational_closure.plan.md).
+**Shipped — WS6 + WS8 closed (OC-35A–C).** WS1–WS5, WS7, WS6, and WS8 are complete. Track cross-phase rollup in [`phase_35_37_operational_closure.plan.md`](phase_35_37_operational_closure.plan.md).
 
 Depends on **Phase 14** schedules/automation baseline and existing `actuator_type='light'` + `control_actuator` worker path.
 
@@ -251,12 +251,12 @@ WS1 → WS4 (TZ before trusting cron generation) → WS2 → WS3 → WS5 → WS6
 
 ## Definition of done (phase ship)
 
-- [ ] `lighting_programs` table + CRUD API; preset apply creates paired schedules + actions
-- [ ] Worker honors `schedules.timezone`
-- [ ] Schedule-action POST/GET for schedules
-- [ ] PhotoperiodClockEditor + zone/farm lighting UI
-- [ ] Demo seed / bootstrap migrated to lighting_program model
-- [ ] Operator docs + OpenAPI + tests
+- [x] `lighting_programs` table + CRUD API; preset apply creates paired schedules + actions
+- [x] Worker honors `schedules.timezone`
+- [x] Schedule-action POST/GET for schedules
+- [x] PhotoperiodClockEditor + zone/farm lighting UI
+- [x] Demo seed / bootstrap migrated to lighting_program model
+- [x] Operator docs + OpenAPI + tests
 
 ---
 

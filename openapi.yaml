@@ -65,6 +65,8 @@ tags:
     description: Actuator state and event history
   - name: automation
     description: Schedules, runs, and worker health
+  - name: lighting
+    description: Photoperiod lighting programs — presets, ON/OFF schedule pairs, and grow-light actuators (Phase 35)
   - name: tasks
     description: Task management
   - name: plants
@@ -1137,6 +1139,171 @@ paths:
                 type: array
                 items: { $ref: "#/components/schemas/Actuator" }
 
+  /lighting-programs/presets:
+    get:
+      tags: [lighting]
+      summary: List standard photoperiod presets
+      description: >
+        Named templates (22/2 peas, 18/6 veg, 12/12 flower, 16/8 seedling).
+        Apply via `POST /farms/{id}/lighting-programs/from-preset`.
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          description: Preset library
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/LightingPreset" }
+
+  /farms/{id}/lighting-programs:
+    get:
+      tags: [lighting]
+      summary: List lighting programs for a farm
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      responses:
+        "200":
+          description: Lighting programs
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/LightingProgram" }
+    post:
+      tags: [lighting]
+      summary: Create a custom lighting program
+      description: >
+        Creates the program plus paired ON/OFF schedules and
+        `control_actuator` executable actions in one transaction.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/LightingProgramCreate" }
+      responses:
+        "201":
+          description: Created lighting program
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LightingProgram" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+
+  /farms/{id}/lighting-programs/from-preset:
+    post:
+      tags: [lighting]
+      summary: Create a lighting program from a preset
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/LightingProgramFromPreset" }
+      responses:
+        "201":
+          description: Created lighting program
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LightingProgram" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+
+  /lighting-programs/{pid}:
+    get:
+      tags: [lighting]
+      summary: Get a lighting program
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: pid
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Lighting program
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LightingProgram" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    patch:
+      tags: [lighting]
+      summary: Update a lighting program
+      description: >
+        Regenerates paired ON/OFF cron schedules when photoperiod fields change.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: pid
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/LightingProgramUpdate" }
+      responses:
+        "200":
+          description: Updated lighting program
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LightingProgram" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    delete:
+      tags: [lighting]
+      summary: Delete a lighting program
+      description: Deletes paired schedules (cascade removes executable actions).
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: pid
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "204": { description: Deleted }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /lighting-programs/{pid}/activate:
+    post:
+      tags: [lighting]
+      summary: Activate a lighting program and its paired schedules
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: pid
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Activated program
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LightingProgram" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /lighting-programs/{pid}/deactivate:
+    post:
+      tags: [lighting]
+      summary: Deactivate a lighting program and its paired schedules
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: pid
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Deactivated program
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LightingProgram" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
   /actuators/{id}/state:
     patch:
       tags: [actuators]
@@ -1604,6 +1771,50 @@ paths:
               schema:
                 type: array
                 items: { $ref: "#/components/schemas/ActuatorEvent" }
+
+  /schedules/{id}/actions:
+    get:
+      tags: [automation]
+      summary: List executable actions attached to a schedule
+      description: >
+        Phase 35 WS3. Returns `control_actuator` rows (and other action types)
+        bound to this schedule, ordered by `execution_order` ASC. Lighting
+        programs auto-generate ON/OFF actions when created from a preset.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      responses:
+        "200":
+          description: Ordered list of executable actions for this schedule
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/ExecutableAction" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    post:
+      tags: [automation]
+      summary: Attach an executable action to a schedule
+      description: >
+        Same payload shape as rule-bound actions. `schedule_id` and
+        `program_id` must be omitted in the body — the parent schedule is
+        taken from the URL.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ExecutableActionCreate" }
+      responses:
+        "201":
+          description: Created action
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ExecutableAction" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "404": { $ref: "#/components/responses/NotFound" }
 
   /farms/{id}/automation/runs:
     get:
@@ -5860,6 +6071,84 @@ components:
       description: >
         Omitting `preconditions` preserves the existing interlock rules. Send
         an empty array to clear them.
+
+    LightingPreset:
+      type: object
+      properties:
+        key: { type: string, example: veg_18_6 }
+        name: { type: string, example: "Veg 18/6 (Vegetative)" }
+        on_hours: { type: integer, minimum: 1, maximum: 24 }
+        off_hours: { type: integer, minimum: 0, maximum: 23 }
+
+    LightingProgram:
+      type: object
+      description: >
+        First-class photoperiod entity. Owns paired ON/OFF schedules and
+        grow-light actuator actions. `on_hours + off_hours` must equal 24.
+      properties:
+        id: { type: integer }
+        farm_id: { type: integer }
+        zone_id: { type: integer }
+        actuator_id: { type: integer }
+        name: { type: string }
+        description: { type: string, nullable: true }
+        on_hours: { type: integer }
+        off_hours: { type: integer }
+        lights_on_at:
+          type: string
+          description: Anchor time HH:MM (24-hour)
+          example: "06:00"
+        timezone: { type: string, example: America/New_York }
+        schedule_on_id: { type: integer, nullable: true }
+        schedule_off_id: { type: integer, nullable: true }
+        crop_cycle_id: { type: integer, nullable: true }
+        is_active: { type: boolean }
+        metadata: { type: object }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+
+    LightingProgramCreate:
+      type: object
+      required: [name, zone_id, actuator_id, on_hours, off_hours]
+      properties:
+        name: { type: string }
+        description: { type: string, nullable: true }
+        zone_id: { type: integer }
+        actuator_id: { type: integer }
+        on_hours: { type: integer, minimum: 1, maximum: 24 }
+        off_hours: { type: integer, minimum: 0, maximum: 23 }
+        lights_on_at: { type: string, default: "06:00" }
+        timezone: { type: string, default: UTC }
+        crop_cycle_id: { type: integer, nullable: true }
+        is_active: { type: boolean, default: true }
+        metadata: { type: object }
+
+    LightingProgramFromPreset:
+      type: object
+      required: [preset_key, zone_id, actuator_id]
+      properties:
+        preset_key:
+          type: string
+          enum: [peas_22_2, veg_18_6, flower_12_12, seedling_16_8]
+        name: { type: string, nullable: true }
+        zone_id: { type: integer }
+        actuator_id: { type: integer }
+        lights_on_at: { type: string, default: "06:00" }
+        timezone: { type: string }
+        crop_cycle_id: { type: integer, nullable: true }
+
+    LightingProgramUpdate:
+      type: object
+      properties:
+        name: { type: string }
+        description: { type: string, nullable: true }
+        on_hours: { type: integer }
+        off_hours: { type: integer }
+        lights_on_at: { type: string }
+        timezone: { type: string }
+        crop_cycle_id: { type: integer, nullable: true }
+        is_active: { type: boolean }
+        metadata: { type: object }
 
     AutomationRun:
       type: object

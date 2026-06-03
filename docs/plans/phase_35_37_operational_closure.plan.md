@@ -11,10 +11,10 @@ todos:
     status: done
   - id: oc-35-docs-openapi
     content: "OC-35B: operator-tour 18/6 lighting walkthrough; OpenAPI LightingProgram + schedule-action paths; architecture grow-stack note (Phase 35 WS8)"
-    status: pending
+    status: done
   - id: oc-35-tests
     content: "OC-35C: cmd/api smoke preset apply + TZ cron; Vitest PhotoperiodClockEditor linked fields (Phase 35 WS8)"
-    status: pending
+    status: done
   - id: oc-36-closure
     content: "OC-36: Phase 36 WS8 — greenhouse operator-tour, OpenAPI, bootstrap greenhouse_climate_v1 → core types, smokes (defer until WS1–WS7 land)"
     status: pending
@@ -69,10 +69,10 @@ Use this table when marking a phase shipped:
 | UI | ✅ | `PhotoperiodClockEditor.vue`, `LightingPrograms.vue`, `/lighting` route |
 | Guardian read | ✅ | `summarize_zone_lighting` (no `create_lighting_program` propose tool yet) |
 | **Demo seed** | ⚠️ partial | `master_seed.sql` Section 3B wraps 18/6 in `lighting_programs` |
-| **Bootstrap** | ❌ | `jadam_indoor_photoperiod_v1` still creates orphan Light ON/OFF schedules |
-| **Unit tests** | ⚠️ partial | `handler_test.go`, `worker_test.go` TZ case — **not in git until committed** |
-| **Smokes / Vitest** | ❌ | No `smoke_phase35_*`; no Vitest for clock editor |
-| **OpenAPI / operator-tour** | ❌ | No `LightingProgram` schemas; no operator-tour section |
+| **Bootstrap** | ✅ | `jadam_indoor_photoperiod_v1` → `lighting_programs` (OC-35A migration) |
+| **Unit tests** | ✅ | `handler_test.go`, `worker_test.go` TZ case |
+| **Smokes / Vitest** | ✅ | `smoke_phase35_lighting_test.go`; `photoperiod-clock-editor.test.js` |
+| **OpenAPI / operator-tour** | ✅ | `LightingProgram` schemas; operator-tour §5; architecture §7.0b |
 
 ### OC-35 tasks (close before calling Phase 35 shipped)
 
@@ -161,7 +161,7 @@ Closure PR should `git add` the full set above plus OC-35B/C artifacts when read
 
 | Doc | Use |
 |-----|-----|
-| [phase_35_lighting_domain.plan.md](phase_35_lighting_domain.plan.md) | Feature scope; WS8 = OC-35B/C |
+| [phase_35_lighting_domain.plan.md](phase_35_lighting_domain.plan.md) | Feature scope — **shipped** (WS1–WS8) |
 | [phase_36_greenhouse_climate.plan.md](phase_36_greenhouse_climate.plan.md) | WS8 = OC-36 |
 | [phase_37_guardian_offline_field_assistant.plan.md](phase_37_guardian_offline_field_assistant.plan.md) | WS8 = OC-37 + OC-37E sweep |
 | [phase_32_guardian_grow_setup_prs.plan.md](phase_32_guardian_grow_setup_prs.plan.md) | Reference closure pattern (WS7 OpenAPI + WS8 RAG) |
