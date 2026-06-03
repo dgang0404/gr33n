@@ -198,6 +198,8 @@ func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationwo
 	mux.Handle("GET /farms/{id}/automation/runs", jwt(http.HandlerFunc(automation.ListRunsByFarm)))
 	mux.Handle("GET /farms/{id}/automation/rules", jwt(http.HandlerFunc(automation.ListAutomationRulesByFarm)))
 	mux.Handle("POST /farms/{id}/automation/rules", jwt(http.HandlerFunc(automation.CreateAutomationRule)))
+	// Phase 36 WS3 — greenhouse climate rule templates
+	mux.Handle("POST /farms/{id}/automation/rule-templates/greenhouse", jwt(http.HandlerFunc(automation.ApplyGreenhouseRuleTemplates)))
 
 	// Stage-scoped setpoints (Phase 20.6 WS2)
 	mux.Handle("GET /farms/{id}/setpoints", jwt(http.HandlerFunc(setpoint.List)))

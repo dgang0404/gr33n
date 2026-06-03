@@ -16,6 +16,36 @@ import (
 	"gr33n-api/internal/httputil"
 )
 
+// checkActuatorFarm verifies the actuator exists and belongs to farmID.
+func checkActuatorFarm(ctx context.Context, q *db.Queries, farmID, actuatorID int64, field string) (string, bool) {
+	a, err := q.GetActuatorByID(ctx, actuatorID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return fmt.Sprintf("%s: actuator %d not found", field, actuatorID), false
+		}
+		return fmt.Sprintf("%s: lookup error", field), false
+	}
+	if a.FarmID != farmID {
+		return fmt.Sprintf("%s: actuator %d does not belong to this farm", field, actuatorID), false
+	}
+	return "", true
+}
+
+// checkSensorFarm verifies the sensor exists and belongs to farmID.
+func checkSensorFarm(ctx context.Context, q *db.Queries, farmID, sensorID int64, field string) (string, bool) {
+	s, err := q.GetSensorByID(ctx, sensorID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return fmt.Sprintf("%s: sensor %d not found", field, sensorID), false
+		}
+		return fmt.Sprintf("%s: lookup error", field), false
+	}
+	if s.FarmID != farmID {
+		return fmt.Sprintf("%s: sensor %d does not belong to this farm", field, sensorID), false
+	}
+	return "", true
+}
+
 // validPreconditionOps enumerates the comparison operators accepted by the
 // schedule-precondition evaluator. Keeping the list here (mirrored in the
 // worker) lets us reject bad rules at the write path rather than silently
