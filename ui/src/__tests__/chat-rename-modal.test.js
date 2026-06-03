@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import { setActivePinia, createPinia } from 'pinia'
+import { createRouter, createMemoryHistory } from 'vue-router'
 
 const seedSession = {
   session_id: '11111111-1111-1111-1111-111111111111',
@@ -30,6 +31,11 @@ vi.mock('../api', () => ({
 import FarmGuardianChat from '../views/FarmGuardianChat.vue'
 import api from '../api'
 
+const router = createRouter({
+  history: createMemoryHistory(),
+  routes: [{ path: '/chat', component: FarmGuardianChat }],
+})
+
 describe('FarmGuardianChat — inline rename modal (Phase 27 WS6 follow-up)', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
@@ -42,7 +48,8 @@ describe('FarmGuardianChat — inline rename modal (Phase 27 WS6 follow-up)', ()
   })
 
   async function mountReady() {
-    const wrapper = mount(FarmGuardianChat)
+    await router.push('/chat')
+    const wrapper = mount(FarmGuardianChat, { global: { plugins: [router] } })
     await flushPromises()
     await flushPromises()
     return wrapper

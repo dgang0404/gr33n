@@ -125,6 +125,12 @@ var registry = map[string]Tool{
 		RequiresOperate: true,
 		Execute:         execApplyGrowSetupPack,
 	},
+	// Phase 35 WS7 — lighting read tool
+	"summarize_zone_lighting": {
+		ID:          "summarize_zone_lighting",
+		Description: "Read-only: list active lighting programs for this farm (optionally filtered by zone_id). Returns photoperiod, ON/OFF schedule IDs, actuator, timezone.",
+		Execute:     execSummarizeZoneLighting,
+	},
 }
 
 // Lookup returns a registered tool or an error.

@@ -12,7 +12,7 @@ import (
 
 func TestShouldTriggerNowMatchesCurrentMinute(t *testing.T) {
 	now := time.Date(2026, 4, 15, 6, 0, 0, 0, time.UTC)
-	ok, err := shouldTriggerNow("0 6 * * *", pgtype.Timestamptz{}, now)
+	ok, err := shouldTriggerNow("0 6 * * *", "UTC", pgtype.Timestamptz{}, now)
 	if err != nil {
 		t.Fatalf("unexpected parse error: %v", err)
 	}
@@ -24,7 +24,7 @@ func TestShouldTriggerNowMatchesCurrentMinute(t *testing.T) {
 func TestShouldTriggerNowSkipsDuplicateMinute(t *testing.T) {
 	now := time.Date(2026, 4, 15, 6, 0, 0, 0, time.UTC)
 	last := pgtype.Timestamptz{Time: now, Valid: true}
-	ok, err := shouldTriggerNow("0 6 * * *", last, now)
+	ok, err := shouldTriggerNow("0 6 * * *", "UTC", last, now)
 	if err != nil {
 		t.Fatalf("unexpected parse error: %v", err)
 	}
@@ -35,9 +35,32 @@ func TestShouldTriggerNowSkipsDuplicateMinute(t *testing.T) {
 
 func TestShouldTriggerNowInvalidCron(t *testing.T) {
 	now := time.Now().UTC().Truncate(time.Minute)
-	_, err := shouldTriggerNow("invalid cron", pgtype.Timestamptz{}, now)
+	_, err := shouldTriggerNow("invalid cron", "UTC", pgtype.Timestamptz{}, now)
 	if err == nil {
 		t.Fatalf("expected parse error for invalid cron expression")
+	}
+}
+
+func TestShouldTriggerNowTimezone(t *testing.T) {
+	// "0 6 * * *" with America/New_York (UTC-5 in winter) should fire
+	// when the UTC clock reads 11:00, not 06:00.
+	nowUTC11 := time.Date(2026, 1, 15, 11, 0, 0, 0, time.UTC)
+	nowUTC06 := time.Date(2026, 1, 15, 6, 0, 0, 0, time.UTC)
+
+	okAt11, err := shouldTriggerNow("0 6 * * *", "America/New_York", pgtype.Timestamptz{}, nowUTC11)
+	if err != nil {
+		t.Fatalf("unexpected parse error: %v", err)
+	}
+	if !okAt11 {
+		t.Fatal("expected schedule to trigger at 11:00 UTC (= 06:00 Eastern standard time)")
+	}
+
+	okAt06, err := shouldTriggerNow("0 6 * * *", "America/New_York", pgtype.Timestamptz{}, nowUTC06)
+	if err != nil {
+		t.Fatalf("unexpected parse error: %v", err)
+	}
+	if okAt06 {
+		t.Fatal("expected schedule NOT to trigger at 06:00 UTC when timezone is America/New_York")
 	}
 }
 
@@ -110,7 +133,7 @@ func TestExecuteActionWithRetryPermanentFails(t *testing.T) {
 
 func TestShouldTriggerNowNonMatchingMinute(t *testing.T) {
 	now := time.Date(2026, 4, 15, 7, 0, 0, 0, time.UTC)
-	ok, err := shouldTriggerNow("0 6 * * *", pgtype.Timestamptz{}, now)
+	ok, err := shouldTriggerNow("0 6 * * *", "UTC", pgtype.Timestamptz{}, now)
 	if err != nil {
 		t.Fatalf("unexpected parse error: %v", err)
 	}
@@ -121,7 +144,7 @@ func TestShouldTriggerNowNonMatchingMinute(t *testing.T) {
 
 func TestShouldTriggerNowEveryMinute(t *testing.T) {
 	now := time.Date(2026, 4, 15, 12, 33, 0, 0, time.UTC)
-	ok, err := shouldTriggerNow("* * * * *", pgtype.Timestamptz{}, now)
+	ok, err := shouldTriggerNow("* * * * *", "UTC", pgtype.Timestamptz{}, now)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}

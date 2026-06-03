@@ -25,7 +25,7 @@
       </ol>
       <p class="text-xs text-zinc-600 pt-2">
         Also: <router-link class="text-gr33n-500 hover:underline" to="/alerts">Alerts</router-link>,
-        <router-link class="text-gr33n-500 hover:underline" to="/guardian/requests">Guardian requests</router-link>,
+        <router-link class="text-gr33n-500 hover:underline" to="/chat?tab=pending">Guardian pending requests</router-link>,
         <router-link class="text-gr33n-500 hover:underline" to="/costs">Costs</router-link>,
         <router-link class="text-gr33n-500 hover:underline" to="/farm-knowledge">Knowledge</router-link> (RAG).
       </p>

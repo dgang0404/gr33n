@@ -303,4 +303,5 @@ WS1 (offline proof) → WS2 (corpus) → WS4 (safety, before any step content sh
 | [offline-or-intranet-deployment.md](../offline-or-intranet-deployment.md) | No-WAN topology (extend with field mode) |
 | [phase_32_guardian_grow_setup_prs.plan.md](phase_32_guardian_grow_setup_prs.plan.md) | platform_doc RAG ingest reused for field_guide |
 | [phase_35_lighting_domain.plan.md](phase_35_lighting_domain.plan.md) | Wiring a light relay = a Phase 37 procedure |
+| [phase_35_37_operational_closure.plan.md](phase_35_37_operational_closure.plan.md) | WS8 + end-of-37 sweep (OC-37, OC-37E) |
 | [phase_36_greenhouse_climate.plan.md](phase_36_greenhouse_climate.plan.md) | Wiring shade motor / fan = Phase 37 procedures |

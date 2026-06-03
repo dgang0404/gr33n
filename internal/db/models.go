@@ -1564,6 +1564,26 @@ type Gr33ncoreInsertCommonsSyncEvent struct {
 	CreatedAt      time.Time       `db:"created_at" json:"created_at"`
 }
 
+type Gr33ncoreLightingProgram struct {
+	ID            int64           `db:"id" json:"id"`
+	FarmID        int64           `db:"farm_id" json:"farm_id"`
+	ZoneID        int64           `db:"zone_id" json:"zone_id"`
+	ActuatorID    int64           `db:"actuator_id" json:"actuator_id"`
+	Name          string          `db:"name" json:"name"`
+	Description   *string         `db:"description" json:"description"`
+	OnHours       int32           `db:"on_hours" json:"on_hours"`
+	OffHours      int32           `db:"off_hours" json:"off_hours"`
+	LightsOnAt    string          `db:"lights_on_at" json:"lights_on_at"`
+	Timezone      string          `db:"timezone" json:"timezone"`
+	ScheduleOnID  *int64          `db:"schedule_on_id" json:"schedule_on_id"`
+	ScheduleOffID *int64          `db:"schedule_off_id" json:"schedule_off_id"`
+	CropCycleID   *int64          `db:"crop_cycle_id" json:"crop_cycle_id"`
+	IsActive      bool            `db:"is_active" json:"is_active"`
+	Metadata      json.RawMessage `db:"metadata" json:"metadata"`
+	CreatedAt     time.Time       `db:"created_at" json:"created_at"`
+	UpdatedAt     time.Time       `db:"updated_at" json:"updated_at"`
+}
+
 type Gr33ncoreNotificationTemplate struct {
 	ID                      int64                              `db:"id" json:"id"`
 	FarmID                  *int64                             `db:"farm_id" json:"farm_id"`

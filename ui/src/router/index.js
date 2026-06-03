@@ -20,10 +20,10 @@ import Setpoints from '../views/Setpoints.vue'
 import Settings from '../views/Settings.vue'
 import FarmKnowledge from '../views/FarmKnowledge.vue'
 import FarmGuardianChat from '../views/FarmGuardianChat.vue'
-import GuardianRequests from '../views/GuardianRequests.vue'
 import OperatorGuide from '../views/OperatorGuide.vue'
 import CropCycleSummary from '../views/CropCycleSummary.vue'
 import CropCycleCompare from '../views/CropCycleCompare.vue'
+import LightingPrograms from '../views/LightingPrograms.vue'
 import Login from '../views/Login.vue'
 
 const routes = [
@@ -49,12 +49,13 @@ const routes = [
   { path: '/catalog',      component: CommonsCatalog, name: 'catalog' },
   { path: '/farm-knowledge', component: FarmKnowledge, name: 'farm-knowledge' },
   { path: '/chat',         component: FarmGuardianChat, name: 'farm-guardian-chat' },
-  { path: '/guardian/requests', component: GuardianRequests, name: 'guardian-requests' },
+  { path: '/guardian/requests', redirect: { path: '/chat', query: { tab: 'pending' } } },
   { path: '/settings',     component: Settings,     name: 'settings' },
   { path: '/operator-guide', component: OperatorGuide, name: 'operator-guide' },
   // Phase 28 WS2 — crop cycle analytics
   { path: '/crop-cycles/:id/summary', component: CropCycleSummary, name: 'crop-cycle-summary' },
   { path: '/farms/:fid/crop-cycles/compare', component: CropCycleCompare, name: 'crop-cycle-compare' },
+  { path: '/lighting', component: LightingPrograms, name: 'lighting' },
 ]
 
 const router = createRouter({

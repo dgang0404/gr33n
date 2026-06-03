@@ -37,6 +37,7 @@ import (
 	setpointhandler "gr33n-api/internal/handler/setpoint"
 	ssehandler "gr33n-api/internal/handler/sse"
 	taskhandler "gr33n-api/internal/handler/task"
+	lightinghandler "gr33n-api/internal/handler/lighting"
 	zonehandler "gr33n-api/internal/handler/zone"
 	"gr33n-api/internal/httputil"
 	"gr33n-api/internal/pushnotify"
@@ -68,6 +69,7 @@ func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationwo
 	alert := alerthandler.NewHandler(pool)
 	prof := profilehandler.NewHandler(pool)
 	setpoint := setpointhandler.NewHandler(pool)
+	lighting := lightinghandler.NewHandler(pool)
 	auth := authhandler.NewHandler(adminUser, adminHash, hashFilePath, IssueToken, pool, adminBindUserID, adminBindEmail)
 
 	if fileStore == nil {
@@ -353,6 +355,21 @@ func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationwo
 	mux.Handle("GET /naturalfarming/recipes/{id}", jwt(http.HandlerFunc(recipe.Get)))
 	mux.Handle("PUT /naturalfarming/recipes/{id}", jwt(http.HandlerFunc(recipe.Update)))
 	mux.Handle("DELETE /naturalfarming/recipes/{id}", jwt(http.HandlerFunc(recipe.Delete)))
+
+	// Phase 35 — lighting programs (photoperiod domain)
+	mux.Handle("GET /lighting-programs/presets", jwt(http.HandlerFunc(lighting.ListPresets)))
+	mux.Handle("GET /farms/{id}/lighting-programs", jwt(http.HandlerFunc(lighting.ListByFarm)))
+	mux.Handle("POST /farms/{id}/lighting-programs", jwt(http.HandlerFunc(lighting.CreateProgram)))
+	mux.Handle("POST /farms/{id}/lighting-programs/from-preset", jwt(http.HandlerFunc(lighting.CreateFromPreset)))
+	mux.Handle("GET /lighting-programs/{pid}", jwt(http.HandlerFunc(lighting.Get)))
+	mux.Handle("PATCH /lighting-programs/{pid}", jwt(http.HandlerFunc(lighting.Update)))
+	mux.Handle("DELETE /lighting-programs/{pid}", jwt(http.HandlerFunc(lighting.Delete)))
+	mux.Handle("POST /lighting-programs/{pid}/activate", jwt(http.HandlerFunc(lighting.Activate)))
+	mux.Handle("POST /lighting-programs/{pid}/deactivate", jwt(http.HandlerFunc(lighting.Deactivate)))
+
+	// Phase 35 WS3 — schedule-bound executable actions
+	mux.Handle("GET /schedules/{id}/actions", jwt(http.HandlerFunc(automation.ListActionsBySchedule)))
+	mux.Handle("POST /schedules/{id}/actions", jwt(http.HandlerFunc(automation.CreateActionForSchedule)))
 
 	// Actuator events by schedule (for Schedules page event history)
 	mux.Handle("GET /schedules/{id}/actuator-events", jwt(http.HandlerFunc(actuator.ListEventsBySchedule)))

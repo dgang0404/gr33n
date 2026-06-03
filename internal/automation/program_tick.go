@@ -70,7 +70,7 @@ func (w *Worker) evaluateProgram(ctx context.Context, p db.Gr33nfertigationProgr
 		return
 	}
 
-	should, evalErr := shouldTriggerNow(schedule.CronExpression, schedule.LastTriggeredTime, now)
+	should, evalErr := shouldTriggerNow(schedule.CronExpression, schedule.Timezone, schedule.LastTriggeredTime, now)
 	if evalErr != nil {
 		w.recordProgramRun(ctx, p, "failed",
 			fmt.Sprintf("cron parse error for program %q (schedule %s): %v", p.Name, schedule.Name, evalErr),

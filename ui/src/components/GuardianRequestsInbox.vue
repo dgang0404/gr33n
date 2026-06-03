@@ -33,16 +33,6 @@
         @error="onError"
       />
     </div>
-
-    <RouterLink
-      v-if="farmId && showFullPageLink"
-      to="/guardian/requests"
-      class="inline-block text-[10px] text-zinc-500 hover:text-green-400 underline"
-      data-test="guardian-inbox-full-page"
-      @click="guardianPanel.close()"
-    >
-      Open full-page inbox
-    </RouterLink>
   </div>
 </template>
 
@@ -51,15 +41,14 @@ import { computed, watch } from 'vue'
 import GuardianActionProposal from './GuardianActionProposal.vue'
 import { useFarmOperate } from '../composables/useFarmOperate'
 import { useFarmContextStore } from '../stores/farmContext'
-import { useGuardianPanelStore } from '../stores/guardianPanel'
 import { useGuardianProposalsStore } from '../stores/guardianProposals'
 
 const props = defineProps({
-  showFullPageLink: { type: Boolean, default: true },
+  /** When true, reload pending proposals (drawer or full-page Pending tab). */
+  active: { type: Boolean, default: true },
 })
 
 const farmContext = useFarmContextStore()
-const guardianPanel = useGuardianPanelStore()
 const store = useGuardianProposalsStore()
 
 const farmId = computed(() => farmContext.farmId)
@@ -97,12 +86,14 @@ function onError({ proposal, error }) {
   store.patchProposal(proposal.proposal_id, { error })
 }
 
-watch(farmId, () => load(), { immediate: true })
+watch(farmId, () => {
+  if (props.active) load()
+}, { immediate: true })
 
 watch(
-  () => guardianPanel.open && guardianPanel.drawerTab === 'pending',
-  (active) => {
-    if (active) load()
+  () => props.active,
+  (isActive) => {
+    if (isActive) load()
   },
 )
 

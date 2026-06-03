@@ -600,6 +600,53 @@ WHERE farm_id = 1
   AND name IN ('Light ON 18/6 Veg', 'Light OFF 18/6 Veg');
 
 -- ===========================================================================
+-- SECTION 3B: LIGHTING PROGRAMS (Phase 35)
+-- Wrap the existing 18/6 Veg schedule pair in the new lighting_programs entity.
+-- ===========================================================================
+
+DO $$
+DECLARE
+  v_zone_id      BIGINT;
+  v_actuator_id  BIGINT;
+  v_sch_on_id    BIGINT;
+  v_sch_off_id   BIGINT;
+  v_prog_id      BIGINT;
+BEGIN
+  SELECT id INTO v_zone_id     FROM gr33ncore.zones     WHERE farm_id = 1 AND name = 'Veg Room'           AND deleted_at IS NULL ORDER BY id LIMIT 1;
+  SELECT id INTO v_actuator_id FROM gr33ncore.actuators WHERE farm_id = 1 AND name = 'Veg Room Grow Light' AND deleted_at IS NULL ORDER BY id LIMIT 1;
+  SELECT id INTO v_sch_on_id   FROM gr33ncore.schedules WHERE farm_id = 1 AND name = 'Light ON 18/6 Veg'  ORDER BY id LIMIT 1;
+  SELECT id INTO v_sch_off_id  FROM gr33ncore.schedules WHERE farm_id = 1 AND name = 'Light OFF 18/6 Veg' ORDER BY id LIMIT 1;
+
+  -- Only insert if all references resolved and the program doesn't already exist.
+  IF v_zone_id IS NOT NULL AND v_actuator_id IS NOT NULL
+     AND v_sch_on_id IS NOT NULL AND v_sch_off_id IS NOT NULL
+     AND NOT EXISTS (
+         SELECT 1 FROM gr33ncore.lighting_programs
+         WHERE farm_id = 1 AND name = 'Veg Room 18/6 Photoperiod'
+     ) THEN
+
+    INSERT INTO gr33ncore.lighting_programs
+      (farm_id, zone_id, actuator_id, name, description,
+       on_hours, off_hours, lights_on_at, timezone,
+       schedule_on_id, schedule_off_id,
+       is_active, metadata)
+    VALUES
+      (1, v_zone_id, v_actuator_id,
+       'Veg Room 18/6 Photoperiod',
+       'Standard vegetative photoperiod — 18h on / 6h off. Lights on at 06:00 America/New_York.',
+       18, 6, '06:00', 'America/New_York',
+       v_sch_on_id, v_sch_off_id,
+       true, '{"preset_key":"veg_18_6","source":"seed_demo"}'::jsonb)
+    RETURNING id INTO v_prog_id;
+
+    -- Tag the schedules with the lighting_program_id so they can be found.
+    UPDATE gr33ncore.schedules
+       SET meta_data = jsonb_set(meta_data, '{lighting_program_id}', v_prog_id::text::jsonb)
+     WHERE id IN (v_sch_on_id, v_sch_off_id);
+  END IF;
+END $$;
+
+-- ===========================================================================
 -- SECTION 4B: FERTIGATION BASELINE DATA
 -- ===========================================================================
 

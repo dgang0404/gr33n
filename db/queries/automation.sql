@@ -226,6 +226,14 @@ INSERT INTO gr33ncore.executable_actions (
 ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
 RETURNING *;
 
+-- name: CreateExecutableActionForSchedule :one
+INSERT INTO gr33ncore.executable_actions (
+    schedule_id, execution_order, action_type,
+    target_actuator_id, target_automation_rule_id, target_notification_template_id,
+    action_command, action_parameters, delay_before_execution_seconds
+) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+RETURNING *;
+
 -- RAG ingest: actions linked to this farm via schedule, rule, or fertigation program (exactly one parent).
 -- name: ListExecutableActionsByFarmForRAG :many
 SELECT ea.*

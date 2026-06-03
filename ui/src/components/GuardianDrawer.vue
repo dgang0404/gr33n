@@ -52,7 +52,7 @@
               </div>
               <div class="flex items-center gap-2 shrink-0">
                 <RouterLink
-                  to="/chat"
+                  :to="guardianPanel.drawerTab === 'pending' ? '/chat?tab=pending' : '/chat'"
                   class="text-[10px] text-zinc-500 hover:text-zinc-300 underline"
                   data-test="guardian-drawer-full-page"
                   @click="guardianPanel.close()"
@@ -82,46 +82,18 @@
             </section>
 
             <div v-else class="flex-1 min-h-0 flex flex-col min-w-0">
-              <nav
-                class="flex shrink-0 border-b border-zinc-800 px-4 gap-1"
-                aria-label="Guardian panels"
-                data-test="guardian-drawer-tabs"
-              >
-                <button
-                  type="button"
-                  class="px-3 py-2 text-xs font-medium border-b-2 -mb-px transition-colors"
-                  :class="guardianPanel.drawerTab === 'chat'
-                    ? 'border-green-500 text-green-300'
-                    : 'border-transparent text-zinc-500 hover:text-zinc-300'"
-                  data-test="guardian-tab-chat"
-                  @click="guardianPanel.setDrawerTab('chat')"
-                >
-                  Chat
-                </button>
-                <button
-                  type="button"
-                  class="px-3 py-2 text-xs font-medium border-b-2 -mb-px transition-colors flex items-center gap-1.5"
-                  :class="guardianPanel.drawerTab === 'pending'
-                    ? 'border-green-500 text-green-300'
-                    : 'border-transparent text-zinc-500 hover:text-zinc-300'"
-                  data-test="guardian-tab-pending"
-                  @click="guardianPanel.setDrawerTab('pending')"
-                >
-                  Pending
-                  <span
-                    v-if="proposalsStore.pendingCount > 0"
-                    class="min-w-[1.125rem] h-[1.125rem] px-1 rounded-full bg-amber-600 text-[10px] font-bold text-amber-950 flex items-center justify-center"
-                    data-test="guardian-drawer-pending-badge"
-                  >
-                    {{ proposalsStore.pendingCount > 9 ? '9+' : proposalsStore.pendingCount }}
-                  </span>
-                </button>
-              </nav>
+              <GuardianTabNav
+                :model-value="guardianPanel.drawerTab"
+                :pending-count="proposalsStore.pendingCount"
+                class="px-4"
+                compact
+                @update:model-value="guardianPanel.setDrawerTab"
+              />
               <div class="flex-1 min-h-0 overflow-y-auto px-4 py-3">
                 <GuardianChatPanel v-show="guardianPanel.drawerTab === 'chat'" layout="compact" />
                 <GuardianRequestsInbox
                   v-show="guardianPanel.drawerTab === 'pending'"
-                  :show-full-page-link="true"
+                  :active="guardianPanel.drawerTab === 'pending'"
                 />
               </div>
             </div>
@@ -140,6 +112,7 @@
 import { onMounted, watch } from 'vue'
 import GuardianChatPanel from './GuardianChatPanel.vue'
 import GuardianRequestsInbox from './GuardianRequestsInbox.vue'
+import GuardianTabNav from './GuardianTabNav.vue'
 import { useCapabilitiesStore } from '../stores/capabilities'
 import { useFarmContextStore } from '../stores/farmContext'
 import { useGuardianPanelStore } from '../stores/guardianPanel'

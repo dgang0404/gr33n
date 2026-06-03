@@ -794,8 +794,12 @@ func (h *Handler) resolveActionFarmID(w http.ResponseWriter, r *http.Request, a 
 		}
 		return prog.FarmID, true
 	case a.ScheduleID != nil:
-		httputil.WriteError(w, http.StatusBadRequest, "schedule-bound actions are managed via the schedules API")
-		return 0, false
+		sch, err := h.q.GetScheduleByID(r.Context(), *a.ScheduleID)
+		if err != nil {
+			httputil.WriteError(w, http.StatusInternalServerError, "failed to resolve parent schedule")
+			return 0, false
+		}
+		return sch.FarmID, true
 	default:
 		httputil.WriteError(w, http.StatusInternalServerError, "orphaned executable_action: no parent bound")
 		return 0, false
@@ -879,6 +883,97 @@ func (h *Handler) CreateActionForProgram(w http.ResponseWriter, r *http.Request)
 	}
 	row, err := h.q.CreateExecutableActionForProgram(r.Context(), db.CreateExecutableActionForProgramParams{
 		ProgramID:                    &programID,
+		ExecutionOrder:               body.ExecutionOrder,
+		ActionType:                   commontypes.ExecutableActionTypeEnum(body.ActionType),
+		TargetActuatorID:             body.TargetActuatorID,
+		TargetAutomationRuleID:       nil,
+		TargetNotificationTemplateID: body.TargetNotificationTemplateID,
+		ActionCommand:                body.ActionCommand,
+		ActionParameters:             params,
+		DelayBeforeExecutionSeconds:  body.DelayBeforeExecutionSeconds,
+	})
+	if err != nil {
+		httputil.WriteError(w, http.StatusInternalServerError, "failed to create action: "+err.Error())
+		return
+	}
+	httputil.WriteJSON(w, http.StatusCreated, toActionView(row))
+}
+
+// ── Executable actions (schedule-bound, Phase 35 WS3) ───────────────────────
+//
+// Mirrors the rule/program CRUD pattern so operators and Guardian can attach
+// actions to schedules without raw SQL.
+
+// GET /schedules/{id}/actions
+func (h *Handler) ListActionsBySchedule(w http.ResponseWriter, r *http.Request) {
+	scheduleID, err := httputil.PathID(r.URL.Path, 2)
+	if err != nil {
+		httputil.WriteError(w, http.StatusBadRequest, "invalid schedule id")
+		return
+	}
+	sch, err := h.q.GetScheduleByID(r.Context(), scheduleID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			httputil.WriteError(w, http.StatusNotFound, "schedule not found")
+			return
+		}
+		httputil.WriteError(w, http.StatusInternalServerError, "failed to load schedule")
+		return
+	}
+	if !farmauthz.RequireFarmMember(w, r, h.q, sch.FarmID) {
+		return
+	}
+	rows, err := h.q.ListExecutableActionsBySchedule(r.Context(), &scheduleID)
+	if err != nil {
+		httputil.WriteError(w, http.StatusInternalServerError, "failed to list actions")
+		return
+	}
+	if rows == nil {
+		rows = []db.Gr33ncoreExecutableAction{}
+	}
+	httputil.WriteJSON(w, http.StatusOK, toActionViews(rows))
+}
+
+// POST /schedules/{id}/actions
+func (h *Handler) CreateActionForSchedule(w http.ResponseWriter, r *http.Request) {
+	scheduleID, err := httputil.PathID(r.URL.Path, 2)
+	if err != nil {
+		httputil.WriteError(w, http.StatusBadRequest, "invalid schedule id")
+		return
+	}
+	sch, err := h.q.GetScheduleByID(r.Context(), scheduleID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			httputil.WriteError(w, http.StatusNotFound, "schedule not found")
+			return
+		}
+		httputil.WriteError(w, http.StatusInternalServerError, "failed to load schedule")
+		return
+	}
+	if !farmauthz.RequireFarmOperate(w, r, h.q, sch.FarmID) {
+		return
+	}
+	var body executableActionBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		httputil.WriteError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+	if body.ProgramID != nil {
+		httputil.WriteError(w, http.StatusBadRequest,
+			"this endpoint binds to the schedule in the URL; program_id must be omitted")
+		return
+	}
+	if err := validateActionType(body.ActionType); err != nil {
+		httputil.WriteError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	params, err := validateActionShape(&body, sch.FarmID, h.q, r.Context())
+	if err != nil {
+		httputil.WriteError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	row, err := h.q.CreateExecutableActionForSchedule(r.Context(), db.CreateExecutableActionForScheduleParams{
+		ScheduleID:                   &scheduleID,
 		ExecutionOrder:               body.ExecutionOrder,
 		ActionType:                   commontypes.ExecutableActionTypeEnum(body.ActionType),
 		TargetActuatorID:             body.TargetActuatorID,

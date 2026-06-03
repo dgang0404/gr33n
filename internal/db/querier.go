@@ -81,6 +81,7 @@ type Querier interface {
 	CreateEcTarget(ctx context.Context, arg CreateEcTargetParams) (Gr33nfertigationEcTarget, error)
 	CreateExecutableActionForProgram(ctx context.Context, arg CreateExecutableActionForProgramParams) (Gr33ncoreExecutableAction, error)
 	CreateExecutableActionForRule(ctx context.Context, arg CreateExecutableActionForRuleParams) (Gr33ncoreExecutableAction, error)
+	CreateExecutableActionForSchedule(ctx context.Context, arg CreateExecutableActionForScheduleParams) (Gr33ncoreExecutableAction, error)
 	// ============================================================
 	// Queries: gr33ncore.farms
 	// ============================================================
@@ -94,6 +95,7 @@ type Querier interface {
 	CreateInputBatch(ctx context.Context, arg CreateInputBatchParams) (Gr33nnaturalfarmingInputBatch, error)
 	CreateInputDefinition(ctx context.Context, arg CreateInputDefinitionParams) (Gr33nnaturalfarmingInputDefinition, error)
 	CreateLifecycleEvent(ctx context.Context, arg CreateLifecycleEventParams) (Gr33nanimalsAnimalLifecycleEvent, error)
+	CreateLightingProgram(ctx context.Context, arg CreateLightingProgramParams) (Gr33ncoreLightingProgram, error)
 	CreateMixingEvent(ctx context.Context, arg CreateMixingEventParams) (Gr33nfertigationMixingEvent, error)
 	CreateMixingEventComponent(ctx context.Context, arg CreateMixingEventComponentParams) (Gr33nfertigationMixingEventComponent, error)
 	// ============================================================
@@ -141,6 +143,7 @@ type Querier interface {
 	DeleteFarmEnergyPrice(ctx context.Context, id int64) error
 	DeleteInsertCommonsReceivedPayloadsBefore(ctx context.Context, receivedAt time.Time) error
 	DeleteLifecycleEvent(ctx context.Context, id int64) error
+	DeleteLightingProgram(ctx context.Context, id int64) error
 	DeleteProgram(ctx context.Context, id int64) error
 	DeletePushTokenByFCMToken(ctx context.Context, fcmToken string) error
 	DeleteRagChunksByFarmAndSourceType(ctx context.Context, arg DeleteRagChunksByFarmAndSourceTypeParams) error
@@ -266,6 +269,7 @@ type Querier interface {
 	// existing per-sensor reading_time index.
 	GetLatestReadingForZoneSensorType(ctx context.Context, arg GetLatestReadingForZoneSensorTypeParams) (Gr33ncoreSensorReading, error)
 	GetLifecycleEventByID(ctx context.Context, id int64) (Gr33nanimalsAnimalLifecycleEvent, error)
+	GetLightingProgramByID(ctx context.Context, id int64) (Gr33ncoreLightingProgram, error)
 	GetMixingEventByID(ctx context.Context, id int64) (Gr33nfertigationMixingEvent, error)
 	GetNotificationTemplateByID(ctx context.Context, id int64) (Gr33ncoreNotificationTemplate, error)
 	// Phase 20.9 WS1 — timer stop path. At most one open (ended_at IS NULL)
@@ -432,6 +436,10 @@ type Querier interface {
 	ListInsertCommonsSyncEventsByFarm(ctx context.Context, arg ListInsertCommonsSyncEventsByFarmParams) ([]ListInsertCommonsSyncEventsByFarmRow, error)
 	ListLatestReadingsByFarm(ctx context.Context, farmID int64) ([]ListLatestReadingsByFarmRow, error)
 	ListLifecycleEventsByGroup(ctx context.Context, animalGroupID int64) ([]Gr33nanimalsAnimalLifecycleEvent, error)
+	// ============================================================
+	// Queries: gr33ncore.lighting_programs (Phase 35)
+	// ============================================================
+	ListLightingProgramsByFarm(ctx context.Context, farmID int64) ([]Gr33ncoreLightingProgram, error)
 	// Phase 20.7 WS5 — low-stock sweep: any batch whose remaining stock
 	// has dropped below its opt-in threshold. The worker fires one alert
 	// per batch per day (dedupe enforced in the worker, not here).
@@ -574,6 +582,9 @@ type Querier interface {
 	UpdateFarmMemberRole(ctx context.Context, arg UpdateFarmMemberRoleParams) (Gr33ncoreFarmMembership, error)
 	UpdateInputBatch(ctx context.Context, arg UpdateInputBatchParams) (Gr33nnaturalfarmingInputBatch, error)
 	UpdateInputDefinition(ctx context.Context, arg UpdateInputDefinitionParams) (Gr33nnaturalfarmingInputDefinition, error)
+	UpdateLightingProgram(ctx context.Context, arg UpdateLightingProgramParams) (Gr33ncoreLightingProgram, error)
+	UpdateLightingProgramActive(ctx context.Context, arg UpdateLightingProgramActiveParams) (Gr33ncoreLightingProgram, error)
+	UpdateLightingProgramSchedules(ctx context.Context, arg UpdateLightingProgramSchedulesParams) (Gr33ncoreLightingProgram, error)
 	UpdateOrganization(ctx context.Context, arg UpdateOrganizationParams) (Gr33ncoreOrganization, error)
 	UpdatePlant(ctx context.Context, arg UpdatePlantParams) (Gr33ncropsPlant, error)
 	UpdateProfile(ctx context.Context, arg UpdateProfileParams) (Gr33ncoreProfile, error)

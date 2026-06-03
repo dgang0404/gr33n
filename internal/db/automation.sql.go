@@ -232,6 +232,57 @@ func (q *Queries) CreateExecutableActionForRule(ctx context.Context, arg CreateE
 	return i, err
 }
 
+const createExecutableActionForSchedule = `-- name: CreateExecutableActionForSchedule :one
+INSERT INTO gr33ncore.executable_actions (
+    schedule_id, execution_order, action_type,
+    target_actuator_id, target_automation_rule_id, target_notification_template_id,
+    action_command, action_parameters, delay_before_execution_seconds
+) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+RETURNING id, schedule_id, rule_id, program_id, execution_order, action_type, target_actuator_id, target_automation_rule_id, target_notification_template_id, action_command, action_parameters, delay_before_execution_seconds
+`
+
+type CreateExecutableActionForScheduleParams struct {
+	ScheduleID                   *int64                               `db:"schedule_id" json:"schedule_id"`
+	ExecutionOrder               int32                                `db:"execution_order" json:"execution_order"`
+	ActionType                   commontypes.ExecutableActionTypeEnum `db:"action_type" json:"action_type"`
+	TargetActuatorID             *int64                               `db:"target_actuator_id" json:"target_actuator_id"`
+	TargetAutomationRuleID       *int64                               `db:"target_automation_rule_id" json:"target_automation_rule_id"`
+	TargetNotificationTemplateID *int64                               `db:"target_notification_template_id" json:"target_notification_template_id"`
+	ActionCommand                *string                              `db:"action_command" json:"action_command"`
+	ActionParameters             []byte                               `db:"action_parameters" json:"action_parameters"`
+	DelayBeforeExecutionSeconds  *int32                               `db:"delay_before_execution_seconds" json:"delay_before_execution_seconds"`
+}
+
+func (q *Queries) CreateExecutableActionForSchedule(ctx context.Context, arg CreateExecutableActionForScheduleParams) (Gr33ncoreExecutableAction, error) {
+	row := q.db.QueryRow(ctx, createExecutableActionForSchedule,
+		arg.ScheduleID,
+		arg.ExecutionOrder,
+		arg.ActionType,
+		arg.TargetActuatorID,
+		arg.TargetAutomationRuleID,
+		arg.TargetNotificationTemplateID,
+		arg.ActionCommand,
+		arg.ActionParameters,
+		arg.DelayBeforeExecutionSeconds,
+	)
+	var i Gr33ncoreExecutableAction
+	err := row.Scan(
+		&i.ID,
+		&i.ScheduleID,
+		&i.RuleID,
+		&i.ProgramID,
+		&i.ExecutionOrder,
+		&i.ActionType,
+		&i.TargetActuatorID,
+		&i.TargetAutomationRuleID,
+		&i.TargetNotificationTemplateID,
+		&i.ActionCommand,
+		&i.ActionParameters,
+		&i.DelayBeforeExecutionSeconds,
+	)
+	return i, err
+}
+
 const createSchedule = `-- name: CreateSchedule :one
 INSERT INTO gr33ncore.schedules (
     farm_id, name, description, schedule_type, cron_expression,

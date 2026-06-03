@@ -138,7 +138,7 @@ func (w *Worker) runTick(ctx context.Context) {
 	}
 
 	for _, s := range schedules {
-		should, evalErr := shouldTriggerNow(s.CronExpression, s.LastTriggeredTime, now)
+		should, evalErr := shouldTriggerNow(s.CronExpression, s.Timezone, s.LastTriggeredTime, now)
 		if evalErr != nil {
 			if _, err := w.q.CreateAutomationRun(ctx, db.CreateAutomationRunParams{
 				FarmID:     s.FarmID,
@@ -211,18 +211,33 @@ func (w *Worker) Tick(ctx context.Context) {
 	w.runTick(ctx)
 }
 
-func shouldTriggerNow(expr string, lastTriggered pgtype.Timestamptz, now time.Time) (bool, error) {
+// shouldTriggerNow evaluates whether a cron expression should fire at `now`
+// (which is UTC-truncated to the minute). The schedule's timezone is honoured:
+// a cron "0 6 * * *" with timezone "America/New_York" fires at 06:00 Eastern,
+// not 06:00 UTC. Falls back to UTC if the stored timezone is blank or invalid.
+func shouldTriggerNow(expr, tz string, lastTriggered pgtype.Timestamptz, now time.Time) (bool, error) {
+	// Duplicate-fire guard: if we already ran this schedule in this UTC minute, skip.
 	if lastTriggered.Valid && lastTriggered.Time.UTC().Truncate(time.Minute).Equal(now) {
 		return false, nil
 	}
+
+	loc := time.UTC
+	if tz != "" && tz != "UTC" {
+		if l, err := time.LoadLocation(tz); err == nil {
+			loc = l
+		}
+	}
+
+	// Evaluate the cron expression in the schedule's local timezone.
+	nowLocal := now.In(loc)
 	parser := cron.NewParser(cron.Minute | cron.Hour | cron.Dom | cron.Month | cron.Dow)
 	sched, err := parser.Parse(expr)
 	if err != nil {
 		return false, err
 	}
-	previousMinute := now.Add(-1 * time.Minute)
+	previousMinute := nowLocal.Add(-1 * time.Minute)
 	next := sched.Next(previousMinute)
-	return next.Equal(now), nil
+	return next.Truncate(time.Minute).Equal(nowLocal.Truncate(time.Minute)), nil
 }
 
 // checkCooldown prevents re-execution if the last successful run is within the cooldown window.

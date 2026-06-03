@@ -26,34 +26,26 @@
       <div v-for="group in navGroups" :key="group.label">
         <p v-if="!collapsed" class="px-3 mb-1 text-[10px] uppercase tracking-widest text-gray-600 font-semibold">{{ group.label }}</p>
         <div class="space-y-0.5">
-          <template v-for="item in group.items" :key="item.to ?? item.label">
-            <button
-              v-if="item.action === 'guardian'"
-              type="button"
-              class="w-full flex items-center rounded-lg text-sm text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
-              :class="[
-                collapsed ? 'justify-center px-0 py-2' : 'gap-3 px-3 py-2',
-                guardianPanel.open ? 'bg-gr33n-900 text-gr33n-400 font-semibold' : '',
-              ]"
-              :title="item.navTitle ?? (collapsed ? item.label : undefined)"
-              data-test="sidenav-guardian-toggle"
-              @click="guardianPanel.toggle()"
+          <RouterLink
+            v-for="item in group.items"
+            :key="item.to"
+            :to="item.to"
+            class="flex items-center rounded-lg text-sm text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
+            :class="collapsed ? 'justify-center px-0 py-2' : 'gap-3 px-3 py-2'"
+            active-class="bg-gr33n-900 text-gr33n-400 font-semibold"
+            :title="item.navTitle ?? (collapsed ? item.label : undefined)"
+            :data-test="item.to === '/chat' ? 'sidenav-guardian-link' : undefined"
+          >
+            <span class="text-lg shrink-0">{{ item.icon }}</span>
+            <span v-if="!collapsed" class="flex-1 min-w-0">{{ item.label }}</span>
+            <span
+              v-if="!collapsed && item.to === '/chat' && proposalsStore.pendingCount > 0"
+              class="min-w-[1.125rem] h-[1.125rem] px-1 rounded-full bg-amber-600 text-[10px] font-bold text-amber-950 flex items-center justify-center shrink-0"
+              data-test="sidenav-guardian-pending-badge"
             >
-              <span class="text-lg shrink-0">{{ item.icon }}</span>
-              <span v-if="!collapsed">{{ item.label }}</span>
-            </button>
-            <RouterLink
-              v-else
-              :to="item.to"
-              class="flex items-center rounded-lg text-sm text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
-              :class="collapsed ? 'justify-center px-0 py-2' : 'gap-3 px-3 py-2'"
-              active-class="bg-gr33n-900 text-gr33n-400 font-semibold"
-              :title="item.navTitle ?? (collapsed ? item.label : undefined)"
-            >
-              <span class="text-lg shrink-0">{{ item.icon }}</span>
-              <span v-if="!collapsed">{{ item.label }}</span>
-            </RouterLink>
-          </template>
+              {{ proposalsStore.pendingCount > 9 ? '9+' : proposalsStore.pendingCount }}
+            </span>
+          </RouterLink>
         </div>
       </div>
     </nav>
@@ -80,14 +72,14 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useFarmContextStore } from '../stores/farmContext'
 import { useAuthStore } from '../stores/auth'
-import { useGuardianPanelStore } from '../stores/guardianPanel'
+import { useGuardianProposalsStore } from '../stores/guardianProposals'
 
 const farmContext = useFarmContextStore()
 const auth = useAuthStore()
-const guardianPanel = useGuardianPanelStore()
+const proposalsStore = useGuardianProposalsStore()
 
 const STORAGE_KEY = 'gr33n_sidebar_collapsed'
 const collapsed = ref(localStorage.getItem(STORAGE_KEY) === '1')
@@ -112,6 +104,15 @@ function onFarmSelect(ev) {
   farmContext.selectFarm(id)
 }
 
+watch(
+  () => farmContext.farmId,
+  (id) => {
+    if (id) proposalsStore.refreshPendingCount(id)
+    else proposalsStore.pendingCount = 0
+  },
+  { immediate: true },
+)
+
 // Phase 28 WS2 — the Analytics nav entry needs to know the current farm
 // so the Compare page lands on the right /farms/:fid/crop-cycles/compare
 // URL. When no farm is selected we still surface the entry — the page
@@ -128,6 +129,7 @@ const navGroups = computed(() => [
       { to: '/',          icon: '🌿', label: 'Dashboard'  },
       { to: '/tasks',     icon: '✅', label: 'Tasks'      },
       { to: '/schedules', icon: '📅', label: 'Schedules'  },
+      { to: '/lighting',  icon: '💡', label: 'Lighting', navTitle: 'Lighting programs — photoperiod presets, ON/OFF schedule pairs (Phase 35)' },
       { to: '/automation', icon: '🤖', label: 'Rules'     },
       { to: '/setpoints', icon: '🎯', label: 'Setpoints' },
       { to: '/actuators', icon: '⚡', label: 'Controls'   },
@@ -157,7 +159,7 @@ const navGroups = computed(() => [
       { to: '/costs',  icon: '💰', label: 'Costs'  },
       { to: cycleCompareRoute.value, icon: '📊', label: 'Analytics', navTitle: 'Crop cycle analytics — per-cycle summary & multi-cycle compare (Phase 28).' },
       { to: '/farm-knowledge', icon: '🔎', label: 'Knowledge', navTitle: 'Farm knowledge — semantic search & Ask (LLM); requires API embedding / LLM env' },
-      { action: 'guardian', icon: '🤖', label: 'Guardian', navTitle: 'Farm Guardian — slide-out assistant on any page (Phase 29). Full chat at /chat. Requires AI_ENABLED.' },
+      { to: '/chat', icon: '🤖', label: 'Guardian', navTitle: 'Farm Guardian — chat and pending change requests' },
     ],
   },
   {

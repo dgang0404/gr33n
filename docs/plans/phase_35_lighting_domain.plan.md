@@ -9,25 +9,25 @@ overview: >
 todos:
   - id: ws1-schema
     content: "WS1: Schema — gr33ncore.lighting_programs + photoperiod windows; link zone, actuator, optional crop_cycle; paired schedule generation"
-    status: pending
+    status: done
   - id: ws2-presets
     content: "WS2: Presets — library (22/2, 18/6, 12/12, custom); apply preset → lighting_program + ON/OFF schedules + executable_actions"
-    status: pending
+    status: done
   - id: ws3-schedule-actions-api
     content: "WS3: Schedule-action API — POST/GET/DELETE /schedules/{id}/actions (parity with rules/programs); worker unchanged dispatch path"
-    status: pending
+    status: done
   - id: ws4-timezone-worker
     content: "WS4: Timezone — honor schedules.timezone in shouldTriggerNow; farm/zone default TZ"
-    status: pending
+    status: done
   - id: ws5-timer-ux
     content: "WS5: Timer UX — PhotoperiodClockEditor (start/end/duration linked); LightingProgramForm + zone Lighting tab"
-    status: pending
+    status: done
   - id: ws6-migrate-seed
-    content: "WS6: Migration path — upgrade demo seed / bootstrap jadam_indoor_photoperiod_v1 to lighting_programs; document 18/6 as one entity not two loose crons"
+    content: "WS6: Migration path — master_seed lighting_program wrap done; still TODO jadam_indoor_photoperiod_v1 bootstrap → lighting_program (see phase_35_37_operational_closure.plan.md OC-35)"
     status: pending
   - id: ws7-guardian-read
     content: "WS7: Guardian read — summarize_zone_lighting read tool; optional create_lighting_program propose tool (medium tier) — defer full revise to Phase 34"
-    status: pending
+    status: done
   - id: ws8-docs-tests
     content: "WS8: Docs + tests — operator-tour lighting section; OpenAPI; smokes for preset apply + cron fire in TZ"
     status: pending
@@ -38,7 +38,9 @@ isProject: false
 
 ## Status
 
-**Not started.** Depends on **Phase 14** schedules/automation baseline and existing `actuator_type='light'` + `control_actuator` worker path. **Recommended after Phase 34** if Guardian will propose lighting programs (read layer can ship without 34).
+**In progress — core shipped, closure pending.** WS1–WS5 and WS7 landed (schema, API, TZ worker, presets, schedule-actions, UI, Guardian read). **WS6 partial:** `master_seed.sql` wraps the demo 18/6 pair in `lighting_programs`; **`jadam_indoor_photoperiod_v1` bootstrap still emits orphan schedules.** **WS8 not started:** operator-tour, OpenAPI, integration smokes, Vitest. Track remaining closure in [`phase_35_37_operational_closure.plan.md`](phase_35_37_operational_closure.plan.md).
+
+Depends on **Phase 14** schedules/automation baseline and existing `actuator_type='light'` + `control_actuator` worker path.
 
 **Preconditions:**
 
@@ -273,3 +275,4 @@ WS1 → WS4 (TZ before trusting cron generation) → WS2 → WS3 → WS5 → WS6
 | [pi-integration-guide.md](../pi-integration-guide.md) | Actuator / pending_command execution |
 | [phase_37_guardian_offline_field_assistant.plan.md](phase_37_guardian_offline_field_assistant.plan.md) | Wiring the light relay to the Pi = a guided Phase 37 procedure |
 | [phase_32_guardian_grow_setup_prs.plan.md](phase_32_guardian_grow_setup_prs.plan.md) | Grow setup; photoperiod in plant meta optional |
+| [phase_35_37_operational_closure.plan.md](phase_35_37_operational_closure.plan.md) | Seed / bootstrap / OpenAPI / operator-tour / smokes rollup (35→37) |

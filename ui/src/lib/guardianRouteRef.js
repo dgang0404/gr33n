@@ -22,7 +22,7 @@ const ROUTE_LABELS = {
   '/catalog': 'Commons catalog',
   '/farm-knowledge': 'Farm knowledge',
   '/chat': 'Farm Guardian chat',
-  '/guardian/requests': 'Guardian change requests',
+  '/guardian/requests': 'Farm Guardian',
   '/settings': 'Settings',
   '/operator-guide': 'Operator guide',
 }

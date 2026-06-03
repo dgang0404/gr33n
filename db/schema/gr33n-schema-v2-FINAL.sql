@@ -612,6 +612,33 @@ CREATE TRIGGER trg_schedules_updated_at
     BEFORE UPDATE ON gr33ncore.schedules
     FOR EACH ROW EXECUTE FUNCTION gr33ncore.set_updated_at();
 
+-- Phase 35: lighting_programs (photoperiod domain)
+-- Owns an ON/OFF schedule pair and the linked actuator.
+-- crop_cycle_id FK is added after gr33nfertigation.crop_cycles is defined below.
+CREATE TABLE IF NOT EXISTS gr33ncore.lighting_programs (
+    id              BIGSERIAL PRIMARY KEY,
+    farm_id         BIGINT NOT NULL REFERENCES gr33ncore.farms(id) ON DELETE CASCADE,
+    zone_id         BIGINT NOT NULL REFERENCES gr33ncore.zones(id) ON DELETE CASCADE,
+    actuator_id     BIGINT NOT NULL REFERENCES gr33ncore.actuators(id),
+    name            TEXT   NOT NULL,
+    description     TEXT,
+    on_hours        INTEGER NOT NULL CHECK (on_hours > 0 AND on_hours <= 24),
+    off_hours       INTEGER NOT NULL CHECK (off_hours >= 0 AND off_hours < 24),
+    lights_on_at    TEXT NOT NULL DEFAULT '06:00',
+    timezone        TEXT NOT NULL DEFAULT 'UTC',
+    schedule_on_id  BIGINT REFERENCES gr33ncore.schedules(id) ON DELETE SET NULL,
+    schedule_off_id BIGINT REFERENCES gr33ncore.schedules(id) ON DELETE SET NULL,
+    crop_cycle_id   BIGINT,
+    is_active       BOOLEAN NOT NULL DEFAULT TRUE,
+    metadata        JSONB NOT NULL DEFAULT '{}',
+    created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    CONSTRAINT chk_lighting_hours_cycle CHECK (on_hours + off_hours = 24)
+);
+CREATE TRIGGER trg_lighting_programs_updated_at
+    BEFORE UPDATE ON gr33ncore.lighting_programs
+    FOR EACH ROW EXECUTE FUNCTION gr33ncore.set_updated_at();
+
 -- Tasks + task_labor_log: created after automation_rules and alerts_notifications (FK order).
 
 -- Automation rules
@@ -1452,6 +1479,16 @@ ALTER TABLE gr33ncore.executable_actions
     FOREIGN KEY (program_id) REFERENCES gr33nfertigation.programs(id) ON DELETE CASCADE;
 CREATE INDEX IF NOT EXISTS idx_executable_actions_program
     ON gr33ncore.executable_actions (program_id);
+
+-- Phase 35 — FK on lighting_programs.crop_cycle_id (deferred because
+-- gr33nfertigation.crop_cycles is defined below gr33ncore).
+ALTER TABLE gr33ncore.lighting_programs
+    ADD CONSTRAINT fk_lighting_programs_crop_cycle
+    FOREIGN KEY (crop_cycle_id) REFERENCES gr33nfertigation.crop_cycles(id) ON DELETE SET NULL;
+CREATE INDEX IF NOT EXISTS idx_lighting_programs_farm
+    ON gr33ncore.lighting_programs (farm_id);
+CREATE INDEX IF NOT EXISTS idx_lighting_programs_zone
+    ON gr33ncore.lighting_programs (zone_id);
 
 CREATE TABLE IF NOT EXISTS gr33nfertigation.mixing_events (
     id                      BIGSERIAL PRIMARY KEY,
