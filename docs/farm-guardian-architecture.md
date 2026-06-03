@@ -286,7 +286,7 @@ Operators manage **blocking sun / heat / vents** separately from supplemental li
 
 Guardian **`summarize_zone_greenhouse_climate`** ([`tools/greenhouse.go`](../../internal/farmguardian/tools/greenhouse.go)) answers “is shade deployed?” / “what’s the GH profile?” without proposing changes. Manual motor control uses **`enqueue_actuator_command`** with `deploy` / `retract` / `open` / `close` / `stop` (Confirm tier) — same pending_command path as lights.
 
-**Block sun ≠ add light:** on the same zone, use **lighting_programs** (Phase 35) for photoperiod and **greenhouse_climate** (Phase 36) for shade and ventilation. Operator-tour greenhouse walkthrough — **OC-36B** (planned).
+**Block sun ≠ add light:** on the same zone, use **lighting_programs** (Phase 35) for photoperiod and **greenhouse_climate** (Phase 36) for shade and ventilation. Operator walkthrough: [operator-tour §5b](operator-tour.md#5b-greenhouse-shade-vents-and-fans-phase-36). OpenAPI: `GreenhouseClimate`, `POST /farms/{id}/actuators`, `POST .../rule-templates/greenhouse`.
 
 ### 7.1 Operator mental model
 

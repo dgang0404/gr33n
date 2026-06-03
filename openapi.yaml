@@ -1138,6 +1138,44 @@ paths:
               schema:
                 type: array
                 items: { $ref: "#/components/schemas/Actuator" }
+    post:
+      tags: [actuators]
+      summary: Create an actuator (Phase 36)
+      description: >
+        Creates a farm actuator with optional per-type `config` validation
+        (`shade_screen`, `ridge_vent`, `exhaust_fan`, `circulation_fan`, etc.).
+        Response includes `valid_commands` for the actuator type.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ActuatorCreate" }
+      responses:
+        "201":
+          description: Created actuator with valid_commands hint
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ActuatorWithCommands" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+
+  /actuators/{id}:
+    get:
+      tags: [actuators]
+      summary: Get an actuator by ID (Phase 36)
+      description: Returns the actuator row plus `valid_commands` for its type.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      responses:
+        "200":
+          description: Actuator
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ActuatorWithCommands" }
+        "404": { $ref: "#/components/responses/NotFound" }
 
   /lighting-programs/presets:
     get:
@@ -1893,6 +1931,33 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/AutomationRule" }
         "400": { $ref: "#/components/responses/BadRequest" }
+
+  /farms/{id}/automation/rule-templates/greenhouse:
+    post:
+      tags: [automation]
+      summary: Apply greenhouse climate rule templates (Phase 36)
+      description: >
+        Clones inactive automation rules for high lux (deploy shade), high temp
+        (exhaust fan on), and night retract (temp proxy) for a zone. Pass null
+        for optional actuator/sensor ids to skip that rule family. Rules are
+        created with `is_active=false`; enable and tune on `/automation`.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/GreenhouseRuleTemplatesApply" }
+      responses:
+        "201":
+          description: Template application result
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/GreenhouseRuleTemplatesResult" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
 
   /automation/rules/{id}:
     get:
@@ -5640,8 +5705,17 @@ components:
         farm_id: { type: integer }
         name: { type: string, example: Veg Room }
         description: { type: string }
-        zone_type: { type: string }
+        zone_type:
+          type: string
+          description: >
+            e.g. indoor, outdoor, greenhouse. When greenhouse, optional
+            `meta_data.greenhouse_climate` is validated on write.
         area_sqm: { type: number }
+        meta_data:
+          type: object
+          description: >
+            JSON bag. Phase 36: `greenhouse_climate` profile when
+            `zone_type=greenhouse`. Phase 30: `photo_attachment_ids`.
         created_at: { type: string, format: date-time }
 
     ZoneCreate:
@@ -5650,8 +5724,13 @@ components:
       properties:
         name: { type: string }
         description: { type: string }
-        zone_type: { type: string }
+        zone_type: { type: string, example: greenhouse }
         area_sqm: { type: number }
+        meta_data:
+          type: object
+          properties:
+            greenhouse_climate:
+              { $ref: "#/components/schemas/GreenhouseClimate" }
 
     ZoneUpdate:
       type: object
@@ -5659,10 +5738,46 @@ components:
       properties:
         name: { type: string }
         description: { type: string }
-        zone_type: { type: string }
+        zone_type: { type: string, example: greenhouse }
         area_sqm: { type: number }
-        meta_data: { type: object }
+        meta_data:
+          type: object
+          properties:
+            greenhouse_climate:
+              { $ref: "#/components/schemas/GreenhouseClimate" }
         updated_by_user_id: { type: string, format: uuid }
+
+    GreenhouseClimate:
+      type: object
+      description: >
+        Phase 36 — stored at `zones.meta_data.greenhouse_climate` when
+        `zone_type=greenhouse`. Validated on zone create/update.
+      properties:
+        cover_type:
+          type: string
+          enum: [glass, polycarbonate, film]
+          description: Glazing / cover material for operator context.
+        shade_actuator_id:
+          type: integer
+          nullable: true
+          description: Actuator id for shade_screen (or legacy shade motor).
+        vent_actuator_id:
+          type: integer
+          nullable: true
+          description: Actuator id for ridge_vent.
+        fan_actuator_ids:
+          type: array
+          items: { type: integer }
+          description: Exhaust and/or circulation fan actuator ids.
+        automation_policy:
+          type: string
+          enum: [auto, manual, schedule_only]
+          description: >
+            auto — sensor rules expected; manual — operator/Guardian only;
+            schedule_only — time-based shade retract/deploy without lux predicates.
+        notes:
+          type: string
+          description: Free-text operator notes (e.g. end-wall glazing).
 
     FarmCreate:
       type: object
@@ -5964,8 +6079,18 @@ components:
         farm_id: { type: integer }
         zone_id: { type: integer, nullable: true }
         name: { type: string }
-        actuator_type: { type: string }
+        actuator_type:
+          type: string
+          description: >
+            Phase 36 greenhouse types include shade_screen, ridge_vent,
+            exhaust_fan, circulation_fan, glazing_panel. Legacy bootstrap
+            may use shade_cloth_motor. Lighting uses light / grow_light.
         hardware_identifier: { type: string, nullable: true }
+        config:
+          type: object
+          description: >
+            Per-type JSON (channel, normally_open, max_run_seconds for motors).
+          nullable: true
         current_state_numeric: { type: number, nullable: true }
         current_state_text: { type: string, nullable: true }
         last_known_state_time: { type: string, format: date-time, nullable: true }
@@ -5978,6 +6103,76 @@ components:
             electricity rollup (Phase 20.7 WS4). DEFAULT 0 NOT NULL: 0 means
             "unknown / unmetered" and drops the actuator out of the rollup.
         created_at: { type: string, format: date-time }
+
+    ActuatorConfig:
+      type: object
+      description: Optional actuator config validated per actuator_type (Phase 36).
+      properties:
+        channel: { type: integer, description: Pi GPIO / relay channel index }
+        normally_open: { type: boolean }
+        max_run_seconds:
+          type: integer
+          minimum: 1
+          description: Motor run cap for shade_screen / ridge_vent / glazing_panel
+        percent_open_supported:
+          type: boolean
+          description: Ridge vent supports percentage open commands
+
+    ActuatorCreate:
+      type: object
+      required: [name, actuator_type]
+      properties:
+        name: { type: string, example: GH shade screen }
+        actuator_type:
+          type: string
+          example: shade_screen
+        zone_id: { type: integer, nullable: true }
+        device_id: { type: integer, nullable: true }
+        hardware_identifier: { type: string, nullable: true }
+        feedback_sensor_id: { type: integer, nullable: true }
+        config: { $ref: "#/components/schemas/ActuatorConfig" }
+        meta_data: { type: object }
+
+    ActuatorWithCommands:
+      allOf:
+        - { $ref: "#/components/schemas/Actuator" }
+        - type: object
+          properties:
+            valid_commands:
+              type: array
+              items: { type: string }
+              description: >
+                Typed command vocabulary for this actuator_type (e.g. deploy,
+                retract, stop for shade_screen; on/off for exhaust_fan).
+
+    GreenhouseRuleTemplatesApply:
+      type: object
+      required: [zone_id]
+      properties:
+        zone_id: { type: integer }
+        shade_actuator_id:
+          type: integer
+          nullable: true
+          description: Enables high-lux deploy + night retract rules when set
+        fan_actuator_id:
+          type: integer
+          nullable: true
+          description: Enables high-temp exhaust fan rule when set
+        lux_sensor_id:
+          type: integer
+          nullable: true
+          description: Lux sensor for high-lux shade rule (threshold 80000)
+        temp_sensor_id:
+          type: integer
+          nullable: true
+          description: Air temp sensor for fan + night retract rules
+
+    GreenhouseRuleTemplatesResult:
+      type: object
+      properties:
+        rules_created: { type: integer }
+        zone_id: { type: integer }
+        error: { type: string, description: Present when farm or zone invalid }
 
     ActuatorEvent:
       type: object

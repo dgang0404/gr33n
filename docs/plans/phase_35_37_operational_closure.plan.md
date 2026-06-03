@@ -19,8 +19,8 @@ todos:
     content: "OC-36A: greenhouse_climate_v1 bootstrap v2 → zone_type=greenhouse, typed actuators, meta profile, lux rules (20260603_phase36_greenhouse_climate_v2.sql, 0916aba)"
     status: done
   - id: oc-36-docs-openapi
-    content: "OC-36B: operator-tour greenhouse section; OpenAPI greenhouse_climate + POST actuators + rule-templates; architecture grow-stack §7.0c (Phase 36 WS8)"
-    status: pending
+    content: "OC-36B: operator-tour §5b greenhouse; OpenAPI GreenhouseClimate + POST actuators + rule-templates; architecture §7.0c cross-links (Phase 36 WS8)"
+    status: done
   - id: oc-36-tests
     content: "OC-36C: cmd/api smokes — bootstrap apply, rule fire + cooldown, manual shade deploy via pending_command (Phase 36 WS8)"
     status: pending
@@ -110,12 +110,12 @@ Feature detail: [`phase_36_greenhouse_climate.plan.md`](phase_36_greenhouse_clim
 | **Demo seed** | ⏳ | Bootstrap apply suffices for new farms; `master_seed.sql` greenhouse row optional |
 | **Unit tests** | ✅ partial | `greenhouse_test.go`, `taxonomy_test.go` |
 | **Smokes / Vitest** | ⏳ | **OC-36C** |
-| **OpenAPI / operator-tour** | ⏳ | **OC-36B** |
-| **Architecture** | ⏳ partial | §7.0c draft in `farm-guardian-architecture.md` — expand when OC-36B closes |
+| **OpenAPI / operator-tour** | ✅ | **OC-36B** — operator-tour §5b; OpenAPI paths/schemas |
+| **Architecture** | ✅ | §7.0c in `farm-guardian-architecture.md` + operator-tour cross-links |
 
 ### Phase 36 — status
 
-**In progress.** WS1–WS3, WS5, WS7 + **OC-36A** closed. **OC-36B** (operator-tour, OpenAPI, architecture cross-link to Phase 35 “block sun ≠ add light”) and **OC-36C** (smokes) remain with **WS4** and **WS6**.
+**In progress.** WS1–WS3, WS5, WS7 + **OC-36A** + **OC-36B** closed. **OC-36C** (smokes) remains with **WS4** (Greenhouse UI tab) and **WS6** (missing-sensor UX).
 
 Apply migration `20260603_phase36_greenhouse_climate_v2.sql` before re-running `greenhouse_climate_v1` bootstrap on existing dev DBs.
 
@@ -149,8 +149,8 @@ Before marking the 35–37 arc complete:
 Phase 35 code PR  ──► OC-35A bootstrap (same sprint or +1)
                    ──► OC-35B + OC-35C docs/tests (before Phase 36 UI references lighting)
 
-Phase 36 WS1–3,5,7 ──► OC-36A ✅
-                   ──► WS4 + WS6 + OC-36B + OC-36C (remaining ship)
+Phase 36 WS1–3,5,7 ──► OC-36A + OC-36B ✅
+                   ──► WS4 + WS6 + OC-36C (remaining ship)
 
 Phase 37 WS1–7   ──► OC-37 inline with WS8
                    ──► OC-37E final sweep (OC-35A–C + OC-36B–C verified; RAG ingest)

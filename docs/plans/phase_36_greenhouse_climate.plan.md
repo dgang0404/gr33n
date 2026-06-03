@@ -29,7 +29,7 @@ todos:
     content: "WS7: Guardian — summarize_zone_greenhouse_climate read tool; enqueue_actuator_command deploy/retract/open/close/stop (f686d76)"
     status: done
   - id: ws8-docs-tests
-    content: "WS8: Docs + tests — operator-tour greenhouse section; OpenAPI; architecture grow stack; smokes for rule fire + manual shade command (OC-36)"
+    content: "WS8: Docs + tests — OC-36B done (operator-tour §5b, OpenAPI, architecture §7.0c); OC-36C smokes pending"
     status: pending
 isProject: false
 ---
@@ -38,7 +38,7 @@ isProject: false
 
 ## Status
 
-**In progress — backend shipped (WS1–WS3, WS5, WS7).** Commits `999bff1` (profile + actuator taxonomy), `0916aba` (bootstrap v2 + rule templates), `f686d76` (Guardian read + extended enqueue commands). **Open:** WS4 (ZoneDetail Greenhouse tab), WS6 (missing-sensor UX), WS8 (operator-tour, OpenAPI, smokes — **OC-36**). Track rollup in [`phase_35_37_operational_closure.plan.md`](phase_35_37_operational_closure.plan.md).
+**In progress — backend + OC-36B shipped (WS1–WS3, WS5, WS7, docs).** Commits `999bff1`, `0916aba`, `f686d76` (implementation); plan/closure docs through OC-36B. **Open:** WS4 (ZoneDetail Greenhouse tab), WS6 (missing-sensor UX), **OC-36C** (smokes). Track rollup in [`phase_35_37_operational_closure.plan.md`](phase_35_37_operational_closure.plan.md).
 
 Depends on **zones**, **actuators**, **automation_rules** + **schedules** worker. **Complements Phase 35** (supplemental lighting vs **blocking** sun). Phase 35 WS4 timezone fix is available for future cron-based night retract (bootstrap still uses temp proxy rule today).
 
@@ -49,7 +49,7 @@ Depends on **zones**, **actuators**, **automation_rules** + **schedules** worker
 - Rules worker + predicates ([`internal/automation/rules.go`](../../internal/automation/rules.go), [`predicates.go`](../../internal/automation/predicates.go))
 - Lux/temp/humidity sensor types in seed and bootstrap
 
-**Remaining gap:** No **Greenhouse** tab on ZoneDetail, no missing-sensor banners, no operator-tour/OpenAPI/smokes (WS8). Apply migration `20260603_phase36_greenhouse_climate_v2.sql` on each environment before re-running bootstrap.
+**Remaining gap:** No **Greenhouse** tab on ZoneDetail (WS4), no missing-sensor banners (WS6), no integration smokes (OC-36C). Operator walkthrough: [operator-tour §5b](../operator-tour.md#5b-greenhouse-shade-vents-and-fans-phase-36). Apply migration `20260603_phase36_greenhouse_climate_v2.sql` on each environment before re-running bootstrap.
 
 ---
 
@@ -116,7 +116,7 @@ Operator / Guardian
 | **WS5** | Bootstrap → core | `20260603_phase36_greenhouse_climate_v2.sql` | ✅ |
 | **WS6** | Sensor interlocks | preconditions; missing-sensor UX | pending |
 | **WS7** | Guardian | `summarize_zone_greenhouse_climate`; extended enqueue | ✅ |
-| **WS8** | Docs + tests | operator-tour, OpenAPI, smokes (OC-36) | pending |
+| **WS8** | Docs + tests | operator-tour §5b + OpenAPI (OC-36B ✅); smokes (OC-36C) | partial |
 
 ---
 
@@ -222,15 +222,20 @@ Operator / Guardian
 
 **Acceptance:** Chat "is shade deployed in GH-1?" uses read tool + snapshot. ✅
 
-### WS8 — Docs + tests
+### WS8 — Docs + tests (partial — OC-36B ✅, OC-36C pending)
 
-**Tasks:**
+**Shipped (OC-36B):**
 
-- `operator-tour.md` — greenhouse setup (profile, link actuators, enable high-sun rule)
-- `farm-guardian-architecture.md` — grow environment: soil (inventory), fertigation, watering (note), lighting (35), greenhouse (36)
-- Smokes: template apply, rule fire, manual deploy
+- [`operator-tour.md`](../operator-tour.md) — [§5b Greenhouse shade, vents, and fans](../operator-tour.md#5b-greenhouse-shade-vents-and-fans-phase-36)
+- [`openapi.yaml`](../../openapi.yaml) — `GreenhouseClimate`, `ActuatorCreate`, `ActuatorWithCommands`, `POST /farms/{id}/actuators`, `GET /actuators/{id}`, `POST .../rule-templates/greenhouse`
+- [`farm-guardian-architecture.md`](../farm-guardian-architecture.md) — §7.0c grow stack + read tool; block sun ≠ add light cross-link to Phase 35
 
-**Acceptance:** Docs in phase-14 index; tests green.
+**Remaining (OC-36C):**
+
+- Smokes: bootstrap apply, rule fire + cooldown, manual shade deploy via `pending_command`
+- Optional: RAG re-ingest after operator-tour change (OC-37E sweep)
+
+**Acceptance:** Docs in phase-14 index; `go test` green for new smokes.
 
 ---
 
@@ -270,7 +275,8 @@ WS1 → WS2 → WS5 → WS3 → WS6 → WS4 → WS7 → WS8. WS5 early so demo f
 - [ ] ZoneDetail Greenhouse tab + manual typed commands (WS4)
 - [x] Bootstrap `greenhouse_climate_v1` uses core types + profile (apply migration first)
 - [ ] Missing-sensor honesty in UI (WS6); Guardian read tool ✅
-- [ ] Docs + tests (WS8 / OC-36)
+- [x] Operator docs + OpenAPI (OC-36B)
+- [ ] Integration smokes (OC-36C)
 
 ---
 
@@ -285,7 +291,7 @@ WS1 → WS2 → WS5 → WS3 → WS6 → WS4 → WS7 → WS8. WS5 early so demo f
 | Doc | Use |
 |-----|-----|
 | [phase_35_lighting_domain.plan.md](phase_35_lighting_domain.plan.md) | Supplemental photoperiod |
-| [phase_35_37_operational_closure.plan.md](phase_35_37_operational_closure.plan.md) | OC-36A ✅ bootstrap; OC-36B/C = WS8 docs/smokes |
+| [phase_35_37_operational_closure.plan.md](phase_35_37_operational_closure.plan.md) | OC-36A–B ✅; OC-36C smokes pending |
 | [phase_34_guardian_pr_iteration.plan.md](phase_34_guardian_pr_iteration.plan.md) | Operator blind-spot facts |
 | [phase_32_guardian_grow_setup_prs.plan.md](phase_32_guardian_grow_setup_prs.plan.md) | Zone + cycle setup |
 | [20260504_phase205_husbandry_climate_bootstraps.sql](../../db/migrations/20260504_phase205_husbandry_climate_bootstraps.sql) | Original `greenhouse_climate_v1` bootstrap |
