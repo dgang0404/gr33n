@@ -16,6 +16,7 @@ import (
 	"github.com/robfig/cron/v3"
 
 	db "gr33n-api/internal/db"
+	"gr33n-api/internal/fertigation/mixplan"
 	acthandler "gr33n-api/internal/handler/actuator"
 	"gr33n-api/internal/platform/commontypes"
 )
@@ -135,6 +136,19 @@ func (w *Worker) executeProgram(
 	now time.Time,
 	idemKey string,
 ) {
+	// Phase 39 WS5: if the program has a recipe + reservoir, enqueue mix_batch
+	// BEFORE the irrigate pulse so the Pi runs them in FIFO order.
+	if !w.simulation {
+		if mixCmdID, mixErr := w.dispatchProgramMix(ctx, p, now); mixErr != nil {
+			// ErrProgramHasNoRecipe is expected for plain-irrigation programs — not a failure.
+			if !errors.Is(mixErr, mixplan.ErrProgramHasNoRecipe) {
+				log.Printf("program %d: mix_batch enqueue: %v", p.ID, mixErr)
+			}
+		} else {
+			log.Printf("program %d: enqueued mix_batch command_id=%d", p.ID, mixCmdID)
+		}
+	}
+
 	actions, source, err := ResolveProgramActions(ctx, w.q, p)
 	if err != nil {
 		w.recordProgramRun(ctx, p, "failed",
@@ -577,3 +591,55 @@ var _ = cron.New
 // sentinel used by tests that want to verify the fallback warning path
 // fired for a specific program during the last tick.
 var ErrProgramTickMetadataFallback = errors.New("program action resolved via metadata.steps fallback")
+
+// dispatchProgramMix is the Phase 39 WS5 addition: before the normal
+// control_actuator actions fire, calculate a MixPlan and enqueue a
+// mix_batch command onto the reservoir's delivery device.
+//
+// Returns ErrProgramHasNoRecipe when the program is plain irrigation —
+// callers should treat this as a non-error skip.
+// Returns the command ID on success so the caller can log provenance.
+func (w *Worker) dispatchProgramMix(ctx context.Context, p db.Gr33nfertigationProgram, _ time.Time) (int64, error) {
+	// BuildFromProgramRow does all the guard checks (recipe, reservoir, base EC).
+	in, err := mixplan.BuildFromProgramRow(ctx, w.q, p, mixplan.BuildOptions{})
+	if err != nil {
+		return 0, err
+	}
+	plan, err := mixplan.Calculate(in)
+	if err != nil {
+		return 0, fmt.Errorf("calculate mix plan: %w", err)
+	}
+
+	// Resolve device from the reservoir's delivery_actuator.
+	res, err := w.q.GetFertigationReservoirByID(ctx, plan.ReservoirID)
+	if err != nil {
+		return 0, fmt.Errorf("load reservoir: %w", err)
+	}
+	if res.DeliveryActuatorID == nil {
+		return 0, fmt.Errorf("reservoir %d has no delivery_actuator_id — cannot enqueue mix_batch", res.ID)
+	}
+	actuator, err := w.q.GetActuatorByID(ctx, *res.DeliveryActuatorID)
+	if err != nil || actuator.DeviceID == nil {
+		return 0, fmt.Errorf("delivery actuator not bound to a device")
+	}
+
+	payload, _ := json.Marshal(map[string]any{
+		"command_type": "mix_batch",
+		"program_id":   p.ID,
+		"reservoir_id": plan.ReservoirID,
+		"mix_plan":     plan,
+	})
+
+	cmd, err := w.q.EnqueueDeviceCommand(ctx, db.EnqueueDeviceCommandParams{
+		DeviceID:    *actuator.DeviceID,
+		FarmID:      p.FarmID,
+		CommandType: "mix_batch",
+		Payload:     payload,
+		Source:      "program",
+		ProgramID:   &p.ID,
+	})
+	if err != nil {
+		return 0, fmt.Errorf("enqueue mix_batch: %w", err)
+	}
+	return cmd.ID, nil
+}

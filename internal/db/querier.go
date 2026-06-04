@@ -241,6 +241,7 @@ type Querier interface {
 	GetFertigationAggregatesByCropCycle(ctx context.Context, cropCycleID *int64) (GetFertigationAggregatesByCropCycleRow, error)
 	GetFertigationProgramByID(ctx context.Context, id int64) (Gr33nfertigationProgram, error)
 	GetEcTargetByID(ctx context.Context, id int64) (Gr33nfertigationEcTarget, error)
+	UpdateReservoirBaseWater(ctx context.Context, arg UpdateReservoirBaseWaterParams) (Gr33nfertigationReservoir, error)
 	GetFertigationReservoirByID(ctx context.Context, id int64) (Gr33nfertigationReservoir, error)
 	GetFileAttachmentByID(ctx context.Context, id int64) (Gr33ncoreFileAttachment, error)
 	GetGuardianProposalByID(ctx context.Context, proposalID uuid.UUID) (Gr33ncoreGuardianActionProposal, error)

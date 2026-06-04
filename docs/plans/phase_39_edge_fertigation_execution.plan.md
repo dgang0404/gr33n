@@ -15,19 +15,19 @@ todos:
     status: done
   - id: ws3-mix-command-payload
     content: "WS3: mix_batch command type — OpenAPI + validation; enqueue from operator API and program tick"
-    status: pending
+    status: done
   - id: ws4-pi-mix-executor
     content: "WS4: Pi mix executor — run per-channel steps (relay/pump seconds); POST mixing-event + readings on complete"
-    status: pending
+    status: done
   - id: ws5-program-pipeline
     content: "WS5: Program pipeline — schedule fire → mix_batch (if needed) → pulse irrigate; idempotency + automation_runs"
-    status: pending
+    status: done
   - id: ws6-reservoir-snapshot
     content: "WS6: Reservoir snapshot — base EC/pH/volume on reservoir or pre-mix POST; UI + Guardian read mix prerequisites"
-    status: pending
+    status: done
   - id: ws7-zone-water-ux
     content: "WS7: Zone Water tab — show computed mix plan, queue depth, last mix met target; link manual mix log"
-    status: pending
+    status: done
   - id: ws8-docs-tests-seed
     content: "WS8: Docs + tests + seed — pi-integration-guide, workflow-guide, operator-tour, smokes, optional demo mixer bootstrap"
     status: pending
@@ -38,7 +38,7 @@ isProject: false
 
 ## Status
 
-**WS1 + WS2 complete.** WS3 next. Depends on Phases **22** (program tick + `executable_actions`), **35** (lighting — unchanged), **38** (zone Water UI + `duration_seconds` pulse). Does **not** replace operator-logged mixing (`POST …/mixing-events`); it **automates** the same audit trail when hardware exists.
+**WS1–WS7 complete.** WS8 (docs + smokes + seed) remaining. Depends on Phases **22** (program tick + `executable_actions`), **35** (lighting — unchanged), **38** (zone Water UI + `duration_seconds` pulse). Does **not** replace operator-logged mixing (`POST …/mixing-events`); it **automates** the same audit trail when hardware exists.
 
 ---
 

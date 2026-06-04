@@ -83,6 +83,17 @@ WHERE id = $1 AND deleted_at IS NULL;
 SELECT * FROM gr33nfertigation.ec_targets
 WHERE id = $1;
 
+-- name: UpdateReservoirBaseWater :one
+-- Phase 39 WS6 — operator sets base EC/pH of source water so the mix
+-- calculator always has a starting point. Stamps last_reading_time = NOW().
+UPDATE gr33nfertigation.reservoirs
+SET last_ec_mscm      = $2,
+    last_ph           = $3,
+    last_reading_time = NOW(),
+    updated_at        = NOW()
+WHERE id = $1 AND deleted_at IS NULL
+RETURNING *;
+
 -- name: GetFertigationProgramByID :one
 SELECT * FROM gr33nfertigation.programs
 WHERE id = $1 AND deleted_at IS NULL;

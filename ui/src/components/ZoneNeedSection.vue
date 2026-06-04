@@ -55,7 +55,7 @@
       </div>
     </div>
 
-    <!-- Fertigation block (water only) -->
+    <!-- Fertigation block (water only) — Phase 39 WS7 enhanced -->
     <div v-if="need === PLANT_NEEDS.water" class="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
       <div class="flex items-center justify-between mb-3">
         <h3 class="text-sm font-semibold text-white">Feeding program</h3>
@@ -63,11 +63,84 @@
       </div>
       <p v-if="!activeProgram" class="text-zinc-500 text-sm">No active fertigation program for this zone.</p>
       <template v-else>
-        <p class="text-zinc-200 text-sm">{{ activeProgram.name }}</p>
-        <p class="text-zinc-600 text-xs mt-1">
-          {{ activeProgram.total_volume_liters || '—' }}L
-          <span v-if="activeProgram.run_duration_seconds"> · pump run {{ activeProgram.run_duration_seconds }}s</span>
-        </p>
+        <div class="flex items-start justify-between gap-2 flex-wrap">
+          <div>
+            <p class="text-zinc-200 text-sm">{{ activeProgram.name }}</p>
+            <p class="text-zinc-600 text-xs mt-1">
+              {{ activeProgram.total_volume_liters || '—' }}L
+              <span v-if="activeProgram.run_duration_seconds"> · pump run {{ activeProgram.run_duration_seconds }}s</span>
+            </p>
+          </div>
+          <!-- Queue depth chip -->
+          <span
+            v-if="waterStatus && waterStatus.queue_depth > 0"
+            class="text-[10px] px-2 py-0.5 rounded-full bg-amber-900 text-amber-300 font-semibold shrink-0"
+            title="Commands pending on delivery device"
+          >
+            {{ waterStatus.queue_depth }} queued
+          </span>
+        </div>
+
+        <!-- Last mixing event badge -->
+        <div v-if="waterStatus?.last_mixing_event" class="mt-3 flex items-center gap-2 text-xs text-zinc-400">
+          <span>Last mix:</span>
+          <span class="text-zinc-200">{{ formatMixDate(waterStatus.last_mixing_event.mixed_at) }}</span>
+          <span
+            v-if="waterStatus.last_mixing_event.ec_target_met === true"
+            class="px-1.5 py-0.5 rounded bg-green-900 text-green-300 text-[10px] font-semibold"
+          >EC met ✓</span>
+          <span
+            v-else-if="waterStatus.last_mixing_event.ec_target_met === false"
+            class="px-1.5 py-0.5 rounded bg-red-900 text-red-300 text-[10px] font-semibold"
+          >EC not met</span>
+        </div>
+
+        <!-- Preview mix plan -->
+        <div class="mt-3">
+          <button
+            v-if="!showMixPreview && waterStatus?.mix_required"
+            type="button"
+            class="text-xs text-blue-400 hover:text-blue-300 underline"
+            :disabled="mixPreviewLoading"
+            @click="loadMixPreview"
+          >
+            {{ mixPreviewLoading ? 'Calculating…' : 'Preview mix plan →' }}
+          </button>
+
+          <div v-if="showMixPreview && waterStatus?.mix_preview" class="mt-2 space-y-1">
+            <div class="flex items-center justify-between">
+              <p class="text-xs text-zinc-400 font-semibold">Mix plan — {{ waterStatus.mix_preview.dilution_ratio }}</p>
+              <button
+                type="button"
+                class="text-[10px] text-zinc-600 hover:text-zinc-400"
+                @click="showMixPreview = false"
+              >hide</button>
+            </div>
+            <p class="text-[11px] text-zinc-500">
+              {{ waterStatus.mix_preview.water_volume_liters }}L ·
+              base {{ waterStatus.mix_preview.water_ec_mscm }} mS/cm →
+              est. {{ waterStatus.mix_preview.estimated_final_ec_mscm }} mS/cm
+            </p>
+            <div
+              v-for="step in waterStatus.mix_preview.steps"
+              :key="step.step"
+              class="flex items-center gap-2 text-[11px] text-zinc-300"
+            >
+              <span class="w-4 text-zinc-600 text-right">{{ step.step }}.</span>
+              <span class="flex-1">{{ step.input_name }}</span>
+              <span class="text-zinc-500">{{ step.volume_ml }} ml · {{ step.run_seconds }}s</span>
+            </div>
+            <p v-if="waterStatus.mix_preview.warnings?.length"
+               class="text-[10px] text-amber-500 mt-1 leading-tight">
+              ⚠ {{ waterStatus.mix_preview.warnings[0] }}
+            </p>
+          </div>
+
+          <p v-if="waterStatus?.mix_preview_error && !waterStatus?.mix_required"
+             class="text-[11px] text-zinc-600 mt-1 italic">
+            {{ waterStatus.mix_preview_error }}
+          </p>
+        </div>
       </template>
     </div>
 
@@ -161,7 +234,7 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, ref, watch } from 'vue'
 import {
   PLANT_NEEDS,
   NEED_META,
@@ -195,6 +268,49 @@ const props = defineProps({
 defineEmits(['toggle-actuator', 'refresh-events'])
 
 const store = useFarmStore()
+
+// ── Phase 39 WS7: water status (mix preview, queue depth, last mix) ──────────
+const waterStatus = ref(null)
+const mixPreviewLoading = ref(false)
+const showMixPreview = ref(false)
+
+async function loadWaterStatus() {
+  if (props.need !== PLANT_NEEDS.water || !props.activeProgram?.id) return
+  try {
+    const token = store.token || localStorage.getItem('token')
+    const r = await fetch(`/fertigation/programs/${props.activeProgram.id}/water-status`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    if (r.ok) waterStatus.value = await r.json()
+  } catch {
+    // non-fatal
+  }
+}
+
+async function loadMixPreview() {
+  mixPreviewLoading.value = true
+  await loadWaterStatus()
+  mixPreviewLoading.value = false
+  showMixPreview.value = true
+}
+
+// Load on mount when water tab is active
+watch(
+  () => [props.activeProgram?.id, props.need],
+  () => { if (props.need === PLANT_NEEDS.water) loadWaterStatus() },
+  { immediate: true },
+)
+
+function formatMixDate(iso) {
+  if (!iso) return '—'
+  try {
+    return new Date(iso).toLocaleString(undefined, {
+      month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
+    })
+  } catch {
+    return iso
+  }
+}
 const meta = computed(() => NEED_META[props.need] || NEED_META[PLANT_NEEDS.air])
 
 const needSensors = computed(() =>

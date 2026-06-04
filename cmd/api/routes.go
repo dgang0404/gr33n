@@ -295,6 +295,13 @@ func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationwo
 	mux.Handle("GET /farms/{id}/fertigation/mixing-events", jwt(http.HandlerFunc(fertigation.ListMixingEventsByFarm)))
 	mux.Handle("POST /farms/{id}/fertigation/mixing-events", jwt(http.HandlerFunc(fertigation.CreateMixingEvent)))
 	mux.Handle("GET /farms/{id}/fertigation/mixing-events/{mid}/components", jwt(http.HandlerFunc(fertigation.ListMixingEventComponents)))
+	// Phase 39 WS3 — mix_batch enqueue + preview
+	mux.Handle("POST /farms/{id}/fertigation/mix-jobs", jwt(http.HandlerFunc(fertigation.EnqueueMixJob)))
+	mux.Handle("GET /fertigation/programs/{rid}/mix-preview", jwt(http.HandlerFunc(fertigation.MixPreview)))
+	// Phase 39 WS7 — Zone Water tab one-shot status
+	mux.Handle("GET /fertigation/programs/{rid}/water-status", jwt(http.HandlerFunc(fertigation.WaterStatus)))
+	// Phase 39 WS6 — set base water EC on reservoir
+	mux.Handle("PATCH /fertigation/reservoirs/{rid}/base-water", jwt(http.HandlerFunc(fertigation.SetReservoirBaseWater)))
 
 	mux.Handle("GET /farms/{id}/crop-cycles", jwt(http.HandlerFunc(cropcycle.List)))
 	mux.Handle("POST /farms/{id}/crop-cycles", jwt(http.HandlerFunc(cropcycle.Create)))

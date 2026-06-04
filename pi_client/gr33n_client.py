@@ -289,6 +289,77 @@ class Gr33nApiClient:
         except requests.RequestException:
             return False
 
+    # ── Phase 39 WS1 queue API ───────────────────────────────────────────────
+
+    def get_next_command(self, device_id: int) -> Optional[dict]:
+        """GET /devices/{id}/commands/next — atomically claims head of queue.
+
+        Returns the command dict on 200, None on 204 (empty queue) or error.
+        """
+        try:
+            r = self._s.get(f'{self.base_url}/devices/{device_id}/commands/next',
+                            timeout=self.timeout)
+            if r.status_code == 200:
+                return r.json()
+            if r.status_code == 204:
+                return None
+            log.warning('get_next_command status=%s device=%s', r.status_code, device_id)
+        except requests.RequestException as exc:
+            log.debug('get_next_command error: %s', exc)
+        return None
+
+    def ack_command(self, device_id: int, command_id: int,
+                    status: str = 'completed',
+                    result: Optional[dict] = None) -> bool:
+        """POST /devices/{id}/commands/{cid}/ack — mark command done or failed."""
+        try:
+            body = {'status': status}
+            if result:
+                body['result'] = result
+            r = self._s.post(
+                f'{self.base_url}/devices/{device_id}/commands/{command_id}/ack',
+                json=body, timeout=self.timeout)
+            return r.status_code == 200
+        except requests.RequestException as exc:
+            log.debug('ack_command error: %s', exc)
+            return False
+
+    def post_mixing_event(self, farm_id: int, reservoir_id: int,
+                          program_id: Optional[int],
+                          water_volume_liters: float,
+                          base_ec: float,
+                          final_ec: Optional[float] = None,
+                          ec_target_id: Optional[int] = None) -> Optional[int]:
+        """POST /farms/{id}/fertigation/mixing-events — automated mix audit row.
+
+        Returns the mixing_event id on success, None on failure.
+        """
+        payload: dict = {
+            'reservoir_id':       reservoir_id,
+            'water_volume_liters': water_volume_liters,
+            'water_source':       'automated',
+            'water_ec_mscm':      base_ec,
+            'mixed_at':           datetime.now(timezone.utc).isoformat(),
+        }
+        if program_id is not None:
+            payload['program_id'] = program_id
+        if final_ec is not None:
+            payload['final_ec_mscm'] = final_ec
+            payload['ec_target_met'] = (ec_target_id is not None and final_ec > base_ec)
+        if ec_target_id is not None:
+            payload['ec_target_id'] = ec_target_id
+        try:
+            r = self._s.post(
+                f'{self.base_url}/farms/{farm_id}/fertigation/mixing-events',
+                json=payload, timeout=self.timeout * 2)
+            if r.status_code in (200, 201):
+                data = r.json()
+                return data.get('id')
+            log.warning('post_mixing_event status=%s', r.status_code)
+        except requests.RequestException as exc:
+            log.debug('post_mixing_event error: %s', exc)
+        return None
+
 
 # --- DERIVED SENSOR SUPPORT -------------------------------------------------
 # A `source: derived` sensor computes its value from other sensors on the
@@ -662,6 +733,171 @@ class Gr33nPiClient:
                 self.api.patch_device_status(did, 'online')
             log.debug('Heartbeat sent for %d device(s)', len(device_ids))
 
+    # ── Phase 39 WS4 mix executor ────────────────────────────────────────────
+
+    def _get_channel_actuator(self, channel_index: int):
+        """Return the actuator for a mix channel index (1-based).
+
+        Mapping strategy (v1): channel 1 → first actuator by id, channel 2 →
+        second, etc. Farm operators configure `mix_channels` in the Pi YAML to
+        override: a list where index 0 = channel 1, value = actuator_id.
+
+        Returns None if the channel cannot be resolved.
+        """
+        mix_channels = self.cfg.get('mix_channels', [])
+        actuator_id = None
+        if mix_channels and channel_index <= len(mix_channels):
+            actuator_id = mix_channels[channel_index - 1]
+        if actuator_id is not None:
+            return self._actuators.get(actuator_id)
+        # Fallback: use actuator list sorted by id; channel 1 → index 0.
+        sorted_acts = sorted(self._actuators.values(), key=lambda a: a.actuator_id)
+        idx = channel_index - 1
+        if 0 <= idx < len(sorted_acts):
+            return sorted_acts[idx]
+        return None
+
+    def _execute_mix_batch(self, device_id: int, command_id: int, payload: dict) -> bool:
+        """Run a mix_batch command: iterate steps, pulse each channel, post mixing-event.
+
+        Returns True on success (all steps ran). Pi acks the command either way.
+        """
+        mix_plan = payload.get('mix_plan', {})
+        steps = mix_plan.get('steps', [])
+        program_id = payload.get('program_id')
+        reservoir_id = payload.get('reservoir_id') or mix_plan.get('reservoir_id')
+        water_vol = mix_plan.get('water_volume_liters', 0)
+        base_ec   = mix_plan.get('water_ec_mscm', 0)
+        farm_id   = self.cfg.get('farm', {}).get('farm_id')
+
+        if not steps:
+            log.warning('mix_batch command %s has no steps', command_id)
+            self.api.ack_command(device_id, command_id, status='failed',
+                                 result={'error': 'no steps in mix_plan'})
+            return False
+
+        log.info('mix_batch command %s: %d step(s) for reservoir %s', command_id, len(steps), reservoir_id)
+        success = True
+        for step in sorted(steps, key=lambda s: s.get('step', 0)):
+            channel = step.get('channel', step.get('step', 1))
+            run_s   = int(step.get('run_seconds', 0))
+            name    = step.get('input_name', f'channel {channel}')
+            if run_s <= 0:
+                log.warning('mix_batch step channel=%s run_seconds=%s ≤ 0, skipping', channel, run_s)
+                continue
+            actuator = self._get_channel_actuator(channel)
+            if actuator is None:
+                log.warning('No actuator mapped to mix channel %s — skipping step', channel)
+                success = False
+                continue
+            log.info('mix_batch step %d: %s channel=%s run_seconds=%s',
+                     step.get('step', channel), name, channel, run_s)
+            # Synchronous pulse — mix steps must run sequentially.
+            actuator.turn_on()
+            try:
+                time.sleep(run_s)
+            finally:
+                actuator.turn_off()
+            log.info('mix_batch step %d complete', step.get('step', channel))
+
+        # Post automated mixing event for audit trail.
+        if farm_id and reservoir_id:
+            self.api.post_mixing_event(
+                farm_id=farm_id,
+                reservoir_id=reservoir_id,
+                program_id=program_id,
+                water_volume_liters=water_vol,
+                base_ec=base_ec,
+            )
+
+        status = 'completed' if success else 'failed'
+        self.api.ack_command(device_id, command_id, status=status,
+                             result={'steps_ran': len(steps), 'success': success})
+        return success
+
+    # ── Phase 39 WS1 queue drain + legacy pending_command fallback ───────────
+
+    def _drain_queue(self, device_id: int, actuator_by_device: dict) -> int:
+        """Drain all pending commands from the WS1 queue for one device.
+
+        Returns the number of commands processed (0 = queue was empty).
+        Each command is executed synchronously so FIFO order is preserved.
+        """
+        processed = 0
+        while True:
+            cmd_row = self.api.get_next_command(device_id)
+            if cmd_row is None:
+                break  # 204 No Content — queue empty
+
+            command_id   = cmd_row.get('id')
+            command_type = cmd_row.get('command_type', 'actuator')
+            payload      = cmd_row.get('payload') or {}
+            if isinstance(payload, str):
+                try:
+                    payload = py_json.loads(payload)
+                except py_json.JSONDecodeError:
+                    payload = {}
+
+            log.info('queue command device=%s id=%s type=%s', device_id, command_id, command_type)
+
+            if command_type == 'mix_batch':
+                self._execute_mix_batch(device_id, command_id, payload)
+                processed += 1
+                continue
+
+            # actuator / pulse — same path as legacy pending_command.
+            cmd              = payload.get('command', '')
+            sched_id         = payload.get('schedule_id')
+            rule_id          = payload.get('rule_id')
+            prog_id          = payload.get('program_id')
+            pending_source   = payload.get('source', 'operator')
+            proposal_id      = payload.get('proposal_id')
+            reason           = payload.get('reason')
+            duration_seconds = payload.get('duration_seconds')
+
+            if not cmd:
+                self.api.ack_command(device_id, command_id, status='failed',
+                                     result={'error': 'empty command'})
+                processed += 1
+                continue
+
+            actuator = actuator_by_device.get(device_id)
+            if not actuator:
+                log.debug('No local actuator for device_id=%s', device_id)
+                self.api.ack_command(device_id, command_id, status='failed',
+                                     result={'error': 'no actuator mapped'})
+                processed += 1
+                continue
+
+            actuator.execute(cmd, duration_seconds=duration_seconds)
+
+            if rule_id is not None:
+                src = 'automation_rule_trigger'
+            elif pending_source in ('guardian', 'operator'):
+                src = 'manual_api_call'
+            else:
+                src = 'schedule_trigger'
+
+            meta = {}
+            if proposal_id:
+                meta['proposal_id'] = proposal_id
+            if reason:
+                meta['reason'] = reason
+            if duration_seconds:
+                meta['duration_seconds'] = duration_seconds
+
+            self.api.post_actuator_event(
+                actuator_id=actuator.actuator_id, command=cmd,
+                source=src, schedule_id=sched_id, rule_id=rule_id,
+                program_id=prog_id,
+                meta_data=meta or None,
+            )
+            self.api.ack_command(device_id, command_id, status='completed')
+            self.api.patch_device_status(device_id, 'online')
+            processed += 1
+
+        return processed
+
     def _schedule_loop(self):
         poll_interval = self.cfg.get('schedule_poll_interval_seconds', 30)
         actuator_by_device = {a.device_id: a for a in self._actuators.values()}
@@ -671,6 +907,16 @@ class Gr33nPiClient:
                 continue
             for device in self.api.get_devices():
                 did    = device.get('id')
+
+                # ── Phase 39 WS1: try the FIFO queue first ───────────────────
+                processed = self._drain_queue(did, actuator_by_device)
+                if processed > 0:
+                    continue  # queue drained; skip legacy pending_command for this device
+
+                # ── Legacy fallback: pending_command on devices.config ────────
+                # Pre-39 Pi clients used this slot. Keep reading it so old
+                # deployments upgrading to 39 don't lose in-flight commands on
+                # the first poll after upgrade. Remove in a future release.
                 config = _device_config_dict(device.get('config'))
                 pending = config.get('pending_command')
                 if not pending:
@@ -701,7 +947,7 @@ class Gr33nPiClient:
                 if not actuator:
                     log.debug('No local actuator for device_id=%s', did)
                     continue
-                log.info('Executing scheduled command %r for device_id=%s', cmd, did)
+                log.info('Executing legacy pending_command %r for device_id=%s', cmd, did)
                 actuator.execute(cmd, duration_seconds=duration_seconds)
                 if rule_id is not None:
                     src = 'automation_rule_trigger'

@@ -63,6 +63,34 @@ func (q *Queries) CreateEcTarget(ctx context.Context, arg CreateEcTargetParams) 
 	return i, err
 }
 
+// Phase 39 WS6 — hand-written (run `make sqlc` to regenerate from SQL).
+const updateReservoirBaseWater = `-- name: UpdateReservoirBaseWater :one
+UPDATE gr33nfertigation.reservoirs
+SET last_ec_mscm = $2, last_ph = $3, last_reading_time = NOW(), updated_at = NOW()
+WHERE id = $1 AND deleted_at IS NULL
+RETURNING id, farm_id, zone_id, name, description, capacity_liters, current_volume_liters, status,
+    ec_sensor_id, ph_sensor_id, temp_sensor_id, water_level_sensor_id, delivery_actuator_id,
+    last_ec_mscm, last_ph, last_reading_time, metadata, created_at, updated_at, deleted_at`
+
+type UpdateReservoirBaseWaterParams struct {
+	ID          int64          `db:"id" json:"id"`
+	LastEcMscm  pgtype.Numeric `db:"last_ec_mscm" json:"last_ec_mscm"`
+	LastPh      pgtype.Numeric `db:"last_ph" json:"last_ph"`
+}
+
+func (q *Queries) UpdateReservoirBaseWater(ctx context.Context, arg UpdateReservoirBaseWaterParams) (Gr33nfertigationReservoir, error) {
+	row := q.db.QueryRow(ctx, updateReservoirBaseWater, arg.ID, arg.LastEcMscm, arg.LastPh)
+	var i Gr33nfertigationReservoir
+	err := row.Scan(
+		&i.ID, &i.FarmID, &i.ZoneID, &i.Name, &i.Description,
+		&i.CapacityLiters, &i.CurrentVolumeLiters, &i.Status,
+		&i.EcSensorID, &i.PhSensorID, &i.TempSensorID, &i.WaterLevelSensorID, &i.DeliveryActuatorID,
+		&i.LastEcMscm, &i.LastPh, &i.LastReadingTime, &i.Metadata,
+		&i.CreatedAt, &i.UpdatedAt, &i.DeletedAt,
+	)
+	return i, err
+}
+
 // Phase 39 WS2 — hand-written (run `make sqlc` to regenerate from SQL).
 const getEcTargetByID = `-- name: GetEcTargetByID :one
 SELECT id, farm_id, zone_id, growth_stage, ec_min_mscm, ec_max_mscm, ph_min, ph_max, notes, rationale, created_at, updated_at
