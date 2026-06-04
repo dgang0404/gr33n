@@ -321,6 +321,19 @@ When shipped: operators edit **setpoints**, **ack alerts**, and read **today’s
 
 When shipped: **Dashboard** morning summary, **Fertigation** pages honor `?zone_id=`, **why-empty** hints on empty widgets, and farm-wide lists deep-link back to the zone. Guardian morning questions (“what should I do first?”) should cite Dashboard/tasks/alerts before sending operators to six sidebar hops.
 
+### 7.0h Comfort targets & automation (Phase 42 — planned)
+
+**Doc stub.** Plans: [`plans/phase_42_comfort_targets_automation_plain_language.plan.md`](plans/phase_42_comfort_targets_automation_plain_language.plan.md) · Guardian PR slice: [`plans/phase_42_guardian_pr_spec.md`](plans/phase_42_guardian_pr_spec.md).
+
+When shipped:
+
+- **Comfort bands** replace raw “Setpoints” in farmer nav; Advanced keeps the table.
+- Guardian **conversation starters** on Targets / schedules / rules pages (snapshot-aware, not generic status questions).
+- **Rule-assisted matchers** open Confirm cards for `patch_rule`, `patch_schedule`, `patch_fertigation_program` when operators ask in plain language (tools already exist; matchers are new in 42).
+- **Not Phase 46:** NL→PR when matchers miss remains [Phase 46](plans/phase_46_guardian_llm_tool_proposals.plan.md).
+
+Operator walkthrough: [operator-tour §5c](operator-tour.md#5c-comfort-bands--what-runs-when-phase-42--planned) · Guardian: [operator-tour §6e](operator-tour.md#6e-guardian-on-comfort--automation-phase-42--planned).
+
 ### 7.0e Offline field assistant (Phase 37)
 
 Physical install guidance for **non-IT operators** at sites with **no WAN** (or local-only LLM). Knowledge layers:

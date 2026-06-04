@@ -203,6 +203,39 @@ Open **Zones** → greenhouse zone → **Climate** tab: edit `greenhouse_climate
 
 ---
 
+## 5c. Comfort bands & what runs when (Phase 42 — planned)
+
+**Status:** Doc complete; implementation after [Phase 40](plans/phase_40_unified_farmer_ux_zone_cockpit.plan.md) + [Phase 41](plans/phase_41_farm_hub_coherence.plan.md). Plan: [`plans/phase_42_comfort_targets_automation_plain_language.plan.md`](plans/phase_42_comfort_targets_automation_plain_language.plan.md).
+
+**Goal:** Stop sending operators to raw **Setpoints**, **Schedules**, and **Rules** pages for everyday work. Same database fields; farmer labels and toggles.
+
+### Comfort bands (replaces “Setpoints” in Grow nav)
+
+1. Open **Grow → Targets** (route TBD: `/comfort-targets`).
+2. Pick a room — see whether humidity/temperature bands are **missing**, **ok**, or **out of range** vs recent readings.
+3. Edit **too low / just right / too high** — tied to growth stage when a crop cycle is active.
+4. Zone cockpit (Phase 40) uses the same editor inline — you should not need two different UIs for the same band.
+
+### What runs when (schedules)
+
+1. **Schedules** view shows **next run in plain English** (not cron).
+2. Simple create: “Every day at 6:00 AM” in farm timezone — cron is stored behind the scenes.
+3. Pause a schedule with a toggle — no JSON.
+
+### Automation (rules)
+
+1. Each rule is one **sentence** (what it watches, what it does).
+2. Toggle **active** off to pause without deleting.
+3. Greenhouse templates still available — **Advanced** opens full RuleForm for power users.
+
+### Power-user escape hatch
+
+**Advanced → Power settings** keeps legacy `/setpoints`, `/automation`, `/schedules` with cron and predicates.
+
+Architecture: [`farm-guardian-architecture.md` §7.0h](farm-guardian-architecture.md#70h-comfort-targets--automation-phase-42--planned).
+
+---
+
 ## 6. Farm Guardian change requests (with your OK)
 
 **Requires:** `AI_ENABLED=true`, LLM configured ([`farm-guardian-ollama-setup.md`](farm-guardian-ollama-setup.md)), demo farm selected.
@@ -285,6 +318,24 @@ A proposal is no longer one-shot. If a draft is *close but not quite right*, cor
 **What it will not do:** Guardian never writes silently. Every revision is a new frozen, Confirm-gated proposal; a correction it can't confidently interpret produces a clarifying question rather than a wrong revision.
 
 Architecture detail: [`farm-guardian-architecture.md` §7.7](farm-guardian-architecture.md#77-pr-iteration--blind-spot-facts-phase-34).
+
+### 6e. Guardian on comfort & automation (Phase 42 — planned)
+
+**Spec:** [`plans/phase_42_guardian_pr_spec.md`](plans/phase_42_guardian_pr_spec.md) · **Not** the same as [Phase 46](plans/phase_46_guardian_llm_tool_proposals.plan.md) (LLM opens PRs when matchers miss).
+
+**Starters (conversation chips):** On **Targets**, **Schedules**, and **Rules** farmer pages — short prompts such as “Set humidity comfort band for Flower Room” or “Pause shade rule for this room.” Chips **fill chat**; they do not auto-Confirm.
+
+**Matchers (new in 42):** After you send a message, the server may open a Confirm card for:
+
+| You might say | Tool (if matched) |
+|---------------|-------------------|
+| Turn off / pause the shade rule | `patch_rule` |
+| Pause the feeding schedule | `patch_schedule` |
+| Set feed volume to 0.3 L | `patch_fertigation_program` |
+
+If you get advice text but **no card**, matchers did not recognize the phrase — Phase 46 addresses broader NL; 42 adds phrases for comfort/automation only.
+
+**Prefer the UI when it exists:** Use band editor and rule/schedule **toggles** on the same pages; Guardian is for operators who think in chat first.
 
 ### 6d. First field install with Guardian, offline (Phase 37)
 

@@ -192,11 +192,14 @@ User intent
 
 ### Phase 42 — Comfort & automation
 
+**Canonical spec:** [phase_42_guardian_pr_spec.md](phase_42_guardian_pr_spec.md)
+
 | Item | Type |
 |------|------|
-| Starters for comfort band + rule off | UI |
-| Improve `patch_rule` / `patch_schedule` matcher phrases | Backend |
-| Plain-language impact lines on those cards | Already in impact.go — extend |
+| Starters on comfort / schedules / rules surfaces | UI — §2 of spec |
+| `matchComfortAutomationIntent` for patch_* tools | Backend — §3 of spec |
+| Persona + impact copy | WS6 in parent plan |
+| operator-tour §5c + §6e, architecture §7.0h | Docs — written (planned ship) |
 
 ### Phase 43 — Operations
 
