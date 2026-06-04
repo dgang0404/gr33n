@@ -120,7 +120,7 @@ Phase 40 inline edit is the **wedge**; Phase 42 **owns the full comfort-target e
 | **43** | Operations hub | Stock, recipes, feeding admin, receipts — not NF schema tour | [phase_43](phase_43_operations_stock_feeding_finance.plan.md) |
 | **44** | Getting started & edge | New farm wizard; Pi install in-app; Guardian setup paths | [phase_44](phase_44_getting_started_edge_wizard.plan.md) |
 | **45** | Validation & polish | Real farmer sit-in fixes; mobile checklist; copy pass v2 | [phase_45](phase_45_farmer_validation_whole_app_polish.plan.md) |
-| **46** | LLM tool proposals | PR card from free-form write asks when matchers miss — **not** starter chips | [phase_46](phase_46_guardian_llm_tool_proposals.plan.md) |
+| **46** | LLM tool proposals | Hybrid C: matchers first; validated LLM proposal on miss — **not** starter chips | [phase_46](phase_46_guardian_llm_tool_proposals.plan.md) |
 
 **Start Phase 40 only after** [Pre–Phase 40 gate](phase_35_37_operational_closure.plan.md#prephase-40-gate-start-feature-work-only-when-these-are-green) is green — including Guardian PR docs ([guide](../guardian-change-requests-guide.md), [PR UX plan](guardian_pr_ux_through_farmer_phases.plan.md)). **Do not** wait for 42–45 to start 40 — they follow in order.
 
@@ -148,7 +148,10 @@ Guardian **proposals** are not Git PRs — they are **Confirm-gated change reque
 | Doc | Use |
 |-----|-----|
 | [guardian-change-requests-guide.md](../guardian-change-requests-guide.md) | Operator + industry patterns + inbox flow |
-| [guardian_pr_ux_through_farmer_phases.plan.md](guardian_pr_ux_through_farmer_phases.plan.md) | Conversation starters, triggers per phase 40–45, LLM-tool gap |
+| [guardian_pr_ux_through_farmer_phases.plan.md](guardian_pr_ux_through_farmer_phases.plan.md) | Starters + matchers per phase 40–46 |
+| [phase_44_guardian_pr_spec.md](phase_44_guardian_pr_spec.md) | Wizards first; setup starters |
+| [phase_45_guardian_pr_spec.md](phase_45_guardian_pr_spec.md) | Sit-in PR paths |
+| [farmer-sit-in-protocol.md](../workstreams/farmer-sit-in-protocol.md) | Phase 45 validation script |
 
 **UX rule for 40+:** Zone **inline** actions (ack alert, edit band, run now) beat PRs for the same job. Starters are shortcuts to **send chat**, not auto-approvals.
 

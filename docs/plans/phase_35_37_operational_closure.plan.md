@@ -234,7 +234,7 @@ Feature detail: [`phase_39_edge_fertigation_execution.plan.md`](phase_39_edge_fe
 
 **Pending rows in this plan’s todo list:** only **OC-40** and **OC-41** are intentionally open — they track *future* closure, not missing pre-40 work. Do not block Phase 40 on them.
 
-**Documentation gate (before Phase 40 code):** [guardian-change-requests-guide.md](../guardian-change-requests-guide.md) + [guardian_pr_ux_through_farmer_phases.plan.md](guardian_pr_ux_through_farmer_phases.plan.md).
+**Documentation gate (before Phase 40 code):** [guardian-change-requests-guide.md](../guardian-change-requests-guide.md) + [guardian_pr_ux_through_farmer_phases.plan.md](guardian_pr_ux_through_farmer_phases.plan.md) + per-phase Guardian specs **42–46** ([phase_42_guardian_pr_spec.md](phase_42_guardian_pr_spec.md) … [phase_46](phase_46_guardian_llm_tool_proposals.plan.md)) + [farmer-sit-in-protocol.md](../workstreams/farmer-sit-in-protocol.md).
 
 **Optional hygiene (not blocking):** `make rag-ingest-platform-docs` after doc edits; push `main` to origin when ready.
 

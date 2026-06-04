@@ -6,7 +6,10 @@ overview: >
   "rough around the edges" gap that feature phases cannot predict.
 todos:
   - id: ws1-sit-in-protocol
-    content: "WS1: Sit-in protocol doc — tasks, script, success metrics; recruit 2–3 non-technical testers"
+    content: "WS1: farmer-sit-in-protocol.md — ack, setup pack, dismiss PR paths; 2–3 testers"
+    status: pending
+  - id: ws8-guardian-pr-slice
+    content: "WS8: phase_45_guardian_pr_spec — validate three PR paths; matcher gaps → 46"
     status: pending
   - id: ws2-friction-backlog
     content: "WS2: Triage sit-in findings into P0/P1 fixes (UI-only preferred)"
@@ -37,6 +40,8 @@ isProject: false
 
 **Roadmap:** [farmer_ux_roadmap_40_plus.plan.md](farmer_ux_roadmap_40_plus.plan.md)
 
+**Guardian slice (doc complete):** [phase_45_guardian_pr_spec.md](phase_45_guardian_pr_spec.md) · Protocol: [farmer-sit-in-protocol.md](../workstreams/farmer-sit-in-protocol.md)
+
 ---
 
 ## Problem
@@ -54,16 +59,15 @@ Phase 45 is **evidence-driven polish**, not new domain features.
 
 ## WS1 — Sit-in protocol
 
-**Artifact:** `docs/workstreams/farmer-sit-in-protocol.md` (create in WS1).
+**Artifact:** [farmer-sit-in-protocol.md](../workstreams/farmer-sit-in-protocol.md) (WS1).
 
 | Session | Script |
 |---------|--------|
-| Morning | Open Dashboard → handle alert → open zone → adjust comfort |
-| Feed | Run program or pulse; read water story |
-| Stock | Find low input; log mix (if applicable) |
-| Setup (fresh profile) | New farm wizard only |
+| A — Returning | Dashboard → **ack_alert PR** → zone cockpit → feed |
+| B — Fresh setup | Wizards first → **setup pack PR** → **dismiss drill** |
+| C — Mobile (optional) | Ack + Confirm/Dismiss on phone |
 
-Record: confusion points, verbatim quotes, time-on-task.
+**Required Guardian paths:** ack · setup pack · dismiss — see protocol §4.
 
 ---
 
@@ -119,6 +123,16 @@ Focus visible, aria labels on Run now / Confirm, chip contrast — no full WCAG 
 
 ---
 
+## WS8 — Guardian PR validation
+
+| Item | Owner |
+|------|--------|
+| Run protocol §4 three paths | QA — [phase_45_guardian_pr_spec.md](phase_45_guardian_pr_spec.md) |
+| Matcher gap backlog | → [phase_46](phase_46_guardian_llm_tool_proposals.plan.md) §9 |
+| Copy/a11y on Confirm/Dismiss | WS3 + WS6 |
+
+---
+
 ## Out of scope (remain Tier D)
 
 - Closed-loop EC dosing
@@ -131,7 +145,8 @@ Focus visible, aria labels on Run now / Confirm, chip contrast — no full WCAG 
 ## Definition of done
 
 - [ ] ≥2 sit-ins completed; P0 backlog empty
+- [ ] Guardian ack + setup pack + dismiss **pass** per protocol
 - [ ] Copy pass v2 merged
 - [ ] Mobile checklist executed or explicitly deferred with reason
-- [ ] README + operator-tour updated
+- [ ] README + operator-tour §9 updated
 - [ ] OC-45 closed

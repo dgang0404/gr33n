@@ -214,18 +214,36 @@ User intent
 
 ### Phase 44 — Getting started
 
+**Canonical spec:** [phase_44_guardian_pr_spec.md](phase_44_guardian_pr_spec.md)
+
 | Item | Type |
 |------|------|
-| Setup mode persona flag in chat when `?setup=1` or first-run | Handler optional |
-| Starters: bootstrap template, grow setup pack | UI |
-| Wizard primary; Guardian secondary | UX principle |
+| Wizards first (farm / zone / device / checklist) | UI — parent WS1–WS5 |
+| Setup-mode persona (`?setup=1`, zero zones) | Handler — spec §5 |
+| Starters (grow setup, ack, procedures) — **not** bootstrap auto-PR | UI — spec §4 |
+| operator-tour §8 + §6g, architecture §7.0j | Docs — written (planned ship) |
 
 ### Phase 45 — Validation
 
+**Canonical spec:** [phase_45_guardian_pr_spec.md](phase_45_guardian_pr_spec.md) · **Protocol:** [farmer-sit-in-protocol.md](../workstreams/farmer-sit-in-protocol.md)
+
 | Item | Type |
 |------|------|
-| Sit-in script includes 3 PR paths: ack, setup pack, dismiss | Protocol |
-| Fix matcher gaps found in sit-in | Backlog → §8 |
+| Sit-in: ack_alert, apply_grow_setup_pack, dismiss | Protocol §4 |
+| Matcher gaps → Phase 46 backlog | Process — spec §5 |
+| Copy/a11y on Confirm/Dismiss | WS3 + WS6 parent |
+| operator-tour §9 | Docs — written (planned ship) |
+
+### Phase 46 — LLM tool proposals
+
+**Canonical spec:** [phase_46_guardian_llm_tool_proposals.plan.md](phase_46_guardian_llm_tool_proposals.plan.md) (full phase doc)
+
+| Item | Type |
+|------|------|
+| Hybrid C: matchers first, LLM JSON on miss | Backend — plan §4 |
+| Tool allowlist + validation | Backend — plan §5–6 |
+| Feature flag + Operate gate | Policy — plan §4.1 |
+| operator-tour §6h, architecture §7.0k | Docs — written (planned ship) |
 
 ---
 
@@ -252,23 +270,13 @@ Implement via `ui/src/lib/guardianContextPrompts.js` (build message from props +
 
 ---
 
-## §8 — Future: LLM structured tool proposals (Phase 46)
+## §8 — LLM structured tool proposals (Phase 46)
 
-**Plan:** [`phase_46_guardian_llm_tool_proposals.plan.md`](phase_46_guardian_llm_tool_proposals.plan.md)
+**Plan (expanded):** [`phase_46_guardian_llm_tool_proposals.plan.md`](phase_46_guardian_llm_tool_proposals.plan.md)
 
-**Problem:** Rule-assisted matchers do not cover all natural-language asks.
+**Decision (doc gate):** **Hybrid C** — matchers first; validated LLM `tool` + `args` only on write-intent miss + Operate + allowlist.
 
-**Options (pick one in Phase 46):**
-
-| Option | Pros | Cons |
-|--------|------|------|
-| **A. More matchers** | Deterministic, testable | Maintenance |
-| **B. LLM JSON tool proposal** | Flexible language | Validation, safety, cost |
-| **C. Hybrid** | Matcher first; LLM only if no match + Operate role | Complexity |
-
-**Invariant unchanged:** Confirm gate + frozen args + audit.
-
-**Not in 40–45 v1** — document so Phase 40 does not promise “any ask creates a PR.”
+**Not in 40–45 v1** — Phase 40 must not promise “any ask creates a PR.”
 
 ---
 

@@ -23,6 +23,9 @@ todos:
   - id: ws6-docs-tests
     content: "WS6: operator-tour §8 setup; architecture §7.0j; Vitest wizard flows; OC-44"
     status: pending
+  - id: ws8-guardian-pr-slice
+    content: "WS8: phase_44_guardian_pr_spec — wizards first; setup starters + setup-mode second"
+    status: pending
 isProject: false
 ---
 
@@ -35,6 +38,8 @@ isProject: false
 **Prerequisite API:** [Phase 15](phase_15_farm_onboarding.plan.md) bootstrap templates ✅.
 
 **Roadmap:** [farmer_ux_roadmap_40_plus.plan.md](farmer_ux_roadmap_40_plus.plan.md)
+
+**Guardian slice (doc complete):** [phase_44_guardian_pr_spec.md](phase_44_guardian_pr_spec.md) — wizards primary; starters + setup-mode secondary.
 
 ---
 
@@ -99,8 +104,11 @@ Embed checklist from pi-integration-guide (not PDF-only).
 
 ## WS4 — Guardian setup mode
 
-- Chat system hint when farm has zero zones: suggest **apply_grow_setup_pack** or step-by-step tools.
-- Proposal cards use checklist UI (already partially in setup pack card).
+**Spec:** [phase_44_guardian_pr_spec.md](phase_44_guardian_pr_spec.md) §5.
+
+- Chat system hint when farm has zero zones or `?setup=1`.
+- Starters send grow-setup phrases; **`apply_grow_setup_pack`** matcher unchanged (Phase 32).
+- **Bootstrap** via wizard POST — not chat-first (`apply_bootstrap_template` stays admin PR).
 
 ---
 
@@ -122,7 +130,18 @@ Links to wizards; dismiss when complete.
 
 ## WS6 — Docs, tests, closure (OC-44)
 
-operator-tour §8, architecture §7.0j, Vitest wizard navigation, smoke bootstrap apply from UI path.
+operator-tour §8 + §6g, architecture §7.0j, Vitest wizard navigation, smoke bootstrap apply from UI path.
+
+---
+
+## WS8 — Guardian PR slice
+
+| Item | Owner |
+|------|--------|
+| Starters on checklist, wizards, empty zone | UI — spec §4 |
+| Setup-mode persona | Handler — spec §5 |
+| Grow-setup PR via existing matcher | Backend — no new tool |
+| Bootstrap **not** via starter chips | UX rule — spec §3 |
 
 ---
 
@@ -139,4 +158,12 @@ operator-tour §8, architecture §7.0j, Vitest wizard navigation, smoke bootstra
 - [ ] Farm + zone + device wizards shipped
 - [ ] First-run checklist on Dashboard
 - [ ] Pi steps reachable without leaving app
-- [ ] operator-tour §8 + OC-44
+- [ ] Guardian WS8 per [phase_44_guardian_pr_spec.md](phase_44_guardian_pr_spec.md)
+- [ ] operator-tour §8 + §6g + OC-44
+
+## Related
+
+| Doc | Use |
+|-----|-----|
+| [phase_44_guardian_pr_spec.md](phase_44_guardian_pr_spec.md) | Wizards vs starters |
+| [phase_32_guardian_grow_setup_prs.plan.md](phase_32_guardian_grow_setup_prs.plan.md) | Setup pack |

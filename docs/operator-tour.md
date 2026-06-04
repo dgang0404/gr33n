@@ -354,6 +354,23 @@ If you get advice text but **no card**, matchers did not recognize the phrase �
 
 Guardian **cannot** adjust batch quantities or post receipts via Confirm in Phase 43 — use the hub UI; broader NL writes are Phase 46.
 
+### 6g. Guardian during setup (Phase 44 — planned)
+
+**Spec:** [`plans/phase_44_guardian_pr_spec.md`](plans/phase_44_guardian_pr_spec.md)
+
+- **Wizards win** — farm template, zone, and device are not created by starter chips.
+- **Starters** on the first-run checklist and empty zone: grow-setup phrase, ack alert, Pi procedure help.
+- **Grow setup pack** — same Confirm bundle as [§6b](#6b-grow-setup-via-guardian-phase-32); use after the zone exists.
+- **Bootstrap template** — apply in the **Farm setup wizard**, not via a chip that opens `apply_bootstrap_template`.
+
+### 6h. When Guardian opens a card from your words (Phase 46 — planned)
+
+**Spec:** [`plans/phase_46_guardian_llm_tool_proposals.plan.md`](plans/phase_46_guardian_llm_tool_proposals.plan.md)
+
+Today most cards come from **pattern matchers** after you send a message. Phase 46 adds a **second path**: if matchers miss but you clearly asked for a change (and you have **Operate**), the LLM may suggest a **validated** tool + args — you still **Confirm**.
+
+**Still true:** Dismiss does nothing to your data · setup pack and bootstrap are not LLM-autopilot · read-only questions never Confirm.
+
 ### 6d. First field install with Guardian, offline (Phase 37)
 
 **Requires:** `AI_ENABLED=true`, demo or real farm selected, **Operate** optional for procedure-only turns (Confirm still needed for write proposals).
@@ -428,7 +445,44 @@ Architecture: [`farm-guardian-architecture.md` §7.0i](farm-guardian-architectur
 
 ---
 
-## 8. Related docs
+## 8. Getting started & edge install (Phase 44 — planned)
+
+**Status:** Doc complete; after Phases 40–43. Plan: [`plans/phase_44_getting_started_edge_wizard.plan.md`](plans/phase_44_getting_started_edge_wizard.plan.md).
+
+**Rule:** Use **wizards and checklist buttons** first. Guardian is for questions and the grow-setup **Confirm** bundle — not the only path.
+
+| Wizard | Job |
+|--------|-----|
+| Farm setup | Pick template → preview → apply bootstrap |
+| Add zone | Name, type, optional lighting preset |
+| Edge device | API key, test connection, assign zone |
+| First-run checklist | Zone → device → comfort band → one schedule |
+
+Pi steps: embedded checklist from [pi-integration-guide.md](pi-integration-guide.md); offline procedures in §6d.
+
+Architecture: [`farm-guardian-architecture.md` §7.0j](farm-guardian-architecture.md#70j-getting-started--edge-wizards-phase-44--planned).
+
+---
+
+## 9. Farmer validation sit-in (Phase 45 — planned)
+
+**Status:** Doc complete; after Phase 44 ships. Protocol: [`workstreams/farmer-sit-in-protocol.md`](workstreams/farmer-sit-in-protocol.md).
+
+**Goal:** Prove a non-technical operator can run the daily loop and trust Guardian **Confirm** vs **Dismiss**.
+
+**Three required PR exercises:**
+
+1. **Ack alert** — proposal card → Confirm → alert cleared.
+2. **Grow setup pack** — empty zone → phrase or starter → review bundle → Confirm → plant + program exist.
+3. **Dismiss** — open a card → Dismiss → **no farm data change**.
+
+Matcher misses from sit-in feed Phase 46 — not a blocker for calling v1 farmer-ready.
+
+Spec: [`plans/phase_45_guardian_pr_spec.md`](plans/phase_45_guardian_pr_spec.md).
+
+---
+
+## 10. Related docs
 
 | Doc | Use |
 |-----|-----|

@@ -70,6 +70,8 @@ Phase 25 plans should **assume** this sit-in stream has at least **operator tour
 
 **Phase 27** (Farm Guardian AI layer) continues from **[phase_27_farm_guardian_ai_layer.md](../plans/phase_27_farm_guardian_ai_layer.md)** — e.g. **`AI_ENABLED`**, **`GET /capabilities`**, **`POST /v1/chat`** (stub → full RAG-backed chat). This section links the calendar phase without moving Phase 27 tasks into the sit-in backlog unless operator UX explicitly needs it.
 
+**Phase 45 farmer sit-in (calendar):** one-time validation after Phases 40–44 — scripted Guardian PR paths (ack, setup pack, dismiss). Protocol: **[farmer-sit-in-protocol.md](farmer-sit-in-protocol.md)** · spec: **[phase_45_guardian_pr_spec.md](../plans/phase_45_guardian_pr_spec.md)**. Distinct from this ongoing sit-in stream (logging, tour, tasks-first).
+
 ---
 
 ## Changelog

@@ -49,8 +49,9 @@ isProject: false
 | **3** | Phase 40 DoD + operator-tour §4b stub + architecture §7.0f/§7.0g stubs | ✅ |
 | **4** | workflow-guide §4b; operator-tour §3b + §3/§4b manifest notes; RAG checklist below | ✅ |
 | **5** | [guardian-change-requests-guide.md](../guardian-change-requests-guide.md) + [guardian_pr_ux_through_farmer_phases.plan.md](guardian_pr_ux_through_farmer_phases.plan.md) | ✅ |
+| **6** | Guardian PR specs [42](phase_42_guardian_pr_spec.md)–[46](phase_46_guardian_llm_tool_proposals.plan.md) + [farmer-sit-in-protocol.md](../workstreams/farmer-sit-in-protocol.md) + operator-tour §5c–§9, §6e–§6h, arch §7.0h–§7.0l | ✅ |
 
-**Documentation status:** Chunks 1–4 complete. Phases **39**, **39b**, and **product backlog** shipped on `main`; safe to start **Phase 40** once backlog code is **committed** and smokes pass. **OC-40 / OC-41** in [`phase_35_37_operational_closure.plan.md`](phase_35_37_operational_closure.plan.md) close *with* those phases (WS8), not before them.
+**Documentation status:** Chunks 1–6 complete. Phases **39**, **39b**, and **product backlog** shipped on `main`. **Guardian/PR docs for phases 42–46** are written — safe to start **Phase 40** code when you accept the doc gate; **OC-40 … OC-46** close with each phase’s WS8, not before ship.
 
 ---
 
