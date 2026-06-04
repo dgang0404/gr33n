@@ -8,8 +8,9 @@
 # Phase 36 greenhouse: operator-tour.md §5b; Phase 38 plant-needs §4a + architecture §7.0d; pulse §1.1 in pi-integration-guide.md.
 # Phase 37: operator-tour.md §6d offline field install; architecture §7.0e; offline-or-intranet-deployment.md field assistant section.
 #
-# Phase 39 (re-ingest after ship): operator-tour.md §3 actuation path (queue not single pending_command);
-#   workflow-guide.md §4b row "39"; pi-integration-guide.md queue + mix_batch sections; architecture §7.0d "Not shipped" bullets removed.
+# Phase 39 shipped — re-ingest platform docs after operator-doc edits:
+#   operator-tour.md §3–§4a (queue + automated mix); workflow-guide.md §4 + §4b;
+#   pi-integration-guide.md §1.1 queue + mix_batch; farm-guardian-architecture.md mix bullets.
 #
 # Phase 40 (re-ingest after ship): operator-tour.md §4b zone cockpit (replace stub with full walk);
 #   workflow-guide.md §4b row "40"; architecture §7.0f (replace stub); farm-guardian-persona zone-first edits if any.

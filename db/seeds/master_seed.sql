@@ -727,6 +727,47 @@ WHERE z.farm_id = 1
         AND p.deleted_at IS NULL
   );
 
+-- Phase 39 WS8 — demo prerequisites for automated mix (base EC + delivery pump + parseable dilution)
+INSERT INTO gr33ncore.actuators
+    (device_id, farm_id, zone_id, name, actuator_type, hardware_identifier, current_state_text, config)
+SELECT
+    d.id,
+    1,
+    d.zone_id,
+    'Veg Room Irrigation Pump',
+    'pump',
+    'relay_2',
+    'offline',
+    '{"channel": 2, "simulation": true}'::jsonb
+FROM gr33ncore.devices d
+WHERE d.farm_id = 1
+  AND d.device_uid = 'demo-veg-relay-01'
+  AND NOT EXISTS (
+      SELECT 1 FROM gr33ncore.actuators a
+      WHERE a.farm_id = 1 AND a.name = 'Veg Room Irrigation Pump' AND a.deleted_at IS NULL
+  );
+
+UPDATE gr33nfertigation.reservoirs rv
+SET last_ec_mscm = 0.20,
+    last_ph = 7.0,
+    last_reading_time = NOW(),
+    delivery_actuator_id = (
+        SELECT a.id FROM gr33ncore.actuators a
+        WHERE a.farm_id = 1 AND a.name = 'Veg Room Irrigation Pump' AND a.deleted_at IS NULL
+        LIMIT 1
+    )
+WHERE rv.farm_id = 1
+  AND rv.name = 'Main Nutrient Reservoir'
+  AND rv.deleted_at IS NULL;
+
+-- Override combo recipe text with a parseable ratio for cloud MixPlan demo (recipe row unchanged)
+UPDATE gr33nfertigation.programs
+SET dilution_ratio = '1:500'
+WHERE farm_id = 1
+  AND name = 'Veg Daily JLF Program'
+  AND deleted_at IS NULL
+  AND dilution_ratio IS NULL;
+
 INSERT INTO gr33nfertigation.fertigation_events
     (farm_id, program_id, reservoir_id, zone_id, applied_at, growth_stage,
      volume_applied_liters, run_duration_seconds, ec_before_mscm, ec_after_mscm,

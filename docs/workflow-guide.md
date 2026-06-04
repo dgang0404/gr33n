@@ -83,7 +83,7 @@ Operator flow for controlling an actuator:
    - **`DELETE /devices/{id}/pending-command`** — clears the slot so the command does not repeat.
 6. The API fans this out: actuator state, **`GET /schedules/{id}/actuator-events`**, and **`gr33ncore.automation_runs`** / program run rows stay joinable for audit.
 
-**Single pending slot (Phase 38 — queue in Phase 39):** `SetDevicePendingCommand` stores **one** JSON object at `devices.config.pending_command`. If the automation worker (schedule, rule, or fertigation program tick), **`enqueue_actuator_command`** (Guardian Confirm), and **`POST /actuators/{id}/command`** (operator) all write within the same Pi poll interval, **the last writer wins** and earlier commands are dropped. Safe today: one dominant writer per device per minute, or staggered manual tests. **Phase 39** adds a FIFO **`device_commands`** queue so mix steps + irrigate pulse can run in order.
+**Command queue (Phase 39):** writers enqueue to **`device_commands`** (FIFO). `SetDevicePendingCommand` still mirrors the queue head for one release. Pi clients should **`GET /devices/{id}/commands/next`** and ack — see [`pi-integration-guide.md`](pi-integration-guide.md) §1.1. Do not rely on concurrent writes to **`pending_command` alone**.
 
 **Timed pulse (Phase 38):** operator or program enqueue may include **`duration_seconds`** on `pending_command` (pumps/relays). The Pi runs **on → wait → off** ([`pi-integration-guide.md`](pi-integration-guide.md)). This is **not** multi-step nutrient dosing.
 
@@ -217,13 +217,14 @@ Line items per mixing event are available at `GET /farms/{id}/fertigation/mixing
 
 **Manual mixing vs automated edge (Guardian / operators):**
 
-| Mode | Today (shipped) | Planned (Phase 39) |
-|------|-----------------|---------------------|
-| **Operator mixes by hand** | **Fertigation → Mixing log** or `POST /farms/{id}/fertigation/mixing-events` with components, measured EC/pH, reservoir | Same — remains the audit trail |
-| **Program fires on schedule** | Worker runs **`control_actuator`** (often `on`) and may pass **`run_duration_seconds`** as **`duration_seconds`** on `pending_command` — **irrigation pump pulse only** | Queue **`mix_batch`** (recipe + base water EC + target → per-channel pump seconds) **then** irrigate pulse |
-| **EC math on the Pi** | **Not implemented** — cloud has recipes, EC targets, and programs; Pi does not compute doses | Cloud **`MixPlan`** → edge executes steps |
+| Mode | Shipped (Phase 39) |
+|------|---------------------|
+| **Operator mixes by hand** | **Fertigation → Mixing log** or `POST /farms/{id}/fertigation/mixing-events` — always the audit trail for labs without hardware |
+| **Operator previews / enqueues mix on edge** | **`POST /farms/{id}/fertigation/mix-jobs`** (`preview_only: true` or enqueue); requires reservoir **base water EC** via **`PATCH /fertigation/reservoirs/{rid}/base-water`** |
+| **Program fires on schedule** | Worker enqueues **`mix_batch`** (when recipe + reservoir + base EC) **then** **`pulse`** irrigate on the device **FIFO queue** — no last-write-wins |
+| **EC math** | Cloud **`MixPlan`** (`internal/fertigation/mixplan`); Pi runs **`run_seconds`** per channel only |
 
-Until Phase 39 ships, tell operators and Guardian users: **log mixes in the UI**; do not promise automatic nutrient dosing from programs alone.
+**Zone Water tab:** **`GET /fertigation/programs/{rid}/water-status`** — queue depth, mix preview, last mixing event. See [operator-tour §4a](operator-tour.md#4a-plant-needs-per-zone-phase-38).
 
 ### Fertigation events (what the zone received)
 
@@ -242,13 +243,13 @@ Both accept arbitrary `meta` JSON for tags, notes, or integrations with the **Co
 
 **Fertigation with natural-farming inputs.** Components on a mixing event can draw from either commercial nutrient batches or **natural-farming input batches** (fermented extracts, microbial inoculants, etc.) — the schema doesn't distinguish, it just debits whatever `input_batches.id` you cite. The **JADAM indoor photoperiod starter** bootstrap seeds a handful of JADAM-style inputs (JMS, JLF, FFJ, WCA) so operators following that method have realistic demo data out of the box; operators using other approaches add their own input definitions and the rest of the fertigation pipeline is unchanged. See [`terminology-guideline.md`](terminology-guideline.md) for why we call the API module **natural farming** (the generic umbrella) rather than tying it to any nationality or tradition.
 
-### 4b. Planned operator UX after Phase 38 (39, 40, 41, 39b)
+### 4b. Operator UX roadmap (39 shipped; 40, 41, 39b planned)
 
-**Status:** Planning complete; implementation not started. Canonical gap index: [`plans/pre_development_gaps_index.plan.md`](plans/pre_development_gaps_index.plan.md). **Do not** tell operators these features work until the matching phase ships.
+**Phase 39 — shipped.** FIFO **`device_commands`** queue, cloud **`MixPlan`**, Pi **`mix_batch`** + **pulse**, reservoir base EC, Zone Water preview. Canonical plan: [`plans/phase_39_edge_fertigation_execution.plan.md`](plans/phase_39_edge_fertigation_execution.plan.md).
 
 | Phase | What changes for operators | Workflow impact |
 |-------|---------------------------|-----------------|
-| **[39 — Edge fertigation](plans/phase_39_edge_fertigation_execution.plan.md)** | FIFO **`device_commands`** queue per device; cloud **`MixPlan`**; Pi **`mix_batch`** steps then **pulse** irrigate | §2 actuation path moves from one `pending_command` slot to ordered dequeue. Programs can enqueue **mix then irrigate** without last-write-wins. Manual **`POST …/mixing-events`** stays for labs without hardware. |
+| **39 — Edge fertigation** ✅ | Queue + **`MixPlan`** + Pi mix executor | §2 actuation: ordered dequeue; program tick enqueues **mix then irrigate**. Manual mixing log unchanged. |
 | **[40 — Zone cockpit](plans/phase_40_unified_farmer_ux_zone_cockpit.plan.md)** | **Zones → Overview / Water / Light / Climate** become the edit surface: inline setpoints, zone alerts, Today strip, Water **grow story** | Operators fix targets and ack alerts **in the zone**; Advanced (`/setpoints`, `/automation`, `/schedules`) remain for power users. Guardian should prefer zone-scoped guidance ([architecture §7.0f](farm-guardian-architecture.md)). Walkthrough: [operator-tour §4b](operator-tour.md#4b-zone-cockpit-walkthrough-phase-40--planned). |
 | **[41 — Farm hub](plans/phase_41_farm_hub_coherence.plan.md)** | **Dashboard** morning chips; **Fertigation** honors `?zone_id=`; **Tasks / Schedules / Alerts** keep zone context; **why-empty** hints | Closes the “six sidebar hops” problem when the zone cockpit is done but farm-wide pages still feel disconnected. Walkthrough: [operator-tour §3b](operator-tour.md#3b-farm-hub--morning-path-phase-41--planned). |
 | **[39b — Plain irrigation](plans/phase_39b_plain_irrigation.plan.md)** | **`irrigation_only`** programs — pulse without recipe/EC math | RO/well farms: no mix preview, no fake nutrient story. After 39 WS1 queue. |

@@ -30,7 +30,7 @@ todos:
     status: done
   - id: ws8-docs-tests-seed
     content: "WS8: Docs + tests + seed — pi-integration-guide, workflow-guide, operator-tour, smokes, optional demo mixer bootstrap"
-    status: pending
+    status: done
 isProject: false
 ---
 
@@ -38,7 +38,7 @@ isProject: false
 
 ## Status
 
-**WS1–WS7 complete.** WS8 (docs + smokes + seed) remaining. Depends on Phases **22** (program tick + `executable_actions`), **35** (lighting — unchanged), **38** (zone Water UI + `duration_seconds` pulse). Does **not** replace operator-logged mixing (`POST …/mixing-events`); it **automates** the same audit trail when hardware exists.
+**Phase 39 complete (WS1–WS8).** Depends on Phases **22**, **35**, **38**. Manual **`POST …/mixing-events`** remains for labs without hardware; edge path automates the same audit trail when a Pi and pumps exist.
 
 ---
 
@@ -334,12 +334,12 @@ Queue first (unblocks safe multi-step). Calculator before Pi executor. Worker pi
 
 ## Definition of done
 
-- [ ] `device_commands` queue; no silent overwrites of concurrent automation
-- [ ] Mix plan from recipe + base EC + target EC
-- [ ] `mix_batch` enqueued by program tick and operator API
-- [ ] Pi drains queue; mixing_event written on completion
-- [ ] Phase 38 pulse remains valid as queued `pulse` commands
-- [ ] Docs + smokes; seed still loads; operator-tour explains automated vs manual mix
+- [x] `device_commands` queue; no silent overwrites of concurrent automation
+- [x] Mix plan from recipe + base EC + target EC
+- [x] `mix_batch` enqueued by program tick and operator API
+- [x] Pi drains queue; mixing_event written on completion
+- [x] Phase 38 pulse remains valid as queued `pulse` commands
+- [x] Docs + smokes; seed still loads; operator-tour explains automated vs manual mix
 
 ---
 

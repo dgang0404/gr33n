@@ -51,9 +51,11 @@ Each tab shows the **connection chain**: live **reading** → **target band** (s
 
 **Navigation:** sidebar **Grow** (zones, fertigation) and **Operate** (tasks, schedules, lighting) are the day-to-day path; **Advanced** holds Rules, Setpoints, Controls, and Sensors for power users.
 
-**Edge commands (important):** automation, Guardian Confirm, and manual **Controls** all write **`pending_command`** on a device. Today there is **only one slot per device** — if a schedule, fertigation program, and operator all enqueue within the same poll window, **the last write wins** and earlier commands can be lost. Use **Run pulse** for timed pump runs (Phase 38); do not assume the Pi is running a full multi-step nutrient mix automatically.
+**Edge commands (Phase 39):** automation, Guardian Confirm, manual **Controls**, and fertigation **mix-jobs** enqueue to a **FIFO command queue** per device (`device_commands`). The Pi drains **`GET /devices/{id}/commands/next`** in order — **`mix_batch`** nutrient steps, then **pulse** irrigate, without last-write-wins. Legacy **`pending_command`** still works one release as a fallback.
 
-**Automated mixing on the Pi:** **not available yet.** Operators record what went into the tank via **Fertigation → Mixing log** (API `POST …/mixing-events`). A future **Phase 39** will add a device **command queue** and **`mix_batch`** steps (recipe + base reservoir EC → pump seconds on the edge). Until then, Guardian and docs should treat fertigation programs as **pulse irrigation + logging**, not EC dosing hardware.
+**Automated mixing on the Pi (Phase 39):** when a program has a **recipe + reservoir + base water EC**, the cloud calculates a **mix plan** and the Pi runs per-channel pump seconds. Operators without edge hardware still use **Fertigation → Mixing log**. Before the first automated mix, set **base water EC** on the reservoir (API `PATCH /fertigation/reservoirs/{rid}/base-water` or future reservoir card). **Zone → Water** tab: preview mix plan, queue depth chip, last mix “EC met” badge.
+
+**Plain irrigation only:** programs with no recipe skip mix — pulse only ([Phase 39b](plans/phase_39b_plain_irrigation.plan.md) will add explicit `irrigation_only` copy).
 
 ---
 
@@ -94,9 +96,7 @@ flowchart LR
 
 **Reading path:** Hardware → (optional Pi / `gr33n_client.py`) → `POST` readings → API → `sensor_readings` (and related). The UI can subscribe to **SSE** live readings for the selected farm (`/farms/{id}/sensors/stream`) so charts update without polling everything.
 
-**Actuation path:** Rules / schedules / fertigation programs → worker or operator → **`pending_command`** on the device row → Pi poll → GPIO → **`actuator_events`**. One pending slot per device today (see §4a).
-
-**After Phase 39 (planned):** writers enqueue to **`device_commands`** (FIFO); Pi drains via **`GET /devices/{id}/commands/next`** (see [`workflow-guide.md`](workflow-guide.md) §4b, [`pi-integration-guide.md`](pi-integration-guide.md)). `pending_command` may mirror queue head for one release. **Re-ingest RAG** after §3 text is updated on ship — see [`rag/platform-doc-manifest.yaml`](rag/platform-doc-manifest.yaml).
+**Actuation path:** Rules / schedules / fertigation programs → worker or operator → **`device_commands`** queue (FIFO) → Pi **`GET /devices/{id}/commands/next`** → GPIO → **`actuator_events`** (+ **mixing_events** for `mix_batch`). `pending_command` mirrors queue head for backward compat (see §4a, [`pi-integration-guide.md`](pi-integration-guide.md) §1.1).
 
 ---
 
@@ -182,7 +182,7 @@ Clone inactive template rules for another zone: **`POST /farms/{id}/automation/r
 
 ### Manual and Guardian control
 
-**Execution path:** rules and Guardian write **`pending_command`** on the device; the Pi client executes on GPIO (same as lights and pumps). Motor verbs map to relay on/off using actuator **config** polarity. Only **one** pending command per device at a time — avoid overlapping automation and manual enqueue on the same Pi device (Phase 39 command queue will fix this).
+**Execution path:** rules and Guardian enqueue **`device_commands`** (FIFO); the Pi drains the queue on GPIO (same as lights and pumps). Motor verbs map to relay on/off using actuator **config** polarity.
 
 | Intent | Typical command | Guardian / API |
 |--------|-----------------|----------------|
@@ -334,7 +334,7 @@ Architecture: [`farm-guardian-architecture.md`](farm-guardian-architecture.md) �
 | [farm-guardian-persona-platform-context.md](farm-guardian-persona-platform-context.md) | What Guardian is told about on-prem gr33n (WS9) |
 | [plans/phase_35_lighting_domain.plan.md](plans/phase_35_lighting_domain.plan.md) | Photoperiod programs, presets, `/lighting` UI (Phase 35) |
 | [plans/phase_38_plant_needs_ui_and_pulse_commands.plan.md](plans/phase_38_plant_needs_ui_and_pulse_commands.plan.md) | Zone Water/Light/Climate tabs, timed pump pulses (Phase 38) |
-| [plans/phase_39_edge_fertigation_execution.plan.md](plans/phase_39_edge_fertigation_execution.plan.md) | Planned: device command queue, automated mix on Pi (Phase 39) |
+| [plans/phase_39_edge_fertigation_execution.plan.md](plans/phase_39_edge_fertigation_execution.plan.md) | Shipped: device command queue, automated mix on Pi (Phase 39) |
 | [plans/phase_36_greenhouse_climate.plan.md](plans/phase_36_greenhouse_climate.plan.md) | Greenhouse profile, typed actuators, shade/fan rules (Phase 36) |
 | [pattern-playbooks.md](pattern-playbooks.md) | `greenhouse_climate_v1` bootstrap pattern |
 | [plans/phase_32_guardian_grow_setup_prs.plan.md](plans/phase_32_guardian_grow_setup_prs.plan.md) | Grow setup PR bundle (Phase 32) |

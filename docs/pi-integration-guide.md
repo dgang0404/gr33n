@@ -19,28 +19,49 @@ The Pi client is a single-process Python program that:
 1. **Reads sensors** on a per-sensor interval (temperature, humidity, EC, pH, CO₂, PAR, soil moisture). Hardware drivers are auto-stubbed on non-Pi hosts, so the exact same file runs on a dev laptop for tests.
 2. **Posts readings** to the API (one-shot or batched).
 3. **Reports device status** (online / offline / error) on a heartbeat.
-4. **Polls for pending commands** (`GET /farms/{id}/devices` → `config.pending_command`) and executes them via GPIO (instant on/off, **deploy/retract**, or **timed pulse** — see §1.1).
-5. **Reports actuator events** (what it actually did and when), then clears the pending command.
+4. **Drains the device command queue** (`GET /devices/{id}/commands/next` → execute → `POST …/commands/{cid}/ack`) — **actuator**, **pulse**, and **mix_batch** (see §1.1–§1.2). Falls back to legacy `config.pending_command` if the queue is empty.
+5. **Reports actuator events** (what it did and when) and, for **mix_batch**, posts a **mixing event** audit row.
 6. **Falls back offline** — any failed POST is stored in a local SQLite queue (`offline_queue_path`) and flushed later via the batch endpoint.
 
 All API calls go over plain HTTP(S); there is no long-lived socket. Authentication is a pre-shared **API key** sent as the **`X-API-Key`** HTTP header on every request (same spelling the server reads in `cmd/api/auth.go`; header names are case-insensitive, but examples below use this form). The API validates it with **`requireAPIKey`** middleware (`cmd/api/routes.go`).
 
-### 1.1 Pending commands — shape, pulse, and one slot per device
+### 1.1 Device command queue (Phase 39 — preferred)
 
-**Payload** (JSON inside `devices.config.pending_command` after base64-decode on the wire):
+Writers enqueue to **`gr33ncore.device_commands`** (FIFO per device). The Pi polls **`GET /devices/{id}/commands/next`**, which atomically marks the oldest **`pending`** row **`in_progress`**, runs it, then **`POST /devices/{id}/commands/{cid}/ack`** with `status: completed` or `failed`.
+
+| `command_type` | Pi behavior |
+|----------------|-------------|
+| **`actuator`** | Instant on/off/deploy/retract on the bound actuator |
+| **`pulse`** | **on → wait `duration_seconds` → off** (Phase 38 shape in payload) |
+| **`mix_batch`** | Run **`mix_plan.steps[]`** sequentially — each step: channel → relay on → `run_seconds` → off; then **`POST /farms/{id}/fertigation/mixing-events`** |
+
+**Typical fertigation program fire (cloud):** **`mix_batch`** (if program has recipe + reservoir + base EC) **then** **`pulse`** irrigate — two queue rows, one FIFO drain.
+
+**`mix_batch` payload** (JSON):
 
 | Field | Purpose |
 |-------|---------|
-| `command` | `on`, `off`, `deploy`, `retract`, `open`, `close`, … per actuator type |
-| `actuator_id` | Which relay/pump on this device |
-| `duration_seconds` | **Phase 38** — optional; Pi runs **on → wait N s → off** (pumps, relays, valves) |
-| `schedule_id`, `rule_id`, `program_id`, `source`, `reason` | Provenance for `actuator_events` |
+| `mix_plan` | Cloud-calculated **`MixPlan`** — `steps[]` with `channel`, `run_seconds`, `volume_ml` |
+| `program_id`, `reservoir_id` | Provenance for mixing events |
 
-Writers: automation worker (schedules, rules, fertigation programs), **`POST /actuators/{id}/command`** (operator), Guardian **`enqueue_actuator_command`** after Confirm.
+**Channel map (Pi `config.yaml`):** optional `mix_channels: [actuator_id, …]` — index 0 = channel 1. Without it, channels map to actuators sorted by id (demo only).
 
-**One slot per device (important):** the API stores **at most one** `pending_command` per device row. Concurrent writes in the same poll window **overwrite** each other (**last write wins**). Do not rely on schedule + program + manual enqueue all landing on one Pi without coordination. **Phase 39** adds a FIFO **`device_commands`** queue and **`mix_batch`** multi-step mix — see [operator-tour §4a](operator-tour.md#4a-plant-needs-per-zone-phase-38).
+Operator enqueue: **`POST /farms/{id}/fertigation/mix-jobs`** (preview or enqueue). Calculator lives in Go (`internal/fertigation/mixplan`); Pi does not recompute doses.
 
-**Not on the Pi today:** automated nutrient **mixing** from recipe/EC math — operators log mixes via the API/UI; edge mix execution is planned Phase 39.
+### 1.2 Legacy `pending_command` (backward compat)
+
+Older deployments and one-release mirroring still use **`devices.config.pending_command`** (base64 JSON on `GET /farms/{id}/devices`). The Pi drains the **queue first**; if empty, it reads **`pending_command`** and clears via **`DELETE /devices/{id}/pending-command`**.
+
+**Payload** (actuator / pulse):
+
+| Field | Purpose |
+|-------|---------|
+| `command` | `on`, `off`, `deploy`, `retract`, … |
+| `actuator_id` | Which relay/pump |
+| `duration_seconds` | Timed pulse |
+| `schedule_id`, `rule_id`, `program_id`, `source` | Provenance |
+
+**Do not rely on concurrent writes to `pending_command` alone** — use the queue for multi-step automation.
 
 ---
 
@@ -81,8 +102,11 @@ Every Pi-facing endpoint is declared with `requireAPIKey` in [`cmd/api/routes.go
 | `POST` | `/sensors/readings/batch` | Post many readings across sensors in one request | `Gr33nApiClient.post_readings_batch` |
 | `PATCH` | `/devices/{id}/status` | Heartbeat: `{"status": "online"}` | `Gr33nApiClient.patch_device_status` |
 | `POST` | `/actuators/{id}/events` | Record what the actuator actually did | `Gr33nApiClient.post_actuator_event` |
-| `DELETE` | `/devices/{id}/pending-command` | Clear a pending command after executing it | `Gr33nApiClient.clear_pending_command` |
-| `GET` | `/farms/{id}/devices` | List devices (Pi or JWT) — Pi reads `config.pending_command` | `Gr33nApiClient.get_devices` |
+| `GET` | `/devices/{id}/commands/next` | Dequeue head command (204 if empty) | `Gr33nApiClient.get_next_command` |
+| `POST` | `/devices/{id}/commands/{cid}/ack` | Mark command completed/failed | `Gr33nApiClient.ack_command` |
+| `POST` | `/farms/{id}/fertigation/mixing-events` | Audit row after automated mix | `Gr33nApiClient.post_mixing_event` |
+| `DELETE` | `/devices/{id}/pending-command` | Legacy clear after `pending_command` fallback | `Gr33nApiClient.clear_pending_command` |
+| `GET` | `/farms/{id}/devices` | List devices — legacy `pending_command` fallback | `Gr33nApiClient.get_devices` |
 
 Request/response shapes for each of these are defined in [`openapi.yaml`](../openapi.yaml). The Pi client struct-matches those shapes one-for-one.
 
@@ -378,7 +402,7 @@ Python client contract (no DB): `cd pi_client && python3 -m pytest test_gr33n_cl
 | **404** on sensor post | Wrong **`sensor_id`** — run `print-demo-sensor-ids.sh` |
 | **Devices stay offline** | Heartbeat uses `device_id` from actuators config; PATCH path reachable? |
 | **pending_command never clears** | `GET /farms/{id}/devices` returns config? Actuator `device_id` matches config? |
-| **Command “lost” after automation + manual test** | **Last write wins** on single `pending_command` slot — see §1.1; Phase 39 queue |
+| **Command “lost” after automation + manual test** | Use **FIFO queue** (`GET …/commands/next`) — not concurrent `pending_command` writes alone |
 | **Pulse ignored** | Confirm `duration_seconds` in pending JSON; pump/relay actuator type; check Pi log for pulse thread |
 | **Queue grows forever** | API down or batch POST failing — see §8.5 (sensor offline SQLite queue, not actuator command queue) |
 

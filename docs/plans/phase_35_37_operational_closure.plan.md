@@ -35,6 +35,7 @@ todos:
     status: done
   - id: oc-39-closure
     content: "OC-39: Phase 39 WS8 — device_commands queue smokes, mix plan unit tests, pi-integration-guide queue+mix_batch, operator-tour automated mix"
+    status: done
     status: pending
   - id: bug-guardian-nav
     content: "BUG (pre-40): Guardian edge tab + sidebar overlap — see phase_40 plan bug-guardian-nav"
@@ -190,7 +191,7 @@ Feature detail: [`phase_38_plant_needs_ui_and_pulse_commands.plan.md`](phase_38_
 
 ## Phase 39 — Edge fertigation execution
 
-Feature detail: [`phase_39_edge_fertigation_execution.plan.md`](phase_39_edge_fertigation_execution.plan.md). **OC-39** when WS8 lands.
+Feature detail: [`phase_39_edge_fertigation_execution.plan.md`](phase_39_edge_fertigation_execution.plan.md). **OC-39 complete** (WS8 docs, smokes, seed, OpenAPI 0.4.5).
 
 ---
 

@@ -304,8 +304,8 @@ Sidebar **Advanced** (Rules, Setpoints, Controls, Sensors) remains for power use
 
 **Not shipped (do not tell operators it works today):**
 
-- **Device command queue** — still **one `pending_command` slot per device**; concurrent schedule + program + Confirm can **overwrite** (last write wins). Planned **Phase 39 WS1**.
-- **Automated Pi mixing** — operators log mixes via **`POST …/mixing-events`**; no **`mix_batch`** on the edge yet. Planned **Phase 39** (recipe + base EC → edge steps).
+- **Device command queue (Phase 39)** — FIFO **`device_commands`** per device; **`mix_batch`** then **pulse** for fertigation programs. Legacy **`pending_command`** mirrors queue head one release.
+- **Automated Pi mixing (Phase 39)** — cloud **`MixPlan`** + queue **`mix_batch`**; operators without hardware still log via **`POST …/mixing-events`**. Guardian should not promise mix until reservoir **base EC** is set.
 
 When answering “how do I run my room?”, direct operators to **Zones → Water / Light / Climate** first, then Advanced pages. Operator walkthrough: [operator-tour §4a](operator-tour.md#4a-plant-needs-per-zone-phase-38).
 
@@ -366,7 +366,7 @@ Guardian **proposes**; the operator **confirms**. Viewers may chat and see propo
 | `create_crop_cycle` | medium | Start an active crop cycle in a zone (rejects busy zones) |
 | `create_fertigation_program` | medium | Create a fertigation program for a zone |
 | `apply_bootstrap_template` | high | Apply farm bootstrap template (admin only) |
-| `enqueue_actuator_command` | high | Write `pending_command` on device config (Pi picks up later); optional `duration_seconds` pulse for pumps — **one slot per device** until Phase 39 queue |
+| `enqueue_actuator_command` | high | Enqueue **`device_commands`** (and mirror `pending_command`); optional `duration_seconds` pulse for pumps |
 | `apply_grow_setup_pack` | high | **Transactional bundle:** optional plant + active cycle + program + optional monitor task |
 
 Every tool still runs only after **Confirm** — same frozen-args, TTL, and audit path as Phase 29. **Guardian cannot silently add plants, cycles, or programs** — chat may *propose* them; database rows appear only after the operator Confirms. See [§7.3](#73-phase-30--change-request-pr-inbox), [§7.6](#76-grow-setup-prs-phase-32), and [§8](#8-operator-expectations-at-phase-30-ship).
