@@ -37,6 +37,17 @@
         <h1 class="text-sm font-semibold text-gray-300">{{ title }}</h1>
       </div>
       <div class="flex items-center gap-4">
+        <button
+          v-if="guardianAvailable"
+          type="button"
+          class="hidden sm:inline-flex items-center gap-1.5 text-xs font-semibold text-green-400 border border-green-800/80 rounded-lg px-2.5 py-1 hover:bg-green-950/50 hover:text-green-300 transition-colors"
+          title="Open Farm Guardian"
+          data-test="topbar-guardian-button"
+          @click="openGuardianDrawer"
+        >
+          <span aria-hidden="true">✨</span>
+          Guardian
+        </button>
         <RouterLink to="/alerts" class="relative text-gray-400 hover:text-white transition-colors" title="Alerts">
           <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
@@ -63,6 +74,8 @@ import { useRoute } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { useFarmStore } from '../stores/farm'
 import { useFarmContextStore } from '../stores/farmContext'
+import { useCapabilitiesStore } from '../stores/capabilities'
+import { useGuardianPanelStore } from '../stores/guardianPanel'
 import api from '../api'
 
 defineEmits(['toggle-drawer'])
@@ -71,6 +84,14 @@ const route = useRoute()
 const auth  = useAuthStore()
 const farmStore = useFarmStore()
 const farmContext = useFarmContextStore()
+const capabilities = useCapabilitiesStore()
+const guardianPanel = useGuardianPanelStore()
+
+const guardianAvailable = computed(() => capabilities.loaded && !capabilities.isLite)
+
+function openGuardianDrawer() {
+  guardianPanel.openDrawer({ tab: 'chat' })
+}
 
 const apiOk = ref(true)
 const now   = ref('')
@@ -98,6 +119,7 @@ const title = computed(() => {
 let tick
 onMounted(async () => {
   auth.fetchAuthMode()
+  if (!capabilities.loaded) await capabilities.fetch()
   tick = setInterval(async () => {
     now.value = new Date().toLocaleTimeString()
     try { await api.get('/health'); apiOk.value = true }

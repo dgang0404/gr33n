@@ -7,7 +7,7 @@ overview: >
 todos:
   - id: bug-guardian-nav
     content: "BUG (pre-40): Guardian edge tab + sidebar overlap — canonical drawer on right; fix stray Farm Guardian chrome at bottom-left; dedupe or relocate Monitor→Guardian link"
-    status: pending
+    status: done
   - id: ws1-zone-today
     content: "WS1: Zone Overview 'Today' strip — next schedule fires, active rules count, unread zone alerts, device/queue summary (after Phase 39 WS1)"
     status: pending
@@ -267,7 +267,7 @@ WS2 + WS4 give the biggest "not the DB" win early.
 
 ## Definition of done
 
-- [ ] Guardian hotfix: no overlapping chrome; drawer is obvious primary entry
+- [x] Guardian hotfix: no overlapping chrome; drawer is obvious primary entry (`bug-guardian-nav`)
 - [ ] Zone Overview "Today" strip with schedules, rules, alerts, devices (and queue when 39 shipped)
 - [ ] Inline setpoint edit on need tabs
 - [ ] Zone-filtered rules/schedules with active toggles and humanized next run
@@ -277,12 +277,21 @@ WS2 + WS4 give the biggest "not the DB" win early.
 
 ---
 
+## After Phase 40 (documented gaps)
+
+Farm-wide polish (Dashboard morning hub, Fertigation `?zone_id=`, why-empty hints) is **[Phase 41](phase_41_farm_hub_coherence.plan.md)** — see [`pre_development_gaps_index.plan.md`](pre_development_gaps_index.plan.md).
+
+---
+
 ## Related
 
 | Doc | Use |
 |-----|-----|
+| [pre_development_gaps_index.plan.md](pre_development_gaps_index.plan.md) | Master gap list + doc chunks |
 | [phase_38_plant_needs_ui_and_pulse_commands.plan.md](phase_38_plant_needs_ui_and_pulse_commands.plan.md) | Zone tabs + connection cards (prerequisite) |
 | [phase_39_edge_fertigation_execution.plan.md](phase_39_edge_fertigation_execution.plan.md) | Queue + mix — feeds WS5 |
+| [phase_39b_plain_irrigation.plan.md](phase_39b_plain_irrigation.plan.md) | RO/well — Water grow story branch |
+| [phase_41_farm_hub_coherence.plan.md](phase_41_farm_hub_coherence.plan.md) | Farm-wide hub after zone cockpit |
 | [phase_35_37_operational_closure.plan.md](phase_35_37_operational_closure.plan.md) | OC-40 tracker (add when WS8 lands) |
 | [operator-tour.md](../operator-tour.md) §4a | Phase 38 plant needs |
 | [ZoneDetail.vue](../../ui/src/views/ZoneDetail.vue) | Integration point |

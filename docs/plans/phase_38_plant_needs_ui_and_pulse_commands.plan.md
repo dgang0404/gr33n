@@ -46,6 +46,8 @@ isProject: false
 | [phase_36_greenhouse_climate.plan.md](phase_36_greenhouse_climate.plan.md) | Air/climate need |
 | [phase_39_edge_fertigation_execution.plan.md](phase_39_edge_fertigation_execution.plan.md) | **Next:** mix jobs + device command queue (fixes last-write-wins); automated recipe→Pi |
 | [phase_40_unified_farmer_ux_zone_cockpit.plan.md](phase_40_unified_farmer_ux_zone_cockpit.plan.md) | **After 39:** zone cockpit — inline setpoints, alerts, today strip (not DB-shaped UI) |
+| [phase_41_farm_hub_coherence.plan.md](phase_41_farm_hub_coherence.plan.md) | **After 40:** Dashboard + farm-wide pages + why-empty |
+| [pre_development_gaps_index.plan.md](pre_development_gaps_index.plan.md) | Gap tracker before dev |
 | [operator-tour.md](../operator-tour.md) | § Plant needs (Phase 38) |
 
 ## Not in Phase 38

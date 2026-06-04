@@ -64,6 +64,9 @@
                 </div>
               </div>
             </nav>
+            <div class="px-3 pb-3 shrink-0 border-t border-gray-800">
+              <GuardianNavLaunch :collapsed="false" />
+            </div>
           </aside>
         </Transition>
         <div class="flex-1 bg-black/60" @click="drawerOpen = false" />
@@ -81,6 +84,7 @@ import SideNav from './components/SideNav.vue'
 import TopBar  from './components/TopBar.vue'
 import GuardianDrawer from './components/GuardianDrawer.vue'
 import GuardianEdgeTab from './components/GuardianEdgeTab.vue'
+import GuardianNavLaunch from './components/GuardianNavLaunch.vue'
 import { useFarmStore } from './stores/farm'
 import { useFarmContextStore } from './stores/farmContext'
 import { useAuthStore } from './stores/auth'

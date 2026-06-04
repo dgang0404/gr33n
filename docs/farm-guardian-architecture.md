@@ -309,6 +309,18 @@ Sidebar **Advanced** (Rules, Setpoints, Controls, Sensors) remains for power use
 
 When answering “how do I run my room?”, direct operators to **Zones → Water / Light / Climate** first, then Advanced pages. Operator walkthrough: [operator-tour §4a](operator-tour.md#4a-plant-needs-per-zone-phase-38).
 
+### 7.0f Zone cockpit (Phase 40 — planned)
+
+**Doc stub.** Plan: [`plans/phase_40_unified_farmer_ux_zone_cockpit.plan.md`](plans/phase_40_unified_farmer_ux_zone_cockpit.plan.md).
+
+When shipped: operators edit **setpoints**, **ack alerts**, and read **today’s schedule/rules** inside the zone hub. Guardian should prefer **zone-scoped** answers and propose/confirm paths that match inline edits — not “open Setpoints page.” Water tab shows **grow story** (last event, next run, queue) after Phase 39. Operator walkthrough: [operator-tour §4b](operator-tour.md#4b-zone-cockpit-walkthrough-phase-40--planned).
+
+### 7.0g Farm hub coherence (Phase 41 — planned)
+
+**Doc stub.** Plan: [`plans/phase_41_farm_hub_coherence.plan.md`](plans/phase_41_farm_hub_coherence.plan.md).
+
+When shipped: **Dashboard** morning summary, **Fertigation** pages honor `?zone_id=`, **why-empty** hints on empty widgets, and farm-wide lists deep-link back to the zone. Guardian morning questions (“what should I do first?”) should cite Dashboard/tasks/alerts before sending operators to six sidebar hops.
+
 ### 7.0e Offline field assistant (Phase 37)
 
 Physical install guidance for **non-IT operators** at sites with **no WAN** (or local-only LLM). Knowledge layers:

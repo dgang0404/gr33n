@@ -45,7 +45,6 @@ export function buildNavGroups(cycleCompareRoute) {
         { to: '/costs', icon: '💰', label: 'Costs' },
         { to: cycleCompareRoute, icon: '📊', label: 'Analytics', navTitle: 'Crop cycle analytics' },
         { to: '/farm-knowledge', icon: '🔎', label: 'Knowledge' },
-        { to: '/chat', icon: '🤖', label: 'Guardian', navTitle: 'Farm Guardian chat' },
       ],
     },
     {

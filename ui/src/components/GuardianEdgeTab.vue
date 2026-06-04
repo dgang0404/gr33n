@@ -1,25 +1,19 @@
 <template>
   <Teleport to="body">
     <button
-      v-if="visible && !guardianPanel.open"
+      v-if="showTab"
       type="button"
-      class="guardian-edge-tab fixed z-30 flex items-center gap-2 rounded-l-xl relative border border-r-0 border-green-700/60 bg-zinc-950/95 text-green-400 shadow-lg shadow-black/40 backdrop-blur-sm transition-[transform,box-shadow,background-color] duration-200 ease-out hover:bg-green-950/90 hover:shadow-green-900/30 focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950"
-      :class="compact ? 'guardian-edge-tab--compact right-0 top-[4.75rem] px-2 py-2' : 'guardian-edge-tab--center right-0 top-1/2 px-2.5 py-3'"
-      title="Farm Guardian"
+      class="guardian-edge-tab fixed z-[35] flex flex-col items-center justify-center gap-1 rounded-l-xl border border-r-0 border-green-700/60 bg-zinc-950/95 text-green-400 shadow-lg shadow-black/40 backdrop-blur-sm transition-[transform,box-shadow,background-color] duration-200 ease-out hover:bg-green-950/90 hover:shadow-green-900/30 focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950"
+      :class="compact ? 'guardian-edge-tab--compact' : 'guardian-edge-tab--desktop'"
+      title="Open Farm Guardian"
       aria-label="Open Farm Guardian"
       data-test="guardian-edge-tab"
       @click="guardianPanel.toggle()"
     >
       <span class="text-lg leading-none guardian-edge-tab-icon" aria-hidden="true">✨</span>
       <span
-        class="text-xs font-semibold tracking-wide uppercase hidden sm:inline"
-        style="writing-mode: vertical-rl; text-orientation: mixed;"
-      >
-        {{ guardianChat.streaming ? 'Thinking…' : 'Guardian' }}
-      </span>
-      <span
         v-if="guardianChat.streaming"
-        class="absolute -top-1 -left-1 h-2.5 w-2.5 rounded-full bg-green-500 animate-pulse"
+        class="h-2 w-2 rounded-full bg-green-500 animate-pulse"
         data-test="guardian-edge-thinking"
         aria-hidden="true"
       />
@@ -29,6 +23,7 @@
 
 <script setup>
 import { computed, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
 import { useGuardianChatStore } from '../stores/guardianChat'
 import { useGuardianPanelStore } from '../stores/guardianPanel'
 import { useCapabilitiesStore } from '../stores/capabilities'
@@ -38,11 +33,17 @@ defineProps({
   compact: { type: Boolean, default: false },
 })
 
+const route = useRoute()
 const guardianPanel = useGuardianPanelStore()
 const guardianChat = useGuardianChatStore()
 const capabilities = useCapabilitiesStore()
 
-const visible = computed(() => capabilities.loaded && !capabilities.isLite)
+const aiAvailable = computed(() => capabilities.loaded && !capabilities.isLite)
+
+/** Full-page /chat already is Guardian — hide duplicate edge chrome. */
+const onChatPage = computed(() => route.path === '/chat' || route.path.startsWith('/chat/'))
+
+const showTab = computed(() => aiAvailable.value && !guardianPanel.open && !onChatPage.value)
 
 onMounted(async () => {
   if (!capabilities.loaded) await capabilities.fetch()
@@ -50,12 +51,26 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.guardian-edge-tab--center {
-  transform: translateY(-50%);
+.guardian-edge-tab {
+  left: auto;
+  right: 0;
 }
 
-.guardian-edge-tab--center:hover {
+.guardian-edge-tab--desktop {
+  top: 50%;
+  transform: translateY(-50%);
+  padding: 0.75rem 0.5rem;
+  min-width: 2.5rem;
+}
+
+.guardian-edge-tab--desktop:hover {
   transform: translate(-4px, -50%);
+}
+
+.guardian-edge-tab--compact {
+  top: 4.75rem;
+  padding: 0.5rem;
+  min-width: 2.25rem;
 }
 
 .guardian-edge-tab--compact:hover {

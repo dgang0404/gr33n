@@ -7,7 +7,7 @@ An open-source agricultural operating system designed to reclaim data, land, and
 [![Vue](https://img.shields.io/badge/Vue-3-4FC08D?logo=vue.js)](https://vuejs.org)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-14+-336791?logo=postgresql)](https://postgresql.org)
 
-**Current focus:** **Phases 35–38 shipped on `main`**. **Next:** **39** edge fertigation queue + automated mix ([plan](docs/plans/phase_39_edge_fertigation_execution.plan.md)), then **40** unified zone cockpit — inline setpoints, today's schedule, zone alerts ([plan](docs/plans/phase_40_unified_farmer_ux_zone_cockpit.plan.md)). **Hotfix tracked:** Guardian sidebar/edge tab layout ([plan](docs/plans/phase_40_unified_farmer_ux_zone_cockpit.plan.md) `bug-guardian-nav`). **Shipped since Phase 31:** field validation & edge; **32** grow-setup PRs + platform doc RAG; **33** Guardian polish; **34** PR revise loop + operator blind-spot facts. Guardian **writes** still go through propose→**Confirm** ([Phase 30](docs/plans/phase_30_guardian_change_requests.plan.md)). Multi-site sketch: [`hypothetical-enterprise-topology.md`](docs/hypothetical-enterprise-topology.md). After `git pull`, run **`./scripts/bootstrap-local.sh --skip-schema`** (or **`make dev-stack`**) so migrations apply. Pi / edge: [`pi_client/gr33n_client.py`](pi_client/gr33n_client.py), [`docs/pi-integration-guide.md`](docs/pi-integration-guide.md). Operator index: [`docs/phase-14-operator-documentation.md`](docs/phase-14-operator-documentation.md) · closure rollup: [`docs/plans/phase_35_37_operational_closure.plan.md`](docs/plans/phase_35_37_operational_closure.plan.md).
+**Current focus:** **Phases 35–38 shipped on `main`**; **Guardian nav hotfix** (`bug-guardian-nav`) shipped. **Next (dev order):** **39** edge fertigation queue + automated mix → **40** zone cockpit → **41** farm hub coherence → **39b** plain irrigation. Gap index: [`docs/plans/pre_development_gaps_index.plan.md`](docs/plans/pre_development_gaps_index.plan.md). Plans: [39](docs/plans/phase_39_edge_fertigation_execution.plan.md) · [40](docs/plans/phase_40_unified_farmer_ux_zone_cockpit.plan.md) · [41](docs/plans/phase_41_farm_hub_coherence.plan.md) · [39b](docs/plans/phase_39b_plain_irrigation.plan.md). **Shipped since Phase 31:** field validation & edge; **32** grow-setup PRs + platform doc RAG; **33** Guardian polish; **34** PR revise loop + operator blind-spot facts. Guardian **writes** still go through propose→**Confirm** ([Phase 30](docs/plans/phase_30_guardian_change_requests.plan.md)). Multi-site sketch: [`hypothetical-enterprise-topology.md`](docs/hypothetical-enterprise-topology.md). After `git pull`, run **`./scripts/bootstrap-local.sh --skip-schema`** (or **`make dev-stack`**) so migrations apply. Pi / edge: [`pi_client/gr33n_client.py`](pi_client/gr33n_client.py), [`docs/pi-integration-guide.md`](docs/pi-integration-guide.md). Operator index: [`docs/phase-14-operator-documentation.md`](docs/phase-14-operator-documentation.md) · closure rollup: [`docs/plans/phase_35_37_operational_closure.plan.md`](docs/plans/phase_35_37_operational_closure.plan.md).
 
 ---
 
@@ -680,9 +680,11 @@ Stabilization sprint **closed** on **`main`** **2026-04-18**. Criterion-by-crite
 - [x] **Phase 36 — Greenhouse climate** — shade/vents/fans backend + Guardian tools + OC-36B docs (Climate tab → Phase 38) — [plan](docs/plans/phase_36_greenhouse_climate.plan.md) · [operator tour §5b](docs/operator-tour.md#5b-greenhouse-shade-vents-and-fans-phase-36)
 - [x] **Phase 37 — Guardian offline field assistant** — `field_guide` corpus, procedures, safety stops, degrade, print, background chat — [plan](docs/plans/phase_37_guardian_offline_field_assistant.plan.md) · [operator tour §6d](docs/operator-tour.md#6d-first-field-install-with-guardian-offline-phase-37)
 - [x] **Phase 38 — Plant-needs UI + pulse commands** — zone Water/Light/Climate tabs, Advanced nav, `duration_seconds` on `pending_command` — [plan](docs/plans/phase_38_plant_needs_ui_and_pulse_commands.plan.md) · [operator tour §4a](docs/operator-tour.md#4a-plant-needs-per-zone-phase-38)
-- [ ] **Deprecate `programs.metadata.steps`** — after N deploys with zero fallback warnings, promote `action_source` checks to hard errors and drop the column.
-- [ ] **Program "run now" API** — explicit trigger for unscheduled / ad-hoc programs.
-- [ ] **Mobile distribution polish** — Capacitor packaging, store submission checklist.
+- [ ] **Product backlog (documented)** — program run now, `metadata.steps` deprecation, Guardian lighting propose, mobile distribution — [`docs/plans/product_backlog_operator_runtime.plan.md`](docs/plans/product_backlog_operator_runtime.plan.md)
+- [ ] **Phase 39** — edge fertigation queue + mix — [plan](docs/plans/phase_39_edge_fertigation_execution.plan.md)
+- [ ] **Phase 40** — unified zone cockpit — [plan](docs/plans/phase_40_unified_farmer_ux_zone_cockpit.plan.md)
+- [ ] **Phase 41** — farm hub coherence (Dashboard, why-empty, zone context on farm pages) — [plan](docs/plans/phase_41_farm_hub_coherence.plan.md)
+- [ ] **Phase 39b** — plain irrigation (RO/well) — [plan](docs/plans/phase_39b_plain_irrigation.plan.md)
 
 ## Project Roadmap
 
@@ -730,6 +732,10 @@ Stabilization sprint **closed** on **`main`** **2026-04-18**. Criterion-by-crite
 - [x] Phase 36 — Greenhouse climate (shade, panels, fans; Guardian + bootstrap) — [plan](docs/plans/phase_36_greenhouse_climate.plan.md)
 - [x] Phase 37 — Guardian offline field assistant (procedures, field_guide, offline degrade) — [plan](docs/plans/phase_37_guardian_offline_field_assistant.plan.md)
 - [x] Phase 38 — Plant-needs UI + timed actuator pulse (`POST /actuators/{id}/command`) — [plan](docs/plans/phase_38_plant_needs_ui_and_pulse_commands.plan.md)
+- [ ] Phase 39 — Edge fertigation execution (command queue, `mix_batch`, Pi mix) — [plan](docs/plans/phase_39_edge_fertigation_execution.plan.md)
+- [ ] Phase 40 — Unified farmer UX / zone cockpit — [plan](docs/plans/phase_40_unified_farmer_ux_zone_cockpit.plan.md)
+- [ ] Phase 41 — Farm hub coherence — [plan](docs/plans/phase_41_farm_hub_coherence.plan.md)
+- [ ] Phase 39b — Plain irrigation (RO/well) — [plan](docs/plans/phase_39b_plain_irrigation.plan.md)
 
 ---
 

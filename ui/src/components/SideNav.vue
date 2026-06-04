@@ -34,24 +34,20 @@
             :class="collapsed ? 'justify-center px-0 py-2' : 'gap-3 px-3 py-2'"
             active-class="bg-gr33n-900 text-gr33n-400 font-semibold"
             :title="item.navTitle ?? (collapsed ? item.label : undefined)"
-            :data-test="item.to === '/chat' ? 'sidenav-guardian-link' : undefined"
           >
             <span class="text-lg shrink-0">{{ item.icon }}</span>
             <span v-if="!collapsed" class="flex-1 min-w-0">{{ item.label }}</span>
-            <span
-              v-if="!collapsed && item.to === '/chat' && proposalsStore.pendingCount > 0"
-              class="min-w-[1.125rem] h-[1.125rem] px-1 rounded-full bg-amber-600 text-[10px] font-bold text-amber-950 flex items-center justify-center shrink-0"
-              data-test="sidenav-guardian-pending-badge"
-            >
-              {{ proposalsStore.pendingCount > 9 ? '9+' : proposalsStore.pendingCount }}
-            </span>
           </RouterLink>
         </div>
       </div>
     </nav>
 
+    <div class="px-2 shrink-0">
+      <GuardianNavLaunch :collapsed="collapsed" />
+    </div>
+
     <!-- Farm selector -->
-    <div class="px-2 py-3 border-t border-gray-800">
+    <div class="px-2 py-3 border-t border-gray-800 shrink-0">
       <label v-if="!collapsed" class="block text-[10px] uppercase tracking-wide text-gray-500 mb-1 px-1">Farm</label>
       <select
         :value="farmContext.farmId ?? ''"
@@ -77,6 +73,7 @@ import { useFarmContextStore } from '../stores/farmContext'
 import { useAuthStore } from '../stores/auth'
 import { useGuardianProposalsStore } from '../stores/guardianProposals'
 import { buildNavGroups } from '../lib/navGroups.js'
+import GuardianNavLaunch from './GuardianNavLaunch.vue'
 
 const farmContext = useFarmContextStore()
 const auth = useAuthStore()

@@ -9,10 +9,10 @@ overview: >
 todos:
   - id: ws1-command-queue
     content: "WS1: Device command queue — schema + enqueue/dequeue API; migrate pending_command writers; Pi polls next command"
-    status: pending
+    status: done
   - id: ws2-mix-calculator
     content: "WS2: Mix dose calculator — service from recipe components + reservoir base EC/pH/volume + ec_target → structured mix plan"
-    status: pending
+    status: done
   - id: ws3-mix-command-payload
     content: "WS3: mix_batch command type — OpenAPI + validation; enqueue from operator API and program tick"
     status: pending
@@ -38,7 +38,7 @@ isProject: false
 
 ## Status
 
-**Not started.** Depends on Phases **22** (program tick + `executable_actions`), **35** (lighting — unchanged), **38** (zone Water UI + `duration_seconds` pulse). Does **not** replace operator-logged mixing (`POST …/mixing-events`); it **automates** the same audit trail when hardware exists.
+**WS1 + WS2 complete.** WS3 next. Depends on Phases **22** (program tick + `executable_actions`), **35** (lighting — unchanged), **38** (zone Water UI + `duration_seconds` pulse). Does **not** replace operator-logged mixing (`POST …/mixing-events`); it **automates** the same audit trail when hardware exists.
 
 ---
 
@@ -103,7 +103,7 @@ flowchart TB
 | **Light** | 35 (+ 38 UI) | Cron → `control_actuator` on/off → **queue** (39) → GPIO |
 | **Climate** | 36 (+ 38 UI) | Rules → deploy/retract, fans → **queue** (39) → GPIO |
 | **Water / feed** | 22 fertigation + **39** | Program → **mix_batch** (recipe math) → **pulse** irrigate → events |
-| **Plain RO/well** | **Future 39b or 40** | `irrigation_only` program type — pulse without mix (no EC math) |
+| **Plain RO/well** | **[Phase 39b](phase_39b_plain_irrigation.plan.md)** | `irrigation_only` program type — pulse without mix (no EC math) |
 | **Operator visibility** | 38 | Zone tabs; 39 adds live queue + mix plan on Water tab |
 
 **Phase 37** (Guardian field assistant) complements **install**; 39 complements **runtime** mix/irrigate.
@@ -117,7 +117,7 @@ flowchart TB
 3. **Thin new command types** — `pulse` (Phase 38 shape), `actuator` (instant on/off/deploy), `mix_batch` (structured steps). Extensible JSON `command_type` field.
 4. **Same audit tables** — automated mix completes with `POST` mixing-event (+ components) and fertigation-event; links `mixing_event_id` on apply.
 5. **Simulation first** — worker can dequeue in simulation without GPIO; smokes assert queue + plan JSON without hardware.
-6. **Do not merge plain-water irrigation** in v1 — document as 39b; worm casting / new inputs remain inventory rows.
+6. **Plain-water irrigation** — **[Phase 39b](phase_39b_plain_irrigation.plan.md)** after WS1; worm casting / new inputs remain inventory rows.
 
 ---
 
@@ -317,7 +317,7 @@ Table `gr33ncore.device_commands`:
 - Repeat/interval pulse trains (irigation “pulse every 5 min for 1h”) — defer
 - Closed-loop EC dosing with inline sensor (v2 in WS2 note)
 - Peristaltic vendor protocols (Modbus) — map to `channel` + seconds in v1
-- Plain-water-only `irrigation_program` entity (39b)
+- Plain-water-only programs — **[Phase 39b](phase_39b_plain_irrigation.plan.md)** (`irrigation_only` flag; separate `irrigation_program` table deferred)
 - CO₂ / cooling pad / weather API
 - Replacing manual mixing UI — manual path stays for labs without edge hardware
 - **Unified zone cockpit** (inline setpoints, zone alerts, today's schedule) — **[Phase 40](phase_40_unified_farmer_ux_zone_cockpit.plan.md)**
@@ -350,6 +350,8 @@ Queue first (unblocks safe multi-step). Calculator before Pi executor. Worker pi
 | [phase_38_plant_needs_ui_and_pulse_commands.plan.md](phase_38_plant_needs_ui_and_pulse_commands.plan.md) | Zone UI + pulse (prerequisite) |
 | [phase_35_lighting_domain.plan.md](phase_35_lighting_domain.plan.md) | Lighting — uses queue after WS1 |
 | [phase_36_greenhouse_climate.plan.md](phase_36_greenhouse_climate.plan.md) | Climate actuators — uses queue |
+| [phase_39b_plain_irrigation.plan.md](phase_39b_plain_irrigation.plan.md) | RO/well — after WS1 queue |
+| [pre_development_gaps_index.plan.md](pre_development_gaps_index.plan.md) | All gaps before dev |
 | [phase_35_37_operational_closure.plan.md](phase_35_37_operational_closure.plan.md) | OC rollup; extend with OC-38/39 |
 | [workflow-guide.md](../workflow-guide.md) | Fertigation domain today |
 | [pi-integration-guide.md](../pi-integration-guide.md) | Edge contract (update in WS8) |

@@ -78,6 +78,11 @@ RETURNING *;
 SELECT * FROM gr33nfertigation.reservoirs
 WHERE id = $1 AND deleted_at IS NULL;
 
+-- name: GetEcTargetByID :one
+-- Phase 39 WS2 — needed by the mix dose calculator to read target EC bounds.
+SELECT * FROM gr33nfertigation.ec_targets
+WHERE id = $1;
+
 -- name: GetFertigationProgramByID :one
 SELECT * FROM gr33nfertigation.programs
 WHERE id = $1 AND deleted_at IS NULL;

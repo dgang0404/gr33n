@@ -17,6 +17,7 @@ import api from '../api'
 import App from '../App.vue'
 import GuardianDrawer from '../components/GuardianDrawer.vue'
 import GuardianEdgeTab from '../components/GuardianEdgeTab.vue'
+import GuardianNavLaunch from '../components/GuardianNavLaunch.vue'
 import GuardianChatPanel from '../components/GuardianChatPanel.vue'
 import { useGuardianPanelStore } from '../stores/guardianPanel'
 import { useFarmContextStore } from '../stores/farmContext'
@@ -190,16 +191,20 @@ describe('Phase 29 WS1 — drawer on any route', () => {
 })
 
 describe('Phase 29 WS1 — GuardianEdgeTab', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     setActivePinia(createPinia())
     vi.clearAllMocks()
     stubCapabilities()
     document.body.innerHTML = ''
+    await router.push('/')
   })
 
   it('renders edge tab when AI is enabled and drawer is closed', async () => {
     await useCapabilitiesStore().fetch()
-    const wrapper = mount(GuardianEdgeTab, { attachTo: document.body })
+    const wrapper = mount(GuardianEdgeTab, {
+      attachTo: document.body,
+      global: { plugins: [router] },
+    })
     await flushPromises()
     expect(document.body.querySelector('[data-test="guardian-edge-tab"]')).not.toBeNull()
     wrapper.unmount()
@@ -208,9 +213,44 @@ describe('Phase 29 WS1 — GuardianEdgeTab', () => {
   it('hides edge tab while drawer is open', async () => {
     await useCapabilitiesStore().fetch()
     useGuardianPanelStore().openDrawer()
-    const wrapper = mount(GuardianEdgeTab, { attachTo: document.body })
+    const wrapper = mount(GuardianEdgeTab, {
+      attachTo: document.body,
+      global: { plugins: [router] },
+    })
     await flushPromises()
     expect(document.body.querySelector('[data-test="guardian-edge-tab"]')).toBeNull()
+    wrapper.unmount()
+  })
+
+  it('hides edge tab on full-page /chat route', async () => {
+    await useCapabilitiesStore().fetch()
+    await router.push('/chat')
+    const wrapper = mount(GuardianEdgeTab, {
+      attachTo: document.body,
+      global: { plugins: [router] },
+    })
+    await flushPromises()
+    expect(document.body.querySelector('[data-test="guardian-edge-tab"]')).toBeNull()
+    wrapper.unmount()
+  })
+})
+
+describe('Phase 40 bug-guardian-nav — GuardianNavLaunch', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia())
+    vi.clearAllMocks()
+    stubCapabilities()
+  })
+
+  it('opens drawer from sidebar launch button', async () => {
+    await useCapabilitiesStore().fetch()
+    const panel = useGuardianPanelStore()
+    const wrapper = mount(GuardianNavLaunch, {
+      global: { plugins: [router] },
+    })
+    await flushPromises()
+    await wrapper.get('[data-test="guardian-nav-open-drawer"]').trigger('click')
+    expect(panel.open).toBe(true)
     wrapper.unmount()
   })
 })

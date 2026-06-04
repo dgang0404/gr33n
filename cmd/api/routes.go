@@ -25,6 +25,7 @@ import (
 	costhandler "gr33n-api/internal/handler/cost"
 	cropcyclehandler "gr33n-api/internal/handler/cropcycle"
 	devicehandler "gr33n-api/internal/handler/device"
+	devicecmdhandler "gr33n-api/internal/handler/devicecmd"
 	farmhandler "gr33n-api/internal/handler/farm"
 	fertigationhandler "gr33n-api/internal/handler/fertigation"
 	fileattachhandler "gr33n-api/internal/handler/fileattach"
@@ -50,6 +51,7 @@ func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationwo
 	audit := audithandler.NewHandler(pool)
 	zone := zonehandler.NewHandler(pool)
 	device := devicehandler.NewHandler(pool)
+	devicecmd := devicecmdhandler.NewHandler(pool)
 	actuator := actuatorhandler.NewHandler(pool)
 	automation := automationhandler.NewHandler(pool, worker)
 	sse := ssehandler.NewHandler(pool)
@@ -124,6 +126,9 @@ func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationwo
 	mux.Handle("PATCH /devices/{id}/status", piChain(http.HandlerFunc(device.UpdateStatus)))
 	mux.Handle("POST /actuators/{id}/events", piChain(http.HandlerFunc(actuator.RecordEvent)))
 	mux.Handle("DELETE /devices/{id}/pending-command", piChain(http.HandlerFunc(device.ClearPendingCommand)))
+	// Phase 39 WS1 — Pi polls queue head and acks after execution
+	mux.Handle("GET /devices/{id}/commands/next", piChain(http.HandlerFunc(devicecmd.Next)))
+	mux.Handle("POST /devices/{id}/commands/{cid}/ack", piChain(http.HandlerFunc(devicecmd.Ack)))
 
 	// ── Dashboard routes — JWT required ──────────────────────────────────────
 
@@ -196,6 +201,9 @@ func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationwo
 	mux.Handle("POST /farms/{id}/actuators", jwt(http.HandlerFunc(actuator.Create)))
 	mux.Handle("GET /actuators/{id}", jwt(http.HandlerFunc(actuator.Get)))
 	mux.Handle("POST /actuators/{id}/command", jwt(http.HandlerFunc(actuator.EnqueueCommand)))
+	// Phase 39 WS1 — operator JWT routes for device command queue
+	mux.Handle("POST /devices/{id}/commands", jwt(http.HandlerFunc(devicecmd.Enqueue)))
+	mux.Handle("GET /devices/{id}/commands", jwt(http.HandlerFunc(devicecmd.List)))
 	mux.Handle("GET /farms/{id}/sensors", jwt(http.HandlerFunc(sensor.ListByFarm)))
 	mux.Handle("GET /farms/{id}/schedules", jwt(http.HandlerFunc(automation.ListSchedulesByFarm)))
 	mux.Handle("POST /farms/{id}/schedules", jwt(http.HandlerFunc(automation.CreateSchedule)))

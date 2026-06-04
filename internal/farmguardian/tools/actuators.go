@@ -76,19 +76,34 @@ func execEnqueueActuatorCommand(ctx context.Context, deps ExecutorDeps, args map
 	if err != nil {
 		return nil, err
 	}
-	if err := deps.Q.SetDevicePendingCommand(ctx, db.SetDevicePendingCommandParams{
-		ID:      deviceID,
-		Column2: pendingJSON,
-	}); err != nil {
-		return nil, err
+
+	// Phase 39 WS1: enqueue to FIFO queue so Guardian commands don't overwrite
+	// concurrent schedule/operator commands (last-write-wins fix).
+	queued, qErr := deps.Q.EnqueueDeviceCommand(ctx, db.EnqueueDeviceCommandParams{
+		DeviceID:    deviceID,
+		FarmID:      device.FarmID,
+		CommandType: "actuator",
+		Payload:     pendingJSON,
+		Source:      "guardian",
+		ActuatorID:  &actuatorID,
+	})
+	if qErr != nil {
+		return nil, fmt.Errorf("enqueue device command: %w", qErr)
 	}
 
+	// Mirror legacy pending_command for pre-39 Pi clients.
+	_ = deps.Q.SetDevicePendingCommand(ctx, db.SetDevicePendingCommandParams{
+		ID:      deviceID,
+		Column2: pendingJSON,
+	})
+
 	return map[string]any{
-		"device_id":        deviceID,
-		"actuator_id":      actuatorID,
-		"command":          command,
-		"pending_command":  pending,
-		"actuator_name":    actuator.Name,
-		"device_name":      device.Name,
+		"command_id":      queued.ID,
+		"device_id":       deviceID,
+		"actuator_id":     actuatorID,
+		"command":         command,
+		"pending_command": pending,
+		"actuator_name":   actuator.Name,
+		"device_name":     device.Name,
 	}, nil
 }

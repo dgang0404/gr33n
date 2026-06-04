@@ -16,8 +16,16 @@ type Querier interface {
 	AddFarmMember(ctx context.Context, arg AddFarmMemberParams) (Gr33ncoreFarmMembership, error)
 	AddRecipeComponent(ctx context.Context, arg AddRecipeComponentParams) error
 	ApproveInsertCommonsBundle(ctx context.Context, arg ApproveInsertCommonsBundleParams) (Gr33ncoreInsertCommonsBundle, error)
+	// Phase 39 WS1 — device command queue
+	AckDeviceCommand(ctx context.Context, arg AckDeviceCommandParams) (Gr33ncoreDeviceCommand, error)
 	ArchiveAnimalGroup(ctx context.Context, arg ArchiveAnimalGroupParams) (Gr33nanimalsAnimalGroup, error)
+	CancelDeviceCommand(ctx context.Context, id int64) (Gr33ncoreDeviceCommand, error)
 	ClearDevicePendingCommand(ctx context.Context, id int64) error
+	CountPendingCommandsByDevice(ctx context.Context, deviceID int64) (int64, error)
+	CountPendingCommandsByFarm(ctx context.Context, farmID int64) ([]CountPendingCommandsByFarmRow, error)
+	EnqueueDeviceCommand(ctx context.Context, arg EnqueueDeviceCommandParams) (Gr33ncoreDeviceCommand, error)
+	GetNextDeviceCommand(ctx context.Context, deviceID int64) (Gr33ncoreDeviceCommand, error)
+	ListDeviceCommands(ctx context.Context, deviceID int64, status *string) ([]Gr33ncoreDeviceCommand, error)
 	ClearSensorAlertBreachStart(ctx context.Context, id int64) error
 	// Phase 20.9 WS1 — stops a running timer. Rate is captured at close
 	// time, not start, so a rate change mid-shift applies to the rest of
@@ -232,6 +240,7 @@ type Querier interface {
 	// number reflects the working solution, not just the freshly-mixed batch.
 	GetFertigationAggregatesByCropCycle(ctx context.Context, cropCycleID *int64) (GetFertigationAggregatesByCropCycleRow, error)
 	GetFertigationProgramByID(ctx context.Context, id int64) (Gr33nfertigationProgram, error)
+	GetEcTargetByID(ctx context.Context, id int64) (Gr33nfertigationEcTarget, error)
 	GetFertigationReservoirByID(ctx context.Context, id int64) (Gr33nfertigationReservoir, error)
 	GetFileAttachmentByID(ctx context.Context, id int64) (Gr33ncoreFileAttachment, error)
 	GetGuardianProposalByID(ctx context.Context, proposalID uuid.UUID) (Gr33ncoreGuardianActionProposal, error)

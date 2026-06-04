@@ -394,11 +394,32 @@ func (w *Worker) dispatchProgramActuator(
 		})
 		if err != nil {
 			log.Printf("program %d action %d: build pending command: %v", p.ID, action.ID, err)
-		} else if err := w.q.SetDevicePendingCommand(ctx, db.SetDevicePendingCommandParams{
-			ID:      *actuator.DeviceID,
-			Column2: pendingJSON,
-		}); err != nil {
-			log.Printf("program %d action %d: set pending command: %v", p.ID, action.ID, err)
+		} else {
+			cmdType := "actuator"
+			if dur != nil {
+				cmdType = "pulse"
+			}
+			aID := *action.TargetActuatorID
+			// Phase 39 WS1: enqueue to FIFO queue; mirror pending_command for backward compat.
+			if _, qErr := w.q.EnqueueDeviceCommand(ctx, db.EnqueueDeviceCommandParams{
+				DeviceID:    *actuator.DeviceID,
+				FarmID:      p.FarmID,
+				CommandType: cmdType,
+				Payload:     pendingJSON,
+				Source:      "program",
+				ActuatorID:  &aID,
+				ScheduleID:  &schedID,
+				ProgramID:   &progID,
+			}); qErr != nil {
+				log.Printf("program %d action %d: enqueue device command: %v", p.ID, action.ID, qErr)
+			}
+			// Keep writing legacy slot so pre-39 Pi clients still receive the command.
+			if err := w.q.SetDevicePendingCommand(ctx, db.SetDevicePendingCommandParams{
+				ID:      *actuator.DeviceID,
+				Column2: pendingJSON,
+			}); err != nil {
+				log.Printf("program %d action %d: set pending command: %v", p.ID, action.ID, err)
+			}
 		}
 	}
 	return nil

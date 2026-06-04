@@ -57,6 +57,21 @@ Each tab shows the **connection chain**: live **reading** → **target band** (s
 
 ---
 
+## 4b. Zone cockpit walkthrough (Phase 40 — planned)
+
+**Status:** Doc stub until Phase 40 ships. Plan: [`plans/phase_40_unified_farmer_ux_zone_cockpit.plan.md`](plans/phase_40_unified_farmer_ux_zone_cockpit.plan.md).
+
+**Intended walk (Flower Room example):**
+
+1. **Zones → Flower Room → Overview** — “Today” strip: next schedule, active rules, unread alerts, device/queue summary.
+2. **Climate / Water / Light** — edit **target bands inline** (no Setpoints sidebar hop); ack an alert from Overview.
+3. **Water** — grow story: last feed, next program run, queue head (after Phase 39); **Run pulse** for manual irrigate.
+4. **Power settings** — link out to Advanced only when cron/rule expression editing is needed.
+
+Farm-wide morning path and empty-state hints: [Phase 41](plans/phase_41_farm_hub_coherence.plan.md). Gap index: [pre_development_gaps_index](plans/pre_development_gaps_index.plan.md).
+
+---
+
 ## 3. Data-flow diagram (browser, API, edge)
 
 High level: the **dashboard** talks to the **Go API** with a JWT; optional **Pi / edge** clients send readings with an API key. **Postgres** holds farm data; an **automation worker** (started with the API process) advances schedules and rules against the same database.
@@ -79,13 +94,30 @@ flowchart LR
 
 **Reading path:** Hardware → (optional Pi / `gr33n_client.py`) → `POST` readings → API → `sensor_readings` (and related). The UI can subscribe to **SSE** live readings for the selected farm (`/farms/{id}/sensors/stream`) so charts update without polling everything.
 
-**Actuation path:** Rules / schedules / fertigation programs → worker or operator → **`pending_command`** on the device row → Pi poll → GPIO → **`actuator_events`**. One pending slot per device today (see §4a). Phase 39 will add a FIFO **command queue** for multi-step mix + irrigate.
+**Actuation path:** Rules / schedules / fertigation programs → worker or operator → **`pending_command`** on the device row → Pi poll → GPIO → **`actuator_events`**. One pending slot per device today (see §4a).
+
+**After Phase 39 (planned):** writers enqueue to **`device_commands`** (FIFO); Pi drains via **`GET /devices/{id}/commands/next`** (see [`workflow-guide.md`](workflow-guide.md) §4b, [`pi-integration-guide.md`](pi-integration-guide.md)). `pending_command` may mirror queue head for one release. **Re-ingest RAG** after §3 text is updated on ship — see [`rag/platform-doc-manifest.yaml`](rag/platform-doc-manifest.yaml).
+
+---
+
+## 3b. Farm hub & morning path (Phase 41 — planned)
+
+**Status:** Doc stub until Phase 41 ships. Plan: [`plans/phase_41_farm_hub_coherence.plan.md`](plans/phase_41_farm_hub_coherence.plan.md).
+
+**Intended path (complements [tasks-first guide](tasks-first-operator-guide.md)):**
+
+1. **`/` Dashboard** — morning strip: tasks due, unread alerts, next schedule, offline devices, queue depth (post-39).
+2. **`/tasks`** → **`/alerts`** → **`/schedules`** with optional **`?zone_id=`** when you started from a zone.
+3. **`/fertigation?zone_id=`** — events/programs filtered to that room; banner back to **Zones → Water**.
+4. **Why-empty hints** on empty widgets (telemetry vs setpoint vs automation off) — replaces guesswork in [§4](#4-why-is-this-empty-future-ux).
+
+Requires Phase 40 zone cockpit for consistent zone-first language.
 
 ---
 
 ## 4. “Why is this empty?” (future UX)
 
-Empty lists usually mean one of: **no data yet**, **wrong farm selected**, **telemetry not reaching the API** (Pi down, URL/key wrong), **automation not configured**, or **setpoints vs live readings** confusion (setpoint without recent readings looks “dead”). The sit-in stream tracks **per-area inline hints** as **separate tickets**; this tour stays the **conceptual** map — update both when product copy lands.
+Empty lists usually mean one of: **no data yet**, **wrong farm selected**, **telemetry not reaching the API** (Pi down, URL/key wrong), **automation not configured**, or **setpoints vs live readings** confusion (setpoint without recent readings looks “dead”). **Inline hints** are planned in [Phase 41 WS4](plans/phase_41_farm_hub_coherence.plan.md#ws4--why-empty-inline-hints) (see [gaps index](plans/pre_development_gaps_index.plan.md)); this section stays the **conceptual** map until that ships.
 
 ---
 

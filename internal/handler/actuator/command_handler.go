@@ -92,6 +92,11 @@ func (h *Handler) EnqueueCommand(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	cmdType := "actuator"
+	if body.DurationSeconds != nil && *body.DurationSeconds > 0 {
+		cmdType = "pulse"
+	}
+
 	pendingJSON, err := BuildPendingCommandJSONFull(PendingCommandInput{
 		ActuatorID:      actuatorID,
 		Command:         command,
@@ -103,26 +108,42 @@ func (h *Handler) EnqueueCommand(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusBadRequest, err.Error())
 		return
 	}
-	if err := h.q.SetDevicePendingCommand(ctx, db.SetDevicePendingCommandParams{
-		ID:      device.ID,
-		Column2: pendingJSON,
-	}); err != nil {
+
+	// Phase 39 WS1: enqueue into the FIFO device_commands queue.
+	queued, qErr := h.q.EnqueueDeviceCommand(ctx, db.EnqueueDeviceCommandParams{
+		DeviceID:    device.ID,
+		FarmID:      device.FarmID,
+		CommandType: cmdType,
+		Payload:     pendingJSON,
+		Source:      "operator",
+		ActuatorID:  &actuatorID,
+	})
+	if qErr != nil {
 		httputil.WriteError(w, http.StatusInternalServerError, "failed to enqueue command")
 		return
 	}
+
+	// Backward compat: mirror head payload on devices.config.pending_command
+	// so pre-39 Pi clients still pick it up.
+	_ = h.q.SetDevicePendingCommand(ctx, db.SetDevicePendingCommandParams{
+		ID:      device.ID,
+		Column2: pendingJSON,
+	})
 
 	var pending map[string]any
 	_ = json.Unmarshal(pendingJSON, &pending)
 
 	resp := map[string]any{
-		"device_id":        device.ID,
-		"actuator_id":      actuatorID,
-		"command":          command,
-		"pending_command":  pending,
-		"actuator_name":    actuator.Name,
-		"device_name":      device.Name,
-		"valid_commands":   ValidCommands(actuator.ActuatorType),
-		"pulse_supported":  PulseDurationAllowed(actuator.ActuatorType),
+		"command_id":      queued.ID,
+		"device_id":       device.ID,
+		"actuator_id":     actuatorID,
+		"command":         command,
+		"command_type":    cmdType,
+		"pending_command": pending,
+		"actuator_name":   actuator.Name,
+		"device_name":     device.Name,
+		"valid_commands":  ValidCommands(actuator.ActuatorType),
+		"pulse_supported": PulseDurationAllowed(actuator.ActuatorType),
 	}
 	if body.DurationSeconds != nil {
 		resp["duration_seconds"] = *body.DurationSeconds

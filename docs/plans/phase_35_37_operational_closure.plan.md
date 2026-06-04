@@ -38,9 +38,12 @@ todos:
     status: pending
   - id: bug-guardian-nav
     content: "BUG (pre-40): Guardian edge tab + sidebar overlap — see phase_40 plan bug-guardian-nav"
-    status: pending
+    status: done
   - id: oc-40-closure
     content: "OC-40: Phase 40 WS8 — zone cockpit operator-tour §4b, architecture §7.0f, Vitest inline setpoints + Today strip"
+    status: pending
+  - id: oc-41-closure
+    content: "OC-41: Phase 41 WS7 — farm hub operator-tour §3, architecture §7.0g, why-empty Vitest"
     status: pending
 isProject: false
 ---
@@ -98,9 +101,9 @@ Use this table when marking a phase shipped:
 
 ---
 
-## Current git snapshot
+## Historical note
 
-Phase 35 shipped: `06e281d`, `362c0ac`, `9a19048`, `e09d4f4`. Phase 36 backend: `999bff1` (WS1+WS2), `0916aba` (WS3+WS5), `f686d76` (WS7), `46ecdbb` (plan status). **Open:** WS4 UI, WS6 interlocks, OC-36B/C.
+Phase 35–36 implementation commits are on `main`; Phase 36 **WS4 UI, WS6 interlocks, OC-36B/C** are **closed**. Use the status tables below, not this note, for current state.
 
 ---
 
@@ -117,9 +120,9 @@ Feature detail: [`phase_36_greenhouse_climate.plan.md`](phase_36_greenhouse_clim
 | Automation templates (WS3) | ✅ | `POST /farms/{id}/automation/rule-templates/greenhouse`; bootstrap lux/temp/vent rules (inactive) |
 | Bootstrap → core (WS5) | ✅ | **OC-36A** — [`20260603_phase36_greenhouse_climate_v2.sql`](../../db/migrations/20260603_phase36_greenhouse_climate_v2.sql) |
 | Guardian read (WS7) | ✅ | `summarize_zone_greenhouse_climate`; `enqueue_actuator_command` deploy/retract/open/close/stop |
-| **Greenhouse UI (WS4)** | ⏳ | ZoneDetail tab, typed command buttons, sensor strip |
-| **Sensor interlocks (WS6)** | ⏳ | Missing lux/PAR banner; template guard without override |
-| **Demo seed** | ⏳ | Bootstrap apply suffices for new farms; `master_seed.sql` greenhouse row optional |
+| **Greenhouse UI (WS4)** | ✅ | ZoneDetail Climate tab, typed command buttons, sensor strip |
+| **Sensor interlocks (WS6)** | ✅ | Missing lux/PAR banner; template guard without override |
+| **Demo seed** | ✅ partial | Bootstrap apply suffices; optional greenhouse row in master_seed |
 | **Unit tests** | ✅ partial | `greenhouse_test.go`, `taxonomy_test.go` |
 | **Smokes / Vitest** | ✅ | **OC-36C** — `smoke_phase36_oc36c_test.go` (+ WS4-prep pending_command) |
 | **OpenAPI / operator-tour** | ✅ | **OC-36B** — operator-tour §5b; OpenAPI paths/schemas |
@@ -197,11 +200,26 @@ Feature detail: [`phase_40_unified_farmer_ux_zone_cockpit.plan.md`](phase_40_uni
 
 | Area | Status | Notes |
 |------|--------|-------|
-| Guardian nav hotfix | ⏳ | `bug-guardian-nav` — edge tab vs sidebar; do before WS7 |
+| Guardian nav hotfix | ✅ | `bug-guardian-nav` — pinned sidebar launch + TopBar; edge tab icon-only on right |
 | Today strip + inline setpoints | ⏳ | WS1–WS2 |
 | Zone rules/schedules/alerts | ⏳ | WS3–WS4 |
 | Water grow story | ⏳ | WS5 — extends 39 WS7 |
 | OC-40 docs/tests | ⏳ | WS8 |
+
+## Phase 41 — Farm hub coherence
+
+Feature detail: [`phase_41_farm_hub_coherence.plan.md`](phase_41_farm_hub_coherence.plan.md). **OC-41** when WS7 lands. **After Phase 40.**
+
+| Area | Status | Notes |
+|------|--------|-------|
+| Dashboard morning cockpit | ⏳ | WS1 |
+| Fertigation `?zone_id=` | ⏳ | WS2 |
+| Cross-page zone filter | ⏳ | WS3 |
+| Why-empty hints | ⏳ | WS4 — closes sit-in §1 |
+| Seed tasks `zone_id` | ⏳ | WS5 |
+| Lighting ↔ zone Light | ⏳ | WS6 |
+
+---
 
 | Area | Depends on | Notes |
 |------|------------|-------|

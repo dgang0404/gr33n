@@ -242,6 +242,23 @@ Both accept arbitrary `meta` JSON for tags, notes, or integrations with the **Co
 
 **Fertigation with natural-farming inputs.** Components on a mixing event can draw from either commercial nutrient batches or **natural-farming input batches** (fermented extracts, microbial inoculants, etc.) — the schema doesn't distinguish, it just debits whatever `input_batches.id` you cite. The **JADAM indoor photoperiod starter** bootstrap seeds a handful of JADAM-style inputs (JMS, JLF, FFJ, WCA) so operators following that method have realistic demo data out of the box; operators using other approaches add their own input definitions and the rest of the fertigation pipeline is unchanged. See [`terminology-guideline.md`](terminology-guideline.md) for why we call the API module **natural farming** (the generic umbrella) rather than tying it to any nationality or tradition.
 
+### 4b. Planned operator UX after Phase 38 (39, 40, 41, 39b)
+
+**Status:** Planning complete; implementation not started. Canonical gap index: [`plans/pre_development_gaps_index.plan.md`](plans/pre_development_gaps_index.plan.md). **Do not** tell operators these features work until the matching phase ships.
+
+| Phase | What changes for operators | Workflow impact |
+|-------|---------------------------|-----------------|
+| **[39 — Edge fertigation](plans/phase_39_edge_fertigation_execution.plan.md)** | FIFO **`device_commands`** queue per device; cloud **`MixPlan`**; Pi **`mix_batch`** steps then **pulse** irrigate | §2 actuation path moves from one `pending_command` slot to ordered dequeue. Programs can enqueue **mix then irrigate** without last-write-wins. Manual **`POST …/mixing-events`** stays for labs without hardware. |
+| **[40 — Zone cockpit](plans/phase_40_unified_farmer_ux_zone_cockpit.plan.md)** | **Zones → Overview / Water / Light / Climate** become the edit surface: inline setpoints, zone alerts, Today strip, Water **grow story** | Operators fix targets and ack alerts **in the zone**; Advanced (`/setpoints`, `/automation`, `/schedules`) remain for power users. Guardian should prefer zone-scoped guidance ([architecture §7.0f](farm-guardian-architecture.md)). Walkthrough: [operator-tour §4b](operator-tour.md#4b-zone-cockpit-walkthrough-phase-40--planned). |
+| **[41 — Farm hub](plans/phase_41_farm_hub_coherence.plan.md)** | **Dashboard** morning chips; **Fertigation** honors `?zone_id=`; **Tasks / Schedules / Alerts** keep zone context; **why-empty** hints | Closes the “six sidebar hops” problem when the zone cockpit is done but farm-wide pages still feel disconnected. Walkthrough: [operator-tour §3b](operator-tour.md#3b-farm-hub--morning-path-phase-41--planned). |
+| **[39b — Plain irrigation](plans/phase_39b_plain_irrigation.plan.md)** | **`irrigation_only`** programs — pulse without recipe/EC math | RO/well farms: no mix preview, no fake nutrient story. After 39 WS1 queue. |
+
+**Recommended implementation order:** 39 → 40 → 41 → 39b (39b can follow 39 WS1 in parallel with late 40).
+
+**RAG / docs:** After each phase ships, expand the matching **operator-tour** section (§3 actuation path, §4b, §3b), **workflow-guide** §4b table row, and **architecture** §7.0f/§7.0g stubs; then **`make rag-ingest-platform-docs`** (see manifest comments in [`rag/platform-doc-manifest.yaml`](rag/platform-doc-manifest.yaml)).
+
+**Product backlog (non-phase):** program **run now**, `metadata.steps` deprecation, Guardian **create_lighting_program** propose, mobile distribution — [`plans/product_backlog_operator_runtime.plan.md`](plans/product_backlog_operator_runtime.plan.md).
+
 ---
 
 ## 5. Tasks
@@ -527,6 +544,7 @@ Operator-facing constraints (PII, secrets, Insert Commons boundaries) are docume
 - For **commons publishing**: [`insert-commons-pipeline-runbook.md`](insert-commons-pipeline-runbook.md), [`commons-catalog-operator-playbook.md`](commons-catalog-operator-playbook.md).
 - For **alerts and push**: [`notifications-operator-playbook.md`](notifications-operator-playbook.md).
 - For **phased feature history**: [`phase-13-operator-documentation.md`](phase-13-operator-documentation.md), [`phase-14-operator-documentation.md`](phase-14-operator-documentation.md).
+- For **planned grow UX (39–41)**: §4b above; [`plans/pre_development_gaps_index.plan.md`](plans/pre_development_gaps_index.plan.md).
 - For **RAG scope, data classes, and LLM egress**: [`rag-scope-and-threat-model.md`](rag-scope-and-threat-model.md).
 - For **RAG CI / DB parity**: [`rag-ci-and-staging-parity.md`](rag-ci-and-staging-parity.md).
 - For **schema ER diagram (text + Mermaid)** including **`rag_embedding_chunks`**: [`schema-erd-text.md`](schema-erd-text.md).

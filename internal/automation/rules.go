@@ -428,11 +428,11 @@ func (w *Worker) dispatchRuleActuator(ctx context.Context, rule db.Gr33ncoreAuto
 		return fmt.Errorf("action %d: insert actuator event: %w", action.ID, err)
 	}
 
-	// In non-simulation mode, queue the command onto the owning device
-	// so the Pi client can pick it up on its next poll. Best-effort —
-	// the rule still counts as "fired" even if the device is offline.
+	// In non-simulation mode, enqueue the command so the Pi picks it up.
+	// Phase 39 WS1: use FIFO queue; mirror pending_command for pre-39 Pi clients.
 	if !w.simulation && actuator.DeviceID != nil {
 		ruleID := rule.ID
+		aID := *action.TargetActuatorID
 		pendingJSON, err := acthandler.BuildPendingCommandJSONFull(acthandler.PendingCommandInput{
 			ActuatorID: *action.TargetActuatorID,
 			Command:    command,
@@ -441,11 +441,25 @@ func (w *Worker) dispatchRuleActuator(ctx context.Context, rule db.Gr33ncoreAuto
 		})
 		if err != nil {
 			log.Printf("rule %d action %d: build pending command: %v", rule.ID, action.ID, err)
-		} else if err := w.q.SetDevicePendingCommand(ctx, db.SetDevicePendingCommandParams{
-			ID:      *actuator.DeviceID,
-			Column2: pendingJSON,
-		}); err != nil {
-			log.Printf("rule %d action %d: set pending command: %v", rule.ID, action.ID, err)
+		} else {
+			if _, qErr := w.q.EnqueueDeviceCommand(ctx, db.EnqueueDeviceCommandParams{
+				DeviceID:    *actuator.DeviceID,
+				FarmID:      actuator.FarmID,
+				CommandType: "actuator",
+				Payload:     pendingJSON,
+				Source:      "rule",
+				ActuatorID:  &aID,
+				RuleID:      &ruleID,
+			}); qErr != nil {
+				log.Printf("rule %d action %d: enqueue device command: %v", rule.ID, action.ID, qErr)
+			}
+			// Keep legacy slot for backward compat.
+			if err := w.q.SetDevicePendingCommand(ctx, db.SetDevicePendingCommandParams{
+				ID:      *actuator.DeviceID,
+				Column2: pendingJSON,
+			}); err != nil {
+				log.Printf("rule %d action %d: set pending command: %v", rule.ID, action.ID, err)
+			}
 		}
 	}
 	return nil

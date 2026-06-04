@@ -63,6 +63,23 @@ func (q *Queries) CreateEcTarget(ctx context.Context, arg CreateEcTargetParams) 
 	return i, err
 }
 
+// Phase 39 WS2 — hand-written (run `make sqlc` to regenerate from SQL).
+const getEcTargetByID = `-- name: GetEcTargetByID :one
+SELECT id, farm_id, zone_id, growth_stage, ec_min_mscm, ec_max_mscm, ph_min, ph_max, notes, rationale, created_at, updated_at
+FROM gr33nfertigation.ec_targets
+WHERE id = $1`
+
+func (q *Queries) GetEcTargetByID(ctx context.Context, id int64) (Gr33nfertigationEcTarget, error) {
+	row := q.db.QueryRow(ctx, getEcTargetByID, id)
+	var i Gr33nfertigationEcTarget
+	err := row.Scan(
+		&i.ID, &i.FarmID, &i.ZoneID, &i.GrowthStage,
+		&i.EcMinMscm, &i.EcMaxMscm, &i.PhMin, &i.PhMax,
+		&i.Notes, &i.Rationale, &i.CreatedAt, &i.UpdatedAt,
+	)
+	return i, err
+}
+
 const createFertigationEvent = `-- name: CreateFertigationEvent :one
 INSERT INTO gr33nfertigation.fertigation_events (
     farm_id, program_id, reservoir_id, zone_id, crop_cycle_id, applied_at,

@@ -1379,6 +1379,33 @@ type Gr33ncoreCostTransactionIdempotency struct {
 	CreatedAt         time.Time `db:"created_at" json:"created_at"`
 }
 
+// Gr33ncoreDeviceCommand is the Phase 39 WS1 FIFO queue row.
+type Gr33ncoreDeviceCommand struct {
+	ID          int64           `db:"id" json:"id"`
+	DeviceID    int64           `db:"device_id" json:"device_id"`
+	FarmID      int64           `db:"farm_id" json:"farm_id"`
+	CommandType string          `db:"command_type" json:"command_type"`
+	Payload     json.RawMessage `db:"payload" json:"payload"`
+	Status      string          `db:"status" json:"status"`
+	Source      string          `db:"source" json:"source"`
+	// nullable provenance
+	ActuatorID  *int64              `db:"actuator_id" json:"actuator_id,omitempty"`
+	ScheduleID  *int64              `db:"schedule_id" json:"schedule_id,omitempty"`
+	RuleID      *int64              `db:"rule_id" json:"rule_id,omitempty"`
+	ProgramID   *int64              `db:"program_id" json:"program_id,omitempty"`
+	// audit
+	CreatedAt   time.Time           `db:"created_at" json:"created_at"`
+	StartedAt   pgtype.Timestamptz  `db:"started_at" json:"started_at,omitempty"`
+	CompletedAt pgtype.Timestamptz  `db:"completed_at" json:"completed_at,omitempty"`
+	Result      json.RawMessage     `db:"result" json:"result,omitempty"`
+}
+
+// CountPendingCommandsByDeviceRow holds the queue-depth result per device.
+type CountPendingCommandsByFarmRow struct {
+	DeviceID int64 `db:"device_id" json:"device_id"`
+	Cnt      int64 `db:"cnt" json:"cnt"`
+}
+
 type Gr33ncoreDevice struct {
 	ID              int64                        `db:"id" json:"id"`
 	FarmID          int64                        `db:"farm_id" json:"farm_id"`

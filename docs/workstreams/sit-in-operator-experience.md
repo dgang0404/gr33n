@@ -15,7 +15,7 @@
 | Item | Notes |
 |------|--------|
 | **Single-page operator tour** | **Done (v1):** [`docs/operator-tour.md`](../operator-tour.md) — narrative walk: Farm → Zones → Sensors/Controls → Schedules/Rules → Tasks → Fertigation; **mermaid data-flow** diagram; links to bootstrap + schema. Revise as nav/copy changes. **In-app (Phase 26 WS1 v1):** **System → Guide** — glossary + suggested route order (`/operator-guide`). |
-| **“Why empty?” UX** | Per major UI area, future inline hints (telemetry vs setpoints vs automation inactive). Track implementation as **separate UX tickets**; tour §4 points here — **implementation still open**. |
+| **“Why empty?” UX** | Per major UI area, inline hints (telemetry vs setpoints vs automation inactive). **Planned:** [Phase 41 WS4](../plans/phase_41_farm_hub_coherence.plan.md#ws4--why-empty-inline-hints); gap index [pre_development_gaps_index](../plans/pre_development_gaps_index.plan.md). Tour §4 stays conceptual until WS4 ships. |
 
 **Artifact:** [`docs/operator-tour.md`](../operator-tour.md).
 
