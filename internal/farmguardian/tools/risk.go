@@ -21,7 +21,7 @@ func RiskTierForTool(toolID string, args map[string]any) string {
 		return RiskMedium
 	case "create_task", "create_task_from_alert", "update_cycle_stage",
 		"patch_schedule", "patch_fertigation_program",
-		"create_plant", "create_crop_cycle", "create_fertigation_program":
+		"create_plant", "create_crop_cycle", "create_fertigation_program", "create_lighting_program":
 		return RiskMedium
 	default:
 		return RiskMedium

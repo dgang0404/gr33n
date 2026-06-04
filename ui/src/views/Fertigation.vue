@@ -220,16 +220,30 @@
         <div v-for="p in programs" :key="p.id"
           class="bg-zinc-900 border rounded-xl p-4 space-y-2"
           :class="p.is_active ? 'border-green-800/70' : 'border-zinc-800'">
-          <div class="flex items-center justify-between">
+          <div class="flex items-center justify-between gap-2 flex-wrap">
             <p class="text-white text-sm font-medium">{{ p.name }}</p>
-            <span class="text-xs px-2 py-0.5 rounded-full"
-              :class="p.is_active ? 'bg-green-900/50 text-green-300' : 'bg-zinc-800 text-zinc-400'">
-              {{ p.is_active ? 'Active' : 'Inactive' }}
-            </span>
-            <span v-if="p.irrigation_only" class="text-xs px-2 py-0.5 rounded-full bg-sky-900/50 text-sky-300">
-              Irrigation only
-            </span>
+            <div class="flex items-center gap-1.5 flex-wrap">
+              <button
+                type="button"
+                class="text-xs px-2 py-0.5 rounded-md bg-amber-900/60 text-amber-200 hover:bg-amber-800/80 disabled:opacity-50"
+                :disabled="runNowBusy[p.id] || saving"
+                :title="p.is_active ? 'Run program now (same pipeline as scheduled tick)' : 'Run inactive program now for testing'"
+                @click="runProgramNow(p)"
+              >
+                {{ runNowBusy[p.id] ? 'Running…' : 'Run now' }}
+              </button>
+              <span class="text-xs px-2 py-0.5 rounded-full"
+                :class="p.is_active ? 'bg-green-900/50 text-green-300' : 'bg-zinc-800 text-zinc-400'">
+                {{ p.is_active ? 'Active' : 'Inactive' }}
+              </span>
+              <span v-if="p.irrigation_only" class="text-xs px-2 py-0.5 rounded-full bg-sky-900/50 text-sky-300">
+                Irrigation only
+              </span>
+            </div>
           </div>
+          <p v-if="runNowMessage[p.id]" class="text-xs" :class="runNowMessage[p.id].ok ? 'text-green-400' : 'text-amber-400'">
+            {{ runNowMessage[p.id].text }}
+          </p>
           <p class="text-zinc-400 text-xs">
             <router-link v-if="p.target_zone_id" :to="`/zones/${p.target_zone_id}`" class="hover:text-green-400 transition-colors">{{ zoneLabel(p.target_zone_id) }}</router-link>
             <span v-else>All zones</span>
@@ -585,6 +599,8 @@ const store = useFarmStore()
 const farmContext = useFarmContextStore()
 const loading = ref(false)
 const saving = ref(false)
+const runNowBusy = reactive({})
+const runNowMessage = reactive({})
 const activeTab = ref('reservoirs')
 
 const tabs = [
@@ -1056,6 +1072,28 @@ async function submitEcTarget() {
     ecForm.value = { growth_stage: '', zone_id: null, ec_min_mscm: 0, ec_max_mscm: 0, ph_min: 0, ph_max: 0, notes: '' }
     ecTargets.value = await store.loadEcTargets(farmId.value)
   } finally { saving.value = false }
+}
+
+async function runProgramNow(p) {
+  if (!farmId.value || !p?.id) return
+  runNowBusy[p.id] = true
+  delete runNowMessage[p.id]
+  try {
+    const res = await store.runFertigationProgramNow(farmId.value, p.id)
+    runNowMessage[p.id] = {
+      ok: true,
+      text: res.duplicate
+        ? 'Already ran this minute — no duplicate commands queued.'
+        : (res.message || 'Program run queued.'),
+    }
+  } catch (e) {
+    runNowMessage[p.id] = {
+      ok: false,
+      text: e?.response?.data?.error || e?.message || 'Run now failed',
+    }
+  } finally {
+    runNowBusy[p.id] = false
+  }
 }
 
 async function submitProgram() {

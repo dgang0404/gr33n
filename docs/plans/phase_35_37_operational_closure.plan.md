@@ -36,15 +36,20 @@ todos:
   - id: oc-39-closure
     content: "OC-39: Phase 39 WS8 — device_commands queue smokes, mix plan unit tests, pi-integration-guide queue+mix_batch, operator-tour automated mix"
     status: done
-    status: pending
+  - id: oc-39b-closure
+    content: "OC-39b: irrigation_only programs — migration, worker skip mix, UI badge, smoke (commits with 39b)"
+    status: done
+  - id: backlog-operator-runtime
+    content: "Product backlog B1–B4 — run-now, metadata.steps counter, create_lighting_program, mobile checklist (see product_backlog_operator_runtime.plan.md)"
+    status: done
   - id: bug-guardian-nav
     content: "BUG (pre-40): Guardian edge tab + sidebar overlap — see phase_40 plan bug-guardian-nav"
     status: done
   - id: oc-40-closure
-    content: "OC-40: Phase 40 WS8 — zone cockpit operator-tour §4b, architecture §7.0f, Vitest inline setpoints + Today strip"
+    content: "OC-40: Phase 40 WS8 — zone cockpit operator-tour §4b, architecture §7.0f, Vitest inline setpoints + Today strip (close when Phase 40 ships, not before)"
     status: pending
   - id: oc-41-closure
-    content: "OC-41: Phase 41 WS7 — farm hub operator-tour §3, architecture §7.0g, why-empty Vitest"
+    content: "OC-41: Phase 41 WS7 — farm hub operator-tour §3, architecture §7.0g, why-empty Vitest (close when Phase 41 ships, after 40)"
     status: pending
 isProject: false
 ---
@@ -89,7 +94,7 @@ Use this table when marking a phase shipped:
 | Schedule-action API | ✅ | GET/POST `/schedules/{id}/actions` |
 | TZ-aware worker | ✅ | `shouldTriggerNow(expr, tz, …)` + unit test |
 | UI | ✅ | `PhotoperiodClockEditor.vue`, `LightingPrograms.vue`, `/lighting` route |
-| Guardian read | ✅ | `summarize_zone_lighting` (no `create_lighting_program` propose tool yet) |
+| Guardian read + propose | ✅ | `summarize_zone_lighting`; **`create_lighting_program`** (product backlog B3) |
 | **Demo seed** | ✅ | `master_seed.sql` Section 3B wraps 18/6 in `lighting_programs` |
 | **Bootstrap** | ✅ | `jadam_indoor_photoperiod_v1` → `lighting_programs` (OC-35A migration) |
 | **Unit tests** | ✅ | `handler_test.go`, `worker_test.go` TZ case |
@@ -192,6 +197,29 @@ Feature detail: [`phase_38_plant_needs_ui_and_pulse_commands.plan.md`](phase_38_
 ## Phase 39 — Edge fertigation execution
 
 Feature detail: [`phase_39_edge_fertigation_execution.plan.md`](phase_39_edge_fertigation_execution.plan.md). **OC-39 complete** (WS8 docs, smokes, seed, OpenAPI 0.4.5).
+
+**Phase 39b** (plain irrigation): [`phase_39b_plain_irrigation.plan.md`](phase_39b_plain_irrigation.plan.md) — **OC-39b done**.
+
+**Product backlog** (run-now, steps counter, lighting propose, mobile checklist): [`product_backlog_operator_runtime.plan.md`](product_backlog_operator_runtime.plan.md) — **done** (OpenAPI 0.4.6); commit on `main` before Phase 40 kickoff.
+
+---
+
+## Pre–Phase 40 gate (start feature work only when these are green)
+
+| Gate | Required before Phase 40 WS1? | Status |
+|------|-------------------------------|--------|
+| Phases **35–37** OC slices (seed, bootstrap, docs, smokes) | **Yes** | ✅ OC-35A–C, OC-36A–C, OC-37 + OC-37E |
+| Phase **38** plant-needs + pulse | **Yes** | ✅ OC-38 |
+| Phase **39** + **39b** runtime (queue, mix, irrigation_only) | **Yes** | ✅ OC-39, OC-39b |
+| **bug-guardian-nav** hotfix | **Yes** (UX baseline) | ✅ |
+| **Product backlog** B1–B4 | **Yes** (operator day-2; small diff) | ✅ code — ensure **committed** on `main` |
+| **OC-40-closure** (operator-tour §4b, Vitest cockpit, arch §7.0f) | **No** — this *is* Phase 40 **WS8** | ⏳ pending until Phase 40 ships |
+| **OC-41-closure** (farm hub tour, why-empty Vitest) | **No** — Phase **41** WS7 | ⏳ after Phase 40 |
+| Phase **41** feature work (dashboard hub, `?zone_id=`) | **No** | Planned after 40 |
+
+**Pending rows in this plan’s todo list:** only **OC-40** and **OC-41** are intentionally open — they track *future* closure, not missing pre-40 work. Do not block Phase 40 on them.
+
+**Optional hygiene (not blocking):** `make rag-ingest-platform-docs` after doc edits; push `main` to origin when ready.
 
 ---
 

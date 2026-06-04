@@ -271,6 +271,13 @@ func successSummary(toolID string, result any) string {
 			}
 		}
 		return "Fertigation program created."
+	case "create_lighting_program":
+		if m, ok := result.(map[string]any); ok {
+			if name, ok := m["name"].(string); ok && name != "" {
+				return "Lighting program created: " + name + "."
+			}
+		}
+		return "Lighting program created."
 	case "apply_grow_setup_pack":
 		return "Grow setup pack applied — plant, crop cycle, and fertigation program created."
 	case "patch_schedule", "patch_fertigation_program", "patch_rule":
@@ -355,6 +362,17 @@ func auditTargetForTool(toolID string, args map[string]any, result any) (*string
 		if result != nil {
 			if m, ok := result.(map[string]any); ok {
 				if id, ok := m["program_id"]; ok {
+					recID = strPtr(formatAnyInt(id))
+				}
+			}
+		}
+		return table, recID
+	case "create_lighting_program":
+		table := strPtr("lighting_programs")
+		recID := strPtr("")
+		if result != nil {
+			if m, ok := result.(map[string]any); ok {
+				if id, ok := m["lighting_program_id"]; ok {
 					recID = strPtr(formatAnyInt(id))
 				}
 			}

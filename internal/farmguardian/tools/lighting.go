@@ -2,9 +2,14 @@ package tools
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
+
+	db "gr33n-api/internal/db"
 	lightinghandler "gr33n-api/internal/handler/lighting"
 )
 
@@ -107,6 +112,98 @@ func computeOffTime(lightsOnAt string, onHours int32) string {
 	h, m := parseInt(parts[0]), parseInt(parts[1])
 	totalMins := (h*60 + m + int(onHours)*60) % (24 * 60)
 	return fmt.Sprintf("%02d:%02d", totalMins/60, totalMins%60)
+}
+
+func execCreateLightingProgram(ctx context.Context, deps ExecutorDeps, args map[string]any) (any, error) {
+	if deps.FarmID <= 0 {
+		return nil, errors.New("farm_id required in proposal scope")
+	}
+	presetKey, err := stringFromArgs(args, "preset_key")
+	if err != nil {
+		return nil, err
+	}
+	zoneID, err := int64FromArgs(args, "zone_id")
+	if err != nil {
+		return nil, err
+	}
+	actuatorID, err := int64FromArgs(args, "actuator_id")
+	if err != nil {
+		return nil, err
+	}
+	z, err := deps.Q.GetZoneByID(ctx, zoneID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, fmt.Errorf("zone %d not found", zoneID)
+		}
+		return nil, err
+	}
+	if err := ensureFarmScope(z.FarmID, deps.FarmID); err != nil {
+		return nil, err
+	}
+	act, err := deps.Q.GetActuatorByID(ctx, actuatorID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, fmt.Errorf("actuator %d not found", actuatorID)
+		}
+		return nil, err
+	}
+	if err := ensureFarmScope(act.FarmID, deps.FarmID); err != nil {
+		return nil, err
+	}
+	pool, ok := deps.Pool.(*pgxpool.Pool)
+	if !ok || pool == nil {
+		return nil, errors.New("create_lighting_program requires database pool")
+	}
+	baseQ, ok := deps.Q.(*db.Queries)
+	if !ok {
+		return nil, errors.New("create_lighting_program requires database queries")
+	}
+
+	var name *string
+	if n, err := optionalStringFromArgs(args, "name"); err != nil {
+		return nil, err
+	} else if n != nil {
+		name = n
+	}
+	lightsOnAt, _ := optionalStringFromArgs(args, "lights_on_at")
+	tz, _ := optionalStringFromArgs(args, "timezone")
+	var cropCycleID *int64
+	if v, ok := args["crop_cycle_id"]; ok && v != nil {
+		cid, err := int64FromArgs(args, "crop_cycle_id")
+		if err != nil {
+			return nil, err
+		}
+		cropCycleID = &cid
+	}
+	in := lightinghandler.FromPresetInput{
+		PresetKey:   presetKey,
+		Name:        name,
+		ZoneID:      zoneID,
+		ActuatorID:  actuatorID,
+		CropCycleID: cropCycleID,
+	}
+	if lightsOnAt != nil {
+		in.LightsOnAt = *lightsOnAt
+	}
+	if tz != nil {
+		in.Timezone = *tz
+	}
+
+	prog, err := lightinghandler.CreateProgramFromPreset(ctx, pool, baseQ, deps.FarmID, in)
+	if err != nil {
+		return nil, err
+	}
+	offAt := computeOffTime(prog.LightsOnAt, prog.OnHours)
+	return map[string]any{
+		"lighting_program_id": prog.ID,
+		"name":                prog.Name,
+		"zone_id":             prog.ZoneID,
+		"actuator_id":         prog.ActuatorID,
+		"preset_key":          presetKey,
+		"photoperiod":         fmt.Sprintf("%dh/%dh ON/OFF — lights on at %s, off at %s (%s)", prog.OnHours, prog.OffHours, prog.LightsOnAt, offAt, prog.Timezone),
+		"schedule_on_id":      prog.ScheduleOnID,
+		"schedule_off_id":     prog.ScheduleOffID,
+	}, nil
 }
 
 func parseInt(s string) int {

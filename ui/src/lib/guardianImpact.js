@@ -53,6 +53,11 @@ function deriveImpactLines(tool, args) {
     }
     case 'create_fertigation_program':
       return [`Create fertigation program ${String(a.name || '')}${programHints(a)} — no run triggered now`.trim()]
+    case 'create_lighting_program': {
+      const preset = String(a.preset_key || '')
+      const z = a.zone_id != null ? ` for zone ${a.zone_id}` : ''
+      return [`Create lighting program${preset ? ` from preset ${preset}` : ''}${z} — ON/OFF schedules will be created`.trim()]
+    }
     case 'create_plant':
       return [`Create plant ${String(a.display_name || '')} (editable later)`.trim()]
     case 'create_crop_cycle':

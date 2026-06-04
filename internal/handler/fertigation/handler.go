@@ -12,6 +12,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"gr33n-api/internal/authctx"
+	automationworker "gr33n-api/internal/automation"
 	"gr33n-api/internal/costing"
 	db "gr33n-api/internal/db"
 	"gr33n-api/internal/farmauthz"
@@ -19,12 +20,13 @@ import (
 )
 
 type Handler struct {
-	pool *pgxpool.Pool
-	q    *db.Queries
+	pool   *pgxpool.Pool
+	q      *db.Queries
+	worker *automationworker.Worker
 }
 
-func NewHandler(pool *pgxpool.Pool) *Handler {
-	return &Handler{pool: pool, q: db.New(pool)}
+func NewHandler(pool *pgxpool.Pool, worker *automationworker.Worker) *Handler {
+	return &Handler{pool: pool, q: db.New(pool), worker: worker}
 }
 
 func numericFromFloat64(v float64) (pgtype.Numeric, error) {

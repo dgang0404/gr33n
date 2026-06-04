@@ -1,7 +1,7 @@
 openapi: "3.0.3"
 info:
   title: gr33n API
-  version: "0.4.5"
+  version: "0.4.6"
   description: |
     Local-first automated agriculture platform API.
     All endpoints run on localhost:8080 by default.
@@ -38,6 +38,11 @@ info:
     **Phase 39 API areas (added in 0.4.5):**
     - `devices` — FIFO **`device_commands`** queue: **`POST/GET /devices/{id}/commands`**, Pi **`GET …/commands/next`**, **`POST …/commands/{cid}/ack`**. Command types: **`actuator`**, **`pulse`**, **`mix_batch`**. Legacy **`devices.config.pending_command`** mirrors queue head for one release.
     - `fertigation` — cloud **`MixPlan`** calculator: **`POST /farms/{id}/fertigation/mix-jobs`** (preview or enqueue), **`GET /fertigation/programs/{rid}/mix-preview`**, **`GET …/water-status`**, **`PATCH /fertigation/reservoirs/{rid}/base-water`** (source-water EC prerequisite).
+
+    **Operator runtime backlog (added in 0.4.6):**
+    - `fertigation` — **`POST /farms/{id}/fertigation/programs/{rid}/run-now`** ad-hoc program execution (idempotent per UTC minute).
+    - `automation` — **`GET /automation/worker/health`** includes **`metadata_steps_fallback_total`** (programs still using legacy `metadata.steps`).
+    - `chat` — Guardian **`create_lighting_program`** propose tool (preset + zone + actuator; Confirm-gated).
   license:
     name: AGPL-3.0
     url: https://www.gnu.org/licenses/agpl-3.0
@@ -2000,6 +2005,10 @@ paths:
                   simulation_mode: { type: boolean }
                   last_tick_at: { type: string, format: date-time, nullable: true }
                   last_error: { type: string }
+                  metadata_steps_fallback_total:
+                    type: integer
+                    format: int64
+                    description: Cumulative count of program runs that resolved actions via legacy metadata.steps
                   status: { type: string, enum: [ok, disabled] }
 
   # ── Automation rules (Phase 20 WS1) ────────────────────────
@@ -2645,6 +2654,29 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/FertigationProgram" }
+
+  /farms/{id}/fertigation/programs/{rid}/run-now:
+    post:
+      tags: [fertigation]
+      summary: Run a fertigation program now (operator)
+      description: >
+        Ad-hoc execution of the program tick pipeline (mix enqueue + executable actions).
+        Idempotent within the same UTC minute — second call returns duplicate=true.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+        - { $ref: "#/components/parameters/ResourceID" }
+      responses:
+        "202":
+          description: Run accepted
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ProgramRunNowResponse" }
+        "200":
+          description: Skipped (already ran this minute)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ProgramRunNowResponse" }
 
   /fertigation/programs/{rid}:
     patch:
@@ -7539,6 +7571,14 @@ components:
           description: Plain water (RO/well) — pulse only, no mix_batch (Phase 39b)
         created_at: { type: string, format: date-time }
         updated_at: { type: string, format: date-time }
+
+    ProgramRunNowResponse:
+      type: object
+      properties:
+        program_id: { type: integer }
+        status: { type: string, description: "accepted or skipped" }
+        message: { type: string }
+        duplicate: { type: boolean, description: true when already ran this UTC minute }
 
     FertigationProgramCreate:
       type: object

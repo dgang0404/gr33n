@@ -131,6 +131,12 @@ var registry = map[string]Tool{
 		Description: "Read-only: list active lighting programs for this farm (optionally filtered by zone_id). Returns photoperiod, ON/OFF schedule IDs, actuator, timezone.",
 		Execute:     execSummarizeZoneLighting,
 	},
+	"create_lighting_program": {
+		ID:              "create_lighting_program",
+		Description:     "Create a lighting program from preset (veg_18_6, flower_12_12, seedling_16_8, peas_22_2) with ON/OFF schedules",
+		RequiresOperate: true,
+		Execute:         execCreateLightingProgram,
+	},
 	// Phase 36 WS7 — greenhouse climate read tool
 	"summarize_zone_greenhouse_climate": {
 		ID: "summarize_zone_greenhouse_climate",

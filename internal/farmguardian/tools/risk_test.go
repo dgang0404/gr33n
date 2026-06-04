@@ -14,6 +14,7 @@ func TestRiskTierForTool(t *testing.T) {
 		{"create_plant", map[string]any{"display_name": "x"}, RiskMedium},
 		{"create_crop_cycle", map[string]any{"zone_id": 1}, RiskMedium},
 		{"create_fertigation_program", map[string]any{"name": "x"}, RiskMedium},
+		{"create_lighting_program", map[string]any{"preset_key": "veg_18_6", "zone_id": float64(1), "actuator_id": float64(1)}, RiskMedium},
 		{"apply_grow_setup_pack", map[string]any{"zone_id": 1}, RiskHigh},
 		{"apply_bootstrap_template", map[string]any{"template": "x"}, RiskHigh},
 		{"enqueue_actuator_command", map[string]any{"command": "on"}, RiskHigh},

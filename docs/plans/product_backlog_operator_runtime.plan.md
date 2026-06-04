@@ -7,16 +7,16 @@ overview: >
 todos:
   - id: run-now-api
     content: "POST /farms/{id}/fertigation/programs/{id}/run-now — ad-hoc program tick with idempotency; UI on program row + zone Water"
-    status: pending
+    status: completed
   - id: metadata-steps-deprecation
     content: "Deprecate programs.metadata.steps — monitor fallback warnings; then harden action_source and drop column"
-    status: pending
+    status: completed
   - id: guardian-lighting-propose
     content: "Guardian propose tool create_lighting_program — mirror summarize_zone_lighting; Confirm-gated"
-    status: pending
+    status: completed
   - id: mobile-distribution
     content: "Capacitor / store checklist — docs/mobile-distribution.md execution pass (icons, signing, release notes)"
-    status: pending
+    status: completed
 isProject: false
 ---
 
@@ -85,11 +85,11 @@ These are **not** blockers for starting Phase 39. They improve day-2 operations 
 
 **Tasks (checklist, not code phase):**
 
-- [ ] Icons / splash assets per platform
-- [ ] Signing + provisioning profiles documented
-- [ ] Release notes template
+- [ ] Icons / splash assets per platform — procedure in [`mobile-distribution.md`](../mobile-distribution.md#release-checklist-b4--operator-runtime-backlog)
+- [ ] Signing + provisioning profiles documented — same section
+- [x] Release notes template — same section
 - [ ] Deep link smoke (optional)
-- [ ] Align with Phase 18 mobile hardening notes
+- [x] Align with Phase 18 mobile hardening notes — linked in checklist
 
 **Acceptance:** Operator can follow doc end-to-end for one TestFlight/internal track build.
 

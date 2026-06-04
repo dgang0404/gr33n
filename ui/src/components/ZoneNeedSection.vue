@@ -57,10 +57,21 @@
 
     <!-- Fertigation block (water only) — Phase 39 WS7 enhanced -->
     <div v-if="need === PLANT_NEEDS.water" class="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
-      <div class="flex items-center justify-between mb-3">
+      <div class="flex items-center justify-between mb-3 gap-2 flex-wrap">
         <h3 class="text-sm font-semibold text-white">Feeding program</h3>
-        <router-link to="/fertigation" class="text-xs text-green-600 hover:text-green-400">Fertigation →</router-link>
+        <div class="flex items-center gap-2">
+          <button
+            type="button"
+            class="text-xs px-2 py-0.5 rounded-md bg-amber-900/60 text-amber-200 hover:bg-amber-800/80 disabled:opacity-50"
+            :disabled="runNowBusy"
+            @click="runActiveProgramNow"
+          >
+            {{ runNowBusy ? 'Running…' : 'Run now' }}
+          </button>
+          <router-link to="/fertigation" class="text-xs text-green-600 hover:text-green-400">Fertigation →</router-link>
+        </div>
       </div>
+      <p v-if="runNowFeedback" class="text-xs mb-2" :class="runNowOk ? 'text-green-400' : 'text-amber-400'">{{ runNowFeedback }}</p>
       <p v-if="!activeProgram" class="text-zinc-500 text-sm">No active fertigation program for this zone.</p>
       <template v-else>
         <div class="flex items-start justify-between gap-2 flex-wrap">
@@ -278,6 +289,28 @@ const store = useFarmStore()
 const waterStatus = ref(null)
 const mixPreviewLoading = ref(false)
 const showMixPreview = ref(false)
+const runNowBusy = ref(false)
+const runNowFeedback = ref('')
+const runNowOk = ref(true)
+
+async function runActiveProgramNow() {
+  if (!props.farmId || !props.activeProgram?.id) return
+  runNowBusy.value = true
+  runNowFeedback.value = ''
+  try {
+    const res = await store.runFertigationProgramNow(props.farmId, props.activeProgram.id)
+    runNowOk.value = true
+    runNowFeedback.value = res.duplicate
+      ? 'Already ran this minute — no duplicate commands queued.'
+      : (res.message || 'Program run queued.')
+    await loadWaterStatus()
+  } catch (e) {
+    runNowOk.value = false
+    runNowFeedback.value = e?.response?.data?.error || e?.message || 'Run now failed'
+  } finally {
+    runNowBusy.value = false
+  }
+}
 
 async function loadWaterStatus() {
   if (props.need !== PLANT_NEEDS.water || !props.activeProgram?.id) return

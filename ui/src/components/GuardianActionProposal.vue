@@ -200,6 +200,8 @@ const TOOL_LABELS = {
   create_plant: 'Create plant',
   create_crop_cycle: 'Start crop cycle',
   create_fertigation_program: 'Create fertigation program',
+  create_lighting_program: 'Create lighting program',
+  summarize_zone_lighting: 'Summarize zone lighting',
   apply_grow_setup_pack: 'Apply grow setup pack',
 }
 

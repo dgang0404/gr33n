@@ -79,6 +79,50 @@ Today, **sensor threshold** alerts trigger push for farm roles **owner**, **mana
 - **CORS**: native apps still issue browser-like requests; ensure API CORS or same-origin strategy matches how you deploy the UI.
 - **Deep links**: not configured in the scaffold; add Universal Links / App Links when you need them.
 
+## Release checklist (B4 — operator runtime backlog)
+
+Use this when cutting a **TestFlight** or **internal track** build. Check items off in the repo plan [`plans/product_backlog_operator_runtime.plan.md`](plans/product_backlog_operator_runtime.plan.md) when complete.
+
+### Assets
+
+- [ ] **App icon** — 1024×1024 master; Android adaptive layers in `ui/android/app/src/main/res/`; iOS `AppIcon.appiconset` in Xcode.
+- [ ] **Splash** — Capacitor splash config matches brand; test cold start on a physical device.
+
+### Signing and provisioning
+
+- [ ] **Android** — release keystore path documented (not committed); `signingConfigs` in `build.gradle`; Play App Signing enrollment noted.
+- [ ] **iOS** — distribution certificate + provisioning profile for bundle id; archive via Xcode **Product → Archive**.
+
+### Release notes
+
+Copy the template below into store “What’s New” or internal release mail:
+
+```markdown
+## Gr33n Operator — YYYY-MM-DD (build N)
+
+### Highlights
+- (user-facing bullets)
+
+### Fixes
+- (optional)
+
+### Known issues
+- (optional)
+
+### Ops
+- API base: `VITE_API_URL` used for this build
+- Min supported API: (OpenAPI version from openapi.yaml)
+```
+
+### Optional smoke
+
+- [ ] **Deep links** — only if Universal Links / App Links configured (see Troubleshooting).
+- [ ] **Push** — FCM token registration on device; farm alert reaches opted-in operator (see [`notifications-operator-playbook.md`](notifications-operator-playbook.md)).
+
+### Phase 18 alignment
+
+- [ ] Re-read mobile hardening notes in [`phase_18_mobile_hardening.plan.md`](plans/phase_18_mobile_hardening.plan.md) for offline queue and auth session behavior before store submission.
+
 ## References
 
 - [Capacitor](https://capacitorjs.com/docs)

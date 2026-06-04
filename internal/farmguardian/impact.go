@@ -36,6 +36,16 @@ func impactSteps(toolID string, args map[string]any) []string {
 	case "create_fertigation_program":
 		return []string{joinName("Create fertigation program", argString(args, "name")) +
 			fertigationHints(args) + " — no run triggered now"}
+	case "create_lighting_program":
+		preset := argString(args, "preset_key")
+		line := "Create lighting program"
+		if preset != "" {
+			line += " from preset " + preset
+		}
+		if z := argString(args, "zone_id"); z != "" {
+			line += " for zone " + z
+		}
+		return []string{line + " — ON/OFF schedules and actuator actions will be created"}
 	case "create_task", "create_task_from_alert":
 		return []string{joinName("Create task", argString(args, "title")) + " (reversible — you can complete or delete it)"}
 	case "update_cycle_stage":

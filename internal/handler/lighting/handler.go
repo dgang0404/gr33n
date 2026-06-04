@@ -345,107 +345,17 @@ func (h *Handler) CreateFromPreset(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid request body")
 		return
 	}
-	p, ok := presets[body.PresetKey]
-	if !ok {
-		httputil.WriteError(w, http.StatusBadRequest, fmt.Sprintf("unknown preset_key %q; available: peas_22_2, veg_18_6, flower_12_12, seedling_16_8", body.PresetKey))
-		return
-	}
-	name := p.Name
-	if body.Name != nil && strings.TrimSpace(*body.Name) != "" {
-		name = *body.Name
-	}
-	if body.LightsOnAt == "" {
-		body.LightsOnAt = "06:00"
-	}
-	if body.Timezone == "" {
-		// Try to inherit from farm.
-		farm, ferr := h.q.GetFarmByID(r.Context(), farmID)
-		if ferr == nil && farm.Timezone != "" {
-			body.Timezone = farm.Timezone
-		} else {
-			body.Timezone = "UTC"
-		}
-	}
-	if _, err := time.LoadLocation(body.Timezone); err != nil {
-		httputil.WriteError(w, http.StatusBadRequest, fmt.Sprintf("invalid timezone %q", body.Timezone))
-		return
-	}
-
-	meta, _ := json.Marshal(map[string]string{"preset_key": body.PresetKey})
-
-	req := createProgramRequest{
-		Name:        name,
+	prog, err := CreateProgramFromPreset(r.Context(), h.pool, h.q, farmID, FromPresetInput{
+		PresetKey:   body.PresetKey,
+		Name:        body.Name,
 		ZoneID:      body.ZoneID,
 		ActuatorID:  body.ActuatorID,
-		OnHours:     p.OnHours,
-		OffHours:    p.OffHours,
 		LightsOnAt:  body.LightsOnAt,
 		Timezone:    body.Timezone,
 		CropCycleID: body.CropCycleID,
-		IsActive:    true,
-		Metadata:    json.RawMessage(meta),
-	}
-	if err := req.validate(); err != nil {
+	})
+	if err != nil {
 		httputil.WriteError(w, http.StatusBadRequest, err.Error())
-		return
-	}
-
-	onCron, offCron, err := buildCronExpressions(req.LightsOnAt, req.OnHours)
-	if err != nil {
-		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
-		return
-	}
-
-	tx, err := h.pool.Begin(r.Context())
-	if err != nil {
-		httputil.WriteError(w, http.StatusInternalServerError, "failed to begin transaction")
-		return
-	}
-	defer tx.Rollback(r.Context()) //nolint:errcheck
-
-	qtx := h.q.WithTx(tx)
-
-	prog, err := qtx.CreateLightingProgram(r.Context(), db.CreateLightingProgramParams{
-		FarmID:        farmID,
-		ZoneID:        req.ZoneID,
-		ActuatorID:    req.ActuatorID,
-		Name:          req.Name,
-		Description:   req.Description,
-		OnHours:       req.OnHours,
-		OffHours:      req.OffHours,
-		LightsOnAt:    req.LightsOnAt,
-		Timezone:      req.Timezone,
-		CropCycleID:   req.CropCycleID,
-		IsActive:      req.IsActive,
-		Metadata:      req.Metadata,
-		ScheduleOnID:  nil,
-		ScheduleOffID: nil,
-	})
-	if err != nil {
-		httputil.WriteError(w, http.StatusInternalServerError, "failed to create lighting program")
-		return
-	}
-
-	onID, offID, err := materializeSchedules(r.Context(), qtx, prog, onCron, offCron)
-	if err != nil {
-		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
-		return
-	}
-	if err := createScheduleActions(r.Context(), qtx, req.ActuatorID, onID, offID); err != nil {
-		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
-		return
-	}
-	prog, err = qtx.UpdateLightingProgramSchedules(r.Context(), db.UpdateLightingProgramSchedulesParams{
-		ID:            prog.ID,
-		ScheduleOnID:  &onID,
-		ScheduleOffID: &offID,
-	})
-	if err != nil {
-		httputil.WriteError(w, http.StatusInternalServerError, "failed to link schedules")
-		return
-	}
-	if err := tx.Commit(r.Context()); err != nil {
-		httputil.WriteError(w, http.StatusInternalServerError, "failed to commit")
 		return
 	}
 	httputil.WriteJSON(w, http.StatusCreated, prog)

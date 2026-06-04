@@ -628,6 +628,11 @@ export const useFarmStore = defineStore('farm', {
       return r.data
     },
 
+    async runFertigationProgramNow(farmId, programId) {
+      const r = await api.post(`/farms/${farmId}/fertigation/programs/${programId}/run-now`, {})
+      return r.data
+    },
+
     async createFertigationEvent(farmId, data) {
       const r = await api.post(`/farms/${farmId}/fertigation/events`, data)
       return r.data

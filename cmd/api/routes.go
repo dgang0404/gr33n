@@ -60,7 +60,7 @@ func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationwo
 	}
 	sensor := sensorhandler.NewHandler(pool, sse, pushDispatch)
 	task := taskhandler.NewHandler(pool)
-	fertigation := fertigationhandler.NewHandler(pool)
+	fertigation := fertigationhandler.NewHandler(pool, worker)
 	nf := nfhandler.NewHandler(pool)
 	recipe := recipehandler.NewHandler(pool)
 	cropcycle := cropcyclehandler.NewHandler(pool)
@@ -285,6 +285,7 @@ func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationwo
 	mux.Handle("POST /farms/{id}/fertigation/ec-targets", jwt(http.HandlerFunc(fertigation.CreateEcTarget)))
 	mux.Handle("GET /farms/{id}/fertigation/programs", jwt(http.HandlerFunc(fertigation.ListProgramsByFarm)))
 	mux.Handle("POST /farms/{id}/fertigation/programs", jwt(http.HandlerFunc(fertigation.CreateProgram)))
+	mux.Handle("POST /farms/{id}/fertigation/programs/{rid}/run-now", jwt(http.HandlerFunc(fertigation.RunProgramNow)))
 	mux.Handle("PATCH /fertigation/programs/{rid}", jwt(http.HandlerFunc(fertigation.UpdateProgram)))
 	mux.Handle("DELETE /fertigation/programs/{rid}", jwt(http.HandlerFunc(fertigation.DeleteProgram)))
 	// Program-bound executable actions (Phase 20.9 WS4)

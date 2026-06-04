@@ -366,10 +366,11 @@ func (h *Handler) WorkerHealth(w http.ResponseWriter, r *http.Request) {
 	}
 	s := h.worker.GetStatus()
 	httputil.WriteJSON(w, http.StatusOK, map[string]any{
-		"running":         s.Running,
-		"simulation_mode": s.SimulationMode,
-		"last_tick_at":    s.LastTickAt,
-		"last_error":      s.LastError,
-		"status":          "ok",
+		"running":                         s.Running,
+		"simulation_mode":                 s.SimulationMode,
+		"last_tick_at":                    s.LastTickAt,
+		"last_error":                      s.LastError,
+		"metadata_steps_fallback_total":   s.MetadataStepsFallbackTotal,
+		"status":                          "ok",
 	})
 }

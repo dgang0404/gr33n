@@ -11,6 +11,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -27,6 +28,8 @@ type Status struct {
 	SimulationMode bool      `json:"simulation_mode"`
 	LastTickAt     time.Time `json:"last_tick_at"`
 	LastError      string    `json:"last_error,omitempty"`
+	// Programs still resolving actions via legacy metadata.steps (B2).
+	MetadataStepsFallbackTotal uint64 `json:"metadata_steps_fallback_total"`
 }
 
 // PushNotifier is the minimum interface the rule evaluator needs from
@@ -52,6 +55,7 @@ type Worker struct {
 	// so the scheduled tick only fires once per day (the per-actuator
 	// idempotency table handles retries separately).
 	lastElecRollupDate time.Time
+	metadataStepsFallbackTotal atomic.Uint64
 }
 
 func NewWorker(pool *pgxpool.Pool, simulation bool, opts ...WorkerOption) *Worker {
@@ -111,11 +115,16 @@ func (w *Worker) GetStatus() Status {
 	w.mu.RLock()
 	defer w.mu.RUnlock()
 	return Status{
-		Running:        w.running,
-		SimulationMode: w.simulation,
-		LastTickAt:     w.lastTickAt,
-		LastError:      w.lastError,
+		Running:                    w.running,
+		SimulationMode:             w.simulation,
+		LastTickAt:                 w.lastTickAt,
+		LastError:                  w.lastError,
+		MetadataStepsFallbackTotal: w.metadataStepsFallbackTotal.Load(),
 	}
+}
+
+func (w *Worker) noteMetadataStepsFallback() {
+	w.metadataStepsFallbackTotal.Add(1)
 }
 
 func (w *Worker) setLastTick(err error) {

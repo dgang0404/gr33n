@@ -26,8 +26,8 @@ import (
 // whose bound schedule's cron expression fires at `now` and dispatches
 // its actions through dispatchProgramAction.
 //
-// Programs without a bound schedule are skipped — those are "template"
-// programs invoked via an explicit "run now" API (not yet wired). Cron
+// Programs without a bound schedule are skipped on cron ticks — use
+// POST /farms/{id}/fertigation/programs/{id}/run-now for ad-hoc runs. Cron
 // evaluation reuses shouldTriggerNow via a tiny shouldTriggerProgramNow
 // wrapper so schedule dedup and program dedup share the same mental
 // model.
@@ -98,7 +98,28 @@ func (w *Worker) evaluateProgram(ctx context.Context, p db.Gr33nfertigationProgr
 		return
 	}
 
-	w.executeProgram(ctx, p, schedule, now, idemKey)
+	dctx := programDispatchCtx{scheduleID: &schedule.ID, manualRun: false}
+	w.executeProgram(ctx, p, dctx, now, idemKey)
+}
+
+// RunProgramNow executes a fertigation program immediately (product backlog B1).
+// Idempotency matches cron ticks (same minute → second call is a no-op).
+// Returns duplicate=true when an automation_runs row already exists for the key.
+func (w *Worker) RunProgramNow(ctx context.Context, p db.Gr33nfertigationProgram) (status string, message string, duplicate bool, err error) {
+	now := time.Now().UTC().Truncate(time.Minute)
+	idemKey := programIdempotencyKey(p.ID, now)
+	if w.checkProgramIdempotency(ctx, p, idemKey, now) {
+		return "skipped", "program already ran this minute (idempotent)", true, nil
+	}
+	var dctx programDispatchCtx
+	if p.ScheduleID != nil {
+		if sched, sErr := w.q.GetScheduleByID(ctx, *p.ScheduleID); sErr == nil {
+			dctx.scheduleID = &sched.ID
+		}
+	}
+	dctx.manualRun = true
+	w.executeProgram(ctx, p, dctx, now, idemKey)
+	return "accepted", "program run started", false, nil
 }
 
 // maybeStampSchedulePrevTrigger is a placeholder so the compiler keeps
@@ -132,7 +153,7 @@ func (w *Worker) checkProgramIdempotency(ctx context.Context, p db.Gr33nfertigat
 func (w *Worker) executeProgram(
 	ctx context.Context,
 	p db.Gr33nfertigationProgram,
-	schedule db.Gr33ncoreSchedule,
+	dctx programDispatchCtx,
 	now time.Time,
 	idemKey string,
 ) {
@@ -161,6 +182,7 @@ func (w *Worker) executeProgram(
 	// logs (or scrape automation_runs.details.action_source) to find
 	// programs still awaiting backfill.
 	if source == ProgramActionsFromMetadataStepsFallback {
+		w.noteMetadataStepsFallback()
 		log.Printf("program %d (%s) using metadata.steps fallback — run the 20260515 backfill or POST /fertigation/programs/%d/actions rows", p.ID, p.Name, p.ID)
 	}
 
@@ -178,7 +200,7 @@ func (w *Worker) executeProgram(
 	successCount := 0
 	errs := make([]actionError, 0)
 	for _, a := range actions {
-		if err := w.dispatchProgramActionWithRetry(ctx, p, schedule, a, now); err != nil {
+		if err := w.dispatchProgramActionWithRetry(ctx, p, dctx, a, now); err != nil {
 			// Synthetic (fallback) actions have ID=0; surface the
 			// execution_order instead so the error row still points
 			// operators at a specific step.
@@ -209,7 +231,10 @@ func (w *Worker) executeProgram(
 		"idempotency_key": idemKey,
 		"action_source":   string(source),
 		"errors":          errs,
-		"schedule_id":     schedule.ID,
+		"manual_run":      dctx.manualRun,
+	}
+	if dctx.scheduleID != nil {
+		details["schedule_id"] = *dctx.scheduleID
 	}
 	msg := fmt.Sprintf("executed %d/%d actions", successCount, len(actions))
 	w.recordProgramRun(ctx, p, status, msg, details, now)
@@ -255,13 +280,13 @@ func (w *Worker) recordProgramRun(
 func (w *Worker) dispatchProgramActionWithRetry(
 	ctx context.Context,
 	p db.Gr33nfertigationProgram,
-	schedule db.Gr33ncoreSchedule,
+	dctx programDispatchCtx,
 	action db.Gr33ncoreExecutableAction,
 	now time.Time,
 ) error {
 	var lastErr error
 	for attempt := range w.maxRetries + 1 {
-		lastErr = w.dispatchProgramAction(ctx, p, schedule, action, now)
+		lastErr = w.dispatchProgramAction(ctx, p, dctx, action, now)
 		if lastErr == nil {
 			return nil
 		}
@@ -290,13 +315,13 @@ func (w *Worker) dispatchProgramActionWithRetry(
 func (w *Worker) dispatchProgramAction(
 	ctx context.Context,
 	p db.Gr33nfertigationProgram,
-	schedule db.Gr33ncoreSchedule,
+	dctx programDispatchCtx,
 	action db.Gr33ncoreExecutableAction,
 	now time.Time,
 ) error {
 	switch string(action.ActionType) {
 	case "control_actuator":
-		return w.dispatchProgramActuator(ctx, p, schedule, action, now)
+		return w.dispatchProgramActuator(ctx, p, dctx, action, now)
 	case "create_task":
 		return w.dispatchProgramCreateTask(ctx, p, action, now)
 	case "send_notification":
@@ -313,7 +338,7 @@ func (w *Worker) dispatchProgramAction(
 func (w *Worker) dispatchProgramActuator(
 	ctx context.Context,
 	p db.Gr33nfertigationProgram,
-	schedule db.Gr33ncoreSchedule,
+	dctx programDispatchCtx,
 	action db.Gr33ncoreExecutableAction,
 	now time.Time,
 ) error {
@@ -357,32 +382,45 @@ func (w *Worker) dispatchProgramActuator(
 		}
 	}
 
-	params, _ := json.Marshal(map[string]any{
+	params := map[string]any{
 		"command":         command,
 		"simulation_mode": w.simulation,
 		"program_id":      p.ID,
 		"program_name":    p.Name,
-		"schedule_id":     schedule.ID,
-	})
+	}
+	if dctx.scheduleID != nil {
+		params["schedule_id"] = *dctx.scheduleID
+	}
+	paramsJSON, _ := json.Marshal(params)
 	meta, _ := json.Marshal(map[string]any{
 		"program_id":   p.ID,
 		"program_name": p.Name,
 	})
+
+	eventSource := db.Gr33ncoreActuatorEventSourceEnumScheduleTrigger
+	if dctx.manualRun {
+		eventSource = db.Gr33ncoreActuatorEventSourceEnumManualApiCall
+	}
 
 	status := db.Gr33ncoreActuatorExecutionStatusEnumPendingConfirmationFromFeedback
 	if w.simulation {
 		status = db.Gr33ncoreActuatorExecutionStatusEnumExecutionCompletedSuccessOnDevice
 	}
 
+	var triggeredByScheduleID *int64
+	if dctx.scheduleID != nil {
+		triggeredByScheduleID = dctx.scheduleID
+	}
+
 	if _, err := w.q.InsertActuatorEvent(ctx, db.InsertActuatorEventParams{
 		EventTime:             eventTime,
 		ActuatorID:            *action.TargetActuatorID,
 		CommandSent:           ptr(command),
-		ParametersSent:        params,
+		ParametersSent:        paramsJSON,
 		TriggeredByUserID:     pgtype.UUID{},
-		TriggeredByScheduleID: &schedule.ID,
+		TriggeredByScheduleID: triggeredByScheduleID,
 		TriggeredByRuleID:     nil,
-		Source:                db.Gr33ncoreActuatorEventSourceEnumScheduleTrigger,
+		Source:                eventSource,
 		ExecutionStatus: &status,
 		MetaData:        meta,
 	}); err != nil {
@@ -396,15 +434,22 @@ func (w *Worker) dispatchProgramActuator(
 			dur = &d
 		}
 		progID := p.ID
-		schedID := schedule.ID
-		pendingJSON, err := acthandler.BuildPendingCommandJSONFull(acthandler.PendingCommandInput{
+		cmdSource := "schedule"
+		if dctx.manualRun {
+			cmdSource = "operator"
+		}
+		pendingIn := acthandler.PendingCommandInput{
 			ActuatorID:      *action.TargetActuatorID,
 			Command:         command,
-			Source:          "schedule",
+			Source:          cmdSource,
 			DurationSeconds: dur,
-			ScheduleID:      &schedID,
 			ProgramID:       &progID,
-		})
+		}
+		if dctx.scheduleID != nil {
+			schedID := *dctx.scheduleID
+			pendingIn.ScheduleID = &schedID
+		}
+		pendingJSON, err := acthandler.BuildPendingCommandJSONFull(pendingIn)
 		if err != nil {
 			log.Printf("program %d action %d: build pending command: %v", p.ID, action.ID, err)
 		} else {
@@ -413,17 +458,24 @@ func (w *Worker) dispatchProgramActuator(
 				cmdType = "pulse"
 			}
 			aID := *action.TargetActuatorID
-			// Phase 39 WS1: enqueue to FIFO queue; mirror pending_command for backward compat.
-			if _, qErr := w.q.EnqueueDeviceCommand(ctx, db.EnqueueDeviceCommandParams{
+			queueSource := "program"
+			if dctx.manualRun {
+				queueSource = "operator"
+			}
+			enqueue := db.EnqueueDeviceCommandParams{
 				DeviceID:    *actuator.DeviceID,
 				FarmID:      p.FarmID,
 				CommandType: cmdType,
 				Payload:     pendingJSON,
-				Source:      "program",
+				Source:      queueSource,
 				ActuatorID:  &aID,
-				ScheduleID:  &schedID,
 				ProgramID:   &progID,
-			}); qErr != nil {
+			}
+			if dctx.scheduleID != nil {
+				enqueue.ScheduleID = dctx.scheduleID
+			}
+			// Phase 39 WS1: enqueue to FIFO queue; mirror pending_command for backward compat.
+			if _, qErr := w.q.EnqueueDeviceCommand(ctx, enqueue); qErr != nil {
 				log.Printf("program %d action %d: enqueue device command: %v", p.ID, action.ID, qErr)
 			}
 			// Keep writing legacy slot so pre-39 Pi clients still receive the command.

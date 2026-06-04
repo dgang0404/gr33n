@@ -37,7 +37,7 @@ isProject: false
 | **3** | Phase 40 DoD + operator-tour §4b stub + architecture §7.0f/§7.0g stubs | ✅ |
 | **4** | workflow-guide §4b; operator-tour §3b + §3/§4b manifest notes; RAG checklist below | ✅ |
 
-**Documentation status:** Chunks 1–4 complete. Safe to start **Phase 39 WS1** implementation.
+**Documentation status:** Chunks 1–4 complete. Phases **39**, **39b**, and **product backlog** shipped on `main`; safe to start **Phase 40** once backlog code is **committed** and smokes pass. **OC-40 / OC-41** in [`phase_35_37_operational_closure.plan.md`](phase_35_37_operational_closure.plan.md) close *with* those phases (WS8), not before them.
 
 ---
 
@@ -68,7 +68,7 @@ Whole-file ingest: `operator-tour.md` and `workflow-guide.md` are already in `in
 | Empty lists, no explanation | **41 WS4** (why-empty) | sit-in §1 |
 | RO/well feed without nutrients | **39b** | 39 queue + pulse |
 | Guardian nav clutter | **40 bug-guardian-nav** | ✅ shipped |
-| Ad-hoc program run | **backlog** run-now | 39 WS5 pipeline |
+| Ad-hoc program run | ✅ **B1** run-now | `POST …/programs/{rid}/run-now` |
 | Store / Capacitor polish | **backlog** mobile | `docs/mobile-distribution.md` |
 
 ---
@@ -88,7 +88,7 @@ Whole-file ingest: `operator-tour.md` and `workflow-guide.md` are already in `in
 
 | ID | Gap | Notes |
 |----|-----|-------|
-| **B1** | Program **run now** API + UI | Unscheduled ad-hoc program fire; README lists as open |
+| **B1** | Program **run now** API + UI | ✅ Implemented (0.4.6) |
 | **B2** | Deprecate `programs.metadata.steps` | After zero fallback warnings; harden `action_source` |
 | **B3** | Guardian **`create_lighting_program`** propose tool | Optional; read `summarize_zone_lighting` exists |
 | **B4** | **Mobile distribution** polish | Capacitor / store checklist — see `docs/mobile-distribution.md` |
