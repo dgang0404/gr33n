@@ -256,16 +256,17 @@ Feature detail: [`phase_40_unified_farmer_ux_zone_cockpit.plan.md`](phase_40_uni
 
 Feature detail: [`phase_41_farm_hub_coherence.plan.md`](phase_41_farm_hub_coherence.plan.md). **OC-41** when WS7 lands. **After Phase 40.**
 
-## Phases 42–45 — Farmer UX completion
+## Phases 42–46 — Farmer UX + Guardian PR completion
 
-**Master roadmap:** [`farmer_ux_roadmap_40_plus.plan.md`](farmer_ux_roadmap_40_plus.plan.md). Closure rows **OC-42 … OC-45** track each phase WS8 — not pre-40 work.
+**Master roadmap:** [`farmer_ux_roadmap_40_plus.plan.md`](farmer_ux_roadmap_40_plus.plan.md). Closure rows **OC-42 … OC-46** track each phase WS8 — not pre-40 work. Guardian specs: [42](phase_42_guardian_pr_spec.md) · [43](phase_43_guardian_pr_spec.md) · [44](phase_44_guardian_pr_spec.md) · [45](phase_45_guardian_pr_spec.md) · [46](phase_46_guardian_llm_tool_proposals.plan.md).
 
 | Phase | Focus |
 |-------|--------|
-| [42](phase_42_comfort_targets_automation_plain_language.plan.md) | Comfort bands; schedules/rules without cron literacy |
+| [42](phase_42_comfort_targets_automation_plain_language.plan.md) | Comfort bands; matchers + starters |
 | [43](phase_43_operations_stock_feeding_finance.plan.md) | Supplies, feeding admin, money hubs |
-| [44](phase_44_getting_started_edge_wizard.plan.md) | Farm + Pi wizards |
+| [44](phase_44_getting_started_edge_wizard.plan.md) | Farm + Pi wizards; setup starters second |
 | [45](phase_45_farmer_validation_whole_app_polish.plan.md) | Sit-in + whole-app polish |
+| [46](phase_46_guardian_llm_tool_proposals.plan.md) | LLM tool proposals (hybrid C) |
 
 | Area | Status | Notes |
 |------|--------|-------|
