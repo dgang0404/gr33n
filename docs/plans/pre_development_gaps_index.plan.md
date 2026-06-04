@@ -17,6 +17,9 @@ todos:
   - id: doc-chunk-4
     content: "Chunk 4 — workflow-guide post-39/40 notes; platform-doc-manifest rows for §4b/§3; RAG manifest checklist"
     status: done
+  - id: doc-chunk-5-guardian-pr
+    content: "Chunk 5 — guardian-change-requests-guide.md + guardian_pr_ux_through_farmer_phases.plan.md (PR triggers, starters, industry patterns)"
+    status: done
 isProject: false
 ---
 
@@ -24,7 +27,16 @@ isProject: false
 
 **Purpose:** One place to see what is **shipped**, **in flight (39–40)**, and **still gap** before writing feature code. Prevents rediscovering the same disconnects (zone vs farm-wide pages, empty states, RO-only farms) mid-sprint.
 
-**Canonical development order:** [Phase 39](phase_39_edge_fertigation_execution.plan.md) ✅ → [Phase 39b](phase_39b_plain_irrigation.plan.md) ✅ → [Phase 40](phase_40_unified_farmer_ux_zone_cockpit.plan.md) → [Phase 41](phase_41_farm_hub_coherence.plan.md). Tier **B** backlog is opportunistic (not blocking 40).
+**Canonical development order:** [39](phase_39_edge_fertigation_execution.plan.md) ✅ → [39b](phase_39b_plain_irrigation.plan.md) ✅ → **[40 → 45 farmer UX arc](farmer_ux_roadmap_40_plus.plan.md)**. Tier **B** backlog ✅ on `main`.
+
+| Step | Phase | Focus |
+|------|-------|--------|
+| 1 | [40](phase_40_unified_farmer_ux_zone_cockpit.plan.md) | Zone cockpit |
+| 2 | [41](phase_41_farm_hub_coherence.plan.md) | Farm hub + why-empty |
+| 3 | [42](phase_42_comfort_targets_automation_plain_language.plan.md) | Comfort bands; schedules/rules plain language |
+| 4 | [43](phase_43_operations_stock_feeding_finance.plan.md) | Supplies, feeding admin, money |
+| 5 | [44](phase_44_getting_started_edge_wizard.plan.md) | Farm + Pi wizards |
+| 6 | [45](phase_45_farmer_validation_whole_app_polish.plan.md) | Sit-in + whole-app polish |
 
 ---
 
@@ -36,6 +48,7 @@ isProject: false
 | **2** | [`product_backlog_operator_runtime.plan.md`](product_backlog_operator_runtime.plan.md) — run now, steps deprecation, Guardian lighting propose, mobile | ✅ |
 | **3** | Phase 40 DoD + operator-tour §4b stub + architecture §7.0f/§7.0g stubs | ✅ |
 | **4** | workflow-guide §4b; operator-tour §3b + §3/§4b manifest notes; RAG checklist below | ✅ |
+| **5** | [guardian-change-requests-guide.md](../guardian-change-requests-guide.md) + [guardian_pr_ux_through_farmer_phases.plan.md](guardian_pr_ux_through_farmer_phases.plan.md) | ✅ |
 
 **Documentation status:** Chunks 1–4 complete. Phases **39**, **39b**, and **product backlog** shipped on `main`; safe to start **Phase 40** once backlog code is **committed** and smokes pass. **OC-40 / OC-41** in [`phase_35_37_operational_closure.plan.md`](phase_35_37_operational_closure.plan.md) close *with* those phases (WS8), not before them.
 
@@ -73,14 +86,21 @@ Whole-file ingest: `operator-tour.md` and `workflow-guide.md` are already in `in
 
 ---
 
-## Tier A — Must plan before “polished site” (have plans)
+## Tier A — Farmer UX arc (plans 40–45)
+
+**Master map:** [`farmer_ux_roadmap_40_plus.plan.md`](farmer_ux_roadmap_40_plus.plan.md)
 
 | ID | Gap | Plan | Blocker for |
 |----|-----|------|-------------|
-| **A1** | Device command queue + automated mix | [phase_39](phase_39_edge_fertigation_execution.plan.md) | Honest Water tab, safe automation |
-| **A2** | Zone cockpit (inline targets, alerts, today) | [phase_40](phase_40_unified_farmer_ux_zone_cockpit.plan.md) | Zone ≠ DB admin |
-| **A3** | Farm-wide hub (Dashboard, Fertigation context, deep links) | [phase_41](phase_41_farm_hub_coherence.plan.md) | Whole-app polish |
-| **A4** | Plain-water / irrigation-only programs | [phase_39b](phase_39b_plain_irrigation.plan.md) | Non-mix farms |
+| **A1** | Device command queue + automated mix | [phase_39](phase_39_edge_fertigation_execution.plan.md) ✅ | Honest Water tab |
+| **A2** | Zone cockpit | [phase_40](phase_40_unified_farmer_ux_zone_cockpit.plan.md) | Daily grow in the room |
+| **A3** | Farm-wide hub | [phase_41](phase_41_farm_hub_coherence.plan.md) | Morning + `?zone_id=` |
+| **A4** | Plain-water programs | [phase_39b](phase_39b_plain_irrigation.plan.md) ✅ | RO/well farms |
+| **A5** | Setpoints / rules / schedules understandable | [phase_42](phase_42_comfort_targets_automation_plain_language.plan.md) | Not a DB console |
+| **A6** | Inventory / fertigation admin / costs coherent | [phase_43](phase_43_operations_stock_feeding_finance.plan.md) | Stock & money jobs |
+| **A7** | New farm + Pi setup in-app | [phase_44](phase_44_getting_started_edge_wizard.plan.md) | Onboarding without shell docs |
+| **A8** | Non-technical validation | [phase_45](phase_45_farmer_validation_whole_app_polish.plan.md) | Farmer-ready v1 |
+| **A9** | Guardian LLM tool proposals (PR from free-form ask) | [phase_46](phase_46_guardian_llm_tool_proposals.plan.md) | After 45; not starter chips |
 
 ---
 
@@ -117,6 +137,7 @@ Every Tier **A** and **B** gap has a dedicated plan file. Tier **C** items are d
 | A | A2 | [phase_40_unified_farmer_ux_zone_cockpit.plan.md](phase_40_unified_farmer_ux_zone_cockpit.plan.md) |
 | A | A3 | [phase_41_farm_hub_coherence.plan.md](phase_41_farm_hub_coherence.plan.md) |
 | A | A4 | [phase_39b_plain_irrigation.plan.md](phase_39b_plain_irrigation.plan.md) |
+| A | A5–A8 | [farmer_ux_roadmap_40_plus.plan.md](farmer_ux_roadmap_40_plus.plan.md) → phases 42–45 |
 | B | B1 | [product_backlog_operator_runtime.plan.md](product_backlog_operator_runtime.plan.md#b1--program-run-now) |
 | B | B2 | [product_backlog_operator_runtime.plan.md](product_backlog_operator_runtime.plan.md#b2--deprecate-programsmetadatasteps) |
 | B | B3 | [product_backlog_operator_runtime.plan.md](product_backlog_operator_runtime.plan.md#b3--guardian-create_lighting_program-propose) |

@@ -29,6 +29,9 @@ todos:
   - id: ws7-nav-ia
     content: "WS7: Nav IA polish — Grow-first labels; Guardian = drawer primary; Advanced collapsed hint on zone pages"
     status: pending
+  - id: ws7b-zone-guardian-starters
+    content: "WS7b: Contextual Ask Guardian + zone starter chips — snapshot-aware prompts (replace generic status question); see guardian_pr_ux plan"
+    status: pending
   - id: ws8-docs-tests
     content: "WS8: operator-tour §4b zone cockpit; architecture §7.0f; Vitest zone cockpit; optional GET /zones/{id}/grow-summary"
     status: pending
@@ -39,7 +42,7 @@ isProject: false
 
 ## Status
 
-**Planned.** Depends on **Phase 38** (zone need tabs + connection cards) shipped. **Phase 39** (command queue + mix on Water tab) should land **before or in parallel with WS5** so the Water story shows honest queue/mix state — not fake "program ran" copy.
+**Planned — chapter 1 of 6** in the [Farmer UX roadmap (40–45)](farmer_ux_roadmap_40_plus.plan.md). Depends on **Phase 38** + **39/39b** ✅. This phase fixes **daily grow in one room**; it does **not** replace Setpoints/Schedules pages (→ **42**) or inventory/costs (→ **43**).
 
 **Quick fix (not a full WS):** [`bug-guardian-nav`](#bug-guardian-nav-hotfix) — do before or alongside WS7; tracked in plan todos.
 
@@ -104,6 +107,7 @@ flowchart TB
 3. **Plain language over table names** — "Runs today at 6:00" not `schedule_id=12`; "Too humid" not `alerts_notifications`.
 4. **No schema churn in v1** — reuse `setpoints`, `automation_rules`, `schedules`, `alerts_notifications`, existing PATCH/POST APIs. Optional **read aggregate** endpoint only if N+1 fetches hurt.
 5. **Do not duplicate Guardian** — one primary entry (right-edge drawer); full `/chat` for long sessions.
+6. **PR vs inline** — ack alert, edit targets, run now on the zone **without** a Guardian card when a direct API exists. See [guardian_pr_ux_through_farmer_phases.plan.md](guardian_pr_ux_through_farmer_phases.plan.md).
 
 ---
 
@@ -279,7 +283,11 @@ WS2 + WS4 give the biggest "not the DB" win early.
 
 ## After Phase 40 (documented gaps)
 
-Farm-wide polish (Dashboard morning hub, Fertigation `?zone_id=`, why-empty hints) is **[Phase 41](phase_41_farm_hub_coherence.plan.md)** — see [`pre_development_gaps_index.plan.md`](pre_development_gaps_index.plan.md).
+| Next | Plan |
+|------|------|
+| Farm hub | [Phase 41](phase_41_farm_hub_coherence.plan.md) |
+| Comfort targets + automation plain language | [Phase 42](phase_42_comfort_targets_automation_plain_language.plan.md) |
+| Full arc | [farmer_ux_roadmap_40_plus.plan.md](farmer_ux_roadmap_40_plus.plan.md) |
 
 ---
 

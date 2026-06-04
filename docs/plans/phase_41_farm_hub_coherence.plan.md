@@ -34,7 +34,7 @@ isProject: false
 
 ## Status
 
-**Planned.** Depends on **Phase 40** zone cockpit (inline edits, Today strip, zone alerts) for consistent mental model. Can start **WS4 (why-empty)** in parallel with late Phase 40 if component is shared.
+**Planned — chapter 2 of 6** in the [Farmer UX roadmap (40–45)](farmer_ux_roadmap_40_plus.plan.md). Depends on **Phase 40**. Does not replace Advanced CRUD or setpoints education (→ **42–45**).
 
 **Indexed in:** [`pre_development_gaps_index.plan.md`](pre_development_gaps_index.plan.md) (gap **A3**).
 

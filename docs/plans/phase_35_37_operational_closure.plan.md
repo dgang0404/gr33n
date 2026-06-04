@@ -51,6 +51,21 @@ todos:
   - id: oc-41-closure
     content: "OC-41: Phase 41 WS7 — farm hub operator-tour §3, architecture §7.0g, why-empty Vitest (close when Phase 41 ships, after 40)"
     status: pending
+  - id: oc-42-closure
+    content: "OC-42: Phase 42 WS7 — comfort targets + plain automation docs/tests (close when Phase 42 ships)"
+    status: pending
+  - id: oc-43-closure
+    content: "OC-43: Phase 43 WS7 — operations hub docs/tests (close when Phase 43 ships)"
+    status: pending
+  - id: oc-44-closure
+    content: "OC-44: Phase 44 WS6 — setup + edge wizard docs/tests (close when Phase 44 ships)"
+    status: pending
+  - id: oc-45-closure
+    content: "OC-45: Phase 45 WS7 — farmer sit-in + farmer-ready v1 (close when Phase 45 ships)"
+    status: pending
+  - id: oc-46-closure
+    content: "OC-46: Phase 46 WS5 — LLM tool proposals docs/tests (close when Phase 46 ships)"
+    status: pending
 isProject: false
 ---
 
@@ -219,6 +234,8 @@ Feature detail: [`phase_39_edge_fertigation_execution.plan.md`](phase_39_edge_fe
 
 **Pending rows in this plan’s todo list:** only **OC-40** and **OC-41** are intentionally open — they track *future* closure, not missing pre-40 work. Do not block Phase 40 on them.
 
+**Documentation gate (before Phase 40 code):** [guardian-change-requests-guide.md](../guardian-change-requests-guide.md) + [guardian_pr_ux_through_farmer_phases.plan.md](guardian_pr_ux_through_farmer_phases.plan.md).
+
 **Optional hygiene (not blocking):** `make rag-ingest-platform-docs` after doc edits; push `main` to origin when ready.
 
 ---
@@ -238,6 +255,17 @@ Feature detail: [`phase_40_unified_farmer_ux_zone_cockpit.plan.md`](phase_40_uni
 ## Phase 41 — Farm hub coherence
 
 Feature detail: [`phase_41_farm_hub_coherence.plan.md`](phase_41_farm_hub_coherence.plan.md). **OC-41** when WS7 lands. **After Phase 40.**
+
+## Phases 42–45 — Farmer UX completion
+
+**Master roadmap:** [`farmer_ux_roadmap_40_plus.plan.md`](farmer_ux_roadmap_40_plus.plan.md). Closure rows **OC-42 … OC-45** track each phase WS8 — not pre-40 work.
+
+| Phase | Focus |
+|-------|--------|
+| [42](phase_42_comfort_targets_automation_plain_language.plan.md) | Comfort bands; schedules/rules without cron literacy |
+| [43](phase_43_operations_stock_feeding_finance.plan.md) | Supplies, feeding admin, money hubs |
+| [44](phase_44_getting_started_edge_wizard.plan.md) | Farm + Pi wizards |
+| [45](phase_45_farmer_validation_whole_app_polish.plan.md) | Sit-in + whole-app polish |
 
 | Area | Status | Notes |
 |------|--------|-------|

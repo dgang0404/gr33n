@@ -1,0 +1,142 @@
+---
+name: Phase 44 — Getting started & edge install wizard
+overview: >
+  In-app paths for "I have a new farm" and "connect my Pi" — surfacing Phase 15 bootstrap
+  templates, device pairing, and Guardian-guided setup without requiring cron literacy or
+  shell docs. Confirm-gated writes remain; wizards collect intent, Guardian/API execute.
+todos:
+  - id: ws1-farm-setup-wizard
+    content: "WS1: Farm setup wizard — blank vs template cards; preview what gets created; POST apply-template"
+    status: pending
+  - id: ws2-zone-starter
+    content: "WS2: Add zone wizard — name, type (greenhouse/indoor), optional bootstrap slice"
+    status: pending
+  - id: ws3-device-wizard
+    content: "WS3: Edge device wizard — API key, test connection, assign zone; link pi-integration-guide steps in UI"
+    status: pending
+  - id: ws4-guardian-setup-mode
+    content: "WS4: Guardian 'setup mode' prompts — grow_setup_pack, create_lighting_program, create_fertigation_program with checklists"
+    status: pending
+  - id: ws5-first-run-dashboard
+    content: "WS5: First-run empty Dashboard — checklist (zones, device, comfort band, one schedule)"
+    status: pending
+  - id: ws6-docs-tests
+    content: "WS6: operator-tour §8 setup; architecture §7.0j; Vitest wizard flows; OC-44"
+    status: pending
+isProject: false
+---
+
+# Phase 44 — Getting started & edge install wizard
+
+## Status
+
+**Planned.** After [Phase 41](phase_41_farm_hub_coherence.plan.md) (empty states) and [Phase 42](phase_42_comfort_targets_automation_plain_language.plan.md) (comfort bands — wizard can set first band).
+
+**Prerequisite API:** [Phase 15](phase_15_farm_onboarding.plan.md) bootstrap templates ✅.
+
+**Roadmap:** [farmer_ux_roadmap_40_plus.plan.md](farmer_ux_roadmap_40_plus.plan.md)
+
+---
+
+## Problem
+
+| Job | Today |
+|-----|--------|
+| New farm | Settings/template exists but easy to miss; docs-heavy |
+| New zone | Form fields, no guided path |
+| Pi online | [`pi-integration-guide.md`](../pi-integration-guide.md) — not in-app |
+| First grow | Guardian + bootstrap — assumes chat comfort |
+
+---
+
+## Design principles
+
+1. **Wizards call existing APIs** — `apply_bootstrap_template`, device POST, zone POST.
+2. **Guardian complements, does not replace** — wizards for linear steps; Guardian for questions.
+3. **No silent writes** — template apply may still need admin RBAC; device keys shown once.
+4. **Offline-aware copy** — point to Phase 37 field guides for Pi procedures.
+
+---
+
+## WS1 — Farm setup wizard
+
+**Entry:** New farm created → wizard modal or `/farms/{id}/setup`.
+
+| Step | Action |
+|------|--------|
+| Choose | Blank · Indoor veg template · Greenhouse climate template (cards with bullet preview) |
+| Confirm | List zones/schedules/programs to be created |
+| Apply | `POST /farms/{id}/bootstrap-template` |
+
+Reuse Phase 15 UI patterns; improve copy and illustration.
+
+---
+
+## WS2 — Add zone wizard
+
+| Step | Fields |
+|------|--------|
+| Basics | Name, zone type |
+| Needs | Greenhouse profile if type=greenhouse (36) |
+| Optional | Link device, pick starter lighting preset |
+
+`POST /farms/{id}/zones` + optional lighting from-preset.
+
+---
+
+## WS3 — Edge device wizard
+
+| Step | Content |
+|------|---------|
+| Register device | Name, UID, farm/zone |
+| API key | Generate/show once; copy button |
+| Test | Poll device status or `GET /devices` online |
+| Actuators | Auto-discover or assign pump/light |
+
+Embed checklist from pi-integration-guide (not PDF-only).
+
+---
+
+## WS4 — Guardian setup mode
+
+- Chat system hint when farm has zero zones: suggest **apply_grow_setup_pack** or step-by-step tools.
+- Proposal cards use checklist UI (already partially in setup pack card).
+
+---
+
+## WS5 — First-run dashboard
+
+When farm has no zones / no devices / no setpoints:
+
+```
+Getting started
+☐ Add a grow room
+☐ Connect edge device
+☐ Set comfort targets
+☐ Turn on one schedule
+```
+
+Links to wizards; dismiss when complete.
+
+---
+
+## WS6 — Docs, tests, closure (OC-44)
+
+operator-tour §8, architecture §7.0j, Vitest wizard navigation, smoke bootstrap apply from UI path.
+
+---
+
+## Out of scope
+
+- Guardian as **only** UI (no one-tap without Confirm)
+- Replacing `bootstrap-local.sh` for developers
+- OTA firmware management
+
+---
+
+## Definition of done
+
+- [ ] Farm + zone + device wizards shipped
+- [ ] First-run checklist on Dashboard
+- [ ] Pi steps reachable without leaving app
+- [ ] operator-tour §8 + OC-44

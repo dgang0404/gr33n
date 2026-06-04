@@ -207,6 +207,8 @@ Open **Zones** → greenhouse zone → **Climate** tab: edit `greenhouse_climate
 
 **Requires:** `AI_ENABLED=true`, LLM configured ([`farm-guardian-ollama-setup.md`](farm-guardian-ollama-setup.md)), demo farm selected.
 
+**Full guide (triggers, inbox, starters, industry patterns):** [`guardian-change-requests-guide.md`](guardian-change-requests-guide.md) · Product spec through farmer phases: [`plans/guardian_pr_ux_through_farmer_phases.plan.md`](plans/guardian_pr_ux_through_farmer_phases.plan.md).
+
 Guardian is **not autonomous**. It is a **copilot** in chat and an **actor** only after you **Confirm** a change request (like approving a pull request). **Automation rules and alerts** are a separate layer — they run without chat and are not Guardian PRs.
 
 ### Copilot vs actor vs automation
