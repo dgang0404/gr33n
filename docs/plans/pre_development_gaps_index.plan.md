@@ -24,7 +24,7 @@ isProject: false
 
 **Purpose:** One place to see what is **shipped**, **in flight (39–40)**, and **still gap** before writing feature code. Prevents rediscovering the same disconnects (zone vs farm-wide pages, empty states, RO-only farms) mid-sprint.
 
-**Canonical development order:** [Phase 39](phase_39_edge_fertigation_execution.plan.md) → [Phase 40](phase_40_unified_farmer_ux_zone_cockpit.plan.md) → [Phase 41](phase_41_farm_hub_coherence.plan.md) (after 40 or partial parallel) → [Phase 39b](phase_39b_plain_irrigation.plan.md) (after 39 WS1 queue).
+**Canonical development order:** [Phase 39](phase_39_edge_fertigation_execution.plan.md) ✅ → [Phase 39b](phase_39b_plain_irrigation.plan.md) ✅ → [Phase 40](phase_40_unified_farmer_ux_zone_cockpit.plan.md) → [Phase 41](phase_41_farm_hub_coherence.plan.md). Tier **B** backlog is opportunistic (not blocking 40).
 
 ---
 

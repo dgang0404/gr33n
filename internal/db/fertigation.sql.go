@@ -309,14 +309,14 @@ INSERT INTO gr33nfertigation.programs (
     farm_id, name, description, application_recipe_id, reservoir_id,
     target_zone_id, schedule_id, ec_target_id, total_volume_liters,
     run_duration_seconds, ec_trigger_low, ph_trigger_low, ph_trigger_high,
-    is_active
+    is_active, irrigation_only
 ) VALUES (
     $1, $2, $3, $4, $5,
     $6, $7, $8, $9,
     $10, $11, $12, $13,
-    $14
+    $14, $15
 )
-RETURNING id, farm_id, name, description, application_recipe_id, reservoir_id, target_zone_id, schedule_id, ec_target_id, volume_liters_per_sqm, total_volume_liters, dilution_ratio, run_duration_seconds, ec_trigger_low, ph_trigger_low, ph_trigger_high, is_active, metadata, last_triggered_time, created_at, updated_at, deleted_at
+RETURNING id, farm_id, name, description, application_recipe_id, reservoir_id, target_zone_id, schedule_id, ec_target_id, volume_liters_per_sqm, total_volume_liters, dilution_ratio, run_duration_seconds, ec_trigger_low, ph_trigger_low, ph_trigger_high, is_active, irrigation_only, metadata, last_triggered_time, created_at, updated_at, deleted_at
 `
 
 type CreateProgramParams struct {
@@ -334,6 +334,7 @@ type CreateProgramParams struct {
 	PhTriggerLow        pgtype.Numeric `db:"ph_trigger_low" json:"ph_trigger_low"`
 	PhTriggerHigh       pgtype.Numeric `db:"ph_trigger_high" json:"ph_trigger_high"`
 	IsActive            bool           `db:"is_active" json:"is_active"`
+	IrrigationOnly      bool           `db:"irrigation_only" json:"irrigation_only"`
 }
 
 func (q *Queries) CreateProgram(ctx context.Context, arg CreateProgramParams) (Gr33nfertigationProgram, error) {
@@ -352,6 +353,7 @@ func (q *Queries) CreateProgram(ctx context.Context, arg CreateProgramParams) (G
 		arg.PhTriggerLow,
 		arg.PhTriggerHigh,
 		arg.IsActive,
+		arg.IrrigationOnly,
 	)
 	var i Gr33nfertigationProgram
 	err := row.Scan(
@@ -372,6 +374,7 @@ func (q *Queries) CreateProgram(ctx context.Context, arg CreateProgramParams) (G
 		&i.PhTriggerLow,
 		&i.PhTriggerHigh,
 		&i.IsActive,
+		&i.IrrigationOnly,
 		&i.Metadata,
 		&i.LastTriggeredTime,
 		&i.CreatedAt,
@@ -458,7 +461,7 @@ func (q *Queries) DeleteReservoir(ctx context.Context, id int64) error {
 }
 
 const getFertigationProgramByID = `-- name: GetFertigationProgramByID :one
-SELECT id, farm_id, name, description, application_recipe_id, reservoir_id, target_zone_id, schedule_id, ec_target_id, volume_liters_per_sqm, total_volume_liters, dilution_ratio, run_duration_seconds, ec_trigger_low, ph_trigger_low, ph_trigger_high, is_active, metadata, last_triggered_time, created_at, updated_at, deleted_at FROM gr33nfertigation.programs
+SELECT id, farm_id, name, description, application_recipe_id, reservoir_id, target_zone_id, schedule_id, ec_target_id, volume_liters_per_sqm, total_volume_liters, dilution_ratio, run_duration_seconds, ec_trigger_low, ph_trigger_low, ph_trigger_high, is_active, irrigation_only, metadata, last_triggered_time, created_at, updated_at, deleted_at FROM gr33nfertigation.programs
 WHERE id = $1 AND deleted_at IS NULL
 `
 
@@ -483,6 +486,7 @@ func (q *Queries) GetFertigationProgramByID(ctx context.Context, id int64) (Gr33
 		&i.PhTriggerLow,
 		&i.PhTriggerHigh,
 		&i.IsActive,
+		&i.IrrigationOnly,
 		&i.Metadata,
 		&i.LastTriggeredTime,
 		&i.CreatedAt,
@@ -556,7 +560,7 @@ func (q *Queries) GetMixingEventByID(ctx context.Context, id int64) (Gr33nfertig
 }
 
 const listActivePrograms = `-- name: ListActivePrograms :many
-SELECT id, farm_id, name, description, application_recipe_id, reservoir_id, target_zone_id, schedule_id, ec_target_id, volume_liters_per_sqm, total_volume_liters, dilution_ratio, run_duration_seconds, ec_trigger_low, ph_trigger_low, ph_trigger_high, is_active, metadata, last_triggered_time, created_at, updated_at, deleted_at FROM gr33nfertigation.programs
+SELECT id, farm_id, name, description, application_recipe_id, reservoir_id, target_zone_id, schedule_id, ec_target_id, volume_liters_per_sqm, total_volume_liters, dilution_ratio, run_duration_seconds, ec_trigger_low, ph_trigger_low, ph_trigger_high, is_active, irrigation_only, metadata, last_triggered_time, created_at, updated_at, deleted_at FROM gr33nfertigation.programs
 WHERE is_active = TRUE
   AND deleted_at IS NULL
   AND schedule_id IS NOT NULL
@@ -592,6 +596,7 @@ func (q *Queries) ListActivePrograms(ctx context.Context) ([]Gr33nfertigationPro
 			&i.PhTriggerLow,
 			&i.PhTriggerHigh,
 			&i.IsActive,
+			&i.IrrigationOnly,
 			&i.Metadata,
 			&i.LastTriggeredTime,
 			&i.CreatedAt,
@@ -838,7 +843,7 @@ func (q *Queries) ListMixingEventsByFarm(ctx context.Context, farmID int64) ([]G
 }
 
 const listProgramsByFarm = `-- name: ListProgramsByFarm :many
-SELECT id, farm_id, name, description, application_recipe_id, reservoir_id, target_zone_id, schedule_id, ec_target_id, volume_liters_per_sqm, total_volume_liters, dilution_ratio, run_duration_seconds, ec_trigger_low, ph_trigger_low, ph_trigger_high, is_active, metadata, last_triggered_time, created_at, updated_at, deleted_at FROM gr33nfertigation.programs
+SELECT id, farm_id, name, description, application_recipe_id, reservoir_id, target_zone_id, schedule_id, ec_target_id, volume_liters_per_sqm, total_volume_liters, dilution_ratio, run_duration_seconds, ec_trigger_low, ph_trigger_low, ph_trigger_high, is_active, irrigation_only, metadata, last_triggered_time, created_at, updated_at, deleted_at FROM gr33nfertigation.programs
 WHERE farm_id = $1 AND deleted_at IS NULL
 ORDER BY name ASC
 `
@@ -870,6 +875,7 @@ func (q *Queries) ListProgramsByFarm(ctx context.Context, farmID int64) ([]Gr33n
 			&i.PhTriggerLow,
 			&i.PhTriggerHigh,
 			&i.IsActive,
+			&i.IrrigationOnly,
 			&i.Metadata,
 			&i.LastTriggeredTime,
 			&i.CreatedAt,
@@ -887,7 +893,7 @@ func (q *Queries) ListProgramsByFarm(ctx context.Context, farmID int64) ([]Gr33n
 }
 
 const listProgramsByFarmUpdatedAfter = `-- name: ListProgramsByFarmUpdatedAfter :many
-SELECT id, farm_id, name, description, application_recipe_id, reservoir_id, target_zone_id, schedule_id, ec_target_id, volume_liters_per_sqm, total_volume_liters, dilution_ratio, run_duration_seconds, ec_trigger_low, ph_trigger_low, ph_trigger_high, is_active, metadata, last_triggered_time, created_at, updated_at, deleted_at FROM gr33nfertigation.programs
+SELECT id, farm_id, name, description, application_recipe_id, reservoir_id, target_zone_id, schedule_id, ec_target_id, volume_liters_per_sqm, total_volume_liters, dilution_ratio, run_duration_seconds, ec_trigger_low, ph_trigger_low, ph_trigger_high, is_active, irrigation_only, metadata, last_triggered_time, created_at, updated_at, deleted_at FROM gr33nfertigation.programs
 WHERE farm_id = $1 AND deleted_at IS NULL AND updated_at > $2::timestamptz
 ORDER BY updated_at ASC, id ASC
 `
@@ -924,6 +930,7 @@ func (q *Queries) ListProgramsByFarmUpdatedAfter(ctx context.Context, arg ListPr
 			&i.PhTriggerLow,
 			&i.PhTriggerHigh,
 			&i.IsActive,
+			&i.IrrigationOnly,
 			&i.Metadata,
 			&i.LastTriggeredTime,
 			&i.CreatedAt,
@@ -995,7 +1002,7 @@ const markProgramTriggered = `-- name: MarkProgramTriggered :one
 UPDATE gr33nfertigation.programs
 SET last_triggered_time = $2, updated_at = NOW()
 WHERE id = $1
-RETURNING id, farm_id, name, description, application_recipe_id, reservoir_id, target_zone_id, schedule_id, ec_target_id, volume_liters_per_sqm, total_volume_liters, dilution_ratio, run_duration_seconds, ec_trigger_low, ph_trigger_low, ph_trigger_high, is_active, metadata, last_triggered_time, created_at, updated_at, deleted_at
+RETURNING id, farm_id, name, description, application_recipe_id, reservoir_id, target_zone_id, schedule_id, ec_target_id, volume_liters_per_sqm, total_volume_liters, dilution_ratio, run_duration_seconds, ec_trigger_low, ph_trigger_low, ph_trigger_high, is_active, irrigation_only, metadata, last_triggered_time, created_at, updated_at, deleted_at
 `
 
 type MarkProgramTriggeredParams struct {
@@ -1024,6 +1031,7 @@ func (q *Queries) MarkProgramTriggered(ctx context.Context, arg MarkProgramTrigg
 		&i.PhTriggerLow,
 		&i.PhTriggerHigh,
 		&i.IsActive,
+		&i.IrrigationOnly,
 		&i.Metadata,
 		&i.LastTriggeredTime,
 		&i.CreatedAt,
@@ -1037,20 +1045,24 @@ const updateProgram = `-- name: UpdateProgram :one
 UPDATE gr33nfertigation.programs
 SET name = $2, description = $3, reservoir_id = $4,
     target_zone_id = $5, ec_target_id = $6,
-    total_volume_liters = $7, is_active = $8, updated_at = NOW()
+    total_volume_liters = $7, is_active = $8,
+    irrigation_only = $9, application_recipe_id = $10,
+    updated_at = NOW()
 WHERE id = $1 AND deleted_at IS NULL
-RETURNING id, farm_id, name, description, application_recipe_id, reservoir_id, target_zone_id, schedule_id, ec_target_id, volume_liters_per_sqm, total_volume_liters, dilution_ratio, run_duration_seconds, ec_trigger_low, ph_trigger_low, ph_trigger_high, is_active, metadata, last_triggered_time, created_at, updated_at, deleted_at
+RETURNING id, farm_id, name, description, application_recipe_id, reservoir_id, target_zone_id, schedule_id, ec_target_id, volume_liters_per_sqm, total_volume_liters, dilution_ratio, run_duration_seconds, ec_trigger_low, ph_trigger_low, ph_trigger_high, is_active, irrigation_only, metadata, last_triggered_time, created_at, updated_at, deleted_at
 `
 
 type UpdateProgramParams struct {
-	ID                int64          `db:"id" json:"id"`
-	Name              string         `db:"name" json:"name"`
-	Description       *string        `db:"description" json:"description"`
-	ReservoirID       *int64         `db:"reservoir_id" json:"reservoir_id"`
-	TargetZoneID      *int64         `db:"target_zone_id" json:"target_zone_id"`
-	EcTargetID        *int64         `db:"ec_target_id" json:"ec_target_id"`
-	TotalVolumeLiters pgtype.Numeric `db:"total_volume_liters" json:"total_volume_liters"`
-	IsActive          bool           `db:"is_active" json:"is_active"`
+	ID                  int64          `db:"id" json:"id"`
+	Name                string         `db:"name" json:"name"`
+	Description         *string        `db:"description" json:"description"`
+	ReservoirID         *int64         `db:"reservoir_id" json:"reservoir_id"`
+	TargetZoneID        *int64         `db:"target_zone_id" json:"target_zone_id"`
+	EcTargetID          *int64         `db:"ec_target_id" json:"ec_target_id"`
+	TotalVolumeLiters   pgtype.Numeric `db:"total_volume_liters" json:"total_volume_liters"`
+	IsActive            bool           `db:"is_active" json:"is_active"`
+	IrrigationOnly      bool           `db:"irrigation_only" json:"irrigation_only"`
+	ApplicationRecipeID *int64         `db:"application_recipe_id" json:"application_recipe_id"`
 }
 
 func (q *Queries) UpdateProgram(ctx context.Context, arg UpdateProgramParams) (Gr33nfertigationProgram, error) {
@@ -1063,6 +1075,8 @@ func (q *Queries) UpdateProgram(ctx context.Context, arg UpdateProgramParams) (G
 		arg.EcTargetID,
 		arg.TotalVolumeLiters,
 		arg.IsActive,
+		arg.IrrigationOnly,
+		arg.ApplicationRecipeID,
 	)
 	var i Gr33nfertigationProgram
 	err := row.Scan(
@@ -1083,6 +1097,7 @@ func (q *Queries) UpdateProgram(ctx context.Context, arg UpdateProgramParams) (G
 		&i.PhTriggerLow,
 		&i.PhTriggerHigh,
 		&i.IsActive,
+		&i.IrrigationOnly,
 		&i.Metadata,
 		&i.LastTriggeredTime,
 		&i.CreatedAt,

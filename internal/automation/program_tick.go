@@ -136,9 +136,8 @@ func (w *Worker) executeProgram(
 	now time.Time,
 	idemKey string,
 ) {
-	// Phase 39 WS5: if the program has a recipe + reservoir, enqueue mix_batch
-	// BEFORE the irrigate pulse so the Pi runs them in FIFO order.
-	if !w.simulation {
+	// Phase 39 WS5 / 39b: mix_batch only for fertigation programs (not irrigation_only).
+	if !w.simulation && !p.IrrigationOnly {
 		if mixCmdID, mixErr := w.dispatchProgramMix(ctx, p, now); mixErr != nil {
 			// ErrProgramHasNoRecipe is expected for plain-irrigation programs — not a failure.
 			if !errors.Is(mixErr, mixplan.ErrProgramHasNoRecipe) {

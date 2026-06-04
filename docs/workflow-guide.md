@@ -222,6 +222,7 @@ Line items per mixing event are available at `GET /farms/{id}/fertigation/mixing
 | **Operator mixes by hand** | **Fertigation → Mixing log** or `POST /farms/{id}/fertigation/mixing-events` — always the audit trail for labs without hardware |
 | **Operator previews / enqueues mix on edge** | **`POST /farms/{id}/fertigation/mix-jobs`** (`preview_only: true` or enqueue); requires reservoir **base water EC** via **`PATCH /fertigation/reservoirs/{rid}/base-water`** |
 | **Program fires on schedule** | Worker enqueues **`mix_batch`** (when recipe + reservoir + base EC) **then** **`pulse`** irrigate on the device **FIFO queue** — no last-write-wins |
+| **Irrigation-only program (39b)** | `irrigation_only: true` — **pulse only**, no recipe, no mix preview, no `mix_batch` | RO/well farms |
 | **EC math** | Cloud **`MixPlan`** (`internal/fertigation/mixplan`); Pi runs **`run_seconds`** per channel only |
 
 **Zone Water tab:** **`GET /fertigation/programs/{rid}/water-status`** — queue depth, mix preview, last mixing event. See [operator-tour §4a](operator-tour.md#4a-plant-needs-per-zone-phase-38).

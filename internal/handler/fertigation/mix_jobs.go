@@ -19,6 +19,7 @@ import (
 	db "gr33n-api/internal/db"
 	"gr33n-api/internal/farmauthz"
 	"gr33n-api/internal/fertigation/mixplan"
+	"gr33n-api/internal/fertigation/programrules"
 	"gr33n-api/internal/httputil"
 )
 
@@ -72,6 +73,11 @@ func (h *Handler) EnqueueMixJob(w http.ResponseWriter, r *http.Request) {
 	}
 	if prog.FarmID != farmID {
 		httputil.WriteError(w, http.StatusForbidden, "program belongs to a different farm")
+		return
+	}
+	if prog.IrrigationOnly {
+		httputil.WriteError(w, http.StatusBadRequest,
+			"This program is irrigation-only (plain water). It runs pump pulses only — no nutrient mix to enqueue.")
 		return
 	}
 
@@ -190,15 +196,20 @@ func (h *Handler) MixPreview(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if prog.IrrigationOnly || !programrules.NeedsMixBatch(prog.IrrigationOnly, prog.ApplicationRecipeID) {
+		reason := "program has no application_recipe_id (plain irrigation)"
+		if prog.IrrigationOnly {
+			reason = "irrigation_only program — pulse watering only, no nutrient mix"
+		}
+		httputil.WriteJSON(w, http.StatusOK, map[string]any{
+			"mix_required": false,
+			"reason":       reason,
+		})
+		return
+	}
+
 	in, err := mixplan.BuildFromProgramRow(ctx, h.q, prog, mixplan.BuildOptions{})
 	if err != nil {
-		if errors.Is(err, mixplan.ErrProgramHasNoRecipe) {
-			httputil.WriteJSON(w, http.StatusOK, map[string]any{
-				"mix_required": false,
-				"reason":       "program has no application_recipe_id (plain irrigation)",
-			})
-			return
-		}
 		httputil.WriteError(w, http.StatusBadRequest, err.Error())
 		return
 	}
@@ -247,20 +258,30 @@ func (h *Handler) WaterStatus(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// ── Mix preview ──────────────────────────────────────────────────────────
-	in, buildErr := mixplan.BuildFromProgramRow(ctx, h.q, prog, mixplan.BuildOptions{})
-	if buildErr != nil {
+	if prog.IrrigationOnly || !programrules.NeedsMixBatch(prog.IrrigationOnly, prog.ApplicationRecipeID) {
+		reason := "plain irrigation — no mix step"
+		if prog.IrrigationOnly {
+			reason = "irrigation_only — pulse only"
+		}
 		resp["mix_required"] = false
 		resp["mix_preview"] = nil
-		resp["mix_preview_error"] = buildErr.Error()
+		resp["mix_preview_error"] = reason
 	} else {
-		plan, calcErr := mixplan.Calculate(in)
-		if calcErr != nil {
-			resp["mix_required"] = true
+		in, buildErr := mixplan.BuildFromProgramRow(ctx, h.q, prog, mixplan.BuildOptions{})
+		if buildErr != nil {
+			resp["mix_required"] = false
 			resp["mix_preview"] = nil
-			resp["mix_preview_error"] = calcErr.Error()
+			resp["mix_preview_error"] = buildErr.Error()
 		} else {
-			resp["mix_required"] = true
-			resp["mix_preview"] = plan
+			plan, calcErr := mixplan.Calculate(in)
+			if calcErr != nil {
+				resp["mix_required"] = true
+				resp["mix_preview"] = nil
+				resp["mix_preview_error"] = calcErr.Error()
+			} else {
+				resp["mix_required"] = true
+				resp["mix_preview"] = plan
+			}
 		}
 	}
 

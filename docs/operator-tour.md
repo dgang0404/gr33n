@@ -55,7 +55,7 @@ Each tab shows the **connection chain**: live **reading** → **target band** (s
 
 **Automated mixing on the Pi (Phase 39):** when a program has a **recipe + reservoir + base water EC**, the cloud calculates a **mix plan** and the Pi runs per-channel pump seconds. Operators without edge hardware still use **Fertigation → Mixing log**. Before the first automated mix, set **base water EC** on the reservoir (API `PATCH /fertigation/reservoirs/{rid}/base-water` or future reservoir card). **Zone → Water** tab: preview mix plan, queue depth chip, last mix “EC met” badge.
 
-**Plain irrigation only:** programs with no recipe skip mix — pulse only ([Phase 39b](plans/phase_39b_plain_irrigation.plan.md) will add explicit `irrigation_only` copy).
+**Irrigation-only programs (Phase 39b):** check **Irrigation only (plain water)** when creating a program for RO/well/municipal feed. No recipe, no mix preview, no base EC requirement — only timed pump pulses via the queue.
 
 ---
 

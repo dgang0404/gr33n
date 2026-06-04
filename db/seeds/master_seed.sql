@@ -768,6 +768,38 @@ WHERE farm_id = 1
   AND deleted_at IS NULL
   AND dilution_ratio IS NULL;
 
+-- Phase 39b — plain irrigation (RO/well): pulse only, no recipe or mix_batch
+INSERT INTO gr33nfertigation.programs
+    (farm_id, name, description, application_recipe_id, reservoir_id, target_zone_id, schedule_id,
+     total_volume_liters, run_duration_seconds, ec_trigger_low, ph_trigger_low, ph_trigger_high,
+     is_active, irrigation_only)
+SELECT
+    1,
+    'Outdoor Well Pulse',
+    'Municipal/RO water — timed pump pulse only. No nutrient mix (Phase 39b demo).',
+    NULL,
+    rv.id,
+    z.id,
+    s.id,
+    40.000,
+    120,
+    0.0,
+    6.0,
+    8.0,
+    TRUE,
+    TRUE
+FROM gr33ncore.zones z
+LEFT JOIN gr33ncore.schedules s
+    ON s.farm_id = 1 AND s.name = 'Water Outdoor Garden Daily'
+LEFT JOIN gr33nfertigation.reservoirs rv
+    ON rv.farm_id = 1 AND rv.name = 'Outdoor Drench Tank'
+WHERE z.farm_id = 1
+  AND z.name = 'Outdoor Garden'
+  AND NOT EXISTS (
+      SELECT 1 FROM gr33nfertigation.programs p
+      WHERE p.farm_id = 1 AND p.name = 'Outdoor Well Pulse' AND p.deleted_at IS NULL
+  );
+
 INSERT INTO gr33nfertigation.fertigation_events
     (farm_id, program_id, reservoir_id, zone_id, applied_at, growth_stage,
      volume_applied_liters, run_duration_seconds, ec_before_mscm, ec_after_mscm,

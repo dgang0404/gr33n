@@ -146,16 +146,26 @@ func (h *Handler) UpdateProgram(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var req struct {
-		Name              string  `json:"name"`
-		Description       *string `json:"description"`
-		ReservoirID       *int64  `json:"reservoir_id"`
-		TargetZoneID      *int64  `json:"target_zone_id"`
-		EcTargetID        *int64  `json:"ec_target_id"`
-		TotalVolumeLiters float64 `json:"total_volume_liters"`
-		IsActive          bool    `json:"is_active"`
+		Name                string  `json:"name"`
+		Description         *string `json:"description"`
+		ReservoirID         *int64  `json:"reservoir_id"`
+		TargetZoneID        *int64  `json:"target_zone_id"`
+		EcTargetID          *int64  `json:"ec_target_id"`
+		TotalVolumeLiters   float64 `json:"total_volume_liters"`
+		IsActive            bool    `json:"is_active"`
+		IrrigationOnly      bool    `json:"irrigation_only"`
+		ApplicationRecipeID *int64  `json:"application_recipe_id"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+	recipeID := req.ApplicationRecipeID
+	if req.ApplicationRecipeID == nil && !req.IrrigationOnly {
+		recipeID = prog.ApplicationRecipeID
+	}
+	if err := normalizeProgramFields(req.IrrigationOnly, &recipeID); err != nil {
+		writeProgramValidationError(w, err)
 		return
 	}
 	totalVol, err := numericFromFloat64(req.TotalVolumeLiters)
@@ -164,14 +174,16 @@ func (h *Handler) UpdateProgram(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	row, err := h.q.UpdateProgram(r.Context(), db.UpdateProgramParams{
-		ID:                id,
-		Name:              req.Name,
-		Description:       req.Description,
-		ReservoirID:       req.ReservoirID,
-		TargetZoneID:      req.TargetZoneID,
-		EcTargetID:        req.EcTargetID,
-		TotalVolumeLiters: totalVol,
-		IsActive:          req.IsActive,
+		ID:                  id,
+		Name:                req.Name,
+		Description:         req.Description,
+		ReservoirID:         req.ReservoirID,
+		TargetZoneID:        req.TargetZoneID,
+		EcTargetID:          req.EcTargetID,
+		TotalVolumeLiters:   totalVol,
+		IsActive:            req.IsActive,
+		IrrigationOnly:      req.IrrigationOnly,
+		ApplicationRecipeID: recipeID,
 	})
 	if err != nil {
 		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
@@ -410,9 +422,15 @@ func (h *Handler) CreateProgram(w http.ResponseWriter, r *http.Request) {
 		PhTriggerLow        float64 `json:"ph_trigger_low"`
 		PhTriggerHigh       float64 `json:"ph_trigger_high"`
 		IsActive            bool    `json:"is_active"`
+		IrrigationOnly      bool    `json:"irrigation_only"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+	recipeID := req.ApplicationRecipeID
+	if err := normalizeProgramFields(req.IrrigationOnly, &recipeID); err != nil {
+		writeProgramValidationError(w, err)
 		return
 	}
 
@@ -441,7 +459,7 @@ func (h *Handler) CreateProgram(w http.ResponseWriter, r *http.Request) {
 		FarmID:              farmID,
 		Name:                req.Name,
 		Description:         req.Description,
-		ApplicationRecipeID: req.ApplicationRecipeID,
+		ApplicationRecipeID: recipeID,
 		ReservoirID:         req.ReservoirID,
 		TargetZoneID:        req.TargetZoneID,
 		ScheduleID:          req.ScheduleID,
@@ -452,6 +470,7 @@ func (h *Handler) CreateProgram(w http.ResponseWriter, r *http.Request) {
 		PhTriggerLow:        phLow,
 		PhTriggerHigh:       phHigh,
 		IsActive:            req.IsActive,
+		IrrigationOnly:      req.IrrigationOnly,
 	})
 	if err != nil {
 		httputil.WriteError(w, http.StatusInternalServerError, err.Error())

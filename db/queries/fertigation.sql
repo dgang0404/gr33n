@@ -41,12 +41,12 @@ INSERT INTO gr33nfertigation.programs (
     farm_id, name, description, application_recipe_id, reservoir_id,
     target_zone_id, schedule_id, ec_target_id, total_volume_liters,
     run_duration_seconds, ec_trigger_low, ph_trigger_low, ph_trigger_high,
-    is_active
+    is_active, irrigation_only
 ) VALUES (
     $1, $2, $3, $4, $5,
     $6, $7, $8, $9,
     $10, $11, $12, $13,
-    $14
+    $14, $15
 )
 RETURNING *;
 
@@ -129,7 +129,9 @@ WHERE id = $1 AND deleted_at IS NULL;
 UPDATE gr33nfertigation.programs
 SET name = $2, description = $3, reservoir_id = $4,
     target_zone_id = $5, ec_target_id = $6,
-    total_volume_liters = $7, is_active = $8, updated_at = NOW()
+    total_volume_liters = $7, is_active = $8,
+    irrigation_only = $9, application_recipe_id = $10,
+    updated_at = NOW()
 WHERE id = $1 AND deleted_at IS NULL
 RETURNING *;
 

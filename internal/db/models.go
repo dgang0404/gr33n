@@ -2038,6 +2038,7 @@ type Gr33nfertigationProgram struct {
 	PhTriggerLow        pgtype.Numeric     `db:"ph_trigger_low" json:"ph_trigger_low"`
 	PhTriggerHigh       pgtype.Numeric     `db:"ph_trigger_high" json:"ph_trigger_high"`
 	IsActive            bool               `db:"is_active" json:"is_active"`
+	IrrigationOnly      bool               `db:"irrigation_only" json:"irrigation_only"`
 	Metadata            json.RawMessage    `db:"metadata" json:"metadata"`
 	LastTriggeredTime   pgtype.Timestamptz `db:"last_triggered_time" json:"last_triggered_time"`
 	CreatedAt           time.Time          `db:"created_at" json:"created_at"`

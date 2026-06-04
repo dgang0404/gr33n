@@ -7,16 +7,16 @@ overview: >
 todos:
   - id: ws1-program-type
     content: "WS1: irrigation_only program flag or program_type — schedule fire enqueues pulse only (no mix_batch)"
-    status: pending
+    status: done
   - id: ws2-worker-path
     content: "WS2: program_tick branch — irrigation_only skips mix calculator; single pulse enqueue with provenance"
-    status: pending
+    status: done
   - id: ws3-zone-water-copy
     content: "WS3: Zone Water + Fertigation UI — show 'irrigation only' badge; hide mix preview when N/A"
-    status: pending
+    status: done
   - id: ws4-docs-seed
     content: "WS4: operator-tour + workflow-guide + optional seed program; smoke irrigation_only tick"
-    status: pending
+    status: done
 isProject: false
 ---
 
@@ -24,7 +24,7 @@ isProject: false
 
 ## Status
 
-**Planned.** Depends on **Phase 39 WS1** (device command queue). Referenced from [Phase 39](phase_39_edge_fertigation_execution.plan.md) out-of-scope table as **39b**.
+**Complete.** Depends on **Phase 39** (device command queue + mix pipeline). Referenced from [Phase 39](phase_39_edge_fertigation_execution.plan.md) out-of-scope table as **39b**.
 
 **Indexed in:** [`pre_development_gaps_index.plan.md`](pre_development_gaps_index.plan.md) (gap **A4**).
 
@@ -134,10 +134,10 @@ WS1 → WS2 → WS3 → WS4 (after 39 WS1; can parallel 39 WS4 Pi work)
 
 ## Definition of done
 
-- [ ] irrigation_only programs cannot attach recipes
-- [ ] Program tick enqueues pulse only via queue
-- [ ] UI hides mix affordances for irrigation-only
-- [ ] Docs + smoke + optional seed
+- [x] irrigation_only programs cannot attach recipes
+- [x] Program tick enqueues pulse only via queue
+- [x] UI hides mix affordances for irrigation-only
+- [x] Docs + smoke + optional seed
 
 ---
 

@@ -191,7 +191,12 @@
           <option :value="null">No EC target</option>
           <option v-for="t in ecTargets" :key="t.id" :value="t.id">{{ t.growth_stage }} ({{ t.ec_min_mscm }}–{{ t.ec_max_mscm }})</option>
         </select>
-        <select v-model="progForm.application_recipe_id" class="input-field">
+        <label class="flex items-center gap-2 text-zinc-300 text-sm sm:col-span-2">
+          <input type="checkbox" v-model="progForm.irrigation_only" class="rounded bg-zinc-800 border-zinc-700" />
+          Irrigation only (plain water — no nutrients)
+          <HelpTip>RO, well, or municipal water. Runs pump pulses only; no mix plan or recipe.</HelpTip>
+        </label>
+        <select v-model="progForm.application_recipe_id" class="input-field" :disabled="progForm.irrigation_only">
           <option :value="null">No NF recipe</option>
           <option v-for="r in nfRecipes" :key="r.id" :value="r.id">{{ r.name }}</option>
         </select>
@@ -220,6 +225,9 @@
             <span class="text-xs px-2 py-0.5 rounded-full"
               :class="p.is_active ? 'bg-green-900/50 text-green-300' : 'bg-zinc-800 text-zinc-400'">
               {{ p.is_active ? 'Active' : 'Inactive' }}
+            </span>
+            <span v-if="p.irrigation_only" class="text-xs px-2 py-0.5 rounded-full bg-sky-900/50 text-sky-300">
+              Irrigation only
             </span>
           </div>
           <p class="text-zinc-400 text-xs">
@@ -754,6 +762,7 @@ const progForm = ref({
   ec_target_id: null,
   total_volume_liters: 0,
   is_active: false,
+  irrigation_only: false,
   ec_trigger_low: 0,
   ph_trigger_low: 0,
   ph_trigger_high: 0,
@@ -1053,6 +1062,10 @@ async function submitProgram() {
   saving.value = true
   try {
     const payload = { ...progForm.value }
+    if (payload.irrigation_only) {
+      payload.application_recipe_id = null
+      payload.ec_target_id = null
+    }
     if (payload.schedule_id == null) delete payload.schedule_id
     await store.createProgram(farmId.value, payload)
     showProgramForm.value = false
@@ -1065,6 +1078,7 @@ async function submitProgram() {
       ec_target_id: null,
       total_volume_liters: 0,
       is_active: false,
+      irrigation_only: false,
       ec_trigger_low: 0,
       ph_trigger_low: 0,
       ph_trigger_high: 0,

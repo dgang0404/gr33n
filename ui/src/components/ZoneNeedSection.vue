@@ -66,9 +66,14 @@
         <div class="flex items-start justify-between gap-2 flex-wrap">
           <div>
             <p class="text-zinc-200 text-sm">{{ activeProgram.name }}</p>
+            <span
+              v-if="activeProgram.irrigation_only"
+              class="text-[10px] px-2 py-0.5 rounded-full bg-sky-900/50 text-sky-300 font-semibold shrink-0"
+            >Irrigation only</span>
             <p class="text-zinc-600 text-xs mt-1">
               {{ activeProgram.total_volume_liters || '—' }}L
               <span v-if="activeProgram.run_duration_seconds"> · pump run {{ activeProgram.run_duration_seconds }}s</span>
+              <span v-if="activeProgram.irrigation_only"> · plain water, no mix</span>
             </p>
           </div>
           <!-- Queue depth chip -->
@@ -276,6 +281,13 @@ const showMixPreview = ref(false)
 
 async function loadWaterStatus() {
   if (props.need !== PLANT_NEEDS.water || !props.activeProgram?.id) return
+  if (props.activeProgram.irrigation_only) {
+    waterStatus.value = {
+      mix_required: false,
+      reason: 'irrigation_only program — pulse watering only',
+    }
+    return
+  }
   try {
     const token = store.token || localStorage.getItem('token')
     const r = await fetch(`/fertigation/programs/${props.activeProgram.id}/water-status`, {

@@ -7534,6 +7534,9 @@ components:
         ph_trigger_low: { type: number }
         ph_trigger_high: { type: number }
         is_active: { type: boolean }
+        irrigation_only:
+          type: boolean
+          description: Plain water (RO/well) — pulse only, no mix_batch (Phase 39b)
         created_at: { type: string, format: date-time }
         updated_at: { type: string, format: date-time }
 
@@ -7554,6 +7557,7 @@ components:
         ph_trigger_low: { type: number }
         ph_trigger_high: { type: number }
         is_active: { type: boolean }
+        irrigation_only: { type: boolean }
 
     FertigationProgramUpdate:
       type: object
@@ -7566,6 +7570,8 @@ components:
         ec_target_id: { type: integer }
         total_volume_liters: { type: number }
         is_active: { type: boolean }
+        irrigation_only: { type: boolean }
+        application_recipe_id: { type: integer, nullable: true }
 
     FertigationEvent:
       type: object
