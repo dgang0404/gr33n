@@ -52,11 +52,11 @@ Cross-linked from Phase 14 because enterprise scale-out and MQTT edge patterns s
 | **38** | **Plant-needs UI** (**shipped**) — Zones → **Water / Light / Climate**; Advanced nav; **`duration_seconds`** pump pulse on `pending_command` | [`phase_38_plant_needs_ui_and_pulse_commands.plan.md`](plans/phase_38_plant_needs_ui_and_pulse_commands.plan.md) · [operator-tour §4a](operator-tour.md#4a-plant-needs-per-zone-phase-38) · [architecture §7.0d](farm-guardian-architecture.md#70d-plant-needs-ui--pulse-phase-38) |
 | **39** | **Edge fertigation** (**shipped**) — FIFO queue, `mix_batch`, Pi executor | [`phase_39_edge_fertigation_execution.plan.md`](plans/phase_39_edge_fertigation_execution.plan.md) |
 | **39b** | **Plain irrigation** (**shipped**) — RO/well programs without mix | [`phase_39b_plain_irrigation.plan.md`](plans/phase_39b_plain_irrigation.plan.md) |
-| **40–45** | **Farmer UX arc** — zone cockpit → farm hub → comfort targets → operations → setup wizards → sit-in polish | **[`farmer_ux_roadmap_40_plus.plan.md`](plans/farmer_ux_roadmap_40_plus.plan.md)** · [40](plans/phase_40_unified_farmer_ux_zone_cockpit.plan.md) · [41](plans/phase_41_farm_hub_coherence.plan.md) · [42](plans/phase_42_comfort_targets_automation_plain_language.plan.md) · [43](plans/phase_43_operations_stock_feeding_finance.plan.md) · [44](plans/phase_44_getting_started_edge_wizard.plan.md) · [45](plans/phase_45_farmer_validation_whole_app_polish.plan.md) |
+| **40–47** | **Farmer UX arc** — zone cockpit → farm hub → feeding & water → comfort → operations → setup → sit-in → Guardian LLM PRs | **[`farmer_ux_roadmap_40_plus.plan.md`](plans/farmer_ux_roadmap_40_plus.plan.md)** · [40](plans/phase_40_unified_farmer_ux_zone_cockpit.plan.md) · [41](plans/phase_41_farm_hub_coherence.plan.md) · [47](plans/phase_47_feeding_water_plain_language.plan.md) · [42](plans/phase_42_comfort_targets_automation_plain_language.plan.md) · [43](plans/phase_43_operations_stock_feeding_finance.plan.md) · [44](plans/phase_44_getting_started_edge_wizard.plan.md) · [45](plans/phase_45_farmer_validation_whole_app_polish.plan.md) · [46](plans/phase_46_guardian_llm_tool_proposals.plan.md) · [`farmer-vocabulary.md`](farmer-vocabulary.md) |
 
 **Pre-dev gap index:** [`pre_development_gaps_index.plan.md`](plans/pre_development_gaps_index.plan.md) · **Product backlog:** [`product_backlog_operator_runtime.plan.md`](plans/product_backlog_operator_runtime.plan.md) (**shipped**)
 
-Rollup: [`phase_35_37_operational_closure.plan.md`](plans/phase_35_37_operational_closure.plan.md) (spans **35–45** OC rows). After operator-doc edits, re-ingest Guardian RAG: **`make rag-ingest-platform-docs`** and **`make rag-ingest-field-guides`** (Phase 37 field corpus).
+Rollup: [`phase_35_37_operational_closure.plan.md`](plans/phase_35_37_operational_closure.plan.md) (spans **35–47** OC rows). After operator-doc edits, re-ingest Guardian RAG: **`make rag-ingest-platform-docs`** and **`make rag-ingest-field-guides`** (Phase 37 field corpus).
 
 ## Quick links
 
@@ -88,11 +88,12 @@ Rollup: [`phase_35_37_operational_closure.plan.md`](plans/phase_35_37_operationa
 | Phase 36 — Greenhouse climate (plan) | [`plans/phase_36_greenhouse_climate.plan.md`](plans/phase_36_greenhouse_climate.plan.md) — shipped (interlocks + smokes) |
 | Phase 38 — Plant-needs UI + pulse (plan) | [`plans/phase_38_plant_needs_ui_and_pulse_commands.plan.md`](plans/phase_38_plant_needs_ui_and_pulse_commands.plan.md) — Zones Water/Light/Climate; `duration_seconds` |
 | Phase 39 — Edge fertigation execution (plan) | [`plans/phase_39_edge_fertigation_execution.plan.md`](plans/phase_39_edge_fertigation_execution.plan.md) — command queue + automated mix |
-| Farmer UX roadmap 40–45 | [`plans/farmer_ux_roadmap_40_plus.plan.md`](plans/farmer_ux_roadmap_40_plus.plan.md) — full site vision + phase order |
-| Phase 40–45 plans | 40 zone cockpit · 41 farm hub · 42 comfort/automation · 43 operations · 44 setup/Pi · 45 sit-in |
+| Farmer UX roadmap 40–47 | [`plans/farmer_ux_roadmap_40_plus.plan.md`](plans/farmer_ux_roadmap_40_plus.plan.md) — full site vision + phase order |
+| Phase 40–47 plans | 40 cockpit · 41 hub · **47 feed/water** · 42 comfort · 43 ops · 44 setup · 45 sit-in · 46 LLM PRs |
+| Farmer vocabulary | [`farmer-vocabulary.md`](farmer-vocabulary.md) — grow-path language contract |
 | Pre-development gaps index | [`plans/pre_development_gaps_index.plan.md`](plans/pre_development_gaps_index.plan.md) |
 | Product backlog (run now, mobile, …) | [`plans/product_backlog_operator_runtime.plan.md`](plans/product_backlog_operator_runtime.plan.md) — shipped |
-| Phase 35–45 operational closure | [`plans/phase_35_37_operational_closure.plan.md`](plans/phase_35_37_operational_closure.plan.md) — OC-40…45 close with each phase WS8 |
+| Phase 35–47 operational closure | [`plans/phase_35_37_operational_closure.plan.md`](plans/phase_35_37_operational_closure.plan.md) — OC-40…47 close with each phase WS8 |
 | Phase 37 — Guardian offline field assistant (plan) | [`plans/phase_37_guardian_offline_field_assistant.plan.md`](plans/phase_37_guardian_offline_field_assistant.plan.md) — Pi wiring / plumbing walkthroughs, trades corpus, safety gating, offline |
 | Pi pending_command + pulse | [`pi-integration-guide.md`](pi-integration-guide.md) §1.1 |
 | Workflow — single slot + manual mix | [`workflow-guide.md`](workflow-guide.md) |

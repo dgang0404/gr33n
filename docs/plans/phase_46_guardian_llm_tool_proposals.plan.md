@@ -30,7 +30,7 @@ isProject: false
 
 ## Status
 
-**Planned — after [Phase 45](phase_45_farmer_validation_whole_app_polish.plan.md).** Sits **after** farmer UX arc 40–45 and sit-in validation.
+**Planned — after [Phase 45](phase_45_farmer_validation_whole_app_polish.plan.md).** Sits **after** farmer UX arc 40–47 (feature phases 40–45 + feeding language 47) and sit-in validation.
 
 **Canonical implementation spec:** this document (full phase = Guardian slice).
 

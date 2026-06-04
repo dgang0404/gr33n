@@ -383,6 +383,19 @@ When shipped:
 
 Operator: [operator-tour §6h](operator-tour.md#6h-when-guardian-opens-a-card-from-your-words-phase-46--planned).
 
+### 7.0m Feeding & water plain language (Phase 47 — planned)
+
+**Doc stub.** Plan: [`plans/phase_47_feeding_water_plain_language.plan.md`](plans/phase_47_feeding_water_plain_language.plan.md) · Vocabulary: [`farmer-vocabulary.md`](farmer-vocabulary.md).
+
+When shipped:
+
+- **Zone Water** is the primary surface for last/next feed, feeding plan, Run now, pulse, reservoir — not the six-tab Fertigation console.
+- **Feeding hub** lists rooms as cards; technical Fertigation stays Advanced / Operations (43).
+- **irrigation_only** (39b) framed as **Water only**; mix preview hidden when N/A.
+- Guardian starters on Water; `summarize_zone_fertigation` for read; patch program matchers from Phase 42.
+
+Operator: [operator-tour §7b](operator-tour.md#7b-feeding--water-for-this-room-phase-47--planned).
+
 ### 7.0e Offline field assistant (Phase 37)
 
 Physical install guidance for **non-IT operators** at sites with **no WAN** (or local-only LLM). Knowledge layers:

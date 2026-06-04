@@ -91,7 +91,9 @@ APIs: inventory batches, input definitions, `ListLowStockBatchesByFarm`.
 
 ## WS3 — Feeding admin
 
-Simplify [Fertigation.vue](../../ui/src/views/Fertigation.vue) entry:
+**Daily feeding UX:** owned by [Phase 47](phase_47_feeding_water_plain_language.plan.md) (zone Water + Feeding hub). This WS is **farm-wide admin** — recipes, reservoirs, mixing log, bulk program edit.
+
+Simplify [Fertigation.vue](../../ui/src/views/Fertigation.vue) as **Advanced / Operations** entry:
 
 | Card type | Farmer copy |
 |-----------|-------------|
@@ -99,7 +101,7 @@ Simplify [Fertigation.vue](../../ui/src/views/Fertigation.vue) entry:
 | Reservoir | Volume bar, "ready / needs top-up" |
 | EC target | Stage name + range, not table ID |
 
-Default tab: **Programs** filtered by `?zone_id=`. Advanced: full tab bar for agronomists.
+Default: link from 47 Feeding hub → "Technical feeding admin →". Full tab bar for agronomists only.
 
 ---
 

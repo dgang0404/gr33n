@@ -164,4 +164,6 @@ Farmers should not **need** chat to run a day — PRs are for “help me phrase 
 | [operator-tour §6](operator-tour.md#6-farm-guardian-change-requests-with-your-ok) | Walkthrough |
 | [farm-guardian-persona-platform-context.md](farm-guardian-persona-platform-context.md) | What Guardian is told |
 | [plans/guardian_pr_ux_through_farmer_phases.plan.md](plans/guardian_pr_ux_through_farmer_phases.plan.md) | Starters + triggers by phase |
-| [plans/farmer_ux_roadmap_40_plus.plan.md](plans/farmer_ux_roadmap_40_plus.plan.md) | Full UI arc 40–45 |
+| [plans/farmer_ux_roadmap_40_plus.plan.md](plans/farmer_ux_roadmap_40_plus.plan.md) | Full UI arc 40–47 |
+| [farmer-vocabulary.md](farmer-vocabulary.md) | Grow-path words (feeding, comfort — not setpoint/cron) |
+| [plans/phase_47_feeding_water_plain_language.plan.md](plans/phase_47_feeding_water_plain_language.plan.md) | Room-first feeding |

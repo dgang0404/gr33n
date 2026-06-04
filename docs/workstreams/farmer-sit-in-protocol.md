@@ -76,6 +76,8 @@ parent_plan: phase_45_farmer_validation_whole_app_polish.plan.md
 
 Facilitator marks **pass / fail / skip** per path.
 
+**Vocabulary gate:** [farmer-vocabulary.md](../farmer-vocabulary.md) — fail if daily feeding or humidity tasks require pages titled **Setpoints** or the six-tab **Fertigation** console (Phase 47 + 42).
+
 ### 4.1 Path 1 — `ack_alert`
 
 | Step | Operator does | Pass criteria |

@@ -42,7 +42,7 @@ isProject: false
 
 ## Status
 
-**Planned — chapter 1 of 6** in the [Farmer UX roadmap (40–45)](farmer_ux_roadmap_40_plus.plan.md). Depends on **Phase 38** + **39/39b** ✅. This phase fixes **daily grow in one room**; it does **not** replace Setpoints/Schedules pages (→ **42**) or inventory/costs (→ **43**).
+**Planned — chapter 1 of 8** in the [Farmer UX roadmap (40–47)](farmer_ux_roadmap_40_plus.plan.md). Depends on **Phase 38** + **39/39b** ✅. This phase fixes **daily grow in one room**; Water wedge completes in **47**; Setpoints/Schedules farmer routes → **42**; inventory/costs → **43**.
 
 **Quick fix (not a full WS):** [`bug-guardian-nav`](#bug-guardian-nav-hotfix) — do before or alongside WS7; tracked in plan todos.
 
@@ -198,6 +198,8 @@ flowchart TB
 ## WS5 — Water "grow story"
 
 **Goal:** Unify fertigation program, events, and edge queue into one narrative on Water tab.
+
+**Completion:** [Phase 47](phase_47_feeding_water_plain_language.plan.md) owns feeding plan UI, vocabulary, and Feeding hub — 40 ships the **wedge** (last/next/queue); 47 completes farmer-grade Water.
 
 **Depends on:** Phase 39 WS1 + WS7 for queue/mix honesty.
 

@@ -64,7 +64,10 @@ todos:
     content: "OC-45: Phase 45 WS7 — farmer sit-in + farmer-ready v1 (close when Phase 45 ships)"
     status: pending
   - id: oc-46-closure
-    content: "OC-46: Phase 46 WS5 — LLM tool proposals docs/tests (close when Phase 46 ships)"
+    content: "OC-46: Phase 46 WS6 — LLM tool proposals docs/tests (close when Phase 46 ships)"
+    status: pending
+  - id: oc-47
+    content: "OC-47: Phase 47 WS7 — feeding & water plain language docs/tests (close when Phase 47 ships)"
     status: pending
 isProject: false
 ---
@@ -234,7 +237,7 @@ Feature detail: [`phase_39_edge_fertigation_execution.plan.md`](phase_39_edge_fe
 
 **Pending rows in this plan’s todo list:** only **OC-40** and **OC-41** are intentionally open — they track *future* closure, not missing pre-40 work. Do not block Phase 40 on them.
 
-**Documentation gate (before Phase 40 code):** [guardian-change-requests-guide.md](../guardian-change-requests-guide.md) + [guardian_pr_ux_through_farmer_phases.plan.md](guardian_pr_ux_through_farmer_phases.plan.md) + per-phase Guardian specs **42–46** ([phase_42_guardian_pr_spec.md](phase_42_guardian_pr_spec.md) … [phase_46](phase_46_guardian_llm_tool_proposals.plan.md)) + [farmer-sit-in-protocol.md](../workstreams/farmer-sit-in-protocol.md).
+**Documentation gate (before Phase 40 code):** [guardian-change-requests-guide.md](../guardian-change-requests-guide.md) + [guardian_pr_ux_through_farmer_phases.plan.md](guardian_pr_ux_through_farmer_phases.plan.md) + per-phase Guardian specs **42–46** + [phase_47](phase_47_feeding_water_plain_language.plan.md) + [farmer-vocabulary.md](../farmer-vocabulary.md) + [farmer-sit-in-protocol.md](../workstreams/farmer-sit-in-protocol.md). **Green to start Phase 40.**
 
 **Optional hygiene (not blocking):** `make rag-ingest-platform-docs` after doc edits; push `main` to origin when ready.
 
@@ -256,12 +259,13 @@ Feature detail: [`phase_40_unified_farmer_ux_zone_cockpit.plan.md`](phase_40_uni
 
 Feature detail: [`phase_41_farm_hub_coherence.plan.md`](phase_41_farm_hub_coherence.plan.md). **OC-41** when WS7 lands. **After Phase 40.**
 
-## Phases 42–46 — Farmer UX + Guardian PR completion
+## Phases 42–47 — Farmer UX + Guardian PR completion
 
-**Master roadmap:** [`farmer_ux_roadmap_40_plus.plan.md`](farmer_ux_roadmap_40_plus.plan.md). Closure rows **OC-42 … OC-46** track each phase WS8 — not pre-40 work. Guardian specs: [42](phase_42_guardian_pr_spec.md) · [43](phase_43_guardian_pr_spec.md) · [44](phase_44_guardian_pr_spec.md) · [45](phase_45_guardian_pr_spec.md) · [46](phase_46_guardian_llm_tool_proposals.plan.md).
+**Master roadmap:** [`farmer_ux_roadmap_40_plus.plan.md`](farmer_ux_roadmap_40_plus.plan.md). Closure rows **OC-42 … OC-47** track each phase WS8/WS7 — not pre-40 work. Vocabulary: [`farmer-vocabulary.md`](../farmer-vocabulary.md). Guardian specs: [42](phase_42_guardian_pr_spec.md) · [43](phase_43_guardian_pr_spec.md) · [44](phase_44_guardian_pr_spec.md) · [45](phase_45_guardian_pr_spec.md) · [46](phase_46_guardian_llm_tool_proposals.plan.md).
 
-| Phase | Focus |
-|-------|--------|
+| Phase | Focus (build order after 40–41) |
+|-------|--------------------------------|
+| [47](phase_47_feeding_water_plain_language.plan.md) | Feeding plan per room; zone Water primary |
 | [42](phase_42_comfort_targets_automation_plain_language.plan.md) | Comfort bands; matchers + starters |
 | [43](phase_43_operations_stock_feeding_finance.plan.md) | Supplies, feeding admin, money hubs |
 | [44](phase_44_getting_started_edge_wizard.plan.md) | Farm + Pi wizards; setup starters second |

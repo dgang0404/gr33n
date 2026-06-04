@@ -21,6 +21,7 @@
 # Phase 39b (re-ingest after ship): workflow-guide.md §4b row "39b"; operator-tour §4a irrigation-only note.
 #
 # Guardian PR doc gate (before Phase 40 code): guardian-change-requests-guide.md — propose/confirm/inbox/starters.
+# Phase 47: farmer-vocabulary.md — grow-path language contract (ingest after ship).
 #
 # Pre-dev gap index (planning only, not ingested): docs/plans/pre_development_gaps_index.plan.md
 # Plans under docs/plans/ are excluded via exclude_globs.
@@ -35,6 +36,7 @@ include:
   - operator-troubleshooting.md
   - farm-guardian-architecture.md
   - guardian-change-requests-guide.md
+  - farmer-vocabulary.md
   - farm-guardian-persona-platform-context.md
   - farm-guardian-ollama-setup.md
   - audit-events-operator-playbook.md

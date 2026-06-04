@@ -445,6 +445,27 @@ Architecture: [`farm-guardian-architecture.md` §7.0i](farm-guardian-architectur
 
 ---
 
+## 7b. Feeding & water for this room (Phase 47 — planned)
+
+**Status:** Doc complete; after [Phase 40](plans/phase_40_unified_farmer_ux_zone_cockpit.plan.md) WS5 wedge and [Phase 41](plans/phase_41_farm_hub_coherence.plan.md). Plan: [`plans/phase_47_feeding_water_plain_language.plan.md`](plans/phase_47_feeding_water_plain_language.plan.md) · Words: [`farmer-vocabulary.md`](farmer-vocabulary.md).
+
+**One question:** *How does this room get water?*
+
+1. Open **My rooms → Flower Room → Water**.
+2. Read the **status line** — next feed in plain time, volume, EC range.
+3. **Last feed** — when it ran and whether it looked OK.
+4. **Feeding plan** — change volume, daily time, or **Water only** (irrigation without nutrients).
+5. **Run feed now** or **Pulse pump** when you need manual control.
+6. **Reservoir** — Ready or Needs top-up.
+7. Farm-wide list: **Feed & water** hub (all rooms as cards).
+8. Recipes, mixing log, six tabs → **Advanced / Operations** only.
+
+**Do not** send operators to a page titled **Fertigation** for daily feeding after 47 ships.
+
+Architecture: [`farm-guardian-architecture.md` §7.0m](farm-guardian-architecture.md#70m-feeding--water-plain-language-phase-47--planned).
+
+---
+
 ## 8. Getting started & edge install (Phase 44 — planned)
 
 **Status:** Doc complete; after Phases 40–43. Plan: [`plans/phase_44_getting_started_edge_wizard.plan.md`](plans/phase_44_getting_started_edge_wizard.plan.md).
@@ -495,6 +516,8 @@ Spec: [`plans/phase_45_guardian_pr_spec.md`](plans/phase_45_guardian_pr_spec.md)
 | [plans/phase_36_greenhouse_climate.plan.md](plans/phase_36_greenhouse_climate.plan.md) | Greenhouse profile, typed actuators, shade/fan rules (Phase 36) |
 | [pattern-playbooks.md](pattern-playbooks.md) | `greenhouse_climate_v1` bootstrap pattern |
 | [plans/phase_32_guardian_grow_setup_prs.plan.md](plans/phase_32_guardian_grow_setup_prs.plan.md) | Grow setup PR bundle (Phase 32) |
+| [plans/phase_47_feeding_water_plain_language.plan.md](plans/phase_47_feeding_water_plain_language.plan.md) | Feeding & water plain language (Phase 47) |
+| [farmer-vocabulary.md](farmer-vocabulary.md) | UI language contract for grow paths |
 | [plans/phase_31_field_validation_and_edge.plan.md](plans/phase_31_field_validation_and_edge.plan.md) | Pi / breadboard validation after actuator PRs |
 | [audit-events-operator-playbook.md](audit-events-operator-playbook.md) | `guardian_tool_executed` after Confirm |
 | [operator-troubleshooting.md](operator-troubleshooting.md) | 401 / empty farms / reading logs |

@@ -87,7 +87,7 @@ Prefer **UI + API composition** fixes; schema only if sit-in proves gap.
 
 ## WS3 — Copy pass v2
 
-Extend [phase_20_9b](phase_20_9b_terminology_and_copy_pass.plan.md):
+Extend [farmer-vocabulary.md](../farmer-vocabulary.md) and [phase_20_9b](phase_20_9b_terminology_and_copy_pass.plan.md):
 
 - Ban list: `cron`, `predicate`, `executable_action`, `zone_setpoints` in farmer routes
 - HelpTips audit on 40–44 surfaces

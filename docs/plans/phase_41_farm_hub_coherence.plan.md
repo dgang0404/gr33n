@@ -34,7 +34,7 @@ isProject: false
 
 ## Status
 
-**Planned — chapter 2 of 6** in the [Farmer UX roadmap (40–45)](farmer_ux_roadmap_40_plus.plan.md). Depends on **Phase 40**. Does not replace Advanced CRUD or setpoints education (→ **42–45**).
+**Planned — chapter 2 of 8** in the [Farmer UX roadmap (40–47)](farmer_ux_roadmap_40_plus.plan.md). Depends on **Phase 40**. Feeding hub deep links → **47** after 41; comfort/setpoints → **42**; operations → **43**.
 
 **Indexed in:** [`pre_development_gaps_index.plan.md`](pre_development_gaps_index.plan.md) (gap **A3**).
 

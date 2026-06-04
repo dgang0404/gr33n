@@ -1,5 +1,5 @@
 ---
-name: Guardian PR UX through farmer phases (40–45)
+name: Guardian PR UX through farmer phases (40–47)
 overview: >
   Product spec for how Guardian change requests (proposals) are triggered, suggested,
   and reviewed as the farmer UX arc ships. Documents current rule-assisted behavior,
@@ -36,7 +36,7 @@ todos:
 isProject: false
 ---
 
-# Guardian PR UX through farmer phases (40–45)
+# Guardian PR UX through farmer phases (40–47)
 
 ## Status
 
@@ -234,6 +234,15 @@ User intent
 | Copy/a11y on Confirm/Dismiss | WS3 + WS6 parent |
 | operator-tour §9 | Docs — written (planned ship) |
 
+### Phase 47 — Feeding & water
+
+| Item | Type |
+|------|------|
+| Starters on zone Water + Feeding hub | UI — [phase_47](phase_47_feeding_water_plain_language.plan.md) WS6 |
+| Read: `summarize_zone_fertigation` | Existing |
+| PR: `patch_fertigation_program` / schedule | Matchers 42 + 46 fallback |
+| [farmer-vocabulary.md](../farmer-vocabulary.md) | Docs WS5 |
+
 ### Phase 46 — LLM tool proposals
 
 **Canonical spec:** [phase_46_guardian_llm_tool_proposals.plan.md](phase_46_guardian_llm_tool_proposals.plan.md) (full phase doc)
@@ -276,7 +285,7 @@ Implement via `ui/src/lib/guardianContextPrompts.js` (build message from props +
 
 **Decision (doc gate):** **Hybrid C** — matchers first; validated LLM `tool` + `args` only on write-intent miss + Operate + allowlist.
 
-**Not in 40–45 v1** — Phase 40 must not promise “any ask creates a PR.”
+**Not in 40–47 v1 (except 46 when shipped)** — Phase 40 must not promise “any ask creates a PR.”
 
 ---
 
@@ -301,7 +310,8 @@ Implement via `ui/src/lib/guardianContextPrompts.js` (build message from props +
 
 | Doc | Use |
 |-----|-----|
-| [farmer_ux_roadmap_40_plus.plan.md](farmer_ux_roadmap_40_plus.plan.md) | UI arc 40–45 |
+| [farmer_ux_roadmap_40_plus.plan.md](farmer_ux_roadmap_40_plus.plan.md) | UI arc 40–47 |
+| [farmer-vocabulary.md](../farmer-vocabulary.md) | Grow-path language (Phase 47) |
 | [phase_30_guardian_change_requests.plan.md](phase_30_guardian_change_requests.plan.md) | Shipped PR queue |
 | [phase_34_guardian_pr_iteration.plan.md](phase_34_guardian_pr_iteration.plan.md) | Revise loop |
 | [phase_44_getting_started_edge_wizard.plan.md](phase_44_getting_started_edge_wizard.plan.md) | Wizards vs Guardian |
