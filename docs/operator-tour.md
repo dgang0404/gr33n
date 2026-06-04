@@ -337,6 +337,23 @@ If you get advice text but **no card**, matchers did not recognize the phrase �
 
 **Prefer the UI when it exists:** Use band editor and rule/schedule **toggles** on the same pages; Guardian is for operators who think in chat first.
 
+### 6f. Guardian on supplies & money (Phase 43 — planned)
+
+**Spec:** [`plans/phase_43_guardian_pr_spec.md`](plans/phase_43_guardian_pr_spec.md)
+
+**Read (new in 43):** Ask “What’s running low?” or use the **What’s running low?** starter on Supplies — Guardian attaches a **`summarize_farm_low_stock`** block (input names and quantities). This is **advice text**, not a Confirm card.
+
+**Starters:** On Supplies, Feeding, and Money hubs — e.g. “Turn alert into refill task”, “When does feeding run next?”, “Explain this month’s spend”. Chips fill chat; they do not change stock by themselves.
+
+**PR cards (existing tools only):**
+
+| You might say | Tool (if matched) |
+|---------------|-------------------|
+| Create a task from this low-stock alert | `create_task_from_alert` |
+| Create a task to check humidity | `create_task` |
+
+Guardian **cannot** adjust batch quantities or post receipts via Confirm in Phase 43 — use the hub UI; broader NL writes are Phase 46.
+
 ### 6d. First field install with Guardian, offline (Phase 37)
 
 **Requires:** `AI_ENABLED=true`, demo or real farm selected, **Operate** optional for procedure-only turns (Confirm still needed for write proposals).
@@ -378,7 +395,40 @@ Architecture: [`farm-guardian-architecture.md`](farm-guardian-architecture.md) �
 
 ---
 
-## 7. Related docs
+## 7. Supplies, feeding & money (Phase 43 — planned)
+
+**Status:** Doc complete; implementation after [Phase 41](plans/phase_41_farm_hub_coherence.plan.md). Plan: [`plans/phase_43_operations_stock_feeding_finance.plan.md`](plans/phase_43_operations_stock_feeding_finance.plan.md).
+
+**Goal:** One **Operations** area for restock, feeding admin, and receipts — not three separate schema apps.
+
+### Supplies
+
+1. Open **Operations → Supplies** (wraps today’s inventory data).
+2. **Low-stock banner** at top — same alerts the worker already creates (`inventory_low_stock`).
+3. List shows **input name** and quantity on hand — not `input_batches` tab jargon.
+4. **Log mix** links to mixing log or zone Water (Phase 39).
+
+### Feeding (details)
+
+1. **Operations → Feeding** — programs and reservoirs as **cards** (room name, next run, irrigation-only badge).
+2. Default filter: `?zone_id=` from farm hub or zone cockpit.
+3. Advanced: full Fertigation tab bar for agronomists.
+
+### Money
+
+1. **Operations → Money** — this month spend summary first.
+2. **Save receipt** flow with photo attach — COA hidden until Advanced.
+
+### Cross-links
+
+- Zone **Water** → “Stock & recipes for this room”
+- **Dashboard** (41) → Supplies chip when low stock
+
+Architecture: [`farm-guardian-architecture.md` §7.0i](farm-guardian-architecture.md#70i-operations-hub--supplies-feeding-money-phase-43--planned).
+
+---
+
+## 8. Related docs
 
 | Doc | Use |
 |-----|-----|

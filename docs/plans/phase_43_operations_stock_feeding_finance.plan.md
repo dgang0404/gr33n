@@ -21,10 +21,13 @@ todos:
     content: "WS5: Deep links from zone Water and 41 Fertigation context into filtered hubs"
     status: pending
   - id: ws6-guardian-ops
-    content: "WS6: Guardian read tools for stock summary (optional); no new write tools unless gap found"
+    content: "WS6: Guardian persona + impact for supplies/feeding/money vocabulary"
     status: pending
   - id: ws7-docs-tests
-    content: "WS7: operator-tour §7 operations; architecture §7.0i; Vitest hub empty states; OC-43"
+    content: "WS7: operator-tour §7 + §6f; architecture §7.0i; Vitest hub empty states; OC-43"
+    status: pending
+  - id: ws8-guardian-pr-slice
+    content: "WS8: phase_43_guardian_pr_spec — summarize_farm_low_stock read + ops starters (no new Confirm tools)"
     status: pending
 isProject: false
 ---
@@ -36,6 +39,8 @@ isProject: false
 **Planned.** After [Phase 41](phase_41_farm_hub_coherence.plan.md) (`?zone_id=` and why-empty).
 
 **Roadmap:** [farmer_ux_roadmap_40_plus.plan.md](farmer_ux_roadmap_40_plus.plan.md)
+
+**Guardian slice (doc complete):** [phase_43_guardian_pr_spec.md](phase_43_guardian_pr_spec.md) — low-stock read + ops starters; no new Confirm tools.
 
 ---
 
@@ -117,15 +122,31 @@ Reuse [cost handler](../../internal/handler/cost/) routes.
 
 ---
 
-## WS6 — Guardian (optional)
+## WS6 — Guardian persona
 
-Read-only `summarize_farm_inventory` or extend existing alerts tool — only if sit-in shows gap.
+- `platform_context.go`: **Supplies**, **Feeding details**, **Money** — not Inventory / Fertigation / Costs in operator-facing replies.
+- `impact.go`: verify `create_task_from_alert` copy when source is `inventory_low_stock`.
+
+**Implementation spec (read + starters):** [phase_43_guardian_pr_spec.md](phase_43_guardian_pr_spec.md)
 
 ---
 
 ## WS7 — Docs, tests, closure (OC-43)
 
-operator-tour §7, architecture §7.0i, Vitest hub filters, OC-43 row in closure doc.
+operator-tour §7 (operations hubs) + §6f (Guardian on supplies/money), architecture §7.0i, Vitest hub filters, OC-43 row in closure doc.
+
+---
+
+## WS8 — Guardian PR slice
+
+| Item | Owner |
+|------|--------|
+| `summarize_farm_low_stock` read enrichment | Backend — spec §2 |
+| Starters on supplies / feeding / money / dashboard | UI — spec §3 |
+| Optional `pickAlertForIntent` for refill phrases | Backend — spec §4.2 |
+| **No** new Confirm tools for batch/cost writes | — |
+
+Starters ≠ Confirm. Matchers for stock PATCH deferred to Phase 46 if sit-in demands it.
 
 ---
 
@@ -142,4 +163,12 @@ operator-tour §7, architecture §7.0i, Vitest hub filters, OC-43 row in closure
 - [ ] Operations nav group live
 - [ ] Three hubs usable without reading schema names
 - [ ] Zone filter on feeding/supplies
-- [ ] operator-tour §7 + OC-43
+- [ ] Guardian: [phase_43_guardian_pr_spec.md](phase_43_guardian_pr_spec.md) WS8 complete
+- [ ] operator-tour §7 + §6f + OC-43
+
+## Related
+
+| Doc | Use |
+|-----|-----|
+| [phase_43_guardian_pr_spec.md](phase_43_guardian_pr_spec.md) | Low-stock read + ops starters |
+| [guardian_pr_ux_through_farmer_phases.plan.md](guardian_pr_ux_through_farmer_phases.plan.md) | Cross-phase PR table |

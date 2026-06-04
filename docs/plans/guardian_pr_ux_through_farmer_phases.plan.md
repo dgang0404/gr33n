@@ -203,10 +203,14 @@ User intent
 
 ### Phase 43 — Operations
 
+**Canonical spec:** [phase_43_guardian_pr_spec.md](phase_43_guardian_pr_spec.md)
+
 | Item | Type |
 |------|------|
-| Optional read tool `summarize_low_stock` | Backend optional |
-| Starters linking to Supplies hub | UI |
+| Read enrichment `summarize_farm_low_stock` | Backend — spec §2 |
+| Starters on Supplies / Feeding / Money (+ dashboard) | UI — spec §3 |
+| `create_task_from_alert` for refill (existing; optional alert picker) | Backend — spec §4 |
+| operator-tour §7 + §6f, architecture §7.0i | Docs — written (planned ship) |
 
 ### Phase 44 — Getting started
 
