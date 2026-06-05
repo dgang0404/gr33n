@@ -225,27 +225,14 @@
       </div>
     </div>
 
-    <!-- Setpoints for this need -->
-    <div v-if="needSetpoints.length" class="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
-      <div class="flex items-center justify-between mb-3">
-        <h3 class="text-sm font-semibold text-white">Targets</h3>
-        <router-link to="/setpoints" class="text-xs text-green-600 hover:text-green-400">Setpoints →</router-link>
-      </div>
-      <div class="space-y-1">
-        <div
-          v-for="sp in needSetpoints"
-          :key="sp.id"
-          class="bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 flex justify-between text-xs"
-        >
-          <span class="text-zinc-200">{{ sp.sensor_type }}</span>
-          <span class="text-zinc-500">
-            <span v-if="sp.min_value != null">min {{ sp.min_value }}</span>
-            <span v-if="sp.ideal_value != null"> · ideal {{ sp.ideal_value }}</span>
-            <span v-if="sp.max_value != null"> · max {{ sp.max_value }}</span>
-          </span>
-        </div>
-      </div>
-    </div>
+    <ZoneComfortTargets
+      :need="need"
+      :zone-id="zoneId"
+      :farm-id="farmId"
+      :sensors="sensors"
+      :setpoints="setpoints"
+      @updated="$emit('setpoints-updated')"
+    />
   </div>
 </template>
 
@@ -262,6 +249,7 @@ import SensorTile from './SensorTile.vue'
 import ZoneNeedConnectionCard from './ZoneNeedConnectionCard.vue'
 import ActuatorPulseControl from './ActuatorPulseControl.vue'
 import ZoneGreenhouseTab from './ZoneGreenhouseTab.vue'
+import ZoneComfortTargets from './ZoneComfortTargets.vue'
 
 const props = defineProps({
   need: { type: String, required: true },
@@ -281,7 +269,7 @@ const props = defineProps({
   toggling: { type: Object, default: () => ({}) },
 })
 
-defineEmits(['toggle-actuator', 'refresh-events'])
+defineEmits(['toggle-actuator', 'refresh-events', 'setpoints-updated'])
 
 const store = useFarmStore()
 
@@ -408,8 +396,8 @@ const connectionCards = computed(() => {
       subtitle: s.sensor_type,
       manageTo: `/sensors/${s.id}`,
       readingLabel: formatReading(s),
-      targetLabel: sp ? formatSetpoint(sp) : 'No setpoint — add under Setpoints',
-      automationLabel: 'Alerts use sensor thresholds; rules use Setpoints page',
+      targetLabel: sp ? formatSetpoint(sp) : 'Set comfort target below',
+      automationLabel: 'Alerts when readings leave the comfort band',
       controlLabel: '—',
       lastEventLabel: '',
     })
@@ -470,7 +458,7 @@ const connectionCards = computed(() => {
         subtitle: 'Automation rule',
         manageTo: '/automation',
         readingLabel: needSensors.value[0] ? formatReading(needSensors.value[0]) : 'Add temp/humidity/lux sensor',
-        targetLabel: 'Uses setpoints when conditions type is setpoint',
+        targetLabel: 'Uses comfort targets when configured',
         automationLabel: r.is_active ? 'Active' : 'Inactive',
         controlLabel: fan ? `${fan.name}` : 'Link fan/vent/shade actuator',
         controlOnline: fan?.current_state_text === 'online',

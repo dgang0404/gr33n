@@ -10,16 +10,16 @@ todos:
     status: done
   - id: ws1-zone-today
     content: "WS1: Zone Overview 'Today' strip — next schedule fires, active rules count, unread zone alerts, device/queue summary (after Phase 39 WS1)"
-    status: pending
+    status: done
   - id: ws2-inline-setpoints
     content: "WS2: Inline setpoint editor on need tabs — edit min/ideal/max per sensor type in zone; PATCH existing API; no new tables"
-    status: pending
+    status: done
   - id: ws3-rules-schedules-context
     content: "WS3: Zone-scoped rules + schedules cards — list what applies to this zone/need; toggle rule active; link 'edit in Advanced' only when needed"
     status: pending
   - id: ws4-zone-alerts
     content: "WS4: Zone alerts panel — unread + recent for zone sensors/actuators; ack/mark read inline; link farm-wide Alerts for history"
-    status: pending
+    status: done
   - id: ws5-water-story
     content: "WS5: Water 'grow story' — last fertigation event, next program run, queue head (39); collapse farm-wide Fertigation tabs to 'details' link"
     status: pending
@@ -31,7 +31,7 @@ todos:
     status: pending
   - id: ws7b-zone-guardian-starters
     content: "WS7b: Contextual Ask Guardian + zone starter chips — snapshot-aware prompts (replace generic status question); see guardian_pr_ux plan"
-    status: pending
+    status: done
   - id: ws8-docs-tests
     content: "WS8: operator-tour §4b zone cockpit; architecture §7.0f; Vitest zone cockpit; optional GET /zones/{id}/grow-summary"
     status: pending
@@ -274,10 +274,10 @@ WS2 + WS4 give the biggest "not the DB" win early.
 ## Definition of done
 
 - [x] Guardian hotfix: no overlapping chrome; drawer is obvious primary entry (`bug-guardian-nav`)
-- [ ] Zone Overview "Today" strip with schedules, rules, alerts, devices (and queue when 39 shipped)
-- [ ] Inline setpoint edit on need tabs
+- [x] Zone Overview "Today" strip with schedules, rules, alerts, devices (and queue when 39 shipped)
+- [x] Inline setpoint edit on need tabs
 - [ ] Zone-filtered rules/schedules with active toggles and humanized next run
-- [ ] Zone alerts ack inline
+- [x] Zone alerts ack inline
 - [ ] Water tab grow story (last event, next run, queue) — requires Phase 39 for queue line
 - [ ] operator-tour §4b + architecture §7.0f + Vitest
 

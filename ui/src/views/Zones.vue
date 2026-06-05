@@ -53,9 +53,18 @@
             <span class="text-white font-medium group-hover:text-green-400 transition-colors">
               {{ zone.name }}
             </span>
-            <span :class="zoneBadge(zone.zone_type)" class="text-xs font-medium px-2 py-0.5 rounded-full capitalize">
-              {{ zone.zone_type || 'unknown' }}
-            </span>
+            <div class="flex items-center gap-1.5 shrink-0">
+              <span
+                v-if="zoneUnreadAlerts(zone.id)"
+                class="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-amber-900/70 text-amber-200"
+                :data-test="`zone-unread-alerts-${zone.id}`"
+              >
+                {{ zoneUnreadAlerts(zone.id) }} alert{{ zoneUnreadAlerts(zone.id) === 1 ? '' : 's' }}
+              </span>
+              <span :class="zoneBadge(zone.zone_type)" class="text-xs font-medium px-2 py-0.5 rounded-full capitalize">
+                {{ zone.zone_type || 'unknown' }}
+              </span>
+            </div>
           </div>
 
           <p v-if="zone.description" class="text-zinc-500 text-sm mb-3 line-clamp-2">
@@ -90,6 +99,7 @@ import { ref, onMounted } from 'vue'
 import { useFarmStore } from '../stores/farm'
 import { useFarmContextStore } from '../stores/farmContext'
 import AskGuardianButton from '../components/AskGuardianButton.vue'
+import { countZoneUnreadAlerts } from '../lib/zoneGrowSummary.js'
 
 const store = useFarmStore()
 const farmContext = useFarmContextStore()
@@ -108,6 +118,11 @@ function zonePrograms(zoneId) { return programs.value.filter(p => p.target_zone_
 function zoneTasks(zoneId) { return tasks.value.filter(t => t.zone_id === zoneId && t.status !== 'completed' && t.status !== 'cancelled') }
 function zoneReservoirs(zoneId) { return reservoirs.value.filter(r => r.zone_id === zoneId) }
 
+function zoneUnreadAlerts(zoneId) {
+  const z = store.zones.find((x) => x.id === zoneId)
+  return countZoneUnreadAlerts(store.alerts, store.sensorsByZone(zoneId), z?.name || '')
+}
+
 onMounted(async () => {
   const fid = farmContext.farmId
   if (!store.zones.length && fid) await store.loadAll(fid)
@@ -116,6 +131,7 @@ onMounted(async () => {
       store.loadFertigationPrograms(fid),
       store.loadTasks(fid),
       store.loadReservoirs(fid),
+      store.loadAlerts(fid),
     ])
     programs.value = p
     tasks.value = store.tasks

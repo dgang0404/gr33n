@@ -9,14 +9,16 @@
           What this zone needs: water & feeding, light, and air/climate — use the tabs below.
         </p>
       </div>
-      <div class="flex items-center gap-3">
+      <div class="flex flex-col items-end gap-2">
         <AskGuardianButton
           v-if="zone"
           variant="primary"
           size="sm"
-          :prefilled-message="`What's the current status of ${zone.name}?`"
-          :context-ref="{ type: 'zone', id: zone.id, name: zone.name }"
+          :prefilled-message="zoneGuardianPrompt"
+          :context-ref="zoneGuardianContextRef"
         />
+        <GuardianStarterChips v-if="zone" :starters="zoneStarters" />
+      </div>
         <span :class="zoneBadge(zone?.zone_type)" class="text-xs font-medium px-2 py-1 rounded-full capitalize">
           {{ zone?.zone_type || 'unknown' }}
         </span>
@@ -56,6 +58,7 @@
         :toggling="toggling"
         @toggle-actuator="toggleActuator"
         @refresh-events="loadEvents"
+        @setpoints-updated="loadSetpoints"
       />
 
       <ZoneNeedSection
@@ -74,6 +77,7 @@
         :toggling="toggling"
         @toggle-actuator="toggleActuator"
         @refresh-events="loadEvents"
+        @setpoints-updated="loadSetpoints"
       />
 
       <ZoneNeedSection
@@ -92,9 +96,21 @@
         :toggling="toggling"
         @toggle-actuator="toggleActuator"
         @refresh-events="loadEvents"
+        @setpoints-updated="loadSetpoints"
       />
 
       <template v-else>
+        <ZoneTodayStrip :chips="todaySnapshot.chips" />
+
+        <ZoneAlertsPanel
+          v-if="zone"
+          :zone-id="zoneId"
+          :zone-name="zone.name"
+          :sensors="sensors"
+          :alerts="store.alerts"
+          @refresh="refreshZoneAlerts"
+        />
+
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
           <button
             type="button"
@@ -188,7 +204,16 @@ import {
   actuatorPlantNeed,
 } from '../lib/plantNeeds.js'
 import AskGuardianButton from '../components/AskGuardianButton.vue'
+import GuardianStarterChips from '../components/GuardianStarterChips.vue'
 import ZoneNeedSection from '../components/ZoneNeedSection.vue'
+import ZoneTodayStrip from '../components/ZoneTodayStrip.vue'
+import ZoneAlertsPanel from '../components/ZoneAlertsPanel.vue'
+import {
+  buildZoneGuardianContextRef,
+  buildZoneGuardianPrompt,
+} from '../lib/guardianContextPrompts.js'
+import { buildZoneStarters } from '../lib/guardianStarters.js'
+import { computeZoneTodaySnapshot, pickNextZoneSchedule } from '../lib/zoneGrowSummary.js'
 
 const route = useRoute()
 const activeTab = ref('overview')
@@ -211,6 +236,7 @@ const tasks = ref([])
 const setpoints = ref([])
 const rules = ref([])
 const lightingPrograms = ref([])
+const waterQueueDepth = ref(0)
 
 const zoneTabs = [
   { id: 'overview', icon: '📋', label: 'Overview' },
@@ -240,6 +266,69 @@ const zoneSchedule = computed(() => {
 const zoneTasks = computed(() =>
   tasks.value.filter(t => t.zone_id === zoneId.value && t.status !== 'completed' && t.status !== 'cancelled'),
 )
+const zoneDevices = computed(() => store.devicesByZone(zoneId.value))
+
+const nextZoneSchedule = computed(() => {
+  if (!zone.value) return null
+  return pickNextZoneSchedule({
+    zoneId: zoneId.value,
+    zoneName: zone.value.name,
+    schedules: schedules.value,
+    activeProgram: activeProgram.value,
+    lightingPrograms: lightingPrograms.value,
+  })
+})
+
+const todaySnapshot = computed(() => {
+  if (!zone.value) {
+    return { chips: [], unreadAlerts: [], activeRulesCount: 0, queueDepth: 0, missingComfortTargets: 0 }
+  }
+  return computeZoneTodaySnapshot({
+    zone: zone.value,
+    sensors: sensors.value,
+    devices: zoneDevices.value,
+    alerts: store.alerts,
+    rules: rules.value,
+    schedules: schedules.value,
+    setpoints: zoneSetpoints.value,
+    activeProgram: activeProgram.value,
+    lightingPrograms: lightingPrograms.value,
+    queueDepth: waterQueueDepth.value,
+    zoneTasks: zoneTasks.value,
+  })
+})
+
+const guardianSnapshotCtx = computed(() => ({
+  zone: zone.value,
+  activeTab: activeTab.value,
+  unreadAlerts: todaySnapshot.value.unreadAlerts,
+  queueDepth: waterQueueDepth.value,
+  missingComfortTargets: todaySnapshot.value.missingComfortTargets,
+  offlineDevices: zoneDevices.value.filter(d => d.status !== 'online').length,
+  nextSchedule: nextZoneSchedule.value,
+  activeRulesCount: todaySnapshot.value.activeRulesCount,
+  activeProgramName: activeProgram.value?.name,
+}))
+
+const zoneGuardianPrompt = computed(() =>
+  zone.value ? buildZoneGuardianPrompt(guardianSnapshotCtx.value) : '',
+)
+
+const zoneGuardianContextRef = computed(() =>
+  zone.value ? buildZoneGuardianContextRef(guardianSnapshotCtx.value) : null,
+)
+
+const zoneStarterSurface = computed(() => {
+  const t = activeTab.value
+  if (t === PLANT_NEEDS.water) return 'zone_water'
+  if (t === PLANT_NEEDS.light) return 'zone_light'
+  if (t === PLANT_NEEDS.air) return 'zone_climate'
+  return 'zone_overview'
+})
+
+const zoneStarters = computed(() =>
+  zone.value ? buildZoneStarters(zoneStarterSurface.value, guardianSnapshotCtx.value) : [],
+)
 
 const waterSummary = computed(() => {
   const n = sensors.value.filter(s => sensorPlantNeed(s.sensor_type) === PLANT_NEEDS.water).length
@@ -257,6 +346,10 @@ const airSummary = computed(() => {
 watch(() => route.query.tab, (t) => {
   if (t && zoneTabs.some(z => z.id === t)) activeTab.value = t
 }, { immediate: true })
+
+watch(() => activeProgram.value?.id, () => {
+  loadWaterQueueDepth()
+})
 
 async function loadEvents() {
   eventsLoading.value = true
@@ -297,12 +390,7 @@ onMounted(async () => {
   schedules.value = s
   await store.loadTasks(fid)
   tasks.value = store.tasks
-  try {
-    const res = await api.get(`/farms/${fid}/setpoints`, { params: { zone_id: zoneId.value } })
-    setpoints.value = res.data ?? []
-  } catch {
-    setpoints.value = []
-  }
+  await loadSetpoints()
   try {
     rules.value = await store.loadAutomationRules(fid)
   } catch {
@@ -314,8 +402,43 @@ onMounted(async () => {
   } catch {
     lightingPrograms.value = []
   }
-  await Promise.all([loadEvents(), loadZonePhotos()])
+  await Promise.all([loadEvents(), loadZonePhotos(), loadWaterQueueDepth(), store.loadAlerts(fid)])
 })
+
+async function loadSetpoints() {
+  const fid = farmId.value
+  if (!fid) return
+  try {
+    const res = await api.get(`/farms/${fid}/setpoints`, { params: { zone_id: zoneId.value } })
+    setpoints.value = res.data ?? []
+  } catch {
+    setpoints.value = []
+  }
+}
+
+async function refreshZoneAlerts() {
+  const fid = farmId.value
+  if (!fid) return
+  await store.loadAlerts(fid)
+}
+
+async function loadWaterQueueDepth() {
+  waterQueueDepth.value = 0
+  const prog = activeProgram.value
+  if (!prog?.id || prog.irrigation_only) return
+  try {
+    const token = store.token || localStorage.getItem('token')
+    const r = await fetch(`/fertigation/programs/${prog.id}/water-status`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    if (r.ok) {
+      const data = await r.json()
+      waterQueueDepth.value = data.queue_depth ?? 0
+    }
+  } catch {
+    // non-fatal
+  }
+}
 
 function photoThumbUrl(p) {
   return photoThumbUrls.value[p.id] || ''
