@@ -68,7 +68,7 @@ todos:
     status: pending
   - id: oc-47
     content: "OC-47: Phase 47 WS7 — feeding & water plain language docs/tests (close when Phase 47 ships)"
-    status: pending
+    status: completed
 isProject: false
 ---
 
@@ -269,6 +269,20 @@ Feature detail: [`phase_41_farm_hub_coherence.plan.md`](phase_41_farm_hub_cohere
 | Seed tasks `zone_id` | ✅ | WS5 — `master_seed.sql` comment + demo rows |
 | Lighting ↔ zone Light | ✅ | WS6 — `/lighting?zone_id=`, shared copy |
 | OC-41 docs/tests | ✅ | WS7 — operator-tour §3b, architecture §7.0g, Vitest |
+
+## Phase 47 — Feeding & water plain language
+
+Feature detail: [`phase_47_feeding_water_plain_language.plan.md`](phase_47_feeding_water_plain_language.plan.md). **OC-47** closed (WS7).
+
+| Area | Status | Notes |
+|------|--------|-------|
+| Feeding plan view-model | ✅ | WS1 — `zoneFeedingPlan.js` |
+| Zone Water primary | ✅ | WS2 — `ZoneWaterGrowStory`, Run now, advanced link |
+| Inline plan editor + wizard | ✅ | WS3 — `ZoneFeedingPlanEditor`, `ZoneFeedingPlanWizard` |
+| Feed & water hub | ✅ | WS4 — `/feeding`, `farmFeedingHub.js`, Dashboard links |
+| Farmer vocabulary | ✅ | WS5 — `farmer-vocabulary.md`, `farmerVocabulary.js` Vitest gate |
+| Guardian feeding | ✅ | WS6 — starters, `summarize_zone_fertigation` intents, patch matchers |
+| OC-47 docs/tests | ✅ | WS7 — operator-tour §7b, architecture §7.0m, workflow §4c, Vitest |
 
 **Master roadmap:** [`farmer_ux_roadmap_40_plus.plan.md`](farmer_ux_roadmap_40_plus.plan.md). Closure rows **OC-42 … OC-47** track each phase WS8/WS7 — not pre-40 work. Vocabulary: [`farmer-vocabulary.md`](../farmer-vocabulary.md). Guardian specs: [42](phase_42_guardian_pr_spec.md) · [43](phase_43_guardian_pr_spec.md) · [44](phase_44_guardian_pr_spec.md) · [45](phase_45_guardian_pr_spec.md) · [46](phase_46_guardian_llm_tool_proposals.plan.md).
 

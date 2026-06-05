@@ -225,7 +225,22 @@ Line items per mixing event are available at `GET /farms/{id}/fertigation/mixing
 | **Irrigation-only program (39b)** | `irrigation_only: true` — **pulse only**, no recipe, no mix preview, no `mix_batch` | RO/well farms |
 | **EC math** | Cloud **`MixPlan`** (`internal/fertigation/mixplan`); Pi runs **`run_seconds`** per channel only |
 
-**Zone Water tab:** **`GET /fertigation/programs/{rid}/water-status`** — queue depth, mix preview, last mixing event. See [operator-tour §4a](operator-tour.md#4a-plant-needs-per-zone-phase-38).
+**Zone Water tab:** **`GET /fertigation/programs/{rid}/water-status`** — queue depth, mix preview, last mixing event. See [operator-tour §4a](operator-tour.md#4a-plant-needs-per-zone-phase-38) and [§7b feeding plan](operator-tour.md#7b-feeding--water-for-this-room-phase-47).
+
+### 4c. Feeding plan & plain irrigation (Phase 47)
+
+**Shipped.** Farmer-facing layer on top of the same programs, schedules, and events from §4 — no new schema.
+
+| Operator surface | Route / component | What it replaces for daily work |
+|------------------|-------------------|--------------------------------|
+| **Feeding plan card** | Zone **Water** tab (`ZoneWaterGrowStory`) | Reading six Fertigation tabs for “when is the next feed?” |
+| **Feed & water hub** | `/feeding` | Farm-wide fertigation console as first nav stop |
+| **Inline plan edit** | `ZoneFeedingPlanEditor` / wizard | PATCH program + schedule from grow path |
+| **Water only** | Badge + hidden mix preview | Required recipe story for RO/well (`irrigation_only`, Phase 39b) |
+
+**Cross-links:** [operator-tour §7b](operator-tour.md#7b-feeding--water-for-this-room-phase-47) · [farmer-vocabulary.md](farmer-vocabulary.md) · [architecture §7.0m](farm-guardian-architecture.md#70m-feeding--water-plain-language-phase-47).
+
+**Plain irrigation reminder:** `irrigation_only: true` programs enqueue **pulse** only — no `mix_batch`, no mix preview on Water, no recipe on the plan card. Nutrient farms still use recipe + reservoir + base EC (Phase 39).
 
 ### Fertigation events (what the zone received)
 

@@ -26,7 +26,7 @@ todos:
     status: completed
   - id: ws7-docs-tests
     content: "WS7: operator-tour §7b feeding; architecture §7.0m; Vitest feeding plan card; OC-47"
-    status: pending
+    status: completed
 isProject: false
 ---
 
@@ -34,11 +34,11 @@ isProject: false
 
 ## Status
 
-**In progress — WS1–WS6 shipped.** Ties the farmer UX arc together for **non-technical growers** who understand EC, irrigation, and fertigation in the field but not in the database.
+**Shipped — WS1–WS7 complete; OC-47 closed.** Ties the farmer UX arc together for **non-technical growers** who understand EC, irrigation, and fertigation in the field but not in the database.
 
 **Roadmap:** [farmer_ux_roadmap_40_plus.plan.md](farmer_ux_roadmap_40_plus.plan.md) (chapter after farm hub; completes the Water story started in Phase 40).
 
-**Next chunk:** WS7 docs/OC-47.
+**Next in arc:** [Phase 42](phase_42_comfort_targets_automation_plain_language.plan.md) comfort bands · [Phase 43](phase_43_operations_stock_feeding_finance.plan.md) operations hub.
 
 **Does not replace:** [Phase 43](phase_43_operations_stock_feeding_finance.plan.md) (Supplies, farm-wide feeding **admin**, Money). Phase 47 owns **per-room watering**; Phase 43 owns **restock, recipes catalog, receipts**.
 
@@ -273,12 +273,12 @@ No new Confirm tools in 47 v1 unless sit-in demands `create_fertigation_program`
 
 ## Definition of done
 
-- [ ] Zone Water answers last/next feed and reservoir without `/fertigation`
-- [ ] Farm Feeding hub lists rooms as cards; Advanced opens technical Fertigation
-- [ ] Irrigation-only farms never see required mix/recipe on Water
-- [ ] [farmer-vocabulary.md](../farmer-vocabulary.md) published; grow path ban list applied
-- [ ] operator-tour §7b + architecture §7.0m + OC-47
-- [ ] Guardian feeding starters shipped (WS6)
+- [x] Zone Water answers last/next feed and reservoir without `/fertigation`
+- [x] Farm Feeding hub lists rooms as cards; Advanced opens technical Fertigation
+- [x] Irrigation-only farms never see required mix/recipe on Water
+- [x] [farmer-vocabulary.md](../farmer-vocabulary.md) published; grow path ban list applied
+- [x] operator-tour §7b + architecture §7.0m + OC-47
+- [x] Guardian feeding starters shipped (WS6)
 
 ---
 

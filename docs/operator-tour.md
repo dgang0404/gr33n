@@ -20,16 +20,16 @@ Think **physical layout → signals → automation → work tracking → feeding
 
 | Step | Where in the app | What you are doing |
 |------|------------------|--------------------|
-| **1. Farm home** | `/` Dashboard | Orient: counts, quick links to tasks / schedules / fertigation; optional widgets for today’s work and alerts. |
-| **2. Zones (plant needs)** | `/zones`, `/zones/:id` | Define **grow areas** (rooms, benches, beds). Open a zone → **Overview** plus **Water / Light / Climate** tabs — the **zone cockpit** for day-to-day grow (Phase 38 + [§4b](#4b-zone-cockpit-walkthrough-phase-40)). |
+| **1. Farm home** | `/` Dashboard | Orient: morning strip (tasks, alerts, **Feed & water** chip), recent feeds, what runs when. |
+| **2. Zones (plant needs)** | `/zones`, `/zones/:id` | Define **grow areas** (rooms, benches, beds). Open a zone → **Overview** plus **Water / Light / Climate** tabs — the **zone cockpit** for day-to-day grow (Phase 38 + [§4b](#4b-zone-cockpit-walkthrough-phase-40)). Optional zone photos for Guardian context ([architecture §7.4](farm-guardian-architecture.md#74-zone-reference-photos-phase-30-ws5)). |
 | **3. Sensors & controls (advanced)** | `/sensors`, `/actuators`, `/setpoints` under **Advanced** in the nav | Farm-wide device lists. Prefer the **zone** tabs first; use Advanced when wiring many sensors or debugging. |
 | **4. Schedules & rules** | `/schedules`, `/automation` | **Schedules** = time-based cadence (cron-like) tied to actions or fertigation windows. **Rules** (Automation) = conditions + actions (e.g. “if humidity low → open mist”). |
 | **4b. Lighting (photoperiod)** | `/lighting` | **Lighting programs** — first-class 18/6, 12/12, or custom ON/OFF photoperiods for grow lights. One program owns a paired schedule + `control_actuator` actions (see [§5](#5-set-up-186-vegetative-lights-phase-35)). |
 | **4c. Greenhouse climate** | `/zones/:id`, `/actuators`, `/automation` | **Shade, vents, fans** on `zone_type=greenhouse` — profile in zone meta, typed actuators, lux/temp rules. **Not** supplemental light (see [§5b](#5b-greenhouse-shade-vents-and-fans-phase-36)). |
 | **5. Tasks** | `/tasks` | Human **work items**: inspections, harvest prep, fixes — often the day-to-day spine (see sit-in “tasks-first”). |
-| **6. Fertigation** | `/fertigation` | Programs, mixing logs, reservoirs, recipes — ties schedules + inventory-style inputs to delivery. |
-| **7. Guardian (optional AI)** | Side nav `/chat`, drawer robot tab | **Farm Guardian** — grounded Q&A + **change requests** (propose → Confirm). Pending inbox: `/chat?tab=pending`. See [§6](#6-farm-guardian-change-requests-with-your-ok). |
-| **7b. Zone photos (optional)** | `/zones/:id` | Reference / walkthrough photos per zone; Guardian sees them in the farm snapshot ([architecture §7.4](farm-guardian-architecture.md#74-zone-reference-photos-phase-30-ws5)). |
+| **6. Feed & water** | `/feeding`, zone **Water** tab | Daily feeding — one card per room on the hub; per-room **feeding plan** on **Water** ([§7b](#7b-feeding--water-for-this-room-phase-47)). |
+| **6b. Feeding (technical)** | `/fertigation` under **Advanced** | Programs, reservoirs, EC targets, mixing log — power users and Phase 43 admin only. |
+| **7. Guardian (optional AI)** | Side nav `/chat`, drawer robot tab | **Farm Guardian** — grounded Q&A + **change requests** (propose → Confirm). Pending inbox: `/chat?tab=pending`. See [§6](#6-farm-guardian-change-requests-with-your-ok). Starters on **Water** and **Feed & water** for next feed / run now / water-only. |
 
 **Around the edges (same session):** **Alerts** (`/alerts`), **Costs** (`/costs`), **Knowledge** (`/farm-knowledge` — farm-scoped RAG), **Plants / Animals / Aquaponics** when those modules matter, **Settings** / **Catalog** for account and reference data.
 
@@ -41,15 +41,15 @@ Operators think in **what the plant needs**, not database table names:
 
 | Need | Zone tab | Typical hardware | Operator pages |
 |------|----------|------------------|----------------|
-| **Water & feeding** | Water | EC/pH/moisture sensors, irrigation pump | `/fertigation`, schedules on the program |
+| **Water & feeding** | Water | EC/pH/moisture sensors, irrigation pump | **Zone Water tab**, **Feed & water** hub (`/feeding`); Advanced → Feeding (technical) |
 | **Light** | Light | Grow lights, optional lux/PAR | `/lighting` photoperiod programs |
-| **Air & climate** | Climate | Temp/humidity, fans, vents, shade (greenhouse) | `/automation` rules, `/setpoints` targets |
+| **Air & climate** | Climate | Temp/humidity, fans, vents, shade (greenhouse) | Comfort targets on tab; **Automations** under Advanced |
 
-Each tab shows the **connection chain**: live **reading** → **target band** (setpoint) → **schedule or rule** → **pump/light/fan** → **device online**.
+Each tab shows the **connection chain**: live **reading** → **comfort target** → **automation or feed timing** → **pump/light/fan** → **device online**.
 
 **Timed pump runs:** most microcontrollers are on/off relays. Use **Run pulse** (N seconds) on a pump in the zone Water tab or on **Controls** — the Pi runs **on → wait → off**. Fertigation programs can set `run_duration_seconds` so automated feeds use the same pulse.
 
-**Navigation:** sidebar **Grow** (zones, fertigation) and **Operate** (tasks, schedules, lighting) are the day-to-day path; **Advanced** holds Rules, Setpoints, Controls, and Sensors for power users.
+**Navigation:** sidebar **Grow** (**My rooms**, **Feed & water**, Supplies) and **Today** (Dashboard, tasks, alerts) are the day-to-day path; **Advanced** holds Automations, Comfort bands, Feeding (technical), Controls, and Sensors for power users.
 
 **Edge commands (Phase 39):** automation, Guardian Confirm, manual **Controls**, and fertigation **mix-jobs** enqueue to a **FIFO command queue** per device (`device_commands`). The Pi drains **`GET /devices/{id}/commands/next`** in order — **`mix_batch`** nutrient steps, then **pulse** irrigate, without last-write-wins. Legacy **`pending_command`** still works one release as a fallback.
 
@@ -489,24 +489,27 @@ Architecture: [`farm-guardian-architecture.md` §7.0i](farm-guardian-architectur
 
 ---
 
-## 7b. Feeding & water for this room (Phase 47 — planned)
+## 7b. Feeding & water for this room (Phase 47)
 
-**Status:** Doc complete; after [Phase 40](plans/phase_40_unified_farmer_ux_zone_cockpit.plan.md) WS5 wedge and [Phase 41](plans/phase_41_farm_hub_coherence.plan.md). Plan: [`plans/phase_47_feeding_water_plain_language.plan.md`](plans/phase_47_feeding_water_plain_language.plan.md) · Words: [`farmer-vocabulary.md`](farmer-vocabulary.md).
+**Shipped.** Completes the Water story from [Phase 40](plans/phase_40_unified_farmer_ux_zone_cockpit.plan.md) WS5 and [Phase 41](plans/phase_41_farm_hub_coherence.plan.md) farm hub links. Plan: [`plans/phase_47_feeding_water_plain_language.plan.md`](plans/phase_47_feeding_water_plain_language.plan.md) · Words: [`farmer-vocabulary.md`](farmer-vocabulary.md).
 
 **One question:** *How does this room get water?*
 
 1. Open **My rooms → Flower Room → Water**.
 2. Read the **status line** — next feed in plain time, volume, EC range.
-3. **Last feed** — when it ran and whether it looked OK.
-4. **Feeding plan** — change volume, daily time, or **Water only** (irrigation without nutrients).
+3. **Last feed** — when it ran and whether it looked OK (**See history** → **Feed & water** hub).
+4. **Feeding plan** card — inline edit volume, daily time, or **Water only** (irrigation without nutrients); wizard when no plan exists.
 5. **Run feed now** or **Pulse pump** when you need manual control.
 6. **Reservoir** — Ready or Needs top-up.
-7. Farm-wide list: **Feed & water** hub (all rooms as cards).
-8. Recipes, mixing log, six tabs → **Advanced / Operations** only.
+7. Farm-wide list: **Feed & water** (`/feeding`) — one card per room; `?zone_id=` filter from [Phase 41](plans/phase_41_farm_hub_coherence.plan.md).
+8. **Ask gr33n** starters on Water and the hub: next feed, run now safe?, switch to water-only.
+9. Recipes, mixing log, six tabs → **Advanced → Feeding (technical)** or Phase 43 Operations only.
 
-**Do not** send operators to a page titled **Fertigation** for daily feeding after 47 ships.
+**Do not** send operators to a page titled **Fertigation** for daily feeding.
 
-Architecture: [`farm-guardian-architecture.md` §7.0m](farm-guardian-architecture.md#70m-feeding--water-plain-language-phase-47--planned).
+**Vitest closure:** `zone-feeding-water.test.js`, `zone-feeding-plan.test.js`, `farm-feeding-hub.test.js`, `farmer-vocabulary-grow-path.test.js`, `guardian-context-prompts.test.js`.
+
+Architecture: [`farm-guardian-architecture.md` §7.0m](farm-guardian-architecture.md#70m-feeding--water-plain-language-phase-47). Workflow: [workflow-guide §4c](workflow-guide.md#4c-feeding-plan--plain-irrigation-phase-47).
 
 ---
 

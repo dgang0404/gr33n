@@ -55,7 +55,7 @@ describe('Phase 47 WS2 — zone Water primary surface', () => {
       },
       global: {
         stubs: {
-          RouterLink: { props: ['to'], template: '<a><slot /></a>' },
+          RouterLink: { props: ['to'], template: '<a :data-to="JSON.stringify(to)"><slot /></a>' },
           ActuatorPulseControl: true,
           EmptyStateHint: true,
         },
@@ -66,7 +66,9 @@ describe('Phase 47 WS2 — zone Water primary surface', () => {
     expect(wrapper.find('[data-test="feeding-plan-card"]').exists()).toBe(true)
     expect(wrapper.find('[data-test="feeding-advanced-link"]').text()).toContain('Advanced feeding')
     expect(wrapper.find('[data-test="grow-story-run-now"]').text()).toContain('Run feed now')
-    expect(wrapper.find('[data-test="feeding-history-link"]').text()).toContain('See history')
+    const historyTo = JSON.parse(wrapper.find('[data-test="feeding-history-link"]').attributes('data-to'))
+    expect(historyTo.path).toBe('/feeding')
+    expect(historyTo.query.zone_id).toBe('3')
   })
 
   it('shows water-only badge and hides preview mix for irrigation_only', () => {
@@ -82,7 +84,7 @@ describe('Phase 47 WS2 — zone Water primary surface', () => {
       },
       global: {
         stubs: {
-          RouterLink: { props: ['to'], template: '<a><slot /></a>' },
+          RouterLink: { props: ['to'], template: '<a :data-to="JSON.stringify(to)"><slot /></a>' },
           ActuatorPulseControl: true,
           EmptyStateHint: true,
         },

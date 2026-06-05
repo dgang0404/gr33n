@@ -404,18 +404,22 @@ When shipped:
 
 Operator: [operator-tour §6h](operator-tour.md#6h-when-guardian-opens-a-card-from-your-words-phase-46--planned).
 
-### 7.0m Feeding & water plain language (Phase 47 — planned)
+### 7.0m Feeding & water plain language (Phase 47)
 
-**Doc stub.** Plan: [`plans/phase_47_feeding_water_plain_language.plan.md`](plans/phase_47_feeding_water_plain_language.plan.md) · Vocabulary: [`farmer-vocabulary.md`](farmer-vocabulary.md).
+**Shipped.** Plan: [`plans/phase_47_feeding_water_plain_language.plan.md`](plans/phase_47_feeding_water_plain_language.plan.md) · Vocabulary: [`farmer-vocabulary.md`](farmer-vocabulary.md).
 
-When shipped:
+| Surface | Operator job | Guardian / API |
+|---------|--------------|----------------|
+| **Zone Water tab** | Last/next feed, feeding plan edit, Run now, pulse, reservoir chip | `summarize_zone_fertigation` when question is feeding-related; zone `context_ref.tab=water` hints feeding language |
+| **Feed & water hub** (`/feeding`) | Farm-wide room cards; Dashboard + nav entry | Route `context_ref`; starters mirror Water tab |
+| **Feeding (technical)** | Programs, reservoirs, EC targets, mixing log | Advanced escape hatch; Phase 43 farm-wide admin |
+| **Water only** (39b) | Plain irrigation badge; no mix preview | `irrigation_only` on program; worker skips `mix_batch` |
 
-- **Zone Water** is the primary surface for last/next feed, feeding plan, Run now, pulse, reservoir — not the six-tab Fertigation console.
-- **Feeding hub** lists rooms as cards; technical Fertigation stays Advanced / Operations (43).
-- **irrigation_only** (39b) framed as **Water only**; mix preview hidden when N/A.
-- Guardian starters on Water; `summarize_zone_fertigation` for read; patch program matchers from Phase 42.
+**Write matchers (WS6):** plain-language phrases can open Confirm cards for `patch_fertigation_program` (volume, pause, water-only) and `patch_schedule` (pause/enable) — same frozen-args Confirm path as other Guardian tools.
 
-Operator: [operator-tour §7b](operator-tour.md#7b-feeding--water-for-this-room-phase-47--planned).
+**Grow-path vocabulary (WS5):** Vitest ban-list on zone templates + `plantNeeds.js` — no raw cron, “Fertigation program”, or Setpoints → on grow routes.
+
+Operator: [operator-tour §7b](operator-tour.md#7b-feeding--water-for-this-room-phase-47).
 
 ### 7.0e Offline field assistant (Phase 37)
 
