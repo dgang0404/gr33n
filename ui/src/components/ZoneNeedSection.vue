@@ -23,7 +23,7 @@
       <p class="text-zinc-600 text-xs">
         How it connects: <strong class="text-zinc-400">sensor reading</strong> →
         <strong class="text-zinc-400">target band</strong> →
-        <strong class="text-zinc-400">schedule or rule</strong> →
+        <strong class="text-zinc-400">automation or feed timing</strong> →
         <strong class="text-zinc-400">pump/light/fan</strong> →
         <strong class="text-zinc-400">device</strong>
       </p>
@@ -195,6 +195,7 @@ import ZoneAutomationPanel from './ZoneAutomationPanel.vue'
 import ZoneWaterGrowStory from './ZoneWaterGrowStory.vue'
 import EmptyStateHint from './EmptyStateHint.vue'
 import { formatLightingProgramSummary } from '../lib/lightingDisplay.js'
+import { scheduleRunsLabel } from '../lib/cronHumanize.js'
 
 const props = defineProps({
   need: { type: String, required: true },
@@ -227,10 +228,16 @@ const meta = computed(() => NEED_META[props.need] || NEED_META[PLANT_NEEDS.air])
 
 const sectionManageLinks = computed(() => {
   if (props.need === PLANT_NEEDS.water) {
-    return [{
-      to: { path: '/fertigation', query: { tab: 'programs', zone_id: String(props.zoneId) } },
-      label: 'Advanced feeding',
-    }]
+    return [
+      {
+        to: { path: '/feeding', query: { zone_id: String(props.zoneId) } },
+        label: 'Feed & water hub',
+      },
+      {
+        to: { path: '/fertigation', query: { tab: 'programs', zone_id: String(props.zoneId) } },
+        label: 'Advanced feeding',
+      },
+    ]
   }
   if (props.need === PLANT_NEEDS.light) {
     return [{
@@ -307,13 +314,15 @@ const connectionCards = computed(() => {
     const pump = needActuators.value[0]
     cards.unshift({
       title: props.activeProgram.name,
-      subtitle: 'Fertigation program',
-      manageTo: '/fertigation',
+      subtitle: 'Feeding plan',
+      manageTo: { path: '/feeding', query: { zone_id: String(props.zoneId) } },
       readingLabel: needSensors.value.length ? formatReading(needSensors.value[0]) : 'Add EC/pH sensor',
       targetLabel: props.activeProgram.run_duration_seconds
         ? `Pump on ${props.activeProgram.run_duration_seconds}s per run`
         : 'Volume-based feed',
-      automationLabel: sched ? `${sched.name} (${sched.is_active ? 'active' : 'inactive'})` : 'No schedule linked',
+      automationLabel: sched
+        ? `${scheduleRunsLabel(sched)}${sched.is_active ? '' : ' · paused'}`
+        : 'No feed timing linked',
       controlLabel: pump ? `${pump.name} — ${pump.current_state_text || 'offline'}` : 'Assign a pump actuator',
       controlOnline: pump?.current_state_text === 'online',
       lastEventLabel: pump ? lastEventForActuator(pump.id) : '',
@@ -354,7 +363,7 @@ const connectionCards = computed(() => {
       const fan = needActuators.value[0]
       cards.push({
         title: r.name,
-        subtitle: 'Automation rule',
+        subtitle: 'Automation',
         manageTo: '/automation',
         readingLabel: needSensors.value[0] ? formatReading(needSensors.value[0]) : 'Add temp/humidity/lux sensor',
         targetLabel: 'Uses comfort targets when configured',

@@ -208,7 +208,7 @@ describe('Phase 29 WS6 — GuardianChatPanel context_ref POST', () => {
     expect(body.context_ref).toEqual({
       type: 'route',
       path: '/fertigation',
-      name: 'Fertigation',
+      name: 'Feeding (technical)',
     })
 
     vi.unstubAllGlobals()

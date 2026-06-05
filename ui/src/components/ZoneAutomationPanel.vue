@@ -13,7 +13,7 @@
         <router-link
           :to="{ path: '/schedules', query: { zone_id: String(zoneId) } }"
           class="text-zinc-500 hover:text-green-400"
-        >Schedules →</router-link>
+        >Farm-wide timing →</router-link>
       </div>
     </div>
 
@@ -22,7 +22,7 @@
     </p>
 
     <div v-if="automation.schedules.length" class="mb-4">
-      <p class="text-xs text-zinc-500 uppercase tracking-wide mb-2">Schedules</p>
+      <p class="text-xs text-zinc-500 uppercase tracking-wide mb-2">Timed runs</p>
       <ul class="space-y-2">
         <li
           v-for="item in automation.schedules"

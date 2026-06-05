@@ -16,10 +16,10 @@ export function buildNavGroups(cycleCompareRoute) {
           navTitle: 'Grow areas — water, light, and climate per room',
         },
         {
-          to: '/fertigation',
+          to: '/feeding',
           icon: '💧',
           label: 'Feed & water',
-          navTitle: 'Feeding programs, reservoirs, and events (admin detail)',
+          navTitle: 'Daily feeding plan per room — how each room gets water',
         },
         { to: '/plants', icon: '🌱', label: 'Plants' },
         {
@@ -74,6 +74,12 @@ export function buildNavGroups(cycleCompareRoute) {
           icon: '🎯',
           label: 'Comfort bands',
           navTitle: 'Farm-wide target ranges per sensor and stage',
+        },
+        {
+          to: '/fertigation',
+          icon: '💦',
+          label: 'Feeding (technical)',
+          navTitle: 'Programs, reservoirs, EC targets, mixing log — power users',
         },
         {
           to: '/actuators',

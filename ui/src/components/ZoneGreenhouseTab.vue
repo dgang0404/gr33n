@@ -147,10 +147,10 @@
       </div>
     </div>
 
-    <!-- GH automation rules -->
+    <!-- GH automations -->
     <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
       <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
-        <h2 class="text-sm font-semibold text-white">Greenhouse rules</h2>
+        <h2 class="text-sm font-semibold text-white">Greenhouse automations</h2>
         <div class="flex flex-wrap items-center gap-2">
           <label v-if="canApplyTemplates" class="flex items-center gap-1.5 text-xs text-zinc-400">
             <input v-model="allowMissingLux" type="checkbox" class="rounded border-zinc-600" />

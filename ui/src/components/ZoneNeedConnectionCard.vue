@@ -6,7 +6,7 @@
         <p v-if="subtitle" class="text-zinc-500 text-xs mt-0.5">{{ subtitle }}</p>
       </div>
       <router-link v-if="manageTo" :to="manageTo" class="text-xs text-green-600 hover:text-green-400 shrink-0">
-        Manage →
+        Details →
       </router-link>
     </div>
 

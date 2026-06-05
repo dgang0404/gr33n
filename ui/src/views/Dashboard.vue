@@ -6,11 +6,10 @@
       <div>
         <h2 class="text-xl font-bold text-white">{{ store.farm?.name ?? 'Loading...' }}
           <HelpTip position="bottom">
-            <strong>How it all connects:</strong> Your farm has <em>zones</em> (grow areas), each with <em>sensors</em>
-            (reading temp/humidity/EC) and <em>actuators</em> (pumps, lights). <em>Schedules</em> trigger actuators on a
-            cron cadence or generate <em>tasks</em>. <em>Fertigation programs</em> tie a schedule + reservoir + recipe +
-            EC target into an automated feeding plan. <em>Crop cycles</em> track a single grow run per zone.
-            Open <router-link to="/operator-guide" class="text-gr33n-400 underline">Guide</router-link> for definitions and a suggested click path.
+            <strong>How it all connects:</strong> Your farm has <em>rooms</em> (grow areas), each with <em>sensors</em>
+            (reading temp, humidity, EC) and <em>controls</em> (pumps, lights, fans). <em>Feeding plans</em> say when each room
+            gets water and nutrients. <em>Automations</em> react to readings. <em>Tasks</em> are your daily to-do list.
+            Open <router-link to="/operator-guide" class="text-gr33n-400 underline">Guide</router-link> for a suggested click path.
           </HelpTip>
         </h2>
         <p class="text-sm text-gray-500">{{ store.zones.length }} zones · {{ store.sensors.length }} sensors · {{ store.devices.length }} devices</p>
@@ -29,13 +28,13 @@
         class="px-4 py-2 text-sm font-medium rounded-lg bg-green-900/50 text-green-400 border border-green-800 hover:bg-green-900/70 transition-colors">
         + New Task
       </router-link>
-      <router-link :to="{ path: '/fertigation', query: { tab: 'mixing' } }"
+      <router-link to="/feeding"
         class="px-4 py-2 text-sm font-medium rounded-lg bg-blue-900/50 text-blue-400 border border-blue-800 hover:bg-blue-900/70 transition-colors">
-        + Log Mix
+        Feed &amp; water
       </router-link>
-      <router-link to="/schedules"
-        class="px-4 py-2 text-sm font-medium rounded-lg bg-zinc-800 text-zinc-300 border border-zinc-700 hover:bg-zinc-700 transition-colors">
-        Schedules
+      <router-link :to="{ path: '/fertigation', query: { tab: 'mixing' } }"
+        class="px-4 py-2 text-sm font-medium rounded-lg bg-zinc-800 text-zinc-400 border border-zinc-700 hover:bg-zinc-700 transition-colors">
+        Log mix (advanced)
       </router-link>
       <router-link to="/operator-guide"
         class="px-4 py-2 text-sm font-medium rounded-lg bg-zinc-800 text-gr33n-400 border border-zinc-600 hover:bg-zinc-700 transition-colors">
@@ -110,51 +109,51 @@
           v-else
           reason="automation_off"
           message="No recent alerts — thresholds and failed runs create them when rules are active."
-          action-label="Automation rules"
+          action-label="Automations"
           action-to="/automation"
         />
       </section>
     </div>
 
-    <!-- Active Schedules + Recent Fertigation row -->
+    <!-- What runs when + Recent feeds row -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
 
-      <!-- Active Schedules -->
+      <!-- What runs when -->
       <section class="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
         <div class="flex items-center justify-between mb-3">
-          <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-widest">Active Schedules</h3>
-          <router-link to="/schedules" class="text-xs text-gr33n-500 hover:text-gr33n-400">Manage &rarr;</router-link>
+          <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-widest">What runs when</h3>
+          <router-link to="/schedules" class="text-xs text-gr33n-500 hover:text-gr33n-400">Farm-wide timing →</router-link>
         </div>
         <div v-if="activeSchedules.length" class="space-y-2">
           <div v-for="s in activeSchedules" :key="s.id"
             class="flex items-center justify-between gap-3 bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2">
             <div class="min-w-0">
               <p class="text-sm text-zinc-200 truncate">{{ s.name }}</p>
-              <p class="text-[11px] text-zinc-500 font-mono">{{ s.cron_expression }} · {{ s.timezone }}</p>
+              <p class="text-[11px] text-zinc-500">{{ scheduleLabel(s) }}</p>
             </div>
-            <span class="text-[10px] px-1.5 py-0.5 rounded bg-green-900/50 text-green-300 shrink-0">active</span>
+            <span class="text-[10px] px-1.5 py-0.5 rounded bg-green-900/50 text-green-300 shrink-0">On</span>
           </div>
         </div>
         <EmptyStateHint
           v-else
           reason="automation_off"
-          message="No active schedules — time-based watering, lights, and program ticks need one."
-          action-label="Create schedule"
-          action-to="/schedules"
+          message="Nothing timed yet — feeding plans and lights need a daily time to run."
+          action-label="Feed &amp; water"
+          action-to="/feeding"
         />
       </section>
 
-      <!-- Recent Fertigation Events -->
+      <!-- Recent feeds -->
       <section class="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
         <div class="flex items-center justify-between mb-3">
-          <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-widest">Recent Fertigation</h3>
-          <router-link :to="{ path: '/fertigation', query: { tab: 'events' } }" class="text-xs text-gr33n-500 hover:text-gr33n-400">View all &rarr;</router-link>
+          <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-widest">Recent feeds</h3>
+          <router-link :to="{ path: '/feeding' }" class="text-xs text-gr33n-500 hover:text-gr33n-400">Feed &amp; water →</router-link>
         </div>
         <div v-if="recentFertEvents.length" class="space-y-2">
           <div v-for="e in recentFertEvents" :key="e.id"
             class="flex items-center justify-between gap-3 bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2">
             <div class="flex items-center gap-2 min-w-0">
-              <router-link v-if="e.zone_id" :to="`/zones/${e.zone_id}`"
+              <router-link v-if="e.zone_id" :to="{ path: `/zones/${e.zone_id}`, query: { tab: 'water' } }"
                 class="text-sm text-zinc-200 hover:text-green-400 truncate">{{ zoneName(e.zone_id) }}</router-link>
               <span v-if="e.program_id" class="text-[11px] text-zinc-500">{{ programName(e.program_id) }}</span>
             </div>
@@ -167,9 +166,9 @@
         <EmptyStateHint
           v-else
           reason="no_data"
-          message="No fertigation events yet — they appear after programs run or you log a feed."
-          action-label="Fertigation"
-          :action-to="{ path: '/fertigation', query: { tab: 'events' } }"
+          message="No feeds logged yet — they appear after programs run or you log a feed from a room's Water tab."
+          action-label="Feed &amp; water"
+          :action-to="{ path: '/feeding' }"
         />
       </section>
     </div>
@@ -240,6 +239,7 @@ import FarmMorningStrip from '../components/FarmMorningStrip.vue'
 import EmptyStateHint from '../components/EmptyStateHint.vue'
 import { computeFarmMorningSnapshot } from '../lib/farmGrowSummary.js'
 import { sumFarmPendingQueueDepth } from '../lib/farmQueueDepth.js'
+import { scheduleRunsLabel } from '../lib/cronHumanize.js'
 
 const store = useFarmStore()
 const farmContext = useFarmContextStore()
@@ -257,6 +257,8 @@ const morningChips = computed(() =>
     alerts: alerts.value,
     schedules: schedules.value,
     devices: store.devices,
+    zones: store.zones,
+    programs: programs.value,
     queueDepth: queueDepth.value,
   }).chips,
 )
@@ -308,6 +310,12 @@ function formatDueDate(d) {
   const today = new Date().toISOString().slice(0, 10)
   if (s === today) return 'today'
   return s
+}
+
+function scheduleLabel(schedule) {
+  const when = scheduleRunsLabel(schedule)
+  const tz = schedule.timezone && schedule.timezone !== 'UTC' ? schedule.timezone : null
+  return tz ? `${when} · ${tz}` : when
 }
 
 function formatShort(ts) {

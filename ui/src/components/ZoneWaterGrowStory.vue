@@ -272,8 +272,8 @@ const reservoirChipClass = computed(() => {
 })
 
 const feedHistoryLink = computed(() => ({
-  path: '/fertigation',
-  query: { tab: 'events', zone_id: String(props.zoneId) },
+  path: '/feeding',
+  query: { zone_id: String(props.zoneId) },
 }))
 
 const logFeedLink = computed(() => feedHistoryLink.value)

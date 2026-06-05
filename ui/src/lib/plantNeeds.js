@@ -19,6 +19,7 @@ export const NEED_META = {
     icon: '💧',
     description: 'Feeding plan, irrigation pumps, EC/pH, soil moisture.',
     manageLinks: [
+      { to: '/feeding', label: 'Feed & water hub' },
       { to: '/fertigation', label: 'Advanced feeding (technical)' },
     ],
   },
@@ -30,7 +31,6 @@ export const NEED_META = {
     description: 'Photoperiod and grow lights.',
     manageLinks: [
       { to: '/lighting', label: 'Lighting programs' },
-      { to: '/schedules', label: 'Schedules' },
     ],
   },
   [PLANT_NEEDS.air]: {

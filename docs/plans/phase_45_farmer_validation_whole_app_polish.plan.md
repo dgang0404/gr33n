@@ -90,6 +90,7 @@ Prefer **UI + API composition** fixes; schema only if sit-in proves gap.
 Extend [farmer-vocabulary.md](../farmer-vocabulary.md) and [phase_20_9b](phase_20_9b_terminology_and_copy_pass.plan.md):
 
 - Ban list: `cron`, `predicate`, `executable_action`, `zone_setpoints` in farmer routes
+- Grow-path enforcement: `ui/src/__tests__/farmer-vocabulary-grow-path.test.js` (Phase 47 WS5)
 - HelpTips audit on 40–44 surfaces
 
 ---

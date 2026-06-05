@@ -1,5 +1,7 @@
 # Farmer vocabulary — gr33n UI language contract
 
+**Status:** Published (Phase 47 WS5). Enforced on grow routes by `ui/src/__tests__/farmer-vocabulary-grow-path.test.js`.
+
 **Audience:** Product, UX, and developers shipping Phases 40–47 and 45 sit-in validation.
 
 **Purpose:** Farmers understand **EC, irrigation, fertigation, photoperiod, humidity** in the grow room. They should not need to learn **setpoint, cron, predicate, executable_action**, or six admin apps to run gr33n.
@@ -74,7 +76,9 @@ Guardian should mirror this doc ([platform_context](farm-guardian-persona-platfo
 
 ---
 
-## Validation (Phase 45 sit-in)
+## Validation (Phase 45 sit-in + CI)
+
+**Automated (47 WS5):** Vitest scans grow-path Vue templates and `plantNeeds.js` for the ban list above. Run `npm test` in `ui/`.
 
 Facilitator **fail** if tester must open a page titled **Setpoints** or the six-tab **Fertigation** console to complete:
 

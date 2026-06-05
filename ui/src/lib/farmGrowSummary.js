@@ -4,6 +4,7 @@
 
 import { scheduleRunsLabel } from './cronHumanize.js'
 import { isOpenTask, isTaskDueToday, todayDateIso } from './zoneTasks.js'
+import { countRoomsWithFeedingPlan } from './farmFeedingHub.js'
 
 /**
  * @param {object[]} tasks
@@ -53,6 +54,8 @@ export function computeFarmMorningSnapshot(params) {
     alerts = [],
     schedules = [],
     devices = [],
+    zones = [],
+    programs = [],
     queueDepth = 0,
   } = params
 
@@ -115,6 +118,20 @@ export function computeFarmMorningSnapshot(params) {
     to: { path: '/zones' },
   })
 
+  if (zones.length) {
+    const roomsWithPlan = countRoomsWithFeedingPlan(programs, zones)
+    chips.push({
+      id: 'feeding',
+      icon: '💧',
+      label: 'Feed & water',
+      value: roomsWithPlan
+        ? `${roomsWithPlan} of ${zones.length} rooms planned`
+        : `${zones.length} room${zones.length === 1 ? '' : 's'} — no plans yet`,
+      tone: roomsWithPlan ? 'ok' : 'muted',
+      to: { path: '/feeding' },
+    })
+  }
+
   if (queueDepth > 0) {
     chips.push({
       id: 'queue',
@@ -122,7 +139,7 @@ export function computeFarmMorningSnapshot(params) {
       label: 'Queued commands',
       value: String(queueDepth),
       tone: 'warn',
-      to: { path: '/fertigation', query: { tab: 'events' } },
+      to: { path: '/feeding' },
     })
   }
 

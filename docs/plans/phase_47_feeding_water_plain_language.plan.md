@@ -17,10 +17,10 @@ todos:
     status: completed
   - id: ws4-farm-feeding-hub
     content: "WS4: Farm Feeding hub (route) — all rooms as cards; ?zone_id= from 41; Advanced link to full Fertigation.vue"
-    status: pending
+    status: completed
   - id: ws5-vocabulary-pass
     content: "WS5: farmer-vocabulary.md + grep ban list — no setpoint/cron/executable_action on grow paths; plantNeeds.js copy"
-    status: pending
+    status: completed
   - id: ws6-guardian-feeding
     content: "WS6: Guardian starters on Water + feeding hub; summarize_zone_fertigation prominence; patch program matchers"
     status: pending
@@ -34,11 +34,11 @@ isProject: false
 
 ## Status
 
-**In progress — WS1–WS3 shipped.** Ties the farmer UX arc together for **non-technical growers** who understand EC, irrigation, and fertigation in the field but not in the database.
+**In progress — WS1–WS5 shipped.** Ties the farmer UX arc together for **non-technical growers** who understand EC, irrigation, and fertigation in the field but not in the database.
 
 **Roadmap:** [farmer_ux_roadmap_40_plus.plan.md](farmer_ux_roadmap_40_plus.plan.md) (chapter after farm hub; completes the Water story started in Phase 40).
 
-**Next chunk:** WS4 farm Feeding hub · WS5 vocabulary.
+**Next chunk:** WS6 Guardian starters · WS7 docs/OC-47.
 
 **Does not replace:** [Phase 43](phase_43_operations_stock_feeding_finance.plan.md) (Supplies, farm-wide feeding **admin**, Money). Phase 47 owns **per-room watering**; Phase 43 owns **restock, recipes catalog, receipts**.
 

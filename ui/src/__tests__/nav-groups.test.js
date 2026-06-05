@@ -7,7 +7,7 @@ describe('Phase 40 WS7 — farmer nav groups', () => {
   it('uses grow-first labels', () => {
     const grow = groups.find((g) => g.label === 'Grow')
     expect(grow.items.some((i) => i.label === 'My rooms' && i.to === '/zones')).toBe(true)
-    expect(grow.items.some((i) => i.label === 'Feed & water')).toBe(true)
+    expect(grow.items.some((i) => i.label === 'Feed & water' && i.to === '/feeding')).toBe(true)
     expect(grow.items.some((i) => i.label === 'Supplies')).toBe(true)
   })
 
@@ -29,6 +29,7 @@ describe('Phase 40 WS7 — farmer nav groups', () => {
     const advanced = groups.find((g) => g.label === 'Advanced')
     expect(advanced.items.some((i) => i.label === 'Automations')).toBe(true)
     expect(advanced.items.some((i) => i.label === 'Comfort bands')).toBe(true)
+    expect(advanced.items.some((i) => i.label === 'Feeding (technical)' && i.to === '/fertigation')).toBe(true)
   })
 
   it('uses farmer labels on mobile bottom nav', () => {

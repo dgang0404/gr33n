@@ -19,6 +19,8 @@ describe('Phase 41 WS1 — farm morning snapshot', () => {
       alerts: [{ is_read: false, is_acknowledged: false }],
       schedules: [{ id: 1, name: 'Water Daily', is_active: true, cron_expression: '0 6 * * *' }],
       devices: [{ status: 'online' }, { status: 'offline' }],
+      zones: [{ id: 1, name: 'Veg' }, { id: 2, name: 'Flower' }],
+      programs: [{ id: 10, target_zone_id: 1, is_active: true }],
       queueDepth: 2,
     })
     expect(snap.dueToday).toBe(1)
@@ -26,7 +28,10 @@ describe('Phase 41 WS1 — farm morning snapshot', () => {
     expect(snap.queueDepth).toBe(2)
     const ids = snap.chips.map((c) => c.id)
     expect(ids).toContain('tasks-due')
+    expect(ids).toContain('feeding')
     expect(ids).toContain('queue')
     expect(snap.chips.find((c) => c.id === 'tasks-due').to).toEqual({ path: '/tasks' })
+    expect(snap.chips.find((c) => c.id === 'feeding').to).toEqual({ path: '/feeding' })
+    expect(snap.chips.find((c) => c.id === 'queue').to).toEqual({ path: '/feeding' })
   })
 })

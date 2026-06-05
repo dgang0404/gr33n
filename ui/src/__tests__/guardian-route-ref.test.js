@@ -6,7 +6,15 @@ describe('Phase 32 WS1 — guardianRouteRef', () => {
     expect(routeContextRefFromRoute({ path: '/fertigation', meta: {} })).toEqual({
       type: 'route',
       path: '/fertigation',
-      name: 'Fertigation',
+      name: 'Feeding (technical)',
+    })
+  })
+
+  it('maps feeding hub path to route context_ref', () => {
+    expect(routeContextRefFromRoute({ path: '/feeding', meta: {} })).toEqual({
+      type: 'route',
+      path: '/feeding',
+      name: 'Feed & water',
     })
   })
 
