@@ -53,7 +53,7 @@ todos:
     status: completed
   - id: oc-42-closure
     content: "OC-42: Phase 42 WS7 — comfort targets + plain automation docs/tests (close when Phase 42 ships)"
-    status: pending
+    status: completed
   - id: oc-43-closure
     content: "OC-43: Phase 43 WS7 — operations hub docs/tests (close when Phase 43 ships)"
     status: pending

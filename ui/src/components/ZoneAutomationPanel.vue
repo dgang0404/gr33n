@@ -7,13 +7,13 @@
       </div>
       <div class="flex gap-3 text-xs">
         <router-link
-          :to="{ path: '/automation', query: { zone_id: String(zoneId) } }"
+          :to="{ path: '/comfort-targets', query: { zone_id: String(zoneId), tab: 'rules' } }"
           class="text-zinc-500 hover:text-green-400"
         >Automations →</router-link>
         <router-link
-          :to="{ path: '/schedules', query: { zone_id: String(zoneId) } }"
+          :to="{ path: '/comfort-targets', query: { zone_id: String(zoneId), tab: 'schedules' } }"
           class="text-zinc-500 hover:text-green-400"
-        >Farm-wide timing →</router-link>
+        >What runs when →</router-link>
       </div>
     </div>
 

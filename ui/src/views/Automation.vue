@@ -1,5 +1,11 @@
 <template>
   <div class="p-6">
+    <PowerUserBanner
+      :farmer-link="{ path: '/comfort-targets', query: { tab: 'rules' } }"
+      farmer-link-label="Automation toggles"
+      message="Predicate JSON and RuleForm editing live here. Use Grow → Targets to pause rules in plain language."
+      class="mb-6"
+    />
     <div class="flex items-center justify-between mb-6">
       <div class="flex items-center">
         <h1 class="text-xl font-semibold text-white">Automation Rules</h1>
@@ -166,6 +172,7 @@ import HelpTip from '../components/HelpTip.vue'
 import RuleForm from '../components/RuleForm.vue'
 import ZoneContextBanner from '../components/ZoneContextBanner.vue'
 import EmptyStateHint from '../components/EmptyStateHint.vue'
+import PowerUserBanner from '../components/PowerUserBanner.vue'
 import { parseZoneIdQuery, filterRulesForZone } from '../lib/zoneContext.js'
 import api from '../api'
 

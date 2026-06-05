@@ -133,7 +133,10 @@ func matchFreshProposal(
 	if toolID, args, summary, okFeed := matchFeedingProgramIntent(ctx, q, farmID, question, snap); okFeed {
 		return toolID, args, summary, true
 	}
-	return matchConfigToolIntent(question, snap)
+	if toolID, args, summary, okCfg := matchConfigToolIntent(question, snap); okCfg {
+		return toolID, args, summary, true
+	}
+	return matchComfortAutomationIntent(ctx, q, farmID, question, snap)
 }
 
 // insertProposalInput carries the fields for one frozen proposal row.

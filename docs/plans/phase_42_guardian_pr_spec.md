@@ -5,7 +5,7 @@ overview: >
   comfort/automation surfaces and rule-assisted matchers for patch_rule,
   patch_schedule, patch_fertigation_program. Not LLM-tool routing (Phase 46).
 parent_plan: phase_42_comfort_targets_automation_plain_language.plan.md
-status: planned
+status: shipped
 ---
 
 # Phase 42 — Guardian PR spec (starters + matchers)
@@ -73,9 +73,9 @@ Wire into comfort hub + schedules/rules pages in Phase 42 WS8 (UI), not Phase 40
 
 ### 2.4 Acceptance (starters)
 
-- [ ] No chip text equals generic “What’s the status of X?”
-- [ ] At least one chip on comfort hub changes when zone lacks a band (demo seed)
-- [ ] Sending chip message does **not** Confirm anything without user tap
+- [x] No chip text equals generic “What’s the status of X?”
+- [x] At least one chip on comfort hub changes when zone lacks a band (demo seed)
+- [x] Sending chip message does **not** Confirm anything without user tap
 
 ---
 
@@ -131,10 +131,10 @@ Phase 42 adds **`matchComfortAutomationIntent`** called from `matchFreshProposal
 
 ### 3.6 Acceptance (matchers)
 
-- [ ] “Turn off the shade rule for Flower Room” → `patch_rule` proposal when rule exists
-- [ ] “Set feed volume to 0.3 L for Flower Room” → `patch_fertigation_program` when program exists
-- [ ] “What is EC?” → no proposal (text only)
-- [ ] Confirm still replays frozen args (no regression)
+- [x] “Turn off the shade rule for Flower Room” → `patch_rule` proposal when rule exists
+- [x] “Set feed volume to 0.3 L for Flower Room” → `patch_fertigation_program` when program exists (Phase 47 `matchFeedingProgramIntent`)
+- [x] “What is EC?” → no proposal (text only)
+- [x] Confirm still replays frozen args (no regression)
 
 ---
 
@@ -186,11 +186,11 @@ After ship: `make rag-ingest-platform-docs` (operator-tour §6e + this spec is p
 
 ## 7. Definition of done (Guardian slice only)
 
-- [ ] `guardianStarters.js` + chips on comfort/schedules/rules surfaces
-- [ ] `matchComfortAutomationIntent` + tests
-- [ ] impact + persona bullets
-- [ ] Documented in operator-tour §6e
-- [ ] No dependency on Phase 46
+- [x] `guardianStarters.js` + chips on comfort/schedules/rules surfaces
+- [x] `matchComfortAutomationIntent` + tests
+- [x] impact + persona bullets
+- [x] Documented in operator-tour §6e
+- [x] No dependency on Phase 46
 
 ---
 

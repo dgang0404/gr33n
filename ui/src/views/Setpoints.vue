@@ -8,6 +8,11 @@
 -->
 <template>
   <div class="p-6 space-y-6">
+    <PowerUserBanner
+      :farmer-link="{ path: '/comfort-targets', query: { tab: 'bands' } }"
+      farmer-link-label="Grow → Targets"
+      message="Raw setpoint table with cycle/stage scope and bulk filters. Use Grow → Targets for everyday comfort bands."
+    />
     <div class="flex items-center justify-between">
       <div class="flex items-center gap-2">
         <h1 class="text-xl font-semibold text-white">Setpoints</h1>
@@ -100,6 +105,7 @@ import api from '../api'
 import { useFarmContextStore } from '../stores/farmContext'
 import HelpTip from '../components/HelpTip.vue'
 import SetpointRow from '../components/SetpointRow.vue'
+import PowerUserBanner from '../components/PowerUserBanner.vue'
 
 const farmContext = useFarmContextStore()
 

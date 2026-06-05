@@ -21,6 +21,12 @@ export function buildNavGroups(cycleCompareRoute) {
           label: 'Feed & water',
           navTitle: 'Daily feeding plan per room — how each room gets water',
         },
+        {
+          to: '/comfort-targets',
+          icon: '🎯',
+          label: 'Targets & schedules',
+          navTitle: 'Comfort bands, what runs when, and automation toggles',
+        },
         { to: '/plants', icon: '🌱', label: 'Plants' },
         {
           to: '/inventory',
@@ -47,12 +53,6 @@ export function buildNavGroups(cycleCompareRoute) {
       label: 'Operate',
       items: [
         {
-          to: '/schedules',
-          icon: '📅',
-          label: 'Schedules',
-          navTitle: 'Time-based automation (power users)',
-        },
-        {
           to: '/lighting',
           icon: '💡',
           label: 'Lighting',
@@ -64,6 +64,12 @@ export function buildNavGroups(cycleCompareRoute) {
       label: 'Advanced',
       items: [
         {
+          to: '/schedules',
+          icon: '📅',
+          label: 'Schedules (cron)',
+          navTitle: 'Cron schedule editor — power users',
+        },
+        {
           to: '/automation',
           icon: '🤖',
           label: 'Automations',
@@ -72,7 +78,7 @@ export function buildNavGroups(cycleCompareRoute) {
         {
           to: '/setpoints',
           icon: '🎯',
-          label: 'Comfort bands',
+          label: 'Setpoints (raw)',
           navTitle: 'Farm-wide target ranges per sensor and stage',
         },
         {

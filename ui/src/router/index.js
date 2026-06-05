@@ -25,6 +25,7 @@ import CropCycleSummary from '../views/CropCycleSummary.vue'
 import CropCycleCompare from '../views/CropCycleCompare.vue'
 import LightingPrograms from '../views/LightingPrograms.vue'
 import FeedingHub from '../views/FeedingHub.vue'
+import ComfortTargetsHub from '../views/ComfortTargetsHub.vue'
 import Login from '../views/Login.vue'
 
 const routes = [
@@ -41,6 +42,7 @@ const routes = [
   { path: '/setpoints',    component: Setpoints,    name: 'setpoints' },
   { path: '/tasks',        component: Tasks,        name: 'tasks' },
   { path: '/feeding',     component: FeedingHub,     name: 'feeding' },
+  { path: '/comfort-targets', component: ComfortTargetsHub, name: 'comfort-targets' },
   { path: '/fertigation',  component: Fertigation,  name: 'fertigation' },
   { path: '/inventory',    component: Inventory,    name: 'inventory' },
   { path: '/costs',        component: Costs,        name: 'costs' },

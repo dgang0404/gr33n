@@ -96,7 +96,7 @@ func matchFeedingProgramIntent(
 	return "", nil, "", false
 }
 
-func resolveActiveProgramForIntent(ctx context.Context, querier db.Querier, question string, farmID int64, snap Snapshot) (db.Gr33nfertigationProgram, bool) {
+func resolveActiveProgramForIntent(ctx context.Context, querier farmMatchQuerier, question string, farmID int64, snap Snapshot) (db.Gr33nfertigationProgram, bool) {
 	zoneID := resolveZoneIDForIntent(ctx, querier, question, farmID, snap)
 	programs, err := querier.ListProgramsByFarm(ctx, farmID)
 	if err != nil || len(programs) == 0 {
@@ -125,7 +125,7 @@ func resolveActiveProgramForIntent(ctx context.Context, querier db.Querier, ques
 	return active[0], true
 }
 
-func resolveScheduleForIntent(ctx context.Context, querier db.Querier, farmID int64, question string, snap Snapshot) (db.Gr33ncoreSchedule, bool) {
+func resolveScheduleForIntent(ctx context.Context, querier farmMatchQuerier, farmID int64, question string, snap Snapshot) (db.Gr33ncoreSchedule, bool) {
 	schedules, err := querier.ListSchedulesByFarm(ctx, farmID)
 	if err != nil || len(schedules) == 0 {
 		return db.Gr33ncoreSchedule{}, false
@@ -142,7 +142,7 @@ func resolveScheduleForIntent(ctx context.Context, querier db.Querier, farmID in
 	return db.Gr33ncoreSchedule{}, false
 }
 
-func resolveZoneIDForIntent(ctx context.Context, querier db.Querier, question string, farmID int64, snap Snapshot) int64 {
+func resolveZoneIDForIntent(ctx context.Context, querier farmMatchQuerier, question string, farmID int64, snap Snapshot) int64 {
 	lower := strings.ToLower(strings.TrimSpace(question))
 	zones, err := querier.ListZonesByFarm(ctx, farmID)
 	if err == nil {

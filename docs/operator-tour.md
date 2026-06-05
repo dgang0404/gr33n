@@ -247,15 +247,15 @@ Open **Zones** → greenhouse zone → **Climate** tab: edit `greenhouse_climate
 
 ---
 
-## 5c. Comfort bands & what runs when (Phase 42 — planned)
+## 5c. Comfort bands & what runs when (Phase 42 — shipped)
 
-**Status:** Doc complete; implementation after [Phase 40](plans/phase_40_unified_farmer_ux_zone_cockpit.plan.md) + [Phase 41](plans/phase_41_farm_hub_coherence.plan.md). Plan: [`plans/phase_42_comfort_targets_automation_plain_language.plan.md`](plans/phase_42_comfort_targets_automation_plain_language.plan.md).
+**Status:** Shipped. Plan: [`plans/phase_42_comfort_targets_automation_plain_language.plan.md`](plans/phase_42_comfort_targets_automation_plain_language.plan.md). Depends on [Phase 40](plans/phase_40_unified_farmer_ux_zone_cockpit.plan.md) + [Phase 41](plans/phase_41_farm_hub_coherence.plan.md).
 
 **Goal:** Stop sending operators to raw **Setpoints**, **Schedules**, and **Rules** pages for everyday work. Same database fields; farmer labels and toggles.
 
 ### Comfort bands (replaces “Setpoints” in Grow nav)
 
-1. Open **Grow → Targets** (route TBD: `/comfort-targets`).
+1. Open **Grow → Targets & schedules** (`/comfort-targets`).
 2. Pick a room — see whether humidity/temperature bands are **missing**, **ok**, or **out of range** vs recent readings.
 3. Edit **too low / just right / too high** — tied to growth stage when a crop cycle is active.
 4. Zone cockpit (Phase 40) uses the same editor inline — you should not need two different UIs for the same band.
@@ -363,19 +363,19 @@ A proposal is no longer one-shot. If a draft is *close but not quite right*, cor
 
 Architecture detail: [`farm-guardian-architecture.md` §7.7](farm-guardian-architecture.md#77-pr-iteration--blind-spot-facts-phase-34).
 
-### 6e. Guardian on comfort & automation (Phase 42 — planned)
+### 6e. Guardian on comfort & automation (Phase 42 — shipped)
 
 **Spec:** [`plans/phase_42_guardian_pr_spec.md`](plans/phase_42_guardian_pr_spec.md) · **Not** the same as [Phase 46](plans/phase_46_guardian_llm_tool_proposals.plan.md) (LLM opens PRs when matchers miss).
 
-**Starters (conversation chips):** On **Targets**, **Schedules**, and **Rules** farmer pages — short prompts such as “Set humidity comfort band for Flower Room” or “Pause shade rule for this room.” Chips **fill chat**; they do not auto-Confirm.
+**Starters (conversation chips):** On **Targets & schedules** (`/comfort-targets`) — tabs **Comfort bands**, **What runs when**, **Automation** — snapshot-aware prompts such as “Set humidity comfort band for Flower Room” or “Pause shade rule for this room.” Chips **prefill chat**; they do not auto-Confirm.
 
-**Matchers (new in 42):** After you send a message, the server may open a Confirm card for:
+**Matchers (shipped in 42):** After you send a message, the server may open a Confirm card for:
 
 | You might say | Tool (if matched) |
 |---------------|-------------------|
-| Turn off / pause the shade rule | `patch_rule` |
-| Pause the feeding schedule | `patch_schedule` |
-| Set feed volume to 0.3 L | `patch_fertigation_program` |
+| Turn off / pause the shade rule | `patch_rule` (`matchComfortAutomationIntent`) |
+| Pause the feeding / lights schedule | `patch_schedule` (`matchFeedingProgramIntent` + comfort matcher) |
+| Set feed volume to 0.3 L / set EC target | `patch_fertigation_program` |
 
 If you get advice text but **no card**, matchers did not recognize the phrase — Phase 46 addresses broader NL; 42 adds phrases for comfort/automation only.
 

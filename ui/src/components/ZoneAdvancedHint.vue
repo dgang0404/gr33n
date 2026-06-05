@@ -6,7 +6,7 @@
     Power settings:
     <router-link to="/automation" class="text-zinc-400 hover:text-green-400">Automations</router-link>
     <span class="text-zinc-700"> · </span>
-    <router-link to="/setpoints" class="text-zinc-400 hover:text-green-400">Comfort bands (farm-wide)</router-link>
+    <router-link to="/comfort-targets" class="text-zinc-400 hover:text-green-400">Targets &amp; schedules</router-link>
     <span class="text-zinc-700"> · </span>
     <router-link to="/schedules" class="text-zinc-400 hover:text-green-400">Schedules</router-link>
   </p>

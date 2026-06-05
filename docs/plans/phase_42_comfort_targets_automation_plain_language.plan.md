@@ -8,28 +8,28 @@ overview: >
 todos:
   - id: ws1-comfort-targets-hub
     content: "WS1: Grow → Targets hub — zone list, band status, why-empty; ?zone_id= from 41"
-    status: pending
+    status: completed
   - id: ws2-band-editor
     content: "WS2: ComfortBandEditor — too low / just right / too high; stage chip; reuse setpoint PATCH"
-    status: pending
+    status: completed
   - id: ws3-schedules-plain
     content: "WS3: Schedules farmer view — humanized next run; simple time picker → cron; active toggle"
-    status: pending
+    status: completed
   - id: ws4-rules-plain
     content: "WS4: Rules farmer view — plain summary; active toggle; GH template entry; Advanced link"
-    status: pending
+    status: completed
   - id: ws5-advanced-escape
     content: "WS5: Advanced → Power settings — legacy /setpoints, /automation, cron schedules"
-    status: pending
+    status: completed
   - id: ws6-guardian-persona-impact
     content: "WS6: Persona + impact.go — comfort band / pause schedule language on PR cards"
-    status: pending
+    status: completed
   - id: ws7-docs-tests-ui
     content: "WS7: operator-tour §6e + §6 comfort; architecture §7.0h; Vitest hub + band editor"
-    status: pending
+    status: completed
   - id: ws8-guardian-starters-matchers
     content: "WS8: Guardian starters + patch_rule/schedule/program matchers — phase_42_guardian_pr_spec.md"
-    status: pending
+    status: completed
 isProject: false
 ---
 
@@ -37,14 +37,12 @@ isProject: false
 
 ## Status
 
-**Planned — doc complete for Guardian slice.** Implement after [Phase 40](phase_40_unified_farmer_ux_zone_cockpit.plan.md) + [Phase 41](phase_41_farm_hub_coherence.plan.md).
+**Shipped (2026-06-05).** Depends on **Phase 40** ✅ + **Phase 41** ✅. **OC-42** closed (WS7).
 
 | Doc | Purpose |
 |-----|---------|
 | [farmer_ux_roadmap_40_plus.plan.md](farmer_ux_roadmap_40_plus.plan.md) | Arc position |
-| **[phase_42_guardian_pr_spec.md](phase_42_guardian_pr_spec.md)** | **Starters + matchers (this phase’s Guardian work)** |
-
-**Do not start Phase 40** until roadmap + Guardian guides are committed (done). Phase 42 code comes later in the arc.
+| **[phase_42_guardian_pr_spec.md](phase_42_guardian_pr_spec.md)** | **Starters + matchers (shipped)** |
 
 ---
 
@@ -73,7 +71,7 @@ Operators report **setpoints are hard to understand**:
 ```text
 Grow
 ├── My rooms (40) — inline band wedge
-└── Targets & schedules (42)  ← this phase
+└── Targets & schedules (42)  ← shipped at /comfort-targets
     ├── Comfort bands (hub)
     ├── What runs when (schedules)
     └── Automation (rules)
@@ -88,7 +86,7 @@ Advanced → Power settings
 
 ## WS1 — Comfort targets hub
 
-**Route:** `/comfort-targets` (or **Grow → Targets**).
+**Route:** `/comfort-targets` (**Grow → Targets & schedules**).
 
 | UI | API / data |
 |----|------------|
@@ -122,7 +120,7 @@ Advanced → Power settings
 |---------|--------|
 | List | Name, **next run** (humanized), linked program/lighting |
 | Toggle active | `PATCH` schedule |
-| Simple create | Daily @ time + timezone → `buildCronExpressions` server-side |
+| Simple create | Daily @ time + timezone → `buildDailyCron` client-side |
 | Starters | “When does feeding run next?” — [guardian PR spec](phase_42_guardian_pr_spec.md) |
 | Advanced link | Full cron editor |
 
@@ -156,12 +154,12 @@ See [phase_42_guardian_pr_spec §4](phase_42_guardian_pr_spec.md#4-persona--impa
 
 | Artifact | Content |
 |----------|---------|
-| **operator-tour §6** | Comfort bands + what runs when (farmer walkthrough) |
+| **operator-tour §5c** | Comfort bands + what runs when (farmer walkthrough) |
 | **operator-tour §6e** | Guardian starters + patch matchers on Targets pages |
 | **architecture §7.0h** | Comfort vs Advanced; Guardian patch tools |
-| **Vitest** | `ComfortBandEditor`, schedule humanize helper |
+| **Vitest** | `comfortBand`, `farmComfortHub`, `guardian-comfort-starters`, `zone-comfort-targets` |
 | **Smokes** | Optional — setpoint PATCH unchanged |
-| **OC-42** | [closure plan](phase_35_37_operational_closure.plan.md) row |
+| **OC-42** | Closed |
 
 ---
 
@@ -171,9 +169,9 @@ See [phase_42_guardian_pr_spec §4](phase_42_guardian_pr_spec.md#4-persona--impa
 
 | Item | Owner |
 |------|--------|
-| Conversation starters on comfort / schedules / rules | UI WS8 |
-| `matchComfortAutomationIntent` | Go WS8 |
-| Tests | Go WS8 |
+| Conversation starters on comfort / schedules / rules | UI WS8 ✅ |
+| `matchComfortAutomationIntent` | Go WS8 ✅ |
+| Tests | Go + Vitest ✅ |
 
 **Explicitly not WS8:** LLM tool proposals → Phase 46.
 
@@ -190,11 +188,11 @@ See [phase_42_guardian_pr_spec §4](phase_42_guardian_pr_spec.md#4-persona--impa
 
 ## Definition of done
 
-- [ ] Targets hub + band editor (farmer labels)
-- [ ] Schedules + rules farmer views (no cron/JSON first)
-- [ ] Advanced group contains legacy CRUD
-- [ ] Guardian WS8 per [phase_42_guardian_pr_spec.md](phase_42_guardian_pr_spec.md)
-- [ ] operator-tour §6 + §6e + architecture §7.0h + OC-42
+- [x] Targets hub + band editor (farmer labels)
+- [x] Schedules + rules farmer views (no cron/JSON first)
+- [x] Advanced group contains legacy CRUD
+- [x] Guardian WS8 per [phase_42_guardian_pr_spec.md](phase_42_guardian_pr_spec.md)
+- [x] operator-tour §5c + §6e + architecture §7.0h + OC-42
 
 ---
 

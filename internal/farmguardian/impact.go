@@ -55,12 +55,23 @@ func impactSteps(toolID string, args map[string]any) []string {
 	case "mark_alert_read":
 		return []string{"Mark the alert as read (reversible)"}
 	case "patch_schedule":
-		return []string{"Update the schedule configuration (reversible)"}
-	case "patch_rule":
+		name := argString(args, "schedule_name")
 		if active, ok := args["is_active"].(bool); ok && !active {
-			return []string{"Disable this automation rule — it will stop firing until re-enabled"}
+			return []string{joinName("Pause schedule", name) + " — no automatic runs until re-enabled"}
 		}
-		return []string{"Update the automation rule (reversible)"}
+		if active, ok := args["is_active"].(bool); ok && active {
+			return []string{joinName("Enable schedule", name) + " — automatic runs resume"}
+		}
+		return []string{joinName("Update schedule", name) + " (reversible)"}
+	case "patch_rule":
+		name := argString(args, "rule_name")
+		if active, ok := args["is_active"].(bool); ok && !active {
+			return []string{joinName("Pause automation rule", name) + " — it will stop firing until re-enabled"}
+		}
+		if active, ok := args["is_active"].(bool); ok && active {
+			return []string{joinName("Enable automation rule", name) + " — it will resume firing when conditions match"}
+		}
+		return []string{joinName("Update automation rule", name) + " (reversible)"}
 	case "enqueue_actuator_command":
 		cmd := argString(args, "command")
 		name := argString(args, "actuator_name")

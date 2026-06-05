@@ -342,18 +342,17 @@ When answering “how do I run my room?”, direct operators to **Zones → Wate
 
 When answering “what should I do first?”, prefer **Dashboard → Tasks → Alerts** over scattering links across Advanced nav.
 
-### 7.0h Comfort targets & automation (Phase 42 — planned)
+### 7.0h Comfort targets & automation (Phase 42 — shipped)
 
-**Doc stub.** Plans: [`plans/phase_42_comfort_targets_automation_plain_language.plan.md`](plans/phase_42_comfort_targets_automation_plain_language.plan.md) · Guardian PR slice: [`plans/phase_42_guardian_pr_spec.md`](plans/phase_42_guardian_pr_spec.md).
+Plans: [`plans/phase_42_comfort_targets_automation_plain_language.plan.md`](plans/phase_42_comfort_targets_automation_plain_language.plan.md) · Guardian PR slice: [`plans/phase_42_guardian_pr_spec.md`](plans/phase_42_guardian_pr_spec.md).
 
-When shipped:
-
-- **Comfort bands** replace raw “Setpoints” in farmer nav; Advanced keeps the table.
-- Guardian **conversation starters** on Targets / schedules / rules pages (snapshot-aware, not generic status questions).
-- **Rule-assisted matchers** open Confirm cards for `patch_rule`, `patch_schedule`, `patch_fertigation_program` when operators ask in plain language (tools already exist; matchers are new in 42).
+- **Grow → Targets & schedules** (`/comfort-targets`) — comfort bands, humanized schedules, one-line rules with toggles. **Advanced** keeps raw `/setpoints`, `/automation`, `/schedules` with `PowerUserBanner` escape hatch.
+- **ComfortBandEditor** shared with zone Climate tab (too low / just right / too high).
+- Guardian **conversation starters** on all three tabs (`buildComfortHubStarters`, `buildSchedulesFarmerStarters`, `buildRulesFarmerStarters`).
+- **Rule-assisted matchers:** `matchComfortAutomationIntent` (patch_rule, lights schedule, EC) after `matchFeedingProgramIntent` and config matchers in `matchFreshProposal`.
 - **Not Phase 46:** NL→PR when matchers miss remains [Phase 46](plans/phase_46_guardian_llm_tool_proposals.plan.md).
 
-Operator walkthrough: [operator-tour §5c](operator-tour.md#5c-comfort-bands--what-runs-when-phase-42--planned) · Guardian: [operator-tour §6e](operator-tour.md#6e-guardian-on-comfort--automation-phase-42--planned).
+Operator walkthrough: [operator-tour §5c](operator-tour.md#5c-comfort-bands--what-runs-when-phase-42--shipped) · Guardian: [operator-tour §6e](operator-tour.md#6e-guardian-on-comfort--automation-phase-42--shipped).
 
 ### 7.0i Operations hub — supplies, feeding, money (Phase 43 — planned)
 

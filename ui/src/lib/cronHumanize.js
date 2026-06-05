@@ -58,3 +58,15 @@ export function scheduleRunsLabel(schedule) {
   if (human) return human
   return schedule.name || 'Scheduled'
 }
+
+/**
+ * Build a daily cron expression from local clock time (Phase 42).
+ * @param {number} hour 0–23
+ * @param {number} [minute=0]
+ * @returns {string}
+ */
+export function buildDailyCron(hour, minute = 0) {
+  const h = Math.min(23, Math.max(0, Number(hour) || 0))
+  const m = Math.min(59, Math.max(0, Number(minute) || 0))
+  return `${m} ${h} * * *`
+}

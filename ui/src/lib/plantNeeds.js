@@ -40,8 +40,8 @@ export const NEED_META = {
     icon: '🌬️',
     description: 'Temperature, humidity, fans, vents, shade.',
     manageLinks: [
-      { to: '/automation', label: 'Automations' },
-      { to: '/setpoints', label: 'Comfort bands (farm-wide)' },
+      { to: '/comfort-targets', label: 'Targets & schedules' },
+      { to: '/automation', label: 'Automations (advanced)' },
     ],
   },
 }

@@ -1,5 +1,11 @@
 <template>
   <div class="p-6">
+    <PowerUserBanner
+      :farmer-link="{ path: '/comfort-targets', query: { tab: 'schedules' } }"
+      farmer-link-label="What runs when"
+      message="Cron expressions and preconditions live here. Use Grow → Targets for everyday schedule toggles and plain-language next run."
+      class="mb-6"
+    />
     <div class="flex items-center justify-between mb-6">
       <h1 class="text-xl font-semibold text-white">Automation Schedules</h1>
         <HelpTip position="bottom">
@@ -256,6 +262,7 @@ import { useFarmContextStore } from '../stores/farmContext'
 import HelpTip from '../components/HelpTip.vue'
 import ZoneContextBanner from '../components/ZoneContextBanner.vue'
 import EmptyStateHint from '../components/EmptyStateHint.vue'
+import PowerUserBanner from '../components/PowerUserBanner.vue'
 import { parseZoneIdQuery, filterSchedulesForZone } from '../lib/zoneContext.js'
 import api from '../api'
 
