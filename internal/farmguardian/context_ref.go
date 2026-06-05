@@ -16,6 +16,7 @@ type ContextRef struct {
 	ID   int64  `json:"id,omitempty"`
 	Name string `json:"name,omitempty"`
 	Path string `json:"path,omitempty"`
+	Tab  string `json:"tab,omitempty"`
 }
 
 // BuildContextRefBlock loads the referenced row and renders a focused prompt
@@ -36,7 +37,7 @@ func BuildContextRefBlock(ctx context.Context, q *db.Queries, farmID int64, ref 
 	case "crop_cycle", "cycle":
 		return renderCropCycleContext(ctx, q, farmID, ref.ID)
 	case "zone":
-		return renderZoneContext(ctx, q, farmID, ref.ID, ref.Name)
+		return renderZoneContext(ctx, q, farmID, ref)
 	default:
 		return ""
 	}
@@ -54,6 +55,9 @@ func renderRouteContext(path, nameHint string) string {
 	var b strings.Builder
 	b.WriteString("Operator UI context — viewing: " + label)
 	b.WriteString("\nRoute path: " + path)
+	if path == "/feeding" {
+		b.WriteString("\nFeed & water hub — prefer feeding plan language (next feed, last feed, reservoir). Use summarize_zone_fertigation when a room is in scope.")
+	}
 	b.WriteString("\nPrefer setup/how-to guidance for this screen; live rows still come from the snapshot and read tools only.")
 	return b.String()
 }
@@ -83,9 +87,10 @@ var knownRouteLabels = map[string]string{
 	"/actuators":         "Actuators",
 	"/schedules":         "Schedules",
 	"/automation":        "Automation",
-	"/setpoints":         "Setpoints",
+	"/feeding":           "Feed & water",
+	"/fertigation":       "Feeding (technical)",
+	"/setpoints":         "Comfort bands",
 	"/tasks":             "Tasks",
-	"/fertigation":       "Fertigation",
 	"/inventory":         "Inventory",
 	"/costs":             "Costs",
 	"/alerts":            "Alerts",
@@ -186,17 +191,23 @@ func renderCropCycleContext(ctx context.Context, q *db.Queries, farmID, cycleID 
 	return strings.TrimSpace(b.String())
 }
 
-func renderZoneContext(ctx context.Context, q *db.Queries, farmID, zoneID int64, nameHint string) string {
-	z, err := q.GetZoneByID(ctx, zoneID)
+func renderZoneContext(ctx context.Context, q *db.Queries, farmID int64, ref ContextRef) string {
+	z, err := q.GetZoneByID(ctx, ref.ID)
 	if err != nil || z.FarmID != farmID {
 		return ""
 	}
 	name := z.Name
 	if name == "" {
-		name = strings.TrimSpace(nameHint)
+		name = strings.TrimSpace(ref.Name)
 	}
 	var b strings.Builder
 	b.WriteString(fmt.Sprintf("Operator focus — zone #%d: %s", z.ID, name))
+	if tab := strings.TrimSpace(ref.Tab); tab == "water" {
+		b.WriteString(" (Water / feeding plan tab)")
+		b.WriteString("\nPrefer feeding plan language — next feed, last feed, reservoir, water-only. Use summarize_zone_fertigation for program details.")
+	} else if tab != "" {
+		b.WriteString(fmt.Sprintf(" (%s tab)", tab))
+	}
 	if z.ZoneType != nil && *z.ZoneType != "" {
 		b.WriteString(fmt.Sprintf(" (%s)", *z.ZoneType))
 	}
@@ -207,7 +218,7 @@ func renderZoneContext(ctx context.Context, q *db.Queries, farmID, zoneID int64,
 	// Phase 33 WS2: carry the same latest sensor readings summarize_zone would
 	// render, so this focus block is the single, complete zone block for the
 	// turn (EnrichPromptBlock skips summarize_zone for this zone).
-	if readings, rerr := renderZoneSensorReadings(ctx, q, zoneID); rerr == nil && readings != "" {
+	if readings, rerr := renderZoneSensorReadings(ctx, q, z.ID); rerr == nil && readings != "" {
 		b.WriteString(readings)
 	}
 	if meta, _, err := zonephotos.ParseMeta(z.MetaData); err == nil && len(meta.PhotoAttachmentIDs) > 0 {

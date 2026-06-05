@@ -135,6 +135,16 @@ func execPatchFertigationProgram(ctx context.Context, deps ExecutorDeps, args ma
 	} else if v != nil {
 		isActive = *v
 	}
+	irrigationOnly := prog.IrrigationOnly
+	if v, err := optionalBoolFromArgs(args, "irrigation_only"); err != nil {
+		return nil, err
+	} else if v != nil {
+		irrigationOnly = *v
+	}
+	recipeID := prog.ApplicationRecipeID
+	if irrigationOnly {
+		recipeID = nil
+	}
 	totalVol := prog.TotalVolumeLiters
 	if v, err := optionalFloat64FromArgs(args, "total_volume_liters"); err != nil {
 		return nil, err
@@ -146,14 +156,16 @@ func execPatchFertigationProgram(ctx context.Context, deps ExecutorDeps, args ma
 		totalVol = n
 	}
 	row, err := deps.Q.UpdateProgram(ctx, db.UpdateProgramParams{
-		ID:                programID,
-		Name:              prog.Name,
-		Description:       prog.Description,
-		ReservoirID:       prog.ReservoirID,
-		TargetZoneID:      prog.TargetZoneID,
-		EcTargetID:        ecTarget,
-		TotalVolumeLiters: totalVol,
-		IsActive:          isActive,
+		ID:                  programID,
+		Name:                prog.Name,
+		Description:         prog.Description,
+		ReservoirID:         prog.ReservoirID,
+		TargetZoneID:        prog.TargetZoneID,
+		EcTargetID:          ecTarget,
+		TotalVolumeLiters:   totalVol,
+		IsActive:            isActive,
+		IrrigationOnly:      irrigationOnly,
+		ApplicationRecipeID: recipeID,
 	})
 	if err != nil {
 		return nil, err

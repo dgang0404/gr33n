@@ -130,6 +130,9 @@ func matchFreshProposal(
 	if packArgs, packSummary, okPack := matchSetupPackIntent(ctx, q, farmID, question, snap); okPack {
 		return "apply_grow_setup_pack", packArgs, packSummary, true
 	}
+	if toolID, args, summary, okFeed := matchFeedingProgramIntent(ctx, q, farmID, question, snap); okFeed {
+		return toolID, args, summary, true
+	}
 	return matchConfigToolIntent(question, snap)
 }
 

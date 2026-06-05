@@ -199,10 +199,13 @@ func matchSummarizeZoneFertigationIntent(question string) bool {
 		return false
 	}
 	for _, term := range []string{
-		"fertigation", "feeding program", "feed program", "nutrient program",
+		"fertigation", "feeding program", "feed program", "feeding plan", "nutrient program",
 		"watering program", "irrigation program", "fert program",
+		"next feed", "last feed", "run feed", "feed now",
+		"water only", "plain water", "irrigation only", "water-only",
+		"reservoir", "reservoir low", "needs top-up",
 		"ec trigger", "ph trigger", "ec target", "ph target",
-		"setpoint", "set point", "feeding schedule",
+		"feeding schedule", "feed timing",
 	} {
 		if strings.Contains(lower, term) {
 			return true

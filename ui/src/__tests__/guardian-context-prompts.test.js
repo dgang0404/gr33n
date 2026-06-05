@@ -3,7 +3,7 @@ import {
   buildZoneGuardianContextRef,
   buildZoneGuardianPrompt,
 } from '../lib/guardianContextPrompts.js'
-import { buildZoneStarters } from '../lib/guardianStarters.js'
+import { buildZoneStarters, buildFeedingHubStarters } from '../lib/guardianStarters.js'
 
 describe('Phase 40 WS7b — contextual zone Guardian prompts', () => {
   const zone = { id: 3, name: 'Flower Room' }
@@ -53,5 +53,24 @@ describe('Phase 40 WS7b — contextual zone Guardian prompts', () => {
     expect(starters.length).toBeGreaterThan(0)
     expect(starters.length).toBeLessThanOrEqual(5)
     expect(starters[0].message).toContain('alert #1')
+  })
+
+  it('builds Phase 47 water tab feeding starters', () => {
+    const starters = buildZoneStarters('zone_water', {
+      zone,
+      activeProgramName: 'Flower FFJ',
+    })
+    expect(starters.map((s) => s.id)).toEqual(['next-feed', 'run-feed-safe', 'water-only'])
+    expect(starters[0].message).toContain('next feed')
+    expect(starters[0].contextRef.tab).toBe('water')
+  })
+
+  it('builds feeding hub starters for a focused room', () => {
+    const starters = buildFeedingHubStarters({
+      zones: [{ id: 3, name: 'Flower Room' }],
+      zoneContextId: 3,
+    })
+    expect(starters[0].id).toBe('next-feed')
+    expect(starters[0].message).toContain('Flower Room')
   })
 })

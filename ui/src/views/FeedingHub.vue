@@ -16,6 +16,8 @@
       </button>
     </div>
 
+    <GuardianStarterChips :starters="feedingStarters" />
+
     <ZoneContextBanner
       v-if="zoneContextId"
       :zone-id="zoneContextId"
@@ -112,7 +114,9 @@ import { useFarmStore } from '../stores/farm.js'
 import { useFarmContextStore } from '../stores/farmContext.js'
 import ZoneContextBanner from '../components/ZoneContextBanner.vue'
 import EmptyStateHint from '../components/EmptyStateHint.vue'
+import GuardianStarterChips from '../components/GuardianStarterChips.vue'
 import { parseZoneIdQuery } from '../lib/zoneContext.js'
+import { buildFeedingHubStarters } from '../lib/guardianStarters.js'
 import {
   buildFarmFeedingCards,
   filterFeedingCardsByZone,
@@ -144,6 +148,14 @@ const feedingCards = computed(() =>
 
 const filteredCards = computed(() =>
   filterFeedingCardsByZone(feedingCards.value, zoneContextId.value),
+)
+
+const feedingStarters = computed(() =>
+  buildFeedingHubStarters({
+    zones: store.zones,
+    zoneContextId: zoneContextId.value,
+    zoneName: zoneContextId.value ? zoneName(zoneContextId.value) : '',
+  }),
 )
 
 const advancedFeedingLink = computed(() => {

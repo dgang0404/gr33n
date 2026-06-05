@@ -130,6 +130,7 @@ func TestMatchSummarizeZoneFertigationIntent(t *testing.T) {
 		"what fertigation program runs in Veg Room?",
 		"show feeding programs for Flower Room",
 		"ec targets in the outdoor garden",
+		"When is the next feed for Flower Room?",
 	} {
 		if !matchSummarizeZoneFertigationIntent(q) {
 			t.Fatalf("expected fertigation intent for %q", q)

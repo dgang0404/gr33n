@@ -136,10 +136,13 @@ func patchFertigationImpact(args map[string]any) []string {
 			parts = append(parts, "set inactive")
 		}
 	}
-	if len(parts) == 0 {
-		return []string{"Update the fertigation program (no run triggered now)"}
+	if v, ok := args["irrigation_only"].(bool); ok && v {
+		parts = append(parts, "water-only irrigation")
 	}
-	return []string{"Update fertigation program: " + strings.Join(parts, ", ") + " (no run triggered now)"}
+	if len(parts) == 0 {
+		return []string{"Update the feeding plan (no run triggered now)"}
+	}
+	return []string{"Update feeding plan: " + strings.Join(parts, ", ") + " (no run triggered now)"}
 }
 
 func fertigationHints(program map[string]any) string {
