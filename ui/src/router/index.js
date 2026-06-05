@@ -28,6 +28,7 @@ import FeedingHub from '../views/FeedingHub.vue'
 import ComfortTargetsHub from '../views/ComfortTargetsHub.vue'
 import SuppliesHub from '../views/SuppliesHub.vue'
 import FeedingAdminHub from '../views/FeedingAdminHub.vue'
+import MoneyHub from '../views/MoneyHub.vue'
 import Login from '../views/Login.vue'
 
 const routes = [
@@ -51,7 +52,7 @@ const routes = [
   // Phase 43 — farmer operations hubs
   { path: '/operations/supplies', component: SuppliesHub, name: 'operations-supplies' },
   { path: '/operations/feeding', component: FeedingAdminHub, name: 'operations-feeding' },
-  { path: '/operations/money', component: Costs, name: 'operations-money' },
+  { path: '/operations/money', component: MoneyHub, name: 'operations-money' },
   { path: '/alerts',       component: Alerts,       name: 'alerts' },
   { path: '/plants',       component: Plants,       name: 'plants' },
   { path: '/animals',      component: Animals,      name: 'animals' },

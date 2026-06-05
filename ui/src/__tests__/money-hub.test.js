@@ -1,0 +1,61 @@
+import { describe, it, expect } from 'vitest'
+import {
+  computeMonthSummary,
+  formatSpendCategory,
+  buildMoneyActivityRow,
+  buildRecentMoneyRows,
+  formatMoney,
+} from '../lib/moneyHub.js'
+
+describe('Phase 43 WS4 — money hub helpers', () => {
+  const ref = new Date('2026-06-15')
+
+  it('computes this-month spend summary from transactions', () => {
+    const summary = computeMonthSummary([
+      { transaction_date: '2026-06-01', amount: 50, is_income: false },
+      { transaction_date: '2026-06-10', amount: 20, is_income: false },
+      { transaction_date: '2026-05-30', amount: 99, is_income: false },
+      { transaction_date: '2026-06-12', amount: 100, is_income: true },
+    ], ref)
+    expect(summary.expenses).toBe(70)
+    expect(summary.income).toBe(100)
+    expect(summary.net).toBe(30)
+    expect(summary.count).toBe(3)
+    expect(summary.monthLabel).toContain('June')
+  })
+
+  it('maps farmer spend category labels', () => {
+    expect(formatSpendCategory('miscellaneous')).toBe('Other')
+    expect(formatSpendCategory('labor_wages')).toBe('Labor')
+  })
+
+  it('builds activity rows without COA fields', () => {
+    const row = buildMoneyActivityRow({
+      id: 9,
+      transaction_date: '2026-06-02',
+      category: 'fertilizers_soil_amendments',
+      description: 'OHN restock',
+      amount: 42.5,
+      currency: 'USD',
+      is_income: false,
+      receipt_file_id: 3,
+    })
+    expect(row.label).toBe('OHN restock')
+    expect(row.categoryLabel).toBe('Supplies & inputs')
+    expect(row.hasReceipt).toBe(true)
+    expect(row.advancedLink).toEqual({ path: '/costs', query: { highlight: '9' } })
+  })
+
+  it('sorts recent rows newest first', () => {
+    const rows = buildRecentMoneyRows([
+      { id: 1, transaction_date: '2026-06-01', amount: 1, category: 'miscellaneous' },
+      { id: 2, transaction_date: '2026-06-10', amount: 2, category: 'miscellaneous' },
+    ])
+    expect(rows[0].id).toBe(2)
+  })
+
+  it('formats money amounts', () => {
+    expect(formatMoney(12.5)).toBe('12.50')
+    expect(formatMoney(null)).toBe('0.00')
+  })
+})
