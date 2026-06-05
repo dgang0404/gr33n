@@ -12,14 +12,28 @@
       </div>
     </div>
 
+    <ZoneContextBanner
+      v-if="zoneContextId"
+      :zone-id="zoneContextId"
+      :zone-name="zoneName(zoneContextId)"
+      page-label="Schedules"
+      :clear-route="{ path: '/schedules' }"
+    />
+
     <div v-if="loading" class="text-zinc-400 text-sm">Loading schedules…</div>
 
     <div v-else class="space-y-6">
       <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
         <h2 class="text-white text-sm font-semibold mb-3">Schedules</h2>
-        <p v-if="!schedules.length" class="text-zinc-500 text-sm">No schedules found.</p>
+        <EmptyStateHint
+          v-if="!filteredSchedules.length"
+          reason="automation_off"
+          message="No schedules found for this view."
+          action-label="Create schedule"
+          action-to="/schedules"
+        />
         <div v-else class="space-y-3">
-          <div v-for="s in schedules" :key="s.id" class="bg-zinc-950 border border-zinc-800 rounded-lg p-3">
+          <div v-for="s in filteredSchedules" :key="s.id" class="bg-zinc-950 border border-zinc-800 rounded-lg p-3">
             <div class="flex items-start justify-between gap-3">
               <div class="flex-1 min-w-0">
                 <p class="text-sm text-zinc-200 font-medium">{{ s.name }}</p>
@@ -235,11 +249,17 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import { useFarmStore } from '../stores/farm'
 import { useFarmContextStore } from '../stores/farmContext'
 import HelpTip from '../components/HelpTip.vue'
+import ZoneContextBanner from '../components/ZoneContextBanner.vue'
+import EmptyStateHint from '../components/EmptyStateHint.vue'
+import { parseZoneIdQuery, filterSchedulesForZone } from '../lib/zoneContext.js'
 import api from '../api'
+
+const route = useRoute()
 
 const store = useFarmStore()
 const farmContext = useFarmContextStore()
@@ -248,6 +268,7 @@ const runs = ref([])
 const programs = ref([])
 const tasks = ref([])
 const sensors = ref([])
+const lightingPrograms = ref([])
 const worker = ref({ running: false, simulation_mode: false })
 const loading = ref(false)
 const expandedSchedule = ref(null)
@@ -386,21 +407,46 @@ function taskZoneName(zoneId) {
   return store.zones.find(z => z.id === zoneId)?.name || ''
 }
 
+function zoneName(zoneId) {
+  return store.zones.find(z => z.id === zoneId)?.name || `Zone ${zoneId}`
+}
+
+const zoneContextId = computed(() => parseZoneIdQuery(route.query.zone_id))
+
+const filteredSchedules = computed(() => {
+  if (!zoneContextId.value) return schedules.value
+  const zone = store.zones.find((z) => z.id === zoneContextId.value)
+  return filterSchedulesForZone(
+    schedules.value,
+    zoneContextId.value,
+    zone?.name || '',
+    programs.value,
+    lightingPrograms.value,
+    tasks.value,
+  )
+})
+
+function applyZoneQueryFilter() {
+  // zone filter is read-only from URL; list uses filteredSchedules computed
+}
+
 async function refreshAll() {
   const fid = farmContext.farmId
   if (fid && (!store.zones.length || !store.sensors.length)) await store.loadAll(fid)
   loading.value = true
   try {
-    const [s, r, w, p] = await Promise.all([
+    const [s, r, w, p, lp] = await Promise.all([
       store.loadSchedules(fid),
       store.loadAutomationRuns(fid),
       api.get('/automation/worker/health'),
       store.loadFertigationPrograms(fid),
+      api.get(`/farms/${fid}/lighting-programs`).catch(() => ({ data: [] })),
     ])
     schedules.value = s
     runs.value = r
     worker.value = w.data || { running: false, simulation_mode: false }
     programs.value = p
+    lightingPrograms.value = lp.data?.programs ?? lp.data ?? []
     await store.loadTasks(fid)
     tasks.value = store.tasks
     sensors.value = Array.isArray(store.sensors) ? store.sensors : []
@@ -413,6 +459,8 @@ onMounted(async () => {
   try { await refreshAll() }
   finally { loading.value = false }
 })
+
+watch(() => route.query.zone_id, applyZoneQueryFilter)
 
 async function toggleSchedule(schedule) {
   const updated = await store.updateScheduleActive(schedule.id, !schedule.is_active)

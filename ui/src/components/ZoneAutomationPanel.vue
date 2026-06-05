@@ -6,8 +6,14 @@
         <p class="text-zinc-600 text-xs mt-0.5">Automations and schedules for this room.</p>
       </div>
       <div class="flex gap-3 text-xs">
-        <router-link to="/automation" class="text-zinc-500 hover:text-green-400">Automations →</router-link>
-        <router-link to="/schedules" class="text-zinc-500 hover:text-green-400">Schedules →</router-link>
+        <router-link
+          :to="{ path: '/automation', query: { zone_id: String(zoneId) } }"
+          class="text-zinc-500 hover:text-green-400"
+        >Automations →</router-link>
+        <router-link
+          :to="{ path: '/schedules', query: { zone_id: String(zoneId) } }"
+          class="text-zinc-500 hover:text-green-400"
+        >Schedules →</router-link>
       </div>
     </div>
 

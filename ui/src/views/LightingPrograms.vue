@@ -14,20 +14,33 @@
       </div>
     </div>
 
+    <ZoneContextBanner
+      v-if="zoneContextId"
+      :zone-id="zoneContextId"
+      :zone-name="zoneName(zoneContextId)"
+      page-label="Lighting"
+      back-to-zone-tab="light"
+      :clear-route="{ path: '/lighting' }"
+    />
+
     <!-- Error banner -->
     <div v-if="error" class="mb-4 px-4 py-2 text-sm text-red-400 bg-red-900/20 border border-red-800/40 rounded-lg">{{ error }}</div>
 
     <div v-if="loading" class="text-zinc-400 text-sm">Loading…</div>
 
-    <div v-else-if="!programs.length" class="text-zinc-500 text-sm py-12 text-center">
-      <div class="text-4xl mb-3">💡</div>
-      <p class="font-medium">No lighting programs yet.</p>
-      <p class="text-xs mt-1">Create one to manage photoperiod schedules for your grow lights.</p>
+    <div v-else-if="!filteredPrograms.length" class="text-zinc-500 text-sm py-12 text-center">
+      <EmptyStateHint
+        :reason="zoneContextId ? 'no_data' : 'no_data'"
+        :message="zoneContextId ? 'No lighting programs for this room yet.' : 'No lighting programs yet.'"
+        action-label="Create program"
+        :action-to="null"
+        @action="openCreate"
+      />
     </div>
 
     <div v-else class="space-y-3">
       <div
-        v-for="prog in programs"
+        v-for="prog in filteredPrograms"
         :key="prog.id"
         class="bg-zinc-900 border border-zinc-800 rounded-xl p-4"
       >
@@ -53,6 +66,11 @@
               <span>🌐 {{ prog.timezone }}</span>
             </div>
             <div class="flex flex-wrap gap-2 mt-2">
+              <router-link
+                v-if="prog.zone_id"
+                :to="{ path: `/zones/${prog.zone_id}`, query: { tab: 'light' } }"
+                class="text-[11px] px-1.5 py-0.5 rounded bg-blue-900/30 text-blue-400 border border-blue-800/30 hover:bg-blue-900/50"
+              >Open zone →</router-link>
               <router-link
                 v-if="prog.schedule_on_id"
                 :to="{ path: '/schedules' }"
@@ -204,9 +222,16 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import api from '../api/index.js'
 import PhotoperiodClockEditor from '../components/PhotoperiodClockEditor.vue'
+import ZoneContextBanner from '../components/ZoneContextBanner.vue'
+import EmptyStateHint from '../components/EmptyStateHint.vue'
+import { parseZoneIdQuery } from '../lib/zoneContext.js'
+import { computeOffTime } from '../lib/lightingDisplay.js'
+
+const route = useRoute()
 
 // ── farm context ──────────────────────────────────────────────────────────────
 const farmId = computed(() => {
@@ -253,6 +278,17 @@ const lightActuators = computed(() =>
   actuators.value.filter(a => !a.deleted_at && (a.actuator_type === 'light' || a.actuator_type === 'grow_light'))
 )
 
+const zoneContextId = computed(() => parseZoneIdQuery(route.query.zone_id))
+
+function zoneName(zoneId) {
+  return zones.value.find((z) => z.id === zoneId)?.name || `Zone ${zoneId}`
+}
+
+const filteredPrograms = computed(() => {
+  if (!zoneContextId.value) return programs.value
+  return programs.value.filter((p) => Number(p.zone_id) === zoneContextId.value)
+})
+
 // ── load ──────────────────────────────────────────────────────────────────────
 async function load() {
   if (!farmId.value) return
@@ -276,14 +312,9 @@ async function load() {
 
 onMounted(load)
 
-// ── helpers ───────────────────────────────────────────────────────────────────
-function computeOffTime(lightsOnAt, onHours) {
-  if (!lightsOnAt) return '—'
-  const [h, m] = lightsOnAt.split(':').map(Number)
-  const total = (h * 60 + m + onHours * 60) % (24 * 60)
-  return `${String(Math.floor(total / 60)).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}`
-}
+watch(() => route.query.zone_id, () => {})
 
+// ── helpers ───────────────────────────────────────────────────────────────────
 function presetLabel(metadata) {
   try {
     const meta = typeof metadata === 'string' ? JSON.parse(metadata) : metadata

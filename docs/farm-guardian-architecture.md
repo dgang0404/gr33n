@@ -309,17 +309,38 @@ Sidebar **Advanced** (Rules, Setpoints, Controls, Sensors) remains for power use
 
 When answering “how do I run my room?”, direct operators to **Zones → Water / Light / Climate** first, then Advanced pages. Operator walkthrough: [operator-tour §4a](operator-tour.md#4a-plant-needs-per-zone-phase-38).
 
-### 7.0f Zone cockpit (Phase 40 — planned)
+### 7.0f Zone cockpit (Phase 40)
 
-**Doc stub.** Plan: [`plans/phase_40_unified_farmer_ux_zone_cockpit.plan.md`](plans/phase_40_unified_farmer_ux_zone_cockpit.plan.md).
+**Shipped.** Plan: [`plans/phase_40_unified_farmer_ux_zone_cockpit.plan.md`](plans/phase_40_unified_farmer_ux_zone_cockpit.plan.md). Operator walkthrough: [operator-tour §4b](operator-tour.md#4b-zone-cockpit-walkthrough-phase-40).
 
-When shipped: operators edit **setpoints**, **ack alerts**, and read **today’s schedule/rules** inside the zone hub. Guardian should prefer **zone-scoped** answers and propose/confirm paths that match inline edits — not “open Setpoints page.” Water tab shows **grow story** (last event, next run, queue) after Phase 39. Operator walkthrough: [operator-tour §4b](operator-tour.md#4b-zone-cockpit-walkthrough-phase-40--planned).
+| Surface | Operator intent | Guardian behavior |
+|---------|-----------------|-------------------|
+| **Overview → Today strip** | “What matters in this room now?” | Cite next schedule, active rule count, unread zone alerts, queue depth, tasks due — from zone snapshot tools (`summarize_zone_*`) before farm-wide lists |
+| **Comfort targets** (need tabs) | “Fix humidity band here” | Prefer **`patch_setpoint`** / inline comfort-target language; do **not** default to “open Setpoints page” on grow routes |
+| **Zone alerts panel** | “Clear this room’s alert” | Ack/mark-read in zone; link farm-wide Alerts only for history |
+| **What runs when** | “What automations apply here?” | Zone-filtered schedules + rules; Confirm paths for `patch_schedule` / `patch_rule` when operator asks in plain language |
+| **Water grow story** | “When did we last feed? What’s queued?” | Use fertigation summary + queue depth; after Phase 39, reference **mix then pulse** order — not legacy `pending_command` only |
+| **Ask gr33n starters** | Contextual one-tap questions | Starters are **zone + tab aware** (Overview / Water / Light / Climate); avoid generic “what’s my farm status?” on zone pages |
+| **Power settings hint** | Escape hatch to Advanced | OK to link `/setpoints`, `/automation`, `/schedules` for expression editing — secondary to zone cockpit |
 
-### 7.0g Farm hub coherence (Phase 41 — planned)
+**Nav:** sidebar leads with **My rooms** and **Ask gr33n**; **Advanced** stays collapsed for power users ([`navGroups.js`](../ui/src/lib/navGroups.js)).
 
-**Doc stub.** Plan: [`plans/phase_41_farm_hub_coherence.plan.md`](plans/phase_41_farm_hub_coherence.plan.md).
+**Not in Phase 40:** replacing farm-wide Setpoints/Automation/Schedules CRUD; autonomous zone changes without Confirm; merging fertigation EC matrix into the zone card (zone shows **active** program story only).
 
-When shipped: **Dashboard** morning summary, **Fertigation** pages honor `?zone_id=`, **why-empty** hints on empty widgets, and farm-wide lists deep-link back to the zone. Guardian morning questions (“what should I do first?”) should cite Dashboard/tasks/alerts before sending operators to six sidebar hops.
+### 7.0g Farm hub coherence (Phase 41)
+
+**Shipped.** Plan: [`plans/phase_41_farm_hub_coherence.plan.md`](plans/phase_41_farm_hub_coherence.plan.md). Operator walkthrough: [operator-tour §3b](operator-tour.md#3b-farm-hub--morning-path-phase-41).
+
+| Surface | Operator intent | Guardian behavior |
+|---------|-----------------|-------------------|
+| **Dashboard morning strip** | “What should I do first on the farm?” | Cite tasks due, unread alerts, next schedule, offline devices, queue depth before sending operators to six sidebar pages |
+| **`?zone_id=` on farm routes** | “I came from Flower Room — keep that lens” | Honor zone filter on Tasks, Alerts, Schedules, Automation, Fertigation, Lighting; breadcrumb back to zone tab |
+| **Why-empty hints** | “Why is this list blank?” | One sentence + action link (`no_data`, `no_telemetry`, `no_setpoint`, `automation_off`) — not apologetic boilerplate |
+| **Fertigation hub** | “Details for this room’s water” | Zone banner + back to **Zones → Water**; events filtered; programs highlighted for zone |
+
+**Not Phase 41:** merging fertigation tabs into one route; replacing Tasks Kanban; new notification types; enterprise multi-site dashboard.
+
+When answering “what should I do first?”, prefer **Dashboard → Tasks → Alerts** over scattering links across Advanced nav.
 
 ### 7.0h Comfort targets & automation (Phase 42 — planned)
 

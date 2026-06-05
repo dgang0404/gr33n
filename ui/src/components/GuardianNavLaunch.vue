@@ -1,5 +1,5 @@
 <template>
-  <div v-if="visible" class="border-t border-gray-800 pt-2" data-test="guardian-nav-launch">
+  <div v-if="visible" class="rounded-lg bg-gray-800/40 mb-1" data-test="guardian-nav-launch">
     <button
       type="button"
       class="w-full flex items-center rounded-lg text-sm text-green-400 hover:text-green-300 hover:bg-gray-800 transition-colors"
@@ -10,7 +10,7 @@
       @click="openDrawer"
     >
       <span class="text-lg shrink-0" aria-hidden="true">✨</span>
-      <span v-if="!collapsed" class="flex-1 min-w-0 text-left font-semibold">Farm Guardian</span>
+      <span v-if="!collapsed" class="flex-1 min-w-0 text-left font-semibold">Ask gr33n</span>
       <span
         v-if="!collapsed && proposalsStore.pendingCount > 0"
         class="min-w-[1.125rem] h-[1.125rem] px-1 rounded-full bg-amber-600 text-[10px] font-bold text-amber-950 flex items-center justify-center shrink-0"
@@ -19,15 +19,6 @@
         {{ proposalsStore.pendingCount > 9 ? '9+' : proposalsStore.pendingCount }}
       </span>
     </button>
-    <RouterLink
-      v-if="!collapsed"
-      to="/chat"
-      class="mt-1 block px-3 text-[10px] text-zinc-500 hover:text-zinc-300"
-      data-test="guardian-nav-full-page"
-      title="Full-page chat and session history"
-    >
-      Full page chat →
-    </RouterLink>
   </div>
 </template>
 

@@ -11,7 +11,10 @@
           {{ unreadCount }} open
         </span>
       </div>
-      <router-link to="/alerts" class="text-xs text-green-600 hover:text-green-400">
+      <router-link
+        :to="{ path: '/alerts', query: { zone_id: String(zoneId) } }"
+        class="text-xs text-green-600 hover:text-green-400"
+      >
         All farm alerts →
       </router-link>
     </div>

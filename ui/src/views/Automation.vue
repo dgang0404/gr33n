@@ -18,17 +18,29 @@
       </div>
     </div>
 
+    <ZoneContextBanner
+      v-if="zoneContextId"
+      :zone-id="zoneContextId"
+      :zone-name="zoneName(zoneContextId)"
+      page-label="Automation"
+      :clear-route="{ path: '/automation' }"
+    />
+
     <div v-if="loading" class="text-zinc-400 text-sm">Loading automation rules…</div>
 
     <div v-else class="space-y-6">
       <!-- Rule list -->
       <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
         <h2 class="text-white text-sm font-semibold mb-3">Rules</h2>
-        <p v-if="!rules.length" class="text-zinc-500 text-sm">
-          No rules yet. Create one to react to sensor thresholds automatically.
-        </p>
+        <EmptyStateHint
+          v-if="!displayRules.length"
+          reason="automation_off"
+          message="No automation rules for this view yet."
+          action-label="Create rule"
+          action-to="/automation"
+        />
         <div v-else class="space-y-3">
-          <div v-for="rule in rules" :key="rule.id"
+          <div v-for="rule in displayRules" :key="rule.id"
             class="bg-zinc-950 border border-zinc-800 rounded-lg p-3">
             <div class="flex items-start justify-between gap-3">
               <div class="flex-1 min-w-0">
@@ -146,12 +158,18 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import { useFarmStore } from '../stores/farm'
 import { useFarmContextStore } from '../stores/farmContext'
 import HelpTip from '../components/HelpTip.vue'
 import RuleForm from '../components/RuleForm.vue'
+import ZoneContextBanner from '../components/ZoneContextBanner.vue'
+import EmptyStateHint from '../components/EmptyStateHint.vue'
+import { parseZoneIdQuery, filterRulesForZone } from '../lib/zoneContext.js'
 import api from '../api'
+
+const route = useRoute()
 
 const store = useFarmStore()
 const farmContext = useFarmContextStore()
@@ -172,6 +190,23 @@ const zones = ref([])
 const worker = ref({ running: false, simulation_mode: false })
 
 const ruleRuns = computed(() => runs.value.filter(r => r.rule_id != null))
+
+const zoneContextId = computed(() => parseZoneIdQuery(route.query.zone_id))
+
+function zoneName(zoneId) {
+  return zones.value.find((z) => z.id === zoneId)?.name || `Zone ${zoneId}`
+}
+
+const displayRules = computed(() => {
+  if (!zoneContextId.value) return rules.value
+  const zone = zones.value.find((z) => z.id === zoneContextId.value)
+  return filterRulesForZone(
+    rules.value,
+    zoneContextId.value,
+    zone?.name || '',
+    sensors.value,
+  )
+})
 
 function ruleName(id) {
   return rules.value.find(r => r.id === id)?.name || ''

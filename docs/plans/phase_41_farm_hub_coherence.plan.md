@@ -8,25 +8,25 @@ overview: >
 todos:
   - id: ws1-dashboard-morning
     content: "WS1: Dashboard morning cockpit — farm-wide chips (tasks due, unread alerts, next schedule, queue depth); reuse grow-summary or parallel aggregate API"
-    status: pending
+    status: completed
   - id: ws2-fertigation-zone-context
     content: "WS2: Fertigation hub zone context — ?zone_id= preserves lens; default tab/events filter; 'back to zone Water' strip"
-    status: pending
+    status: completed
   - id: ws3-cross-page-deep-links
     content: "WS3: Schedules / Tasks / Events / Alerts — zone filter query param + breadcrumb when opened from zone"
-    status: pending
+    status: completed
   - id: ws4-why-empty-ux
     content: "WS4: Why-empty inline hints — reusable EmptyStateHint component (no telemetry / no setpoint / automation off / wrong farm)"
-    status: pending
+    status: completed
   - id: ws5-seed-zone-tasks
     content: "WS5: Seed + demo data — tasks with zone_id for zone Overview strip (unblocks 40 WS6 demos)"
-    status: pending
+    status: completed
   - id: ws6-lighting-farm-link
     content: "WS6: /lighting ↔ zone Light tab — consistent copy; zone page links program; lighting page shows zone filter"
-    status: pending
+    status: completed
   - id: ws7-docs-tests
     content: "WS7: operator-tour §3 farm hub; architecture §7.0g; Vitest dashboard + fertigation zone context; OC-41 closure"
-    status: pending
+    status: completed
 isProject: false
 ---
 
@@ -34,7 +34,7 @@ isProject: false
 
 ## Status
 
-**Planned — chapter 2 of 8** in the [Farmer UX roadmap (40–47)](farmer_ux_roadmap_40_plus.plan.md). Depends on **Phase 40**. Feeding hub deep links → **47** after 41; comfort/setpoints → **42**; operations → **43**.
+**Shipped — chapter 2 of 8** in the [Farmer UX roadmap (40–47)](farmer_ux_roadmap_40_plus.plan.md). Depends on **Phase 40** ✅. **OC-41** closed (WS7). Next: **Phase 47** feeding & water plain language (or **42** comfort targets).
 
 **Indexed in:** [`pre_development_gaps_index.plan.md`](pre_development_gaps_index.plan.md) (gap **A3**).
 
@@ -191,13 +191,13 @@ WS4 + WS5 unblock demos; WS1 delivers morning cockpit value.
 
 ## Definition of done
 
-- [ ] Dashboard morning strip with tasks, alerts, schedule, devices, queue
-- [ ] Fertigation respects `?zone_id=` + back to zone Water
-- [ ] Tasks/Schedules/Alerts accept zone filter from zone links
-- [ ] Why-empty hints on ≥5 major surfaces
-- [ ] Demo tasks carry `zone_id`
-- [ ] Lighting page ↔ zone Light consistent
-- [ ] operator-tour §3 + architecture §7.0g + Vitest + OC-41
+- [x] Dashboard morning strip with tasks, alerts, schedule, devices, queue
+- [x] Fertigation respects `?zone_id=` + back to zone Water
+- [x] Tasks/Schedules/Alerts accept zone filter from zone links
+- [x] Why-empty hints on ≥5 major surfaces
+- [x] Demo tasks carry `zone_id`
+- [x] Lighting page ↔ zone Light consistent
+- [x] operator-tour §3 + architecture §7.0g + Vitest + OC-41
 
 ---
 

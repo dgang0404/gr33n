@@ -47,10 +47,10 @@ todos:
     status: done
   - id: oc-40-closure
     content: "OC-40: Phase 40 WS8 — zone cockpit operator-tour §4b, architecture §7.0f, Vitest inline setpoints + Today strip (close when Phase 40 ships, not before)"
-    status: pending
+    status: done
   - id: oc-41-closure
     content: "OC-41: Phase 41 WS7 — farm hub operator-tour §3, architecture §7.0g, why-empty Vitest (close when Phase 41 ships, after 40)"
-    status: pending
+    status: completed
   - id: oc-42-closure
     content: "OC-42: Phase 42 WS7 — comfort targets + plain automation docs/tests (close when Phase 42 ships)"
     status: pending
@@ -231,11 +231,11 @@ Feature detail: [`phase_39_edge_fertigation_execution.plan.md`](phase_39_edge_fe
 | Phase **39** + **39b** runtime (queue, mix, irrigation_only) | **Yes** | ✅ OC-39, OC-39b |
 | **bug-guardian-nav** hotfix | **Yes** (UX baseline) | ✅ |
 | **Product backlog** B1–B4 | **Yes** (operator day-2; small diff) | ✅ code — ensure **committed** on `main` |
-| **OC-40-closure** (operator-tour §4b, Vitest cockpit, arch §7.0f) | **No** — this *is* Phase 40 **WS8** | ⏳ pending until Phase 40 ships |
-| **OC-41-closure** (farm hub tour, why-empty Vitest) | **No** — Phase **41** WS7 | ⏳ after Phase 40 |
+| **OC-40-closure** (operator-tour §4b, Vitest cockpit, arch §7.0f) | **No** — this *is* Phase 40 **WS8** | ✅ OC-40 |
+| **OC-41-closure** (farm hub tour, why-empty Vitest) | **Yes** — Phase **41** WS7 | ✅ closed |
 | Phase **41** feature work (dashboard hub, `?zone_id=`) | **No** | Planned after 40 |
 
-**Pending rows in this plan’s todo list:** only **OC-40** and **OC-41** are intentionally open — they track *future* closure, not missing pre-40 work. Do not block Phase 40 on them.
+**Pending rows in this plan’s todo list:** only **OC-41** (and OC-42+) are intentionally open — they track *future* closure. Phase 40 **OC-40** is closed.
 
 **Documentation gate (before Phase 40 code):** [guardian-change-requests-guide.md](../guardian-change-requests-guide.md) + [guardian_pr_ux_through_farmer_phases.plan.md](guardian_pr_ux_through_farmer_phases.plan.md) + per-phase Guardian specs **42–46** + [phase_47](phase_47_feeding_water_plain_language.plan.md) + [farmer-vocabulary.md](../farmer-vocabulary.md) + [farmer-sit-in-protocol.md](../workstreams/farmer-sit-in-protocol.md). **Green to start Phase 40.**
 
@@ -245,21 +245,30 @@ Feature detail: [`phase_39_edge_fertigation_execution.plan.md`](phase_39_edge_fe
 
 ## Phase 40 — Unified farmer UX (zone cockpit)
 
-Feature detail: [`phase_40_unified_farmer_ux_zone_cockpit.plan.md`](phase_40_unified_farmer_ux_zone_cockpit.plan.md). **Planned** after Phase 38; **WS5** best after Phase 39 queue.
+Feature detail: [`phase_40_unified_farmer_ux_zone_cockpit.plan.md`](phase_40_unified_farmer_ux_zone_cockpit.plan.md). **OC-40 complete** (WS1–WS8 shipped).
 
 | Area | Status | Notes |
 |------|--------|-------|
-| Guardian nav hotfix | ✅ | `bug-guardian-nav` — pinned sidebar launch + TopBar; edge tab icon-only on right |
-| Today strip + inline setpoints | ⏳ | WS1–WS2 |
-| Zone rules/schedules/alerts | ⏳ | WS3–WS4 |
-| Water grow story | ⏳ | WS5 — extends 39 WS7 |
-| OC-40 docs/tests | ⏳ | WS8 |
+| Guardian nav hotfix | ✅ | `bug-guardian-nav` — Ask gr33n top of sidebar; full-page chat under System |
+| Today strip + inline comfort targets | ✅ | WS1–WS2 — `ZoneTodayStrip`, `ZoneComfortTargets` |
+| Zone rules/schedules/alerts | ✅ | WS3–WS4 — `ZoneAutomationPanel`, `ZoneAlertsPanel` |
+| Water grow story + zone tasks | ✅ | WS5–WS6 — `ZoneWaterGrowStory`, `ZoneTasksPanel` |
+| Nav IA + Guardian starters | ✅ | WS7–WS7b — `navGroups.js`, `GuardianStarterChips` |
+| OC-40 docs/tests | ✅ | WS8 — operator-tour §4b, architecture §7.0f, `zone-cockpit.test.js` |
 
 ## Phase 41 — Farm hub coherence
 
-Feature detail: [`phase_41_farm_hub_coherence.plan.md`](phase_41_farm_hub_coherence.plan.md). **OC-41** when WS7 lands. **After Phase 40.**
+Feature detail: [`phase_41_farm_hub_coherence.plan.md`](phase_41_farm_hub_coherence.plan.md). **OC-41** closed (WS7).
 
-## Phases 42–47 — Farmer UX + Guardian PR completion
+| Area | Status | Notes |
+|------|--------|-------|
+| Dashboard morning cockpit | ✅ | WS1 — `FarmMorningStrip`, `farmGrowSummary.js` |
+| Fertigation `?zone_id=` | ✅ | WS2 — `ZoneContextBanner`, program highlight |
+| Cross-page zone filter | ✅ | WS3 — Tasks, Schedules, Alerts, Automation |
+| Why-empty hints | ✅ | WS4 — `EmptyStateHint.vue` |
+| Seed tasks `zone_id` | ✅ | WS5 — `master_seed.sql` comment + demo rows |
+| Lighting ↔ zone Light | ✅ | WS6 — `/lighting?zone_id=`, shared copy |
+| OC-41 docs/tests | ✅ | WS7 — operator-tour §3b, architecture §7.0g, Vitest |
 
 **Master roadmap:** [`farmer_ux_roadmap_40_plus.plan.md`](farmer_ux_roadmap_40_plus.plan.md). Closure rows **OC-42 … OC-47** track each phase WS8/WS7 — not pre-40 work. Vocabulary: [`farmer-vocabulary.md`](../farmer-vocabulary.md). Guardian specs: [42](phase_42_guardian_pr_spec.md) · [43](phase_43_guardian_pr_spec.md) · [44](phase_44_guardian_pr_spec.md) · [45](phase_45_guardian_pr_spec.md) · [46](phase_46_guardian_llm_tool_proposals.plan.md).
 
@@ -272,18 +281,7 @@ Feature detail: [`phase_41_farm_hub_coherence.plan.md`](phase_41_farm_hub_cohere
 | [45](phase_45_farmer_validation_whole_app_polish.plan.md) | Sit-in + whole-app polish |
 | [46](phase_46_guardian_llm_tool_proposals.plan.md) | LLM tool proposals (hybrid C) |
 
-| Area | Status | Notes |
-|------|--------|-------|
-| Dashboard morning cockpit | ⏳ | WS1 |
-| Fertigation `?zone_id=` | ⏳ | WS2 |
-| Cross-page zone filter | ⏳ | WS3 |
-| Why-empty hints | ⏳ | WS4 — closes sit-in §1 |
-| Seed tasks `zone_id` | ⏳ | WS5 |
-| Lighting ↔ zone Light | ⏳ | WS6 |
-
----
-
-| Area | Depends on | Notes |
+## Phases 42–47 — Farmer UX + Guardian PR completion
 |------|------------|-------|
 | `device_commands` queue | WS1 | **Fixes last-write-wins** for all actuators + mix |
 | Mix calculator + `mix_batch` | WS2–WS3 | Recipe + base EC + target |

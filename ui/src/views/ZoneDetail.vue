@@ -28,6 +28,8 @@
     <div v-if="!zone" class="text-zinc-500 text-sm">Zone not found.</div>
 
     <template v-else>
+      <ZoneAdvancedHint class="mb-2" />
+
       <div class="flex flex-wrap gap-1 border-b border-zinc-800">
         <button
           v-for="tab in zoneTabs"
@@ -54,12 +56,17 @@
         :rules="rules"
         :programs="programs"
         :active-program="activeProgram"
+        :ec-targets="ecTargets"
+        :reservoirs="reservoirs"
         :actuator-events="actuatorEvents"
+        :fertigation-events="zoneEvents"
         :toggling="toggling"
         @toggle-actuator="toggleActuator"
         @refresh-events="loadEvents"
         @setpoints-updated="loadSetpoints"
         @rules-updated="loadRules"
+        @water-refreshed="onWaterRefreshed"
+        @plan-updated="refreshFeedingPlan"
       />
 
       <ZoneNeedSection
@@ -114,6 +121,13 @@
           @refresh="refreshZoneAlerts"
         />
 
+        <ZoneTasksPanel
+          v-if="zone"
+          :zone-id="zoneId"
+          :tasks="tasks"
+          @refresh="refreshZoneTasks"
+        />
+
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
           <button
             type="button"
@@ -140,8 +154,8 @@
             <p class="text-white text-sm">{{ airSummary }}</p>
           </button>
           <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
-            <p class="text-zinc-400 text-xs mb-1">Open tasks</p>
-            <p class="text-white text-2xl font-semibold">{{ zoneTasks.length }}</p>
+            <p class="text-zinc-400 text-xs mb-1">Due today</p>
+            <p class="text-white text-2xl font-semibold">{{ zoneTasksDueToday.length }}</p>
           </div>
         </div>
 
@@ -169,26 +183,6 @@
           </div>
         </div>
 
-        <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
-          <div class="flex items-center justify-between mb-3">
-            <h2 class="text-sm font-semibold text-white">Schedules & tasks</h2>
-            <div class="flex gap-3">
-              <router-link to="/schedules" class="text-xs text-green-600 hover:text-green-400">Schedules →</router-link>
-              <router-link to="/tasks" class="text-xs text-green-600 hover:text-green-400">Tasks →</router-link>
-            </div>
-          </div>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <div class="bg-zinc-950 border border-zinc-800 rounded-lg p-3">
-              <p class="text-zinc-400 text-xs mb-1">Irrigation schedule</p>
-              <p v-if="zoneSchedule" class="text-zinc-200 text-sm">{{ zoneSchedule.name }}</p>
-              <p v-else class="text-zinc-500 text-sm">None linked</p>
-            </div>
-            <div class="bg-zinc-950 border border-zinc-800 rounded-lg p-3">
-              <p class="text-zinc-400 text-xs mb-1">Open tasks ({{ zoneTasks.length }})</p>
-              <p v-for="t in zoneTasks.slice(0, 3)" :key="t.id" class="text-zinc-300 text-xs truncate">{{ t.title }}</p>
-            </div>
-          </div>
-        </div>
       </template>
     </template>
   </div>
@@ -211,6 +205,9 @@ import GuardianStarterChips from '../components/GuardianStarterChips.vue'
 import ZoneNeedSection from '../components/ZoneNeedSection.vue'
 import ZoneTodayStrip from '../components/ZoneTodayStrip.vue'
 import ZoneAlertsPanel from '../components/ZoneAlertsPanel.vue'
+import ZoneTasksPanel from '../components/ZoneTasksPanel.vue'
+import ZoneAdvancedHint from '../components/ZoneAdvancedHint.vue'
+import { zoneTasksDueToday as filterZoneTasksDueToday } from '../lib/zoneTasks.js'
 import {
   buildZoneGuardianContextRef,
   buildZoneGuardianPrompt,
@@ -232,6 +229,8 @@ const photoError = ref('')
 
 const programs = ref([])
 const events = ref([])
+const ecTargets = ref([])
+const reservoirs = ref([])
 const actuatorEvents = ref([])
 const eventsLoading = ref(false)
 const schedules = ref([])
@@ -261,14 +260,10 @@ const activeProgram = computed(() =>
 const zoneEvents = computed(() =>
   events.value.filter(e => e.zone_id === zoneId.value).sort((a, b) => new Date(b.applied_at) - new Date(a.applied_at)),
 )
-const zoneSchedule = computed(() => {
-  const prog = activeProgram.value
-  if (!prog?.schedule_id) return null
-  return schedules.value.find(s => s.id === prog.schedule_id) || null
-})
 const zoneTasks = computed(() =>
   tasks.value.filter(t => t.zone_id === zoneId.value && t.status !== 'completed' && t.status !== 'cancelled'),
 )
+const zoneTasksDueToday = computed(() => filterZoneTasksDueToday(tasks.value, zoneId.value, 99))
 const zoneDevices = computed(() => store.devicesByZone(zoneId.value))
 
 const nextZoneSchedule = computed(() => {
@@ -297,7 +292,7 @@ const todaySnapshot = computed(() => {
     activeProgram: activeProgram.value,
     lightingPrograms: lightingPrograms.value,
     queueDepth: waterQueueDepth.value,
-    zoneTasks: zoneTasks.value,
+    zoneTasks: zoneTasksDueToday.value,
   })
 })
 
@@ -383,14 +378,18 @@ async function toggleActuator(a) {
 onMounted(async () => {
   if (!store.zones.length && farmId.value) await store.loadAll(farmId.value)
   const fid = farmId.value
-  const [p, e, s] = await Promise.all([
+  const [p, e, s, ec, res] = await Promise.all([
     store.loadFertigationPrograms(fid),
     store.loadFertigationEvents(fid),
     store.loadSchedules(fid),
+    store.loadEcTargets(fid),
+    store.loadReservoirs(fid),
   ])
   programs.value = p
   events.value = e
   schedules.value = s
+  ecTargets.value = ec
+  reservoirs.value = res
   await store.loadTasks(fid)
   tasks.value = store.tasks
   await loadSetpoints()
@@ -431,10 +430,37 @@ async function refreshZoneAlerts() {
   await store.loadAlerts(fid)
 }
 
+async function refreshFeedingPlan() {
+  const fid = farmId.value
+  if (!fid) return
+  const [p, s, ec, res] = await Promise.all([
+    store.loadFertigationPrograms(fid),
+    store.loadSchedules(fid),
+    store.loadEcTargets(fid),
+    store.loadReservoirs(fid),
+  ])
+  programs.value = p
+  schedules.value = s
+  ecTargets.value = ec
+  reservoirs.value = res
+  await loadWaterQueueDepth()
+}
+
+async function refreshZoneTasks() {
+  const fid = farmId.value
+  if (!fid) return
+  await store.loadTasks(fid)
+  tasks.value = store.tasks
+}
+
+function onWaterRefreshed(status) {
+  waterQueueDepth.value = status?.queue_depth ?? 0
+}
+
 async function loadWaterQueueDepth() {
   waterQueueDepth.value = 0
   const prog = activeProgram.value
-  if (!prog?.id || prog.irrigation_only) return
+  if (!prog?.id) return
   try {
     const token = store.token || localStorage.getItem('token')
     const r = await fetch(`/fertigation/programs/${prog.id}/water-status`, {

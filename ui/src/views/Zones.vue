@@ -1,7 +1,7 @@
 <template>
   <div class="p-6">
     <div class="flex items-center justify-between mb-2">
-      <h1 class="text-xl font-semibold text-white">Zones</h1>
+      <h1 class="text-xl font-semibold text-white">My rooms</h1>
       <button @click="showCreateForm = true"
         class="px-3 py-1.5 bg-green-700 hover:bg-green-600 text-white text-xs rounded-lg">
         + New Zone
@@ -81,8 +81,8 @@
         </router-link>
         <div class="flex gap-2 mt-3 pt-3 border-t border-zinc-800">
           <AskGuardianButton
-            :prefilled-message="`What's the current status of ${zone.name}?`"
-            :context-ref="{ type: 'zone', id: zone.id, name: zone.name }"
+            :prefilled-message="zoneListGuardianPrompt(zone)"
+            :context-ref="zoneListGuardianRef(zone)"
           />
           <button @click.prevent="startEdit(zone)"
             class="text-xs text-zinc-400 hover:text-zinc-200">Edit</button>
@@ -100,6 +100,10 @@ import { useFarmStore } from '../stores/farm'
 import { useFarmContextStore } from '../stores/farmContext'
 import AskGuardianButton from '../components/AskGuardianButton.vue'
 import { countZoneUnreadAlerts } from '../lib/zoneGrowSummary.js'
+import {
+  buildZoneGuardianContextRef,
+  buildZoneGuardianPrompt,
+} from '../lib/guardianContextPrompts.js'
 
 const store = useFarmStore()
 const farmContext = useFarmContextStore()
@@ -121,6 +125,26 @@ function zoneReservoirs(zoneId) { return reservoirs.value.filter(r => r.zone_id 
 function zoneUnreadAlerts(zoneId) {
   const z = store.zones.find((x) => x.id === zoneId)
   return countZoneUnreadAlerts(store.alerts, store.sensorsByZone(zoneId), z?.name || '')
+}
+
+function zoneListGuardianPrompt(zone) {
+  const unread = store.alerts.filter(
+    (a) => !a.is_read && !a.is_acknowledged
+      && (a.subject_rendered?.includes(zone.name) || a.message_text_rendered?.includes(zone.name)),
+  )
+  return buildZoneGuardianPrompt({
+    zone,
+    unreadAlerts: unread,
+    offlineDevices: store.devicesByZone(zone.id).filter((d) => d.status !== 'online').length,
+  })
+}
+
+function zoneListGuardianRef(zone) {
+  const unread = store.alerts.filter(
+    (a) => !a.is_read && !a.is_acknowledged
+      && (a.subject_rendered?.includes(zone.name) || a.message_text_rendered?.includes(zone.name)),
+  )
+  return buildZoneGuardianContextRef({ zone, unreadAlerts: unread })
 }
 
 onMounted(async () => {

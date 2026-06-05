@@ -21,6 +21,11 @@
       </button>
     </div>
 
+    <!-- Guardian — top of sidebar so operators need not scroll (Phase 40 WS7) -->
+    <div class="px-2 pt-2 shrink-0">
+      <GuardianNavLaunch :collapsed="collapsed" />
+    </div>
+
     <!-- Nav groups -->
     <nav class="flex-1 overflow-y-auto px-2 py-3 space-y-4">
       <div v-for="group in navGroups" :key="group.label">
@@ -41,10 +46,6 @@
         </div>
       </div>
     </nav>
-
-    <div class="px-2 shrink-0">
-      <GuardianNavLaunch :collapsed="collapsed" />
-    </div>
 
     <!-- Farm selector -->
     <div class="px-2 py-3 border-t border-gray-800 shrink-0">

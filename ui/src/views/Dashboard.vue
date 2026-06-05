@@ -20,6 +20,9 @@
       </button>
     </div>
 
+    <!-- Phase 41 WS1 — morning cockpit -->
+    <FarmMorningStrip :chips="morningChips" />
+
     <!-- Quick actions -->
     <section class="flex flex-wrap gap-3">
       <router-link to="/tasks?create=1"
@@ -69,10 +72,13 @@
             </div>
           </div>
         </div>
-        <p v-else class="text-sm text-zinc-600">
-          No tasks due today.
-          <span class="block text-xs text-zinc-500 mt-1">Add tasks from <router-link class="text-gr33n-500 hover:underline" to="/tasks">Tasks</router-link> or generate them via automation rules.</span>
-        </p>
+        <EmptyStateHint
+          v-else
+          reason="no_data"
+          message="No tasks due today."
+          action-label="Open Tasks"
+          action-to="/tasks"
+        />
       </section>
 
       <!-- Alerts -->
@@ -100,10 +106,13 @@
             <span class="text-[11px] text-zinc-600 shrink-0">{{ formatShort(a.created_at) }}</span>
           </div>
         </div>
-        <p v-else class="text-sm text-zinc-600">
-          No recent alerts.
-          <span class="block text-xs text-zinc-500 mt-1">Threshold breaches and failed runs create alerts — check <router-link class="text-gr33n-500 hover:underline" to="/automation">Rules</router-link> if you expected something here.</span>
-        </p>
+        <EmptyStateHint
+          v-else
+          reason="automation_off"
+          message="No recent alerts — thresholds and failed runs create them when rules are active."
+          action-label="Automation rules"
+          action-to="/automation"
+        />
       </section>
     </div>
 
@@ -126,10 +135,13 @@
             <span class="text-[10px] px-1.5 py-0.5 rounded bg-green-900/50 text-green-300 shrink-0">active</span>
           </div>
         </div>
-        <p v-else class="text-sm text-zinc-600">
-          No active schedules.
-          <span class="block text-xs text-zinc-500 mt-1"><router-link class="text-gr33n-500 hover:underline" to="/schedules">Create a schedule</router-link> for time-based watering, lights, or program ticks.</span>
-        </p>
+        <EmptyStateHint
+          v-else
+          reason="automation_off"
+          message="No active schedules — time-based watering, lights, and program ticks need one."
+          action-label="Create schedule"
+          action-to="/schedules"
+        />
       </section>
 
       <!-- Recent Fertigation Events -->
@@ -152,10 +164,13 @@
             </div>
           </div>
         </div>
-        <p v-else class="text-sm text-zinc-600">
-          No fertigation events yet.
-          <span class="block text-xs text-zinc-500 mt-1">After programs run, events appear here — open <router-link class="text-gr33n-500 hover:underline" to="/fertigation">Fertigation</router-link> to configure reservoirs and programs.</span>
-        </p>
+        <EmptyStateHint
+          v-else
+          reason="no_data"
+          message="No fertigation events yet — they appear after programs run or you log a feed."
+          action-label="Fertigation"
+          :action-to="{ path: '/fertigation', query: { tab: 'events' } }"
+        />
       </section>
     </div>
 
@@ -166,10 +181,11 @@
         <SensorTile v-for="s in store.sensors" :key="s.id"
           :sensor="s" :reading="store.readings[s.id]" />
       </div>
-      <div v-else class="text-sm text-gray-600">
-        No sensors found for this farm.
-        <p class="text-xs text-zinc-500 mt-1">Confirm the Pi or gateway is posting readings and the correct farm is selected. See <router-link class="text-gr33n-500 hover:underline" to="/operator-guide">Guide</router-link> · glossary <em>Sensor vs live reading</em>.</p>
-      </div>
+      <EmptyStateHint
+        v-else
+        reason="no_telemetry"
+        message="No sensors found for this farm — readings appear once hardware is registered and posting."
+      />
     </section>
 
     <!-- Zone cards -->
@@ -220,6 +236,10 @@ import { useFarmContextStore } from '../stores/farmContext'
 import SensorTile   from '../components/SensorTile.vue'
 import ActuatorCard from '../components/ActuatorCard.vue'
 import HelpTip from '../components/HelpTip.vue'
+import FarmMorningStrip from '../components/FarmMorningStrip.vue'
+import EmptyStateHint from '../components/EmptyStateHint.vue'
+import { computeFarmMorningSnapshot } from '../lib/farmGrowSummary.js'
+import { sumFarmPendingQueueDepth } from '../lib/farmQueueDepth.js'
 
 const store = useFarmStore()
 const farmContext = useFarmContextStore()
@@ -229,6 +249,17 @@ const fertigationEvents = ref([])
 const alerts = ref([])
 const unreadAlerts = ref(0)
 const programs = ref([])
+const queueDepth = ref(0)
+
+const morningChips = computed(() =>
+  computeFarmMorningSnapshot({
+    tasks: store.tasks,
+    alerts: alerts.value,
+    schedules: schedules.value,
+    devices: store.devices,
+    queueDepth: queueDepth.value,
+  }).chips,
+)
 
 const todayTasks = computed(() => {
   const today = new Date().toISOString().slice(0, 10)
@@ -314,6 +345,7 @@ async function refreshAll() {
   unreadAlerts.value = unread
   programs.value = prog
   await store.loadTasks(fid)
+  queueDepth.value = await sumFarmPendingQueueDepth(store.devices)
 }
 
 onMounted(() => refreshAll())

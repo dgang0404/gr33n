@@ -22,19 +22,19 @@ todos:
     status: done
   - id: ws5-water-story
     content: "WS5: Water 'grow story' — last fertigation event, next program run, queue head (39); collapse farm-wide Fertigation tabs to 'details' link"
-    status: pending
+    status: done
   - id: ws6-tasks-strip
     content: "WS6: Optional tasks due in zone on Overview — filter farm tasks by zone_id; quick complete/snooze"
-    status: pending
+    status: done
   - id: ws7-nav-ia
     content: "WS7: Nav IA polish — Grow-first labels; Guardian = drawer primary; Advanced collapsed hint on zone pages"
-    status: pending
+    status: done
   - id: ws7b-zone-guardian-starters
     content: "WS7b: Contextual Ask Guardian + zone starter chips — snapshot-aware prompts (replace generic status question); see guardian_pr_ux plan"
     status: done
   - id: ws8-docs-tests
     content: "WS8: operator-tour §4b zone cockpit; architecture §7.0f; Vitest zone cockpit; optional GET /zones/{id}/grow-summary"
-    status: pending
+    status: done
 isProject: false
 ---
 
@@ -42,7 +42,7 @@ isProject: false
 
 ## Status
 
-**Planned — chapter 1 of 8** in the [Farmer UX roadmap (40–47)](farmer_ux_roadmap_40_plus.plan.md). Depends on **Phase 38** + **39/39b** ✅. This phase fixes **daily grow in one room**; Water wedge completes in **47**; Setpoints/Schedules farmer routes → **42**; inventory/costs → **43**.
+**Shipped — chapter 1 of 8** in the [Farmer UX roadmap (40–47)](farmer_ux_roadmap_40_plus.plan.md). Depends on **Phase 38** + **39/39b** ✅. **OC-40** closed (WS8). Next: **Phase 41** farm hub. Water wedge completes in **47**; Setpoints/Schedules farmer routes → **42**; inventory/costs → **43**.
 
 **Quick fix (not a full WS):** [`bug-guardian-nav`](#bug-guardian-nav-hotfix) — do before or alongside WS7; tracked in plan todos.
 
@@ -278,8 +278,8 @@ WS2 + WS4 give the biggest "not the DB" win early.
 - [x] Inline setpoint edit on need tabs
 - [x] Zone-filtered rules/schedules with active toggles and humanized next run
 - [x] Zone alerts ack inline
-- [ ] Water tab grow story (last event, next run, queue) — requires Phase 39 for queue line
-- [ ] operator-tour §4b + architecture §7.0f + Vitest
+- [x] Water tab grow story (last event, next run, queue) — requires Phase 39 for queue line
+- [x] operator-tour §4b + architecture §7.0f + Vitest (`zone-cockpit.test.js`)
 
 ---
 

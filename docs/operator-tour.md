@@ -21,7 +21,7 @@ Think **physical layout → signals → automation → work tracking → feeding
 | Step | Where in the app | What you are doing |
 |------|------------------|--------------------|
 | **1. Farm home** | `/` Dashboard | Orient: counts, quick links to tasks / schedules / fertigation; optional widgets for today’s work and alerts. |
-| **2. Zones (plant needs)** | `/zones`, `/zones/:id` | Define **grow areas** (rooms, benches, beds). Open a zone → **Water / Light / Climate** tabs show what the plant needs in one place (Phase 38). |
+| **2. Zones (plant needs)** | `/zones`, `/zones/:id` | Define **grow areas** (rooms, benches, beds). Open a zone → **Overview** plus **Water / Light / Climate** tabs — the **zone cockpit** for day-to-day grow (Phase 38 + [§4b](#4b-zone-cockpit-walkthrough-phase-40)). |
 | **3. Sensors & controls (advanced)** | `/sensors`, `/actuators`, `/setpoints` under **Advanced** in the nav | Farm-wide device lists. Prefer the **zone** tabs first; use Advanced when wiring many sensors or debugging. |
 | **4. Schedules & rules** | `/schedules`, `/automation` | **Schedules** = time-based cadence (cron-like) tied to actions or fertigation windows. **Rules** (Automation) = conditions + actions (e.g. “if humidity low → open mist”). |
 | **4b. Lighting (photoperiod)** | `/lighting` | **Lighting programs** — first-class 18/6, 12/12, or custom ON/OFF photoperiods for grow lights. One program owns a paired schedule + `control_actuator` actions (see [§5](#5-set-up-186-vegetative-lights-phase-35)). |
@@ -59,18 +59,59 @@ Each tab shows the **connection chain**: live **reading** → **target band** (s
 
 ---
 
-## 4b. Zone cockpit walkthrough (Phase 40 — planned)
+## 4b. Zone cockpit walkthrough (Phase 40)
 
-**Status:** Doc stub until Phase 40 ships. Plan: [`plans/phase_40_unified_farmer_ux_zone_cockpit.plan.md`](plans/phase_40_unified_farmer_ux_zone_cockpit.plan.md).
+**Shipped.** The zone hub is the **grow cockpit** — fix targets, ack alerts, and read what runs today **without** hopping to Setpoints, Automation, or Schedules for routine work. Power users still use **Advanced** for farm-wide CRUD and expression editing. Plan: [`plans/phase_40_unified_farmer_ux_zone_cockpit.plan.md`](plans/phase_40_unified_farmer_ux_zone_cockpit.plan.md). Vocabulary: [`farmer-vocabulary.md`](farmer-vocabulary.md) (comfort targets, Feed & water, Ask gr33n).
 
-**Intended walk (Flower Room example):**
+**Walkthrough — Flower Room example**
 
-1. **Zones → Flower Room → Overview** — “Today” strip: next schedule, active rules, unread alerts, device/queue summary.
-2. **Climate / Water / Light** — edit **target bands inline** (no Setpoints sidebar hop); ack an alert from Overview.
-3. **Water** — grow story: last feed, next program run, queue head (after Phase 39); **Run pulse** for manual irrigate.
-4. **Power settings** — link out to Advanced only when cron/rule expression editing is needed.
+### 1. Open the room
 
-Farm-wide morning path and empty-state hints: [Phase 41](plans/phase_41_farm_hub_coherence.plan.md). Gap index: [pre_development_gaps_index](plans/pre_development_gaps_index.plan.md).
+1. Sidebar **My rooms** → **Flower Room** (or **Zones** list → pick the room).
+2. Tabs: **Overview** · **Water** · **Light** · **Climate** — stay in the zone for day-to-day grow.
+
+### 2. Overview — “Today in this room”
+
+The **Today** strip summarizes what matters now:
+
+| Chip | What it shows |
+|------|----------------|
+| **Next run** | Next schedule tied to this zone (humanized time, e.g. “Every day at 8 AM”) |
+| **Automations** | Count of **active rules** scoped to this zone |
+| **Alerts** | Unread alerts for sensors/actuators in this room |
+| **Devices** | Online vs offline devices in the zone |
+| **Queue** | FIFO command depth on edge hardware (after Phase 39) |
+| **Tasks** | Tasks due today for this zone (Done / Snooze inline) |
+
+**Zone alerts** panel below lists unread and recent items for this room. **Acknowledge** or **Mark read** inline; open farm-wide **Alerts** for history.
+
+**Ask gr33n** starter chips (when AI is enabled) are **zone-aware** — e.g. “Why is humidity off?” — not generic status questions.
+
+### 3. Climate / Light — comfort targets inline
+
+On **Climate** or **Light**, edit **comfort targets** (min / ideal / max) per sensor type **in the tab**. Labels say **comfort target**, not “setpoint.” Saving calls the existing setpoints API (`PATCH` / `POST` on the farm setpoints collection).
+
+**What runs when** card lists zone-scoped **schedules** and **automations** with humanized next run and active toggles. Use **Power settings** (Advanced hint) only when you need cron expressions or farm-wide rule editing.
+
+### 4. Water — grow story
+
+The **Water** tab adds a **grow story** row:
+
+- **Last feed** — last mixing or irrigation event for the active program
+- **Next run** — next program schedule fire (humanized)
+- **Queue** — mix + pulse depth when edge queue is in use
+
+Keep using **Run pulse** for manual irrigate. Farm-wide program editing stays under **Feed & water** (`/fertigation`); the zone links there with `?zone_id=` when you need the full program card.
+
+### 5. When to leave the zone
+
+| Stay in zone | Use Advanced / farm-wide pages |
+|--------------|--------------------------------|
+| Edit comfort targets, ack alerts, read today’s runs | Edit cron strings, bulk sensor wiring, debug all rules |
+| Run pulse, preview mix, see queue | Create programs, reservoirs, recipes |
+| Complete zone tasks due today | Farm-wide task backlog without zone filter |
+
+Farm-wide morning path and empty-state hints: [Phase 41](plans/phase_41_farm_hub_coherence.plan.md). Guardian zone-first guidance: [architecture §7.0f](farm-guardian-architecture.md#70f-zone-cockpit-phase-40).
 
 ---
 
@@ -100,16 +141,19 @@ flowchart LR
 
 ---
 
-## 3b. Farm hub & morning path (Phase 41 — planned)
+## 3b. Farm hub & morning path (Phase 41)
 
-**Status:** Doc stub until Phase 41 ships. Plan: [`plans/phase_41_farm_hub_coherence.plan.md`](plans/phase_41_farm_hub_coherence.plan.md).
+**Status:** Shipped. Plan: [`plans/phase_41_farm_hub_coherence.plan.md`](plans/phase_41_farm_hub_coherence.plan.md).
 
-**Intended path (complements [tasks-first guide](tasks-first-operator-guide.md)):**
+**Morning path (complements [tasks-first guide](tasks-first-operator-guide.md)):**
 
-1. **`/` Dashboard** — morning strip: tasks due, unread alerts, next schedule, offline devices, queue depth (post-39).
-2. **`/tasks`** → **`/alerts`** → **`/schedules`** with optional **`?zone_id=`** when you started from a zone.
-3. **`/fertigation?zone_id=`** — events/programs filtered to that room; banner back to **Zones → Water**.
-4. **Why-empty hints** on empty widgets (telemetry vs setpoint vs automation off) — replaces guesswork in [§4](#4-why-is-this-empty-future-ux).
+1. **`/` Dashboard** — **This morning** strip: tasks due today, unread alerts, next schedule, device heartbeat, queued commands (when pending).
+2. **`/tasks`** → **`/alerts`** → **`/schedules`** with optional **`?zone_id=`** when you started from a zone; breadcrumb shows `Zones › Room › Page`.
+3. **`/fertigation?zone_id=`** — events filtered to that room; programs for the zone are highlighted; banner links **Back to zone Water**.
+4. **`/lighting?zone_id=`** — programs for one room; **Open zone →** returns to the Light tab.
+5. **Why-empty hints** on Dashboard widgets, zone comfort targets, fertigation events, tasks, and alerts — see [§4](#4-why-is-this-empty-future-ux).
+
+Demo tasks with **`zone_id`** appear on **Flower Room** Overview after a fresh seed (`master_seed.sql`).
 
 Requires Phase 40 zone cockpit for consistent zone-first language.
 
@@ -117,7 +161,7 @@ Requires Phase 40 zone cockpit for consistent zone-first language.
 
 ## 4. “Why is this empty?” (future UX)
 
-Empty lists usually mean one of: **no data yet**, **wrong farm selected**, **telemetry not reaching the API** (Pi down, URL/key wrong), **automation not configured**, or **setpoints vs live readings** confusion (setpoint without recent readings looks “dead”). **Inline hints** are planned in [Phase 41 WS4](plans/phase_41_farm_hub_coherence.plan.md#ws4--why-empty-inline-hints) (see [gaps index](plans/pre_development_gaps_index.plan.md)); this section stays the **conceptual** map until that ships.
+Empty lists usually mean one of: **no data yet**, **wrong farm selected**, **telemetry not reaching the API** (Pi down, URL/key wrong), **automation not configured**, or **setpoints vs live readings** confusion (setpoint without recent readings looks “dead”). **Inline hints** ship in Phase 41 (`EmptyStateHint` on Dashboard, zone comfort targets, fertigation events, tasks, alerts) — this section remains the **conceptual** map.
 
 ---
 

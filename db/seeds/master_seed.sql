@@ -959,6 +959,7 @@ UPDATE gr33ncore.sensors SET zone_id = (SELECT id FROM gr33ncore.zones WHERE far
 UPDATE gr33ncore.sensors SET zone_id = (SELECT id FROM gr33ncore.zones WHERE farm_id = 1 AND name = 'Veg Room' AND deleted_at IS NULL ORDER BY id LIMIT 1)      WHERE farm_id = 1 AND name = 'EC Sensor';
 UPDATE gr33ncore.sensors SET zone_id = (SELECT id FROM gr33ncore.zones WHERE farm_id = 1 AND name = 'Veg Room' AND deleted_at IS NULL ORDER BY id LIMIT 1)      WHERE farm_id = 1 AND name = 'pH Sensor';
 
+-- Phase 41 WS5: zone_id on open tasks powers zone Overview + Dashboard morning chips.
 INSERT INTO gr33ncore.tasks
   (farm_id, zone_id, schedule_id, title, description, task_type, status, priority, due_date)
 SELECT

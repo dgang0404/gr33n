@@ -131,6 +131,14 @@
       </div>
     </div>
 
+    <ZoneContextBanner
+      v-if="zoneContextId"
+      :zone-id="zoneContextId"
+      :zone-name="zoneName(zoneContextId)"
+      page-label="Tasks"
+      :clear-route="{ path: '/tasks' }"
+    />
+
     <div class="flex flex-wrap gap-3 mb-4">
       <div>
         <label class="text-[11px] text-zinc-500 mr-1">Zone</label>
@@ -150,9 +158,18 @@
       </div>
     </div>
 
-    <div v-if="loading" class="text-zinc-400 text-sm">Loading tasks…</div>
+    <div v-if="loading" class="text-zinc-400 text-sm mb-4">Loading tasks…</div>
 
-    <div v-else class="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
+    <div v-if="zoneContextId && !loading && !filteredTasks.length" class="mb-4">
+      <EmptyStateHint
+        reason="no_data"
+        message="No open tasks for this room."
+        action-label="Show all rooms"
+        :action-to="{ path: '/tasks' }"
+      />
+    </div>
+
+    <div v-if="!loading" class="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
       <div
         v-for="col in COLUMNS"
         :key="col.id"
@@ -384,11 +401,15 @@
 </template>
 
 <script setup>
-import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import { useFarmStore } from '../stores/farm'
 import { useFarmContextStore } from '../stores/farmContext'
 import HelpTip from '../components/HelpTip.vue'
+import ZoneContextBanner from '../components/ZoneContextBanner.vue'
+import EmptyStateHint from '../components/EmptyStateHint.vue'
 
+const route = useRoute()
 const store = useFarmStore()
 const farmContext = useFarmContextStore()
 const tasks = computed(() => store.tasks)
@@ -606,9 +627,18 @@ function formatTimestamp(ts) {
   return d.toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
 }
 
+function applyZoneQueryFilter() {
+  const raw = route.query.zone_id
+  const s = Array.isArray(raw) ? raw[0] : raw
+  if (s != null && String(s).trim() !== '') {
+    filterZone.value = String(s)
+  }
+}
+
 onMounted(async () => {
   const fid = farmContext.farmId
   if (!store.zones.length && fid) await store.loadAll(fid)
+  applyZoneQueryFilter()
   loading.value = true
   try {
     if (fid) await store.loadSchedules(fid)
@@ -618,6 +648,8 @@ onMounted(async () => {
   window.addEventListener('online', onConnectionChange)
   window.addEventListener('offline', onConnectionChange)
 })
+
+watch(() => route.query.zone_id, applyZoneQueryFilter)
 
 onUnmounted(() => {
   window.removeEventListener('online', onConnectionChange)
@@ -668,6 +700,11 @@ async function submitTask() {
 }
 
 const filterZone = ref('')
+
+const zoneContextId = computed(() => {
+  const n = Number(filterZone.value)
+  return Number.isFinite(n) && n > 0 ? n : null
+})
 const filterSchedule = ref('')
 
 const COLUMNS = [

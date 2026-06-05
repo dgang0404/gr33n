@@ -48,7 +48,10 @@
                 </svg>
               </button>
             </div>
-            <nav class="flex-1 px-3 py-4 space-y-4">
+            <div class="px-3 pt-3 shrink-0">
+              <GuardianNavLaunch :collapsed="false" />
+            </div>
+            <nav class="flex-1 px-3 py-4 space-y-4 overflow-y-auto">
               <div v-for="group in drawerNavGroups" :key="group.label">
                 <p class="px-3 mb-1 text-[10px] uppercase tracking-widest text-gray-600 font-semibold">{{ group.label }}</p>
                 <div class="space-y-0.5">
@@ -64,9 +67,6 @@
                 </div>
               </div>
             </nav>
-            <div class="px-3 pb-3 shrink-0 border-t border-gray-800">
-              <GuardianNavLaunch :collapsed="false" />
-            </div>
           </aside>
         </Transition>
         <div class="flex-1 bg-black/60" @click="drawerOpen = false" />

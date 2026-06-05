@@ -82,7 +82,15 @@
         </div>
       </form>
 
-      <div v-if="missingTypes.length" class="flex flex-wrap gap-2">
+      <div v-if="missingTypes.length" class="space-y-2">
+        <EmptyStateHint
+          v-for="st in missingTypes"
+          :key="st"
+          reason="no_setpoint"
+          :message="`No comfort target for ${sensorTypeLabel(st)} yet.`"
+          compact
+        />
+        <div class="flex flex-wrap gap-2">
         <button
           v-for="st in missingTypes"
           :key="st"
@@ -94,6 +102,7 @@
           + Add target for {{ sensorTypeLabel(st) }}
         </button>
       </div>
+      </div>
     </div>
   </div>
 </template>
@@ -103,6 +112,7 @@ import { computed, ref, watch } from 'vue'
 import api from '../api'
 import { sensorPlantNeed, NEED_META } from '../lib/plantNeeds.js'
 import { sensorTypeLabel } from '../lib/sensorTypeLabel.js'
+import EmptyStateHint from './EmptyStateHint.vue'
 
 const props = defineProps({
   need: { type: String, required: true },

@@ -18,9 +18,25 @@
       </div>
     </div>
 
+    <ZoneContextBanner
+      v-if="zoneContextId"
+      :zone-id="zoneContextId"
+      :zone-name="zoneName(zoneContextId)"
+      page-label="Alerts"
+      :clear-route="{ path: '/alerts' }"
+    />
+
     <div v-if="loading" class="text-zinc-500 text-sm">Loading alerts...</div>
-    <div v-else-if="filtered.length === 0" class="text-zinc-500 text-sm bg-zinc-800 border border-zinc-700 rounded-xl p-8 text-center">
-      No alerts{{ severityFilter ? ` with severity "${severityFilter}"` : '' }}.
+    <div
+      v-else-if="filtered.length === 0"
+      class="bg-zinc-800 border border-zinc-700 rounded-xl p-8 text-center"
+    >
+      <EmptyStateHint
+        :reason="zoneContextId ? 'no_data' : 'automation_off'"
+        :message="emptyMessage"
+        action-label="Automation rules"
+        action-to="/automation"
+      />
     </div>
 
     <div v-else class="space-y-2">
@@ -135,9 +151,15 @@
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import { useFarmStore } from '../stores/farm'
 import { useFarmContextStore } from '../stores/farmContext'
 import AskGuardianButton from '../components/AskGuardianButton.vue'
+import ZoneContextBanner from '../components/ZoneContextBanner.vue'
+import EmptyStateHint from '../components/EmptyStateHint.vue'
+import { parseZoneIdQuery, filterAlertsForZone } from '../lib/zoneContext.js'
+
+const route = useRoute()
 
 const farmStore = useFarmStore()
 const farmContext = useFarmContextStore()
@@ -145,12 +167,36 @@ const loading = ref(false)
 const severityFilter = ref('')
 const offset = ref(0)
 
+const zoneContextId = computed(() => parseZoneIdQuery(route?.query?.zone_id))
+
+function zoneName(zoneId) {
+  return farmStore.zones.find((z) => z.id === zoneId)?.name || `Zone ${zoneId}`
+}
+
+const zoneFilteredAlerts = computed(() => {
+  if (!zoneContextId.value) return farmStore.alerts
+  const zone = farmStore.zones.find((z) => z.id === zoneContextId.value)
+  return filterAlertsForZone(
+    farmStore.alerts,
+    zoneContextId.value,
+    zone?.name || '',
+    farmStore.sensors,
+  )
+})
+
 const filtered = computed(() => {
-  if (!severityFilter.value) return farmStore.alerts
-  return farmStore.alerts.filter(a => {
+  let list = zoneFilteredAlerts.value
+  if (!severityFilter.value) return list
+  return list.filter(a => {
     const sev = a.severity?.gr33ncore_notification_priority_enum || a.severity || ''
     return sev === severityFilter.value
   })
+})
+
+const emptyMessage = computed(() => {
+  if (zoneContextId.value) return 'No alerts for this room right now.'
+  if (severityFilter.value) return `No alerts with severity "${severityFilter}".`
+  return 'No alerts yet — threshold breaches and failed runs create them when rules are active.'
 })
 
 function severityBadge(sev) {
@@ -183,6 +229,9 @@ async function refresh() {
   loading.value = true
   offset.value = 0
   try {
+    if (!farmStore.zones.length || !farmStore.sensors.length) {
+      await farmStore.loadAll(farmContext.farmId)
+    }
     await farmStore.loadAlerts(farmContext.farmId, { limit: 50, offset: 0 })
     await farmStore.countUnreadAlerts(farmContext.farmId)
     // Pull tasks too so we can render the "→ Task #N" badge without an extra round trip.

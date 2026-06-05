@@ -13,6 +13,16 @@
       <button @click="refresh" class="text-xs text-zinc-400 hover:text-zinc-200">Refresh</button>
     </div>
 
+    <ZoneContextBanner
+      v-if="zoneContextId"
+      :zone-id="zoneContextId"
+      :zone-name="zoneLabel(zoneContextId)"
+      page-label="Fertigation"
+      variant="fertigation"
+      back-to-zone-tab="water"
+      :clear-route="{ name: 'fertigation', query: { tab: activeTab } }"
+    />
+
     <!-- Tabs -->
     <div class="flex flex-wrap gap-1 bg-zinc-900 border border-zinc-800 rounded-lg p-1">
       <button
@@ -219,7 +229,7 @@
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div v-for="p in programs" :key="p.id"
           class="bg-zinc-900 border rounded-xl p-4 space-y-2"
-          :class="p.is_active ? 'border-green-800/70' : 'border-zinc-800'">
+          :class="programHighlightClass(p)">
           <div class="flex items-center justify-between gap-2 flex-wrap">
             <p class="text-white text-sm font-medium">{{ p.name }}</p>
             <div class="flex items-center gap-1.5 flex-wrap">
@@ -501,7 +511,7 @@
     <template v-if="activeTab === 'events'">
       <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div class="flex flex-wrap items-center gap-3">
-          <p class="text-zinc-400 text-sm">{{ fertigationEvents.length }} event(s)
+          <p class="text-zinc-400 text-sm">{{ sortedEvents.length }} event(s)
             <HelpTip>Events record each individual feeding — volume applied, EC/pH before and after, which zone and crop cycle. Events are created automatically by programs or logged manually here.</HelpTip>
           </p>
           <label class="flex items-center gap-2 text-xs text-zinc-500">
@@ -581,7 +591,14 @@
           </tbody>
         </table>
       </div>
-      <p v-if="!fertigationEvents.length" class="text-zinc-500 text-sm">No fertigation events recorded yet.</p>
+      <EmptyStateHint
+        v-if="!sortedEvents.length"
+        reason="no_data"
+        message="No fertigation events recorded yet for this view."
+        action-label="Log event"
+        :action-to="null"
+        @action="showEventForm = true"
+      />
     </template>
   </div>
 </template>
@@ -592,6 +609,12 @@ import { useRoute, useRouter } from 'vue-router'
 import { useFarmStore } from '../stores/farm'
 import { useFarmContextStore } from '../stores/farmContext'
 import HelpTip from '../components/HelpTip.vue'
+import ZoneContextBanner from '../components/ZoneContextBanner.vue'
+import EmptyStateHint from '../components/EmptyStateHint.vue'
+import {
+  parseZoneIdQuery,
+  programAppliesToZone,
+} from '../lib/zoneContext.js'
 
 const route = useRoute()
 const router = useRouter()
@@ -687,9 +710,24 @@ const cycleForm = ref({
   yield_notes: '',
 })
 
-const sortedEvents = computed(() =>
-  [...fertigationEvents.value].sort((a, b) => new Date(b.applied_at) - new Date(a.applied_at))
-)
+const zoneContextId = computed(() => parseZoneIdQuery(route.query.zone_id))
+
+const eventsZoneFilter = computed(() => zoneContextId.value)
+
+function programHighlightClass(program) {
+  const zoneMatch = zoneContextId.value && programAppliesToZone(program, zoneContextId.value, cropCycles.value)
+  if (zoneMatch) return 'border-amber-700/70 ring-1 ring-amber-900/40'
+  if (program.is_active) return 'border-green-800/70'
+  return 'border-zinc-800'
+}
+
+const sortedEvents = computed(() => {
+  let list = [...fertigationEvents.value]
+  if (eventsZoneFilter.value != null) {
+    list = list.filter((e) => Number(e.zone_id) === eventsZoneFilter.value)
+  }
+  return list.sort((a, b) => new Date(b.applied_at) - new Date(a.applied_at))
+})
 
 const showReservoirForm = ref(false)
 const showEcForm = ref(false)

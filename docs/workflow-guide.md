@@ -244,20 +244,21 @@ Both accept arbitrary `meta` JSON for tags, notes, or integrations with the **Co
 
 **Fertigation with natural-farming inputs.** Components on a mixing event can draw from either commercial nutrient batches or **natural-farming input batches** (fermented extracts, microbial inoculants, etc.) — the schema doesn't distinguish, it just debits whatever `input_batches.id` you cite. The **JADAM indoor photoperiod starter** bootstrap seeds a handful of JADAM-style inputs (JMS, JLF, FFJ, WCA) so operators following that method have realistic demo data out of the box; operators using other approaches add their own input definitions and the rest of the fertigation pipeline is unchanged. See [`terminology-guideline.md`](terminology-guideline.md) for why we call the API module **natural farming** (the generic umbrella) rather than tying it to any nationality or tradition.
 
-### 4b. Operator UX roadmap (39 shipped; 40, 41, 39b planned)
+### 4b. Operator UX roadmap (39, 39b, 40 shipped; 41 planned)
 
 **Phase 39 — shipped.** FIFO **`device_commands`** queue, cloud **`MixPlan`**, Pi **`mix_batch`** + **pulse**, reservoir base EC, Zone Water preview. Canonical plan: [`plans/phase_39_edge_fertigation_execution.plan.md`](plans/phase_39_edge_fertigation_execution.plan.md).
+
+**Phase 40 — shipped.** Zone cockpit on **Overview / Water / Light / Climate** — Today strip, inline comfort targets, zone alerts, What runs when, Water grow story, zone tasks, Ask gr33n starters. Plan: [`plans/phase_40_unified_farmer_ux_zone_cockpit.plan.md`](plans/phase_40_unified_farmer_ux_zone_cockpit.plan.md).
 
 | Phase | What changes for operators | Workflow impact |
 |-------|---------------------------|-----------------|
 | **39 — Edge fertigation** ✅ | Queue + **`MixPlan`** + Pi mix executor | §2 actuation: ordered dequeue; program tick enqueues **mix then irrigate**. Manual mixing log unchanged. |
-| **[40 — Zone cockpit](plans/phase_40_unified_farmer_ux_zone_cockpit.plan.md)** | **Zones → Overview / Water / Light / Climate** become the edit surface: inline setpoints, zone alerts, Today strip, Water **grow story** | Operators fix targets and ack alerts **in the zone**; Advanced (`/setpoints`, `/automation`, `/schedules`) remain for power users. Guardian should prefer zone-scoped guidance ([architecture §7.0f](farm-guardian-architecture.md)). Walkthrough: [operator-tour §4b](operator-tour.md#4b-zone-cockpit-walkthrough-phase-40--planned). |
+| **39b — Plain irrigation** ✅ | **`irrigation_only`** programs — pulse without recipe/EC math | RO/well farms: no mix preview, no fake nutrient story. |
+| **40 — Zone cockpit** ✅ | **Zones → Overview / Water / Light / Climate** — comfort targets, zone alerts, Today strip, Water **grow story** | Operators fix targets and ack alerts **in the zone**; Advanced (`/setpoints`, `/automation`, `/schedules`) remain for power users. Guardian prefers zone-scoped guidance ([architecture §7.0f](farm-guardian-architecture.md#70f-zone-cockpit-phase-40)). Walkthrough: [operator-tour §4b](operator-tour.md#4b-zone-cockpit-walkthrough-phase-40). |
 | **[41 — Farm hub](plans/phase_41_farm_hub_coherence.plan.md)** | **Dashboard** morning chips; **Fertigation** honors `?zone_id=`; **Tasks / Schedules / Alerts** keep zone context; **why-empty** hints | Closes the “six sidebar hops” problem when the zone cockpit is done but farm-wide pages still feel disconnected. Walkthrough: [operator-tour §3b](operator-tour.md#3b-farm-hub--morning-path-phase-41--planned). |
 | **[42–45 — Farmer UX completion](plans/farmer_ux_roadmap_40_plus.plan.md)** | Comfort bands (42), operations hub (43), setup/Pi wizards (44), sit-in polish (45) | Full non-technical farmer v1 — UI composes existing APIs; schema stable. |
 | **Guardian PR UX (doc gate)** | [guardian-change-requests-guide.md](guardian-change-requests-guide.md) · [guardian_pr_ux_through_farmer_phases.plan.md](plans/guardian_pr_ux_through_farmer_phases.plan.md) | How proposals are triggered, starters vs Confirm, inbox — read before Phase 40 zone starters. |
-| **[39b — Plain irrigation](plans/phase_39b_plain_irrigation.plan.md)** | **`irrigation_only`** programs — pulse without recipe/EC math | RO/well farms: no mix preview, no fake nutrient story. After 39 WS1 queue. |
-
-**Recommended implementation order:** 39 → 40 → 41 → 39b (39b can follow 39 WS1 in parallel with late 40).
+**Recommended implementation order:** 39 → 40 → 41 (39b shipped with 39 queue).
 
 **RAG / docs:** After each phase ships, expand the matching **operator-tour** section (§3 actuation path, §4b, §3b), **workflow-guide** §4b table row, and **architecture** §7.0f/§7.0g stubs; then **`make rag-ingest-platform-docs`** (see manifest comments in [`rag/platform-doc-manifest.yaml`](rag/platform-doc-manifest.yaml)).
 

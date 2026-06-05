@@ -14,13 +14,12 @@ export const PLANT_NEEDS = {
 export const NEED_META = {
   [PLANT_NEEDS.water]: {
     id: PLANT_NEEDS.water,
-    label: 'Water & feeding',
+    label: 'Feed & water',
     shortLabel: 'Water',
     icon: '💧',
-    description: 'Fertigation, irrigation pumps, EC/pH, soil moisture.',
+    description: 'Feeding plan, irrigation pumps, EC/pH, soil moisture.',
     manageLinks: [
-      { to: '/fertigation', label: 'Fertigation programs' },
-      { to: '/setpoints', label: 'Targets (setpoints)' },
+      { to: '/fertigation', label: 'Advanced feeding (technical)' },
     ],
   },
   [PLANT_NEEDS.light]: {
@@ -41,8 +40,8 @@ export const NEED_META = {
     icon: '🌬️',
     description: 'Temperature, humidity, fans, vents, shade.',
     manageLinks: [
-      { to: '/automation', label: 'Automation rules' },
-      { to: '/setpoints', label: 'Targets (setpoints)' },
+      { to: '/automation', label: 'Automations' },
+      { to: '/setpoints', label: 'Comfort bands (farm-wide)' },
     ],
   },
 }

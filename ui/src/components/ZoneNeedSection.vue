@@ -11,8 +11,8 @@
         </div>
         <div class="flex flex-wrap gap-2 justify-end">
           <router-link
-            v-for="link in meta.manageLinks"
-            :key="link.to"
+            v-for="link in sectionManageLinks"
+            :key="link.label"
             :to="link.to"
             class="text-xs text-green-600 hover:text-green-400"
           >
@@ -32,7 +32,12 @@
     <!-- Live sensors -->
     <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
       <h3 class="text-sm font-semibold text-white mb-3">Sensors</h3>
-      <p v-if="!needSensors.length" class="text-zinc-500 text-sm">No {{ meta.shortLabel.toLowerCase() }} sensors in this zone yet.</p>
+      <EmptyStateHint
+        v-if="!needSensors.length"
+        reason="no_telemetry"
+        :message="`No ${meta.shortLabel.toLowerCase()} sensors in this zone yet.`"
+        compact
+      />
       <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
         <SensorTile
           v-for="s in needSensors"
@@ -67,118 +72,40 @@
       </div>
     </div>
 
-    <!-- Fertigation block (water only) — Phase 39 WS7 enhanced -->
-    <div v-if="need === PLANT_NEEDS.water" class="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
-      <div class="flex items-center justify-between mb-3 gap-2 flex-wrap">
-        <h3 class="text-sm font-semibold text-white">Feeding program</h3>
-        <div class="flex items-center gap-2">
-          <button
-            type="button"
-            class="text-xs px-2 py-0.5 rounded-md bg-amber-900/60 text-amber-200 hover:bg-amber-800/80 disabled:opacity-50"
-            :disabled="runNowBusy"
-            @click="runActiveProgramNow"
-          >
-            {{ runNowBusy ? 'Running…' : 'Run now' }}
-          </button>
-          <router-link to="/fertigation" class="text-xs text-green-600 hover:text-green-400">Fertigation →</router-link>
-        </div>
-      </div>
-      <p v-if="runNowFeedback" class="text-xs mb-2" :class="runNowOk ? 'text-green-400' : 'text-amber-400'">{{ runNowFeedback }}</p>
-      <p v-if="!activeProgram" class="text-zinc-500 text-sm">No active fertigation program for this zone.</p>
-      <template v-else>
-        <div class="flex items-start justify-between gap-2 flex-wrap">
-          <div>
-            <p class="text-zinc-200 text-sm">{{ activeProgram.name }}</p>
-            <span
-              v-if="activeProgram.irrigation_only"
-              class="text-[10px] px-2 py-0.5 rounded-full bg-sky-900/50 text-sky-300 font-semibold shrink-0"
-            >Irrigation only</span>
-            <p class="text-zinc-600 text-xs mt-1">
-              {{ activeProgram.total_volume_liters || '—' }}L
-              <span v-if="activeProgram.run_duration_seconds"> · pump run {{ activeProgram.run_duration_seconds }}s</span>
-              <span v-if="activeProgram.irrigation_only"> · plain water, no mix</span>
-            </p>
-          </div>
-          <!-- Queue depth chip -->
-          <span
-            v-if="waterStatus && waterStatus.queue_depth > 0"
-            class="text-[10px] px-2 py-0.5 rounded-full bg-amber-900 text-amber-300 font-semibold shrink-0"
-            title="Commands pending on delivery device"
-          >
-            {{ waterStatus.queue_depth }} queued
-          </span>
-        </div>
-
-        <!-- Last mixing event badge -->
-        <div v-if="waterStatus?.last_mixing_event" class="mt-3 flex items-center gap-2 text-xs text-zinc-400">
-          <span>Last mix:</span>
-          <span class="text-zinc-200">{{ formatMixDate(waterStatus.last_mixing_event.mixed_at) }}</span>
-          <span
-            v-if="waterStatus.last_mixing_event.ec_target_met === true"
-            class="px-1.5 py-0.5 rounded bg-green-900 text-green-300 text-[10px] font-semibold"
-          >EC met ✓</span>
-          <span
-            v-else-if="waterStatus.last_mixing_event.ec_target_met === false"
-            class="px-1.5 py-0.5 rounded bg-red-900 text-red-300 text-[10px] font-semibold"
-          >EC not met</span>
-        </div>
-
-        <!-- Preview mix plan -->
-        <div class="mt-3">
-          <button
-            v-if="!showMixPreview && waterStatus?.mix_required"
-            type="button"
-            class="text-xs text-blue-400 hover:text-blue-300 underline"
-            :disabled="mixPreviewLoading"
-            @click="loadMixPreview"
-          >
-            {{ mixPreviewLoading ? 'Calculating…' : 'Preview mix plan →' }}
-          </button>
-
-          <div v-if="showMixPreview && waterStatus?.mix_preview" class="mt-2 space-y-1">
-            <div class="flex items-center justify-between">
-              <p class="text-xs text-zinc-400 font-semibold">Mix plan — {{ waterStatus.mix_preview.dilution_ratio }}</p>
-              <button
-                type="button"
-                class="text-[10px] text-zinc-600 hover:text-zinc-400"
-                @click="showMixPreview = false"
-              >hide</button>
-            </div>
-            <p class="text-[11px] text-zinc-500">
-              {{ waterStatus.mix_preview.water_volume_liters }}L ·
-              base {{ waterStatus.mix_preview.water_ec_mscm }} mS/cm →
-              est. {{ waterStatus.mix_preview.estimated_final_ec_mscm }} mS/cm
-            </p>
-            <div
-              v-for="step in waterStatus.mix_preview.steps"
-              :key="step.step"
-              class="flex items-center gap-2 text-[11px] text-zinc-300"
-            >
-              <span class="w-4 text-zinc-600 text-right">{{ step.step }}.</span>
-              <span class="flex-1">{{ step.input_name }}</span>
-              <span class="text-zinc-500">{{ step.volume_ml }} ml · {{ step.run_seconds }}s</span>
-            </div>
-            <p v-if="waterStatus.mix_preview.warnings?.length"
-               class="text-[10px] text-amber-500 mt-1 leading-tight">
-              ⚠ {{ waterStatus.mix_preview.warnings[0] }}
-            </p>
-          </div>
-
-          <p v-if="waterStatus?.mix_preview_error && !waterStatus?.mix_required"
-             class="text-[11px] text-zinc-600 mt-1 italic">
-            {{ waterStatus.mix_preview_error }}
-          </p>
-        </div>
-      </template>
-    </div>
+    <ZoneWaterGrowStory
+      v-if="need === PLANT_NEEDS.water"
+      :zone-id="zoneId"
+      :farm-id="farmId"
+      :active-program="activeProgram"
+      :programs="programs"
+      :schedules="schedules"
+      :fertigation-events="fertigationEvents"
+      :actuators="actuators"
+      :ec-targets="ecTargets"
+      :reservoirs="reservoirs"
+      :zone-name="zone?.name || 'This room'"
+      :farm-timezone="farmTimezone"
+      @refreshed="$emit('water-refreshed', $event)"
+      @plan-updated="$emit('plan-updated')"
+    />
 
     <!-- Lighting block (light only) -->
     <div v-if="need === PLANT_NEEDS.light" class="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
       <div class="flex items-center justify-between mb-3">
         <h3 class="text-sm font-semibold text-white">Lighting program</h3>
-        <router-link to="/lighting" class="text-xs text-green-600 hover:text-green-400">Lighting →</router-link>
+        <router-link
+          :to="{ path: '/lighting', query: { zone_id: String(zoneId) } }"
+          class="text-xs text-green-600 hover:text-green-400"
+        >Lighting →</router-link>
       </div>
-      <p v-if="!zoneLightingPrograms.length" class="text-zinc-500 text-sm">No lighting program linked to this zone.</p>
+      <EmptyStateHint
+        v-if="!zoneLightingPrograms.length"
+        reason="no_data"
+        message="No lighting program linked to this zone."
+        action-label="Lighting programs"
+        :action-to="{ path: '/lighting', query: { zone_id: String(zoneId) } }"
+        compact
+      />
       <ul v-else class="space-y-2">
         <li
           v-for="lp in zoneLightingPrograms"
@@ -186,7 +113,9 @@
           class="bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-zinc-300"
         >
           {{ lp.name }}
-          <span class="text-zinc-600 text-xs ml-2">{{ lp.is_active ? 'active' : 'inactive' }}</span>
+          <span class="text-zinc-500 text-xs block mt-1">
+            {{ lightingSummary(lp) }}
+          </span>
         </li>
       </ul>
     </div>
@@ -249,7 +178,7 @@
 </template>
 
 <script setup>
-import { computed, ref, watch } from 'vue'
+import { computed } from 'vue'
 import {
   PLANT_NEEDS,
   NEED_META,
@@ -263,6 +192,9 @@ import ActuatorPulseControl from './ActuatorPulseControl.vue'
 import ZoneGreenhouseTab from './ZoneGreenhouseTab.vue'
 import ZoneComfortTargets from './ZoneComfortTargets.vue'
 import ZoneAutomationPanel from './ZoneAutomationPanel.vue'
+import ZoneWaterGrowStory from './ZoneWaterGrowStory.vue'
+import EmptyStateHint from './EmptyStateHint.vue'
+import { formatLightingProgramSummary } from '../lib/lightingDisplay.js'
 
 const props = defineProps({
   need: { type: String, required: true },
@@ -277,87 +209,37 @@ const props = defineProps({
   rules: { type: Array, default: () => [] },
   programs: { type: Array, default: () => [] },
   lightingPrograms: { type: Array, default: () => [] },
+  ecTargets: { type: Array, default: () => [] },
+  reservoirs: { type: Array, default: () => [] },
   activeProgram: { type: Object, default: null },
   actuatorEvents: { type: Array, default: () => [] },
+  fertigationEvents: { type: Array, default: () => [] },
   toggling: { type: Object, default: () => ({}) },
 })
 
-defineEmits(['toggle-actuator', 'refresh-events', 'setpoints-updated', 'rules-updated'])
+defineEmits(['toggle-actuator', 'refresh-events', 'setpoints-updated', 'rules-updated', 'water-refreshed', 'plan-updated'])
 
 const store = useFarmStore()
 
-// ── Phase 39 WS7: water status (mix preview, queue depth, last mix) ──────────
-const waterStatus = ref(null)
-const mixPreviewLoading = ref(false)
-const showMixPreview = ref(false)
-const runNowBusy = ref(false)
-const runNowFeedback = ref('')
-const runNowOk = ref(true)
+const farmTimezone = computed(() => store.farm?.timezone || 'America/New_York')
 
-async function runActiveProgramNow() {
-  if (!props.farmId || !props.activeProgram?.id) return
-  runNowBusy.value = true
-  runNowFeedback.value = ''
-  try {
-    const res = await store.runFertigationProgramNow(props.farmId, props.activeProgram.id)
-    runNowOk.value = true
-    runNowFeedback.value = res.duplicate
-      ? 'Already ran this minute — no duplicate commands queued.'
-      : (res.message || 'Program run queued.')
-    await loadWaterStatus()
-  } catch (e) {
-    runNowOk.value = false
-    runNowFeedback.value = e?.response?.data?.error || e?.message || 'Run now failed'
-  } finally {
-    runNowBusy.value = false
-  }
-}
-
-async function loadWaterStatus() {
-  if (props.need !== PLANT_NEEDS.water || !props.activeProgram?.id) return
-  if (props.activeProgram.irrigation_only) {
-    waterStatus.value = {
-      mix_required: false,
-      reason: 'irrigation_only program — pulse watering only',
-    }
-    return
-  }
-  try {
-    const token = store.token || localStorage.getItem('token')
-    const r = await fetch(`/fertigation/programs/${props.activeProgram.id}/water-status`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-    if (r.ok) waterStatus.value = await r.json()
-  } catch {
-    // non-fatal
-  }
-}
-
-async function loadMixPreview() {
-  mixPreviewLoading.value = true
-  await loadWaterStatus()
-  mixPreviewLoading.value = false
-  showMixPreview.value = true
-}
-
-// Load on mount when water tab is active
-watch(
-  () => [props.activeProgram?.id, props.need],
-  () => { if (props.need === PLANT_NEEDS.water) loadWaterStatus() },
-  { immediate: true },
-)
-
-function formatMixDate(iso) {
-  if (!iso) return '—'
-  try {
-    return new Date(iso).toLocaleString(undefined, {
-      month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
-    })
-  } catch {
-    return iso
-  }
-}
 const meta = computed(() => NEED_META[props.need] || NEED_META[PLANT_NEEDS.air])
+
+const sectionManageLinks = computed(() => {
+  if (props.need === PLANT_NEEDS.water) {
+    return [{
+      to: { path: '/fertigation', query: { tab: 'programs', zone_id: String(props.zoneId) } },
+      label: 'Advanced feeding',
+    }]
+  }
+  if (props.need === PLANT_NEEDS.light) {
+    return [{
+      to: { path: '/lighting', query: { zone_id: String(props.zoneId) } },
+      label: 'Lighting programs',
+    }]
+  }
+  return meta.value.manageLinks
+})
 
 const needSensors = computed(() =>
   props.sensors.filter(s => sensorPlantNeed(s.sensor_type) === props.need),
@@ -375,6 +257,10 @@ const needSetpoints = computed(() => {
 const zoneLightingPrograms = computed(() =>
   props.lightingPrograms.filter(lp => lp.zone_id === props.zoneId),
 )
+
+function lightingSummary(lp) {
+  return formatLightingProgramSummary(lp)
+}
 
 function formatReading(sensor) {
   const r = store.readings[sensor.id]

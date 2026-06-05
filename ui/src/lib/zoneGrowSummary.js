@@ -209,7 +209,7 @@ export function computeZoneTodaySnapshot(params) {
     chips.push({
       id: 'tasks',
       icon: '✅',
-      label: 'Open tasks',
+      label: 'Due today',
       value: String(zoneTasks.length),
     })
   }
