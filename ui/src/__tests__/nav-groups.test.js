@@ -9,7 +9,18 @@ describe('Phase 40 WS7 — farmer nav groups', () => {
     expect(grow.items.some((i) => i.label === 'My rooms' && i.to === '/zones')).toBe(true)
     expect(grow.items.some((i) => i.label === 'Feed & water' && i.to === '/feeding')).toBe(true)
     expect(grow.items.some((i) => i.label === 'Targets & schedules' && i.to === '/comfort-targets')).toBe(true)
-    expect(grow.items.some((i) => i.label === 'Supplies')).toBe(true)
+    expect(grow.items.some((i) => i.label === 'Supplies')).toBe(false)
+  })
+
+  it('Phase 43 — groups supplies, feeding admin, and money under Operations', () => {
+    const ops = groups.find((g) => g.label === 'Operations')
+    expect(ops).toBeTruthy()
+    expect(ops.items.some((i) => i.label === 'Supplies' && i.to === '/operations/supplies')).toBe(true)
+    expect(ops.items.some((i) => i.label === 'Feeding (details)' && i.to === '/operations/feeding')).toBe(true)
+    expect(ops.items.some((i) => i.label === 'Money' && i.to === '/operations/money')).toBe(true)
+
+    const monitor = groups.find((g) => g.label === 'Monitor')
+    expect(monitor.items.some((i) => i.to === '/costs')).toBe(false)
   })
 
   it('groups Today cockpit items and moves alerts out of Monitor-only', () => {

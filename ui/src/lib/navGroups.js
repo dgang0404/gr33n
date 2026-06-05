@@ -28,12 +28,6 @@ export function buildNavGroups(cycleCompareRoute) {
           navTitle: 'Comfort bands, what runs when, and automation toggles',
         },
         { to: '/plants', icon: '🌱', label: 'Plants' },
-        {
-          to: '/inventory',
-          icon: '🧪',
-          label: 'Supplies',
-          navTitle: 'Inventory and input batches',
-        },
       ],
     },
     {
@@ -47,6 +41,29 @@ export function buildNavGroups(cycleCompareRoute) {
         },
         { to: '/tasks', icon: '✅', label: 'Tasks' },
         { to: '/alerts', icon: '🔔', label: 'Alerts' },
+      ],
+    },
+    {
+      label: 'Operations',
+      items: [
+        {
+          to: '/operations/supplies',
+          icon: '🧪',
+          label: 'Supplies',
+          navTitle: 'What is on hand, what is running low, and mixing recipes',
+        },
+        {
+          to: '/operations/feeding',
+          icon: '💦',
+          label: 'Feeding (details)',
+          navTitle: 'Programs, reservoirs, EC targets, and mixing log — farm-wide admin',
+        },
+        {
+          to: '/operations/money',
+          icon: '💰',
+          label: 'Money',
+          navTitle: 'Spend summary, receipts, and cost attachments',
+        },
       ],
     },
     {
@@ -111,7 +128,6 @@ export function buildNavGroups(cycleCompareRoute) {
     {
       label: 'Monitor',
       items: [
-        { to: '/costs', icon: '💰', label: 'Costs' },
         {
           to: cycleCompareRoute,
           icon: '📊',

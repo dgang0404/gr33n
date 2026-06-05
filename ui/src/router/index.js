@@ -46,6 +46,10 @@ const routes = [
   { path: '/fertigation',  component: Fertigation,  name: 'fertigation' },
   { path: '/inventory',    component: Inventory,    name: 'inventory' },
   { path: '/costs',        component: Costs,        name: 'costs' },
+  // Phase 43 WS1 — farmer operations hubs (wrap legacy views until WS2–WS4 hubs ship)
+  { path: '/operations/supplies', component: Inventory, name: 'operations-supplies' },
+  { path: '/operations/feeding', component: Fertigation, name: 'operations-feeding' },
+  { path: '/operations/money', component: Costs, name: 'operations-money' },
   { path: '/alerts',       component: Alerts,       name: 'alerts' },
   { path: '/plants',       component: Plants,       name: 'plants' },
   { path: '/animals',      component: Animals,      name: 'animals' },
