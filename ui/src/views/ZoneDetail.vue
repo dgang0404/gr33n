@@ -10,6 +10,9 @@
         </p>
       </div>
       <div class="flex flex-col items-end gap-2">
+        <span :class="zoneBadge(zone?.zone_type)" class="text-xs font-medium px-2 py-1 rounded-full capitalize">
+          {{ zone?.zone_type || 'unknown' }}
+        </span>
         <AskGuardianButton
           v-if="zone"
           variant="primary"
@@ -18,10 +21,6 @@
           :context-ref="zoneGuardianContextRef"
         />
         <GuardianStarterChips v-if="zone" :starters="zoneStarters" />
-      </div>
-        <span :class="zoneBadge(zone?.zone_type)" class="text-xs font-medium px-2 py-1 rounded-full capitalize">
-          {{ zone?.zone_type || 'unknown' }}
-        </span>
       </div>
     </div>
 
