@@ -1,6 +1,6 @@
 # Farmer vocabulary — gr33n UI language contract
 
-**Status:** Published (Phase 47 WS5). Enforced on grow routes by `ui/src/__tests__/farmer-vocabulary-grow-path.test.js`.
+**Status:** Published (Phase 47 WS5). **Vocabulary v2 (zones not rooms)** — scheduled in [Phase 45 WS3](plans/phase_45_farmer_validation_whole_app_polish.plan.md#ws3--copy-pass-v2). Enforced on grow routes by `ui/src/__tests__/farmer-vocabulary-grow-path.test.js`.
 
 **Audience:** Product, UX, and developers shipping Phases 40–47 and 45 sit-in validation.
 
@@ -37,6 +37,7 @@
 | metadata.steps | **Feeding steps** (Advanced only) |
 | input_batches | **Supplies on hand** |
 | Triggering event source | *(never in UI)* |
+| **Room** (generic grow-area label) | **Zone** / **My zones** / **this zone** — see [Vocabulary v2](#vocabulary-v2--zones-not-rooms-phase-45-ws3) |
 
 ---
 
@@ -47,7 +48,8 @@
 | EC | "EC 1.1–1.3" on feeding plan |
 | pH | With EC on mix/feed lines |
 | Irrigation | **Water only** / plain irrigation (39b) |
-| Fertigation / feeding | **Feed** / **Feeding plan** (room-scoped) |
+| Fertigation / feeding | **Feed** / **Feeding plan** (zone-scoped) |
+| Zone | **Grow area** — default product word (greenhouse bay, bench, field block, or indoor room) |
 | Reservoir | **Reservoir** — Ready / Needs top-up |
 | Run now | Button label (product backlog ✅) |
 | Pulse | **Run pump for N seconds** (plain English sublabel) |
@@ -56,11 +58,46 @@
 
 ---
 
-## Navigation labels (target — Phase 40 WS7 + 47)
+## Vocabulary v2 — zones not rooms (Phase 45 WS3)
 
-| Today (Advanced-heavy) | Farmer nav |
-|------------------------|------------|
-| Zones | **My rooms** |
+Phase 47 used **room** in grow-path copy and nav (**My rooms**) to match indoor demo farms. Sit-in feedback and broader ag use (greenhouse bays, propagation benches, field blocks, drying rooms — not only indoor **rooms**) favor **zone** as the default product word. The API and schema stay `zone`; only user-visible labels change.
+
+### Rule
+
+| Context | Use | Do not use |
+|---------|-----|------------|
+| Nav, page titles, empty states, hub cards | **Zone** / **My zones** / **this zone** | **Room** as the generic label for every grow area |
+| A specific zone’s display name | The name as stored (e.g. **Flower Room**, **North Bench**) | Renaming zones to drop “Room” |
+| Guardian starters and body copy | **Zone name** or **this zone** | **This room** when no name is loaded |
+| Feeding hub | **One card per zone** | **One card per room** |
+
+### Target label map (v2)
+
+| Surface (today after 47) | Target (45 WS3) |
+|--------------------------|-----------------|
+| Sidebar **My rooms** | **My zones** (navTitle: *Grow areas — water, light, and climate per zone*) |
+| Mobile bottom nav **Rooms** | **Zones** |
+| `/zones` H1 **My rooms** | **My zones** |
+| Dashboard section **Zones** vs nav **rooms** | **My zones** everywhere (one label) |
+| Feeding hub empty state **create zones first… each room's** | **…each zone's** |
+| `guardianStarters.js` fallback **this room** | **this zone** |
+| `ZoneWaterGrowStory` default **This room** | **This zone** |
+
+### Implementation notes (45 WS3)
+
+- Centralize grow-path labels in `ui/src/lib/farmerVocabulary.js` (export map + optional Vitest for **room** as generic nav/body term on grow routes).
+- Extend `farmer-vocabulary-grow-path.test.js` — fail on generic **My rooms** / **one card per room** / **this room** (allow **Room** inside zone **names** and seed data like `Flower Room`).
+- Update [operator-tour.md](operator-tour.md), Guardian starters, and nav tests (`nav-groups.test.js`) in the same PR.
+
+**Sit-in still valid:** “When is the next feed for **Flower Room**?” — tests a **named zone**, not the word “room” as the product term.
+
+---
+
+## Navigation labels (target — Phase 40 WS7 + 47 → v2 in 45)
+
+| Today (Advanced-heavy) | Farmer nav (v2) |
+|------------------------|-----------------|
+| Zones | **My zones** |
 | Dashboard | **Today** |
 | Fertigation | **Feed & water** (47 hub) |
 | Setpoints | **Targets** (42) — Advanced: Comfort bands (table) |

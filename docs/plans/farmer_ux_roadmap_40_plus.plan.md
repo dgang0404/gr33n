@@ -13,10 +13,10 @@ todos:
     status: done
   - id: phase-40-41
     content: "Phases 40–41 — zone cockpit + farm hub (existing plans)"
-    status: pending
+    status: completed
   - id: phase-42
     content: "Phase 42 — comfort targets + automation in plain language"
-    status: pending
+    status: completed
   - id: phase-43
     content: "Phase 43 — stock, feeding details, receipts (operations hub)"
     status: pending
@@ -28,7 +28,7 @@ todos:
     status: pending
   - id: phase-47
     content: "Phase 47 — feeding & water plain language (room-first; ties arc together)"
-    status: pending
+    status: completed
   - id: phase-48-dev-seed
     content: "Phase 48 — dev seed hygiene & small farm profiles (parallel infra track)"
     status: pending
@@ -36,6 +36,17 @@ isProject: false
 ---
 
 # Farmer UX roadmap — Phases 40–47
+
+## Where we are now (2026-06)
+
+| Status | Phases |
+|--------|--------|
+| **Shipped** | 40, 41, 47, 42 |
+| **Next feature code** | **[43](phase_43_operations_stock_feeding_finance.plan.md)** — Operations hub (Supplies & money) |
+| **Parallel infra** | **[48](phase_48_dev_seed_and_small_farm_profiles.plan.md)** — dev seed hygiene (recommended before 45 sit-in) |
+| **Then** | 44 → 45 → 46 |
+
+---
 
 ## Design rule (non-negotiable)
 

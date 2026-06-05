@@ -15,7 +15,7 @@ todos:
     content: "WS2: Triage sit-in findings into P0/P1 fixes (UI-only preferred)"
     status: pending
   - id: ws3-copy-pass-v2
-    content: "WS3: Copy pass v2 — grep technical terms site-wide; extend 20.9b pattern"
+    content: "WS3: Copy pass v2 — Vocabulary v2 zones not rooms; grep technical terms; extend farmerVocabulary.js + Vitest"
     status: pending
   - id: ws4-mobile-b4
     content: "WS4: Execute mobile-distribution.md checklist (icons, signing template, TestFlight path)"
@@ -93,6 +93,23 @@ Extend [farmer-vocabulary.md](../farmer-vocabulary.md) and [phase_20_9b](phase_2
 - Grow-path enforcement: `ui/src/__tests__/farmer-vocabulary-grow-path.test.js` (Phase 47 WS5)
 - HelpTips audit on 40–44 surfaces
 
+### Vocabulary v2 — zones not rooms
+
+Phase 47 introduced **room** as the generic grow-area word (**My rooms**, feeding hub “one card per room”, Guardian **this room**). Phase 45 **reverts the product term to zone** so the UI fits indoor, greenhouse, and outdoor farms without implying every grow area is a room. Zone **display names** stay as-is (e.g. **Flower Room**).
+
+**Spec:** [farmer-vocabulary.md § Vocabulary v2](../farmer-vocabulary.md#vocabulary-v2--zones-not-rooms-phase-45-ws3)
+
+| Work item | Files / surfaces |
+|-----------|------------------|
+| Nav + mobile tab | `navGroups.js` — **My zones**, mobile **Zones** |
+| Zone list + feeding hub | `Zones.vue`, `FeedingHub.vue`, `farmFeedingHub.js`, `farmGrowSummary.js` |
+| Zone cockpit copy | `ZoneWaterGrowStory.vue`, `ZoneNeedSection.vue`, `ZoneFeedingPlanWizard.vue`, `zoneFeedingPlan.js`, `Alerts.vue`, `Dashboard.vue` |
+| Guardian | `guardianStarters.js` — **this zone** fallback |
+| Label map + CI | `farmerVocabulary.js` exports; extend Vitest ban patterns for generic **room** |
+| Docs | `operator-tour.md`, `farm-guardian-architecture.md`, nav/closure tests |
+
+**Definition:** no grow-route label uses **room** as the generic noun for a grow area; **room** only appears inside a zone’s own name or agronomic examples.
+
 ---
 
 ## WS4 — Mobile (backlog B4)
@@ -147,7 +164,7 @@ Focus visible, aria labels on Run now / Confirm, chip contrast — no full WCAG 
 
 - [ ] ≥2 sit-ins completed; P0 backlog empty
 - [ ] Guardian ack + setup pack + dismiss **pass** per protocol
-- [ ] Copy pass v2 merged
+- [ ] Copy pass v2 merged (includes **Vocabulary v2 — zones not rooms**)
 - [ ] Mobile checklist executed or explicitly deferred with reason
 - [ ] README + operator-tour §9 updated
 - [ ] OC-45 closed

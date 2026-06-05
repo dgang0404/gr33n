@@ -190,6 +190,20 @@ With **AI_ENABLED** and Ollama running, grounded chat includes the three seed al
 
 If your DB has been used for smoke tests for weeks, you may see hundreds of thousands of stale automation alerts and extra test farms — reset with **`make dev-stack-fresh`** for a clean demo farm.
 
+## Slow UI and dev DB hygiene
+
+Local slowness after many dev sessions is usually **data volume**, not Vue bundle size:
+
+| Symptom | Likely cause | Quick fix |
+|---------|--------------|-----------|
+| Dashboard takes seconds to load | Duplicate sensors from re-running **`make seed`** / bootstrap on the same Docker volume; each refresh hits many `/readings/latest` rows | **`make dev-stack-fresh`** (wipes volumes) or implement [Phase 48 WS2–WS3](plans/phase_48_dev_seed_and_small_farm_profiles.plan.md) |
+| Hundreds of `/sensors/{id}/readings/latest` 404s | Stale sensor IDs in UI cache vs DB | Fresh seed; UI now batch-loads via `GET /farms/{id}/sensors/readings/latest` |
+| Guardian drawer sluggish | Mass automation-rule alerts from smoke tests | **`make dev-stack-fresh`** or Phase 48 **`db-sanity-report`** metrics |
+
+**Do not** use **`./scripts/restart-local.sh`** alone when the API is down — it only starts Postgres unless you pass **`--serve`**. From repo root use **`make dev-auth-test`** (API + UI) or **`make local-up`**.
+
+Canonical plan: [`docs/plans/phase_48_dev_seed_and_small_farm_profiles.plan.md`](plans/phase_48_dev_seed_and_small_farm_profiles.plan.md) — idempotent seed, `small_indoor` profile, optional Timescale retention (dev-gated).
+
 **Multi-site / enterprise (hypothetical):** how 500 warehouse-scale sites map onto org/farm/zone + commons recipe packs — no core software changes required: [`hypothetical-enterprise-topology.md`](hypothetical-enterprise-topology.md). **Phase 30** — Guardian PR queue (config + Pi via confirm): [`plans/phase_30_guardian_change_requests.plan.md`](plans/phase_30_guardian_change_requests.plan.md). **Phase 31** — Pi/breadboard field validation: [`plans/phase_31_field_validation_and_edge.plan.md`](plans/phase_31_field_validation_and_edge.plan.md).
 
 **Edge vs dashboard auth in the spec:** paths wrapped with `requireAPIKey` in `routes.go` are **Pi / bridge** calls using header **`X-API-Key`** (same secret as `PI_API_KEY` in `.env`). `GET /farms/{id}/devices` uses **`requireJWTOrPiEdge`**: OpenAPI lists **both** `bearerAuth` and `apiKeyAuth` so operators know the Pi may poll device `config` (including `pending_command`) with the API key while the dashboard uses a JWT.

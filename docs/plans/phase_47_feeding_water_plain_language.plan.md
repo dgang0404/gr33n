@@ -280,6 +280,8 @@ No new Confirm tools in 47 v1 unless sit-in demands `create_fertigation_program`
 - [x] operator-tour §7b + architecture §7.0m + OC-47
 - [x] Guardian feeding starters shipped (WS6)
 
+**Follow-up (Phase 45):** Grow-path copy shipped with **room** as the generic label (**My rooms**, hub cards). [Vocabulary v2 — zones not rooms](../farmer-vocabulary.md#vocabulary-v2--zones-not-rooms-phase-45-ws3) retargets nav and body copy to **zone** without renaming zone display names (e.g. Flower Room).
+
 ---
 
 ## Related
