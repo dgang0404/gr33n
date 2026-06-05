@@ -101,7 +101,7 @@
         class="text-xs text-zinc-400 hover:text-green-400 border border-zinc-700 rounded-lg px-3 py-1.5"
         data-test="feeding-advanced-footer"
       >
-        Advanced feeding (technical) →
+        Feeding details (admin) →
       </router-link>
     </footer>
   </div>
@@ -160,9 +160,9 @@ const feedingStarters = computed(() =>
 
 const advancedFeedingLink = computed(() => {
   if (zoneContextId.value) {
-    return { path: '/fertigation', query: { tab: 'programs', zone_id: String(zoneContextId.value) } }
+    return { path: '/operations/feeding', query: { tab: 'programs', zone_id: String(zoneContextId.value) } }
   }
-  return { path: '/fertigation', query: { tab: 'programs' } }
+  return { path: '/operations/feeding', query: { tab: 'programs' } }
 })
 
 function zoneName(zoneId) {
