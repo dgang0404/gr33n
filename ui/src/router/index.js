@@ -26,6 +26,7 @@ import CropCycleCompare from '../views/CropCycleCompare.vue'
 import LightingPrograms from '../views/LightingPrograms.vue'
 import FeedingHub from '../views/FeedingHub.vue'
 import ComfortTargetsHub from '../views/ComfortTargetsHub.vue'
+import SuppliesHub from '../views/SuppliesHub.vue'
 import Login from '../views/Login.vue'
 
 const routes = [
@@ -46,8 +47,8 @@ const routes = [
   { path: '/fertigation',  component: Fertigation,  name: 'fertigation' },
   { path: '/inventory',    component: Inventory,    name: 'inventory' },
   { path: '/costs',        component: Costs,        name: 'costs' },
-  // Phase 43 WS1 — farmer operations hubs (wrap legacy views until WS2–WS4 hubs ship)
-  { path: '/operations/supplies', component: Inventory, name: 'operations-supplies' },
+  // Phase 43 — farmer operations hubs
+  { path: '/operations/supplies', component: SuppliesHub, name: 'operations-supplies' },
   { path: '/operations/feeding', component: Fertigation, name: 'operations-feeding' },
   { path: '/operations/money', component: Costs, name: 'operations-money' },
   { path: '/alerts',       component: Alerts,       name: 'alerts' },

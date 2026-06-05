@@ -383,7 +383,7 @@ onMounted(async () => {
     ])
     inputs.value  = i
     batches.value = b
-    if (route.query.tab === 'batches') activeTab.value = 'batches'
+    if (route.query.tab === 'batches' || route.query.batch_id) activeTab.value = 'batches'
     else if (route.query.tab === 'recipes') activeTab.value = 'recipes'
     await loadRecipesList()
     const counts = {}
