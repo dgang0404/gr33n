@@ -59,6 +59,7 @@
         @toggle-actuator="toggleActuator"
         @refresh-events="loadEvents"
         @setpoints-updated="loadSetpoints"
+        @rules-updated="loadRules"
       />
 
       <ZoneNeedSection
@@ -78,6 +79,7 @@
         @toggle-actuator="toggleActuator"
         @refresh-events="loadEvents"
         @setpoints-updated="loadSetpoints"
+        @rules-updated="loadRules"
       />
 
       <ZoneNeedSection
@@ -97,6 +99,7 @@
         @toggle-actuator="toggleActuator"
         @refresh-events="loadEvents"
         @setpoints-updated="loadSetpoints"
+        @rules-updated="loadRules"
       />
 
       <template v-else>
@@ -391,11 +394,7 @@ onMounted(async () => {
   await store.loadTasks(fid)
   tasks.value = store.tasks
   await loadSetpoints()
-  try {
-    rules.value = await store.loadAutomationRules(fid)
-  } catch {
-    rules.value = []
-  }
+  await loadRules()
   try {
     const lr = await api.get(`/farms/${fid}/lighting-programs`)
     lightingPrograms.value = lr.data?.programs ?? lr.data ?? []
@@ -404,6 +403,16 @@ onMounted(async () => {
   }
   await Promise.all([loadEvents(), loadZonePhotos(), loadWaterQueueDepth(), store.loadAlerts(fid)])
 })
+
+async function loadRules() {
+  const fid = farmId.value
+  if (!fid) return
+  try {
+    rules.value = await store.loadAutomationRules(fid)
+  } catch {
+    rules.value = []
+  }
+}
 
 async function loadSetpoints() {
   const fid = farmId.value

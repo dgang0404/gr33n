@@ -43,6 +43,18 @@
       </div>
     </div>
 
+    <ZoneAutomationPanel
+      :need="need"
+      :zone-id="zoneId"
+      :zone-name="zone?.name || ''"
+      :sensors="sensors"
+      :rules="rules"
+      :schedules="schedules"
+      :active-program="activeProgram"
+      :lighting-programs="lightingPrograms"
+      @rules-updated="$emit('rules-updated')"
+    />
+
     <!-- Connection cards -->
     <div v-if="connectionCards.length" class="space-y-3">
       <h3 class="text-sm font-semibold text-white">What runs this</h3>
@@ -250,6 +262,7 @@ import ZoneNeedConnectionCard from './ZoneNeedConnectionCard.vue'
 import ActuatorPulseControl from './ActuatorPulseControl.vue'
 import ZoneGreenhouseTab from './ZoneGreenhouseTab.vue'
 import ZoneComfortTargets from './ZoneComfortTargets.vue'
+import ZoneAutomationPanel from './ZoneAutomationPanel.vue'
 
 const props = defineProps({
   need: { type: String, required: true },
@@ -269,7 +282,7 @@ const props = defineProps({
   toggling: { type: Object, default: () => ({}) },
 })
 
-defineEmits(['toggle-actuator', 'refresh-events', 'setpoints-updated'])
+defineEmits(['toggle-actuator', 'refresh-events', 'setpoints-updated', 'rules-updated'])
 
 const store = useFarmStore()
 
