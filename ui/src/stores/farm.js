@@ -545,13 +545,16 @@ export const useFarmStore = defineStore('farm', {
       return this.tasks.find((t) => t._offline?.queueItemId === queueItemId)
     },
 
-    async refreshReadings() {
-      for (const s of this.sensors) {
-        try {
-          const r = await api.get(`/sensors/${s.id}/readings/latest`)
-          this.readings[s.id] = r.data
-        } catch { /* no readings yet */ }
-      }
+    async refreshReadings(farmId) {
+      const fid = farmId ?? this.farm?.id
+      if (!fid) return
+      try {
+        const r = await api.get(`/farms/${fid}/sensors/readings/latest`)
+        const rows = Array.isArray(r.data) ? r.data : []
+        for (const row of rows) {
+          if (row?.sensor_id != null) this.readings[row.sensor_id] = row
+        }
+      } catch { /* no readings yet */ }
     },
 
     async loadSensorReadings(sensorId, { since, until, limit } = {}) {

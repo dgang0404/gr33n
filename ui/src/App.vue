@@ -149,7 +149,7 @@ async function bootstrapFarmData() {
   } else if (farmContext.farmId) {
     await store.loadAll(farmContext.farmId)
   }
-  await store.refreshReadings()
+  await store.refreshReadings(farmContext.farmId)
   connectSSE(farmContext.farmId)
 }
 

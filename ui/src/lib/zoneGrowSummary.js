@@ -14,6 +14,21 @@ function parseTriggerConfig(rule) {
   }
 }
 
+/** Normalize legacy array or canonical `{ logic, predicates }` rule conditions. */
+export function ruleConditionPredicates(rule) {
+  try {
+    const raw = rule?.conditions_jsonb
+    const parsed = typeof raw === 'string'
+      ? (() => { try { return JSON.parse(raw) } catch { return null } })()
+      : raw
+    if (Array.isArray(parsed)) return parsed
+    if (parsed && Array.isArray(parsed.predicates)) return parsed.predicates
+    return []
+  } catch {
+    return []
+  }
+}
+
 /**
  * @param {object} rule
  * @param {number} zoneId
@@ -26,9 +41,7 @@ export function ruleAppliesToZone(rule, zoneId, zoneName, zoneSensorIds) {
   if (zoneName && tc.target_zone && String(tc.target_zone).trim() === String(zoneName).trim()) {
     return true
   }
-  const conds = rule?.conditions_jsonb
-  const list = typeof conds === 'string' ? (() => { try { return JSON.parse(conds) } catch { return [] } })() : (conds || [])
-  for (const p of list) {
+  for (const p of ruleConditionPredicates(rule)) {
     if (p?.sensor_id != null && zoneSensorIds.has(Number(p.sensor_id))) return true
   }
   return false

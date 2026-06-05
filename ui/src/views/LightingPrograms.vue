@@ -225,6 +225,7 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import api from '../api/index.js'
+import { useFarmContextStore } from '../stores/farmContext.js'
 import PhotoperiodClockEditor from '../components/PhotoperiodClockEditor.vue'
 import ZoneContextBanner from '../components/ZoneContextBanner.vue'
 import EmptyStateHint from '../components/EmptyStateHint.vue'
@@ -232,12 +233,10 @@ import { parseZoneIdQuery } from '../lib/zoneContext.js'
 import { computeOffTime } from '../lib/lightingDisplay.js'
 
 const route = useRoute()
+const farmContext = useFarmContextStore()
 
 // ── farm context ──────────────────────────────────────────────────────────────
-const farmId = computed(() => {
-  const u = JSON.parse(localStorage.getItem('gr33n_user') || '{}')
-  return u.farm_id ?? null
-})
+const farmId = computed(() => farmContext.farmId)
 
 // ── state ─────────────────────────────────────────────────────────────────────
 const programs = ref([])

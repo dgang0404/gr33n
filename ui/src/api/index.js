@@ -21,6 +21,15 @@ api.interceptors.request.use((config) => {
   return config
 })
 
+/** Noisy failures callers already handle or that happen during normal navigation / API restarts. */
+function shouldLogApiError(err) {
+  const url = err.config?.url || ''
+  if (err.response?.status === 404 && url.includes('/readings/latest')) return false
+  if (err.code === 'ERR_CANCELED' || axios.isCancel?.(err)) return false
+  if (/abort|canceled/i.test(String(err.message || ''))) return false
+  return true
+}
+
 // On 401 — clear session and redirect to login
 api.interceptors.response.use(
   r => r,
@@ -37,7 +46,9 @@ api.interceptors.response.use(
         window.location.href = '/login'
       }
     }
-    console.error('[gr33n api]', err.config?.url, err.message)
+    if (shouldLogApiError(err)) {
+      console.error('[gr33n api]', err.config?.url || '', err.message)
+    }
     return Promise.reject(err)
   }
 )

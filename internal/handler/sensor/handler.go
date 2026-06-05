@@ -339,6 +339,27 @@ func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
+// LatestReadingsByFarm — GET /farms/{id}/sensors/readings/latest
+func (h *Handler) LatestReadingsByFarm(w http.ResponseWriter, r *http.Request) {
+	farmID, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	if err != nil {
+		httputil.WriteError(w, http.StatusBadRequest, "invalid farm id")
+		return
+	}
+	if !farmauthz.RequireFarmMember(w, r, h.q, farmID) {
+		return
+	}
+	rows, err := h.q.ListLatestReadingsByFarm(r.Context(), farmID)
+	if err != nil {
+		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	if rows == nil {
+		rows = []db.ListLatestReadingsByFarmRow{}
+	}
+	httputil.WriteJSON(w, http.StatusOK, rows)
+}
+
 // LatestReading — GET /sensors/{id}/readings/latest
 func (h *Handler) LatestReading(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)

@@ -3,6 +3,7 @@ import {
   computeZoneTodaySnapshot,
   filterZoneAlerts,
   ruleAppliesToZone,
+  ruleConditionPredicates,
 } from '../lib/zoneGrowSummary.js'
 import { humanizeCron } from '../lib/cronHumanize.js'
 
@@ -44,6 +45,17 @@ describe('Phase 40 WS1 — zone grow summary', () => {
     ]
     expect(ruleAppliesToZone(rules[0], zoneId, 'Flower Room', new Set())).toBe(true)
     expect(ruleAppliesToZone(rules[1], zoneId, 'Flower Room', new Set())).toBe(false)
+  })
+
+  it('handles canonical conditions_jsonb predicates shape', () => {
+    const zoneSensorIds = new Set([10])
+    const rule = {
+      id: 3,
+      trigger_configuration: {},
+      conditions_jsonb: { logic: 'ALL', predicates: [{ sensor_id: 10, op: 'gt', value: 28 }] },
+    }
+    expect(ruleConditionPredicates(rule)).toHaveLength(1)
+    expect(ruleAppliesToZone(rule, 99, 'Other', zoneSensorIds)).toBe(true)
   })
 
   it('builds Today chips with schedule, alerts, and queue', () => {

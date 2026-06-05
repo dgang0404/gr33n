@@ -36,7 +36,7 @@
 defineProps({
   title: { type: String, required: true },
   subtitle: { type: String, default: '' },
-  manageTo: { type: String, default: '' },
+  manageTo: { type: [String, Object], default: '' },
   readingLabel: { type: String, default: '' },
   targetLabel: { type: String, default: '' },
   automationLabel: { type: String, default: '' },

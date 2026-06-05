@@ -204,6 +204,7 @@ func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationwo
 	// Phase 39 WS1 — operator JWT routes for device command queue
 	mux.Handle("POST /devices/{id}/commands", jwt(http.HandlerFunc(devicecmd.Enqueue)))
 	mux.Handle("GET /devices/{id}/commands", jwt(http.HandlerFunc(devicecmd.List)))
+	mux.Handle("GET /farms/{id}/sensors/readings/latest", jwt(http.HandlerFunc(sensor.LatestReadingsByFarm)))
 	mux.Handle("GET /farms/{id}/sensors", jwt(http.HandlerFunc(sensor.ListByFarm)))
 	mux.Handle("GET /farms/{id}/schedules", jwt(http.HandlerFunc(automation.ListSchedulesByFarm)))
 	mux.Handle("POST /farms/{id}/schedules", jwt(http.HandlerFunc(automation.CreateSchedule)))

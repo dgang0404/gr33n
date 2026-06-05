@@ -313,7 +313,7 @@ async function refresh() {
   loading.value = true
   try {
     if (!store.zones.length) await store.loadAll(fid)
-    else await store.refreshReadings()
+    else await store.refreshReadings(fid)
     const [sp, rs, sc, pr, cycles] = await Promise.all([
       loadSetpoints(),
       store.loadAutomationRules(fid).catch(() => []),

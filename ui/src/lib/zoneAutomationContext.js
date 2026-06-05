@@ -3,7 +3,7 @@
  */
 
 import { PLANT_NEEDS, sensorPlantNeed } from './plantNeeds.js'
-import { ruleAppliesToZone, collectZoneScheduleIds } from './zoneGrowSummary.js'
+import { ruleAppliesToZone, collectZoneScheduleIds, ruleConditionPredicates } from './zoneGrowSummary.js'
 import { scheduleRunsLabel } from './cronHumanize.js'
 
 function parseTriggerConfig(rule) {
@@ -12,15 +12,6 @@ function parseTriggerConfig(rule) {
     return typeof tc === 'string' ? JSON.parse(tc) : (tc || {})
   } catch {
     return {}
-  }
-}
-
-function parseConditions(rule) {
-  try {
-    const c = rule?.conditions_jsonb
-    return typeof c === 'string' ? JSON.parse(c) : (c || [])
-  } catch {
-    return []
   }
 }
 
@@ -57,7 +48,7 @@ export function ruleAppliesToNeed(rule, need, ctx) {
     if (name.includes('water') || name.includes('irrig') || name.includes('feed')) return true
   }
 
-  for (const p of parseConditions(rule)) {
+  for (const p of ruleConditionPredicates(rule)) {
     const sid = p?.sensor_id
     if (sid == null) continue
     const sensor = sensors.find((s) => s.id === Number(sid))
@@ -70,7 +61,7 @@ export function ruleAppliesToNeed(rule, need, ctx) {
   }
 
   if (need === PLANT_NEEDS.air) {
-    for (const p of parseConditions(rule)) {
+    for (const p of ruleConditionPredicates(rule)) {
       if (p?.type === 'setpoint' && p?.sensor_type) {
         if (sensorPlantNeed(p.sensor_type) === PLANT_NEEDS.air) return true
       }
