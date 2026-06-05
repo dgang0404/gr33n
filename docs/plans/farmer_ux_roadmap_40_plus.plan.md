@@ -29,6 +29,9 @@ todos:
   - id: phase-47
     content: "Phase 47 — feeding & water plain language (room-first; ties arc together)"
     status: pending
+  - id: phase-48-dev-seed
+    content: "Phase 48 — dev seed hygiene & small farm profiles (parallel infra track)"
+    status: pending
 isProject: false
 ---
 
@@ -79,7 +82,7 @@ flowchart LR
 | Sidebar group | Farmer label (target) | What lives here |
 |---------------|----------------------|-----------------|
 | **Today** | Today | Dashboard morning cockpit (41), tasks due, alerts |
-| **Grow** | My rooms | Zones list → zone cockpit (40) — default entry |
+| **Grow** | My zones *(v2 — Phase 45; 47 shipped “My rooms”)* | Zones list → zone cockpit (40) — default entry |
 | **Feed & water** | Feeding | Phase **47** room-first feeding plan; not six-tab Fertigation first ([phase_47](phase_47_feeding_water_plain_language.plan.md)) |
 | **Comfort** | Targets & schedules | Phase 42 — bands + "what runs when" (replaces raw Setpoints/Schedules tour) |
 | **Stock & costs** | Supplies & money | Phase 43 — inventory, recipes, receipts simplified |
@@ -129,7 +132,7 @@ Phase 40 inline edit is the **wedge**; Phase 42 **owns the full comfort-target e
 
 **Start Phase 40 only after** [Pre–Phase 40 gate](phase_35_37_operational_closure.plan.md#prephase-40-gate-start-feature-work-only-when-these-are-green) is green — including Guardian PR docs ([guide](../guardian-change-requests-guide.md), [PR UX plan](guardian_pr_ux_through_farmer_phases.plan.md)). **Do not** wait for 42–47 to start 40 — they follow in order. **Recommended:** ship **47** soon after **41** so Water tab completes before comfort (42).
 
-**Vocabulary:** [farmer-vocabulary.md](../farmer-vocabulary.md) — enforced in Phase 47 WS5 and Phase 45 sit-in.
+**Vocabulary:** [farmer-vocabulary.md](../farmer-vocabulary.md) — enforced in Phase 47 WS5; **Vocabulary v2 (zones not rooms)** in Phase 45 WS3; sit-in validation in Phase 45.
 
 ---
 
@@ -195,6 +198,16 @@ Guardian **proposals** are not Git PRs — they are **Confirm-gated change reque
 
 Total **~8 feature phases** after 39 for "farmer-grade whole app" v1 (40–47) including **46** for Guardian NL→PR — not including Tier D engineering.
 
+### Dev hygiene track (parallel — Phase 48)
+
+Not farmer-facing UI. Run **in parallel** with 43–46; **complete before Phase 45 sit-in** if possible.
+
+| Phase | Name | Outcome |
+|-------|------|---------|
+| **48** | Dev seed & small farm profiles | Idempotent seed, `small_indoor` vs `demo_showcase`, reset script, optional Timescale retention |
+
+Plan: [phase_48_dev_seed_and_small_farm_profiles.plan.md](phase_48_dev_seed_and_small_farm_profiles.plan.md) · Closure: **OC-48**
+
 ---
 
 ## Related
@@ -202,7 +215,7 @@ Total **~8 feature phases** after 39 for "farmer-grade whole app" v1 (40–47) i
 | Doc | Use |
 |-----|-----|
 | [pre_development_gaps_index.plan.md](pre_development_gaps_index.plan.md) | Gap IDs → phase links (update Tier A to A2–A6) |
-| [phase_35_37_operational_closure.plan.md](phase_35_37_operational_closure.plan.md) | OC-40 … OC-45 trackers |
+| [phase_35_37_operational_closure.plan.md](phase_35_37_operational_closure.plan.md) | OC-40 … OC-48 trackers |
 | [sit-in-operator-experience.md](../workstreams/sit-in-operator-experience.md) | Feeds 45 |
 | [phase_15_farm_onboarding.plan.md](phase_15_farm_onboarding.plan.md) | Bootstrap API — 44 surfaces it |
 | [phase_20_6_stage_scoped_setpoints.plan.md](phase_20_6_stage_scoped_setpoints.plan.md) | Underlying setpoint model — 42 reframes UI |

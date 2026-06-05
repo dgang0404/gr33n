@@ -69,6 +69,9 @@ todos:
   - id: oc-47
     content: "OC-47: Phase 47 WS7 — feeding & water plain language docs/tests (close when Phase 47 ships)"
     status: completed
+  - id: oc-48-closure
+    content: "OC-48: Phase 48 WS7 — dev seed profiles, idempotent seed, reset script, sanity report (close when Phase 48 ships)"
+    status: pending
 isProject: false
 ---
 
@@ -284,7 +287,7 @@ Feature detail: [`phase_47_feeding_water_plain_language.plan.md`](phase_47_feedi
 | Guardian feeding | ✅ | WS6 — starters, `summarize_zone_fertigation` intents, patch matchers |
 | OC-47 docs/tests | ✅ | WS7 — operator-tour §7b, architecture §7.0m, workflow §4c, Vitest |
 
-**Master roadmap:** [`farmer_ux_roadmap_40_plus.plan.md`](farmer_ux_roadmap_40_plus.plan.md). Closure rows **OC-42 … OC-47** track each phase WS8/WS7 — not pre-40 work. Vocabulary: [`farmer-vocabulary.md`](../farmer-vocabulary.md). Guardian specs: [42](phase_42_guardian_pr_spec.md) · [43](phase_43_guardian_pr_spec.md) · [44](phase_44_guardian_pr_spec.md) · [45](phase_45_guardian_pr_spec.md) · [46](phase_46_guardian_llm_tool_proposals.plan.md).
+**Master roadmap:** [`farmer_ux_roadmap_40_plus.plan.md`](farmer_ux_roadmap_40_plus.plan.md). Closure rows **OC-42 … OC-48** track each phase WS8/WS7 — not pre-40 work. Vocabulary: [`farmer-vocabulary.md`](../farmer-vocabulary.md). Guardian specs: [42](phase_42_guardian_pr_spec.md) · [43](phase_43_guardian_pr_spec.md) · [44](phase_44_guardian_pr_spec.md) · [45](phase_45_guardian_pr_spec.md) · [46](phase_46_guardian_llm_tool_proposals.plan.md).
 
 | Phase | Focus (build order after 40–41) |
 |-------|--------------------------------|
@@ -294,15 +297,23 @@ Feature detail: [`phase_47_feeding_water_plain_language.plan.md`](phase_47_feedi
 | [44](phase_44_getting_started_edge_wizard.plan.md) | Farm + Pi wizards; setup starters second |
 | [45](phase_45_farmer_validation_whole_app_polish.plan.md) | Sit-in + whole-app polish |
 | [46](phase_46_guardian_llm_tool_proposals.plan.md) | LLM tool proposals (hybrid C) |
+| [48](phase_48_dev_seed_and_small_farm_profiles.plan.md) | Dev seed hygiene; small farm profiles (parallel infra) |
 
-## Phases 42–47 — Farmer UX + Guardian PR completion
-|------|------------|-------|
-| `device_commands` queue | WS1 | **Fixes last-write-wins** for all actuators + mix |
-| Mix calculator + `mix_batch` | WS2–WS3 | Recipe + base EC + target |
-| Pi executor + program pipeline | WS4–WS5 | After queue |
-| Schema migration | WS1 | First grow-stack migration since 38 (additive) |
+## Phase 48 — Dev seed hygiene & small farm profiles
 
-**Stack rule:** 35/36/38 keep working during 39; migrate writers to queue with `pending_command` head mirror for one Pi release.
+Feature detail: [`phase_48_dev_seed_and_small_farm_profiles.plan.md`](phase_48_dev_seed_and_small_farm_profiles.plan.md). **OC-48** pending.
+
+| Area | Status | Notes |
+|------|--------|-------|
+| Profile spec (`small_indoor` / `demo_showcase`) | ⏳ | WS1 |
+| Idempotent `master_seed` + unique sensors | ⏳ | WS2 — fixes duplicate sensor IDs on re-seed |
+| `dev-reset-farm.sh` | ⏳ | WS3 — without `--reset-volumes` |
+| Bootstrap template audit | ⏳ | WS4 — aligns with Phase 44 wizard |
+| Timescale retention (dev-gated) | ⏳ | WS5 |
+| `db-sanity-report` bloat metrics | ⏳ | WS6 |
+| OC-48 docs/smokes | ⏳ | WS7 |
+
+**Master roadmap:** [`farmer_ux_roadmap_40_plus.plan.md`](farmer_ux_roadmap_40_plus.plan.md). Closure rows **OC-42 … OC-48** track each phase WS8/WS7 — not pre-40 work. Vocabulary: [`farmer-vocabulary.md`](../farmer-vocabulary.md). Guardian specs: [42](phase_42_guardian_pr_spec.md) · [43](phase_43_guardian_pr_spec.md) · [44](phase_44_guardian_pr_spec.md) · [45](phase_45_guardian_pr_spec.md) · [46](phase_46_guardian_llm_tool_proposals.plan.md).
 
 ---
 
@@ -316,3 +327,4 @@ Feature detail: [`phase_47_feeding_water_plain_language.plan.md`](phase_47_feedi
 | [phase_38_plant_needs_ui_and_pulse_commands.plan.md](phase_38_plant_needs_ui_and_pulse_commands.plan.md) | **Shipped** — UI + pulse |
 | [phase_39_edge_fertigation_execution.plan.md](phase_39_edge_fertigation_execution.plan.md) | **Next** — queue + automated mix |
 | [phase_32_guardian_grow_setup_prs.plan.md](phase_32_guardian_grow_setup_prs.plan.md) | Reference closure pattern (WS7 OpenAPI + WS8 RAG) |
+| [phase_48_dev_seed_and_small_farm_profiles.plan.md](phase_48_dev_seed_and_small_farm_profiles.plan.md) | Dev seed hygiene — parallel to 43–46 |
