@@ -169,11 +169,18 @@
       <section class="bg-zinc-900/60 border border-zinc-800 rounded-xl p-4 space-y-2">
         <h2 class="text-sm font-semibold text-zinc-300">Edge device</h2>
         <p class="text-xs text-zinc-500">
-          Pi registration and API keys are handled in the <strong class="text-zinc-400">edge device wizard</strong> (Phase 44 WS3).
           {{ unassignedDevices.length
             ? `${unassignedDevices.length} farm device(s) are not assigned to a room yet.`
             : 'Connect a Pi when you are ready to wire sensors and pumps.' }}
         </p>
+        <router-link
+          v-if="farmId"
+          :to="deviceWizardLink"
+          class="inline-block text-xs text-green-400 hover:text-green-300 underline"
+          data-test="zone-wizard-device-link"
+        >
+          Open edge device wizard →
+        </router-link>
       </section>
 
       <p v-if="submitError" class="text-sm text-red-400">{{ submitError }}</p>
@@ -235,6 +242,7 @@ import {
   isGreenhouseZoneType,
   supportsLightingPreset,
 } from '../lib/zoneSetupWizard.js'
+import { deviceSetupRoute } from '../lib/deviceSetupWizard.js'
 
 const route = useRoute()
 const store = useFarmStore()
@@ -275,6 +283,11 @@ const isGreenhouse = computed(() => isGreenhouseZoneType(form.zoneType))
 const showLighting = computed(() => supportsLightingPreset(form.zoneType))
 const lightActuators = computed(() => filterLightActuators(store.actuators))
 const unassignedDevices = computed(() => listUnassignedDevices(store.devices))
+
+const deviceWizardLink = computed(() => {
+  if (!farmId.value) return '/settings'
+  return deviceSetupRoute(farmId.value, zoneContextId.value)
+})
 
 const farmTimezone = computed(() =>
   farmContext.selectedFarm?.timezone || store.farm?.timezone || 'America/New_York',

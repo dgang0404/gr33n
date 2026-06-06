@@ -31,6 +31,7 @@ import FeedingAdminHub from '../views/FeedingAdminHub.vue'
 import MoneyHub from '../views/MoneyHub.vue'
 import FarmSetupWizard from '../views/FarmSetupWizard.vue'
 import ZoneSetupWizard from '../views/ZoneSetupWizard.vue'
+import DeviceSetupWizard from '../views/DeviceSetupWizard.vue'
 import Login from '../views/Login.vue'
 
 const routes = [
@@ -70,6 +71,7 @@ const routes = [
   { path: '/farms/:fid/crop-cycles/compare', component: CropCycleCompare, name: 'crop-cycle-compare' },
   { path: '/farms/:id/setup', component: FarmSetupWizard, name: 'farm-setup' },
   { path: '/farms/:id/zones/new', component: ZoneSetupWizard, name: 'zone-setup' },
+  { path: '/farms/:id/devices/new', component: DeviceSetupWizard, name: 'device-setup' },
   { path: '/lighting', component: LightingPrograms, name: 'lighting' },
 ]
 

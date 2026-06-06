@@ -13,7 +13,7 @@ todos:
     status: completed
   - id: ws3-device-wizard
     content: "WS3: Edge device wizard — API key, test connection, assign zone; link pi-integration-guide steps in UI"
-    status: pending
+    status: completed
   - id: ws4-guardian-setup-mode
     content: "WS4: Guardian 'setup mode' prompts — grow_setup_pack, create_lighting_program, create_fertigation_program with checklists"
     status: pending
@@ -33,7 +33,7 @@ isProject: false
 
 ## Status
 
-**WS1–WS2 shipped** on `main`. WS3–WS8 pending. After [Phase 41](phase_41_farm_hub_coherence.plan.md) (empty states) and [Phase 42](phase_42_comfort_targets_automation_plain_language.plan.md) (comfort bands — wizard can set first band).
+**WS1–WS3 shipped** on `main`. WS4–WS8 pending. After [Phase 41](phase_41_farm_hub_coherence.plan.md) (empty states) and [Phase 42](phase_42_comfort_targets_automation_plain_language.plan.md) (comfort bands — wizard can set first band).
 
 **Prerequisite API:** [Phase 15](phase_15_farm_onboarding.plan.md) bootstrap templates ✅.
 
@@ -157,7 +157,8 @@ operator-tour §8 + §6g, architecture §7.0j, Vitest wizard navigation, smoke b
 
 - [x] Farm setup wizard (WS1) — `/farms/:id/setup`, template cards, preview, apply
 - [x] Add zone wizard (WS2) — `/farms/:id/zones/new`, greenhouse profile, optional lighting preset
-- [ ] Device wizard shipped
+- [x] Edge device wizard (WS3) — `/farms/:id/devices/new`, Pi checklist, poll online, actuators
+- [ ] First-run checklist + remaining WS4–WS8
 - [ ] First-run checklist on Dashboard
 - [ ] Pi steps reachable without leaving app
 - [ ] Guardian WS8 per [phase_44_guardian_pr_spec.md](phase_44_guardian_pr_spec.md)

@@ -693,6 +693,18 @@ export const useFarmStore = defineStore('farm', {
       this.zones = this.zones.filter(z => z.id !== id)
     },
 
+    async createDevice(farmId, data) {
+      const r = await api.post(`/farms/${farmId}/devices`, data)
+      if (r.data) this.devices.push(r.data)
+      return r.data
+    },
+
+    async createActuator(farmId, data) {
+      const r = await api.post(`/farms/${farmId}/actuators`, data)
+      await this.loadAll(farmId)
+      return r.data
+    },
+
     // Natural farming CRUD
     async loadNfInputs(farmId) {
       const r = await api.get(`/farms/${farmId}/naturalfarming/inputs`)
