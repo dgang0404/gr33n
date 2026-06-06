@@ -247,6 +247,10 @@
         >
           Image analysis is advisory only — hypotheses, not certified diagnosis. Any change still needs Confirm.
         </p>
+        <div v-if="setupStarters.length" class="space-y-1.5" data-test="chat-setup-starters">
+          <p class="text-[10px] uppercase tracking-widest text-zinc-500">Setup help</p>
+          <GuardianStarterChips :starters="setupStarters" />
+        </div>
         <div class="flex flex-col gap-2">
           <label class="text-xs text-zinc-400">Your message</label>
           <textarea
@@ -404,10 +408,13 @@
 
 <script setup>
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import api from '../api'
 import GuardianActionProposal from './GuardianActionProposal.vue'
 import GuardianProcedureCard from './GuardianProcedureCard.vue'
+import GuardianStarterChips from './GuardianStarterChips.vue'
+import { buildSetupStarters } from '../lib/guardianStarters.js'
 import { useFarmOperate } from '../composables/useFarmOperate'
 import { useFarmContextStore } from '../stores/farmContext'
 import { useFarmStore } from '../stores/farm'
@@ -425,6 +432,7 @@ const props = defineProps({
 })
 
 const maxHistoryTurns = 20
+const route = useRoute()
 
 const farmContext = useFarmContextStore()
 const farmStore = useFarmStore()
@@ -444,6 +452,28 @@ const photoThumbUrls = ref({})
 const photoUploading = ref(false)
 const selectedAttachmentIds = ref([])
 const { canOperate } = useFarmOperate(farmIdRef)
+
+const setupModeActive = computed(() => {
+  if (!capabilities.aiEnabled || !farmContext.farmId) return false
+  if (guardianPanel.setupMode) return true
+  if (route?.path === '/chat' && route?.query?.setup === '1') return true
+  return (farmStore.zones?.length ?? 0) === 0
+})
+
+const setupStarters = computed(() => {
+  if (!setupModeActive.value) return []
+  const devices = farmStore.devices || []
+  const deviceOffline = devices.length > 0 && devices.some((d) => d.status !== 'online')
+  const unreadAlerts = (farmStore.alerts || []).filter((a) => !a.is_read)
+  return buildSetupStarters({
+    surface: 'setup_mode_chat',
+    farmId: farmContext.farmId,
+    zoneCount: farmStore.zones?.length ?? 0,
+    zones: farmStore.zones || [],
+    unreadAlerts,
+    deviceOffline,
+  })
+})
 
 const message = ref('')
 const useFarmContext = ref(!!farmContext.farmId)
@@ -824,6 +854,7 @@ async function send() {
     sessionId: sessionId.value || undefined,
     contextRef: guardianPanel.chatContextRef(),
     attachmentIds: attachedIds,
+    setupMode: setupModeActive.value,
   })
   if (!result?.finalEvent) return
 

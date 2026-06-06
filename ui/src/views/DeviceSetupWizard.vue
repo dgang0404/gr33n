@@ -95,6 +95,10 @@
         </button>
         <button type="button" class="px-4 py-2 text-sm text-zinc-400 hover:text-zinc-200" @click="step = 'register'">Back</button>
       </div>
+      <section class="pt-4 border-t border-zinc-800 space-y-2" data-test="device-wizard-guardian-help">
+        <p class="text-[10px] uppercase tracking-widest text-zinc-500">Need help?</p>
+        <GuardianStarterChips :starters="deviceWizardStarters" />
+      </section>
     </template>
 
     <!-- Step 3 — Test connection -->
@@ -178,6 +182,8 @@
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import api from '../api.js'
+import GuardianStarterChips from '../components/GuardianStarterChips.vue'
+import { buildSetupStarters } from '../lib/guardianStarters.js'
 import { useFarmStore } from '../stores/farm.js'
 import { useFarmContextStore } from '../stores/farmContext.js'
 import { parseZoneIdQuery } from '../lib/zoneContext.js'
@@ -241,6 +247,15 @@ const configSnippet = computed(() => {
 
 const deviceOnline = computed(() => isDeviceOnline(createdDevice.value))
 const statusLabel = computed(() => formatDeviceStatusLabel(createdDevice.value))
+
+const deviceWizardStarters = computed(() => buildSetupStarters({
+  surface: 'device_wizard',
+  farmId: farmId.value,
+  zoneCount: store.zones?.length ?? 0,
+  zones: store.zones || [],
+  deviceOffline: createdDevice.value != null && !deviceOnline.value,
+  deviceWizardStep: step.value === 'apikey' || step.value === 'test',
+}))
 
 async function ensureFarmContext() {
   loadError.value = ''

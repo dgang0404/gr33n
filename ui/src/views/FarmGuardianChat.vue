@@ -55,6 +55,7 @@ import GuardianRequestsInbox from '../components/GuardianRequestsInbox.vue'
 import GuardianTabNav from '../components/GuardianTabNav.vue'
 import { useCapabilitiesStore } from '../stores/capabilities'
 import { useFarmContextStore } from '../stores/farmContext'
+import { useGuardianPanelStore } from '../stores/guardianPanel'
 import { useGuardianProposalsStore } from '../stores/guardianProposals'
 
 const route = useRoute()
@@ -62,6 +63,7 @@ const router = useRouter()
 const capabilities = useCapabilitiesStore()
 const farmContext = useFarmContextStore()
 const proposalsStore = useGuardianProposalsStore()
+const guardianPanel = useGuardianPanelStore()
 
 const activeTab = computed({
   get() {
@@ -75,6 +77,9 @@ const activeTab = computed({
 
 onMounted(async () => {
   if (!capabilities.loaded) await capabilities.fetch()
+  if (route.query.setup === '1') {
+    guardianPanel.setupMode = true
+  }
   if (farmContext.farmId) {
     await proposalsStore.refreshPendingCount(farmContext.farmId)
   }

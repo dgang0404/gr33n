@@ -124,6 +124,10 @@
           Back
         </button>
       </div>
+      <section class="pt-4 border-t border-zinc-800 space-y-2" data-test="farm-setup-guardian-help">
+        <p class="text-[10px] uppercase tracking-widest text-zinc-500">Need help?</p>
+        <GuardianStarterChips :starters="farmSetupStarters" />
+      </section>
     </template>
 
     <!-- Step 3 — Done -->
@@ -164,6 +168,8 @@
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
+import GuardianStarterChips from '../components/GuardianStarterChips.vue'
+import { buildSetupStarters } from '../lib/guardianStarters.js'
 import { useFarmStore } from '../stores/farm.js'
 import { useFarmContextStore } from '../stores/farmContext.js'
 import {
@@ -202,6 +208,13 @@ const primaryChoices = FARM_SETUP_PRIMARY_CHOICES
 const moreChoices = farmSetupMoreChoices()
 
 const preview = computed(() => previewForSetupChoice(selectedChoice.value))
+
+const farmSetupStarters = computed(() => buildSetupStarters({
+  surface: 'farm_setup_wizard',
+  farmId: farmId.value,
+  zoneCount: store.zones?.length ?? zoneCount.value,
+  zones: store.zones || [],
+}))
 
 function selectChoice(id) {
   selectedChoice.value = id

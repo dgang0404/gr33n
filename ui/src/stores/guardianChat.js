@@ -72,7 +72,7 @@ export const useGuardianChatStore = defineStore('guardianChat', {
      * POST /v1/chat SSE. Aborts only on explicit cancelStream or a new sendMessage.
      * @returns {{ finalEvent, userMessage, attachedIds, body } | null}
      */
-    async sendMessage({ message, farmId, sessionId, contextRef, attachmentIds }) {
+    async sendMessage({ message, farmId, sessionId, contextRef, attachmentIds, setupMode }) {
       const trimmed = (message || '').trim()
       if (!trimmed) return null
       if (this.streaming) this.cancelStream()
@@ -87,6 +87,7 @@ export const useGuardianChatStore = defineStore('guardianChat', {
       if (farmId != null) body.farm_id = Number(farmId)
       if (contextRef) body.context_ref = contextRef
       if (attachmentIds?.length) body.attachment_ids = [...attachmentIds]
+      if (setupMode) body.setup_mode = true
 
       const ctrl = new AbortController()
       this._abort = ctrl

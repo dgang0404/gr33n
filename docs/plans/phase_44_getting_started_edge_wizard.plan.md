@@ -16,7 +16,7 @@ todos:
     status: completed
   - id: ws4-guardian-setup-mode
     content: "WS4: Guardian 'setup mode' prompts — grow_setup_pack, create_lighting_program, create_fertigation_program with checklists"
-    status: pending
+    status: completed
   - id: ws5-first-run-dashboard
     content: "WS5: First-run empty Dashboard — checklist (zones, device, comfort band, one schedule)"
     status: pending
@@ -102,13 +102,15 @@ Embed checklist from pi-integration-guide (not PDF-only).
 
 ---
 
-## WS4 — Guardian setup mode
+## WS4 — Guardian setup mode ✅
 
 **Spec:** [phase_44_guardian_pr_spec.md](phase_44_guardian_pr_spec.md) §5.
 
 - Chat system hint when farm has zero zones or `?setup=1`.
 - Starters send grow-setup phrases; **`apply_grow_setup_pack`** matcher unchanged (Phase 32).
 - **Bootstrap** via wizard POST — not chat-first (`apply_bootstrap_template` stays admin PR).
+
+**Shipped:** `internal/farmguardian/setup_mode.go` + `POST /v1/chat` `setup_mode` / `?setup=1`; `buildSetupStarters` on drawer, wizards, and `/chat?setup=1`.
 
 ---
 

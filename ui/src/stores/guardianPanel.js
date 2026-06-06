@@ -15,6 +15,7 @@ export const useGuardianPanelStore = defineStore('guardianPanel', {
     contextRef: null, // { type: 'alert'|'crop_cycle'|'zone', id, ... } — WS6
     routeRef: null, // { type: 'route', path, name } — Phase 32 WS1
     activeSessionId: '',
+    setupMode: false, // Phase 44 WS4 — setup-mode persona for grounded chat
   }),
 
   actions: {
@@ -29,6 +30,7 @@ export const useGuardianPanelStore = defineStore('guardianPanel', {
       if (opts.prefilledMessage != null) this.prefilledMessage = opts.prefilledMessage
       if (opts.contextRef != null) this.contextRef = opts.contextRef
       if (opts.activeSessionId != null) this.activeSessionId = opts.activeSessionId
+      if (opts.setupMode != null) this.setupMode = !!opts.setupMode
     },
 
     openPendingTab() {
@@ -42,6 +44,7 @@ export const useGuardianPanelStore = defineStore('guardianPanel', {
 
     close() {
       this.open = false
+      this.setupMode = false
     },
 
     clearPrefill() {

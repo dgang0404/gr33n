@@ -5,7 +5,7 @@ overview: >
   conversation starters and optional setup-mode persona only guide chat. Reuses
   apply_grow_setup_pack matcher; bootstrap template via wizard API (not chat-first).
 parent_plan: phase_44_getting_started_edge_wizard.plan.md
-status: planned
+status: in_progress
 ---
 
 # Phase 44 — Guardian PR spec (wizards first, setup starters second)

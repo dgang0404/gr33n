@@ -119,6 +119,9 @@ type postBody struct {
 	// AttachmentIDs lists zone reference photo file_attachments to include in a
 	// multimodal user turn (Phase 30 WS6). Requires farm_id and vision LLM config.
 	AttachmentIDs []int64 `json:"attachment_ids,omitempty"`
+	// SetupMode opts into the setup-mode persona (Phase 44 WS4). Also activates
+	// when the farm snapshot has zero zones or POST ?setup=1.
+	SetupMode bool `json:"setup_mode,omitempty"`
 }
 
 type postResponse struct {
@@ -229,6 +232,12 @@ func (h *Handler) PostV1(w http.ResponseWriter, r *http.Request) {
 		if pb.ContextRef != nil {
 			if focus := farmguardian.ContextRefPromptBlock(r.Context(), h.q, farmID, *pb.ContextRef); focus != "" {
 				system += focus + "\n\n"
+			}
+		}
+		setupExplicit := pb.SetupMode || strings.TrimSpace(r.URL.Query().Get("setup")) == "1"
+		if farmguardian.SetupModeActive(liveSnap, setupExplicit) {
+			if setupBlock := farmguardian.SetupModePromptBlock(liveSnap); setupBlock != "" {
+				system += setupBlock + "\n\n"
 			}
 		}
 

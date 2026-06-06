@@ -67,12 +67,24 @@ func renderRouteContext(path, nameHint string) string {
 	if path == "/operations/money" || path == "/costs" {
 		b.WriteString("\nMoney — spend summary and receipts. Plain language; hide GL/COA unless the operator is on the full costs editor.")
 	}
+	if strings.HasPrefix(path, "/farms/") && strings.HasSuffix(path, "/setup") {
+		b.WriteString("\nFarm setup wizard — prefer wizard buttons and preview over inventing bootstrap config in chat.")
+	}
+	if strings.HasPrefix(path, "/farms/") && strings.HasSuffix(path, "/zones/new") {
+		b.WriteString("\nAdd grow room wizard — zone creation happens in the wizard UI, not chat.")
+	}
+	if strings.HasPrefix(path, "/farms/") && strings.HasSuffix(path, "/devices/new") {
+		b.WriteString("\nEdge device wizard — device register and Pi config happen in the wizard; offer procedure wire-pi-relay-light for wiring help.")
+	}
 	b.WriteString("\nPrefer setup/how-to guidance for this screen; live rows still come from the snapshot and read tools only.")
 	return b.String()
 }
 
 func routeLabelFromPath(path string) string {
 	if label, ok := knownRouteLabels[path]; ok {
+		return label
+	}
+	if label := setupWizardRouteLabel(path); label != "" {
 		return label
 	}
 	switch {
@@ -116,6 +128,19 @@ var knownRouteLabels = map[string]string{
 	"/guardian/requests": "Guardian change requests",
 	"/settings":          "Settings",
 	"/operator-guide":    "Operator guide",
+}
+
+func setupWizardRouteLabel(path string) string {
+	switch {
+	case strings.HasPrefix(path, "/farms/") && strings.HasSuffix(path, "/setup"):
+		return "Farm setup"
+	case strings.HasPrefix(path, "/farms/") && strings.HasSuffix(path, "/zones/new"):
+		return "Add grow room"
+	case strings.HasPrefix(path, "/farms/") && strings.HasSuffix(path, "/devices/new"):
+		return "Connect edge device"
+	default:
+		return ""
+	}
 }
 
 func renderAlertContext(ctx context.Context, q *db.Queries, farmID, alertID int64) string {

@@ -28,6 +28,7 @@ function pickStarter(s) {
   guardianPanel.openDrawer({
     prefilledMessage: s.message,
     contextRef: s.contextRef ?? null,
+    setupMode: !!s.setupMode,
   })
 }
 </script>

@@ -48,6 +48,23 @@ func TestContextRefPromptBlock_RouteWithoutFarm(t *testing.T) {
 	}
 }
 
+func TestBuildContextRefBlock_SetupWizardRoutes(t *testing.T) {
+	got := BuildContextRefBlock(t.Context(), nil, 0, ContextRef{Type: "route", Path: "/farms/7/setup"})
+	for _, want := range []string{"Farm setup", "wizard buttons", "bootstrap"} {
+		if !strings.Contains(got, want) {
+			t.Fatalf("farm setup block missing %q:\n%s", want, got)
+		}
+	}
+	got = BuildContextRefBlock(t.Context(), nil, 0, ContextRef{Type: "route", Path: "/farms/7/zones/new"})
+	if !strings.Contains(got, "grow room wizard") {
+		t.Fatalf("zone wizard block: %q", got)
+	}
+	got = BuildContextRefBlock(t.Context(), nil, 0, ContextRef{Type: "route", Path: "/farms/7/devices/new"})
+	if !strings.Contains(got, "wire-pi-relay-light") {
+		t.Fatalf("device wizard block: %q", got)
+	}
+}
+
 func TestBuildContextRefBlock_OperationsRoutes(t *testing.T) {
 	got := BuildContextRefBlock(t.Context(), nil, 0, ContextRef{Type: "route", Path: "/operations/supplies"})
 	for _, want := range []string{"Supplies", "do not promise Guardian can change stock"} {

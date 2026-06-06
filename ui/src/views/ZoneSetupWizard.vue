@@ -220,6 +220,10 @@
           All rooms
         </router-link>
       </div>
+      <section class="pt-4 border-t border-zinc-800 space-y-2" data-test="zone-wizard-guardian-help">
+        <p class="text-[10px] uppercase tracking-widest text-zinc-500">Need help?</p>
+        <GuardianStarterChips :starters="zoneWizardStarters" />
+      </section>
     </template>
   </div>
 </template>
@@ -228,6 +232,8 @@
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import api from '../api.js'
+import GuardianStarterChips from '../components/GuardianStarterChips.vue'
+import { buildSetupStarters } from '../lib/guardianStarters.js'
 import { useFarmStore } from '../stores/farm.js'
 import { useFarmContextStore } from '../stores/farmContext.js'
 import {
@@ -286,12 +292,20 @@ const unassignedDevices = computed(() => listUnassignedDevices(store.devices))
 
 const deviceWizardLink = computed(() => {
   if (!farmId.value) return '/settings'
-  return deviceSetupRoute(farmId.value, zoneContextId.value)
+  return deviceSetupRoute(farmId.value, createdZoneId.value)
 })
 
 const farmTimezone = computed(() =>
   farmContext.selectedFarm?.timezone || store.farm?.timezone || 'America/New_York',
 )
+
+const zoneWizardStarters = computed(() => buildSetupStarters({
+  surface: 'zone_wizard',
+  farmId: farmId.value,
+  zoneCount: store.zones?.length ?? 0,
+  zones: store.zones || [],
+  zoneName: form.name,
+}))
 
 async function ensureFarmContext() {
   loadError.value = ''

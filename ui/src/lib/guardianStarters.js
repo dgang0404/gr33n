@@ -1,6 +1,130 @@
 /**
  * Phase 40 WS7b + Phase 47 WS6 — zone and feeding hub Guardian starter chips.
+ * Phase 44 WS4 — setup-mode starters for wizards and onboarding drawer.
  */
+
+const SETUP_SURFACE_MAX = {
+  first_run_dashboard: 3,
+  farm_setup_wizard: 2,
+  zone_wizard: 3,
+  device_wizard: 2,
+  empty_zone_grow: 3,
+  setup_mode_chat: 4,
+}
+
+function setupRouteRef(farmId, kind, surface) {
+  const paths = {
+    farm: `/farms/${farmId}/setup`,
+    zone: `/farms/${farmId}/zones/new`,
+    device: `/farms/${farmId}/devices/new`,
+  }
+  const names = {
+    farm: 'Farm setup',
+    zone: 'Add grow room',
+    device: 'Connect edge device',
+  }
+  return { type: 'route', path: paths[kind], name: names[kind], surface }
+}
+
+/**
+ * Phase 44 WS4 — setup / first-run Guardian starter chips (priority order per spec §4.2).
+ * @param {object} params
+ */
+export function buildSetupStarters({
+  surface = 'setup_mode_chat',
+  farmId = null,
+  zoneCount = 0,
+  zones = [],
+  activeCycles = [],
+  unreadAlerts = [],
+  deviceOffline = false,
+  zoneName = '',
+  deviceWizardStep = false,
+} = {}) {
+  const max = SETUP_SURFACE_MAX[surface] ?? 4
+  const candidates = []
+
+  if (zoneCount === 0) {
+    candidates.push({
+      id: 'first-grow-room',
+      label: 'Add my first grow room',
+      message: "I'm setting up a new farm — what should I do first after creating a zone?",
+      contextRef: farmId
+        ? setupRouteRef(farmId, 'zone', surface)
+        : { type: 'route', path: '/zones', name: 'Zones', surface },
+      setupMode: true,
+    })
+  }
+
+  const firstZone = zones[0]
+  const zoneForGrow = zoneName || firstZone?.name || ''
+  const zoneId = firstZone?.id
+  const hasCycleInZone = zoneId != null
+    && (activeCycles || []).some((c) => Number(c.zone_id) === Number(zoneId))
+  const growSurfaces = new Set(['setup_mode_chat', 'empty_zone_grow', 'zone_wizard'])
+  if (zoneCount > 0 && zoneForGrow && !hasCycleInZone && growSurfaces.has(surface)) {
+    candidates.push({
+      id: 'start-grow',
+      label: `Start a grow in ${zoneForGrow}`,
+      message: `Add my philodendron to ${zoneForGrow} with a light fertigation program`,
+      contextRef: zoneId
+        ? { type: 'zone', id: zoneId, name: zoneForGrow }
+        : (farmId ? setupRouteRef(farmId, 'zone', surface) : null),
+      setupMode: true,
+    })
+  }
+
+  const alert = (unreadAlerts || []).find((a) => !a.is_read) || unreadAlerts[0]
+  if (alert?.id) {
+    candidates.push({
+      id: 'handle-alert',
+      label: 'Handle this alert',
+      message: `Acknowledge alert #${alert.id}: ${alert.subject_rendered || alert.subject || 'alert'}`,
+      contextRef: { type: 'alert', id: alert.id },
+      setupMode: true,
+    })
+  }
+
+  if (surface === 'device_wizard' || deviceWizardStep) {
+    candidates.push({
+      id: 'wire-pi',
+      label: 'Wire Pi checklist',
+      message: 'start procedure wire-pi-relay-light',
+      contextRef: farmId ? setupRouteRef(farmId, 'device', surface) : null,
+      setupMode: true,
+    })
+  }
+
+  if (surface === 'farm_setup_wizard') {
+    candidates.push({
+      id: 'compare-templates',
+      label: 'Compare templates',
+      message: "What's the difference between indoor veg and greenhouse climate bootstrap templates?",
+      contextRef: farmId ? setupRouteRef(farmId, 'farm', surface) : null,
+      setupMode: true,
+    })
+  }
+
+  if (deviceOffline) {
+    candidates.push({
+      id: 'pi-offline',
+      label: 'Why is my Pi offline?',
+      message: 'start procedure diagnose-pi-offline',
+      contextRef: farmId ? setupRouteRef(farmId, 'device', surface) : null,
+      setupMode: true,
+    })
+  }
+
+  candidates.push({
+    id: 'setup-walkthrough',
+    label: 'What does setup mode do?',
+    message: "I'm in farm setup — walk me through zones, device, and comfort targets in order",
+    contextRef: { type: 'route', path: '/chat', name: 'Farm Guardian chat', surface: 'setup_mode_chat' },
+    setupMode: true,
+  })
+
+  return dedupeStarters(candidates).slice(0, max)
+}
 
 import { buildZoneGuardianPrompt, buildZoneGuardianContextRef } from './guardianContextPrompts.js'
 
