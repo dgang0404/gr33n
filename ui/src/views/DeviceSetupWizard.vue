@@ -8,15 +8,15 @@
     </div>
 
     <div class="flex gap-2 text-[10px] uppercase tracking-wide text-zinc-500" aria-label="Wizard steps">
-      <span :class="step === 'register' ? 'text-green-400' : ''">1 Register</span>
-      <span>›</span>
-      <span :class="step === 'apikey' ? 'text-green-400' : ''">2 Pi config</span>
-      <span>›</span>
-      <span :class="step === 'test' ? 'text-green-400' : ''">3 Test</span>
-      <span>›</span>
-      <span :class="step === 'actuators' ? 'text-green-400' : ''">4 Actuators</span>
-      <span>›</span>
-      <span :class="step === 'done' ? 'text-green-400' : ''">5 Done</span>
+      <span :class="step === 'register' ? 'text-green-400' : ''" :aria-current="step === 'register' ? 'step' : undefined">1 Register</span>
+      <span aria-hidden="true">›</span>
+      <span :class="step === 'apikey' ? 'text-green-400' : ''" :aria-current="step === 'apikey' ? 'step' : undefined">2 Pi config</span>
+      <span aria-hidden="true">›</span>
+      <span :class="step === 'test' ? 'text-green-400' : ''" :aria-current="step === 'test' ? 'step' : undefined">3 Test</span>
+      <span aria-hidden="true">›</span>
+      <span :class="step === 'actuators' ? 'text-green-400' : ''" :aria-current="step === 'actuators' ? 'step' : undefined">4 Actuators</span>
+      <span aria-hidden="true">›</span>
+      <span :class="step === 'done' ? 'text-green-400' : ''" :aria-current="step === 'done' ? 'step' : undefined">5 Done</span>
     </div>
 
     <p v-if="loadError" class="text-sm text-red-400">{{ loadError }}</p>

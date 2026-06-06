@@ -9,11 +9,11 @@
     </div>
 
     <div class="flex gap-2 text-[10px] uppercase tracking-wide text-zinc-500" aria-label="Wizard steps">
-      <span :class="step === 'choose' ? 'text-green-400' : ''">1 Choose</span>
-      <span>›</span>
-      <span :class="step === 'preview' ? 'text-green-400' : ''">2 Preview</span>
-      <span>›</span>
-      <span :class="step === 'done' ? 'text-green-400' : ''">3 Finish</span>
+      <span :class="step === 'choose' ? 'text-green-400' : ''" :aria-current="step === 'choose' ? 'step' : undefined">1 Choose</span>
+      <span aria-hidden="true">›</span>
+      <span :class="step === 'preview' ? 'text-green-400' : ''" :aria-current="step === 'preview' ? 'step' : undefined">2 Preview</span>
+      <span aria-hidden="true">›</span>
+      <span :class="step === 'done' ? 'text-green-400' : ''" :aria-current="step === 'done' ? 'step' : undefined">3 Finish</span>
     </div>
 
     <p v-if="loadError" class="text-sm text-red-400">{{ loadError }}</p>

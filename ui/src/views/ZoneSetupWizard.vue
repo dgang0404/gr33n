@@ -8,13 +8,13 @@
     </div>
 
     <div class="flex gap-2 text-[10px] uppercase tracking-wide text-zinc-500" aria-label="Wizard steps">
-      <span :class="step === 'basics' ? 'text-green-400' : ''">1 Basics</span>
-      <span>›</span>
-      <span :class="step === 'needs' ? 'text-green-400' : ''">2 Needs</span>
-      <span>›</span>
-      <span :class="step === 'extras' ? 'text-green-400' : ''">3 Extras</span>
-      <span>›</span>
-      <span :class="step === 'done' ? 'text-green-400' : ''">4 Done</span>
+      <span :class="step === 'basics' ? 'text-green-400' : ''" :aria-current="step === 'basics' ? 'step' : undefined">1 Basics</span>
+      <span aria-hidden="true">›</span>
+      <span :class="step === 'needs' ? 'text-green-400' : ''" :aria-current="step === 'needs' ? 'step' : undefined">2 Needs</span>
+      <span aria-hidden="true">›</span>
+      <span :class="step === 'extras' ? 'text-green-400' : ''" :aria-current="step === 'extras' ? 'step' : undefined">3 Extras</span>
+      <span aria-hidden="true">›</span>
+      <span :class="step === 'done' ? 'text-green-400' : ''" :aria-current="step === 'done' ? 'step' : undefined">4 Done</span>
     </div>
 
     <p v-if="loadError" class="text-sm text-red-400">{{ loadError }}</p>

@@ -12,7 +12,8 @@
       </div>
       <button
         type="button"
-        class="text-[10px] text-zinc-500 hover:text-zinc-300 shrink-0"
+        class="text-[10px] text-zinc-500 hover:text-zinc-300 shrink-0 min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 inline-flex items-center justify-center"
+        aria-label="Hide getting started checklist"
         data-test="first-run-dismiss"
         @click="onDismiss"
       >
@@ -38,7 +39,8 @@
         <router-link
           v-if="!item.done"
           :to="item.to"
-          class="text-zinc-200 hover:text-green-300 transition-colors"
+          class="text-zinc-200 hover:text-green-300 transition-colors min-h-[44px] sm:min-h-0 inline-flex items-center"
+          :aria-label="`Getting started: ${item.label}`"
           :data-test="`first-run-link-${item.id}`"
         >
           {{ item.label }}

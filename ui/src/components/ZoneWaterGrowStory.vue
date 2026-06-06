@@ -134,8 +134,10 @@
       <div class="flex flex-wrap items-center gap-2 border-t border-zinc-800 pt-3">
         <button
           type="button"
-          class="text-xs px-2.5 py-1 rounded-md bg-amber-900/60 text-amber-200 hover:bg-amber-800/80 disabled:opacity-50"
+          class="text-xs px-3 py-2 min-h-[44px] sm:min-h-0 rounded-md bg-amber-900/70 text-amber-100 hover:bg-amber-800/85 disabled:opacity-50 font-medium"
+          :class="focusRingClass"
           :disabled="runNowBusy"
+          :aria-label="runNowLabel"
           data-test="grow-story-run-now"
           @click="runActiveProgramNow"
         >
@@ -227,6 +229,7 @@ import { supportsPulseCommand } from '../lib/plantNeeds.js'
 import ActuatorPulseControl from './ActuatorPulseControl.vue'
 import ZoneFeedingPlanEditor from './ZoneFeedingPlanEditor.vue'
 import ZoneFeedingPlanWizard from './ZoneFeedingPlanWizard.vue'
+import { FARMER_FOCUS_RING, runFeedNowAriaLabel } from '../lib/farmerA11y.js'
 
 const props = defineProps({
   zoneId: { type: Number, required: true },
@@ -245,6 +248,7 @@ const props = defineProps({
 const emit = defineEmits(['refreshed', 'plan-updated'])
 
 const store = useFarmStore()
+const focusRingClass = FARMER_FOCUS_RING
 const waterStatus = ref(null)
 const queueHead = ref(null)
 const mixPreviewLoading = ref(false)
@@ -265,6 +269,10 @@ const plan = computed(() => buildZoneFeedingPlan({
   waterStatus: waterStatus.value,
   queueHead: queueHead.value,
 }))
+
+const runNowLabel = computed(() =>
+  runFeedNowAriaLabel(props.zoneName, props.activeProgram?.name || plan.value?.programName),
+)
 
 const deliveryActuator = computed(() => {
   const res = plan.value.reservoir

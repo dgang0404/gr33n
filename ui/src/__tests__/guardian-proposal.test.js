@@ -57,6 +57,14 @@ describe('GuardianActionProposal (Phase 29 WS4)', () => {
     expect(wrapper.find('[data-test="guardian-proposal-dismiss"]').exists()).toBe(true)
   })
 
+  it('exposes aria-label on Confirm and Dismiss (Phase 45 WS6)', () => {
+    const wrapper = mountCard()
+    expect(wrapper.find('[data-test="guardian-proposal-confirm"]').attributes('aria-label'))
+      .toContain('Confirm proposed action')
+    expect(wrapper.find('[data-test="guardian-proposal-dismiss"]').attributes('aria-label'))
+      .toContain('without changing farm data')
+  })
+
   it('disables Confirm when canOperate is false (viewer)', () => {
     const wrapper = mountCard({}, false)
     const btn = wrapper.find('[data-test="guardian-proposal-confirm"]')

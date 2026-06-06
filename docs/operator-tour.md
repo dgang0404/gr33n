@@ -590,6 +590,23 @@ Spec: [`plans/phase_45_guardian_pr_spec.md`](plans/phase_45_guardian_pr_spec.md)
 
 ---
 
+## 10b. Light accessibility (Phase 45 WS6 — shipped)
+
+**Shipped.** Not a full WCAG audit — targeted fixes for sit-in and mobile WebView (Session C).
+
+| Surface | Change |
+|---------|--------|
+| Global | `focus-visible` green ring on buttons, links, inputs (`style.css`) |
+| Guardian PR | **Confirm** / **Dismiss** / **Refine** `aria-label` + ~44px tap targets; Dismiss bordered for visibility |
+| Guardian chips | Higher contrast green; `Ask Guardian: {label}` per chip |
+| Zone Water | **Run feed now** and **Run pulse** descriptive `aria-label` |
+| Wizards | `aria-current="step"` on active wizard step indicator |
+| First-run checklist | `aria-label` on step links and Hide control |
+
+**Vitest:** `farmer-a11y.test.js`, `phase-45-ws6-a11y.test.js`.
+
+---
+
 ## 10. Related docs
 
 | Doc | Use |

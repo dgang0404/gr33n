@@ -25,7 +25,7 @@ todos:
     status: completed
   - id: ws6-accessibility-pass
     content: "WS6: Light a11y — focus order on wizards, contrast on chips, button labels"
-    status: pending
+    status: completed
   - id: ws7-docs-tests
     content: "WS7: operator-tour §9 validation; README farmer-ready statement; OC-45 closure"
     status: pending

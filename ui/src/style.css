@@ -20,3 +20,16 @@ body {
 .badge-warn    { @apply bg-amber-500 text-gray-900 text-xs font-semibold px-2 py-0.5 rounded-full; }
 .badge-danger  { @apply bg-red-500 text-white text-xs font-semibold px-2 py-0.5 rounded-full; }
 .badge-off     { @apply bg-gray-700 text-gray-400 text-xs font-semibold px-2 py-0.5 rounded-full; }
+
+/* Phase 45 WS6 — visible keyboard focus on farmer routes (light a11y pass). */
+@layer base {
+  button:focus-visible,
+  a:focus-visible,
+  input:focus-visible,
+  select:focus-visible,
+  textarea:focus-visible,
+  summary:focus-visible,
+  [role='button']:focus-visible {
+    @apply outline-none ring-2 ring-green-500/90 ring-offset-2 ring-offset-gray-950;
+  }
+}

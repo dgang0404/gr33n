@@ -116,14 +116,19 @@
       <p v-if="uiError" data-test="guardian-proposal-error" class="text-xs text-red-400">
         {{ uiError }}
       </p>
-      <div class="flex items-center gap-2 pt-0.5">
+      <div
+        class="flex flex-wrap items-center gap-2 pt-0.5"
+        role="group"
+        aria-label="Proposal actions"
+      >
         <button
           type="button"
           data-test="guardian-proposal-confirm"
-          class="px-3 py-1.5 rounded-lg text-xs font-medium disabled:opacity-40"
-          :class="confirmButtonClass"
+          class="px-3 py-2 rounded-lg text-xs font-medium disabled:opacity-40"
+          :class="[confirmButtonClass, touchTargetClass, focusRingClass]"
           :disabled="confirming || !canOperate || isExpired"
           :title="confirmTitle"
+          :aria-label="confirmAriaLabel"
           @click="onConfirm"
         >
           {{ confirming ? 'Confirming…' : 'Confirm' }}
@@ -131,9 +136,11 @@
         <button
           type="button"
           data-test="guardian-proposal-refine"
-          class="px-3 py-1.5 rounded-lg bg-violet-900/50 text-violet-200 border border-violet-800 hover:bg-violet-900/70 text-xs disabled:opacity-40"
+          class="px-3 py-2 rounded-lg bg-violet-900/50 text-violet-200 border border-violet-800 hover:bg-violet-900/70 text-xs disabled:opacity-40"
+          :class="[touchTargetClass, focusRingClass]"
           :disabled="confirming || !canOperate || isExpired"
           :title="confirmTitle"
+          :aria-label="refineAriaLabel"
           @click="onRefine"
         >
           Refine
@@ -141,8 +148,10 @@
         <button
           type="button"
           data-test="guardian-proposal-dismiss"
-          class="px-3 py-1.5 rounded-lg bg-zinc-800 text-zinc-300 hover:bg-zinc-700 text-xs"
+          class="px-3 py-2 rounded-lg border border-zinc-600 bg-zinc-800/90 text-zinc-200 hover:bg-zinc-700 text-xs font-medium"
+          :class="[touchTargetClass, focusRingClass]"
           :disabled="confirming"
+          :aria-label="dismissAriaLabel"
           @click="onDismiss"
         >
           Dismiss
@@ -159,6 +168,11 @@ import api from '../api'
 import SetupPackProposalCard from './SetupPackProposalCard.vue'
 import { SETUP_PACK_HIGH_RISK_COPY } from '../lib/guardianSetupPack.js'
 import { impactForProposal, revisionLabel } from '../lib/guardianImpact.js'
+import {
+  FARMER_FOCUS_RING,
+  FARMER_TOUCH_TARGET,
+  guardianProposalAriaLabel,
+} from '../lib/farmerA11y.js'
 
 const props = defineProps({
   proposal: { type: Object, required: true },
@@ -308,6 +322,12 @@ const confirmTitle = computed(() => {
   if (props.canOperate) return undefined
   return 'Operators only — your role cannot confirm farm actions'
 })
+
+const focusRingClass = FARMER_FOCUS_RING
+const touchTargetClass = FARMER_TOUCH_TARGET
+const confirmAriaLabel = computed(() => guardianProposalAriaLabel('confirm', local.summary))
+const dismissAriaLabel = computed(() => guardianProposalAriaLabel('dismiss', local.summary))
+const refineAriaLabel = computed(() => guardianProposalAriaLabel('refine', local.summary))
 
 function toolLabel(id) {
   return TOOL_LABELS[id] || id

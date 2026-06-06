@@ -12,8 +12,11 @@
     <span class="text-zinc-600 text-xs">sec</span>
     <button
       type="button"
-      class="px-2 py-1 rounded bg-green-800 hover:bg-green-700 text-white text-xs disabled:opacity-40"
+      class="px-3 py-2 min-h-[44px] sm:min-h-0 rounded bg-green-800 hover:bg-green-700 text-white text-xs font-medium disabled:opacity-40"
+      :class="focusRingClass"
       :disabled="busy || !seconds || seconds < 1"
+      :aria-label="pulseAriaLabel"
+      data-test="actuator-run-pulse"
       @click="runPulse"
     >
       {{ busy ? 'Running…' : 'Run pulse' }}
@@ -27,6 +30,7 @@
 import { ref, computed } from 'vue'
 import { supportsPulseCommand } from '../lib/plantNeeds.js'
 import { useFarmStore } from '../stores/farm.js'
+import { FARMER_FOCUS_RING, runPulseAriaLabel } from '../lib/farmerA11y.js'
 
 const props = defineProps({
   actuator: { type: Object, required: true },
@@ -40,6 +44,10 @@ const error = ref('')
 const ok = ref('')
 
 const supportsPulse = computed(() => supportsPulseCommand(props.actuator?.actuator_type))
+const focusRingClass = FARMER_FOCUS_RING
+const pulseAriaLabel = computed(() =>
+  runPulseAriaLabel(props.actuator?.name, seconds.value),
+)
 
 async function runPulse() {
   busy.value = true
