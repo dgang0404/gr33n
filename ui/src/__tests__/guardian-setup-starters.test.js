@@ -50,6 +50,19 @@ describe('Phase 44 WS4 — setup Guardian starters', () => {
     expect(starters[0].id).toBe('first-grow-room')
   })
 
+  it('empty_zone_grow caps at 3 chips and prefers grow setup', () => {
+    const starters = buildSetupStarters({
+      surface: 'empty_zone_grow',
+      farmId: 6,
+      zoneCount: 1,
+      zones: [{ id: 20, name: 'Bench A' }],
+      zoneName: 'Bench A',
+      activeCycles: [],
+    })
+    expect(starters.length).toBeLessThanOrEqual(3)
+    expect(starters.some((s) => s.id === 'start-grow')).toBe(true)
+  })
+
   it('zone wizard can suggest grow setup pack phrase for new room', () => {
     const starters = buildSetupStarters({
       surface: 'zone_wizard',

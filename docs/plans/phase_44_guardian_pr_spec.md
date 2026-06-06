@@ -5,7 +5,7 @@ overview: >
   conversation starters and optional setup-mode persona only guide chat. Reuses
   apply_grow_setup_pack matcher; bootstrap template via wizard API (not chat-first).
 parent_plan: phase_44_getting_started_edge_wizard.plan.md
-status: in_progress
+status: completed
 ---
 
 # Phase 44 — Guardian PR spec (wizards first, setup starters second)
@@ -113,8 +113,8 @@ Short bullet block (persona file or handler):
 
 ### 5.3 Acceptance
 
-- [ ] Setup mode does not auto-insert proposals without user message
-- [ ] Zero-zone farm: Guardian mentions checklist order (zone → device → targets)
+- [x] Setup mode does not auto-insert proposals without user message
+- [x] Zero-zone farm: Guardian mentions checklist order (zone → device → targets)
 
 ---
 
@@ -151,12 +151,12 @@ Short bullet block (persona file or handler):
 
 ## 8. Definition of done (Guardian slice)
 
-- [ ] Starters on first-run checklist, wizards, empty zone — no generic status chips
-- [ ] Setup-mode hint when `zone_count == 0` or `?setup=1`
-- [ ] Grow-setup starter triggers existing setup-pack matcher (manual send)
-- [ ] Bootstrap **not** promoted via starter chips (wizard only)
+- [x] Starters on first-run checklist, wizards, empty zone — no generic status chips
+- [x] Setup-mode hint when `zone_count == 0` or `?setup=1`
+- [x] Grow-setup starter triggers existing setup-pack matcher (manual send)
+- [x] Bootstrap **not** promoted via starter chips (wizard only)
 - [x] operator-tour §6g + §8
-- [ ] No dependency on Phase 46
+- [x] No dependency on Phase 46
 
 ---
 

@@ -300,7 +300,7 @@ Feature detail: [`phase_44_getting_started_edge_wizard.plan.md`](phase_44_gettin
 | Guardian setup mode | ✅ | WS4 — `setup_mode.go`, starters, wizard footers |
 | First-run checklist | ✅ | WS5 — `GettingStartedChecklist` on Dashboard |
 | OC-44 docs/tests | ✅ | WS6 — operator-tour §8 + §6g, architecture §7.0j, Vitest + `TestPhase44WizardBootstrapApply` |
-| Guardian empty-zone starters | ⏳ | WS8 — `empty_zone_grow` on zone cockpit |
+| Guardian empty-zone starters | ✅ | WS8 — `empty_zone_grow` on zone cockpit |
 
 ## Phase 47 — Feeding & water plain language
 

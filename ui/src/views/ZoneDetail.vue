@@ -211,7 +211,7 @@ import {
   buildZoneGuardianContextRef,
   buildZoneGuardianPrompt,
 } from '../lib/guardianContextPrompts.js'
-import { buildZoneStarters } from '../lib/guardianStarters.js'
+import { buildSetupStarters, buildZoneStarters } from '../lib/guardianStarters.js'
 import { computeZoneTodaySnapshot, pickNextZoneSchedule } from '../lib/zoneGrowSummary.js'
 
 const route = useRoute()
@@ -237,6 +237,7 @@ const tasks = ref([])
 const setpoints = ref([])
 const rules = ref([])
 const lightingPrograms = ref([])
+const cropCycles = ref([])
 const waterQueueDepth = ref(0)
 
 const zoneTabs = [
@@ -323,9 +324,28 @@ const zoneStarterSurface = computed(() => {
   return 'zone_overview'
 })
 
-const zoneStarters = computed(() =>
-  zone.value ? buildZoneStarters(zoneStarterSurface.value, guardianSnapshotCtx.value) : [],
+const hasActiveCropCycle = computed(() =>
+  cropCycles.value.some(
+    (c) => c.is_active && Number(c.zone_id) === Number(zoneId.value),
+  ),
 )
+
+const zoneStarters = computed(() => {
+  if (!zone.value) return []
+  if (!hasActiveCropCycle.value) {
+    return buildSetupStarters({
+      surface: 'empty_zone_grow',
+      farmId: farmId.value,
+      zoneCount: 1,
+      zones: [zone.value],
+      zoneName: zone.value.name,
+      activeCycles: cropCycles.value,
+      unreadAlerts: todaySnapshot.value.unreadAlerts,
+      deviceOffline: zoneDevices.value.some((d) => d.status !== 'online'),
+    })
+  }
+  return buildZoneStarters(zoneStarterSurface.value, guardianSnapshotCtx.value)
+})
 
 const waterSummary = computed(() => {
   const n = sensors.value.filter(s => sensorPlantNeed(s.sensor_type) === PLANT_NEEDS.water).length
@@ -377,13 +397,15 @@ async function toggleActuator(a) {
 onMounted(async () => {
   if (!store.zones.length && farmId.value) await store.loadAll(farmId.value)
   const fid = farmId.value
-  const [p, e, s, ec, res] = await Promise.all([
+  const [p, e, s, ec, res, cycles] = await Promise.all([
     store.loadFertigationPrograms(fid),
     store.loadFertigationEvents(fid),
     store.loadSchedules(fid),
     store.loadEcTargets(fid),
     store.loadReservoirs(fid),
+    store.loadCropCycles(fid),
   ])
+  cropCycles.value = cycles
   programs.value = p
   events.value = e
   schedules.value = s

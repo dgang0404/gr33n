@@ -77,6 +77,22 @@ func TestMatchSetupPackIntent_SkipsBusyZone(t *testing.T) {
 	}
 }
 
+// Phase 44 WS8 — starter chip phrase must pass setup-pack intent patterns.
+func TestMatchSetupPackIntent_StarterPhrase(t *testing.T) {
+	msg := "Add my philodendron to Flower Room with a light fertigation program"
+	if !setupPackVerbIntent.MatchString(msg) || !setupPackGrowIntent.MatchString(msg) {
+		t.Fatal("starter phrase should match verb + grow intent patterns")
+	}
+	name, ok := extractPlantDisplayName(msg)
+	if !ok || name != "Philodendron" {
+		t.Fatalf("extractPlantDisplayName(%q) = %q,%v", msg, name, ok)
+	}
+	zone, ok := resolveZoneNameForSetupPack(msg, Snapshot{ZoneNames: []string{"Flower Room"}})
+	if !ok || zone != "Flower Room" {
+		t.Fatalf("resolveZoneNameForSetupPack = %q,%v", zone, ok)
+	}
+}
+
 func TestInferSetupProfile(t *testing.T) {
 	if inferSetupProfile("Living Room", "") != "house_plant" {
 		t.Fatal("living room should be house_plant")

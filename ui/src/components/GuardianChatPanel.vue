@@ -414,6 +414,7 @@ import api from '../api'
 import GuardianActionProposal from './GuardianActionProposal.vue'
 import GuardianProcedureCard from './GuardianProcedureCard.vue'
 import GuardianStarterChips from './GuardianStarterChips.vue'
+import { computeFirstRunChecklist, isFirstRunIncomplete } from '../lib/firstRunChecklist.js'
 import { buildSetupStarters } from '../lib/guardianStarters.js'
 import { useFarmOperate } from '../composables/useFarmOperate'
 import { useFarmContextStore } from '../stores/farmContext'
@@ -453,11 +454,18 @@ const photoUploading = ref(false)
 const selectedAttachmentIds = ref([])
 const { canOperate } = useFarmOperate(farmIdRef)
 
+const firstRunChecklistItems = computed(() => computeFirstRunChecklist({
+  zones: farmStore.zones || [],
+  devices: farmStore.devices || [],
+  farmId: farmContext.farmId,
+}))
+
 const setupModeActive = computed(() => {
   if (!capabilities.aiEnabled || !farmContext.farmId) return false
   if (guardianPanel.setupMode) return true
   if (route?.path === '/chat' && route?.query?.setup === '1') return true
-  return (farmStore.zones?.length ?? 0) === 0
+  if ((farmStore.zones?.length ?? 0) === 0) return true
+  return isFirstRunIncomplete(firstRunChecklistItems.value)
 })
 
 const setupStarters = computed(() => {

@@ -109,6 +109,7 @@ describe('Phase 44 WS6 / OC-44 — setup wizard closure', () => {
       expect(existsSync(join(uiSrc, f))).toBe(true)
     }
     expect(existsSync(join(repoRoot, 'internal/farmguardian/setup_mode.go'))).toBe(true)
+    expect(existsSync(join(uiSrc, '__tests__/phase-44-guardian-closure.test.js'))).toBe(true)
     const smoke = readFileSync(join(repoRoot, 'cmd/api/smoke_farms_test.go'), 'utf8')
     expect(smoke).toContain('TestPhase44WizardBootstrapApply')
   })

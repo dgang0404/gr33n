@@ -386,10 +386,10 @@ Operator walkthrough: [operator-tour §7](operator-tour.md#7-supplies-feeding--m
 | **Edge device** (`/farms/{id}/devices/new`) | Register Pi, config snippet, poll online, actuators | `DeviceSetupWizard.vue`, `deviceSetupWizard.js`, `PI_FIELD_CHECKLIST` |
 | **First-run checklist** (Dashboard) | Zone → device → comfort → schedule | `GettingStartedChecklist.vue`, `firstRunChecklist.js` |
 
-**Guardian (WS4–WS5 shipped; WS8 partial):**
+**Guardian (WS4–WS8 shipped):**
 
 - **Setup-mode persona** when `zone_count == 0`, `setup_mode` on `POST /v1/chat`, or `?setup=1` — [`setup_mode.go`](../internal/farmguardian/setup_mode.go).
-- **Starters** on checklist, wizard footers, and drawer — `buildSetupStarters` in [`guardianStarters.js`](../ui/src/lib/guardianStarters.js); wizards own writes, not chips.
+- **Starters** on checklist, wizard footers, drawer, and **empty zone cockpit** (`empty_zone_grow`) — `buildSetupStarters` in [`guardianStarters.js`](../ui/src/lib/guardianStarters.js); wizards own writes, not chips.
 - **`apply_grow_setup_pack`** — rule-assisted Confirm unchanged (Phase 32); grow-setup starter sends matcher-friendly phrase.
 - **`apply_bootstrap_template`** — wizard `POST` only (admin RBAC); not promoted in starter chips.
 - Route `context_ref` hints for setup wizard paths — [`context_ref.go`](../internal/farmguardian/context_ref.go).

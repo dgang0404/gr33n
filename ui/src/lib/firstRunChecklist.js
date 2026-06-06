@@ -67,6 +67,11 @@ export function isFirstRunComplete(items) {
   return Array.isArray(items) && items.length > 0 && items.every((i) => i.done)
 }
 
+/** True when any checklist step remains (ignores dismiss — for setup-mode persona). */
+export function isFirstRunIncomplete(items) {
+  return Array.isArray(items) && items.length > 0 && !isFirstRunComplete(items)
+}
+
 export function isFirstRunChecklistDismissed(farmId) {
   if (typeof localStorage === 'undefined' || !farmId) return false
   return localStorage.getItem(`${DISMISS_PREFIX}${farmId}`) === '1'

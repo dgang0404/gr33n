@@ -221,9 +221,10 @@ User intent
 
 | Item | Type |
 |------|------|
-| Wizards first (farm / zone / device / checklist) | UI — parent WS1–WS5 |
-| Setup-mode persona (`?setup=1`, zero zones) | Handler — spec §5 |
-| Starters (grow setup, ack, procedures) — **not** bootstrap auto-PR | UI — spec §4 |
+| Wizards first (farm / zone / device / checklist) | UI — parent WS1–WS5 ✅ |
+| Setup-mode persona (`?setup=1`, zero zones) | Handler — spec §5 ✅ |
+| Starters (grow setup, ack, procedures) — **not** bootstrap auto-PR | UI — spec §4 ✅ |
+| Empty zone cockpit starters (`empty_zone_grow`) | UI — WS8 ✅ |
 | operator-tour §8 + §6g, architecture §7.0j | Docs — WS6 ✅ |
 
 ### Phase 45 — Validation

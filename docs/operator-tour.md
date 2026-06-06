@@ -534,7 +534,7 @@ Architecture: [`farm-guardian-architecture.md` §7.0m](farm-guardian-architectur
 4. **`/farms/{id}/zones/new`** — name, room type, optional greenhouse profile or lighting preset.
 5. **`/farms/{id}/devices/new`** — register Pi, copy `pi_client` config snippet, embedded field checklist, poll **online**, optional actuators.
 6. **`/comfort-targets`** — set first comfort band; **Schedules** tab to turn on one run.
-7. Optional — **Ask Guardian** from checklist chips or wizard **Need help?** footers ([§6g](#6g-guardian-during-setup-phase-44--shipped)).
+7. Optional — **Ask Guardian** from checklist chips, wizard **Need help?** footers, or **empty room** grow starters on zone cockpit ([§6g](#6g-guardian-during-setup-phase-44--shipped)).
 
 | Wizard / surface | Job | Route |
 |------------------|-----|-------|
@@ -545,7 +545,7 @@ Architecture: [`farm-guardian-architecture.md` §7.0m](farm-guardian-architectur
 
 Pi steps stay in-app: embedded checklist from [pi-integration-guide.md](pi-integration-guide.md) §8.3 on the device wizard; offline wiring procedures in [§6d](#6d-first-field-install-with-guardian-offline-phase-37).
 
-**Vitest closure:** `farm-setup-wizard.test.js`, `zone-setup-wizard.test.js`, `device-setup-wizard.test.js`, `first-run-checklist.test.js`, `guardian-setup-starters.test.js`, `phase-44-wizard-navigation.test.js`, `phase-44-closure.test.js`.
+**Vitest closure:** `farm-setup-wizard.test.js`, `zone-setup-wizard.test.js`, `device-setup-wizard.test.js`, `first-run-checklist.test.js`, `guardian-setup-starters.test.js`, `phase-44-wizard-navigation.test.js`, `phase-44-closure.test.js`, `phase-44-guardian-closure.test.js`.
 
 **Go smoke:** `TestPhase44WizardBootstrapApply` — blank farm + `POST /farms/{id}/bootstrap-template` (same path as the wizard).
 

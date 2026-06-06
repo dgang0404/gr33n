@@ -25,7 +25,7 @@ todos:
     status: completed
   - id: ws8-guardian-pr-slice
     content: "WS8: phase_44_guardian_pr_spec — wizards first; setup starters + setup-mode second"
-    status: pending
+    status: completed
 isProject: false
 ---
 
@@ -33,7 +33,7 @@ isProject: false
 
 ## Status
 
-**WS1–WS6 shipped** on `main`. WS8 (Guardian PR slice closure) pending. After [Phase 41](phase_41_farm_hub_coherence.plan.md) (empty states) and [Phase 42](phase_42_comfort_targets_automation_plain_language.plan.md) (comfort bands — wizard can set first band).
+**WS1–WS8 shipped** on `main`. Phase 44 feature + Guardian PR slice complete. After [Phase 41](phase_41_farm_hub_coherence.plan.md) (empty states) and [Phase 42](phase_42_comfort_targets_automation_plain_language.plan.md) (comfort bands — wizard can set first band).
 
 **Prerequisite API:** [Phase 15](phase_15_farm_onboarding.plan.md) bootstrap templates ✅.
 
@@ -140,7 +140,7 @@ operator-tour §8 + §6g, architecture §7.0j, Vitest wizard navigation, smoke b
 
 ---
 
-## WS8 — Guardian PR slice
+## WS8 — Guardian PR slice ✅
 
 | Item | Owner |
 |------|--------|
@@ -148,6 +148,8 @@ operator-tour §8 + §6g, architecture §7.0j, Vitest wizard navigation, smoke b
 | Setup-mode persona | Handler — spec §5 |
 | Grow-setup PR via existing matcher | Backend — no new tool |
 | Bootstrap **not** via starter chips | UX rule — spec §3 |
+
+**Shipped:** `empty_zone_grow` starters on zone cockpit; first-run incomplete extends setup mode; `phase-44-guardian-closure.test.js`; `TestMatchSetupPackIntent_StarterPhrase`.
 
 ---
 
@@ -167,7 +169,7 @@ operator-tour §8 + §6g, architecture §7.0j, Vitest wizard navigation, smoke b
 - [x] First-run checklist on Dashboard (WS5)
 - [x] Docs, tests, OC-44 closure (WS6)
 - [x] Pi steps reachable without leaving app (device wizard checklist)
-- [ ] Guardian WS8 per [phase_44_guardian_pr_spec.md](phase_44_guardian_pr_spec.md)
+- [x] Guardian WS8 per [phase_44_guardian_pr_spec.md](phase_44_guardian_pr_spec.md)
 - [x] operator-tour §8 + §6g + architecture §7.0j
 
 ## Related
