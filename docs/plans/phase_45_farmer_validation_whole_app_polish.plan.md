@@ -73,6 +73,8 @@ Phase 45 is **evidence-driven polish**, not new domain features.
 
 ## WS2 — Friction backlog
 
+**Template:** [phase-45-ws2-friction-backlog.md](../workstreams/phase-45-ws2-friction-backlog.md) · **Preflight:** `./scripts/sit-in-preflight.sh`
+
 Triage into:
 
 | Priority | Example |

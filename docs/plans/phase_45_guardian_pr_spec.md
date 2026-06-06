@@ -109,7 +109,7 @@ Do not expand scope in 45 — file issue and continue polish.
 | Parent WS | Guardian slice |
 |-----------|----------------|
 | WS1 | Protocol + this spec §2 |
-| WS2 | Triage + 46 backlog |
+| WS2 | Triage + 46 backlog · [phase-45-ws2-friction-backlog.md](../workstreams/phase-45-ws2-friction-backlog.md) |
 | WS3 | §4 copy |
 | WS6 | Dismiss/Confirm a11y |
 | WS7 | operator-tour §9 + README farmer-ready |
