@@ -7,7 +7,7 @@ overview: >
 todos:
   - id: ws1-farm-setup-wizard
     content: "WS1: Farm setup wizard — blank vs template cards; preview what gets created; POST apply-template"
-    status: pending
+    status: completed
   - id: ws2-zone-starter
     content: "WS2: Add zone wizard — name, type (greenhouse/indoor), optional bootstrap slice"
     status: pending
@@ -33,7 +33,7 @@ isProject: false
 
 ## Status
 
-**Planned.** After [Phase 41](phase_41_farm_hub_coherence.plan.md) (empty states) and [Phase 42](phase_42_comfort_targets_automation_plain_language.plan.md) (comfort bands — wizard can set first band).
+**WS1 shipped** on `main`. WS2–WS8 pending. After [Phase 41](phase_41_farm_hub_coherence.plan.md) (empty states) and [Phase 42](phase_42_comfort_targets_automation_plain_language.plan.md) (comfort bands — wizard can set first band).
 
 **Prerequisite API:** [Phase 15](phase_15_farm_onboarding.plan.md) bootstrap templates ✅.
 
@@ -155,7 +155,8 @@ operator-tour §8 + §6g, architecture §7.0j, Vitest wizard navigation, smoke b
 
 ## Definition of done
 
-- [ ] Farm + zone + device wizards shipped
+- [x] Farm setup wizard (WS1) — `/farms/:id/setup`, template cards, preview, apply
+- [ ] Zone + device wizards shipped
 - [ ] First-run checklist on Dashboard
 - [ ] Pi steps reachable without leaving app
 - [ ] Guardian WS8 per [phase_44_guardian_pr_spec.md](phase_44_guardian_pr_spec.md)

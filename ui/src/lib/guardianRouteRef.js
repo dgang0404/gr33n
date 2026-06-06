@@ -38,6 +38,7 @@ function labelFromPath(path) {
   if (path.startsWith('/sensors/')) return 'Sensor detail'
   if (path.includes('/crop-cycles/') && path.endsWith('/summary')) return 'Crop cycle summary'
   if (path.includes('/crop-cycles/compare')) return 'Crop cycle compare'
+  if (path.startsWith('/farms/') && path.endsWith('/setup')) return 'Farm setup'
   return path
 }
 

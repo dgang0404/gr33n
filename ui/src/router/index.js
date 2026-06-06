@@ -29,6 +29,7 @@ import ComfortTargetsHub from '../views/ComfortTargetsHub.vue'
 import SuppliesHub from '../views/SuppliesHub.vue'
 import FeedingAdminHub from '../views/FeedingAdminHub.vue'
 import MoneyHub from '../views/MoneyHub.vue'
+import FarmSetupWizard from '../views/FarmSetupWizard.vue'
 import Login from '../views/Login.vue'
 
 const routes = [
@@ -66,6 +67,7 @@ const routes = [
   // Phase 28 WS2 — crop cycle analytics
   { path: '/crop-cycles/:id/summary', component: CropCycleSummary, name: 'crop-cycle-summary' },
   { path: '/farms/:fid/crop-cycles/compare', component: CropCycleCompare, name: 'crop-cycle-compare' },
+  { path: '/farms/:id/setup', component: FarmSetupWizard, name: 'farm-setup' },
   { path: '/lighting', component: LightingPrograms, name: 'lighting' },
 ]
 

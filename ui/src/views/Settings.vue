@@ -137,8 +137,8 @@
     <section class="bg-zinc-800 border border-zinc-700 rounded-xl p-5 mb-5">
       <h2 class="text-white font-semibold mb-3">New farm</h2>
       <p class="text-zinc-500 text-xs mb-4">
-        Create a farm you own. Starter packs are idempotent — applying the same template again does not duplicate data.
-        If you link an organization with a default template, you can start from that default without picking a pack here.
+        Create a farm you own. Choose <strong class="text-zinc-400">Start blank</strong> to continue in the
+        <strong class="text-zinc-400">farm setup wizard</strong> (template cards + preview). Starter packs are idempotent.
       </p>
       <form class="space-y-3" @submit.prevent="submitNewFarm">
         <div class="flex flex-col gap-1.5">
@@ -204,12 +204,19 @@
     <!-- Apply starter to existing farm (farm admin) -->
     <section v-if="farmContext.farmId"
       class="bg-zinc-800 border border-zinc-700 rounded-xl p-5 mb-5">
-      <h2 class="text-white font-semibold mb-3">Current farm — apply starter pack</h2>
+      <h2 class="text-white font-semibold mb-3">Current farm — starter pack</h2>
       <p class="text-zinc-500 text-xs mb-4">
-        Use this if the farm was created blank and you want demo zones, inventory lots,
-        fertigation (reservoirs, programs, schedules, mixing log), and a task linked to an irrigation schedule.
-        Farm admins only. If the pack was already applied, the API returns “already applied” and leaves data unchanged.
+        Prefer the guided <strong class="text-zinc-400">farm setup wizard</strong> for template cards and a preview before applying.
+        Farm admins only. Templates are idempotent — re-applying returns “already applied”.
       </p>
+      <router-link
+        :to="farmSetupWizardLink"
+        class="inline-flex mb-4 px-4 py-2 text-sm font-medium rounded-lg bg-green-900/50 text-green-400 border border-green-800 hover:bg-green-900/70"
+        data-test="settings-open-farm-setup"
+      >
+        Open farm setup wizard →
+      </router-link>
+      <p class="text-zinc-600 text-[11px] mb-3">Advanced: apply a template directly without the wizard</p>
       <div class="flex flex-wrap items-end gap-3">
         <div class="flex flex-col gap-1.5">
           <label class="text-zinc-400 text-xs uppercase tracking-wide">Template</label>
@@ -856,6 +863,7 @@ import {
   BOOTSTRAP_TEMPLATE_KEYS,
   BOOTSTRAP_STARTER_SUMMARIES,
 } from '../constants/bootstrapTemplates'
+import { farmSetupRoute } from '../lib/farmSetupWizard.js'
 
 const router = useRouter()
 const auth   = useAuthStore()
@@ -863,6 +871,11 @@ const farmStore = useFarmStore()
 const farmContext = useFarmContextStore()
 const capabilities = useCapabilitiesStore()
 const chatUsage = useChatUsageStore()
+
+const farmSetupWizardLink = computed(() => {
+  const fid = farmContext.farmId
+  return fid ? farmSetupRoute(fid) : '/settings'
+})
 
 // ── Phase 28 WS5 — Guardian usage card helpers ─────────────────────────
 // Bar width is the rendered fraction. Empty caps stay at 0 so the bar
@@ -1025,6 +1038,14 @@ async function submitNewFarm() {
 
     const { farm, bootstrap } = await farmContext.createFarm(payload)
     await farmContext.selectFarm(farm.id)
+    const starterSkipped = bootstrap?.skipped
+      || newFarm.bootstrapMode === 'blank'
+      || (bootstrap && !bootstrap.applied && !bootstrap.already_applied && !bootstrap.error)
+    if (starterSkipped && newFarm.bootstrapMode !== 'starter') {
+      newFarm.name = ''
+      await router.push({ name: 'farm-setup', params: { id: String(farm.id) } })
+      return
+    }
     let msg = `Farm “${farm.name}” created.`
     if (bootstrap && typeof bootstrap === 'object') {
       if (bootstrap.skipped) msg += ' No starter data applied.'
