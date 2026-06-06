@@ -1,6 +1,9 @@
 package farmguardian
 
-import "testing"
+import (
+	"strings"
+	"testing"
+)
 
 func setupPackArgsFixture() map[string]any {
 	return map[string]any{
@@ -108,6 +111,23 @@ func TestImpactSummary_PatchFertigation(t *testing.T) {
 	}, nil)
 	if len(lines) == 0 || !contains(lines[0], "0.3") || !contains(lines[0], "no run triggered now") {
 		t.Fatalf("impact = %#v", lines)
+	}
+}
+
+func TestImpactSummary_CreateTaskFromAlert_LowStock(t *testing.T) {
+	lines := ImpactSummary("create_task_from_alert", map[string]any{
+		"title":             "Refill OHN",
+		"alert_subject":     "Inventory low: OHN at 1.00 (threshold 3.00)",
+		"alert_source_type": "inventory_low_stock",
+	}, nil)
+	if len(lines) != 1 {
+		t.Fatalf("lines=%v", lines)
+	}
+	if !strings.Contains(lines[0], "refill task") || !strings.Contains(lines[0], "OHN") {
+		t.Fatalf("unexpected impact: %q", lines[0])
+	}
+	if !strings.Contains(lines[0], "Supplies hub") {
+		t.Fatalf("expected Supplies hub hint: %q", lines[0])
 	}
 }
 

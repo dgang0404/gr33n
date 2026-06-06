@@ -39,3 +39,21 @@ func TestMatchConfigToolIntent_CreateTaskFromAlert(t *testing.T) {
 		t.Fatalf("alert_id %v", args["alert_id"])
 	}
 }
+
+func TestTaskTitleFromQuestion_LowStockRefill(t *testing.T) {
+	alert := UnreadAlertDetail{
+		ID:         12,
+		Subject:    "Inventory low: OHN at 1.00 (threshold 3.00)",
+		SourceType: "inventory_low_stock",
+	}
+	title := taskTitleFromQuestion("Create a refill task from alert #12 for OHN", alert)
+	if title != "Refill OHN" {
+		t.Fatalf("got title %q want Refill OHN", title)
+	}
+}
+
+func TestLowStockInputFromSubject(t *testing.T) {
+	if got := lowStockInputFromSubject("Inventory low: OHN at 1.00 (threshold 3.00)"); got != "OHN" {
+		t.Fatalf("got %q", got)
+	}
+}

@@ -18,6 +18,17 @@ describe('Phase 32 WS1 — guardianRouteRef', () => {
     })
   })
 
+  it('Phase 43 — maps operations hub paths to farmer labels', () => {
+    expect(routeContextRefFromRoute({ path: '/operations/supplies', meta: {} })).toEqual({
+      type: 'route',
+      path: '/operations/supplies',
+      name: 'Supplies',
+    })
+    expect(routeContextRefFromRoute({ path: '/operations/money', meta: {} })).toMatchObject({
+      name: 'Money',
+    })
+  })
+
   it('skips public auth routes', () => {
     expect(routeContextRefFromRoute({ path: '/login', meta: { public: true } })).toBeNull()
   })

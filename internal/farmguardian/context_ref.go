@@ -58,6 +58,15 @@ func renderRouteContext(path, nameHint string) string {
 	if path == "/feeding" {
 		b.WriteString("\nFeed & water hub — prefer feeding plan language (next feed, last feed, reservoir). Use summarize_zone_fertigation when a room is in scope.")
 	}
+	if path == "/operations/supplies" || path == "/inventory" {
+		b.WriteString("\nSupplies — on-hand batches and low-stock. Cite input names and quantities; do not promise Guardian can change stock levels (hub UI or future tools only).")
+	}
+	if path == "/operations/feeding" {
+		b.WriteString("\nFeeding (details) — farm-wide programs, nutrient tanks, EC targets. Not the daily Feed & water hub.")
+	}
+	if path == "/operations/money" || path == "/costs" {
+		b.WriteString("\nMoney — spend summary and receipts. Plain language; hide GL/COA unless the operator is on the full costs editor.")
+	}
 	b.WriteString("\nPrefer setup/how-to guidance for this screen; live rows still come from the snapshot and read tools only.")
 	return b.String()
 }
@@ -87,12 +96,16 @@ var knownRouteLabels = map[string]string{
 	"/actuators":         "Actuators",
 	"/schedules":         "Schedules",
 	"/automation":        "Automation",
-	"/feeding":           "Feed & water",
-	"/fertigation":       "Feeding (technical)",
-	"/setpoints":         "Comfort bands",
-	"/tasks":             "Tasks",
-	"/inventory":         "Inventory",
-	"/costs":             "Costs",
+	"/feeding":              "Feed & water",
+	"/operations/supplies":  "Supplies",
+	"/operations/feeding":   "Feeding (details)",
+	"/operations/money":     "Money",
+	"/fertigation":          "Feeding (technical)",
+	"/comfort-targets":      "Targets & schedules",
+	"/setpoints":            "Comfort bands",
+	"/tasks":                "Tasks",
+	"/inventory":            "Supplies (full editor)",
+	"/costs":                "Money (full editor)",
 	"/alerts":            "Alerts",
 	"/plants":            "Plants",
 	"/animals":           "Animals",

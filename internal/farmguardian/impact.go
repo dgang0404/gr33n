@@ -46,7 +46,9 @@ func impactSteps(toolID string, args map[string]any) []string {
 			line += " for zone " + z
 		}
 		return []string{line + " — ON/OFF schedules and actuator actions will be created"}
-	case "create_task", "create_task_from_alert":
+	case "create_task_from_alert":
+		return createTaskFromAlertImpact(args)
+	case "create_task":
 		return []string{joinName("Create task", argString(args, "title")) + " (reversible — you can complete or delete it)"}
 	case "update_cycle_stage":
 		return []string{"Update the crop cycle growth stage to " + argString(args, "current_stage") + " (reversible)"}
@@ -88,6 +90,31 @@ func impactSteps(toolID string, args map[string]any) []string {
 	default:
 		return nil
 	}
+}
+
+func createTaskFromAlertImpact(args map[string]any) []string {
+	subject := argString(args, "alert_subject")
+	title := argString(args, "title")
+	src := argString(args, "alert_source_type")
+	suffix := " (reversible — you can complete or delete it)"
+	if src == "inventory_low_stock" {
+		name := lowStockInputFromSubject(subject)
+		if name == "" {
+			name = title
+		}
+		line := "Create refill task"
+		if name != "" {
+			line += " for " + name
+		}
+		if subject != "" {
+			line += " — " + subject
+		}
+		return []string{line + " — restock in Supplies hub; Guardian cannot change batch quantities" + suffix}
+	}
+	if subject != "" {
+		return []string{joinName("Create task from alert", subject) + suffix}
+	}
+	return []string{joinName("Create task", title) + suffix}
 }
 
 func setupPackImpact(args map[string]any) []string {

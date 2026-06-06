@@ -22,8 +22,10 @@ func matchConfigToolIntent(question string, snap Snapshot) (toolID string, args 
 		alert := pickAlertForIntent(question, snap.UnreadAlertDetails)
 		title := taskTitleFromQuestion(question, alert)
 		return "create_task_from_alert", map[string]any{
-			"alert_id": alert.ID,
-			"title":    title,
+			"alert_id":          alert.ID,
+			"title":             title,
+			"alert_subject":     alert.Subject,
+			"alert_source_type": alert.SourceType,
 		}, "Create task: " + title, true
 	}
 
@@ -56,6 +58,16 @@ func matchConfigToolIntent(question string, snap Snapshot) (toolID string, args 
 
 func taskTitleFromQuestion(question string, alert UnreadAlertDetail) string {
 	lower := strings.ToLower(question)
+	if alert.SourceType == "inventory_low_stock" {
+		if name := lowStockInputFromSubject(alert.Subject); name != "" {
+			if strings.Contains(lower, "refill") || strings.Contains(lower, "restock") ||
+				strings.Contains(lower, "reorder") || strings.Contains(lower, "low stock") ||
+				strings.Contains(lower, "supplies") {
+				return "Refill " + name
+			}
+			return "Refill supplies: " + name
+		}
+	}
 	switch {
 	case strings.Contains(lower, "humidity"):
 		if alert.Subject != "" && strings.Contains(strings.ToLower(alert.Subject), "humidity") {
@@ -136,4 +148,17 @@ func inferStageKeyword(lower string) string {
 		}
 	}
 	return ""
+}
+
+// lowStockInputFromSubject parses "Inventory low: OHN at …" subjects from the worker.
+func lowStockInputFromSubject(subject string) string {
+	const prefix = "Inventory low:"
+	if !strings.Contains(subject, prefix) {
+		return ""
+	}
+	rest := strings.TrimSpace(strings.SplitN(subject, prefix, 2)[1])
+	if at := strings.Index(rest, " at "); at > 0 {
+		return strings.TrimSpace(rest[:at])
+	}
+	return strings.TrimSpace(rest)
 }
