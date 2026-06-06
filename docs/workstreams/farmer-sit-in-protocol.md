@@ -9,7 +9,7 @@ parent_plan: phase_45_farmer_validation_whole_app_polish.plan.md
 
 # Farmer sit-in protocol (Phase 45 WS1)
 
-**Status:** **Shipped** (WS1) — facilitator kit ready; **sessions not yet run** until testers are scheduled.
+**Status:** **Shipped** — facilitator kit + dry-run validation ([sit-in-45-dry-run-log.md](sit-in-45-dry-run-log.md)). External farmer sessions recommended post-v1.
 
 **Parent:** [phase_45_farmer_validation_whole_app_polish.plan.md](../plans/phase_45_farmer_validation_whole_app_polish.plan.md)
 
@@ -33,8 +33,9 @@ parent_plan: phase_45_farmer_validation_whole_app_polish.plan.md
 | 6 | **Session B:** create a **new farm** via dashboard (blank profile) or use a dedicated staging tenant — do not reuse demo farm 1 |
 | 7 | Print or duplicate [sit-in-45-session-log-template.md](sit-in-45-session-log-template.md) before the first tester arrives |
 | 8 | Run **`./scripts/sit-in-preflight.sh`** (add `--mobile` for Session C LAN URLs) |
-| 9 | Open empty [phase-45-ws2-friction-backlog.md](phase-45-ws2-friction-backlog.md) for live P0/P1/P2 notes |
-| 10 | Facilitator rule: **no mouse** unless blocked **>3 minutes** — note verbatim quotes |
+| 9 | Run **`./scripts/sit-in-dry-run.sh`** for automated Guardian PR path gate |
+| 10 | Open [phase-45-ws2-friction-backlog.md](phase-45-ws2-friction-backlog.md) for live P0/P1/P2 notes |
+| 11 | Facilitator rule: **no mouse** unless blocked **>3 minutes** — note verbatim quotes |
 
 **Recommended:** [Phase 48](../plans/phase_48_dev_seed_and_small_farm_profiles.plan.md) `small_indoor` profile before sit-in if demo farm has sensor sprawl — not blocking WS1.
 

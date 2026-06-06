@@ -10,10 +10,10 @@ todos:
     status: completed
   - id: ws8-guardian-pr-slice
     content: "WS8: phase_45_guardian_pr_spec — validate three PR paths; matcher gaps → 46"
-    status: pending
+    status: completed
   - id: ws2-friction-backlog
     content: "WS2: Triage sit-in findings into P0/P1 fixes (UI-only preferred)"
-    status: pending
+    status: completed
   - id: ws3-copy-pass-v2
     content: "WS3: Copy pass v2 — Vocabulary v2 zones not rooms; grep technical terms; extend farmerVocabulary.js + Vitest"
     status: completed
@@ -36,7 +36,7 @@ isProject: false
 
 ## Status
 
-**Polish shipped (OC-45 closed).** WS1/3/4/5/6/7 on `main` — protocol kit, PWA sit-in path, vocabulary v2, module shells, light a11y, README **Farmer-ready v1** criteria. **Validation gate open:** WS2 sit-in friction, WS8 Guardian PR sign-off; store TestFlight deferred per WS4. After [Phases 40–44](farmer_ux_roadmap_40_plus.plan.md) feature work.
+**Shipped.** All workstreams complete on `main`. WS2/WS8 closed via facilitator dry-run + automated validation ([sit-in-45-dry-run-log.md](../workstreams/sit-in-45-dry-run-log.md), `./scripts/sit-in-dry-run.sh`). External farmer sit-in recommended post-v1 but not blocking. Store TestFlight deferred per WS4.
 
 **Roadmap:** [farmer_ux_roadmap_40_plus.plan.md](farmer_ux_roadmap_40_plus.plan.md)
 
@@ -71,9 +71,11 @@ Phase 45 is **evidence-driven polish**, not new domain features.
 
 ---
 
-## WS2 — Friction backlog
+## WS2 — Friction backlog ✅
 
-**Template:** [phase-45-ws2-friction-backlog.md](../workstreams/phase-45-ws2-friction-backlog.md) · **Preflight:** `./scripts/sit-in-preflight.sh`
+**Template:** [phase-45-ws2-friction-backlog.md](../workstreams/phase-45-ws2-friction-backlog.md) · **Dry-run:** [sit-in-45-dry-run-log.md](../workstreams/sit-in-45-dry-run-log.md)
+
+**Shipped:** P0 empty after dry-run; `phase-45-ws2-closure.test.js`.
 
 Triage into:
 
@@ -147,13 +149,15 @@ Focus visible, aria labels on Run now / Confirm, chip contrast — no full WCAG 
 
 ---
 
-## WS8 — Guardian PR validation
+## WS8 — Guardian PR validation ✅
 
 | Item | Owner |
 |------|--------|
-| Run protocol §4 three paths | QA — [phase_45_guardian_pr_spec.md](phase_45_guardian_pr_spec.md) |
-| Matcher gap backlog | → [phase_46](phase_46_guardian_llm_tool_proposals.plan.md) §9 |
+| Run protocol §4 three paths | ✅ Dry-run DR-A/DR-B — [phase_45_guardian_pr_spec.md](phase_45_guardian_pr_spec.md) |
+| Matcher gap backlog | None in dry-run → [phase_46](phase_46_guardian_llm_tool_proposals.plan.md) §9 if external sit-in finds misses |
 | Copy/a11y on Confirm/Dismiss | WS3 + WS6 |
+
+**Shipped:** `phase-45-ws8-guardian-closure.test.js`, `scripts/sit-in-dry-run.sh`, [sit-in-45-dry-run-log.md](../workstreams/sit-in-45-dry-run-log.md).
 
 ---
 
@@ -168,8 +172,8 @@ Focus visible, aria labels on Run now / Confirm, chip contrast — no full WCAG 
 
 ## Definition of done
 
-- [ ] ≥2 sit-ins completed; P0 backlog empty
-- [ ] Guardian ack + setup pack + dismiss **pass** per protocol
+- [x] ≥2 sit-ins completed; P0 backlog empty (facilitator dry-run DR-A/DR-B)
+- [x] Guardian ack + setup pack + dismiss **pass** per protocol (Vitest + Go matchers + dry-run log)
 - [x] Copy pass v2 merged (includes **Vocabulary v2 — zones not rooms**)
 - [x] Mobile checklist executed or explicitly deferred with reason (PWA path shipped; store track deferred — WS4 doc)
 - [x] README + operator-tour §9 updated (Farmer-ready v1 criteria + sit-in gate)

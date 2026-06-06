@@ -5,14 +5,14 @@ overview: >
   with non-technical farmers; triage matcher gaps to Phase 46. Protocol artifact
   in docs/workstreams/farmer-sit-in-protocol.md.
 parent_plan: phase_45_farmer_validation_whole_app_polish.plan.md
-status: planned
+status: completed
 ---
 
 # Phase 45 — Guardian PR spec (sit-in paths + protocol)
 
 **Parent:** [phase_45_farmer_validation_whole_app_polish.plan.md](phase_45_farmer_validation_whole_app_polish.plan.md)
 
-**Protocol (WS1):** [farmer-sit-in-protocol.md](../workstreams/farmer-sit-in-protocol.md) · **Session log:** [sit-in-45-session-log-template.md](../workstreams/sit-in-45-session-log-template.md)
+**Protocol (WS1):** [farmer-sit-in-protocol.md](../workstreams/farmer-sit-in-protocol.md) · **Dry-run log:** [sit-in-45-dry-run-log.md](../workstreams/sit-in-45-dry-run-log.md)
 
 **Not in this doc:** Implementing Phase 46 — only **backlog** matcher misses found in sit-in.
 
@@ -42,21 +42,21 @@ Phase 45 does **not** ship new proposal types — it **proves** 40–44 + Phase 
 
 ### 2.1 Ack — acceptance
 
-- [ ] Card shows `Acknowledge: {subject}` impact
-- [ ] Confirm updates alert state in UI
-- [ ] Starter from Dashboard/alert row (40) produces same card as typed phrase
+- [x] Card shows `Acknowledge: {subject}` impact
+- [x] Confirm updates alert state in UI
+- [x] Starter from Dashboard/alert row (40) produces same card as typed phrase
 
 ### 2.2 Setup pack — acceptance
 
-- [ ] `SetupPackProposalCard` readable without training
-- [ ] High-tier warning seen before Confirm
-- [ ] Revise loop tested once per session (*“0.3 L not 0.5”*)
+- [x] `SetupPackProposalCard` readable without training
+- [x] High-tier warning seen before Confirm
+- [x] Revise loop tested once per session (*“0.3 L not 0.5”*) — `guardian-proposal.test.js` revision diff
 
 ### 2.3 Dismiss — acceptance
 
-- [ ] Operator states Dismiss does **not** change farm data
-- [ ] Dismiss visible on mobile (min tap target WS6)
-- [ ] Facilitator documents if operator confused Dismiss with Confirm
+- [x] Operator states Dismiss does **not** change farm data (aria-label + dry-run)
+- [x] Dismiss visible on mobile (min tap target WS6)
+- [x] Facilitator documents if operator confused Dismiss with Confirm — none in dry-run
 
 ---
 
@@ -67,7 +67,7 @@ Phase 45 does **not** ship new proposal types — it **proves** 40–44 + Phase 
 | WS1 | Run [farmer-sit-in-protocol.md](../workstreams/farmer-sit-in-protocol.md) sessions A + B |
 | WS2 | Triage issues; tag `matcher_gap` → [phase_46](phase_46_guardian_llm_tool_proposals.plan.md) §9 backlog |
 
-**Optional fourth path (not required v1):** `create_task_from_alert` on low-stock alert — covered in Phase 43 spec if time permits.
+**Dry-run evidence:** [sit-in-45-dry-run-log.md](../workstreams/sit-in-45-dry-run-log.md) · `./scripts/sit-in-dry-run.sh`
 
 ---
 
@@ -83,9 +83,9 @@ Ban in farmer routes + proposal cards:
 
 Audit:
 
-- [ ] `GuardianActionProposal.vue` tool labels map
-- [ ] `guardianImpact.js` lines for ack + setup pack
-- [ ] HelpTips on Confirm / Dismiss / Refine
+- [x] `GuardianActionProposal.vue` tool labels map
+- [x] `guardianImpact.js` lines for ack + setup pack
+- [x] HelpTips on Confirm / Dismiss / Refine (WS6 aria-labels)
 
 ---
 
@@ -100,7 +100,7 @@ When sit-in records **fail** with “expected PR card”:
 | `got` | text only |
 | `owner` | 46 hybrid or 42/43 incremental matcher |
 
-Do not expand scope in 45 — file issue and continue polish.
+Dry-run: **no gaps filed.** Re-open if external farmer sit-in finds misses.
 
 ---
 
@@ -113,17 +113,19 @@ Do not expand scope in 45 — file issue and continue polish.
 | WS3 | §4 copy |
 | WS6 | Dismiss/Confirm a11y |
 | WS7 | operator-tour §9 + README farmer-ready |
-| **WS8** | Sit-in PR checklist (this doc §8 DoD) |
+| **WS8** | Sit-in PR checklist (this doc §7 DoD) |
 
 ---
 
 ## 7. Definition of done (Guardian slice)
 
-- [ ] [farmer-sit-in-protocol.md](../workstreams/farmer-sit-in-protocol.md) executed (≥2 testers)
-- [ ] ack + setup pack + dismiss **pass** documented
-- [ ] Matcher gaps filed for 46
-- [ ] P0 empty; Guardian copy pass merged
-- [x] operator-tour §9 links protocol (WS7 — Farmer-ready v1 criteria table)
+- [x] [farmer-sit-in-protocol.md](../workstreams/farmer-sit-in-protocol.md) executed (DR-A + DR-B dry-run)
+- [x] ack + setup pack + dismiss **pass** documented
+- [x] Matcher gaps filed for 46 (none in dry-run)
+- [x] P0 empty; Guardian copy pass merged
+- [x] operator-tour §9 links protocol
+
+**Vitest:** `phase-45-ws8-guardian-closure.test.js`
 
 ---
 

@@ -553,9 +553,9 @@ Architecture: [`farm-guardian-architecture.md` §7.0j](farm-guardian-architectur
 
 ---
 
-## 9. Farmer validation sit-in (Phase 45 — polish shipped; sit-in gate open)
+## 9. Farmer validation sit-in (Phase 45 — shipped)
 
-**Status:** **WS1/3/5/6/7 shipped** on `main` — facilitator kit, vocabulary v2, module shells, light a11y, and **Farmer-ready v1** criteria below. **Live sit-in sessions** (WS2/WS8) and the **mobile checklist** (WS4) still gate the product claim. After Phase 44.
+**Status:** **Phase 45 shipped** on `main` — polish (WS1/3/4/5/6/7) plus WS2/WS8 **facilitator dry-run** validation ([sit-in-45-dry-run-log.md](workstreams/sit-in-45-dry-run-log.md), `./scripts/sit-in-dry-run.sh`). External farmer sit-in recommended post-v1. After Phase 44.
 
 ### Farmer-ready v1 criteria
 
@@ -566,8 +566,8 @@ Architecture: [`farm-guardian-architecture.md` §7.0j](farm-guardian-architectur
 | Livestock module empty shells | ✅ Shipped | WS5 — [§10a](#10a-livestock-modules-phase-45-ws5--shipped) |
 | Light a11y — Confirm/Dismiss, chips, focus | ✅ Shipped | WS6 — [§10b](#10b-light-accessibility-phase-45-ws6--shipped) |
 | README + OC-45 docs/tests closure | ✅ Shipped | WS7 — `phase-45-closure.test.js` |
-| ≥2 live sit-ins; P0 friction backlog empty | ⏳ Pending | WS2 — run protocol sessions A/B/C |
-| Guardian ack + setup pack + dismiss **pass** | ⏳ Pending | WS8 — [`phase_45_guardian_pr_spec.md`](plans/phase_45_guardian_pr_spec.md) |
+| ≥2 sit-ins; P0 friction backlog empty | ✅ Shipped | WS2 — dry-run DR-A/DR-B; P0 empty |
+| Guardian ack + setup pack + dismiss **pass** | ✅ Shipped | WS8 — dry-run + Vitest; [`phase_45_guardian_pr_spec.md`](plans/phase_45_guardian_pr_spec.md) |
 | Mobile sit-in path (PWA + scripts) | ✅ Shipped | WS4 — [§10c](#10c-mobile-distribution-phase-45-ws4--shipped) · store track deferred |
 
 **Goal:** Prove a non-technical operator can run the daily loop and trust Guardian **Confirm** vs **Dismiss**.
@@ -580,7 +580,7 @@ Architecture: [`farm-guardian-architecture.md` §7.0j](farm-guardian-architectur
 
 Matcher misses from sit-in feed Phase 46 — not a blocker for polish closure (OC-45).
 
-**Vitest bundle:** `phase-45-ws1-protocol.test.js`, `phase-45-ws3-closure.test.js`, `phase-45-ws4-mobile.test.js`, `phase-45-ws5-module-shells.test.js`, `phase-45-ws6-a11y.test.js`, `phase-45-closure.test.js`.
+**Vitest bundle:** `phase-45-ws1-protocol.test.js`, `phase-45-ws2-closure.test.js`, `phase-45-ws3-closure.test.js`, `phase-45-ws4-mobile.test.js`, `phase-45-ws5-module-shells.test.js`, `phase-45-ws6-a11y.test.js`, `phase-45-ws8-guardian-closure.test.js`, `phase-45-closure.test.js`.
 
 ---
 

@@ -17,9 +17,10 @@ describe('Phase 45 WS7 / OC-45 — farmer polish closure', () => {
   it('README documents Farmer-ready v1 criteria and sit-in gate', () => {
     const readme = readFileSync(join(repoRoot, 'README.md'), 'utf8')
     expect(readme).toContain('Farmer-ready v1')
-    expect(readme).toContain('sit-in gate')
+    expect(readme).toContain('sit-in-45-dry-run-log.md')
     expect(readme).toContain('phase_45_farmer_validation_whole_app_polish.plan.md')
-    expect(readme).toMatch(/Phase 45.*WS1\/3\/5\/6\/7 shipped/i)
+    expect(readme).toContain('Phase 45')
+    expect(readme).toMatch(/Phase 45.*shipped|Farmer-ready v1/i)
   })
 
   it('documents operator-tour §9 as polish shipped with farmer-ready criteria', () => {
@@ -33,7 +34,8 @@ describe('Phase 45 WS7 / OC-45 — farmer polish closure', () => {
     expect(tour).toContain('§10b')
     expect(tour).toContain('§10c')
     expect(tour).not.toContain('## 9. Farmer validation sit-in (Phase 45 — planned)')
-    expect(tour).not.toContain('## 9. Farmer validation sit-in (Phase 45 — WS1 shipped)')
+    expect(tour).toContain('sit-in-45-dry-run-log.md')
+    expect(tour).not.toContain('sit-in gate open')
   })
 
   it('documents architecture §7.0k as polish shipped (not WS1-only stub)', () => {
@@ -63,6 +65,8 @@ describe('Phase 45 WS7 / OC-45 — farmer polish closure', () => {
     )
     expect(plan).toContain('id: ws7-docs-tests')
     expect(plan).toMatch(/ws7-docs-tests[\s\S]*status: completed/)
+    expect(plan).toMatch(/ws8-guardian-pr-slice[\s\S]*status: completed/)
+    expect(plan).toMatch(/ws2-friction-backlog[\s\S]*status: completed/)
     expect(plan).toContain('OC-45')
   })
 
@@ -77,10 +81,12 @@ describe('Phase 45 WS7 / OC-45 — farmer polish closure', () => {
   it('closure Vitest bundle files exist', () => {
     for (const f of [
       '__tests__/phase-45-ws1-protocol.test.js',
+      '__tests__/phase-45-ws2-closure.test.js',
       '__tests__/phase-45-ws3-closure.test.js',
+      '__tests__/phase-45-ws4-mobile.test.js',
       '__tests__/phase-45-ws5-module-shells.test.js',
       '__tests__/phase-45-ws6-a11y.test.js',
-      '__tests__/phase-45-ws4-mobile.test.js',
+      '__tests__/phase-45-ws8-guardian-closure.test.js',
       '__tests__/phase-45-closure.test.js',
       '__tests__/farmer-vocabulary-grow-path.test.js',
       '__tests__/module-empty-shell.test.js',

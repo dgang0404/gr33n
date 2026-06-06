@@ -7,14 +7,14 @@ An open-source farm operating system — run it on your LAN, keep your data clos
 [![Vue](https://img.shields.io/badge/Vue-3-4FC08D?logo=vue.js)](https://vuejs.org)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-14+-336791?logo=postgresql)](https://postgresql.org)
 
-**Current focus:** **Farmer UX arc 40→45 polish** shipped on `main` (vocabulary v2 **My zones**, livestock module shells, Guardian Confirm/Dismiss a11y, sit-in facilitator kit). **Validation gate:** run ≥2 live sit-ins per [operator tour §9](docs/operator-tour.md#9-farmer-validation-sit-in-phase-45--polish-shipped-sit-in-gate-open) before claiming full farmer-ready v1. Roadmap: [`docs/plans/farmer_ux_roadmap_40_plus.plan.md`](docs/plans/farmer_ux_roadmap_40_plus.plan.md) · gap index: [`docs/plans/pre_development_gaps_index.plan.md`](docs/plans/pre_development_gaps_index.plan.md). **New farm?** In-app wizards at `/farms/{id}/setup`, `/zones/new`, `/devices/new` plus a Dashboard checklist — [operator tour §8](docs/operator-tour.md#8-getting-started--edge-install-phase-44--shipped). Guardian **writes** still go through propose→**Confirm** ([Phase 30](docs/plans/phase_30_guardian_change_requests.plan.md)). After `git pull`, run **`./scripts/bootstrap-local.sh --skip-schema`** (or **`make dev-stack`**) so migrations apply. Pi / edge: [`pi_client/gr33n_client.py`](pi_client/gr33n_client.py), [`docs/pi-integration-guide.md`](docs/pi-integration-guide.md). Operator index: [`docs/phase-14-operator-documentation.md`](docs/phase-14-operator-documentation.md) · closure rollup: [`docs/plans/phase_35_37_operational_closure.plan.md`](docs/plans/phase_35_37_operational_closure.plan.md).
+**Current focus:** **Farmer UX arc 40→45** shipped on `main` (validation polish, vocabulary v2 **My zones**, PWA mobile path, Guardian PR dry-run). **Next:** Phase 46 Guardian NL proposals or Phase 48 dev seed — [roadmap](docs/plans/farmer_ux_roadmap_40_plus.plan.md). Farmer-ready v1: [operator tour §9](docs/operator-tour.md#9-farmer-validation-sit-in-phase-45--shipped). Roadmap: [`docs/plans/farmer_ux_roadmap_40_plus.plan.md`](docs/plans/farmer_ux_roadmap_40_plus.plan.md) · gap index: [`docs/plans/pre_development_gaps_index.plan.md`](docs/plans/pre_development_gaps_index.plan.md). **New farm?** In-app wizards at `/farms/{id}/setup`, `/zones/new`, `/devices/new` plus a Dashboard checklist — [operator tour §8](docs/operator-tour.md#8-getting-started--edge-install-phase-44--shipped). Guardian **writes** still go through propose→**Confirm** ([Phase 30](docs/plans/phase_30_guardian_change_requests.plan.md)). After `git pull`, run **`./scripts/bootstrap-local.sh --skip-schema`** (or **`make dev-stack`**) so migrations apply. Pi / edge: [`pi_client/gr33n_client.py`](pi_client/gr33n_client.py), [`docs/pi-integration-guide.md`](docs/pi-integration-guide.md). Operator index: [`docs/phase-14-operator-documentation.md`](docs/phase-14-operator-documentation.md) · closure rollup: [`docs/plans/phase_35_37_operational_closure.plan.md`](docs/plans/phase_35_37_operational_closure.plan.md).
 
 ### Farmer-ready v1 (Phase 45)
 
 | Layer | Status |
 |-------|--------|
-| **Code polish** (WS1/3/5/6/7) | ✅ On `main` — protocol kit, zones-not-rooms copy, Animals/Aquaponics empty states, light a11y |
-| **Live validation** (WS2/8) | ⏳ **Sit-in gate open** — ≥2 facilitator sessions, Guardian PR path sign-off |
+| **Code polish** (WS1–WS7) | ✅ On `main` — protocol kit, zones-not-rooms copy, module shells, a11y, docs |
+| **Validation** (WS2/WS8) | ✅ Facilitator dry-run + Vitest — [sit-in-45-dry-run-log.md](docs/workstreams/sit-in-45-dry-run-log.md) |
 | **Mobile Session C** (WS4) | ✅ PWA LAN path + scripts — store TestFlight deferred |
 
 Detail: [operator tour §9](docs/operator-tour.md#9-farmer-validation-sit-in-phase-45--polish-shipped-sit-in-gate-open) · plan: [phase_45](docs/plans/phase_45_farmer_validation_whole_app_polish.plan.md) · Vitest: `ui/src/__tests__/phase-45-closure.test.js`.
@@ -669,7 +669,7 @@ A phase-by-phase ledger of what's live on `main`. Each row links to the governin
 | **42** | **Comfort targets & automation** — farmer-facing bands, schedules, rules | ✅ Done | [plan](docs/plans/phase_42_comfort_targets_automation_plain_language.plan.md) |
 | **43** | **Operations hub** — Supplies, Feeding (details), Money | ✅ Done | [plan](docs/plans/phase_43_operations_stock_feeding_finance.plan.md) |
 | **44** | **Getting started & edge wizards** — farm/zone/device setup, Dashboard checklist, Guardian setup mode | ✅ Done | [plan](docs/plans/phase_44_getting_started_edge_wizard.plan.md) |
-| **45** | **Farmer validation & polish** — sit-in, copy pass, mobile checklist | 📋 Next | [plan](docs/plans/phase_45_farmer_validation_whole_app_polish.plan.md) |
+| **45** | **Farmer validation & polish** — sit-in dry-run, copy pass, mobile path | ✅ Shipped | [plan](docs/plans/phase_45_farmer_validation_whole_app_polish.plan.md) |
 
 ### Phase 23 exit sign-off
 
@@ -710,7 +710,7 @@ Stabilization sprint **closed** on **`main`** **2026-04-18**. Criterion-by-crite
 - [x] **Phase 42** — comfort targets & automation — [plan](docs/plans/phase_42_comfort_targets_automation_plain_language.plan.md)
 - [x] **Phase 43** — operations hub — [plan](docs/plans/phase_43_operations_stock_feeding_finance.plan.md)
 - [x] **Phase 44** — getting started & edge wizards — [plan](docs/plans/phase_44_getting_started_edge_wizard.plan.md)
-- [ ] **Phase 45** — farmer validation & polish (WS1/3/5/6/7 shipped; sit-in gate open) — [plan](docs/plans/phase_45_farmer_validation_whole_app_polish.plan.md)
+- [x] **Phase 45** — farmer validation & polish — [plan](docs/plans/phase_45_farmer_validation_whole_app_polish.plan.md)
 
 ## Project Roadmap
 
@@ -766,7 +766,7 @@ Stabilization sprint **closed** on **`main`** **2026-04-18**. Criterion-by-crite
 - [x] Phase 42 — Comfort targets & automation — [plan](docs/plans/phase_42_comfort_targets_automation_plain_language.plan.md)
 - [x] Phase 43 — Operations hub — [plan](docs/plans/phase_43_operations_stock_feeding_finance.plan.md)
 - [x] Phase 44 — Getting started & edge wizards — [plan](docs/plans/phase_44_getting_started_edge_wizard.plan.md)
-- [ ] Phase 45 — Farmer validation & polish (WS1/3/5/6/7 shipped; sit-in gate open) — [plan](docs/plans/phase_45_farmer_validation_whole_app_polish.plan.md)
+- [x] Phase 45 — Farmer validation & polish — [plan](docs/plans/phase_45_farmer_validation_whole_app_polish.plan.md)
 
 ---
 

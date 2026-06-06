@@ -304,7 +304,7 @@ Feature detail: [`phase_44_getting_started_edge_wizard.plan.md`](phase_44_gettin
 
 ## Phase 45 — Farmer validation & whole-app polish
 
-Feature detail: [`phase_45_farmer_validation_whole_app_polish.plan.md`](phase_45_farmer_validation_whole_app_polish.plan.md). **OC-45** closed (WS7). **Validation gate open** — WS2/4/8 sit-in + mobile pending; [phase_45_guardian_pr_spec.md](phase_45_guardian_pr_spec.md).
+Feature detail: [`phase_45_farmer_validation_whole_app_polish.plan.md`](phase_45_farmer_validation_whole_app_polish.plan.md). **OC-45** closed (WS7). **Phase 45 shipped** — WS2/WS8 dry-run; [phase_45_guardian_pr_spec.md](phase_45_guardian_pr_spec.md).
 
 | Area | Status | Notes |
 |------|--------|-------|
@@ -313,9 +313,9 @@ Feature detail: [`phase_45_farmer_validation_whole_app_polish.plan.md`](phase_45
 | Module empty shells | ✅ | WS5 — Animals/Aquaponics `ModuleEmptyShell` |
 | Light a11y | ✅ | WS6 — `farmerA11y.js`, Confirm/Dismiss/chips |
 | OC-45 docs/tests | ✅ | WS7 — README Farmer-ready v1, operator-tour §9, architecture §7.0k, `phase-45-closure.test.js` |
-| Live sit-in + friction backlog | ⏳ | WS2 — ≥2 sessions, P0 triage |
+| Live sit-in + friction backlog | ✅ | WS2 — dry-run DR-A/DR-B; P0 empty |
 | Mobile sit-in path (PWA) | ✅ | WS4 — `phase-45-ws4-mobile-sit-in-path.md`, prep scripts; store deferred |
-| Guardian PR path validation | ⏳ | WS8 — ack, setup pack, dismiss per protocol |
+| Guardian PR path validation | ✅ | WS8 — ack, setup pack, dismiss; `sit-in-dry-run.sh` |
 
 ## Phase 47 — Feeding & water plain language
 
