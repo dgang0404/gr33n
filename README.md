@@ -1,36 +1,36 @@
 # gr33n 🌱
 
-An open-source agricultural operating system designed to reclaim data, land, and autonomy.
+An open-source farm operating system — run it on your LAN, keep your data close, grow at your own pace.
 
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
 [![Go](https://img.shields.io/badge/Go-1.25+-00ADD8?logo=go)](https://go.dev)
 [![Vue](https://img.shields.io/badge/Vue-3-4FC08D?logo=vue.js)](https://vuejs.org)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-14+-336791?logo=postgresql)](https://postgresql.org)
 
-**Current focus:** **Phases 35–39, 39b, product backlog** shipped on `main`. **Next:** **[Farmer UX arc 40→45](docs/plans/farmer_ux_roadmap_40_plus.plan.md)** — zone cockpit (40), farm hub (41), comfort targets (42), operations (43), setup wizards (44), farmer sit-in polish (45). Gap index: [`docs/plans/pre_development_gaps_index.plan.md`](docs/plans/pre_development_gaps_index.plan.md). Start implementation: [40](docs/plans/phase_40_unified_farmer_ux_zone_cockpit.plan.md). **Shipped since Phase 31:** field validation & edge; **32** grow-setup PRs + platform doc RAG; **33** Guardian polish; **34** PR revise loop + operator blind-spot facts. Guardian **writes** still go through propose→**Confirm** ([Phase 30](docs/plans/phase_30_guardian_change_requests.plan.md)). Multi-site sketch: [`hypothetical-enterprise-topology.md`](docs/hypothetical-enterprise-topology.md). After `git pull`, run **`./scripts/bootstrap-local.sh --skip-schema`** (or **`make dev-stack`**) so migrations apply. Pi / edge: [`pi_client/gr33n_client.py`](pi_client/gr33n_client.py), [`docs/pi-integration-guide.md`](docs/pi-integration-guide.md). Operator index: [`docs/phase-14-operator-documentation.md`](docs/phase-14-operator-documentation.md) · closure rollup: [`docs/plans/phase_35_37_operational_closure.plan.md`](docs/plans/phase_35_37_operational_closure.plan.md).
+**Current focus:** **Farmer UX arc 40→44** shipped on `main` (zone cockpit, farm hub, feeding & water, comfort targets, operations hubs, **getting-started wizards**). **Next:** **[Phase 45](docs/plans/phase_45_farmer_validation_whole_app_polish.plan.md)** — farmer sit-in polish and whole-app validation. Roadmap: [`docs/plans/farmer_ux_roadmap_40_plus.plan.md`](docs/plans/farmer_ux_roadmap_40_plus.plan.md) · gap index: [`docs/plans/pre_development_gaps_index.plan.md`](docs/plans/pre_development_gaps_index.plan.md). **New farm?** In-app wizards at `/farms/{id}/setup`, `/zones/new`, `/devices/new` plus a Dashboard checklist — [operator tour §8](docs/operator-tour.md#8-getting-started--edge-install-phase-44--shipped). Guardian **writes** still go through propose→**Confirm** ([Phase 30](docs/plans/phase_30_guardian_change_requests.plan.md)). After `git pull`, run **`./scripts/bootstrap-local.sh --skip-schema`** (or **`make dev-stack`**) so migrations apply. Pi / edge: [`pi_client/gr33n_client.py`](pi_client/gr33n_client.py), [`docs/pi-integration-guide.md`](docs/pi-integration-guide.md). Operator index: [`docs/phase-14-operator-documentation.md`](docs/phase-14-operator-documentation.md) · closure rollup: [`docs/plans/phase_35_37_operational_closure.plan.md`](docs/plans/phase_35_37_operational_closure.plan.md).
 
 ---
 
 ## What Is gr33n?
 
-gr33n is a modular, scalable, and decentralized farm management system built for real humans — not cloud landlords. Whether you're managing a homestead on solar or automating thousands of acres, gr33n adapts to your size, ethics, and bandwidth.
+gr33n is a modular farm management system for homesteads, market gardens, and small commercial grows — whether you're on solar, a mesh network, or a rack in the barn.
 
-It's PostgreSQL schemas + Go APIs + Vue dashboards + Raspberry Pi clients + shared insert statements.
+Under the hood: PostgreSQL schemas, Go APIs, Vue dashboards, and Raspberry Pi edge clients.
 
-But more than that:
-it's a political stance in schema form.
+The through-line is practical: **your farm data should stay with you** — inspectable, forkable, and runnable without a mandatory cloud account.
 
 ---
 
 ## Why gr33n Exists
 
-> "If your DNA, soil, labor, and climate data feed trillion-dollar industries — and you're not seeing a dime — that's not tech, that's extraction."
+Growers produce rich, useful records every day — sensor readings, feeding logs, crop notes, labor, recipes. Too often that work lives in software you cannot audit, on servers you do not control, under terms that can change without warning.
 
-This project exists because:
-- Big Ag is closing the loop on food systems, and we're cracking it back open.
-- Data rights matter — even your soil and sunlight deserve consent.
-- Billionaires shouldn't profit off your greenhouse or genome without giving back.
-- Farmers, tinkerers, and off-gridders deserve tools that don't call home.
+gr33n offers a different default:
+
+- **Local-first** — core operation works on your network; internet is optional, not required.
+- **Transparent** — AGPL source, documented schemas, no hidden check-in for day-to-day farm work.
+- **Modular** — enable only the domains you need (crops, natural farming, animals, aquaponics, …).
+- **Built for people who touch soil** — operators, tinkerers, and off-grid installs welcome.
 
 ### 🔌 What Does "Don't Call Home" Mean?
 
@@ -282,6 +282,7 @@ Integration tests under `cmd/api/` (`TestMain` in [`cmd/api/smoke_test.go`](cmd/
 | GET | `/farms/:id` | Farm detail (member or owner) |
 | PUT | `/farms/:id` | Update farm record (**admin**: owner or manager) |
 | DELETE | `/farms/:id` | Soft-delete farm (**admin**) |
+| POST | `/farms/:id/bootstrap-template` | Apply a starter template to an existing farm (**admin**; idempotent) |
 
 #### Farm members (**admin**: owner or manager)
 
@@ -416,7 +417,7 @@ Integration tests under `cmd/api/` (`TestMain` in [`cmd/api/smoke_test.go`](cmd/
 
 | Method | Path | Description |
 |--------|------|-------------|
-| POST | `/v1/chat` | Send a message to Farm Guardian. Optional `farm_id` → RAG grounding + live snapshot. Optional `session_id` (UUID) for multi-turn context replay. Optional `context_ref` (alert / crop cycle / zone from **Ask Guardian**). Optional `attachment_ids` for zone photos (vision). Optional `"stream": true` for SSE streaming. Response includes `answer`, `grounded`, `citations`, `proposals[]`, `session_id`, `turn_index`, `prompt_tokens`, `completion_tokens`. |
+| POST | `/v1/chat` | Send a message to Farm Guardian. Optional `farm_id` → RAG grounding + live snapshot. Optional `session_id` (UUID) for multi-turn context replay. Optional `context_ref` (alert / crop cycle / zone / route from **Ask Guardian**). Optional `setup_mode` or `?setup=1` for onboarding persona. Optional `attachment_ids` for zone photos (vision). Optional `"stream": true` for SSE streaming. Response includes `answer`, `grounded`, `citations`, `proposals[]`, `session_id`, `turn_index`, `prompt_tokens`, `completion_tokens`. |
 | POST | `/v1/chat/confirm` | Execute a frozen change request (`{"proposal_id": "..."}`). Requires Operate role for write tools. |
 | GET | `/v1/chat/proposals` | Pending change-request inbox (`?farm_id=`, `?status=pending`, pagination). Same queue as `/guardian/requests`. |
 | GET | `/v1/chat/sessions` | List recent conversation sessions (up to 50, latest-first). |
@@ -592,7 +593,7 @@ The AI features are gated by `AI_ENABLED` (default on) and degrade gracefully: i
 | **36** | **`summarize_zone_greenhouse_climate`**; actuator commands `deploy`/`retract`/`open`/`close` via Confirm — [operator tour §5b](docs/operator-tour.md#5b-greenhouse-shade-vents-and-fans-phase-36) |
 | **37** | **`field_guide` RAG** + **guided procedures** (confirm-per-step), **safety stops** (mains / pressurized water), **`GET /v1/chat/health`**, LLM-down **field degrade**, **Pinia background chat** — [operator tour §6d](docs/operator-tour.md#6d-first-field-install-with-guardian-offline-phase-37) |
 
-Viewers can chat but cannot **Confirm**. Confirmed actions log `guardian_tool_executed`. Automation **rules/alerts** still run without chat — Guardian PRs are intentional, reviewed changes only. Architecture: [`docs/farm-guardian-architecture.md`](docs/farm-guardian-architecture.md). **Next:** Phase 38 plant-needs UI — [`docs/phase-14-operator-documentation.md`](docs/phase-14-operator-documentation.md).
+Viewers can chat but cannot **Confirm**. Confirmed actions log `guardian_tool_executed`. Automation **rules/alerts** still run without chat — Guardian PRs are intentional, reviewed changes only. Architecture: [`docs/farm-guardian-architecture.md`](docs/farm-guardian-architecture.md). Operator walkthrough: [`docs/operator-tour.md`](docs/operator-tour.md) · [`docs/phase-14-operator-documentation.md`](docs/phase-14-operator-documentation.md).
 
 All AI calls remain inside your farm's intranet:
 
@@ -647,8 +648,18 @@ A phase-by-phase ledger of what's live on `main`. Each row links to the governin
 | **33** | **Guardian polish & enterprise ops** — read-tool hardening, context_ref dedup, hardware CI, site manifest | ✅ Done | [plan](docs/plans/phase_33_guardian_polish_and_enterprise_ops.plan.md) |
 | **34** | **Guardian PR iteration** — revise/supersede pending PRs, operator blind-spot facts, impact explanations | ✅ Done | [plan](docs/plans/phase_34_guardian_pr_iteration.plan.md) |
 | **35** | **Lighting domain** — `lighting_programs`, presets (22/2, 18/6, 12/12), PhotoperiodClockEditor, TZ-aware worker | ✅ Done | [plan](docs/plans/phase_35_lighting_domain.plan.md) |
-| **36** | **Greenhouse climate** — `greenhouse_climate` zone profile, typed actuators, rule templates, Guardian read (UI/smokes open) | 🚧 In progress | [plan](docs/plans/phase_36_greenhouse_climate.plan.md) |
-| **37** | **Guardian offline field assistant** — Pi wiring / plumbing walkthroughs, trades corpus, safety gating | 📋 Planned | [plan](docs/plans/phase_37_guardian_offline_field_assistant.plan.md) |
+| **36** | **Greenhouse climate** — `greenhouse_climate` zone profile, typed actuators, rule templates, Guardian read | ✅ Done | [plan](docs/plans/phase_36_greenhouse_climate.plan.md) |
+| **37** | **Guardian offline field assistant** — Pi wiring / plumbing walkthroughs, trades corpus, safety gating | ✅ Done | [plan](docs/plans/phase_37_guardian_offline_field_assistant.plan.md) |
+| **38** | **Plant-needs UI + pulse commands** — zone Water/Light/Climate tabs, timed `pending_command` | ✅ Done | [plan](docs/plans/phase_38_plant_needs_ui_and_pulse_commands.plan.md) |
+| **39** | **Edge fertigation execution** — device command queue, `mix_batch`, Pi mix | ✅ Done | [plan](docs/plans/phase_39_edge_fertigation_execution.plan.md) |
+| **39b** | **Plain irrigation (RO/well)** — `irrigation_only` programs | ✅ Done | [plan](docs/plans/phase_39b_plain_irrigation.plan.md) |
+| **40** | **Zone cockpit** — daily grow in the room (Today strip, Water story wedge) | ✅ Done | [plan](docs/plans/phase_40_unified_farmer_ux_zone_cockpit.plan.md) |
+| **41** | **Farm hub** — morning Dashboard, `?zone_id=`, why-empty hints | ✅ Done | [plan](docs/plans/phase_41_farm_hub_coherence.plan.md) |
+| **47** | **Feeding & water plain language** — zone Water primary, `/feeding` hub | ✅ Done | [plan](docs/plans/phase_47_feeding_water_plain_language.plan.md) |
+| **42** | **Comfort targets & automation** — farmer-facing bands, schedules, rules | ✅ Done | [plan](docs/plans/phase_42_comfort_targets_automation_plain_language.plan.md) |
+| **43** | **Operations hub** — Supplies, Feeding (details), Money | ✅ Done | [plan](docs/plans/phase_43_operations_stock_feeding_finance.plan.md) |
+| **44** | **Getting started & edge wizards** — farm/zone/device setup, Dashboard checklist, Guardian setup mode | ✅ Done | [plan](docs/plans/phase_44_getting_started_edge_wizard.plan.md) |
+| **45** | **Farmer validation & polish** — sit-in, copy pass, mobile checklist | 📋 Next | [plan](docs/plans/phase_45_farmer_validation_whole_app_polish.plan.md) |
 
 ### Phase 23 exit sign-off
 
@@ -681,10 +692,15 @@ Stabilization sprint **closed** on **`main`** **2026-04-18**. Criterion-by-crite
 - [x] **Phase 37 — Guardian offline field assistant** — `field_guide` corpus, procedures, safety stops, degrade, print, background chat — [plan](docs/plans/phase_37_guardian_offline_field_assistant.plan.md) · [operator tour §6d](docs/operator-tour.md#6d-first-field-install-with-guardian-offline-phase-37)
 - [x] **Phase 38 — Plant-needs UI + pulse commands** — zone Water/Light/Climate tabs, Advanced nav, `duration_seconds` on `pending_command` — [plan](docs/plans/phase_38_plant_needs_ui_and_pulse_commands.plan.md) · [operator tour §4a](docs/operator-tour.md#4a-plant-needs-per-zone-phase-38)
 - [ ] **Product backlog (documented)** — program run now, `metadata.steps` deprecation, Guardian lighting propose, mobile distribution — [`docs/plans/product_backlog_operator_runtime.plan.md`](docs/plans/product_backlog_operator_runtime.plan.md)
-- [ ] **Phase 39** — edge fertigation queue + mix — [plan](docs/plans/phase_39_edge_fertigation_execution.plan.md)
-- [ ] **Phase 40** — unified zone cockpit — [plan](docs/plans/phase_40_unified_farmer_ux_zone_cockpit.plan.md)
-- [ ] **Phase 41** — farm hub coherence (Dashboard, why-empty, zone context on farm pages) — [plan](docs/plans/phase_41_farm_hub_coherence.plan.md)
-- [ ] **Phase 39b** — plain irrigation (RO/well) — [plan](docs/plans/phase_39b_plain_irrigation.plan.md)
+- [x] **Phase 39** — edge fertigation queue + mix — [plan](docs/plans/phase_39_edge_fertigation_execution.plan.md)
+- [x] **Phase 39b** — plain irrigation (RO/well) — [plan](docs/plans/phase_39b_plain_irrigation.plan.md)
+- [x] **Phase 40** — unified zone cockpit — [plan](docs/plans/phase_40_unified_farmer_ux_zone_cockpit.plan.md)
+- [x] **Phase 41** — farm hub coherence — [plan](docs/plans/phase_41_farm_hub_coherence.plan.md)
+- [x] **Phase 47** — feeding & water plain language — [plan](docs/plans/phase_47_feeding_water_plain_language.plan.md)
+- [x] **Phase 42** — comfort targets & automation — [plan](docs/plans/phase_42_comfort_targets_automation_plain_language.plan.md)
+- [x] **Phase 43** — operations hub — [plan](docs/plans/phase_43_operations_stock_feeding_finance.plan.md)
+- [x] **Phase 44** — getting started & edge wizards — [plan](docs/plans/phase_44_getting_started_edge_wizard.plan.md)
+- [ ] **Phase 45** — farmer validation & polish — [plan](docs/plans/phase_45_farmer_validation_whole_app_polish.plan.md)
 
 ## Project Roadmap
 
@@ -732,10 +748,15 @@ Stabilization sprint **closed** on **`main`** **2026-04-18**. Criterion-by-crite
 - [x] Phase 36 — Greenhouse climate (shade, panels, fans; Guardian + bootstrap) — [plan](docs/plans/phase_36_greenhouse_climate.plan.md)
 - [x] Phase 37 — Guardian offline field assistant (procedures, field_guide, offline degrade) — [plan](docs/plans/phase_37_guardian_offline_field_assistant.plan.md)
 - [x] Phase 38 — Plant-needs UI + timed actuator pulse (`POST /actuators/{id}/command`) — [plan](docs/plans/phase_38_plant_needs_ui_and_pulse_commands.plan.md)
-- [ ] Phase 39 — Edge fertigation execution (command queue, `mix_batch`, Pi mix) — [plan](docs/plans/phase_39_edge_fertigation_execution.plan.md)
-- [ ] Phase 40 — Unified farmer UX / zone cockpit — [plan](docs/plans/phase_40_unified_farmer_ux_zone_cockpit.plan.md)
-- [ ] Phase 41 — Farm hub coherence — [plan](docs/plans/phase_41_farm_hub_coherence.plan.md)
-- [ ] Phase 39b — Plain irrigation (RO/well) — [plan](docs/plans/phase_39b_plain_irrigation.plan.md)
+- [x] Phase 39 — Edge fertigation execution (command queue, `mix_batch`, Pi mix) — [plan](docs/plans/phase_39_edge_fertigation_execution.plan.md)
+- [x] Phase 39b — Plain irrigation (RO/well) — [plan](docs/plans/phase_39b_plain_irrigation.plan.md)
+- [x] Phase 40 — Unified farmer UX / zone cockpit — [plan](docs/plans/phase_40_unified_farmer_ux_zone_cockpit.plan.md)
+- [x] Phase 41 — Farm hub coherence — [plan](docs/plans/phase_41_farm_hub_coherence.plan.md)
+- [x] Phase 47 — Feeding & water plain language — [plan](docs/plans/phase_47_feeding_water_plain_language.plan.md)
+- [x] Phase 42 — Comfort targets & automation — [plan](docs/plans/phase_42_comfort_targets_automation_plain_language.plan.md)
+- [x] Phase 43 — Operations hub — [plan](docs/plans/phase_43_operations_stock_feeding_finance.plan.md)
+- [x] Phase 44 — Getting started & edge wizards — [plan](docs/plans/phase_44_getting_started_edge_wizard.plan.md)
+- [ ] Phase 45 — Farmer validation & polish — [plan](docs/plans/phase_45_farmer_validation_whole_app_polish.plan.md)
 
 ---
 
@@ -750,13 +771,9 @@ Stabilization sprint **closed** on **`main`** **2026-04-18**. Criterion-by-crite
 
 ## Built for the Commons
 
-> "Built for the commons."
+The commons is shared knowledge, shared code, and shared resilience — the village well and the seed bank, carried into software.
 
-The commons means shared knowledge, shared code, shared resilience. It's an ancient concept — like the village well or a seed bank — remixed into digital space.
-
-gr33n lives in this tradition:
-Free to use, fork, and rebuild.
-Not fenced off behind corporate toll booths.
+gr33n is meant to stay **free to use, fork, and rebuild** under AGPL. If you run it as a service, modifications flow back to the community — that keeps the tool trustworthy for the people who depend on it.
 
 ---
 
@@ -765,9 +782,6 @@ Not fenced off behind corporate toll booths.
 **GNU Affero General Public License v3.0 (AGPL-3.0)**
 
 Use it. Fork it. Share it.
-If you run it as a service — cloud, SaaS, or otherwise — you must release your modifications back to the community. No exceptions. No toll booths.
+If you run it as a service — cloud, SaaS, or otherwise — you must release your modifications back to the community.
 
-Just don't try to put a fence around the commons.
-
-Built by farmers, hackers, and friends.
-With sunlight and rage.
+Built by farmers, hackers, and friends — for soil, sunlight, and tools that stay yours.

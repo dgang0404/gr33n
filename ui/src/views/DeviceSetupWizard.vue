@@ -181,7 +181,7 @@
 <script setup>
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
-import api from '../api.js'
+import api from '../api'
 import GuardianStarterChips from '../components/GuardianStarterChips.vue'
 import { buildSetupStarters } from '../lib/guardianStarters.js'
 import { useFarmStore } from '../stores/farm.js'

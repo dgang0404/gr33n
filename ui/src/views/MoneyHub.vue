@@ -153,7 +153,7 @@
 
 <script setup>
 import { computed, onMounted, onUnmounted, reactive, ref } from 'vue'
-import api from '../api.js'
+import api from '../api'
 import { useFarmStore } from '../stores/farm.js'
 import { useFarmContextStore } from '../stores/farmContext.js'
 import EmptyStateHint from '../components/EmptyStateHint.vue'
