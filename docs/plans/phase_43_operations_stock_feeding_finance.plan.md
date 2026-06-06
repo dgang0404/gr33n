@@ -7,25 +7,25 @@ overview: >
 todos:
   - id: ws1-operations-nav
     content: "WS1: Sidebar Operations group — Supplies, Feeding details, Money; collapse raw Inventory/Fertigation tabs"
-    status: pending
+    status: completed
   - id: ws2-supplies-hub
     content: "WS2: Supplies hub — batches low-stock, inputs by name, link to mix; reuse NF/inventory APIs"
-    status: pending
+    status: completed
   - id: ws3-feeding-admin
     content: "WS3: Feeding admin — programs/reservoirs/EC targets as cards; zone filter; plain irrigation vs fertigation badges"
-    status: pending
+    status: completed
   - id: ws4-money-hub
     content: "WS4: Money hub — costs, receipts, simple COA labels; link from tasks; no ledger jargon on first screen"
-    status: pending
+    status: completed
   - id: ws5-cross-links
     content: "WS5: Deep links from zone Water and 41 Fertigation context into filtered hubs"
-    status: pending
+    status: completed
   - id: ws6-guardian-ops
     content: "WS6: Guardian persona + impact for supplies/feeding/money vocabulary"
-    status: pending
+    status: completed
   - id: ws7-docs-tests
     content: "WS7: operator-tour §7 + §6f; architecture §7.0i; Vitest hub empty states; OC-43"
-    status: pending
+    status: completed
   - id: ws8-guardian-pr-slice
     content: "WS8: phase_43_guardian_pr_spec — summarize_farm_low_stock read + ops starters (no new Confirm tools)"
     status: pending
@@ -36,7 +36,7 @@ isProject: false
 
 ## Status
 
-**Planned.** After [Phase 41](phase_41_farm_hub_coherence.plan.md) (`?zone_id=` and why-empty).
+**WS1–WS7 shipped** on `main`. **WS8** (Guardian `summarize_farm_low_stock` + ops starter chips) pending — [phase_43_guardian_pr_spec.md](phase_43_guardian_pr_spec.md).
 
 **Roadmap:** [farmer_ux_roadmap_40_plus.plan.md](farmer_ux_roadmap_40_plus.plan.md)
 
@@ -162,11 +162,12 @@ Starters ≠ Confirm. Matchers for stock PATCH deferred to Phase 46 if sit-in de
 
 ## Definition of done
 
-- [ ] Operations nav group live
-- [ ] Three hubs usable without reading schema names
-- [ ] Zone filter on feeding/supplies
+- [x] Operations nav group live
+- [x] Three hubs usable without reading schema names
+- [x] Zone filter on feeding/supplies (`?zone_id=`)
+- [x] Guardian persona + impact (WS6)
+- [x] operator-tour §7 + §6f + OC-43 (WS7)
 - [ ] Guardian: [phase_43_guardian_pr_spec.md](phase_43_guardian_pr_spec.md) WS8 complete
-- [ ] operator-tour §7 + §6f + OC-43
 
 ## Related
 

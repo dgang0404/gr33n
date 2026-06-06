@@ -24,6 +24,10 @@
 # Guardian PR doc gate (before Phase 40 code): guardian-change-requests-guide.md — propose/confirm/inbox/starters.
 # Phase 47: farmer-vocabulary.md — grow-path language contract (ingest after ship).
 #
+# Phase 43 shipped (WS1–WS7) — re-ingest after operator-doc edits:
+#   operator-tour.md §7 + §6f; workflow-guide.md §4b row "43" ✅;
+#   farm-guardian-architecture.md §7.0i (replace planned stub); farmer-vocabulary.md Operations rows.
+#
 # Pre-dev gap index (planning only, not ingested): docs/plans/pre_development_gaps_index.plan.md
 # Plans under docs/plans/ are excluded via exclude_globs.
 version: 1

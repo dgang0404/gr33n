@@ -103,7 +103,9 @@ Phase 47 used **room** in grow-path copy and nav (**My rooms**) to match indoor 
 | Setpoints | **Targets** (42) — Advanced: Comfort bands (table) |
 | Schedules | Inside feeding plan / Targets — Advanced: Schedules |
 | Automation / Rules | **Automations** — Advanced only |
-| Inventory | **Supplies** (43) |
+| Inventory | **Supplies** (43) — `/operations/supplies` |
+| Fertigation (admin) | **Feeding (details)** (43) — `/operations/feeding`; daily grow → **Feed & water** (47) |
+| Costs | **Money** (43) — `/operations/money` |
 
 ---
 

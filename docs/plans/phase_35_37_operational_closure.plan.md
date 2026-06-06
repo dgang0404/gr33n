@@ -56,7 +56,7 @@ todos:
     status: completed
   - id: oc-43-closure
     content: "OC-43: Phase 43 WS7 — operations hub docs/tests (close when Phase 43 ships)"
-    status: pending
+    status: completed
   - id: oc-44-closure
     content: "OC-44: Phase 44 WS6 — setup + edge wizard docs/tests (close when Phase 44 ships)"
     status: pending
@@ -272,6 +272,20 @@ Feature detail: [`phase_41_farm_hub_coherence.plan.md`](phase_41_farm_hub_cohere
 | Seed tasks `zone_id` | ✅ | WS5 — `master_seed.sql` comment + demo rows |
 | Lighting ↔ zone Light | ✅ | WS6 — `/lighting?zone_id=`, shared copy |
 | OC-41 docs/tests | ✅ | WS7 — operator-tour §3b, architecture §7.0g, Vitest |
+
+## Phase 43 — Operations hub (stock, feeding admin, money)
+
+Feature detail: [`phase_43_operations_stock_feeding_finance.plan.md`](phase_43_operations_stock_feeding_finance.plan.md). **OC-43** closed (WS7). Guardian read + starters remain **WS8** — [phase_43_guardian_pr_spec.md](phase_43_guardian_pr_spec.md).
+
+| Area | Status | Notes |
+|------|--------|-------|
+| Operations nav group | ✅ | WS1 — Supplies, Feeding (details), Money |
+| Supplies hub | ✅ | WS2 — `SuppliesHub.vue`, low-stock banner, `?zone_id=` |
+| Feeding admin hub | ✅ | WS3 — `FeedingAdminHub.vue`, card tabs, mixing escape |
+| Money hub | ✅ | WS4 — `MoneyHub.vue`, month summary, receipt form |
+| Cross-links | ✅ | WS5 — zone Water, Dashboard **Supplies low** chip |
+| Guardian persona + impact | ✅ | WS6 — ops vocabulary, refill task cites input name |
+| OC-43 docs/tests | ✅ | WS7 — operator-tour §7 + §6f, architecture §7.0i, `phase-43-closure.test.js` |
 
 ## Phase 47 — Feeding & water plain language
 

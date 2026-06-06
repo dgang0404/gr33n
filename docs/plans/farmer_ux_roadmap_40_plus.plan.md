@@ -19,7 +19,7 @@ todos:
     status: completed
   - id: phase-43
     content: "Phase 43 — stock, feeding details, receipts (operations hub)"
-    status: pending
+    status: completed
   - id: phase-44
     content: "Phase 44 — getting started + edge install wizards"
     status: pending
@@ -41,8 +41,8 @@ isProject: false
 
 | Status | Phases |
 |--------|--------|
-| **Shipped** | 40, 41, 47, 42 |
-| **Next feature code** | **[43](phase_43_operations_stock_feeding_finance.plan.md)** — Operations hub (Supplies & money) |
+| **Shipped** | 40, 41, 47, 42, **43** (WS1–WS7; WS8 Guardian read + starters pending) |
+| **Next feature code** | **[44](phase_44_getting_started_edge_wizard.plan.md)** — Getting started + edge wizards (or **43 WS8** Guardian slice) |
 | **Parallel infra** | **[48](phase_48_dev_seed_and_small_farm_profiles.plan.md)** — dev seed hygiene (recommended before 45 sit-in) |
 | **Then** | 44 → 45 → 46 |
 

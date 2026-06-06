@@ -28,10 +28,11 @@ Think **physical layout → signals → automation → work tracking → feeding
 | **4c. Greenhouse climate** | `/zones/:id`, `/actuators`, `/automation` | **Shade, vents, fans** on `zone_type=greenhouse` — profile in zone meta, typed actuators, lux/temp rules. **Not** supplemental light (see [§5b](#5b-greenhouse-shade-vents-and-fans-phase-36)). |
 | **5. Tasks** | `/tasks` | Human **work items**: inspections, harvest prep, fixes — often the day-to-day spine (see sit-in “tasks-first”). |
 | **6. Feed & water** | `/feeding`, zone **Water** tab | Daily feeding — one card per room on the hub; per-room **feeding plan** on **Water** ([§7b](#7b-feeding--water-for-this-room-phase-47)). |
-| **6b. Feeding (technical)** | `/fertigation` under **Advanced** | Programs, reservoirs, EC targets, mixing log — power users and Phase 43 admin only. |
+| **6b. Operations** | `/operations/supplies`, `/operations/feeding`, `/operations/money` | **Supplies**, **Feeding (details)**, **Money** — restock, farm-wide feeding admin, receipts ([§7](#7-supplies-feeding--money-phase-43)). |
+| **6c. Feeding (technical)** | `/fertigation` under **Advanced** | Full six-tab console — mixing log, crop cycles, bulk program edit. |
 | **7. Guardian (optional AI)** | Side nav `/chat`, drawer robot tab | **Farm Guardian** — grounded Q&A + **change requests** (propose → Confirm). Pending inbox: `/chat?tab=pending`. See [§6](#6-farm-guardian-change-requests-with-your-ok). Starters on **Water** and **Feed & water** for next feed / run now / water-only. |
 
-**Around the edges (same session):** **Alerts** (`/alerts`), **Costs** (`/costs`), **Knowledge** (`/farm-knowledge` — farm-scoped RAG), **Plants / Animals / Aquaponics** when those modules matter, **Settings** / **Catalog** for account and reference data.
+**Around the edges (same session):** **Alerts** (`/alerts`), **Knowledge** (`/farm-knowledge` — farm-scoped RAG), **Plants / Animals / Aquaponics** when those modules matter, **Settings** / **Catalog** for account and reference data. Legacy **Inventory** / **Costs** routes remain under Advanced for power users.
 
 ---
 
@@ -381,22 +382,22 @@ If you get advice text but **no card**, matchers did not recognize the phrase �
 
 **Prefer the UI when it exists:** Use band editor and rule/schedule **toggles** on the same pages; Guardian is for operators who think in chat first.
 
-### 6f. Guardian on supplies & money (Phase 43 — planned)
+### 6f. Guardian on supplies & money (Phase 43 — shipped)
 
-**Spec:** [`plans/phase_43_guardian_pr_spec.md`](plans/phase_43_guardian_pr_spec.md)
+**Spec:** [`plans/phase_43_guardian_pr_spec.md`](plans/phase_43_guardian_pr_spec.md) · Persona: architecture [§7.0i](farm-guardian-architecture.md#70i-operations-hub--supplies-feeding-money-phase-43).
 
-**Read (new in 43):** Ask “What’s running low?” or use the **What’s running low?** starter on Supplies — Guardian attaches a **`summarize_farm_low_stock`** block (input names and quantities). This is **advice text**, not a Confirm card.
+**Shipped (WS6):** Guardian says **Supplies**, **Feeding (details)**, and **Money** — not Inventory / Fertigation / Costs. Route `context_ref` on `/operations/*` hubs steers copy. **`create_task_from_alert`** on low-stock alerts (`inventory_low_stock`) proposes a **refill task** with input name in the impact line.
 
-**Starters:** On Supplies, Feeding, and Money hubs — e.g. “Turn alert into refill task”, “When does feeding run next?”, “Explain this month’s spend”. Chips fill chat; they do not change stock by themselves.
+**Planned (WS8):** Read enrichment **`summarize_farm_low_stock`** (“What’s running low?”) and **conversation starter chips** on Supplies / Feeding / Money / Dashboard — spec §2–§3.
 
-**PR cards (existing tools only):**
+**PR cards today (existing tools only):**
 
 | You might say | Tool (if matched) |
 |---------------|-------------------|
-| Create a task from this low-stock alert | `create_task_from_alert` |
+| Create a refill task from this low-stock alert | `create_task_from_alert` |
 | Create a task to check humidity | `create_task` |
 
-Guardian **cannot** adjust batch quantities or post receipts via Confirm in Phase 43 — use the hub UI; broader NL writes are Phase 46.
+Guardian **cannot** adjust batch quantities or post receipts via Confirm — use the hub UI; broader NL writes are [Phase 46](plans/phase_46_guardian_llm_tool_proposals.plan.md).
 
 ### 6g. Guardian during setup (Phase 44 — planned)
 
@@ -456,36 +457,41 @@ Architecture: [`farm-guardian-architecture.md`](farm-guardian-architecture.md) �
 
 ---
 
-## 7. Supplies, feeding & money (Phase 43 — planned)
+## 7. Supplies, feeding & money (Phase 43)
 
-**Status:** Doc complete; implementation after [Phase 41](plans/phase_41_farm_hub_coherence.plan.md). Plan: [`plans/phase_43_operations_stock_feeding_finance.plan.md`](plans/phase_43_operations_stock_feeding_finance.plan.md).
+**Shipped.** Hubs WS1–WS7 on `main`; Guardian read tool + starter chips remain **WS8** ([spec](plans/phase_43_guardian_pr_spec.md)). Plan: [`plans/phase_43_operations_stock_feeding_finance.plan.md`](plans/phase_43_operations_stock_feeding_finance.plan.md).
 
 **Goal:** One **Operations** area for restock, feeding admin, and receipts — not three separate schema apps.
 
-### Supplies
+### Supplies (`/operations/supplies`)
 
-1. Open **Operations → Supplies** (wraps today’s inventory data).
-2. **Low-stock banner** at top — same alerts the worker already creates (`inventory_low_stock`).
-3. List shows **input name** and quantity on hand — not `input_batches` tab jargon.
-4. **Log mix** links to mixing log or zone Water (Phase 39).
+1. Open **Operations → Supplies**.
+2. **Low-stock banner** when batches are below threshold (same worker alerts as `inventory_low_stock`).
+3. **On-hand cards** — input name, quantity, low badge — not `input_batches` tab jargon.
+4. **Log a mix** → Feeding (details) mixing tab; **Full inventory editor** → `/inventory` for definitions, recipes, and batch forms.
+5. Optional `?zone_id=` — zone context banner when linked from zone Water.
 
-### Feeding (details)
+### Feeding (details) (`/operations/feeding`)
 
-1. **Operations → Feeding** — programs and reservoirs as **cards** (room name, next run, irrigation-only badge).
-2. Default filter: `?zone_id=` from farm hub or zone cockpit.
-3. Advanced: full Fertigation tab bar for agronomists.
+1. **Operations → Feeding (details)** — programs, nutrient tanks, and strength targets as **cards** (zone name, next run, **Water only** badge).
+2. Tabs: Programs · Nutrient tanks · Strength targets.
+3. `?zone_id=` filters programs, tanks, and targets; `?tab=mixing` redirects to **Advanced → Feeding (technical)** mixing log.
+4. **Feed & water (daily)** link → `/feeding`; full editor → `/fertigation`.
 
-### Money
+### Money (`/operations/money`)
 
-1. **Operations → Money** — this month spend summary first.
-2. **Save receipt** flow with photo attach — COA hidden until Advanced.
+1. **Operations → Money** — **this month** spent / received / net summary.
+2. **Save receipt** — amount, plain category, photo/PDF; no chart of accounts on the first screen.
+3. Recent activity with **Details →** to `/costs` for GL mapping and exports.
 
-### Cross-links
+### Cross-links (WS5)
 
-- Zone **Water** → “Stock & recipes for this room”
-- **Dashboard** (41) → Supplies chip when low stock
+- Zone **Water** → **Stock & recipes for this room →** (`/operations/supplies?zone_id=`)
+- **Dashboard** morning strip → **Supplies low** chip when batches are below threshold
 
-Architecture: [`farm-guardian-architecture.md` §7.0i](farm-guardian-architecture.md#70i-operations-hub--supplies-feeding-money-phase-43--planned).
+**Vitest closure:** `phase-43-closure.test.js`, `supplies-hub.test.js`, `feeding-admin-hub.test.js`, `money-hub.test.js`, `nav-groups.test.js`, `farm-grow-summary.test.js`, `zone-feeding-water.test.js`.
+
+Architecture: [`farm-guardian-architecture.md` §7.0i](farm-guardian-architecture.md#70i-operations-hub--supplies-feeding-money-phase-43).
 
 ---
 
@@ -503,7 +509,7 @@ Architecture: [`farm-guardian-architecture.md` §7.0i](farm-guardian-architectur
 6. **Reservoir** — Ready or Needs top-up.
 7. Farm-wide list: **Feed & water** (`/feeding`) — one card per room; `?zone_id=` filter from [Phase 41](plans/phase_41_farm_hub_coherence.plan.md).
 8. **Ask gr33n** starters on Water and the hub: next feed, run now safe?, switch to water-only.
-9. Recipes, mixing log, six tabs → **Advanced → Feeding (technical)** or Phase 43 Operations only.
+9. Recipes, mixing log, six tabs → **Operations → Feeding (details)** or **Advanced → Feeding (technical)**.
 
 **Do not** send operators to a page titled **Fertigation** for daily feeding.
 

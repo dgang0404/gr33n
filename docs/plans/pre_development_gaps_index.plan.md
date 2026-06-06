@@ -35,7 +35,7 @@ isProject: false
 | 2 | [41](phase_41_farm_hub_coherence.plan.md) | Farm hub + why-empty ✅ |
 | 3 | [47](phase_47_feeding_water_plain_language.plan.md) | Feeding & water plain language (room-first) ✅ |
 | 4 | [42](phase_42_comfort_targets_automation_plain_language.plan.md) | Comfort bands; schedules/rules plain language ✅ |
-| 5 | [43](phase_43_operations_stock_feeding_finance.plan.md) | Supplies, feeding admin, money — **next code** |
+| 5 | [43](phase_43_operations_stock_feeding_finance.plan.md) | Supplies, feeding admin, money ✅ (WS8 Guardian pending) |
 | 6 | [44](phase_44_getting_started_edge_wizard.plan.md) | Farm + Pi wizards |
 | 7 | [45](phase_45_farmer_validation_whole_app_polish.plan.md) | Sit-in + whole-app polish |
 | 8 | [46](phase_46_guardian_llm_tool_proposals.plan.md) | Guardian LLM tool proposals |
@@ -56,7 +56,7 @@ isProject: false
 | **7** | [phase_47](phase_47_feeding_water_plain_language.plan.md) + [farmer-vocabulary.md](../farmer-vocabulary.md) + tour §7b + arch §7.0m | ✅ |
 | **8** | [phase_48](phase_48_dev_seed_and_small_farm_profiles.plan.md) + [local-operator-bootstrap.md](../local-operator-bootstrap.md) slow-dev section | ✅ |
 
-**Documentation status:** Chunks 1–8 complete. Phases **39**, **39b**, **40**, **41**, **47**, **42**, and **product backlog** shipped on `main`. **Phase 48** plan written (parallel infra). **Next feature code:** [43](phase_43_operations_stock_feeding_finance.plan.md). **Guardian/PR docs for phases 42–46** are written — **OC-40 … OC-46** close with each phase’s WS8, not before ship.
+**Documentation status:** Chunks 1–8 complete. Phases **39**, **39b**, **40**, **41**, **47**, **42**, **43** (WS1–WS7), and **product backlog** shipped on `main`. **Phase 48** plan written (parallel infra). **Next feature code:** [44](phase_44_getting_started_edge_wizard.plan.md) (or [43 WS8](phase_43_guardian_pr_spec.md)). **Guardian/PR docs for phases 42–46** are written — **OC-43** closed; **43 WS8** + **OC-44 … OC-46** close with each phase’s WS8/WS7 ship.
 
 ---
 
@@ -70,6 +70,7 @@ Run on each farm with embedding configured: **`make rag-ingest-platform-docs`** 
 | **40** | operator-tour §4b (full walk), workflow §4b, architecture §7.0f | Phase 40 comment block |
 | **41** | operator-tour §3b, §4, workflow §4b, architecture §7.0g, tasks-first guide | Phase 41 comment block |
 | **39b** | workflow §4b, operator-tour §4a | Phase 39b comment block |
+| **43** | operator-tour §7 + §6f, workflow §4b, architecture §7.0i, farmer-vocabulary | Phase 43 comment block |
 
 Whole-file ingest: `operator-tour.md` and `workflow-guide.md` are already in `include:` — section edits still require a full re-ingest pass.
 
@@ -104,7 +105,7 @@ Whole-file ingest: `operator-tour.md` and `workflow-guide.md` are already in `in
 | **A4** | Plain-water programs | [phase_39b](phase_39b_plain_irrigation.plan.md) ✅ | RO/well farms |
 | **A5** | Feeding & water — room-first, no fertigation console | [phase_47](phase_47_feeding_water_plain_language.plan.md) ✅ | "How does this room get water?" |
 | **A5b** | Setpoints / rules / schedules understandable | [phase_42](phase_42_comfort_targets_automation_plain_language.plan.md) ✅ | Not a DB console |
-| **A6** | Inventory / fertigation admin / costs coherent | [phase_43](phase_43_operations_stock_feeding_finance.plan.md) | Stock & money jobs |
+| **A6** | Inventory / fertigation admin / costs coherent | [phase_43](phase_43_operations_stock_feeding_finance.plan.md) ✅ | Stock & money jobs |
 | **A7** | New farm + Pi setup in-app | [phase_44](phase_44_getting_started_edge_wizard.plan.md) | Onboarding without shell docs |
 | **A8** | Non-technical validation | [phase_45](phase_45_farmer_validation_whole_app_polish.plan.md) | Farmer-ready v1 |
 | **A9** | Guardian LLM tool proposals (PR from free-form ask) | [phase_46](phase_46_guardian_llm_tool_proposals.plan.md) | After 45; not starter chips |

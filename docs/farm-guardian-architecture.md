@@ -354,19 +354,25 @@ Plans: [`plans/phase_42_comfort_targets_automation_plain_language.plan.md`](plan
 
 Operator walkthrough: [operator-tour §5c](operator-tour.md#5c-comfort-bands--what-runs-when-phase-42--shipped) · Guardian: [operator-tour §6e](operator-tour.md#6e-guardian-on-comfort--automation-phase-42--shipped).
 
-### 7.0i Operations hub — supplies, feeding, money (Phase 43 — planned)
+### 7.0i Operations hub — supplies, feeding, money (Phase 43)
 
-**Doc stub.** Plans: [`plans/phase_43_operations_stock_feeding_finance.plan.md`](plans/phase_43_operations_stock_feeding_finance.plan.md) · Guardian PR slice: [`plans/phase_43_guardian_pr_spec.md`](plans/phase_43_guardian_pr_spec.md).
+**Shipped (WS1–WS7).** Plans: [`plans/phase_43_operations_stock_feeding_finance.plan.md`](plans/phase_43_operations_stock_feeding_finance.plan.md) · Guardian PR slice: [`plans/phase_43_guardian_pr_spec.md`](plans/phase_43_guardian_pr_spec.md).
 
-When shipped:
+| Surface | Operator job | Implementation |
+|---------|--------------|----------------|
+| **Supplies** (`/operations/supplies`) | What is on hand / running low; log a mix | `SuppliesHub.vue`, `suppliesHub.js`; low-stock from batches API; banner + Dashboard chip |
+| **Feeding (details)** (`/operations/feeding`) | Programs, tanks, EC targets (farm-wide admin) | `FeedingAdminHub.vue`, `feedingAdminHub.js`; `?zone_id=` filter; mixing → `/fertigation?tab=mixing` |
+| **Money** (`/operations/money`) | Month spend; save receipt | `MoneyHub.vue`, `moneyHub.js`; full editor → `/costs` |
+| **Advanced** | GL mapping, exports, six-tab fertigation | `/inventory`, `/costs`, `/fertigation` unchanged |
 
-- **Supplies**, **Feeding (details)**, and **Money** replace schema-first Inventory / Fertigation / Costs in farmer nav (Advanced keeps full tables).
-- Guardian **`summarize_farm_low_stock`** read enrichment answers “what’s running low?” without opening batches UI.
-- **Conversation starters** on each hub — job language (restock, mix, receipt), not generic page status.
-- **Refill tasks** still use existing `create_task_from_alert` from low-stock alerts — not new inventory write tools.
+**Guardian (WS6 shipped; WS8 pending):**
+
+- Persona + route `context_ref` prefer **Supplies / Feeding (details) / Money** — not Inventory / Fertigation / Costs ([`platform_context.go`](../internal/farmguardian/platform_context.go), [`context_ref.go`](../internal/farmguardian/context_ref.go)).
+- **`create_task_from_alert`** for `inventory_low_stock` — refill task impact cites input name; no new stock write tools.
+- **WS8 (planned):** **`summarize_farm_low_stock`** read enrichment + hub **conversation starters** — spec §2–§3.
 - Stock/cost **writes via chat** when matchers miss → [Phase 46](plans/phase_46_guardian_llm_tool_proposals.plan.md).
 
-Operator walkthrough: [operator-tour §7](operator-tour.md#7-supplies-feeding--money-phase-43--planned) · Guardian: [operator-tour §6f](operator-tour.md#6f-guardian-on-supplies--money-phase-43--planned).
+Operator walkthrough: [operator-tour §7](operator-tour.md#7-supplies-feeding--money-phase-43) · Guardian: [operator-tour §6f](operator-tour.md#6f-guardian-on-supplies--money-phase-43--shipped).
 
 ### 7.0j Getting started & edge wizards (Phase 44 — planned)
 
