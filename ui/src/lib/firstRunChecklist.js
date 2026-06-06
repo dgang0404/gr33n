@@ -37,7 +37,7 @@ export function computeFirstRunChecklist({
   return [
     {
       id: 'add_zone',
-      label: 'Add a grow room',
+      label: 'Add a zone',
       done: hasZones,
       to: zoneTo,
     },

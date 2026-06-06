@@ -2,7 +2,7 @@
   <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-4" data-test="zone-alerts-panel">
     <div class="flex items-center justify-between gap-2 mb-3 flex-wrap">
       <div class="flex items-center gap-2">
-        <h2 class="text-sm font-semibold text-white">Alerts for this room</h2>
+        <h2 class="text-sm font-semibold text-white">Alerts for this zone</h2>
         <span
           v-if="unreadCount"
           class="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-900/60 text-amber-200"
@@ -19,7 +19,7 @@
       </router-link>
     </div>
 
-    <p v-if="!displayAlerts.length" class="text-zinc-500 text-sm">No alerts for this room right now.</p>
+    <p v-if="!displayAlerts.length" class="text-zinc-500 text-sm">No alerts for this zone right now.</p>
 
     <div v-else class="space-y-2">
       <div

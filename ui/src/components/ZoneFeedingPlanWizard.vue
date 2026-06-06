@@ -61,7 +61,7 @@
 
     <div v-else class="space-y-2">
       <label class="block text-[11px] text-zinc-500">
-        What time should this room feed each day?
+        What time should this zone feed each day?
         <input
           v-model="form.dailyFeedTime"
           type="time"
@@ -120,7 +120,7 @@ import {
 const props = defineProps({
   zoneId: { type: Number, required: true },
   farmId: { type: Number, required: true },
-  zoneName: { type: String, default: 'This room' },
+  zoneName: { type: String, default: 'This zone' },
   reservoirs: { type: Array, default: () => [] },
   farmTimezone: { type: String, default: 'UTC' },
 })

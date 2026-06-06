@@ -4,7 +4,7 @@
       <div>
         <h1 class="text-xl font-semibold text-white">Targets &amp; schedules</h1>
         <p class="text-zinc-500 text-sm mt-1 max-w-2xl">
-          Comfort bands per room, what runs when, and automation toggles — without cron or JSON.
+          Comfort bands per zone, what runs when, and automation toggles — without cron or JSON.
         </p>
       </div>
       <button
@@ -53,16 +53,16 @@
       <EmptyStateHint
         v-else-if="!store.zones.length"
         reason="no_data"
-        message="No rooms yet — create zones first, then set comfort bands here or on each room's Climate tab."
-        action-label="My rooms"
+        message="No zones yet — create zones first, then set comfort bands here or on each zone's Climate tab."
+        action-label="My zones"
         action-to="/zones"
       />
 
       <EmptyStateHint
         v-else-if="zoneContextId && !filteredCards.length"
         reason="no_data"
-        message="No comfort card for this room filter."
-        action-label="Show all rooms"
+        message="No comfort card for this zone filter."
+        action-label="Show all zones"
         :action-to="{ path: '/comfort-targets' }"
       />
 
@@ -108,7 +108,7 @@
               :readings="store.readings"
               :sensor-types-filter="card.bands.map((b) => b.sensorType)"
               :empty-message="card.status === 'no_sensors'
-                ? 'Add temperature or humidity sensors to this room first.'
+                ? 'Add temperature or humidity sensors to this zone first.'
                 : ''"
               @updated="onBandUpdated"
             />

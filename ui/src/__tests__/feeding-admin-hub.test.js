@@ -65,7 +65,7 @@ describe('Phase 43 WS3 — feeding admin hub helpers', () => {
       ph_max: 6.2,
     }, zones)
     expect(card.stageLabel).toBe('mid flower')
-    expect(card.zoneName).toBe('All rooms')
+    expect(card.zoneName).toBe('All zones')
     expect(card.ecRange).toBe('1.8–2.2 mS/cm')
     expect(card.phRange).toContain('pH')
   })

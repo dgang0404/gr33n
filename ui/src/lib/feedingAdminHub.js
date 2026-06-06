@@ -49,7 +49,7 @@ export function buildProgramAdminCard(program, zones, schedules) {
   return {
     id: program.id,
     name: program.name,
-    zoneName: zone?.name || 'No room linked',
+    zoneName: zone?.name || 'No zone linked',
     zoneId: program.target_zone_id,
     nextRunLabel: schedule
       ? scheduleRunsLabel(schedule)
@@ -116,7 +116,7 @@ export function buildEcTargetAdminCard(target, zones) {
   return {
     id: target.id,
     stageLabel: formatGrowthStage(target.growth_stage),
-    zoneName: zone?.name || 'All rooms',
+    zoneName: zone?.name || 'All zones',
     zoneId: target.zone_id,
     ecRange: `${target.ec_min_mscm}–${target.ec_max_mscm} mS/cm`,
     phRange: target.ph_min != null && target.ph_max != null

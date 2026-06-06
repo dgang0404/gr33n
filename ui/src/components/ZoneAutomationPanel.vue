@@ -3,7 +3,7 @@
     <div class="flex items-center justify-between gap-2 mb-3 flex-wrap">
       <div>
         <h3 class="text-sm font-semibold text-white">What runs when</h3>
-        <p class="text-zinc-600 text-xs mt-0.5">Automations and schedules for this room.</p>
+        <p class="text-zinc-600 text-xs mt-0.5">Automations and schedules for this zone.</p>
       </div>
       <div class="flex gap-3 text-xs">
         <router-link
@@ -18,7 +18,7 @@
     </div>
 
     <p v-if="!automation.rules.length && !automation.schedules.length" class="text-zinc-500 text-sm">
-      Nothing automated for {{ needLabel }} in this room yet.
+      Nothing automated for {{ needLabel }} in this zone yet.
     </p>
 
     <div v-if="automation.schedules.length" class="mb-4">

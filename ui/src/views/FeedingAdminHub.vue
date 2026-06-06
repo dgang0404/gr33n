@@ -4,7 +4,7 @@
       <div>
         <h1 class="text-xl font-semibold text-white">Feeding (details)</h1>
         <p class="text-zinc-500 text-sm mt-1 max-w-2xl">
-          Farm-wide feeding admin — programs, nutrient tanks, and strength targets. For daily “what runs next per room”, use Feed &amp; water.
+          Farm-wide feeding admin — programs, nutrient tanks, and strength targets. For daily “what runs next per zone”, use Feed &amp; water.
         </p>
       </div>
       <button
@@ -63,7 +63,7 @@
       <EmptyStateHint
         v-if="!programCards.length"
         reason="no_data"
-        message="No feeding programs yet — add one in the full editor or start a plan from a room's Water tab."
+        message="No feeding programs yet — add one in the full editor or start a plan from a zone's Water tab."
         action-label="Open full editor"
         :action-to="technicalLink('programs')"
       />
@@ -106,7 +106,7 @@
             :to="{ path: `/zones/${card.zoneId}`, query: { tab: 'water' } }"
             class="inline-block mt-3 text-xs text-green-500 hover:text-green-400"
           >
-            Open room Water tab →
+            Open zone Water tab →
           </router-link>
         </div>
       </div>

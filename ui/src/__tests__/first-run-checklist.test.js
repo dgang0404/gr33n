@@ -60,7 +60,7 @@ describe('Phase 44 WS5 — GettingStartedChecklist component', () => {
       },
     })
     expect(wrapper.find('[data-test="first-run-checklist"]').exists()).toBe(true)
-    expect(wrapper.find('[data-test="first-run-item-add_zone"]').text()).toContain('Add a grow room')
+    expect(wrapper.find('[data-test="first-run-item-add_zone"]').text()).toContain('Add a zone')
     await wrapper.find('[data-test="first-run-dismiss"]').trigger('click')
     expect(wrapper.emitted('dismiss')).toHaveLength(1)
     expect(isFirstRunChecklistDismissed(5)).toBe(true)

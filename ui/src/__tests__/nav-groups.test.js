@@ -6,7 +6,7 @@ describe('Phase 40 WS7 — farmer nav groups', () => {
 
   it('uses grow-first labels', () => {
     const grow = groups.find((g) => g.label === 'Grow')
-    expect(grow.items.some((i) => i.label === 'My rooms' && i.to === '/zones')).toBe(true)
+    expect(grow.items.some((i) => i.label === 'My zones' && i.to === '/zones')).toBe(true)
     expect(grow.items.some((i) => i.label === 'Feed & water' && i.to === '/feeding')).toBe(true)
     expect(grow.items.some((i) => i.label === 'Targets & schedules' && i.to === '/comfort-targets')).toBe(true)
     expect(grow.items.some((i) => i.label === 'Supplies')).toBe(false)
@@ -46,6 +46,6 @@ describe('Phase 40 WS7 — farmer nav groups', () => {
 
   it('uses farmer labels on mobile bottom nav', () => {
     expect(mobileBottomNav.find((i) => i.to === '/')?.label).toBe('Today')
-    expect(mobileBottomNav.find((i) => i.to === '/zones')?.label).toBe('Rooms')
+    expect(mobileBottomNav.find((i) => i.to === '/zones')?.label).toBe('Zones')
   })
 })

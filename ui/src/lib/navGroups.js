@@ -1,3 +1,5 @@
+import { GROW_PATH_ZONE_LABELS as Z } from './farmerVocabulary.js'
+
 /**
  * Phase 38 + Phase 40 WS7 — sidebar / mobile drawer navigation groups.
  * Farmer-first labels; Advanced routes grouped for power users.
@@ -12,14 +14,14 @@ export function buildNavGroups(cycleCompareRoute) {
         {
           to: '/zones',
           icon: '🗂️',
-          label: 'My rooms',
-          navTitle: 'Grow areas — water, light, and climate per room',
+          label: Z.navMyZones,
+          navTitle: Z.navMyZonesTitle,
         },
         {
           to: '/feeding',
           icon: '💧',
           label: 'Feed & water',
-          navTitle: 'Daily feeding plan per room — how each room gets water',
+          navTitle: Z.feedingNavTitle,
         },
         {
           to: '/comfort-targets',
@@ -90,7 +92,7 @@ export function buildNavGroups(cycleCompareRoute) {
           to: '/automation',
           icon: '🤖',
           label: 'Automations',
-          navTitle: 'Sensor-triggered automation rules',
+          navTitle: 'Sensor-triggered automations',
         },
         {
           to: '/setpoints',
@@ -156,7 +158,7 @@ export function buildNavGroups(cycleCompareRoute) {
 
 export const mobileBottomNav = [
   { to: '/', icon: '🌿', label: 'Today' },
-  { to: '/zones', icon: '🗂️', label: 'Rooms' },
+  { to: '/zones', icon: '🗂️', label: Z.mobileZones },
   { to: '/tasks', icon: '✅', label: 'Tasks' },
   { to: '/alerts', icon: '🔔', label: 'Alerts' },
   { to: '/settings', icon: '⚙️', label: 'More' },

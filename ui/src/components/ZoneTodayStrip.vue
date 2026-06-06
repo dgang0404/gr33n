@@ -4,7 +4,7 @@
     data-test="zone-today-strip"
   >
     <div class="flex items-center justify-between gap-2 mb-3">
-      <h2 class="text-sm font-semibold text-white">Today in this room</h2>
+      <h2 class="text-sm font-semibold text-white">Today in this zone</h2>
       <span class="text-zinc-600 text-xs">What matters now</span>
     </div>
     <div class="flex flex-wrap gap-2">

@@ -24,7 +24,7 @@
         :to="clearRoute"
         class="text-green-400 hover:text-green-300 ml-1"
       >
-        Show all rooms →
+        Show all zones →
       </router-link>
     </p>
   </div>

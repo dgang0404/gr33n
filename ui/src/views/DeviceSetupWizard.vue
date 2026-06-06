@@ -44,7 +44,7 @@
           </select>
         </label>
         <label class="block">
-          <span class="text-zinc-400 text-xs">Grow room (optional)</span>
+          <span class="text-zinc-400 text-xs">Grow zone (optional)</span>
           <select v-model.number="form.zoneId" class="input-field mt-1 w-full">
             <option :value="null">— Farm-wide / assign later —</option>
             <option v-for="z in store.zones" :key="z.id" :value="z.id">{{ z.name }}</option>
@@ -131,7 +131,7 @@
     <template v-else-if="step === 'actuators'">
       <section class="bg-zinc-900 border border-zinc-800 rounded-xl p-4 space-y-3">
         <h2 class="text-sm font-semibold text-white">Add actuators (optional)</h2>
-        <p class="text-xs text-zinc-500">Link outputs to this device and room so automations and lighting programs can target them.</p>
+        <p class="text-xs text-zinc-500">Link outputs to this device and zone so automations and lighting programs can target them.</p>
         <div class="flex flex-wrap gap-2">
           <button
             v-for="t in actuatorTemplates"
@@ -168,7 +168,7 @@
       </section>
       <div class="flex flex-wrap gap-2">
         <router-link v-if="form.zoneId" :to="`/zones/${form.zoneId}`" class="px-4 py-2 text-sm font-medium rounded-lg bg-green-700 hover:bg-green-600 text-white">
-          Open room
+          Open zone
         </router-link>
         <router-link to="/actuators" class="px-4 py-2 text-sm text-zinc-300 border border-zinc-700 rounded-lg">
           View controls

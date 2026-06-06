@@ -1,6 +1,6 @@
 # Farmer vocabulary — gr33n UI language contract
 
-**Status:** Published (Phase 47 WS5). **Vocabulary v2 (zones not rooms)** — scheduled in [Phase 45 WS3](plans/phase_45_farmer_validation_whole_app_polish.plan.md#ws3--copy-pass-v2). Enforced on grow routes by `ui/src/__tests__/farmer-vocabulary-grow-path.test.js`.
+**Status:** Published (Phase 47 WS5). **Vocabulary v2 (zones not rooms)** — **shipped** in [Phase 45 WS3](plans/phase_45_farmer_validation_whole_app_polish.plan.md#ws3--copy-pass-v2). Enforced on grow routes by `ui/src/__tests__/farmer-vocabulary-grow-path.test.js` and `phase-45-ws3-closure.test.js`.
 
 **Audience:** Product, UX, and developers shipping Phases 40–47 and 45 sit-in validation.
 

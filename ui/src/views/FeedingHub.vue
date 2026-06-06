@@ -4,7 +4,7 @@
       <div>
         <h1 class="text-xl font-semibold text-white">Feed &amp; water</h1>
         <p class="text-zinc-500 text-sm mt-1 max-w-2xl">
-          One card per room — next feed, last run, and plan status. Open a room to edit the plan on the Water tab.
+          One card per zone — next feed, last run, and plan status. Open a zone to edit the plan on the Water tab.
         </p>
       </div>
       <button
@@ -32,16 +32,16 @@
     <EmptyStateHint
       v-else-if="!store.zones.length"
       reason="no_data"
-      message="No rooms yet — create zones first, then start a feeding plan on each room's Water tab."
-      action-label="My rooms"
+      message="No zones yet — create zones first, then start a feeding plan on each zone's Water tab."
+      action-label="My zones"
       action-to="/zones"
     />
 
     <EmptyStateHint
       v-else-if="zoneContextId && !filteredCards.length"
       reason="no_data"
-      message="No feeding card for this room filter."
-      action-label="Show all rooms"
+      message="No feeding card for this zone filter."
+      action-label="Show all zones"
       :action-to="{ path: '/feeding' }"
     />
 

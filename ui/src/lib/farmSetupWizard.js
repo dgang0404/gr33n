@@ -15,14 +15,14 @@ export const FARM_SETUP_PRIMARY_CHOICES = [
   {
     id: FARM_SETUP_BLANK_ID,
     label: 'Start blank',
-    tagline: 'Empty farm — add rooms and devices yourself',
+    tagline: 'Empty farm — add zones and devices yourself',
     icon: '📋',
     recommended: false,
   },
   {
     id: BOOTSTRAP_TEMPLATE_KEYS.JADAM_INDOOR_PHOTOPERIOD_V1,
     label: 'Indoor photoperiod',
-    tagline: 'Four grow rooms, feeding programs, inventory, and demo tasks',
+    tagline: 'Four zones, feeding programs, inventory, and demo tasks',
     icon: '🌱',
     recommended: true,
   },
@@ -100,7 +100,7 @@ export function formatBootstrapApplyResult(bootstrap) {
   if (bootstrap.applied) {
     return {
       ok: true,
-      message: 'Starter pack applied. Open My rooms, Feed & water, and Tasks to explore what was created.',
+      message: 'Starter pack applied. Open My zones, Feed & water, and Tasks to explore what was created.',
     }
   }
   return { ok: true, message: 'Template step finished.' }

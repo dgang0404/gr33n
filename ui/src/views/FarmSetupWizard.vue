@@ -135,7 +135,7 @@
       <section class="bg-zinc-900 border border-green-900/50 rounded-xl p-4 space-y-2">
         <p class="text-sm text-green-300 font-medium">{{ doneMessage }}</p>
         <p v-if="zoneCount > 0" class="text-xs text-zinc-500">
-          {{ zoneCount }} grow room{{ zoneCount === 1 ? '' : 's' }} on this farm now.
+          {{ zoneCount }} zone{{ zoneCount === 1 ? '' : 's' }} on this farm now.
         </p>
       </section>
       <div class="flex flex-wrap gap-2">
@@ -145,14 +145,14 @@
           class="px-4 py-2 text-sm font-medium rounded-lg bg-green-700 hover:bg-green-600 text-white"
           data-test="setup-add-zone"
         >
-          Add a grow room
+          Add a zone
         </router-link>
         <router-link
           to="/zones"
           class="px-4 py-2 text-sm text-zinc-300 border border-zinc-700 rounded-lg"
           data-test="setup-go-zones"
         >
-          Open My rooms
+          Open My zones
         </router-link>
         <router-link
           to="/"
@@ -259,7 +259,7 @@ function finishDone(message) {
 }
 
 async function finishBlank() {
-  finishDone('Your farm is ready. Add grow rooms when you are ready to start.')
+  finishDone('Your farm is ready. Add zones when you are ready to start.')
 }
 
 async function applyTemplate() {

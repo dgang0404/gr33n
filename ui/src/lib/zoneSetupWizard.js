@@ -4,7 +4,7 @@
 
 /** Farmer-facing zone types for the setup wizard (subset of API values). */
 export const ZONE_SETUP_TYPES = [
-  { value: 'indoor', label: 'Indoor grow room', hint: 'Tent, rack, or warehouse bay' },
+  { value: 'indoor', label: 'Indoor grow zone', hint: 'Tent, rack, or warehouse bay' },
   { value: 'greenhouse', label: 'Greenhouse', hint: 'Glazing, shade, vents, and climate profile' },
   { value: 'outdoor', label: 'Outdoor', hint: 'Garden bed, field, or patio grow' },
 ]
@@ -48,7 +48,7 @@ export function supportsLightingPreset(zoneType) {
 export function buildZoneCreatePayload(form) {
   const name = String(form.name || '').trim()
   if (!name) {
-    throw new Error('Room name is required')
+    throw new Error('Zone name is required')
   }
   const zoneType = form.zoneType || null
   const payload = {

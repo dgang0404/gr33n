@@ -63,7 +63,7 @@ describe('Phase 40 WS8 — zone cockpit integration', () => {
     expect(wrapper.find('[data-test="zone-today-chip-next-schedule"]').exists()).toBe(true)
     expect(wrapper.find('[data-test="zone-today-chip-open-alerts"]').exists()).toBe(true)
     expect(wrapper.find('[data-test="zone-today-chip-queue"]').exists()).toBe(true)
-    expect(wrapper.text()).toContain('Today in this room')
+    expect(wrapper.text()).toContain('Today in this zone')
     expect(wrapper.text()).toContain('Open alerts')
     expect(wrapper.text()).toContain('Queued commands')
   })

@@ -19,7 +19,7 @@ export function lastZoneFeedEvent(events, zoneId) {
  * @param {string} [programName]
  */
 export function formatLastFeedLine(event, programName = '') {
-  if (!event) return 'No feed logged yet for this room'
+  if (!event) return 'No feed logged yet for this zone'
   const when = formatWhen(event.applied_at)
   const vol = event.volume_applied_liters != null ? `${event.volume_applied_liters}L` : null
   const ec =

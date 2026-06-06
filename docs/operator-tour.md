@@ -27,7 +27,7 @@ Think **physical layout → signals → automation → work tracking → feeding
 | **4b. Lighting (photoperiod)** | `/lighting` | **Lighting programs** — first-class 18/6, 12/12, or custom ON/OFF photoperiods for grow lights. One program owns a paired schedule + `control_actuator` actions (see [§5](#5-set-up-186-vegetative-lights-phase-35)). |
 | **4c. Greenhouse climate** | `/zones/:id`, `/actuators`, `/automation` | **Shade, vents, fans** on `zone_type=greenhouse` — profile in zone meta, typed actuators, lux/temp rules. **Not** supplemental light (see [§5b](#5b-greenhouse-shade-vents-and-fans-phase-36)). |
 | **5. Tasks** | `/tasks` | Human **work items**: inspections, harvest prep, fixes — often the day-to-day spine (see sit-in “tasks-first”). |
-| **6. Feed & water** | `/feeding`, zone **Water** tab | Daily feeding — one card per room on the hub; per-room **feeding plan** on **Water** ([§7b](#7b-feeding--water-for-this-room-phase-47)). |
+| **6. Feed & water** | `/feeding`, zone **Water** tab | Daily feeding — one card per zone on the hub; per-zone **feeding plan** on **Water** ([§7b](#7b-feeding--water-for-this-zone-phase-47)). |
 | **6b. Operations** | `/operations/supplies`, `/operations/feeding`, `/operations/money` | **Supplies**, **Feeding (details)**, **Money** — restock, farm-wide feeding admin, receipts ([§7](#7-supplies-feeding--money-phase-43)). |
 | **6c. Feeding (technical)** | `/fertigation` under **Advanced** | Full six-tab console — mixing log, crop cycles, bulk program edit. |
 | **7. Guardian (optional AI)** | Side nav `/chat`, drawer robot tab | **Farm Guardian** — grounded Q&A + **change requests** (propose → Confirm). Pending inbox: `/chat?tab=pending`. See [§6](#6-farm-guardian-change-requests-with-your-ok). Starters on **Water** and **Feed & water** for next feed / run now / water-only. |
@@ -50,7 +50,7 @@ Each tab shows the **connection chain**: live **reading** → **comfort target**
 
 **Timed pump runs:** most microcontrollers are on/off relays. Use **Run pulse** (N seconds) on a pump in the zone Water tab or on **Controls** — the Pi runs **on → wait → off**. Fertigation programs can set `run_duration_seconds` so automated feeds use the same pulse.
 
-**Navigation:** sidebar **Grow** (**My rooms**, **Feed & water**, Supplies) and **Today** (Dashboard, tasks, alerts) are the day-to-day path; **Advanced** holds Automations, Comfort bands, Feeding (technical), Controls, and Sensors for power users.
+**Navigation:** sidebar **Grow** (**My zones**, **Feed & water**, Supplies) and **Today** (Dashboard, tasks, alerts) are the day-to-day path; **Advanced** holds Automations, Comfort bands, Feeding (technical), Controls, and Sensors for power users.
 
 **Edge commands (Phase 39):** automation, Guardian Confirm, manual **Controls**, and fertigation **mix-jobs** enqueue to a **FIFO command queue** per device (`device_commands`). The Pi drains **`GET /devices/{id}/commands/next`** in order — **`mix_batch`** nutrient steps, then **pulse** irrigate, without last-write-wins. Legacy **`pending_command`** still works one release as a fallback.
 
@@ -66,12 +66,12 @@ Each tab shows the **connection chain**: live **reading** → **comfort target**
 
 **Walkthrough — Flower Room example**
 
-### 1. Open the room
+### 1. Open the zone
 
-1. Sidebar **My rooms** → **Flower Room** (or **Zones** list → pick the room).
+1. Sidebar **My zones** → **Flower Room** (or **Zones** list → pick the zone).
 2. Tabs: **Overview** · **Water** · **Light** · **Climate** — stay in the zone for day-to-day grow.
 
-### 2. Overview — “Today in this room”
+### 2. Overview — “Today in this zone”
 
 The **Today** strip summarizes what matters now:
 
@@ -79,12 +79,12 @@ The **Today** strip summarizes what matters now:
 |------|----------------|
 | **Next run** | Next schedule tied to this zone (humanized time, e.g. “Every day at 8 AM”) |
 | **Automations** | Count of **active rules** scoped to this zone |
-| **Alerts** | Unread alerts for sensors/actuators in this room |
+| **Alerts** | Unread alerts for sensors/actuators in this zone |
 | **Devices** | Online vs offline devices in the zone |
 | **Queue** | FIFO command depth on edge hardware (after Phase 39) |
 | **Tasks** | Tasks due today for this zone (Done / Snooze inline) |
 
-**Zone alerts** panel below lists unread and recent items for this room. **Acknowledge** or **Mark read** inline; open farm-wide **Alerts** for history.
+**Zone alerts** panel below lists unread and recent items for this zone. **Acknowledge** or **Mark read** inline; open farm-wide **Alerts** for history.
 
 **Ask gr33n** starter chips (when AI is enabled) are **zone-aware** — e.g. “Why is humidity off?” — not generic status questions.
 
@@ -368,7 +368,7 @@ Architecture detail: [`farm-guardian-architecture.md` §7.7](farm-guardian-archi
 
 **Spec:** [`plans/phase_42_guardian_pr_spec.md`](plans/phase_42_guardian_pr_spec.md) · **Not** the same as [Phase 46](plans/phase_46_guardian_llm_tool_proposals.plan.md) (LLM opens PRs when matchers miss).
 
-**Starters (conversation chips):** On **Targets & schedules** (`/comfort-targets`) — tabs **Comfort bands**, **What runs when**, **Automation** — snapshot-aware prompts such as “Set humidity comfort band for Flower Room” or “Pause shade rule for this room.” Chips **prefill chat**; they do not auto-Confirm.
+**Starters (conversation chips):** On **Targets & schedules** (`/comfort-targets`) — tabs **Comfort bands**, **What runs when**, **Automation** — snapshot-aware prompts such as “Set humidity comfort band for Flower Room” or “Pause shade rule for this zone.” Chips **prefill chat**; they do not auto-Confirm.
 
 **Matchers (shipped in 42):** After you send a message, the server may open a Confirm card for:
 
@@ -404,7 +404,7 @@ Guardian **cannot** adjust batch quantities or post receipts via Confirm — use
 **Spec:** [`plans/phase_44_guardian_pr_spec.md`](plans/phase_44_guardian_pr_spec.md) · Architecture: [`farm-guardian-architecture.md` §7.0j](farm-guardian-architecture.md#70j-getting-started--edge-wizards-phase-44).
 
 - **Wizards win** — farm template, zone, and device are **not** created by starter chips.
-- **Setup mode** — grounded chat adds a setup persona when the farm has **zero grow rooms**, `POST /v1/chat` sends `setup_mode: true`, or you open `/chat?setup=1`.
+- **Setup mode** — grounded chat adds a setup persona when the farm has **zero zones**, `POST /v1/chat` sends `setup_mode: true`, or you open `/chat?setup=1`.
 - **Starters** on the first-run checklist, wizard footers, and Guardian drawer: grow-setup phrase, ack alert, Pi procedure help (`start procedure wire-pi-relay-light`).
 - **Grow setup pack** — same Confirm bundle as [§6b](#6b-grow-setup-via-guardian-phase-32); use after the room exists.
 - **Bootstrap template** — apply in the **Farm setup wizard** (`POST /farms/{id}/bootstrap-template`), not via a chip that opens `apply_bootstrap_template`.
@@ -487,7 +487,7 @@ Architecture: [`farm-guardian-architecture.md`](farm-guardian-architecture.md) �
 
 ### Cross-links (WS5)
 
-- Zone **Water** → **Stock & recipes for this room →** (`/operations/supplies?zone_id=`)
+- Zone **Water** → **Stock & recipes for this zone →** (`/operations/supplies?zone_id=`)
 - **Dashboard** morning strip → **Supplies low** chip when batches are below threshold
 
 **Vitest closure:** `phase-43-closure.test.js`, `supplies-hub.test.js`, `feeding-admin-hub.test.js`, `money-hub.test.js`, `nav-groups.test.js`, `farm-grow-summary.test.js`, `zone-feeding-water.test.js`.
@@ -496,19 +496,19 @@ Architecture: [`farm-guardian-architecture.md` §7.0i](farm-guardian-architectur
 
 ---
 
-## 7b. Feeding & water for this room (Phase 47)
+## 7b. Feeding & water for this zone (Phase 47)
 
 **Shipped.** Completes the Water story from [Phase 40](plans/phase_40_unified_farmer_ux_zone_cockpit.plan.md) WS5 and [Phase 41](plans/phase_41_farm_hub_coherence.plan.md) farm hub links. Plan: [`plans/phase_47_feeding_water_plain_language.plan.md`](plans/phase_47_feeding_water_plain_language.plan.md) · Words: [`farmer-vocabulary.md`](farmer-vocabulary.md).
 
-**One question:** *How does this room get water?*
+**One question:** *How does this zone get water?*
 
-1. Open **My rooms → Flower Room → Water**.
+1. Open **My zones → Flower Room → Water**.
 2. Read the **status line** — next feed in plain time, volume, EC range.
 3. **Last feed** — when it ran and whether it looked OK (**See history** → **Feed & water** hub).
 4. **Feeding plan** card — inline edit volume, daily time, or **Water only** (irrigation without nutrients); wizard when no plan exists.
 5. **Run feed now** or **Pulse pump** when you need manual control.
 6. **Reservoir** — Ready or Needs top-up.
-7. Farm-wide list: **Feed & water** (`/feeding`) — one card per room; `?zone_id=` filter from [Phase 41](plans/phase_41_farm_hub_coherence.plan.md).
+7. Farm-wide list: **Feed & water** (`/feeding`) — one card per zone; `?zone_id=` filter from [Phase 41](plans/phase_41_farm_hub_coherence.plan.md).
 8. **Ask gr33n** starters on Water and the hub: next feed, run now safe?, switch to water-only.
 9. Recipes, mixing log, six tabs → **Operations → Feeding (details)** or **Advanced → Feeding (technical)**.
 
@@ -530,16 +530,16 @@ Architecture: [`farm-guardian-architecture.md` §7.0m](farm-guardian-architectur
 
 1. **Settings** → create farm (or open **Farm setup wizard** for an existing blank farm).
 2. **`/farms/{id}/setup`** — choose **Start blank** or a template card → preview → **Apply starter pack** (farm admin; idempotent).
-3. **Today** (`/`) — **Getting started** checklist when steps remain: grow room → edge device → comfort targets → one schedule.
-4. **`/farms/{id}/zones/new`** — name, room type, optional greenhouse profile or lighting preset.
+3. **Today** (`/`) — **Getting started** checklist when steps remain: zone → edge device → comfort targets → one schedule.
+4. **`/farms/{id}/zones/new`** — name, zone type, optional greenhouse profile or lighting preset.
 5. **`/farms/{id}/devices/new`** — register Pi, copy `pi_client` config snippet, embedded field checklist, poll **online**, optional actuators.
 6. **`/comfort-targets`** — set first comfort band; **Schedules** tab to turn on one run.
-7. Optional — **Ask Guardian** from checklist chips, wizard **Need help?** footers, or **empty room** grow starters on zone cockpit ([§6g](#6g-guardian-during-setup-phase-44--shipped)).
+7. Optional — **Ask Guardian** from checklist chips, wizard **Need help?** footers, or **empty zone** grow starters on zone cockpit ([§6g](#6g-guardian-during-setup-phase-44--shipped)).
 
 | Wizard / surface | Job | Route |
 |------------------|-----|-------|
 | Farm setup | Pick template → preview → apply bootstrap | `/farms/{id}/setup` |
-| Add grow room | Name, type, optional lighting preset | `/farms/{id}/zones/new` |
+| Add zone | Name, type, optional lighting preset | `/farms/{id}/zones/new` |
 | Edge device | Pi config, connection test, actuators | `/farms/{id}/devices/new` |
 | First-run checklist | Zone → device → comfort band → one schedule | Dashboard `GettingStartedChecklist` |
 

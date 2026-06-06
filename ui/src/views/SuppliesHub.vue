@@ -4,7 +4,7 @@
       <div>
         <h1 class="text-xl font-semibold text-white">Supplies</h1>
         <p class="text-zinc-500 text-sm mt-1 max-w-2xl">
-          What you have on hand, what is running low, and where to log a mix. Farm-wide stock — not tied to one room.
+          What you have on hand, what is running low, and where to log a mix. Farm-wide stock — not tied to one zone.
         </p>
       </div>
       <button

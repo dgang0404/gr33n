@@ -83,7 +83,7 @@
       :actuators="actuators"
       :ec-targets="ecTargets"
       :reservoirs="reservoirs"
-      :zone-name="zone?.name || 'This room'"
+      :zone-name="zone?.name || 'This zone'"
       :farm-timezone="farmTimezone"
       @refreshed="$emit('water-refreshed', $event)"
       @plan-updated="$emit('plan-updated')"

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { buildSetupStarters } from '../lib/guardianStarters.js'
 
 describe('Phase 44 WS4 — setup Guardian starters', () => {
-  it('zero-zone farm offers first grow room chip (max 4 in drawer)', () => {
+  it('zero-zone farm offers first zone chip (max 4 in drawer)', () => {
     const starters = buildSetupStarters({
       surface: 'setup_mode_chat',
       farmId: 7,

@@ -1,5 +1,5 @@
 /**
- * Phase 47 WS4 — farm-wide feeding hub cards (one per room).
+ * Phase 47 WS4 — farm-wide feeding hub cards (one per zone).
  */
 
 import { buildZoneFeedingPlan } from './zoneFeedingPlan.js'
@@ -80,6 +80,9 @@ export function filterFeedingCardsByZone(cards, zoneId) {
  * @param {object[]} programs
  * @param {object[]} zones
  */
-export function countRoomsWithFeedingPlan(programs, zones) {
+export function countZonesWithFeedingPlan(programs, zones) {
   return (zones || []).filter((z) => activeProgramForZone(programs, z.id)).length
 }
+
+/** @deprecated Use countZonesWithFeedingPlan */
+export const countRoomsWithFeedingPlan = countZonesWithFeedingPlan

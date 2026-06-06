@@ -1,21 +1,21 @@
 <template>
   <div class="p-6">
     <div class="flex items-center justify-between mb-2">
-      <h1 class="text-xl font-semibold text-white">My rooms</h1>
+      <h1 class="text-xl font-semibold text-white">My zones</h1>
       <router-link
         v-if="farmContext.farmId"
         :to="zoneWizardLink"
         class="px-3 py-1.5 bg-green-700 hover:bg-green-600 text-white text-xs rounded-lg"
         data-test="zones-open-wizard"
       >
-        + Add room
+        + Add zone
       </router-link>
       <button
         v-else
         disabled
         class="px-3 py-1.5 bg-zinc-700 text-zinc-500 text-xs rounded-lg cursor-not-allowed"
       >
-        + Add room
+        + Add zone
       </button>
     </div>
     <p class="text-zinc-500 text-sm mb-6 max-w-2xl">

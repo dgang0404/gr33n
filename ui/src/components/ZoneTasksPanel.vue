@@ -2,7 +2,7 @@
   <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-4" data-test="zone-tasks-panel">
     <div class="flex items-center justify-between gap-2 mb-3 flex-wrap">
       <div class="flex items-center gap-2">
-        <h2 class="text-sm font-semibold text-white">Due today in this room</h2>
+        <h2 class="text-sm font-semibold text-white">Due today in this zone</h2>
         <span
           v-if="dueToday.length"
           class="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-blue-900/50 text-blue-200"
@@ -16,7 +16,7 @@
     </div>
 
     <p v-if="!dueToday.length" class="text-zinc-500 text-sm">
-      <EmptyStateHint reason="no_data" message="No tasks due today for this room." compact />
+      <EmptyStateHint reason="no_data" message="No tasks due today for this zone." compact />
     </p>
 
     <ul v-else class="space-y-2">

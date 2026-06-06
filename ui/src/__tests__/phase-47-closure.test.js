@@ -15,7 +15,7 @@ describe('Phase 47 WS7 / OC-47 — feeding closure', () => {
   it('documents operator-tour §7b and architecture §7.0m as shipped', () => {
     const tour = readFileSync(join(repoDocs, 'operator-tour.md'), 'utf8')
     const arch = readFileSync(join(repoDocs, 'farm-guardian-architecture.md'), 'utf8')
-    expect(tour).toContain('## 7b. Feeding & water for this room (Phase 47)')
+    expect(tour).toContain('## 7b. Feeding & water for this zone (Phase 47)')
     expect(tour).toContain('**Shipped.**')
     expect(arch).toContain('### 7.0m Feeding & water plain language (Phase 47)')
     expect(arch).not.toContain('7.0m Feeding & water plain language (Phase 47 — planned)')
@@ -59,7 +59,7 @@ describe('Phase 47 WS7 / OC-47 — feeding closure', () => {
     expect(plan.mixRequired).toBe(false)
   })
 
-  it('farm feeding hub builds one card per room', () => {
+  it('farm feeding hub builds one card per zone', () => {
     const cards = buildFarmFeedingCards({
       zones: [{ id: 1, name: 'Veg' }, { id: 2, name: 'Flower' }],
       programs: [{ id: 10, target_zone_id: 1, is_active: true, name: 'Veg daily' }],

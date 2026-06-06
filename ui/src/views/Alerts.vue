@@ -34,7 +34,7 @@
       <EmptyStateHint
         :reason="zoneContextId ? 'no_data' : 'automation_off'"
         :message="emptyMessage"
-        action-label="Automation rules"
+        action-label="Automations"
         action-to="/automation"
       />
     </div>
@@ -194,7 +194,7 @@ const filtered = computed(() => {
 })
 
 const emptyMessage = computed(() => {
-  if (zoneContextId.value) return 'No alerts for this room right now.'
+  if (zoneContextId.value) return 'No alerts for this zone right now.'
   if (severityFilter.value) return `No alerts with severity "${severityFilter}".`
   return 'No alerts yet — threshold breaches and failed runs create them when rules are active.'
 })

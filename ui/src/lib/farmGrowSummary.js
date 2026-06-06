@@ -4,7 +4,7 @@
 
 import { scheduleRunsLabel } from './cronHumanize.js'
 import { isOpenTask, isTaskDueToday, todayDateIso } from './zoneTasks.js'
-import { countRoomsWithFeedingPlan } from './farmFeedingHub.js'
+import { countZonesWithFeedingPlan } from './farmFeedingHub.js'
 
 /**
  * @param {object[]} tasks
@@ -131,15 +131,15 @@ export function computeFarmMorningSnapshot(params) {
   })
 
   if (zones.length) {
-    const roomsWithPlan = countRoomsWithFeedingPlan(programs, zones)
+    const zonesWithPlan = countZonesWithFeedingPlan(programs, zones)
     chips.push({
       id: 'feeding',
       icon: '💧',
       label: 'Feed & water',
-      value: roomsWithPlan
-        ? `${roomsWithPlan} of ${zones.length} rooms planned`
-        : `${zones.length} room${zones.length === 1 ? '' : 's'} — no plans yet`,
-      tone: roomsWithPlan ? 'ok' : 'muted',
+      value: zonesWithPlan
+        ? `${zonesWithPlan} of ${zones.length} zones planned`
+        : `${zones.length} zone${zones.length === 1 ? '' : 's'} — no plans yet`,
+      tone: zonesWithPlan ? 'ok' : 'muted',
       to: { path: '/feeding' },
     })
   }

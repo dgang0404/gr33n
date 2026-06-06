@@ -6,8 +6,8 @@
       <div>
         <h2 class="text-xl font-bold text-white">{{ store.farm?.name ?? 'Loading...' }}
           <HelpTip position="bottom">
-            <strong>How it all connects:</strong> Your farm has <em>rooms</em> (grow areas), each with <em>sensors</em>
-            (reading temp, humidity, EC) and <em>controls</em> (pumps, lights, fans). <em>Feeding plans</em> say when each room
+            <strong>How it all connects:</strong> Your farm has <em>zones</em> (grow areas), each with <em>sensors</em>
+            (reading temp, humidity, EC) and <em>controls</em> (pumps, lights, fans). <em>Feeding plans</em> say when each zone
             gets water and nutrients. <em>Automations</em> react to readings. <em>Tasks</em> are your daily to-do list.
             Open <router-link to="/operator-guide" class="text-gr33n-400 underline">Guide</router-link> for a suggested click path.
           </HelpTip>
@@ -177,7 +177,7 @@
         <EmptyStateHint
           v-else
           reason="no_data"
-          message="No feeds logged yet — they appear after programs run or you log a feed from a room's Water tab."
+          message="No feeds logged yet — they appear after programs run or you log a feed from a zone's Water tab."
           action-label="Feed &amp; water"
           :action-to="{ path: '/feeding' }"
         />

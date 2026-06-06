@@ -3,10 +3,10 @@
     <div class="flex items-center justify-between gap-2 mb-3 flex-wrap">
       <div>
         <h3 class="text-sm font-semibold text-white">Comfort targets</h3>
-        <p class="text-zinc-600 text-xs mt-0.5">How comfortable this room should be — min, ideal, and max.</p>
+        <p class="text-zinc-600 text-xs mt-0.5">How comfortable this zone should be — min, ideal, and max.</p>
       </div>
       <router-link to="/comfort-targets" class="text-xs text-zinc-500 hover:text-green-400">
-        All rooms →
+        All zones →
       </router-link>
     </div>
 

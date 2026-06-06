@@ -31,7 +31,7 @@
     <div v-else-if="!filteredPrograms.length" class="text-zinc-500 text-sm py-12 text-center">
       <EmptyStateHint
         :reason="zoneContextId ? 'no_data' : 'no_data'"
-        :message="zoneContextId ? 'No lighting programs for this room yet.' : 'No lighting programs yet.'"
+        :message="zoneContextId ? 'No lighting programs for this zone yet.' : 'No lighting programs yet.'"
         action-label="Create program"
         :action-to="null"
         @action="openCreate"

@@ -1,9 +1,9 @@
 <template>
   <div class="p-6 max-w-2xl mx-auto space-y-6" data-test="zone-setup-wizard">
     <div>
-      <h1 class="text-xl font-semibold text-white">Add a grow room</h1>
+      <h1 class="text-xl font-semibold text-white">Add a zone</h1>
       <p class="text-zinc-500 text-sm mt-1">
-        Name the room, pick its type, and optionally set greenhouse climate or a lighting photoperiod.
+        Name the zone, pick its type, and optionally set greenhouse climate or a lighting photoperiod.
       </p>
     </div>
 
@@ -23,7 +23,7 @@
     <template v-if="step === 'basics'">
       <form class="space-y-4" @submit.prevent="goNeeds">
         <label class="block">
-          <span class="text-zinc-400 text-xs">Room name</span>
+          <span class="text-zinc-400 text-xs">Zone name</span>
           <input
             v-model="form.name"
             type="text"
@@ -43,7 +43,7 @@
           />
         </label>
         <fieldset class="space-y-2">
-          <legend class="text-zinc-400 text-xs mb-2">Room type</legend>
+          <legend class="text-zinc-400 text-xs mb-2">Zone type</legend>
           <label
             v-for="t in zoneTypes"
             :key="t.value"
@@ -111,7 +111,7 @@
         </label>
       </section>
       <p v-else class="text-sm text-zinc-400">
-        No extra climate profile for <strong class="text-zinc-300">{{ form.zoneType }}</strong> rooms — continue to optional lighting.
+        No extra climate profile for <strong class="text-zinc-300">{{ form.zoneType }}</strong> zones — continue to optional lighting.
       </p>
       <div class="flex flex-wrap gap-2">
         <button
@@ -170,7 +170,7 @@
         <h2 class="text-sm font-semibold text-zinc-300">Edge device</h2>
         <p class="text-xs text-zinc-500">
           {{ unassignedDevices.length
-            ? `${unassignedDevices.length} farm device(s) are not assigned to a room yet.`
+            ? `${unassignedDevices.length} farm device(s) are not assigned to a zone yet.`
             : 'Connect a Pi when you are ready to wire sensors and pumps.' }}
         </p>
         <router-link
@@ -193,7 +193,7 @@
           data-test="zone-wizard-create"
           @click="createZone"
         >
-          {{ saving ? 'Creating…' : 'Create room' }}
+          {{ saving ? 'Creating…' : 'Create zone' }}
         </button>
         <button type="button" class="px-4 py-2 text-sm text-zinc-400 hover:text-zinc-200" @click="step = 'needs'">
           Back
@@ -217,7 +217,7 @@
           Open {{ form.name }}
         </router-link>
         <router-link to="/zones" class="px-4 py-2 text-sm text-zinc-300 border border-zinc-700 rounded-lg">
-          All rooms
+          All zones
         </router-link>
       </div>
       <section class="pt-4 border-t border-zinc-800 space-y-2" data-test="zone-wizard-guardian-help">

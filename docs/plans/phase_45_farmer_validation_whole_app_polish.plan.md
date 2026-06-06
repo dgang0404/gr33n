@@ -16,7 +16,7 @@ todos:
     status: pending
   - id: ws3-copy-pass-v2
     content: "WS3: Copy pass v2 — Vocabulary v2 zones not rooms; grep technical terms; extend farmerVocabulary.js + Vitest"
-    status: pending
+    status: completed
   - id: ws4-mobile-b4
     content: "WS4: Execute mobile-distribution.md checklist (icons, signing template, TestFlight path)"
     status: pending

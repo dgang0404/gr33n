@@ -2,7 +2,7 @@
   <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-4 space-y-4" data-test="zone-water-grow-story">
     <div class="flex items-start justify-between gap-2 flex-wrap">
       <div>
-        <h3 class="text-sm font-semibold text-white">How this room gets water</h3>
+        <h3 class="text-sm font-semibold text-white">How this zone gets water</h3>
         <p class="text-zinc-600 text-xs mt-0.5">Daily feeding plan, last run, and what the Pi is waiting on.</p>
       </div>
       <router-link
@@ -212,7 +212,7 @@
         class="text-xs text-zinc-400 hover:text-green-400"
         data-test="zone-water-supplies-link"
       >
-        Stock &amp; recipes for this room →
+        Stock &amp; recipes for this zone →
       </router-link>
     </div>
   </div>
@@ -231,7 +231,7 @@ import ZoneFeedingPlanWizard from './ZoneFeedingPlanWizard.vue'
 const props = defineProps({
   zoneId: { type: Number, required: true },
   farmId: { type: Number, required: true },
-  zoneName: { type: String, default: 'This room' },
+  zoneName: { type: String, default: 'This zone' },
   farmTimezone: { type: String, default: 'UTC' },
   activeProgram: { type: Object, default: null },
   programs: { type: Array, default: () => [] },

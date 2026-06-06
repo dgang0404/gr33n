@@ -13,7 +13,7 @@
  * @param {object|null} [ctx.nextSchedule] — { schedule: { name } }
  */
 export function buildZoneGuardianPrompt(ctx) {
-  const zoneName = ctx.zone?.name || 'this room'
+  const zoneName = ctx.zone?.name || 'this zone'
   const tab = ctx.activeTab && ctx.activeTab !== 'overview' ? ctx.activeTab : null
   const tabHint = tab ? ` (I'm on the ${tab} tab)` : ''
 

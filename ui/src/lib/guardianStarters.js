@@ -20,7 +20,7 @@ function setupRouteRef(farmId, kind, surface) {
   }
   const names = {
     farm: 'Farm setup',
-    zone: 'Add grow room',
+    zone: 'Add zone',
     device: 'Connect edge device',
   }
   return { type: 'route', path: paths[kind], name: names[kind], surface }
@@ -47,7 +47,7 @@ export function buildSetupStarters({
   if (zoneCount === 0) {
     candidates.push({
       id: 'first-grow-room',
-      label: 'Add my first grow room',
+      label: 'Add my first zone',
       message: "I'm setting up a new farm — what should I do first after creating a zone?",
       contextRef: farmId
         ? setupRouteRef(farmId, 'zone', surface)
@@ -136,7 +136,7 @@ const FEEDING_STARTER_IDS = ['next-feed', 'run-feed-safe', 'water-only']
  * @returns {Array<{ id: string, label: string, message: string, contextRef?: object }>}
  */
 export function buildZoneStarters(surface, ctx) {
-  const zoneName = ctx.zone?.name || 'this room'
+  const zoneName = ctx.zone?.name || 'this zone'
   const starters = []
   const baseRef = () => buildZoneGuardianContextRef({ ...ctx, activeTab: tabForSurface(surface) })
 
@@ -197,8 +197,8 @@ export function buildZoneStarters(surface, ctx) {
 
   if (!starters.length) {
     starters.push({
-      id: 'summarize-room',
-      label: 'Summarize this room',
+      id: 'summarize-zone',
+      label: 'Summarize this zone',
       message: buildZoneGuardianPrompt(ctx),
       contextRef: baseRef(),
     })
@@ -229,13 +229,13 @@ export function buildFeedingHubStarters({ zones = [], zoneContextId = null, zone
   return [{
     id: 'farm-feeding-overview',
     label: 'Feeding overview',
-    message: 'Which rooms have feeding plans today, and which need reservoir top-up or attention?',
+    message: 'Which zones have feeding plans today, and which need reservoir top-up or attention?',
     contextRef: routeRef,
   }]
 }
 
 function buildWaterTabStarters(ctx, baseRef) {
-  const zoneName = ctx.zone?.name || 'this room'
+  const zoneName = ctx.zone?.name || 'this zone'
   const ref = baseRef()
   const programHint = ctx.activeProgramName ? ` (plan: "${ctx.activeProgramName}")` : ''
 
@@ -338,7 +338,7 @@ export function buildSuppliesHubStarters({
   if (zoneContextId && programs.some((p) => p.is_active && Number(p.target_zone_id) === Number(zoneContextId))) {
     starters.push({
       id: 'feeding-setup-zone',
-      label: 'Feeding setup for this room',
+      label: 'Feeding setup for this zone',
       message: `Summarize feeding programs and reservoirs for ${name} — what should I check before the next run?`,
       contextRef: routeRef,
     })
@@ -396,7 +396,7 @@ export function buildFeedingAdminStarters({
     label: 'Explain feeding setup',
     message: zoneContextId
       ? `Summarize active feeding programs, tanks, and strength targets for ${name}.`
-      : 'Which rooms have active feeding programs I should review before the next run?',
+      : 'Which zones have active feeding programs I should review before the next run?',
     contextRef: routeRef,
   })
 
@@ -571,7 +571,7 @@ export function buildComfortHubStarters({
       label: 'Explain my targets',
       message: zoneContextId
         ? `Summarize comfort bands and scheduled runs for ${name} in plain language.`
-        : 'Which rooms have missing comfort bands or paused schedules I should fix today?',
+        : 'Which zones have missing comfort bands or paused schedules I should fix today?',
       contextRef: routeRef,
     })
   }
@@ -616,7 +616,7 @@ export function buildSchedulesFarmerStarters({
 }
 
 /**
- * Phase 42 WS8 — farmer automation rules tab starters.
+ * Phase 42 WS8 — farmer automations tab starters.
  */
 export function buildRulesFarmerStarters({
   zones = [],
@@ -632,7 +632,7 @@ export function buildRulesFarmerStarters({
     starters.push({
       id: 'explain-rules',
       label: 'Explain automations',
-      message: `Explain the ${active.length} active automation rule(s) affecting ${name} and when they run.`,
+      message: `Explain the ${active.length} active automation(s) affecting ${name} and when they run.`,
       contextRef: routeRef,
     })
     const gh = active.find((r) => isGreenhouseRule(r))

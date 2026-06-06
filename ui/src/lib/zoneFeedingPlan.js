@@ -81,7 +81,7 @@ export function formatLastEventSummary(event) {
  * @param {object} plan
  */
 export function buildFeedingPlanStatusLine(plan) {
-  if (!plan.hasPlan) return 'No feeding plan for this room yet'
+  if (!plan.hasPlan) return 'No feeding plan for this zone yet'
   const parts = []
   if (plan.nextRunLabel) parts.push(`Next feed: ${plan.nextRunLabel}`)
   if (plan.volumeLiters != null) parts.push(`${plan.volumeLiters}L`)

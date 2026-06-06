@@ -4,7 +4,7 @@
       <div>
         <h1 class="text-xl font-semibold text-white">Tasks
           <HelpTip position="bottom">
-            Tasks are to-do items for your farm — created manually, from alerts, or by automation rules (when an action type is “create task”). Link to zones, schedules, and crop cycles. Offline: new writes queue locally and sync when you’re back online or tap Sync now.
+            Tasks are to-do items for your farm — created manually, from alerts, or by automations (when an action type is “create task”). Link to zones, schedules, and crop cycles. Offline: new writes queue locally and sync when you’re back online or tap Sync now.
           </HelpTip>
         </h1>
         <p
@@ -163,8 +163,8 @@
     <div v-if="zoneContextId && !loading && !filteredTasks.length" class="mb-4">
       <EmptyStateHint
         reason="no_data"
-        message="No open tasks for this room."
-        action-label="Show all rooms"
+        message="No open tasks for this zone."
+        action-label="Show all zones"
         :action-to="{ path: '/tasks' }"
       />
     </div>
