@@ -28,7 +28,7 @@ todos:
     status: completed
   - id: ws7-docs-tests
     content: "WS7: operator-tour §9 validation; README farmer-ready statement; OC-45 closure"
-    status: pending
+    status: completed
 isProject: false
 ---
 
@@ -36,7 +36,7 @@ isProject: false
 
 ## Status
 
-**In progress.** WS1 sit-in protocol **shipped** (facilitator kit + session log); live sessions pending. After [Phases 40–44](farmer_ux_roadmap_40_plus.plan.md) feature work.
+**Polish shipped (OC-45 closed).** WS1/3/5/6/7 on `main` — protocol kit, vocabulary v2, module shells, light a11y, README **Farmer-ready v1** criteria. **Validation gate open:** WS2 sit-in friction, WS4 mobile checklist, WS8 Guardian PR sign-off. After [Phases 40–44](farmer_ux_roadmap_40_plus.plan.md) feature work.
 
 **Roadmap:** [farmer_ux_roadmap_40_plus.plan.md](farmer_ux_roadmap_40_plus.plan.md)
 
@@ -133,11 +133,13 @@ Focus visible, aria labels on Run now / Confirm, chip contrast — no full WCAG 
 
 ---
 
-## WS7 — Docs, tests, closure (OC-45)
+## WS7 — Docs, tests, closure (OC-45) ✅
 
-- README: "Farmer-ready v1" criteria met
-- operator-tour §9
-- OC-45 in closure doc
+- README: **Farmer-ready v1** criteria (code polish vs sit-in gate)
+- operator-tour §9 — full polish bundle + pending validation rows
+- OC-45 in [`phase_35_37_operational_closure.plan.md`](phase_35_37_operational_closure.plan.md)
+
+**Shipped:** `phase-45-closure.test.js`; operator-tour §9; architecture §7.0k; README Farmer-ready v1 table.
 
 ---
 
@@ -164,7 +166,7 @@ Focus visible, aria labels on Run now / Confirm, chip contrast — no full WCAG 
 
 - [ ] ≥2 sit-ins completed; P0 backlog empty
 - [ ] Guardian ack + setup pack + dismiss **pass** per protocol
-- [ ] Copy pass v2 merged (includes **Vocabulary v2 — zones not rooms**)
+- [x] Copy pass v2 merged (includes **Vocabulary v2 — zones not rooms**)
 - [ ] Mobile checklist executed or explicitly deferred with reason
-- [ ] README + operator-tour §9 updated
-- [ ] OC-45 closed
+- [x] README + operator-tour §9 updated (Farmer-ready v1 criteria + sit-in gate)
+- [x] OC-45 closed (WS7 docs/tests)

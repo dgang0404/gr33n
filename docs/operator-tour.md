@@ -553,25 +553,34 @@ Architecture: [`farm-guardian-architecture.md` §7.0j](farm-guardian-architectur
 
 ---
 
-## 9. Farmer validation sit-in (Phase 45 — WS1 shipped)
+## 9. Farmer validation sit-in (Phase 45 — polish shipped; sit-in gate open)
 
-**Status:** **WS1 shipped** — facilitator protocol + scorecard ready; **live sit-in sessions** not yet run. After Phase 44.
+**Status:** **WS1/3/5/6/7 shipped** on `main` — facilitator kit, vocabulary v2, module shells, light a11y, and **Farmer-ready v1** criteria below. **Live sit-in sessions** (WS2/WS8) and the **mobile checklist** (WS4) still gate the product claim. After Phase 44.
 
-**Protocol:** [`workstreams/farmer-sit-in-protocol.md`](workstreams/farmer-sit-in-protocol.md) (§0 prep, sessions A/B/C, §4 three PR paths).
+### Farmer-ready v1 criteria
 
-**Facilitator scorecard:** [`workstreams/sit-in-45-session-log-template.md`](workstreams/sit-in-45-session-log-template.md).
+| Criterion | Status | Workstream |
+|-----------|--------|------------|
+| Sit-in protocol + facilitator scorecard | ✅ Shipped | WS1 — [`farmer-sit-in-protocol.md`](workstreams/farmer-sit-in-protocol.md) · [`sit-in-45-session-log-template.md`](workstreams/sit-in-45-session-log-template.md) |
+| Vocabulary v2 — **zones not rooms** | ✅ Shipped | WS3 — [`farmer-vocabulary.md`](farmer-vocabulary.md) · `farmerVocabulary.js` |
+| Livestock module empty shells | ✅ Shipped | WS5 — [§10a](#10a-livestock-modules-phase-45-ws5--shipped) |
+| Light a11y — Confirm/Dismiss, chips, focus | ✅ Shipped | WS6 — [§10b](#10b-light-accessibility-phase-45-ws6--shipped) |
+| README + OC-45 docs/tests closure | ✅ Shipped | WS7 — `phase-45-closure.test.js` |
+| ≥2 live sit-ins; P0 friction backlog empty | ⏳ Pending | WS2 — run protocol sessions A/B/C |
+| Guardian ack + setup pack + dismiss **pass** | ⏳ Pending | WS8 — [`phase_45_guardian_pr_spec.md`](plans/phase_45_guardian_pr_spec.md) |
+| Mobile distribution checklist | ⏳ Pending | WS4 — [`mobile-distribution.md`](mobile-distribution.md) |
 
 **Goal:** Prove a non-technical operator can run the daily loop and trust Guardian **Confirm** vs **Dismiss**.
 
-**Three required PR exercises:**
+**Three required PR exercises** (protocol §4):
 
 1. **Ack alert** — proposal card → Confirm → alert cleared.
 2. **Grow setup pack** — empty zone → phrase or starter → review bundle → Confirm → plant + program exist.
 3. **Dismiss** — open a card → Dismiss → **no farm data change**.
 
-Matcher misses from sit-in feed Phase 46 — not a blocker for calling v1 farmer-ready.
+Matcher misses from sit-in feed Phase 46 — not a blocker for polish closure (OC-45).
 
-Spec: [`plans/phase_45_guardian_pr_spec.md`](plans/phase_45_guardian_pr_spec.md).
+**Vitest bundle:** `phase-45-ws1-protocol.test.js`, `phase-45-ws3-closure.test.js`, `phase-45-ws5-module-shells.test.js`, `phase-45-ws6-a11y.test.js`, `phase-45-closure.test.js`.
 
 ---
 

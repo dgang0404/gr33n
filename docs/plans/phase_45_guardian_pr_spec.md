@@ -123,7 +123,7 @@ Do not expand scope in 45 — file issue and continue polish.
 - [ ] ack + setup pack + dismiss **pass** documented
 - [ ] Matcher gaps filed for 46
 - [ ] P0 empty; Guardian copy pass merged
-- [ ] operator-tour §9 links protocol
+- [x] operator-tour §9 links protocol (WS7 — Farmer-ready v1 criteria table)
 
 ---
 

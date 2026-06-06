@@ -62,7 +62,7 @@ todos:
     status: completed
   - id: oc-45-closure
     content: "OC-45: Phase 45 WS7 — farmer sit-in + farmer-ready v1 (close when Phase 45 ships)"
-    status: pending
+    status: completed
   - id: oc-46-closure
     content: "OC-46: Phase 46 WS6 — LLM tool proposals docs/tests (close when Phase 46 ships)"
     status: pending
@@ -301,6 +301,21 @@ Feature detail: [`phase_44_getting_started_edge_wizard.plan.md`](phase_44_gettin
 | First-run checklist | ✅ | WS5 — `GettingStartedChecklist` on Dashboard |
 | OC-44 docs/tests | ✅ | WS6 — operator-tour §8 + §6g, architecture §7.0j, Vitest + `TestPhase44WizardBootstrapApply` |
 | Guardian empty-zone starters | ✅ | WS8 — `empty_zone_grow` on zone cockpit |
+
+## Phase 45 — Farmer validation & whole-app polish
+
+Feature detail: [`phase_45_farmer_validation_whole_app_polish.plan.md`](phase_45_farmer_validation_whole_app_polish.plan.md). **OC-45** closed (WS7). **Validation gate open** — WS2/4/8 sit-in + mobile pending; [phase_45_guardian_pr_spec.md](phase_45_guardian_pr_spec.md).
+
+| Area | Status | Notes |
+|------|--------|-------|
+| Sit-in protocol + scorecard | ✅ | WS1 — `farmer-sit-in-protocol.md`, `sit-in-45-session-log-template.md` |
+| Vocabulary v2 (zones not rooms) | ✅ | WS3 — `farmerVocabulary.js`, grow-path Vitest |
+| Module empty shells | ✅ | WS5 — Animals/Aquaponics `ModuleEmptyShell` |
+| Light a11y | ✅ | WS6 — `farmerA11y.js`, Confirm/Dismiss/chips |
+| OC-45 docs/tests | ✅ | WS7 — README Farmer-ready v1, operator-tour §9, architecture §7.0k, `phase-45-closure.test.js` |
+| Live sit-in + friction backlog | ⏳ | WS2 — ≥2 sessions, P0 triage |
+| Mobile distribution checklist | ⏳ | WS4 — `mobile-distribution.md` |
+| Guardian PR path validation | ⏳ | WS8 — ack, setup pack, dismiss per protocol |
 
 ## Phase 47 — Feeding & water plain language
 

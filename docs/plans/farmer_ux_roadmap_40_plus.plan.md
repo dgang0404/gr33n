@@ -24,7 +24,7 @@ todos:
     content: "Phase 44 — getting started + edge install wizards"
     status: pending
   - id: phase-45
-    content: "Phase 45 — farmer sit-in remediation + whole-app polish"
+    content: "Phase 45 — farmer sit-in remediation + whole-app polish (WS1/3/5/6/7 shipped; sit-in gate open)"
     status: pending
   - id: phase-47
     content: "Phase 47 — feeding & water plain language (room-first; ties arc together)"

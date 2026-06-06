@@ -396,18 +396,20 @@ Operator walkthrough: [operator-tour §7](operator-tour.md#7-supplies-feeding--m
 
 Operator: [operator-tour §8](operator-tour.md#8-getting-started--edge-install-phase-44--shipped) · Guardian: [§6g](operator-tour.md#6g-guardian-during-setup-phase-44--shipped).
 
-### 7.0k Farmer sit-in & PR validation (Phase 45 — WS1 shipped)
+### 7.0k Farmer sit-in & PR validation (Phase 45 — polish shipped; sit-in gate open)
 
-**Shipped (WS1):** sit-in protocol + facilitator scorecard. Plans: [`plans/phase_45_farmer_validation_whole_app_polish.plan.md`](plans/phase_45_farmer_validation_whole_app_polish.plan.md) · Guardian: [`plans/phase_45_guardian_pr_spec.md`](plans/phase_45_guardian_pr_spec.md) · Protocol: [`workstreams/farmer-sit-in-protocol.md`](workstreams/farmer-sit-in-protocol.md) · Log: [`workstreams/sit-in-45-session-log-template.md`](workstreams/sit-in-45-session-log-template.md).
+**Shipped (WS1/3/5/6/7):** sit-in protocol + facilitator scorecard; **Vocabulary v2** (zones not rooms); Animals/Aquaponics empty shells; light Guardian a11y; **Farmer-ready v1** criteria in README and operator-tour §9; **OC-45** closed via `phase-45-closure.test.js`.
 
-**Pending:** live sessions with 2–3 non-technical testers.
+Plans: [`plans/phase_45_farmer_validation_whole_app_polish.plan.md`](plans/phase_45_farmer_validation_whole_app_polish.plan.md) · Guardian: [`plans/phase_45_guardian_pr_spec.md`](plans/phase_45_guardian_pr_spec.md) · Protocol: [`workstreams/farmer-sit-in-protocol.md`](workstreams/farmer-sit-in-protocol.md) · Log: [`workstreams/sit-in-45-session-log-template.md`](workstreams/sit-in-45-session-log-template.md) · Vocabulary: [`farmer-vocabulary.md`](farmer-vocabulary.md).
 
-When complete:
+**Pending (validation gate):** live sessions with 2–3 non-technical testers (WS2/WS8); mobile distribution checklist (WS4).
+
+When sit-in completes:
 
 - Non-technical sit-in validates **`ack_alert`**, **`apply_grow_setup_pack`**, and **Dismiss** (UI-only, no DB write).
-- Matcher misses filed for Phase 46 — not blocking 45 polish.
+- Matcher misses filed for Phase 46 — not blocking OC-45 polish closure.
 
-Operator: [operator-tour §9](operator-tour.md#9-farmer-validation-sit-in-phase-45--ws1-shipped).
+Operator: [operator-tour §9](operator-tour.md#9-farmer-validation-sit-in-phase-45--polish-shipped-sit-in-gate-open) · modules [§10a](operator-tour.md#10a-livestock-modules-phase-45-ws5--shipped) · a11y [§10b](operator-tour.md#10b-light-accessibility-phase-45-ws6--shipped).
 
 ### 7.0l LLM tool proposals (Phase 46 — planned)
 
