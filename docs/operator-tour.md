@@ -575,6 +575,21 @@ Spec: [`plans/phase_45_guardian_pr_spec.md`](plans/phase_45_guardian_pr_spec.md)
 
 ---
 
+## 10a. Livestock modules (Phase 45 WS5 — shipped)
+
+**Shipped.** Empty **Animals** and **Aquaponics** pages now explain what each area is for, link to workflow docs, and offer a clear first action — they no longer look “broken” when no rows exist.
+
+| Route | Purpose | Empty-state docs |
+|-------|---------|------------------|
+| `/animals` | Flocks / herds — head count, lifecycle events, optional primary zone | [`workflow-guide.md` §10](workflow-guide.md#10-animal-husbandry--aquaponics) · [`pattern-playbooks.md`](pattern-playbooks.md) `chicken_coop_v1` |
+| `/aquaponics` | Fish-tank zone ↔ grow-bed zone pairing for reporting | [`workflow-guide.md` §10.4](workflow-guide.md#104-aquaponics-loops) · [`pattern-playbooks.md`](pattern-playbooks.md) `small_aquaponics_v1` |
+
+**Nav:** **Livestock** group in the sidebar. Pumps, sensors, and rules still live on **zone** tabs — the module row is the farm-level anchor.
+
+**Vitest:** `module-empty-shell.test.js`, `phase-45-ws5-module-shells.test.js`.
+
+---
+
 ## 10. Related docs
 
 | Doc | Use |

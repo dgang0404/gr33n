@@ -21,12 +21,12 @@
 
     <div v-if="loading" class="text-zinc-400 text-sm">Loading loops…</div>
 
-    <div
+    <ModuleEmptyShell
       v-else-if="!loops.length"
-      class="text-zinc-500 text-sm bg-zinc-800 border border-zinc-700 rounded-xl p-8 text-center"
-    >
-      No aquaponics loops yet. Create one by linking a fish-tank zone to a grow-bed zone.
-    </div>
+      module-id="aquaponics"
+      :zone-count="zones.length"
+      @primary="openCreate"
+    />
 
     <div v-else class="grid grid-cols-1 lg:grid-cols-2 gap-4">
       <div
@@ -153,6 +153,7 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useFarmStore } from '../stores/farm'
 import { useFarmContextStore } from '../stores/farmContext'
 import HelpTip from '../components/HelpTip.vue'
+import ModuleEmptyShell from '../components/ModuleEmptyShell.vue'
 
 const store = useFarmStore()
 const farmContext = useFarmContextStore()

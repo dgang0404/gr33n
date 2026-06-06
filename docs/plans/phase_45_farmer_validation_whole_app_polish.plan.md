@@ -22,7 +22,7 @@ todos:
     status: pending
   - id: ws5-module-shells
     content: "WS5: Animals/aquaponics — farmer-empty shells with why-empty + link to docs (no full CRUD redesign)"
-    status: pending
+    status: completed
   - id: ws6-accessibility-pass
     content: "WS6: Light a11y — focus order on wizards, contrast on chips, button labels"
     status: pending
