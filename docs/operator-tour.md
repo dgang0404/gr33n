@@ -568,7 +568,7 @@ Architecture: [`farm-guardian-architecture.md` §7.0j](farm-guardian-architectur
 | README + OC-45 docs/tests closure | ✅ Shipped | WS7 — `phase-45-closure.test.js` |
 | ≥2 live sit-ins; P0 friction backlog empty | ⏳ Pending | WS2 — run protocol sessions A/B/C |
 | Guardian ack + setup pack + dismiss **pass** | ⏳ Pending | WS8 — [`phase_45_guardian_pr_spec.md`](plans/phase_45_guardian_pr_spec.md) |
-| Mobile distribution checklist | ⏳ Pending | WS4 — [`mobile-distribution.md`](mobile-distribution.md) |
+| Mobile sit-in path (PWA + scripts) | ✅ Shipped | WS4 — [§10c](#10c-mobile-distribution-phase-45-ws4--shipped) · store track deferred |
 
 **Goal:** Prove a non-technical operator can run the daily loop and trust Guardian **Confirm** vs **Dismiss**.
 
@@ -580,7 +580,7 @@ Architecture: [`farm-guardian-architecture.md` §7.0j](farm-guardian-architectur
 
 Matcher misses from sit-in feed Phase 46 — not a blocker for polish closure (OC-45).
 
-**Vitest bundle:** `phase-45-ws1-protocol.test.js`, `phase-45-ws3-closure.test.js`, `phase-45-ws5-module-shells.test.js`, `phase-45-ws6-a11y.test.js`, `phase-45-closure.test.js`.
+**Vitest bundle:** `phase-45-ws1-protocol.test.js`, `phase-45-ws3-closure.test.js`, `phase-45-ws4-mobile.test.js`, `phase-45-ws5-module-shells.test.js`, `phase-45-ws6-a11y.test.js`, `phase-45-closure.test.js`.
 
 ---
 
@@ -613,6 +613,24 @@ Matcher misses from sit-in feed Phase 46 — not a blocker for polish closure (O
 | First-run checklist | `aria-label` on step links and Hide control |
 
 **Vitest:** `farmer-a11y.test.js`, `phase-45-ws6-a11y.test.js`.
+
+---
+
+## 10c. Mobile distribution (Phase 45 WS4 — shipped)
+
+**Shipped.** Session C (optional mobile sit-in) uses **PWA Add to Home Screen** on the same LAN as the API — no App Store build required for validation.
+
+| Path | Use |
+|------|-----|
+| **PWA (primary)** | `./scripts/mobile-sit-in-prep.sh` → set `CORS_ORIGIN` → phone opens `http://<LAN-IP>:5173` → install |
+| **Capacitor (optional)** | `./scripts/cap-lan-build.sh` → `npm run cap:open:android` (native project from `cap:add:android` once) |
+| **TestFlight / Play internal** | ⏳ Deferred — signing + store accounts; see [mobile-distribution.md](mobile-distribution.md) B4 checklist |
+
+**Icons:** `ui/public/icons/icon-192.png`, `icon-512.png`, `icon-maskable-512.png` (from `icon.svg`).
+
+**Full path:** [`workstreams/phase-45-ws4-mobile-sit-in-path.md`](workstreams/phase-45-ws4-mobile-sit-in-path.md) · protocol Session C: [`farmer-sit-in-protocol.md`](workstreams/farmer-sit-in-protocol.md).
+
+**Vitest:** `phase-45-ws4-mobile.test.js`.
 
 ---
 

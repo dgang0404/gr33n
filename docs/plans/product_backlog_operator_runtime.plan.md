@@ -85,7 +85,8 @@ These are **not** blockers for starting Phase 39. They improve day-2 operations 
 
 **Tasks (checklist, not code phase):**
 
-- [ ] Icons / splash assets per platform — procedure in [`mobile-distribution.md`](../mobile-distribution.md#release-checklist-b4--operator-runtime-backlog)
+- [x] PWA icons + sit-in path — Phase 45 WS4 [`phase-45-ws4-mobile-sit-in-path.md`](../workstreams/phase-45-ws4-mobile-sit-in-path.md)
+- [ ] Store icons / splash per platform — procedure in [`mobile-distribution.md`](../mobile-distribution.md#release-checklist-b4--operator-runtime-backlog)
 - [ ] Signing + provisioning profiles documented — same section
 - [x] Release notes template — same section
 - [ ] Deep link smoke (optional)

@@ -402,7 +402,7 @@ Operator: [operator-tour §8](operator-tour.md#8-getting-started--edge-install-p
 
 Plans: [`plans/phase_45_farmer_validation_whole_app_polish.plan.md`](plans/phase_45_farmer_validation_whole_app_polish.plan.md) · Guardian: [`plans/phase_45_guardian_pr_spec.md`](plans/phase_45_guardian_pr_spec.md) · Protocol: [`workstreams/farmer-sit-in-protocol.md`](workstreams/farmer-sit-in-protocol.md) · Log: [`workstreams/sit-in-45-session-log-template.md`](workstreams/sit-in-45-session-log-template.md) · Vocabulary: [`farmer-vocabulary.md`](farmer-vocabulary.md).
 
-**Pending (validation gate):** live sessions with 2–3 non-technical testers (WS2/WS8); mobile distribution checklist (WS4).
+**Pending (validation gate):** live sessions with 2–3 non-technical testers (WS2/WS8). **WS4 mobile:** PWA sit-in path shipped; store track deferred.
 
 When sit-in completes:
 

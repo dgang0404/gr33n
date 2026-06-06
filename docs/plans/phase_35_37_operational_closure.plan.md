@@ -314,7 +314,7 @@ Feature detail: [`phase_45_farmer_validation_whole_app_polish.plan.md`](phase_45
 | Light a11y | ✅ | WS6 — `farmerA11y.js`, Confirm/Dismiss/chips |
 | OC-45 docs/tests | ✅ | WS7 — README Farmer-ready v1, operator-tour §9, architecture §7.0k, `phase-45-closure.test.js` |
 | Live sit-in + friction backlog | ⏳ | WS2 — ≥2 sessions, P0 triage |
-| Mobile distribution checklist | ⏳ | WS4 — `mobile-distribution.md` |
+| Mobile sit-in path (PWA) | ✅ | WS4 — `phase-45-ws4-mobile-sit-in-path.md`, prep scripts; store deferred |
 | Guardian PR path validation | ⏳ | WS8 — ack, setup pack, dismiss per protocol |
 
 ## Phase 47 — Feeding & water plain language

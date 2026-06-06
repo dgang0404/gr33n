@@ -31,7 +31,7 @@ parent_plan: phase_45_farmer_validation_whole_app_polish.plan.md
 
 ## Guardian PR scorecard (required)
 
-Mark **pass / fail / skip** per tester per path. All three must **pass** for ≥2 testers before OC-45.
+Mark **pass / fail / skip** per tester per path. All three must **pass** for ≥2 testers before the **farmer-ready v1 product claim** (OC-45 docs closed in WS7).
 
 | Path | `task` | Tester 1 | Tester 2 | Tester 3 | Notes |
 |------|--------|----------|----------|----------|-------|

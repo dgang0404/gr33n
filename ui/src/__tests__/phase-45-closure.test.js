@@ -31,6 +31,7 @@ describe('Phase 45 WS7 / OC-45 — farmer polish closure', () => {
     expect(tour).toContain('phase-45-closure.test.js')
     expect(tour).toContain('§10a')
     expect(tour).toContain('§10b')
+    expect(tour).toContain('§10c')
     expect(tour).not.toContain('## 9. Farmer validation sit-in (Phase 45 — planned)')
     expect(tour).not.toContain('## 9. Farmer validation sit-in (Phase 45 — WS1 shipped)')
   })
@@ -79,6 +80,7 @@ describe('Phase 45 WS7 / OC-45 — farmer polish closure', () => {
       '__tests__/phase-45-ws3-closure.test.js',
       '__tests__/phase-45-ws5-module-shells.test.js',
       '__tests__/phase-45-ws6-a11y.test.js',
+      '__tests__/phase-45-ws4-mobile.test.js',
       '__tests__/phase-45-closure.test.js',
       '__tests__/farmer-vocabulary-grow-path.test.js',
       '__tests__/module-empty-shell.test.js',

@@ -19,7 +19,7 @@ todos:
     status: completed
   - id: ws4-mobile-b4
     content: "WS4: Execute mobile-distribution.md checklist (icons, signing template, TestFlight path)"
-    status: pending
+    status: completed
   - id: ws5-module-shells
     content: "WS5: Animals/aquaponics — farmer-empty shells with why-empty + link to docs (no full CRUD redesign)"
     status: completed
@@ -36,7 +36,7 @@ isProject: false
 
 ## Status
 
-**Polish shipped (OC-45 closed).** WS1/3/5/6/7 on `main` — protocol kit, vocabulary v2, module shells, light a11y, README **Farmer-ready v1** criteria. **Validation gate open:** WS2 sit-in friction, WS4 mobile checklist, WS8 Guardian PR sign-off. After [Phases 40–44](farmer_ux_roadmap_40_plus.plan.md) feature work.
+**Polish shipped (OC-45 closed).** WS1/3/4/5/6/7 on `main` — protocol kit, PWA sit-in path, vocabulary v2, module shells, light a11y, README **Farmer-ready v1** criteria. **Validation gate open:** WS2 sit-in friction, WS8 Guardian PR sign-off; store TestFlight deferred per WS4. After [Phases 40–44](farmer_ux_roadmap_40_plus.plan.md) feature work.
 
 **Roadmap:** [farmer_ux_roadmap_40_plus.plan.md](farmer_ux_roadmap_40_plus.plan.md)
 
@@ -112,9 +112,11 @@ Phase 47 introduced **room** as the generic grow-area word (**My rooms**, feedin
 
 ---
 
-## WS4 — Mobile (backlog B4)
+## WS4 — Mobile (backlog B4) ✅
 
 Execute [mobile-distribution.md](../mobile-distribution.md) release checklist — at least one internal/TestFlight or sideload build documented end-to-end.
+
+**Shipped:** PWA sit-in path for Session C — [`phase-45-ws4-mobile-sit-in-path.md`](../workstreams/phase-45-ws4-mobile-sit-in-path.md), `scripts/mobile-sit-in-prep.sh`, `scripts/cap-lan-build.sh`, PWA PNG icons, operator-tour §10c. **Store track** (TestFlight / Play signing) explicitly deferred until operator-owned certs/keystores.
 
 ---
 
@@ -167,6 +169,6 @@ Focus visible, aria labels on Run now / Confirm, chip contrast — no full WCAG 
 - [ ] ≥2 sit-ins completed; P0 backlog empty
 - [ ] Guardian ack + setup pack + dismiss **pass** per protocol
 - [x] Copy pass v2 merged (includes **Vocabulary v2 — zones not rooms**)
-- [ ] Mobile checklist executed or explicitly deferred with reason
+- [x] Mobile checklist executed or explicitly deferred with reason (PWA path shipped; store track deferred — WS4 doc)
 - [x] README + operator-tour §9 updated (Farmer-ready v1 criteria + sit-in gate)
 - [x] OC-45 closed (WS7 docs/tests)

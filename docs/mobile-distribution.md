@@ -11,6 +11,18 @@ The **Vue 3 PWA** in `ui/` remains the product UI. This document covers an optio
 
 Capacitor does **not** replace the PWA: it hosts the same `dist/` assets in a system WebView.
 
+## Phase 45 WS4 — sit-in mobile path (shipped)
+
+For **farmer sit-in Session C**, use the **PWA** path on a phone on the same LAN — no TestFlight required. End-to-end steps: [`workstreams/phase-45-ws4-mobile-sit-in-path.md`](workstreams/phase-45-ws4-mobile-sit-in-path.md).
+
+| Helper | Purpose |
+|--------|---------|
+| `./scripts/mobile-sit-in-prep.sh` | Print LAN UI/API URLs + CORS reminder |
+| `./scripts/cap-lan-build.sh` | Capacitor `cap:sync` with `VITE_API_URL` for LAN API |
+| `ui/.env.capacitor.local.example` | Template for device builds |
+
+**Store track** (TestFlight / Play internal) remains in the B4 checklist below — deferred until signing assets and store accounts are ready.
+
 ## Prerequisites
 
 - Node 20+ and npm (same as `ui/`).
@@ -85,6 +97,7 @@ Use this when cutting a **TestFlight** or **internal track** build. Check items 
 
 ### Assets
 
+- [x] **PWA icons** — `ui/public/icons/icon-192.png`, `icon-512.png`, `icon-maskable-512.png` (Phase 45 WS4; manifest references).
 - [ ] **App icon** — 1024×1024 master; Android adaptive layers in `ui/android/app/src/main/res/`; iOS `AppIcon.appiconset` in Xcode.
 - [ ] **Splash** — Capacitor splash config matches brand; test cold start on a physical device.
 
@@ -119,9 +132,14 @@ Copy the template below into store “What’s New” or internal release mail:
 - [ ] **Deep links** — only if Universal Links / App Links configured (see Troubleshooting).
 - [ ] **Push** — FCM token registration on device; farm alert reaches opted-in operator (see [`notifications-operator-playbook.md`](notifications-operator-playbook.md)).
 
+### Phase 45 sit-in (PWA)
+
+- [x] **LAN PWA path** — [`phase-45-ws4-mobile-sit-in-path.md`](workstreams/phase-45-ws4-mobile-sit-in-path.md) + `scripts/mobile-sit-in-prep.sh`.
+- [x] **Capacitor LAN build** — `scripts/cap-lan-build.sh` + `.env.capacitor.local.example`.
+
 ### Phase 18 alignment
 
-- [ ] Re-read mobile hardening notes in [`phase_18_mobile_hardening.plan.md`](plans/phase_18_mobile_hardening.plan.md) for offline queue and auth session behavior before store submission.
+- [x] Re-read mobile hardening notes in [`phase_18_platform_polish.plan.md`](plans/phase_18_platform_polish.plan.md) (sidebar drawer, responsive nav) before store submission.
 
 ## References
 

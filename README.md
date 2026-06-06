@@ -14,7 +14,8 @@ An open-source farm operating system — run it on your LAN, keep your data clos
 | Layer | Status |
 |-------|--------|
 | **Code polish** (WS1/3/5/6/7) | ✅ On `main` — protocol kit, zones-not-rooms copy, Animals/Aquaponics empty states, light a11y |
-| **Live validation** (WS2/4/8) | ⏳ **Sit-in gate open** — ≥2 facilitator sessions, Guardian PR path sign-off, mobile checklist |
+| **Live validation** (WS2/8) | ⏳ **Sit-in gate open** — ≥2 facilitator sessions, Guardian PR path sign-off |
+| **Mobile Session C** (WS4) | ✅ PWA LAN path + scripts — store TestFlight deferred |
 
 Detail: [operator tour §9](docs/operator-tour.md#9-farmer-validation-sit-in-phase-45--polish-shipped-sit-in-gate-open) · plan: [phase_45](docs/plans/phase_45_farmer_validation_whole_app_polish.plan.md) · Vitest: `ui/src/__tests__/phase-45-closure.test.js`.
 
