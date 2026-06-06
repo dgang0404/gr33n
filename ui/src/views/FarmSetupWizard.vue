@@ -136,15 +136,23 @@
       </section>
       <div class="flex flex-wrap gap-2">
         <router-link
-          to="/zones"
+          v-if="farmId"
+          :to="`/farms/${farmId}/zones/new`"
           class="px-4 py-2 text-sm font-medium rounded-lg bg-green-700 hover:bg-green-600 text-white"
+          data-test="setup-add-zone"
+        >
+          Add a grow room
+        </router-link>
+        <router-link
+          to="/zones"
+          class="px-4 py-2 text-sm text-zinc-300 border border-zinc-700 rounded-lg"
           data-test="setup-go-zones"
         >
           Open My rooms
         </router-link>
         <router-link
           to="/"
-          class="px-4 py-2 text-sm text-zinc-300 hover:text-white border border-zinc-700 rounded-lg"
+          class="px-4 py-2 text-sm text-zinc-400 hover:text-zinc-200"
         >
           Go to Today
         </router-link>
