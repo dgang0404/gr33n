@@ -69,6 +69,11 @@ describe('Phase 47 WS2 — zone Water primary surface', () => {
     const historyTo = JSON.parse(wrapper.find('[data-test="feeding-history-link"]').attributes('data-to'))
     expect(historyTo.path).toBe('/feeding')
     expect(historyTo.query.zone_id).toBe('3')
+    const suppliesTo = JSON.parse(wrapper.find('[data-test="zone-water-supplies-link"]').attributes('data-to'))
+    expect(suppliesTo.path).toBe('/operations/supplies')
+    expect(suppliesTo.query.zone_id).toBe('3')
+    const advancedTo = JSON.parse(wrapper.find('[data-test="feeding-advanced-link"]').attributes('data-to'))
+    expect(advancedTo.path).toBe('/operations/feeding')
   })
 
   it('shows water-only badge and hides preview mix for irrigation_only', () => {

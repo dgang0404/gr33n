@@ -34,4 +34,22 @@ describe('Phase 41 WS1 — farm morning snapshot', () => {
     expect(snap.chips.find((c) => c.id === 'feeding').to).toEqual({ path: '/feeding' })
     expect(snap.chips.find((c) => c.id === 'queue').to).toEqual({ path: '/feeding' })
   })
+
+  it('Phase 43 WS5 — adds supplies chip when low-stock batches exist', () => {
+    const snap = computeFarmMorningSnapshot({
+      tasks: [],
+      alerts: [],
+      schedules: [],
+      devices: [],
+      zones: [{ id: 1 }],
+      programs: [],
+      lowStockCount: 2,
+    })
+    const chip = snap.chips.find((c) => c.id === 'low-stock')
+    expect(chip).toBeTruthy()
+    expect(chip.label).toBe('Supplies low')
+    expect(chip.value).toBe('2 batches')
+    expect(chip.tone).toBe('warn')
+    expect(chip.to).toEqual({ path: '/operations/supplies' })
+  })
 })

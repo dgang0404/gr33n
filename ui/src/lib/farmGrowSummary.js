@@ -57,6 +57,7 @@ export function computeFarmMorningSnapshot(params) {
     zones = [],
     programs = [],
     queueDepth = 0,
+    lowStockCount = 0,
   } = params
 
   const dueToday = countFarmTasksDueToday(tasks)
@@ -83,6 +84,17 @@ export function computeFarmMorningSnapshot(params) {
     tone: unread ? 'warn' : 'ok',
     to: { path: '/alerts' },
   })
+
+  if (lowStockCount > 0) {
+    chips.push({
+      id: 'low-stock',
+      icon: '🧪',
+      label: 'Supplies low',
+      value: `${lowStockCount} batch${lowStockCount === 1 ? '' : 'es'}`,
+      tone: 'warn',
+      to: { path: '/operations/supplies' },
+    })
+  }
 
   if (nextSched) {
     chips.push({

@@ -239,6 +239,7 @@ import FarmMorningStrip from '../components/FarmMorningStrip.vue'
 import EmptyStateHint from '../components/EmptyStateHint.vue'
 import { computeFarmMorningSnapshot } from '../lib/farmGrowSummary.js'
 import { sumFarmPendingQueueDepth } from '../lib/farmQueueDepth.js'
+import { listLowStockBatches } from '../lib/suppliesHub.js'
 import { scheduleRunsLabel } from '../lib/cronHumanize.js'
 
 const store = useFarmStore()
@@ -250,6 +251,12 @@ const alerts = ref([])
 const unreadAlerts = ref(0)
 const programs = ref([])
 const queueDepth = ref(0)
+const nfBatches = ref([])
+const nfInputs = ref([])
+
+const lowStockCount = computed(() =>
+  listLowStockBatches(nfBatches.value, nfInputs.value).length,
+)
 
 const morningChips = computed(() =>
   computeFarmMorningSnapshot({
@@ -260,6 +267,7 @@ const morningChips = computed(() =>
     zones: store.zones,
     programs: programs.value,
     queueDepth: queueDepth.value,
+    lowStockCount: lowStockCount.value,
   }).chips,
 )
 
@@ -340,18 +348,22 @@ async function refreshAll() {
   const fid = farmContext.farmId
   if (!fid) return
   await store.loadAll(fid)
-  const [sch, ev, al, unread, prog] = await Promise.all([
+  const [sch, ev, al, unread, prog, batches, inputs] = await Promise.all([
     store.loadSchedules(fid),
     store.loadFertigationEvents(fid),
     store.loadAlerts(fid),
     store.countUnreadAlerts(fid),
     store.loadFertigationPrograms(fid),
+    store.loadNfBatches(fid),
+    store.loadNfInputs(fid),
   ])
   schedules.value = sch
   fertigationEvents.value = ev
   alerts.value = al
   unreadAlerts.value = unread
   programs.value = prog
+  nfBatches.value = batches
+  nfInputs.value = inputs
   await store.loadTasks(fid)
   queueDepth.value = await sumFarmPendingQueueDepth(store.devices)
 }

@@ -205,6 +205,16 @@
         {{ waterStatus.mix_preview_error }}
       </p>
     </template>
+
+    <div class="border-t border-zinc-800 pt-3">
+      <router-link
+        :to="suppliesForRoomLink"
+        class="text-xs text-zinc-400 hover:text-green-400"
+        data-test="zone-water-supplies-link"
+      >
+        Stock &amp; recipes for this room →
+      </router-link>
+    </div>
   </div>
 </template>
 
@@ -279,8 +289,13 @@ const feedHistoryLink = computed(() => ({
 const logFeedLink = computed(() => feedHistoryLink.value)
 
 const advancedFeedingLink = computed(() => ({
-  path: '/fertigation',
+  path: '/operations/feeding',
   query: { tab: 'programs', zone_id: String(props.zoneId) },
+}))
+
+const suppliesForRoomLink = computed(() => ({
+  path: '/operations/supplies',
+  query: { zone_id: String(props.zoneId) },
 }))
 
 async function resolveDeliveryDevice() {
