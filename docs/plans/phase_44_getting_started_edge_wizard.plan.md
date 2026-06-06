@@ -19,7 +19,7 @@ todos:
     status: completed
   - id: ws5-first-run-dashboard
     content: "WS5: First-run empty Dashboard — checklist (zones, device, comfort band, one schedule)"
-    status: pending
+    status: completed
   - id: ws6-docs-tests
     content: "WS6: operator-tour §8 setup; architecture §7.0j; Vitest wizard flows; OC-44"
     status: pending
@@ -114,7 +114,7 @@ Embed checklist from pi-integration-guide (not PDF-only).
 
 ---
 
-## WS5 — First-run dashboard
+## WS5 — First-run dashboard ✅
 
 When farm has no zones / no devices / no setpoints:
 
@@ -127,6 +127,8 @@ Getting started
 ```
 
 Links to wizards; dismiss when complete.
+
+**Shipped:** `GettingStartedChecklist` on Dashboard; `firstRunChecklist.js`; Guardian `first_run_dashboard` starters; auto-hides when all four steps complete or operator hides for now.
 
 ---
 
@@ -160,8 +162,8 @@ operator-tour §8 + §6g, architecture §7.0j, Vitest wizard navigation, smoke b
 - [x] Farm setup wizard (WS1) — `/farms/:id/setup`, template cards, preview, apply
 - [x] Add zone wizard (WS2) — `/farms/:id/zones/new`, greenhouse profile, optional lighting preset
 - [x] Edge device wizard (WS3) — `/farms/:id/devices/new`, Pi checklist, poll online, actuators
-- [ ] First-run checklist + remaining WS4–WS8
-- [ ] First-run checklist on Dashboard
+- [x] First-run checklist on Dashboard (WS5)
+- [ ] Remaining WS6–WS8
 - [ ] Pi steps reachable without leaving app
 - [ ] Guardian WS8 per [phase_44_guardian_pr_spec.md](phase_44_guardian_pr_spec.md)
 - [ ] operator-tour §8 + §6g + OC-44

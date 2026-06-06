@@ -19,6 +19,15 @@
       </button>
     </div>
 
+    <!-- Phase 44 WS5 — first-run getting started checklist -->
+    <GettingStartedChecklist
+      v-if="showFirstRunChecklist"
+      :items="firstRunItems"
+      :farm-id="farmContext.farmId"
+      :starters="firstRunStarters"
+      @dismiss="firstRunDismissed = true"
+    />
+
     <!-- Phase 41 WS1 — morning cockpit -->
     <FarmMorningStrip :chips="morningChips" />
 
@@ -231,7 +240,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useFarmStore } from '../stores/farm'
 import { useFarmContextStore } from '../stores/farmContext'
 import SensorTile   from '../components/SensorTile.vue'
@@ -239,10 +248,15 @@ import ActuatorCard from '../components/ActuatorCard.vue'
 import HelpTip from '../components/HelpTip.vue'
 import FarmMorningStrip from '../components/FarmMorningStrip.vue'
 import EmptyStateHint from '../components/EmptyStateHint.vue'
+import GettingStartedChecklist from '../components/GettingStartedChecklist.vue'
 import GuardianStarterChips from '../components/GuardianStarterChips.vue'
 import { computeFarmMorningSnapshot } from '../lib/farmGrowSummary.js'
 import { sumFarmPendingQueueDepth } from '../lib/farmQueueDepth.js'
-import { buildDashboardOpsStarters } from '../lib/guardianStarters.js'
+import {
+  computeFirstRunChecklist,
+  shouldShowFirstRunChecklist,
+} from '../lib/firstRunChecklist.js'
+import { buildDashboardOpsStarters, buildSetupStarters } from '../lib/guardianStarters.js'
 import { filterLowStockAlerts, listLowStockBatches } from '../lib/suppliesHub.js'
 import { scheduleRunsLabel } from '../lib/cronHumanize.js'
 
@@ -250,8 +264,10 @@ const store = useFarmStore()
 const farmContext = useFarmContextStore()
 
 const schedules = ref([])
+const setpoints = ref([])
 const fertigationEvents = ref([])
 const alerts = ref([])
+const firstRunDismissed = ref(false)
 const unreadAlerts = ref(0)
 const programs = ref([])
 const queueDepth = ref(0)
@@ -263,6 +279,31 @@ const lowStockCount = computed(() =>
 )
 
 const lowStockAlerts = computed(() => filterLowStockAlerts(alerts.value))
+
+const firstRunItems = computed(() => computeFirstRunChecklist({
+  zones: store.zones,
+  devices: store.devices,
+  setpoints: setpoints.value,
+  schedules: schedules.value,
+  farmId: farmContext.farmId,
+}))
+
+const showFirstRunChecklist = computed(() => {
+  if (firstRunDismissed.value) return false
+  return shouldShowFirstRunChecklist(farmContext.farmId, firstRunItems.value)
+})
+
+const firstRunStarters = computed(() => {
+  if (!showFirstRunChecklist.value) return []
+  return buildSetupStarters({
+    surface: 'first_run_dashboard',
+    farmId: farmContext.farmId,
+    zoneCount: store.zones.length,
+    zones: store.zones,
+    unreadAlerts: alerts.value.filter((a) => !a.is_read),
+    deviceOffline: store.devices.length > 0 && store.devices.some((d) => d.status !== 'online'),
+  })
+})
 
 const dashboardOpsStarters = computed(() => buildDashboardOpsStarters({
   lowStockCount: lowStockCount.value,
@@ -359,8 +400,9 @@ async function refreshAll() {
   const fid = farmContext.farmId
   if (!fid) return
   await store.loadAll(fid)
-  const [sch, ev, al, unread, prog, batches, inputs] = await Promise.all([
+  const [sch, sp, ev, al, unread, prog, batches, inputs] = await Promise.all([
     store.loadSchedules(fid),
+    store.loadSetpoints(fid),
     store.loadFertigationEvents(fid),
     store.loadAlerts(fid),
     store.countUnreadAlerts(fid),
@@ -369,6 +411,7 @@ async function refreshAll() {
     store.loadNfInputs(fid),
   ])
   schedules.value = sch
+  setpoints.value = sp
   fertigationEvents.value = ev
   alerts.value = al
   unreadAlerts.value = unread
@@ -378,6 +421,13 @@ async function refreshAll() {
   await store.loadTasks(fid)
   queueDepth.value = await sumFarmPendingQueueDepth(store.devices)
 }
+
+watch(
+  () => farmContext.farmId,
+  () => {
+    firstRunDismissed.value = false
+  },
+)
 
 onMounted(() => refreshAll())
 </script>

@@ -39,6 +39,17 @@ describe('Phase 44 WS4 — setup Guardian starters', () => {
     expect(wire.contextRef.path).toBe('/farms/5/devices/new')
   })
 
+  it('first-run dashboard surface returns at most 3 starters', () => {
+    const starters = buildSetupStarters({
+      surface: 'first_run_dashboard',
+      farmId: 9,
+      zoneCount: 0,
+      zones: [],
+    })
+    expect(starters.length).toBeLessThanOrEqual(3)
+    expect(starters[0].id).toBe('first-grow-room')
+  })
+
   it('zone wizard can suggest grow setup pack phrase for new room', () => {
     const starters = buildSetupStarters({
       surface: 'zone_wizard',

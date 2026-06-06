@@ -103,6 +103,11 @@ export const useFarmStore = defineStore('farm', {
       return this.schedules
     },
 
+    async loadSetpoints(farmId) {
+      const r = await api.get(`/farms/${farmId}/setpoints`)
+      return Array.isArray(r.data) ? r.data : []
+    },
+
     async updateScheduleActive(scheduleId, isActive) {
       const r = await api.patch(`/schedules/${scheduleId}/active`, { is_active: isActive })
       const next = r.data
