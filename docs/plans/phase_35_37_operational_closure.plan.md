@@ -59,7 +59,7 @@ todos:
     status: completed
   - id: oc-44-closure
     content: "OC-44: Phase 44 WS6 — setup + edge wizard docs/tests (close when Phase 44 ships)"
-    status: pending
+    status: completed
   - id: oc-45-closure
     content: "OC-45: Phase 45 WS7 — farmer sit-in + farmer-ready v1 (close when Phase 45 ships)"
     status: pending
@@ -287,6 +287,20 @@ Feature detail: [`phase_43_operations_stock_feeding_finance.plan.md`](phase_43_o
 | Guardian persona + impact | ✅ | WS6 — ops vocabulary, refill task cites input name |
 | OC-43 docs/tests | ✅ | WS7 — operator-tour §7 + §6f, architecture §7.0i, `phase-43-closure.test.js` |
 | Guardian read + starters | ✅ | WS8 — `summarize_farm_low_stock`, ops starter chips, `guardian-ops-starters.test.js` |
+
+## Phase 44 — Getting started & edge wizards
+
+Feature detail: [`phase_44_getting_started_edge_wizard.plan.md`](phase_44_getting_started_edge_wizard.plan.md). **OC-44** closed (WS6). **WS8** Guardian PR slice partial — [phase_44_guardian_pr_spec.md](phase_44_guardian_pr_spec.md).
+
+| Area | Status | Notes |
+|------|--------|-------|
+| Farm setup wizard | ✅ | WS1 — `/farms/:id/setup`, template cards, bootstrap POST |
+| Add zone wizard | ✅ | WS2 — greenhouse profile, lighting preset |
+| Edge device wizard | ✅ | WS3 — Pi checklist, poll online, actuators |
+| Guardian setup mode | ✅ | WS4 — `setup_mode.go`, starters, wizard footers |
+| First-run checklist | ✅ | WS5 — `GettingStartedChecklist` on Dashboard |
+| OC-44 docs/tests | ✅ | WS6 — operator-tour §8 + §6g, architecture §7.0j, Vitest + `TestPhase44WizardBootstrapApply` |
+| Guardian empty-zone starters | ⏳ | WS8 — `empty_zone_grow` on zone cockpit |
 
 ## Phase 47 — Feeding & water plain language
 

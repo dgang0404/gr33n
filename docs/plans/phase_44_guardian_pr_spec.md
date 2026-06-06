@@ -155,7 +155,7 @@ Short bullet block (persona file or handler):
 - [ ] Setup-mode hint when `zone_count == 0` or `?setup=1`
 - [ ] Grow-setup starter triggers existing setup-pack matcher (manual send)
 - [ ] Bootstrap **not** promoted via starter chips (wizard only)
-- [ ] operator-tour §6g + §8
+- [x] operator-tour §6g + §8
 - [ ] No dependency on Phase 46
 
 ---

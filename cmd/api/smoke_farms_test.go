@@ -137,6 +137,49 @@ func TestCrossFarmWriteForbidden(t *testing.T) {
 
 // ── Fertigation CRUD ────────────────────────────────────────────────────────
 
+// TestPhase44WizardBootstrapApply mirrors the farm setup wizard: blank farm
+// created with bootstrap_template "none", then POST /farms/{id}/bootstrap-template.
+func TestPhase44WizardBootstrapApply(t *testing.T) {
+	tok := smokeJWT(t)
+	name := uniqueName("phase44_wizard")
+	resp := authPost(t, tok, "/farms", map[string]any{
+		"name":               name,
+		"owner_user_id":      smokeDevUserUUID,
+		"timezone":           "UTC",
+		"currency":           "USD",
+		"operational_status": "active",
+		"scale_tier":         "small",
+		"bootstrap_template": "none",
+	})
+	expectStatus(t, resp, http.StatusCreated)
+	payload := decodeMap(t, resp)
+	farmObj, ok := payload["farm"].(map[string]any)
+	if !ok {
+		t.Fatalf("expected farm in response, got %v", payload)
+	}
+	fid := int64(farmObj["id"].(float64))
+	zones := decodeSlice(t, authGet(t, tok, fmt.Sprintf("/farms/%d/zones", fid)))
+	if len(zones) != 0 {
+		t.Fatalf("expected blank farm before wizard apply, got %d zones", len(zones))
+	}
+	resp2 := authPost(t, tok, fmt.Sprintf("/farms/%d/bootstrap-template", fid), map[string]any{
+		"template": "jadam_indoor_photoperiod_v1",
+	})
+	expectStatus(t, resp2, http.StatusOK)
+	again := decodeMap(t, resp2)
+	boot, ok := again["bootstrap"].(map[string]any)
+	if !ok {
+		t.Fatalf("expected bootstrap block, got %#v", again)
+	}
+	if applied, _ := boot["applied"].(bool); !applied {
+		t.Fatalf("expected applied=true from wizard-equivalent POST, got %#v", boot)
+	}
+	zones2 := decodeSlice(t, authGet(t, tok, fmt.Sprintf("/farms/%d/zones", fid)))
+	if len(zones2) < 4 {
+		t.Fatalf("expected at least 4 zones after template apply, got %d", len(zones2))
+	}
+}
+
 func TestFarmBootstrapOnCreate(t *testing.T) {
 	tok := smokeJWT(t)
 	name := uniqueName("bootstrap_farm")

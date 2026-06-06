@@ -224,7 +224,7 @@ User intent
 | Wizards first (farm / zone / device / checklist) | UI — parent WS1–WS5 |
 | Setup-mode persona (`?setup=1`, zero zones) | Handler — spec §5 |
 | Starters (grow setup, ack, procedures) — **not** bootstrap auto-PR | UI — spec §4 |
-| operator-tour §8 + §6g, architecture §7.0j | Docs — written (planned ship) |
+| operator-tour §8 + §6g, architecture §7.0j | Docs — WS6 ✅ |
 
 ### Phase 45 — Validation
 

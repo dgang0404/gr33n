@@ -375,17 +375,26 @@ Operator walkthrough: [operator-tour §5c](operator-tour.md#5c-comfort-bands--wh
 
 Operator walkthrough: [operator-tour §7](operator-tour.md#7-supplies-feeding--money-phase-43) · Guardian: [operator-tour §6f](operator-tour.md#6f-guardian-on-supplies--money-phase-43--shipped).
 
-### 7.0j Getting started & edge wizards (Phase 44 — planned)
+### 7.0j Getting started & edge wizards (Phase 44)
 
-**Doc stub.** Plans: [`plans/phase_44_getting_started_edge_wizard.plan.md`](plans/phase_44_getting_started_edge_wizard.plan.md) · Guardian: [`plans/phase_44_guardian_pr_spec.md`](plans/phase_44_guardian_pr_spec.md).
+**Shipped (WS1–WS6).** Plans: [`plans/phase_44_getting_started_edge_wizard.plan.md`](plans/phase_44_getting_started_edge_wizard.plan.md) · Guardian: [`plans/phase_44_guardian_pr_spec.md`](plans/phase_44_guardian_pr_spec.md).
 
-When shipped:
+| Surface | Operator job | Implementation |
+|---------|--------------|----------------|
+| **Farm setup** (`/farms/{id}/setup`) | Blank vs template cards, preview, apply bootstrap | `FarmSetupWizard.vue`, `farmSetupWizard.js` → `POST /farms/{id}/bootstrap-template` |
+| **Add grow room** (`/farms/{id}/zones/new`) | Name, type, greenhouse profile, lighting preset | `ZoneSetupWizard.vue`, `zoneSetupWizard.js` |
+| **Edge device** (`/farms/{id}/devices/new`) | Register Pi, config snippet, poll online, actuators | `DeviceSetupWizard.vue`, `deviceSetupWizard.js`, `PI_FIELD_CHECKLIST` |
+| **First-run checklist** (Dashboard) | Zone → device → comfort → schedule | `GettingStartedChecklist.vue`, `firstRunChecklist.js` |
 
-- **Wizards** own farm template, zone, device, and first-run checklist — not chat-first setup.
-- Guardian **starters** and optional **setup-mode** persona are secondary; **`apply_grow_setup_pack`** remains rule-assisted Confirm.
-- **`apply_bootstrap_template`** via wizard API (admin RBAC), not promoted in starter chips.
+**Guardian (WS4–WS5 shipped; WS8 partial):**
 
-Operator: [operator-tour §8](operator-tour.md#8-getting-started--edge-install-phase-44--planned) · Guardian: [§6g](operator-tour.md#6g-guardian-during-setup-phase-44--planned).
+- **Setup-mode persona** when `zone_count == 0`, `setup_mode` on `POST /v1/chat`, or `?setup=1` — [`setup_mode.go`](../internal/farmguardian/setup_mode.go).
+- **Starters** on checklist, wizard footers, and drawer — `buildSetupStarters` in [`guardianStarters.js`](../ui/src/lib/guardianStarters.js); wizards own writes, not chips.
+- **`apply_grow_setup_pack`** — rule-assisted Confirm unchanged (Phase 32); grow-setup starter sends matcher-friendly phrase.
+- **`apply_bootstrap_template`** — wizard `POST` only (admin RBAC); not promoted in starter chips.
+- Route `context_ref` hints for setup wizard paths — [`context_ref.go`](../internal/farmguardian/context_ref.go).
+
+Operator: [operator-tour §8](operator-tour.md#8-getting-started--edge-install-phase-44--shipped) · Guardian: [§6g](operator-tour.md#6g-guardian-during-setup-phase-44--shipped).
 
 ### 7.0k Farmer sit-in & PR validation (Phase 45 — planned)
 

@@ -399,14 +399,15 @@ If you get advice text but **no card**, matchers did not recognize the phrase �
 
 Guardian **cannot** adjust batch quantities or post receipts via Confirm — use the hub UI; broader NL writes are [Phase 46](plans/phase_46_guardian_llm_tool_proposals.plan.md).
 
-### 6g. Guardian during setup (Phase 44 — planned)
+### 6g. Guardian during setup (Phase 44 — shipped)
 
-**Spec:** [`plans/phase_44_guardian_pr_spec.md`](plans/phase_44_guardian_pr_spec.md)
+**Spec:** [`plans/phase_44_guardian_pr_spec.md`](plans/phase_44_guardian_pr_spec.md) · Architecture: [`farm-guardian-architecture.md` §7.0j](farm-guardian-architecture.md#70j-getting-started--edge-wizards-phase-44).
 
-- **Wizards win** — farm template, zone, and device are not created by starter chips.
-- **Starters** on the first-run checklist and empty zone: grow-setup phrase, ack alert, Pi procedure help.
-- **Grow setup pack** — same Confirm bundle as [§6b](#6b-grow-setup-via-guardian-phase-32); use after the zone exists.
-- **Bootstrap template** — apply in the **Farm setup wizard**, not via a chip that opens `apply_bootstrap_template`.
+- **Wizards win** — farm template, zone, and device are **not** created by starter chips.
+- **Setup mode** — grounded chat adds a setup persona when the farm has **zero grow rooms**, `POST /v1/chat` sends `setup_mode: true`, or you open `/chat?setup=1`.
+- **Starters** on the first-run checklist, wizard footers, and Guardian drawer: grow-setup phrase, ack alert, Pi procedure help (`start procedure wire-pi-relay-light`).
+- **Grow setup pack** — same Confirm bundle as [§6b](#6b-grow-setup-via-guardian-phase-32); use after the room exists.
+- **Bootstrap template** — apply in the **Farm setup wizard** (`POST /farms/{id}/bootstrap-template`), not via a chip that opens `apply_bootstrap_template`.
 
 ### 6h. When Guardian opens a card from your words (Phase 46 — planned)
 
@@ -519,22 +520,36 @@ Architecture: [`farm-guardian-architecture.md` §7.0m](farm-guardian-architectur
 
 ---
 
-## 8. Getting started & edge install (Phase 44 — planned)
+## 8. Getting started & edge install (Phase 44 — shipped)
 
-**Status:** Doc complete; after Phases 40–43. Plan: [`plans/phase_44_getting_started_edge_wizard.plan.md`](plans/phase_44_getting_started_edge_wizard.plan.md).
+**Shipped.** Plan: [`plans/phase_44_getting_started_edge_wizard.plan.md`](plans/phase_44_getting_started_edge_wizard.plan.md) · Guardian: [§6g](#6g-guardian-during-setup-phase-44--shipped).
 
 **Rule:** Use **wizards and checklist buttons** first. Guardian is for questions and the grow-setup **Confirm** bundle — not the only path.
 
-| Wizard | Job |
-|--------|-----|
-| Farm setup | Pick template → preview → apply bootstrap |
-| Add zone | Name, type, optional lighting preset |
-| Edge device | API key, test connection, assign zone |
-| First-run checklist | Zone → device → comfort band → one schedule |
+### Suggested click path (new farm)
 
-Pi steps: embedded checklist from [pi-integration-guide.md](pi-integration-guide.md); offline procedures in §6d.
+1. **Settings** → create farm (or open **Farm setup wizard** for an existing blank farm).
+2. **`/farms/{id}/setup`** — choose **Start blank** or a template card → preview → **Apply starter pack** (farm admin; idempotent).
+3. **Today** (`/`) — **Getting started** checklist when steps remain: grow room → edge device → comfort targets → one schedule.
+4. **`/farms/{id}/zones/new`** — name, room type, optional greenhouse profile or lighting preset.
+5. **`/farms/{id}/devices/new`** — register Pi, copy `pi_client` config snippet, embedded field checklist, poll **online**, optional actuators.
+6. **`/comfort-targets`** — set first comfort band; **Schedules** tab to turn on one run.
+7. Optional — **Ask Guardian** from checklist chips or wizard **Need help?** footers ([§6g](#6g-guardian-during-setup-phase-44--shipped)).
 
-Architecture: [`farm-guardian-architecture.md` §7.0j](farm-guardian-architecture.md#70j-getting-started--edge-wizards-phase-44--planned).
+| Wizard / surface | Job | Route |
+|------------------|-----|-------|
+| Farm setup | Pick template → preview → apply bootstrap | `/farms/{id}/setup` |
+| Add grow room | Name, type, optional lighting preset | `/farms/{id}/zones/new` |
+| Edge device | Pi config, connection test, actuators | `/farms/{id}/devices/new` |
+| First-run checklist | Zone → device → comfort band → one schedule | Dashboard `GettingStartedChecklist` |
+
+Pi steps stay in-app: embedded checklist from [pi-integration-guide.md](pi-integration-guide.md) §8.3 on the device wizard; offline wiring procedures in [§6d](#6d-first-field-install-with-guardian-offline-phase-37).
+
+**Vitest closure:** `farm-setup-wizard.test.js`, `zone-setup-wizard.test.js`, `device-setup-wizard.test.js`, `first-run-checklist.test.js`, `guardian-setup-starters.test.js`, `phase-44-wizard-navigation.test.js`, `phase-44-closure.test.js`.
+
+**Go smoke:** `TestPhase44WizardBootstrapApply` — blank farm + `POST /farms/{id}/bootstrap-template` (same path as the wizard).
+
+Architecture: [`farm-guardian-architecture.md` §7.0j](farm-guardian-architecture.md#70j-getting-started--edge-wizards-phase-44).
 
 ---
 

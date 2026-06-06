@@ -56,7 +56,7 @@ isProject: false
 | **7** | [phase_47](phase_47_feeding_water_plain_language.plan.md) + [farmer-vocabulary.md](../farmer-vocabulary.md) + tour §7b + arch §7.0m | ✅ |
 | **8** | [phase_48](phase_48_dev_seed_and_small_farm_profiles.plan.md) + [local-operator-bootstrap.md](../local-operator-bootstrap.md) slow-dev section | ✅ |
 
-**Documentation status:** Chunks 1–8 complete. Phases **39**, **39b**, **40**, **41**, **47**, **42**, **43** (WS1–WS7), and **product backlog** shipped on `main`. **Phase 48** plan written (parallel infra). **Next feature code:** [44](phase_44_getting_started_edge_wizard.plan.md) (or [43 WS8](phase_43_guardian_pr_spec.md)). **Guardian/PR docs for phases 42–46** are written — **OC-43** closed; **43 WS8** + **OC-44 … OC-46** close with each phase’s WS8/WS7 ship.
+**Documentation status:** Chunks 1–8 complete. Phases **39**, **39b**, **40**, **41**, **47**, **42**, **43** (WS1–WS7), and **product backlog** shipped on `main`. **Phase 48** plan written (parallel infra). **Next feature code:** [45](phase_45_farmer_validation_whole_app_polish.plan.md) (or [44 WS8](phase_44_guardian_pr_spec.md)). **Guardian/PR docs for phases 42–46** are written — **OC-43** and **OC-44** closed; **44 WS8** + **OC-45 … OC-46** close with each phase’s WS8/WS7 ship.
 
 ---
 

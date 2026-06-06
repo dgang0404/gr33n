@@ -22,7 +22,7 @@ todos:
     status: completed
   - id: ws6-docs-tests
     content: "WS6: operator-tour §8 setup; architecture §7.0j; Vitest wizard flows; OC-44"
-    status: pending
+    status: completed
   - id: ws8-guardian-pr-slice
     content: "WS8: phase_44_guardian_pr_spec — wizards first; setup starters + setup-mode second"
     status: pending
@@ -33,7 +33,7 @@ isProject: false
 
 ## Status
 
-**WS1–WS3 shipped** on `main`. WS4–WS8 pending. After [Phase 41](phase_41_farm_hub_coherence.plan.md) (empty states) and [Phase 42](phase_42_comfort_targets_automation_plain_language.plan.md) (comfort bands — wizard can set first band).
+**WS1–WS6 shipped** on `main`. WS8 (Guardian PR slice closure) pending. After [Phase 41](phase_41_farm_hub_coherence.plan.md) (empty states) and [Phase 42](phase_42_comfort_targets_automation_plain_language.plan.md) (comfort bands — wizard can set first band).
 
 **Prerequisite API:** [Phase 15](phase_15_farm_onboarding.plan.md) bootstrap templates ✅.
 
@@ -132,9 +132,11 @@ Links to wizards; dismiss when complete.
 
 ---
 
-## WS6 — Docs, tests, closure (OC-44)
+## WS6 — Docs, tests, closure (OC-44) ✅
 
 operator-tour §8 + §6g, architecture §7.0j, Vitest wizard navigation, smoke bootstrap apply from UI path.
+
+**Shipped:** `phase-44-closure.test.js`, `phase-44-wizard-navigation.test.js`, `TestPhase44WizardBootstrapApply`, operator-tour §8/§6g + architecture §7.0j updated from stubs.
 
 ---
 
@@ -163,10 +165,10 @@ operator-tour §8 + §6g, architecture §7.0j, Vitest wizard navigation, smoke b
 - [x] Add zone wizard (WS2) — `/farms/:id/zones/new`, greenhouse profile, optional lighting preset
 - [x] Edge device wizard (WS3) — `/farms/:id/devices/new`, Pi checklist, poll online, actuators
 - [x] First-run checklist on Dashboard (WS5)
-- [ ] Remaining WS6–WS8
-- [ ] Pi steps reachable without leaving app
+- [x] Docs, tests, OC-44 closure (WS6)
+- [x] Pi steps reachable without leaving app (device wizard checklist)
 - [ ] Guardian WS8 per [phase_44_guardian_pr_spec.md](phase_44_guardian_pr_spec.md)
-- [ ] operator-tour §8 + §6g + OC-44
+- [x] operator-tour §8 + §6g + architecture §7.0j
 
 ## Related
 

@@ -110,6 +110,11 @@ export function farmSetupRoute(farmId) {
   return `/farms/${farmId}/setup`
 }
 
+/** Same POST path the farm setup wizard uses (`farmContext.applyBootstrapTemplate`). */
+export function farmBootstrapApplyPath(farmId) {
+  return `/farms/${farmId}/bootstrap-template`
+}
+
 const SETUP_DONE_PREFIX = 'gr33n_farm_setup_done_'
 
 export function markFarmSetupComplete(farmId) {

@@ -6,6 +6,7 @@ import {
   previewForSetupChoice,
   formatBootstrapApplyResult,
   farmSetupRoute,
+  farmBootstrapApplyPath,
 } from '../lib/farmSetupWizard.js'
 import { BOOTSTRAP_TEMPLATE_KEYS } from '../constants/bootstrapTemplates.js'
 
@@ -45,5 +46,9 @@ describe('Phase 44 WS1 — farm setup wizard helpers', () => {
 
   it('builds setup route for farm id', () => {
     expect(farmSetupRoute(42)).toBe('/farms/42/setup')
+  })
+
+  it('builds bootstrap apply path used by wizard POST', () => {
+    expect(farmBootstrapApplyPath(42)).toBe('/farms/42/bootstrap-template')
   })
 })
