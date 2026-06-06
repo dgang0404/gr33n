@@ -553,9 +553,13 @@ Architecture: [`farm-guardian-architecture.md` §7.0j](farm-guardian-architectur
 
 ---
 
-## 9. Farmer validation sit-in (Phase 45 — planned)
+## 9. Farmer validation sit-in (Phase 45 — WS1 shipped)
 
-**Status:** Doc complete; after Phase 44 ships. Protocol: [`workstreams/farmer-sit-in-protocol.md`](workstreams/farmer-sit-in-protocol.md).
+**Status:** **WS1 shipped** — facilitator protocol + scorecard ready; **live sit-in sessions** not yet run. After Phase 44.
+
+**Protocol:** [`workstreams/farmer-sit-in-protocol.md`](workstreams/farmer-sit-in-protocol.md) (§0 prep, sessions A/B/C, §4 three PR paths).
+
+**Facilitator scorecard:** [`workstreams/sit-in-45-session-log-template.md`](workstreams/sit-in-45-session-log-template.md).
 
 **Goal:** Prove a non-technical operator can run the daily loop and trust Guardian **Confirm** vs **Dismiss**.
 

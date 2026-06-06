@@ -12,7 +12,7 @@ status: planned
 
 **Parent:** [phase_45_farmer_validation_whole_app_polish.plan.md](phase_45_farmer_validation_whole_app_polish.plan.md)
 
-**Protocol (WS1):** [farmer-sit-in-protocol.md](../workstreams/farmer-sit-in-protocol.md)
+**Protocol (WS1):** [farmer-sit-in-protocol.md](../workstreams/farmer-sit-in-protocol.md) · **Session log:** [sit-in-45-session-log-template.md](../workstreams/sit-in-45-session-log-template.md)
 
 **Not in this doc:** Implementing Phase 46 — only **backlog** matcher misses found in sit-in.
 

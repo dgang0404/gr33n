@@ -396,16 +396,18 @@ Operator walkthrough: [operator-tour §7](operator-tour.md#7-supplies-feeding--m
 
 Operator: [operator-tour §8](operator-tour.md#8-getting-started--edge-install-phase-44--shipped) · Guardian: [§6g](operator-tour.md#6g-guardian-during-setup-phase-44--shipped).
 
-### 7.0k Farmer sit-in & PR validation (Phase 45 — planned)
+### 7.0k Farmer sit-in & PR validation (Phase 45 — WS1 shipped)
 
-**Doc stub.** Plans: [`plans/phase_45_farmer_validation_whole_app_polish.plan.md`](plans/phase_45_farmer_validation_whole_app_polish.plan.md) · Guardian: [`plans/phase_45_guardian_pr_spec.md`](plans/phase_45_guardian_pr_spec.md) · Protocol: [`workstreams/farmer-sit-in-protocol.md`](workstreams/farmer-sit-in-protocol.md).
+**Shipped (WS1):** sit-in protocol + facilitator scorecard. Plans: [`plans/phase_45_farmer_validation_whole_app_polish.plan.md`](plans/phase_45_farmer_validation_whole_app_polish.plan.md) · Guardian: [`plans/phase_45_guardian_pr_spec.md`](plans/phase_45_guardian_pr_spec.md) · Protocol: [`workstreams/farmer-sit-in-protocol.md`](workstreams/farmer-sit-in-protocol.md) · Log: [`workstreams/sit-in-45-session-log-template.md`](workstreams/sit-in-45-session-log-template.md).
 
-When shipped:
+**Pending:** live sessions with 2–3 non-technical testers.
+
+When complete:
 
 - Non-technical sit-in validates **`ack_alert`**, **`apply_grow_setup_pack`**, and **Dismiss** (UI-only, no DB write).
 - Matcher misses filed for Phase 46 — not blocking 45 polish.
 
-Operator: [operator-tour §9](operator-tour.md#9-farmer-validation-sit-in-phase-45--planned).
+Operator: [operator-tour §9](operator-tour.md#9-farmer-validation-sit-in-phase-45--ws1-shipped).
 
 ### 7.0l LLM tool proposals (Phase 46 — planned)
 

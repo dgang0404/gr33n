@@ -7,7 +7,7 @@ overview: >
 todos:
   - id: ws1-sit-in-protocol
     content: "WS1: farmer-sit-in-protocol.md — ack, setup pack, dismiss PR paths; 2–3 testers"
-    status: pending
+    status: completed
   - id: ws8-guardian-pr-slice
     content: "WS8: phase_45_guardian_pr_spec — validate three PR paths; matcher gaps → 46"
     status: pending
@@ -36,7 +36,7 @@ isProject: false
 
 ## Status
 
-**Planned.** After [Phases 40–44](farmer_ux_roadmap_40_plus.plan.md) feature work.
+**In progress.** WS1 sit-in protocol **shipped** (facilitator kit + session log); live sessions pending. After [Phases 40–44](farmer_ux_roadmap_40_plus.plan.md) feature work.
 
 **Roadmap:** [farmer_ux_roadmap_40_plus.plan.md](farmer_ux_roadmap_40_plus.plan.md)
 

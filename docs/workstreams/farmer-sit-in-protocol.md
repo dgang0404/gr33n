@@ -3,17 +3,38 @@ name: Farmer sit-in protocol (Phase 45)
 overview: >
   Scripted validation with 2–3 non-technical farmers after Phases 40–44 ship.
   Records confusion, time-on-task, and Guardian PR path success (ack, setup pack, dismiss).
-status: planned
+status: shipped
 parent_plan: phase_45_farmer_validation_whole_app_polish.plan.md
 ---
 
 # Farmer sit-in protocol (Phase 45 WS1)
 
+**Status:** **Shipped** (WS1) — facilitator kit ready; **sessions not yet run** until testers are scheduled.
+
 **Parent:** [phase_45_farmer_validation_whole_app_polish.plan.md](../plans/phase_45_farmer_validation_whole_app_polish.plan.md)
 
 **Guardian PR script detail:** [phase_45_guardian_pr_spec.md](../plans/phase_45_guardian_pr_spec.md)
 
+**Session log (copy-paste):** [sit-in-45-session-log-template.md](sit-in-45-session-log-template.md)
+
 **Related stream:** [sit-in-operator-experience.md](sit-in-operator-experience.md) (ongoing operator pain — this protocol is a **one-time farmer validation** gate for v1)
+
+---
+
+## 0. Facilitator prep (before any session)
+
+| Step | Action |
+|------|--------|
+| 1 | Clone latest `main`; from repo root: **`make dev-stack-fresh-rag`** (or `make dev-stack-fresh` if embeddings skipped) — see [local-operator-bootstrap.md § Guardian-ready demo](../local-operator-bootstrap.md#guardian-ready-demo-after-seed) |
+| 2 | Start API + UI: **`make dev-auth-test`** or **`make restart-local-serve`** |
+| 3 | Register or log in as facilitator; open **gr33n Demo Farm** (farm 1) for **Session A** |
+| 4 | Confirm Guardian drawer opens (sidebar ✨, TopBar, or right-edge tab); **Operate** role if testing Confirm |
+| 5 | Optional Ollama + **`AI_ENABLED`** for grounded chat — matchers for ack/setup pack work without LLM |
+| 6 | **Session B:** create a **new farm** via dashboard (blank profile) or use a dedicated staging tenant — do not reuse demo farm 1 |
+| 7 | Print or duplicate [sit-in-45-session-log-template.md](sit-in-45-session-log-template.md) before the first tester arrives |
+| 8 | Facilitator rule: **no mouse** unless blocked **>3 minutes** — note verbatim quotes |
+
+**Recommended:** [Phase 48](../plans/phase_48_dev_seed_and_small_farm_profiles.plan.md) `small_indoor` profile before sit-in if demo farm has sensor sprawl — not blocking WS1.
 
 ---
 
@@ -115,6 +136,20 @@ Facilitator marks **pass / fail / skip** per path.
 
 **Fail examples:** Operator believes Dismiss = Confirm; afraid to dismiss high-tier card; cannot find Dismiss button on mobile.
 
+### 4.4 UI anchors (facilitator quick reference)
+
+| Path | Entry | UI / code anchor |
+|------|-------|------------------|
+| Ack | Dashboard alert row **Ask Guardian** or starter chip `handle-alert` | `buildSetupStarters` → message `Acknowledge alert #N` · card `data-test="guardian-proposal-card"` · Confirm `data-test="guardian-proposal-confirm"` |
+| Setup pack | Empty zone → **Zone detail** starter `start-grow` or chip *Start a grow in {zone}* | Surface `empty_zone_grow` · message `Add my philodendron to {zone} with a light fertigation program` · `SetupPackProposalCard` inside proposal card |
+| Dismiss | Any pending card in Guardian drawer | `data-test="guardian-proposal-dismiss"` → `data-test="guardian-proposal-dismissed"` · **no** `POST /v1/chat/confirm` |
+
+**Routes (Session A):** `/` Dashboard · `/zones/{id}` zone cockpit · `/comfort-targets` · `/supplies` · `/alerts`
+
+**Routes (Session B):** `/farms/{id}/setup` · `/farms/{id}/zones/new` · `/farms/{id}/devices/new` · Dashboard `GettingStartedChecklist`
+
+**Impact lines (expect operator to read before Confirm):** `ui/src/lib/guardianImpact.js` — ack: *Acknowledge the alert (reversible)*; setup pack: high-tier banner via `SETUP_PACK_HIGH_RISK_COPY`.
+
 ---
 
 ## 5. What we record
@@ -130,7 +165,7 @@ Facilitator marks **pass / fail / skip** per path.
 | `route` | `/zones/3`, Dashboard, … |
 | `matcher_gap` | Phrase that should have proposed but did not → Phase 46 backlog |
 
-Log in spreadsheet or GitHub issues with label `sit-in-45`.
+Log in spreadsheet or GitHub issues with label `sit-in-45`. Use [sit-in-45-session-log-template.md](sit-in-45-session-log-template.md) for the scorecard.
 
 ---
 
@@ -162,6 +197,8 @@ Prefer UI composition fixes; schema only if sit-in proves data model gap.
 
 | Doc | Use |
 |-----|-----|
+| [sit-in-45-session-log-template.md](sit-in-45-session-log-template.md) | Facilitator scorecard |
 | [operator-tour.md](../operator-tour.md) §6, §9 | Operator + validation tour |
 | [guardian-change-requests-guide.md](../guardian-change-requests-guide.md) | PR basics |
+| [local-operator-bootstrap.md](../local-operator-bootstrap.md) | Env + Guardian demo commands |
 | [farmer_ux_roadmap_40_plus.plan.md](../plans/farmer_ux_roadmap_40_plus.plan.md) | Arc context |
