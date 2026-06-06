@@ -41,6 +41,8 @@
       :clear-route="{ path: '/operations/feeding', query: { tab: activeTab } }"
     />
 
+    <GuardianStarterChips :starters="feedingAdminStarters" />
+
     <div class="flex flex-wrap gap-1 bg-zinc-900 border border-zinc-800 rounded-lg p-1 w-fit">
       <button
         v-for="t in tabs"
@@ -196,7 +198,9 @@ import { useFarmStore } from '../stores/farm.js'
 import { useFarmContextStore } from '../stores/farmContext.js'
 import ZoneContextBanner from '../components/ZoneContextBanner.vue'
 import EmptyStateHint from '../components/EmptyStateHint.vue'
+import GuardianStarterChips from '../components/GuardianStarterChips.vue'
 import { parseZoneIdQuery, filterProgramsForZone } from '../lib/zoneContext.js'
+import { buildFeedingAdminStarters } from '../lib/guardianStarters.js'
 import {
   buildProgramAdminCards,
   buildReservoirAdminCards,
@@ -243,6 +247,12 @@ const filteredEcTargets = computed(() =>
 const programCards = computed(() =>
   buildProgramAdminCards(filteredPrograms.value, store.zones, schedules.value),
 )
+
+const feedingAdminStarters = computed(() => buildFeedingAdminStarters({
+  zones: store.zones,
+  zoneContextId: zoneContextId.value,
+  programs: programs.value,
+}))
 
 const reservoirCards = computed(() =>
   buildReservoirAdminCards(filteredReservoirs.value, store.zones),

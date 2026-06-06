@@ -23,6 +23,8 @@
       {{ costPendingWrites }} receipt{{ costPendingWrites === 1 ? '' : 's' }} waiting to sync.
     </p>
 
+    <GuardianStarterChips :starters="moneyStarters" />
+
     <div v-if="loading" class="text-zinc-400 text-sm">Loading money summary…</div>
 
     <template v-else>
@@ -155,6 +157,8 @@ import api from '../api.js'
 import { useFarmStore } from '../stores/farm.js'
 import { useFarmContextStore } from '../stores/farmContext.js'
 import EmptyStateHint from '../components/EmptyStateHint.vue'
+import GuardianStarterChips from '../components/GuardianStarterChips.vue'
+import { buildMoneyHubStarters } from '../lib/guardianStarters.js'
 import {
   FARMER_SPEND_CATEGORIES,
   computeMonthSummary,
@@ -184,6 +188,8 @@ const receiptForm = reactive({
   currency: 'USD',
   is_income: false,
 })
+
+const moneyStarters = buildMoneyHubStarters()
 
 const monthSummary = computed(() => computeMonthSummary(transactions.value))
 

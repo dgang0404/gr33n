@@ -95,7 +95,7 @@ func TestEnrichPromptBlock_NoQueries(t *testing.T) {
 
 func TestReadToolIDs(t *testing.T) {
 	ids := ReadToolIDs()
-	want := []string{"list_unread_alerts", "summarize_zone", "list_plants", "summarize_zone_fertigation"}
+	want := []string{"list_unread_alerts", "summarize_farm_low_stock", "summarize_zone", "list_plants", "summarize_zone_fertigation"}
 	if len(ids) != len(want) {
 		t.Fatalf("unexpected read tool ids: %v", ids)
 	}
@@ -121,6 +121,48 @@ func TestMatchListPlantsIntent(t *testing.T) {
 		got := matchListPlantsIntent(c.q)
 		if got != c.want {
 			t.Fatalf("matchListPlantsIntent(%q) = %v want %v", c.q, got, c.want)
+		}
+	}
+}
+
+func TestMatchSummarizeFarmLowStockIntent(t *testing.T) {
+	cases := []struct {
+		q    string
+		want bool
+	}{
+		{"What's running low?", true},
+		{"low stock on the farm", true},
+		{"supplies low — do I need to restock?", true},
+		{"out of OHN", true},
+		{"Do I need to restock anything?", true},
+		{"What supplies are below their low-stock threshold on this farm?", true},
+		{"list my plants", false},
+		{"show plants on this farm", false},
+		{"summarize zone Flower Room", false},
+	}
+	for _, c := range cases {
+		got := matchSummarizeFarmLowStockIntent(c.q)
+		if got != c.want {
+			t.Fatalf("matchSummarizeFarmLowStockIntent(%q) = %v want %v", c.q, got, c.want)
+		}
+	}
+}
+
+func TestShouldRunSummarizeFarmLowStockReadIntent_Guards(t *testing.T) {
+	cases := []struct {
+		q    string
+		want bool
+	}{
+		{"What's running low?", true},
+		{"list my plants", false},
+		{"tell me about the plant catalog inventory", false},
+		{"summarize zone Flower Room", false},
+		{"is the reservoir running low in Flower Room?", false},
+	}
+	for _, c := range cases {
+		got := shouldRunSummarizeFarmLowStockReadIntent(c.q)
+		if got != c.want {
+			t.Fatalf("shouldRunSummarizeFarmLowStockReadIntent(%q) = %v want %v", c.q, got, c.want)
 		}
 	}
 }

@@ -230,6 +230,20 @@ func pickAlertForIntent(question string, details []UnreadAlertDetail) UnreadAler
 		}
 	}
 	lower := strings.ToLower(question)
+	if strings.Contains(lower, "restock") || strings.Contains(lower, "refill") ||
+		strings.Contains(lower, "reorder") || strings.Contains(lower, "low stock") || strings.Contains(lower, "low-stock") {
+		for _, a := range details {
+			if a.SourceType == "inventory_low_stock" {
+				return a
+			}
+		}
+		for _, a := range details {
+			subj := strings.ToLower(a.Subject)
+			if strings.Contains(subj, "inventory low") || strings.Contains(subj, "low stock") {
+				return a
+			}
+		}
+	}
 	keywords := []string{"humidity", "ohn", "inventory", "light", "schedule"}
 	for _, kw := range keywords {
 		if strings.Contains(lower, kw) {

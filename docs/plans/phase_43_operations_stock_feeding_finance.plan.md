@@ -28,7 +28,7 @@ todos:
     status: completed
   - id: ws8-guardian-pr-slice
     content: "WS8: phase_43_guardian_pr_spec — summarize_farm_low_stock read + ops starters (no new Confirm tools)"
-    status: pending
+    status: completed
 isProject: false
 ---
 
@@ -36,7 +36,7 @@ isProject: false
 
 ## Status
 
-**WS1–WS7 shipped** on `main`. **WS8** (Guardian `summarize_farm_low_stock` + ops starter chips) pending — [phase_43_guardian_pr_spec.md](phase_43_guardian_pr_spec.md).
+**Shipped (WS1–WS8)** on `main`. Guardian read + starters: [phase_43_guardian_pr_spec.md](phase_43_guardian_pr_spec.md).
 
 **Roadmap:** [farmer_ux_roadmap_40_plus.plan.md](farmer_ux_roadmap_40_plus.plan.md)
 
@@ -167,7 +167,7 @@ Starters ≠ Confirm. Matchers for stock PATCH deferred to Phase 46 if sit-in de
 - [x] Zone filter on feeding/supplies (`?zone_id=`)
 - [x] Guardian persona + impact (WS6)
 - [x] operator-tour §7 + §6f + OC-43 (WS7)
-- [ ] Guardian: [phase_43_guardian_pr_spec.md](phase_43_guardian_pr_spec.md) WS8 complete
+- [x] Guardian: [phase_43_guardian_pr_spec.md](phase_43_guardian_pr_spec.md) WS8 complete
 
 ## Related
 

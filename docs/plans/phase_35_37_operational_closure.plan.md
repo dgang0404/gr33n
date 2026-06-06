@@ -275,7 +275,7 @@ Feature detail: [`phase_41_farm_hub_coherence.plan.md`](phase_41_farm_hub_cohere
 
 ## Phase 43 — Operations hub (stock, feeding admin, money)
 
-Feature detail: [`phase_43_operations_stock_feeding_finance.plan.md`](phase_43_operations_stock_feeding_finance.plan.md). **OC-43** closed (WS7). Guardian read + starters remain **WS8** — [phase_43_guardian_pr_spec.md](phase_43_guardian_pr_spec.md).
+Feature detail: [`phase_43_operations_stock_feeding_finance.plan.md`](phase_43_operations_stock_feeding_finance.plan.md). **OC-43** closed (WS7). **WS8** Guardian read + starters shipped — [phase_43_guardian_pr_spec.md](phase_43_guardian_pr_spec.md).
 
 | Area | Status | Notes |
 |------|--------|-------|
@@ -286,6 +286,7 @@ Feature detail: [`phase_43_operations_stock_feeding_finance.plan.md`](phase_43_o
 | Cross-links | ✅ | WS5 — zone Water, Dashboard **Supplies low** chip |
 | Guardian persona + impact | ✅ | WS6 — ops vocabulary, refill task cites input name |
 | OC-43 docs/tests | ✅ | WS7 — operator-tour §7 + §6f, architecture §7.0i, `phase-43-closure.test.js` |
+| Guardian read + starters | ✅ | WS8 — `summarize_farm_low_stock`, ops starter chips, `guardian-ops-starters.test.js` |
 
 ## Phase 47 — Feeding & water plain language
 

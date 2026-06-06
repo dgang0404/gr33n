@@ -6,7 +6,7 @@ overview: >
   No new Confirm write tools; reuse create_task_from_alert for refill tasks.
   Not LLM-tool routing (Phase 46).
 parent_plan: phase_43_operations_stock_feeding_finance.plan.md
-status: planned
+status: shipped
 ---
 
 # Phase 43 — Guardian PR spec (low-stock read + ops starters)

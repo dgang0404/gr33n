@@ -93,7 +93,7 @@ Operations that are **not** yet mirrored into this log (for example JWT secret r
 
 ### Guardian read-tool usage (info log, not persisted) — Phase 33 WS3
 
-Read-only Guardian tools that enrich a grounded chat turn (`list_unread_alerts`, `list_plants`, `summarize_zone`, `summarize_zone_fertigation`) are **not** write actions and do **not** create `user_activity_log` rows or require Confirm. Instead, each firing emits a structured **application info log** (`slog`) so enterprise operators can answer *"who asked Guardian about Flower Room humidity yesterday?"* from their log pipeline (Loki / `docker logs` / journald):
+Read-only Guardian tools that enrich a grounded chat turn (`list_unread_alerts`, `summarize_farm_low_stock`, `list_plants`, `summarize_zone`, `summarize_zone_fertigation`) are **not** write actions and do **not** create `user_activity_log` rows or require Confirm. Instead, each firing emits a structured **application info log** (`slog`) so enterprise operators can answer *"who asked Guardian about Flower Room humidity yesterday?"* from their log pipeline (Loki / `docker logs` / journald):
 
 ```
 level=INFO msg="farm guardian read tool used" event=guardian_tool_read tool_id=summarize_zone farm_id=1 user_id=<uuid> zone_id=3
@@ -102,7 +102,7 @@ level=INFO msg="farm guardian read tool used" event=guardian_tool_read tool_id=s
 | Field | Meaning |
 |-------|---------|
 | `event` | Always `guardian_tool_read` (filter key) |
-| `tool_id` | `list_unread_alerts` \| `list_plants` \| `summarize_zone` \| `summarize_zone_fertigation` |
+| `tool_id` | `list_unread_alerts` \| `summarize_farm_low_stock` \| `list_plants` \| `summarize_zone` \| `summarize_zone_fertigation` |
 | `farm_id` | Farm scope of the turn |
 | `user_id` | Actor when the turn used a user JWT (omitted for dev-bypass / unauthenticated) |
 | `zone_id` | Present for the zone summary tools |

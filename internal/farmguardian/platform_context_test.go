@@ -20,6 +20,7 @@ func TestPlatformContextBlock_ContainsRequiredFacts(t *testing.T) {
 		"summarize_zone",
 		"list_plants",
 		"summarize_zone_fertigation",
+		"summarize_farm_low_stock",
 		"Water / Light / Climate",
 		"pending_command",
 		"Phase 39",

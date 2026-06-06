@@ -22,6 +22,8 @@
     <!-- Phase 41 WS1 — morning cockpit -->
     <FarmMorningStrip :chips="morningChips" />
 
+    <GuardianStarterChips :starters="dashboardOpsStarters" />
+
     <!-- Quick actions -->
     <section class="flex flex-wrap gap-3">
       <router-link to="/tasks?create=1"
@@ -237,9 +239,11 @@ import ActuatorCard from '../components/ActuatorCard.vue'
 import HelpTip from '../components/HelpTip.vue'
 import FarmMorningStrip from '../components/FarmMorningStrip.vue'
 import EmptyStateHint from '../components/EmptyStateHint.vue'
+import GuardianStarterChips from '../components/GuardianStarterChips.vue'
 import { computeFarmMorningSnapshot } from '../lib/farmGrowSummary.js'
 import { sumFarmPendingQueueDepth } from '../lib/farmQueueDepth.js'
-import { listLowStockBatches } from '../lib/suppliesHub.js'
+import { buildDashboardOpsStarters } from '../lib/guardianStarters.js'
+import { filterLowStockAlerts, listLowStockBatches } from '../lib/suppliesHub.js'
 import { scheduleRunsLabel } from '../lib/cronHumanize.js'
 
 const store = useFarmStore()
@@ -257,6 +261,13 @@ const nfInputs = ref([])
 const lowStockCount = computed(() =>
   listLowStockBatches(nfBatches.value, nfInputs.value).length,
 )
+
+const lowStockAlerts = computed(() => filterLowStockAlerts(alerts.value))
+
+const dashboardOpsStarters = computed(() => buildDashboardOpsStarters({
+  lowStockCount: lowStockCount.value,
+  lowStockAlerts: lowStockAlerts.value,
+}))
 
 const morningChips = computed(() =>
   computeFarmMorningSnapshot({

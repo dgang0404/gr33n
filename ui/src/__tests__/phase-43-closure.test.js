@@ -5,6 +5,7 @@ import { describe, it, expect } from 'vitest'
 import { readFileSync, existsSync } from 'node:fs'
 import { join } from 'node:path'
 import { buildNavGroups } from '../lib/navGroups.js'
+import { buildSuppliesHubStarters, buildMoneyHubStarters } from '../lib/guardianStarters.js'
 import { listLowStockBatches, buildSupplyRows } from '../lib/suppliesHub.js'
 import { buildProgramAdminCards } from '../lib/feedingAdminHub.js'
 import { computeMonthSummary } from '../lib/moneyHub.js'
@@ -21,6 +22,16 @@ describe('Phase 43 WS7 / OC-43 — operations hub closure', () => {
     expect(tour).toContain('/operations/supplies')
     expect(arch).toContain('### 7.0i Operations hub — supplies, feeding, money (Phase 43)')
     expect(arch).not.toContain('7.0i Operations hub — supplies, feeding, money (Phase 43 — planned)')
+    expect(tour).toContain('summarize_farm_low_stock')
+  })
+
+  it('WS8 Guardian starters exist for operations hubs', () => {
+    const low = buildSuppliesHubStarters({
+      lowStockRows: [{ inputName: 'OHN' }],
+      zones: [{ id: 1, name: 'Veg' }],
+    })
+    expect(low.some((s) => s.id === 'whats-running-low')).toBe(true)
+    expect(buildMoneyHubStarters()).toHaveLength(1)
   })
 
   it('Operations nav group exposes three farmer hubs', () => {

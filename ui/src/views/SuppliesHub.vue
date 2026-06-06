@@ -25,6 +25,8 @@
       :clear-route="{ path: '/operations/supplies' }"
     />
 
+    <GuardianStarterChips :starters="suppliesStarters" />
+
     <div
       v-if="lowStockRows.length"
       class="rounded-xl border border-amber-800/80 bg-amber-950/40 px-4 py-3 space-y-2"
@@ -158,7 +160,9 @@ import { useFarmStore } from '../stores/farm.js'
 import { useFarmContextStore } from '../stores/farmContext.js'
 import ZoneContextBanner from '../components/ZoneContextBanner.vue'
 import EmptyStateHint from '../components/EmptyStateHint.vue'
+import GuardianStarterChips from '../components/GuardianStarterChips.vue'
 import { parseZoneIdQuery } from '../lib/zoneContext.js'
+import { buildSuppliesHubStarters } from '../lib/guardianStarters.js'
 import {
   buildSupplyRows,
   filterLowStockAlerts,
@@ -175,6 +179,7 @@ const inputs = ref([])
 const batches = ref([])
 const recipes = ref([])
 const alerts = ref([])
+const programs = ref([])
 const mixingComponentsByBatch = ref({})
 
 const zoneContextId = computed(() => parseZoneIdQuery(route.query.zone_id))
@@ -190,6 +195,16 @@ const lowStockAlertLink = computed(() => {
   if (!first) return null
   return { path: '/alerts', query: { highlight: String(first.id) } }
 })
+
+const suppliesStarters = computed(() => buildSuppliesHubStarters({
+  lowStockRows: lowStockRows.value,
+  lowStockAlerts: lowStockAlerts.value,
+  recipes: recipes.value,
+  zones: store.zones,
+  zoneContextId: zoneContextId.value,
+  programs: programs.value,
+  surface: zoneContextId.value ? 'supplies_hub_zone' : 'supplies_hub',
+}))
 
 const logMixLink = computed(() => {
   const q = { tab: 'mixing' }
@@ -246,16 +261,18 @@ async function refresh() {
   loading.value = true
   try {
     if (!store.zones.length) await store.loadAll(fid)
-    const [i, b, r, a] = await Promise.all([
+    const [i, b, r, a, p] = await Promise.all([
       store.loadNfInputs(fid),
       store.loadNfBatches(fid),
       store.loadRecipes(fid),
       store.loadAlerts(fid, { limit: 100 }),
+      store.loadFertigationPrograms(fid),
     ])
     inputs.value = i
     batches.value = b
     recipes.value = r
     alerts.value = a
+    programs.value = p
     await loadMixCounts(fid)
   } finally {
     loading.value = false

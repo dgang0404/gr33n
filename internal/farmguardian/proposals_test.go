@@ -30,3 +30,18 @@ func TestPickAlertForIntent(t *testing.T) {
 		t.Fatalf("pick by id: got %d want 1", got.ID)
 	}
 }
+
+func TestPickAlertForIntent_PrefersLowStockOnRefill(t *testing.T) {
+	details := []UnreadAlertDetail{
+		{ID: 1, Subject: "Humidity high — Flower Room"},
+		{ID: 7, Subject: "Inventory low: OHN at 1.00 (threshold 3.00)", SourceType: "inventory_low_stock"},
+	}
+	got := pickAlertForIntent("Create a refill task from the low stock alert", details)
+	if got.ID != 7 {
+		t.Fatalf("pick refill: got id %d want 7", got.ID)
+	}
+	got = pickAlertForIntent("help me restock supplies", details)
+	if got.ID != 7 {
+		t.Fatalf("pick restock: got id %d want 7", got.ID)
+	}
+}

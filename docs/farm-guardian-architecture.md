@@ -255,6 +255,7 @@ Before the LLM call on grounded turns, [`readtools.go`](../../internal/farmguard
 | `summarize_zone` | Humidity/temp/sensor/zone-status intent + resolved zone name | Latest sensor readings + active cycles for that zone |
 | `list_plants` | List/show plant catalog intent | Up to 20 plant rows (display name, variety) |
 | `summarize_zone_fertigation` | Fertigation/feeding/program intent + resolved zone | Active programs, EC/pH triggers, linked cycle hints for that zone |
+| `summarize_farm_low_stock` | Low-stock / restock intent (not plant catalog) | Batches below threshold via `ListLowStockBatchesByFarm` — input name, remaining, threshold |
 | `summarize_zone_lighting` | Light/photoperiod/18-6/12-12 intent + resolved zone (optional) | Active `lighting_programs`, ON/OFF hours, anchor times, linked schedule ids |
 | `summarize_zone_greenhouse_climate` | Shade/deploy/greenhouse/vent/fan intent + `zone_id` | `greenhouse_climate` profile, linked actuator states, active `GH —` rules, recent shade/fan events (48 h) |
 
@@ -369,7 +370,7 @@ Operator walkthrough: [operator-tour §5c](operator-tour.md#5c-comfort-bands--wh
 
 - Persona + route `context_ref` prefer **Supplies / Feeding (details) / Money** — not Inventory / Fertigation / Costs ([`platform_context.go`](../internal/farmguardian/platform_context.go), [`context_ref.go`](../internal/farmguardian/context_ref.go)).
 - **`create_task_from_alert`** for `inventory_low_stock` — refill task impact cites input name; no new stock write tools.
-- **WS8 (planned):** **`summarize_farm_low_stock`** read enrichment + hub **conversation starters** — spec §2–§3.
+- **WS8 (shipped):** **`summarize_farm_low_stock`** read enrichment + hub **conversation starters** on Supplies / Feeding (details) / Money / Dashboard — spec §2–§3.
 - Stock/cost **writes via chat** when matchers miss → [Phase 46](plans/phase_46_guardian_llm_tool_proposals.plan.md).
 
 Operator walkthrough: [operator-tour §7](operator-tour.md#7-supplies-feeding--money-phase-43) · Guardian: [operator-tour §6f](operator-tour.md#6f-guardian-on-supplies--money-phase-43--shipped).

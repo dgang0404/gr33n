@@ -205,15 +205,15 @@ User intent
 
 **Canonical spec:** [phase_43_guardian_pr_spec.md](phase_43_guardian_pr_spec.md)
 
-**WS6 + WS7 shipped** — persona/route refs, refill impact copy, operator-tour §7 + §6f, architecture §7.0i. **WS8 pending** — read tool + starters below.
+**Shipped (WS6–WS8)** — persona/route refs, refill impact copy, read tool, starters, docs.
 
 | Item | Type | Status |
 |------|------|--------|
 | Persona + route `context_ref` (Supplies / Feeding details / Money) | Backend — WS6 | ✅ |
-| `create_task_from_alert` for refill (existing; optional alert picker) | Backend — spec §4 | ✅ impact copy |
+| `create_task_from_alert` for refill (existing; optional alert picker) | Backend — spec §4 | ✅ |
 | operator-tour §7 + §6f, architecture §7.0i | Docs — WS7 | ✅ |
-| Read enrichment `summarize_farm_low_stock` | Backend — spec §2 | ⏳ WS8 |
-| Starters on Supplies / Feeding / Money (+ dashboard) | UI — spec §3 | ⏳ WS8 |
+| Read enrichment `summarize_farm_low_stock` | Backend — spec §2 | ✅ |
+| Starters on Supplies / Feeding / Money (+ dashboard) | UI — spec §3 | ✅ |
 
 ### Phase 44 — Getting started
 

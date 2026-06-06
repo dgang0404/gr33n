@@ -388,7 +388,7 @@ If you get advice text but **no card**, matchers did not recognize the phrase �
 
 **Shipped (WS6):** Guardian says **Supplies**, **Feeding (details)**, and **Money** — not Inventory / Fertigation / Costs. Route `context_ref` on `/operations/*` hubs steers copy. **`create_task_from_alert`** on low-stock alerts (`inventory_low_stock`) proposes a **refill task** with input name in the impact line.
 
-**Planned (WS8):** Read enrichment **`summarize_farm_low_stock`** (“What’s running low?”) and **conversation starter chips** on Supplies / Feeding / Money / Dashboard — spec §2–§3.
+**Shipped (WS8):** Read enrichment **`summarize_farm_low_stock`** answers “What’s running low?” with input names and quantities (no Confirm). **Starter chips** on Supplies / Feeding (details) / Money / Dashboard (when low stock) open Guardian with job-shaped messages — spec §2–§3.
 
 **PR cards today (existing tools only):**
 
@@ -459,7 +459,7 @@ Architecture: [`farm-guardian-architecture.md`](farm-guardian-architecture.md) �
 
 ## 7. Supplies, feeding & money (Phase 43)
 
-**Shipped.** Hubs WS1–WS7 on `main`; Guardian read tool + starter chips remain **WS8** ([spec](plans/phase_43_guardian_pr_spec.md)). Plan: [`plans/phase_43_operations_stock_feeding_finance.plan.md`](plans/phase_43_operations_stock_feeding_finance.plan.md).
+**Shipped.** Hubs WS1–WS8 on `main` including Guardian read + starters ([spec](plans/phase_43_guardian_pr_spec.md)). Plan: [`plans/phase_43_operations_stock_feeding_finance.plan.md`](plans/phase_43_operations_stock_feeding_finance.plan.md).
 
 **Goal:** One **Operations** area for restock, feeding admin, and receipts — not three separate schema apps.
 

@@ -38,11 +38,12 @@ var (
 	zoneIDPattern = regexp.MustCompile(`(?i)\bzone\s*#?\s*(\d+)\b`)
 	listAlertsIntent = regexp.MustCompile(`(?i)\b(list|show|what are|tell me about|any|how many)\b.*\b(unread\s+)?alerts?\b|\b(unread\s+)?alerts?\b.*\b(list|show|details?)\b`)
 	listPlantsIntent = regexp.MustCompile(`(?i)\b(list|show|what are|tell me about|any|how many|do i have)\b.*\bplants?\b|\bplants?\b.*\b(list|show|catalog|inventory)\b`)
+	summarizeFarmLowStockIntent = regexp.MustCompile(`(?i)(running\s+low|low[\s-]?stock|supplies?\s+low|out\s+of\s+\w+|restock|reorder|below.{0,30}threshold|need\s+to\s+restock|supplies?\s+below)`)
 )
 
 // ReadToolIDs returns registered read-only tool ids for platform context.
 func ReadToolIDs() []string {
-	return []string{"list_unread_alerts", "summarize_zone", "list_plants", "summarize_zone_fertigation"}
+	return []string{"list_unread_alerts", "summarize_farm_low_stock", "summarize_zone", "list_plants", "summarize_zone_fertigation"}
 }
 
 // EnrichPromptBlock runs matching read-only tools and returns extra system
@@ -65,6 +66,15 @@ func EnrichPromptBlock(ctx context.Context, q db.Querier, farmID int64, question
 		} else if block != "" {
 			blocks = append(blocks, block)
 			logReadToolUse(ctx, "list_unread_alerts", farmID)
+		}
+	}
+
+	if shouldRunSummarizeFarmLowStockReadIntent(question) {
+		if block, err := renderSummarizeFarmLowStock(ctx, q, farmID); err != nil {
+			slog.Warn("farm guardian read tool failed", "tool", "summarize_farm_low_stock", "farm_id", farmID, "err", err)
+		} else if block != "" {
+			blocks = append(blocks, block)
+			logReadToolUse(ctx, "summarize_farm_low_stock", farmID)
 		}
 	}
 
@@ -149,6 +159,45 @@ func snapUnreadCountIntent(question string) bool {
 		}
 	}
 	return false
+}
+
+func matchSummarizeFarmLowStockIntent(question string) bool {
+	q := strings.TrimSpace(question)
+	if q == "" {
+		return false
+	}
+	lower := strings.ToLower(q)
+	for _, phrase := range []string{
+		"what supplies are below",
+		"what's running low",
+		"whats running low",
+		"do i need to restock",
+	} {
+		if strings.Contains(lower, phrase) {
+			return true
+		}
+	}
+	return summarizeFarmLowStockIntent.MatchString(q)
+}
+
+// shouldRunSummarizeFarmLowStockReadIntent gates summarize_farm_low_stock enrichment.
+func shouldRunSummarizeFarmLowStockReadIntent(question string) bool {
+	if matchListPlantsIntent(question) {
+		return false
+	}
+	if !matchSummarizeFarmLowStockIntent(question) {
+		return false
+	}
+	lower := strings.ToLower(strings.TrimSpace(question))
+	if shouldRunSummarizeZoneReadIntent(question) &&
+		!strings.Contains(lower, "stock") && !strings.Contains(lower, "suppl") && !strings.Contains(lower, "restock") {
+		return false
+	}
+	if (strings.Contains(lower, "reservoir") || strings.Contains(lower, "nutrient tank")) &&
+		strings.Contains(lower, "low") && !strings.Contains(lower, "stock") {
+		return false
+	}
+	return true
 }
 
 func matchListPlantsIntent(question string) bool {
@@ -363,6 +412,57 @@ func renderListUnreadAlerts(ctx context.Context, q db.Querier, farmID int64) (st
 		b.WriteString(fmt.Sprintf("\n(+ %d more unread alerts not listed)", extra))
 	}
 	return b.String(), nil
+}
+
+func renderSummarizeFarmLowStock(ctx context.Context, q db.Querier, farmID int64) (string, error) {
+	farmLabel := fmt.Sprintf("farm #%d", farmID)
+	if farm, err := q.GetFarmByID(ctx, farmID); err == nil {
+		if name := strings.TrimSpace(farm.Name); name != "" {
+			farmLabel = name
+		}
+	}
+
+	rows, err := q.ListLowStockBatchesByFarm(ctx, farmID)
+	if err != nil {
+		return "", err
+	}
+
+	var b strings.Builder
+	b.WriteString("summarize_farm_low_stock — " + farmLabel)
+	if len(rows) == 0 {
+		b.WriteString("\nNo batches below their low-stock threshold right now.")
+		return b.String(), nil
+	}
+	for _, row := range rows {
+		remaining := formatBatchQuantity(row.CurrentQuantityRemaining)
+		threshold := formatBatchQuantity(row.LowStockThreshold)
+		unit := batchQuantityUnitLabel(row.QuantityUnitID)
+		line := fmt.Sprintf("\n- %s — %s / threshold %s", strings.TrimSpace(row.InputName), remaining, threshold)
+		if unit != "" {
+			line += " " + unit
+		}
+		line += fmt.Sprintf("; batch #%d", row.ID)
+		b.WriteString(line)
+	}
+	return b.String(), nil
+}
+
+func formatBatchQuantity(n pgtype.Numeric) string {
+	if !n.Valid {
+		return "—"
+	}
+	v := numericToFloat64(n)
+	if v == float64(int64(v)) {
+		return strconv.FormatInt(int64(v), 10)
+	}
+	return strconv.FormatFloat(v, 'f', -1, 64)
+}
+
+func batchQuantityUnitLabel(unitID *int64) string {
+	if unitID == nil || *unitID <= 0 {
+		return ""
+	}
+	return fmt.Sprintf("unit#%d", *unitID)
 }
 
 func renderListPlants(ctx context.Context, q db.Querier, farmID int64) (string, error) {

@@ -155,6 +155,167 @@ function tabForSurface(surface) {
 
 export { FEEDING_STARTER_IDS }
 
+/**
+ * Parse "Inventory low: OHN at …" alert subjects (mirrors Go lowStockInputFromSubject).
+ * @param {object} alert
+ */
+export function lowStockInputFromAlert(alert) {
+  const subject = String(alert?.subject_rendered || alert?.subject || '')
+  const prefix = 'Inventory low:'
+  if (!subject.includes(prefix)) return ''
+  const rest = subject.split(prefix)[1]?.trim() || ''
+  const at = rest.indexOf(' at ')
+  return (at > 0 ? rest.slice(0, at) : rest).trim()
+}
+
+function operationsRouteRef(path, name, surface) {
+  return { type: 'route', path, name, surface }
+}
+
+/**
+ * Phase 43 WS8 — Supplies hub Guardian starters.
+ */
+export function buildSuppliesHubStarters({
+  lowStockRows = [],
+  lowStockAlerts = [],
+  recipes = [],
+  zones = [],
+  zoneContextId = null,
+  zoneName = '',
+  programs = [],
+  surface = 'supplies_hub',
+}) {
+  const max = surface === 'supplies_hub_zone' ? 3 : 4
+  const path = zoneContextId ? `/operations/supplies?zone_id=${zoneContextId}` : '/operations/supplies'
+  const routeRef = operationsRouteRef(path, 'Supplies', surface)
+  const name = focusZoneName(zones, zoneContextId, zoneName)
+  const starters = []
+
+  if (lowStockRows.length) {
+    starters.push({
+      id: 'whats-running-low',
+      label: "What's running low?",
+      message: 'What supplies are below their low-stock threshold on this farm?',
+      contextRef: routeRef,
+    })
+  }
+
+  const lowAlert = lowStockAlerts[0]
+  if (lowAlert) {
+    const inputName = lowStockInputFromAlert(lowAlert)
+    starters.push({
+      id: 'refill-from-alert',
+      label: 'Turn alert into refill task',
+      message: `Create a refill task from alert #${lowAlert.id}${inputName ? ` for ${inputName}` : ''}`,
+      contextRef: { ...routeRef, alert_id: lowAlert.id },
+    })
+  }
+
+  if (zoneContextId && programs.some((p) => p.is_active && Number(p.target_zone_id) === Number(zoneContextId))) {
+    starters.push({
+      id: 'feeding-setup-zone',
+      label: 'Feeding setup for this room',
+      message: `Summarize feeding programs and reservoirs for ${name} — what should I check before the next run?`,
+      contextRef: routeRef,
+    })
+  }
+
+  const firstLow = lowStockRows[0]
+  if (firstLow?.inputName && recipes.length) {
+    starters.push({
+      id: 'recipe-reorder',
+      label: 'Which recipe uses this input?',
+      message: `Which mixing recipes use ${firstLow.inputName} and what should I reorder?`,
+      contextRef: routeRef,
+    })
+  }
+
+  if (!starters.some((s) => s.id === 'whats-running-low')) {
+    starters.push({
+      id: 'log-mix-how',
+      label: 'How do I log a mix?',
+      message: 'How do I log a nutrient mix and tie it to inventory on this farm?',
+      contextRef: routeRef,
+    })
+  }
+
+  return dedupeStarters(starters).slice(0, max)
+}
+
+/**
+ * Phase 43 WS8 — Feeding (details) admin hub starters.
+ */
+export function buildFeedingAdminStarters({
+  zones = [],
+  zoneContextId = null,
+  programs = [],
+}) {
+  const path = zoneContextId ? `/operations/feeding?zone_id=${zoneContextId}` : '/operations/feeding'
+  const routeRef = operationsRouteRef(path, 'Feeding (details)', 'feeding_admin')
+  const name = focusZoneName(zones, zoneContextId)
+  const starters = []
+
+  const activeProgram = programs.find(
+    (p) => p.is_active && (zoneContextId == null || Number(p.target_zone_id) === Number(zoneContextId)),
+  )
+  if (activeProgram) {
+    starters.push({
+      id: 'next-feed-schedule',
+      label: 'When does feeding run next?',
+      message: `When does the fertigation schedule for ${name} run next, in plain language?`,
+      contextRef: routeRef,
+    })
+  }
+
+  starters.push({
+    id: 'feeding-admin-overview',
+    label: 'Explain feeding setup',
+    message: zoneContextId
+      ? `Summarize active feeding programs, tanks, and strength targets for ${name}.`
+      : 'Which rooms have active feeding programs I should review before the next run?',
+    contextRef: routeRef,
+  })
+
+  return dedupeStarters(starters).slice(0, 3)
+}
+
+/**
+ * Phase 43 WS8 — Money hub Guardian starters.
+ */
+export function buildMoneyHubStarters() {
+  return [{
+    id: 'month-spend',
+    label: "Explain this month's spend",
+    message: 'Summarize what I spent this month in plain language — no accounting jargon',
+    contextRef: operationsRouteRef('/operations/money', 'Money', 'money_hub'),
+  }]
+}
+
+/**
+ * Phase 43 WS8 — Dashboard starters when supplies are low.
+ */
+export function buildDashboardOpsStarters({ lowStockCount = 0, lowStockAlerts = [] }) {
+  if (!lowStockCount) return []
+  const routeRef = operationsRouteRef('/', 'Dashboard', 'dashboard_ops')
+  const starters = [{
+    id: 'whats-running-low',
+    label: "What's running low?",
+    message: 'What supplies are below their low-stock threshold on this farm?',
+    contextRef: routeRef,
+  }]
+  const lowAlert = lowStockAlerts[0]
+  if (lowAlert) {
+    const inputName = lowStockInputFromAlert(lowAlert)
+    starters.push({
+      id: 'refill-from-alert',
+      label: 'Turn alert into refill task',
+      message: `Create a refill task from alert #${lowAlert.id}${inputName ? ` for ${inputName}` : ''}`,
+      contextRef: { ...routeRef, alert_id: lowAlert.id },
+    })
+  }
+  return dedupeStarters(starters).slice(0, 2)
+}
+
 function targetsRouteRef(zoneContextId, tab = 'bands', surface = 'comfort_hub') {
   const path = zoneContextId
     ? `/comfort-targets?zone_id=${zoneContextId}${tab !== 'bands' ? `&tab=${tab}` : ''}`
