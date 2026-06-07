@@ -69,10 +69,17 @@
           (not per-device). Set the same value in <code class="text-zinc-400">pi_client/config.yaml</code>
           under <code class="text-zinc-400">api.api_key</code>. Your admin can find it in server env / Settings → Pi Client.
         </p>
-        <pre class="text-[11px] text-zinc-300 bg-zinc-950 border border-zinc-800 rounded-lg p-3 overflow-x-auto whitespace-pre-wrap" data-test="device-wizard-config-snippet">{{ configSnippet }}</pre>
-        <button type="button" class="text-xs text-green-400 hover:text-green-300 underline" @click="copySnippet">
-          {{ copied ? 'Copied!' : 'Copy config snippet' }}
-        </button>
+        <p v-if="configLoading" class="text-xs text-zinc-500">Generating config from platform wiring…</p>
+        <p v-if="configError" class="text-xs text-amber-400">{{ configError }}</p>
+        <pre class="text-[11px] text-zinc-300 bg-zinc-950 border border-zinc-800 rounded-lg p-3 overflow-x-auto whitespace-pre-wrap max-h-96" data-test="device-wizard-config-snippet">{{ configYaml }}</pre>
+        <div class="flex flex-wrap gap-3">
+          <button type="button" class="text-xs text-green-400 hover:text-green-300 underline" @click="copySnippet">
+            {{ copied ? 'Copied!' : 'Copy config' }}
+          </button>
+          <button type="button" class="text-xs text-zinc-400 hover:text-zinc-200 underline" @click="downloadConfig" :disabled="!configYaml">
+            Download config.yaml
+          </button>
+        </div>
       </section>
 
       <section class="bg-zinc-900/60 border border-zinc-800 rounded-xl p-4">
@@ -212,6 +219,10 @@ const loadError = ref('')
 const polling = ref(false)
 const pollMessage = ref('')
 const copied = ref(false)
+const configYaml = ref('')
+const configFilename = ref('config.yaml')
+const configLoading = ref(false)
+const configError = ref('')
 const doneMessage = ref('')
 const actuatorsCreated = ref(0)
 const createdDevice = ref(null)
@@ -235,15 +246,39 @@ const deviceTypes = DEVICE_TYPE_OPTIONS
 const actuatorTemplates = DEVICE_ACTUATOR_TEMPLATES
 const piChecklist = PI_FIELD_CHECKLIST
 
-const configSnippet = computed(() => {
+const apiBaseUrl = computed(() => {
+  if (typeof window === 'undefined') return 'http://<api-lan-ip>:8080'
+  return `${window.location.origin.replace(/:\d+$/, ':8080')}`
+})
+
+function fallbackConfigSnippet() {
   if (!createdDevice.value || !farmId.value) return ''
   return buildPiConfigSnippet({
-    baseUrl: typeof window !== 'undefined' ? `${window.location.origin.replace(/:\d+$/, ':8080')}` : 'http://<api-lan-ip>:8080',
+    baseUrl: apiBaseUrl.value,
     farmId: farmId.value,
     deviceId: createdDevice.value.id,
     deviceUid: createdDevice.value.device_uid || form.deviceUid,
   })
-})
+}
+
+async function loadPiConfig() {
+  if (!createdDevice.value?.id) return
+  configLoading.value = true
+  configError.value = ''
+  try {
+    const r = await api.get(`/devices/${createdDevice.value.id}/pi-config`, {
+      params: { base_url: apiBaseUrl.value },
+    })
+    configYaml.value = r.data?.yaml || ''
+    configFilename.value = r.data?.filename || 'config.yaml'
+  } catch (e) {
+    configError.value = e.response?.data?.error || e.message || 'Could not generate config — using minimal snippet.'
+    configYaml.value = fallbackConfigSnippet()
+    configFilename.value = 'config.yaml'
+  } finally {
+    configLoading.value = false
+  }
+}
 
 const deviceOnline = computed(() => isDeviceOnline(createdDevice.value))
 const statusLabel = computed(() => formatDeviceStatusLabel(createdDevice.value))
@@ -301,6 +336,7 @@ async function registerDevice() {
     const device = await store.createDevice(farmId.value, payload)
     createdDevice.value = device
     step.value = 'apikey'
+    await loadPiConfig()
   } catch (e) {
     submitError.value = e.response?.data?.error || e.message || 'Could not register device'
   } finally {
@@ -310,12 +346,24 @@ async function registerDevice() {
 
 async function copySnippet() {
   try {
-    await navigator.clipboard.writeText(configSnippet.value)
+    await navigator.clipboard.writeText(configYaml.value || fallbackConfigSnippet())
     copied.value = true
     setTimeout(() => { copied.value = false }, 2000)
   } catch {
     copied.value = false
   }
+}
+
+function downloadConfig() {
+  const text = configYaml.value || fallbackConfigSnippet()
+  if (!text) return
+  const blob = new Blob([text], { type: 'text/yaml;charset=utf-8' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = configFilename.value || 'config.yaml'
+  a.click()
+  URL.revokeObjectURL(url)
 }
 
 async function pollDevice() {
@@ -378,6 +426,12 @@ onMounted(() => {
 
 watch(() => route.fullPath, () => {
   void ensureFarmContext()
+})
+
+watch(step, (s) => {
+  if (s === 'apikey' && createdDevice.value?.id && !configYaml.value && !configLoading.value) {
+    void loadPiConfig()
+  }
 })
 </script>
 

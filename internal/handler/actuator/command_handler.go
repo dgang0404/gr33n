@@ -10,19 +10,23 @@ import (
 
 	db "gr33n-api/internal/db"
 	"gr33n-api/internal/farmauthz"
+	"gr33n-api/internal/hardware"
 	"gr33n-api/internal/httputil"
 )
 
 // actuatorWithCommands is the list/get response shape including valid_commands.
 type actuatorWithCommands struct {
 	db.Gr33ncoreActuator
-	ValidCommands []string `json:"valid_commands"`
+	ValidCommands []string           `json:"valid_commands"`
+	Wiring        *hardware.Wiring   `json:"wiring"`
 }
 
 func wrapActuatorWithCommands(row db.Gr33ncoreActuator) actuatorWithCommands {
+	w, _ := hardware.ExtractWiring(row.Config)
 	return actuatorWithCommands{
 		Gr33ncoreActuator: row,
 		ValidCommands:     ValidCommands(row.ActuatorType),
+		Wiring:            w,
 	}
 }
 

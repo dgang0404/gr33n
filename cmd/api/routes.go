@@ -228,6 +228,7 @@ func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationwo
 
 	// Sensors
 	mux.Handle("GET /sensors/{id}", jwt(http.HandlerFunc(sensor.Get)))
+	mux.Handle("PATCH /sensors/{id}/wiring", jwt(http.HandlerFunc(sensor.PatchWiring)))
 	mux.Handle("POST /farms/{id}/sensors", jwt(http.HandlerFunc(sensor.Create)))
 	mux.Handle("PUT /sensors/{id}", jwt(http.HandlerFunc(sensor.Update)))
 	mux.Handle("DELETE /sensors/{id}", jwt(http.HandlerFunc(sensor.Delete)))
@@ -237,9 +238,11 @@ func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationwo
 
 	// Devices
 	mux.Handle("GET /devices/{id}", jwt(http.HandlerFunc(device.Get)))
+	mux.Handle("GET /devices/{id}/pi-config", jwt(http.HandlerFunc(device.GetPiConfig)))
 	mux.Handle("POST /farms/{id}/devices", jwt(http.HandlerFunc(device.Create)))
 	mux.Handle("DELETE /devices/{id}", jwt(http.HandlerFunc(device.Delete)))
 	mux.Handle("PATCH /actuators/{id}/state", jwt(http.HandlerFunc(actuator.UpdateState)))
+	mux.Handle("PATCH /actuators/{id}/wiring", jwt(http.HandlerFunc(actuator.PatchWiring)))
 	mux.Handle("GET /actuators/{id}/events", jwt(http.HandlerFunc(actuator.ListEvents)))
 	mux.Handle("PATCH /schedules/{id}/active", jwt(http.HandlerFunc(automation.UpdateScheduleActive)))
 	mux.Handle("PUT /schedules/{id}", jwt(http.HandlerFunc(automation.UpdateSchedule)))

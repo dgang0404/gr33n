@@ -20,11 +20,12 @@ import (
 )
 
 type Handler struct {
-	q *db.Queries
+	q    *db.Queries
+	pool *pgxpool.Pool
 }
 
 func NewHandler(pool *pgxpool.Pool) *Handler {
-	return &Handler{q: db.New(pool)}
+	return &Handler{q: db.New(pool), pool: pool}
 }
 
 // POST /farms/{id}/actuators

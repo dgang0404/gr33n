@@ -430,3 +430,43 @@ func (q *Queries) UpdateSensor(ctx context.Context, arg UpdateSensorParams) (Gr3
 	)
 	return i, err
 }
+
+const updateSensorConfig = `-- name: UpdateSensorConfig :one
+UPDATE gr33ncore.sensors
+SET config = $2, updated_at = NOW()
+WHERE id = $1 AND deleted_at IS NULL
+RETURNING id, device_id, farm_id, zone_id, name, sensor_type, unit_id, hardware_identifier, value_min_expected, value_max_expected, alert_threshold_low, alert_threshold_high, alert_duration_seconds, alert_cooldown_seconds, alert_breach_started_at, reading_interval_seconds, is_calibrated, last_calibration_date, calibration_data, config, meta_data, created_at, updated_at, updated_by_user_id, deleted_at
+`
+
+func (q *Queries) UpdateSensorConfig(ctx context.Context, id int64, config json.RawMessage) (Gr33ncoreSensor, error) {
+	row := q.db.QueryRow(ctx, updateSensorConfig, id, config)
+	var i Gr33ncoreSensor
+	err := row.Scan(
+		&i.ID,
+		&i.DeviceID,
+		&i.FarmID,
+		&i.ZoneID,
+		&i.Name,
+		&i.SensorType,
+		&i.UnitID,
+		&i.HardwareIdentifier,
+		&i.ValueMinExpected,
+		&i.ValueMaxExpected,
+		&i.AlertThresholdLow,
+		&i.AlertThresholdHigh,
+		&i.AlertDurationSeconds,
+		&i.AlertCooldownSeconds,
+		&i.AlertBreachStartedAt,
+		&i.ReadingIntervalSeconds,
+		&i.IsCalibrated,
+		&i.LastCalibrationDate,
+		&i.CalibrationData,
+		&i.Config,
+		&i.MetaData,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.UpdatedByUserID,
+		&i.DeletedAt,
+	)
+	return i, err
+}

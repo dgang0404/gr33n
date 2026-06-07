@@ -342,3 +342,37 @@ func (q *Queries) UpdateActuatorState(ctx context.Context, arg UpdateActuatorSta
 	)
 	return i, err
 }
+
+const updateActuatorConfig = `-- name: UpdateActuatorConfig :one
+UPDATE gr33ncore.actuators
+SET config = $2, updated_at = NOW()
+WHERE id = $1 AND deleted_at IS NULL
+RETURNING id, device_id, farm_id, zone_id, name, actuator_type, hardware_identifier, current_state_numeric, current_state_text, last_known_state_time, last_command_sent_time, feedback_sensor_id, config, meta_data, created_at, updated_at, updated_by_user_id, deleted_at, watts
+`
+
+func (q *Queries) UpdateActuatorConfig(ctx context.Context, id int64, config json.RawMessage) (Gr33ncoreActuator, error) {
+	row := q.db.QueryRow(ctx, updateActuatorConfig, id, config)
+	var i Gr33ncoreActuator
+	err := row.Scan(
+		&i.ID,
+		&i.DeviceID,
+		&i.FarmID,
+		&i.ZoneID,
+		&i.Name,
+		&i.ActuatorType,
+		&i.HardwareIdentifier,
+		&i.CurrentStateNumeric,
+		&i.CurrentStateText,
+		&i.LastKnownStateTime,
+		&i.LastCommandSentTime,
+		&i.FeedbackSensorID,
+		&i.Config,
+		&i.MetaData,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.UpdatedByUserID,
+		&i.DeletedAt,
+		&i.Watts,
+	)
+	return i, err
+}

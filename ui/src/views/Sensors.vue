@@ -15,6 +15,7 @@
             <th class="px-4 py-3 text-left">Sensor</th>
             <th class="px-4 py-3 text-left">Type</th>
             <th class="px-4 py-3 text-left">Zone</th>
+            <th class="px-4 py-3 text-left">Wiring</th>
             <th class="px-4 py-3 text-left">Last Reading</th>
             <th class="px-4 py-3 text-left">Status</th>
           </tr>
@@ -40,6 +41,9 @@
               </span>
             </td>
             <td class="px-4 py-3 text-zinc-400">{{ zoneName(sensor.zone_id) }}</td>
+            <td class="px-4 py-3">
+              <HardwareWiringBadge :entity="sensor" show-empty />
+            </td>
             <td class="px-4 py-3 font-mono text-zinc-200 tabular-nums">
               {{ formatReading(sensor.id) }}
             </td>
@@ -60,6 +64,7 @@
 import { onMounted } from 'vue'
 import { useFarmStore } from '../stores/farm'
 import { useFarmContextStore } from '../stores/farmContext'
+import HardwareWiringBadge from '../components/HardwareWiringBadge.vue'
 
 const store = useFarmStore()
 const farmContext = useFarmContextStore()

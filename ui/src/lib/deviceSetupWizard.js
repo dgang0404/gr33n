@@ -20,7 +20,7 @@ export const PI_FIELD_CHECKLIST = [
   { id: 'api', label: 'API reachable on LAN; PI_API_KEY set on the server' },
   { id: 'pi-os', label: 'Pi OS 64-bit, SSH, NTP/chrony (UTC timestamps)' },
   { id: 'deps', label: 'Edge deps installed — ./scripts/install-pi-edge-deps.sh on the Pi' },
-  { id: 'config', label: 'pi_client/config.yaml — base_url, api_key, farm_id, device id' },
+  { id: 'config', label: 'pi_client/config.yaml — download from wizard or copy; set api_key on the Pi' },
   { id: 'systemd', label: 'systemd gr33n service enabled — journalctl -u gr33n -f' },
   { id: 'readings', label: 'Dashboard Live Sensors update; device shows online after heartbeat' },
   { id: 'relay-test', label: 'One-relay safe bench test (LED) before mains loads' },

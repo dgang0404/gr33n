@@ -71,6 +71,12 @@ UPDATE gr33ncore.sensors
 SET alert_breach_started_at = NULL, updated_at = NOW()
 WHERE id = $1 AND deleted_at IS NULL AND alert_breach_started_at IS NOT NULL;
 
+-- name: UpdateSensorConfig :one
+UPDATE gr33ncore.sensors
+SET config = $2, updated_at = NOW()
+WHERE id = $1 AND deleted_at IS NULL
+RETURNING *;
+
 -- name: SoftDeleteSensor :exec
 UPDATE gr33ncore.sensors
 SET deleted_at = NOW(), updated_at = NOW(), updated_by_user_id = $2

@@ -18,6 +18,12 @@ SELECT * FROM gr33ncore.actuators
 WHERE farm_id = $1 AND deleted_at IS NULL
 ORDER BY name ASC;
 
+-- name: UpdateActuatorConfig :one
+UPDATE gr33ncore.actuators
+SET config = $2, updated_at = NOW()
+WHERE id = $1 AND deleted_at IS NULL
+RETURNING *;
+
 -- name: UpdateActuatorState :one
 UPDATE gr33ncore.actuators
 SET current_state_numeric = $2, current_state_text = $3,

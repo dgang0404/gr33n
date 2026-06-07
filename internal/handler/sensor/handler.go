@@ -72,7 +72,11 @@ func (h *Handler) ListByFarm(w http.ResponseWriter, r *http.Request) {
 	if rows == nil {
 		rows = []db.Gr33ncoreSensor{}
 	}
-	httputil.WriteJSON(w, http.StatusOK, rows)
+	out := make([]sensorResponse, len(rows))
+	for i, row := range rows {
+		out[i] = wrapSensor(row)
+	}
+	httputil.WriteJSON(w, http.StatusOK, out)
 }
 
 func (h *Handler) Get(w http.ResponseWriter, r *http.Request) {
@@ -93,7 +97,7 @@ func (h *Handler) Get(w http.ResponseWriter, r *http.Request) {
 	if !farmauthz.RequireFarmMember(w, r, h.q, s.FarmID) {
 		return
 	}
-	httputil.WriteJSON(w, http.StatusOK, s)
+	httputil.WriteJSON(w, http.StatusOK, wrapSensor(s))
 }
 
 // Duration + cooldown bounds (mirrored in CHECK constraints on gr33ncore.sensors).

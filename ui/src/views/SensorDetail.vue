@@ -175,6 +175,13 @@
             </div>
           </form>
         </div>
+
+        <HardwareWiringPanel
+          :sensor-id="route.params.id"
+          :sensor="sensor"
+          :devices="store.devices"
+          @updated="onWiringUpdated"
+        />
       </template>
     </div>
   </div>
@@ -198,6 +205,7 @@ import api from '../api'
 import { useFarmStore } from '../stores/farm'
 import { useFarmContextStore } from '../stores/farmContext'
 import HelpTip from '../components/HelpTip.vue'
+import HardwareWiringPanel from '../components/HardwareWiringPanel.vue'
 
 ChartJS.register(LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler)
 
@@ -477,6 +485,12 @@ async function loadSensor(id) {
   } catch (e) {
     loadError.value = e.response?.data?.error || e.message || 'Failed to load sensor'
   }
+}
+
+function onWiringUpdated(updated) {
+  sensor.value = updated
+  const idx = store.sensors.findIndex(s => String(s.id) === String(updated.id))
+  if (idx >= 0) store.sensors[idx] = updated
 }
 
 function csvEscape(s) {

@@ -29,6 +29,9 @@
               <p class="text-white text-sm font-medium truncate">{{ actuator.name }}</p>
               <p class="text-zinc-500 text-xs capitalize">{{ actuator.actuator_type }}</p>
               <p class="text-zinc-600 text-[10px]">{{ needLabel(actuator.actuator_type) }}</p>
+              <div class="mt-1">
+                <HardwareWiringBadge :entity="actuator" show-empty />
+              </div>
             </div>
           </div>
           <button
@@ -76,6 +79,7 @@ import { useFarmStore } from '../stores/farm'
 import { useFarmContextStore } from '../stores/farmContext'
 import { actuatorPlantNeed, NEED_META } from '../lib/plantNeeds.js'
 import ActuatorPulseControl from '../components/ActuatorPulseControl.vue'
+import HardwareWiringBadge from '../components/HardwareWiringBadge.vue'
 
 const store = useFarmStore()
 const farmContext = useFarmContextStore()

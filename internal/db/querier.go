@@ -576,6 +576,7 @@ type Querier interface {
 	SumLifecycleDeltasByGroup(ctx context.Context, animalGroupID int64) (int64, error)
 	// Phase 34 — mark a still-pending proposal as replaced by a later revision.
 	SupersedeProposal(ctx context.Context, arg SupersedeProposalParams) (Gr33ncoreGuardianActionProposal, error)
+	UpdateActuatorConfig(ctx context.Context, id int64, config json.RawMessage) (Gr33ncoreActuator, error)
 	UpdateActuatorState(ctx context.Context, arg UpdateActuatorStateParams) (Gr33ncoreActuator, error)
 	UpdateAnimalGroup(ctx context.Context, arg UpdateAnimalGroupParams) (Gr33nanimalsAnimalGroup, error)
 	UpdateAquaponicsLoop(ctx context.Context, arg UpdateAquaponicsLoopParams) (Gr33naquaponicsLoop, error)
@@ -615,6 +616,7 @@ type Querier interface {
 	// pass NULL to leave the existing value untouched. alert_breach_started_at is managed
 	// by the evaluator and is not editable via this query.
 	UpdateSensor(ctx context.Context, arg UpdateSensorParams) (Gr33ncoreSensor, error)
+	UpdateSensorConfig(ctx context.Context, id int64, config json.RawMessage) (Gr33ncoreSensor, error)
 	UpdateSetpoint(ctx context.Context, arg UpdateSetpointParams) (Gr33ncoreZoneSetpoint, error)
 	UpdateTask(ctx context.Context, arg UpdateTaskParams) (Gr33ncoreTask, error)
 	// The autologger may write the cost_transactions row after the
