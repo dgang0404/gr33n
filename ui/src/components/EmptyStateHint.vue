@@ -7,6 +7,7 @@
     {{ config.message }}
     <router-link
       v-if="config.actionLabel && config.actionTo"
+      v-nav-hint="config.actionTo"
       :to="config.actionTo"
       class="text-gr33n-500 hover:text-gr33n-400 hover:underline ml-1"
     >

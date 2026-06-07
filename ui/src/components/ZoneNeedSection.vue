@@ -95,6 +95,7 @@
       <div class="flex items-center justify-between mb-3">
         <h3 class="text-sm font-semibold text-white">Lighting program</h3>
         <router-link
+          v-nav-hint="'/lighting'"
           :to="{ path: '/lighting', query: { zone_id: String(zoneId) } }"
           class="text-xs text-green-600 hover:text-green-400"
         >Lighting →</router-link>
