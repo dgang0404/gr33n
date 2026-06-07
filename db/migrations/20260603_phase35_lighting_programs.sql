@@ -32,6 +32,7 @@ CREATE TABLE IF NOT EXISTS gr33ncore.lighting_programs (
     CONSTRAINT chk_lighting_hours_cycle CHECK (on_hours + off_hours = 24)
 );
 
+DROP TRIGGER IF EXISTS trg_lighting_programs_updated_at ON gr33ncore.lighting_programs;
 CREATE TRIGGER trg_lighting_programs_updated_at
     BEFORE UPDATE ON gr33ncore.lighting_programs
     FOR EACH ROW EXECUTE FUNCTION gr33ncore.set_updated_at();
