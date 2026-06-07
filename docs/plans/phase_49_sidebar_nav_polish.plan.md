@@ -13,7 +13,7 @@ todos:
     content: "WS2: navRelations map — declare related nav items (zones, /feeding, /comfort-targets; controls↔sensors; lighting↔fertigation) consumed by SideNav"
     status: completed
   - id: ws3-hover-wiggle
-    content: "WS3: Hover affordance — on hover/focus of a nav item, gently wiggle/highlight related items; prefers-reduced-motion fallback to static highlight"
+    content: "WS3: Hover affordance — in-page links (v-nav-hint) wiggle their sidebar destination; sidebar self-hover wiggles siblings; prefers-reduced-motion fallback"
     status: completed
   - id: ws4-docs-tests
     content: "WS4: nav-groups.test.js updates, new nav-relations Vitest, phase-49-closure.test.js; operator-tour nav note; OC-49"
@@ -104,14 +104,29 @@ export const NAV_RELATIONS = {
 
 ## WS3 — Hover affordance (the "wiggle")
 
-In [`ui/src/components/SideNav.vue`](../ui/src/components/SideNav.vue):
+**Primary goal (operator intent):** when you hover an **in-page navigation link** — e.g. "Feed & water hub →" or "Advanced feeding →" on the zone Water tab — the **sidebar item that link leads to** wiggles. The user sees *where* a link goes in the global nav without clicking, so they stop "dancing around the UI."
 
-- Track a `hoveredRoute` ref set on `@mouseenter` / `@focus` of each `RouterLink`, cleared on leave/blur.
-- A nav item gets a `is-related` class when its `to` is in `relatedTo(hoveredRoute)`.
-- `is-related` applies a subtle **wiggle** keyframe (small rotate/translate, ~400ms, 1–2 cycles) **plus** a faint highlight ring so the cue survives reduced motion.
+### Cross-component wiring
+
+| Piece | File | Role |
+|-------|------|------|
+| Highlight store | `ui/src/stores/navHighlight.js` | Holds the hinted destination path (Pinia) |
+| `v-nav-hint` directive | `ui/src/directives/navHint.js` | On hover/focus of any link, sets the store to that link's path; clears on leave/blur. Accepts a string path or `{ path, query }` (query ignored) |
+| SideNav consumer | [`ui/src/components/SideNav.vue`](../ui/src/components/SideNav.vue) | Wiggles the sidebar item whose `to` **exactly matches** the hinted path |
+
+Applied to the zone-water links the operator called out — `ZoneNeedSection.vue` (`Feed & water hub →` → `/feeding`; `Advanced feeding →` → `/fertigation`), `ZoneWaterGrowStory.vue` (`Advanced feeding →`), and `FeedingHub.vue` footer (`Feeding details (admin) →` → `/operations/feeding`). Sprinkle `v-nav-hint="to"` on more links over time.
+
+### Secondary: sidebar self-hover (kept)
+
+Hovering a sidebar item still wiggles its declared **siblings** (`relatedTo` from WS2) — zones ↔ feed & water ↔ targets. Same visual treatment, complements the in-page hints.
+
+### Visual treatment ([`SideNav.vue`](../ui/src/components/SideNav.vue))
+
+- A nav item gets the `nav-related` class when it matches the hinted destination **or** is a sibling of the self-hovered item.
+- `nav-related` applies a subtle **wiggle** keyframe (small rotate/translate, ~400ms, 2 cycles) **plus** a faint highlight ring so the cue survives reduced motion.
 - `@media (prefers-reduced-motion: reduce)` → drop the keyframe, keep only the highlight ring.
 - Works collapsed (icon-only) and expanded. No width/layout shift; transform-only animation.
-- Keyboard parity: focusing an item triggers the same related-highlight (accessibility).
+- Keyboard parity: focusing a hinted link or sidebar item triggers the same highlight (accessibility).
 
 ---
 

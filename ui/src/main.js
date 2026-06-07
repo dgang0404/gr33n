@@ -8,9 +8,11 @@ import { setUnauthorizedHandler } from './api/index.js'
 import { useAuthStore } from './stores/auth'
 import { useCapabilitiesStore } from './stores/capabilities'
 import { useGuardianPanelStore } from './stores/guardianPanel'
+import { navHint } from './directives/navHint'
 
 const pinia = createPinia()
 const app = createApp(App).use(pinia).use(router)
+app.directive('nav-hint', navHint)
 
 router.afterEach((to) => {
   useGuardianPanelStore().setRouteFromRouter(to)

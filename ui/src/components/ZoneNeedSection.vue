@@ -13,6 +13,7 @@
           <router-link
             v-for="link in sectionManageLinks"
             :key="link.label"
+            v-nav-hint="link.to"
             :to="link.to"
             class="text-xs text-green-600 hover:text-green-400"
           >

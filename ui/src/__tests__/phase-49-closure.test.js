@@ -36,6 +36,24 @@ describe('Phase 49 WS4 / OC-49 — sidebar nav closure', () => {
     expect(rel).toContain("relatedTo")
   })
 
+  it('SideNav wiggles the sidebar destination of hovered in-page links', () => {
+    const sideNav = readFileSync(join(process.cwd(), 'src/components/SideNav.vue'), 'utf8')
+    expect(sideNav).toContain('navHighlight')
+    expect(sideNav).toContain('useNavHighlightStore')
+  })
+
+  it('nav-hint directive is registered globally', () => {
+    const main = readFileSync(join(process.cwd(), 'src/main.js'), 'utf8')
+    expect(main).toContain("app.directive('nav-hint', navHint)")
+  })
+
+  it('zone water in-page links carry v-nav-hint to their sidebar destination', () => {
+    const needSection = readFileSync(join(process.cwd(), 'src/components/ZoneNeedSection.vue'), 'utf8')
+    expect(needSection).toContain('v-nav-hint="link.to"')
+    const growStory = readFileSync(join(process.cwd(), 'src/components/ZoneWaterGrowStory.vue'), 'utf8')
+    expect(growStory).toContain('v-nav-hint="advancedFeedingLink"')
+  })
+
   it('operator-tour documents Fertigation in Advanced nav', () => {
     const tour = readFileSync(join(repoDocs, 'operator-tour.md'), 'utf8')
     expect(tour).toContain('Fertigation')

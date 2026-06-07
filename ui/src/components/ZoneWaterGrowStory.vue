@@ -6,6 +6,7 @@
         <p class="text-zinc-600 text-xs mt-0.5">Daily feeding plan, last run, and what the Pi is waiting on.</p>
       </div>
       <router-link
+        v-nav-hint="advancedFeedingLink"
         :to="advancedFeedingLink"
         class="text-xs text-zinc-500 hover:text-green-400"
         data-test="feeding-advanced-link"

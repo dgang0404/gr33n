@@ -97,6 +97,7 @@
         Programs, reservoirs, EC targets, mixing log, and recipes live under Advanced feeding.
       </p>
       <router-link
+        v-nav-hint="advancedFeedingLink"
         :to="advancedFeedingLink"
         class="text-xs text-zinc-400 hover:text-green-400 border border-zinc-700 rounded-lg px-3 py-1.5"
         data-test="feeding-advanced-footer"

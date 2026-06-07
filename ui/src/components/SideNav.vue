@@ -82,6 +82,7 @@ import { useAuthStore } from '../stores/auth'
 import { useGuardianProposalsStore } from '../stores/guardianProposals'
 import { buildNavGroups } from '../lib/navGroups.js'
 import { relatedTo } from '../lib/navRelations.js'
+import { useNavHighlightStore } from '../stores/navHighlight'
 import GuardianNavLaunch from './GuardianNavLaunch.vue'
 
 const farmContext = useFarmContextStore()
@@ -131,9 +132,14 @@ const cycleCompareRoute = computed(() => {
 
 const navGroups = computed(() => buildNavGroups(cycleCompareRoute.value))
 
+const navHighlight = useNavHighlightStore()
 const hoveredRoute = ref(null)
 
 function isRelatedNav(route) {
+  // In-page link hover (v-nav-hint) → wiggle the exact sidebar destination,
+  // so the user sees where a "Feed & water hub →" / "Advanced feeding →" link goes.
+  if (navHighlight.route && route === navHighlight.route) return true
+  // Sidebar self-hover → wiggle declared sibling routes (zones ↔ feed ↔ targets).
   if (!hoveredRoute.value || route === hoveredRoute.value) return false
   return relatedTo(hoveredRoute.value).includes(route)
 }
