@@ -62,5 +62,97 @@ if [[ -n "${farm1_sensors:-}" && "${farm1_sensors}" -gt 24 ]]; then
   echo "warn: farm 1 has ${farm1_sensors} active sensors (>24) — consider ./scripts/dev-reset-farm.sh --profile small_indoor" >&2
 fi
 
+gpio_conflicts="$(psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -tAc "
+SELECT count(*) FROM (
+  SELECT farm_id, device_id, gpio_pin
+  FROM (
+    SELECT s.farm_id,
+           (s.config->'wiring'->>'device_id')::bigint AS device_id,
+           (s.config->'wiring'->>'gpio_pin')::int AS gpio_pin,
+           'sensor' AS entity_kind,
+           COALESCE(s.config->'wiring'->>'source', '') AS source
+    FROM gr33ncore.sensors s
+    WHERE s.deleted_at IS NULL
+      AND s.config->'wiring'->>'device_id' IS NOT NULL
+      AND s.config->'wiring'->>'gpio_pin' IS NOT NULL
+    UNION ALL
+    SELECT a.farm_id,
+           (a.config->'wiring'->>'device_id')::bigint,
+           (a.config->'wiring'->>'gpio_pin')::int,
+           'actuator',
+           COALESCE(a.config->'wiring'->>'source', 'gpio_relay')
+    FROM gr33ncore.actuators a
+    WHERE a.deleted_at IS NULL
+      AND a.config->'wiring'->>'device_id' IS NOT NULL
+      AND a.config->'wiring'->>'gpio_pin' IS NOT NULL
+  ) gpio_usage
+  GROUP BY farm_id, device_id, gpio_pin
+  HAVING count(*) > 1
+     AND NOT (count(*) = count(*) FILTER (WHERE entity_kind = 'sensor' AND source = 'dht22'))
+) t;" | tr -d '[:space:]')"
+
+if [[ "${gpio_conflicts:-0}" != "0" ]]; then
+  echo ""
+  echo "error: GPIO pin conflicts on edge devices ($gpio_conflicts groups). Fix wiring in Sensors / Controls or SQL." >&2
+  exit 1
+fi
+
+i2c_conflicts="$(psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -tAc "
+SELECT count(*) FROM (
+  SELECT farm_id, device_id, i2c_channel
+  FROM (
+    SELECT s.farm_id,
+           (s.config->'wiring'->>'device_id')::bigint AS device_id,
+           (s.config->'wiring'->>'i2c_channel')::int AS i2c_channel
+    FROM gr33ncore.sensors s
+    WHERE s.deleted_at IS NULL
+      AND s.config->'wiring'->>'device_id' IS NOT NULL
+      AND s.config->'wiring'->>'i2c_channel' IS NOT NULL
+  ) ch_usage
+  GROUP BY farm_id, device_id, i2c_channel
+  HAVING count(*) > 1
+) t;" | tr -d '[:space:]')"
+
+if [[ "${i2c_conflicts:-0}" != "0" ]]; then
+  echo ""
+  echo "error: I2C channel conflicts on edge devices ($i2c_conflicts groups)." >&2
+  exit 1
+fi
+
+bad_source="$(psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -tAc "
+SELECT count(*) FROM (
+  SELECT id FROM gr33ncore.sensors
+  WHERE deleted_at IS NULL
+    AND config->'wiring'->>'source' IS NOT NULL
+    AND config->'wiring'->>'source' NOT IN ('dht22', 'ads1115', 'mhz19', 'bh1750', 'derived', 'gpio_digital')
+  UNION ALL
+  SELECT id FROM gr33ncore.actuators
+  WHERE deleted_at IS NULL
+    AND config->'wiring'->>'gpio_pin' IS NOT NULL
+    AND COALESCE(config->'wiring'->>'source', 'gpio_relay') NOT IN ('gpio_relay')
+) t;" | tr -d '[:space:]')"
+
+if [[ "${bad_source:-0}" != "0" ]]; then
+  echo ""
+  echo "error: unsupported wiring.source on $bad_source sensor/actuator row(s)." >&2
+  exit 1
+fi
+
+derived_bad="$(psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -tAc "
+SELECT count(*) FROM gr33ncore.sensors s
+CROSS JOIN LATERAL jsonb_each_text(s.config->'wiring'->'inputs') AS inp(key, value)
+WHERE s.deleted_at IS NULL
+  AND s.config->'wiring'->>'source' = 'derived'
+  AND NOT EXISTS (
+      SELECT 1 FROM gr33ncore.sensors t
+      WHERE t.farm_id = s.farm_id AND t.id = (inp.value)::bigint AND t.deleted_at IS NULL
+  );" | tr -d '[:space:]')"
+
+if [[ "${derived_bad:-0}" != "0" ]]; then
+  echo ""
+  echo "error: derived sensor wiring references $derived_bad missing input sensor id(s)." >&2
+  exit 1
+fi
+
 echo ""
-echo "ok  no duplicate zone or sensor names"
+echo "ok  no duplicate zone or sensor names; no wiring pin/channel conflicts"

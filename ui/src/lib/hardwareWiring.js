@@ -40,3 +40,79 @@ export function wiringIsEmpty(wiring) {
     && !wiring.serial_port
     && wiring.device_id == null
 }
+
+function intVal(v) {
+  if (v == null || v === '') return null
+  const n = Number(v)
+  return Number.isFinite(n) ? n : null
+}
+
+function sharedDht22Gpio(a, b) {
+  return a === 'dht22' && b === 'dht22'
+}
+
+function entityWiring(entity) {
+  return resolveWiring(entity)
+}
+
+function sharesGpio(wiring, deviceId, pin) {
+  if (!wiring || wiring.device_id == null || wiring.gpio_pin == null) return false
+  return Number(wiring.device_id) === deviceId && Number(wiring.gpio_pin) === pin
+}
+
+function sharesI2c(wiring, deviceId, channel) {
+  if (!wiring || wiring.device_id == null || wiring.i2c_channel == null) return false
+  return Number(wiring.device_id) === deviceId && Number(wiring.i2c_channel) === channel
+}
+
+/** Client-side pin/channel conflict preview (mirrors API checks). */
+export function findWiringConflict({ wiring, entityType, entityId, sensors = [], actuators = [] }) {
+  if (!wiring || wiring.device_id == null) return null
+  const deviceId = Number(wiring.device_id)
+  const pin = intVal(wiring.gpio_pin)
+  const channel = intVal(wiring.i2c_channel)
+  const source = wiring.source || ''
+
+  if (pin != null) {
+    for (const s of sensors) {
+      if (entityType === 'sensor' && Number(s.id) === Number(entityId)) continue
+      const w = entityWiring(s)
+      if (!sharesGpio(w, deviceId, pin)) continue
+      if (sharedDht22Gpio(source, w?.source)) continue
+      return {
+        entity_type: 'sensor',
+        entity_id: s.id,
+        entity_name: s.name,
+        message: `sensor ${s.id} (${s.name}) already uses this pin/channel on the device`,
+      }
+    }
+    for (const a of actuators) {
+      if (entityType === 'actuator' && Number(a.id) === Number(entityId)) continue
+      const w = entityWiring(a)
+      if (sharesGpio(w, deviceId, pin)) {
+        return {
+          entity_type: 'actuator',
+          entity_id: a.id,
+          entity_name: a.name,
+          message: `actuator ${a.id} (${a.name}) already uses this pin/channel on the device`,
+        }
+      }
+    }
+  }
+
+  if (channel != null && entityType === 'sensor') {
+    for (const s of sensors) {
+      if (Number(s.id) === Number(entityId)) continue
+      const w = entityWiring(s)
+      if (sharesI2c(w, deviceId, channel)) {
+        return {
+          entity_type: 'sensor',
+          entity_id: s.id,
+          entity_name: s.name,
+          message: `sensor ${s.id} (${s.name}) already uses this pin/channel on the device`,
+        }
+      }
+    }
+  }
+  return null
+}

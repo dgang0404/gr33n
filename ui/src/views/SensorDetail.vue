@@ -180,6 +180,8 @@
           :sensor-id="route.params.id"
           :sensor="sensor"
           :devices="store.devices"
+          :sensors="store.sensors"
+          :actuators="store.actuators"
           @updated="onWiringUpdated"
         />
       </template>

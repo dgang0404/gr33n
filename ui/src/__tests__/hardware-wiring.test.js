@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { formatWiringLabel, resolveWiring, wiringIsEmpty } from '../lib/hardwareWiring.js'
+import { formatWiringLabel, findWiringConflict, resolveWiring, wiringIsEmpty } from '../lib/hardwareWiring.js'
 
 describe('hardwareWiring', () => {
   it('formats BCM GPIO label', () => {
@@ -20,5 +20,24 @@ describe('hardwareWiring', () => {
     expect(wiringIsEmpty(null)).toBe(true)
     expect(wiringIsEmpty({})).toBe(true)
     expect(wiringIsEmpty({ source: 'dht22', gpio_pin: 4 })).toBe(false)
+  })
+
+  it('allows shared dht22 gpio and blocks actuator overlap', () => {
+    const sensors = [{ id: 3, name: 'Air Temp', wiring: { source: 'dht22', gpio_pin: 4, device_id: 1 } }]
+    expect(findWiringConflict({
+      wiring: { source: 'dht22', gpio_pin: 4, device_id: 1 },
+      entityType: 'sensor',
+      entityId: 5,
+      sensors,
+    })).toBeNull()
+
+    const actuators = [{ id: 2, name: 'Light', wiring: { gpio_pin: 17, device_id: 1 } }]
+    const hit = findWiringConflict({
+      wiring: { source: 'gpio_relay', gpio_pin: 17, device_id: 1 },
+      entityType: 'sensor',
+      entityId: 9,
+      actuators,
+    })
+    expect(hit?.entity_id).toBe(2)
   })
 })

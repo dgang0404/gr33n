@@ -56,6 +56,21 @@ describe('Phase 50 — hardware wiring visibility', () => {
     expect(wizard).toContain('Download config.yaml')
   })
 
+  it('WS5 sanity report flags wiring conflicts', () => {
+    const sql = readFileSync(join(repoRoot, 'scripts/sql/db_sanity_report.sql'), 'utf8')
+    const sh = readFileSync(join(repoRoot, 'scripts/db-sanity-report.sh'), 'utf8')
+    expect(sql).toContain('GPIO pin conflicts')
+    expect(sql).toContain('derived sensors with missing input')
+    expect(sh).toContain('gpio_conflicts')
+    expect(sh).toContain('i2c_conflicts')
+  })
+
+  it('wiring panel previews conflicts before save', () => {
+    const panel = readFileSync(join(process.cwd(), 'src/components/HardwareWiringPanel.vue'), 'utf8')
+    expect(panel).toContain('conflictPreview')
+    expect(panel).toContain('findWiringConflict')
+  })
+
   it('demo backfill migration exists', () => {
     const mig = readFileSync(
       join(repoRoot, 'db/migrations/20260607_phase50_hardware_wiring_backfill.sql'),

@@ -93,12 +93,13 @@
         />
       </label>
 
+      <p v-if="conflictPreview" class="text-amber-400 text-xs">{{ conflictPreview.message }}</p>
       <p v-if="error" class="text-red-400 text-xs">{{ error }}</p>
 
       <div class="flex flex-wrap gap-2 pt-1">
         <button
           type="submit"
-          :disabled="saving"
+          :disabled="saving || !!conflictPreview"
           class="text-xs px-3 py-1.5 rounded-lg bg-green-700 text-white hover:bg-green-600 disabled:opacity-40"
         >Save wiring</button>
         <button
@@ -123,12 +124,14 @@ import { computed, ref, watch } from 'vue'
 import api from '../api'
 import HelpTip from './HelpTip.vue'
 import HardwareWiringBadge from './HardwareWiringBadge.vue'
-import { resolveWiring, SENSOR_WIRING_SOURCES } from '../lib/hardwareWiring.js'
+import { findWiringConflict, resolveWiring, SENSOR_WIRING_SOURCES } from '../lib/hardwareWiring.js'
 
 const props = defineProps({
   sensorId: { type: [String, Number], required: true },
   sensor: { type: Object, required: true },
   devices: { type: Array, default: () => [] },
+  sensors: { type: Array, default: () => [] },
+  actuators: { type: Array, default: () => [] },
 })
 
 const emit = defineEmits(['updated'])
@@ -143,6 +146,17 @@ const displayWiring = computed(() => resolveWiring(props.sensor))
 const needsGpio = computed(() => ['dht22', 'gpio_digital'].includes(form.value.source))
 const needsI2c = computed(() => form.value.source === 'ads1115')
 const needsSerial = computed(() => form.value.source === 'mhz19')
+
+const conflictPreview = computed(() => {
+  if (!editing.value) return null
+  return findWiringConflict({
+    wiring: buildPayload(),
+    entityType: 'sensor',
+    entityId: props.sensorId,
+    sensors: props.sensors,
+    actuators: props.actuators,
+  })
+})
 
 function emptyForm() {
   return {
