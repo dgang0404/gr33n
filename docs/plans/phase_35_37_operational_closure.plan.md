@@ -72,6 +72,9 @@ todos:
   - id: oc-48-closure
     content: "OC-48: Phase 48 WS7 — dev seed profiles, idempotent seed, reset script, sanity report (close when Phase 48 ships)"
     status: completed
+  - id: oc-49-closure
+    content: "OC-49: Phase 49 WS4 — sidebar nav polish, Fertigation rename, related-route hover (close when Phase 49 ships)"
+    status: completed
 isProject: false
 ---
 
@@ -370,7 +373,18 @@ Feature detail: [`phase_48_dev_seed_and_small_farm_profiles.plan.md`](phase_48_d
 | `db-sanity-report` bloat metrics | ✅ | WS6 — sensors, profile, readings approx |
 | OC-48 docs/smokes | ✅ | WS7 — local-operator-bootstrap, architecture §7.0n, `phase-48-closure.test.js`, `smoke_phase48_test.go` |
 
-**Master roadmap:** [`farmer_ux_roadmap_40_plus.plan.md`](farmer_ux_roadmap_40_plus.plan.md). Closure rows **OC-42 … OC-48** track each phase WS8/WS7 — not pre-40 work. Vocabulary: [`farmer-vocabulary.md`](../farmer-vocabulary.md). Guardian specs: [42](phase_42_guardian_pr_spec.md) · [43](phase_43_guardian_pr_spec.md) · [44](phase_44_guardian_pr_spec.md) · [45](phase_45_guardian_pr_spec.md) · [46](phase_46_guardian_llm_tool_proposals.plan.md).
+## Phase 49 — Sidebar nav polish
+
+Feature detail: [`phase_49_sidebar_nav_polish.plan.md`](phase_49_sidebar_nav_polish.plan.md). **OC-49** closed (WS4). **Phase 49 shipped.**
+
+| Area | Status | Notes |
+|------|--------|-------|
+| Fertigation rename + feeding disambiguation | ✅ | WS1 — Advanced **Fertigation**; Operations **Feeding admin** |
+| `navRelations.js` map | ✅ | WS2 — zones ↔ feed & water ↔ targets; controls ↔ sensors |
+| Related-route hover affordance | ✅ | WS3 — `SideNav.vue` wiggle + `prefers-reduced-motion` fallback |
+| OC-49 docs/tests | ✅ | WS4 — `phase-49-closure.test.js`, `nav-relations.test.js`, operator-tour |
+
+**Master roadmap:** [`farmer_ux_roadmap_40_plus.plan.md`](farmer_ux_roadmap_40_plus.plan.md). Closure rows **OC-42 … OC-49** track each phase WS8/WS7 — not pre-40 work. Vocabulary: [`farmer-vocabulary.md`](../farmer-vocabulary.md). Guardian specs: [42](phase_42_guardian_pr_spec.md) · [43](phase_43_guardian_pr_spec.md) · [44](phase_44_guardian_pr_spec.md) · [45](phase_45_guardian_pr_spec.md) · [46](phase_46_guardian_llm_tool_proposals.plan.md).
 
 ---
 

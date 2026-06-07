@@ -8,16 +8,16 @@ overview: >
 todos:
   - id: ws1-fertigation-rename
     content: "WS1: Rename Advanced 'Feeding (technical)' → 'Fertigation'; disambiguate the three feeding nav labels; keep vocab grep ban (fertigation allowed in Advanced only)"
-    status: pending
+    status: completed
   - id: ws2-route-relationship-map
     content: "WS2: navRelations map — declare related nav items (zones, /feeding, /comfort-targets; controls↔sensors; lighting↔fertigation) consumed by SideNav"
-    status: pending
+    status: completed
   - id: ws3-hover-wiggle
     content: "WS3: Hover affordance — on hover/focus of a nav item, gently wiggle/highlight related items; prefers-reduced-motion fallback to static highlight"
-    status: pending
+    status: completed
   - id: ws4-docs-tests
     content: "WS4: nav-groups.test.js updates, new nav-relations Vitest, phase-49-closure.test.js; operator-tour nav note; OC-49"
-    status: pending
+    status: completed
 isProject: false
 ---
 
@@ -25,7 +25,7 @@ isProject: false
 
 ## Status
 
-**Planned.** UI-only polish. No DB, no API, no Pi. Safe to ship independently of Phase 50.
+**Shipped.** WS1–WS4 complete on `main`. UI-only polish. No DB, no API, no Pi.
 
 **Roadmap:** [farmer_ux_roadmap_40_plus.plan.md](farmer_ux_roadmap_40_plus.plan.md) (polish track, follows Phase 45 whole-app polish).
 
@@ -140,11 +140,11 @@ In [`ui/src/components/SideNav.vue`](../ui/src/components/SideNav.vue):
 
 ## Definition of done
 
-- [ ] Advanced nav reads **Fertigation**; the three feeding entries are unambiguous
-- [ ] No route `to:` paths changed; deep links + Guardian route refs still resolve
-- [ ] Hovering/focusing a related nav item wiggles + highlights its siblings
-- [ ] `prefers-reduced-motion` falls back to static highlight (no animation)
-- [ ] Vitest green; OC-49 closed
+- [x] Advanced nav reads **Fertigation**; the three feeding entries are unambiguous
+- [x] No route `to:` paths changed; deep links + Guardian route refs still resolve
+- [x] Hovering/focusing a related nav item wiggles + highlights its siblings
+- [x] `prefers-reduced-motion` falls back to static highlight (no animation)
+- [x] Vitest green; OC-49 closed
 
 ---
 

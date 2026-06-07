@@ -16,7 +16,7 @@ describe('Phase 40 WS7 — farmer nav groups', () => {
     const ops = groups.find((g) => g.label === 'Operations')
     expect(ops).toBeTruthy()
     expect(ops.items.some((i) => i.label === 'Supplies' && i.to === '/operations/supplies')).toBe(true)
-    expect(ops.items.some((i) => i.label === 'Feeding (details)' && i.to === '/operations/feeding')).toBe(true)
+    expect(ops.items.some((i) => i.label === 'Feeding admin' && i.to === '/operations/feeding')).toBe(true)
     expect(ops.items.some((i) => i.label === 'Money' && i.to === '/operations/money')).toBe(true)
 
     const monitor = groups.find((g) => g.label === 'Monitor')
@@ -41,7 +41,7 @@ describe('Phase 40 WS7 — farmer nav groups', () => {
     const advanced = groups.find((g) => g.label === 'Advanced')
     expect(advanced.items.some((i) => i.label === 'Automations')).toBe(true)
     expect(advanced.items.some((i) => i.label === 'Setpoints (raw)')).toBe(true)
-    expect(advanced.items.some((i) => i.label === 'Feeding (technical)' && i.to === '/fertigation')).toBe(true)
+    expect(advanced.items.some((i) => i.label === 'Fertigation' && i.to === '/fertigation')).toBe(true)
   })
 
   it('uses farmer labels on mobile bottom nav', () => {

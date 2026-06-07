@@ -103,7 +103,7 @@ const labels = {
   '/schedules': 'Schedules',
   '/tasks': 'Tasks',
   '/feeding': 'Feed & water',
-  '/fertigation': 'Feeding (technical)',
+  '/fertigation': 'Fertigation',
   '/inventory': 'Inventory',
   '/alerts': 'Alerts',
   '/plants': 'Plants',

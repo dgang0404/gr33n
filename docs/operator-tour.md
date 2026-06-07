@@ -28,8 +28,8 @@ Think **physical layout → signals → automation → work tracking → feeding
 | **4c. Greenhouse climate** | `/zones/:id`, `/actuators`, `/automation` | **Shade, vents, fans** on `zone_type=greenhouse` — profile in zone meta, typed actuators, lux/temp rules. **Not** supplemental light (see [§5b](#5b-greenhouse-shade-vents-and-fans-phase-36)). |
 | **5. Tasks** | `/tasks` | Human **work items**: inspections, harvest prep, fixes — often the day-to-day spine (see sit-in “tasks-first”). |
 | **6. Feed & water** | `/feeding`, zone **Water** tab | Daily feeding — one card per zone on the hub; per-zone **feeding plan** on **Water** ([§7b](#7b-feeding--water-for-this-zone-phase-47)). |
-| **6b. Operations** | `/operations/supplies`, `/operations/feeding`, `/operations/money` | **Supplies**, **Feeding (details)**, **Money** — restock, farm-wide feeding admin, receipts ([§7](#7-supplies-feeding--money-phase-43)). |
-| **6c. Feeding (technical)** | `/fertigation` under **Advanced** | Full six-tab console — mixing log, crop cycles, bulk program edit. |
+| **6b. Operations** | `/operations/supplies`, `/operations/feeding`, `/operations/money` | **Supplies**, **Feeding admin**, **Money** — restock, farm-wide feeding admin, receipts ([§7](#7-supplies-feeding--money-phase-43)). |
+| **6c. Fertigation** | `/fertigation` under **Advanced** | Full six-tab console — mixing log, crop cycles, bulk program edit. |
 | **7. Guardian (optional AI)** | Side nav `/chat`, drawer robot tab | **Farm Guardian** — grounded Q&A + **change requests** (propose → Confirm). Pending inbox: `/chat?tab=pending`. See [§6](#6-farm-guardian-change-requests-with-your-ok). Starters on **Water** and **Feed & water** for next feed / run now / water-only. |
 
 **Around the edges (same session):** **Alerts** (`/alerts`), **Knowledge** (`/farm-knowledge` — farm-scoped RAG), **Plants / Animals / Aquaponics** when those modules matter, **Settings** / **Catalog** for account and reference data. Legacy **Inventory** / **Costs** routes remain under Advanced for power users.
@@ -42,7 +42,7 @@ Operators think in **what the plant needs**, not database table names:
 
 | Need | Zone tab | Typical hardware | Operator pages |
 |------|----------|------------------|----------------|
-| **Water & feeding** | Water | EC/pH/moisture sensors, irrigation pump | **Zone Water tab**, **Feed & water** hub (`/feeding`); Advanced → Feeding (technical) |
+| **Water & feeding** | Water | EC/pH/moisture sensors, irrigation pump | **Zone Water tab**, **Feed & water** hub (`/feeding`); Advanced → **Fertigation** |
 | **Light** | Light | Grow lights, optional lux/PAR | `/lighting` photoperiod programs |
 | **Air & climate** | Climate | Temp/humidity, fans, vents, shade (greenhouse) | Comfort targets on tab; **Automations** under Advanced |
 
@@ -50,7 +50,7 @@ Each tab shows the **connection chain**: live **reading** → **comfort target**
 
 **Timed pump runs:** most microcontrollers are on/off relays. Use **Run pulse** (N seconds) on a pump in the zone Water tab or on **Controls** — the Pi runs **on → wait → off**. Fertigation programs can set `run_duration_seconds` so automated feeds use the same pulse.
 
-**Navigation:** sidebar **Grow** (**My zones**, **Feed & water**, Supplies) and **Today** (Dashboard, tasks, alerts) are the day-to-day path; **Advanced** holds Automations, Comfort bands, Feeding (technical), Controls, and Sensors for power users.
+**Navigation:** sidebar **Grow** (**My zones**, **Feed & water**, **Targets & schedules**) and **Today** (Dashboard, tasks, alerts) are the day-to-day path; **Advanced** holds Automations, Comfort bands, **Fertigation**, Controls, and Sensors for power users. **Phase 49:** hovering a related sidebar item (e.g. **My zones**) gently highlights its siblings (**Feed & water**, **Targets & schedules**) so linked routes are easier to discover.
 
 **Edge commands (Phase 39):** automation, Guardian Confirm, manual **Controls**, and fertigation **mix-jobs** enqueue to a **FIFO command queue** per device (`device_commands`). The Pi drains **`GET /devices/{id}/commands/next`** in order — **`mix_batch`** nutrient steps, then **pulse** irrigate, without last-write-wins. Legacy **`pending_command`** still works one release as a fallback.
 

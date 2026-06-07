@@ -36,9 +36,16 @@
             :key="item.to"
             :to="item.to"
             class="flex items-center rounded-lg text-sm text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
-            :class="collapsed ? 'justify-center px-0 py-2' : 'gap-3 px-3 py-2'"
+            :class="[
+              collapsed ? 'justify-center px-0 py-2' : 'gap-3 px-3 py-2',
+              isRelatedNav(item.to) ? 'nav-related' : '',
+            ]"
             active-class="bg-gr33n-900 text-gr33n-400 font-semibold"
             :title="item.navTitle ?? (collapsed ? item.label : undefined)"
+            @mouseenter="hoveredRoute = item.to"
+            @mouseleave="hoveredRoute = null"
+            @focus="hoveredRoute = item.to"
+            @blur="onNavBlur"
           >
             <span class="text-lg shrink-0">{{ item.icon }}</span>
             <span v-if="!collapsed" class="flex-1 min-w-0">{{ item.label }}</span>
@@ -74,6 +81,7 @@ import { useFarmContextStore } from '../stores/farmContext'
 import { useAuthStore } from '../stores/auth'
 import { useGuardianProposalsStore } from '../stores/guardianProposals'
 import { buildNavGroups } from '../lib/navGroups.js'
+import { relatedTo } from '../lib/navRelations.js'
 import GuardianNavLaunch from './GuardianNavLaunch.vue'
 
 const farmContext = useFarmContextStore()
@@ -122,4 +130,38 @@ const cycleCompareRoute = computed(() => {
 })
 
 const navGroups = computed(() => buildNavGroups(cycleCompareRoute.value))
+
+const hoveredRoute = ref(null)
+
+function isRelatedNav(route) {
+  if (!hoveredRoute.value || route === hoveredRoute.value) return false
+  return relatedTo(hoveredRoute.value).includes(route)
+}
+
+function onNavBlur() {
+  requestAnimationFrame(() => {
+    if (!document.activeElement?.closest('aside nav')) {
+      hoveredRoute.value = null
+    }
+  })
+}
 </script>
+
+<style scoped>
+.nav-related {
+  color: rgb(74 222 128);
+  box-shadow: inset 0 0 0 1px rgb(34 197 94 / 0.45);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .nav-related {
+    animation: nav-related-wiggle 0.4s ease-in-out 2;
+  }
+}
+
+@keyframes nav-related-wiggle {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-2px) rotate(-1deg); }
+  75% { transform: translateX(2px) rotate(1deg); }
+}
+</style>

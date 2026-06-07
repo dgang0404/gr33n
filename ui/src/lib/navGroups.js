@@ -57,7 +57,7 @@ export function buildNavGroups(cycleCompareRoute) {
         {
           to: '/operations/feeding',
           icon: '💦',
-          label: 'Feeding (details)',
+          label: 'Feeding admin',
           navTitle: 'Programs, reservoirs, EC targets, and mixing log — farm-wide admin',
         },
         {
@@ -103,8 +103,8 @@ export function buildNavGroups(cycleCompareRoute) {
         {
           to: '/fertigation',
           icon: '💦',
-          label: 'Feeding (technical)',
-          navTitle: 'Programs, reservoirs, EC targets, mixing log — power users',
+          label: 'Fertigation',
+          navTitle: 'Fertigation console — programs, reservoirs, EC targets, mixing log',
         },
         {
           to: '/actuators',

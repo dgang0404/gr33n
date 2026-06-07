@@ -7,6 +7,7 @@ import {
   GROW_PATH_ZONE_LABELS,
   GROW_PATH_GENERIC_ROOM_BANS,
 } from '../lib/farmerVocabulary.js'
+import { buildNavGroups } from '../lib/navGroups.js'
 
 const uiSrc = join(process.cwd(), 'src')
 
@@ -120,6 +121,14 @@ describe('Phase 47 WS5 + Phase 45 WS3 — grow-path farmer vocabulary', () => {
   it('allows zone display names containing Room', () => {
     expect(findGrowPathVocabularyViolations('When is the next feed for Flower Room?')).toEqual([])
     expect(findGrowPathVocabularyViolations('Start a grow in Veg Room')).toEqual([])
+  })
+
+  it('Phase 49 — allows Fertigation in Advanced nav only', () => {
+    const advanced = buildNavGroups('/farms/1/crop-cycles/compare').find((g) => g.label === 'Advanced')
+    expect(advanced.items.some((i) => i.label === 'Fertigation' && i.to === '/fertigation')).toBe(true)
+
+    const grow = buildNavGroups('/farms/1/crop-cycles/compare').find((g) => g.label === 'Grow')
+    expect(grow.items.some((i) => /fertigation/i.test(i.label))).toBe(false)
   })
 
   it('only scans vue templates, not script blocks', () => {
