@@ -33,6 +33,7 @@ func ActionProposalFromRow(row db.Gr33ncoreGuardianActionProposal) ActionProposa
 		Revision:         int(row.Revision),
 		Status:           row.Status,
 		OperatorProvided: meta.OperatorProvided,
+		LLMSourced:       meta.LLMSourced,
 	}
 	if row.SupersedesProposalID.Valid {
 		ap.SupersedesProposalID = uuidString(row.SupersedesProposalID.Bytes)

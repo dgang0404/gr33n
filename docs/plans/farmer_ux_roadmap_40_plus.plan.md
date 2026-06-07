@@ -41,10 +41,9 @@ isProject: false
 
 | Status | Phases |
 |--------|--------|
-| **Shipped** | 40, 41, 47, 42, **43** (WS1–WS8) |
-| **Next feature code** | **[44](phase_44_getting_started_edge_wizard.plan.md)** — Getting started + edge wizards |
-| **Parallel infra** | **[48](phase_48_dev_seed_and_small_farm_profiles.plan.md)** — dev seed hygiene (recommended before 45 sit-in) |
-| **Then** | 44 → 45 → 46 |
+| **Shipped** | 40–45, 47 (farmer UX arc) |
+| **Next feature code** | **[46](phase_46_guardian_llm_tool_proposals.plan.md)** — Guardian LLM tool proposals (WS1 policy shipped) |
+| **Parallel infra** | **[48](phase_48_dev_seed_and_small_farm_profiles.plan.md)** — dev seed hygiene |
 
 ---
 

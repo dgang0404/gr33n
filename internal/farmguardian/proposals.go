@@ -37,6 +37,7 @@ type ActionProposal struct {
 	Status               string         `json:"status,omitempty"`
 	OperatorProvided     []OperatorFact `json:"operator_provided,omitempty"`
 	ImpactSummary        []string       `json:"impact_summary,omitempty"`
+	LLMSourced           bool           `json:"llm_sourced,omitempty"`
 }
 
 // OperatorFact is a ground-truth value the operator asserts that Guardian cannot
@@ -53,6 +54,7 @@ type OperatorFact struct {
 // proposalMeta is the JSONB shape persisted in guardian_action_proposals.meta.
 type proposalMeta struct {
 	OperatorProvided []OperatorFact `json:"operator_provided,omitempty"`
+	LLMSourced       bool           `json:"llm_sourced,omitempty"`
 }
 
 var (
@@ -150,11 +152,12 @@ type insertProposalInput struct {
 	revision   int32
 	supersedes uuid.UUID // uuid.Nil for a first draft
 	facts      []OperatorFact
+	llmSourced bool
 }
 
 func insertProposal(ctx context.Context, q db.Querier, in insertProposalInput) (db.Gr33ncoreGuardianActionProposal, error) {
 	argsJSON, _ := json.Marshal(in.args)
-	metaJSON := marshalProposalMeta(in.facts)
+	metaJSON := marshalProposalMeta(in.facts, in.llmSourced)
 	expires := time.Now().UTC().Add(ProposalTTL)
 	var sessUUID pgtype.UUID
 	if in.sessionID != uuid.Nil {
@@ -183,11 +186,11 @@ func insertProposal(ctx context.Context, q db.Querier, in insertProposalInput) (
 	})
 }
 
-func marshalProposalMeta(facts []OperatorFact) []byte {
-	if len(facts) == 0 {
+func marshalProposalMeta(facts []OperatorFact, llmSourced bool) []byte {
+	if len(facts) == 0 && !llmSourced {
 		return []byte("{}")
 	}
-	b, err := json.Marshal(proposalMeta{OperatorProvided: facts})
+	b, err := json.Marshal(proposalMeta{OperatorProvided: facts, LLMSourced: llmSourced})
 	if err != nil || len(b) == 0 {
 		return []byte("{}")
 	}

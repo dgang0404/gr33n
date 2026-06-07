@@ -7,7 +7,7 @@ overview: >
 todos:
   - id: ws1-policy
     content: "WS1: Hybrid policy — matchers first; LLM proposal only on miss + Operate + allowlist"
-    status: pending
+    status: completed
   - id: ws2-schema
     content: "WS2: JSON schema per registry tool; server validation + risk tier replay"
     status: pending
@@ -30,7 +30,7 @@ isProject: false
 
 ## Status
 
-**Planned — after [Phase 45](phase_45_farmer_validation_whole_app_polish.plan.md).** Sits **after** farmer UX arc 40–47 (feature phases 40–45 + feeding language 47) and sit-in validation.
+**In progress.** WS1 hybrid policy shipped (`proposals_llm.go`). After [Phase 45](phase_45_farmer_validation_whole_app_polish.plan.md) farmer UX arc.
 
 **Canonical implementation spec:** this document (full phase = Guardian slice).
 
@@ -72,6 +72,12 @@ Starters improve **what you ask**. Matchers improve **deterministic** cards. Pha
 | **Risk tiers** | [`tools/risk.go`](../../internal/farmguardian/tools/risk.go) — UI warnings unchanged |
 | **Matchers first** | If `matchFreshProposal` returns ok → **do not** call LLM proposal path |
 | **Role gates** | `RequiresOperate` / `RequiresAdmin` on registry — LLM cannot bypass |
+
+---
+
+## WS1 — Hybrid policy ✅
+
+**Shipped:** `internal/farmguardian/proposals_llm.go` — `GUARDIAN_LLM_PROPOSALS` env flag, `ShouldAttemptLLMProposal`, `HasWriteIntent`, v1 allowlist §5, `ParseLLMProposalFromAssistant`, `ValidateLLMProposalDraft`, `TryBuildLLMProposalsFromAssistant` (handler hook in WS3). Tests: `proposals_llm_test.go`, `phase-46-ws1-policy.test.js`.
 
 ---
 
