@@ -192,5 +192,6 @@ func TryBuildLLMProposalsFromAssistant(
 	if err != nil {
 		return nil, err
 	}
+	LogLLMProposalSuggested(farmID, draft.Tool)
 	return []ActionProposal{ActionProposalFromRow(row)}, nil
 }

@@ -10,14 +10,18 @@ const repoDocs = join(repoRoot, 'docs')
 const internal = join(repoRoot, 'internal/farmguardian')
 
 describe('Phase 46 WS2 — schema validation closure', () => {
-  it('proposals_llm_validate.go implements schema + bind + reject log', () => {
+  it('proposals_llm_validate.go implements schema + bind', () => {
     const src = readFileSync(join(internal, 'proposals_llm_validate.go'), 'utf8')
     expect(src).toContain('validateLLMProposalSchema')
     expect(src).toContain('bindLLMProposalFarmIDs')
-    expect(src).toContain('LogLLMProposalRejected')
-    expect(src).toContain('guardian_llm_proposal_rejected')
     expect(src).toContain('GetFertigationProgramByID')
     expect(src).toContain('LLM patch_rule only allows is_active false v1')
+  })
+
+  it('reject log lives in proposals_observability.go (WS5)', () => {
+    const src = readFileSync(join(internal, 'proposals_observability.go'), 'utf8')
+    expect(src).toContain('LogLLMProposalRejected')
+    expect(src).toContain('guardian_llm_proposal_rejected')
   })
 
   it('TryBuildLLMProposalsFromAssistant logs rejections', () => {

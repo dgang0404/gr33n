@@ -3,7 +3,6 @@ package farmguardian
 import (
 	"context"
 	"errors"
-	"log/slog"
 	"math"
 	"strings"
 
@@ -41,15 +40,6 @@ func ValidateLLMProposalDraft(
 		}
 	}
 	return ""
-}
-
-// LogLLMProposalRejected records validation failures (WS2 step 7).
-func LogLLMProposalRejected(farmID int64, tool, reason string) {
-	slog.Warn("guardian_llm_proposal_rejected",
-		"farm_id", farmID,
-		"tool", tool,
-		"reason", reason,
-	)
 }
 
 func validateLLMProposalCore(draft LLMProposalDraft, hasAdmin bool) string {

@@ -19,7 +19,7 @@ todos:
     status: completed
   - id: ws5-observability
     content: "WS5: Metrics — llm_proposal_suggested, rejected_validation, matcher_hit"
-    status: pending
+    status: completed
   - id: ws6-docs
     content: "WS6: guardian-change-requests-guide §LLM; operator-tour §6h; architecture §7.0k; OC-46"
     status: pending
@@ -30,7 +30,7 @@ isProject: false
 
 ## Status
 
-**In progress.** WS1–WS4 shipped (policy, schema/binding, handler, safety tests). WS5 observability next.
+**In progress.** WS1–WS5 shipped (policy, schema/binding, handler, safety tests, observability). WS6 docs/OC-46 next.
 
 **Canonical implementation spec:** this document (full phase = Guardian slice).
 
@@ -238,13 +238,15 @@ Happy path: `TestPhase46WS4_LLMHappyPathPatchFertigationProgram` — `patch_fert
 
 ---
 
-## 10. Observability (WS5)
+## WS5 — Observability ✅
+
+**Shipped:** `proposals_observability.go` — structured `slog` on matcher insert (`LogMatcherProposalHit`), LLM insert (`LogLLMProposalSuggested`), and validation reject (`LogLLMProposalRejected`). Wired from `proposals.go` + `proposals_llm.go`. Documented in [audit-events-operator-playbook.md](../audit-events-operator-playbook.md). Tests: `proposals_observability_test.go`, `phase-46-ws5-observability.test.js`.
 
 | Metric / log | Use |
 |--------------|-----|
-| `guardian_llm_proposal_suggested` | Count by tool |
-| `guardian_llm_proposal_rejected` | Validation reason |
-| `guardian_matcher_proposal_hit` | Compare rates |
+| `guardian_llm_proposal_suggested` | Count by `tool` |
+| `guardian_llm_proposal_rejected` | Group by `reason` |
+| `guardian_matcher_proposal_hit` | Compare matcher vs LLM rates |
 
 ---
 

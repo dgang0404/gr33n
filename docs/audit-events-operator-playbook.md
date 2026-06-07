@@ -109,6 +109,24 @@ level=INFO msg="farm guardian read tool used" event=guardian_tool_read tool_id=s
 
 This is observability only; persisting read history to a queryable DB table is intentionally **out of scope** (revisit if an enterprise requires retained read trails).
 
+### Guardian proposal observability (info/warn log, not persisted) — Phase 46 WS5
+
+Hybrid-C proposal paths emit structured **`slog`** lines so operators can compare matcher vs LLM suggestion rates in Loki / `docker logs` / journald. These are **not** `user_activity_log` rows — Confirm still gates execution.
+
+```
+level=INFO msg="guardian_matcher_proposal_hit" event=guardian_matcher_proposal_hit farm_id=1 tool=ack_alert
+level=INFO msg="guardian_llm_proposal_suggested" event=guardian_llm_proposal_suggested farm_id=1 tool=patch_fertigation_program
+level=WARN msg="guardian_llm_proposal_rejected" event=guardian_llm_proposal_rejected farm_id=1 tool=patch_fertigation_program reason="program_id not on farm"
+```
+
+| `event` / `msg` | When | Key fields |
+|-----------------|------|------------|
+| `guardian_matcher_proposal_hit` | Rule-assisted matcher inserted a fresh proposal | `farm_id`, `tool` |
+| `guardian_llm_proposal_suggested` | Validated LLM JSON inserted an `llm_sourced` proposal | `farm_id`, `tool` |
+| `guardian_llm_proposal_rejected` | LLM JSON failed schema/binding/policy before insert | `farm_id`, `tool`, `reason` |
+
+Filter examples: `{event="guardian_matcher_proposal_hit"}`, `{event="guardian_llm_proposal_rejected"}` grouped by `reason`.
+
 ## Storage and retention
 
 - Physical table: `gr33ncore.user_activity_log` (hypertable on `activity_time` when TimescaleDB is enabled in your deployment).

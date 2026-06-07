@@ -106,6 +106,7 @@ func BuildRuleAssistedProposals(
 	if err != nil {
 		return nil, err
 	}
+	LogMatcherProposalHit(farmID, toolID)
 	return []ActionProposal{ActionProposalFromRow(row)}, nil
 }
 
