@@ -1,7 +1,7 @@
 <template>
   <div class="p-6 space-y-6">
     <div>
-      <router-link to="/sensors" class="text-xs text-zinc-500 hover:text-zinc-300">&larr; Back to sensors</router-link>
+      <router-link v-nav-hint="'/sensors'" to="/sensors" class="text-xs text-zinc-500 hover:text-zinc-300">&larr; Back to sensors</router-link>
       <div v-if="loadError" class="mt-4 rounded-lg border border-red-900/50 bg-red-950/30 px-4 py-3 text-red-300 text-sm">
         {{ loadError }}
       </div>

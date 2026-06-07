@@ -12,6 +12,7 @@
         </span>
       </div>
       <router-link
+        v-nav-hint="'/alerts'"
         :to="{ path: '/alerts', query: { zone_id: String(zoneId) } }"
         class="text-xs text-green-600 hover:text-green-400"
       >

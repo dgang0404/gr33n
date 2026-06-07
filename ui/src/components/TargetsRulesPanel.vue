@@ -50,7 +50,7 @@
       >
         Greenhouse templates on zone Climate tab →
       </router-link>
-      <router-link to="/automation" class="text-green-600 hover:text-green-400">
+      <router-link v-nav-hint="'/automation'" to="/automation" class="text-green-600 hover:text-green-400">
         Advanced automations →
       </router-link>
     </div>

@@ -7,10 +7,12 @@
       </div>
       <div class="flex gap-3 text-xs">
         <router-link
+          v-nav-hint="'/comfort-targets'"
           :to="{ path: '/comfort-targets', query: { zone_id: String(zoneId), tab: 'rules' } }"
           class="text-zinc-500 hover:text-green-400"
         >Automations →</router-link>
         <router-link
+          v-nav-hint="'/comfort-targets'"
           :to="{ path: '/comfort-targets', query: { zone_id: String(zoneId), tab: 'schedules' } }"
           class="text-zinc-500 hover:text-green-400"
         >What runs when →</router-link>

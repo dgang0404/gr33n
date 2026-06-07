@@ -5,7 +5,7 @@
         <h3 class="text-sm font-semibold text-white">Comfort targets</h3>
         <p class="text-zinc-600 text-xs mt-0.5">How comfortable this zone should be — min, ideal, and max.</p>
       </div>
-      <router-link to="/comfort-targets" class="text-xs text-zinc-500 hover:text-green-400">
+      <router-link v-nav-hint="'/comfort-targets'" to="/comfort-targets" class="text-xs text-zinc-500 hover:text-green-400">
         All zones →
       </router-link>
     </div>

@@ -5,7 +5,7 @@
     data-test="zone-context-banner"
   >
     <nav class="text-zinc-400 mb-1" aria-label="Breadcrumb">
-      <router-link to="/zones" class="hover:text-green-400">Zones</router-link>
+      <router-link v-nav-hint="'/zones'" to="/zones" class="hover:text-green-400">Zones</router-link>
       <span class="mx-1">›</span>
       <router-link :to="zoneRoute" class="hover:text-green-400">{{ zoneName }}</router-link>
       <span class="mx-1">›</span>

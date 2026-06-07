@@ -77,7 +77,7 @@
 
     <p class="text-xs text-zinc-600">
       Need cron strings or preconditions?
-      <router-link to="/schedules" class="text-green-600 hover:text-green-400">Advanced schedules →</router-link>
+      <router-link v-nav-hint="'/schedules'" to="/schedules" class="text-green-600 hover:text-green-400">Advanced schedules →</router-link>
     </p>
   </div>
 </template>

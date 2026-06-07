@@ -38,6 +38,7 @@
         </span>
         <router-link
           v-if="!item.done"
+          v-nav-hint="item.to"
           :to="item.to"
           class="text-zinc-200 hover:text-green-300 transition-colors min-h-[44px] sm:min-h-0 inline-flex items-center"
           :aria-label="`Getting started: ${item.label}`"

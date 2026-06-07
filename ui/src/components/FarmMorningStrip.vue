@@ -11,6 +11,7 @@
       <router-link
         v-for="chip in chips"
         :key="chip.id"
+        v-nav-hint="chip.to"
         :to="chip.to"
         class="flex items-center gap-2 rounded-lg border px-3 py-2 min-w-[8.5rem] transition-colors hover:border-gr33n-800/80"
         :class="chipClass(chip)"

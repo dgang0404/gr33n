@@ -6,7 +6,7 @@
     </div>
     <p class="text-zinc-500 text-sm mb-6 max-w-2xl">
       Manual switches for pumps, lights, and fans. For a connected view (sensor → target → automation),
-      open a <router-link to="/zones" class="text-green-600 hover:text-green-400">zone</router-link>
+      open a <router-link v-nav-hint="'/zones'" to="/zones" class="text-green-600 hover:text-green-400">zone</router-link>
       and use the Water / Light / Climate tabs.
     </p>
 

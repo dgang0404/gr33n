@@ -2,7 +2,7 @@
   <div class="p-6 space-y-6">
     <div class="flex items-center justify-between">
       <div>
-        <router-link to="/zones" class="text-xs text-zinc-500 hover:text-zinc-300">&larr; Back to zones</router-link>
+        <router-link v-nav-hint="'/zones'" to="/zones" class="text-xs text-zinc-500 hover:text-zinc-300">&larr; Back to zones</router-link>
         <h1 class="text-xl font-semibold text-white mt-1">{{ zone?.name || 'Zone' }}</h1>
         <p class="text-zinc-500 text-sm">{{ zone?.description || 'No description' }}</p>
         <p class="text-zinc-600 text-xs mt-1">

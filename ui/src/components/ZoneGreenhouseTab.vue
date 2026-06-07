@@ -32,7 +32,7 @@
       <h2 class="text-sm font-semibold text-white">Greenhouse climate profile</h2>
       <p class="text-zinc-500 text-xs">
         Block sun and ventilation are separate from supplemental lighting
-        (<router-link to="/lighting" class="text-green-600 hover:text-green-400">Lighting programs</router-link>).
+        (<router-link v-nav-hint="'/lighting'" to="/lighting" class="text-green-600 hover:text-green-400">Lighting programs</router-link>).
       </p>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <label class="block">
@@ -165,7 +165,7 @@
           >
             {{ applyingTemplates ? 'Applying…' : 'Clone GH templates' }}
           </button>
-          <router-link to="/automation" class="text-xs text-green-600 hover:text-green-400">Automation →</router-link>
+          <router-link v-nav-hint="'/automation'" to="/automation" class="text-xs text-green-600 hover:text-green-400">Automation →</router-link>
         </div>
       </div>
       <p v-if="templateMsg" class="text-xs mb-2" :class="templateError ? 'text-red-400' : 'text-green-400'">{{ templateMsg }}</p>

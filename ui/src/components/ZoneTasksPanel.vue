@@ -10,7 +10,7 @@
           {{ dueToday.length }}
         </span>
       </div>
-      <router-link :to="tasksLink" class="text-xs text-green-600 hover:text-green-400">
+      <router-link v-nav-hint="'/tasks'" :to="tasksLink" class="text-xs text-green-600 hover:text-green-400">
         All tasks →
       </router-link>
     </div>

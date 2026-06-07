@@ -47,6 +47,7 @@
                 <p class="text-xs text-zinc-600 mt-1">Last trigger: {{ s.last_triggered_time || 'never' }}</p>
                 <div class="flex flex-wrap gap-2 mt-1.5">
                   <router-link v-if="scheduleProgram(s.id)"
+                    v-nav-hint="{ path: '/fertigation' }"
                     :to="{ path: '/fertigation', query: { tab: 'programs' } }"
                     class="text-[11px] px-1.5 py-0.5 rounded bg-green-900/40 text-green-400 border border-green-800/50 hover:bg-green-900/70">
                     Program: {{ scheduleProgram(s.id).name }}
