@@ -409,13 +409,22 @@ Guardian **cannot** adjust batch quantities or post receipts via Confirm — use
 - **Grow setup pack** — same Confirm bundle as [§6b](#6b-grow-setup-via-guardian-phase-32); use after the room exists.
 - **Bootstrap template** — apply in the **Farm setup wizard** (`POST /farms/{id}/bootstrap-template`), not via a chip that opens `apply_bootstrap_template`.
 
-### 6h. When Guardian opens a card from your words (Phase 46 — planned)
+### 6h. When Guardian opens a card from your words (Phase 46 — shipped)
 
-**Spec:** [`plans/phase_46_guardian_llm_tool_proposals.plan.md`](plans/phase_46_guardian_llm_tool_proposals.plan.md)
+**Spec:** [`plans/phase_46_guardian_llm_tool_proposals.plan.md`](plans/phase_46_guardian_llm_tool_proposals.plan.md) · Guide: [`guardian-change-requests-guide.md` §3.3](guardian-change-requests-guide.md#33-when-the-llm-opens-a-card-phase-46--shipped)
 
-Today most cards come from **pattern matchers** after you send a message. Phase 46 adds a **second path**: if matchers miss but you clearly asked for a change (and you have **Operate**), the LLM may suggest a **validated** tool + args — you still **Confirm**.
+Most cards still come from **pattern matchers** after you send a message. When matchers miss, a **second path** may open a card: if you clearly asked for a change, you have **Operate**, and the API has **`GUARDIAN_LLM_PROPOSALS=true`**, Guardian parses **validated** structured tool JSON from the assistant reply — you still **Confirm**.
 
-**Still true:** Dismiss does nothing to your data · setup pack and bootstrap are not LLM-autopilot · read-only questions never Confirm.
+| Expectation | Detail |
+|-------------|--------|
+| Matchers first | Ack alert, setup pack, feed volume regex, comfort patches — unchanged |
+| LLM fallback | Paraphrased writes; proposal `meta.llm_sourced` |
+| Flag default | Off in `.env.example` — enable per deployment |
+| Allowlist v1 | `patch_fertigation_program`, `patch_schedule`, `patch_rule` (pause only), alerts/tasks/stage — not setup pack or bootstrap |
+| Viewer | Chat works; no write proposals from LLM path |
+| Dismiss | Still does nothing to your data |
+
+**Vitest bundle:** `phase-46-ws1-policy.test.js` … `phase-46-ws5-observability.test.js`, `phase-46-closure.test.js`.
 
 ### 6d. First field install with Guardian, offline (Phase 37)
 

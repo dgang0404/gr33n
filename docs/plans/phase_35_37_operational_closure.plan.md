@@ -65,7 +65,7 @@ todos:
     status: completed
   - id: oc-46-closure
     content: "OC-46: Phase 46 WS6 — LLM tool proposals docs/tests (close when Phase 46 ships)"
-    status: pending
+    status: completed
   - id: oc-47
     content: "OC-47: Phase 47 WS7 — feeding & water plain language docs/tests (close when Phase 47 ships)"
     status: completed
@@ -316,6 +316,19 @@ Feature detail: [`phase_45_farmer_validation_whole_app_polish.plan.md`](phase_45
 | Live sit-in + friction backlog | ✅ | WS2 — dry-run DR-A/DR-B; P0 empty |
 | Mobile sit-in path (PWA) | ✅ | WS4 — `phase-45-ws4-mobile-sit-in-path.md`, prep scripts; store deferred |
 | Guardian PR path validation | ✅ | WS8 — ack, setup pack, dismiss; `sit-in-dry-run.sh` |
+
+## Phase 46 — Guardian LLM tool proposals
+
+Feature detail: [`phase_46_guardian_llm_tool_proposals.plan.md`](phase_46_guardian_llm_tool_proposals.plan.md). **OC-46** closed (WS6). **Phase 46 shipped.**
+
+| Area | Status | Notes |
+|------|--------|-------|
+| Hybrid policy + allowlist | ✅ | WS1 — `proposals_llm.go`, `GUARDIAN_LLM_PROPOSALS` |
+| Schema + farm ID binding | ✅ | WS2 — `proposals_llm_validate.go` |
+| Chat handler hook | ✅ | WS3 — `attachProposals` + assistant text |
+| Safety tests | ✅ | WS4 — `proposals_llm_safety_test.go`, `smoke_phase46_ws4_test.go` |
+| Observability logs | ✅ | WS5 — `proposals_observability.go` |
+| OC-46 docs/tests | ✅ | WS6 — guide §3.3, operator-tour §6h, architecture §7.0l, `phase-46-closure.test.js` |
 
 ## Phase 47 — Feeding & water plain language
 

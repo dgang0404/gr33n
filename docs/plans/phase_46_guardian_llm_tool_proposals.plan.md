@@ -21,8 +21,8 @@ todos:
     content: "WS5: Metrics — llm_proposal_suggested, rejected_validation, matcher_hit"
     status: completed
   - id: ws6-docs
-    content: "WS6: guardian-change-requests-guide §LLM; operator-tour §6h; architecture §7.0k; OC-46"
-    status: pending
+    content: "WS6: guardian-change-requests-guide §LLM; operator-tour §6h; architecture §7.0l; OC-46"
+    status: completed
 isProject: false
 ---
 
@@ -30,7 +30,7 @@ isProject: false
 
 ## Status
 
-**In progress.** WS1–WS5 shipped (policy, schema/binding, handler, safety tests, observability). WS6 docs/OC-46 next.
+**Shipped.** WS1–WS6 complete (policy, schema/binding, handler, safety tests, observability, docs/OC-46).
 
 **Canonical implementation spec:** this document (full phase = Guardian slice).
 
@@ -250,14 +250,16 @@ Happy path: `TestPhase46WS4_LLMHappyPathPatchFertigationProgram` — `patch_fert
 
 ---
 
-## 11. Docs (WS6)
+## WS6 — Docs & OC-46 ✅
+
+**Shipped:** [guardian-change-requests-guide.md](../guardian-change-requests-guide.md) §3.3 · [guardian_pr_ux_through_farmer_phases.plan.md](guardian_pr_ux_through_farmer_phases.plan.md) §8 · [operator-tour.md](../operator-tour.md) §6h · [farm-guardian-architecture.md](../farm-guardian-architecture.md) §7.0l · README · `phase-46-closure.test.js` · OC-46 in [phase_35_37_operational_closure.plan.md](phase_35_37_operational_closure.plan.md).
 
 | Doc | Update |
 |-----|--------|
-| [guardian-change-requests-guide.md](../guardian-change-requests-guide.md) | § “When LLM opens a card” |
-| [guardian_pr_ux_through_farmer_phases.plan.md](guardian_pr_ux_through_farmer_phases.plan.md) | Mark §8 implemented |
+| [guardian-change-requests-guide.md](../guardian-change-requests-guide.md) | §3.3 “When LLM opens a card” |
+| [guardian_pr_ux_through_farmer_phases.plan.md](guardian_pr_ux_through_farmer_phases.plan.md) | §8 implemented |
 | [operator-tour.md](../operator-tour.md) §6h | Operator expectations |
-| [farm-guardian-architecture.md](../farm-guardian-architecture.md) §7.0k | Architecture stub → shipped |
+| [farm-guardian-architecture.md](../farm-guardian-architecture.md) §7.0l | Shipped + OC-46 |
 
 ---
 
@@ -272,12 +274,12 @@ Happy path: `TestPhase46WS4_LLMHappyPathPatchFertigationProgram` — `patch_fert
 
 ## 13. Definition of done
 
-- [ ] Hybrid C shipped behind feature flag
-- [ ] Allowlist §5 tools validated in tests
-- [ ] High-tier tools still show impact + warnings
-- [ ] Sit-in top 3 matcher gaps addressed (matcher or LLM)
-- [ ] Docs §11 updated; OC-46 closed
-- [ ] No regression: rule-assisted ack + setup pack still work
+- [x] Hybrid C shipped behind feature flag
+- [x] Allowlist §5 tools validated in tests
+- [x] High-tier tools still show impact + warnings (unchanged Confirm UI)
+- [x] Sit-in top 3 matcher gaps — none in 45 dry-run; §9 backlog for external sit-in
+- [x] Docs §11 updated; OC-46 closed
+- [x] No regression: rule-assisted ack + setup pack (`smoke_phase46_ws4`, Phase 29/32 smokes)
 
 ---
 

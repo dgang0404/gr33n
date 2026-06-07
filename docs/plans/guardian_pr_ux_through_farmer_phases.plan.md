@@ -256,7 +256,7 @@ User intent
 | Hybrid C: matchers first, LLM JSON on miss | Backend — plan §4 |
 | Tool allowlist + validation | Backend — plan §5–6 |
 | Feature flag + Operate gate | Policy — plan §4.1 |
-| operator-tour §6h, architecture §7.0k | Docs — written (planned ship) |
+| operator-tour §6h, architecture §7.0l | Docs — ✅ shipped (WS6 / OC-46) |
 
 ---
 
@@ -267,7 +267,7 @@ User intent
 | **Fixes** | Weak or generic **questions**; empty chat | Matcher **missed** a write intent |
 | **Mechanism** | UI sends a **better message**; matchers unchanged | LLM emits **tool + args** → proposal row |
 | **User still** | Sends / confirms send | Sends; may get card without exact phrase |
-| **Example gap today** | Zone button: *"What's the current status of X?"* → obvious answer | *"Set feed volume to 0.3 L"* → advice text, **no card** |
+| **Example gap today** | Zone button: *"What's the current status of X?"* → obvious answer | *"Set feed volume to 0.3 L"* → matcher card if regex hits; else LLM card when flag on + valid JSON |
 
 **Your sit-in feedback** (generic Ask Guardian, obvious answers) is addressed in **Phase 40 WS7b + contextual prefills** — not by Phase 46 alone.
 
@@ -283,13 +283,15 @@ Implement via `ui/src/lib/guardianContextPrompts.js` (build message from props +
 
 ---
 
-## §8 — LLM structured tool proposals (Phase 46)
+## §8 — LLM structured tool proposals (Phase 46) ✅
 
 **Plan (expanded):** [`phase_46_guardian_llm_tool_proposals.plan.md`](phase_46_guardian_llm_tool_proposals.plan.md)
 
 **Decision (doc gate):** **Hybrid C** — matchers first; validated LLM `tool` + `args` only on write-intent miss + Operate + allowlist.
 
-**Not in 40–47 v1 (except 46 when shipped)** — Phase 40 must not promise “any ask creates a PR.”
+**Shipped (WS1–WS6):** `GUARDIAN_LLM_PROPOSALS` flag, handler hook, safety tests, observability logs, [guardian-change-requests-guide §3.3](../guardian-change-requests-guide.md), operator-tour §6h, `phase-46-closure.test.js`.
+
+**Still not promised:** “Any ask creates a PR” — read-only questions, viewers, and invalid LLM JSON stay text-only.
 
 ---
 

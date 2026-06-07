@@ -7,7 +7,7 @@ An open-source farm operating system — run it on your LAN, keep your data clos
 [![Vue](https://img.shields.io/badge/Vue-3-4FC08D?logo=vue.js)](https://vuejs.org)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-14+-336791?logo=postgresql)](https://postgresql.org)
 
-**Current focus:** **Phase 46** Guardian LLM tool proposals (hybrid C) — WS1–WS5 on `main` (policy, schema/binding, handler, safety tests, observability); WS6 docs/OC-46 next. Farmer UX arc 40→45 shipped. Roadmap: [farmer_ux_roadmap_40_plus.plan.md](docs/plans/farmer_ux_roadmap_40_plus.plan.md). Farmer-ready v1: [operator tour §9](docs/operator-tour.md#9-farmer-validation-sit-in-phase-45--shipped). Roadmap: [`docs/plans/farmer_ux_roadmap_40_plus.plan.md`](docs/plans/farmer_ux_roadmap_40_plus.plan.md) · gap index: [`docs/plans/pre_development_gaps_index.plan.md`](docs/plans/pre_development_gaps_index.plan.md). **New farm?** In-app wizards at `/farms/{id}/setup`, `/zones/new`, `/devices/new` plus a Dashboard checklist — [operator tour §8](docs/operator-tour.md#8-getting-started--edge-install-phase-44--shipped). Guardian **writes** still go through propose→**Confirm** ([Phase 30](docs/plans/phase_30_guardian_change_requests.plan.md)). After `git pull`, run **`./scripts/bootstrap-local.sh --skip-schema`** (or **`make dev-stack`**) so migrations apply. Pi / edge: [`pi_client/gr33n_client.py`](pi_client/gr33n_client.py), [`docs/pi-integration-guide.md`](docs/pi-integration-guide.md). Operator index: [`docs/phase-14-operator-documentation.md`](docs/phase-14-operator-documentation.md) · closure rollup: [`docs/plans/phase_35_37_operational_closure.plan.md`](docs/plans/phase_35_37_operational_closure.plan.md).
+**Current focus:** **Phase 48** dev seed hygiene (parallel infra) — farmer UX arc **40→47** and **Phase 46** Guardian LLM tool proposals (hybrid C) shipped on `main`. Roadmap: [`docs/plans/farmer_ux_roadmap_40_plus.plan.md`](docs/plans/farmer_ux_roadmap_40_plus.plan.md) · gap index: [`docs/plans/pre_development_gaps_index.plan.md`](docs/plans/pre_development_gaps_index.plan.md). Farmer-ready v1: [operator tour §9](docs/operator-tour.md#9-farmer-validation-sit-in-phase-45--shipped). **New farm?** In-app wizards at `/farms/{id}/setup`, `/zones/new`, `/devices/new` plus a Dashboard checklist — [operator tour §8](docs/operator-tour.md#8-getting-started--edge-install-phase-44--shipped). Guardian **writes** still go through propose→**Confirm** ([Phase 30](docs/plans/phase_30_guardian_change_requests.plan.md)); optional LLM proposal fallback when matchers miss — set `GUARDIAN_LLM_PROPOSALS=true` ([operator tour §6h](docs/operator-tour.md#6h-when-guardian-opens-a-card-from-your-words-phase-46--shipped)). After `git pull`, run **`./scripts/bootstrap-local.sh --skip-schema`** (or **`make dev-stack`**) so migrations apply. Pi / edge: [`pi_client/gr33n_client.py`](pi_client/gr33n_client.py), [`docs/pi-integration-guide.md`](docs/pi-integration-guide.md). Operator index: [`docs/phase-14-operator-documentation.md`](docs/phase-14-operator-documentation.md) · closure rollup: [`docs/plans/phase_35_37_operational_closure.plan.md`](docs/plans/phase_35_37_operational_closure.plan.md).
 
 ### Farmer-ready v1 (Phase 45)
 
@@ -18,6 +18,17 @@ An open-source farm operating system — run it on your LAN, keep your data clos
 | **Mobile Session C** (WS4) | ✅ PWA LAN path + scripts — store TestFlight deferred |
 
 Detail: [operator tour §9](docs/operator-tour.md#9-farmer-validation-sit-in-phase-45--polish-shipped-sit-in-gate-open) · plan: [phase_45](docs/plans/phase_45_farmer_validation_whole_app_polish.plan.md) · Vitest: `ui/src/__tests__/phase-45-closure.test.js`.
+
+### Guardian LLM tool proposals (Phase 46)
+
+| Layer | Status |
+|-------|--------|
+| **Hybrid C** (WS1–WS3) | ✅ Matchers first; LLM JSON fallback on miss when `GUARDIAN_LLM_PROPOSALS=true` |
+| **Validation + safety** (WS2/WS4) | ✅ Allowlist, farm ID binding, smoke + unit tests |
+| **Observability** (WS5) | ✅ `guardian_matcher_proposal_hit` / `guardian_llm_proposal_*` slog |
+| **Docs / OC-46** (WS6) | ✅ Guide §3.3, operator-tour §6h, architecture §7.0l |
+
+Detail: [operator tour §6h](docs/operator-tour.md#6h-when-guardian-opens-a-card-from-your-words-phase-46--shipped) · [guardian-change-requests-guide §3.3](docs/guardian-change-requests-guide.md#33-when-the-llm-opens-a-card-phase-46--shipped) · plan: [phase_46](docs/plans/phase_46_guardian_llm_tool_proposals.plan.md) · Vitest: `ui/src/__tests__/phase-46-closure.test.js`.
 
 ---
 

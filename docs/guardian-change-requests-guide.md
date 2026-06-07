@@ -48,7 +48,12 @@ sequenceDiagram
     Rules->>DB: Insert frozen proposal (pending, TTL 5 min)
     API->>UI: SSE done + proposals[] on response
     UI->>Op: Proposal card in transcript
-  else No match
+  else No match + write intent + Operate + flag
+    API->>API: Parse validated LLM tool JSON (Phase 46)
+    API->>DB: Insert llm_sourced proposal when valid
+    API->>UI: SSE done + proposals[] (meta.llm_sourced)
+    UI->>Op: Proposal card in transcript
+  else No match or read-only
     API->>Op: Text only — no card
   end
 ```
@@ -60,9 +65,28 @@ sequenceDiagram
 | **You ask in chat** | After your message, server runs **rule-assisted** intent matchers (regex + snapshot checks) | “ack alert 5”, “add philodendron to Living Room with a light feed program” |
 | **Ask Guardian button** | UI opens drawer with **prefilled message**; same matcher runs when you send | Zone card: “What’s the status of Flower Room?”; Alerts: “Explain alert #42…” |
 | **Revise in session** | Follow-up message updates the **pending** draft (Phase 34) | “use 0.3 L not 0.5” |
-| **Not today: LLM tool calls** | The LLM does **not** directly open arbitrary PRs from free-form chat unless a matcher recognizes the intent | Asking “patch my schedule to 7am” may get **text advice only** until matchers or future LLM-tool routing cover it |
+| **LLM structured proposal (Phase 46)** | Matchers miss, but you clearly asked for a change, you have **Operate**, and `GUARDIAN_LLM_PROPOSALS=true` — server parses **validated** tool JSON from the assistant turn | Paraphrased feed patch when regex matchers miss; card shows `llm_sourced` in meta |
 
-**Important:** Copilot text and PR cards are **decoupled**. Guardian can answer well and still show **no** card if the server did not match a registered write tool.
+**Important:** Copilot text and PR cards are **decoupled**. Guardian can answer well and still show **no** card if matchers miss **and** the LLM path did not produce valid structured output.
+
+### 3.3 When the LLM opens a card (Phase 46 — shipped)
+
+**Hybrid C** — matchers always run first. The LLM proposal path runs only when **all** are true:
+
+| Gate | Meaning |
+|------|---------|
+| Matcher miss | `matchFreshProposal` returned false for this turn |
+| Write intent | Imperative verbs (set, patch, acknowledge, …) — not pure Q&A |
+| Operate role | Viewer sees chat only; no LLM proposal insert |
+| Feature flag | `GUARDIAN_LLM_PROPOSALS=true` in API env (default off) |
+| Valid JSON | Assistant text includes a fenced `tool` + `args` block that passes schema + farm ID binding |
+| Allowlist v1 | Narrow set only — see [phase 46 plan §5](plans/phase_46_guardian_llm_tool_proposals.plan.md) |
+
+**Still Confirm-gated.** `meta.llm_sourced: true` on the proposal row is for audit and ops logs — not autopilot.
+
+**Excluded from LLM path:** `apply_grow_setup_pack`, `apply_bootstrap_template`, `enqueue_actuator_command`, and other high-risk bundles — use matchers, wizards, or normal UI.
+
+**Observability:** structured logs `guardian_matcher_proposal_hit`, `guardian_llm_proposal_suggested`, `guardian_llm_proposal_rejected` — see [audit-events-operator-playbook.md](audit-events-operator-playbook.md).
 
 Registered write tools: see [`internal/farmguardian/tools/registry.go`](../internal/farmguardian/tools/registry.go) and [operator-tour §6](operator-tour.md#6-farm-guardian-change-requests-with-your-ok).
 
@@ -139,7 +163,7 @@ High-tier cards should be read slowly. Actuator PRs only **enqueue** Pi commands
 |------------|---------|
 | **Better Ask Guardian + starter chips** | Snapshot-aware **questions** (alerts, missing bands, queue) |
 | **Phase 42 matchers** | More phrases → PR card without LLM |
-| **[Phase 46](plans/phase_46_guardian_llm_tool_proposals.plan.md)** | LLM proposes **tool+args** when matchers still miss |
+| **[Phase 46](plans/phase_46_guardian_llm_tool_proposals.plan.md)** | ✅ Shipped — LLM proposes **tool+args** when matchers still miss (flag-gated) |
 
 Starters = **better prompts**. Phase 46 = **more proposals from free-form asks**. Both need Confirm.
 

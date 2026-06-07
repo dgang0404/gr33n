@@ -41,9 +41,9 @@ isProject: false
 
 | Status | Phases |
 |--------|--------|
-| **Shipped** | 40–45, 47 (farmer UX arc) |
-| **Next feature code** | **[46](phase_46_guardian_llm_tool_proposals.plan.md)** — Guardian LLM tool proposals (WS1 policy shipped) |
-| **Parallel infra** | **[48](phase_48_dev_seed_and_small_farm_profiles.plan.md)** — dev seed hygiene |
+| **Shipped** | 40–47, 46 (farmer UX arc + Guardian LLM proposals) |
+| **Next feature code** | **[48](phase_48_dev_seed_and_small_farm_profiles.plan.md)** — dev seed hygiene |
+| **Parallel infra** | Same — optional alongside feature work |
 
 ---
 
