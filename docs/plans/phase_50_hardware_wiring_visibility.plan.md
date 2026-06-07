@@ -10,22 +10,22 @@ overview: >
 todos:
   - id: ws1-wiring-model
     content: "WS1: Define wiring schema in sensors.config / actuators.config JSONB (source, gpio_pin, i2c_channel, i2c_address, serial_port, notes); JSON-schema + migration backfill from config.yaml"
-    status: pending
+    status: completed
   - id: ws2-api-read-write
     content: "WS2: API — expose wiring on sensor/actuator GET; PATCH wiring (validated, conflict-checked: no two devices on same pin per Pi)"
-    status: pending
+    status: completed
   - id: ws3-ui-surface
     content: "WS3: UI — wiring panel on Sensors detail + Controls cards + device wizard step; 'Wiring: BCM GPIO 17 (relay)' badges; empty state 'Not wired yet'"
-    status: pending
+    status: completed
   - id: ws4-config-generator
     content: "WS4: Generate pi_client/config.yaml from DB per device — download/copy in device wizard; round-trips with WS1 schema"
-    status: pending
+    status: completed
   - id: ws5-validation-conflicts
     content: "WS5: Conflict + sanity checks — duplicate pin/channel per device, unknown source driver, derived-sensor inputs exist; surfaced in UI + db-sanity-report"
-    status: pending
+    status: completed
   - id: ws6-docs-tests
     content: "WS6: pi-integration-guide rewrite (DB-first), architecture §, Go handler tests, Vitest wiring panel, phase-50-closure.test.js, OC-50"
-    status: pending
+    status: completed
 isProject: false
 ---
 
@@ -33,7 +33,7 @@ isProject: false
 
 ## Status
 
-**Planned.** Adds structured wiring metadata + read/edit UI + config generation. **Does not** change the Pi runtime contract — the Pi still reads local `config.yaml` this phase. Live config pull-from-API is **[Phase 51](#relationship-to-phase-51)**.
+**Shipped.** WS1–WS6 complete on `main`. Wiring metadata + read/edit UI + config generation. **Pi still reads local YAML** — live pull-from-API is **[Phase 51](#relationship-to-phase-51)**.
 
 **Roadmap:** [farmer_ux_roadmap_40_plus.plan.md](farmer_ux_roadmap_40_plus.plan.md) (edge/Pi track).
 
@@ -185,12 +185,12 @@ Phase 50 is **read + edit + generate** with the Pi still reading **local** YAML.
 
 ## Definition of done
 
-- [ ] Wiring is a typed, validated object on sensors/actuators (in `config JSONB`)
-- [ ] API returns wiring on GET and accepts validated, conflict-checked PATCH
-- [ ] Sensors, Controls, and device wizard show "where this is wired" + edit
-- [ ] Operator can generate a working `config.yaml` from the UI (round-trips)
-- [ ] Sanity report flags pin/channel conflicts; demo farm backfilled from current YAML
-- [ ] pi-integration-guide is DB-first; OC-50 closed
+- [x] Wiring is a typed, validated object on sensors/actuators (in `config JSONB`)
+- [x] API returns wiring on GET and accepts validated, conflict-checked PATCH
+- [x] Sensors, Controls, and device wizard show "where this is wired" + edit
+- [x] Operator can generate a working `config.yaml` from the UI (round-trips)
+- [x] Sanity report flags pin/channel conflicts; demo farm backfilled from current YAML
+- [x] pi-integration-guide is DB-first; OC-50 closed
 
 ---
 
@@ -219,4 +219,4 @@ Phase 50 is **read + edit + generate** with the Pi still reading **local** YAML.
 
 ## Using this in a new chat
 
-> Read `docs/plans/phase_50_hardware_wiring_visibility.plan.md`. Implement one workstream (WS1–WS6). Reuse `config JSONB` (no new columns). Do not change the Pi runtime contract — generation only this phase. Validate pin/channel conflicts per device.
+> Read `docs/plans/phase_50_hardware_wiring_visibility.plan.md`. Phase 50 is **shipped** (OC-50 closed). For Pi live config pull, start **Phase 51** (`phase_51_pi_config_sync.plan.md`).

@@ -2,6 +2,8 @@
 
 > **Scope:** How an on-farm Raspberry Pi running [`pi_client/gr33n_client.py`](../pi_client/gr33n_client.py) posts sensor readings, device status, and actuator events to the gr33n API, and how those flow into the dashboard UI.
 >
+> **Phase 50 (DB-first wiring):** Set GPIO / I2C / serial wiring in the **dashboard** (Sensors, Controls, device wizard), then **download** a generated `config.yaml` — see [§2a](#2a-db-first-wiring-and-config-generation-phase-50--recommended). Manual YAML editing remains a fallback; live config pull from the API is [Phase 51](plans/phase_51_pi_config_sync.plan.md).
+>
 > **Companion docs:**
 > - API spec: [`openapi.yaml`](../openapi.yaml) — source of truth for every route used below.
 > - MQTT edge playbook: [`mqtt-edge-operator-playbook.md`](mqtt-edge-operator-playbook.md) — MQTT → API bridge; **room-scale warehouse topics (Phase 31 WS4)** in § Room-scale pattern.
@@ -89,6 +91,37 @@ For the **MQTT bridge** (`pi_client/mqtt_telemetry_bridge.py`) the same values a
 | `PI_API_KEY` (or `MQTT_BRIDGE_API_KEY`) | Pre-shared key; must equal the API's `PI_API_KEY` env var |
 
 The API side must have `PI_API_KEY` set (see `cmd/api/main.go` / deployment docs). Any Pi-tagged route (`requireAPIKey`) will reject requests without a matching header with **401**.
+
+### 2a. DB-first wiring and config generation (Phase 50 — recommended)
+
+**Happy path:** register hardware in gr33n, record **where each sensor and actuator is wired**, generate `config.yaml`, copy to the Pi. No hand-editing pin lists in YAML and no SQL.
+
+| Step | Where | What |
+|------|--------|------|
+| 1 | **Settings → Connect edge device** (`/farms/{id}/devices/new`) | Register the Pi (`device_uid`, zone). |
+| 2 | **Sensors** list + **sensor detail → Hardware wiring** | Set driver (`dht22`, `ads1115`, …), BCM GPIO, I2C channel, or serial port; assign the **edge device**. |
+| 3 | **Controls** cards | Wiring badges show pin summary; edit wiring via sensor detail or API (`PATCH /actuators/{id}/wiring`). |
+| 4 | Device wizard **Pi config** step | **Download config.yaml** or copy — generated from DB via `GET /devices/{id}/pi-config`. |
+| 5 | On the Pi | `scp` the file to `pi_client/config.yaml`, set `api.api_key`, restart `gr33n` systemd unit. |
+
+**Data model:** wiring lives in `sensors.config.wiring` and `actuators.config.wiring` (JSONB). API responses also expose a top-level `wiring` field. Validation rejects unknown drivers, duplicate pins per device (with an exception: multiple **DHT22** logical sensors may share one physical GPIO), and broken **derived** input references.
+
+**Operator checks:**
+
+- `make db-sanity-report` — prints wiring coverage and **fails** on pin/channel conflicts.
+- Demo farm backfill: migration `db/migrations/20260607_phase50_hardware_wiring_backfill.sql` (idempotent).
+
+**Manual fallback:** edit [`pi_client/config.yaml`](../pi_client/config.yaml) directly (§2, §8.3 step 4b). Use when the UI is unreachable or for one-off experiments. Keep `sensor_id` / `actuator_id` aligned with the database ([`scripts/print-demo-sensor-ids.sh`](../scripts/print-demo-sensor-ids.sh)).
+
+**API (JWT, farm-scoped):**
+
+| Method | Path | Purpose |
+|--------|------|---------|
+| `PATCH` | `/sensors/{id}/wiring` | Merge validated wiring into `sensors.config` |
+| `PATCH` | `/actuators/{id}/wiring` | Merge validated wiring into `actuators.config` |
+| `GET` | `/devices/{id}/pi-config` | Generate full `config.yaml` for that edge device |
+
+Plan: [`plans/phase_50_hardware_wiring_visibility.plan.md`](plans/phase_50_hardware_wiring_visibility.plan.md). Runtime pull-from-API: Phase 51.
 
 ---
 
@@ -265,7 +298,7 @@ For a single **plastic grow room** with **three vertical shelves**, pick **one c
 
 Enterprise-scale naming patterns: [`hypothetical-enterprise-topology.md`](hypothetical-enterprise-topology.md) (*Plastic grow room → zones*). **MQTT room-scale ingest:** same three zones can publish on `gr33n/farm/{farm_id}/zone/{zone_id}/sensor/{id}` — [`mqtt-edge-operator-playbook.md`](mqtt-edge-operator-playbook.md#room-scale-warehouse-pattern-phase-31-ws4).
 
-Create zones in the dashboard (**Zones**) or via seed/template **before** editing `config.yaml` — run [`scripts/print-demo-sensor-ids.sh`](../scripts/print-demo-sensor-ids.sh) or `./scripts/run-edge-stub-client.sh` on a laptop to confirm **`sensor_id`** values match DB names.
+Create zones in the dashboard (**Zones**) or via seed/template **before** wiring sensors. Prefer **§2a**: set wiring in the UI, download config, then deploy to the Pi. For manual YAML, run [`scripts/print-demo-sensor-ids.sh`](../scripts/print-demo-sensor-ids.sh) or `./scripts/run-edge-stub-client.sh` on a laptop to confirm **`sensor_id`** values match DB names.
 
 #### Wiring sketch — room layout (logical, not electrical)
 
@@ -322,12 +355,14 @@ Use this on first deploy; tick items in order.
 [ ] 2. Pi OS — Raspberry Pi OS (64-bit); SSH; NTP/chrony (correct reading_time UTC)
 [ ] 3. Packages — from repo on Pi: ./scripts/install-pi-edge-deps.sh
        (see docs/raspberry-pi-and-deployment-topology.md §2)
-[ ] 4. Pi client — cd pi_client && ./setup.sh; edit config.yaml:
+[ ] 4a. Pi config (DB-first, Phase 50) — in device wizard step 2: set wiring on sensors/actuators,
+       Download config.yaml, scp to Pi pi_client/config.yaml; set api.api_key on the Pi only
+[ ] 4b. Pi config (manual fallback) — cd pi_client && ./setup.sh; hand-edit config.yaml:
        api.base_url = http://<api-lan-ip>:8080
        api.api_key  = <same as server PI_API_KEY>
        farm.farm_id = <your farm>
        sensors[]    = sensor_id values from DB (print-demo-sensor-ids.sh)
-       actuators[]  = device_id / actuator_id from dashboard Devices (after WS3 bench device exists)
+       actuators[]  = device_id / actuator_id from dashboard Devices (after bench device exists)
 [ ] 5. systemd — sudo systemctl enable --now gr33n; journalctl -u gr33n -f
 [ ] 6. Readings — dashboard Live Sensors update within ~1 interval; Devices show online after heartbeat
 [ ] 7. Offline queue drill — stop API 2 min; client logs queue; start API; readings flush via batch (§8.5)

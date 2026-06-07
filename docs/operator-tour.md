@@ -22,7 +22,7 @@ Think **physical layout → signals → automation → work tracking → feeding
 |------|------------------|--------------------|
 | **1. Farm home** | `/` Dashboard | Orient: morning strip (tasks, alerts, **Feed & water** chip), recent feeds, what runs when. |
 | **2. Zones (plant needs)** | `/zones`, `/zones/:id` | Define **grow areas** (rooms, benches, beds). Open a zone → **Overview** plus **Water / Light / Climate** tabs — the **zone cockpit** for day-to-day grow (Phase 38 + [§4b](#4b-zone-cockpit-walkthrough-phase-40)). Optional zone photos for Guardian context ([architecture §7.4](farm-guardian-architecture.md#74-zone-reference-photos-phase-30-ws5)). |
-| **3. Sensors & controls (advanced)** | `/sensors`, `/actuators`, `/setpoints` under **Advanced** in the nav | Farm-wide device lists. Prefer the **zone** tabs first; use Advanced when wiring many sensors or debugging. |
+| **3. Sensors & controls (advanced)** | `/sensors`, `/actuators`, `/setpoints` under **Advanced** in the nav | Farm-wide device lists. **Sensors** and **Controls** show **wiring badges** (GPIO / I2C). Open a sensor for the wiring editor. Prefer zone tabs first; use Advanced when wiring many sensors or debugging. |
 | **4. Schedules & rules** | `/schedules`, `/automation` | **Schedules** = time-based cadence (cron-like) tied to actions or fertigation windows. **Rules** (Automation) = conditions + actions (e.g. “if humidity low → open mist”). |
 | **4b. Lighting (photoperiod)** | `/lighting` | **Lighting programs** — first-class 18/6, 12/12, or custom ON/OFF photoperiods for grow lights. One program owns a paired schedule + `control_actuator` actions (see [§5](#5-set-up-186-vegetative-lights-phase-35)). |
 | **4c. Greenhouse climate** | `/zones/:id`, `/actuators`, `/automation` | **Shade, vents, fans** on `zone_type=greenhouse` — profile in zone meta, typed actuators, lux/temp rules. **Not** supplemental light (see [§5b](#5b-greenhouse-shade-vents-and-fans-phase-36)). |
@@ -541,7 +541,7 @@ Architecture: [`farm-guardian-architecture.md` §7.0m](farm-guardian-architectur
 2. **`/farms/{id}/setup`** — choose **Start blank** or a template card → preview → **Apply starter pack** (farm admin; idempotent).
 3. **Today** (`/`) — **Getting started** checklist when steps remain: zone → edge device → comfort targets → one schedule.
 4. **`/farms/{id}/zones/new`** — name, zone type, optional greenhouse profile or lighting preset.
-5. **`/farms/{id}/devices/new`** — register Pi, copy `pi_client` config snippet, embedded field checklist, poll **online**, optional actuators.
+5. **`/farms/{id}/devices/new`** — register Pi, **download generated config.yaml** (Phase 50) from platform wiring, embedded field checklist, poll **online**, optional actuators.
 6. **`/comfort-targets`** — set first comfort band; **Schedules** tab to turn on one run.
 7. Optional — **Ask Guardian** from checklist chips, wizard **Need help?** footers, or **empty zone** grow starters on zone cockpit ([§6g](#6g-guardian-during-setup-phase-44--shipped)).
 
@@ -549,10 +549,10 @@ Architecture: [`farm-guardian-architecture.md` §7.0m](farm-guardian-architectur
 |------------------|-----|-------|
 | Farm setup | Pick template → preview → apply bootstrap | `/farms/{id}/setup` |
 | Add zone | Name, type, optional lighting preset | `/farms/{id}/zones/new` |
-| Edge device | Pi config, connection test, actuators | `/farms/{id}/devices/new` |
+| Edge device | Wiring in UI → generated Pi config, connection test, actuators | `/farms/{id}/devices/new` |
 | First-run checklist | Zone → device → comfort band → one schedule | Dashboard `GettingStartedChecklist` |
 
-Pi steps stay in-app: embedded checklist from [pi-integration-guide.md](pi-integration-guide.md) §8.3 on the device wizard; offline wiring procedures in [§6d](#6d-first-field-install-with-guardian-offline-phase-37).
+Pi steps stay in-app: **DB-first** wiring ([pi-integration-guide.md](pi-integration-guide.md) §2a) — set pins in Sensors/Controls, **download config** in the device wizard; checklist §8.3; offline physical wiring procedures in [§6d](#6d-first-field-install-with-guardian-offline-phase-37).
 
 **Vitest closure:** `farm-setup-wizard.test.js`, `zone-setup-wizard.test.js`, `device-setup-wizard.test.js`, `first-run-checklist.test.js`, `guardian-setup-starters.test.js`, `phase-44-wizard-navigation.test.js`, `phase-44-closure.test.js`, `phase-44-guardian-closure.test.js`.
 

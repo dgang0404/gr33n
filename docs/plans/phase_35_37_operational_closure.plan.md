@@ -75,6 +75,9 @@ todos:
   - id: oc-49-closure
     content: "OC-49: Phase 49 WS4 — sidebar nav polish, Fertigation rename, related-route hover (close when Phase 49 ships)"
     status: completed
+  - id: oc-50-closure
+    content: "OC-50: Phase 50 WS6 — hardware wiring visibility, pi-config generator, sanity report, docs/tests (close when Phase 50 ships)"
+    status: completed
 isProject: false
 ---
 
@@ -384,7 +387,20 @@ Feature detail: [`phase_49_sidebar_nav_polish.plan.md`](phase_49_sidebar_nav_pol
 | Related-route hover affordance | ✅ | WS3 — `SideNav.vue` wiggle + `prefers-reduced-motion` fallback |
 | OC-49 docs/tests | ✅ | WS4 — `phase-49-closure.test.js`, `nav-relations.test.js`, operator-tour |
 
-**Master roadmap:** [`farmer_ux_roadmap_40_plus.plan.md`](farmer_ux_roadmap_40_plus.plan.md). Closure rows **OC-42 … OC-49** track each phase WS8/WS7 — not pre-40 work. Vocabulary: [`farmer-vocabulary.md`](../farmer-vocabulary.md). Guardian specs: [42](phase_42_guardian_pr_spec.md) · [43](phase_43_guardian_pr_spec.md) · [44](phase_44_guardian_pr_spec.md) · [45](phase_45_guardian_pr_spec.md) · [46](phase_46_guardian_llm_tool_proposals.plan.md).
+## Phase 50 — Hardware wiring visibility
+
+Feature detail: [`phase_50_hardware_wiring_visibility.plan.md`](phase_50_hardware_wiring_visibility.plan.md). **OC-50** closed (WS6). **Phase 50 shipped.**
+
+| Area | Status | Notes |
+|------|--------|-------|
+| Wiring model + demo backfill | ✅ | WS1 — `config.wiring` JSONB; migration by sensor/actuator name |
+| PATCH wiring API + GET `wiring` | ✅ | WS2 — validated, conflict-checked |
+| UI badges + sensor wiring editor | ✅ | WS3 — Sensors, Controls, sensor detail |
+| Pi config generator | ✅ | WS4 — `GET /devices/{id}/pi-config`; device wizard download |
+| Sanity report + inline conflicts | ✅ | WS5 — `db-sanity-report` exit on conflicts; wiring panel preview |
+| OC-50 docs/tests | ✅ | WS6 — `pi-integration-guide` §2a, architecture §7.0o, `phase-50-closure.test.js` |
+
+**Master roadmap:** [`farmer_ux_roadmap_40_plus.plan.md`](farmer_ux_roadmap_40_plus.plan.md). Closure rows **OC-42 … OC-50** track each phase WS8/WS7 — not pre-40 work. Vocabulary: [`farmer-vocabulary.md`](../farmer-vocabulary.md). Guardian specs: [42](phase_42_guardian_pr_spec.md) · [43](phase_43_guardian_pr_spec.md) · [44](phase_44_guardian_pr_spec.md) · [45](phase_45_guardian_pr_spec.md) · [46](phase_46_guardian_llm_tool_proposals.plan.md).
 
 ---
 

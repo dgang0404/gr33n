@@ -425,6 +425,20 @@ Operator: [operator-tour §6h](operator-tour.md#6h-when-guardian-opens-a-card-fr
 
 Plan: [`plans/phase_48_dev_seed_and_small_farm_profiles.plan.md`](plans/phase_48_dev_seed_and_small_farm_profiles.plan.md) · Bootstrap: [`local-operator-bootstrap.md`](local-operator-bootstrap.md#slow-ui-and-dev-db-hygiene).
 
+### 7.0o Hardware wiring visibility (Phase 50 — shipped)
+
+**Shipped.** Structured Pi wiring metadata in `sensors.config.wiring` / `actuators.config.wiring`; read + PATCH API; UI badges on **Sensors** and **Controls**; **Hardware wiring** editor on sensor detail; **`GET /devices/{id}/pi-config`** generator in the edge device wizard. Pi runtime still reads **local** YAML — live API sync is Phase 51.
+
+| Layer | Artifact |
+|-------|----------|
+| Model + validation | `internal/hardware/wiring.go`, `conflict.go`, `piconfig.go` |
+| API | `PATCH /sensors\|actuators/{id}/wiring`, `GET /devices/{id}/pi-config` |
+| UI | `HardwareWiringBadge.vue`, `HardwareWiringPanel.vue`, `hardwareWiring.js` |
+| Hygiene | `db-sanity-report` GPIO/I2C conflict exit; demo backfill migration |
+| Docs | [`pi-integration-guide.md`](pi-integration-guide.md) §2a DB-first path |
+
+**OC-50** via `phase-50-closure.test.js`. Plan: [`plans/phase_50_hardware_wiring_visibility.plan.md`](plans/phase_50_hardware_wiring_visibility.plan.md).
+
 ### 7.0m Feeding & water plain language (Phase 47)
 
 **Shipped.** Plan: [`plans/phase_47_feeding_water_plain_language.plan.md`](plans/phase_47_feeding_water_plain_language.plan.md) · Vocabulary: [`farmer-vocabulary.md`](farmer-vocabulary.md).
