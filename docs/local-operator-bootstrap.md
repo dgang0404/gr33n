@@ -196,13 +196,23 @@ Local slowness after many dev sessions is usually **data volume**, not Vue bundl
 
 | Symptom | Likely cause | Quick fix |
 |---------|--------------|-----------|
-| Dashboard takes seconds to load | Duplicate sensors from re-running **`make seed`** / bootstrap on the same Docker volume; each refresh hits many `/readings/latest` rows | **`make dev-stack-fresh`** (wipes volumes) or implement [Phase 48 WS2–WS3](plans/phase_48_dev_seed_and_small_farm_profiles.plan.md) |
-| Hundreds of `/sensors/{id}/readings/latest` 404s | Stale sensor IDs in UI cache vs DB | Fresh seed; UI now batch-loads via `GET /farms/{id}/sensors/readings/latest` |
-| Guardian drawer sluggish | Mass automation-rule alerts from smoke tests | **`make dev-stack-fresh`** or Phase 48 **`db-sanity-report`** metrics |
+| Dashboard takes seconds to load | Duplicate sensors from re-running **`make seed`** / bootstrap on the same Docker volume; each refresh hits many `/readings/latest` rows | **`./scripts/dev-reset-farm.sh --profile small_indoor`** (Phase 48) or **`make dev-stack-fresh`** (volume wipe) |
+| Hundreds of `/sensors/{id}/readings/latest` 404s | Stale sensor IDs in UI cache vs DB | **`make dev-reset-farm`** or fresh seed; UI batch-loads via `GET /farms/{id}/sensors/readings/latest` |
+| Guardian drawer sluggish | Mass automation-rule alerts from smoke tests | **`make db-sanity-report`** then **`make dev-reset-farm`** |
+
+**Phase 48 profiles:** [`dev-farm-profiles.md`](dev-farm-profiles.md) — `small_indoor` (daily dev / sit-in) vs `demo_showcase` (operator tour). Farm 1 tag: `farms.meta_data.dev_seed_profile`.
+
+```bash
+make dev-reset-farm ARGS="--farm-id 1 --profile small_indoor"
+make dev-reset-farm ARGS="--farm-id 1 --profile demo_showcase --include-readings"
+make db-sanity-report
+# Optional hypertable retention (dev only):
+TIMESCALE_RETENTION_DAYS=90 make apply-dev-retention
+```
 
 **Do not** use **`./scripts/restart-local.sh`** alone when the API is down — it only starts Postgres unless you pass **`--serve`**. From repo root use **`make dev-auth-test`** (API + UI) or **`make local-up`**.
 
-Canonical plan: [`docs/plans/phase_48_dev_seed_and_small_farm_profiles.plan.md`](plans/phase_48_dev_seed_and_small_farm_profiles.plan.md) — idempotent seed, `small_indoor` profile, optional Timescale retention (dev-gated).
+Canonical plan: [`docs/plans/phase_48_dev_seed_and_small_farm_profiles.plan.md`](plans/phase_48_dev_seed_and_small_farm_profiles.plan.md).
 
 **Multi-site / enterprise (hypothetical):** how 500 warehouse-scale sites map onto org/farm/zone + commons recipe packs — no core software changes required: [`hypothetical-enterprise-topology.md`](hypothetical-enterprise-topology.md). **Phase 30** — Guardian PR queue (config + Pi via confirm): [`plans/phase_30_guardian_change_requests.plan.md`](plans/phase_30_guardian_change_requests.plan.md). **Phase 31** — Pi/breadboard field validation: [`plans/phase_31_field_validation_and_edge.plan.md`](plans/phase_31_field_validation_and_edge.plan.md).
 

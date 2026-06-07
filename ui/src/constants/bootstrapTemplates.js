@@ -1,4 +1,6 @@
-/** Keys must match `gr33ncore.apply_farm_bootstrap_template` (API / DB). */
+/** Keys must match `gr33ncore.apply_farm_bootstrap_template` (API / DB).
+ *  Phase 48: `jadam_indoor_photoperiod_v1` is the recommended small-indoor footprint for new farms;
+ *  farm 1 demo uses `demo_showcase` via master_seed — see docs/dev-farm-profiles.md. */
 export const BOOTSTRAP_TEMPLATE_KEYS = {
   JADAM_INDOOR_PHOTOPERIOD_V1: 'jadam_indoor_photoperiod_v1',
   CHICKEN_COOP_V1: 'chicken_coop_v1',

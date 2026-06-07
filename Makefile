@@ -182,8 +182,14 @@ restart-local: ## After reboot: Compose db up + wait + db sanity report (no migr
 restart-local-serve: ## Same as restart-local then make dev-auth-test (Go compile may be slow cold)
 	@./scripts/restart-local.sh --serve
 
-db-sanity-report: ## Read-only SQL checks (duplicate zones, extensions); exits non-zero if seed hazards detected
+db-sanity-report: ## Read-only SQL checks (duplicate zones/sensors, profile, extensions)
 	@./scripts/db-sanity-report.sh
+
+dev-reset-farm: ## Reset farm 1 demo config without volume wipe (Phase 48; DEV_SEED_PROFILE or --profile)
+	@./scripts/dev-reset-farm.sh $(ARGS)
+
+apply-dev-retention: ## Apply Timescale retention when TIMESCALE_RETENTION_DAYS is set (dev/staging)
+	@./scripts/apply-dev-retention.sh
 
 check-stack: ## Verify .env DATABASE_URL, pgvector, optional API /health (see docs/local-operator-bootstrap.md)
 	@./scripts/check-local-stack.sh

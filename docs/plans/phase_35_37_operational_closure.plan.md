@@ -71,7 +71,7 @@ todos:
     status: completed
   - id: oc-48-closure
     content: "OC-48: Phase 48 WS7 — dev seed profiles, idempotent seed, reset script, sanity report (close when Phase 48 ships)"
-    status: pending
+    status: completed
 isProject: false
 ---
 
@@ -358,17 +358,17 @@ Feature detail: [`phase_47_feeding_water_plain_language.plan.md`](phase_47_feedi
 
 ## Phase 48 — Dev seed hygiene & small farm profiles
 
-Feature detail: [`phase_48_dev_seed_and_small_farm_profiles.plan.md`](phase_48_dev_seed_and_small_farm_profiles.plan.md). **OC-48** pending.
+Feature detail: [`phase_48_dev_seed_and_small_farm_profiles.plan.md`](phase_48_dev_seed_and_small_farm_profiles.plan.md). **OC-48** closed (WS7). **Phase 48 shipped.**
 
 | Area | Status | Notes |
 |------|--------|-------|
-| Profile spec (`small_indoor` / `demo_showcase`) | ⏳ | WS1 |
-| Idempotent `master_seed` + unique sensors | ⏳ | WS2 — fixes duplicate sensor IDs on re-seed |
-| `dev-reset-farm.sh` | ⏳ | WS3 — without `--reset-volumes` |
-| Bootstrap template audit | ⏳ | WS4 — aligns with Phase 44 wizard |
-| Timescale retention (dev-gated) | ⏳ | WS5 |
-| `db-sanity-report` bloat metrics | ⏳ | WS6 |
-| OC-48 docs/smokes | ⏳ | WS7 |
+| Profile spec (`small_indoor` / `demo_showcase`) | ✅ | WS1 — `docs/dev-farm-profiles.md`, `farms.meta_data` |
+| Idempotent `master_seed` + unique sensors | ✅ | WS2 — migration `uq_sensors_farm_name_active`, `WHERE NOT EXISTS` |
+| `dev-reset-farm.sh` | ✅ | WS3 — surgical reset without `--reset-volumes` |
+| Bootstrap template alignment | ✅ | WS4 — `jadam_indoor` default for new farms; bootstrap idempotent |
+| Timescale retention (dev-gated) | ✅ | WS5 — `apply-dev-retention.sh` + `TIMESCALE_RETENTION_DAYS` |
+| `db-sanity-report` bloat metrics | ✅ | WS6 — sensors, profile, readings approx |
+| OC-48 docs/smokes | ✅ | WS7 — local-operator-bootstrap, architecture §7.0n, `phase-48-closure.test.js`, `smoke_phase48_test.go` |
 
 **Master roadmap:** [`farmer_ux_roadmap_40_plus.plan.md`](farmer_ux_roadmap_40_plus.plan.md). Closure rows **OC-42 … OC-48** track each phase WS8/WS7 — not pre-40 work. Vocabulary: [`farmer-vocabulary.md`](../farmer-vocabulary.md). Guardian specs: [42](phase_42_guardian_pr_spec.md) · [43](phase_43_guardian_pr_spec.md) · [44](phase_44_guardian_pr_spec.md) · [45](phase_45_guardian_pr_spec.md) · [46](phase_46_guardian_llm_tool_proposals.plan.md).
 

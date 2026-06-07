@@ -56,7 +56,7 @@ isProject: false
 | **7** | [phase_47](phase_47_feeding_water_plain_language.plan.md) + [farmer-vocabulary.md](../farmer-vocabulary.md) + tour §7b + arch §7.0m | ✅ |
 | **8** | [phase_48](phase_48_dev_seed_and_small_farm_profiles.plan.md) + [local-operator-bootstrap.md](../local-operator-bootstrap.md) slow-dev section | ✅ |
 
-**Documentation status:** Chunks 1–8 complete. Phases **39**, **39b**, **40–47**, **46**, and **product backlog** shipped on `main`. **Phase 48** plan written (parallel infra). **Next feature code:** [48](phase_48_dev_seed_and_small_farm_profiles.plan.md). **Guardian/PR docs for phases 42–46** are written — **OC-43** through **OC-46** closed.
+**Documentation status:** Chunks 1–8 complete. Phases **39**, **39b**, **40–48**, and **product backlog** shipped on `main`. **Guardian/PR docs for phases 42–46** and **OC-43 … OC-48** closed.
 
 ---
 
@@ -132,7 +132,7 @@ Whole-file ingest: `operator-tour.md` and `workflow-guide.md` are already in `in
 | **C3** | Closure doc stale Phase 36 snapshot | [phase_35_37_operational_closure.plan.md](phase_35_37_operational_closure.plan.md) | ✅ Chunk 1 |
 | **C4** | Demo **tasks** missing `zone_id` | [phase_40](phase_40_unified_farmer_ux_zone_cockpit.plan.md) WS6 · [phase_41](phase_41_farm_hub_coherence.plan.md) WS5 | ⏳ implement |
 | **C5** | RAG re-ingest after operator-doc edits | [OC-37E](phase_35_37_operational_closure.plan.md) · checklist above | ⏳ per phase ship |
-| **C6** | Dev DB bloat / duplicate sensors from re-seed | [phase_48](phase_48_dev_seed_and_small_farm_profiles.plan.md) · [local-operator-bootstrap.md](../local-operator-bootstrap.md#slow-ui-and-dev-db-hygiene) | ⏳ implement WS2–WS3 |
+| **C6** | Dev DB bloat / duplicate sensors from re-seed | [phase_48](phase_48_dev_seed_and_small_farm_profiles.plan.md) · [local-operator-bootstrap.md](../local-operator-bootstrap.md#slow-ui-and-dev-db-hygiene) | ✅ `dev-reset-farm.sh`, idempotent seed |
 
 ---
 

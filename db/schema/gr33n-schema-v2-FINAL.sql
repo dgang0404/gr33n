@@ -286,7 +286,8 @@ CREATE TABLE IF NOT EXISTS gr33ncore.farms (
     insert_commons_last_error TEXT,
     insert_commons_backoff_until TIMESTAMPTZ,
     insert_commons_consecutive_failures INT NOT NULL DEFAULT 0,
-    insert_commons_require_approval BOOLEAN NOT NULL DEFAULT FALSE
+    insert_commons_require_approval BOOLEAN NOT NULL DEFAULT FALSE,
+    meta_data            JSONB NOT NULL DEFAULT '{}'::jsonb
 );
 CREATE TRIGGER trg_farms_updated_at
     BEFORE UPDATE ON gr33ncore.farms
@@ -486,6 +487,9 @@ CREATE TABLE IF NOT EXISTS gr33ncore.sensors (
     deleted_at               TIMESTAMPTZ DEFAULT NULL,
     CONSTRAINT chk_sensor_farm_context CHECK (device_id IS NOT NULL OR farm_id IS NOT NULL)
 );
+CREATE UNIQUE INDEX IF NOT EXISTS uq_sensors_farm_name_active
+    ON gr33ncore.sensors (farm_id, name)
+    WHERE deleted_at IS NULL;
 CREATE TRIGGER trg_sensors_updated_at
     BEFORE UPDATE ON gr33ncore.sensors
     FOR EACH ROW EXECUTE FUNCTION gr33ncore.set_updated_at();

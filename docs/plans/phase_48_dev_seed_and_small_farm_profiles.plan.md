@@ -8,25 +8,25 @@ overview: >
 todos:
   - id: ws1-profiles-spec
     content: "WS1: Profile spec — small_indoor (2–3 zones, ~12 sensors) vs demo_showcase; document entity counts and which bootstrap templates each applies"
-    status: pending
+    status: completed
   - id: ws2-seed-idempotency
     content: "WS2: master_seed idempotency — unique (farm_id, name) on sensors/zones where safe; upsert-by-name instead of blind INSERT; fix ON CONFLICT DO NOTHING on sensors"
-    status: pending
+    status: completed
   - id: ws3-dev-reset-script
     content: "WS3: scripts/dev-reset-farm.sh — reset farm 1 config + readings without docker volume wipe; document vs dev-stack --reset-volumes"
-    status: pending
+    status: completed
   - id: ws4-bootstrap-alignment
     content: "WS4: Bootstrap template guards audit — apply_farm_bootstrap_template idempotency; default new dev farms to small_indoor profile"
-    status: pending
+    status: completed
   - id: ws5-timescale-retention
     content: "WS5: Optional dev retention — add_retention_policy on sensor_readings/actuator_events (env-gated); document in workflow-guide + operator-logging-runbook cross-link"
-    status: pending
+    status: completed
   - id: ws6-sanity-report
     content: "WS6: Extend db-sanity-report — sensor count per farm, duplicate names, readings row count, profile tag in farms.meta_data"
-    status: pending
+    status: completed
   - id: ws7-docs-tests
     content: "WS7: local-operator-bootstrap § dev profiles; operator-tour note; architecture §7.0n; smoke idempotent re-seed; OC-48"
-    status: pending
+    status: completed
 isProject: false
 ---
 
@@ -34,7 +34,7 @@ isProject: false
 
 ## Status
 
-**Planned.** Parallel to [Phase 43–46](farmer_ux_roadmap_40_plus.plan.md) farmer UX work — **does not block** feature phases. **Strongly recommended before [Phase 45](phase_45_farmer_validation_whole_app_polish.plan.md) sit-in** so validators see a believable small farm, not sensor id 280 sprawl.
+**Shipped.** WS1–WS7 complete — profiles, idempotent seed, `dev-reset-farm.sh`, sanity metrics, optional retention, OC-48 closed.
 
 **Roadmap:** [farmer_ux_roadmap_40_plus.plan.md](farmer_ux_roadmap_40_plus.plan.md) (dev hygiene track)
 
@@ -201,12 +201,12 @@ Exit non-zero on duplicate names (already zones); add sensor duplicate check.
 
 ## Definition of done
 
-- [ ] `small_indoor` and `demo_showcase` documented with entity targets
-- [ ] Re-running seed does not duplicate sensors on farm 1
-- [ ] `dev-reset-farm.sh` restores small profile without volume wipe
-- [ ] `db-sanity-report` flags bloat and duplicates
-- [ ] Optional dev retention policy documented and env-gated
-- [ ] local-operator-bootstrap + OC-48 closed
+- [x] `small_indoor` and `demo_showcase` documented with entity targets
+- [x] Re-running seed does not duplicate sensors on farm 1
+- [x] `dev-reset-farm.sh` restores small profile without volume wipe
+- [x] `db-sanity-report` flags bloat and duplicates
+- [x] Optional dev retention policy documented and env-gated
+- [x] local-operator-bootstrap + OC-48 closed
 
 ---
 

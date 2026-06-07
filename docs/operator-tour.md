@@ -456,7 +456,7 @@ On-prem gr33n, not a cloud subscription; Lite vs Full; LAN inference when config
 
 ### Suggested demo path
 
-1. **Alerts** — seeded demo farm has unread alerts after `make dev-stack-fresh`.
+1. **Alerts** — seeded demo farm has unread alerts after `make dev-stack-fresh`. Tour assumes **`demo_showcase`** profile on farm 1; daily dev may use **`make dev-reset-farm ARGS="--profile small_indoor"`** ([dev-farm-profiles.md](dev-farm-profiles.md)).
 2. **✨ Ask Guardian** on a humidity row (or open the drawer).
 3. Ask to acknowledge the alert → **Confirm** the proposal card.
 4. Open **`/guardian/requests`** or drawer **Pending** to see the inbox pattern.

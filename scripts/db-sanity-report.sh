@@ -41,5 +41,26 @@ if [[ "${dup:-0}" != "0" ]]; then
   exit 1
 fi
 
+sensor_dup="$(psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -tAc "
+SELECT count(*) FROM (
+  SELECT farm_id, name FROM gr33ncore.sensors
+  WHERE deleted_at IS NULL
+  GROUP BY farm_id, name HAVING count(*) > 1
+) t;" | tr -d '[:space:]')"
+
+if [[ "${sensor_dup:-0}" != "0" ]]; then
+  echo ""
+  echo "error: duplicate active sensor names detected ($sensor_dup groups). Run migration phase48 or ./scripts/dev-reset-farm.sh" >&2
+  exit 1
+fi
+
+farm1_sensors="$(psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -tAc "
+SELECT count(*) FROM gr33ncore.sensors WHERE farm_id = 1 AND deleted_at IS NULL;" | tr -d '[:space:]')"
+
+if [[ -n "${farm1_sensors:-}" && "${farm1_sensors}" -gt 24 ]]; then
+  echo ""
+  echo "warn: farm 1 has ${farm1_sensors} active sensors (>24) — consider ./scripts/dev-reset-farm.sh --profile small_indoor" >&2
+fi
+
 echo ""
-echo "ok  no duplicate zone names"
+echo "ok  no duplicate zone or sensor names"

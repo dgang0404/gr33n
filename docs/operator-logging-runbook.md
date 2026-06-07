@@ -2,7 +2,7 @@
 
 **Audience:** Operators running the **Go API** (`cmd/api`) on **Docker Compose**, systemd, or bare processes — anyone who needs **request traces**, **automation outcomes**, and **auth failures** beyond a scrolling terminal.
 
-**Not in scope here:** TimescaleDB **hypertable retention** (sensor readings, time-series pruning). That deletes **database rows**, not application stdout. See **[workflow-guide.md](workflow-guide.md)** and DB operator docs for table-level policies. Phase 26 separates **log retention** from **data retention** deliberately.
+**Not in scope here:** TimescaleDB **hypertable retention** (sensor readings, time-series pruning). That deletes **database rows**, not application stdout. See **[workflow-guide.md](workflow-guide.md)** and DB operator docs for table-level policies. Phase 26 separates **log retention** from **data retention** deliberately. **Dev/staging optional:** Phase 48 [`apply-dev-retention.sh`](../scripts/apply-dev-retention.sh) when `TIMESCALE_RETENTION_DAYS` is set — see [`dev-farm-profiles.md`](dev-farm-profiles.md).
 
 **RAG vs logs:** Operational logs are **not** farm Knowledge ingest by default — see **[rag-scope-and-threat-model.md](rag-scope-and-threat-model.md) §9**.
 

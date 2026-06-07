@@ -572,3 +572,4 @@ Operator-facing constraints (PII, secrets, Insert Commons boundaries) are docume
 - For **RAG CI / DB parity**: [`rag-ci-and-staging-parity.md`](rag-ci-and-staging-parity.md).
 - For **schema ER diagram (text + Mermaid)** including **`rag_embedding_chunks`**: [`schema-erd-text.md`](schema-erd-text.md).
 - For **API operational logs** (Docker / journald / archival vs DB retention): [`operator-logging-runbook.md`](operator-logging-runbook.md).
+- For **dev DB hygiene** (idempotent seed, `small_indoor` profile, optional Timescale row retention): [`dev-farm-profiles.md`](dev-farm-profiles.md) · Phase 48 [`apply-dev-retention.sh`](../scripts/apply-dev-retention.sh) when `TIMESCALE_RETENTION_DAYS` is set.

@@ -419,6 +419,12 @@ Plan: [`plans/phase_46_guardian_llm_tool_proposals.plan.md`](plans/phase_46_guar
 
 Operator: [operator-tour §6h](operator-tour.md#6h-when-guardian-opens-a-card-from-your-words-phase-46--shipped).
 
+### 7.0n Dev seed profiles (Phase 48 — shipped)
+
+**Shipped:** `docs/dev-farm-profiles.md` — `small_indoor` vs `demo_showcase` profiles on `farms.meta_data.dev_seed_profile`; idempotent `master_seed.sql`; `scripts/dev-reset-farm.sh`; extended `db-sanity-report`; optional Timescale retention (`apply-dev-retention.sh`). **OC-48** via `phase-48-closure.test.js`.
+
+Plan: [`plans/phase_48_dev_seed_and_small_farm_profiles.plan.md`](plans/phase_48_dev_seed_and_small_farm_profiles.plan.md) · Bootstrap: [`local-operator-bootstrap.md`](local-operator-bootstrap.md#slow-ui-and-dev-db-hygiene).
+
 ### 7.0m Feeding & water plain language (Phase 47)
 
 **Shipped.** Plan: [`plans/phase_47_feeding_water_plain_language.plan.md`](plans/phase_47_feeding_water_plain_language.plan.md) · Vocabulary: [`farmer-vocabulary.md`](farmer-vocabulary.md).

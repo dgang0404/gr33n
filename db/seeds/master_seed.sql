@@ -1,5 +1,6 @@
 -- =============================================================================
--- gr33n Master Seed File  v1.006
+-- gr33n Master Seed File  v1.007
+-- Phase 48: idempotent sensors/automation_rules; demo_showcase profile tag on farm 1.
 -- + Demo input_batches (inventory), flower reservoir + fertigation program,
 --   Phase 29 WS7 — three unread Guardian demo alerts (farm 1).
 --   mixing_events + components, crop_cycles, protocol tasks (18/6 veg vs 12/12 flower).
@@ -48,6 +49,11 @@ VALUES (
     '{}'::jsonb,
     NOW()
 ) ON CONFLICT (farm_id, user_id) DO NOTHING;
+
+-- Phase 48 — demo farm 1 uses full showcase profile (small_indoor via dev-reset-farm.sh).
+UPDATE gr33ncore.farms
+SET meta_data = COALESCE(meta_data, '{}'::jsonb) || '{"dev_seed_profile":"demo_showcase"}'::jsonb
+WHERE id = 1;
 
 INSERT INTO gr33ncore.zones (farm_id, name, description, zone_type)
 SELECT 1, v.name, v.description, v.zone_type
@@ -840,51 +846,38 @@ WHERE z.farm_id = 1
 INSERT INTO gr33ncore.automation_rules
     (farm_id, name, description, is_active, trigger_source,
      trigger_configuration, condition_logic)
-VALUES
-
-(1, 'AUTO Light ON 18/6 Veg',
- 'Turn grow lights ON at 06:00 for 18/6 vegetative schedule.',
- false, 'specific_time_cron',
- '{"cron": "0 6 * * *", "timezone": "America/New_York",
-   "action": "actuator_on", "target_zone": "Veg Room"}',
- 'ALL'),
-
-(1, 'AUTO Light OFF 18/6 Veg',
- 'Turn grow lights OFF at midnight for 18/6 vegetative schedule.',
- false, 'specific_time_cron',
- '{"cron": "0 0 * * *", "timezone": "America/New_York",
-   "action": "actuator_off", "target_zone": "Veg Room"}',
- 'ALL'),
-
-(1, 'AUTO Light ON 12/12 Flower',
- 'Turn grow lights ON at 06:00 for 12/12 flowering schedule.',
- false, 'specific_time_cron',
- '{"cron": "0 6 * * *", "timezone": "America/New_York",
-   "action": "actuator_on", "target_zone": "Flower Room"}',
- 'ALL'),
-
-(1, 'AUTO Light OFF 12/12 Flower',
- 'Turn grow lights OFF at 18:00. 12 hours uninterrupted dark triggers flowering.',
- false, 'specific_time_cron',
- '{"cron": "0 18 * * *", "timezone": "America/New_York",
-   "action": "actuator_off", "target_zone": "Flower Room"}',
- 'ALL'),
-
-(1, 'AUTO Light ON 16/8 Moderate Veg',
- 'Turn grow lights ON at 06:00 for 16/8 schedule.',
- false, 'specific_time_cron',
- '{"cron": "0 6 * * *", "timezone": "America/New_York",
-   "action": "actuator_on", "target_zone": "Veg Room"}',
- 'ALL'),
-
-(1, 'AUTO Light OFF 16/8 Moderate Veg',
- 'Turn grow lights OFF at 22:00 for 16/8 schedule.',
- false, 'specific_time_cron',
- '{"cron": "0 22 * * *", "timezone": "America/New_York",
-   "action": "actuator_off", "target_zone": "Veg Room"}',
- 'ALL')
-
-ON CONFLICT DO NOTHING;
+SELECT
+    1,
+    v.name,
+    v.description,
+    FALSE,
+    'specific_time_cron'::gr33ncore.automation_trigger_source_enum,
+    v.trigger_configuration::jsonb,
+    'ALL'
+FROM (VALUES
+    ('AUTO Light ON 18/6 Veg',
+     'Turn grow lights ON at 06:00 for 18/6 vegetative schedule.',
+     '{"cron": "0 6 * * *", "timezone": "America/New_York", "action": "actuator_on", "target_zone": "Veg Room"}'),
+    ('AUTO Light OFF 18/6 Veg',
+     'Turn grow lights OFF at midnight for 18/6 vegetative schedule.',
+     '{"cron": "0 0 * * *", "timezone": "America/New_York", "action": "actuator_off", "target_zone": "Veg Room"}'),
+    ('AUTO Light ON 12/12 Flower',
+     'Turn grow lights ON at 06:00 for 12/12 flowering schedule.',
+     '{"cron": "0 6 * * *", "timezone": "America/New_York", "action": "actuator_on", "target_zone": "Flower Room"}'),
+    ('AUTO Light OFF 12/12 Flower',
+     'Turn grow lights OFF at 18:00. 12 hours uninterrupted dark triggers flowering.',
+     '{"cron": "0 18 * * *", "timezone": "America/New_York", "action": "actuator_off", "target_zone": "Flower Room"}'),
+    ('AUTO Light ON 16/8 Moderate Veg',
+     'Turn grow lights ON at 06:00 for 16/8 schedule.',
+     '{"cron": "0 6 * * *", "timezone": "America/New_York", "action": "actuator_on", "target_zone": "Veg Room"}'),
+    ('AUTO Light OFF 16/8 Moderate Veg',
+     'Turn grow lights OFF at 22:00 for 16/8 schedule.',
+     '{"cron": "0 22 * * *", "timezone": "America/New_York", "action": "actuator_off", "target_zone": "Veg Room"}')
+) AS v(name, description, trigger_configuration)
+WHERE NOT EXISTS (
+    SELECT 1 FROM gr33ncore.automation_rules r
+    WHERE r.farm_id = 1 AND r.name = v.name
+);
 
 -- ===========================================================================
 -- SECTION 6: SENSOR TEMPLATES
@@ -927,7 +920,12 @@ FROM (VALUES
      '{"notes":"Ambient 400ppm. Enrichment 800-1200ppm veg, 1000-1500ppm flower."}')
 ) AS s(name, sensor_type, unit_name, vmin, vmax, alert_low, alert_high, interval_sec, config)
 JOIN gr33ncore.units u ON u.name = s.unit_name
-ON CONFLICT DO NOTHING;
+WHERE NOT EXISTS (
+    SELECT 1 FROM gr33ncore.sensors existing
+    WHERE existing.farm_id = 1
+      AND existing.name = s.name
+      AND existing.deleted_at IS NULL
+);
 
 COMMIT;
 
@@ -980,7 +978,10 @@ FROM (VALUES
   ('Flower Room',     NULL,                          'Harvest Flower Room A',                     'Week 9 photoperiod crop. Flush complete. Check trichomes.', 'harvest',       'completed',   3, CURRENT_DATE - 2),
   ('Outdoor Garden',  NULL,                          'Turn compost pile',                         'Aerate pile. Check temp 55–65C. Moisture should clump not drip.', 'soil_prep',    'completed',   1, CURRENT_DATE - 5)
 ) AS t(z, sched, title, description, task_type, status, priority, due_date)
-ON CONFLICT DO NOTHING;
+WHERE NOT EXISTS (
+    SELECT 1 FROM gr33ncore.tasks existing
+    WHERE existing.farm_id = 1 AND existing.title = t.title
+);
 
 -- ===========================================================================
 -- SECTION 8: INVENTORY BATCHES + FLOWER FERTIGATION + MIXING HISTORY
