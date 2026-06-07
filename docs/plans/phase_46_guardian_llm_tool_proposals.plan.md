@@ -16,7 +16,7 @@ todos:
     status: completed
   - id: ws4-safety
     content: "WS4: Tests — no execute without Confirm; reject unknown tool/args/hallucinated IDs"
-    status: pending
+    status: completed
   - id: ws5-observability
     content: "WS5: Metrics — llm_proposal_suggested, rejected_validation, matcher_hit"
     status: pending
@@ -30,7 +30,7 @@ isProject: false
 
 ## Status
 
-**In progress.** WS1–WS3 shipped (policy, schema/binding, chat handler hook). WS4 safety tests next.
+**In progress.** WS1–WS4 shipped (policy, schema/binding, handler, safety tests). WS5 observability next.
 
 **Canonical implementation spec:** this document (full phase = Guardian slice).
 
@@ -210,19 +210,21 @@ Files (expected):
 
 ---
 
-## 8. Safety tests (WS4)
+## WS4 — Safety tests ✅
 
-| Case | Expect |
-|------|--------|
-| Matcher hit + LLM also emits tool | Single matcher proposal only |
-| Unknown `tool` | No row; no Confirm |
-| Wrong `program_id` for farm | Rejected |
-| `apply_bootstrap_template` from LLM | Rejected (not on allowlist) |
-| Viewer role | No LLM proposal insert |
-| Confirm without Operate | 403 (existing) |
-| Expired proposal | Confirm fails (existing TTL) |
+**Shipped:** `proposals_llm_safety_test.go` (unit gates) + `smoke_phase46_ws4_test.go` (DB smokes) + `phase-46-ws4-safety.test.js`. Confirm RBAC reuses Phase 29 WS5 `TestPhase29WS5_Confirm_ViewerForbidden`.
 
-Smoke: one happy path `patch_fertigation_program` via LLM JSON in integration test with mock LLM client.
+| Case | Expect | Test |
+|------|--------|------|
+| Matcher hit + LLM also emits tool | Single matcher proposal only | `TestPhase46WS4_MatcherFirstIgnoresLLMJSON` |
+| Unknown `tool` | No row; no Confirm | `TestTryBuildLLM_NotOnAllowlist` |
+| Wrong `program_id` for farm | Rejected | `TestPhase46WS4_WrongProgramIDRejected` |
+| `apply_bootstrap_template` from LLM | Rejected (not on allowlist) | `TestTryBuildLLM_BootstrapTemplateRejected` |
+| Viewer role | No LLM proposal insert | `TestTryBuildLLM_NoOperateSkipsInsert` + `TestPhase46WS4_ViewerNoLLMInsert` |
+| Confirm without Operate | 403 (existing) | Phase 29 WS5 smoke |
+| Expired proposal | Confirm fails (existing TTL) | `TestPhase46WS4_ConfirmExpiredProposalGone` |
+
+Happy path: `TestPhase46WS4_LLMHappyPathPatchFertigationProgram` — `patch_fertigation_program` via structured LLM JSON.
 
 ---
 
