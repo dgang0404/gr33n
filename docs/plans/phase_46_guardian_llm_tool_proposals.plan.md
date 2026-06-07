@@ -10,7 +10,7 @@ todos:
     status: completed
   - id: ws2-schema
     content: "WS2: JSON schema per registry tool; server validation + risk tier replay"
-    status: pending
+    status: completed
   - id: ws3-handler
     content: "WS3: Chat handler — parse LLM tool block; insert proposal row; SSE proposals[]"
     status: pending
@@ -30,7 +30,7 @@ isProject: false
 
 ## Status
 
-**In progress.** WS1 hybrid policy shipped (`proposals_llm.go`). After [Phase 45](phase_45_farmer_validation_whole_app_polish.plan.md) farmer UX arc.
+**In progress.** WS1 policy + WS2 schema/ID binding shipped (`proposals_llm.go`, `proposals_llm_validate.go`). WS3 handler hook next.
 
 **Canonical implementation spec:** this document (full phase = Guardian slice).
 
@@ -77,7 +77,13 @@ Starters improve **what you ask**. Matchers improve **deterministic** cards. Pha
 
 ## WS1 — Hybrid policy ✅
 
-**Shipped:** `internal/farmguardian/proposals_llm.go` — `GUARDIAN_LLM_PROPOSALS` env flag, `ShouldAttemptLLMProposal`, `HasWriteIntent`, v1 allowlist §5, `ParseLLMProposalFromAssistant`, `ValidateLLMProposalDraft`, `TryBuildLLMProposalsFromAssistant` (handler hook in WS3). Tests: `proposals_llm_test.go`, `phase-46-ws1-policy.test.js`.
+**Shipped:** `internal/farmguardian/proposals_llm.go` — `GUARDIAN_LLM_PROPOSALS` env flag, `ShouldAttemptLLMProposal`, `HasWriteIntent`, v1 allowlist §5, `ParseLLMProposalFromAssistant`, `TryBuildLLMProposalsFromAssistant` (handler hook in WS3). Tests: `proposals_llm_test.go`, `phase-46-ws1-policy.test.js`.
+
+---
+
+## WS2 — Schema + farm ID binding ✅
+
+**Shipped:** `internal/farmguardian/proposals_llm_validate.go` — per-tool arg schema, DB farm-scope binding (`program_id`, `schedule_id`, `rule_id`, `alert_id`, `zone_id`, `crop_cycle_id`), `patch_rule` is_active-false-only v1, `LogLLMProposalRejected`. Tests: `proposals_llm_validate_test.go`, `phase-46-ws2-schema.test.js`.
 
 ---
 

@@ -407,9 +407,9 @@ Plans: [`plans/phase_45_farmer_validation_whole_app_polish.plan.md`](plans/phase
 
 Operator: [operator-tour §9](operator-tour.md#9-farmer-validation-sit-in-phase-45--shipped) · modules [§10a](operator-tour.md#10a-livestock-modules-phase-45-ws5--shipped) · a11y [§10b](operator-tour.md#10b-light-accessibility-phase-45-ws6--shipped) · mobile [§10c](operator-tour.md#10c-mobile-distribution-phase-45-ws4--shipped).
 
-### 7.0l LLM tool proposals (Phase 46 — WS1 shipped; handler WS3 pending)
+### 7.0l LLM tool proposals (Phase 46 — WS1/WS2 shipped; handler WS3 pending)
 
-**WS1 shipped:** `proposals_llm.go` — `GUARDIAN_LLM_PROPOSALS` feature flag, write-intent gate, v1 tool allowlist, JSON parse + validate. Plan: [`plans/phase_46_guardian_llm_tool_proposals.plan.md`](plans/phase_46_guardian_llm_tool_proposals.plan.md).
+**WS1/WS2 shipped:** `proposals_llm.go` + `proposals_llm_validate.go` — feature flag, write-intent gate, allowlist, per-tool schema, farm ID binding, reject logging. Plan: [`plans/phase_46_guardian_llm_tool_proposals.plan.md`](plans/phase_46_guardian_llm_tool_proposals.plan.md).
 
 - **Hybrid C:** matchers first (`BuildRuleAssistedProposals`); on miss + write intent + Operate + flag, LLM may suggest validated proposal JSON (WS3 wires chat handler).
 - Same Confirm / frozen args / audit — `meta.llm_sourced` on proposal row.

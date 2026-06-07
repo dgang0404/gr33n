@@ -43,6 +43,6 @@ describe('Phase 46 WS1 — hybrid policy closure', () => {
   it('architecture §7.0l references hybrid policy', () => {
     const arch = readFileSync(join(repoDocs, 'farm-guardian-architecture.md'), 'utf8')
     expect(arch).toContain('### 7.0l LLM tool proposals (Phase 46')
-    expect(arch).toContain('GUARDIAN_LLM_PROPOSALS')
+    expect(arch).toContain('proposals_llm.go')
   })
 })

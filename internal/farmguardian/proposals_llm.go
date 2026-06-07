@@ -10,7 +10,6 @@ import (
 	"github.com/google/uuid"
 
 	db "gr33n-api/internal/db"
-	"gr33n-api/internal/farmguardian/tools"
 )
 
 // LLMProposalPolicy gates Phase 46 hybrid-C (matchers first, LLM proposal on miss).
@@ -147,34 +146,6 @@ func extractJSONBlocks(text string) []string {
 	return out
 }
 
-// ValidateLLMProposalDraft applies allowlist + registry checks (WS1); ID binding expands in WS2.
-func ValidateLLMProposalDraft(draft LLMProposalDraft, hasAdmin bool) (rejectReason string) {
-	tool := strings.TrimSpace(draft.Tool)
-	if tool == "" {
-		return "missing tool"
-	}
-	if !IsLLMToolAllowed(tool) {
-		return "tool not on LLM allowlist"
-	}
-	t, err := tools.Lookup(tool)
-	if err != nil {
-		return "unknown tool"
-	}
-	if t.RequiresAdmin && !hasAdmin {
-		return "tool requires admin"
-	}
-	if draft.Summary == "" {
-		return "missing summary"
-	}
-	if len(draft.Args) == 0 {
-		return "missing args"
-	}
-	if strings.EqualFold(draft.Confidence, "low") && tools.RiskTierForTool(tool, draft.Args) == "high" {
-		return "low confidence on high-tier tool"
-	}
-	return ""
-}
-
 // TryBuildLLMProposalsFromAssistant inserts a validated LLM-sourced proposal when policy allows.
 // Called after rule-assisted matchers miss (Phase 46 WS3 wires this into chat handler).
 func TryBuildLLMProposalsFromAssistant(
@@ -204,7 +175,8 @@ func TryBuildLLMProposalsFromAssistant(
 	if !ok {
 		return nil, nil
 	}
-	if reason := ValidateLLMProposalDraft(draft, hasAdmin); reason != "" {
+	if reason := ValidateLLMProposalDraft(ctx, q, farmID, draft, hasAdmin); reason != "" {
+		LogLLMProposalRejected(farmID, draft.Tool, reason)
 		return nil, nil
 	}
 	row, err := insertProposal(ctx, q, insertProposalInput{
