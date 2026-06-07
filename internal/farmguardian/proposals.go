@@ -109,6 +109,18 @@ func BuildRuleAssistedProposals(
 	return []ActionProposal{ActionProposalFromRow(row)}, nil
 }
 
+// FreshMatcherMatches reports whether rule-assisted matchers would propose on a fresh turn.
+func FreshMatcherMatches(
+	ctx context.Context,
+	q db.Querier,
+	farmID int64,
+	question string,
+	snap Snapshot,
+) bool {
+	_, _, _, ok := matchFreshProposal(ctx, q, farmID, question, snap)
+	return ok
+}
+
 // matchFreshProposal runs the Phase 29/30/32 intent matchers for a brand-new draft.
 func matchFreshProposal(
 	ctx context.Context,

@@ -412,7 +412,7 @@ func (h *Handler) PostV1(w http.ResponseWriter, r *http.Request) {
 	if turnIdx, perr := h.persistTurn(r.Context(), sessionID, userID, hasUser, farmID, grounded, question, answer, resp.Citations, len(chunks), usage); perr == nil {
 		resp.TurnIndex = turnIdx
 	}
-	h.attachProposals(r.Context(), farmID, hasUser, userID, sessionID, question, liveSnap, &resp)
+	h.attachProposals(r.Context(), farmID, hasUser, userID, sessionID, question, answer, liveSnap, &resp)
 
 	slog.Info("farm guardian chat completed",
 		"farm_id", farmID,
@@ -517,7 +517,7 @@ func (h *Handler) streamResponse(
 	if turnIdx, perr := h.persistTurn(r.Context(), sessionID, userID, hasUser, farmID, grounded, question, answer, done.Citations, len(chunks), usage); perr == nil {
 		done.TurnIndex = turnIdx
 	}
-	h.attachProposals(r.Context(), farmID, hasUser, userID, sessionID, question, liveSnap, &done)
+	h.attachProposals(r.Context(), farmID, hasUser, userID, sessionID, question, answer, liveSnap, &done)
 
 	sendEvent("done", done)
 	_, _ = w.Write([]byte("data: [DONE]\n\n"))

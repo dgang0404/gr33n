@@ -428,7 +428,8 @@ func formatInt(n int64) string {
 	return string(b[i:])
 }
 
-// attachProposals adds rule-assisted proposals to the chat response when grounded.
+// attachProposals adds rule-assisted proposals to the chat response; on matcher miss,
+// optionally inserts a validated LLM-sourced proposal (Phase 46 hybrid C).
 func (h *Handler) attachProposals(
 	ctx context.Context,
 	farmID int64,
@@ -436,6 +437,7 @@ func (h *Handler) attachProposals(
 	userID uuid.UUID,
 	sessionID uuid.UUID,
 	question string,
+	assistantText string,
 	snap farmguardian.Snapshot,
 	resp *postResponse,
 ) {
@@ -446,5 +448,31 @@ func (h *Handler) attachProposals(
 	if err != nil {
 		return
 	}
-	resp.Proposals = props
+	if len(props) > 0 {
+		resp.Proposals = props
+		return
+	}
+
+	caps, cerr := farmauthz.FarmCapsForUser(ctx, h.q, userID, farmID)
+	if cerr != nil {
+		return
+	}
+	llmProps, err := farmguardian.TryBuildLLMProposalsFromAssistant(
+		ctx,
+		h.q,
+		userID,
+		farmID,
+		sessionID,
+		question,
+		assistantText,
+		farmguardian.LoadLLMProposalPolicyFromEnv(),
+		caps.Operate,
+		caps.Admin,
+		false,
+		farmguardian.FreshMatcherMatches(ctx, h.q, farmID, question, snap),
+	)
+	if err != nil {
+		return
+	}
+	resp.Proposals = llmProps
 }

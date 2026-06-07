@@ -13,7 +13,7 @@ todos:
     status: completed
   - id: ws3-handler
     content: "WS3: Chat handler — parse LLM tool block; insert proposal row; SSE proposals[]"
-    status: pending
+    status: completed
   - id: ws4-safety
     content: "WS4: Tests — no execute without Confirm; reject unknown tool/args/hallucinated IDs"
     status: pending
@@ -30,7 +30,7 @@ isProject: false
 
 ## Status
 
-**In progress.** WS1 policy + WS2 schema/ID binding shipped (`proposals_llm.go`, `proposals_llm_validate.go`). WS3 handler hook next.
+**In progress.** WS1–WS3 shipped (policy, schema/binding, chat handler hook). WS4 safety tests next.
 
 **Canonical implementation spec:** this document (full phase = Guardian slice).
 
@@ -84,6 +84,12 @@ Starters improve **what you ask**. Matchers improve **deterministic** cards. Pha
 ## WS2 — Schema + farm ID binding ✅
 
 **Shipped:** `internal/farmguardian/proposals_llm_validate.go` — per-tool arg schema, DB farm-scope binding (`program_id`, `schedule_id`, `rule_id`, `alert_id`, `zone_id`, `crop_cycle_id`), `patch_rule` is_active-false-only v1, `LogLLMProposalRejected`. Tests: `proposals_llm_validate_test.go`, `phase-46-ws2-schema.test.js`.
+
+---
+
+## WS3 — Chat handler wiring ✅
+
+**Shipped:** `internal/handler/chat/confirm.go` — `attachProposals` calls `BuildRuleAssistedProposals` first; on empty, `TryBuildLLMProposalsFromAssistant` with `FreshMatcherMatches`, `FarmCapsForUser`, and `GUARDIAN_LLM_PROPOSALS`. Non-stream `PostV1` and SSE `done` pass assistant text. Tests: `confirm_proposals_test.go`, `phase-46-ws3-handler.test.js`.
 
 ---
 

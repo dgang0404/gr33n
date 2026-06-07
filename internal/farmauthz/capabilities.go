@@ -1,9 +1,11 @@
 package farmauthz
 
 import (
+	"context"
 	"errors"
 	"net/http"
 
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 
 	"gr33n-api/internal/authctx"
@@ -99,4 +101,23 @@ func RequireFarmOperate(w http.ResponseWriter, r *http.Request, q db.Querier, fa
 func RequireFarmAdmin(w http.ResponseWriter, r *http.Request, q db.Querier, farmID int64) bool {
 	return RequireFarmCaps(w, r, q, farmID, func(c FarmCaps) bool { return c.Admin },
 		"insufficient role for farm administration")
+}
+
+// FarmCapsForUser resolves capabilities for a user on a farm without writing HTTP errors.
+func FarmCapsForUser(ctx context.Context, q db.Querier, userID uuid.UUID, farmID int64) (FarmCaps, error) {
+	if authctx.FarmAuthzSkip(ctx) {
+		return fullCaps(), nil
+	}
+	farm, err := q.GetFarmByID(ctx, farmID)
+	if err != nil {
+		return FarmCaps{}, err
+	}
+	if farm.OwnerUserID == userID {
+		return fullCaps(), nil
+	}
+	m, err := q.GetFarmMembership(ctx, db.GetFarmMembershipParams{FarmID: farmID, UserID: userID})
+	if err != nil {
+		return FarmCaps{}, err
+	}
+	return capsForRole(m.RoleInFarm), nil
 }
