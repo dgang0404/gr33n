@@ -31,25 +31,44 @@
       <div v-for="group in navGroups" :key="group.label">
         <p v-if="!collapsed" class="px-3 mb-1 text-[10px] uppercase tracking-widest text-gray-600 font-semibold">{{ group.label }}</p>
         <div class="space-y-0.5">
-          <RouterLink
-            v-for="item in group.items"
-            :key="item.to"
-            :to="item.to"
-            class="flex items-center rounded-lg text-sm text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
-            :class="[
-              collapsed ? 'justify-center px-0 py-2' : 'gap-3 px-3 py-2',
-              isRelatedNav(item.to) ? 'nav-related' : '',
-            ]"
-            active-class="bg-gr33n-900 text-gr33n-400 font-semibold"
-            :title="item.navTitle ?? (collapsed ? item.label : undefined)"
-            @mouseenter="hoveredRoute = item.to"
-            @mouseleave="hoveredRoute = null"
-            @focus="hoveredRoute = item.to"
-            @blur="onNavBlur"
-          >
-            <span class="text-lg shrink-0">{{ item.icon }}</span>
-            <span v-if="!collapsed" class="flex-1 min-w-0">{{ item.label }}</span>
-          </RouterLink>
+          <template v-for="item in group.items" :key="item.to">
+            <RouterLink
+              :to="item.to"
+              class="flex items-center rounded-lg text-sm text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
+              :class="[
+                collapsed ? 'justify-center px-0 py-2' : 'gap-3 px-3 py-2',
+                isRelatedNav(item.to) ? 'nav-related' : '',
+              ]"
+              active-class="bg-gr33n-900 text-gr33n-400 font-semibold"
+              :title="item.navTitle ?? (collapsed ? item.label : undefined)"
+              @mouseenter="hoveredRoute = item.to"
+              @mouseleave="hoveredRoute = null"
+              @focus="hoveredRoute = item.to"
+              @blur="onNavBlur"
+            >
+              <span class="text-lg shrink-0">{{ item.icon }}</span>
+              <span v-if="!collapsed" class="flex-1 min-w-0">{{ item.label }}</span>
+            </RouterLink>
+            <!-- Sub-items: indented, only visible when sidebar is expanded -->
+            <template v-if="!collapsed && item.children?.length">
+              <RouterLink
+                v-for="child in item.children"
+                :key="child.to"
+                :to="child.to"
+                class="flex items-center gap-2 rounded-lg text-xs text-gray-500 hover:text-white hover:bg-gray-800 transition-colors pl-8 pr-3 py-1.5"
+                :class="isRelatedNav(child.to) ? 'nav-related' : ''"
+                active-class="text-gr33n-400 font-semibold"
+                :title="child.navTitle"
+                @mouseenter="hoveredRoute = child.to"
+                @mouseleave="hoveredRoute = null"
+                @focus="hoveredRoute = child.to"
+                @blur="onNavBlur"
+              >
+                <span class="text-sm shrink-0 opacity-70">{{ child.icon }}</span>
+                <span class="flex-1 min-w-0 truncate">{{ child.label }}</span>
+              </RouterLink>
+            </template>
+          </template>
         </div>
       </div>
     </nav>

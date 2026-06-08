@@ -11,6 +11,7 @@ export const NAV_RELATIONS = {
   '/actuators': ['/sensors', '/fertigation'],
   '/sensors': ['/actuators'],
   '/lighting': ['/fertigation'],
+  '/pi-setup': ['/sensors', '/actuators'],
 }
 
 /**

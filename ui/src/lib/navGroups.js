@@ -142,7 +142,19 @@ export function buildNavGroups(cycleCompareRoute) {
     {
       label: 'System',
       items: [
-        { to: '/operator-guide', icon: '📖', label: 'Guide' },
+        {
+          to: '/operator-guide',
+          icon: '📖',
+          label: 'Guide',
+          children: [
+            {
+              to: '/pi-setup',
+              icon: '🔌',
+              label: 'Pi + HAT setup',
+              navTitle: 'Raspberry Pi + Sequent Microsystems relay HAT wiring guide',
+            },
+          ],
+        },
         { to: '/catalog', icon: '📚', label: 'Catalog' },
         {
           to: '/chat',
