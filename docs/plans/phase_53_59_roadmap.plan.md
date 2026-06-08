@@ -64,8 +64,20 @@ isProject: false
 |-------|---------|--------------|------|
 | **60** | Morning walkthrough — one tap, Guardian tells you what's wrong today | Read tool | [phase_60](phase_60_guardian_morning_walkthrough.plan.md) |
 | **61** | Proactive nudges — dot on robot icon when something needs attention | Lightweight poller | [phase_61](phase_61_guardian_proactive_nudges.plan.md) |
-| **62** | Grow advisor — VPD, DLI, stage transitions, post-harvest analysis | Read tool | [phase_62](phase_62_guardian_grow_advisor.plan.md) |
+| **62** | Grow advisor — VPD, DLI, stage transitions, post-harvest analysis | Read tool (needs 64) | [phase_62](phase_62_guardian_grow_advisor.plan.md) |
 | **63** | Session memory — Guardian remembers what you asked, you control it | Session summary job | [phase_63](phase_63_guardian_session_memory.plan.md) |
+
+### Guardian knowledge & sensing arc (64–66)
+
+These answer *"how does Guardian actually KNOW things?"* — grounding, not guessing.
+
+| Phase | One job | New backend? | Plan |
+|-------|---------|--------------|------|
+| **64** | Crop knowledge base — real EC/pH/VPD/DLI per crop per stage; Guardian cites, never guesses | Migration + seed | [phase_64](phase_64_crop_knowledge_base.plan.md) |
+| **65** | Weather & site — offline solar (sunrise/DLI from lat-long), sensor, optional online | Solar engine + ingest | [phase_65](phase_65_weather_site_context.plan.md) |
+| **66** | Hands-free field assistant — voice in/out, crop-grounded photo diagnosis | STT/TTS + vision | [phase_66](phase_66_guardian_field_assistant.plan.md) |
+
+**Key dependency:** **64 must precede 62** — the grow advisor reads targets from the crop knowledge base. **64 also grounds 66** photo diagnosis. **65** is independent (schema + coordinates already exist).
 
 ---
 
@@ -101,8 +113,14 @@ flowchart TB
 **Guardian intelligence arc:**
 8. **60** after 55 read tools ship — morning walkthrough uses same pipeline
 9. **61** after 60 — nudge engine wraps same data
-10. **62** after 56 grow schema — needs `plant_id` + stage data
-11. **63** when session list is well-established — memory wraps existing sessions
+10. **64** before 62 — crop knowledge base must exist for grow advisor to cite targets
+11. **62** after 56 + 64 — needs `plant_id`, stage data, and real targets
+12. **63** when session list is well-established — memory wraps existing sessions
+
+**Knowledge & sensing arc:**
+13. **64** anytime after 56 — foundational; unblocks 62 and 66
+14. **65** anytime — coordinates + `weather_data` table already exist; offline solar first
+15. **66** after 64 — voice baseline is independent; photo diagnosis grounds on 64
 
 ---
 
@@ -137,10 +155,31 @@ flowchart TB
 | OC-59 | 59 enterprise doc | README + gaps index updated |
 | OC-60 | 60 morning walkthrough | walk_farm tool + closure test |
 | OC-61 | 61 nudges | Dot badge + dismiss + operator-tour |
-| OC-62 | 62 grow advisor | VPD starters + post-harvest + closure test |
+| OC-62 | 62 grow advisor | VPD/EC starters (from 64) + post-harvest + closure test |
 | OC-63 | 63 session memory | Topic tags + inject + delete + privacy note |
+| OC-64 | 64 crop knowledge base | 7 profiles seeded + grounding guard test |
+| OC-65 | 65 weather & site | Offline solar test + supplemental-light starter |
+| OC-66 | 66 field assistant | Mic + TTS + grounded photo diagnosis |
 
 Track in [phase_35_37_operational_closure.plan.md](phase_35_37_operational_closure.plan.md).
+
+---
+
+## Guardian "almighty helper" backlog (not yet phased)
+
+Ideas worth doing, parked until 60–66 prove out. Each could become a phase.
+
+| Idea | Sketch | Why later |
+|------|--------|-----------|
+| **Trend / anomaly detection** | "Your RH has crept up 8% over 5 days" — rolling stats on sensor history | Needs 60/61 data pipeline first |
+| **What-if simulator** | "If I drop RH to 55%, VPD becomes 1.3 kPa" — pure-math preview | Small; bolt onto 62 advisor |
+| **Auto feed-chart generator** | From crop profile (64) + water test → full weekly feed schedule draft → Confirm | Needs 64 + a write tool (Phase 46 track) |
+| **Yield / harvest prediction** | Days-to-harvest + estimated yield from stage + history | Needs 56/64 history |
+| **Operator knowledge ingestion** | Drop your own grow notes/PDFs into Guardian's RAG | Extends Phase 37 field-guide RAG |
+| **Multi-zone load balancing** | "Stagger feeds so the pump isn't double-booked" | Careful re: enterprise boundary (59) |
+| **Seasonal planning** | Combine solar (65) + crop (64) → "best window to start next run" | Needs 64 + 65 |
+
+> **Through-line:** every "smart" feature must be **grounded** — structured data or RAG for facts, LLM for synthesis only. No invented numbers. This is the rule that keeps Guardian trustworthy as it gets more capable.
 
 ---
 

@@ -247,6 +247,14 @@ Hardware, Pi platform sync, and farmer job completion — each phase is shippabl
 | **62** | Grow advisor | VPD, DLI, stage transitions, post-harvest analysis | [phase_62](phase_62_guardian_grow_advisor.plan.md) |
 | **63** | Session memory | Guardian remembers topics; operator controls / deletes | [phase_63](phase_63_guardian_session_memory.plan.md) |
 
+**Guardian knowledge & sensing arc (64–66)** — how Guardian *knows* things (grounding, not guessing). **64 must precede 62.**
+
+| Phase | Name | One job | Plan |
+|-------|------|---------|------|
+| **64** | Crop knowledge base | Real EC/pH/VPD/DLI per crop per stage — Guardian cites, never guesses | [phase_64](phase_64_crop_knowledge_base.plan.md) |
+| **65** | Weather & site | Offline solar (sunrise/DLI from lat-long) + sensor + optional online | [phase_65](phase_65_weather_site_context.plan.md) |
+| **66** | Field assistant | Voice in/out + crop-grounded photo diagnosis (hands-free in the room) | [phase_66](phase_66_guardian_field_assistant.plan.md) |
+
 ---
 
 ## Related

@@ -117,6 +117,15 @@ todos:
   - id: oc-63-closure
     content: "OC-63: Phase 63 WS5 — session memory, topic tags, privacy note, delete, phase-63-closure.test.js"
     status: pending
+  - id: oc-64-closure
+    content: "OC-64: Phase 64 WS6 — crop knowledge base, 7 seeded profiles, lookup_crop_targets, grounding guard test"
+    status: pending
+  - id: oc-65-closure
+    content: "OC-65: Phase 65 WS6 — weather & site, offline solar engine, ingestion tiers, supplemental-light starter"
+    status: pending
+  - id: oc-66-closure
+    content: "OC-66: Phase 66 WS6 — hands-free field assistant, voice in/out, crop-grounded photo diagnosis"
+    status: pending
 isProject: false
 ---
 
@@ -480,8 +489,11 @@ Hub: [`phase_53_59_roadmap.plan.md`](phase_53_59_roadmap.plan.md). Close **OC-53
 | 61 Proactive nudges | OC-61 | [phase_61](phase_61_guardian_proactive_nudges.plan.md) | Dot badge + dismiss + tour |
 | 62 Grow advisor | OC-62 | [phase_62](phase_62_guardian_grow_advisor.plan.md) | VPD starters + post-harvest |
 | 63 Session memory | OC-63 | [phase_63](phase_63_guardian_session_memory.plan.md) | Topic tags + privacy delete |
+| 64 Crop knowledge base | OC-64 | [phase_64](phase_64_crop_knowledge_base.plan.md) | 7 profiles + grounding guard |
+| 65 Weather & site | OC-65 | [phase_65](phase_65_weather_site_context.plan.md) | Offline solar + ingest tiers |
+| 66 Field assistant | OC-66 | [phase_66](phase_66_guardian_field_assistant.plan.md) | Voice + grounded photo diagnosis |
 
-**Note:** Phase 51 "Phase 52+ per-device API keys" → **[Phase 57](phase_57_pi_device_api_keys.plan.md)** (not Phase 52).
+**Note:** Phase 51 "Phase 52+ per-device API keys" → **[Phase 57](phase_57_pi_device_api_keys.plan.md)** (not Phase 52). **Phase 64 must precede Phase 62** (grow advisor reads real targets from the crop knowledge base).
 
 ---
 
