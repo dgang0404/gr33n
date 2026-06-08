@@ -303,8 +303,11 @@ function formatStageLabel(stage) {
   return String(stage).replace(/_/g, ' ')
 }
 
+const VEG_STAGES = new Set(['clone', 'seedling', 'early_veg', 'late_veg'])
+const LATE_FLOWER_STAGES = new Set(['late_flower', 'flush'])
+
 /**
- * Phase 53 WS5 — zone grow strip starters (active crop cycle on overview).
+ * Phase 53 WS5 + Phase 62 — zone grow strip starters (active crop cycle on overview).
  * @param {object} params
  */
 export function buildZoneGrowStripStarters({
@@ -313,13 +316,13 @@ export function buildZoneGrowStripStarters({
   farmId = null,
   priorHarvestedCycle = null,
   allCycles = [],
+  dayCount = null,
   surface = 'zone_grow_strip',
 } = {}) {
   if (!zone?.id || !activeCycle?.id) return []
 
   const zoneName = zone.name || 'this zone'
   const cycleName = activeCycle.name || activeCycle.strain_or_variety || 'this grow'
-  const path = `/zones/${zone.id}`
   const contextRef = {
     type: 'zone',
     id: zone.id,
@@ -327,8 +330,52 @@ export function buildZoneGrowStripStarters({
     crop_cycle_id: activeCycle.id,
     surface,
   }
+  const stage = activeCycle.current_stage
 
-  const starters = [
+  const growAdvisorStarters = [
+    {
+      id: 'vpd-on-target',
+      label: 'Is my VPD on target?',
+      message: `Is my VPD on target in ${zoneName} for "${cycleName}" right now? Use grow_advisor — compare current VPD to the stage target from lookup_crop_targets.`,
+      contextRef: { ...contextRef, crop_cycle_id: activeCycle.id },
+    },
+  ]
+
+  if (VEG_STAGES.has(stage)) {
+    growAdvisorStarters.push({
+      id: 'days-to-flip',
+      label: 'How many days to flip?',
+      message: `How many days until I should flip in ${zoneName} for "${cycleName}"? Use grow_advisor — days in veg, plant readiness, and profile stage notes.`,
+      contextRef: { ...contextRef, crop_cycle_id: activeCycle.id },
+    })
+  }
+
+  if (LATE_FLOWER_STAGES.has(stage)) {
+    growAdvisorStarters.push({
+      id: 'ready-to-harvest',
+      label: 'Ready to harvest?',
+      message: `Is "${cycleName}" in ${zoneName} ready to harvest? Use grow_advisor — flower stage, days in bloom, and harvest window guidance.`,
+      contextRef: { ...contextRef, crop_cycle_id: activeCycle.id },
+    })
+  }
+
+  growAdvisorStarters.push({
+    id: 'optimize-light-hours',
+    label: 'Optimize light hours',
+    message: `How do my light hours and DLI in ${zoneName} compare to the target for "${cycleName}"? Use grow_advisor and lookup_crop_targets.`,
+    contextRef: { ...contextRef, crop_cycle_id: activeCycle.id },
+  })
+
+  if (dayCount != null && dayCount >= 14) {
+    growAdvisorStarters.push({
+      id: 'summarize-grow',
+      label: 'Summarize this grow so far',
+      message: `Summarize this grow in ${zoneName} so far for "${cycleName}" — cost pace, feeding consistency, and anything off target. Use grow_advisor and summarize_cycle_cost.`,
+      contextRef: { ...contextRef, crop_cycle_id: activeCycle.id },
+    })
+  }
+
+  const costStarters = [
     {
       id: 'grow-room-cost',
       label: 'What did this room cost so far?',
@@ -358,12 +405,12 @@ export function buildZoneGrowStripStarters({
     {
       id: 'stage-advice',
       label: 'Stage advice',
-      message: `What should I watch for in ${zoneName} during ${formatStageLabel(activeCycle.current_stage) || 'this stage'} for "${cycleName}"?`,
+      message: `What should I watch for in ${zoneName} during ${formatStageLabel(stage) || 'this stage'} for "${cycleName}"? Use grow_advisor and lookup_crop_targets.`,
       contextRef: { ...contextRef, crop_cycle_id: activeCycle.id },
     },
   ]
 
-  return dedupeStarters(starters).slice(0, 3)
+  return dedupeStarters([...growAdvisorStarters, ...costStarters]).slice(0, 5)
 }
 
 /**
@@ -393,6 +440,16 @@ export function buildHarvestFlowStarters({
     || 'the last run'
 
   const starters = [
+    {
+      id: 'next-run-diff',
+      label: 'What to change next run?',
+      message: priorHarvestedCycle
+        ? `What should I do differently next run in ${zoneName}? Compare this harvest to "${priorLabel}" — yield, VPD comfort, feeds — and give one concrete recommendation. Use grow_advisor.`
+        : `What should I do differently next run in ${zoneName}? Use grow_advisor and prior cycle data if available.`,
+      contextRef: priorHarvestedCycle?.id
+        ? { ...contextRef, prior_crop_cycle_id: priorHarvestedCycle.id, crop_cycle_id: activeCycle?.id ?? null }
+        : contextRef,
+    },
     {
       id: 'prior-yield',
       label: 'Last run yield',
@@ -432,7 +489,7 @@ export function buildHarvestFlowStarters({
     },
   ]
 
-  const max = surface === 'post_harvest' ? 3 : 2
+  const max = surface === 'post_harvest' ? 4 : 2
   return dedupeStarters(starters).slice(0, max)
 }
 

@@ -580,7 +580,23 @@ Operator: [operator-tour §7d](operator-tour.md#7d-zone-connection-pipeline-phas
 
 **OC-64** via `phase-64-closure.test.js` · **Go smoke:** `TestPhase64_CropProfilesListAndCannabisFlowerEC`.
 
-Plan: [`plans/phase_64_crop_knowledge_base.plan.md`](plans/phase_64_crop_knowledge_base.plan.md). **Unblocks Phase 62** grow advisor.
+Plan: [`plans/phase_64_crop_knowledge_base.plan.md`](plans/phase_64_crop_knowledge_base.plan.md). **Prerequisite for Phase 62** grow advisor.
+
+### 7.0x Grow advisor (Phase 62 — shipped)
+
+**Shipped.** Guardian grow science grounded in active cycles, crop profile stage targets (Phase 64), zone comfort bands, and live temp/RH readings. VPD is computed server-side (Tetens); DLI is estimated when PPFD/PAR exists.
+
+| Layer | Artifact |
+|-------|----------|
+| Read tool | `grow_advisor` in `readtools_grow.go` — cycle, targets, comfort bands, VPD, DLI estimate, flip/harvest hints |
+| Targets | Reuses `lookup_crop_targets` / `GetCropProfileStage` — never invents EC/VPD/DLI |
+| Persona | `GrowAdvisorPersonaRule` in platform context; `growAdvisorBriefLine` on zone/cycle `context_ref` |
+| Starters | Zone grow strip: VPD, flip, harvest, light hours, summarize grow; post-harvest: "What to change next run?" |
+| Vocabulary | "flip", "light hours", "harvest window" — see [`farmer-vocabulary.md`](farmer-vocabulary.md) grow-advisor addendum |
+
+**OC-62** via `phase-62-closure.test.js` · **Go smoke:** `TestPhase62_GrowAdvisorReadToolRegistered`.
+
+Plan: [`plans/phase_62_guardian_grow_advisor.plan.md`](plans/phase_62_guardian_grow_advisor.plan.md).
 
 ### 7.0v Guardian Pi & hardware diagnostics (Phase 65 — planned)
 

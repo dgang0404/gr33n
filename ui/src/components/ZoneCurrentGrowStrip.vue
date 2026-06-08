@@ -127,6 +127,7 @@ const growStarters = computed(() => {
     zone: zoneRef,
     activeCycle: activeCycle.value,
     farmId: props.farmId,
+    dayCount: dayCount.value,
     priorHarvestedCycle: lastHarvestedCycleInZone(
       cycleList.value,
       props.zoneId,

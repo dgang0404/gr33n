@@ -7,19 +7,19 @@ overview: >
 todos:
   - id: ws1-grow-knowledge
     content: "WS1: Go grow_advisor read tool — active cycle + comfort bands + VPD calc"
-    status: pending
+    status: completed
   - id: ws2-starters
     content: "WS2: Zone grow strip starters — VPD, DLI, stage advice, transition readiness"
-    status: pending
+    status: completed
   - id: ws3-persona-grow
     content: "WS3: Grow advisor persona block; vocabulary: VPD, DLI, PPFD, stage plain language"
-    status: pending
+    status: completed
   - id: ws4-compare-advisor
     content: "WS4: Post-harvest Guardian analysis — what went well vs last run, one recommendation"
-    status: pending
+    status: completed
   - id: ws5-docs-tests
-    content: "WS5: farm-guardian-architecture §9 grow advisor; phase-62-closure; OC-62"
-    status: pending
+    content: "WS5: farm-guardian-architecture §7.0x grow advisor; phase-62-closure; OC-62"
+    status: completed
 isProject: false
 ---
 
@@ -27,7 +27,7 @@ isProject: false
 
 ## Status
 
-**Planned.** **Hard prerequisite: [Phase 64](phase_64_crop_knowledge_base.plan.md)** — the grow advisor must read real per-crop targets (EC/pH/VPD/DLI) from the crop knowledge base, never guess them. Also needs [Phase 56](phase_56_grow_schema_harvest_analytics.plan.md) `plant_id` FK for strain linkage and benefits from [Phase 66](phase_66_weather_site_context.plan.md) natural-DLI for light recommendations.
+**Shipped.** **Hard prerequisite: [Phase 64](phase_64_crop_knowledge_base.plan.md)** — the grow advisor reads real per-crop targets (EC/pH/VPD/DLI) from the crop knowledge base, never guesses them. Uses [Phase 56](phase_56_grow_schema_harvest_analytics.plan.md) `plant_id` FK for strain linkage. [Phase 66](phase_66_weather_site_context.plan.md) natural-DLI remains a future enhancement for outdoor light math.
 
 > **Where do the numbers come from?** Phase 64. This plan originally implied Guardian "knows" VPD/EC targets — it does not until Phase 64 seeds the profile library and the `lookup_crop_targets` tool grounds every figure.
 
@@ -112,10 +112,10 @@ Guardian compares:
 
 ## Definition of done
 
-- [ ] "Is my VPD on target?" starter surfaces on zone grow strip
-- [ ] Guardian answer cites actual current VPD vs stage target
-- [ ] Post-harvest starter appears after weigh-in
-- [ ] OC-62 closed
+- [x] "Is my VPD on target?" starter surfaces on zone grow strip
+- [x] Guardian answer cites actual current VPD vs stage target (`grow_advisor` + `lookup_crop_targets`)
+- [x] Post-harvest starter appears after weigh-in
+- [x] OC-62 closed (`phase-62-closure.test.js`, `smoke_phase62_test.go`)
 
 ---
 

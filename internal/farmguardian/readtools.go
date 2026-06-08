@@ -54,6 +54,7 @@ func ReadToolIDs() []string {
 		"list_plants",
 		"summarize_zone_fertigation",
 		"lookup_crop_targets",
+		"grow_advisor",
 	}
 }
 
@@ -164,6 +165,15 @@ func EnrichPromptBlock(ctx context.Context, q db.Querier, farmID int64, question
 		} else if block != "" {
 			blocks = append(blocks, block)
 			logReadToolUse(ctx, "lookup_crop_targets", farmID)
+		}
+	}
+
+	if shouldRunGrowAdvisorReadIntent(question, ref) {
+		if block, err := renderGrowAdvisor(ctx, q, farmID, question, ref); err != nil {
+			slog.Warn("farm guardian read tool failed", "tool", "grow_advisor", "farm_id", farmID, "err", err)
+		} else if block != "" {
+			blocks = append(blocks, block)
+			logReadToolUse(ctx, "grow_advisor", farmID)
 		}
 	}
 

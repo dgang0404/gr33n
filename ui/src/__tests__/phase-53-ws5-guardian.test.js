@@ -25,15 +25,18 @@ describe('Phase 53 WS5 — Guardian starters', () => {
       farmId: 7,
       priorHarvestedCycle: priorCycle,
     })
-    expect(starters).toHaveLength(3)
-    expect(starters[0].label).toBe('What did this room cost so far?')
-    expect(starters[0].message).toContain('Flower Room')
-    expect(starters[0].message).toContain('OG Spring')
-    expect(starters[0].message).toContain('summarize_cycle_cost')
-    expect(starters[0].contextRef.crop_cycle_id).toBe(22)
-    expect(starters[1].label).toBe('Compare to last time')
-    expect(starters[1].message).toContain('OG Winter')
-    expect(starters[1].contextRef.compare_path).toBe('/farms/7/crop-cycles/compare')
+    expect(starters.length).toBeGreaterThanOrEqual(3)
+    const vpd = starters.find((s) => s.id === 'vpd-on-target')
+    expect(vpd?.label).toBe('Is my VPD on target?')
+    expect(vpd?.message).toContain('grow_advisor')
+    const cost = starters.find((s) => s.id === 'grow-room-cost')
+    expect(cost?.message).toContain('Flower Room')
+    expect(cost?.message).toContain('OG Spring')
+    expect(cost?.message).toContain('summarize_cycle_cost')
+    expect(cost?.contextRef.crop_cycle_id).toBe(22)
+    const compare = starters.find((s) => s.id === 'compare-last-cycle')
+    expect(compare?.message).toContain('OG Winter')
+    expect(compare?.contextRef.compare_path).toBe('/farms/7/crop-cycles/compare')
   })
 
   it('harvest flow offers prior yield starter', () => {
@@ -43,9 +46,10 @@ describe('Phase 53 WS5 — Guardian starters', () => {
       priorHarvestedCycle: priorCycle,
     })
     expect(starters).toHaveLength(2)
-    expect(starters[0].label).toBe('Last run yield')
-    expect(starters[0].message).toContain('OG Winter')
-    expect(starters[0].contextRef.prior_crop_cycle_id).toBe(18)
+    const priorYield = starters.find((s) => s.id === 'prior-yield')
+    expect(priorYield?.label).toBe('Last run yield')
+    expect(priorYield?.message).toContain('OG Winter')
+    expect(priorYield?.contextRef.prior_crop_cycle_id).toBe(18)
   })
 
   it('supplies hub prioritizes restock-first chip when low stock', () => {

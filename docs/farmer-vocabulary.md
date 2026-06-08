@@ -127,6 +127,21 @@ Facilitator **fail** if tester must open a page titled **Setpoints** or the six-
 
 ---
 
+## Grow advisor addendum (Phase 62)
+
+Guardian grow-science starters and answers on the zone grow strip and post-harvest flow:
+
+| Prefer | Avoid (unless operator uses the term) |
+|--------|----------------------------------------|
+| **flip** | transition to 12/12 |
+| **light hours** | photoperiod (OK in Advanced / crop profile detail) |
+| **harvest window** | day of senescence |
+| **VPD** | Long vapor-pressure lecture unless asked |
+
+Targets always come from the assigned crop profile (`lookup_crop_targets` / `grow_advisor`) — never invented.
+
+---
+
 ## Related
 
 | Doc | Use |

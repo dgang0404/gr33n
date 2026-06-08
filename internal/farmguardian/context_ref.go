@@ -276,8 +276,14 @@ func renderCropCycleContext(ctx context.Context, q *db.Queries, farmID, cycleID 
 	if line := ac.Analytics.renderLine(); line != "" {
 		b.WriteString("Metrics: " + line + "\n")
 	}
+	if hint := growAdvisorBriefLine(ctx, q, farmID, c.ZoneID, c.ID); hint != "" {
+		b.WriteString(hint + "\n")
+	}
 	if costLine := cycleCostSummaryLine(ctx, q, c.ID); costLine != "" {
 		b.WriteString(costLine + "\n")
+	}
+	if c.IsActive {
+		b.WriteString("Prefer grow_advisor and lookup_crop_targets for VPD, DLI, and stage transition advice.")
 	}
 	return strings.TrimSpace(b.String())
 }
@@ -334,11 +340,15 @@ func renderZoneContext(ctx context.Context, q *db.Queries, farmID int64, ref Con
 		}
 	}
 	if cycleID > 0 {
+		if hint := growAdvisorBriefLine(ctx, q, farmID, z.ID, cycleID); hint != "" {
+			b.WriteByte('\n')
+			b.WriteString(hint)
+		}
 		if costLine := cycleCostSummaryLine(ctx, q, cycleID); costLine != "" {
 			b.WriteByte('\n')
 			b.WriteString(costLine)
 		}
-		b.WriteString("\nPrefer summarize_cycle_cost and cycle summary over generic farm snapshot when answering grow cost questions.")
+		b.WriteString("\nPrefer grow_advisor, lookup_crop_targets, summarize_cycle_cost, and cycle summary over generic farm snapshot when answering grow questions.")
 	}
 	if meta, _, err := zonephotos.ParseMeta(z.MetaData); err == nil && len(meta.PhotoAttachmentIDs) > 0 {
 		b.WriteByte('\n')
