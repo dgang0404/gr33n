@@ -133,6 +133,44 @@
       </form>
     </section>
 
+    <!-- Farm Guardian session memory (Phase 63) -->
+    <section
+      v-if="farmContext.farmId && capabilities.aiEnabled"
+      class="bg-zinc-800 border border-zinc-700 rounded-xl p-5 mb-5"
+      data-test="settings-guardian-memory"
+    >
+      <h2 class="text-white font-semibold mb-3 flex items-center gap-2">
+        <span>✨</span> Farm Guardian memory
+      </h2>
+      <p class="text-xs text-zinc-500 mb-4 leading-relaxed">
+        When you start a new chat, Guardian can remember short summaries of prior sessions on this farm
+        (topic tags only — not a hidden profile). Summaries are per-operator and deletable anytime.
+        Deleting a chat session also removes its summary.
+      </p>
+      <div class="flex flex-wrap gap-2">
+        <button
+          type="button"
+          class="text-xs px-3 py-1.5 rounded-lg bg-zinc-900 border border-zinc-700 text-zinc-200 hover:bg-zinc-800 disabled:opacity-40"
+          data-test="settings-guardian-memory-export"
+          :disabled="guardianMemoryBusy"
+          @click="exportGuardianMemory"
+        >
+          Export summaries
+        </button>
+        <button
+          type="button"
+          class="text-xs px-3 py-1.5 rounded-lg bg-red-950/50 border border-red-900 text-red-200 hover:bg-red-900/40 disabled:opacity-40"
+          data-test="settings-guardian-memory-clear"
+          :disabled="guardianMemoryBusy"
+          @click="clearGuardianMemory"
+        >
+          Clear all memory
+        </button>
+      </div>
+      <p v-if="guardianMemoryMessage" class="mt-2 text-xs text-emerald-400">{{ guardianMemoryMessage }}</p>
+      <p v-if="guardianMemoryError" class="mt-2 text-xs text-red-400">{{ guardianMemoryError }}</p>
+    </section>
+
     <!-- Create farm (bootstrap template picker) -->
     <section class="bg-zinc-800 border border-zinc-700 rounded-xl p-5 mb-5">
       <h2 class="text-white font-semibold mb-3">New farm</h2>
@@ -945,6 +983,50 @@ const hourlyRateForm = reactive({ rate: null, currency: 'USD' })
 const hourlyRateSaving = ref(false)
 const hourlyRateError = ref('')
 const hourlyRateMessage = ref('')
+
+const guardianMemoryBusy = ref(false)
+const guardianMemoryError = ref('')
+const guardianMemoryMessage = ref('')
+
+async function exportGuardianMemory() {
+  const farmId = farmContext.farmId
+  if (!farmId) return
+  guardianMemoryBusy.value = true
+  guardianMemoryError.value = ''
+  guardianMemoryMessage.value = ''
+  try {
+    const r = await api.get(`/farms/${farmId}/guardian-memory/export`, { responseType: 'blob' })
+    const blob = new Blob([r.data], { type: 'text/plain' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `guardian-memory-farm-${farmId}.txt`
+    a.click()
+    URL.revokeObjectURL(url)
+    guardianMemoryMessage.value = 'Export downloaded.'
+  } catch (e) {
+    guardianMemoryError.value = e?.response?.data?.error || e.message || 'Export failed'
+  } finally {
+    guardianMemoryBusy.value = false
+  }
+}
+
+async function clearGuardianMemory() {
+  const farmId = farmContext.farmId
+  if (!farmId) return
+  if (!window.confirm('Clear all Guardian session memory for this farm? Chat history is not deleted.')) return
+  guardianMemoryBusy.value = true
+  guardianMemoryError.value = ''
+  guardianMemoryMessage.value = ''
+  try {
+    await api.delete(`/farms/${farmId}/guardian-memory`)
+    guardianMemoryMessage.value = 'Guardian memory cleared for this farm.'
+  } catch (e) {
+    guardianMemoryError.value = e?.response?.data?.error || e.message || 'Clear failed'
+  } finally {
+    guardianMemoryBusy.value = false
+  }
+}
 
 async function loadMyHourlyRate() {
   try {

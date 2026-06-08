@@ -1736,6 +1736,15 @@ type Gr33ncoreSensorReading struct {
 	MetaData            json.RawMessage `db:"meta_data" json:"meta_data"`
 }
 
+type Gr33ncoreSessionSummary struct {
+	SessionID   uuid.UUID `db:"session_id" json:"session_id"`
+	FarmID      int64     `db:"farm_id" json:"farm_id"`
+	UserID      uuid.UUID `db:"user_id" json:"user_id"`
+	SummaryText string    `db:"summary_text" json:"summary_text"`
+	Topics      []string  `db:"topics" json:"topics"`
+	CreatedAt   time.Time `db:"created_at" json:"created_at"`
+}
+
 type Gr33ncoreSystemLog struct {
 	ID              int64                    `db:"id" json:"id"`
 	FarmID          *int64                   `db:"farm_id" json:"farm_id"`

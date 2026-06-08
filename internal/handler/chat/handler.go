@@ -238,6 +238,9 @@ func (h *Handler) PostV1(w http.ResponseWriter, r *http.Request) {
 				system += focus + "\n\n"
 			}
 		}
+		if uid, uok := authctx.UserID(r.Context()); uok {
+			h.injectPriorSessionMemory(r.Context(), &system, farmID, uid, question, pb.ContextRef)
+		}
 		setupExplicit := pb.SetupMode || strings.TrimSpace(r.URL.Query().Get("setup")) == "1"
 		if farmguardian.SetupModeActive(liveSnap, setupExplicit) {
 			if setupBlock := farmguardian.SetupModePromptBlock(liveSnap); setupBlock != "" {
@@ -723,16 +726,17 @@ func buildMessages(system string, history []llm.Message, currentUser llm.Message
 // ──────────────────────────────────────────────────────────────────────────
 
 type sessionSummary struct {
-	SessionID             string  `json:"session_id"`
-	Title                 *string `json:"title,omitempty"`
-	TurnCount             int32   `json:"turn_count"`
-	LastTurnAt            string  `json:"last_turn_at"`
-	AnyGrounded           bool    `json:"any_grounded"`
-	FirstUserMessage      string  `json:"first_user_message"`
-	LastAssistantMessage  string  `json:"last_assistant_message"`
-	LastFarmID            *int64  `json:"last_farm_id,omitempty"`
-	TotalPromptTokens     int32   `json:"total_prompt_tokens"`
-	TotalCompletionTokens int32   `json:"total_completion_tokens"`
+	SessionID             string   `json:"session_id"`
+	Title                 *string  `json:"title,omitempty"`
+	TurnCount             int32    `json:"turn_count"`
+	LastTurnAt            string   `json:"last_turn_at"`
+	AnyGrounded           bool     `json:"any_grounded"`
+	FirstUserMessage      string   `json:"first_user_message"`
+	LastAssistantMessage  string   `json:"last_assistant_message"`
+	LastFarmID            *int64   `json:"last_farm_id,omitempty"`
+	TotalPromptTokens     int32    `json:"total_prompt_tokens"`
+	TotalCompletionTokens int32    `json:"total_completion_tokens"`
+	Topics                []string `json:"topics,omitempty"` // Phase 63
 }
 
 type sessionTurn struct {
@@ -770,6 +774,11 @@ func (h *Handler) ListSessions(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusInternalServerError, "failed to load sessions")
 		return
 	}
+	topicRows, _ := h.q.ListSessionSummaryTopicsForUser(r.Context(), userID)
+	topicBySession := map[uuid.UUID][]string{}
+	for _, tr := range topicRows {
+		topicBySession[tr.SessionID] = tr.Topics
+	}
 	out := make([]sessionSummary, 0, len(rows))
 	for _, row := range rows {
 		out = append(out, sessionSummary{
@@ -783,6 +792,7 @@ func (h *Handler) ListSessions(w http.ResponseWriter, r *http.Request) {
 			LastFarmID:            row.LastFarmID,
 			TotalPromptTokens:     row.TotalPromptTokens,
 			TotalCompletionTokens: row.TotalCompletionTokens,
+			Topics:                topicBySession[row.SessionID],
 		})
 	}
 	httputil.WriteJSON(w, http.StatusOK, map[string]any{"sessions": out})
@@ -926,6 +936,12 @@ func (h *Handler) DeleteSession(w http.ResponseWriter, r *http.Request) {
 		slog.Warn("session delete turns failed", "session_id", sessionID, "err", derr)
 		httputil.WriteError(w, http.StatusInternalServerError, "delete failed")
 		return
+	}
+	if serr := h.q.DeleteSessionSummary(r.Context(), db.DeleteSessionSummaryParams{
+		SessionID: sessionID,
+		UserID:    userID,
+	}); serr != nil {
+		slog.Warn("session delete summary failed", "session_id", sessionID, "err", serr)
 	}
 	if _, derr := h.q.DeleteConversationSession(r.Context(), db.DeleteConversationSessionParams{
 		ID:     sessionID,

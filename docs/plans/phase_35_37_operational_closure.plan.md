@@ -116,7 +116,7 @@ todos:
     status: completed
   - id: oc-63-closure
     content: "OC-63: Phase 63 WS5 — session memory, topic tags, privacy note, delete, phase-63-closure.test.js"
-    status: pending
+    status: completed
   - id: oc-64-closure
     content: "OC-64: Phase 64 WS6 — crop knowledge base, 7 seeded profiles, lookup_crop_targets, grounding guard test"
     status: completed
@@ -566,7 +566,7 @@ Hub: [`phase_53_59_roadmap.plan.md`](phase_53_59_roadmap.plan.md). Close **OC-58
 | ~~60 Morning walkthrough~~ | ~~OC-60~~ | [phase_60](phase_60_guardian_morning_walkthrough.plan.md) | ✅ Shipped |
 | ~~61 Proactive nudges~~ | ~~OC-61~~ | [phase_61](phase_61_guardian_proactive_nudges.plan.md) | ✅ Shipped |
 | ~~62 Grow advisor~~ | ~~OC-62~~ | [phase_62](phase_62_guardian_grow_advisor.plan.md) | ✅ Shipped |
-| 63 Session memory | OC-63 | [phase_63](phase_63_guardian_session_memory.plan.md) | Topic tags + privacy delete |
+| ~~63 Session memory~~ | ~~OC-63~~ | [phase_63](phase_63_guardian_session_memory.plan.md) | ✅ Shipped |
 | ~~64 Crop knowledge base~~ | ~~OC-64~~ | [phase_64](phase_64_crop_knowledge_base.plan.md) | ✅ Shipped |
 | ~~65 Pi & hardware diagnostics~~ | ~~OC-65~~ | [phase_65](phase_65_guardian_pi_diagnostics.plan.md) | ✅ Shipped |
 | 66 Weather & site | OC-66 | [phase_66](phase_66_weather_site_context.plan.md) | Offline solar + ingest tiers |

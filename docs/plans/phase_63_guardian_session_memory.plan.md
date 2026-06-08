@@ -8,19 +8,19 @@ overview: >
 todos:
   - id: ws1-session-summary
     content: "WS1: Go — session summary endpoint; topic tagging on close; farm-scoped storage"
-    status: pending
+    status: completed
   - id: ws2-memory-ui
     content: "WS2: Session list shows topic tags; 'You last asked about X' recent-topic chip"
-    status: pending
+    status: completed
   - id: ws3-context-injection
     content: "WS3: System prompt includes relevant prior session summary when topic matches"
-    status: pending
+    status: completed
   - id: ws4-delete
     content: "WS4: Delete session deletes summary; export all sessions to text"
-    status: pending
+    status: completed
   - id: ws5-docs-tests
     content: "WS5: privacy note in operator-tour; phase-63-closure; OC-63"
-    status: pending
+    status: completed
 isProject: false
 ---
 
@@ -28,7 +28,7 @@ isProject: false
 
 ## Status
 
-**Planned.** Lower priority — after Phases 60–62 ops/grow intelligence ships.
+**Shipped.** `session_summaries` table, close-on-new-session summaries, topic chips, route-matched continue chip, prior-summary system prompt injection, Settings clear/export.
 
 ---
 
@@ -114,10 +114,10 @@ Operator always in control. No silent memory accumulation.
 
 ## Definition of done
 
-- [ ] Sessions tagged with topics
-- [ ] Related prior summary injected in system prompt
-- [ ] Clear memory option in settings
-- [ ] OC-63 closed
+- [x] Sessions tagged with topics
+- [x] Related prior summary injected in system prompt
+- [x] Clear memory option in settings
+- [x] OC-63 closed
 
 ---
 

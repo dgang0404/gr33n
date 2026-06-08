@@ -1927,6 +1927,21 @@ CREATE TRIGGER trg_conversation_sessions_updated_at
     BEFORE UPDATE ON gr33ncore.conversation_sessions
     FOR EACH ROW EXECUTE FUNCTION gr33ncore.set_updated_at();
 
+CREATE TABLE IF NOT EXISTS gr33ncore.session_summaries (
+    session_id    UUID PRIMARY KEY REFERENCES gr33ncore.conversation_sessions(id) ON DELETE CASCADE,
+    farm_id       BIGINT NOT NULL REFERENCES gr33ncore.farms(id) ON DELETE CASCADE,
+    user_id       UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    summary_text  TEXT NOT NULL,
+    topics        TEXT[] NOT NULL DEFAULT '{}',
+    created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_session_summaries_farm_user_created
+    ON gr33ncore.session_summaries (farm_id, user_id, created_at DESC);
+
+CREATE INDEX IF NOT EXISTS idx_session_summaries_user_created
+    ON gr33ncore.session_summaries (user_id, created_at DESC);
+
 COMMENT ON TABLE gr33ncore.conversation_turns IS
   'Per-session (user_message, assistant_message) history for Farm Guardian (Phase 27 WS5). '
   'Same farm_id trust boundary as gr33ncore.rag_embedding_chunks.';

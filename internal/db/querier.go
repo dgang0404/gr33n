@@ -143,6 +143,7 @@ type Querier interface {
 	// remaining quantity lets the caller detect a negative-stock
 	// condition and log a warning without a second round-trip.
 	DecrementInputBatchQuantity(ctx context.Context, arg DecrementInputBatchQuantityParams) (DecrementInputBatchQuantityRow, error)
+	DeleteAllSessionSummariesForFarmUser(ctx context.Context, arg DeleteAllSessionSummariesForFarmUserParams) (int64, error)
 	DeleteAutomationRule(ctx context.Context, id int64) error
 	// Drops the metadata row last. Caller deletes turns first so the user-facing
 	// session disappears cleanly even when no metadata row was ever created
@@ -162,6 +163,7 @@ type Querier interface {
 	DeleteRagChunksByFarmSource(ctx context.Context, arg DeleteRagChunksByFarmSourceParams) error
 	DeleteReservoir(ctx context.Context, id int64) error
 	DeleteSchedule(ctx context.Context, id int64) error
+	DeleteSessionSummary(ctx context.Context, arg DeleteSessionSummaryParams) error
 	DeleteSetpoint(ctx context.Context, id int64) error
 	// Phase 27 WS5 follow-up — TTL pruning. Drops session metadata rows whose
 	// last activity (updated_at) is older than the cutoff. Run AFTER
@@ -181,6 +183,8 @@ type Querier interface {
 	// ============================================================
 	EnqueueDeviceCommand(ctx context.Context, arg EnqueueDeviceCommandParams) (Gr33ncoreDeviceCommand, error)
 	ExpireStaleGuardianProposals(ctx context.Context) error
+	// Returns the newest summary whose topics overlap any of the requested tags.
+	FindMatchingSessionSummary(ctx context.Context, arg FindMatchingSessionSummaryParams) (Gr33ncoreSessionSummary, error)
 	// Phase 20.6 WS3 — the rule engine calls this to translate a rule's zone
 	// into the active cycle so the setpoint resolver has a `current_stage`
 	// to match against. At most one crop cycle per zone is active at a time
@@ -323,6 +327,7 @@ type Querier interface {
 	GetScheduleByID(ctx context.Context, id int64) (Gr33ncoreSchedule, error)
 	GetSensorByID(ctx context.Context, id int64) (Gr33ncoreSensor, error)
 	GetSensorReadingStats(ctx context.Context, arg GetSensorReadingStatsParams) (GetSensorReadingStatsRow, error)
+	GetSessionSummary(ctx context.Context, arg GetSessionSummaryParams) (Gr33ncoreSessionSummary, error)
 	GetSetpointByID(ctx context.Context, id int64) (Gr33ncoreZoneSetpoint, error)
 	GetTaskByID(ctx context.Context, id int64) (Gr33ncoreTask, error)
 	GetTaskInputConsumptionByID(ctx context.Context, id int64) (Gr33ncoreTaskInputConsumption, error)
@@ -525,6 +530,8 @@ type Querier interface {
 	ListSensorsByDevice(ctx context.Context, deviceID *int64) ([]Gr33ncoreSensor, error)
 	ListSensorsByFarm(ctx context.Context, farmID int64) ([]Gr33ncoreSensor, error)
 	ListSensorsByZone(ctx context.Context, zoneID *int64) ([]Gr33ncoreSensor, error)
+	ListSessionSummariesByFarmUser(ctx context.Context, arg ListSessionSummariesByFarmUserParams) ([]Gr33ncoreSessionSummary, error)
+	ListSessionSummaryTopicsForUser(ctx context.Context, userID uuid.UUID) ([]ListSessionSummaryTopicsForUserRow, error)
 	ListSetpointsByCropCycle(ctx context.Context, cropCycleID *int64) ([]Gr33ncoreZoneSetpoint, error)
 	// Phase 20.6 WS1 — stage-scoped setpoints.
 	// The precedence resolver (GetActiveSetpointForScope) is the query the
@@ -673,6 +680,10 @@ type Querier interface {
 	// Queries: gr33ncore.rag_embedding_chunks (Phase 24 RAG)
 	// ============================================================
 	UpsertRagEmbeddingChunk(ctx context.Context, arg UpsertRagEmbeddingChunkParams) (Gr33ncoreRagEmbeddingChunk, error)
+	// ============================================================
+	// Queries: gr33ncore.session_summaries (Phase 63)
+	// ============================================================
+	UpsertSessionSummary(ctx context.Context, arg UpsertSessionSummaryParams) (Gr33ncoreSessionSummary, error)
 	// ============================================================
 	// Queries: gr33ncore.user_push_tokens
 	// ============================================================

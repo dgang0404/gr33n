@@ -521,6 +521,16 @@ Not browser push notifications — page-load only, one nudge at a time, rule-bas
 
 **Vitest:** `phase-61-closure.test.js` · **Go smoke:** `TestPhase61_GuardianNudgeEnginePresent`.
 
+### 6k. Guardian session memory (Phase 63 — shipped)
+
+**Plan:** [`plans/phase_63_guardian_session_memory.plan.md`](plans/phase_63_guardian_session_memory.plan.md) · Architecture: [§7.0aa](farm-guardian-architecture.md#70aa-session-memory-phase-63--shipped).
+
+When you start a **new** Guardian chat or switch sessions, the prior conversation is summarized (topic tags like `grow`, `comfort`, `feeding`) and stored per farm. The session list shows chips; on a related page you may see **Pick up where I left off**. Guardian uses matching summaries in the background — not shown in the transcript.
+
+**Privacy:** Memory is per-operator, per-farm. **Settings → Farm Guardian memory** — export plain text or **Clear all memory**. Deleting a session removes its summary too.
+
+**Vitest:** `phase-63-closure.test.js` · **Go smoke:** `TestPhase63_SessionMemoryTopicsPresent`.
+
 ### 6m. Guardian Pi diagnostics (Phase 65 — shipped)
 
 **Plan:** [`plans/phase_65_guardian_pi_diagnostics.plan.md`](plans/phase_65_guardian_pi_diagnostics.plan.md) · Architecture: [§7.0v](farm-guardian-architecture.md#70v-guardian-pi--hardware-diagnostics-phase-65--shipped).

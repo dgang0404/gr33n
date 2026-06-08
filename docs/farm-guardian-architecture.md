@@ -377,6 +377,21 @@ Plan: [`plans/phase_60_guardian_morning_walkthrough.plan.md`](plans/phase_60_gua
 
 Plan: [`plans/phase_61_guardian_proactive_nudges.plan.md`](plans/phase_61_guardian_proactive_nudges.plan.md).
 
+### 7.0aa Session memory (Phase 63 — shipped)
+
+**Shipped.** Farm-scoped, operator-visible session summaries — not a silent profile. Closing a session (`POST /v1/chat/sessions/{id}/close`) stores a 2–3 sentence recap + topic tags in `session_summaries`. Tag overlap injects `[Prior session context]` into the system prompt on the next related turn.
+
+| Layer | Artifact |
+|-------|----------|
+| Storage | `gr33ncore.session_summaries` — `session_id`, `farm_id`, `user_id`, `summary_text`, `topics[]` |
+| Close | UI calls close when starting/switching sessions; LLM summary with keyword fallback |
+| UI | Topic chips on session list; `GuardianRecentTopicChip` when route matches prior topics |
+| Control | Delete session drops summary; Settings **Clear all memory** + **Export summaries** |
+
+**OC-63** via `phase-63-closure.test.js` · **Go smoke:** `TestPhase63_SessionMemoryTopicsPresent`.
+
+Plan: [`plans/phase_63_guardian_session_memory.plan.md`](plans/phase_63_guardian_session_memory.plan.md).
+
 ### 7.0h Comfort targets & automation (Phase 42 — shipped)
 
 Plans: [`plans/phase_42_comfort_targets_automation_plain_language.plan.md`](plans/phase_42_comfort_targets_automation_plain_language.plan.md) · Guardian PR slice: [`plans/phase_42_guardian_pr_spec.md`](plans/phase_42_guardian_pr_spec.md).
