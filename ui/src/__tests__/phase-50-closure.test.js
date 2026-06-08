@@ -27,6 +27,7 @@ describe('Phase 50 WS6 / OC-50 — hardware wiring closure', () => {
     const badge = readFileSync(join(process.cwd(), 'src/components/HardwareWiringBadge.vue'), 'utf8')
     expect(view).toContain('HardwareWiringBadge')
     expect(badge).toContain('Not wired yet')
+    expect(badge).toContain("v-nav-hint=\"'/pi-setup'\"")
   })
 
   it('Sensor detail includes wiring panel with PATCH and conflict preview', () => {

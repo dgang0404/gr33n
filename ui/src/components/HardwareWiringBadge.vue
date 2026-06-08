@@ -1,17 +1,24 @@
 <template>
+  <!-- Hover wiggles Pi + HAT setup in the sidebar (Phase 49 nav-hint chain). -->
   <span
-    v-if="label"
-    class="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-zinc-800/80 text-zinc-300 border border-zinc-700/80"
-    :title="label"
+    v-nav-hint="'/pi-setup'"
+    class="inline-flex cursor-default"
+    :title="hintTitle"
+    data-test="hardware-wiring-badge"
   >
-    <span aria-hidden="true">🔌</span>
-    <span class="truncate max-w-[14rem]">{{ label }}</span>
-  </span>
-  <span
-    v-else-if="showEmpty"
-    class="inline-flex items-center text-[10px] text-zinc-500 italic"
-  >
-    Not wired yet
+    <span
+      v-if="label"
+      class="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-zinc-800/80 text-zinc-300 border border-zinc-700/80"
+    >
+      <span aria-hidden="true">🔌</span>
+      <span class="truncate max-w-[14rem]">{{ label }}</span>
+    </span>
+    <span
+      v-else-if="showEmpty"
+      class="inline-flex items-center text-[10px] text-zinc-500 italic"
+    >
+      Not wired yet
+    </span>
   </span>
 </template>
 
@@ -28,5 +35,10 @@ const props = defineProps({
 const label = computed(() => {
   const w = props.wiring ?? resolveWiring(props.entity)
   return formatWiringLabel(w)
+})
+
+const hintTitle = computed(() => {
+  if (label.value) return `${label.value} — see Pi + HAT setup in sidebar`
+  return 'Not wired yet — see Pi + HAT setup in sidebar'
 })
 </script>

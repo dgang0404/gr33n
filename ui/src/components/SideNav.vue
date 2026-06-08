@@ -155,9 +155,12 @@ const navHighlight = useNavHighlightStore()
 const hoveredRoute = ref(null)
 
 function isRelatedNav(route) {
-  // In-page link hover (v-nav-hint) → wiggle the exact sidebar destination,
-  // so the user sees where a "Feed & water hub →" / "Advanced feeding →" link goes.
-  if (navHighlight.route && route === navHighlight.route) return true
+  // In-page link hover (v-nav-hint) → wiggle destination + its related routes
+  // (e.g. wiring badge → Pi setup + Sensors + Controls).
+  if (navHighlight.route) {
+    if (route === navHighlight.route) return true
+    if (relatedTo(navHighlight.route).includes(route)) return true
+  }
   // Sidebar self-hover → wiggle declared sibling routes (zones ↔ feed ↔ targets).
   if (!hoveredRoute.value || route === hoveredRoute.value) return false
   return relatedTo(hoveredRoute.value).includes(route)
