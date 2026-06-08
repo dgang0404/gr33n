@@ -4,6 +4,9 @@ import {
   listLowStockBatches,
   buildSupplyRows,
   filterLowStockAlerts,
+  nextQuantityAfterRestock,
+  formatInputUnitCost,
+  buildRefillTaskPayload,
 } from '../lib/suppliesHub.js'
 
 describe('Phase 43 WS2 — supplies hub helpers', () => {
@@ -40,6 +43,36 @@ describe('Phase 43 WS2 — supplies hub helpers', () => {
     expect(rows[0].inputName).toBe('OHN')
     expect(rows[1].lowStock).toBe(false)
     expect(rows[0].scope).toBe('farm')
+  })
+
+  it('adds restock quantity to current on hand', () => {
+    expect(nextQuantityAfterRestock(2, 3)).toBe(5)
+    expect(nextQuantityAfterRestock(null, 1)).toBe(1)
+    expect(nextQuantityAfterRestock(5, 0)).toBeNull()
+  })
+
+  it('formats input unit cost for display', () => {
+    expect(formatInputUnitCost({ unit_cost: 12.5, unit_cost_currency: 'USD' })).toBe('$12.50')
+    expect(formatInputUnitCost({})).toBeNull()
+  })
+
+  it('builds refill task payload in plain language', () => {
+    const p = buildRefillTaskPayload({
+      inputName: 'OHN',
+      remaining: 1,
+      threshold: 5,
+    })
+    expect(p.title).toBe('Refill OHN')
+    expect(p.description).toContain('1')
+    expect(p.priority).toBe(2)
+  })
+
+  it('includes unit cost on supply rows', () => {
+    const rows = buildSupplyRows([
+      { id: 1, input_definition_id: 1, current_quantity_remaining: 10, status: 'ready_for_use' },
+    ], [{ id: 1, name: 'OHN', unit_cost: 4.25, unit_cost_currency: 'USD' }])
+    expect(rows[0].unitCostLabel).toBe('$4.25')
+    expect(rows[0].inputDefinitionId).toBe(1)
   })
 
   it('filters unread inventory_low_stock alerts', () => {

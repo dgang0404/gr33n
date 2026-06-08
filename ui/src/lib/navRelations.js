@@ -15,6 +15,8 @@ export const NAV_RELATIONS = {
   '/operator-guide': ['/pi-setup'],
   '/alerts': ['/tasks'],
   '/tasks': ['/alerts', '/schedules'],
+  '/operations/supplies': ['/tasks', '/operations/feeding'],
+  '/operations/feeding': ['/operations/supplies', '/feeding'],
 }
 
 /**

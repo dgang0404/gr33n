@@ -11,7 +11,7 @@ todos:
     status: pending
   - id: ws2-stock-closure
     content: "WS2: Stock — restock, quick new batch, unit cost, low-stock→task, consumptions thin UI"
-    status: pending
+    status: completed
   - id: ws3-money-closure
     content: "WS3: Money — cycle tag, spend chip, plain autolog, zone cost peek, income receipts, energy nudge"
     status: pending
