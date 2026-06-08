@@ -448,7 +448,7 @@ Architecture: [`farm-guardian-architecture.md` §7.0e](farm-guardian-architectur
 ### Vision and photos — what to expect
 
 - **Zone photos (shipped):** upload on **Zone detail**; Guardian knows photos exist and can discuss walkthrough context.
-- **Leaf/crop image analysis (optional, WS6):** set `LLM_VISION_MODEL` (e.g. `llava` on Ollama); attach zone photos in the Guardian drawer when asking from a zone; treat answers as **hypotheses**, not certified diagnosis. Prefer **create task** over silent config changes.
+- **Leaf/crop image analysis (optional):** set `LLM_VISION_MODEL` (e.g. `llava` on Ollama); attach zone photos in the Guardian drawer when asking **from a zone** (robot tab on a zone page). On **Guardian full page** (`/chat`) the upload UI is hidden until you have zone context — [Phase 66](plans/phase_66_guardian_field_assistant.plan.md) adds camera upload everywhere + a room picker. Treat vision answers as **hypotheses**, not certified diagnosis. Prefer **create task** over silent config changes.
 
 ### Platform facts (what Guardian should say about itself)
 

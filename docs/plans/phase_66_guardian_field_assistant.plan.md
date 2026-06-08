@@ -15,14 +15,17 @@ todos:
   - id: ws3-local-stt
     content: "WS3: Optional local whisper.cpp STT service for fully-offline voice (LAN)"
     status: pending
-  - id: ws4-photo-diagnosis
-    content: "WS4: Field photo diagnosis grounded on crop profile (Phase 64); deficiency/pest hypotheses"
+  - id: ws4-photo-discoverability
+    content: "WS4: Photo upload everywhere Guardian lives — /chat full page, slide-out, zone picker when context missing"
     status: pending
-  - id: ws5-glovebox-ux
-    content: "WS5: One-handed mobile layout — big targets, works on a phone in the room"
+  - id: ws5-photo-diagnosis
+    content: "WS5: Field photo diagnosis grounded on crop profile (Phase 64); deficiency/pest hypotheses"
     status: pending
-  - id: ws6-docs-tests
-    content: "WS6: operator-tour § field assistant; phase-66-closure; OC-66"
+  - id: ws6-glovebox-ux
+    content: "WS6: One-handed mobile layout — big camera + mic targets, works on a phone in the room"
+    status: pending
+  - id: ws7-docs-tests
+    content: "WS7: operator-tour § field assistant + vision discoverability; phase-66-closure; OC-66"
     status: pending
 isProject: false
 ---
@@ -65,7 +68,26 @@ isProject: false
 
 ---
 
-## WS4 — Field photo diagnosis (grounded)
+## WS4 — Photo upload discoverability (fix today's one-way UX)
+
+**Problem today:** "Zone photos (vision)" only appears when Guardian has **zone context** — i.e. you opened the slide-out from a zone page. On **Guardian full page** (`/chat`) or Dashboard, the upload block is hidden even when `vision_chat_enabled` is true. Farmers shouldn't have to discover a side door.
+
+| Surface | Today | After Phase 66 |
+|---------|-------|----------------|
+| `/chat` full page | No photo UI | Camera / upload always visible when vision enabled |
+| Slide-out (any page) | Photos only if `contextRef.type === 'zone'` | Same + zone picker if context missing |
+| Zone detail | Reference photos (separate from chat) | Link: "Ask Guardian about this photo" |
+
+**Deliverables:**
+- Prominent **camera button** next to Send (full page + compact panel)
+- **Zone picker** dropdown when no zone in context: "Which room is this photo from?" (required for attachment API)
+- Optional: attach photo **without** pre-uploading to zone gallery — direct `POST` with message (one-shot field snap)
+- Empty-state copy on `/chat`: "Snap a leaf photo — pick the room it came from"
+- `v-nav-hint` from zone reference-photos section → Guardian with zone pre-selected
+
+---
+
+## WS5 — Field photo diagnosis (grounded)
 
 - Reuse existing vision path (`vision_context.go`, `visionChatEnabled`)
 - **Ground on Phase 64 crop profile:** "This is cannabis in flower — the yellowing between veins on older leaves is consistent with **magnesium** deficiency. Your EC is in range, so check pH lockout (target 5.8–6.2)."
@@ -74,7 +96,7 @@ isProject: false
 
 ---
 
-## WS5 — Glovebox UX
+## WS6 — Glovebox UX
 
 - One-handed mobile layout: large mic + camera buttons, thumb-reachable
 - High-contrast for bright grow lights / sunlight
@@ -82,7 +104,7 @@ isProject: false
 
 ---
 
-## WS6 — Docs, tests, OC-66
+## WS7 — Docs, tests, OC-66
 
 - operator-tour "Hands-free field assistant" section
 - `phase-66-closure.test.js` — mic button renders; TTS toggle; vision disclaimer present
@@ -92,6 +114,8 @@ isProject: false
 
 ## Definition of done
 
+- [ ] Photo upload visible on `/chat` full page (not only zone slide-out)
+- [ ] Zone picker when context missing; one-shot camera attach works
 - [ ] Push-to-talk transcribes into Guardian
 - [ ] Optional read-aloud answers
 - [ ] Photo diagnosis cites the crop profile + current readings
