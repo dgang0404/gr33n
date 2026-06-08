@@ -108,6 +108,10 @@ type postBody struct {
 	// ContextRef is the UI "Ask Guardian" anchor (Phase 29 WS6) — alert,
 	// crop cycle, or zone the operator opened the drawer from.
 	ContextRef *farmguardian.ContextRef `json:"context_ref,omitempty"`
+	// NavHistory is the ordered list of recent routes the operator visited
+	// before the current page (most recent first, max 3). Used to give the
+	// Guardian breadcrumb context so starters don't need "I'm on page X".
+	NavHistory []farmguardian.ContextRef `json:"nav_history,omitempty"`
 	// SessionID is an opaque identifier the client can use to correlate turns.
 	// When empty the handler generates a fresh UUID and returns it. When
 	// supplied, prior turns in that session (owned by the same user) are
@@ -230,7 +234,7 @@ func (h *Handler) PostV1(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 		if pb.ContextRef != nil {
-			if focus := farmguardian.ContextRefPromptBlock(r.Context(), h.q, farmID, *pb.ContextRef); focus != "" {
+			if focus := farmguardian.ContextRefPromptBlock(r.Context(), h.q, farmID, *pb.ContextRef, pb.NavHistory); focus != "" {
 				system += focus + "\n\n"
 			}
 		}

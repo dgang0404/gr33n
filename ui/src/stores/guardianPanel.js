@@ -1,11 +1,17 @@
 import { defineStore } from 'pinia'
 import { routeContextRefFromRoute } from '../lib/guardianRouteRef.js'
 
+const NAV_HISTORY_MAX = 3
+
 /**
  * Phase 29 WS1 — global Farm Guardian slide-out panel state.
  *
  * Keeps drawer open/close, prefilled prompts (WS6 entry points), contextual
- * refs, and the active chat session_id across routes and drawer toggles.
+ * refs, active chat session_id, and navigation history across routes.
+ *
+ * Phase 52: navHistory tracks the last NAV_HISTORY_MAX routes visited so the
+ * Guardian receives a breadcrumb trail — it knows both where the user IS and
+ * where they came from, eliminating the need for starters to embed "I'm on page X".
  */
 export const useGuardianPanelStore = defineStore('guardianPanel', {
   state: () => ({
@@ -14,6 +20,7 @@ export const useGuardianPanelStore = defineStore('guardianPanel', {
     prefilledMessage: '',
     contextRef: null, // { type: 'alert'|'crop_cycle'|'zone', id, ... } — WS6
     routeRef: null, // { type: 'route', path, name } — Phase 32 WS1
+    navHistory: [], // [{ type:'route', path, name }, ...] — previous pages (most recent first, excl. current)
     activeSessionId: '',
     setupMode: false, // Phase 44 WS4 — setup-mode persona for grounded chat
   }),
@@ -52,9 +59,23 @@ export const useGuardianPanelStore = defineStore('guardianPanel', {
       this.contextRef = null
     },
 
-    /** Sync current Vue route for grounded chat honesty (Phase 32 WS1). */
+    /**
+     * Sync current Vue route for grounded chat context (Phase 32 WS1).
+     * Phase 52: also push previous page into navHistory so Guardian sees
+     * where the user came from (breadcrumb trail, last 3 pages).
+     */
     setRouteFromRouter(route) {
-      this.routeRef = routeContextRefFromRoute(route)
+      const next = routeContextRefFromRoute(route)
+      // Push old routeRef into history only when it differs from the new route
+      // and differs from the head of the history (avoid duplicates on hot-reloads).
+      if (
+        this.routeRef &&
+        this.routeRef.path !== next?.path &&
+        this.navHistory[0]?.path !== this.routeRef.path
+      ) {
+        this.navHistory = [this.routeRef, ...this.navHistory].slice(0, NAV_HISTORY_MAX)
+      }
+      this.routeRef = next
     },
 
     /** Entity Ask Guardian ref wins over passive route ref for this turn. */

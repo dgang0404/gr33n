@@ -48,7 +48,7 @@ export function buildSetupStarters({
     candidates.push({
       id: 'first-grow-room',
       label: 'Add my first zone',
-      message: "I'm setting up a new farm — what should I do first after creating a zone?",
+      message: 'What should I do first after creating my first grow zone?',
       contextRef: farmId
         ? setupRouteRef(farmId, 'zone', surface)
         : { type: 'route', path: '/zones', name: 'Zones', surface },
@@ -117,8 +117,8 @@ export function buildSetupStarters({
 
   candidates.push({
     id: 'setup-walkthrough',
-    label: 'What does setup mode do?',
-    message: "I'm in farm setup — walk me through zones, device, and comfort targets in order",
+    label: 'Walk me through setup',
+    message: 'Walk me through adding zones, connecting a device, and setting comfort targets in order.',
     contextRef: { type: 'route', path: '/chat', name: 'Farm Guardian chat', surface: 'setup_mode_chat' },
     setupMode: true,
   })

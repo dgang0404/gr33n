@@ -28,8 +28,9 @@ func TestBuildContextRefBlock_Route(t *testing.T) {
 	ref := ContextRef{Type: "route", Path: "/fertigation", Name: "Fertigation"}
 	got := BuildContextRefBlock(t.Context(), nil, 0, ref)
 	for _, want := range []string{
-		"Operator UI context — viewing: Fertigation",
+		"currently viewing: Fertigation",
 		"Route path: /fertigation",
+		"EC/pH mixing",
 	} {
 		if !strings.Contains(got, want) {
 			t.Fatalf("route block missing %q:\n%s", want, got)
@@ -50,7 +51,7 @@ func TestContextRefPromptBlock_RouteWithoutFarm(t *testing.T) {
 
 func TestBuildContextRefBlock_SetupWizardRoutes(t *testing.T) {
 	got := BuildContextRefBlock(t.Context(), nil, 0, ContextRef{Type: "route", Path: "/farms/7/setup"})
-	for _, want := range []string{"Farm setup", "wizard buttons", "bootstrap"} {
+	for _, want := range []string{"Farm setup", "wizard", "adding zones"} {
 		if !strings.Contains(got, want) {
 			t.Fatalf("farm setup block missing %q:\n%s", want, got)
 		}
@@ -75,6 +76,29 @@ func TestBuildContextRefBlock_OperationsRoutes(t *testing.T) {
 	got = BuildContextRefBlock(t.Context(), nil, 0, ContextRef{Type: "route", Path: "/operations/money"})
 	if !strings.Contains(got, "Money") || !strings.Contains(got, "GL/COA") {
 		t.Fatalf("money block: %q", got)
+	}
+}
+
+func TestBuildContextRefBlock_NavHistoryAppended(t *testing.T) {
+	ref := ContextRef{Type: "route", Path: "/sensors", Name: "Sensors"}
+	history := []ContextRef{
+		{Type: "route", Path: "/", Name: "Dashboard"},
+		{Type: "route", Path: "/zones", Name: "Zones"},
+	}
+	got := BuildContextRefBlock(t.Context(), nil, 0, ref, history)
+	if !strings.Contains(got, "Navigation trail") {
+		t.Fatalf("expected nav trail in block:\n%s", got)
+	}
+	if !strings.Contains(got, "Dashboard") || !strings.Contains(got, "Zones") {
+		t.Fatalf("expected history labels in block:\n%s", got)
+	}
+}
+
+func TestBuildContextRefBlock_NoHistoryOmitsTrail(t *testing.T) {
+	ref := ContextRef{Type: "route", Path: "/tasks", Name: "Tasks"}
+	got := BuildContextRefBlock(t.Context(), nil, 0, ref)
+	if strings.Contains(got, "Navigation trail") {
+		t.Fatalf("expected no trail when history empty:\n%s", got)
 	}
 }
 

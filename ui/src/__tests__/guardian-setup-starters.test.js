@@ -12,7 +12,7 @@ describe('Phase 44 WS4 — setup Guardian starters', () => {
     expect(starters.length).toBeLessThanOrEqual(4)
     expect(starters[0].id).toBe('first-grow-room')
     expect(starters[0].setupMode).toBe(true)
-    expect(starters[0].message).toContain('setting up a new farm')
+    expect(starters[0].message).toContain('first grow zone')
   })
 
   it('farm setup wizard returns compare-templates chip (max 2)', () => {

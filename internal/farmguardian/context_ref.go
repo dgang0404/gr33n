@@ -22,11 +22,16 @@ type ContextRef struct {
 // BuildContextRefBlock loads the referenced row and renders a focused prompt
 // block. Best-effort: empty string when lookup fails or farm scope mismatches.
 // Route refs need no DB row — only path (and optional name hint).
-func BuildContextRefBlock(ctx context.Context, q *db.Queries, farmID int64, ref ContextRef) string {
+// history is the ordered list of recently-visited route refs (most recent first).
+func BuildContextRefBlock(ctx context.Context, q *db.Queries, farmID int64, ref ContextRef, history ...[]ContextRef) string {
+	var nav []ContextRef
+	if len(history) > 0 {
+		nav = history[0]
+	}
 	refType := strings.ToLower(strings.TrimSpace(ref.Type))
 	switch refType {
 	case "route":
-		return renderRouteContext(ref.Path, ref.Name)
+		return renderRouteContext(ref.Path, ref.Name, nav)
 	}
 	if q == nil || farmID <= 0 || ref.ID <= 0 {
 		return ""
@@ -43,7 +48,7 @@ func BuildContextRefBlock(ctx context.Context, q *db.Queries, farmID int64, ref 
 	}
 }
 
-func renderRouteContext(path, nameHint string) string {
+func renderRouteContext(path, nameHint string, history []ContextRef) string {
 	path = strings.TrimSpace(path)
 	if path == "" {
 		return ""
@@ -53,30 +58,70 @@ func renderRouteContext(path, nameHint string) string {
 		label = routeLabelFromPath(path)
 	}
 	var b strings.Builder
-	b.WriteString("Operator UI context — viewing: " + label)
+	b.WriteString("Operator UI context — currently viewing: " + label)
 	b.WriteString("\nRoute path: " + path)
-	if path == "/feeding" {
+
+	// Page-specific hints so the Guardian adopts the right framing without
+	// the operator needing to say which screen they are on.
+	switch {
+	case path == "/feeding":
 		b.WriteString("\nFeed & water hub — prefer feeding plan language (next feed, last feed, reservoir). Use summarize_zone_fertigation when a room is in scope.")
-	}
-	if path == "/operations/supplies" || path == "/inventory" {
+	case path == "/operations/supplies" || path == "/inventory":
 		b.WriteString("\nSupplies — on-hand batches and low-stock. Cite input names and quantities; do not promise Guardian can change stock levels (hub UI or future tools only).")
-	}
-	if path == "/operations/feeding" {
+	case path == "/operations/feeding":
 		b.WriteString("\nFeeding (details) — farm-wide programs, nutrient tanks, EC targets. Not the daily Feed & water hub.")
-	}
-	if path == "/operations/money" || path == "/costs" {
+	case path == "/operations/money" || path == "/costs":
 		b.WriteString("\nMoney — spend summary and receipts. Plain language; hide GL/COA unless the operator is on the full costs editor.")
+	case path == "/sensors":
+		b.WriteString("\nSensors list — operator can see all sensor cards with wiring and reading status. Lead with wiring health, offline sensors, or reading freshness.")
+	case path == "/actuators":
+		b.WriteString("\nActuators list — relay and output wiring panel. Lead with device config sync status and schedule coverage.")
+	case path == "/schedules":
+		b.WriteString("\nSchedules — automation rules that trigger actuators. Focus on schedule gaps, overlaps, or next-run times.")
+	case path == "/comfort-targets" || path == "/setpoints":
+		b.WriteString("\nTargets & schedules — comfort band editor. Focus on whether current readings are within the set bands.")
+	case path == "/tasks":
+		b.WriteString("\nTasks — operator task list. Focus on overdue items, upcoming deadlines, or unassigned work.")
+	case path == "/alerts":
+		b.WriteString("\nAlerts — unread alert inbox. Lead with highest-severity unread alerts and recommended actions.")
+	case path == "/fertigation":
+		b.WriteString("\nFertigation (technical) — EC/pH mixing programs. Use precise nutrient and dosing language.")
+	case path == "/plants":
+		b.WriteString("\nPlants — inventory of plant batches. Prefer common names; connect to active crop cycles where relevant.")
+	case path == "/" || path == "":
+		b.WriteString("\nDashboard — farm overview. Prefer high-level summaries; offer to drill down into specific zones or alerts.")
+	case strings.HasPrefix(path, "/zones/"):
+		b.WriteString("\nZone detail — single grow room view. Zone-scoped answers preferred; sensor readings and crop cycle context are available.")
+	case strings.HasPrefix(path, "/sensors/"):
+		b.WriteString("\nSensor detail — single sensor config and history. Lead with reading quality and wiring.")
+	case strings.HasPrefix(path, "/farms/") && strings.HasSuffix(path, "/setup"):
+		b.WriteString("\nFarm setup wizard — guide the operator through adding zones, connecting a device, and setting comfort targets in that order. Prefer wizard actions over free-form config advice.")
+	case strings.HasPrefix(path, "/farms/") && strings.HasSuffix(path, "/zones/new"):
+		b.WriteString("\nAdd grow room wizard — zone creation happens in the wizard UI, not chat. Guide through name, type, and comfort targets.")
+	case strings.HasPrefix(path, "/farms/") && strings.HasSuffix(path, "/devices/new"):
+		b.WriteString("\nEdge device wizard — device registration and Pi config. Offer procedure wire-pi-relay-light for hardware wiring help.")
 	}
-	if strings.HasPrefix(path, "/farms/") && strings.HasSuffix(path, "/setup") {
-		b.WriteString("\nFarm setup wizard — prefer wizard buttons and preview over inventing bootstrap config in chat.")
+
+	// Navigation breadcrumb — show where the operator came from so the Guardian
+	// understands the intent journey (e.g. Dashboard → Farm setup → Add zone).
+	if len(history) > 0 {
+		var trail []string
+		for _, h := range history {
+			if h.Path == "" {
+				continue
+			}
+			hl := strings.TrimSpace(h.Name)
+			if hl == "" {
+				hl = routeLabelFromPath(h.Path)
+			}
+			trail = append(trail, hl)
+		}
+		if len(trail) > 0 {
+			b.WriteString("\nNavigation trail (most recent first): " + strings.Join(trail, " → "))
+		}
 	}
-	if strings.HasPrefix(path, "/farms/") && strings.HasSuffix(path, "/zones/new") {
-		b.WriteString("\nAdd grow room wizard — zone creation happens in the wizard UI, not chat.")
-	}
-	if strings.HasPrefix(path, "/farms/") && strings.HasSuffix(path, "/devices/new") {
-		b.WriteString("\nEdge device wizard — device register and Pi config happen in the wizard; offer procedure wire-pi-relay-light for wiring help.")
-	}
-	b.WriteString("\nPrefer setup/how-to guidance for this screen; live rows still come from the snapshot and read tools only.")
+
+	b.WriteString("\nUse this page context to answer without asking the operator to describe their screen.")
 	return b.String()
 }
 
@@ -271,8 +316,10 @@ func renderZoneContext(ctx context.Context, q *db.Queries, farmID int64, ref Con
 }
 
 // ContextRefPromptBlock wraps BuildContextRefBlock for the chat system prompt.
-func ContextRefPromptBlock(ctx context.Context, q *db.Queries, farmID int64, ref ContextRef) string {
-	body := BuildContextRefBlock(ctx, q, farmID, ref)
+// navHistory (optional) is passed through to renderRouteContext so the Guardian
+// receives the operator's breadcrumb trail alongside the current-page context.
+func ContextRefPromptBlock(ctx context.Context, q *db.Queries, farmID int64, ref ContextRef, navHistory ...[]ContextRef) string {
+	body := BuildContextRefBlock(ctx, q, farmID, ref, navHistory...)
 	if body == "" {
 		return ""
 	}

@@ -82,6 +82,30 @@ describe('Phase 29 WS1 — guardian panel store', () => {
     panel.contextRef = { type: 'zone', id: 3, name: 'Veg Room' }
     expect(panel.chatContextRef()).toEqual({ type: 'zone', id: 3, name: 'Veg Room' })
   })
+
+  it('navHistory tracks last 3 unique routes before current', () => {
+    const panel = useGuardianPanelStore()
+    // navigate A → B → C → D
+    panel.setRouteFromRouter({ path: '/', meta: {} })          // current=Dashboard, history=[]
+    panel.setRouteFromRouter({ path: '/zones', meta: {} })     // current=Zones, history=[Dashboard]
+    panel.setRouteFromRouter({ path: '/sensors', meta: {} })   // current=Sensors, history=[Zones, Dashboard]
+    panel.setRouteFromRouter({ path: '/tasks', meta: {} })     // current=Tasks, history=[Sensors, Zones, Dashboard]
+    expect(panel.navHistory).toHaveLength(3)
+    expect(panel.navHistory[0].name).toBe('Sensors')
+    expect(panel.navHistory[1].name).toBe('Zones')
+    expect(panel.navHistory[2].name).toBe('Dashboard')
+    expect(panel.routeRef.name).toBe('Tasks')
+  })
+
+  it('navHistory does not duplicate consecutive same route', () => {
+    const panel = useGuardianPanelStore()
+    panel.setRouteFromRouter({ path: '/', meta: {} })
+    panel.setRouteFromRouter({ path: '/zones', meta: {} })
+    // navigate to same route again (hot-reload / same-page click)
+    panel.setRouteFromRouter({ path: '/zones', meta: {} })
+    expect(panel.navHistory).toHaveLength(1)
+    expect(panel.navHistory[0].path).toBe('/')
+  })
 })
 
 describe('Phase 29 WS1 — GuardianDrawer', () => {

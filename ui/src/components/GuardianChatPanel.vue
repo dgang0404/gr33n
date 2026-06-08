@@ -861,6 +861,7 @@ async function send() {
     farmId,
     sessionId: sessionId.value || undefined,
     contextRef: guardianPanel.chatContextRef(),
+    navHistory: guardianPanel.navHistory,
     attachmentIds: attachedIds,
     setupMode: setupModeActive.value,
   })
