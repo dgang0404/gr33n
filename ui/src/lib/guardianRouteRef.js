@@ -30,6 +30,7 @@ const ROUTE_LABELS = {
   '/guardian/requests': 'Farm Guardian',
   '/settings': 'Settings',
   '/operator-guide': 'Operator guide',
+  '/pi-setup': 'Pi + HAT setup guide',
 }
 
 function labelFromPath(path) {

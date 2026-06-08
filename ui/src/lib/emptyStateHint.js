@@ -20,8 +20,8 @@ const DEFAULTS = {
   },
   no_telemetry: {
     message: 'No recent readings — check that your edge device is online and posting to the API.',
-    actionLabel: 'Pi integration guide',
-    actionTo: '/operator-guide',
+    actionLabel: 'Pi + HAT setup guide',
+    actionTo: '/pi-setup',
   },
   no_setpoint: {
     message: 'No target band for this sensor type yet.',

@@ -88,6 +88,8 @@ func renderRouteContext(path, nameHint string, history []ContextRef) string {
 		b.WriteString("\nFertigation (technical) — EC/pH mixing programs. Use precise nutrient and dosing language.")
 	case path == "/plants":
 		b.WriteString("\nPlants — inventory of plant batches. Prefer common names; connect to active crop cycles where relevant.")
+	case path == "/pi-setup":
+		b.WriteString("\nPi + HAT setup guide — operator is configuring Raspberry Pi hardware with Sequent Microsystems stacking relay HATs. Lead with practical wiring and channel numbering advice. Offer procedure wire-pi-relay-light.")
 	case path == "/" || path == "":
 		b.WriteString("\nDashboard — farm overview. Prefer high-level summaries; offer to drill down into specific zones or alerts.")
 	case strings.HasPrefix(path, "/zones/"):
@@ -173,6 +175,7 @@ var knownRouteLabels = map[string]string{
 	"/guardian/requests": "Guardian change requests",
 	"/settings":          "Settings",
 	"/operator-guide":    "Operator guide",
+	"/pi-setup":          "Pi + HAT setup guide",
 }
 
 func setupWizardRouteLabel(path string) string {

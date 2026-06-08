@@ -21,6 +21,7 @@ import Settings from '../views/Settings.vue'
 import FarmKnowledge from '../views/FarmKnowledge.vue'
 import FarmGuardianChat from '../views/FarmGuardianChat.vue'
 import OperatorGuide from '../views/OperatorGuide.vue'
+import PiSetupGuide from '../views/PiSetupGuide.vue'
 import CropCycleSummary from '../views/CropCycleSummary.vue'
 import CropCycleCompare from '../views/CropCycleCompare.vue'
 import LightingPrograms from '../views/LightingPrograms.vue'
@@ -66,6 +67,7 @@ const routes = [
   { path: '/guardian/requests', redirect: { path: '/chat', query: { tab: 'pending' } } },
   { path: '/settings',     component: Settings,     name: 'settings' },
   { path: '/operator-guide', component: OperatorGuide, name: 'operator-guide' },
+  { path: '/pi-setup', component: PiSetupGuide, name: 'pi-setup' },
   // Phase 28 WS2 — crop cycle analytics
   { path: '/crop-cycles/:id/summary', component: CropCycleSummary, name: 'crop-cycle-summary' },
   { path: '/farms/:fid/crop-cycles/compare', component: CropCycleCompare, name: 'crop-cycle-compare' },
