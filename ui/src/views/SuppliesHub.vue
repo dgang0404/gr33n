@@ -262,6 +262,19 @@
               Advanced editor →
             </button>
           </div>
+          <p
+            v-if="batchConsumptions(row.id).length"
+            class="text-[10px] text-zinc-600 mt-2 pt-2 border-t border-zinc-800"
+            data-test="supply-batch-task-usage"
+          >
+            Used by tasks:
+            <template v-for="(c, i) in batchConsumptions(row.id).slice(0, 3)" :key="c.id">
+              {{ i ? ', ' : ' ' }}
+              <router-link v-nav-hint="'/tasks'" to="/tasks" class="text-green-600 hover:text-green-400">
+                {{ c.task_title || `Task #${c.task_id}` }}
+              </router-link>
+            </template>
+          </p>
         </div>
       </div>
     </div>
@@ -364,12 +377,12 @@ import GuardianStarterChips from '../components/GuardianStarterChips.vue'
 import { parseZoneIdQuery } from '../lib/zoneContext.js'
 import { buildSuppliesHubStarters } from '../lib/guardianStarters.js'
 import {
-  buildRefillTaskPayload,
   buildSupplyRows,
   filterLowStockAlerts,
   listLowStockBatches,
   nextQuantityAfterRestock,
 } from '../lib/suppliesHub.js'
+import { refillTaskFromLowStock } from '../lib/taskTemplates.js'
 
 const route = useRoute()
 const router = useRouter()
@@ -442,6 +455,10 @@ function zoneName(zoneId) {
 
 function mixCount(batchId) {
   return mixingComponentsByBatch.value[batchId] || 0
+}
+
+function batchConsumptions(batchId) {
+  return store.taskConsumptionsByBatchId[batchId] || []
 }
 
 function formatQty(value) {
@@ -618,10 +635,13 @@ async function createRefillTask(row) {
       inputName: row.inputName,
       id: row.batch.id,
     })
+    const payload = refillTaskFromLowStock(row)
+    const { template_id, ...body } = payload
+    void template_id
     if (alert) {
-      await store.createTaskFromAlert(alert.id, buildRefillTaskPayload(row))
+      await store.createTaskFromAlert(alert.id, body)
     } else {
-      await store.createTask(fid, buildRefillTaskPayload(row))
+      await store.createTask(fid, body)
     }
     flashSuccess('Refill task created — see Tasks.')
   } catch (e) {
@@ -672,6 +692,7 @@ async function refresh() {
     recipes.value = r
     alerts.value = a
     programs.value = p
+    await store.loadFarmTaskConsumptions(fid)
     await loadMixCounts(fid)
   } finally {
     loading.value = false

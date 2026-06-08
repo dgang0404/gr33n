@@ -39,7 +39,7 @@
             class="text-xs px-2 py-1 rounded border border-green-800 text-green-400 hover:bg-green-900/30 disabled:opacity-50"
             :disabled="busyId === task.id"
             :data-test="`zone-task-complete-${task.id}`"
-            @click="completeTask(task)"
+            @click="openComplete(task)"
           >
             Done
           </button>
@@ -55,11 +55,21 @@
         </div>
       </li>
     </ul>
+
+    <TaskCompleteSheet
+      :open="!!completeTarget"
+      :task="completeTarget"
+      :batches="nfBatches"
+      :inputs="nfInputs"
+      @cancel="completeTarget = null"
+      @complete="onCompleteSheet"
+    />
   </div>
 </template>
 
 <script setup>
 import { computed, ref } from 'vue'
+import { useFarmContextStore } from '../stores/farmContext.js'
 import { useFarmStore } from '../stores/farm.js'
 import {
   zoneTasksDueToday,
@@ -68,6 +78,7 @@ import {
   todayDateIso,
 } from '../lib/zoneTasks.js'
 import EmptyStateHint from './EmptyStateHint.vue'
+import TaskCompleteSheet from './TaskCompleteSheet.vue'
 
 const props = defineProps({
   zoneId: { type: Number, required: true },
@@ -78,7 +89,11 @@ const props = defineProps({
 const emit = defineEmits(['refresh'])
 
 const store = useFarmStore()
+const farmContext = useFarmContextStore()
 const busyId = ref(null)
+const completeTarget = ref(null)
+const nfBatches = ref([])
+const nfInputs = ref([])
 
 const dueToday = computed(() => zoneTasksDueToday(props.tasks, props.zoneId, props.limit))
 
@@ -94,10 +109,32 @@ function dueClass(dueDate) {
   return 'text-zinc-500'
 }
 
-async function completeTask(task) {
+async function ensureSuppliesLoaded() {
+  const fid = farmContext.farmId
+  if (!fid) return
+  if (!nfBatches.value.length) nfBatches.value = await store.loadNfBatches(fid)
+  if (!nfInputs.value.length) nfInputs.value = await store.loadNfInputs(fid)
+}
+
+async function openComplete(task) {
+  await ensureSuppliesLoaded()
+  completeTarget.value = task
+}
+
+async function onCompleteSheet({ task, consumption }) {
+  if (!task) return
   busyId.value = task.id
   try {
     await store.updateTaskStatus(task.id, 'completed')
+    if (consumption) {
+      await store.recordTaskConsumption(task.id, consumption)
+      const fid = farmContext.farmId
+      if (fid) {
+        nfBatches.value = await store.loadNfBatches(fid)
+        await store.loadFarmTaskConsumptions(fid)
+      }
+    }
+    completeTarget.value = null
     emit('refresh')
   } finally {
     busyId.value = null

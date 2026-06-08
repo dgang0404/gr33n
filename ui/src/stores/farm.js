@@ -22,6 +22,8 @@ export const useFarmStore = defineStore('farm', {
     schedules: [],
     automationRuns: [],
     tasks: [],
+    taskConsumptionsByTaskId: {},
+    taskConsumptionsByBatchId: {},
     readings: {},
     alerts: [],
     unreadAlertCount: 0,
@@ -77,6 +79,44 @@ export const useFarmStore = defineStore('farm', {
       const r = await api.get(`/farms/${farmId}/tasks`)
       this.tasks = this.withTaskQueueOverlay(Array.isArray(r.data) ? r.data : [], farmId)
       return this.tasks
+    },
+
+    async loadTaskConsumptions(taskId) {
+      if (!taskId) return []
+      const r = await api.get(`/tasks/${taskId}/consumptions`)
+      const rows = Array.isArray(r.data) ? r.data : []
+      this.taskConsumptionsByTaskId = { ...this.taskConsumptionsByTaskId, [taskId]: rows }
+      return rows
+    },
+
+    async recordTaskConsumption(taskId, body) {
+      const r = await api.post(`/tasks/${taskId}/consumptions`, body)
+      await this.loadTaskConsumptions(taskId)
+      return r.data
+    },
+
+    async loadFarmTaskConsumptions(farmId, { limit = 100 } = {}) {
+      if (!farmId) {
+        this.taskConsumptionsByBatchId = {}
+        return []
+      }
+      const r = await api.get(`/farms/${farmId}/task-consumptions`, { params: { limit } })
+      const rows = Array.isArray(r.data?.consumptions) ? r.data.consumptions : []
+      const byBatch = {}
+      const byTask = { ...this.taskConsumptionsByTaskId }
+      for (const row of rows) {
+        if (row.task_id) {
+          if (!byTask[row.task_id]) byTask[row.task_id] = []
+          if (!byTask[row.task_id].some((x) => x.id === row.id)) byTask[row.task_id].push(row)
+        }
+        if (row.input_batch_id) {
+          if (!byBatch[row.input_batch_id]) byBatch[row.input_batch_id] = []
+          byBatch[row.input_batch_id].push(row)
+        }
+      }
+      this.taskConsumptionsByTaskId = byTask
+      this.taskConsumptionsByBatchId = byBatch
+      return rows
     },
 
     async createTask(farmId, data) {

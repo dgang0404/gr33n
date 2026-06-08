@@ -101,7 +101,7 @@ todos:
     status: completed
   - id: oc-58-closure
     content: "OC-58: Phase 58 WS4 — task consumptions UI, templates, phase-58-closure.test.js"
-    status: pending
+    status: completed
   - id: oc-59-closure
     content: "OC-59: Phase 59 WS4 — enterprise-tier-boundary.md, copy audit, index links"
     status: pending
@@ -561,7 +561,7 @@ Hub: [`phase_53_59_roadmap.plan.md`](phase_53_59_roadmap.plan.md). Close **OC-58
 | ~~55 Guardian ops~~ | ~~OC-55~~ | [phase_55](phase_55_guardian_ops_grow_money.plan.md) | ✅ Shipped |
 | ~~56 Grow schema~~ | ~~OC-56~~ | [phase_56](phase_56_grow_schema_harvest_analytics.plan.md) | ✅ Shipped |
 | ~~57 Device API keys~~ | ~~OC-57~~ | [phase_57](phase_57_pi_device_api_keys.plan.md) | ✅ Shipped |
-| 58 Task consumptions | OC-58 | [phase_58](phase_58_task_consumptions_runtime.plan.md) | Consumption UI test |
+| ~~58 Task consumptions~~ | ~~OC-58~~ | [phase_58](phase_58_task_consumptions_runtime.plan.md) | ✅ Shipped |
 | 59 Enterprise boundary | OC-59 | [phase_59](phase_59_enterprise_tier_boundary.plan.md) | `enterprise-tier-boundary.md` |
 | ~~60 Morning walkthrough~~ | ~~OC-60~~ | [phase_60](phase_60_guardian_morning_walkthrough.plan.md) | ✅ Shipped |
 | ~~61 Proactive nudges~~ | ~~OC-61~~ | [phase_61](phase_61_guardian_proactive_nudges.plan.md) | ✅ Shipped |

@@ -8,6 +8,27 @@ SELECT * FROM gr33ncore.task_input_consumptions
 WHERE task_id = $1
 ORDER BY recorded_at DESC, id DESC;
 
+-- name: ListTaskInputConsumptionsByFarm :many
+SELECT
+    c.id,
+    c.farm_id,
+    c.task_id,
+    c.input_batch_id,
+    c.quantity,
+    c.unit_id,
+    c.notes,
+    c.recorded_at,
+    c.recorded_by,
+    c.cost_transaction_id,
+    c.created_at,
+    c.updated_at,
+    t.title AS task_title
+FROM gr33ncore.task_input_consumptions c
+JOIN gr33ncore.tasks t ON t.id = c.task_id
+WHERE c.farm_id = $1
+ORDER BY c.recorded_at DESC, c.id DESC
+LIMIT $2;
+
 -- name: GetTaskInputConsumptionByID :one
 SELECT * FROM gr33ncore.task_input_consumptions
 WHERE id = $1;

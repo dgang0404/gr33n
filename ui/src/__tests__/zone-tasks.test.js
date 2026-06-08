@@ -11,7 +11,8 @@ vi.mock('../api', () => ({
 }))
 
 import ZoneTasksPanel from '../components/ZoneTasksPanel.vue'
-import { useFarmStore } from '../stores/farm'
+import { useFarmStore } from '../stores/farm.js'
+import { useFarmContextStore } from '../stores/farmContext.js'
 import {
   zoneTasksDueToday,
   snoozeDueDateToTomorrow,
@@ -38,10 +39,13 @@ describe('Phase 40 WS6 — zone tasks', () => {
     expect(formatTaskDueLabel(today)).toBe('Due today')
   })
 
-  it('completes task inline from zone panel', async () => {
+  it('opens complete sheet from zone panel Done button', async () => {
     setActivePinia(createPinia())
     const store = useFarmStore()
-    store.updateTaskStatus = vi.fn().mockResolvedValue(undefined)
+    const farmContext = useFarmContextStore()
+    farmContext.farmId = 1
+    store.loadNfBatches = vi.fn().mockResolvedValue([])
+    store.loadNfInputs = vi.fn().mockResolvedValue([])
 
     const wrapper = mount(ZoneTasksPanel, {
       props: {
@@ -56,7 +60,7 @@ describe('Phase 40 WS6 — zone tasks', () => {
     await wrapper.find('[data-test="zone-task-complete-5"]').trigger('click')
     await flushPromises()
 
-    expect(store.updateTaskStatus).toHaveBeenCalledWith(5, 'completed')
-    expect(wrapper.emitted('refresh')).toBeTruthy()
+    expect(store.loadNfBatches).toHaveBeenCalled()
+    expect(wrapper.find('[data-test="task-complete-sheet"]').exists()).toBe(true)
   })
 })

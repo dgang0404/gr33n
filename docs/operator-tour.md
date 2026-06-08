@@ -637,6 +637,23 @@ Architecture: [`farm-guardian-architecture.md` §7.0i](farm-guardian-architectur
 
 Architecture: [`farm-guardian-architecture.md` §7.0q](farm-guardian-architecture.md#70q-grow--stock--money-closure-phase-53--shipped).
 
+### 7c.1 Task consumptions & operator runtime (Phase 58 — shipped)
+
+**Shipped.** Plan: [`plans/phase_58_task_consumptions_runtime.plan.md`](plans/phase_58_task_consumptions_runtime.plan.md).
+
+| Job | Where | What to click |
+|-----|--------|----------------|
+| **Log supply used** | **Tasks** or zone **Due today** → **Done** | Optional **Log supply used** — pick batch + quantity; blocks over-draw vs on-hand |
+| **Refill from low stock** | **Operations → Supplies** | Low-stock banner → **Create refill task** (pre-filled title) |
+| **Sensor check task** | **Alerts** | **Create task** on sensor-offline alerts (pre-filled check task) |
+| **See what tasks used** | **Operations → Supplies** | Batch card footnote **Used by tasks**; completed task cards show consumption lines |
+
+**Runtime hints:** Dashboard **Do next** chip (open tasks + low stock); zone strip shows overdue tasks and offline-device copy with links to **Tasks** or **Pi + HAT setup**.
+
+**Vitest:** `phase-58-closure.test.js`, `task-consumption.test.js` · **Go smoke:** `TestPhase58_TaskConsumptionRouteRegistered`.
+
+Architecture: [`farm-guardian-architecture.md` §7.0ab](farm-guardian-architecture.md#70ab-task-consumptions--operator-runtime-phase-58--shipped).
+
 ### 7d. Zone connection pipeline (Phase 54)
 
 **Shipped.** Hover each step in **How it connects** on zone **Overview** and **Water / Light / Climate** tabs — the matching sidebar item wiggles (Phase 49). Chain:

@@ -542,6 +542,7 @@ type Querier interface {
 	// nullable filter args avoids the handler having to branch.
 	ListSetpointsByFarmFiltered(ctx context.Context, arg ListSetpointsByFarmFilteredParams) ([]Gr33ncoreZoneSetpoint, error)
 	ListSetpointsByZone(ctx context.Context, zoneID *int64) ([]Gr33ncoreZoneSetpoint, error)
+	ListTaskInputConsumptionsByFarm(ctx context.Context, arg ListTaskInputConsumptionsByFarmParams) ([]ListTaskInputConsumptionsByFarmRow, error)
 	// Phase 20.7 WS3 — task_input_consumptions CRUD. The handler wraps
 	// each Create in the autologger so the paired batch-decrement +
 	// cost_transactions row write happen atomically; Delete calls the

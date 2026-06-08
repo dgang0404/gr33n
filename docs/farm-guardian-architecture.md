@@ -392,6 +392,21 @@ Plan: [`plans/phase_61_guardian_proactive_nudges.plan.md`](plans/phase_61_guardi
 
 Plan: [`plans/phase_63_guardian_session_memory.plan.md`](plans/phase_63_guardian_session_memory.plan.md).
 
+### 7.0ab Task consumptions & operator runtime (Phase 58 — shipped)
+
+**Shipped (WS1–WS4).** Plan: [`plans/phase_58_task_consumptions_runtime.plan.md`](plans/phase_58_task_consumptions_runtime.plan.md).
+
+| Surface | Operator job | Implementation |
+|---------|--------------|----------------|
+| **Task complete** | Optionally log batch drawdown when marking done | `TaskCompleteSheet.vue`, `POST /tasks/{id}/consumptions`, client qty validation |
+| **Farm history** | See consumptions across tasks | `GET /farms/{id}/task-consumptions` |
+| **Templates** | Refill / check-sensor / review-feed tasks from Supplies & Alerts | `taskTemplates.js` |
+| **Runtime** | Do-next + overdue chips on dashboard / zone strip | `farmGrowSummary.js`, `zoneGrowSummary.js` |
+
+Operator: [operator-tour §7c.1](operator-tour.md#7c1-task-consumptions--operator-runtime-phase-58--shipped).
+
+**OC-58** via `phase-58-closure.test.js` · **Go smoke:** `TestPhase58_TaskConsumptionRouteRegistered`.
+
 ### 7.0h Comfort targets & automation (Phase 42 — shipped)
 
 Plans: [`plans/phase_42_comfort_targets_automation_plain_language.plan.md`](plans/phase_42_comfort_targets_automation_plain_language.plan.md) · Guardian PR slice: [`plans/phase_42_guardian_pr_spec.md`](plans/phase_42_guardian_pr_spec.md).
@@ -538,7 +553,7 @@ Operator (UI)                    Platform (API)                 Pi (gr33n_client
 | Money hub | Spending by category | Grounded answer from cost list; dedicated read tool in [Phase 55](plans/phase_55_guardian_ops_grow_money.plan.md) |
 | Harvest weigh-in | Last run yield | Prior cycle summary via chat context |
 
-**Deferred:** task consumptions UI → [Phase 58](plans/phase_58_task_consumptions_runtime.plan.md); NL stock/receipt writes → [Phase 46](plans/phase_46_guardian_llm_tool_proposals.plan.md). **`plant_id` FK shipped in [Phase 56](plans/phase_56_grow_schema_harvest_analytics.plan.md).**
+**Deferred:** NL stock/receipt writes → [Phase 46](plans/phase_46_guardian_llm_tool_proposals.plan.md). **`plant_id` FK shipped in [Phase 56](plans/phase_56_grow_schema_harvest_analytics.plan.md).** **Task consumptions UI shipped in [Phase 58](plans/phase_58_task_consumptions_runtime.plan.md).**
 
 Operator: [operator-tour §7c](operator-tour.md#7c-grow--stock--money-closure-phase-53) · Guardian: [§6i](operator-tour.md#6i-guardian-on-grow-closure-phase-53--shipped).
 

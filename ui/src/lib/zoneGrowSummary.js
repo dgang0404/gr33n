@@ -4,6 +4,7 @@
 
 import { humanizeCron, scheduleRunsLabel } from './cronHumanize.js'
 import { PLANT_NEEDS, sensorPlantNeed } from './plantNeeds.js'
+import { countZoneOverdueTasks } from './zoneTasks.js'
 
 function parseTriggerConfig(rule) {
   try {
@@ -139,6 +140,7 @@ export function computeZoneTodaySnapshot(params) {
     lightingPrograms = [],
     queueDepth = 0,
     zoneTasks = [],
+    tasks = [],
   } = params
 
   const zoneId = zone?.id
@@ -206,6 +208,10 @@ export function computeZoneTodaySnapshot(params) {
     label: 'Devices',
     value: deviceValue,
     tone: offline ? 'warn' : 'ok',
+    to: offline ? { path: '/pi-setup' } : undefined,
+    detail: offline
+      ? (queueDepth > 0 ? 'Commands queue when Pi is back' : 'Check Pi + HAT setup')
+      : undefined,
   })
 
   if (queueDepth > 0) {
@@ -215,6 +221,20 @@ export function computeZoneTodaySnapshot(params) {
       label: 'Queued commands',
       value: String(queueDepth),
       tone: 'warn',
+      to: { path: '/feeding' },
+      detail: offline ? 'Will run when device reconnects' : undefined,
+    })
+  }
+
+  const overdueCount = countZoneOverdueTasks(tasks, zoneId)
+  if (overdueCount > 0) {
+    chips.push({
+      id: 'tasks-overdue',
+      icon: '⚠️',
+      label: 'Overdue tasks',
+      value: String(overdueCount),
+      tone: 'warn',
+      to: { path: '/tasks', query: { zone_id: String(zoneId) } },
     })
   }
 
@@ -224,6 +244,7 @@ export function computeZoneTodaySnapshot(params) {
       icon: '✅',
       label: 'Due today',
       value: String(zoneTasks.length),
+      to: { path: '/tasks', query: { zone_id: String(zoneId) } },
     })
   }
 

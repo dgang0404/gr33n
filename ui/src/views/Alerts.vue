@@ -159,6 +159,7 @@ import AskGuardianButton from '../components/AskGuardianButton.vue'
 import ZoneContextBanner from '../components/ZoneContextBanner.vue'
 import EmptyStateHint from '../components/EmptyStateHint.vue'
 import { parseZoneIdQuery, filterAlertsForZone } from '../lib/zoneContext.js'
+import { detectAlertTaskTemplate } from '../lib/taskTemplates.js'
 
 const route = useRoute()
 
@@ -267,12 +268,15 @@ const taskForm = ref({ title: '', description: '', priority: 1, due_date: '' })
 function openCreateTask(alert) {
   createTaskError.value = ''
   createTaskAlert.value = alert
-  taskForm.value = {
-    title: alert.subject_rendered || `Follow up on alert #${alert.id}`,
-    description: alert.message_text_rendered || '',
-    priority: severityToPriority(alert.severity),
-    due_date: '',
-  }
+  const tpl = detectAlertTaskTemplate(alert, farmStore.sensors)
+  taskForm.value = tpl
+    ? { ...tpl, due_date: '' }
+    : {
+        title: alert.subject_rendered || `Follow up on alert #${alert.id}`,
+        description: alert.message_text_rendered || '',
+        priority: severityToPriority(alert.severity),
+        due_date: '',
+      }
 }
 
 function cancelCreateTask() {

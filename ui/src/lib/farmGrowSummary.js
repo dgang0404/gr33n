@@ -76,6 +76,21 @@ export function computeFarmMorningSnapshot(params) {
 
   const chips = []
 
+  if (dueToday > 0 || lowStockCount > 0) {
+    const parts = []
+    if (dueToday > 0) parts.push(`${dueToday} task${dueToday === 1 ? '' : 's'}`)
+    if (lowStockCount > 0) parts.push(`${lowStockCount} low stock`)
+    chips.push({
+      id: 'do-next',
+      icon: '🎯',
+      label: 'Do next',
+      value: `${dueToday + lowStockCount} item${dueToday + lowStockCount === 1 ? '' : 's'}`,
+      detail: parts.join(' · '),
+      tone: 'warn',
+      to: { path: '/tasks' },
+    })
+  }
+
   chips.push({
     id: 'tasks-due',
     icon: '✅',

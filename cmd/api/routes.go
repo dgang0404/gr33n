@@ -292,6 +292,7 @@ func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationwo
 	mux.Handle("POST /tasks/{id}/labor/stop", jwt(http.HandlerFunc(task.StopLabor)))
 	mux.Handle("DELETE /labor/{id}", jwt(http.HandlerFunc(task.DeleteLabor)))
 	// Phase 20.7 WS3: task-driven consumption ledger (autologged).
+	mux.Handle("GET /farms/{id}/task-consumptions", jwt(http.HandlerFunc(task.ListFarmConsumptions)))
 	mux.Handle("GET /tasks/{id}/consumptions", jwt(http.HandlerFunc(task.ListConsumptions)))
 	mux.Handle("POST /tasks/{id}/consumptions", jwt(http.HandlerFunc(task.CreateConsumption)))
 	mux.Handle("DELETE /consumptions/{id}", jwt(http.HandlerFunc(task.DeleteConsumption)))

@@ -7,16 +7,16 @@ overview: >
 todos:
   - id: ws1-consumption-ui
     content: "WS1: Task complete sheet — optional batch + qty drawdown; Supplies history line"
-    status: pending
+    status: completed
   - id: ws2-refill-templates
     content: "WS2: Task templates — Refill input, Log mix, Check sensor (from low-stock / alerts)"
-    status: pending
+    status: completed
   - id: ws3-runtime-hints
     content: "WS3: Offline actuator queue copy; task due chips on zone strip"
-    status: pending
+    status: completed
   - id: ws4-docs-tests
     content: "WS4: operator-tour § consumptions; phase-58-closure; OC-58"
-    status: pending
+    status: completed
 isProject: false
 ---
 
@@ -24,7 +24,7 @@ isProject: false
 
 ## Status
 
-**Planned.** Parallel with [Phase 55](phase_55_guardian_ops_grow_money.plan.md) after [Phase 53](phase_53_grow_stock_money_closure.plan.md) WS2.
+**Shipped.** Task complete consumption sheet, templates, zone/dashboard runtime hints, Supplies batch footnotes, `GET /farms/{id}/task-consumptions`.
 
 ---
 
@@ -77,6 +77,6 @@ Reuse existing store actions if present; else add `recordTaskConsumption`.
 
 ## Definition of done
 
-- [ ] Complete refill task reduces batch qty in UI
-- [ ] Templates create tasks from low-stock CTA
-- [ ] OC-58 closed
+- [x] Complete refill task reduces batch qty in UI
+- [x] Templates create tasks from low-stock CTA
+- [x] OC-58 closed

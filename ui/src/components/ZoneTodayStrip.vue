@@ -8,11 +8,13 @@
       <span class="text-zinc-600 text-xs">What matters now</span>
     </div>
     <div class="flex flex-wrap gap-2">
-      <div
+      <component
+        :is="chip.to ? 'router-link' : 'div'"
         v-for="chip in chips"
         :key="chip.id"
+        v-bind="chip.to ? { to: chip.to } : {}"
         class="flex items-center gap-2 rounded-lg border px-3 py-2 min-w-[8.5rem]"
-        :class="chipClass(chip)"
+        :class="[chipClass(chip), chip.to ? 'transition-colors hover:border-gr33n-800/80' : '']"
         :data-test="`zone-today-chip-${chip.id}`"
       >
         <span class="text-base leading-none" aria-hidden="true">{{ chip.icon }}</span>
@@ -23,7 +25,7 @@
           </p>
           <p v-if="chip.detail" class="text-[10px] text-zinc-600 truncate">{{ chip.detail }}</p>
         </div>
-      </div>
+      </component>
     </div>
   </div>
 </template>

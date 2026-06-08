@@ -7,6 +7,7 @@ package db
 
 import (
 	"context"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgtype"
 )
@@ -91,6 +92,83 @@ func (q *Queries) GetTaskInputConsumptionByID(ctx context.Context, id int64) (Gr
 		&i.UpdatedAt,
 	)
 	return i, err
+}
+
+const listTaskInputConsumptionsByFarm = `-- name: ListTaskInputConsumptionsByFarm :many
+SELECT
+    c.id,
+    c.farm_id,
+    c.task_id,
+    c.input_batch_id,
+    c.quantity,
+    c.unit_id,
+    c.notes,
+    c.recorded_at,
+    c.recorded_by,
+    c.cost_transaction_id,
+    c.created_at,
+    c.updated_at,
+    t.title AS task_title
+FROM gr33ncore.task_input_consumptions c
+JOIN gr33ncore.tasks t ON t.id = c.task_id
+WHERE c.farm_id = $1
+ORDER BY c.recorded_at DESC, c.id DESC
+LIMIT $2
+`
+
+type ListTaskInputConsumptionsByFarmParams struct {
+	FarmID int64 `db:"farm_id" json:"farm_id"`
+	Limit  int32 `db:"limit" json:"limit"`
+}
+
+type ListTaskInputConsumptionsByFarmRow struct {
+	ID                int64          `db:"id" json:"id"`
+	FarmID            int64          `db:"farm_id" json:"farm_id"`
+	TaskID            int64          `db:"task_id" json:"task_id"`
+	InputBatchID      int64          `db:"input_batch_id" json:"input_batch_id"`
+	Quantity          pgtype.Numeric `db:"quantity" json:"quantity"`
+	UnitID            int64          `db:"unit_id" json:"unit_id"`
+	Notes             *string        `db:"notes" json:"notes"`
+	RecordedAt        time.Time      `db:"recorded_at" json:"recorded_at"`
+	RecordedBy        pgtype.UUID    `db:"recorded_by" json:"recorded_by"`
+	CostTransactionID *int64         `db:"cost_transaction_id" json:"cost_transaction_id"`
+	CreatedAt         time.Time      `db:"created_at" json:"created_at"`
+	UpdatedAt         time.Time      `db:"updated_at" json:"updated_at"`
+	TaskTitle         string         `db:"task_title" json:"task_title"`
+}
+
+func (q *Queries) ListTaskInputConsumptionsByFarm(ctx context.Context, arg ListTaskInputConsumptionsByFarmParams) ([]ListTaskInputConsumptionsByFarmRow, error) {
+	rows, err := q.db.Query(ctx, listTaskInputConsumptionsByFarm, arg.FarmID, arg.Limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListTaskInputConsumptionsByFarmRow{}
+	for rows.Next() {
+		var i ListTaskInputConsumptionsByFarmRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.FarmID,
+			&i.TaskID,
+			&i.InputBatchID,
+			&i.Quantity,
+			&i.UnitID,
+			&i.Notes,
+			&i.RecordedAt,
+			&i.RecordedBy,
+			&i.CostTransactionID,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.TaskTitle,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const listTaskInputConsumptionsByTask = `-- name: ListTaskInputConsumptionsByTask :many

@@ -139,6 +139,25 @@
       :clear-route="{ path: '/tasks' }"
     />
 
+    <div
+      v-if="missedFeedSchedule"
+      class="mb-4 rounded-xl border border-amber-800/70 bg-amber-950/30 px-4 py-3 flex flex-wrap items-center justify-between gap-2"
+      data-test="tasks-missed-feed-banner"
+    >
+      <p class="text-sm text-amber-100/90">
+        <strong>{{ missedFeedSchedule.name }}</strong> was due but hasn't run — review the feeding plan?
+      </p>
+      <button
+        type="button"
+        class="text-xs px-3 py-1.5 rounded-lg bg-amber-900/60 border border-amber-700 text-amber-100 hover:bg-amber-800/80 disabled:opacity-40"
+        :disabled="templateTaskSaving"
+        data-test="tasks-review-feeding-template"
+        @click="createReviewFeedingTask"
+      >
+        {{ templateTaskSaving ? 'Creating…' : 'Create review task' }}
+      </button>
+    </div>
+
     <div class="flex flex-wrap gap-3 mb-4">
       <div>
         <label class="text-[11px] text-zinc-500 mr-1">Zone</label>
@@ -255,10 +274,20 @@
               Time log
             </button>
           </div>
+          <p
+            v-if="col.id === 'done' && taskConsumptions(task.id).length"
+            class="text-[10px] text-zinc-500 mb-2"
+            data-test="task-consumptions"
+          >
+            Used:
+            <span v-for="(c, i) in taskConsumptions(task.id)" :key="c.id">
+              {{ i ? ', ' : '' }}{{ formatConsumptionLine(c) }}
+            </span>
+          </p>
           <div class="flex items-center gap-3">
             <button
               v-if="col.next"
-              @click="advance(task, col.next)"
+              @click="requestAdvance(task, col.next)"
               class="text-xs text-green-600 hover:text-green-400 transition-colors"
             >
               &rarr; {{ col.nextLabel }}
@@ -403,6 +432,15 @@
         </div>
       </div>
     </div>
+
+    <TaskCompleteSheet
+      :open="!!completeTarget"
+      :task="completeTarget"
+      :batches="nfBatches"
+      :inputs="nfInputs"
+      @cancel="completeTarget = null"
+      @complete="onCompleteSheet"
+    />
   </div>
 </template>
 
@@ -414,6 +452,9 @@ import { useFarmContextStore } from '../stores/farmContext'
 import HelpTip from '../components/HelpTip.vue'
 import ZoneContextBanner from '../components/ZoneContextBanner.vue'
 import EmptyStateHint from '../components/EmptyStateHint.vue'
+import TaskCompleteSheet from '../components/TaskCompleteSheet.vue'
+import { formatConsumptionLine } from '../lib/taskConsumption.js'
+import { buildReviewFeedingPlanPayload, detectMissedFeedSchedule } from '../lib/taskTemplates.js'
 
 const route = useRoute()
 const store = useFarmStore()
@@ -453,6 +494,17 @@ const formError = ref('')
 const editingTask = ref(null)
 const deleteTarget = ref(null)
 const form = ref(emptyForm())
+const completeTarget = ref(null)
+const completeNextStatus = ref('completed')
+const nfBatches = ref([])
+const nfInputs = ref([])
+const templateTaskSaving = ref(false)
+
+const missedFeedSchedule = computed(() => detectMissedFeedSchedule(store.schedules))
+
+function taskConsumptions(taskId) {
+  return store.taskConsumptionsByTaskId[taskId] || []
+}
 
 function emptyForm() {
   return { title: '', description: '', zone_id: '', schedule_id: '', task_type: '', priority: 1, due_date: '' }
@@ -647,8 +699,14 @@ onMounted(async () => {
   applyZoneQueryFilter()
   loading.value = true
   try {
-    if (fid) await store.loadSchedules(fid)
+    if (fid) {
+      await store.loadSchedules(fid)
+      nfBatches.value = await store.loadNfBatches(fid)
+      nfInputs.value = await store.loadNfInputs(fid)
+      await store.loadFarmTaskConsumptions(fid)
+    }
     await store.loadTasks(fid)
+    await preloadCompletedConsumptions()
     await syncNow()
   } finally { loading.value = false }
   window.addEventListener('online', onConnectionChange)
@@ -732,9 +790,59 @@ const filteredTasks = computed(() => {
   return list
 })
 function colTasks(col) { return filteredTasks.value.filter(t => col.statuses.includes(t.status)) }
+
+function requestAdvance(task, nextStatus) {
+  if (nextStatus === 'completed') {
+    completeTarget.value = task
+    completeNextStatus.value = nextStatus
+    return
+  }
+  void advance(task, nextStatus)
+}
+
+async function onCompleteSheet({ task, consumption }) {
+  if (!task) return
+  try {
+    await store.updateTaskStatus(task.id, completeNextStatus.value)
+    if (consumption) {
+      await store.recordTaskConsumption(task.id, consumption)
+      const fid = farmContext.farmId
+      if (fid) {
+        nfBatches.value = await store.loadNfBatches(fid)
+        await store.loadFarmTaskConsumptions(fid)
+      }
+    }
+    completeTarget.value = null
+    await syncNow()
+  } catch (e) {
+    formError.value = e.response?.data?.error || e.message || 'Failed to complete task'
+  }
+}
+
+async function createReviewFeedingTask() {
+  const fid = farmContext.farmId
+  const sched = missedFeedSchedule.value
+  if (!fid || !sched) return
+  templateTaskSaving.value = true
+  try {
+    const payload = buildReviewFeedingPlanPayload(sched)
+    const { template_id, ...body } = payload
+    void template_id
+    await store.createTask(fid, body)
+    await store.loadTasks(fid)
+  } finally {
+    templateTaskSaving.value = false
+  }
+}
+
 async function advance(task, nextStatus) {
   await store.updateTaskStatus(task.id, nextStatus)
   await syncNow()
+}
+
+async function preloadCompletedConsumptions() {
+  const done = tasks.value.filter((t) => t.status === 'completed').slice(0, 20)
+  await Promise.all(done.map((t) => store.loadTaskConsumptions(t.id).catch(() => [])))
 }
 function zoneName(id) {
   if (!id) return ''

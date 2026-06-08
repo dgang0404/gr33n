@@ -20,6 +20,25 @@ export function isTaskDueToday(task, todayIso = todayDateIso()) {
   return String(task.due_date).slice(0, 10) <= todayIso
 }
 
+/**
+ * @param {object} task
+ * @param {string} [todayIso]
+ */
+export function isTaskOverdue(task, todayIso = todayDateIso()) {
+  if (!isOpenTask(task) || !task?.due_date) return false
+  return String(task.due_date).slice(0, 10) < todayIso
+}
+
+/**
+ * @param {object[]} tasks
+ * @param {number} zoneId
+ */
+export function countZoneOverdueTasks(tasks, zoneId) {
+  return (tasks || []).filter(
+    (t) => Number(t.zone_id) === Number(zoneId) && isTaskOverdue(t),
+  ).length
+}
+
 export function todayDateIso() {
   return new Date().toISOString().slice(0, 10)
 }

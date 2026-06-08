@@ -685,6 +685,37 @@ func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
+// ListFarmConsumptions — GET /farms/{id}/task-consumptions (Phase 58 WS1)
+func (h *Handler) ListFarmConsumptions(w http.ResponseWriter, r *http.Request) {
+	farmID, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	if err != nil || farmID <= 0 {
+		httputil.WriteError(w, http.StatusBadRequest, "invalid farm id")
+		return
+	}
+	q := db.New(h.pool)
+	if !farmauthz.RequireFarmMember(w, r, q, farmID) {
+		return
+	}
+	limit := int32(100)
+	if raw := strings.TrimSpace(r.URL.Query().Get("limit")); raw != "" {
+		if n, perr := strconv.ParseInt(raw, 10, 32); perr == nil && n > 0 && n <= 500 {
+			limit = int32(n)
+		}
+	}
+	rows, err := q.ListTaskInputConsumptionsByFarm(r.Context(), db.ListTaskInputConsumptionsByFarmParams{
+		FarmID: farmID,
+		Limit:  limit,
+	})
+	if err != nil {
+		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	if rows == nil {
+		rows = []db.ListTaskInputConsumptionsByFarmRow{}
+	}
+	httputil.WriteJSON(w, http.StatusOK, map[string]any{"consumptions": rows})
+}
+
 // ListConsumptions — GET /tasks/{id}/consumptions (Phase 20.7 WS3)
 func (h *Handler) ListConsumptions(w http.ResponseWriter, r *http.Request) {
 	taskID, err := strconv.ParseInt(r.PathValue("id"), 10, 64)

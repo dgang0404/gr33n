@@ -349,6 +349,7 @@ const todaySnapshot = computed(() => {
     lightingPrograms: lightingPrograms.value,
     queueDepth: waterQueueDepth.value,
     zoneTasks: zoneTasksDueToday.value,
+    tasks: tasks.value,
   })
 })
 
