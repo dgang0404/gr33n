@@ -46,6 +46,8 @@ isProject: false
 
 ## Phase map
 
+### Farmer closure (53–59)
+
 | Phase | One job | New backend? | Plan |
 |-------|---------|--------------|------|
 | **53** | Start grow, restock, tag receipt — without Advanced editors | No | [phase_53](phase_53_grow_stock_money_closure.plan.md) |
@@ -55,6 +57,15 @@ isProject: false
 | **57** | Each Pi has its own API key | Yes | [phase_57](phase_57_pi_device_api_keys.plan.md) |
 | **58** | Task drawdown + consumptions visible | No (API exists) | [phase_58](phase_58_task_consumptions_runtime.plan.md) |
 | **59** | Say no to POs/METRC until we mean it | Doc only | [phase_59](phase_59_enterprise_tier_boundary.plan.md) |
+
+### Guardian intelligence arc (60–63)
+
+| Phase | One job | New backend? | Plan |
+|-------|---------|--------------|------|
+| **60** | Morning walkthrough — one tap, Guardian tells you what's wrong today | Read tool | [phase_60](phase_60_guardian_morning_walkthrough.plan.md) |
+| **61** | Proactive nudges — dot on robot icon when something needs attention | Lightweight poller | [phase_61](phase_61_guardian_proactive_nudges.plan.md) |
+| **62** | Grow advisor — VPD, DLI, stage transitions, post-harvest analysis | Read tool | [phase_62](phase_62_guardian_grow_advisor.plan.md) |
+| **63** | Session memory — Guardian remembers what you asked, you control it | Session summary job | [phase_63](phase_63_guardian_session_memory.plan.md) |
 
 ---
 
@@ -69,22 +80,33 @@ flowchart TB
   P53 --> P55
   P54 --> P56[Phase 56 grow schema]
   P55 --> P56
+  P55 --> P60[Phase 60 morning walkthrough]
+  P60 --> P61[Phase 61 nudges]
+  P56 --> P62[Phase 62 grow advisor]
+  P61 --> P63[Phase 63 session memory]
   P53 --> P58[Phase 58 task consumptions]
   P51[Phase 51 Pi sync] --> P57[Phase 57 device API keys]
   P59[Phase 59 enterprise doc] -.-> P53
 ```
 
-1. **53 WS2 → 53 WS3 → 53 WS1** (stock before money autolog $; grow in parallel)
-2. **54** alongside 53 WS5 (wiggles on new CTAs)
+**Farmer closure:**
+1. **53 WS2 → 53 WS3 → 53 WS1** (stock before money autolog; grow in parallel)
+2. **54** alongside 53 WS4 (wiggles on new CTAs)
 3. **55** after 53 WS1–3 surfaces exist (Guardian has something to talk about)
 4. **56** after harvest flow from 53 is exercised
 5. **57** when Pi fleet >1 device per farm in production
 6. **58** anytime after 53 WS2 (restock + consumptions share stock mental model)
 7. **59** anytime — product gate doc
 
+**Guardian intelligence arc:**
+8. **60** after 55 read tools ship — morning walkthrough uses same pipeline
+9. **61** after 60 — nudge engine wraps same data
+10. **62** after 56 grow schema — needs `plant_id` + stage data
+11. **63** when session list is well-established — memory wraps existing sessions
+
 ---
 
-## Guardian across 53–55
+## Guardian across 53–63
 
 | Phase | Guardian deliverable |
 |-------|---------------------|
@@ -92,8 +114,12 @@ flowchart TB
 | 53 | Starters on grow strip, Supplies, Money |
 | 54 | Context for connection pipeline segments |
 | 55 | Read tools: cycle cost, spending summary, restock priority; ops persona copy |
+| 60 | Morning walkthrough — one read tool, all farm findings ranked |
+| 61 | Proactive nudge dot — one alert, one tap, dismissed per session |
+| 62 | Grow advisor — VPD/DLI/stage starters; post-harvest analysis |
+| 63 | Session memory — topic tags, related context injection, operator-deletable |
 
-**Rule:** Inline wizards beat Confirm PRs for restock/receipt/harvest. Phase 55 adds **read depth**, not new write tools (Phase 46 backlog for NL→PR).
+**Rule:** Inline wizards beat Confirm PRs for restock/receipt/harvest. Phases 55 + 60–62 add **read depth**; new write tools stay in Phase 46 backlog for NL→PR until proven valuable.
 
 ---
 
@@ -102,13 +128,17 @@ flowchart TB
 | OC | Phase | Close when |
 |----|-------|------------|
 | OC-52 | 52 Guardian UI context | ✅ Shipped |
-| OC-53 | 53 grow/stock/money | WS7 docs/tests |
+| OC-53 | 53 grow/stock/money | WS6 docs/tests |
 | OC-54 | 54 connection nav | WS4 docs/tests |
 | OC-55 | 55 Guardian ops | WS5 docs/tests + guardian pr spec |
 | OC-56 | 56 grow schema | Migration + smokes |
 | OC-57 | 57 device keys | Security smokes + pi guide |
 | OC-58 | 58 consumptions | Vitest + operator-tour |
 | OC-59 | 59 enterprise doc | README + gaps index updated |
+| OC-60 | 60 morning walkthrough | walk_farm tool + closure test |
+| OC-61 | 61 nudges | Dot badge + dismiss + operator-tour |
+| OC-62 | 62 grow advisor | VPD starters + post-harvest + closure test |
+| OC-63 | 63 session memory | Topic tags + inject + delete + privacy note |
 
 Track in [phase_35_37_operational_closure.plan.md](phase_35_37_operational_closure.plan.md).
 

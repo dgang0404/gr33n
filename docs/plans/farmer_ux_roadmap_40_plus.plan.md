@@ -238,6 +238,15 @@ Hardware, Pi platform sync, and farmer job completion — each phase is shippabl
 
 **Recommended order:** 53 (WS2→3→1) → 54 ∥ 55 → 56 → 57 when multi-Pi · 58 after 53 WS2 · 59 anytime.
 
+**Guardian intelligence arc (60–63):** 60 after 55 · 61 after 60 · 62 after 56 · 63 when sessions mature.
+
+| Phase | Name | One job | Plan |
+|-------|------|---------|------|
+| **60** | Morning walkthrough | One tap → Guardian ranks everything needing attention | [phase_60](phase_60_guardian_morning_walkthrough.plan.md) |
+| **61** | Proactive nudges | Dot on robot icon when something crosses threshold | [phase_61](phase_61_guardian_proactive_nudges.plan.md) |
+| **62** | Grow advisor | VPD, DLI, stage transitions, post-harvest analysis | [phase_62](phase_62_guardian_grow_advisor.plan.md) |
+| **63** | Session memory | Guardian remembers topics; operator controls / deletes | [phase_63](phase_63_guardian_session_memory.plan.md) |
+
 ---
 
 ## Related

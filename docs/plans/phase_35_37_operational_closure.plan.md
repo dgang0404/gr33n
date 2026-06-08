@@ -105,6 +105,18 @@ todos:
   - id: oc-59-closure
     content: "OC-59: Phase 59 WS4 — enterprise-tier-boundary.md, copy audit, index links"
     status: pending
+  - id: oc-60-closure
+    content: "OC-60: Phase 60 WS5 — morning walkthrough, walk_farm tool, operator-tour §6i, phase-60-closure.test.js"
+    status: pending
+  - id: oc-61-closure
+    content: "OC-61: Phase 61 WS5 — proactive nudge dot, dismiss, operator-tour, phase-61-closure.test.js"
+    status: pending
+  - id: oc-62-closure
+    content: "OC-62: Phase 62 WS5 — grow advisor, VPD starters, post-harvest, farm-guardian-architecture §9"
+    status: pending
+  - id: oc-63-closure
+    content: "OC-63: Phase 63 WS5 — session memory, topic tags, privacy note, delete, phase-63-closure.test.js"
+    status: pending
 isProject: false
 ---
 
@@ -464,6 +476,10 @@ Hub: [`phase_53_59_roadmap.plan.md`](phase_53_59_roadmap.plan.md). Close **OC-53
 | 57 Device API keys | OC-57 | [phase_57](phase_57_pi_device_api_keys.plan.md) | Security smokes + pi guide |
 | 58 Task consumptions | OC-58 | [phase_58](phase_58_task_consumptions_runtime.plan.md) | Consumption UI test |
 | 59 Enterprise boundary | OC-59 | [phase_59](phase_59_enterprise_tier_boundary.plan.md) | `enterprise-tier-boundary.md` |
+| 60 Morning walkthrough | OC-60 | [phase_60](phase_60_guardian_morning_walkthrough.plan.md) | `walk_farm` tool + closure test |
+| 61 Proactive nudges | OC-61 | [phase_61](phase_61_guardian_proactive_nudges.plan.md) | Dot badge + dismiss + tour |
+| 62 Grow advisor | OC-62 | [phase_62](phase_62_guardian_grow_advisor.plan.md) | VPD starters + post-harvest |
+| 63 Session memory | OC-63 | [phase_63](phase_63_guardian_session_memory.plan.md) | Topic tags + privacy delete |
 
 **Note:** Phase 51 "Phase 52+ per-device API keys" → **[Phase 57](phase_57_pi_device_api_keys.plan.md)** (not Phase 52).
 
