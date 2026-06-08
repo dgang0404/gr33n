@@ -8,7 +8,7 @@ overview: >
 todos:
   - id: ws1-grow-closure
     content: "WS1: Grow — zone strip, start wizard, harvest weigh-in, post-harvest screen, Plants hints"
-    status: pending
+    status: completed
   - id: ws2-stock-closure
     content: "WS2: Stock — restock, quick new batch, unit cost, low-stock→task, consumptions thin UI"
     status: completed
@@ -17,7 +17,7 @@ todos:
     status: completed
   - id: ws4-cross-links
     content: "WS4: Cross-links — v-nav-hint on all new CTAs; getting-started checklist rows; zone grow→feed→cost line"
-    status: pending
+    status: completed
   - id: ws5-guardian
     content: "WS5: Guardian starters on grow strip, Supplies, Money; cycle cost question routing"
     status: pending

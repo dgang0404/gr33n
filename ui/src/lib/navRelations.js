@@ -5,9 +5,10 @@
 
 /** @type {Record<string, string[]>} */
 export const NAV_RELATIONS = {
-  '/zones': ['/feeding', '/comfort-targets'],
-  '/feeding': ['/zones', '/comfort-targets'],
-  '/comfort-targets': ['/zones', '/feeding', '/automation', '/schedules'],
+  '/zones': ['/feeding', '/comfort-targets', '/plants'],
+  '/plants': ['/zones', '/comfort-targets'],
+  '/feeding': ['/zones', '/comfort-targets', '/plants'],
+  '/comfort-targets': ['/zones', '/feeding', '/plants', '/automation', '/schedules'],
   '/actuators': ['/sensors', '/fertigation'],
   '/sensors': ['/actuators'],
   '/lighting': ['/fertigation'],
@@ -17,7 +18,8 @@ export const NAV_RELATIONS = {
   '/tasks': ['/alerts', '/schedules'],
   '/operations/supplies': ['/tasks', '/operations/feeding'],
   '/operations/feeding': ['/operations/supplies', '/feeding'],
-  '/operations/money': ['/operations/supplies', '/costs'],
+  '/operations/money': ['/operations/supplies', '/costs', '/plants'],
+  '/fertigation': ['/plants', '/zones'],
 }
 
 /**

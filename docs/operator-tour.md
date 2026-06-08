@@ -503,6 +503,21 @@ Architecture: [`farm-guardian-architecture.md`](farm-guardian-architecture.md) �
 
 Architecture: [`farm-guardian-architecture.md` §7.0i](farm-guardian-architecture.md#70i-operations-hub--supplies-feeding-money-phase-43).
 
+### 7c. Grow + stock + money closure (Phase 53)
+
+**Shipped.** Closes the farmer loop without new migrations. Plan: [`plans/phase_53_grow_stock_money_closure.plan.md`](plans/phase_53_grow_stock_money_closure.plan.md).
+
+| Job | Where | What to click |
+|-----|--------|----------------|
+| **Start a grow** | Zone **Overview** → **Start a grow**, or **Plants** → **Start a grow** | Strain → zone → optional feeding program; creates a crop cycle |
+| **Harvest** | Zone **Overview** → **Harvest weigh-in** | Yield (g), notes → cycle closes → **post-harvest** screen with summary + **Compare to last cycle** |
+| **Restock** | **Operations → Supplies** | **+ Add qty** on a batch; low-stock banner → **Create refill task** (links to **Tasks**) |
+| **Log spend** | **Operations → Money** | **Save receipt** — optional tag to room + active grow; Dashboard **Spent this month** chip → Money |
+
+**Cross-links:** hover in-page CTAs to see related sidebar items wiggle (**Plants**, **Targets & schedules**, **Supplies**, **Tasks**, **Money**). Dashboard **Getting started** adds optional rows: start a grow, restock one input, log first receipt.
+
+**Vitest:** `phase-53-ws1-grow.test.js`, `phase-53-ws2-supplies.test.js`, `phase-53-ws3-money.test.js`, `phase-53-ws4-crosslinks.test.js`.
+
 ---
 
 ## 7b. Feeding & water for this zone (Phase 47)

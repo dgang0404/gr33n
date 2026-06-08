@@ -117,6 +117,7 @@
           </div>
           <button
             type="submit"
+            v-nav-hint="'/operations/money'"
             :disabled="saving"
             class="px-4 py-2 bg-green-700 hover:bg-green-600 text-white text-sm rounded-lg disabled:opacity-50"
             data-test="money-save-receipt"

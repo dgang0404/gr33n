@@ -275,6 +275,7 @@ const queueDepth = ref(0)
 const nfBatches = ref([])
 const nfInputs = ref([])
 const costTransactions = ref([])
+const cropCycles = ref([])
 
 const lowStockCount = computed(() =>
   listLowStockBatches(nfBatches.value, nfInputs.value).length,
@@ -287,6 +288,10 @@ const firstRunItems = computed(() => computeFirstRunChecklist({
   devices: store.devices,
   setpoints: setpoints.value,
   schedules: schedules.value,
+  cropCycles: cropCycles.value,
+  nfBatches: nfBatches.value,
+  costTransactions: costTransactions.value,
+  includeGrowClosure: true,
   farmId: farmContext.farmId,
 }))
 
@@ -405,7 +410,7 @@ async function refreshAll() {
   const fid = farmContext.farmId
   if (!fid) return
   await store.loadAll(fid)
-  const [sch, sp, ev, al, unread, prog, batches, inputs, costs] = await Promise.all([
+  const [sch, sp, ev, al, unread, prog, batches, inputs, costs, cycles] = await Promise.all([
     store.loadSchedules(fid),
     store.loadSetpoints(fid),
     store.loadFertigationEvents(fid),
@@ -415,6 +420,7 @@ async function refreshAll() {
     store.loadNfBatches(fid),
     store.loadNfInputs(fid),
     store.loadCosts(fid, { limit: 100, offset: 0 }),
+    store.loadCropCycles(fid),
   ])
   schedules.value = sch
   setpoints.value = sp
@@ -425,6 +431,7 @@ async function refreshAll() {
   nfBatches.value = batches
   nfInputs.value = inputs
   costTransactions.value = costs
+  cropCycles.value = cycles
   await store.loadTasks(fid)
   queueDepth.value = await sumFarmPendingQueueDepth(store.devices)
 }

@@ -1,0 +1,244 @@
+<template>
+  <div
+    v-if="open"
+    class="fixed inset-0 z-50 bg-black/70 p-4 flex items-center justify-center"
+    data-test="start-grow-wizard"
+    @click.self="close"
+  >
+    <div class="w-full max-w-lg bg-zinc-900 border border-zinc-700 rounded-xl p-5 space-y-4">
+      <div class="flex items-start justify-between gap-2">
+        <div>
+          <h2 class="text-white font-semibold">Start a grow</h2>
+          <p class="text-zinc-500 text-xs mt-0.5">Pick strain, zone, and optional feeding program.</p>
+        </div>
+        <button type="button" class="text-zinc-500 hover:text-zinc-300 text-sm" @click="close">✕</button>
+      </div>
+
+      <div class="space-y-3">
+        <div>
+          <label class="block text-xs text-zinc-500 mb-1">Strain / variety</label>
+          <input
+            v-model="form.strain"
+            type="text"
+            class="w-full bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-green-600"
+            placeholder="e.g. OG Kush"
+            data-test="start-grow-strain"
+          />
+          <select
+            v-if="plants.length"
+            v-model="plantPickId"
+            class="w-full mt-2 bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white"
+            data-test="start-grow-plant-pick"
+            @change="onPlantPick"
+          >
+            <option :value="''">Or pick from Plants…</option>
+            <option v-for="p in plants" :key="p.id" :value="p.id">{{ p.display_name }}</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs text-zinc-500 mb-1">Zone *</label>
+          <select
+            v-model.number="form.zoneId"
+            required
+            class="w-full bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white"
+            data-test="start-grow-zone"
+          >
+            <option :value="null" disabled>Select zone</option>
+            <option v-for="z in zones" :key="z.id" :value="z.id">{{ z.name }}</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs text-zinc-500 mb-1">Cycle name</label>
+          <input
+            v-model="form.name"
+            type="text"
+            class="w-full bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white"
+            placeholder="Auto-filled from strain + zone"
+            data-test="start-grow-name"
+          />
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs text-zinc-500 mb-1">Starting stage</label>
+            <select v-model="form.stage" class="w-full bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white">
+              <option v-for="gs in growthStages" :key="gs" :value="gs">{{ formatStageLabel(gs) }}</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs text-zinc-500 mb-1">Started on</label>
+            <input v-model="form.startedAt" type="date" class="w-full bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white" />
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs text-zinc-500 mb-1">Feeding program (optional)</label>
+          <select
+            v-model.number="form.programId"
+            class="w-full bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white"
+            data-test="start-grow-program"
+          >
+            <option :value="null">None — assign later</option>
+            <option
+              v-for="p in zonePrograms"
+              :key="p.id"
+              :value="p.id"
+            >
+              {{ p.name }}
+            </option>
+          </select>
+        </div>
+      </div>
+
+      <p v-if="formError" class="text-red-400 text-xs">{{ formError }}</p>
+
+      <div class="flex justify-end gap-3 pt-1">
+        <button
+          type="button"
+          class="px-3 py-1.5 text-xs rounded border border-zinc-700 text-zinc-400 hover:text-zinc-200"
+          @click="close"
+        >
+          Cancel
+        </button>
+        <button
+          type="button"
+          class="px-4 py-1.5 text-xs rounded-lg bg-green-700 hover:bg-green-600 text-white font-medium disabled:opacity-40"
+          :disabled="submitting || !canSubmit"
+          data-test="start-grow-submit"
+          @click="submit"
+        >
+          {{ submitting ? 'Starting…' : 'Start grow' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script setup>
+import { computed, ref, watch } from 'vue'
+import { useFarmStore } from '../stores/farm.js'
+import {
+  GROWTH_STAGES,
+  buildStartGrowPayload,
+  defaultCycleName,
+  formatStageLabel,
+  strainFromPlant,
+} from '../lib/growHub.js'
+
+const props = defineProps({
+  open: { type: Boolean, default: false },
+  farmId: { type: Number, required: true },
+  zones: { type: Array, default: () => [] },
+  programs: { type: Array, default: () => [] },
+  plants: { type: Array, default: () => [] },
+  initialZoneId: { type: Number, default: null },
+  initialStrain: { type: String, default: '' },
+})
+
+const emit = defineEmits(['close', 'created'])
+
+const store = useFarmStore()
+const growthStages = GROWTH_STAGES
+const submitting = ref(false)
+const formError = ref('')
+const plantPickId = ref('')
+
+const form = ref(emptyForm())
+
+function emptyForm() {
+  return {
+    strain: '',
+    zoneId: null,
+    name: '',
+    stage: 'seedling',
+    startedAt: new Date().toISOString().slice(0, 10),
+    programId: null,
+  }
+}
+
+const zonePrograms = computed(() => {
+  if (!form.value.zoneId) return props.programs
+  return props.programs.filter((p) => Number(p.target_zone_id) === Number(form.value.zoneId))
+})
+
+const selectedZone = computed(() =>
+  props.zones.find((z) => Number(z.id) === Number(form.value.zoneId)),
+)
+
+const canSubmit = computed(() =>
+  Boolean(props.farmId && form.value.zoneId && (form.value.strain?.trim() || form.value.name?.trim())),
+)
+
+watch(
+  () => [form.value.strain, form.value.zoneId],
+  () => {
+    if (!form.value.name || form.value.name === lastAutoName.value) {
+      const auto = defaultCycleName(form.value.strain, selectedZone.value?.name)
+      form.value.name = auto
+      lastAutoName.value = auto
+    }
+  },
+)
+
+const lastAutoName = ref('')
+
+watch(
+  () => props.open,
+  (isOpen) => {
+    if (!isOpen) return
+    formError.value = ''
+    plantPickId.value = ''
+    const f = emptyForm()
+    if (props.initialStrain) f.strain = props.initialStrain
+    if (props.initialZoneId) f.zoneId = props.initialZoneId
+    f.name = defaultCycleName(f.strain, props.zones.find((z) => z.id === f.zoneId)?.name)
+    lastAutoName.value = f.name
+    form.value = f
+  },
+)
+
+watch(
+  () => form.value.zoneId,
+  () => {
+    if (zonePrograms.value.length === 1) {
+      form.value.programId = zonePrograms.value[0].id
+    } else if (!zonePrograms.value.some((p) => p.id === form.value.programId)) {
+      form.value.programId = null
+    }
+  },
+)
+
+function onPlantPick() {
+  const plant = props.plants.find((p) => Number(p.id) === Number(plantPickId.value))
+  if (plant) form.value.strain = strainFromPlant(plant)
+}
+
+function close() {
+  emit('close')
+}
+
+async function submit() {
+  formError.value = ''
+  if (!canSubmit.value) return
+  submitting.value = true
+  try {
+    const payload = buildStartGrowPayload({
+      zoneId: form.value.zoneId,
+      strain: form.value.strain,
+      name: form.value.name,
+      stage: form.value.stage,
+      startedAt: form.value.startedAt,
+      programId: form.value.programId,
+    })
+    const created = await store.createCropCycle(props.farmId, payload)
+    emit('created', created)
+    close()
+  } catch (e) {
+    formError.value = e?.response?.data?.error || e?.message || 'Failed to start grow'
+  } finally {
+    submitting.value = false
+  }
+}
+</script>

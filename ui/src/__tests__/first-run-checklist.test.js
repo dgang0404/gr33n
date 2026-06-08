@@ -33,6 +33,10 @@ describe('Phase 44 WS5 — first-run checklist logic', () => {
       devices: [{ id: 10, status: 'offline' }],
       setpoints: [{ id: 1, zone_id: 1, sensor_type: 'humidity', min_value: 40, max_value: 60 }],
       schedules: [{ id: 2, is_active: true }],
+      cropCycles: [{ id: 1 }],
+      nfBatches: [{ current_quantity_remaining: 10 }],
+      costTransactions: [{ id: 1, amount: 5, transaction_date: '2026-06-01', description: 'Receipt' }],
+      includeGrowClosure: true,
     })
     expect(isFirstRunComplete(items)).toBe(true)
     expect(shouldShowFirstRunChecklist(3, items)).toBe(false)

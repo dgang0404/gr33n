@@ -121,6 +121,7 @@
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import HelpTip from '../components/HelpTip.vue'
 import { useFarmContextStore } from '../stores/farmContext'
 import { useFarmStore } from '../stores/farm'
@@ -130,10 +131,14 @@ import { useFarmStore } from '../stores/farm'
 // sync avoids the "Add cycle 6 → silent failure" surprise.
 const MAX_COMPARE = 5
 
+const route = useRoute()
 const farmContext = useFarmContextStore()
 const store = useFarmStore()
 
-const farmId = computed(() => farmContext.farmId)
+const farmId = computed(() => {
+  const fromRoute = Number(route.params.fid)
+  return fromRoute || farmContext.farmId
+})
 const cycles = ref([])
 const loadingCycles = ref(false)
 const selectedIds = ref([])
@@ -270,10 +275,30 @@ function cellClass(row, idx) {
   return 'text-white'
 }
 
-onMounted(loadCycles)
+function applyIdsFromQuery() {
+  const raw = route.query.ids
+  if (!raw || typeof raw !== 'string') return
+  const ids = raw
+    .split(',')
+    .map((s) => Number(s.trim()))
+    .filter((n) => Number.isFinite(n) && n > 0)
+    .slice(0, MAX_COMPARE)
+  if (ids.length) selectedIds.value = ids
+}
+
+onMounted(async () => {
+  applyIdsFromQuery()
+  await loadCycles()
+  if (selectedIds.value.length) await loadCompare()
+})
 watch(farmId, () => {
   clearSelection()
+  applyIdsFromQuery()
   loadCycles()
+})
+watch(() => route.query.ids, () => {
+  applyIdsFromQuery()
+  if (selectedIds.value.length) loadCompare()
 })
 watch(selectedIds, loadCompare)
 </script>

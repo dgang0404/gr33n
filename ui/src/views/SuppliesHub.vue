@@ -56,6 +56,7 @@
           </span>
           <button
             type="button"
+            v-nav-hint="'/tasks'"
             class="text-[10px] px-2 py-0.5 rounded bg-amber-900/60 text-amber-100 hover:bg-amber-800/80"
             :disabled="refillTaskSaving === row.batch.id"
             data-test="supplies-refill-task"
@@ -208,6 +209,7 @@
               />
               <button
                 type="button"
+                v-nav-hint="'/operations/supplies'"
                 class="text-xs px-2 py-1 rounded bg-green-800 text-white disabled:opacity-50"
                 :disabled="saving || !restockQty"
                 data-test="supplies-restock-submit"
@@ -225,6 +227,7 @@
           <div class="flex flex-wrap gap-2 pt-2 border-t border-zinc-800">
             <button
               type="button"
+              v-nav-hint="'/operations/supplies'"
               class="text-xs text-green-500 hover:text-green-400"
               data-test="supplies-restock-btn"
               @click="startRestock(row)"
@@ -242,8 +245,10 @@
             <button
               v-if="row.lowStock"
               type="button"
+              v-nav-hint="'/tasks'"
               class="text-xs text-amber-400 hover:text-amber-200"
               :disabled="refillTaskSaving === row.id"
+              data-test="supplies-refill-task-row"
               @click="createRefillTaskForRow(row)"
             >
               Refill task

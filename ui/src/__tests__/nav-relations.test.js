@@ -10,9 +10,11 @@ describe('Phase 49 WS2 — nav relations', () => {
   )
 
   it('returns related routes for grow-path siblings', () => {
-    expect(relatedTo('/zones')).toEqual(['/feeding', '/comfort-targets'])
-    expect(relatedTo('/feeding')).toEqual(['/zones', '/comfort-targets'])
-    expect(relatedTo('/comfort-targets')).toEqual(['/zones', '/feeding'])
+    expect(relatedTo('/zones')).toEqual(['/feeding', '/comfort-targets', '/plants'])
+    expect(relatedTo('/plants')).toEqual(['/zones', '/comfort-targets'])
+    expect(relatedTo('/feeding')).toEqual(['/zones', '/comfort-targets', '/plants'])
+    expect(relatedTo('/comfort-targets')).toContain('/zones')
+    expect(relatedTo('/comfort-targets')).toContain('/plants')
   })
 
   it('returns empty for unknown routes', () => {

@@ -209,6 +209,12 @@
       </p>
     </template>
 
+    <ZoneGrowConnectionLine
+      :zone-id="zoneId"
+      :farm-id="farmId"
+      :active-program="activeProgram"
+    />
+
     <ZoneGrowCostPeek :zone-id="zoneId" :farm-id="farmId" />
 
     <div class="border-t border-zinc-800 pt-3 flex flex-wrap gap-3">
@@ -241,6 +247,7 @@ import ActuatorPulseControl from './ActuatorPulseControl.vue'
 import ZoneFeedingPlanEditor from './ZoneFeedingPlanEditor.vue'
 import ZoneFeedingPlanWizard from './ZoneFeedingPlanWizard.vue'
 import ZoneGrowCostPeek from './ZoneGrowCostPeek.vue'
+import ZoneGrowConnectionLine from './ZoneGrowConnectionLine.vue'
 import { FARMER_FOCUS_RING, runFeedNowAriaLabel } from '../lib/farmerA11y.js'
 
 const props = defineProps({

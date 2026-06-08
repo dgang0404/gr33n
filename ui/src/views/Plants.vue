@@ -20,9 +20,13 @@
 
     <div v-if="loading" class="text-zinc-400 text-sm">Loading plants…</div>
 
-    <div v-else-if="!plants.length" class="text-zinc-500 text-sm bg-zinc-800 border border-zinc-700 rounded-xl p-8 text-center">
-      No plants yet. Add your first plant to start tracking crops.
-    </div>
+    <EmptyStateHint
+      v-else-if="!plants.length"
+      reason="no_data"
+      message="No plants yet — add a strain definition, then start a grow in a zone."
+      action-label="Add your first plant"
+      @action="openCreate"
+    />
 
     <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
       <div
@@ -41,7 +45,16 @@
           <p class="text-zinc-600 text-xs line-clamp-2">{{ metaSummary(p.meta) }}</p>
         </div>
         <p class="text-zinc-600 text-[11px] mb-3">Added {{ formatDate(p.created_at) }}</p>
-        <div class="flex items-center gap-3 border-t border-zinc-800 pt-2">
+        <div class="flex items-center gap-3 border-t border-zinc-800 pt-2 flex-wrap">
+          <button
+            type="button"
+            v-nav-hint="'/zones'"
+            class="text-xs text-green-500 hover:text-green-300 font-medium"
+            data-test="plant-start-grow"
+            @click="openStartGrow(p)"
+          >
+            Start a grow
+          </button>
           <button @click="openEdit(p)" class="text-xs text-zinc-400 hover:text-zinc-200">Edit</button>
           <button @click="confirmDelete(p)" class="text-xs text-red-500 hover:text-red-400">Delete</button>
         </div>
@@ -130,19 +143,40 @@
         </div>
       </div>
     </div>
+
+    <StartGrowWizard
+      :open="showStartGrowWizard"
+      :farm-id="farmContext.farmId"
+      :zones="zones"
+      :programs="programs"
+      :plants="plants"
+      :initial-strain="startGrowStrain"
+      @close="showStartGrowWizard = false"
+      @created="onGrowStarted"
+    />
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { useFarmStore } from '../stores/farm'
 import { useFarmContextStore } from '../stores/farmContext'
 import HelpTip from '../components/HelpTip.vue'
+import EmptyStateHint from '../components/EmptyStateHint.vue'
+import StartGrowWizard from '../components/StartGrowWizard.vue'
+import { strainFromPlant } from '../lib/growHub.js'
 
 const store = useFarmStore()
 const farmContext = useFarmContextStore()
+const route = useRoute()
+const router = useRouter()
 
 const plants = ref([])
+const zones = ref([])
+const programs = ref([])
+const showStartGrowWizard = ref(false)
+const startGrowStrain = ref('')
 const loading = ref(false)
 const showModal = ref(false)
 const editing = ref(null)
@@ -185,9 +219,28 @@ async function refresh() {
   if (!fid) return
   loading.value = true
   try {
-    plants.value = await store.loadPlants(fid)
+    const [p, z, prog] = await Promise.all([
+      store.loadPlants(fid),
+      store.zones.length ? Promise.resolve(store.zones) : store.loadAll(fid).then(() => store.zones),
+      store.loadFertigationPrograms(fid),
+    ])
+    plants.value = p
+    zones.value = z
+    programs.value = prog
   } finally {
     loading.value = false
+  }
+}
+
+function openStartGrow(plant) {
+  startGrowStrain.value = strainFromPlant(plant)
+  showStartGrowWizard.value = true
+}
+
+async function onGrowStarted(cycle) {
+  showStartGrowWizard.value = false
+  if (cycle?.zone_id) {
+    router.push({ path: `/zones/${cycle.zone_id}` })
   }
 }
 
@@ -258,6 +311,16 @@ function formatDate(ts) {
   if (!ts) return ''
   return new Date(ts).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
 }
+
+watch(
+  () => route.query.start_grow,
+  (flag) => {
+    if (!flag) return
+    startGrowStrain.value = typeof route.query.strain === 'string' ? route.query.strain : ''
+    showStartGrowWizard.value = true
+  },
+  { immediate: true },
+)
 
 onMounted(refresh)
 watch(() => farmContext.farmId, refresh)

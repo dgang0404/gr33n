@@ -111,6 +111,14 @@
       <template v-else>
         <ZoneTodayStrip :chips="todaySnapshot.chips" />
 
+        <ZoneCurrentGrowStrip
+          :zone-id="zoneId"
+          :farm-id="farmId"
+          :cycles="cropCycles"
+          @start-grow="openStartGrowWizard"
+          @harvest="openHarvestWizard"
+        />
+
         <ZoneAlertsPanel
           v-if="zone"
           :zone-id="zoneId"
@@ -184,6 +192,34 @@
 
       </template>
     </template>
+
+    <StartGrowWizard
+      :open="showStartGrowWizard"
+      :farm-id="farmId"
+      :zones="store.zones"
+      :programs="programs"
+      :plants="plants"
+      :initial-zone-id="zoneId"
+      :initial-strain="startGrowStrain"
+      @close="showStartGrowWizard = false"
+      @created="onGrowStarted"
+    />
+
+    <HarvestWeighIn
+      :open="showHarvestWizard"
+      :cycle="harvestTarget"
+      @close="closeHarvestWizard"
+      @harvested="onHarvestComplete"
+    />
+
+    <PostHarvestScreen
+      :open="showPostHarvest"
+      :farm-id="farmId"
+      :cycle-id="postHarvestCycleId"
+      :zone-id="zoneId"
+      :cycles="cropCycles"
+      @close="showPostHarvest = false"
+    />
   </div>
 </template>
 
@@ -206,6 +242,10 @@ import ZoneTodayStrip from '../components/ZoneTodayStrip.vue'
 import ZoneAlertsPanel from '../components/ZoneAlertsPanel.vue'
 import ZoneTasksPanel from '../components/ZoneTasksPanel.vue'
 import ZoneAdvancedHint from '../components/ZoneAdvancedHint.vue'
+import ZoneCurrentGrowStrip from '../components/ZoneCurrentGrowStrip.vue'
+import StartGrowWizard from '../components/StartGrowWizard.vue'
+import HarvestWeighIn from '../components/HarvestWeighIn.vue'
+import PostHarvestScreen from '../components/PostHarvestScreen.vue'
 import { zoneTasksDueToday as filterZoneTasksDueToday } from '../lib/zoneTasks.js'
 import {
   buildZoneGuardianContextRef,
@@ -238,7 +278,14 @@ const setpoints = ref([])
 const rules = ref([])
 const lightingPrograms = ref([])
 const cropCycles = ref([])
+const plants = ref([])
 const waterQueueDepth = ref(0)
+const showStartGrowWizard = ref(false)
+const showHarvestWizard = ref(false)
+const showPostHarvest = ref(false)
+const harvestTarget = ref(null)
+const postHarvestCycleId = ref(null)
+const startGrowStrain = ref('')
 
 const zoneTabs = [
   { id: 'overview', icon: '📋', label: 'Overview' },
@@ -393,6 +440,56 @@ async function toggleActuator(a) {
     toggling.value[a.id] = false
   }
 }
+
+async function refreshCropCycles() {
+  const fid = farmId.value
+  if (!fid) return
+  cropCycles.value = await store.loadCropCycles(fid)
+}
+
+async function ensurePlants() {
+  const fid = farmId.value
+  if (!fid || plants.value.length) return
+  try {
+    plants.value = await store.loadPlants(fid)
+  } catch {
+    plants.value = []
+  }
+}
+
+function openStartGrowWizard() {
+  startGrowStrain.value = typeof route.query.strain === 'string' ? route.query.strain : ''
+  ensurePlants()
+  showStartGrowWizard.value = true
+}
+
+function openHarvestWizard(cycle) {
+  harvestTarget.value = cycle
+  showHarvestWizard.value = true
+}
+
+function closeHarvestWizard() {
+  showHarvestWizard.value = false
+  harvestTarget.value = null
+}
+
+async function onGrowStarted() {
+  await refreshCropCycles()
+}
+
+async function onHarvestComplete(cycle) {
+  await refreshCropCycles()
+  postHarvestCycleId.value = cycle?.id ?? null
+  showPostHarvest.value = Boolean(postHarvestCycleId.value)
+}
+
+watch(
+  () => route.query.start_grow,
+  (flag) => {
+    if (flag && zone.value) openStartGrowWizard()
+  },
+  { immediate: true },
+)
 
 onMounted(async () => {
   if (!store.zones.length && farmId.value) await store.loadAll(farmId.value)
