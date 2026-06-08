@@ -11,7 +11,7 @@
   <div class="p-6 max-w-7xl">
     <div class="flex items-center justify-between mb-4">
       <div class="flex items-center gap-2">
-        <router-link to="/fertigation" class="text-xs text-zinc-400 hover:text-zinc-200">← Fertigation</router-link>
+        <router-link v-nav-hint="'/fertigation'" to="/fertigation" class="text-xs text-zinc-400 hover:text-zinc-200">← Fertigation</router-link>
         <h1 class="text-xl font-semibold text-white ml-3">
           Compare crop cycles
           <HelpTip position="bottom">

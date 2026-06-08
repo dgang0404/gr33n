@@ -54,6 +54,7 @@
             <router-link
               v-for="t in linkedTasks(a.id)"
               :key="t.id"
+              v-nav-hint="'/tasks'"
               to="/tasks"
               class="text-[11px] px-2 py-0.5 rounded bg-green-900/40 border border-green-800 text-green-300 hover:bg-green-900/60"
             >

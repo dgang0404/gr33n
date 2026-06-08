@@ -52,6 +52,7 @@
               </div>
               <div class="flex items-center gap-2 shrink-0">
                 <RouterLink
+                  v-nav-hint="'/chat'"
                   :to="guardianPanel.drawerTab === 'pending' ? '/chat?tab=pending' : '/chat'"
                   class="text-[10px] text-zinc-500 hover:text-zinc-300 underline"
                   data-test="guardian-drawer-full-page"

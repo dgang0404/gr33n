@@ -1,6 +1,7 @@
 <template>
   <router-link
     v-if="sensor?.id"
+    v-nav-hint="'/sensors'"
     :to="{ name: 'sensor-detail', params: { id: sensor.id } }"
     class="block rounded-xl ring-0 hover:ring-1 ring-zinc-600 focus:outline-none focus:ring-2 focus:ring-green-600 transition-shadow min-w-0"
   >

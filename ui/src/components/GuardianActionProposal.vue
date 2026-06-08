@@ -11,6 +11,7 @@
       </p>
       <RouterLink
         v-if="followUpLink"
+        v-nav-hint="followUpLink"
         :to="followUpLink"
         class="text-[11px] text-green-400 hover:text-green-300 underline"
         data-test="guardian-proposal-followup"

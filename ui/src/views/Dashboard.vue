@@ -9,7 +9,7 @@
             <strong>How it all connects:</strong> Your farm has <em>zones</em> (grow areas), each with <em>sensors</em>
             (reading temp, humidity, EC) and <em>controls</em> (pumps, lights, fans). <em>Feeding plans</em> say when each zone
             gets water and nutrients. <em>Automations</em> react to readings. <em>Tasks</em> are your daily to-do list.
-            Open <router-link to="/operator-guide" class="text-gr33n-400 underline">Guide</router-link> for a suggested click path.
+            Open <router-link v-nav-hint="'/operator-guide'" to="/operator-guide" class="text-gr33n-400 underline">Guide</router-link> for a suggested click path.
           </HelpTip>
         </h2>
         <p class="text-sm text-gray-500">{{ store.zones.length }} zones · {{ store.sensors.length }} sensors · {{ store.devices.length }} devices</p>
@@ -168,7 +168,7 @@
           <div v-for="e in recentFertEvents" :key="e.id"
             class="flex items-center justify-between gap-3 bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2">
             <div class="flex items-center gap-2 min-w-0">
-              <router-link v-if="e.zone_id" :to="{ path: `/zones/${e.zone_id}`, query: { tab: 'water' } }"
+              <router-link v-if="e.zone_id" v-nav-hint="'/zones'" :to="{ path: `/zones/${e.zone_id}`, query: { tab: 'water' } }"
                 class="text-sm text-zinc-200 hover:text-green-400 truncate">{{ zoneName(e.zone_id) }}</router-link>
               <span v-if="e.program_id" class="text-[11px] text-zinc-500">{{ programName(e.program_id) }}</span>
             </div>

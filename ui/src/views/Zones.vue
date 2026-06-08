@@ -59,7 +59,7 @@
         :key="zone.id"
         class="bg-zinc-900 border border-zinc-800 rounded-xl p-5 hover:border-green-700 transition-colors group"
       >
-        <router-link :to="`/zones/${zone.id}`" class="block">
+        <router-link v-nav-hint="'/zones'" :to="`/zones/${zone.id}`" class="block">
           <div class="flex items-start justify-between mb-3">
             <span class="text-white font-medium group-hover:text-green-400 transition-colors">
               {{ zone.name }}

@@ -68,16 +68,19 @@
             <div class="flex flex-wrap gap-2 mt-2">
               <router-link
                 v-if="prog.zone_id"
+                v-nav-hint="'/zones'"
                 :to="{ path: `/zones/${prog.zone_id}`, query: { tab: 'light' } }"
                 class="text-[11px] px-1.5 py-0.5 rounded bg-blue-900/30 text-blue-400 border border-blue-800/30 hover:bg-blue-900/50"
               >Open zone →</router-link>
               <router-link
                 v-if="prog.schedule_on_id"
+                v-nav-hint="'/schedules'"
                 :to="{ path: '/schedules' }"
                 class="text-[11px] px-1.5 py-0.5 rounded bg-green-900/30 text-green-400 border border-green-800/30 hover:bg-green-900/50"
               >ON sch #{{ prog.schedule_on_id }}</router-link>
               <router-link
                 v-if="prog.schedule_off_id"
+                v-nav-hint="'/schedules'"
                 :to="{ path: '/schedules' }"
                 class="text-[11px] px-1.5 py-0.5 rounded bg-yellow-900/30 text-yellow-400 border border-yellow-800/30 hover:bg-yellow-900/50"
               >OFF sch #{{ prog.schedule_off_id }}</router-link>

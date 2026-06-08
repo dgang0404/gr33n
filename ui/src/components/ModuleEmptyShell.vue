@@ -37,6 +37,7 @@
       {{ zoneHint.message }}
       <router-link
         v-if="zoneHint.actionTo"
+        v-nav-hint="'/zones'"
         :to="zoneHint.actionTo"
         class="text-gr33n-500 hover:text-gr33n-400 hover:underline ml-1"
       >
@@ -54,6 +55,7 @@
         {{ shell.primaryAction }}
       </button>
       <router-link
+        v-nav-hint="'/'"
         to="/"
         class="text-xs text-zinc-400 hover:text-zinc-200"
       >

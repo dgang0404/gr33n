@@ -98,6 +98,7 @@
         Log a mix
       </router-link>
       <router-link
+        v-nav-hint="'/operations/supplies'"
         :to="recipesLink"
         class="px-4 py-2 text-sm font-medium rounded-lg bg-zinc-800 text-zinc-300 border border-zinc-700 hover:bg-zinc-700 transition-colors"
       >
@@ -267,6 +268,7 @@
 
     <footer class="pt-2 border-t border-zinc-800">
       <router-link
+        v-nav-hint="'/operations/supplies'"
         :to="{ path: '/inventory', query: zoneContextId ? { tab: 'definitions', zone_id: String(zoneContextId) } : { tab: 'definitions' } }"
         class="text-xs text-zinc-400 hover:text-green-400"
         data-test="supplies-advanced-footer"

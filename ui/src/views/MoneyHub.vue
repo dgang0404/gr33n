@@ -203,6 +203,7 @@
               </button>
               <router-link
                 v-if="row.advancedLink"
+                v-nav-hint="'/fertigation'"
                 :to="row.advancedLink"
                 class="text-xs text-zinc-500 hover:text-zinc-300"
               >
@@ -216,6 +217,7 @@
 
     <footer class="pt-2 border-t border-zinc-800">
       <router-link
+        v-nav-hint="'/operations/money'"
         to="/costs"
         class="text-xs text-zinc-400 hover:text-green-400"
         data-test="money-advanced-footer"

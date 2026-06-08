@@ -7,7 +7,7 @@
     <nav class="text-zinc-400 mb-1" aria-label="Breadcrumb">
       <router-link v-nav-hint="'/zones'" to="/zones" class="hover:text-green-400">Zones</router-link>
       <span class="mx-1">›</span>
-      <router-link :to="zoneRoute" class="hover:text-green-400">{{ zoneName }}</router-link>
+      <router-link v-nav-hint="'/zones'" :to="zoneRoute" class="hover:text-green-400">{{ zoneName }}</router-link>
       <span class="mx-1">›</span>
       <span class="text-zinc-200">{{ pageLabel }}</span>
     </nav>
@@ -15,12 +15,13 @@
       Viewing <strong>{{ zoneName }}</strong>
       <template v-if="backToZoneTab">
         —
-        <router-link :to="backToZoneRoute" class="text-green-400 hover:text-green-300">
+        <router-link v-nav-hint="'/zones'" :to="backToZoneRoute" class="text-green-400 hover:text-green-300">
           Back to zone {{ backToZoneTabLabel }} →
         </router-link>
       </template>
       <router-link
         v-if="clearRoute"
+        v-nav-hint="'/zones'"
         :to="clearRoute"
         class="text-green-400 hover:text-green-300 ml-1"
       >

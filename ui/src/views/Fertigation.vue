@@ -101,7 +101,7 @@
             EC {{ r.last_ec_mscm }} mS/cm · pH {{ r.last_ph || '—' }}
           </p>
           <p class="text-zinc-600 text-xs">
-            <router-link v-if="r.zone_id" :to="`/zones/${r.zone_id}`" class="hover:text-green-400 transition-colors">{{ zoneLabel(r.zone_id) }}</router-link>
+                <router-link v-if="r.zone_id" v-nav-hint="'/zones'" :to="`/zones/${r.zone_id}`" class="hover:text-green-400 transition-colors">{{ zoneLabel(r.zone_id) }}</router-link>
             <span v-else>All zones</span>
           </p>
         </div>
@@ -161,7 +161,7 @@
             <tr v-for="t in ecTargets" :key="t.id" class="border-b border-zinc-800/50">
               <td class="py-2 pr-4 capitalize">{{ t.growth_stage }}</td>
               <td class="py-2 pr-4">
-                <router-link v-if="t.zone_id" :to="`/zones/${t.zone_id}`" class="hover:text-green-400 transition-colors">{{ zoneLabel(t.zone_id) }}</router-link>
+                <router-link v-if="t.zone_id" v-nav-hint="'/zones'" :to="`/zones/${t.zone_id}`" class="hover:text-green-400 transition-colors">{{ zoneLabel(t.zone_id) }}</router-link>
                 <span v-else>All zones</span>
               </td>
               <td class="py-2 pr-4 font-mono">{{ t.ec_min_mscm }}–{{ t.ec_max_mscm }} mS/cm</td>
@@ -255,17 +255,17 @@
             {{ runNowMessage[p.id].text }}
           </p>
           <p class="text-zinc-400 text-xs">
-            <router-link v-if="p.target_zone_id" :to="`/zones/${p.target_zone_id}`" class="hover:text-green-400 transition-colors">{{ zoneLabel(p.target_zone_id) }}</router-link>
+            <router-link v-if="p.target_zone_id" v-nav-hint="'/zones'" :to="`/zones/${p.target_zone_id}`" class="hover:text-green-400 transition-colors">{{ zoneLabel(p.target_zone_id) }}</router-link>
             <span v-else>All zones</span>
             · {{ p.total_volume_liters || 0 }}L
           </p>
           <p v-if="p.description" class="text-zinc-500 text-xs">{{ p.description }}</p>
           <div class="text-zinc-600 text-xs space-y-0.5 border-t border-zinc-800/80 pt-2 mt-2">
             <p v-if="p.reservoir_id"><span class="text-zinc-500">Reservoir:</span> <a href="#" @click.prevent="selectTab('reservoirs')" class="text-green-600 hover:text-green-400">{{ reservoirName(p.reservoir_id) }}</a></p>
-            <p v-if="p.schedule_id"><span class="text-zinc-500">Schedule:</span> <router-link to="/schedules" class="text-green-600 hover:text-green-400">{{ scheduleName(p.schedule_id) }}</router-link></p>
+            <p v-if="p.schedule_id"><span class="text-zinc-500">Schedule:</span> <router-link v-nav-hint="'/schedules'" to="/schedules" class="text-green-600 hover:text-green-400">{{ scheduleName(p.schedule_id) }}</router-link></p>
             <p v-if="p.application_recipe_id">
               <span class="text-zinc-500">Recipe:</span>
-              <router-link :to="{ path: '/inventory', query: { tab: 'recipes' } }" class="text-green-600 hover:text-green-400">{{ recipeName(p.application_recipe_id) }}</router-link>
+              <router-link v-nav-hint="'/operations/supplies'" :to="{ path: '/inventory', query: { tab: 'recipes' } }" class="text-green-600 hover:text-green-400">{{ recipeName(p.application_recipe_id) }}</router-link>
             </p>
           </div>
 
@@ -338,7 +338,7 @@
             class="px-3 py-1.5 bg-green-700 hover:bg-green-600 text-white text-xs rounded-lg">
             {{ showMixForm ? 'Cancel' : '+ Log Mix' }}
           </button>
-          <router-link to="/inventory" class="text-xs text-green-600 hover:text-green-400">Inventory batches &rarr;</router-link>
+          <router-link v-nav-hint="'/operations/supplies'" to="/inventory" class="text-xs text-green-600 hover:text-green-400">Inventory batches &rarr;</router-link>
         </div>
       </div>
 
@@ -413,7 +413,7 @@
             <ul v-else-if="mixingComponentsCache[m.id]?.length" class="text-xs text-zinc-400 space-y-1">
               <li v-for="c in mixingComponentsCache[m.id]" :key="c.id">
                 {{ inputName(c.input_definition_id) }}
-                <router-link v-if="c.input_batch_id" :to="{ path: '/inventory', query: { tab: 'batches' } }" class="text-green-600 hover:text-green-400"> · batch #{{ c.input_batch_id }}</router-link>
+                <router-link v-if="c.input_batch_id" v-nav-hint="'/operations/supplies'" :to="{ path: '/inventory', query: { tab: 'batches' } }" class="text-green-600 hover:text-green-400"> · batch #{{ c.input_batch_id }}</router-link>
                 · {{ c.volume_added_ml }} mL
                 <span v-if="c.dilution_ratio" class="text-zinc-600"> ({{ c.dilution_ratio }})</span>
               </li>
@@ -495,6 +495,7 @@
             <button type="button" @click="patchStage(c)" :disabled="saving"
               class="text-xs px-2 py-1 rounded bg-zinc-800 text-zinc-300 hover:bg-zinc-700">Set stage</button>
             <router-link
+              v-nav-hint="'/fertigation'"
               :to="{ name: 'crop-cycle-summary', params: { id: c.id } }"
               class="text-xs px-2 py-1 rounded bg-green-900/40 border border-green-800 text-green-300 hover:bg-green-900/60"
               data-test="cycle-summary-link"
@@ -574,7 +575,7 @@
             <tr v-for="e in sortedEvents" :key="e.id" class="border-b border-zinc-800/50">
               <td class="py-2 pr-4 whitespace-nowrap">{{ formatDate(e.applied_at) }}</td>
               <td class="py-2 pr-4">
-                <router-link v-if="e.zone_id" :to="`/zones/${e.zone_id}`" class="hover:text-green-400 transition-colors">{{ zoneLabel(e.zone_id) }}</router-link>
+                <router-link v-if="e.zone_id" v-nav-hint="'/zones'" :to="`/zones/${e.zone_id}`" class="hover:text-green-400 transition-colors">{{ zoneLabel(e.zone_id) }}</router-link>
                 <span v-else>—</span>
               </td>
               <td class="py-2 pr-4 text-zinc-500 text-xs">{{ cycleLabel(e.crop_cycle_id) }}</td>

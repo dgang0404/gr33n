@@ -10,7 +10,7 @@
   <div class="p-6 max-w-5xl">
     <div class="flex items-center justify-between mb-4">
       <div class="flex items-center gap-2">
-        <router-link to="/fertigation" class="text-xs text-zinc-400 hover:text-zinc-200">← Fertigation</router-link>
+        <router-link v-nav-hint="'/fertigation'" to="/fertigation" class="text-xs text-zinc-400 hover:text-zinc-200">← Fertigation</router-link>
         <h1 class="text-xl font-semibold text-white ml-3">
           Crop cycle summary
           <HelpTip position="bottom">
@@ -37,6 +37,7 @@
         >Download CSV</a>
         <router-link
           v-if="summary && summary.cycle"
+          v-nav-hint="'/fertigation'"
           :to="{ name: 'crop-cycle-compare', params: { fid: summary.cycle.farm_id } }"
           class="text-xs font-medium px-3 py-1.5 rounded-lg bg-green-900/50 text-green-400 border border-green-800 hover:bg-green-900/70"
         >Compare ↔</router-link>

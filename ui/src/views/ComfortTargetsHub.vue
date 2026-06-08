@@ -113,6 +113,7 @@
               @updated="onBandUpdated"
             />
             <router-link
+              v-nav-hint="'/zones'"
               :to="{ path: `/zones/${card.zone.id}`, query: { tab: 'air' } }"
               class="inline-block text-[11px] text-green-600 hover:text-green-400 mt-3"
             >
@@ -140,6 +141,7 @@
         Cron strings, predicate JSON, and bulk CRUD live under Advanced power settings.
       </p>
       <router-link
+        v-nav-hint="'/setpoints'"
         to="/setpoints"
         class="text-xs text-zinc-400 hover:text-green-400 border border-zinc-700 rounded-lg px-3 py-1.5"
         data-test="comfort-advanced-footer"

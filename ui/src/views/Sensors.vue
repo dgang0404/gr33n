@@ -28,6 +28,7 @@
           >
             <td class="px-4 py-3">
               <router-link
+                v-nav-hint="'/sensors'"
                 :to="{ name: 'sensor-detail', params: { id: sensor.id } }"
                 class="text-white font-medium hover:text-green-400"
               >

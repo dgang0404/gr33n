@@ -3,7 +3,7 @@
     <h1 class="text-2xl font-bold text-green-400 mb-2">Settings</h1>
     <p class="text-sm text-zinc-500 mb-6">
       New to the layout?
-      <router-link to="/operator-guide" class="text-gr33n-400 hover:underline">Operator guide</router-link>
+      <router-link v-nav-hint="'/operator-guide'" to="/operator-guide" class="text-gr33n-400 hover:underline">Operator guide</router-link>
       — glossary and suggested tour order.
     </p>
 
@@ -211,6 +211,7 @@
       </p>
       <div class="flex flex-wrap gap-2 mb-4">
         <router-link
+          v-nav-hint="'/settings'"
           :to="farmSetupWizardLink"
           class="inline-flex px-4 py-2 text-sm font-medium rounded-lg bg-green-900/50 text-green-400 border border-green-800 hover:bg-green-900/70"
           data-test="settings-open-farm-setup"
@@ -218,6 +219,7 @@
           Farm setup wizard →
         </router-link>
         <router-link
+          v-nav-hint="'/pi-setup'"
           :to="deviceSetupWizardLink"
           class="inline-flex px-4 py-2 text-sm font-medium rounded-lg bg-blue-900/50 text-blue-400 border border-blue-800 hover:bg-blue-900/70"
           data-test="settings-open-device-setup"

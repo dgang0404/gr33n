@@ -8,6 +8,7 @@
     {{ message }}
     <router-link
       v-if="farmerLink"
+      v-nav-hint="farmerLink"
       :to="farmerLink"
       class="ml-1 underline hover:text-green-300"
     >

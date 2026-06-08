@@ -18,12 +18,15 @@
 
     <div class="flex flex-wrap gap-2">
       <router-link
+        v-nav-hint="'/feeding'"
         :to="dailyFeedingLink"
         class="px-4 py-2 text-sm font-medium rounded-lg bg-blue-900/50 text-blue-400 border border-blue-800 hover:bg-blue-900/70 transition-colors"
+        data-test="feeding-admin-daily-link"
       >
         Feed &amp; water (daily)
       </router-link>
       <router-link
+        v-nav-hint="'/fertigation'"
         :to="logMixLink"
         class="px-4 py-2 text-sm font-medium rounded-lg bg-green-900/50 text-green-400 border border-green-800 hover:bg-green-900/70 transition-colors"
         data-test="feeding-admin-log-mix"
@@ -103,6 +106,7 @@
           </dl>
           <router-link
             v-if="card.zoneId"
+            v-nav-hint="'/zones'"
             :to="{ path: `/zones/${card.zoneId}`, query: { tab: 'water' } }"
             class="inline-block mt-3 text-xs text-green-500 hover:text-green-400"
           >
@@ -181,6 +185,7 @@
 
     <footer class="pt-2 border-t border-zinc-800">
       <router-link
+        v-nav-hint="'/fertigation'"
         :to="technicalLink(activeTab === 'ec-targets' ? 'ec-targets' : activeTab)"
         class="text-xs text-zinc-400 hover:text-green-400"
         data-test="feeding-admin-technical-footer"

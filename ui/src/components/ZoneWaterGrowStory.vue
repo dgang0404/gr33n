@@ -156,6 +156,7 @@
           {{ mixPreviewLoading ? 'Calculating…' : 'Preview mix' }}
         </button>
         <router-link
+          v-nav-hint="'/operations/feeding'"
           :to="logFeedLink"
           class="text-xs px-2.5 py-1 rounded-md border border-zinc-700 text-zinc-400 hover:text-green-300"
           data-test="grow-story-log-feed"

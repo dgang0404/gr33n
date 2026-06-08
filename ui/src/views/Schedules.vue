@@ -53,6 +53,7 @@
                     Program: {{ scheduleProgram(s.id).name }}
                   </router-link>
                   <router-link v-if="scheduleTasks(s.id).length"
+                    v-nav-hint="'/tasks'"
                     to="/tasks"
                     class="text-[11px] px-1.5 py-0.5 rounded bg-blue-900/40 text-blue-400 border border-blue-800/50 hover:bg-blue-900/70">
                     {{ scheduleTasks(s.id).length }} task{{ scheduleTasks(s.id).length > 1 ? 's' : '' }}
@@ -133,6 +134,7 @@
                   schedule #{{ r.schedule_id }}
                 </span>
                 <router-link v-else-if="r.rule_id"
+                  v-nav-hint="'/automation'"
                   :to="{ name: 'automation' }"
                   class="text-[10px] text-zinc-500 hover:text-zinc-300">
                   rule #{{ r.rule_id }}

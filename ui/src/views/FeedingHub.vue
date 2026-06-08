@@ -49,6 +49,7 @@
       <router-link
         v-for="card in filteredCards"
         :key="card.zone.id"
+        v-nav-hint="'/zones'"
         :to="zoneWaterLink(card.zone.id)"
         class="bg-zinc-900 border border-zinc-800 rounded-xl p-4 hover:border-green-800/80 transition-colors block"
         :data-test="`feeding-room-card-${card.zone.id}`"
