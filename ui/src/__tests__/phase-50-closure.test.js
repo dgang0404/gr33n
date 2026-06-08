@@ -81,11 +81,23 @@ describe('Phase 50 WS6 / OC-50 — hardware wiring closure', () => {
     expect(mig).toContain("config->'wiring'")
   })
 
-  it('pi-integration-guide documents DB-first wiring (§2a)', () => {
+  it('pi-integration-guide documents DB-first wiring (§2a) and Phase 51 sync', () => {
     const guide = readFileSync(join(repoDocs, 'pi-integration-guide.md'), 'utf8')
     expect(guide).toContain('DB-first wiring')
-    expect(guide).toContain('GET /devices/{id}/pi-config')
+    expect(guide).toContain('/devices/{id}/pi-config')
+    expect(guide).toContain('/devices/by-uid/{uid}/config')
     expect(guide).toContain('manual fallback')
+  })
+
+  it('pi-sequent-hat-setup guide and /pi-setup route exist', () => {
+    const doc = readFileSync(join(repoDocs, 'pi-sequent-hat-setup.md'), 'utf8')
+    expect(doc).toContain('Sequent Microsystems')
+    expect(doc).toContain('DIP switch')
+    const router = readFileSync(join(process.cwd(), 'src/router/index.js'), 'utf8')
+    const nav = readFileSync(join(process.cwd(), 'src/lib/navGroups.js'), 'utf8')
+    expect(router).toContain("path: '/pi-setup'")
+    expect(nav).toContain("to: '/pi-setup'")
+    expect(nav).toContain('children')
   })
 
   it('architecture §7.0o documents Phase 50 wiring shipped', () => {
