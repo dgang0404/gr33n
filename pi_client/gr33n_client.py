@@ -299,6 +299,51 @@ def _sensor_wiring_key(scfg: dict) -> tuple:
     )
 
 
+def pi_sensor_entry_to_wiring(entry: dict, device_id: int) -> dict:
+    """Map a pi_client sensors[] stanza to Phase 50 config.wiring (import helper)."""
+    wiring: dict = {
+        'source': entry.get('source', ''),
+        'device_id': int(device_id),
+    }
+    if entry.get('pin') is not None:
+        wiring['gpio_pin'] = int(entry['pin'])
+    if entry.get('channel') is not None:
+        wiring['i2c_channel'] = int(entry['channel'])
+    port = entry.get('port')
+    if port:
+        wiring['serial_port'] = str(port)
+    inputs = entry.get('inputs')
+    if inputs:
+        wiring['inputs'] = inputs
+    return wiring
+
+
+def pi_actuator_entry_to_wiring(entry: dict) -> dict:
+    """Map a pi_client actuators[] stanza to Phase 50 config.wiring."""
+    dev_id = entry.get('device_id', entry.get('actuator_id'))
+    return {
+        'source': 'gpio_relay',
+        'gpio_pin': int(entry['gpio_pin']),
+        'device_id': int(dev_id),
+    }
+
+
+def build_minimal_bootstrap(cfg: dict) -> dict:
+    """Strip sensors/actuators for platform-sync bootstrap YAML."""
+    out: dict = {}
+    for key in (
+        'api', 'device', 'farm',
+        'schedule_poll_interval_seconds',
+        'offline_queue_path',
+        'offline_flush_interval_seconds',
+    ):
+        if key in cfg:
+            out[key] = copy.deepcopy(cfg[key])
+    if 'device' not in out:
+        out['device'] = {'uid': ''}
+    return out
+
+
 def _actuator_wiring_key(acfg: dict) -> tuple:
     return (
         acfg.get('actuator_id'),

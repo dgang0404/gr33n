@@ -1,5 +1,9 @@
 # gr33n Pi Client - config.yaml
 # Edit per Pi node. Defaults are applied automatically for any omitted key.
+#
+# Platform sync (Phase 51): omit sensors[]/actuators[] and set device.uid — wiring
+# comes from the API. To migrate an existing full YAML:
+#   python3 import_config_to_platform.py --config config.yaml --email YOU --password PASS
 
 api:
   base_url: "http://192.168.1.100:8080"   # IP of your gr33n Go server
