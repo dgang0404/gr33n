@@ -247,6 +247,10 @@
         >
           Image analysis is advisory only — hypotheses, not certified diagnosis. Any change still needs Confirm.
         </p>
+        <div v-if="morningWalkthroughStarters.length" class="space-y-1.5" data-test="chat-morning-starters">
+          <p class="text-[10px] uppercase tracking-widest text-zinc-500">Daily check</p>
+          <GuardianStarterChips :starters="morningWalkthroughStarters" />
+        </div>
         <div v-if="setupStarters.length" class="space-y-1.5" data-test="chat-setup-starters">
           <p class="text-[10px] uppercase tracking-widest text-zinc-500">Try asking</p>
           <GuardianStarterChips :starters="setupStarters" />
@@ -415,7 +419,7 @@ import GuardianActionProposal from './GuardianActionProposal.vue'
 import GuardianProcedureCard from './GuardianProcedureCard.vue'
 import GuardianStarterChips from './GuardianStarterChips.vue'
 import { computeFirstRunChecklist, isFirstRunIncomplete } from '../lib/firstRunChecklist.js'
-import { buildSetupStarters } from '../lib/guardianStarters.js'
+import { buildMorningWalkthroughStarters, buildSetupStarters } from '../lib/guardianStarters.js'
 import { useFarmOperate } from '../composables/useFarmOperate'
 import { useFarmContextStore } from '../stores/farmContext'
 import { useFarmStore } from '../stores/farm'
@@ -466,6 +470,14 @@ const setupModeActive = computed(() => {
   if (route?.path === '/chat' && route?.query?.setup === '1') return true
   if ((farmStore.zones?.length ?? 0) === 0) return true
   return isFirstRunIncomplete(firstRunChecklistItems.value)
+})
+
+const morningWalkthroughStarters = computed(() => {
+  if (!capabilities.aiEnabled || !farmContext.farmId || setupModeActive.value) return []
+  return buildMorningWalkthroughStarters({
+    surface: 'chat',
+    farmName: farmStore.farm?.name || '',
+  })
 })
 
 const setupStarters = computed(() => {

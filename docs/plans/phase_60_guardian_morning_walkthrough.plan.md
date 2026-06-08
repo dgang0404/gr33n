@@ -8,19 +8,19 @@ overview: >
 todos:
   - id: ws1-walkthrough-flow
     content: "WS1: Go — walk_farm endpoint: aggregate alerts + feed schedule + offline + low-stock into ordered findings"
-    status: pending
+    status: completed
   - id: ws2-ui-starter
     content: "WS2: Dashboard + Guardian panel 'Morning check' chip; progress steps UI"
-    status: pending
+    status: completed
   - id: ws3-smart-skip
     content: "WS3: Skip categories with nothing to report; surface only actionable findings"
-    status: pending
+    status: completed
   - id: ws4-guardian-context
     content: "WS4: context_ref framing for walkthrough route; Guardian persona morning-check copy"
-    status: pending
+    status: completed
   - id: ws5-docs-tests
-    content: "WS5: operator-tour § morning walkthrough; phase-60-closure.test.js; OC-60"
-    status: pending
+    content: "WS5: operator-tour §6i morning walkthrough; phase-60-closure.test.js; OC-60"
+    status: completed
 isProject: false
 ---
 
@@ -28,7 +28,7 @@ isProject: false
 
 ## Status
 
-**Planned.** After [Phase 55](phase_55_guardian_ops_grow_money.plan.md) read tools ship (feeds walkthrough with real data).
+**Shipped.** After [Phase 55](phase_55_guardian_ops_grow_money.plan.md) read tools (feeds walkthrough uses same data pipeline).
 
 **Arc:** [phase_53_59_roadmap.plan.md](phase_53_59_roadmap.plan.md)
 
@@ -115,7 +115,7 @@ Use plain language. No schema terms. Cite zone name, not zone_id.
 
 ## Definition of done
 
-- [ ] "Morning check" chip on Dashboard
-- [ ] Guardian finds and ranks real farm issues in one message
-- [ ] Empty farm returns positive summary, not empty bullets
-- [ ] OC-60 closed
+- [x] "Morning check" chip on Dashboard
+- [x] Guardian finds and ranks real farm issues in one message (`walk_farm`)
+- [x] Empty farm returns positive summary, not empty bullets
+- [x] OC-60 closed (`phase-60-closure.test.js`, `smoke_phase60_test.go`)

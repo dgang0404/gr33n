@@ -634,6 +634,33 @@ export function buildMoneyHubStarters() {
 }
 
 /**
+ * Phase 60 — morning walkthrough starters (Dashboard + /chat).
+ * @param {object} params
+ */
+export function buildMorningWalkthroughStarters({
+  surface = 'dashboard',
+  farmName = '',
+} = {}) {
+  const onChat = surface === 'chat'
+  const path = onChat ? '/chat' : '/'
+  const pageName = onChat ? 'Farm Guardian chat' : 'Dashboard'
+  const contextRef = {
+    type: 'route',
+    path,
+    name: pageName,
+    guardian_mode: 'morning_walkthrough',
+    surface: onChat ? 'chat_morning' : 'dashboard_morning',
+  }
+  const farmBit = farmName ? ` for ${farmName}` : ''
+  return [{
+    id: onChat ? 'morning-walkthrough' : 'morning-check',
+    label: onChat ? 'Morning walkthrough' : 'Morning check',
+    message: `Run my morning farm walkthrough${farmBit}. Use walk_farm — check unacknowledged alerts, today's feeds, offline devices, comfort bands, and low stock. Skip categories with nothing to flag. Plain language only.`,
+    contextRef,
+  }]
+}
+
+/**
  * Phase 43 WS8 — Dashboard starters when supplies are low.
  */
 export function buildDashboardOpsStarters({ lowStockCount = 0, lowStockAlerts = [] }) {

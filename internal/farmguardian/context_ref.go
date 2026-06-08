@@ -19,6 +19,8 @@ type ContextRef struct {
 	Tab              string `json:"tab,omitempty"`
 	CropCycleID      int64  `json:"crop_cycle_id,omitempty"`
 	PriorCropCycleID int64  `json:"prior_crop_cycle_id,omitempty"`
+	GuardianMode     string `json:"guardian_mode,omitempty"` // Phase 60 — e.g. morning_walkthrough
+	Surface          string `json:"surface,omitempty"`
 }
 
 // BuildContextRefBlock loads the referenced row and renders a focused prompt
@@ -33,6 +35,17 @@ func BuildContextRefBlock(ctx context.Context, q *db.Queries, farmID int64, ref 
 	refType := strings.ToLower(strings.TrimSpace(ref.Type))
 	switch refType {
 	case "route":
+		if strings.EqualFold(strings.TrimSpace(ref.GuardianMode), "morning_walkthrough") {
+			farmLabel := ""
+			if farm, err := q.GetFarmByID(ctx, farmID); err == nil {
+				farmLabel = strings.TrimSpace(farm.Name)
+			}
+			body := morningWalkthroughContextBlock(farmLabel)
+			if routeBody := renderRouteContext(ref.Path, ref.Name, nav); routeBody != "" {
+				body += "\n" + routeBody
+			}
+			return body
+		}
 		return renderRouteContext(ref.Path, ref.Name, nav)
 	}
 	if q == nil || farmID <= 0 || ref.ID <= 0 {

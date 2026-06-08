@@ -503,6 +503,14 @@ Four new **read tools** (no Confirm): **`summarize_cycle_cost`**, **`summarize_f
 
 **Vitest:** `phase-57-closure.test.js` · **Go smoke:** `TestPhase57_DeviceAPIKeyIssueAuthRevoke`.
 
+### 6i. Morning walkthrough (Phase 60 — shipped)
+
+**Plan:** [`plans/phase_60_guardian_morning_walkthrough.plan.md`](plans/phase_60_guardian_morning_walkthrough.plan.md) · Architecture: [§7.0y](farm-guardian-architecture.md#70y-morning-walkthrough-phase-60--shipped).
+
+On the **Dashboard**, tap **Morning check** (or open **Farm Guardian** → **Morning walkthrough**). Guardian runs `walk_farm` — unacknowledged alerts, today's feeds, offline Pis, comfort band breaches, low stock — and reports only what needs attention. All-clear farms get a short positive summary.
+
+**Vitest:** `phase-60-closure.test.js` · **Go smoke:** `TestPhase60_WalkFarmReadToolRegistered`.
+
 ### 6m. Guardian Pi diagnostics (Phase 65 — shipped)
 
 **Plan:** [`plans/phase_65_guardian_pi_diagnostics.plan.md`](plans/phase_65_guardian_pi_diagnostics.plan.md) · Architecture: [§7.0v](farm-guardian-architecture.md#70v-guardian-pi--hardware-diagnostics-phase-65--shipped).

@@ -347,6 +347,21 @@ When answering “how do I run my room?”, direct operators to **Zones → Wate
 
 When answering “what should I do first?”, prefer **Dashboard → Tasks → Alerts** over scattering links across Advanced nav.
 
+### 7.0y Morning walkthrough (Phase 60 — shipped)
+
+**Shipped.** One-tap Guardian daily check — aggregates unacknowledged alerts, today's feed schedules, offline Pis, comfort band breaches, and low stock into ranked `walk_farm` findings. Skips empty categories; all-clear farms get a positive summary.
+
+| Layer | Artifact |
+|-------|----------|
+| Read tool | `walk_farm` in `readtools_walk.go` |
+| Persona | `WalkFarmPersonaRule`; `guardian_mode: morning_walkthrough` on `context_ref` |
+| Starters | Dashboard **Morning check** chip; `/chat` **Morning walkthrough** chip |
+| Smart skip | No "Alerts: none" laundry list — only actionable findings |
+
+**OC-60** via `phase-60-closure.test.js` · **Go smoke:** `TestPhase60_WalkFarmReadToolRegistered`.
+
+Plan: [`plans/phase_60_guardian_morning_walkthrough.plan.md`](plans/phase_60_guardian_morning_walkthrough.plan.md).
+
 ### 7.0h Comfort targets & automation (Phase 42 — shipped)
 
 Plans: [`plans/phase_42_comfort_targets_automation_plain_language.plan.md`](plans/phase_42_comfort_targets_automation_plain_language.plan.md) · Guardian PR slice: [`plans/phase_42_guardian_pr_spec.md`](plans/phase_42_guardian_pr_spec.md).

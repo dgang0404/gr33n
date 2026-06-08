@@ -31,6 +31,8 @@
     <!-- Phase 41 WS1 — morning cockpit -->
     <FarmMorningStrip :chips="morningChips" />
 
+    <GuardianStarterChips :starters="morningWalkthroughStarters" data-test="dashboard-morning-check-starters" />
+
     <GuardianStarterChips :starters="dashboardOpsStarters" />
 
     <!-- Quick actions -->
@@ -260,7 +262,11 @@ import {
   computeFirstRunChecklist,
   shouldShowFirstRunChecklist,
 } from '../lib/firstRunChecklist.js'
-import { buildDashboardOpsStarters, buildSetupStarters } from '../lib/guardianStarters.js'
+import {
+  buildDashboardOpsStarters,
+  buildMorningWalkthroughStarters,
+  buildSetupStarters,
+} from '../lib/guardianStarters.js'
 import { filterLowStockAlerts, listLowStockBatches } from '../lib/suppliesHub.js'
 import { computeMonthSummary } from '../lib/moneyHub.js'
 import { scheduleRunsLabel } from '../lib/cronHumanize.js'
@@ -315,6 +321,11 @@ const firstRunStarters = computed(() => {
     deviceOffline: store.devices.length > 0 && store.devices.some((d) => d.status !== 'online'),
   })
 })
+
+const morningWalkthroughStarters = computed(() => buildMorningWalkthroughStarters({
+  surface: 'dashboard',
+  farmName: store.farm?.name || '',
+}))
 
 const dashboardOpsStarters = computed(() => buildDashboardOpsStarters({
   lowStockCount: lowStockCount.value,
