@@ -5,6 +5,8 @@ import {
   buildMoneyActivityRow,
   buildRecentMoneyRows,
   formatMoney,
+  isAutologgedTransaction,
+  autologPlainLabel,
 } from '../lib/moneyHub.js'
 
 describe('Phase 43 WS4 — money hub helpers', () => {
@@ -57,5 +59,21 @@ describe('Phase 43 WS4 — money hub helpers', () => {
   it('formats money amounts', () => {
     expect(formatMoney(12.5)).toBe('12.50')
     expect(formatMoney(null)).toBe('0.00')
+  })
+
+  it('marks autolog rows with plain labels', () => {
+    const tx = {
+      id: 3,
+      transaction_date: '2026-06-04',
+      amount: 8,
+      category: 'labor_wages',
+      related_table_name: 'task_labor_log',
+      related_record_id: 2,
+    }
+    expect(isAutologgedTransaction(tx)).toBe(true)
+    expect(autologPlainLabel(tx)).toBe('From task labor time')
+    const row = buildMoneyActivityRow(tx)
+    expect(row.isAutolog).toBe(true)
+    expect(row.autologLink?.path).toBe('/tasks')
   })
 })

@@ -209,13 +209,23 @@
       </p>
     </template>
 
-    <div class="border-t border-zinc-800 pt-3">
+    <ZoneGrowCostPeek :zone-id="zoneId" :farm-id="farmId" />
+
+    <div class="border-t border-zinc-800 pt-3 flex flex-wrap gap-3">
       <router-link
+        v-nav-hint="'/operations/supplies'"
         :to="suppliesForRoomLink"
         class="text-xs text-zinc-400 hover:text-green-400"
         data-test="zone-water-supplies-link"
       >
         Stock &amp; recipes for this zone →
+      </router-link>
+      <router-link
+        v-nav-hint="'/operations/money'"
+        :to="{ path: '/operations/money' }"
+        class="text-xs text-zinc-500 hover:text-green-400"
+      >
+        Farm money →
       </router-link>
     </div>
   </div>
@@ -230,6 +240,7 @@ import { supportsPulseCommand } from '../lib/plantNeeds.js'
 import ActuatorPulseControl from './ActuatorPulseControl.vue'
 import ZoneFeedingPlanEditor from './ZoneFeedingPlanEditor.vue'
 import ZoneFeedingPlanWizard from './ZoneFeedingPlanWizard.vue'
+import ZoneGrowCostPeek from './ZoneGrowCostPeek.vue'
 import { FARMER_FOCUS_RING, runFeedNowAriaLabel } from '../lib/farmerA11y.js'
 
 const props = defineProps({

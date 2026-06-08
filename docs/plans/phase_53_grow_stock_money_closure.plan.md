@@ -14,7 +14,7 @@ todos:
     status: completed
   - id: ws3-money-closure
     content: "WS3: Money — cycle tag, spend chip, plain autolog, zone cost peek, income receipts, energy nudge"
-    status: pending
+    status: completed
   - id: ws4-cross-links
     content: "WS4: Cross-links — v-nav-hint on all new CTAs; getting-started checklist rows; zone grow→feed→cost line"
     status: pending

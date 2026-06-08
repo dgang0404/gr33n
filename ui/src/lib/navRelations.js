@@ -17,6 +17,7 @@ export const NAV_RELATIONS = {
   '/tasks': ['/alerts', '/schedules'],
   '/operations/supplies': ['/tasks', '/operations/feeding'],
   '/operations/feeding': ['/operations/supplies', '/feeding'],
+  '/operations/money': ['/operations/supplies', '/costs'],
 }
 
 /**

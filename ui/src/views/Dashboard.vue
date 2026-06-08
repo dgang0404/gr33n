@@ -258,6 +258,7 @@ import {
 } from '../lib/firstRunChecklist.js'
 import { buildDashboardOpsStarters, buildSetupStarters } from '../lib/guardianStarters.js'
 import { filterLowStockAlerts, listLowStockBatches } from '../lib/suppliesHub.js'
+import { computeMonthSummary } from '../lib/moneyHub.js'
 import { scheduleRunsLabel } from '../lib/cronHumanize.js'
 
 const store = useFarmStore()
@@ -273,6 +274,7 @@ const programs = ref([])
 const queueDepth = ref(0)
 const nfBatches = ref([])
 const nfInputs = ref([])
+const costTransactions = ref([])
 
 const lowStockCount = computed(() =>
   listLowStockBatches(nfBatches.value, nfInputs.value).length,
@@ -310,6 +312,8 @@ const dashboardOpsStarters = computed(() => buildDashboardOpsStarters({
   lowStockAlerts: lowStockAlerts.value,
 }))
 
+const monthExpenses = computed(() => computeMonthSummary(costTransactions.value).expenses)
+
 const morningChips = computed(() =>
   computeFarmMorningSnapshot({
     tasks: store.tasks,
@@ -320,6 +324,7 @@ const morningChips = computed(() =>
     programs: programs.value,
     queueDepth: queueDepth.value,
     lowStockCount: lowStockCount.value,
+    monthExpenses: monthExpenses.value,
   }).chips,
 )
 
@@ -400,7 +405,7 @@ async function refreshAll() {
   const fid = farmContext.farmId
   if (!fid) return
   await store.loadAll(fid)
-  const [sch, sp, ev, al, unread, prog, batches, inputs] = await Promise.all([
+  const [sch, sp, ev, al, unread, prog, batches, inputs, costs] = await Promise.all([
     store.loadSchedules(fid),
     store.loadSetpoints(fid),
     store.loadFertigationEvents(fid),
@@ -409,6 +414,7 @@ async function refreshAll() {
     store.loadFertigationPrograms(fid),
     store.loadNfBatches(fid),
     store.loadNfInputs(fid),
+    store.loadCosts(fid, { limit: 100, offset: 0 }),
   ])
   schedules.value = sch
   setpoints.value = sp
@@ -418,6 +424,7 @@ async function refreshAll() {
   programs.value = prog
   nfBatches.value = batches
   nfInputs.value = inputs
+  costTransactions.value = costs
   await store.loadTasks(fid)
   queueDepth.value = await sumFarmPendingQueueDepth(store.devices)
 }

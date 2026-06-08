@@ -903,6 +903,11 @@ export const useFarmStore = defineStore('farm', {
       return Array.isArray(r.data) ? r.data : []
     },
 
+    async loadCropCycleCostSummary(cycleId) {
+      const r = await api.get(`/crop-cycles/${cycleId}/cost-summary`)
+      return r.data
+    },
+
     async createCropCycle(farmId, data) {
       const r = await api.post(`/farms/${farmId}/crop-cycles`, data)
       return r.data

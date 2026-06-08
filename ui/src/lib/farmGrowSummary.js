@@ -48,6 +48,14 @@ export function pickNextFarmSchedule(schedules) {
  * @param {object} params
  * @returns {{ chips: Array<{ id: string, icon: string, label: string, value: string, tone?: string, to?: object|string }> }}
  */
+/**
+ * @param {number|null|undefined} amount
+ */
+function formatSpendChip(amount) {
+  if (amount == null || Number.isNaN(Number(amount))) return '$0.00'
+  return `$${Number(amount).toFixed(2)}`
+}
+
 export function computeFarmMorningSnapshot(params) {
   const {
     tasks = [],
@@ -58,6 +66,7 @@ export function computeFarmMorningSnapshot(params) {
     programs = [],
     queueDepth = 0,
     lowStockCount = 0,
+    monthExpenses = null,
   } = params
 
   const dueToday = countFarmTasksDueToday(tasks)
@@ -93,6 +102,17 @@ export function computeFarmMorningSnapshot(params) {
       value: `${lowStockCount} batch${lowStockCount === 1 ? '' : 'es'}`,
       tone: 'warn',
       to: { path: '/operations/supplies' },
+    })
+  }
+
+  if (monthExpenses != null && Number(monthExpenses) > 0) {
+    chips.push({
+      id: 'month-spend',
+      icon: '💵',
+      label: 'Spent this month',
+      value: formatSpendChip(monthExpenses),
+      tone: 'muted',
+      to: { path: '/operations/money' },
     })
   }
 

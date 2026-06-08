@@ -12,6 +12,13 @@ export const FARMER_SPEND_CATEGORIES = [
   { label: 'Other', value: 'miscellaneous' },
 ]
 
+/** Income-friendly categories when "Money in" is checked. */
+export const FARMER_INCOME_CATEGORIES = [
+  { label: 'Sold harvest', value: 'miscellaneous' },
+  { label: 'Grant or subsidy', value: 'miscellaneous' },
+  { label: 'Other income', value: 'miscellaneous' },
+]
+
 /**
  * @param {string|object} raw
  */
@@ -67,17 +74,77 @@ export function formatSpendCategory(category) {
 }
 
 /**
+ * @param {object} tx
+ */
+export function isAutologgedTransaction(tx) {
+  return Boolean(tx?.related_table_name && tx?.related_record_id != null)
+}
+
+/**
+ * @param {object} tx
+ */
+export function autologPlainLabel(tx) {
+  const table = String(tx?.related_table_name || '')
+  if (table.includes('mixing')) return 'From a nutrient mix'
+  if (table.includes('consumption') || table.includes('input_batch')) return 'From supply used on a task'
+  if (table.includes('labor')) return 'From task labor time'
+  if (table.includes('energy') || tx?.category === 'utilities_electricity_gas') {
+    return 'From electricity use'
+  }
+  return 'Logged automatically'
+}
+
+/**
+ * @param {object} tx
+ */
+export function autologContextLink(tx) {
+  const table = String(tx?.related_table_name || '')
+  if (table.includes('mixing')) {
+    return { path: '/operations/feeding', query: { tab: 'mixing' } }
+  }
+  if (table.includes('consumption') || table.includes('labor')) {
+    return { path: '/tasks' }
+  }
+  if (table.includes('energy') || tx?.category === 'utilities_electricity_gas') {
+    return { path: '/costs' }
+  }
+  return null
+}
+
+/**
+ * @param {object} cycle
+ */
+export function formatCycleOptionLabel(cycle) {
+  const strain = cycle?.strain_or_variety || 'Grow'
+  const stage = cycle?.current_stage ? String(cycle.current_stage).replace(/_/g, ' ') : ''
+  return stage ? `${strain} — ${stage}` : strain
+}
+
+/**
+ * @param {object[]} cycles
+ * @param {number} zoneId
+ */
+export function activeCyclesForZone(cycles, zoneId) {
+  return (cycles || [])
+    .filter((c) => c.is_active && Number(c.zone_id) === Number(zoneId))
+    .sort((a, b) => Number(b.id) - Number(a.id))
+}
+
+/**
  * Farmer-facing row for recent activity (no GL / COA fields).
  * @param {object} tx
  */
 export function buildMoneyActivityRow(tx) {
   const amt = Number(tx.amount) || 0
+  const autolog = isAutologgedTransaction(tx)
   return {
     id: tx.id,
     clientCostId: tx._offline?.clientCostId,
     date: parseTransactionDate(tx.transaction_date),
     dateLabel: isoDateLabel(tx.transaction_date),
-    label: tx.description || tx.counterparty || formatSpendCategory(tx.category),
+    label: autolog
+      ? autologPlainLabel(tx)
+      : (tx.description || tx.counterparty || formatSpendCategory(tx.category)),
     vendor: tx.counterparty || '',
     categoryLabel: formatSpendCategory(tx.category),
     amount: amt,
@@ -87,8 +154,35 @@ export function buildMoneyActivityRow(tx) {
     receiptFileId: tx.receipt_file_id,
     queued: Boolean(tx._offline?.queued),
     stale: Boolean(tx._offline?.stale),
+    isAutolog: autolog,
+    autologLink: autolog ? autologContextLink(tx) : null,
+    cropCycleId: tx.crop_cycle_id ?? null,
     advancedLink: tx.id ? { path: '/costs', query: { highlight: String(tx.id) } } : null,
   }
+}
+
+/**
+ * @param {object[]} transactions
+ * @param {number} [limit]
+ */
+export function buildAutologMoneyRows(transactions, limit = 8) {
+  return (transactions || [])
+    .map(buildMoneyActivityRow)
+    .filter((r) => r.isAutolog)
+    .sort((a, b) => (b.date?.getTime() || 0) - (a.date?.getTime() || 0))
+    .slice(0, limit)
+}
+
+/**
+ * @param {object[]} transactions
+ * @param {number} [limit]
+ */
+export function buildManualMoneyRows(transactions, limit = 12) {
+  return (transactions || [])
+    .map(buildMoneyActivityRow)
+    .filter((r) => !r.isAutolog)
+    .sort((a, b) => (b.date?.getTime() || 0) - (a.date?.getTime() || 0))
+    .slice(0, limit)
 }
 
 /**

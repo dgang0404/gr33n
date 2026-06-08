@@ -23,6 +23,23 @@
       {{ costPendingWrites }} receipt{{ costPendingWrites === 1 ? '' : 's' }} waiting to sync.
     </p>
 
+    <div
+      v-if="!energyPrices.length && !loading"
+      class="rounded-lg border border-zinc-700 bg-zinc-950 px-4 py-3 flex flex-wrap items-center justify-between gap-2"
+      data-test="money-energy-nudge"
+    >
+      <p class="text-xs text-zinc-400">
+        No electricity price set — automatic power-cost logging stays off until you add a $/kWh rate.
+      </p>
+      <router-link
+        v-nav-hint="'/costs'"
+        to="/costs"
+        class="text-xs text-green-500 hover:text-green-400 shrink-0"
+      >
+        Set energy price →
+      </router-link>
+    </div>
+
     <GuardianStarterChips :starters="moneyStarters" />
 
     <div v-if="loading" class="text-zinc-400 text-sm">Loading money summary…</div>
@@ -59,7 +76,7 @@
             class="input-field"
           />
           <select v-model="receiptForm.category" required class="input-field">
-            <option v-for="c in spendCategories" :key="c.value" :value="c.value">{{ c.label }}</option>
+            <option v-for="c in receiptCategories" :key="c.value + c.label" :value="c.value">{{ c.label }}</option>
           </select>
           <input v-model="receiptForm.description" placeholder="What was this for?" class="input-field sm:col-span-2" />
           <input v-model="receiptForm.counterparty" placeholder="Vendor (optional)" class="input-field" />
@@ -72,10 +89,32 @@
               @change="onReceiptPick"
             />
           </label>
-          <label class="flex items-center gap-2 text-zinc-300 text-sm">
+          <label class="flex items-center gap-2 text-zinc-300 text-sm sm:col-span-2">
             <input v-model="receiptForm.is_income" type="checkbox" class="rounded bg-zinc-800 border-zinc-700" />
-            Money in (not an expense)
+            Money in (sold harvest, grant, or other income)
           </label>
+          <div class="sm:col-span-2 lg:col-span-3 space-y-2 border-t border-zinc-800 pt-3">
+            <p class="text-[10px] uppercase tracking-widest text-zinc-500">Tag to a grow (optional)</p>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <select
+                v-model.number="receiptForm.tagZoneId"
+                class="input-field"
+                data-test="money-tag-zone"
+              >
+                <option :value="null">No room</option>
+                <option v-for="z in store.zones" :key="z.id" :value="z.id">{{ z.name }}</option>
+              </select>
+              <select
+                v-model.number="receiptForm.tagCycleId"
+                class="input-field"
+                :disabled="!tagCycleOptions.length"
+                data-test="money-tag-cycle"
+              >
+                <option :value="null">{{ tagCycleOptions.length ? 'Pick active grow' : 'No active grow in room' }}</option>
+                <option v-for="c in tagCycleOptions" :key="c.id" :value="c.id">{{ formatCycleOptionLabel(c) }}</option>
+              </select>
+            </div>
+          </div>
           <button
             type="submit"
             :disabled="saving"
@@ -89,16 +128,50 @@
         <p v-if="formSuccess" class="text-xs text-green-400">{{ formSuccess }}</p>
       </section>
 
+      <section v-if="autologRows.length" class="space-y-3" data-test="money-autolog-section">
+        <h2 class="text-xs text-zinc-500 uppercase tracking-widest">Logged automatically</h2>
+        <p class="text-[11px] text-zinc-600">Mixes, labor, supplies, and electricity the farm recorded for you.</p>
+        <div class="space-y-2">
+          <div
+            v-for="row in autologRows"
+            :key="row.id || row.clientCostId"
+            class="flex items-center justify-between gap-3 bg-zinc-900/60 border border-zinc-800/80 rounded-xl px-4 py-3"
+            :data-test="`money-autolog-${row.id || row.clientCostId}`"
+          >
+            <div class="min-w-0">
+              <p class="text-sm text-zinc-300 truncate">{{ row.label }}</p>
+              <p class="text-[11px] text-zinc-500 mt-0.5">
+                {{ row.dateLabel }} · {{ row.categoryLabel }}
+                <span class="text-zinc-600"> · auto</span>
+              </p>
+            </div>
+            <div class="flex items-center gap-2 shrink-0">
+              <span class="text-sm font-mono tabular-nums text-red-400/90">
+                −${{ formatMoney(row.amount) }}
+              </span>
+              <router-link
+                v-if="row.autologLink"
+                v-nav-hint="row.autologLink.path"
+                :to="row.autologLink"
+                class="text-xs text-green-500 hover:text-green-400"
+              >
+                View →
+              </router-link>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <section class="space-y-3">
-        <h2 class="text-xs text-zinc-500 uppercase tracking-widest">Recent activity</h2>
+        <h2 class="text-xs text-zinc-500 uppercase tracking-widest">Your receipts</h2>
         <EmptyStateHint
-          v-if="!recentRows.length"
+          v-if="!manualRows.length"
           reason="no_data"
-          message="No spending logged yet — save your first receipt above."
+          message="No receipts saved yet — log spending above."
         />
         <div v-else class="space-y-2">
           <div
-            v-for="row in recentRows"
+            v-for="row in manualRows"
             :key="row.clientCostId || row.id"
             class="flex items-center justify-between gap-3 bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3"
             :data-test="`money-row-${row.id || row.clientCostId}`"
@@ -107,6 +180,7 @@
               <p class="text-sm text-zinc-200 truncate">{{ row.label }}</p>
               <p class="text-[11px] text-zinc-500 mt-0.5">
                 {{ row.dateLabel }} · {{ row.categoryLabel }}
+                <span v-if="row.cropCycleId" class="text-zinc-600"> · tagged to grow</span>
                 <span v-if="row.queued" class="text-blue-300"> · queued</span>
                 <span v-if="row.stale" class="text-amber-300"> · sync issue</span>
               </p>
@@ -152,7 +226,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, onUnmounted, reactive, ref } from 'vue'
+import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue'
 import api from '../api'
 import { useFarmStore } from '../stores/farm.js'
 import { useFarmContextStore } from '../stores/farmContext.js'
@@ -161,9 +235,13 @@ import GuardianStarterChips from '../components/GuardianStarterChips.vue'
 import { buildMoneyHubStarters } from '../lib/guardianStarters.js'
 import {
   FARMER_SPEND_CATEGORIES,
+  FARMER_INCOME_CATEGORIES,
   computeMonthSummary,
-  buildRecentMoneyRows,
+  buildAutologMoneyRows,
+  buildManualMoneyRows,
   formatMoney,
+  activeCyclesForZone,
+  formatCycleOptionLabel,
 } from '../lib/moneyHub.js'
 
 const store = useFarmStore()
@@ -174,10 +252,10 @@ const saving = ref(false)
 const formError = ref('')
 const formSuccess = ref('')
 const transactions = ref([])
+const cropCycles = ref([])
+const energyPrices = ref([])
 const receiptFile = ref(null)
 const isOnline = ref(typeof navigator === 'undefined' ? true : navigator.onLine)
-
-const spendCategories = FARMER_SPEND_CATEGORIES
 
 const receiptForm = reactive({
   transaction_date: new Date().toISOString().slice(0, 10),
@@ -187,18 +265,42 @@ const receiptForm = reactive({
   counterparty: '',
   currency: 'USD',
   is_income: false,
+  tagZoneId: null,
+  tagCycleId: null,
 })
 
 const moneyStarters = buildMoneyHubStarters()
 
 const monthSummary = computed(() => computeMonthSummary(transactions.value))
 
-const recentRows = computed(() => buildRecentMoneyRows(transactions.value))
+const autologRows = computed(() => buildAutologMoneyRows(transactions.value))
+
+const manualRows = computed(() => buildManualMoneyRows(transactions.value))
+
+const receiptCategories = computed(() =>
+  receiptForm.is_income ? FARMER_INCOME_CATEGORIES : FARMER_SPEND_CATEGORIES,
+)
+
+const tagCycleOptions = computed(() => {
+  if (!receiptForm.tagZoneId) return []
+  return activeCyclesForZone(cropCycles.value, receiptForm.tagZoneId)
+})
 
 const costPendingWrites = computed(() => {
   const fid = farmContext.farmId
   if (!fid) return 0
   return store.taskWriteQueue.filter((i) => i.farmId === fid && i.type === 'create_cost' && i.state !== 'synced').length
+})
+
+watch(() => receiptForm.tagZoneId, () => {
+  receiptForm.tagCycleId = tagCycleOptions.value[0]?.id ?? null
+})
+
+watch(() => receiptForm.is_income, (income) => {
+  receiptForm.category = 'miscellaneous'
+  if (!income && receiptForm.description.toLowerCase().includes('sold')) {
+    receiptForm.description = ''
+  }
 })
 
 function onReceiptPick(e) {
@@ -226,25 +328,29 @@ async function submitReceipt() {
   try {
     const fid = farmContext.farmId
     if (!fid) return
-    await store.createCost(
-      fid,
-      {
-        transaction_date: receiptForm.transaction_date,
-        category: receiptForm.category,
-        amount: receiptForm.amount,
-        currency: receiptForm.currency.trim().toUpperCase(),
-        description: receiptForm.description.trim() || undefined,
-        counterparty: receiptForm.counterparty.trim() || undefined,
-        is_income: receiptForm.is_income,
-        document_type: receiptFile.value ? 'receipt' : undefined,
-      },
-      { receiptFile: receiptFile.value || undefined },
-    )
+    const payload = {
+      transaction_date: receiptForm.transaction_date,
+      category: receiptForm.category,
+      amount: receiptForm.amount,
+      currency: receiptForm.currency.trim().toUpperCase(),
+      description: receiptForm.description.trim() || undefined,
+      counterparty: receiptForm.counterparty.trim() || undefined,
+      is_income: receiptForm.is_income,
+      document_type: receiptFile.value ? 'receipt' : undefined,
+    }
+    const taggedCycleId = receiptForm.tagCycleId
+    if (taggedCycleId) {
+      payload.crop_cycle_id = taggedCycleId
+    }
+    await store.createCost(fid, payload, { receiptFile: receiptFile.value || undefined })
     receiptFile.value = null
     receiptForm.amount = 0
     receiptForm.description = ''
     receiptForm.counterparty = ''
-    formSuccess.value = 'Receipt saved.'
+    receiptForm.tagCycleId = null
+    formSuccess.value = taggedCycleId
+      ? 'Receipt saved and tagged to this grow.'
+      : 'Receipt saved.'
     await refresh()
   } catch (e) {
     formError.value = e.response?.data?.error || e.message || 'Could not save receipt'
@@ -259,7 +365,15 @@ async function refresh() {
   loading.value = true
   formError.value = ''
   try {
-    transactions.value = await store.loadCosts(fid, { limit: 100, offset: 0 })
+    if (!store.zones.length) await store.loadAll(fid)
+    const [costs, cycles, prices] = await Promise.all([
+      store.loadCosts(fid, { limit: 100, offset: 0 }),
+      store.loadCropCycles(fid),
+      api.get(`/farms/${fid}/energy-prices`).then((r) => r.data).catch(() => []),
+    ])
+    transactions.value = costs
+    cropCycles.value = cycles
+    energyPrices.value = Array.isArray(prices) ? prices : []
   } finally {
     loading.value = false
   }
