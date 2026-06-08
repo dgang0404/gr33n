@@ -2,9 +2,11 @@
 # gr33n Pi Client - sensor + actuator daemon
 
 import base64
+import copy
 import json as py_json
 import logging
 import math
+import os
 import sqlite3
 import threading
 import time
@@ -109,9 +111,24 @@ DEFAULT_CONFIG = {
     'offline_flush_interval_seconds': 60,
 }
 
+# Phase 51 — minimal bootstrap defaults (no sensors/actuators; wiring from API or cache).
+BOOTSTRAP_DEFAULTS = {
+    'api': {
+        'base_url': 'http://192.168.1.100:8080',
+        'timeout_seconds': 5,
+        'api_key': '',
+    },
+    'farm': {'farm_id': 1},
+    'device': {'uid': ''},
+    'schedule_poll_interval_seconds': 30,
+    'offline_queue_path': '/var/lib/gr33n/queue.db',
+    'offline_flush_interval_seconds': 60,
+}
+
 
 def load_config(path: str = 'config.yaml') -> dict:
-    cfg = DEFAULT_CONFIG.copy()
+    """Legacy full merge with DEFAULT_CONFIG (includes default sensors/actuators)."""
+    cfg = copy.deepcopy(DEFAULT_CONFIG)
     p = Path(path)
     if p.exists():
         with open(p) as fh:
@@ -122,6 +139,165 @@ def load_config(path: str = 'config.yaml') -> dict:
             else:
                 cfg[k] = v
     return cfg
+
+
+def load_bootstrap(path: str = 'config.yaml') -> dict:
+    """Load api/device/farm and optional local sensors/actuators overrides only."""
+    cfg = copy.deepcopy(BOOTSTRAP_DEFAULTS)
+    p = Path(path)
+    if p.exists():
+        with open(p) as fh:
+            user_cfg = yaml.safe_load(fh) or {}
+        for k, v in user_cfg.items():
+            if isinstance(v, dict) and isinstance(cfg.get(k), dict):
+                cfg[k].update(v)
+            else:
+                cfg[k] = v
+    return cfg
+
+
+def default_config_cache_path() -> Path:
+    return Path.home() / '.gr33n' / 'config-cache.json'
+
+
+def load_config_cache(path: str) -> Optional[dict]:
+    p = Path(path)
+    if not p.exists():
+        return None
+    try:
+        with open(p) as fh:
+            data = py_json.load(fh)
+        return data if isinstance(data, dict) else None
+    except (OSError, py_json.JSONDecodeError) as exc:
+        log.warning('Could not read config cache %s: %s', path, exc)
+        return None
+
+
+def write_config_cache(path: str, remote: dict) -> None:
+    p = Path(path)
+    p.parent.mkdir(parents=True, exist_ok=True)
+    with open(p, 'w') as fh:
+        py_json.dump(remote, fh, indent=2, sort_keys=True)
+        fh.write('\n')
+    log.info('Wrote platform config cache to %s', p)
+
+
+def _has_local_wiring(bootstrap: dict) -> bool:
+    """True when config.yaml declares sensors and/or actuators (platform sync opt-out)."""
+    if 'sensors' in bootstrap and bootstrap['sensors'] is not None:
+        return True
+    if 'actuators' in bootstrap and bootstrap['actuators'] is not None:
+        return True
+    return False
+
+
+def fetch_remote_config(api: 'Gr33nApiClient', device_uid: str) -> Optional[dict]:
+    """GET /devices/by-uid/{uid}/config — None when API unreachable or device missing."""
+    uid = (device_uid or '').strip()
+    if not uid:
+        return None
+    return api.fetch_device_config(uid)
+
+
+def resolve_config(bootstrap: dict, remote: Optional[dict] = None) -> dict:
+    """Merge bootstrap with remote wiring; local sensors/actuators win when present."""
+    cfg: dict = {
+        'api': copy.deepcopy(bootstrap.get('api', BOOTSTRAP_DEFAULTS['api'])),
+        'farm': copy.deepcopy(bootstrap.get('farm', BOOTSTRAP_DEFAULTS['farm'])),
+    }
+    if 'device' in bootstrap:
+        cfg['device'] = copy.deepcopy(bootstrap['device'])
+
+    for key in (
+        'schedule_poll_interval_seconds',
+        'offline_queue_path',
+        'offline_flush_interval_seconds',
+    ):
+        if key in bootstrap:
+            cfg[key] = bootstrap[key]
+        elif remote and key in remote:
+            cfg[key] = remote[key]
+        else:
+            cfg[key] = BOOTSTRAP_DEFAULTS[key]
+
+    local_sensors = bootstrap.get('sensors')
+    local_actuators = bootstrap.get('actuators')
+    has_local_sensors = 'sensors' in bootstrap and local_sensors is not None
+    has_local_actuators = 'actuators' in bootstrap and local_actuators is not None
+
+    if has_local_sensors:
+        cfg['sensors'] = copy.deepcopy(local_sensors)
+    elif remote:
+        cfg['sensors'] = copy.deepcopy(remote.get('sensors', []))
+    else:
+        cfg['sensors'] = []
+
+    if has_local_actuators:
+        cfg['actuators'] = copy.deepcopy(local_actuators)
+    elif remote:
+        cfg['actuators'] = copy.deepcopy(remote.get('actuators', []))
+    else:
+        cfg['actuators'] = []
+
+    if bootstrap.get('mix_channels') is not None:
+        cfg['mix_channels'] = copy.deepcopy(bootstrap['mix_channels'])
+    elif remote and 'mix_channels' in remote:
+        cfg['mix_channels'] = copy.deepcopy(remote['mix_channels'])
+
+    if not _has_local_wiring(bootstrap) and remote and 'config_version' in remote:
+        cfg['config_version'] = remote['config_version']
+
+    return cfg
+
+
+def resolve_startup_config(bootstrap: dict, api: 'Gr33nApiClient', cache_path: str) -> dict:
+    """Phase 51 startup: local wiring opt-out, else fetch → cache fallback."""
+    remote = None
+    if _has_local_wiring(bootstrap):
+        log.info(
+            'Using local wiring for sensors/actuators (platform sync disabled for this device)')
+    else:
+        device_uid = (bootstrap.get('device') or {}).get('uid', '').strip()
+        if not device_uid:
+            raise RuntimeError(
+                'Cannot start: no wiring in config.yaml and device.uid is not set for platform sync')
+        remote = fetch_remote_config(api, device_uid)
+        if remote is None:
+            remote = load_config_cache(cache_path)
+            if remote:
+                log.warning(
+                    'API unreachable — running on cached config (version may be stale)')
+            else:
+                raise RuntimeError(
+                    'Cannot start: no wiring config. Connect to API or add sensors/actuators to config.yaml')
+        else:
+            write_config_cache(cache_path, remote)
+    return resolve_config(bootstrap, remote)
+
+
+def _sensor_wiring_key(scfg: dict) -> tuple:
+    inputs = scfg.get('inputs') or {}
+    return (
+        scfg.get('sensor_id'),
+        scfg.get('sensor_type'),
+        scfg.get('source'),
+        scfg.get('pin'),
+        scfg.get('channel'),
+        scfg.get('port'),
+        scfg.get('interval_seconds'),
+        scfg.get('input_max_age_seconds'),
+        tuple(sorted(inputs.items())),
+    )
+
+
+def _actuator_wiring_key(acfg: dict) -> tuple:
+    return (
+        acfg.get('actuator_id'),
+        acfg.get('device_id'),
+        acfg.get('device_type'),
+        acfg.get('gpio_pin'),
+        acfg.get('max_run_seconds'),
+    )
 
 
 # --- OFFLINE QUEUE (SQLite) -------------------------------------------------
@@ -360,6 +536,45 @@ class Gr33nApiClient:
             log.debug('post_mixing_event error: %s', exc)
         return None
 
+    # ── Phase 51 WS1/WS2 — platform config sync ─────────────────────────────
+
+    def fetch_device_config(self, device_uid: str) -> Optional[dict]:
+        """GET /devices/by-uid/{uid}/config — runtime wiring JSON for this Pi."""
+        uid = (device_uid or '').strip()
+        if not uid:
+            return None
+        try:
+            r = self._s.get(
+                f'{self.base_url}/devices/by-uid/{uid}/config',
+                timeout=self.timeout,
+            )
+            if r.status_code == 200:
+                data = r.json()
+                return data if isinstance(data, dict) else None
+            log.warning('fetch_device_config status=%s uid=%s body=%s',
+                        r.status_code, uid, r.text[:200])
+        except requests.RequestException as exc:
+            log.debug('fetch_device_config error: %s', exc)
+        return None
+
+    def get_config_version(self, device_uid: str) -> Optional[int]:
+        """GET /devices/by-uid/{uid}/config/version — int or None on error."""
+        uid = (device_uid or '').strip()
+        if not uid:
+            return None
+        try:
+            r = self._s.get(
+                f'{self.base_url}/devices/by-uid/{uid}/config/version',
+                timeout=self.timeout,
+            )
+            if r.status_code == 200:
+                data = r.json()
+                if isinstance(data, dict) and 'config_version' in data:
+                    return int(data['config_version'])
+        except (requests.RequestException, TypeError, ValueError) as exc:
+            log.debug('get_config_version error: %s', exc)
+        return None
+
 
 # --- DERIVED SENSOR SUPPORT -------------------------------------------------
 # A `source: derived` sensor computes its value from other sensors on the
@@ -545,6 +760,23 @@ class SensorReader:
                 return None
         return self._mock(stype)
 
+    def close(self) -> None:
+        """Release hardware handles when wiring changes or sensor is removed."""
+        if self._dht is not None:
+            try:
+                self._dht.exit()
+            except Exception as exc:
+                log.debug('DHT close sensor_id=%s: %s', self.cfg.get('sensor_id'), exc)
+            self._dht = None
+        if self._uart is not None:
+            try:
+                self._uart.close()
+            except Exception as exc:
+                log.debug('UART close sensor_id=%s: %s', self.cfg.get('sensor_id'), exc)
+            self._uart = None
+        self._adc = None
+        self._i2c = None
+
     def _read_derived(self, stype: str) -> Optional[float]:
         """Compute a derived sensor value from other cached readings.
 
@@ -592,6 +824,7 @@ class ActuatorController:
     OFF_COMMANDS = frozenset(('off', 'actuator_off', 'turn_off', 'close', 'stop', 'retract'))
 
     def __init__(self, cfg: dict):
+        self.cfg = cfg
         self.actuator_id = cfg['actuator_id']
         self.device_id   = cfg.get('device_id', cfg['actuator_id'])
         self.device_type = cfg['device_type']
@@ -652,6 +885,17 @@ class ActuatorController:
         else:
             log.warning('Unknown command %r for actuator %s', command, self.actuator_id)
 
+    def close(self) -> None:
+        """Turn off relay and release GPIO when wiring changes or actuator is removed."""
+        try:
+            self.turn_off()
+        except Exception as exc:
+            log.debug('actuator turn_off id=%s: %s', self.actuator_id, exc)
+        try:
+            self._gpio.close()
+        except Exception as exc:
+            log.debug('GPIO close actuator_id=%s: %s', self.actuator_id, exc)
+
     @property
     def state(self) -> str:
         return 'on' if self._state else 'off'
@@ -660,34 +904,119 @@ class ActuatorController:
 # --- MAIN DAEMON ------------------------------------------------------------
 class Gr33nPiClient:
     def __init__(self, config_path: str = 'config.yaml'):
-        self.cfg  = load_config(config_path)
-        self.api  = Gr33nApiClient(
-            base_url = self.cfg['api']['base_url'],
-            farm_id  = self.cfg['farm']['farm_id'],
-            api_key  = self.cfg['api'].get('api_key', ''),
-            timeout  = self.cfg['api']['timeout_seconds'],
+        bootstrap = load_bootstrap(config_path)
+        self._bootstrap = bootstrap
+        self._config_cache_path = os.environ.get(
+            'CONFIG_CACHE_PATH', str(default_config_cache_path()))
+        self.api = Gr33nApiClient(
+            base_url=bootstrap['api']['base_url'],
+            farm_id=bootstrap['farm']['farm_id'],
+            api_key=bootstrap['api'].get('api_key', ''),
+            timeout=bootstrap['api']['timeout_seconds'],
         )
+        self.cfg = resolve_startup_config(bootstrap, self.api, self._config_cache_path)
+        self.device_uid = (bootstrap.get('device') or {}).get('uid', '').strip()
+        self._config_version = self.cfg.get('config_version')
         self.queue      = OfflineQueue(self.cfg['offline_queue_path'])
         self._stop      = threading.Event()
+        self._hw_lock   = threading.Lock()
         self._last_read: dict = {}
         # Shared across all readers so `source: derived` sensors can compute
         # from the freshest values physical sensors posted this tick.
         self._reading_cache = ReadingCache()
-        self._readers: dict = {
-            s['sensor_id']: SensorReader(s, cache=self._reading_cache)
-            for s in self.cfg['sensors']
-        }
-        self._actuators: dict = {a['actuator_id']: ActuatorController(a) for a in self.cfg['actuators']}
+        self._readers, self._actuators = self._build_hardware(self.cfg, {}, {})
+
+    def _build_hardware(self, cfg: dict, old_readers: dict, old_actuators: dict):
+        """Reuse unchanged readers/actuators; close and replace when wiring differs."""
+        readers: dict = {}
+        for scfg in cfg.get('sensors', []):
+            sid = scfg['sensor_id']
+            prev = old_readers.get(sid)
+            if prev and _sensor_wiring_key(prev.cfg) == _sensor_wiring_key(scfg):
+                readers[sid] = prev
+            else:
+                if prev:
+                    prev.close()
+                readers[sid] = SensorReader(scfg, cache=self._reading_cache)
+        for sid, prev in old_readers.items():
+            if sid not in readers:
+                prev.close()
+
+        actuators: dict = {}
+        for acfg in cfg.get('actuators', []):
+            aid = acfg['actuator_id']
+            prev = old_actuators.get(aid)
+            if prev and _actuator_wiring_key(prev.cfg) == _actuator_wiring_key(acfg):
+                actuators[aid] = prev
+            else:
+                if prev:
+                    prev.close()
+                actuators[aid] = ActuatorController(acfg)
+        for aid, prev in old_actuators.items():
+            if aid not in actuators:
+                prev.close()
+
+        return readers, actuators
+
+    def _reload_config(self) -> bool:
+        """Hot-reload wiring from platform after config_version bump."""
+        if _has_local_wiring(self._bootstrap) or not self.device_uid:
+            return False
+        remote = fetch_remote_config(self.api, self.device_uid)
+        if not remote:
+            log.error('[config-reload] fetch failed for device_uid=%s', self.device_uid)
+            return False
+        new_cfg = resolve_config(self._bootstrap, remote)
+        if not new_cfg.get('sensors') and not new_cfg.get('actuators'):
+            log.error(
+                '[config-reload] rejected empty wiring (config_version=%s)',
+                remote.get('config_version'),
+            )
+            return False
+
+        with self._hw_lock:
+            old_readers = self._readers
+            old_actuators = self._actuators
+            new_readers, new_actuators = self._build_hardware(new_cfg, old_readers, old_actuators)
+            self.cfg = new_cfg
+            self._readers = new_readers
+            self._actuators = new_actuators
+            self._config_version = new_cfg.get('config_version')
+            active_sids = {s['sensor_id'] for s in new_cfg.get('sensors', [])}
+            self._last_read = {k: v for k, v in self._last_read.items() if k in active_sids}
+
+        write_config_cache(self._config_cache_path, remote)
+        log.info(
+            '[config-reload] config_version=%s sensors=%d actuators=%d',
+            self._config_version,
+            len(new_cfg.get('sensors', [])),
+            len(new_cfg.get('actuators', [])),
+        )
+        return True
+
+    def _poll_config_version(self) -> None:
+        """Lightweight version check — full fetch only when version changes."""
+        if _has_local_wiring(self._bootstrap) or not self.device_uid:
+            return
+        remote_version = self.api.get_config_version(self.device_uid)
+        if remote_version is None:
+            return
+        if remote_version == self._config_version:
+            return
+        self._reload_config()
 
     def _sensor_loop(self):
         while not self._stop.is_set():
             now = time.time()
-            for scfg in self.cfg['sensors']:
+            with self._hw_lock:
+                sensor_cfgs = list(self.cfg.get('sensors', []))
+                readers = dict(self._readers)
+            for scfg in sensor_cfgs:
                 sid      = scfg['sensor_id']
                 interval = scfg.get('interval_seconds', 60)
                 if now - self._last_read.get(sid, 0) < interval:
                     continue
-                reader = self._readers.get(sid)
+                reader = readers.get(sid)
                 value  = reader.read() if reader else None
                 if value is None:
                     log.warning('No reading from sensor_id=%s', sid)
@@ -724,11 +1053,12 @@ class Gr33nPiClient:
                 log.info('Flushed %d queued readings to API', len(acked))
 
     def _heartbeat_loop(self):
-        device_ids = {a.device_id for a in self._actuators.values()}
         while not self._stop.is_set():
             time.sleep(30)
             if not self.api.is_reachable():
                 continue
+            with self._hw_lock:
+                device_ids = {a.device_id for a in self._actuators.values()}
             for did in device_ids:
                 self.api.patch_device_status(did, 'online')
             log.debug('Heartbeat sent for %d device(s)', len(device_ids))
@@ -744,14 +1074,16 @@ class Gr33nPiClient:
 
         Returns None if the channel cannot be resolved.
         """
-        mix_channels = self.cfg.get('mix_channels', [])
+        with self._hw_lock:
+            mix_channels = list(self.cfg.get('mix_channels', []))
+            actuators = dict(self._actuators)
         actuator_id = None
         if mix_channels and channel_index <= len(mix_channels):
             actuator_id = mix_channels[channel_index - 1]
         if actuator_id is not None:
-            return self._actuators.get(actuator_id)
+            return actuators.get(actuator_id)
         # Fallback: use actuator list sorted by id; channel 1 → index 0.
-        sorted_acts = sorted(self._actuators.values(), key=lambda a: a.actuator_id)
+        sorted_acts = sorted(actuators.values(), key=lambda a: a.actuator_id)
         idx = channel_index - 1
         if 0 <= idx < len(sorted_acts):
             return sorted_acts[idx]
@@ -899,12 +1231,14 @@ class Gr33nPiClient:
         return processed
 
     def _schedule_loop(self):
-        poll_interval = self.cfg.get('schedule_poll_interval_seconds', 30)
-        actuator_by_device = {a.device_id: a for a in self._actuators.values()}
         while not self._stop.is_set():
+            with self._hw_lock:
+                poll_interval = self.cfg.get('schedule_poll_interval_seconds', 30)
             time.sleep(poll_interval)
             if not self.api.is_reachable():
                 continue
+            with self._hw_lock:
+                actuator_by_device = {a.device_id: a for a in self._actuators.values()}
             for device in self.api.get_devices():
                 did    = device.get('id')
 
@@ -971,9 +1305,17 @@ class Gr33nPiClient:
                 self.api.clear_pending_command(did)
                 self.api.patch_device_status(did, 'online')
 
+            self._poll_config_version()
+
     def run(self):
-        log.info('gr33n Pi Client starting - farm_id=%s  api=%s',
-                 self.cfg['farm']['farm_id'], self.cfg['api']['base_url'])
+        log.info(
+            'gr33n Pi Client starting - farm_id=%s  api=%s  device_uid=%s  sensors=%d  actuators=%d',
+            self.cfg['farm']['farm_id'],
+            self.cfg['api']['base_url'],
+            self.device_uid or '(local wiring)',
+            len(self.cfg.get('sensors', [])),
+            len(self.cfg.get('actuators', [])),
+        )
         threads = [
             threading.Thread(target=self._sensor_loop,    name='sensor-loop',    daemon=True),
             threading.Thread(target=self._flush_loop,     name='flush-loop',     daemon=True),

@@ -1424,6 +1424,7 @@ type Gr33ncoreDevice struct {
 	UpdatedAt       time.Time                    `db:"updated_at" json:"updated_at"`
 	UpdatedByUserID pgtype.UUID                  `db:"updated_by_user_id" json:"updated_by_user_id"`
 	DeletedAt       pgtype.Timestamptz           `db:"deleted_at" json:"deleted_at"`
+	ConfigVersion   int32                        `db:"config_version" json:"config_version"`
 }
 
 type Gr33ncoreExecutableAction struct {

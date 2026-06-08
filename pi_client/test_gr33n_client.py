@@ -6,6 +6,7 @@ Run: python3 -m pytest test_gr33n_client.py -v
 """
 
 import base64
+import copy
 import json
 import sqlite3
 import tempfile
@@ -1060,6 +1061,250 @@ class TestDerivedSensorReader(unittest.TestCase):
         cache.put(2, 50.0)
         r = self._derived_reader(stype='mystery_metric', cache=cache)
         self.assertIsNone(r.read())
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# PHASE 51 WS2 — platform config sync (bootstrap + fetch + cache)
+# ─────────────────────────────────────────────────────────────────────────────
+
+class TestPhase51ConfigSync(unittest.TestCase):
+
+    REMOTE_CONFIG = {
+        'device_uid': 'veg-pi-01',
+        'device_id': 1,
+        'farm_id': 1,
+        'config_version': 3,
+        'sensors': [
+            {'sensor_id': 3, 'sensor_type': 'temperature', 'source': 'dht22',
+             'pin': 4, 'interval_seconds': 60},
+        ],
+        'actuators': [
+            {'actuator_id': 1, 'device_id': 1, 'device_type': 'light', 'gpio_pin': 17},
+        ],
+        'schedule_poll_interval_seconds': 30,
+        'offline_queue_path': '/var/lib/gr33n/queue.db',
+        'offline_flush_interval_seconds': 60,
+    }
+
+    def _mock_config_server(self, status=200, body=None):
+        payload = body if body is not None else self.REMOTE_CONFIG
+
+        class Handler(BaseHTTPRequestHandler):
+            def log_message(self, *args): pass
+
+            def do_GET(self):
+                if self.path.startswith('/devices/by-uid/veg-pi-01/config'):
+                    self.send_response(status)
+                    self.send_header('Content-Type', 'application/json')
+                    self.end_headers()
+                    if status == 200:
+                        self.wfile.write(json.dumps(payload).encode())
+                    return
+                self.send_response(404)
+                self.end_headers()
+
+        server = HTTPServer(('127.0.0.1', 0), Handler)
+        port = server.server_address[1]
+        thread = threading.Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+        return server, port
+
+    def test_fetch_remote_config_success(self):
+        server, port = self._mock_config_server()
+        try:
+            api = client.Gr33nApiClient(f'http://127.0.0.1:{port}', 1, api_key='k')
+            got = client.fetch_remote_config(api, 'veg-pi-01')
+            self.assertIsNotNone(got)
+            self.assertEqual(got['config_version'], 3)
+            self.assertEqual(len(got['sensors']), 1)
+            self.assertEqual(got['sensors'][0]['pin'], 4)
+        finally:
+            server.shutdown()
+
+    def test_resolve_config_uses_remote_wiring(self):
+        bootstrap = client.load_bootstrap('/tmp/nonexistent_phase51_bootstrap.yaml')
+        bootstrap['device'] = {'uid': 'veg-pi-01'}
+        cfg = client.resolve_config(bootstrap, self.REMOTE_CONFIG)
+        self.assertEqual(cfg['sensors'][0]['sensor_id'], 3)
+        self.assertEqual(cfg['actuators'][0]['gpio_pin'], 17)
+        self.assertEqual(cfg['config_version'], 3)
+        self.assertEqual(cfg['api']['base_url'], bootstrap['api']['base_url'])
+
+    def test_local_wiring_takes_precedence(self):
+        bootstrap = {
+            'api': {'base_url': 'http://10.0.0.2:8080', 'timeout_seconds': 5, 'api_key': ''},
+            'farm': {'farm_id': 1},
+            'sensors': [{'sensor_id': 99, 'sensor_type': 'temperature', 'source': 'dht22',
+                         'pin': 7, 'interval_seconds': 30}],
+            'actuators': [],
+            'schedule_poll_interval_seconds': 30,
+            'offline_queue_path': tempfile.mktemp(suffix='.db'),
+            'offline_flush_interval_seconds': 60,
+        }
+        cfg = client.resolve_config(bootstrap, self.REMOTE_CONFIG)
+        self.assertEqual(cfg['sensors'][0]['sensor_id'], 99)
+        self.assertEqual(cfg['sensors'][0]['pin'], 7)
+        self.assertNotIn('config_version', cfg)
+
+    def test_fetch_remote_config_offline_falls_back_to_cache(self):
+        cache_path = tempfile.mktemp(suffix='.json')
+        client.write_config_cache(cache_path, self.REMOTE_CONFIG)
+        try:
+            bootstrap = client.load_bootstrap('/tmp/nonexistent_phase51_bootstrap.yaml')
+            bootstrap['device'] = {'uid': 'veg-pi-01'}
+            bootstrap['offline_queue_path'] = tempfile.mktemp(suffix='.db')
+            api = client.Gr33nApiClient('http://127.0.0.1:19999', 1, timeout=1)
+            cfg = client.resolve_startup_config(bootstrap, api, cache_path)
+            self.assertEqual(cfg['sensors'][0]['sensor_id'], 3)
+            self.assertEqual(cfg['config_version'], 3)
+        finally:
+            os.unlink(cache_path)
+
+    def test_startup_without_wiring_or_cache_raises(self):
+        bootstrap = client.load_bootstrap('/tmp/nonexistent_phase51_bootstrap.yaml')
+        bootstrap['device'] = {'uid': 'veg-pi-01'}
+        api = client.Gr33nApiClient('http://127.0.0.1:19999', 1, timeout=1)
+        with self.assertRaises(RuntimeError) as ctx:
+            client.resolve_startup_config(bootstrap, api, tempfile.mktemp(suffix='.json'))
+        self.assertIn('no wiring config', str(ctx.exception))
+
+    def test_bootstrap_client_fetches_on_startup(self):
+        server, port = self._mock_config_server()
+        cache_path = tempfile.mktemp(suffix='.json')
+        try:
+            with tempfile.NamedTemporaryFile('w', suffix='.yaml', delete=False) as f:
+                yaml.dump({
+                    'api': {'base_url': f'http://127.0.0.1:{port}', 'timeout_seconds': 3,
+                            'api_key': 'test'},
+                    'farm': {'farm_id': 1},
+                    'device': {'uid': 'veg-pi-01'},
+                    'offline_queue_path': tempfile.mktemp(suffix='.db'),
+                }, f)
+                cfg_path = f.name
+            os.environ['CONFIG_CACHE_PATH'] = cache_path
+            pi = client.Gr33nPiClient(cfg_path)
+            self.assertEqual(pi.cfg['sensors'][0]['pin'], 4)
+            self.assertEqual(pi._config_version, 3)
+            self.assertTrue(os.path.exists(cache_path))
+            os.unlink(cfg_path)
+        finally:
+            os.environ.pop('CONFIG_CACHE_PATH', None)
+            if os.path.exists(cache_path):
+                os.unlink(cache_path)
+            server.shutdown()
+
+
+class TestPhase51LiveReload(unittest.TestCase):
+
+    BOOTSTRAP = {
+        'api': {'base_url': 'http://127.0.0.1:1', 'timeout_seconds': 1, 'api_key': 'k'},
+        'farm': {'farm_id': 1},
+        'device': {'uid': 'veg-pi-01'},
+        'offline_queue_path': '',
+        'schedule_poll_interval_seconds': 30,
+        'offline_flush_interval_seconds': 60,
+    }
+
+    REMOTE_V3 = {
+        'device_uid': 'veg-pi-01',
+        'config_version': 3,
+        'sensors': [
+            {'sensor_id': 3, 'sensor_type': 'temperature', 'source': 'dht22',
+             'pin': 4, 'interval_seconds': 60},
+        ],
+        'actuators': [
+            {'actuator_id': 1, 'device_id': 1, 'device_type': 'light', 'gpio_pin': 17},
+        ],
+    }
+
+    REMOTE_V4 = {
+        **REMOTE_V3,
+        'config_version': 4,
+        'sensors': [
+            {'sensor_id': 3, 'sensor_type': 'temperature', 'source': 'dht22',
+             'pin': 5, 'interval_seconds': 60},
+        ],
+    }
+
+    def _platform_client(self, queue_path):
+        bootstrap = copy.deepcopy(self.BOOTSTRAP)
+        bootstrap['offline_queue_path'] = queue_path
+        with tempfile.NamedTemporaryFile('w', suffix='.yaml', delete=False) as f:
+            yaml.dump(bootstrap, f)
+            cfg_path = f.name
+        with patch.object(client.Gr33nPiClient, '__init__', lambda self, *a, **k: None):
+            pi = client.Gr33nPiClient(cfg_path)
+        pi._bootstrap = bootstrap
+        pi._config_cache_path = tempfile.mktemp(suffix='.json')
+        pi.api = MagicMock()
+        pi.device_uid = 'veg-pi-01'
+        pi._config_version = 3
+        pi._stop = threading.Event()
+        pi._hw_lock = threading.Lock()
+        pi._last_read = {}
+        pi._reading_cache = client.ReadingCache()
+        pi.cfg = client.resolve_config(bootstrap, self.REMOTE_V3)
+        pi._readers, pi._actuators = pi._build_hardware(pi.cfg, {}, {})
+        return pi, cfg_path
+
+    def test_reload_config_rejects_empty_wiring(self):
+        pi, cfg_path = self._platform_client(tempfile.mktemp(suffix='.db'))
+        try:
+            pi.api.fetch_device_config = MagicMock(return_value={
+                'config_version': 9, 'sensors': [], 'actuators': [],
+            })
+            self.assertFalse(pi._reload_config())
+            self.assertEqual(pi._config_version, 3)
+            self.assertEqual(pi._readers[3].cfg['pin'], 4)
+        finally:
+            os.unlink(cfg_path)
+
+    def test_reload_config_swaps_readers_atomically(self):
+        pi, cfg_path = self._platform_client(tempfile.mktemp(suffix='.db'))
+        try:
+            old_reader = pi._readers[3]
+            pi.api.fetch_device_config = MagicMock(return_value=self.REMOTE_V4)
+            with patch.object(old_reader, 'close') as mock_close:
+                self.assertTrue(pi._reload_config())
+                mock_close.assert_called_once()
+            self.assertEqual(pi._config_version, 4)
+            self.assertEqual(pi._readers[3].cfg['pin'], 5)
+            self.assertIsNot(pi._readers[3], old_reader)
+        finally:
+            os.unlink(cfg_path)
+
+    def test_poll_config_version_triggers_reload(self):
+        pi, cfg_path = self._platform_client(tempfile.mktemp(suffix='.db'))
+        try:
+            pi.api.get_config_version = MagicMock(return_value=4)
+            with patch.object(pi, '_reload_config', return_value=True) as mock_reload:
+                pi._poll_config_version()
+                mock_reload.assert_called_once()
+            pi.api.get_config_version = MagicMock(return_value=3)
+            with patch.object(pi, '_reload_config') as mock_reload:
+                pi._poll_config_version()
+                mock_reload.assert_not_called()
+        finally:
+            os.unlink(cfg_path)
+
+    def test_local_wiring_skips_version_poll(self):
+        bootstrap = {
+            **self.BOOTSTRAP,
+            'sensors': [{'sensor_id': 1, 'sensor_type': 'temperature', 'source': 'dht22',
+                         'pin': 4, 'interval_seconds': 60}],
+            'actuators': [],
+            'offline_queue_path': tempfile.mktemp(suffix='.db'),
+        }
+        with tempfile.NamedTemporaryFile('w', suffix='.yaml', delete=False) as f:
+            yaml.dump(bootstrap, f)
+            cfg_path = f.name
+        pi = client.Gr33nPiClient(cfg_path)
+        try:
+            with patch.object(pi.api, 'get_config_version') as mock_ver:
+                pi._poll_config_version()
+                mock_ver.assert_not_called()
+        finally:
+            os.unlink(cfg_path)
 
 
 class TestDerivedSensorInClient(unittest.TestCase):

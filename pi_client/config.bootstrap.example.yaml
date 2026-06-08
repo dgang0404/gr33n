@@ -1,0 +1,18 @@
+# Phase 51 — minimal bootstrap (platform sync)
+# Wiring (sensors, actuators, GPIO pins) is fetched from the API on startup.
+# Copy to config.yaml and set api_key from repo root .env (PI_API_KEY).
+
+api:
+  base_url: "http://192.168.1.100:8080"
+  timeout_seconds: 5
+  api_key: "replace-with-PI_API_KEY"
+
+device:
+  uid: "demo-veg-relay-01"   # must match gr33ncore.devices.device_uid
+
+farm:
+  farm_id: 1
+
+schedule_poll_interval_seconds: 30
+offline_queue_path: "/var/lib/gr33n/queue.db"
+offline_flush_interval_seconds: 60

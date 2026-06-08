@@ -129,6 +129,9 @@ func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationwo
 	// Phase 39 WS1 — Pi polls queue head and acks after execution
 	mux.Handle("GET /devices/{id}/commands/next", piChain(http.HandlerFunc(devicecmd.Next)))
 	mux.Handle("POST /devices/{id}/commands/{cid}/ack", piChain(http.HandlerFunc(devicecmd.Ack)))
+	// Phase 51 WS1 — Pi runtime config sync by device_uid (version before full config)
+	mux.Handle("GET /devices/by-uid/{device_uid}/config/version", piChain(http.HandlerFunc(device.GetConfigVersionByUID)))
+	mux.Handle("GET /devices/by-uid/{device_uid}/config", piChain(http.HandlerFunc(device.GetConfigByUID)))
 
 	// ── Dashboard routes — JWT required ──────────────────────────────────────
 

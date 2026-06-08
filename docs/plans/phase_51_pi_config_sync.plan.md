@@ -10,13 +10,13 @@ overview: >
 todos:
   - id: ws1-api-config-endpoint
     content: "WS1: GET /devices/by-uid/{uid}/config — return structured wiring config for one device; includes sensors[], actuators[], poll intervals, mix_channels; versioned (ETag/config_version)"
-    status: pending
+    status: completed
   - id: ws2-pi-bootstrap-rewrite
     content: "WS2: Pi client — minimal-YAML bootstrap (api_url, api_key, device_uid, farm_id only); fetch wiring from API after connect; merge with local defaults; cache to ~/.gr33n/config-cache.json"
-    status: pending
+    status: completed
   - id: ws3-live-reload
     content: "WS3: Live reload — Pi checks config_version on each schedule poll tick; if changed, reload sensors/actuators in-place without restart; UI shows 'Config pushed to Pi'"
-    status: pending
+    status: completed
   - id: ws4-offline-safety
     content: "WS4: Offline resilience + safety — if API unreachable on first start, boot from cache with log warning; if no cache and no local wiring, fail loudly; UI badge 'Pi config stale' after configurable age"
     status: pending
@@ -33,7 +33,13 @@ isProject: false
 
 ## Status
 
-**Planned.** Requires [Phase 50 hardware wiring visibility](phase_50_hardware_wiring_visibility.plan.md) to have shipped first — specifically the wiring data model (WS1) and API PATCH (WS2), which define the contract this phase consumes.
+**In progress (WS1–WS3 shipped).** Requires [Phase 50 hardware wiring visibility](phase_50_hardware_wiring_visibility.plan.md) to have shipped first — specifically the wiring data model (WS1) and API PATCH (WS2), which define the contract this phase consumes.
+
+**WS1 delivered:** `config_version` on `gr33ncore.devices`, bump triggers on sensor/actuator wiring, `GET /devices/by-uid/{uid}/config` + `/config/version` (Pi `X-API-Key`).
+
+**WS2 delivered:** `load_bootstrap` / `fetch_remote_config` / `resolve_config` / `resolve_startup_config` in `pi_client/gr33n_client.py`; cache at `~/.gr33n/config-cache.json` (`CONFIG_CACHE_PATH` override); `config.bootstrap.example.yaml`; local `sensors`/`actuators` in YAML still opt out of sync.
+
+**WS3 delivered:** `_poll_config_version` on each schedule-loop tick; `_reload_config` hot-swaps readers/actuators under `_hw_lock`; rejects empty platform wiring; reuses unchanged hardware handles when wiring keys match. UI “config pushed” signal deferred to WS4/WS6 (`last_config_fetch_at`).
 
 **Roadmap:** [farmer_ux_roadmap_40_plus.plan.md](farmer_ux_roadmap_40_plus.plan.md) (edge/Pi track).
 
