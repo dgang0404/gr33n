@@ -248,7 +248,7 @@
           Image analysis is advisory only — hypotheses, not certified diagnosis. Any change still needs Confirm.
         </p>
         <div v-if="setupStarters.length" class="space-y-1.5" data-test="chat-setup-starters">
-          <p class="text-[10px] uppercase tracking-widest text-zinc-500">Setup help</p>
+          <p class="text-[10px] uppercase tracking-widest text-zinc-500">Try asking</p>
           <GuardianStarterChips :starters="setupStarters" />
         </div>
         <div class="flex flex-col gap-2">
