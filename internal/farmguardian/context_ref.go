@@ -75,9 +75,9 @@ func renderRouteContext(path, nameHint string, history []ContextRef) string {
 	case path == "/operations/money" || path == "/costs":
 		b.WriteString("\nMoney — spend summary and receipts. Use summarize_farm_spending for month-by-category answers; summarize_cycle_cost when a grow is in scope. Plain language; hide GL/COA unless the operator is on the full costs editor (/costs).")
 	case path == "/sensors":
-		b.WriteString("\nSensors list — operator can see all sensor cards with wiring and reading status. Lead with wiring health, offline sensors, or reading freshness.")
+		b.WriteString("\nSensors list — operator can see all sensor cards with wiring and reading status. Use summarize_device_health for GPIO/source and reading freshness — no need to ask the operator to read back config.")
 	case path == "/actuators":
-		b.WriteString("\nActuators list — relay and output wiring panel. Lead with device config sync status and schedule coverage.")
+		b.WriteString("\nActuators list — relay and output wiring panel. Use summarize_device_health for relay channel assignments and Pi config sync status.")
 	case path == "/schedules":
 		b.WriteString("\nSchedules — automation rules that trigger actuators. Focus on schedule gaps, overlaps, or next-run times.")
 	case path == "/comfort-targets" || path == "/setpoints":
@@ -91,19 +91,19 @@ func renderRouteContext(path, nameHint string, history []ContextRef) string {
 	case path == "/plants":
 		b.WriteString("\nPlants — strain catalog and varieties. Distinguish catalog plants from active grow runs (summarize_active_grows). Start a new grow from zone Overview or Plants — not silent chat writes.")
 	case path == "/pi-setup":
-		b.WriteString("\nPi + HAT setup guide — operator is configuring Raspberry Pi hardware with Sequent Microsystems stacking relay HATs. Lead with practical wiring and channel numbering advice. Offer procedure wire-pi-relay-light.")
+		b.WriteString("\nPi + HAT setup guide — operator is configuring Raspberry Pi hardware with Sequent Microsystems stacking relay HATs. Use summarize_device_health for live GPIO/relay assignments. Offer procedure wire-pi-relay-light.")
 	case path == "/" || path == "":
 		b.WriteString("\nDashboard — farm overview. Prefer high-level summaries; offer to drill down into specific zones or alerts.")
 	case strings.HasPrefix(path, "/zones/"):
 		b.WriteString("\nZone detail — single grow room view. Zone-scoped answers preferred; sensor readings and crop cycle context are available.")
 	case strings.HasPrefix(path, "/sensors/"):
-		b.WriteString("\nSensor detail — single sensor config and history. Lead with reading quality and wiring.")
+		b.WriteString("\nSensor detail — single sensor config and history. Use summarize_device_health for wiring pin, source, and reading staleness on this sensor's Pi.")
 	case strings.HasPrefix(path, "/farms/") && strings.HasSuffix(path, "/setup"):
 		b.WriteString("\nFarm setup wizard — guide the operator through adding zones, connecting a device, and setting comfort targets in that order. Prefer wizard actions over free-form config advice.")
 	case strings.HasPrefix(path, "/farms/") && strings.HasSuffix(path, "/zones/new"):
 		b.WriteString("\nAdd grow room wizard — zone creation happens in the wizard UI, not chat. Guide through name, type, and comfort targets.")
 	case strings.HasPrefix(path, "/farms/") && strings.HasSuffix(path, "/devices/new"):
-		b.WriteString("\nEdge device wizard — device registration and Pi config. Offer procedure wire-pi-relay-light for hardware wiring help.")
+		b.WriteString("\nEdge device wizard — device registration and Pi config. Use summarize_device_health after registration for heartbeat and wiring status. Offer procedure wire-pi-relay-light.")
 	}
 
 	// Navigation breadcrumb — show where the operator came from so the Guardian

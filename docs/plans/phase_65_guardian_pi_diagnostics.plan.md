@@ -10,16 +10,16 @@ overview: >
 todos:
   - id: ws1-read-tool
     content: "WS1: summarize_device_health read tool — device status, sensors (GPIO/source/last-reading-age), actuators (channel/status), config sync age"
-    status: pending
+    status: completed
   - id: ws2-intent
     content: "WS2: Intent matching for wiring/device diagnostic questions: offline, wrong reading, not responding, channel wrong"
-    status: pending
+    status: completed
   - id: ws3-grounding-update
     content: "WS3: Update fieldGuideGrounding + context_ref hints — Guardian can now see platform wiring; remove 'ask them to confirm'"
-    status: pending
+    status: completed
   - id: ws4-docs-tests
-    content: "WS4: operator-tour §, architecture §, phase-65-closure.test.js, OC-65"
-    status: pending
+    content: "WS4: architecture §7.0v, phase-65-closure.test.js, OC-65"
+    status: completed
 isProject: false
 ---
 
@@ -27,7 +27,7 @@ isProject: false
 
 ## Status
 
-**Planned.** After [Phase 57](phase_57_pi_device_api_keys.plan.md) (wiring data is stored per-device) and before [Phase 66](phase_66_weather_site_context.plan.md) (weather). **Ship before [Phase 67](phase_67_guardian_field_assistant.plan.md)** — voice + photo are most useful when Guardian can already cross-reference wiring without asking the operator to read it back.
+**Shipped.** After [Phase 57](phase_57_pi_device_api_keys.plan.md) (wiring data is stored per-device) and before [Phase 66](phase_66_weather_site_context.plan.md) (weather). **Shipped before [Phase 67](phase_67_guardian_field_assistant.plan.md)** — voice + photo are most useful when Guardian can cross-reference wiring without asking the operator to read it back.
 
 **Depends on:** Phase 50 (wiring model), Phase 51 (config sync / staleness tracking), Phase 57 (device keys, per-device identity).
 
@@ -150,10 +150,10 @@ Fall back to all farm devices if ambiguous.
 
 ## Definition of done
 
-- [ ] `summarize_device_health` read tool fires on wiring/device diagnostic intent
-- [ ] Output includes: device status, sensors with GPIO/source/last-reading-age, actuators with channel, GPIO conflicts flagged
-- [ ] `fieldGuideGrounding` updated — Guardian no longer says it cannot see the wiring
-- [ ] OC-65 closed
+- [x] `summarize_device_health` read tool fires on wiring/device diagnostic intent
+- [x] Output includes: device status, sensors with GPIO/source/last-reading-age, actuators with channel, GPIO sharing flagged
+- [x] `fieldGuideGrounding` updated — Guardian no longer says it cannot see the wiring
+- [x] OC-65 closed (`phase-65-closure.test.js`, `smoke_phase65_test.go`)
 
 ---
 

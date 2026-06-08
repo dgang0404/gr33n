@@ -122,7 +122,7 @@ todos:
     status: completed
   - id: oc-65-closure
     content: "OC-65: Phase 65 WS4 — Pi & hardware diagnostics, summarize_device_health, fieldGuideGrounding update"
-    status: pending
+    status: completed
   - id: oc-66-closure
     content: "OC-66: Phase 66 WS6 — weather & site, offline solar engine, ingestion tiers, supplemental-light starter"
     status: pending
@@ -568,7 +568,7 @@ Hub: [`phase_53_59_roadmap.plan.md`](phase_53_59_roadmap.plan.md). Close **OC-58
 | ~~62 Grow advisor~~ | ~~OC-62~~ | [phase_62](phase_62_guardian_grow_advisor.plan.md) | ✅ Shipped |
 | 63 Session memory | OC-63 | [phase_63](phase_63_guardian_session_memory.plan.md) | Topic tags + privacy delete |
 | ~~64 Crop knowledge base~~ | ~~OC-64~~ | [phase_64](phase_64_crop_knowledge_base.plan.md) | ✅ Shipped |
-| 65 Pi & hardware diagnostics | OC-65 | [phase_65](phase_65_guardian_pi_diagnostics.plan.md) | summarize_device_health + GPIO conflict |
+| ~~65 Pi & hardware diagnostics~~ | ~~OC-65~~ | [phase_65](phase_65_guardian_pi_diagnostics.plan.md) | ✅ Shipped |
 | 66 Weather & site | OC-66 | [phase_66](phase_66_weather_site_context.plan.md) | Offline solar + ingest tiers |
 | 67 Field assistant | OC-67 | [phase_67](phase_67_guardian_field_assistant.plan.md) | Voice + grounded photo diagnosis |
 

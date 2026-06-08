@@ -503,6 +503,16 @@ Four new **read tools** (no Confirm): **`summarize_cycle_cost`**, **`summarize_f
 
 **Vitest:** `phase-57-closure.test.js` · **Go smoke:** `TestPhase57_DeviceAPIKeyIssueAuthRevoke`.
 
+### 6m. Guardian Pi diagnostics (Phase 65 — shipped)
+
+**Plan:** [`plans/phase_65_guardian_pi_diagnostics.plan.md`](plans/phase_65_guardian_pi_diagnostics.plan.md) · Architecture: [§7.0v](farm-guardian-architecture.md#70v-guardian-pi--hardware-diagnostics-phase-65--shipped).
+
+On **Sensors**, **Controls**, or **Pi + HAT setup**, Ask Guardian can call `summarize_device_health` — Pi heartbeat, config sync age, sensor GPIO/source with reading staleness, actuator relay channels, and GPIO pin sharing. Guardian no longer asks you to read back wiring from memory; it reads the platform record and asks you to verify the physical wire matches.
+
+**Try:** "Why is my temperature sensor stuck?" or "Is my Pi offline?" from `/sensors` or `/pi-setup`.
+
+**Vitest:** `phase-65-closure.test.js` · **Go smoke:** `TestPhase65_SummarizeDeviceHealthReadToolRegistered`.
+
 ### 6d. First field install with Guardian, offline (Phase 37)
 
 **Requires:** `AI_ENABLED=true`, demo or real farm selected, **Operate** optional for procedure-only turns (Confirm still needed for write proposals).

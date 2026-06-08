@@ -598,20 +598,21 @@ Plan: [`plans/phase_64_crop_knowledge_base.plan.md`](plans/phase_64_crop_knowled
 
 Plan: [`plans/phase_62_guardian_grow_advisor.plan.md`](plans/phase_62_guardian_grow_advisor.plan.md).
 
-### 7.0v Guardian Pi & hardware diagnostics (Phase 65 — planned)
+### 7.0v Guardian Pi & hardware diagnostics (Phase 65 — shipped)
 
-**Planned.** Today Guardian's field persona says it **cannot see wiring** — operators must read GPIO/channel labels back. Phase 50/51/57 store structured wiring per device; Phase 65 adds a read tool so Guardian can cross-reference platform records with live device status and reading freshness.
+**Shipped.** Guardian reads structured platform wiring (Phase 50/51/57) via `summarize_device_health` — Pi heartbeat, config sync age, sensor GPIO/source with reading staleness, actuator relay channels, and GPIO pin sharing flags.
 
 | Surface | Operator job | Implementation |
 |---------|--------------|----------------|
-| **Read tool** | "Why is temp stuck?" / "Pi offline?" | `summarize_device_health` — device heartbeat, config sync age, sensors (GPIO/source/last-reading), actuators (relay channel), GPIO conflicts |
-| **Intent** | Wiring / gpio / channel / relay troubleshooting | Fires on diagnostic questions; scopes to device or zone from `context_ref` |
-| **Grounding** | Stop asking operator to narrate pins | Update `fieldGuideGrounding` — platform wiring is queryable; physical wire may still differ |
-| **Procedures** | Hands-on steps when LLM is down | Phase 37 procedures remain; Phase 65 adds structured live data on top |
+| **Read tool** | "Why is temp stuck?" / "Pi offline?" | `summarize_device_health` in `readtools_device.go` |
+| **Intent** | Wiring / gpio / channel / relay / stuck sensor | Regex + auto-fire on `/pi-setup`, `/sensors`, `/actuators` routes |
+| **Grounding** | Platform wiring is queryable | `fieldGuideGrounding`, `field_assistant.go`, `DeviceHealthGroundingRule` |
+| **Context** | Sensors/actuators/Pi setup pages | `context_ref.go` route hints cite `summarize_device_health` |
+| **Procedures** | Hands-on steps when LLM is down | Phase 37 procedures remain; Phase 65 adds live read depth |
 
-**Relationship to Phase 37:** WS5 field diagnostics used snapshot + procedure refs with operator-stated wiring. Phase 65 **supersedes the blind spot** (Guardian can read platform wiring) but does not replace guided procedures or safety stops.
+**OC-65** via `phase-65-closure.test.js` · **Go smoke:** `TestPhase65_SummarizeDeviceHealthReadToolRegistered`.
 
-Plan: [`plans/phase_65_guardian_pi_diagnostics.plan.md`](plans/phase_65_guardian_pi_diagnostics.plan.md) · **OC-65** when `phase-65-closure.test.js` ships.
+Plan: [`plans/phase_65_guardian_pi_diagnostics.plan.md`](plans/phase_65_guardian_pi_diagnostics.plan.md).
 
 ### 7.0m Feeding & water plain language (Phase 47)
 

@@ -24,6 +24,7 @@ func PlatformContextBlock(cfg ai.Config, llmConfigured bool, toolIDs []string) s
 
 	cropRule := CropTargetsGroundingRule
 	growRule := GrowAdvisorPersonaRule
+	deviceRule := DeviceHealthGroundingRule
 
 	return strings.TrimSpace(fmt.Sprintf(`
 Platform context (how you run inside gr33n — state these facts plainly when asked):
@@ -52,8 +53,10 @@ Crop targets: %s
 
 Grow science: %s
 
+Device wiring: %s
+
 Tone: Speak like a calm farm steward — short paragraphs, practical metaphors are fine ("tend the snapshot," "the row won't change until you Confirm the request"). Obey the hard constraints above: no model names, no invented farm rows.
-`, mode, internet, toolsLine, readToolsLine, horizon, cropRule, growRule))
+`, mode, internet, toolsLine, readToolsLine, horizon, cropRule, growRule, deviceRule))
 }
 
 func platformModeLine(cfg ai.Config, llmConfigured bool) string {
