@@ -86,7 +86,7 @@ todos:
     status: completed
   - id: oc-53-closure
     content: "OC-53: Phase 53 WS6 — grow/stock/money closure, cross-links, Guardian starters, phase-53-closure.test.js"
-    status: pending
+    status: completed
   - id: oc-54-closure
     content: "OC-54: Phase 54 WS4 — zone connection pipeline, orphan link wiggles, phase-54-closure.test.js"
     status: pending
@@ -472,13 +472,26 @@ Feature detail: [`phase_52_guardian_ui_context.plan.md`](phase_52_guardian_ui_co
 | Sidebar wiggles + navRelations | ✅ | WS3 — wiring, offline, config stale chains |
 | Starter cleanup | ✅ | WS4 — no redundant "I'm on…" prefixes |
 
-## Phases 53–59 — Farmer closure arc (planned)
+## Phase 53 — Grow + stock + money closure
 
-Hub: [`phase_53_59_roadmap.plan.md`](phase_53_59_roadmap.plan.md). Close **OC-53 … OC-59** when each phase WS docs/tests ship.
+Feature detail: [`phase_53_grow_stock_money_closure.plan.md`](phase_53_grow_stock_money_closure.plan.md). **OC-53** closed (WS6). **Phase 53 shipped.**
+
+| Area | Status | Notes |
+|------|--------|-------|
+| Grow strip + wizards | ✅ | WS1 — `ZoneCurrentGrowStrip`, start/harvest/post-harvest, `growHub.js` |
+| Supplies restock actions | ✅ | WS2 — `+ Add qty`, new batch, unit cost, refill task |
+| Money tagging + spend chip | ✅ | WS3 — cycle tag, autolog split, `ZoneGrowCostPeek`, energy nudge |
+| Cross-links + checklist | ✅ | WS4 — `v-nav-hint`, `firstRunChecklist` optional rows, operator guide |
+| Guardian starters | ✅ | WS5 — grow strip, supplies restock-first, money by category, harvest yield |
+| OC-53 docs/tests | ✅ | WS6 — operator-tour §7c + §6i, architecture §7.0q, `phase-53-closure.test.js` |
+
+## Phases 54–59 — Farmer closure arc (planned)
+
+Hub: [`phase_53_59_roadmap.plan.md`](phase_53_59_roadmap.plan.md). Close **OC-54 … OC-59** when each phase WS docs/tests ship.
 
 | Phase | OC | Plan | Close when |
 |-------|-----|------|------------|
-| 53 Grow + stock + money | OC-53 | [phase_53](phase_53_grow_stock_money_closure.plan.md) | WS6 closure test + operator-tour |
+| ~~53 Grow + stock + money~~ | ~~OC-53~~ | [phase_53](phase_53_grow_stock_money_closure.plan.md) | ✅ Shipped |
 | 54 Zone connection nav | OC-54 | [phase_54](phase_54_zone_connection_nav.plan.md) | Pipeline + link audit test |
 | 55 Guardian ops | OC-55 | [phase_55](phase_55_guardian_ops_grow_money.plan.md) | Read tools + `phase_55_guardian_pr_spec.md` |
 | 56 Grow schema | OC-56 | [phase_56](phase_56_grow_schema_harvest_analytics.plan.md) | Migration smokes |

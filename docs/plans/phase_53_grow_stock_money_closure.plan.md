@@ -23,7 +23,7 @@ todos:
     status: completed
   - id: ws6-docs-tests
     content: "WS6: operator-tour, architecture §7.0q, phase-53-closure.test.js, OC-53, roadmap row"
-    status: pending
+    status: completed
 isProject: false
 ---
 
@@ -31,7 +31,7 @@ isProject: false
 
 ## Status
 
-**Planned.** No new DB migrations for v1. Full arc: [phase_53_59_roadmap.plan.md](phase_53_59_roadmap.plan.md).
+**Shipped (WS1–WS6).** No new DB migrations for v1. Full arc: [phase_53_59_roadmap.plan.md](phase_53_59_roadmap.plan.md). **OC-53** closed.
 
 **Predecessors:** Phase 43 (hubs) ✅ · Phase 28 (cycle analytics) ✅ · Phase 47 (Water) ✅ · Phase 52 (wiggles) ✅
 
@@ -125,11 +125,11 @@ No new Confirm tools — starters send chat; matchers optional in Phase 55.
 
 ## Definition of done
 
-- [ ] Start grow → restock → tag receipt → see cycle cost without Advanced default path
-- [ ] Post-harvest lands on summary + compare link
-- [ ] All new links wiggle sidebar destinations
-- [ ] Guardian starters on three hub surfaces
-- [ ] No migrations in v1
+- [x] Start grow → restock → tag receipt → see cycle cost without Advanced default path
+- [x] Post-harvest lands on summary + compare link
+- [x] All new links wiggle sidebar destinations
+- [x] Guardian starters on three hub surfaces
+- [x] No migrations in v1
 
 ---
 

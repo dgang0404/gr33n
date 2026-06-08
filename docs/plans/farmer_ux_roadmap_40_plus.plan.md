@@ -228,7 +228,7 @@ Hardware, Pi platform sync, and farmer job completion — each phase is shippabl
 | **50** ✅ | Hardware wiring visibility | Wiring badges, pi-config generator | [phase_50](phase_50_hardware_wiring_visibility.plan.md) |
 | **51** ✅ | Pi config platform sync | Live reload, staleness, import script | [phase_51](phase_51_pi_config_sync.plan.md) |
 | **52** ✅ | Guardian UI context | Nav history, Pi setup guide, wiggles | [phase_52](phase_52_guardian_ui_context.plan.md) |
-| **53** | Grow + stock + money | Start grow, restock, tag receipt — UI only | [phase_53](phase_53_grow_stock_money_closure.plan.md) |
+| **53** ✅ | Grow + stock + money | Start grow, restock, tag receipt — UI only | [phase_53](phase_53_grow_stock_money_closure.plan.md) |
 | **54** | Zone connection nav | Interactive pipeline + orphan link wiggles | [phase_54](phase_54_zone_connection_nav.plan.md) |
 | **55** | Guardian ops intelligence | Read tools + starters on ops hubs | [phase_55](phase_55_guardian_ops_grow_money.plan.md) |
 | **56** | Grow schema + analytics | `plant_id` FK, compare, net harvest | [phase_56](phase_56_grow_schema_harvest_analytics.plan.md) |
@@ -236,7 +236,7 @@ Hardware, Pi platform sync, and farmer job completion — each phase is shippabl
 | **58** | Task consumptions + runtime | Drawdown on task complete, templates | [phase_58](phase_58_task_consumptions_runtime.plan.md) |
 | **59** | Enterprise tier boundary | Doc-only — no accidental ERP | [phase_59](phase_59_enterprise_tier_boundary.plan.md) |
 
-**Recommended order:** 53 (WS2→3→1) → 54 ∥ 55 → 56 → 57 when multi-Pi · 58 after 53 WS2 · 59 anytime.
+**Recommended order:** ~~53~~ ✅ → **54** ∥ **55** → 56 → 57 when multi-Pi · 58 after 53 WS2 · 59 anytime.
 
 **Guardian intelligence arc (60–63):** 60 after 55 · 61 after 60 · 62 after 56 · 63 when sessions mature.
 

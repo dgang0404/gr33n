@@ -466,6 +466,35 @@ Operator (UI)                    Platform (API)                 Pi (gr33n_client
 
 **OC-51** via `phase-51-closure.test.js`. Plan: [`plans/phase_51_pi_config_sync.plan.md`](plans/phase_51_pi_config_sync.plan.md).
 
+### 7.0q Grow + stock + money closure (Phase 53 — shipped)
+
+**Shipped (WS1–WS6).** No new migrations — UI wiring on existing crop cycle, NF batch, and cost APIs. Plan: [`plans/phase_53_grow_stock_money_closure.plan.md`](plans/phase_53_grow_stock_money_closure.plan.md).
+
+| Surface | Operator job | Implementation |
+|---------|--------------|----------------|
+| **Zone Overview** | What's growing; start / harvest | `ZoneCurrentGrowStrip.vue`, `StartGrowWizard.vue`, `HarvestWeighIn.vue`, `PostHarvestScreen.vue` |
+| **Plants** (`/plants`) | Strain catalog → start grow | `EmptyStateHint`, wizard with strain pre-fill |
+| **Supplies** | Restock on hand | `+ Add qty`, quick batch, unit cost, refill task — `suppliesHub.js` |
+| **Money** | Tag receipt to grow; month spend | `crop_cycle_id` on `createCost`, autolog vs manual rows, Dashboard spend chip |
+| **Zone Water** | Grow → feed → cost chain | `ZoneGrowConnectionLine.vue`, `ZoneGrowCostPeek.vue` |
+
+**Cross-links (WS4):** `v-nav-hint` on harvest, restock, receipt, compare CTAs; `navRelations` links **Plants** ↔ **Zones** ↔ **Comfort targets**; optional getting-started rows in `firstRunChecklist.js`.
+
+**Guardian (WS5 — starters only; read-tool depth in Phase 55):**
+
+| Surface | Starter | Backend today |
+|---------|---------|---------------|
+| Zone grow strip | Room cost so far; compare to last cycle | Chat + `crop_cycle_id` context; compare route hint |
+| Supplies hub | What should I restock first? | **`summarize_farm_low_stock`** (existing read tool) |
+| Money hub | Spending by category | Grounded answer from cost list; dedicated read tool in [Phase 55](plans/phase_55_guardian_ops_grow_money.plan.md) |
+| Harvest weigh-in | Last run yield | Prior cycle summary via chat context |
+
+**Deferred:** `plant_id` FK → [Phase 56](plans/phase_56_grow_schema_harvest_analytics.plan.md); task consumptions UI → [Phase 58](plans/phase_58_task_consumptions_runtime.plan.md); NL stock/receipt writes → [Phase 46](plans/phase_46_guardian_llm_tool_proposals.plan.md).
+
+Operator: [operator-tour §7c](operator-tour.md#7c-grow--stock--money-closure-phase-53) · Guardian: [§6i](operator-tour.md#6i-guardian-on-grow-closure-phase-53--shipped).
+
+**OC-53** via `phase-53-closure.test.js`.
+
 ### 7.0m Feeding & water plain language (Phase 47)
 
 **Shipped.** Plan: [`plans/phase_47_feeding_water_plain_language.plan.md`](plans/phase_47_feeding_water_plain_language.plan.md) · Vocabulary: [`farmer-vocabulary.md`](farmer-vocabulary.md).

@@ -8,7 +8,7 @@ overview: >
 todos:
   - id: phase-53
     content: "Phase 53 — Grow + stock + money closure (UI wiring)"
-    status: pending
+    status: completed
   - id: phase-54
     content: "Phase 54 — Zone connection nav & wiggle completion"
     status: pending
@@ -36,8 +36,8 @@ isProject: false
 
 | Status | Phases |
 |--------|--------|
-| **Shipped** | 40–52 (farmer UX arc, Pi sync, Guardian UI context, Pi setup guide) |
-| **Planned next** | **53** → 54 → 55 (can overlap 53 WS2/3 with 54) |
+| **Shipped** | 40–53 (farmer UX arc through grow/stock/money closure) |
+| **Planned next** | **54** → 55 (connection nav + Guardian read-tool depth) |
 | **Schema / security** | **56**, **57** after 53 farmer paths proven |
 | **Runtime polish** | **58** parallel with 55–56 |
 | **Explicit deferrals** | **59** doc-only — no accidental ERP creep |
@@ -50,7 +50,7 @@ isProject: false
 
 | Phase | One job | New backend? | Plan |
 |-------|---------|--------------|------|
-| **53** | Start grow, restock, tag receipt — without Advanced editors | No | [phase_53](phase_53_grow_stock_money_closure.plan.md) |
+| **53** ✅ | Start grow, restock, tag receipt — without Advanced editors | No | [phase_53](phase_53_grow_stock_money_closure.plan.md) |
 | **54** | See how the whole system connects — wiggle every link | No | [phase_54](phase_54_zone_connection_nav.plan.md) |
 | **55** | Guardian knows grow, stock, money — starters + read tools | Read tools only | [phase_55](phase_55_guardian_ops_grow_money.plan.md) |
 | **56** | Plants ↔ cycles linked; post-harvest compare in one flow | Small migration | [phase_56](phase_56_grow_schema_harvest_analytics.plan.md) |
@@ -129,7 +129,7 @@ flowchart TB
 | Phase | Guardian deliverable |
 |-------|---------------------|
 | 52 ✅ | Route + nav history + Pi setup framing |
-| 53 | Starters on grow strip, Supplies, Money |
+| 53 ✅ | Starters on grow strip, Supplies, Money |
 | 54 | Context for connection pipeline segments |
 | 55 | Read tools: cycle cost, spending summary, restock priority; ops persona copy |
 | 60 | Morning walkthrough — one read tool, all farm findings ranked |
@@ -146,7 +146,7 @@ flowchart TB
 | OC | Phase | Close when |
 |----|-------|------------|
 | OC-52 | 52 Guardian UI context | ✅ Shipped |
-| OC-53 | 53 grow/stock/money | WS6 docs/tests |
+| OC-53 | 53 grow/stock/money | ✅ Shipped |
 | OC-54 | 54 connection nav | WS4 docs/tests |
 | OC-55 | 55 Guardian ops | WS5 docs/tests + guardian pr spec |
 | OC-56 | 56 grow schema | Migration + smokes |

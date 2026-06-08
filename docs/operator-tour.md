@@ -426,6 +426,24 @@ Most cards still come from **pattern matchers** after you send a message. When m
 
 **Vitest bundle:** `phase-46-ws1-policy.test.js` … `phase-46-ws5-observability.test.js`, `phase-46-closure.test.js`.
 
+### 6i. Guardian on grow closure (Phase 53 — shipped)
+
+**Plan:** [`plans/phase_53_grow_stock_money_closure.plan.md`](plans/phase_53_grow_stock_money_closure.plan.md) · Architecture: [§7.0q](farm-guardian-architecture.md#70q-grow--stock--money-closure-phase-53--shipped).
+
+**Starters (no new Confirm tools):**
+
+| Surface | Chip | Read path today |
+|---------|------|-----------------|
+| Zone grow strip | What did this room cost so far? | Chat + cycle `context_ref`; cost summary API cited in copy |
+| Zone grow strip | Compare to last time | Compare route hint when prior harvested cycle exists |
+| Supplies hub | What should I restock first? | **`summarize_farm_low_stock`** |
+| Money hub | Spending by category | Month costs from farm data; category read tool in [Phase 55](plans/phase_55_guardian_ops_grow_money.plan.md) |
+| Harvest weigh-in | Last run yield | Prior cycle in same zone |
+
+**Prefer the UI for writes:** start grow, harvest weigh-in, **+ Add qty**, and **Save receipt** — same rule as [§6f](#6f-guardian-on-supplies--money-phase-43--shipped).
+
+**Vitest:** `phase-53-ws5-guardian.test.js`, `phase-53-closure.test.js`.
+
 ### 6d. First field install with Guardian, offline (Phase 37)
 
 **Requires:** `AI_ENABLED=true`, demo or real farm selected, **Operate** optional for procedure-only turns (Confirm still needed for write proposals).
@@ -518,7 +536,9 @@ Architecture: [`farm-guardian-architecture.md` §7.0i](farm-guardian-architectur
 
 **Guardian starters (WS5):** Zone grow strip — cost so far + compare to last run; Supplies — **What should I restock first?** (`summarize_farm_low_stock`); Money — spending by category; Harvest weigh-in — last run yield.
 
-**Vitest:** `phase-53-ws1-grow.test.js`, `phase-53-ws2-supplies.test.js`, `phase-53-ws3-money.test.js`, `phase-53-ws4-crosslinks.test.js`, `phase-53-ws5-guardian.test.js`.
+**Vitest bundle:** `phase-53-closure.test.js` (OC-53) · workstreams: `phase-53-ws1-grow.test.js` … `phase-53-ws5-guardian.test.js`.
+
+Architecture: [`farm-guardian-architecture.md` §7.0q](farm-guardian-architecture.md#70q-grow--stock--money-closure-phase-53--shipped).
 
 ---
 
