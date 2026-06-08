@@ -546,7 +546,7 @@ Hub: [`phase_53_59_roadmap.plan.md`](phase_53_59_roadmap.plan.md). Close **OC-58
 | ~~54 Zone connection nav~~ | ~~OC-54~~ | [phase_54](phase_54_zone_connection_nav.plan.md) | ✅ Shipped |
 | ~~55 Guardian ops~~ | ~~OC-55~~ | [phase_55](phase_55_guardian_ops_grow_money.plan.md) | ✅ Shipped |
 | ~~56 Grow schema~~ | ~~OC-56~~ | [phase_56](phase_56_grow_schema_harvest_analytics.plan.md) | ✅ Shipped |
-| 57 Device API keys | OC-57 | [phase_57](phase_57_pi_device_api_keys.plan.md) | Security smokes + pi guide |
+| ~~57 Device API keys~~ | ~~OC-57~~ | [phase_57](phase_57_pi_device_api_keys.plan.md) | ✅ Shipped |
 | 58 Task consumptions | OC-58 | [phase_58](phase_58_task_consumptions_runtime.plan.md) | Consumption UI test |
 | 59 Enterprise boundary | OC-59 | [phase_59](phase_59_enterprise_tier_boundary.plan.md) | `enterprise-tier-boundary.md` |
 | 60 Morning walkthrough | OC-60 | [phase_60](phase_60_guardian_morning_walkthrough.plan.md) | `walk_farm` tool + closure test |
@@ -562,7 +562,7 @@ Hub: [`phase_53_59_roadmap.plan.md`](phase_53_59_roadmap.plan.md). Close **OC-58
 
 ---
 
-**Master roadmap:** [`farmer_ux_roadmap_40_plus.plan.md`](farmer_ux_roadmap_40_plus.plan.md) · [`phase_53_59_roadmap.plan.md`](phase_53_59_roadmap.plan.md). Closure rows **OC-42 … OC-59** track each phase WS8/WS7 — not pre-40 work. Vocabulary: [`farmer-vocabulary.md`](../farmer-vocabulary.md). Guardian specs: [42](phase_42_guardian_pr_spec.md) · [43](phase_43_guardian_pr_spec.md) · [44](phase_44_guardian_pr_spec.md) · [45](phase_45_guardian_pr_spec.md) · [46](phase_46_guardian_llm_tool_proposals.plan.md) · [55](phase_55_guardian_ops_grow_money.plan.md).
+**Master roadmap:** [`farmer_ux_roadmap_40_plus.plan.md`](farmer_ux_roadmap_40_plus.plan.md) · [`phase_53_59_roadmap.plan.md`](phase_53_59_roadmap.plan.md). Closure rows **OC-42 … OC-67** track each phase WS8/WS7 — not pre-40 work. Vocabulary: [`farmer-vocabulary.md`](../farmer-vocabulary.md). Guardian specs: [42](phase_42_guardian_pr_spec.md) · [43](phase_43_guardian_pr_spec.md) · [44](phase_44_guardian_pr_spec.md) · [45](phase_45_guardian_pr_spec.md) · [46](phase_46_guardian_llm_tool_proposals.plan.md) · [55](phase_55_guardian_ops_grow_money.plan.md).
 
 ---
 

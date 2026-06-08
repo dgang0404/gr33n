@@ -162,6 +162,7 @@ Fall back to all farm devices if ambiguous.
 - **Read only** — Guardian reports what the platform says the wiring is. It does not auto-fix wiring or propose changes to GPIO pins (those go through the edit panel on Sensors / Controls).
 - **Platform wiring ≠ physical wiring** — the platform stores operator-entered data. Guardian should always caveat: "this is what your platform wiring says — verify the physical wire matches."
 - **No mains AC diagnosis** — the safety stop rule stays. Guardian will not walk through line-voltage troubleshooting regardless of what the wiring tool shows.
+- **Phase 37 relationship** — [Phase 37 WS5](phase_37_guardian_offline_field_assistant.plan.md) field diagnostics used snapshot + procedure refs while asking the operator to confirm GPIO/channel. Phase 65 **supersedes that blind spot** (structured platform wiring + staleness). Guided procedures (`wire-pi-relay-light`, `diagnose-actuator-wont-fire`) and safety gating stay; this phase adds live read depth on top.
 
 ---
 

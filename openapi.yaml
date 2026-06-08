@@ -989,6 +989,30 @@ paths:
       responses:
         "204": { description: Deleted }
 
+  /sensors/{id}/wiring:
+    patch:
+      tags: [sensors]
+      summary: Update sensor hardware wiring (Phase 50)
+      description: >
+        Merges validated wiring into `sensors.config.wiring` (GPIO, I2C, serial).
+        Pass `wiring: null` to clear. Rejects duplicate pin/channel per edge device.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/HardwareWiringPatch" }
+      responses:
+        "200":
+          description: Updated sensor (includes top-level `wiring` when set)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Sensor" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
   /sensors/{id}/readings/stats:
     get:
       tags: [sensors]
@@ -1309,6 +1333,56 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/ActuatorWithCommands" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /actuators/{id}/wiring:
+    patch:
+      tags: [actuators]
+      summary: Update actuator GPIO wiring (Phase 50)
+      description: >
+        Merges validated wiring into `actuators.config.wiring` (direct GPIO relay).
+        Pass `wiring: null` to clear. For Sequent relay HAT channels, use
+        `PATCH /actuators/{id}/assign` (`hardware_identifier`) instead.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/HardwareWiringPatch" }
+      responses:
+        "200":
+          description: Updated actuator
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ActuatorWithCommands" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /actuators/{id}/assign:
+    patch:
+      tags: [actuators]
+      summary: Update actuator device and relay channel assignment
+      description: >
+        Sets `device_id` and `hardware_identifier` (Sequent HAT relay channel id).
+        Omitted fields keep their stored values. Pass `hardware_identifier: ""` to
+        clear the channel. `clear_device: true` clears `device_id`.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ActuatorAssignmentPatch" }
+      responses:
+        "200":
+          description: Updated actuator
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ActuatorWithCommands" }
+        "400": { $ref: "#/components/responses/BadRequest" }
         "404": { $ref: "#/components/responses/NotFound" }
 
   /actuators/{id}/command:
@@ -6552,6 +6626,42 @@ components:
               description: >
                 Typed command vocabulary for this actuator_type (e.g. deploy,
                 retract, stop for shade_screen; on/off for exhaust_fan).
+
+    HardwareWiring:
+      type: object
+      description: Structured Pi wiring stored at config.wiring (Phase 50).
+      properties:
+        source:
+          type: string
+          description: Driver id (e.g. dht22, ads1115, gpio_relay)
+        gpio_pin: { type: integer, nullable: true, description: BCM GPIO pin }
+        i2c_channel: { type: integer, nullable: true }
+        i2c_address: { type: string }
+        serial_port: { type: string }
+        device_id: { type: integer, nullable: true }
+        notes: { type: string }
+
+    HardwareWiringPatch:
+      type: object
+      properties:
+        wiring:
+          allOf:
+            - { $ref: "#/components/schemas/HardwareWiring" }
+          nullable: true
+          description: Pass null to clear wiring.
+
+    ActuatorAssignmentPatch:
+      type: object
+      description: Relay HAT channel + edge device assignment (post–Phase 50).
+      properties:
+        device_id: { type: integer, nullable: true }
+        hardware_identifier:
+          type: string
+          nullable: true
+          description: Sequent relay HAT channel id (e.g. stack 0 relay 3)
+        clear_device:
+          type: boolean
+          description: When true, clears device_id regardless of device_id in body
 
     ActuatorCommandEnqueue:
       type: object

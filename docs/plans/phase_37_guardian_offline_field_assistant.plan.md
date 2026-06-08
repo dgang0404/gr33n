@@ -24,7 +24,7 @@ todos:
     content: "WS4: Safety gating — classify steps (safe / caution / qualified-person-required); hard stop + escalate language for mains AC and pressurized water; never instruct unsafe work"
     status: done
   - id: ws5-diagnostics
-    content: "WS5: Field diagnostics — guided 'sensor reads nothing / actuator won't fire' wiring + config troubleshooting using snapshot + procedure refs (no internet)"
+    content: "WS5: Field diagnostics — guided 'sensor reads nothing / actuator won't fire' wiring + config troubleshooting using snapshot + procedure refs (no internet). Phase 65 adds summarize_device_health so Guardian reads platform GPIO/channel without operator narration."
     status: done
   - id: ws6-printable-cards
     content: "WS6: Printable/offline cards — export a procedure to a printable checklist (PDF/markdown) so a worker can follow it with the screen off or no device at the rig"

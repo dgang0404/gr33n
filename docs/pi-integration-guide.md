@@ -150,11 +150,11 @@ The API side must have `PI_API_KEY` set (see `cmd/api/main.go` / deployment docs
 |------|--------|------|
 | 1 | **Settings → Connect edge device** (`/farms/{id}/devices/new`) | Register the Pi (`device_uid`, zone). |
 | 2 | **Sensors** list + **sensor detail → Hardware wiring** | Set driver (`dht22`, `ads1115`, …), BCM GPIO, I2C channel, or serial port; assign the **edge device**. |
-| 3 | **Controls** cards | Wiring badges show pin summary; edit wiring via sensor detail or API (`PATCH /actuators/{id}/wiring`). |
+| 3 | **Controls** cards | Wiring badges show pin or relay channel; expand **Edit wiring** on an actuator card (HAT channel via `hardware_identifier`, or direct GPIO via `config.wiring`). |
 | 4 | Device wizard **Pi config** step | **Download bootstrap or full YAML** — or skip file entirely with §2 platform sync. |
 | 5 | On the Pi | Copy minimal bootstrap (§2) or generated YAML; set `api.api_key`; restart `gr33n` systemd unit. |
 
-**Data model:** wiring lives in `sensors.config.wiring` and `actuators.config.wiring` (JSONB). API responses also expose a top-level `wiring` field. Validation rejects unknown drivers, duplicate pins per device (with an exception: multiple **DHT22** logical sensors may share one physical GPIO), and broken **derived** input references.
+**Data model:** sensor wiring lives in `sensors.config.wiring` (JSONB). Actuator **direct GPIO** relays use `actuators.config.wiring`; **Sequent relay HAT** channels use `actuators.hardware_identifier` plus `device_id`. API responses expose a top-level `wiring` field when set. Validation rejects unknown drivers, duplicate pins per device (with an exception: multiple **DHT22** logical sensors may share one physical GPIO), and broken **derived** input references.
 
 **Operator checks:**
 
@@ -168,7 +168,8 @@ The API side must have `PI_API_KEY` set (see `cmd/api/main.go` / deployment docs
 | Method | Path | Purpose |
 |--------|------|---------|
 | `PATCH` | `/sensors/{id}/wiring` | Merge validated wiring into `sensors.config` |
-| `PATCH` | `/actuators/{id}/wiring` | Merge validated wiring into `actuators.config` |
+| `PATCH` | `/actuators/{id}/wiring` | Merge validated GPIO wiring into `actuators.config` (direct relay) |
+| `PATCH` | `/actuators/{id}/assign` | Set `device_id` + `hardware_identifier` (relay HAT channel) |
 | `GET` | `/devices/{id}/pi-config` | Generate full `config.yaml` for that edge device |
 
 Plan: [`plans/phase_50_hardware_wiring_visibility.plan.md`](plans/phase_50_hardware_wiring_visibility.plan.md). Runtime pull-from-API: [§2](#2-platform-sync-phase-51--recommended).

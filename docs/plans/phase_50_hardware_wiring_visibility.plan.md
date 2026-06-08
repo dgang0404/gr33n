@@ -118,7 +118,7 @@ Store wiring under a reserved key in the existing `config JSONB` on `sensors` an
 - **GET** sensor/actuator responses include a typed `wiring` object (null when unset).
 - **PATCH** `wiring` on sensor/actuator (auth + farm scope as existing handlers): validates against the schema, normalizes pin/channel types, and **rejects conflicts** (same `device_id` + same `gpio_pin`/`i2c_channel`).
 - Reuse existing handlers ([`internal/handler/sensor/handler.go`](../internal/handler/sensor/handler.go), [`internal/handler/actuator/handler.go`](../internal/handler/actuator/handler.go)); extend OpenAPI.
-- No new endpoints if PATCH on the existing resource suffices.
+- **Post–OC-50 addendum (shipped):** Sequent relay HAT actuators store channel in `hardware_identifier`, not `config.wiring`. Added `PATCH /actuators/{id}/assign` and **Controls → Edit wiring** (`ActuatorWiringPanel.vue`) for HAT channel vs direct GPIO modes.
 
 ---
 
@@ -127,7 +127,7 @@ Store wiring under a reserved key in the existing `config JSONB` on `sensors` an
 | Surface | What it shows |
 |---------|---------------|
 | Sensors detail ([`Actuators.vue`](../ui/src/views/Actuators.vue) / sensor detail) | "Wiring: BCM GPIO 4 · DHT22" badge; edit affordance |
-| Controls cards ([`Actuators.vue`](../ui/src/views/Actuators.vue), `ActuatorCard.vue`) | Pin badge per actuator; "Not wired yet" empty state |
+| Controls cards ([`Actuators.vue`](../ui/src/views/Actuators.vue), `ActuatorCard.vue`) | Pin or HAT channel badge; **Edit wiring** panel (`ActuatorWiringPanel.vue`) |
 | Device wizard ([`DeviceSetupWizard.vue`](../ui/src/views/DeviceSetupWizard.vue)) | New step: assign pins/channels to the device's sensors/actuators |
 
 - Inline editor PATCHes wiring; shows conflict errors from WS2.

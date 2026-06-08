@@ -431,13 +431,13 @@ Plan: [`plans/phase_48_dev_seed_and_small_farm_profiles.plan.md`](plans/phase_48
 
 ### 7.0o Hardware wiring visibility (Phase 50 — shipped)
 
-**Shipped.** Structured Pi wiring metadata in `sensors.config.wiring` / `actuators.config.wiring`; read + PATCH API; UI badges on **Sensors** and **Controls**; **Hardware wiring** editor on sensor detail; **`GET /devices/{id}/pi-config`** generator in the edge device wizard.
+**Shipped.** Structured Pi wiring metadata in `sensors.config.wiring` / `actuators.config.wiring`; read + PATCH API; UI badges on **Sensors** and **Controls**; **Hardware wiring** editor on sensor detail; relay HAT channel assignment via `hardware_identifier`; **`GET /devices/{id}/pi-config`** generator in the edge device wizard.
 
 | Layer | Artifact |
 |-------|----------|
 | Model + validation | `internal/hardware/wiring.go`, `conflict.go`, `piconfig.go` |
-| API | `PATCH /sensors\|actuators/{id}/wiring`, `GET /devices/{id}/pi-config` |
-| UI | `HardwareWiringBadge.vue`, `HardwareWiringPanel.vue`, `hardwareWiring.js` |
+| API | `PATCH /sensors\|actuators/{id}/wiring`, `PATCH /actuators/{id}/assign`, `GET /devices/{id}/pi-config` |
+| UI | `HardwareWiringBadge.vue`, `HardwareWiringPanel.vue`, `ActuatorWiringPanel.vue`, `hardwareWiring.js` |
 | Hygiene | `db-sanity-report` GPIO/I2C conflict exit; demo backfill migration |
 | Docs | [`pi-integration-guide.md`](pi-integration-guide.md) §2a DB-first path |
 
@@ -564,6 +564,21 @@ Operator: [operator-tour §7d](operator-tour.md#7d-zone-connection-pipeline-phas
 **Legacy:** shared `PI_API_KEY` / `X-API-Key` still accepted during migration (logged deprecation on Pi).
 
 **OC-57** via `phase-57-closure.test.js` · **Go smoke:** `TestPhase57_DeviceAPIKeyIssueAuthRevoke`.
+
+### 7.0v Guardian Pi & hardware diagnostics (Phase 65 — planned)
+
+**Planned.** Today Guardian's field persona says it **cannot see wiring** — operators must read GPIO/channel labels back. Phase 50/51/57 store structured wiring per device; Phase 65 adds a read tool so Guardian can cross-reference platform records with live device status and reading freshness.
+
+| Surface | Operator job | Implementation |
+|---------|--------------|----------------|
+| **Read tool** | "Why is temp stuck?" / "Pi offline?" | `summarize_device_health` — device heartbeat, config sync age, sensors (GPIO/source/last-reading), actuators (relay channel), GPIO conflicts |
+| **Intent** | Wiring / gpio / channel / relay troubleshooting | Fires on diagnostic questions; scopes to device or zone from `context_ref` |
+| **Grounding** | Stop asking operator to narrate pins | Update `fieldGuideGrounding` — platform wiring is queryable; physical wire may still differ |
+| **Procedures** | Hands-on steps when LLM is down | Phase 37 procedures remain; Phase 65 adds structured live data on top |
+
+**Relationship to Phase 37:** WS5 field diagnostics used snapshot + procedure refs with operator-stated wiring. Phase 65 **supersedes the blind spot** (Guardian can read platform wiring) but does not replace guided procedures or safety stops.
+
+Plan: [`plans/phase_65_guardian_pi_diagnostics.plan.md`](plans/phase_65_guardian_pi_diagnostics.plan.md) · **OC-65** when `phase-65-closure.test.js` ships.
 
 ### 7.0m Feeding & water plain language (Phase 47)
 
