@@ -249,6 +249,8 @@ Hardware, Pi platform sync, and farmer job completion — each phase is shippabl
 
 **Guardian knowledge & sensing arc (64–67)** — how Guardian *knows* things (grounding, not guessing). **64 must precede 62.**
 
+> 🔒 **Capstone ordering rule (permanent):** Phase **66 (Weather & site)** and Phase **67 (Hands-free field assistant)** must always remain the **final two phases**. Never append a new phase after 67; new phases insert at or below 65 (use a letter suffix like `65a` if no integer slot is free). Full rule in [`phase_53_59_roadmap.plan.md`](phase_53_59_roadmap.plan.md#guardian-knowledge--sensing-arc-6467).
+
 | Phase | Name | One job | Plan |
 |-------|------|---------|------|
 | **64** | Crop knowledge base | Real EC/pH/VPD/DLI per crop per stage — Guardian cites, never guesses | [phase_64](phase_64_crop_knowledge_base.plan.md) |

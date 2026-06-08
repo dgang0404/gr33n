@@ -58,6 +58,10 @@ isProject: false
 | **58** | Task drawdown + consumptions visible | No (API exists) | [phase_58](phase_58_task_consumptions_runtime.plan.md) |
 | **59** | Say no to POs/METRC until we mean it | Doc only | [phase_59](phase_59_enterprise_tier_boundary.plan.md) |
 
+**Shipped post-57 extensions (folded into existing phases — no new phase number):**
+- **Actuator wiring editor** + `PATCH /actuators/{id}/assign` → [Phase 50](phase_50_hardware_wiring_visibility.plan.md) (Controls → Edit wiring; HAT channel vs direct GPIO)
+- **`/pi-setup` live farm channels** view → [Phase 52](phase_52_guardian_ui_context.plan.md) (actual wired actuators/sensors, linked to detail pages)
+
 ### Guardian intelligence arc (60–63)
 
 | Phase | One job | New backend? | Plan |
@@ -68,6 +72,15 @@ isProject: false
 | **63** | Session memory — Guardian remembers what you asked, you control it | Session summary job | [phase_63](phase_63_guardian_session_memory.plan.md) |
 
 ### Guardian knowledge & sensing arc (64–67)
+
+> ## 🔒 Capstone ordering rule (permanent)
+>
+> **Phase 66 (Weather & site) and Phase 67 (Hands-free field assistant) are the capstone phases and must always remain the final two phases — no matter how many phases are added.**
+>
+> - **Never append a new phase after 67.** Field assistant (voice + photo) is the last thing we ship — it sits on top of everything else.
+> - New phases insert **at or below 65**. Slots 58–65 are taken; if a new phase is needed and no integer slot is free, use a letter suffix (e.g. `58a`, `65a`) so **66 and 67 never move**.
+> - If a future reorg ever does renumber the capstones, they still go **last** and keep the two highest numbers in the sequence.
+> - Rationale: weather/site grounds the grow advisor's light math, and the field assistant is the "everything comes together in your hand" capstone — both depend on the knowledge layers shipping first.
 
 These answer *"how does Guardian actually KNOW things?"* — grounding, not guessing.
 

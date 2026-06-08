@@ -35,6 +35,8 @@ isProject: false
 
 **Shipped.** WS1–WS6 complete on `main`. Wiring metadata + read/edit UI + config generation. Live Pi pull-from-API shipped in **[Phase 51](phase_51_pi_config_sync.plan.md)** (OC-51).
 
+**Shipped extension (post-57):** an **actuator wiring editor** on the Controls page (`ActuatorWiringPanel.vue`) closes the original WS3 gap where only *sensors* had an inline editor. It toggles between **Sequent relay HAT** mode (channel via `hardware_identifier`, new `PATCH /actuators/{id}/assign`) and **direct GPIO relay** mode (`config.wiring` via `PATCH /actuators/{id}/wiring`). See [WS2 addendum](#ws2--api-read--edit). Paired with the [Phase 52 live-wiring `/pi-setup` view](phase_52_guardian_ui_context.plan.md#ws2-shipped-extension--live-farm-channels-post-57).
+
 **Roadmap:** [farmer_ux_roadmap_40_plus.plan.md](farmer_ux_roadmap_40_plus.plan.md) (edge/Pi track).
 
 **Closure:** **OC-50** in [phase_35_37_operational_closure.plan.md](phase_35_37_operational_closure.plan.md).

@@ -450,6 +450,7 @@ Feature detail: [`phase_50_hardware_wiring_visibility.plan.md`](phase_50_hardwar
 | Pi config generator | ✅ | WS4 — `GET /devices/{id}/pi-config`; device wizard download |
 | Sanity report + inline conflicts | ✅ | WS5 — `db-sanity-report` exit on conflicts; wiring panel preview |
 | OC-50 docs/tests | ✅ | WS6 — `pi-integration-guide` §2a, architecture §7.0o, `phase-50-closure.test.js` |
+| **Extension (post-57)** | ✅ | Actuator wiring editor `ActuatorWiringPanel.vue` + `PATCH /actuators/{id}/assign` (HAT channel) / `/wiring` (GPIO). Docs only — closure test follow-up tracked below. |
 
 ## Phase 51 — Pi config platform sync
 
@@ -474,6 +475,7 @@ Feature detail: [`phase_52_guardian_ui_context.plan.md`](phase_52_guardian_ui_co
 | Pi setup guide `/pi-setup` | ✅ | WS2 — Sequent HAT visual guide |
 | Sidebar wiggles + navRelations | ✅ | WS3 — wiring, offline, config stale chains |
 | Starter cleanup | ✅ | WS4 — no redundant "I'm on…" prefixes |
+| **Extension (post-57)** | ✅ | `/pi-setup` live "Your farm channels" view — actual wired actuators/sensors link to detail pages (`data-test="pi-setup-live-wiring"`). Docs only — closure test follow-up tracked below. |
 
 ## Phase 53 — Grow + stock + money closure
 
@@ -559,6 +561,15 @@ Hub: [`phase_53_59_roadmap.plan.md`](phase_53_59_roadmap.plan.md). Close **OC-58
 | 67 Field assistant | OC-67 | [phase_67](phase_67_guardian_field_assistant.plan.md) | Voice + grounded photo diagnosis |
 
 **Note:** Phase 51 "Phase 52+ per-device API keys" → **[Phase 57](phase_57_pi_device_api_keys.plan.md)** (not Phase 52). **Phase 64 must precede Phase 62** (grow advisor reads real targets from the crop knowledge base).
+
+### Deferred closure tests (shipped post-57 extensions)
+
+These extensions shipped with code + docs; closure tests are a small follow-up (not blocking):
+
+| Extension | Home phase | Suggested test |
+|-----------|-----------|----------------|
+| Actuator wiring editor (`ActuatorWiringPanel.vue`, `/actuators/{id}/assign`) | [Phase 50](phase_50_hardware_wiring_visibility.plan.md) | Vitest: HAT-channel vs GPIO mode toggle, save calls correct endpoint; Go smoke on `PATCH /assign` |
+| `/pi-setup` live farm channels | [Phase 52](phase_52_guardian_ui_context.plan.md) | Vitest: wired actuator renders a link; empty state when no wiring |
 
 ---
 

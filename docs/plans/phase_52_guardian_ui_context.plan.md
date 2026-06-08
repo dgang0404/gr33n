@@ -63,6 +63,18 @@ isProject: false
 | `docs/pi-sequent-hat-setup.md` | Repo reference |
 | `emptyStateHint` `no_telemetry` | Links to `/pi-setup` |
 
+### WS2 shipped extension — live farm channels (post-57)
+
+**Shipped.** `/pi-setup` was upgraded from a static reference into a **live wiring view** using `useFarmStore`:
+
+| Surface | Behaviour |
+|---------|-----------|
+| **Reference channel-map cards** | A channel that is wired to an actuator shows the actuator name and becomes a `router-link` to its detail (with `v-nav-hint` sidebar wiggle). `slotActuator(channel)` resolves the overlay. |
+| **"Your farm channels"** section (`data-test="pi-setup-live-wiring"`) | Lists each wired device with its actuators (by relay channel) and sensors (by GPIO/source), each linking to the actuator/sensor page. Empty state links to Settings → Devices / Controls / Sensors. |
+| Computeds | `actuatorByChannel`, `sensorByDevicePin`, `wiredDevices`, `deviceActuators`, `deviceSensors`, `slotActuator` |
+
+This pairs with the **Phase 50 shipped extension** (Controls → **Edit wiring** actuator editor + `PATCH /actuators/{id}/assign`): the guide now reads the same `hardware_identifier` / `config.wiring` data operators edit on the Controls page.
+
 ---
 
 ## WS3 — Sidebar discoverability & wiggle chains

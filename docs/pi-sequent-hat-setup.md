@@ -119,6 +119,8 @@ In the dashboard (Controls → New actuator) set:
 - **Channel ID:** 0–63 matching the table above
 - **Zone:** the grow room this relay serves
 
+**Editing an existing relay's channel:** on **Controls**, expand **Edit wiring** on the actuator card. Pick **Sequent relay HAT (channel)** to set the `channel_id` and edge device, or **Direct GPIO relay (pin)** for a single relay wired straight to a BCM pin. The **Pi + HAT setup** page (`/pi-setup`) shows a live **Your farm channels** view of everything currently wired, with links to each actuator/sensor — use it to confirm the dashboard matches the physical stack.
+
 ---
 
 ## Typical 8-channel farm wiring plan
