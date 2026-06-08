@@ -102,6 +102,16 @@ func TestBuildContextRefBlock_NoHistoryOmitsTrail(t *testing.T) {
 	}
 }
 
+func TestZoneTabConnectionPipelineHint(t *testing.T) {
+	water := zoneTabConnectionPipelineHint("water")
+	if !strings.Contains(water, "sensor reading") || !strings.Contains(water, "feed timing") {
+		t.Fatalf("water pipeline hint: %q", water)
+	}
+	if zoneTabConnectionPipelineHint("") != "" {
+		t.Fatal("expected empty hint for unknown tab")
+	}
+}
+
 func TestContextRefPromptBlock_WrapsBody(t *testing.T) {
 	ref := ContextRef{Type: "zone", ID: 1, Name: "Flower Room"}
 	body := BuildContextRefBlock(t.Context(), nil, 1, ref)

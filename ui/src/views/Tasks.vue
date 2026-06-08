@@ -233,7 +233,13 @@
             <router-link v-nav-hint="'/alerts'" to="/alerts" class="text-blue-400 hover:text-blue-300">From alert #{{ task.source_alert_id }}</router-link>
           </p>
           <div class="flex items-center justify-between text-xs text-zinc-600 mb-2">
-            <router-link v-if="task.zone_id" :to="`/zones/${task.zone_id}`" class="hover:text-green-400 transition-colors">{{ zoneName(task.zone_id) }}</router-link>
+            <router-link
+              v-if="task.zone_id"
+              v-nav-hint="`/zones/${task.zone_id}`"
+              :to="`/zones/${task.zone_id}`"
+              class="hover:text-green-400 transition-colors"
+              data-test="task-zone-link"
+            >{{ zoneName(task.zone_id) }}</router-link>
             <span v-else></span>
             <span v-if="task.due_date">Due {{ task.due_date }}</span>
           </div>

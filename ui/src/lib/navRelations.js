@@ -14,12 +14,12 @@ export const NAV_RELATIONS = {
   '/lighting': ['/fertigation'],
   '/pi-setup': ['/sensors', '/actuators'],
   '/operator-guide': ['/pi-setup'],
-  '/alerts': ['/tasks'],
-  '/tasks': ['/alerts', '/schedules'],
+  '/alerts': ['/tasks', '/zones'],
+  '/tasks': ['/alerts', '/schedules', '/zones'],
   '/operations/supplies': ['/tasks', '/operations/feeding'],
   '/operations/feeding': ['/operations/supplies', '/feeding'],
-  '/operations/money': ['/operations/supplies', '/costs', '/plants'],
-  '/fertigation': ['/plants', '/zones'],
+  '/operations/money': ['/operations/supplies', '/plants'],
+  '/fertigation': ['/plants', '/zones', '/feeding', '/operations/feeding'],
 }
 
 /**

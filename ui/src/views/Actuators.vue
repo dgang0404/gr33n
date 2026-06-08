@@ -51,8 +51,10 @@
         <div class="flex items-center justify-between text-xs">
           <router-link
             v-if="actuator.zone_id"
+            v-nav-hint="`/zones/${actuator.zone_id}`"
             :to="`/zones/${actuator.zone_id}`"
             class="text-green-600 hover:text-green-400 truncate"
+            data-test="actuator-zone-link"
           >
             {{ zoneName(actuator.zone_id) }}
           </router-link>

@@ -45,8 +45,10 @@
 
     <div class="flex flex-wrap gap-3 text-xs">
       <router-link
-        :to="{ path: '/zones', query: zoneContextId ? undefined : {} }"
+        v-nav-hint="greenhouseTemplatesLink"
+        :to="greenhouseTemplatesLink"
         class="text-zinc-500 hover:text-green-400"
+        data-test="greenhouse-templates-zone-link"
       >
         Greenhouse templates on zone Climate tab →
       </router-link>
@@ -78,6 +80,12 @@ const farmContext = useFarmContextStore()
 const loading = ref(false)
 const rules = ref([])
 const ruleActions = ref({})
+
+const greenhouseTemplatesLink = computed(() =>
+  props.zoneContextId
+    ? { path: `/zones/${props.zoneContextId}`, query: { tab: 'air' } }
+    : '/zones',
+)
 
 const displayRules = computed(() => {
   if (!props.zoneContextId) return rules.value

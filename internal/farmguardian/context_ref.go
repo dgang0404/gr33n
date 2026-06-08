@@ -277,6 +277,20 @@ func renderCropCycleContext(ctx context.Context, q *db.Queries, farmID, cycleID 
 	return strings.TrimSpace(b.String())
 }
 
+// zoneTabConnectionPipelineHint documents the interactive sidebar pipeline on zone tabs (Phase 54).
+func zoneTabConnectionPipelineHint(tab string) string {
+	switch strings.TrimSpace(tab) {
+	case "water":
+		return "\nConnection chain (zone Water tab): sensor reading → target band → automation or feed timing → pump/light/fan → edge device."
+	case "climate", "air":
+		return "\nConnection chain (zone Climate tab): sensor reading → target band → automation → pump/light/fan → edge device."
+	case "light":
+		return "\nConnection chain (zone Light tab): sensor reading → target band → automation → grow light → edge device."
+	default:
+		return ""
+	}
+}
+
 func renderZoneContext(ctx context.Context, q *db.Queries, farmID int64, ref ContextRef) string {
 	z, err := q.GetZoneByID(ctx, ref.ID)
 	if err != nil || z.FarmID != farmID {
@@ -291,6 +305,7 @@ func renderZoneContext(ctx context.Context, q *db.Queries, farmID int64, ref Con
 	if tab := strings.TrimSpace(ref.Tab); tab == "water" {
 		b.WriteString(" (Water / feeding plan tab)")
 		b.WriteString("\nPrefer feeding plan language — next feed, last feed, reservoir, water-only. Use summarize_zone_fertigation for program details.")
+		b.WriteString(zoneTabConnectionPipelineHint(tab))
 	} else if tab != "" {
 		b.WriteString(fmt.Sprintf(" (%s tab)", tab))
 	}

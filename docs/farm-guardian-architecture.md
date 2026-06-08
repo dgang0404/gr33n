@@ -495,6 +495,23 @@ Operator: [operator-tour §7c](operator-tour.md#7c-grow--stock--money-closure-ph
 
 **OC-53** via `phase-53-closure.test.js`.
 
+### 7.0r Zone connection nav (Phase 54 — shipped)
+
+**Shipped (WS1–WS4).** Completes the “see how it all connects” affordance from Phases 49/52/53. Plan: [`plans/phase_54_zone_connection_nav.plan.md`](plans/phase_54_zone_connection_nav.plan.md).
+
+| Surface | Operator job | Implementation |
+|---------|--------------|----------------|
+| **Zone tabs** | Understand reading → target → automation → actuator → device | `ZoneConnectionPipeline.vue`, `zoneConnectionPipeline.js` — each segment is a `v-nav-hint` hover target |
+| **Zone overview** | Same chain on the cockpit landing tab | `ZoneDetail.vue` overview strip |
+| **Orphan links** | Zone names, Details, history, automation edit | `v-nav-hint` on Tasks, Actuators, connection cards, water story, rules panel |
+| **Sidebar ripple** | Related routes highlight together | Expanded `navRelations.js` — tasks↔zones, fertigation↔feeding hubs |
+
+**Guardian (WS4):** zone `context_ref` with `tab=water` appends the connection-chain hint in [`context_ref.go`](../internal/farmguardian/context_ref.go) so grounded answers reference the same pipeline language.
+
+Operator: [operator-tour §7d](operator-tour.md#7d-zone-connection-pipeline-phase-54).
+
+**OC-54** via `phase-54-closure.test.js`.
+
 ### 7.0m Feeding & water plain language (Phase 47)
 
 **Shipped.** Plan: [`plans/phase_47_feeding_water_plain_language.plan.md`](plans/phase_47_feeding_water_plain_language.plan.md) · Vocabulary: [`farmer-vocabulary.md`](farmer-vocabulary.md).

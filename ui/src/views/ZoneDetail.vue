@@ -120,6 +120,10 @@
           @harvest="openHarvestWizard"
         />
 
+        <div class="bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3">
+          <ZoneConnectionPipeline :devices="zoneDevices" />
+        </div>
+
         <ZoneAlertsPanel
           v-if="zone"
           :zone-id="zoneId"
@@ -246,6 +250,7 @@ import ZoneAlertsPanel from '../components/ZoneAlertsPanel.vue'
 import ZoneTasksPanel from '../components/ZoneTasksPanel.vue'
 import ZoneAdvancedHint from '../components/ZoneAdvancedHint.vue'
 import ZoneCurrentGrowStrip from '../components/ZoneCurrentGrowStrip.vue'
+import ZoneConnectionPipeline from '../components/ZoneConnectionPipeline.vue'
 import StartGrowWizard from '../components/StartGrowWizard.vue'
 import HarvestWeighIn from '../components/HarvestWeighIn.vue'
 import PostHarvestScreen from '../components/PostHarvestScreen.vue'

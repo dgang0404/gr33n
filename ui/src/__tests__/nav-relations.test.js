@@ -2,12 +2,10 @@ import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { NAV_RELATIONS, relatedTo } from '../lib/navRelations.js'
-import { buildNavGroups } from '../lib/navGroups.js'
+import { buildNavGroups, collectSidebarRoutes } from '../lib/navGroups.js'
 
 describe('Phase 49 WS2 — nav relations', () => {
-  const navRoutes = new Set(
-    buildNavGroups('/farms/1/crop-cycles/compare').flatMap((g) => g.items.map((i) => i.to)),
-  )
+  const navRoutes = new Set(collectSidebarRoutes(buildNavGroups('/farms/1/crop-cycles/compare')))
 
   it('returns related routes for grow-path siblings', () => {
     expect(relatedTo('/zones')).toEqual(['/feeding', '/comfort-targets', '/plants'])
@@ -15,6 +13,13 @@ describe('Phase 49 WS2 — nav relations', () => {
     expect(relatedTo('/feeding')).toEqual(['/zones', '/comfort-targets', '/plants'])
     expect(relatedTo('/comfort-targets')).toContain('/zones')
     expect(relatedTo('/comfort-targets')).toContain('/plants')
+  })
+
+  it('links tasks, alerts, and fertigation across the grow story', () => {
+    expect(relatedTo('/tasks')).toContain('/zones')
+    expect(relatedTo('/alerts')).toContain('/zones')
+    expect(relatedTo('/fertigation')).toContain('/feeding')
+    expect(relatedTo('/fertigation')).toContain('/operations/feeding')
   })
 
   it('returns empty for unknown routes', () => {

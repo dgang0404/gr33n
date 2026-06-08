@@ -11,7 +11,7 @@ todos:
     status: completed
   - id: phase-54
     content: "Phase 54 — Zone connection nav & wiggle completion"
-    status: pending
+    status: completed
   - id: phase-55
     content: "Phase 55 — Guardian ops / grow / money intelligence"
     status: pending
@@ -36,8 +36,8 @@ isProject: false
 
 | Status | Phases |
 |--------|--------|
-| **Shipped** | 40–53 (farmer UX arc through grow/stock/money closure) |
-| **Planned next** | **54** → 55 (connection nav + Guardian read-tool depth) |
+| **Shipped** | 40–54 (farmer UX arc through connection nav) |
+| **Planned next** | **55** (Guardian read-tool depth for grow/stock/money) |
 | **Schema / security** | **56**, **57** after 53 farmer paths proven |
 | **Runtime polish** | **58** parallel with 55–56 |
 | **Explicit deferrals** | **59** doc-only — no accidental ERP creep |
@@ -51,7 +51,7 @@ isProject: false
 | Phase | One job | New backend? | Plan |
 |-------|---------|--------------|------|
 | **53** ✅ | Start grow, restock, tag receipt — without Advanced editors | No | [phase_53](phase_53_grow_stock_money_closure.plan.md) |
-| **54** | See how the whole system connects — wiggle every link | No | [phase_54](phase_54_zone_connection_nav.plan.md) |
+| **54** ✅ | See how the whole system connects — wiggle every link | No | [phase_54](phase_54_zone_connection_nav.plan.md) |
 | **55** | Guardian knows grow, stock, money — starters + read tools | Read tools only | [phase_55](phase_55_guardian_ops_grow_money.plan.md) |
 | **56** | Plants ↔ cycles linked; post-harvest compare in one flow | Small migration | [phase_56](phase_56_grow_schema_harvest_analytics.plan.md) |
 | **57** | Each Pi has its own API key | Yes | [phase_57](phase_57_pi_device_api_keys.plan.md) |
@@ -147,7 +147,7 @@ flowchart TB
 |----|-------|------------|
 | OC-52 | 52 Guardian UI context | ✅ Shipped |
 | OC-53 | 53 grow/stock/money | ✅ Shipped |
-| OC-54 | 54 connection nav | WS4 docs/tests |
+| OC-54 | 54 connection nav | ✅ Shipped |
 | OC-55 | 55 Guardian ops | WS5 docs/tests + guardian pr spec |
 | OC-56 | 56 grow schema | Migration + smokes |
 | OC-57 | 57 device keys | Security smokes + pi guide |

@@ -73,8 +73,12 @@
               <span class="text-sm text-zinc-200 truncate">{{ t.title }}</span>
             </div>
             <div class="flex items-center gap-2 shrink-0">
-              <router-link v-if="t.zone_id" :to="`/zones/${t.zone_id}`"
-                class="text-[11px] text-zinc-500 hover:text-green-400">{{ zoneName(t.zone_id) }}</router-link>
+              <router-link
+                v-if="t.zone_id"
+                v-nav-hint="`/zones/${t.zone_id}`"
+                :to="`/zones/${t.zone_id}`"
+                class="text-[11px] text-zinc-500 hover:text-green-400"
+              >{{ zoneName(t.zone_id) }}</router-link>
               <span v-if="t.due_date" class="text-[11px]"
                 :class="isOverdue(t.due_date) ? 'text-red-400' : 'text-zinc-600'">
                 {{ formatDueDate(t.due_date) }}

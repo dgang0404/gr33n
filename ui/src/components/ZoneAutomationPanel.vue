@@ -92,8 +92,10 @@
                 {{ togglingId === rule.id ? '…' : (rule.is_active ? 'On' : 'Off') }}
               </button>
               <router-link
+                v-nav-hint="'/automation'"
                 :to="`/automation?rule=${rule.id}`"
                 class="text-[10px] text-zinc-500 hover:text-green-400"
+                data-test="zone-rule-edit-automation"
               >
                 Edit in Automations →
               </router-link>

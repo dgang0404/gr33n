@@ -540,6 +540,18 @@ Architecture: [`farm-guardian-architecture.md` §7.0i](farm-guardian-architectur
 
 Architecture: [`farm-guardian-architecture.md` §7.0q](farm-guardian-architecture.md#70q-grow--stock--money-closure-phase-53--shipped).
 
+### 7d. Zone connection pipeline (Phase 54)
+
+**Shipped.** Hover each step in **How it connects** on zone **Overview** and **Water / Light / Climate** tabs — the matching sidebar item wiggles (Phase 49). Chain:
+
+`sensor reading` → `target band` → `automation` (or **automation or feed timing** on Water) → `pump/light/fan` → `device` (wiggles **Pi + HAT setup** when any edge device in the zone is offline).
+
+Orphan links now carry the same affordance: zone names on **Tasks** and **Controls**, **Details →** on connection cards, **See history →** on the water story, **Edit in Automations →**, and greenhouse template links on **Targets & schedules**.
+
+**Vitest bundle:** `phase-54-closure.test.js`, `zone-connection-pipeline.test.js`.
+
+Architecture: [`farm-guardian-architecture.md` §7.0r](farm-guardian-architecture.md#70r-zone-connection-nav-phase-54--shipped).
+
 ---
 
 ## 7b. Feeding & water for this zone (Phase 47)

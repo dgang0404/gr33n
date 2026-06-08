@@ -7,16 +7,16 @@ overview: >
 todos:
   - id: ws1-connection-pipeline
     content: "WS1: Interactive How it connects on zone tabs — each segment wiggles sidebar"
-    status: pending
+    status: completed
   - id: ws2-orphan-links
     content: "WS2: v-nav-hint on zone names, task zones, connection card Details, See history, Edit in Automations"
-    status: pending
+    status: completed
   - id: ws3-nav-relations
     content: "WS3: Expand navRelations — tasks↔alerts, fertigation↔feeding, grow↔money"
-    status: pending
+    status: completed
   - id: ws4-docs-tests
     content: "WS4: operator-tour § connection nav; phase-54-closure.test.js; OC-54"
-    status: pending
+    status: completed
 isProject: false
 ---
 
@@ -24,7 +24,7 @@ isProject: false
 
 ## Status
 
-**Planned.** Depends on [Phase 53](phase_53_grow_stock_money_closure.plan.md) WS4 starting the wiggle pattern on new surfaces.
+**Shipped.** WS1–WS4 complete. Depends on [Phase 53](phase_53_grow_stock_money_closure.plan.md) WS4 wiggle pattern. **OC-54** closed.
 
 **Predecessor:** [Phase 52](phase_52_guardian_ui_context.plan.md) ✅ · [Phase 49](phase_49_sidebar_nav_polish.plan.md) ✅
 
@@ -96,6 +96,6 @@ Sidebar self-hover continues to ripple related routes.
 
 ## Definition of done
 
-- [ ] Zone Water/Climate/Overview shows interactive pipeline
-- [ ] No major in-app router-link without v-nav-hint (audit list in closure test)
-- [ ] OC-54 closed
+- [x] Zone Water/Climate/Overview shows interactive pipeline
+- [x] No major in-app router-link without v-nav-hint (audit list in closure test)
+- [x] OC-54 closed

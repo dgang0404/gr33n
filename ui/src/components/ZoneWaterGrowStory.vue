@@ -90,6 +90,7 @@
           <div class="flex items-center justify-between gap-2 mb-1">
             <p class="text-[10px] uppercase tracking-wide text-zinc-500">Last feed</p>
             <router-link
+              v-nav-hint="feedHistoryLink"
               :to="feedHistoryLink"
               class="text-[10px] text-green-600 hover:text-green-400"
               data-test="feeding-history-link"

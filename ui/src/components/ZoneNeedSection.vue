@@ -21,13 +21,7 @@
           </router-link>
         </div>
       </div>
-      <p class="text-zinc-600 text-xs">
-        How it connects: <strong class="text-zinc-400">sensor reading</strong> →
-        <strong class="text-zinc-400">target band</strong> →
-        <strong class="text-zinc-400">automation or feed timing</strong> →
-        <strong class="text-zinc-400">pump/light/fan</strong> →
-        <strong class="text-zinc-400">device</strong>
-      </p>
+      <ZoneConnectionPipeline :need="need" :devices="zoneDevices" />
     </div>
 
     <!-- Live sensors -->
@@ -196,6 +190,7 @@ import ZoneComfortTargets from './ZoneComfortTargets.vue'
 import ZoneAutomationPanel from './ZoneAutomationPanel.vue'
 import ZoneWaterGrowStory from './ZoneWaterGrowStory.vue'
 import EmptyStateHint from './EmptyStateHint.vue'
+import ZoneConnectionPipeline from './ZoneConnectionPipeline.vue'
 import { formatLightingProgramSummary } from '../lib/lightingDisplay.js'
 import { scheduleRunsLabel } from '../lib/cronHumanize.js'
 
@@ -223,6 +218,8 @@ const props = defineProps({
 defineEmits(['toggle-actuator', 'refresh-events', 'setpoints-updated', 'rules-updated', 'water-refreshed', 'plan-updated'])
 
 const store = useFarmStore()
+
+const zoneDevices = computed(() => store.devicesByZone(props.zoneId))
 
 const farmTimezone = computed(() => store.farm?.timezone || 'America/New_York')
 

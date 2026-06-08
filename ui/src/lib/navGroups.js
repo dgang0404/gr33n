@@ -168,6 +168,13 @@ export function buildNavGroups(cycleCompareRoute) {
   ]
 }
 
+/** All sidebar `to` paths, including nested Guide children (e.g. `/pi-setup`). */
+export function collectSidebarRoutes(groups) {
+  return groups.flatMap((g) =>
+    g.items.flatMap((i) => [i.to, ...(i.children || []).map((c) => c.to)]),
+  )
+}
+
 export const mobileBottomNav = [
   { to: '/', icon: '🌿', label: 'Today' },
   { to: '/zones', icon: '🗂️', label: Z.mobileZones },
