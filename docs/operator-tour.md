@@ -511,6 +511,16 @@ On the **Dashboard**, tap **Morning check** (or open **Farm Guardian** → **Mor
 
 **Vitest:** `phase-60-closure.test.js` · **Go smoke:** `TestPhase60_WalkFarmReadToolRegistered`.
 
+### 6j. Proactive nudges (Phase 61 — shipped)
+
+**Plan:** [`plans/phase_61_guardian_proactive_nudges.plan.md`](plans/phase_61_guardian_proactive_nudges.plan.md) · Architecture: [§7.0z](farm-guardian-architecture.md#70z-proactive-nudges-phase-61--shipped).
+
+When something crosses a threshold (unacked alert, missed feed, comfort breach, stale Pi config sync, low stock), the ✨ **Farm Guardian** tab shows an **amber dot**. Open Guardian to see one dismissable nudge strip — **Review** sends a grounded message with `nudge_category` context; **Dismiss** snoozes that category until the next page load.
+
+Not browser push notifications — page-load only, one nudge at a time, rule-based (no LLM until you engage).
+
+**Vitest:** `phase-61-closure.test.js` · **Go smoke:** `TestPhase61_GuardianNudgeEnginePresent`.
+
 ### 6m. Guardian Pi diagnostics (Phase 65 — shipped)
 
 **Plan:** [`plans/phase_65_guardian_pi_diagnostics.plan.md`](plans/phase_65_guardian_pi_diagnostics.plan.md) · Architecture: [§7.0v](farm-guardian-architecture.md#70v-guardian-pi--hardware-diagnostics-phase-65--shipped).

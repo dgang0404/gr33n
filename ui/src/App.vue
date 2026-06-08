@@ -87,6 +87,7 @@ import GuardianEdgeTab from './components/GuardianEdgeTab.vue'
 import GuardianNavLaunch from './components/GuardianNavLaunch.vue'
 import { useFarmStore } from './stores/farm'
 import { useFarmContextStore } from './stores/farmContext'
+import { useGuardianPanelStore } from './stores/guardianPanel'
 import { useAuthStore } from './stores/auth'
 import { usePush } from './composables/usePush'
 import { onMounted, onUnmounted, ref, watch, computed } from 'vue'
@@ -94,6 +95,7 @@ import { buildNavGroups, mobileBottomNav } from './lib/navGroups.js'
 
 const store = useFarmStore()
 const farmContext = useFarmContextStore()
+const guardianPanel = useGuardianPanelStore()
 const auth = useAuthStore()
 const push = usePush()
 let evtSource = null
@@ -137,6 +139,7 @@ function connectSSE(farmId) {
 
 watch(() => farmContext.farmId, (id) => {
   if (id) connectSSE(id)
+  if (id) void guardianPanel.fetchNudge(id)
 })
 
 async function bootstrapFarmData() {

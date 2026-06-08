@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia'
+import api from '../api'
 import { routeContextRefFromRoute } from '../lib/guardianRouteRef.js'
 
 const NAV_HISTORY_MAX = 3
@@ -23,7 +24,24 @@ export const useGuardianPanelStore = defineStore('guardianPanel', {
     navHistory: [], // [{ type:'route', path, name }, ...] — previous pages (most recent first, excl. current)
     activeSessionId: '',
     setupMode: false, // Phase 44 WS4 — setup-mode persona for grounded chat
+    activeNudge: null, // Phase 61 — { category, message, severity, action_route, nudge_id }
+    snoozedNudgeCategories: [], // session-only dismiss/snooze
+    nudgeLoading: false,
   }),
+
+  getters: {
+    /** Amber dot on edge tab / TopBar when a nudge is pending and panel is closed. */
+    showNudgeDot(state) {
+      if (!state.activeNudge || state.open) return false
+      return !state.snoozedNudgeCategories.includes(state.activeNudge.category)
+    },
+
+    /** Nudge strip inside the Guardian panel (above starters). */
+    showNudgeStrip(state) {
+      if (!state.activeNudge) return false
+      return !state.snoozedNudgeCategories.includes(state.activeNudge.category)
+    },
+  },
 
   actions: {
     toggle() {
@@ -85,6 +103,45 @@ export const useGuardianPanelStore = defineStore('guardianPanel', {
 
     setActiveSessionId(id) {
       this.activeSessionId = id || ''
+    },
+
+    async fetchNudge(farmId) {
+      if (!farmId) {
+        this.activeNudge = null
+        return
+      }
+      this.nudgeLoading = true
+      try {
+        const r = await api.get(`/farms/${farmId}/guardian-nudge`, {
+          validateStatus: (s) => s === 200 || s === 204,
+        })
+        const nudge = r.status === 200 ? r.data : null
+        if (nudge?.category && !this.snoozedNudgeCategories.includes(nudge.category)) {
+          this.activeNudge = nudge
+        } else {
+          this.activeNudge = null
+        }
+      } catch {
+        this.activeNudge = null
+      } finally {
+        this.nudgeLoading = false
+      }
+    },
+
+    dismissNudge() {
+      const cat = this.activeNudge?.category
+      if (cat && !this.snoozedNudgeCategories.includes(cat)) {
+        this.snoozedNudgeCategories = [...this.snoozedNudgeCategories, cat]
+      }
+      this.activeNudge = null
+    },
+
+    clearNudgeAfterReview() {
+      const cat = this.activeNudge?.category
+      if (cat && !this.snoozedNudgeCategories.includes(cat)) {
+        this.snoozedNudgeCategories = [...this.snoozedNudgeCategories, cat]
+      }
+      this.activeNudge = null
     },
   },
 })

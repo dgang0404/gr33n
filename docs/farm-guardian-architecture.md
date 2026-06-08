@@ -362,6 +362,21 @@ When answering “what should I do first?”, prefer **Dashboard → Tasks → A
 
 Plan: [`plans/phase_60_guardian_morning_walkthrough.plan.md`](plans/phase_60_guardian_morning_walkthrough.plan.md).
 
+### 7.0z Proactive nudges (Phase 61 — shipped)
+
+**Shipped.** Rule-based shoulder-tap — at most one nudge per farm per page load, priority-ordered (critical alert → feed missed → comfort breach → Pi stale → low stock). Not push notifications; not LLM-generated until the operator taps **Review**.
+
+| Layer | Artifact |
+|-------|----------|
+| API | `GET /farms/{id}/guardian-nudge` → `NudgePayload` or 204 (`nudge.go`, `handler/guardian`) |
+| UI | Amber dot on ✨ edge tab + TopBar **Ask gr33n**; `GuardianNudgeStrip` above starters |
+| Session | `snoozedNudgeCategories` in `guardianPanel` Pinia store — dismiss until reload |
+| Context | `nudge_category` + `nudge_id` on `context_ref`; `NudgeContextBlock` skips pleasantries |
+
+**OC-61** via `phase-61-closure.test.js` · **Go smoke:** `TestPhase61_GuardianNudgeEnginePresent`.
+
+Plan: [`plans/phase_61_guardian_proactive_nudges.plan.md`](plans/phase_61_guardian_proactive_nudges.plan.md).
+
 ### 7.0h Comfort targets & automation (Phase 42 — shipped)
 
 Plans: [`plans/phase_42_comfort_targets_automation_plain_language.plan.md`](plans/phase_42_comfort_targets_automation_plain_language.plan.md) · Guardian PR slice: [`plans/phase_42_guardian_pr_spec.md`](plans/phase_42_guardian_pr_spec.md).

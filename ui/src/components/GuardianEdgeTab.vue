@@ -10,7 +10,15 @@
       data-test="guardian-edge-tab"
       @click="guardianPanel.toggle()"
     >
-      <span class="text-lg leading-none guardian-edge-tab-icon" aria-hidden="true">✨</span>
+      <span class="relative text-lg leading-none guardian-edge-tab-icon" aria-hidden="true">
+        ✨
+        <span
+          v-if="guardianPanel.showNudgeDot"
+          class="absolute -top-0.5 -right-1 h-2 w-2 rounded-full bg-amber-400 ring-2 ring-zinc-950"
+          data-test="guardian-nudge-dot"
+          aria-hidden="true"
+        />
+      </span>
       <span
         v-if="guardianChat.streaming"
         class="h-2 w-2 rounded-full bg-green-500 animate-pulse"

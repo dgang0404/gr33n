@@ -21,6 +21,8 @@ type ContextRef struct {
 	PriorCropCycleID int64  `json:"prior_crop_cycle_id,omitempty"`
 	GuardianMode     string `json:"guardian_mode,omitempty"` // Phase 60 — e.g. morning_walkthrough
 	Surface          string `json:"surface,omitempty"`
+	NudgeCategory    string `json:"nudge_category,omitempty"` // Phase 61 — proactive nudge category
+	NudgeID          string `json:"nudge_id,omitempty"`     // Phase 61 — stable nudge key from API
 }
 
 // BuildContextRefBlock loads the referenced row and renders a focused prompt
@@ -378,9 +380,15 @@ func renderZoneContext(ctx context.Context, q *db.Queries, farmID int64, ref Con
 // navHistory (optional) is passed through to renderRouteContext so the Guardian
 // receives the operator's breadcrumb trail alongside the current-page context.
 func ContextRefPromptBlock(ctx context.Context, q *db.Queries, farmID int64, ref ContextRef, navHistory ...[]ContextRef) string {
-	body := BuildContextRefBlock(ctx, q, farmID, ref, navHistory...)
-	if body == "" {
+	var parts []string
+	if nudge := NudgeContextBlock(ref); nudge != "" {
+		parts = append(parts, nudge)
+	}
+	if body := BuildContextRefBlock(ctx, q, farmID, ref, navHistory...); body != "" {
+		parts = append(parts, body)
+	}
+	if len(parts) == 0 {
 		return ""
 	}
-	return "Contextual focus (background — do not cite as [n]):\n" + body
+	return "Contextual focus (background — do not cite as [n]):\n" + strings.Join(parts, "\n")
 }

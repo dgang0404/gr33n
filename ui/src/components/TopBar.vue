@@ -40,12 +40,20 @@
         <button
           v-if="guardianAvailable"
           type="button"
-          class="hidden sm:inline-flex items-center gap-1.5 text-xs font-semibold text-green-400 border border-green-800/80 rounded-lg px-2.5 py-1 hover:bg-green-950/50 hover:text-green-300 transition-colors"
+          class="relative hidden sm:inline-flex items-center gap-1.5 text-xs font-semibold text-green-400 border border-green-800/80 rounded-lg px-2.5 py-1 hover:bg-green-950/50 hover:text-green-300 transition-colors"
           title="Open Farm Guardian"
           data-test="topbar-guardian-button"
           @click="openGuardianDrawer"
         >
-          <span aria-hidden="true">✨</span>
+          <span class="relative" aria-hidden="true">
+            ✨
+            <span
+              v-if="guardianPanel.showNudgeDot"
+              class="absolute -top-1 -right-1.5 h-2 w-2 rounded-full bg-amber-400 ring-2 ring-gray-900"
+              data-test="topbar-guardian-nudge-dot"
+              aria-hidden="true"
+            />
+          </span>
           Ask gr33n
         </button>
         <RouterLink v-nav-hint="'/alerts'" to="/alerts" class="relative text-gray-400 hover:text-white transition-colors" title="Alerts">

@@ -247,6 +247,7 @@
         >
           Image analysis is advisory only — hypotheses, not certified diagnosis. Any change still needs Confirm.
         </p>
+        <GuardianNudgeStrip @review="onNudgeReview" />
         <div v-if="morningWalkthroughStarters.length" class="space-y-1.5" data-test="chat-morning-starters">
           <p class="text-[10px] uppercase tracking-widest text-zinc-500">Daily check</p>
           <GuardianStarterChips :starters="morningWalkthroughStarters" />
@@ -417,6 +418,7 @@ import { storeToRefs } from 'pinia'
 import api from '../api'
 import GuardianActionProposal from './GuardianActionProposal.vue'
 import GuardianProcedureCard from './GuardianProcedureCard.vue'
+import GuardianNudgeStrip from './GuardianNudgeStrip.vue'
 import GuardianStarterChips from './GuardianStarterChips.vue'
 import { computeFirstRunChecklist, isFirstRunIncomplete } from '../lib/firstRunChecklist.js'
 import { buildMorningWalkthroughStarters, buildSetupStarters } from '../lib/guardianStarters.js'
@@ -859,6 +861,15 @@ async function onChatPhotoSelected(ev) {
   } finally {
     photoUploading.value = false
   }
+}
+
+async function onNudgeReview(payload) {
+  if (!payload?.message) return
+  guardianPanel.contextRef = payload.contextRef ?? null
+  message.value = payload.message
+  useFarmContext.value = true
+  await nextTick()
+  await send()
 }
 
 async function send() {

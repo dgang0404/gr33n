@@ -7,19 +7,19 @@ overview: >
 todos:
   - id: ws1-nudge-engine
     content: "WS1: Go nudge poller — compute nudge score per farm per session; categories"
-    status: pending
+    status: completed
   - id: ws2-dot-badge
     content: "WS2: Robot tab dot badge; Guardian panel nudge strip above starter chips"
-    status: pending
+    status: completed
   - id: ws3-dismiss
     content: "WS3: Dismiss / snooze nudge until next session; no re-nudge same category"
-    status: pending
+    status: completed
   - id: ws4-guardian-context
     content: "WS4: context_ref nudge framing; snooze state in guardianPanel store"
-    status: pending
+    status: completed
   - id: ws5-docs-tests
     content: "WS5: operator-tour; phase-61-closure.test.js; OC-61"
-    status: pending
+    status: completed
 isProject: false
 ---
 
@@ -27,7 +27,7 @@ isProject: false
 
 ## Status
 
-**Planned.** Best after [Phase 60](phase_60_guardian_morning_walkthrough.plan.md) walk_farm tool ships (shares same data pipeline).
+**Shipped.** Rule-based `GET /farms/{id}/guardian-nudge`, amber dot on edge tab + TopBar, dismissable nudge strip, `nudge_category` on `context_ref` when Review is tapped.
 
 ---
 
@@ -122,6 +122,6 @@ Skip pleasantries — address the specific issue immediately.
 
 ## Definition of done
 
-- [ ] Dot on robot icon when nudge present
-- [ ] One nudge strip, dismissable
-- [ ] OC-61 closed
+- [x] Dot on robot icon when nudge present
+- [x] One nudge strip, dismissable
+- [x] OC-61 closed
