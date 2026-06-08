@@ -296,6 +296,11 @@ function operationsRouteRef(path, name, surface) {
   return { type: 'route', path, name, surface }
 }
 
+function formatStageLabel(stage) {
+  if (!stage) return ''
+  return String(stage).replace(/_/g, ' ')
+}
+
 /**
  * Phase 53 WS5 — zone grow strip starters (active crop cycle on overview).
  * @param {object} params
@@ -324,8 +329,8 @@ export function buildZoneGrowStripStarters({
     {
       id: 'grow-room-cost',
       label: 'What did this room cost so far?',
-      message: `What did ${zoneName} cost so far for the active grow "${cycleName}"? Use tagged receipts and cycle cost summary — plain dollars, no accounting jargon.`,
-      contextRef,
+      message: `What did ${zoneName} cost so far for the active grow "${cycleName}"? Use summarize_cycle_cost — plain dollars, no accounting jargon.`,
+      contextRef: { ...contextRef, crop_cycle_id: activeCycle.id },
     },
     {
       id: 'compare-last-cycle',
@@ -336,13 +341,20 @@ export function buildZoneGrowStripStarters({
       contextRef: farmId
         ? {
             ...contextRef,
+            crop_cycle_id: activeCycle.id,
             compare_path: `/farms/${farmId}/crop-cycles/compare`,
           }
-        : contextRef,
+        : { ...contextRef, crop_cycle_id: activeCycle.id },
+    },
+    {
+      id: 'stage-advice',
+      label: 'Stage advice',
+      message: `What should I watch for in ${zoneName} during ${formatStageLabel(activeCycle.current_stage) || 'this stage'} for "${cycleName}"?`,
+      contextRef: { ...contextRef, crop_cycle_id: activeCycle.id },
     },
   ]
 
-  return dedupeStarters(starters).slice(0, 2)
+  return dedupeStarters(starters).slice(0, 3)
 }
 
 /**
@@ -369,18 +381,41 @@ export function buildHarvestFlowStarters({
     || priorHarvestedCycle?.strain_or_variety
     || 'the last run'
 
-  const starters = [{
-    id: 'prior-yield',
-    label: 'Last run yield',
-    message: priorHarvestedCycle
-      ? `What yield did we hit on "${priorLabel}" in ${zoneName}? Summarize grams and duration from the prior cycle.`
-      : `What yield did we hit last time we harvested in ${zoneName}?`,
-    contextRef: priorHarvestedCycle?.id
-      ? { ...contextRef, prior_crop_cycle_id: priorHarvestedCycle.id }
-      : contextRef,
-  }]
+  const starters = [
+    {
+      id: 'prior-yield',
+      label: 'Last run yield',
+      message: priorHarvestedCycle
+        ? `What yield did we hit on "${priorLabel}" in ${zoneName}? Summarize grams and duration from the prior cycle.`
+        : `What yield did we hit last time we harvested in ${zoneName}?`,
+      contextRef: priorHarvestedCycle?.id
+        ? { ...contextRef, prior_crop_cycle_id: priorHarvestedCycle.id }
+        : contextRef,
+    },
+    {
+      id: 'how-did-we-do',
+      label: 'How did we do vs last time?',
+      message: priorHarvestedCycle
+        ? `How did this harvest in ${zoneName} compare to "${priorLabel}" — yield, feeds, and tagged cost?`
+        : `How did this harvest in ${zoneName} compare to previous runs here?`,
+      contextRef: priorHarvestedCycle?.id
+        ? { ...contextRef, prior_crop_cycle_id: priorHarvestedCycle.id, crop_cycle_id: activeCycle?.id ?? null }
+        : contextRef,
+    },
+    {
+      id: 'cost-per-gram',
+      label: 'Cost per gram',
+      message: activeCycle?.id
+        ? `What is the cost per gram for the grow we just harvested in ${zoneName}? Use summarize_cycle_cost.`
+        : `What was the cost per gram for this harvest in ${zoneName}?`,
+      contextRef: activeCycle?.id
+        ? { ...contextRef, crop_cycle_id: activeCycle.id }
+        : contextRef,
+    },
+  ]
 
-  return dedupeStarters(starters).slice(0, 1)
+  const max = surface === 'post_harvest' ? 3 : 2
+  return dedupeStarters(starters).slice(0, max)
 }
 
 /**
@@ -406,7 +441,7 @@ export function buildSuppliesHubStarters({
     starters.push({
       id: 'restock-first',
       label: 'What should I restock first?',
-      message: 'What should I restock first on this farm? List low-stock inputs by priority.',
+      message: 'What should I restock first on this farm? Use restock_priority — list low-stock inputs by urgency.',
       contextRef: routeRef,
     })
     starters.push({
@@ -505,7 +540,7 @@ export function buildMoneyHubStarters() {
     {
       id: 'month-spend-by-category',
       label: 'Spending by category',
-      message: 'Summarize spending this month by category in plain language — no accounting jargon',
+      message: 'Summarize spending this month by category using summarize_farm_spending — plain language, no accounting jargon',
       contextRef: routeRef,
     },
     {
@@ -514,7 +549,13 @@ export function buildMoneyHubStarters() {
       message: 'Summarize what I spent this month in plain language — no accounting jargon',
       contextRef: routeRef,
     },
-  ]).slice(0, 2)
+    {
+      id: 'tag-receipt-help',
+      label: 'Tag a receipt to a grow',
+      message: 'How do I log a receipt on the Money hub and tag it to an active grow? Walk me through the UI — no GL jargon.',
+      contextRef: routeRef,
+    },
+  ]).slice(0, 3)
 }
 
 /**
@@ -523,11 +564,17 @@ export function buildMoneyHubStarters() {
 export function buildDashboardOpsStarters({ lowStockCount = 0, lowStockAlerts = [] }) {
   if (!lowStockCount) return []
   const routeRef = operationsRouteRef('/', 'Dashboard', 'dashboard_ops')
+  const suppliesRef = operationsRouteRef('/operations/supplies', 'Supplies', 'dashboard_ops')
   const starters = [{
     id: 'whats-running-low',
     label: "What's running low?",
     message: 'What supplies are below their low-stock threshold on this farm?',
     contextRef: routeRef,
+  }, {
+    id: 'open-supplies',
+    label: 'Open Supplies',
+    message: 'What should I restock first? Use restock_priority and point me to Supplies for + Add qty.',
+    contextRef: suppliesRef,
   }]
   const lowAlert = lowStockAlerts[0]
   if (lowAlert) {

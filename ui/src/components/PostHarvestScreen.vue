@@ -55,6 +55,12 @@
         </div>
       </template>
 
+      <GuardianStarterChips
+        v-if="postHarvestStarters.length"
+        :starters="postHarvestStarters"
+        class="border-t border-zinc-800 pt-3"
+      />
+
       <div class="flex flex-wrap items-center gap-2 border-t border-zinc-800 pt-3">
         <router-link
           v-if="cycleId"
@@ -93,6 +99,8 @@ import {
   formatStageLabel,
   lastHarvestedCycleInZone,
 } from '../lib/growHub.js'
+import { buildHarvestFlowStarters } from '../lib/guardianStarters.js'
+import GuardianStarterChips from './GuardianStarterChips.vue'
 
 const props = defineProps({
   open: { type: Boolean, default: false },
@@ -112,6 +120,22 @@ const loadError = ref('')
 const priorCycle = computed(() => {
   if (!props.zoneId || !props.cycleId) return null
   return lastHarvestedCycleInZone(props.cycles, props.zoneId, props.cycleId)
+})
+
+const harvestedCycle = computed(() =>
+  props.cycles.find((c) => Number(c.id) === Number(props.cycleId)) || null,
+)
+
+const postHarvestStarters = computed(() => {
+  const zone = props.zoneId
+    ? { id: props.zoneId, name: summary.value?.cycle?.zone_name || `Zone ${props.zoneId}` }
+    : null
+  return buildHarvestFlowStarters({
+    zone,
+    activeCycle: harvestedCycle.value,
+    priorHarvestedCycle: priorCycle.value,
+    surface: 'post_harvest',
+  })
 })
 
 const compareRoute = computed(() =>

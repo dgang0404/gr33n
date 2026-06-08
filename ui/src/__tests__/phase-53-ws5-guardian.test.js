@@ -25,10 +25,11 @@ describe('Phase 53 WS5 — Guardian starters', () => {
       farmId: 7,
       priorHarvestedCycle: priorCycle,
     })
-    expect(starters).toHaveLength(2)
+    expect(starters).toHaveLength(3)
     expect(starters[0].label).toBe('What did this room cost so far?')
     expect(starters[0].message).toContain('Flower Room')
     expect(starters[0].message).toContain('OG Spring')
+    expect(starters[0].message).toContain('summarize_cycle_cost')
     expect(starters[0].contextRef.crop_cycle_id).toBe(22)
     expect(starters[1].label).toBe('Compare to last time')
     expect(starters[1].message).toContain('OG Winter')
@@ -41,7 +42,7 @@ describe('Phase 53 WS5 — Guardian starters', () => {
       activeCycle,
       priorHarvestedCycle: priorCycle,
     })
-    expect(starters).toHaveLength(1)
+    expect(starters).toHaveLength(2)
     expect(starters[0].label).toBe('Last run yield')
     expect(starters[0].message).toContain('OG Winter')
     expect(starters[0].contextRef.prior_crop_cycle_id).toBe(18)
@@ -58,9 +59,9 @@ describe('Phase 53 WS5 — Guardian starters', () => {
 
   it('money hub offers category spend summary chip', () => {
     const starters = buildMoneyHubStarters()
-    expect(starters).toHaveLength(2)
+    expect(starters).toHaveLength(3)
     expect(starters[0].id).toBe('month-spend-by-category')
-    expect(starters[0].message).toContain('by category')
+    expect(starters[0].message).toContain('summarize_farm_spending')
   })
 
   it('components wire grow and harvest starters', () => {

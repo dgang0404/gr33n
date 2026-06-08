@@ -256,6 +256,10 @@ Before the LLM call on grounded turns, [`readtools.go`](../../internal/farmguard
 | `list_plants` | List/show plant catalog intent | Up to 20 plant rows (display name, variety) |
 | `summarize_zone_fertigation` | Fertigation/feeding/program intent + resolved zone | Active programs, EC/pH triggers, linked cycle hints for that zone |
 | `summarize_farm_low_stock` | Low-stock / restock intent (not plant catalog) | Batches below threshold via `ListLowStockBatchesByFarm` — input name, remaining, threshold |
+| `restock_priority` | “Restock first” / priority reorder intent | Same query, sorted by remaining/threshold ratio; footer points to Supplies UI |
+| `summarize_cycle_cost` | Grow/room/cycle cost intent + resolved `crop_cycle_id` | `GetCostTotalsByCropCycle` — total spent, top categories, cost/gram when yield logged |
+| `summarize_farm_spending` | Month/category spend intent | `GetCostCategoryTotalsByFarmForYear` for current calendar month |
+| `summarize_active_grows` | “What’s growing” / active cycles intent | `ListCropCyclesByFarm` filtered `is_active`, zone names |
 | `summarize_zone_lighting` | Light/photoperiod/18-6/12-12 intent + resolved zone (optional) | Active `lighting_programs`, ON/OFF hours, anchor times, linked schedule ids |
 | `summarize_zone_greenhouse_climate` | Shade/deploy/greenhouse/vent/fan intent + `zone_id` | `greenhouse_climate` profile, linked actuator states, active `GH —` rules, recent shade/fan events (48 h) |
 
@@ -511,6 +515,23 @@ Operator: [operator-tour §7c](operator-tour.md#7c-grow--stock--money-closure-ph
 Operator: [operator-tour §7d](operator-tour.md#7d-zone-connection-pipeline-phase-54).
 
 **OC-54** via `phase-54-closure.test.js`.
+
+### 7.0s Guardian ops read depth (Phase 55 — shipped)
+
+**Shipped (WS1–WS5).** Deepens Guardian for grow/stock/money jobs shipped in Phases 43 and 53. Plan: [`plans/phase_55_guardian_ops_grow_money.plan.md`](plans/phase_55_guardian_ops_grow_money.plan.md) · Spec: [`plans/phase_55_guardian_pr_spec.md`](plans/phase_55_guardian_pr_spec.md).
+
+| Read tool | Operator question | Implementation |
+|-----------|-------------------|----------------|
+| `summarize_cycle_cost` | What did this room cost? | [`readtools_ops.go`](../internal/farmguardian/readtools_ops.go) + `crop_cycle_id` on zone starters |
+| `summarize_farm_spending` | Spending this month by category | Month window category rollup |
+| `restock_priority` | What should I restock first? | Sorted low-stock batches (replaces generic low-stock block on same turn) |
+| `summarize_active_grows` | What's growing where? | Active cycles per zone |
+
+**Starters:** Supplies restock-first, Money tag-receipt + spending-by-category, grow strip stage advice, post-harvest compare/cost-per-gram, dashboard open-supplies.
+
+**No new Confirm tools** — restock, receipt, harvest stay hub UI ([spec §4](plans/phase_55_guardian_pr_spec.md)).
+
+**OC-55** via `phase-55-closure.test.js`.
 
 ### 7.0m Feeding & water plain language (Phase 47)
 

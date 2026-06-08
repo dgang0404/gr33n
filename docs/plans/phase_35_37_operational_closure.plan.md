@@ -92,7 +92,7 @@ todos:
     status: completed
   - id: oc-55-closure
     content: "OC-55: Phase 55 WS5 — Guardian ops read tools, starters, phase_55_guardian_pr_spec.md"
-    status: pending
+    status: completed
   - id: oc-56-closure
     content: "OC-56: Phase 56 WS5 — plant_id migration, compare flow, phase-56-closure.test.js"
     status: pending
@@ -497,15 +497,27 @@ Feature detail: [`phase_54_zone_connection_nav.plan.md`](phase_54_zone_connectio
 | Guardian zone water hint | ✅ | WS4 — `zoneTabConnectionPipelineHint` in `context_ref.go` |
 | OC-54 docs/tests | ✅ | WS4 — operator-tour §7d, architecture §7.0r, `phase-54-closure.test.js` |
 
-## Phases 55–59 — Farmer closure arc (planned)
+## Phase 55 — Guardian ops read depth
 
-Hub: [`phase_53_59_roadmap.plan.md`](phase_53_59_roadmap.plan.md). Close **OC-55 … OC-59** when each phase WS docs/tests ship.
+Feature detail: [`phase_55_guardian_ops_grow_money.plan.md`](phase_55_guardian_ops_grow_money.plan.md). **OC-55** closed (WS5). **Phase 55 shipped.**
+
+| Area | Status | Notes |
+|------|--------|-------|
+| Read tools | ✅ | WS1 — `summarize_cycle_cost`, `summarize_farm_spending`, `restock_priority`, `summarize_active_grows` |
+| Hub starters | ✅ | WS2 — Supplies, Money, grow strip, post-harvest, dashboard |
+| Ops persona | ✅ | WS3 — `context_ref.go`, `platform_context.go` |
+| Guardian PR spec | ✅ | WS4 — `phase_55_guardian_pr_spec.md` |
+| OC-55 docs/tests | ✅ | WS5 — architecture §7.0s, `readtools_ops_test.go`, `phase-55-closure.test.js` |
+
+## Phases 56–59 — Farmer closure arc (planned)
+
+Hub: [`phase_53_59_roadmap.plan.md`](phase_53_59_roadmap.plan.md). Close **OC-56 … OC-59** when each phase WS docs/tests ship.
 
 | Phase | OC | Plan | Close when |
 |-------|-----|------|------------|
 | ~~53 Grow + stock + money~~ | ~~OC-53~~ | [phase_53](phase_53_grow_stock_money_closure.plan.md) | ✅ Shipped |
 | ~~54 Zone connection nav~~ | ~~OC-54~~ | [phase_54](phase_54_zone_connection_nav.plan.md) | ✅ Shipped |
-| 55 Guardian ops | OC-55 | [phase_55](phase_55_guardian_ops_grow_money.plan.md) | Read tools + `phase_55_guardian_pr_spec.md` |
+| ~~55 Guardian ops~~ | ~~OC-55~~ | [phase_55](phase_55_guardian_ops_grow_money.plan.md) | ✅ Shipped |
 | 56 Grow schema | OC-56 | [phase_56](phase_56_grow_schema_harvest_analytics.plan.md) | Migration smokes |
 | 57 Device API keys | OC-57 | [phase_57](phase_57_pi_device_api_keys.plan.md) | Security smokes + pi guide |
 | 58 Task consumptions | OC-58 | [phase_58](phase_58_task_consumptions_runtime.plan.md) | Consumption UI test |

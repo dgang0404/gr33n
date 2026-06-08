@@ -8,19 +8,19 @@ overview: >
 todos:
   - id: ws1-read-tools
     content: "WS1: Read tools — summarize_cycle_cost, summarize_farm_spending, restock_priority (wrap existing APIs)"
-    status: pending
+    status: completed
   - id: ws2-starters
     content: "WS2: Starters on Supplies, Money, grow strip, post-harvest, low-stock banner"
-    status: pending
+    status: completed
   - id: ws3-persona-prompt
     content: "WS3: Ops persona blocks for /operations/* routes + grow/money context_ref hints"
-    status: pending
+    status: completed
   - id: ws4-guardian-pr-spec
     content: "WS4: phase_55_guardian_pr_spec.md — matchers, banned phrases, impact previews"
-    status: pending
+    status: completed
   - id: ws5-docs-tests
-    content: "WS5: architecture §8 ops; smokes for read tools; phase-55-closure; OC-55"
-    status: pending
+    content: "WS5: architecture §7.0s ops; smokes for read tools; phase-55-closure; OC-55"
+    status: completed
 isProject: false
 ---
 
@@ -28,7 +28,7 @@ isProject: false
 
 ## Status
 
-**Planned.** Best after [Phase 53](phase_53_grow_stock_money_closure.plan.md) surfaces exist.
+**Shipped.** WS1–WS5 complete on `main`. Best after [Phase 53](phase_53_grow_stock_money_closure.plan.md) surfaces. **OC-55** closed.
 
 **Spec pattern:** [phase_43_guardian_pr_spec.md](phase_43_guardian_pr_spec.md) · [phase_44_guardian_pr_spec.md](phase_44_guardian_pr_spec.md)
 
@@ -103,7 +103,7 @@ Create `phase_55_guardian_pr_spec.md`:
 
 ## Definition of done
 
-- [ ] Three read tools callable from grounded chat
-- [ ] Starters on Supplies, Money, grow strip
-- [ ] phase_55_guardian_pr_spec.md published
-- [ ] OC-55 closed
+- [x] Four read tools callable from grounded chat
+- [x] Starters on Supplies, Money, grow strip, post-harvest, dashboard
+- [x] phase_55_guardian_pr_spec.md published
+- [x] OC-55 closed

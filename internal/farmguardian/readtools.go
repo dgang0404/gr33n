@@ -43,7 +43,17 @@ var (
 
 // ReadToolIDs returns registered read-only tool ids for platform context.
 func ReadToolIDs() []string {
-	return []string{"list_unread_alerts", "summarize_farm_low_stock", "summarize_zone", "list_plants", "summarize_zone_fertigation"}
+	return []string{
+		"list_unread_alerts",
+		"summarize_farm_low_stock",
+		"restock_priority",
+		"summarize_cycle_cost",
+		"summarize_farm_spending",
+		"summarize_active_grows",
+		"summarize_zone",
+		"list_plants",
+		"summarize_zone_fertigation",
+	}
 }
 
 // EnrichPromptBlock runs matching read-only tools and returns extra system
@@ -69,12 +79,46 @@ func EnrichPromptBlock(ctx context.Context, q db.Querier, farmID int64, question
 		}
 	}
 
-	if shouldRunSummarizeFarmLowStockReadIntent(question) {
+	if shouldRunRestockPriorityReadIntent(question) {
+		if block, err := renderRestockPriority(ctx, q, farmID); err != nil {
+			slog.Warn("farm guardian read tool failed", "tool", "restock_priority", "farm_id", farmID, "err", err)
+		} else if block != "" {
+			blocks = append(blocks, block)
+			logReadToolUse(ctx, "restock_priority", farmID)
+		}
+	} else if shouldRunSummarizeFarmLowStockReadIntent(question) {
 		if block, err := renderSummarizeFarmLowStock(ctx, q, farmID); err != nil {
 			slog.Warn("farm guardian read tool failed", "tool", "summarize_farm_low_stock", "farm_id", farmID, "err", err)
 		} else if block != "" {
 			blocks = append(blocks, block)
 			logReadToolUse(ctx, "summarize_farm_low_stock", farmID)
+		}
+	}
+
+	if shouldRunSummarizeCycleCostReadIntent(question, ref) {
+		if block, err := renderSummarizeCycleCost(ctx, q, farmID, question, snap, ref); err != nil {
+			slog.Warn("farm guardian read tool failed", "tool", "summarize_cycle_cost", "farm_id", farmID, "err", err)
+		} else if block != "" {
+			blocks = append(blocks, block)
+			logReadToolUse(ctx, "summarize_cycle_cost", farmID)
+		}
+	}
+
+	if shouldRunSummarizeFarmSpendingReadIntent(question) {
+		if block, err := renderSummarizeFarmSpending(ctx, q, farmID); err != nil {
+			slog.Warn("farm guardian read tool failed", "tool", "summarize_farm_spending", "farm_id", farmID, "err", err)
+		} else if block != "" {
+			blocks = append(blocks, block)
+			logReadToolUse(ctx, "summarize_farm_spending", farmID)
+		}
+	}
+
+	if shouldRunSummarizeActiveGrowsReadIntent(question) {
+		if block, err := renderSummarizeActiveGrows(ctx, q, farmID); err != nil {
+			slog.Warn("farm guardian read tool failed", "tool", "summarize_active_grows", "farm_id", farmID, "err", err)
+		} else if block != "" {
+			blocks = append(blocks, block)
+			logReadToolUse(ctx, "summarize_active_grows", farmID)
 		}
 	}
 

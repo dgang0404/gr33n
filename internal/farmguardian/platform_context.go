@@ -20,7 +20,7 @@ func PlatformContextBlock(cfg ai.Config, llmConfigured bool, toolIDs []string) s
 	internet := platformInternetLine()
 	toolsLine := formatToolList(toolIDs)
 	readToolsLine := formatToolList(ReadToolIDs())
-	horizon := "Grow setup: one Confirm-gated pack or individual create tools; bootstrap templates are admin-only. Day-to-day: Today dashboard, My rooms (Zones → Water / Light / Climate), and Feed & water hub (Phase 47). Say feeding plan, next feed, and comfort target — not setpoint or cron. Operations hub (Phase 43): prefer nav labels Supplies, Feeding (details), and Money over Inventory, Fertigation, or Costs. Low stock: cite input name and remaining qty; point operators to Supplies. enqueue_actuator_command: one pending_command per device (last write wins); duration_seconds pulse for pumps. Pi auto-mix + command queue: Phase 39."
+	horizon := "Grow setup: Confirm-gated pack or individual create tools; bootstrap templates admin-only. Day-to-day: Today, My rooms (Zones → Water / Light / Climate), Feed & water hub. Say feeding plan and comfort target — not setpoint or cron. Operations hub: prefer Supplies, Feeding (details), Money over Inventory, Fertigation, or Costs. Phase 55 read tools: cycle cost, farm spending, restock priority, active grows (no Confirm); restock/receipt in hub UI. Low stock → Supplies. enqueue_actuator_command: one pending_command per device; duration_seconds pulse. Pi queue: Phase 39."
 
 	return strings.TrimSpace(fmt.Sprintf(`
 Platform context (how you run inside gr33n — state these facts plainly when asked):

@@ -12,11 +12,13 @@ import (
 // ContextRef is the UI "Ask Guardian" anchor — which alert, cycle, zone, or
 // dashboard route the operator opened the drawer from (Phase 29 WS6, route Phase 32 WS1).
 type ContextRef struct {
-	Type string `json:"type"`
-	ID   int64  `json:"id,omitempty"`
-	Name string `json:"name,omitempty"`
-	Path string `json:"path,omitempty"`
-	Tab  string `json:"tab,omitempty"`
+	Type             string `json:"type"`
+	ID               int64  `json:"id,omitempty"`
+	Name             string `json:"name,omitempty"`
+	Path             string `json:"path,omitempty"`
+	Tab              string `json:"tab,omitempty"`
+	CropCycleID      int64  `json:"crop_cycle_id,omitempty"`
+	PriorCropCycleID int64  `json:"prior_crop_cycle_id,omitempty"`
 }
 
 // BuildContextRefBlock loads the referenced row and renders a focused prompt
@@ -67,11 +69,11 @@ func renderRouteContext(path, nameHint string, history []ContextRef) string {
 	case path == "/feeding":
 		b.WriteString("\nFeed & water hub — prefer feeding plan language (next feed, last feed, reservoir). Use summarize_zone_fertigation when a room is in scope.")
 	case path == "/operations/supplies" || path == "/inventory":
-		b.WriteString("\nSupplies — on-hand batches and low-stock. Cite input names and quantities; do not promise Guardian can change stock levels (hub UI or future tools only).")
+		b.WriteString("\nSupplies — on-hand batches and low-stock. Cite input names and quantities; use restock_priority or summarize_farm_low_stock for grounded stock answers. Do not promise Guardian can change stock levels — restock stays in Supplies UI (+ Add qty).")
 	case path == "/operations/feeding":
-		b.WriteString("\nFeeding (details) — farm-wide programs, nutrient tanks, EC targets. Not the daily Feed & water hub.")
+		b.WriteString("\nFeeding (details) — farm-wide programs, nutrient tanks, EC targets. Not the daily Feed & water hub (/feeding).")
 	case path == "/operations/money" || path == "/costs":
-		b.WriteString("\nMoney — spend summary and receipts. Plain language; hide GL/COA unless the operator is on the full costs editor.")
+		b.WriteString("\nMoney — spend summary and receipts. Use summarize_farm_spending for month-by-category answers; summarize_cycle_cost when a grow is in scope. Plain language; hide GL/COA unless the operator is on the full costs editor (/costs).")
 	case path == "/sensors":
 		b.WriteString("\nSensors list — operator can see all sensor cards with wiring and reading status. Lead with wiring health, offline sensors, or reading freshness.")
 	case path == "/actuators":
@@ -87,7 +89,7 @@ func renderRouteContext(path, nameHint string, history []ContextRef) string {
 	case path == "/fertigation":
 		b.WriteString("\nFertigation (technical) — EC/pH mixing programs. Use precise nutrient and dosing language.")
 	case path == "/plants":
-		b.WriteString("\nPlants — inventory of plant batches. Prefer common names; connect to active crop cycles where relevant.")
+		b.WriteString("\nPlants — strain catalog and varieties. Distinguish catalog plants from active grow runs (summarize_active_grows). Start a new grow from zone Overview or Plants — not silent chat writes.")
 	case path == "/pi-setup":
 		b.WriteString("\nPi + HAT setup guide — operator is configuring Raspberry Pi hardware with Sequent Microsystems stacking relay HATs. Lead with practical wiring and channel numbering advice. Offer procedure wire-pi-relay-light.")
 	case path == "/" || path == "":
@@ -274,6 +276,9 @@ func renderCropCycleContext(ctx context.Context, q *db.Queries, farmID, cycleID 
 	if line := ac.Analytics.renderLine(); line != "" {
 		b.WriteString("Metrics: " + line + "\n")
 	}
+	if costLine := cycleCostSummaryLine(ctx, q, c.ID); costLine != "" {
+		b.WriteString(costLine + "\n")
+	}
 	return strings.TrimSpace(b.String())
 }
 
@@ -321,6 +326,19 @@ func renderZoneContext(ctx context.Context, q *db.Queries, farmID int64, ref Con
 	// turn (EnrichPromptBlock skips summarize_zone for this zone).
 	if readings, rerr := renderZoneSensorReadings(ctx, q, z.ID); rerr == nil && readings != "" {
 		b.WriteString(readings)
+	}
+	cycleID := ref.CropCycleID
+	if cycleID <= 0 {
+		if c, ok := activeCycleForZoneID(ctx, q, farmID, z.ID); ok {
+			cycleID = c.ID
+		}
+	}
+	if cycleID > 0 {
+		if costLine := cycleCostSummaryLine(ctx, q, cycleID); costLine != "" {
+			b.WriteByte('\n')
+			b.WriteString(costLine)
+		}
+		b.WriteString("\nPrefer summarize_cycle_cost and cycle summary over generic farm snapshot when answering grow cost questions.")
 	}
 	if meta, _, err := zonephotos.ParseMeta(z.MetaData); err == nil && len(meta.PhotoAttachmentIDs) > 0 {
 		b.WriteByte('\n')

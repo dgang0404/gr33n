@@ -68,14 +68,16 @@ func TestBuildContextRefBlock_SetupWizardRoutes(t *testing.T) {
 
 func TestBuildContextRefBlock_OperationsRoutes(t *testing.T) {
 	got := BuildContextRefBlock(t.Context(), nil, 0, ContextRef{Type: "route", Path: "/operations/supplies"})
-	for _, want := range []string{"Supplies", "do not promise Guardian can change stock"} {
+	for _, want := range []string{"Supplies", "Do not promise Guardian can change stock"} {
 		if !strings.Contains(got, want) {
 			t.Fatalf("supplies block missing %q:\n%s", want, got)
 		}
 	}
 	got = BuildContextRefBlock(t.Context(), nil, 0, ContextRef{Type: "route", Path: "/operations/money"})
-	if !strings.Contains(got, "Money") || !strings.Contains(got, "GL/COA") {
-		t.Fatalf("money block: %q", got)
+	for _, want := range []string{"Money", "summarize_farm_spending", "GL/COA"} {
+		if !strings.Contains(got, want) {
+			t.Fatalf("money block missing %q:\n%s", want, got)
+		}
 	}
 }
 

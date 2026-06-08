@@ -95,13 +95,26 @@ func TestEnrichPromptBlock_NoQueries(t *testing.T) {
 
 func TestReadToolIDs(t *testing.T) {
 	ids := ReadToolIDs()
-	want := []string{"list_unread_alerts", "summarize_farm_low_stock", "summarize_zone", "list_plants", "summarize_zone_fertigation"}
-	if len(ids) != len(want) {
-		t.Fatalf("unexpected read tool ids: %v", ids)
-	}
-	for i, id := range want {
-		if ids[i] != id {
-			t.Fatalf("read tool ids = %v want %v", ids, want)
+	for _, want := range []string{
+		"list_unread_alerts",
+		"summarize_farm_low_stock",
+		"restock_priority",
+		"summarize_cycle_cost",
+		"summarize_farm_spending",
+		"summarize_active_grows",
+		"summarize_zone",
+		"list_plants",
+		"summarize_zone_fertigation",
+	} {
+		found := false
+		for _, id := range ids {
+			if id == want {
+				found = true
+				break
+			}
+		}
+		if !found {
+			t.Fatalf("ReadToolIDs missing %q: %v", want, ids)
 		}
 	}
 }

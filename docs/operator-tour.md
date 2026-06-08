@@ -437,12 +437,28 @@ Most cards still come from **pattern matchers** after you send a message. When m
 | Zone grow strip | What did this room cost so far? | Chat + cycle `context_ref`; cost summary API cited in copy |
 | Zone grow strip | Compare to last time | Compare route hint when prior harvested cycle exists |
 | Supplies hub | What should I restock first? | **`summarize_farm_low_stock`** |
-| Money hub | Spending by category | Month costs from farm data; category read tool in [Phase 55](plans/phase_55_guardian_ops_grow_money.plan.md) |
+| Money hub | Spending by category | **`summarize_farm_spending`** (Phase 55) |
 | Harvest weigh-in | Last run yield | Prior cycle in same zone |
 
 **Prefer the UI for writes:** start grow, harvest weigh-in, **+ Add qty**, and **Save receipt** — same rule as [§6f](#6f-guardian-on-supplies--money-phase-43--shipped).
 
 **Vitest:** `phase-53-ws5-guardian.test.js`, `phase-53-closure.test.js`.
+
+### 6j. Guardian ops read depth (Phase 55 — shipped)
+
+**Plan:** [`plans/phase_55_guardian_ops_grow_money.plan.md`](plans/phase_55_guardian_ops_grow_money.plan.md) · Spec: [`plans/phase_55_guardian_pr_spec.md`](plans/phase_55_guardian_pr_spec.md) · Architecture: [§7.0s](farm-guardian-architecture.md#70s-guardian-ops-read-depth-phase-55--shipped).
+
+Four new **read tools** (no Confirm): **`summarize_cycle_cost`**, **`summarize_farm_spending`**, **`restock_priority`**, **`summarize_active_grows`**.
+
+| Surface | Starter | Read tool |
+|---------|---------|-----------|
+| Supplies | What should I restock first? | **`restock_priority`** |
+| Money | Spending by category; Tag a receipt | **`summarize_farm_spending`** |
+| Grow strip | Room cost; Stage advice | **`summarize_cycle_cost`** + `crop_cycle_id` context |
+| Post-harvest | How did we do vs last time; Cost per gram | **`summarize_cycle_cost`** |
+| Dashboard (low stock) | Open Supplies | **`restock_priority`** |
+
+**Vitest bundle:** `phase-55-closure.test.js`, `readtools_ops_test.go`.
 
 ### 6d. First field install with Guardian, offline (Phase 37)
 
