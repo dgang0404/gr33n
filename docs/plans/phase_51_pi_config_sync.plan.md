@@ -25,7 +25,7 @@ todos:
     status: completed
   - id: ws6-docs-tests
     content: "WS6: pi-integration-guide §DB-first sync, architecture §7.0p, Pi pytest coverage, Go handler tests, smoke_phase51_test.go, phase-51-closure.test.js, OC-51"
-    status: pending
+    status: completed
 isProject: false
 ---
 
@@ -33,7 +33,7 @@ isProject: false
 
 ## Status
 
-**In progress (WS1–WS5 shipped).** Requires [Phase 50 hardware wiring visibility](phase_50_hardware_wiring_visibility.plan.md) to have shipped first — specifically the wiring data model (WS1) and API PATCH (WS2), which define the contract this phase consumes.
+**Shipped.** WS1–WS6 complete on `main`. Requires [Phase 50 hardware wiring visibility](phase_50_hardware_wiring_visibility.plan.md) — wiring model + PATCH API consumed by Pi sync.
 
 **WS1 delivered:** `config_version` on `gr33ncore.devices`, bump triggers on sensor/actuator wiring, `GET /devices/by-uid/{uid}/config` + `/config/version` (Pi `X-API-Key`).
 
@@ -44,6 +44,8 @@ isProject: false
 **WS4 delivered:** Cache-only boot warning; Pi PATCHes `last_config_fetch_at` on live fetch/reload; `ActuatorCard` staleness badge (`deviceConfigSync.js`); handler stores timestamp in `devices.config`.
 
 **WS5 delivered:** Local `sensors`/`actuators` in YAML remain opt-out (unchanged installs); `import_config_to_platform.py` PATCHes wiring via JWT and writes minimal bootstrap YAML; `pi_sensor_entry_to_wiring` / `build_minimal_bootstrap` helpers in `gr33n_client.py`.
+
+**WS6 delivered:** `pi-integration-guide` §2 platform sync + §2b legacy opt-out; architecture §7.0p; `smoke_phase51_test.go`; `phase-51-closure.test.js`; **OC-51** closed.
 
 **Roadmap:** [farmer_ux_roadmap_40_plus.plan.md](farmer_ux_roadmap_40_plus.plan.md) (edge/Pi track).
 
@@ -338,15 +340,15 @@ The script is idempotent — re-running it overwrites the same wiring fields wit
 
 ## Definition of done
 
-- [ ] `GET /devices/by-uid/{uid}/config` returns structured wiring that round-trips with the Pi
-- [ ] `GET /devices/by-uid/{uid}/config/version` is lightweight (Pi can call it every 30s)
-- [ ] Pi client starts from a 5-line `config.yaml` (no sensors/actuators) and reads all wiring from API
-- [ ] Pi caches config; survives API restart / network blip on the next boot
-- [ ] Wiring change in UI → Pi hot-reloads within one `schedule_poll_interval_seconds` (~30s); no manual restart
-- [ ] Existing full-YAML `config.yaml` deployments work unchanged (opt-out path)
-- [ ] `import_config_to_platform.py` migrates a local YAML to the platform in one command
-- [ ] Staleness badge on device card in UI
-- [ ] All tests green; OC-51 closed
+- [x] `GET /devices/by-uid/{uid}/config` returns structured wiring that round-trips with the Pi
+- [x] `GET /devices/by-uid/{uid}/config/version` is lightweight (Pi can call it every 30s)
+- [x] Pi client starts from a 5-line `config.yaml` (no sensors/actuators) and reads all wiring from API
+- [x] Pi caches config; survives API restart / network blip on the next boot
+- [x] Wiring change in UI → Pi hot-reloads within one `schedule_poll_interval_seconds` (~30s); no manual restart
+- [x] Existing full-YAML `config.yaml` deployments work unchanged (opt-out path)
+- [x] `import_config_to_platform.py` migrates a local YAML to the platform in one command
+- [x] Staleness badge on device card in UI
+- [x] All tests green; OC-51 closed
 
 ---
 

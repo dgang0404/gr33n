@@ -2,7 +2,7 @@
 
 > **Scope:** How an on-farm Raspberry Pi running [`pi_client/gr33n_client.py`](../pi_client/gr33n_client.py) posts sensor readings, device status, and actuator events to the gr33n API, and how those flow into the dashboard UI.
 >
-> **Phase 50 (DB-first wiring):** Set GPIO / I2C / serial wiring in the **dashboard** (Sensors, Controls, device wizard), then **download** a generated `config.yaml` — see [§2a](#2a-db-first-wiring-and-config-generation-phase-50--recommended). Manual YAML editing remains a fallback; live config pull from the API is [Phase 51](plans/phase_51_pi_config_sync.plan.md).
+> **Phase 51 (platform sync — recommended):** Minimal `config.yaml` on the Pi (`api`, `device.uid`, `farm_id`); wiring is fetched from the API on startup, cached offline, and **hot-reloaded** when you edit pins in the dashboard — see [§2](#2-platform-sync-phase-51--recommended). [§2a](#2a-db-first-wiring-in-the-dashboard-phase-50) is how wiring gets into the DB; [§2b](#2b-legacy-full-local-yaml-opt-out) keeps old full-YAML Pis working unchanged.
 >
 > **Companion docs:**
 > - API spec: [`openapi.yaml`](../openapi.yaml) — source of truth for every route used below.
@@ -67,22 +67,72 @@ Older deployments and one-release mirroring still use **`devices.config.pending_
 
 ---
 
-## 2. Environment & configuration
+## 2. Platform sync (Phase 51 — recommended)
 
-The Pi reads its config from `pi_client/config.yaml` (see `DEFAULT_CONFIG` in [`gr33n_client.py`](../pi_client/gr33n_client.py)):
+After [§2a](#2a-db-first-wiring-in-the-dashboard-phase-50) wiring is in the database, the Pi can run with a **bootstrap-only** `config.yaml` — no `sensors[]` or `actuators[]` on disk.
+
+### Minimal bootstrap (`config.bootstrap.example.yaml`)
 
 ```yaml
 api:
-  base_url: http://192.168.1.100:8080   # or https://gr33n-api.example.com
+  base_url: "http://192.168.1.100:8080"
   timeout_seconds: 5
-  api_key: "replace-with-PI_API_KEY"    # must match the API's PI_API_KEY env var
+  api_key: "replace-with-PI_API_KEY"
+device:
+  uid: "demo-veg-relay-01"   # must match gr33ncore.devices.device_uid
 farm:
   farm_id: 1
-offline_queue_path: /var/lib/gr33n/queue.db
+schedule_poll_interval_seconds: 30
+offline_queue_path: "/var/lib/gr33n/queue.db"
 offline_flush_interval_seconds: 60
 ```
 
-For the **MQTT bridge** (`pi_client/mqtt_telemetry_bridge.py`) the same values are read from environment variables:
+### Startup flow
+
+1. `load_bootstrap("config.yaml")` — api, device, farm only (no network).
+2. If local `sensors[]` / `actuators[]` are **absent** → `GET /devices/by-uid/{uid}/config` (`X-API-Key`).
+3. On success → write `~/.gr33n/config-cache.json` (`CONFIG_CACHE_PATH` env override).
+4. If API unreachable → load cache and log **running on cached config, version may be stale**.
+5. If no API and no cache → **fail loud** (no silent defaults).
+6. Build `SensorReader` / `ActuatorController` from merged runtime config.
+
+### Live reload
+
+On each schedule-loop tick the Pi calls `GET /devices/by-uid/{uid}/config/version`. When `config_version` changes it fetches the full config, hot-swaps hardware under a lock, and updates the cache — typically within one `schedule_poll_interval_seconds` (~30s). Empty platform wiring is **rejected** (old config kept).
+
+### Pi-facing API (edge auth)
+
+| Method | Path | Purpose |
+|--------|------|---------|
+| `GET` | `/devices/by-uid/{uid}/config` | Full runtime wiring JSON (`pin`/`channel` for sensors, `gpio_pin` for actuators) |
+| `GET` | `/devices/by-uid/{uid}/config/version` | Lightweight version poll (`{"config_version": N}`) |
+| `PATCH` | `/devices/{id}/status` | Heartbeat; optional `last_config_fetch_at` ISO timestamp after successful sync |
+
+`devices.config_version` increments via DB trigger when sensor/actuator `config.wiring` changes (dashboard PATCH or import script).
+
+### Dashboard: config sync badge
+
+Device cards on the Dashboard show **Config synced** / **Config stale** / **Never fetched** from `devices.config.last_config_fetch_at` (Pi reports on each live fetch/reload). Requires `device_uid` and `config_version > 0`.
+
+### Migrate from full local YAML
+
+```bash
+cd pi_client
+python3 import_config_to_platform.py --config config.yaml \
+  --email dev@gr33n.local --password devpassword
+```
+
+PATCHes wiring via JWT (`/sensors/{id}/wiring`, `/actuators/{id}/wiring`), then rewrites minimal bootstrap YAML. Idempotent.
+
+Plan: [`plans/phase_51_pi_config_sync.plan.md`](plans/phase_51_pi_config_sync.plan.md).
+
+---
+
+## 2a. DB-first wiring in the dashboard (Phase 50)
+
+The Pi reads MQTT bridge env vars separately (unchanged). For **`gr33n_client.py`**, use §2 (platform sync) or §2b (legacy full YAML).
+
+For the **MQTT bridge** (`pi_client/mqtt_telemetry_bridge.py`) the API values are read from environment variables:
 
 | Var | Purpose |
 |-----|---------|
@@ -92,7 +142,7 @@ For the **MQTT bridge** (`pi_client/mqtt_telemetry_bridge.py`) the same values a
 
 The API side must have `PI_API_KEY` set (see `cmd/api/main.go` / deployment docs). Any Pi-tagged route (`requireAPIKey`) will reject requests without a matching header with **401**.
 
-### 2a. DB-first wiring and config generation (Phase 50 — recommended)
+### Wiring in the dashboard
 
 **Happy path:** register hardware in gr33n, record **where each sensor and actuator is wired**, generate `config.yaml`, copy to the Pi. No hand-editing pin lists in YAML and no SQL.
 
@@ -101,8 +151,8 @@ The API side must have `PI_API_KEY` set (see `cmd/api/main.go` / deployment docs
 | 1 | **Settings → Connect edge device** (`/farms/{id}/devices/new`) | Register the Pi (`device_uid`, zone). |
 | 2 | **Sensors** list + **sensor detail → Hardware wiring** | Set driver (`dht22`, `ads1115`, …), BCM GPIO, I2C channel, or serial port; assign the **edge device**. |
 | 3 | **Controls** cards | Wiring badges show pin summary; edit wiring via sensor detail or API (`PATCH /actuators/{id}/wiring`). |
-| 4 | Device wizard **Pi config** step | **Download config.yaml** or copy — generated from DB via `GET /devices/{id}/pi-config`. |
-| 5 | On the Pi | `scp` the file to `pi_client/config.yaml`, set `api.api_key`, restart `gr33n` systemd unit. |
+| 4 | Device wizard **Pi config** step | **Download bootstrap or full YAML** — or skip file entirely with §2 platform sync. |
+| 5 | On the Pi | Copy minimal bootstrap (§2) or generated YAML; set `api.api_key`; restart `gr33n` systemd unit. |
 
 **Data model:** wiring lives in `sensors.config.wiring` and `actuators.config.wiring` (JSONB). API responses also expose a top-level `wiring` field. Validation rejects unknown drivers, duplicate pins per device (with an exception: multiple **DHT22** logical sensors may share one physical GPIO), and broken **derived** input references.
 
@@ -111,7 +161,7 @@ The API side must have `PI_API_KEY` set (see `cmd/api/main.go` / deployment docs
 - `make db-sanity-report` — prints wiring coverage and **fails** on pin/channel conflicts.
 - Demo farm backfill: migration `db/migrations/20260607_phase50_hardware_wiring_backfill.sql` (idempotent).
 
-**Manual fallback:** edit [`pi_client/config.yaml`](../pi_client/config.yaml) directly (§2, §8.3 step 4b). Use when the UI is unreachable or for one-off experiments. Keep `sensor_id` / `actuator_id` aligned with the database ([`scripts/print-demo-sensor-ids.sh`](../scripts/print-demo-sensor-ids.sh)).
+**Manual fallback:** edit [`pi_client/config.yaml`](../pi_client/config.yaml) directly ([§2b](#2b-legacy-full-local-yaml-opt-out), §8.3 step 4b). Use when the UI is unreachable or for one-off experiments. Keep `sensor_id` / `actuator_id` aligned with the database ([`scripts/print-demo-sensor-ids.sh`](../scripts/print-demo-sensor-ids.sh)).
 
 **API (JWT, farm-scoped):**
 
@@ -121,7 +171,39 @@ The API side must have `PI_API_KEY` set (see `cmd/api/main.go` / deployment docs
 | `PATCH` | `/actuators/{id}/wiring` | Merge validated wiring into `actuators.config` |
 | `GET` | `/devices/{id}/pi-config` | Generate full `config.yaml` for that edge device |
 
-Plan: [`plans/phase_50_hardware_wiring_visibility.plan.md`](plans/phase_50_hardware_wiring_visibility.plan.md). Runtime pull-from-API: Phase 51.
+Plan: [`plans/phase_50_hardware_wiring_visibility.plan.md`](plans/phase_50_hardware_wiring_visibility.plan.md). Runtime pull-from-API: [§2](#2-platform-sync-phase-51--recommended).
+
+---
+
+## 2b. Legacy full local YAML (opt-out)
+
+If `config.yaml` still contains `sensors[]` and/or `actuators[]`, the Pi **skips** platform fetch for that section and logs *Using local wiring for sensors/actuators (platform sync disabled for this device)*. Existing installs need **no changes** to upgrade the client.
+
+Full-file example (see [`pi_client/config.yaml`](../pi_client/config.yaml) and `DEFAULT_CONFIG` in [`gr33n_client.py`](../pi_client/gr33n_client.py)):
+
+```yaml
+api:
+  base_url: http://192.168.1.100:8080
+  timeout_seconds: 5
+  api_key: "replace-with-PI_API_KEY"
+farm:
+  farm_id: 1
+sensors:
+  - sensor_id: 3
+    sensor_type: temperature
+    source: dht22
+    pin: 4
+    interval_seconds: 60
+actuators:
+  - actuator_id: 1
+    device_id: 1
+    device_type: light
+    gpio_pin: 17
+offline_queue_path: /var/lib/gr33n/queue.db
+offline_flush_interval_seconds: 60
+```
+
+To adopt platform sync later, run [`import_config_to_platform.py`](../pi_client/import_config_to_platform.py) (§2).
 
 ---
 
@@ -133,7 +215,9 @@ Every Pi-facing endpoint is declared with `requireAPIKey` in [`cmd/api/routes.go
 |--------|------|---------|---------------|
 | `POST` | `/sensors/{id}/readings` | Post one reading for one sensor | `Gr33nApiClient.post_reading` |
 | `POST` | `/sensors/readings/batch` | Post many readings across sensors in one request | `Gr33nApiClient.post_readings_batch` |
-| `PATCH` | `/devices/{id}/status` | Heartbeat: `{"status": "online"}` | `Gr33nApiClient.patch_device_status` |
+| `PATCH` | `/devices/{id}/status` | Heartbeat; optional `last_config_fetch_at` after config sync | `Gr33nApiClient.patch_device_status` |
+| `GET` | `/devices/by-uid/{uid}/config` | Runtime wiring for platform-sync Pis (Phase 51) | `Gr33nApiClient.fetch_device_config` |
+| `GET` | `/devices/by-uid/{uid}/config/version` | Version poll for live reload | `Gr33nApiClient.get_config_version` |
 | `POST` | `/actuators/{id}/events` | Record what the actuator actually did | `Gr33nApiClient.post_actuator_event` |
 | `GET` | `/devices/{id}/commands/next` | Dequeue head command (204 if empty) | `Gr33nApiClient.get_next_command` |
 | `POST` | `/devices/{id}/commands/{cid}/ack` | Mark command completed/failed | `Gr33nApiClient.ack_command` |

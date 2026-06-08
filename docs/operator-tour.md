@@ -541,7 +541,7 @@ Architecture: [`farm-guardian-architecture.md` §7.0m](farm-guardian-architectur
 2. **`/farms/{id}/setup`** — choose **Start blank** or a template card → preview → **Apply starter pack** (farm admin; idempotent).
 3. **Today** (`/`) — **Getting started** checklist when steps remain: zone → edge device → comfort targets → one schedule.
 4. **`/farms/{id}/zones/new`** — name, zone type, optional greenhouse profile or lighting preset.
-5. **`/farms/{id}/devices/new`** — register Pi, **download generated config.yaml** (Phase 50) from platform wiring, embedded field checklist, poll **online**, optional actuators.
+5. **`/farms/{id}/devices/new`** — register Pi, **download bootstrap or generated config.yaml** (Phase 50/51) from platform wiring, embedded field checklist, poll **online**, optional actuators. After the Pi syncs, Dashboard device cards show **Config synced** / **Config stale** / **Never fetched** (Phase 51).
 6. **`/comfort-targets`** — set first comfort band; **Schedules** tab to turn on one run.
 7. Optional — **Ask Guardian** from checklist chips, wizard **Need help?** footers, or **empty zone** grow starters on zone cockpit ([§6g](#6g-guardian-during-setup-phase-44--shipped)).
 

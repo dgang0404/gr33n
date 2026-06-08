@@ -78,6 +78,9 @@ todos:
   - id: oc-50-closure
     content: "OC-50: Phase 50 WS6 — hardware wiring visibility, pi-config generator, sanity report, docs/tests (close when Phase 50 ships)"
     status: completed
+  - id: oc-51-closure
+    content: "OC-51: Phase 51 WS6 — Pi config platform sync, live reload, staleness badge, import script, docs/tests (close when Phase 51 ships)"
+    status: completed
 isProject: false
 ---
 
@@ -400,7 +403,22 @@ Feature detail: [`phase_50_hardware_wiring_visibility.plan.md`](phase_50_hardwar
 | Sanity report + inline conflicts | ✅ | WS5 — `db-sanity-report` exit on conflicts; wiring panel preview |
 | OC-50 docs/tests | ✅ | WS6 — `pi-integration-guide` §2a, architecture §7.0o, `phase-50-closure.test.js` |
 
-**Master roadmap:** [`farmer_ux_roadmap_40_plus.plan.md`](farmer_ux_roadmap_40_plus.plan.md). Closure rows **OC-42 … OC-50** track each phase WS8/WS7 — not pre-40 work. Vocabulary: [`farmer-vocabulary.md`](../farmer-vocabulary.md). Guardian specs: [42](phase_42_guardian_pr_spec.md) · [43](phase_43_guardian_pr_spec.md) · [44](phase_44_guardian_pr_spec.md) · [45](phase_45_guardian_pr_spec.md) · [46](phase_46_guardian_llm_tool_proposals.plan.md).
+## Phase 51 — Pi config platform sync
+
+Feature detail: [`phase_51_pi_config_sync.plan.md`](phase_51_pi_config_sync.plan.md). **OC-51** closed (WS6). **Phase 51 shipped.**
+
+| Area | Status | Notes |
+|------|--------|-------|
+| API config by uid + version | ✅ | WS1 — `GET /devices/by-uid/{uid}/config`, `/config/version`; `config_version` + triggers |
+| Pi bootstrap + cache | ✅ | WS2 — minimal YAML, `~/.gr33n/config-cache.json` |
+| Live reload | ✅ | WS3 — `_poll_config_version`, `_reload_config` |
+| Offline + staleness badge | ✅ | WS4 — cache fallback; `last_config_fetch_at`; `ActuatorCard` badge |
+| Legacy opt-out + import | ✅ | WS5 — local YAML precedence; `import_config_to_platform.py` |
+| OC-51 docs/tests | ✅ | WS6 — `pi-integration-guide` §2, architecture §7.0p, `phase-51-closure.test.js`, `smoke_phase51_test.go` |
+
+---
+
+**Master roadmap:** [`farmer_ux_roadmap_40_plus.plan.md`](farmer_ux_roadmap_40_plus.plan.md). Closure rows **OC-42 … OC-51** track each phase WS8/WS7 — not pre-40 work. Vocabulary: [`farmer-vocabulary.md`](../farmer-vocabulary.md). Guardian specs: [42](phase_42_guardian_pr_spec.md) · [43](phase_43_guardian_pr_spec.md) · [44](phase_44_guardian_pr_spec.md) · [45](phase_45_guardian_pr_spec.md) · [46](phase_46_guardian_llm_tool_proposals.plan.md).
 
 ---
 

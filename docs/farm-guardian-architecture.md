@@ -427,7 +427,7 @@ Plan: [`plans/phase_48_dev_seed_and_small_farm_profiles.plan.md`](plans/phase_48
 
 ### 7.0o Hardware wiring visibility (Phase 50 — shipped)
 
-**Shipped.** Structured Pi wiring metadata in `sensors.config.wiring` / `actuators.config.wiring`; read + PATCH API; UI badges on **Sensors** and **Controls**; **Hardware wiring** editor on sensor detail; **`GET /devices/{id}/pi-config`** generator in the edge device wizard. Pi runtime still reads **local** YAML — live API sync is Phase 51.
+**Shipped.** Structured Pi wiring metadata in `sensors.config.wiring` / `actuators.config.wiring`; read + PATCH API; UI badges on **Sensors** and **Controls**; **Hardware wiring** editor on sensor detail; **`GET /devices/{id}/pi-config`** generator in the edge device wizard.
 
 | Layer | Artifact |
 |-------|----------|
@@ -438,6 +438,33 @@ Plan: [`plans/phase_48_dev_seed_and_small_farm_profiles.plan.md`](plans/phase_48
 | Docs | [`pi-integration-guide.md`](pi-integration-guide.md) §2a DB-first path |
 
 **OC-50** via `phase-50-closure.test.js`. Plan: [`plans/phase_50_hardware_wiring_visibility.plan.md`](plans/phase_50_hardware_wiring_visibility.plan.md).
+
+### 7.0p Pi config platform sync (Phase 51 — shipped)
+
+**Shipped.** Closes the loop between dashboard wiring edits and Pi runtime — no SSH to change GPIO after initial bootstrap.
+
+```
+Operator (UI)                    Platform (API)                 Pi (gr33n_client.py)
+     │                                │                                │
+     │ PATCH sensors/{id}/wiring      │                                │
+     ├───────────────────────────────►│ devices.config_version++       │
+     │                                │                                │
+     │                                │◄──── GET …/config/version ─────┤ schedule loop (~30s)
+     │                                │──── config_version ───────────►│
+     │                                │◄──── GET …/config (on change) ─┤
+     │                                │──── sensors[], actuators[] ───►│ hot-reload readers
+     │                                │◄──── PATCH status + last_fetch ┤ staleness badge
+```
+
+| Layer | Artifact |
+|-------|----------|
+| API | `GET /devices/by-uid/{uid}/config`, `/config/version`; `config_version` column + triggers |
+| Pi client | `load_bootstrap`, `fetch_remote_config`, `~/.gr33n/config-cache.json`, `_reload_config` |
+| Migration | `import_config_to_platform.py` — JWT import from legacy YAML |
+| UI | `deviceConfigSync.js`, **Config synced / stale** on `ActuatorCard` |
+| Docs | [`pi-integration-guide.md`](pi-integration-guide.md) §2 platform sync, §2b legacy opt-out |
+
+**OC-51** via `phase-51-closure.test.js`. Plan: [`plans/phase_51_pi_config_sync.plan.md`](plans/phase_51_pi_config_sync.plan.md).
 
 ### 7.0m Feeding & water plain language (Phase 47)
 

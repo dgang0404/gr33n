@@ -33,7 +33,7 @@ isProject: false
 
 ## Status
 
-**Shipped.** WS1–WS6 complete on `main`. Wiring metadata + read/edit UI + config generation. **Pi still reads local YAML** — live pull-from-API is **[Phase 51](#relationship-to-phase-51)**.
+**Shipped.** WS1–WS6 complete on `main`. Wiring metadata + read/edit UI + config generation. Live Pi pull-from-API shipped in **[Phase 51](phase_51_pi_config_sync.plan.md)** (OC-51).
 
 **Roadmap:** [farmer_ux_roadmap_40_plus.plan.md](farmer_ux_roadmap_40_plus.plan.md) (edge/Pi track).
 
