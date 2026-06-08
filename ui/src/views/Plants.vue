@@ -45,6 +45,24 @@
           <p class="text-zinc-600 text-xs line-clamp-2">{{ metaSummary(p.meta) }}</p>
         </div>
         <p class="text-zinc-600 text-[11px] mb-3">Added {{ formatDate(p.created_at) }}</p>
+        <div
+          v-if="cyclesForPlant(p.id).length"
+          class="mb-3 rounded-lg border border-zinc-800 bg-zinc-950/50 px-3 py-2"
+          data-test="plant-active-cycles"
+        >
+          <p class="text-[10px] uppercase tracking-widest text-zinc-500 mb-1.5">Grows</p>
+          <ul class="space-y-1">
+            <li v-for="c in cyclesForPlant(p.id)" :key="c.id" class="text-xs">
+              <router-link
+                :to="`/crop-cycles/${c.id}/summary`"
+                class="text-green-500 hover:text-green-300"
+              >
+                {{ c.name || c.strain_or_variety || 'Grow' }}
+              </router-link>
+              <span class="text-zinc-500"> · {{ c.is_active ? 'active' : 'harvested' }}</span>
+            </li>
+          </ul>
+        </div>
         <div class="flex items-center gap-3 border-t border-zinc-800 pt-2 flex-wrap">
           <button
             type="button"
@@ -151,6 +169,7 @@
       :programs="programs"
       :plants="plants"
       :initial-strain="startGrowStrain"
+      :initial-plant-id="startGrowPlantId"
       @close="showStartGrowWizard = false"
       @created="onGrowStarted"
     />
@@ -177,6 +196,8 @@ const zones = ref([])
 const programs = ref([])
 const showStartGrowWizard = ref(false)
 const startGrowStrain = ref('')
+const startGrowPlantId = ref(null)
+const cropCycles = ref([])
 const loading = ref(false)
 const showModal = ref(false)
 const editing = ref(null)
@@ -219,21 +240,28 @@ async function refresh() {
   if (!fid) return
   loading.value = true
   try {
-    const [p, z, prog] = await Promise.all([
+    const [p, z, prog, cycles] = await Promise.all([
       store.loadPlants(fid),
       store.zones.length ? Promise.resolve(store.zones) : store.loadAll(fid).then(() => store.zones),
       store.loadFertigationPrograms(fid),
+      store.loadCropCycles(fid),
     ])
     plants.value = p
     zones.value = z
     programs.value = prog
+    cropCycles.value = cycles || []
   } finally {
     loading.value = false
   }
 }
 
+function cyclesForPlant(plantId) {
+  return cropCycles.value.filter((c) => Number(c.plant_id) === Number(plantId))
+}
+
 function openStartGrow(plant) {
   startGrowStrain.value = strainFromPlant(plant)
+  startGrowPlantId.value = plant.id
   showStartGrowWizard.value = true
 }
 

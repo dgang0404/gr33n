@@ -42,6 +42,23 @@
 
     <GuardianStarterChips :starters="moneyStarters" />
 
+    <div
+      v-if="filterCycleId"
+      class="rounded-lg border border-emerald-800/60 bg-emerald-950/30 px-4 py-3 flex flex-wrap items-center justify-between gap-2"
+      data-test="money-grow-filter"
+    >
+      <p class="text-xs text-emerald-200">
+        Showing receipts tagged to grow #{{ filterCycleId }}
+        <span v-if="filterCycleLabel" class="text-emerald-400">({{ filterCycleLabel }})</span>
+      </p>
+      <router-link
+        to="/operations/money"
+        class="text-xs text-zinc-400 hover:text-zinc-200"
+      >
+        Clear filter
+      </router-link>
+    </div>
+
     <div v-if="loading" class="text-zinc-400 text-sm">Loading money summary…</div>
 
     <template v-else>
@@ -230,6 +247,7 @@
 
 <script setup>
 import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import api from '../api'
 import { useFarmStore } from '../stores/farm.js'
 import { useFarmContextStore } from '../stores/farmContext.js'
@@ -249,6 +267,20 @@ import {
 
 const store = useFarmStore()
 const farmContext = useFarmContextStore()
+const route = useRoute()
+
+const filterCycleId = computed(() => {
+  const raw = route.query.cycle_id
+  if (!raw) return null
+  const n = Number(raw)
+  return Number.isFinite(n) && n > 0 ? n : null
+})
+
+const filterCycleLabel = computed(() => {
+  if (!filterCycleId.value) return ''
+  const c = cropCycles.value.find((row) => Number(row.id) === filterCycleId.value)
+  return c?.name || c?.strain_or_variety || ''
+})
 
 const loading = ref(false)
 const saving = ref(false)
@@ -370,7 +402,11 @@ async function refresh() {
   try {
     if (!store.zones.length) await store.loadAll(fid)
     const [costs, cycles, prices] = await Promise.all([
-      store.loadCosts(fid, { limit: 100, offset: 0 }),
+      store.loadCosts(fid, {
+        limit: 100,
+        offset: 0,
+        cropCycleId: filterCycleId.value,
+      }),
       store.loadCropCycles(fid),
       api.get(`/farms/${fid}/energy-prices`).then((r) => r.data).catch(() => []),
     ])
@@ -386,6 +422,10 @@ function onConnectionChange() {
   isOnline.value = navigator.onLine
   if (isOnline.value) void store.flushTaskWriteQueue({ farmId: farmContext.farmId }).then(refresh)
 }
+
+watch(filterCycleId, () => {
+  void refresh()
+})
 
 onMounted(() => {
   refresh()

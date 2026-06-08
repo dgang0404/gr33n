@@ -212,11 +212,11 @@ func TestPhase28_CropCycleSummary_JSON(t *testing.T) {
 	}
 
 	stages := body["stages"].([]any)
-	if len(stages) != 1 {
-		t.Fatalf("stages length = %d, want 1 (single-row stand-in)", len(stages))
+	if len(stages) < 1 {
+		t.Fatalf("stages length = %d, want at least one timeline row", len(stages))
 	}
-	if body["stage_history_supported"].(bool) {
-		t.Fatalf("stage_history_supported must be false until a real history table lands")
+	if !body["stage_history_supported"].(bool) {
+		t.Fatalf("stage_history_supported must be true when crop_cycle_stage_events has rows (Phase 56)")
 	}
 }
 

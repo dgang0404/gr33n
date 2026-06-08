@@ -5,8 +5,8 @@
 -- name: CreateCropCycle :one
 INSERT INTO gr33nfertigation.crop_cycles (
     farm_id, zone_id, name, strain_or_variety, current_stage,
-    is_active, started_at, cycle_notes, primary_program_id
-) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+    is_active, started_at, cycle_notes, primary_program_id, plant_id
+) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
 RETURNING *;
 
 -- name: ListCropCyclesByFarm :many
@@ -33,6 +33,7 @@ UPDATE gr33nfertigation.crop_cycles SET
     yield_grams = $8,
     yield_notes = $9,
     primary_program_id = $10,
+    plant_id = $11,
     updated_at = NOW()
 WHERE id = $1
 RETURNING *;

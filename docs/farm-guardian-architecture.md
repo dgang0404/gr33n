@@ -493,7 +493,7 @@ Operator (UI)                    Platform (API)                 Pi (gr33n_client
 | Money hub | Spending by category | Grounded answer from cost list; dedicated read tool in [Phase 55](plans/phase_55_guardian_ops_grow_money.plan.md) |
 | Harvest weigh-in | Last run yield | Prior cycle summary via chat context |
 
-**Deferred:** `plant_id` FK → [Phase 56](plans/phase_56_grow_schema_harvest_analytics.plan.md); task consumptions UI → [Phase 58](plans/phase_58_task_consumptions_runtime.plan.md); NL stock/receipt writes → [Phase 46](plans/phase_46_guardian_llm_tool_proposals.plan.md).
+**Deferred:** task consumptions UI → [Phase 58](plans/phase_58_task_consumptions_runtime.plan.md); NL stock/receipt writes → [Phase 46](plans/phase_46_guardian_llm_tool_proposals.plan.md). **`plant_id` FK shipped in [Phase 56](plans/phase_56_grow_schema_harvest_analytics.plan.md).**
 
 Operator: [operator-tour §7c](operator-tour.md#7c-grow--stock--money-closure-phase-53) · Guardian: [§6i](operator-tour.md#6i-guardian-on-grow-closure-phase-53--shipped).
 
@@ -532,6 +532,22 @@ Operator: [operator-tour §7d](operator-tour.md#7d-zone-connection-pipeline-phas
 **No new Confirm tools** — restock, receipt, harvest stay hub UI ([spec §4](plans/phase_55_guardian_pr_spec.md)).
 
 **OC-55** via `phase-55-closure.test.js`.
+
+### 7.0t Grow schema + harvest analytics (Phase 56 — shipped)
+
+**Shipped (WS1–WS5).** Plants, cycles, and harvest numbers share one coherent story. Plan: [`plans/phase_56_grow_schema_harvest_analytics.plan.md`](plans/phase_56_grow_schema_harvest_analytics.plan.md).
+
+| Surface | Operator job | Implementation |
+|---------|--------------|----------------|
+| **Start grow** | Pick strain from Plants catalog | `crop_cycles.plant_id` FK; wizard sends `plant_id` |
+| **Plants page** | See grows tied to a strain | List cycles per plant; link to summary |
+| **Cycle summary** | Stage timeline + economics | `crop_cycle_stage_events` on stage PATCH; net banner when income tagged |
+| **Compare** | Side-by-side vs last harvest | `/farms/{id}/crop-cycles/compare?ids=` pre-selected from summary + post-harvest |
+| **Money hub** | Income for this grow | `GET /farms/{id}/costs?crop_cycle_id=` + `?cycle_id=` deep link |
+
+**Guardian:** post-harvest and grow-strip starters carry `compare_ids` for the compare route.
+
+**OC-56** via `phase-56-closure.test.js`.
 
 ### 7.0m Feeding & water plain language (Phase 47)
 

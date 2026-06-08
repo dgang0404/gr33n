@@ -115,6 +115,7 @@ export function buildStartGrowPayload({
   stage = 'seedling',
   startedAt,
   programId = null,
+  plantId = null,
   notes = '',
 }) {
   const today = new Date().toISOString().slice(0, 10)
@@ -127,6 +128,7 @@ export function buildStartGrowPayload({
     is_active: true,
   }
   if (programId) payload.primary_program_id = Number(programId)
+  if (plantId) payload.plant_id = Number(plantId)
   if (notes?.trim()) payload.cycle_notes = notes.trim()
   return payload
 }

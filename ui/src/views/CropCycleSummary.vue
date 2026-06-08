@@ -36,9 +36,9 @@
           class="text-xs font-medium px-3 py-1.5 rounded-lg bg-zinc-900 text-zinc-300 border border-zinc-700 hover:bg-zinc-800"
         >Download CSV</a>
         <router-link
-          v-if="summary && summary.cycle"
+          v-if="summary && summary.cycle && compareRoute"
           v-nav-hint="'/fertigation'"
-          :to="{ name: 'crop-cycle-compare', params: { fid: summary.cycle.farm_id } }"
+          :to="compareRoute"
           class="text-xs font-medium px-3 py-1.5 rounded-lg bg-green-900/50 text-green-400 border border-green-800 hover:bg-green-900/70"
         >Compare ↔</router-link>
       </div>
@@ -74,6 +74,32 @@
             </p>
           </div>
         </div>
+      </section>
+
+      <section
+        v-if="harvestEconomics"
+        data-test="summary-harvest-economics"
+        class="bg-emerald-950/30 border border-emerald-800/50 rounded-xl p-5 mb-5"
+      >
+        <h2 class="text-emerald-300 text-sm font-semibold mb-2">Harvest economics</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
+          <Metric label="Spent on this grow" :value="fmt(harvestEconomics.expenses)" :suffix="' ' + harvestEconomics.currency" />
+          <Metric label="Income tagged" :value="fmt(harvestEconomics.income)" :suffix="' ' + harvestEconomics.currency" />
+          <Metric
+            label="Net"
+            :value="fmt(harvestEconomics.net)"
+            :suffix="' ' + harvestEconomics.currency"
+          />
+        </div>
+        <router-link
+          v-if="summary.cycle"
+          v-nav-hint="'/operations/money'"
+          :to="{ path: '/operations/money', query: { cycle_id: summary.cycle.id } }"
+          class="inline-block mt-3 text-xs text-green-500 hover:text-green-300"
+          data-test="summary-income-for-grow-link"
+        >
+          Income for this grow →
+        </router-link>
       </section>
 
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -149,7 +175,7 @@
             </li>
           </ol>
           <p v-if="!summary.stage_history_supported" class="text-amber-400/80 text-[11px] mt-3">
-            Stage history is a single-row stand-in until the schema records transitions explicitly.
+            Stage history will fill in as you advance stages on this grow.
           </p>
         </section>
       </div>
@@ -161,6 +187,7 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useFarmStore } from '../stores/farm'
+import { buildPostHarvestCompareRoute, formatStageLabel } from '../lib/growHub.js'
 import HelpTip from '../components/HelpTip.vue'
 import Metric from '../components/MetricChip.vue'
 import AskGuardianButton from '../components/AskGuardianButton.vue'
@@ -170,8 +197,27 @@ const store = useFarmStore()
 
 const cycleId = computed(() => Number(route.params.id))
 const summary = ref(null)
+const farmCycles = ref([])
 const loading = ref(false)
 const loadError = ref('')
+
+const compareRoute = computed(() => {
+  const cycle = summary.value?.cycle
+  if (!cycle?.farm_id || !cycleId.value) return null
+  return buildPostHarvestCompareRoute(cycle.farm_id, farmCycles.value, cycleId.value, cycle.zone_id)
+})
+
+const harvestEconomics = computed(() => {
+  const totals = summary.value?.cost?.totals || []
+  const row = totals.find((t) => Number(t.total_income) > 0)
+  if (!row) return null
+  return {
+    currency: row.currency || 'USD',
+    expenses: row.total_expenses,
+    income: row.total_income,
+    net: row.net,
+  }
+})
 
 const csvUrl = computed(() => {
   if (!cycleId.value) return '#'
@@ -193,7 +239,9 @@ const currentStageLabel = computed(() => {
   if (!s) return '—'
   if (typeof s === 'string') return s
   // sqlc emits a NullEnum shape like { Gr33nfertigationGrowthStageEnum: "veg", Valid: true }
-  if (s.Valid && s.Gr33nfertigationGrowthStageEnum) return s.Gr33nfertigationGrowthStageEnum
+  if (s.Valid && s.Gr33nfertigationGrowthStageEnum) {
+    return formatStageLabel(s.Gr33nfertigationGrowthStageEnum)
+  }
   return '—'
 })
 
@@ -215,7 +263,11 @@ async function load() {
   loading.value = true
   loadError.value = ''
   try {
-    summary.value = await store.loadCropCycleSummary(cycleId.value)
+    const sum = await store.loadCropCycleSummary(cycleId.value)
+    summary.value = sum
+    if (sum?.cycle?.farm_id) {
+      farmCycles.value = await store.loadCropCycles(sum.cycle.farm_id).catch(() => [])
+    }
   } catch (err) {
     loadError.value = err?.response?.data?.error || err?.message || 'Failed to load cycle summary'
   } finally {

@@ -9,7 +9,7 @@
 
 BEGIN;
 
-CREATE TABLE gr33ncore.device_commands (
+CREATE TABLE IF NOT EXISTS gr33ncore.device_commands (
     id              BIGSERIAL PRIMARY KEY,
     device_id       BIGINT NOT NULL REFERENCES gr33ncore.devices(id) ON DELETE CASCADE,
     farm_id         BIGINT NOT NULL,   -- denorm for auth queries; not FK to avoid cross-schema join cost
@@ -32,12 +32,12 @@ CREATE TABLE gr33ncore.device_commands (
 );
 
 -- Ordered head-of-queue lookup: pending commands for one device, oldest first
-CREATE INDEX device_commands_device_pending
+CREATE INDEX IF NOT EXISTS device_commands_device_pending
     ON gr33ncore.device_commands (device_id, created_at ASC)
     WHERE status = 'pending';
 
 -- Auth / list queries
-CREATE INDEX device_commands_farm
+CREATE INDEX IF NOT EXISTS device_commands_farm
     ON gr33ncore.device_commands (farm_id, created_at DESC);
 
 COMMENT ON TABLE gr33ncore.device_commands IS

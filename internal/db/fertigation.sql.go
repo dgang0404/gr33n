@@ -63,51 +63,6 @@ func (q *Queries) CreateEcTarget(ctx context.Context, arg CreateEcTargetParams) 
 	return i, err
 }
 
-// Phase 39 WS6 — hand-written (run `make sqlc` to regenerate from SQL).
-const updateReservoirBaseWater = `-- name: UpdateReservoirBaseWater :one
-UPDATE gr33nfertigation.reservoirs
-SET last_ec_mscm = $2, last_ph = $3, last_reading_time = NOW(), updated_at = NOW()
-WHERE id = $1 AND deleted_at IS NULL
-RETURNING id, farm_id, zone_id, name, description, capacity_liters, current_volume_liters, status,
-    ec_sensor_id, ph_sensor_id, temp_sensor_id, water_level_sensor_id, delivery_actuator_id,
-    last_ec_mscm, last_ph, last_reading_time, metadata, created_at, updated_at, deleted_at`
-
-type UpdateReservoirBaseWaterParams struct {
-	ID          int64          `db:"id" json:"id"`
-	LastEcMscm  pgtype.Numeric `db:"last_ec_mscm" json:"last_ec_mscm"`
-	LastPh      pgtype.Numeric `db:"last_ph" json:"last_ph"`
-}
-
-func (q *Queries) UpdateReservoirBaseWater(ctx context.Context, arg UpdateReservoirBaseWaterParams) (Gr33nfertigationReservoir, error) {
-	row := q.db.QueryRow(ctx, updateReservoirBaseWater, arg.ID, arg.LastEcMscm, arg.LastPh)
-	var i Gr33nfertigationReservoir
-	err := row.Scan(
-		&i.ID, &i.FarmID, &i.ZoneID, &i.Name, &i.Description,
-		&i.CapacityLiters, &i.CurrentVolumeLiters, &i.Status,
-		&i.EcSensorID, &i.PhSensorID, &i.TempSensorID, &i.WaterLevelSensorID, &i.DeliveryActuatorID,
-		&i.LastEcMscm, &i.LastPh, &i.LastReadingTime, &i.Metadata,
-		&i.CreatedAt, &i.UpdatedAt, &i.DeletedAt,
-	)
-	return i, err
-}
-
-// Phase 39 WS2 — hand-written (run `make sqlc` to regenerate from SQL).
-const getEcTargetByID = `-- name: GetEcTargetByID :one
-SELECT id, farm_id, zone_id, growth_stage, ec_min_mscm, ec_max_mscm, ph_min, ph_max, notes, rationale, created_at, updated_at
-FROM gr33nfertigation.ec_targets
-WHERE id = $1`
-
-func (q *Queries) GetEcTargetByID(ctx context.Context, id int64) (Gr33nfertigationEcTarget, error) {
-	row := q.db.QueryRow(ctx, getEcTargetByID, id)
-	var i Gr33nfertigationEcTarget
-	err := row.Scan(
-		&i.ID, &i.FarmID, &i.ZoneID, &i.GrowthStage,
-		&i.EcMinMscm, &i.EcMaxMscm, &i.PhMin, &i.PhMax,
-		&i.Notes, &i.Rationale, &i.CreatedAt, &i.UpdatedAt,
-	)
-	return i, err
-}
-
 const createFertigationEvent = `-- name: CreateFertigationEvent :one
 INSERT INTO gr33nfertigation.fertigation_events (
     farm_id, program_id, reservoir_id, zone_id, crop_cycle_id, applied_at,
@@ -316,7 +271,7 @@ INSERT INTO gr33nfertigation.programs (
     $10, $11, $12, $13,
     $14, $15
 )
-RETURNING id, farm_id, name, description, application_recipe_id, reservoir_id, target_zone_id, schedule_id, ec_target_id, volume_liters_per_sqm, total_volume_liters, dilution_ratio, run_duration_seconds, ec_trigger_low, ph_trigger_low, ph_trigger_high, is_active, irrigation_only, metadata, last_triggered_time, created_at, updated_at, deleted_at
+RETURNING id, farm_id, name, description, application_recipe_id, reservoir_id, target_zone_id, schedule_id, ec_target_id, volume_liters_per_sqm, total_volume_liters, dilution_ratio, run_duration_seconds, ec_trigger_low, ph_trigger_low, ph_trigger_high, is_active, metadata, last_triggered_time, irrigation_only, created_at, updated_at, deleted_at
 `
 
 type CreateProgramParams struct {
@@ -374,9 +329,9 @@ func (q *Queries) CreateProgram(ctx context.Context, arg CreateProgramParams) (G
 		&i.PhTriggerLow,
 		&i.PhTriggerHigh,
 		&i.IsActive,
-		&i.IrrigationOnly,
 		&i.Metadata,
 		&i.LastTriggeredTime,
+		&i.IrrigationOnly,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.DeletedAt,
@@ -460,8 +415,34 @@ func (q *Queries) DeleteReservoir(ctx context.Context, id int64) error {
 	return err
 }
 
+const getEcTargetByID = `-- name: GetEcTargetByID :one
+SELECT id, farm_id, zone_id, growth_stage, ec_min_mscm, ec_max_mscm, ph_min, ph_max, notes, rationale, created_at, updated_at FROM gr33nfertigation.ec_targets
+WHERE id = $1
+`
+
+// Phase 39 WS2 — needed by the mix dose calculator to read target EC bounds.
+func (q *Queries) GetEcTargetByID(ctx context.Context, id int64) (Gr33nfertigationEcTarget, error) {
+	row := q.db.QueryRow(ctx, getEcTargetByID, id)
+	var i Gr33nfertigationEcTarget
+	err := row.Scan(
+		&i.ID,
+		&i.FarmID,
+		&i.ZoneID,
+		&i.GrowthStage,
+		&i.EcMinMscm,
+		&i.EcMaxMscm,
+		&i.PhMin,
+		&i.PhMax,
+		&i.Notes,
+		&i.Rationale,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const getFertigationProgramByID = `-- name: GetFertigationProgramByID :one
-SELECT id, farm_id, name, description, application_recipe_id, reservoir_id, target_zone_id, schedule_id, ec_target_id, volume_liters_per_sqm, total_volume_liters, dilution_ratio, run_duration_seconds, ec_trigger_low, ph_trigger_low, ph_trigger_high, is_active, irrigation_only, metadata, last_triggered_time, created_at, updated_at, deleted_at FROM gr33nfertigation.programs
+SELECT id, farm_id, name, description, application_recipe_id, reservoir_id, target_zone_id, schedule_id, ec_target_id, volume_liters_per_sqm, total_volume_liters, dilution_ratio, run_duration_seconds, ec_trigger_low, ph_trigger_low, ph_trigger_high, is_active, metadata, last_triggered_time, irrigation_only, created_at, updated_at, deleted_at FROM gr33nfertigation.programs
 WHERE id = $1 AND deleted_at IS NULL
 `
 
@@ -486,9 +467,9 @@ func (q *Queries) GetFertigationProgramByID(ctx context.Context, id int64) (Gr33
 		&i.PhTriggerLow,
 		&i.PhTriggerHigh,
 		&i.IsActive,
-		&i.IrrigationOnly,
 		&i.Metadata,
 		&i.LastTriggeredTime,
+		&i.IrrigationOnly,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.DeletedAt,
@@ -560,7 +541,7 @@ func (q *Queries) GetMixingEventByID(ctx context.Context, id int64) (Gr33nfertig
 }
 
 const listActivePrograms = `-- name: ListActivePrograms :many
-SELECT id, farm_id, name, description, application_recipe_id, reservoir_id, target_zone_id, schedule_id, ec_target_id, volume_liters_per_sqm, total_volume_liters, dilution_ratio, run_duration_seconds, ec_trigger_low, ph_trigger_low, ph_trigger_high, is_active, irrigation_only, metadata, last_triggered_time, created_at, updated_at, deleted_at FROM gr33nfertigation.programs
+SELECT id, farm_id, name, description, application_recipe_id, reservoir_id, target_zone_id, schedule_id, ec_target_id, volume_liters_per_sqm, total_volume_liters, dilution_ratio, run_duration_seconds, ec_trigger_low, ph_trigger_low, ph_trigger_high, is_active, metadata, last_triggered_time, irrigation_only, created_at, updated_at, deleted_at FROM gr33nfertigation.programs
 WHERE is_active = TRUE
   AND deleted_at IS NULL
   AND schedule_id IS NOT NULL
@@ -596,9 +577,9 @@ func (q *Queries) ListActivePrograms(ctx context.Context) ([]Gr33nfertigationPro
 			&i.PhTriggerLow,
 			&i.PhTriggerHigh,
 			&i.IsActive,
-			&i.IrrigationOnly,
 			&i.Metadata,
 			&i.LastTriggeredTime,
+			&i.IrrigationOnly,
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.DeletedAt,
@@ -843,7 +824,7 @@ func (q *Queries) ListMixingEventsByFarm(ctx context.Context, farmID int64) ([]G
 }
 
 const listProgramsByFarm = `-- name: ListProgramsByFarm :many
-SELECT id, farm_id, name, description, application_recipe_id, reservoir_id, target_zone_id, schedule_id, ec_target_id, volume_liters_per_sqm, total_volume_liters, dilution_ratio, run_duration_seconds, ec_trigger_low, ph_trigger_low, ph_trigger_high, is_active, irrigation_only, metadata, last_triggered_time, created_at, updated_at, deleted_at FROM gr33nfertigation.programs
+SELECT id, farm_id, name, description, application_recipe_id, reservoir_id, target_zone_id, schedule_id, ec_target_id, volume_liters_per_sqm, total_volume_liters, dilution_ratio, run_duration_seconds, ec_trigger_low, ph_trigger_low, ph_trigger_high, is_active, metadata, last_triggered_time, irrigation_only, created_at, updated_at, deleted_at FROM gr33nfertigation.programs
 WHERE farm_id = $1 AND deleted_at IS NULL
 ORDER BY name ASC
 `
@@ -875,9 +856,9 @@ func (q *Queries) ListProgramsByFarm(ctx context.Context, farmID int64) ([]Gr33n
 			&i.PhTriggerLow,
 			&i.PhTriggerHigh,
 			&i.IsActive,
-			&i.IrrigationOnly,
 			&i.Metadata,
 			&i.LastTriggeredTime,
+			&i.IrrigationOnly,
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.DeletedAt,
@@ -893,7 +874,7 @@ func (q *Queries) ListProgramsByFarm(ctx context.Context, farmID int64) ([]Gr33n
 }
 
 const listProgramsByFarmUpdatedAfter = `-- name: ListProgramsByFarmUpdatedAfter :many
-SELECT id, farm_id, name, description, application_recipe_id, reservoir_id, target_zone_id, schedule_id, ec_target_id, volume_liters_per_sqm, total_volume_liters, dilution_ratio, run_duration_seconds, ec_trigger_low, ph_trigger_low, ph_trigger_high, is_active, irrigation_only, metadata, last_triggered_time, created_at, updated_at, deleted_at FROM gr33nfertigation.programs
+SELECT id, farm_id, name, description, application_recipe_id, reservoir_id, target_zone_id, schedule_id, ec_target_id, volume_liters_per_sqm, total_volume_liters, dilution_ratio, run_duration_seconds, ec_trigger_low, ph_trigger_low, ph_trigger_high, is_active, metadata, last_triggered_time, irrigation_only, created_at, updated_at, deleted_at FROM gr33nfertigation.programs
 WHERE farm_id = $1 AND deleted_at IS NULL AND updated_at > $2::timestamptz
 ORDER BY updated_at ASC, id ASC
 `
@@ -930,9 +911,9 @@ func (q *Queries) ListProgramsByFarmUpdatedAfter(ctx context.Context, arg ListPr
 			&i.PhTriggerLow,
 			&i.PhTriggerHigh,
 			&i.IsActive,
-			&i.IrrigationOnly,
 			&i.Metadata,
 			&i.LastTriggeredTime,
+			&i.IrrigationOnly,
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.DeletedAt,
@@ -1002,7 +983,7 @@ const markProgramTriggered = `-- name: MarkProgramTriggered :one
 UPDATE gr33nfertigation.programs
 SET last_triggered_time = $2, updated_at = NOW()
 WHERE id = $1
-RETURNING id, farm_id, name, description, application_recipe_id, reservoir_id, target_zone_id, schedule_id, ec_target_id, volume_liters_per_sqm, total_volume_liters, dilution_ratio, run_duration_seconds, ec_trigger_low, ph_trigger_low, ph_trigger_high, is_active, irrigation_only, metadata, last_triggered_time, created_at, updated_at, deleted_at
+RETURNING id, farm_id, name, description, application_recipe_id, reservoir_id, target_zone_id, schedule_id, ec_target_id, volume_liters_per_sqm, total_volume_liters, dilution_ratio, run_duration_seconds, ec_trigger_low, ph_trigger_low, ph_trigger_high, is_active, metadata, last_triggered_time, irrigation_only, created_at, updated_at, deleted_at
 `
 
 type MarkProgramTriggeredParams struct {
@@ -1031,9 +1012,9 @@ func (q *Queries) MarkProgramTriggered(ctx context.Context, arg MarkProgramTrigg
 		&i.PhTriggerLow,
 		&i.PhTriggerHigh,
 		&i.IsActive,
-		&i.IrrigationOnly,
 		&i.Metadata,
 		&i.LastTriggeredTime,
+		&i.IrrigationOnly,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.DeletedAt,
@@ -1049,7 +1030,7 @@ SET name = $2, description = $3, reservoir_id = $4,
     irrigation_only = $9, application_recipe_id = $10,
     updated_at = NOW()
 WHERE id = $1 AND deleted_at IS NULL
-RETURNING id, farm_id, name, description, application_recipe_id, reservoir_id, target_zone_id, schedule_id, ec_target_id, volume_liters_per_sqm, total_volume_liters, dilution_ratio, run_duration_seconds, ec_trigger_low, ph_trigger_low, ph_trigger_high, is_active, irrigation_only, metadata, last_triggered_time, created_at, updated_at, deleted_at
+RETURNING id, farm_id, name, description, application_recipe_id, reservoir_id, target_zone_id, schedule_id, ec_target_id, volume_liters_per_sqm, total_volume_liters, dilution_ratio, run_duration_seconds, ec_trigger_low, ph_trigger_low, ph_trigger_high, is_active, metadata, last_triggered_time, irrigation_only, created_at, updated_at, deleted_at
 `
 
 type UpdateProgramParams struct {
@@ -1097,9 +1078,9 @@ func (q *Queries) UpdateProgram(ctx context.Context, arg UpdateProgramParams) (G
 		&i.PhTriggerLow,
 		&i.PhTriggerHigh,
 		&i.IsActive,
-		&i.IrrigationOnly,
 		&i.Metadata,
 		&i.LastTriggeredTime,
+		&i.IrrigationOnly,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.DeletedAt,
@@ -1133,6 +1114,52 @@ func (q *Queries) UpdateReservoir(ctx context.Context, arg UpdateReservoirParams
 		arg.CurrentVolumeLiters,
 		arg.Status,
 	)
+	var i Gr33nfertigationReservoir
+	err := row.Scan(
+		&i.ID,
+		&i.FarmID,
+		&i.ZoneID,
+		&i.Name,
+		&i.Description,
+		&i.CapacityLiters,
+		&i.CurrentVolumeLiters,
+		&i.Status,
+		&i.EcSensorID,
+		&i.PhSensorID,
+		&i.TempSensorID,
+		&i.WaterLevelSensorID,
+		&i.DeliveryActuatorID,
+		&i.LastEcMscm,
+		&i.LastPh,
+		&i.LastReadingTime,
+		&i.Metadata,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.DeletedAt,
+	)
+	return i, err
+}
+
+const updateReservoirBaseWater = `-- name: UpdateReservoirBaseWater :one
+UPDATE gr33nfertigation.reservoirs
+SET last_ec_mscm      = $2,
+    last_ph           = $3,
+    last_reading_time = NOW(),
+    updated_at        = NOW()
+WHERE id = $1 AND deleted_at IS NULL
+RETURNING id, farm_id, zone_id, name, description, capacity_liters, current_volume_liters, status, ec_sensor_id, ph_sensor_id, temp_sensor_id, water_level_sensor_id, delivery_actuator_id, last_ec_mscm, last_ph, last_reading_time, metadata, created_at, updated_at, deleted_at
+`
+
+type UpdateReservoirBaseWaterParams struct {
+	ID         int64          `db:"id" json:"id"`
+	LastEcMscm pgtype.Numeric `db:"last_ec_mscm" json:"last_ec_mscm"`
+	LastPh     pgtype.Numeric `db:"last_ph" json:"last_ph"`
+}
+
+// Phase 39 WS6 — operator sets base EC/pH of source water so the mix
+// calculator always has a starting point. Stamps last_reading_time = NOW().
+func (q *Queries) UpdateReservoirBaseWater(ctx context.Context, arg UpdateReservoirBaseWaterParams) (Gr33nfertigationReservoir, error) {
+	row := q.db.QueryRow(ctx, updateReservoirBaseWater, arg.ID, arg.LastEcMscm, arg.LastPh)
 	var i Gr33nfertigationReservoir
 	err := row.Scan(
 		&i.ID,

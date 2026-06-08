@@ -1379,33 +1379,6 @@ type Gr33ncoreCostTransactionIdempotency struct {
 	CreatedAt         time.Time `db:"created_at" json:"created_at"`
 }
 
-// Gr33ncoreDeviceCommand is the Phase 39 WS1 FIFO queue row.
-type Gr33ncoreDeviceCommand struct {
-	ID          int64           `db:"id" json:"id"`
-	DeviceID    int64           `db:"device_id" json:"device_id"`
-	FarmID      int64           `db:"farm_id" json:"farm_id"`
-	CommandType string          `db:"command_type" json:"command_type"`
-	Payload     json.RawMessage `db:"payload" json:"payload"`
-	Status      string          `db:"status" json:"status"`
-	Source      string          `db:"source" json:"source"`
-	// nullable provenance
-	ActuatorID  *int64              `db:"actuator_id" json:"actuator_id,omitempty"`
-	ScheduleID  *int64              `db:"schedule_id" json:"schedule_id,omitempty"`
-	RuleID      *int64              `db:"rule_id" json:"rule_id,omitempty"`
-	ProgramID   *int64              `db:"program_id" json:"program_id,omitempty"`
-	// audit
-	CreatedAt   time.Time           `db:"created_at" json:"created_at"`
-	StartedAt   pgtype.Timestamptz  `db:"started_at" json:"started_at,omitempty"`
-	CompletedAt pgtype.Timestamptz  `db:"completed_at" json:"completed_at,omitempty"`
-	Result      json.RawMessage     `db:"result" json:"result,omitempty"`
-}
-
-// CountPendingCommandsByDeviceRow holds the queue-depth result per device.
-type CountPendingCommandsByFarmRow struct {
-	DeviceID int64 `db:"device_id" json:"device_id"`
-	Cnt      int64 `db:"cnt" json:"cnt"`
-}
-
 type Gr33ncoreDevice struct {
 	ID              int64                        `db:"id" json:"id"`
 	FarmID          int64                        `db:"farm_id" json:"farm_id"`
@@ -1420,11 +1393,29 @@ type Gr33ncoreDevice struct {
 	ApiKey          *string                      `db:"api_key" json:"api_key"`
 	Config          json.RawMessage              `db:"config" json:"config"`
 	MetaData        json.RawMessage              `db:"meta_data" json:"meta_data"`
+	ConfigVersion   int32                        `db:"config_version" json:"config_version"`
 	CreatedAt       time.Time                    `db:"created_at" json:"created_at"`
 	UpdatedAt       time.Time                    `db:"updated_at" json:"updated_at"`
 	UpdatedByUserID pgtype.UUID                  `db:"updated_by_user_id" json:"updated_by_user_id"`
 	DeletedAt       pgtype.Timestamptz           `db:"deleted_at" json:"deleted_at"`
-	ConfigVersion   int32                        `db:"config_version" json:"config_version"`
+}
+
+type Gr33ncoreDeviceCommand struct {
+	ID          int64              `db:"id" json:"id"`
+	DeviceID    int64              `db:"device_id" json:"device_id"`
+	FarmID      int64              `db:"farm_id" json:"farm_id"`
+	CommandType string             `db:"command_type" json:"command_type"`
+	Payload     json.RawMessage    `db:"payload" json:"payload"`
+	Status      string             `db:"status" json:"status"`
+	Source      string             `db:"source" json:"source"`
+	ActuatorID  *int64             `db:"actuator_id" json:"actuator_id"`
+	ScheduleID  *int64             `db:"schedule_id" json:"schedule_id"`
+	RuleID      *int64             `db:"rule_id" json:"rule_id"`
+	ProgramID   *int64             `db:"program_id" json:"program_id"`
+	CreatedAt   time.Time          `db:"created_at" json:"created_at"`
+	StartedAt   pgtype.Timestamptz `db:"started_at" json:"started_at"`
+	CompletedAt pgtype.Timestamptz `db:"completed_at" json:"completed_at"`
+	Result      []byte             `db:"result" json:"result"`
 }
 
 type Gr33ncoreExecutableAction struct {
@@ -1468,6 +1459,7 @@ type Gr33ncoreFarm struct {
 	InsertCommonsBackoffUntil        pgtype.Timestamptz                `db:"insert_commons_backoff_until" json:"insert_commons_backoff_until"`
 	InsertCommonsConsecutiveFailures int32                             `db:"insert_commons_consecutive_failures" json:"insert_commons_consecutive_failures"`
 	InsertCommonsRequireApproval     bool                              `db:"insert_commons_require_approval" json:"insert_commons_require_approval"`
+	MetaData                         json.RawMessage                   `db:"meta_data" json:"meta_data"`
 }
 
 type Gr33ncoreFarmActiveModule struct {
@@ -1944,6 +1936,15 @@ type Gr33nfertigationCropCycle struct {
 	CreatedAt        time.Time                        `db:"created_at" json:"created_at"`
 	UpdatedAt        time.Time                        `db:"updated_at" json:"updated_at"`
 	PrimaryProgramID *int64                           `db:"primary_program_id" json:"primary_program_id"`
+	PlantID          *int64                           `db:"plant_id" json:"plant_id"`
+}
+
+type Gr33nfertigationCropCycleStageEvent struct {
+	ID          int64                           `db:"id" json:"id"`
+	CropCycleID int64                           `db:"crop_cycle_id" json:"crop_cycle_id"`
+	GrowthStage Gr33nfertigationGrowthStageEnum `db:"growth_stage" json:"growth_stage"`
+	EnteredAt   time.Time                       `db:"entered_at" json:"entered_at"`
+	CreatedAt   time.Time                       `db:"created_at" json:"created_at"`
 }
 
 type Gr33nfertigationEcTarget struct {
@@ -2039,9 +2040,9 @@ type Gr33nfertigationProgram struct {
 	PhTriggerLow        pgtype.Numeric     `db:"ph_trigger_low" json:"ph_trigger_low"`
 	PhTriggerHigh       pgtype.Numeric     `db:"ph_trigger_high" json:"ph_trigger_high"`
 	IsActive            bool               `db:"is_active" json:"is_active"`
-	IrrigationOnly      bool               `db:"irrigation_only" json:"irrigation_only"`
 	Metadata            json.RawMessage    `db:"metadata" json:"metadata"`
 	LastTriggeredTime   pgtype.Timestamptz `db:"last_triggered_time" json:"last_triggered_time"`
+	IrrigationOnly      bool               `db:"irrigation_only" json:"irrigation_only"`
 	CreatedAt           time.Time          `db:"created_at" json:"created_at"`
 	UpdatedAt           time.Time          `db:"updated_at" json:"updated_at"`
 	DeletedAt           pgtype.Timestamptz `db:"deleted_at" json:"deleted_at"`

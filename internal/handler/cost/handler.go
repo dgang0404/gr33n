@@ -176,6 +176,33 @@ func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 	if rows == nil {
 		rows = []db.Gr33ncoreCostTransaction{}
 	}
+	if cycleRaw := strings.TrimSpace(r.URL.Query().Get("crop_cycle_id")); cycleRaw != "" {
+		cycleID, err := strconv.ParseInt(cycleRaw, 10, 64)
+		if err != nil || cycleID <= 0 {
+			httputil.WriteError(w, http.StatusBadRequest, "invalid crop_cycle_id")
+			return
+		}
+		cc, err := h.q.GetCropCycleByID(r.Context(), cycleID)
+		if err != nil {
+			if errors.Is(err, pgx.ErrNoRows) {
+				httputil.WriteError(w, http.StatusBadRequest, "crop_cycle_id not found")
+				return
+			}
+			httputil.WriteError(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+		if cc.FarmID != farmID {
+			httputil.WriteError(w, http.StatusBadRequest, "crop_cycle_id does not belong to this farm")
+			return
+		}
+		filtered := make([]db.Gr33ncoreCostTransaction, 0, len(rows))
+		for _, row := range rows {
+			if row.CropCycleID != nil && *row.CropCycleID == cycleID {
+				filtered = append(filtered, row)
+			}
+		}
+		rows = filtered
+	}
 	httputil.WriteJSON(w, http.StatusOK, rows)
 }
 

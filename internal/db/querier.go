@@ -13,19 +13,15 @@ import (
 )
 
 type Querier interface {
+	// Pi-key: marks a command completed or failed and records the result payload.
+	AckDeviceCommand(ctx context.Context, arg AckDeviceCommandParams) (Gr33ncoreDeviceCommand, error)
 	AddFarmMember(ctx context.Context, arg AddFarmMemberParams) (Gr33ncoreFarmMembership, error)
 	AddRecipeComponent(ctx context.Context, arg AddRecipeComponentParams) error
 	ApproveInsertCommonsBundle(ctx context.Context, arg ApproveInsertCommonsBundleParams) (Gr33ncoreInsertCommonsBundle, error)
-	// Phase 39 WS1 — device command queue
-	AckDeviceCommand(ctx context.Context, arg AckDeviceCommandParams) (Gr33ncoreDeviceCommand, error)
 	ArchiveAnimalGroup(ctx context.Context, arg ArchiveAnimalGroupParams) (Gr33nanimalsAnimalGroup, error)
+	// Cancel a pending command (operator or worker safety valve).
 	CancelDeviceCommand(ctx context.Context, id int64) (Gr33ncoreDeviceCommand, error)
 	ClearDevicePendingCommand(ctx context.Context, id int64) error
-	CountPendingCommandsByDevice(ctx context.Context, deviceID int64) (int64, error)
-	CountPendingCommandsByFarm(ctx context.Context, farmID int64) ([]CountPendingCommandsByFarmRow, error)
-	EnqueueDeviceCommand(ctx context.Context, arg EnqueueDeviceCommandParams) (Gr33ncoreDeviceCommand, error)
-	GetNextDeviceCommand(ctx context.Context, deviceID int64) (Gr33ncoreDeviceCommand, error)
-	ListDeviceCommands(ctx context.Context, deviceID int64, status *string) ([]Gr33ncoreDeviceCommand, error)
 	ClearSensorAlertBreachStart(ctx context.Context, id int64) error
 	// Phase 20.9 WS1 — stops a running timer. Rate is captured at close
 	// time, not start, so a rate change mid-shift applies to the rest of
@@ -40,6 +36,9 @@ type Querier interface {
 	CountDevicesByStatusForFarm(ctx context.Context, farmID int64) ([]CountDevicesByStatusForFarmRow, error)
 	CountGuardianProposalsByUser(ctx context.Context, arg CountGuardianProposalsByUserParams) (int64, error)
 	CountInsertCommonsSyncAttemptsSince(ctx context.Context, arg CountInsertCommonsSyncAttemptsSinceParams) (int64, error)
+	CountPendingCommandsByDevice(ctx context.Context, deviceID int64) (int64, error)
+	// Aggregate queue depth per device for a farm (Dashboard chip, Phase 41 WS1).
+	CountPendingCommandsByFarm(ctx context.Context, farmID int64) ([]CountPendingCommandsByFarmRow, error)
 	CountRagChunksByFarm(ctx context.Context, farmID int64) (int64, error)
 	CountRagChunksByFarmSourceType(ctx context.Context, arg CountRagChunksByFarmSourceTypeParams) (int64, error)
 	CountTasksByStatusForFarm(ctx context.Context, farmID int64) ([]CountTasksByStatusForFarmRow, error)
@@ -174,6 +173,10 @@ type Querier interface {
 	DeleteTaskInputConsumption(ctx context.Context, id int64) error
 	DeleteTaskLaborLog(ctx context.Context, id int64) error
 	DeleteUserPushToken(ctx context.Context, arg DeleteUserPushTokenParams) error
+	// ============================================================
+	// Queries: gr33ncore.device_commands (Phase 39 WS1)
+	// ============================================================
+	EnqueueDeviceCommand(ctx context.Context, arg EnqueueDeviceCommandParams) (Gr33ncoreDeviceCommand, error)
 	ExpireStaleGuardianProposals(ctx context.Context) error
 	// Phase 20.6 WS3 — the rule engine calls this to translate a rule's zone
 	// into the active cycle so the setpoint resolver has a `current_stage`
@@ -228,6 +231,8 @@ type Querier interface {
 	GetCropCycleByID(ctx context.Context, id int64) (Gr33nfertigationCropCycle, error)
 	GetDeviceByID(ctx context.Context, id int64) (Gr33ncoreDevice, error)
 	GetDeviceByUID(ctx context.Context, deviceUid *string) (Gr33ncoreDevice, error)
+	// Phase 39 WS2 — needed by the mix dose calculator to read target EC bounds.
+	GetEcTargetByID(ctx context.Context, id int64) (Gr33nfertigationEcTarget, error)
 	GetExecutableActionByID(ctx context.Context, id int64) (Gr33ncoreExecutableAction, error)
 	GetFarmByID(ctx context.Context, id int64) (Gr33ncoreFarm, error)
 	GetFarmEnergyPriceByID(ctx context.Context, id int64) (Gr33ncoreFarmEnergyPrice, error)
@@ -240,8 +245,6 @@ type Querier interface {
 	// number reflects the working solution, not just the freshly-mixed batch.
 	GetFertigationAggregatesByCropCycle(ctx context.Context, cropCycleID *int64) (GetFertigationAggregatesByCropCycleRow, error)
 	GetFertigationProgramByID(ctx context.Context, id int64) (Gr33nfertigationProgram, error)
-	GetEcTargetByID(ctx context.Context, id int64) (Gr33nfertigationEcTarget, error)
-	UpdateReservoirBaseWater(ctx context.Context, arg UpdateReservoirBaseWaterParams) (Gr33nfertigationReservoir, error)
 	GetFertigationReservoirByID(ctx context.Context, id int64) (Gr33nfertigationReservoir, error)
 	GetFileAttachmentByID(ctx context.Context, id int64) (Gr33ncoreFileAttachment, error)
 	GetGuardianProposalByID(ctx context.Context, proposalID uuid.UUID) (Gr33ncoreGuardianActionProposal, error)
@@ -284,6 +287,9 @@ type Querier interface {
 	GetLifecycleEventByID(ctx context.Context, id int64) (Gr33nanimalsAnimalLifecycleEvent, error)
 	GetLightingProgramByID(ctx context.Context, id int64) (Gr33ncoreLightingProgram, error)
 	GetMixingEventByID(ctx context.Context, id int64) (Gr33nfertigationMixingEvent, error)
+	// Returns the oldest pending command for a device and marks it in_progress atomically.
+	// Pi-key path: Pi calls this, gets one command, executes, then calls AckDeviceCommand.
+	GetNextDeviceCommand(ctx context.Context, deviceID int64) (Gr33ncoreDeviceCommand, error)
 	GetNotificationTemplateByID(ctx context.Context, id int64) (Gr33ncoreNotificationTemplate, error)
 	// Phase 20.9 WS1 — timer stop path. At most one open (ended_at IS NULL)
 	// row per (task, user) is expected; the handler is the only writer.
@@ -332,6 +338,10 @@ type Querier interface {
 	// COALESCE(MAX+1, 0) keeps numbering monotonic without a sequence per session.
 	InsertConversationTurn(ctx context.Context, arg InsertConversationTurnParams) (InsertConversationTurnRow, error)
 	InsertCostTransactionIdempotency(ctx context.Context, arg InsertCostTransactionIdempotencyParams) error
+	// ============================================================
+	// Queries: gr33nfertigation.crop_cycle_stage_events (Phase 56 WS2)
+	// ============================================================
+	InsertCropCycleStageEvent(ctx context.Context, arg InsertCropCycleStageEventParams) (Gr33nfertigationCropCycleStageEvent, error)
 	// Phase 29 WS3 — Guardian action proposals (propose → confirm).
 	// Phase 34 — revise/supersede chain + operator-supplied facts in meta.
 	InsertGuardianProposal(ctx context.Context, arg InsertGuardianProposalParams) (Gr33ncoreGuardianActionProposal, error)
@@ -408,8 +418,14 @@ type Querier interface {
 	ListCostTransactionsByFarmUpdatedAfterFirst(ctx context.Context, arg ListCostTransactionsByFarmUpdatedAfterFirstParams) ([]Gr33ncoreCostTransaction, error)
 	// Subsequent pages keyed by (updated_at, id).
 	ListCostTransactionsByFarmUpdatedAfterNext(ctx context.Context, arg ListCostTransactionsByFarmUpdatedAfterNextParams) ([]Gr33ncoreCostTransaction, error)
+	ListCropCycleStageEventsByCycle(ctx context.Context, cropCycleID int64) ([]Gr33nfertigationCropCycleStageEvent, error)
 	ListCropCyclesByFarm(ctx context.Context, farmID int64) ([]Gr33nfertigationCropCycle, error)
 	ListCropCyclesByFarmUpdatedAfter(ctx context.Context, arg ListCropCyclesByFarmUpdatedAfterParams) ([]Gr33nfertigationCropCycle, error)
+	// Operator JWT: list commands for a device with optional status filter.
+	// Pass NULL for status to get all.
+	ListDeviceCommands(ctx context.Context, arg ListDeviceCommandsParams) ([]Gr33ncoreDeviceCommand, error)
+	// List all commands for a farm for dashboard / ops view.
+	ListDeviceCommandsByFarm(ctx context.Context, arg ListDeviceCommandsByFarmParams) ([]Gr33ncoreDeviceCommand, error)
 	ListDevicesByFarm(ctx context.Context, farmID int64) ([]Gr33ncoreDevice, error)
 	ListDevicesByZone(ctx context.Context, zoneID *int64) ([]Gr33ncoreDevice, error)
 	ListEcTargetsByFarm(ctx context.Context, farmID int64) ([]Gr33nfertigationEcTarget, error)
@@ -576,7 +592,7 @@ type Querier interface {
 	SumLifecycleDeltasByGroup(ctx context.Context, animalGroupID int64) (int64, error)
 	// Phase 34 — mark a still-pending proposal as replaced by a later revision.
 	SupersedeProposal(ctx context.Context, arg SupersedeProposalParams) (Gr33ncoreGuardianActionProposal, error)
-	UpdateActuatorConfig(ctx context.Context, id int64, config json.RawMessage) (Gr33ncoreActuator, error)
+	UpdateActuatorConfig(ctx context.Context, arg UpdateActuatorConfigParams) (Gr33ncoreActuator, error)
 	UpdateActuatorState(ctx context.Context, arg UpdateActuatorStateParams) (Gr33ncoreActuator, error)
 	UpdateAnimalGroup(ctx context.Context, arg UpdateAnimalGroupParams) (Gr33nanimalsAnimalGroup, error)
 	UpdateAquaponicsLoop(ctx context.Context, arg UpdateAquaponicsLoopParams) (Gr33naquaponicsLoop, error)
@@ -610,13 +626,16 @@ type Querier interface {
 	UpdateProgram(ctx context.Context, arg UpdateProgramParams) (Gr33nfertigationProgram, error)
 	UpdateRecipe(ctx context.Context, arg UpdateRecipeParams) (Gr33nnaturalfarmingApplicationRecipe, error)
 	UpdateReservoir(ctx context.Context, arg UpdateReservoirParams) (Gr33nfertigationReservoir, error)
+	// Phase 39 WS6 — operator sets base EC/pH of source water so the mix
+	// calculator always has a starting point. Stamps last_reading_time = NOW().
+	UpdateReservoirBaseWater(ctx context.Context, arg UpdateReservoirBaseWaterParams) (Gr33nfertigationReservoir, error)
 	UpdateSchedule(ctx context.Context, arg UpdateScheduleParams) (Gr33ncoreSchedule, error)
 	UpdateScheduleActive(ctx context.Context, arg UpdateScheduleActiveParams) (Gr33ncoreSchedule, error)
 	// Patch-style update: each field overwritten when the caller passes a non-NULL value;
 	// pass NULL to leave the existing value untouched. alert_breach_started_at is managed
 	// by the evaluator and is not editable via this query.
 	UpdateSensor(ctx context.Context, arg UpdateSensorParams) (Gr33ncoreSensor, error)
-	UpdateSensorConfig(ctx context.Context, id int64, config json.RawMessage) (Gr33ncoreSensor, error)
+	UpdateSensorConfig(ctx context.Context, arg UpdateSensorConfigParams) (Gr33ncoreSensor, error)
 	UpdateSetpoint(ctx context.Context, arg UpdateSetpointParams) (Gr33ncoreZoneSetpoint, error)
 	UpdateTask(ctx context.Context, arg UpdateTaskParams) (Gr33ncoreTask, error)
 	// The autologger may write the cost_transactions row after the

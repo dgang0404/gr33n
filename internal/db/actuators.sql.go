@@ -302,22 +302,20 @@ func (q *Queries) ListActuatorsByFarm(ctx context.Context, farmID int64) ([]Gr33
 	return items, nil
 }
 
-const updateActuatorState = `-- name: UpdateActuatorState :one
+const updateActuatorConfig = `-- name: UpdateActuatorConfig :one
 UPDATE gr33ncore.actuators
-SET current_state_numeric = $2, current_state_text = $3,
-    last_known_state_time = NOW(), updated_at = NOW()
-WHERE id = $1
+SET config = $2, updated_at = NOW()
+WHERE id = $1 AND deleted_at IS NULL
 RETURNING id, device_id, farm_id, zone_id, name, actuator_type, hardware_identifier, current_state_numeric, current_state_text, last_known_state_time, last_command_sent_time, feedback_sensor_id, config, meta_data, created_at, updated_at, updated_by_user_id, deleted_at, watts
 `
 
-type UpdateActuatorStateParams struct {
-	ID                  int64          `db:"id" json:"id"`
-	CurrentStateNumeric pgtype.Numeric `db:"current_state_numeric" json:"current_state_numeric"`
-	CurrentStateText    *string        `db:"current_state_text" json:"current_state_text"`
+type UpdateActuatorConfigParams struct {
+	ID     int64           `db:"id" json:"id"`
+	Config json.RawMessage `db:"config" json:"config"`
 }
 
-func (q *Queries) UpdateActuatorState(ctx context.Context, arg UpdateActuatorStateParams) (Gr33ncoreActuator, error) {
-	row := q.db.QueryRow(ctx, updateActuatorState, arg.ID, arg.CurrentStateNumeric, arg.CurrentStateText)
+func (q *Queries) UpdateActuatorConfig(ctx context.Context, arg UpdateActuatorConfigParams) (Gr33ncoreActuator, error) {
+	row := q.db.QueryRow(ctx, updateActuatorConfig, arg.ID, arg.Config)
 	var i Gr33ncoreActuator
 	err := row.Scan(
 		&i.ID,
@@ -343,15 +341,22 @@ func (q *Queries) UpdateActuatorState(ctx context.Context, arg UpdateActuatorSta
 	return i, err
 }
 
-const updateActuatorConfig = `-- name: UpdateActuatorConfig :one
+const updateActuatorState = `-- name: UpdateActuatorState :one
 UPDATE gr33ncore.actuators
-SET config = $2, updated_at = NOW()
-WHERE id = $1 AND deleted_at IS NULL
+SET current_state_numeric = $2, current_state_text = $3,
+    last_known_state_time = NOW(), updated_at = NOW()
+WHERE id = $1
 RETURNING id, device_id, farm_id, zone_id, name, actuator_type, hardware_identifier, current_state_numeric, current_state_text, last_known_state_time, last_command_sent_time, feedback_sensor_id, config, meta_data, created_at, updated_at, updated_by_user_id, deleted_at, watts
 `
 
-func (q *Queries) UpdateActuatorConfig(ctx context.Context, id int64, config json.RawMessage) (Gr33ncoreActuator, error) {
-	row := q.db.QueryRow(ctx, updateActuatorConfig, id, config)
+type UpdateActuatorStateParams struct {
+	ID                  int64          `db:"id" json:"id"`
+	CurrentStateNumeric pgtype.Numeric `db:"current_state_numeric" json:"current_state_numeric"`
+	CurrentStateText    *string        `db:"current_state_text" json:"current_state_text"`
+}
+
+func (q *Queries) UpdateActuatorState(ctx context.Context, arg UpdateActuatorStateParams) (Gr33ncoreActuator, error) {
+	row := q.db.QueryRow(ctx, updateActuatorState, arg.ID, arg.CurrentStateNumeric, arg.CurrentStateText)
 	var i Gr33ncoreActuator
 	err := row.Scan(
 		&i.ID,

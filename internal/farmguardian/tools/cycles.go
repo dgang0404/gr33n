@@ -64,16 +64,35 @@ func execCreateCropCycle(ctx context.Context, deps ExecutorDeps, args map[string
 		}
 	}
 
+	var plantID *int64
+	if v, err := optionalInt64FromArgs(args, "plant_id"); err != nil {
+		return nil, err
+	} else if v != nil && *v > 0 {
+		p, err := deps.Q.GetPlant(ctx, *v)
+		if err != nil {
+			if errors.Is(err, pgx.ErrNoRows) {
+				return nil, fmt.Errorf("plant %d not found", *v)
+			}
+			return nil, err
+		}
+		if err := ensureFarmScope(p.FarmID, deps.FarmID); err != nil {
+			return nil, err
+		}
+		plantID = v
+	}
+
 	strainPtr := &strain
+	parsedStage := parseGrowthStage(stage)
 	row, err := deps.Q.CreateCropCycle(ctx, db.CreateCropCycleParams{
 		FarmID:          deps.FarmID,
 		ZoneID:          zoneID,
 		Name:            name,
 		StrainOrVariety: strainPtr,
-		CurrentStage:    parseGrowthStage(stage),
+		CurrentStage:    parsedStage,
 		IsActive:        active,
 		StartedAt:       startedAt,
 		CycleNotes:      notes,
+		PlantID:         plantID,
 	})
 	if err != nil {
 		var pgErr *pgconn.PgError
@@ -81,6 +100,17 @@ func execCreateCropCycle(ctx context.Context, deps ExecutorDeps, args map[string
 			return nil, errors.New("only one active crop cycle per zone is allowed")
 		}
 		return nil, err
+	}
+	if parsedStage != nil {
+		enteredAt := startedAt.Time
+		if !startedAt.Valid {
+			enteredAt = row.CreatedAt
+		}
+		_, _ = deps.Q.InsertCropCycleStageEvent(ctx, db.InsertCropCycleStageEventParams{
+			CropCycleID: row.ID,
+			GrowthStage: *parsedStage,
+			EnteredAt:   enteredAt.UTC(),
+		})
 	}
 	return map[string]any{
 		"crop_cycle_id":     row.ID,

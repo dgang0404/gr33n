@@ -438,8 +438,13 @@ WHERE id = $1 AND deleted_at IS NULL
 RETURNING id, device_id, farm_id, zone_id, name, sensor_type, unit_id, hardware_identifier, value_min_expected, value_max_expected, alert_threshold_low, alert_threshold_high, alert_duration_seconds, alert_cooldown_seconds, alert_breach_started_at, reading_interval_seconds, is_calibrated, last_calibration_date, calibration_data, config, meta_data, created_at, updated_at, updated_by_user_id, deleted_at
 `
 
-func (q *Queries) UpdateSensorConfig(ctx context.Context, id int64, config json.RawMessage) (Gr33ncoreSensor, error) {
-	row := q.db.QueryRow(ctx, updateSensorConfig, id, config)
+type UpdateSensorConfigParams struct {
+	ID     int64           `db:"id" json:"id"`
+	Config json.RawMessage `db:"config" json:"config"`
+}
+
+func (q *Queries) UpdateSensorConfig(ctx context.Context, arg UpdateSensorConfigParams) (Gr33ncoreSensor, error) {
+	row := q.db.QueryRow(ctx, updateSensorConfig, arg.ID, arg.Config)
 	var i Gr33ncoreSensor
 	err := row.Scan(
 		&i.ID,

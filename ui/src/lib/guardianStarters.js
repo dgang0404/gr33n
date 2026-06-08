@@ -3,6 +3,8 @@
  * Phase 44 WS4 — setup-mode starters for wizards and onboarding drawer.
  */
 
+import { buildPostHarvestCompareRoute } from './growHub.js'
+
 const SETUP_SURFACE_MAX = {
   first_run_dashboard: 3,
   farm_setup_wizard: 2,
@@ -310,6 +312,7 @@ export function buildZoneGrowStripStarters({
   activeCycle = null,
   farmId = null,
   priorHarvestedCycle = null,
+  allCycles = [],
   surface = 'zone_grow_strip',
 } = {}) {
   if (!zone?.id || !activeCycle?.id) return []
@@ -343,6 +346,12 @@ export function buildZoneGrowStripStarters({
             ...contextRef,
             crop_cycle_id: activeCycle.id,
             compare_path: `/farms/${farmId}/crop-cycles/compare`,
+            compare_ids: buildPostHarvestCompareRoute(
+              farmId,
+              allCycles,
+              activeCycle.id,
+              zone.id,
+            ).query?.ids ?? null,
           }
         : { ...contextRef, crop_cycle_id: activeCycle.id },
     },
@@ -364,6 +373,8 @@ export function buildHarvestFlowStarters({
   zone = null,
   activeCycle = null,
   priorHarvestedCycle = null,
+  farmId = null,
+  allCycles = [],
   surface = 'harvest_flow',
 } = {}) {
   if (!zone?.id) return []
@@ -399,7 +410,14 @@ export function buildHarvestFlowStarters({
         ? `How did this harvest in ${zoneName} compare to "${priorLabel}" — yield, feeds, and tagged cost?`
         : `How did this harvest in ${zoneName} compare to previous runs here?`,
       contextRef: priorHarvestedCycle?.id
-        ? { ...contextRef, prior_crop_cycle_id: priorHarvestedCycle.id, crop_cycle_id: activeCycle?.id ?? null }
+        ? {
+            ...contextRef,
+            prior_crop_cycle_id: priorHarvestedCycle.id,
+            crop_cycle_id: activeCycle?.id ?? null,
+            compare_ids: farmId && activeCycle?.id && zone?.id
+              ? buildPostHarvestCompareRoute(farmId, allCycles, activeCycle.id, zone.id).query?.ids ?? null
+              : null,
+          }
         : contextRef,
     },
     {

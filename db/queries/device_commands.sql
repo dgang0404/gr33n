@@ -15,9 +15,9 @@ RETURNING *;
 UPDATE gr33ncore.device_commands
 SET status = 'in_progress', started_at = NOW()
 WHERE id = (
-    SELECT id FROM gr33ncore.device_commands
-    WHERE device_id = $1 AND status = 'pending'
-    ORDER BY created_at ASC
+    SELECT q.id FROM gr33ncore.device_commands q
+    WHERE q.device_id = $1 AND q.status = 'pending'
+    ORDER BY q.created_at ASC
     LIMIT 1
     FOR UPDATE SKIP LOCKED
 )

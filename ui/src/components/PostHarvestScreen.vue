@@ -134,6 +134,8 @@ const postHarvestStarters = computed(() => {
     zone,
     activeCycle: harvestedCycle.value,
     priorHarvestedCycle: priorCycle.value,
+    farmId: props.farmId,
+    allCycles: props.cycles,
     surface: 'post_harvest',
   })
 })

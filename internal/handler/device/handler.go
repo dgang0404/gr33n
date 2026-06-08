@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -113,10 +114,14 @@ func (h *Handler) UpdateStatus(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()
 
+	lastFetch := ""
+	if body.LastConfigFetchAt != nil {
+		lastFetch = strings.TrimSpace(*body.LastConfigFetchAt)
+	}
 	device, err := h.q.UpdateDeviceStatus(ctx, db.UpdateDeviceStatusParams{
-		ID:                id,
-		Status:            commontypes.DeviceStatusEnum(body.Status),
-		LastConfigFetchAt: body.LastConfigFetchAt,
+		ID:      id,
+		Status:  commontypes.DeviceStatusEnum(body.Status),
+		Column3: lastFetch,
 	})
 	if err != nil {
 		httputil.WriteError(w, http.StatusInternalServerError, "failed to update device status")

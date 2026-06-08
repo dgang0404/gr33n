@@ -8,6 +8,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
+	db "gr33n-api/internal/db"
 	"gr33n-api/internal/farmauthz"
 	"gr33n-api/internal/hardware"
 	"gr33n-api/internal/httputil"
@@ -57,7 +58,7 @@ func (h *Handler) PatchWiring(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusBadRequest, err.Error())
 		return
 	}
-	updated, err := h.q.UpdateActuatorConfig(r.Context(), id, cfg)
+	updated, err := h.q.UpdateActuatorConfig(r.Context(), db.UpdateActuatorConfigParams{ID: id, Config: cfg})
 	if err != nil {
 		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
 		return

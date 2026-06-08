@@ -310,7 +310,14 @@ func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 	if s := r.URL.Query().Get("status"); s != "" {
 		statusFilter = &s
 	}
-	cmds, err := h.q.ListDeviceCommands(ctx, deviceID, statusFilter)
+	statusVal := ""
+	if statusFilter != nil {
+		statusVal = *statusFilter
+	}
+	cmds, err := h.q.ListDeviceCommands(ctx, db.ListDeviceCommandsParams{
+		DeviceID: deviceID,
+		Column2:  statusVal,
+	})
 	if err != nil {
 		httputil.WriteError(w, http.StatusInternalServerError, "failed to list commands")
 		return

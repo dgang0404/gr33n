@@ -95,7 +95,7 @@ todos:
     status: completed
   - id: oc-56-closure
     content: "OC-56: Phase 56 WS5 — plant_id migration, compare flow, phase-56-closure.test.js"
-    status: pending
+    status: completed
   - id: oc-57-closure
     content: "OC-57: Phase 57 WS5 — per-device API keys, pi guide, security smokes"
     status: pending
@@ -509,7 +509,19 @@ Feature detail: [`phase_55_guardian_ops_grow_money.plan.md`](phase_55_guardian_o
 | Guardian PR spec | ✅ | WS4 — `phase_55_guardian_pr_spec.md` |
 | OC-55 docs/tests | ✅ | WS5 — architecture §7.0s, `readtools_ops_test.go`, `phase-55-closure.test.js` |
 
-## Phases 56–59 — Farmer closure arc (planned)
+## Phase 56 — Grow schema + harvest analytics
+
+Feature detail: [`phase_56_grow_schema_harvest_analytics.plan.md`](phase_56_grow_schema_harvest_analytics.plan.md). **OC-56** closed (WS5). **Phase 56 shipped.**
+
+| Area | Status | Notes |
+|------|--------|-------|
+| plant_id FK | ✅ | WS1 — migration, wizard, Plants page, list filter |
+| Stage history | ✅ | WS2 — `crop_cycle_stage_events`, summary timeline |
+| Compare polish | ✅ | WS3 — pre-selected `?ids=`, Guardian `compare_ids` |
+| Income rollup | ✅ | WS4 — harvest economics banner, Money `?cycle_id=` |
+| OC-56 docs/tests | ✅ | WS5 — architecture §7.0t, operator-tour §6k, `phase-56-closure.test.js`, crop-cycle smokes |
+
+## Phases 57–59 — Farmer closure arc (planned)
 
 Hub: [`phase_53_59_roadmap.plan.md`](phase_53_59_roadmap.plan.md). Close **OC-56 … OC-59** when each phase WS docs/tests ship.
 
@@ -518,7 +530,7 @@ Hub: [`phase_53_59_roadmap.plan.md`](phase_53_59_roadmap.plan.md). Close **OC-56
 | ~~53 Grow + stock + money~~ | ~~OC-53~~ | [phase_53](phase_53_grow_stock_money_closure.plan.md) | ✅ Shipped |
 | ~~54 Zone connection nav~~ | ~~OC-54~~ | [phase_54](phase_54_zone_connection_nav.plan.md) | ✅ Shipped |
 | ~~55 Guardian ops~~ | ~~OC-55~~ | [phase_55](phase_55_guardian_ops_grow_money.plan.md) | ✅ Shipped |
-| 56 Grow schema | OC-56 | [phase_56](phase_56_grow_schema_harvest_analytics.plan.md) | Migration smokes |
+| ~~56 Grow schema~~ | ~~OC-56~~ | [phase_56](phase_56_grow_schema_harvest_analytics.plan.md) | ✅ Shipped |
 | 57 Device API keys | OC-57 | [phase_57](phase_57_pi_device_api_keys.plan.md) | Security smokes + pi guide |
 | 58 Task consumptions | OC-58 | [phase_58](phase_58_task_consumptions_runtime.plan.md) | Consumption UI test |
 | 59 Enterprise boundary | OC-59 | [phase_59](phase_59_enterprise_tier_boundary.plan.md) | `enterprise-tier-boundary.md` |

@@ -1,6 +1,7 @@
 package cropcycle
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -70,6 +71,20 @@ func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 	if rows == nil {
 		rows = []db.Gr33nfertigationCropCycle{}
 	}
+	if plantRaw := strings.TrimSpace(r.URL.Query().Get("plant_id")); plantRaw != "" {
+		plantID, err := strconv.ParseInt(plantRaw, 10, 64)
+		if err != nil || plantID <= 0 {
+			httputil.WriteError(w, http.StatusBadRequest, "invalid plant_id")
+			return
+		}
+		filtered := make([]db.Gr33nfertigationCropCycle, 0, len(rows))
+		for _, row := range rows {
+			if row.PlantID != nil && *row.PlantID == plantID {
+				filtered = append(filtered, row)
+			}
+		}
+		rows = filtered
+	}
 	httputil.WriteJSON(w, http.StatusOK, rows)
 }
 
@@ -114,6 +129,7 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		StartedAt        string  `json:"started_at"`
 		CycleNotes       *string `json:"cycle_notes"`
 		PrimaryProgramID *int64  `json:"primary_program_id"`
+		PlantID          *int64  `json:"plant_id"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid body")
@@ -146,16 +162,23 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 	if body.IsActive != nil {
 		active = *body.IsActive
 	}
+	plantID, err := h.resolvePlantIDForFarm(r.Context(), farmID, body.PlantID)
+	if err != nil {
+		httputil.WriteError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	stage := parseGrowthStage(body.CurrentStage)
 	row, err := h.q.CreateCropCycle(r.Context(), db.CreateCropCycleParams{
 		FarmID:           farmID,
 		ZoneID:           body.ZoneID,
 		Name:             name,
 		StrainOrVariety:  body.StrainOrVariety,
-		CurrentStage:     parseGrowthStage(body.CurrentStage),
+		CurrentStage:     stage,
 		IsActive:         active,
 		StartedAt:        started,
 		CycleNotes:       body.CycleNotes,
 		PrimaryProgramID: body.PrimaryProgramID,
+		PlantID:          plantID,
 	})
 	if err != nil {
 		var pgErr *pgconn.PgError
@@ -165,6 +188,17 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		}
 		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
 		return
+	}
+	if stage != nil {
+		enteredAt := stageEnteredAt(started, row.CreatedAt)
+		if _, err := h.q.InsertCropCycleStageEvent(r.Context(), db.InsertCropCycleStageEventParams{
+			CropCycleID: row.ID,
+			GrowthStage: *stage,
+			EnteredAt:   enteredAt,
+		}); err != nil {
+			httputil.WriteError(w, http.StatusInternalServerError, err.Error())
+			return
+		}
 	}
 	httputil.WriteJSON(w, http.StatusCreated, row)
 }
@@ -186,6 +220,7 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 		YieldGrams       *float64 `json:"yield_grams"`
 		YieldNotes       *string  `json:"yield_notes"`
 		PrimaryProgramID *int64   `json:"primary_program_id"`
+		PlantID          *int64   `json:"plant_id"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid body")
@@ -241,6 +276,14 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
+	plantID := existing.PlantID
+	if body.PlantID != nil {
+		plantID, err = h.resolvePlantIDForFarm(r.Context(), existing.FarmID, body.PlantID)
+		if err != nil {
+			httputil.WriteError(w, http.StatusBadRequest, err.Error())
+			return
+		}
+	}
 	row, err := h.q.UpdateCropCycle(r.Context(), db.UpdateCropCycleParams{
 		ID:               id,
 		Name:             name,
@@ -252,6 +295,7 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 		YieldGrams:       yield,
 		YieldNotes:       body.YieldNotes,
 		PrimaryProgramID: body.PrimaryProgramID,
+		PlantID:          plantID,
 	})
 	if err != nil {
 		var pgErr *pgconn.PgError
@@ -295,15 +339,60 @@ func (h *Handler) UpdateStage(w http.ResponseWriter, r *http.Request) {
 	if !farmauthz.RequireFarmOperate(w, r, h.q, cc.FarmID) {
 		return
 	}
+	newStage := parseGrowthStage(body.CurrentStage)
 	row, err := h.q.UpdateCropCycleStage(r.Context(), db.UpdateCropCycleStageParams{
 		ID:           id,
-		CurrentStage: parseGrowthStage(body.CurrentStage),
+		CurrentStage: newStage,
 	})
 	if err != nil {
 		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
+	if newStage != nil && stageChanged(cc.CurrentStage, newStage) {
+		if _, err := h.q.InsertCropCycleStageEvent(r.Context(), db.InsertCropCycleStageEventParams{
+			CropCycleID: id,
+			GrowthStage: *newStage,
+			EnteredAt:   time.Now().UTC(),
+		}); err != nil {
+			httputil.WriteError(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+	}
 	httputil.WriteJSON(w, http.StatusOK, row)
+}
+
+func (h *Handler) resolvePlantIDForFarm(ctx context.Context, farmID int64, plantID *int64) (*int64, error) {
+	if plantID == nil || *plantID <= 0 {
+		return nil, nil
+	}
+	p, err := h.q.GetPlant(ctx, *plantID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, errors.New("plant_id not found")
+		}
+		return nil, err
+	}
+	if p.FarmID != farmID {
+		return nil, errors.New("plant_id does not belong to this farm")
+	}
+	return plantID, nil
+}
+
+func stageEnteredAt(started pgtype.Date, fallback time.Time) time.Time {
+	if started.Valid {
+		return started.Time.UTC()
+	}
+	return fallback.UTC()
+}
+
+func stageChanged(prev, next *db.Gr33nfertigationGrowthStageEnum) bool {
+	if next == nil {
+		return false
+	}
+	if prev == nil {
+		return true
+	}
+	return *prev != *next
 }
 
 // Delete — DELETE /crop-cycles/{id} (soft: is_active = false)

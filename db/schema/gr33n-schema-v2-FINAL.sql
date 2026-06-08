@@ -449,6 +449,7 @@ CREATE TABLE IF NOT EXISTS gr33ncore.devices (
     api_key            TEXT   UNIQUE,
     config             JSONB NOT NULL  DEFAULT '{}'::jsonb,
     meta_data          JSONB NOT NULL  DEFAULT '{}'::jsonb,
+    config_version     INTEGER NOT NULL DEFAULT 0,
     created_at         TIMESTAMPTZ DEFAULT NOW() NOT NULL,
     updated_at         TIMESTAMPTZ DEFAULT NOW() NOT NULL,
     updated_by_user_id UUID   REFERENCES gr33ncore.profiles(user_id) ON DELETE SET NULL,
@@ -457,6 +458,32 @@ CREATE TABLE IF NOT EXISTS gr33ncore.devices (
 CREATE TRIGGER trg_devices_updated_at
     BEFORE UPDATE ON gr33ncore.devices
     FOR EACH ROW EXECUTE FUNCTION gr33ncore.set_updated_at();
+
+-- Phase 39 WS1 — FIFO per-device command queue.
+CREATE TABLE IF NOT EXISTS gr33ncore.device_commands (
+    id              BIGSERIAL PRIMARY KEY,
+    device_id       BIGINT NOT NULL REFERENCES gr33ncore.devices(id) ON DELETE CASCADE,
+    farm_id         BIGINT NOT NULL,
+    command_type    TEXT NOT NULL CHECK (command_type IN ('actuator', 'pulse', 'mix_batch')),
+    payload         JSONB NOT NULL DEFAULT '{}',
+    status          TEXT NOT NULL DEFAULT 'pending'
+                        CHECK (status IN ('pending', 'in_progress', 'completed', 'failed', 'cancelled')),
+    source          TEXT NOT NULL DEFAULT 'operator'
+                        CHECK (source IN ('operator', 'schedule', 'rule', 'program', 'guardian')),
+    actuator_id     BIGINT,
+    schedule_id     BIGINT,
+    rule_id         BIGINT,
+    program_id      BIGINT,
+    created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    started_at      TIMESTAMPTZ,
+    completed_at    TIMESTAMPTZ,
+    result          JSONB
+);
+CREATE INDEX IF NOT EXISTS device_commands_device_pending
+    ON gr33ncore.device_commands (device_id, created_at ASC)
+    WHERE status = 'pending';
+CREATE INDEX IF NOT EXISTS device_commands_farm
+    ON gr33ncore.device_commands (farm_id, created_at DESC);
 
 -- Sensors
 CREATE TABLE IF NOT EXISTS gr33ncore.sensors (
@@ -1457,6 +1484,7 @@ CREATE TABLE IF NOT EXISTS gr33nfertigation.programs (
     -- program fires, mirroring schedules/rules so the tick can skip
     -- "already fired this minute" without scanning automation_runs.
     last_triggered_time         TIMESTAMPTZ,
+    irrigation_only             BOOLEAN NOT NULL DEFAULT FALSE,
     created_at                  TIMESTAMPTZ DEFAULT NOW() NOT NULL,
     updated_at                  TIMESTAMPTZ DEFAULT NOW() NOT NULL,
     deleted_at                  TIMESTAMPTZ DEFAULT NULL
@@ -1466,6 +1494,24 @@ CREATE TRIGGER trg_programs_updated_at
     FOR EACH ROW EXECUTE FUNCTION gr33ncore.set_updated_at();
 ALTER TABLE gr33nfertigation.crop_cycles
     ADD COLUMN primary_program_id BIGINT REFERENCES gr33nfertigation.programs(id) ON DELETE SET NULL;
+
+-- Phase 56 WS1 — optional link to Plants catalog.
+ALTER TABLE gr33nfertigation.crop_cycles
+    ADD COLUMN plant_id BIGINT REFERENCES gr33ncrops.plants(id) ON DELETE SET NULL;
+CREATE INDEX IF NOT EXISTS idx_crop_cycles_plant_id
+    ON gr33nfertigation.crop_cycles (plant_id)
+    WHERE plant_id IS NOT NULL;
+
+-- Phase 56 WS2 — stage transition history for grow timelines.
+CREATE TABLE IF NOT EXISTS gr33nfertigation.crop_cycle_stage_events (
+    id            BIGSERIAL PRIMARY KEY,
+    crop_cycle_id BIGINT NOT NULL REFERENCES gr33nfertigation.crop_cycles(id) ON DELETE CASCADE,
+    growth_stage  gr33nfertigation.growth_stage_enum NOT NULL,
+    entered_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_crop_cycle_stage_events_cycle
+    ON gr33nfertigation.crop_cycle_stage_events (crop_cycle_id, entered_at ASC);
 
 -- Phase 22 WS1 — program_id column on automation_runs (declared above;
 -- FK deferred here because programs is defined below core).

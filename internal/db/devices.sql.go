@@ -64,7 +64,7 @@ INSERT INTO gr33ncore.devices (
     farm_id, zone_id, name, device_uid, device_type,
     ip_address, firmware_version, status, config, meta_data, created_at, updated_at
 ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW(), NOW())
-RETURNING id, farm_id, zone_id, name, device_uid, device_type, ip_address, firmware_version, status, last_heartbeat, api_key, config, meta_data, created_at, updated_at, updated_by_user_id, deleted_at, config_version
+RETURNING id, farm_id, zone_id, name, device_uid, device_type, ip_address, firmware_version, status, last_heartbeat, api_key, config, meta_data, config_version, created_at, updated_at, updated_by_user_id, deleted_at
 `
 
 type CreateDeviceParams struct {
@@ -111,17 +111,17 @@ func (q *Queries) CreateDevice(ctx context.Context, arg CreateDeviceParams) (Gr3
 		&i.ApiKey,
 		&i.Config,
 		&i.MetaData,
+		&i.ConfigVersion,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.UpdatedByUserID,
 		&i.DeletedAt,
-		&i.ConfigVersion,
 	)
 	return i, err
 }
 
 const getDeviceByID = `-- name: GetDeviceByID :one
-SELECT id, farm_id, zone_id, name, device_uid, device_type, ip_address, firmware_version, status, last_heartbeat, api_key, config, meta_data, created_at, updated_at, updated_by_user_id, deleted_at, config_version FROM gr33ncore.devices
+SELECT id, farm_id, zone_id, name, device_uid, device_type, ip_address, firmware_version, status, last_heartbeat, api_key, config, meta_data, config_version, created_at, updated_at, updated_by_user_id, deleted_at FROM gr33ncore.devices
 WHERE id = $1 AND deleted_at IS NULL
 `
 
@@ -142,17 +142,17 @@ func (q *Queries) GetDeviceByID(ctx context.Context, id int64) (Gr33ncoreDevice,
 		&i.ApiKey,
 		&i.Config,
 		&i.MetaData,
+		&i.ConfigVersion,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.UpdatedByUserID,
 		&i.DeletedAt,
-		&i.ConfigVersion,
 	)
 	return i, err
 }
 
 const getDeviceByUID = `-- name: GetDeviceByUID :one
-SELECT id, farm_id, zone_id, name, device_uid, device_type, ip_address, firmware_version, status, last_heartbeat, api_key, config, meta_data, created_at, updated_at, updated_by_user_id, deleted_at, config_version FROM gr33ncore.devices
+SELECT id, farm_id, zone_id, name, device_uid, device_type, ip_address, firmware_version, status, last_heartbeat, api_key, config, meta_data, config_version, created_at, updated_at, updated_by_user_id, deleted_at FROM gr33ncore.devices
 WHERE device_uid = $1 AND deleted_at IS NULL
 `
 
@@ -173,17 +173,17 @@ func (q *Queries) GetDeviceByUID(ctx context.Context, deviceUid *string) (Gr33nc
 		&i.ApiKey,
 		&i.Config,
 		&i.MetaData,
+		&i.ConfigVersion,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.UpdatedByUserID,
 		&i.DeletedAt,
-		&i.ConfigVersion,
 	)
 	return i, err
 }
 
 const listDevicesByFarm = `-- name: ListDevicesByFarm :many
-SELECT id, farm_id, zone_id, name, device_uid, device_type, ip_address, firmware_version, status, last_heartbeat, api_key, config, meta_data, created_at, updated_at, updated_by_user_id, deleted_at, config_version FROM gr33ncore.devices
+SELECT id, farm_id, zone_id, name, device_uid, device_type, ip_address, firmware_version, status, last_heartbeat, api_key, config, meta_data, config_version, created_at, updated_at, updated_by_user_id, deleted_at FROM gr33ncore.devices
 WHERE farm_id = $1 AND deleted_at IS NULL
 ORDER BY name ASC
 `
@@ -211,11 +211,11 @@ func (q *Queries) ListDevicesByFarm(ctx context.Context, farmID int64) ([]Gr33nc
 			&i.ApiKey,
 			&i.Config,
 			&i.MetaData,
+			&i.ConfigVersion,
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.UpdatedByUserID,
 			&i.DeletedAt,
-			&i.ConfigVersion,
 		); err != nil {
 			return nil, err
 		}
@@ -228,7 +228,7 @@ func (q *Queries) ListDevicesByFarm(ctx context.Context, farmID int64) ([]Gr33nc
 }
 
 const listDevicesByZone = `-- name: ListDevicesByZone :many
-SELECT id, farm_id, zone_id, name, device_uid, device_type, ip_address, firmware_version, status, last_heartbeat, api_key, config, meta_data, created_at, updated_at, updated_by_user_id, deleted_at, config_version FROM gr33ncore.devices
+SELECT id, farm_id, zone_id, name, device_uid, device_type, ip_address, firmware_version, status, last_heartbeat, api_key, config, meta_data, config_version, created_at, updated_at, updated_by_user_id, deleted_at FROM gr33ncore.devices
 WHERE zone_id = $1 AND deleted_at IS NULL
 ORDER BY name ASC
 `
@@ -256,11 +256,11 @@ func (q *Queries) ListDevicesByZone(ctx context.Context, zoneID *int64) ([]Gr33n
 			&i.ApiKey,
 			&i.Config,
 			&i.MetaData,
+			&i.ConfigVersion,
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.UpdatedByUserID,
 			&i.DeletedAt,
-			&i.ConfigVersion,
 		); err != nil {
 			return nil, err
 		}
@@ -322,17 +322,17 @@ SET status = $2,
       ELSE config
     END
 WHERE id = $1 AND deleted_at IS NULL
-RETURNING id, farm_id, zone_id, name, device_uid, device_type, ip_address, firmware_version, status, last_heartbeat, api_key, config, meta_data, created_at, updated_at, updated_by_user_id, deleted_at, config_version
+RETURNING id, farm_id, zone_id, name, device_uid, device_type, ip_address, firmware_version, status, last_heartbeat, api_key, config, meta_data, config_version, created_at, updated_at, updated_by_user_id, deleted_at
 `
 
 type UpdateDeviceStatusParams struct {
-	ID                int64                        `db:"id" json:"id"`
-	Status            commontypes.DeviceStatusEnum `db:"status" json:"status"`
-	LastConfigFetchAt *string                      `db:"last_config_fetch_at" json:"last_config_fetch_at"`
+	ID      int64                        `db:"id" json:"id"`
+	Status  commontypes.DeviceStatusEnum `db:"status" json:"status"`
+	Column3 string                       `db:"column_3" json:"column_3"`
 }
 
 func (q *Queries) UpdateDeviceStatus(ctx context.Context, arg UpdateDeviceStatusParams) (Gr33ncoreDevice, error) {
-	row := q.db.QueryRow(ctx, updateDeviceStatus, arg.ID, arg.Status, arg.LastConfigFetchAt)
+	row := q.db.QueryRow(ctx, updateDeviceStatus, arg.ID, arg.Status, arg.Column3)
 	var i Gr33ncoreDevice
 	err := row.Scan(
 		&i.ID,
@@ -348,11 +348,11 @@ func (q *Queries) UpdateDeviceStatus(ctx context.Context, arg UpdateDeviceStatus
 		&i.ApiKey,
 		&i.Config,
 		&i.MetaData,
+		&i.ConfigVersion,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.UpdatedByUserID,
 		&i.DeletedAt,
-		&i.ConfigVersion,
 	)
 	return i, err
 }

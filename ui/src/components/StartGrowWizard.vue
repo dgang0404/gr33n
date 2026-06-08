@@ -135,6 +135,7 @@ const props = defineProps({
   plants: { type: Array, default: () => [] },
   initialZoneId: { type: Number, default: null },
   initialStrain: { type: String, default: '' },
+  initialPlantId: { type: Number, default: null },
 })
 
 const emit = defineEmits(['close', 'created'])
@@ -193,6 +194,7 @@ watch(
     const f = emptyForm()
     if (props.initialStrain) f.strain = props.initialStrain
     if (props.initialZoneId) f.zoneId = props.initialZoneId
+    if (props.initialPlantId) plantPickId.value = String(props.initialPlantId)
     f.name = defaultCycleName(f.strain, props.zones.find((z) => z.id === f.zoneId)?.name)
     lastAutoName.value = f.name
     form.value = f
@@ -231,6 +233,7 @@ async function submit() {
       stage: form.value.stage,
       startedAt: form.value.startedAt,
       programId: form.value.programId,
+      plantId: plantPickId.value ? Number(plantPickId.value) : null,
     })
     const created = await store.createCropCycle(props.farmId, payload)
     emit('created', created)

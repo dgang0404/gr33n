@@ -91,7 +91,7 @@ type cycleSummary struct {
 // JWT + farm member (farm_id resolved from the cycle row). Stage history
 // is currently a single-row "current stage entered at started_at" stand-in
 // because the schema only stores current_stage — flagged by
-// stage_history_supported = false so the UI can show that explicitly.
+// stage_history_supported reflects whether crop_cycle_stage_events has rows.
 func (h *Handler) Summary(w http.ResponseWriter, r *http.Request) {
 	asCSV := strings.HasSuffix(r.URL.Path, ".csv")
 	rawID := r.PathValue("id")
@@ -249,23 +249,40 @@ func (h *Handler) buildSummary(r *http.Request, cycle db.Gr33nfertigationCropCyc
 
 	out.Yield = buildYield(cycle, out.Fertigation, out.Cost, out.DurationDays)
 
-	// Stage history: we only store current_stage, so we surface a single
-	// entry pinned to the cycle's started_at and explicitly mark
-	// stage_history_supported = false. A future migration can add a real
-	// stage_transitions table and flip this without a contract break.
-	out.Stages = []summaryStage{}
-	if cycle.CurrentStage != nil {
+	events, err := h.q.ListCropCycleStageEventsByCycle(r.Context(), cycle.ID)
+	if err != nil {
+		return out, err
+	}
+	if len(events) > 0 {
+		out.Stages = make([]summaryStage, 0, len(events))
+		for _, ev := range events {
+			out.Stages = append(out.Stages, summaryStage{
+				Stage:     formatStageLabelFarmer(string(ev.GrowthStage)),
+				EnteredAt: ev.EnteredAt.Format("2006-01-02"),
+			})
+		}
+		out.StageHistorySupported = true
+	} else if cycle.CurrentStage != nil {
 		entered := ""
 		if cycle.StartedAt.Valid {
 			entered = cycle.StartedAt.Time.Format("2006-01-02")
 		}
 		out.Stages = append(out.Stages, summaryStage{
-			Stage:     string(*cycle.CurrentStage),
+			Stage:     formatStageLabelFarmer(string(*cycle.CurrentStage)),
 			EnteredAt: entered,
 		})
+		out.StageHistorySupported = false
 	}
-	out.StageHistorySupported = false
 	return out, nil
+}
+
+// formatStageLabelFarmer turns enum slugs into readable timeline copy.
+func formatStageLabelFarmer(stage string) string {
+	stage = strings.TrimSpace(stage)
+	if stage == "" {
+		return "—"
+	}
+	return strings.ReplaceAll(stage, "_", " ")
 }
 
 func buildYield(cycle db.Gr33nfertigationCropCycle, fert summaryFertigation, cost summaryCost, days int64) summaryYield {

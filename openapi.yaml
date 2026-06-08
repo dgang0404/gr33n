@@ -2892,6 +2892,11 @@ paths:
       security: [{ bearerAuth: [] }]
       parameters:
         - { $ref: "#/components/parameters/ID" }
+        - name: plant_id
+          in: query
+          required: false
+          description: Optional filter — only cycles linked to this Plants catalog row (Phase 56).
+          schema: { type: integer }
       responses:
         "200":
           description: Crop cycles
@@ -3574,6 +3579,11 @@ paths:
         - name: offset
           in: query
           schema: { type: integer, default: 0 }
+        - name: crop_cycle_id
+          in: query
+          required: false
+          description: Optional filter — receipts tagged to this grow (Phase 56).
+          schema: { type: integer }
       responses:
         "200":
           content:
@@ -7272,6 +7282,7 @@ components:
         yield_notes: { type: string, nullable: true }
         cycle_notes: { type: string, nullable: true }
         primary_program_id: { type: integer, nullable: true }
+        plant_id: { type: integer, nullable: true, description: "FK to gr33ncrops.plants (Phase 56)" }
         created_at: { type: string, format: date-time }
         updated_at: { type: string, format: date-time }
 
@@ -7287,6 +7298,7 @@ components:
         started_at: { type: string, format: date }
         cycle_notes: { type: string }
         primary_program_id: { type: integer }
+        plant_id: { type: integer, nullable: true }
 
     CropCycleUpdate:
       type: object
@@ -7301,6 +7313,7 @@ components:
         yield_grams: { type: number }
         yield_notes: { type: string }
         primary_program_id: { type: integer }
+        plant_id: { type: integer, nullable: true }
 
     ApplicationTargetEnum:
       type: string

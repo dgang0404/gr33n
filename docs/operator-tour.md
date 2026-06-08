@@ -460,6 +460,22 @@ Four new **read tools** (no Confirm): **`summarize_cycle_cost`**, **`summarize_f
 
 **Vitest bundle:** `phase-55-closure.test.js`, `readtools_ops_test.go`.
 
+### 6k. Grow schema + harvest analytics (Phase 56 — shipped)
+
+**Plan:** [`plans/phase_56_grow_schema_harvest_analytics.plan.md`](plans/phase_56_grow_schema_harvest_analytics.plan.md) · Architecture: [§7.0t](farm-guardian-architecture.md#70t-grow-schema--harvest-analytics-phase-56--shipped).
+
+| Surface | What you see |
+|---------|----------------|
+| **Start grow** | Plant picker links the cycle to your Plants catalog (`plant_id`) |
+| **Plants** | Each strain card lists grows tied to that plant |
+| **Cycle summary** | Real stage timeline after stage changes; **Harvest economics** when income is tagged |
+| **Compare** | Opens with this harvest + prior run pre-selected (`?ids=`) |
+| **Money** | **Income for this grow** filter from summary (`?cycle_id=`) |
+
+**Compare + net harvest economics:** When you tag sale receipts to a grow, the summary shows spent vs received and net — then **Income for this grow →** on Money filters to just those transactions.
+
+**Vitest:** `phase-56-closure.test.js` · **Go smoke:** `TestPhase56CropCyclePlantID`, stage events on `TestCropCycleCreateAndStage`.
+
 ### 6d. First field install with Guardian, offline (Phase 37)
 
 **Requires:** `AI_ENABLED=true`, demo or real farm selected, **Operate** optional for procedure-only turns (Confirm still needed for write proposals).

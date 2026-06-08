@@ -1002,8 +1002,10 @@ export const useFarmStore = defineStore('farm', {
       return Array.isArray(r.data) ? r.data : []
     },
 
-    async loadCosts(farmId, { limit = 50, offset = 0 } = {}) {
-      const r = await api.get(`/farms/${farmId}/costs?limit=${limit}&offset=${offset}`)
+    async loadCosts(farmId, { limit = 50, offset = 0, cropCycleId = null } = {}) {
+      let url = `/farms/${farmId}/costs?limit=${limit}&offset=${offset}`
+      if (cropCycleId) url += `&crop_cycle_id=${Number(cropCycleId)}`
+      const r = await api.get(url)
       const list = Array.isArray(r.data) ? r.data : []
       return this.withCostQueueOverlay(list, farmId)
     },
