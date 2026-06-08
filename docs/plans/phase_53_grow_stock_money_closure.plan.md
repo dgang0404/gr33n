@@ -20,7 +20,7 @@ todos:
     status: completed
   - id: ws5-guardian
     content: "WS5: Guardian starters on grow strip, Supplies, Money; cycle cost question routing"
-    status: pending
+    status: completed
   - id: ws6-docs-tests
     content: "WS6: operator-tour, architecture §7.0q, phase-53-closure.test.js, OC-53, roadmap row"
     status: pending

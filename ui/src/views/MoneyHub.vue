@@ -270,7 +270,7 @@ const receiptForm = reactive({
   tagCycleId: null,
 })
 
-const moneyStarters = buildMoneyHubStarters()
+const moneyStarters = computed(() => buildMoneyHubStarters())
 
 const monthSummary = computed(() => computeMonthSummary(transactions.value))
 

@@ -55,17 +55,31 @@
         </button>
       </div>
     </div>
+
+    <GuardianStarterChips
+      v-if="activeCycle && growStarters.length"
+      :starters="growStarters"
+      data-test="zone-grow-strip-starters"
+    />
   </div>
 </template>
 
 <script setup>
 import { computed, ref, watch } from 'vue'
 import { useFarmStore } from '../stores/farm.js'
-import { activeCycleForZone, daysSinceStart, formatStageLabel } from '../lib/growHub.js'
+import {
+  activeCycleForZone,
+  daysSinceStart,
+  formatStageLabel,
+  lastHarvestedCycleInZone,
+} from '../lib/growHub.js'
+import { buildZoneGrowStripStarters } from '../lib/guardianStarters.js'
+import GuardianStarterChips from './GuardianStarterChips.vue'
 
 const props = defineProps({
   zoneId: { type: Number, required: true },
   farmId: { type: Number, required: true },
+  zone: { type: Object, default: null },
   /** Optional parent-owned cycles to avoid duplicate fetch. */
   cycles: { type: Array, default: null },
 })
@@ -85,6 +99,21 @@ const dayCount = computed(() =>
 const summaryLink = computed(() => ({
   path: `/crop-cycles/${activeCycle.value?.id}/summary`,
 }))
+
+const growStarters = computed(() => {
+  if (!activeCycle.value) return []
+  const zoneRef = props.zone || { id: props.zoneId, name: `Zone ${props.zoneId}` }
+  return buildZoneGrowStripStarters({
+    zone: zoneRef,
+    activeCycle: activeCycle.value,
+    farmId: props.farmId,
+    priorHarvestedCycle: lastHarvestedCycleInZone(
+      cycleList.value,
+      props.zoneId,
+      activeCycle.value.id,
+    ),
+  })
+})
 
 async function loadCycles() {
   if (props.cycles || !props.farmId) return

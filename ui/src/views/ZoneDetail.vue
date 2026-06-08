@@ -114,6 +114,7 @@
         <ZoneCurrentGrowStrip
           :zone-id="zoneId"
           :farm-id="farmId"
+          :zone="zone"
           :cycles="cropCycles"
           @start-grow="openStartGrowWizard"
           @harvest="openHarvestWizard"
@@ -208,6 +209,8 @@
     <HarvestWeighIn
       :open="showHarvestWizard"
       :cycle="harvestTarget"
+      :zone="zone"
+      :prior-harvested-cycle="priorHarvestedCycleForZone"
       @close="closeHarvestWizard"
       @harvested="onHarvestComplete"
     />
@@ -253,6 +256,7 @@ import {
 } from '../lib/guardianContextPrompts.js'
 import { buildSetupStarters, buildZoneStarters } from '../lib/guardianStarters.js'
 import { computeZoneTodaySnapshot, pickNextZoneSchedule } from '../lib/zoneGrowSummary.js'
+import { lastHarvestedCycleInZone } from '../lib/growHub.js'
 
 const route = useRoute()
 const activeTab = ref('overview')
@@ -376,6 +380,13 @@ const hasActiveCropCycle = computed(() =>
     (c) => c.is_active && Number(c.zone_id) === Number(zoneId.value),
   ),
 )
+
+const priorHarvestedCycleForZone = computed(() => {
+  const active = cropCycles.value.find(
+    (c) => c.is_active && Number(c.zone_id) === Number(zoneId.value),
+  )
+  return lastHarvestedCycleInZone(cropCycles.value, zoneId.value, active?.id)
+})
 
 const zoneStarters = computed(() => {
   if (!zone.value) return []

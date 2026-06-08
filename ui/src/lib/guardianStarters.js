@@ -297,6 +297,93 @@ function operationsRouteRef(path, name, surface) {
 }
 
 /**
+ * Phase 53 WS5 — zone grow strip starters (active crop cycle on overview).
+ * @param {object} params
+ */
+export function buildZoneGrowStripStarters({
+  zone = null,
+  activeCycle = null,
+  farmId = null,
+  priorHarvestedCycle = null,
+  surface = 'zone_grow_strip',
+} = {}) {
+  if (!zone?.id || !activeCycle?.id) return []
+
+  const zoneName = zone.name || 'this zone'
+  const cycleName = activeCycle.name || activeCycle.strain_or_variety || 'this grow'
+  const path = `/zones/${zone.id}`
+  const contextRef = {
+    type: 'zone',
+    id: zone.id,
+    name: zoneName,
+    crop_cycle_id: activeCycle.id,
+    surface,
+  }
+
+  const starters = [
+    {
+      id: 'grow-room-cost',
+      label: 'What did this room cost so far?',
+      message: `What did ${zoneName} cost so far for the active grow "${cycleName}"? Use tagged receipts and cycle cost summary — plain dollars, no accounting jargon.`,
+      contextRef,
+    },
+    {
+      id: 'compare-last-cycle',
+      label: 'Compare to last time',
+      message: priorHarvestedCycle
+        ? `How does the current grow in ${zoneName} compare to my last harvested cycle "${priorHarvestedCycle.name || priorHarvestedCycle.strain_or_variety || 'last run'}" in this zone?`
+        : `How does the current grow in ${zoneName} compare to previous harvested cycles in this zone?`,
+      contextRef: farmId
+        ? {
+            ...contextRef,
+            compare_path: `/farms/${farmId}/crop-cycles/compare`,
+          }
+        : contextRef,
+    },
+  ]
+
+  return dedupeStarters(starters).slice(0, 2)
+}
+
+/**
+ * Phase 53 WS5 — harvest weigh-in / post-harvest Guardian starters.
+ */
+export function buildHarvestFlowStarters({
+  zone = null,
+  activeCycle = null,
+  priorHarvestedCycle = null,
+  surface = 'harvest_flow',
+} = {}) {
+  if (!zone?.id) return []
+
+  const zoneName = zone.name || 'this zone'
+  const contextRef = {
+    type: 'zone',
+    id: zone.id,
+    name: zoneName,
+    crop_cycle_id: activeCycle?.id ?? null,
+    surface,
+  }
+
+  const priorLabel = priorHarvestedCycle?.name
+    || priorHarvestedCycle?.strain_or_variety
+    || 'the last run'
+
+  const starters = [{
+    id: 'prior-yield',
+    label: 'Last run yield',
+    message: priorHarvestedCycle
+      ? `What yield did we hit on "${priorLabel}" in ${zoneName}? Summarize grams and duration from the prior cycle.`
+      : `What yield did we hit last time we harvested in ${zoneName}?`,
+    contextRef: priorHarvestedCycle?.id
+      ? { ...contextRef, prior_crop_cycle_id: priorHarvestedCycle.id }
+      : contextRef,
+  }]
+
+  return dedupeStarters(starters).slice(0, 1)
+}
+
+/**
  * Phase 43 WS8 — Supplies hub Guardian starters.
  */
 export function buildSuppliesHubStarters({
@@ -309,13 +396,19 @@ export function buildSuppliesHubStarters({
   programs = [],
   surface = 'supplies_hub',
 }) {
-  const max = surface === 'supplies_hub_zone' ? 3 : 4
+  const max = surface === 'supplies_hub_zone' ? 3 : 5
   const path = zoneContextId ? `/operations/supplies?zone_id=${zoneContextId}` : '/operations/supplies'
   const routeRef = operationsRouteRef(path, 'Supplies', surface)
   const name = focusZoneName(zones, zoneContextId, zoneName)
   const starters = []
 
   if (lowStockRows.length) {
+    starters.push({
+      id: 'restock-first',
+      label: 'What should I restock first?',
+      message: 'What should I restock first on this farm? List low-stock inputs by priority.',
+      contextRef: routeRef,
+    })
     starters.push({
       id: 'whats-running-low',
       label: "What's running low?",
@@ -404,15 +497,24 @@ export function buildFeedingAdminStarters({
 }
 
 /**
- * Phase 43 WS8 — Money hub Guardian starters.
+ * Phase 43 WS8 + Phase 53 WS5 — Money hub Guardian starters.
  */
 export function buildMoneyHubStarters() {
-  return [{
-    id: 'month-spend',
-    label: "Explain this month's spend",
-    message: 'Summarize what I spent this month in plain language — no accounting jargon',
-    contextRef: operationsRouteRef('/operations/money', 'Money', 'money_hub'),
-  }]
+  const routeRef = operationsRouteRef('/operations/money', 'Money', 'money_hub')
+  return dedupeStarters([
+    {
+      id: 'month-spend-by-category',
+      label: 'Spending by category',
+      message: 'Summarize spending this month by category in plain language — no accounting jargon',
+      contextRef: routeRef,
+    },
+    {
+      id: 'month-spend',
+      label: "Explain this month's spend",
+      message: 'Summarize what I spent this month in plain language — no accounting jargon',
+      contextRef: routeRef,
+    },
+  ]).slice(0, 2)
 }
 
 /**

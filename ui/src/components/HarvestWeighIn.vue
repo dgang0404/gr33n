@@ -13,6 +13,12 @@
         </p>
       </div>
 
+      <GuardianStarterChips
+        v-if="harvestStarters.length"
+        :starters="harvestStarters"
+        data-test="harvest-flow-starters"
+      />
+
       <div>
         <label class="block text-xs text-zinc-500 mb-1">Yield (grams)</label>
         <input
@@ -72,14 +78,24 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useFarmStore } from '../stores/farm.js'
 import { buildHarvestPayload } from '../lib/growHub.js'
+import { buildHarvestFlowStarters } from '../lib/guardianStarters.js'
+import GuardianStarterChips from './GuardianStarterChips.vue'
 
 const props = defineProps({
   open: { type: Boolean, default: false },
   cycle: { type: Object, default: null },
+  zone: { type: Object, default: null },
+  priorHarvestedCycle: { type: Object, default: null },
 })
+
+const harvestStarters = computed(() => buildHarvestFlowStarters({
+  zone: props.zone,
+  activeCycle: props.cycle,
+  priorHarvestedCycle: props.priorHarvestedCycle,
+}))
 
 const emit = defineEmits(['close', 'harvested'])
 

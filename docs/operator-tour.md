@@ -516,7 +516,9 @@ Architecture: [`farm-guardian-architecture.md` §7.0i](farm-guardian-architectur
 
 **Cross-links:** hover in-page CTAs to see related sidebar items wiggle (**Plants**, **Targets & schedules**, **Supplies**, **Tasks**, **Money**). Dashboard **Getting started** adds optional rows: start a grow, restock one input, log first receipt.
 
-**Vitest:** `phase-53-ws1-grow.test.js`, `phase-53-ws2-supplies.test.js`, `phase-53-ws3-money.test.js`, `phase-53-ws4-crosslinks.test.js`.
+**Guardian starters (WS5):** Zone grow strip — cost so far + compare to last run; Supplies — **What should I restock first?** (`summarize_farm_low_stock`); Money — spending by category; Harvest weigh-in — last run yield.
+
+**Vitest:** `phase-53-ws1-grow.test.js`, `phase-53-ws2-supplies.test.js`, `phase-53-ws3-money.test.js`, `phase-53-ws4-crosslinks.test.js`, `phase-53-ws5-guardian.test.js`.
 
 ---
 

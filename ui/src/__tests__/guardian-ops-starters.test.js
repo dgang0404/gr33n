@@ -47,11 +47,20 @@ describe('Phase 43 WS8 — operations Guardian starters', () => {
     expect(starters[0].message).toContain('plain language')
   })
 
-  it('money hub offers month spend summary chip', () => {
+  it('money hub offers month spend summary chips', () => {
     const starters = buildMoneyHubStarters()
-    expect(starters).toHaveLength(1)
-    expect(starters[0].message).toContain('no accounting jargon')
+    expect(starters.length).toBeGreaterThanOrEqual(2)
+    expect(starters.some((s) => s.message.includes('by category'))).toBe(true)
+    expect(starters.some((s) => s.message.includes('no accounting jargon'))).toBe(true)
     expect(starters[0].contextRef.path).toBe('/operations/money')
+  })
+
+  it('supplies hub offers restock-first when low stock', () => {
+    const starters = buildSuppliesHubStarters({
+      lowStockRows: [{ inputName: 'JMS', remaining: 0.5, threshold: 2 }],
+      zones,
+    })
+    expect(starters.some((s) => s.id === 'restock-first')).toBe(true)
   })
 
   it('dashboard ops starters appear only when low stock exists', () => {
