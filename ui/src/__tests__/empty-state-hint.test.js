@@ -9,6 +9,12 @@ describe('Phase 41 WS4 — EmptyStateHint', () => {
     expect(EMPTY_HINT_REASONS.no_telemetry).toBe('no_telemetry')
   })
 
+  it('no_setpoint defaults to comfort-targets route', () => {
+    const cfg = emptyHintConfig('no_setpoint')
+    expect(cfg.actionLabel).toBe('Comfort targets')
+    expect(cfg.actionTo).toBe('/comfort-targets')
+  })
+
   it('builds config with overrides', () => {
     const cfg = emptyHintConfig('no_setpoint', {
       message: 'No humidity band yet.',

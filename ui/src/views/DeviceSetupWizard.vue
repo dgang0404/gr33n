@@ -91,8 +91,8 @@
           </li>
         </ul>
         <p class="text-[11px] text-zinc-600 mt-3">
-          Full guide: <router-link to="/operator-guide" class="text-green-600 hover:text-green-400">Operator guide</router-link>
-          and <code class="text-zinc-500">docs/pi-integration-guide.md</code> §8.3 in the repo.
+          Full guide: <router-link v-nav-hint="'/pi-setup'" to="/pi-setup" class="text-green-600 hover:text-green-400">Pi + HAT setup</router-link>
+          · <router-link v-nav-hint="'/operator-guide'" to="/operator-guide" class="text-green-600 hover:text-green-400">Operator guide</router-link>
         </p>
       </section>
 
@@ -177,7 +177,7 @@
         <router-link v-if="form.zoneId" :to="`/zones/${form.zoneId}`" class="px-4 py-2 text-sm font-medium rounded-lg bg-green-700 hover:bg-green-600 text-white">
           Open zone
         </router-link>
-        <router-link to="/actuators" class="px-4 py-2 text-sm text-zinc-300 border border-zinc-700 rounded-lg">
+        <router-link v-nav-hint="'/actuators'" to="/actuators" class="px-4 py-2 text-sm text-zinc-300 border border-zinc-700 rounded-lg">
           View controls
         </router-link>
       </div>

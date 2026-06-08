@@ -8,26 +8,32 @@
         </HelpTip>
       </h1>
       <p class="text-sm text-zinc-500 leading-relaxed">
-        Recommended order for new farms — each step opens in the app.
+        Recommended order for new farms — each step opens in the app. Hover a link to see where it lives in the sidebar.
       </p>
     </header>
 
     <section class="bg-zinc-900 border border-zinc-800 rounded-xl p-5 space-y-3">
       <h2 class="text-white font-semibold text-sm uppercase tracking-widest text-zinc-500">Suggested walk</h2>
       <ol class="list-decimal list-inside space-y-2 text-sm text-zinc-300">
-        <li><router-link class="text-gr33n-400 hover:underline" to="/">Farm home</router-link> — context, counts, quick links</li>
-        <li><router-link class="text-gr33n-400 hover:underline" to="/zones">Zones</router-link> — grow areas before attaching gear</li>
-        <li><router-link class="text-gr33n-400 hover:underline" to="/sensors">Sensors</router-link> · <router-link class="text-gr33n-400 hover:underline" to="/actuators">Controls</router-link> · <router-link class="text-gr33n-400 hover:underline" to="/setpoints">Setpoints</router-link></li>
-        <li><router-link class="text-gr33n-400 hover:underline" to="/schedules">Schedules</router-link> · <router-link class="text-gr33n-400 hover:underline" to="/automation">Rules</router-link></li>
-        <li><router-link class="text-gr33n-400 hover:underline" to="/tasks">Tasks</router-link></li>
-        <li><router-link class="text-gr33n-400 hover:underline" to="/fertigation">Fertigation</router-link></li>
-        <li><router-link class="text-gr33n-400 hover:underline" to="/chat">Farm Guardian</router-link> — optional AI; change requests need Confirm (see glossary)</li>
+        <li><router-link v-nav-hint="'/'" class="text-gr33n-400 hover:underline" to="/">Farm home</router-link> — context, counts, quick links</li>
+        <li><router-link v-nav-hint="'/zones'" class="text-gr33n-400 hover:underline" to="/zones">Zones</router-link> — grow areas before attaching gear</li>
+        <li>
+          <router-link v-nav-hint="'/pi-setup'" class="text-gr33n-400 hover:underline" to="/pi-setup">Pi + HAT setup</router-link> — wire Raspberry Pi relay cards
+          · <router-link v-nav-hint="'/sensors'" class="text-gr33n-400 hover:underline" to="/sensors">Sensors</router-link>
+          · <router-link v-nav-hint="'/actuators'" class="text-gr33n-400 hover:underline" to="/actuators">Controls</router-link>
+          · <router-link v-nav-hint="'/setpoints'" class="text-gr33n-400 hover:underline" to="/setpoints">Setpoints</router-link>
+        </li>
+        <li><router-link v-nav-hint="'/comfort-targets'" class="text-gr33n-400 hover:underline" to="/comfort-targets">Targets &amp; schedules</router-link> — everyday comfort bands</li>
+        <li><router-link v-nav-hint="'/schedules'" class="text-gr33n-400 hover:underline" to="/schedules">Schedules</router-link> · <router-link v-nav-hint="'/automation'" class="text-gr33n-400 hover:underline" to="/automation">Rules</router-link></li>
+        <li><router-link v-nav-hint="'/tasks'" class="text-gr33n-400 hover:underline" to="/tasks">Tasks</router-link></li>
+        <li><router-link v-nav-hint="'/fertigation'" class="text-gr33n-400 hover:underline" to="/fertigation">Fertigation</router-link></li>
+        <li><router-link v-nav-hint="'/chat'" class="text-gr33n-400 hover:underline" to="/chat">Farm Guardian</router-link> — optional AI; change requests need Confirm (see glossary)</li>
       </ol>
       <p class="text-xs text-zinc-600 pt-2">
-        Also: <router-link class="text-gr33n-500 hover:underline" to="/alerts">Alerts</router-link>,
-        <router-link class="text-gr33n-500 hover:underline" to="/chat?tab=pending">Guardian pending requests</router-link>,
-        <router-link class="text-gr33n-500 hover:underline" to="/costs">Costs</router-link>,
-        <router-link class="text-gr33n-500 hover:underline" to="/farm-knowledge">Knowledge</router-link> (RAG).
+        Also: <router-link v-nav-hint="'/alerts'" class="text-gr33n-500 hover:underline" to="/alerts">Alerts</router-link>,
+        <router-link v-nav-hint="'/chat'" class="text-gr33n-500 hover:underline" to="/chat?tab=pending">Guardian pending requests</router-link>,
+        <router-link v-nav-hint="'/costs'" class="text-gr33n-500 hover:underline" to="/costs">Costs</router-link>,
+        <router-link v-nav-hint="'/farm-knowledge'" class="text-gr33n-500 hover:underline" to="/farm-knowledge">Knowledge</router-link> (RAG).
       </p>
     </section>
 
@@ -46,7 +52,7 @@
 
     <section class="rounded-xl border border-zinc-800 bg-zinc-950/50 px-4 py-3 text-xs text-zinc-500 space-y-2">
       <p><strong class="text-zinc-400">Why lists look empty</strong> — wrong farm selected, no data yet, telemetry not reaching the API (Pi / URL / key), or automation not configured. Compare <strong class="text-zinc-300">setpoints</strong> (targets) to <strong class="text-zinc-300">live readings</strong>.</p>
-      <p>For install and logs see <strong class="text-zinc-400">docs/local-operator-bootstrap.md</strong> and <strong class="text-zinc-400">docs/operator-troubleshooting.md</strong> in the repo.</p>
+      <p>For Pi hardware wiring see <router-link v-nav-hint="'/pi-setup'" to="/pi-setup" class="text-gr33n-500 hover:underline">Pi + HAT setup</router-link>. For install and logs see <strong class="text-zinc-400">docs/local-operator-bootstrap.md</strong> and <strong class="text-zinc-400">docs/operator-troubleshooting.md</strong> in the repo.</p>
       <p>For Docker/systemd capture, rotation, Loki demo stack (<strong class="text-zinc-400">docker-compose.logging.yml</strong>), and archival (vs Timescale row pruning): <strong class="text-zinc-400">docs/operator-logging-runbook.md</strong>.</p>
     </section>
   </div>

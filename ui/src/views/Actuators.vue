@@ -57,8 +57,21 @@
             {{ zoneName(actuator.zone_id) }}
           </router-link>
           <span v-else class="text-zinc-400 truncate">Unassigned</span>
-          <span :class="statusBadge(actuator.current_state_text || 'offline')"
-            class="shrink-0 ml-2 px-2 py-0.5 rounded-full font-medium">
+          <span
+            v-if="(actuator.current_state_text || 'offline') === 'online'"
+            :class="statusBadge('online')"
+            class="shrink-0 ml-2 px-2 py-0.5 rounded-full font-medium"
+          >
+            online
+          </span>
+          <span
+            v-else
+            v-nav-hint="'/pi-setup'"
+            :class="statusBadge(actuator.current_state_text || 'offline')"
+            class="shrink-0 ml-2 px-2 py-0.5 rounded-full font-medium cursor-default"
+            title="Device offline — see Pi + HAT setup in sidebar"
+            data-test="actuator-offline-hint"
+          >
             {{ (actuator.current_state_text || 'offline').replaceAll('_', ' ') }}
           </span>
         </div>

@@ -89,6 +89,19 @@ describe('Phase 50 WS6 / OC-50 — hardware wiring closure', () => {
     expect(guide).toContain('manual fallback')
   })
 
+  it('high-impact nav-hint affordances are wired', () => {
+    const actuators = readFileSync(join(process.cwd(), 'src/views/Actuators.vue'), 'utf8')
+    const card = readFileSync(join(process.cwd(), 'src/components/ActuatorCard.vue'), 'utf8')
+    const operator = readFileSync(join(process.cwd(), 'src/views/OperatorGuide.vue'), 'utf8')
+    const piGuide = readFileSync(join(process.cwd(), 'src/views/PiSetupGuide.vue'), 'utf8')
+    const hints = readFileSync(join(process.cwd(), 'src/lib/emptyStateHint.js'), 'utf8')
+    expect(actuators).toContain("v-nav-hint=\"'/pi-setup'\"")
+    expect(card).toContain('syncBadgeNavHint')
+    expect(operator).toContain("v-nav-hint=\"'/pi-setup'\"")
+    expect(piGuide).toContain("v-nav-hint=\"'/actuators'\"")
+    expect(hints).toContain("actionTo: '/comfort-targets'")
+  })
+
   it('pi-sequent-hat-setup guide and /pi-setup route exist', () => {
     const doc = readFileSync(join(repoDocs, 'pi-sequent-hat-setup.md'), 'utf8')
     expect(doc).toContain('Sequent Microsystems')

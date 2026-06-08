@@ -5,14 +5,20 @@
       <div class="min-w-0">
         <div class="text-sm font-semibold text-white truncate">{{ device.name }}</div>
         <div class="text-xs text-gray-500">{{ device.device_type }} · Zone {{ device.zone_id }}</div>
-        <div
+        <span
           v-if="syncBadge"
-          class="text-[10px] mt-0.5 font-medium"
-          :class="syncBadgeClass"
-          data-test="device-config-sync-badge"
+          v-nav-hint="syncBadgeNavHint"
+          class="inline-block cursor-default"
+          :title="syncBadgeNavHint ? 'See Pi + HAT setup in sidebar' : undefined"
         >
-          {{ syncBadge.label }}
-        </div>
+          <span
+            class="text-[10px] mt-0.5 font-medium"
+            :class="syncBadgeClass"
+            data-test="device-config-sync-badge"
+          >
+            {{ syncBadge.label }}
+          </span>
+        </span>
       </div>
     </div>
     <button @click="toggle"
@@ -37,6 +43,10 @@ const ICONS = { light: '💡', irrigation: '💧', fan: '🌀', pump: '⚙️', 
 const icon  = computed(() => ICONS[props.device?.device_type] ?? '⚡')
 const isOn  = computed(() => props.device?.status === 'online')
 const syncBadge = computed(() => configSyncBadge(props.device))
+const syncBadgeNavHint = computed(() => {
+  const tone = syncBadge.value?.tone
+  return tone === 'warn' || tone === 'muted' ? '/pi-setup' : null
+})
 const syncBadgeClass = computed(() => {
   const tone = syncBadge.value?.tone
   if (tone === 'ok') return 'text-emerald-500/90'

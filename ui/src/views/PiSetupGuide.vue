@@ -4,7 +4,7 @@
     <!-- Header -->
     <header class="space-y-2">
       <div class="flex items-center gap-2">
-        <router-link to="/operator-guide" class="text-xs text-zinc-500 hover:text-zinc-300">Operator guide</router-link>
+        <router-link v-nav-hint="'/operator-guide'" to="/operator-guide" class="text-xs text-zinc-500 hover:text-zinc-300">Operator guide</router-link>
         <span class="text-zinc-700">/</span>
         <span class="text-xs text-zinc-400">Pi + HAT setup</span>
       </div>
@@ -221,22 +221,22 @@
       <div class="space-y-2 text-sm">
         <div class="flex items-center gap-2 text-zinc-400">
           <span class="text-gr33n-500">1.</span>
-          <router-link to="/actuators" class="text-gr33n-400 hover:underline">Add actuators</router-link>
+          <router-link v-nav-hint="'/actuators'" to="/actuators" class="text-gr33n-400 hover:underline">Add actuators</router-link>
           <span>— one per relay channel, set channel_id to match the table above</span>
         </div>
         <div class="flex items-center gap-2 text-zinc-400">
           <span class="text-gr33n-500">2.</span>
-          <router-link to="/sensors" class="text-gr33n-400 hover:underline">Add sensors</router-link>
+          <router-link v-nav-hint="'/sensors'" to="/sensors" class="text-gr33n-400 hover:underline">Add sensors</router-link>
           <span>— connect to the zone and assign wiring if using input cards</span>
         </div>
         <div class="flex items-center gap-2 text-zinc-400">
           <span class="text-gr33n-500">3.</span>
-          <router-link to="/schedules" class="text-gr33n-400 hover:underline">Set schedules</router-link>
+          <router-link v-nav-hint="'/schedules'" to="/schedules" class="text-gr33n-400 hover:underline">Set schedules</router-link>
           <span>— light cycle, irrigation windows</span>
         </div>
         <div class="flex items-center gap-2 text-zinc-400">
           <span class="text-gr33n-500">4.</span>
-          <router-link to="/chat" class="text-gr33n-400 hover:underline">Ask Guardian</router-link>
+          <router-link v-nav-hint="'/chat'" to="/chat" class="text-gr33n-400 hover:underline">Ask Guardian</router-link>
           <span>— "Walk me through wiring a pump to channel 2"</span>
         </div>
       </div>

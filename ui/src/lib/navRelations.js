@@ -7,11 +7,14 @@
 export const NAV_RELATIONS = {
   '/zones': ['/feeding', '/comfort-targets'],
   '/feeding': ['/zones', '/comfort-targets'],
-  '/comfort-targets': ['/zones', '/feeding'],
+  '/comfort-targets': ['/zones', '/feeding', '/automation', '/schedules'],
   '/actuators': ['/sensors', '/fertigation'],
   '/sensors': ['/actuators'],
   '/lighting': ['/fertigation'],
   '/pi-setup': ['/sensors', '/actuators'],
+  '/operator-guide': ['/pi-setup'],
+  '/alerts': ['/tasks'],
+  '/tasks': ['/alerts', '/schedules'],
 }
 
 /**

@@ -26,7 +26,7 @@ const DEFAULTS = {
   no_setpoint: {
     message: 'No target band for this sensor type yet.',
     actionLabel: 'Comfort targets',
-    actionTo: null,
+    actionTo: '/comfort-targets',
   },
   automation_off: {
     message: 'Rules or schedules exist but nothing is active right now.',
