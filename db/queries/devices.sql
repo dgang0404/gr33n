@@ -29,8 +29,19 @@ ORDER BY name ASC;
 
 -- name: UpdateDeviceStatus :one
 UPDATE gr33ncore.devices
-SET status = $2, last_heartbeat = NOW(), updated_at = NOW()
-WHERE id = $1
+SET status = $2,
+    last_heartbeat = NOW(),
+    updated_at = NOW(),
+    config = CASE
+      WHEN $3::text IS NOT NULL AND $3::text <> '' THEN
+        jsonb_set(
+          coalesce(config, '{}'::jsonb),
+          '{last_config_fetch_at}',
+          to_jsonb($3::text)
+        )
+      ELSE config
+    END
+WHERE id = $1 AND deleted_at IS NULL
 RETURNING *;
 
 -- name: SetDevicePendingCommand :exec

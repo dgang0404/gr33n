@@ -103,7 +103,8 @@ func (h *Handler) UpdateStatus(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var body struct {
-		Status string `json:"status"`
+		Status            string  `json:"status"`
+		LastConfigFetchAt *string `json:"last_config_fetch_at"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid request body")
@@ -113,8 +114,9 @@ func (h *Handler) UpdateStatus(w http.ResponseWriter, r *http.Request) {
 	defer cancel()
 
 	device, err := h.q.UpdateDeviceStatus(ctx, db.UpdateDeviceStatusParams{
-		ID:     id,
-		Status: commontypes.DeviceStatusEnum(body.Status),
+		ID:                id,
+		Status:            commontypes.DeviceStatusEnum(body.Status),
+		LastConfigFetchAt: body.LastConfigFetchAt,
 	})
 	if err != nil {
 		httputil.WriteError(w, http.StatusInternalServerError, "failed to update device status")

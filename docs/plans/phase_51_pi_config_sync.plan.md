@@ -19,7 +19,7 @@ todos:
     status: completed
   - id: ws4-offline-safety
     content: "WS4: Offline resilience + safety — if API unreachable on first start, boot from cache with log warning; if no cache and no local wiring, fail loudly; UI badge 'Pi config stale' after configurable age"
-    status: pending
+    status: completed
   - id: ws5-backward-compat
     content: "WS5: Backward compat — if sensors/actuators present in local config.yaml they take precedence (opt-out of sync); migration guide: run 'import local config to platform' helper once"
     status: pending
@@ -33,13 +33,15 @@ isProject: false
 
 ## Status
 
-**In progress (WS1–WS3 shipped).** Requires [Phase 50 hardware wiring visibility](phase_50_hardware_wiring_visibility.plan.md) to have shipped first — specifically the wiring data model (WS1) and API PATCH (WS2), which define the contract this phase consumes.
+**In progress (WS1–WS4 shipped).** Requires [Phase 50 hardware wiring visibility](phase_50_hardware_wiring_visibility.plan.md) to have shipped first — specifically the wiring data model (WS1) and API PATCH (WS2), which define the contract this phase consumes.
 
 **WS1 delivered:** `config_version` on `gr33ncore.devices`, bump triggers on sensor/actuator wiring, `GET /devices/by-uid/{uid}/config` + `/config/version` (Pi `X-API-Key`).
 
 **WS2 delivered:** `load_bootstrap` / `fetch_remote_config` / `resolve_config` / `resolve_startup_config` in `pi_client/gr33n_client.py`; cache at `~/.gr33n/config-cache.json` (`CONFIG_CACHE_PATH` override); `config.bootstrap.example.yaml`; local `sensors`/`actuators` in YAML still opt out of sync.
 
-**WS3 delivered:** `_poll_config_version` on each schedule-loop tick; `_reload_config` hot-swaps readers/actuators under `_hw_lock`; rejects empty platform wiring; reuses unchanged hardware handles when wiring keys match. UI “config pushed” signal deferred to WS4/WS6 (`last_config_fetch_at`).
+**WS3 delivered:** `_poll_config_version` on each schedule-loop tick; `_reload_config` hot-swaps readers/actuators under `_hw_lock`; rejects empty platform wiring; reuses unchanged hardware handles when wiring keys match.
+
+**WS4 delivered:** Cache-only boot warning; Pi PATCHes `last_config_fetch_at` on live fetch/reload; `ActuatorCard` staleness badge (`deviceConfigSync.js`); handler stores timestamp in `devices.config`.
 
 **Roadmap:** [farmer_ux_roadmap_40_plus.plan.md](farmer_ux_roadmap_40_plus.plan.md) (edge/Pi track).
 

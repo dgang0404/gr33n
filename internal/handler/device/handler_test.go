@@ -36,6 +36,40 @@ func (m *mockQuerier) ClearDevicePendingCommand(ctx context.Context, id int64) e
 	return m.clearPendingCmdFn(ctx, id)
 }
 
+func TestUpdateStatus_WithLastConfigFetchAt_200(t *testing.T) {
+	var gotFetch *string
+	mq := &mockQuerier{
+		updateStatusFn: func(_ context.Context, arg db.UpdateDeviceStatusParams) (db.Gr33ncoreDevice, error) {
+			gotFetch = arg.LastConfigFetchAt
+			return db.Gr33ncoreDevice{
+				ID:        arg.ID,
+				Status:    arg.Status,
+				Config:    []byte(`{"last_config_fetch_at":"2026-06-08T12:00:00Z"}`),
+				MetaData:  []byte("{}"),
+				CreatedAt: time.Now(),
+				UpdatedAt: time.Now(),
+			}, nil
+		},
+	}
+	h := NewHandlerWithQuerier(mq)
+
+	body, _ := json.Marshal(map[string]string{
+		"status":               "online",
+		"last_config_fetch_at": "2026-06-08T12:00:00Z",
+	})
+	req := httptest.NewRequest(http.MethodPatch, "/devices/1/status", bytes.NewReader(body))
+	rec := httptest.NewRecorder()
+
+	h.UpdateStatus(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d: %s", rec.Code, rec.Body.String())
+	}
+	if gotFetch == nil || *gotFetch != "2026-06-08T12:00:00Z" {
+		t.Fatalf("expected last_config_fetch_at passthrough, got %v", gotFetch)
+	}
+}
+
 func TestUpdateStatus_ValidBody_200(t *testing.T) {
 	mq := &mockQuerier{
 		updateStatusFn: func(_ context.Context, arg db.UpdateDeviceStatusParams) (db.Gr33ncoreDevice, error) {

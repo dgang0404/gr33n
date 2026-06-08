@@ -244,15 +244,23 @@ def resolve_config(bootstrap: dict, remote: Optional[dict] = None) -> dict:
     elif remote and 'mix_channels' in remote:
         cfg['mix_channels'] = copy.deepcopy(remote['mix_channels'])
 
-    if not _has_local_wiring(bootstrap) and remote and 'config_version' in remote:
-        cfg['config_version'] = remote['config_version']
+    if not _has_local_wiring(bootstrap) and remote:
+        if 'config_version' in remote:
+            cfg['config_version'] = remote['config_version']
+        if remote.get('device_id') is not None:
+            cfg['device_id'] = remote['device_id']
 
     return cfg
 
 
-def resolve_startup_config(bootstrap: dict, api: 'Gr33nApiClient', cache_path: str) -> dict:
-    """Phase 51 startup: local wiring opt-out, else fetch → cache fallback."""
+def resolve_startup_config(bootstrap: dict, api: 'Gr33nApiClient', cache_path: str) -> tuple:
+    """Phase 51 startup: local wiring opt-out, else fetch → cache fallback.
+
+    Returns (resolved_cfg, synced_from_api) where synced_from_api is True only
+    when wiring was loaded from a live GET /devices/by-uid/{uid}/config.
+    """
     remote = None
+    synced_from_api = False
     if _has_local_wiring(bootstrap):
         log.info(
             'Using local wiring for sensors/actuators (platform sync disabled for this device)')
@@ -266,13 +274,14 @@ def resolve_startup_config(bootstrap: dict, api: 'Gr33nApiClient', cache_path: s
             remote = load_config_cache(cache_path)
             if remote:
                 log.warning(
-                    'API unreachable — running on cached config (version may be stale)')
+                    'running on cached config, version may be stale')
             else:
                 raise RuntimeError(
                     'Cannot start: no wiring config. Connect to API or add sensors/actuators to config.yaml')
         else:
+            synced_from_api = True
             write_config_cache(cache_path, remote)
-    return resolve_config(bootstrap, remote)
+    return resolve_config(bootstrap, remote), synced_from_api
 
 
 def _sensor_wiring_key(scfg: dict) -> tuple:
@@ -407,14 +416,15 @@ class Gr33nApiClient:
             log.debug('Could not fetch devices: %s', exc)
         return []
 
-    def patch_device_status(self, device_id: int, status: str) -> bool:
-        # PATCH /devices/{id}/status - body: {status: string}
-        # Allowed values (device_status_enum): online | offline | error_comms |
-        #   error_hardware | maintenance_mode | initializing | unknown |
-        #   decommissioned | pending_activation
+    def patch_device_status(self, device_id: int, status: str,
+                            last_config_fetch_at: Optional[str] = None) -> bool:
+        # PATCH /devices/{id}/status — optional last_config_fetch_at (Phase 51 WS4).
+        payload: dict = {'status': status}
+        if last_config_fetch_at:
+            payload['last_config_fetch_at'] = last_config_fetch_at
         try:
             r = self._s.patch(f'{self.base_url}/devices/{device_id}/status',
-                              json={'status': status}, timeout=self.timeout)
+                              json=payload, timeout=self.timeout)
             return r.status_code == 200
         except requests.RequestException:
             return False
@@ -914,9 +924,12 @@ class Gr33nPiClient:
             api_key=bootstrap['api'].get('api_key', ''),
             timeout=bootstrap['api']['timeout_seconds'],
         )
-        self.cfg = resolve_startup_config(bootstrap, self.api, self._config_cache_path)
+        self.cfg, _synced_from_api = resolve_startup_config(
+            bootstrap, self.api, self._config_cache_path)
         self.device_uid = (bootstrap.get('device') or {}).get('uid', '').strip()
         self._config_version = self.cfg.get('config_version')
+        if _synced_from_api:
+            self._report_config_sync()
         self.queue      = OfflineQueue(self.cfg['offline_queue_path'])
         self._stop      = threading.Event()
         self._hw_lock   = threading.Lock()
@@ -992,7 +1005,19 @@ class Gr33nPiClient:
             len(new_cfg.get('sensors', [])),
             len(new_cfg.get('actuators', [])),
         )
+        self._report_config_sync()
         return True
+
+    def _report_config_sync(self) -> None:
+        """Tell the platform the Pi applied platform wiring (staleness badge)."""
+        if _has_local_wiring(self._bootstrap):
+            return
+        device_id = self.cfg.get('device_id')
+        if not device_id:
+            return
+        ts = datetime.now(timezone.utc).isoformat()
+        if not self.api.patch_device_status(int(device_id), 'online', last_config_fetch_at=ts):
+            log.debug('config sync report failed for device_id=%s', device_id)
 
     def _poll_config_version(self) -> None:
         """Lightweight version check — full fetch only when version changes."""

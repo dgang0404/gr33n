@@ -1154,7 +1154,8 @@ class TestPhase51ConfigSync(unittest.TestCase):
             bootstrap['device'] = {'uid': 'veg-pi-01'}
             bootstrap['offline_queue_path'] = tempfile.mktemp(suffix='.db')
             api = client.Gr33nApiClient('http://127.0.0.1:19999', 1, timeout=1)
-            cfg = client.resolve_startup_config(bootstrap, api, cache_path)
+            cfg, synced = client.resolve_startup_config(bootstrap, api, cache_path)
+            self.assertFalse(synced)
             self.assertEqual(cfg['sensors'][0]['sensor_id'], 3)
             self.assertEqual(cfg['config_version'], 3)
         finally:
@@ -1167,6 +1168,20 @@ class TestPhase51ConfigSync(unittest.TestCase):
         with self.assertRaises(RuntimeError) as ctx:
             client.resolve_startup_config(bootstrap, api, tempfile.mktemp(suffix='.json'))
         self.assertIn('no wiring config', str(ctx.exception))
+
+    def test_resolve_startup_config_reports_live_fetch(self):
+        server, port = self._mock_config_server()
+        cache_path = tempfile.mktemp(suffix='.json')
+        try:
+            bootstrap = client.load_bootstrap('/tmp/nonexistent_phase51_bootstrap.yaml')
+            bootstrap['device'] = {'uid': 'veg-pi-01'}
+            bootstrap['offline_queue_path'] = tempfile.mktemp(suffix='.db')
+            api = client.Gr33nApiClient(f'http://127.0.0.1:{port}', 1, timeout=3, api_key='k')
+            cfg, synced = client.resolve_startup_config(bootstrap, api, cache_path)
+            self.assertTrue(synced)
+            self.assertEqual(cfg['device_id'], 1)
+        finally:
+            server.shutdown()
 
     def test_bootstrap_client_fetches_on_startup(self):
         server, port = self._mock_config_server()
@@ -1284,6 +1299,20 @@ class TestPhase51LiveReload(unittest.TestCase):
             with patch.object(pi, '_reload_config') as mock_reload:
                 pi._poll_config_version()
                 mock_reload.assert_not_called()
+        finally:
+            os.unlink(cfg_path)
+
+    def test_report_config_sync_patches_last_fetch(self):
+        pi, cfg_path = self._platform_client(tempfile.mktemp(suffix='.db'))
+        try:
+            pi.cfg['device_id'] = 42
+            pi.api.patch_device_status = MagicMock(return_value=True)
+            pi._report_config_sync()
+            pi.api.patch_device_status.assert_called_once()
+            args, kwargs = pi.api.patch_device_status.call_args
+            self.assertEqual(args[0], 42)
+            self.assertEqual(args[1], 'online')
+            self.assertIn('last_config_fetch_at', kwargs)
         finally:
             os.unlink(cfg_path)
 

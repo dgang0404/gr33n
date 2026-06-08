@@ -309,18 +309,30 @@ func (q *Queries) SoftDeleteDevice(ctx context.Context, arg SoftDeleteDevicePara
 
 const updateDeviceStatus = `-- name: UpdateDeviceStatus :one
 UPDATE gr33ncore.devices
-SET status = $2, last_heartbeat = NOW(), updated_at = NOW()
-WHERE id = $1
+SET status = $2,
+    last_heartbeat = NOW(),
+    updated_at = NOW(),
+    config = CASE
+      WHEN $3::text IS NOT NULL AND $3::text <> '' THEN
+        jsonb_set(
+          coalesce(config, '{}'::jsonb),
+          '{last_config_fetch_at}',
+          to_jsonb($3::text)
+        )
+      ELSE config
+    END
+WHERE id = $1 AND deleted_at IS NULL
 RETURNING id, farm_id, zone_id, name, device_uid, device_type, ip_address, firmware_version, status, last_heartbeat, api_key, config, meta_data, created_at, updated_at, updated_by_user_id, deleted_at, config_version
 `
 
 type UpdateDeviceStatusParams struct {
-	ID     int64                        `db:"id" json:"id"`
-	Status commontypes.DeviceStatusEnum `db:"status" json:"status"`
+	ID                int64                        `db:"id" json:"id"`
+	Status            commontypes.DeviceStatusEnum `db:"status" json:"status"`
+	LastConfigFetchAt *string                      `db:"last_config_fetch_at" json:"last_config_fetch_at"`
 }
 
 func (q *Queries) UpdateDeviceStatus(ctx context.Context, arg UpdateDeviceStatusParams) (Gr33ncoreDevice, error) {
-	row := q.db.QueryRow(ctx, updateDeviceStatus, arg.ID, arg.Status)
+	row := q.db.QueryRow(ctx, updateDeviceStatus, arg.ID, arg.Status, arg.LastConfigFetchAt)
 	var i Gr33ncoreDevice
 	err := row.Scan(
 		&i.ID,
