@@ -1400,6 +1400,16 @@ type Gr33ncoreDevice struct {
 	DeletedAt       pgtype.Timestamptz           `db:"deleted_at" json:"deleted_at"`
 }
 
+type Gr33ncoreDeviceApiKey struct {
+	ID         int64              `db:"id" json:"id"`
+	DeviceID   int64              `db:"device_id" json:"device_id"`
+	KeyHash    string             `db:"key_hash" json:"key_hash"`
+	Label      *string            `db:"label" json:"label"`
+	CreatedAt  time.Time          `db:"created_at" json:"created_at"`
+	RevokedAt  pgtype.Timestamptz `db:"revoked_at" json:"revoked_at"`
+	LastUsedAt pgtype.Timestamptz `db:"last_used_at" json:"last_used_at"`
+}
+
 type Gr33ncoreDeviceCommand struct {
 	ID          int64              `db:"id" json:"id"`
 	DeviceID    int64              `db:"device_id" json:"device_id"`

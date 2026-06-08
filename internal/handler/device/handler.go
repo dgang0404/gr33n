@@ -103,6 +103,9 @@ func (h *Handler) UpdateStatus(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid device id")
 		return
 	}
+	if !farmauthz.RequirePiEdgeDeviceScope(w, r, id) {
+		return
+	}
 	var body struct {
 		Status            string  `json:"status"`
 		LastConfigFetchAt *string `json:"last_config_fetch_at"`
@@ -135,6 +138,9 @@ func (h *Handler) ClearPendingCommand(w http.ResponseWriter, r *http.Request) {
 	id, err := httputil.PathID(r.URL.Path, 2)
 	if err != nil {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid device id")
+		return
+	}
+	if !farmauthz.RequirePiEdgeDeviceScope(w, r, id) {
 		return
 	}
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)

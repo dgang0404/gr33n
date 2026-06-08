@@ -302,6 +302,48 @@ func (q *Queries) ListActuatorsByFarm(ctx context.Context, farmID int64) ([]Gr33
 	return items, nil
 }
 
+const updateActuatorAssignment = `-- name: UpdateActuatorAssignment :one
+UPDATE gr33ncore.actuators
+SET device_id           = $2,
+    hardware_identifier = $3,
+    updated_at          = NOW()
+WHERE id = $1 AND deleted_at IS NULL
+RETURNING id, device_id, farm_id, zone_id, name, actuator_type, hardware_identifier, current_state_numeric, current_state_text, last_known_state_time, last_command_sent_time, feedback_sensor_id, config, meta_data, created_at, updated_at, updated_by_user_id, deleted_at, watts
+`
+
+type UpdateActuatorAssignmentParams struct {
+	ID                 int64   `db:"id" json:"id"`
+	DeviceID           *int64  `db:"device_id" json:"device_id"`
+	HardwareIdentifier *string `db:"hardware_identifier" json:"hardware_identifier"`
+}
+
+func (q *Queries) UpdateActuatorAssignment(ctx context.Context, arg UpdateActuatorAssignmentParams) (Gr33ncoreActuator, error) {
+	row := q.db.QueryRow(ctx, updateActuatorAssignment, arg.ID, arg.DeviceID, arg.HardwareIdentifier)
+	var i Gr33ncoreActuator
+	err := row.Scan(
+		&i.ID,
+		&i.DeviceID,
+		&i.FarmID,
+		&i.ZoneID,
+		&i.Name,
+		&i.ActuatorType,
+		&i.HardwareIdentifier,
+		&i.CurrentStateNumeric,
+		&i.CurrentStateText,
+		&i.LastKnownStateTime,
+		&i.LastCommandSentTime,
+		&i.FeedbackSensorID,
+		&i.Config,
+		&i.MetaData,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.UpdatedByUserID,
+		&i.DeletedAt,
+		&i.Watts,
+	)
+	return i, err
+}
+
 const updateActuatorConfig = `-- name: UpdateActuatorConfig :one
 UPDATE gr33ncore.actuators
 SET config = $2, updated_at = NOW()

@@ -10,6 +10,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"gr33n-api/internal/authctx"
+	"gr33n-api/internal/deviceapikey"
 	"gr33n-api/internal/httputil"
 )
 
@@ -32,36 +33,21 @@ func isDevAuthBypass() bool {
 	return devBypassAllowed && authMode == "dev"
 }
 
-// ── API Key middleware (Pi → API) ────────────────────────────────────────────
-// Protects POST /sensors/{id}/readings, POST /sensors/readings/batch,
-// PATCH /devices/{id}/status, and other Pi-only routes.
-// Pi sends:  X-API-Key: <PI_API_KEY>
+// ── Pi edge auth (Phase 57 + legacy PI_API_KEY) ─────────────────────────────
+// Per-device: X-Device-Key or Authorization: Device gdev_{id}_{secret}
+// Legacy: X-API-Key: <PI_API_KEY> (deprecated; logged when AUTH_DEBUG_LOG=true)
 func requireAPIKey(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if isDevAuthBypass() {
-			ctx := authctx.WithFarmAuthzSkip(r.Context(), true)
-			next.ServeHTTP(w, r.WithContext(ctx))
-			return
-		}
-		key := r.Header.Get("X-API-Key")
-		if key == "" {
-			if authDebug {
-				slog.Warn("auth_rejected", "reason", "missing_x_api_key", "path", r.URL.Path)
+		ctx, ok := authenticatePiEdge(r)
+		if !ok {
+			if deviceapikey.ExtractFromRequest(r.Header.Get("X-Device-Key"), r.Header.Get("Authorization")) != "" {
+				httputil.WriteError(w, http.StatusForbidden, "invalid or revoked device key")
+				return
 			}
-			httputil.WriteError(w, http.StatusUnauthorized, "X-API-Key required")
+			httputil.WriteError(w, http.StatusUnauthorized, "X-API-Key or X-Device-Key required")
 			return
 		}
-		if key != piAPIKey {
-			if authDebug {
-				slog.Warn("auth_rejected", "reason", "invalid_x_api_key", "path", r.URL.Path)
-			}
-			httputil.WriteError(w, http.StatusForbidden, "invalid API key")
-			return
-		}
-		// Same trust boundary as requireJWTOrPiEdge: a valid PI_API_KEY may
-		// call farm-scoped handlers (e.g. RecordEvent → RequireFarmMemberOrPiEdge)
-		// without a dashboard JWT.
-		next.ServeHTTP(w, r.WithContext(authctx.WithPiEdgeAuth(r.Context())))
+		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
 

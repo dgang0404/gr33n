@@ -60,14 +60,22 @@
       </form>
     </template>
 
-    <!-- Step 2 — API key & Pi config -->
+    <!-- Step 2 — Device key & Pi config -->
     <template v-else-if="step === 'apikey'">
+      <DeviceApiKeyPanel
+        v-if="createdDevice?.id"
+        :device-id="createdDevice.id"
+        data-test="device-wizard-api-key-panel"
+      />
+
       <section class="bg-zinc-900 border border-zinc-800 rounded-xl p-4 space-y-3">
         <h2 class="text-sm font-semibold text-white">Pi client configuration</h2>
         <p class="text-xs text-zinc-500">
-          This install uses a shared <strong class="text-zinc-400">PI_API_KEY</strong> on the API server
-          (not per-device). Set the same value in <code class="text-zinc-400">pi_client/config.yaml</code>
-          under <code class="text-zinc-400">api.api_key</code>. Your admin can find it in server env / Settings → Pi Client.
+          Issue a per-device key above, then paste it on the Pi as
+          <code class="text-zinc-400">GR33N_DEVICE_API_KEY</code> or
+          <code class="text-zinc-400">/etc/gr33n/device.key</code>.
+          Legacy farms may still use the shared <code class="text-zinc-400">PI_API_KEY</code> in
+          <code class="text-zinc-400">pi_client/config.yaml</code> until rotated.
         </p>
         <p v-if="configLoading" class="text-xs text-zinc-500">Generating config from platform wiring…</p>
         <p v-if="configError" class="text-xs text-amber-400">{{ configError }}</p>
@@ -189,6 +197,7 @@
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import api from '../api'
+import DeviceApiKeyPanel from '../components/DeviceApiKeyPanel.vue'
 import GuardianStarterChips from '../components/GuardianStarterChips.vue'
 import { buildSetupStarters } from '../lib/guardianStarters.js'
 import { useFarmStore } from '../stores/farm.js'

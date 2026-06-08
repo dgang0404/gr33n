@@ -247,13 +247,14 @@ Hardware, Pi platform sync, and farmer job completion — each phase is shippabl
 | **62** | Grow advisor | VPD, DLI, stage transitions, post-harvest analysis | [phase_62](phase_62_guardian_grow_advisor.plan.md) |
 | **63** | Session memory | Guardian remembers topics; operator controls / deletes | [phase_63](phase_63_guardian_session_memory.plan.md) |
 
-**Guardian knowledge & sensing arc (64–66)** — how Guardian *knows* things (grounding, not guessing). **64 must precede 62.**
+**Guardian knowledge & sensing arc (64–67)** — how Guardian *knows* things (grounding, not guessing). **64 must precede 62.**
 
 | Phase | Name | One job | Plan |
 |-------|------|---------|------|
 | **64** | Crop knowledge base | Real EC/pH/VPD/DLI per crop per stage — Guardian cites, never guesses | [phase_64](phase_64_crop_knowledge_base.plan.md) |
-| **65** | Weather & site | Offline solar (sunrise/DLI from lat-long) + sensor + optional online | [phase_65](phase_65_weather_site_context.plan.md) |
-| **66** | Field assistant | Voice in/out + crop-grounded photo diagnosis (hands-free in the room) | [phase_66](phase_66_guardian_field_assistant.plan.md) |
+| **65** | Pi & hardware diagnostics | Guardian sees live GPIO/channel wiring, device status, reading staleness | [phase_65](phase_65_guardian_pi_diagnostics.plan.md) |
+| **66** | Weather & site | Offline solar (sunrise/DLI from lat-long) + sensor + optional online | [phase_66](phase_66_weather_site_context.plan.md) |
+| **67** | Field assistant | Voice in/out + crop-grounded photo diagnosis (hands-free in the room) | [phase_67](phase_67_guardian_field_assistant.plan.md) |
 
 ---
 
@@ -262,7 +263,7 @@ Hardware, Pi platform sync, and farmer job completion — each phase is shippabl
 | Doc | Use |
 |-----|-----|
 | [pre_development_gaps_index.plan.md](pre_development_gaps_index.plan.md) | Gap IDs → phase links (update Tier A to A2–A6) |
-| [phase_35_37_operational_closure.plan.md](phase_35_37_operational_closure.plan.md) | OC-40 … OC-59 trackers |
+| [phase_35_37_operational_closure.plan.md](phase_35_37_operational_closure.plan.md) | OC-40 … OC-67 trackers |
 | [phase_53_59_roadmap.plan.md](phase_53_59_roadmap.plan.md) | Post-52 farmer closure hub |
 | [sit-in-operator-experience.md](../workstreams/sit-in-operator-experience.md) | Feeds 45 |
 | [phase_15_farm_onboarding.plan.md](phase_15_farm_onboarding.plan.md) | Bootstrap API — 44 surfaces it |

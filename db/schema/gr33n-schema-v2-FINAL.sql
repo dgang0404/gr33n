@@ -485,6 +485,20 @@ CREATE INDEX IF NOT EXISTS device_commands_device_pending
 CREATE INDEX IF NOT EXISTS device_commands_farm
     ON gr33ncore.device_commands (farm_id, created_at DESC);
 
+-- Phase 57 WS1 — per-device Pi API keys.
+CREATE TABLE IF NOT EXISTS gr33ncore.device_api_keys (
+    id            BIGSERIAL PRIMARY KEY,
+    device_id     BIGINT NOT NULL REFERENCES gr33ncore.devices(id) ON DELETE CASCADE,
+    key_hash      TEXT NOT NULL,
+    label         TEXT,
+    created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    revoked_at    TIMESTAMPTZ,
+    last_used_at  TIMESTAMPTZ
+);
+CREATE INDEX IF NOT EXISTS idx_device_api_keys_device_active
+    ON gr33ncore.device_api_keys (device_id)
+    WHERE revoked_at IS NULL;
+
 -- Sensors
 CREATE TABLE IF NOT EXISTS gr33ncore.sensors (
     id                       BIGSERIAL PRIMARY KEY,

@@ -98,7 +98,7 @@ todos:
     status: completed
   - id: oc-57-closure
     content: "OC-57: Phase 57 WS5 — per-device API keys, pi guide, security smokes"
-    status: pending
+    status: completed
   - id: oc-58-closure
     content: "OC-58: Phase 58 WS4 — task consumptions UI, templates, phase-58-closure.test.js"
     status: pending
@@ -121,10 +121,13 @@ todos:
     content: "OC-64: Phase 64 WS6 — crop knowledge base, 7 seeded profiles, lookup_crop_targets, grounding guard test"
     status: pending
   - id: oc-65-closure
-    content: "OC-65: Phase 65 WS6 — weather & site, offline solar engine, ingestion tiers, supplemental-light starter"
+    content: "OC-65: Phase 65 WS4 — Pi & hardware diagnostics, summarize_device_health, fieldGuideGrounding update"
     status: pending
   - id: oc-66-closure
-    content: "OC-66: Phase 66 WS6 — hands-free field assistant, voice in/out, crop-grounded photo diagnosis"
+    content: "OC-66: Phase 66 WS6 — weather & site, offline solar engine, ingestion tiers, supplemental-light starter"
+    status: pending
+  - id: oc-67-closure
+    content: "OC-67: Phase 67 WS7 — hands-free field assistant, voice in/out, crop-grounded photo diagnosis"
     status: pending
 isProject: false
 ---
@@ -521,9 +524,21 @@ Feature detail: [`phase_56_grow_schema_harvest_analytics.plan.md`](phase_56_grow
 | Income rollup | ✅ | WS4 — harvest economics banner, Money `?cycle_id=` |
 | OC-56 docs/tests | ✅ | WS5 — architecture §7.0t, operator-tour §6k, `phase-56-closure.test.js`, crop-cycle smokes |
 
-## Phases 57–59 — Farmer closure arc (planned)
+## Phase 57 — Per-device Pi API keys
 
-Hub: [`phase_53_59_roadmap.plan.md`](phase_53_59_roadmap.plan.md). Close **OC-56 … OC-59** when each phase WS docs/tests ship.
+Feature detail: [`phase_57_pi_device_api_keys.plan.md`](phase_57_pi_device_api_keys.plan.md). **OC-57** closed (WS5). **Phase 57 shipped.**
+
+| Area | Status | Notes |
+|------|--------|-------|
+| Schema | ✅ | WS1 — `device_api_keys`, bcrypt hash, last_used |
+| Platform UI | ✅ | WS2 — wizard + Controls card issue/rotate/revoke |
+| Pi agent | ✅ | WS3 — `GR33N_DEVICE_API_KEY`, `/etc/gr33n/device.key`, legacy fallback |
+| Edge auth | ✅ | WS4 — `X-Device-Key`, scoped routes, rate limit, audit |
+| OC-57 docs/tests | ✅ | WS5 — architecture §7.0u, operator-tour §6l, `phase-57-closure.test.js`, `smoke_phase57_test.go` |
+
+## Phases 58–59 — Farmer closure arc (planned)
+
+Hub: [`phase_53_59_roadmap.plan.md`](phase_53_59_roadmap.plan.md). Close **OC-58 … OC-59** when each phase WS docs/tests ship.
 
 | Phase | OC | Plan | Close when |
 |-------|-----|------|------------|
@@ -539,8 +554,9 @@ Hub: [`phase_53_59_roadmap.plan.md`](phase_53_59_roadmap.plan.md). Close **OC-56
 | 62 Grow advisor | OC-62 | [phase_62](phase_62_guardian_grow_advisor.plan.md) | VPD starters + post-harvest |
 | 63 Session memory | OC-63 | [phase_63](phase_63_guardian_session_memory.plan.md) | Topic tags + privacy delete |
 | 64 Crop knowledge base | OC-64 | [phase_64](phase_64_crop_knowledge_base.plan.md) | 7 profiles + grounding guard |
-| 65 Weather & site | OC-65 | [phase_65](phase_65_weather_site_context.plan.md) | Offline solar + ingest tiers |
-| 66 Field assistant | OC-66 | [phase_66](phase_66_guardian_field_assistant.plan.md) | Voice + grounded photo diagnosis |
+| 65 Pi & hardware diagnostics | OC-65 | [phase_65](phase_65_guardian_pi_diagnostics.plan.md) | summarize_device_health + GPIO conflict |
+| 66 Weather & site | OC-66 | [phase_66](phase_66_weather_site_context.plan.md) | Offline solar + ingest tiers |
+| 67 Field assistant | OC-67 | [phase_67](phase_67_guardian_field_assistant.plan.md) | Voice + grounded photo diagnosis |
 
 **Note:** Phase 51 "Phase 52+ per-device API keys" → **[Phase 57](phase_57_pi_device_api_keys.plan.md)** (not Phase 52). **Phase 64 must precede Phase 62** (grow advisor reads real targets from the crop knowledge base).
 

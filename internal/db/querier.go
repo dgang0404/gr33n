@@ -28,6 +28,7 @@ type Querier interface {
 	// the shift, not retroactively.
 	CloseTaskLaborLog(ctx context.Context, arg CloseTaskLaborLogParams) (Gr33ncoreTaskLaborLog, error)
 	ConfirmGuardianProposal(ctx context.Context, arg ConfirmGuardianProposalParams) (Gr33ncoreGuardianActionProposal, error)
+	CountActiveDeviceAPIKeysByDevice(ctx context.Context, deviceID int64) (int64, error)
 	CountAlertsByFarm(ctx context.Context, farmID int64) (int64, error)
 	CountAlertsByFarmCreatedAfter(ctx context.Context, arg CountAlertsByFarmCreatedAfterParams) (int64, error)
 	CountAutomationRunsByFarmExecutedAfter(ctx context.Context, arg CountAutomationRunsByFarmExecutedAfterParams) (int64, error)
@@ -342,6 +343,10 @@ type Querier interface {
 	// Queries: gr33nfertigation.crop_cycle_stage_events (Phase 56 WS2)
 	// ============================================================
 	InsertCropCycleStageEvent(ctx context.Context, arg InsertCropCycleStageEventParams) (Gr33nfertigationCropCycleStageEvent, error)
+	// ============================================================
+	// Queries: gr33ncore.device_api_keys (Phase 57)
+	// ============================================================
+	InsertDeviceAPIKey(ctx context.Context, arg InsertDeviceAPIKeyParams) (Gr33ncoreDeviceApiKey, error)
 	// Phase 29 WS3 — Guardian action proposals (propose → confirm).
 	// Phase 34 — revise/supersede chain + operator-supplied facts in meta.
 	InsertGuardianProposal(ctx context.Context, arg InsertGuardianProposalParams) (Gr33ncoreGuardianActionProposal, error)
@@ -362,6 +367,7 @@ type Querier interface {
 	// ============================================================
 	InsertUserActivityLog(ctx context.Context, arg InsertUserActivityLogParams) error
 	ListActiveAutomationRules(ctx context.Context) ([]Gr33ncoreAutomationRule, error)
+	ListActiveDeviceAPIKeyHashesByDevice(ctx context.Context, deviceID int64) ([]ListActiveDeviceAPIKeyHashesByDeviceRow, error)
 	// Phase 22 WS1 — feeds the worker's program-tick. Only programs with a
 	// bound schedule are dispatched automatically (unscheduled programs are
 	// template-only and require an explicit "run now" API call, added later).
@@ -421,6 +427,7 @@ type Querier interface {
 	ListCropCycleStageEventsByCycle(ctx context.Context, cropCycleID int64) ([]Gr33nfertigationCropCycleStageEvent, error)
 	ListCropCyclesByFarm(ctx context.Context, farmID int64) ([]Gr33nfertigationCropCycle, error)
 	ListCropCyclesByFarmUpdatedAfter(ctx context.Context, arg ListCropCyclesByFarmUpdatedAfterParams) ([]Gr33nfertigationCropCycle, error)
+	ListDeviceAPIKeysByDevice(ctx context.Context, deviceID int64) ([]ListDeviceAPIKeysByDeviceRow, error)
 	// Operator JWT: list commands for a device with optional status filter.
 	// Pass NULL for status to get all.
 	ListDeviceCommands(ctx context.Context, arg ListDeviceCommandsParams) ([]Gr33ncoreDeviceCommand, error)
@@ -560,6 +567,7 @@ type Querier interface {
 	RemoveRecipeComponent(ctx context.Context, arg RemoveRecipeComponentParams) error
 	ResetFarmFinanceAccountMappingByCategory(ctx context.Context, arg ResetFarmFinanceAccountMappingByCategoryParams) (int64, error)
 	ResetFarmFinanceAccountMappingsAll(ctx context.Context, farmID int64) (int64, error)
+	RevokeDeviceAPIKey(ctx context.Context, arg RevokeDeviceAPIKeyParams) (RevokeDeviceAPIKeyRow, error)
 	// Farm-scoped nearest-neighbor search (caller supplies query embedding; WS4 retrieval API).
 	SearchRagNearestNeighbors(ctx context.Context, arg SearchRagNearestNeighborsParams) ([]SearchRagNearestNeighborsRow, error)
 	// Same as above with optional metadata module + created_at range (hybrid filters).
@@ -592,6 +600,8 @@ type Querier interface {
 	SumLifecycleDeltasByGroup(ctx context.Context, animalGroupID int64) (int64, error)
 	// Phase 34 — mark a still-pending proposal as replaced by a later revision.
 	SupersedeProposal(ctx context.Context, arg SupersedeProposalParams) (Gr33ncoreGuardianActionProposal, error)
+	TouchDeviceAPIKeyLastUsed(ctx context.Context, id int64) error
+	UpdateActuatorAssignment(ctx context.Context, arg UpdateActuatorAssignmentParams) (Gr33ncoreActuator, error)
 	UpdateActuatorConfig(ctx context.Context, arg UpdateActuatorConfigParams) (Gr33ncoreActuator, error)
 	UpdateActuatorState(ctx context.Context, arg UpdateActuatorStateParams) (Gr33ncoreActuator, error)
 	UpdateAnimalGroup(ctx context.Context, arg UpdateAnimalGroupParams) (Gr33nanimalsAnimalGroup, error)

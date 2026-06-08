@@ -80,6 +80,25 @@
 
         <ActuatorPulseControl :actuator="actuator" />
 
+        <!-- Wiring expand toggle -->
+        <button
+          type="button"
+          class="text-[10px] text-left text-zinc-500 hover:text-zinc-300 flex items-center gap-1 -mb-1"
+          data-test="actuator-wiring-toggle"
+          @click="toggleWiring(actuator.id)"
+        >
+          <span>{{ wiringOpen[actuator.id] ? '▾' : '▸' }}</span>
+          <span>{{ wiringOpen[actuator.id] ? 'Hide wiring' : 'Edit wiring' }}</span>
+        </button>
+
+        <ActuatorWiringPanel
+          v-if="wiringOpen[actuator.id]"
+          :actuator="actuator"
+          :devices="store.devices"
+          data-test="actuator-wiring-panel"
+          @updated="onActuatorUpdated"
+        />
+
         <p v-if="actuator.last_known_state_time" class="text-zinc-600 text-xs">
           Last state update {{ timeAgo(actuator.last_known_state_time) }}
         </p>
@@ -95,11 +114,22 @@ import { useFarmContextStore } from '../stores/farmContext'
 import { actuatorPlantNeed, NEED_META } from '../lib/plantNeeds.js'
 import ActuatorPulseControl from '../components/ActuatorPulseControl.vue'
 import HardwareWiringBadge from '../components/HardwareWiringBadge.vue'
+import ActuatorWiringPanel from '../components/ActuatorWiringPanel.vue'
 
 const store = useFarmStore()
 const farmContext = useFarmContextStore()
 const toggling = ref({})
+const wiringOpen = ref({})
 onMounted(() => { if (!store.actuators.length && farmContext.farmId) store.loadAll(farmContext.farmId) })
+
+function toggleWiring(id) {
+  wiringOpen.value[id] = !wiringOpen.value[id]
+}
+
+function onActuatorUpdated(updated) {
+  const idx = store.actuators.findIndex(a => a.id === updated.id)
+  if (idx >= 0) store.actuators[idx] = updated
+}
 
 async function toggle(actuator) {
   toggling.value[actuator.id] = true

@@ -1,10 +1,10 @@
 ---
-name: Phase 66 — Guardian hands-free field assistant
+name: Phase 67 — Guardian hands-free field assistant
 overview: >
   The "in the grow room with dirty gloves" assistant — voice in, voice out, and
   crop-profile-grounded photo diagnosis. Local-first to honor the LAN/offline ethos:
   browser speech as baseline, optional local whisper.cpp for fully-offline STT.
-  Vision stays advisory ("hypothesis, not diagnosis") and is grounded on Phase 64.
+  Vision stays advisory ("hypothesis, not diagnosis") and is grounded on Phase 64. Wiring troubleshooting is grounded on Phase 65.
 todos:
   - id: ws1-voice-in
     content: "WS1: Push-to-talk mic in Guardian panel — browser SpeechRecognition baseline"
@@ -25,16 +25,16 @@ todos:
     content: "WS6: One-handed mobile layout — big camera + mic targets, works on a phone in the room"
     status: pending
   - id: ws7-docs-tests
-    content: "WS7: operator-tour § field assistant + vision discoverability; phase-66-closure; OC-66"
+    content: "WS7: operator-tour § field assistant + vision discoverability; phase-67-closure; OC-67"
     status: pending
 isProject: false
 ---
 
-# Phase 66 — Guardian hands-free field assistant
+# Phase 67 — Guardian hands-free field assistant
 
 ## Status
 
-**Planned.** After [Phase 64](phase_64_crop_knowledge_base.plan.md) (photo diagnosis grounds on crop profiles). Builds on existing `vision_context.go`.
+**Planned.** After [Phase 64](phase_64_crop_knowledge_base.plan.md) (photo diagnosis grounds on crop profiles) and [Phase 65](phase_65_guardian_pi_diagnostics.plan.md) (wiring diagnostics make voice troubleshooting far more useful). Builds on existing `vision_context.go`.
 
 ---
 
@@ -72,7 +72,7 @@ isProject: false
 
 **Problem today:** "Zone photos (vision)" only appears when Guardian has **zone context** — i.e. you opened the slide-out from a zone page. On **Guardian full page** (`/chat`) or Dashboard, the upload block is hidden even when `vision_chat_enabled` is true. Farmers shouldn't have to discover a side door.
 
-| Surface | Today | After Phase 66 |
+| Surface | Today | After Phase 67 |
 |---------|-------|----------------|
 | `/chat` full page | No photo UI | Camera / upload always visible when vision enabled |
 | Slide-out (any page) | Photos only if `contextRef.type === 'zone'` | Same + zone picker if context missing |
@@ -104,10 +104,10 @@ isProject: false
 
 ---
 
-## WS7 — Docs, tests, OC-66
+## WS7 — Docs, tests, OC-67
 
 - operator-tour "Hands-free field assistant" section
-- `phase-66-closure.test.js` — mic button renders; TTS toggle; vision disclaimer present
+- `phase-67-closure.test.js` — mic button renders; TTS toggle; vision disclaimer present
 - Accessibility: voice is additive, never the only path (keyboard always works)
 
 ---
@@ -120,7 +120,7 @@ isProject: false
 - [ ] Optional read-aloud answers
 - [ ] Photo diagnosis cites the crop profile + current readings
 - [ ] Fully-offline STT path documented
-- [ ] OC-66 closed
+- [ ] OC-67 closed
 
 ---
 

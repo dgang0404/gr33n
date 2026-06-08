@@ -549,6 +549,22 @@ Operator: [operator-tour §7d](operator-tour.md#7d-zone-connection-pipeline-phas
 
 **OC-56** via `phase-56-closure.test.js`.
 
+### 7.0u Per-device Pi API keys (Phase 57 — shipped)
+
+**Shipped (WS1–WS5).** Each edge Pi authenticates with its own scoped credential; revoke one device without rotating the farm. Plan: [`plans/phase_57_pi_device_api_keys.plan.md`](plans/phase_57_pi_device_api_keys.plan.md).
+
+| Surface | Operator job | Implementation |
+|---------|--------------|----------------|
+| **Device wizard** | Issue key, copy once to Pi | `POST /devices/{id}/api-keys`; `DeviceApiKeyPanel` show-once |
+| **Controls card** | Rotate / revoke per device | `GET/POST …/api-keys`, `POST …/{key_id}/revoke`; legacy badge when no active key |
+| **Pi client** | Send device credential | `GR33N_DEVICE_API_KEY` or `/etc/gr33n/device.key`; `X-Device-Key` header |
+| **Edge auth** | Scope to device_id in URL | `authenticatePiEdge`; `RequirePiEdgeDeviceScope` on status, config, commands |
+| **Storage** | No plaintext in DB | `device_api_keys.key_hash` (bcrypt); `gdev_{deviceID}_{secret}` shown once |
+
+**Legacy:** shared `PI_API_KEY` / `X-API-Key` still accepted during migration (logged deprecation on Pi).
+
+**OC-57** via `phase-57-closure.test.js` · **Go smoke:** `TestPhase57_DeviceAPIKeyIssueAuthRevoke`.
+
 ### 7.0m Feeding & water plain language (Phase 47)
 
 **Shipped.** Plan: [`plans/phase_47_feeding_water_plain_language.plan.md`](plans/phase_47_feeding_water_plain_language.plan.md) · Vocabulary: [`farmer-vocabulary.md`](farmer-vocabulary.md).

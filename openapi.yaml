@@ -334,7 +334,9 @@ paths:
     patch:
       tags: [devices]
       summary: Update device status (Pi heartbeat)
-      security: [{ apiKeyAuth: [] }]
+      security:
+        - { deviceKeyAuth: [] }
+        - { apiKeyAuth: [] }
       parameters:
         - { $ref: "#/components/parameters/ID" }
       requestBody:
@@ -1095,6 +1097,48 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Device" }
+
+  /devices/{id}/api-keys:
+    get:
+      tags: [devices]
+      summary: List device API keys (metadata only; no plaintext)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      responses:
+        "200":
+          description: Key list with active_count and uses_legacy_auth flag
+    post:
+      tags: [devices]
+      summary: Issue a new device API key (plaintext shown once)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                label: { type: string }
+      responses:
+        "201":
+          description: Created key with api_key show-once field
+
+  /devices/{id}/api-keys/{key_id}/revoke:
+    post:
+      tags: [devices]
+      summary: Revoke an active device API key
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+        - name: key_id
+          in: path
+          required: true
+          schema: { type: integer, format: int64 }
+      responses:
+        "200":
+          description: Revoked key metadata
 
   /devices/{id}:
     get:
@@ -4994,6 +5038,11 @@ components:
       type: apiKey
       in: header
       name: X-API-Key
+    deviceKeyAuth:
+      type: apiKey
+      in: header
+      name: X-Device-Key
+      description: Per-device Pi credential `gdev_{device_id}_{secret}` (Phase 57). Also `Authorization: Device <key>`.
 
   parameters:
     ID:

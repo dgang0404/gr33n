@@ -1,5 +1,5 @@
 ---
-name: Phase 65 — Weather & site context (offline-first)
+name: Phase 66 — Weather & site context (offline-first)
 overview: >
   Bring outdoor reality into Guardian's reasoning — WITHOUT requiring internet.
   The schema (weather_data table) and farm coordinates (location_gis) already exist.
@@ -23,16 +23,16 @@ todos:
     content: "WS5: weather read tool; starters 'Need supplemental light today?', 'Frost risk tonight?'"
     status: pending
   - id: ws6-docs-tests
-    content: "WS6: architecture §11; offline-first note; phase-65-closure; OC-65"
+    content: "WS6: architecture §11; offline-first note; phase-66-closure; OC-66"
     status: pending
 isProject: false
 ---
 
-# Phase 65 — Weather & site context (offline-first)
+# Phase 66 — Weather & site context (offline-first)
 
 ## Status
 
-**Planned.** Independent of the 53 arc; strongest after [Phase 62/64](phase_64_crop_knowledge_base.plan.md) (natural DLI feeds the grow advisor's light recommendations).
+**Planned.** Independent of the 53 arc; strongest after [Phase 65](phase_65_guardian_pi_diagnostics.plan.md) and [Phase 64](phase_64_crop_knowledge_base.plan.md) (natural DLI feeds the grow advisor's light recommendations).
 
 ---
 
@@ -123,12 +123,12 @@ Greenhouse vs sealed-indoor: effects scale by `zone` type — sealed rooms get H
 
 ---
 
-## WS6 — Docs, tests, OC-65
+## WS6 — Docs, tests, OC-66
 
 - `farm-guardian-architecture.md` §11 weather tiers + offline solar
 - **Offline-first note:** solar + sensor tiers work with the uplink unplugged
 - Go test: `SolarForDate` matches known sunrise/sunset for a fixed lat/long/date
-- `phase-65-closure.test.js` — site coords UI; supplemental-light starter
+- `phase-66-closure.test.js` — site coords UI; supplemental-light starter
 
 ---
 
@@ -138,7 +138,7 @@ Greenhouse vs sealed-indoor: effects scale by `zone` type — sealed rooms get H
 - [ ] Supplemental-light recommendation uses natural DLI vs crop target
 - [ ] Optional online provider opt-in, caches, degrades gracefully
 - [ ] Guardian states which tier it answered from
-- [ ] OC-65 closed
+- [ ] OC-66 closed
 
 ---
 

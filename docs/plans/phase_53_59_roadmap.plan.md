@@ -17,10 +17,10 @@ todos:
     status: completed
   - id: phase-56
     content: "Phase 56 — Grow schema + harvest analytics polish"
-    status: pending
+    status: completed
   - id: phase-57
     content: "Phase 57 — Per-device Pi API keys (security)"
-    status: pending
+    status: completed
   - id: phase-58
     content: "Phase 58 — Task consumptions & operator runtime"
     status: pending
@@ -36,9 +36,9 @@ isProject: false
 
 | Status | Phases |
 |--------|--------|
-| **Shipped** | 40–55 (farmer UX arc through Guardian ops read depth) |
-| **Planned next** | **56** (grow schema + harvest analytics) |
-| **Schema / security** | **56**, **57** after 53 farmer paths proven |
+| **Shipped** | 40–57 (farmer UX arc through per-device Pi API keys) |
+| **Planned next** | **58** (task consumptions) or **64** (crop knowledge base) |
+| **Schema / security** | **57** ✅ shipped |
 | **Runtime polish** | **58** parallel with 55–56 |
 | **Explicit deferrals** | **59** doc-only — no accidental ERP creep |
 
@@ -53,8 +53,8 @@ isProject: false
 | **53** ✅ | Start grow, restock, tag receipt — without Advanced editors | No | [phase_53](phase_53_grow_stock_money_closure.plan.md) |
 | **54** ✅ | See how the whole system connects — wiggle every link | No | [phase_54](phase_54_zone_connection_nav.plan.md) |
 | **55** ✅ | Guardian knows grow, stock, money — starters + read tools | Read tools only | [phase_55](phase_55_guardian_ops_grow_money.plan.md) |
-| **56** | Plants ↔ cycles linked; post-harvest compare in one flow | Small migration | [phase_56](phase_56_grow_schema_harvest_analytics.plan.md) |
-| **57** | Each Pi has its own API key | Yes | [phase_57](phase_57_pi_device_api_keys.plan.md) |
+| **56** ✅ | Plants ↔ cycles linked; post-harvest compare in one flow | Small migration | [phase_56](phase_56_grow_schema_harvest_analytics.plan.md) |
+| **57** ✅ | Each Pi has its own API key | Yes | [phase_57](phase_57_pi_device_api_keys.plan.md) |
 | **58** | Task drawdown + consumptions visible | No (API exists) | [phase_58](phase_58_task_consumptions_runtime.plan.md) |
 | **59** | Say no to POs/METRC until we mean it | Doc only | [phase_59](phase_59_enterprise_tier_boundary.plan.md) |
 
@@ -67,17 +67,18 @@ isProject: false
 | **62** | Grow advisor — VPD, DLI, stage transitions, post-harvest analysis | Read tool (needs 64) | [phase_62](phase_62_guardian_grow_advisor.plan.md) |
 | **63** | Session memory — Guardian remembers what you asked, you control it | Session summary job | [phase_63](phase_63_guardian_session_memory.plan.md) |
 
-### Guardian knowledge & sensing arc (64–66)
+### Guardian knowledge & sensing arc (64–67)
 
 These answer *"how does Guardian actually KNOW things?"* — grounding, not guessing.
 
 | Phase | One job | New backend? | Plan |
 |-------|---------|--------------|------|
 | **64** | Crop knowledge base — real EC/pH/VPD/DLI per crop per stage; Guardian cites, never guesses | Migration + seed | [phase_64](phase_64_crop_knowledge_base.plan.md) |
-| **65** | Weather & site — offline solar (sunrise/DLI from lat-long), sensor, optional online | Solar engine + ingest | [phase_65](phase_65_weather_site_context.plan.md) |
-| **66** | Hands-free field assistant — voice in/out, crop-grounded photo diagnosis | STT/TTS + vision | [phase_66](phase_66_guardian_field_assistant.plan.md) |
+| **65** | Pi & hardware diagnostics — Guardian sees live wiring (GPIO/channel), device status, reading staleness; directs troubleshooting | Read tool | [phase_65](phase_65_guardian_pi_diagnostics.plan.md) |
+| **66** | Weather & site — offline solar (sunrise/DLI from lat-long), sensor, optional online | Solar engine + ingest | [phase_66](phase_66_weather_site_context.plan.md) |
+| **67** | Hands-free field assistant — voice in/out, crop-grounded photo diagnosis + wiring diagnostics by voice | STT/TTS + vision | [phase_67](phase_67_guardian_field_assistant.plan.md) |
 
-**Key dependency:** **64 must precede 62** — the grow advisor reads targets from the crop knowledge base. **64 also grounds 66** photo diagnosis. **65** is independent (schema + coordinates already exist).
+**Key dependency:** **64 must precede 62** — the grow advisor reads targets from the crop knowledge base. **64 also grounds 67** photo diagnosis. **65 ships after 57** (wiring is stored per-device from Phase 50/51/57). **65 before 67** — voice troubleshooting is far more useful when Guardian can already look up the wiring. **66** is independent (schema + coordinates already exist).
 
 ---
 
@@ -118,13 +119,14 @@ flowchart TB
 12. **63** when session list is well-established — memory wraps existing sessions
 
 **Knowledge & sensing arc:**
-13. **64** anytime after 56 — foundational; unblocks 62 and 66
-14. **65** anytime — coordinates + `weather_data` table already exist; offline solar first
-15. **66** after 64 — voice baseline is independent; photo diagnosis grounds on 64
+13. **64** anytime after 56 — foundational; unblocks 62 and 67
+14. **65** after 57 — wiring data is structured; ships before 66 and before 67 (makes voice much better)
+15. **66** anytime — coordinates + `weather_data` table already exist; offline solar first
+16. **67** after 64 + 65 — voice baseline is independent; photo diagnosis grounds on 64; wiring diagnostics from 65
 
 ---
 
-## Guardian across 53–63
+## Guardian across 53–67
 
 | Phase | Guardian deliverable |
 |-------|---------------------|
@@ -136,6 +138,7 @@ flowchart TB
 | 61 | Proactive nudge dot — one alert, one tap, dismissed per session |
 | 62 | Grow advisor — VPD/DLI/stage starters; post-harvest analysis |
 | 63 | Session memory — topic tags, related context injection, operator-deletable |
+| 65 | Pi & hardware diagnostics — see actual GPIO/channel wiring, device status, reading staleness; directed troubleshooting |
 
 **Rule:** Inline wizards beat Confirm PRs for restock/receipt/harvest. Phases 55 + 60–62 add **read depth**; new write tools stay in Phase 46 backlog for NL→PR until proven valuable.
 
@@ -158,8 +161,9 @@ flowchart TB
 | OC-62 | 62 grow advisor | VPD/EC starters (from 64) + post-harvest + closure test |
 | OC-63 | 63 session memory | Topic tags + inject + delete + privacy note |
 | OC-64 | 64 crop knowledge base | 7 profiles seeded + grounding guard test |
-| OC-65 | 65 weather & site | Offline solar test + supplemental-light starter |
-| OC-66 | 66 field assistant | Mic + TTS + grounded photo diagnosis |
+| OC-65 | 65 Pi & hardware diagnostics | summarize_device_health fires on wiring intent; GPIO conflict flagged; fieldGuideGrounding updated |
+| OC-66 | 66 weather & site | Offline solar test + supplemental-light starter |
+| OC-67 | 67 field assistant | Mic + TTS + grounded photo diagnosis + wiring context from 65 |
 
 Track in [phase_35_37_operational_closure.plan.md](phase_35_37_operational_closure.plan.md).
 

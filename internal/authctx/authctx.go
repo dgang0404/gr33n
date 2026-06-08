@@ -9,10 +9,12 @@ import (
 type ctxKey string
 
 const (
-	userIDKey        ctxKey = "user_id"
-	emailKey         ctxKey = "email"
-	farmAuthzSkipKey ctxKey = "farm_authz_skip"
-	piEdgeAuthKey    ctxKey = "pi_edge_auth"
+	userIDKey          ctxKey = "user_id"
+	emailKey           ctxKey = "email"
+	farmAuthzSkipKey   ctxKey = "farm_authz_skip"
+	piEdgeAuthKey      ctxKey = "pi_edge_auth"
+	deviceKeyIDKey     ctxKey = "device_api_key_id"
+	deviceKeyDeviceKey ctxKey = "device_api_key_device_id"
 )
 
 func WithUserID(ctx context.Context, uid uuid.UUID) context.Context {
@@ -52,4 +54,27 @@ func WithPiEdgeAuth(ctx context.Context) context.Context {
 func PiEdgeAuth(ctx context.Context) bool {
 	v, _ := ctx.Value(piEdgeAuthKey).(bool)
 	return v
+}
+
+// WithDeviceKeyAuth marks the request as authenticated with a per-device API key (Phase 57).
+func WithDeviceKeyAuth(ctx context.Context, keyRowID, deviceID int64) context.Context {
+	ctx = context.WithValue(ctx, deviceKeyIDKey, keyRowID)
+	ctx = context.WithValue(ctx, deviceKeyDeviceKey, deviceID)
+	ctx = WithPiEdgeAuth(ctx)
+	return ctx
+}
+
+func DeviceKeyAuth(ctx context.Context) bool {
+	_, ok := DeviceKeyDeviceID(ctx)
+	return ok
+}
+
+func DeviceKeyDeviceID(ctx context.Context) (int64, bool) {
+	id, ok := ctx.Value(deviceKeyDeviceKey).(int64)
+	return id, ok && id > 0
+}
+
+func DeviceKeyRowID(ctx context.Context) (int64, bool) {
+	id, ok := ctx.Value(deviceKeyIDKey).(int64)
+	return id, ok && id > 0
 }

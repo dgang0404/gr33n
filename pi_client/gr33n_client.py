@@ -399,6 +399,40 @@ class OfflineQueue:
             self._conn.execute(f'DELETE FROM pending_readings WHERE id IN ({ph})', qids)
 
 
+# Phase 57 — per-device edge credential (preferred over shared PI_API_KEY).
+DEVICE_KEY_ENV = 'GR33N_DEVICE_API_KEY'
+DEVICE_KEY_FILE = '/etc/gr33n/device.key'
+
+
+def _read_device_key_file() -> str:
+    try:
+        return Path(DEVICE_KEY_FILE).read_text(encoding='utf-8').strip()
+    except OSError:
+        return ''
+
+
+def resolve_edge_api_credential(config_api_key: str = '') -> tuple:
+    """Return (header_name, credential) for Pi → API auth."""
+    candidates = [
+        os.environ.get(DEVICE_KEY_ENV, '').strip(),
+        _read_device_key_file(),
+        (config_api_key or '').strip(),
+    ]
+    for raw in candidates:
+        if raw.startswith('gdev_'):
+            return 'X-Device-Key', raw
+    legacy = os.environ.get('PI_API_KEY', '').strip() or (config_api_key or '').strip()
+    if legacy:
+        if legacy.startswith('gdev_'):
+            return 'X-Device-Key', legacy
+        if not os.environ.get(DEVICE_KEY_ENV) and not _read_device_key_file():
+            log.warning(
+                'Using shared farm API key — issue a per-device key in the dashboard (Phase 57)'
+            )
+        return 'X-Api-Key', legacy
+    return 'X-Api-Key', ''
+
+
 # --- API CLIENT -------------------------------------------------------------
 class Gr33nApiClient:
     def __init__(self, base_url: str, farm_id: int, api_key: str = '', timeout: int = 5):
@@ -406,8 +440,9 @@ class Gr33nApiClient:
         self.farm_id  = farm_id
         self.timeout  = timeout
         self._s = requests.Session()
-        if api_key:
-            self._s.headers['X-Api-Key'] = api_key
+        header, cred = resolve_edge_api_credential(api_key)
+        if cred:
+            self._s.headers[header] = cred
         self._s.headers['Content-Type'] = 'application/json'
 
     def is_reachable(self) -> bool:

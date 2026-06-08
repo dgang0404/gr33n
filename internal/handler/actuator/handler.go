@@ -146,6 +146,71 @@ func (h *Handler) ListByFarm(w http.ResponseWriter, r *http.Request) {
 	httputil.WriteJSON(w, http.StatusOK, out)
 }
 
+// PATCH /actuators/{id}/assign — update device assignment and relay channel.
+// Body: { device_id?: int64|null, hardware_identifier?: string|null }
+func (h *Handler) UpdateAssignment(w http.ResponseWriter, r *http.Request) {
+	actuatorID, err := httputil.PathID(r.URL.Path, 2)
+	if err != nil {
+		httputil.WriteError(w, http.StatusBadRequest, "invalid actuator id")
+		return
+	}
+	existing, err := h.q.GetActuatorByID(r.Context(), actuatorID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			httputil.WriteError(w, http.StatusNotFound, "actuator not found")
+			return
+		}
+		httputil.WriteError(w, http.StatusInternalServerError, "failed to load actuator")
+		return
+	}
+	if !farmauthz.RequireFarmOperate(w, r, h.q, existing.FarmID) {
+		return
+	}
+
+	var body struct {
+		DeviceID           *int64  `json:"device_id"`
+		HardwareIdentifier *string `json:"hardware_identifier"`
+		ClearDevice        bool    `json:"clear_device"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		httputil.WriteError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	// Resolve device_id: keep existing unless body provides a new one or clear_device=true.
+	deviceID := existing.DeviceID
+	if body.ClearDevice {
+		deviceID = nil
+	} else if body.DeviceID != nil {
+		deviceID = body.DeviceID
+	}
+
+	// Resolve hardware_identifier: keep existing unless provided (empty string = clear).
+	hwID := existing.HardwareIdentifier
+	if body.HardwareIdentifier != nil {
+		s := *body.HardwareIdentifier
+		if s == "" {
+			hwID = nil
+		} else {
+			hwID = &s
+		}
+	}
+
+	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+	defer cancel()
+
+	updated, err := h.q.UpdateActuatorAssignment(ctx, db.UpdateActuatorAssignmentParams{
+		ID:                 actuatorID,
+		DeviceID:           deviceID,
+		HardwareIdentifier: hwID,
+	})
+	if err != nil {
+		httputil.WriteError(w, http.StatusInternalServerError, "failed to update actuator assignment")
+		return
+	}
+	httputil.WriteJSON(w, http.StatusOK, wrapActuatorWithCommands(updated))
+}
+
 // PATCH /actuators/{id}/state
 func (h *Handler) UpdateState(w http.ResponseWriter, r *http.Request) {
 	actuatorID, err := httputil.PathID(r.URL.Path, 2)
@@ -289,6 +354,9 @@ func (h *Handler) RecordEvent(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		httputil.WriteError(w, http.StatusInternalServerError, "failed to load actuator")
+		return
+	}
+	if !farmauthz.RequirePiEdgeResourceDevice(w, r, a0.DeviceID) {
 		return
 	}
 	if !farmauthz.RequireFarmMemberOrPiEdge(w, r, h.q, a0.FarmID) {

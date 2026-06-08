@@ -92,12 +92,27 @@ In gr33n config (Phase 51 platform sync — recommended):
 # config.yaml — minimal bootstrap; wiring pulled from dashboard
 api:
   base_url: "http://192.168.1.100:8080"
-  api_key: "replace-with-PI_API_KEY"
+  # Legacy only — prefer per-device key (Phase 57) via env or file below
+  api_key: ""
 device:
   uid: "flower-room-01"
 farm:
   farm_id: 1
 ```
+
+**Per-device API key (Phase 57 — recommended):** issue in the dashboard (Connect device wizard or Controls → **API key**). Copy the `gdev_*` value once, then on the Pi:
+
+```bash
+# Option A — environment (systemd unit or shell)
+export GR33N_DEVICE_API_KEY='gdev_<device_id>_<secret>'
+
+# Option B — file (root-readable)
+sudo mkdir -p /etc/gr33n
+echo 'gdev_<device_id>_<secret>' | sudo tee /etc/gr33n/device.key
+sudo chmod 600 /etc/gr33n/device.key
+```
+
+The Pi client sends `X-Device-Key` automatically. Legacy farms may still set `api.api_key` to the shared `PI_API_KEY` until each Pi is rotated.
 
 In the dashboard (Controls → New actuator) set:
 - **Actuator type:** relay
@@ -169,7 +184,7 @@ cd ~
 git clone <your-gr33n-repo>
 cd gr33n-platform/pi_client
 cp config.bootstrap.example.yaml config.yaml
-nano config.yaml   # set api.base_url, api.api_key, device.uid
+nano config.yaml   # set api.base_url, device.uid; add GR33N_DEVICE_API_KEY (see credentials above)
 ```
 
 ### 6. Add actuators in the dashboard
@@ -227,8 +242,9 @@ Input cards share the same I²C bus and DIP addressing scheme, but each card *ty
 | `i2cdetect` shows nothing | I²C not enabled, or HAT not seated fully on header |
 | `8relind` command not found | `sudo make install` not completed, or `PATH` missing `/usr/local/bin` |
 | Relay clicks but load doesn't switch | Load wired to NC instead of NO (or vice versa), or load exceeds 4A — add contactor |
-| Pi offline in dashboard | API key wrong, base_url unreachable, or Pi client not running |
-| Config stale badge in UI | Pi can't reach API for config pull — check network and API key |
+| Pi offline in dashboard | Device key revoked/wrong, base_url unreachable, or Pi client not running |
+| Config stale badge in UI | Pi can't reach API for config pull — check network and device key |
+| 401 after key rotate | Old key still on Pi — paste new `gdev_*` into env or `/etc/gr33n/device.key` |
 
 ---
 

@@ -108,17 +108,121 @@
             Stack {{ card.stack }} — I²C {{ card.i2c }}
           </div>
           <div class="grid grid-cols-4 gap-1">
-            <div v-for="ch in card.channels" :key="ch.relay"
-              class="bg-zinc-900 rounded px-1.5 py-1 text-center border border-zinc-800">
-              <div class="text-[10px] text-zinc-600">relay {{ ch.relay }}</div>
-              <div class="text-xs font-mono text-gr33n-400 font-semibold">ch{{ ch.channel }}</div>
-            </div>
+            <template v-for="ch in card.channels" :key="ch.relay">
+              <!-- channel has a wired actuator — make it a link -->
+              <router-link
+                v-if="slotActuator(ch.channel)"
+                v-nav-hint="'/actuators'"
+                to="/actuators"
+                :title="slotActuator(ch.channel).name"
+                class="block rounded px-1.5 py-1 text-center border bg-green-950/40 border-green-800/50 hover:bg-green-900/40 cursor-pointer transition-colors"
+              >
+                <div class="text-[10px] text-zinc-600">relay {{ ch.relay }}</div>
+                <div class="text-xs font-mono text-gr33n-400 font-semibold">ch{{ ch.channel }}</div>
+                <div class="text-[9px] text-green-300/80 truncate leading-tight mt-0.5">{{ slotActuator(ch.channel).name }}</div>
+              </router-link>
+              <div
+                v-else
+                class="rounded px-1.5 py-1 text-center border bg-zinc-900 border-zinc-800"
+              >
+                <div class="text-[10px] text-zinc-600">relay {{ ch.relay }}</div>
+                <div class="text-xs font-mono text-gr33n-400 font-semibold">ch{{ ch.channel }}</div>
+              </div>
+            </template>
           </div>
         </div>
       </div>
       <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-4 space-y-2">
         <div class="text-xs font-semibold text-zinc-400">config.yaml snippet (Phase 51 wiring)</div>
         <pre class="text-xs font-mono text-zinc-300 leading-5">{{ yamlExample }}</pre>
+      </div>
+    </section>
+
+    <!-- ── Live "Your farm" wiring map ──────────────────────────────────── -->
+    <section class="space-y-4" data-test="pi-setup-live-wiring">
+      <div class="flex items-center justify-between">
+        <h2 class="text-sm font-semibold uppercase tracking-widest text-zinc-500">Your farm channels</h2>
+        <span class="text-[10px] text-zinc-600">from platform wiring — click any row to edit</span>
+      </div>
+
+      <div v-if="!wiredDevices.length" class="rounded-xl border border-zinc-800 bg-zinc-950/50 px-4 py-5 text-center space-y-2">
+        <p class="text-sm text-zinc-500">No wiring set up yet.</p>
+        <p class="text-xs text-zinc-600">
+          Register a Pi in
+          <router-link v-nav-hint="'/settings'" to="/settings" class="text-green-600 hover:text-green-400">Settings → Devices</router-link>,
+          then open a sensor or actuator and set its GPIO pin / channel.
+        </p>
+      </div>
+
+      <div v-else class="space-y-6">
+        <div
+          v-for="device in wiredDevices"
+          :key="device.id"
+          class="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden"
+        >
+          <!-- device header -->
+          <div class="flex items-center gap-3 px-4 py-3 border-b border-zinc-800 bg-zinc-950/40">
+            <span class="text-base">🖥️</span>
+            <span class="text-sm font-semibold text-white">{{ deviceName(device) }}</span>
+            <span class="text-[10px] font-mono text-zinc-500">{{ device.device_uid }}</span>
+            <span
+              class="ml-auto text-[10px] px-2 py-0.5 rounded-full font-medium"
+              :class="device.status === 'online' ? 'bg-green-900/40 text-green-400' : 'bg-zinc-800 text-zinc-500'"
+            >{{ device.status || 'offline' }}</span>
+          </div>
+
+          <!-- relay channels -->
+          <div v-if="deviceActuators(device.id).length" class="px-4 py-3 border-b border-zinc-800/60">
+            <p class="text-[10px] uppercase tracking-wide text-zinc-600 mb-2">Relay channels</p>
+            <div class="space-y-1">
+              <router-link
+                v-for="row in deviceActuators(device.id)"
+                :key="row.channel"
+                v-nav-hint="'/actuators'"
+                :to="'/actuators'"
+                class="flex items-center gap-3 rounded-lg px-3 py-2 hover:bg-zinc-800/60 transition-colors group"
+                data-test="pi-setup-channel-row"
+              >
+                <span class="font-mono text-[11px] text-gr33n-400 shrink-0 w-8">ch{{ row.channel }}</span>
+                <span class="text-xs text-zinc-200 truncate">{{ row.actuator.name }}</span>
+                <span class="text-[10px] text-zinc-500 ml-auto capitalize">{{ row.actuator.actuator_type }}</span>
+                <span class="text-[10px] text-zinc-700 group-hover:text-zinc-400 shrink-0">→</span>
+              </router-link>
+            </div>
+          </div>
+
+          <!-- sensor GPIO pins -->
+          <div v-if="deviceSensors(device.id).length" class="px-4 py-3">
+            <p class="text-[10px] uppercase tracking-wide text-zinc-600 mb-2">Sensor pins</p>
+            <div class="space-y-1">
+              <router-link
+                v-for="row in deviceSensors(device.id)"
+                :key="row.sensor.id"
+                v-nav-hint="'/sensors'"
+                :to="{ name: 'sensor-detail', params: { id: row.sensor.id } }"
+                class="flex items-center gap-3 rounded-lg px-3 py-2 hover:bg-zinc-800/60 transition-colors group"
+                data-test="pi-setup-sensor-row"
+              >
+                <span class="font-mono text-[11px] text-blue-400 shrink-0 w-8 truncate">{{ row.label.split('·')[1]?.trim() || '—' }}</span>
+                <span class="text-xs text-zinc-200 truncate">{{ row.sensor.name }}</span>
+                <span class="text-[10px] text-zinc-500 ml-auto">{{ row.label.split('·')[0]?.trim() }}</span>
+                <span class="text-[10px] text-zinc-700 group-hover:text-zinc-400 shrink-0">→ edit</span>
+              </router-link>
+            </div>
+          </div>
+
+          <!-- nothing wired to this device yet -->
+          <div
+            v-if="!deviceActuators(device.id).length && !deviceSensors(device.id).length"
+            class="px-4 py-4 text-xs text-zinc-600 italic"
+          >
+            No wiring assigned — open
+            <router-link v-nav-hint="'/actuators'" to="/actuators" class="text-green-600 hover:text-green-400">Controls</router-link>
+            or
+            <router-link v-nav-hint="'/sensors'" to="/sensors" class="text-green-600 hover:text-green-400">Sensors</router-link>
+            and assign this Pi.
+          </div>
+        </div>
       </div>
     </section>
 
@@ -251,7 +355,86 @@
 </template>
 
 <script setup>
-import { defineComponent, h } from 'vue'
+import { computed, defineComponent, h, onMounted } from 'vue'
+import { useFarmStore } from '../stores/farm'
+import { resolveWiring, formatWiringLabel } from '../lib/hardwareWiring.js'
+
+const store = useFarmStore()
+onMounted(() => { if (!store.actuators.length && !store.sensors.length) store.loadFarm?.() })
+
+// ── Live wiring helpers ───────────────────────────────────────────────────────
+
+function channelFromActuator(a) {
+  const hi = a?.hardware_identifier
+  if (hi == null) return null
+  const n = parseInt(String(hi), 10)
+  return Number.isFinite(n) && n >= 0 ? n : null
+}
+
+/** { deviceId: { channelNumber: actuator } } */
+const actuatorByChannel = computed(() => {
+  const map = {}
+  for (const a of store.actuators) {
+    if (!a.device_id) continue
+    const ch = channelFromActuator(a)
+    if (ch == null) continue
+    if (!map[a.device_id]) map[a.device_id] = {}
+    map[a.device_id][ch] = a
+  }
+  return map
+})
+
+/** { deviceId: [ { sensor, wiring } ] } sorted by pin */
+const sensorByDevicePin = computed(() => {
+  const map = {}
+  for (const s of store.sensors) {
+    const w = resolveWiring(s)
+    if (!w?.device_id) continue
+    if (!map[w.device_id]) map[w.device_id] = []
+    map[w.device_id].push({ sensor: s, wiring: w })
+  }
+  for (const rows of Object.values(map)) {
+    rows.sort((a, b) => (a.wiring.gpio_pin ?? 99) - (b.wiring.gpio_pin ?? 99))
+  }
+  return map
+})
+
+/** Devices that have at least one wired actuator or sensor */
+const wiredDevices = computed(() => {
+  const ids = new Set([
+    ...Object.keys(actuatorByChannel.value).map(Number),
+    ...Object.keys(sensorByDevicePin.value).map(Number),
+  ])
+  return store.devices.filter(d => ids.has(d.id))
+})
+
+function deviceName(d) {
+  return d.name || d.device_uid || `Device ${d.id}`
+}
+
+/** Return the first actuator wired to a given channel across all devices (for the reference card overlay). */
+function slotActuator(channel) {
+  for (const chMap of Object.values(actuatorByChannel.value)) {
+    if (chMap[channel]) return chMap[channel]
+  }
+  return null
+}
+
+/** Actuators assigned to a device's channels, sorted by channel */
+function deviceActuators(deviceId) {
+  const chMap = actuatorByChannel.value[deviceId] || {}
+  return Object.entries(chMap)
+    .map(([ch, a]) => ({ channel: Number(ch), actuator: a }))
+    .sort((a, b) => a.channel - b.channel)
+}
+
+/** Sensors wired to a device, with formatted label */
+function deviceSensors(deviceId) {
+  return (sensorByDevicePin.value[deviceId] || []).map(({ sensor, wiring }) => ({
+    sensor,
+    label: formatWiringLabel(wiring) || 'wired',
+  }))
+}
 
 // DipBit — inline sub-component that renders a single ON/OFF DIP switch indicator.
 const DipBit = defineComponent({

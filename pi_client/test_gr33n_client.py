@@ -652,7 +652,9 @@ class TestLoadConfig(unittest.TestCase):
 class TestApiKeyHeader(unittest.TestCase):
     """Test that X-Api-Key header is sent when api_key is configured."""
 
-    def test_api_key_sent_in_header(self):
+    @patch.object(client, '_read_device_key_file', return_value='')
+    @patch.dict(os.environ, {}, clear=True)
+    def test_api_key_sent_in_header(self, _mock_file):
         captured_headers = {}
 
         class HeaderCapture(BaseHTTPRequestHandler):
@@ -683,7 +685,9 @@ class TestApiKeyHeader(unittest.TestCase):
 
         self.assertEqual(captured_headers.get("X-Api-Key"), "test-key-123")
 
-    def test_no_api_key_when_empty(self):
+    @patch.object(client, '_read_device_key_file', return_value='')
+    @patch.dict(os.environ, {}, clear=True)
+    def test_no_api_key_when_empty(self, _mock_file):
         captured_headers = {}
 
         class HeaderCapture(BaseHTTPRequestHandler):
@@ -713,6 +717,47 @@ class TestApiKeyHeader(unittest.TestCase):
             server.server_close()
 
         self.assertIsNone(captured_headers.get("X-Api-Key"))
+
+    @patch.object(client, '_read_device_key_file', return_value='')
+    @patch.dict(os.environ, {}, clear=True)
+    def test_device_key_uses_x_device_key_header(self, _mock_file):
+        captured_headers = {}
+
+        class HeaderCapture(BaseHTTPRequestHandler):
+            def log_message(self, *args): pass
+            def do_POST(self):
+                captured_headers.update(self.headers)
+                length = int(self.headers.get("Content-Length", 0))
+                self.rfile.read(length)
+                self.send_response(201)
+                self.send_header("Content-Type", "application/json")
+                self.end_headers()
+                self.wfile.write(b'{"id":1}')
+
+        server = HTTPServer(("127.0.0.1", 0), HeaderCapture)
+        port = server.server_address[1]
+        thread = threading.Thread(target=server.handle_request)
+        thread.start()
+        try:
+            api = client.Gr33nApiClient(
+                base_url=f"http://127.0.0.1:{port}",
+                farm_id=1,
+                api_key="gdev_42_testsecret",
+            )
+            api.post_reading(1, 22.5)
+            thread.join(timeout=2)
+        finally:
+            server.server_close()
+
+        self.assertEqual(captured_headers.get("X-Device-Key"), "gdev_42_testsecret")
+        self.assertIsNone(captured_headers.get("X-Api-Key"))
+
+    @patch.object(client, '_read_device_key_file', return_value='')
+    @patch.dict(os.environ, {"GR33N_DEVICE_API_KEY": "gdev_9_fromenv"}, clear=True)
+    def test_resolve_edge_prefers_env_device_key(self, _mock_file):
+        header, cred = client.resolve_edge_api_credential("legacy-shared")
+        self.assertEqual(header, "X-Device-Key")
+        self.assertEqual(cred, "gdev_9_fromenv")
 
 
 class TestDaemonLoopSkipOnUnreachable(unittest.TestCase):

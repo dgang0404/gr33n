@@ -638,6 +638,18 @@ func (h *Handler) PostReading(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid JSON")
 		return
 	}
+	sn, err := h.q.GetSensorByID(r.Context(), id)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			httputil.WriteError(w, http.StatusNotFound, "sensor not found")
+			return
+		}
+		httputil.WriteError(w, http.StatusInternalServerError, "failed to load sensor")
+		return
+	}
+	if !farmauthz.RequirePiEdgeResourceDevice(w, r, sn.DeviceID) {
+		return
+	}
 	ts := time.Now().UTC()
 	if body.ReadingTime != nil {
 		ts = *body.ReadingTime
@@ -705,6 +717,18 @@ func (h *Handler) PostReadingsBatch(w http.ResponseWriter, r *http.Request) {
 	for i := range items {
 		if items[i].SensorID < 1 {
 			httputil.WriteError(w, http.StatusBadRequest, "each item requires sensor_id")
+			return
+		}
+		sn, err := h.q.GetSensorByID(r.Context(), items[i].SensorID)
+		if err != nil {
+			if errors.Is(err, pgx.ErrNoRows) {
+				httputil.WriteError(w, http.StatusBadRequest, fmt.Sprintf("sensor %d not found", items[i].SensorID))
+				return
+			}
+			httputil.WriteError(w, http.StatusInternalServerError, "failed to load sensor")
+			return
+		}
+		if !farmauthz.RequirePiEdgeResourceDevice(w, r, sn.DeviceID) {
 			return
 		}
 	}

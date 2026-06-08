@@ -27,7 +27,7 @@ isProject: false
 
 ## Status
 
-**Planned.** **Hard prerequisite: [Phase 64](phase_64_crop_knowledge_base.plan.md)** — the grow advisor must read real per-crop targets (EC/pH/VPD/DLI) from the crop knowledge base, never guess them. Also needs [Phase 56](phase_56_grow_schema_harvest_analytics.plan.md) `plant_id` FK for strain linkage and benefits from [Phase 65](phase_65_weather_site_context.plan.md) natural-DLI for light recommendations.
+**Planned.** **Hard prerequisite: [Phase 64](phase_64_crop_knowledge_base.plan.md)** — the grow advisor must read real per-crop targets (EC/pH/VPD/DLI) from the crop knowledge base, never guess them. Also needs [Phase 56](phase_56_grow_schema_harvest_analytics.plan.md) `plant_id` FK for strain linkage and benefits from [Phase 66](phase_66_weather_site_context.plan.md) natural-DLI for light recommendations.
 
 > **Where do the numbers come from?** Phase 64. This plan originally implied Guardian "knows" VPD/EC targets — it does not until Phase 64 seeds the profile library and the `lookup_crop_targets` tool grounds every figure.
 

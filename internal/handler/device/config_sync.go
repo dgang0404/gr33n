@@ -9,6 +9,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
+	"gr33n-api/internal/farmauthz"
 	"gr33n-api/internal/hardware"
 	"gr33n-api/internal/httputil"
 )
@@ -31,6 +32,9 @@ func (h *Handler) GetConfigByUID(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		httputil.WriteError(w, http.StatusInternalServerError, "failed to load device")
+		return
+	}
+	if !farmauthz.RequirePiEdgeDeviceScope(w, r, device.ID) {
 		return
 	}
 
@@ -77,6 +81,9 @@ func (h *Handler) GetConfigVersionByUID(w http.ResponseWriter, r *http.Request) 
 			return
 		}
 		httputil.WriteError(w, http.StatusInternalServerError, "failed to load device")
+		return
+	}
+	if !farmauthz.RequirePiEdgeDeviceScope(w, r, device.ID) {
 		return
 	}
 	httputil.WriteJSON(w, http.StatusOK, map[string]int32{

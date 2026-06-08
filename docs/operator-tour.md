@@ -22,7 +22,7 @@ Think **physical layout → signals → automation → work tracking → feeding
 |------|------------------|--------------------|
 | **1. Farm home** | `/` Dashboard | Orient: morning strip (tasks, alerts, **Feed & water** chip), recent feeds, what runs when. |
 | **2. Zones (plant needs)** | `/zones`, `/zones/:id` | Define **grow areas** (rooms, benches, beds). Open a zone → **Overview** plus **Water / Light / Climate** tabs — the **zone cockpit** for day-to-day grow (Phase 38 + [§4b](#4b-zone-cockpit-walkthrough-phase-40)). Optional zone photos for Guardian context ([architecture §7.4](farm-guardian-architecture.md#74-zone-reference-photos-phase-30-ws5)). |
-| **3. Sensors & controls (advanced)** | `/sensors`, `/actuators`, `/setpoints` under **Advanced** in the nav | Farm-wide device lists. **Sensors** and **Controls** show **wiring badges** (GPIO / I2C). Open a sensor for the wiring editor. Prefer zone tabs first; use Advanced when wiring many sensors or debugging. |
+| **3. Sensors & controls (advanced)** | `/sensors`, `/actuators`, `/setpoints` under **Advanced** in the nav | Farm-wide device lists. **Sensors** and **Controls** show **wiring badges** (GPIO / I2C / relay channel). Open a sensor for the wiring editor; on **Controls**, expand **Edit wiring** on an actuator card (HAT channel or direct GPIO). Prefer zone tabs first; use Advanced when wiring many sensors or debugging. |
 | **4. Schedules & rules** | `/schedules`, `/automation` | **Schedules** = time-based cadence (cron-like) tied to actions or fertigation windows. **Rules** (Automation) = conditions + actions (e.g. “if humidity low → open mist”). |
 | **4b. Lighting (photoperiod)** | `/lighting` | **Lighting programs** — first-class 18/6, 12/12, or custom ON/OFF photoperiods for grow lights. One program owns a paired schedule + `control_actuator` actions (see [§5](#5-set-up-186-vegetative-lights-phase-35)). |
 | **4c. Greenhouse climate** | `/zones/:id`, `/actuators`, `/automation` | **Shade, vents, fans** on `zone_type=greenhouse` — profile in zone meta, typed actuators, lux/temp rules. **Not** supplemental light (see [§5b](#5b-greenhouse-shade-vents-and-fans-phase-36)). |
@@ -476,6 +476,20 @@ Four new **read tools** (no Confirm): **`summarize_cycle_cost`**, **`summarize_f
 
 **Vitest:** `phase-56-closure.test.js` · **Go smoke:** `TestPhase56CropCyclePlantID`, stage events on `TestCropCycleCreateAndStage`.
 
+### 6l. Per-device Pi API keys (Phase 57 — shipped)
+
+**Plan:** [`plans/phase_57_pi_device_api_keys.plan.md`](plans/phase_57_pi_device_api_keys.plan.md) · Architecture: [§7.0u](farm-guardian-architecture.md#70u-per-device-pi-api-keys-phase-57--shipped).
+
+| Surface | What you do |
+|---------|-------------|
+| **Connect device wizard** | After register, **Issue key** — copy the `gdev_*` value once to the Pi |
+| **Controls → device card** | **API key** expands rotate/revoke; **Legacy shared key** badge until a device key is active |
+| **On the Pi** | `GR33N_DEVICE_API_KEY` env or `/etc/gr33n/device.key` (preferred over shared `api_key` in config) |
+
+**Why:** Compromise or decommission one Pi — revoke that key only; other Pis keep working.
+
+**Vitest:** `phase-57-closure.test.js` · **Go smoke:** `TestPhase57_DeviceAPIKeyIssueAuthRevoke`.
+
 ### 6d. First field install with Guardian, offline (Phase 37)
 
 **Requires:** `AI_ENABLED=true`, demo or real farm selected, **Operate** optional for procedure-only turns (Confirm still needed for write proposals).
@@ -498,7 +512,7 @@ Architecture: [`farm-guardian-architecture.md` §7.0e](farm-guardian-architectur
 ### Vision and photos — what to expect
 
 - **Zone photos (shipped):** upload on **Zone detail**; Guardian knows photos exist and can discuss walkthrough context.
-- **Leaf/crop image analysis (optional):** set `LLM_VISION_MODEL` (e.g. `llava` on Ollama); attach zone photos in the Guardian drawer when asking **from a zone** (robot tab on a zone page). On **Guardian full page** (`/chat`) the upload UI is hidden until you have zone context — [Phase 66](plans/phase_66_guardian_field_assistant.plan.md) adds camera upload everywhere + a room picker. Treat vision answers as **hypotheses**, not certified diagnosis. Prefer **create task** over silent config changes.
+- **Leaf/crop image analysis (optional):** set `LLM_VISION_MODEL` (e.g. `llava` on Ollama); attach zone photos in the Guardian drawer when asking **from a zone** (robot tab on a zone page). On **Guardian full page** (`/chat`) the upload UI is hidden until you have zone context — [Phase 67](plans/phase_67_guardian_field_assistant.plan.md) adds camera upload everywhere + a room picker. Treat vision answers as **hypotheses**, not certified diagnosis. Prefer **create task** over silent config changes.
 
 ### Platform facts (what Guardian should say about itself)
 

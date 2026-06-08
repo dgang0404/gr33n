@@ -7,19 +7,19 @@ overview: >
 todos:
   - id: ws1-schema
     content: "WS1: device_api_keys table — hash, label, device_id, revoked_at, last_used"
-    status: pending
+    status: completed
   - id: ws2-platform-ui
     content: "WS2: Device detail — issue key, show once, revoke; operator copy"
-    status: pending
+    status: completed
   - id: ws3-pi-agent
     content: "WS3: Pi agent reads key from env/file; migrates from shared secret"
-    status: pending
+    status: completed
   - id: ws4-auth-middleware
     content: "WS4: Accept device key header on device-scoped routes; audit log"
-    status: pending
+    status: completed
   - id: ws5-docs-tests
     content: "WS5: pi-sequent-hat-setup + operator guide; security smokes; OC-57"
-    status: pending
+    status: completed
 isProject: false
 ---
 
@@ -27,7 +27,7 @@ isProject: false
 
 ## Status
 
-**Planned.** Follows [Phase 51](phase_51_pi_config_sync.plan.md) config sync (WS6 shipped).
+**Shipped.** Follows [Phase 51](phase_51_pi_config_sync.plan.md) config sync (WS6 shipped).
 
 **When to ship:** Multi-Pi farms in production or shared operator accounts on one farm.
 
@@ -86,7 +86,7 @@ device_api_keys (
 
 ## Definition of done
 
-- [ ] New Pi provisioned with per-device key only
-- [ ] Revoke stops telemetry within TTL
-- [ ] No plaintext keys in DB
-- [ ] OC-57 closed
+- [x] New Pi provisioned with per-device key only
+- [x] Revoke stops telemetry within TTL
+- [x] No plaintext keys in DB
+- [x] OC-57 closed

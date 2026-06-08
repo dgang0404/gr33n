@@ -195,8 +195,7 @@ func (h *Handler) Next(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusInternalServerError, "failed to load device")
 		return
 	}
-	// Pi-key is farm-scoped; ensure the key belongs to this farm.
-	if !farmauthz.RequireFarmMemberOrPiEdge(w, r, h.q, device.FarmID) {
+	if !farmauthz.RequirePiEdgeDeviceScope(w, r, device.ID) {
 		return
 	}
 
@@ -251,7 +250,7 @@ func (h *Handler) Ack(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusInternalServerError, "failed to load device")
 		return
 	}
-	if !farmauthz.RequireFarmMemberOrPiEdge(w, r, h.q, device.FarmID) {
+	if !farmauthz.RequirePiEdgeDeviceScope(w, r, device.ID) {
 		return
 	}
 
