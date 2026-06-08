@@ -304,7 +304,7 @@ func (q *Queries) ListActuatorsByFarm(ctx context.Context, farmID int64) ([]Gr33
 
 const updateActuatorAssignment = `-- name: UpdateActuatorAssignment :one
 UPDATE gr33ncore.actuators
-SET device_id           = $2,
+SET device_id          = $2,
     hardware_identifier = $3,
     updated_at          = NOW()
 WHERE id = $1 AND deleted_at IS NULL

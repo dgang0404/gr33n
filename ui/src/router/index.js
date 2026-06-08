@@ -22,6 +22,7 @@ import FarmKnowledge from '../views/FarmKnowledge.vue'
 import FarmGuardianChat from '../views/FarmGuardianChat.vue'
 import OperatorGuide from '../views/OperatorGuide.vue'
 import PiSetupGuide from '../views/PiSetupGuide.vue'
+import CropProfileDetail from '../views/CropProfileDetail.vue'
 import CropCycleSummary from '../views/CropCycleSummary.vue'
 import CropCycleCompare from '../views/CropCycleCompare.vue'
 import LightingPrograms from '../views/LightingPrograms.vue'
@@ -59,6 +60,7 @@ const routes = [
   { path: '/operations/money', component: MoneyHub, name: 'operations-money' },
   { path: '/alerts',       component: Alerts,       name: 'alerts' },
   { path: '/plants',       component: Plants,       name: 'plants' },
+  { path: '/crop-profiles/:id', component: CropProfileDetail, name: 'crop-profile-detail' },
   { path: '/animals',      component: Animals,      name: 'animals' },
   { path: '/aquaponics',   component: Aquaponics,   name: 'aquaponics' },
   { path: '/catalog',      component: CommonsCatalog, name: 'catalog' },

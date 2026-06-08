@@ -86,7 +86,7 @@ These answer *"how does Guardian actually KNOW things?"* — grounding, not gues
 
 | Phase | One job | New backend? | Plan |
 |-------|---------|--------------|------|
-| **64** | Crop knowledge base — real EC/pH/VPD/DLI per crop per stage; Guardian cites, never guesses | Migration + seed | [phase_64](phase_64_crop_knowledge_base.plan.md) |
+| **64** ✅ | Crop knowledge base — real EC/pH/VPD/DLI per crop per stage; Guardian cites, never guesses | Migration + seed | [phase_64](phase_64_crop_knowledge_base.plan.md) |
 | **65** | Pi & hardware diagnostics — Guardian sees live wiring (GPIO/channel), device status, reading staleness; directs troubleshooting | Read tool | [phase_65](phase_65_guardian_pi_diagnostics.plan.md) |
 | **66** | Weather & site — offline solar (sunrise/DLI from lat-long), sensor, optional online | Solar engine + ingest | [phase_66](phase_66_weather_site_context.plan.md) |
 | **67** | Hands-free field assistant — voice in/out, crop-grounded photo diagnosis + wiring diagnostics by voice | STT/TTS + vision | [phase_67](phase_67_guardian_field_assistant.plan.md) |

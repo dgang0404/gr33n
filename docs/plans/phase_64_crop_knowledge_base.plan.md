@@ -8,22 +8,22 @@ overview: >
 todos:
   - id: ws1-schema
     content: "WS1: crop_profiles + crop_profile_stages tables; crop_profile_id FK on plants"
-    status: pending
+    status: completed
   - id: ws2-bundled-data
     content: "WS2: Curated seed — cannabis, tomato, pepper, lettuce, orchid, basil, strawberry; versioned + sourced"
-    status: pending
+    status: completed
   - id: ws3-guardian-grounding
     content: "WS3: crop_profile read tool; grow advisor cites real targets; RAG crop guides for narrative"
-    status: pending
+    status: completed
   - id: ws4-ui
     content: "WS4: Profile picker in start-grow wizard; target-vs-reading chips on zone; profile detail view"
-    status: pending
+    status: completed
   - id: ws5-override-share
     content: "WS5: Clone-and-override per farm; export/import profile JSON; optional community share"
-    status: pending
+    status: completed
   - id: ws6-docs-tests
-    content: "WS6: farm-guardian-architecture §10; field-guide manifest crop entries; phase-64-closure; OC-64"
-    status: pending
+    content: "WS6: farm-guardian-architecture §7.0w; field-guide manifest crop entries; phase-64-closure; OC-64"
+    status: completed
 isProject: false
 ---
 
@@ -31,7 +31,7 @@ isProject: false
 
 ## Status
 
-**Planned.** **Prerequisite for [Phase 62](phase_62_guardian_grow_advisor.plan.md)** (grow advisor needs real targets to cite) and pairs with [Phase 56](phase_56_grow_schema_harvest_analytics.plan.md) `plant_id` FK.
+**Shipped.** **Prerequisite for [Phase 62](phase_62_guardian_grow_advisor.plan.md)** (grow advisor needs real targets to cite) and pairs with [Phase 56](phase_56_grow_schema_harvest_analytics.plan.md) `plant_id` FK.
 
 **Arc:** [phase_53_59_roadmap.plan.md](phase_53_59_roadmap.plan.md)
 
@@ -157,11 +157,11 @@ If no profile is assigned, say so and offer to set one — do not guess from gen
 
 ## Definition of done
 
-- [ ] 7 built-in crop profiles seeded offline
-- [ ] Start-grow wizard assigns a profile
-- [ ] Guardian cites real EC/VPD from the profile, refuses to guess without one
-- [ ] Operator can clone + override
-- [ ] OC-64 closed
+- [x] 7 built-in crop profiles seeded offline
+- [x] Start-grow wizard assigns a profile
+- [x] Guardian cites real EC/VPD from the profile, refuses to guess without one
+- [x] Operator can clone + override
+- [x] OC-64 closed
 
 ---
 

@@ -1919,11 +1919,46 @@ type Gr33ncoreZoneSetpoint struct {
 	UpdatedAt   time.Time       `db:"updated_at" json:"updated_at"`
 }
 
+type Gr33ncropsCropProfile struct {
+	ID          int64           `db:"id" json:"id"`
+	FarmID      *int64          `db:"farm_id" json:"farm_id"`
+	CropKey     string          `db:"crop_key" json:"crop_key"`
+	DisplayName string          `db:"display_name" json:"display_name"`
+	Category    *string         `db:"category" json:"category"`
+	Source      *string         `db:"source" json:"source"`
+	Version     int32           `db:"version" json:"version"`
+	IsBuiltin   bool            `db:"is_builtin" json:"is_builtin"`
+	Meta        json.RawMessage `db:"meta" json:"meta"`
+	CreatedAt   time.Time       `db:"created_at" json:"created_at"`
+	UpdatedAt   time.Time       `db:"updated_at" json:"updated_at"`
+}
+
+type Gr33ncropsCropProfileStage struct {
+	ID             int64                           `db:"id" json:"id"`
+	CropProfileID  int64                           `db:"crop_profile_id" json:"crop_profile_id"`
+	Stage          Gr33nfertigationGrowthStageEnum `db:"stage" json:"stage"`
+	EcMin          pgtype.Numeric                  `db:"ec_min" json:"ec_min"`
+	EcTarget       pgtype.Numeric                  `db:"ec_target" json:"ec_target"`
+	EcMax          pgtype.Numeric                  `db:"ec_max" json:"ec_max"`
+	PhMin          pgtype.Numeric                  `db:"ph_min" json:"ph_min"`
+	PhMax          pgtype.Numeric                  `db:"ph_max" json:"ph_max"`
+	VpdMinKpa      pgtype.Numeric                  `db:"vpd_min_kpa" json:"vpd_min_kpa"`
+	VpdMaxKpa      pgtype.Numeric                  `db:"vpd_max_kpa" json:"vpd_max_kpa"`
+	TempMinC       pgtype.Numeric                  `db:"temp_min_c" json:"temp_min_c"`
+	TempMaxC       pgtype.Numeric                  `db:"temp_max_c" json:"temp_max_c"`
+	RhMinPct       pgtype.Numeric                  `db:"rh_min_pct" json:"rh_min_pct"`
+	RhMaxPct       pgtype.Numeric                  `db:"rh_max_pct" json:"rh_max_pct"`
+	DliTarget      pgtype.Numeric                  `db:"dli_target" json:"dli_target"`
+	PhotoperiodHrs pgtype.Numeric                  `db:"photoperiod_hrs" json:"photoperiod_hrs"`
+	Notes          *string                         `db:"notes" json:"notes"`
+}
+
 type Gr33ncropsPlant struct {
 	ID                int64              `db:"id" json:"id"`
 	FarmID            int64              `db:"farm_id" json:"farm_id"`
 	DisplayName       string             `db:"display_name" json:"display_name"`
 	VarietyOrCultivar *string            `db:"variety_or_cultivar" json:"variety_or_cultivar"`
+	CropProfileID     *int64             `db:"crop_profile_id" json:"crop_profile_id"`
 	Meta              json.RawMessage    `db:"meta" json:"meta"`
 	CreatedAt         time.Time          `db:"created_at" json:"created_at"`
 	UpdatedAt         time.Time          `db:"updated_at" json:"updated_at"`

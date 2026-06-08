@@ -16,6 +16,23 @@
 
       <div class="space-y-3">
         <div>
+          <label class="block text-xs text-zinc-500 mb-1">Crop profile (targets)</label>
+          <select
+            v-model.number="form.cropProfileId"
+            class="w-full bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white"
+            data-test="start-grow-crop-profile"
+          >
+            <option :value="null">None — assign later</option>
+            <option v-for="p in cropProfiles" :key="p.id" :value="p.id">
+              {{ p.display_name }}{{ p.is_builtin ? '' : ' (custom)' }}
+            </option>
+          </select>
+          <p class="text-[10px] text-zinc-600 mt-1">
+            Sets EC/pH/VPD targets for Guardian and the grow strip.
+          </p>
+        </div>
+
+        <div>
           <label class="block text-xs text-zinc-500 mb-1">Strain / variety</label>
           <input
             v-model="form.strain"
@@ -117,7 +134,7 @@
 </template>
 
 <script setup>
-import { computed, ref, watch } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useFarmStore } from '../stores/farm.js'
 import {
   GROWTH_STAGES,
@@ -145,6 +162,7 @@ const growthStages = GROWTH_STAGES
 const submitting = ref(false)
 const formError = ref('')
 const plantPickId = ref('')
+const cropProfiles = ref([])
 
 const form = ref(emptyForm())
 
@@ -156,8 +174,19 @@ function emptyForm() {
     stage: 'seedling',
     startedAt: new Date().toISOString().slice(0, 10),
     programId: null,
+    cropProfileId: null,
   }
 }
+
+onMounted(async () => {
+  if (props.farmId) {
+    try {
+      cropProfiles.value = await store.loadCropProfiles(props.farmId)
+    } catch {
+      cropProfiles.value = []
+    }
+  }
+})
 
 const zonePrograms = computed(() => {
   if (!form.value.zoneId) return props.programs
@@ -187,10 +216,17 @@ const lastAutoName = ref('')
 
 watch(
   () => props.open,
-  (isOpen) => {
+  async (isOpen) => {
     if (!isOpen) return
     formError.value = ''
     plantPickId.value = ''
+    if (props.farmId) {
+      try {
+        cropProfiles.value = await store.loadCropProfiles(props.farmId)
+      } catch {
+        cropProfiles.value = []
+      }
+    }
     const f = emptyForm()
     if (props.initialStrain) f.strain = props.initialStrain
     if (props.initialZoneId) f.zoneId = props.initialZoneId
@@ -214,7 +250,10 @@ watch(
 
 function onPlantPick() {
   const plant = props.plants.find((p) => Number(p.id) === Number(plantPickId.value))
-  if (plant) form.value.strain = strainFromPlant(plant)
+  if (plant) {
+    form.value.strain = strainFromPlant(plant)
+    if (plant.crop_profile_id) form.value.cropProfileId = plant.crop_profile_id
+  }
 }
 
 function close() {
@@ -226,6 +265,26 @@ async function submit() {
   if (!canSubmit.value) return
   submitting.value = true
   try {
+    let plantId = plantPickId.value ? Number(plantPickId.value) : null
+    if (form.value.cropProfileId) {
+      if (plantId) {
+        const plant = props.plants.find((p) => Number(p.id) === plantId)
+        if (plant) {
+          await store.updatePlant(plantId, {
+            display_name: plant.display_name,
+            variety_or_cultivar: plant.variety_or_cultivar,
+            crop_profile_id: form.value.cropProfileId,
+            meta: plant.meta,
+          })
+        }
+      } else if (form.value.strain?.trim()) {
+        const createdPlant = await store.createPlant(props.farmId, {
+          display_name: form.value.strain.trim(),
+          crop_profile_id: form.value.cropProfileId,
+        })
+        plantId = createdPlant.id
+      }
+    }
     const payload = buildStartGrowPayload({
       zoneId: form.value.zoneId,
       strain: form.value.strain,
@@ -233,7 +292,7 @@ async function submit() {
       stage: form.value.stage,
       startedAt: form.value.startedAt,
       programId: form.value.programId,
-      plantId: plantPickId.value ? Number(plantPickId.value) : null,
+      plantId,
     })
     const created = await store.createCropCycle(props.farmId, payload)
     emit('created', created)

@@ -77,6 +77,7 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 	var body struct {
 		DisplayName       string          `json:"display_name"`
 		VarietyOrCultivar *string         `json:"variety_or_cultivar"`
+		CropProfileID     *int64          `json:"crop_profile_id"`
 		Meta              json.RawMessage `json:"meta"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -100,6 +101,7 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		FarmID:            farmID,
 		DisplayName:       name,
 		VarietyOrCultivar: body.VarietyOrCultivar,
+		CropProfileID:     body.CropProfileID,
 		Meta:              meta,
 	})
 	if err != nil {
@@ -131,6 +133,7 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 	var body struct {
 		DisplayName       string          `json:"display_name"`
 		VarietyOrCultivar *string         `json:"variety_or_cultivar"`
+		CropProfileID     *int64          `json:"crop_profile_id"`
 		Meta              json.RawMessage `json:"meta"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -150,10 +153,15 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 		}
 		meta = body.Meta
 	}
+	cropProfileID := existing.CropProfileID
+	if body.CropProfileID != nil {
+		cropProfileID = body.CropProfileID
+	}
 	row, err := h.q.UpdatePlant(r.Context(), db.UpdatePlantParams{
 		ID:                id,
 		DisplayName:       name,
 		VarietyOrCultivar: body.VarietyOrCultivar,
+		CropProfileID:     cropProfileID,
 		Meta:              meta,
 	})
 	if err != nil {

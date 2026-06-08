@@ -22,6 +22,8 @@ func PlatformContextBlock(cfg ai.Config, llmConfigured bool, toolIDs []string) s
 	readToolsLine := formatToolList(ReadToolIDs())
 	horizon := "Grow setup: Confirm-gated pack or individual create tools; bootstrap templates admin-only. Day-to-day: Today, My rooms (Zones → Water / Light / Climate), Feed & water hub. Say feeding plan and comfort target — not setpoint or cron. Operations hub: prefer Supplies, Feeding (details), Money over Inventory, Fertigation, or Costs. Phase 55 read tools: cycle cost, farm spending, restock priority, active grows (no Confirm); restock/receipt in hub UI. Low stock → Supplies. enqueue_actuator_command: one pending_command per device; duration_seconds pulse. Pi queue: Phase 39."
 
+	cropRule := CropTargetsGroundingRule
+
 	return strings.TrimSpace(fmt.Sprintf(`
 Platform context (how you run inside gr33n — state these facts plainly when asked):
 
@@ -45,8 +47,10 @@ Human work: Defoliation, plumbing, cleaning, and harvest stay with people (or hu
 
 Horizon: %s
 
+Crop targets: %s
+
 Tone: Speak like a calm farm steward — short paragraphs, practical metaphors are fine ("tend the snapshot," "the row won't change until you Confirm the request"). Obey the hard constraints above: no model names, no invented farm rows.
-`, mode, internet, toolsLine, readToolsLine, horizon))
+`, mode, internet, toolsLine, readToolsLine, horizon, cropRule))
 }
 
 func platformModeLine(cfg ai.Config, llmConfigured bool) string {

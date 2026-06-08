@@ -253,7 +253,7 @@ Hardware, Pi platform sync, and farmer job completion — each phase is shippabl
 
 | Phase | Name | One job | Plan |
 |-------|------|---------|------|
-| **64** | Crop knowledge base | Real EC/pH/VPD/DLI per crop per stage — Guardian cites, never guesses | [phase_64](phase_64_crop_knowledge_base.plan.md) |
+| **64** ✅ | Crop knowledge base | Real EC/pH/VPD/DLI per crop per stage — Guardian cites, never guesses | [phase_64](phase_64_crop_knowledge_base.plan.md) |
 | **65** | Pi & hardware diagnostics | Guardian sees live GPIO/channel wiring, device status, reading staleness | [phase_65](phase_65_guardian_pi_diagnostics.plan.md) |
 | **66** | Weather & site | Offline solar (sunrise/DLI from lat-long) + sensor + optional online | [phase_66](phase_66_weather_site_context.plan.md) |
 | **67** | Field assistant | Voice in/out + crop-grounded photo diagnosis (hands-free in the room) | [phase_67](phase_67_guardian_field_assistant.plan.md) |

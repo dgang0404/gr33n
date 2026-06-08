@@ -119,7 +119,7 @@ todos:
     status: pending
   - id: oc-64-closure
     content: "OC-64: Phase 64 WS6 — crop knowledge base, 7 seeded profiles, lookup_crop_targets, grounding guard test"
-    status: pending
+    status: completed
   - id: oc-65-closure
     content: "OC-65: Phase 65 WS4 — Pi & hardware diagnostics, summarize_device_health, fieldGuideGrounding update"
     status: pending
@@ -526,6 +526,18 @@ Feature detail: [`phase_56_grow_schema_harvest_analytics.plan.md`](phase_56_grow
 | Income rollup | ✅ | WS4 — harvest economics banner, Money `?cycle_id=` |
 | OC-56 docs/tests | ✅ | WS5 — architecture §7.0t, operator-tour §6k, `phase-56-closure.test.js`, crop-cycle smokes |
 
+## Phase 64 — Crop knowledge base
+
+Feature detail: [`phase_64_crop_knowledge_base.plan.md`](phase_64_crop_knowledge_base.plan.md). **OC-64** closed (WS6). **Phase 64 shipped.**
+
+| Area | Status | Notes |
+|------|--------|-------|
+| Schema + seed | ✅ | WS1–WS2 — `crop_profiles`, `crop_profile_stages`, `plants.crop_profile_id`; 7 built-in crops |
+| API | ✅ | List/get/clone/export/import; plants carry `crop_profile_id` |
+| Guardian | ✅ | WS3 — `lookup_crop_targets`; persona crop-target rule |
+| UI | ✅ | WS4 — Start grow picker, grow strip EC chip, `/crop-profiles/:id` |
+| OC-64 docs/tests | ✅ | WS6 — architecture §7.0w, crop field guides, `phase-64-closure.test.js`, `smoke_phase64_test.go` |
+
 ## Phase 57 — Per-device Pi API keys
 
 Feature detail: [`phase_57_pi_device_api_keys.plan.md`](phase_57_pi_device_api_keys.plan.md). **OC-57** closed (WS5). **Phase 57 shipped.**
@@ -555,7 +567,7 @@ Hub: [`phase_53_59_roadmap.plan.md`](phase_53_59_roadmap.plan.md). Close **OC-58
 | 61 Proactive nudges | OC-61 | [phase_61](phase_61_guardian_proactive_nudges.plan.md) | Dot badge + dismiss + tour |
 | 62 Grow advisor | OC-62 | [phase_62](phase_62_guardian_grow_advisor.plan.md) | VPD starters + post-harvest |
 | 63 Session memory | OC-63 | [phase_63](phase_63_guardian_session_memory.plan.md) | Topic tags + privacy delete |
-| 64 Crop knowledge base | OC-64 | [phase_64](phase_64_crop_knowledge_base.plan.md) | 7 profiles + grounding guard |
+| ~~64 Crop knowledge base~~ | ~~OC-64~~ | [phase_64](phase_64_crop_knowledge_base.plan.md) | ✅ Shipped |
 | 65 Pi & hardware diagnostics | OC-65 | [phase_65](phase_65_guardian_pi_diagnostics.plan.md) | summarize_device_health + GPIO conflict |
 | 66 Weather & site | OC-66 | [phase_66](phase_66_weather_site_context.plan.md) | Offline solar + ingest tiers |
 | 67 Field assistant | OC-67 | [phase_67](phase_67_guardian_field_assistant.plan.md) | Voice + grounded photo diagnosis |

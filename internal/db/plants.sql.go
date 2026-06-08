@@ -8,17 +8,20 @@ package db
 import (
 	"context"
 	"encoding/json"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const createPlant = `-- name: CreatePlant :one
-INSERT INTO gr33ncrops.plants (farm_id, display_name, variety_or_cultivar, meta)
-VALUES ($1, $2, $3, $4) RETURNING id, farm_id, display_name, variety_or_cultivar, meta, created_at, updated_at, deleted_at
+INSERT INTO gr33ncrops.plants (farm_id, display_name, variety_or_cultivar, crop_profile_id, meta)
+VALUES ($1, $2, $3, $4, $5) RETURNING id, farm_id, display_name, variety_or_cultivar, crop_profile_id, meta, created_at, updated_at, deleted_at
 `
 
 type CreatePlantParams struct {
 	FarmID            int64           `db:"farm_id" json:"farm_id"`
 	DisplayName       string          `db:"display_name" json:"display_name"`
 	VarietyOrCultivar *string         `db:"variety_or_cultivar" json:"variety_or_cultivar"`
+	CropProfileID     *int64          `db:"crop_profile_id" json:"crop_profile_id"`
 	Meta              json.RawMessage `db:"meta" json:"meta"`
 }
 
@@ -27,6 +30,7 @@ func (q *Queries) CreatePlant(ctx context.Context, arg CreatePlantParams) (Gr33n
 		arg.FarmID,
 		arg.DisplayName,
 		arg.VarietyOrCultivar,
+		arg.CropProfileID,
 		arg.Meta,
 	)
 	var i Gr33ncropsPlant
@@ -35,6 +39,7 @@ func (q *Queries) CreatePlant(ctx context.Context, arg CreatePlantParams) (Gr33n
 		&i.FarmID,
 		&i.DisplayName,
 		&i.VarietyOrCultivar,
+		&i.CropProfileID,
 		&i.Meta,
 		&i.CreatedAt,
 		&i.UpdatedAt,
@@ -44,7 +49,7 @@ func (q *Queries) CreatePlant(ctx context.Context, arg CreatePlantParams) (Gr33n
 }
 
 const getPlant = `-- name: GetPlant :one
-SELECT id, farm_id, display_name, variety_or_cultivar, meta, created_at, updated_at, deleted_at FROM gr33ncrops.plants WHERE id = $1 AND deleted_at IS NULL
+SELECT id, farm_id, display_name, variety_or_cultivar, crop_profile_id, meta, created_at, updated_at, deleted_at FROM gr33ncrops.plants WHERE id = $1 AND deleted_at IS NULL
 `
 
 func (q *Queries) GetPlant(ctx context.Context, id int64) (Gr33ncropsPlant, error) {
@@ -55,6 +60,7 @@ func (q *Queries) GetPlant(ctx context.Context, id int64) (Gr33ncropsPlant, erro
 		&i.FarmID,
 		&i.DisplayName,
 		&i.VarietyOrCultivar,
+		&i.CropProfileID,
 		&i.Meta,
 		&i.CreatedAt,
 		&i.UpdatedAt,
@@ -63,8 +69,70 @@ func (q *Queries) GetPlant(ctx context.Context, id int64) (Gr33ncropsPlant, erro
 	return i, err
 }
 
+const getPlantCropProfileStage = `-- name: GetPlantCropProfileStage :one
+SELECT s.id, s.crop_profile_id, s.stage, s.ec_min, s.ec_target, s.ec_max, s.ph_min, s.ph_max, s.vpd_min_kpa, s.vpd_max_kpa, s.temp_min_c, s.temp_max_c, s.rh_min_pct, s.rh_max_pct, s.dli_target, s.photoperiod_hrs, s.notes, p.display_name AS profile_display_name, p.crop_key
+FROM gr33ncrops.crop_profile_stages s
+JOIN gr33ncrops.crop_profiles p ON p.id = s.crop_profile_id
+JOIN gr33ncrops.plants pl ON pl.crop_profile_id = p.id
+WHERE pl.id = $1 AND s.stage = $2 AND pl.deleted_at IS NULL
+`
+
+type GetPlantCropProfileStageParams struct {
+	ID    int64                           `db:"id" json:"id"`
+	Stage Gr33nfertigationGrowthStageEnum `db:"stage" json:"stage"`
+}
+
+type GetPlantCropProfileStageRow struct {
+	ID                 int64                           `db:"id" json:"id"`
+	CropProfileID      int64                           `db:"crop_profile_id" json:"crop_profile_id"`
+	Stage              Gr33nfertigationGrowthStageEnum `db:"stage" json:"stage"`
+	EcMin              pgtype.Numeric                  `db:"ec_min" json:"ec_min"`
+	EcTarget           pgtype.Numeric                  `db:"ec_target" json:"ec_target"`
+	EcMax              pgtype.Numeric                  `db:"ec_max" json:"ec_max"`
+	PhMin              pgtype.Numeric                  `db:"ph_min" json:"ph_min"`
+	PhMax              pgtype.Numeric                  `db:"ph_max" json:"ph_max"`
+	VpdMinKpa          pgtype.Numeric                  `db:"vpd_min_kpa" json:"vpd_min_kpa"`
+	VpdMaxKpa          pgtype.Numeric                  `db:"vpd_max_kpa" json:"vpd_max_kpa"`
+	TempMinC           pgtype.Numeric                  `db:"temp_min_c" json:"temp_min_c"`
+	TempMaxC           pgtype.Numeric                  `db:"temp_max_c" json:"temp_max_c"`
+	RhMinPct           pgtype.Numeric                  `db:"rh_min_pct" json:"rh_min_pct"`
+	RhMaxPct           pgtype.Numeric                  `db:"rh_max_pct" json:"rh_max_pct"`
+	DliTarget          pgtype.Numeric                  `db:"dli_target" json:"dli_target"`
+	PhotoperiodHrs     pgtype.Numeric                  `db:"photoperiod_hrs" json:"photoperiod_hrs"`
+	Notes              *string                         `db:"notes" json:"notes"`
+	ProfileDisplayName string                          `db:"profile_display_name" json:"profile_display_name"`
+	CropKey            string                          `db:"crop_key" json:"crop_key"`
+}
+
+func (q *Queries) GetPlantCropProfileStage(ctx context.Context, arg GetPlantCropProfileStageParams) (GetPlantCropProfileStageRow, error) {
+	row := q.db.QueryRow(ctx, getPlantCropProfileStage, arg.ID, arg.Stage)
+	var i GetPlantCropProfileStageRow
+	err := row.Scan(
+		&i.ID,
+		&i.CropProfileID,
+		&i.Stage,
+		&i.EcMin,
+		&i.EcTarget,
+		&i.EcMax,
+		&i.PhMin,
+		&i.PhMax,
+		&i.VpdMinKpa,
+		&i.VpdMaxKpa,
+		&i.TempMinC,
+		&i.TempMaxC,
+		&i.RhMinPct,
+		&i.RhMaxPct,
+		&i.DliTarget,
+		&i.PhotoperiodHrs,
+		&i.Notes,
+		&i.ProfileDisplayName,
+		&i.CropKey,
+	)
+	return i, err
+}
+
 const listPlantsByFarm = `-- name: ListPlantsByFarm :many
-SELECT id, farm_id, display_name, variety_or_cultivar, meta, created_at, updated_at, deleted_at FROM gr33ncrops.plants
+SELECT id, farm_id, display_name, variety_or_cultivar, crop_profile_id, meta, created_at, updated_at, deleted_at FROM gr33ncrops.plants
 WHERE farm_id = $1 AND deleted_at IS NULL
 ORDER BY display_name
 `
@@ -83,6 +151,7 @@ func (q *Queries) ListPlantsByFarm(ctx context.Context, farmID int64) ([]Gr33ncr
 			&i.FarmID,
 			&i.DisplayName,
 			&i.VarietyOrCultivar,
+			&i.CropProfileID,
 			&i.Meta,
 			&i.CreatedAt,
 			&i.UpdatedAt,
@@ -109,14 +178,15 @@ func (q *Queries) SoftDeletePlant(ctx context.Context, id int64) error {
 
 const updatePlant = `-- name: UpdatePlant :one
 UPDATE gr33ncrops.plants
-SET display_name = $2, variety_or_cultivar = $3, meta = $4, updated_at = NOW()
-WHERE id = $1 AND deleted_at IS NULL RETURNING id, farm_id, display_name, variety_or_cultivar, meta, created_at, updated_at, deleted_at
+SET display_name = $2, variety_or_cultivar = $3, crop_profile_id = $4, meta = $5, updated_at = NOW()
+WHERE id = $1 AND deleted_at IS NULL RETURNING id, farm_id, display_name, variety_or_cultivar, crop_profile_id, meta, created_at, updated_at, deleted_at
 `
 
 type UpdatePlantParams struct {
 	ID                int64           `db:"id" json:"id"`
 	DisplayName       string          `db:"display_name" json:"display_name"`
 	VarietyOrCultivar *string         `db:"variety_or_cultivar" json:"variety_or_cultivar"`
+	CropProfileID     *int64          `db:"crop_profile_id" json:"crop_profile_id"`
 	Meta              json.RawMessage `db:"meta" json:"meta"`
 }
 
@@ -125,6 +195,7 @@ func (q *Queries) UpdatePlant(ctx context.Context, arg UpdatePlantParams) (Gr33n
 		arg.ID,
 		arg.DisplayName,
 		arg.VarietyOrCultivar,
+		arg.CropProfileID,
 		arg.Meta,
 	)
 	var i Gr33ncropsPlant
@@ -133,6 +204,7 @@ func (q *Queries) UpdatePlant(ctx context.Context, arg UpdatePlantParams) (Gr33n
 		&i.FarmID,
 		&i.DisplayName,
 		&i.VarietyOrCultivar,
+		&i.CropProfileID,
 		&i.Meta,
 		&i.CreatedAt,
 		&i.UpdatedAt,

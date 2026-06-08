@@ -84,6 +84,8 @@ type Querier interface {
 	// Queries: gr33nfertigation.crop_cycles
 	// ============================================================
 	CreateCropCycle(ctx context.Context, arg CreateCropCycleParams) (Gr33nfertigationCropCycle, error)
+	CreateCropProfile(ctx context.Context, arg CreateCropProfileParams) (Gr33ncropsCropProfile, error)
+	CreateCropProfileStage(ctx context.Context, arg CreateCropProfileStageParams) (Gr33ncropsCropProfileStage, error)
 	// ============================================================
 	// Queries: gr33ncore.devices
 	// ============================================================
@@ -230,6 +232,9 @@ type Querier interface {
 	// ============================================================
 	GetCostTransactionIDByIdempotencyKey(ctx context.Context, arg GetCostTransactionIDByIdempotencyKeyParams) (int64, error)
 	GetCropCycleByID(ctx context.Context, id int64) (Gr33nfertigationCropCycle, error)
+	GetCropProfile(ctx context.Context, id int64) (Gr33ncropsCropProfile, error)
+	GetCropProfileByKey(ctx context.Context, arg GetCropProfileByKeyParams) (Gr33ncropsCropProfile, error)
+	GetCropProfileStage(ctx context.Context, arg GetCropProfileStageParams) (Gr33ncropsCropProfileStage, error)
 	GetDeviceByID(ctx context.Context, id int64) (Gr33ncoreDevice, error)
 	GetDeviceByUID(ctx context.Context, deviceUid *string) (Gr33ncoreDevice, error)
 	// Phase 39 WS2 — needed by the mix dose calculator to read target EC bounds.
@@ -299,6 +304,7 @@ type Querier interface {
 	GetOrganizationMembership(ctx context.Context, arg GetOrganizationMembershipParams) (Gr33ncoreOrganizationMembership, error)
 	GetOrganizationUsageSummary(ctx context.Context, organizationID *int64) (GetOrganizationUsageSummaryRow, error)
 	GetPlant(ctx context.Context, id int64) (Gr33ncropsPlant, error)
+	GetPlantCropProfileStage(ctx context.Context, arg GetPlantCropProfileStageParams) (GetPlantCropProfileStageRow, error)
 	GetProfileByEmail(ctx context.Context, email string) (Gr33ncoreProfile, error)
 	// ============================================================
 	// Queries: gr33ncore.profiles
@@ -427,6 +433,8 @@ type Querier interface {
 	ListCropCycleStageEventsByCycle(ctx context.Context, cropCycleID int64) ([]Gr33nfertigationCropCycleStageEvent, error)
 	ListCropCyclesByFarm(ctx context.Context, farmID int64) ([]Gr33nfertigationCropCycle, error)
 	ListCropCyclesByFarmUpdatedAfter(ctx context.Context, arg ListCropCyclesByFarmUpdatedAfterParams) ([]Gr33nfertigationCropCycle, error)
+	ListCropProfileStages(ctx context.Context, cropProfileID int64) ([]Gr33ncropsCropProfileStage, error)
+	ListCropProfilesForFarm(ctx context.Context, farmID *int64) ([]Gr33ncropsCropProfile, error)
 	ListDeviceAPIKeysByDevice(ctx context.Context, deviceID int64) ([]ListDeviceAPIKeysByDeviceRow, error)
 	// Operator JWT: list commands for a device with optional status filter.
 	// Pass NULL for status to get all.

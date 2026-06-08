@@ -565,6 +565,23 @@ Operator: [operator-tour §7d](operator-tour.md#7d-zone-connection-pipeline-phas
 
 **OC-57** via `phase-57-closure.test.js` · **Go smoke:** `TestPhase57_DeviceAPIKeyIssueAuthRevoke`.
 
+### 7.0w Crop knowledge base (Phase 64 — shipped)
+
+**Shipped.** Structured per-crop, per-stage targets (EC mS/cm, pH, VPD, temp, RH, DLI, photoperiod) in `gr33ncrops.crop_profiles` + `crop_profile_stages`. Seven built-in profiles ship offline in migration seed. Guardian **never invents** numeric targets — `lookup_crop_targets` read tool + persona hard rule.
+
+| Layer | Artifact |
+|-------|----------|
+| Schema + seed | `db/migrations/20260610_phase64_crop_knowledge_base.sql` |
+| API | `GET /farms/{id}/crop-profiles`, `GET /crop-profiles/{id}`, clone/export/import |
+| Plants link | `plants.crop_profile_id` — set in Start grow wizard |
+| Read tool | `lookup_crop_targets` in `readtools_crop.go` |
+| UI | Start grow profile picker; zone grow strip EC target chip; `/crop-profiles/:id` detail |
+| RAG narrative | `docs/field-guides/crop-*.md` in field-guide manifest |
+
+**OC-64** via `phase-64-closure.test.js` · **Go smoke:** `TestPhase64_CropProfilesListAndCannabisFlowerEC`.
+
+Plan: [`plans/phase_64_crop_knowledge_base.plan.md`](plans/phase_64_crop_knowledge_base.plan.md). **Unblocks Phase 62** grow advisor.
+
 ### 7.0v Guardian Pi & hardware diagnostics (Phase 65 — planned)
 
 **Planned.** Today Guardian's field persona says it **cannot see wiring** — operators must read GPIO/channel labels back. Phase 50/51/57 store structured wiring per device; Phase 65 adds a read tool so Guardian can cross-reference platform records with live device status and reading freshness.

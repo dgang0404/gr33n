@@ -24,6 +24,7 @@ import (
 	commonscataloghandler "gr33n-api/internal/handler/commonscatalog"
 	costhandler "gr33n-api/internal/handler/cost"
 	cropcyclehandler "gr33n-api/internal/handler/cropcycle"
+	cropprofilehandler "gr33n-api/internal/handler/cropprofile"
 	devicehandler "gr33n-api/internal/handler/device"
 	devicecmdhandler "gr33n-api/internal/handler/devicecmd"
 	farmhandler "gr33n-api/internal/handler/farm"
@@ -69,6 +70,7 @@ func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationwo
 	aichat := chathandler.NewHandler(pool, aiCfg, fileStore)
 	fieldGuides := fieldguideshandler.NewHandler("")
 	plants := planthandler.NewHandler(pool)
+	cropProfiles := cropprofilehandler.NewHandler(pool)
 	animals := animalhandler.NewHandler(pool)
 	aquaponics := aquaponicshandler.NewHandler(pool)
 	alert := alerthandler.NewHandler(pool)
@@ -335,6 +337,13 @@ func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationwo
 	mux.Handle("GET /plants/{id}", jwt(http.HandlerFunc(plants.Get)))
 	mux.Handle("PUT /plants/{id}", jwt(http.HandlerFunc(plants.Update)))
 	mux.Handle("DELETE /plants/{id}", jwt(http.HandlerFunc(plants.Delete)))
+
+	// Crop knowledge base (Phase 64)
+	mux.Handle("GET /farms/{id}/crop-profiles", jwt(http.HandlerFunc(cropProfiles.List)))
+	mux.Handle("POST /farms/{id}/crop-profiles/import", jwt(http.HandlerFunc(cropProfiles.Import)))
+	mux.Handle("GET /crop-profiles/{id}", jwt(http.HandlerFunc(cropProfiles.Get)))
+	mux.Handle("POST /crop-profiles/{id}/clone", jwt(http.HandlerFunc(cropProfiles.Clone)))
+	mux.Handle("GET /crop-profiles/{id}/export", jwt(http.HandlerFunc(cropProfiles.Export)))
 
 	// Animal husbandry (Phase 20.8 WS2)
 	mux.Handle("GET /farms/{id}/animal-groups", jwt(http.HandlerFunc(animals.ListGroups)))

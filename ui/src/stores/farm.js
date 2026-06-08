@@ -774,6 +774,22 @@ export const useFarmStore = defineStore('farm', {
       await api.delete(`/plants/${id}`)
     },
 
+    // Crop knowledge base (Phase 64)
+    async loadCropProfiles(farmId) {
+      const r = await api.get(`/farms/${farmId}/crop-profiles`)
+      return Array.isArray(r.data) ? r.data : []
+    },
+
+    async getCropProfile(id) {
+      const r = await api.get(`/crop-profiles/${id}`)
+      return r.data
+    },
+
+    async cloneCropProfile(id, farmId) {
+      const r = await api.post(`/crop-profiles/${id}/clone?farm_id=${farmId}`)
+      return r.data
+    },
+
     // Animal husbandry (Phase 20.8)
     async loadAnimalGroups(farmId) {
       const r = await api.get(`/farms/${farmId}/animal-groups`)

@@ -476,6 +476,19 @@ Four new **read tools** (no Confirm): **`summarize_cycle_cost`**, **`summarize_f
 
 **Vitest:** `phase-56-closure.test.js` · **Go smoke:** `TestPhase56CropCyclePlantID`, stage events on `TestCropCycleCreateAndStage`.
 
+### 6k-b. Crop knowledge base (Phase 64 — shipped)
+
+**Plan:** [`plans/phase_64_crop_knowledge_base.plan.md`](plans/phase_64_crop_knowledge_base.plan.md) · Architecture: [§7.0w](farm-guardian-architecture.md#70w-crop-knowledge-base-phase-64--shipped).
+
+| Surface | What you do |
+|---------|-------------|
+| **Start a grow** | Pick a **crop profile** (cannabis, tomato, orchid, …) — sets EC/pH/VPD targets on the plant |
+| **Zone grow strip** | **EC target** chip from the profile stage; link to profile detail |
+| **Crop profile detail** | `/crop-profiles/{id}` — read-only stage table; **Clone to edit** for farm copies |
+| **Guardian** | Cites `lookup_crop_targets` — refuses to guess EC/VPD without a profile |
+
+**Vitest:** `phase-64-closure.test.js` · **Go smoke:** `TestPhase64_CropProfilesListAndCannabisFlowerEC`.
+
 ### 6l. Per-device Pi API keys (Phase 57 — shipped)
 
 **Plan:** [`plans/phase_57_pi_device_api_keys.plan.md`](plans/phase_57_pi_device_api_keys.plan.md) · Architecture: [§7.0u](farm-guardian-architecture.md#70u-per-device-pi-api-keys-phase-57--shipped).

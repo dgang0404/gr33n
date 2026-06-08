@@ -18,6 +18,22 @@
               · {{ activeCycle.strain_or_variety }}
             </span>
           </p>
+          <p
+            v-if="ecTargetLabel"
+            class="text-xs mt-1.5 inline-flex items-center gap-1 px-2 py-0.5 rounded-md border"
+            :class="ecTargetChipClass"
+            data-test="grow-strip-ec-target"
+          >
+            {{ ecTargetLabel }}
+            <router-link
+              v-if="cropProfileId"
+              v-nav-hint="`/crop-profiles/${cropProfileId}`"
+              :to="`/crop-profiles/${cropProfileId}`"
+              class="text-green-500/80 hover:text-green-400 underline-offset-2 hover:underline"
+            >
+              profile
+            </router-link>
+          </p>
         </template>
         <p v-else class="text-zinc-500 text-xs mt-2">
           No active grow in this zone yet.
@@ -70,6 +86,7 @@ import { useFarmStore } from '../stores/farm.js'
 import {
   activeCycleForZone,
   daysSinceStart,
+  formatEcTargetChip,
   formatStageLabel,
   lastHarvestedCycleInZone,
 } from '../lib/growHub.js'
@@ -89,6 +106,9 @@ const emit = defineEmits(['start-grow', 'harvest', 'cycles-loaded'])
 const store = useFarmStore()
 const localCycles = ref([])
 const loading = ref(false)
+const cropProfileId = ref(null)
+const ecTargetLabel = ref(null)
+const ecTargetChipClass = ref('border-zinc-700 text-zinc-400 bg-zinc-950/50')
 
 const cycleList = computed(() => props.cycles ?? localCycles.value)
 const activeCycle = computed(() => activeCycleForZone(cycleList.value, props.zoneId))
@@ -140,6 +160,34 @@ watch(
     }
     loadCycles()
   },
+  { immediate: true },
+)
+
+async function loadCropTargets() {
+  cropProfileId.value = null
+  ecTargetLabel.value = null
+  const cycle = activeCycle.value
+  if (!cycle?.plant_id || !cycle.current_stage) return
+  try {
+    const plant = await store.getPlant(cycle.plant_id)
+    if (!plant?.crop_profile_id) return
+    cropProfileId.value = plant.crop_profile_id
+    const profile = await store.getCropProfile(plant.crop_profile_id)
+    const stageRow = (profile.stages || []).find(
+      (s) => s.stage === cycle.current_stage,
+    )
+    ecTargetLabel.value = formatEcTargetChip(stageRow)
+    if (ecTargetLabel.value) {
+      ecTargetChipClass.value = 'border-green-900/60 text-green-300/90 bg-green-950/30'
+    }
+  } catch {
+    /* best-effort */
+  }
+}
+
+watch(
+  () => [activeCycle.value?.id, activeCycle.value?.current_stage, activeCycle.value?.plant_id],
+  () => loadCropTargets(),
   { immediate: true },
 )
 

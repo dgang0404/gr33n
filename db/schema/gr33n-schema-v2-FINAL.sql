@@ -1682,11 +1682,63 @@ CREATE TRIGGER trg_zone_setpoints_updated_at
 
 CREATE SCHEMA IF NOT EXISTS gr33ncrops;
 
+CREATE TABLE IF NOT EXISTS gr33ncrops.crop_profiles (
+    id            BIGSERIAL PRIMARY KEY,
+    farm_id       BIGINT REFERENCES gr33ncore.farms(id) ON DELETE CASCADE,
+    crop_key      TEXT NOT NULL,
+    display_name  TEXT NOT NULL,
+    category      TEXT,
+    source        TEXT,
+    version       INTEGER NOT NULL DEFAULT 1,
+    is_builtin    BOOLEAN NOT NULL DEFAULT FALSE,
+    meta          JSONB NOT NULL DEFAULT '{}'::jsonb,
+    created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    CONSTRAINT crop_profiles_farm_key_unique UNIQUE NULLS NOT DISTINCT (farm_id, crop_key)
+);
+
+CREATE INDEX IF NOT EXISTS idx_crop_profiles_farm
+    ON gr33ncrops.crop_profiles (farm_id)
+    WHERE farm_id IS NOT NULL;
+
+CREATE INDEX IF NOT EXISTS idx_crop_profiles_builtin
+    ON gr33ncrops.crop_profiles (is_builtin)
+    WHERE is_builtin = TRUE;
+
+CREATE TABLE IF NOT EXISTS gr33ncrops.crop_profile_stages (
+    id              BIGSERIAL PRIMARY KEY,
+    crop_profile_id BIGINT NOT NULL REFERENCES gr33ncrops.crop_profiles(id) ON DELETE CASCADE,
+    stage           gr33nfertigation.growth_stage_enum NOT NULL,
+    ec_min          NUMERIC(4,2),
+    ec_target       NUMERIC(4,2),
+    ec_max          NUMERIC(4,2),
+    ph_min          NUMERIC(3,1),
+    ph_max          NUMERIC(3,1),
+    vpd_min_kpa     NUMERIC(3,2),
+    vpd_max_kpa     NUMERIC(3,2),
+    temp_min_c      NUMERIC(4,1),
+    temp_max_c      NUMERIC(4,1),
+    rh_min_pct      NUMERIC(4,1),
+    rh_max_pct      NUMERIC(4,1),
+    dli_target      NUMERIC(4,1),
+    photoperiod_hrs NUMERIC(3,1),
+    notes           TEXT,
+    CONSTRAINT crop_profile_stages_unique UNIQUE (crop_profile_id, stage)
+);
+
+CREATE INDEX IF NOT EXISTS idx_crop_profile_stages_profile
+    ON gr33ncrops.crop_profile_stages (crop_profile_id);
+
+CREATE TRIGGER trg_gr33ncrops_crop_profiles_updated_at
+    BEFORE UPDATE ON gr33ncrops.crop_profiles
+    FOR EACH ROW EXECUTE FUNCTION gr33ncore.set_updated_at();
+
 CREATE TABLE IF NOT EXISTS gr33ncrops.plants (
     id                   BIGSERIAL PRIMARY KEY,
     farm_id              BIGINT NOT NULL REFERENCES gr33ncore.farms(id) ON DELETE CASCADE,
     display_name         TEXT NOT NULL,
     variety_or_cultivar  TEXT,
+    crop_profile_id      BIGINT REFERENCES gr33ncrops.crop_profiles(id) ON DELETE SET NULL,
     meta                 JSONB NOT NULL DEFAULT '{}'::jsonb,
     created_at           TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at           TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -1696,6 +1748,10 @@ CREATE TABLE IF NOT EXISTS gr33ncrops.plants (
 CREATE INDEX IF NOT EXISTS idx_gr33ncrops_plants_farm
     ON gr33ncrops.plants (farm_id)
     WHERE deleted_at IS NULL;
+
+CREATE INDEX IF NOT EXISTS idx_gr33ncrops_plants_crop_profile
+    ON gr33ncrops.plants (crop_profile_id)
+    WHERE crop_profile_id IS NOT NULL AND deleted_at IS NULL;
 
 CREATE TRIGGER trg_gr33ncrops_plants_updated_at
     BEFORE UPDATE ON gr33ncrops.plants

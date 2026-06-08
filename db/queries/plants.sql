@@ -7,13 +7,20 @@ ORDER BY display_name;
 SELECT * FROM gr33ncrops.plants WHERE id = $1 AND deleted_at IS NULL;
 
 -- name: CreatePlant :one
-INSERT INTO gr33ncrops.plants (farm_id, display_name, variety_or_cultivar, meta)
-VALUES ($1, $2, $3, $4) RETURNING *;
+INSERT INTO gr33ncrops.plants (farm_id, display_name, variety_or_cultivar, crop_profile_id, meta)
+VALUES ($1, $2, $3, $4, $5) RETURNING *;
 
 -- name: UpdatePlant :one
 UPDATE gr33ncrops.plants
-SET display_name = $2, variety_or_cultivar = $3, meta = $4, updated_at = NOW()
+SET display_name = $2, variety_or_cultivar = $3, crop_profile_id = $4, meta = $5, updated_at = NOW()
 WHERE id = $1 AND deleted_at IS NULL RETURNING *;
+
+-- name: GetPlantCropProfileStage :one
+SELECT s.*, p.display_name AS profile_display_name, p.crop_key
+FROM gr33ncrops.crop_profile_stages s
+JOIN gr33ncrops.crop_profiles p ON p.id = s.crop_profile_id
+JOIN gr33ncrops.plants pl ON pl.crop_profile_id = p.id
+WHERE pl.id = $1 AND s.stage = $2 AND pl.deleted_at IS NULL;
 
 -- name: SoftDeletePlant :exec
 UPDATE gr33ncrops.plants SET deleted_at = NOW() WHERE id = $1;

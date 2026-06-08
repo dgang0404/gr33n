@@ -90,6 +90,24 @@ export function defaultCycleName(strain, zoneName = '') {
 /**
  * @param {object} plant
  */
+/**
+ * @param {object|null} stageRow crop_profile_stages row
+ */
+export function formatEcTargetChip(stageRow) {
+  if (!stageRow) return null
+  const fmt = (n) => {
+    if (n == null || n === '') return null
+    const v = Number(n)
+    return Number.isFinite(v) ? (v % 1 === 0 ? String(v) : v.toFixed(2)) : null
+  }
+  const min = fmt(stageRow.ec_min)
+  const max = fmt(stageRow.ec_max)
+  const target = fmt(stageRow.ec_target)
+  if (min && max) return `EC target ${min}–${max} mS/cm`
+  if (target) return `EC target ${target} mS/cm`
+  return null
+}
+
 export function strainFromPlant(plant) {
   if (!plant) return ''
   const variety = plant.variety_or_cultivar?.trim()
