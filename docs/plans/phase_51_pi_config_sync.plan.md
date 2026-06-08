@@ -114,7 +114,7 @@ The `config.yaml` shrinks to 4–5 lines. GPIO/wiring lives in the platform.
 
 5. **In-place hot-reload, no restart required.** When a version change is detected, the Pi rebuilds `SensorReader` / `ActuatorController` objects and swaps them into the running daemon's maps. The sensor-loop and schedule-loop continue without a process restart. A SIGTERM-based restart fallback is provided as a CLI flag for operators who prefer explicit control.
 
-6. **No per-Pi credentials yet.** Phase 50/51 still uses the farm-wide `PI_API_KEY` as auth for the config endpoint (same `requireAPIKey` middleware). Per-device API keys are a Phase 52+ security hardening step noted in [Out of scope](#out-of-scope).
+6. **No per-Pi credentials yet.** Phase 50/51 still uses the farm-wide `PI_API_KEY` as auth for the config endpoint (same `requireAPIKey` middleware). Per-device API keys are **[Phase 57](phase_57_pi_device_api_keys.plan.md)** security hardening — see [Out of scope](#out-of-scope).
 
 ---
 
@@ -323,13 +323,13 @@ The script is idempotent — re-running it overwrites the same wiring fields wit
 | **50** | **Hard prerequisite.** Wiring model (WS1) + API PATCH (WS2) must ship first. The Phase 51 endpoint reads the same `config.wiring` rows Phase 50 writes. |
 | **44** | Device wizard generates and applies wiring; Phase 51 means the Pi picks it up without SSH. |
 | **39** | Command queue contract unchanged — Phase 51 adds config sync only; command execution is untouched. |
-| **Phase 52+** | Per-device API keys (replacing shared `PI_API_KEY`) — security hardening that builds on Phase 51's per-device identity path. |
+| **[57](phase_57_pi_device_api_keys.plan.md)** | Per-device API keys (replacing shared `PI_API_KEY`) — security hardening that builds on Phase 51's per-device identity path. |
 
 ---
 
 ## Out of scope
 
-- Per-device API keys / RBAC for edge clients — the shared `PI_API_KEY` stays this phase.
+- Per-device API keys / RBAC for edge clients — the shared `PI_API_KEY` stays this phase; see [Phase 57](phase_57_pi_device_api_keys.plan.md).
 - OTA firmware or Python package updates pushed from the platform.
 - Auto-discovery of connected I2C/GPIO hardware (the platform still relies on the operator to declare wiring; the Pi does not scan).
 - MQTT bridge config sync — MQTT bridge (`mqtt_telemetry_bridge.py`) uses env vars, not `config.yaml`; out of scope.

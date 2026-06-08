@@ -81,6 +81,30 @@ todos:
   - id: oc-51-closure
     content: "OC-51: Phase 51 WS6 — Pi config platform sync, live reload, staleness badge, import script, docs/tests (close when Phase 51 ships)"
     status: completed
+  - id: oc-52-closure
+    content: "OC-52: Phase 52 — Guardian UI context, Pi setup guide, nav-hint wiggle chains (shipped)"
+    status: completed
+  - id: oc-53-closure
+    content: "OC-53: Phase 53 WS6 — grow/stock/money closure, cross-links, Guardian starters, phase-53-closure.test.js"
+    status: pending
+  - id: oc-54-closure
+    content: "OC-54: Phase 54 WS4 — zone connection pipeline, orphan link wiggles, phase-54-closure.test.js"
+    status: pending
+  - id: oc-55-closure
+    content: "OC-55: Phase 55 WS5 — Guardian ops read tools, starters, phase_55_guardian_pr_spec.md"
+    status: pending
+  - id: oc-56-closure
+    content: "OC-56: Phase 56 WS5 — plant_id migration, compare flow, phase-56-closure.test.js"
+    status: pending
+  - id: oc-57-closure
+    content: "OC-57: Phase 57 WS5 — per-device API keys, pi guide, security smokes"
+    status: pending
+  - id: oc-58-closure
+    content: "OC-58: Phase 58 WS4 — task consumptions UI, templates, phase-58-closure.test.js"
+    status: pending
+  - id: oc-59-closure
+    content: "OC-59: Phase 59 WS4 — enterprise-tier-boundary.md, copy audit, index links"
+    status: pending
 isProject: false
 ---
 
@@ -416,9 +440,36 @@ Feature detail: [`phase_51_pi_config_sync.plan.md`](phase_51_pi_config_sync.plan
 | Legacy opt-out + import | ✅ | WS5 — local YAML precedence; `import_config_to_platform.py` |
 | OC-51 docs/tests | ✅ | WS6 — `pi-integration-guide` §2, architecture §7.0p, `phase-51-closure.test.js`, `smoke_phase51_test.go` |
 
+## Phase 52 — Guardian UI context & Pi setup
+
+Feature detail: [`phase_52_guardian_ui_context.plan.md`](phase_52_guardian_ui_context.plan.md). **OC-52** closed. **Phase 52 shipped.**
+
+| Area | Status | Notes |
+|------|--------|-------|
+| Nav history + POST `nav_history` | ✅ | WS1 — `guardianPanel`, `context_ref` breadcrumb |
+| Pi setup guide `/pi-setup` | ✅ | WS2 — Sequent HAT visual guide |
+| Sidebar wiggles + navRelations | ✅ | WS3 — wiring, offline, config stale chains |
+| Starter cleanup | ✅ | WS4 — no redundant "I'm on…" prefixes |
+
+## Phases 53–59 — Farmer closure arc (planned)
+
+Hub: [`phase_53_59_roadmap.plan.md`](phase_53_59_roadmap.plan.md). Close **OC-53 … OC-59** when each phase WS docs/tests ship.
+
+| Phase | OC | Plan | Close when |
+|-------|-----|------|------------|
+| 53 Grow + stock + money | OC-53 | [phase_53](phase_53_grow_stock_money_closure.plan.md) | WS6 closure test + operator-tour |
+| 54 Zone connection nav | OC-54 | [phase_54](phase_54_zone_connection_nav.plan.md) | Pipeline + link audit test |
+| 55 Guardian ops | OC-55 | [phase_55](phase_55_guardian_ops_grow_money.plan.md) | Read tools + `phase_55_guardian_pr_spec.md` |
+| 56 Grow schema | OC-56 | [phase_56](phase_56_grow_schema_harvest_analytics.plan.md) | Migration smokes |
+| 57 Device API keys | OC-57 | [phase_57](phase_57_pi_device_api_keys.plan.md) | Security smokes + pi guide |
+| 58 Task consumptions | OC-58 | [phase_58](phase_58_task_consumptions_runtime.plan.md) | Consumption UI test |
+| 59 Enterprise boundary | OC-59 | [phase_59](phase_59_enterprise_tier_boundary.plan.md) | `enterprise-tier-boundary.md` |
+
+**Note:** Phase 51 "Phase 52+ per-device API keys" → **[Phase 57](phase_57_pi_device_api_keys.plan.md)** (not Phase 52).
+
 ---
 
-**Master roadmap:** [`farmer_ux_roadmap_40_plus.plan.md`](farmer_ux_roadmap_40_plus.plan.md). Closure rows **OC-42 … OC-51** track each phase WS8/WS7 — not pre-40 work. Vocabulary: [`farmer-vocabulary.md`](../farmer-vocabulary.md). Guardian specs: [42](phase_42_guardian_pr_spec.md) · [43](phase_43_guardian_pr_spec.md) · [44](phase_44_guardian_pr_spec.md) · [45](phase_45_guardian_pr_spec.md) · [46](phase_46_guardian_llm_tool_proposals.plan.md).
+**Master roadmap:** [`farmer_ux_roadmap_40_plus.plan.md`](farmer_ux_roadmap_40_plus.plan.md) · [`phase_53_59_roadmap.plan.md`](phase_53_59_roadmap.plan.md). Closure rows **OC-42 … OC-59** track each phase WS8/WS7 — not pre-40 work. Vocabulary: [`farmer-vocabulary.md`](../farmer-vocabulary.md). Guardian specs: [42](phase_42_guardian_pr_spec.md) · [43](phase_43_guardian_pr_spec.md) · [44](phase_44_guardian_pr_spec.md) · [45](phase_45_guardian_pr_spec.md) · [46](phase_46_guardian_llm_tool_proposals.plan.md) · [55](phase_55_guardian_ops_grow_money.plan.md).
 
 ---
 

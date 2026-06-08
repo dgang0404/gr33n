@@ -40,6 +40,9 @@ isProject: false
 | 7 | [45](phase_45_farmer_validation_whole_app_polish.plan.md) | Sit-in + whole-app polish |
 | 8 | [46](phase_46_guardian_llm_tool_proposals.plan.md) | Guardian LLM tool proposals |
 | — | [48](phase_48_dev_seed_and_small_farm_profiles.plan.md) | Dev seed hygiene (parallel; before 45 sit-in) |
+| 9+ | [53→59 arc](phase_53_59_roadmap.plan.md) | Grow/stock/money, nav, Guardian ops, schema, Pi keys, runtime, enterprise doc |
+
+**Post-52 shipped:** [49](phase_49_sidebar_nav_polish.plan.md) · [50](phase_50_hardware_wiring_visibility.plan.md) · [51](phase_51_pi_config_sync.plan.md) · [52](phase_52_guardian_ui_context.plan.md) ✅
 
 ---
 
@@ -147,6 +150,7 @@ Every Tier **A** and **B** gap has a dedicated plan file. Tier **C** items are d
 | A | A3 | [phase_41_farm_hub_coherence.plan.md](phase_41_farm_hub_coherence.plan.md) |
 | A | A4 | [phase_39b_plain_irrigation.plan.md](phase_39b_plain_irrigation.plan.md) |
 | A | A5–A9 | [farmer_ux_roadmap_40_plus.plan.md](farmer_ux_roadmap_40_plus.plan.md) → phases 40–47 |
+| A | A10 | [phase_53_59_roadmap.plan.md](phase_53_59_roadmap.plan.md) → phases 53–59 (grow/stock/money closure arc) |
 | B | B1 | [product_backlog_operator_runtime.plan.md](product_backlog_operator_runtime.plan.md#b1--program-run-now) |
 | B | B2 | [product_backlog_operator_runtime.plan.md](product_backlog_operator_runtime.plan.md#b2--deprecate-programsmetadatasteps) |
 | B | B3 | [product_backlog_operator_runtime.plan.md](product_backlog_operator_runtime.plan.md#b3--guardian-create_lighting_program-propose) |
@@ -163,6 +167,7 @@ Every Tier **A** and **B** gap has a dedicated plan file. Tier **C** items are d
 - Closed-loop EC dosing with inline sensor (39 v2 note)
 - CO₂ / weather API / Modbus peristaltic vendors
 - LM Studio insert-sharing scaffolds (README roadmap item, separate product line)
+- **Enterprise tier** (POs, METRC, multi-entity GL) — see [Phase 59](phase_59_enterprise_tier_boundary.plan.md) boundary doc when published
 
 ---
 
@@ -181,7 +186,8 @@ Every Tier **A** and **B** gap has a dedicated plan file. Tier **C** items are d
 
 | Doc | Use |
 |-----|-----|
-| [phase_35_37_operational_closure.plan.md](phase_35_37_operational_closure.plan.md) | OC-39, OC-40, future OC-41 |
+| [phase_35_37_operational_closure.plan.md](phase_35_37_operational_closure.plan.md) | OC-39 … OC-59 |
+| [phase_53_59_roadmap.plan.md](phase_53_59_roadmap.plan.md) | Post-52 farmer closure hub |
 | [phase-14-operator-documentation.md](../phase-14-operator-documentation.md) | Operator index |
 | [sit-in-operator-experience.md](../workstreams/sit-in-operator-experience.md) | Why-empty → 41 WS4 |
 | [operator-tour.md](../operator-tour.md) | §4 conceptual; §4b after 40 |

@@ -1,0 +1,82 @@
+---
+name: Phase 58 — Task consumptions & operator runtime
+overview: >
+  Make stock drawdown visible when tasks complete — consumptions API exists but
+  farmer UI is thin. Plus operator-runtime backlog: offline queue hints, task
+  templates for refill/mix, and dashboard "what needs doing" coherence.
+todos:
+  - id: ws1-consumption-ui
+    content: "WS1: Task complete sheet — optional batch + qty drawdown; Supplies history line"
+    status: pending
+  - id: ws2-refill-templates
+    content: "WS2: Task templates — Refill input, Log mix, Check sensor (from low-stock / alerts)"
+    status: pending
+  - id: ws3-runtime-hints
+    content: "WS3: Offline actuator queue copy; task due chips on zone strip"
+    status: pending
+  - id: ws4-docs-tests
+    content: "WS4: operator-tour § consumptions; phase-58-closure; OC-58"
+    status: pending
+isProject: false
+---
+
+# Phase 58 — Task consumptions & operator runtime
+
+## Status
+
+**Planned.** Parallel with [Phase 55](phase_55_guardian_ops_grow_money.plan.md) after [Phase 53](phase_53_grow_stock_money_closure.plan.md) WS2.
+
+---
+
+## The one job
+
+> **Finish a task and stock updates — or see why it didn't — without opening Advanced.**
+
+---
+
+## WS1 — Consumption UI
+
+| Surface | Behavior |
+|---------|----------|
+| Task complete dialog | Optional: pick NF batch, qty, unit → POST consumption |
+| Task detail | List consumptions linked to task |
+| Supplies batch card | "Used by tasks" footnote with links |
+| Validation | Block qty > on-hand with plain message |
+
+Reuse existing store actions if present; else add `recordTaskConsumption`.
+
+---
+
+## WS2 — Task templates
+
+| Trigger | Template |
+|---------|----------|
+| Low-stock banner (53) | Refill {input} — pre-fill description |
+| Alert: sensor offline | Check {sensor} wiring |
+| Feed schedule miss | Review feeding plan |
+
+`POST /tasks` with `template_id` or metadata blob.
+
+---
+
+## WS3 — Runtime hints
+
+- Zone strip: overdue task chip → `/tasks?zone=`
+- Actuator offline: "Commands queue when back" (if true) or link Pi setup
+- Dashboard: merge open tasks + low-stock into one "Do next" strip (read-only aggregate)
+
+---
+
+## WS4 — Docs, tests, OC-58
+
+- operator-tour consumptions paragraph
+- Vitest: complete task with consumption mocks API
+- Guardian starter: "What did we use on last mix task?" (read — Phase 55 backlog if no tool)
+
+---
+
+## Definition of done
+
+- [ ] Complete refill task reduces batch qty in UI
+- [ ] Templates create tasks from low-stock CTA
+- [ ] OC-58 closed

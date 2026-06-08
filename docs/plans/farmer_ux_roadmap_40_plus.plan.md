@@ -41,9 +41,9 @@ isProject: false
 
 | Status | Phases |
 |--------|--------|
-| **Shipped** | 40–47, 46 (farmer UX arc + Guardian LLM proposals) |
-| **Next feature code** | **[48](phase_48_dev_seed_and_small_farm_profiles.plan.md)** — dev seed hygiene |
-| **Parallel infra** | Same — optional alongside feature work |
+| **Shipped** | 40–48 (farmer UX arc + Guardian LLM + dev seed) · **49–52** (sidebar, hardware, Pi sync, Guardian UI context) |
+| **Next feature code** | **[53→59 arc](phase_53_59_roadmap.plan.md)** — grow/stock/money closure, connection nav, Guardian ops, schema, Pi keys, runtime, enterprise boundary |
+| **Hub doc** | [`phase_53_59_roadmap.plan.md`](phase_53_59_roadmap.plan.md) — ship order, OC rows, Guardian slices |
 
 ---
 
@@ -218,6 +218,26 @@ Not farmer-facing UI. Run **in parallel** with 43–46; **complete before Phase 
 
 Plan: [phase_48_dev_seed_and_small_farm_profiles.plan.md](phase_48_dev_seed_and_small_farm_profiles.plan.md) · Closure: **OC-48**
 
+### Post–48 closure arc (49–59)
+
+Hardware, Pi platform sync, and farmer job completion — each phase is shippable alone.
+
+| Phase | Name | One job | Plan |
+|-------|------|---------|------|
+| **49** ✅ | Sidebar nav polish | Fertigation rename, related-route hover | [phase_49](phase_49_sidebar_nav_polish.plan.md) |
+| **50** ✅ | Hardware wiring visibility | Wiring badges, pi-config generator | [phase_50](phase_50_hardware_wiring_visibility.plan.md) |
+| **51** ✅ | Pi config platform sync | Live reload, staleness, import script | [phase_51](phase_51_pi_config_sync.plan.md) |
+| **52** ✅ | Guardian UI context | Nav history, Pi setup guide, wiggles | [phase_52](phase_52_guardian_ui_context.plan.md) |
+| **53** | Grow + stock + money | Start grow, restock, tag receipt — UI only | [phase_53](phase_53_grow_stock_money_closure.plan.md) |
+| **54** | Zone connection nav | Interactive pipeline + orphan link wiggles | [phase_54](phase_54_zone_connection_nav.plan.md) |
+| **55** | Guardian ops intelligence | Read tools + starters on ops hubs | [phase_55](phase_55_guardian_ops_grow_money.plan.md) |
+| **56** | Grow schema + analytics | `plant_id` FK, compare, net harvest | [phase_56](phase_56_grow_schema_harvest_analytics.plan.md) |
+| **57** | Per-device Pi API keys | Revoke one Pi without killing the farm | [phase_57](phase_57_pi_device_api_keys.plan.md) |
+| **58** | Task consumptions + runtime | Drawdown on task complete, templates | [phase_58](phase_58_task_consumptions_runtime.plan.md) |
+| **59** | Enterprise tier boundary | Doc-only — no accidental ERP | [phase_59](phase_59_enterprise_tier_boundary.plan.md) |
+
+**Recommended order:** 53 (WS2→3→1) → 54 ∥ 55 → 56 → 57 when multi-Pi · 58 after 53 WS2 · 59 anytime.
+
 ---
 
 ## Related
@@ -225,7 +245,8 @@ Plan: [phase_48_dev_seed_and_small_farm_profiles.plan.md](phase_48_dev_seed_and_
 | Doc | Use |
 |-----|-----|
 | [pre_development_gaps_index.plan.md](pre_development_gaps_index.plan.md) | Gap IDs → phase links (update Tier A to A2–A6) |
-| [phase_35_37_operational_closure.plan.md](phase_35_37_operational_closure.plan.md) | OC-40 … OC-48 trackers |
+| [phase_35_37_operational_closure.plan.md](phase_35_37_operational_closure.plan.md) | OC-40 … OC-59 trackers |
+| [phase_53_59_roadmap.plan.md](phase_53_59_roadmap.plan.md) | Post-52 farmer closure hub |
 | [sit-in-operator-experience.md](../workstreams/sit-in-operator-experience.md) | Feeds 45 |
 | [phase_15_farm_onboarding.plan.md](phase_15_farm_onboarding.plan.md) | Bootstrap API — 44 surfaces it |
 | [phase_20_6_stage_scoped_setpoints.plan.md](phase_20_6_stage_scoped_setpoints.plan.md) | Underlying setpoint model — 42 reframes UI |
@@ -234,4 +255,4 @@ Plan: [phase_48_dev_seed_and_small_farm_profiles.plan.md](phase_48_dev_seed_and_
 
 ## Using this in a new chat
 
-> Read `docs/plans/farmer_ux_roadmap_40_plus.plan.md` and `docs/farmer-vocabulary.md` first. Implement only the phase named in the prompt (40–47). Do not add schema unless the phase plan explicitly allows it. Prefer farmer job language over table names.
+> Read `docs/plans/farmer_ux_roadmap_40_plus.plan.md`, [`phase_53_59_roadmap.plan.md`](phase_53_59_roadmap.plan.md), and `docs/farmer-vocabulary.md` first. Implement only the phase named in the prompt (40–59). Do not add schema unless the phase plan explicitly allows it. Prefer farmer job language over table names.
