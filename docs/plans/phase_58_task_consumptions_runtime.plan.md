@@ -75,6 +75,10 @@ Reuse existing store actions if present; else add `recordTaskConsumption`.
 
 ---
 
+**Enterprise boundary:** No PO receiving or WMS pick paths — batch drawdown only; see [Phase 59](../enterprise-tier-boundary.md).
+
+---
+
 ## Definition of done
 
 - [x] Complete refill task reduces batch qty in UI

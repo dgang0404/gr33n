@@ -23,10 +23,10 @@ todos:
     status: completed
   - id: phase-58
     content: "Phase 58 — Task consumptions & operator runtime"
-    status: pending
+    status: completed
   - id: phase-59
     content: "Phase 59 — Enterprise tier boundary (doc-only gate)"
-    status: pending
+    status: completed
 isProject: false
 ---
 
@@ -36,11 +36,11 @@ isProject: false
 
 | Status | Phases |
 |--------|--------|
-| **Shipped** | 40–57 (farmer UX arc through per-device Pi API keys) |
-| **Planned next** | **58** (task consumptions) or **64** (crop knowledge base) |
+| **Shipped** | 40–59 (farmer closure arc complete — consumptions + enterprise boundary doc) |
+| **Planned next** | Guardian arc **60–67** (see below); crop KB **64** shipped |
 | **Schema / security** | **57** ✅ shipped |
-| **Runtime polish** | **58** parallel with 55–56 |
-| **Explicit deferrals** | **59** doc-only — no accidental ERP creep |
+| **Runtime polish** | **58** ✅ task consumptions |
+| **Explicit deferrals** | **59** ✅ [enterprise-tier-boundary.md](../enterprise-tier-boundary.md) |
 
 ---
 
@@ -55,8 +55,8 @@ isProject: false
 | **55** ✅ | Guardian knows grow, stock, money — starters + read tools | Read tools only | [phase_55](phase_55_guardian_ops_grow_money.plan.md) |
 | **56** ✅ | Plants ↔ cycles linked; post-harvest compare in one flow | Small migration | [phase_56](phase_56_grow_schema_harvest_analytics.plan.md) |
 | **57** ✅ | Each Pi has its own API key | Yes | [phase_57](phase_57_pi_device_api_keys.plan.md) |
-| **58** | Task drawdown + consumptions visible | No (API exists) | [phase_58](phase_58_task_consumptions_runtime.plan.md) |
-| **59** | Say no to POs/METRC until we mean it | Doc only | [phase_59](phase_59_enterprise_tier_boundary.plan.md) |
+| **58** ✅ | Task drawdown + consumptions visible | No (API exists) | [phase_58](phase_58_task_consumptions_runtime.plan.md) |
+| **59** ✅ | Say no to POs/METRC until we mean it | Doc only | [phase_59](phase_59_enterprise_tier_boundary.plan.md) · [boundary doc](../enterprise-tier-boundary.md) |
 
 **Shipped post-57 extensions (folded into existing phases — no new phase number):**
 - **Actuator wiring editor** + `PATCH /actuators/{id}/assign` → [Phase 50](phase_50_hardware_wiring_visibility.plan.md) (Controls → Edit wiring; HAT channel vs direct GPIO)
@@ -167,8 +167,8 @@ flowchart TB
 | OC-55 | 55 Guardian ops | ✅ Shipped |
 | OC-56 | 56 grow schema | Migration + smokes |
 | OC-57 | 57 device keys | Security smokes + pi guide |
-| OC-58 | 58 consumptions | Vitest + operator-tour |
-| OC-59 | 59 enterprise doc | README + gaps index updated |
+| OC-58 | 58 consumptions | ✅ Shipped |
+| OC-59 | 59 enterprise doc | ✅ Shipped — [enterprise-tier-boundary.md](../enterprise-tier-boundary.md) |
 | OC-60 | 60 morning walkthrough | walk_farm tool + closure test |
 | OC-61 | 61 nudges | Dot badge + dismiss + operator-tour |
 | OC-62 | 62 grow advisor | VPD/EC starters (from 64) + post-harvest + closure test |

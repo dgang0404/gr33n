@@ -167,7 +167,7 @@ Every Tier **A** and **B** gap has a dedicated plan file. Tier **C** items are d
 - Closed-loop EC dosing with inline sensor (39 v2 note)
 - CO₂ / weather API / Modbus peristaltic vendors
 - LM Studio insert-sharing scaffolds (README roadmap item, separate product line)
-- **Enterprise tier** (POs, METRC, multi-entity GL) — see [Phase 59](phase_59_enterprise_tier_boundary.plan.md) boundary doc when published
+- **Enterprise tier** (POs, METRC, multi-entity GL) — see [enterprise-tier-boundary.md](../enterprise-tier-boundary.md) (Phase 59 ✅)
 
 ---
 

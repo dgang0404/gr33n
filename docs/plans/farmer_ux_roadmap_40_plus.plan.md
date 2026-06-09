@@ -234,7 +234,7 @@ Hardware, Pi platform sync, and farmer job completion — each phase is shippabl
 | **56** | Grow schema + analytics | `plant_id` FK, compare, net harvest | [phase_56](phase_56_grow_schema_harvest_analytics.plan.md) |
 | **57** | Per-device Pi API keys | Revoke one Pi without killing the farm | [phase_57](phase_57_pi_device_api_keys.plan.md) |
 | **58** | Task consumptions + runtime | Drawdown on task complete, templates | [phase_58](phase_58_task_consumptions_runtime.plan.md) |
-| **59** | Enterprise tier boundary | Doc-only — no accidental ERP | [phase_59](phase_59_enterprise_tier_boundary.plan.md) |
+| **59** ✅ | Enterprise tier boundary | Doc-only — no accidental ERP | [phase_59](phase_59_enterprise_tier_boundary.plan.md) · [boundary](../enterprise-tier-boundary.md) |
 
 **Recommended order:** ~~53–55~~ ✅ → **56** → 57 when multi-Pi · 58 after 53 WS2 · 59 anytime.
 

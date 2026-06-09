@@ -64,6 +64,15 @@ gr33n offers a different default:
 - **Modular** — enable only the domains you need (crops, natural farming, animals, aquaponics, …).
 - **Built for people who touch soil** — operators, tinkerers, and off-grid installs welcome.
 
+### Product tiers
+
+| Tier | What you get | Doc |
+|------|----------------|-----|
+| **Farmer** (default on `main`) | Single-farm grow, supplies batches, receipts, tasks, Pi edge, Guardian read tools | [operator tour](docs/operator-tour.md) |
+| **Enterprise** (future — not shipping) | POs, METRC/traceability, multi-entity GL, WMS — explicitly **out of scope** for farmer UX | [enterprise-tier-boundary.md](docs/enterprise-tier-boundary.md) |
+
+Phases 53–58 close the farmer loop; Phase 59 publishes the boundary so we do not accidentally creep into ERP features. Accountant handoff today: cost **CSV export** only — not a full general ledger.
+
 ### 🔌 What Does "Don't Call Home" Mean?
 
 gr33n will never require a permanent internet connection, forced login, or hidden check-in with third-party servers. Whether you're on an island, a mountaintop, or a mesh-netted greenhouse, gr33n works where you live, without compromise.

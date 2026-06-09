@@ -94,6 +94,10 @@ Sidebar self-hover continues to ripple related routes.
 
 ---
 
+**Enterprise boundary:** No multi-site rollup or WMS links — [Phase 59](../enterprise-tier-boundary.md).
+
+---
+
 ## Definition of done
 
 - [x] Zone Water/Climate/Overview shows interactive pipeline

@@ -104,7 +104,7 @@ todos:
     status: completed
   - id: oc-59-closure
     content: "OC-59: Phase 59 WS4 — enterprise-tier-boundary.md, copy audit, index links"
-    status: pending
+    status: completed
   - id: oc-60-closure
     content: "OC-60: Phase 60 WS5 — morning walkthrough, walk_farm tool, operator-tour §6i, phase-60-closure.test.js"
     status: completed
@@ -562,7 +562,7 @@ Hub: [`phase_53_59_roadmap.plan.md`](phase_53_59_roadmap.plan.md). Close **OC-58
 | ~~56 Grow schema~~ | ~~OC-56~~ | [phase_56](phase_56_grow_schema_harvest_analytics.plan.md) | ✅ Shipped |
 | ~~57 Device API keys~~ | ~~OC-57~~ | [phase_57](phase_57_pi_device_api_keys.plan.md) | ✅ Shipped |
 | ~~58 Task consumptions~~ | ~~OC-58~~ | [phase_58](phase_58_task_consumptions_runtime.plan.md) | ✅ Shipped |
-| 59 Enterprise boundary | OC-59 | [phase_59](phase_59_enterprise_tier_boundary.plan.md) | `enterprise-tier-boundary.md` |
+| ~~59 Enterprise boundary~~ | ~~OC-59~~ | [phase_59](phase_59_enterprise_tier_boundary.plan.md) | ✅ Shipped |
 | ~~60 Morning walkthrough~~ | ~~OC-60~~ | [phase_60](phase_60_guardian_morning_walkthrough.plan.md) | ✅ Shipped |
 | ~~61 Proactive nudges~~ | ~~OC-61~~ | [phase_61](phase_61_guardian_proactive_nudges.plan.md) | ✅ Shipped |
 | ~~62 Grow advisor~~ | ~~OC-62~~ | [phase_62](phase_62_guardian_grow_advisor.plan.md) | ✅ Shipped |

@@ -84,6 +84,10 @@ device_api_keys (
 
 ---
 
+**Enterprise boundary:** Org-level key management / multi-farm admin deferred — [Phase 59](../enterprise-tier-boundary.md).
+
+---
+
 ## Definition of done
 
 - [x] New Pi provisioned with per-device key only

@@ -7,16 +7,16 @@ overview: >
 todos:
   - id: ws1-boundary-doc
     content: "WS1: docs/enterprise-tier-boundary.md — in/out table, API stubs, METRC note"
-    status: pending
+    status: completed
   - id: ws2-readme-gaps
     content: "WS2: README + pre_development_gaps_index + phase_53_59_roadmap pointers"
-    status: pending
+    status: completed
   - id: ws3-ui-copy-audit
     content: "WS3: Ban ERP jargon in farmer surfaces — grep pass checklist in closure test"
-    status: pending
+    status: completed
   - id: ws4-oc-59
     content: "WS4: OC-59 in operational closure; phase-59-closure.test.js"
-    status: pending
+    status: completed
 isProject: false
 ---
 
@@ -24,7 +24,7 @@ isProject: false
 
 ## Status
 
-**Planned.** Can ship anytime — **no feature code required** for v1.
+**Shipped.** `docs/enterprise-tier-boundary.md` published; README Product tiers; farmer copy audit; OC-59 closed.
 
 ---
 
@@ -91,6 +91,6 @@ Replace with farmer language or hide behind Advanced flag.
 
 ## Definition of done
 
-- [ ] enterprise-tier-boundary.md on main
-- [ ] README points to it
-- [ ] OC-59 closed
+- [x] enterprise-tier-boundary.md on main
+- [x] README points to it
+- [x] OC-59 closed

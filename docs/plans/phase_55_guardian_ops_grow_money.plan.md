@@ -87,7 +87,8 @@ Create `phase_55_guardian_pr_spec.md`:
 
 - **No new Confirm tools** in v1 (restock/receipt stay UI)
 - Matchers for "restock", "log receipt", "harvest" → point to UI wizards
-- Banned: "Inventory module", "cost_transactions table"
+- Banned: "Inventory module", "cost_transactions table", purchase orders, METRC, general ledger
+- Enterprise deferral: [Phase 59](../enterprise-tier-boundary.md)
 - Impact preview templates for any future Phase 46 proposals
 
 ---

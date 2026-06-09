@@ -142,3 +142,4 @@ No new Confirm tools — starters send chat; matchers optional in Phase 55.
 | Interactive sensor→target→pump pipeline | [54](phase_54_zone_connection_nav.plan.md) |
 | Guardian read-tool depth + persona | [55](phase_55_guardian_ops_grow_money.plan.md) |
 | Per-device API keys | [57](phase_57_pi_device_api_keys.plan.md) |
+| Enterprise ERP (POs, METRC, multi-entity GL) | [59](../enterprise-tier-boundary.md) |

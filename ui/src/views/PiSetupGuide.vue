@@ -632,7 +632,7 @@ const scaleTiers = [
   {
     name: 'Max per Pi',
     relays: 64,
-    desc: '8 × HATs stacked. Warehouse scale. Add a second Pi for redundancy or zone separation.',
+    desc: '8 × HATs stacked. Large multi-room install. Add a second Pi for redundancy or zone separation.',
     highlight: false,
   },
 ]
