@@ -1,9 +1,10 @@
 ---
 name: Pre-development gaps index (39–41 + backlog)
 overview: >
-  Master tracker for UX/runtime gaps identified after Phases 35–38 and before starting
-  Phase 39 development. Links every gap to a canonical plan or backlog section, priority,
-  dependencies, and documentation chunk status. Use this file to resume multi-session doc work.
+  ARCHIVED historical index — UX/runtime gaps identified after Phases 35–38 and before
+  Phase 39. All doc chunks (1–9) and Tier A/B gaps through Phase 67 are closed. Do not
+  use this as an active tracker. For new work see phase_68_73_spa_workspace_roadmap.plan.md.
+  Closure rollup through OC-67 is frozen in phase_35_37_operational_closure.plan.md.
 todos:
   - id: doc-chunk-1
     content: "Chunk 1 — Index + Phase 41 + Phase 39b + cross-links (README, phase-14, 39, 40, sit-in, closure)"
@@ -20,14 +21,28 @@ todos:
   - id: doc-chunk-5-guardian-pr
     content: "Chunk 5 — guardian-change-requests-guide.md + guardian_pr_ux_through_farmer_phases.plan.md (PR triggers, starters, industry patterns)"
     status: done
+  - id: doc-chunk-9-doc-hygiene
+    content: "Chunk 9 — Archive index; point closure doc + phase-14 at 68–73 arc and plan lifecycle rules"
+    status: done
 isProject: false
 ---
 
 # Pre-development gaps index
 
-**Purpose:** One place to see what is **shipped**, **in flight (39–40)**, and **still gap** before writing feature code. Prevents rediscovering the same disconnects (zone vs farm-wide pages, empty states, RO-only farms) mid-sprint.
+> ## ⛔ ARCHIVED — historical gap index (pre–Phase 40 context)
+>
+> **All Tier A/B gaps and doc chunks 1–9 are closed.** Phases 39–67 shipped. Do not treat
+> this file as an active tracker or block new work on stale rows (e.g. C4 seed tasks, C5
+> per-phase RAG gates).
+>
+> **Active planning:** [phase_68_73_spa_workspace_roadmap.plan.md](phase_68_73_spa_workspace_roadmap.plan.md)
+> (SPA workspace refactor). **Plan lifecycle rules** (shipped = conditions deprecated) live
+> there. **Closure rollup (OC-35 … OC-67 only):**
+> [phase_35_37_operational_closure.plan.md](phase_35_37_operational_closure.plan.md) — frozen.
 
-**Canonical development order:** [39](phase_39_edge_fertigation_execution.plan.md) ✅ → [39b](phase_39b_plain_irrigation.plan.md) ✅ → **[40 → 47 farmer UX arc](farmer_ux_roadmap_40_plus.plan.md)** (40 → 41 → **47** → 42 → 43 → 44 → 45 → 46). Tier **B** backlog ✅ on `main`.
+**Purpose (historical):** One place to see what was **shipped**, **in flight (39–40)**, and **still gap** before the farmer UX arc. Kept for audit trail only.
+
+**Canonical development order (historical → current):** [39](phase_39_edge_fertigation_execution.plan.md) ✅ → [39b](phase_39b_plain_irrigation.plan.md) ✅ → **[40 → 67 farmer + Guardian arcs](farmer_ux_roadmap_40_plus.plan.md)** ✅ → **[68 → 73 SPA workspace arc](phase_68_73_spa_workspace_roadmap.plan.md)** (planned). Tier **B** backlog ✅ on `main`.
 
 | Step | Phase | Focus |
 |------|-------|--------|
@@ -35,14 +50,16 @@ isProject: false
 | 2 | [41](phase_41_farm_hub_coherence.plan.md) | Farm hub + why-empty ✅ |
 | 3 | [47](phase_47_feeding_water_plain_language.plan.md) | Feeding & water plain language (room-first) ✅ |
 | 4 | [42](phase_42_comfort_targets_automation_plain_language.plan.md) | Comfort bands; schedules/rules plain language ✅ |
-| 5 | [43](phase_43_operations_stock_feeding_finance.plan.md) | Supplies, feeding admin, money ✅ (WS8 Guardian pending) |
-| 6 | [44](phase_44_getting_started_edge_wizard.plan.md) | Farm + Pi wizards |
-| 7 | [45](phase_45_farmer_validation_whole_app_polish.plan.md) | Sit-in + whole-app polish |
-| 8 | [46](phase_46_guardian_llm_tool_proposals.plan.md) | Guardian LLM tool proposals |
-| — | [48](phase_48_dev_seed_and_small_farm_profiles.plan.md) | Dev seed hygiene (parallel; before 45 sit-in) |
-| 9+ | [53→59 arc](phase_53_59_roadmap.plan.md) | Grow/stock/money, nav, Guardian ops, schema, Pi keys, runtime, enterprise doc |
+| 5 | [43](phase_43_operations_stock_feeding_finance.plan.md) | Supplies, feeding admin, money ✅ |
+| 6 | [44](phase_44_getting_started_edge_wizard.plan.md) | Farm + Pi wizards ✅ |
+| 7 | [45](phase_45_farmer_validation_whole_app_polish.plan.md) | Sit-in + whole-app polish ✅ |
+| 8 | [46](phase_46_guardian_llm_tool_proposals.plan.md) | Guardian LLM tool proposals ✅ |
+| — | [48](phase_48_dev_seed_and_small_farm_profiles.plan.md) | Dev seed hygiene ✅ |
+| 9+ | [53→59 arc](phase_53_59_roadmap.plan.md) | Grow/stock/money, nav, Guardian ops, schema, Pi keys ✅ |
+| 10+ | [60→67 arc](phase_53_59_roadmap.plan.md) | Guardian intelligence + knowledge + field assistant ✅ |
+| **Next** | [68→73 arc](phase_68_73_spa_workspace_roadmap.plan.md) | SPA workspace refactor (sidebar → workspaces) |
 
-**Post-52 shipped:** [49](phase_49_sidebar_nav_polish.plan.md) · [50](phase_50_hardware_wiring_visibility.plan.md) · [51](phase_51_pi_config_sync.plan.md) · [52](phase_52_guardian_ui_context.plan.md) ✅
+**Post-52 shipped:** [49](phase_49_sidebar_nav_polish.plan.md) · [50](phase_50_hardware_wiring_visibility.plan.md) · [51](phase_51_pi_config_sync.plan.md) · [52](phase_52_guardian_ui_context.plan.md) · … through **67** ✅
 
 ---
 
@@ -58,8 +75,9 @@ isProject: false
 | **6** | Guardian PR specs [42](phase_42_guardian_pr_spec.md)–[46](phase_46_guardian_llm_tool_proposals.plan.md) + [farmer-sit-in-protocol.md](../workstreams/farmer-sit-in-protocol.md) + operator-tour §5c–§9, §6e–§6h, arch §7.0h–§7.0l | ✅ |
 | **7** | [phase_47](phase_47_feeding_water_plain_language.plan.md) + [farmer-vocabulary.md](../farmer-vocabulary.md) + tour §7b + arch §7.0m | ✅ |
 | **8** | [phase_48](phase_48_dev_seed_and_small_farm_profiles.plan.md) + [local-operator-bootstrap.md](../local-operator-bootstrap.md) slow-dev section | ✅ |
+| **9** | Archive index + [phase-14](../phase-14-operator-documentation.md) → 68–73 arc; closure doc frozen at OC-67 | ✅ |
 
-**Documentation status:** Chunks 1–8 complete. Phases **39**, **39b**, **40–48**, and **product backlog** shipped on `main`. **Guardian/PR docs for phases 42–46** and **OC-43 … OC-48** closed.
+**Documentation status:** Chunks 1–9 complete. Phases **39–67** and **product backlog** shipped on `main`. **Next:** [68–73 SPA workspace arc](phase_68_73_spa_workspace_roadmap.plan.md).
 
 ---
 
@@ -126,15 +144,15 @@ Whole-file ingest: `operator-tour.md` and `workflow-guide.md` are already in `in
 
 ---
 
-## Tier C — Hygiene / closure (no new domain)
+## Tier C — Hygiene / closure (historical — all closed or superseded)
 
 | ID | Gap | Canonical link / action | Doc status |
 |----|-----|-------------------------|------------|
 | **C1** | README Guardian nav hotfix wording | [README.md](../../README.md) current-focus line | ✅ Chunk 1 |
-| **C2** | Project Roadmap through Phase 38 only | [README.md](../../README.md) roadmap + in-flight list | ✅ Chunk 1 |
-| **C3** | Closure doc stale Phase 36 snapshot | [phase_35_37_operational_closure.plan.md](phase_35_37_operational_closure.plan.md) | ✅ Chunk 1 |
-| **C4** | Demo **tasks** missing `zone_id` | [phase_40](phase_40_unified_farmer_ux_zone_cockpit.plan.md) WS6 · [phase_41](phase_41_farm_hub_coherence.plan.md) WS5 | ⏳ implement |
-| **C5** | RAG re-ingest after operator-doc edits | [OC-37E](phase_35_37_operational_closure.plan.md) · checklist above | ⏳ per phase ship |
+| **C2** | Project Roadmap through Phase 38 only | [README.md](../../README.md) roadmap + in-flight list | ✅ Chunk 1 (superseded by farmer_ux_roadmap) |
+| **C3** | Closure doc stale snapshots | [phase_35_37_operational_closure.plan.md](phase_35_37_operational_closure.plan.md) | ✅ **Archived** at OC-67 (Chunk 9) — do not extend |
+| **C4** | Demo **tasks** missing `zone_id` | [phase_40](phase_40_unified_farmer_ux_zone_cockpit.plan.md) WS6 · [phase_41](phase_41_farm_hub_coherence.plan.md) WS5 | ✅ shipped / historical |
+| **C5** | RAG re-ingest after operator-doc edits | Checklist below + OC-37E (historical) | ✅ ongoing ops habit, not a gate |
 | **C6** | Dev DB bloat / duplicate sensors from re-seed | [phase_48](phase_48_dev_seed_and_small_farm_profiles.plan.md) · [local-operator-bootstrap.md](../local-operator-bootstrap.md#slow-ui-and-dev-db-hygiene) | ✅ `dev-reset-farm.sh`, idempotent seed |
 
 ---
@@ -155,9 +173,9 @@ Every Tier **A** and **B** gap has a dedicated plan file. Tier **C** items are d
 | B | B2 | [product_backlog_operator_runtime.plan.md](product_backlog_operator_runtime.plan.md#b2--deprecate-programsmetadatasteps) |
 | B | B3 | [product_backlog_operator_runtime.plan.md](product_backlog_operator_runtime.plan.md#b3--guardian-create_lighting_program-propose) |
 | B | B4 | [product_backlog_operator_runtime.plan.md](product_backlog_operator_runtime.plan.md#b4--mobile-distribution-polish) · [mobile-distribution.md](../mobile-distribution.md) |
-| C | C1–C3 | README + [phase_35_37_operational_closure.plan.md](phase_35_37_operational_closure.plan.md) |
-| C | C4 | phase_40 WS6 + phase_41 WS5 |
-| C | C5 | RAG checklist (this doc) + OC-37E |
+| C | C1–C3 | README + archived [phase_35_37_operational_closure.plan.md](phase_35_37_operational_closure.plan.md) |
+| C | C4 | phase_40 WS6 + phase_41 WS5 (historical) |
+| C | C5 | RAG checklist (this doc) — ops habit |
 
 ---
 
@@ -186,8 +204,10 @@ Every Tier **A** and **B** gap has a dedicated plan file. Tier **C** items are d
 
 | Doc | Use |
 |-----|-----|
-| [phase_35_37_operational_closure.plan.md](phase_35_37_operational_closure.plan.md) | OC-39 … OC-59 |
-| [phase_53_59_roadmap.plan.md](phase_53_59_roadmap.plan.md) | Post-52 farmer closure hub |
-| [phase-14-operator-documentation.md](../phase-14-operator-documentation.md) | Operator index |
+| [phase_35_37_operational_closure.plan.md](phase_35_37_operational_closure.plan.md) | **Archived** OC-35 … OC-67 rollup — do not extend |
+| [phase_68_73_spa_workspace_roadmap.plan.md](phase_68_73_spa_workspace_roadmap.plan.md) | **Active** — SPA workspace arc + plan lifecycle rules |
+| [phase_53_59_roadmap.plan.md](phase_53_59_roadmap.plan.md) | Farmer + Guardian arcs 53–67 (shipped) |
+| [farmer_ux_roadmap_40_plus.plan.md](farmer_ux_roadmap_40_plus.plan.md) | Master farmer UX map 40–73 |
+| [phase-14-operator-documentation.md](../phase-14-operator-documentation.md) | Operator doc index |
 | [sit-in-operator-experience.md](../workstreams/sit-in-operator-experience.md) | Why-empty → 41 WS4 |
 | [operator-tour.md](../operator-tour.md) | §4 conceptual; §4b after 40 |

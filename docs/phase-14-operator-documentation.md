@@ -33,13 +33,12 @@ Cross-linked from Phase 14 because enterprise scale-out and MQTT edge patterns s
 
 **Multi-site / enterprise (hypothetical):** [`hypothetical-enterprise-topology.md`](hypothetical-enterprise-topology.md) — maps org/farm/zone onto warehouse-scale deployments without new core tables; links Phase 30 PR queue + Phase 31 field proof paths. **Planned:** Phase 33 WS5 [`site-manifest.yaml`](../scripts/enterprise/) bring-up stub.
 
-## Phase 33 & 32 — Guardian next (planned)
+## Phase 33 & 32 — Guardian grow setup (shipped)
 
 | Phase | Focus | Plan |
 |-------|--------|------|
-| **33 WS1** (optional first) | Read-tool hardening, persona/architecture doc parity | [`phase_33_guardian_polish_and_enterprise_ops.plan.md`](plans/phase_33_guardian_polish_and_enterprise_ops.plan.md) |
-| **32** | Grow-setup PR bundles + platform doc RAG | [`phase_32_guardian_grow_setup_prs.plan.md`](plans/phase_32_guardian_grow_setup_prs.plan.md) |
-| **33 (shipped)** | context_ref dedup, read-tool audit log, @hardware lane, site manifest | Same Phase 33 plan |
+| **32** ✅ | Grow-setup PR bundles + platform doc RAG | [`phase_32_guardian_grow_setup_prs.plan.md`](plans/phase_32_guardian_grow_setup_prs.plan.md) |
+| **33** ✅ | context_ref dedup, read-tool audit log, @hardware lane, site manifest | [`phase_33_guardian_polish_and_enterprise_ops.plan.md`](plans/phase_33_guardian_polish_and_enterprise_ops.plan.md) |
 
 ## Phases 34–39 — Guardian polish, grow environment, plant-needs UI, edge fertigation
 
@@ -53,11 +52,30 @@ Cross-linked from Phase 14 because enterprise scale-out and MQTT edge patterns s
 | **39** | **Edge fertigation** (**shipped**) — FIFO queue, `mix_batch`, Pi executor | [`phase_39_edge_fertigation_execution.plan.md`](plans/phase_39_edge_fertigation_execution.plan.md) |
 | **39b** | **Plain irrigation** (**shipped**) — RO/well programs without mix | [`phase_39b_plain_irrigation.plan.md`](plans/phase_39b_plain_irrigation.plan.md) |
 | **40** | **Zone cockpit** (**shipped**) — Today strip, comfort targets, zone alerts, grow story, Ask gr33n starters | [`phase_40_unified_farmer_ux_zone_cockpit.plan.md`](plans/phase_40_unified_farmer_ux_zone_cockpit.plan.md) · [operator-tour §4b](operator-tour.md#4b-zone-cockpit-walkthrough-phase-40) · [architecture §7.0f](farm-guardian-architecture.md#70f-zone-cockpit-phase-40) |
-| **41–47** | **Farmer UX arc** (continued) — farm hub → feeding & water → comfort → operations → setup → sit-in → Guardian LLM PRs | **[`farmer_ux_roadmap_40_plus.plan.md`](plans/farmer_ux_roadmap_40_plus.plan.md)** · [41](plans/phase_41_farm_hub_coherence.plan.md) · [47](plans/phase_47_feeding_water_plain_language.plan.md) · [42](plans/phase_42_comfort_targets_automation_plain_language.plan.md) · [43](plans/phase_43_operations_stock_feeding_finance.plan.md) · [44](plans/phase_44_getting_started_edge_wizard.plan.md) · [45](plans/phase_45_farmer_validation_whole_app_polish.plan.md) · [46](plans/phase_46_guardian_llm_tool_proposals.plan.md) · [`farmer-vocabulary.md`](farmer-vocabulary.md) |
+| **41–47** | **Farmer UX arc** (**shipped**) — farm hub → feeding & water → comfort → operations → setup → sit-in → Guardian LLM PRs | **[`farmer_ux_roadmap_40_plus.plan.md`](plans/farmer_ux_roadmap_40_plus.plan.md)** · [41](plans/phase_41_farm_hub_coherence.plan.md) · [47](plans/phase_47_feeding_water_plain_language.plan.md) · [42](plans/phase_42_comfort_targets_automation_plain_language.plan.md) · [43](plans/phase_43_operations_stock_feeding_finance.plan.md) · [44](plans/phase_44_getting_started_edge_wizard.plan.md) · [45](plans/phase_45_farmer_validation_whole_app_polish.plan.md) · [46](plans/phase_46_guardian_llm_tool_proposals.plan.md) · [`farmer-vocabulary.md`](farmer-vocabulary.md) |
 
-**Pre-dev gap index:** [`pre_development_gaps_index.plan.md`](plans/pre_development_gaps_index.plan.md) · **Product backlog:** [`product_backlog_operator_runtime.plan.md`](plans/product_backlog_operator_runtime.plan.md) (**shipped**)
+## Phases 48–67 — Farmer closure + Guardian arcs (shipped)
 
-Rollup: [`phase_35_37_operational_closure.plan.md`](plans/phase_35_37_operational_closure.plan.md) (spans **35–47** OC rows). After operator-doc edits, re-ingest Guardian RAG: **`make rag-ingest-platform-docs`** and **`make rag-ingest-field-guides`** (Phase 37 field corpus).
+Hub: [`phase_53_59_roadmap.plan.md`](plans/phase_53_59_roadmap.plan.md). Includes nav polish (49), Pi wiring + config sync (50–51), Guardian UI context (52), grow/stock/money closure (53–59), morning walkthrough + nudges + grow advisor + session memory (60–63), crop knowledge base (64), Pi diagnostics (65), weather/site (66), hands-free field assistant (67).
+
+**Historical closure rollup (OC-35 … OC-67):** [`phase_35_37_operational_closure.plan.md`](plans/phase_35_37_operational_closure.plan.md) — **archived, do not extend.** Shipped phases' "close when" conditions are deprecated per [plan lifecycle rules](plans/phase_68_73_spa_workspace_roadmap.plan.md#plan-lifecycle-rules-for-all-phase-plans).
+
+## Phases 68–73 — SPA workspace refactor (planned)
+
+Hub: [`phase_68_73_spa_workspace_roadmap.plan.md`](plans/phase_68_73_spa_workspace_roadmap.plan.md). Collapse the deep sidebar into full-page workspaces (zones, hardware/Pi GPIO board, feed & water, money, Guardian PR discoverability). Closure for 68+ lives in each phase plan + the arc hub OC table — not the Phase 35 closure doc.
+
+| Phase | Focus | Plan |
+|-------|--------|------|
+| **68** | Workspace shell — sidebar → workspaces, route redirects | [`phase_68_workspace_shell_spa_nav.plan.md`](plans/phase_68_workspace_shell_spa_nav.plan.md) |
+| **69** | Zone workspace — inline sensors/controls/lighting | [`phase_69_zone_workspace_hub.plan.md`](plans/phase_69_zone_workspace_hub.plan.md) |
+| **70** | Hardware / Pi GPIO live board | [`phase_70_hardware_pi_control_spa.plan.md`](plans/phase_70_hardware_pi_control_spa.plan.md) |
+| **71** | Feed & Water unification SPA | [`phase_71_feed_water_unification.plan.md`](plans/phase_71_feed_water_unification.plan.md) |
+| **72** | Money unification SPA | [`phase_72_money_unification.plan.md`](plans/phase_72_money_unification.plan.md) |
+| **73** | Guardian change-request discoverability | [`phase_73_guardian_pr_discoverability.plan.md`](plans/phase_73_guardian_pr_discoverability.plan.md) |
+
+**Pre-dev gap index (archived):** [`pre_development_gaps_index.plan.md`](plans/pre_development_gaps_index.plan.md) · **Product backlog:** [`product_backlog_operator_runtime.plan.md`](plans/product_backlog_operator_runtime.plan.md) (**shipped**)
+
+After operator-doc edits, re-ingest Guardian RAG: **`make rag-ingest-platform-docs`** and **`make rag-ingest-field-guides`** (Phase 37 field corpus).
 
 ## Quick links
 
@@ -92,13 +110,14 @@ Rollup: [`phase_35_37_operational_closure.plan.md`](plans/phase_35_37_operationa
 | Farmer UX roadmap 40–47 | [`plans/farmer_ux_roadmap_40_plus.plan.md`](plans/farmer_ux_roadmap_40_plus.plan.md) — full site vision + phase order |
 | Phase 40–47 plans | 40 cockpit · 41 hub · **47 feed/water** · 42 comfort · 43 ops · 44 setup · 45 sit-in · 46 LLM PRs |
 | Farmer vocabulary | [`farmer-vocabulary.md`](farmer-vocabulary.md) — grow-path language contract |
-| Pre-development gaps index | [`plans/pre_development_gaps_index.plan.md`](plans/pre_development_gaps_index.plan.md) |
+| Pre-development gaps index (archived) | [`plans/pre_development_gaps_index.plan.md`](plans/pre_development_gaps_index.plan.md) |
 | Product backlog (run now, mobile, …) | [`plans/product_backlog_operator_runtime.plan.md`](plans/product_backlog_operator_runtime.plan.md) — shipped |
-| Phase 35–47 operational closure | [`plans/phase_35_37_operational_closure.plan.md`](plans/phase_35_37_operational_closure.plan.md) — OC-40…47 close with each phase WS8 |
+| Operational closure (archived OC-35 … OC-67) | [`plans/phase_35_37_operational_closure.plan.md`](plans/phase_35_37_operational_closure.plan.md) — frozen; do not extend |
+| SPA workspace arc 68–73 (planned) | [`plans/phase_68_73_spa_workspace_roadmap.plan.md`](plans/phase_68_73_spa_workspace_roadmap.plan.md) |
 | Phase 37 — Guardian offline field assistant (plan) | [`plans/phase_37_guardian_offline_field_assistant.plan.md`](plans/phase_37_guardian_offline_field_assistant.plan.md) — Pi wiring / plumbing walkthroughs, trades corpus, safety gating, offline |
 | Pi pending_command + pulse | [`pi-integration-guide.md`](pi-integration-guide.md) §1.1 |
 | Workflow — single slot + manual mix | [`workflow-guide.md`](workflow-guide.md) |
 
 ## Using this in a new chat
 
-Reference `@docs/phase-14-operator-documentation.md` for Phase 14 deliverables and the **[Phase 31 field validation index](phase-14-operator-documentation.md#phase-31-field-validation-edge)**. For **grow-environment + Guardian doc alignment**, see **[Phases 34–39](#phases-34-39--guardian-polish-grow-environment-plant-needs-ui-edge-fertigation)** (lighting → greenhouse → plant-needs UI → edge mix queue). For **first-time local setup**, use **[`local-operator-bootstrap.md`](local-operator-bootstrap.md)** (`make bootstrap-local`).
+Reference `@docs/phase-14-operator-documentation.md` for Phase 14 deliverables and the **[Phase 31 field validation index](phase-14-operator-documentation.md#phase-31-field-validation-edge)**. For **grow-environment + Guardian doc alignment**, see **[Phases 34–39](#phases-34-39--guardian-polish-grow-environment-plant-needs-ui-edge-fertigation)**. For **current UI work**, start **[Phases 68–73](#phases-6873--spa-workspace-refactor-planned)**. For **first-time local setup**, use **[`local-operator-bootstrap.md`](local-operator-bootstrap.md)** (`make bootstrap-local`).
