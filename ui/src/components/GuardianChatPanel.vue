@@ -202,34 +202,65 @@
           layout === 'compact' ? 'p-3' : 'p-5 space-y-4',
         ]"
       >
+        <p
+          v-if="capabilities.visionChatEnabled && useFarmContext && !transcript.length && !streaming"
+          class="text-xs text-zinc-500"
+          data-test="chat-field-empty-hint"
+        >
+          Snap a leaf photo — pick the room it came from, then ask Guardian.
+        </p>
         <div
-          v-if="useFarmContext && farmContext.farmId && capabilities.visionChatEnabled && zoneContextId"
+          v-if="useFarmContext && farmContext.farmId && capabilities.visionChatEnabled"
           class="rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 space-y-2"
           data-test="chat-vision-attach"
         >
-          <div class="flex items-center justify-between gap-2">
-            <p class="text-xs text-zinc-400">Zone photos (vision)</p>
-            <label class="text-[10px] text-green-600 hover:text-green-400 cursor-pointer">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <p class="text-xs text-zinc-400">Field photos (vision)</p>
+            <label
+              class="text-xs px-2 py-1 rounded border border-zinc-700 text-green-400 hover:bg-zinc-900 cursor-pointer"
+              :class="layout === 'compact' ? 'min-h-[2.5rem] inline-flex items-center' : ''"
+              data-test="chat-camera-button"
+            >
               <input
+                ref="cameraInputRef"
                 type="file"
                 accept="image/jpeg,image/png,image/webp"
+                capture="environment"
                 class="hidden"
-                :disabled="photoUploading || streaming"
+                :disabled="photoUploading || streaming || !effectivePhotoZoneId"
                 @change="onChatPhotoSelected"
               />
-              {{ photoUploading ? 'Uploading…' : '+ Upload' }}
+              {{ photoUploading ? '…' : '📷 Camera' }}
             </label>
           </div>
-          <p v-if="!zonePhotos.length" class="text-[10px] text-zinc-600">
-            Attach reference photos from this zone, or upload one, then ask about leaves or layout.
+          <div v-if="!zoneContextId && farmStore.zones?.length" class="flex flex-col gap-1">
+            <label class="text-[10px] text-zinc-500" for="chat-photo-zone">Which room is this photo from?</label>
+            <select
+              id="chat-photo-zone"
+              v-model="photoZonePick"
+              class="bg-zinc-900 border border-zinc-700 rounded-lg px-2 py-1.5 text-xs text-zinc-200"
+              data-test="chat-photo-zone-picker"
+            >
+              <option value="">— Select zone —</option>
+              <option v-for="z in farmStore.zones" :key="z.id" :value="String(z.id)">{{ z.name }}</option>
+            </select>
+          </div>
+          <p v-else-if="!effectivePhotoZoneId" class="text-[10px] text-amber-300/80">
+            Open Guardian from a zone page, or pick a room above, to attach photos.
           </p>
-          <div v-else class="flex flex-wrap gap-2">
+          <p v-if="effectivePhotoZoneId && !zonePhotos.length" class="text-[10px] text-zinc-600">
+            Upload a walkthrough or leaf photo, then ask about deficiency, canopy, or layout.
+          </p>
+          <div v-if="zonePhotos.length" class="flex flex-wrap gap-2">
             <button
               v-for="p in zonePhotos"
               :key="p.id"
               type="button"
-              class="relative w-14 h-14 rounded border overflow-hidden transition-colors"
-              :class="isAttachmentSelected(p.id) ? 'border-green-600 ring-1 ring-green-700' : 'border-zinc-700 hover:border-zinc-500'"
+              class="relative rounded border overflow-hidden transition-colors"
+              :class="[
+                layout === 'compact' ? 'w-16 h-16' : 'w-14 h-14',
+                isAttachmentSelected(p.id) ? 'border-green-600 ring-1 ring-green-700' : 'border-zinc-700 hover:border-zinc-500',
+              ]"
               :title="p.file_name"
               @click="toggleAttachment(p.id)"
             >
@@ -275,7 +306,14 @@
             @keydown.enter.exact.prevent="send"
           />
         </div>
-        <div class="flex flex-wrap items-center gap-3">
+        <p v-if="micListening" class="text-xs text-amber-300/90 animate-pulse" data-test="chat-mic-listening">
+          Listening… release to stop
+        </p>
+        <div
+          class="flex flex-wrap items-center gap-3"
+          :class="layout === 'compact' ? 'gap-2' : ''"
+          data-test="chat-field-actions"
+        >
           <label class="flex items-center gap-2 text-zinc-300 text-sm">
             <input v-model="useFarmContext" type="checkbox" class="rounded bg-zinc-800 border-zinc-700" data-test="chat-use-farm-context" />
             Use farm context
@@ -284,10 +322,30 @@
             Select a farm in the sidebar first to ground answers.
           </span>
           <button
+            v-if="micSupported"
+            type="button"
+            data-test="chat-mic-button"
+            :disabled="streaming"
+            class="px-3 py-2 rounded-lg border text-sm font-medium shrink-0"
+            :class="[
+              layout === 'compact' ? 'min-h-[2.75rem] min-w-[2.75rem]' : '',
+              micListening ? 'border-amber-600 bg-amber-950/50 text-amber-200' : 'border-zinc-700 bg-zinc-950 text-zinc-200 hover:border-zinc-500',
+            ]"
+            :title="micSupported ? 'Hold to talk (push-to-talk)' : 'Speech recognition not supported in this browser'"
+            @mousedown="startMic"
+            @mouseup="stopMic"
+            @mouseleave="stopMic"
+            @touchstart.prevent="startMic"
+            @touchend.prevent="stopMic"
+          >
+            🎤
+          </button>
+          <button
             type="button"
             data-test="chat-send-button"
             :disabled="streaming || !message.trim() || (useFarmContext && !farmContext.farmId)"
             class="ml-auto px-4 py-2 rounded-lg bg-green-900/50 text-green-400 border border-green-800 hover:bg-green-900/70 disabled:opacity-40 text-sm font-medium"
+            :class="layout === 'compact' ? 'min-h-[2.75rem]' : ''"
             @click="send"
           >
             {{ streaming ? 'Streaming…' : 'Send' }}
@@ -438,6 +496,13 @@ import { useGuardianChatStore } from '../stores/guardianChat'
 import { useGuardianPanelStore } from '../stores/guardianPanel'
 import { useGuardianProposalsStore } from '../stores/guardianProposals'
 import { useCapabilitiesStore } from '../stores/capabilities'
+import { loadGuardianFieldPrefs } from '../lib/guardianFieldPrefs.js'
+import {
+  createPushToTalkRecognizer,
+  speechRecognitionSupported,
+  speakText,
+  stopSpeaking,
+} from '../lib/guardianFieldVoice.js'
 const props = defineProps({
   /** `full` — sidebar session list (page). `compact` — dropdown (drawer). */
   layout: {
@@ -463,7 +528,13 @@ const zoneContextId = computed(() => {
   if (!ref || ref.type !== 'zone' || !ref.id) return null
   return Number(ref.id)
 })
+const photoZonePick = ref('')
+const effectivePhotoZoneId = computed(() => zoneContextId.value || (photoZonePick.value ? Number(photoZonePick.value) : null))
 const zonePhotos = ref([])
+const cameraInputRef = ref(null)
+const micListening = ref(false)
+const micSupported = speechRecognitionSupported()
+let micRecognizer = null
 const photoThumbUrls = ref({})
 const photoUploading = ref(false)
 const selectedAttachmentIds = ref([])
@@ -537,7 +608,7 @@ watch(
   },
 )
 
-watch(zoneContextId, () => {
+watch(effectivePhotoZoneId, () => {
   selectedAttachmentIds.value = []
   void loadZonePhotosForChat()
 })
@@ -844,10 +915,47 @@ function revokeChatPhotoThumbs() {
   photoThumbUrls.value = {}
 }
 
+function resolveChatContextRef(attachedIds) {
+  let contextRef = guardianPanel.chatContextRef()
+  const zid = effectivePhotoZoneId.value
+  if (attachedIds?.length && zid && (!contextRef || contextRef.type !== 'zone')) {
+    const zone = (farmStore.zones || []).find((z) => Number(z.id) === Number(zid))
+    contextRef = { type: 'zone', id: Number(zid), name: zone?.name || `Zone ${zid}` }
+  }
+  return contextRef
+}
+
+function maybeReadAloud(text) {
+  if (!loadGuardianFieldPrefs().readAloud) return
+  speakText(text)
+}
+
+function ensureMicRecognizer() {
+  if (micRecognizer || !micSupported) return
+  micRecognizer = createPushToTalkRecognizer({
+    onPartial: (t) => { if (t) message.value = t },
+    onFinal: (t) => { if (t) message.value = t },
+    onError: () => { micListening.value = false },
+    onState: (s) => { micListening.value = s === 'listening' },
+  })
+}
+
+function startMic() {
+  if (streaming.value || !micSupported) return
+  stopSpeaking()
+  ensureMicRecognizer()
+  micRecognizer?.start()
+}
+
+function stopMic() {
+  micRecognizer?.stop()
+  micListening.value = false
+}
+
 async function loadZonePhotosForChat() {
   revokeChatPhotoThumbs()
   zonePhotos.value = []
-  const zid = zoneContextId.value
+  const zid = effectivePhotoZoneId.value
   if (!zid || !capabilities.visionChatEnabled) return
   try {
     const r = await api.get(`/zones/${zid}/photos`)
@@ -868,7 +976,7 @@ async function loadZonePhotosForChat() {
 async function onChatPhotoSelected(ev) {
   const file = ev.target?.files?.[0]
   ev.target.value = ''
-  const zid = zoneContextId.value
+  const zid = effectivePhotoZoneId.value
   if (!file || !zid || photoUploading.value) return
   photoUploading.value = true
   try {
@@ -909,7 +1017,7 @@ async function send() {
     message: message.value,
     farmId,
     sessionId: sessionId.value || undefined,
-    contextRef: guardianPanel.chatContextRef(),
+    contextRef: resolveChatContextRef(attachedIds),
     navHistory: guardianPanel.navHistory,
     attachmentIds: attachedIds,
     setupMode: setupModeActive.value,
@@ -936,13 +1044,18 @@ async function send() {
   message.value = ''
   selectedAttachmentIds.value = []
   guardianPanel.clearPrefill()
+  maybeReadAloud(finalEvent.answer || streamingText.value)
   if (finalEvent.proposals?.length && farmContext.farmId) {
     await guardianProposals.refreshPendingCount(farmContext.farmId)
   }
   await refreshSessions()
 }
 
-onUnmounted(revokeChatPhotoThumbs)
+onUnmounted(() => {
+  revokeChatPhotoThumbs()
+  micRecognizer?.abort()
+  stopSpeaking()
+})
 
 onMounted(async () => {
   await refreshSessions()

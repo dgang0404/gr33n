@@ -187,9 +187,20 @@
               <button type="button" class="block w-full aspect-square" @click="openPhoto(p)">
                 <img :src="photoThumbUrl(p)" :alt="p.file_name || 'Zone photo'" class="w-full h-full object-cover" loading="lazy" />
               </button>
-              <div class="px-2 py-1.5 flex items-center justify-between gap-1">
-                <p class="text-zinc-500 text-[10px] truncate flex-1">{{ p.file_name }}</p>
-                <button type="button" class="text-zinc-600 hover:text-red-400 text-[10px] shrink-0" :disabled="photoDeleting[p.id]" @click="removePhoto(p)">Remove</button>
+              <div class="px-2 py-1.5 flex flex-col gap-1">
+                <p class="text-zinc-500 text-[10px] truncate">{{ p.file_name }}</p>
+                <div class="flex items-center justify-between gap-1">
+                  <button
+                    type="button"
+                    class="text-green-600 hover:text-green-400 text-[10px]"
+                    data-test="zone-photo-ask-guardian"
+                    v-nav-hint="'/chat'"
+                    @click="askGuardianAboutPhoto(p)"
+                  >
+                    Ask Guardian →
+                  </button>
+                  <button type="button" class="text-zinc-600 hover:text-red-400 text-[10px] shrink-0" :disabled="photoDeleting[p.id]" @click="removePhoto(p)">Remove</button>
+                </div>
               </div>
             </div>
           </div>
@@ -236,6 +247,7 @@ import { useRoute } from 'vue-router'
 import api from '../api'
 import { useFarmStore } from '../stores/farm'
 import { useFarmContextStore } from '../stores/farmContext'
+import { useGuardianPanelStore } from '../stores/guardianPanel.js'
 import {
   PLANT_NEEDS,
   NEED_META,
@@ -266,6 +278,7 @@ import { lastHarvestedCycleInZone } from '../lib/growHub.js'
 const route = useRoute()
 const activeTab = ref('overview')
 const store = useFarmStore()
+const guardianPanel = useGuardianPanelStore()
 const farmContext = useFarmContextStore()
 const toggling = ref({})
 const zonePhotos = ref([])
@@ -663,6 +676,16 @@ async function onPhotoSelected(ev) {
   } finally {
     photoUploading.value = false
   }
+}
+
+function askGuardianAboutPhoto(p) {
+  const zid = zoneId.value
+  if (!zid || !p?.id) return
+  guardianPanel.openDrawer({
+    tab: 'chat',
+    contextRef: buildZoneGuardianContextRef(zid, zone.value?.name),
+    prefilledMessage: `I'm looking at a reference photo (${p.file_name || 'zone photo'}) from ${zone.value?.name || 'this zone'}. Attachment id ${p.id}. What deficiency or stress patterns should I check — ground on lookup_crop_targets and our current readings. Hypotheses only.`,
+  })
 }
 
 async function openPhoto(p) {

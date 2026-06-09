@@ -128,7 +128,7 @@ todos:
     status: completed
   - id: oc-67-closure
     content: "OC-67: Phase 67 WS7 — hands-free field assistant, voice in/out, crop-grounded photo diagnosis"
-    status: pending
+    status: completed
 isProject: false
 ---
 
@@ -570,7 +570,7 @@ Hub: [`phase_53_59_roadmap.plan.md`](phase_53_59_roadmap.plan.md). Close **OC-58
 | ~~64 Crop knowledge base~~ | ~~OC-64~~ | [phase_64](phase_64_crop_knowledge_base.plan.md) | ✅ Shipped |
 | ~~65 Pi & hardware diagnostics~~ | ~~OC-65~~ | [phase_65](phase_65_guardian_pi_diagnostics.plan.md) | ✅ Shipped |
 | ~~66 Weather & site~~ | ~~OC-66~~ | [phase_66](phase_66_weather_site_context.plan.md) | ✅ Shipped |
-| 67 Field assistant | OC-67 | [phase_67](phase_67_guardian_field_assistant.plan.md) | Voice + grounded photo diagnosis |
+| ~~67 Field assistant~~ | ~~OC-67~~ | [phase_67](phase_67_guardian_field_assistant.plan.md) | ✅ Shipped |
 
 **Note:** Phase 51 "Phase 52+ per-device API keys" → **[Phase 57](phase_57_pi_device_api_keys.plan.md)** (not Phase 52). **Phase 64 must precede Phase 62** (grow advisor reads real targets from the crop knowledge base).
 

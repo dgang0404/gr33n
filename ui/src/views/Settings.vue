@@ -198,6 +198,46 @@
       <p v-if="siteError" class="mt-2 text-xs text-red-400">{{ siteError }}</p>
     </section>
 
+    <!-- Field assistant voice (Phase 67) -->
+    <section
+      v-if="capabilities.aiEnabled"
+      class="bg-zinc-800 border border-zinc-700 rounded-xl p-5 mb-5"
+      data-test="settings-field-assistant"
+    >
+      <h2 class="text-white font-semibold mb-3 flex items-center gap-2">
+        <span>🎤</span> Field assistant (voice)
+      </h2>
+      <p class="text-xs text-zinc-500 mb-4 leading-relaxed">
+        Push-to-talk in Farm Guardian — hold the mic button to dictate. Keyboard input always works.
+        Vision photos are advisory hypotheses, not certified diagnosis.
+      </p>
+      <label class="flex items-center gap-2 text-sm text-zinc-300 mb-3">
+        <input
+          v-model="fieldPrefs.readAloud"
+          type="checkbox"
+          class="rounded bg-zinc-800 border-zinc-700"
+          data-test="settings-field-read-aloud"
+          @change="persistFieldPrefs"
+        />
+        Read answers aloud (browser speech)
+      </label>
+      <div class="flex flex-col gap-1 max-w-xs">
+        <label class="text-[11px] text-zinc-500 uppercase tracking-wide">Speech-to-text</label>
+        <select
+          v-model="fieldPrefs.sttProvider"
+          class="bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white"
+          data-test="settings-field-stt-provider"
+          @change="persistFieldPrefs"
+        >
+          <option value="browser">Browser (default)</option>
+          <option value="local" :disabled="!capabilities.sttLocalEnabled">Local whisper (LAN)</option>
+        </select>
+        <p v-if="!capabilities.sttLocalEnabled" class="text-[10px] text-zinc-600 mt-1">
+          Fully offline STT: set <code class="text-zinc-400">STT_BASE_URL</code> on the API to a whisper.cpp HTTP service.
+        </p>
+      </div>
+    </section>
+
     <!-- Farm Guardian session memory (Phase 63) -->
     <section
       v-if="farmContext.farmId && capabilities.aiEnabled"
@@ -973,6 +1013,7 @@ import { useCapabilitiesStore } from '../stores/capabilities'
 import { useChatUsageStore } from '../stores/chatUsage'
 import api from '../api'
 import { parseFarmCoordinates, parseFarmElevationM } from '../lib/siteWeather.js'
+import { loadGuardianFieldPrefs, saveGuardianFieldPrefs } from '../lib/guardianFieldPrefs.js'
 import {
   BOOTSTRAP_STARTER_OPTIONS,
   BOOTSTRAP_TEMPLATE_KEYS,
@@ -1049,6 +1090,12 @@ const hourlyRateForm = reactive({ rate: null, currency: 'USD' })
 const hourlyRateSaving = ref(false)
 const hourlyRateError = ref('')
 const hourlyRateMessage = ref('')
+
+const fieldPrefs = reactive(loadGuardianFieldPrefs())
+
+function persistFieldPrefs() {
+  saveGuardianFieldPrefs({ readAloud: !!fieldPrefs.readAloud, sttProvider: fieldPrefs.sttProvider })
+}
 
 const siteForm = reactive({ latitude: null, longitude: null, elevation_m: null })
 const siteSaving = ref(false)

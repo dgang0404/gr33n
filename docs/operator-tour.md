@@ -563,7 +563,7 @@ Architecture: [`farm-guardian-architecture.md` §7.0e](farm-guardian-architectur
 ### Vision and photos — what to expect
 
 - **Zone photos (shipped):** upload on **Zone detail**; Guardian knows photos exist and can discuss walkthrough context.
-- **Leaf/crop image analysis (optional):** set `LLM_VISION_MODEL` (e.g. `llava` on Ollama); attach zone photos in the Guardian drawer when asking **from a zone** (robot tab on a zone page). On **Guardian full page** (`/chat`) the upload UI is hidden until you have zone context — [Phase 67](plans/phase_67_guardian_field_assistant.plan.md) adds camera upload everywhere + a room picker. Treat vision answers as **hypotheses**, not certified diagnosis. Prefer **create task** over silent config changes.
+- **Leaf/crop image analysis (optional):** set `LLM_VISION_MODEL` (e.g. `llava` on Ollama); attach photos on **any** Guardian surface (`/chat` full page or slide-out) — pick the room if you are not already on a zone page. Treat vision answers as **hypotheses**, not certified diagnosis. Prefer **create task** over silent config changes. See [§6n Field assistant (Phase 67)](#6n-hands-free-field-assistant-phase-67--shipped).
 
 ### Platform facts (what Guardian should say about itself)
 
@@ -691,6 +691,21 @@ Architecture: [`farm-guardian-architecture.md` §7.0r](farm-guardian-architectur
 Architecture: [`farm-guardian-architecture.md` §7.0m](farm-guardian-architecture.md#70m-feeding--water-plain-language-phase-47). Workflow: [workflow-guide §4c](workflow-guide.md#4c-feeding-plan--plain-irrigation-phase-47).
 
 ---
+
+### 6n. Hands-free field assistant (Phase 67 — shipped)
+
+**Plan:** [`plans/phase_67_guardian_field_assistant.plan.md`](plans/phase_67_guardian_field_assistant.plan.md) · Architecture: [§7.0ad](farm-guardian-architecture.md#70ad-hands-free-field-assistant-phase-67--shipped).
+
+| Job | Where | What to click |
+|-----|--------|----------------|
+| **Talk instead of type** | Farm Guardian (`/chat` or slide-out) | Hold **🎤** — push-to-talk; review text, then **Send** |
+| **Hear the answer** | **Settings → Field assistant** | **Read answers aloud** (browser speech) |
+| **Snap a leaf photo** | Guardian composer | **📷 Camera** — pick room if needed, attach up to 3 photos |
+| **From zone photos** | Zone **Overview → Reference photos** | **Ask Guardian →** on a thumbnail |
+
+**Offline STT (optional):** set `STT_BASE_URL` on the API to a LAN whisper.cpp HTTP service; choose **Local whisper** in Settings.
+
+**Vitest:** `phase-67-closure.test.js` · **Go smoke:** `TestPhase67_FieldAssistantRoutesAndVision`.
 
 ### 8a. Farm site & daylight (Phase 66 — shipped)
 

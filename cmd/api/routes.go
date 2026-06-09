@@ -4,6 +4,8 @@ import (
 	"context"
 	"log"
 	"net/http"
+	"os"
+	"strings"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -121,9 +123,11 @@ func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationwo
 		httputil.WriteJSON(w, http.StatusOK, map[string]string{"mode": authMode})
 	})))
 	mux.Handle("GET /capabilities", withRequestLog("public", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		httputil.WriteJSON(w, http.StatusOK, map[string]bool{
-			"ai_enabled":         aiCfg.Enabled,
+		sttLocal := strings.TrimSpace(os.Getenv("STT_BASE_URL")) != ""
+		httputil.WriteJSON(w, http.StatusOK, map[string]any{
+			"ai_enabled":          aiCfg.Enabled,
 			"vision_chat_enabled": ai.VisionConfigured(),
+			"stt_local_enabled":   sttLocal,
 		})
 	})))
 
@@ -148,6 +152,7 @@ func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationwo
 	// Phase 27 — Farm Guardian chat + session history
 	mux.Handle("GET /v1/chat/health", jwt(http.HandlerFunc(aichat.GetHealth)))
 	mux.Handle("POST /v1/chat", jwt(http.HandlerFunc(aichat.PostV1)))
+	mux.Handle("POST /v1/chat/stt", jwt(http.HandlerFunc(aichat.TranscribeSTT)))
 	mux.Handle("POST /v1/chat/confirm", jwt(http.HandlerFunc(aichat.PostConfirm)))
 	mux.Handle("GET /v1/chat/proposals", jwt(http.HandlerFunc(aichat.ListProposals)))
 	mux.Handle("GET /v1/chat/sessions", jwt(http.HandlerFunc(aichat.ListSessions)))

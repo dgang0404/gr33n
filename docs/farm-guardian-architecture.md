@@ -430,6 +430,22 @@ Operator: [operator-tour §8a](operator-tour.md#8a-farm-site--daylight-phase-66-
 
 **OC-66** via `phase-66-closure.test.js` · **Go smoke:** `TestPhase66_SiteWeatherRouteRegistered`.
 
+### 7.0ad Hands-free field assistant (Phase 67 — shipped)
+
+**Shipped (WS1–WS7).** Capstone — voice + vision in the grow room. Plan: [`plans/phase_67_guardian_field_assistant.plan.md`](plans/phase_67_guardian_field_assistant.plan.md).
+
+| Surface | Operator job | Implementation |
+|---------|--------------|----------------|
+| **Push-to-talk** | Dictate with wet gloves | `GuardianChatPanel` mic → browser `SpeechRecognition` |
+| **Read aloud** | Hands-free answers | Settings toggle → `SpeechSynthesis` |
+| **Camera everywhere** | Leaf / canopy photos on `/chat` | Zone picker when context missing; `capture=environment` |
+| **Crop-grounded vision** | Deficiency hypotheses tied to profile | `VisionContextBlock` + `FieldPhotoCropGroundingBlock` (Phase 64) |
+| **Local STT** | Fully offline LAN farms | `POST /v1/chat/stt` → `STT_BASE_URL` (whisper.cpp) |
+
+Operator: [operator-tour §6n](operator-tour.md#6n-hands-free-field-assistant-phase-67--shipped).
+
+**OC-67** via `phase-67-closure.test.js` · **Go smoke:** `TestPhase67_FieldAssistantRoutesAndVision`.
+
 ### 7.0h Comfort targets & automation (Phase 42 — shipped)
 
 Plans: [`plans/phase_42_comfort_targets_automation_plain_language.plan.md`](plans/phase_42_comfort_targets_automation_plain_language.plan.md) · Guardian PR slice: [`plans/phase_42_guardian_pr_spec.md`](plans/phase_42_guardian_pr_spec.md).

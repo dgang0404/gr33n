@@ -15,6 +15,7 @@ export const useCapabilitiesStore = defineStore('capabilities', {
   state: () => ({
     aiEnabled: true,
     visionChatEnabled: false,
+    sttLocalEnabled: false,
     loaded: false,
     fetchError: null,
   }),
@@ -29,11 +30,13 @@ export const useCapabilitiesStore = defineStore('capabilities', {
         const r = await api.get('/capabilities')
         this.aiEnabled = r.data?.ai_enabled !== false
         this.visionChatEnabled = r.data?.vision_chat_enabled === true
+        this.sttLocalEnabled = r.data?.stt_local_enabled === true
         this.fetchError = null
       } catch (e) {
         // Older API builds without /capabilities → treat as AI on (back-compat).
         this.aiEnabled = true
         this.visionChatEnabled = false
+        this.sttLocalEnabled = false
         this.fetchError = e.message || 'capabilities fetch failed'
       } finally {
         this.loaded = true

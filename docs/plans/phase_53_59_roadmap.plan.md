@@ -36,8 +36,8 @@ isProject: false
 
 | Status | Phases |
 |--------|--------|
-| **Shipped** | 40–59 (farmer closure arc complete — consumptions + enterprise boundary doc) |
-| **Planned next** | Guardian arc **60–67** (see below); crop KB **64** shipped |
+| **Shipped** | 40–67 (farmer closure + Guardian capstone arc complete) |
+| **Planned next** | Guardian intelligence **60–63**, hardware diagnostics **65** (see below) |
 | **Schema / security** | **57** ✅ shipped |
 | **Runtime polish** | **58** ✅ task consumptions |
 | **Explicit deferrals** | **59** ✅ [enterprise-tier-boundary.md](../enterprise-tier-boundary.md) |
@@ -88,8 +88,8 @@ These answer *"how does Guardian actually KNOW things?"* — grounding, not gues
 |-------|---------|--------------|------|
 | **64** ✅ | Crop knowledge base — real EC/pH/VPD/DLI per crop per stage; Guardian cites, never guesses | Migration + seed | [phase_64](phase_64_crop_knowledge_base.plan.md) |
 | **65** | Pi & hardware diagnostics — Guardian sees live wiring (GPIO/channel), device status, reading staleness; directs troubleshooting | Read tool | [phase_65](phase_65_guardian_pi_diagnostics.plan.md) |
-| **66** | Weather & site — offline solar (sunrise/DLI from lat-long), sensor, optional online | Solar engine + ingest | [phase_66](phase_66_weather_site_context.plan.md) |
-| **67** | Hands-free field assistant — voice in/out, crop-grounded photo diagnosis + wiring diagnostics by voice | STT/TTS + vision | [phase_67](phase_67_guardian_field_assistant.plan.md) |
+| **66** ✅ | Weather & site — offline solar (sunrise/DLI from lat-long), sensor, optional online | Solar engine + ingest | [phase_66](phase_66_weather_site_context.plan.md) |
+| **67** ✅ | Hands-free field assistant — voice in/out, crop-grounded photo diagnosis + wiring diagnostics by voice | STT/TTS + vision | [phase_67](phase_67_guardian_field_assistant.plan.md) |
 
 **Key dependency:** **64 must precede 62** — the grow advisor reads targets from the crop knowledge base. **64 also grounds 67** photo diagnosis. **65 ships after 57** (wiring is stored per-device from Phase 50/51/57). **65 before 67** — voice troubleshooting is far more useful when Guardian can already look up the wiring. **66** is independent (schema + coordinates already exist).
 

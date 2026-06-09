@@ -339,6 +339,11 @@ func (h *Handler) PostV1(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		system += "\n\n" + farmguardian.VisionContextBlock()
+		if pb.ContextRef != nil {
+			if cropBlock := farmguardian.FieldPhotoCropGroundingBlock(r.Context(), h.q, farmID, pb.ContextRef); cropBlock != "" {
+				system += "\n\n" + cropBlock
+			}
+		}
 	}
 
 	chatClient := h.llm

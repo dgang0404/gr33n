@@ -8,25 +8,25 @@ overview: >
 todos:
   - id: ws1-voice-in
     content: "WS1: Push-to-talk mic in Guardian panel — browser SpeechRecognition baseline"
-    status: pending
+    status: completed
   - id: ws2-voice-out
     content: "WS2: Optional TTS read-back for hands-free answers; toggle in settings"
-    status: pending
+    status: completed
   - id: ws3-local-stt
     content: "WS3: Optional local whisper.cpp STT service for fully-offline voice (LAN)"
-    status: pending
+    status: completed
   - id: ws4-photo-discoverability
     content: "WS4: Photo upload everywhere Guardian lives — /chat full page, slide-out, zone picker when context missing"
-    status: pending
+    status: completed
   - id: ws5-photo-diagnosis
     content: "WS5: Field photo diagnosis grounded on crop profile (Phase 64); deficiency/pest hypotheses"
-    status: pending
+    status: completed
   - id: ws6-glovebox-ux
     content: "WS6: One-handed mobile layout — big camera + mic targets, works on a phone in the room"
-    status: pending
+    status: completed
   - id: ws7-docs-tests
     content: "WS7: operator-tour § field assistant + vision discoverability; phase-67-closure; OC-67"
-    status: pending
+    status: completed
 isProject: false
 ---
 
@@ -34,7 +34,7 @@ isProject: false
 
 ## Status
 
-**Planned.** After [Phase 64](phase_64_crop_knowledge_base.plan.md) (photo diagnosis grounds on crop profiles) and [Phase 65](phase_65_guardian_pi_diagnostics.plan.md) (wiring diagnostics make voice troubleshooting far more useful). Builds on existing `vision_context.go`.
+**Shipped.** Push-to-talk mic, optional read-aloud, camera upload on `/chat` + slide-out with zone picker, crop-grounded vision prompts, local STT proxy (`STT_BASE_URL`), glovebox-sized controls.
 
 ---
 
@@ -114,13 +114,13 @@ isProject: false
 
 ## Definition of done
 
-- [ ] Photo upload visible on `/chat` full page (not only zone slide-out)
-- [ ] Zone picker when context missing; one-shot camera attach works
-- [ ] Push-to-talk transcribes into Guardian
-- [ ] Optional read-aloud answers
-- [ ] Photo diagnosis cites the crop profile + current readings
-- [ ] Fully-offline STT path documented
-- [ ] OC-67 closed
+- [x] Photo upload visible on `/chat` full page (not only zone slide-out)
+- [x] Zone picker when context missing; one-shot camera attach works
+- [x] Push-to-talk transcribes into Guardian
+- [x] Optional read-aloud answers
+- [x] Photo diagnosis cites the crop profile + current readings
+- [x] Fully-offline STT path documented
+- [x] OC-67 closed
 
 ---
 
