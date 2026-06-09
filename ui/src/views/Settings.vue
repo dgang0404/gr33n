@@ -133,6 +133,71 @@
       </form>
     </section>
 
+    <!-- Farm site coordinates (Phase 66) -->
+    <section
+      v-if="farmContext.farmId"
+      class="bg-zinc-800 border border-zinc-700 rounded-xl p-5 mb-5"
+      data-test="settings-farm-site"
+    >
+      <h2 class="text-white font-semibold mb-3 flex items-center gap-2">
+        <span>📍</span> Farm site
+      </h2>
+      <p class="text-xs text-zinc-500 mb-4 leading-relaxed">
+        Where is your farm? gr33n uses latitude and longitude to calculate sunrise, sunset, and daylight hours —
+        <strong class="text-zinc-400">no internet required</strong> for solar math.
+      </p>
+      <form class="grid grid-cols-1 sm:grid-cols-3 gap-3" @submit.prevent="saveFarmSite">
+        <div>
+          <label class="text-zinc-400 text-[11px] uppercase tracking-wide">Latitude</label>
+          <input
+            v-model.number="siteForm.latitude"
+            type="number"
+            step="any"
+            min="-90"
+            max="90"
+            required
+            class="mt-1 w-full bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white"
+            data-test="settings-site-latitude"
+          />
+        </div>
+        <div>
+          <label class="text-zinc-400 text-[11px] uppercase tracking-wide">Longitude</label>
+          <input
+            v-model.number="siteForm.longitude"
+            type="number"
+            step="any"
+            min="-180"
+            max="180"
+            required
+            class="mt-1 w-full bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white"
+            data-test="settings-site-longitude"
+          />
+        </div>
+        <div>
+          <label class="text-zinc-400 text-[11px] uppercase tracking-wide">Elevation (m, optional)</label>
+          <input
+            v-model.number="siteForm.elevation_m"
+            type="number"
+            step="any"
+            class="mt-1 w-full bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white"
+            data-test="settings-site-elevation"
+          />
+        </div>
+        <div class="sm:col-span-3 flex gap-2">
+          <button
+            type="submit"
+            class="text-xs px-3 py-1.5 rounded-lg bg-green-900/50 text-green-400 border border-green-800 hover:bg-green-900/70 disabled:opacity-40"
+            :disabled="siteSaving"
+            data-test="settings-site-save"
+          >
+            {{ siteSaving ? 'Saving…' : 'Save site' }}
+          </button>
+        </div>
+      </form>
+      <p v-if="siteMessage" class="mt-2 text-xs text-emerald-400">{{ siteMessage }}</p>
+      <p v-if="siteError" class="mt-2 text-xs text-red-400">{{ siteError }}</p>
+    </section>
+
     <!-- Farm Guardian session memory (Phase 63) -->
     <section
       v-if="farmContext.farmId && capabilities.aiEnabled"
@@ -907,6 +972,7 @@ import { useFarmContextStore } from '../stores/farmContext'
 import { useCapabilitiesStore } from '../stores/capabilities'
 import { useChatUsageStore } from '../stores/chatUsage'
 import api from '../api'
+import { parseFarmCoordinates, parseFarmElevationM } from '../lib/siteWeather.js'
 import {
   BOOTSTRAP_STARTER_OPTIONS,
   BOOTSTRAP_TEMPLATE_KEYS,
@@ -983,6 +1049,42 @@ const hourlyRateForm = reactive({ rate: null, currency: 'USD' })
 const hourlyRateSaving = ref(false)
 const hourlyRateError = ref('')
 const hourlyRateMessage = ref('')
+
+const siteForm = reactive({ latitude: null, longitude: null, elevation_m: null })
+const siteSaving = ref(false)
+const siteError = ref('')
+const siteMessage = ref('')
+
+function syncSiteFormFromFarm() {
+  const farm = farmContext.selectedFarm
+  if (!farm) return
+  const { latitude, longitude } = parseFarmCoordinates(farm)
+  siteForm.latitude = latitude
+  siteForm.longitude = longitude
+  siteForm.elevation_m = parseFarmElevationM(farm)
+}
+
+async function saveFarmSite() {
+  const farmId = farmContext.farmId
+  if (!farmId) return
+  siteSaving.value = true
+  siteError.value = ''
+  siteMessage.value = ''
+  try {
+    await farmContext.patchSite(farmId, {
+      latitude: siteForm.latitude,
+      longitude: siteForm.longitude,
+      elevation_m: siteForm.elevation_m || null,
+    })
+    siteMessage.value = 'Site saved — daylight hours will use these coordinates (offline).'
+  } catch (e) {
+    siteError.value = e?.response?.data?.error || e.message || 'Save failed'
+  } finally {
+    siteSaving.value = false
+  }
+}
+
+watch(() => farmContext.selectedFarm, syncSiteFormFromFarm, { immediate: true })
 
 const guardianMemoryBusy = ref(false)
 const guardianMemoryError = ref('')

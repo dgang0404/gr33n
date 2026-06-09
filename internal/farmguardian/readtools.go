@@ -57,6 +57,7 @@ func ReadToolIDs() []string {
 		"grow_advisor",
 		"summarize_device_health",
 		"walk_farm",
+		"site_weather",
 	}
 }
 
@@ -194,6 +195,15 @@ func EnrichPromptBlock(ctx context.Context, q db.Querier, farmID int64, question
 		} else if block != "" {
 			blocks = append(blocks, block)
 			logReadToolUse(ctx, "walk_farm", farmID)
+		}
+	}
+
+	if shouldRunSiteWeatherReadIntent(question) {
+		if block, err := renderSiteWeather(ctx, q, farmID); err != nil {
+			slog.Warn("farm guardian read tool failed", "tool", "site_weather", "farm_id", farmID, "err", err)
+		} else if block != "" {
+			blocks = append(blocks, block)
+			logReadToolUse(ctx, "site_weather", farmID)
 		}
 	}
 

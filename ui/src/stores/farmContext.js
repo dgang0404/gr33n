@@ -69,6 +69,14 @@ export const useFarmContextStore = defineStore('farmContext', {
       return r.data
     },
 
+    /** Phase 66 — set farm site coordinates for offline solar math. */
+    async patchSite(id, { latitude, longitude, elevation_m }) {
+      const r = await api.patch(`/farms/${id}/site`, { latitude, longitude, elevation_m })
+      const idx = this.farms.findIndex(f => f.id === id)
+      if (idx >= 0) this.farms[idx] = r.data
+      return r.data
+    },
+
     async deleteFarm(id) {
       await api.delete(`/farms/${id}`)
       this.farms = this.farms.filter(f => f.id !== id)

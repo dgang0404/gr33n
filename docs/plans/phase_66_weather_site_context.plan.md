@@ -9,22 +9,22 @@ overview: >
 todos:
   - id: ws1-site-coords
     content: "WS1: Site coordinates UI — confirm/set lat-long + elevation on farm (uses existing location_gis)"
-    status: pending
+    status: completed
   - id: ws2-solar-engine
     content: "WS2: Pure-Go offline solar engine — sunrise, sunset, daylength, solar noon, clear-sky DLI"
-    status: pending
+    status: completed
   - id: ws3-ingestion-sources
     content: "WS3: Manual entry UI; outdoor sensor mapping; OPTIONAL online provider behind flag w/ cache"
-    status: pending
+    status: completed
   - id: ws4-effects
     content: "WS4: Supplemental light DLI top-up; greenhouse vent/shade/heat nudges; frost/heat alerts"
-    status: pending
+    status: completed
   - id: ws5-guardian
     content: "WS5: weather read tool; starters 'Need supplemental light today?', 'Frost risk tonight?'"
-    status: pending
+    status: completed
   - id: ws6-docs-tests
     content: "WS6: architecture §11; offline-first note; phase-66-closure; OC-66"
-    status: pending
+    status: completed
 isProject: false
 ---
 
@@ -32,7 +32,7 @@ isProject: false
 
 ## Status
 
-**Planned.** Independent of the 53 arc; strongest after [Phase 65](phase_65_guardian_pi_diagnostics.plan.md) and [Phase 64](phase_64_crop_knowledge_base.plan.md) (natural DLI feeds the grow advisor's light recommendations).
+**Shipped.** Offline solar engine, site coords in Settings, `site_weather` read tool, dashboard daylight chip + weather starters, manual weather API. Online forecast provider deferred (Tier 3 flag).
 
 ---
 
@@ -134,11 +134,11 @@ Greenhouse vs sealed-indoor: effects scale by `zone` type — sealed rooms get H
 
 ## Definition of done
 
-- [ ] Daylight hours + DLI computed with internet disabled
-- [ ] Supplemental-light recommendation uses natural DLI vs crop target
-- [ ] Optional online provider opt-in, caches, degrades gracefully
-- [ ] Guardian states which tier it answered from
-- [ ] OC-66 closed
+- [x] Daylight hours + DLI computed with internet disabled
+- [x] Supplemental-light recommendation uses natural DLI vs crop target
+- [ ] Optional online provider opt-in, caches, degrades gracefully (Tier 3 deferred)
+- [x] Guardian states which tier it answered from
+- [x] OC-66 closed
 
 ---
 

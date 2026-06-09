@@ -692,6 +692,25 @@ Architecture: [`farm-guardian-architecture.md` §7.0m](farm-guardian-architectur
 
 ---
 
+### 8a. Farm site & daylight (Phase 66 — shipped)
+
+**Shipped.** Plan: [`plans/phase_66_weather_site_context.plan.md`](plans/phase_66_weather_site_context.plan.md).
+
+| Job | Where | What to click |
+|-----|--------|----------------|
+| **Set farm location** | **Settings → Farm site** | Latitude, longitude, optional elevation — powers **offline** sunrise/sunset/daylength |
+| **See daylight today** | **Dashboard** morning chips | **Daylight today** chip when coordinates are set |
+| **Ask Guardian** | **Dashboard** weather starters | **Need supplemental light?**, **Frost risk tonight?** — uses `site_weather` read tool |
+| **Log outdoor conditions** | API `POST /farms/{id}/weather/manual` | Optional manual temp/RH/cloud (Advanced integrations later) |
+
+**Tiers:** Tier 1 solar math works with **no internet**. Tier 2 uses your outdoor sensor or manual log on the LAN. Tier 3 online forecast is **opt-in future** — degrades gracefully.
+
+**Vitest:** `phase-66-closure.test.js` · **Go smoke:** `TestPhase66_SiteWeatherRouteRegistered` · **Solar unit:** `internal/solar/solar_test.go`.
+
+Architecture: [`farm-guardian-architecture.md` §7.0ac](farm-guardian-architecture.md#70ac-weather--site-context-phase-66--shipped).
+
+---
+
 ## 8. Getting started & edge install (Phase 44 — shipped)
 
 **Shipped.** Plan: [`plans/phase_44_getting_started_edge_wizard.plan.md`](plans/phase_44_getting_started_edge_wizard.plan.md) · Guardian: [§6g](#6g-guardian-during-setup-phase-44--shipped).

@@ -407,6 +407,29 @@ Operator: [operator-tour §7c.1](operator-tour.md#7c1-task-consumptions--operato
 
 **OC-58** via `phase-58-closure.test.js` · **Go smoke:** `TestPhase58_TaskConsumptionRouteRegistered`.
 
+### 7.0ac Weather & site context (Phase 66 — shipped)
+
+**Shipped (WS1–WS6).** Offline-first outdoor reality for Guardian and dashboard chips. Plan: [`plans/phase_66_weather_site_context.plan.md`](plans/phase_66_weather_site_context.plan.md).
+
+| Tier | Source | Internet? | Data |
+|------|--------|-----------|------|
+| **1 — Solar math** | `location_gis` + date | **None** | Sunrise, sunset, daylength, clear-sky DLI |
+| **2 — Local** | Manual entry / outdoor sensor | **LAN only** | Temp, RH, cloud cover |
+| **3 — Forecast** | Optional provider (future flag) | Optional | Cached forecast; degrades to Tier 1+2 |
+
+| API / tool | Role |
+|------------|------|
+| `PATCH /farms/{id}/site` | Set lat/long + `meta_data.elevation_m` |
+| `GET /farms/{id}/site-weather` | Solar + latest `weather_data` row |
+| `POST /farms/{id}/weather/manual` | Quick outdoor log |
+| **`site_weather`** read tool | Guardian grounding; states which tier answered |
+
+**Supplemental light:** `site_weather` compares clear-sky DLI (cloud-adjusted when readings exist) to crop profile DLI target from Phase 64.
+
+Operator: [operator-tour §8a](operator-tour.md#8a-farm-site--daylight-phase-66--shipped).
+
+**OC-66** via `phase-66-closure.test.js` · **Go smoke:** `TestPhase66_SiteWeatherRouteRegistered`.
+
 ### 7.0h Comfort targets & automation (Phase 42 — shipped)
 
 Plans: [`plans/phase_42_comfort_targets_automation_plain_language.plan.md`](plans/phase_42_comfort_targets_automation_plain_language.plan.md) · Guardian PR slice: [`plans/phase_42_guardian_pr_spec.md`](plans/phase_42_guardian_pr_spec.md).

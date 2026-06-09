@@ -637,6 +637,36 @@ export function buildMoneyHubStarters() {
  * Phase 60 — morning walkthrough starters (Dashboard + /chat).
  * @param {object} params
  */
+/**
+ * Phase 66 — weather-aware Guardian starters (offline solar tier).
+ */
+export function buildWeatherStarters({ surface = 'dashboard', farmName = '' } = {}) {
+  const path = surface === 'chat' ? '/chat' : '/'
+  const pageName = surface === 'chat' ? 'Farm Guardian chat' : 'Dashboard'
+  const contextRef = { type: 'route', path, name: pageName, surface: `weather_${surface}` }
+  const farmBit = farmName ? ` at ${farmName}` : ''
+  return dedupeStarters([
+    {
+      id: 'supplemental-light-today',
+      label: 'Need supplemental light?',
+      message: `Do I need supplemental light today${farmBit}? Use site_weather and lookup_crop_targets — compare natural clear-sky DLI to my crop target. State which tier you used.`,
+      contextRef,
+    },
+    {
+      id: 'frost-risk-tonight',
+      label: 'Frost risk tonight?',
+      message: `Is there frost risk tonight${farmBit}? Use site_weather — solar math and any outdoor readings; say which tier.`,
+      contextRef,
+    },
+    {
+      id: 'daylight-hours',
+      label: 'How long is daylight?',
+      message: `How long is daylight today${farmBit}? Use site_weather solar math (works offline).`,
+      contextRef,
+    },
+  ]).slice(0, 2)
+}
+
 export function buildMorningWalkthroughStarters({
   surface = 'dashboard',
   farmName = '',

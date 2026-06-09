@@ -54,6 +54,27 @@ SELECT (
     )
 ) AS user_has_farm_access;
 
+-- name: GetFarmSiteCoords :one
+SELECT
+    id,
+    ST_Y(location_gis::geometry) AS latitude,
+    ST_X(location_gis::geometry) AS longitude,
+    COALESCE((meta_data->>'elevation_m')::double precision, NULL) AS elevation_m,
+    timezone
+FROM gr33ncore.farms
+WHERE id = $1 AND deleted_at IS NULL;
+
+-- name: UpdateFarmSiteCoords :one
+UPDATE gr33ncore.farms
+SET location_gis = ST_SetSRID(ST_MakePoint(sqlc.arg(longitude), sqlc.arg(latitude)), 4326),
+    meta_data = CASE
+        WHEN sqlc.narg(elevation_m)::double precision IS NULL THEN COALESCE(meta_data, '{}'::jsonb) - 'elevation_m'
+        ELSE COALESCE(meta_data, '{}'::jsonb) || jsonb_build_object('elevation_m', sqlc.narg(elevation_m)::double precision)
+    END,
+    updated_at = NOW()
+WHERE id = sqlc.arg(id) AND deleted_at IS NULL
+RETURNING *;
+
 -- name: SoftDeleteFarm :exec
 UPDATE gr33ncore.farms
 SET deleted_at = NOW(), updated_at = NOW(), updated_by_user_id = $2

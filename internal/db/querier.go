@@ -248,6 +248,7 @@ type Querier interface {
 	GetFarmEnergyPriceByID(ctx context.Context, id int64) (Gr33ncoreFarmEnergyPrice, error)
 	GetFarmMembers(ctx context.Context, farmID int64) ([]GetFarmMembersRow, error)
 	GetFarmMembership(ctx context.Context, arg GetFarmMembershipParams) (Gr33ncoreFarmMembership, error)
+	GetFarmSiteCoords(ctx context.Context, id int64) (GetFarmSiteCoordsRow, error)
 	// Phase 28 WS1 — rolling fertigation stats for the cycle-summary endpoint.
 	// COALESCE keeps the JSON shape stable (zeros instead of NULLs) when a
 	// cycle has no events yet. EC after-feed is the canonical "what the plants
@@ -294,6 +295,7 @@ type Querier interface {
 	// the JOIN is cheap; the ORDER BY reading_time DESC LIMIT 1 uses the
 	// existing per-sensor reading_time index.
 	GetLatestReadingForZoneSensorType(ctx context.Context, arg GetLatestReadingForZoneSensorTypeParams) (Gr33ncoreSensorReading, error)
+	GetLatestWeatherForFarm(ctx context.Context, farmID int64) (Gr33ncoreWeatherDatum, error)
 	GetLifecycleEventByID(ctx context.Context, id int64) (Gr33nanimalsAnimalLifecycleEvent, error)
 	GetLightingProgramByID(ctx context.Context, id int64) (Gr33ncoreLightingProgram, error)
 	GetMixingEventByID(ctx context.Context, id int64) (Gr33nfertigationMixingEvent, error)
@@ -377,6 +379,10 @@ type Querier interface {
 	// Queries: gr33ncore.user_activity_log (compliance / audit trail)
 	// ============================================================
 	InsertUserActivityLog(ctx context.Context, arg InsertUserActivityLogParams) error
+	// ============================================================
+	// Queries: gr33ncore.weather_data (Phase 66)
+	// ============================================================
+	InsertWeatherData(ctx context.Context, arg InsertWeatherDataParams) (Gr33ncoreWeatherDatum, error)
 	ListActiveAutomationRules(ctx context.Context) ([]Gr33ncoreAutomationRule, error)
 	ListActiveDeviceAPIKeyHashesByDevice(ctx context.Context, deviceID int64) ([]ListActiveDeviceAPIKeyHashesByDeviceRow, error)
 	// Phase 22 WS1 — feeds the worker's program-tick. Only programs with a
@@ -637,6 +643,7 @@ type Querier interface {
 	UpdateFarm(ctx context.Context, arg UpdateFarmParams) (Gr33ncoreFarm, error)
 	UpdateFarmEnergyPrice(ctx context.Context, arg UpdateFarmEnergyPriceParams) (Gr33ncoreFarmEnergyPrice, error)
 	UpdateFarmMemberRole(ctx context.Context, arg UpdateFarmMemberRoleParams) (Gr33ncoreFarmMembership, error)
+	UpdateFarmSiteCoords(ctx context.Context, arg UpdateFarmSiteCoordsParams) (Gr33ncoreFarm, error)
 	UpdateInputBatch(ctx context.Context, arg UpdateInputBatchParams) (Gr33nnaturalfarmingInputBatch, error)
 	UpdateInputDefinition(ctx context.Context, arg UpdateInputDefinitionParams) (Gr33nnaturalfarmingInputDefinition, error)
 	UpdateLightingProgram(ctx context.Context, arg UpdateLightingProgramParams) (Gr33ncoreLightingProgram, error)

@@ -26,6 +26,7 @@ func PlatformContextBlock(cfg ai.Config, llmConfigured bool, toolIDs []string) s
 	growRule := GrowAdvisorPersonaRule
 	deviceRule := DeviceHealthGroundingRule
 	walkRule := WalkFarmPersonaRule
+	weatherRule := SiteWeatherPersonaRule
 
 	return strings.TrimSpace(fmt.Sprintf(`
 Platform context (how you run inside gr33n — state these facts plainly when asked):
@@ -58,8 +59,10 @@ Device wiring: %s
 
 Morning walkthrough: %s
 
+Site weather: %s
+
 Tone: Speak like a calm farm steward — short paragraphs, practical metaphors are fine ("tend the snapshot," "the row won't change until you Confirm the request"). Obey the hard constraints above: no model names, no invented farm rows.
-`, mode, internet, toolsLine, readToolsLine, horizon, cropRule, growRule, deviceRule, walkRule))
+`, mode, internet, toolsLine, readToolsLine, horizon, cropRule, growRule, deviceRule, walkRule, weatherRule))
 }
 
 func platformModeLine(cfg ai.Config, llmConfigured bool) string {

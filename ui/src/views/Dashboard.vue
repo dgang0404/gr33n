@@ -32,6 +32,7 @@
     <FarmMorningStrip :chips="morningChips" />
 
     <GuardianStarterChips :starters="morningWalkthroughStarters" data-test="dashboard-morning-check-starters" />
+    <GuardianStarterChips :starters="weatherStarters" data-test="dashboard-weather-starters" />
 
     <GuardianStarterChips :starters="dashboardOpsStarters" />
 
@@ -266,7 +267,9 @@ import {
   buildDashboardOpsStarters,
   buildMorningWalkthroughStarters,
   buildSetupStarters,
+  buildWeatherStarters,
 } from '../lib/guardianStarters.js'
+import { fetchSiteWeather, daylightChipFromSiteWeather } from '../lib/siteWeather.js'
 import { filterLowStockAlerts, listLowStockBatches } from '../lib/suppliesHub.js'
 import { computeMonthSummary } from '../lib/moneyHub.js'
 import { scheduleRunsLabel } from '../lib/cronHumanize.js'
@@ -286,6 +289,7 @@ const nfBatches = ref([])
 const nfInputs = ref([])
 const costTransactions = ref([])
 const cropCycles = ref([])
+const siteWeather = ref(null)
 
 const lowStockCount = computed(() =>
   listLowStockBatches(nfBatches.value, nfInputs.value).length,
@@ -327,6 +331,11 @@ const morningWalkthroughStarters = computed(() => buildMorningWalkthroughStarter
   farmName: store.farm?.name || '',
 }))
 
+const weatherStarters = computed(() => buildWeatherStarters({
+  surface: 'dashboard',
+  farmName: store.farm?.name || '',
+}))
+
 const dashboardOpsStarters = computed(() => buildDashboardOpsStarters({
   lowStockCount: lowStockCount.value,
   lowStockAlerts: lowStockAlerts.value,
@@ -334,8 +343,8 @@ const dashboardOpsStarters = computed(() => buildDashboardOpsStarters({
 
 const monthExpenses = computed(() => computeMonthSummary(costTransactions.value).expenses)
 
-const morningChips = computed(() =>
-  computeFarmMorningSnapshot({
+const morningChips = computed(() => {
+  const chips = computeFarmMorningSnapshot({
     tasks: store.tasks,
     alerts: alerts.value,
     schedules: schedules.value,
@@ -345,8 +354,10 @@ const morningChips = computed(() =>
     queueDepth: queueDepth.value,
     lowStockCount: lowStockCount.value,
     monthExpenses: monthExpenses.value,
-  }).chips,
-)
+  }).chips
+  const daylight = daylightChipFromSiteWeather(siteWeather.value)
+  return daylight ? [daylight, ...chips] : chips
+})
 
 const todayTasks = computed(() => {
   const today = new Date().toISOString().slice(0, 10)
@@ -449,6 +460,11 @@ async function refreshAll() {
   cropCycles.value = cycles
   await store.loadTasks(fid)
   queueDepth.value = await sumFarmPendingQueueDepth(store.devices)
+  try {
+    siteWeather.value = await fetchSiteWeather(fid)
+  } catch {
+    siteWeather.value = null
+  }
 }
 
 watch(

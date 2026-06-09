@@ -41,6 +41,7 @@ import (
 	setpointhandler "gr33n-api/internal/handler/setpoint"
 	ssehandler "gr33n-api/internal/handler/sse"
 	taskhandler "gr33n-api/internal/handler/task"
+	weatherhandler "gr33n-api/internal/handler/weather"
 	lightinghandler "gr33n-api/internal/handler/lighting"
 	zonehandler "gr33n-api/internal/handler/zone"
 	"gr33n-api/internal/httputil"
@@ -49,6 +50,7 @@ import (
 
 func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationworker.Worker, pushDispatch *pushnotify.Dispatcher, adminUser string, adminHash []byte, hashFilePath string, fileStore filestorage.Store, fileCfg filestorage.Config, adminBindUserID uuid.UUID, adminBindEmail string, aiCfg ai.Config) {
 	farm := farmhandler.NewHandler(pool)
+	weather := weatherhandler.NewHandler(pool)
 	org := organizationhandler.NewHandler(pool)
 	audit := audithandler.NewHandler(pool)
 	zone := zonehandler.NewHandler(pool)
@@ -185,6 +187,9 @@ func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationwo
 	mux.Handle("POST /farms", jwt(http.HandlerFunc(farm.Create)))
 	mux.Handle("POST /farms/{id}/bootstrap-template", jwt(http.HandlerFunc(farm.ApplyFarmBootstrapTemplate)))
 	mux.Handle("PUT /farms/{id}", jwt(http.HandlerFunc(farm.Update)))
+	mux.Handle("PATCH /farms/{id}/site", jwt(http.HandlerFunc(farm.PatchSite)))
+	mux.Handle("GET /farms/{id}/site-weather", jwt(http.HandlerFunc(weather.GetSiteWeather)))
+	mux.Handle("POST /farms/{id}/weather/manual", jwt(http.HandlerFunc(weather.PostManual)))
 	mux.Handle("PATCH /farms/{id}/organization", jwt(http.HandlerFunc(farm.SetOrganization)))
 	mux.Handle("DELETE /farms/{id}", jwt(http.HandlerFunc(farm.Delete)))
 	mux.Handle("GET /farms/{id}", jwt(http.HandlerFunc(farm.Get)))
