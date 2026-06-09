@@ -1,12 +1,12 @@
 <template>
-  <div class="p-6">
-    <div class="flex items-center justify-between mb-2">
+  <div :class="embedded ? '' : 'p-6'">
+    <div v-if="!embedded" class="flex items-center justify-between mb-2">
       <h1 class="text-xl font-semibold text-white">Controls</h1>
       <span class="text-xs text-zinc-500">{{ store.actuators.length }} actuators</span>
     </div>
-    <p class="text-zinc-500 text-sm mb-6 max-w-2xl">
-      Manual switches for pumps, lights, and fans. For a connected view (sensor → target → automation),
-      open a <router-link v-nav-hint="'/zones'" to="/zones" class="text-green-600 hover:text-green-400">zone</router-link>
+    <p v-if="!embedded" class="text-zinc-500 text-sm mb-6 max-w-2xl">
+      Manual switches for pumps, lights, and fans. For zone-scoped edits, open a
+      <router-link v-nav-hint="'/zones'" to="/zones" class="text-green-600 hover:text-green-400">zone</router-link>
       and use the Water / Light / Climate tabs.
     </p>
 
@@ -15,112 +15,136 @@
       No actuators found. Register hardware in Settings or apply a starter pack.
     </div>
 
-    <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+    <template v-else>
       <div
-        v-for="actuator in store.actuators"
-        :key="actuator.id"
-        class="bg-zinc-900 border rounded-xl p-4 flex flex-col gap-3 transition-colors"
-        :class="actuator.current_state_text === 'online' ? 'border-green-800/70' : 'border-zinc-800'"
+        v-for="group in displayGroups"
+        :key="group.zoneId ?? 'unassigned'"
+        :class="groupByZone ? 'mb-6' : ''"
+        data-test="fleet-zone-group"
       >
-        <div class="flex items-center justify-between">
-          <div class="flex items-center gap-2 min-w-0">
-            <span class="text-xl shrink-0">{{ deviceIcon(actuator.actuator_type) }}</span>
-            <div class="min-w-0">
-              <p class="text-white text-sm font-medium truncate">{{ actuator.name }}</p>
-              <p class="text-zinc-500 text-xs capitalize">{{ actuator.actuator_type }}</p>
-              <p class="text-zinc-600 text-[10px]">{{ needLabel(actuator.actuator_type) }}</p>
-              <div class="mt-1">
-                <HardwareWiringBadge :entity="actuator" show-empty />
+        <h2 v-if="groupByZone" class="text-sm font-semibold text-zinc-300 mb-2">{{ group.zoneName }}</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          <div
+            v-for="actuator in group.items"
+            :key="actuator.id"
+            class="bg-zinc-900 border rounded-xl p-4 flex flex-col gap-3 transition-colors"
+            :class="actuator.current_state_text === 'online' ? 'border-green-800/70' : 'border-zinc-800'"
+          >
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2 min-w-0">
+                <span class="text-xl shrink-0">{{ deviceIcon(actuator.actuator_type) }}</span>
+                <div class="min-w-0">
+                  <p class="text-white text-sm font-medium truncate">{{ actuator.name }}</p>
+                  <p class="text-zinc-500 text-xs capitalize">{{ actuator.actuator_type }}</p>
+                  <p class="text-zinc-600 text-[10px]">{{ needLabel(actuator.actuator_type) }}</p>
+                  <div class="mt-1 flex flex-wrap gap-1 items-center">
+                    <HardwareWiringBadge :entity="actuator" show-empty />
+                    <span
+                      v-if="pinConflict(actuator)"
+                      class="text-[10px] px-1.5 py-0.5 rounded bg-amber-900/40 text-amber-300 border border-amber-800/40"
+                      data-test="fleet-pin-conflict"
+                    >Pin conflict</span>
+                  </div>
+                </div>
               </div>
+              <button
+                @click="toggle(actuator)"
+                :disabled="toggling[actuator.id]"
+                class="relative shrink-0 w-11 h-6 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-green-600 disabled:opacity-40"
+                :class="actuator.current_state_text === 'online' ? 'bg-green-600' : 'bg-zinc-700'"
+              >
+                <span
+                  class="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200"
+                  :class="actuator.current_state_text === 'online' ? 'translate-x-5' : 'translate-x-0'"
+                />
+              </button>
             </div>
-          </div>
-          <button
-            @click="toggle(actuator)"
-            :disabled="toggling[actuator.id]"
-            class="relative shrink-0 w-11 h-6 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-green-600 disabled:opacity-40"
-            :class="actuator.current_state_text === 'online' ? 'bg-green-600' : 'bg-zinc-700'"
-            :title="actuator.current_state_text === 'online' ? 'Turn off' : 'Turn on'"
-          >
-            <span
-              class="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200"
-              :class="actuator.current_state_text === 'online' ? 'translate-x-5' : 'translate-x-0'"
+
+            <div v-if="!groupByZone" class="flex items-center justify-between text-xs">
+              <router-link
+                v-if="actuator.zone_id"
+                v-nav-hint="`/zones/${actuator.zone_id}`"
+                :to="`/zones/${actuator.zone_id}`"
+                class="text-green-600 hover:text-green-400 truncate"
+                data-test="actuator-zone-link"
+              >
+                {{ zoneName(actuator.zone_id) }}
+              </router-link>
+              <span v-else class="text-zinc-400 truncate">Unassigned</span>
+              <span
+                v-if="(actuator.current_state_text || 'offline') === 'online'"
+                class="shrink-0 ml-2 px-2 py-0.5 rounded-full font-medium bg-green-900/60 text-green-400"
+              >
+                online
+              </span>
+              <span
+                v-else
+                v-nav-hint="'/pi-setup'"
+                class="shrink-0 ml-2 px-2 py-0.5 rounded-full font-medium bg-zinc-800 text-zinc-400 cursor-default"
+                title="Device offline — see Pi + HAT setup in sidebar"
+                data-test="actuator-offline-hint"
+              >
+                {{ (actuator.current_state_text || 'offline').replaceAll('_', ' ') }}
+              </span>
+            </div>
+
+            <ActuatorPulseControl :actuator="actuator" />
+
+            <button
+              type="button"
+              class="text-[10px] text-left text-zinc-500 hover:text-zinc-300 flex items-center gap-1 -mb-1"
+              data-test="actuator-wiring-toggle"
+              @click="toggleWiring(actuator.id)"
+            >
+              <span>{{ wiringOpen[actuator.id] ? '▾' : '▸' }}</span>
+              <span>{{ wiringOpen[actuator.id] ? 'Hide wiring' : 'Edit wiring' }}</span>
+            </button>
+
+            <ActuatorWiringPanel
+              v-if="wiringOpen[actuator.id]"
+              :actuator="actuator"
+              :devices="store.devices"
+              data-test="actuator-wiring-panel"
+              @updated="onActuatorUpdated"
             />
-          </button>
+          </div>
         </div>
-
-        <div class="flex items-center justify-between text-xs">
-          <router-link
-            v-if="actuator.zone_id"
-            v-nav-hint="`/zones/${actuator.zone_id}`"
-            :to="`/zones/${actuator.zone_id}`"
-            class="text-green-600 hover:text-green-400 truncate"
-            data-test="actuator-zone-link"
-          >
-            {{ zoneName(actuator.zone_id) }}
-          </router-link>
-          <span v-else class="text-zinc-400 truncate">Unassigned</span>
-          <span
-            v-if="(actuator.current_state_text || 'offline') === 'online'"
-            :class="statusBadge('online')"
-            class="shrink-0 ml-2 px-2 py-0.5 rounded-full font-medium"
-          >
-            online
-          </span>
-          <span
-            v-else
-            v-nav-hint="'/pi-setup'"
-            :class="statusBadge(actuator.current_state_text || 'offline')"
-            class="shrink-0 ml-2 px-2 py-0.5 rounded-full font-medium cursor-default"
-            title="Device offline — see Pi + HAT setup in sidebar"
-            data-test="actuator-offline-hint"
-          >
-            {{ (actuator.current_state_text || 'offline').replaceAll('_', ' ') }}
-          </span>
-        </div>
-
-        <ActuatorPulseControl :actuator="actuator" />
-
-        <!-- Wiring expand toggle -->
-        <button
-          type="button"
-          class="text-[10px] text-left text-zinc-500 hover:text-zinc-300 flex items-center gap-1 -mb-1"
-          data-test="actuator-wiring-toggle"
-          @click="toggleWiring(actuator.id)"
-        >
-          <span>{{ wiringOpen[actuator.id] ? '▾' : '▸' }}</span>
-          <span>{{ wiringOpen[actuator.id] ? 'Hide wiring' : 'Edit wiring' }}</span>
-        </button>
-
-        <ActuatorWiringPanel
-          v-if="wiringOpen[actuator.id]"
-          :actuator="actuator"
-          :devices="store.devices"
-          data-test="actuator-wiring-panel"
-          @updated="onActuatorUpdated"
-        />
-
-        <p v-if="actuator.last_known_state_time" class="text-zinc-600 text-xs">
-          Last state update {{ timeAgo(actuator.last_known_state_time) }}
-        </p>
       </div>
-    </div>
+    </template>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { useFarmStore } from '../stores/farm'
 import { useFarmContextStore } from '../stores/farmContext'
 import { actuatorPlantNeed, NEED_META } from '../lib/plantNeeds.js'
 import ActuatorPulseControl from '../components/ActuatorPulseControl.vue'
 import HardwareWiringBadge from '../components/HardwareWiringBadge.vue'
 import ActuatorWiringPanel from '../components/ActuatorWiringPanel.vue'
+import { actuatorPinConflict, groupEntitiesByZone } from '../lib/fleetGrouping.js'
+
+const props = defineProps({
+  embedded: { type: Boolean, default: false },
+  groupByZone: { type: Boolean, default: false },
+})
 
 const store = useFarmStore()
 const farmContext = useFarmContextStore()
 const toggling = ref({})
 const wiringOpen = ref({})
+
+const displayGroups = computed(() =>
+  props.groupByZone
+    ? groupEntitiesByZone(store.actuators, store.zones)
+    : [{ zoneId: null, zoneName: '', items: store.actuators }],
+)
+
 onMounted(() => { if (!store.actuators.length && farmContext.farmId) store.loadAll(farmContext.farmId) })
+
+function pinConflict(actuator) {
+  return actuatorPinConflict(actuator, store.sensors, store.actuators)
+}
 
 function toggleWiring(id) {
   wiringOpen.value[id] = !wiringOpen.value[id]
@@ -152,19 +176,5 @@ function deviceIcon(type) {
   const k = type.toLowerCase()
   for (const [n, i] of Object.entries(DEVICE_ICONS)) { if (k.includes(n)) return i }
   return DEVICE_ICONS.default
-}
-const STATUS_BADGE = {
-  online:'bg-green-900/60 text-green-400',
-  offline:'bg-zinc-800 text-zinc-400',
-  on:'bg-green-900/60 text-green-400',
-  off:'bg-zinc-800 text-zinc-400',
-}
-function statusBadge(s) { return STATUS_BADGE[s] ?? 'bg-zinc-800 text-zinc-400' }
-function timeAgo(ts) {
-  const mins = Math.floor((Date.now() - new Date(ts)) / 60000)
-  if (mins < 1) return 'just now'
-  if (mins < 60) return `${mins}m ago`
-  const hrs = Math.floor(mins / 60)
-  return hrs < 24 ? `${hrs}h ago` : `${Math.floor(hrs / 24)}d ago`
 }
 </script>

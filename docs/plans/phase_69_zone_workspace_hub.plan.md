@@ -11,22 +11,22 @@ overview: >
 todos:
   - id: ws1-zone-tab-inline-edit
     content: "WS1: ZoneNeedSection — promote summary tiles to inline editors (sensor wiring/assign, actuator tune, comfort target edit) using existing PATCH endpoints; no link-out for in-zone work"
-    status: pending
+    status: completed
   - id: ws2-zone-lighting-inline
     content: "WS2: Light tab edits the zone's lighting program inline (photoperiod, schedule) instead of read-only summary + /lighting link"
-    status: pending
+    status: completed
   - id: ws3-fleet-tab
     content: "WS3: Zones workspace 'Fleet' tab — farm-wide Sensors + Controls + Lighting as one cross-zone admin surface (filter/group by zone); absorbs Sensors.vue/Actuators.vue/LightingPrograms.vue"
-    status: pending
+    status: completed
   - id: ws4-zone-overview-spine
     content: "WS4: Zone Overview becomes the spine — pin GPIO/device pipeline, next runs, alerts, active grow; one-screen 'what is this zone doing right now'"
-    status: pending
+    status: completed
   - id: ws5-detail-redirects
     content: "WS5: Redirect /sensors, /actuators, /lighting → /zones?tab=fleet; keep /sensors/:id, /zones/:id detail; update cross-links + wiggle targets"
-    status: pending
+    status: completed
   - id: ws6-docs-tests
     content: "WS6: zone inline-edit Vitest, fleet-tab test, phase-69-closure.test.js; operator-tour zone section; OC-69"
-    status: pending
+    status: completed
 isProject: false
 ---
 
@@ -34,7 +34,7 @@ isProject: false
 
 ## Status
 
-**Planned.** Builds on the [workspace shell](phase_68_workspace_shell_spa_nav.plan.md) (Phase 68). UI-only — reuses existing wiring/command/setpoint endpoints; no schema, no new API, no Pi.
+**Shipped.** Builds on the [workspace shell](phase_68_workspace_shell_spa_nav.plan.md) (Phase 68). UI-only — reuses existing wiring/command/setpoint endpoints; no schema, no new API, no Pi.
 
 **Closure:** **OC-69** — tracked in this plan's DoD + [arc hub OC table](phase_68_73_spa_workspace_roadmap.plan.md#operational-closure-oc-rows). Do not add to the archived Phase 35 closure doc.
 

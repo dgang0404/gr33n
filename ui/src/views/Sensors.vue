@@ -1,12 +1,61 @@
 <template>
-  <div class="p-6">
-    <div class="flex items-center justify-between mb-6">
+  <div :class="embedded ? '' : 'p-6'">
+    <div v-if="!embedded" class="flex items-center justify-between mb-6">
       <h1 class="text-xl font-semibold text-white">Sensors</h1>
       <span class="text-xs text-zinc-500">{{ store.sensors.length }} total</span>
     </div>
 
     <div v-if="store.loading" class="text-zinc-400 text-sm">Loading sensors…</div>
     <div v-else-if="!store.sensors.length" class="text-zinc-500 text-sm">No sensors found.</div>
+
+    <template v-else-if="groupByZone">
+      <div
+        v-for="group in sensorGroups"
+        :key="group.zoneId ?? 'unassigned'"
+        class="mb-6"
+        data-test="fleet-zone-group"
+      >
+        <h2 class="text-sm font-semibold text-zinc-300 mb-2">{{ group.zoneName }}</h2>
+        <div class="overflow-hidden rounded-xl border border-zinc-800">
+          <table class="w-full text-sm">
+            <thead class="bg-zinc-900 text-zinc-400 text-xs uppercase tracking-wide">
+              <tr>
+                <th class="px-4 py-3 text-left">Sensor</th>
+                <th class="px-4 py-3 text-left">Type</th>
+                <th class="px-4 py-3 text-left">Wiring</th>
+                <th class="px-4 py-3 text-left">Last Reading</th>
+                <th class="px-4 py-3 text-left">Status</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-zinc-800/60">
+              <tr
+                v-for="sensor in group.items"
+                :key="sensor.id"
+                class="bg-zinc-950 hover:bg-zinc-900/60 transition-colors"
+              >
+                <td class="px-4 py-3">
+                  <router-link
+                    v-nav-hint="'/zones'"
+                    :to="{ name: 'sensor-detail', params: { id: sensor.id } }"
+                    class="text-white font-medium hover:text-green-400"
+                  >
+                    {{ sensor.name }}
+                  </router-link>
+                </td>
+                <td class="px-4 py-3 text-zinc-300 capitalize">{{ sensor.sensor_type }}</td>
+                <td class="px-4 py-3"><HardwareWiringBadge :entity="sensor" show-empty /></td>
+                <td class="px-4 py-3 font-mono text-zinc-200 tabular-nums">{{ formatReading(sensor.id) }}</td>
+                <td class="px-4 py-3">
+                  <span :class="statusBadge(store.sensorStatus(sensor.id))" class="text-xs font-medium px-2 py-0.5 rounded-full">
+                    {{ store.sensorStatus(sensor.id) }}
+                  </span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </template>
 
     <div v-else class="overflow-hidden rounded-xl border border-zinc-800">
       <table class="w-full text-sm">
@@ -28,7 +77,7 @@
           >
             <td class="px-4 py-3">
               <router-link
-                v-nav-hint="'/sensors'"
+                v-nav-hint="'/zones'"
                 :to="{ name: 'sensor-detail', params: { id: sensor.id } }"
                 class="text-white font-medium hover:text-green-400"
               >
@@ -62,13 +111,24 @@
 </template>
 
 <script setup>
-import { onMounted } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useFarmStore } from '../stores/farm'
 import { useFarmContextStore } from '../stores/farmContext'
 import HardwareWiringBadge from '../components/HardwareWiringBadge.vue'
+import { groupEntitiesByZone } from '../lib/fleetGrouping.js'
+
+defineProps({
+  embedded: { type: Boolean, default: false },
+  groupByZone: { type: Boolean, default: false },
+})
 
 const store = useFarmStore()
 const farmContext = useFarmContextStore()
+
+const sensorGroups = computed(() =>
+  groupEntitiesByZone(store.sensors, store.zones),
+)
+
 onMounted(async () => {
   if (!store.sensors.length && farmContext.farmId) await store.loadAll(farmContext.farmId)
   store.refreshReadings()

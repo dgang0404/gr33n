@@ -8,6 +8,14 @@
       <router-link v-nav-hint="'/comfort-targets'" to="/comfort-targets" class="text-xs text-zinc-500 hover:text-green-400">
         All zones →
       </router-link>
+      <router-link
+        v-nav-hint="'/setpoints'"
+        :to="{ path: '/setpoints', query: { zone_id: String(zoneId) } }"
+        class="text-xs text-zinc-600 hover:text-zinc-400"
+        data-test="zone-comfort-raw-setpoints"
+      >
+        Raw bands →
+      </router-link>
     </div>
 
     <ComfortBandEditor

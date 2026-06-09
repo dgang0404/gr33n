@@ -1,6 +1,6 @@
 <template>
-  <div class="p-6">
-    <div class="flex items-center justify-between mb-6">
+  <div :class="embedded ? 'px-4 sm:px-6 pb-6' : 'p-6'">
+    <div v-if="!embedded" class="flex items-center justify-between mb-6">
       <div>
         <h1 class="text-xl font-semibold text-white">Lighting Programs</h1>
         <p class="text-xs text-zinc-500 mt-0.5">Photoperiod schedules — one program owns the ON/OFF pair + actuator</p>
@@ -237,6 +237,10 @@ import { computeOffTime } from '../lib/lightingDisplay.js'
 
 const route = useRoute()
 const farmContext = useFarmContextStore()
+
+defineProps({
+  embedded: { type: Boolean, default: false },
+})
 
 // ── farm context ──────────────────────────────────────────────────────────────
 const farmId = computed(() => farmContext.farmId)

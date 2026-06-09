@@ -681,6 +681,18 @@ Old bookmarks still work — `/feeding`, `/fertigation`, `/operations/money`, `/
 
 Plan: [`plans/phase_68_workspace_shell_spa_nav.plan.md`](plans/phase_68_workspace_shell_spa_nav.plan.md) · **Vitest:** `phase-68-closure.test.js`, `workspaces.test.js`.
 
+### 7f. Zone hub — edit everything here; Fleet for cross-zone (Phase 69)
+
+**Shipped.** Open **My zones → a room**. The zone page is the operational hub:
+
+- **Overview** — pipeline (Pi → device → zone), next scheduled run, active grow, alerts, and quick jumps to Water / Light / Climate.
+- **Water / Light / Climate tabs** — wire sensors, tune actuators, edit comfort targets, pause/resume schedules, and edit the lighting program **inline** (no jumping to `/sensors`, `/actuators`, or `/lighting` for zone work).
+- **Fleet** (`/zones` → Fleet tab) — farm-wide sensors, controls, and lighting grouped by zone; pin conflicts flagged on controls.
+
+Legacy list routes `/sensors`, `/actuators`, `/lighting` redirect to **Zones → Fleet**. Detail routes `/zones/:id` and `/sensors/:id` unchanged.
+
+Plan: [`plans/phase_69_zone_workspace_hub.plan.md`](plans/phase_69_zone_workspace_hub.plan.md) · **Vitest:** `phase-69-closure.test.js`, `zone-inline-edit.test.js`, `zone-fleet-tab.test.js`.
+
 ---
 
 ## 7b. Feeding & water for this zone (Phase 47)

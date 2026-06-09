@@ -19,9 +19,9 @@
             {{ sub.label }}
           </button>
         </div>
-        <Sensors v-if="fleetTab === 'sensors'" />
-        <Actuators v-else-if="fleetTab === 'controls'" />
-        <LightingPrograms v-else-if="fleetTab === 'lighting'" />
+        <Sensors v-if="fleetTab === 'sensors'" embedded group-by-zone />
+        <Actuators v-else-if="fleetTab === 'controls'" embedded group-by-zone />
+        <LightingPrograms v-else-if="fleetTab === 'lighting'" embedded />
       </div>
     </template>
   </WorkspaceShell>

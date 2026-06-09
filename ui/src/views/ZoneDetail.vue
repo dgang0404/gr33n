@@ -36,7 +36,7 @@
           type="button"
           class="px-4 py-2 text-sm font-medium rounded-t-lg transition-colors"
           :class="activeTab === tab.id ? 'bg-zinc-800 text-white' : 'text-zinc-500 hover:text-zinc-300'"
-          @click="activeTab = tab.id"
+          @click="goNeedTab(tab.id)"
         >
           {{ tab.icon }} {{ tab.label }}
         </button>
@@ -64,6 +64,9 @@
         @refresh-events="loadEvents"
         @setpoints-updated="loadSetpoints"
         @rules-updated="loadRules"
+        @schedules-updated="loadSchedulesList"
+        @hardware-updated="refreshHardware"
+        @lighting-updated="loadLightingPrograms"
         @water-refreshed="onWaterRefreshed"
         @plan-updated="refreshFeedingPlan"
       />
@@ -86,6 +89,9 @@
         @refresh-events="loadEvents"
         @setpoints-updated="loadSetpoints"
         @rules-updated="loadRules"
+        @schedules-updated="loadSchedulesList"
+        @hardware-updated="refreshHardware"
+        @lighting-updated="loadLightingPrograms"
       />
 
       <ZoneNeedSection
@@ -106,6 +112,9 @@
         @refresh-events="loadEvents"
         @setpoints-updated="loadSetpoints"
         @rules-updated="loadRules"
+        @schedules-updated="loadSchedulesList"
+        @hardware-updated="refreshHardware"
+        @lighting-updated="loadLightingPrograms"
       />
 
       <template v-else>
@@ -120,8 +129,29 @@
           @harvest="openHarvestWizard"
         />
 
-        <div class="bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3">
+        <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-4 space-y-3" data-test="zone-overview-spine">
+          <div class="flex items-center justify-between gap-2 flex-wrap">
+            <h2 class="text-sm font-semibold text-white">Right now</h2>
+            <p v-if="nextZoneSchedule" class="text-xs text-green-400/90">
+              Next run: <span class="text-zinc-200">{{ nextZoneSchedule.schedule.name }}</span>
+              · {{ nextZoneSchedule.label }}
+            </p>
+          </div>
           <ZoneConnectionPipeline :devices="zoneDevices" />
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
+            <button type="button" class="text-left px-3 py-2 rounded-lg bg-zinc-950 border border-zinc-800 hover:border-green-800/40" @click="goNeedTab(PLANT_NEEDS.water)">
+              <span class="text-zinc-500">💧 Water</span>
+              <p class="text-zinc-200 mt-0.5 truncate">{{ waterSummary }}</p>
+            </button>
+            <button type="button" class="text-left px-3 py-2 rounded-lg bg-zinc-950 border border-zinc-800 hover:border-green-800/40" @click="goNeedTab(PLANT_NEEDS.light)">
+              <span class="text-zinc-500">💡 Light</span>
+              <p class="text-zinc-200 mt-0.5 truncate">{{ lightSummary }}</p>
+            </button>
+            <button type="button" class="text-left px-3 py-2 rounded-lg bg-zinc-950 border border-zinc-800 hover:border-green-800/40" @click="goNeedTab(PLANT_NEEDS.air)">
+              <span class="text-zinc-500">🌬️ Climate</span>
+              <p class="text-zinc-200 mt-0.5 truncate">{{ airSummary }}</p>
+            </button>
+          </div>
         </div>
 
         <ZoneAlertsPanel
@@ -243,7 +273,7 @@
 
 <script setup>
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import api from '../api'
 import { useFarmStore } from '../stores/farm'
 import { useFarmContextStore } from '../stores/farmContext'
@@ -276,6 +306,7 @@ import { computeZoneTodaySnapshot, pickNextZoneSchedule } from '../lib/zoneGrowS
 import { lastHarvestedCycleInZone } from '../lib/growHub.js'
 
 const route = useRoute()
+const router = useRouter()
 const activeTab = ref('overview')
 const store = useFarmStore()
 const guardianPanel = useGuardianPanelStore()
@@ -514,6 +545,34 @@ async function onHarvestComplete(cycle) {
 }
 
 watch(
+  () => route.query.tab,
+  (tab) => {
+    if (typeof tab === 'string' && zoneTabs.some((t) => t.id === tab)) {
+      activeTab.value = tab
+    } else if (!tab) {
+      activeTab.value = 'overview'
+    }
+  },
+  { immediate: true },
+)
+
+watch(activeTab, (tab) => {
+  if (tab === 'overview') {
+    if (!route.query.tab) return
+    const { tab: _removed, ...rest } = route.query
+    router.replace({ path: route.path, query: rest })
+    return
+  }
+  if (route.query.tab !== tab) {
+    router.replace({ path: route.path, query: { ...route.query, tab } })
+  }
+})
+
+function goNeedTab(tabId) {
+  activeTab.value = tabId
+}
+
+watch(
   () => route.query.start_grow,
   (flag) => {
     if (flag && zone.value) openStartGrowWizard()
@@ -542,14 +601,32 @@ onMounted(async () => {
   tasks.value = store.tasks
   await loadSetpoints()
   await loadRules()
+  await loadLightingPrograms()
+  await Promise.all([loadEvents(), loadZonePhotos(), loadWaterQueueDepth(), store.loadAlerts(fid)])
+})
+
+async function loadSchedulesList() {
+  const fid = farmId.value
+  if (!fid) return
+  schedules.value = await store.loadSchedules(fid)
+}
+
+async function loadLightingPrograms() {
+  const fid = farmId.value
+  if (!fid) return
   try {
     const lr = await api.get(`/farms/${fid}/lighting-programs`)
     lightingPrograms.value = lr.data?.programs ?? lr.data ?? []
   } catch {
     lightingPrograms.value = []
   }
-  await Promise.all([loadEvents(), loadZonePhotos(), loadWaterQueueDepth(), store.loadAlerts(fid)])
-})
+}
+
+async function refreshHardware() {
+  const fid = farmId.value
+  if (!fid) return
+  await store.loadAll(fid)
+}
 
 async function loadRules() {
   const fid = farmId.value

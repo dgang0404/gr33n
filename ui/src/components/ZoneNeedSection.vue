@@ -15,7 +15,7 @@
             :key="link.label"
             v-nav-hint="link.to"
             :to="link.to"
-            class="text-xs text-green-600 hover:text-green-400"
+            class="text-xs text-zinc-500 hover:text-green-400"
           >
             {{ link.label }} →
           </router-link>
@@ -33,13 +33,34 @@
         :message="`No ${meta.shortLabel.toLowerCase()} sensors in this zone yet.`"
         compact
       />
-      <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-        <SensorTile
+      <div v-else class="space-y-3">
+        <div
           v-for="s in needSensors"
           :key="s.id"
-          :sensor="s"
-          :reading="store.readings[s.id]"
-        />
+          class="bg-zinc-950 border border-zinc-800 rounded-lg p-3"
+          :data-test="`zone-sensor-${s.id}`"
+        >
+          <SensorTile :sensor="s" :reading="store.readings[s.id]" />
+          <button
+            type="button"
+            class="mt-2 text-[10px] text-zinc-500 hover:text-zinc-300"
+            :data-test="`zone-sensor-wiring-toggle-${s.id}`"
+            @click="toggleSensorWiring(s.id)"
+          >
+            {{ sensorWiringOpen[s.id] ? '▾ Hide wiring' : '▸ Edit wiring' }}
+          </button>
+          <HardwareWiringPanel
+            v-if="sensorWiringOpen[s.id]"
+            :sensor-id="s.id"
+            :sensor="s"
+            :devices="store.devices"
+            :sensors="sensors"
+            :actuators="actuators"
+            class="mt-2 border-0 bg-transparent p-0"
+            data-test="zone-sensor-wiring-panel"
+            @updated="onHardwareUpdated"
+          />
+        </div>
       </div>
     </div>
 
@@ -53,6 +74,7 @@
       :active-program="activeProgram"
       :lighting-programs="lightingPrograms"
       @rules-updated="$emit('rules-updated')"
+      @schedules-updated="$emit('schedules-updated')"
     />
 
     <!-- Connection cards -->
@@ -84,36 +106,14 @@
       @plan-updated="$emit('plan-updated')"
     />
 
-    <!-- Lighting block (light only) -->
+    <!-- Lighting inline editor (light only) -->
     <div v-if="need === PLANT_NEEDS.light" class="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
-      <div class="flex items-center justify-between mb-3">
-        <h3 class="text-sm font-semibold text-white">Lighting program</h3>
-        <router-link
-          v-nav-hint="'/lighting'"
-          :to="{ path: '/lighting', query: { zone_id: String(zoneId) } }"
-          class="text-xs text-green-600 hover:text-green-400"
-        >Lighting →</router-link>
-      </div>
-      <EmptyStateHint
-        v-if="!zoneLightingPrograms.length"
-        reason="no_data"
-        message="No lighting program linked to this zone."
-        action-label="Lighting programs"
-        :action-to="{ path: '/lighting', query: { zone_id: String(zoneId) } }"
-        compact
+      <h3 class="text-sm font-semibold text-white mb-3">Lighting program</h3>
+      <ZoneLightingEditor
+        :zone-id="zoneId"
+        :farm-id="farmId"
+        @updated="$emit('lighting-updated')"
       />
-      <ul v-else class="space-y-2">
-        <li
-          v-for="lp in zoneLightingPrograms"
-          :key="lp.id"
-          class="bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-zinc-300"
-        >
-          {{ lp.name }}
-          <span class="text-zinc-500 text-xs block mt-1">
-            {{ lightingSummary(lp) }}
-          </span>
-        </li>
-      </ul>
     </div>
 
     <!-- Greenhouse climate (air + greenhouse zone) -->
@@ -158,6 +158,22 @@
             </button>
           </div>
           <ActuatorPulseControl :actuator="a" />
+          <button
+            type="button"
+            class="mt-2 text-[10px] text-zinc-500 hover:text-zinc-300"
+            :data-test="`zone-actuator-wiring-toggle-${a.id}`"
+            @click="toggleActuatorWiring(a.id)"
+          >
+            {{ actuatorWiringOpen[a.id] ? '▾ Hide wiring' : '▸ Edit wiring' }}
+          </button>
+          <ActuatorWiringPanel
+            v-if="actuatorWiringOpen[a.id]"
+            :actuator="a"
+            :devices="store.devices"
+            class="mt-2"
+            data-test="zone-actuator-wiring-panel"
+            @updated="onHardwareUpdated"
+          />
         </div>
       </div>
     </div>
@@ -174,7 +190,7 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, reactive } from 'vue'
 import {
   PLANT_NEEDS,
   NEED_META,
@@ -185,13 +201,15 @@ import { useFarmStore } from '../stores/farm.js'
 import SensorTile from './SensorTile.vue'
 import ZoneNeedConnectionCard from './ZoneNeedConnectionCard.vue'
 import ActuatorPulseControl from './ActuatorPulseControl.vue'
+import ActuatorWiringPanel from './ActuatorWiringPanel.vue'
+import HardwareWiringPanel from './HardwareWiringPanel.vue'
 import ZoneGreenhouseTab from './ZoneGreenhouseTab.vue'
 import ZoneComfortTargets from './ZoneComfortTargets.vue'
 import ZoneAutomationPanel from './ZoneAutomationPanel.vue'
 import ZoneWaterGrowStory from './ZoneWaterGrowStory.vue'
+import ZoneLightingEditor from './ZoneLightingEditor.vue'
 import EmptyStateHint from './EmptyStateHint.vue'
 import ZoneConnectionPipeline from './ZoneConnectionPipeline.vue'
-import { formatLightingProgramSummary } from '../lib/lightingDisplay.js'
 import { scheduleRunsLabel } from '../lib/cronHumanize.js'
 
 const props = defineProps({
@@ -215,9 +233,33 @@ const props = defineProps({
   toggling: { type: Object, default: () => ({}) },
 })
 
-defineEmits(['toggle-actuator', 'refresh-events', 'setpoints-updated', 'rules-updated', 'water-refreshed', 'plan-updated'])
+const emit = defineEmits([
+  'toggle-actuator',
+  'refresh-events',
+  'setpoints-updated',
+  'rules-updated',
+  'schedules-updated',
+  'water-refreshed',
+  'plan-updated',
+  'lighting-updated',
+  'hardware-updated',
+])
 
 const store = useFarmStore()
+const sensorWiringOpen = reactive({})
+const actuatorWiringOpen = reactive({})
+
+function toggleSensorWiring(id) {
+  sensorWiringOpen[id] = !sensorWiringOpen[id]
+}
+
+function toggleActuatorWiring(id) {
+  actuatorWiringOpen[id] = !actuatorWiringOpen[id]
+}
+
+function onHardwareUpdated() {
+  emit('hardware-updated')
+}
 
 const zoneDevices = computed(() => store.devicesByZone(props.zoneId))
 
@@ -240,11 +282,26 @@ const sectionManageLinks = computed(() => {
   }
   if (props.need === PLANT_NEEDS.light) {
     return [{
-      to: { path: '/lighting', query: { zone_id: String(props.zoneId) } },
-      label: 'Lighting programs',
+      to: { path: '/zones', query: { tab: 'fleet', fleet: 'lighting' } },
+      label: 'All zones (Fleet)',
     }]
   }
-  return meta.value.manageLinks
+  if (props.need === PLANT_NEEDS.air) {
+    return [
+      ...(meta.value.manageLinks || []),
+      {
+        to: { path: '/zones', query: { tab: 'fleet', fleet: 'sensors' } },
+        label: 'All zones (Fleet)',
+      },
+    ]
+  }
+  return [
+    ...(meta.value.manageLinks || []),
+    {
+      to: { path: '/zones', query: { tab: 'fleet', fleet: props.need === PLANT_NEEDS.water ? 'controls' : 'sensors' } },
+      label: 'All zones (Fleet)',
+    },
+  ].filter((link, i, arr) => arr.findIndex((x) => JSON.stringify(x.to) === JSON.stringify(link.to)) === i)
 })
 
 const needSensors = computed(() =>
@@ -263,10 +320,6 @@ const needSetpoints = computed(() => {
 const zoneLightingPrograms = computed(() =>
   props.lightingPrograms.filter(lp => lp.zone_id === props.zoneId),
 )
-
-function lightingSummary(lp) {
-  return formatLightingProgramSummary(lp)
-}
 
 function formatReading(sensor) {
   const r = store.readings[sensor.id]
@@ -336,7 +389,7 @@ const connectionCards = computed(() => {
       cards.push({
         title: lp.name,
         subtitle: 'Lighting program',
-        manageTo: '/lighting',
+        manageTo: { path: '/zones', query: { tab: 'fleet', fleet: 'lighting' } },
         readingLabel: needSensors.value[0] ? formatReading(needSensors.value[0]) : 'Optional lux/PAR sensor',
         targetLabel: `${lp.on_hours ?? '—'}h on / ${lp.off_hours ?? '—'}h off`,
         automationLabel: lp.is_active ? 'Active — ON/OFF schedules fire automatically' : 'Inactive',

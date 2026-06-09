@@ -40,12 +40,24 @@
                 Linked: {{ item.linkedName }}
               </p>
             </div>
-            <span
-              class="shrink-0 text-[10px] px-2 py-0.5 rounded-full"
-              :class="item.schedule.is_active ? 'bg-green-900/50 text-green-300' : 'bg-zinc-800 text-zinc-500'"
-            >
-              {{ item.schedule.is_active ? 'On' : 'Off' }}
-            </span>
+            <div class="flex flex-col items-end gap-1 shrink-0">
+              <span
+                class="text-[10px] px-2 py-0.5 rounded-full"
+                :class="item.schedule.is_active ? 'bg-green-900/50 text-green-300' : 'bg-zinc-800 text-zinc-500'"
+              >
+                {{ item.schedule.is_active ? 'On' : 'Off' }}
+              </span>
+              <button
+                type="button"
+                class="text-[10px] px-2 py-0.5 rounded border transition-colors disabled:opacity-50"
+                :class="item.schedule.is_active ? 'border-yellow-800/50 text-yellow-400' : 'border-green-800/50 text-green-400'"
+                :disabled="scheduleTogglingId === item.schedule.id"
+                :data-test="`zone-schedule-toggle-${item.schedule.id}`"
+                @click="toggleSchedule(item.schedule)"
+              >
+                {{ scheduleTogglingId === item.schedule.id ? '…' : (item.schedule.is_active ? 'Pause' : 'Resume') }}
+              </button>
+            </div>
           </div>
         </li>
       </ul>
@@ -128,10 +140,11 @@ const props = defineProps({
   lightingPrograms: { type: Array, default: () => [] },
 })
 
-const emit = defineEmits(['rules-updated'])
+const emit = defineEmits(['rules-updated', 'schedules-updated'])
 
 const store = useFarmStore()
 const togglingId = ref(null)
+const scheduleTogglingId = ref(null)
 
 const needLabel = computed(() => NEED_META[props.need]?.shortLabel?.toLowerCase() || 'this need')
 
@@ -156,6 +169,16 @@ async function toggleRule(rule) {
     emit('rules-updated')
   } finally {
     togglingId.value = null
+  }
+}
+
+async function toggleSchedule(schedule) {
+  scheduleTogglingId.value = schedule.id
+  try {
+    await store.updateScheduleActive(schedule.id, !schedule.is_active)
+    emit('schedules-updated')
+  } finally {
+    scheduleTogglingId.value = null
   }
 }
 </script>
