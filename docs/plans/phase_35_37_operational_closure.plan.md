@@ -1,10 +1,10 @@
 ---
 name: Phase 35–37 operational closure (seed, bootstrap, docs, tests)
 overview: >
-  Cross-phase workstream for operator-facing parity after feature code lands: demo seed,
-  bootstrap templates, OpenAPI, operator-tour, architecture notes, Go smokes, and Vitest.
-  Each feature phase (35–37) keeps a final WS8 (or OC slice); this doc tracks what shipped
-  vs deferred so nothing is marked "done" without docs/tests/seed alignment.
+  ARCHIVED ROLLUP (Phases 35–67 only). Historical cross-phase tracker for operator-facing
+  parity: demo seed, bootstrap templates, OpenAPI, operator-tour, smokes, Vitest. All OC rows
+  through OC-67 are closed. Do NOT add new phases here — use each phase's own plan + arc
+  roadmap for closure (see phase_68_73_spa_workspace_roadmap.plan.md § Plan lifecycle).
 todos:
   - id: oc-35-seed-bootstrap
     content: "OC-35A: jadam_indoor_photoperiod_v1 bootstrap → lighting_program + paired schedules (Phase 35 WS6 remainder)"
@@ -133,6 +133,23 @@ isProject: false
 ---
 
 # Phase 35–39 operational closure (seed, bootstrap, docs, tests)
+
+> ## ⛔ ARCHIVED — read-only historical rollup (Phases 35–67)
+>
+> **This document is frozen.** All OC rows through **OC-67** are **closed**. Do not treat
+> conditional language below ("close when Phase X ships", "not before", "planned next") as
+> active requirements — those conditions are **deprecated** because the phase shipped.
+>
+> **For agents:** If a phase plan says **Status: Shipped** or its OC row is ✅, ignore
+> gating/dependency prose in that plan unless the plan explicitly says otherwise. Do not
+> re-open closure work or block new work on stale "close when" conditions.
+>
+> **For new phases (68+):** Closure lives in **each phase's own plan** (final WS + DoD) and
+> the arc hub's OC table — **not here**. See
+> [phase_68_73_spa_workspace_roadmap.plan.md](phase_68_73_spa_workspace_roadmap.plan.md)
+> § Plan lifecycle rules.
+
+---
 
 ## Why this doc exists
 

@@ -37,7 +37,8 @@ isProject: false
 | Status | Phases |
 |--------|--------|
 | **Shipped** | 40–67 (farmer closure + Guardian capstone arc complete) |
-| **Planned next** | Guardian intelligence **60–63**, hardware diagnostics **65** (see below) |
+| **Planned next** | **SPA workspace refactor 68–73** → [phase_68_73_spa_workspace_roadmap.plan.md](phase_68_73_spa_workspace_roadmap.plan.md) |
+| **Also planned** | Guardian intelligence **60–63**, hardware diagnostics **65** (see below) |
 | **Schema / security** | **57** ✅ shipped |
 | **Runtime polish** | **58** ✅ task consumptions |
 | **Explicit deferrals** | **59** ✅ [enterprise-tier-boundary.md](../enterprise-tier-boundary.md) |
@@ -73,14 +74,13 @@ isProject: false
 
 ### Guardian knowledge & sensing arc (64–67)
 
-> ## 🔒 Capstone ordering rule (permanent)
+> ## 🔓 Capstone ordering rule (RETIRED — 2026-06)
 >
-> **Phase 66 (Weather & site) and Phase 67 (Hands-free field assistant) are the capstone phases and must always remain the final two phases — no matter how many phases are added.**
+> **This rule has been retired.** It originally reserved Phase 66 (Weather & site) and Phase 67 (Hands-free field assistant) as the permanent final two phases. **Both shipped**, so the rationale (knowledge layers must land before the capstone) is satisfied — the capstones already sit on top of the knowledge work.
 >
-> - **Never append a new phase after 67.** Field assistant (voice + photo) is the last thing we ship — it sits on top of everything else.
-> - New phases insert **at or below 65**. Slots 58–65 are taken; if a new phase is needed and no integer slot is free, use a letter suffix (e.g. `58a`, `65a`) so **66 and 67 never move**.
-> - If a future reorg ever does renumber the capstones, they still go **last** and keep the two highest numbers in the sequence.
-> - Rationale: weather/site grounds the grow advisor's light math, and the field assistant is the "everything comes together in your hand" capstone — both depend on the knowledge layers shipping first.
+> - New work now continues at **68 and up**. The SPA workspace refactor arc opens at 68 — see [phase_68_73_spa_workspace_roadmap.plan.md](phase_68_73_spa_workspace_roadmap.plan.md).
+> - Historical note (no longer enforced): the rule said never append after 67 and insert new phases at/below 65 with letter suffixes so 66/67 stayed last.
+> - Rationale for retiring: 66/67 are done; a new UI-architecture arc is naturally sequenced after them in time, and forcing letter suffixes for six new phases hurt readability.
 
 These answer *"how does Guardian actually KNOW things?"* — grounding, not guessing.
 
@@ -178,7 +178,7 @@ flowchart TB
 | OC-66 | 66 weather & site | Offline solar test + supplemental-light starter |
 | OC-67 | 67 field assistant | Mic + TTS + grounded photo diagnosis + wiring context from 65 |
 
-Track in [phase_35_37_operational_closure.plan.md](phase_35_37_operational_closure.plan.md).
+**Historical rollup (OC-35 … OC-67 only):** [phase_35_37_operational_closure.plan.md](phase_35_37_operational_closure.plan.md) — **archived, do not extend.** Phases 68+ closure: each phase plan + [phase_68_73_spa_workspace_roadmap.plan.md](phase_68_73_spa_workspace_roadmap.plan.md) § Plan lifecycle rules.
 
 ---
 
