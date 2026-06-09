@@ -165,7 +165,7 @@ Store wiring under a reserved key in the existing `config JSONB` on `sensors` an
 | Vitest | Wiring panel render + edit; empty state; conflict error |
 | `ui/src/__tests__/phase-50-closure.test.js` | Closure bundle |
 
-**OC-50** row added and closed when WS1–WS6 ship.
+**OC-50** closed (shipped).
 
 ---
 

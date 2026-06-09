@@ -140,7 +140,7 @@ Hovering a sidebar item still wiggles its declared **siblings** (`relatedTo` fro
 | `ui/src/__tests__/phase-49-closure.test.js` (new) | Closure bundle: rename + relations + reduced-motion class present |
 | [operator-tour.md](../operator-tour.md) | One line: Advanced → Fertigation; hover shows related pages |
 
-**OC-49** row added to closure plan and closed when WS1–WS4 ship.
+**OC-49** closed (shipped).
 
 ---
 

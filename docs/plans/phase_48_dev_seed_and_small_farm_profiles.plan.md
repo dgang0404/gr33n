@@ -175,7 +175,7 @@ Exit non-zero on duplicate names (already zones); add sensor duplicate check.
 | Go smoke | Re-seed idempotency; batch latest readings on small profile |
 | Vitest | Optional — none required unless reset script gets JS helper |
 
-**OC-48** row closed when WS1–WS7 ship.
+**OC-48** closed (shipped).
 
 ---
 

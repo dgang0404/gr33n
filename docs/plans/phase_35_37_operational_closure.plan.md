@@ -46,40 +46,40 @@ todos:
     content: "BUG (pre-40): Guardian edge tab + sidebar overlap — see phase_40 plan bug-guardian-nav"
     status: done
   - id: oc-40-closure
-    content: "OC-40: Phase 40 WS8 — zone cockpit operator-tour §4b, architecture §7.0f, Vitest inline setpoints + Today strip (close when Phase 40 ships, not before)"
+    content: "OC-40: Phase 40 WS8 — zone cockpit operator-tour §4b, architecture §7.0f, Vitest inline setpoints + Today strip"
     status: done
   - id: oc-41-closure
-    content: "OC-41: Phase 41 WS7 — farm hub operator-tour §3, architecture §7.0g, why-empty Vitest (close when Phase 41 ships, after 40)"
+    content: "OC-41: Phase 41 WS7 — farm hub operator-tour §3, architecture §7.0g, why-empty Vitest"
     status: completed
   - id: oc-42-closure
-    content: "OC-42: Phase 42 WS7 — comfort targets + plain automation docs/tests (close when Phase 42 ships)"
+    content: "OC-42: Phase 42 WS7 — comfort targets + plain automation docs/tests"
     status: completed
   - id: oc-43-closure
-    content: "OC-43: Phase 43 WS7 — operations hub docs/tests (close when Phase 43 ships)"
+    content: "OC-43: Phase 43 WS7 — operations hub docs/tests"
     status: completed
   - id: oc-44-closure
-    content: "OC-44: Phase 44 WS6 — setup + edge wizard docs/tests (close when Phase 44 ships)"
+    content: "OC-44: Phase 44 WS6 — setup + edge wizard docs/tests"
     status: completed
   - id: oc-45-closure
-    content: "OC-45: Phase 45 WS7 — farmer sit-in + farmer-ready v1 (close when Phase 45 ships)"
+    content: "OC-45: Phase 45 WS7 — farmer sit-in + farmer-ready v1"
     status: completed
   - id: oc-46-closure
-    content: "OC-46: Phase 46 WS6 — LLM tool proposals docs/tests (close when Phase 46 ships)"
+    content: "OC-46: Phase 46 WS6 — LLM tool proposals docs/tests"
     status: completed
   - id: oc-47
-    content: "OC-47: Phase 47 WS7 — feeding & water plain language docs/tests (close when Phase 47 ships)"
+    content: "OC-47: Phase 47 WS7 — feeding & water plain language docs/tests"
     status: completed
   - id: oc-48-closure
-    content: "OC-48: Phase 48 WS7 — dev seed profiles, idempotent seed, reset script, sanity report (close when Phase 48 ships)"
+    content: "OC-48: Phase 48 WS7 — dev seed profiles, idempotent seed, reset script, sanity report"
     status: completed
   - id: oc-49-closure
-    content: "OC-49: Phase 49 WS4 — sidebar nav polish, Fertigation rename, related-route hover (close when Phase 49 ships)"
+    content: "OC-49: Phase 49 WS4 — sidebar nav polish, Fertigation rename, related-route hover"
     status: completed
   - id: oc-50-closure
-    content: "OC-50: Phase 50 WS6 — hardware wiring visibility, pi-config generator, sanity report, docs/tests (close when Phase 50 ships)"
+    content: "OC-50: Phase 50 WS6 — hardware wiring visibility, pi-config generator, sanity report, docs/tests"
     status: completed
   - id: oc-51-closure
-    content: "OC-51: Phase 51 WS6 — Pi config platform sync, live reload, staleness badge, import script, docs/tests (close when Phase 51 ships)"
+    content: "OC-51: Phase 51 WS6 — Pi config platform sync, live reload, staleness badge, import script, docs/tests"
     status: completed
   - id: oc-52-closure
     content: "OC-52: Phase 52 — Guardian UI context, Pi setup guide, nav-hint wiggle chains (shipped)"
@@ -569,9 +569,9 @@ Feature detail: [`phase_57_pi_device_api_keys.plan.md`](phase_57_pi_device_api_k
 
 ## Phases 58–59 — Farmer closure arc (planned)
 
-Hub: [`phase_53_59_roadmap.plan.md`](phase_53_59_roadmap.plan.md). Close **OC-58 … OC-59** when each phase WS docs/tests ship.
+Hub: [`phase_53_59_roadmap.plan.md`](phase_53_59_roadmap.plan.md). Close **OC-58 … OC-59** when each phase WS docs/tests ship — **all closed (historical)**.
 
-| Phase | OC | Plan | Close when |
+| Phase | OC | Plan | Status |
 |-------|-----|------|------------|
 | ~~53 Grow + stock + money~~ | ~~OC-53~~ | [phase_53](phase_53_grow_stock_money_closure.plan.md) | ✅ Shipped |
 | ~~54 Zone connection nav~~ | ~~OC-54~~ | [phase_54](phase_54_zone_connection_nav.plan.md) | ✅ Shipped |

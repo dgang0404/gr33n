@@ -42,9 +42,7 @@ isProject: false
 
 ## Status
 
-**Shipped — chapter 1 of 8** in the [Farmer UX roadmap (40–47)](farmer_ux_roadmap_40_plus.plan.md). Depends on **Phase 38** + **39/39b** ✅. **OC-40** closed (WS8). Next: **Phase 41** farm hub. Water wedge completes in **47**; Setpoints/Schedules farmer routes → **42**; inventory/costs → **43**.
-
-**Quick fix (not a full WS):** [`bug-guardian-nav`](#bug-guardian-nav-hotfix) — do before or alongside WS7; tracked in plan todos.
+**Shipped.** OC-40 closed (WS8). **Historical:** ship-order / dependency notes in this plan are deprecated — see [plan lifecycle rules](phase_68_73_spa_workspace_roadmap.plan.md#plan-lifecycle-rules-for-all-phase-plans). Active work: [68–73 SPA arc](phase_68_73_spa_workspace_roadmap.plan.md).
 
 ---
 
@@ -302,7 +300,7 @@ WS2 + WS4 give the biggest "not the DB" win early.
 | [phase_39_edge_fertigation_execution.plan.md](phase_39_edge_fertigation_execution.plan.md) | Queue + mix — feeds WS5 |
 | [phase_39b_plain_irrigation.plan.md](phase_39b_plain_irrigation.plan.md) | RO/well — Water grow story branch |
 | [phase_41_farm_hub_coherence.plan.md](phase_41_farm_hub_coherence.plan.md) | Farm-wide hub after zone cockpit |
-| [phase_35_37_operational_closure.plan.md](phase_35_37_operational_closure.plan.md) | OC-40 tracker (add when WS8 lands) |
+| [phase_35_37_operational_closure.plan.md](phase_35_37_operational_closure.plan.md) | OC-40 closed (archived rollup) |
 | [operator-tour.md](../operator-tour.md) §4a | Phase 38 plant needs |
 | [ZoneDetail.vue](../../ui/src/views/ZoneDetail.vue) | Integration point |
 | [ZoneNeedSection.vue](../../ui/src/components/ZoneNeedSection.vue) | Connection cards to replace |
@@ -311,4 +309,4 @@ WS2 + WS4 give the biggest "not the DB" win early.
 
 ## Using this plan in a new chat
 
-> Implement Phase 40 from `docs/plans/phase_40_unified_farmer_ux_zone_cockpit.plan.md`. Start with **bug-guardian-nav** or **WS2 inline setpoints** for fastest UX win. Do not add schema unless tasks lack `zone_id`. Keep farm-wide Advanced pages. Assume Phase 38 zone hub and Phase 39 queue on Water tab exist or are in flight.
+> **Shipped.** Historical reference only. Active UI work: [68–73 SPA arc](phase_68_73_spa_workspace_roadmap.plan.md). Do not re-implement Phase 40 unless fixing a regression.

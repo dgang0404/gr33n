@@ -159,7 +159,7 @@ flowchart TB
 
 ## Operational closure (OC rows)
 
-| OC | Phase | Close when |
+| OC | Phase | Status |
 |----|-------|------------|
 | OC-52 | 52 Guardian UI context | ✅ Shipped |
 | OC-53 | 53 grow/stock/money | ✅ Shipped |

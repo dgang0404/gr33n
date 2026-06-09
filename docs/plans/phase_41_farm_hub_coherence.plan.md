@@ -34,9 +34,9 @@ isProject: false
 
 ## Status
 
-**Shipped — chapter 2 of 8** in the [Farmer UX roadmap (40–47)](farmer_ux_roadmap_40_plus.plan.md). Depends on **Phase 40** ✅. **OC-41** closed (WS7). Next: **Phase 47** feeding & water plain language (or **42** comfort targets).
+**Shipped.** OC-41 closed (WS7). **Historical:** ship-order notes in this plan are deprecated.
 
-**Indexed in:** [`pre_development_gaps_index.plan.md`](pre_development_gaps_index.plan.md) (gap **A3**).
+**Indexed in:** [`pre_development_gaps_index.plan.md`](pre_development_gaps_index.plan.md) (gap **A3**, archived).
 
 ---
 
@@ -214,4 +214,4 @@ WS4 + WS5 unblock demos; WS1 delivers morning cockpit value.
 
 ## Using this plan in a new chat
 
-> Implement Phase 41 from `docs/plans/phase_41_farm_hub_coherence.plan.md` after Phase 40 zone cockpit. Start with **WS4 why-empty** + **WS5 seed tasks** if demos look empty. Use `?zone_id=` query params; avoid new tables unless farm-summary API is required.
+> **Shipped.** For historical context only — do not treat dependency prose as a live gate. Active work: [68–73 SPA arc](phase_68_73_spa_workspace_roadmap.plan.md).

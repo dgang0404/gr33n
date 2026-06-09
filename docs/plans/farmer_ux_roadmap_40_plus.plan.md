@@ -1,18 +1,18 @@
 ---
-name: Farmer UX roadmap (Phases 40–47)
+name: Farmer UX roadmap (Phases 40–73)
 overview: >
-  North-star plan for making gr33n usable by non-technical farmers without turning the UI
-  into a database console. Phases 40–41 zone + farm hub; 47 feeding & water plain language;
-  42–45 comfort, operations, setup, sit-in; 46 Guardian LLM proposals. Schema stays stable.
+  North-star plan for making gr33n usable by non-technical farmers. Phases 40–67 shipped
+  (zone cockpit through field assistant). Phases 68–73 SPA workspace refactor is planned next.
+  Schema stays stable; gating prose in shipped phase plans is historical only.
 todos:
   - id: roadmap-published
     content: "Master roadmap + phase 42–45 plan stubs linked from gaps index and README"
     status: done
   - id: guardian-pr-docs
-    content: "Guardian PR operator guide + guardian_pr_ux_through_farmer_phases.plan.md (doc gate before 40 code)"
+    content: "Guardian PR operator guide + guardian_pr_ux_through_farmer_phases.plan.md"
     status: done
   - id: phase-40-41
-    content: "Phases 40–41 — zone cockpit + farm hub (existing plans)"
+    content: "Phases 40–41 — zone cockpit + farm hub"
     status: completed
   - id: phase-42
     content: "Phase 42 — comfort targets + automation in plain language"
@@ -22,7 +22,7 @@ todos:
     status: completed
   - id: phase-44
     content: "Phase 44 — getting started + edge install wizards"
-    status: pending
+    status: completed
   - id: phase-45
     content: "Phase 45 — farmer sit-in remediation + whole-app polish"
     status: completed
@@ -30,8 +30,8 @@ todos:
     content: "Phase 47 — feeding & water plain language (room-first; ties arc together)"
     status: completed
   - id: phase-48-dev-seed
-    content: "Phase 48 — dev seed hygiene & small farm profiles (parallel infra track)"
-    status: pending
+    content: "Phase 48 — dev seed hygiene & small farm profiles"
+    status: completed
 isProject: false
 ---
 
@@ -41,9 +41,11 @@ isProject: false
 
 | Status | Phases |
 |--------|--------|
-| **Shipped** | 40–48 (farmer UX arc + Guardian LLM + dev seed) · **49–52** (sidebar, hardware, Pi sync, Guardian UI context) |
-| **Next feature code** | **[53→59 arc](phase_53_59_roadmap.plan.md)** — grow/stock/money closure, connection nav, Guardian ops, schema, Pi keys, runtime, enterprise boundary |
-| **Hub doc** | [`phase_53_59_roadmap.plan.md`](phase_53_59_roadmap.plan.md) — ship order, OC rows, Guardian slices |
+| **Shipped** | **40–67** — farmer UX arc, Pi wiring/sync, grow/stock/money closure, Guardian intelligence, crop knowledge, weather, field assistant |
+| **Planned next** | **[68→73 SPA workspace refactor](phase_68_73_spa_workspace_roadmap.plan.md)** — sidebar → workspaces |
+| **Hub docs** | [53–59 arc](phase_53_59_roadmap.plan.md) (historical) · [68–73 arc](phase_68_73_spa_workspace_roadmap.plan.md) (active) |
+
+> **Plan lifecycle:** Gating / ship-order prose in **shipped** phase plans (40–67) is **historical** — not a live blocker. See [plan lifecycle rules](phase_68_73_spa_workspace_roadmap.plan.md#plan-lifecycle-rules-for-all-phase-plans).
 
 ---
 
@@ -140,7 +142,7 @@ Phase 40 inline edit is the **wedge**; Phase 42 **owns the full comfort-target e
 | **45** | Validation & polish | Real farmer sit-in fixes; mobile checklist; copy pass v2 | [phase_45](phase_45_farmer_validation_whole_app_polish.plan.md) |
 | **46** | LLM tool proposals | Hybrid C: matchers first; validated LLM proposal on miss — **not** starter chips | [phase_46](phase_46_guardian_llm_tool_proposals.plan.md) |
 
-**Start Phase 40 only after** [Pre–Phase 40 gate](phase_35_37_operational_closure.plan.md#prephase-40-gate-start-feature-work-only-when-these-are-green) is green — including Guardian PR docs ([guide](../guardian-change-requests-guide.md), [PR UX plan](guardian_pr_ux_through_farmer_phases.plan.md)). **Do not** wait for 42–47 to start 40 — they follow in order. **Recommended:** ship **47** soon after **41** so Water tab completes before comfort (42).
+> **Historical (shipped):** Phases 40–47 above are complete. The pre–Phase 40 gate and ship-order notes below are **deprecated** — do not block new work.
 
 **Vocabulary:** [farmer-vocabulary.md](../farmer-vocabulary.md) — enforced in Phase 47 WS5; **Vocabulary v2 (zones not rooms)** in Phase 45 WS3; sit-in validation in Phase 45.
 
@@ -162,7 +164,7 @@ Phase 40 inline edit is the **wedge**; Phase 42 **owns the full comfort-target e
 
 ---
 
-## Guardian change requests (PRs) — read before Phase 40 code
+## Guardian change requests (PRs) — historical context (shipped arc)
 
 Guardian **proposals** are not Git PRs — they are **Confirm-gated change requests**. Today they are opened by **rule-assisted matchers** after you send a chat message, not by the LLM silently.
 
@@ -273,7 +275,7 @@ Hardware, Pi platform sync, and farmer job completion — each phase is shippabl
 
 | Doc | Use |
 |-----|-----|
-| [pre_development_gaps_index.plan.md](pre_development_gaps_index.plan.md) | Gap IDs → phase links (update Tier A to A2–A6) |
+| [pre_development_gaps_index.plan.md](pre_development_gaps_index.plan.md) | **Archived** gap index |
 | [phase_35_37_operational_closure.plan.md](phase_35_37_operational_closure.plan.md) | **Archived** OC-35 … OC-67 rollup only — do not extend |
 | [phase_68_73_spa_workspace_roadmap.plan.md](phase_68_73_spa_workspace_roadmap.plan.md) | SPA workspace arc hub + plan lifecycle rules |
 | [phase_53_59_roadmap.plan.md](phase_53_59_roadmap.plan.md) | Post-52 farmer closure hub |
@@ -285,4 +287,4 @@ Hardware, Pi platform sync, and farmer job completion — each phase is shippabl
 
 ## Using this in a new chat
 
-> Read `docs/plans/farmer_ux_roadmap_40_plus.plan.md`, [`phase_53_59_roadmap.plan.md`](phase_53_59_roadmap.plan.md), and `docs/farmer-vocabulary.md` first. Implement only the phase named in the prompt (40–59). Do not add schema unless the phase plan explicitly allows it. Prefer farmer job language over table names.
+> Read [`phase_68_73_spa_workspace_roadmap.plan.md`](phase_68_73_spa_workspace_roadmap.plan.md) for **active work** (68–73). Phases 40–67 are **shipped** — treat gating prose as historical. For a specific shipped phase, read its plan **Status** section first. Prefer farmer job language over table names.

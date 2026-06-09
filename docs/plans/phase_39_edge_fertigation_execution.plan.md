@@ -360,4 +360,4 @@ Queue first (unblocks safe multi-step). Calculator before Pi executor. Worker pi
 
 ## Using this plan in a new chat
 
-> Implement Phase 39 starting with **WS1 device command queue** (fixes last-write-wins). Do not re-litigate Phase 38 UI. Mix math stays in Go (`internal/fertigation/mixplan`). Pi runs steps only. Keep manual `POST …/mixing-events` for operators without hardware.
+> **Shipped.** Historical reference only. Do not re-implement unless fixing a regression.

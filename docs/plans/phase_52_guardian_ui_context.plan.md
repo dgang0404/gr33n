@@ -26,9 +26,9 @@ isProject: false
 
 **Shipped** on `main` (commits through `804e930`). **OC-52** closed in [operational closure](phase_35_37_operational_closure.plan.md).
 
-**Not the same as:** Phase 51 plan [Out of scope](phase_51_pi_config_sync.plan.md#out-of-scope) **"Phase 52+ per-device API keys"** — renamed **[Phase 57](phase_57_pi_device_api_keys.plan.md)** in the [53–59 arc](phase_53_59_roadmap.plan.md). **Planned, not shipped.**
+**Not the same as:** Phase 51 plan [Out of scope](phase_51_pi_config_sync.plan.md#out-of-scope) **"Phase 52+ per-device API keys"** — shipped as **[Phase 57](phase_57_pi_device_api_keys.plan.md)**.
 
-**Next in arc:** [Phase 53](phase_53_grow_stock_money_closure.plan.md) grow/stock/money · [Phase 54](phase_54_zone_connection_nav.plan.md) connection nav · [Phase 55](phase_55_guardian_ops_grow_money.plan.md) Guardian ops.
+**Historical:** "Next in arc" below is deprecated — phases 53–55 also shipped.
 
 ---
 

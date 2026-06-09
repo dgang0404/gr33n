@@ -153,4 +153,4 @@ WS1 → WS2 → WS3 → WS4 (after 39 WS1; can parallel 39 WS4 Pi work)
 
 ## Using this plan in a new chat
 
-> Implement Phase 39b after Phase 39 WS1 queue. Add irrigation_only program path — pulse enqueue only, no mix_batch. Update zone Water and Fertigation copy. See `docs/plans/phase_39b_plain_irrigation.plan.md`.
+> **Shipped.** Historical reference only. See `docs/plans/phase_39b_plain_irrigation.plan.md` for scope.

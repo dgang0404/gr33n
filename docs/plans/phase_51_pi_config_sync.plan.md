@@ -312,7 +312,7 @@ The script is idempotent — re-running it overwrites the same wiring fields wit
 | `pi_client/test_gr33n_client.py` | `test_fetch_remote_config_success`, `test_fetch_remote_config_offline_falls_back_to_cache`, `test_reload_config_swaps_readers_atomically`, `test_local_wiring_takes_precedence` |
 | `cmd/api/smoke_phase51_test.go` | Go handler: `GET /devices/by-uid/{uid}/config` returns correct wiring; version bump on PATCH |
 | `ui/src/__tests__/phase-51-closure.test.js` | Closure bundle + device card staleness badge renders |
-| **OC-51** | Row added to closure plan; closed when WS1–WS6 ship |
+| **OC-51** | Closed (shipped) |
 
 ---
 

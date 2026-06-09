@@ -150,7 +150,7 @@ roadmap table**; the phase plan's DoD is authoritative.
 
 ## Operational closure (OC rows)
 
-| OC | Phase | Close when |
+| OC | Phase | Status |
 |----|-------|------------|
 | OC-68 | 68 workspace shell | Sidebar shows workspaces; all old routes redirect; cross-workspace wiggle; nav-groups tests green |
 | OC-69 | 69 zone workspace | Per-zone sensor/control/lighting edit inline; Fleet tab; farm-wide pages redirect |
