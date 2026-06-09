@@ -1,8 +1,8 @@
 ---
-name: Farmer UX roadmap (Phases 40–73)
+name: Farmer UX roadmap (Phases 40–77)
 overview: >
   North-star plan for making gr33n usable by non-technical farmers. Phases 40–67 shipped
-  (zone cockpit through field assistant). Phases 68–73 SPA workspace refactor is planned next.
+  (zone cockpit through field assistant). Phases 68–77 SPA workspace refactor is planned next.
   Schema stays stable; gating prose in shipped phase plans is historical only.
 todos:
   - id: roadmap-published
@@ -42,8 +42,8 @@ isProject: false
 | Status | Phases |
 |--------|--------|
 | **Shipped** | **40–67** — farmer UX arc, Pi wiring/sync, grow/stock/money closure, Guardian intelligence, crop knowledge, weather, field assistant |
-| **Planned next** | **[68→73 SPA workspace refactor](phase_68_73_spa_workspace_roadmap.plan.md)** — sidebar → workspaces |
-| **Hub docs** | [53–59 arc](phase_53_59_roadmap.plan.md) (historical) · [68–73 arc](phase_68_73_spa_workspace_roadmap.plan.md) (active) |
+| **Planned next** | **[68→77 SPA workspace arc](phase_68_73_spa_workspace_roadmap.plan.md)** — workspaces + zone ops + comfort + polish |
+| **Hub docs** | [53–59 arc](phase_53_59_roadmap.plan.md) (historical) · [68–77 arc](phase_68_73_spa_workspace_roadmap.plan.md) (active) |
 
 > **Plan lifecycle:** Gating / ship-order prose in **shipped** phase plans (40–67) is **historical** — not a live blocker. See [plan lifecycle rules](phase_68_73_spa_workspace_roadmap.plan.md#plan-lifecycle-rules-for-all-phase-plans).
 
@@ -251,16 +251,20 @@ Hardware, Pi platform sync, and farmer job completion — each phase is shippabl
 
 **Guardian knowledge & sensing arc (64–67)** — how Guardian *knows* things (grounding, not guessing). **64 must precede 62.** **Shipped.**
 
-**SPA workspace refactor arc (68–73)** — collapse sidebar into full-page workspaces (zones, hardware/Pi, feed & water, money, Guardian PR discoverability). Hub: [`phase_68_73_spa_workspace_roadmap.plan.md`](phase_68_73_spa_workspace_roadmap.plan.md). Plan lifecycle rules (shipped = conditions deprecated) live there — not in the archived closure doc.
+**SPA workspace refactor arc (68–77)** — collapse sidebar into full-page workspaces; Phases 74–77 finish zone ops, comfort/automation, Today alignment, and post-arc polish. Hub: [`phase_68_73_spa_workspace_roadmap.plan.md`](phase_68_73_spa_workspace_roadmap.plan.md). Plan lifecycle rules (shipped = conditions deprecated) live there — not in the archived closure doc.
 
 | Phase | Name | One job | Plan |
 |-------|------|---------|------|
-| **68** | Workspace shell | Sidebar → workspaces; old routes redirect; cross-workspace wiggle | [phase_68](phase_68_workspace_shell_spa_nav.plan.md) |
-| **69** | Zone workspace | One zone = edit sensors/controls/lighting inline; Fleet tab | [phase_69](phase_69_zone_workspace_hub.plan.md) |
+| **68** ✅ | Workspace shell | Sidebar → workspaces; old routes redirect; cross-workspace wiggle | [phase_68](phase_68_workspace_shell_spa_nav.plan.md) |
+| **69** ✅ | Zone workspace | One zone = edit sensors/controls/lighting inline; Fleet tab | [phase_69](phase_69_zone_workspace_hub.plan.md) |
 | **70** | Hardware / Pi SPA | Live GPIO board; close Pi export gaps | [phase_70](phase_70_hardware_pi_control_spa.plan.md) |
 | **71** | Feed & Water SPA | FeedingHub + admin + Fertigation unified | [phase_71](phase_71_feed_water_unification.plan.md) |
 | **72** | Money SPA | Money + Costs + Supplies unified | [phase_72](phase_72_money_unification.plan.md) |
 | **73** | Guardian PRs | Pending badge, empty-zone nudge, read-tool reliability | [phase_73](phase_73_guardian_pr_discoverability.plan.md) |
+| **74** | Zone ops inbox | Tasks, Alerts, Plants in zone SPA; Today = triage only | [phase_74](phase_74_zone_ops_inbox.plan.md) |
+| **75** | Comfort workspace | Absorb Advanced trio into one workspace | [phase_75](phase_75_automation_comfort_workspace.plan.md) |
+| **76** | Today alignment | Dashboard + mobile nav link sweep | [phase_76](phase_76_today_dashboard_nav_alignment.plan.md) |
+| **77** | Post-arc polish | Analytics, Guardian nav, help, farm config | [phase_77](phase_77_post_arc_ui_polish.plan.md) |
 
 | Phase | Name | One job | Plan |
 |-------|------|---------|------|
@@ -287,4 +291,4 @@ Hardware, Pi platform sync, and farmer job completion — each phase is shippabl
 
 ## Using this in a new chat
 
-> Read [`phase_68_73_spa_workspace_roadmap.plan.md`](phase_68_73_spa_workspace_roadmap.plan.md) for **active work** (68–73). Phases 40–67 are **shipped** — treat gating prose as historical. For a specific shipped phase, read its plan **Status** section first. Prefer farmer job language over table names.
+> Read [`phase_68_73_spa_workspace_roadmap.plan.md`](phase_68_73_spa_workspace_roadmap.plan.md) for **active work** (68–77). Phases 40–69 shipped — treat gating prose in older plans as historical. For a specific phase, read its plan **Status** section first. Prefer farmer job language over table names.

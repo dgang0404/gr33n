@@ -693,6 +693,48 @@ Legacy list routes `/sensors`, `/actuators`, `/lighting` redirect to **Zones →
 
 Plan: [`plans/phase_69_zone_workspace_hub.plan.md`](plans/phase_69_zone_workspace_hub.plan.md) · **Vitest:** `phase-69-closure.test.js`, `zone-inline-edit.test.js`, `zone-fleet-tab.test.js`.
 
+### 7g. Zone ops inbox — tasks, alerts, plants in the room (Phase 74 — planned)
+
+**Planned.** Tasks, Alerts, and Plants leave the sidebar. Farm-wide triage stays on **Today**; room work lives on the zone **Ops** and **Plants** tabs. **Zones → Strains** tab for farm-wide strain/cultivar admin.
+
+| Job | Where | Notes |
+|-----|--------|-------|
+| **See what's wrong in this room** | Zone → **Ops** tab | Full alerts + tasks filtered to zone |
+| **Log or complete a task** | Zone → **Ops** | Same as old `/tasks`, scoped to room |
+| **Manage plants in this grow** | Zone → **Plants** | Replaces `/plants` list for zone work |
+| **Compare harvests / strains** | **Zones → Strains** | Farm-wide; links to cycle compare |
+
+Legacy `/tasks`, `/alerts`, `/plants` redirect into zone or workspace tabs.
+
+Plan: [`plans/phase_74_zone_ops_inbox.plan.md`](plans/phase_74_zone_ops_inbox.plan.md).
+
+### 7h. Comfort & automation workspace (Phase 75 — planned)
+
+**Planned.** One workspace at `/comfort-targets` replaces four sidebar entries and the whole **Advanced** group for climate/automation:
+
+| Tab | What it covers | Absorbs |
+|-----|----------------|---------|
+| **Comfort** | Zone comfort bands (farmer view) | default hub |
+| **What runs when** | Schedules — plain + cron editor | `/schedules` |
+| **Automations** | Sensor-triggered rules | `/automation` |
+| **Raw setpoints** | Farm-wide raw bands (power user) | `/setpoints` |
+
+Zone **Climate** tab stays the in-room editor; farm-wide admin = this workspace.
+
+Plan: [`plans/phase_75_automation_comfort_workspace.plan.md`](plans/phase_75_automation_comfort_workspace.plan.md).
+
+### 7i. Today dashboard alignment (Phase 76 — planned)
+
+**Planned.** After workspaces ship, sweep **Today** (`/`) and **mobile bottom nav** so widgets, quick actions, and chips never link to absorbed routes (`/feeding`, `/schedules`, `/tasks`, …). Remove **Alerts** from mobile bottom bar — triage via Today + zone Ops.
+
+Plan: [`plans/phase_76_today_dashboard_nav_alignment.plan.md`](plans/phase_76_today_dashboard_nav_alignment.plan.md).
+
+### 7j. Post-arc polish (Phase 77 — planned)
+
+**Planned.** Final sidebar cleanup (~8 items): analytics/compare → **Zones → Strains** or **Money → Grows**; Guardian drawer primary (demote `/chat` in sidebar); optional **Help** hub (Guide + Knowledge + Catalog); farm config card on Today; Settings defers devices to **Hardware**.
+
+Plan: [`plans/phase_77_post_arc_ui_polish.plan.md`](plans/phase_77_post_arc_ui_polish.plan.md) · Arc hub: [`plans/phase_68_73_spa_workspace_roadmap.plan.md`](plans/phase_68_73_spa_workspace_roadmap.plan.md) (68–77).
+
 ---
 
 ## 7b. Feeding & water for this zone (Phase 47)

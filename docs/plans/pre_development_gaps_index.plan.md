@@ -3,7 +3,7 @@ name: Pre-development gaps index (39–41 + backlog)
 overview: >
   ARCHIVED historical index — UX/runtime gaps identified after Phases 35–38 and before
   Phase 39. All doc chunks (1–9) and Tier A/B gaps through Phase 67 are closed. Do not
-  use this as an active tracker. For new work see phase_68_73_spa_workspace_roadmap.plan.md.
+  use this as an active tracker. For new work see phase_68_73_spa_workspace_roadmap.plan.md (68–77).
   Closure rollup through OC-67 is frozen in phase_35_37_operational_closure.plan.md.
 todos:
   - id: doc-chunk-1
@@ -36,7 +36,7 @@ isProject: false
 > per-phase RAG gates).
 >
 > **Active planning:** [phase_68_73_spa_workspace_roadmap.plan.md](phase_68_73_spa_workspace_roadmap.plan.md)
-> (SPA workspace refactor). **Plan lifecycle rules** (shipped = conditions deprecated) live
+> (SPA workspace refactor **68–77**). **Plan lifecycle rules** (shipped = conditions deprecated) live
 > there. **Closure rollup (OC-35 … OC-67 only):**
 > [phase_35_37_operational_closure.plan.md](phase_35_37_operational_closure.plan.md) — frozen.
 
@@ -57,7 +57,7 @@ isProject: false
 | — | [48](phase_48_dev_seed_and_small_farm_profiles.plan.md) | Dev seed hygiene ✅ |
 | 9+ | [53→59 arc](phase_53_59_roadmap.plan.md) | Grow/stock/money, nav, Guardian ops, schema, Pi keys ✅ |
 | 10+ | [60→67 arc](phase_53_59_roadmap.plan.md) | Guardian intelligence + knowledge + field assistant ✅ |
-| **Next** | [68→73 arc](phase_68_73_spa_workspace_roadmap.plan.md) | SPA workspace refactor (sidebar → workspaces) |
+| **Next** | [68→77 arc](phase_68_73_spa_workspace_roadmap.plan.md) | SPA workspace refactor (sidebar → workspaces; ops, comfort, Today, polish) |
 
 **Post-52 shipped:** [49](phase_49_sidebar_nav_polish.plan.md) · [50](phase_50_hardware_wiring_visibility.plan.md) · [51](phase_51_pi_config_sync.plan.md) · [52](phase_52_guardian_ui_context.plan.md) · … through **67** ✅
 
@@ -77,7 +77,7 @@ isProject: false
 | **8** | [phase_48](phase_48_dev_seed_and_small_farm_profiles.plan.md) + [local-operator-bootstrap.md](../local-operator-bootstrap.md) slow-dev section | ✅ |
 | **9** | Archive index + [phase-14](../phase-14-operator-documentation.md) → 68–73 arc; closure doc frozen at OC-67 | ✅ |
 
-**Documentation status:** Chunks 1–9 complete. Phases **39–67** and **product backlog** shipped on `main`. **Next:** [68–73 SPA workspace arc](phase_68_73_spa_workspace_roadmap.plan.md).
+**Documentation status:** Chunks 1–9 complete. Phases **39–67** and **product backlog** shipped on `main`. **Next:** [68–77 SPA workspace arc](phase_68_73_spa_workspace_roadmap.plan.md).
 
 ---
 
