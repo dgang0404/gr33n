@@ -1,6 +1,6 @@
 <template>
-  <div class="p-6 space-y-6">
-    <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+  <div :class="embedded ? 'space-y-4' : 'p-6 space-y-6'">
+    <div v-if="!embedded" class="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
       <div>
         <h1 class="text-xl font-semibold text-white">Targets &amp; schedules</h1>
         <p class="text-zinc-500 text-sm mt-1 max-w-2xl">
@@ -16,7 +16,21 @@
       </button>
     </div>
 
-    <nav class="flex flex-wrap gap-2 border-b border-zinc-800 pb-2" aria-label="Targets sections">
+    <div v-else class="flex items-center justify-end">
+      <button
+        type="button"
+        class="text-xs text-zinc-400 hover:text-zinc-200"
+        @click="refresh"
+      >
+        Refresh
+      </button>
+    </div>
+
+    <nav
+      v-if="!embedded"
+      class="flex flex-wrap gap-2 border-b border-zinc-800 pb-2"
+      aria-label="Targets sections"
+    >
       <button
         v-for="tab in tabs"
         :key="tab.id"
@@ -35,7 +49,7 @@
     <GuardianStarterChips :starters="activeStarters" />
 
     <ZoneContextBanner
-      v-if="zoneContextId && activeTab === 'bands'"
+      v-if="zoneContextId && resolvedSection === 'bands'"
       :zone-id="zoneContextId"
       :zone-name="zoneName(zoneContextId)"
       page-label="Comfort bands"
@@ -47,7 +61,7 @@
       Select a farm to manage comfort targets.
     </div>
 
-    <template v-else-if="activeTab === 'bands'">
+    <template v-else-if="resolvedSection === 'bands'">
       <div v-if="loading" class="text-zinc-400 text-sm">Loading comfort bands…</div>
 
       <EmptyStateHint
@@ -125,28 +139,31 @@
     </template>
 
     <TargetsSchedulesPanel
-      v-else-if="activeTab === 'schedules'"
+      v-else-if="resolvedSection === 'schedules'"
       :zone-context-id="zoneContextId"
       @refresh="refresh"
     />
 
     <TargetsRulesPanel
-      v-else-if="activeTab === 'rules'"
+      v-else-if="resolvedSection === 'rules'"
       :zone-context-id="zoneContextId"
       @refresh="refresh"
     />
 
-    <footer class="border-t border-zinc-800 pt-4 flex flex-wrap items-center justify-between gap-3">
+    <footer
+      v-if="!embedded"
+      class="border-t border-zinc-800 pt-4 flex flex-wrap items-center justify-between gap-3"
+    >
       <p class="text-zinc-600 text-xs">
-        Cron strings, predicate JSON, and bulk CRUD live under Advanced power settings.
+        Cron strings, predicate JSON, and bulk CRUD live in the workspace tabs below.
       </p>
       <router-link
-        v-nav-hint="'/setpoints'"
-        to="/setpoints"
+        v-nav-hint="'/comfort-targets'"
+        :to="{ path: '/comfort-targets', query: { tab: 'raw' } }"
         class="text-xs text-zinc-400 hover:text-green-400 border border-zinc-700 rounded-lg px-3 py-1.5"
         data-test="comfort-advanced-footer"
       >
-        Advanced power settings →
+        Raw setpoints →
       </router-link>
     </footer>
   </div>
@@ -175,6 +192,12 @@ import {
   filterComfortCardsByZone,
 } from '../lib/farmComfortHub.js'
 
+const props = defineProps({
+  embedded: { type: Boolean, default: false },
+  /** comfort | schedules | automations — when embedded, fixed section from workspace tab */
+  section: { type: String, default: null },
+})
+
 const route = useRoute()
 const router = useRouter()
 const store = useFarmStore()
@@ -194,6 +217,19 @@ const tabs = [
   { id: 'schedules', label: 'What runs when' },
   { id: 'rules', label: 'Automation' },
 ]
+
+const SECTION_TO_HUB = {
+  comfort: 'bands',
+  schedules: 'schedules',
+  automations: 'rules',
+}
+
+const resolvedSection = computed(() => {
+  if (props.embedded && props.section) {
+    return SECTION_TO_HUB[props.section] ?? props.section
+  }
+  return activeTab.value
+})
 
 const zoneContextId = computed(() => parseZoneIdQuery(route.query.zone_id))
 
@@ -238,10 +274,11 @@ const activeStarters = computed(() => {
     zoneContextId: zoneContextId.value,
     zoneName: zoneContextId.value ? zoneName(zoneContextId.value) : '',
   }
-  if (activeTab.value === 'schedules') {
+  const section = resolvedSection.value
+  if (section === 'schedules') {
     return buildSchedulesFarmerStarters({ ...base, schedules: zoneScopedSchedules.value })
   }
-  if (activeTab.value === 'rules') {
+  if (section === 'rules') {
     return buildRulesFarmerStarters({ ...base, rules: zoneScopedRules.value })
   }
   return buildComfortHubStarters({
@@ -259,8 +296,12 @@ const activeStarters = computed(() => {
 watch(
   () => route.query.tab,
   (tab) => {
-    if (tab === 'schedules' || tab === 'rules') activeTab.value = tab
-    else activeTab.value = 'bands'
+    if (props.embedded) return
+    if (tab === 'schedules' || tab === 'rules' || tab === 'automations') {
+      activeTab.value = tab === 'automations' ? 'rules' : tab
+    } else if (tab === 'comfort' || tab === 'bands' || !tab) {
+      activeTab.value = 'bands'
+    }
   },
   { immediate: true },
 )

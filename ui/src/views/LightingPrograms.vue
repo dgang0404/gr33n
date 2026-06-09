@@ -74,14 +74,14 @@
               >Open zone →</router-link>
               <router-link
                 v-if="prog.schedule_on_id"
-                v-nav-hint="'/schedules'"
-                :to="{ path: '/schedules' }"
+                v-nav-hint="'/comfort-targets'"
+                :to="{ path: '/comfort-targets', query: { tab: 'schedules' } }"
                 class="text-[11px] px-1.5 py-0.5 rounded bg-green-900/30 text-green-400 border border-green-800/30 hover:bg-green-900/50"
               >ON sch #{{ prog.schedule_on_id }}</router-link>
               <router-link
                 v-if="prog.schedule_off_id"
-                v-nav-hint="'/schedules'"
-                :to="{ path: '/schedules' }"
+                v-nav-hint="'/comfort-targets'"
+                :to="{ path: '/comfort-targets', query: { tab: 'schedules' } }"
                 class="text-[11px] px-1.5 py-0.5 rounded bg-yellow-900/30 text-yellow-400 border border-yellow-800/30 hover:bg-yellow-900/50"
               >OFF sch #{{ prog.schedule_off_id }}</router-link>
             </div>

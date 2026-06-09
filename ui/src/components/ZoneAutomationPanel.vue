@@ -8,7 +8,7 @@
       <div class="flex gap-3 text-xs">
         <router-link
           v-nav-hint="'/comfort-targets'"
-          :to="{ path: '/comfort-targets', query: { zone_id: String(zoneId), tab: 'rules' } }"
+          :to="{ path: '/comfort-targets', query: { zone_id: String(zoneId), tab: 'automations' } }"
           class="text-zinc-500 hover:text-green-400"
         >Automations →</router-link>
         <router-link
@@ -104,8 +104,8 @@
                 {{ togglingId === rule.id ? '…' : (rule.is_active ? 'On' : 'Off') }}
               </button>
               <router-link
-                v-nav-hint="'/automation'"
-                :to="`/automation?rule=${rule.id}`"
+                v-nav-hint="'/comfort-targets'"
+                :to="{ path: '/comfort-targets', query: { tab: 'automations', rule: String(rule.id) } }"
                 class="text-[10px] text-zinc-500 hover:text-green-400"
                 data-test="zone-rule-edit-automation"
               >

@@ -123,13 +123,17 @@ describe('Phase 47 WS5 + Phase 45 WS3 — grow-path farmer vocabulary', () => {
     expect(findGrowPathVocabularyViolations('Start a grow in Veg Room')).toEqual([])
   })
 
-  it('Phase 68 — fertigation lives in Feed & Water workspace, not Advanced nav', () => {
-    const advanced = buildNavGroups('/farms/1/crop-cycles/compare').find((g) => g.label === 'Advanced')
-    expect(advanced.items.some((i) => i.label === 'Fertigation' && i.to === '/fertigation')).toBe(false)
+  it('Phase 75 — cron/automation/setpoints live in comfort workspace, not sidebar', () => {
+    const groups = buildNavGroups('/farms/1/crop-cycles/compare')
+    expect(groups.some((g) => g.label === 'Advanced')).toBe(false)
+    const routes = groups.flatMap((g) => g.items.map((i) => i.to))
+    expect(routes).not.toContain('/schedules')
+    expect(routes).not.toContain('/automation')
+    expect(routes).not.toContain('/setpoints')
 
-    const grow = buildNavGroups('/farms/1/crop-cycles/compare').find((g) => g.label === 'Grow & operate')
+    const grow = groups.find((g) => g.label === 'Grow & operate')
     expect(grow.items.some((i) => i.to === '/feed-water' && i.label === 'Feed & water')).toBe(true)
-    expect(grow.items.some((i) => /fertigation/i.test(i.label))).toBe(false)
+    expect(grow.items.some((i) => i.to === '/comfort-targets' && i.label === 'Comfort & automation')).toBe(true)
   })
 
   it('only scans vue templates, not script blocks', () => {

@@ -416,7 +416,7 @@ const connectionCards = computed(() => {
       cards.push({
         title: r.name,
         subtitle: 'Automation',
-        manageTo: '/automation',
+        manageTo: '/comfort-targets?tab=automations',
         readingLabel: needSensors.value[0] ? formatReading(needSensors.value[0]) : 'Add temp/humidity/lux sensor',
         targetLabel: 'Uses comfort targets when configured',
         automationLabel: r.is_active ? 'Active' : 'Inactive',

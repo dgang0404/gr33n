@@ -140,7 +140,7 @@
       <section class="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
         <div class="flex items-center justify-between mb-3">
           <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-widest">What runs when</h3>
-          <router-link v-nav-hint="'/schedules'" to="/schedules" class="text-xs text-gr33n-500 hover:text-gr33n-400">Farm-wide timing →</router-link>
+          <router-link v-nav-hint="'/comfort-targets'" to="/comfort-targets?tab=schedules" class="text-xs text-gr33n-500 hover:text-gr33n-400">Farm-wide timing →</router-link>
         </div>
         <div v-if="activeSchedules.length" class="space-y-2">
           <div v-for="s in activeSchedules" :key="s.id"

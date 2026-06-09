@@ -7,13 +7,14 @@
   zone/cycle" toggle) resolve these rows at every tick.
 -->
 <template>
-  <div class="p-6 space-y-6">
+  <div :class="embedded ? 'space-y-6' : 'p-6 space-y-6'">
     <PowerUserBanner
-      :farmer-link="{ path: '/comfort-targets', query: { tab: 'bands' } }"
-      farmer-link-label="Grow → Targets"
-      message="Raw setpoint table with cycle/stage scope and bulk filters. Use Grow → Targets for everyday comfort bands."
+      v-if="!embedded"
+      :farmer-link="{ path: '/comfort-targets', query: { tab: 'comfort' } }"
+      farmer-link-label="Comfort & automation"
+      message="Raw setpoint table with cycle/stage scope and bulk filters. Use the Comfort tab for everyday comfort bands."
     />
-    <div class="flex items-center justify-between">
+    <div v-if="!embedded" class="flex items-center justify-between">
       <div class="flex items-center gap-2">
         <h1 class="text-xl font-semibold text-white">Setpoints</h1>
         <HelpTip position="bottom">
@@ -25,6 +26,13 @@
           the next tick.
         </HelpTip>
       </div>
+      <button
+        @click="refresh"
+        class="text-xs text-zinc-400 hover:text-zinc-200"
+      >Refresh</button>
+    </div>
+
+    <div v-else class="flex items-center justify-end mb-2">
       <button
         @click="refresh"
         class="text-xs text-zinc-400 hover:text-zinc-200"
@@ -106,6 +114,10 @@ import { useFarmContextStore } from '../stores/farmContext'
 import HelpTip from '../components/HelpTip.vue'
 import SetpointRow from '../components/SetpointRow.vue'
 import PowerUserBanner from '../components/PowerUserBanner.vue'
+
+defineProps({
+  embedded: { type: Boolean, default: false },
+})
 
 const farmContext = useFarmContextStore()
 

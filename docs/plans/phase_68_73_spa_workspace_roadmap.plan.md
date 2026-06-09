@@ -32,7 +32,7 @@ todos:
     status: completed
   - id: phase-75
     content: "Phase 75 — Automation & comfort workspace (absorb Advanced trio)"
-    status: pending
+    status: completed
   - id: phase-76
     content: "Phase 76 — Today dashboard & mobile nav link alignment"
     status: pending
@@ -166,7 +166,7 @@ flowchart TB
 | OC-72 | 72 money | Planned |
 | OC-73 | 73 guardian PRs | Planned |
 | OC-74 | 74 zone ops inbox | ✅ Shipped |
-| OC-75 | 75 comfort workspace | Planned |
+| OC-75 | 75 comfort workspace | ✅ Shipped |
 | OC-76 | 76 Today/mobile alignment | Planned |
 | OC-77 | 77 post-arc polish | Planned |
 

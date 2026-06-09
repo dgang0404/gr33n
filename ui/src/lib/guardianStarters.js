@@ -721,14 +721,15 @@ export function buildDashboardOpsStarters({ lowStockCount = 0, lowStockAlerts = 
   return dedupeStarters(starters).slice(0, 2)
 }
 
-function targetsRouteRef(zoneContextId, tab = 'bands', surface = 'comfort_hub') {
+function targetsRouteRef(zoneContextId, tab = 'comfort', surface = 'comfort_hub') {
+  const workspaceTab = tab === 'bands' ? 'comfort' : tab === 'rules' ? 'automations' : tab
   const path = zoneContextId
-    ? `/comfort-targets?zone_id=${zoneContextId}${tab !== 'bands' ? `&tab=${tab}` : ''}`
-    : `/comfort-targets${tab !== 'bands' ? `?tab=${tab}` : ''}`
+    ? `/comfort-targets?zone_id=${zoneContextId}${workspaceTab !== 'comfort' ? `&tab=${workspaceTab}` : ''}`
+    : `/comfort-targets${workspaceTab !== 'comfort' ? `?tab=${workspaceTab}` : ''}`
   return {
     type: 'route',
     path,
-    name: 'Targets & schedules',
+    name: 'Comfort & automation',
     surface,
   }
 }

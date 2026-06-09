@@ -77,7 +77,7 @@ describe('Phase 54 WS4 / OC-54 — connection nav closure', () => {
     const legacyOk = new Set([
       '/feeding', '/fertigation', '/operations/feeding', '/operations/supplies', '/operations/money',
       '/sensors', '/actuators', '/lighting', '/pi-setup', '/costs', '/inventory',
-      '/tasks', '/alerts', '/plants',
+      '/tasks', '/alerts', '/plants', '/schedules', '/automation', '/setpoints',
     ])
     for (const [from, targets] of Object.entries(NAV_RELATIONS)) {
       if (!navRoutes.has(from) && !legacyOk.has(from)) {

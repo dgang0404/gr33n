@@ -15,7 +15,8 @@ describe('Phase 49 WS4 / OC-49 — sidebar nav closure', () => {
   it('disambiguates feeding via workspace tabs (Phase 68)', () => {
     const grow = groups.find((g) => g.label === 'Grow & operate')
     expect(grow.items.find((i) => i.to === '/feed-water')?.label).toBe('Feed & water')
-    expect(groups.find((g) => g.label === 'Advanced')?.items.some((i) => i.to === '/fertigation')).toBe(false)
+    expect(groups.find((g) => g.label === 'Advanced')).toBeUndefined()
+    expect(grow.items.some((i) => i.to === '/comfort-targets')).toBe(true)
   })
 
   it('SideNav implements related-route hover affordance', () => {

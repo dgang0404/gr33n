@@ -9,11 +9,14 @@ import { WORKSPACE_RELATIONS } from './workspaces.js'
 /** @type {Record<string, string[]>} */
 export const NAV_RELATIONS = {
   ...WORKSPACE_RELATIONS,
-  '/comfort-targets': ['/zones', '/feed-water', '/automation', '/schedules'],
+  '/comfort-targets': ['/zones', '/feed-water'],
   '/operator-guide': ['/hardware'],
   '/tasks': ['/zones'],
   '/alerts': ['/zones'],
   '/plants': ['/zones'],
+  '/schedules': ['/comfort-targets'],
+  '/automation': ['/comfort-targets'],
+  '/setpoints': ['/comfort-targets'],
   // Legacy paths still linked from in-app copy — targets must be sidebar routes (Phase 68)
   '/feeding': ['/zones', '/comfort-targets'],
   '/fertigation': ['/feed-water', '/zones'],

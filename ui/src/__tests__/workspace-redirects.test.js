@@ -35,6 +35,14 @@ describe('Phase 68 WS4 — workspace legacy redirects', () => {
     expect(router.resolve('/zones/2').name).toBe('zone-detail')
   })
 
+  it('redirect config sends /schedules to comfort workspace schedules tab', () => {
+    const entry = buildLegacyRedirectRoutes().find((r) => r.path === '/schedules')
+    expect(entry).toBeTruthy()
+    const result = entry.redirect({ path: '/schedules', query: {}, hash: '', fullPath: '/schedules', matched: [], meta: {}, name: undefined, params: {}, redirectedFrom: undefined })
+    expect(result.path).toBe('/comfort-targets')
+    expect(result.query.tab).toBe('schedules')
+  })
+
   it('registers workspace routes by name', () => {
     expect(router.resolve('/hardware').name).toBe('hardware')
     expect(router.resolve('/feed-water').name).toBe('feed-water')

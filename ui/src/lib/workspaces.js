@@ -73,6 +73,23 @@ export const WORKSPACES = {
       '/inventory': { tab: 'supplies' },
     },
   },
+  comfort: {
+    label: 'Comfort & automation',
+    icon: '🎯',
+    route: '/comfort-targets',
+    subtitle: 'Comfort bands, what runs when, and automation toggles',
+    tabs: [
+      { id: 'comfort', label: 'Comfort' },
+      { id: 'schedules', label: 'What runs when' },
+      { id: 'automations', label: 'Automations' },
+      { id: 'raw', label: 'Raw setpoints' },
+    ],
+    absorbs: {
+      '/schedules': { tab: 'schedules' },
+      '/automation': { tab: 'automations' },
+      '/setpoints': { tab: 'raw' },
+    },
+  },
 }
 
 /** Fleet sub-views inside Zones → Fleet tab (Phase 69 will deepen). */
@@ -88,6 +105,7 @@ export const WORKSPACE_RELATIONS = {
   '/hardware': ['/zones', '/feed-water'],
   '/feed-water': ['/zones', '/hardware', '/money'],
   '/money': ['/feed-water', '/zones'],
+  '/comfort-targets': ['/zones', '/feed-water'],
 }
 
 const LEGACY_ABSORB_INDEX = buildLegacyAbsorbIndex()
@@ -164,6 +182,16 @@ export function defaultTabFor(workspaceId) {
   return WORKSPACES[workspaceId]?.tabs[0]?.id ?? ''
 }
 
+/** Legacy comfort hub tab ids → workspace tab ids (Phase 75). */
+const COMFORT_TAB_ALIASES = {
+  bands: 'comfort',
+  comfort: 'comfort',
+  schedules: 'schedules',
+  rules: 'automations',
+  automations: 'automations',
+  raw: 'raw',
+}
+
 /**
  * @param {string} workspaceId
  * @param {string | undefined | null} tabId
@@ -171,7 +199,11 @@ export function defaultTabFor(workspaceId) {
  */
 export function resolveWorkspaceTab(workspaceId, tabId) {
   const tabs = tabsFor(workspaceId)
-  if (tabId && tabs.some((t) => t.id === tabId)) return tabId
+  let resolved = tabId
+  if (workspaceId === 'comfort' && tabId) {
+    resolved = COMFORT_TAB_ALIASES[tabId] ?? tabId
+  }
+  if (resolved && tabs.some((t) => t.id === resolved)) return resolved
   return defaultTabFor(workspaceId)
 }
 

@@ -10,28 +10,28 @@ overview: >
 todos:
   - id: ws1-workspace-shell
     content: "WS1: Add comfort workspace to workspaces.js — route /comfort-targets (keep path), tabs Comfort | Schedules | Automations | Raw; WorkspaceShell wrapper"
-    status: pending
+    status: completed
   - id: ws2-comfort-tab
     content: "WS2: Comfort tab — embed ComfortTargetsHub bands view (zone cards, ComfortBandEditor); default landing tab"
-    status: pending
+    status: completed
   - id: ws3-schedules-tab
     content: "WS3: Schedules tab — farmer 'what runs when' from hub + embed Schedules.vue cron editor behind 'Cron editor' expand or sub-tab"
-    status: pending
+    status: completed
   - id: ws4-automations-tab
     content: "WS4: Automations tab — farmer rules view from hub + embed Automation.vue for expression editing"
-    status: pending
+    status: completed
   - id: ws5-setpoints-tab
     content: "WS5: Raw tab — embed Setpoints.vue; farmer vocab ban on other tabs; 'setpoints' jargon allowed here only"
-    status: pending
+    status: completed
   - id: ws6-nav-redirects
     content: "WS6: Remove Advanced nav group; redirect /schedules,/automation,/setpoints → /comfort-targets?tab=; update ZoneAdvancedHint + navRelations + context_ref"
-    status: pending
+    status: completed
   - id: ws7-zone-climate
     content: "WS7: Zone Climate tab — remove link-outs to farm-wide Advanced; cross-workspace wiggle to comfort workspace; keep inline ZoneComfortTargets + ZoneAutomationPanel"
-    status: pending
+    status: completed
   - id: ws8-docs-tests
     content: "WS8: comfort-workspace.test.js, phase-75-closure.test.js; operator-tour §7h; OC-75"
-    status: pending
+    status: completed
 isProject: false
 ---
 
@@ -39,7 +39,7 @@ isProject: false
 
 ## Status
 
-**Planned.** Closes the largest remaining sidebar duplication after [Phase 74](phase_74_zone_ops_inbox.plan.md). UI-only — reuses [Phase 42](phase_42_comfort_targets_automation_plain_language.plan.md) farmer views and existing Advanced CRUD pages.
+**Shipped.** Closes the largest remaining sidebar duplication after [Phase 74](phase_74_zone_ops_inbox.plan.md). UI-only — reuses [Phase 42](phase_42_comfort_targets_automation_plain_language.plan.md) farmer views and existing Advanced CRUD pages.
 
 **Closure:** **OC-75** — tracked in this plan's DoD + [arc hub OC table](phase_68_73_spa_workspace_roadmap.plan.md#operational-closure-oc-rows). Do not add to the archived Phase 35 closure doc.
 

@@ -14,10 +14,11 @@ describe('Phase 68 WS6 / OC-68 — workspace shell closure', () => {
   const routes = collectSidebarRoutes(groups)
 
   it('sidebar uses four compact groups with workspace entries', () => {
-    expect(groups.map((g) => g.label)).toEqual(['Today', 'Grow & operate', 'Advanced', 'More'])
+    expect(groups.map((g) => g.label)).toEqual(['Today', 'Grow & operate', 'More'])
     const grow = groups.find((g) => g.label === 'Grow & operate')
     expect(grow.items.some((i) => i.to === '/zones')).toBe(true)
     expect(grow.items.some((i) => i.to === '/feed-water' && i.label === 'Feed & water')).toBe(true)
+    expect(grow.items.some((i) => i.to === '/comfort-targets' && i.label === 'Comfort & automation')).toBe(true)
     expect(grow.items.some((i) => i.to === '/hardware')).toBe(true)
     expect(grow.items.some((i) => i.to === '/money')).toBe(true)
     expect(routes).not.toContain('/feeding')
@@ -40,6 +41,7 @@ describe('Phase 68 WS6 / OC-68 — workspace shell closure', () => {
       'views/workspaces/FeedWaterWorkspace.vue',
       'views/workspaces/MoneyWorkspace.vue',
       'views/workspaces/HardwareWorkspace.vue',
+      'views/workspaces/ComfortWorkspace.vue',
     ]) {
       const src = readFileSync(join(uiSrc, file), 'utf8')
       expect(src).toContain('WorkspaceShell')

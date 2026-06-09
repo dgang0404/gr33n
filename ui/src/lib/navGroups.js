@@ -2,7 +2,7 @@ import { GROW_PATH_ZONE_LABELS as Z } from './farmerVocabulary.js'
 
 /**
  * Phase 68 — workspace-first sidebar navigation.
- * Workspaces replace scattered hub/admin/advanced duplicates; power-user routes stay in Advanced.
+ * Workspaces replace scattered hub/admin/advanced duplicates.
  *
  * @param {string} cycleCompareRoute
  */
@@ -37,8 +37,8 @@ export function buildNavGroups(cycleCompareRoute) {
         {
           to: '/comfort-targets',
           icon: '🎯',
-          label: 'Targets & schedules',
-          navTitle: 'Comfort bands, what runs when, and automation toggles',
+          label: 'Comfort & automation',
+          navTitle: 'Comfort bands, what runs when, automations, and raw setpoints',
         },
         {
           to: '/hardware',
@@ -51,29 +51,6 @@ export function buildNavGroups(cycleCompareRoute) {
           icon: '💰',
           label: 'Money',
           navTitle: 'Spend summary, ledger, and supply costs',
-        },
-      ],
-    },
-    {
-      label: 'Advanced',
-      items: [
-        {
-          to: '/schedules',
-          icon: '📅',
-          label: 'Schedules (cron)',
-          navTitle: 'Cron schedule editor — power users',
-        },
-        {
-          to: '/automation',
-          icon: '🤖',
-          label: 'Automations',
-          navTitle: 'Sensor-triggered automations',
-        },
-        {
-          to: '/setpoints',
-          icon: '🎯',
-          label: 'Setpoints (raw)',
-          navTitle: 'Farm-wide target ranges per sensor and stage',
         },
       ],
     },

@@ -5,12 +5,9 @@ import ZoneDetail from '../views/ZoneDetail.vue'
 import Sensors from '../views/Sensors.vue'
 import SensorDetail from '../views/SensorDetail.vue'
 import Actuators from '../views/Actuators.vue'
-import Schedules from '../views/Schedules.vue'
-import Automation from '../views/Automation.vue'
 import Animals from '../views/Animals.vue'
 import Aquaponics from '../views/Aquaponics.vue'
 import CommonsCatalog from '../views/CommonsCatalog.vue'
-import Setpoints from '../views/Setpoints.vue'
 import Settings from '../views/Settings.vue'
 import FarmKnowledge from '../views/FarmKnowledge.vue'
 import FarmGuardianChat from '../views/FarmGuardianChat.vue'
@@ -18,13 +15,13 @@ import OperatorGuide from '../views/OperatorGuide.vue'
 import CropProfileDetail from '../views/CropProfileDetail.vue'
 import CropCycleSummary from '../views/CropCycleSummary.vue'
 import CropCycleCompare from '../views/CropCycleCompare.vue'
-import ComfortTargetsHub from '../views/ComfortTargetsHub.vue'
 import FarmSetupWizard from '../views/FarmSetupWizard.vue'
 import ZoneSetupWizard from '../views/ZoneSetupWizard.vue'
 import DeviceSetupWizard from '../views/DeviceSetupWizard.vue'
 import HardwareWorkspace from '../views/workspaces/HardwareWorkspace.vue'
 import FeedWaterWorkspace from '../views/workspaces/FeedWaterWorkspace.vue'
 import MoneyWorkspace from '../views/workspaces/MoneyWorkspace.vue'
+import ComfortWorkspace from '../views/workspaces/ComfortWorkspace.vue'
 import Login from '../views/Login.vue'
 import { buildLegacyRedirectRoutes, buildZoneOpsRedirectRoutes } from '../lib/workspaces.js'
 
@@ -38,10 +35,7 @@ const routes = [
   { path: '/feed-water',   component: FeedWaterWorkspace, name: 'feed-water' },
   { path: '/money',        component: MoneyWorkspace, name: 'money' },
   { path: '/sensors/:id', component: SensorDetail, name: 'sensor-detail' },
-  { path: '/schedules',    component: Schedules,    name: 'schedules' },
-  { path: '/automation',   component: Automation,   name: 'automation' },
-  { path: '/setpoints',    component: Setpoints,    name: 'setpoints' },
-  { path: '/comfort-targets', component: ComfortTargetsHub, name: 'comfort-targets' },
+  { path: '/comfort-targets', component: ComfortWorkspace, name: 'comfort-targets' },
   { path: '/crop-profiles/:id', component: CropProfileDetail, name: 'crop-profile-detail' },
   { path: '/animals',      component: Animals,      name: 'animals' },
   { path: '/aquaponics',   component: Aquaponics,   name: 'aquaponics' },

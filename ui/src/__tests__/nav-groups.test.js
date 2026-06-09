@@ -13,12 +13,11 @@ describe('Phase 68 — workspace nav groups', () => {
     expect(grow.items.some((i) => i.to === '/feeding')).toBe(false)
   })
 
-  it('keeps power-user routes in Advanced only', () => {
-    const advanced = groups.find((g) => g.label === 'Advanced')
-    expect(advanced.items.some((i) => i.label === 'Automations')).toBe(true)
-    expect(advanced.items.some((i) => i.label === 'Setpoints (raw)')).toBe(true)
-    expect(advanced.items.some((i) => i.to === '/fertigation')).toBe(false)
-    expect(advanced.items.some((i) => i.to === '/sensors')).toBe(false)
+  it('comfort & automation is a single workspace entry (Phase 75)', () => {
+    const grow = groups.find((g) => g.label === 'Grow & operate')
+    expect(grow.items.some((i) => i.to === '/comfort-targets' && i.label === 'Comfort & automation')).toBe(true)
+    expect(groups.some((g) => g.label === 'Advanced')).toBe(false)
+    expect(grow.items.some((i) => i.to === '/schedules')).toBe(false)
   })
 
   it('groups Today cockpit items', () => {

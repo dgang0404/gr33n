@@ -1,12 +1,13 @@
 <template>
-  <div class="p-6">
+  <div :class="embedded ? '' : 'p-6'">
     <PowerUserBanner
-      :farmer-link="{ path: '/comfort-targets', query: { tab: 'rules' } }"
+      v-if="!embedded"
+      :farmer-link="{ path: '/comfort-targets', query: { tab: 'automations' } }"
       farmer-link-label="Automation toggles"
-      message="Predicate JSON and RuleForm editing live here. Use Grow → Targets to pause rules in plain language."
+      message="Predicate JSON and RuleForm editing live here. Use Comfort & automation → Automations to pause rules in plain language."
       class="mb-6"
     />
-    <div class="flex items-center justify-between mb-6">
+    <div v-if="!embedded" class="flex items-center justify-between mb-6">
       <div class="flex items-center">
         <h1 class="text-xl font-semibold text-white">Automation Rules</h1>
         <HelpTip position="bottom">
@@ -24,12 +25,18 @@
       </div>
     </div>
 
+    <div v-else class="flex items-center justify-end gap-2 mb-4">
+      <button class="px-3 py-1.5 text-xs rounded bg-gr33n-600 hover:bg-gr33n-500 text-white font-medium"
+        @click="openCreate">+ New Rule</button>
+      <button class="text-xs text-zinc-400 hover:text-zinc-200" @click="refreshAll">Refresh</button>
+    </div>
+
     <ZoneContextBanner
       v-if="zoneContextId"
       :zone-id="zoneContextId"
       :zone-name="zoneName(zoneContextId)"
       page-label="Automation"
-      :clear-route="{ path: '/automation' }"
+      :clear-route="{ path: '/comfort-targets', query: { tab: 'automations' } }"
     />
 
     <div v-if="loading" class="text-zinc-400 text-sm">Loading automation rules…</div>
@@ -43,7 +50,7 @@
           reason="automation_off"
           message="No automation rules for this view yet."
           action-label="Create rule"
-          action-to="/automation"
+          action-to="/comfort-targets?tab=automations"
         />
         <div v-else class="space-y-3">
           <div v-for="rule in displayRules" :key="rule.id"
@@ -175,6 +182,10 @@ import EmptyStateHint from '../components/EmptyStateHint.vue'
 import PowerUserBanner from '../components/PowerUserBanner.vue'
 import { parseZoneIdQuery, filterRulesForZone } from '../lib/zoneContext.js'
 import api from '../api'
+
+defineProps({
+  embedded: { type: Boolean, default: false },
+})
 
 const route = useRoute()
 

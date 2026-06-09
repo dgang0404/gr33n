@@ -1,21 +1,29 @@
 <template>
-  <div class="p-6">
+  <div :class="embedded ? '' : 'p-6'">
     <PowerUserBanner
+      v-if="!embedded"
       :farmer-link="{ path: '/comfort-targets', query: { tab: 'schedules' } }"
       farmer-link-label="What runs when"
-      message="Cron expressions and preconditions live here. Use Grow → Targets for everyday schedule toggles and plain-language next run."
+      message="Cron expressions and preconditions live here. Use Comfort & automation → What runs when for everyday schedule toggles and plain-language next run."
       class="mb-6"
     />
-    <div class="flex items-center justify-between mb-6">
-      <h1 class="text-xl font-semibold text-white">Automation Schedules</h1>
+    <div v-if="!embedded" class="flex items-center justify-between mb-6">
+      <div class="flex items-center">
+        <h1 class="text-xl font-semibold text-white">Automation Schedules</h1>
         <HelpTip position="bottom">
           Schedules use cron expressions to trigger actions automatically. A schedule can drive a fertigation program (auto-feed) or generate tasks (reminders).
           The automation worker checks active schedules and fires actuator events or creates tasks on the defined cadence.
         </HelpTip>
+      </div>
       <div class="flex items-center gap-3">
         <button class="px-3 py-1.5 text-xs rounded bg-gr33n-600 hover:bg-gr33n-500 text-white font-medium" @click="openCreate">+ New Schedule</button>
         <button class="text-xs text-zinc-400 hover:text-zinc-200" @click="refreshAll">Refresh</button>
       </div>
+    </div>
+
+    <div v-else class="flex items-center justify-end gap-2 mb-4">
+      <button class="px-3 py-1.5 text-xs rounded bg-gr33n-600 hover:bg-gr33n-500 text-white font-medium" @click="openCreate">+ New Schedule</button>
+      <button class="text-xs text-zinc-400 hover:text-zinc-200" @click="refreshAll">Refresh</button>
     </div>
 
     <ZoneContextBanner
@@ -23,7 +31,7 @@
       :zone-id="zoneContextId"
       :zone-name="zoneName(zoneContextId)"
       page-label="Schedules"
-      :clear-route="{ path: '/schedules' }"
+      :clear-route="{ path: '/comfort-targets', query: { tab: 'schedules' } }"
     />
 
     <div v-if="loading" class="text-zinc-400 text-sm">Loading schedules…</div>
@@ -36,7 +44,7 @@
           reason="automation_off"
           message="No schedules found for this view."
           action-label="Create schedule"
-          action-to="/schedules"
+          action-to="/comfort-targets?tab=schedules"
         />
         <div v-else class="space-y-3">
           <div v-for="s in filteredSchedules" :key="s.id" class="bg-zinc-950 border border-zinc-800 rounded-lg p-3">
@@ -268,6 +276,10 @@ import EmptyStateHint from '../components/EmptyStateHint.vue'
 import PowerUserBanner from '../components/PowerUserBanner.vue'
 import { parseZoneIdQuery, filterSchedulesForZone } from '../lib/zoneContext.js'
 import api from '../api'
+
+defineProps({
+  embedded: { type: Boolean, default: false },
+})
 
 const route = useRoute()
 

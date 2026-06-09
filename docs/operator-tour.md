@@ -708,9 +708,9 @@ Legacy `/tasks`, `/alerts`, `/plants` redirect into zone or workspace tabs.
 
 Plan: [`plans/phase_74_zone_ops_inbox.plan.md`](plans/phase_74_zone_ops_inbox.plan.md).
 
-### 7h. Comfort & automation workspace (Phase 75 — planned)
+### 7h. Comfort & automation workspace (Phase 75)
 
-**Planned.** One workspace at `/comfort-targets` replaces four sidebar entries and the whole **Advanced** group for climate/automation:
+**Shipped.** One workspace at `/comfort-targets` replaces four sidebar entries and the whole **Advanced** group for climate/automation:
 
 | Tab | What it covers | Absorbs |
 |-----|----------------|---------|

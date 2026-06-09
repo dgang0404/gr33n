@@ -74,7 +74,7 @@ describe('Phase 40 WS8 — zone cockpit integration', () => {
     })
 
     expect(wrapper.find('[data-test="zone-advanced-hint"]').exists()).toBe(true)
-    expect(wrapper.text()).toMatch(/Power settings|Advanced/i)
+    expect(wrapper.text()).toMatch(/Farm-wide comfort|workspace/i)
     expect(wrapper.text()).not.toContain('setpoint')
   })
 
