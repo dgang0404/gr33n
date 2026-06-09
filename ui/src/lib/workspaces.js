@@ -16,11 +16,13 @@ export const WORKSPACES = {
     tabs: [
       { id: 'rooms', label: 'Rooms' },
       { id: 'fleet', label: 'Fleet' },
+      { id: 'strains', label: 'Strains' },
     ],
     absorbs: {
       '/sensors': { tab: 'fleet', fleet: 'sensors' },
       '/actuators': { tab: 'fleet', fleet: 'controls' },
       '/lighting': { tab: 'fleet', fleet: 'lighting' },
+      '/plants': { tab: 'strains' },
     },
   },
   hardware: {
@@ -82,10 +84,10 @@ export const FLEET_SUB_TABS = [
 
 /** Cross-workspace jump targets (Phase 68 WS5). */
 export const WORKSPACE_RELATIONS = {
-  '/zones': ['/hardware', '/feed-water', '/money', '/comfort-targets', '/plants'],
+  '/zones': ['/hardware', '/feed-water', '/money', '/comfort-targets'],
   '/hardware': ['/zones', '/feed-water'],
   '/feed-water': ['/zones', '/hardware', '/money'],
-  '/money': ['/feed-water', '/zones', '/plants'],
+  '/money': ['/feed-water', '/zones'],
 }
 
 const LEGACY_ABSORB_INDEX = buildLegacyAbsorbIndex()
@@ -180,6 +182,35 @@ export function resolveWorkspaceTab(workspaceId, tabId) {
 export function resolveFleetSubTab(fleetId) {
   if (fleetId && FLEET_SUB_TABS.some((t) => t.id === fleetId)) return fleetId
   return FLEET_SUB_TABS[0].id
+}
+
+/** @returns {Array<{ path: string, redirect: (to: import('vue-router').RouteLocationNormalized) => object }>} */
+export function buildZoneOpsRedirectRoutes() {
+  return [
+    {
+      path: '/tasks',
+      redirect: (to) => redirectToZoneOps(to, 'tasks'),
+    },
+    {
+      path: '/alerts',
+      redirect: (to) => redirectToZoneOps(to, 'alerts'),
+    },
+  ]
+}
+
+/**
+ * @param {import('vue-router').RouteLocationNormalized} to
+ * @param {'tasks' | 'alerts'} ops
+ */
+function redirectToZoneOps(to, ops) {
+  const raw = to.query.zone_id
+  const zoneId = raw != null ? String(Array.isArray(raw) ? raw[0] : raw).trim() : ''
+  const query = { ...to.query, tab: 'ops', ops }
+  delete query.zone_id
+  if (zoneId) {
+    return { path: `/zones/${zoneId}`, query }
+  }
+  return { path: '/', query: {} }
 }
 
 /** @returns {Array<{ path: string, redirect: (to: import('vue-router').RouteLocationNormalized) => object }>} */

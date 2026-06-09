@@ -23,6 +23,9 @@
         <Actuators v-else-if="fleetTab === 'controls'" embedded group-by-zone />
         <LightingPrograms v-else-if="fleetTab === 'lighting'" embedded />
       </div>
+      <div v-else-if="activeTab === 'strains'" class="p-0">
+        <Plants embedded />
+      </div>
     </template>
   </WorkspaceShell>
 </template>
@@ -35,6 +38,7 @@ import Zones from '../Zones.vue'
 import Sensors from '../Sensors.vue'
 import Actuators from '../Actuators.vue'
 import LightingPrograms from '../LightingPrograms.vue'
+import Plants from '../Plants.vue'
 import { FLEET_SUB_TABS, resolveFleetSubTab } from '../../lib/workspaces.js'
 
 const route = useRoute()

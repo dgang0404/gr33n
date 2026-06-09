@@ -1,6 +1,6 @@
 <template>
-  <div class="p-6">
-    <div class="flex items-center justify-between mb-6">
+  <div :class="embedded ? '' : 'p-6'">
+    <div v-if="!embedded" class="flex items-center justify-between mb-6">
       <h1 class="text-xl font-semibold text-white">Plants
         <HelpTip position="bottom">
           Plants are species or strain definitions (e.g. "OG Kush", "Basil - Genovese"). Create a plant here, then use Crop Cycles in Fertigation to track an individual grow of that plant in a specific zone.
@@ -185,6 +185,10 @@ import HelpTip from '../components/HelpTip.vue'
 import EmptyStateHint from '../components/EmptyStateHint.vue'
 import StartGrowWizard from '../components/StartGrowWizard.vue'
 import { strainFromPlant } from '../lib/growHub.js'
+
+defineProps({
+  embedded: { type: Boolean, default: false },
+})
 
 const store = useFarmStore()
 const farmContext = useFarmContextStore()

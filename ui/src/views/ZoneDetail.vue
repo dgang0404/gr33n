@@ -117,6 +117,24 @@
         @lighting-updated="loadLightingPrograms"
       />
 
+      <ZoneOpsSection
+        v-else-if="activeTab === 'ops'"
+        :zone-id="zoneId"
+      />
+
+      <ZonePlantsSection
+        v-else-if="activeTab === 'plants'"
+        :zone-id="zoneId"
+        :farm-id="farmId"
+        :zone="zone"
+        :crop-cycles="cropCycles"
+        :plants="plants"
+        @start-grow="openStartGrowWizard"
+        @harvest="openHarvestWizard"
+        @start-grow-strain="onStartGrowStrain"
+        @plants-updated="ensurePlants"
+      />
+
       <template v-else>
         <ZoneTodayStrip :chips="todaySnapshot.chips" />
 
@@ -293,6 +311,8 @@ import ZoneTasksPanel from '../components/ZoneTasksPanel.vue'
 import ZoneAdvancedHint from '../components/ZoneAdvancedHint.vue'
 import ZoneCurrentGrowStrip from '../components/ZoneCurrentGrowStrip.vue'
 import ZoneConnectionPipeline from '../components/ZoneConnectionPipeline.vue'
+import ZoneOpsSection from '../components/ZoneOpsSection.vue'
+import ZonePlantsSection from '../components/ZonePlantsSection.vue'
 import StartGrowWizard from '../components/StartGrowWizard.vue'
 import HarvestWeighIn from '../components/HarvestWeighIn.vue'
 import PostHarvestScreen from '../components/PostHarvestScreen.vue'
@@ -303,7 +323,7 @@ import {
 } from '../lib/guardianContextPrompts.js'
 import { buildSetupStarters, buildZoneStarters } from '../lib/guardianStarters.js'
 import { computeZoneTodaySnapshot, pickNextZoneSchedule } from '../lib/zoneGrowSummary.js'
-import { lastHarvestedCycleInZone } from '../lib/growHub.js'
+import { lastHarvestedCycleInZone, strainFromPlant } from '../lib/growHub.js'
 
 const route = useRoute()
 const router = useRouter()
@@ -342,6 +362,8 @@ const startGrowStrain = ref('')
 
 const zoneTabs = [
   { id: 'overview', icon: '📋', label: 'Overview' },
+  { id: 'ops', icon: '📥', label: 'Ops' },
+  { id: 'plants', icon: '🌱', label: 'Plants' },
   { id: PLANT_NEEDS.water, icon: NEED_META[PLANT_NEEDS.water].icon, label: NEED_META[PLANT_NEEDS.water].shortLabel },
   { id: PLANT_NEEDS.light, icon: NEED_META[PLANT_NEEDS.light].icon, label: NEED_META[PLANT_NEEDS.light].shortLabel },
   { id: PLANT_NEEDS.air, icon: NEED_META[PLANT_NEEDS.air].icon, label: NEED_META[PLANT_NEEDS.air].shortLabel },
@@ -468,10 +490,6 @@ const airSummary = computed(() => {
   return isGreenhouse.value ? `Greenhouse · ${n} sensor(s)` : `${n} sensor(s)`
 })
 
-watch(() => route.query.tab, (t) => {
-  if (t && zoneTabs.some(z => z.id === t)) activeTab.value = t
-}, { immediate: true })
-
 watch(() => activeProgram.value?.id, () => {
   loadWaterQueueDepth()
 })
@@ -508,14 +526,20 @@ async function refreshCropCycles() {
   cropCycles.value = await store.loadCropCycles(fid)
 }
 
-async function ensurePlants() {
+async function ensurePlants(force = false) {
   const fid = farmId.value
-  if (!fid || plants.value.length) return
+  if (!fid || (!force && plants.value.length)) return
   try {
     plants.value = await store.loadPlants(fid)
   } catch {
     plants.value = []
   }
+}
+
+function onStartGrowStrain(plant) {
+  startGrowStrain.value = strainFromPlant(plant) || plant.display_name || ''
+  ensurePlants(true)
+  showStartGrowWizard.value = true
 }
 
 function openStartGrowWizard() {
@@ -559,12 +583,15 @@ watch(
 watch(activeTab, (tab) => {
   if (tab === 'overview') {
     if (!route.query.tab) return
-    const { tab: _removed, ...rest } = route.query
+    const { tab: _removed, ops: _ops, ...rest } = route.query
     router.replace({ path: route.path, query: rest })
     return
   }
-  if (route.query.tab !== tab) {
-    router.replace({ path: route.path, query: { ...route.query, tab } })
+  const query = { ...route.query, tab }
+  if (tab !== 'ops' && query.ops) delete query.ops
+  if (route.query.tab !== tab || (tab === 'ops' && !route.query.ops)) {
+    if (tab === 'ops' && !query.ops) query.ops = 'alerts'
+    router.replace({ path: route.path, query })
   }
 })
 

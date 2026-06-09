@@ -26,7 +26,7 @@ describe('Phase 49/68 — nav relations', () => {
   it('only points primary relations at routes that exist in the sidebar', () => {
     for (const [from, targets] of Object.entries(NAV_RELATIONS)) {
       const fromSidebar = navRoutes.has(from) || navRoutes.has(canonicalSidebarPath(from))
-      if (!fromSidebar && !['/feeding', '/fertigation', '/operations/feeding', '/operations/supplies', '/operations/money', '/sensors', '/actuators', '/lighting', '/pi-setup', '/costs', '/inventory'].includes(from)) {
+      if (!fromSidebar && !['/feeding', '/fertigation', '/operations/feeding', '/operations/supplies', '/operations/money', '/sensors', '/actuators', '/lighting', '/pi-setup', '/costs', '/inventory', '/tasks', '/alerts', '/plants'].includes(from)) {
         expect(navRoutes.has(from), `missing nav route ${from}`).toBe(true)
       }
       for (const to of targets) {

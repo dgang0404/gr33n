@@ -1,6 +1,6 @@
 <template>
-  <div class="p-6 max-w-5xl">
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
+  <div :class="embedded ? '' : 'p-6 max-w-5xl'">
+    <div v-if="!embedded" class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
       <h1 class="text-2xl font-bold text-green-400">Alerts</h1>
       <div class="flex items-center gap-3">
         <select v-model="severityFilter"
@@ -18,8 +18,26 @@
       </div>
     </div>
 
+    <div v-else class="flex items-center justify-between gap-3 mb-4 flex-wrap">
+      <h2 class="text-sm font-semibold text-white">Alerts in this zone</h2>
+      <div class="flex items-center gap-2">
+        <select v-model="severityFilter"
+          class="bg-zinc-800 border border-zinc-700 text-gray-300 text-xs rounded-lg px-3 py-1.5">
+          <option value="">All severities</option>
+          <option value="critical">Critical</option>
+          <option value="high">High</option>
+          <option value="medium">Medium</option>
+          <option value="low">Low</option>
+        </select>
+        <button @click="refresh"
+          class="text-xs text-zinc-400 hover:text-white border border-zinc-700 rounded-lg px-3 py-1.5">
+          Refresh
+        </button>
+      </div>
+    </div>
+
     <ZoneContextBanner
-      v-if="zoneContextId"
+      v-if="zoneContextId && !embedded"
       :zone-id="zoneContextId"
       :zone-name="zoneName(zoneContextId)"
       page-label="Alerts"
@@ -54,8 +72,8 @@
             <router-link
               v-for="t in linkedTasks(a.id)"
               :key="t.id"
-              v-nav-hint="'/tasks'"
-              to="/tasks"
+              v-nav-hint="'/zones'"
+              :to="taskLinkFor(t)"
               class="text-[11px] px-2 py-0.5 rounded bg-green-900/40 border border-green-800 text-green-300 hover:bg-green-900/60"
             >
               → Task #{{ t.id }}
@@ -161,6 +179,11 @@ import EmptyStateHint from '../components/EmptyStateHint.vue'
 import { parseZoneIdQuery, filterAlertsForZone } from '../lib/zoneContext.js'
 import { detectAlertTaskTemplate } from '../lib/taskTemplates.js'
 
+const props = defineProps({
+  embedded: { type: Boolean, default: false },
+  lockZoneId: { type: Number, default: null },
+})
+
 const route = useRoute()
 
 const farmStore = useFarmStore()
@@ -169,7 +192,18 @@ const loading = ref(false)
 const severityFilter = ref('')
 const offset = ref(0)
 
-const zoneContextId = computed(() => parseZoneIdQuery(route?.query?.zone_id))
+const zoneContextId = computed(() => {
+  if (props.lockZoneId) return props.lockZoneId
+  return parseZoneIdQuery(route?.query?.zone_id)
+})
+
+function taskLinkFor(task) {
+  const zid = task.zone_id || props.lockZoneId
+  if (zid) {
+    return { path: `/zones/${zid}`, query: { tab: 'ops', ops: 'tasks' } }
+  }
+  return { path: '/' }
+}
 
 function zoneName(zoneId) {
   return farmStore.zones.find((z) => z.id === zoneId)?.name || `Zone ${zoneId}`

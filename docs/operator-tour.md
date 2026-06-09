@@ -693,9 +693,9 @@ Legacy list routes `/sensors`, `/actuators`, `/lighting` redirect to **Zones →
 
 Plan: [`plans/phase_69_zone_workspace_hub.plan.md`](plans/phase_69_zone_workspace_hub.plan.md) · **Vitest:** `phase-69-closure.test.js`, `zone-inline-edit.test.js`, `zone-fleet-tab.test.js`.
 
-### 7g. Zone ops inbox — tasks, alerts, plants in the room (Phase 74 — planned)
+### 7g. Zone ops inbox — tasks, alerts, plants in the zone (Phase 74)
 
-**Planned.** Tasks, Alerts, and Plants leave the sidebar. Farm-wide triage stays on **Today**; room work lives on the zone **Ops** and **Plants** tabs. **Zones → Strains** tab for farm-wide strain/cultivar admin.
+**Shipped.** Tasks, Alerts, and Plants leave the sidebar. Farm-wide triage stays on **Today**; room work lives on the zone **Ops** and **Plants** tabs. **Zones → Strains** tab for farm-wide strain/cultivar admin.
 
 | Job | Where | Notes |
 |-----|--------|-------|

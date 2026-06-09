@@ -7,9 +7,6 @@ import SensorDetail from '../views/SensorDetail.vue'
 import Actuators from '../views/Actuators.vue'
 import Schedules from '../views/Schedules.vue'
 import Automation from '../views/Automation.vue'
-import Tasks from '../views/Tasks.vue'
-import Alerts from '../views/Alerts.vue'
-import Plants from '../views/Plants.vue'
 import Animals from '../views/Animals.vue'
 import Aquaponics from '../views/Aquaponics.vue'
 import CommonsCatalog from '../views/CommonsCatalog.vue'
@@ -29,7 +26,7 @@ import HardwareWorkspace from '../views/workspaces/HardwareWorkspace.vue'
 import FeedWaterWorkspace from '../views/workspaces/FeedWaterWorkspace.vue'
 import MoneyWorkspace from '../views/workspaces/MoneyWorkspace.vue'
 import Login from '../views/Login.vue'
-import { buildLegacyRedirectRoutes } from '../lib/workspaces.js'
+import { buildLegacyRedirectRoutes, buildZoneOpsRedirectRoutes } from '../lib/workspaces.js'
 
 const routes = [
   { path: '/login',        component: Login,        name: 'login',        meta: { public: true } },
@@ -44,10 +41,7 @@ const routes = [
   { path: '/schedules',    component: Schedules,    name: 'schedules' },
   { path: '/automation',   component: Automation,   name: 'automation' },
   { path: '/setpoints',    component: Setpoints,    name: 'setpoints' },
-  { path: '/tasks',        component: Tasks,        name: 'tasks' },
   { path: '/comfort-targets', component: ComfortTargetsHub, name: 'comfort-targets' },
-  { path: '/alerts',       component: Alerts,       name: 'alerts' },
-  { path: '/plants',       component: Plants,       name: 'plants' },
   { path: '/crop-profiles/:id', component: CropProfileDetail, name: 'crop-profile-detail' },
   { path: '/animals',      component: Animals,      name: 'animals' },
   { path: '/aquaponics',   component: Aquaponics,   name: 'aquaponics' },
@@ -62,6 +56,7 @@ const routes = [
   { path: '/farms/:id/setup', component: FarmSetupWizard, name: 'farm-setup' },
   { path: '/farms/:id/zones/new', component: ZoneSetupWizard, name: 'zone-setup' },
   { path: '/farms/:id/devices/new', component: DeviceSetupWizard, name: 'device-setup' },
+  ...buildZoneOpsRedirectRoutes(),
   ...buildLegacyRedirectRoutes(),
 ]
 

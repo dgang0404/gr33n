@@ -100,7 +100,7 @@ describe('Phase 53 WS6 / OC-53 — grow + stock + money closure', () => {
     expect(items.some((i) => i.id === 'restock_input')).toBe(true)
     expect(items.some((i) => i.id === 'log_receipt')).toBe(true)
     expect(relatedTo('/plants')).toContain('/zones')
-    expect(relatedTo('/zones')).toContain('/plants')
+    expect(relatedTo('/zones')).toContain('/hardware')
   })
 
   it('Guardian starters cover grow strip, supplies, and money', () => {

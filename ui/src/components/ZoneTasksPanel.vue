@@ -10,8 +10,8 @@
           {{ dueToday.length }}
         </span>
       </div>
-      <router-link v-nav-hint="'/tasks'" :to="tasksLink" class="text-xs text-green-600 hover:text-green-400">
-        All tasks →
+      <router-link v-nav-hint="'/zones'" :to="tasksLink" class="text-xs text-green-600 hover:text-green-400">
+        See all in Ops →
       </router-link>
     </div>
 
@@ -98,8 +98,8 @@ const nfInputs = ref([])
 const dueToday = computed(() => zoneTasksDueToday(props.tasks, props.zoneId, props.limit))
 
 const tasksLink = computed(() => ({
-  path: '/tasks',
-  query: { zone_id: String(props.zoneId) },
+  path: `/zones/${props.zoneId}`,
+  query: { tab: 'ops', ops: 'tasks' },
 }))
 
 function dueClass(dueDate) {

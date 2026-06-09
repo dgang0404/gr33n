@@ -60,11 +60,9 @@ describe('Phase 53 WS4 — cross-links & checklist', () => {
 
   it('navRelations links grow, plants, money, and supplies', () => {
     expect(relatedTo('/plants')).toContain('/zones')
-    expect(relatedTo('/plants')).toContain('/comfort-targets')
-    expect(relatedTo('/zones')).toContain('/plants')
-    expect(relatedTo('/operations/money')).toContain('/plants')
-    expect(relatedTo('/operations/supplies')).toContain('/tasks')
-    expect(relatedTo('/fertigation')).toContain('/plants')
+    expect(relatedTo('/zones')).toContain('/hardware')
+    expect(relatedTo('/operations/money')).toContain('/money')
+    expect(relatedTo('/fertigation')).toContain('/zones')
   })
 
   it('phase-53 CTAs use v-nav-hint on harvest, restock, receipt, compare', () => {

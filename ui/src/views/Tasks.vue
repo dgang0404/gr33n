@@ -1,6 +1,6 @@
 <template>
-  <div class="p-6">
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
+  <div :class="embedded ? '' : 'p-6'">
+    <div v-if="!embedded" class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
       <div>
         <h1 class="text-xl font-semibold text-white">Tasks
           <HelpTip position="bottom">
@@ -56,6 +56,20 @@
       </div>
     </div>
 
+    <div v-else class="flex items-center justify-between gap-3 mb-4 flex-wrap">
+      <h2 class="text-sm font-semibold text-white">Tasks in this zone</h2>
+      <div class="flex items-center gap-2">
+        <button
+          type="button"
+          @click="openCreate"
+          class="text-xs font-medium px-3 py-1.5 rounded-lg bg-green-900/50 text-green-400 border border-green-800 hover:bg-green-900/70"
+        >
+          + New task
+        </button>
+        <span class="text-xs text-zinc-500">{{ filteredTasks.length }} tasks</span>
+      </div>
+    </div>
+
     <p v-if="queueHasStale" class="mb-3 text-xs text-amber-300">
       Some queued updates need review due to server-side conflicts. Open the task card and retry after checking latest data.
     </p>
@@ -76,7 +90,7 @@
           class="w-full bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white" />
       </div>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <div>
+        <div v-if="!lockZoneId">
           <label class="block text-xs text-zinc-500 mb-1">Zone</label>
           <select v-model="form.zone_id"
             class="w-full bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white">
@@ -132,7 +146,7 @@
     </div>
 
     <ZoneContextBanner
-      v-if="zoneContextId"
+      v-if="zoneContextId && !embedded"
       :zone-id="zoneContextId"
       :zone-name="zoneName(zoneContextId)"
       page-label="Tasks"
@@ -158,7 +172,7 @@
       </button>
     </div>
 
-    <div class="flex flex-wrap gap-3 mb-4">
+    <div v-if="!lockZoneId" class="flex flex-wrap gap-3 mb-4">
       <div>
         <label class="text-[11px] text-zinc-500 mr-1">Zone</label>
         <select v-model="filterZone"
@@ -456,6 +470,12 @@ import TaskCompleteSheet from '../components/TaskCompleteSheet.vue'
 import { formatConsumptionLine } from '../lib/taskConsumption.js'
 import { buildReviewFeedingPlanPayload, detectMissedFeedSchedule } from '../lib/taskTemplates.js'
 
+const props = defineProps({
+  embedded: { type: Boolean, default: false },
+  lockZoneId: { type: Number, default: null },
+  autoOpenCreate: { type: Boolean, default: false },
+})
+
 const route = useRoute()
 const store = useFarmStore()
 const farmContext = useFarmContextStore()
@@ -513,6 +533,7 @@ function emptyForm() {
 function openCreate() {
   editingTask.value = null
   form.value = emptyForm()
+  if (props.lockZoneId) form.value.zone_id = String(props.lockZoneId)
   formError.value = ''
   showForm.value = true
 }
@@ -697,6 +718,7 @@ onMounted(async () => {
   const fid = farmContext.farmId
   if (!store.zones.length && fid) await store.loadAll(fid)
   applyZoneQueryFilter()
+  if (props.lockZoneId) filterZone.value = String(props.lockZoneId)
   loading.value = true
   try {
     if (fid) {
@@ -709,9 +731,14 @@ onMounted(async () => {
     await preloadCompletedConsumptions()
     await syncNow()
   } finally { loading.value = false }
+  if (props.autoOpenCreate || route.query.create === '1') openCreate()
   window.addEventListener('online', onConnectionChange)
   window.addEventListener('offline', onConnectionChange)
 })
+
+watch(() => props.lockZoneId, (id) => {
+  if (id) filterZone.value = String(id)
+}, { immediate: true })
 
 watch(() => route.query.zone_id, applyZoneQueryFilter)
 
@@ -766,6 +793,7 @@ async function submitTask() {
 const filterZone = ref('')
 
 const zoneContextId = computed(() => {
+  if (props.lockZoneId) return props.lockZoneId
   const n = Number(filterZone.value)
   return Number.isFinite(n) && n > 0 ? n : null
 })

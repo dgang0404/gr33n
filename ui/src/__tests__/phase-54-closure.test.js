@@ -70,13 +70,14 @@ describe('Phase 54 WS4 / OC-54 — connection nav closure', () => {
     expect(relatedTo('/fertigation')).toContain('/feed-water')
     expect(relatedTo('/fertigation')).toContain('/zones')
     expect(relatedTo('/operations/money')).toContain('/money')
-    expect(relatedTo('/plants')).toContain('/comfort-targets')
+    expect(relatedTo('/plants')).toContain('/zones')
   })
 
   it('navRelations only points at sidebar routes', () => {
     const legacyOk = new Set([
       '/feeding', '/fertigation', '/operations/feeding', '/operations/supplies', '/operations/money',
       '/sensors', '/actuators', '/lighting', '/pi-setup', '/costs', '/inventory',
+      '/tasks', '/alerts', '/plants',
     ])
     for (const [from, targets] of Object.entries(NAV_RELATIONS)) {
       if (!navRoutes.has(from) && !legacyOk.has(from)) {

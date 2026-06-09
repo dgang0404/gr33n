@@ -72,7 +72,7 @@ Hub: [`phase_68_73_spa_workspace_roadmap.plan.md`](plans/phase_68_73_spa_workspa
 | **71** | Feed & Water SPA | [`phase_71_feed_water_unification.plan.md`](plans/phase_71_feed_water_unification.plan.md) |
 | **72** | Money SPA | [`phase_72_money_unification.plan.md`](plans/phase_72_money_unification.plan.md) |
 | **73** | Guardian discoverability | [`phase_73_guardian_pr_discoverability.plan.md`](plans/phase_73_guardian_pr_discoverability.plan.md) |
-| **74** | Zone ops (Tasks, Alerts, Plants) | [`phase_74_zone_ops_inbox.plan.md`](plans/phase_74_zone_ops_inbox.plan.md) |
+| **74** ✅ | Zone ops (Tasks, Alerts, Plants) | [`phase_74_zone_ops_inbox.plan.md`](plans/phase_74_zone_ops_inbox.plan.md) |
 | **75** | Comfort & automation workspace | [`phase_75_automation_comfort_workspace.plan.md`](plans/phase_75_automation_comfort_workspace.plan.md) |
 | **76** | Today + mobile nav alignment | [`phase_76_today_dashboard_nav_alignment.plan.md`](plans/phase_76_today_dashboard_nav_alignment.plan.md) |
 | **77** | Post-arc polish | [`phase_77_post_arc_ui_polish.plan.md`](plans/phase_77_post_arc_ui_polish.plan.md) |

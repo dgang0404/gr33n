@@ -17,8 +17,6 @@ export function buildNavGroups(cycleCompareRoute) {
           label: 'Today',
           navTitle: 'Morning dashboard — tasks, alerts, schedules',
         },
-        { to: '/tasks', icon: '✅', label: 'Tasks' },
-        { to: '/alerts', icon: '🔔', label: 'Alerts' },
       ],
     },
     {
@@ -42,7 +40,6 @@ export function buildNavGroups(cycleCompareRoute) {
           label: 'Targets & schedules',
           navTitle: 'Comfort bands, what runs when, and automation toggles',
         },
-        { to: '/plants', icon: '🌱', label: 'Plants' },
         {
           to: '/hardware',
           icon: '🔌',

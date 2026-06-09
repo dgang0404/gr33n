@@ -21,8 +21,8 @@ describe('Phase 53 WS2 — supplies stock closure', () => {
     expect(vue).toContain('updateNfInput')
   })
 
-  it('navRelations links supplies to tasks and feeding', () => {
-    expect(relatedTo('/operations/supplies')).toContain('/tasks')
+  it('navRelations links supplies to zones and feeding', () => {
+    expect(relatedTo('/operations/supplies')).toContain('/zones')
     expect(relatedTo('/operations/supplies')).toContain('/feed-water')
   })
 

@@ -10,22 +10,22 @@ overview: >
 todos:
   - id: ws1-zone-ops-tab
     content: "WS1: Zone detail Ops tab — full zone-filtered alerts inbox + tasks board (reuse Alerts/Tasks views embedded; Done/Snooze/Create task/Ack inline); deep-link ?tab=ops&ops=alerts|tasks"
-    status: pending
+    status: completed
   - id: ws2-zone-plants-tab
     content: "WS2: Zone detail Plants tab — strains and grows for this zone (active + history via crop_cycles); inline New strain + Start grow; absorb /plants farm-wide list into Zones workspace Strains sub-tab or redirect"
-    status: pending
+    status: completed
   - id: ws3-today-triage
     content: "WS3: Today dashboard — sole farm-wide ops triage; cross-zone alert/task widgets link into zone Ops tabs; drop duplicate sidebar entries"
-    status: pending
+    status: completed
   - id: ws4-nav-sidebar
     content: "WS4: Remove Tasks, Alerts, Plants from sidebar; Grow & operate shrinks to zones/feed-water/targets/hardware/money; mobile bottom nav unchanged except drop alert shortcut if redundant"
-    status: pending
+    status: completed
   - id: ws5-redirects-wiggle
     content: "WS5: Redirect /tasks, /alerts, /plants → zone or Today; preserve ?zone_id= query; update workspaces.js absorbs, navRelations, v-nav-hint, Guardian route refs"
-    status: pending
+    status: completed
   - id: ws6-docs-tests
     content: "WS6: zone-ops-tab.test.js, zone-plants-tab.test.js, phase-74-closure.test.js; operator-tour §7g; OC-74"
-    status: pending
+    status: completed
 isProject: false
 ---
 
@@ -33,7 +33,7 @@ isProject: false
 
 ## Status
 
-**Planned.** Closes the gap after [Phase 69](phase_69_zone_workspace_hub.plan.md) (zone hardware inline) and before or alongside [Phases 70–73](phase_68_73_spa_workspace_roadmap.plan.md). UI-only — no DB, no API, no Pi.
+**Shipped.** Closes the gap after [Phase 69](phase_69_zone_workspace_hub.plan.md) (zone hardware inline). UI-only — no DB, no API, no Pi.
 
 **Closure:** **OC-74** — tracked in this plan's DoD + [arc hub OC table](phase_68_73_spa_workspace_roadmap.plan.md#operational-closure-oc-rows). Do not add to the archived Phase 35 closure doc.
 

@@ -24,7 +24,8 @@ describe('Phase 68 — workspace nav groups', () => {
   it('groups Today cockpit items', () => {
     const today = groups.find((g) => g.label === 'Today')
     expect(today.items.some((i) => i.label === 'Today' && i.to === '/')).toBe(true)
-    expect(today.items.some((i) => i.to === '/alerts')).toBe(true)
+    expect(today.items.some((i) => i.to === '/alerts')).toBe(false)
+    expect(today.items.some((i) => i.to === '/tasks')).toBe(false)
   })
 
   it('puts Guardian full page under More', () => {

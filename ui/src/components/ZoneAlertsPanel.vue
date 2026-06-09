@@ -12,11 +12,11 @@
         </span>
       </div>
       <router-link
-        v-nav-hint="'/alerts'"
-        :to="{ path: '/alerts', query: { zone_id: String(zoneId) } }"
+        v-nav-hint="'/zones'"
+        :to="{ path: `/zones/${zoneId}`, query: { tab: 'ops', ops: 'alerts' } }"
         class="text-xs text-green-600 hover:text-green-400"
       >
-        All farm alerts →
+        See all in Ops →
       </router-link>
     </div>
 
