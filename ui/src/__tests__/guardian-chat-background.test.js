@@ -2,6 +2,8 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 
+import { createRouter, createMemoryHistory } from 'vue-router'
+
 vi.mock('../api', () => ({
   default: {
     get: vi.fn(),
@@ -16,6 +18,18 @@ import api from '../api'
 import GuardianChatPanel from '../components/GuardianChatPanel.vue'
 import { useFarmContextStore } from '../stores/farmContext'
 import { useGuardianChatStore } from '../stores/guardianChat'
+
+const testRouter = createRouter({
+  history: createMemoryHistory(),
+  routes: [{ path: '/', component: { template: '<div/>' } }],
+})
+
+function mountChatPanel() {
+  return mount(GuardianChatPanel, {
+    props: { layout: 'compact' },
+    global: { plugins: [testRouter] },
+  })
+}
 
 describe('Phase 37 WS9 — Guardian chat background stream', () => {
   beforeEach(() => {
@@ -48,7 +62,7 @@ describe('Phase 37 WS9 — Guardian chat background stream', () => {
 
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, body: stream }))
 
-    const wrapper = mount(GuardianChatPanel, { props: { layout: 'compact' } })
+    const wrapper = mountChatPanel()
     await flushPromises()
 
     await wrapper.find('[data-test="chat-message-input"]').setValue('wire the relay')
@@ -76,7 +90,7 @@ describe('Phase 37 WS9 — Guardian chat background stream', () => {
     chatStore.streaming = true
     chatStore.streamingText = 'still thinking'
 
-    const wrapper = mount(GuardianChatPanel, { props: { layout: 'compact' } })
+    const wrapper = mountChatPanel()
     await flushPromises()
     expect(wrapper.find('[data-test="chat-streaming-row"]').text()).toContain('still thinking')
     wrapper.unmount()

@@ -34,11 +34,13 @@ describe('Phase 43 WS7 / OC-43 — operations hub closure', () => {
     expect(buildMoneyHubStarters().length).toBeGreaterThanOrEqual(1)
   })
 
-  it('Operations nav group exposes three farmer hubs', () => {
-    const ops = buildNavGroups('/farms/1/crop-cycles/compare').find((g) => g.label === 'Operations')
-    expect(ops).toBeTruthy()
-    const paths = ops.items.map((i) => i.to)
-    expect(paths).toEqual(['/operations/supplies', '/operations/feeding', '/operations/money'])
+  it('Grow & operate nav exposes workspace hubs (Phase 68)', () => {
+    const grow = buildNavGroups('/farms/1/crop-cycles/compare').find((g) => g.label === 'Grow & operate')
+    expect(grow).toBeTruthy()
+    const paths = grow.items.map((i) => i.to)
+    expect(paths).toContain('/feed-water')
+    expect(paths).toContain('/money')
+    expect(paths).toContain('/hardware')
   })
 
   it('supplies hub helpers surface low-stock rows', () => {

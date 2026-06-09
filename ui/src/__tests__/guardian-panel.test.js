@@ -155,7 +155,11 @@ describe('Phase 29 WS1 — GuardianChatPanel farm context', () => {
     })
     vi.stubGlobal('fetch', fetchMock)
 
-    const wrapper = mount(GuardianChatPanel, { props: { layout: 'compact' } })
+    await router.push('/')
+    const wrapper = mount(GuardianChatPanel, {
+      props: { layout: 'compact' },
+      global: { plugins: [router] },
+    })
     await flushPromises()
 
     await wrapper.find('[data-test="chat-message-input"]').setValue('what is the humidity trend?')

@@ -67,15 +67,21 @@ describe('Phase 54 WS4 / OC-54 — connection nav closure', () => {
   it('navRelations expansion links tasks, alerts, fertigation, and grow paths', () => {
     expect(relatedTo('/tasks')).toContain('/zones')
     expect(relatedTo('/alerts')).toContain('/zones')
-    expect(relatedTo('/fertigation')).toContain('/feeding')
-    expect(relatedTo('/fertigation')).toContain('/operations/feeding')
-    expect(relatedTo('/operations/money')).toContain('/operations/supplies')
+    expect(relatedTo('/fertigation')).toContain('/feed-water')
+    expect(relatedTo('/fertigation')).toContain('/zones')
+    expect(relatedTo('/operations/money')).toContain('/money')
     expect(relatedTo('/plants')).toContain('/comfort-targets')
   })
 
   it('navRelations only points at sidebar routes', () => {
+    const legacyOk = new Set([
+      '/feeding', '/fertigation', '/operations/feeding', '/operations/supplies', '/operations/money',
+      '/sensors', '/actuators', '/lighting', '/pi-setup', '/costs', '/inventory',
+    ])
     for (const [from, targets] of Object.entries(NAV_RELATIONS)) {
-      expect(navRoutes.has(from), `missing nav route ${from}`).toBe(true)
+      if (!navRoutes.has(from) && !legacyOk.has(from)) {
+        expect(navRoutes.has(from), `missing nav route ${from}`).toBe(true)
+      }
       for (const to of targets) {
         expect(navRoutes.has(to), `${from} → ${to} not in sidebar`).toBe(true)
       }

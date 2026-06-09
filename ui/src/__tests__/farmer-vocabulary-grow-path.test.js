@@ -123,11 +123,12 @@ describe('Phase 47 WS5 + Phase 45 WS3 — grow-path farmer vocabulary', () => {
     expect(findGrowPathVocabularyViolations('Start a grow in Veg Room')).toEqual([])
   })
 
-  it('Phase 49 — allows Fertigation in Advanced nav only', () => {
+  it('Phase 68 — fertigation lives in Feed & Water workspace, not Advanced nav', () => {
     const advanced = buildNavGroups('/farms/1/crop-cycles/compare').find((g) => g.label === 'Advanced')
-    expect(advanced.items.some((i) => i.label === 'Fertigation' && i.to === '/fertigation')).toBe(true)
+    expect(advanced.items.some((i) => i.label === 'Fertigation' && i.to === '/fertigation')).toBe(false)
 
-    const grow = buildNavGroups('/farms/1/crop-cycles/compare').find((g) => g.label === 'Grow')
+    const grow = buildNavGroups('/farms/1/crop-cycles/compare').find((g) => g.label === 'Grow & operate')
+    expect(grow.items.some((i) => i.to === '/feed-water' && i.label === 'Feed & water')).toBe(true)
     expect(grow.items.some((i) => /fertigation/i.test(i.label))).toBe(false)
   })
 

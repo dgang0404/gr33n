@@ -12,14 +12,10 @@ const repoDocs = join(repoRoot, 'docs')
 describe('Phase 49 WS4 / OC-49 — sidebar nav closure', () => {
   const groups = buildNavGroups('/farms/1/crop-cycles/compare')
 
-  it('disambiguates feeding nav labels', () => {
-    const grow = groups.find((g) => g.label === 'Grow')
-    const ops = groups.find((g) => g.label === 'Operations')
-    const advanced = groups.find((g) => g.label === 'Advanced')
-
-    expect(grow.items.find((i) => i.to === '/feeding')?.label).toBe('Feed & water')
-    expect(ops.items.find((i) => i.to === '/operations/feeding')?.label).toBe('Feeding admin')
-    expect(advanced.items.find((i) => i.to === '/fertigation')?.label).toBe('Fertigation')
+  it('disambiguates feeding via workspace tabs (Phase 68)', () => {
+    const grow = groups.find((g) => g.label === 'Grow & operate')
+    expect(grow.items.find((i) => i.to === '/feed-water')?.label).toBe('Feed & water')
+    expect(groups.find((g) => g.label === 'Advanced')?.items.some((i) => i.to === '/fertigation')).toBe(false)
   })
 
   it('SideNav implements related-route hover affordance', () => {
@@ -54,10 +50,10 @@ describe('Phase 49 WS4 / OC-49 — sidebar nav closure', () => {
     expect(growStory).toContain('v-nav-hint="advancedFeedingLink"')
   })
 
-  it('operator-tour documents Fertigation in Advanced nav', () => {
+  it('operator-tour documents workspaces and feeding tabs', () => {
     const tour = readFileSync(join(repoDocs, 'operator-tour.md'), 'utf8')
-    expect(tour).toContain('Fertigation')
-    expect(tour).toContain('Feeding admin')
+    expect(tour).toMatch(/workspace/i)
+    expect(tour).toContain('Feed & Water')
   })
 
   it('OC-49 marked completed in operational closure plan', () => {

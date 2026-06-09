@@ -4,15 +4,15 @@ import { resolveHintPath } from '../directives/navHint.js'
 import { useNavHighlightStore } from '../stores/navHighlight.js'
 
 describe('Phase 49 WS3 — nav-hint path resolution', () => {
-  it('resolves a string path and strips query', () => {
-    expect(resolveHintPath('/feeding')).toBe('/feeding')
-    expect(resolveHintPath('/fertigation?tab=programs')).toBe('/fertigation')
+  it('resolves a string path and maps legacy routes to workspaces', () => {
+    expect(resolveHintPath('/feeding')).toBe('/feed-water')
+    expect(resolveHintPath('/fertigation?tab=programs')).toBe('/feed-water')
   })
 
-  it('resolves a router object path and strips query', () => {
-    expect(resolveHintPath({ path: '/feeding', query: { zone_id: '2' } })).toBe('/feeding')
+  it('resolves a router object path and maps to workspace sidebar routes', () => {
+    expect(resolveHintPath({ path: '/feeding', query: { zone_id: '2' } })).toBe('/feed-water')
     expect(resolveHintPath({ path: '/operations/feeding', query: { tab: 'programs' } })).toBe(
-      '/operations/feeding',
+      '/feed-water',
     )
   })
 

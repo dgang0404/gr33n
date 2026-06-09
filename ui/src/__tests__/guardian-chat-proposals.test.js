@@ -2,6 +2,8 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 
+import { createRouter, createMemoryHistory } from 'vue-router'
+
 vi.mock('../api', () => ({
   default: {
     get: vi.fn(),
@@ -15,6 +17,11 @@ vi.mock('../api', () => ({
 import api from '../api'
 import GuardianChatPanel from '../components/GuardianChatPanel.vue'
 import { useFarmContextStore } from '../stores/farmContext'
+
+const testRouter = createRouter({
+  history: createMemoryHistory(),
+  routes: [{ path: '/', component: { template: '<div/>' } }],
+})
 
 describe('GuardianChatPanel — proposals in transcript (Phase 29 WS4)', () => {
   beforeEach(() => {
@@ -65,7 +72,10 @@ describe('GuardianChatPanel — proposals in transcript (Phase 29 WS4)', () => {
 
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, body: stream }))
 
-    const wrapper = mount(GuardianChatPanel, { props: { layout: 'compact' } })
+    const wrapper = mount(GuardianChatPanel, {
+      props: { layout: 'compact' },
+      global: { plugins: [testRouter] },
+    })
     await flushPromises()
 
     await wrapper.find('[data-test="chat-message-input"]').setValue('acknowledge the humidity alert')

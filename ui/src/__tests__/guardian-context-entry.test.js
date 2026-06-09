@@ -2,6 +2,8 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import { setActivePinia, createPinia } from 'pinia'
 
+import { createRouter, createMemoryHistory } from 'vue-router'
+
 vi.mock('../api', () => ({
   default: {
     get: vi.fn(),
@@ -20,6 +22,21 @@ import { useGuardianPanelStore } from '../stores/guardianPanel'
 import { useCapabilitiesStore } from '../stores/capabilities'
 import { useFarmContextStore } from '../stores/farmContext'
 import { useFarmStore } from '../stores/farm'
+
+const testRouter = createRouter({
+  history: createMemoryHistory(),
+  routes: [
+    { path: '/', name: 'dashboard', component: { template: '<div/>' } },
+    { path: '/plants', name: 'plants', component: { template: '<div/>' } },
+  ],
+})
+
+function mountChatPanel() {
+  return mount(GuardianChatPanel, {
+    props: { layout: 'compact' },
+    global: { plugins: [testRouter] },
+  })
+}
 
 function stubCapabilities() {
   api.get.mockImplementation((url) => {
@@ -163,7 +180,7 @@ describe('Phase 29 WS6 — GuardianChatPanel context_ref POST', () => {
     })
     vi.stubGlobal('fetch', fetchMock)
 
-    const wrapper = mount(GuardianChatPanel, { props: { layout: 'compact' } })
+    const wrapper = mountChatPanel()
     await flushPromises()
 
     await wrapper.find('[data-test="chat-message-input"]').setValue('Explain alert #42')
@@ -196,7 +213,7 @@ describe('Phase 29 WS6 — GuardianChatPanel context_ref POST', () => {
     })
     vi.stubGlobal('fetch', fetchMock)
 
-    const wrapper = mount(GuardianChatPanel, { props: { layout: 'compact' } })
+    const wrapper = mountChatPanel()
     await flushPromises()
 
     await wrapper.find('[data-test="chat-message-input"]').setValue('How do I add a program?')
@@ -236,7 +253,7 @@ describe('Phase 29 WS6 — GuardianChatPanel context_ref POST', () => {
     })
     vi.stubGlobal('fetch', fetchMock)
 
-    const wrapper = mount(GuardianChatPanel, { props: { layout: 'compact' } })
+    const wrapper = mountChatPanel()
     await flushPromises()
 
     await wrapper.find('[data-test="chat-message-input"]').setValue('Explain alert #42')

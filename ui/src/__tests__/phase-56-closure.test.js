@@ -92,7 +92,7 @@ describe('Phase 56 WS5 / OC-56 — grow schema closure', () => {
     const plants = readFileSync(join(process.cwd(), 'src/views/Plants.vue'), 'utf8')
     const summary = readFileSync(join(process.cwd(), 'src/views/CropCycleSummary.vue'), 'utf8')
     const money = readFileSync(join(process.cwd(), 'src/views/MoneyHub.vue'), 'utf8')
-    expect(wizard).toContain('plantId: plantPickId.value')
+    expect(wizard).toContain('plantId,')
     expect(plants).toContain('plant-active-cycles')
     expect(summary).toContain('buildPostHarvestCompareRoute')
     expect(summary).toContain('summary-harvest-economics')

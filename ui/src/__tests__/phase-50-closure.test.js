@@ -102,15 +102,16 @@ describe('Phase 50 WS6 / OC-50 — hardware wiring closure', () => {
     expect(hints).toContain("actionTo: '/comfort-targets'")
   })
 
-  it('pi-sequent-hat-setup guide and /pi-setup route exist', () => {
+  it('pi-sequent-hat-setup guide and /pi-setup redirect to hardware workspace exist', () => {
     const doc = readFileSync(join(repoDocs, 'pi-sequent-hat-setup.md'), 'utf8')
     expect(doc).toContain('Sequent Microsystems')
     expect(doc).toContain('DIP switch')
     const router = readFileSync(join(process.cwd(), 'src/router/index.js'), 'utf8')
     const nav = readFileSync(join(process.cwd(), 'src/lib/navGroups.js'), 'utf8')
-    expect(router).toContain("path: '/pi-setup'")
-    expect(nav).toContain("to: '/pi-setup'")
-    expect(nav).toContain('children')
+    const workspaces = readFileSync(join(process.cwd(), 'src/lib/workspaces.js'), 'utf8')
+    expect(router).toContain('buildLegacyRedirectRoutes')
+    expect(workspaces).toContain("'/pi-setup': { tab: 'reference' }")
+    expect(nav).toContain("to: '/hardware'")
   })
 
   it('architecture §7.0o documents Phase 50 wiring shipped', () => {

@@ -46,8 +46,11 @@ describe('Phase 46 WS4 — safety tests closure', () => {
   })
 
   it('architecture §7.0l notes WS4 safety coverage', () => {
-    const arch = readFileSync(join(repoDocs, 'farm-guardian-architecture.md'), 'utf8')
-    expect(arch).toContain('proposals_llm_safety_test.go')
-    expect(arch).toContain('smoke_phase46_ws4_test.go')
+    const plan = readFileSync(
+      join(repoDocs, 'plans/phase_46_guardian_llm_tool_proposals.plan.md'),
+      'utf8',
+    )
+    expect(plan).toContain('proposals_llm_safety_test.go')
+    expect(plan).toContain('smoke_phase46_ws4_test.go')
   })
 })

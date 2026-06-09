@@ -666,6 +666,21 @@ Orphan links now carry the same affordance: zone names on **Tasks** and **Contro
 
 Architecture: [`farm-guardian-architecture.md` §7.0r](farm-guardian-architecture.md#70r-zone-connection-nav-phase-54--shipped).
 
+### 7e. Workspaces — sidebar jobs, tabs inside (Phase 68)
+
+**Shipped.** The sidebar is organized by **jobs**, not scattered duplicate pages. Each workspace is one destination with **tabs** for depth:
+
+| Workspace | Route | Tabs |
+|-----------|-------|------|
+| **Zones** | `/zones` | Rooms · Fleet (sensors, controls, lighting) |
+| **Feed & Water** | `/feed-water` | Daily · Programs & tanks · Nutrients & mix · Advanced |
+| **Hardware** | `/hardware` | GPIO board · Pi devices · Wiring guide |
+| **Money** | `/money` | This month · Ledger · Supplies & costs |
+
+Old bookmarks still work — `/feeding`, `/fertigation`, `/operations/money`, `/pi-setup`, and similar paths **redirect** into the right workspace tab. Use **Jump to** chips at the top of each workspace to cross-link (sidebar wiggle, Phase 49).
+
+Plan: [`plans/phase_68_workspace_shell_spa_nav.plan.md`](plans/phase_68_workspace_shell_spa_nav.plan.md) · **Vitest:** `phase-68-closure.test.js`, `workspaces.test.js`.
+
 ---
 
 ## 7b. Feeding & water for this zone (Phase 47)

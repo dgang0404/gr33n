@@ -20,10 +20,10 @@ describe('Phase 45 WS3 — vocabulary v2 closure', () => {
 
   it('nav uses My zones and mobile Zones', () => {
     const groups = buildNavGroups('/analytics')
-    const grow = groups.find((g) => g.label === 'Grow')
+    const grow = groups.find((g) => g.label === 'Grow & operate')
     const zonesItem = grow.items.find((i) => i.to === '/zones')
     expect(zonesItem.label).toBe(GROW_PATH_ZONE_LABELS.navMyZones)
-    expect(zonesItem.navTitle).toContain('per zone')
+    expect(zonesItem.navTitle).toMatch(/room|zone/i)
     expect(mobileBottomNav.find((i) => i.to === '/zones')?.label).toBe('Zones')
   })
 

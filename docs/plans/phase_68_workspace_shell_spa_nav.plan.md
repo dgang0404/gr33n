@@ -11,22 +11,22 @@ overview: >
 todos:
   - id: ws1-workspace-model
     content: "WS1: Declare the workspace model — workspaces.js maps workspace id → route, tabs, and the legacy routes each tab absorbs; single source of truth consumed by nav + router"
-    status: pending
+    status: completed
   - id: ws2-workspace-shell
     content: "WS2: WorkspaceShell.vue layout — page header, tab strip (deep-linkable ?tab=), sticky sub-nav, related-workspace wiggle rail; mobile = tab dropdown"
-    status: pending
+    status: completed
   - id: ws3-nav-collapse
     content: "WS3: Rewrite navGroups.js to list workspaces instead of 26 leaf items; keep Today/Tasks/Alerts/Plants/Settings standalone; update SideNav + mobile drawer + bottom nav"
-    status: pending
+    status: completed
   - id: ws4-route-redirects
     content: "WS4: Add redirects from every retired route (/sensors, /actuators, /lighting, /fertigation, /operations/*, /costs, /inventory, ...) → workspace?tab=; keep named routes resolvable for context_ref.go"
-    status: pending
+    status: completed
   - id: ws5-cross-workspace-wiggle
     content: "WS5: Extend navRelations.js + v-nav-hint so in-workspace links wiggle the destination workspace (zone ↔ hardware ↔ feed-water ↔ money); honor prefers-reduced-motion"
-    status: pending
+    status: completed
   - id: ws6-docs-tests
     content: "WS6: nav-groups.test.js rewrite, workspace-routes redirect test, phase-68-closure.test.js; operator-tour 'workspaces' section; OC-68"
-    status: pending
+    status: completed
 isProject: false
 ---
 
@@ -34,7 +34,7 @@ isProject: false
 
 ## Status
 
-**Planned.** First phase of the [SPA workspace arc](phase_68_73_spa_workspace_roadmap.plan.md). UI-only. No DB, no API, no Pi. Everything else in the arc (69–73) plugs into the `WorkspaceShell` this phase introduces.
+**Shipped.** First phase of the [SPA workspace arc](phase_68_73_spa_workspace_roadmap.plan.md). UI-only. No DB, no API, no Pi. Everything else in the arc (69–73) plugs into the `WorkspaceShell` this phase introduces.
 
 **Closure:** **OC-68** — tracked in this plan's DoD + [arc hub OC table](phase_68_73_spa_workspace_roadmap.plan.md#operational-closure-oc-rows). Do not add to the archived Phase 35 closure doc.
 

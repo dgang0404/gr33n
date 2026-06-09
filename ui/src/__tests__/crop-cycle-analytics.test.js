@@ -15,7 +15,7 @@ vi.mock('../api', () => ({
 // useRoute() is what CropCycleSummary uses; the $route global doesn't get
 // picked up by the composition API. Mocking the whole module is cleaner
 // than spinning up a real vue-router in every test.
-const routeMock = { params: { id: '42' } }
+const routeMock = { params: { id: '42' }, query: {} }
 vi.mock('vue-router', () => ({
   useRoute: () => routeMock,
   useRouter: () => ({ push: vi.fn() }),
@@ -116,7 +116,7 @@ describe('CropCycleSummary.vue', () => {
     expect(header.exists()).toBe(true)
     expect(header.text()).toContain('OG Kush — Run 3')
     expect(header.text()).toContain('61')         // duration
-    expect(header.text()).toContain('late_flower') // stage
+    expect(header.text()).toContain('late flower') // formatted stage
   })
 
   it('renders all four metric cards', async () => {

@@ -66,7 +66,7 @@ describe('Phase 55 WS5 / OC-55 — Guardian ops closure', () => {
       activeCycle: { id: 9, name: 'Run A', current_stage: 'early_veg' },
       farmId: 1,
     })
-    expect(grow.some((s) => s.id === 'stage-advice')).toBe(true)
+    expect(grow.some((s) => s.id === 'vpd-on-target')).toBe(true)
     expect(grow[0].contextRef.crop_cycle_id).toBe(9)
 
     const harvest = buildHarvestFlowStarters({

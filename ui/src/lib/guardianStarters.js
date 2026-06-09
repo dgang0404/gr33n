@@ -378,7 +378,7 @@ export function buildZoneGrowStripStarters({
   const costStarters = [
     {
       id: 'grow-room-cost',
-      label: 'What did this room cost so far?',
+      label: 'What did this zone cost so far?',
       message: `What did ${zoneName} cost so far for the active grow "${cycleName}"? Use summarize_cycle_cost — plain dollars, no accounting jargon.`,
       contextRef: { ...contextRef, crop_cycle_id: activeCycle.id },
     },
