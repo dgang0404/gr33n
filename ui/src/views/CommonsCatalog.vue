@@ -1,8 +1,8 @@
 <template>
-  <div class="p-6">
+  <div :class="embedded ? 'p-4 sm:p-6' : 'p-6'">
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
-      <h1 class="text-xl font-semibold text-white">Commons Catalog</h1>
-      <div class="flex items-center gap-2">
+      <h1 v-if="!embedded" class="text-xl font-semibold text-white">Commons Catalog</h1>
+      <div class="flex items-center gap-2" :class="embedded ? 'w-full' : ''">
         <button
           @click="tab = 'browse'"
           class="text-xs font-medium px-3 py-1.5 rounded-lg border transition-colors"
@@ -150,6 +150,10 @@
 import { ref, onMounted, watch } from 'vue'
 import { useFarmStore } from '../stores/farm'
 import { useFarmContextStore } from '../stores/farmContext'
+
+defineProps({
+  embedded: { type: Boolean, default: false },
+})
 
 const store = useFarmStore()
 const farmContext = useFarmContextStore()

@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { buildNavGroups, mobileBottomNav } from '../lib/navGroups.js'
 
 describe('Phase 68 — workspace nav groups', () => {
-  const groups = buildNavGroups('/farms/1/crop-cycles/compare')
+  const groups = buildNavGroups()
 
   it('uses workspace-first grow & operate labels', () => {
     const grow = groups.find((g) => g.label === 'Grow & operate')
@@ -27,14 +27,20 @@ describe('Phase 68 — workspace nav groups', () => {
     expect(today.items.some((i) => i.to === '/tasks')).toBe(false)
   })
 
-  it('puts Guardian full page under More', () => {
+  it('More holds Help workspace instead of scattered reference pages', () => {
     const more = groups.find((g) => g.label === 'More')
-    expect(more.items.some((i) => i.to === '/chat' && i.label.includes('Guardian'))).toBe(true)
+    expect(more.items.some((i) => i.label === 'Help' && i.to === '/operator-guide')).toBe(true)
+    expect(more.items.some((i) => i.to === '/chat')).toBe(false)
+    expect(more.items.some((i) => i.to === '/farm-knowledge')).toBe(false)
+    expect(more.items.some((i) => i.to === '/catalog')).toBe(false)
+    expect(more.items.some((i) => i.to.includes('crop-cycles/compare'))).toBe(false)
   })
 
-  it('uses farmer labels on mobile bottom nav with feed workspace', () => {
+  it('uses farmer labels on mobile bottom nav with feed and targets workspaces', () => {
     expect(mobileBottomNav.find((i) => i.to === '/')?.label).toBe('Today')
     expect(mobileBottomNav.find((i) => i.to === '/zones')?.label).toBe('Zones')
     expect(mobileBottomNav.find((i) => i.to === '/feed-water')?.label).toBe('Feed')
+    expect(mobileBottomNav.find((i) => i.to === '/comfort-targets')?.label).toBe('Targets')
+    expect(mobileBottomNav.find((i) => i.to === '/alerts')).toBeUndefined()
   })
 })

@@ -110,11 +110,7 @@ function syncMobile() {
 
 const mobileNav = mobileBottomNav
 
-const drawerNavGroups = computed(() => {
-  const fid = farmContext.farmId
-  const compare = fid ? `/farms/${fid}/crop-cycles/compare` : '/farms/0/crop-cycles/compare'
-  return buildNavGroups(compare)
-})
+const drawerNavGroups = computed(() => buildNavGroups())
 
 function connectSSE(farmId) {
   if (evtSource) evtSource.close()

@@ -723,17 +723,36 @@ Zone **Climate** tab stays the in-room editor; farm-wide admin = this workspace.
 
 Plan: [`plans/phase_75_automation_comfort_workspace.plan.md`](plans/phase_75_automation_comfort_workspace.plan.md).
 
-### 7i. Today dashboard alignment (Phase 76 — planned)
+### 7i. Today dashboard alignment (Phase 76)
 
-**Planned.** After workspaces ship, sweep **Today** (`/`) and **mobile bottom nav** so widgets, quick actions, and chips never link to absorbed routes (`/feeding`, `/schedules`, `/tasks`, …). Remove **Alerts** from mobile bottom bar — triage via Today + zone Ops.
+**Shipped.** **Today** (`/`) and **mobile bottom nav** link only to workspaces or zone deep links — no absorbed sidebar routes.
+
+| Area | Target |
+|------|--------|
+| Quick actions | **Feed & water** → `/feed-water?tab=daily`; **Log mix** → nutrients tab; **+ New Task** → zone **Ops** (first zone) |
+| Tasks / Alerts widgets | **View all** → first zone with open tasks/alerts, else **Zones** list; row zone chips → `/zones/:id?tab=ops&ops=tasks` |
+| Schedules / feeds | `/comfort-targets?tab=schedules` and `/feed-water?tab=daily` |
+| Morning strip chips | Same workspace paths (tasks → zone Ops, supplies → **Money**, schedules → **Comfort**) |
+| Mobile bottom bar | Today · Zones · Feed · **Targets** · More — **Alerts** removed (triage on Today + zone Ops) |
 
 Plan: [`plans/phase_76_today_dashboard_nav_alignment.plan.md`](plans/phase_76_today_dashboard_nav_alignment.plan.md).
 
-### 7j. Post-arc polish (Phase 77 — planned)
+### 7j. Post-arc polish (Phase 77)
 
-**Planned.** Final sidebar cleanup (~8 items): analytics/compare → **Zones → Strains** or **Money → Grows**; Guardian drawer primary (demote `/chat` in sidebar); optional **Help** hub (Guide + Knowledge + Catalog); farm config card on Today; Settings defers devices to **Hardware**.
+**Shipped.** Final sidebar (~8 items) — nothing important hides in **More** by accident.
 
-Plan: [`plans/phase_77_post_arc_ui_polish.plan.md`](plans/phase_77_post_arc_ui_polish.plan.md) · Arc hub: [`plans/phase_68_73_spa_workspace_roadmap.plan.md`](plans/phase_68_73_spa_workspace_roadmap.plan.md) (68–77).
+| Area | Home |
+|------|------|
+| **Compare harvests** | **Zones → Strains** banner → `/farms/:id/crop-cycles/compare`; legacy `/analytics` redirects |
+| **Grow economics** | **Money → Grows** tab — cycle list + compare link |
+| **Guardian** | **Drawer** (edge tab + TopBar) is primary; **Open full chat →** for sessions / pending inbox; `/chat` not in sidebar |
+| **Help** | **More → Help** (`/operator-guide`) — Guide · Knowledge · Catalog tabs; `/farm-knowledge` and `/catalog` redirect |
+| **Farm site** | **Today** farm card (lat/long) + full detail in Settings |
+| **Pi devices** | **Hardware → Pi devices** — Settings links out instead of duplicating wizard |
+
+**Final sidebar:** Today · Zones · Feed & water · Comfort & automation · Hardware · Money · (Animals*) · (Aquaponics*) · Help · Settings.
+
+Plan: [`plans/phase_77_post_arc_ui_polish.plan.md`](plans/phase_77_post_arc_ui_polish.plan.md) · Arc hub: [`plans/phase_68_73_spa_workspace_roadmap.plan.md`](plans/phase_68_73_spa_workspace_roadmap.plan.md) (68–77 **complete**).
 
 ---
 

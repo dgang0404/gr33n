@@ -221,7 +221,7 @@ export function buildFeedingHubStarters({ zones = [], zoneContextId = null, zone
     ? zones.find((z) => Number(z.id) === Number(zoneContextId))
     : zones[0]
   const name = focusZone?.name || zoneName || 'this farm'
-  const routeRef = { type: 'route', path: '/feeding', name: 'Feed & water' }
+  const routeRef = { type: 'route', path: '/feed-water', name: 'Feed & water' }
 
   if (focusZone) {
     const ctx = { zone: focusZone, activeTab: 'water' }
@@ -696,7 +696,7 @@ export function buildMorningWalkthroughStarters({
 export function buildDashboardOpsStarters({ lowStockCount = 0, lowStockAlerts = [] }) {
   if (!lowStockCount) return []
   const routeRef = operationsRouteRef('/', 'Dashboard', 'dashboard_ops')
-  const suppliesRef = operationsRouteRef('/operations/supplies', 'Supplies', 'dashboard_ops')
+  const suppliesRef = operationsRouteRef('/money?tab=supplies', 'Supplies', 'dashboard_ops')
   const starters = [{
     id: 'whats-running-low',
     label: "What's running low?",

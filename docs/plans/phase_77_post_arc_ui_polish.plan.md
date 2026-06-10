@@ -8,22 +8,22 @@ overview: >
 todos:
   - id: ws1-analytics-home
     content: "WS1: Analytics — CropCycleCompare + summary links under Zones Strains tab and/or Money Grows sub-tab; remove orphan More → Analytics or redirect"
-    status: pending
+    status: completed
   - id: ws2-guardian-nav-decision
     content: "WS2: Guardian nav — document drawer=primary, /chat=sessions+pending; remove or demote More → Guardian if global badge (Phase 73) suffices"
-    status: pending
+    status: completed
   - id: ws3-help-hub
     content: "WS3 (optional): Help & reference workspace — Guide + Knowledge + Catalog as tabs at /operator-guide or /help; redirect legacy paths"
-    status: pending
+    status: completed
   - id: ws4-farm-config-surface
     content: "WS4: Farm config — site lat/long (Phase 73), modules, timezone: slim 'Farm' card on Today or Settings tab; not a new sidebar item"
-    status: pending
+    status: completed
   - id: ws5-settings-trim
     content: "WS5: Settings trim — device wizard entry defers to Hardware (Phase 70); link out from Settings; reduce duplicate Pi copy"
-    status: pending
+    status: completed
   - id: ws6-docs-tests
     content: "WS6: phase-77-closure.test.js; operator-tour final sidebar map; arc hub 'target ~8 items' verified; OC-77"
-    status: pending
+    status: completed
 isProject: false
 ---
 
@@ -31,7 +31,7 @@ isProject: false
 
 ## Status
 
-**Planned.** Last planned phase of the [SPA workspace arc](phase_68_73_spa_workspace_roadmap.plan.md). Run after [Phase 76](phase_76_today_dashboard_nav_alignment.plan.md). Mostly UI-only; WS4 may reuse Phase 73 Settings nudges.
+**Shipped.** Last planned phase of the [SPA workspace arc](phase_68_73_spa_workspace_roadmap.plan.md). UI-only.
 
 **Closure:** **OC-77** — arc hub OC table.
 
@@ -149,12 +149,12 @@ Update [arc hub](phase_68_73_spa_workspace_roadmap.plan.md) status to **Arc plan
 
 ## Definition of done
 
-- [ ] Analytics/compare has workspace home; sidebar Analytics removed or redirected
-- [ ] Guardian sidebar policy documented and implemented
-- [ ] (Optional) Help hub merged
-- [ ] Farm config surfaced on Today or Settings without new nav item
-- [ ] Settings defers devices to Hardware
-- [ ] OC-77 closed; operator-tour final sidebar map
+- [x] Analytics/compare has workspace home; sidebar Analytics removed or redirected
+- [x] Guardian sidebar policy documented and implemented
+- [x] (Optional) Help hub merged
+- [x] Farm config surfaced on Today or Settings without new nav item
+- [x] Settings defers devices to Hardware
+- [x] OC-77 closed; operator-tour final sidebar map
 
 ---
 

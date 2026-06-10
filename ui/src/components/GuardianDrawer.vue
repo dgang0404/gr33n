@@ -58,7 +58,7 @@
                   data-test="guardian-drawer-full-page"
                   @click="guardianPanel.close()"
                 >
-                  Full page
+                  Open full chat →
                 </RouterLink>
                 <button
                   type="button"

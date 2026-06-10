@@ -11,7 +11,7 @@ const uiSrc = join(process.cwd(), 'src')
 const repoDocs = join(process.cwd(), '..', 'docs')
 
 describe('Phase 75 WS8 / OC-75 — comfort workspace closure', () => {
-  const groups = buildNavGroups('/farms/1/crop-cycles/compare')
+  const groups = buildNavGroups()
   const routes = collectSidebarRoutes(groups)
 
   it('sidebar has no Advanced group; comfort is one workspace entry', () => {

@@ -46,7 +46,7 @@ isProject: false
 
 ## Status
 
-**Planned through Phase 77.** Opened after Phase 40–67 farmer-closure work shipped. Phases **68–69 shipped**; **70–77 planned** before further UI development.
+**Arc complete through Phase 77.** Phases **68–69, 74–77 shipped**; **70–73** remain planned (backend / Guardian PR work).
 
 Operator feedback (2026-06): *sidebar too deep, pages overlap, zone detail requires too much jumping.*
 
@@ -77,7 +77,7 @@ Operator feedback (2026-06): *sidebar too deep, pages overlap, zone detail requi
 |-------|-------|
 | **Today** | Today |
 | **Grow & operate** | Zones · Feed & water · Comfort & automation · Hardware · Money |
-| **More** | Animals* · Aquaponics* · Settings |
+| **More** | Animals* · Aquaponics* · Help · Settings |
 
 \*Module-gated. Guide/Knowledge/Catalog/Analytics/Guardian absorbed or demoted per Phase 77.
 
@@ -167,8 +167,8 @@ flowchart TB
 | OC-73 | 73 guardian PRs | Planned |
 | OC-74 | 74 zone ops inbox | ✅ Shipped |
 | OC-75 | 75 comfort workspace | ✅ Shipped |
-| OC-76 | 76 Today/mobile alignment | Planned |
-| OC-77 | 77 post-arc polish | Planned |
+| OC-76 | 76 Today/mobile alignment | ✅ Shipped |
+| OC-77 | 77 post-arc polish | ✅ Shipped |
 
 ---
 

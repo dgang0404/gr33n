@@ -4,7 +4,7 @@ import { buildNavGroups, collectSidebarRoutes } from '../lib/navGroups.js'
 import { canonicalSidebarPath } from '../lib/workspaces.js'
 
 describe('Phase 49/68 — nav relations', () => {
-  const navRoutes = new Set(collectSidebarRoutes(buildNavGroups('/farms/1/crop-cycles/compare')))
+  const navRoutes = new Set(collectSidebarRoutes(buildNavGroups()))
 
   it('returns related routes for workspace siblings', () => {
     expect(relatedTo('/zones')).toContain('/feed-water')

@@ -19,7 +19,7 @@ describe('Phase 45 WS3 — vocabulary v2 closure', () => {
   })
 
   it('nav uses My zones and mobile Zones', () => {
-    const groups = buildNavGroups('/analytics')
+    const groups = buildNavGroups()
     const grow = groups.find((g) => g.label === 'Grow & operate')
     const zonesItem = grow.items.find((i) => i.to === '/zones')
     expect(zonesItem.label).toBe(GROW_PATH_ZONE_LABELS.navMyZones)

@@ -179,7 +179,7 @@ export function buildHarvestPayload(cycle, { yieldGrams, yieldNotes = '', harves
  */
 export function buildCompareRoute(farmId, cycleIds) {
   const ids = (cycleIds || []).filter((id) => id != null).map((id) => Number(id))
-  if (!farmId || !ids.length) return { path: '/fertigation' }
+  if (!farmId || !ids.length) return { path: '/zones', query: { tab: 'strains' } }
   return {
     path: `/farms/${farmId}/crop-cycles/compare`,
     query: { ids: ids.join(',') },

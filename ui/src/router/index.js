@@ -11,7 +11,7 @@ import CommonsCatalog from '../views/CommonsCatalog.vue'
 import Settings from '../views/Settings.vue'
 import FarmKnowledge from '../views/FarmKnowledge.vue'
 import FarmGuardianChat from '../views/FarmGuardianChat.vue'
-import OperatorGuide from '../views/OperatorGuide.vue'
+import HelpWorkspace from '../views/workspaces/HelpWorkspace.vue'
 import CropProfileDetail from '../views/CropProfileDetail.vue'
 import CropCycleSummary from '../views/CropCycleSummary.vue'
 import CropCycleCompare from '../views/CropCycleCompare.vue'
@@ -43,8 +43,12 @@ const routes = [
   { path: '/farm-knowledge', component: FarmKnowledge, name: 'farm-knowledge' },
   { path: '/chat',         component: FarmGuardianChat, name: 'farm-guardian-chat' },
   { path: '/guardian/requests', redirect: { path: '/chat', query: { tab: 'pending' } } },
+  {
+    path: '/analytics',
+    redirect: (to) => ({ path: '/zones', query: { ...to.query, tab: 'strains', compare: '1' } }),
+  },
   { path: '/settings',     component: Settings,     name: 'settings' },
-  { path: '/operator-guide', component: OperatorGuide, name: 'operator-guide' },
+  { path: '/operator-guide', component: HelpWorkspace, name: 'operator-guide' },
   { path: '/crop-cycles/:id/summary', component: CropCycleSummary, name: 'crop-cycle-summary' },
   { path: '/farms/:fid/crop-cycles/compare', component: CropCycleCompare, name: 'crop-cycle-compare' },
   { path: '/farms/:id/setup', component: FarmSetupWizard, name: 'farm-setup' },

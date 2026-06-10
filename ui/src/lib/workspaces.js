@@ -60,17 +60,33 @@ export const WORKSPACES = {
     label: 'Money',
     icon: '💰',
     route: '/money',
-    subtitle: 'Spend, ledger, and supply costs',
+    subtitle: 'Spend, ledger, supply costs, and grow economics',
     tabs: [
       { id: 'summary', label: 'This month' },
       { id: 'ledger', label: 'Ledger' },
       { id: 'supplies', label: 'Supplies & costs' },
+      { id: 'grows', label: 'Grows' },
     ],
     absorbs: {
       '/operations/money': { tab: 'summary' },
       '/costs': { tab: 'ledger' },
       '/operations/supplies': { tab: 'supplies' },
       '/inventory': { tab: 'supplies' },
+    },
+  },
+  help: {
+    label: 'Help',
+    icon: '📖',
+    route: '/operator-guide',
+    subtitle: 'Operator guide, knowledge search, and commons catalog',
+    tabs: [
+      { id: 'guide', label: 'Guide' },
+      { id: 'knowledge', label: 'Knowledge' },
+      { id: 'catalog', label: 'Catalog' },
+    ],
+    absorbs: {
+      '/farm-knowledge': { tab: 'knowledge' },
+      '/catalog': { tab: 'catalog' },
     },
   },
   comfort: {
@@ -104,8 +120,9 @@ export const WORKSPACE_RELATIONS = {
   '/zones': ['/hardware', '/feed-water', '/money', '/comfort-targets'],
   '/hardware': ['/zones', '/feed-water'],
   '/feed-water': ['/zones', '/hardware', '/money'],
-  '/money': ['/feed-water', '/zones'],
+  '/money': ['/feed-water', '/zones', '/operator-guide'],
   '/comfort-targets': ['/zones', '/feed-water'],
+  '/operator-guide': ['/zones', '/money'],
 }
 
 const LEGACY_ABSORB_INDEX = buildLegacyAbsorbIndex()

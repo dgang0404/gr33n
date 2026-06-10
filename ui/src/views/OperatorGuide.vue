@@ -1,6 +1,6 @@
 <template>
-  <div class="p-4 sm:p-6 max-w-3xl mx-auto space-y-10 pb-24 md:pb-10">
-    <header class="space-y-2">
+  <div :class="embedded ? 'p-4 sm:p-6 max-w-3xl mx-auto space-y-10 pb-24 md:pb-10' : 'p-4 sm:p-6 max-w-3xl mx-auto space-y-10 pb-24 md:pb-10'">
+    <header v-if="!embedded" class="space-y-2">
       <h1 class="text-2xl font-bold text-green-400 flex items-center gap-2">
         Operator guide
         <HelpTip position="bottom">
@@ -74,6 +74,10 @@
 
 <script setup>
 import HelpTip from '../components/HelpTip.vue'
+
+defineProps({
+  embedded: { type: Boolean, default: false },
+})
 
 const glossary = [
   {

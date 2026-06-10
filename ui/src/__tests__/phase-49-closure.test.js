@@ -10,7 +10,7 @@ const repoRoot = join(process.cwd(), '..')
 const repoDocs = join(repoRoot, 'docs')
 
 describe('Phase 49 WS4 / OC-49 — sidebar nav closure', () => {
-  const groups = buildNavGroups('/farms/1/crop-cycles/compare')
+  const groups = buildNavGroups()
 
   it('disambiguates feeding via workspace tabs (Phase 68)', () => {
     const grow = groups.find((g) => g.label === 'Grow & operate')

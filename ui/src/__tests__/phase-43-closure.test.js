@@ -35,7 +35,7 @@ describe('Phase 43 WS7 / OC-43 — operations hub closure', () => {
   })
 
   it('Grow & operate nav exposes workspace hubs (Phase 68)', () => {
-    const grow = buildNavGroups('/farms/1/crop-cycles/compare').find((g) => g.label === 'Grow & operate')
+    const grow = buildNavGroups().find((g) => g.label === 'Grow & operate')
     expect(grow).toBeTruthy()
     const paths = grow.items.map((i) => i.to)
     expect(paths).toContain('/feed-water')

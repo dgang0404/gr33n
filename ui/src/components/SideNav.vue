@@ -140,16 +140,7 @@ watch(
   { immediate: true },
 )
 
-// Phase 28 WS2 — the Analytics nav entry needs to know the current farm
-// so the Compare page lands on the right /farms/:fid/crop-cycles/compare
-// URL. When no farm is selected we still surface the entry — the page
-// itself shows an "Select a farm" prompt rather than 404'ing.
-const cycleCompareRoute = computed(() => {
-  const fid = farmContext.farmId
-  return fid ? `/farms/${fid}/crop-cycles/compare` : '/farms/0/crop-cycles/compare'
-})
-
-const navGroups = computed(() => buildNavGroups(cycleCompareRoute.value))
+const navGroups = computed(() => buildNavGroups())
 
 const navHighlight = useNavHighlightStore()
 const hoveredRoute = ref(null)

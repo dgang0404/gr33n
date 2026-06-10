@@ -10,7 +10,7 @@ const uiSrc = join(process.cwd(), 'src')
 const repoDocs = join(process.cwd(), '..', 'docs')
 
 describe('Phase 68 WS6 / OC-68 — workspace shell closure', () => {
-  const groups = buildNavGroups('/farms/1/crop-cycles/compare')
+  const groups = buildNavGroups()
   const routes = collectSidebarRoutes(groups)
 
   it('sidebar uses four compact groups with workspace entries', () => {
@@ -42,6 +42,7 @@ describe('Phase 68 WS6 / OC-68 — workspace shell closure', () => {
       'views/workspaces/MoneyWorkspace.vue',
       'views/workspaces/HardwareWorkspace.vue',
       'views/workspaces/ComfortWorkspace.vue',
+      'views/workspaces/HelpWorkspace.vue',
     ]) {
       const src = readFileSync(join(uiSrc, file), 'utf8')
       expect(src).toContain('WorkspaceShell')

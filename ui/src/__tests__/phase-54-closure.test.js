@@ -12,7 +12,7 @@ const uiSrc = join(process.cwd(), 'src')
 const repoDocs = join(process.cwd(), '..', 'docs')
 
 describe('Phase 54 WS4 / OC-54 — connection nav closure', () => {
-  const navRoutes = new Set(collectSidebarRoutes(buildNavGroups('/farms/1/crop-cycles/compare')))
+  const navRoutes = new Set(collectSidebarRoutes(buildNavGroups()))
 
   it('documents operator-tour and architecture for connection pipeline', () => {
     const tour = readFileSync(join(repoDocs, 'operator-tour.md'), 'utf8')

@@ -1,5 +1,21 @@
 <template>
   <div :class="embedded ? '' : 'p-6'">
+    <div
+      v-if="embedded"
+      class="px-4 sm:px-6 pt-4 pb-2 flex flex-wrap items-center justify-between gap-2 border-b border-zinc-800/60"
+      data-test="strains-compare-banner"
+    >
+      <p class="text-xs text-zinc-500">Strain definitions and active grows across the farm.</p>
+      <router-link
+        v-if="compareRoute"
+        v-nav-hint="'/zones'"
+        :to="compareRoute"
+        class="text-xs font-medium px-3 py-1.5 rounded-lg bg-zinc-800 text-green-400 border border-zinc-700 hover:bg-zinc-700"
+      >
+        Compare harvests →
+      </router-link>
+    </div>
+
     <div v-if="!embedded" class="flex items-center justify-between mb-6">
       <h1 class="text-xl font-semibold text-white">Plants
         <HelpTip position="bottom">
@@ -177,7 +193,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, watch, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useFarmStore } from '../stores/farm'
 import { useFarmContextStore } from '../stores/farmContext'
@@ -194,6 +210,11 @@ const store = useFarmStore()
 const farmContext = useFarmContextStore()
 const route = useRoute()
 const router = useRouter()
+
+const compareRoute = computed(() => {
+  const fid = farmContext.farmId
+  return fid ? { path: `/farms/${fid}/crop-cycles/compare` } : null
+})
 
 const plants = ref([])
 const zones = ref([])

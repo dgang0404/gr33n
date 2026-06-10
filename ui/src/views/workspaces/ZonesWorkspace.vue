@@ -33,6 +33,7 @@
 <script setup>
 import { computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useFarmContextStore } from '../../stores/farmContext'
 import WorkspaceShell from '../../components/WorkspaceShell.vue'
 import Zones from '../Zones.vue'
 import Sensors from '../Sensors.vue'
@@ -43,6 +44,7 @@ import { FLEET_SUB_TABS, resolveFleetSubTab } from '../../lib/workspaces.js'
 
 const route = useRoute()
 const router = useRouter()
+const farmContext = useFarmContextStore()
 
 const fleetSubTabs = FLEET_SUB_TABS
 
@@ -55,8 +57,15 @@ function selectFleet(id) {
 }
 
 watch(
-  () => [route.query.tab, route.query.fleet],
+  () => [route.query.tab, route.query.fleet, route.query.compare],
   () => {
+    if (route.query.tab === 'strains' && route.query.compare === '1') {
+      const fid = farmContext.farmId
+      if (fid) {
+        router.replace({ path: `/farms/${fid}/crop-cycles/compare`, query: {} })
+        return
+      }
+    }
     if (route.query.tab === 'fleet') {
       const resolved = resolveFleetSubTab(typeof route.query.fleet === 'string' ? route.query.fleet : null)
       if (route.query.fleet !== resolved) {

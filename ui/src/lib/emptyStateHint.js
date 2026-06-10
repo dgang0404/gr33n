@@ -30,8 +30,8 @@ const DEFAULTS = {
   },
   automation_off: {
     message: 'Rules or schedules exist but nothing is active right now.',
-    actionLabel: 'Schedules',
-    actionTo: '/schedules',
+    actionLabel: 'What runs when',
+    actionTo: '/comfort-targets?tab=schedules',
   },
   wrong_farm: {
     message: 'This list is empty for the farm selected in the header — try another farm.',

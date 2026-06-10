@@ -335,7 +335,7 @@
         </div>
         <div class="flex items-center gap-2 text-zinc-400">
           <span class="text-gr33n-500">3.</span>
-          <router-link v-nav-hint="'/schedules'" to="/schedules" class="text-gr33n-400 hover:underline">Set schedules</router-link>
+          <router-link v-nav-hint="'/comfort-targets'" to="/comfort-targets?tab=schedules" class="text-gr33n-400 hover:underline">Set schedules</router-link>
           <span>— light cycle, irrigation windows</span>
         </div>
         <div class="flex items-center gap-2 text-zinc-400">

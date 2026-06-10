@@ -124,7 +124,7 @@ describe('Phase 47 WS5 + Phase 45 WS3 — grow-path farmer vocabulary', () => {
   })
 
   it('Phase 75 — cron/automation/setpoints live in comfort workspace, not sidebar', () => {
-    const groups = buildNavGroups('/farms/1/crop-cycles/compare')
+    const groups = buildNavGroups()
     expect(groups.some((g) => g.label === 'Advanced')).toBe(false)
     const routes = groups.flatMap((g) => g.items.map((i) => i.to))
     expect(routes).not.toContain('/schedules')

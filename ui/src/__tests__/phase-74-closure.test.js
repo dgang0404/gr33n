@@ -11,7 +11,7 @@ const uiSrc = join(process.cwd(), 'src')
 const repoDocs = join(process.cwd(), '..', 'docs')
 
 describe('Phase 74 WS6 / OC-74 — zone ops inbox closure', () => {
-  const groups = buildNavGroups('/farms/1/crop-cycles/compare')
+  const groups = buildNavGroups()
   const routes = collectSidebarRoutes(groups)
 
   it('sidebar omits Tasks, Alerts, and Plants', () => {

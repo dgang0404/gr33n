@@ -1,6 +1,6 @@
 <template>
-  <div class="p-4 sm:p-6 max-w-4xl mx-auto space-y-8">
-    <header>
+  <div :class="embedded ? 'p-4 sm:p-6 max-w-4xl mx-auto space-y-8' : 'p-4 sm:p-6 max-w-4xl mx-auto space-y-8'">
+    <header v-if="!embedded">
       <h1 class="text-2xl font-bold text-green-400 mb-2 flex items-center gap-2">
         Farm knowledge
         <HelpTip position="bottom">
@@ -184,6 +184,10 @@ import api from '../api'
 import HelpTip from '../components/HelpTip.vue'
 import { useFarmContextStore } from '../stores/farmContext'
 import { useCapabilitiesStore } from '../stores/capabilities'
+
+defineProps({
+  embedded: { type: Boolean, default: false },
+})
 
 const farmContext = useFarmContextStore()
 const capabilities = useCapabilitiesStore()

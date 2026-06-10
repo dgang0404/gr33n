@@ -65,7 +65,7 @@ describe('Phase 53 WS3 — money closure', () => {
 
   it('morning snapshot includes month spend chip', () => {
     const { chips } = computeFarmMorningSnapshot({ monthExpenses: 142.5 })
-    expect(chips.some((c) => c.id === 'month-spend' && c.to?.path === '/operations/money')).toBe(true)
+    expect(chips.some((c) => c.id === 'month-spend' && c.to?.path === '/money')).toBe(true)
   })
 
   it('MoneyHub and zone cost peek UI exist', () => {

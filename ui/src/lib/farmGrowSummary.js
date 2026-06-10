@@ -5,6 +5,13 @@
 import { scheduleRunsLabel } from './cronHumanize.js'
 import { isOpenTask, isTaskDueToday, todayDateIso } from './zoneTasks.js'
 import { countZonesWithFeedingPlan } from './farmFeedingHub.js'
+import {
+  alertsViewAllRoute,
+  comfortRoute,
+  feedWaterRoute,
+  moneyRoute,
+  tasksViewAllRoute,
+} from './dashboardWorkspaceLinks.js'
 
 /**
  * @param {object[]} tasks
@@ -67,6 +74,7 @@ export function computeFarmMorningSnapshot(params) {
     queueDepth = 0,
     lowStockCount = 0,
     monthExpenses = null,
+    sensors = [],
   } = params
 
   const dueToday = countFarmTasksDueToday(tasks)
@@ -80,6 +88,9 @@ export function computeFarmMorningSnapshot(params) {
     const parts = []
     if (dueToday > 0) parts.push(`${dueToday} task${dueToday === 1 ? '' : 's'}`)
     if (lowStockCount > 0) parts.push(`${lowStockCount} low stock`)
+    const doNextTo = dueToday > 0
+      ? tasksViewAllRoute(tasks, zones)
+      : moneyRoute('supplies')
     chips.push({
       id: 'do-next',
       icon: '🎯',
@@ -87,7 +98,7 @@ export function computeFarmMorningSnapshot(params) {
       value: `${dueToday + lowStockCount} item${dueToday + lowStockCount === 1 ? '' : 's'}`,
       detail: parts.join(' · '),
       tone: 'warn',
-      to: { path: '/tasks' },
+      to: doNextTo,
     })
   }
 
@@ -97,7 +108,7 @@ export function computeFarmMorningSnapshot(params) {
     label: 'Tasks due today',
     value: dueToday ? String(dueToday) : 'None',
     tone: dueToday ? 'warn' : 'ok',
-    to: { path: '/tasks' },
+    to: tasksViewAllRoute(tasks, zones),
   })
 
   chips.push({
@@ -106,7 +117,7 @@ export function computeFarmMorningSnapshot(params) {
     label: 'Unread alerts',
     value: unread ? String(unread) : 'None',
     tone: unread ? 'warn' : 'ok',
-    to: { path: '/alerts' },
+    to: alertsViewAllRoute(alerts, zones, sensors),
   })
 
   if (lowStockCount > 0) {
@@ -116,7 +127,7 @@ export function computeFarmMorningSnapshot(params) {
       label: 'Supplies low',
       value: `${lowStockCount} batch${lowStockCount === 1 ? '' : 'es'}`,
       tone: 'warn',
-      to: { path: '/operations/supplies' },
+      to: moneyRoute('supplies'),
     })
   }
 
@@ -127,7 +138,7 @@ export function computeFarmMorningSnapshot(params) {
       label: 'Spent this month',
       value: formatSpendChip(monthExpenses),
       tone: 'muted',
-      to: { path: '/operations/money' },
+      to: moneyRoute('summary'),
     })
   }
 
@@ -138,7 +149,7 @@ export function computeFarmMorningSnapshot(params) {
       label: 'Next schedule',
       value: nextSched.label,
       detail: nextSched.schedule.name,
-      to: { path: '/schedules' },
+      to: comfortRoute('schedules'),
     })
   } else {
     chips.push({
@@ -147,7 +158,7 @@ export function computeFarmMorningSnapshot(params) {
       label: 'Next schedule',
       value: 'Nothing scheduled',
       tone: 'muted',
-      to: { path: '/schedules' },
+      to: comfortRoute('schedules'),
     })
   }
 
@@ -175,7 +186,7 @@ export function computeFarmMorningSnapshot(params) {
         ? `${zonesWithPlan} of ${zones.length} zones planned`
         : `${zones.length} zone${zones.length === 1 ? '' : 's'} — no plans yet`,
       tone: zonesWithPlan ? 'ok' : 'muted',
-      to: { path: '/feeding' },
+      to: feedWaterRoute('daily'),
     })
   }
 
@@ -186,7 +197,7 @@ export function computeFarmMorningSnapshot(params) {
       label: 'Queued commands',
       value: String(queueDepth),
       tone: 'warn',
-      to: { path: '/feeding' },
+      to: feedWaterRoute('daily'),
     })
   }
 

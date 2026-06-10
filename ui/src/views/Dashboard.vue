@@ -31,6 +31,8 @@
     <!-- Phase 41 WS1 — morning cockpit -->
     <FarmMorningStrip :chips="morningChips" />
 
+    <FarmConfigCard />
+
     <GuardianStarterChips :starters="morningWalkthroughStarters" data-test="dashboard-morning-check-starters" />
     <GuardianStarterChips :starters="weatherStarters" data-test="dashboard-weather-starters" />
 
@@ -38,15 +40,15 @@
 
     <!-- Quick actions -->
     <section class="flex flex-wrap gap-3">
-      <router-link v-nav-hint="'/tasks'" to="/tasks?create=1"
+      <router-link v-nav-hint="'/zones'" :to="newTaskLink"
         class="px-4 py-2 text-sm font-medium rounded-lg bg-green-900/50 text-green-400 border border-green-800 hover:bg-green-900/70 transition-colors">
         + New Task
       </router-link>
-      <router-link v-nav-hint="'/feeding'" to="/feeding"
+      <router-link v-nav-hint="'/feed-water'" :to="feedWaterDailyLink"
         class="px-4 py-2 text-sm font-medium rounded-lg bg-blue-900/50 text-blue-400 border border-blue-800 hover:bg-blue-900/70 transition-colors">
         Feed &amp; water
       </router-link>
-      <router-link v-nav-hint="{ path: '/fertigation' }" :to="{ path: '/fertigation', query: { tab: 'mixing' } }"
+      <router-link v-nav-hint="'/feed-water'" :to="feedWaterNutrientsLink"
         class="px-4 py-2 text-sm font-medium rounded-lg bg-zinc-800 text-zinc-400 border border-zinc-700 hover:bg-zinc-700 transition-colors">
         Log mix (advanced)
       </router-link>
@@ -63,7 +65,7 @@
       <section class="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
         <div class="flex items-center justify-between mb-3">
           <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-widest">Today's Tasks</h3>
-          <router-link v-nav-hint="'/tasks'" to="/tasks" class="text-xs text-gr33n-500 hover:text-gr33n-400">View all &rarr;</router-link>
+          <router-link v-nav-hint="'/zones'" :to="tasksViewAllLink" class="text-xs text-gr33n-500 hover:text-gr33n-400">View all &rarr;</router-link>
         </div>
         <div v-if="todayTasks.length" class="space-y-2">
           <div v-for="t in todayTasks" :key="t.id"
@@ -79,7 +81,7 @@
               <router-link
                 v-if="t.zone_id"
                 v-nav-hint="`/zones/${t.zone_id}`"
-                :to="`/zones/${t.zone_id}`"
+                :to="zoneTaskLink(t.zone_id)"
                 class="text-[11px] text-zinc-500 hover:text-green-400"
               >{{ zoneName(t.zone_id) }}</router-link>
               <span v-if="t.due_date" class="text-[11px]"
@@ -93,8 +95,8 @@
           v-else
           reason="no_data"
           message="No tasks due today."
-          action-label="Open Tasks"
-          action-to="/tasks"
+          action-label="Open zone Ops"
+          :action-to="tasksViewAllLink"
         />
       </section>
 
@@ -108,7 +110,7 @@
               {{ unreadAlerts }}
             </span>
           </h3>
-          <router-link v-nav-hint="'/alerts'" to="/alerts" class="text-xs text-gr33n-500 hover:text-gr33n-400">View all &rarr;</router-link>
+          <router-link v-nav-hint="'/zones'" :to="alertsViewAllLink" class="text-xs text-gr33n-500 hover:text-gr33n-400">View all &rarr;</router-link>
         </div>
         <div v-if="recentAlerts.length" class="space-y-2">
           <div v-for="a in recentAlerts" :key="a.id"
@@ -128,7 +130,7 @@
           reason="automation_off"
           message="No recent alerts — thresholds and failed runs create them when rules are active."
           action-label="Automations"
-          action-to="/automation"
+          :action-to="comfortAutomationsLink"
         />
       </section>
     </div>
@@ -157,7 +159,7 @@
           reason="automation_off"
           message="Nothing timed yet — feeding plans and lights need a daily time to run."
           action-label="Feed &amp; water"
-          action-to="/feeding"
+          :action-to="feedWaterDailyLink"
         />
       </section>
 
@@ -165,7 +167,7 @@
       <section class="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
         <div class="flex items-center justify-between mb-3">
           <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-widest">Recent feeds</h3>
-          <router-link v-nav-hint="'/feeding'" :to="{ path: '/feeding' }" class="text-xs text-gr33n-500 hover:text-gr33n-400">Feed &amp; water →</router-link>
+          <router-link v-nav-hint="'/feed-water'" :to="feedWaterDailyLink" class="text-xs text-gr33n-500 hover:text-gr33n-400">Feed &amp; water →</router-link>
         </div>
         <div v-if="recentFertEvents.length" class="space-y-2">
           <div v-for="e in recentFertEvents" :key="e.id"
@@ -186,7 +188,7 @@
           reason="no_data"
           message="No feeds logged yet — they appear after programs run or you log a feed from a zone's Water tab."
           action-label="Feed &amp; water"
-          :action-to="{ path: '/feeding' }"
+          :action-to="feedWaterDailyLink"
         />
       </section>
     </div>
@@ -254,6 +256,7 @@ import SensorTile   from '../components/SensorTile.vue'
 import ActuatorCard from '../components/ActuatorCard.vue'
 import HelpTip from '../components/HelpTip.vue'
 import FarmMorningStrip from '../components/FarmMorningStrip.vue'
+import FarmConfigCard from '../components/FarmConfigCard.vue'
 import EmptyStateHint from '../components/EmptyStateHint.vue'
 import GettingStartedChecklist from '../components/GettingStartedChecklist.vue'
 import GuardianStarterChips from '../components/GuardianStarterChips.vue'
@@ -273,6 +276,14 @@ import { fetchSiteWeather, daylightChipFromSiteWeather } from '../lib/siteWeathe
 import { filterLowStockAlerts, listLowStockBatches } from '../lib/suppliesHub.js'
 import { computeMonthSummary } from '../lib/moneyHub.js'
 import { scheduleRunsLabel } from '../lib/cronHumanize.js'
+import {
+  alertsViewAllRoute,
+  comfortRoute,
+  feedWaterRoute,
+  newTaskRoute,
+  tasksViewAllRoute,
+  zoneOpsRoute,
+} from '../lib/dashboardWorkspaceLinks.js'
 
 const store = useFarmStore()
 const farmContext = useFarmContextStore()
@@ -343,6 +354,17 @@ const dashboardOpsStarters = computed(() => buildDashboardOpsStarters({
 
 const monthExpenses = computed(() => computeMonthSummary(costTransactions.value).expenses)
 
+const feedWaterDailyLink = computed(() => feedWaterRoute('daily'))
+const feedWaterNutrientsLink = computed(() => feedWaterRoute('nutrients'))
+const comfortAutomationsLink = computed(() => comfortRoute('automations'))
+const newTaskLink = computed(() => newTaskRoute(store.tasks, store.zones))
+const tasksViewAllLink = computed(() => tasksViewAllRoute(store.tasks, store.zones))
+const alertsViewAllLink = computed(() => alertsViewAllRoute(alerts.value, store.zones, store.sensors))
+
+function zoneTaskLink(zoneId) {
+  return zoneOpsRoute(zoneId, 'tasks')
+}
+
 const morningChips = computed(() => {
   const chips = computeFarmMorningSnapshot({
     tasks: store.tasks,
@@ -354,6 +376,7 @@ const morningChips = computed(() => {
     queueDepth: queueDepth.value,
     lowStockCount: lowStockCount.value,
     monthExpenses: monthExpenses.value,
+    sensors: store.sensors,
   }).chips
   const daylight = daylightChipFromSiteWeather(siteWeather.value)
   return daylight ? [daylight, ...chips] : chips

@@ -362,12 +362,12 @@
           Farm setup wizard →
         </router-link>
         <router-link
-          v-nav-hint="'/pi-setup'"
-          :to="deviceSetupWizardLink"
+          v-nav-hint="'/hardware'"
+          :to="{ path: '/hardware', query: { tab: 'devices' } }"
           class="inline-flex px-4 py-2 text-sm font-medium rounded-lg bg-blue-900/50 text-blue-400 border border-blue-800 hover:bg-blue-900/70"
           data-test="settings-open-device-setup"
         >
-          Edge device wizard →
+          Hardware → Pi devices
         </router-link>
       </div>
       <p class="text-zinc-600 text-[11px] mb-3">Advanced: apply a template directly without the wizard</p>
@@ -1020,7 +1020,6 @@ import {
   BOOTSTRAP_STARTER_SUMMARIES,
 } from '../constants/bootstrapTemplates'
 import { farmSetupRoute } from '../lib/farmSetupWizard.js'
-import { deviceSetupRoute } from '../lib/deviceSetupWizard.js'
 
 const router = useRouter()
 const auth   = useAuthStore()
@@ -1032,11 +1031,6 @@ const chatUsage = useChatUsageStore()
 const farmSetupWizardLink = computed(() => {
   const fid = farmContext.farmId
   return fid ? farmSetupRoute(fid) : '/settings'
-})
-
-const deviceSetupWizardLink = computed(() => {
-  const fid = farmContext.farmId
-  return fid ? deviceSetupRoute(fid) : '/settings'
 })
 
 // ── Phase 28 WS5 — Guardian usage card helpers ─────────────────────────

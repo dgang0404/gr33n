@@ -121,7 +121,7 @@ describe('Phase 53 WS6 / OC-53 — grow + stock + money closure', () => {
   it('dashboard morning strip exposes month spend chip', () => {
     const snap = computeFarmMorningSnapshot({ monthExpenses: 42.5 })
     const chip = snap.chips.find((c) => c.id === 'month-spend')
-    expect(chip?.to).toEqual({ path: '/operations/money' })
+    expect(chip?.to).toEqual({ path: '/money', query: { tab: 'summary' } })
     expect(chip?.value).toContain('42.50')
   })
 

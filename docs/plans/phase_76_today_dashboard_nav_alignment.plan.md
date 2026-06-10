@@ -7,22 +7,22 @@ overview: >
 todos:
   - id: ws1-dashboard-quick-actions
     content: "WS1: Dashboard quick actions — /feeding,/fertigation → /feed-water?tab=; /tasks?create → zone or Today; /operator-guide kept"
-    status: pending
+    status: completed
   - id: ws2-dashboard-widgets
     content: "WS2: Tasks/Alerts/Schedules/Feeding widgets — link to /zones/:id?tab=ops, /feed-water, /comfort-targets; empty states → workspaces not /automation"
-    status: pending
+    status: completed
   - id: ws3-morning-strip-chips
     content: "WS3: FarmMorningStrip + Do next chips — canonical paths via workspaces.js / canonicalSidebarPath"
-    status: pending
+    status: completed
   - id: ws4-mobile-bottom-nav
     content: "WS4: Mobile bottom nav — drop Alerts after Phase 74; use Ops via Zones or Today; align with final sidebar (~8 items)"
-    status: pending
+    status: completed
   - id: ws5-empty-state-hints
     content: "WS5: EmptyStateHint + guardianStarters dashboard paths — audit action-to for absorbed routes"
-    status: pending
+    status: completed
   - id: ws6-docs-tests
     content: "WS6: dashboard-workspace-links.test.js, phase-76-closure.test.js; operator-tour Today section refresh; OC-76"
-    status: pending
+    status: completed
 isProject: false
 ---
 
@@ -30,7 +30,7 @@ isProject: false
 
 ## Status
 
-**Planned.** **Capstone polish** for the workspace arc — run **after** [Phases 71–75](phase_68_73_spa_workspace_roadmap.plan.md) (or in parallel once redirects exist). UI-only.
+**Shipped.** **Capstone polish** for the workspace arc — run **after** [Phases 71–75](phase_68_73_spa_workspace_roadmap.plan.md). UI-only.
 
 **Closure:** **OC-76** — arc hub OC table. Do not add to Phase 35 closure doc.
 
@@ -132,10 +132,10 @@ Fix or accept as redirect-only in [`emptyStateHints.js`](../ui/src/lib/emptyStat
 
 ## Definition of done
 
-- [ ] Dashboard has zero primary links to absorbed legacy routes (Vitest guard)
-- [ ] Mobile bottom nav matches post-74/75 sidebar story
-- [ ] Morning strip + dashboard starters use workspace paths
-- [ ] operator-tour §3 Today refreshed; OC-76 closed
+- [x] Dashboard has zero primary links to absorbed legacy routes (Vitest guard)
+- [x] Mobile bottom nav matches post-74/75 sidebar story
+- [x] Morning strip + dashboard starters use workspace paths
+- [x] operator-tour §7i Today refreshed; OC-76 closed
 
 ---
 
