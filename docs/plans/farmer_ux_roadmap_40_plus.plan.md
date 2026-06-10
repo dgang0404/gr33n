@@ -251,7 +251,7 @@ Hardware, Pi platform sync, and farmer job completion — each phase is shippabl
 
 **Guardian knowledge & sensing arc (64–67)** — how Guardian *knows* things (grounding, not guessing). **64 must precede 62.** **Shipped.**
 
-**SPA workspace refactor arc (68–77)** — collapse sidebar into full-page workspaces; Phases 74–77 finish zone ops, comfort/automation, Today alignment, and post-arc polish. Hub: [`phase_68_73_spa_workspace_roadmap.plan.md`](phase_68_73_spa_workspace_roadmap.plan.md). Plan lifecycle rules (shipped = conditions deprecated) live there — not in the archived closure doc.
+**SPA workspace refactor arc (68–77)** — collapse sidebar into full-page workspaces. **UI shipped** through Phase 77; **70–73** remain for Pi GPIO depth and Guardian PR discoverability. Hub: [`phase_68_73_spa_workspace_roadmap.plan.md`](phase_68_73_spa_workspace_roadmap.plan.md). Plan lifecycle rules (shipped = conditions deprecated) live there — not in the archived closure doc.
 
 | Phase | Name | One job | Plan |
 |-------|------|---------|------|
@@ -261,10 +261,10 @@ Hardware, Pi platform sync, and farmer job completion — each phase is shippabl
 | **71** | Feed & Water SPA | FeedingHub + admin + Fertigation unified | [phase_71](phase_71_feed_water_unification.plan.md) |
 | **72** | Money SPA | Money + Costs + Supplies unified | [phase_72](phase_72_money_unification.plan.md) |
 | **73** | Guardian PRs | Pending badge, empty-zone nudge, read-tool reliability | [phase_73](phase_73_guardian_pr_discoverability.plan.md) |
-| **74** | Zone ops inbox | Tasks, Alerts, Plants in zone SPA; Today = triage only | [phase_74](phase_74_zone_ops_inbox.plan.md) |
-| **75** | Comfort workspace | Absorb Advanced trio into one workspace | [phase_75](phase_75_automation_comfort_workspace.plan.md) |
-| **76** | Today alignment | Dashboard + mobile nav link sweep | [phase_76](phase_76_today_dashboard_nav_alignment.plan.md) |
-| **77** | Post-arc polish | Analytics, Guardian nav, help, farm config | [phase_77](phase_77_post_arc_ui_polish.plan.md) |
+| **74** ✅ | Zone ops inbox | Tasks, Alerts, Plants in zone SPA; Today = triage only | [phase_74](phase_74_zone_ops_inbox.plan.md) |
+| **75** ✅ | Comfort workspace | Absorb Advanced trio into one workspace | [phase_75](phase_75_automation_comfort_workspace.plan.md) |
+| **76** ✅ | Today alignment | Dashboard + mobile nav link sweep | [phase_76](phase_76_today_dashboard_nav_alignment.plan.md) |
+| **77** ✅ | Post-arc polish | Analytics, Guardian nav, help, farm config | [phase_77](phase_77_post_arc_ui_polish.plan.md) |
 
 | Phase | Name | One job | Plan |
 |-------|------|---------|------|

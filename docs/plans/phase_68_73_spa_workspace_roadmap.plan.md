@@ -185,4 +185,4 @@ flowchart TB
 
 ## Using this in a new chat
 
-> Read `docs/plans/phase_68_73_spa_workspace_roadmap.plan.md` (covers **68–77**). Implement from the specific phase plan. Never delete routes — redirect. Phases 68–69 shipped; 70–77 planned. Backend only in 70 and 73.
+> Read `docs/plans/phase_68_73_spa_workspace_roadmap.plan.md` (covers **68–77**). Implement from the specific phase plan. Never delete routes — redirect. **UI shipped:** 68–69, 74–77. **Planned:** 70–73 (backend / Pi GPIO / Guardian PR badge).

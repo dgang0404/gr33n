@@ -7,7 +7,7 @@ An open-source farm operating system — run it on your LAN, keep your data clos
 [![Vue](https://img.shields.io/badge/Vue-3-4FC08D?logo=vue.js)](https://vuejs.org)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-14+-336791?logo=postgresql)](https://postgresql.org)
 
-**Current focus:** Phases **40→67** shipped on `main` (farmer UX, Pi wiring/sync, Guardian intelligence, crop knowledge, weather, field assistant). **Next:** [Phases 68→73 SPA workspace refactor](docs/plans/phase_68_73_spa_workspace_roadmap.plan.md) — collapse the sidebar into full-page workspaces (zones, hardware/Pi, feed & water, money, Guardian PR discoverability). Roadmap: [`farmer_ux_roadmap_40_plus`](docs/plans/farmer_ux_roadmap_40_plus.plan.md) · hub: [`phase_68_73`](docs/plans/phase_68_73_spa_workspace_roadmap.plan.md) · operator index: [`phase-14`](docs/phase-14-operator-documentation.md). Farmer-ready v1: [operator tour §9](docs/operator-tour.md#9-farmer-validation-sit-in-phase-45--shipped). **New farm?** In-app wizards at `/farms/{id}/setup`, `/zones/new`, `/devices/new` plus a Dashboard checklist — [operator tour §8](docs/operator-tour.md#8-getting-started--edge-install-phase-44--shipped). Guardian **writes** still go through propose→**Confirm** ([Phase 30](docs/plans/phase_30_guardian_change_requests.plan.md)); optional LLM proposal fallback when matchers miss — set `GUARDIAN_LLM_PROPOSALS=true` ([operator tour §6h](docs/operator-tour.md#6h-when-guardian-opens-a-card-from-your-words-phase-46--shipped)). After `git pull`, run **`./scripts/bootstrap-local.sh --skip-schema`** (or **`make dev-stack`**) so migrations apply. Pi / edge: [`pi_client/gr33n_client.py`](pi_client/gr33n_client.py), [`docs/pi-integration-guide.md`](docs/pi-integration-guide.md). Historical closure rollup (OC-35 … OC-67, archived): [`phase_35_37_operational_closure`](docs/plans/phase_35_37_operational_closure.plan.md).
+**Current focus:** Phases **40→67** and **SPA workspace UI (68–69, 74–77)** shipped on `main`. **Next:** [Phases 70–73](docs/plans/phase_68_73_spa_workspace_roadmap.plan.md) — live Pi GPIO board (70), feed/water + money workspace depth (71–72), Guardian PR discoverability (73). Hub: [`phase_68_73`](docs/plans/phase_68_73_spa_workspace_roadmap.plan.md) · operator index: [`phase-14`](docs/phase-14-operator-documentation.md) · nav map: [operator tour §7e–§7j](docs/operator-tour.md#7e-workspaces--sidebar-jobs-tabs-inside-phase-68). Farmer-ready v1: [operator tour §9](docs/operator-tour.md#9-farmer-validation-sit-in-phase-45--shipped). **New farm?** In-app wizards at `/farms/{id}/setup`, `/zones/new`, `/devices/new` plus a Dashboard checklist — [operator tour §8](docs/operator-tour.md#8-getting-started--edge-install-phase-44--shipped). Guardian **writes** still go through propose→**Confirm** ([Phase 30](docs/plans/phase_30_guardian_change_requests.plan.md)); optional LLM proposal fallback when matchers miss — set `GUARDIAN_LLM_PROPOSALS=true` ([operator tour §6h](docs/operator-tour.md#6h-when-guardian-opens-a-card-from-your-words-phase-46--shipped)). After `git pull`, run **`./scripts/bootstrap-local.sh --skip-schema`** (or **`make dev-stack`**) so migrations apply. Pi / edge: [`pi_client/gr33n_client.py`](pi_client/gr33n_client.py), [`docs/pi-integration-guide.md`](docs/pi-integration-guide.md). Historical closure rollup (OC-35 … OC-67, archived): [`phase_35_37_operational_closure`](docs/plans/phase_35_37_operational_closure.plan.md).
 
 ### Farmer-ready v1 (Phase 45)
 
@@ -71,7 +71,7 @@ gr33n offers a different default:
 | **Farmer** (default on `main`) | Single-farm grow, supplies batches, receipts, tasks, Pi edge, Guardian read tools | [operator tour](docs/operator-tour.md) |
 | **Enterprise** (future — not shipping) | POs, METRC/traceability, multi-entity GL, WMS — explicitly **out of scope** for farmer UX | [enterprise-tier-boundary.md](docs/enterprise-tier-boundary.md) |
 
-Phases 40–67 (farmer UX + Guardian arcs) and Phase 59 (enterprise boundary doc) shipped on `main`. **Active work:** [Phases 68–73 SPA workspace refactor](docs/plans/phase_68_73_spa_workspace_roadmap.plan.md). Accountant handoff today: cost **CSV export** only — not a full general ledger.
+Phases 40–67 (farmer UX + Guardian arcs), Phase 59 (enterprise boundary doc), and **SPA workspace UI through Phase 77** shipped on `main`. **Active work:** [Phases 70–73](docs/plans/phase_68_73_spa_workspace_roadmap.plan.md) (Pi GPIO SPA, workspace backend polish, Guardian PR badge). Accountant handoff today: cost **CSV export** only — not a full general ledger.
 
 ### 🔌 What Does "Don't Call Home" Mean?
 
@@ -702,7 +702,8 @@ A phase-by-phase ledger of what's live on `main`. Each row links to the governin
 | **44** | **Getting started & edge wizards** — farm/zone/device setup, Dashboard checklist, Guardian setup mode | ✅ Done | [plan](docs/plans/phase_44_getting_started_edge_wizard.plan.md) |
 | **45** | **Farmer validation & polish** — sit-in dry-run, copy pass, mobile path | ✅ Shipped | [plan](docs/plans/phase_45_farmer_validation_whole_app_polish.plan.md) |
 | **46–67** | Farmer closure (48–59), Guardian intelligence (60–63), crop/weather/field assistant (64–67) | ✅ Shipped | [phase-14 index](docs/phase-14-operator-documentation.md#phases-48-67--farmer-closure--guardian-arcs-shipped) · [53–59 hub](docs/plans/phase_53_59_roadmap.plan.md) |
-| **68–73** | SPA workspace refactor — sidebar → workspaces | 📋 Planned | [hub](docs/plans/phase_68_73_spa_workspace_roadmap.plan.md) |
+| **68–69, 74–77** | SPA workspace UI — sidebar → workspaces, zone ops, Today/mobile alignment | ✅ Shipped | [hub](docs/plans/phase_68_73_spa_workspace_roadmap.plan.md) |
+| **70–73** | Pi GPIO SPA, feed/money depth, Guardian PR discoverability | 📋 Planned | [hub](docs/plans/phase_68_73_spa_workspace_roadmap.plan.md) |
 
 ### Phase 23 exit sign-off
 
@@ -717,7 +718,8 @@ Stabilization sprint **closed** on **`main`** **2026-04-18**. Criterion-by-crite
 
 **Next up** (priority order):
 
-- [ ] **[Phases 68–73 — SPA workspace refactor](docs/plans/phase_68_73_spa_workspace_roadmap.plan.md)** — collapse sidebar into workspaces; live Pi GPIO board; feed/water + money unification; Guardian PR discoverability. Start with [Phase 68](docs/plans/phase_68_workspace_shell_spa_nav.plan.md).
+- [ ] **[Phases 70–73 — SPA workspace backend & Pi depth](docs/plans/phase_68_73_spa_workspace_roadmap.plan.md)** — live Pi GPIO board ([Phase 70](docs/plans/phase_70_hardware_pi_control_spa.plan.md)); feed/water + money unification ([71–72](docs/plans/phase_71_feed_water_unification.plan.md)); Guardian pending badge + site-coords nudge ([73](docs/plans/phase_73_guardian_pr_discoverability.plan.md)).
+- [x] **[Phases 68–69, 74–77 — SPA workspace UI](docs/plans/phase_68_73_spa_workspace_roadmap.plan.md)** — workspaces, zone ops, comfort hub, Today/mobile nav, Help hub, compact sidebar.
 
 <details>
 <summary>Phases 23–67 (shipped — historical checklist)</summary>

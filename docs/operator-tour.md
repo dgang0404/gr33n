@@ -8,13 +8,15 @@
 
 ## 1. Start here: farm context
 
-After login, the app works in the context of **one selected farm** (name, zones, devices, sensors). The dashboard header summarizes **zones · sensors · devices** and includes a short **How it all connects** help tip — same mental model as this doc. **In the UI**, **System → Guide** (`/operator-guide`) has the glossary and a clickable walk aligned with §2 below. For Raspberry Pi + Sequent relay HAT wiring, use **System → Guide → Pi + HAT setup** (`/pi-setup`) or the link on empty sensor/actuator wiring badges. The Pi setup page shows a live **Your farm channels** section — your actual wired actuators and sensors, each linking to its detail page. To change what's wired to a relay channel, expand **Edit wiring** on a card in **Controls** (Sequent HAT channel or direct GPIO).
+After login, the app works in the context of **one selected farm** (name, zones, devices, sensors). The dashboard header summarizes **zones · sensors · devices** and includes a short **How it all connects** help tip — same mental model as this doc. **In the UI**, **More → Help** (`/operator-guide`) has the glossary and a clickable walk (Guide · Knowledge · Catalog tabs). For Raspberry Pi + Sequent relay HAT wiring, use **Hardware → Wiring guide** (`/pi-setup`) or the link on empty sensor/actuator wiring badges. The Pi setup page shows a live **Your farm channels** section — your actual wired actuators and sensors, each linking to its detail page. To change what's wired to a relay channel, expand **Edit wiring** on a card in **Zones → Fleet → Controls** (Sequent HAT channel or direct GPIO).
 
 If lists look empty, see [**Why is this empty?**](#4-why-is-this-empty-future-ux) below; detailed hints are tracked as separate UX work in the [sit-in workstream](workstreams/sit-in-operator-experience.md).
 
 ---
 
 ## 2. Narrative walk (recommended order)
+
+> **Current sidebar (Phases 68–77):** Use **[§7e–§7j](#7e-workspaces--sidebar-jobs-tabs-inside-phase-68)** for today’s workspace routes. The table below is the **legacy mental model** — old paths like `/tasks` and `/feeding` still **redirect** into zones or workspaces.
 
 Think **physical layout → signals → automation → work tracking → feeding**.
 
@@ -666,18 +668,24 @@ Orphan links now carry the same affordance: zone names on **Tasks** and **Contro
 
 Architecture: [`farm-guardian-architecture.md` §7.0r](farm-guardian-architecture.md#70r-zone-connection-nav-phase-54--shipped).
 
-### 7e. Workspaces — sidebar jobs, tabs inside (Phase 68)
+### 7e. Workspaces — sidebar jobs, tabs inside (Phase 68+)
 
 **Shipped.** The sidebar is organized by **jobs**, not scattered duplicate pages. Each workspace is one destination with **tabs** for depth:
 
 | Workspace | Route | Tabs |
 |-----------|-------|------|
-| **Zones** | `/zones` | Rooms · Fleet (sensors, controls, lighting) |
+| **Today** | `/` | Farm-wide triage — morning strip, tasks/alerts preview, farm site card |
+| **Zones** | `/zones` | Rooms · Fleet (sensors, controls, lighting) · **Strains** (compare harvests) |
 | **Feed & Water** | `/feed-water` | Daily · Programs & tanks · Nutrients & mix · Advanced |
+| **Comfort & automation** | `/comfort-targets` | Comfort · What runs when · Automations · Raw setpoints |
 | **Hardware** | `/hardware` | GPIO board · Pi devices · Wiring guide |
-| **Money** | `/money` | This month · Ledger · Supplies & costs |
+| **Money** | `/money` | This month · Ledger · Supplies & costs · **Grows** |
+| **Help** | `/operator-guide` | Guide · Knowledge · Catalog |
+| **More** | `/animals`, `/aquaponics`, `/settings` | Module-gated domains + account |
 
-Old bookmarks still work — `/feeding`, `/fertigation`, `/operations/money`, `/pi-setup`, and similar paths **redirect** into the right workspace tab. Use **Jump to** chips at the top of each workspace to cross-link (sidebar wiggle, Phase 49).
+**Guardian** — drawer (edge tab + TopBar), not a sidebar item; **Open full chat →** for sessions and pending inbox (`/chat`).
+
+Old bookmarks still work — `/feeding`, `/fertigation`, `/tasks`, `/alerts`, `/farm-knowledge`, `/catalog`, `/analytics`, and similar paths **redirect** into the right workspace tab. Use **Jump to** chips at the top of each workspace to cross-link (sidebar wiggle, Phase 49).
 
 Plan: [`plans/phase_68_workspace_shell_spa_nav.plan.md`](plans/phase_68_workspace_shell_spa_nav.plan.md) · **Vitest:** `phase-68-closure.test.js`, `workspaces.test.js`.
 
