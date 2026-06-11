@@ -26,7 +26,9 @@ describe('Phase 64 WS6 / OC-64 — crop knowledge base closure', () => {
   it('start-grow wizard exposes crop profile picker', () => {
     const vue = readFileSync(join(process.cwd(), 'src/components/StartGrowWizard.vue'), 'utf8')
     expect(vue).toContain('data-test="start-grow-crop-profile"')
-    expect(vue).toContain('loadCropProfiles')
+    expect(vue).toContain('CropLibraryPicker')
+    const picker = readFileSync(join(process.cwd(), 'src/components/CropLibraryPicker.vue'), 'utf8')
+    expect(picker).toContain('crop-library-picker')
   })
 
   it('grow strip renders EC target chip helper', () => {

@@ -38,3 +38,22 @@ LIMIT 1`).Scan(&ecMin, &ecMax)
 		t.Fatalf("want >= 13 profiles, got %d", len(body))
 	}
 }
+
+func TestPhase82_CropLibraryPicker(t *testing.T) {
+	if testPool == nil {
+		t.Skip("testPool unavailable")
+	}
+	tok := smokeJWT(t)
+	resp := authGet(t, tok, "/farms/1/crop-library/picker")
+	expectStatus(t, resp, http.StatusOK)
+	body := decodeMap(t, resp)
+	resp.Body.Close()
+	counts, _ := body["counts"].(map[string]any)
+	if counts == nil {
+		t.Fatal("picker response missing counts")
+	}
+	withTargets, _ := counts["with_targets"].(float64)
+	if withTargets < 13 {
+		t.Fatalf("want >= 13 with_targets, got %v", withTargets)
+	}
+}

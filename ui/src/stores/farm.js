@@ -824,6 +824,11 @@ export const useFarmStore = defineStore('farm', {
       }
     },
 
+    async loadCropLibraryPicker(farmId) {
+      const r = await api.get(`/farms/${farmId}/crop-library/picker`)
+      return r.data
+    },
+
     async getCropProfile(id) {
       const r = await api.get(`/crop-profiles/${id}`)
       return r.data

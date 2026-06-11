@@ -84,12 +84,23 @@
     >
       <div class="w-full max-w-md bg-zinc-900 border border-zinc-700 rounded-xl p-5 space-y-4">
         <h2 class="text-white font-semibold">New strain</h2>
+        <CropLibraryPicker
+          v-if="farmId"
+          :farm-id="farmId"
+          v-model="form.crop_profile_id"
+          label="Crop type"
+          required
+          data-test="zone-plants-crop-picker"
+          @select="onCropSelect"
+        />
         <div>
-          <label class="block text-xs text-zinc-500 mb-1">Display name *</label>
+          <label class="block text-xs text-zinc-500 mb-1">Strain name *</label>
           <input
             v-model="form.display_name"
             type="text"
+            placeholder="e.g. Veg Room Romas"
             class="w-full bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white"
+            data-test="zone-plants-strain-name"
           />
         </div>
         <div>
@@ -106,7 +117,7 @@
           <button
             type="button"
             class="text-xs px-4 py-1.5 rounded-lg bg-green-700 text-white disabled:opacity-40"
-            :disabled="submitting || !form.display_name.trim()"
+            :disabled="submitting || !form.display_name.trim() || !form.crop_profile_id"
             @click="submitForm"
           >
             {{ submitting ? 'Saving…' : 'Create' }}
@@ -122,6 +133,7 @@ import { computed, ref } from 'vue'
 import { useFarmStore } from '../stores/farm.js'
 import { useFarmContextStore } from '../stores/farmContext.js'
 import ZoneCurrentGrowStrip from './ZoneCurrentGrowStrip.vue'
+import CropLibraryPicker from './CropLibraryPicker.vue'
 
 const props = defineProps({
   zoneId: { type: Number, required: true },
@@ -139,7 +151,7 @@ const farmContext = useFarmContextStore()
 const showModal = ref(false)
 const submitting = ref(false)
 const formError = ref('')
-const form = ref({ display_name: '', variety_or_cultivar: '' })
+const form = ref({ display_name: '', variety_or_cultivar: '', crop_profile_id: null })
 
 const historyCycles = computed(() =>
   props.cropCycles
@@ -167,20 +179,32 @@ function formatHarvest(cycle) {
 }
 
 function openCreate() {
-  form.value = { display_name: '', variety_or_cultivar: '' }
+  form.value = { display_name: '', variety_or_cultivar: '', crop_profile_id: null }
   formError.value = ''
   showModal.value = true
+}
+
+function onCropSelect(item) {
+  if (!item?.display_name) return
+  if (!form.value.display_name.trim()) {
+    form.value.display_name = item.display_name
+  }
 }
 
 async function submitForm() {
   const fid = props.farmId || farmContext.farmId
   if (!fid) return
+  if (!form.value.crop_profile_id) {
+    formError.value = 'Pick a crop type with targets'
+    return
+  }
   submitting.value = true
   formError.value = ''
   try {
     await store.createPlant(fid, {
       display_name: form.value.display_name.trim(),
       variety_or_cultivar: form.value.variety_or_cultivar.trim() || null,
+      crop_profile_id: form.value.crop_profile_id,
       meta: {},
     })
     showModal.value = false

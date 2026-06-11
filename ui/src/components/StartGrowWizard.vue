@@ -16,17 +16,13 @@
 
       <div class="space-y-3">
         <div>
-          <label class="block text-xs text-zinc-500 mb-1">Crop profile (targets)</label>
-          <select
-            v-model.number="form.cropProfileId"
-            class="w-full bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white"
+          <CropLibraryPicker
+            :farm-id="farmId"
+            v-model="form.cropProfileId"
+            label="Crop profile (targets)"
             data-test="start-grow-crop-profile"
-          >
-            <option :value="null">None — assign later</option>
-            <option v-for="p in cropProfiles" :key="p.id" :value="p.id">
-              {{ p.display_name }}{{ p.is_builtin ? '' : ' (custom)' }}
-            </option>
-          </select>
+            @select="onCropProfileSelect"
+          />
           <p class="text-[10px] text-zinc-600 mt-1">
             Sets EC/pH/VPD targets for Guardian and the grow strip.
           </p>
@@ -134,7 +130,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useFarmStore } from '../stores/farm.js'
 import {
   GROWTH_STAGES,
@@ -143,6 +139,7 @@ import {
   formatStageLabel,
   strainFromPlant,
 } from '../lib/growHub.js'
+import CropLibraryPicker from './CropLibraryPicker.vue'
 
 const props = defineProps({
   open: { type: Boolean, default: false },
@@ -162,7 +159,13 @@ const growthStages = GROWTH_STAGES
 const submitting = ref(false)
 const formError = ref('')
 const plantPickId = ref('')
-const cropProfiles = ref([])
+
+function onCropProfileSelect(item) {
+  if (!item?.display_name) return
+  if (!form.value.strain?.trim()) {
+    form.value.strain = item.display_name
+  }
+}
 
 const form = ref(emptyForm())
 
@@ -177,16 +180,6 @@ function emptyForm() {
     cropProfileId: null,
   }
 }
-
-onMounted(async () => {
-  if (props.farmId) {
-    try {
-      cropProfiles.value = await store.loadCropProfiles(props.farmId)
-    } catch {
-      cropProfiles.value = []
-    }
-  }
-})
 
 const zonePrograms = computed(() => {
   if (!form.value.zoneId) return props.programs
@@ -220,13 +213,6 @@ watch(
     if (!isOpen) return
     formError.value = ''
     plantPickId.value = ''
-    if (props.farmId) {
-      try {
-        cropProfiles.value = await store.loadCropProfiles(props.farmId)
-      } catch {
-        cropProfiles.value = []
-      }
-    }
     const f = emptyForm()
     if (props.initialStrain) f.strain = props.initialStrain
     if (props.initialZoneId) f.zoneId = props.initialZoneId

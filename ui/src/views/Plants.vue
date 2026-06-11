@@ -103,8 +103,16 @@
     >
       <div class="w-full max-w-md bg-zinc-900 border border-zinc-700 rounded-xl p-5 space-y-4">
         <h2 class="text-white font-semibold">{{ editing ? 'Edit Plant' : 'New Plant' }}</h2>
+        <CropLibraryPicker
+          v-if="farmContext.farmId"
+          :farm-id="farmContext.farmId"
+          v-model="form.crop_profile_id"
+          label="Crop type"
+          required
+          @select="onCropSelect"
+        />
         <div>
-          <label class="block text-xs text-zinc-500 mb-1">Display name *</label>
+          <label class="block text-xs text-zinc-500 mb-1">Strain name *</label>
           <input
             v-model="form.display_name"
             type="text"
@@ -140,7 +148,7 @@
           </button>
           <button
             @click="submitForm"
-            :disabled="submitting || !form.display_name.trim()"
+            :disabled="submitting || !form.display_name.trim() || !form.crop_profile_id"
             class="px-4 py-1.5 text-xs rounded-lg bg-green-700 hover:bg-green-600 text-white font-medium disabled:opacity-40"
           >
             {{ submitting ? 'Saving…' : editing ? 'Update' : 'Create' }}
@@ -200,6 +208,7 @@ import { useFarmContextStore } from '../stores/farmContext'
 import HelpTip from '../components/HelpTip.vue'
 import EmptyStateHint from '../components/EmptyStateHint.vue'
 import StartGrowWizard from '../components/StartGrowWizard.vue'
+import CropLibraryPicker from '../components/CropLibraryPicker.vue'
 import { strainFromPlant } from '../lib/growHub.js'
 
 defineProps({
@@ -233,7 +242,7 @@ const deleteTarget = ref(null)
 const form = ref(emptyForm())
 
 function emptyForm() {
-  return { display_name: '', variety_or_cultivar: '', metaStr: '{}' }
+  return { display_name: '', variety_or_cultivar: '', crop_profile_id: null, metaStr: '{}' }
 }
 
 function openCreate() {
@@ -249,6 +258,7 @@ function openEdit(plant) {
   form.value = {
     display_name: plant.display_name || '',
     variety_or_cultivar: plant.variety_or_cultivar || '',
+    crop_profile_id: plant.crop_profile_id || null,
     metaStr: typeof plant.meta === 'string' ? plant.meta : JSON.stringify(plant.meta ?? {}, null, 2),
   }
   formError.value = ''
@@ -297,6 +307,13 @@ async function onGrowStarted(cycle) {
   }
 }
 
+function onCropSelect(item) {
+  if (!item?.display_name || editing.value) return
+  if (!form.value.display_name.trim()) {
+    form.value.display_name = item.display_name
+  }
+}
+
 async function submitForm() {
   formError.value = ''
   metaError.value = ''
@@ -304,6 +321,10 @@ async function submitForm() {
   if (!fid) { formError.value = 'No farm selected'; return }
   const name = form.value.display_name.trim()
   if (!name) return
+  if (!form.value.crop_profile_id) {
+    formError.value = 'Pick a crop type with targets'
+    return
+  }
 
   let meta
   try {
@@ -316,6 +337,7 @@ async function submitForm() {
   const payload = {
     display_name: name,
     variety_or_cultivar: form.value.variety_or_cultivar.trim() || null,
+    crop_profile_id: form.value.crop_profile_id,
     meta,
   }
 

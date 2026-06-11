@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 
@@ -12,14 +13,22 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	db "gr33n-api/internal/db"
+	"gr33n-api/internal/croplibrary"
 	"gr33n-api/internal/farmauthz"
 	"gr33n-api/internal/httputil"
 )
 
-type Handler struct{ q *db.Queries }
+type Handler struct {
+	q        *db.Queries
+	repoRoot string
+}
 
 func NewHandler(pool *pgxpool.Pool) *Handler {
-	return &Handler{q: db.New(pool)}
+	root, err := croplibrary.FindRepoRoot()
+	if err != nil {
+		root = "."
+	}
+	return &Handler{q: db.New(pool), repoRoot: root}
 }
 
 type profileWithStages struct {
@@ -46,6 +55,47 @@ func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 		rows = []db.Gr33ncropsCropProfile{}
 	}
 	httputil.WriteJSON(w, http.StatusOK, rows)
+}
+
+// Picker — GET /farms/{id}/crop-library/picker (Phase 82 WS4f)
+func (h *Handler) Picker(w http.ResponseWriter, r *http.Request) {
+	farmID, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	if err != nil {
+		httputil.WriteError(w, http.StatusBadRequest, "invalid farm id")
+		return
+	}
+	if !farmauthz.RequireFarmMember(w, r, h.q, farmID) {
+		return
+	}
+	catalogPath := os.Getenv("CROP_LIBRARY_PATH")
+	cat, err := croplibrary.LoadCatalog(h.repoRoot, catalogPath)
+	if err != nil {
+		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	rows, err := h.q.ListCropProfilesForFarm(r.Context(), &farmID)
+	if err != nil {
+		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	profiles := make([]croplibrary.ProfileRow, 0, len(rows))
+	for _, p := range rows {
+		stages, serr := h.q.ListCropProfileStages(r.Context(), p.ID)
+		if serr != nil {
+			httputil.WriteError(w, http.StatusInternalServerError, serr.Error())
+			return
+		}
+		profiles = append(profiles, croplibrary.ProfileRow{
+			ID:          p.ID,
+			CropKey:     p.CropKey,
+			DisplayName: p.DisplayName,
+			Category:    p.Category,
+			IsBuiltin:   p.IsBuiltin,
+			FarmID:      p.FarmID,
+			StageCount:  len(stages),
+		})
+	}
+	httputil.WriteJSON(w, http.StatusOK, croplibrary.BuildPicker(cat, profiles))
 }
 
 // Get — GET /crop-profiles/{id}

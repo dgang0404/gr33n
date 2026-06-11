@@ -13,6 +13,8 @@ aliases:
   shiitake: mushroom
   apple_tree: fruit_tree
   grape_vine: fruit_tree
+  trichocereus: san_pedro
+  echinopsis: san_pedro
 
 crops:
   # ── Existing Phase 64 profiles (stages seeded) ──────────────────────────
@@ -914,6 +916,14 @@ crops:
     substrate: gritty_mix
     watering_style: dry_down_succulent
     cousin_of: null
+
+  - key: san_pedro
+    display_name: San Pedro cactus
+    category: ornamental
+    substrate: gritty_mix
+    watering_style: dry_down_succulent
+    cousin_of: succulent
+    aliases: [trichocereus, echinopsis]
 
   - key: houseplant
     display_name: Houseplant (general)
