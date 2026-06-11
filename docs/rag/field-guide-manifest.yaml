@@ -34,6 +34,20 @@ include:
   - crop-broccoli-nutrition.md
   - crop-melon-nutrition.md
   - crop-arugula-nutrition.md
+  - crop-rose-care.md
+  - crop-sunflower-nutrition.md
+  - crop-hops-nutrition.md
+  - crop-succulent-care.md
+  - crop-san-pedro-care.md
+  - crop-houseplant-care.md
+  - crop-chard-nutrition.md
+  - crop-bok-choy-nutrition.md
+  - crop-radish-nutrition.md
+  - crop-thyme-nutrition.md
+  - crop-oregano-nutrition.md
+  - crop-rosemary-nutrition.md
+  - crop-lavender-nutrition.md
+  - crop-chrysanthemum-care.md
 
 exclude_globs:
   - "procedures/**"

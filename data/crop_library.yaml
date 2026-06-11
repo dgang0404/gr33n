@@ -1,7 +1,7 @@
-# Phase 82 WS4a — canonical cultivator crop library (single source of truth).
+# Phase 82 — canonical cultivator crop library (single source of truth).
 # Drives SQL seed (generate-crop-seed.sql.sh), Guardian aliases (WS3), UI picker (WS4f).
 # EC stage fields are mS/cm only — never percentages.
-version: 2
+version: 3
 
 aliases:
   orchid: phalaenopsis
@@ -15,6 +15,13 @@ aliases:
   grape_vine: fruit_tree
   trichocereus: san_pedro
   echinopsis: san_pedro
+  swiss_chard: chard
+  pak_choi: bok_choy
+  pak_choy: bok_choy
+  mum: chrysanthemum
+  chrysanthemum_mum: chrysanthemum
+  cherry_tomato: tomato
+  beefsteak_tomato: tomato
 
 crops:
   # ── Existing Phase 64 profiles (stages seeded) ──────────────────────────
@@ -1301,49 +1308,633 @@ crops:
         photoperiod_hrs: 12.0
         notes: Bolt and bitterness in sustained heat
 
-  # ── Tier C — optional greenhouse / ornamental ───────────────────────────
+  # ── Tier C — greenhouse / ornamental (stages seeded) ───────────────────────
   - key: rose
     display_name: Rose (cut flower)
     category: flower
+    source: Cut-flower rose; moderate EC; long photoperiod
     substrate: rockwool / coco
     watering_style: pulse_dryback
+    runoff_pct_target: "10-15"
     cousin_of: tomato
+    stages:
+      - stage: early_veg
+        ec_min: 1.40
+        ec_target: 1.80
+        ec_max: 2.20
+        ph_min: 5.5
+        ph_max: 6.0
+        vpd_min_kpa: 0.80
+        vpd_max_kpa: 1.10
+        temp_min_c: 18.0
+        temp_max_c: 24.0
+        rh_min_pct: 55
+        rh_max_pct: 65
+        dli_target: 25.0
+        photoperiod_hrs: 16.0
+        notes: Vegetative cane growth
+      - stage: late_veg
+        ec_min: 1.80
+        ec_target: 2.20
+        ec_max: 2.60
+        ph_min: 5.5
+        ph_max: 6.0
+        vpd_min_kpa: 0.90
+        vpd_max_kpa: 1.20
+        temp_min_c: 18.0
+        temp_max_c: 24.0
+        rh_min_pct: 50
+        rh_max_pct: 60
+        dli_target: 30.0
+        photoperiod_hrs: 16.0
+        notes: Pre-bud buildup
+      - stage: early_flower
+        ec_min: 2.00
+        ec_target: 2.40
+        ec_max: 2.80
+        ph_min: 5.5
+        ph_max: 6.0
+        vpd_min_kpa: 1.00
+        vpd_max_kpa: 1.30
+        temp_min_c: 18.0
+        temp_max_c: 22.0
+        rh_min_pct: 45
+        rh_max_pct: 55
+        dli_target: 30.0
+        photoperiod_hrs: 16.0
+        notes: Bud / cut-flower production
 
   - key: sunflower
     display_name: Sunflower
     category: flower
+    source: Short-cycle high-light flower; fast turnover
     substrate: coco / rockwool
     watering_style: pulse_dryback
     cousin_of: tomato
+    stages:
+      - stage: seedling
+        ec_min: 0.80
+        ec_target: 1.00
+        ec_max: 1.20
+        ph_min: 5.5
+        ph_max: 6.0
+        vpd_min_kpa: 0.60
+        vpd_max_kpa: 0.90
+        temp_min_c: 20.0
+        temp_max_c: 26.0
+        rh_min_pct: 60
+        rh_max_pct: 70
+        dli_target: 20.0
+        photoperiod_hrs: 16.0
+        notes: Transplant quickly — roots sensitive
+      - stage: early_veg
+        ec_min: 1.20
+        ec_target: 1.60
+        ec_max: 2.00
+        ph_min: 5.5
+        ph_max: 6.0
+        vpd_min_kpa: 0.90
+        vpd_max_kpa: 1.20
+        temp_min_c: 20.0
+        temp_max_c: 28.0
+        rh_min_pct: 50
+        rh_max_pct: 60
+        dli_target: 35.0
+        photoperiod_hrs: 16.0
+        notes: Short cycle to bloom; high light
 
   - key: hops
     display_name: Hops (bines)
     category: industrial
+    source: Long vegetative bines — not cannabis flower profile
     substrate: coco / rockwool
     watering_style: pulse_dryback
     cousin_of: cannabis
+    stages:
+      - stage: early_veg
+        ec_min: 1.00
+        ec_target: 1.40
+        ec_max: 1.80
+        ph_min: 5.8
+        ph_max: 6.2
+        vpd_min_kpa: 0.90
+        vpd_max_kpa: 1.20
+        temp_min_c: 18.0
+        temp_max_c: 24.0
+        rh_min_pct: 55
+        rh_max_pct: 65
+        dli_target: 35.0
+        photoperiod_hrs: 18.0
+        notes: Bine establishment
+      - stage: late_veg
+        ec_min: 1.40
+        ec_target: 1.80
+        ec_max: 2.20
+        ph_min: 5.8
+        ph_max: 6.2
+        vpd_min_kpa: 1.00
+        vpd_max_kpa: 1.30
+        temp_min_c: 18.0
+        temp_max_c: 24.0
+        rh_min_pct: 50
+        rh_max_pct: 60
+        dli_target: 40.0
+        photoperiod_hrs: 18.0
+        notes: Long veg before cone season — trellis required
 
   - key: succulent
     display_name: Succulents (general)
     category: ornamental
+    source: Dry-down epiphyte/soilless — never constant wet
     substrate: gritty_mix
     watering_style: dry_down_succulent
     cousin_of: null
+    stages:
+      - stage: seedling
+        ec_min: 0.30
+        ec_target: 0.50
+        ec_max: 0.70
+        ph_min: 5.5
+        ph_max: 6.5
+        vpd_min_kpa: 0.50
+        vpd_max_kpa: 0.90
+        temp_min_c: 18.0
+        temp_max_c: 26.0
+        rh_min_pct: 40
+        rh_max_pct: 55
+        dli_target: 12.0
+        photoperiod_hrs: 14.0
+        notes: Root lightly; excellent drainage
+      - stage: early_veg
+        ec_min: 0.40
+        ec_target: 0.60
+        ec_max: 0.80
+        ph_min: 5.5
+        ph_max: 6.5
+        vpd_min_kpa: 0.60
+        vpd_max_kpa: 1.00
+        temp_min_c: 18.0
+        temp_max_c: 28.0
+        rh_min_pct: 35
+        rh_max_pct: 50
+        dli_target: 15.0
+        photoperiod_hrs: 14.0
+        notes: Full dry-down between feeds
 
   - key: san_pedro
     display_name: San Pedro cactus
     category: ornamental
+    source: Columnar cactus — minimal EC; dry winter rest
     substrate: gritty_mix
     watering_style: dry_down_succulent
     cousin_of: succulent
     aliases: [trichocereus, echinopsis]
+    stages:
+      - stage: seedling
+        ec_min: 0.20
+        ec_target: 0.35
+        ec_max: 0.50
+        ph_min: 5.5
+        ph_max: 6.5
+        vpd_min_kpa: 0.40
+        vpd_max_kpa: 0.80
+        temp_min_c: 18.0
+        temp_max_c: 26.0
+        rh_min_pct: 35
+        rh_max_pct: 50
+        dli_target: 10.0
+        photoperiod_hrs: 14.0
+        notes: Seedling — almost no feed
+      - stage: early_veg
+        ec_min: 0.25
+        ec_target: 0.40
+        ec_max: 0.55
+        ph_min: 5.5
+        ph_max: 6.5
+        vpd_min_kpa: 0.50
+        vpd_max_kpa: 0.90
+        temp_min_c: 18.0
+        temp_max_c: 28.0
+        rh_min_pct: 30
+        rh_max_pct: 45
+        dli_target: 15.0
+        photoperiod_hrs: 14.0
+        notes: Active growth season only; rest dry in winter
 
   - key: houseplant
     display_name: Houseplant (general)
     category: ornamental
+    source: Conservative foliage baseline — many species; clone to customize
     substrate: peat / soilless_mix
     watering_style: top_water_drydown
     cousin_of: null
+    stages:
+      - stage: seedling
+        ec_min: 0.60
+        ec_target: 0.80
+        ec_max: 1.00
+        ph_min: 5.5
+        ph_max: 6.2
+        vpd_min_kpa: 0.50
+        vpd_max_kpa: 0.80
+        temp_min_c: 20.0
+        temp_max_c: 26.0
+        rh_min_pct: 55
+        rh_max_pct: 70
+        dli_target: 8.0
+        photoperiod_hrs: 12.0
+        notes: Low light tolerant baseline
+      - stage: early_veg
+        ec_min: 0.80
+        ec_target: 1.00
+        ec_max: 1.30
+        ph_min: 5.5
+        ph_max: 6.2
+        vpd_min_kpa: 0.60
+        vpd_max_kpa: 0.90
+        temp_min_c: 20.0
+        temp_max_c: 26.0
+        rh_min_pct: 50
+        rh_max_pct: 65
+        dli_target: 12.0
+        photoperiod_hrs: 12.0
+        notes: Foliar houseplant — adjust per species
+
+  # ── Popular add-ons — common bench / herb crops ─────────────────────────
+  - key: chard
+    display_name: Swiss chard
+    category: leafy
+    source: Leafy beet relative; kale-class EC
+    substrate: DWC / NFT
+    watering_style: constant_feed
+    cousin_of: kale
+    aliases: [swiss_chard]
+    stages:
+      - stage: seedling
+        ec_min: 0.80
+        ec_target: 1.00
+        ec_max: 1.20
+        ph_min: 5.5
+        ph_max: 6.0
+        vpd_min_kpa: 0.50
+        vpd_max_kpa: 0.80
+        temp_min_c: 16.0
+        temp_max_c: 22.0
+        rh_min_pct: 65
+        rh_max_pct: 75
+        dli_target: 12.0
+        photoperiod_hrs: 16.0
+        notes: Colorful stems — cool start
+      - stage: early_veg
+        ec_min: 1.00
+        ec_target: 1.20
+        ec_max: 1.40
+        ph_min: 5.5
+        ph_max: 6.0
+        vpd_min_kpa: 0.60
+        vpd_max_kpa: 0.90
+        temp_min_c: 16.0
+        temp_max_c: 24.0
+        rh_min_pct: 60
+        rh_max_pct: 70
+        dli_target: 15.0
+        photoperiod_hrs: 16.0
+        notes: Continuous leaf harvest
+      - stage: late_veg
+        ec_min: 1.10
+        ec_target: 1.30
+        ec_max: 1.50
+        ph_min: 5.5
+        ph_max: 6.0
+        vpd_min_kpa: 0.70
+        vpd_max_kpa: 1.00
+        temp_min_c: 16.0
+        temp_max_c: 24.0
+        rh_min_pct: 55
+        rh_max_pct: 65
+        dli_target: 17.0
+        photoperiod_hrs: 16.0
+        notes: Cut outer leaves; heat softens texture
+
+  - key: bok_choy
+    display_name: Bok choy / pak choi
+    category: leafy
+    source: Cool Asian brassica; fast head crop
+    substrate: NFT / rockwool
+    watering_style: constant_feed
+    cousin_of: kale
+    aliases: [pak_choi, pak_choy]
+    stages:
+      - stage: seedling
+        ec_min: 0.70
+        ec_target: 0.90
+        ec_max: 1.10
+        ph_min: 5.5
+        ph_max: 6.0
+        vpd_min_kpa: 0.50
+        vpd_max_kpa: 0.80
+        temp_min_c: 14.0
+        temp_max_c: 20.0
+        rh_min_pct: 65
+        rh_max_pct: 75
+        dli_target: 12.0
+        photoperiod_hrs: 14.0
+        notes: Cool germination
+      - stage: early_veg
+        ec_min: 0.90
+        ec_target: 1.10
+        ec_max: 1.30
+        ph_min: 5.5
+        ph_max: 6.0
+        vpd_min_kpa: 0.60
+        vpd_max_kpa: 0.90
+        temp_min_c: 14.0
+        temp_max_c: 22.0
+        rh_min_pct: 60
+        rh_max_pct: 70
+        dli_target: 15.0
+        photoperiod_hrs: 14.0
+        notes: Head fill; bolts in heat
+      - stage: late_veg
+        ec_min: 1.00
+        ec_target: 1.20
+        ec_max: 1.40
+        ph_min: 5.5
+        ph_max: 6.0
+        vpd_min_kpa: 0.70
+        vpd_max_kpa: 1.00
+        temp_min_c: 14.0
+        temp_max_c: 22.0
+        rh_min_pct: 55
+        rh_max_pct: 65
+        dli_target: 17.0
+        photoperiod_hrs: 14.0
+        notes: Harvest whole heads promptly
+
+  - key: radish
+    display_name: Radish
+    category: leafy
+    source: Fast root/leaf crop; low EC; 3–4 week turnover
+    substrate: DWC / NFT
+    watering_style: constant_feed
+    cousin_of: arugula
+    stages:
+      - stage: seedling
+        ec_min: 0.50
+        ec_target: 0.70
+        ec_max: 0.90
+        ph_min: 5.5
+        ph_max: 6.0
+        vpd_min_kpa: 0.50
+        vpd_max_kpa: 0.80
+        temp_min_c: 15.0
+        temp_max_c: 20.0
+        rh_min_pct: 65
+        rh_max_pct: 75
+        dli_target: 12.0
+        photoperiod_hrs: 14.0
+        notes: Direct or plug; cool
+      - stage: early_veg
+        ec_min: 0.70
+        ec_target: 0.90
+        ec_max: 1.10
+        ph_min: 5.5
+        ph_max: 6.0
+        vpd_min_kpa: 0.60
+        vpd_max_kpa: 0.90
+        temp_min_c: 15.0
+        temp_max_c: 22.0
+        rh_min_pct: 60
+        rh_max_pct: 70
+        dli_target: 15.0
+        photoperiod_hrs: 14.0
+        notes: Bulb swell; harvest before pithy
+
+  - key: thyme
+    display_name: Thyme
+    category: herb
+    source: Woody herb; lower EC; lean dry-down between feeds
+    substrate: coco / rockwool
+    watering_style: pulse_dryback
+    cousin_of: oregano
+    stages:
+      - stage: seedling
+        ec_min: 0.60
+        ec_target: 0.80
+        ec_max: 1.00
+        ph_min: 5.5
+        ph_max: 6.0
+        vpd_min_kpa: 0.60
+        vpd_max_kpa: 0.90
+        temp_min_c: 18.0
+        temp_max_c: 24.0
+        rh_min_pct: 50
+        rh_max_pct: 60
+        dli_target: 15.0
+        photoperiod_hrs: 14.0
+        notes: Slow from seed — prefer cuttings
+      - stage: early_veg
+        ec_min: 0.80
+        ec_target: 1.10
+        ec_max: 1.30
+        ph_min: 5.5
+        ph_max: 6.0
+        vpd_min_kpa: 0.80
+        vpd_max_kpa: 1.10
+        temp_min_c: 18.0
+        temp_max_c: 26.0
+        rh_min_pct: 45
+        rh_max_pct: 55
+        dli_target: 18.0
+        photoperiod_hrs: 14.0
+        notes: Aromatic oils — do not over-feed
+
+  - key: oregano
+    display_name: Oregano
+    category: herb
+    source: Mediterranean herb; moderate EC; drier than basil
+    substrate: coco / rockwool
+    watering_style: pulse_dryback
+    cousin_of: basil
+    stages:
+      - stage: seedling
+        ec_min: 0.70
+        ec_target: 0.90
+        ec_max: 1.10
+        ph_min: 5.5
+        ph_max: 6.0
+        vpd_min_kpa: 0.60
+        vpd_max_kpa: 0.90
+        temp_min_c: 18.0
+        temp_max_c: 24.0
+        rh_min_pct: 50
+        rh_max_pct: 60
+        dli_target: 15.0
+        photoperiod_hrs: 14.0
+        notes: Warm germination
+      - stage: early_veg
+        ec_min: 1.00
+        ec_target: 1.30
+        ec_max: 1.50
+        ph_min: 5.5
+        ph_max: 6.0
+        vpd_min_kpa: 0.80
+        vpd_max_kpa: 1.10
+        temp_min_c: 20.0
+        temp_max_c: 28.0
+        rh_min_pct: 45
+        rh_max_pct: 55
+        dli_target: 20.0
+        photoperiod_hrs: 14.0
+        notes: Continuous harvest; trim to bush
+      - stage: late_veg
+        ec_min: 1.10
+        ec_target: 1.40
+        ec_max: 1.60
+        ph_min: 5.5
+        ph_max: 6.0
+        vpd_min_kpa: 0.90
+        vpd_max_kpa: 1.20
+        temp_min_c: 20.0
+        temp_max_c: 28.0
+        rh_min_pct: 40
+        rh_max_pct: 50
+        dli_target: 22.0
+        photoperiod_hrs: 14.0
+        notes: Lower RH reduces mildew on dense canopy
+
+  - key: rosemary
+    display_name: Rosemary
+    category: herb
+    source: Woody Mediterranean herb; lean feed; excellent drainage
+    substrate: coco / gritty_mix
+    watering_style: pulse_dryback
+    cousin_of: thyme
+    stages:
+      - stage: seedling
+        ec_min: 0.60
+        ec_target: 0.80
+        ec_max: 1.00
+        ph_min: 5.5
+        ph_max: 6.2
+        vpd_min_kpa: 0.60
+        vpd_max_kpa: 0.90
+        temp_min_c: 18.0
+        temp_max_c: 24.0
+        rh_min_pct: 45
+        rh_max_pct: 55
+        dli_target: 15.0
+        photoperiod_hrs: 14.0
+        notes: Cuttings root faster than seed
+      - stage: early_veg
+        ec_min: 0.80
+        ec_target: 1.10
+        ec_max: 1.30
+        ph_min: 5.5
+        ph_max: 6.2
+        vpd_min_kpa: 0.80
+        vpd_max_kpa: 1.10
+        temp_min_c: 18.0
+        temp_max_c: 26.0
+        rh_min_pct: 40
+        rh_max_pct: 50
+        dli_target: 20.0
+        photoperiod_hrs: 14.0
+        notes: Never soggy — root rot common
+
+  - key: lavender
+    display_name: Lavender
+    category: herb
+    source: Dry-lean aromatic; low EC; alkaline-leaning ok
+    substrate: gritty_mix / coco
+    watering_style: dry_down_succulent
+    cousin_of: rosemary
+    stages:
+      - stage: seedling
+        ec_min: 0.50
+        ec_target: 0.70
+        ec_max: 0.90
+        ph_min: 5.8
+        ph_max: 6.8
+        vpd_min_kpa: 0.60
+        vpd_max_kpa: 0.90
+        temp_min_c: 18.0
+        temp_max_c: 24.0
+        rh_min_pct: 40
+        rh_max_pct: 55
+        dli_target: 15.0
+        photoperiod_hrs: 14.0
+        notes: Slow from seed
+      - stage: early_veg
+        ec_min: 0.70
+        ec_target: 0.90
+        ec_max: 1.10
+        ph_min: 5.8
+        ph_max: 6.8
+        vpd_min_kpa: 0.80
+        vpd_max_kpa: 1.10
+        temp_min_c: 18.0
+        temp_max_c: 26.0
+        rh_min_pct: 35
+        rh_max_pct: 50
+        dli_target: 20.0
+        photoperiod_hrs: 14.0
+        notes: Dry-down between irrigation; high light for oil
+
+  - key: chrysanthemum
+    display_name: Chrysanthemum (mum)
+    category: flower
+    source: Photoperiod-sensitive cut flower; moderate EC
+    substrate: rockwool / coco
+    watering_style: pulse_dryback
+    cousin_of: rose
+    aliases: [mum]
+    stages:
+      - stage: early_veg
+        ec_min: 1.20
+        ec_target: 1.60
+        ec_max: 2.00
+        ph_min: 5.5
+        ph_max: 6.0
+        vpd_min_kpa: 0.80
+        vpd_max_kpa: 1.10
+        temp_min_c: 18.0
+        temp_max_c: 24.0
+        rh_min_pct: 55
+        rh_max_pct: 65
+        dli_target: 25.0
+        photoperiod_hrs: 16.0
+        notes: Long-day vegetative growth
+      - stage: late_veg
+        ec_min: 1.60
+        ec_target: 2.00
+        ec_max: 2.40
+        ph_min: 5.5
+        ph_max: 6.0
+        vpd_min_kpa: 0.90
+        vpd_max_kpa: 1.20
+        temp_min_c: 18.0
+        temp_max_c: 24.0
+        rh_min_pct: 50
+        rh_max_pct: 60
+        dli_target: 28.0
+        photoperiod_hrs: 16.0
+        notes: Pinch for branchiness
+      - stage: early_flower
+        ec_min: 1.80
+        ec_target: 2.20
+        ec_max: 2.60
+        ph_min: 5.5
+        ph_max: 6.0
+        vpd_min_kpa: 1.00
+        vpd_max_kpa: 1.30
+        temp_min_c: 16.0
+        temp_max_c: 22.0
+        rh_min_pct: 45
+        rh_max_pct: 55
+        dli_target: 25.0
+        photoperiod_hrs: 12.0
+        notes: Short-day bloom — photoperiod critical
 
 unsupported:
   - key: ramps

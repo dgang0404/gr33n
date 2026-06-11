@@ -38,28 +38,17 @@ func TestBuildPicker_GroupsAndTargets(t *testing.T) {
 	}
 }
 
-func TestBuildPicker_CatalogOnlyHasCousin(t *testing.T) {
+func TestBuildPicker_CompleteCatalog(t *testing.T) {
 	root := repoRoot(t)
 	cat, err := croplibrary.LoadCatalog(root, croplibrary.DefaultCatalogPath)
 	if err != nil {
 		t.Fatal(err)
 	}
 	out := croplibrary.BuildPicker(cat, nil)
-	var rose *croplibrary.PickerItem
-	for _, g := range out.Groups {
-		for i := range g.Items {
-			if g.Items[i].CropKey == "rose" {
-				rose = &g.Items[i]
-			}
-		}
+	if out.Counts.Total != 36 {
+		t.Fatalf("want 36 catalog crops, got %d", out.Counts.Total)
 	}
-	if rose == nil {
-		t.Fatal("rose not in picker")
-	}
-	if rose.HasTargets {
-		t.Fatal("rose should be catalog-only without DB seed")
-	}
-	if rose.CousinOf == nil || *rose.CousinOf != "tomato" {
-		t.Fatalf("cousin_of: %+v", rose.CousinOf)
+	if out.Counts.CatalogOnly != 36 {
+		t.Fatalf("without DB all should be catalog-only, got %d", out.Counts.CatalogOnly)
 	}
 }
