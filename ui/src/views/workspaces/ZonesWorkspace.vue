@@ -5,19 +5,29 @@
         <Zones />
       </div>
       <div v-else-if="activeTab === 'fleet'" class="flex flex-col min-h-[50vh]">
-        <div class="px-4 sm:px-6 pt-3 pb-2 border-b border-zinc-800/60 flex flex-wrap gap-2">
-          <button
-            v-for="sub in fleetSubTabs"
-            :key="sub.id"
-            type="button"
-            class="px-3 py-1.5 text-xs rounded-lg border transition-colors"
-            :class="fleetTab === sub.id
-              ? 'border-green-700/60 bg-green-950/40 text-green-400'
-              : 'border-zinc-800 text-zinc-500 hover:text-zinc-300'"
-            @click="selectFleet(sub.id)"
+        <div class="px-4 sm:px-6 pt-3 pb-2 border-b border-zinc-800/60 flex flex-wrap items-center justify-between gap-2">
+          <div class="flex flex-wrap gap-2">
+            <button
+              v-for="sub in fleetSubTabs"
+              :key="sub.id"
+              type="button"
+              class="px-3 py-1.5 text-xs rounded-lg border transition-colors"
+              :class="fleetTab === sub.id
+                ? 'border-green-700/60 bg-green-950/40 text-green-400'
+                : 'border-zinc-800 text-zinc-500 hover:text-zinc-300'"
+              @click="selectFleet(sub.id)"
+            >
+              {{ sub.label }}
+            </button>
+          </div>
+          <router-link
+            v-nav-hint="'/pi-setup'"
+            to="/pi-setup"
+            class="text-xs text-zinc-500 hover:text-green-400 shrink-0"
+            data-test="fleet-pi-setup-link"
           >
-            {{ sub.label }}
-          </button>
+            Pi + HAT setup guide →
+          </router-link>
         </div>
         <Sensors v-if="fleetTab === 'sensors'" embedded group-by-zone />
         <Actuators v-else-if="fleetTab === 'controls'" embedded group-by-zone />

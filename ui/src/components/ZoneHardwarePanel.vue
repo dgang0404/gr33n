@@ -8,11 +8,11 @@
         </p>
       </div>
       <router-link
-        v-nav-hint="'/zones'"
-        :to="{ path: '/zones', query: { tab: 'fleet', fleet: 'sensors' } }"
+        v-nav-hint="'/pi-setup'"
+        to="/pi-setup"
         class="text-xs text-zinc-500 hover:text-green-400 shrink-0"
       >
-        Farm fleet →
+        Pi setup guide →
       </router-link>
     </div>
 

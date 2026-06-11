@@ -46,7 +46,7 @@ isProject: false
 
 ## Status
 
-**Arc complete through Phase 77.** Phases **68–69, 74–77 shipped**; **70–73** remain planned (backend / Guardian PR work).
+**Arc complete through Phase 81 (UI polish).** Phases **68–69, 74–81 shipped**; **70–73** remain planned (backend / Guardian PR discoverability work).
 
 Operator feedback (2026-06): *sidebar too deep, pages overlap, zone detail requires too much jumping.*
 
@@ -169,6 +169,10 @@ flowchart TB
 | OC-75 | 75 comfort workspace | ✅ Shipped |
 | OC-76 | 76 Today/mobile alignment | ✅ Shipped |
 | OC-77 | 77 post-arc polish | ✅ Shipped |
+| OC-78 | 78 zone hardware + GPIO alerts | ✅ Shipped (`phase-78-closure.test.js`) |
+| OC-79 | 79 tasks/inventory/glossary | ✅ Shipped (`phase-79-closure.test.js`) |
+| OC-80 | 80 routing + zones tab labels | ✅ Shipped (`phase-80-closure.test.js`) |
+| OC-81 | 81 pi-setup + zone hardware scope | ✅ Shipped (`phase-81-closure.test.js`) |
 
 ---
 

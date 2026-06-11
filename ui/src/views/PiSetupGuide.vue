@@ -3,7 +3,7 @@
 
     <!-- Header -->
     <header class="space-y-2">
-      <div class="flex items-center gap-2">
+      <div v-if="!embedded" class="flex items-center gap-2">
         <router-link v-nav-hint="'/operator-guide'" to="/operator-guide" class="text-xs text-zinc-500 hover:text-zinc-300">Operator guide</router-link>
         <span class="text-zinc-700">/</span>
         <span class="text-xs text-zinc-400">Pi + HAT setup</span>
@@ -357,6 +357,10 @@
 <script setup>
 import { computed, defineComponent, h, onMounted } from 'vue'
 import { useFarmStore } from '../stores/farm'
+
+defineProps({
+  embedded: { type: Boolean, default: false },
+})
 import { resolveWiring, formatWiringLabel } from '../lib/hardwareWiring.js'
 
 const store = useFarmStore()

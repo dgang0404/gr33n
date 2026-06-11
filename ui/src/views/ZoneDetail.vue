@@ -42,17 +42,6 @@
         </button>
       </div>
 
-      <p
-        v-if="activeTab !== 'overview' && (sensors.length || actuators.length)"
-        class="text-xs text-zinc-500"
-      >
-        <a href="#zone-hardware" class="text-green-500 hover:text-green-400">
-          🔌 {{ sensors.length }} sensor{{ sensors.length === 1 ? '' : 's' }},
-          {{ actuators.length }} control{{ actuators.length === 1 ? '' : 's' }}
-          — jump to GPIO &amp; wiring ↓
-        </a>
-      </p>
-
       <ZoneNeedSection
         v-if="activeTab === PLANT_NEEDS.water"
         :need="PLANT_NEEDS.water"
@@ -266,18 +255,18 @@
           </div>
         </div>
 
-      </template>
+        <div id="zone-hardware" class="scroll-mt-6">
+          <ZoneHardwarePanel
+            :zone-id="zoneId"
+            :sensors="sensors"
+            :actuators="actuators"
+            :toggling="toggling"
+            @toggle-actuator="toggleActuator"
+            @hardware-updated="refreshHardware"
+          />
+        </div>
 
-      <div id="zone-hardware" class="scroll-mt-6">
-        <ZoneHardwarePanel
-          :zone-id="zoneId"
-          :sensors="sensors"
-          :actuators="actuators"
-          :toggling="toggling"
-          @toggle-actuator="toggleActuator"
-          @hardware-updated="refreshHardware"
-        />
-      </div>
+      </template>
     </template>
 
     <StartGrowWizard

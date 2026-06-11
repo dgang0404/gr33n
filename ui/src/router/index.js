@@ -18,6 +18,7 @@ import CropCycleCompare from '../views/CropCycleCompare.vue'
 import FarmSetupWizard from '../views/FarmSetupWizard.vue'
 import ZoneSetupWizard from '../views/ZoneSetupWizard.vue'
 import DeviceSetupWizard from '../views/DeviceSetupWizard.vue'
+import PiSetupGuide from '../views/PiSetupGuide.vue'
 import MoneyWorkspace from '../views/workspaces/MoneyWorkspace.vue'
 import ComfortWorkspace from '../views/workspaces/ComfortWorkspace.vue'
 import Login from '../views/Login.vue'
@@ -51,6 +52,7 @@ const routes = [
   { path: '/farms/:id/setup', component: FarmSetupWizard, name: 'farm-setup' },
   { path: '/farms/:id/zones/new', component: ZoneSetupWizard, name: 'zone-setup' },
   { path: '/farms/:id/devices/new', component: DeviceSetupWizard, name: 'device-setup' },
+  { path: '/pi-setup', component: PiSetupGuide, name: 'pi-setup' },
   ...buildZoneOpsRedirectRoutes(),
   ...buildLegacyRedirectRoutes(),
 ]

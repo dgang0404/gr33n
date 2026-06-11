@@ -153,9 +153,11 @@ High-tier cards should be read slowly. Actuator PRs only **enqueue** Pi commands
 ### Today
 
 - **Ask Guardian** on zones, alerts, crop summaries → sets `prefilledMessage` + optional `contextRef`.
-- **Known weakness:** some prefills are **generic** (e.g. “What’s the current status of {zone}?”) — answers feel obvious; does not create useful PRs.
+- **Starter chips** on zones, comfort hub, supplies, morning walkthrough — snapshot-aware; many open chat with a **question**, some with an **action** (pause schedule, water-only, ack alert) that may open a Confirm card when matchers hit.
 - **Refine** on proposal cards → prefills correction prompt.
-- **No** dynamic starter chips in empty chat yet.
+- **Pending** tab on `/chat` (badge in TopBar) — inbox for change requests awaiting Confirm.
+- **Pi + HAT setup** at `/pi-setup` and **Help → Pi + HAT setup** (not absorbed into Zones fleet view).
+- **Zone hardware:** full **Sensors & controls** panel on zone **Overview** only; Ops/Water tabs stay focused (GPIO still shown on alert cards).
 
 ### Target (Phases 40–44 — NOT the same as Phase 46)
 

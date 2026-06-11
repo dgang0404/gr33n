@@ -118,11 +118,11 @@ describe('Phase 78 — zone-first hardware & feed consolidation', () => {
     expect(wrapper.find('[data-test="zone-hardware-actuator-9"]')).toBeTruthy()
   })
 
-  it('ZoneDetail overview embeds hardware panel on every tab', () => {
+  it('ZoneDetail overview embeds hardware panel (not on Ops or other tabs)', () => {
     const src = readFileSync(join(process.cwd(), 'src/views/ZoneDetail.vue'), 'utf8')
     expect(src).toContain('ZoneHardwarePanel')
     expect(src).toContain('id="zone-hardware"')
-    expect(src).toContain('jump to GPIO')
+    expect(src).not.toContain('jump to GPIO')
   })
 
   it('ZoneAlertsPanel acknowledges with actuators prop wired', async () => {

@@ -26,7 +26,6 @@ export const WORKSPACES = {
       '/feeding': { zoneTab: 'water' },
       '/operations/feeding': { zoneTab: 'water' },
       '/fertigation': { zoneTab: 'water' },
-      '/pi-setup': { tab: 'fleet', fleet: 'sensors' },
     },
   },
   money: {
@@ -55,6 +54,7 @@ export const WORKSPACES = {
     subtitle: 'Operator guide, knowledge search, and commons catalog',
     tabs: [
       { id: 'guide', label: 'Guide' },
+      { id: 'pi-setup', label: 'Pi + HAT setup' },
       { id: 'knowledge', label: 'Knowledge' },
       { id: 'catalog', label: 'Catalog' },
     ],

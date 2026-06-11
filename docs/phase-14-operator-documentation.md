@@ -60,11 +60,11 @@ Hub: [`phase_53_59_roadmap.plan.md`](plans/phase_53_59_roadmap.plan.md). Include
 
 **Historical closure rollup (OC-35 … OC-67):** [`phase_35_37_operational_closure.plan.md`](plans/phase_35_37_operational_closure.plan.md) — **archived, do not extend.** Shipped phases' "close when" conditions are deprecated per [plan lifecycle rules](plans/phase_68_73_spa_workspace_roadmap.plan.md#plan-lifecycle-rules-for-all-phase-plans).
 
-## Phases 68–77 — SPA workspace refactor
+## Phases 68–81 — SPA workspace refactor
 
-Hub: [`phase_68_73_spa_workspace_roadmap.plan.md`](plans/phase_68_73_spa_workspace_roadmap.plan.md) (covers **68–77**). **UI arc shipped** through Phase 77; Phases **70–73** remain for Pi GPIO depth and Guardian PR discoverability. Closure for 68+ lives in each phase plan + arc hub OC table.
+Hub: [`phase_68_73_spa_workspace_roadmap.plan.md`](plans/phase_68_73_spa_workspace_roadmap.plan.md) (covers **68–77** formally; **78–81** are post-arc UI polish on `main`). **UI arc shipped** through Phase 81; Phases **70–73** remain for Pi GPIO depth and Guardian PR discoverability. Closure for 68+ lives in each phase plan + arc hub OC table + Vitest `phase-*-closure.test.js` files.
 
-| Phase | Focus | Plan |
+| Phase | Focus | Plan / tests |
 |-------|--------|------|
 | **68** ✅ | Workspace shell | [`phase_68_workspace_shell_spa_nav.plan.md`](plans/phase_68_workspace_shell_spa_nav.plan.md) |
 | **69** ✅ | Zone inline hub | [`phase_69_zone_workspace_hub.plan.md`](plans/phase_69_zone_workspace_hub.plan.md) |
@@ -76,6 +76,10 @@ Hub: [`phase_68_73_spa_workspace_roadmap.plan.md`](plans/phase_68_73_spa_workspa
 | **75** ✅ | Comfort & automation workspace | [`phase_75_automation_comfort_workspace.plan.md`](plans/phase_75_automation_comfort_workspace.plan.md) |
 | **76** ✅ | Today + mobile nav alignment | [`phase_76_today_dashboard_nav_alignment.plan.md`](plans/phase_76_today_dashboard_nav_alignment.plan.md) |
 | **77** ✅ | Post-arc polish | [`phase_77_post_arc_ui_polish.plan.md`](plans/phase_77_post_arc_ui_polish.plan.md) |
+| **78** ✅ | Zone-first hardware & GPIO on alerts | `ui/src/__tests__/phase-78-closure.test.js` |
+| **79** ✅ | Tasks fix, Money inventory tab, operator glossary | `ui/src/__tests__/phase-79-closure.test.js` |
+| **80** ✅ | Routing hashes, zones tab labels, workspace routes | `ui/src/__tests__/phase-80-closure.test.js` |
+| **81** ✅ | `/pi-setup` restore, Help Pi tab, zone hardware on Overview only | `ui/src/__tests__/phase-81-closure.test.js` |
 
 **Pre-dev gap index (archived):** [`pre_development_gaps_index.plan.md`](plans/pre_development_gaps_index.plan.md) · **Product backlog:** [`product_backlog_operator_runtime.plan.md`](plans/product_backlog_operator_runtime.plan.md) (**shipped**)
 
@@ -117,11 +121,11 @@ After operator-doc edits, re-ingest Guardian RAG: **`make rag-ingest-platform-do
 | Pre-development gaps index (archived) | [`plans/pre_development_gaps_index.plan.md`](plans/pre_development_gaps_index.plan.md) |
 | Product backlog (run now, mobile, …) | [`plans/product_backlog_operator_runtime.plan.md`](plans/product_backlog_operator_runtime.plan.md) — shipped |
 | Operational closure (archived OC-35 … OC-67) | [`plans/phase_35_37_operational_closure.plan.md`](plans/phase_35_37_operational_closure.plan.md) — frozen; do not extend |
-| SPA workspace arc 68–77 (UI shipped; 70–73 planned) | [`plans/phase_68_73_spa_workspace_roadmap.plan.md`](plans/phase_68_73_spa_workspace_roadmap.plan.md) · [operator tour §7e–§7j](operator-tour.md#7e-workspaces--sidebar-jobs-tabs-inside-phase-68) |
+| SPA workspace arc 68–81 (UI shipped; 70–73 planned) | [`plans/phase_68_73_spa_workspace_roadmap.plan.md`](plans/phase_68_73_spa_workspace_roadmap.plan.md) · [operator tour §7e–§7j](operator-tour.md#7e-workspaces--sidebar-jobs-tabs-inside-phase-68) |
 | Phase 37 — Guardian offline field assistant (plan) | [`plans/phase_37_guardian_offline_field_assistant.plan.md`](plans/phase_37_guardian_offline_field_assistant.plan.md) — Pi wiring / plumbing walkthroughs, trades corpus, safety gating, offline |
 | Pi pending_command + pulse | [`pi-integration-guide.md`](pi-integration-guide.md) §1.1 |
 | Workflow — single slot + manual mix | [`workflow-guide.md`](workflow-guide.md) |
 
 ## Using this in a new chat
 
-Reference `@docs/phase-14-operator-documentation.md` for Phase 14 deliverables and the **[Phase 31 field validation index](phase-14-operator-documentation.md#phase-31-field-validation-edge)**. For **grow-environment + Guardian doc alignment**, see **[Phases 34–39](#phases-34-39--guardian-polish-grow-environment-plant-needs-ui-edge-fertigation)**. For **current UI nav**, see **[Phases 68–77](#phases-6877--spa-workspace-refactor)** and **[operator tour §7e–§7j](operator-tour.md#7e-workspaces--sidebar-jobs-tabs-inside-phase-68)**. For **first-time local setup**, use **[`local-operator-bootstrap.md`](local-operator-bootstrap.md)** (`make bootstrap-local`).
+Reference `@docs/phase-14-operator-documentation.md` for Phase 14 deliverables and the **[Phase 31 field validation index](phase-14-operator-documentation.md#phase-31-field-validation-edge)**. For **grow-environment + Guardian doc alignment**, see **[Phases 34–39](#phases-34-39--guardian-polish-grow-environment-plant-needs-ui-edge-fertigation)**. For **current UI nav**, see **[Phases 68–81](#phases-6881--spa-workspace-refactor)** and **[operator tour §7e–§7j](operator-tour.md#7e-workspaces--sidebar-jobs-tabs-inside-phase-68)**. For **first-time local setup**, use **[`local-operator-bootstrap.md`](local-operator-bootstrap.md)** (`make bootstrap-local`).

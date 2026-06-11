@@ -72,7 +72,13 @@
       </label>
 
       <label class="block">
-        <span class="text-xs text-zinc-400">Edge device (Pi)</span>
+        <span class="text-xs text-zinc-400 inline-flex items-center gap-1">
+          Edge device (Pi)
+          <HelpTip position="top">
+            Raspberry Pis registered for this farm (Settings or Connect edge device).
+            Loaded from <code class="text-zinc-500">GET /farms/:id/devices</code> — name shown is the device record.
+          </HelpTip>
+        </span>
         <select
           v-model.number="form.device_id"
           class="mt-1 w-full rounded-lg bg-zinc-950 border border-zinc-700 px-3 py-2 text-sm text-white focus:outline-none focus:border-green-600"
@@ -82,6 +88,14 @@
             {{ d.name || d.device_uid || `Device ${d.id}` }}
           </option>
         </select>
+        <p v-if="!devices.length" class="text-[10px] text-zinc-600 mt-1">
+          No edge devices yet —
+          <router-link
+            v-if="deviceSetupRoute"
+            :to="deviceSetupRoute"
+            class="text-green-600 hover:text-green-400"
+          >connect a Pi</router-link>.
+        </p>
       </label>
 
       <label class="block">
@@ -125,6 +139,7 @@ import api from '../api'
 import HelpTip from './HelpTip.vue'
 import HardwareWiringBadge from './HardwareWiringBadge.vue'
 import { findWiringConflict, resolveWiring, SENSOR_WIRING_SOURCES } from '../lib/hardwareWiring.js'
+import { useFarmContextStore } from '../stores/farmContext.js'
 
 const props = defineProps({
   sensorId: { type: [String, Number], required: true },
@@ -135,6 +150,12 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['updated'])
+
+const farmContext = useFarmContextStore()
+const deviceSetupRoute = computed(() => {
+  const fid = farmContext.farmId
+  return fid ? { path: `/farms/${fid}/devices/new` } : null
+})
 
 const editing = ref(false)
 const saving = ref(false)

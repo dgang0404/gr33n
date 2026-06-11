@@ -30,7 +30,7 @@ describe('Phase 68 / 78 WS1 — workspaces model', () => {
     expect(workspaceFor('/feeding')).toMatchObject({ route: '/zones', zoneTab: 'water' })
     expect(workspaceFor('/fertigation')).toMatchObject({ route: '/zones', zoneTab: 'water' })
     expect(workspaceFor('/costs')).toMatchObject({ route: '/money', tab: 'ledger' })
-    expect(workspaceFor('/pi-setup')).toMatchObject({ route: '/zones', tab: 'fleet', fleet: 'sensors' })
+    expect(workspaceFor('/pi-setup')).toBeNull()
   })
 
   it('canonicalSidebarPath maps legacy routes to workspace sidebar entries', () => {
