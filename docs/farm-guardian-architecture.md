@@ -6,6 +6,7 @@
 - [`recommended-hardware-and-sizing.md`](recommended-hardware-and-sizing.md) — GPU/RAM profiles; when chat will feel laggy.
 - [`farm-guardian-ollama-setup.md`](farm-guardian-ollama-setup.md) — operator install runbook for the inference host (Ollama).
 - [`rag-scope-and-threat-model.md`](rag-scope-and-threat-model.md) — privacy & scope boundaries (what RAG indexes, what it doesn't).
+- [`guardian-real-grow-readiness.md`](guardian-real-grow-readiness.md) — before live plants: ingest, Confirm, bench actuators, 8B smokes.
 - [`plans/phase_27_farm_guardian_ai_layer.md`](plans/phase_27_farm_guardian_ai_layer.md) — the calendar plan that shipped the chat layer.
 - [`plans/phase_29_guardian_agent_layer.md`](plans/phase_29_guardian_agent_layer.md) — confirmed agent actions (propose → confirm).
 - [`plans/phase_30_guardian_change_requests.plan.md`](plans/phase_30_guardian_change_requests.plan.md) — PR queue (config tools, risk tiers, zone photos, actuator enqueue).

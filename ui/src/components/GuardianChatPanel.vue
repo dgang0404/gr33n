@@ -188,6 +188,23 @@
               @error="onProposalError"
             />
           </div>
+          <!-- Follow-up chips: only on the last completed turn -->
+          <div
+            v-if="idx === transcript.length - 1 && !streaming && followUps.length"
+            class="flex flex-wrap gap-2 pt-1"
+            data-test="chat-follow-ups"
+          >
+            <button
+              v-for="chip in followUps"
+              :key="chip.id"
+              type="button"
+              class="text-xs px-3 py-1.5 rounded-full border border-zinc-700 bg-zinc-900 text-zinc-300 hover:border-green-700 hover:bg-green-950/50 hover:text-green-200 transition-colors"
+              :data-test="`chat-follow-up-${chip.id}`"
+              @click="onFollowUp(chip)"
+            >
+              {{ chip.label }}
+            </button>
+          </div>
         </article>
         <div v-if="streaming" class="text-zinc-100 text-sm space-y-2" data-test="chat-streaming-row">
           <span class="text-[10px] uppercase tracking-widest text-green-500 mr-2">guardian</span>
@@ -489,6 +506,7 @@ import GuardianStarterChips from './GuardianStarterChips.vue'
 import { topicChipLabel } from '../lib/guardianSessionMemory.js'
 import { computeFirstRunChecklist, isFirstRunIncomplete } from '../lib/firstRunChecklist.js'
 import { buildMorningWalkthroughStarters, buildSetupStarters } from '../lib/guardianStarters.js'
+import { deriveFollowUps } from '../lib/guardianFollowUps.js'
 import { useFarmOperate } from '../composables/useFarmOperate'
 import { useFarmContextStore } from '../stores/farmContext'
 import { useFarmStore } from '../stores/farm'
@@ -575,6 +593,13 @@ const setupStarters = computed(() => {
     unreadAlerts,
     deviceOffline,
   })
+})
+
+const followUps = computed(() => {
+  if (streaming.value || !transcript.value.length) return []
+  const last = transcript.value[transcript.value.length - 1]
+  if (!last?.assistant_message) return []
+  return deriveFollowUps(last.user_message || '', last.assistant_message)
 })
 
 const message = ref('')
@@ -1001,6 +1026,14 @@ async function onNudgeReview(payload) {
   if (!payload?.message) return
   guardianPanel.contextRef = payload.contextRef ?? null
   message.value = payload.message
+  useFarmContext.value = true
+  await nextTick()
+  await send()
+}
+
+async function onFollowUp(chip) {
+  if (!chip?.message || streaming.value) return
+  message.value = chip.message
   useFarmContext.value = true
   await nextTick()
   await send()

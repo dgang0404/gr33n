@@ -291,6 +291,8 @@ Architecture: [`farm-guardian-architecture.md` §7.0h](farm-guardian-architectur
 
 Guardian is **not autonomous**. It is a **copilot** in chat and an **actor** only after you **Confirm** a change request (like approving a pull request). **Automation rules and alerts** are a separate layer — they run without chat and are not Guardian PRs.
 
+**Live plants?** Read **[Guardian & real grows — readiness](guardian-real-grow-readiness.md)** before trusting crop advice or wiring actuators to water and lights (ingest checklist, bench testing, Phase 82/83 bootstrap).
+
 ### Copilot vs actor vs automation
 
 | Layer | You | System |

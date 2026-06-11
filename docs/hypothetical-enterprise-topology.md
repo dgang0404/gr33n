@@ -129,7 +129,7 @@ Large integrators will eventually want **repeatable** site bring-up:
 - Import commons pack version pin  
 - Smoke: `GET /health`, one reading POST, one pending_command round-trip  
 
-**Repository convention:** optional helpers live under [`scripts/enterprise/`](../scripts/enterprise/README.md). Phase 33 WS5 adds a **`site-manifest.yaml`** bring-up stub (farm + zones + recipe pack pin). The core team does not need to ship a full 500-site suite for the platform to be valid.
+**Repository convention:** optional helpers live under [`scripts/enterprise/`](../scripts/enterprise/README.md). Phase 33 WS5 adds a **`site-manifest.yaml`** bring-up stub (farm + zones + recipe pack pin). **Phase 83 (planned)** adds **`guardian_seed`** — commons agronomy pack, RAG ingest bootstrap, farm crop overrides, and readiness smokes so Guardian is trustworthy on day one ([`phase_83_enterprise_agronomy_seed_pack.plan.md`](plans/phase_83_enterprise_agronomy_seed_pack.plan.md)). The core team does not need to ship a full 500-site suite for the platform to be valid.
 
 ### AGPL and pull requests (why this matters)
 

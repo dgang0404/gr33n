@@ -51,6 +51,19 @@ Large multi-site operators (see [`docs/hypothetical-enterprise-topology.md`](../
 
 See [`docs/commons-catalog-operator-playbook.md`](../../docs/commons-catalog-operator-playbook.md) for catalog semantics (import records audit — does not auto-run SQL).
 
+## Planned (Phase 83 — agronomy seed pack)
+
+**Plan:** [`docs/plans/phase_83_enterprise_agronomy_seed_pack.plan.md`](../../docs/plans/phase_83_enterprise_agronomy_seed_pack.plan.md)
+
+| Tool (planned) | Purpose |
+|----------------|---------|
+| `import-agronomy-seed-pack.sh` | Promote **`gr33n-cultivator-seed-pack-v1`** to farm(s) via commons catalog |
+| `guardian-bootstrap-farm.sh` | Field-guide + platform-doc + operational RAG ingest + readiness report |
+| `apply-agronomy-overrides.sh` | Farm-specific EC/VPD/DLI overrides (YAML) on top of Phase 82 builtins |
+| `site-manifest.yaml` → `guardian_seed:` | Extend site bring-up to call bootstrap after zones + recipe pack |
+
+**Depends on Phase 82** (`crop_library.yaml`, field guides, zero-chunk guardrail). Run readiness smokes on **8B + full seed** before upgrading to 70B — same pipelines, better synthesis.
+
 ## Contributing
 
 If you build deployment pipeline tooling against the **public HTTP API**:
@@ -68,5 +81,6 @@ gr33n platform code is **[AGPL v3](../../LICENSE)**. Ops scripts in this folder 
 - [`docs/hypothetical-enterprise-topology.md`](../../docs/hypothetical-enterprise-topology.md)  
 - [`docs/phase-14-operator-documentation.md`](../../docs/phase-14-operator-documentation.md#phase-31-field-validation-edge) — Phase 31 operator index  
 - [`docs/plans/phase_33_guardian_polish_and_enterprise_ops.plan.md`](../../docs/plans/phase_33_guardian_polish_and_enterprise_ops.plan.md) — site manifest WS5 (planned)  
+- [`docs/plans/phase_83_enterprise_agronomy_seed_pack.plan.md`](../../docs/plans/phase_83_enterprise_agronomy_seed_pack.plan.md) — Guardian agronomy seed pack + bootstrap (planned)  
 - [`docs/plans/phase_30_guardian_change_requests.plan.md`](../../docs/plans/phase_30_guardian_change_requests.plan.md)  
 - [`docs/plans/phase_31_field_validation_and_edge.plan.md`](../../docs/plans/phase_31_field_validation_and_edge.plan.md)

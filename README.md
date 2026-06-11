@@ -7,7 +7,11 @@ An open-source farm operating system — run it on your LAN, keep your data clos
 [![Vue](https://img.shields.io/badge/Vue-3-4FC08D?logo=vue.js)](https://vuejs.org)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-14+-336791?logo=postgresql)](https://postgresql.org)
 
-**Current focus:** Phases **40→67** and **SPA workspace UI (68–69, 74–81)** shipped on `main`. **Next:** [Phases 70–73](docs/plans/phase_68_73_spa_workspace_roadmap.plan.md) — live Pi GPIO board (70), feed/water + money workspace depth (71–72), Guardian PR discoverability (73). Hub: [`phase_68_73`](docs/plans/phase_68_73_spa_workspace_roadmap.plan.md) · operator index: [`phase-14`](docs/phase-14-operator-documentation.md) · nav map: [operator tour §7e–§7j](docs/operator-tour.md#7e-workspaces--sidebar-jobs-tabs-inside-phase-68). Farmer-ready v1: [operator tour §9](docs/operator-tour.md#9-farmer-validation-sit-in-phase-45--shipped). **New farm?** In-app wizards at `/farms/{id}/setup`, `/zones/new`, `/devices/new` plus a Dashboard checklist — [operator tour §8](docs/operator-tour.md#8-getting-started--edge-install-phase-44--shipped). Guardian **writes** still go through propose→**Confirm** ([change requests guide](docs/guardian-change-requests-guide.md)); optional LLM proposal fallback when matchers miss — set `GUARDIAN_LLM_PROPOSALS=true` ([operator tour §6h](docs/operator-tour.md#6h-when-guardian-opens-a-card-from-your-words-phase-46--shipped)). After `git pull`, run **`./scripts/bootstrap-local.sh --skip-schema`** (or **`make dev-stack`**) so migrations apply. Pi / edge: [`pi_client/gr33n_client.py`](pi_client/gr33n_client.py), [`docs/pi-integration-guide.md`](docs/pi-integration-guide.md), **[Pi + HAT setup](/pi-setup)** in-app. Historical closure rollup (OC-35 … OC-67, archived): [`phase_35_37_operational_closure`](docs/plans/phase_35_37_operational_closure.plan.md).
+**Current focus:** Phases **40→67** and **SPA workspace UI (68–81)** shipped on `main`. **Active:** [Phase 82](docs/plans/phase_82_guardian_crop_grounding_hardening.plan.md) (Guardian crop library + grounding) · [Phase 83](docs/plans/phase_83_enterprise_agronomy_seed_pack.plan.md) (enterprise seed pack + bootstrap). [Phases 70–73](docs/plans/phase_68_73_spa_workspace_roadmap.plan.md) — Pi GPIO SPA, workspace depth, Guardian PR discoverability. Hub: [`phase_68_73`](docs/plans/phase_68_73_spa_workspace_roadmap.plan.md) · operator index: [`phase-14`](docs/phase-14-operator-documentation.md) · **Hooking up a real grow?** [`guardian-real-grow-readiness.md`](docs/guardian-real-grow-readiness.md) · nav map: [operator tour §7e–§7j](docs/operator-tour.md#7e-workspaces--sidebar-jobs-tabs-inside-phase-68).
+
+### First session after clone
+
+**Just cloned?** → **[First session after clone](docs/first-session-after-clone.md)** — Docker DB path, login, demo farm, UI tour. Wall-clock varies (first `go run` compile, Docker pulls); goal is **dashboard + live sensors in one sitting**, not a stopwatch.
 
 ### Farmer-ready v1 (Phase 45)
 
@@ -76,6 +80,10 @@ Phases 40–67 (farmer UX + Guardian arcs), Phase 59 (enterprise boundary doc), 
 ### 🔌 What Does "Don't Call Home" Mean?
 
 gr33n will never require a permanent internet connection, forced login, or hidden check-in with third-party servers. Whether you're on an island, a mountaintop, or a mesh-netted greenhouse, gr33n works where you live, without compromise.
+
+### 🌿 Hooking up a real grow?
+
+Demo seed ≠ your room. Before Guardian or automation touches live plants, read **[Guardian & real grows — readiness](docs/guardian-real-grow-readiness.md)** (Confirm gate, ingest checklist, 8B smokes → 70B, bench-first actuators). Guardian **writes** always go propose → **Confirm** — [change requests guide](docs/guardian-change-requests-guide.md).
 
 ---
 
@@ -160,6 +168,8 @@ gr33n/
 ---
 
 ## Quick Start
+
+**Start here:** [First session after clone](docs/first-session-after-clone.md) — ordered steps, verify checklist, common blockers (no fake “30 minute” promise).
 
 **First time after `git clone`:** run **`./scripts/setup-first-clone.sh`** (or **`make first-clone`**) — it pulls Go deps, creates `.env` / `ui/.env` from examples, runs **`scripts/bootstrap-local.sh`** to load schema and `npm ci` in `ui/`. On **Debian/Ubuntu**, **`./scripts/setup-first-clone.sh --install-system-deps`** (`make first-clone-install-deps`) runs **`sudo apt`** first (Postgres 16 + extensions + Node 22; Go still from [go.dev/dl](https://go.dev/dl/)). Otherwise you must have Postgres with TimescaleDB, PostGIS, and pgvector available first (native), *or* use **`./scripts/setup-first-clone.sh --docker`** for the Compose database. Step-by-step: [docs/local-operator-bootstrap.md](docs/local-operator-bootstrap.md). How the database is actually defined (ignore stale ERDs): [docs/database-schema-overview.md](docs/database-schema-overview.md).
 

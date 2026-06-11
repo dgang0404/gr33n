@@ -2,7 +2,7 @@
 
 **Run bootstrap and Make targets from the repository root** (`cd /path/to/gr33n-platform` after `git clone`). Commands like `./scripts/bootstrap-local.sh` and `make dev` apply to **this** repo only — not from your home directory (`~`).
 
-**Quick links:** [Example `.env` (doc copy)](example-env.md) · [Machine setup checklist](machine-setup-checklist.md) · [Operator tour — dashboard narrative](operator-tour.md) · [Tasks-first guide (morning ops, automation, offline queue)](tasks-first-operator-guide.md) · [Operator troubleshooting (401, logs)](operator-troubleshooting.md) · [Sit-in workstream — operator UX + logging + tasks](workstreams/sit-in-operator-experience.md) · [Offline / intranet deployment (LAN, VLAN, local LLM)](offline-or-intranet-deployment.md)
+**Quick links:** [First session after clone](first-session-after-clone.md) · [Example `.env` (doc copy)](example-env.md) · [Machine setup checklist](machine-setup-checklist.md) · [Operator tour — dashboard narrative](operator-tour.md) · [Tasks-first guide (morning ops, automation, offline queue)](tasks-first-operator-guide.md) · [Operator troubleshooting (401, logs)](operator-troubleshooting.md) · [Sit-in workstream — operator UX + logging + tasks](workstreams/sit-in-operator-experience.md) · [Offline / intranet deployment (LAN, VLAN, local LLM)](offline-or-intranet-deployment.md)
 
 Single happy path for standing up **Postgres → API → dashboard → optional Insert Commons receiver → optional Pi / MQTT bridge**, with explicit env templates and pointers to federation and audit docs. For farm template behavior (blank vs starter pack), see [`plans/phase_15_farm_onboarding.plan.md`](plans/phase_15_farm_onboarding.plan.md).
 
@@ -187,6 +187,8 @@ make restart-local-serve    # API + UI (or: make dev-auth-test in one terminal)
 With **AI_ENABLED** and Ollama running, grounded chat includes the three seed alerts in the live snapshot. **Change requests** use proposal cards + **Confirm** (`POST /v1/chat/confirm`); pending items also appear in the drawer **Pending** tab and **`/guardian/requests`**. Audit rows: `guardian_tool_executed`. See [operator tour §6](operator-tour.md#6-farm-guardian-change-requests-with-your-ok) and [farm-guardian-architecture §8](farm-guardian-architecture.md#8-operator-expectations-at-phase-30-ship).
 
 **Hardware expectations:** Guardian chat is GPU/LLM-bound on weak laptops — see [recommended-hardware-and-sizing.md](recommended-hardware-and-sizing.md) (dev vs production profiles, Lite mode without GPU).
+
+**Real grow (live plants):** do not skip **[guardian-real-grow-readiness.md](guardian-real-grow-readiness.md)** — ingest checklist, Confirm vs automation, bench actuators first, Phase 82/83 bootstrap when shipped.
 
 If your DB has been used for smoke tests for weeks, you may see hundreds of thousands of stale automation alerts and extra test farms — reset with **`make dev-stack-fresh`** for a clean demo farm.
 
