@@ -43,7 +43,7 @@ async function loadRecent() {
   try {
     const r = await api.get(`/farms/${farmId}/guardian-memory/recent`, {
       params: { route },
-      validateStatus: (s) => s === 200 || s === 204,
+      validateStatus: (s) => s === 200 || s === 204 || s === 404,
     })
     recent.value = r.status === 200 ? r.data : null
   } catch {

@@ -186,7 +186,7 @@ export function computeFarmMorningSnapshot(params) {
         ? `${zonesWithPlan} of ${zones.length} zones planned`
         : `${zones.length} zone${zones.length === 1 ? '' : 's'} — no plans yet`,
       tone: zonesWithPlan ? 'ok' : 'muted',
-      to: feedWaterRoute('daily'),
+      to: feedWaterRoute(zones),
     })
   }
 
@@ -197,7 +197,7 @@ export function computeFarmMorningSnapshot(params) {
       label: 'Queued commands',
       value: String(queueDepth),
       tone: 'warn',
-      to: feedWaterRoute('daily'),
+      to: feedWaterRoute(zones),
     })
   }
 

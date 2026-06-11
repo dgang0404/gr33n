@@ -38,9 +38,10 @@ describe('Phase 43 WS7 / OC-43 — operations hub closure', () => {
     const grow = buildNavGroups().find((g) => g.label === 'Grow & operate')
     expect(grow).toBeTruthy()
     const paths = grow.items.map((i) => i.to)
-    expect(paths).toContain('/feed-water')
+    expect(paths).toContain('/zones')
     expect(paths).toContain('/money')
-    expect(paths).toContain('/hardware')
+    expect(paths).not.toContain('/feed-water')
+    expect(paths).not.toContain('/hardware')
   })
 
   it('supplies hub helpers surface low-stock rows', () => {

@@ -22,8 +22,8 @@
     <EmptyStateHint
       v-else-if="!cycles.length"
       reason="no_data"
-      message="No crop cycles yet — start a grow from Zones → Strains or a zone Overview tab."
-      action-label="Open Strains"
+      message="No crop cycles yet — start a grow from Zones → Plants & strains or a zone Overview tab."
+      action-label="Plants & strains"
       :action-to="{ path: '/zones', query: { tab: 'strains' } }"
     />
     <div v-else class="space-y-2">

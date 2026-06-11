@@ -18,10 +18,7 @@ export const NEED_META = {
     shortLabel: 'Water',
     icon: '💧',
     description: 'Feeding plan, irrigation pumps, EC/pH, soil moisture.',
-    manageLinks: [
-      { to: '/feeding', label: 'Feed & water hub' },
-      { to: '/fertigation', label: 'Advanced feeding (technical)' },
-    ],
+    manageLinks: [],
   },
   [PLANT_NEEDS.light]: {
     id: PLANT_NEEDS.light,

@@ -12,48 +12,21 @@ export const WORKSPACES = {
     label: 'Zones',
     icon: '🗂️',
     route: '/zones',
-    subtitle: 'Every room — grows, sensors, controls, and lighting',
+    subtitle: 'My zones, farm-wide hardware, and plant strains',
     tabs: [
-      { id: 'rooms', label: 'Rooms' },
-      { id: 'fleet', label: 'Fleet' },
-      { id: 'strains', label: 'Strains' },
+      { id: 'rooms', label: 'My zones' },
+      { id: 'fleet', label: 'Hardware & devices' },
+      { id: 'strains', label: 'Plants & strains' },
     ],
     absorbs: {
       '/sensors': { tab: 'fleet', fleet: 'sensors' },
       '/actuators': { tab: 'fleet', fleet: 'controls' },
       '/lighting': { tab: 'fleet', fleet: 'lighting' },
       '/plants': { tab: 'strains' },
-    },
-  },
-  hardware: {
-    label: 'Hardware',
-    icon: '🔌',
-    route: '/hardware',
-    subtitle: 'Pi devices, GPIO wiring, and relay channels',
-    tabs: [
-      { id: 'board', label: 'GPIO board' },
-      { id: 'devices', label: 'Pi devices' },
-      { id: 'reference', label: 'Wiring guide' },
-    ],
-    absorbs: {
-      '/pi-setup': { tab: 'reference' },
-    },
-  },
-  feedwater: {
-    label: 'Feed & Water',
-    icon: '💧',
-    route: '/feed-water',
-    subtitle: 'Daily watering, programs, nutrients, and advanced fertigation',
-    tabs: [
-      { id: 'daily', label: 'Daily' },
-      { id: 'programs', label: 'Programs & tanks' },
-      { id: 'nutrients', label: 'Nutrients & mix' },
-      { id: 'advanced', label: 'Advanced' },
-    ],
-    absorbs: {
-      '/feeding': { tab: 'daily' },
-      '/operations/feeding': { tab: 'programs' },
-      '/fertigation': { tab: 'advanced' },
+      '/feeding': { zoneTab: 'water' },
+      '/operations/feeding': { zoneTab: 'water' },
+      '/fertigation': { zoneTab: 'water' },
+      '/pi-setup': { tab: 'fleet', fleet: 'sensors' },
     },
   },
   money: {
@@ -64,14 +37,15 @@ export const WORKSPACES = {
     tabs: [
       { id: 'summary', label: 'This month' },
       { id: 'ledger', label: 'Ledger' },
-      { id: 'supplies', label: 'Supplies & costs' },
+      { id: 'supplies', label: 'Supplies on hand' },
+      { id: 'inventory', label: 'Inventory & recipes' },
       { id: 'grows', label: 'Grows' },
     ],
     absorbs: {
       '/operations/money': { tab: 'summary' },
       '/costs': { tab: 'ledger' },
       '/operations/supplies': { tab: 'supplies' },
-      '/inventory': { tab: 'supplies' },
+      '/inventory': { tab: 'inventory' },
     },
   },
   help: {
@@ -108,44 +82,79 @@ export const WORKSPACES = {
   },
 }
 
-/** Fleet sub-views inside Zones → Fleet tab (Phase 69 will deepen). */
+/** Hardware sub-views inside Zones → Hardware & devices tab. */
 export const FLEET_SUB_TABS = [
   { id: 'sensors', label: 'Sensors' },
   { id: 'controls', label: 'Controls' },
   { id: 'lighting', label: 'Lighting' },
 ]
 
-/** Cross-workspace jump targets (Phase 68 WS5). */
+/** Cross-workspace jump targets (Phase 68 WS5, Phase 78 zone-first). */
 export const WORKSPACE_RELATIONS = {
-  '/zones': ['/hardware', '/feed-water', '/money', '/comfort-targets'],
-  '/hardware': ['/zones', '/feed-water'],
-  '/feed-water': ['/zones', '/hardware', '/money'],
-  '/money': ['/feed-water', '/zones', '/operator-guide'],
-  '/comfort-targets': ['/zones', '/feed-water'],
+  '/zones': ['/money', '/comfort-targets', '/operator-guide'],
+  '/money': ['/zones', '/operator-guide'],
+  '/comfort-targets': ['/zones'],
   '/operator-guide': ['/zones', '/money'],
+  '/chat': ['/zones', '/operator-guide'],
 }
 
 const LEGACY_ABSORB_INDEX = buildLegacyAbsorbIndex()
 
 function buildLegacyAbsorbIndex() {
-  /** @type {Record<string, { workspaceId: string, route: string, tab: string, fleet?: string }>} */
+  /** @type {Record<string, { workspaceId: string, route: string, tab: string, fleet?: string, zoneTab?: string }>} */
   const index = {}
   for (const [workspaceId, ws] of Object.entries(WORKSPACES)) {
     for (const [legacyPath, target] of Object.entries(ws.absorbs ?? {})) {
       index[legacyPath] = {
         workspaceId,
         route: ws.route,
-        tab: target.tab,
+        tab: target.tab ?? ws.tabs[0]?.id ?? 'rooms',
         fleet: target.fleet,
+        zoneTab: target.zoneTab,
       }
     }
   }
   return index
 }
 
+function parseZoneIdFromQuery(query) {
+  const raw = query?.zone_id
+  if (raw == null) return ''
+  return String(Array.isArray(raw) ? raw[0] : raw).trim()
+}
+
+/**
+ * Phase 78 — retired workspace routes → zones hub or zone detail.
+ * @param {import('vue-router').RouteLocationNormalized} to
+ */
+export function redirectSunsetWorkspace(to) {
+  const zoneId = parseZoneIdFromQuery(to.query)
+  const query = { ...to.query }
+  delete query.zone_id
+
+  if (zoneId) {
+    const tab = to.path === '/feed-water' ? 'water' : 'overview'
+    return { path: `/zones/${zoneId}`, query: { ...query, tab } }
+  }
+
+  if (to.path === '/hardware') {
+    return { path: '/zones', query: { ...query, tab: 'fleet', fleet: 'sensors' } }
+  }
+
+  return { path: '/zones', query }
+}
+
+/** @returns {Array<{ path: string, redirect: (to: import('vue-router').RouteLocationNormalized) => object }>} */
+export function buildSunsetWorkspaceRedirects() {
+  return [
+    { path: '/feed-water', redirect: redirectSunsetWorkspace },
+    { path: '/hardware', redirect: redirectSunsetWorkspace },
+  ]
+}
+
 /**
  * @param {string | null | undefined} path
- * @returns {{ workspaceId: string, route: string, tab: string, fleet?: string } | null}
+ * @returns {{ workspaceId: string, route: string, tab: string, fleet?: string, zoneTab?: string } | null}
  */
 export function workspaceFor(path) {
   if (!path) return null
@@ -267,6 +276,14 @@ export function buildLegacyRedirectRoutes() {
   return Object.entries(LEGACY_ABSORB_INDEX).map(([legacyPath, hit]) => ({
     path: legacyPath,
     redirect: (to) => {
+      const zoneId = parseZoneIdFromQuery(to.query)
+
+      if (hit.zoneTab && zoneId) {
+        const query = { ...to.query }
+        delete query.zone_id
+        return { path: `/zones/${zoneId}`, query: { ...query, tab: hit.zoneTab } }
+      }
+
       const query = { ...to.query, tab: hit.tab }
       if (hit.fleet) query.fleet = hit.fleet
       return { path: hit.route, query }

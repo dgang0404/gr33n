@@ -41,6 +41,16 @@ export function wiringIsEmpty(wiring) {
     && wiring.device_id == null
 }
 
+/** One-line GPIO / relay label for a sensor or actuator entity. */
+export function formatEntityHardwareLabel(entity) {
+  if (!entity) return ''
+  const fromWiring = formatWiringLabel(resolveWiring(entity))
+  if (fromWiring) return fromWiring
+  const hi = entity.hardware_identifier
+  if (hi != null && hi !== '') return `Relay ch ${hi}`
+  return ''
+}
+
 function intVal(v) {
   if (v == null || v === '') return null
   const n = Number(v)

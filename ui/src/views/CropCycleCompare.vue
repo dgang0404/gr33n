@@ -11,7 +11,7 @@
   <div class="p-6 max-w-7xl">
     <div class="flex items-center justify-between mb-4">
       <div class="flex items-center gap-2">
-        <router-link v-nav-hint="'/zones'" :to="{ path: '/zones', query: { tab: 'strains' } }" class="text-xs text-zinc-400 hover:text-zinc-200">← Strains</router-link>
+        <router-link v-nav-hint="'/zones'" :to="{ path: '/zones', query: { tab: 'strains' } }" class="text-xs text-zinc-400 hover:text-zinc-200">← Plants & strains</router-link>
         <h1 class="text-xl font-semibold text-white ml-3">
           Compare crop cycles
           <HelpTip position="bottom">

@@ -5,7 +5,7 @@
         v-for="sub in opsSubTabs"
         :key="sub.id"
         type="button"
-        class="px-3 py-1.5 text-xs rounded-lg border transition-colors"
+        class="px-3 py-1.5 text-xs rounded-lg border transition-colors inline-flex items-center gap-1"
         :class="opsView === sub.id
           ? 'border-green-700/60 bg-green-950/40 text-green-400'
           : 'border-zinc-800 text-zinc-500 hover:text-zinc-300'"
@@ -13,6 +13,7 @@
         @click="selectOps(sub.id)"
       >
         {{ sub.icon }} {{ sub.label }}
+        <ConceptHelpTip :concept-id="sub.conceptId" position="top" />
       </button>
     </div>
 
@@ -35,6 +36,7 @@ import { computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import Alerts from '../views/Alerts.vue'
 import Tasks from '../views/Tasks.vue'
+import ConceptHelpTip from './ConceptHelpTip.vue'
 
 const props = defineProps({
   zoneId: { type: Number, required: true },
@@ -44,8 +46,8 @@ const route = useRoute()
 const router = useRouter()
 
 const opsSubTabs = [
-  { id: 'alerts', icon: '🔔', label: 'Alerts' },
-  { id: 'tasks', icon: '✅', label: 'Tasks' },
+  { id: 'alerts', icon: '🔔', label: 'Alerts', conceptId: 'alert' },
+  { id: 'tasks', icon: '✅', label: 'Tasks', conceptId: 'task' },
 ]
 
 const opsView = computed(() => {

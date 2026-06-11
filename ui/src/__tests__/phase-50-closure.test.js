@@ -27,7 +27,8 @@ describe('Phase 50 WS6 / OC-50 — hardware wiring closure', () => {
     const badge = readFileSync(join(process.cwd(), 'src/components/HardwareWiringBadge.vue'), 'utf8')
     expect(view).toContain('HardwareWiringBadge')
     expect(badge).toContain('Not wired yet')
-    expect(badge).toContain("v-nav-hint=\"'/pi-setup'\"")
+    expect(badge).toContain('hintPath')
+    expect(badge).toContain("default: '/zones'")
   })
 
   it('Sensor detail includes wiring panel with PATCH and conflict preview', () => {
@@ -102,7 +103,7 @@ describe('Phase 50 WS6 / OC-50 — hardware wiring closure', () => {
     expect(hints).toContain("actionTo: '/comfort-targets'")
   })
 
-  it('pi-sequent-hat-setup guide and /pi-setup redirect to hardware workspace exist', () => {
+  it('pi-sequent-hat-setup guide and /pi-setup redirect to zones fleet exist', () => {
     const doc = readFileSync(join(repoDocs, 'pi-sequent-hat-setup.md'), 'utf8')
     expect(doc).toContain('Sequent Microsystems')
     expect(doc).toContain('DIP switch')
@@ -110,8 +111,9 @@ describe('Phase 50 WS6 / OC-50 — hardware wiring closure', () => {
     const nav = readFileSync(join(process.cwd(), 'src/lib/navGroups.js'), 'utf8')
     const workspaces = readFileSync(join(process.cwd(), 'src/lib/workspaces.js'), 'utf8')
     expect(router).toContain('buildLegacyRedirectRoutes')
-    expect(workspaces).toContain("'/pi-setup': { tab: 'reference' }")
-    expect(nav).toContain("to: '/hardware'")
+    expect(workspaces).toContain("'/pi-setup': { tab: 'fleet', fleet: 'sensors' }")
+    expect(nav).toContain("to: '/zones'")
+    expect(nav).not.toContain("to: '/hardware'")
   })
 
   it('architecture §7.0o documents Phase 50 wiring shipped', () => {

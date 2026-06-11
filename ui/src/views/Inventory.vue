@@ -375,6 +375,13 @@ async function loadRecipesList() {
   recipes.value = await store.loadRecipes(fid)
 }
 
+function applyInventoryTabFromRoute() {
+  const inv = route.query.inv
+  if (inv === 'recipes' || route.query.tab === 'recipes') activeTab.value = 'recipes'
+  else if (inv === 'batches' || route.query.tab === 'batches' || route.query.batch_id) activeTab.value = 'batches'
+  else if (inv === 'definitions' || route.query.tab === 'definitions') activeTab.value = 'definitions'
+}
+
 onMounted(async () => {
   try {
     const fid = farmContext.farmId
@@ -385,8 +392,7 @@ onMounted(async () => {
     ])
     inputs.value  = i
     batches.value = b
-    if (route.query.tab === 'batches' || route.query.batch_id) activeTab.value = 'batches'
-    else if (route.query.tab === 'recipes') activeTab.value = 'recipes'
+    applyInventoryTabFromRoute()
     await loadRecipesList()
     const counts = {}
     for (const me of mixEvents) {
@@ -401,6 +407,10 @@ onMounted(async () => {
   } finally {
     loading.value = false
   }
+})
+
+watch(() => [route.query.inv, route.query.tab, route.query.batch_id], () => {
+  applyInventoryTabFromRoute()
 })
 
 watch(() => activeTab.value, (k) => {

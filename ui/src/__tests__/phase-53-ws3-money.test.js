@@ -83,6 +83,6 @@ describe('Phase 53 WS3 — money closure', () => {
 
   it('navRelations links money hub to supplies and costs', () => {
     expect(relatedTo('/operations/money')).toContain('/money')
-    expect(relatedTo('/operations/money')).toContain('/feed-water')
+    expect(relatedTo('/operations/money')).toContain('/zones')
   })
 })

@@ -2,18 +2,21 @@
   <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-4" data-test="zone-automation-panel">
     <div class="flex items-center justify-between gap-2 mb-3 flex-wrap">
       <div>
-        <h3 class="text-sm font-semibold text-white">What runs when</h3>
+        <h3 class="text-sm font-semibold text-white flex items-center gap-1">
+          What runs when
+          <ConceptHelpTip concept-id="schedule" />
+        </h3>
         <p class="text-zinc-600 text-xs mt-0.5">Automations and schedules for this zone.</p>
       </div>
       <div class="flex gap-3 text-xs">
         <router-link
           v-nav-hint="'/comfort-targets'"
-          :to="{ path: '/comfort-targets', query: { zone_id: String(zoneId), tab: 'automations' } }"
+          :to="comfortAutomationsRoute"
           class="text-zinc-500 hover:text-green-400"
         >Automations →</router-link>
         <router-link
           v-nav-hint="'/comfort-targets'"
-          :to="{ path: '/comfort-targets', query: { zone_id: String(zoneId), tab: 'schedules' } }"
+          :to="comfortSchedulesRoute"
           class="text-zinc-500 hover:text-green-400"
         >What runs when →</router-link>
       </div>
@@ -128,6 +131,8 @@ import {
   greenhouseRuleBadges,
   formatRuleLastFired,
 } from '../lib/zoneAutomationContext.js'
+import ConceptHelpTip from './ConceptHelpTip.vue'
+import { comfortAdvancedSchedulesRoute, comfortTabRoute } from '../lib/workspaceRoutes.js'
 
 const props = defineProps({
   need: { type: String, required: true },
@@ -147,6 +152,13 @@ const togglingId = ref(null)
 const scheduleTogglingId = ref(null)
 
 const needLabel = computed(() => NEED_META[props.need]?.shortLabel?.toLowerCase() || 'this need')
+
+const comfortAutomationsRoute = computed(() =>
+  comfortTabRoute('automations', { zoneId: props.zoneId }),
+)
+const comfortSchedulesRoute = computed(() =>
+  comfortAdvancedSchedulesRoute({ zoneId: props.zoneId }),
+)
 
 const automation = computed(() => zoneAutomationForNeed(props.need, {
   zoneId: props.zoneId,

@@ -262,10 +262,10 @@
           <p v-if="p.description" class="text-zinc-500 text-xs">{{ p.description }}</p>
           <div class="text-zinc-600 text-xs space-y-0.5 border-t border-zinc-800/80 pt-2 mt-2">
             <p v-if="p.reservoir_id"><span class="text-zinc-500">Reservoir:</span> <a href="#" @click.prevent="selectTab('reservoirs')" class="text-green-600 hover:text-green-400">{{ reservoirName(p.reservoir_id) }}</a></p>
-            <p v-if="p.schedule_id"><span class="text-zinc-500">Schedule:</span> <router-link v-nav-hint="'/schedules'" to="/schedules" class="text-green-600 hover:text-green-400">{{ scheduleName(p.schedule_id) }}</router-link></p>
+            <p v-if="p.schedule_id"><span class="text-zinc-500">Schedule:</span> <router-link v-nav-hint="'/comfort-targets'" :to="comfortScheduleRoute" class="text-green-600 hover:text-green-400">{{ scheduleName(p.schedule_id) }}</router-link></p>
             <p v-if="p.application_recipe_id">
               <span class="text-zinc-500">Recipe:</span>
-              <router-link v-nav-hint="'/operations/supplies'" :to="{ path: '/inventory', query: { tab: 'recipes' } }" class="text-green-600 hover:text-green-400">{{ recipeName(p.application_recipe_id) }}</router-link>
+              <router-link v-nav-hint="'/money'" :to="recipeInventoryRoute" class="text-green-600 hover:text-green-400">{{ recipeName(p.application_recipe_id) }}</router-link>
             </p>
           </div>
 
@@ -338,7 +338,7 @@
             class="px-3 py-1.5 bg-green-700 hover:bg-green-600 text-white text-xs rounded-lg">
             {{ showMixForm ? 'Cancel' : '+ Log Mix' }}
           </button>
-          <router-link v-nav-hint="'/operations/supplies'" to="/inventory" class="text-xs text-green-600 hover:text-green-400">Inventory batches &rarr;</router-link>
+          <router-link v-nav-hint="'/money'" :to="inventoryRoute" class="text-xs text-green-600 hover:text-green-400">Inventory batches &rarr;</router-link>
         </div>
       </div>
 
@@ -413,7 +413,7 @@
             <ul v-else-if="mixingComponentsCache[m.id]?.length" class="text-xs text-zinc-400 space-y-1">
               <li v-for="c in mixingComponentsCache[m.id]" :key="c.id">
                 {{ inputName(c.input_definition_id) }}
-                <router-link v-if="c.input_batch_id" v-nav-hint="'/operations/supplies'" :to="{ path: '/inventory', query: { tab: 'batches' } }" class="text-green-600 hover:text-green-400"> · batch #{{ c.input_batch_id }}</router-link>
+                <router-link v-if="c.input_batch_id" v-nav-hint="'/money'" :to="inventoryBatchesRoute" class="text-green-600 hover:text-green-400"> · batch #{{ c.input_batch_id }}</router-link>
                 · {{ c.volume_added_ml }} mL
                 <span v-if="c.dilution_ratio" class="text-zinc-600"> ({{ c.dilution_ratio }})</span>
               </li>
@@ -616,6 +616,12 @@ import {
   parseZoneIdQuery,
   programAppliesToZone,
 } from '../lib/zoneContext.js'
+import { comfortTabRoute, moneyTabRoute } from '../lib/workspaceRoutes.js'
+
+const comfortScheduleRoute = comfortTabRoute('schedules')
+const recipeInventoryRoute = moneyTabRoute('inventory', { inv: 'recipes' })
+const inventoryRoute = moneyTabRoute('inventory', { inv: 'batches' })
+const inventoryBatchesRoute = moneyTabRoute('inventory', { inv: 'batches' })
 
 const route = useRoute()
 const router = useRouter()

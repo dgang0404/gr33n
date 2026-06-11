@@ -23,7 +23,6 @@ describe('Phase 53 WS2 — supplies stock closure', () => {
 
   it('navRelations links supplies to zones and feeding', () => {
     expect(relatedTo('/operations/supplies')).toContain('/zones')
-    expect(relatedTo('/operations/supplies')).toContain('/feed-water')
   })
 
   it('phase-53 ws2 test file exists', () => {

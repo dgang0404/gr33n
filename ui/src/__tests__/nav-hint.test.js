@@ -3,16 +3,16 @@ import { setActivePinia, createPinia } from 'pinia'
 import { resolveHintPath } from '../directives/navHint.js'
 import { useNavHighlightStore } from '../stores/navHighlight.js'
 
-describe('Phase 49 WS3 — nav-hint path resolution', () => {
-  it('resolves a string path and maps legacy routes to workspaces', () => {
-    expect(resolveHintPath('/feeding')).toBe('/feed-water')
-    expect(resolveHintPath('/fertigation?tab=programs')).toBe('/feed-water')
+describe('Phase 49 / 78 WS3 — nav-hint path resolution', () => {
+  it('resolves a string path and maps legacy routes to zones', () => {
+    expect(resolveHintPath('/feeding')).toBe('/zones')
+    expect(resolveHintPath('/fertigation?tab=programs')).toBe('/zones')
   })
 
   it('resolves a router object path and maps to workspace sidebar routes', () => {
-    expect(resolveHintPath({ path: '/feeding', query: { zone_id: '2' } })).toBe('/feed-water')
+    expect(resolveHintPath({ path: '/feeding', query: { zone_id: '2' } })).toBe('/zones')
     expect(resolveHintPath({ path: '/operations/feeding', query: { tab: 'programs' } })).toBe(
-      '/feed-water',
+      '/zones',
     )
   })
 

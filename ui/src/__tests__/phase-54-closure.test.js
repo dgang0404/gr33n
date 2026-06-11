@@ -67,8 +67,8 @@ describe('Phase 54 WS4 / OC-54 — connection nav closure', () => {
   it('navRelations expansion links tasks, alerts, fertigation, and grow paths', () => {
     expect(relatedTo('/tasks')).toContain('/zones')
     expect(relatedTo('/alerts')).toContain('/zones')
-    expect(relatedTo('/fertigation')).toContain('/feed-water')
     expect(relatedTo('/fertigation')).toContain('/zones')
+    expect(relatedTo('/fertigation')).not.toContain('/feed-water')
     expect(relatedTo('/operations/money')).toContain('/money')
     expect(relatedTo('/plants')).toContain('/zones')
   })

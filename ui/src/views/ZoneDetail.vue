@@ -42,6 +42,17 @@
         </button>
       </div>
 
+      <p
+        v-if="activeTab !== 'overview' && (sensors.length || actuators.length)"
+        class="text-xs text-zinc-500"
+      >
+        <a href="#zone-hardware" class="text-green-500 hover:text-green-400">
+          🔌 {{ sensors.length }} sensor{{ sensors.length === 1 ? '' : 's' }},
+          {{ actuators.length }} control{{ actuators.length === 1 ? '' : 's' }}
+          — jump to GPIO &amp; wiring ↓
+        </a>
+      </p>
+
       <ZoneNeedSection
         v-if="activeTab === PLANT_NEEDS.water"
         :need="PLANT_NEEDS.water"
@@ -177,6 +188,7 @@
           :zone-id="zoneId"
           :zone-name="zone.name"
           :sensors="sensors"
+          :actuators="actuators"
           :alerts="store.alerts"
           @refresh="refreshZoneAlerts"
         />
@@ -255,6 +267,17 @@
         </div>
 
       </template>
+
+      <div id="zone-hardware" class="scroll-mt-6">
+        <ZoneHardwarePanel
+          :zone-id="zoneId"
+          :sensors="sensors"
+          :actuators="actuators"
+          :toggling="toggling"
+          @toggle-actuator="toggleActuator"
+          @hardware-updated="refreshHardware"
+        />
+      </div>
     </template>
 
     <StartGrowWizard
@@ -307,6 +330,7 @@ import GuardianStarterChips from '../components/GuardianStarterChips.vue'
 import ZoneNeedSection from '../components/ZoneNeedSection.vue'
 import ZoneTodayStrip from '../components/ZoneTodayStrip.vue'
 import ZoneAlertsPanel from '../components/ZoneAlertsPanel.vue'
+import ZoneHardwarePanel from '../components/ZoneHardwarePanel.vue'
 import ZoneTasksPanel from '../components/ZoneTasksPanel.vue'
 import ZoneAdvancedHint from '../components/ZoneAdvancedHint.vue'
 import ZoneCurrentGrowStrip from '../components/ZoneCurrentGrowStrip.vue'

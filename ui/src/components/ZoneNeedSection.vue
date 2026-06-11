@@ -30,7 +30,9 @@
       <EmptyStateHint
         v-if="!needSensors.length"
         reason="no_telemetry"
-        :message="`No ${meta.shortLabel.toLowerCase()} sensors in this zone yet.`"
+        :message="needSensorsEmptyMessage"
+        :action-label="otherSensorsInZone ? 'GPIO & wiring below' : undefined"
+        :action-to="otherSensorsInZone ? `#zone-hardware` : undefined"
         compact
       />
       <div v-else class="space-y-3">
@@ -40,7 +42,15 @@
           class="bg-zinc-950 border border-zinc-800 rounded-lg p-3"
           :data-test="`zone-sensor-${s.id}`"
         >
-          <SensorTile :sensor="s" :reading="store.readings[s.id]" />
+          <div class="flex items-start justify-between gap-2 flex-wrap mb-1">
+            <SensorTile :sensor="s" :reading="store.readings[s.id]" class="flex-1 min-w-0" />
+          </div>
+          <HardwareWiringBadge
+            :entity="s"
+            show-empty
+            :hint-path="zoneHintPath"
+            class="mt-1"
+          />
           <button
             type="button"
             class="mt-2 text-[10px] text-zinc-500 hover:text-zinc-300"
@@ -143,6 +153,12 @@
             <div class="min-w-0">
               <p class="text-white text-sm font-medium truncate">{{ a.name }}</p>
               <p class="text-zinc-500 text-xs capitalize">{{ a.actuator_type }}</p>
+              <HardwareWiringBadge
+                :entity="a"
+                show-empty
+                :hint-path="zoneHintPath"
+                class="mt-1"
+              />
             </div>
             <button
               type="button"
@@ -203,6 +219,7 @@ import ZoneNeedConnectionCard from './ZoneNeedConnectionCard.vue'
 import ActuatorPulseControl from './ActuatorPulseControl.vue'
 import ActuatorWiringPanel from './ActuatorWiringPanel.vue'
 import HardwareWiringPanel from './HardwareWiringPanel.vue'
+import HardwareWiringBadge from './HardwareWiringBadge.vue'
 import ZoneGreenhouseTab from './ZoneGreenhouseTab.vue'
 import ZoneComfortTargets from './ZoneComfortTargets.vue'
 import ZoneAutomationPanel from './ZoneAutomationPanel.vue'
@@ -211,6 +228,17 @@ import ZoneLightingEditor from './ZoneLightingEditor.vue'
 import EmptyStateHint from './EmptyStateHint.vue'
 import ZoneConnectionPipeline from './ZoneConnectionPipeline.vue'
 import { scheduleRunsLabel } from '../lib/cronHumanize.js'
+import { formatEntityHardwareLabel } from '../lib/hardwareWiring.js'
+import {
+  comfortTabRoute,
+  zoneWaterPlanRoute,
+  zonesWorkspaceTabRoute,
+} from '../lib/workspaceRoutes.js'
+
+const hardwareFleetLink = (fleet) => ({
+  to: zonesWorkspaceTabRoute('fleet', { fleet }),
+  label: 'Farm hardware',
+})
 
 const props = defineProps({
   need: { type: String, required: true },
@@ -267,40 +295,36 @@ const farmTimezone = computed(() => store.farm?.timezone || 'America/New_York')
 
 const meta = computed(() => NEED_META[props.need] || NEED_META[PLANT_NEEDS.air])
 
+const zoneHintPath = computed(() => `/zones/${props.zoneId}`)
+
+const otherSensorsInZone = computed(() =>
+  props.sensors.some((s) => sensorPlantNeed(s.sensor_type) !== props.need),
+)
+
+const needSensorsEmptyMessage = computed(() => {
+  const label = meta.value.shortLabel.toLowerCase()
+  if (otherSensorsInZone.value) {
+    return `No ${label} sensors on this tab — other sensors in this zone are listed under Sensors & controls below.`
+  }
+  return `No ${label} sensors in this zone yet.`
+})
+
 const sectionManageLinks = computed(() => {
   if (props.need === PLANT_NEEDS.water) {
-    return [
-      {
-        to: { path: '/feeding', query: { zone_id: String(props.zoneId) } },
-        label: 'Feed & water hub',
-      },
-      {
-        to: { path: '/fertigation', query: { tab: 'programs', zone_id: String(props.zoneId) } },
-        label: 'Advanced feeding',
-      },
-    ]
+    return [hardwareFleetLink('controls')]
   }
   if (props.need === PLANT_NEEDS.light) {
-    return [{
-      to: { path: '/zones', query: { tab: 'fleet', fleet: 'lighting' } },
-      label: 'All zones (Fleet)',
-    }]
+    return [hardwareFleetLink('lighting')]
   }
   if (props.need === PLANT_NEEDS.air) {
     return [
       ...(meta.value.manageLinks || []),
-      {
-        to: { path: '/zones', query: { tab: 'fleet', fleet: 'sensors' } },
-        label: 'All zones (Fleet)',
-      },
+      hardwareFleetLink('sensors'),
     ]
   }
   return [
     ...(meta.value.manageLinks || []),
-    {
-      to: { path: '/zones', query: { tab: 'fleet', fleet: props.need === PLANT_NEEDS.water ? 'controls' : 'sensors' } },
-      label: 'All zones (Fleet)',
-    },
+    hardwareFleetLink(props.need === PLANT_NEEDS.water ? 'controls' : 'sensors'),
   ].filter((link, i, arr) => arr.findIndex((x) => JSON.stringify(x.to) === JSON.stringify(link.to)) === i)
 })
 
@@ -367,7 +391,7 @@ const connectionCards = computed(() => {
     cards.unshift({
       title: props.activeProgram.name,
       subtitle: 'Feeding plan',
-      manageTo: { path: '/feeding', query: { zone_id: String(props.zoneId) } },
+      manageTo: zoneWaterPlanRoute(props.zoneId),
       readingLabel: needSensors.value.length ? formatReading(needSensors.value[0]) : 'Add EC/pH sensor',
       targetLabel: props.activeProgram.run_duration_seconds
         ? `Pump on ${props.activeProgram.run_duration_seconds}s per run`
@@ -376,6 +400,7 @@ const connectionCards = computed(() => {
         ? `${scheduleRunsLabel(sched)}${sched.is_active ? '' : ' · paused'}`
         : 'No feed timing linked',
       controlLabel: pump ? `${pump.name} — ${pump.current_state_text || 'offline'}` : 'Assign a pump actuator',
+      controlHardwareLabel: pump ? formatEntityHardwareLabel(pump) : '',
       controlOnline: pump?.current_state_text === 'online',
       lastEventLabel: pump ? lastEventForActuator(pump.id) : '',
     })
@@ -389,7 +414,7 @@ const connectionCards = computed(() => {
       cards.push({
         title: lp.name,
         subtitle: 'Lighting program',
-        manageTo: { path: '/zones', query: { tab: 'fleet', fleet: 'lighting' } },
+        manageTo: zonesWorkspaceTabRoute('fleet', { fleet: 'lighting' }),
         readingLabel: needSensors.value[0] ? formatReading(needSensors.value[0]) : 'Optional lux/PAR sensor',
         targetLabel: `${lp.on_hours ?? '—'}h on / ${lp.off_hours ?? '—'}h off`,
         automationLabel: lp.is_active ? 'Active — ON/OFF schedules fire automatically' : 'Inactive',
@@ -416,7 +441,7 @@ const connectionCards = computed(() => {
       cards.push({
         title: r.name,
         subtitle: 'Automation',
-        manageTo: '/comfort-targets?tab=automations',
+        manageTo: comfortTabRoute('automations'),
         readingLabel: needSensors.value[0] ? formatReading(needSensors.value[0]) : 'Add temp/humidity/lux sensor',
         targetLabel: 'Uses comfort targets when configured',
         automationLabel: r.is_active ? 'Active' : 'Inactive',

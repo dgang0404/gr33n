@@ -39,6 +39,7 @@
           </div>
           <p class="text-sm text-zinc-200 font-medium truncate">{{ a.subject_rendered || 'Alert' }}</p>
           <p class="text-xs text-zinc-500 mt-0.5 line-clamp-2">{{ a.message_text_rendered }}</p>
+          <AlertHardwareLine :alert="a" :sensors="sensors" :actuators="actuators" />
           <p class="text-[10px] text-zinc-600 mt-1">{{ formatTime(a.created_at) }}</p>
         </div>
         <div class="flex flex-wrap gap-2 shrink-0">
@@ -78,11 +79,13 @@ import { computed, ref } from 'vue'
 import { useFarmStore } from '../stores/farm.js'
 import { filterZoneAlertsForRoom } from '../lib/zoneGrowSummary.js'
 import AskGuardianButton from './AskGuardianButton.vue'
+import AlertHardwareLine from './AlertHardwareLine.vue'
 
 const props = defineProps({
   zoneId: { type: Number, required: true },
   zoneName: { type: String, default: '' },
   sensors: { type: Array, default: () => [] },
+  actuators: { type: Array, default: () => [] },
   alerts: { type: Array, default: () => [] },
   limit: { type: Number, default: 8 },
 })

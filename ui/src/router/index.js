@@ -18,12 +18,10 @@ import CropCycleCompare from '../views/CropCycleCompare.vue'
 import FarmSetupWizard from '../views/FarmSetupWizard.vue'
 import ZoneSetupWizard from '../views/ZoneSetupWizard.vue'
 import DeviceSetupWizard from '../views/DeviceSetupWizard.vue'
-import HardwareWorkspace from '../views/workspaces/HardwareWorkspace.vue'
-import FeedWaterWorkspace from '../views/workspaces/FeedWaterWorkspace.vue'
 import MoneyWorkspace from '../views/workspaces/MoneyWorkspace.vue'
 import ComfortWorkspace from '../views/workspaces/ComfortWorkspace.vue'
 import Login from '../views/Login.vue'
-import { buildLegacyRedirectRoutes, buildZoneOpsRedirectRoutes } from '../lib/workspaces.js'
+import { buildLegacyRedirectRoutes, buildSunsetWorkspaceRedirects, buildZoneOpsRedirectRoutes } from '../lib/workspaces.js'
 
 const routes = [
   { path: '/login',        component: Login,        name: 'login',        meta: { public: true } },
@@ -31,8 +29,7 @@ const routes = [
   { path: '/',             component: Dashboard,    name: 'dashboard' },
   { path: '/zones',        component: ZonesWorkspace, name: 'zones' },
   { path: '/zones/:id',    component: ZoneDetail,   name: 'zone-detail' },
-  { path: '/hardware',     component: HardwareWorkspace, name: 'hardware' },
-  { path: '/feed-water',   component: FeedWaterWorkspace, name: 'feed-water' },
+  ...buildSunsetWorkspaceRedirects(),
   { path: '/money',        component: MoneyWorkspace, name: 'money' },
   { path: '/sensors/:id', component: SensorDetail, name: 'sensor-detail' },
   { path: '/comfort-targets', component: ComfortWorkspace, name: 'comfort-targets' },
@@ -61,6 +58,13 @@ const routes = [
 const router = createRouter({
   history: createWebHistory(),
   routes,
+  scrollBehavior(to, _from, savedPosition) {
+    if (savedPosition) return savedPosition
+    if (to.hash) {
+      return { el: to.hash, behavior: 'smooth', top: 88 }
+    }
+    return { top: 0 }
+  },
 })
 
 router.beforeEach((to) => {

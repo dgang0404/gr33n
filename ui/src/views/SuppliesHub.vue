@@ -113,7 +113,7 @@
       reason="no_data"
       :message="inputs.length ? 'No batches on hand — start one below or use the full editor.' : 'No supply batches yet — add inputs and batches in the full editor, or start from a demo farm.'"
       :action-label="inputs.length ? 'Create first batch' : 'Open full editor'"
-      :action-to="inputs.length ? null : { path: '/inventory', query: { tab: 'batches' } }"
+      :action-to="inputs.length ? null : { path: '/money', query: { tab: 'inventory', inv: 'batches' } }"
       @action="openNewBatch()"
     />
 
@@ -282,7 +282,7 @@
     <footer class="pt-2 border-t border-zinc-800">
       <router-link
         v-nav-hint="'/operations/supplies'"
-        :to="{ path: '/inventory', query: zoneContextId ? { tab: 'definitions', zone_id: String(zoneContextId) } : { tab: 'definitions' } }"
+        :to="{ path: '/money', query: { tab: 'inventory', inv: 'definitions', ...(zoneContextId ? { zone_id: String(zoneContextId) } : {}) } }"
         class="text-xs text-zinc-400 hover:text-green-400"
         data-test="supplies-advanced-footer"
       >
@@ -445,8 +445,12 @@ const logMixLink = computed(() => {
 })
 
 const recipesLink = computed(() => ({
-  path: '/inventory',
-  query: { tab: 'recipes' },
+  path: '/money',
+  query: {
+    tab: 'inventory',
+    inv: 'recipes',
+    ...(zoneContextId.value ? { zone_id: String(zoneContextId.value) } : {}),
+  },
 }))
 
 function zoneName(zoneId) {
@@ -483,7 +487,7 @@ function flashSuccess(msg) {
 }
 
 function openBatchEditor(batchId) {
-  router.push({ path: '/inventory', query: { tab: 'batches', batch_id: String(batchId) } })
+  router.push({ path: '/money', query: { tab: 'inventory', inv: 'batches', batch_id: String(batchId) } })
 }
 
 function startRestock(row) {

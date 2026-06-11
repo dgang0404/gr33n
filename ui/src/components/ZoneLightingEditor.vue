@@ -13,7 +13,7 @@
           v-nav-hint="'/zones'"
           :to="{ path: '/zones', query: { tab: 'fleet', fleet: 'lighting' } }"
           class="text-xs text-zinc-500 hover:text-green-400"
-        >All zones (Fleet) →</router-link>
+        >Farm hardware →</router-link>
       </div>
     </div>
 

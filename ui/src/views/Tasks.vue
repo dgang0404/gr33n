@@ -260,7 +260,7 @@
             {{ task.description }}
           </p>
           <p v-if="task.schedule_id" class="text-[11px] text-zinc-500 mb-1">
-            <router-link v-nav-hint="'/schedules'" to="/schedules" class="text-green-600 hover:text-green-400">{{ scheduleName(task.schedule_id) }}</router-link>
+            <router-link v-nav-hint="'/comfort-targets'" :to="comfortScheduleRoute" class="text-green-600 hover:text-green-400">{{ scheduleName(task.schedule_id) }}</router-link>
           </p>
           <p v-if="task.source_alert_id" class="text-[11px] text-zinc-500 mb-1">
             <router-link v-nav-hint="'/alerts'" to="/alerts" class="text-blue-400 hover:text-blue-300">From alert #{{ task.source_alert_id }}</router-link>
@@ -469,6 +469,9 @@ import EmptyStateHint from '../components/EmptyStateHint.vue'
 import TaskCompleteSheet from '../components/TaskCompleteSheet.vue'
 import { formatConsumptionLine } from '../lib/taskConsumption.js'
 import { buildReviewFeedingPlanPayload, detectMissedFeedSchedule } from '../lib/taskTemplates.js'
+import { comfortTabRoute } from '../lib/workspaceRoutes.js'
+
+const comfortScheduleRoute = comfortTabRoute('schedules')
 
 const props = defineProps({
   embedded: { type: Boolean, default: false },
@@ -519,6 +522,9 @@ const completeNextStatus = ref('completed')
 const nfBatches = ref([])
 const nfInputs = ref([])
 const templateTaskSaving = ref(false)
+
+const filterZone = ref('')
+const filterSchedule = ref('')
 
 const missedFeedSchedule = computed(() => detectMissedFeedSchedule(store.schedules))
 
@@ -790,14 +796,11 @@ async function submitTask() {
   }
 }
 
-const filterZone = ref('')
-
 const zoneContextId = computed(() => {
   if (props.lockZoneId) return props.lockZoneId
   const n = Number(filterZone.value)
   return Number.isFinite(n) && n > 0 ? n : null
 })
-const filterSchedule = ref('')
 
 const COLUMNS = [
   { id: 'scheduled', label: 'Scheduled', icon: '📋',

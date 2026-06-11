@@ -132,7 +132,7 @@ describe('Phase 47 WS5 + Phase 45 WS3 — grow-path farmer vocabulary', () => {
     expect(routes).not.toContain('/setpoints')
 
     const grow = groups.find((g) => g.label === 'Grow & operate')
-    expect(grow.items.some((i) => i.to === '/feed-water' && i.label === 'Feed & water')).toBe(true)
+    expect(grow.items.some((i) => i.to === '/zones')).toBe(true)
     expect(grow.items.some((i) => i.to === '/comfort-targets' && i.label === 'Comfort & automation')).toBe(true)
   })
 

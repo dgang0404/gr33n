@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { formatWiringLabel, findWiringConflict, resolveWiring, wiringIsEmpty } from '../lib/hardwareWiring.js'
+import { formatWiringLabel, findWiringConflict, resolveWiring, wiringIsEmpty, formatEntityHardwareLabel } from '../lib/hardwareWiring.js'
 
 describe('hardwareWiring', () => {
   it('formats BCM GPIO label', () => {
@@ -20,6 +20,11 @@ describe('hardwareWiring', () => {
     expect(wiringIsEmpty(null)).toBe(true)
     expect(wiringIsEmpty({})).toBe(true)
     expect(wiringIsEmpty({ source: 'dht22', gpio_pin: 4 })).toBe(false)
+  })
+
+  it('formats entity hardware label from wiring or relay channel', () => {
+    expect(formatEntityHardwareLabel({ wiring: { source: 'dht22', gpio_pin: 4 } })).toContain('BCM GPIO 4')
+    expect(formatEntityHardwareLabel({ hardware_identifier: '3' })).toBe('Relay ch 3')
   })
 
   it('allows shared dht22 gpio and blocks actuator overlap', () => {

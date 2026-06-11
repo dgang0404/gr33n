@@ -1,7 +1,6 @@
 <template>
-  <!-- Hover wiggles Pi + HAT setup in the sidebar (Phase 49 nav-hint chain). -->
   <span
-    v-nav-hint="'/pi-setup'"
+    v-nav-hint="hintPath"
     class="inline-flex cursor-default"
     :title="hintTitle"
     data-test="hardware-wiring-badge"
@@ -30,6 +29,7 @@ const props = defineProps({
   entity: { type: Object, default: null },
   wiring: { type: Object, default: null },
   showEmpty: { type: Boolean, default: false },
+  hintPath: { type: String, default: '/zones' },
 })
 
 const label = computed(() => {
@@ -38,7 +38,7 @@ const label = computed(() => {
 })
 
 const hintTitle = computed(() => {
-  if (label.value) return `${label.value} — see Pi + HAT setup in sidebar`
-  return 'Not wired yet — see Pi + HAT setup in sidebar'
+  if (label.value) return `${label.value} — wiring lives on the zone page`
+  return 'Not wired yet — edit wiring on the zone page'
 })
 </script>

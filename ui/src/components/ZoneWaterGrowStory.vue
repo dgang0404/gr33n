@@ -1,5 +1,9 @@
 <template>
-  <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-4 space-y-4" data-test="zone-water-grow-story">
+  <div
+    class="bg-zinc-900 border border-zinc-800 rounded-xl p-4 space-y-4 scroll-mt-24"
+    data-test="zone-water-grow-story"
+    id="zone-water-plan"
+  >
     <div class="flex items-start justify-between gap-2 flex-wrap">
       <div>
         <h3 class="text-sm font-semibold text-white">How this zone gets water</h3>
@@ -86,7 +90,7 @@
       </div>
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-        <div class="bg-zinc-950 border border-zinc-800 rounded-lg p-3" data-test="grow-story-last">
+        <div class="bg-zinc-950 border border-zinc-800 rounded-lg p-3" data-test="grow-story-last" id="zone-feed-history">
           <div class="flex items-center justify-between gap-2 mb-1">
             <p class="text-[10px] uppercase tracking-wide text-zinc-500">Last feed</p>
             <router-link
@@ -229,8 +233,8 @@
         Stock &amp; recipes for this zone →
       </router-link>
       <router-link
-        v-nav-hint="'/operations/money'"
-        :to="{ path: '/operations/money' }"
+        v-nav-hint="moneyTabRoute('summary')"
+        :to="moneyTabRoute('summary')"
         class="text-xs text-zinc-500 hover:text-green-400"
       >
         Farm money →
@@ -251,6 +255,11 @@ import ZoneFeedingPlanWizard from './ZoneFeedingPlanWizard.vue'
 import ZoneGrowCostPeek from './ZoneGrowCostPeek.vue'
 import ZoneGrowConnectionLine from './ZoneGrowConnectionLine.vue'
 import { FARMER_FOCUS_RING, runFeedNowAriaLabel } from '../lib/farmerA11y.js'
+import {
+  moneyTabRoute,
+  zoneTabRoute,
+  zoneWaterPlanRoute,
+} from '../lib/workspaceRoutes.js'
 
 const props = defineProps({
   zoneId: { type: Number, required: true },
@@ -310,22 +319,17 @@ const reservoirChipClass = computed(() => {
   return 'border-zinc-800'
 })
 
-const feedHistoryLink = computed(() => ({
-  path: '/feeding',
-  query: { zone_id: String(props.zoneId) },
-}))
+const feedHistoryLink = computed(() =>
+  zoneTabRoute(props.zoneId, 'water', '#zone-feed-history'),
+)
 
-const logFeedLink = computed(() => feedHistoryLink.value)
+const logFeedLink = computed(() => zoneWaterPlanRoute(props.zoneId))
 
-const advancedFeedingLink = computed(() => ({
-  path: '/operations/feeding',
-  query: { tab: 'programs', zone_id: String(props.zoneId) },
-}))
+const advancedFeedingLink = computed(() => zoneWaterPlanRoute(props.zoneId))
 
-const suppliesForRoomLink = computed(() => ({
-  path: '/operations/supplies',
-  query: { zone_id: String(props.zoneId) },
-}))
+const suppliesForRoomLink = computed(() =>
+  moneyTabRoute('supplies', { zoneId: props.zoneId }),
+)
 
 async function resolveDeliveryDevice() {
   deliveryDeviceId.value = null

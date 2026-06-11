@@ -1,8 +1,8 @@
 import { GROW_PATH_ZONE_LABELS as Z } from './farmerVocabulary.js'
 
 /**
- * Phase 68 / 77 — workspace-first sidebar navigation.
- * Analytics, Guardian full page, and reference pages live in workspaces — not More.
+ * Phase 68 / 77 / 78 — workspace-first sidebar navigation.
+ * Guardian full page lives in More; drawer remains via Ask gr33n at top.
  */
 export function buildNavGroups() {
   return [
@@ -24,25 +24,13 @@ export function buildNavGroups() {
           to: '/zones',
           icon: '🗂️',
           label: Z.navMyZones,
-          navTitle: 'Every room — grows, fleet sensors, controls, and lighting',
-        },
-        {
-          to: '/feed-water',
-          icon: '💧',
-          label: 'Feed & water',
-          navTitle: 'Daily watering, programs, nutrients, and advanced fertigation',
+          navTitle: 'My zones, farm-wide hardware, sensors, controls, and lighting',
         },
         {
           to: '/comfort-targets',
           icon: '🎯',
           label: 'Comfort & automation',
           navTitle: 'Comfort bands, what runs when, automations, and raw setpoints',
-        },
-        {
-          to: '/hardware',
-          icon: '🔌',
-          label: 'Hardware',
-          navTitle: 'Pi devices, GPIO wiring, relay channels, and setup guide',
         },
         {
           to: '/money',
@@ -55,6 +43,12 @@ export function buildNavGroups() {
     {
       label: 'More',
       items: [
+        {
+          to: '/chat',
+          icon: '✨',
+          label: 'Farm Guardian',
+          navTitle: 'Full-page chat, session history, and pending requests',
+        },
         { to: '/animals', icon: '🐔', label: 'Animals' },
         { to: '/aquaponics', icon: '🐟', label: 'Aquaponics' },
         {
@@ -77,7 +71,7 @@ export function collectSidebarRoutes(groups) {
 export const mobileBottomNav = [
   { to: '/', icon: '🌿', label: 'Today' },
   { to: '/zones', icon: '🗂️', label: Z.mobileZones },
-  { to: '/feed-water', icon: '💧', label: 'Feed' },
   { to: '/comfort-targets', icon: '🎯', label: 'Targets' },
+  { to: '/money', icon: '💰', label: 'Money' },
   { to: '/settings', icon: '⚙️', label: 'More' },
 ]

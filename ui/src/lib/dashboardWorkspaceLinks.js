@@ -16,10 +16,13 @@ export function zoneOpsRoute(zoneId, ops = 'tasks') {
 }
 
 /**
- * @param {string} [tab]
+ * @param {object[]} [zones]
+ * @param {number|string|null} [zoneId]
  */
-export function feedWaterRoute(tab = 'daily') {
-  return { path: '/feed-water', query: { tab } }
+export function feedWaterRoute(zones = [], zoneId = null) {
+  const zid = zoneId ?? zones[0]?.id
+  if (zid) return { path: `/zones/${zid}`, query: { tab: 'water' } }
+  return { path: '/zones' }
 }
 
 /**

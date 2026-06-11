@@ -3,24 +3,28 @@ import { NAV_RELATIONS, relatedTo } from '../lib/navRelations.js'
 import { buildNavGroups, collectSidebarRoutes } from '../lib/navGroups.js'
 import { canonicalSidebarPath } from '../lib/workspaces.js'
 
-describe('Phase 49/68 — nav relations', () => {
+describe('Phase 49/68/78 — nav relations', () => {
   const navRoutes = new Set(collectSidebarRoutes(buildNavGroups()))
 
   it('returns related routes for workspace siblings', () => {
-    expect(relatedTo('/zones')).toContain('/feed-water')
-    expect(relatedTo('/zones')).toContain('/hardware')
-    expect(relatedTo('/feed-water')).toContain('/zones')
-    expect(relatedTo('/money')).toContain('/feed-water')
+    expect(relatedTo('/zones')).toContain('/money')
+    expect(relatedTo('/zones')).toContain('/comfort-targets')
+    expect(relatedTo('/money')).toContain('/zones')
+    expect(relatedTo('/comfort-targets')).toContain('/zones')
   })
 
-  it('maps legacy hint paths to sidebar workspace routes', () => {
-    expect(canonicalSidebarPath('/feeding')).toBe('/feed-water')
+  it('maps legacy hint paths to zones sidebar route', () => {
+    expect(canonicalSidebarPath('/feeding')).toBe('/zones')
     expect(relatedTo('/feeding')).toContain('/zones')
   })
 
   it('returns empty for unknown routes', () => {
-    expect(relatedTo('/chat')).toEqual([])
+    expect(relatedTo('/unknown-route')).toEqual([])
     expect(relatedTo(null)).toEqual([])
+  })
+
+  it('links Farm Guardian to zones and help', () => {
+    expect(relatedTo('/chat')).toContain('/zones')
   })
 
   it('only points primary relations at routes that exist in the sidebar', () => {

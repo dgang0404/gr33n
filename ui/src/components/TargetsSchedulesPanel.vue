@@ -15,7 +15,7 @@
       reason="automation_off"
       message="No schedules yet — add a daily run time below or use Advanced for full cron editing."
       action-label="Advanced schedules"
-      action-to="/schedules"
+      :action-to="advancedSchedulesRoute"
     />
 
     <div v-else class="space-y-3">
@@ -77,7 +77,12 @@
 
     <p class="text-xs text-zinc-600">
       Need cron strings or preconditions?
-      <router-link v-nav-hint="'/schedules'" to="/schedules" class="text-green-600 hover:text-green-400">Advanced schedules →</router-link>
+      <router-link
+        v-nav-hint="advancedSchedulesRoute"
+        :to="advancedSchedulesRoute"
+        class="text-green-600 hover:text-green-400"
+        data-test="advanced-schedules-link"
+      >Advanced schedules →</router-link>
     </p>
   </div>
 </template>
@@ -91,6 +96,11 @@ import ZoneContextBanner from './ZoneContextBanner.vue'
 import EmptyStateHint from './EmptyStateHint.vue'
 import { filterSchedulesForZone } from '../lib/zoneContext.js'
 import { buildDailyCron, scheduleRunsLabel } from '../lib/cronHumanize.js'
+import { comfortAdvancedSchedulesRoute } from '../lib/workspaceRoutes.js'
+
+const advancedSchedulesRoute = computed(() =>
+  comfortAdvancedSchedulesRoute({ zoneId: props.zoneContextId || undefined }),
+)
 
 const props = defineProps({
   zoneContextId: { type: Number, default: null },

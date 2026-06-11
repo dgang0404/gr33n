@@ -15,22 +15,24 @@ describe('Phase 77 WS6 / OC-77 — post-arc polish closure', () => {
   const groups = buildNavGroups()
   const routes = collectSidebarRoutes(groups)
 
-  it('sidebar stays compact (~8 items) without orphan More entries', () => {
+  it('sidebar stays compact without orphan More entries', () => {
     expect(groups.map((g) => g.label)).toEqual(['Today', 'Grow & operate', 'More'])
-    expect(routes.length).toBeLessThanOrEqual(10)
-    expect(routes).not.toContain('/chat')
+    expect(routes.length).toBeLessThanOrEqual(11)
+    expect(routes).toContain('/chat')
     expect(routes).not.toContain('/farm-knowledge')
     expect(routes).not.toContain('/catalog')
     expect(routes.filter((r) => r.includes('crop-cycles/compare'))).toHaveLength(0)
 
     const more = groups.find((g) => g.label === 'More')
     expect(more.items.map((i) => i.to)).toEqual([
+      '/chat',
       '/animals',
       '/aquaponics',
       '/operator-guide',
       '/settings',
     ])
     expect(more.items.find((i) => i.label === 'Help')?.to).toBe('/operator-guide')
+    expect(more.items.find((i) => i.label === 'Farm Guardian')?.to).toBe('/chat')
   })
 
   it('help and money grows workspaces ship', () => {
@@ -52,12 +54,13 @@ describe('Phase 77 WS6 / OC-77 — post-arc polish closure', () => {
     expect(compare).toContain("tab: 'strains'")
   })
 
-  it('Guardian drawer demotes full page; Settings defers devices to Hardware', () => {
+  it('Guardian drawer and full page both reachable', () => {
     const drawer = readFileSync(join(uiSrc, 'components/GuardianDrawer.vue'), 'utf8')
     expect(drawer).toContain('Open full chat')
+    const nav = buildNavGroups()
+    expect(nav.find((g) => g.label === 'More')?.items.some((i) => i.to === '/chat')).toBe(true)
     const settings = readFileSync(join(uiSrc, 'views/Settings.vue'), 'utf8')
-    expect(settings).toContain("tab: 'devices'")
-    expect(settings).toContain('Hardware → Pi devices')
+    expect(settings).toContain("tab: 'fleet', fleet: 'sensors'")
   })
 
   it('Today dashboard surfaces farm config card', () => {

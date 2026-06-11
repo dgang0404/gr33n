@@ -67,6 +67,11 @@
         <div class="flex-1 min-w-0">
           <p class="text-white text-sm font-medium truncate">{{ a.subject_rendered || 'Alert' }}</p>
           <p class="text-zinc-400 text-xs mt-0.5">{{ a.message_text_rendered }}</p>
+          <AlertHardwareLine
+            :alert="a"
+            :sensors="alertContextSensors"
+            :actuators="alertContextActuators"
+          />
           <p class="text-zinc-600 text-xs mt-1">{{ formatTime(a.created_at) }}</p>
           <div v-if="linkedTasks(a.id).length" class="mt-1 flex flex-wrap gap-1">
             <router-link
@@ -176,6 +181,7 @@ import { useFarmContextStore } from '../stores/farmContext'
 import AskGuardianButton from '../components/AskGuardianButton.vue'
 import ZoneContextBanner from '../components/ZoneContextBanner.vue'
 import EmptyStateHint from '../components/EmptyStateHint.vue'
+import AlertHardwareLine from '../components/AlertHardwareLine.vue'
 import { parseZoneIdQuery, filterAlertsForZone } from '../lib/zoneContext.js'
 import { detectAlertTaskTemplate } from '../lib/taskTemplates.js'
 
@@ -218,6 +224,16 @@ const zoneFilteredAlerts = computed(() => {
     zone?.name || '',
     farmStore.sensors,
   )
+})
+
+const alertContextSensors = computed(() => {
+  if (!zoneContextId.value) return farmStore.sensors
+  return farmStore.sensorsByZone(zoneContextId.value)
+})
+
+const alertContextActuators = computed(() => {
+  if (!zoneContextId.value) return farmStore.actuators
+  return farmStore.actuatorsByZone(zoneContextId.value)
 })
 
 const filtered = computed(() => {

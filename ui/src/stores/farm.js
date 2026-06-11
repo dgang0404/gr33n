@@ -816,8 +816,12 @@ export const useFarmStore = defineStore('farm', {
 
     // Crop knowledge base (Phase 64)
     async loadCropProfiles(farmId) {
-      const r = await api.get(`/farms/${farmId}/crop-profiles`)
-      return Array.isArray(r.data) ? r.data : []
+      try {
+        const r = await api.get(`/farms/${farmId}/crop-profiles`)
+        return Array.isArray(r.data) ? r.data : []
+      } catch {
+        return []
+      }
     },
 
     async getCropProfile(id) {

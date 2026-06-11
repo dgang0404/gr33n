@@ -362,12 +362,12 @@
           Farm setup wizard →
         </router-link>
         <router-link
-          v-nav-hint="'/hardware'"
-          :to="{ path: '/hardware', query: { tab: 'devices' } }"
+          v-nav-hint="'/zones'"
+          :to="{ path: '/zones', query: { tab: 'fleet', fleet: 'sensors' } }"
           class="inline-flex px-4 py-2 text-sm font-medium rounded-lg bg-blue-900/50 text-blue-400 border border-blue-800 hover:bg-blue-900/70"
           data-test="settings-open-device-setup"
         >
-          Hardware → Pi devices
+          Zones → fleet &amp; devices
         </router-link>
       </div>
       <p class="text-zinc-600 text-[11px] mb-3">Advanced: apply a template directly without the wizard</p>

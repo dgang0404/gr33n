@@ -11,6 +11,7 @@
         :to="manageTo"
         class="text-xs text-green-600 hover:text-green-400 shrink-0"
         data-test="connection-card-details"
+        @click="onDetailsClick"
       >
         Details →
       </router-link>
@@ -28,9 +29,14 @@
       <span class="text-zinc-500">Automation</span>
       <span class="text-zinc-300">{{ automationLabel }}</span>
     </div>
-    <div v-if="controlLabel" class="flex items-center justify-between text-xs">
-      <span class="text-zinc-500">Control</span>
-      <span :class="controlOnline ? 'text-green-400' : 'text-zinc-500'">{{ controlLabel }}</span>
+    <div v-if="controlLabel" class="flex items-center justify-between text-xs gap-2">
+      <span class="text-zinc-500 shrink-0">Control</span>
+      <div class="text-right min-w-0">
+        <span :class="controlOnline ? 'text-green-400' : 'text-zinc-500'">{{ controlLabel }}</span>
+        <p v-if="controlHardwareLabel" class="text-[10px] text-green-500/90 font-medium mt-0.5">
+          🔌 {{ controlHardwareLabel }}
+        </p>
+      </div>
     </div>
     <p v-if="lastEventLabel" class="text-zinc-600 text-[10px] border-t border-zinc-800 pt-2">
       Last: {{ lastEventLabel }}
@@ -39,7 +45,9 @@
 </template>
 
 <script setup>
-defineProps({
+import { useRoute, useRouter } from 'vue-router'
+
+const props = defineProps({
   title: { type: String, required: true },
   subtitle: { type: String, default: '' },
   manageTo: { type: [String, Object], default: '' },
@@ -47,7 +55,26 @@ defineProps({
   targetLabel: { type: String, default: '' },
   automationLabel: { type: String, default: '' },
   controlLabel: { type: String, default: '' },
+  controlHardwareLabel: { type: String, default: '' },
   controlOnline: { type: Boolean, default: false },
   lastEventLabel: { type: String, default: '' },
 })
+
+const route = useRoute()
+const router = useRouter()
+
+function onDetailsClick(event) {
+  const to = props.manageTo
+  if (!to || typeof to === 'string' || !to.hash) return
+  const targetPath = to.path ?? route.path
+  const targetQuery = to.query ?? {}
+  const samePath = route.path === targetPath
+  const sameQuery = JSON.stringify(route.query) === JSON.stringify(targetQuery)
+  if (!samePath || !sameQuery) return
+  event.preventDefault()
+  router.push(to).finally(() => {
+    const el = document.querySelector(to.hash)
+    el?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  })
+}
 </script>
