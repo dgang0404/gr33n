@@ -45,21 +45,21 @@ func TestBuildPicker_CatalogOnlyHasCousin(t *testing.T) {
 		t.Fatal(err)
 	}
 	out := croplibrary.BuildPicker(cat, nil)
-	var zucchini *croplibrary.PickerItem
+	var rose *croplibrary.PickerItem
 	for _, g := range out.Groups {
 		for i := range g.Items {
-			if g.Items[i].CropKey == "zucchini" {
-				zucchini = &g.Items[i]
+			if g.Items[i].CropKey == "rose" {
+				rose = &g.Items[i]
 			}
 		}
 	}
-	if zucchini == nil {
-		t.Fatal("zucchini not in picker")
+	if rose == nil {
+		t.Fatal("rose not in picker")
 	}
-	if zucchini.HasTargets {
-		t.Fatal("zucchini should be catalog-only without DB seed")
+	if rose.HasTargets {
+		t.Fatal("rose should be catalog-only without DB seed")
 	}
-	if zucchini.CousinOf == nil || *zucchini.CousinOf != "cucumber" {
-		t.Fatalf("cousin_of: %+v", zucchini.CousinOf)
+	if rose.CousinOf == nil || *rose.CousinOf != "tomato" {
+		t.Fatalf("cousin_of: %+v", rose.CousinOf)
 	}
 }

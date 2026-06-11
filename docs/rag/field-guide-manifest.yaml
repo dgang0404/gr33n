@@ -25,6 +25,15 @@ include:
   - crop-spinach-nutrition.md
   - crop-cilantro-nutrition.md
   - crop-microgreens-nutrition.md
+  - crop-zucchini-nutrition.md
+  - crop-green-bean-nutrition.md
+  - crop-mint-nutrition.md
+  - crop-parsley-nutrition.md
+  - crop-blueberry-nutrition.md
+  - crop-hemp-nutrition.md
+  - crop-broccoli-nutrition.md
+  - crop-melon-nutrition.md
+  - crop-arugula-nutrition.md
 
 exclude_globs:
   - "procedures/**"

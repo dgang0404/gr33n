@@ -824,69 +824,482 @@ crops:
         photoperiod_hrs: 16.0
         notes: 10–14 d cycle; harvest at cotyledon/first true leaf
 
-  # ── Tier B — catalog metadata; stages ship in WS4c ───────────────────────
+  # ── Tier B — Phase 82 WS4c (stages seeded) ───────────────────────────────
   - key: zucchini
     display_name: Zucchini / summer squash
     category: fruiting
+    source: Fruiting squash; modeled on cucumber
     substrate: coco / rockwool
     watering_style: pulse_dryback
+    runoff_pct_target: "10-20"
     cousin_of: cucumber
+    stages:
+      - stage: early_veg
+        ec_min: 1.80
+        ec_target: 2.20
+        ec_max: 2.60
+        ph_min: 5.5
+        ph_max: 6.0
+        vpd_min_kpa: 0.80
+        vpd_max_kpa: 1.10
+        temp_min_c: 22.0
+        temp_max_c: 28.0
+        rh_min_pct: 65
+        rh_max_pct: 75
+        dli_target: 30.0
+        photoperiod_hrs: 16.0
+        notes: Bush or vining squash veg
+      - stage: late_veg
+        ec_min: 2.20
+        ec_target: 2.60
+        ec_max: 3.00
+        ph_min: 5.5
+        ph_max: 6.0
+        vpd_min_kpa: 0.90
+        vpd_max_kpa: 1.20
+        temp_min_c: 22.0
+        temp_max_c: 28.0
+        rh_min_pct: 60
+        rh_max_pct: 70
+        dli_target: 35.0
+        photoperiod_hrs: 16.0
+        notes: Pre-fruit; support heavy squash
+      - stage: early_flower
+        ec_min: 2.40
+        ec_target: 2.80
+        ec_max: 3.20
+        ph_min: 5.5
+        ph_max: 6.0
+        vpd_min_kpa: 1.00
+        vpd_max_kpa: 1.30
+        temp_min_c: 22.0
+        temp_max_c: 28.0
+        rh_min_pct: 55
+        rh_max_pct: 65
+        dli_target: 35.0
+        photoperiod_hrs: 16.0
+        notes: Fruit set; hand-pollinate if needed indoors
 
   - key: green_bean
     display_name: Green bean
     category: fruiting
+    source: Moderate EC warm legume; modeled on pepper
     substrate: coco / rockwool
     watering_style: pulse_dryback
+    runoff_pct_target: "10-15"
     cousin_of: pepper
+    stages:
+      - stage: early_veg
+        ec_min: 1.40
+        ec_target: 1.80
+        ec_max: 2.20
+        ph_min: 5.5
+        ph_max: 6.0
+        vpd_min_kpa: 0.80
+        vpd_max_kpa: 1.10
+        temp_min_c: 22.0
+        temp_max_c: 28.0
+        rh_min_pct: 55
+        rh_max_pct: 65
+        dli_target: 25.0
+        photoperiod_hrs: 16.0
+        notes: Warm veg; avoid cold irrigation
+      - stage: late_veg
+        ec_min: 1.80
+        ec_target: 2.20
+        ec_max: 2.60
+        ph_min: 5.5
+        ph_max: 6.0
+        vpd_min_kpa: 0.90
+        vpd_max_kpa: 1.20
+        temp_min_c: 22.0
+        temp_max_c: 28.0
+        rh_min_pct: 50
+        rh_max_pct: 60
+        dli_target: 30.0
+        photoperiod_hrs: 16.0
+        notes: Runner / trellis
+      - stage: early_flower
+        ec_min: 2.00
+        ec_target: 2.40
+        ec_max: 2.80
+        ph_min: 5.5
+        ph_max: 6.0
+        vpd_min_kpa: 1.00
+        vpd_max_kpa: 1.30
+        temp_min_c: 22.0
+        temp_max_c: 28.0
+        rh_min_pct: 45
+        rh_max_pct: 55
+        dli_target: 30.0
+        photoperiod_hrs: 16.0
+        notes: Pod set; moderate EC
 
   - key: mint
     display_name: Mint
     category: herb
+    source: Aggressive roots — contain in pots; modeled on basil
     substrate: coco / DWC
     watering_style: constant_feed
     cousin_of: basil
+    stages:
+      - stage: seedling
+        ec_min: 0.80
+        ec_target: 1.00
+        ec_max: 1.20
+        ph_min: 5.5
+        ph_max: 6.0
+        vpd_min_kpa: 0.60
+        vpd_max_kpa: 0.90
+        temp_min_c: 20.0
+        temp_max_c: 26.0
+        rh_min_pct: 60
+        rh_max_pct: 70
+        dli_target: 15.0
+        photoperiod_hrs: 16.0
+        notes: Root in contained module
+      - stage: early_veg
+        ec_min: 1.00
+        ec_target: 1.40
+        ec_max: 1.60
+        ph_min: 5.5
+        ph_max: 6.0
+        vpd_min_kpa: 0.80
+        vpd_max_kpa: 1.10
+        temp_min_c: 20.0
+        temp_max_c: 28.0
+        rh_min_pct: 55
+        rh_max_pct: 65
+        dli_target: 20.0
+        photoperiod_hrs: 16.0
+        notes: Continuous harvest; isolate roots from other crops
+      - stage: late_veg
+        ec_min: 1.20
+        ec_target: 1.60
+        ec_max: 1.80
+        ph_min: 5.5
+        ph_max: 6.0
+        vpd_min_kpa: 0.90
+        vpd_max_kpa: 1.20
+        temp_min_c: 20.0
+        temp_max_c: 28.0
+        rh_min_pct: 50
+        rh_max_pct: 60
+        dli_target: 22.0
+        photoperiod_hrs: 16.0
+        notes: Trim often; roots spread aggressively
 
   - key: parsley
     display_name: Parsley
     category: herb
+    source: Biennial herb baseline; slightly cooler than basil
     substrate: coco / rockwool
     watering_style: constant_feed
     cousin_of: basil
+    stages:
+      - stage: seedling
+        ec_min: 0.80
+        ec_target: 1.00
+        ec_max: 1.20
+        ph_min: 5.5
+        ph_max: 6.0
+        vpd_min_kpa: 0.60
+        vpd_max_kpa: 0.90
+        temp_min_c: 18.0
+        temp_max_c: 24.0
+        rh_min_pct: 60
+        rh_max_pct: 70
+        dli_target: 14.0
+        photoperiod_hrs: 14.0
+        notes: Slow germination; cool start
+      - stage: early_veg
+        ec_min: 1.00
+        ec_target: 1.30
+        ec_max: 1.50
+        ph_min: 5.5
+        ph_max: 6.0
+        vpd_min_kpa: 0.80
+        vpd_max_kpa: 1.10
+        temp_min_c: 18.0
+        temp_max_c: 24.0
+        rh_min_pct: 55
+        rh_max_pct: 65
+        dli_target: 18.0
+        photoperiod_hrs: 14.0
+        notes: Leaf harvest; cooler than basil
+      - stage: late_veg
+        ec_min: 1.10
+        ec_target: 1.50
+        ec_max: 1.70
+        ph_min: 5.5
+        ph_max: 6.0
+        vpd_min_kpa: 0.90
+        vpd_max_kpa: 1.20
+        temp_min_c: 18.0
+        temp_max_c: 24.0
+        rh_min_pct: 50
+        rh_max_pct: 60
+        dli_target: 20.0
+        photoperiod_hrs: 14.0
+        notes: Second-year bolt if kept too warm
 
   - key: blueberry
     display_name: Blueberry
     category: fruiting
+    source: Acidic pH band 4.5–5.5; modeled on strawberry
     substrate: peat / coco
     watering_style: pulse_dryback
+    runoff_pct_target: "10-15"
     cousin_of: strawberry
+    stages:
+      - stage: seedling
+        ec_min: 0.80
+        ec_target: 1.00
+        ec_max: 1.20
+        ph_min: 4.5
+        ph_max: 5.5
+        vpd_min_kpa: 0.60
+        vpd_max_kpa: 0.90
+        temp_min_c: 18.0
+        temp_max_c: 22.0
+        rh_min_pct: 65
+        rh_max_pct: 75
+        dli_target: 12.0
+        photoperiod_hrs: 14.0
+        notes: Acidic root zone required
+      - stage: early_veg
+        ec_min: 1.00
+        ec_target: 1.30
+        ec_max: 1.60
+        ph_min: 4.5
+        ph_max: 5.5
+        vpd_min_kpa: 0.80
+        vpd_max_kpa: 1.10
+        temp_min_c: 18.0
+        temp_max_c: 24.0
+        rh_min_pct: 60
+        rh_max_pct: 70
+        dli_target: 18.0
+        photoperiod_hrs: 14.0
+        notes: Crown / vegetative growth
+      - stage: early_flower
+        ec_min: 1.10
+        ec_target: 1.50
+        ec_max: 1.90
+        ph_min: 4.5
+        ph_max: 5.5
+        vpd_min_kpa: 0.90
+        vpd_max_kpa: 1.20
+        temp_min_c: 18.0
+        temp_max_c: 24.0
+        rh_min_pct: 55
+        rh_max_pct: 65
+        dli_target: 20.0
+        photoperiod_hrs: 14.0
+        notes: Berry set; monitor pH drift
 
   - key: hemp
     display_name: Hemp (fiber/seed)
     category: industrial
+    source: Separate from cannabis flower profile — vegetative fiber/seed baseline only
     substrate: coco / rockwool
     watering_style: pulse_dryback
     cousin_of: cannabis
+    aliases: []
+    stages:
+      - stage: early_veg
+        ec_min: 0.80
+        ec_target: 1.00
+        ec_max: 1.20
+        ph_min: 5.8
+        ph_max: 6.2
+        vpd_min_kpa: 0.80
+        vpd_max_kpa: 1.00
+        temp_min_c: 22.0
+        temp_max_c: 26.0
+        rh_min_pct: 60
+        rh_max_pct: 70
+        dli_target: 30.0
+        photoperiod_hrs: 18.0
+        notes: Fiber/seed — not flower EC curve
+      - stage: late_veg
+        ec_min: 1.00
+        ec_target: 1.30
+        ec_max: 1.50
+        ph_min: 5.8
+        ph_max: 6.2
+        vpd_min_kpa: 0.90
+        vpd_max_kpa: 1.10
+        temp_min_c: 22.0
+        temp_max_c: 26.0
+        rh_min_pct: 55
+        rh_max_pct: 65
+        dli_target: 35.0
+        photoperiod_hrs: 18.0
+        notes: Long veg; do not use cannabis flower targets
 
   - key: broccoli
     display_name: Broccoli
     category: leafy
+    source: Cool brassica; modeled on kale with lower temps
     substrate: NFT / rockwool
     watering_style: constant_feed
     cousin_of: kale
+    stages:
+      - stage: seedling
+        ec_min: 0.80
+        ec_target: 1.00
+        ec_max: 1.20
+        ph_min: 5.5
+        ph_max: 6.0
+        vpd_min_kpa: 0.50
+        vpd_max_kpa: 0.80
+        temp_min_c: 14.0
+        temp_max_c: 20.0
+        rh_min_pct: 65
+        rh_max_pct: 75
+        dli_target: 12.0
+        photoperiod_hrs: 16.0
+        notes: Cool brassica seedling
+      - stage: early_veg
+        ec_min: 1.00
+        ec_target: 1.20
+        ec_max: 1.40
+        ph_min: 5.5
+        ph_max: 6.0
+        vpd_min_kpa: 0.60
+        vpd_max_kpa: 0.90
+        temp_min_c: 14.0
+        temp_max_c: 20.0
+        rh_min_pct: 60
+        rh_max_pct: 70
+        dli_target: 15.0
+        photoperiod_hrs: 16.0
+        notes: Head formation; keep cool
+      - stage: late_veg
+        ec_min: 1.10
+        ec_target: 1.30
+        ec_max: 1.50
+        ph_min: 5.5
+        ph_max: 6.0
+        vpd_min_kpa: 0.70
+        vpd_max_kpa: 1.00
+        temp_min_c: 14.0
+        temp_max_c: 20.0
+        rh_min_pct: 55
+        rh_max_pct: 65
+        dli_target: 17.0
+        photoperiod_hrs: 16.0
+        notes: Pre-harvest; bolt in heat
 
   - key: melon
     display_name: Melon / cantaloupe
     category: fruiting
+    source: Warm vining melon; high transpiration; modeled on cucumber
     substrate: coco / rockwool
     watering_style: pulse_dryback
+    runoff_pct_target: "10-20"
     cousin_of: cucumber
+    stages:
+      - stage: early_veg
+        ec_min: 1.80
+        ec_target: 2.20
+        ec_max: 2.60
+        ph_min: 5.5
+        ph_max: 6.0
+        vpd_min_kpa: 0.80
+        vpd_max_kpa: 1.10
+        temp_min_c: 24.0
+        temp_max_c: 30.0
+        rh_min_pct: 65
+        rh_max_pct: 75
+        dli_target: 30.0
+        photoperiod_hrs: 16.0
+        notes: Warm vining veg
+      - stage: late_veg
+        ec_min: 2.20
+        ec_target: 2.60
+        ec_max: 3.00
+        ph_min: 5.5
+        ph_max: 6.0
+        vpd_min_kpa: 0.90
+        vpd_max_kpa: 1.20
+        temp_min_c: 24.0
+        temp_max_c: 30.0
+        rh_min_pct: 60
+        rh_max_pct: 70
+        dli_target: 35.0
+        photoperiod_hrs: 16.0
+        notes: Runner growth; high water demand
+      - stage: early_flower
+        ec_min: 2.50
+        ec_target: 2.90
+        ec_max: 3.30
+        ph_min: 5.5
+        ph_max: 6.0
+        vpd_min_kpa: 1.00
+        vpd_max_kpa: 1.30
+        temp_min_c: 24.0
+        temp_max_c: 30.0
+        rh_min_pct: 55
+        rh_max_pct: 65
+        dli_target: 40.0
+        photoperiod_hrs: 16.0
+        notes: Fruiting; very high transpiration
 
   - key: arugula
     display_name: Arugula / rocket
     category: leafy
+    source: Fast turnover leafy; bolts in heat; modeled on lettuce
     substrate: DWC / NFT
     watering_style: constant_feed
     cousin_of: lettuce
+    stages:
+      - stage: seedling
+        ec_min: 0.60
+        ec_target: 0.80
+        ec_max: 1.00
+        ph_min: 5.5
+        ph_max: 6.0
+        vpd_min_kpa: 0.50
+        vpd_max_kpa: 0.80
+        temp_min_c: 16.0
+        temp_max_c: 20.0
+        rh_min_pct: 65
+        rh_max_pct: 75
+        dli_target: 12.0
+        photoperiod_hrs: 12.0
+        notes: Fast germination
+      - stage: early_veg
+        ec_min: 0.80
+        ec_target: 1.00
+        ec_max: 1.20
+        ph_min: 5.5
+        ph_max: 6.0
+        vpd_min_kpa: 0.60
+        vpd_max_kpa: 0.90
+        temp_min_c: 16.0
+        temp_max_c: 22.0
+        rh_min_pct: 60
+        rh_max_pct: 70
+        dli_target: 15.0
+        photoperiod_hrs: 12.0
+        notes: 3–4 week crop; harvest young
+      - stage: late_veg
+        ec_min: 0.90
+        ec_target: 1.10
+        ec_max: 1.30
+        ph_min: 5.5
+        ph_max: 6.0
+        vpd_min_kpa: 0.70
+        vpd_max_kpa: 1.00
+        temp_min_c: 16.0
+        temp_max_c: 22.0
+        rh_min_pct: 55
+        rh_max_pct: 65
+        dli_target: 17.0
+        photoperiod_hrs: 12.0
+        notes: Bolt and bitterness in sustained heat
 
   # ── Tier C — optional greenhouse / ornamental ───────────────────────────
   - key: rose

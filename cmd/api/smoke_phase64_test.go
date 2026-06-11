@@ -34,8 +34,8 @@ LIMIT 1`).Scan(&ecMin, &ecMax)
 	expectStatus(t, resp, http.StatusOK)
 	body := decodeSlice(t, resp)
 	resp.Body.Close()
-	if len(body) < 13 {
-		t.Fatalf("want >= 13 profiles, got %d", len(body))
+	if len(body) < 22 {
+		t.Fatalf("want >= 22 profiles, got %d", len(body))
 	}
 }
 
@@ -53,7 +53,7 @@ func TestPhase82_CropLibraryPicker(t *testing.T) {
 		t.Fatal("picker response missing counts")
 	}
 	withTargets, _ := counts["with_targets"].(float64)
-	if withTargets < 13 {
-		t.Fatalf("want >= 13 with_targets, got %v", withTargets)
+	if withTargets < 22 {
+		t.Fatalf("want >= 22 with_targets, got %v", withTargets)
 	}
 }
