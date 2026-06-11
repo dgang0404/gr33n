@@ -55,6 +55,9 @@ jobs:
       - name: Bootstrap schema, migrations, and demo seed
         run: ./scripts/bootstrap-local.sh --seed
 
+      - name: Validate crop library YAML (Phase 82 WS4a)
+        run: make check-crop-library
+
       - name: Verify pgvector extension (RAG parity)
         run: |
           count=$(psql "$DATABASE_URL" -tAc "SELECT count(*) FROM pg_extension WHERE extname='vector'" | tr -d '[:space:]')

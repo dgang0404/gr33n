@@ -1,0 +1,949 @@
+# Phase 82 WS4a — canonical cultivator crop library (single source of truth).
+# Drives SQL seed (generate-crop-seed.sql.sh), Guardian aliases (WS3), UI picker (WS4f).
+# EC stage fields are mS/cm only — never percentages.
+version: 2
+
+aliases:
+  orchid: phalaenopsis
+  aubergine: eggplant
+  weed: cannabis
+  marijuana: cannabis
+  coriander: cilantro
+  wild_leek: ramps
+  shiitake: mushroom
+  apple_tree: fruit_tree
+  grape_vine: fruit_tree
+
+crops:
+  # ── Existing Phase 64 profiles (stages seeded) ──────────────────────────
+  - key: cannabis
+    display_name: Cannabis
+    category: flower
+    source: Curated indoor ranges; verify against your genetics
+    substrate: coco / rockwool
+    watering_style: pulse_dryback
+    runoff_pct_target: "10-20"
+    cousin_of: null
+    aliases: []
+    stages:
+      - stage: early_veg
+        ec_min: 0.80
+        ec_target: 1.00
+        ec_max: 1.20
+        ph_min: 5.8
+        ph_max: 6.2
+        vpd_min_kpa: 0.80
+        vpd_max_kpa: 1.00
+        temp_min_c: 22.0
+        temp_max_c: 26.0
+        rh_min_pct: 60
+        rh_max_pct: 70
+        dli_target: 30.0
+        photoperiod_hrs: 18.0
+        notes: Veg photoperiod
+      - stage: late_veg
+        ec_min: 1.00
+        ec_target: 1.40
+        ec_max: 1.60
+        ph_min: 5.8
+        ph_max: 6.2
+        vpd_min_kpa: 0.90
+        vpd_max_kpa: 1.10
+        temp_min_c: 22.0
+        temp_max_c: 26.0
+        rh_min_pct: 55
+        rh_max_pct: 65
+        dli_target: 35.0
+        photoperiod_hrs: 18.0
+        notes: Ramp EC before flip
+      - stage: early_flower
+        ec_min: 1.40
+        ec_target: 1.60
+        ec_max: 1.80
+        ph_min: 5.8
+        ph_max: 6.2
+        vpd_min_kpa: 1.00
+        vpd_max_kpa: 1.20
+        temp_min_c: 20.0
+        temp_max_c: 24.0
+        rh_min_pct: 45
+        rh_max_pct: 55
+        dli_target: 40.0
+        photoperiod_hrs: 12.0
+        notes: 12/12 flip
+      - stage: mid_flower
+        ec_min: 1.60
+        ec_target: 1.80
+        ec_max: 2.00
+        ph_min: 5.8
+        ph_max: 6.2
+        vpd_min_kpa: 1.10
+        vpd_max_kpa: 1.30
+        temp_min_c: 20.0
+        temp_max_c: 24.0
+        rh_min_pct: 40
+        rh_max_pct: 50
+        dli_target: 45.0
+        photoperiod_hrs: 12.0
+        notes: Peak EC window
+      - stage: late_flower
+        ec_min: 1.20
+        ec_target: 1.40
+        ec_max: 1.60
+        ph_min: 5.8
+        ph_max: 6.2
+        vpd_min_kpa: 1.00
+        vpd_max_kpa: 1.20
+        temp_min_c: 18.0
+        temp_max_c: 22.0
+        rh_min_pct: 40
+        rh_max_pct: 50
+        dli_target: 35.0
+        photoperiod_hrs: 12.0
+        notes: Pre-flush taper
+      - stage: flush
+        ec_min: 0.00
+        ec_target: 0.20
+        ec_max: 0.40
+        ph_min: 6.0
+        ph_max: 6.5
+        vpd_min_kpa: 1.00
+        vpd_max_kpa: 1.30
+        temp_min_c: 18.0
+        temp_max_c: 22.0
+        rh_min_pct: 40
+        rh_max_pct: 50
+        dli_target: 30.0
+        photoperiod_hrs: 12.0
+        notes: Plain water flush
+
+  - key: tomato
+    display_name: Tomato
+    category: fruiting
+    source: Hydroponic fruiting tomato references
+    substrate: coco / rockwool slab
+    watering_style: pulse_dryback
+    runoff_pct_target: "10-20"
+    cousin_of: null
+    stages:
+      - stage: seedling
+        ec_min: 1.00
+        ec_target: 1.20
+        ec_max: 1.40
+        ph_min: 5.5
+        ph_max: 6.0
+        vpd_min_kpa: 0.60
+        vpd_max_kpa: 0.90
+        temp_min_c: 20.0
+        temp_max_c: 24.0
+        rh_min_pct: 65
+        rh_max_pct: 75
+        dli_target: 15.0
+        photoperiod_hrs: 16.0
+        notes: Seedling / transplant
+      - stage: early_veg
+        ec_min: 1.80
+        ec_target: 2.20
+        ec_max: 2.60
+        ph_min: 5.5
+        ph_max: 6.0
+        vpd_min_kpa: 0.80
+        vpd_max_kpa: 1.10
+        temp_min_c: 20.0
+        temp_max_c: 26.0
+        rh_min_pct: 60
+        rh_max_pct: 70
+        dli_target: 25.0
+        photoperiod_hrs: 16.0
+        notes: Vegetative
+      - stage: late_veg
+        ec_min: 2.20
+        ec_target: 2.60
+        ec_max: 3.00
+        ph_min: 5.5
+        ph_max: 6.0
+        vpd_min_kpa: 0.90
+        vpd_max_kpa: 1.20
+        temp_min_c: 20.0
+        temp_max_c: 26.0
+        rh_min_pct: 55
+        rh_max_pct: 65
+        dli_target: 30.0
+        photoperiod_hrs: 16.0
+        notes: Pre-fruit
+      - stage: early_flower
+        ec_min: 2.40
+        ec_target: 2.80
+        ec_max: 3.20
+        ph_min: 5.5
+        ph_max: 6.0
+        vpd_min_kpa: 1.00
+        vpd_max_kpa: 1.30
+        temp_min_c: 20.0
+        temp_max_c: 26.0
+        rh_min_pct: 50
+        rh_max_pct: 60
+        dli_target: 30.0
+        photoperiod_hrs: 16.0
+        notes: Fruit set
+      - stage: mid_flower
+        ec_min: 2.80
+        ec_target: 3.20
+        ec_max: 3.50
+        ph_min: 5.5
+        ph_max: 6.0
+        vpd_min_kpa: 1.10
+        vpd_max_kpa: 1.40
+        temp_min_c: 20.0
+        temp_max_c: 26.0
+        rh_min_pct: 50
+        rh_max_pct: 60
+        dli_target: 35.0
+        photoperiod_hrs: 16.0
+        notes: Heavy fruiting — high EC
+
+  - key: pepper
+    display_name: Pepper (bell/chili)
+    category: fruiting
+    source: Similar to tomato, lower EC headroom
+    substrate: coco / rockwool
+    watering_style: pulse_dryback
+    runoff_pct_target: "10-20"
+    cousin_of: tomato
+    stages:
+      - stage: early_veg
+        ec_min: 1.40
+        ec_target: 1.80
+        ec_max: 2.20
+        ph_min: 5.5
+        ph_max: 6.0
+        vpd_min_kpa: 0.80
+        vpd_max_kpa: 1.10
+        temp_min_c: 22.0
+        temp_max_c: 28.0
+        rh_min_pct: 55
+        rh_max_pct: 65
+        dli_target: 25.0
+        photoperiod_hrs: 16.0
+        notes: Warm veg
+      - stage: late_veg
+        ec_min: 1.80
+        ec_target: 2.20
+        ec_max: 2.60
+        ph_min: 5.5
+        ph_max: 6.0
+        vpd_min_kpa: 0.90
+        vpd_max_kpa: 1.20
+        temp_min_c: 22.0
+        temp_max_c: 28.0
+        rh_min_pct: 50
+        rh_max_pct: 60
+        dli_target: 30.0
+        photoperiod_hrs: 16.0
+        notes: Pre-fruit
+      - stage: early_flower
+        ec_min: 2.00
+        ec_target: 2.40
+        ec_max: 2.80
+        ph_min: 5.5
+        ph_max: 6.0
+        vpd_min_kpa: 1.00
+        vpd_max_kpa: 1.30
+        temp_min_c: 22.0
+        temp_max_c: 28.0
+        rh_min_pct: 45
+        rh_max_pct: 55
+        dli_target: 30.0
+        photoperiod_hrs: 16.0
+        notes: Fruit set
+      - stage: mid_flower
+        ec_min: 2.20
+        ec_target: 2.60
+        ec_max: 3.00
+        ph_min: 5.5
+        ph_max: 6.0
+        vpd_min_kpa: 1.10
+        vpd_max_kpa: 1.40
+        temp_min_c: 22.0
+        temp_max_c: 28.0
+        rh_min_pct: 45
+        rh_max_pct: 55
+        dli_target: 35.0
+        photoperiod_hrs: 16.0
+        notes: Fruiting — lower than tomato peak
+
+  - key: lettuce
+    display_name: Lettuce / leafy greens
+    category: leafy
+    source: Low-EC leafy production
+    substrate: DWC / NFT / rockwool
+    watering_style: constant_feed
+    runoff_pct_target: "5-10"
+    cousin_of: null
+    stages:
+      - stage: seedling
+        ec_min: 0.60
+        ec_target: 0.80
+        ec_max: 1.00
+        ph_min: 5.5
+        ph_max: 6.0
+        vpd_min_kpa: 0.50
+        vpd_max_kpa: 0.80
+        temp_min_c: 18.0
+        temp_max_c: 22.0
+        rh_min_pct: 65
+        rh_max_pct: 75
+        dli_target: 12.0
+        photoperiod_hrs: 16.0
+        notes: Cool seedling
+      - stage: early_veg
+        ec_min: 0.80
+        ec_target: 1.00
+        ec_max: 1.20
+        ph_min: 5.5
+        ph_max: 6.0
+        vpd_min_kpa: 0.60
+        vpd_max_kpa: 0.90
+        temp_min_c: 18.0
+        temp_max_c: 22.0
+        rh_min_pct: 60
+        rh_max_pct: 70
+        dli_target: 15.0
+        photoperiod_hrs: 16.0
+        notes: Leaf expansion
+      - stage: late_veg
+        ec_min: 0.90
+        ec_target: 1.10
+        ec_max: 1.30
+        ph_min: 5.5
+        ph_max: 6.0
+        vpd_min_kpa: 0.70
+        vpd_max_kpa: 1.00
+        temp_min_c: 18.0
+        temp_max_c: 22.0
+        rh_min_pct: 55
+        rh_max_pct: 65
+        dli_target: 17.0
+        photoperiod_hrs: 16.0
+        notes: Pre-harvest
+
+  - key: phalaenopsis
+    display_name: Orchid (Phalaenopsis)
+    category: epiphyte
+    source: Epiphyte — very low EC, high RH
+    substrate: orchid_bark
+    watering_style: mist_epiphyte
+    runoff_pct_target: "0"
+    cousin_of: null
+    aliases: [orchid]
+    stages:
+      - stage: seedling
+        ec_min: 0.30
+        ec_target: 0.50
+        ec_max: 0.70
+        ph_min: 5.5
+        ph_max: 6.0
+        vpd_min_kpa: 0.40
+        vpd_max_kpa: 0.70
+        temp_min_c: 20.0
+        temp_max_c: 24.0
+        rh_min_pct: 70
+        rh_max_pct: 85
+        dli_target: 8.0
+        photoperiod_hrs: 12.0
+        notes: Low light epiphyte
+      - stage: early_veg
+        ec_min: 0.40
+        ec_target: 0.60
+        ec_max: 0.80
+        ph_min: 5.5
+        ph_max: 6.0
+        vpd_min_kpa: 0.50
+        vpd_max_kpa: 0.80
+        temp_min_c: 20.0
+        temp_max_c: 26.0
+        rh_min_pct: 65
+        rh_max_pct: 80
+        dli_target: 10.0
+        photoperiod_hrs: 12.0
+        notes: Vegetative spike growth
+      - stage: early_flower
+        ec_min: 0.40
+        ec_target: 0.60
+        ec_max: 0.80
+        ph_min: 5.5
+        ph_max: 6.0
+        vpd_min_kpa: 0.60
+        vpd_max_kpa: 0.90
+        temp_min_c: 20.0
+        temp_max_c: 26.0
+        rh_min_pct: 60
+        rh_max_pct: 75
+        dli_target: 12.0
+        photoperiod_hrs: 12.0
+        notes: Spike / bloom — very low EC
+
+  - key: basil
+    display_name: Basil / herbs
+    category: herb
+    source: Warm-weather herb baseline
+    substrate: coco / rockwool
+    watering_style: constant_feed
+    runoff_pct_target: "10-15"
+    cousin_of: null
+    stages:
+      - stage: seedling
+        ec_min: 0.80
+        ec_target: 1.00
+        ec_max: 1.20
+        ph_min: 5.5
+        ph_max: 6.0
+        vpd_min_kpa: 0.60
+        vpd_max_kpa: 0.90
+        temp_min_c: 22.0
+        temp_max_c: 26.0
+        rh_min_pct: 60
+        rh_max_pct: 70
+        dli_target: 15.0
+        photoperiod_hrs: 16.0
+        notes: Warm herb seedling
+      - stage: early_veg
+        ec_min: 1.00
+        ec_target: 1.40
+        ec_max: 1.60
+        ph_min: 5.5
+        ph_max: 6.0
+        vpd_min_kpa: 0.80
+        vpd_max_kpa: 1.10
+        temp_min_c: 22.0
+        temp_max_c: 28.0
+        rh_min_pct: 55
+        rh_max_pct: 65
+        dli_target: 20.0
+        photoperiod_hrs: 16.0
+        notes: Vegetative harvest
+      - stage: late_veg
+        ec_min: 1.20
+        ec_target: 1.60
+        ec_max: 1.80
+        ph_min: 5.5
+        ph_max: 6.0
+        vpd_min_kpa: 0.90
+        vpd_max_kpa: 1.20
+        temp_min_c: 22.0
+        temp_max_c: 28.0
+        rh_min_pct: 50
+        rh_max_pct: 60
+        dli_target: 22.0
+        photoperiod_hrs: 16.0
+        notes: Continuous harvest
+
+  - key: strawberry
+    display_name: Strawberry
+    category: fruiting
+    source: Day-neutral strawberry baseline
+    substrate: coco / rockwool
+    watering_style: pulse_dryback
+    runoff_pct_target: "10-15"
+    cousin_of: null
+    stages:
+      - stage: seedling
+        ec_min: 0.80
+        ec_target: 1.00
+        ec_max: 1.20
+        ph_min: 5.5
+        ph_max: 6.0
+        vpd_min_kpa: 0.60
+        vpd_max_kpa: 0.90
+        temp_min_c: 18.0
+        temp_max_c: 22.0
+        rh_min_pct: 65
+        rh_max_pct: 75
+        dli_target: 12.0
+        photoperiod_hrs: 14.0
+        notes: Transplant
+      - stage: early_veg
+        ec_min: 1.00
+        ec_target: 1.40
+        ec_max: 1.60
+        ph_min: 5.5
+        ph_max: 6.0
+        vpd_min_kpa: 0.80
+        vpd_max_kpa: 1.10
+        temp_min_c: 18.0
+        temp_max_c: 24.0
+        rh_min_pct: 60
+        rh_max_pct: 70
+        dli_target: 18.0
+        photoperiod_hrs: 14.0
+        notes: Runner / crown growth
+      - stage: early_flower
+        ec_min: 1.20
+        ec_target: 1.60
+        ec_max: 2.00
+        ph_min: 5.5
+        ph_max: 6.0
+        vpd_min_kpa: 0.90
+        vpd_max_kpa: 1.20
+        temp_min_c: 18.0
+        temp_max_c: 24.0
+        rh_min_pct: 55
+        rh_max_pct: 65
+        dli_target: 20.0
+        photoperiod_hrs: 14.0
+        notes: Day-neutral fruiting
+
+  # ── Tier A — Phase 82 WS4b (stages seeded) ───────────────────────────────
+  - key: eggplant
+    display_name: Eggplant
+    category: fruiting
+    source: Solanaceous fruiting; ~10% lower EC than tomato; hand-pollinate indoors
+    substrate: coco / rockwool slab
+    watering_style: pulse_dryback
+    runoff_pct_target: "10-20"
+    cousin_of: tomato
+    aliases: [aubergine]
+    stages:
+      - stage: seedling
+        ec_min: 0.90
+        ec_target: 1.10
+        ec_max: 1.30
+        ph_min: 5.5
+        ph_max: 6.0
+        vpd_min_kpa: 0.60
+        vpd_max_kpa: 0.90
+        temp_min_c: 22.0
+        temp_max_c: 26.0
+        rh_min_pct: 65
+        rh_max_pct: 75
+        dli_target: 15.0
+        photoperiod_hrs: 16.0
+        notes: Transplant; warm
+      - stage: early_veg
+        ec_min: 1.60
+        ec_target: 2.00
+        ec_max: 2.40
+        ph_min: 5.5
+        ph_max: 6.0
+        vpd_min_kpa: 0.80
+        vpd_max_kpa: 1.10
+        temp_min_c: 22.0
+        temp_max_c: 28.0
+        rh_min_pct: 60
+        rh_max_pct: 70
+        dli_target: 25.0
+        photoperiod_hrs: 16.0
+        notes: Vegetative; hand-pollinate when flowering indoors
+      - stage: late_veg
+        ec_min: 2.00
+        ec_target: 2.40
+        ec_max: 2.70
+        ph_min: 5.5
+        ph_max: 6.0
+        vpd_min_kpa: 0.90
+        vpd_max_kpa: 1.20
+        temp_min_c: 22.0
+        temp_max_c: 28.0
+        rh_min_pct: 55
+        rh_max_pct: 65
+        dli_target: 30.0
+        photoperiod_hrs: 16.0
+        notes: Pre-fruit
+      - stage: early_flower
+        ec_min: 2.20
+        ec_target: 2.50
+        ec_max: 2.90
+        ph_min: 5.5
+        ph_max: 6.0
+        vpd_min_kpa: 1.00
+        vpd_max_kpa: 1.30
+        temp_min_c: 22.0
+        temp_max_c: 28.0
+        rh_min_pct: 50
+        rh_max_pct: 60
+        dli_target: 30.0
+        photoperiod_hrs: 16.0
+        notes: Fruit set; vibrate flowers if no pollinators
+
+  - key: cucumber
+    display_name: Cucumber
+    category: fruiting
+    source: Vining fruiting cucumber; higher RH than tomato
+    substrate: coco / rockwool
+    watering_style: pulse_dryback
+    runoff_pct_target: "10-20"
+    cousin_of: tomato
+    stages:
+      - stage: early_veg
+        ec_min: 1.80
+        ec_target: 2.20
+        ec_max: 2.60
+        ph_min: 5.5
+        ph_max: 6.0
+        vpd_min_kpa: 0.80
+        vpd_max_kpa: 1.10
+        temp_min_c: 22.0
+        temp_max_c: 28.0
+        rh_min_pct: 65
+        rh_max_pct: 75
+        dli_target: 30.0
+        photoperiod_hrs: 16.0
+        notes: Vining veg; higher humidity than tomato
+      - stage: late_veg
+        ec_min: 2.20
+        ec_target: 2.60
+        ec_max: 3.00
+        ph_min: 5.5
+        ph_max: 6.0
+        vpd_min_kpa: 0.90
+        vpd_max_kpa: 1.20
+        temp_min_c: 22.0
+        temp_max_c: 28.0
+        rh_min_pct: 60
+        rh_max_pct: 70
+        dli_target: 35.0
+        photoperiod_hrs: 16.0
+        notes: Runner / trellis growth
+      - stage: early_flower
+        ec_min: 2.40
+        ec_target: 2.80
+        ec_max: 3.20
+        ph_min: 5.5
+        ph_max: 6.0
+        vpd_min_kpa: 1.00
+        vpd_max_kpa: 1.30
+        temp_min_c: 22.0
+        temp_max_c: 28.0
+        rh_min_pct: 55
+        rh_max_pct: 65
+        dli_target: 35.0
+        photoperiod_hrs: 16.0
+        notes: Fruiting; monitor transpiration on long vines
+
+  - key: kale
+    display_name: Kale
+    category: leafy
+    source: Leafy brassica; slightly higher EC than lettuce
+    substrate: DWC / NFT
+    watering_style: constant_feed
+    cousin_of: lettuce
+    stages:
+      - stage: seedling
+        ec_min: 0.80
+        ec_target: 1.00
+        ec_max: 1.20
+        ph_min: 5.5
+        ph_max: 6.0
+        vpd_min_kpa: 0.50
+        vpd_max_kpa: 0.80
+        temp_min_c: 16.0
+        temp_max_c: 22.0
+        rh_min_pct: 65
+        rh_max_pct: 75
+        dli_target: 12.0
+        photoperiod_hrs: 16.0
+        notes: Cool seedling
+      - stage: early_veg
+        ec_min: 1.00
+        ec_target: 1.20
+        ec_max: 1.40
+        ph_min: 5.5
+        ph_max: 6.0
+        vpd_min_kpa: 0.60
+        vpd_max_kpa: 0.90
+        temp_min_c: 16.0
+        temp_max_c: 22.0
+        rh_min_pct: 60
+        rh_max_pct: 70
+        dli_target: 15.0
+        photoperiod_hrs: 16.0
+        notes: Leaf expansion; tolerates cooler than basil
+      - stage: late_veg
+        ec_min: 1.10
+        ec_target: 1.30
+        ec_max: 1.50
+        ph_min: 5.5
+        ph_max: 6.0
+        vpd_min_kpa: 0.70
+        vpd_max_kpa: 1.00
+        temp_min_c: 16.0
+        temp_max_c: 22.0
+        rh_min_pct: 55
+        rh_max_pct: 65
+        dli_target: 17.0
+        photoperiod_hrs: 16.0
+        notes: Pre-harvest; baby or full leaf
+
+  - key: spinach
+    display_name: Spinach
+    category: leafy
+    source: Cool-season leafy; bolts in heat
+    substrate: DWC / NFT
+    watering_style: constant_feed
+    cousin_of: lettuce
+    stages:
+      - stage: seedling
+        ec_min: 0.60
+        ec_target: 0.80
+        ec_max: 1.00
+        ph_min: 5.5
+        ph_max: 6.0
+        vpd_min_kpa: 0.50
+        vpd_max_kpa: 0.80
+        temp_min_c: 15.0
+        temp_max_c: 20.0
+        rh_min_pct: 65
+        rh_max_pct: 75
+        dli_target: 12.0
+        photoperiod_hrs: 14.0
+        notes: Cool seedling; avoid heat
+      - stage: early_veg
+        ec_min: 0.80
+        ec_target: 1.00
+        ec_max: 1.20
+        ph_min: 5.5
+        ph_max: 6.0
+        vpd_min_kpa: 0.60
+        vpd_max_kpa: 0.90
+        temp_min_c: 15.0
+        temp_max_c: 20.0
+        rh_min_pct: 60
+        rh_max_pct: 70
+        dli_target: 15.0
+        photoperiod_hrs: 14.0
+        notes: Leaf crop; bolts above ~24 °C
+      - stage: late_veg
+        ec_min: 0.90
+        ec_target: 1.10
+        ec_max: 1.30
+        ph_min: 5.5
+        ph_max: 6.0
+        vpd_min_kpa: 0.70
+        vpd_max_kpa: 1.00
+        temp_min_c: 15.0
+        temp_max_c: 20.0
+        rh_min_pct: 55
+        rh_max_pct: 65
+        dli_target: 17.0
+        photoperiod_hrs: 14.0
+        notes: Harvest before bolting in warm rooms
+
+  - key: cilantro
+    display_name: Cilantro / coriander
+    category: herb
+    source: Cool-leaning herb; bolts in heat like basil but prefers lower temps
+    substrate: coco / rockwool
+    watering_style: constant_feed
+    cousin_of: basil
+    aliases: [coriander]
+    stages:
+      - stage: seedling
+        ec_min: 0.80
+        ec_target: 1.00
+        ec_max: 1.20
+        ph_min: 5.5
+        ph_max: 6.0
+        vpd_min_kpa: 0.60
+        vpd_max_kpa: 0.90
+        temp_min_c: 18.0
+        temp_max_c: 22.0
+        rh_min_pct: 60
+        rh_max_pct: 70
+        dli_target: 15.0
+        photoperiod_hrs: 14.0
+        notes: Cool germination; slow in heat
+      - stage: early_veg
+        ec_min: 1.00
+        ec_target: 1.40
+        ec_max: 1.60
+        ph_min: 5.5
+        ph_max: 6.0
+        vpd_min_kpa: 0.80
+        vpd_max_kpa: 1.10
+        temp_min_c: 18.0
+        temp_max_c: 24.0
+        rh_min_pct: 55
+        rh_max_pct: 65
+        dli_target: 18.0
+        photoperiod_hrs: 14.0
+        notes: Leaf harvest; bolts in sustained heat
+      - stage: late_veg
+        ec_min: 1.20
+        ec_target: 1.60
+        ec_max: 1.80
+        ph_min: 5.5
+        ph_max: 6.0
+        vpd_min_kpa: 0.90
+        vpd_max_kpa: 1.20
+        temp_min_c: 18.0
+        temp_max_c: 24.0
+        rh_min_pct: 50
+        rh_max_pct: 60
+        dli_target: 20.0
+        photoperiod_hrs: 14.0
+        notes: Succession plant; do not let go to seed indoors
+
+  - key: microgreens
+    display_name: Microgreens
+    category: leafy
+    source: Very low EC; 10–14 day turnover; shallow moisture
+    substrate: soilless_tray
+    watering_style: top_water_drydown
+    cousin_of: lettuce
+    stages:
+      - stage: seedling
+        ec_min: 0.40
+        ec_target: 0.55
+        ec_max: 0.70
+        ph_min: 5.5
+        ph_max: 6.0
+        vpd_min_kpa: 0.50
+        vpd_max_kpa: 0.80
+        temp_min_c: 18.0
+        temp_max_c: 22.0
+        rh_min_pct: 60
+        rh_max_pct: 75
+        dli_target: 10.0
+        photoperiod_hrs: 16.0
+        notes: Germination; mist or shallow water only
+      - stage: early_veg
+        ec_min: 0.55
+        ec_target: 0.70
+        ec_max: 0.85
+        ph_min: 5.5
+        ph_max: 6.0
+        vpd_min_kpa: 0.60
+        vpd_max_kpa: 0.90
+        temp_min_c: 18.0
+        temp_max_c: 22.0
+        rh_min_pct: 55
+        rh_max_pct: 70
+        dli_target: 12.0
+        photoperiod_hrs: 16.0
+        notes: 10–14 d cycle; harvest at cotyledon/first true leaf
+
+  # ── Tier B — catalog metadata; stages ship in WS4c ───────────────────────
+  - key: zucchini
+    display_name: Zucchini / summer squash
+    category: fruiting
+    substrate: coco / rockwool
+    watering_style: pulse_dryback
+    cousin_of: cucumber
+
+  - key: green_bean
+    display_name: Green bean
+    category: fruiting
+    substrate: coco / rockwool
+    watering_style: pulse_dryback
+    cousin_of: pepper
+
+  - key: mint
+    display_name: Mint
+    category: herb
+    substrate: coco / DWC
+    watering_style: constant_feed
+    cousin_of: basil
+
+  - key: parsley
+    display_name: Parsley
+    category: herb
+    substrate: coco / rockwool
+    watering_style: constant_feed
+    cousin_of: basil
+
+  - key: blueberry
+    display_name: Blueberry
+    category: fruiting
+    substrate: peat / coco
+    watering_style: pulse_dryback
+    cousin_of: strawberry
+
+  - key: hemp
+    display_name: Hemp (fiber/seed)
+    category: industrial
+    substrate: coco / rockwool
+    watering_style: pulse_dryback
+    cousin_of: cannabis
+
+  - key: broccoli
+    display_name: Broccoli
+    category: leafy
+    substrate: NFT / rockwool
+    watering_style: constant_feed
+    cousin_of: kale
+
+  - key: melon
+    display_name: Melon / cantaloupe
+    category: fruiting
+    substrate: coco / rockwool
+    watering_style: pulse_dryback
+    cousin_of: cucumber
+
+  - key: arugula
+    display_name: Arugula / rocket
+    category: leafy
+    substrate: DWC / NFT
+    watering_style: constant_feed
+    cousin_of: lettuce
+
+  # ── Tier C — optional greenhouse / ornamental ───────────────────────────
+  - key: rose
+    display_name: Rose (cut flower)
+    category: flower
+    substrate: rockwool / coco
+    watering_style: pulse_dryback
+    cousin_of: tomato
+
+  - key: sunflower
+    display_name: Sunflower
+    category: flower
+    substrate: coco / rockwool
+    watering_style: pulse_dryback
+    cousin_of: tomato
+
+  - key: hops
+    display_name: Hops (bines)
+    category: industrial
+    substrate: coco / rockwool
+    watering_style: pulse_dryback
+    cousin_of: cannabis
+
+  - key: succulent
+    display_name: Succulents (general)
+    category: ornamental
+    substrate: gritty_mix
+    watering_style: dry_down_succulent
+    cousin_of: null
+
+  - key: houseplant
+    display_name: Houseplant (general)
+    category: ornamental
+    substrate: peat / soilless_mix
+    watering_style: top_water_drydown
+    cousin_of: null
+
+unsupported:
+  - key: ramps
+    aliases: [wild_leek, allium_tricoccum]
+    reason: Woodland spring ephemeral — not indoor fertigation
+    cousin_of: null
+
+  - key: mushroom
+    aliases: [fungi, shiitake]
+    reason: Different production domain — use husbandry / animals module
+    cousin_of: null
+
+  - key: in_ground_root
+    aliases: [carrot, potato, sweet_potato]
+    reason: Field / deep soil crops — gr33n targets hydroponic and container
+    cousin_of: lettuce
+
+  - key: fruit_tree
+    aliases: [apple, grape, grapevine]
+    reason: Perennial tree/vine scale — years to bearing; greenhouse seedling caveat only
+    cousin_of: tomato
+
+  - key: ginseng
+    aliases: []
+    reason: Multi-year woodland medicinal — not fertigation automation
+    cousin_of: null

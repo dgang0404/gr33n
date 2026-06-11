@@ -15,6 +15,16 @@ include:
   - crop-cannabis-nutrition.md
   - crop-tomato-nutrition.md
   - crop-orchid-care.md
+  - crop-pepper-nutrition.md
+  - crop-lettuce-nutrition.md
+  - crop-basil-nutrition.md
+  - crop-strawberry-nutrition.md
+  - crop-eggplant-nutrition.md
+  - crop-cucumber-nutrition.md
+  - crop-kale-nutrition.md
+  - crop-spinach-nutrition.md
+  - crop-cilantro-nutrition.md
+  - crop-microgreens-nutrition.md
 
 exclude_globs:
   - "procedures/**"

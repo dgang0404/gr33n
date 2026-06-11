@@ -1,4 +1,4 @@
-.PHONY: run run-receiver build build-receiver test seed sqlc migrate ui dev dev-auth-test rag-ingest-help rag-ingest-demo rag-ingest-platform-docs compose-db-up compose-db-status compose-logging-up compose-logging-down setup-compose-dev dev-stack dev-stack-fresh dev-stack-fresh-rag local-up restart-local restart-local-serve db-sanity-report check-stack clean lint bootstrap-local bootstrap-local-docker install-deps-debian install-pi-edge-deps first-clone first-clone-docker first-clone-install-deps audit-openapi edge-smoke-help edge-actuator-smoke-help recipe-pack-import-help
+.PHONY: run run-receiver build build-receiver test seed sqlc migrate ui dev dev-auth-test rag-ingest-help rag-ingest-demo rag-ingest-platform-docs compose-db-up compose-db-status compose-logging-up compose-logging-down setup-compose-dev dev-stack dev-stack-fresh dev-stack-fresh-rag local-up restart-local restart-local-serve db-sanity-report check-stack check-crop-library clean lint bootstrap-local bootstrap-local-docker install-deps-debian install-pi-edge-deps first-clone first-clone-docker first-clone-install-deps audit-openapi edge-smoke-help edge-actuator-smoke-help recipe-pack-import-help
 
 # dash (common default /bin/sh) can report "wait: No child processes" for dev / dev-auth-test;
 # bash handles background jobs + wait reliably.
@@ -83,6 +83,9 @@ test: ## Run Go tests (dev build so smoke tests can use auth bypass)
 
 lint: ## Run go vet
 	$(GO) vet -tags dev ./...
+
+check-crop-library: ## Phase 82 WS4a — validate data/crop_library.yaml (EC mS/cm, growth_stage_enum)
+	@./scripts/generate-crop-seed.sql.sh --validate
 
 audit-openapi: ## Phase 20.95 WS6 — confirm openapi.yaml matches cmd/api/routes.go
 	@./scripts/openapi_route_diff.sh

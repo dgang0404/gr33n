@@ -34,7 +34,7 @@ LIMIT 1`).Scan(&ecMin, &ecMax)
 	expectStatus(t, resp, http.StatusOK)
 	body := decodeSlice(t, resp)
 	resp.Body.Close()
-	if len(body) < 7 {
-		t.Fatalf("want >= 7 profiles, got %d", len(body))
+	if len(body) < 13 {
+		t.Fatalf("want >= 13 profiles, got %d", len(body))
 	}
 }
