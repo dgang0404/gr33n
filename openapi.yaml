@@ -3302,6 +3302,162 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/Error" }
 
+  # ── Crop profiles (Phase 64 / Phase 83 WS6) ────────────────
+
+  /farms/{id}/crop-profiles:
+    get:
+      tags: [plants]
+      summary: List builtin and farm crop profiles
+      description: >
+        Returns platform builtins (`farm_id` null, `is_builtin` true) plus any
+        farm-specific rows. Effective targets for a `crop_key` prefer the farm
+        override when present — use `GET …/{crop_key}` for the resolved profile.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      responses:
+        "200":
+          description: Crop profile rows
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/CropProfile" }
+
+  /farms/{id}/crop-profiles/{crop_key}:
+    get:
+      tags: [plants]
+      summary: Get effective crop profile by crop_key
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+        - { $ref: "#/components/parameters/CropKey" }
+      responses:
+        "200":
+          description: Profile with stages (farm override wins over builtin)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CropProfileWithStages" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    put:
+      tags: [plants]
+      summary: Upsert farm crop override (farm admin)
+      description: >
+        Replaces any existing farm override for the same `crop_key`. Builtin
+        catalog entry must exist and be supported. Guardian reads overrides on
+        the next chat turn without RAG re-ingest.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+        - { $ref: "#/components/parameters/CropKey" }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CropProfileOverrideUpsert" }
+      responses:
+        "200":
+          description: Saved override with stages
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CropProfileWithStages" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+    delete:
+      tags: [plants]
+      summary: Remove farm crop override (farm admin)
+      description: Deletes the farm row; effective profile reverts to builtin.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+        - { $ref: "#/components/parameters/CropKey" }
+      responses:
+        "204":
+          description: Override removed
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /farms/{id}/crop-profiles/import:
+    post:
+      tags: [plants]
+      summary: Import a crop profile JSON for a farm
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CropProfileImport" }
+      responses:
+        "201":
+          description: Imported profile
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CropProfileWithStages" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+
+  /farms/{id}/crop-library/picker:
+    get:
+      tags: [plants]
+      summary: Crop library picker (catalog + profile coverage)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      responses:
+        "200":
+          description: Picker payload with counts and entries
+          content:
+            application/json:
+              schema: { type: object, additionalProperties: true }
+
+  /crop-profiles/{id}:
+    get:
+      tags: [plants]
+      summary: Get crop profile by numeric id
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      responses:
+        "200":
+          description: Profile with stages
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CropProfileWithStages" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /crop-profiles/{id}/clone:
+    post:
+      tags: [plants]
+      summary: Clone a builtin profile to a farm (legacy copy key)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+        - name: farm_id
+          in: query
+          required: true
+          schema: { type: integer, format: int64 }
+      responses:
+        "201":
+          description: Cloned farm profile
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CropProfileWithStages" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+
+  /crop-profiles/{id}/export:
+    get:
+      tags: [plants]
+      summary: Export crop profile as JSON attachment
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      responses:
+        "200":
+          description: Profile JSON download
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CropProfileWithStages" }
+
   # ── Plants ─────────────────────────────────────────────────
 
   /farms/{id}/plants:
@@ -5215,6 +5371,11 @@ components:
       required: true
       description: Chat session UUID (assigned on the first turn; returned by `POST /v1/chat`).
       schema: { type: string, format: uuid }
+    CropKey:
+      name: crop_key
+      in: path
+      required: true
+      schema: { type: string, example: cannabis }
 
   responses:
     BadRequest:
@@ -5229,6 +5390,11 @@ components:
           schema: { $ref: "#/components/schemas/Error" }
     Unauthorized:
       description: Authentication required
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    Forbidden:
+      description: Insufficient permissions
       content:
         application/json:
           schema: { $ref: "#/components/schemas/Error" }
@@ -7394,6 +7560,92 @@ components:
     PlantUpdate:
       allOf:
         - $ref: "#/components/schemas/PlantCreate"
+
+    CropProfile:
+      type: object
+      properties:
+        id: { type: integer, format: int64 }
+        farm_id: { type: integer, format: int64, nullable: true }
+        crop_key: { type: string }
+        display_name: { type: string }
+        category: { type: string, nullable: true }
+        source: { type: string, nullable: true }
+        version: { type: integer }
+        is_builtin: { type: boolean }
+        meta: { type: object }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+
+    CropProfileStage:
+      type: object
+      properties:
+        id: { type: integer, format: int64 }
+        crop_profile_id: { type: integer, format: int64 }
+        stage: { type: string, description: gr33nfertigation.growth_stage_enum value }
+        ec_min: { type: number, nullable: true, description: mS/cm }
+        ec_target: { type: number, nullable: true, description: mS/cm }
+        ec_max: { type: number, nullable: true, description: mS/cm }
+        ph_min: { type: number, nullable: true }
+        ph_max: { type: number, nullable: true }
+        vpd_min_kpa: { type: number, nullable: true, description: kPa }
+        vpd_max_kpa: { type: number, nullable: true, description: kPa }
+        temp_min_c: { type: number, nullable: true }
+        temp_max_c: { type: number, nullable: true }
+        rh_min_pct: { type: number, nullable: true }
+        rh_max_pct: { type: number, nullable: true }
+        dli_target: { type: number, nullable: true, description: mol/m²/day }
+        photoperiod_hrs: { type: number, nullable: true }
+        notes: { type: string, nullable: true }
+
+    CropProfileWithStages:
+      allOf:
+        - { $ref: "#/components/schemas/CropProfile" }
+        - type: object
+          properties:
+            stages:
+              type: array
+              items: { $ref: "#/components/schemas/CropProfileStage" }
+
+    CropProfileOverrideUpsert:
+      type: object
+      required: [stages]
+      properties:
+        display_name: { type: string }
+        source: { type: string, nullable: true }
+        stages:
+          type: array
+          minItems: 1
+          items:
+            type: object
+            required: [stage]
+            properties:
+              stage: { type: string }
+              ec_min: { type: number, nullable: true }
+              ec_target: { type: number, nullable: true }
+              ec_max: { type: number, nullable: true }
+              ph_min: { type: number, nullable: true }
+              ph_max: { type: number, nullable: true }
+              vpd_min_kpa: { type: number, nullable: true }
+              vpd_max_kpa: { type: number, nullable: true }
+              temp_min_c: { type: number, nullable: true }
+              temp_max_c: { type: number, nullable: true }
+              rh_min_pct: { type: number, nullable: true }
+              rh_max_pct: { type: number, nullable: true }
+              dli_target: { type: number, nullable: true }
+              photoperiod_hrs: { type: number, nullable: true }
+              notes: { type: string, nullable: true }
+
+    CropProfileImport:
+      type: object
+      required: [crop_key, display_name, stages]
+      properties:
+        crop_key: { type: string }
+        display_name: { type: string }
+        category: { type: string, nullable: true }
+        source: { type: string, nullable: true }
+        stages:
+          type: array
+          items: { $ref: "#/components/schemas/CropProfileStage" }
 
     AnimalGroup:
       type: object

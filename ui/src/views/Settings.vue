@@ -134,6 +134,12 @@
     </section>
 
     <!-- Farm site coordinates (Phase 66) -->
+    <CropTargetsSettings
+      v-if="farmContext.farmId"
+      :farm-id="farmContext.farmId"
+      :can-edit="isFarmAdmin"
+    />
+
     <section
       v-if="farmContext.farmId"
       class="bg-zinc-800 border border-zinc-700 rounded-xl p-5 mb-5"
@@ -1019,6 +1025,7 @@ import {
   BOOTSTRAP_TEMPLATE_KEYS,
   BOOTSTRAP_STARTER_SUMMARIES,
 } from '../constants/bootstrapTemplates'
+import CropTargetsSettings from '../components/CropTargetsSettings.vue'
 import { farmSetupRoute } from '../lib/farmSetupWizard.js'
 
 const router = useRouter()

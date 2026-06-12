@@ -839,6 +839,20 @@ export const useFarmStore = defineStore('farm', {
       return r.data
     },
 
+    async getCropProfileByKey(farmId, cropKey) {
+      const r = await api.get(`/farms/${farmId}/crop-profiles/${encodeURIComponent(cropKey)}`)
+      return r.data
+    },
+
+    async upsertCropProfileOverride(farmId, cropKey, body) {
+      const r = await api.put(`/farms/${farmId}/crop-profiles/${encodeURIComponent(cropKey)}`, body)
+      return r.data
+    },
+
+    async deleteCropProfileOverride(farmId, cropKey) {
+      await api.delete(`/farms/${farmId}/crop-profiles/${encodeURIComponent(cropKey)}`)
+    },
+
     // Animal husbandry (Phase 20.8)
     async loadAnimalGroups(farmId) {
       const r = await api.get(`/farms/${farmId}/animal-groups`)
