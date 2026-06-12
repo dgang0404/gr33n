@@ -3,7 +3,7 @@
  * Phase 44 WS4 — setup-mode starters for wizards and onboarding drawer.
  */
 
-import { buildPostHarvestCompareRoute } from './growHub.js'
+import { buildPostHarvestCompareRoute, cycleBatchLabel } from './growHub.js'
 
 const SETUP_SURFACE_MAX = {
   first_run_dashboard: 3,
@@ -322,7 +322,7 @@ export function buildZoneGrowStripStarters({
   if (!zone?.id || !activeCycle?.id) return []
 
   const zoneName = zone.name || 'this zone'
-  const cycleName = activeCycle.name || activeCycle.strain_or_variety || 'this grow'
+  const cycleName = activeCycle.name || cycleBatchLabel(activeCycle) || 'this grow'
   const contextRef = {
     type: 'zone',
     id: zone.id,
@@ -386,7 +386,7 @@ export function buildZoneGrowStripStarters({
       id: 'compare-last-cycle',
       label: 'Compare to last time',
       message: priorHarvestedCycle
-        ? `How does the current grow in ${zoneName} compare to my last harvested cycle "${priorHarvestedCycle.name || priorHarvestedCycle.strain_or_variety || 'last run'}" in this zone?`
+        ? `How does the current grow in ${zoneName} compare to my last harvested cycle "${priorHarvestedCycle.name || cycleBatchLabel(priorHarvestedCycle) || 'last run'}" in this zone?`
         : `How does the current grow in ${zoneName} compare to previous harvested cycles in this zone?`,
       contextRef: farmId
         ? {
@@ -436,7 +436,7 @@ export function buildHarvestFlowStarters({
   }
 
   const priorLabel = priorHarvestedCycle?.name
-    || priorHarvestedCycle?.strain_or_variety
+    || cycleBatchLabel(priorHarvestedCycle)
     || 'the last run'
 
   const starters = [

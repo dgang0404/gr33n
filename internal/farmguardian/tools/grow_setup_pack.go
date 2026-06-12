@@ -223,12 +223,16 @@ func cycleArgsFromSetupPack(pack growSetupPack, plantVariety string) (map[string
 		"current_stage": pack.Cycle["current_stage"],
 		"started_at":    pack.Cycle["started_at"],
 	}
-	if strain, ok := pack.Cycle["strain_or_variety"]; ok && strain != nil {
-		out["strain_or_variety"] = strain
+	if batch, ok := pack.Cycle["batch_label"]; ok && batch != nil {
+		out["batch_label"] = batch
+	} else if strain, ok := pack.Cycle["strain_or_variety"]; ok && strain != nil {
+		out["batch_label"] = strain
 	} else if plantVariety != "" {
-		out["strain_or_variety"] = plantVariety
+		out["batch_label"] = plantVariety
 	} else if pack.Plant != nil {
-		out["strain_or_variety"] = pack.Plant["display_name"]
+		if v, ok := pack.Plant["display_name"]; ok {
+			out["batch_label"] = v
+		}
 	}
 	if notes, err := optionalStringFromArgs(pack.Cycle, "cycle_notes"); err != nil {
 		return nil, err
@@ -305,7 +309,7 @@ func linkCropCyclePrimaryProgram(ctx context.Context, q db.Querier, cycleID, pro
 	_, err = q.UpdateCropCycle(ctx, db.UpdateCropCycleParams{
 		ID:               cc.ID,
 		Name:             cc.Name,
-		StrainOrVariety:  cc.StrainOrVariety,
+		BatchLabel:  cc.BatchLabel,
 		ZoneID:           cc.ZoneID,
 		IsActive:         cc.IsActive,
 		CycleNotes:       cc.CycleNotes,

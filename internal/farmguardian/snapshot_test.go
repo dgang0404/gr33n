@@ -117,7 +117,7 @@ func TestSnapshot_TruncatesZones(t *testing.T) {
 func TestSnapshot_RendersActiveCycleDetails(t *testing.T) {
 	s := Snapshot{
 		ActiveCycles: []ActiveCycle{
-			{Name: "TomatoSpring", ZoneName: "B", Strain: "Roma", Stage: "vegetative"},
+			{Name: "TomatoSpring", ZoneName: "B", BatchLabel: "Roma", Stage: "vegetative"},
 			{Name: "BasilWinter", ZoneName: "A"},
 		},
 	}

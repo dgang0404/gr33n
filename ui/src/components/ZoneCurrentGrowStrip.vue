@@ -14,8 +14,8 @@
           <p class="text-zinc-400 text-xs mt-0.5">
             <span class="capitalize">{{ stageLabel }}</span>
             <span v-if="dayCount != null" class="text-zinc-600"> · day {{ dayCount }}</span>
-            <span v-if="activeCycle.strain_or_variety" class="text-zinc-600">
-              · {{ activeCycle.strain_or_variety }}
+            <span v-if="cycleBatchLabel(activeCycle)" class="text-zinc-600">
+              · {{ cycleBatchLabel(activeCycle) }}
             </span>
           </p>
           <p
@@ -85,6 +85,7 @@ import { computed, ref, watch } from 'vue'
 import { useFarmStore } from '../stores/farm.js'
 import {
   activeCycleForZone,
+  cycleBatchLabel,
   daysSinceStart,
   formatEcTargetChip,
   formatStageLabel,

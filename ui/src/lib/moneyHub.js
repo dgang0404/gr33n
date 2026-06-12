@@ -2,6 +2,8 @@
  * Phase 43 WS4 — farmer money hub helpers.
  */
 
+import { cycleBatchLabel } from './growHub.js'
+
 /** Simplified spend categories for receipt capture (maps to cost API enums). */
 export const FARMER_SPEND_CATEGORIES = [
   { label: 'Supplies & inputs', value: 'fertilizers_soil_amendments' },
@@ -115,9 +117,9 @@ export function autologContextLink(tx) {
  * @param {object} cycle
  */
 export function formatCycleOptionLabel(cycle) {
-  const strain = cycle?.strain_or_variety || 'Grow'
+  const label = cycleBatchLabel(cycle) || 'Grow'
   const stage = cycle?.current_stage ? String(cycle.current_stage).replace(/_/g, ' ') : ''
-  return stage ? `${strain} — ${stage}` : strain
+  return stage ? `${label} — ${stage}` : label
 }
 
 /**

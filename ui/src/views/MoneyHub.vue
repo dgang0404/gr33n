@@ -254,6 +254,7 @@ import { useFarmContextStore } from '../stores/farmContext.js'
 import EmptyStateHint from '../components/EmptyStateHint.vue'
 import GuardianStarterChips from '../components/GuardianStarterChips.vue'
 import { buildMoneyHubStarters } from '../lib/guardianStarters.js'
+import { cycleBatchLabel } from '../lib/growHub.js'
 import {
   FARMER_SPEND_CATEGORIES,
   FARMER_INCOME_CATEGORIES,
@@ -279,7 +280,7 @@ const filterCycleId = computed(() => {
 const filterCycleLabel = computed(() => {
   if (!filterCycleId.value) return ''
   const c = cropCycles.value.find((row) => Number(row.id) === filterCycleId.value)
-  return c?.name || c?.strain_or_variety || ''
+  return c?.name || cycleBatchLabel(c) || ''
 })
 
 const loading = ref(false)

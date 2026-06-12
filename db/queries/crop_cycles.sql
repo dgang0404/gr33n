@@ -4,7 +4,7 @@
 
 -- name: CreateCropCycle :one
 INSERT INTO gr33nfertigation.crop_cycles (
-    farm_id, zone_id, name, strain_or_variety, current_stage,
+    farm_id, zone_id, name, batch_label, current_stage,
     is_active, started_at, cycle_notes, primary_program_id, plant_id
 ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
 RETURNING *;
@@ -25,7 +25,7 @@ SELECT * FROM gr33nfertigation.crop_cycles WHERE id = $1;
 -- name: UpdateCropCycle :one
 UPDATE gr33nfertigation.crop_cycles SET
     name = $2,
-    strain_or_variety = $3,
+    batch_label = $3,
     zone_id = $4,
     is_active = $5,
     cycle_notes = $6,

@@ -444,7 +444,7 @@
           <option v-for="z in zones" :key="z.id" :value="z.id">{{ z.name }}</option>
         </select>
         <input v-model="cycleForm.name" placeholder="Cycle name" required class="input-field" />
-        <input v-model="cycleForm.strain_or_variety" placeholder="Strain / variety" class="input-field" />
+        <input v-model="cycleForm.batch_label" placeholder="Batch label (optional)" class="input-field" />
         <select v-model="cycleForm.current_stage" class="input-field">
           <option v-for="gs in growthStages" :key="gs" :value="gs">{{ gs.replace(/_/g, ' ') }}</option>
         </select>
@@ -471,7 +471,7 @@
             <div>
               <p class="text-white font-medium">{{ c.name }}</p>
               <p class="text-zinc-500 text-xs mt-1">{{ zoneLabel(c.zone_id) }}
-                <span v-if="c.strain_or_variety"> · {{ c.strain_or_variety }}</span>
+                <span v-if="cycleBatchLabel(c)"> · {{ cycleBatchLabel(c) }}</span>
               </p>
             </div>
             <span class="text-xs px-2 py-0.5 rounded-full capitalize shrink-0"
@@ -616,6 +616,7 @@ import {
   parseZoneIdQuery,
   programAppliesToZone,
 } from '../lib/zoneContext.js'
+import { cycleBatchLabel } from '../lib/growHub.js'
 import { comfortTabRoute, moneyTabRoute } from '../lib/workspaceRoutes.js'
 
 const comfortScheduleRoute = comfortTabRoute('schedules')
@@ -706,7 +707,7 @@ const stageDraft = reactive({})
 const cycleForm = ref({
   zone_id: '',
   name: '',
-  strain_or_variety: '',
+  batch_label: '',
   current_stage: 'seedling',
   started_at: new Date().toISOString().slice(0, 10),
   is_active: true,
@@ -998,7 +999,7 @@ function emptyCycleForm() {
   return {
     zone_id: '',
     name: '',
-    strain_or_variety: '',
+    batch_label: '',
     current_stage: 'seedling',
     started_at: new Date().toISOString().slice(0, 10),
     is_active: true,
@@ -1024,7 +1025,7 @@ function startEditCycle(c) {
   cycleForm.value = {
     zone_id: c.zone_id,
     name: c.name,
-    strain_or_variety: c.strain_or_variety || '',
+    batch_label: cycleBatchLabel(c) || '',
     current_stage: cycleStageRaw(c),
     started_at: isoDate(c.started_at) === '—' ? new Date().toISOString().slice(0, 10) : isoDate(c.started_at),
     is_active: !!c.is_active,
@@ -1042,7 +1043,7 @@ async function submitCycle() {
     const fid = farmId.value
     const base = {
       name: cycleForm.value.name.trim(),
-      strain_or_variety: cycleForm.value.strain_or_variety?.trim() || undefined,
+      batch_label: cycleForm.value.batch_label?.trim() || undefined,
       zone_id: Number(cycleForm.value.zone_id),
       is_active: cycleForm.value.is_active,
       cycle_notes: cycleForm.value.cycle_notes?.trim() || undefined,
@@ -1060,7 +1061,7 @@ async function submitCycle() {
       await store.createCropCycle(fid, {
         zone_id: base.zone_id,
         name: base.name,
-        strain_or_variety: base.strain_or_variety,
+        batch_label: base.batch_label,
         current_stage: cycleForm.value.current_stage,
         started_at: cycleForm.value.started_at,
         is_active: base.is_active,

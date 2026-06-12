@@ -104,7 +104,7 @@ func renderRouteContext(path, nameHint string, history []ContextRef) string {
 	case path == "/fertigation":
 		b.WriteString("\nFertigation (technical) — EC/pH mixing programs. Use precise nutrient and dosing language.")
 	case path == "/plants":
-		b.WriteString("\nPlants — strain catalog and varieties. Distinguish catalog plants from active grow runs (summarize_active_grows). Start a new grow from zone Overview or Plants — not silent chat writes.")
+		b.WriteString("\nPlants — catalog plants and varieties. Distinguish catalog plants from active grow runs (summarize_active_grows). Start a new grow from zone Overview or Plants — not silent chat writes.")
 	case path == "/pi-setup":
 		b.WriteString("\nPi + HAT setup guide — operator is configuring Raspberry Pi hardware with Sequent Microsystems stacking relay HATs. Use summarize_device_health for live GPIO/relay assignments. Offer procedure wire-pi-relay-light.")
 	case path == "/" || path == "":
@@ -262,8 +262,8 @@ func renderCropCycleContext(ctx context.Context, q *db.Queries, farmID, cycleID 
 	if z, zerr := q.GetZoneByID(ctx, c.ZoneID); zerr == nil {
 		ac.ZoneName = z.Name
 	}
-	if c.StrainOrVariety != nil {
-		ac.Strain = *c.StrainOrVariety
+	if c.BatchLabel != nil {
+		ac.BatchLabel = *c.BatchLabel
 	}
 	if c.CurrentStage != nil {
 		ac.Stage = string(*c.CurrentStage)
@@ -277,8 +277,8 @@ func renderCropCycleContext(ctx context.Context, q *db.Queries, farmID, cycleID 
 		b.WriteString(fmt.Sprintf(" (zone %s)", ac.ZoneName))
 	}
 	b.WriteByte('\n')
-	if ac.Strain != "" {
-		b.WriteString("Strain: " + ac.Strain + "\n")
+	if ac.BatchLabel != "" {
+		b.WriteString("Batch: " + ac.BatchLabel + "\n")
 	}
 	if ac.Stage != "" {
 		b.WriteString("Stage: " + ac.Stage + "\n")

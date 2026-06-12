@@ -22,9 +22,9 @@
     <EmptyStateHint
       v-else-if="!cycles.length"
       reason="no_data"
-      message="No crop cycles yet — start a grow from Zones → Plants & strains or a zone Overview tab."
-      action-label="Plants & strains"
-      :action-to="{ path: '/zones', query: { tab: 'strains' } }"
+      message="No crop cycles yet — start a grow from Zones → Plants or a zone Overview tab."
+      action-label="Plants"
+      :action-to="{ path: '/zones', query: { tab: 'plants' } }"
     />
     <div v-else class="space-y-2">
       <div
@@ -34,7 +34,7 @@
         data-test="money-grow-row"
       >
         <div class="min-w-0">
-          <p class="text-sm text-zinc-200 truncate">{{ c.name || c.strain_or_variety || `Grow #${c.id}` }}</p>
+          <p class="text-sm text-zinc-200 truncate">{{ c.name || cycleBatchLabel(c) || `Grow #${c.id}` }}</p>
           <p class="text-[11px] text-zinc-500">
             {{ c.is_active ? 'Active' : 'Harvested' }}
             <span v-if="c.zone_id"> · zone #{{ c.zone_id }}</span>
@@ -62,6 +62,7 @@
 
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue'
+import { cycleBatchLabel } from '../lib/growHub.js'
 import { useFarmStore } from '../stores/farm'
 import { useFarmContextStore } from '../stores/farmContext'
 import EmptyStateHint from '../components/EmptyStateHint.vue'

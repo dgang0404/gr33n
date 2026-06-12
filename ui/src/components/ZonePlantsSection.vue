@@ -18,7 +18,7 @@
           class="flex items-center justify-between gap-2 text-sm border-b border-zinc-800/60 pb-2 last:border-0 last:pb-0"
         >
           <div class="min-w-0">
-            <p class="text-zinc-200 truncate">{{ c.name || c.strain_or_variety || 'Grow' }}</p>
+            <p class="text-zinc-200 truncate">{{ c.name || cycleBatchLabel(c) || 'Grow' }}</p>
             <p class="text-zinc-600 text-xs">{{ formatHarvest(c) }}</p>
           </div>
           <router-link
@@ -70,7 +70,7 @@
 
       <router-link
         v-nav-hint="'/zones'"
-        :to="{ path: '/zones', query: { tab: 'strains' } }"
+        :to="{ path: '/zones', query: { tab: 'plants' } }"
         class="inline-block mt-3 text-xs text-green-600 hover:text-green-400"
       >
         All farm plants →
@@ -130,6 +130,7 @@
 
 <script setup>
 import { computed, ref } from 'vue'
+import { cycleBatchLabel } from '../lib/growHub.js'
 import { useFarmStore } from '../stores/farm.js'
 import { useFarmContextStore } from '../stores/farmContext.js'
 import ZoneCurrentGrowStrip from './ZoneCurrentGrowStrip.vue'

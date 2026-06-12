@@ -5,7 +5,7 @@
       class="px-4 sm:px-6 pt-4 pb-2 flex flex-wrap items-center justify-between gap-2 border-b border-zinc-800/60"
       data-test="strains-compare-banner"
     >
-      <p class="text-xs text-zinc-500">Strain definitions and active grows across the farm.</p>
+      <p class="text-xs text-zinc-500">Catalog plants and active grows across the farm.</p>
       <router-link
         v-if="compareRoute"
         v-nav-hint="'/zones'"
@@ -19,7 +19,7 @@
     <div v-if="!embedded" class="flex items-center justify-between mb-6">
       <h1 class="text-xl font-semibold text-white">Plants
         <HelpTip position="bottom">
-          Plants are species or strain definitions (e.g. "OG Kush", "Basil - Genovese"). Create a plant here, then use Crop Cycles in Fertigation to track an individual grow of that plant in a specific zone.
+          Plants are catalog-bound crop types (e.g. Tomato, Basil). Create a plant from the knowledge base, then start a grow in a zone to track a batch run.
         </HelpTip>
       </h1>
       <div class="flex items-center gap-3">
@@ -73,7 +73,7 @@
                 :to="`/crop-cycles/${c.id}/summary`"
                 class="text-green-500 hover:text-green-300"
               >
-                {{ c.name || c.strain_or_variety || 'Grow' }}
+                {{ c.name || cycleBatchLabel(c) || 'Grow' }}
               </router-link>
               <span class="text-zinc-500"> · {{ c.is_active ? 'active' : 'harvested' }}</span>
             </li>
@@ -212,7 +212,7 @@ import HelpTip from '../components/HelpTip.vue'
 import EmptyStateHint from '../components/EmptyStateHint.vue'
 import StartGrowWizard from '../components/StartGrowWizard.vue'
 import CropLibraryPicker from '../components/CropLibraryPicker.vue'
-import { strainFromPlant } from '../lib/growHub.js'
+import { cycleBatchLabel, strainFromPlant } from '../lib/growHub.js'
 
 defineProps({
   embedded: { type: Boolean, default: false },

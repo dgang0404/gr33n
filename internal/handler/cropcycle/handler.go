@@ -86,7 +86,19 @@ func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 		}
 		rows = filtered
 	}
-	httputil.WriteJSON(w, http.StatusOK, rows)
+	writeCyclesJSON(w, http.StatusOK, rows)
+}
+
+func writeCyclesJSON(w http.ResponseWriter, status int, rows []db.Gr33nfertigationCropCycle) {
+	out := make([]map[string]any, len(rows))
+	for i, row := range rows {
+		out[i] = cropcycle.CycleJSON(row)
+	}
+	httputil.WriteJSON(w, status, out)
+}
+
+func writeCycleJSON(w http.ResponseWriter, status int, row db.Gr33nfertigationCropCycle) {
+	httputil.WriteJSON(w, status, cropcycle.CycleJSON(row))
 }
 
 // Get — GET /crop-cycles/{id}
@@ -108,10 +120,8 @@ func (h *Handler) Get(w http.ResponseWriter, r *http.Request) {
 	if !farmauthz.RequireFarmMember(w, r, h.q, row.FarmID) {
 		return
 	}
-	httputil.WriteJSON(w, http.StatusOK, row)
+	writeCycleJSON(w, http.StatusOK, row)
 }
-
-// Create — POST /farms/{id}/crop-cycles
 func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 	farmID, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil {
@@ -164,13 +174,7 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 	if body.IsActive != nil {
 		active = *body.IsActive
 	}
-	strainOrVariety := body.StrainOrVariety
-	if batch := body.BatchLabel; batch != nil && strings.TrimSpace(*batch) != "" {
-		if strainOrVariety == nil || strings.TrimSpace(*strainOrVariety) == "" {
-			v := strings.TrimSpace(*batch)
-			strainOrVariety = &v
-		}
-	}
+	batchLabel := cropcycle.ResolveBatchLabel(body.BatchLabel, body.StrainOrVariety)
 	plantID, err := h.resolvePlantIDForFarm(r.Context(), farmID, body.PlantID, active)
 	if err != nil {
 		httputil.WriteError(w, http.StatusBadRequest, err.Error())
@@ -181,7 +185,7 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		FarmID:           farmID,
 		ZoneID:           body.ZoneID,
 		Name:             name,
-		StrainOrVariety:  strainOrVariety,
+		BatchLabel:       batchLabel,
 		CurrentStage:     stage,
 		IsActive:         active,
 		StartedAt:        started,
@@ -209,10 +213,8 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	httputil.WriteJSON(w, http.StatusCreated, row)
+	writeCycleJSON(w, http.StatusCreated, row)
 }
-
-// Update — PUT /crop-cycles/{id}
 func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil {
@@ -221,6 +223,7 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 	}
 	var body struct {
 		Name             string   `json:"name"`
+		BatchLabel       *string  `json:"batch_label"`
 		StrainOrVariety  *string  `json:"strain_or_variety"`
 		ZoneID           int64    `json:"zone_id"`
 		IsActive         bool     `json:"is_active"`
@@ -302,10 +305,14 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
+	batchLabel := existing.BatchLabel
+	if body.BatchLabel != nil || body.StrainOrVariety != nil {
+		batchLabel = cropcycle.ResolveBatchLabel(body.BatchLabel, body.StrainOrVariety)
+	}
 	row, err := h.q.UpdateCropCycle(r.Context(), db.UpdateCropCycleParams{
 		ID:               id,
 		Name:             name,
-		StrainOrVariety:  body.StrainOrVariety,
+		BatchLabel:       batchLabel,
 		ZoneID:           body.ZoneID,
 		IsActive:         body.IsActive,
 		CycleNotes:       body.CycleNotes,
@@ -324,7 +331,7 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-	httputil.WriteJSON(w, http.StatusOK, row)
+	writeCycleJSON(w, http.StatusOK, row)
 }
 
 // UpdateStage — PATCH /crop-cycles/{id}/stage
@@ -376,7 +383,7 @@ func (h *Handler) UpdateStage(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	httputil.WriteJSON(w, http.StatusOK, row)
+	writeCycleJSON(w, http.StatusOK, row)
 }
 
 func (h *Handler) resolvePlantIDForFarm(ctx context.Context, farmID int64, plantID *int64, active bool) (*int64, error) {

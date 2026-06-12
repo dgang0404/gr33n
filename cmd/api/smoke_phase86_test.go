@@ -66,8 +66,11 @@ func TestPhase86_GuardianECMatchesCropProfileStage(t *testing.T) {
 	expectStatus(t, resp, http.StatusCreated)
 	cycle := decodeMap(t, resp)
 	cycleID := int64(cycle["id"].(float64))
+	if cycle["batch_label"] != "Batch A" {
+		t.Fatalf("expected batch_label Batch A, got %v", cycle["batch_label"])
+	}
 	if cycle["strain_or_variety"] != "Batch A" {
-		t.Fatalf("expected batch_label as strain_or_variety, got %v", cycle["strain_or_variety"])
+		t.Fatalf("expected strain_or_variety alias Batch A, got %v", cycle["strain_or_variety"])
 	}
 
 	var ecMin, ecMax float64

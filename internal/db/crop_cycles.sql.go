@@ -15,17 +15,17 @@ import (
 const createCropCycle = `-- name: CreateCropCycle :one
 
 INSERT INTO gr33nfertigation.crop_cycles (
-    farm_id, zone_id, name, strain_or_variety, current_stage,
+    farm_id, zone_id, name, batch_label, current_stage,
     is_active, started_at, cycle_notes, primary_program_id, plant_id
 ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-RETURNING id, farm_id, zone_id, name, strain_or_variety, current_stage, is_active, started_at, harvested_at, yield_grams, yield_notes, cycle_notes, created_at, updated_at, primary_program_id, plant_id
+RETURNING id, farm_id, zone_id, name, batch_label, current_stage, is_active, started_at, harvested_at, yield_grams, yield_notes, cycle_notes, created_at, updated_at, primary_program_id, plant_id
 `
 
 type CreateCropCycleParams struct {
 	FarmID           int64                            `db:"farm_id" json:"farm_id"`
 	ZoneID           int64                            `db:"zone_id" json:"zone_id"`
 	Name             string                           `db:"name" json:"name"`
-	StrainOrVariety  *string                          `db:"strain_or_variety" json:"strain_or_variety"`
+	BatchLabel       *string                          `db:"batch_label" json:"batch_label"`
 	CurrentStage     *Gr33nfertigationGrowthStageEnum `db:"current_stage" json:"current_stage"`
 	IsActive         bool                             `db:"is_active" json:"is_active"`
 	StartedAt        pgtype.Date                      `db:"started_at" json:"started_at"`
@@ -42,7 +42,7 @@ func (q *Queries) CreateCropCycle(ctx context.Context, arg CreateCropCycleParams
 		arg.FarmID,
 		arg.ZoneID,
 		arg.Name,
-		arg.StrainOrVariety,
+		arg.BatchLabel,
 		arg.CurrentStage,
 		arg.IsActive,
 		arg.StartedAt,
@@ -56,7 +56,7 @@ func (q *Queries) CreateCropCycle(ctx context.Context, arg CreateCropCycleParams
 		&i.FarmID,
 		&i.ZoneID,
 		&i.Name,
-		&i.StrainOrVariety,
+		&i.BatchLabel,
 		&i.CurrentStage,
 		&i.IsActive,
 		&i.StartedAt,
@@ -73,7 +73,7 @@ func (q *Queries) CreateCropCycle(ctx context.Context, arg CreateCropCycleParams
 }
 
 const getActiveCropCycleForZone = `-- name: GetActiveCropCycleForZone :one
-SELECT id, farm_id, zone_id, name, strain_or_variety, current_stage, is_active, started_at, harvested_at, yield_grams, yield_notes, cycle_notes, created_at, updated_at, primary_program_id, plant_id FROM gr33nfertigation.crop_cycles
+SELECT id, farm_id, zone_id, name, batch_label, current_stage, is_active, started_at, harvested_at, yield_grams, yield_notes, cycle_notes, created_at, updated_at, primary_program_id, plant_id FROM gr33nfertigation.crop_cycles
 WHERE zone_id = $1 AND is_active = TRUE
 LIMIT 1
 `
@@ -90,7 +90,7 @@ func (q *Queries) GetActiveCropCycleForZone(ctx context.Context, zoneID int64) (
 		&i.FarmID,
 		&i.ZoneID,
 		&i.Name,
-		&i.StrainOrVariety,
+		&i.BatchLabel,
 		&i.CurrentStage,
 		&i.IsActive,
 		&i.StartedAt,
@@ -107,7 +107,7 @@ func (q *Queries) GetActiveCropCycleForZone(ctx context.Context, zoneID int64) (
 }
 
 const getCropCycleByID = `-- name: GetCropCycleByID :one
-SELECT id, farm_id, zone_id, name, strain_or_variety, current_stage, is_active, started_at, harvested_at, yield_grams, yield_notes, cycle_notes, created_at, updated_at, primary_program_id, plant_id FROM gr33nfertigation.crop_cycles WHERE id = $1
+SELECT id, farm_id, zone_id, name, batch_label, current_stage, is_active, started_at, harvested_at, yield_grams, yield_notes, cycle_notes, created_at, updated_at, primary_program_id, plant_id FROM gr33nfertigation.crop_cycles WHERE id = $1
 `
 
 func (q *Queries) GetCropCycleByID(ctx context.Context, id int64) (Gr33nfertigationCropCycle, error) {
@@ -118,7 +118,7 @@ func (q *Queries) GetCropCycleByID(ctx context.Context, id int64) (Gr33nfertigat
 		&i.FarmID,
 		&i.ZoneID,
 		&i.Name,
-		&i.StrainOrVariety,
+		&i.BatchLabel,
 		&i.CurrentStage,
 		&i.IsActive,
 		&i.StartedAt,
@@ -178,7 +178,7 @@ func (q *Queries) GetFertigationAggregatesByCropCycle(ctx context.Context, cropC
 }
 
 const listCropCyclesByFarm = `-- name: ListCropCyclesByFarm :many
-SELECT id, farm_id, zone_id, name, strain_or_variety, current_stage, is_active, started_at, harvested_at, yield_grams, yield_notes, cycle_notes, created_at, updated_at, primary_program_id, plant_id FROM gr33nfertigation.crop_cycles
+SELECT id, farm_id, zone_id, name, batch_label, current_stage, is_active, started_at, harvested_at, yield_grams, yield_notes, cycle_notes, created_at, updated_at, primary_program_id, plant_id FROM gr33nfertigation.crop_cycles
 WHERE farm_id = $1
 ORDER BY started_at DESC
 `
@@ -197,7 +197,7 @@ func (q *Queries) ListCropCyclesByFarm(ctx context.Context, farmID int64) ([]Gr3
 			&i.FarmID,
 			&i.ZoneID,
 			&i.Name,
-			&i.StrainOrVariety,
+			&i.BatchLabel,
 			&i.CurrentStage,
 			&i.IsActive,
 			&i.StartedAt,
@@ -221,7 +221,7 @@ func (q *Queries) ListCropCyclesByFarm(ctx context.Context, farmID int64) ([]Gr3
 }
 
 const listCropCyclesByFarmUpdatedAfter = `-- name: ListCropCyclesByFarmUpdatedAfter :many
-SELECT id, farm_id, zone_id, name, strain_or_variety, current_stage, is_active, started_at, harvested_at, yield_grams, yield_notes, cycle_notes, created_at, updated_at, primary_program_id, plant_id FROM gr33nfertigation.crop_cycles
+SELECT id, farm_id, zone_id, name, batch_label, current_stage, is_active, started_at, harvested_at, yield_grams, yield_notes, cycle_notes, created_at, updated_at, primary_program_id, plant_id FROM gr33nfertigation.crop_cycles
 WHERE farm_id = $1 AND updated_at > $2::timestamptz
 ORDER BY updated_at ASC, id ASC
 `
@@ -245,7 +245,7 @@ func (q *Queries) ListCropCyclesByFarmUpdatedAfter(ctx context.Context, arg List
 			&i.FarmID,
 			&i.ZoneID,
 			&i.Name,
-			&i.StrainOrVariety,
+			&i.BatchLabel,
 			&i.CurrentStage,
 			&i.IsActive,
 			&i.StartedAt,
@@ -280,7 +280,7 @@ func (q *Queries) SoftDeleteCropCycle(ctx context.Context, id int64) error {
 const updateCropCycle = `-- name: UpdateCropCycle :one
 UPDATE gr33nfertigation.crop_cycles SET
     name = $2,
-    strain_or_variety = $3,
+    batch_label = $3,
     zone_id = $4,
     is_active = $5,
     cycle_notes = $6,
@@ -291,13 +291,13 @@ UPDATE gr33nfertigation.crop_cycles SET
     plant_id = $11,
     updated_at = NOW()
 WHERE id = $1
-RETURNING id, farm_id, zone_id, name, strain_or_variety, current_stage, is_active, started_at, harvested_at, yield_grams, yield_notes, cycle_notes, created_at, updated_at, primary_program_id, plant_id
+RETURNING id, farm_id, zone_id, name, batch_label, current_stage, is_active, started_at, harvested_at, yield_grams, yield_notes, cycle_notes, created_at, updated_at, primary_program_id, plant_id
 `
 
 type UpdateCropCycleParams struct {
 	ID               int64          `db:"id" json:"id"`
 	Name             string         `db:"name" json:"name"`
-	StrainOrVariety  *string        `db:"strain_or_variety" json:"strain_or_variety"`
+	BatchLabel       *string        `db:"batch_label" json:"batch_label"`
 	ZoneID           int64          `db:"zone_id" json:"zone_id"`
 	IsActive         bool           `db:"is_active" json:"is_active"`
 	CycleNotes       *string        `db:"cycle_notes" json:"cycle_notes"`
@@ -312,7 +312,7 @@ func (q *Queries) UpdateCropCycle(ctx context.Context, arg UpdateCropCycleParams
 	row := q.db.QueryRow(ctx, updateCropCycle,
 		arg.ID,
 		arg.Name,
-		arg.StrainOrVariety,
+		arg.BatchLabel,
 		arg.ZoneID,
 		arg.IsActive,
 		arg.CycleNotes,
@@ -328,7 +328,7 @@ func (q *Queries) UpdateCropCycle(ctx context.Context, arg UpdateCropCycleParams
 		&i.FarmID,
 		&i.ZoneID,
 		&i.Name,
-		&i.StrainOrVariety,
+		&i.BatchLabel,
 		&i.CurrentStage,
 		&i.IsActive,
 		&i.StartedAt,
@@ -349,7 +349,7 @@ UPDATE gr33nfertigation.crop_cycles SET
     current_stage = $2,
     updated_at = NOW()
 WHERE id = $1
-RETURNING id, farm_id, zone_id, name, strain_or_variety, current_stage, is_active, started_at, harvested_at, yield_grams, yield_notes, cycle_notes, created_at, updated_at, primary_program_id, plant_id
+RETURNING id, farm_id, zone_id, name, batch_label, current_stage, is_active, started_at, harvested_at, yield_grams, yield_notes, cycle_notes, created_at, updated_at, primary_program_id, plant_id
 `
 
 type UpdateCropCycleStageParams struct {
@@ -365,7 +365,7 @@ func (q *Queries) UpdateCropCycleStage(ctx context.Context, arg UpdateCropCycleS
 		&i.FarmID,
 		&i.ZoneID,
 		&i.Name,
-		&i.StrainOrVariety,
+		&i.BatchLabel,
 		&i.CurrentStage,
 		&i.IsActive,
 		&i.StartedAt,

@@ -23,9 +23,9 @@ describe('Phase 74 WS6 / OC-74 — zone ops inbox closure', () => {
     expect(today.items[0].to).toBe('/')
   })
 
-  it('zones workspace includes Strains tab and absorbs /plants', () => {
-    expect(WORKSPACES.zones.tabs.some((t) => t.id === 'strains')).toBe(true)
-    expect(WORKSPACES.zones.absorbs['/plants']).toEqual({ tab: 'strains' })
+  it('zones workspace includes Plants tab and absorbs /plants', () => {
+    expect(WORKSPACES.zones.tabs.some((t) => t.id === 'plants')).toBe(true)
+    expect(WORKSPACES.zones.absorbs['/plants']).toEqual({ tab: 'plants' })
   })
 
   it('/tasks and /alerts redirect into zone Ops or Today', () => {
@@ -38,12 +38,12 @@ describe('Phase 74 WS6 / OC-74 — zone ops inbox closure', () => {
     expect(alerts?.redirect({ query: { zone_id: '2', create: '1' } }).query.ops).toBe('alerts')
   })
 
-  it('/plants redirects to zones strains tab', () => {
+  it('/plants redirects to zones plants tab', () => {
     const entry = buildLegacyRedirectRoutes().find((r) => r.path === '/plants')
     expect(entry).toBeTruthy()
     const result = entry.redirect({ path: '/plants', query: {}, hash: '', fullPath: '/plants', matched: [], meta: {}, params: {} })
     expect(result.path).toBe('/zones')
-    expect(result.query.tab).toBe('strains')
+    expect(result.query.tab).toBe('plants')
   })
 
   it('zone detail ships Ops and Plants tabs', () => {

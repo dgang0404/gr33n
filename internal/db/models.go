@@ -2019,7 +2019,7 @@ type Gr33nfertigationCropCycle struct {
 	FarmID           int64                            `db:"farm_id" json:"farm_id"`
 	ZoneID           int64                            `db:"zone_id" json:"zone_id"`
 	Name             string                           `db:"name" json:"name"`
-	StrainOrVariety  *string                          `db:"strain_or_variety" json:"strain_or_variety"`
+	BatchLabel       *string                          `db:"batch_label" json:"batch_label"`
 	CurrentStage     *Gr33nfertigationGrowthStageEnum `db:"current_stage" json:"current_stage"`
 	IsActive         bool                             `db:"is_active" json:"is_active"`
 	StartedAt        pgtype.Date                      `db:"started_at" json:"started_at"`

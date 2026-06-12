@@ -33,7 +33,7 @@
         <Actuators v-else-if="fleetTab === 'controls'" embedded group-by-zone />
         <LightingPrograms v-else-if="fleetTab === 'lighting'" embedded />
       </div>
-      <div v-else-if="activeTab === 'strains'" class="p-0">
+      <div v-else-if="activeTab === 'plants'" class="p-0">
         <Plants embedded />
       </div>
     </template>
@@ -69,7 +69,11 @@ function selectFleet(id) {
 watch(
   () => [route.query.tab, route.query.fleet, route.query.compare],
   () => {
-    if (route.query.tab === 'strains' && route.query.compare === '1') {
+    if (route.query.tab === 'strains') {
+      router.replace({ path: route.path, query: { ...route.query, tab: 'plants' } })
+      return
+    }
+    if (route.query.tab === 'plants' && route.query.compare === '1') {
       const fid = farmContext.farmId
       if (fid) {
         router.replace({ path: `/farms/${fid}/crop-cycles/compare`, query: {} })

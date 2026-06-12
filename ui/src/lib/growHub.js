@@ -78,18 +78,15 @@ export function lastHarvestedCycleInZone(cycles, zoneId, excludeId = null) {
 }
 
 /**
- * @param {string} strain
+ * @param {string} batchLabel
  * @param {string} [zoneName]
  */
-export function defaultCycleName(strain, zoneName = '') {
-  const base = (strain || 'Grow').trim() || 'Grow'
+export function defaultCycleName(batchLabel, zoneName = '') {
+  const base = (batchLabel || 'Grow').trim() || 'Grow'
   if (!zoneName) return base
   return `${base} — ${zoneName}`
 }
 
-/**
- * @param {object} plant
- */
 /**
  * @param {object|null} stageRow crop_profile_stages row
  */
@@ -108,7 +105,14 @@ export function formatEcTargetChip(stageRow) {
   return null
 }
 
-export function strainFromPlant(plant) {
+/** @param {object} cycle */
+export function cycleBatchLabel(cycle) {
+  if (!cycle) return ''
+  return (cycle.batch_label || cycle.strain_or_variety || '').trim()
+}
+
+/** @param {object} plant */
+export function batchLabelFromPlant(plant) {
   if (!plant) return ''
   const variety = plant.variety_or_cultivar?.trim()
   const name = plant.display_name?.trim() || ''
@@ -116,10 +120,14 @@ export function strainFromPlant(plant) {
   return name || variety || ''
 }
 
+/** @deprecated use batchLabelFromPlant */
+export const strainFromPlant = batchLabelFromPlant
+
 /**
  * @param {object} params
  * @param {number} params.zoneId
- * @param {string} params.strain
+ * @param {string} [params.batchLabel]
+ * @param {string} [params.strain] deprecated alias for batchLabel
  * @param {string} [params.name]
  * @param {string} [params.stage]
  * @param {string} [params.startedAt]
@@ -128,6 +136,7 @@ export function strainFromPlant(plant) {
  */
 export function buildStartGrowPayload({
   zoneId,
+  batchLabel,
   strain,
   name,
   stage = 'seedling',
@@ -136,11 +145,12 @@ export function buildStartGrowPayload({
   plantId = null,
   notes = '',
 }) {
+  const label = (batchLabel ?? strain)?.trim()
   const today = new Date().toISOString().slice(0, 10)
   const payload = {
     zone_id: Number(zoneId),
-    name: (name || strain || 'Grow').trim(),
-    strain_or_variety: strain?.trim() || undefined,
+    name: (name || label || 'Grow').trim(),
+    batch_label: label || undefined,
     current_stage: stage || 'seedling',
     started_at: startedAt || today,
     is_active: true,
@@ -164,7 +174,7 @@ export function buildHarvestPayload(cycle, { yieldGrams, yieldNotes = '', harves
     cycle_notes: cycle.cycle_notes || undefined,
     harvested_at: harvestedAt || today,
     primary_program_id: cycle.primary_program_id ?? undefined,
-    strain_or_variety: cycle.strain_or_variety || undefined,
+    batch_label: cycleBatchLabel(cycle) || undefined,
   }
   if (yieldGrams != null && yieldGrams !== '' && !Number.isNaN(Number(yieldGrams))) {
     payload.yield_grams = Number(yieldGrams)
@@ -179,7 +189,7 @@ export function buildHarvestPayload(cycle, { yieldGrams, yieldNotes = '', harves
  */
 export function buildCompareRoute(farmId, cycleIds) {
   const ids = (cycleIds || []).filter((id) => id != null).map((id) => Number(id))
-  if (!farmId || !ids.length) return { path: '/zones', query: { tab: 'strains' } }
+  if (!farmId || !ids.length) return { path: '/zones', query: { tab: 'plants' } }
   return {
     path: `/farms/${farmId}/crop-cycles/compare`,
     query: { ids: ids.join(',') },

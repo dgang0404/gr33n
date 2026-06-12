@@ -97,7 +97,7 @@ type ActiveCycle struct {
 	ID        int64
 	Name      string
 	ZoneName  string
-	Strain    string
+	BatchLabel string
 	Stage     string
 	Analytics CycleAnalytics
 }
@@ -198,8 +198,8 @@ func (s Snapshot) Render() string {
 				b.WriteString(c.ZoneName)
 			}
 			details := []string{}
-			if c.Strain != "" {
-				details = append(details, c.Strain)
+			if c.BatchLabel != "" {
+				details = append(details, c.BatchLabel)
 			}
 			if c.Stage != "" {
 				details = append(details, "stage: "+c.Stage)
@@ -390,8 +390,8 @@ func BuildSnapshot(ctx context.Context, q *db.Queries, farmID int64) (Snapshot, 
 			if name, ok := zoneByID[c.ZoneID]; ok {
 				ac.ZoneName = name
 			}
-			if c.StrainOrVariety != nil {
-				ac.Strain = *c.StrainOrVariety
+			if c.BatchLabel != nil {
+				ac.BatchLabel = *c.BatchLabel
 			}
 			if c.CurrentStage != nil {
 				ac.Stage = string(*c.CurrentStage)

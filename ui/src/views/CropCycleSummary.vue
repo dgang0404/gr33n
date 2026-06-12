@@ -55,9 +55,9 @@
             <p class="text-zinc-500 text-[11px] uppercase tracking-wide">Cycle</p>
             <p class="text-white text-base font-medium">{{ summary.cycle.name }}</p>
           </div>
-          <div v-if="summary.cycle.strain_or_variety">
-            <p class="text-zinc-500 text-[11px] uppercase tracking-wide">Strain</p>
-            <p class="text-white text-sm">{{ summary.cycle.strain_or_variety }}</p>
+          <div v-if="cycleBatchLabel(summary.cycle)">
+            <p class="text-zinc-500 text-[11px] uppercase tracking-wide">Batch</p>
+            <p class="text-white text-sm">{{ cycleBatchLabel(summary.cycle) }}</p>
           </div>
           <div>
             <p class="text-zinc-500 text-[11px] uppercase tracking-wide">Stage</p>
@@ -187,7 +187,7 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useFarmStore } from '../stores/farm'
-import { buildPostHarvestCompareRoute, formatStageLabel } from '../lib/growHub.js'
+import { buildPostHarvestCompareRoute, cycleBatchLabel, formatStageLabel } from '../lib/growHub.js'
 import HelpTip from '../components/HelpTip.vue'
 import Metric from '../components/MetricChip.vue'
 import AskGuardianButton from '../components/AskGuardianButton.vue'

@@ -27,7 +27,7 @@
         <li><router-link v-nav-hint="'/comfort-targets'" class="text-gr33n-400 hover:underline" to="/comfort-targets?tab=schedules">What runs when</router-link> · <router-link v-nav-hint="'/automation'" class="text-gr33n-400 hover:underline" to="/comfort-targets?tab=automations">Automations</router-link></li>
         <li><router-link v-nav-hint="'/tasks'" class="text-gr33n-400 hover:underline" to="/tasks">Tasks</router-link></li>
         <li>
-          <router-link v-nav-hint="'/plants'" class="text-gr33n-400 hover:underline" to="/zones?tab=strains">Plants &amp; strains</router-link>
+          <router-link v-nav-hint="'/plants'" class="text-gr33n-400 hover:underline" to="/zones?tab=plants">Plants</router-link>
           · <router-link v-nav-hint="'/operations/supplies'" class="text-gr33n-400 hover:underline" to="/money?tab=supplies">Supplies</router-link>
           · <router-link v-nav-hint="'/operations/money'" class="text-gr33n-400 hover:underline" to="/money">Money</router-link>
           — start a grow, restock inputs, log receipts
@@ -38,7 +38,7 @@
       <p class="text-xs text-zinc-600 pt-2">
         <strong class="text-zinc-500">Grow closure (Phase 53):</strong>
         zone <strong class="text-zinc-400">Overview → Start a grow</strong> or
-        <router-link v-nav-hint="'/plants'" class="text-gr33n-500 hover:underline" to="/zones?tab=strains">Plants → Start a grow</router-link>;
+        <router-link v-nav-hint="'/plants'" class="text-gr33n-500 hover:underline" to="/zones?tab=plants">Plants → Start a grow</router-link>;
         <strong class="text-zinc-400">Harvest weigh-in</strong> on the zone strip → post-harvest compare;
         <router-link v-nav-hint="'/operations/supplies'" class="text-gr33n-500 hover:underline" to="/money?tab=supplies">Supplies → + Add qty</router-link> to restock;
         <router-link v-nav-hint="'/operations/money'" class="text-gr33n-500 hover:underline" to="/money?tab=ledger">Money → Save receipt</router-link> (tag to room/grow).

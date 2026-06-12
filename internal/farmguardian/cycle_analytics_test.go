@@ -109,7 +109,7 @@ func TestSnapshot_RendersAnalyticsAttachedToCycle(t *testing.T) {
 			{
 				Name:     "FlowerRun3",
 				ZoneName: "B",
-				Strain:   "OG",
+				BatchLabel: "OG",
 				Stage:    "late_flower",
 				Analytics: CycleAnalytics{
 					EventCount:   142,

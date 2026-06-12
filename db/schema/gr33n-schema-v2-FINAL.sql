@@ -1452,7 +1452,7 @@ CREATE TABLE IF NOT EXISTS gr33nfertigation.crop_cycles (
     farm_id                     BIGINT NOT NULL REFERENCES gr33ncore.farms(id) ON DELETE CASCADE,
     zone_id                     BIGINT NOT NULL REFERENCES gr33ncore.zones(id) ON DELETE RESTRICT,
     name                        TEXT NOT NULL,
-    strain_or_variety           TEXT,
+    batch_label                 TEXT,
     current_stage               gr33nfertigation.growth_stage_enum DEFAULT 'seedling',
     is_active                   BOOLEAN DEFAULT TRUE NOT NULL,
     started_at                  DATE NOT NULL,

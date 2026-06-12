@@ -52,7 +52,7 @@ func TestApplyGrowSetupPackRegisteredHighRisk(t *testing.T) {
 	}
 }
 
-func TestCycleArgsFromSetupPack_StrainFallback(t *testing.T) {
+func TestCycleArgsFromSetupPack_BatchLabelFallback(t *testing.T) {
 	args, err := cycleArgsFromSetupPack(growSetupPack{
 		ZoneID: 3,
 		Plant:  map[string]any{"display_name": "Philodendron"},
@@ -65,7 +65,7 @@ func TestCycleArgsFromSetupPack_StrainFallback(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if args["strain_or_variety"] != "heartleaf" {
-		t.Fatalf("strain %#v", args["strain_or_variety"])
+	if args["batch_label"] != "heartleaf" {
+		t.Fatalf("batch_label %#v", args["batch_label"])
 	}
 }

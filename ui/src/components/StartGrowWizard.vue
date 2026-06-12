@@ -70,7 +70,7 @@
             v-model="form.name"
             type="text"
             class="w-full bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white"
-            placeholder="Auto-filled from strain + zone"
+            placeholder="Auto-filled from label + zone"
             data-test="start-grow-name"
           />
         </div>

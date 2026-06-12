@@ -40,6 +40,11 @@ describe('Phase 68 / 78 WS1 — workspaces model', () => {
     expect(canonicalSidebarPath('/comfort-targets')).toBe('/comfort-targets')
   })
 
+  it('resolveWorkspaceTab maps legacy strains tab to plants', () => {
+    expect(resolveWorkspaceTab('zones', 'strains')).toBe('plants')
+    expect(resolveWorkspaceTab('zones', 'plants')).toBe('plants')
+  })
+
   it('resolveWorkspaceTab falls back to first tab for unknown ids', () => {
     expect(resolveWorkspaceTab('zones', 'bogus')).toBe('rooms')
     expect(resolveWorkspaceTab('zones', undefined)).toBe('rooms')

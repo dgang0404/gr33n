@@ -371,8 +371,8 @@ func writeSummaryCSV(w http.ResponseWriter, summaries []cycleSummary, filename s
 			harvested = s.Cycle.HarvestedAt.Time.Format("2006-01-02")
 		}
 		strain := ""
-		if s.Cycle.StrainOrVariety != nil {
-			strain = *s.Cycle.StrainOrVariety
+		if s.Cycle.BatchLabel != nil {
+			strain = *s.Cycle.BatchLabel
 		}
 		stage := ""
 		if s.Cycle.CurrentStage != nil {

@@ -25,10 +25,7 @@ func execCreateCropCycle(ctx context.Context, deps ExecutorDeps, args map[string
 	if err != nil {
 		return nil, err
 	}
-	strain, err := stringFromArgs(args, "strain_or_variety")
-	if err != nil {
-		return nil, err
-	}
+	batchLabel := cropcycle.BatchLabelFromArgs(args)
 	stage, err := stringFromArgs(args, "current_stage")
 	if err != nil {
 		return nil, err
@@ -90,13 +87,13 @@ func execCreateCropCycle(ctx context.Context, deps ExecutorDeps, args map[string
 		return nil, errors.New("plant_id required for active crop cycle — pick a catalog plant in Zone → Plants or Start grow")
 	}
 
-	strainPtr := &strain
+	strainPtr := batchLabel
 	parsedStage := parseGrowthStage(stage)
 	row, err := deps.Q.CreateCropCycle(ctx, db.CreateCropCycleParams{
-		FarmID:          deps.FarmID,
-		ZoneID:          zoneID,
-		Name:            name,
-		StrainOrVariety: strainPtr,
+		FarmID:       deps.FarmID,
+		ZoneID:       zoneID,
+		Name:         name,
+		BatchLabel:   strainPtr,
 		CurrentStage:    parsedStage,
 		IsActive:        active,
 		StartedAt:       startedAt,
@@ -121,13 +118,17 @@ func execCreateCropCycle(ctx context.Context, deps ExecutorDeps, args map[string
 			EnteredAt:   enteredAt.UTC(),
 		})
 	}
-	return map[string]any{
-		"crop_cycle_id":     row.ID,
-		"name":              row.Name,
-		"zone_id":           row.ZoneID,
-		"strain_or_variety": strain,
-		"current_stage":     string(canonicalGrowthStage(stage)),
-	}, nil
+	out := map[string]any{
+		"crop_cycle_id": row.ID,
+		"name":          row.Name,
+		"zone_id":       row.ZoneID,
+		"current_stage": string(canonicalGrowthStage(stage)),
+	}
+	if batchLabel != nil {
+		out["batch_label"] = *batchLabel
+		out["strain_or_variety"] = *batchLabel
+	}
+	return out, nil
 }
 
 func ensureZoneHasNoActiveCycle(ctx context.Context, q db.Querier, farmID, zoneID int64) error {

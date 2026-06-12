@@ -44,14 +44,14 @@ describe('Phase 77 WS6 / OC-77 — post-arc polish closure', () => {
     expect(existsSync(join(uiSrc, 'components/FarmConfigCard.vue'))).toBe(true)
   })
 
-  it('compare analytics home is zones strains, not sidebar Analytics', () => {
+  it('compare analytics home is zones plants tab, not sidebar Analytics', () => {
     const plants = readFileSync(join(uiSrc, 'views/Plants.vue'), 'utf8')
     expect(plants).toContain('strains-compare-banner')
     expect(plants).toContain('crop-cycles/compare')
-    expect(buildCompareRoute(null, [1])).toEqual({ path: '/zones', query: { tab: 'strains' } })
+    expect(buildCompareRoute(null, [1])).toEqual({ path: '/zones', query: { tab: 'plants' } })
 
     const compare = readFileSync(join(uiSrc, 'views/CropCycleCompare.vue'), 'utf8')
-    expect(compare).toContain("tab: 'strains'")
+    expect(compare).toContain("tab: 'plants'")
   })
 
   it('Guardian drawer and full page both reachable', () => {

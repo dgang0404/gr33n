@@ -23,7 +23,7 @@ func TestCreateCropCycleArgsValidation(t *testing.T) {
 		"name":    "Test cycle",
 	})
 	if err == nil {
-		t.Fatal("expected strain_or_variety and current_stage required")
+		t.Fatal("expected current_stage required")
 	}
 }
 

@@ -411,8 +411,8 @@ func renderSummarizeActiveGrows(ctx context.Context, q db.Querier, farmID int64)
 		if c.CurrentStage != nil {
 			line += fmt.Sprintf("; stage %s", string(*c.CurrentStage))
 		}
-		if c.StrainOrVariety != nil && strings.TrimSpace(*c.StrainOrVariety) != "" {
-			line += "; strain " + strings.TrimSpace(*c.StrainOrVariety)
+		if c.BatchLabel != nil && strings.TrimSpace(*c.BatchLabel) != "" {
+			line += "; batch " + strings.TrimSpace(*c.BatchLabel)
 		}
 		b.WriteString(line)
 	}

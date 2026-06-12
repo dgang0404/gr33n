@@ -5571,7 +5571,7 @@ components:
     GuardianCreateCropCycleArgs:
       type: object
       description: Frozen args for `create_crop_cycle` (Phase 32, medium tier).
-      required: [zone_id, name, strain_or_variety, current_stage, started_at]
+      required: [zone_id, name, current_stage, started_at]
       properties:
         zone_id:
           type: integer
@@ -5579,8 +5579,13 @@ components:
           minimum: 1
         name:
           type: string
+        batch_label:
+          type: string
+          description: Optional operator batch label (room note, run tag — not crop identity).
         strain_or_variety:
           type: string
+          deprecated: true
+          description: Deprecated alias for batch_label (Phase 93).
         current_stage:
           type: string
           description: Growth stage enum value (e.g. `vegetative`, `late_veg`).
@@ -5650,9 +5655,13 @@ components:
         started_at:
           type: string
           format: date
-        strain_or_variety:
+        batch_label:
           type: string
           description: Defaults to plant variety or display name when omitted.
+        strain_or_variety:
+          type: string
+          deprecated: true
+          description: Deprecated alias for batch_label (Phase 93).
         cycle_notes:
           type: string
 
@@ -7780,7 +7789,15 @@ components:
         farm_id: { type: integer }
         zone_id: { type: integer }
         name: { type: string }
-        strain_or_variety: { type: string, nullable: true }
+        batch_label:
+          type: string
+          nullable: true
+          description: Optional operator batch label (room note, run tag — not crop identity).
+        strain_or_variety:
+          type: string
+          nullable: true
+          deprecated: true
+          description: Deprecated alias for batch_label (Phase 93).
         current_stage: { $ref: "#/components/schemas/GrowthStageEnum" }
         is_active: { type: boolean }
         started_at: { type: string, format: date }
@@ -7799,7 +7816,13 @@ components:
       properties:
         zone_id: { type: integer }
         name: { type: string }
-        strain_or_variety: { type: string }
+        batch_label:
+          type: string
+          description: Optional operator batch label (room note, run tag — not crop identity).
+        strain_or_variety:
+          type: string
+          deprecated: true
+          description: Deprecated alias for batch_label (Phase 93).
         current_stage: { $ref: "#/components/schemas/GrowthStageEnum" }
         is_active: { type: boolean }
         started_at: { type: string, format: date }
@@ -7812,7 +7835,13 @@ components:
       required: [name, zone_id, is_active]
       properties:
         name: { type: string }
-        strain_or_variety: { type: string }
+        batch_label:
+          type: string
+          description: Optional operator batch label (room note, run tag — not crop identity).
+        strain_or_variety:
+          type: string
+          deprecated: true
+          description: Deprecated alias for batch_label (Phase 93).
         zone_id: { type: integer }
         is_active: { type: boolean }
         cycle_notes: { type: string }

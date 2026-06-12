@@ -12,17 +12,17 @@ export const WORKSPACES = {
     label: 'Zones',
     icon: '🗂️',
     route: '/zones',
-    subtitle: 'My zones, farm-wide hardware, and plant strains',
+    subtitle: 'My zones, farm-wide hardware, and plants',
     tabs: [
       { id: 'rooms', label: 'My zones' },
       { id: 'fleet', label: 'Hardware & devices' },
-      { id: 'strains', label: 'Plants' },
+      { id: 'plants', label: 'Plants' },
     ],
     absorbs: {
       '/sensors': { tab: 'fleet', fleet: 'sensors' },
       '/actuators': { tab: 'fleet', fleet: 'controls' },
       '/lighting': { tab: 'fleet', fleet: 'lighting' },
-      '/plants': { tab: 'strains' },
+      '/plants': { tab: 'plants' },
       '/feeding': { zoneTab: 'water' },
       '/operations/feeding': { zoneTab: 'water' },
       '/fertigation': { zoneTab: 'water' },
@@ -218,6 +218,14 @@ const COMFORT_TAB_ALIASES = {
   raw: 'raw',
 }
 
+/** Legacy zones tab ids → workspace tab ids (Phase 93). */
+const ZONES_TAB_ALIASES = {
+  strains: 'plants',
+  plants: 'plants',
+  rooms: 'rooms',
+  fleet: 'fleet',
+}
+
 /**
  * @param {string} workspaceId
  * @param {string | undefined | null} tabId
@@ -228,6 +236,9 @@ export function resolveWorkspaceTab(workspaceId, tabId) {
   let resolved = tabId
   if (workspaceId === 'comfort' && tabId) {
     resolved = COMFORT_TAB_ALIASES[tabId] ?? tabId
+  }
+  if (workspaceId === 'zones' && tabId) {
+    resolved = ZONES_TAB_ALIASES[tabId] ?? tabId
   }
   if (resolved && tabs.some((t) => t.id === resolved)) return resolved
   return defaultTabFor(workspaceId)

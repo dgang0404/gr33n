@@ -609,8 +609,8 @@ func renderSummarizeZone(ctx context.Context, q db.Querier, farmID int64, zone d
 				continue
 			}
 			line := c.Name
-			if c.StrainOrVariety != nil && strings.TrimSpace(*c.StrainOrVariety) != "" {
-				line += " — " + strings.TrimSpace(*c.StrainOrVariety)
+			if c.BatchLabel != nil && strings.TrimSpace(*c.BatchLabel) != "" {
+				line += " — " + strings.TrimSpace(*c.BatchLabel)
 			}
 			if c.CurrentStage != nil {
 				line += " (stage: " + string(*c.CurrentStage) + ")"
@@ -758,8 +758,8 @@ func renderSummarizeZoneFertigation(ctx context.Context, q db.Querier, farmID in
 				continue
 			}
 			line := c.Name
-			if c.StrainOrVariety != nil && strings.TrimSpace(*c.StrainOrVariety) != "" {
-				line += " — " + strings.TrimSpace(*c.StrainOrVariety)
+			if c.BatchLabel != nil && strings.TrimSpace(*c.BatchLabel) != "" {
+				line += " — " + strings.TrimSpace(*c.BatchLabel)
 			}
 			if c.CurrentStage != nil {
 				line += " (stage: " + string(*c.CurrentStage) + ")"

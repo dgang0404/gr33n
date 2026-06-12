@@ -43,7 +43,7 @@ const routes = [
   { path: '/guardian/requests', redirect: { path: '/chat', query: { tab: 'pending' } } },
   {
     path: '/analytics',
-    redirect: (to) => ({ path: '/zones', query: { ...to.query, tab: 'strains', compare: '1' } }),
+    redirect: (to) => ({ path: '/zones', query: { ...to.query, tab: 'plants', compare: '1' } }),
   },
   { path: '/settings',     component: Settings,     name: 'settings' },
   { path: '/operator-guide', component: HelpWorkspace, name: 'operator-guide' },

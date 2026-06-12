@@ -91,9 +91,9 @@ func CropCycleDocument(c db.Gr33nfertigationCropCycle) string {
 	b.WriteString("zone_id: ")
 	b.WriteString(strconv.FormatInt(c.ZoneID, 10))
 	b.WriteByte('\n')
-	if c.StrainOrVariety != nil && strings.TrimSpace(*c.StrainOrVariety) != "" {
-		b.WriteString("strain_or_variety: ")
-		b.WriteString(strings.TrimSpace(*c.StrainOrVariety))
+	if c.BatchLabel != nil && strings.TrimSpace(*c.BatchLabel) != "" {
+		b.WriteString("batch_label: ")
+		b.WriteString(strings.TrimSpace(*c.BatchLabel))
 		b.WriteByte('\n')
 	}
 	if c.CurrentStage != nil {
