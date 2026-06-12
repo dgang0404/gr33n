@@ -307,6 +307,43 @@ const VEG_STAGES = new Set(['clone', 'seedling', 'early_veg', 'late_veg'])
 const LATE_FLOWER_STAGES = new Set(['late_flower', 'flush'])
 
 /**
+ * Phase 106 — symptom / deficiency starter chips when crop_key is known.
+ * @param {object} params
+ */
+export function buildSymptomGrowStarters({
+  zone = null,
+  activeCycle = null,
+  cropKey = null,
+  cropDisplayName = null,
+  surface = 'zone_grow_strip',
+} = {}) {
+  if (!zone?.id || !activeCycle?.id) return []
+  const crop = cropDisplayName || cropKey || 'this crop'
+  const zoneName = zone.name || 'this zone'
+  const contextRef = {
+    type: 'zone',
+    id: zone.id,
+    name: zoneName,
+    crop_cycle_id: activeCycle.id,
+    surface,
+  }
+  return [
+    {
+      id: 'whats-wrong',
+      label: "What's wrong?",
+      message: `What's wrong with my ${crop} in ${zoneName}? Use lookup_crop_symptoms and lookup_crop_targets — ranked hypotheses and EC/pH checks only, not a diagnosis.`,
+      contextRef: { ...contextRef, crop_cycle_id: activeCycle.id },
+    },
+    {
+      id: 'yellow-leaves',
+      label: 'Yellow leaves?',
+      message: `Yellow leaves on my ${crop} in ${zoneName} — use lookup_crop_symptoms with live EC/pH from lookup_crop_targets.`,
+      contextRef: { ...contextRef, crop_cycle_id: activeCycle.id },
+    },
+  ]
+}
+
+/**
  * Phase 53 WS5 + Phase 62 — zone grow strip starters (active crop cycle on overview).
  * @param {object} params
  */
@@ -314,12 +351,25 @@ export function buildZoneGrowStripStarters({
   zone = null,
   activeCycle = null,
   farmId = null,
+  cropKey = null,
+  cropDisplayName = null,
   priorHarvestedCycle = null,
   allCycles = [],
   dayCount = null,
   surface = 'zone_grow_strip',
 } = {}) {
   if (!zone?.id || !activeCycle?.id) return []
+
+  const key = cropKey || activeCycle.crop_key || null
+  const symptomStarters = key
+    ? buildSymptomGrowStarters({
+        zone,
+        activeCycle,
+        cropKey: key,
+        cropDisplayName: cropDisplayName || activeCycle.catalog_display_name,
+        surface,
+      })
+    : []
 
   const zoneName = zone.name || 'this zone'
   const cycleName = activeCycle.name || cycleBatchLabel(activeCycle) || 'this grow'
@@ -410,7 +460,7 @@ export function buildZoneGrowStripStarters({
     },
   ]
 
-  return dedupeStarters([...growAdvisorStarters, ...costStarters]).slice(0, 5)
+  return dedupeStarters([...symptomStarters, ...growAdvisorStarters, ...costStarters]).slice(0, 5)
 }
 
 /**

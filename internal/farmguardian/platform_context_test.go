@@ -30,6 +30,8 @@ func TestPlatformContextBlock_ContainsRequiredFacts(t *testing.T) {
 		"pending_command",
 		"Phase 39",
 		"Reads (live lookup, no Confirm)",
+		"lookup_crop_symptoms",
+		"Symptom catalog",
 		"subscription",
 		"LAN/intranet",
 	} {

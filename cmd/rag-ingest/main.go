@@ -403,6 +403,11 @@ func main() {
 			log.Fatalf("field_guides: %v", err)
 		}
 		log.Printf("embedded field_guides: %d", n)
+		n, err = w.IngestSymptomGuidesFromDB(ctx, *farmID)
+		if err != nil {
+			log.Fatalf("symptom_guides: %v", err)
+		}
+		log.Printf("embedded symptom_guides: %d", n)
 	}
 }
 

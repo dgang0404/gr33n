@@ -19,6 +19,7 @@ import (
 
 const (
 	SourceTypeFieldGuide      = "field_guide"
+	SourceTypeSymptomGuide    = "symptom_guide"
 	metadataModuleFieldGuide  = "field_guide"
 	defaultFieldGuideManifest = "docs/rag/field-guide-manifest.yaml"
 )

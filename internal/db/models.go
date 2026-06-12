@@ -1944,6 +1944,21 @@ type Gr33ncropsAgronomyFieldGuide struct {
 	UpdatedAt      time.Time `db:"updated_at" json:"updated_at"`
 }
 
+type Gr33ncropsAgronomySymptomEntry struct {
+	ID             int64     `db:"id" json:"id"`
+	SymptomKey     string    `db:"symptom_key" json:"symptom_key"`
+	DisplayName    string    `db:"display_name" json:"display_name"`
+	CropKeys       []string  `db:"crop_keys" json:"crop_keys"`
+	Categories     []string  `db:"categories" json:"categories"`
+	BodyMd         string    `db:"body_md" json:"body_md"`
+	SeverityHint   *string   `db:"severity_hint" json:"severity_hint"`
+	CatalogVersion int32     `db:"catalog_version" json:"catalog_version"`
+	Published      bool      `db:"published" json:"published"`
+	SortOrder      int32     `db:"sort_order" json:"sort_order"`
+	CreatedAt      time.Time `db:"created_at" json:"created_at"`
+	UpdatedAt      time.Time `db:"updated_at" json:"updated_at"`
+}
+
 type Gr33ncropsCropCatalogAlias struct {
 	Alias   string `db:"alias" json:"alias"`
 	CropKey string `db:"crop_key" json:"crop_key"`

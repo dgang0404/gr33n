@@ -1796,6 +1796,32 @@ CREATE TRIGGER trg_agronomy_field_guides_updated_at
     BEFORE UPDATE ON gr33ncrops.agronomy_field_guides
     FOR EACH ROW EXECUTE FUNCTION gr33ncore.set_updated_at();
 
+CREATE TABLE IF NOT EXISTS gr33ncrops.agronomy_symptom_entries (
+    id              BIGSERIAL PRIMARY KEY,
+    symptom_key     TEXT NOT NULL UNIQUE,
+    display_name    TEXT NOT NULL,
+    crop_keys       TEXT[] NOT NULL DEFAULT '{}',
+    categories      TEXT[] NOT NULL DEFAULT '{}',
+    body_md         TEXT NOT NULL,
+    severity_hint   TEXT,
+    catalog_version INTEGER NOT NULL DEFAULT 1,
+    published       BOOLEAN NOT NULL DEFAULT TRUE,
+    sort_order      INTEGER NOT NULL DEFAULT 0,
+    created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_agronomy_symptom_crop_keys
+    ON gr33ncrops.agronomy_symptom_entries USING GIN (crop_keys);
+
+CREATE INDEX IF NOT EXISTS idx_agronomy_symptom_categories
+    ON gr33ncrops.agronomy_symptom_entries USING GIN (categories);
+
+DROP TRIGGER IF EXISTS trg_agronomy_symptom_entries_updated_at ON gr33ncrops.agronomy_symptom_entries;
+CREATE TRIGGER trg_agronomy_symptom_entries_updated_at
+    BEFORE UPDATE ON gr33ncrops.agronomy_symptom_entries
+    FOR EACH ROW EXECUTE FUNCTION gr33ncore.set_updated_at();
+
 CREATE TABLE IF NOT EXISTS gr33ncrops.plants (
     id                   BIGSERIAL PRIMARY KEY,
     farm_id              BIGINT NOT NULL REFERENCES gr33ncore.farms(id) ON DELETE CASCADE,

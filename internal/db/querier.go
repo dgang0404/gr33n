@@ -408,6 +408,9 @@ type Querier interface {
 	ListActuatorEventsForRollup(ctx context.Context, arg ListActuatorEventsForRollupParams) ([]ListActuatorEventsForRollupRow, error)
 	ListActuatorsByFarm(ctx context.Context, farmID int64) ([]Gr33ncoreActuator, error)
 	ListAgronomyFieldGuides(ctx context.Context) ([]Gr33ncropsAgronomyFieldGuide, error)
+	ListAgronomySymptomEntries(ctx context.Context) ([]Gr33ncropsAgronomySymptomEntry, error)
+	// Returns entries matching crop_key, category, or universal (empty crop_keys).
+	ListAgronomySymptomsForCrop(ctx context.Context, arg ListAgronomySymptomsForCropParams) ([]Gr33ncropsAgronomySymptomEntry, error)
 	ListAlertsByFarm(ctx context.Context, arg ListAlertsByFarmParams) ([]Gr33ncoreAlertsNotification, error)
 	// RAG ingest cursor (id order).
 	ListAlertsByFarmAfterID(ctx context.Context, arg ListAlertsByFarmAfterIDParams) ([]Gr33ncoreAlertsNotification, error)
