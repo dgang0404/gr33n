@@ -6,19 +6,19 @@ overview: >
 todos:
   - id: ws1-loader
     content: "WS1: ui/lib/lightingPresets.js — fetch + cache GET /lighting-programs/presets"
-    status: pending
+    status: completed
   - id: ws2-lighting-programs
     content: "WS2: LightingPrograms.vue — remove PRESET_CHIPS"
-    status: pending
+    status: completed
   - id: ws3-zone-editor
     content: "WS3: ZoneLightingEditor.vue — presets from loader"
-    status: pending
+    status: completed
   - id: ws4-zone-wizard
     content: "WS4: zoneSetupWizard.js — remove ZONE_LIGHTING_PRESETS; include peas_22_2"
-    status: pending
+    status: completed
   - id: ws5-tests
     content: "WS5: Vitest + smoke_phase35 parity"
-    status: pending
+    status: completed
 isProject: false
 ---
 
@@ -26,9 +26,9 @@ isProject: false
 
 ## Status
 
-**Planned.** **Quick win** — backend API **already shipped**; UI never calls it.
+**Shipped.** **Quick win** — UI now calls the backend preset list shipped in Phase 35.
 
-**Closure:** **OC-89**
+**Closure:** [`phase-89-closure.md`](phase-89-closure.md) · **OC-89**
 
 ---
 
@@ -87,9 +87,9 @@ No backend change. Guardian already uses `PresetList()`. After Phase 89, operato
 
 ## Acceptance
 
-- [ ] Zero hardcoded preset keys in Vue except "Skip for now"
-- [ ] Zone wizard shows `peas_22_2`
-- [ ] New preset added to Go map appears in UI after API deploy (no UI release)
-- [ ] Existing `smoke_phase35_lighting` still green
+- [x] Zero hardcoded preset keys in Vue except "Skip for now"
+- [x] Zone wizard shows `peas_22_2`
+- [x] New preset added to Go map appears in UI after API deploy (no UI release)
+- [x] Existing `smoke_phase35_lighting` still green
 
 **Prompt loop:** **`phase 89`** (small — often one session).

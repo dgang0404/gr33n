@@ -10,7 +10,7 @@ todos:
     status: completed
   - id: p89-lighting
     content: "Phase 89 — Wire GET /lighting-programs/presets in UI (API exists, unused)"
-    status: pending
+    status: completed
   - id: p90-devices
     content: "Phase 90 — Device taxonomy registry (sensor/actuator → water/light/climate)"
     status: pending
