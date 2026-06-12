@@ -6,19 +6,19 @@ overview: >
 todos:
   - id: ws1-audit
     content: "WS1: SQL audit report — duplicate display_names, missing crop_profile_id"
-    status: pending
+    status: completed
   - id: ws2-merge
     content: "WS2: scripts/merge-legacy-plants.sh — fuzzy match to catalog aliases"
-    status: pending
+    status: completed
   - id: ws3-backfill
     content: "WS3: Phase 85 backfill + manual review queue for ambiguous rows"
-    status: pending
+    status: completed
   - id: ws4-cycles
     content: "WS4: Relink crop_cycles.plant_id after merge; preserve batch_label"
-    status: pending
+    status: completed
   - id: ws5-smoke
     content: "WS5: master_seed + demo farm — zero orphan plants after migrate"
-    status: pending
+    status: completed
 isProject: false
 ---
 
@@ -26,7 +26,9 @@ isProject: false
 
 ## Status
 
-**Planned.** Real farms (including **gr33n Demo Farm**) may already have typo plant rows.
+**Shipped** on `main`. Closure: [`phase-103-closure.md`](phase-103-closure.md) (**OC-103**).
+
+Real farms (including **gr33n Demo Farm**) may already have typo plant rows — run merge after migrate.
 
 **Depends on:** [Phase 85](phase_85_catalog_bound_plants.plan.md) schema.
 
@@ -53,8 +55,8 @@ isProject: false
 
 ## Acceptance
 
-- [ ] Demo farm post-migrate: ≤1 plant row per crop_key
-- [ ] No active cycle loses plant link after merge
-- [ ] Document in crop-knowledge-operator-runbook upgrade section
+- [x] Demo farm post-migrate: ≤1 plant row per crop_key
+- [x] No active cycle loses plant link after merge
+- [x] Document in crop-knowledge-operator-runbook upgrade section
 
 **Prompt loop:** **`phase 103`** (run with **85 WS1** on existing deployments).
