@@ -6,23 +6,29 @@ overview: >
 todos:
   - id: arc-84-87
     content: "Arc A (84–87): Plants, grows, Guardian crop chain — DO FIRST"
-    status: pending
+    status: completed
   - id: arc-88-92
     content: "Arc B (88–92): UI static → DB/API enums, devices, bootstrap"
-    status: pending
+    status: completed
   - id: arc-93-100
     content: "Arc C (93–100): Blind spots — identity, genetics, ops, CI, offline"
-    status: pending
+    status: completed
   - id: arc-101-105
     content: "Arc D (101–105): Guardian writes, programs, legacy data, analytics, audit"
-    status: pending
+    status: completed
   - id: arc-106-110
     content: "Arc E (106–110): Symptoms, photos, commons recipes, push, OC-82"
-    status: pending
+    status: completed
 isProject: false
 ---
 
 # Phases 84–110 — Master roadmap
+
+## Status
+
+**Shipped** on `main`. Master closure: [`phase-84-110-closure.md`](phase-84-110-closure.md).
+
+All arcs A–E complete (phases 84–110). For new gaps, use **Phase 111+** template below.
 
 ## Big-dawg rule
 
