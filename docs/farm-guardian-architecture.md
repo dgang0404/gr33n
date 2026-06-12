@@ -447,6 +447,25 @@ Operator: [operator-tour §6n](operator-tour.md#6n-hands-free-field-assistant-ph
 
 **OC-67** via `phase-67-closure.test.js` · **Go smoke:** `TestPhase67_FieldAssistantRoutesAndVision`.
 
+### 7.0ae Enterprise agronomy bootstrap (Phase 83 — shipped)
+
+**Shipped.** One-command integrator path from migrate → Guardian-ready: commons **`gr33n-cultivator-seed-pack-v1`**, RAG ingest bootstrap, optional farm EC overrides, scheduled operational refresh. Depends on Phase 82 field guides + Phase 84 Postgres crop catalog (`CROP_CATALOG_SOURCE=db`).
+
+| Layer | Artifact |
+|-------|----------|
+| Commons pack | `gr33n-cultivator-seed-pack-v1` — `kind: agronomy_seed_pack`, DB contract in `body` |
+| Bootstrap | [`scripts/enterprise/guardian-bootstrap-farm.sh`](../scripts/enterprise/guardian-bootstrap-farm.sh) · `make guardian-bootstrap-farm FARM_ID=N` |
+| Site manifest | `guardian_seed.enabled` in YAML → `apply-site-manifest.sh` |
+| Overrides | [`apply-agronomy-overrides.sh`](../scripts/enterprise/apply-agronomy-overrides.sh) **or** Settings **Crops & targets** |
+| Override API | `PUT/DELETE /farms/{id}/crop-profiles/{crop_key}` — same key as builtin; farm wins in `GetCropProfileByKey` |
+| Operational RAG | [`rag-ingest-farm-operational.sh`](../scripts/rag-ingest-farm-operational.sh) — cron doc in enterprise README |
+| Read tool | `lookup_crop_targets` unchanged — reads effective farm override without re-ingest |
+| Smokes | `cmd/api/smoke_phase83_test.go` |
+
+**OC-83** · Closure: [`plans/phase-83-closure.md`](plans/phase-83-closure.md).
+
+Plan: [`plans/phase_83_enterprise_agronomy_seed_pack.plan.md`](plans/phase_83_enterprise_agronomy_seed_pack.plan.md). Operator: [operator-tour §6o](operator-tour.md#6o-enterprise-agronomy-bootstrap-phase-83--shipped) · Live plants: [`guardian-real-grow-readiness.md`](guardian-real-grow-readiness.md).
+
 ### 7.0h Comfort targets & automation (Phase 42 — shipped)
 
 Plans: [`plans/phase_42_comfort_targets_automation_plain_language.plan.md`](plans/phase_42_comfort_targets_automation_plain_language.plan.md) · Guardian PR slice: [`plans/phase_42_guardian_pr_spec.md`](plans/phase_42_guardian_pr_spec.md).
@@ -672,7 +691,7 @@ Operator: [operator-tour §7d](operator-tour.md#7d-zone-connection-pipeline-phas
 | Layer | Artifact |
 |-------|----------|
 | Schema + seed | `db/migrations/20260610_phase64_crop_knowledge_base.sql` |
-| API | `GET /farms/{id}/crop-profiles`, `GET /crop-profiles/{id}`, clone/export/import |
+| API | `GET /farms/{id}/crop-profiles`, `GET /crop-profiles/{id}`, `GET/PUT/DELETE /farms/{id}/crop-profiles/{crop_key}`, clone/export/import |
 | Plants link | `plants.crop_profile_id` — set in Start grow wizard |
 | Read tool | `lookup_crop_targets` in `readtools_crop.go` |
 | UI | Start grow profile picker; zone grow strip EC target chip; `/crop-profiles/:id` detail |

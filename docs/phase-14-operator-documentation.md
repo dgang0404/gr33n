@@ -81,7 +81,24 @@ Hub: [`phase_68_73_spa_workspace_roadmap.plan.md`](plans/phase_68_73_spa_workspa
 | **80** ✅ | Routing hashes, zones tab labels, workspace routes | `ui/src/__tests__/phase-80-closure.test.js` |
 | **81** ✅ | `/pi-setup` restore, Help Pi tab, zone hardware on Overview only | `ui/src/__tests__/phase-81-closure.test.js` |
 | **82** | Guardian plant intelligence — ≥25 crop library, plant context bundle, substrate watering, deficiency guides, zero-chunk guardrail | [`phase_82_guardian_crop_grounding_hardening.plan.md`](plans/phase_82_guardian_crop_grounding_hardening.plan.md) |
-| **83** | Enterprise agronomy seed pack — commons cultivator pack, `guardian-bootstrap-farm`, site-manifest hook, farm crop overrides, scheduled RAG ingest, readiness smokes | [`phase_83_enterprise_agronomy_seed_pack.plan.md`](plans/phase_83_enterprise_agronomy_seed_pack.plan.md) |
+| **83** ✅ | Enterprise agronomy seed pack — commons cultivator pack, `guardian-bootstrap-farm`, site-manifest hook, farm crop overrides, scheduled RAG ingest, readiness smokes | [`phase_83_enterprise_agronomy_seed_pack.plan.md`](plans/phase_83_enterprise_agronomy_seed_pack.plan.md) · [`phase-83-closure.md`](plans/phase-83-closure.md) |
+
+## Phase 83 — Enterprise agronomy seed pack (shipped)
+
+Cross-linked from Phase 82/84 crop catalog work. **Canonical plan:** [`plans/phase_83_enterprise_agronomy_seed_pack.plan.md`](plans/phase_83_enterprise_agronomy_seed_pack.plan.md) · **Closure:** [`plans/phase-83-closure.md`](plans/phase-83-closure.md).
+
+| WS | Operator path |
+|----|----------------|
+| **WS1** | [`import-agronomy-seed-pack.sh`](../scripts/enterprise/import-agronomy-seed-pack.sh) · commons slug `gr33n-cultivator-seed-pack-v1` |
+| **WS2** | [`apply-agronomy-overrides.sh`](../scripts/enterprise/apply-agronomy-overrides.sh) · [`data/agronomy-override-pack.example.yaml`](../data/agronomy-override-pack.example.yaml) |
+| **WS3** | `make guardian-bootstrap-farm FARM_ID=N` · [`guardian-bootstrap-farm.sh`](../scripts/enterprise/guardian-bootstrap-farm.sh) |
+| **WS4** | [`site-manifest.example.yaml`](../scripts/enterprise/site-manifest.example.yaml) — `guardian_seed` block |
+| **WS5** | [`rag-ingest-farm-operational.sh`](../scripts/rag-ingest-farm-operational.sh) · cron example in enterprise README |
+| **WS6** | **Settings → Crops & targets** · `PUT/DELETE /farms/{id}/crop-profiles/{crop_key}` |
+| **WS7** | [`guardian-real-grow-readiness.md`](guardian-real-grow-readiness.md) · [`cmd/api/smoke_phase83_test.go`](../cmd/api/smoke_phase83_test.go) |
+| **WS8** | This index + [`farm-guardian-architecture.md` §7.0ae](farm-guardian-architecture.md#70ae-enterprise-agronomy-bootstrap-phase-83--shipped) · [operator tour §6o](operator-tour.md#6o-enterprise-agronomy-bootstrap-phase-83--shipped) |
+
+**Pre-flight:** `make migrate` · `make check-crop-catalog-parity` · [`crop-catalog-db-cutover-runbook.md`](crop-catalog-db-cutover-runbook.md).
 
 **Pre-dev gap index (archived):** [`pre_development_gaps_index.plan.md`](plans/pre_development_gaps_index.plan.md) · **Product backlog:** [`product_backlog_operator_runtime.plan.md`](plans/product_backlog_operator_runtime.plan.md) (**shipped**)
 
@@ -105,7 +122,7 @@ After operator-doc edits, re-ingest Guardian RAG: **`make rag-ingest-platform-do
 | Pi integration + field checklist | [`pi-integration-guide.md`](pi-integration-guide.md) §8–§9 |
 | Edge actuator safety | [`operator-troubleshooting.md`](operator-troubleshooting.md) §5 |
 | Enterprise deployment scripts | [`scripts/enterprise/README.md`](../scripts/enterprise/README.md) |
-| Phase 83 — Enterprise agronomy seed pack (plan) | [`plans/phase_83_enterprise_agronomy_seed_pack.plan.md`](plans/phase_83_enterprise_agronomy_seed_pack.plan.md) — Guardian bootstrap, commons pack, crop overrides |
+| Phase 83 — Enterprise agronomy seed pack (**shipped**) | [`plans/phase_83_enterprise_agronomy_seed_pack.plan.md`](plans/phase_83_enterprise_agronomy_seed_pack.plan.md) · [`phase-83-closure.md`](plans/phase-83-closure.md) — Guardian bootstrap, commons pack, crop overrides |
 | Hardware sizing (API, DB, Ollama, RAG, chat) | [`recommended-hardware-and-sizing.md`](recommended-hardware-and-sizing.md) |
 | Guardian real-grow readiness (live plants) | [`guardian-real-grow-readiness.md`](guardian-real-grow-readiness.md) |
 | First session after clone | [`first-session-after-clone.md`](first-session-after-clone.md) |

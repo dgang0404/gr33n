@@ -129,7 +129,7 @@ Large integrators will eventually want **repeatable** site bring-up:
 - Import commons pack version pin  
 - Smoke: `GET /health`, one reading POST, one pending_command round-trip  
 
-**Repository convention:** optional helpers live under [`scripts/enterprise/`](../scripts/enterprise/README.md). Phase 33 WS5 adds a **`site-manifest.yaml`** bring-up stub (farm + zones + recipe pack pin). **Phase 83 (planned)** adds **`guardian_seed`** — commons agronomy pack, RAG ingest bootstrap, farm crop overrides, and readiness smokes so Guardian is trustworthy on day one ([`phase_83_enterprise_agronomy_seed_pack.plan.md`](plans/phase_83_enterprise_agronomy_seed_pack.plan.md)). The core team does not need to ship a full 500-site suite for the platform to be valid.
+**Repository convention:** optional helpers live under [`scripts/enterprise/`](../scripts/enterprise/README.md). Phase 33 WS5 adds a **`site-manifest.yaml`** bring-up stub (farm + zones + recipe pack pin). **Phase 83 (shipped)** adds **`guardian_seed`** — commons agronomy pack import, **`guardian-bootstrap-farm.sh`** RAG ingest, farm crop overrides (YAML or **Settings → Crops & targets**), scheduled operational ingest, and readiness smokes ([`phase_83_enterprise_agronomy_seed_pack.plan.md`](plans/phase_83_enterprise_agronomy_seed_pack.plan.md) · [`phase-83-closure.md`](plans/phase-83-closure.md)). The core team does not need to ship a full 500-site suite for the platform to be valid.
 
 ### AGPL and pull requests (why this matters)
 
@@ -165,7 +165,8 @@ gr33n wins on **sovereignty and transparency**; it does not try to out-Deere Dee
 5. This doc — scale-out thought experiment  
 6. [`commons-catalog-operator-playbook.md`](commons-catalog-operator-playbook.md) — recipe pack provenance; Phase 31 WS5 [`import-recipe-pack.sh`](../scripts/enterprise/import-recipe-pack.sh) demo  
 7. [`mqtt-edge-operator-playbook.md`](mqtt-edge-operator-playbook.md#room-scale-warehouse-pattern-phase-31-ws4) — room-scale MQTT ingest for multi-zone warehouses  
-8. [`plans/phase_33_guardian_polish_and_enterprise_ops.plan.md`](plans/phase_33_guardian_polish_and_enterprise_ops.plan.md) — site manifest + read-tool polish (optional before Phase 32)
+8. [`plans/phase_33_guardian_polish_and_enterprise_ops.plan.md`](plans/phase_33_guardian_polish_and_enterprise_ops.plan.md) — site manifest + read-tool polish  
+9. [`plans/phase_83_enterprise_agronomy_seed_pack.plan.md`](plans/phase_83_enterprise_agronomy_seed_pack.plan.md) — **shipped** — Guardian bootstrap + agronomy pack on new warehouse ([`scripts/enterprise/README.md`](../scripts/enterprise/README.md))
 
 **README entry point:** [Phase 31 row](../README.md) in the roadmap table links here for multi-site integrators.
 
@@ -175,6 +176,7 @@ gr33n wins on **sovereignty and transparency**; it does not try to out-Deere Dee
 
 | Date | Note |
 |------|------|
+| 2026-06-12 | Phase 83 shipped — `guardian_seed`, bootstrap script, crop override UI |
 | 2026-05-27 | Phase 33 plan — site manifest WS5, read-tool hardening; reading order step 8 |
 | 2026-05-27 | Phase 31 WS7 — cross-links to phase-14 index, README roadmap, Guardian read tools row |
 | 2026-05-26 | Starter sketch — central HQ vs frontier autonomy, commons promotion, AGPL/PR note, `scripts/enterprise/` hook |

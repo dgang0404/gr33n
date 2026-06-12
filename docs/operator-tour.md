@@ -291,7 +291,7 @@ Architecture: [`farm-guardian-architecture.md` §7.0h](farm-guardian-architectur
 
 Guardian is **not autonomous**. It is a **copilot** in chat and an **actor** only after you **Confirm** a change request (like approving a pull request). **Automation rules and alerts** are a separate layer — they run without chat and are not Guardian PRs.
 
-**Live plants?** Read **[Guardian & real grows — readiness](guardian-real-grow-readiness.md)** before trusting crop advice or wiring actuators to water and lights (ingest checklist, bench testing, Phase 82/83 bootstrap).
+**Live plants?** Read **[Guardian & real grows — readiness](guardian-real-grow-readiness.md)** before trusting crop advice or wiring actuators to water and lights. After migrate, run **`make guardian-bootstrap-farm FARM_ID=N`** (Phase 83) and optionally tune EC in **Settings → Crops & targets**.
 
 ### Copilot vs actor vs automation
 
@@ -804,6 +804,29 @@ Architecture: [`farm-guardian-architecture.md` §7.0m](farm-guardian-architectur
 **Offline STT (optional):** set `STT_BASE_URL` on the API to a LAN whisper.cpp HTTP service; choose **Local whisper** in Settings.
 
 **Vitest:** `phase-67-closure.test.js` · **Go smoke:** `TestPhase67_FieldAssistantRoutesAndVision`.
+
+### 6o. Enterprise agronomy bootstrap (Phase 83 — shipped)
+
+**Plan:** [`plans/phase_83_enterprise_agronomy_seed_pack.plan.md`](plans/phase_83_enterprise_agronomy_seed_pack.plan.md) · Architecture: [§7.0ae](farm-guardian-architecture.md#70ae-enterprise-agronomy-bootstrap-phase-83--shipped) · Closure: [`phase-83-closure.md`](plans/phase-83-closure.md).
+
+**Integrator path (new warehouse / farm):**
+
+```bash
+make migrate
+make check-crop-catalog-parity
+make guardian-bootstrap-farm FARM_ID=1   # needs EMBEDDING_API_KEY for ingest
+```
+
+| Job | Where | What to do |
+|-----|--------|------------|
+| **Commons import audit** | Terminal | `./scripts/enterprise/import-agronomy-seed-pack.sh --farm-ids 1` |
+| **Site YAML bring-up** | `apply-site-manifest.sh` | Set `guardian_seed.enabled: true` in manifest |
+| **Farm EC tweak (UI)** | **Settings → Crops & targets** | Customize a builtin → Save override; **Reset** reverts |
+| **Farm EC tweak (YAML)** | Terminal | `apply-agronomy-overrides.sh --farm-id 1 --file …` |
+| **Keep cycle notes fresh** | Cron / Makefile | `make rag-ingest-farm-operational FARM_ID=1` every 6h (example in enterprise README) |
+| **Readiness smokes** | Guardian chat | Compare cannabis vs eggplant EC; ramps unsupported — see [`guardian-real-grow-readiness.md`](guardian-real-grow-readiness.md) |
+
+**Go smoke:** `TestPhase83CultivatorSeedPackPublished`, `TestPhase83_CropProfileOverridePutDelete`.
 
 ### 8a. Farm site & daylight (Phase 66 — shipped)
 

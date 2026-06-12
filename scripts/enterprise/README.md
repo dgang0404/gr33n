@@ -80,11 +80,17 @@ make guardian-bootstrap-farm FARM_ID=1
 
 **Depends on Phase 82 + Phase 84** (crop profiles + `crop_catalog_*` in Postgres). Cutover: [`docs/crop-catalog-db-cutover-runbook.md`](../../docs/crop-catalog-db-cutover-runbook.md).
 
-## Planned (Phase 83 — remaining)
+### WS6 — farm crop override UI (Settings)
 
-| Tool (planned) | Purpose |
-|----------------|---------|
-| Farm admin crop override UI | Settings → Crops & targets (WS6) |
+Farm owners/managers edit site-specific EC/VPD/DLI in **Settings → Crops & targets** without YAML. Overrides use the **same `crop_key`** as builtins (e.g. `cannabis`); Guardian `lookup_crop_targets` reads the farm row on the next chat turn.
+
+| API | Role |
+|-----|------|
+| `GET /farms/{id}/crop-profiles/{crop_key}` | Effective profile + stages (member) |
+| `PUT /farms/{id}/crop-profiles/{crop_key}` | Upsert override (farm admin) |
+| `DELETE /farms/{id}/crop-profiles/{crop_key}` | Reset to builtin (farm admin) |
+
+YAML alternative: [`apply-agronomy-overrides.sh`](apply-agronomy-overrides.sh) (WS2).
 
 ### WS5 — scheduled operational ingest
 
@@ -129,7 +135,7 @@ gr33n platform code is **[AGPL v3](../../LICENSE)**. Ops scripts in this folder 
 
 - [`docs/hypothetical-enterprise-topology.md`](../../docs/hypothetical-enterprise-topology.md)  
 - [`docs/phase-14-operator-documentation.md`](../../docs/phase-14-operator-documentation.md#phase-31-field-validation-edge) — Phase 31 operator index  
-- [`docs/plans/phase_33_guardian_polish_and_enterprise_ops.plan.md`](../../docs/plans/phase_33_guardian_polish_and_enterprise_ops.plan.md) — site manifest WS5 (planned)  
-- [`docs/plans/phase_83_enterprise_agronomy_seed_pack.plan.md`](../../docs/plans/phase_83_enterprise_agronomy_seed_pack.plan.md) — Guardian agronomy seed pack + bootstrap (planned)  
+- [`docs/plans/phase_33_guardian_polish_and_enterprise_ops.plan.md`](../../docs/plans/phase_33_guardian_polish_and_enterprise_ops.plan.md) — site manifest WS5  
+- [`docs/plans/phase_83_enterprise_agronomy_seed_pack.plan.md`](../../docs/plans/phase_83_enterprise_agronomy_seed_pack.plan.md) — **shipped** — Guardian agronomy seed pack + bootstrap · [`phase-83-closure.md`](../../docs/plans/phase-83-closure.md)  
 - [`docs/plans/phase_30_guardian_change_requests.plan.md`](../../docs/plans/phase_30_guardian_change_requests.plan.md)  
 - [`docs/plans/phase_31_field_validation_and_edge.plan.md`](../../docs/plans/phase_31_field_validation_and_edge.plan.md)

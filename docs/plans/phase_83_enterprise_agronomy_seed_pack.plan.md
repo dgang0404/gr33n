@@ -9,31 +9,31 @@ overview: >
 todos:
   - id: ws0-deps
     content: "WS0: Hard dependency on Phase 82 crop_library.yaml + field guides shipped"
-    status: pending
+    status: completed
   - id: ws1-commons-pack
     content: "WS1: Commons catalog gr33n-cultivator-seed-pack-v1 + migration + sample body JSON"
-    status: pending
+    status: completed
   - id: ws2-override-format
     content: "WS2: Farm agronomy override pack YAML — EC/pH deltas per crop_key; import API/script"
-    status: pending
+    status: completed
   - id: ws3-bootstrap-script
     content: "WS3: scripts/enterprise/guardian-bootstrap-farm.sh — ingest + verify chunks + smoke prompts"
-    status: pending
+    status: completed
   - id: ws4-site-manifest
     content: "WS4: site-manifest guardian_seed block; apply-site-manifest.sh calls bootstrap"
-    status: pending
+    status: completed
   - id: ws5-incremental-ingest
     content: "WS5: Scheduled incremental rag-ingest — cron doc + optional worker hook / Makefile target"
-    status: pending
+    status: completed
   - id: ws6-override-ui
     content: "WS6: Farm admin UI — view builtin profiles; create/edit farm-specific crop overrides"
-    status: pending
+    status: completed
   - id: ws7-readiness-smokes
     content: "WS7: Guardian readiness checklist + smoke_phase83 + OC-83 closure"
-    status: pending
+    status: completed
   - id: ws8-docs
-    content: "WS8: enterprise README, operator-tour §6e, architecture §7.0aa, phase-14 index"
-    status: pending
+    content: "WS8: enterprise README, operator-tour §6o, architecture §7.0ae, phase-14 index"
+    status: completed
 isProject: false
 ---
 
@@ -41,9 +41,9 @@ isProject: false
 
 ## Status
 
-**Planned.** Depends on **[Phase 82](phase_82_guardian_crop_grounding_hardening.plan.md)** shipping `data/crop_library.yaml`, expanded `crop_profiles`, field guides, and zero-chunk guardrails. Phase 83 does **not** duplicate crop science authoring — it **packages, deploys, and keeps fresh** what Phase 82 curates, plus enterprise-specific overrides and one-command bring-up.
+**Shipped.** Depends on **[Phase 82](phase_82_guardian_crop_grounding_hardening.plan.md)** crop library + field guides and **Phase 84** Postgres catalog defaults. Phase 83 packages, deploys, and keeps fresh what Phase 82 curates, plus enterprise-specific overrides and one-command bring-up.
 
-**Closure:** **OC-83**
+**Closure:** **OC-83** — [`phase-83-closure.md`](phase-83-closure.md)
 
 ---
 
@@ -369,8 +369,8 @@ OpenAPI + farm authz: **`RequireFarmAdmin`** for mutations; **`RequireFarmMember
 |-----|--------|
 | [`scripts/enterprise/README.md`](../../scripts/enterprise/README.md) | WS1–WS5 tools, quick start, idempotency |
 | [`docs/hypothetical-enterprise-topology.md`](../hypothetical-enterprise-topology.md) | § Guardian seed pack on new warehouse |
-| [`docs/farm-guardian-architecture.md`](../farm-guardian-architecture.md) | §7.0aa Enterprise agronomy bootstrap |
-| [`docs/operator-tour.md`](../operator-tour.md) | §6 callout + link to real-grow readiness |
+| [`docs/farm-guardian-architecture.md`](../farm-guardian-architecture.md) | §7.0ae Enterprise agronomy bootstrap |
+| [`docs/operator-tour.md`](../operator-tour.md) | §6 callout + §6o bootstrap walkthrough |
 | [`docs/guardian-real-grow-readiness.md`](../guardian-real-grow-readiness.md) | **New** — live-plant checklist, public-demo honesty |
 | [`docs/commons-catalog-operator-playbook.md`](../commons-catalog-operator-playbook.md) | Agronomy pack kind + import semantics |
 | [`docs/phase-14-operator-documentation.md`](../phase-14-operator-documentation.md) | Phase 83 row |

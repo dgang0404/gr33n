@@ -654,7 +654,7 @@ New read helper: `renderTargetVsActualBlock` — pure formatting, no LLM math.
 
 | Topic | Where |
 |-------|--------|
-| Enterprise seed pack, bootstrap script, site manifest hook, farm crop override UI, scheduled ingest | **[Phase 83](phase_83_enterprise_agronomy_seed_pack.plan.md)** |
+| Enterprise seed pack, bootstrap script, site manifest hook, farm crop override UI, scheduled ingest | **[Phase 83](phase_83_enterprise_agronomy_seed_pack.plan.md)** (**shipped** — [`phase-83-closure.md`](phase-83-closure.md)) |
 | Per-genetics ML / auto-tune from harvest | Phase 84+ — needs data volume + training pipeline |
 | Certified pest ID / pesticide prescriptions | regulatory |
 | Operator-uploaded PDF plant notes RAG | Phase 53 roadmap item |

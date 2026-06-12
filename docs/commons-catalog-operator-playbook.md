@@ -18,7 +18,27 @@ Phase 14 **WS3** introduces a **published catalog** of contribution-style packs:
 - **`gr33ncore.commons_catalog_entries`** — curator-published rows (`slug`, `title`, `summary`, `body` JSONB, `contributor_*`, `license_spdx`, `tags`, `published`).
 - **`gr33ncore.farm_commons_catalog_imports`** — `(farm_id, catalog_entry_id)` unique; `imported_by`, `imported_at`, optional `note`.
 
-Apply **`db/migrations/20260426_commons_catalog.sql`** (includes one demo documentation pack). Phase 31 WS5 adds **`20260527_phase31_commons_recipe_pack_v7.sql`** (fertigation recipe pack demo) — promote with [`scripts/enterprise/import-recipe-pack.sh`](../../scripts/enterprise/import-recipe-pack.sh).
+Apply **`db/migrations/20260426_commons_catalog.sql`** (includes one demo documentation pack). Phase 31 WS5 adds **`20260527_phase31_commons_recipe_pack_v7.sql`** (fertigation recipe pack demo) — promote with [`scripts/enterprise/import-recipe-pack.sh`](../../scripts/enterprise/import-recipe-pack.sh). Phase 83 adds **`20260618_phase83_cultivator_seed_pack_v1.sql`** — agronomy seed pack — promote with [`scripts/enterprise/import-agronomy-seed-pack.sh`](../../scripts/enterprise/import-agronomy-seed-pack.sh).
+
+## Agronomy seed pack (`gr33n-cultivator-seed-pack-v1`)
+
+**Kind:** `agronomy_seed_pack` in catalog `body`.
+
+| Field | Meaning |
+|-------|---------|
+| `platform_catalog_version` | Expected Postgres `crop_catalog_*` version after migrate |
+| `expected_counts` | Sanity checks (supported crops, field guides) — import script verifies |
+| `readme_md` | Operator-facing notes; not executed by API |
+
+**Import semantics:** same as any commons entry — `POST /farms/{id}/commons/catalog-imports` records audit linkage and returns the body JSON. Import does **not** run migrations or RAG ingest. Integrators follow with:
+
+1. `make check-crop-catalog-parity` (platform DB already seeded by migrate)
+2. [`guardian-bootstrap-farm.sh`](../../scripts/enterprise/guardian-bootstrap-farm.sh) for RAG ingest
+3. Optional [`apply-agronomy-overrides.sh`](../../scripts/enterprise/apply-agronomy-overrides.sh) or Settings **Crops & targets**
+
+**Idempotency:** one import row per `(farm_id, catalog_entry_id)`; re-import updates audit timestamp only.
+
+See [`scripts/enterprise/README.md`](../../scripts/enterprise/README.md) and [`plans/phase-83-closure.md`](plans/phase-83-closure.md).
 
 ## Licensing and attribution
 

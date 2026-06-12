@@ -7,7 +7,7 @@
 - [`guardian-change-requests-guide.md`](guardian-change-requests-guide.md) — Confirm workflow
 - [`recommended-hardware-and-sizing.md`](recommended-hardware-and-sizing.md) — 8B vs 70B, GPU sizing
 - [`local-operator-bootstrap.md`](local-operator-bootstrap.md) — dev stack + ingest commands
-- **Planned:** [Phase 82](plans/phase_82_guardian_crop_grounding_hardening.plan.md) (crop library + zero-chunk guardrails) · [Phase 83](plans/phase_83_enterprise_agronomy_seed_pack.plan.md) (one-command bootstrap + smokes)
+- [Phase 82](plans/phase_82_guardian_crop_grounding_hardening.plan.md) (crop library + zero-chunk guardrails) · [Phase 83](plans/phase_83_enterprise_agronomy_seed_pack.plan.md) (**shipped** — bootstrap + overrides) · [`phase-83-closure.md`](plans/phase-83-closure.md)
 
 ---
 
@@ -42,12 +42,12 @@ Guardian combines four inputs on a grounded turn. Only one is automatic:
 |-------|-------------|-----------|
 | **Weights** | Meta / Ollama | `ollama pull` + set `LLM_MODEL`; see [Ollama setup](farm-guardian-ollama-setup.md) |
 | **RAG** | Platform guides + **your** operational notes | Run ingest — **`make rag-ingest-field-guides`**, **`make rag-ingest-platform-docs`**, operational ingest (Phase 83 bootstrap) |
-| **Profiles** | Platform seed (Phase 82 expands to ≥25 crops) | Assign the right crop to cycles/plants; optional farm overrides (Phase 83) |
+| **Profiles** | Platform seed (Phase 82 expands to ≥46 crops) | Assign the right crop to cycles/plants; optional farm overrides — **Settings → Crops & targets** or YAML (Phase 83) |
 | **Snapshot** | Your live DB | Keep zone names, cycles, and sensors accurate |
 
-**Today (pre–Phase 82 ship):** only **7** built-in crop profiles; field guides are thin; **0 RAG chunks** produces overconfident chat. Treat numeric feed/light advice as **unverified** until ingest + profiles are in place.
+**Today:** Platform ships **≥46** built-in crop profiles when Phase 82/84 migrations are applied; field guides and RAG chunks still require ingest. Treat numeric feed/light advice as **unverified** until bootstrap passes.
 
-**After Phase 82/83:** run **`guardian-bootstrap-farm`** (planned) and pass readiness smokes before trusting crop Q&A on live plants.
+**After bootstrap (Phase 83):** run **`make guardian-bootstrap-farm FARM_ID=N`** and pass readiness smokes before trusting crop Q&A on live plants.
 
 ---
 
@@ -64,9 +64,8 @@ Use this order. Do not skip **bench** steps because the UI looks good.
 
 ### B. Knowledge (trust the advice)
 
-- [ ] **`make rag-ingest-field-guides`** — crop narrative chunks in pgvector
-- [ ] **`make rag-ingest-platform-docs`** — how-to / Confirm workflow in RAG
-- [ ] Operational ingest for your farm (tasks, cycles, programs) — or Phase 83 cron when shipped
+- [ ] **`make guardian-bootstrap-farm FARM_ID=N`** — field guides + platform docs + operational domains (Phase 83)
+- [ ] Or manually: **`make rag-ingest-field-guides`**, **`make rag-ingest-platform-docs`**, operational ingest
 - [ ] Ask a test question: *"Compare cannabis and eggplant EC targets in mS/cm"* — metadata should show **chunks > 0** and/or tool block with **mS/cm** (never `% EC`)
 - [ ] Ask: *"How should I feed ramps?"* — should refuse or redirect (unsupported crop), not invent 12/12 cannabis schedule
 
@@ -128,8 +127,8 @@ For a **public README / video** that lands well:
 
 1. Show **Confirm** before any actuator write — "this isn't a black box"
 2. Show **local Ollama** or Lite mode — "your data stays on the LAN"
-3. Show **crop profile numbers** matching chat (after Phase 82) — "structured, not vibes"
-4. Be honest about **phase status** — Phases 82/83 are the crop-trust arc; today is strong on ops + Confirm, still hardening agronomy RAG
+3. Show **crop profile numbers** matching chat (after bootstrap) — "structured, not vibes"
+4. Show **`make guardian-bootstrap-farm`** + **Settings → Crops & targets** — enterprise bring-up is scripted
 
 That honesty reads as **engineering**, not apology — and matches what AGPL operators expect.
 
@@ -139,10 +138,10 @@ That honesty reads as **engineering**, not apology — and matches what AGPL ope
 
 | Phase | What it gives your live grow |
 |-------|------------------------------|
-| **82** | ≥25 crop profiles, field guides, zero-chunk guardrails, multi-crop lookup, plant context bundle |
-| **83** | `guardian-bootstrap-farm`, commons seed pack, farm EC overrides, scheduled ingest, readiness smokes |
+| **82** | ≥46 crop profiles, field guides, zero-chunk guardrails, multi-crop lookup, plant context bundle |
+| **83** ✅ | `guardian-bootstrap-farm`, commons seed pack, farm EC overrides (UI + YAML), scheduled ingest, readiness smokes — [`phase-83-closure.md`](plans/phase-83-closure.md) |
 
-**Suggested order for you:** finish UI testing in parallel → ship Phase 82 on your branch → run bootstrap (Phase 83) on your farm_id → smokes on 8B → wire actuators on bench → live plants.
+**Suggested order for you:** migrate + parity check → **`make guardian-bootstrap-farm FARM_ID=N`** → smokes on 8B → optional EC overrides → wire actuators on bench → live plants.
 
 ---
 
