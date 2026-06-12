@@ -1,9 +1,9 @@
 ---
-name: Phases 84–100 — Master roadmap (plants, platform data, blind spots)
+name: Phases 84–105 — Master roadmap (plants, platform data, blind spots)
 overview: >
   Locked execution order for the full gr33n knowledge-base and platform-data arc.
-  Every blind spot from the 84–87 planning review has an explicit phase — no random
-  follow-up tasks during testing.
+  Phases 84–100 cover plants, UI enums, and blind spots; 101–105 cover Guardian
+  writes, program metadata, legacy dedupe, analytics, and audit closure.
 todos:
   - id: arc-84-87
     content: "Arc A (84–87): Plants, grows, Guardian crop chain — DO FIRST"
@@ -14,10 +14,13 @@ todos:
   - id: arc-93-100
     content: "Arc C (93–100): Blind spots — identity, genetics, ops, CI, offline"
     status: pending
+  - id: arc-101-105
+    content: "Arc D (101–105): Guardian writes, programs, legacy data, analytics, audit"
+    status: pending
 isProject: false
 ---
 
-# Phases 84–100 — Master roadmap
+# Phases 84–105 — Master roadmap
 
 ## Big-dawg rule
 
@@ -45,6 +48,13 @@ Arc C — BLIND SPOTS & ENTERPRISE
   94 (genetics EC — after 87 docs v1)
   98 (enterprise promotion — anytime after 83/84)
   100 (offline cache — after 85 + 88)
+
+Arc D — GUARDIAN, DATA, ANALYTICS (after 85–87 core)
+  101 (Guardian create_plant crop_key — with 85)
+  103 (legacy dedupe — with 85 backfill)
+  102 (program metadata — before/with 96)
+  104 (analytics by crop_key — after 86/93)
+  105 (audit + OC-84 closure — anytime)
 ```
 
 **Do NOT** run 88/89 before 85 unless you explicitly want enum fixes while plants still flood the DB.
@@ -93,17 +103,27 @@ Domain enums, lighting presets API, device taxonomy, bootstrap catalog, zone voc
 | **99** | [CI domain parity guards](phase_99_ci_domain_parity_guards.plan.md) |
 | **100** | [Offline catalog cache](phase_100_offline_catalog_cache.plan.md) |
 
+### Arc D — Guardian, programs, legacy data (101–105)
+
+| Phase | Plan |
+|-------|------|
+| **101** | [Guardian write tools crop_key](phase_101_guardian_write_tools_crop_key.plan.md) |
+| **102** | [Fertigation program catalog metadata](phase_102_fertigation_program_catalog_metadata.plan.md) |
+| **103** | [Legacy plant dedupe & backfill](phase_103_legacy_plant_dedupe_backfill.plan.md) |
+| **104** | [Harvest analytics by crop_key](phase_104_harvest_analytics_by_crop_key.plan.md) |
+| **105** | [Catalog audit & OC-84 closure](phase_105_catalog_audit_oc84_closure.plan.md) |
+
 ---
 
 ## Prompt loop
 
-`phase 85 ws1` … `phase 100` — one phase per chat session or WS per prompt.
+`phase 85 ws1` … `phase 105` — one phase per chat session or WS per prompt.
 
 **Index:** [phase-14-operator-documentation.md](../phase-14-operator-documentation.md)
 
 ---
 
-## Adding Phase 101+
+## Adding Phase 106+
 
 Template for new gaps found in testing:
 

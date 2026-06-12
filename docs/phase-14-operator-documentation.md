@@ -91,23 +91,26 @@ Hub: [`phase_68_73_spa_workspace_roadmap.plan.md`](plans/phase_68_73_spa_workspa
 | **90** | Device taxonomy registry — sensor/actuator → water/light/climate + Guardian | [`phase_90_device_taxonomy_registry.plan.md`](plans/phase_90_device_taxonomy_registry.plan.md) |
 | **91** | Bootstrap template catalog — replace `bootstrapTemplates.js` | [`phase_91_bootstrap_template_catalog.plan.md`](plans/phase_91_bootstrap_template_catalog.plan.md) |
 | **92** | Zone types + greenhouse enums from API | [`phase_92_zone_greenhouse_vocabulary.plan.md`](plans/phase_92_zone_greenhouse_vocabulary.plan.md) |
+| **101** | Guardian write tools — `crop_key` on create_plant | [`phase_101_guardian_write_tools_crop_key.plan.md`](plans/phase_101_guardian_write_tools_crop_key.plan.md) |
+| **102** | Fertigation program crop/stage metadata | [`phase_102_fertigation_program_catalog_metadata.plan.md`](plans/phase_102_fertigation_program_catalog_metadata.plan.md) |
+| **103** | Legacy plant dedupe & backfill | [`phase_103_legacy_plant_dedupe_backfill.plan.md`](plans/phase_103_legacy_plant_dedupe_backfill.plan.md) |
+| **104** | Harvest analytics by crop_key | [`phase_104_harvest_analytics_by_crop_key.plan.md`](plans/phase_104_harvest_analytics_by_crop_key.plan.md) |
+| **105** | Catalog override audit + OC-84 | [`phase_105_catalog_audit_oc84_closure.plan.md`](plans/phase_105_catalog_audit_oc84_closure.plan.md) |
 
-## Master roadmap — Phases 84–100
+## Master roadmap — Phases 84–105
 
-**Locked order + blind spot map:** [`plans/phase_84_100_master_roadmap.plan.md`](plans/phase_84_100_master_roadmap.plan.md)
+**Locked order:** [`plans/phase_84_100_master_roadmap.plan.md`](plans/phase_84_100_master_roadmap.plan.md)
 
-**Execute:** 85 → 86 → 87 → **93** → then 89 → 88 → 90–92 → 95–100 as needed.
+**Execute:** 85 → 86 → 87 → **93** → **101** + **103** (with 85) → 89 → 88 → 90–92 → 95–100 → **102** → **104** → **105**.
 
 | Phase | Focus |
 |-------|--------|
-| **93** | Identity cleanup — `batch_label`, no typed display_name |
-| **94** | Genetics / batch EC profiles |
-| **95** | Catalog integrator ops cadence |
-| **96** | Feeding program vs stage validation |
-| **97** | RAG vs structured truth governance |
-| **98** | Enterprise catalog promotion model |
-| **99** | CI `check-ui-domain-parity` |
-| **100** | Offline catalog cache (LAN/mobile) |
+| **93–100** | Blind spots (see master roadmap) |
+| **101** | Guardian `create_plant` requires `crop_key` |
+| **102** | Fertigation program crop/stage tags |
+| **103** | Legacy plant dedupe on existing farms |
+| **104** | Compare/analytics by `crop_key` |
+| **105** | Override audit + OC-84 closure |
 
 ## Phases 84–87 — Plants & crop knowledge base
 
@@ -176,6 +179,7 @@ After operator-doc edits, re-ingest Guardian RAG: **`make rag-ingest-platform-do
 | Phases 88–92 — UI static data → DB/API | [`plans/phase_88_92_platform_data_gaps_roadmap.plan.md`](plans/phase_88_92_platform_data_gaps_roadmap.plan.md) |
 | Phases 84–100 — Master roadmap (order + blind spots) | [`plans/phase_84_100_master_roadmap.plan.md`](plans/phase_84_100_master_roadmap.plan.md) |
 | Phases 93–100 — Blind spot closure | [93](plans/phase_93_plant_identity_vocabulary_cleanup.plan.md) · [94](plans/phase_94_genetics_batch_ec_profiles.plan.md) · [95](plans/phase_95_catalog_integrator_ops.plan.md) · [96](plans/phase_96_grow_feeding_program_validation.plan.md) · [97](plans/phase_97_rag_structured_truth_governance.plan.md) · [98](plans/phase_98_enterprise_catalog_promotion.plan.md) · [99](plans/phase_99_ci_domain_parity_guards.plan.md) · [100](plans/phase_100_offline_catalog_cache.plan.md) |
+| Phases 101–105 — Guardian, programs, analytics | [101](plans/phase_101_guardian_write_tools_crop_key.plan.md) · [102](plans/phase_102_fertigation_program_catalog_metadata.plan.md) · [103](plans/phase_103_legacy_plant_dedupe_backfill.plan.md) · [104](plans/phase_104_harvest_analytics_by_crop_key.plan.md) · [105](plans/phase_105_catalog_audit_oc84_closure.plan.md) |
 | Crop catalog DB cutover | [`crop-catalog-db-cutover-runbook.md`](crop-catalog-db-cutover-runbook.md) |
 | Hardware sizing (API, DB, Ollama, RAG, chat) | [`recommended-hardware-and-sizing.md`](recommended-hardware-and-sizing.md) |
 | Guardian real-grow readiness (live plants) | [`guardian-real-grow-readiness.md`](guardian-real-grow-readiness.md) |
