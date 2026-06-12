@@ -17,16 +17,16 @@ todos:
     status: completed
   - id: phase-70
     content: "Phase 70 — Hardware / Pi GPIO live control SPA"
-    status: pending
+    status: completed
   - id: phase-71
     content: "Phase 71 — Feed & Water unification SPA"
-    status: pending
+    status: completed
   - id: phase-72
     content: "Phase 72 — Money unification SPA"
-    status: pending
+    status: completed
   - id: phase-73
     content: "Phase 73 — Guardian change-request discoverability + read-tool reliability"
-    status: pending
+    status: completed
   - id: phase-74
     content: "Phase 74 — Zone ops inbox (Tasks, Alerts, Plants in zone SPA)"
     status: completed
@@ -35,10 +35,10 @@ todos:
     status: completed
   - id: phase-76
     content: "Phase 76 — Today dashboard & mobile nav link alignment"
-    status: pending
+    status: completed
   - id: phase-77
     content: "Phase 77 — Post-arc polish (analytics, Guardian nav, help, farm config)"
-    status: pending
+    status: completed
 isProject: false
 ---
 
@@ -46,7 +46,7 @@ isProject: false
 
 ## Status
 
-**Arc complete through Phase 81 (UI polish).** Phases **68–69, 70–72, 74–81 shipped**; **73** remains planned (Guardian PR discoverability).
+**Arc complete through Phase 81 (UI polish).** Phases **68–81 shipped** (including **70–73** Guardian PR discoverability). No open items in this arc.
 
 Operator feedback (2026-06): *sidebar too deep, pages overlap, zone detail requires too much jumping.*
 

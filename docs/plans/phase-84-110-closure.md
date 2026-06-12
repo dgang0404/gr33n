@@ -4,7 +4,7 @@
 
 **Canonical plan:** [`phase_84_100_master_roadmap.plan.md`](phase_84_100_master_roadmap.plan.md)
 
-**Next active arc:** [Phases 68–77 SPA workspace](phase_68_73_spa_workspace_roadmap.plan.md) — **70–73** remain planned.
+**All formal roadmaps shipped on `main`.** SPA arc 68–81 closed; crop/intelligence arc 84–110 closed. For new gaps found in testing, use **Phase 111+** — see [`phase_84_100_master_roadmap.plan.md`](phase_84_100_master_roadmap.plan.md#adding-phase-111).
 
 ---
 

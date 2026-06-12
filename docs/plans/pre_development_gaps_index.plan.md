@@ -57,7 +57,7 @@ isProject: false
 | — | [48](phase_48_dev_seed_and_small_farm_profiles.plan.md) | Dev seed hygiene ✅ |
 | 9+ | [53→59 arc](phase_53_59_roadmap.plan.md) | Grow/stock/money, nav, Guardian ops, schema, Pi keys ✅ |
 | 10+ | [60→67 arc](phase_53_59_roadmap.plan.md) | Guardian intelligence + knowledge + field assistant ✅ |
-| **Next** | [68→77 arc](phase_68_73_spa_workspace_roadmap.plan.md) | SPA workspace refactor (sidebar → workspaces; ops, comfort, Today, polish) |
+| **Next** | [68→81 arc](phase_68_73_spa_workspace_roadmap.plan.md) | SPA workspace refactor ✅ shipped |
 
 **Post-52 shipped:** [49](phase_49_sidebar_nav_polish.plan.md) · [50](phase_50_hardware_wiring_visibility.plan.md) · [51](phase_51_pi_config_sync.plan.md) · [52](phase_52_guardian_ui_context.plan.md) · … through **67** ✅
 
@@ -77,7 +77,7 @@ isProject: false
 | **8** | [phase_48](phase_48_dev_seed_and_small_farm_profiles.plan.md) + [local-operator-bootstrap.md](../local-operator-bootstrap.md) slow-dev section | ✅ |
 | **9** | Archive index + [phase-14](../phase-14-operator-documentation.md) → 68–73 arc; closure doc frozen at OC-67 | ✅ |
 
-**Documentation status:** Chunks 1–9 complete. Phases **39–67** and **product backlog** shipped on `main`. **SPA workspace UI (68–69, 74–77) shipped**; **70–73** planned — see [68–77 arc hub](phase_68_73_spa_workspace_roadmap.plan.md).
+**Documentation status:** Chunks 1–9 complete. Phases **39–67** and **product backlog** shipped on `main`. **SPA workspace arc (68–81) shipped** — see [68–77 arc hub](phase_68_73_spa_workspace_roadmap.plan.md).
 
 ---
 

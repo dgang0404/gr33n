@@ -251,16 +251,16 @@ Hardware, Pi platform sync, and farmer job completion — each phase is shippabl
 
 **Guardian knowledge & sensing arc (64–67)** — how Guardian *knows* things (grounding, not guessing). **64 must precede 62.** **Shipped.**
 
-**SPA workspace refactor arc (68–77)** — collapse sidebar into full-page workspaces. **UI shipped** through Phase 77; **70–73** remain for Pi GPIO depth and Guardian PR discoverability. Hub: [`phase_68_73_spa_workspace_roadmap.plan.md`](phase_68_73_spa_workspace_roadmap.plan.md). Plan lifecycle rules (shipped = conditions deprecated) live there — not in the archived closure doc.
+**SPA workspace refactor arc (68–77)** — collapse sidebar into full-page workspaces. **Shipped** through Phase 81 (including **70–73**). Hub: [`phase_68_73_spa_workspace_roadmap.plan.md`](phase_68_73_spa_workspace_roadmap.plan.md). Plan lifecycle rules (shipped = conditions deprecated) live there — not in the archived closure doc.
 
 | Phase | Name | One job | Plan |
 |-------|------|---------|------|
 | **68** ✅ | Workspace shell | Sidebar → workspaces; old routes redirect; cross-workspace wiggle | [phase_68](phase_68_workspace_shell_spa_nav.plan.md) |
 | **69** ✅ | Zone workspace | One zone = edit sensors/controls/lighting inline; Fleet tab | [phase_69](phase_69_zone_workspace_hub.plan.md) |
-| **70** | Hardware / Pi SPA | Live GPIO board; close Pi export gaps | [phase_70](phase_70_hardware_pi_control_spa.plan.md) |
-| **71** | Feed & Water SPA | FeedingHub + admin + Fertigation unified | [phase_71](phase_71_feed_water_unification.plan.md) |
-| **72** | Money SPA | Money + Costs + Supplies unified | [phase_72](phase_72_money_unification.plan.md) |
-| **73** | Guardian PRs | Pending badge, empty-zone nudge, read-tool reliability | [phase_73](phase_73_guardian_pr_discoverability.plan.md) |
+| **70** ✅ | Hardware / Pi SPA | Live GPIO board; close Pi export gaps | [phase_70](phase_70_hardware_pi_control_spa.plan.md) |
+| **71** ✅ | Feed & Water SPA | FeedingHub + admin + Fertigation unified | [phase_71](phase_71_feed_water_unification.plan.md) |
+| **72** ✅ | Money SPA | Money + Costs + Supplies unified | [phase_72](phase_72_money_unification.plan.md) |
+| **73** ✅ | Guardian PRs | Pending badge, empty-zone nudge, read-tool reliability | [phase_73](phase_73_guardian_pr_discoverability.plan.md) |
 | **74** ✅ | Zone ops inbox | Tasks, Alerts, Plants in zone SPA; Today = triage only | [phase_74](phase_74_zone_ops_inbox.plan.md) |
 | **75** ✅ | Comfort workspace | Absorb Advanced trio into one workspace | [phase_75](phase_75_automation_comfort_workspace.plan.md) |
 | **76** ✅ | Today alignment | Dashboard + mobile nav link sweep | [phase_76](phase_76_today_dashboard_nav_alignment.plan.md) |
