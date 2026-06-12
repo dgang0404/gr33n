@@ -6,22 +6,22 @@ overview: >
 todos:
   - id: ws0-deps
     content: "WS0: Phase 14 WS5 notifications infra; farm admin role"
-    status: pending
+    status: completed
   - id: ws1-version
     content: "WS1: gr33ncore.platform_catalog_version table or settings key"
-    status: pending
+    status: completed
   - id: ws2-detect
     content: "WS2: API startup or cron compares catalog_version → emit audit event"
-    status: pending
+    status: completed
   - id: ws3-notify
     content: "WS3: FCM + in-app notification — 'Knowledge base updated — review new crops'"
-    status: pending
+    status: completed
   - id: ws4-prefs
     content: "WS4: profiles.preferences.notify.catalog_updates opt-in"
-    status: pending
+    status: completed
   - id: ws5-runbook
     content: "WS5: Enterprise runbook — migrate HQ → notify sites → re-ingest RAG"
-    status: pending
+    status: completed
 isProject: false
 ---
 
@@ -29,7 +29,9 @@ isProject: false
 
 ## Status
 
-**Planned.** Enterprise **multi-site** ops — sites know when HQ publishes new catalog seed.
+**Shipped** on `main`. Closure: [`phase-109-closure.md`](phase-109-closure.md) (**OC-109**).
+
+Enterprise **multi-site** ops — sites know when HQ publishes new catalog seed.
 
 **Depends on:** [Phase 98](phase_98_enterprise_catalog_promotion.plan.md), [Phase 95](phase_95_catalog_integrator_ops.plan.md), notifications playbook.
 

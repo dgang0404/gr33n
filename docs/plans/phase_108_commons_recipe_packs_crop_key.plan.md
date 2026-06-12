@@ -29,7 +29,9 @@ isProject: false
 
 ## Status
 
-**Planned.** Extends [Phase 102 WS8](phase_102_fertigation_program_catalog_metadata.plan.md) for **commons promotion** of recipes across sites.
+**Shipped** on `main`. Closure: [`phase-108-closure.md`](phase-108-closure.md) (**OC-108**).
+
+Extends [Phase 102 WS8](phase_102_fertigation_program_catalog_metadata.plan.md) for **commons promotion** of recipes across sites.
 
 **Depends on:** [Phase 102](phase_102_fertigation_program_catalog_metadata.plan.md), [Phase 98](phase_98_enterprise_catalog_promotion.plan.md).
 
@@ -68,8 +70,8 @@ Import rejects unknown `crop_key` (parity with catalog).
 
 ## Acceptance
 
-- [ ] `import-recipe-pack.sh` fails on invalid crop_key
-- [ ] Imported recipes visible in Phase 102 program suggest API
-- [ ] Document in commons-catalog-operator-playbook
+- [x] `import-recipe-pack.sh` fails on invalid crop_key
+- [x] Imported recipes visible in Phase 102 program suggest API
+- [x] Document in commons-catalog-operator-playbook
 
 **Prompt loop:** **`phase 108`**.
