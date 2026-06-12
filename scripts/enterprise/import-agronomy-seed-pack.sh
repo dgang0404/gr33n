@@ -12,15 +12,17 @@ FARM_IDS="${GR33N_FARM_IDS:-1}"
 PACK_JSON="${AGRONOMY_PACK_JSON:-$ROOT/scripts/enterprise/sample-cultivator-seed-pack-v1.body.json}"
 DRY_RUN=0
 VERIFY_ONLY=0
+OVERRIDE_FILE=""
 
 usage() {
   cat <<EOF
-Usage: $(basename "$0") [--dry-run] [--verify-only] [--farm-ids 1,2] [--slug SLUG]
+Usage: $(basename "$0") [--dry-run] [--verify-only] [--farm-ids 1,2] [--slug SLUG] [--apply-overrides FILE]
 
 Record agronomy seed pack import per farm and verify Postgres catalog matches pack contract.
 
   --dry-run       Print planned API actions + DB checks (no JWT / no writes)
   --verify-only   Skip catalog import POST; run DB verification only
+  --apply-overrides FILE  After import, apply WS2 farm override YAML per farm (requires DATABASE_URL)
   --farm-ids      Comma-separated farm_id list (default: 1)
   --slug          Commons catalog slug (default: gr33n-cultivator-seed-pack-v1)
 
@@ -182,12 +184,19 @@ for fid in farm_ids:
 
 print("Done. Run guardian-bootstrap-farm.sh next.")
 PY
+  if [[ -n "$OVERRIDE_FILE" ]]; then
+    for fid in $(echo "$FARM_IDS" | tr ',' ' '); do
+      echo "==> apply agronomy overrides farm_id=${fid}"
+      "$ROOT/scripts/enterprise/apply-agronomy-overrides.sh" --farm-id "$fid" --file "$OVERRIDE_FILE"
+    done
+  fi
 }
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --dry-run) DRY_RUN=1; shift ;;
     --verify-only) VERIFY_ONLY=1; shift ;;
+    --apply-overrides) OVERRIDE_FILE="$2"; shift 2 ;;
     --farm-ids) FARM_IDS="$2"; shift 2 ;;
     --slug) CATALOG_SLUG="$2"; shift 2 ;;
     -h|--help) usage; exit 0 ;;

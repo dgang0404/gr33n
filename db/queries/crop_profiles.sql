@@ -3,7 +3,7 @@ SELECT *
 FROM gr33ncrops.crop_profiles
 WHERE farm_id IS NULL AND is_builtin = TRUE
    OR farm_id = sqlc.arg(farm_id)
-ORDER BY is_builtin DESC, display_name;
+ORDER BY is_builtin ASC, display_name;
 
 -- name: GetCropProfile :one
 SELECT * FROM gr33ncrops.crop_profiles WHERE id = $1;
@@ -13,8 +13,17 @@ SELECT *
 FROM gr33ncrops.crop_profiles
 WHERE crop_key = $1
   AND (farm_id IS NULL AND is_builtin = TRUE OR farm_id = sqlc.arg(farm_id))
-ORDER BY is_builtin DESC
+ORDER BY is_builtin ASC
 LIMIT 1;
+
+-- name: GetBuiltinCropProfileByKey :one
+SELECT *
+FROM gr33ncrops.crop_profiles
+WHERE crop_key = $1 AND farm_id IS NULL AND is_builtin = TRUE;
+
+-- name: DeleteFarmCropProfileByKey :exec
+DELETE FROM gr33ncrops.crop_profiles
+WHERE farm_id = $1 AND crop_key = $2 AND is_builtin = FALSE;
 
 -- name: ListCropProfileStages :many
 SELECT *

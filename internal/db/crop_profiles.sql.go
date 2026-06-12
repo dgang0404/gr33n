@@ -130,6 +130,46 @@ func (q *Queries) CreateCropProfileStage(ctx context.Context, arg CreateCropProf
 	return i, err
 }
 
+const deleteFarmCropProfileByKey = `-- name: DeleteFarmCropProfileByKey :exec
+DELETE FROM gr33ncrops.crop_profiles
+WHERE farm_id = $1 AND crop_key = $2 AND is_builtin = FALSE
+`
+
+type DeleteFarmCropProfileByKeyParams struct {
+	FarmID  *int64 `db:"farm_id" json:"farm_id"`
+	CropKey string `db:"crop_key" json:"crop_key"`
+}
+
+func (q *Queries) DeleteFarmCropProfileByKey(ctx context.Context, arg DeleteFarmCropProfileByKeyParams) error {
+	_, err := q.db.Exec(ctx, deleteFarmCropProfileByKey, arg.FarmID, arg.CropKey)
+	return err
+}
+
+const getBuiltinCropProfileByKey = `-- name: GetBuiltinCropProfileByKey :one
+SELECT id, farm_id, crop_key, display_name, category, source, version, is_builtin, meta, created_at, updated_at
+FROM gr33ncrops.crop_profiles
+WHERE crop_key = $1 AND farm_id IS NULL AND is_builtin = TRUE
+`
+
+func (q *Queries) GetBuiltinCropProfileByKey(ctx context.Context, cropKey string) (Gr33ncropsCropProfile, error) {
+	row := q.db.QueryRow(ctx, getBuiltinCropProfileByKey, cropKey)
+	var i Gr33ncropsCropProfile
+	err := row.Scan(
+		&i.ID,
+		&i.FarmID,
+		&i.CropKey,
+		&i.DisplayName,
+		&i.Category,
+		&i.Source,
+		&i.Version,
+		&i.IsBuiltin,
+		&i.Meta,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const getCropProfile = `-- name: GetCropProfile :one
 SELECT id, farm_id, crop_key, display_name, category, source, version, is_builtin, meta, created_at, updated_at FROM gr33ncrops.crop_profiles WHERE id = $1
 `
@@ -158,7 +198,7 @@ SELECT id, farm_id, crop_key, display_name, category, source, version, is_builti
 FROM gr33ncrops.crop_profiles
 WHERE crop_key = $1
   AND (farm_id IS NULL AND is_builtin = TRUE OR farm_id = $2)
-ORDER BY is_builtin DESC
+ORDER BY is_builtin ASC
 LIMIT 1
 `
 
@@ -273,7 +313,7 @@ SELECT id, farm_id, crop_key, display_name, category, source, version, is_builti
 FROM gr33ncrops.crop_profiles
 WHERE farm_id IS NULL AND is_builtin = TRUE
    OR farm_id = $1
-ORDER BY is_builtin DESC, display_name
+ORDER BY is_builtin ASC, display_name
 `
 
 func (q *Queries) ListCropProfilesForFarm(ctx context.Context, farmID *int64) ([]Gr33ncropsCropProfile, error) {

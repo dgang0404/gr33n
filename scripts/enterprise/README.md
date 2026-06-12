@@ -84,8 +84,34 @@ make guardian-bootstrap-farm FARM_ID=1
 
 | Tool (planned) | Purpose |
 |----------------|---------|
-| `apply-agronomy-overrides.sh` | Farm-specific EC/VPD/DLI overrides (WS2 YAML) |
 | Farm admin crop override UI | Settings → Crops & targets (WS6) |
+
+### WS5 — scheduled operational ingest
+
+Example cron on the API host (`/etc/cron.d/gr33n-rag-ingest`):
+
+```cron
+0 */6 * * * gr33n cd /opt/gr33n-platform && set -a && . ./.env && set +a && \
+  ./scripts/rag-ingest-farm-operational.sh --farm-id 1 --watermark-file /var/lib/gr33n/rag-watermark-farm-1
+```
+
+Or: `make rag-ingest-farm-operational FARM_ID=1`
+
+## Shipped (Phase 83 WS2) — farm agronomy overrides
+
+| Tool | Purpose |
+|------|---------|
+| [`apply-agronomy-overrides.sh`](apply-agronomy-overrides.sh) | Apply EC/VPD/DLI deltas from YAML onto farm crop profiles |
+| [`data/agronomy-override-pack.example.yaml`](../../data/agronomy-override-pack.example.yaml) | Example override pack |
+
+```bash
+./scripts/enterprise/apply-agronomy-overrides.sh --dry-run --farm-id 1
+./scripts/enterprise/apply-agronomy-overrides.sh --farm-id 1 --file data/agronomy-override-pack.example.yaml
+# or with import:
+./scripts/enterprise/import-agronomy-seed-pack.sh --farm-ids 1 --apply-overrides data/agronomy-override-pack.example.yaml
+```
+
+Unsupported catalog keys are rejected. Farm overrides win over builtins in `GetCropProfileByKey`.
 
 ## Contributing
 

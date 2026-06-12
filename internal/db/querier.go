@@ -155,6 +155,7 @@ type Querier interface {
 	DeleteConversationTurnsBySession(ctx context.Context, arg DeleteConversationTurnsBySessionParams) error
 	DeleteCostTransaction(ctx context.Context, id int64) error
 	DeleteExecutableAction(ctx context.Context, id int64) error
+	DeleteFarmCropProfileByKey(ctx context.Context, arg DeleteFarmCropProfileByKeyParams) error
 	DeleteFarmEnergyPrice(ctx context.Context, id int64) error
 	DeleteInsertCommonsReceivedPayloadsBefore(ctx context.Context, receivedAt time.Time) error
 	DeleteLifecycleEvent(ctx context.Context, id int64) error
@@ -223,6 +224,7 @@ type Querier interface {
 	GetAutomationRunByDetails(ctx context.Context, arg GetAutomationRunByDetailsParams) (Gr33ncoreAutomationRun, error)
 	GetAutomationRunByProgramAndDetails(ctx context.Context, arg GetAutomationRunByProgramAndDetailsParams) (Gr33ncoreAutomationRun, error)
 	GetBaseUnitForType(ctx context.Context, unitType string) (Gr33ncoreUnit, error)
+	GetBuiltinCropProfileByKey(ctx context.Context, cropKey string) (Gr33ncropsCropProfile, error)
 	GetBuiltinCropProfileIDByCropKey(ctx context.Context, cropKey string) (int64, error)
 	GetConversationSessionMeta(ctx context.Context, arg GetConversationSessionMetaParams) (json.RawMessage, error)
 	GetCostCategoryTotalsByFarm(ctx context.Context, farmID int64) ([]GetCostCategoryTotalsByFarmRow, error)

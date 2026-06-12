@@ -1,0 +1,20 @@
+# Phase 83 WS2 — example farm agronomy overrides (clone builtin + stage deltas).
+# Apply: ./scripts/enterprise/apply-agronomy-overrides.sh --farm-id 1 --file data/agronomy-override-pack.example.yaml
+
+version: 1
+farm_slug: north-warehouse-bay3
+source: "North Warehouse agronomy committee 2026-06 (example only)"
+
+overrides:
+  - crop_key: cannabis
+    display_name: "Cannabis (North — flower room A)"
+    stages:
+      - stage: late_flower
+        ec_ms_cm_min: 1.0
+        ec_ms_cm_max: 1.4
+        notes: "RO water, coco 70/30; never above 1.4 in summer"
+  - crop_key: tomato
+    stages:
+      - stage: late_flower
+        vpd_kpa_min: 0.9
+        vpd_kpa_max: 1.2

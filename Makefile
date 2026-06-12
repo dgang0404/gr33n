@@ -1,4 +1,4 @@
-.PHONY: run run-receiver build build-receiver test seed sqlc migrate ui dev dev-auth-test rag-ingest-help rag-ingest-demo rag-ingest-platform-docs compose-db-up compose-db-status compose-logging-up compose-logging-down setup-compose-dev dev-stack dev-stack-fresh dev-stack-fresh-rag local-up restart-local restart-local-serve db-sanity-report check-stack check-crop-library check-crop-catalog check-crop-catalog-parity clean lint bootstrap-local bootstrap-local-docker install-deps-debian install-pi-edge-deps first-clone first-clone-docker first-clone-install-deps audit-openapi edge-smoke-help edge-actuator-smoke-help recipe-pack-import-help agronomy-seed-pack-help guardian-bootstrap-farm import-agronomy-seed-pack
+.PHONY: run run-receiver build build-receiver test seed sqlc migrate ui dev dev-auth-test rag-ingest-help rag-ingest-demo rag-ingest-platform-docs compose-db-up compose-db-status compose-logging-up compose-logging-down setup-compose-dev dev-stack dev-stack-fresh dev-stack-fresh-rag local-up restart-local restart-local-serve db-sanity-report check-stack check-crop-library check-crop-catalog check-crop-catalog-parity clean lint bootstrap-local bootstrap-local-docker install-deps-debian install-pi-edge-deps first-clone first-clone-docker first-clone-install-deps audit-openapi edge-smoke-help edge-actuator-smoke-help recipe-pack-import-help agronomy-seed-pack-help guardian-bootstrap-farm import-agronomy-seed-pack apply-agronomy-overrides rag-ingest-farm-operational
 
 # dash (common default /bin/sh) can report "wait: No child processes" for dev / dev-auth-test;
 # bash handles background jobs + wait reliably.
@@ -164,6 +164,12 @@ import-agronomy-seed-pack: ## Phase 83 WS1 — record agronomy pack import + ver
 
 guardian-bootstrap-farm: ## Phase 83 WS3 — RAG ingest + readiness report (FARM_ID=1)
 	@./scripts/enterprise/guardian-bootstrap-farm.sh --farm-id $(or $(FARM_ID),1) $(ARGS)
+
+apply-agronomy-overrides: ## Phase 83 WS2 — farm crop EC/VPD overrides (FARM_ID=1 FILE=data/agronomy-override-pack.example.yaml)
+	@./scripts/enterprise/apply-agronomy-overrides.sh --farm-id $(or $(FARM_ID),1) --file $(or $(FILE),data/agronomy-override-pack.example.yaml)
+
+rag-ingest-farm-operational: ## Phase 83 WS5 — incremental operational RAG for farm (FARM_ID=1)
+	@./scripts/rag-ingest-farm-operational.sh --farm-id $(or $(FARM_ID),1)
 
 compose-db-up: ## Start only the Postgres image from docker-compose.yml (Timescale + pgvector build)
 	docker compose up -d db --build
