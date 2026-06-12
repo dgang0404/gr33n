@@ -466,6 +466,28 @@ Operator: [operator-tour §6n](operator-tour.md#6n-hands-free-field-assistant-ph
 
 Plan: [`plans/phase_83_enterprise_agronomy_seed_pack.plan.md`](plans/phase_83_enterprise_agronomy_seed_pack.plan.md). Operator: [operator-tour §6o](operator-tour.md#6o-enterprise-agronomy-bootstrap-phase-83--shipped) · Live plants: [`guardian-real-grow-readiness.md`](guardian-real-grow-readiness.md).
 
+### 7.0af Plants & crop knowledge chain (Phases 85–87 — shipped)
+
+**Shipped.** One chain from **Plants** to **Guardian**: catalog dropdown → `plants.crop_key` → active cycle `plant_id` → effective farm profile → zone strip, Water/Light hints, and `lookup_crop_targets`.
+
+| Layer | Artifact |
+|-------|----------|
+| Catalog | `crop_catalog_entries` + aliases — `CROP_CATALOG_SOURCE=db`; registry at API boot via `SetRuntimeCatalogQuerier` |
+| Plants | `plants.crop_key` UNIQUE per farm; POST by `crop_key`; server `display_name` from catalog |
+| Picker API | `GET /farms/{id}/crop-library/picker` — same effective profiles as Settings |
+| Overrides | `PUT /farms/{id}/crop-profiles/{crop_key}` — immediate on strip + Guardian (no re-ingest) |
+| Active grow | `POST /crop-cycles` with `is_active=true` requires catalog-bound `plant_id` |
+| UI | `CropLibraryPicker`; grow strip EC chip; `ZoneCropStageTargetHint` on Water/Light |
+| Read tool | `lookup_crop_targets` — `cycle → plant → crop_key → GetCropProfileByKey`; blocks active grow without plant |
+| Hard rule | No EC/pH/VPD/DLI/photoperiod without read-tool output; EC in **mS/cm** |
+| Narrative | RAG field guides — supplement only ([Phase 97](plans/phase_97_rag_structured_truth_governance.plan.md)) |
+
+**OC-87** · Operator: [`crop-knowledge-operator-runbook.md`](crop-knowledge-operator-runbook.md) · Closure: [`plans/phase-87-closure.md`](plans/phase-87-closure.md).
+
+Plans: [85](plans/phase_85_catalog_bound_plants.plan.md) · [86](plans/phase_86_grow_ops_catalog_chain.plan.md) · [87](plans/phase_87_crop_knowledge_operator_closure.plan.md) · Roadmap: [84–87](plans/phase_84_87_crop_identity_roadmap.plan.md).
+
+**Go smokes:** `smoke_phase85_test.go`, `smoke_phase86_test.go`, `smoke_phase87_test.go`.
+
 ### 7.0h Comfort targets & automation (Phase 42 — shipped)
 
 Plans: [`plans/phase_42_comfort_targets_automation_plain_language.plan.md`](plans/phase_42_comfort_targets_automation_plain_language.plan.md) · Guardian PR slice: [`plans/phase_42_guardian_pr_spec.md`](plans/phase_42_guardian_pr_spec.md).

@@ -471,7 +471,7 @@ Four new **read tools** (no Confirm): **`summarize_cycle_cost`**, **`summarize_f
 | Surface | What you see |
 |---------|----------------|
 | **Start grow** | Plant picker links the cycle to your Plants catalog (`plant_id`) |
-| **Plants** | Each strain card lists grows tied to that plant |
+| **Plants** | Each plant card lists grows tied to that catalog crop |
 | **Cycle summary** | Real stage timeline after stage changes; **Harvest economics** when income is tagged |
 | **Compare** | Opens with this harvest + prior run pre-selected (`?ids=`) |
 | **Money** | **Income for this grow** filter from summary (`?cycle_id=`) |
@@ -492,6 +492,26 @@ Four new **read tools** (no Confirm): **`summarize_cycle_cost`**, **`summarize_f
 | **Guardian** | Cites `lookup_crop_targets` — refuses to guess EC/VPD without a profile |
 
 **Vitest:** `phase-64-closure.test.js` · **Go smoke:** `TestPhase64_CropProfilesListAndCannabisFlowerEC`.
+
+### 6m. Plants & crop knowledge chain (Phases 85–87 — shipped)
+
+**Plans:** [85](plans/phase_85_catalog_bound_plants.plan.md) · [86](plans/phase_86_grow_ops_catalog_chain.plan.md) · [87](plans/phase_87_crop_knowledge_operator_closure.plan.md) · **Runbook:** [`crop-knowledge-operator-runbook.md`](crop-knowledge-operator-runbook.md) · Architecture: [§7.0af](farm-guardian-architecture.md#70af-plants--crop-knowledge-chain-phases-8587--shipped).
+
+| Surface | What you do |
+|---------|-------------|
+| **Zone → Plants** | **+ Add plant** — pick from knowledge base dropdown (EC / DLI / photoperiod preview); optional variety only |
+| **Plants workspace** | Same catalog picker; one farm row per crop type (`crop_key`) |
+| **Settings → Crops & targets** | Tune EC per crop for this farm — applies to all grows of that `crop_key` |
+| **Start grow** | Catalog crop required; links `plant_id` on the cycle |
+| **Grow strip** | EC chip for active stage; **tune targets** → Settings |
+| **Water / Light** | Crop target hint from profile stage |
+| **Guardian** | Feed / light / compare → `lookup_crop_targets` (mS/cm); matches strip |
+
+**Terminology:** **Plant** and **crop** — not “strain” in operator copy.
+
+**Picker 404?** `make migrate` + restart API — see runbook.
+
+**Go smokes:** `TestPhase85CatalogBoundPlants`, `TestPhase86_*`, `TestPhase87_*`.
 
 ### 6l. Per-device Pi API keys (Phase 57 — shipped)
 
@@ -628,7 +648,7 @@ Architecture: [`farm-guardian-architecture.md` §7.0i](farm-guardian-architectur
 
 | Job | Where | What to click |
 |-----|--------|----------------|
-| **Start a grow** | Zone **Overview** → **Start a grow**, or **Plants** → **Start a grow** | Strain → zone → optional feeding program; creates a crop cycle |
+| **Start a grow** | Zone **Overview** → **Start a grow**, or **Plants** → **Start a grow** | Catalog crop → zone → optional feeding program; creates a catalog plant + crop cycle |
 | **Harvest** | Zone **Overview** → **Harvest weigh-in** | Yield (g), notes → cycle closes → **post-harvest** screen with summary + **Compare to last cycle** |
 | **Restock** | **Operations → Supplies** | **+ Add qty** on a batch; low-stock banner → **Create refill task** (links to **Tasks**) |
 | **Log spend** | **Operations → Money** | **Save receipt** — optional tag to room + active grow; Dashboard **Spent this month** chip → Money |
