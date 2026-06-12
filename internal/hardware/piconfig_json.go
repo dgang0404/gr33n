@@ -37,7 +37,9 @@ type PiRuntimeActuator struct {
 	ActuatorID int64  `json:"actuator_id"`
 	DeviceID   int64  `json:"device_id"`
 	DeviceType string `json:"device_type"`
-	GPIOPin    int    `json:"gpio_pin"`
+	Driver     string `json:"driver,omitempty"`
+	GPIOPin    *int   `json:"gpio_pin,omitempty"`
+	Channel    *int   `json:"channel,omitempty"`
 }
 
 // BuildPiRuntimeConfig assembles the Pi pull-sync payload from DB wiring rows.
@@ -99,7 +101,9 @@ func toRuntimeActuators(entries []piActuatorEntry) []PiRuntimeActuator {
 			ActuatorID: e.ActuatorID,
 			DeviceID:   e.DeviceID,
 			DeviceType: e.DeviceType,
+			Driver:     e.Driver,
 			GPIOPin:    e.GPIOPin,
+			Channel:    e.Channel,
 		}
 	}
 	return out

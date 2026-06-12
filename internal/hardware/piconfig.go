@@ -32,10 +32,11 @@ type PiConfigSensor struct {
 
 // PiConfigActuator is an actuator row + optional wiring for generation.
 type PiConfigActuator struct {
-	ID           int64
-	ActuatorType string
-	DeviceID     *int64
-	Config       json.RawMessage
+	ID                 int64
+	ActuatorType       string
+	DeviceID           *int64
+	HardwareIdentifier *string
+	Config             json.RawMessage
 }
 
 type piConfigFile struct {
@@ -70,7 +71,9 @@ type piActuatorEntry struct {
 	ActuatorID int64  `yaml:"actuator_id"`
 	DeviceID   int64  `yaml:"device_id"`
 	DeviceType string `yaml:"device_type"`
-	GPIOPin    int    `yaml:"gpio_pin"`
+	Driver     string `yaml:"driver,omitempty"`
+	GPIOPin    *int   `yaml:"gpio_pin,omitempty"`
+	Channel    *int   `yaml:"channel,omitempty"`
 }
 
 var actuatorTypeToPiDevice = map[string]string{
@@ -191,21 +194,60 @@ func buildPiActuatorEntries(rows []PiConfigActuator, deviceID int64) ([]piActuat
 		if err != nil {
 			return nil, fmt.Errorf("actuator %d: %w", row.ID, err)
 		}
-		if !belongsToDevice(w, row.DeviceID, deviceID) {
+		if w != nil && w.GPIOPin != nil && belongsToDevice(w, row.DeviceID, deviceID) {
+			pin := *w.GPIOPin
+			out = append(out, piActuatorEntry{
+				ActuatorID: row.ID,
+				DeviceID:   deviceID,
+				DeviceType: mapActuatorTypeToPi(row.ActuatorType),
+				Driver:     "gpio",
+				GPIOPin:    &pin,
+			})
 			continue
 		}
-		if w == nil || w.GPIOPin == nil {
+		if row.DeviceID == nil || *row.DeviceID != deviceID {
+			continue
+		}
+		if row.HardwareIdentifier == nil {
+			continue
+		}
+		ch, ok := parseRelayHATChannel(*row.HardwareIdentifier)
+		if !ok {
 			continue
 		}
 		out = append(out, piActuatorEntry{
 			ActuatorID: row.ID,
 			DeviceID:   deviceID,
 			DeviceType: mapActuatorTypeToPi(row.ActuatorType),
-			GPIOPin:    *w.GPIOPin,
+			Driver:     "relay_hat",
+			Channel:    &ch,
 		})
 	}
 	sort.Slice(out, func(i, j int) bool { return out[i].ActuatorID < out[j].ActuatorID })
 	return out, nil
+}
+
+func parseRelayHATChannel(raw string) (int, bool) {
+	s := strings.TrimSpace(raw)
+	if s == "" {
+		return 0, false
+	}
+	var ch int
+	if _, err := fmt.Sscanf(s, "%d", &ch); err == nil && ch >= 0 {
+		return ch, true
+	}
+	// relay_3, ch-3 — trailing digits
+	i := len(s)
+	for i > 0 && s[i-1] >= '0' && s[i-1] <= '9' {
+		i--
+	}
+	if i >= len(s) {
+		return 0, false
+	}
+	if _, err := fmt.Sscanf(s[i:], "%d", &ch); err != nil || ch < 0 {
+		return 0, false
+	}
+	return ch, true
 }
 
 func belongsToDevice(w *Wiring, rowDeviceID *int64, targetID int64) bool {
@@ -292,11 +334,13 @@ func PiSensorEntryToWiring(entry piSensorEntry, deviceID int64) *Wiring {
 
 // PiActuatorEntryToWiring maps a parsed pi_client actuator stanza back to WS1 wiring.
 func PiActuatorEntryToWiring(entry piActuatorEntry) *Wiring {
-	pin := entry.GPIOPin
+	if entry.GPIOPin == nil {
+		return nil
+	}
 	dev := entry.DeviceID
 	return &Wiring{
 		Source:   "gpio_relay",
-		GPIOPin:  &pin,
+		GPIOPin:  entry.GPIOPin,
 		DeviceID: &dev,
 	}
 }

@@ -103,10 +103,11 @@ func mapActuatorsForPi(rows []db.Gr33ncoreActuator) []hardware.PiConfigActuator 
 	out := make([]hardware.PiConfigActuator, len(rows))
 	for i, a := range rows {
 		out[i] = hardware.PiConfigActuator{
-			ID:           a.ID,
-			ActuatorType: a.ActuatorType,
-			DeviceID:     a.DeviceID,
-			Config:       a.Config,
+			ID:                 a.ID,
+			ActuatorType:       a.ActuatorType,
+			DeviceID:           a.DeviceID,
+			HardwareIdentifier: a.HardwareIdentifier,
+			Config:             a.Config,
 		}
 	}
 	return out

@@ -163,6 +163,8 @@ The API side must have `PI_API_KEY` set (see `cmd/api/main.go` / deployment docs
 
 **Manual fallback:** edit [`pi_client/config.yaml`](../pi_client/config.yaml) directly ([§2b](#2b-legacy-full-local-yaml-opt-out), §8.3 step 4b). Use when the UI is unreachable or for one-off experiments. Keep `sensor_id` / `actuator_id` aligned with the database ([`scripts/print-demo-sensor-ids.sh`](../scripts/print-demo-sensor-ids.sh)).
 
+**UI (JWT, farm-scoped):** assign wiring under **Hardware → GPIO board** (live map) or **Controls** / **Zone → hardware** panels. Reference diagrams: **Hardware → Reference**.
+
 **API (JWT, farm-scoped):**
 
 | Method | Path | Purpose |

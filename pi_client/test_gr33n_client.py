@@ -1381,6 +1381,39 @@ class TestPhase51LiveReload(unittest.TestCase):
             os.unlink(cfg_path)
 
 
+class TestPhase70MultiActuatorDispatch(unittest.TestCase):
+    """Phase 70 — actuator_id dispatch and relay-HAT controller factory."""
+
+    def test_resolve_actuator_prefers_payload_actuator_id(self):
+        a1 = client.ActuatorController({'actuator_id': 1, 'device_id': 10, 'device_type': 'light', 'gpio_pin': 17})
+        a2 = client.ActuatorController({'actuator_id': 2, 'device_id': 10, 'device_type': 'pump', 'gpio_pin': 18})
+        reg = {1: a1, 2: a2}
+        got = client.resolve_actuator_for_command(reg, 10, {'actuator_id': 2, 'command': 'on'})
+        self.assertIs(got, a2)
+
+    def test_resolve_actuator_single_on_device_falls_back(self):
+        a1 = client.ActuatorController({'actuator_id': 1, 'device_id': 10, 'device_type': 'light', 'gpio_pin': 17})
+        reg = {1: a1}
+        got = client.resolve_actuator_for_command(reg, 10, {'command': 'on'})
+        self.assertIs(got, a1)
+
+    def test_make_actuator_controller_relay_hat(self):
+        ctrl = client.make_actuator_controller({
+            'actuator_id': 9, 'device_id': 1, 'device_type': 'pump', 'driver': 'relay_hat', 'channel': 3,
+        })
+        self.assertIsInstance(ctrl, client.RelayHATActuatorController)
+        self.assertEqual(ctrl.channel, 3)
+
+    def test_relay_hat_controller_on_off(self):
+        ctrl = client.RelayHATActuatorController({
+            'actuator_id': 9, 'device_id': 1, 'device_type': 'pump', 'channel': 2,
+        })
+        ctrl.turn_on()
+        self.assertEqual(ctrl.state, 'on')
+        ctrl.turn_off()
+        self.assertEqual(ctrl.state, 'off')
+
+
 class TestDerivedSensorInClient(unittest.TestCase):
     """End-to-end: a Gr33nPiClient built with derived sensors wires the cache."""
 

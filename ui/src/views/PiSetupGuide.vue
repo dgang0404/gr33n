@@ -9,6 +9,10 @@
         <span class="text-xs text-zinc-400">Pi + HAT setup</span>
       </div>
       <h1 class="text-2xl font-bold text-green-400">Pi + Sequent Microsystems HAT Setup</h1>
+      <p v-if="embedded" class="text-xs text-amber-200/90 bg-amber-950/40 border border-amber-900/50 rounded-lg px-3 py-2">
+        Reference — typical wiring and parts. Your actual farm map is on
+        <router-link v-nav-hint="'/hardware'" :to="{ path: '/hardware', query: { tab: 'board' } }" class="text-green-400 hover:text-green-300">Hardware → GPIO board</router-link>.
+      </p>
       <p class="text-sm text-zinc-400 leading-relaxed max-w-2xl">
         The fastest way to wire up a grow room with off-the-shelf hardware.
         One Raspberry Pi + one 8-relay HAT controls pumps, lights, fans, and valves.
@@ -364,7 +368,7 @@ defineProps({
 import { resolveWiring, formatWiringLabel } from '../lib/hardwareWiring.js'
 
 const store = useFarmStore()
-onMounted(() => { if (!store.actuators.length && !store.sensors.length) store.loadFarm?.() })
+onMounted(() => { if (!store.actuators.length && !store.sensors.length) store.loadAll() })
 
 // ── Live wiring helpers ───────────────────────────────────────────────────────
 

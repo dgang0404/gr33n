@@ -77,6 +77,20 @@ func mustConfig(t *testing.T, v map[string]any) json.RawMessage {
 	return b
 }
 
+func TestParseRelayHATChannel(t *testing.T) {
+	cases := map[string]int{
+		"3":       3,
+		"relay_1": 1,
+		"ch-12":   12,
+	}
+	for raw, want := range cases {
+		got, ok := parseRelayHATChannel(raw)
+		if !ok || got != want {
+			t.Fatalf("parseRelayHATChannel(%q) = %d,%v want %d,true", raw, got, ok, want)
+		}
+	}
+}
+
 func containsAll(s string, parts ...string) bool {
 	for _, p := range parts {
 		if !strings.Contains(s, p) {

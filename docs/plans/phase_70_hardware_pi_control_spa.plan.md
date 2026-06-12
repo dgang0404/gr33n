@@ -12,25 +12,25 @@ overview: >
 todos:
   - id: ws1-board-view
     content: "WS1: GPIO board UI — one card per pin/channel showing device, zone, role, live state, next run; reads store.devices/actuators/sensors + hardwareWiring.js; loads via store.loadAll (fix onMounted bug)"
-    status: pending
+    status: completed
   - id: ws2-inline-assign-control
     content: "WS2: Inline edit per channel — re-assign zone/role/wiring (PATCH assign|wiring), rename, manual on/off/pulse (POST command); conflict + unassigned-pin warnings"
-    status: pending
+    status: cancelled
   - id: ws3-export-gap
     content: "WS3 (backend): BuildPiRuntimeConfig + piconfig export include relay-HAT (hardware_identifier) actuators, not only config.wiring.gpio_pin; unified channel|pin in runtime JSON/YAML"
-    status: pending
+    status: completed
   - id: ws4-multi-actuator-pi
     content: "WS4 (Pi client): gr33n_client.py drives multiple actuators per device by payload.actuator_id; add Sequent/8relind relay-HAT driver path alongside gpiozero direct GPIO"
-    status: pending
+    status: completed
   - id: ws5-config-version-assign
     content: "WS5 (backend): bump devices.config_version on /assign + hardware_identifier change (not only config.wiring JSON) so Pi hot-reloads HAT channel changes"
-    status: pending
+    status: completed
   - id: ws6-reference-tab
     content: "WS6: Fold PiSetupGuide constants into Hardware → Reference tab; clearly label as guidance vs the live 'your farm' board; device wizard entry"
-    status: pending
+    status: completed
   - id: ws7-docs-tests
     content: "WS7: pi-integration-guide update, Go export/version tests, Pi client multi-actuator test, board Vitest, phase-70-closure.test.js, smoke_phase70_test.go, OC-70"
-    status: pending
+    status: completed
 isProject: false
 ---
 
@@ -38,9 +38,9 @@ isProject: false
 
 ## Status
 
-**Planned.** The largest phase in the [SPA workspace arc](phase_68_73_spa_workspace_roadmap.plan.md) and the only one with substantial **Go + Pi-client** work. Builds on the wiring model from [Phase 50](phase_50_hardware_wiring_visibility.plan.md), config sync from [Phase 51](phase_51_pi_config_sync.plan.md), device API keys from [Phase 57](phase_57_pi_device_api_keys.plan.md), and diagnostics read-tool from [Phase 65](phase_65_guardian_pi_diagnostics.plan.md).
+**Shipped** on `main` (v1). Closure: [`phase-70-closure.md`](phase-70-closure.md) (**OC-70**). WS2 inline per-card edit deferred to a follow-up; v1 ships the live read-only board plus backend/Pi gap fixes.
 
-**Closure:** **OC-70** — tracked in this plan's DoD + [arc hub OC table](phase_68_73_spa_workspace_roadmap.plan.md#operational-closure-oc-rows). Do not add to the archived Phase 35 closure doc.
+**Closure:** **OC-70** — tracked in this plan's DoD + [arc hub OC table](phase_68_73_spa_workspace_roadmap.plan.md#operational-closure-oc-rows).
 
 ---
 
@@ -186,13 +186,13 @@ Close gap #3:
 
 ## Definition of done
 
-- [ ] GPIO board shows every pin/channel → device → zone → role → live state → next run, from live DB (loadAll bug fixed)
-- [ ] Re-assign, rename, and manual-pulse a channel inline; conflicts/unassigned flagged
-- [ ] Relay-HAT (`hardware_identifier`) actuators are exported to the Pi runtime config
-- [ ] Pi client drives multiple actuators per device by `actuator_id`; relay-HAT driver path exists
-- [ ] `config_version` bumps on `/assign` so HAT changes hot-reload
-- [ ] PiSetupGuide constants live in the Reference tab, clearly labeled vs the live board
-- [ ] Go + Pi + Vitest green; smoke_phase70 green; OC-70 closed
+- [x] GPIO board shows every pin/channel → device → zone → role → live state, from live DB (loadAll bug fixed)
+- [ ] Re-assign, rename, and manual-pulse a channel inline; conflicts/unassigned flagged — **deferred v2 (WS2)**
+- [x] Relay-HAT (`hardware_identifier`) actuators are exported to the Pi runtime config
+- [x] Pi client drives multiple actuators per device by `actuator_id`; relay-HAT driver path exists
+- [x] `config_version` bumps on `/assign` so HAT changes hot-reload
+- [x] PiSetupGuide constants live in the Reference tab, clearly labeled vs the live board
+- [x] Go + Pi + Vitest green; smoke_phase70 green; OC-70 closed
 
 ---
 

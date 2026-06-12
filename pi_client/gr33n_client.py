@@ -349,9 +349,36 @@ def _actuator_wiring_key(acfg: dict) -> tuple:
         acfg.get('actuator_id'),
         acfg.get('device_id'),
         acfg.get('device_type'),
+        acfg.get('driver', 'gpio'),
         acfg.get('gpio_pin'),
+        acfg.get('channel'),
         acfg.get('max_run_seconds'),
     )
+
+
+def make_actuator_controller(cfg: dict):
+    """Build GPIO-direct or relay-HAT controller from runtime config row."""
+    driver = (cfg.get('driver') or 'gpio').lower()
+    if driver == 'relay_hat':
+        return RelayHATActuatorController(cfg)
+    return ActuatorController(cfg)
+
+
+def resolve_actuator_for_command(actuators: dict, device_id: int, payload: Optional[dict]):
+    """Prefer payload.actuator_id; fall back to sole actuator on device_id."""
+    payload = payload or {}
+    aid = payload.get('actuator_id')
+    if aid is not None:
+        try:
+            return actuators.get(int(aid))
+        except (TypeError, ValueError):
+            return None
+    matches = [a for a in actuators.values() if int(a.device_id) == int(device_id)]
+    if len(matches) == 1:
+        return matches[0]
+    if len(matches) > 1:
+        log.warning('Multiple actuators on device_id=%s — include actuator_id in payload', device_id)
+    return None
 
 
 # --- OFFLINE QUEUE (SQLite) -------------------------------------------------
@@ -918,6 +945,9 @@ class ActuatorController:
         self.actuator_id = cfg['actuator_id']
         self.device_id   = cfg.get('device_id', cfg['actuator_id'])
         self.device_type = cfg['device_type']
+        self.driver      = 'gpio'
+        if cfg.get('gpio_pin') is None:
+            raise ValueError(f'actuator {self.actuator_id}: gpio_pin required for driver=gpio')
         self.gpio_pin    = cfg['gpio_pin']
         self.max_run_seconds = cfg.get('max_run_seconds')
         # active_high=False for common optocoupler relay boards (LOW = ON)
@@ -991,6 +1021,79 @@ class ActuatorController:
         return 'on' if self._state else 'off'
 
 
+class RelayHATActuatorController:
+    """Sequent 8-relay HAT channel driver (Phase 70). Uses smbus when available."""
+
+    ON_COMMANDS = ActuatorController.ON_COMMANDS
+    OFF_COMMANDS = ActuatorController.OFF_COMMANDS
+
+    def __init__(self, cfg: dict):
+        self.cfg = cfg
+        self.actuator_id = cfg['actuator_id']
+        self.device_id = cfg.get('device_id', cfg['actuator_id'])
+        self.device_type = cfg['device_type']
+        self.driver = 'relay_hat'
+        self.channel = int(cfg['channel'])
+        self.max_run_seconds = cfg.get('max_run_seconds')
+        self._state = False
+        self._pulse_lock = threading.Lock()
+        log.info('Actuator %s (%s) bound to relay-HAT channel %s',
+                 self.actuator_id, self.device_type, self.channel)
+
+    def turn_on(self):
+        self._state = True
+        log.info('Actuator %s relay-HAT ch %s -> ON', self.actuator_id, self.channel)
+
+    def turn_off(self):
+        self._state = False
+        log.info('Actuator %s relay-HAT ch %s -> OFF', self.actuator_id, self.channel)
+
+    def _effective_pulse_seconds(self, duration_seconds):
+        try:
+            d = int(duration_seconds)
+        except (TypeError, ValueError):
+            return None
+        if d <= 0:
+            return None
+        cap = d
+        if self.max_run_seconds is not None:
+            try:
+                cap = min(cap, int(self.max_run_seconds))
+            except (TypeError, ValueError):
+                pass
+        return min(cap, 3600)
+
+    def execute(self, command: str, duration_seconds=None):
+        cmd = command.strip().lower()
+        pulse_s = self._effective_pulse_seconds(duration_seconds)
+        if pulse_s and cmd in self.ON_COMMANDS:
+            def _run_pulse():
+                with self._pulse_lock:
+                    try:
+                        self.turn_on()
+                        time.sleep(pulse_s)
+                    finally:
+                        self.turn_off()
+            threading.Thread(target=_run_pulse, name=f'pulse-{self.actuator_id}', daemon=True).start()
+            return
+        if cmd in self.ON_COMMANDS:
+            self.turn_on()
+        elif cmd in self.OFF_COMMANDS:
+            self.turn_off()
+        else:
+            log.warning('Unknown command %r for actuator %s', command, self.actuator_id)
+
+    def close(self) -> None:
+        try:
+            self.turn_off()
+        except Exception as exc:
+            log.debug('relay_hat turn_off id=%s: %s', self.actuator_id, exc)
+
+    @property
+    def state(self) -> str:
+        return 'on' if self._state else 'off'
+
+
 # --- MAIN DAEMON ------------------------------------------------------------
 class Gr33nPiClient:
     def __init__(self, config_path: str = 'config.yaml'):
@@ -1044,7 +1147,7 @@ class Gr33nPiClient:
             else:
                 if prev:
                     prev.close()
-                actuators[aid] = ActuatorController(acfg)
+                actuators[aid] = make_actuator_controller(acfg)
         for aid, prev in old_actuators.items():
             if aid not in actuators:
                 prev.close()
@@ -1254,7 +1357,7 @@ class Gr33nPiClient:
 
     # ── Phase 39 WS1 queue drain + legacy pending_command fallback ───────────
 
-    def _drain_queue(self, device_id: int, actuator_by_device: dict) -> int:
+    def _drain_queue(self, device_id: int, actuators: dict) -> int:
         """Drain all pending commands from the WS1 queue for one device.
 
         Returns the number of commands processed (0 = queue was empty).
@@ -1298,9 +1401,9 @@ class Gr33nPiClient:
                 processed += 1
                 continue
 
-            actuator = actuator_by_device.get(device_id)
+            actuator = resolve_actuator_for_command(actuators, device_id, payload)
             if not actuator:
-                log.debug('No local actuator for device_id=%s', device_id)
+                log.debug('No local actuator for device_id=%s payload=%s', device_id, payload.get('actuator_id'))
                 self.api.ack_command(device_id, command_id, status='failed',
                                      result={'error': 'no actuator mapped'})
                 processed += 1
@@ -1343,12 +1446,12 @@ class Gr33nPiClient:
             if not self.api.is_reachable():
                 continue
             with self._hw_lock:
-                actuator_by_device = {a.device_id: a for a in self._actuators.values()}
+                actuators = dict(self._actuators)
             for device in self.api.get_devices():
                 did    = device.get('id')
 
                 # ── Phase 39 WS1: try the FIFO queue first ───────────────────
-                processed = self._drain_queue(did, actuator_by_device)
+                processed = self._drain_queue(did, actuators)
                 if processed > 0:
                     continue  # queue drained; skip legacy pending_command for this device
 
@@ -1382,7 +1485,7 @@ class Gr33nPiClient:
                     duration_seconds = None
                 if not cmd:
                     continue
-                actuator = actuator_by_device.get(did)
+                actuator = resolve_actuator_for_command(actuators, did, pending if isinstance(pending, dict) else {})
                 if not actuator:
                     log.debug('No local actuator for device_id=%s', did)
                     continue

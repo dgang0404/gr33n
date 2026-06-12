@@ -44,7 +44,7 @@ func TestBuildPiRuntimeConfig_sensorAndActuatorShape(t *testing.T) {
 	if cfg.Sensors[0].SensorID != 3 || cfg.Sensors[0].IntervalSeconds != 60 {
 		t.Fatalf("sensor meta: %+v", cfg.Sensors[0])
 	}
-	if len(cfg.Actuators) != 1 || cfg.Actuators[0].GPIOPin != 17 {
+	if len(cfg.Actuators) != 1 || cfg.Actuators[0].GPIOPin == nil || *cfg.Actuators[0].GPIOPin != 17 {
 		t.Fatalf("actuator: %+v", cfg.Actuators)
 	}
 	if len(cfg.MixChannels) != 2 || cfg.MixChannels[0] != 1 {
@@ -72,6 +72,30 @@ func TestBuildPiRuntimeConfig_sensorAndActuatorShape(t *testing.T) {
 	}
 	if _, hasGpio := s0["gpio_pin"]; hasGpio {
 		t.Fatalf("sensor must use pin not gpio_pin: %v", s0)
+	}
+}
+
+func TestBuildPiRuntimeConfig_relayHATActuator(t *testing.T) {
+	dev := int64(1)
+	hw := "3"
+	opts := PiConfigOptions{
+		FarmID: 1, DeviceID: 1, DeviceUID: "demo-veg-relay-01",
+		Actuators: []PiConfigActuator{
+			{
+				ID: 9, ActuatorType: "pump", DeviceID: &dev, HardwareIdentifier: &hw,
+			},
+		},
+	}
+	cfg, err := BuildPiRuntimeConfig(opts, 1, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(cfg.Actuators) != 1 {
+		t.Fatalf("actuators: %+v", cfg.Actuators)
+	}
+	a := cfg.Actuators[0]
+	if a.Driver != "relay_hat" || a.Channel == nil || *a.Channel != 3 || a.GPIOPin != nil {
+		t.Fatalf("relay_hat actuator: %+v", a)
 	}
 }
 
