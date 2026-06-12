@@ -168,18 +168,20 @@
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
+import api from '../api'
 import GuardianStarterChips from '../components/GuardianStarterChips.vue'
 import { buildSetupStarters } from '../lib/guardianStarters.js'
 import { useFarmStore } from '../stores/farm.js'
 import { useFarmContextStore } from '../stores/farmContext.js'
 import {
-  FARM_SETUP_PRIMARY_CHOICES,
   FARM_SETUP_BLANK_ID,
+  farmSetupPrimaryChoices,
   farmSetupMoreChoices,
   previewForSetupChoice,
   formatBootstrapApplyResult,
   markFarmSetupComplete,
 } from '../lib/farmSetupWizard.js'
+import { loadBootstrapCatalog } from '../lib/bootstrapCatalog.js'
 
 const route = useRoute()
 const store = useFarmStore()
@@ -204,8 +206,8 @@ const farmLabel = computed(() => {
   return f?.name || store.farm?.name || (farmId.value ? `Farm #${farmId.value}` : 'this farm')
 })
 
-const primaryChoices = FARM_SETUP_PRIMARY_CHOICES
-const moreChoices = farmSetupMoreChoices()
+const primaryChoices = computed(() => farmSetupPrimaryChoices())
+const moreChoices = computed(() => farmSetupMoreChoices())
 
 const preview = computed(() => previewForSetupChoice(selectedChoice.value))
 
@@ -285,7 +287,7 @@ async function applyTemplate() {
 }
 
 onMounted(() => {
-  void ensureFarmContext()
+  void loadBootstrapCatalog(api).then(() => ensureFarmContext())
 })
 
 watch(farmId, () => {

@@ -189,6 +189,8 @@ func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationwo
 	mux.Handle("GET /platform/domain-enums", jwt(http.HandlerFunc(platform.ListDomainEnums)))
 	// Phase 90 — device taxonomy (sensor/actuator → plant need, labels, GH roles)
 	mux.Handle("GET /platform/device-taxonomy", jwt(http.HandlerFunc(platform.ListDeviceTaxonomy)))
+	// Phase 91 — bootstrap template catalog (starter pack pickers)
+	mux.Handle("GET /platform/bootstrap-templates", jwt(http.HandlerFunc(platform.ListBootstrapTemplates)))
 
 	// Commons catalog (gr33n_inserts — browse + per-farm import audit)
 	mux.Handle("GET /commons/catalog", jwt(http.HandlerFunc(commonsCatalog.List)))

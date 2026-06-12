@@ -7,6 +7,7 @@ import (
 
 	db "gr33n-api/internal/db"
 	"gr33n-api/internal/farmbootstrap"
+	"gr33n-api/internal/platform/bootstraptemplates"
 )
 
 func execApplyBootstrapTemplate(ctx context.Context, deps ExecutorDeps, args map[string]any) (any, error) {
@@ -19,6 +20,9 @@ func execApplyBootstrapTemplate(ctx context.Context, deps ExecutorDeps, args map
 	}
 	if farmbootstrap.IsBlankChoice(template) {
 		return nil, errors.New("template is required")
+	}
+	if !bootstraptemplates.Current().IsValid(template) {
+		return nil, fmt.Errorf("unknown template %q — use a key from GET /platform/bootstrap-templates", template)
 	}
 	q, ok := deps.Q.(*db.Queries)
 	if !ok {

@@ -1021,10 +1021,11 @@ import api from '../api'
 import { parseFarmCoordinates, parseFarmElevationM } from '../lib/siteWeather.js'
 import { loadGuardianFieldPrefs, saveGuardianFieldPrefs } from '../lib/guardianFieldPrefs.js'
 import {
-  BOOTSTRAP_STARTER_OPTIONS,
   BOOTSTRAP_TEMPLATE_KEYS,
-  BOOTSTRAP_STARTER_SUMMARIES,
+  bootstrapStarterOptions,
+  bootstrapStarterSummaries,
 } from '../constants/bootstrapTemplates'
+import { loadBootstrapCatalog } from '../lib/bootstrapCatalog.js'
 import CropTargetsSettings from '../components/CropTargetsSettings.vue'
 import { farmSetupRoute } from '../lib/farmSetupWizard.js'
 
@@ -1060,13 +1061,13 @@ const userBarColor = computed(() => pctColor(chatUsage.user))
 const farmBarWidth = computed(() => pctWidth(chatUsage.farm))
 const farmBarColor = computed(() => pctColor(chatUsage.farm))
 
-const starterPackOptions = BOOTSTRAP_STARTER_OPTIONS
+const starterPackOptions = computed(() => bootstrapStarterOptions())
 
 const starterSummaryForNewFarm = computed(
-  () => BOOTSTRAP_STARTER_SUMMARIES[newFarm.starterKey] || null,
+  () => bootstrapStarterSummaries()[newFarm.starterKey] || null,
 )
 const starterSummaryForApply = computed(
-  () => BOOTSTRAP_STARTER_SUMMARIES[applyStarterKey.value] || null,
+  () => bootstrapStarterSummaries()[applyStarterKey.value] || null,
 )
 
 const newFarm = reactive({
@@ -1854,6 +1855,7 @@ async function removeMember(userId) {
 }
 
 onMounted(() => {
+  void loadBootstrapCatalog(api)
   loadOrgs()
   loadMembers()
   loadFarmSharing()

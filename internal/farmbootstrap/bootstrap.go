@@ -1,6 +1,10 @@
 package farmbootstrap
 
-import "strings"
+import (
+	"strings"
+
+	"gr33n-api/internal/platform/bootstraptemplates"
+)
 
 // Template keys (versioned in DB function gr33ncore.apply_farm_bootstrap_template).
 const (
@@ -31,4 +35,9 @@ func IsBlankChoice(s string) bool {
 	default:
 		return false
 	}
+}
+
+// IsKnownTemplate reports whether the key is listed in the bootstrap catalog.
+func IsKnownTemplate(s string) bool {
+	return bootstraptemplates.Current().IsValid(strings.TrimSpace(s))
 }

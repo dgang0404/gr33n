@@ -1,45 +1,42 @@
 /**
- * Phase 44 WS1 — farm setup wizard helpers (template cards, preview, apply result).
+ * Phase 44 / 91 — farm setup wizard helpers (template cards, preview, apply result).
  */
 
-import {
-  BOOTSTRAP_TEMPLATE_KEYS,
-  BOOTSTRAP_STARTER_OPTIONS,
-  BOOTSTRAP_STARTER_SUMMARIES,
-} from '../constants/bootstrapTemplates.js'
+import { getBootstrapCatalog } from './bootstrapCatalog.js'
+import { BOOTSTRAP_TEMPLATE_KEYS } from './bootstrapCatalog.fallback.js'
 
 export const FARM_SETUP_BLANK_ID = 'blank'
 
-/** Primary wizard cards (plan: blank + indoor veg + greenhouse). */
-export const FARM_SETUP_PRIMARY_CHOICES = [
-  {
+/** Primary wizard cards (blank + wizard_primary templates from catalog). */
+export function farmSetupPrimaryChoices() {
+  const { templates } = getBootstrapCatalog()
+  const blank = {
     id: FARM_SETUP_BLANK_ID,
     label: 'Start blank',
     tagline: 'Empty farm — add zones and devices yourself',
     icon: '📋',
     recommended: false,
-  },
-  {
-    id: BOOTSTRAP_TEMPLATE_KEYS.JADAM_INDOOR_PHOTOPERIOD_V1,
-    label: 'Indoor photoperiod',
-    tagline: 'Four zones, feeding programs, inventory, and demo tasks',
-    icon: '🌱',
-    recommended: true,
-  },
-  {
-    id: BOOTSTRAP_TEMPLATE_KEYS.GREENHOUSE_CLIMATE_V1,
-    label: 'Greenhouse climate',
-    tagline: 'Shade, vents, humidity bands, and Pi placeholder',
-    icon: '🏠',
-    recommended: false,
-  },
-]
+  }
+  const cards = templates
+    .filter((t) => t.wizard_primary)
+    .map((t) => ({
+      id: t.template_key,
+      label: t.short_label || t.label,
+      tagline: t.tagline || t.label,
+      icon: t.icon || '📦',
+      recommended: !!t.recommended,
+    }))
+  return [blank, ...cards]
+}
+
+/** @deprecated prefer farmSetupPrimaryChoices() after loadBootstrapCatalog */
+export const FARM_SETUP_PRIMARY_CHOICES = farmSetupPrimaryChoices()
 
 /** Additional templates shown under “More starter packs”. */
 export function farmSetupMoreChoices() {
-  const primary = new Set(FARM_SETUP_PRIMARY_CHOICES.map((c) => c.id))
-  return BOOTSTRAP_STARTER_OPTIONS
-    .filter((opt) => !primary.has(opt.value))
+  const primary = new Set(farmSetupPrimaryChoices().map((c) => c.id))
+  return getBootstrapCatalog()
+    .starterOptions.filter((opt) => !primary.has(opt.value))
     .map((opt) => ({
       id: opt.value,
       label: opt.shortLabel || opt.label,
@@ -63,7 +60,7 @@ export function previewForSetupChoice(choiceId) {
       ],
     }
   }
-  const summary = BOOTSTRAP_STARTER_SUMMARIES[choiceId]
+  const summary = getBootstrapCatalog().summariesByKey[choiceId]
   if (!summary) {
     return {
       isBlank: false,
@@ -126,3 +123,5 @@ export function isFarmSetupMarkedComplete(farmId) {
   if (typeof localStorage === 'undefined' || !farmId) return false
   return localStorage.getItem(`${SETUP_DONE_PREFIX}${farmId}`) === '1'
 }
+
+export { BOOTSTRAP_TEMPLATE_KEYS }

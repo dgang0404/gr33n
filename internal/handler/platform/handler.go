@@ -6,6 +6,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"gr33n-api/internal/httputil"
+	"gr33n-api/internal/platform/bootstraptemplates"
 	"gr33n-api/internal/platform/devicetaxonomy"
 	"gr33n-api/internal/platform/domainenums"
 )
@@ -31,4 +32,14 @@ func (h *Handler) ListDeviceTaxonomy(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	httputil.WriteJSON(w, http.StatusOK, payload)
+}
+
+// GET /platform/bootstrap-templates
+func (h *Handler) ListBootstrapTemplates(w http.ResponseWriter, r *http.Request) {
+	list, err := bootstraptemplates.LoadList(r.Context(), h.pool)
+	if err != nil {
+		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	httputil.WriteJSON(w, http.StatusOK, map[string]any{"templates": list})
 }
