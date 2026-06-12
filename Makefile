@@ -1,4 +1,4 @@
-.PHONY: run run-receiver build build-receiver test seed sqlc migrate merge-legacy-plants ui dev dev-auth-test rag-ingest-help rag-ingest-demo rag-ingest-platform-docs compose-db-up compose-db-status compose-logging-up compose-logging-down setup-compose-dev dev-stack dev-stack-fresh dev-stack-fresh-rag local-up restart-local restart-local-serve db-sanity-report check-stack check-crop-library check-crop-catalog check-crop-catalog-parity check-ui-domain-parity clean lint bootstrap-local bootstrap-local-docker install-deps-debian install-pi-edge-deps first-clone first-clone-docker first-clone-install-deps audit-openapi edge-smoke-help edge-actuator-smoke-help recipe-pack-import-help agronomy-seed-pack-help guardian-bootstrap-farm import-agronomy-seed-pack apply-agronomy-overrides rag-ingest-farm-operational
+.PHONY: run run-receiver build build-receiver test seed sqlc migrate merge-legacy-plants ui dev dev-auth-test rag-ingest-help rag-ingest-demo rag-ingest-platform-docs compose-db-up compose-db-status compose-logging-up compose-logging-down setup-compose-dev dev-stack dev-stack-fresh dev-stack-fresh-rag local-up restart-local restart-local-serve db-sanity-report check-stack check-crop-library check-crop-catalog check-crop-catalog-parity check-catalog-seed-drift add-crop-check check-catalog-release check-ui-domain-parity clean lint bootstrap-local bootstrap-local-docker install-deps-debian install-pi-edge-deps first-clone first-clone-docker first-clone-install-deps audit-openapi edge-smoke-help edge-actuator-smoke-help recipe-pack-import-help agronomy-seed-pack-help guardian-bootstrap-farm import-agronomy-seed-pack apply-agronomy-overrides rag-ingest-farm-operational
 
 # dash (common default /bin/sh) can report "wait: No child processes" for dev / dev-auth-test;
 # bash handles background jobs + wait reliably.
@@ -94,6 +94,14 @@ check-crop-catalog-db: ## Phase 84 WS-K — verify Postgres catalog seed (needs 
 	@./scripts/check-crop-catalog-db.sh
 
 check-crop-catalog-parity: check-crop-library check-crop-catalog check-crop-catalog-db ## YAML seed + DB parity
+
+check-catalog-seed-drift: ## Phase 95 — regenerated catalog SQL matches db/seed/crop_catalog_from_yaml.sql
+	@./scripts/check-catalog-seed-drift.sh
+
+add-crop-check: ## Phase 95 — integrator pre-migrate validation (YAML + seed drift; no DB)
+	@./scripts/add-crop-check.sh
+
+check-catalog-release: add-crop-check check-crop-catalog-db ## Phase 95 — full catalog release checklist (needs migrate)
 
 check-ui-domain-parity: ## Phase 99 — UI enum lists match backend/OpenAPI (growth stages, lighting presets)
 	@./scripts/check-ui-domain-parity.sh

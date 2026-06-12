@@ -6,19 +6,19 @@ overview: >
 todos:
   - id: ws1-playbook
     content: "WS1: docs/catalog-integrator-playbook.md — full cadence + roles"
-    status: pending
+    status: completed
   - id: ws2-make
     content: "WS2: make add-crop-check / check-catalog-release checklist target"
-    status: pending
+    status: completed
   - id: ws3-version
     content: "WS3: catalog_version bump contract in seed SQL + commons manifest"
-    status: pending
+    status: completed
   - id: ws4-ci
     content: "WS4: CI gate — parity fails if YAML changed without seed regen"
-    status: pending
+    status: completed
   - id: ws5-smoke
     content: "WS5: smoke new crop appears in picker + commons API after migrate"
-    status: pending
+    status: completed
 isProject: false
 ---
 
@@ -26,7 +26,7 @@ isProject: false
 
 ## Status
 
-**Planned.** Closes **blind spot #4** (catalog growth path stalls without process).
+**Shipped (OC-95).** Closure: [`phase-95-closure.md`](phase-95-closure.md).
 
 **Depends on:** [Phase 84](phase_84_crop_catalog_enterprise_db.plan.md) (shipped).
 
@@ -59,8 +59,8 @@ Adding crops is **migration-only** — correct for quality — but without a **r
 
 ## Acceptance
 
-- [ ] Playbook linked from phase-14, enterprise README, crop cutover runbook
-- [ ] CI fails on YAML/seed drift
-- [ ] Example PR template for “add San Pedro cactus” walkthrough
+- [x] Playbook linked from phase-14, enterprise README, crop cutover runbook
+- [x] CI fails on YAML/seed drift
+- [x] Example PR template for “add San Pedro cactus” walkthrough
 
 **Prompt loop:** **`phase 95`**.

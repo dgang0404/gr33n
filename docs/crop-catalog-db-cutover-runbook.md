@@ -24,6 +24,7 @@ API pods and `rag-ingest` **do not need the git checkout** when defaults are use
 ```bash
 make migrate
 make check-crop-catalog-parity   # YAML authoring still valid in git
+make check-catalog-seed-drift    # Phase 95 — YAML matches db/seed/crop_catalog_from_yaml.sql
 make check-crop-catalog-db       # Postgres row counts + WS-I meta
 
 # Optional explicit (defaults are db after WS-G):
@@ -92,11 +93,11 @@ GROUP BY source_id ORDER BY source_id;
 
 1. Edit `data/crop_library.yaml` and `docs/field-guides/*.md`
 2. Optional catalog thumbnail: add `ui/public/assets/crops/{crop_key}.svg` and set `crop_catalog_entries.image_url` in seed SQL (Phase 107 — `/assets/crops/{crop_key}.svg`)
-3. Regenerate seed: `./scripts/generate-crop-catalog-seed.sql.sh -o db/migrations/…`
-4. Add migration + `make migrate`
+3. Regenerate seed: `./scripts/generate-crop-catalog-seed.sql.sh -o db/seed/crop_catalog_from_yaml.sql` and dated migration — see [`catalog-integrator-playbook.md`](catalog-integrator-playbook.md) (Phase 95)
+4. `make add-crop-check` then `make migrate` + `make check-catalog-release`
 5. Re-ingest farms if guide text changed
 
-`make check-crop-catalog-parity` validates YAML/manifest **before** SQL generation — keep running in CI.
+`make check-catalog-seed-drift` fails CI when YAML changed without updating committed seed SQL.
 
 ---
 

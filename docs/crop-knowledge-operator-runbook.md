@@ -48,7 +48,7 @@ After at least one successful load while online, the UI caches the crop picker i
 
 **Growth stages:** UI dropdowns load all 11 stages (`transition`, `flush`, …) from `GET /platform/domain-enums` — same vocabulary as Postgres `growth_stage_enum`, OpenAPI, and Guardian `lookup_crop_targets` / cycle tools.
 
-**Extend the catalog** (new crops, aliases): edit `data/crop_library.yaml` → regenerate seed SQL → migrate. Operators do not type new crop identities in the UI.
+**Extend the catalog** (new crops, aliases): edit `data/crop_library.yaml` → follow [`catalog-integrator-playbook.md`](catalog-integrator-playbook.md) (Phase 95). Operators do not type new crop identities in the UI.
 
 ---
 
@@ -106,6 +106,7 @@ Field guides supplement RAG; structured numbers still come from `lookup_crop_tar
 | `TestPhase107_*` | Commons + picker `image_url` for ornamentals |
 | `TestPhase64_*` / `TestPhase82_*` | Profile library + picker API |
 | `TestPhase94_*` | Genetics EC profile beats farm `crop_key` override on effective API |
+| `TestPhase95_*` | Picker `version` matches YAML; catalog crop in commons + picker |
 
 ---
 

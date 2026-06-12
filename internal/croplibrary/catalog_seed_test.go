@@ -1,6 +1,8 @@
 package croplibrary_test
 
 import (
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -60,6 +62,27 @@ func TestGenerateCatalogSeedSQL(t *testing.T) {
 	}
 	if !strings.Contains(sql, "crop-zucchini-nutrition") {
 		t.Fatal("missing zucchini guide seed")
+	}
+}
+
+func TestCatalogSeedMatchesCanonicalFile(t *testing.T) {
+	root := repoRoot(t)
+	cat, err := croplibrary.LoadCatalog(root, croplibrary.DefaultCatalogPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	guides, err := croplibrary.LoadFieldGuideSeeds(root, croplibrary.DefaultFieldGuideManifest, cat)
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := croplibrary.GenerateCatalogSeedSQL(cat, guides)
+	wantPath := filepath.Join(root, "db/seed/crop_catalog_from_yaml.sql")
+	want, err := os.ReadFile(wantPath)
+	if err != nil {
+		t.Fatalf("read canonical seed: %v (run generate-crop-catalog-seed.sql.sh)", err)
+	}
+	if got != string(want) {
+		t.Fatalf("catalog seed drift — regenerate: ./scripts/generate-crop-catalog-seed.sql.sh -o db/seed/crop_catalog_from_yaml.sql")
 	}
 }
 

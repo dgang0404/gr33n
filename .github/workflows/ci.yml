@@ -60,6 +60,9 @@ jobs:
       - name: Validate crop library YAML (Phase 82 WS4a)
         run: make check-crop-catalog-parity
 
+      - name: Catalog seed drift gate (Phase 95)
+        run: make check-catalog-seed-drift
+
       - name: Verify crop catalog seed (Phase 84 WS-B/K)
         run: make check-crop-catalog-db
 

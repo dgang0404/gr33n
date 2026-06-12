@@ -65,6 +65,7 @@ See [`docs/commons-catalog-operator-playbook.md`](../../docs/commons-catalog-ope
 ```bash
 make migrate
 make check-crop-catalog-parity
+make add-crop-check              # Phase 95 — pre-migrate YAML + seed drift (no DB)
 make dev-auth-test   # optional for import POST
 
 ./scripts/enterprise/import-agronomy-seed-pack.sh --dry-run
@@ -78,7 +79,7 @@ make guardian-bootstrap-farm FARM_ID=1
 
 **Site manifest:** set `guardian_seed.enabled: true` in YAML — `apply-site-manifest.sh` calls import + bootstrap after farm create. See [`site-manifest.example.yaml`](site-manifest.example.yaml).
 
-**Depends on Phase 82 + Phase 84** (crop profiles + `crop_catalog_*` in Postgres). Cutover: [`docs/crop-catalog-db-cutover-runbook.md`](../../docs/crop-catalog-db-cutover-runbook.md).
+**Depends on Phase 82 + Phase 84** (crop profiles + `crop_catalog_*` in Postgres). Cutover: [`docs/crop-catalog-db-cutover-runbook.md`](../../docs/crop-catalog-db-cutover-runbook.md). **Add crops:** [`docs/catalog-integrator-playbook.md`](../../docs/catalog-integrator-playbook.md) · PR checklist: [`docs/templates/add-crop-pr-checklist.md`](../../docs/templates/add-crop-pr-checklist.md).
 
 ### WS6 — farm crop override UI (Settings)
 
