@@ -6,19 +6,19 @@ overview: >
 todos:
   - id: ws1-cache
     content: "WS1: IndexedDB cache for picker + domain-enums keyed by farm_id + catalog_version"
-    status: pending
+    status: completed
   - id: ws2-stale
     content: "WS2: Stale banner when cache catalog_version < API"
-    status: pending
+    status: completed
   - id: ws3-offline
     content: "WS3: Field assistant / Pi setup — use cache when GET picker fails (not silent fallback)"
-    status: pending
+    status: completed
   - id: ws4-pwa
     content: "WS4: Service worker optional — document mobile/LAN operator path"
-    status: pending
+    status: completed
   - id: ws5-smokes
     content: "WS5: Vitest — offline mode shows cached crops + stale warning"
-    status: pending
+    status: completed
 isProject: false
 ---
 
@@ -26,11 +26,11 @@ isProject: false
 
 ## Status
 
-**Planned.** Closes **blind spot #11** (mobile / offline operators need picker without live API).
+**Shipped.** Closes **blind spot #11** (mobile / offline operators need picker without live API).
 
 **Depends on:** [Phase 85](phase_85_catalog_bound_plants.plan.md), [Phase 88](phase_88_domain_enums_api.plan.md).
 
-**Closure:** **OC-100**
+**Closure:** [`phase-100-closure.md`](phase-100-closure.md) · **OC-100**
 
 ---
 
