@@ -80,3 +80,10 @@ export function programOptionSuffix(program, ctx) {
   if (badge === 'mismatch') return ' ⚠'
   return ''
 }
+
+/** Operator-facing mismatch line for Water tab / Start grow (Phase 96). */
+export function programMismatchSummary(program, ctx) {
+  const fit = programFitResult(program, ctx)
+  if (!fit.warnings.length) return ''
+  return `${fit.warnings[0]} EC on the zone strip comes from the crop profile; the pump recipe may differ.`
+}

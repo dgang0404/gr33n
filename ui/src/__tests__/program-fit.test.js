@@ -4,6 +4,7 @@ import {
   programFitBadge,
   sortProgramsByFit,
   parseProgramMeta,
+  programMismatchSummary,
 } from '../lib/programFit.js'
 
 describe('Phase 102 — program fit helpers', () => {
@@ -20,6 +21,7 @@ describe('Phase 102 — program fit helpers', () => {
     const fit = programFitResult(vegProgram, { cropKey: 'cannabis', stage: 'early_flower' })
     expect(fit.ok).toBe(false)
     expect(fit.warnings.some((w) => /early_flower|recommended_stages/i.test(w))).toBe(true)
+    expect(programMismatchSummary(vegProgram, { cropKey: 'cannabis', stage: 'early_flower' })).toMatch(/crop profile/)
   })
 
   it('accepts matching veg grow', () => {

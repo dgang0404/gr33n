@@ -112,6 +112,8 @@
       :reservoirs="reservoirs"
       :zone-name="zone?.name || 'This zone'"
       :farm-timezone="farmTimezone"
+      :active-crop-cycle="activeCropCycle"
+      :grow-fit-context="growFitContext"
       @refreshed="$emit('water-refreshed', $event)"
       @plan-updated="$emit('plan-updated')"
     />
@@ -258,6 +260,8 @@ const props = defineProps({
   ecTargets: { type: Array, default: () => [] },
   reservoirs: { type: Array, default: () => [] },
   activeProgram: { type: Object, default: null },
+  activeCropCycle: { type: Object, default: null },
+  growFitContext: { type: Object, default: () => ({ cropKey: '', stage: '' }) },
   actuatorEvents: { type: Array, default: () => [] },
   fertigationEvents: { type: Array, default: () => [] },
   toggling: { type: Object, default: () => ({}) },

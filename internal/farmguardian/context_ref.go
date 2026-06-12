@@ -359,6 +359,12 @@ func renderZoneContext(ctx context.Context, q *db.Queries, farmID int64, ref Con
 			b.WriteByte('\n')
 			b.WriteString(hint)
 		}
+		if c, err := q.GetCropCycleByID(ctx, cycleID); err == nil && c.IsActive {
+			if fit := ProgramFitHintLine(ctx, q, c); fit != "" {
+				b.WriteByte('\n')
+				b.WriteString(fit)
+			}
+		}
 		if costLine := cycleCostSummaryLine(ctx, q, cycleID); costLine != "" {
 			b.WriteByte('\n')
 			b.WriteString(costLine)

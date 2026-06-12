@@ -808,6 +808,9 @@ func renderSummarizeZoneFertigation(ctx context.Context, q db.Querier, farmID in
 					line += fmt.Sprintf("; primary program: #%d", *c.PrimaryProgramID)
 				}
 			}
+			if fit := ProgramFitHintLine(ctx, q, c); fit != "" {
+				line += "; " + fit
+			}
 			active = append(active, line)
 		}
 		if len(active) > 0 {

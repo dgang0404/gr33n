@@ -11,7 +11,7 @@ import (
 )
 
 // ValidateProgramForGrow returns fit warnings when program metadata mismatches crop/stage.
-func ValidateProgramForGrow(ctx context.Context, q *db.Queries, programID int64, cropKey, stage string) ([]string, error) {
+func ValidateProgramForGrow(ctx context.Context, q db.Querier, programID int64, cropKey, stage string) ([]string, error) {
 	if programID <= 0 {
 		return nil, nil
 	}

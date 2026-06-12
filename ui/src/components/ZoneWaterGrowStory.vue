@@ -29,6 +29,21 @@
 
     <ZoneCropStageTargetHint :zone-id="zoneId" :farm-id="farmId" />
 
+    <div
+      v-if="programMismatchSummaryText"
+      class="rounded-lg border border-amber-800/60 bg-amber-950/30 px-3 py-2 text-[11px] text-amber-200/90"
+      data-test="water-program-mismatch"
+    >
+      {{ programMismatchSummaryText }}
+      <router-link
+        v-nav-hint="advancedFeedingLink"
+        :to="advancedFeedingLink"
+        class="ml-1 text-amber-100/90 underline hover:text-white"
+      >
+        Edit program →
+      </router-link>
+    </div>
+
     <ZoneFeedingPlanWizard
       v-if="!plan.hasPlan"
       :zone-id="zoneId"
@@ -250,6 +265,7 @@ import { computed, ref, watch } from 'vue'
 import api from '../api'
 import { useFarmStore } from '../stores/farm.js'
 import { buildZoneFeedingPlan } from '../lib/zoneFeedingPlan.js'
+import { programMismatchSummary } from '../lib/programFit.js'
 import { supportsPulseCommand } from '../lib/plantNeeds.js'
 import ActuatorPulseControl from './ActuatorPulseControl.vue'
 import ZoneFeedingPlanEditor from './ZoneFeedingPlanEditor.vue'
@@ -276,6 +292,10 @@ const props = defineProps({
   actuators: { type: Array, default: () => [] },
   ecTargets: { type: Array, default: () => [] },
   reservoirs: { type: Array, default: () => [] },
+  /** Active crop cycle in this zone — for program fit warnings (Phase 96). */
+  activeCropCycle: { type: Object, default: null },
+  /** { cropKey, stage } from active grow */
+  growFitContext: { type: Object, default: () => ({ cropKey: '', stage: '' }) },
 })
 
 const emit = defineEmits(['refreshed', 'plan-updated'])
@@ -302,6 +322,17 @@ const plan = computed(() => buildZoneFeedingPlan({
   waterStatus: waterStatus.value,
   queueHead: queueHead.value,
 }))
+
+const programForFit = computed(() => {
+  if (props.activeProgram) return props.activeProgram
+  const pid = props.activeCropCycle?.primary_program_id
+  if (!pid) return null
+  return props.programs.find((p) => Number(p.id) === Number(pid)) || null
+})
+
+const programMismatchSummaryText = computed(() =>
+  programMismatchSummary(programForFit.value, props.growFitContext || {}),
+)
 
 const runNowLabel = computed(() =>
   runFeedNowAriaLabel(props.zoneName, props.activeProgram?.name || plan.value?.programName),

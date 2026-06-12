@@ -55,6 +55,8 @@
         :rules="rules"
         :programs="programs"
         :active-program="activeProgram"
+        :active-crop-cycle="activeCropCycle"
+        :grow-fit-context="activeGrowFitContext"
         :ec-targets="ecTargets"
         :reservoirs="reservoirs"
         :actuator-events="actuatorEvents"
@@ -393,6 +395,23 @@ const zoneSetpoints = computed(() => setpoints.value)
 const activeProgram = computed(() =>
   programs.value.find(p => p.target_zone_id === zoneId.value && p.is_active),
 )
+const activeCropCycle = computed(() =>
+  cropCycles.value.find(
+    (c) => c.is_active && Number(c.zone_id) === Number(zoneId.value),
+  ),
+)
+const activeGrowFitContext = computed(() => {
+  const cycle = activeCropCycle.value
+  if (!cycle) return { cropKey: '', stage: '' }
+  let stage = cycle.current_stage
+  if (stage && typeof stage === 'object') {
+    stage = stage.gr33nfertigation_growth_stage_enum || stage.value || ''
+  }
+  const cropKey = cycle.crop_key
+    || plants.value.find((p) => Number(p.id) === Number(cycle.plant_id))?.crop_key
+    || ''
+  return { cropKey: String(cropKey || ''), stage: String(stage || '') }
+})
 const zoneEvents = computed(() =>
   events.value.filter(e => e.zone_id === zoneId.value).sort((a, b) => new Date(b.applied_at) - new Date(a.applied_at)),
 )

@@ -6,25 +6,25 @@ overview: >
 todos:
   - id: ws0-deps
     content: "WS0: Phase 86 — cycle has plant_id + crop_key + current_stage"
-    status: pending
+    status: completed
   - id: ws1-rules-v1
     content: "WS1: v1 rules — stage/crop heuristics until Phase 102 meta seeded"
-    status: pending
+    status: completed
   - id: ws2-api
     content: "WS2: POST crop-cycles warns/blocks primary_program_id mismatch"
-    status: pending
+    status: completed
   - id: ws3-ui
     content: "WS3: Start grow + Water tab — mismatch banner (veg program + flower stage)"
-    status: pending
+    status: completed
   - id: ws4-guardian
     content: "WS4: Guardian prompt block — profile EC vs pump recipe may differ"
-    status: pending
+    status: completed
   - id: ws5-smokes
     content: "WS5: smoke — flower stage + veg JLF program → warning visible"
-    status: pending
+    status: completed
   - id: ws6-phase102-handoff
     content: "WS6: Hand off to Phase 102 — validation reads program.meta + recipe.meta"
-    status: pending
+    status: completed
 isProject: false
 ---
 
@@ -32,13 +32,13 @@ isProject: false
 
 ## Status
 
-**Planned.** Closes **blind spot #7** (EC strip says flower; pump runs veg recipe).
+**Shipped.** Closes **blind spot #7** (EC strip vs pump recipe mismatch).
 
 **Depends on:** [Phase 86](phase_86_grow_ops_catalog_chain.plan.md).
 
-**Long-term metadata:** [Phase 102](phase_102_fertigation_program_catalog_metadata.plan.md) — **recipe ↔ crop profile linkage**.
+**Long-term metadata:** [Phase 102](phase_102_fertigation_program_catalog_metadata.plan.md) — program `recommended_*` tags.
 
-**Closure:** **OC-96**
+**Closure:** [`phase-96-closure.md`](phase-96-closure.md) · **OC-96**
 
 ---
 
@@ -106,9 +106,9 @@ After Phase 102: cite program `recommended_crop_keys` and recipe name.
 
 ## Acceptance
 
-- [ ] Start grow with mismatched program shows visible warning before confirm
-- [ ] Water tab links to program edit
-- [ ] Guardian mentions mismatch when asked about feeding
-- [ ] Phase 102 WS7 reuses same validation functions with metadata
+- [x] Start grow with mismatched program shows visible warning before confirm
+- [x] Water tab links to program edit
+- [x] Guardian mentions mismatch when asked about feeding
+- [x] Phase 102 WS7 reuses same validation functions with metadata
 
 **Prompt loop:** **`phase 96`** (ship before or parallel to 102 WS1).
