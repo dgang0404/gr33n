@@ -1,5 +1,8 @@
 /** Phase 50 — Pi wiring metadata helpers (sensors / actuators). */
 
+import { wiringSourceOptions } from './deviceTaxonomy.js'
+
+/** @deprecated use getSensorWiringSources() — kept for tests importing constant shape */
 export const SENSOR_WIRING_SOURCES = [
   { value: 'dht22', label: 'DHT22 (temp / humidity)' },
   { value: 'ads1115', label: 'ADS1115 (analog)' },
@@ -8,6 +11,11 @@ export const SENSOR_WIRING_SOURCES = [
   { value: 'gpio_digital', label: 'GPIO digital' },
   { value: 'derived', label: 'Derived (computed)' },
 ]
+
+/** Wiring driver options from device taxonomy registry (Phase 90). */
+export function getSensorWiringSources() {
+  return wiringSourceOptions()
+}
 
 /** Prefer API top-level wiring; fall back to config.wiring. */
 export function resolveWiring(entity) {

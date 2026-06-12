@@ -97,7 +97,7 @@ func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationwo
 	cost := costhandler.NewHandler(pool, fileStore)
 	files := fileattachhandler.NewHandler(pool, fileStore, fileCfg.DownloadURLTTL)
 	commonsCatalog := commonscataloghandler.NewHandler(pool)
-	platform := platformhandler.NewHandler()
+	platform := platformhandler.NewHandler(pool)
 	commonsCropCatalog := commonscropcataloghandler.NewHandler(pool)
 
 	jwtChain := func(h http.Handler) http.Handler {
@@ -187,6 +187,8 @@ func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationwo
 
 	// Phase 88 — platform domain enums (growth stages, reservoir status, cost categories, NF inventory)
 	mux.Handle("GET /platform/domain-enums", jwt(http.HandlerFunc(platform.ListDomainEnums)))
+	// Phase 90 — device taxonomy (sensor/actuator → plant need, labels, GH roles)
+	mux.Handle("GET /platform/device-taxonomy", jwt(http.HandlerFunc(platform.ListDeviceTaxonomy)))
 
 	// Commons catalog (gr33n_inserts — browse + per-farm import audit)
 	mux.Handle("GET /commons/catalog", jwt(http.HandlerFunc(commonsCatalog.List)))

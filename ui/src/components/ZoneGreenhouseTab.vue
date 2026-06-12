@@ -215,6 +215,7 @@
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import api from '../api'
 import { useFarmStore } from '../stores/farm'
+import { actuatorGHRole } from '../lib/plantNeeds.js'
 import SensorTile from './SensorTile.vue'
 
 const props = defineProps({
@@ -241,11 +242,6 @@ const applyingTemplates = ref(false)
 const allowMissingLux = ref(false)
 const templateMsg = ref('')
 const templateError = ref(false)
-
-const GH_ACTUATOR_TYPES = new Set([
-  'shade_screen', 'ridge_vent', 'exhaust_fan', 'circulation_fan',
-  'glazing_panel', 'shade_cloth_motor',
-])
 
 const CLIMATE_SENSOR_TYPES = [
   { match: t => t === 'lux' || t.includes('lux'), label: 'Lux' },
@@ -291,16 +287,16 @@ watch(() => props.zone, loadProfileFromZone, { immediate: true, deep: true })
 const farmActuators = computed(() => store.actuators.filter(a => !a.deleted_at))
 const shadeActuatorOptions = computed(() =>
   farmActuators.value.filter(a => a.zone_id === props.zoneId &&
-    ['shade_screen', 'shade_cloth_motor'].includes(a.actuator_type)))
+    actuatorGHRole(a.actuator_type) === 'shade'))
 const ventActuatorOptions = computed(() =>
   farmActuators.value.filter(a => a.zone_id === props.zoneId &&
-    ['ridge_vent', 'glazing_panel'].includes(a.actuator_type)))
+    actuatorGHRole(a.actuator_type) === 'vent'))
 const fanActuatorOptions = computed(() =>
   farmActuators.value.filter(a => a.zone_id === props.zoneId &&
-    ['exhaust_fan', 'circulation_fan'].includes(a.actuator_type)))
+    actuatorGHRole(a.actuator_type) === 'fan'))
 
 const climateActuators = computed(() =>
-  props.actuators.filter(a => GH_ACTUATOR_TYPES.has(a.actuator_type)))
+  props.actuators.filter(a => actuatorGHRole(a.actuator_type)))
 
 const climateSensors = computed(() => {
   const used = new Set()
@@ -407,8 +403,9 @@ const ghEvents = computed(() => {
 
 function commandsFor(a) {
   if (Array.isArray(a.valid_commands) && a.valid_commands.length) return a.valid_commands
-  if (['shade_screen', 'shade_cloth_motor'].includes(a.actuator_type)) return ['deploy', 'retract', 'stop']
-  if (['ridge_vent', 'glazing_panel'].includes(a.actuator_type)) return ['open', 'close', 'stop']
+  const role = actuatorGHRole(a.actuator_type)
+  if (role === 'shade') return ['deploy', 'retract', 'stop']
+  if (role === 'vent') return ['open', 'close', 'stop']
   return ['on', 'off']
 }
 

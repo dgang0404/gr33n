@@ -18,6 +18,7 @@ import (
 
 	"gr33n-api/internal/authctx"
 	db "gr33n-api/internal/db"
+	"gr33n-api/internal/platform/devicetaxonomy"
 )
 
 const (
@@ -643,43 +644,59 @@ func renderZoneSensorReadings(ctx context.Context, q db.Querier, zoneID int64) (
 		return "Sensors: none configured in this zone.", nil
 	}
 
+	reg := devicetaxonomy.Current()
+
 	type readingLine struct {
 		sortKey string
 		text    string
 	}
-	lines := make([]readingLine, 0, len(sensors))
+	byNeed := map[string][]readingLine{
+		"water": {},
+		"light": {},
+		"air":   {},
+	}
 	for _, s := range sensors {
+		need := reg.PlantNeed("sensor", s.SensorType)
 		reading, rerr := q.GetLatestReadingBySensor(ctx, s.ID)
+		var text string
 		if rerr != nil {
 			if errors.Is(rerr, pgx.ErrNoRows) {
-				lines = append(lines, readingLine{
-					sortKey: s.SensorType + " " + s.Name,
-					text:    fmt.Sprintf("- %s (%s): no readings yet", sensorLabel(s), s.SensorType),
-				})
-				continue
+				text = fmt.Sprintf("- %s (%s): no readings yet", sensorLabel(reg, s), s.SensorType)
+			} else {
+				return "", rerr
 			}
-			return "", rerr
+		} else {
+			text = fmt.Sprintf("- %s (%s): %s (%s)", sensorLabel(reg, s), s.SensorType, formatSensorReading(s, reading), humanizeAge(timeSince(reading.ReadingTime)))
 		}
-		lines = append(lines, readingLine{
+		byNeed[need] = append(byNeed[need], readingLine{
 			sortKey: s.SensorType + " " + s.Name,
-			text:    fmt.Sprintf("- %s (%s): %s (%s)", sensorLabel(s), s.SensorType, formatSensorReading(s, reading), humanizeAge(timeSince(reading.ReadingTime))),
+			text:    text,
 		})
 	}
-	sort.Slice(lines, func(i, j int) bool { return lines[i].sortKey < lines[j].sortKey })
 
 	var b strings.Builder
 	b.WriteString("Latest sensor readings:")
-	extra := 0
-	if len(lines) > ReadToolsMaxSensorReadings {
-		extra = len(lines) - ReadToolsMaxSensorReadings
-		lines = lines[:ReadToolsMaxSensorReadings]
-	}
-	for _, ln := range lines {
+	totalListed := 0
+	for _, need := range []string{"water", "light", "air"} {
+		lines := byNeed[need]
+		if len(lines) == 0 {
+			continue
+		}
+		sort.Slice(lines, func(i, j int) bool { return lines[i].sortKey < lines[j].sortKey })
 		b.WriteByte('\n')
-		b.WriteString(ln.text)
+		b.WriteString(devicetaxonomy.NeedSectionTitle(need) + ":")
+		for _, ln := range lines {
+			if totalListed >= ReadToolsMaxSensorReadings {
+				break
+			}
+			b.WriteByte('\n')
+			b.WriteString(ln.text)
+			totalListed++
+		}
 	}
-	if extra > 0 {
-		b.WriteString(fmt.Sprintf("\n(+ %d more sensors not listed)", extra))
+	totalSensors := len(sensors)
+	if totalSensors > totalListed {
+		b.WriteString(fmt.Sprintf("\n(+ %d more sensors not listed)", totalSensors-totalListed))
 	}
 	return b.String(), nil
 }
@@ -841,9 +858,14 @@ func targetPH(n pgtype.Numeric) string {
 	return formatPH(numericToFloat64(n))
 }
 
-func sensorLabel(s db.Gr33ncoreSensor) string {
+func sensorLabel(reg *devicetaxonomy.Registry, s db.Gr33ncoreSensor) string {
 	if strings.TrimSpace(s.Name) != "" {
 		return strings.TrimSpace(s.Name)
+	}
+	if reg != nil {
+		if lbl := reg.DisplayLabel("sensor", s.SensorType); lbl != "" {
+			return lbl
+		}
 	}
 	return s.SensorType
 }

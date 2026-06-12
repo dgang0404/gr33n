@@ -314,6 +314,7 @@ import {
   sensorPlantNeed,
   actuatorPlantNeed,
 } from '../lib/plantNeeds.js'
+import { loadDeviceTaxonomy } from '../lib/deviceTaxonomy.js'
 import AskGuardianButton from '../components/AskGuardianButton.vue'
 import GuardianStarterChips from '../components/GuardianStarterChips.vue'
 import ZoneNeedSection from '../components/ZoneNeedSection.vue'
@@ -621,6 +622,7 @@ watch(
 )
 
 onMounted(async () => {
+  void loadDeviceTaxonomy(api)
   if (!store.zones.length && farmId.value) await store.loadAll(farmId.value)
   const fid = farmId.value
   const [p, e, s, ec, res, cycles] = await Promise.all([

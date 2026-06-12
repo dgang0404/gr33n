@@ -17,9 +17,10 @@ describe('plantNeeds', () => {
     expect(sensorPlantNeed('par_umol')).toBe(PLANT_NEEDS.light)
   })
 
-  it('classifies climate sensors', () => {
+  it('classifies climate sensors including temp_f', () => {
     expect(sensorPlantNeed('air_temp')).toBe(PLANT_NEEDS.air)
     expect(sensorPlantNeed('humidity')).toBe(PLANT_NEEDS.air)
+    expect(sensorPlantNeed('temp_f')).toBe(PLANT_NEEDS.air)
   })
 
   it('classifies actuators', () => {

@@ -1493,6 +1493,22 @@ paths:
         "400": { $ref: "#/components/responses/BadRequest" }
         "404": { $ref: "#/components/responses/NotFound" }
 
+  /platform/device-taxonomy:
+    get:
+      tags: [platform]
+      summary: Device type taxonomy for UI zone tabs and Guardian grouping
+      description: >
+        Maps sensor_type and actuator_type to plant need (water/light/air),
+        display labels, pulse support, and greenhouse roles (Phase 90).
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          description: Device taxonomy registry
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeviceTaxonomy"
+
   /platform/domain-enums:
     get:
       tags: [platform]
@@ -7834,6 +7850,36 @@ components:
           type: array
           items: { $ref: "#/components/schemas/DomainEnumOption" }
         batch_statuses:
+          type: array
+          items: { $ref: "#/components/schemas/DomainEnumOption" }
+
+    DeviceTaxonomyEntry:
+      type: object
+      properties:
+        type_key: { type: string }
+        device_class: { type: string, enum: [sensor, actuator] }
+        plant_need: { type: string, enum: [water, light, air] }
+        display_label: { type: string }
+        supports_pulse: { type: boolean }
+        gh_role: { type: string, nullable: true, enum: [shade, vent, fan] }
+        wiring_sources: { type: array, items: { type: string } }
+        sort_order: { type: integer }
+
+    DeviceTaxonomy:
+      type: object
+      properties:
+        sensors:
+          type: array
+          items: { $ref: "#/components/schemas/DeviceTaxonomyEntry" }
+        actuators:
+          type: array
+          items: { $ref: "#/components/schemas/DeviceTaxonomyEntry" }
+        by_plant_need:
+          type: object
+          additionalProperties:
+            type: array
+            items: { $ref: "#/components/schemas/DeviceTaxonomyEntry" }
+        wiring_source_options:
           type: array
           items: { $ref: "#/components/schemas/DomainEnumOption" }
 

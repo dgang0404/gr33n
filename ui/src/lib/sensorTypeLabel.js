@@ -1,28 +1,7 @@
 /**
- * Farmer-facing sensor type labels (Phase 40 / farmer-vocabulary.md).
+ * Farmer-facing sensor type labels (Phase 40 / Phase 90 registry).
  */
-
-const LABELS = {
-  humidity: 'Humidity',
-  rh: 'Humidity',
-  air_temp: 'Air temperature',
-  temperature: 'Temperature',
-  temp: 'Temperature',
-  co2: 'CO₂',
-  vpd: 'VPD',
-  dew_point: 'Dew point',
-  ec: 'EC',
-  ph: 'pH',
-  soil_moisture: 'Soil moisture',
-  moisture: 'Moisture',
-  water_level: 'Water level',
-  flow_rate: 'Flow rate',
-  lux: 'Light level',
-  light_level: 'Light level',
-  par: 'PAR',
-  par_umol: 'PAR',
-  ppfd: 'PPFD',
-}
+import { getDeviceTaxonomy } from './deviceTaxonomy.js'
 
 /**
  * @param {string|undefined|null} sensorType
@@ -31,6 +10,7 @@ const LABELS = {
 export function sensorTypeLabel(sensorType) {
   const t = String(sensorType || '').trim().toLowerCase()
   if (!t) return 'Sensor'
-  if (LABELS[t]) return LABELS[t]
+  const row = getDeviceTaxonomy().sensorsByKey[t]
+  if (row?.display_label) return row.display_label
   return t.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
 }
