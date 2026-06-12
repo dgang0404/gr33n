@@ -86,7 +86,7 @@ Hub: [`phase_68_73_spa_workspace_roadmap.plan.md`](plans/phase_68_73_spa_workspa
 | **85** ✅ | **Plants UX** — catalog dropdown, `plants.crop_key`, one slot per crop; Settings EC link | [`phase_85_catalog_bound_plants.plan.md`](plans/phase_85_catalog_bound_plants.plan.md) |
 | **86** ✅ | Grow ops + **Guardian crop chain** — strip, Water/Light, `lookup_crop_targets` same as UI | [`phase_86_grow_ops_catalog_chain.plan.md`](plans/phase_86_grow_ops_catalog_chain.plan.md) |
 | **87** ✅ | Guardian crop API smokes + operator runbook + OC-87 | [`phase_87_crop_knowledge_operator_closure.plan.md`](plans/phase_87_crop_knowledge_operator_closure.plan.md) · [`phase-87-closure.md`](plans/phase-87-closure.md) · [`crop-knowledge-operator-runbook.md`](crop-knowledge-operator-runbook.md) |
-| **88** | Domain enums API — growth stages, reservoir, cost categories (UI drops duplicates) | [`phase_88_domain_enums_api.plan.md`](plans/phase_88_domain_enums_api.plan.md) |
+| **88** ✅ | Domain enums API — growth stages, reservoir, cost categories (UI drops duplicates) | [`phase_88_domain_enums_api.plan.md`](plans/phase_88_domain_enums_api.plan.md) · [`phase-88-closure.md`](plans/phase-88-closure.md) |
 | **89** | Lighting presets — wire `GET /lighting-programs/presets` (API exists, UI unused) | [`phase_89_lighting_presets_api_wiring.plan.md`](plans/phase_89_lighting_presets_api_wiring.plan.md) |
 | **90** | Device taxonomy registry — sensor/actuator → water/light/climate + Guardian | [`phase_90_device_taxonomy_registry.plan.md`](plans/phase_90_device_taxonomy_registry.plan.md) |
 | **91** | Bootstrap template catalog — replace `bootstrapTemplates.js` | [`phase_91_bootstrap_template_catalog.plan.md`](plans/phase_91_bootstrap_template_catalog.plan.md) |

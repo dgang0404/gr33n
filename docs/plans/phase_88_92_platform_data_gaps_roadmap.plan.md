@@ -7,7 +7,7 @@ overview: >
 todos:
   - id: p88-enums
     content: "Phase 88 — GET /platform/domain-enums; UI drops duplicate stage/reservoir/cost lists"
-    status: pending
+    status: completed
   - id: p89-lighting
     content: "Phase 89 — Wire GET /lighting-programs/presets in UI (API exists, unused)"
     status: pending

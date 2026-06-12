@@ -6,22 +6,22 @@ overview: >
 todos:
   - id: ws1-api
     content: "WS1: GET /platform/domain-enums — growth_stages, reservoir_status, cost_categories, …"
-    status: pending
+    status: completed
   - id: ws2-openapi
     content: "WS2: OpenAPI schema + smoke test"
-    status: pending
+    status: completed
   - id: ws3-ui-loader
     content: "WS3: ui/lib/domainEnums.js — fetch once, cache in pinia or farm store"
-    status: pending
+    status: completed
   - id: ws4-migrate-ui
     content: "WS4: growHub, SetpointRow, Fertigation, Fertigation reservoir, Inventory, moneyHub"
-    status: pending
+    status: completed
   - id: ws5-guardian
     content: "WS5: Document alignment with croplibrary.ValidGrowthStages + persona"
-    status: pending
+    status: completed
   - id: ws6-parity-link
     content: "WS6: Phase 99 check-ui-domain-parity — SetpointRow count guard"
-    status: pending
+    status: completed
 isProject: false
 ---
 
@@ -29,9 +29,9 @@ isProject: false
 
 ## Status
 
-**Planned.** Foundation for keeping **UI forms** aligned with **Postgres enums** and **Guardian stage vocabulary**.
+**Shipped.** Foundation for keeping **UI forms** aligned with **Postgres enums** and **Guardian stage vocabulary**.
 
-**Closure:** **OC-88**
+**Closure:** [`phase-88-closure.md`](phase-88-closure.md) · **OC-88**
 
 ---
 
@@ -103,9 +103,9 @@ GET /platform/domain-enums
 
 ## Acceptance
 
-- [ ] All 11 growth stages in every stage dropdown
-- [ ] Single `formatStageLabel` / no Fertigation duplicate
-- [ ] Money hub shows full cost category list from API
-- [ ] `smoke_phase88` or extend existing enum parity test
+- [x] All 11 growth stages in every stage dropdown
+- [x] Single `formatStageLabel` / no Fertigation duplicate
+- [x] Money hub shows full cost category list from API
+- [x] `smoke_phase88` or extend existing enum parity test
 
 **Prompt loop:** `phase 88 ws1` … or **`phase 88`**.
