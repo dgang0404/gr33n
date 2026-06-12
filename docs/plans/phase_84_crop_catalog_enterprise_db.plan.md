@@ -33,7 +33,7 @@ todos:
     status: completed
   - id: ws-closure
     content: "OC-84: phase-84-closure.md"
-    status: pending
+    status: completed
 isProject: false
 ---
 

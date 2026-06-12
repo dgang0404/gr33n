@@ -45,6 +45,7 @@
             <th class="px-3 py-2 font-medium">Crop</th>
             <th class="px-3 py-2 font-medium">Key</th>
             <th class="px-3 py-2 font-medium">Source</th>
+            <th class="px-3 py-2 font-medium">Last changed</th>
             <th class="px-3 py-2 font-medium text-right">Actions</th>
           </tr>
         </thead>
@@ -66,6 +67,9 @@
                 v-else
                 class="px-1.5 py-0.5 rounded bg-zinc-900 border border-zinc-700 text-zinc-400"
               >Built-in</span>
+            </td>
+            <td class="px-3 py-2 text-zinc-500 whitespace-nowrap">
+              {{ row.isOverride && row.updated_at ? formatUpdatedAt(row.updated_at) : '—' }}
             </td>
             <td class="px-3 py-2 text-right whitespace-nowrap">
               <button
@@ -270,6 +274,13 @@ function stageLabel(stage) {
   return String(stage || '').replace(/_/g, ' ')
 }
 
+function formatUpdatedAt(raw) {
+  if (!raw) return '—'
+  const d = new Date(raw)
+  if (Number.isNaN(d.getTime())) return '—'
+  return d.toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })
+}
+
 function normalizeStage(st) {
   return {
     stage: st.stage,
@@ -301,6 +312,7 @@ const rows = computed(() => {
         crop_key: key,
         display_name: p.display_name,
         isOverride,
+        updated_at: isOverride ? p.updated_at : existing?.updated_at,
       })
     }
   }

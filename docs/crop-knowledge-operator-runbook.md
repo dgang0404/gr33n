@@ -88,6 +88,7 @@ Field guides supplement RAG; structured numbers still come from `lookup_crop_tar
 | DB cutover | [`crop-catalog-db-cutover-runbook.md`](crop-catalog-db-cutover-runbook.md) |
 | Guardian bootstrap | [`scripts/enterprise/README.md`](../scripts/enterprise/README.md) |
 | Add catalog crops | Regenerate from `crop_library.yaml` → [Phase 95](plans/phase_95_catalog_integrator_ops.plan.md) |
+| Override audit trail (compliance) | [`audit-events-operator-playbook.md`](audit-events-operator-playbook.md) — `crop_profile_override_*` kinds; Settings → Farm audit trail |
 
 ---
 

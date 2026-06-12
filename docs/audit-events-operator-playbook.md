@@ -88,6 +88,8 @@ These `details.kind` values are written by the API today (list may grow in later
 | `organization_member_added` | `change_setting` | User added to org; `details.organization_id`; `details.role` is org role |
 | `farm_organization_changed` | `update_record` | Farm linked or unlinked from an org (`PATCH /farms/{id}/organization`); `details.organization_id` / `previous_organization_id` |
 | `guardian_tool_executed` | `guardian_tool_executed` | Phase 29 — operator confirmed a Farm Guardian action (`POST /v1/chat/confirm`); `details.tool_id`, `details.proposal_id`, frozen `details.args`, optional `details.result` on success |
+| `crop_profile_override_upsert` | `update_record` | Phase 105 — farm admin saved a crop target override (`PUT /farms/{id}/crop-profiles/{crop_key}`); `details.crop_key`, `details.catalog_version`, `details.source`, `details.stage_count` |
+| `crop_profile_override_deleted` | `delete_record` | Phase 105 — farm admin reset override to builtin (`DELETE /farms/{id}/crop-profiles/{crop_key}`); `details.crop_key`, `details.catalog_version` |
 
 Operations that are **not** yet mirrored into this log (for example JWT secret rotation, Pi API key rotation, storage env changes) should continue to use **external** operator evidence as described in the receipt storage runbook.
 
@@ -137,6 +139,29 @@ Filter examples: `{event="guardian_matcher_proposal_hit"}`, `{event="guardian_ll
 
 - After security incidents, pull audit rows for the affected farm over the incident window and correlate with application logs and object-store access logs where available.
 - When onboarding finance staff, confirm they understand that **opening or downloading a receipt** generates an audit row (`cost_receipt_access`).
+- When onboarding agronomists or compliance reviewers, confirm **crop target overrides** (Settings → Crops & targets) appear as `crop_profile_override_upsert` / `crop_profile_override_deleted` in the farm audit feed.
+
+## Crop override compliance export (Phase 105)
+
+Farm admins can review override history in **Settings → Farm audit trail** or via API:
+
+```bash
+curl -H "Authorization: Bearer $TOKEN" "$API/farms/1/audit-events?limit=200"
+```
+
+Filter client-side for `details.kind` starting with `crop_profile_override_`.
+
+SQL export for compliance archives:
+
+```sql
+SELECT activity_time, user_id, action_type, target_record_id, details
+FROM gr33ncore.user_activity_log
+WHERE farm_id = $1
+  AND details->>'kind' LIKE 'crop_profile_override_%'
+ORDER BY activity_time DESC;
+```
+
+**Note:** YAML bulk overrides via `./scripts/enterprise/apply-agronomy-overrides.sh` write directly to Postgres and do **not** emit HTTP audit rows unless run through the API. Prefer Settings or documented API for auditable site tweaks.
 
 ## Related documents
 

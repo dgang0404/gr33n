@@ -82,7 +82,7 @@ Hub: [`phase_68_73_spa_workspace_roadmap.plan.md`](plans/phase_68_73_spa_workspa
 | **81** ✅ | `/pi-setup` restore, Help Pi tab, zone hardware on Overview only | `ui/src/__tests__/phase-81-closure.test.js` |
 | **82** | Guardian plant intelligence — ≥25 crop library, plant context bundle, substrate watering, deficiency guides, zero-chunk guardrail | [`phase_82_guardian_crop_grounding_hardening.plan.md`](plans/phase_82_guardian_crop_grounding_hardening.plan.md) |
 | **83** ✅ | Enterprise agronomy seed pack — commons cultivator pack, `guardian-bootstrap-farm`, site-manifest hook, farm crop overrides, scheduled RAG ingest, readiness smokes | [`phase_83_enterprise_agronomy_seed_pack.plan.md`](plans/phase_83_enterprise_agronomy_seed_pack.plan.md) · [`phase-83-closure.md`](plans/phase-83-closure.md) |
-| **84** ✅ | Enterprise crop catalog in Postgres — picker API, EC/stage targets, field guides DB, commons API | [`phase_84_crop_catalog_enterprise_db.plan.md`](plans/phase_84_crop_catalog_enterprise_db.plan.md) · [`crop-catalog-db-cutover-runbook.md`](crop-catalog-db-cutover-runbook.md) |
+| **84** ✅ | Enterprise crop catalog in Postgres — picker API, EC/stage targets, field guides DB, commons API | [`phase_84_crop_catalog_enterprise_db.plan.md`](plans/phase_84_crop_catalog_enterprise_db.plan.md) · [`phase-84-closure.md`](plans/phase-84-closure.md) · [`crop-catalog-db-cutover-runbook.md`](crop-catalog-db-cutover-runbook.md) |
 | **85** ✅ | **Plants UX** — catalog dropdown, `plants.crop_key`, one slot per crop; Settings EC link | [`phase_85_catalog_bound_plants.plan.md`](plans/phase_85_catalog_bound_plants.plan.md) |
 | **86** ✅ | Grow ops + **Guardian crop chain** — strip, Water/Light, `lookup_crop_targets` same as UI | [`phase_86_grow_ops_catalog_chain.plan.md`](plans/phase_86_grow_ops_catalog_chain.plan.md) |
 | **87** ✅ | Guardian crop API smokes + operator runbook + OC-87 | [`phase_87_crop_knowledge_operator_closure.plan.md`](plans/phase_87_crop_knowledge_operator_closure.plan.md) · [`phase-87-closure.md`](plans/phase-87-closure.md) · [`crop-knowledge-operator-runbook.md`](crop-knowledge-operator-runbook.md) |
@@ -95,7 +95,7 @@ Hub: [`phase_68_73_spa_workspace_roadmap.plan.md`](plans/phase_68_73_spa_workspa
 | **102** | Fertigation + recipe ↔ crop_key / profile EC linkage | [`phase_102_fertigation_program_catalog_metadata.plan.md`](plans/phase_102_fertigation_program_catalog_metadata.plan.md) |
 | **103** | Legacy plant dedupe & backfill | [`phase_103_legacy_plant_dedupe_backfill.plan.md`](plans/phase_103_legacy_plant_dedupe_backfill.plan.md) |
 | **104** | Harvest analytics by crop_key | [`phase_104_harvest_analytics_by_crop_key.plan.md`](plans/phase_104_harvest_analytics_by_crop_key.plan.md) |
-| **105** | Catalog override audit + OC-84 | [`phase_105_catalog_audit_oc84_closure.plan.md`](plans/phase_105_catalog_audit_oc84_closure.plan.md) |
+| **105** ✅ | Catalog override audit + OC-84 | [`phase_105_catalog_audit_oc84_closure.plan.md`](plans/phase_105_catalog_audit_oc84_closure.plan.md) · [`phase-84-closure.md`](plans/phase-84-closure.md) |
 | **106** | Deficiency / pest symptom catalog | [`phase_106_deficiency_pest_symptom_catalog.plan.md`](plans/phase_106_deficiency_pest_symptom_catalog.plan.md) |
 | **107** | Crop catalog photos (picker UX) | [`phase_107_crop_catalog_photos.plan.md`](plans/phase_107_crop_catalog_photos.plan.md) |
 | **108** | Commons recipe packs `crop_key` tags | [`phase_108_commons_recipe_packs_crop_key.plan.md`](plans/phase_108_commons_recipe_packs_crop_key.plan.md) |
