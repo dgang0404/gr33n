@@ -135,6 +135,12 @@ SET name = $2, description = $3, reservoir_id = $4,
 WHERE id = $1 AND deleted_at IS NULL
 RETURNING *;
 
+-- name: UpdateProgramMetadata :one
+UPDATE gr33nfertigation.programs
+SET metadata = $2, updated_at = NOW()
+WHERE id = $1 AND deleted_at IS NULL
+RETURNING *;
+
 -- name: DeleteProgram :exec
 UPDATE gr33nfertigation.programs
 SET deleted_at = NOW()

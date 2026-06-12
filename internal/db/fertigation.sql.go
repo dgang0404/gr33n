@@ -1088,6 +1088,49 @@ func (q *Queries) UpdateProgram(ctx context.Context, arg UpdateProgramParams) (G
 	return i, err
 }
 
+const updateProgramMetadata = `-- name: UpdateProgramMetadata :one
+UPDATE gr33nfertigation.programs
+SET metadata = $2, updated_at = NOW()
+WHERE id = $1 AND deleted_at IS NULL
+RETURNING id, farm_id, name, description, application_recipe_id, reservoir_id, target_zone_id, schedule_id, ec_target_id, volume_liters_per_sqm, total_volume_liters, dilution_ratio, run_duration_seconds, ec_trigger_low, ph_trigger_low, ph_trigger_high, is_active, metadata, last_triggered_time, irrigation_only, created_at, updated_at, deleted_at
+`
+
+type UpdateProgramMetadataParams struct {
+	ID       int64           `db:"id" json:"id"`
+	Metadata json.RawMessage `db:"metadata" json:"metadata"`
+}
+
+func (q *Queries) UpdateProgramMetadata(ctx context.Context, arg UpdateProgramMetadataParams) (Gr33nfertigationProgram, error) {
+	row := q.db.QueryRow(ctx, updateProgramMetadata, arg.ID, arg.Metadata)
+	var i Gr33nfertigationProgram
+	err := row.Scan(
+		&i.ID,
+		&i.FarmID,
+		&i.Name,
+		&i.Description,
+		&i.ApplicationRecipeID,
+		&i.ReservoirID,
+		&i.TargetZoneID,
+		&i.ScheduleID,
+		&i.EcTargetID,
+		&i.VolumeLitersPerSqm,
+		&i.TotalVolumeLiters,
+		&i.DilutionRatio,
+		&i.RunDurationSeconds,
+		&i.EcTriggerLow,
+		&i.PhTriggerLow,
+		&i.PhTriggerHigh,
+		&i.IsActive,
+		&i.Metadata,
+		&i.LastTriggeredTime,
+		&i.IrrigationOnly,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.DeletedAt,
+	)
+	return i, err
+}
+
 const updateReservoir = `-- name: UpdateReservoir :one
 UPDATE gr33nfertigation.reservoirs
 SET name = $2, description = $3, capacity_liters = $4,

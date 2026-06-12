@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -16,6 +17,7 @@ import (
 	"gr33n-api/internal/costing"
 	db "gr33n-api/internal/db"
 	"gr33n-api/internal/farmauthz"
+	"gr33n-api/internal/fertigation/programmeta"
 	"gr33n-api/internal/httputil"
 )
 
@@ -395,6 +397,18 @@ func (h *Handler) ListProgramsByFarm(w http.ResponseWriter, r *http.Request) {
 	}
 	if rows == nil {
 		rows = []db.Gr33nfertigationProgram{}
+	}
+	cropKey := strings.TrimSpace(r.URL.Query().Get("crop_key"))
+	stage := strings.TrimSpace(r.URL.Query().Get("stage"))
+	if cropKey != "" || stage != "" {
+		filtered := make([]db.Gr33nfertigationProgram, 0, len(rows))
+		for _, row := range rows {
+			fit := programmeta.Parse(row.Metadata).CheckFit(cropKey, stage)
+			if fit.OK {
+				filtered = append(filtered, row)
+			}
+		}
+		rows = filtered
 	}
 	httputil.WriteJSON(w, http.StatusOK, rows)
 }

@@ -90,6 +90,13 @@
 
         <div>
           <label class="block text-xs text-zinc-500 mb-1">Feeding program (optional)</label>
+          <div
+            v-if="programMismatchWarning"
+            class="mb-2 rounded-lg border border-amber-800/60 bg-amber-950/30 px-3 py-2 text-[11px] text-amber-200/90"
+            data-test="start-grow-program-mismatch"
+          >
+            {{ programMismatchWarning }}
+          </div>
           <select
             v-model.number="form.programId"
             class="w-full bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white"
@@ -97,13 +104,14 @@
           >
             <option :value="null">None — assign later</option>
             <option
-              v-for="p in zonePrograms"
+              v-for="p in sortedZonePrograms"
               :key="p.id"
               :value="p.id"
             >
-              {{ p.name }}
+              {{ p.name }}{{ programOptionSuffix(p, programFitContext) }}
             </option>
           </select>
+          <p v-if="selectedProgramBand" class="text-[10px] text-zinc-600 mt-1">{{ selectedProgramBand }}</p>
         </div>
       </div>
 
@@ -144,6 +152,12 @@ import {
   strainFromPlant,
 } from '../lib/growHub.js'
 import { loadDomainEnums } from '../lib/domainEnums.js'
+import {
+  programFitResult,
+  programOptionSuffix,
+  sortProgramsByFit,
+  parseProgramMeta,
+} from '../lib/programFit.js'
 import CropLibraryPicker from './CropLibraryPicker.vue'
 
 const props = defineProps({
@@ -191,6 +205,31 @@ function emptyForm() {
 const zonePrograms = computed(() => {
   if (!form.value.zoneId) return props.programs
   return props.programs.filter((p) => Number(p.target_zone_id) === Number(form.value.zoneId))
+})
+
+const programFitContext = computed(() => ({
+  cropKey: form.value.cropKey,
+  stage: form.value.stage,
+}))
+
+const sortedZonePrograms = computed(() =>
+  sortProgramsByFit(zonePrograms.value, programFitContext.value),
+)
+
+const selectedProgram = computed(() =>
+  sortedZonePrograms.value.find((p) => Number(p.id) === Number(form.value.programId)) || null,
+)
+
+const programMismatchWarning = computed(() => {
+  if (!selectedProgram.value) return ''
+  const fit = programFitResult(selectedProgram.value, programFitContext.value)
+  return fit.warnings[0] || ''
+})
+
+const selectedProgramBand = computed(() => {
+  const band = parseProgramMeta(selectedProgram.value?.metadata).ec_band_mscm
+  if (!band || band.min == null) return ''
+  return `Program EC band: ${band.min}–${band.max} mS/cm (from catalog profile)`
 })
 
 const selectedZone = computed(() =>
@@ -243,7 +282,7 @@ watch(
   () => form.value.zoneId,
   () => {
     if (zonePrograms.value.length === 1) {
-      form.value.programId = zonePrograms.value[0].id
+      form.value.programId = sortedZonePrograms.value[0]?.id ?? zonePrograms.value[0].id
     } else if (!zonePrograms.value.some((p) => p.id === form.value.programId)) {
       form.value.programId = null
     }

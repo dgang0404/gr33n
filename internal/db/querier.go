@@ -670,6 +670,7 @@ type Querier interface {
 	// snapshot).
 	UpdateProfileHourlyRate(ctx context.Context, arg UpdateProfileHourlyRateParams) (Gr33ncoreProfile, error)
 	UpdateProgram(ctx context.Context, arg UpdateProgramParams) (Gr33nfertigationProgram, error)
+	UpdateProgramMetadata(ctx context.Context, arg UpdateProgramMetadataParams) (Gr33nfertigationProgram, error)
 	UpdateRecipe(ctx context.Context, arg UpdateRecipeParams) (Gr33nnaturalfarmingApplicationRecipe, error)
 	UpdateReservoir(ctx context.Context, arg UpdateReservoirParams) (Gr33nfertigationReservoir, error)
 	// Phase 39 WS6 — operator sets base EC/pH of source water so the mix

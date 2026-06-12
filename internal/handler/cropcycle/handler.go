@@ -17,6 +17,7 @@ import (
 	db "gr33n-api/internal/db"
 	"gr33n-api/internal/cropcycle"
 	"gr33n-api/internal/farmauthz"
+	"gr33n-api/internal/fertigation/programfit"
 	"gr33n-api/internal/httputil"
 )
 
@@ -97,8 +98,12 @@ func writeCyclesJSON(w http.ResponseWriter, status int, rows []db.Gr33nfertigati
 	httputil.WriteJSON(w, status, out)
 }
 
-func writeCycleJSON(w http.ResponseWriter, status int, row db.Gr33nfertigationCropCycle) {
-	httputil.WriteJSON(w, status, cropcycle.CycleJSON(row))
+func writeCycleJSON(w http.ResponseWriter, status int, row db.Gr33nfertigationCropCycle, warnings []string) {
+	out := cropcycle.CycleJSON(row)
+	if len(warnings) > 0 {
+		out["program_fit_warnings"] = warnings
+	}
+	httputil.WriteJSON(w, status, out)
 }
 
 // Get — GET /crop-cycles/{id}
@@ -120,7 +125,7 @@ func (h *Handler) Get(w http.ResponseWriter, r *http.Request) {
 	if !farmauthz.RequireFarmMember(w, r, h.q, row.FarmID) {
 		return
 	}
-	writeCycleJSON(w, http.StatusOK, row)
+	writeCycleJSON(w, http.StatusOK, row, nil)
 }
 func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 	farmID, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
@@ -180,6 +185,18 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusBadRequest, err.Error())
 		return
 	}
+	var fitWarnings []string
+	if body.PrimaryProgramID != nil && *body.PrimaryProgramID > 0 {
+		fitWarnings, err = h.programFitWarnings(r.Context(), body.PrimaryProgramID, plantID, body.CurrentStage)
+		if err != nil {
+			httputil.WriteError(w, http.StatusBadRequest, "program not found")
+			return
+		}
+		if programfit.StrictMode() && len(fitWarnings) > 0 {
+			httputil.WriteError(w, http.StatusUnprocessableEntity, strings.Join(fitWarnings, "; "))
+			return
+		}
+	}
 	stage := parseGrowthStage(body.CurrentStage)
 	row, err := h.q.CreateCropCycle(r.Context(), db.CreateCropCycleParams{
 		FarmID:           farmID,
@@ -213,7 +230,7 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	writeCycleJSON(w, http.StatusCreated, row)
+	writeCycleJSON(w, http.StatusCreated, row, fitWarnings)
 }
 func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
@@ -309,6 +326,22 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 	if body.BatchLabel != nil || body.StrainOrVariety != nil {
 		batchLabel = cropcycle.ResolveBatchLabel(body.BatchLabel, body.StrainOrVariety)
 	}
+	var fitWarnings []string
+	if body.PrimaryProgramID != nil && *body.PrimaryProgramID > 0 {
+		stageStr := ""
+		if existing.CurrentStage != nil {
+			stageStr = string(*existing.CurrentStage)
+		}
+		fitWarnings, err = h.programFitWarnings(r.Context(), body.PrimaryProgramID, plantID, stageStr)
+		if err != nil {
+			httputil.WriteError(w, http.StatusBadRequest, "program not found")
+			return
+		}
+		if programfit.StrictMode() && len(fitWarnings) > 0 {
+			httputil.WriteError(w, http.StatusUnprocessableEntity, strings.Join(fitWarnings, "; "))
+			return
+		}
+	}
 	row, err := h.q.UpdateCropCycle(r.Context(), db.UpdateCropCycleParams{
 		ID:               id,
 		Name:             name,
@@ -331,7 +364,7 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-	writeCycleJSON(w, http.StatusOK, row)
+	writeCycleJSON(w, http.StatusOK, row, fitWarnings)
 }
 
 // UpdateStage — PATCH /crop-cycles/{id}/stage
@@ -383,7 +416,27 @@ func (h *Handler) UpdateStage(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	writeCycleJSON(w, http.StatusOK, row)
+	writeCycleJSON(w, http.StatusOK, row, nil)
+}
+
+func (h *Handler) programFitWarnings(ctx context.Context, programID *int64, plantID *int64, stage string) ([]string, error) {
+	if programID == nil || *programID <= 0 {
+		return nil, nil
+	}
+	cropKey := ""
+	if plantID != nil && *plantID > 0 {
+		p, err := h.q.GetPlant(ctx, *plantID)
+		if err != nil {
+			if errors.Is(err, pgx.ErrNoRows) {
+				return nil, errors.New("plant not found")
+			}
+			return nil, err
+		}
+		if p.CropKey != nil {
+			cropKey = *p.CropKey
+		}
+	}
+	return programfit.ValidateProgramForGrow(ctx, h.q, *programID, cropKey, stage)
 }
 
 func (h *Handler) resolvePlantIDForFarm(ctx context.Context, farmID int64, plantID *int64, active bool) (*int64, error) {
