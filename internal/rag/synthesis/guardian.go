@@ -30,6 +30,7 @@ func hasSourceType(chunks []db.SearchRagNearestNeighborsFilteredRow, want string
 }
 
 // GuardianRAGInstructions returns synthesis citation rules plus corpus-specific guidance when relevant.
+// Call only when len(chunks) > 0 — use ZeroChunkGuardBlock for empty retrieval.
 func GuardianRAGInstructions(chunks []db.SearchRagNearestNeighborsFilteredRow) string {
 	out := SystemPrompt()
 	if HasFieldGuideChunks(chunks) {
@@ -40,3 +41,12 @@ func GuardianRAGInstructions(chunks []db.SearchRagNearestNeighborsFilteredRow) s
 	}
 	return out
 }
+
+const zeroChunkGuardBlock = `No indexed documentation matched this question (0 RAG chunks).
+- Do NOT use [n] citation brackets.
+- Do NOT state EC, pH, VPD, DLI, or photoperiod numbers unless lookup_crop_targets results appear above in this system prompt.
+- For each crop mentioned: if lookup_crop_targets returned a profile, use those mS/cm values; if not, say you have no built-in profile and offer Start grow / Plants.
+- For crops outside gr33n support (e.g. woodland ephemerals), say so plainly.`
+
+// ZeroChunkGuardBlock is injected when farm-grounded chat retrieved zero RAG chunks (Phase 82 WS1).
+func ZeroChunkGuardBlock() string { return zeroChunkGuardBlock }

@@ -258,9 +258,11 @@ func (h *Handler) PostV1(w http.ResponseWriter, r *http.Request) {
 					return
 				}
 				// Phase 37 WS1 — offline field mode: snapshot + procedures still work without RAG.
-			} else {
+			} else if len(chunks) > 0 {
 				system += synthesis.GuardianRAGInstructions(chunks)
 				user = synthesis.BuildUserMessage(question, chunks)
+			} else {
+				system += synthesis.ZeroChunkGuardBlock()
 			}
 		}
 		if farmguardian.IsLocalInferenceURL(strings.TrimSpace(os.Getenv("LLM_BASE_URL"))) ||
@@ -402,6 +404,9 @@ func (h *Handler) PostV1(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusBadGateway, "LLM request failed")
 		return
 	}
+	if grounded {
+		answer = synthesis.StripOrphanCitationRefs(answer, len(chunks))
+	}
 
 	resp := postResponse{
 		Answer:           answer,
@@ -504,6 +509,9 @@ func (h *Handler) streamResponse(
 	}
 
 	answer := collected.String()
+	if grounded {
+		answer = synthesis.StripOrphanCitationRefs(answer, len(chunks))
+	}
 	done := postResponse{
 		Answer:           answer,
 		LLMModel:         chatClient.ModelLabel(),

@@ -6,19 +6,19 @@ overview: >
 todos:
   - id: ws1-audit
     content: "WS1: Checklist each WS0–WS11 vs main — shipped / partial / deferred"
-    status: pending
+    status: completed
   - id: ws2-todos
     content: "WS2: Update phase_82 plan frontmatter — completed vs deferred to 106/84/85"
-    status: pending
+    status: completed
   - id: ws3-gaps
     content: "WS3: Implement or ticket remaining P0 gaps from audit"
-    status: pending
+    status: completed
   - id: ws4-closure
-    content: "WS4: docs/plans/phase-82-closure.md + OC-82; architecture §7.0y–§7.0z"
-    status: pending
+    content: "WS4: docs/plans/phase-82-closure.md + OC-82; architecture §7.0ag"
+    status: completed
   - id: ws5-smokes
     content: "WS5: smoke_phase82 + phase-82-closure.test.js green or updated"
-    status: pending
+    status: completed
 isProject: false
 ---
 
@@ -26,9 +26,7 @@ isProject: false
 
 ## Status
 
-**Planned.** Phase 82 shipped **much** on main (catalog YAML, multi-crop lookup, picker WS4f, unsupported registry) but plan frontmatter still shows **all todos pending** and **no `phase-82-closure.md`**.
-
-**Depends on:** Audit only — can start anytime; finish after [Phase 87](phase_87_crop_knowledge_operator_closure.plan.md) for clean handoff.
+**Shipped.** Formal audit complete — [`phase-82-closure.md`](phase-82-closure.md) · WS1/WS2 P0 gaps closed in Phase 110.
 
 **Closure:** **OC-110** (includes **OC-82**)
 

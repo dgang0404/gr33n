@@ -147,7 +147,7 @@
             <span class="text-[10px] uppercase tracking-widest text-green-500 mr-2">guardian</span>
             <span class="whitespace-pre-wrap">{{ t.assistant_message }}</span>
             <div class="mt-1 text-[10px] text-zinc-600">
-              {{ t.llm_model }}<span v-if="t.grounded"> · grounded · {{ t.context_count }} chunks</span>
+              {{ t.llm_model }}<span v-if="t.grounded"> · {{ turnContextLabel(t) }}</span>
               <span
                 v-if="(t.prompt_tokens || 0) + (t.completion_tokens || 0) > 0"
                 class="ml-2"
@@ -158,7 +158,7 @@
               </span>
             </div>
           </div>
-          <ul v-if="t.citations?.length" class="space-y-1 pl-6">
+          <ul v-if="t.citations?.length && (t.context_count || 0) > 0" class="space-y-1 pl-6">
             <li
               v-for="c in t.citations"
               :key="c.ref + '-' + c.chunk_id"
@@ -175,6 +175,13 @@
             data-test="chat-field-degraded-banner"
           >
             LLM offline — showing authored procedure steps only.
+          </p>
+          <p
+            v-if="zeroChunkWarning(t)"
+            class="text-[10px] text-amber-300/90 px-3 rounded border border-amber-900/50 bg-amber-950/30 py-2"
+            data-test="chat-zero-chunk-banner"
+          >
+            No indexed docs matched — numbers may be unreliable unless from crop profiles. Run field-guide ingest or assign crops in Plants.
           </p>
           <GuardianProcedureCard v-if="t.procedure" :procedure="t.procedure" class="pl-6" />
           <div v-if="t.proposals?.length" class="pl-6 space-y-2" data-test="chat-turn-proposals">
@@ -507,6 +514,7 @@ import { topicChipLabel } from '../lib/guardianSessionMemory.js'
 import { computeFirstRunChecklist, isFirstRunIncomplete } from '../lib/firstRunChecklist.js'
 import { buildMorningWalkthroughStarters, buildSetupStarters } from '../lib/guardianStarters.js'
 import { deriveFollowUps } from '../lib/guardianFollowUps.js'
+import { turnContextLabel, zeroChunkWarning } from '../lib/guardianChatHonesty.js'
 import { useFarmOperate } from '../composables/useFarmOperate'
 import { useFarmContextStore } from '../stores/farmContext'
 import { useFarmStore } from '../stores/farm'

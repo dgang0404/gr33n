@@ -488,6 +488,23 @@ Plans: [85](plans/phase_85_catalog_bound_plants.plan.md) · [86](plans/phase_86_
 
 **Go smokes:** `smoke_phase85_test.go`, `smoke_phase86_test.go`, `smoke_phase87_test.go`.
 
+### 7.0ag Guardian plant intelligence (Phase 82 — partial shipped)
+
+**Partially shipped.** Cultivator crop library (≥46 builtin profiles), multi-crop `lookup_crop_targets`, unsupported registry, substrate watering blocks, grouped picker, and **zero-chunk guardrail** (Phase 110).
+
+| Layer | Artifact |
+|-------|----------|
+| Catalog | `data/crop_library.yaml` v4 → Phase 84 `crop_catalog_entries` |
+| Read tools | `lookup_crop_targets` multi-crop; moisture/substrate blocks; unsupported cousin suggestions |
+| Grounding | `ZeroChunkGuardBlock` + `StripOrphanCitationRefs` when RAG returns 0 chunks |
+| UI | `CropLibraryPicker`; Guardian **farm context · 0 doc chunks** label + amber warning |
+| Symptoms | **Phase 106** — `lookup_crop_symptoms` (WS9 re-homed) |
+| Deferred | **WS7** plant context bundle; **WS11** full EC/DLI/photoperiod deltas → Phase 97 |
+
+**OC-82** · Closure: [`plans/phase-82-closure.md`](plans/phase-82-closure.md). Plan: [`plans/phase_82_guardian_crop_grounding_hardening.plan.md`](plans/phase_82_guardian_crop_grounding_hardening.plan.md).
+
+**Tests:** `smoke_phase82_test.go`, `phase-82-closure.test.js`, `readtools_crop_test.go`.
+
 ### 7.0h Comfort targets & automation (Phase 42 — shipped)
 
 Plans: [`plans/phase_42_comfort_targets_automation_plain_language.plan.md`](plans/phase_42_comfort_targets_automation_plain_language.plan.md) · Guardian PR slice: [`plans/phase_42_guardian_pr_spec.md`](plans/phase_42_guardian_pr_spec.md).

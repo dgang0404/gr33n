@@ -9,55 +9,55 @@ overview: >
 todos:
   - id: ws0-ops-prereqs
     content: "WS0: Ops — rag-ingest gate; LLM + vision model floor; bootstrap checklist"
-    status: pending
+    status: partial
   - id: ws1-zero-chunk-guardrail
     content: "WS1: Handler — zero-chunk policy; no fake [n] citations; strip orphan refs"
-    status: pending
+    status: completed
   - id: ws2-ui-honesty
     content: "WS2: UI — farm context · 0 doc chunks label; warning banner"
-    status: pending
+    status: completed
   - id: ws3-read-tool-widening
     content: "WS3: lookup_crop_targets — multi-crop compare; alias registry from YAML"
-    status: pending
+    status: completed
   - id: ws4a-catalog-source
     content: "WS4a: data/crop_library.yaml — crops, substrates, watering_style, cousin_of, unsupported"
-    status: pending
+    status: completed
   - id: ws4b-tier-a-profiles
     content: "WS4b: Tier A profiles + guides (eggplant, cucumber, kale, spinach, cilantro, microgreens, missing 4)"
-    status: pending
+    status: completed
   - id: ws4c-tier-b-profiles
     content: "WS4c: Tier B — zucchini, green_bean, mint, parsley, blueberry, hemp, broccoli, melon, arugula"
-    status: pending
+    status: completed
   - id: ws4d-field-guides
     content: "WS4d: Per-crop guides + deficiency/symptom guides; manifest + re-ingest"
-    status: pending
+    status: partial
   - id: ws4e-unsupported-registry
     content: "WS4e: Unsupported — ramps, mushrooms, fruit trees, in-ground root crops; cousin suggestions"
-    status: pending
+    status: completed
   - id: ws4f-ui-picker
     content: "WS4f: Profile picker — grouped, searchable, substrate hint"
-    status: pending
+    status: completed
   - id: ws5-follow-up-chips
     content: "WS5: Crop-aware follow-up chips (guardianFollowUps.js)"
-    status: pending
+    status: partial
   - id: ws7-plant-context-bundle
     content: "WS7: plant_context_bundle — fuse cycle, profile, sensors, fertigation, light, grow_advisor"
-    status: pending
+    status: deferred
   - id: ws8-substrate-watering
     content: "WS8: Substrate-aware watering from YAML — wet/dry, runoff, constant-feed"
-    status: pending
+    status: completed
   - id: ws9-symptom-deficiency
     content: "WS9: Symptom/deficiency RAG + intents; vision synergy (Phase 67)"
-    status: pending
+    status: deferred
   - id: ws10-stage-transitions
     content: "WS10: Stage transitions — flip, harvest, bolt, rebloom; grow_advisor on my room/my grow"
-    status: pending
+    status: partial
   - id: ws11-environment-reconcile
     content: "WS11: Live vs target — EC/VPD/DLI/photoperiod delta; comfort band conflicts; site_weather DLI"
-    status: pending
+    status: partial
   - id: ws6-docs-tests
-    content: "WS6: architecture §7.0y–§7.0z; smoke_phase82; phase-82-closure; OC-82"
-    status: pending
+    content: "WS6: architecture §7.0ag; smoke_phase82; phase-82-closure; OC-82"
+    status: completed
 isProject: false
 ---
 
@@ -65,11 +65,9 @@ isProject: false
 
 ## Status
 
-**Planned.** Two halves: **(A) trust & grounding** — fix fake citations, zero-chunk policy, read-tool widening; **(B) plant intelligence depth** — expand Phase 64's 7 profiles into a full cultivator library and fuse live farm data (cycle, sensors, fertigation, light, grow advisor) into every plant question.
+**Partially shipped** — catalog + multi-crop grounding + zero-chunk guardrail on `main`. Plant context bundle (WS7) and full target-vs-actual (WS11) deferred to Phase 97+.
 
-Builds on shipped [Phase 62](phase_62_guardian_grow_advisor.plan.md), [Phase 64](phase_64_crop_knowledge_base.plan.md), [Phase 67](phase_67_guardian_field_assistant.plan.md) (vision), [Phase 66](phase_66_weather_site_context.plan.md) (outdoor DLI), [Phase 28](phase_28_crop_intelligence_guardian_depth.md) (cycle analytics in snapshot).
-
-**Closure:** **OC-82**
+**Closure:** [`phase-82-closure.md`](phase-82-closure.md) · **OC-82** (via Phase 110)
 
 ---
 

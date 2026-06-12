@@ -48,3 +48,10 @@ func TestGuardianRAGInstructionsIncludesFieldGuideHint(t *testing.T) {
 		t.Fatal("expected field_guide grounding text")
 	}
 }
+
+func TestZeroChunkGuardBlock(t *testing.T) {
+	block := ZeroChunkGuardBlock()
+	if !strings.Contains(block, "0 RAG chunks") || !strings.Contains(block, "Do NOT use [n]") {
+		t.Fatalf("unexpected block: %q", block)
+	}
+}

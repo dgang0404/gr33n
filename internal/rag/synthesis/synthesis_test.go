@@ -1,6 +1,7 @@
 package synthesis
 
 import (
+	"strings"
 	"testing"
 
 	db "gr33n-api/internal/db"
@@ -29,5 +30,16 @@ func TestBuildCitations(t *testing.T) {
 	}
 	if cites[1].Ref != 2 || cites[1].ChunkID != 11 {
 		t.Fatal(cites)
+	}
+}
+
+func TestStripOrphanCitationRefs(t *testing.T) {
+	got := StripOrphanCitationRefs("Profile [1] says 2% EC [2].", 0)
+	if strings.Contains(got, "[1]") || strings.Contains(got, "[2]") {
+		t.Fatalf("expected refs stripped, got %q", got)
+	}
+	unchanged := StripOrphanCitationRefs("Still [1] here.", 1)
+	if unchanged != "Still [1] here." {
+		t.Fatalf("expected unchanged with chunks, got %q", unchanged)
 	}
 }

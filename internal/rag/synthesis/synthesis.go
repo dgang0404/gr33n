@@ -88,3 +88,11 @@ func BuildCitations(answer string, chunks []db.SearchRagNearestNeighborsFiltered
 	}
 	return out
 }
+
+// StripOrphanCitationRefs removes [n] brackets when no chunks exist (Phase 82 WS1).
+func StripOrphanCitationRefs(answer string, chunkCount int) string {
+	if chunkCount > 0 || answer == "" {
+		return answer
+	}
+	return bracketRefRE.ReplaceAllString(answer, "")
+}
