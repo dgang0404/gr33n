@@ -160,6 +160,8 @@ Mismatch → amber before attach (Phase 96).
 
 Enterprise recipe import ([`import-recipe-pack.sh`](../scripts/enterprise/import-recipe-pack.sh)) must preserve **`crop_keys`** / **`stages`** in recipe `meta` when pack manifest includes them.
 
+**Full commons promotion:** [Phase 108](phase_108_commons_recipe_packs_crop_key.plan.md) — manifest schema + import validation.
+
 Cross-link [Phase 98](phase_98_enterprise_catalog_promotion.plan.md) — platform recipes promote; farm program links stay local.
 
 ---

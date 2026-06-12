@@ -1,9 +1,8 @@
 ---
-name: Phases 84–105 — Master roadmap (plants, platform data, blind spots)
+name: Phases 84–110 — Master roadmap (plants, platform data, intelligence)
 overview: >
-  Locked execution order for the full gr33n knowledge-base and platform-data arc.
-  Phases 84–100 cover plants, UI enums, and blind spots; 101–105 cover Guardian
-  writes, program metadata, legacy dedupe, analytics, and audit closure.
+  Locked execution order for gr33n knowledge-base, platform-data, and intelligence
+  arcs through Phase 110 (symptoms, photos, commons recipes, notifications, OC-82).
 todos:
   - id: arc-84-87
     content: "Arc A (84–87): Plants, grows, Guardian crop chain — DO FIRST"
@@ -17,10 +16,13 @@ todos:
   - id: arc-101-105
     content: "Arc D (101–105): Guardian writes, programs, legacy data, analytics, audit"
     status: pending
+  - id: arc-106-110
+    content: "Arc E (106–110): Symptoms, photos, commons recipes, push, OC-82"
+    status: pending
 isProject: false
 ---
 
-# Phases 84–105 — Master roadmap
+# Phases 84–110 — Master roadmap
 
 ## Big-dawg rule
 
@@ -55,6 +57,13 @@ Arc D — GUARDIAN, DATA, ANALYTICS (after 85–87 core)
   102 (program + recipe crop_key metadata — before/with 96 v2)
   104 (analytics by crop_key — after 86/93)
   105 (audit + OC-84 closure — anytime)
+
+Arc E — INTELLIGENCE & ENTERPRISE POLISH (106–110)
+  110 (Phase 82 closure audit — can start early)
+  106 (deficiency/symptom catalog — after 87 + 97)
+  107 (crop photos — after 95)
+  108 (commons recipe crop_key packs — with 102)
+  109 (catalog_version push — after 98 enterprise)
 ```
 
 **Do NOT** run 88/89 before 85 unless you explicitly want enum fixes while plants still flood the DB.
@@ -113,17 +122,27 @@ Domain enums, lighting presets API, device taxonomy, bootstrap catalog, zone voc
 | **104** | [Harvest analytics by crop_key](phase_104_harvest_analytics_by_crop_key.plan.md) |
 | **105** | [Catalog audit & OC-84 closure](phase_105_catalog_audit_oc84_closure.plan.md) |
 
+### Arc E — Intelligence & enterprise polish (106–110)
+
+| Phase | Plan | When |
+|-------|------|------|
+| **106** | [Deficiency & pest symptom catalog](phase_106_deficiency_pest_symptom_catalog.plan.md) | After crop chain 87 + RAG governance 97 |
+| **107** | [Crop catalog photos](phase_107_crop_catalog_photos.plan.md) | After integrator cadence 95 |
+| **108** | [Commons recipe packs crop_key](phase_108_commons_recipe_packs_crop_key.plan.md) | With Phase 102 recipe linkage |
+| **109** | [Catalog version push notifications](phase_109_catalog_version_push_notifications.plan.md) | Enterprise multi-site 98 |
+| **110** | [Phase 82 formal closure audit](phase_110_phase_82_formal_closure.plan.md) | Anytime; finish before calling 82 done |
+
 ---
 
 ## Prompt loop
 
-`phase 85 ws1` … `phase 105` — one phase per chat session or WS per prompt.
+`phase 85 ws1` … `phase 110` — one phase per chat session or WS per prompt.
 
 **Index:** [phase-14-operator-documentation.md](../phase-14-operator-documentation.md)
 
 ---
 
-## Adding Phase 106+
+## Adding Phase 111+
 
 Template for new gaps found in testing:
 

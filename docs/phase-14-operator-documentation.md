@@ -96,21 +96,25 @@ Hub: [`phase_68_73_spa_workspace_roadmap.plan.md`](plans/phase_68_73_spa_workspa
 | **103** | Legacy plant dedupe & backfill | [`phase_103_legacy_plant_dedupe_backfill.plan.md`](plans/phase_103_legacy_plant_dedupe_backfill.plan.md) |
 | **104** | Harvest analytics by crop_key | [`phase_104_harvest_analytics_by_crop_key.plan.md`](plans/phase_104_harvest_analytics_by_crop_key.plan.md) |
 | **105** | Catalog override audit + OC-84 | [`phase_105_catalog_audit_oc84_closure.plan.md`](plans/phase_105_catalog_audit_oc84_closure.plan.md) |
+| **106** | Deficiency / pest symptom catalog | [`phase_106_deficiency_pest_symptom_catalog.plan.md`](plans/phase_106_deficiency_pest_symptom_catalog.plan.md) |
+| **107** | Crop catalog photos (picker UX) | [`phase_107_crop_catalog_photos.plan.md`](plans/phase_107_crop_catalog_photos.plan.md) |
+| **108** | Commons recipe packs `crop_key` tags | [`phase_108_commons_recipe_packs_crop_key.plan.md`](plans/phase_108_commons_recipe_packs_crop_key.plan.md) |
+| **109** | Catalog version push notifications | [`phase_109_catalog_version_push_notifications.plan.md`](plans/phase_109_catalog_version_push_notifications.plan.md) |
+| **110** | Phase 82 formal closure audit (OC-82) | [`phase_110_phase_82_formal_closure.plan.md`](plans/phase_110_phase_82_formal_closure.plan.md) |
 
-## Master roadmap — Phases 84–105
+## Master roadmap — Phases 84–110
 
 **Locked order:** [`plans/phase_84_100_master_roadmap.plan.md`](plans/phase_84_100_master_roadmap.plan.md)
 
-**Execute:** 85 → 86 → 87 → **93** → **101** + **103** (with 85) → 89 → 88 → 90–92 → 95–100 → **102** → **104** → **105**.
+**Execute:** 85 → 86 → 87 → **93** → **101** + **103** (with 85) → 89 → 88 → 90–92 → 95–100 → **102** → **104** → **105** → **106–109** as deps allow · **110** (audit) anytime.
 
-| Phase | Focus |
-|-------|--------|
-| **93–100** | Blind spots (see master roadmap) |
-| **101** | Guardian `create_plant` requires `crop_key` |
-| **102** | Fertigation + recipe ↔ crop profile linkage |
-| **103** | Legacy plant dedupe on existing farms |
-| **104** | Compare/analytics by `crop_key` |
-| **105** | Override audit + OC-84 closure |
+| Arc | Phases | Focus |
+|-----|--------|--------|
+| A | 84–87, 93 | Plants & crop knowledge |
+| B | 88–92, 99 | UI enums & CI parity |
+| C | 93–100 | Blind spots |
+| D | 101–105 | Guardian writes, recipes, analytics |
+| E | 106–110 | Symptoms, photos, commons, push, OC-82 |
 
 ## Phases 84–87 — Plants & crop knowledge base
 
@@ -177,7 +181,8 @@ After operator-doc edits, re-ingest Guardian RAG: **`make rag-ingest-platform-do
 | Phase 83 — Enterprise agronomy seed pack (**shipped**) | [`plans/phase_83_enterprise_agronomy_seed_pack.plan.md`](plans/phase_83_enterprise_agronomy_seed_pack.plan.md) · [`phase-83-closure.md`](plans/phase-83-closure.md) — Guardian bootstrap, commons pack, crop overrides |
 | Phases 84–87 — Crop identity & knowledge base | [`plans/phase_84_87_crop_identity_roadmap.plan.md`](plans/phase_84_87_crop_identity_roadmap.plan.md) · [84](plans/phase_84_crop_catalog_enterprise_db.plan.md) · [85](plans/phase_85_catalog_bound_plants.plan.md) · [86](plans/phase_86_grow_ops_catalog_chain.plan.md) · [87](plans/phase_87_crop_knowledge_operator_closure.plan.md) |
 | Phases 88–92 — UI static data → DB/API | [`plans/phase_88_92_platform_data_gaps_roadmap.plan.md`](plans/phase_88_92_platform_data_gaps_roadmap.plan.md) |
-| Phases 84–100 — Master roadmap (order + blind spots) | [`plans/phase_84_100_master_roadmap.plan.md`](plans/phase_84_100_master_roadmap.plan.md) |
+| Phases 84–110 — Master roadmap | [`plans/phase_84_100_master_roadmap.plan.md`](plans/phase_84_100_master_roadmap.plan.md) |
+| Phases 106–110 — Intelligence & enterprise polish | [106](plans/phase_106_deficiency_pest_symptom_catalog.plan.md) · [107](plans/phase_107_crop_catalog_photos.plan.md) · [108](plans/phase_108_commons_recipe_packs_crop_key.plan.md) · [109](plans/phase_109_catalog_version_push_notifications.plan.md) · [110](plans/phase_110_phase_82_formal_closure.plan.md) |
 | Phases 93–100 — Blind spot closure | [93](plans/phase_93_plant_identity_vocabulary_cleanup.plan.md) · [94](plans/phase_94_genetics_batch_ec_profiles.plan.md) · [95](plans/phase_95_catalog_integrator_ops.plan.md) · [96](plans/phase_96_grow_feeding_program_validation.plan.md) · [97](plans/phase_97_rag_structured_truth_governance.plan.md) · [98](plans/phase_98_enterprise_catalog_promotion.plan.md) · [99](plans/phase_99_ci_domain_parity_guards.plan.md) · [100](plans/phase_100_offline_catalog_cache.plan.md) |
 | Phases 101–105 — Guardian, programs, analytics | [101](plans/phase_101_guardian_write_tools_crop_key.plan.md) · [102](plans/phase_102_fertigation_program_catalog_metadata.plan.md) · [103](plans/phase_103_legacy_plant_dedupe_backfill.plan.md) · [104](plans/phase_104_harvest_analytics_by_crop_key.plan.md) · [105](plans/phase_105_catalog_audit_oc84_closure.plan.md) |
 | Crop catalog DB cutover | [`crop-catalog-db-cutover-runbook.md`](crop-catalog-db-cutover-runbook.md) |
