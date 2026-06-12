@@ -39,6 +39,7 @@ type PickerItem struct {
 	Aliases       []string `json:"aliases,omitempty"`
 	CousinOf      *string  `json:"cousin_of,omitempty"`
 	CousinLabel   string   `json:"cousin_label,omitempty"`
+	ImageURL      string   `json:"image_url,omitempty"`
 	SearchTerms   []string `json:"search_terms,omitempty"`
 }
 
@@ -162,6 +163,7 @@ func pickerItemFromCrop(crop Crop, globalAliases map[string]string, cousinLabels
 		WateringStyle: crop.WateringStyle,
 		Aliases:       append([]string(nil), crop.Aliases...),
 		CousinOf:      crop.CousinOf,
+		ImageURL:      strings.TrimSpace(crop.ImageURL),
 		SearchTerms:   searchTerms(crop.Key, crop.DisplayName, crop.Aliases, globalAliases),
 	}
 	if crop.CousinOf != nil && strings.TrimSpace(*crop.CousinOf) != "" {

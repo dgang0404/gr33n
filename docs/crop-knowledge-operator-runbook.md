@@ -103,6 +103,7 @@ Field guides supplement RAG; structured numbers still come from `lookup_crop_tar
 | `TestPhase101_*` | Guardian `create_plant` requires `crop_key` |
 | `TestPhase103_*` | Legacy plant merge; no duplicate `crop_key` per farm |
 | `TestPhase106_*` | Guardian `lookup_crop_symptoms` — tomato yellow leaves + EC targets |
+| `TestPhase107_*` | Commons + picker `image_url` for ornamentals |
 | `TestPhase64_*` / `TestPhase82_*` | Profile library + picker API |
 
 ---

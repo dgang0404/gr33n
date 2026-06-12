@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" role="img" aria-label="Succulent">
+  <rect width="64" height="64" rx="10" fill="#422006"/>
+  <ellipse cx="32" cy="38" rx="18" ry="14" fill="#84cc16"/>
+  <ellipse cx="24" cy="30" rx="10" ry="8" fill="#a3e635"/>
+  <ellipse cx="40" cy="32" rx="9" ry="7" fill="#65a30d"/>
+</svg>

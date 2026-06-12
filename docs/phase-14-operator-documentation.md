@@ -97,7 +97,7 @@ Hub: [`phase_68_73_spa_workspace_roadmap.plan.md`](plans/phase_68_73_spa_workspa
 | **104** | Harvest analytics by crop_key | [`phase_104_harvest_analytics_by_crop_key.plan.md`](plans/phase_104_harvest_analytics_by_crop_key.plan.md) |
 | **105** ✅ | Catalog override audit + OC-84 | [`phase_105_catalog_audit_oc84_closure.plan.md`](plans/phase_105_catalog_audit_oc84_closure.plan.md) · [`phase-84-closure.md`](plans/phase-84-closure.md) |
 | **106** ✅ | Deficiency / pest symptom catalog + `lookup_crop_symptoms` | [`phase_106_deficiency_pest_symptom_catalog.plan.md`](plans/phase_106_deficiency_pest_symptom_catalog.plan.md) |
-| **107** | Crop catalog photos (picker UX) | [`phase_107_crop_catalog_photos.plan.md`](plans/phase_107_crop_catalog_photos.plan.md) |
+| **107** ✅ | Crop catalog photos — picker thumbnails + commons `image_url` | [`phase_107_crop_catalog_photos.plan.md`](plans/phase_107_crop_catalog_photos.plan.md) |
 | **108** | Commons recipe packs `crop_key` tags | [`phase_108_commons_recipe_packs_crop_key.plan.md`](plans/phase_108_commons_recipe_packs_crop_key.plan.md) |
 | **109** | Catalog version push notifications | [`phase_109_catalog_version_push_notifications.plan.md`](plans/phase_109_catalog_version_push_notifications.plan.md) |
 | **110** | Phase 82 formal closure audit (OC-82) | [`phase_110_phase_82_formal_closure.plan.md`](plans/phase_110_phase_82_formal_closure.plan.md) |

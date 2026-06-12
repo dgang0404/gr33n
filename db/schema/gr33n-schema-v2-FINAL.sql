@@ -1746,6 +1746,7 @@ CREATE TABLE IF NOT EXISTS gr33ncrops.crop_catalog_entries (
     cousin_of           TEXT REFERENCES gr33ncrops.crop_catalog_entries (crop_key),
     unsupported_reason  TEXT,
     catalog_version     INTEGER NOT NULL DEFAULT 1,
+    image_url           TEXT,
     meta                JSONB NOT NULL DEFAULT '{}'::jsonb,
     created_at          TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at          TIMESTAMPTZ NOT NULL DEFAULT NOW(),

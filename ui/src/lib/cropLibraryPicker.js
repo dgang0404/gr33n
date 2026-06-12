@@ -63,6 +63,12 @@ export function findPickerItemByProfileId(picker, profileId) {
   return null
 }
 
+/** Alt text for catalog thumbnail (Phase 107). */
+export function cropImageAlt(item) {
+  const name = item?.display_name || item?.crop_key || 'Crop'
+  return `${name} catalog thumbnail`
+}
+
 /**
  * @param {object|null} item
  */

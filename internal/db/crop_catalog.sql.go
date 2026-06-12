@@ -72,7 +72,7 @@ func (q *Queries) GetBuiltinCropProfileIDByCropKey(ctx context.Context, cropKey 
 }
 
 const getCropCatalogEntry = `-- name: GetCropCatalogEntry :one
-SELECT crop_key, display_name, supported, category, source, substrate, watering_style, runoff_pct_target, moisture_guidance, cousin_of, unsupported_reason, catalog_version, meta, created_at, updated_at
+SELECT crop_key, display_name, supported, category, source, substrate, watering_style, runoff_pct_target, moisture_guidance, cousin_of, unsupported_reason, catalog_version, image_url, meta, created_at, updated_at
 FROM gr33ncrops.crop_catalog_entries
 WHERE crop_key = $1
 `
@@ -93,6 +93,7 @@ func (q *Queries) GetCropCatalogEntry(ctx context.Context, cropKey string) (Gr33
 		&i.CousinOf,
 		&i.UnsupportedReason,
 		&i.CatalogVersion,
+		&i.ImageUrl,
 		&i.Meta,
 		&i.CreatedAt,
 		&i.UpdatedAt,
@@ -195,7 +196,7 @@ func (q *Queries) ListCropCatalogAliases(ctx context.Context) ([]Gr33ncropsCropC
 }
 
 const listCropCatalogEntries = `-- name: ListCropCatalogEntries :many
-SELECT crop_key, display_name, supported, category, source, substrate, watering_style, runoff_pct_target, moisture_guidance, cousin_of, unsupported_reason, catalog_version, meta, created_at, updated_at
+SELECT crop_key, display_name, supported, category, source, substrate, watering_style, runoff_pct_target, moisture_guidance, cousin_of, unsupported_reason, catalog_version, image_url, meta, created_at, updated_at
 FROM gr33ncrops.crop_catalog_entries
 ORDER BY supported DESC, display_name
 `
@@ -222,6 +223,7 @@ func (q *Queries) ListCropCatalogEntries(ctx context.Context) ([]Gr33ncropsCropC
 			&i.CousinOf,
 			&i.UnsupportedReason,
 			&i.CatalogVersion,
+			&i.ImageUrl,
 			&i.Meta,
 			&i.CreatedAt,
 			&i.UpdatedAt,

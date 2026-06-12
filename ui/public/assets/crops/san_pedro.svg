@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" role="img" aria-label="San Pedro cactus">
+  <rect width="64" height="64" rx="10" fill="#14532d"/>
+  <rect x="28" y="14" width="8" height="36" rx="4" fill="#4ade80"/>
+  <rect x="18" y="22" width="7" height="22" rx="3.5" fill="#22c55e"/>
+  <rect x="39" y="26" width="7" height="18" rx="3.5" fill="#22c55e"/>
+</svg>

@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" role="img" aria-label="Phalaenopsis orchid">
+  <rect width="64" height="64" rx="10" fill="#4a044e"/>
+  <circle cx="32" cy="28" r="10" fill="#f0abfc"/>
+  <circle cx="22" cy="34" r="7" fill="#e879f9"/>
+  <circle cx="42" cy="34" r="7" fill="#e879f9"/>
+  <path d="M32 38 Q32 48 32 52" stroke="#a21caf" stroke-width="3" fill="none"/>
+</svg>

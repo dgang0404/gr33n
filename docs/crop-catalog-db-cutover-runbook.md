@@ -91,9 +91,10 @@ GROUP BY source_id ORDER BY source_id;
 ## Authoring workflow (unchanged in git)
 
 1. Edit `data/crop_library.yaml` and `docs/field-guides/*.md`
-2. Regenerate seed: `./scripts/generate-crop-catalog-seed.sql.sh -o db/migrations/…`
-3. Add migration + `make migrate`
-4. Re-ingest farms if guide text changed
+2. Optional catalog thumbnail: add `ui/public/assets/crops/{crop_key}.svg` and set `crop_catalog_entries.image_url` in seed SQL (Phase 107 — `/assets/crops/{crop_key}.svg`)
+3. Regenerate seed: `./scripts/generate-crop-catalog-seed.sql.sh -o db/migrations/…`
+4. Add migration + `make migrate`
+5. Re-ingest farms if guide text changed
 
 `make check-crop-catalog-parity` validates YAML/manifest **before** SQL generation — keep running in CI.
 

@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" role="img" aria-label="Rose">
+  <rect width="64" height="64" rx="10" fill="#450a0a"/>
+  <circle cx="32" cy="26" r="11" fill="#f43f5e"/>
+  <circle cx="28" cy="22" r="4" fill="#fb7185"/>
+  <path d="M32 36 L32 52" stroke="#166534" stroke-width="4" stroke-linecap="round"/>
+  <path d="M32 44 Q40 40 44 36" stroke="#15803d" stroke-width="3" fill="none"/>
+</svg>

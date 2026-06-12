@@ -1977,6 +1977,7 @@ type Gr33ncropsCropCatalogEntry struct {
 	CousinOf          *string         `db:"cousin_of" json:"cousin_of"`
 	UnsupportedReason *string         `db:"unsupported_reason" json:"unsupported_reason"`
 	CatalogVersion    int32           `db:"catalog_version" json:"catalog_version"`
+	ImageUrl          *string         `db:"image_url" json:"image_url"`
 	Meta              json.RawMessage `db:"meta" json:"meta"`
 	CreatedAt         time.Time       `db:"created_at" json:"created_at"`
 	UpdatedAt         time.Time       `db:"updated_at" json:"updated_at"`

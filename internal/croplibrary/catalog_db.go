@@ -79,6 +79,7 @@ func LoadCatalogFromDB(ctx context.Context, q CatalogQuerier) (*Catalog, error) 
 				MoistureGuidance: derefStr(e.MoistureGuidance),
 				CousinOf:         optionalStringPtr(e.CousinOf),
 				Aliases:          cropAliases,
+				ImageURL:         derefStr(e.ImageUrl),
 			}
 			cat.Crops = append(cat.Crops, crop)
 			continue

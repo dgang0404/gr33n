@@ -9118,6 +9118,10 @@ components:
         cousin_of: { type: string, nullable: true }
         unsupported_reason: { type: string, nullable: true }
         catalog_version: { type: integer }
+        image_url:
+          type: string
+          nullable: true
+          description: Optional static catalog thumbnail (Phase 107), e.g. /assets/crops/san_pedro.svg
         meta: { type: object }
         created_at: { type: string, format: date-time }
         updated_at: { type: string, format: date-time }

@@ -30,6 +30,13 @@
     </p>
 
     <div v-if="selectedItem && !useSelectOnly" class="flex items-start gap-2 rounded-lg border border-green-900/50 bg-green-950/20 px-3 py-2">
+      <img
+        v-if="selectedItem.image_url"
+        :src="selectedItem.image_url"
+        :alt="cropImageAlt(selectedItem)"
+        class="w-10 h-10 rounded-md object-cover shrink-0 bg-zinc-900"
+        data-test="crop-library-picker-thumb"
+      />
       <div class="min-w-0 flex-1">
         <p class="text-sm text-zinc-100 truncate">{{ pickerItemLabel(selectedItem) }}</p>
         <p v-if="pickerItemHint(selectedItem)" class="text-[10px] text-zinc-500 mt-0.5">{{ pickerItemHint(selectedItem) }}</p>
@@ -45,25 +52,40 @@
     </div>
 
     <template v-else>
-      <select
-        :value="modelValue ?? ''"
-        :disabled="loading || !selectOptions.length"
-        class="w-full bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-green-600 disabled:opacity-50"
-        data-test="crop-library-picker-select"
-        @change="onSelectChange"
+      <p v-if="!loading && !selectOptions.length" class="text-zinc-500 text-xs">No crops with targets available.</p>
+      <div
+        v-else
+        class="max-h-56 overflow-y-auto rounded-lg border border-zinc-700 bg-zinc-950 divide-y divide-zinc-800"
+        data-test="crop-library-picker-list"
       >
-        <option value="" disabled>{{ loading ? 'Loading crops…' : 'Choose a crop from the knowledge base…' }}</option>
-        <optgroup v-for="group in selectGroups" :key="group.key" :label="group.label">
-          <option
+        <div v-for="group in selectGroups" :key="group.key">
+          <p class="sticky top-0 z-10 px-3 py-1.5 text-[10px] uppercase tracking-wide text-zinc-500 bg-zinc-900 border-b border-zinc-800">
+            {{ group.label }}
+          </p>
+          <button
             v-for="item in group.items"
             :key="item.crop_key + String(item.crop_profile_id || '')"
-            :value="item.crop_profile_id || ''"
+            type="button"
+            class="w-full flex items-center gap-2 px-3 py-2 text-left text-sm hover:bg-zinc-900/80 transition-colors disabled:opacity-40"
+            :class="Number(modelValue) === Number(item.crop_profile_id) ? 'bg-green-950/40 text-white' : 'text-zinc-300'"
             :disabled="!item.has_targets || !item.crop_profile_id"
+            @click="selectItem(item)"
           >
-            {{ optionLabel(item) }}
-          </option>
-        </optgroup>
-      </select>
+            <img
+              v-if="item.image_url"
+              :src="item.image_url"
+              :alt="cropImageAlt(item)"
+              class="w-8 h-8 rounded object-cover shrink-0 bg-zinc-900"
+            />
+            <span
+              v-else
+              class="w-8 h-8 rounded shrink-0 bg-zinc-800 border border-zinc-700"
+              aria-hidden="true"
+            />
+            <span class="min-w-0 truncate">{{ optionLabel(item) }}</span>
+          </button>
+        </div>
+      </div>
     </template>
 
     <div
@@ -94,6 +116,7 @@ import {
   formatStageTargetLine,
   pickerItemHint,
   pickerItemLabel,
+  cropImageAlt,
 } from '../lib/cropLibraryPicker.js'
 import { formatCacheDate } from '../lib/catalogCache.js'
 
@@ -184,13 +207,9 @@ async function loadTargetPreview(profileId) {
   }
 }
 
-function onSelectChange(ev) {
-  const raw = ev.target.value
-  const id = raw ? Number(raw) : null
-  if (!id) return
-  const item = findPickerItemByProfileId(picker.value, id)
-  if (!item?.has_targets) return
-  emit('update:modelValue', id)
+function selectItem(item) {
+  if (!item?.has_targets || !item.crop_profile_id) return
+  emit('update:modelValue', item.crop_profile_id)
   emit('select', item)
 }
 

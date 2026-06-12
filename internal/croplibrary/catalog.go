@@ -47,6 +47,7 @@ type Crop struct {
 	MoistureGuidance string      `yaml:"moisture_guidance,omitempty"`
 	CousinOf         *string     `yaml:"cousin_of"`
 	Aliases          []string    `yaml:"aliases,omitempty"`
+	ImageURL         string      `yaml:"image_url,omitempty"`
 	Stages           []StageRow  `yaml:"stages,omitempty"`
 }
 
