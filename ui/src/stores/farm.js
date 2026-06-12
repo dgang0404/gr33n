@@ -825,20 +825,11 @@ export const useFarmStore = defineStore('farm', {
     },
 
     async loadCropLibraryPicker(farmId) {
-      try {
-        const r = await api.get(`/farms/${farmId}/crop-library/picker`)
-        return r.data
-      } catch (e) {
-        if (e.response?.status === 404) {
-          const { buildPickerFallbackFromProfiles } = await import('../lib/cropLibraryPicker.js')
-          const profiles = await this.loadCropProfiles(farmId)
-          const fallback = buildPickerFallbackFromProfiles(profiles)
-          if (fallback.counts.with_targets > 0) {
-            return { ...fallback, _degraded: true, _degradedReason: 'picker_404' }
-          }
-        }
-        throw e
-      }
+      const { loadCropLibraryPickerWithCache } = await import('../lib/cropLibraryLoader.js')
+      return loadCropLibraryPickerWithCache(farmId, {
+        get: (url) => api.get(url),
+        loadProfiles: () => this.loadCropProfiles(farmId),
+      })
     },
 
     async getCropProfile(id) {

@@ -18,6 +18,16 @@ make check-crop-catalog-parity
 
 **Picker 404 or empty dropdown?** Run migrate, restart API, confirm parity check passes. The UI shows an amber **Knowledge base API outdated** banner when falling back to legacy profiles — do not treat that as the full catalog.
 
+### LAN-only / brief API outage (Phase 100)
+
+After at least one successful load while online, the UI caches the crop picker in **IndexedDB** (per farm) and domain enums locally. If the API is unreachable (network error, not 404):
+
+- **Plants** / **Add plant** / **Start grow** dropdowns show the last cached catalog with a blue **Offline — showing cached knowledge base** banner.
+- If the platform catalog was upgraded while you were offline, you may also see **New crops may be available — reconnect and reload**.
+- A **404** still means migrate/restart — the UI does **not** substitute the full cached catalog for a missing picker route.
+
+**Mobile / warehouse Wi‑Fi:** The UI ships with **vite-plugin-pwa** (service worker for static assets). Catalog data is cached separately in IndexedDB — no extra PWA config is required for picker offline mode. For Capacitor field builds, one online session before going offline is enough to populate the cache.
+
 **Upgrading an existing farm (pre–Phase 85 plants)?** After `make migrate`, run `./scripts/merge-legacy-plants.sh` (audit) then `./scripts/merge-legacy-plants.sh --apply --audit`. This merges typo plant rows (Tomato / tomato / Romas) into one `crop_key` slot and relinks `crop_cycles.plant_id`. Rows that still lack `crop_key` need a manual catalog pick in **Zone → Plants**.
 
 ---

@@ -2,6 +2,11 @@
  * Phase 88 — platform domain enums from GET /platform/domain-enums.
  */
 import { FALLBACK_DOMAIN_ENUMS } from './domainEnums.fallback.js'
+import {
+  cacheDomainEnums,
+  getCachedDomainEnums,
+  isNetworkError,
+} from './catalogCache.js'
 
 /** @typedef {{ value: string, label: string }} EnumOption */
 
@@ -35,11 +40,21 @@ export async function loadDomainEnums(api) {
   if (loadPromise) return loadPromise
   loadPromise = api
     .get('/platform/domain-enums')
-    .then(({ data }) => {
+    .then(async ({ data }) => {
       cached = normalizeDomainEnums(data)
+      await cacheDomainEnums(cached)
       return cached
     })
-    .catch(() => {
+    .catch(async (err) => {
+      if (isNetworkError(err)) {
+        const hit = await getCachedDomainEnums()
+        if (hit?.enums) {
+          cached = normalizeDomainEnums(hit.enums)
+          cached._offline = true
+          cached._offlineFetchedAt = hit.fetched_at
+          return cached
+        }
+      }
       cached = normalizeDomainEnums(null)
       return cached
     })

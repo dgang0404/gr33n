@@ -5,6 +5,17 @@
     </label>
 
     <div
+      v-if="offlineBanner"
+      class="rounded-lg border border-sky-800/60 bg-sky-950/30 px-3 py-2 text-[11px] text-sky-200/90"
+      data-test="crop-library-picker-offline-banner"
+    >
+      Offline — showing cached knowledge base ({{ offlineDate }}).
+      <span v-if="staleBanner" class="block mt-1 text-amber-200/90">
+        New crops may be available — reconnect and reload to refresh.
+      </span>
+    </div>
+
+    <div
       v-if="degradedBanner"
       class="rounded-lg border border-amber-800/60 bg-amber-950/30 px-3 py-2 text-[11px] text-amber-200/90"
       data-test="crop-library-picker-degraded-banner"
@@ -13,7 +24,7 @@
       Showing a limited crop list from profiles only (no full catalog).
     </div>
 
-    <p v-if="!loading && !error && countsLabel && !degradedBanner" class="text-[10px] text-zinc-600">
+    <p v-if="!loading && !error && countsLabel && !degradedBanner && !offlineBanner" class="text-[10px] text-zinc-600">
       {{ countsLabel }} — from farm knowledge base (Postgres). Adjust targets in
       <router-link to="/settings" class="text-green-500 hover:text-green-400">Settings → Crops &amp; targets</router-link>.
     </p>
@@ -84,6 +95,7 @@ import {
   pickerItemHint,
   pickerItemLabel,
 } from '../lib/cropLibraryPicker.js'
+import { formatCacheDate } from '../lib/catalogCache.js'
 
 const props = defineProps({
   farmId: { type: Number, required: true },
@@ -129,6 +141,9 @@ const countsLabel = computed(() => {
 })
 
 const degradedBanner = computed(() => Boolean(picker.value?._degraded))
+const offlineBanner = computed(() => Boolean(picker.value?._offline))
+const staleBanner = computed(() => Boolean(picker.value?._stale))
+const offlineDate = computed(() => formatCacheDate(picker.value?._offlineFetchedAt))
 
 function optionLabel(item) {
   let s = item.display_name || item.crop_key
