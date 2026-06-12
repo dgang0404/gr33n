@@ -10,7 +10,7 @@ func setupPackArgsFixture() map[string]any {
 		"profile":   "house_plant",
 		"zone_id":   int64(12),
 		"zone_name": "Tent A",
-		"plant":     map[string]any{"display_name": "Philodendron"},
+		"plant":     map[string]any{"crop_key": "basil"},
 		"cycle":     map[string]any{"name": "Philodendron — Tent A", "current_stage": "early_veg"},
 		"program": map[string]any{
 			"name":                "Philodendron light feed",
@@ -132,14 +132,14 @@ func TestImpactSummary_CreateTaskFromAlert_LowStock(t *testing.T) {
 }
 
 func TestImpactSummary_AppendsOperatorFacts(t *testing.T) {
-	lines := ImpactSummary("create_plant", map[string]any{"display_name": "Basil"}, []OperatorFact{
+	lines := ImpactSummary("create_plant", map[string]any{"crop_key": "basil"}, []OperatorFact{
 		{Field: "rh_pct", Value: 60, Basis: "operator_stated", Label: "RH 60% (operator-stated, not measured)"},
 	})
 	joined := ""
 	for _, l := range lines {
 		joined += l + "\n"
 	}
-	if !contains(joined, "Basil") || !contains(joined, "operator-stated") {
+	if !contains(joined, "crop_key=basil") || !contains(joined, "operator-stated") {
 		t.Fatalf("impact = %#v", lines)
 	}
 }

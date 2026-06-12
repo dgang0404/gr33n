@@ -19,7 +19,9 @@ import (
 )
 
 // CropTargetsGroundingRule is injected into every grounded chat system prompt.
-const CropTargetsGroundingRule = `Crop targets (Phase 64): NEVER state an EC, pH, VPD, DLI, or photoperiod target unless lookup_crop_targets (or an explicit crop profile stage row in read-tool results) provides it. EC is in mS/cm. If no crop profile is assigned to the plant/cycle, say so and offer to set one in Start grow or Plants — do not guess from general knowledge.`
+const CropTargetsGroundingRule = `Crop targets (Phase 64): NEVER state an EC, pH, VPD, DLI, or photoperiod target unless lookup_crop_targets (or an explicit crop profile stage row in read-tool results) provides it. EC is in mS/cm. If no crop profile is assigned to the plant/cycle, say so and offer to set one in Start grow or Plants — do not guess from general knowledge.
+
+Plant writes (Phase 101): create_plant and grow setup pack plant sections require crop_key from the knowledge base (e.g. tomato, basil, cannabis) — never free-text display_name as crop identity.`
 
 const (
 	maxMultiCropProfiles    = 6

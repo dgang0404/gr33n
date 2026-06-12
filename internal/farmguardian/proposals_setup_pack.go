@@ -2,12 +2,16 @@ package farmguardian
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"regexp"
 	"strings"
 	"time"
 	"unicode"
 
+	"github.com/jackc/pgx/v5"
+
+	"gr33n-api/internal/croplibrary"
 	db "gr33n-api/internal/db"
 	"gr33n-api/internal/farmguardian/tools"
 )
@@ -41,7 +45,7 @@ func matchSetupPackIntent(
 		return nil, "", false
 	}
 
-	plantName, ok := extractPlantDisplayName(question)
+	cropKey, ok := resolveCropKeyForSetupPack(question)
 	if !ok {
 		return nil, "", false
 	}
@@ -49,7 +53,7 @@ func matchSetupPackIntent(
 	if !ok {
 		return nil, "", false
 	}
-	if plantAlreadyOnFarm(plantName, snap) {
+	if exists, err := plantCropKeyOnFarm(ctx, q, farmID, cropKey); err != nil || exists {
 		return nil, "", false
 	}
 	if zoneHasActiveCycle(zoneName, snap) {
@@ -63,8 +67,46 @@ func matchSetupPackIntent(
 		return nil, "", false
 	}
 
-	args := buildSetupPackArgs(inferSetupProfile(zoneName, question), zoneID, zoneName, plantName)
+	args := buildSetupPackArgs(inferSetupProfile(zoneName, question), zoneID, zoneName, cropKey)
 	return args, tools.GrowSetupPackSummary(args), true
+}
+
+func resolveCropKeyForSetupPack(question string) (string, bool) {
+	reg, err := defaultCropRegistry()
+	if err != nil || reg == nil {
+		return "", false
+	}
+	for _, m := range reg.FindMentions(question) {
+		if m.Kind == croplibrary.MentionCrop {
+			return m.Key, true
+		}
+	}
+	if name, ok := extractPlantDisplayName(question); ok {
+		term := strings.ToLower(strings.TrimSpace(name))
+		term = strings.ReplaceAll(term, " ", "_")
+		if m, ok := reg.ResolveTerm(term); ok && m.Kind == croplibrary.MentionCrop {
+			return m.Key, true
+		}
+	}
+	return "", false
+}
+
+func plantCropKeyOnFarm(ctx context.Context, q db.Querier, farmID int64, cropKey string) (bool, error) {
+	cropKey = strings.TrimSpace(cropKey)
+	if cropKey == "" || q == nil || farmID <= 0 {
+		return false, nil
+	}
+	_, err := q.GetPlantByFarmCropKey(ctx, db.GetPlantByFarmCropKeyParams{
+		FarmID:  farmID,
+		CropKey: &cropKey,
+	})
+	if err == nil {
+		return true, nil
+	}
+	if errors.Is(err, pgx.ErrNoRows) {
+		return false, nil
+	}
+	return false, err
 }
 
 func extractPlantDisplayName(question string) (string, bool) {
@@ -189,10 +231,17 @@ func inferSetupProfile(zoneName, question string) string {
 	return "house_plant"
 }
 
-func buildSetupPackArgs(profile string, zoneID int64, zoneName, plantName string) map[string]any {
+func buildSetupPackArgs(profile string, zoneID int64, zoneName, cropKey string) map[string]any {
+	label := titleWords(strings.ReplaceAll(cropKey, "_", " "))
+	reg, _ := defaultCropRegistry()
+	if reg != nil {
+		if m, ok := reg.ResolveTerm(cropKey); ok && strings.TrimSpace(m.DisplayName) != "" {
+			label = m.DisplayName
+		}
+	}
 	today := time.Now().UTC().Format("2006-01-02")
-	cycleName := plantName + " — " + zoneName
-	programName := plantName + " light feed"
+	cycleName := label + " — " + zoneName
+	programName := label + " light feed"
 	volume := 0.5
 	ecLow := 0.8
 	phLo := 5.8
@@ -200,7 +249,7 @@ func buildSetupPackArgs(profile string, zoneID int64, zoneName, plantName string
 	stage := "early_veg"
 
 	if profile == "commercial_zone" {
-		programName = plantName + " feed program"
+		programName = label + " feed program"
 		volume = 95.0
 		ecLow = 1.2
 		phHi = 6.8
@@ -212,7 +261,7 @@ func buildSetupPackArgs(profile string, zoneID int64, zoneName, plantName string
 		"zone_id":   zoneID,
 		"zone_name": zoneName,
 		"plant": map[string]any{
-			"display_name": plantName,
+			"crop_key": cropKey,
 		},
 		"cycle": map[string]any{
 			"name":          cycleName,
@@ -228,7 +277,7 @@ func buildSetupPackArgs(profile string, zoneID int64, zoneName, plantName string
 			"is_active":           true,
 		},
 		"optional_task": map[string]any{
-			"title": "Monitor new " + plantName + " — first two weeks",
+			"title": "Monitor new " + label + " — first two weeks",
 		},
 	}
 }

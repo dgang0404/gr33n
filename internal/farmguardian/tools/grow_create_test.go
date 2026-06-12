@@ -9,7 +9,14 @@ func TestCreatePlantArgsValidation(t *testing.T) {
 	}
 	_, err = execCreatePlant(t.Context(), ExecutorDeps{FarmID: 1}, map[string]any{})
 	if err == nil {
-		t.Fatal("expected display_name required")
+		t.Fatal("expected crop_key required")
+	}
+	_, err = execCreatePlant(t.Context(), ExecutorDeps{FarmID: 1}, map[string]any{
+		"display_name": "Basil",
+		"crop_key":     "basil",
+	})
+	if err == nil {
+		t.Fatal("expected display_name rejected")
 	}
 }
 

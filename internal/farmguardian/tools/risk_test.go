@@ -11,7 +11,7 @@ func TestRiskTierForTool(t *testing.T) {
 		{"mark_alert_read", nil, RiskLow},
 		{"ack_alert", nil, RiskLow},
 		{"create_task", map[string]any{"title": "x"}, RiskMedium},
-		{"create_plant", map[string]any{"display_name": "x"}, RiskMedium},
+		{"create_plant", map[string]any{"crop_key": "basil"}, RiskMedium},
 		{"create_crop_cycle", map[string]any{"zone_id": 1}, RiskMedium},
 		{"create_fertigation_program", map[string]any{"name": "x"}, RiskMedium},
 		{"create_lighting_program", map[string]any{"preset_key": "veg_18_6", "zone_id": float64(1), "actuator_id": float64(1)}, RiskMedium},

@@ -5,27 +5,29 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strings"
 	"testing"
 	"time"
 )
 
-func housePlantSetupPackArgs(zoneID int64, zoneName, plantName string) map[string]any {
+func housePlantSetupPackArgs(zoneID int64, zoneName, cropKey string) map[string]any {
+	label := strings.ToUpper(cropKey[:1]) + cropKey[1:]
 	return map[string]any{
 		"profile":   "house_plant",
 		"zone_id":   zoneID,
 		"zone_name": zoneName,
 		"plant": map[string]any{
-			"display_name":        plantName,
-			"variety_or_cultivar": "heartleaf",
+			"crop_key":            cropKey,
+			"variety_or_cultivar": "Genovese",
 			"notes":               "RO water only",
 		},
 		"cycle": map[string]any{
-			"name":          plantName + " — " + zoneName,
+			"name":          label + " — " + zoneName,
 			"current_stage": "vegetative",
 			"started_at":    time.Now().UTC().Format("2006-01-02"),
 		},
 		"program": map[string]any{
-			"name":                plantName + " light feed",
+			"name":                label + " light feed",
 			"total_volume_liters": 0.5,
 			"ec_trigger_low":      0.8,
 			"ph_trigger_low":      5.8,
@@ -33,7 +35,7 @@ func housePlantSetupPackArgs(zoneID int64, zoneName, plantName string) map[strin
 			"is_active":           true,
 		},
 		"optional_task": map[string]any{
-			"title": "Monitor new " + plantName + " — first two weeks",
+			"title": "Monitor new " + label + " — first two weeks",
 		},
 	}
 }
@@ -46,7 +48,7 @@ func TestPhase32WS3_ApplyGrowSetupPackConfirm(t *testing.T) {
 	defer cancel()
 
 	zoneName := fmt.Sprintf("Living Room WS3 %d", time.Now().UnixNano())
-	plantName := fmt.Sprintf("Philodendron %d", time.Now().UnixNano())
+	cropKey := "basil"
 
 	var zoneID int64
 	err := testPool.QueryRow(ctx, `
@@ -59,16 +61,16 @@ RETURNING id`, zoneName).Scan(&zoneID)
 	t.Cleanup(func() {
 		c, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
-		_, _ = testPool.Exec(c, `DELETE FROM gr33ncore.tasks WHERE farm_id = 1 AND title LIKE $1`, "Monitor new "+plantName+"%")
-		_, _ = testPool.Exec(c, `UPDATE gr33nfertigation.programs SET deleted_at = NOW() WHERE farm_id = 1 AND name = $1`, plantName+" light feed")
+		_, _ = testPool.Exec(c, `DELETE FROM gr33ncore.tasks WHERE farm_id = 1 AND title LIKE $1`, "Monitor new Basil%")
+		_, _ = testPool.Exec(c, `UPDATE gr33nfertigation.programs SET deleted_at = NOW() WHERE farm_id = 1 AND name = $1`, "Basil light feed")
 		_, _ = testPool.Exec(c, `DELETE FROM gr33nfertigation.crop_cycles WHERE zone_id = $1`, zoneID)
-		_, _ = testPool.Exec(c, `UPDATE gr33ncrops.plants SET deleted_at = NOW() WHERE farm_id = 1 AND display_name = $1`, plantName)
+		_, _ = testPool.Exec(c, `UPDATE gr33ncrops.plants SET deleted_at = NOW() WHERE farm_id = 1 AND crop_key = $1`, cropKey)
 		_, _ = testPool.Exec(c, `DELETE FROM gr33ncore.zones WHERE id = $1`, zoneID)
 	})
 
-	packArgs := housePlantSetupPackArgs(zoneID, zoneName, plantName)
+	packArgs := housePlantSetupPackArgs(zoneID, zoneName, cropKey)
 	proposalID := insertGuardianProposalWithRisk(t, "apply_grow_setup_pack", packArgs,
-		fmt.Sprintf("Setup pack: %s in %s", plantName, zoneName), "high")
+		fmt.Sprintf("Setup pack: %s in %s", cropKey, zoneName), "high")
 	t.Cleanup(func() {
 		_, _ = testPool.Exec(context.Background(),
 			`DELETE FROM gr33ncore.guardian_action_proposals WHERE proposal_id = $1`, proposalID)
@@ -93,6 +95,9 @@ RETURNING id`, zoneName).Scan(&zoneID)
 	if confirmBody.Result["primary_program_linked"] != true {
 		t.Fatal("expected primary_program_linked true")
 	}
+	if plantBlock["crop_key"] != cropKey {
+		t.Fatalf("plant crop_key %v want %s", plantBlock["crop_key"], cropKey)
+	}
 
 	plantID, _ := plantBlock["plant_id"].(float64)
 	cycleID, _ := cycleBlock["crop_cycle_id"].(float64)
@@ -114,7 +119,7 @@ SELECT primary_program_id FROM gr33nfertigation.crop_cycles WHERE id = $1`, int6
 	var taskCount int
 	_ = testPool.QueryRow(ctx, `
 SELECT COUNT(*) FROM gr33ncore.tasks
-WHERE farm_id = 1 AND title LIKE $1`, "Monitor new "+plantName+"%").Scan(&taskCount)
+WHERE farm_id = 1 AND title LIKE $1`, "Monitor new Basil%").Scan(&taskCount)
 	if taskCount < 1 {
 		t.Fatal("expected optional monitor task")
 	}
@@ -140,7 +145,7 @@ LIMIT 1`).Scan(&zoneID, &zoneName)
 		t.Skip("no seeded active cycle zone")
 	}
 
-	packArgs := housePlantSetupPackArgs(zoneID, zoneName, "Duplicate setup")
+	packArgs := housePlantSetupPackArgs(zoneID, zoneName, "basil")
 	proposalID := insertGuardianProposalWithRisk(t, "apply_grow_setup_pack", packArgs, "Should fail", "high")
 	t.Cleanup(func() {
 		_, _ = testPool.Exec(context.Background(),

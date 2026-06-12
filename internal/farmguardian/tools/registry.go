@@ -103,7 +103,7 @@ var registry = map[string]Tool{
 	},
 	"create_plant": {
 		ID:              "create_plant",
-		Description:     "Create a plant catalog row (POST /farms/{id}/plants)",
+		Description:     "Create a catalog-bound plant (POST /farms/{id}/plants — crop_key required)",
 		RequiresOperate: true,
 		Execute:         execCreatePlant,
 	},

@@ -5554,12 +5554,20 @@ components:
 
     GuardianCreatePlantArgs:
       type: object
-      description: Frozen args for `create_plant` (Phase 32, medium tier).
-      required: [display_name]
+      description: Frozen args for `create_plant` (Phase 32, medium tier; Phase 101 catalog-bound).
+      required: [crop_key]
       properties:
+        crop_key:
+          type: string
+          description: Knowledge-base crop key (e.g. tomato, basil). Server sets display_name from catalog.
+        crop_profile_id:
+          type: integer
+          format: int64
+          description: Optional legacy profile id — crop_key is preferred.
         display_name:
           type: string
-          description: Farm-scoped plant display name (unique per farm, case-insensitive).
+          deprecated: true
+          description: Rejected — server sets from catalog. Use crop_key.
         variety_or_cultivar:
           type: string
           description: Optional cultivar or variety label.
@@ -5633,10 +5641,11 @@ components:
     GuardianGrowSetupPlantArgs:
       type: object
       description: Plant section inside `apply_grow_setup_pack` (optional — commercial profiles may omit).
-      required: [display_name]
+      required: [crop_key]
       properties:
-        display_name:
+        crop_key:
           type: string
+          description: Knowledge-base crop key. Server sets display_name from catalog.
         variety_or_cultivar:
           type: string
         notes:

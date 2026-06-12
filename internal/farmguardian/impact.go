@@ -28,8 +28,11 @@ func impactSteps(toolID string, args map[string]any) []string {
 	case "patch_fertigation_program":
 		return patchFertigationImpact(args)
 	case "create_plant":
-		name := argString(args, "display_name")
-		return []string{joinName("Create plant", name) + " (editable later)"}
+		key := argString(args, "crop_key")
+		if key != "" {
+			return []string{fmt.Sprintf("Create catalog plant (crop_key=%s) — display name comes from knowledge base", key)}
+		}
+		return []string{"Create catalog plant from crop_key (display name comes from knowledge base)"}
 	case "create_crop_cycle":
 		name := argString(args, "name")
 		return []string{joinName("Start crop cycle", name) + " in the selected zone (no harvest data yet)"}
@@ -121,8 +124,8 @@ func setupPackImpact(args map[string]any) []string {
 	steps := []string{}
 	zone := argString(args, "zone_name")
 	if plant, ok := args["plant"].(map[string]any); ok {
-		if name := argString(plant, "display_name"); name != "" {
-			steps = append(steps, joinName("Create plant", name))
+		if key := argString(plant, "crop_key"); key != "" {
+			steps = append(steps, fmt.Sprintf("Create catalog plant (crop_key=%s)", key))
 		}
 	}
 	if cycle, ok := args["cycle"].(map[string]any); ok {

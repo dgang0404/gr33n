@@ -24,7 +24,6 @@ func TestPhase32WS7_SetupPackIntentToConfirm(t *testing.T) {
 	q := db.New(testPool)
 	suffix := time.Now().UnixNano()
 	zoneName := fmt.Sprintf("Living Room WS7 %d", suffix)
-	plantToken := fmt.Sprintf("basil ws7 %d", suffix%100000)
 
 	var zoneID int64
 	err := testPool.QueryRow(ctx, `
@@ -40,7 +39,7 @@ RETURNING id`, zoneName).Scan(&zoneID)
 		_, _ = testPool.Exec(c, `DELETE FROM gr33ncore.tasks WHERE farm_id = 1 AND title LIKE $1`, "Monitor new Basil%")
 		_, _ = testPool.Exec(c, `UPDATE gr33nfertigation.programs SET deleted_at = NOW() WHERE farm_id = 1 AND name LIKE $1`, "Basil% light feed")
 		_, _ = testPool.Exec(c, `DELETE FROM gr33nfertigation.crop_cycles WHERE zone_id = $1`, zoneID)
-		_, _ = testPool.Exec(c, `UPDATE gr33ncrops.plants SET deleted_at = NOW() WHERE farm_id = 1 AND display_name LIKE $1`, "Basil Ws7%")
+		_, _ = testPool.Exec(c, `UPDATE gr33ncrops.plants SET deleted_at = NOW() WHERE farm_id = 1 AND crop_key = 'basil'`)
 		_, _ = testPool.Exec(c, `DELETE FROM gr33ncore.zones WHERE id = $1`, zoneID)
 	})
 
@@ -49,7 +48,7 @@ RETURNING id`, zoneName).Scan(&zoneID)
 		t.Fatalf("BuildSnapshot: %v", err)
 	}
 
-	question := fmt.Sprintf("add my %s to %s with a light fertigation program", plantToken, zoneName)
+	question := fmt.Sprintf("add basil to %s with a light fertigation program", zoneName)
 	uid := uuid.MustParse(smokeDevUserUUID)
 	props, err := farmguardian.BuildRuleAssistedProposals(ctx, q, uid, 1, uuid.Nil, question, snap)
 	if err != nil {
@@ -94,15 +93,15 @@ RETURNING id`, zoneName).Scan(&zoneID)
 		t.Fatalf("missing ids plant=%v cycle=%v program=%v", plantID, cycleID, programID)
 	}
 
-	var plantName string
+	var cropKey string
 	err = testPool.QueryRow(ctx, `
-SELECT display_name FROM gr33ncrops.plants
-WHERE id = $1 AND farm_id = 1 AND deleted_at IS NULL`, int64(plantID)).Scan(&plantName)
+SELECT crop_key FROM gr33ncrops.plants
+WHERE id = $1 AND farm_id = 1 AND deleted_at IS NULL`, int64(plantID)).Scan(&cropKey)
 	if err != nil {
 		t.Fatalf("plant row: %v", err)
 	}
-	if plantName == "" {
-		t.Fatal("expected plant display_name")
+	if cropKey != "basil" {
+		t.Fatalf("expected crop_key basil, got %q", cropKey)
 	}
 
 	var cycleActive bool

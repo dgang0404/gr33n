@@ -61,6 +61,7 @@ func execApplyGrowSetupPack(ctx context.Context, deps ExecutorDeps, args map[str
 	}
 
 	var plantVariety string
+	var plantID int64
 	if pack.Plant != nil {
 		plantArgs, err := plantArgsFromSetupPack(pack.Plant)
 		if err != nil {
@@ -75,12 +76,18 @@ func execApplyGrowSetupPack(ctx context.Context, deps ExecutorDeps, args map[str
 			if v, ok := m["variety_or_cultivar"].(string); ok {
 				plantVariety = v
 			}
+			if id, err := int64FromArgs(m, "plant_id"); err == nil {
+				plantID = id
+			}
 		}
 	}
 
 	cycleArgs, err := cycleArgsFromSetupPack(pack, plantVariety)
 	if err != nil {
 		return nil, err
+	}
+	if plantID > 0 {
+		cycleArgs["plant_id"] = plantID
 	}
 	cycleOut, err := execCreateCropCycle(ctx, txDeps, cycleArgs)
 	if err != nil {
@@ -180,26 +187,20 @@ func validateGrowSetupPack(ctx context.Context, q db.Querier, farmID int64, pack
 		return err
 	}
 	if pack.Plant != nil {
-		displayName, err := stringFromArgs(pack.Plant, "display_name")
-		if err != nil {
+		if _, err := stringFromArgs(pack.Plant, "crop_key"); err != nil {
 			return fmt.Errorf("plant.%w", err)
-		}
-		plants, err := q.ListPlantsByFarm(ctx, farmID)
-		if err != nil {
-			return err
-		}
-		for _, p := range plants {
-			if strings.EqualFold(strings.TrimSpace(p.DisplayName), displayName) {
-				return fmt.Errorf("plant %q already exists on this farm (#%d)", displayName, p.ID)
-			}
 		}
 	}
 	return nil
 }
 
 func plantArgsFromSetupPack(plant map[string]any) (map[string]any, error) {
+	cropKey, err := stringFromArgs(plant, "crop_key")
+	if err != nil {
+		return nil, fmt.Errorf("plant.%w", err)
+	}
 	out := map[string]any{
-		"display_name": plant["display_name"],
+		"crop_key": cropKey,
 	}
 	if v, ok := plant["variety_or_cultivar"]; ok {
 		out["variety_or_cultivar"] = v
@@ -229,10 +230,6 @@ func cycleArgsFromSetupPack(pack growSetupPack, plantVariety string) (map[string
 		out["batch_label"] = strain
 	} else if plantVariety != "" {
 		out["batch_label"] = plantVariety
-	} else if pack.Plant != nil {
-		if v, ok := pack.Plant["display_name"]; ok {
-			out["batch_label"] = v
-		}
 	}
 	if notes, err := optionalStringFromArgs(pack.Cycle, "cycle_notes"); err != nil {
 		return nil, err
@@ -329,8 +326,8 @@ func GrowSetupPackSummary(pack map[string]any) string {
 	}
 	plant := "grow setup"
 	if p, ok := pack["plant"].(map[string]any); ok {
-		if n, ok := p["display_name"].(string); ok && strings.TrimSpace(n) != "" {
-			plant = strings.TrimSpace(n)
+		if k, ok := p["crop_key"].(string); ok && strings.TrimSpace(k) != "" {
+			plant = catalogLabelForCropKey(k)
 		}
 	}
 	return fmt.Sprintf("Setup pack: %s in %s (plant + cycle + program)", plant, zone)

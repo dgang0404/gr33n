@@ -45,14 +45,13 @@ func TestPhase32WS2_CreatePlantConfirm(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 
-	name := fmt.Sprintf("Guardian smoke plant %d", time.Now().UnixNano())
 	proposalID := insertGuardianProposal(t, "create_plant", map[string]any{
-		"display_name":        name,
-		"variety_or_cultivar": "heartleaf",
-	}, "Create plant: "+name)
+		"crop_key":            "basil",
+		"variety_or_cultivar": "Genovese",
+	}, "Create catalog plant: basil")
 	t.Cleanup(func() {
 		_, _ = testPool.Exec(context.Background(),
-			`UPDATE gr33ncrops.plants SET deleted_at = NOW() WHERE farm_id = 1 AND display_name = $1`, name)
+			`UPDATE gr33ncrops.plants SET deleted_at = NOW() WHERE farm_id = 1 AND crop_key = 'basil'`)
 	})
 
 	tok := smokeJWT(t)
@@ -68,16 +67,19 @@ func TestPhase32WS2_CreatePlantConfirm(t *testing.T) {
 	if plantID == 0 {
 		t.Fatalf("missing plant_id: %+v", confirmBody.Result)
 	}
+	if confirmBody.Result["crop_key"] != "basil" {
+		t.Fatalf("expected crop_key basil, got %v", confirmBody.Result["crop_key"])
+	}
 
-	var gotName string
+	var gotKey string
 	err := testPool.QueryRow(ctx, `
-SELECT display_name FROM gr33ncrops.plants WHERE id = $1 AND farm_id = 1 AND deleted_at IS NULL`,
-		int64(plantID)).Scan(&gotName)
+SELECT crop_key FROM gr33ncrops.plants WHERE id = $1 AND farm_id = 1 AND deleted_at IS NULL`,
+		int64(plantID)).Scan(&gotKey)
 	if err != nil {
 		t.Fatalf("plant row: %v", err)
 	}
-	if gotName != name {
-		t.Fatalf("display_name %q want %q", gotName, name)
+	if gotKey != "basil" {
+		t.Fatalf("crop_key %q want basil", gotKey)
 	}
 
 	assertGuardianToolAudit(t, ctx, "create_plant", proposalID)
@@ -103,15 +105,27 @@ RETURNING id`, fmt.Sprintf("WS2 smoke zone %d", time.Now().UnixNano())).Scan(&zo
 		_, _ = testPool.Exec(context.Background(), `DELETE FROM gr33ncore.zones WHERE id = $1`, zoneID)
 	})
 
-	proposalID := insertGuardianProposal(t, "create_crop_cycle", map[string]any{
-		"zone_id":           zoneID,
-		"name":              "Philodendron — smoke",
-		"strain_or_variety": "heartleaf",
-		"current_stage":     "vegetative",
-		"started_at":        time.Now().UTC().Format("2006-01-02"),
-	}, "Start crop cycle in smoke zone")
-
+	plantProposal := insertGuardianProposal(t, "create_plant", map[string]any{
+		"crop_key": "basil",
+	}, "Create plant for cycle smoke")
 	tok := smokeJWT(t)
+	plantConfirm := authPost(t, tok, "/v1/chat/confirm", map[string]string{"proposal_id": plantProposal})
+	expectStatus(t, plantConfirm, http.StatusOK)
+	var plantBody struct {
+		Result map[string]any `json:"result"`
+	}
+	decodeJSON(t, plantConfirm.Body, &plantBody)
+	plantConfirm.Body.Close()
+	plantID := int64(plantBody.Result["plant_id"].(float64))
+
+	proposalID := insertGuardianProposal(t, "create_crop_cycle", map[string]any{
+		"zone_id":       zoneID,
+		"plant_id":      plantID,
+		"name":          "Basil — smoke",
+		"batch_label":   "heartleaf",
+		"current_stage": "vegetative",
+		"started_at":    time.Now().UTC().Format("2006-01-02"),
+	}, "Start crop cycle in smoke zone")
 	confirmResp := authPost(t, tok, "/v1/chat/confirm", map[string]string{"proposal_id": proposalID})
 	defer confirmResp.Body.Close()
 	expectStatus(t, confirmResp, http.StatusOK)

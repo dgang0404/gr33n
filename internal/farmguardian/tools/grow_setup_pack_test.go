@@ -7,8 +7,8 @@ func TestParseGrowSetupPackArgs(t *testing.T) {
 		"profile":    "house_plant",
 		"zone_id":    float64(12),
 		"zone_name":  "Living Room",
-		"plant":      map[string]any{"display_name": "Philodendron", "variety_or_cultivar": "heartleaf"},
-		"cycle":      map[string]any{"name": "Philodendron — Living Room", "current_stage": "vegetative", "started_at": "2026-05-27"},
+		"plant":      map[string]any{"crop_key": "basil", "variety_or_cultivar": "Genovese"},
+		"cycle":      map[string]any{"name": "Basil — Living Room", "current_stage": "vegetative", "started_at": "2026-05-27"},
 		"program":    map[string]any{"name": "Light feed", "total_volume_liters": 0.5, "ec_trigger_low": 0.8, "ph_trigger_low": 5.8, "ph_trigger_high": 6.5},
 		"optional_task": map[string]any{"title": "Monitor first two weeks"},
 	})
@@ -36,9 +36,9 @@ func TestParseGrowSetupPackArgs_MissingCycle(t *testing.T) {
 func TestGrowSetupPackSummary(t *testing.T) {
 	got := GrowSetupPackSummary(map[string]any{
 		"zone_name": "Living Room",
-		"plant":     map[string]any{"display_name": "Philodendron"},
+		"plant":     map[string]any{"crop_key": "basil"},
 	})
-	if got != "Setup pack: Philodendron in Living Room (plant + cycle + program)" {
+	if got != "Setup pack: Basil in Living Room (plant + cycle + program)" {
 		t.Fatalf("got %q", got)
 	}
 }
@@ -55,9 +55,9 @@ func TestApplyGrowSetupPackRegisteredHighRisk(t *testing.T) {
 func TestCycleArgsFromSetupPack_BatchLabelFallback(t *testing.T) {
 	args, err := cycleArgsFromSetupPack(growSetupPack{
 		ZoneID: 3,
-		Plant:  map[string]any{"display_name": "Philodendron"},
+		Plant:  map[string]any{"crop_key": "basil"},
 		Cycle: map[string]any{
-			"name":          "Philodendron — Living Room",
+			"name":          "Basil — Living Room",
 			"current_stage": "vegetative",
 			"started_at":    "2026-05-27",
 		},
@@ -67,5 +67,12 @@ func TestCycleArgsFromSetupPack_BatchLabelFallback(t *testing.T) {
 	}
 	if args["batch_label"] != "heartleaf" {
 		t.Fatalf("batch_label %#v", args["batch_label"])
+	}
+}
+
+func TestPlantArgsFromSetupPack_RequiresCropKey(t *testing.T) {
+	_, err := plantArgsFromSetupPack(map[string]any{"variety_or_cultivar": "x"})
+	if err == nil {
+		t.Fatal("expected crop_key required")
 	}
 }

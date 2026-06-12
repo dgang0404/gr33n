@@ -41,7 +41,7 @@ func (e *UnsupportedCropError) Error() string {
 }
 
 // CreateOrGet upserts a farm plant slot by crop_key.
-func CreateOrGet(ctx context.Context, q *db.Queries, farmID int64, in CreateInput) (CreateResult, error) {
+func CreateOrGet(ctx context.Context, q db.Querier, farmID int64, in CreateInput) (CreateResult, error) {
 	cropKey := strings.TrimSpace(in.CropKey)
 	if cropKey == "" && in.CropProfileID != nil && *in.CropProfileID > 0 {
 		prof, err := q.GetCropProfile(ctx, *in.CropProfileID)

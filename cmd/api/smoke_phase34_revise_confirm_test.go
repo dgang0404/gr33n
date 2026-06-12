@@ -65,7 +65,7 @@ func TestPhase34_ReviseSupersedeConfirm(t *testing.T) {
 	defer cancel()
 
 	zoneName := fmt.Sprintf("Tent A P34 %d", time.Now().UnixNano())
-	plantName := fmt.Sprintf("Philodendron P34 %d", time.Now().UnixNano())
+	cropKey := "basil"
 	sessionID := uuid.NewString()
 
 	var zoneID int64
@@ -78,21 +78,21 @@ RETURNING id`, zoneName).Scan(&zoneID); err != nil {
 	t.Cleanup(func() {
 		c, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
-		_, _ = testPool.Exec(c, `DELETE FROM gr33ncore.tasks WHERE farm_id = 1 AND title LIKE $1`, "Monitor new "+plantName+"%")
-		_, _ = testPool.Exec(c, `UPDATE gr33nfertigation.programs SET deleted_at = NOW() WHERE farm_id = 1 AND name = $1`, plantName+" light feed")
+		_, _ = testPool.Exec(c, `DELETE FROM gr33ncore.tasks WHERE farm_id = 1 AND title LIKE $1`, "Monitor new Basil%")
+		_, _ = testPool.Exec(c, `UPDATE gr33nfertigation.programs SET deleted_at = NOW() WHERE farm_id = 1 AND name = $1`, "Basil light feed")
 		_, _ = testPool.Exec(c, `DELETE FROM gr33nfertigation.crop_cycles WHERE zone_id = $1`, zoneID)
-		_, _ = testPool.Exec(c, `UPDATE gr33ncrops.plants SET deleted_at = NOW() WHERE farm_id = 1 AND display_name = $1`, plantName)
+		_, _ = testPool.Exec(c, `UPDATE gr33ncrops.plants SET deleted_at = NOW() WHERE farm_id = 1 AND crop_key = $1`, cropKey)
 		_, _ = testPool.Exec(c, `DELETE FROM gr33ncore.guardian_action_proposals WHERE session_id = $1`, sessionID)
 		_, _ = testPool.Exec(c, `DELETE FROM gr33ncore.zones WHERE id = $1`, zoneID)
 	})
 
 	// Revision 1 — the original frozen draft (0.5 L), now superseded.
-	rev1Args := housePlantSetupPackArgs(zoneID, zoneName, plantName)
+	rev1Args := housePlantSetupPackArgs(zoneID, zoneName, cropKey)
 	rev1 := insertRevisionProposal(t, "apply_grow_setup_pack", rev1Args,
 		"Setup pack rev1", "high", sessionID, "", 1, nil, "superseded")
 
 	// Revision 2 — supersedes rev1, volume corrected to 0.3 L, operator-stated RH.
-	rev2Args := housePlantSetupPackArgs(zoneID, zoneName, plantName)
+	rev2Args := housePlantSetupPackArgs(zoneID, zoneName, cropKey)
 	rev2Args["program"].(map[string]any)["total_volume_liters"] = 0.3
 	rev2Meta := map[string]any{
 		"operator_provided": []map[string]any{
