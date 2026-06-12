@@ -31,12 +31,12 @@
         </div>
 
         <div>
-          <label class="block text-xs text-zinc-500 mb-1">Your label (variety / room name)</label>
+          <label class="block text-xs text-zinc-500 mb-1">Batch label (optional — variety or room note)</label>
           <input
             v-model="form.strain"
             type="text"
             class="w-full bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-green-600"
-            placeholder="e.g. OG Kush"
+            placeholder="e.g. Veg Room A, Roma variety, Batch 3"
             data-test="start-grow-strain"
           />
           <select
