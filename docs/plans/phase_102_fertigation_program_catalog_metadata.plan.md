@@ -7,34 +7,34 @@ overview: >
 todos:
   - id: ws0-deps
     content: "WS0: Phase 86 crop_key on cycles; effective crop_profiles per farm"
-    status: pending
+    status: completed
   - id: ws1-program-meta
     content: "WS1: fertigation_programs.meta — recommended_crop_keys, recommended_stages, profile_ec_source"
-    status: pending
+    status: completed
   - id: ws2-recipe-meta
     content: "WS2: application_recipes.meta — crop_keys, stages, links to program ids"
-    status: pending
+    status: completed
   - id: ws3-ec-align
     content: "WS3: ec_band_mscm derived from crop_profile_stages for tagged crop_key+stage"
-    status: pending
+    status: completed
   - id: ws4-seed
     content: "WS4: Seed demo programs + recipes (veg JLF, flower FFJ+WCA) with crop_key tags"
-    status: pending
+    status: completed
   - id: ws5-api
     content: "WS5: GET programs/recipes filter by crop_key + stage; suggest for Start grow"
-    status: pending
+    status: completed
   - id: ws6-ui
     content: "WS6: Start grow + Water tab — program picker filtered; recipe name shows crop fit"
-    status: pending
+    status: completed
   - id: ws7-phase96
     content: "WS7: Phase 96 validation reads program+recipe metadata (not name heuristics)"
-    status: pending
+    status: completed
   - id: ws8-commons
     content: "WS8: Commons recipe pack import preserves crop_key tags in recipe meta"
-    status: pending
+    status: completed
   - id: ws9-guardian
     content: "WS9: Guardian feeding advice cites program crop_key + profile EC chain"
-    status: pending
+    status: completed
 isProject: false
 ---
 
@@ -42,7 +42,9 @@ isProject: false
 
 ## Status
 
-**Planned.** Long-term home for **recipe ↔ crop profile** linkage (not Phase 101 — that is Guardian write tools).
+**Shipped** on `main`. Closure: [`phase-102-closure.md`](phase-102-closure.md) (**OC-102**).
+
+Long-term home for **recipe ↔ crop profile** linkage (not Phase 101 — that is Guardian write tools).
 
 **Depends on:** [Phase 86](phase_86_grow_ops_catalog_chain.plan.md), [Phase 96](phase_96_grow_feeding_program_validation.plan.md) (v1 warnings first).
 
@@ -178,10 +180,10 @@ When `primary_program_id` set on active cycle:
 
 ## Acceptance
 
-- [ ] Demo seed: veg JLF program tagged `early_veg`/`late_veg`; flower FFJ tagged `early_flower`+
-- [ ] Start grow cannabis + early_flower → flower program suggested; veg program flagged
-- [ ] Recipe row shows crop_keys in API GET
-- [ ] Phase 96 smokes pass using metadata (not name substring)
-- [ ] Guardian mentions program/recipe crop fit when asked about feeding
+- [x] Demo seed: veg JLF program tagged `early_veg`/`late_veg`; flower FFJ tagged `early_flower`+
+- [x] Start grow cannabis + early_flower → flower program suggested; veg program flagged
+- [x] Recipe row shows crop_keys in API GET (`target_crop_categories`)
+- [x] Phase 96 smokes pass using metadata (not name substring)
+- [x] Guardian mentions program/recipe crop fit when asked about feeding
 
 **Prompt loop:** `phase 102 ws1` … or **`phase 102`**.
