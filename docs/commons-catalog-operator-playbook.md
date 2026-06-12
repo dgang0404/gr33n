@@ -38,6 +38,8 @@ Apply **`db/migrations/20260426_commons_catalog.sql`** (includes one demo docume
 
 **Kind:** `agronomy_seed_pack` in catalog `body`.
 
+**Promotion model (Phase 98):** This pack is **not** the platform catalog. Platform crops live in Postgres after **`make migrate`**. The commons import is an **optional org audit record** per farm — see [`enterprise-catalog-promotion-model.md`](enterprise-catalog-promotion-model.md).
+
 | Field | Meaning |
 |-------|---------|
 | `platform_catalog_version` | Expected Postgres `crop_catalog_*` version after migrate |
@@ -67,5 +69,6 @@ Operators should set **`license_spdx`** (e.g. `CC-BY-4.0`) and **`license_notes`
 ## Related
 
 - Phase 14 plan: [`plans/phase_14_network_and_commons.plan.md`](plans/phase_14_network_and_commons.plan.md)
+- **Enterprise promotion model (Phase 98):** [`enterprise-catalog-promotion-model.md`](enterprise-catalog-promotion-model.md)
 - Insert Commons (separate feature): [`insert-commons-pipeline-runbook.md`](insert-commons-pipeline-runbook.md)
 - Phase 14 operator index: [`phase-14-operator-documentation.md`](phase-14-operator-documentation.md)

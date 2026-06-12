@@ -6,19 +6,19 @@ overview: >
 todos:
   - id: ws1-doc
     content: "WS1: docs/enterprise-catalog-promotion-model.md — promote vs local matrix"
-    status: pending
+    status: completed
   - id: ws2-manifest
     content: "WS2: site-manifest.example.yaml — catalog_version pin + override pack path"
-    status: pending
+    status: completed
   - id: ws3-commons
     content: "WS3: Commons playbook — agronomy pack vs platform catalog vs farm overrides"
-    status: pending
+    status: completed
   - id: ws4-smoke
     content: "WS4: Two-farm smoke — Farm A override ≠ Farm B builtin"
-    status: pending
+    status: completed
   - id: ws5-architecture
     content: "WS5: hypothetical-enterprise-topology.md + architecture cross-link"
-    status: pending
+    status: completed
 isProject: false
 ---
 
@@ -26,7 +26,7 @@ isProject: false
 
 ## Status
 
-**Planned.** Closes **blind spot #9** (multi-farm / commons confusion).
+**Shipped (OC-98).** Closure: [`phase-98-closure.md`](phase-98-closure.md).
 
 **Depends on:** [Phase 83](phase_83_enterprise_agronomy_seed_pack.plan.md), [Phase 84](phase_84_crop_catalog_enterprise_db.plan.md).
 
@@ -56,8 +56,8 @@ Document with diagrams: HQ publishes catalog migration → all sites migrate →
 
 ## Acceptance
 
-- [ ] Enterprise README links promotion model
-- [ ] site-manifest documents `platform_catalog_version` expectation
-- [ ] Two-farm smoke in CI or documented manual checklist
+- [x] Enterprise README links promotion model
+- [x] site-manifest documents `platform_catalog_version` expectation
+- [x] Two-farm smoke in CI or documented manual checklist
 
 **Prompt loop:** **`phase 98`**.

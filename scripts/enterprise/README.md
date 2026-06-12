@@ -79,7 +79,7 @@ make guardian-bootstrap-farm FARM_ID=1
 
 **Site manifest:** set `guardian_seed.enabled: true` in YAML — `apply-site-manifest.sh` calls import + bootstrap after farm create. See [`site-manifest.example.yaml`](site-manifest.example.yaml).
 
-**Depends on Phase 82 + Phase 84** (crop profiles + `crop_catalog_*` in Postgres). Cutover: [`docs/crop-catalog-db-cutover-runbook.md`](../../docs/crop-catalog-db-cutover-runbook.md). **Add crops:** [`docs/catalog-integrator-playbook.md`](../../docs/catalog-integrator-playbook.md) · PR checklist: [`docs/templates/add-crop-pr-checklist.md`](../../docs/templates/add-crop-pr-checklist.md).
+**Depends on Phase 82 + Phase 84** (crop profiles + `crop_catalog_*` in Postgres). Cutover: [`docs/crop-catalog-db-cutover-runbook.md`](../../docs/crop-catalog-db-cutover-runbook.md). **Add crops:** [`docs/catalog-integrator-playbook.md`](../../docs/catalog-integrator-playbook.md) · PR checklist: [`docs/templates/add-crop-pr-checklist.md`](../../docs/templates/add-crop-pr-checklist.md). **Multi-site promote vs local (Phase 98):** [`docs/enterprise-catalog-promotion-model.md`](../../docs/enterprise-catalog-promotion-model.md).
 
 ### WS6 — farm crop override UI (Settings)
 

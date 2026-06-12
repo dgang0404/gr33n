@@ -14,6 +14,18 @@
 # Optional org the farm should belong to. Omit for a standalone farm.
 org_slug: north-warehouse-co
 
+# Phase 98 — platform catalog expectations (HQ release vs farm-local overrides).
+# After migrate, verify: SELECT MAX(catalog_version) FROM gr33ncrops.crop_catalog_entries
+# must be >= catalog_version_min. Overrides in farm_local never promote to other sites.
+platform:
+  catalog_version_min: 4
+  catalog_source: db
+
+# Phase 98 — optional farm-local agronomy overrides (never platform-wide).
+# Apply with: ./scripts/enterprise/apply-agronomy-overrides.sh --farm-id <id> --file <path>
+farm_local:
+  agronomy_override_pack: null   # e.g. data/agronomy-override-pack.example.yaml
+
 farm_name: "North Warehouse — Bay 3"
 
 # Zones to create. type maps to gr33ncore.zones.zone_type (free text;

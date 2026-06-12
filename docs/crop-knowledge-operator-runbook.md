@@ -136,6 +136,7 @@ Field guides supplement RAG; structured numbers still come from `lookup_crop_tar
 | `TestPhase94_*` | Genetics EC profile beats farm `crop_key` override on effective API |
 | `TestPhase95_*` | Picker `version` matches YAML; catalog crop in commons + picker |
 | `TestPhase97_*` | Farm override EC in `lookup_crop_targets`; stale RAG numbers stripped |
+| `TestPhase98_*` | Farm A EC override does not change Farm B builtin profile |
 
 ---
 

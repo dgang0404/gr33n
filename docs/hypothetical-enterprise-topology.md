@@ -5,7 +5,7 @@
 
 This document maps **existing** gr33n nouns (organization, farm, zone, fertigation program, commons catalog, Pi edge) onto a large deployment **without** rewriting the platform. Treat it as a thought experiment and integration guide.
 
-**Companion docs:** [`raspberry-pi-and-deployment-topology.md`](raspberry-pi-and-deployment-topology.md), [`pi-integration-guide.md`](pi-integration-guide.md), [`mqtt-edge-operator-playbook.md`](mqtt-edge-operator-playbook.md), [`commons-catalog-operator-playbook.md`](commons-catalog-operator-playbook.md), [`enterprise-catalog-version-notifications.md`](enterprise-catalog-version-notifications.md), [`insert-commons-pipeline-runbook.md`](insert-commons-pipeline-runbook.md), [`offline-or-intranet-deployment.md`](offline-or-intranet-deployment.md), [`phase-14-operator-documentation.md`](phase-14-operator-documentation.md#phase-31-field-validation-edge) (Phase 31 operator index), [`scripts/enterprise/README.md`](../scripts/enterprise/README.md).
+**Companion docs:** [`raspberry-pi-and-deployment-topology.md`](raspberry-pi-and-deployment-topology.md), [`pi-integration-guide.md`](pi-integration-guide.md), [`mqtt-edge-operator-playbook.md`](mqtt-edge-operator-playbook.md), [`commons-catalog-operator-playbook.md`](commons-catalog-operator-playbook.md), [`enterprise-catalog-promotion-model.md`](enterprise-catalog-promotion-model.md), [`enterprise-catalog-version-notifications.md`](enterprise-catalog-version-notifications.md), [`insert-commons-pipeline-runbook.md`](insert-commons-pipeline-runbook.md), [`offline-or-intranet-deployment.md`](offline-or-intranet-deployment.md), [`phase-14-operator-documentation.md`](phase-14-operator-documentation.md#phase-31-field-validation-edge) (Phase 31 operator index), [`scripts/enterprise/README.md`](../scripts/enterprise/README.md).
 
 ---
 
@@ -73,9 +73,17 @@ There is **no built-in "broadcast to all farms" button**. Hypothetical promotion
 
 Change control: every write should leave an **audit trail**; rollouts are staged (canary farms → region → global).
 
----
+### Platform crop catalog vs farm EC overrides (Phase 98)
 
-## Topology B — Frontier autonomy (local stack per site)
+| Layer | Promotes to all sites? | Mechanism |
+|-------|------------------------|-----------|
+| **`crop_catalog_entries` + builtins** | Yes — after each site runs `make migrate` | HQ ships seed SQL; same Postgres rows everywhere |
+| **Commons agronomy seed pack** | Optional per farm | Import records audit only — does not run migrations |
+| **Farm EC override / genetics profile** | **No** | Settings or YAML scoped to `farm_id` — Farm A ≠ Farm B |
+
+See [`enterprise-catalog-promotion-model.md`](enterprise-catalog-promotion-model.md). Site manifests pin `platform.catalog_version_min` — see [`site-manifest.example.yaml`](../scripts/enterprise/site-manifest.example.yaml).
+
+---
 
 Best when **frontier sites** must run **offline** or cannot depend on HQ uptime. Aligns with gr33n's *"don't call home"* posture.
 
