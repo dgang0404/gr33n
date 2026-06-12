@@ -105,10 +105,12 @@ func renderLookupCropTargets(ctx context.Context, q db.Querier, farmID int64, qu
 		return "lookup_crop_targets: no crop profile assigned to the active grow or plant. Offer to pick a profile in Start grow or Plants.", nil
 	}
 
-	return renderSingleCropTargets(ctx, q, profileID, stage, plantName)
+	return renderSingleCropTargets(ctx, q, profileID, stage, plantName, question)
 }
 
-func renderSingleCropTargets(ctx context.Context, q db.Querier, profileID int64, stage db.Gr33nfertigationGrowthStageEnum, plantName string) (string, error) {
+var moistureQuestionIntent = regexp.MustCompile(`(?i)\b(how wet|water|watering|wet|moisture|irrigation|substrate|dryback|runoff)\b`)
+
+func renderSingleCropTargets(ctx context.Context, q db.Querier, profileID int64, stage db.Gr33nfertigationGrowthStageEnum, plantName, question string) (string, error) {
 	profile, err := q.GetCropProfile(ctx, profileID)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -117,6 +119,11 @@ func renderSingleCropTargets(ctx context.Context, q db.Querier, profileID int64,
 		return "", err
 	}
 	if stage == "" {
+		if moistureQuestionIntent.MatchString(question) {
+			if out := formatMoistureOnlyTargets(profile, plantName); out != "" {
+				return out, nil
+			}
+		}
 		if len(profile.DisplayName) > 0 {
 			stages, err := q.ListCropProfileStages(ctx, profileID)
 			if err != nil {
@@ -164,7 +171,32 @@ func renderSingleCropTargets(ctx context.Context, q db.Querier, profileID int64,
 	if profile.Source != nil && strings.TrimSpace(*profile.Source) != "" {
 		b.WriteString("\nSource: " + strings.TrimSpace(*profile.Source))
 	}
+	appendProfileMoistureMeta(&b, profile.Meta, question)
 	return b.String(), nil
+}
+
+func formatMoistureOnlyTargets(profile db.Gr33ncropsCropProfile, plantName string) string {
+	meta := croplibrary.ParseProfileCatalogMeta(profile.Meta)
+	block := meta.FormatMoistureBlock()
+	if block == "" {
+		return ""
+	}
+	label := profile.DisplayName
+	if plantName != "" {
+		label = plantName + " (" + profile.DisplayName + ")"
+	}
+	return fmt.Sprintf("lookup_crop_targets — %s (%s)\n%s", label, profile.CropKey, block)
+}
+
+func appendProfileMoistureMeta(b *strings.Builder, raw []byte, question string) {
+	if !moistureQuestionIntent.MatchString(question) {
+		return
+	}
+	block := croplibrary.ParseProfileCatalogMeta(raw).FormatMoistureBlock()
+	if block != "" {
+		b.WriteString("\n")
+		b.WriteString(block)
+	}
 }
 
 func renderLookupCropTargetsMulti(ctx context.Context, q db.Querier, farmID int64, question string, cropMentions, unsupMentions []croplibrary.ResolvedMention) (string, error) {

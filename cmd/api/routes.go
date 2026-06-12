@@ -24,6 +24,7 @@ import (
 	chathandler "gr33n-api/internal/handler/chat"
 	fieldguideshandler "gr33n-api/internal/handler/fieldguides"
 	commonscataloghandler "gr33n-api/internal/handler/commonscatalog"
+	commonscropcataloghandler "gr33n-api/internal/handler/commonscropcatalog"
 	costhandler "gr33n-api/internal/handler/cost"
 	cropcyclehandler "gr33n-api/internal/handler/cropcycle"
 	cropprofilehandler "gr33n-api/internal/handler/cropprofile"
@@ -95,6 +96,7 @@ func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationwo
 	cost := costhandler.NewHandler(pool, fileStore)
 	files := fileattachhandler.NewHandler(pool, fileStore, fileCfg.DownloadURLTTL)
 	commonsCatalog := commonscataloghandler.NewHandler(pool)
+	commonsCropCatalog := commonscropcataloghandler.NewHandler(pool)
 
 	jwtChain := func(h http.Handler) http.Handler {
 		return requireJWT(withRequestLog("jwt", h))
@@ -186,6 +188,12 @@ func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationwo
 	mux.Handle("GET /commons/catalog/{slug}", jwt(http.HandlerFunc(commonsCatalog.GetBySlug)))
 	mux.Handle("GET /farms/{id}/commons/catalog-imports", jwt(http.HandlerFunc(commonsCatalog.ListFarmImports)))
 	mux.Handle("POST /farms/{id}/commons/catalog-imports", jwt(http.HandlerFunc(commonsCatalog.Import)))
+
+	// Phase 84 WS-J — platform crop catalog + agronomy field guides (read-only)
+	mux.Handle("GET /commons/crop-catalog", jwt(http.HandlerFunc(commonsCropCatalog.ListCropCatalog)))
+	mux.Handle("GET /commons/crop-catalog/{crop_key}", jwt(http.HandlerFunc(commonsCropCatalog.GetCropCatalogEntry)))
+	mux.Handle("GET /commons/agronomy-field-guides", jwt(http.HandlerFunc(commonsCropCatalog.ListFieldGuides)))
+	mux.Handle("GET /commons/agronomy-field-guides/{slug}", jwt(http.HandlerFunc(commonsCropCatalog.GetFieldGuide)))
 
 	// Farms
 	mux.Handle("GET /farms", jwt(http.HandlerFunc(farm.List)))

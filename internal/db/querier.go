@@ -223,6 +223,7 @@ type Querier interface {
 	GetAutomationRunByDetails(ctx context.Context, arg GetAutomationRunByDetailsParams) (Gr33ncoreAutomationRun, error)
 	GetAutomationRunByProgramAndDetails(ctx context.Context, arg GetAutomationRunByProgramAndDetailsParams) (Gr33ncoreAutomationRun, error)
 	GetBaseUnitForType(ctx context.Context, unitType string) (Gr33ncoreUnit, error)
+	GetBuiltinCropProfileIDByCropKey(ctx context.Context, cropKey string) (int64, error)
 	GetConversationSessionMeta(ctx context.Context, arg GetConversationSessionMetaParams) (json.RawMessage, error)
 	GetCostCategoryTotalsByFarm(ctx context.Context, farmID int64) ([]GetCostCategoryTotalsByFarmRow, error)
 	GetCostCategoryTotalsByFarmForYear(ctx context.Context, arg GetCostCategoryTotalsByFarmForYearParams) ([]GetCostCategoryTotalsByFarmForYearRow, error)
@@ -322,6 +323,7 @@ type Querier interface {
 	GetProfileByUserID(ctx context.Context, userID uuid.UUID) (Gr33ncoreProfile, error)
 	// Phase 34 — walk parent pointers to the first draft (revision 1) for audit lineage.
 	GetProposalChainRoot(ctx context.Context, proposalID uuid.UUID) (uuid.UUID, error)
+	GetPublishedAgronomyFieldGuideBySlug(ctx context.Context, slug string) (Gr33ncropsAgronomyFieldGuide, error)
 	GetPublishedCommonsCatalogEntryBySlug(ctx context.Context, slug string) (GetPublishedCommonsCatalogEntryBySlugRow, error)
 	// Phase 28 WS5 — debounce lookup for the chat-budget-warning alert. The
 	// chat handler fires at most one warning per user per cost-guard

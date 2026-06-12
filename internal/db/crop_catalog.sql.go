@@ -58,6 +58,19 @@ func (q *Queries) GetAgronomyFieldGuideBySlug(ctx context.Context, slug string) 
 	return i, err
 }
 
+const getBuiltinCropProfileIDByCropKey = `-- name: GetBuiltinCropProfileIDByCropKey :one
+SELECT id
+FROM gr33ncrops.crop_profiles
+WHERE farm_id IS NULL AND is_builtin = TRUE AND crop_key = $1
+`
+
+func (q *Queries) GetBuiltinCropProfileIDByCropKey(ctx context.Context, cropKey string) (int64, error) {
+	row := q.db.QueryRow(ctx, getBuiltinCropProfileIDByCropKey, cropKey)
+	var id int64
+	err := row.Scan(&id)
+	return id, err
+}
+
 const getCropCatalogEntry = `-- name: GetCropCatalogEntry :one
 SELECT crop_key, display_name, supported, category, source, substrate, watering_style, runoff_pct_target, moisture_guidance, cousin_of, unsupported_reason, catalog_version, meta, created_at, updated_at
 FROM gr33ncrops.crop_catalog_entries
@@ -81,6 +94,33 @@ func (q *Queries) GetCropCatalogEntry(ctx context.Context, cropKey string) (Gr33
 		&i.UnsupportedReason,
 		&i.CatalogVersion,
 		&i.Meta,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const getPublishedAgronomyFieldGuideBySlug = `-- name: GetPublishedAgronomyFieldGuideBySlug :one
+SELECT id, slug, title, crop_key, guide_kind, domain, safety_tier, body_md, catalog_version, published, sort_order, created_at, updated_at
+FROM gr33ncrops.agronomy_field_guides
+WHERE slug = $1 AND published = TRUE
+`
+
+func (q *Queries) GetPublishedAgronomyFieldGuideBySlug(ctx context.Context, slug string) (Gr33ncropsAgronomyFieldGuide, error) {
+	row := q.db.QueryRow(ctx, getPublishedAgronomyFieldGuideBySlug, slug)
+	var i Gr33ncropsAgronomyFieldGuide
+	err := row.Scan(
+		&i.ID,
+		&i.Slug,
+		&i.Title,
+		&i.CropKey,
+		&i.GuideKind,
+		&i.Domain,
+		&i.SafetyTier,
+		&i.BodyMd,
+		&i.CatalogVersion,
+		&i.Published,
+		&i.SortOrder,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)

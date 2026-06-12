@@ -24,6 +24,16 @@ SELECT *
 FROM gr33ncrops.agronomy_field_guides
 WHERE slug = $1;
 
+-- name: GetPublishedAgronomyFieldGuideBySlug :one
+SELECT *
+FROM gr33ncrops.agronomy_field_guides
+WHERE slug = $1 AND published = TRUE;
+
+-- name: GetBuiltinCropProfileIDByCropKey :one
+SELECT id
+FROM gr33ncrops.crop_profiles
+WHERE farm_id IS NULL AND is_builtin = TRUE AND crop_key = $1;
+
 -- name: CountCropCatalogEntries :one
 SELECT COUNT(*)::bigint AS count FROM gr33ncrops.crop_catalog_entries;
 

@@ -465,6 +465,86 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
 
+  /commons/crop-catalog:
+    get:
+      tags: [commons]
+      summary: List platform crop catalog entries and alias index
+      description: >
+        Returns supported and unsupported crop metadata from `gr33ncrops.crop_catalog_entries`.
+        EC/pH/VPD targets remain on builtin `crop_profiles` — not duplicated here.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: supported
+          in: query
+          schema: { type: boolean }
+          description: When true/false, filter to supported or unsupported entries only
+      responses:
+        "200":
+          description: Catalog version, entries, and alias → crop_key map
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CropCatalogListResponse" }
+
+  /commons/crop-catalog/{crop_key}:
+    get:
+      tags: [commons]
+      summary: Get one crop catalog entry
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: crop_key
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Entry with per-crop aliases and builtin crop_profile_id when supported
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CropCatalogEntryDetail" }
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /commons/agronomy-field-guides:
+    get:
+      tags: [commons]
+      summary: List published agronomy field guides (metadata only)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: crop_key
+          in: query
+          schema: { type: string }
+        - name: guide_kind
+          in: query
+          schema: { type: string }
+          description: e.g. crop_nutrition, crop_care, trades, unsupported
+      responses:
+        "200":
+          description: Guide summaries without body_md
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/AgronomyFieldGuideSummary" }
+
+  /commons/agronomy-field-guides/{slug}:
+    get:
+      tags: [commons]
+      summary: Get one published field guide with markdown body
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Full guide including body_md
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AgronomyFieldGuideDetail" }
+        "404":
+          $ref: "#/components/responses/NotFound"
+
   # ── Farms ──────────────────────────────────────────────────
 
   /farms:
@@ -8493,3 +8573,68 @@ components:
         catalog_entry:
           type: object
           description: Snapshot of metadata + parsed body for tooling
+
+    CropCatalogListResponse:
+      type: object
+      properties:
+        catalog_version: { type: integer }
+        count: { type: integer }
+        entries:
+          type: array
+          items: { $ref: "#/components/schemas/CropCatalogEntry" }
+        aliases:
+          type: object
+          additionalProperties: { type: string }
+          description: alias → crop_key
+
+    CropCatalogEntry:
+      type: object
+      properties:
+        crop_key: { type: string }
+        display_name: { type: string }
+        supported: { type: boolean }
+        category: { type: string, nullable: true }
+        source: { type: string, nullable: true }
+        substrate: { type: string, nullable: true }
+        watering_style: { type: string, nullable: true }
+        runoff_pct_target: { type: string, nullable: true }
+        moisture_guidance: { type: string, nullable: true }
+        cousin_of: { type: string, nullable: true }
+        unsupported_reason: { type: string, nullable: true }
+        catalog_version: { type: integer }
+        meta: { type: object }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+
+    CropCatalogEntryDetail:
+      allOf:
+        - { $ref: "#/components/schemas/CropCatalogEntry" }
+        - type: object
+          properties:
+            aliases:
+              type: array
+              items: { type: string }
+            crop_profile_id:
+              type: integer
+              nullable: true
+              description: Builtin profile id when supported and migrated
+
+    AgronomyFieldGuideSummary:
+      type: object
+      properties:
+        id: { type: integer }
+        slug: { type: string }
+        title: { type: string }
+        crop_key: { type: string, nullable: true }
+        guide_kind: { type: string }
+        domain: { type: string, nullable: true }
+        safety_tier: { type: string }
+        catalog_version: { type: integer }
+        sort_order: { type: integer }
+
+    AgronomyFieldGuideDetail:
+      allOf:
+        - { $ref: "#/components/schemas/AgronomyFieldGuideSummary" }
+        - type: object
+          properties:
+            body_md: { type: string }
