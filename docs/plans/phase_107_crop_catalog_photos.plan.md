@@ -66,8 +66,8 @@ Integrator doc (Phase 95) adds: new crop = YAML + optional image + seed SQL.
 
 ## Acceptance
 
-- [ ] ≥5 ornamentals show thumbnails after migrate
-- [ ] Picker works with `image_url` null (backward compatible)
-- [ ] Commons API includes `image_url`
+- [x] ≥5 ornamentals show thumbnails after migrate
+- [x] Picker works with `image_url` null (backward compatible)
+- [x] Commons API includes `image_url`
 
 **Prompt loop:** **`phase 107`**.

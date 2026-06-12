@@ -6,22 +6,22 @@ overview: >
 todos:
   - id: ws0-deps
     content: "WS0: Phase 102 WS2 recipe.meta schema shipped"
-    status: pending
+    status: completed
   - id: ws1-manifest
     content: "WS1: commons pack JSON schema — recipes[].crop_keys, stages, ec_band"
-    status: pending
+    status: completed
   - id: ws2-import
     content: "WS2: import-recipe-pack.sh writes meta; validate against crop_catalog"
-    status: pending
+    status: completed
   - id: ws3-seed
     content: "WS3: Update phase31/enterprise demo packs with crop_key tags"
-    status: pending
+    status: completed
   - id: ws4-ui
     content: "WS4: Commons catalog UI shows crop fit badges on recipe packs"
-    status: pending
+    status: completed
   - id: ws5-smokes
     content: "WS5: Import pack → Start grow suggests tagged recipe for cannabis flower"
-    status: pending
+    status: completed
 isProject: false
 ---
 
