@@ -194,14 +194,39 @@ export function buildCompareRoute(farmId, cycleIds) {
 }
 
 /**
- * Compare pair: current harvested cycle + prior harvested in same zone.
+ * Most recent harvested (inactive) cycle with the same catalog crop_key.
+ * @param {object[]} cycles
+ * @param {string} cropKey
+ * @param {number} [excludeId]
+ */
+export function lastHarvestedCycleWithCropKey(cycles, cropKey, excludeId = null) {
+  const key = String(cropKey || '').trim()
+  if (!key) return null
+  return (cycles || [])
+    .filter((c) => {
+      if (!c || c.is_active) return false
+      if (String(c.crop_key || '') !== key) return false
+      if (excludeId != null && Number(c.id) === Number(excludeId)) return false
+      return true
+    })
+    .sort((a, b) => Number(b.id) - Number(a.id))[0] || null
+}
+
+/**
+ * Compare pair: current harvested cycle + prior harvested with same crop_key
+ * (falls back to same zone when crop_key is missing).
  * @param {number} farmId
  * @param {object[]} cycles
  * @param {number} currentCycleId
  * @param {number} zoneId
+ * @param {string|null} [cropKey]
  */
-export function buildPostHarvestCompareRoute(farmId, cycles, currentCycleId, zoneId) {
-  const prior = lastHarvestedCycleInZone(cycles, zoneId, currentCycleId)
+export function buildPostHarvestCompareRoute(farmId, cycles, currentCycleId, zoneId, cropKey = null) {
+  const current = (cycles || []).find((c) => Number(c.id) === Number(currentCycleId))
+  const key = cropKey || current?.crop_key || null
+  const prior = key
+    ? lastHarvestedCycleWithCropKey(cycles, key, currentCycleId)
+    : lastHarvestedCycleInZone(cycles, zoneId, currentCycleId)
   const ids = prior ? [currentCycleId, prior.id] : [currentCycleId]
   return buildCompareRoute(farmId, ids)
 }

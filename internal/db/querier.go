@@ -451,6 +451,8 @@ type Querier interface {
 	ListCostTransactionsByFarmUpdatedAfterFirst(ctx context.Context, arg ListCostTransactionsByFarmUpdatedAfterFirstParams) ([]Gr33ncoreCostTransaction, error)
 	// Subsequent pages keyed by (updated_at, id).
 	ListCostTransactionsByFarmUpdatedAfterNext(ctx context.Context, arg ListCostTransactionsByFarmUpdatedAfterNextParams) ([]Gr33ncoreCostTransaction, error)
+	// Phase 104 — farm rollup grouped by catalog crop_key (via plants.plant_id).
+	ListCropAnalyticsByFarm(ctx context.Context, farmID int64) ([]ListCropAnalyticsByFarmRow, error)
 	ListCropCatalogAliases(ctx context.Context) ([]Gr33ncropsCropCatalogAlias, error)
 	ListCropCatalogEntries(ctx context.Context) ([]Gr33ncropsCropCatalogEntry, error)
 	ListCropCycleStageEventsByCycle(ctx context.Context, cropCycleID int64) ([]Gr33nfertigationCropCycleStageEvent, error)

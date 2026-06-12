@@ -3352,6 +3352,41 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/Error" }
 
+  /farms/{id}/crop-analytics:
+    get:
+      tags: [crop-cycle-analytics]
+      summary: Farm harvest rollup by catalog crop_key
+      description: >
+        Groups crop cycles by `plants.crop_key` — cycle counts and total yield
+        grams per catalog crop. Cycles without a linked plant are omitted.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [crops]
+                properties:
+                  crops:
+                    type: array
+                    items:
+                      type: object
+                      required: [crop_key, catalog_display_name, cycle_count, active_count, total_yield_grams]
+                      properties:
+                        crop_key: { type: string }
+                        catalog_display_name: { type: string }
+                        cycle_count: { type: integer, format: int64 }
+                        active_count: { type: integer, format: int64 }
+                        total_yield_grams: { type: number, format: double }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "403":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+
   # ── Crop profiles (Phase 64 / Phase 83 WS6) ────────────────
 
   /farms/{id}/crop-profiles:
@@ -6336,6 +6371,18 @@ components:
       required: [cycle, duration_days, fertigation, cost, yield, stages, stage_history_supported]
       properties:
         cycle: { $ref: "#/components/schemas/CropCycle" }
+        crop_key:
+          type: string
+          nullable: true
+          description: Catalog crop_key from the linked plant (Phase 104).
+        catalog_display_name:
+          type: string
+          nullable: true
+          description: Knowledge-base display name for crop_key.
+        batch_label:
+          type: string
+          nullable: true
+          description: Variety/batch label for this grow run.
         duration_days:
           type: integer
           format: int64

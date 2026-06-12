@@ -57,6 +57,21 @@ SELECT * FROM gr33nfertigation.crop_cycles
 WHERE zone_id = $1 AND is_active = TRUE
 LIMIT 1;
 
+-- name: ListCropAnalyticsByFarm :many
+-- Phase 104 — farm rollup grouped by catalog crop_key (via plants.plant_id).
+SELECT
+    p.crop_key,
+    COUNT(*)::bigint AS cycle_count,
+    COUNT(*) FILTER (WHERE cc.is_active = TRUE)::bigint AS active_count,
+    COALESCE(SUM(COALESCE(cc.yield_grams, 0)), 0)::numeric AS total_yield_grams
+FROM gr33nfertigation.crop_cycles cc
+INNER JOIN gr33ncrops.plants p ON p.id = cc.plant_id AND p.deleted_at IS NULL
+WHERE cc.farm_id = $1
+  AND p.crop_key IS NOT NULL
+  AND TRIM(p.crop_key) <> ''
+GROUP BY p.crop_key
+ORDER BY p.crop_key;
+
 -- name: GetFertigationAggregatesByCropCycle :one
 -- Phase 28 WS1 — rolling fertigation stats for the cycle-summary endpoint.
 -- COALESCE keeps the JSON shape stable (zeros instead of NULLs) when a

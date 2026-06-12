@@ -54,27 +54,53 @@
           No crop cycles yet on this farm.
         </div>
 
-        <div v-else class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
-          <label
-            v-for="c in cycles"
-            :key="c.id"
-            class="flex items-center gap-2 px-3 py-2 rounded-lg border text-xs cursor-pointer transition-colors"
-            :class="isSelected(c.id)
-              ? 'bg-green-900/40 border-green-700 text-white'
-              : isDisabled(c.id)
-                ? 'bg-zinc-900/60 border-zinc-800 text-zinc-600 cursor-not-allowed'
-                : 'bg-zinc-900 border-zinc-700 text-zinc-300 hover:border-zinc-500'"
-          >
-            <input
-              type="checkbox"
-              :value="c.id"
-              :checked="isSelected(c.id)"
-              :disabled="!isSelected(c.id) && isDisabled(c.id)"
-              @change="toggleSelect(c.id)"
-              class="accent-emerald-500"
-            />
-            <span class="truncate">{{ c.name }}</span>
-          </label>
+        <div v-else class="space-y-4">
+          <div v-if="cropKeyOptions.length > 1" class="flex flex-wrap items-center gap-2">
+            <span class="text-zinc-500 text-xs">Filter by crop:</span>
+            <button
+              type="button"
+              class="text-xs px-2 py-1 rounded border"
+              :class="!cropKeyFilter ? 'border-green-700 text-green-400 bg-green-900/30' : 'border-zinc-700 text-zinc-400 hover:border-zinc-500'"
+              @click="cropKeyFilter = ''"
+            >All</button>
+            <button
+              v-for="opt in cropKeyOptions"
+              :key="opt.key"
+              type="button"
+              class="text-xs px-2 py-1 rounded border"
+              :class="cropKeyFilter === opt.key ? 'border-green-700 text-green-400 bg-green-900/30' : 'border-zinc-700 text-zinc-400 hover:border-zinc-500'"
+              @click="cropKeyFilter = opt.key"
+            >{{ opt.label }}</button>
+          </div>
+
+          <div v-for="group in groupedCycles" :key="group.key || 'unlinked'" class="space-y-2">
+            <p v-if="groupedCycles.length > 1" class="text-[11px] uppercase tracking-wide text-zinc-500">
+              {{ group.label }}
+              <span class="text-zinc-600">({{ group.cycles.length }})</span>
+            </p>
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+              <label
+                v-for="c in group.cycles"
+                :key="c.id"
+                class="flex items-center gap-2 px-3 py-2 rounded-lg border text-xs cursor-pointer transition-colors"
+                :class="isSelected(c.id)
+                  ? 'bg-green-900/40 border-green-700 text-white'
+                  : isDisabled(c.id)
+                    ? 'bg-zinc-900/60 border-zinc-800 text-zinc-600 cursor-not-allowed'
+                    : 'bg-zinc-900 border-zinc-700 text-zinc-300 hover:border-zinc-500'"
+              >
+                <input
+                  type="checkbox"
+                  :value="c.id"
+                  :checked="isSelected(c.id)"
+                  :disabled="!isSelected(c.id) && isDisabled(c.id)"
+                  @change="toggleSelect(c.id)"
+                  class="accent-emerald-500"
+                />
+                <span class="truncate">{{ cyclePickerLabel(c) }}</span>
+              </label>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -97,7 +123,12 @@
                 v-for="s in summaries"
                 :key="s.cycle.id"
                 class="text-left text-white text-sm font-medium px-3 py-2"
-              >{{ s.cycle.name }}</th>
+              >
+                <span>{{ s.cycle.name }}</span>
+                <span v-if="s.catalog_display_name || s.crop_key" class="block text-[10px] text-zinc-500 font-normal">
+                  {{ s.catalog_display_name || s.crop_key }}
+                </span>
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -123,6 +154,7 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import HelpTip from '../components/HelpTip.vue'
+import { groupCyclesByCropKey, cyclePickerLabel } from '../lib/cropAnalytics.js'
 import { useFarmContextStore } from '../stores/farmContext'
 import { useFarmStore } from '../stores/farm'
 
@@ -140,11 +172,31 @@ const farmId = computed(() => {
   return fromRoute || farmContext.farmId
 })
 const cycles = ref([])
+const cropKeyFilter = ref('')
 const loadingCycles = ref(false)
 const selectedIds = ref([])
 const summaries = ref([])
 const loadingCompare = ref(false)
 const loadError = ref('')
+
+const cropKeyOptions = computed(() => {
+  const seen = new Map()
+  for (const c of cycles.value) {
+    const key = String(c.crop_key || '').trim()
+    if (!key || seen.has(key)) continue
+    seen.set(key, String(c.catalog_display_name || key).trim() || key)
+  }
+  return [...seen.entries()]
+    .map(([key, label]) => ({ key, label }))
+    .sort((a, b) => a.label.localeCompare(b.label))
+})
+
+const groupedCycles = computed(() => {
+  const list = cropKeyFilter.value
+    ? cycles.value.filter((c) => String(c.crop_key || '') === cropKeyFilter.value)
+    : cycles.value
+  return groupCyclesByCropKey(list)
+})
 
 const csvUrl = computed(() => {
   if (!farmId.value || !selectedIds.value.length) return '#'
@@ -284,6 +336,8 @@ function applyIdsFromQuery() {
     .filter((n) => Number.isFinite(n) && n > 0)
     .slice(0, MAX_COMPARE)
   if (ids.length) selectedIds.value = ids
+  const ck = route.query.crop_key
+  if (typeof ck === 'string' && ck.trim()) cropKeyFilter.value = ck.trim()
 }
 
 onMounted(async () => {

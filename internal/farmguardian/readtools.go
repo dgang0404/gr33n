@@ -55,6 +55,7 @@ func ReadToolIDs() []string {
 		"list_plants",
 		"summarize_zone_fertigation",
 		"lookup_crop_targets",
+		"summarize_farm_crops_by_key",
 		"grow_advisor",
 		"summarize_device_health",
 		"walk_farm",
@@ -169,6 +170,15 @@ func EnrichPromptBlock(ctx context.Context, q db.Querier, farmID int64, question
 		} else if block != "" {
 			blocks = append(blocks, block)
 			logReadToolUse(ctx, "lookup_crop_targets", farmID)
+		}
+	}
+
+	if shouldRunSummarizeFarmCropsByKeyReadIntent(question) {
+		if block, err := renderSummarizeFarmCropsByKey(ctx, q, farmID, question); err != nil {
+			slog.Warn("farm guardian read tool failed", "tool", "summarize_farm_crops_by_key", "farm_id", farmID, "err", err)
+		} else if block != "" {
+			blocks = append(blocks, block)
+			logReadToolUse(ctx, "summarize_farm_crops_by_key", farmID)
 		}
 	}
 

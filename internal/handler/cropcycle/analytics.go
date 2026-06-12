@@ -20,6 +20,7 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 
 	db "gr33n-api/internal/db"
+	"gr33n-api/internal/cropcycle"
 	"gr33n-api/internal/farmauthz"
 	"gr33n-api/internal/httputil"
 )
@@ -76,6 +77,9 @@ type summaryStage struct {
 // exporter only has to know about leaf fields.
 type cycleSummary struct {
 	Cycle                 db.Gr33nfertigationCropCycle `json:"cycle"`
+	CropKey               *string                      `json:"crop_key,omitempty"`
+	CatalogDisplayName    *string                      `json:"catalog_display_name,omitempty"`
+	BatchLabel            *string                      `json:"batch_label,omitempty"`
 	DurationDays          int64                        `json:"duration_days"`
 	Fertigation           summaryFertigation           `json:"fertigation"`
 	Cost                  summaryCost                  `json:"cost"`
@@ -273,6 +277,17 @@ func (h *Handler) buildSummary(r *http.Request, cycle db.Gr33nfertigationCropCyc
 		})
 		out.StageHistorySupported = false
 	}
+
+	if cycle.PlantID != nil {
+		if plant, err := h.q.GetPlant(r.Context(), *cycle.PlantID); err == nil {
+			id := cropcycle.ResolveCycleCropIdentity(cycle, &plant)
+			out.CropKey = id.CropKey
+			out.CatalogDisplayName = id.CatalogDisplayName
+			out.BatchLabel = id.BatchLabel
+		}
+	} else if cycle.BatchLabel != nil {
+		out.BatchLabel = cycle.BatchLabel
+	}
 	return out, nil
 }
 
@@ -354,7 +369,8 @@ func writeSummaryCSV(w http.ResponseWriter, summaries []cycleSummary, filename s
 	defer cw.Flush()
 
 	_ = cw.Write([]string{
-		"cycle_id", "cycle_name", "strain", "farm_id", "zone_id",
+		"cycle_id", "cycle_name", "crop_key", "catalog_display_name", "batch_label",
+		"strain", "farm_id", "zone_id",
 		"started_at", "harvested_at", "duration_days", "current_stage",
 		"event_count", "total_liters",
 		"avg_ec_mscm", "min_ec_mscm", "max_ec_mscm", "avg_ph",
@@ -374,6 +390,18 @@ func writeSummaryCSV(w http.ResponseWriter, summaries []cycleSummary, filename s
 		if s.Cycle.BatchLabel != nil {
 			strain = *s.Cycle.BatchLabel
 		}
+		cropKey := ""
+		if s.CropKey != nil {
+			cropKey = *s.CropKey
+		}
+		catalogName := ""
+		if s.CatalogDisplayName != nil {
+			catalogName = *s.CatalogDisplayName
+		}
+		batchLabel := ""
+		if s.BatchLabel != nil {
+			batchLabel = *s.BatchLabel
+		}
 		stage := ""
 		if s.Cycle.CurrentStage != nil {
 			stage = string(*s.Cycle.CurrentStage)
@@ -382,6 +410,9 @@ func writeSummaryCSV(w http.ResponseWriter, summaries []cycleSummary, filename s
 		_ = cw.Write([]string{
 			strconv.FormatInt(s.Cycle.ID, 10),
 			s.Cycle.Name,
+			cropKey,
+			catalogName,
+			batchLabel,
 			strain,
 			strconv.FormatInt(s.Cycle.FarmID, 10),
 			strconv.FormatInt(s.Cycle.ZoneID, 10),
@@ -452,3 +483,48 @@ var nowDate = func() pgtype.Date {
 
 // nowFunc is the indirection seam tests use to freeze the clock.
 var nowFunc = time.Now
+
+type cropAnalyticsRow struct {
+	CropKey            string  `json:"crop_key"`
+	CatalogDisplayName string  `json:"catalog_display_name"`
+	CycleCount         int64   `json:"cycle_count"`
+	ActiveCount        int64   `json:"active_count"`
+	TotalYieldGrams    float64 `json:"total_yield_grams"`
+}
+
+// FarmAnalytics — GET /farms/{id}/crop-analytics
+//
+// Rolls up harvested and active cycles by catalog crop_key (via plant_id).
+func (h *Handler) FarmAnalytics(w http.ResponseWriter, r *http.Request) {
+	farmID, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	if err != nil {
+		httputil.WriteError(w, http.StatusBadRequest, "invalid farm id")
+		return
+	}
+	if !farmauthz.RequireFarmMember(w, r, h.q, farmID) {
+		return
+	}
+	rows, err := h.q.ListCropAnalyticsByFarm(r.Context(), farmID)
+	if err != nil {
+		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	out := make([]cropAnalyticsRow, 0, len(rows))
+	for _, row := range rows {
+		if row.CropKey == nil {
+			continue
+		}
+		ck := strings.TrimSpace(*row.CropKey)
+		if ck == "" {
+			continue
+		}
+		out = append(out, cropAnalyticsRow{
+			CropKey:            ck,
+			CatalogDisplayName: cropcycle.CatalogDisplayName(ck),
+			CycleCount:         row.CycleCount,
+			ActiveCount:        row.ActiveCount,
+			TotalYieldGrams:    numericToFloat64(row.TotalYieldGrams),
+		})
+	}
+	httputil.WriteJSON(w, http.StatusOK, map[string]any{"crops": out})
+}

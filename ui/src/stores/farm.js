@@ -1027,6 +1027,11 @@ export const useFarmStore = defineStore('farm', {
       return r.data
     },
 
+    async loadCropAnalytics(farmId) {
+      const r = await api.get(`/farms/${farmId}/crop-analytics`)
+      return r.data
+    },
+
     async loadRecipes(farmId) {
       const r = await api.get(`/farms/${farmId}/naturalfarming/recipes`)
       return Array.isArray(r.data) ? r.data : []

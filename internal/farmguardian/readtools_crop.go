@@ -8,12 +8,14 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
+	"sort"
 	"strings"
 	"sync"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 
+	"gr33n-api/internal/cropcycle"
 	"gr33n-api/internal/croplibrary"
 	db "gr33n-api/internal/db"
 )
@@ -31,6 +33,8 @@ const (
 var lookupCropTargetsIntent = regexp.MustCompile(`(?i)\b(ec|ph|vpd|dli|photoperiod|target|targets|nutrient|feed strength|feed|water|watering|wet|moisture|irrigation|fertigation|how wet|light|lighting|hours|cycle|program|compare|vs|versus|difference between|each plant)\b|\bcrop\s+profile\b|\bwhat should (ec|ph|vpd)\b|\b(is my ec|is my ph)\b`)
 
 var compareCropQuestion = regexp.MustCompile(`(?i)\b(compare|vs|versus|difference between|each plant)\b`)
+
+var summarizeFarmCropsByKeyIntent = regexp.MustCompile(`(?i)\b(compare\s+(my\s+)?(last\s+)?(two|2|three|3)?\s*\w*\s*(runs?|grows?|harvests?|cycles?)|last\s+\w+\s+(runs?|grows?|harvests?)|crop\s+analytics|yield\s+by\s+crop|harvest\s+analytics)\b`)
 
 var (
 	cropRegOnce sync.Once
@@ -434,4 +438,144 @@ func formatNumeric(n pgtype.Numeric) string {
 		return fmt.Sprintf("%d", int64(v))
 	}
 	return fmt.Sprintf("%.2f", v)
+}
+
+func shouldRunSummarizeFarmCropsByKeyReadIntent(question string) bool {
+	q := strings.TrimSpace(question)
+	if q == "" {
+		return false
+	}
+	if summarizeFarmCropsByKeyIntent.MatchString(q) {
+		return true
+	}
+	return compareCropQuestion.MatchString(q) && questionMentionsCrop(q)
+}
+
+func renderSummarizeFarmCropsByKey(ctx context.Context, q db.Querier, farmID int64, question string) (string, error) {
+	farmLabel := fmt.Sprintf("farm #%d", farmID)
+	if farm, err := q.GetFarmByID(ctx, farmID); err == nil {
+		if name := strings.TrimSpace(farm.Name); name != "" {
+			farmLabel = name
+		}
+	}
+
+	cycles, err := q.ListCropCyclesByFarm(ctx, farmID)
+	if err != nil {
+		return "", err
+	}
+	plants, err := q.ListPlantsByFarm(ctx, farmID)
+	if err != nil {
+		return "", err
+	}
+	plantCropKey := map[int64]string{}
+	for _, p := range plants {
+		if p.CropKey == nil {
+			continue
+		}
+		if ck := strings.TrimSpace(*p.CropKey); ck != "" {
+			plantCropKey[p.ID] = ck
+		}
+	}
+
+	type harvested struct {
+		cycle   db.Gr33nfertigationCropCycle
+		cropKey string
+	}
+	byKey := map[string][]harvested{}
+	for _, c := range cycles {
+		if c.IsActive || c.PlantID == nil {
+			continue
+		}
+		ck, ok := plantCropKey[*c.PlantID]
+		if !ok {
+			continue
+		}
+		byKey[ck] = append(byKey[ck], harvested{cycle: c, cropKey: ck})
+	}
+	for k := range byKey {
+		sort.Slice(byKey[k], func(i, j int) bool {
+			return byKey[k][i].cycle.ID > byKey[k][j].cycle.ID
+		})
+	}
+
+	focusKeys := cropKeysMentionedInQuestion(question)
+	if len(focusKeys) == 0 {
+		keys := make([]string, 0, len(byKey))
+		for k := range byKey {
+			keys = append(keys, k)
+		}
+		sort.Strings(keys)
+		focusKeys = keys
+	}
+
+	var b strings.Builder
+	b.WriteString("summarize_farm_crops_by_key — " + farmLabel)
+	if len(byKey) == 0 {
+		b.WriteString("\nNo harvested cycles linked to catalog plants yet — compare needs plant_id + crop_key on finished grows.")
+		return b.String(), nil
+	}
+
+	limit := 3
+	for _, ck := range focusKeys {
+		rows := byKey[ck]
+		if len(rows) == 0 {
+			continue
+		}
+		label := cropcycle.CatalogDisplayName(ck)
+		if label == "" {
+			label = ck
+		}
+		b.WriteString(fmt.Sprintf("\n%s (crop_key=%s): %d harvested cycle(s)", label, ck, len(rows)))
+		for i, row := range rows {
+			if i >= limit {
+				b.WriteString(fmt.Sprintf("\n  (+ %d more)", len(rows)-limit))
+				break
+			}
+			c := row.cycle
+			line := fmt.Sprintf("\n  - cycle #%d %s", c.ID, strings.TrimSpace(c.Name))
+			if c.BatchLabel != nil && strings.TrimSpace(*c.BatchLabel) != "" {
+				line += "; batch " + strings.TrimSpace(*c.BatchLabel)
+			}
+			if c.YieldGrams.Valid {
+				line += fmt.Sprintf("; yield %sg", formatNumeric(c.YieldGrams))
+			}
+			if c.HarvestedAt.Valid {
+				line += "; harvested " + c.HarvestedAt.Time.Format("2006-01-02")
+			}
+			b.WriteString(line)
+		}
+		if len(rows) >= 2 {
+			b.WriteString(fmt.Sprintf("\n  Compare cycle ids %d,%d in Crop Cycle Compare (same crop_key).",
+				rows[0].cycle.ID, rows[1].cycle.ID))
+		}
+	}
+	if b.Len() == len("summarize_farm_crops_by_key — "+farmLabel) {
+		b.WriteString("\nNo harvested cycles for crops mentioned — check Plants catalog links.")
+	}
+	return b.String(), nil
+}
+
+func cropKeysMentionedInQuestion(question string) []string {
+	reg, err := defaultCropRegistry()
+	if err != nil || reg == nil {
+		return nil
+	}
+	mentions := reg.FindMentions(question)
+	if len(mentions) == 0 {
+		return nil
+	}
+	seen := map[string]struct{}{}
+	out := make([]string, 0, len(mentions))
+	for _, m := range mentions {
+		if m.Kind != croplibrary.MentionCrop {
+			continue
+		}
+		if _, ok := seen[m.Key]; ok {
+			continue
+		}
+		seen[m.Key] = struct{}{}
+		out = append(out, m.Key)
+	}
+	sort.Strings(out)
+	return out
 }

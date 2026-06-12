@@ -26,36 +26,43 @@
       action-label="Plants"
       :action-to="{ path: '/zones', query: { tab: 'plants' } }"
     />
-    <div v-else class="space-y-2">
-      <div
-        v-for="c in cycles"
-        :key="c.id"
-        class="flex items-center justify-between gap-3 bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3"
-        data-test="money-grow-row"
-      >
-        <div class="min-w-0">
-          <p class="text-sm text-zinc-200 truncate">{{ c.name || cycleBatchLabel(c) || `Grow #${c.id}` }}</p>
-          <p class="text-[11px] text-zinc-500">
-            {{ c.is_active ? 'Active' : 'Harvested' }}
-            <span v-if="c.zone_id"> · zone #{{ c.zone_id }}</span>
-          </p>
+    <div v-else class="space-y-5">
+      <section v-for="group in groupedCycles" :key="group.key || 'unlinked'" class="space-y-2">
+        <h3 class="text-xs uppercase tracking-wide text-zinc-500">
+          {{ group.label }}
+          <span class="text-zinc-600">({{ group.cycles.length }})</span>
+        </h3>
+        <div
+          v-for="c in group.cycles"
+          :key="c.id"
+          class="flex items-center justify-between gap-3 bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3"
+          data-test="money-grow-row"
+        >
+          <div class="min-w-0">
+            <p class="text-sm text-zinc-200 truncate">{{ c.name || cycleBatchLabel(c) || `Grow #${c.id}` }}</p>
+            <p class="text-[11px] text-zinc-500">
+              {{ c.is_active ? 'Active' : 'Harvested' }}
+              <span v-if="c.zone_id"> · zone #{{ c.zone_id }}</span>
+              <span v-if="c.batch_label"> · {{ c.batch_label }}</span>
+            </p>
+          </div>
+          <div class="flex items-center gap-3 shrink-0">
+            <router-link
+              :to="`/crop-cycles/${c.id}/summary`"
+              class="text-xs text-green-500 hover:text-green-400"
+            >
+              Summary →
+            </router-link>
+            <router-link
+              v-nav-hint="'/money'"
+              :to="{ path: '/money', query: { tab: 'summary', cycle_id: c.id } }"
+              class="text-xs text-zinc-500 hover:text-zinc-300"
+            >
+              Receipts
+            </router-link>
+          </div>
         </div>
-        <div class="flex items-center gap-3 shrink-0">
-          <router-link
-            :to="`/crop-cycles/${c.id}/summary`"
-            class="text-xs text-green-500 hover:text-green-400"
-          >
-            Summary →
-          </router-link>
-          <router-link
-            v-nav-hint="'/money'"
-            :to="{ path: '/money', query: { tab: 'summary', cycle_id: c.id } }"
-            class="text-xs text-zinc-500 hover:text-zinc-300"
-          >
-            Receipts
-          </router-link>
-        </div>
-      </div>
+      </section>
     </div>
   </div>
 </template>
@@ -63,6 +70,7 @@
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue'
 import { cycleBatchLabel } from '../lib/growHub.js'
+import { groupCyclesByCropKey } from '../lib/cropAnalytics.js'
 import { useFarmStore } from '../stores/farm'
 import { useFarmContextStore } from '../stores/farmContext'
 import EmptyStateHint from '../components/EmptyStateHint.vue'
@@ -72,6 +80,8 @@ const farmContext = useFarmContextStore()
 
 const loading = ref(false)
 const cycles = ref([])
+
+const groupedCycles = computed(() => groupCyclesByCropKey(cycles.value))
 
 const compareRoute = computed(() => {
   const fid = farmContext.farmId

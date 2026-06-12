@@ -177,6 +177,54 @@ func (q *Queries) GetFertigationAggregatesByCropCycle(ctx context.Context, cropC
 	return i, err
 }
 
+const listCropAnalyticsByFarm = `-- name: ListCropAnalyticsByFarm :many
+SELECT
+    p.crop_key,
+    COUNT(*)::bigint AS cycle_count,
+    COUNT(*) FILTER (WHERE cc.is_active = TRUE)::bigint AS active_count,
+    COALESCE(SUM(COALESCE(cc.yield_grams, 0)), 0)::numeric AS total_yield_grams
+FROM gr33nfertigation.crop_cycles cc
+INNER JOIN gr33ncrops.plants p ON p.id = cc.plant_id AND p.deleted_at IS NULL
+WHERE cc.farm_id = $1
+  AND p.crop_key IS NOT NULL
+  AND TRIM(p.crop_key) <> ''
+GROUP BY p.crop_key
+ORDER BY p.crop_key
+`
+
+type ListCropAnalyticsByFarmRow struct {
+	CropKey         *string        `db:"crop_key" json:"crop_key"`
+	CycleCount      int64          `db:"cycle_count" json:"cycle_count"`
+	ActiveCount     int64          `db:"active_count" json:"active_count"`
+	TotalYieldGrams pgtype.Numeric `db:"total_yield_grams" json:"total_yield_grams"`
+}
+
+// Phase 104 — farm rollup grouped by catalog crop_key (via plants.plant_id).
+func (q *Queries) ListCropAnalyticsByFarm(ctx context.Context, farmID int64) ([]ListCropAnalyticsByFarmRow, error) {
+	rows, err := q.db.Query(ctx, listCropAnalyticsByFarm, farmID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListCropAnalyticsByFarmRow{}
+	for rows.Next() {
+		var i ListCropAnalyticsByFarmRow
+		if err := rows.Scan(
+			&i.CropKey,
+			&i.CycleCount,
+			&i.ActiveCount,
+			&i.TotalYieldGrams,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listCropCyclesByFarm = `-- name: ListCropCyclesByFarm :many
 SELECT id, farm_id, zone_id, name, batch_label, current_stage, is_active, started_at, harvested_at, yield_grams, yield_notes, cycle_notes, created_at, updated_at, primary_program_id, plant_id FROM gr33nfertigation.crop_cycles
 WHERE farm_id = $1

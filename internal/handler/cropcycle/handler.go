@@ -87,19 +87,59 @@ func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 		}
 		rows = filtered
 	}
-	writeCyclesJSON(w, http.StatusOK, rows)
+	cropKeyFilter := strings.TrimSpace(r.URL.Query().Get("crop_key"))
+	out := h.enrichCyclesJSON(r.Context(), farmID, rows)
+	if cropKeyFilter != "" {
+		filtered := make([]map[string]any, 0, len(out))
+		for _, m := range out {
+			if ck, _ := m["crop_key"].(string); ck == cropKeyFilter {
+				filtered = append(filtered, m)
+			}
+		}
+		out = filtered
+	}
+	httputil.WriteJSON(w, http.StatusOK, out)
 }
 
-func writeCyclesJSON(w http.ResponseWriter, status int, rows []db.Gr33nfertigationCropCycle) {
+func (h *Handler) enrichCyclesJSON(ctx context.Context, farmID int64, rows []db.Gr33nfertigationCropCycle) []map[string]any {
+	plantByID := map[int64]db.Gr33ncropsPlant{}
+	if plants, err := h.q.ListPlantsByFarm(ctx, farmID); err == nil {
+		for _, p := range plants {
+			plantByID[p.ID] = p
+		}
+	}
 	out := make([]map[string]any, len(rows))
 	for i, row := range rows {
-		out[i] = cropcycle.CycleJSON(row)
+		m := cropcycle.CycleJSON(row)
+		if row.PlantID != nil {
+			if p, ok := plantByID[*row.PlantID]; ok {
+				id := cropcycle.ResolveCycleCropIdentity(row, &p)
+				if id.CropKey != nil {
+					m["crop_key"] = *id.CropKey
+				}
+				if id.CatalogDisplayName != nil {
+					m["catalog_display_name"] = *id.CatalogDisplayName
+				}
+			}
+		}
+		out[i] = m
 	}
-	httputil.WriteJSON(w, status, out)
+	return out
 }
 
-func writeCycleJSON(w http.ResponseWriter, status int, row db.Gr33nfertigationCropCycle, warnings []string) {
+func (h *Handler) writeCycleJSON(ctx context.Context, w http.ResponseWriter, status int, row db.Gr33nfertigationCropCycle, warnings []string) {
 	out := cropcycle.CycleJSON(row)
+	if row.PlantID != nil {
+		if plant, err := h.q.GetPlant(ctx, *row.PlantID); err == nil {
+			id := cropcycle.ResolveCycleCropIdentity(row, &plant)
+			if id.CropKey != nil {
+				out["crop_key"] = *id.CropKey
+			}
+			if id.CatalogDisplayName != nil {
+				out["catalog_display_name"] = *id.CatalogDisplayName
+			}
+		}
+	}
 	if len(warnings) > 0 {
 		out["program_fit_warnings"] = warnings
 	}
@@ -125,7 +165,7 @@ func (h *Handler) Get(w http.ResponseWriter, r *http.Request) {
 	if !farmauthz.RequireFarmMember(w, r, h.q, row.FarmID) {
 		return
 	}
-	writeCycleJSON(w, http.StatusOK, row, nil)
+	h.writeCycleJSON(r.Context(), w, http.StatusOK, row, nil)
 }
 func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 	farmID, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
@@ -230,7 +270,7 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	writeCycleJSON(w, http.StatusCreated, row, fitWarnings)
+	h.writeCycleJSON(r.Context(), w, http.StatusCreated, row, fitWarnings)
 }
 func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
@@ -364,7 +404,7 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-	writeCycleJSON(w, http.StatusOK, row, fitWarnings)
+	h.writeCycleJSON(r.Context(), w, http.StatusOK, row, fitWarnings)
 }
 
 // UpdateStage — PATCH /crop-cycles/{id}/stage
@@ -416,7 +456,7 @@ func (h *Handler) UpdateStage(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	writeCycleJSON(w, http.StatusOK, row, nil)
+	h.writeCycleJSON(r.Context(), w, http.StatusOK, row, nil)
 }
 
 func (h *Handler) programFitWarnings(ctx context.Context, programID *int64, plantID *int64, stage string) ([]string, error) {
