@@ -65,8 +65,8 @@ Link: Settings or crop-knowledge runbook.
 
 ## Acceptance
 
-- [ ] Bump seed migration version → notification row for farm admins
-- [ ] Opt-out respected in notify prefs
-- [ ] Document in enterprise-catalog-promotion-model (Phase 98)
+- [x] Bump seed migration version → notification row for farm admins
+- [x] Opt-out respected in notify prefs
+- [x] Document in enterprise-catalog-promotion-model (Phase 98)
 
 **Prompt loop:** **`phase 109`**.

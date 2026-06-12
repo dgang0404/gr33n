@@ -26,7 +26,7 @@ isProject: false
 
 ## Status
 
-**Shipped.** Formal audit complete — [`phase-82-closure.md`](phase-82-closure.md) · WS1/WS2 P0 gaps closed in Phase 110.
+**Shipped** on `main`. Closure: [`phase-110-closure.md`](phase-110-closure.md) (**OC-110**, includes **OC-82** via [`phase-82-closure.md`](phase-82-closure.md)).
 
 **Closure:** **OC-110** (includes **OC-82**)
 
@@ -63,8 +63,8 @@ isProject: false
 
 ## Acceptance
 
-- [ ] No WS marked pending if code is on main
-- [ ] Deferred WS link to phase 106+ plans
-- [ ] OC-82 row in phase-14
+- [x] No WS marked pending if code is on main
+- [x] Deferred WS link to phase 106+ plans
+- [x] OC-82 row in phase-14
 
 **Prompt loop:** **`phase 110`** (doc-heavy; can run before 87 if useful).
