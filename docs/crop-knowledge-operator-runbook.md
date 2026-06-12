@@ -88,6 +88,7 @@ Field guides supplement RAG; structured numbers still come from `lookup_crop_tar
 | `TestPhase85CatalogBoundPlants` | `crop_key` upsert; `ramps` → 400 |
 | `TestPhase86_*` | Active cycle requires plant; Guardian EC matches profile |
 | `TestPhase87_*` | Picker parity; multi-crop compare; DB registry alias |
+| `TestPhase88_*` | Domain enums API; `transition` setpoint persists |
 | `TestPhase101_*` | Guardian `create_plant` requires `crop_key` |
 | `TestPhase103_*` | Legacy plant merge; no duplicate `crop_key` per farm |
 | `TestPhase64_*` / `TestPhase82_*` | Profile library + picker API |
