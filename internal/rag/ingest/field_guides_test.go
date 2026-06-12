@@ -6,7 +6,8 @@ import (
 	"testing"
 )
 
-func TestDryRunFieldGuides(t *testing.T) {
+func TestDryRunFieldGuides_FileManifest(t *testing.T) {
+	t.Setenv("AGRONOMY_FIELD_GUIDES_SOURCE", "file")
 	root := findRepoRoot(t)
 	dry, err := DryRunFieldGuides(context.Background(), nil, root, "")
 	if err != nil {

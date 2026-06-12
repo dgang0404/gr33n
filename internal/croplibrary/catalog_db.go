@@ -15,13 +15,15 @@ type CatalogQuerier interface {
 	ListCropCatalogAliases(ctx context.Context) ([]db.Gr33ncropsCropCatalogAlias, error)
 }
 
-// CatalogSource returns yaml or db from CROP_CATALOG_SOURCE (default yaml).
+// CatalogSource returns db or yaml from CROP_CATALOG_SOURCE (default db after Phase 84 WS-G).
 func CatalogSource() string {
 	s := strings.ToLower(strings.TrimSpace(os.Getenv("CROP_CATALOG_SOURCE")))
-	if s == "db" {
+	switch s {
+	case "yaml", "file":
+		return "yaml"
+	default:
 		return "db"
 	}
-	return "yaml"
 }
 
 // LoadCatalogForRuntime picks YAML file or DB based on CROP_CATALOG_SOURCE.

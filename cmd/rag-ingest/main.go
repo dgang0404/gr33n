@@ -35,7 +35,7 @@ func main() {
 		doBatches    = flag.Bool("inventory-batches", false, "index gr33nnaturalfarming.input_batches (no qty / cost numerics)")
 		doAlerts     = flag.Bool("alerts", false, "index gr33ncore.alerts_notifications")
 		doPlatform   = flag.Bool("platform-docs", false, "index curated operator markdown from docs/rag/platform-doc-manifest.yaml (source_type platform_doc)")
-		doFieldGuide = flag.Bool("field-guides", false, "index field/trades markdown from docs/rag/field-guide-manifest.yaml (source_type field_guide)")
+		doFieldGuide = flag.Bool("field-guides", false, "index field guides (default: gr33ncrops.agronomy_field_guides; set AGRONOMY_FIELD_GUIDES_SOURCE=file for legacy manifest)")
 		manifestPath = flag.String("manifest", "", "platform doc manifest path (default docs/rag/platform-doc-manifest.yaml)")
 		fieldManifest = flag.String("field-manifest", "", "field guide manifest path (default docs/rag/field-guide-manifest.yaml)")
 		repoRoot     = flag.String("repo-root", ".", "repo root for platform-docs manifest resolution")
@@ -72,7 +72,7 @@ func main() {
 			return
 		}
 	}
-	if *dryRun && *doFieldGuide && FieldGuidesSource() != "db" {
+	if *dryRun && *doFieldGuide && ingest.FieldGuidesSource() != "db" {
 		dry, err := ingest.DryRunFieldGuides(context.Background(), nil, *repoRoot, *fieldManifest)
 		if err != nil {
 			log.Fatal(err)
@@ -115,6 +115,10 @@ func main() {
 		log.Fatalf("db: %v", err)
 	}
 	defer pool.Close()
+
+	if *doFieldGuide {
+		log.Printf("field guides source: %s", ingest.FieldGuidesSourceLabel())
+	}
 
 	if *dryRun {
 		q := db.New(pool)

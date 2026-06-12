@@ -5,9 +5,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"hash/fnv"
+	"log"
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 
 	"github.com/pgvector/pgvector-go"
 
@@ -127,6 +129,7 @@ func DryRunFieldGuides(ctx context.Context, q FieldGuideQuerier, repoRoot, manif
 		}
 		return DryRunFieldGuidesFromDB(ctx, q)
 	}
+	logFieldGuideFileDeprecation()
 	m, err := LoadFieldGuideManifest(repoRoot, manifestPath)
 	if err != nil {
 		return FieldGuideDryRun{}, err
@@ -150,6 +153,7 @@ func (w *Worker) IngestFieldGuides(ctx context.Context, farmID int64, repoRoot, 
 	if FieldGuidesSource() == "db" {
 		return w.IngestFieldGuidesFromDB(ctx, farmID)
 	}
+	logFieldGuideFileDeprecation()
 	m, err := LoadFieldGuideManifest(repoRoot, manifestPath)
 	if err != nil {
 		return 0, err
@@ -325,4 +329,12 @@ func splitYAMLFrontmatter(raw string) (body string, meta map[string]string) {
 		meta[strings.TrimSpace(k)] = strings.Trim(strings.TrimSpace(v), `"'`)
 	}
 	return body, meta
+}
+
+var fieldGuideFileDeprecationOnce sync.Once
+
+func logFieldGuideFileDeprecation() {
+	fieldGuideFileDeprecationOnce.Do(func() {
+		log.Printf("warning: AGRONOMY_FIELD_GUIDES_SOURCE=file is deprecated — migrate and use db (default). See docs/crop-catalog-db-cutover-runbook.md")
+	})
 }

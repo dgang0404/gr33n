@@ -44,6 +44,8 @@ services:
       AUTH_MODE: dev
       CORS_ORIGIN: http://localhost:5173
       AUTOMATION_SIMULATION_MODE: "true"
+      CROP_CATALOG_SOURCE: db
+      AGRONOMY_FIELD_GUIDES_SOURCE: db
     ports:
       - "8080:8080"
     logging:

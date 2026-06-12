@@ -55,9 +55,7 @@ func TestLoadCatalogFromDB_Integration(t *testing.T) {
 }
 
 func TestDefaultCatalog_DBMode_Integration(t *testing.T) {
-	if os.Getenv("CROP_CATALOG_SOURCE") != "db" {
-		t.Skip("CROP_CATALOG_SOURCE=db not set")
-	}
+	t.Setenv("CROP_CATALOG_SOURCE", "db")
 	dsn := os.Getenv("DATABASE_URL")
 	if dsn == "" {
 		t.Skip("DATABASE_URL not set")

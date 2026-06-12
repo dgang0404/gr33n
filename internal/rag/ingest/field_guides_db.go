@@ -7,12 +7,23 @@ import (
 	"strings"
 )
 
-// FieldGuidesSource returns file or db from AGRONOMY_FIELD_GUIDES_SOURCE (default file).
+// FieldGuidesSource returns db or file from AGRONOMY_FIELD_GUIDES_SOURCE (default db after Phase 84 WS-G).
 func FieldGuidesSource() string {
-	if strings.ToLower(strings.TrimSpace(os.Getenv("AGRONOMY_FIELD_GUIDES_SOURCE"))) == "db" {
+	s := strings.ToLower(strings.TrimSpace(os.Getenv("AGRONOMY_FIELD_GUIDES_SOURCE")))
+	switch s {
+	case "file", "yaml":
+		return "file"
+	default:
 		return "db"
 	}
-	return "file"
+}
+
+// FieldGuidesSourceLabel returns a log-friendly source name.
+func FieldGuidesSourceLabel() string {
+	if FieldGuidesSource() == "db" {
+		return "database (gr33ncrops.agronomy_field_guides)"
+	}
+	return "filesystem (docs/rag/field-guide-manifest.yaml — deprecated authoring path)"
 }
 
 // IngestFieldGuidesFromDB embeds published rows from gr33ncrops.agronomy_field_guides.

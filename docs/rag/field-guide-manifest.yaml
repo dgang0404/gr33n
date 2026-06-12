@@ -1,8 +1,10 @@
-# Curated field/trades guides for Guardian field_guide RAG (Phase 37 WS2).
+# Authoring manifest for field/trades markdown (Phase 37 WS2).
+# Runtime + RAG ingest default: gr33ncrops.agronomy_field_guides (AGRONOMY_FIELD_GUIDES_SOURCE=db).
+# This file feeds generate-crop-catalog-seed.sql.sh — legacy file ingest: AGRONOMY_FIELD_GUIDES_SOURCE=file.
 # Paths are relative to docs/field-guides/.
 #
-#   ./scripts/rag-ingest-field-guides.sh
-#   ./scripts/rag-ingest-field-guides.sh --dry-run
+#   make rag-ingest-field-guides          # DB source (default)
+#   make rag-ingest-field-guides-dry-run
 version: 1
 
 include:

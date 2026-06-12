@@ -1,6 +1,6 @@
 # Sit-in: crop catalog & field guides → enterprise DB
 
-**Status:** WS-B + WS-D + WS-I + WS-J shipped (schema, seed, DB catalog loader, Guardian registry, profile meta, commons read API)  
+**Status:** WS-B through WS-K shipped (DB default runtime, commons API, profile meta, parity checks) — see [crop-catalog-db-cutover-runbook.md](../crop-catalog-db-cutover-runbook.md)  
 **Sit-in rule:** Name and lock decisions here **before** migrations or runtime cutover. Calendar phases 82/83 continue; this stream owns **operator-trust plant data** — where EC lives, what unsupported means, how integrators seed production.
 
 **Parent streams:** [sit-in-operator-experience.md](sit-in-operator-experience.md) · [Phase 82](../plans/phase_82_guardian_crop_grounding_hardening.plan.md) · [Phase 83](../plans/phase_83_enterprise_agronomy_seed_pack.plan.md)
@@ -224,7 +224,7 @@ flowchart LR
 | `IngestFieldGuides` | Read `agronomy_field_guides WHERE published` |
 | `make check-crop-library` | Becomes **DB parity check** OR import validator |
 
-**Env:** `CROP_CATALOG_SOURCE=db|yaml` during WS-D; production default `db`.
+**Env:** `CROP_CATALOG_SOURCE=db|yaml` — production default **`db`** (WS-G). Use `yaml` only for offline authoring validation.
 
 ---
 

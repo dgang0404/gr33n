@@ -90,7 +90,10 @@ check-crop-library: ## Phase 82 WS4a — validate data/crop_library.yaml (EC mS/
 check-crop-catalog: ## Phase 84 WS-B — validate catalog + field guide seed sources
 	@./scripts/generate-crop-catalog-seed.sql.sh --validate
 
-check-crop-catalog-parity: check-crop-library check-crop-catalog ## YAML + catalog seed source parity
+check-crop-catalog-db: ## Phase 84 WS-K — verify Postgres catalog seed (needs migrate + DATABASE_URL)
+	@./scripts/check-crop-catalog-db.sh
+
+check-crop-catalog-parity: check-crop-library check-crop-catalog check-crop-catalog-db ## YAML seed + DB parity
 
 audit-openapi: ## Phase 20.95 WS6 — confirm openapi.yaml matches cmd/api/routes.go
 	@./scripts/openapi_route_diff.sh
@@ -178,10 +181,10 @@ rag-ingest-platform-docs: ## Index operator platform docs for farm 1 (needs EMBE
 rag-ingest-platform-docs-dry-run: ## List manifest files + chunk estimates (no API key required)
 	@./scripts/rag-ingest-platform-docs.sh --dry-run
 
-rag-ingest-field-guides: ## Index field/trades guides for farm 1 (Phase 37; needs EMBEDDING_API_KEY)
+rag-ingest-field-guides: ## Index field guides from DB for farm 1 (default; needs EMBEDDING_API_KEY)
 	@./scripts/rag-ingest-field-guides.sh
 
-rag-ingest-field-guides-dry-run: ## List field-guide manifest + chunk estimates (no API key)
+rag-ingest-field-guides-dry-run: ## Dry-run DB field guides (no API key; AGRONOMY_FIELD_GUIDES_SOURCE=db default)
 	@./scripts/rag-ingest-field-guides.sh --dry-run
 
 local-up: ## dev-stack then API + UI (same as ./scripts/dev-stack.sh --serve)

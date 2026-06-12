@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-# Index authored field/trades guides (docs/rag/field-guide-manifest.yaml) into
-# gr33ncore.rag_embedding_chunks with source_type=field_guide (Phase 37 WS2).
+# Index field/trades guides into gr33ncore.rag_embedding_chunks (source_type=field_guide).
+# Default source: gr33ncrops.agronomy_field_guides (AGRONOMY_FIELD_GUIDES_SOURCE=db).
+# Legacy file manifest: AGRONOMY_FIELD_GUIDES_SOURCE=file (deprecated — see docs/crop-catalog-db-cutover-runbook.md).
 #
 # Usage (repo root):
 #   ./scripts/rag-ingest-field-guides.sh
@@ -41,6 +42,8 @@ set -a
 # shellcheck disable=1091
 source "$ROOT/.env"
 set +a
+
+export AGRONOMY_FIELD_GUIDES_SOURCE="${AGRONOMY_FIELD_GUIDES_SOURCE:-db}"
 
 if [[ "$DRY_RUN" -eq 1 ]]; then
   echo "==> rag-ingest field guides (dry-run, farm_id=$FARM_ID)"
