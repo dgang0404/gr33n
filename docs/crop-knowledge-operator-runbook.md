@@ -18,6 +18,8 @@ make check-crop-catalog-parity
 
 **Picker 404 or empty dropdown?** Run migrate, restart API, confirm parity check passes. The UI shows an amber **Knowledge base API outdated** banner when falling back to legacy profiles — do not treat that as the full catalog.
 
+**Upgrading an existing farm (pre–Phase 85 plants)?** After `make migrate`, run `./scripts/merge-legacy-plants.sh` (audit) then `./scripts/merge-legacy-plants.sh --apply --audit`. This merges typo plant rows (Tomato / tomato / Romas) into one `crop_key` slot and relinks `crop_cycles.plant_id`. Rows that still lack `crop_key` need a manual catalog pick in **Zone → Plants**.
+
 ---
 
 ## Operator flow
@@ -84,6 +86,8 @@ Field guides supplement RAG; structured numbers still come from `lookup_crop_tar
 | `TestPhase85CatalogBoundPlants` | `crop_key` upsert; `ramps` → 400 |
 | `TestPhase86_*` | Active cycle requires plant; Guardian EC matches profile |
 | `TestPhase87_*` | Picker parity; multi-crop compare; DB registry alias |
+| `TestPhase101_*` | Guardian `create_plant` requires `crop_key` |
+| `TestPhase103_*` | Legacy plant merge; no duplicate `crop_key` per farm |
 | `TestPhase64_*` / `TestPhase82_*` | Profile library + picker API |
 
 ---
