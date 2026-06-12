@@ -130,7 +130,24 @@ Phase **90** should expose taxonomy to Guardian read tools the same way crop cat
 
 `phase 88 ws1`, … or `phase 88` for full phase. Same for 89–92.
 
-**Suggested order:** **89** (fast) → **88** (foundation) → **90** (cockpit) → **91** → **92**.
+**Suggested order:** **89** (fast) → **88** (foundation) → **90** (cockpit) → **91** → **92** → **99**.
+
+---
+
+## Continuation — blind spots (Phases 93–100)
+
+**Master roadmap:** [phase_84_100_master_roadmap.plan.md](phase_84_100_master_roadmap.plan.md)
+
+| Phase | Blind spot |
+|-------|------------|
+| **93** | Identity vocabulary, `batch_label`, `tab=plants` |
+| **94** | Genetics / batch EC |
+| **95** | Catalog integrator cadence |
+| **96** | Feeding program vs stage |
+| **97** | RAG vs structured truth |
+| **98** | Enterprise promotion model |
+| **99** | CI domain parity guards |
+| **100** | Offline catalog cache |
 
 ---
 

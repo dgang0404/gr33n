@@ -163,12 +163,14 @@ After plants/crops (85–87), the UI still hardcodes domain enums that **already
 | **91** | Bootstrap template catalog |
 | **92** | Zone types + greenhouse enums |
 
+See **[phase_84_100_master_roadmap.plan.md](phase_84_100_master_roadmap.plan.md)** for Phases **93–100** (blind spots).
+
 ---
 
 ## Out of scope (future phases OK)
 
 | Topic | Notes |
 |-------|--------|
-| Per-genetics EC (OG Kush vs Wedding Cake) | Separate genetics profile phase |
-| Operator UI to add catalog rows | Integrator seed migration only |
-| More ornamentals (flowers, cacti, San Pedro) | Add to YAML → regenerate seed SQL → migrate |
+| Per-genetics EC (OG Kush vs Wedding Cake) | **[Phase 94](phase_94_genetics_batch_ec_profiles.plan.md)** |
+| Operator UI to add catalog rows | **[Phase 95](phase_95_catalog_integrator_ops.plan.md)** integrator path |
+| More ornamentals (flowers, cacti, San Pedro) | Phase 95 cadence: YAML → seed → migrate |

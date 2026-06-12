@@ -23,6 +23,12 @@ todos:
   - id: ws5-docs
     content: "WS5: operator-tour Plants tab; architecture § plants = knowledge base slot"
     status: pending
+  - id: ws6-picker-banner
+    content: "WS6: Picker 404/degraded banner — not silent fallback (blind spot #5)"
+    status: pending
+  - id: ws7-display-readonly
+    content: "WS7: Interim — display_name read-only on create; variety only (until Phase 93)"
+    status: pending
 isProject: false
 ---
 
@@ -65,7 +71,7 @@ isProject: false
 |-------|---------|------|
 | **Crop from knowledge base** | `<select>` via `CropLibraryPicker` | Required; calls `GET /farms/{id}/crop-library/picker` |
 | **Target preview** | Read-only under dropdown | EC mS/cm, DLI, photoperiod by stage — same data Guardian uses |
-| **Plant label** (optional) | Text | Room/batch nickname only — **not** crop identity |
+| **Plant label** (optional) | Text | **Phase 93 removes** — until then read-only catalog name + variety only |
 | **Variety / cultivar** | Text optional | Genetics ("Blue Dream", "Cherokee Purple") |
 
 **Copy rules:** Never “strain”. Use **plant**, **crop**, **knowledge base**.
@@ -159,9 +165,27 @@ Phase 85 **does not** change `lookup_crop_targets` logic — it gives Guardian a
 
 ---
 
+## WS6 — Picker degraded banner (blind spot #5)
+
+When `loadCropLibraryPicker` hits **404** or uses profile fallback:
+
+- Show **amber banner**: “Knowledge base API outdated — run `make migrate` and restart API.”
+- Do **not** present fallback as full catalog (no categories / unsupported / cousin hints)
+
+Phase **100** adds offline cache for network errors — different banner.
+
+---
+
+## WS7 — Interim identity (blind spot #1 partial)
+
+Until **Phase 93**: hide or read-only **display_name** on create; require **crop_key** only. Optional **variety_or_cultivar** for genetics.
+
+---
+
 ## Acceptance
 
-- [ ] Picker loads ≥46 crops; no 404 after migrate + API restart
+- [ ] Picker loads ≥46 crops; no silent 404
+- [ ] **404/fallback shows upgrade banner**
 - [ ] Modal shows dropdown + EC/DLI preview (not free-text crop type)
 - [ ] Two adds of `tomato` → one DB row
 - [ ] `crop_key=ramps` → 400 with honest reason
@@ -175,5 +199,6 @@ Phase 85 **does not** change `lookup_crop_targets` logic — it gives Guardian a
 - Per-genetics EC profiles
 - Operator-created catalog rows from UI
 - Start grow / cycle binding (Phase 86)
+- Full `batch_label` rename (Phase 93)
 
-**Prompt loop:** `phase 85 ws1` … `phase 85 ws5` or **`phase 85`**.
+**Next:** [Phase 93](phase_93_plant_identity_vocabulary_cleanup.plan.md) immediately after 85.

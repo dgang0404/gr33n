@@ -19,6 +19,9 @@ todos:
   - id: ws5-guardian
     content: "WS5: Document alignment with croplibrary.ValidGrowthStages + persona"
     status: pending
+  - id: ws6-parity-link
+    content: "WS6: Phase 99 check-ui-domain-parity — SetpointRow count guard"
+    status: pending
 isProject: false
 ---
 

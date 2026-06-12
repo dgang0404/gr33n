@@ -25,6 +25,12 @@ todos:
   - id: ws6-smokes
     content: "WS6: smoke_phase86 — Flower Room cannabis path; Guardian EC matches strip"
     status: pending
+  - id: ws7-alias-parity
+    content: "WS7: Blind spot #2 — alias mention (roma) + active cycle crop_key parity smokes"
+    status: pending
+  - id: ws8-batch-label-prep
+    content: "WS8: Prep Phase 93 — cycle API accepts batch_label alias for strain_or_variety"
+    status: pending
 isProject: false
 ---
 
@@ -112,6 +118,16 @@ Guardian **must not invent** EC, pH, VPD, DLI, photoperiod, or watering advice. 
 | Picker | Same `CropLibraryPicker` — feeding & light preview before confirm |
 | Optional | `variety_or_cultivar`; cycle name = batch label |
 | Removed | Starting a grow with no catalog crop |
+
+---
+
+### WS7 — Alias vs active grow (blind spot #2)
+
+| Scenario | Expected |
+|----------|----------|
+| User asks “EC for roma” **with** active tomato grow | Strip EC == Guardian EC |
+| User asks “EC for roma” **without** plant on cycle | Guardian resolves tomato from catalog; **prompt offers** “Link plant in Zone → Plants” |
+| Zone strip empty but Guardian returns EC | **Fail smoke** — cycle must have `plant_id` |
 
 ---
 

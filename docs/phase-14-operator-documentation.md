@@ -92,6 +92,23 @@ Hub: [`phase_68_73_spa_workspace_roadmap.plan.md`](plans/phase_68_73_spa_workspa
 | **91** | Bootstrap template catalog — replace `bootstrapTemplates.js` | [`phase_91_bootstrap_template_catalog.plan.md`](plans/phase_91_bootstrap_template_catalog.plan.md) |
 | **92** | Zone types + greenhouse enums from API | [`phase_92_zone_greenhouse_vocabulary.plan.md`](plans/phase_92_zone_greenhouse_vocabulary.plan.md) |
 
+## Master roadmap — Phases 84–100
+
+**Locked order + blind spot map:** [`plans/phase_84_100_master_roadmap.plan.md`](plans/phase_84_100_master_roadmap.plan.md)
+
+**Execute:** 85 → 86 → 87 → **93** → then 89 → 88 → 90–92 → 95–100 as needed.
+
+| Phase | Focus |
+|-------|--------|
+| **93** | Identity cleanup — `batch_label`, no typed display_name |
+| **94** | Genetics / batch EC profiles |
+| **95** | Catalog integrator ops cadence |
+| **96** | Feeding program vs stage validation |
+| **97** | RAG vs structured truth governance |
+| **98** | Enterprise catalog promotion model |
+| **99** | CI `check-ui-domain-parity` |
+| **100** | Offline catalog cache (LAN/mobile) |
+
 ## Phases 84–87 — Plants & crop knowledge base
 
 **Roadmap hub:** [`plans/phase_84_87_crop_identity_roadmap.plan.md`](plans/phase_84_87_crop_identity_roadmap.plan.md) · **Sit-in:** [`workstreams/sit-in-crop-catalog-enterprise-db.md`](workstreams/sit-in-crop-catalog-enterprise-db.md)
@@ -157,6 +174,8 @@ After operator-doc edits, re-ingest Guardian RAG: **`make rag-ingest-platform-do
 | Phase 83 — Enterprise agronomy seed pack (**shipped**) | [`plans/phase_83_enterprise_agronomy_seed_pack.plan.md`](plans/phase_83_enterprise_agronomy_seed_pack.plan.md) · [`phase-83-closure.md`](plans/phase-83-closure.md) — Guardian bootstrap, commons pack, crop overrides |
 | Phases 84–87 — Crop identity & knowledge base | [`plans/phase_84_87_crop_identity_roadmap.plan.md`](plans/phase_84_87_crop_identity_roadmap.plan.md) · [84](plans/phase_84_crop_catalog_enterprise_db.plan.md) · [85](plans/phase_85_catalog_bound_plants.plan.md) · [86](plans/phase_86_grow_ops_catalog_chain.plan.md) · [87](plans/phase_87_crop_knowledge_operator_closure.plan.md) |
 | Phases 88–92 — UI static data → DB/API | [`plans/phase_88_92_platform_data_gaps_roadmap.plan.md`](plans/phase_88_92_platform_data_gaps_roadmap.plan.md) |
+| Phases 84–100 — Master roadmap (order + blind spots) | [`plans/phase_84_100_master_roadmap.plan.md`](plans/phase_84_100_master_roadmap.plan.md) |
+| Phases 93–100 — Blind spot closure | [93](plans/phase_93_plant_identity_vocabulary_cleanup.plan.md) · [94](plans/phase_94_genetics_batch_ec_profiles.plan.md) · [95](plans/phase_95_catalog_integrator_ops.plan.md) · [96](plans/phase_96_grow_feeding_program_validation.plan.md) · [97](plans/phase_97_rag_structured_truth_governance.plan.md) · [98](plans/phase_98_enterprise_catalog_promotion.plan.md) · [99](plans/phase_99_ci_domain_parity_guards.plan.md) · [100](plans/phase_100_offline_catalog_cache.plan.md) |
 | Crop catalog DB cutover | [`crop-catalog-db-cutover-runbook.md`](crop-catalog-db-cutover-runbook.md) |
 | Hardware sizing (API, DB, Ollama, RAG, chat) | [`recommended-hardware-and-sizing.md`](recommended-hardware-and-sizing.md) |
 | Guardian real-grow readiness (live plants) | [`guardian-real-grow-readiness.md`](guardian-real-grow-readiness.md) |

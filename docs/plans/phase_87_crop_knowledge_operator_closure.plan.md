@@ -19,6 +19,15 @@ todos:
   - id: ws5-closure
     content: "WS5: phase-87-closure.md + phase-14 rows; persona platform_context mirror"
     status: pending
+  - id: ws6-ec-scope
+    content: "WS6: Blind spot #3 — runbook v1 EC scope (crop_key farm-wide; Phase 94 genetics)"
+    status: pending
+  - id: ws7-rag-pointer
+    content: "WS7: Link Phase 97 RAG governance; structured wins on numbers"
+    status: pending
+  - id: ws8-enterprise-pointer
+    content: "WS8: Link Phase 98 enterprise promotion model"
+    status: pending
 isProject: false
 ---
 
@@ -86,7 +95,23 @@ New doc: `docs/crop-knowledge-operator-runbook.md`
 5. Start grow → verify strip chips
 6. Ask Guardian — verify numbers match strip
 7. Unsupported crop smoke (ramps)
-8. Integrator: add catalog crops via seed migration
+8. Integrator: add catalog crops via seed migration → **[Phase 95](phase_95_catalog_integrator_ops.plan.md)**
+
+---
+
+## WS6 — EC override scope (blind spot #3)
+
+Runbook section **“What Settings EC affects”**:
+
+- **v1 (now):** All grows of `crop_key` on this farm share Settings override
+- **Not v1:** Per-genetics Blue Dream vs OG Kush → **[Phase 94](phase_94_genetics_batch_ec_profiles.plan.md)**
+- **Not v1:** Per-batch run EC → Phase 94 or separate farm
+
+---
+
+## WS7 — RAG vs structured (blind spot #8 pointer)
+
+Link **[Phase 97](phase_97_rag_structured_truth_governance.plan.md)** — farm override updates numbers immediately; RAG re-ingest is separate.
 
 ---
 
