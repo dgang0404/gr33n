@@ -43,6 +43,26 @@ export const FALLBACK_DOMAIN_ENUMS = {
     'maturing_aging', 'ready_for_use', 'partially_used', 'fully_used',
     'expired_discarded', 'failed_production',
   ]),
+  zone_types: [
+    { value: 'indoor', label: 'Indoor grow zone', wizard_visible: true, hint: 'Tent, rack, or indoor bay' },
+    { value: 'greenhouse', label: 'Greenhouse', wizard_visible: true, hint: 'Glazing, shade, vents, and climate profile' },
+    { value: 'outdoor', label: 'Outdoor', wizard_visible: true, hint: 'Garden bed, field, or patio grow' },
+    { value: 'nursery', label: 'Nursery', wizard_visible: false },
+    { value: 'seedling', label: 'Seedling room', wizard_visible: false },
+    { value: 'veg', label: 'Veg room (legacy)', wizard_visible: false },
+    { value: 'flower', label: 'Flower room (legacy)', wizard_visible: false },
+    { value: 'storage', label: 'Storage', wizard_visible: false },
+  ],
+  greenhouse_cover_types: [
+    { value: 'glass', label: 'Glass' },
+    { value: 'polycarbonate', label: 'Polycarbonate' },
+    { value: 'film', label: 'Film / poly' },
+  ],
+  greenhouse_automation_policies: [
+    { value: 'manual', label: 'Manual only', hint: 'You control shade and fans' },
+    { value: 'auto', label: 'Auto (sensor rules)', hint: 'Uses lux/temp sensors when wired' },
+    { value: 'schedule_only', label: 'Schedule only', hint: 'Time-based, not sensor-driven' },
+  ],
 }
 
 export const FALLBACK_GROWTH_STAGE_VALUES = FALLBACK_DOMAIN_ENUMS.growth_stages.map((r) => r.value)

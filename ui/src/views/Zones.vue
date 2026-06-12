@@ -33,7 +33,7 @@
           class="input-field" />
         <select v-model="zoneForm.zone_type" class="input-field">
           <option value="">Select type</option>
-          <option v-for="t in zoneTypes" :key="t" :value="t">{{ t }}</option>
+          <option v-for="t in zoneTypeOptions" :key="t.value" :value="t.value">{{ t.label }}</option>
         </select>
         <input v-model.number="zoneForm.area_sqm" type="number" step="0.1" min="0"
           placeholder="Area (m²)" class="input-field" />
@@ -72,8 +72,8 @@
               >
                 {{ zoneUnreadAlerts(zone.id) }} alert{{ zoneUnreadAlerts(zone.id) === 1 ? '' : 's' }}
               </span>
-              <span :class="zoneBadge(zone.zone_type)" class="text-xs font-medium px-2 py-0.5 rounded-full capitalize">
-                {{ zone.zone_type || 'unknown' }}
+              <span :class="zoneBadge(zone.zone_type)" class="text-xs font-medium px-2 py-0.5 rounded-full">
+                {{ zoneTypeLabel(zone.zone_type) || 'unknown' }}
               </span>
             </div>
           </div>
@@ -107,9 +107,11 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import api from '../api'
 import { useFarmStore } from '../stores/farm'
 import { useFarmContextStore } from '../stores/farmContext'
 import { zoneSetupRoute } from '../lib/zoneSetupWizard.js'
+import { loadDomainEnums, adminZoneTypes, zoneTypeLabel } from '../lib/domainEnums.js'
 import AskGuardianButton from '../components/AskGuardianButton.vue'
 import { countZoneUnreadAlerts } from '../lib/zoneGrowSummary.js'
 import {
@@ -128,7 +130,7 @@ const showCreateForm = ref(false)
 const editZone = ref(null)
 const saving = ref(false)
 const zoneForm = ref({ name: '', description: '', zone_type: '', area_sqm: null })
-const zoneTypes = ['indoor', 'outdoor', 'greenhouse', 'nursery', 'seedling', 'veg', 'flower', 'storage']
+const zoneTypeOptions = computed(() => adminZoneTypes())
 
 const programs = ref([])
 const tasks = ref([])
@@ -164,6 +166,7 @@ function zoneListGuardianRef(zone) {
 }
 
 onMounted(async () => {
+  void loadDomainEnums(api)
   const fid = farmContext.farmId
   if (!store.zones.length && fid) await store.loadAll(fid)
   if (fid) {

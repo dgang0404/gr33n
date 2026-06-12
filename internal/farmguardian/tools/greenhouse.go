@@ -7,7 +7,8 @@ import (
 	"strings"
 	"time"
 
-	db "gr33n-api/internal/db"
+	"gr33n-api/internal/db"
+	"gr33n-api/internal/platform/domainenums"
 )
 
 // execSummarizeZoneGreenhouseClimate — read tool for Phase 36 WS7.
@@ -188,7 +189,8 @@ func execSummarizeZoneGreenhouseClimate(ctx context.Context, deps ExecutorDeps, 
 		ct, _ := profile["cover_type"].(string)
 		pol, _ := profile["automation_policy"].(string)
 		notes, _ := profile["notes"].(string)
-		lines = append(lines, fmt.Sprintf("  Cover type: %s | Automation policy: %s", orNA(ct), orNA(pol)))
+		lines = append(lines, fmt.Sprintf("  Cover type: %s | Automation policy: %s",
+			orNA(domainenums.GreenhouseCoverTypeLabel(ct)), orNA(domainenums.GreenhouseAutomationPolicyLabel(pol))))
 		if notes != "" {
 			lines = append(lines, "  Notes: "+notes)
 		}

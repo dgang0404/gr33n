@@ -3,6 +3,8 @@ package zone
 import (
 	"encoding/json"
 	"fmt"
+
+	"gr33n-api/internal/platform/domainenums"
 )
 
 // GreenhouseClimate is the typed JSON schema stored at
@@ -26,18 +28,6 @@ type GreenhouseClimate struct {
 	Notes string `json:"notes,omitempty"`
 }
 
-var validCoverTypes = map[string]struct{}{
-	"glass":          {},
-	"polycarbonate":  {},
-	"film":           {},
-}
-
-var validAutomationPolicies = map[string]struct{}{
-	"auto":          {},
-	"manual":        {},
-	"schedule_only": {},
-}
-
 // ValidateGreenhouseClimate parses and validates a greenhouse_climate value
 // extracted from zone meta_data. It returns the parsed struct, a slice of
 // non-fatal warnings (e.g. "auto policy but no shade actuator"), and any
@@ -52,7 +42,7 @@ func ValidateGreenhouseClimate(raw json.RawMessage) (*GreenhouseClimate, []strin
 	}
 
 	if gc.CoverType != "" {
-		if _, ok := validCoverTypes[gc.CoverType]; !ok {
+		if !domainenums.IsValidGreenhouseCoverType(gc.CoverType) {
 			return nil, nil, fmt.Errorf(
 				"greenhouse_climate.cover_type %q is not valid; must be one of: glass, polycarbonate, film",
 				gc.CoverType,
@@ -61,7 +51,7 @@ func ValidateGreenhouseClimate(raw json.RawMessage) (*GreenhouseClimate, []strin
 	}
 
 	if gc.AutomationPolicy != "" {
-		if _, ok := validAutomationPolicies[gc.AutomationPolicy]; !ok {
+		if !domainenums.IsValidGreenhouseAutomationPolicy(gc.AutomationPolicy) {
 			return nil, nil, fmt.Errorf(
 				"greenhouse_climate.automation_policy %q is not valid; must be one of: auto, manual, schedule_only",
 				gc.AutomationPolicy,

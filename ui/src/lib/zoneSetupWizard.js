@@ -2,24 +2,12 @@
  * Phase 44 WS2 — add zone wizard helpers.
  */
 
-/** Farmer-facing zone types for the setup wizard (subset of API values). */
-export const ZONE_SETUP_TYPES = [
-  { value: 'indoor', label: 'Indoor grow zone', hint: 'Tent, rack, or indoor bay' },
-  { value: 'greenhouse', label: 'Greenhouse', hint: 'Glazing, shade, vents, and climate profile' },
-  { value: 'outdoor', label: 'Outdoor', hint: 'Garden bed, field, or patio grow' },
-]
-
-export const GREENHOUSE_COVER_TYPES = [
-  { value: 'glass', label: 'Glass' },
-  { value: 'polycarbonate', label: 'Polycarbonate' },
-  { value: 'film', label: 'Film / poly' },
-]
-
-export const GREENHOUSE_AUTOMATION_POLICIES = [
-  { value: 'manual', label: 'Manual only', hint: 'You control shade and fans' },
-  { value: 'auto', label: 'Auto (sensor rules)', hint: 'Uses lux/temp sensors when wired' },
-  { value: 'schedule_only', label: 'Schedule only', hint: 'Time-based, not sensor-driven' },
-]
+import {
+  getDomainEnums,
+  wizardZoneTypes,
+  greenhouseCoverTypes,
+  greenhouseAutomationPolicies,
+} from './domainEnums.js'
 
 export function zoneSetupRoute(farmId) {
   return `/farms/${farmId}/zones/new`
@@ -33,6 +21,30 @@ export function supportsLightingPreset(zoneType) {
   const t = String(zoneType || '').toLowerCase()
   return t === 'indoor' || t === 'greenhouse' || t === 'veg' || t === 'flower' || t === 'seedling'
 }
+
+/** Wizard zone type cards from GET /platform/domain-enums. */
+export function zoneSetupTypeOptions(enums) {
+  return wizardZoneTypes(enums)
+}
+
+/** Greenhouse cover options from domain enums. */
+export function zoneSetupCoverTypes(enums) {
+  return greenhouseCoverTypes(enums)
+}
+
+/** Greenhouse automation policy options from domain enums. */
+export function zoneSetupAutomationPolicies(enums) {
+  return greenhouseAutomationPolicies(enums)
+}
+
+/** @deprecated use zoneSetupTypeOptions() */
+export const ZONE_SETUP_TYPES = wizardZoneTypes(getDomainEnums())
+
+/** @deprecated use zoneSetupCoverTypes() */
+export const GREENHOUSE_COVER_TYPES = greenhouseCoverTypes(getDomainEnums())
+
+/** @deprecated use zoneSetupAutomationPolicies() */
+export const GREENHOUSE_AUTOMATION_POLICIES = greenhouseAutomationPolicies(getDomainEnums())
 
 /**
  * Build POST /farms/{id}/zones body from wizard form state.

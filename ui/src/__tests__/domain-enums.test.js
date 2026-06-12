@@ -3,6 +3,9 @@ import {
   loadDomainEnums,
   growthStageValues,
   resetDomainEnumsCache,
+  wizardZoneTypes,
+  adminZoneTypes,
+  greenhouseCoverTypes,
 } from '../lib/domainEnums.js'
 import { FALLBACK_GROWTH_STAGE_VALUES } from '../lib/domainEnums.fallback.js'
 import { GROWTH_STAGES } from '../lib/growHub.js'
@@ -37,5 +40,13 @@ describe('Phase 88 — domain enums loader', () => {
     expect(first).toBe(second)
     expect(calls).toBe(1)
     expect(growthStageValues(first)).toEqual(['transition'])
+  })
+
+  it('fallback zone vocabulary includes wizard subset and legacy admin types', () => {
+    expect(adminZoneTypes()).toHaveLength(8)
+    expect(adminZoneTypes().some((z) => z.value === 'veg' && !z.wizard_visible)).toBe(true)
+    expect(wizardZoneTypes()).toHaveLength(3)
+    expect(wizardZoneTypes().map((z) => z.value)).toEqual(['indoor', 'greenhouse', 'outdoor'])
+    expect(greenhouseCoverTypes().map((c) => c.value)).toContain('film')
   })
 })

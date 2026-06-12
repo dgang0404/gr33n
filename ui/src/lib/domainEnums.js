@@ -21,6 +21,9 @@ export function normalizeDomainEnums(payload) {
     application_targets: src.application_targets ?? FALLBACK_DOMAIN_ENUMS.application_targets,
     input_definition_categories: src.input_definition_categories ?? FALLBACK_DOMAIN_ENUMS.input_definition_categories,
     batch_statuses: src.batch_statuses ?? FALLBACK_DOMAIN_ENUMS.batch_statuses,
+    zone_types: src.zone_types ?? FALLBACK_DOMAIN_ENUMS.zone_types,
+    greenhouse_cover_types: src.greenhouse_cover_types ?? FALLBACK_DOMAIN_ENUMS.greenhouse_cover_types,
+    greenhouse_automation_policies: src.greenhouse_automation_policies ?? FALLBACK_DOMAIN_ENUMS.greenhouse_automation_policies,
   }
 }
 
@@ -68,6 +71,33 @@ export function enumLabel(listKey, value, enums) {
   const rows = (enums || getDomainEnums())[listKey] || []
   const hit = rows.find((r) => r.value === value)
   return hit?.label || String(value).replace(/_/g, ' ')
+}
+
+/** @param {object|null|undefined} enums */
+export function adminZoneTypes(enums) {
+  return (enums || getDomainEnums()).zone_types || []
+}
+
+/** @param {object|null|undefined} enums */
+export function wizardZoneTypes(enums) {
+  return adminZoneTypes(enums)
+    .filter((r) => r.wizard_visible)
+    .map((r) => ({ value: r.value, label: r.label, hint: r.hint || '' }))
+}
+
+/** @param {object|null|undefined} enums */
+export function greenhouseCoverTypes(enums) {
+  return (enums || getDomainEnums()).greenhouse_cover_types || []
+}
+
+/** @param {object|null|undefined} enums */
+export function greenhouseAutomationPolicies(enums) {
+  return (enums || getDomainEnums()).greenhouse_automation_policies || []
+}
+
+/** @param {string} value @param {object|null|undefined} enums */
+export function zoneTypeLabel(value, enums) {
+  return enumLabel('zone_types', value, enums)
 }
 
 /** Test helper */

@@ -11,12 +11,15 @@ type Option struct {
 
 // Payload is returned by GET /platform/domain-enums.
 type Payload struct {
-	GrowthStages              []Option `json:"growth_stages"`
-	ReservoirStatuses         []Option `json:"reservoir_statuses"`
-	CostCategories            []Option `json:"cost_categories"`
-	ApplicationTargets        []Option `json:"application_targets"`
-	InputDefinitionCategories []Option `json:"input_definition_categories"`
-	BatchStatuses             []Option `json:"batch_statuses"`
+	GrowthStages                 []Option         `json:"growth_stages"`
+	ReservoirStatuses            []Option         `json:"reservoir_statuses"`
+	CostCategories               []Option         `json:"cost_categories"`
+	ApplicationTargets           []Option         `json:"application_targets"`
+	InputDefinitionCategories    []Option         `json:"input_definition_categories"`
+	BatchStatuses                []Option         `json:"batch_statuses"`
+	ZoneTypes                    []ZoneTypeOption `json:"zone_types"`
+	GreenhouseCoverTypes         []Option         `json:"greenhouse_cover_types"`
+	GreenhouseAutomationPolicies []HintOption     `json:"greenhouse_automation_policies"`
 }
 
 // Ordered slices — aligned with Postgres enums and croplibrary.ValidGrowthStages.
@@ -67,11 +70,14 @@ func options(values []string) []Option {
 // All returns every platform enum for UI dropdowns.
 func All() Payload {
 	return Payload{
-		GrowthStages:              options(growthStageOrder),
-		ReservoirStatuses:         options(reservoirStatusOrder),
-		CostCategories:            options(costCategoryOrder),
-		ApplicationTargets:        options(applicationTargetOrder),
-		InputDefinitionCategories: options(inputDefinitionCategoryOrder),
-		BatchStatuses:             options(batchStatusOrder),
+		GrowthStages:                 options(growthStageOrder),
+		ReservoirStatuses:            options(reservoirStatusOrder),
+		CostCategories:               options(costCategoryOrder),
+		ApplicationTargets:           options(applicationTargetOrder),
+		InputDefinitionCategories:    options(inputDefinitionCategoryOrder),
+		BatchStatuses:                options(batchStatusOrder),
+		ZoneTypes:                    zoneTypeOptions(),
+		GreenhouseCoverTypes:         append([]Option(nil), greenhouseCoverTypes...),
+		GreenhouseAutomationPolicies: append([]HintOption(nil), greenhouseAutomationPolicies...),
 	}
 }

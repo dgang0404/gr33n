@@ -237,16 +237,17 @@ import { buildSetupStarters } from '../lib/guardianStarters.js'
 import { useFarmStore } from '../stores/farm.js'
 import { useFarmContextStore } from '../stores/farmContext.js'
 import {
-  ZONE_SETUP_TYPES,
-  GREENHOUSE_COVER_TYPES,
-  GREENHOUSE_AUTOMATION_POLICIES,
   buildZoneCreatePayload,
   buildLightingPresetRequest,
   filterLightActuators,
   listUnassignedDevices,
   isGreenhouseZoneType,
   supportsLightingPreset,
+  zoneSetupTypeOptions,
+  zoneSetupCoverTypes,
+  zoneSetupAutomationPolicies,
 } from '../lib/zoneSetupWizard.js'
+import { loadDomainEnums } from '../lib/domainEnums.js'
 import { LIGHTING_PRESET_SKIP, loadLightingPresets } from '../lib/lightingPresets.js'
 import { deviceSetupRoute } from '../lib/deviceSetupWizard.js'
 
@@ -280,9 +281,9 @@ const farmId = computed(() => {
   return Number.isFinite(n) && n > 0 ? n : null
 })
 
-const zoneTypes = ZONE_SETUP_TYPES
-const coverTypes = GREENHOUSE_COVER_TYPES
-const automationPolicies = GREENHOUSE_AUTOMATION_POLICIES
+const zoneTypes = computed(() => zoneSetupTypeOptions())
+const coverTypes = computed(() => zoneSetupCoverTypes())
+const automationPolicies = computed(() => zoneSetupAutomationPolicies())
 const apiLightingPresets = ref([])
 const lightingPresets = computed(() => [LIGHTING_PRESET_SKIP, ...apiLightingPresets.value])
 
@@ -382,6 +383,7 @@ async function createZone() {
 }
 
 onMounted(() => {
+  void loadDomainEnums(api)
   void ensureFarmContext()
   void loadLightingPresets(api).then((rows) => {
     apiLightingPresets.value = rows ?? []

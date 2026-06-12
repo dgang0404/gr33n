@@ -39,18 +39,14 @@
           <span class="text-zinc-400 text-xs">Cover type</span>
           <select v-model="profile.cover_type" class="mt-1 w-full bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white">
             <option value="">—</option>
-            <option value="glass">Glass</option>
-            <option value="polycarbonate">Polycarbonate</option>
-            <option value="film">Film</option>
+            <option v-for="opt in coverTypeOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
           </select>
         </label>
         <label class="block">
           <span class="text-zinc-400 text-xs">Automation policy</span>
           <select v-model="profile.automation_policy" class="mt-1 w-full bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white">
             <option value="">—</option>
-            <option value="auto">Auto (sensor rules)</option>
-            <option value="manual">Manual only</option>
-            <option value="schedule_only">Schedule only</option>
+            <option v-for="opt in automationPolicyOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
           </select>
         </label>
         <label class="block md:col-span-2">
@@ -216,6 +212,7 @@ import { computed, onMounted, reactive, ref, watch } from 'vue'
 import api from '../api'
 import { useFarmStore } from '../stores/farm'
 import { actuatorGHRole } from '../lib/plantNeeds.js'
+import { loadDomainEnums, greenhouseCoverTypes, greenhouseAutomationPolicies } from '../lib/domainEnums.js'
 import SensorTile from './SensorTile.vue'
 
 const props = defineProps({
@@ -230,6 +227,8 @@ const props = defineProps({
 const emit = defineEmits(['refresh-events'])
 
 const store = useFarmStore()
+const coverTypeOptions = computed(() => greenhouseCoverTypes())
+const automationPolicyOptions = computed(() => greenhouseAutomationPolicies())
 const saving = ref(false)
 const saveError = ref('')
 const saveOk = ref(false)
@@ -488,5 +487,8 @@ function formatTime(ts) {
   return d.toLocaleString()
 }
 
-onMounted(loadGhRules)
+onMounted(() => {
+  void loadDomainEnums(api)
+  void loadGhRules()
+})
 </script>

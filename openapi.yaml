@@ -1531,8 +1531,9 @@ paths:
       summary: Platform domain enums for UI dropdowns
       description: >
         Growth stages, reservoir statuses, cost categories, NF application targets,
-        input definition categories, and batch statuses — aligned with Postgres enums
-        and Guardian stage vocabulary (Phase 88).
+        input definition categories, batch statuses, zone types, and greenhouse
+        cover/automation vocabulary — aligned with Postgres enums and zone meta
+        validation (Phases 88, 92).
       security: [{ bearerAuth: [] }]
       responses:
         "200":
@@ -7868,6 +7869,32 @@ components:
         batch_statuses:
           type: array
           items: { $ref: "#/components/schemas/DomainEnumOption" }
+        zone_types:
+          type: array
+          items: { $ref: "#/components/schemas/ZoneTypeOption" }
+        greenhouse_cover_types:
+          type: array
+          items: { $ref: "#/components/schemas/DomainEnumOption" }
+        greenhouse_automation_policies:
+          type: array
+          items: { $ref: "#/components/schemas/DomainHintOption" }
+
+    ZoneTypeOption:
+      type: object
+      required: [value, label, wizard_visible]
+      properties:
+        value: { type: string }
+        label: { type: string }
+        wizard_visible: { type: boolean }
+        hint: { type: string }
+
+    DomainHintOption:
+      type: object
+      required: [value, label]
+      properties:
+        value: { type: string }
+        label: { type: string }
+        hint: { type: string }
 
     DeviceTaxonomyEntry:
       type: object
