@@ -183,6 +183,7 @@ type Querier interface {
 	DeleteTaskInputConsumption(ctx context.Context, id int64) error
 	DeleteTaskLaborLog(ctx context.Context, id int64) error
 	DeleteUserPushToken(ctx context.Context, arg DeleteUserPushTokenParams) error
+	DismissGuardianProposal(ctx context.Context, arg DismissGuardianProposalParams) (Gr33ncoreGuardianActionProposal, error)
 	// ============================================================
 	// Queries: gr33ncore.device_commands (Phase 39 WS1)
 	// ============================================================

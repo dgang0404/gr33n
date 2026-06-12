@@ -151,6 +151,7 @@
       <p class="text-xs text-zinc-500 mb-4 leading-relaxed">
         Where is your farm? gr33n uses latitude and longitude to calculate sunrise, sunset, and daylight hours —
         <strong class="text-zinc-400">no internet required</strong> for solar math.
+        Farm Guardian uses these coordinates for supplemental-light and DLI answers.
       </p>
       <form class="grid grid-cols-1 sm:grid-cols-3 gap-3" @submit.prevent="saveFarmSite">
         <div>

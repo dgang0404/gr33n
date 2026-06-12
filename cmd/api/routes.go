@@ -159,6 +159,8 @@ func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationwo
 	mux.Handle("POST /v1/chat/stt", jwt(http.HandlerFunc(aichat.TranscribeSTT)))
 	mux.Handle("POST /v1/chat/confirm", jwt(http.HandlerFunc(aichat.PostConfirm)))
 	mux.Handle("GET /v1/chat/proposals", jwt(http.HandlerFunc(aichat.ListProposals)))
+	mux.Handle("POST /v1/chat/proposals/suggest-empty-zone", jwt(http.HandlerFunc(aichat.PostSuggestEmptyZoneProposal)))
+	mux.Handle("POST /v1/chat/proposals/{id}/dismiss", jwt(http.HandlerFunc(aichat.PostDismissProposal)))
 	mux.Handle("GET /v1/chat/sessions", jwt(http.HandlerFunc(aichat.ListSessions)))
 	mux.Handle("GET /v1/chat/sessions/{session_id}", jwt(http.HandlerFunc(aichat.GetSession)))
 	mux.Handle("PATCH /v1/chat/sessions/{session_id}", jwt(http.HandlerFunc(aichat.PatchSession)))

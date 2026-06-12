@@ -9,6 +9,7 @@ import (
 	"time"
 	"unicode"
 
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 
 	"gr33n-api/internal/croplibrary"
@@ -280,4 +281,53 @@ func buildSetupPackArgs(profile string, zoneID int64, zoneName, cropKey string) 
 			"title": "Monitor new " + label + " — first two weeks",
 		},
 	}
+}
+
+// InsertEmptyZoneSetupProposal creates a proactive apply_grow_setup_pack change request (Phase 73 WS2).
+func InsertEmptyZoneSetupProposal(
+	ctx context.Context,
+	q db.Querier,
+	userID uuid.UUID,
+	farmID, zoneID int64,
+	cropKey string,
+) (db.Gr33ncoreGuardianActionProposal, error) {
+	if q == nil || farmID <= 0 || zoneID <= 0 || userID == uuid.Nil {
+		return db.Gr33ncoreGuardianActionProposal{}, errors.New("invalid empty-zone setup input")
+	}
+	zone, err := q.GetZoneByID(ctx, zoneID)
+	if err != nil {
+		return db.Gr33ncoreGuardianActionProposal{}, err
+	}
+	if zone.FarmID != farmID {
+		return db.Gr33ncoreGuardianActionProposal{}, errors.New("zone not on farm")
+	}
+	if _, err := q.GetActiveCropCycleForZone(ctx, zoneID); err == nil {
+		return db.Gr33ncoreGuardianActionProposal{}, errors.New("zone already has an active grow")
+	} else if !errors.Is(err, pgx.ErrNoRows) {
+		return db.Gr33ncoreGuardianActionProposal{}, err
+	}
+	cropKey = strings.TrimSpace(cropKey)
+	profile := inferSetupProfile(zone.Name, "")
+	if cropKey == "" {
+		if profile == "commercial_zone" {
+			cropKey = "tomato"
+		} else {
+			cropKey = "pothos"
+		}
+	}
+	exists, err := plantCropKeyOnFarm(ctx, q, farmID, cropKey)
+	if err != nil {
+		return db.Gr33ncoreGuardianActionProposal{}, err
+	}
+	if exists {
+		return db.Gr33ncoreGuardianActionProposal{}, errors.New("crop already on farm")
+	}
+	args := buildSetupPackArgs(profile, zoneID, zone.Name, cropKey)
+	return insertProposal(ctx, q, insertProposalInput{
+		userID:  userID,
+		farmID:  farmID,
+		toolID:  "apply_grow_setup_pack",
+		args:    args,
+		summary: tools.GrowSetupPackSummary(args),
+	})
 }

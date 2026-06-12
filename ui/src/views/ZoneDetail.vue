@@ -149,6 +149,13 @@
           @harvest="openHarvestWizard"
         />
 
+        <EmptyZoneGrowNudge
+          v-if="zone && !hasActiveCropCycle"
+          :farm-id="farmId"
+          :zone-id="zoneId"
+          :zone-name="zone.name"
+        />
+
         <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-4 space-y-3" data-test="zone-overview-spine">
           <div class="flex items-center justify-between gap-2 flex-wrap">
             <h2 class="text-sm font-semibold text-white">Right now</h2>
@@ -326,6 +333,7 @@ import ZoneHardwarePanel from '../components/ZoneHardwarePanel.vue'
 import ZoneTasksPanel from '../components/ZoneTasksPanel.vue'
 import ZoneAdvancedHint from '../components/ZoneAdvancedHint.vue'
 import ZoneCurrentGrowStrip from '../components/ZoneCurrentGrowStrip.vue'
+import EmptyZoneGrowNudge from '../components/EmptyZoneGrowNudge.vue'
 import ZoneConnectionPipeline from '../components/ZoneConnectionPipeline.vue'
 import ZoneOpsSection from '../components/ZoneOpsSection.vue'
 import ZonePlantsSection from '../components/ZonePlantsSection.vue'

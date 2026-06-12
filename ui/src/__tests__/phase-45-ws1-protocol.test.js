@@ -71,10 +71,10 @@ describe('Phase 45 WS1 — sit-in protocol closure', () => {
     const vue = readFileSync(join(uiSrc, 'components/GuardianActionProposal.vue'), 'utf8')
     expect(vue).toContain('data-test="guardian-proposal-dismiss"')
     expect(vue).toContain('data-test="guardian-proposal-dismissed"')
-    const dismissFn = vue.match(/function onDismiss\(\) \{[\s\S]*?\n\}/)
+    const dismissFn = vue.match(/async function onDismiss\(\) \{[\s\S]*?\n\}/)
     expect(dismissFn).toBeTruthy()
-    expect(dismissFn[0]).not.toContain('api.post')
-    expect(dismissFn[0]).toContain("uiStatus.value = 'dismissed'")
+    expect(dismissFn[0]).toContain('api.post')
+    expect(dismissFn[0]).toContain('/dismiss')
   })
 
   it('phase 45 parent plan marks WS1 complete', () => {

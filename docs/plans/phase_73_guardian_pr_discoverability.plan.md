@@ -13,22 +13,22 @@ overview: >
 todos:
   - id: ws1-global-pending
     content: "WS1: Global pending-change badge on the Guardian launcher (nav + TopBar) from guardianProposals store; not buried in the drawer Pending tab"
-    status: pending
+    status: completed
   - id: ws2-empty-zone-nudge
     content: "WS2: Empty-zone/empty-farm proactive proposal — when a zone has no active grow, Guardian offers an apply_grow_setup_pack PR the user can Confirm (uses existing starters + setup-pack matcher)"
-    status: pending
+    status: completed
   - id: ws3-server-dismiss
     content: "WS3 (backend): real POST /v1/chat/proposals/{id}/dismiss so dismiss persists (today it's UI-only; DB row lingers pending until TTL)"
-    status: pending
+    status: completed
   - id: ws4-readtool-reliability
     content: "WS4 (backend): widen read-tool intent matching + optional LLM tool-selection so site_weather/lookup_crop_targets fire on natural phrasing; clear 'why no data' messaging (missing coords / no crop profile)"
-    status: pending
+    status: completed
   - id: ws5-grounding-prereqs
     content: "WS5: Setup nudges for the data the tools need — prompt to set farm lat/long (site_weather) and assign a crop profile to a grow (lookup_crop_targets); surfaced in Settings + zone + empty states"
-    status: pending
+    status: completed
   - id: ws6-docs-tests
     content: "WS6: guardian-change-requests-guide update, Go matcher/dismiss tests, smoke_phase73_test.go, phase-73-closure.test.js, operator-tour; OC-73"
-    status: pending
+    status: completed
 isProject: false
 ---
 
@@ -36,9 +36,7 @@ isProject: false
 
 ## Status
 
-**Planned.** Last phase of the [SPA workspace arc](phase_68_73_spa_workspace_roadmap.plan.md). Backend (Go) + UI. Builds on the Guardian proposal system ([Phase 29](phase_29_guardian_agent_layer.md)/[30](phase_30_guardian_change_requests.plan.md)/[34](phase_34_guardian_pr_iteration.plan.md)/[45](phase_45_guardian_pr_spec.md)/[46](phase_46_guardian_llm_tool_proposals.plan.md)/[55](phase_55_guardian_pr_spec.md)) and the read tools from [Phase 55/64/66](phase_66_weather_site_context.plan.md).
-
-**Closure:** **OC-73** — tracked in this plan's DoD + [arc hub OC table](phase_68_73_spa_workspace_roadmap.plan.md#operational-closure-oc-rows). Do not add to the archived Phase 35 closure doc.
+**Status:** **Shipped** on `main`. Closure: [`phase-73-closure.md`](phase-73-closure.md) · **OC-73** closed. Last phase of the [SPA workspace arc](phase_68_73_spa_workspace_roadmap.plan.md). Builds on the Guardian proposal system ([Phase 29](phase_29_guardian_agent_layer.md)/[30](phase_30_guardian_change_requests.plan.md)/[34](phase_34_guardian_pr_iteration.plan.md)/[45](phase_45_guardian_pr_spec.md)/[46](phase_46_guardian_llm_tool_proposals.plan.md)/[55](phase_55_guardian_pr_spec.md)) and the read tools from [Phase 55/64/66](phase_66_weather_site_context.plan.md).
 
 ---
 
@@ -58,7 +56,7 @@ Two operator-reported gaps, both confirmed in the code.
 
 1. **A card only appears when a server-side matcher fires** — generic questions get text only. Triggers live in [`internal/farmguardian/proposals*.go`](../internal/farmguardian/proposals.go), **not** in the persona. (Answering the operator's question: PRs are **not** made by phrases in the persona — they're created after each chat turn by Go intent-matchers, plus an optional LLM path gated off by `GUARDIAN_LLM_PROPOSALS`.)
 2. **The Pending inbox is nested in the drawer** — there's a nudge dot but no clear global count of "you have N changes waiting."
-3. **Dismiss is client-only** — there's no dismiss API; the DB row lingers `pending` until its ~5-min TTL.
+3. **Dismiss persists server-side (Phase 73)** — `POST /v1/chat/proposals/{id}/dismiss` sets status `dismissed`; the global pending badge stays accurate.
 
 ### B. Guardian denies access to data it actually has.
 
@@ -150,12 +148,12 @@ Make the data the tools need easy to provide:
 
 ## Definition of done
 
-- [ ] A global pending-change count is visible on the Guardian launcher + TopBar; one tap reaches the inbox
-- [ ] Empty zones/farms surface a Confirm-able grow-setup proposal (Guardian "sees no plants → offers a PR")
-- [ ] `POST /v1/chat/proposals/{id}/dismiss` persists; badge stays accurate
-- [ ] `site_weather` / `lookup_crop_targets` fire on natural phrasing; the supplemental-light question now gets a grounded answer
-- [ ] Missing coords / crop profile produce a clear "set this up" message + CTA, never a flat "no access"
-- [ ] Go + Vitest green; smoke_phase73 green; OC-73 closed
+- [x] A global pending-change count is visible on the Guardian launcher + TopBar; one tap reaches the inbox
+- [x] Empty zones/farms surface a Confirm-able grow-setup proposal (Guardian "sees no plants → offers a PR")
+- [x] `POST /v1/chat/proposals/{id}/dismiss` persists; badge stays accurate
+- [x] `site_weather` / `lookup_crop_targets` fire on natural phrasing; the supplemental-light question now gets a grounded answer
+- [x] Missing coords / crop profile produce a clear "set this up" message + CTA, never a flat "no access"
+- [x] Go + Vitest green; smoke_phase73 green; OC-73 closed
 
 ---
 

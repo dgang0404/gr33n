@@ -123,12 +123,14 @@ describe('GuardianActionProposal (Phase 29 WS4)', () => {
     expect(wrapper.find('[data-test="guardian-proposal-done"]').exists()).toBe(true)
   })
 
-  it('emits dismissed without calling API', async () => {
+  it('emits dismissed after calling dismiss API', async () => {
     const wrapper = mountCard()
     await wrapper.find('[data-test="guardian-proposal-dismiss"]').trigger('click')
     await flushPromises()
     await nextTick()
-    expect(api.post).not.toHaveBeenCalled()
+    expect(api.post).toHaveBeenCalledWith(
+      `/v1/chat/proposals/${baseProposal.proposal_id}/dismiss`,
+    )
     expect(wrapper.emitted('dismissed')).toBeTruthy()
     expect(wrapper.text()).toContain('Dismissed')
   })

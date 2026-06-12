@@ -164,7 +164,7 @@ flowchart TB
 | OC-70 | 70 hardware Pi SPA | ✅ Shipped (`phase-70-closure.md`) |
 | OC-71 | 71 feed & water | ✅ Shipped (`phase-71-closure.md`) |
 | OC-72 | 72 money | ✅ Shipped (`phase-72-closure.md`) |
-| OC-73 | 73 guardian PRs | Planned |
+| OC-73 | 73 guardian PRs | ✅ Shipped (`phase-73-closure.md`) |
 | OC-74 | 74 zone ops inbox | ✅ Shipped |
 | OC-75 | 75 comfort workspace | ✅ Shipped |
 | OC-76 | 76 Today/mobile alignment | ✅ Shipped |
@@ -189,4 +189,4 @@ flowchart TB
 
 ## Using this in a new chat
 
-> Read `docs/plans/phase_68_73_spa_workspace_roadmap.plan.md` (covers **68–77**). Implement from the specific phase plan. Never delete routes — redirect. **UI shipped:** 68–69, 70–72, 74–77. **Planned:** 73 (Guardian PR badge).
+> Read `docs/plans/phase_68_73_spa_workspace_roadmap.plan.md` (covers **68–77**). Implement from the specific phase plan. Never delete routes — redirect. **UI shipped:** 68–73, 74–77.

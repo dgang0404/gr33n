@@ -63,6 +63,7 @@ sequenceDiagram
 | Trigger type | How it works | Examples |
 |--------------|--------------|----------|
 | **You ask in chat** | After your message, server runs **rule-assisted** intent matchers (regex + snapshot checks) | “ack alert 5”, “add philodendron to Living Room with a light feed program” |
+| **Empty zone nudge (Phase 73)** | Zone Overview when no active grow — **Set up with Guardian** calls `POST /v1/chat/proposals/suggest-empty-zone` | Empty zone → `apply_grow_setup_pack` card without typing setup intent |
 | **Ask Guardian button** | UI opens drawer with **prefilled message**; same matcher runs when you send | Zone card: “What’s the status of Flower Room?”; Alerts: “Explain alert #42…” |
 | **Revise in session** | Follow-up message updates the **pending** draft (Phase 34) | “use 0.3 L not 0.5” |
 | **LLM structured proposal (Phase 46)** | Matchers miss, but you clearly asked for a change, you have **Operate**, and `GUARDIAN_LLM_PROPOSALS=true` — server parses **validated** tool JSON from the assistant turn | Paraphrased feed patch when regex matchers miss; card shows `llm_sourced` in meta |
@@ -106,9 +107,9 @@ Registered write tools: see [`internal/farmguardian/tools/registry.go`](../inter
 | 1. See card | Chat transcript (drawer or `/chat`) |
 | 2. Read impact | “If you Confirm, this will…” + risk tier (low / medium / high) |
 | 3. Optional refine | Reply in same session or **Refine** button (Phase 34) |
-| 4. Inbox later | Drawer **Pending** tab or `/guardian/requests` (badge in TopBar) |
+| 4. Inbox later | Drawer **Pending** tab, `/guardian/requests`, or **✨ Ask gr33n** with numeric pending badge (nav + TopBar — Phase 73) |
 | 5. Confirm | **Operate** role required; viewers see card but cannot Confirm |
-| 6. Dismiss / expiry | Wrong draft → Dismiss; TTL ~5 minutes on pending drafts |
+| 6. Dismiss / expiry | Wrong draft → **Dismiss** (`POST /v1/chat/proposals/{id}/dismiss` persists); TTL ~5 minutes on untouched pending drafts |
 
 **Confirm API:** `POST /v1/chat/confirm` with `proposal_id` — server replays **frozen args**, never trusts the client to resend fields.
 

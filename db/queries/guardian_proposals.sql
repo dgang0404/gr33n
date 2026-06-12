@@ -94,3 +94,11 @@ SELECT COUNT(*)::bigint FROM gr33ncore.guardian_action_proposals
 WHERE user_id = $1
   AND (sqlc.narg('farm_id')::bigint IS NULL OR farm_id = sqlc.narg('farm_id')::bigint)
   AND (sqlc.narg('status')::text IS NULL OR status::text = sqlc.narg('status')::text);
+
+-- name: DismissGuardianProposal :one
+UPDATE gr33ncore.guardian_action_proposals
+SET status = 'dismissed'
+WHERE proposal_id = $1
+  AND user_id = $2
+  AND status = 'pending'
+RETURNING *;

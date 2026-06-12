@@ -20,7 +20,7 @@ import (
 // SiteWeatherPersonaRule guides Guardian weather answers.
 const SiteWeatherPersonaRule = `Site weather (Phase 66): Use site_weather for daylight, DLI, frost, supplemental-light gaps. State tier: solar_math (offline), local sensor/manual, or online forecast — never invent forecast when offline.`
 
-var siteWeatherIntent = regexp.MustCompile(`(?i)\b(daylight|daylength|sunrise|sunset|solar noon|frost|supplemental light|extra light|dli|photoperiod|vent the greenhouse|outdoor temp|site weather|weather today)\b|\bhow long is (the )?day\b|\bneed (supplemental|extra) light\b`)
+var siteWeatherIntent = regexp.MustCompile(`(?i)\b(daylight|daylength|sunrise|sunset|solar noon|frost|supplemental light|extra light|dli|photoperiod|vent the greenhouse|outdoor temp|site weather|weather today|bright enough|bright today|enough light|enough sun)\b|\bhow long is (the )?day\b|\bneed (supplemental|extra) light\b|\bis it (bright|sunny|cloudy) enough\b`)
 
 func shouldRunSiteWeatherReadIntent(question string) bool {
 	q := strings.TrimSpace(question)
@@ -79,7 +79,9 @@ func renderSiteWeather(ctx context.Context, q db.Querier, farmID int64) (string,
 			}
 		}
 	} else {
-		b.WriteString(" none (set farm site coordinates in Settings)")
+		b.WriteString(" none")
+		b.WriteString("\nSetup needed: add farm latitude/longitude in Settings → Farm site so clear-sky DLI and supplemental-light gaps can be computed.")
+		b.WriteString("\nCTA: Settings → Farm site coordinates (Phase 73).")
 	}
 
 	latest, err := q.GetLatestWeatherForFarm(ctx, farmID)

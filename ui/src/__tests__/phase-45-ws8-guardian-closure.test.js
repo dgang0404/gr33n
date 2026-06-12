@@ -43,12 +43,13 @@ describe('Phase 45 WS8 — Guardian PR path closure', () => {
     expect(grow.message).toContain('Bench A')
   })
 
-  it('GuardianActionProposal exposes dismiss without API (protocol §4.3)', () => {
+  it('GuardianActionProposal dismiss persists via API (Phase 73)', () => {
     const vue = readFileSync(join(uiSrc, 'components/GuardianActionProposal.vue'), 'utf8')
     expect(vue).toContain('data-test="guardian-proposal-dismiss"')
     expect(vue).toContain("uiStatus.value = 'dismissed'")
-    const dismissFn = vue.match(/function onDismiss\(\) \{[\s\S]*?\n\}/)
-    expect(dismissFn[0]).not.toContain('api.post')
+    const dismissFn = vue.match(/async function onDismiss\(\) \{[\s\S]*?\n\}/)
+    expect(dismissFn[0]).toContain('api.post')
+    expect(dismissFn[0]).toContain('/dismiss')
   })
 
   it('setup pack card shows high-tier warning before Confirm', () => {

@@ -1,10 +1,15 @@
 package chat
 
 import (
+	"encoding/json"
+	"errors"
 	"net/http"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 
 	"gr33n-api/internal/authctx"
 	db "gr33n-api/internal/db"
@@ -142,6 +147,95 @@ func (h *Handler) ListProposals(w http.ResponseWriter, r *http.Request) {
 		Limit:     limit,
 		Offset:    offset,
 	})
+}
+
+// PostDismissProposal handles POST /v1/chat/proposals/{id}/dismiss (Phase 73 WS3).
+func (h *Handler) PostDismissProposal(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		httputil.WriteError(w, http.StatusMethodNotAllowed, "method not allowed")
+		return
+	}
+	if h.q == nil {
+		httputil.WriteError(w, http.StatusInternalServerError, "database unavailable")
+		return
+	}
+	userID, hasUser := authctx.UserID(r.Context())
+	if !hasUser {
+		httputil.WriteError(w, http.StatusUnauthorized, "authentication required")
+		return
+	}
+	rawID := strings.TrimSpace(r.PathValue("id"))
+	proposalID, err := uuid.Parse(rawID)
+	if err != nil {
+		httputil.WriteError(w, http.StatusBadRequest, "invalid proposal id")
+		return
+	}
+	ctx := r.Context()
+	_ = h.q.ExpireStaleGuardianProposals(ctx)
+	row, err := h.q.DismissGuardianProposal(ctx, db.DismissGuardianProposalParams{
+		ProposalID: proposalID,
+		UserID:     userID,
+	})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			httputil.WriteError(w, http.StatusNotFound, "proposal not found or not dismissible")
+			return
+		}
+		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	if !farmauthz.RequireFarmMember(w, r, h.q, row.FarmID) {
+		return
+	}
+	httputil.WriteJSON(w, http.StatusOK, rowToProposalListItem(row))
+}
+
+type suggestEmptyZoneBody struct {
+	FarmID  int64  `json:"farm_id"`
+	ZoneID  int64  `json:"zone_id"`
+	CropKey string `json:"crop_key,omitempty"`
+}
+
+// PostSuggestEmptyZoneProposal handles POST /v1/chat/proposals/suggest-empty-zone (Phase 73 WS2).
+func (h *Handler) PostSuggestEmptyZoneProposal(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		httputil.WriteError(w, http.StatusMethodNotAllowed, "method not allowed")
+		return
+	}
+	if h.q == nil {
+		httputil.WriteError(w, http.StatusInternalServerError, "database unavailable")
+		return
+	}
+	userID, hasUser := authctx.UserID(r.Context())
+	if !hasUser {
+		httputil.WriteError(w, http.StatusUnauthorized, "authentication required")
+		return
+	}
+	var body suggestEmptyZoneBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		httputil.WriteError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+	if body.FarmID <= 0 || body.ZoneID <= 0 {
+		httputil.WriteError(w, http.StatusBadRequest, "farm_id and zone_id required")
+		return
+	}
+	if !farmauthz.RequireFarmOperate(w, r, h.q, body.FarmID) {
+		return
+	}
+	ctx := r.Context()
+	_ = h.q.ExpireStaleGuardianProposals(ctx)
+	row, err := farmguardian.InsertEmptyZoneSetupProposal(ctx, h.q, userID, body.FarmID, body.ZoneID, body.CropKey)
+	if err != nil {
+		msg := err.Error()
+		if strings.Contains(msg, "already has") || strings.Contains(msg, "already on farm") {
+			httputil.WriteError(w, http.StatusConflict, msg)
+			return
+		}
+		httputil.WriteError(w, http.StatusBadRequest, msg)
+		return
+	}
+	httputil.WriteJSON(w, http.StatusCreated, rowToProposalListItem(row))
 }
 
 func rowToProposalListItem(row db.Gr33ncoreGuardianActionProposal) proposalListItem {

@@ -76,6 +76,44 @@ func (q *Queries) CountGuardianProposalsByUser(ctx context.Context, arg CountGua
 	return column_1, err
 }
 
+const dismissGuardianProposal = `-- name: DismissGuardianProposal :one
+UPDATE gr33ncore.guardian_action_proposals
+SET status = 'dismissed'
+WHERE proposal_id = $1
+  AND user_id = $2
+  AND status = 'pending'
+RETURNING proposal_id, user_id, farm_id, session_id, tool_id, args, summary, risk_tier, status, result, supersedes_proposal_id, revision, meta, created_at, expires_at, confirmed_at
+`
+
+type DismissGuardianProposalParams struct {
+	ProposalID uuid.UUID `db:"proposal_id" json:"proposal_id"`
+	UserID     uuid.UUID `db:"user_id" json:"user_id"`
+}
+
+func (q *Queries) DismissGuardianProposal(ctx context.Context, arg DismissGuardianProposalParams) (Gr33ncoreGuardianActionProposal, error) {
+	row := q.db.QueryRow(ctx, dismissGuardianProposal, arg.ProposalID, arg.UserID)
+	var i Gr33ncoreGuardianActionProposal
+	err := row.Scan(
+		&i.ProposalID,
+		&i.UserID,
+		&i.FarmID,
+		&i.SessionID,
+		&i.ToolID,
+		&i.Args,
+		&i.Summary,
+		&i.RiskTier,
+		&i.Status,
+		&i.Result,
+		&i.SupersedesProposalID,
+		&i.Revision,
+		&i.Meta,
+		&i.CreatedAt,
+		&i.ExpiresAt,
+		&i.ConfirmedAt,
+	)
+	return i, err
+}
+
 const expireStaleGuardianProposals = `-- name: ExpireStaleGuardianProposals :exec
 UPDATE gr33ncore.guardian_action_proposals
 SET status = 'expired'

@@ -70,6 +70,12 @@ export const useGuardianProposalsStore = defineStore('guardianProposals', {
       }
     },
 
+    async dismissProposal(proposalId) {
+      if (!proposalId) return
+      await api.post(`/v1/chat/proposals/${proposalId}/dismiss`)
+      this.removeProposal(proposalId)
+    },
+
     patchProposal(proposalId, patch) {
       const i = this.proposals.findIndex((p) => p.proposal_id === proposalId)
       if (i >= 0) {

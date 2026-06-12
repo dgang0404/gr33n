@@ -301,7 +301,9 @@ Guardian is **not autonomous**. It is a **copilot** in chat and an **actor** onl
 | **Confirm (actor)** | Tap **Confirm** on a card or inbox row | One frozen change: ack alert, create task, patch schedule, enqueue Pi command, … |
 | **Rules (automation)** | Configure rules/schedules | Worker fires alerts or actuation on readings — no Confirm in chat |
 
-Nothing in the database changes from Guardian until you **Confirm** (or you edit the dashboard directly). **Dismiss** or wait for expiry if a proposal is wrong.
+Nothing in the database changes from Guardian until you **Confirm** (or you edit the dashboard directly). **Dismiss** calls the server (Phase 73) so the pending badge stays accurate; wait for expiry if you ignore a draft.
+
+**Find pending changes:** The ✨ launcher in the side nav and TopBar show a **numeric badge** when you have waiting proposals — tap to open the **Pending** inbox directly (Phase 73).
 
 ### PR inbox workflow
 

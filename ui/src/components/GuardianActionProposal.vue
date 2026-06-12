@@ -370,10 +370,17 @@ async function onConfirm() {
   }
 }
 
-function onDismiss() {
+async function onDismiss() {
   if (confirming.value) return
   uiStatus.value = 'dismissed'
   uiError.value = ''
+  try {
+    await api.post(`/v1/chat/proposals/${local.proposal_id}/dismiss`)
+  } catch (e) {
+    uiError.value = e?.response?.data?.error || e.message || 'Dismiss failed'
+    uiStatus.value = 'pending'
+    return
+  }
   emit('dismissed', { proposal: props.proposal })
 }
 
