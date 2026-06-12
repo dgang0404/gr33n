@@ -16,7 +16,7 @@ export const WORKSPACES = {
     tabs: [
       { id: 'rooms', label: 'My zones' },
       { id: 'fleet', label: 'Hardware & devices' },
-      { id: 'strains', label: 'Plants & strains' },
+      { id: 'strains', label: 'Plants' },
     ],
     absorbs: {
       '/sensors': { tab: 'fleet', fleet: 'sensors' },

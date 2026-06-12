@@ -39,7 +39,7 @@
     <EmptyStateHint
       v-else-if="!plants.length"
       reason="no_data"
-      message="No plants yet — add a strain definition, then start a grow in a zone."
+      message="No plants yet — pick a crop from the knowledge base, then start a grow in a zone."
       action-label="Add your first plant"
       @action="openCreate"
     />
@@ -107,12 +107,11 @@
           v-if="farmContext.farmId"
           :farm-id="farmContext.farmId"
           v-model="form.crop_profile_id"
-          label="Crop type"
           required
           @select="onCropSelect"
         />
         <div>
-          <label class="block text-xs text-zinc-500 mb-1">Strain name *</label>
+          <label class="block text-xs text-zinc-500 mb-1">Your label for this plant *</label>
           <input
             v-model="form.display_name"
             type="text"

@@ -82,6 +82,38 @@ Hub: [`phase_68_73_spa_workspace_roadmap.plan.md`](plans/phase_68_73_spa_workspa
 | **81** ✅ | `/pi-setup` restore, Help Pi tab, zone hardware on Overview only | `ui/src/__tests__/phase-81-closure.test.js` |
 | **82** | Guardian plant intelligence — ≥25 crop library, plant context bundle, substrate watering, deficiency guides, zero-chunk guardrail | [`phase_82_guardian_crop_grounding_hardening.plan.md`](plans/phase_82_guardian_crop_grounding_hardening.plan.md) |
 | **83** ✅ | Enterprise agronomy seed pack — commons cultivator pack, `guardian-bootstrap-farm`, site-manifest hook, farm crop overrides, scheduled RAG ingest, readiness smokes | [`phase_83_enterprise_agronomy_seed_pack.plan.md`](plans/phase_83_enterprise_agronomy_seed_pack.plan.md) · [`phase-83-closure.md`](plans/phase-83-closure.md) |
+| **84** ✅ | Enterprise crop catalog in Postgres — picker API, EC/stage targets, field guides DB, commons API | [`phase_84_crop_catalog_enterprise_db.plan.md`](plans/phase_84_crop_catalog_enterprise_db.plan.md) · [`crop-catalog-db-cutover-runbook.md`](crop-catalog-db-cutover-runbook.md) |
+| **85** | **Plants UX** — catalog dropdown, `plants.crop_key`, one slot per crop; Settings EC link | [`phase_85_catalog_bound_plants.plan.md`](plans/phase_85_catalog_bound_plants.plan.md) |
+| **86** | Grow ops + **Guardian crop chain** — strip, Water/Light, `lookup_crop_targets` same as UI | [`phase_86_grow_ops_catalog_chain.plan.md`](plans/phase_86_grow_ops_catalog_chain.plan.md) |
+| **87** | Guardian crop API smokes + operator runbook + OC-87 | [`phase_87_crop_knowledge_operator_closure.plan.md`](plans/phase_87_crop_knowledge_operator_closure.plan.md) |
+| **88** | Domain enums API — growth stages, reservoir, cost categories (UI drops duplicates) | [`phase_88_domain_enums_api.plan.md`](plans/phase_88_domain_enums_api.plan.md) |
+| **89** | Lighting presets — wire `GET /lighting-programs/presets` (API exists, UI unused) | [`phase_89_lighting_presets_api_wiring.plan.md`](plans/phase_89_lighting_presets_api_wiring.plan.md) |
+| **90** | Device taxonomy registry — sensor/actuator → water/light/climate + Guardian | [`phase_90_device_taxonomy_registry.plan.md`](plans/phase_90_device_taxonomy_registry.plan.md) |
+| **91** | Bootstrap template catalog — replace `bootstrapTemplates.js` | [`phase_91_bootstrap_template_catalog.plan.md`](plans/phase_91_bootstrap_template_catalog.plan.md) |
+| **92** | Zone types + greenhouse enums from API | [`phase_92_zone_greenhouse_vocabulary.plan.md`](plans/phase_92_zone_greenhouse_vocabulary.plan.md) |
+
+## Phases 84–87 — Plants & crop knowledge base
+
+**Roadmap hub:** [`plans/phase_84_87_crop_identity_roadmap.plan.md`](plans/phase_84_87_crop_identity_roadmap.plan.md) · **Sit-in:** [`workstreams/sit-in-crop-catalog-enterprise-db.md`](workstreams/sit-in-crop-catalog-enterprise-db.md)
+
+**Plants are a first-class gr33n surface.** Zone → **Plants**, the **Plants** workspace, and **Start grow** all use a **Postgres-backed catalog dropdown** (every `crop_library.yaml` crop + EC/light/watering preview). **Settings → Crops & targets** tunes EC per farm. **Farm Guardian** must use the **same crop APIs / DB profiles** as the UI — `lookup_crop_targets` — never invented EC.
+
+| Phase | Status | One job |
+|-------|--------|---------|
+| **84** ✅ | Shipped | Full catalog + picker API + field guides in Postgres |
+| **85** | Planned | Catalog-bound **plants** — dropdown only; no “strain” / free-text flooding |
+| **86** | Planned | Grow strip + Water/Light + Guardian resolve `plants.crop_key` on active cycle |
+| **87** | Planned | Guardian crop API smokes + operator runbook + OC-87 |
+
+**Picker 404?** `make migrate` · restart API · `CROP_CATALOG_SOURCE=db`.
+
+**Prompt loop:** `phase 85 ws1`, … or `phase 85` for full phase.
+
+## Phases 88–92 — UI static data → DB/API
+
+**Hub:** [`plans/phase_88_92_platform_data_gaps_roadmap.plan.md`](plans/phase_88_92_platform_data_gaps_roadmap.plan.md)
+
+Hardcoded UI constants (growth stages, lighting presets, sensor taxonomy, bootstrap templates, zone types) that should be **fetched from API/DB** so operators and Guardian stay aligned. Suggested order: **89** (quick) → **88** → **90** → **91** → **92**.
 
 ## Phase 83 — Enterprise agronomy seed pack (shipped)
 
@@ -123,6 +155,9 @@ After operator-doc edits, re-ingest Guardian RAG: **`make rag-ingest-platform-do
 | Edge actuator safety | [`operator-troubleshooting.md`](operator-troubleshooting.md) §5 |
 | Enterprise deployment scripts | [`scripts/enterprise/README.md`](../scripts/enterprise/README.md) |
 | Phase 83 — Enterprise agronomy seed pack (**shipped**) | [`plans/phase_83_enterprise_agronomy_seed_pack.plan.md`](plans/phase_83_enterprise_agronomy_seed_pack.plan.md) · [`phase-83-closure.md`](plans/phase-83-closure.md) — Guardian bootstrap, commons pack, crop overrides |
+| Phases 84–87 — Crop identity & knowledge base | [`plans/phase_84_87_crop_identity_roadmap.plan.md`](plans/phase_84_87_crop_identity_roadmap.plan.md) · [84](plans/phase_84_crop_catalog_enterprise_db.plan.md) · [85](plans/phase_85_catalog_bound_plants.plan.md) · [86](plans/phase_86_grow_ops_catalog_chain.plan.md) · [87](plans/phase_87_crop_knowledge_operator_closure.plan.md) |
+| Phases 88–92 — UI static data → DB/API | [`plans/phase_88_92_platform_data_gaps_roadmap.plan.md`](plans/phase_88_92_platform_data_gaps_roadmap.plan.md) |
+| Crop catalog DB cutover | [`crop-catalog-db-cutover-runbook.md`](crop-catalog-db-cutover-runbook.md) |
 | Hardware sizing (API, DB, Ollama, RAG, chat) | [`recommended-hardware-and-sizing.md`](recommended-hardware-and-sizing.md) |
 | Guardian real-grow readiness (live plants) | [`guardian-real-grow-readiness.md`](guardian-real-grow-readiness.md) |
 | First session after clone | [`first-session-after-clone.md`](first-session-after-clone.md) |

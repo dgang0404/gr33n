@@ -9,7 +9,7 @@
       <div class="flex items-start justify-between gap-2">
         <div>
           <h2 class="text-white font-semibold">Start a grow</h2>
-          <p class="text-zinc-500 text-xs mt-0.5">Pick strain, zone, and optional feeding program.</p>
+          <p class="text-zinc-500 text-xs mt-0.5">Pick plant type, zone, and optional feeding program.</p>
         </div>
         <button type="button" class="text-zinc-500 hover:text-zinc-300 text-sm" @click="close">✕</button>
       </div>
@@ -19,17 +19,19 @@
           <CropLibraryPicker
             :farm-id="farmId"
             v-model="form.cropProfileId"
-            label="Crop profile (targets)"
+            label="Plant type (knowledge base)"
+            required
             data-test="start-grow-crop-profile"
             @select="onCropProfileSelect"
           />
           <p class="text-[10px] text-zinc-600 mt-1">
-            Sets EC/pH/VPD targets for Guardian and the grow strip.
+            EC, DLI, and photoperiod targets for Guardian and the zone grow strip.
+            Tune per crop in Settings → Crops &amp; targets.
           </p>
         </div>
 
         <div>
-          <label class="block text-xs text-zinc-500 mb-1">Strain / variety</label>
+          <label class="block text-xs text-zinc-500 mb-1">Your label (variety / room name)</label>
           <input
             v-model="form.strain"
             type="text"
@@ -191,7 +193,12 @@ const selectedZone = computed(() =>
 )
 
 const canSubmit = computed(() =>
-  Boolean(props.farmId && form.value.zoneId && (form.value.strain?.trim() || form.value.name?.trim())),
+  Boolean(
+    props.farmId &&
+      form.value.zoneId &&
+      form.value.cropProfileId &&
+      (form.value.strain?.trim() || form.value.name?.trim()),
+  ),
 )
 
 watch(
@@ -248,6 +255,10 @@ function close() {
 
 async function submit() {
   formError.value = ''
+  if (!form.value.cropProfileId) {
+    formError.value = 'Choose a plant type from the knowledge base'
+    return
+  }
   if (!canSubmit.value) return
   submitting.value = true
   try {

@@ -20,7 +20,7 @@ describe('Phase 80 — routing & zones tab labels', () => {
     const tabs = WORKSPACES.zones.tabs
     expect(tabs.find((t) => t.id === 'rooms')?.label).toBe('My zones')
     expect(tabs.find((t) => t.id === 'fleet')?.label).toBe('Hardware & devices')
-    expect(tabs.find((t) => t.id === 'strains')?.label).toBe('Plants & strains')
+    expect(tabs.find((t) => t.id === 'strains')?.label).toBe('Plants')
     expect(WORKSPACES.zones.subtitle).toMatch(/hardware/i)
   })
 

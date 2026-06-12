@@ -84,6 +84,51 @@ export function pickerItemHint(item) {
   if (!item.has_targets && item.cousin_label) {
     return `No built-in targets yet — start from ${item.cousin_label}`
   }
-  if (!item.has_targets) return 'Catalog entry — clone a profile to customize'
+  if (!item.has_targets) return 'Catalog entry — not in knowledge base yet'
   return ''
+}
+
+/** Fallback when GET …/crop-library/picker is missing (older API). */
+export function buildPickerFallbackFromProfiles(profiles) {
+  const builtins = (profiles || []).filter((p) => p.is_builtin)
+  const items = builtins.map((p) => ({
+    crop_key: p.crop_key,
+    display_name: p.display_name,
+    category: p.category || 'fruiting',
+    crop_profile_id: p.id,
+    has_targets: true,
+    is_custom: false,
+    search_terms: [p.crop_key, p.display_name].filter(Boolean).map((s) => String(s).toLowerCase()),
+  }))
+  items.sort((a, b) => a.display_name.localeCompare(b.display_name))
+  return {
+    version: 1,
+    counts: { with_targets: items.length, catalog_only: 0, total: items.length },
+    groups: [{ key: 'fruiting', label: 'Crops (knowledge base)', items }],
+  }
+}
+
+function num(v) {
+  if (v == null || v === '') return null
+  const n = Number(v)
+  return Number.isFinite(n) ? n : null
+}
+
+/** @param {object} stage crop_profile_stages row */
+export function formatStageTargetLine(stage) {
+  if (!stage) return ''
+  const parts = []
+  const ecMin = num(stage.ec_min)
+  const ecMax = num(stage.ec_max)
+  const ecT = num(stage.ec_target)
+  if (ecMin != null || ecMax != null) {
+    const range = ecMin != null && ecMax != null ? `${ecMin}–${ecMax}` : String(ecMin ?? ecMax)
+    parts.push(`EC ${range} mS/cm${ecT != null ? ` (t ${ecT})` : ''}`)
+  }
+  const dli = num(stage.dli_target)
+  if (dli != null) parts.push(`DLI ${dli} mol/m²/d`)
+  const photo = num(stage.photoperiod_hrs)
+  if (photo != null) parts.push(`${photo}h photoperiod`)
+  const label = String(stage.stage || '').replace(/_/g, ' ')
+  return parts.length ? `${label}: ${parts.join(' · ')}` : label
 }

@@ -6,6 +6,8 @@ import {
   filterPickerGroups,
   findPickerItemByProfileId,
   itemMatchesQuery,
+  buildPickerFallbackFromProfiles,
+  formatStageTargetLine,
 } from '../lib/cropLibraryPicker.js'
 
 const samplePicker = {
@@ -44,6 +46,28 @@ describe('cropLibraryPicker', () => {
   it('finds item by profile id', () => {
     const item = findPickerItemByProfileId(samplePicker, 1)
     expect(item?.crop_key).toBe('tomato')
+  })
+
+  it('builds fallback picker from builtin profiles', () => {
+    const p = buildPickerFallbackFromProfiles([
+      { id: 2, crop_key: 'tomato', display_name: 'Tomato', is_builtin: true },
+    ])
+    expect(p.counts.with_targets).toBe(1)
+    expect(p.groups[0].items[0].crop_profile_id).toBe(2)
+  })
+
+  it('formats stage target line', () => {
+    const line = formatStageTargetLine({
+      stage: 'early_flower',
+      ec_min: 1.2,
+      ec_max: 1.8,
+      ec_target: 1.5,
+      dli_target: 35,
+      photoperiod_hrs: 12,
+    })
+    expect(line).toContain('early flower')
+    expect(line).toContain('mS/cm')
+    expect(line).toContain('DLI')
   })
 
   it('matches search terms on item', () => {
