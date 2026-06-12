@@ -163,9 +163,10 @@ const formError = ref('')
 const plantPickId = ref('')
 
 function onCropProfileSelect(item) {
-  if (!item?.display_name) return
+  if (!item?.crop_key) return
+  form.value.cropKey = item.crop_key
   if (!form.value.strain?.trim()) {
-    form.value.strain = item.display_name
+    form.value.strain = item.display_name || item.crop_key
   }
 }
 
@@ -180,6 +181,7 @@ function emptyForm() {
     startedAt: new Date().toISOString().slice(0, 10),
     programId: null,
     cropProfileId: null,
+    cropKey: '',
   }
 }
 
@@ -197,6 +199,7 @@ const canSubmit = computed(() =>
     props.farmId &&
       form.value.zoneId &&
       form.value.cropProfileId &&
+      form.value.cropKey &&
       (form.value.strain?.trim() || form.value.name?.trim()),
   ),
 )
@@ -246,6 +249,7 @@ function onPlantPick() {
   if (plant) {
     form.value.strain = strainFromPlant(plant)
     if (plant.crop_profile_id) form.value.cropProfileId = plant.crop_profile_id
+    if (plant.crop_key) form.value.cropKey = plant.crop_key
   }
 }
 
@@ -255,7 +259,7 @@ function close() {
 
 async function submit() {
   formError.value = ''
-  if (!form.value.cropProfileId) {
+  if (!form.value.cropProfileId || !form.value.cropKey) {
     formError.value = 'Choose a plant type from the knowledge base'
     return
   }
@@ -263,24 +267,22 @@ async function submit() {
   submitting.value = true
   try {
     let plantId = plantPickId.value ? Number(plantPickId.value) : null
-    if (form.value.cropProfileId) {
-      if (plantId) {
-        const plant = props.plants.find((p) => Number(p.id) === plantId)
-        if (plant) {
-          await store.updatePlant(plantId, {
-            display_name: plant.display_name,
-            variety_or_cultivar: plant.variety_or_cultivar,
-            crop_profile_id: form.value.cropProfileId,
-            meta: plant.meta,
-          })
-        }
-      } else if (form.value.strain?.trim()) {
-        const createdPlant = await store.createPlant(props.farmId, {
-          display_name: form.value.strain.trim(),
-          crop_profile_id: form.value.cropProfileId,
-        })
-        plantId = createdPlant.id
+    if (!plantId) {
+      const createdPlant = await store.createPlant(props.farmId, {
+        crop_key: form.value.cropKey,
+        variety_or_cultivar: form.value.strain?.trim() || null,
+      })
+      plantId = createdPlant.id
+    } else {
+      const plant = props.plants.find((p) => Number(p.id) === plantId)
+      if (plant?.crop_key && plant.crop_key !== form.value.cropKey) {
+        formError.value = 'Selected plant does not match the crop type — pick another plant or clear the selection'
+        return
       }
+    }
+    if (!plantId) {
+      formError.value = 'Could not link a catalog plant to this grow'
+      return
     }
     const payload = buildStartGrowPayload({
       zoneId: form.value.zoneId,

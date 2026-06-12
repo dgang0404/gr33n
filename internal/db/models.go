@@ -2007,6 +2007,7 @@ type Gr33ncropsPlant struct {
 	DisplayName       string             `db:"display_name" json:"display_name"`
 	VarietyOrCultivar *string            `db:"variety_or_cultivar" json:"variety_or_cultivar"`
 	CropProfileID     *int64             `db:"crop_profile_id" json:"crop_profile_id"`
+	CropKey           *string            `db:"crop_key" json:"crop_key"`
 	Meta              json.RawMessage    `db:"meta" json:"meta"`
 	CreatedAt         time.Time          `db:"created_at" json:"created_at"`
 	UpdatedAt         time.Time          `db:"updated_at" json:"updated_at"`

@@ -48,6 +48,11 @@ func defaultCropRegistry() (*croplibrary.Registry, error) {
 	return cropReg, cropRegErr
 }
 
+// LookupCropTargets runs the lookup_crop_targets read tool (Phase 86 — exported for tests).
+func LookupCropTargets(ctx context.Context, q db.Querier, farmID int64, question string, ref *ContextRef) (string, error) {
+	return renderLookupCropTargets(ctx, q, farmID, question, ref)
+}
+
 func shouldRunLookupCropTargetsReadIntent(question string, ref *ContextRef) bool {
 	q := strings.TrimSpace(question)
 	if q == "" && ref == nil {
@@ -73,9 +78,12 @@ func questionMentionsCrop(question string) bool {
 }
 
 func renderLookupCropTargets(ctx context.Context, q db.Querier, farmID int64, question string, ref *ContextRef) (string, error) {
-	profileID, stage, plantName, err := resolveCropProfileContext(ctx, q, farmID, question, ref)
+	profileID, stage, plantName, activeMissingPlant, err := resolveCropProfileContext(ctx, q, farmID, question, ref)
 	if err != nil {
 		return "", err
+	}
+	if activeMissingPlant {
+		return "lookup_crop_targets: active grow has no catalog plant linked — direct operator to Zone → Plants to add a crop from the knowledge base, then Start grow.", nil
 	}
 
 	reg, regErr := defaultCropRegistry()
@@ -102,7 +110,11 @@ func renderLookupCropTargets(ctx context.Context, q db.Querier, farmID int64, qu
 		return formatUnsupportedCropBlock(unsupMentions[0]), nil
 	}
 	if profileID <= 0 {
-		return "lookup_crop_targets: no crop profile assigned to the active grow or plant. Offer to pick a profile in Start grow or Plants.", nil
+		msg := "lookup_crop_targets: no crop profile assigned to the active grow or plant. Offer to pick a profile in Start grow or Plants."
+		if len(cropMentions) == 1 {
+			msg += " Catalog crop mentioned — link a plant in Zone → Plants before relying on grow strip targets."
+		}
+		return msg, nil
 	}
 
 	return renderSingleCropTargets(ctx, q, profileID, stage, plantName, question)
@@ -307,7 +319,7 @@ func lookupBuiltinProfileID(ctx context.Context, q db.Querier, farmID int64, cro
 	return p.ID, true
 }
 
-func resolveCropProfileContext(ctx context.Context, q db.Querier, farmID int64, question string, ref *ContextRef) (profileID int64, stage db.Gr33nfertigationGrowthStageEnum, plantName string, err error) {
+func resolveCropProfileContext(ctx context.Context, q db.Querier, farmID int64, question string, ref *ContextRef) (profileID int64, stage db.Gr33nfertigationGrowthStageEnum, plantName string, activeMissingPlant bool, err error) {
 	var cycle db.Gr33nfertigationCropCycle
 	var haveCycle bool
 
@@ -337,17 +349,33 @@ func resolveCropProfileContext(ctx context.Context, q db.Querier, farmID int64, 
 		if cycle.CurrentStage != nil {
 			stage = *cycle.CurrentStage
 		}
+		if cycle.IsActive && (cycle.PlantID == nil || *cycle.PlantID <= 0) {
+			activeMissingPlant = true
+			return profileID, stage, plantName, activeMissingPlant, nil
+		}
 		if cycle.PlantID != nil && *cycle.PlantID > 0 {
 			plant, perr := q.GetPlant(ctx, *cycle.PlantID)
 			if perr == nil {
 				plantName = plant.DisplayName
-				if plant.CropProfileID != nil {
+				if plant.VarietyOrCultivar != nil && strings.TrimSpace(*plant.VarietyOrCultivar) != "" {
+					plantName += " (" + strings.TrimSpace(*plant.VarietyOrCultivar) + ")"
+				}
+				if plant.CropKey != nil && strings.TrimSpace(*plant.CropKey) != "" {
+					farmPtr := farmID
+					prof, perr := q.GetCropProfileByKey(ctx, db.GetCropProfileByKeyParams{
+						CropKey: strings.TrimSpace(*plant.CropKey),
+						FarmID:  &farmPtr,
+					})
+					if perr == nil {
+						profileID = prof.ID
+					}
+				} else if plant.CropProfileID != nil {
 					profileID = *plant.CropProfileID
 				}
 			}
 		}
 	}
-	if profileID <= 0 {
+	if profileID <= 0 && !activeMissingPlant {
 		reg, rerr := defaultCropRegistry()
 		if rerr == nil && reg != nil {
 			for _, m := range reg.FindMentions(question) {
@@ -361,7 +389,7 @@ func resolveCropProfileContext(ctx context.Context, q db.Querier, farmID int64, 
 			}
 		}
 	}
-	return profileID, stage, plantName, nil
+	return profileID, stage, plantName, activeMissingPlant, nil
 }
 
 func formatEcRange(min, target, max pgtype.Numeric) string {

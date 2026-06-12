@@ -104,20 +104,24 @@
       <div class="w-full max-w-md bg-zinc-900 border border-zinc-700 rounded-xl p-5 space-y-4">
         <h2 class="text-white font-semibold">{{ editing ? 'Edit Plant' : 'New Plant' }}</h2>
         <CropLibraryPicker
-          v-if="farmContext.farmId"
+          v-if="farmContext.farmId && !editing"
           :farm-id="farmContext.farmId"
           v-model="form.crop_profile_id"
           required
           @select="onCropSelect"
         />
-        <div>
-          <label class="block text-xs text-zinc-500 mb-1">Your label for this plant *</label>
-          <input
-            v-model="form.display_name"
-            type="text"
-            required
-            class="w-full bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-green-600"
-          />
+        <div v-if="editing">
+          <label class="block text-xs text-zinc-500 mb-1">Catalog crop</label>
+          <p class="text-sm text-zinc-200 bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2">
+            {{ editing.display_name }}
+            <span v-if="editing.crop_key" class="text-zinc-600 font-mono text-xs ml-1">({{ editing.crop_key }})</span>
+          </p>
+        </div>
+        <div v-else-if="form.display_name">
+          <label class="block text-xs text-zinc-500 mb-1">Catalog name</label>
+          <p class="text-sm text-zinc-200 bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2">
+            {{ form.display_name }}
+          </p>
         </div>
         <div>
           <label class="block text-xs text-zinc-500 mb-1">Variety / cultivar</label>
@@ -127,7 +131,7 @@
             class="w-full bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-green-600"
           />
         </div>
-        <div>
+        <div v-if="editing">
           <label class="block text-xs text-zinc-500 mb-1">Metadata (JSON)</label>
           <textarea
             v-model="form.metaStr"
@@ -147,7 +151,7 @@
           </button>
           <button
             @click="submitForm"
-            :disabled="submitting || !form.display_name.trim() || !form.crop_profile_id"
+            :disabled="submitting || (!editing && !form.crop_key)"
             class="px-4 py-1.5 text-xs rounded-lg bg-green-700 hover:bg-green-600 text-white font-medium disabled:opacity-40"
           >
             {{ submitting ? 'Saving…' : editing ? 'Update' : 'Create' }}
@@ -241,7 +245,7 @@ const deleteTarget = ref(null)
 const form = ref(emptyForm())
 
 function emptyForm() {
-  return { display_name: '', variety_or_cultivar: '', crop_profile_id: null, metaStr: '{}' }
+  return { crop_key: '', display_name: '', variety_or_cultivar: '', crop_profile_id: null, metaStr: '{}' }
 }
 
 function openCreate() {
@@ -255,6 +259,7 @@ function openCreate() {
 function openEdit(plant) {
   editing.value = plant
   form.value = {
+    crop_key: plant.crop_key || '',
     display_name: plant.display_name || '',
     variety_or_cultivar: plant.variety_or_cultivar || '',
     crop_profile_id: plant.crop_profile_id || null,
@@ -307,10 +312,9 @@ async function onGrowStarted(cycle) {
 }
 
 function onCropSelect(item) {
-  if (!item?.display_name || editing.value) return
-  if (!form.value.display_name.trim()) {
-    form.value.display_name = item.display_name
-  }
+  if (!item?.crop_key || editing.value) return
+  form.value.crop_key = item.crop_key
+  form.value.display_name = item.display_name || item.crop_key
 }
 
 async function submitForm() {
@@ -318,12 +322,6 @@ async function submitForm() {
   metaError.value = ''
   const fid = farmContext.farmId
   if (!fid) { formError.value = 'No farm selected'; return }
-  const name = form.value.display_name.trim()
-  if (!name) return
-  if (!form.value.crop_profile_id) {
-    formError.value = 'Pick a crop type with targets'
-    return
-  }
 
   let meta
   try {
@@ -333,19 +331,24 @@ async function submitForm() {
     return
   }
 
-  const payload = {
-    display_name: name,
-    variety_or_cultivar: form.value.variety_or_cultivar.trim() || null,
-    crop_profile_id: form.value.crop_profile_id,
-    meta,
+  if (!editing.value && !form.value.crop_key) {
+    formError.value = 'Pick a crop type from the knowledge base'
+    return
   }
 
   submitting.value = true
   try {
     if (editing.value) {
-      await store.updatePlant(editing.value.id, payload)
+      await store.updatePlant(editing.value.id, {
+        variety_or_cultivar: form.value.variety_or_cultivar.trim() || null,
+        meta,
+      })
     } else {
-      await store.createPlant(fid, payload)
+      await store.createPlant(fid, {
+        crop_key: form.value.crop_key,
+        variety_or_cultivar: form.value.variety_or_cultivar.trim() || null,
+        meta,
+      })
     }
     showModal.value = false
     await refresh()

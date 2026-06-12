@@ -17,6 +17,7 @@ import (
 
 	"gr33n-api/internal/ai"
 	automationworker "gr33n-api/internal/automation"
+	"gr33n-api/internal/croplibrary"
 	db "gr33n-api/internal/db"
 	"gr33n-api/internal/filestorage"
 )
@@ -256,6 +257,7 @@ func TestMain(m *testing.M) {
 		os.Exit(1)
 	}
 	testPool = pool
+	croplibrary.SetRuntimeCatalogQuerier(db.New(pool))
 
 	jwtSecret = []byte("smoke-test-jwt-secret-key-for-local-tests-only!")
 	piAPIKey = "smoke-test-pi-key"

@@ -27,6 +27,8 @@
       {{ plan.statusLine }}
     </p>
 
+    <ZoneCropStageTargetHint :zone-id="zoneId" :farm-id="farmId" />
+
     <ZoneFeedingPlanWizard
       v-if="!plan.hasPlan"
       :zone-id="zoneId"
@@ -254,6 +256,7 @@ import ZoneFeedingPlanEditor from './ZoneFeedingPlanEditor.vue'
 import ZoneFeedingPlanWizard from './ZoneFeedingPlanWizard.vue'
 import ZoneGrowCostPeek from './ZoneGrowCostPeek.vue'
 import ZoneGrowConnectionLine from './ZoneGrowConnectionLine.vue'
+import ZoneCropStageTargetHint from './ZoneCropStageTargetHint.vue'
 import { FARMER_FOCUS_RING, runFeedNowAriaLabel } from '../lib/farmerA11y.js'
 import {
   moneyTabRoute,

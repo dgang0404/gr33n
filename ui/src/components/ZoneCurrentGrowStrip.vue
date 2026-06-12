@@ -27,11 +27,11 @@
             {{ ecTargetLabel }}
             <router-link
               v-if="cropProfileId"
-              v-nav-hint="`/crop-profiles/${cropProfileId}`"
-              :to="`/crop-profiles/${cropProfileId}`"
+              v-nav-hint="'/settings'"
+              :to="{ path: '/settings', query: { tab: 'crops' } }"
               class="text-green-500/80 hover:text-green-400 underline-offset-2 hover:underline"
             >
-              profile
+              tune targets
             </router-link>
           </p>
         </template>

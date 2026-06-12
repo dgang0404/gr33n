@@ -13,8 +13,8 @@ import (
 )
 
 const createPlant = `-- name: CreatePlant :one
-INSERT INTO gr33ncrops.plants (farm_id, display_name, variety_or_cultivar, crop_profile_id, meta)
-VALUES ($1, $2, $3, $4, $5) RETURNING id, farm_id, display_name, variety_or_cultivar, crop_profile_id, meta, created_at, updated_at, deleted_at
+INSERT INTO gr33ncrops.plants (farm_id, display_name, variety_or_cultivar, crop_profile_id, crop_key, meta)
+VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, farm_id, display_name, variety_or_cultivar, crop_profile_id, crop_key, meta, created_at, updated_at, deleted_at
 `
 
 type CreatePlantParams struct {
@@ -22,6 +22,7 @@ type CreatePlantParams struct {
 	DisplayName       string          `db:"display_name" json:"display_name"`
 	VarietyOrCultivar *string         `db:"variety_or_cultivar" json:"variety_or_cultivar"`
 	CropProfileID     *int64          `db:"crop_profile_id" json:"crop_profile_id"`
+	CropKey           *string         `db:"crop_key" json:"crop_key"`
 	Meta              json.RawMessage `db:"meta" json:"meta"`
 }
 
@@ -31,6 +32,7 @@ func (q *Queries) CreatePlant(ctx context.Context, arg CreatePlantParams) (Gr33n
 		arg.DisplayName,
 		arg.VarietyOrCultivar,
 		arg.CropProfileID,
+		arg.CropKey,
 		arg.Meta,
 	)
 	var i Gr33ncropsPlant
@@ -40,6 +42,7 @@ func (q *Queries) CreatePlant(ctx context.Context, arg CreatePlantParams) (Gr33n
 		&i.DisplayName,
 		&i.VarietyOrCultivar,
 		&i.CropProfileID,
+		&i.CropKey,
 		&i.Meta,
 		&i.CreatedAt,
 		&i.UpdatedAt,
@@ -49,7 +52,7 @@ func (q *Queries) CreatePlant(ctx context.Context, arg CreatePlantParams) (Gr33n
 }
 
 const getPlant = `-- name: GetPlant :one
-SELECT id, farm_id, display_name, variety_or_cultivar, crop_profile_id, meta, created_at, updated_at, deleted_at FROM gr33ncrops.plants WHERE id = $1 AND deleted_at IS NULL
+SELECT id, farm_id, display_name, variety_or_cultivar, crop_profile_id, crop_key, meta, created_at, updated_at, deleted_at FROM gr33ncrops.plants WHERE id = $1 AND deleted_at IS NULL
 `
 
 func (q *Queries) GetPlant(ctx context.Context, id int64) (Gr33ncropsPlant, error) {
@@ -61,6 +64,35 @@ func (q *Queries) GetPlant(ctx context.Context, id int64) (Gr33ncropsPlant, erro
 		&i.DisplayName,
 		&i.VarietyOrCultivar,
 		&i.CropProfileID,
+		&i.CropKey,
+		&i.Meta,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.DeletedAt,
+	)
+	return i, err
+}
+
+const getPlantByFarmCropKey = `-- name: GetPlantByFarmCropKey :one
+SELECT id, farm_id, display_name, variety_or_cultivar, crop_profile_id, crop_key, meta, created_at, updated_at, deleted_at FROM gr33ncrops.plants
+WHERE farm_id = $1 AND crop_key = $2 AND deleted_at IS NULL
+`
+
+type GetPlantByFarmCropKeyParams struct {
+	FarmID  int64   `db:"farm_id" json:"farm_id"`
+	CropKey *string `db:"crop_key" json:"crop_key"`
+}
+
+func (q *Queries) GetPlantByFarmCropKey(ctx context.Context, arg GetPlantByFarmCropKeyParams) (Gr33ncropsPlant, error) {
+	row := q.db.QueryRow(ctx, getPlantByFarmCropKey, arg.FarmID, arg.CropKey)
+	var i Gr33ncropsPlant
+	err := row.Scan(
+		&i.ID,
+		&i.FarmID,
+		&i.DisplayName,
+		&i.VarietyOrCultivar,
+		&i.CropProfileID,
+		&i.CropKey,
 		&i.Meta,
 		&i.CreatedAt,
 		&i.UpdatedAt,
@@ -132,7 +164,7 @@ func (q *Queries) GetPlantCropProfileStage(ctx context.Context, arg GetPlantCrop
 }
 
 const listPlantsByFarm = `-- name: ListPlantsByFarm :many
-SELECT id, farm_id, display_name, variety_or_cultivar, crop_profile_id, meta, created_at, updated_at, deleted_at FROM gr33ncrops.plants
+SELECT id, farm_id, display_name, variety_or_cultivar, crop_profile_id, crop_key, meta, created_at, updated_at, deleted_at FROM gr33ncrops.plants
 WHERE farm_id = $1 AND deleted_at IS NULL
 ORDER BY display_name
 `
@@ -152,6 +184,7 @@ func (q *Queries) ListPlantsByFarm(ctx context.Context, farmID int64) ([]Gr33ncr
 			&i.DisplayName,
 			&i.VarietyOrCultivar,
 			&i.CropProfileID,
+			&i.CropKey,
 			&i.Meta,
 			&i.CreatedAt,
 			&i.UpdatedAt,
@@ -178,8 +211,8 @@ func (q *Queries) SoftDeletePlant(ctx context.Context, id int64) error {
 
 const updatePlant = `-- name: UpdatePlant :one
 UPDATE gr33ncrops.plants
-SET display_name = $2, variety_or_cultivar = $3, crop_profile_id = $4, meta = $5, updated_at = NOW()
-WHERE id = $1 AND deleted_at IS NULL RETURNING id, farm_id, display_name, variety_or_cultivar, crop_profile_id, meta, created_at, updated_at, deleted_at
+SET display_name = $2, variety_or_cultivar = $3, crop_profile_id = $4, crop_key = $5, meta = $6, updated_at = NOW()
+WHERE id = $1 AND deleted_at IS NULL RETURNING id, farm_id, display_name, variety_or_cultivar, crop_profile_id, crop_key, meta, created_at, updated_at, deleted_at
 `
 
 type UpdatePlantParams struct {
@@ -187,6 +220,7 @@ type UpdatePlantParams struct {
 	DisplayName       string          `db:"display_name" json:"display_name"`
 	VarietyOrCultivar *string         `db:"variety_or_cultivar" json:"variety_or_cultivar"`
 	CropProfileID     *int64          `db:"crop_profile_id" json:"crop_profile_id"`
+	CropKey           *string         `db:"crop_key" json:"crop_key"`
 	Meta              json.RawMessage `db:"meta" json:"meta"`
 }
 
@@ -196,6 +230,7 @@ func (q *Queries) UpdatePlant(ctx context.Context, arg UpdatePlantParams) (Gr33n
 		arg.DisplayName,
 		arg.VarietyOrCultivar,
 		arg.CropProfileID,
+		arg.CropKey,
 		arg.Meta,
 	)
 	var i Gr33ncropsPlant
@@ -205,6 +240,36 @@ func (q *Queries) UpdatePlant(ctx context.Context, arg UpdatePlantParams) (Gr33n
 		&i.DisplayName,
 		&i.VarietyOrCultivar,
 		&i.CropProfileID,
+		&i.CropKey,
+		&i.Meta,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.DeletedAt,
+	)
+	return i, err
+}
+
+const updatePlantVariety = `-- name: UpdatePlantVariety :one
+UPDATE gr33ncrops.plants
+SET variety_or_cultivar = $2, updated_at = NOW()
+WHERE id = $1 AND deleted_at IS NULL RETURNING id, farm_id, display_name, variety_or_cultivar, crop_profile_id, crop_key, meta, created_at, updated_at, deleted_at
+`
+
+type UpdatePlantVarietyParams struct {
+	ID                int64   `db:"id" json:"id"`
+	VarietyOrCultivar *string `db:"variety_or_cultivar" json:"variety_or_cultivar"`
+}
+
+func (q *Queries) UpdatePlantVariety(ctx context.Context, arg UpdatePlantVarietyParams) (Gr33ncropsPlant, error) {
+	row := q.db.QueryRow(ctx, updatePlantVariety, arg.ID, arg.VarietyOrCultivar)
+	var i Gr33ncropsPlant
+	err := row.Scan(
+		&i.ID,
+		&i.FarmID,
+		&i.DisplayName,
+		&i.VarietyOrCultivar,
+		&i.CropProfileID,
+		&i.CropKey,
 		&i.Meta,
 		&i.CreatedAt,
 		&i.UpdatedAt,

@@ -833,7 +833,9 @@ export const useFarmStore = defineStore('farm', {
           const { buildPickerFallbackFromProfiles } = await import('../lib/cropLibraryPicker.js')
           const profiles = await this.loadCropProfiles(farmId)
           const fallback = buildPickerFallbackFromProfiles(profiles)
-          if (fallback.counts.with_targets > 0) return fallback
+          if (fallback.counts.with_targets > 0) {
+            return { ...fallback, _degraded: true, _degradedReason: 'picker_404' }
+          }
         }
         throw e
       }

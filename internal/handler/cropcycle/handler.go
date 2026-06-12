@@ -15,6 +15,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	db "gr33n-api/internal/db"
+	"gr33n-api/internal/cropcycle"
 	"gr33n-api/internal/farmauthz"
 	"gr33n-api/internal/httputil"
 )
@@ -124,6 +125,7 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		ZoneID           int64   `json:"zone_id"`
 		Name             string  `json:"name"`
 		StrainOrVariety  *string `json:"strain_or_variety"`
+		BatchLabel       *string `json:"batch_label"`
 		CurrentStage     string  `json:"current_stage"`
 		IsActive         *bool   `json:"is_active"`
 		StartedAt        string  `json:"started_at"`
@@ -162,7 +164,14 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 	if body.IsActive != nil {
 		active = *body.IsActive
 	}
-	plantID, err := h.resolvePlantIDForFarm(r.Context(), farmID, body.PlantID)
+	strainOrVariety := body.StrainOrVariety
+	if batch := body.BatchLabel; batch != nil && strings.TrimSpace(*batch) != "" {
+		if strainOrVariety == nil || strings.TrimSpace(*strainOrVariety) == "" {
+			v := strings.TrimSpace(*batch)
+			strainOrVariety = &v
+		}
+	}
+	plantID, err := h.resolvePlantIDForFarm(r.Context(), farmID, body.PlantID, active)
 	if err != nil {
 		httputil.WriteError(w, http.StatusBadRequest, err.Error())
 		return
@@ -172,7 +181,7 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		FarmID:           farmID,
 		ZoneID:           body.ZoneID,
 		Name:             name,
-		StrainOrVariety:  body.StrainOrVariety,
+		StrainOrVariety:  strainOrVariety,
 		CurrentStage:     stage,
 		IsActive:         active,
 		StartedAt:        started,
@@ -278,8 +287,17 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 	}
 	plantID := existing.PlantID
 	if body.PlantID != nil {
-		plantID, err = h.resolvePlantIDForFarm(r.Context(), existing.FarmID, body.PlantID)
+		plantID, err = h.resolvePlantIDForFarm(r.Context(), existing.FarmID, body.PlantID, body.IsActive)
 		if err != nil {
+			httputil.WriteError(w, http.StatusBadRequest, err.Error())
+			return
+		}
+	} else if body.IsActive {
+		if plantID == nil || *plantID <= 0 {
+			httputil.WriteError(w, http.StatusBadRequest, "plant_id required for active crop cycle — pick a catalog plant in Zone → Plants or Start grow")
+			return
+		}
+		if err := cropcycle.ValidatePlantForActiveGrow(r.Context(), h.q, existing.FarmID, *plantID); err != nil {
 			httputil.WriteError(w, http.StatusBadRequest, err.Error())
 			return
 		}
@@ -361,7 +379,16 @@ func (h *Handler) UpdateStage(w http.ResponseWriter, r *http.Request) {
 	httputil.WriteJSON(w, http.StatusOK, row)
 }
 
-func (h *Handler) resolvePlantIDForFarm(ctx context.Context, farmID int64, plantID *int64) (*int64, error) {
+func (h *Handler) resolvePlantIDForFarm(ctx context.Context, farmID int64, plantID *int64, active bool) (*int64, error) {
+	if active {
+		if plantID == nil || *plantID <= 0 {
+			return nil, errors.New("plant_id required for active crop cycle — pick a catalog plant in Zone → Plants or Start grow")
+		}
+		if err := cropcycle.ValidatePlantForActiveGrow(ctx, h.q, farmID, *plantID); err != nil {
+			return nil, err
+		}
+		return plantID, nil
+	}
 	if plantID == nil || *plantID <= 0 {
 		return nil, nil
 	}

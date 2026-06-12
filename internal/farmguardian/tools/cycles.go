@@ -10,6 +10,7 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 
 	db "gr33n-api/internal/db"
+	"gr33n-api/internal/cropcycle"
 )
 
 func execCreateCropCycle(ctx context.Context, deps ExecutorDeps, args map[string]any) (any, error) {
@@ -68,17 +69,25 @@ func execCreateCropCycle(ctx context.Context, deps ExecutorDeps, args map[string
 	if v, err := optionalInt64FromArgs(args, "plant_id"); err != nil {
 		return nil, err
 	} else if v != nil && *v > 0 {
-		p, err := deps.Q.GetPlant(ctx, *v)
-		if err != nil {
-			if errors.Is(err, pgx.ErrNoRows) {
-				return nil, fmt.Errorf("plant %d not found", *v)
+		if active {
+			if err := cropcycle.ValidatePlantForActiveGrow(ctx, deps.Q, deps.FarmID, *v); err != nil {
+				return nil, err
 			}
-			return nil, err
-		}
-		if err := ensureFarmScope(p.FarmID, deps.FarmID); err != nil {
-			return nil, err
+		} else {
+			p, err := deps.Q.GetPlant(ctx, *v)
+			if err != nil {
+				if errors.Is(err, pgx.ErrNoRows) {
+					return nil, fmt.Errorf("plant %d not found", *v)
+				}
+				return nil, err
+			}
+			if err := ensureFarmScope(p.FarmID, deps.FarmID); err != nil {
+				return nil, err
+			}
 		}
 		plantID = v
+	} else if active {
+		return nil, errors.New("plant_id required for active crop cycle — pick a catalog plant in Zone → Plants or Start grow")
 	}
 
 	strainPtr := &strain

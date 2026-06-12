@@ -1802,6 +1802,7 @@ CREATE TABLE IF NOT EXISTS gr33ncrops.plants (
     display_name         TEXT NOT NULL,
     variety_or_cultivar  TEXT,
     crop_profile_id      BIGINT REFERENCES gr33ncrops.crop_profiles(id) ON DELETE SET NULL,
+    crop_key             TEXT REFERENCES gr33ncrops.crop_catalog_entries(crop_key),
     meta                 JSONB NOT NULL DEFAULT '{}'::jsonb,
     created_at           TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at           TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -1815,6 +1816,10 @@ CREATE INDEX IF NOT EXISTS idx_gr33ncrops_plants_farm
 CREATE INDEX IF NOT EXISTS idx_gr33ncrops_plants_crop_profile
     ON gr33ncrops.plants (crop_profile_id)
     WHERE crop_profile_id IS NOT NULL AND deleted_at IS NULL;
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_plants_farm_crop_key
+    ON gr33ncrops.plants (farm_id, crop_key)
+    WHERE deleted_at IS NULL AND crop_key IS NOT NULL;
 
 CREATE TRIGGER trg_gr33ncrops_plants_updated_at
     BEFORE UPDATE ON gr33ncrops.plants

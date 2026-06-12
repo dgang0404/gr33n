@@ -117,8 +117,9 @@
     />
 
     <!-- Lighting inline editor (light only) -->
-    <div v-if="need === PLANT_NEEDS.light" class="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
-      <h3 class="text-sm font-semibold text-white mb-3">Lighting program</h3>
+    <div v-if="need === PLANT_NEEDS.light" class="bg-zinc-900 border border-zinc-800 rounded-xl p-4 space-y-4">
+      <h3 class="text-sm font-semibold text-white">Lighting program</h3>
+      <ZoneCropStageTargetHint :zone-id="zoneId" :farm-id="farmId" />
       <ZoneLightingEditor
         :zone-id="zoneId"
         :farm-id="farmId"
@@ -224,6 +225,7 @@ import ZoneGreenhouseTab from './ZoneGreenhouseTab.vue'
 import ZoneComfortTargets from './ZoneComfortTargets.vue'
 import ZoneAutomationPanel from './ZoneAutomationPanel.vue'
 import ZoneWaterGrowStory from './ZoneWaterGrowStory.vue'
+import ZoneCropStageTargetHint from './ZoneCropStageTargetHint.vue'
 import ZoneLightingEditor from './ZoneLightingEditor.vue'
 import EmptyStateHint from './EmptyStateHint.vue'
 import ZoneConnectionPipeline from './ZoneConnectionPipeline.vue'

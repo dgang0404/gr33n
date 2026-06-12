@@ -97,15 +97,11 @@
           data-test="zone-plants-crop-picker"
           @select="onCropSelect"
         />
-        <div>
-          <label class="block text-xs text-zinc-500 mb-1">Your label for this plant *</label>
-          <input
-            v-model="form.display_name"
-            type="text"
-            placeholder="e.g. Flower Room Romas (defaults from crop type)"
-            class="w-full bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white"
-            data-test="zone-plants-plant-name"
-          />
+        <div v-if="form.display_name">
+          <label class="block text-xs text-zinc-500 mb-1">Catalog name</label>
+          <p class="text-sm text-zinc-200 bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2" data-test="zone-plants-catalog-name">
+            {{ form.display_name }}
+          </p>
         </div>
         <div>
           <label class="block text-xs text-zinc-500 mb-1">Variety / cultivar</label>
@@ -121,7 +117,7 @@
           <button
             type="button"
             class="text-xs px-4 py-1.5 rounded-lg bg-green-700 text-white disabled:opacity-40"
-            :disabled="submitting || !form.display_name.trim() || !form.crop_profile_id"
+            :disabled="submitting || !form.crop_key"
             @click="submitForm"
           >
             {{ submitting ? 'Saving…' : 'Create' }}
@@ -155,7 +151,7 @@ const farmContext = useFarmContextStore()
 const showModal = ref(false)
 const submitting = ref(false)
 const formError = ref('')
-const form = ref({ display_name: '', variety_or_cultivar: '', crop_profile_id: null })
+const form = ref({ crop_key: '', display_name: '', variety_or_cultivar: '', crop_profile_id: null })
 
 const historyCycles = computed(() =>
   props.cropCycles
@@ -183,22 +179,21 @@ function formatHarvest(cycle) {
 }
 
 function openCreate() {
-  form.value = { display_name: '', variety_or_cultivar: '', crop_profile_id: null }
+  form.value = { crop_key: '', display_name: '', variety_or_cultivar: '', crop_profile_id: null }
   formError.value = ''
   showModal.value = true
 }
 
 function onCropSelect(item) {
-  if (!item?.display_name) return
-  if (!form.value.display_name.trim()) {
-    form.value.display_name = item.display_name
-  }
+  if (!item?.crop_key) return
+  form.value.crop_key = item.crop_key
+  form.value.display_name = item.display_name || item.crop_key
 }
 
 async function submitForm() {
   const fid = props.farmId || farmContext.farmId
   if (!fid) return
-  if (!form.value.crop_profile_id) {
+  if (!form.value.crop_key) {
     formError.value = 'Choose a plant type from the knowledge base'
     return
   }
@@ -206,9 +201,8 @@ async function submitForm() {
   formError.value = ''
   try {
     await store.createPlant(fid, {
-      display_name: form.value.display_name.trim(),
+      crop_key: form.value.crop_key,
       variety_or_cultivar: form.value.variety_or_cultivar.trim() || null,
-      crop_profile_id: form.value.crop_profile_id,
       meta: {},
     })
     showModal.value = false

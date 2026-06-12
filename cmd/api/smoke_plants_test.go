@@ -13,18 +13,20 @@ import (
 func TestPlantCRUD(t *testing.T) {
 	tok := smokeJWT(t)
 
-	// Create
-	name := uniqueName("smoke_plant")
+	// Create (Phase 85 — catalog-bound by crop_key)
 	resp := authPost(t, tok, "/farms/1/plants", map[string]any{
-		"display_name":        name,
-		"variety_or_cultivar": "Indica",
-		"meta":                map[string]any{"photoperiod": "short-day"},
+		"crop_key":            "basil",
+		"variety_or_cultivar": "Genovese",
+		"meta":                map[string]any{"photoperiod": "long-day"},
 	})
 	expectStatus(t, resp, http.StatusCreated)
 	created := decodeMap(t, resp)
 	plantID := int64(created["id"].(float64))
-	if created["display_name"] != name {
-		t.Fatalf("expected display_name=%s, got %v", name, created["display_name"])
+	if created["crop_key"] != "basil" {
+		t.Fatalf("expected crop_key=basil, got %v", created["crop_key"])
+	}
+	if created["display_name"] == nil || created["display_name"] == "" {
+		t.Fatal("expected server-set display_name from catalog")
 	}
 
 	// List
@@ -48,21 +50,19 @@ func TestPlantCRUD(t *testing.T) {
 	resp = authGet(t, tok, fmt.Sprintf("/plants/%d", plantID))
 	expectStatus(t, resp, http.StatusOK)
 	got := decodeMap(t, resp)
-	if got["display_name"] != name {
-		t.Fatalf("get: expected display_name=%s, got %v", name, got["display_name"])
+	if got["crop_key"] != "basil" {
+		t.Fatalf("get: expected crop_key=basil, got %v", got["crop_key"])
 	}
 
-	// Update
-	updatedName := uniqueName("smoke_plant_upd")
+	// Update (variety + meta only for catalog-bound plants)
 	resp = authPut(t, tok, fmt.Sprintf("/plants/%d", plantID), map[string]any{
-		"display_name":        updatedName,
-		"variety_or_cultivar": "Sativa",
-		"meta":                map[string]any{"photoperiod": "long-day"},
+		"variety_or_cultivar": "Thai",
+		"meta":                map[string]any{"photoperiod": "long-day", "notes": "bench A"},
 	})
 	expectStatus(t, resp, http.StatusOK)
 	updated := decodeMap(t, resp)
-	if updated["display_name"] != updatedName {
-		t.Fatalf("expected updated name=%s, got %v", updatedName, updated["display_name"])
+	if updated["variety_or_cultivar"] != "Thai" {
+		t.Fatalf("expected updated variety=Thai, got %v", updated["variety_or_cultivar"])
 	}
 
 	// Soft delete

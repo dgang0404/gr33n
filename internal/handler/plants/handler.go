@@ -1,8 +1,10 @@
 package plants
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
+	"io"
 	"net/http"
 	"strconv"
 	"strings"
@@ -13,6 +15,7 @@ import (
 	db "gr33n-api/internal/db"
 	"gr33n-api/internal/farmauthz"
 	"gr33n-api/internal/httputil"
+	"gr33n-api/internal/plantcatalog"
 )
 
 type Handler struct{ q *db.Queries }
@@ -74,41 +77,17 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 	if !farmauthz.RequireFarmOperate(w, r, h.q, farmID) {
 		return
 	}
-	var body struct {
-		DisplayName       string          `json:"display_name"`
-		VarietyOrCultivar *string         `json:"variety_or_cultivar"`
-		CropProfileID     *int64          `json:"crop_profile_id"`
-		Meta              json.RawMessage `json:"meta"`
-	}
-	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+	body, err := io.ReadAll(io.LimitReader(r.Body, 1<<20))
+	if err != nil {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid body")
 		return
 	}
-	name := strings.TrimSpace(body.DisplayName)
-	if name == "" {
-		httputil.WriteError(w, http.StatusBadRequest, "display_name required")
+	plant, _, status, errMsg := plantcatalog.CreateFromRequest(r.Context(), h.q, farmID, body)
+	if errMsg != "" {
+		httputil.WriteError(w, status, errMsg)
 		return
 	}
-	meta := []byte("{}")
-	if len(body.Meta) > 0 {
-		if !json.Valid(body.Meta) {
-			httputil.WriteError(w, http.StatusBadRequest, "meta must be valid JSON")
-			return
-		}
-		meta = body.Meta
-	}
-	row, err := h.q.CreatePlant(r.Context(), db.CreatePlantParams{
-		FarmID:            farmID,
-		DisplayName:       name,
-		VarietyOrCultivar: body.VarietyOrCultivar,
-		CropProfileID:     body.CropProfileID,
-		Meta:              meta,
-	})
-	if err != nil {
-		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
-		return
-	}
-	httputil.WriteJSON(w, http.StatusCreated, row)
+	plantcatalog.WriteCreateResponse(w, plant, status)
 }
 
 // Update — PUT /plants/{id}
@@ -134,15 +113,15 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 		DisplayName       string          `json:"display_name"`
 		VarietyOrCultivar *string         `json:"variety_or_cultivar"`
 		CropProfileID     *int64          `json:"crop_profile_id"`
+		CropKey           *string         `json:"crop_key"`
 		Meta              json.RawMessage `json:"meta"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid body")
 		return
 	}
-	name := strings.TrimSpace(body.DisplayName)
-	if name == "" {
-		httputil.WriteError(w, http.StatusBadRequest, "display_name required")
+	if body.CropKey != nil || body.CropProfileID != nil {
+		httputil.WriteError(w, http.StatusBadRequest, "crop_key and crop_profile_id cannot be changed; create uses catalog slot")
 		return
 	}
 	meta := existing.Meta
@@ -153,20 +132,48 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 		}
 		meta = body.Meta
 	}
-	cropProfileID := existing.CropProfileID
-	if body.CropProfileID != nil {
-		cropProfileID = body.CropProfileID
+
+	displayName := existing.DisplayName
+	if existing.CropKey != nil && strings.TrimSpace(*existing.CropKey) != "" {
+		displayName = existing.DisplayName
+	} else if strings.TrimSpace(body.DisplayName) != "" {
+		displayName = strings.TrimSpace(body.DisplayName)
+	} else if strings.TrimSpace(body.DisplayName) == "" && existing.CropKey == nil {
+		httputil.WriteError(w, http.StatusBadRequest, "display_name required")
+		return
 	}
-	row, err := h.q.UpdatePlant(r.Context(), db.UpdatePlantParams{
+
+	variety := existing.VarietyOrCultivar
+	if body.VarietyOrCultivar != nil {
+		v := strings.TrimSpace(*body.VarietyOrCultivar)
+		if v == "" {
+			variety = nil
+		} else {
+			variety = &v
+		}
+	}
+
+	row, err := h.q.UpdatePlantVariety(r.Context(), db.UpdatePlantVarietyParams{
 		ID:                id,
-		DisplayName:       name,
-		VarietyOrCultivar: body.VarietyOrCultivar,
-		CropProfileID:     cropProfileID,
-		Meta:              meta,
+		VarietyOrCultivar: variety,
 	})
 	if err != nil {
 		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
 		return
+	}
+	if !bytes.Equal(meta, existing.Meta) {
+		row, err = h.q.UpdatePlant(r.Context(), db.UpdatePlantParams{
+			ID:                id,
+			DisplayName:       displayName,
+			VarietyOrCultivar: variety,
+			CropProfileID:     existing.CropProfileID,
+			CropKey:           existing.CropKey,
+			Meta:              meta,
+		})
+		if err != nil {
+			httputil.WriteError(w, http.StatusInternalServerError, err.Error())
+			return
+		}
 	}
 	httputil.WriteJSON(w, http.StatusOK, row)
 }

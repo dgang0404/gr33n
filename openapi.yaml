@@ -3492,6 +3492,11 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Plant" }
+        "200":
+          description: Existing plant for crop_key (upsert)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Plant" }
         "400": { $ref: "#/components/responses/BadRequest" }
 
   /plants/{id}:
@@ -7539,6 +7544,8 @@ components:
         farm_id: { type: integer, format: int64 }
         display_name: { type: string }
         variety_or_cultivar: { type: string, nullable: true }
+        crop_key: { type: string, nullable: true, description: "Catalog identity; one active plant per farm per crop_key (Phase 85)" }
+        crop_profile_id: { type: integer, format: int64, nullable: true, description: "Effective farm crop profile for crop_key" }
         meta:
           type: object
           description: Arbitrary JSON metadata (e.g. notes, tags)
@@ -7549,17 +7556,26 @@ components:
 
     PlantCreate:
       type: object
-      required: [display_name]
+      required: [crop_key]
       properties:
-        display_name: { type: string }
+        crop_key: { type: string, description: "Catalog crop_key; server sets display_name from catalog" }
+        crop_profile_id: { type: integer, format: int64, nullable: true, description: "Legacy; server resolves effective profile from crop_key" }
+        display_name: { type: string, description: "Ignored on create when crop_key is set; server uses catalog display_name" }
         variety_or_cultivar: { type: string, nullable: true }
         meta:
           type: object
           additionalProperties: true
 
     PlantUpdate:
-      allOf:
-        - $ref: "#/components/schemas/PlantCreate"
+      type: object
+      properties:
+        variety_or_cultivar: { type: string, nullable: true }
+        meta:
+          type: object
+          additionalProperties: true
+        display_name:
+          type: string
+          description: "Legacy free-text plants only; catalog-bound plants ignore display_name changes"
 
     CropProfile:
       type: object

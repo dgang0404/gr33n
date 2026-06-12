@@ -317,6 +317,7 @@ type Querier interface {
 	GetOrganizationMembership(ctx context.Context, arg GetOrganizationMembershipParams) (Gr33ncoreOrganizationMembership, error)
 	GetOrganizationUsageSummary(ctx context.Context, organizationID *int64) (GetOrganizationUsageSummaryRow, error)
 	GetPlant(ctx context.Context, id int64) (Gr33ncropsPlant, error)
+	GetPlantByFarmCropKey(ctx context.Context, arg GetPlantByFarmCropKeyParams) (Gr33ncropsPlant, error)
 	GetPlantCropProfileStage(ctx context.Context, arg GetPlantCropProfileStageParams) (GetPlantCropProfileStageRow, error)
 	GetProfileByEmail(ctx context.Context, email string) (Gr33ncoreProfile, error)
 	// ============================================================
@@ -662,6 +663,7 @@ type Querier interface {
 	UpdateLightingProgramSchedules(ctx context.Context, arg UpdateLightingProgramSchedulesParams) (Gr33ncoreLightingProgram, error)
 	UpdateOrganization(ctx context.Context, arg UpdateOrganizationParams) (Gr33ncoreOrganization, error)
 	UpdatePlant(ctx context.Context, arg UpdatePlantParams) (Gr33ncropsPlant, error)
+	UpdatePlantVariety(ctx context.Context, arg UpdatePlantVarietyParams) (Gr33ncropsPlant, error)
 	UpdateProfile(ctx context.Context, arg UpdateProfileParams) (Gr33ncoreProfile, error)
 	// Phase 20.9 WS1 — operator-set default wage. NULL clears the rate
 	// (and the autologger will skip cost rows for logs with no

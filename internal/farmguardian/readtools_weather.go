@@ -125,7 +125,7 @@ func supplementalGapForFarm(ctx context.Context, q db.Querier, farmID int64, cle
 	if cycle.ID == 0 {
 		return 0, 0, false
 	}
-	profileID, stage, _, err := resolveCropProfileContext(ctx, q, farmID, "", &ContextRef{
+	profileID, stage, _, _, err := resolveCropProfileContext(ctx, q, farmID, "", &ContextRef{
 		CropCycleID: cycle.ID,
 	})
 	if err != nil || profileID <= 0 || stage == "" {
