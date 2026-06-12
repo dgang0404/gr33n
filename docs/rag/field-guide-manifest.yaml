@@ -48,6 +48,19 @@ include:
   - crop-rosemary-nutrition.md
   - crop-lavender-nutrition.md
   - crop-chrysanthemum-care.md
+  - crop-apple-nursery.md
+  - crop-citrus-nursery.md
+  - crop-fig-container.md
+  - crop-peach-nursery.md
+  - crop-cherry-nursery.md
+  - crop-grape-vine.md
+  - crop-avocado-nursery.md
+  - crop-pear-nursery.md
+  - crop-plum-nursery.md
+  - crop-mango-nursery.md
+  - crop-unsupported-woodland.md
+  - crop-unsupported-mushroom.md
+  - crop-unsupported-field-roots.md
 
 exclude_globs:
   - "procedures/**"

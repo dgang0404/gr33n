@@ -1,7 +1,7 @@
 # Phase 82 — canonical cultivator crop library (single source of truth).
 # Drives SQL seed (generate-crop-seed.sql.sh), Guardian aliases (WS3), UI picker (WS4f).
 # EC stage fields are mS/cm only — never percentages.
-version: 3
+version: 4
 
 aliases:
   orchid: phalaenopsis
@@ -11,8 +11,15 @@ aliases:
   coriander: cilantro
   wild_leek: ramps
   shiitake: mushroom
-  apple_tree: fruit_tree
-  grape_vine: fruit_tree
+  panax: ginseng
+  apple_tree: apple
+  grape_vine: grape
+  grapevine: grape
+  orange: citrus
+  lemon: citrus
+  lime: citrus
+  mandarin: citrus
+  nectarine: peach
   trichocereus: san_pedro
   echinopsis: san_pedro
   swiss_chard: chard
@@ -22,6 +29,10 @@ aliases:
   chrysanthemum_mum: chrysanthemum
   cherry_tomato: tomato
   beefsteak_tomato: tomato
+  fungi: mushroom
+  carrot: in_ground_root
+  potato: in_ground_root
+  sweet_potato: in_ground_root
 
 crops:
   # ── Existing Phase 64 profiles (stages seeded) ──────────────────────────
@@ -1936,28 +1947,574 @@ crops:
         photoperiod_hrs: 12.0
         notes: Short-day bloom — photoperiod critical
 
+  # ── Fruit trees — greenhouse nursery / young container (years to bearing) ─
+  - key: apple
+    display_name: Apple (nursery / young tree)
+    category: fruit_tree
+    source: Container or greenhouse nursery — multi-year to bearing; not full orchard automation
+    substrate: soilless_mix / large container
+    watering_style: pulse_dryback
+    cousin_of: tomato
+    aliases: [apple_tree]
+    stages:
+      - stage: seedling
+        ec_min: 0.80
+        ec_target: 1.00
+        ec_max: 1.20
+        ph_min: 5.5
+        ph_max: 6.5
+        vpd_min_kpa: 0.60
+        vpd_max_kpa: 0.90
+        temp_min_c: 15.0
+        temp_max_c: 24.0
+        rh_min_pct: 55
+        rh_max_pct: 70
+        dli_target: 15.0
+        photoperiod_hrs: 16.0
+        notes: Bench graft / liner
+      - stage: early_veg
+        ec_min: 1.00
+        ec_target: 1.40
+        ec_max: 1.70
+        ph_min: 5.5
+        ph_max: 6.5
+        vpd_min_kpa: 0.80
+        vpd_max_kpa: 1.10
+        temp_min_c: 15.0
+        temp_max_c: 26.0
+        rh_min_pct: 50
+        rh_max_pct: 65
+        dli_target: 25.0
+        photoperiod_hrs: 16.0
+        notes: Year 1–2 container; winter chill cultivar-dependent
+      - stage: late_veg
+        ec_min: 1.20
+        ec_target: 1.60
+        ec_max: 2.00
+        ph_min: 5.5
+        ph_max: 6.5
+        vpd_min_kpa: 0.90
+        vpd_max_kpa: 1.20
+        temp_min_c: 15.0
+        temp_max_c: 26.0
+        rh_min_pct: 45
+        rh_max_pct: 60
+        dli_target: 30.0
+        photoperiod_hrs: 16.0
+        notes: Young tree training — fruiting years 3–5+
+
+  - key: citrus
+    display_name: Citrus (lemon / orange nursery)
+    category: fruit_tree
+    source: Warm greenhouse citrus nursery; container citrus production
+    substrate: soilless_mix / large container
+    watering_style: pulse_dryback
+    cousin_of: tomato
+    aliases: [orange, lemon, lime, mandarin]
+    stages:
+      - stage: seedling
+        ec_min: 0.80
+        ec_target: 1.00
+        ec_max: 1.20
+        ph_min: 5.5
+        ph_max: 6.2
+        vpd_min_kpa: 0.60
+        vpd_max_kpa: 0.90
+        temp_min_c: 20.0
+        temp_max_c: 28.0
+        rh_min_pct: 55
+        rh_max_pct: 70
+        dli_target: 18.0
+        photoperiod_hrs: 14.0
+        notes: Warm bench; avoid cold root zone
+      - stage: early_veg
+        ec_min: 1.00
+        ec_target: 1.40
+        ec_max: 1.70
+        ph_min: 5.5
+        ph_max: 6.2
+        vpd_min_kpa: 0.80
+        vpd_max_kpa: 1.10
+        temp_min_c: 20.0
+        temp_max_c: 30.0
+        rh_min_pct: 50
+        rh_max_pct: 65
+        dli_target: 25.0
+        photoperiod_hrs: 14.0
+        notes: Container citrus; iron at low pH
+      - stage: late_veg
+        ec_min: 1.20
+        ec_target: 1.60
+        ec_max: 2.00
+        ph_min: 5.5
+        ph_max: 6.2
+        vpd_min_kpa: 0.90
+        vpd_max_kpa: 1.20
+        temp_min_c: 18.0
+        temp_max_c: 30.0
+        rh_min_pct: 45
+        rh_max_pct: 60
+        dli_target: 30.0
+        photoperiod_hrs: 14.0
+        notes: Young tree — fruit set year 2–4 in pots
+
+  - key: fig
+    display_name: Fig (container)
+    category: fruit_tree
+    source: Warm container fig; breba/main crop cultivar-dependent
+    substrate: soilless_mix / large container
+    watering_style: pulse_dryback
+    cousin_of: tomato
+    stages:
+      - stage: seedling
+        ec_min: 0.70
+        ec_target: 0.90
+        ec_max: 1.10
+        ph_min: 5.5
+        ph_max: 6.5
+        vpd_min_kpa: 0.60
+        vpd_max_kpa: 0.90
+        temp_min_c: 18.0
+        temp_max_c: 28.0
+        rh_min_pct: 50
+        rh_max_pct: 65
+        dli_target: 18.0
+        photoperiod_hrs: 14.0
+        notes: Warm germination
+      - stage: early_veg
+        ec_min: 1.00
+        ec_target: 1.30
+        ec_max: 1.60
+        ph_min: 5.5
+        ph_max: 6.5
+        vpd_min_kpa: 0.80
+        vpd_max_kpa: 1.10
+        temp_min_c: 20.0
+        temp_max_c: 30.0
+        rh_min_pct: 45
+        rh_max_pct: 60
+        dli_target: 25.0
+        photoperiod_hrs: 14.0
+        notes: Container vigor management
+      - stage: late_veg
+        ec_min: 1.20
+        ec_target: 1.50
+        ec_max: 1.90
+        ph_min: 5.5
+        ph_max: 6.5
+        vpd_min_kpa: 0.90
+        vpd_max_kpa: 1.20
+        temp_min_c: 18.0
+        temp_max_c: 30.0
+        rh_min_pct: 40
+        rh_max_pct: 55
+        dli_target: 30.0
+        photoperiod_hrs: 14.0
+        notes: Reduce feed pre-dormancy if applicable
+
+  - key: peach
+    display_name: Peach / nectarine (nursery)
+    category: fruit_tree
+    source: Deciduous stone fruit nursery; chill hours required
+    substrate: soilless_mix / large container
+    watering_style: pulse_dryback
+    cousin_of: tomato
+    aliases: [nectarine]
+    stages:
+      - stage: seedling
+        ec_min: 0.80
+        ec_target: 1.00
+        ec_max: 1.20
+        ph_min: 5.5
+        ph_max: 6.5
+        vpd_min_kpa: 0.60
+        vpd_max_kpa: 0.90
+        temp_min_c: 12.0
+        temp_max_c: 24.0
+        rh_min_pct: 55
+        rh_max_pct: 70
+        dli_target: 18.0
+        photoperiod_hrs: 16.0
+        notes: Graft / liner
+      - stage: early_veg
+        ec_min: 1.00
+        ec_target: 1.40
+        ec_max: 1.70
+        ph_min: 5.5
+        ph_max: 6.5
+        vpd_min_kpa: 0.80
+        vpd_max_kpa: 1.10
+        temp_min_c: 15.0
+        temp_max_c: 28.0
+        rh_min_pct: 45
+        rh_max_pct: 60
+        dli_target: 28.0
+        photoperiod_hrs: 16.0
+        notes: Spring flush — monitor bacterial spot risk
+      - stage: late_veg
+        ec_min: 1.20
+        ec_target: 1.60
+        ec_max: 2.00
+        ph_min: 5.5
+        ph_max: 6.5
+        vpd_min_kpa: 0.90
+        vpd_max_kpa: 1.20
+        temp_min_c: 15.0
+        temp_max_c: 28.0
+        rh_min_pct: 40
+        rh_max_pct: 55
+        dli_target: 32.0
+        photoperiod_hrs: 16.0
+        notes: Young tree — stone fruit years 2–4
+
+  - key: cherry
+    display_name: Cherry (nursery / sweet)
+    category: fruit_tree
+    source: Sweet cherry nursery; high light; chill dependent
+    substrate: soilless_mix / large container
+    watering_style: pulse_dryback
+    cousin_of: tomato
+    stages:
+      - stage: seedling
+        ec_min: 0.80
+        ec_target: 1.00
+        ec_max: 1.20
+        ph_min: 5.5
+        ph_max: 6.5
+        vpd_min_kpa: 0.60
+        vpd_max_kpa: 0.90
+        temp_min_c: 12.0
+        temp_max_c: 22.0
+        rh_min_pct: 55
+        rh_max_pct: 70
+        dli_target: 18.0
+        photoperiod_hrs: 16.0
+        notes: Cool-start bench
+      - stage: early_veg
+        ec_min: 1.00
+        ec_target: 1.30
+        ec_max: 1.60
+        ph_min: 5.5
+        ph_max: 6.5
+        vpd_min_kpa: 0.80
+        vpd_max_kpa: 1.10
+        temp_min_c: 15.0
+        temp_max_c: 26.0
+        rh_min_pct: 45
+        rh_max_pct: 60
+        dli_target: 28.0
+        photoperiod_hrs: 16.0
+        notes: High light for quality wood
+      - stage: late_veg
+        ec_min: 1.10
+        ec_target: 1.50
+        ec_max: 1.80
+        ph_min: 5.5
+        ph_max: 6.5
+        vpd_min_kpa: 0.90
+        vpd_max_kpa: 1.20
+        temp_min_c: 15.0
+        temp_max_c: 26.0
+        rh_min_pct: 40
+        rh_max_pct: 55
+        dli_target: 32.0
+        photoperiod_hrs: 16.0
+        notes: Bird / crack risk at fruit — outdoor scale caveat
+
+  - key: grape
+    display_name: Grape (vine / nursery)
+    category: fruit_tree
+    source: Container or greenhouse vine nursery; trellis from year 1
+    substrate: soilless_mix / large container
+    watering_style: pulse_dryback
+    cousin_of: tomato
+    aliases: [grapevine, grape_vine]
+    stages:
+      - stage: seedling
+        ec_min: 0.70
+        ec_target: 0.90
+        ec_max: 1.10
+        ph_min: 5.5
+        ph_max: 6.5
+        vpd_min_kpa: 0.60
+        vpd_max_kpa: 0.90
+        temp_min_c: 15.0
+        temp_max_c: 26.0
+        rh_min_pct: 55
+        rh_max_pct: 70
+        dli_target: 18.0
+        photoperiod_hrs: 16.0
+        notes: Bench graft
+      - stage: early_veg
+        ec_min: 1.00
+        ec_target: 1.40
+        ec_max: 1.70
+        ph_min: 5.5
+        ph_max: 6.5
+        vpd_min_kpa: 0.80
+        vpd_max_kpa: 1.10
+        temp_min_c: 18.0
+        temp_max_c: 28.0
+        rh_min_pct: 45
+        rh_max_pct: 60
+        dli_target: 28.0
+        photoperiod_hrs: 16.0
+        notes: Cane training
+      - stage: late_veg
+        ec_min: 1.20
+        ec_target: 1.60
+        ec_max: 2.00
+        ph_min: 5.5
+        ph_max: 6.5
+        vpd_min_kpa: 0.90
+        vpd_max_kpa: 1.20
+        temp_min_c: 18.0
+        temp_max_c: 28.0
+        rh_min_pct: 40
+        rh_max_pct: 55
+        dli_target: 32.0
+        photoperiod_hrs: 16.0
+        notes: First crop year 2–3 in greenhouse vine
+
+  - key: avocado
+    display_name: Avocado (container nursery)
+    category: fruit_tree
+    source: Sensitive roots; long juvenile phase; warm greenhouse
+    substrate: coarse soilless_mix
+    watering_style: pulse_dryback
+    cousin_of: citrus
+    stages:
+      - stage: seedling
+        ec_min: 0.60
+        ec_target: 0.80
+        ec_max: 1.00
+        ph_min: 5.5
+        ph_max: 6.5
+        vpd_min_kpa: 0.60
+        vpd_max_kpa: 0.90
+        temp_min_c: 20.0
+        temp_max_c: 28.0
+        rh_min_pct: 55
+        rh_max_pct: 70
+        dli_target: 15.0
+        photoperiod_hrs: 14.0
+        notes: Never waterlogged — root rot
+      - stage: early_veg
+        ec_min: 0.90
+        ec_target: 1.20
+        ec_max: 1.50
+        ph_min: 5.5
+        ph_max: 6.5
+        vpd_min_kpa: 0.80
+        vpd_max_kpa: 1.10
+        temp_min_c: 20.0
+        temp_max_c: 30.0
+        rh_min_pct: 50
+        rh_max_pct: 65
+        dli_target: 25.0
+        photoperiod_hrs: 14.0
+        notes: Graft management; chloride-sensitive
+      - stage: late_veg
+        ec_min: 1.10
+        ec_target: 1.40
+        ec_max: 1.80
+        ph_min: 5.5
+        ph_max: 6.5
+        vpd_min_kpa: 0.90
+        vpd_max_kpa: 1.20
+        temp_min_c: 18.0
+        temp_max_c: 30.0
+        rh_min_pct: 45
+        rh_max_pct: 60
+        dli_target: 30.0
+        photoperiod_hrs: 14.0
+        notes: Years to production — patience on fruit
+
+  - key: pear
+    display_name: Pear (nursery)
+    category: fruit_tree
+    source: Deciduous nursery pear; similar to apple bench culture
+    substrate: soilless_mix / large container
+    watering_style: pulse_dryback
+    cousin_of: apple
+    stages:
+      - stage: seedling
+        ec_min: 0.80
+        ec_target: 1.00
+        ec_max: 1.20
+        ph_min: 5.5
+        ph_max: 6.5
+        vpd_min_kpa: 0.60
+        vpd_max_kpa: 0.90
+        temp_min_c: 15.0
+        temp_max_c: 24.0
+        rh_min_pct: 55
+        rh_max_pct: 70
+        dli_target: 15.0
+        photoperiod_hrs: 16.0
+        notes: Bench liner
+      - stage: early_veg
+        ec_min: 1.00
+        ec_target: 1.30
+        ec_max: 1.60
+        ph_min: 5.5
+        ph_max: 6.5
+        vpd_min_kpa: 0.80
+        vpd_max_kpa: 1.10
+        temp_min_c: 15.0
+        temp_max_c: 26.0
+        rh_min_pct: 50
+        rh_max_pct: 65
+        dli_target: 25.0
+        photoperiod_hrs: 16.0
+        notes: Fire blight risk — airflow matters
+      - stage: late_veg
+        ec_min: 1.10
+        ec_target: 1.50
+        ec_max: 1.90
+        ph_min: 5.5
+        ph_max: 6.5
+        vpd_min_kpa: 0.90
+        vpd_max_kpa: 1.20
+        temp_min_c: 15.0
+        temp_max_c: 26.0
+        rh_min_pct: 45
+        rh_max_pct: 60
+        dli_target: 30.0
+        photoperiod_hrs: 16.0
+        notes: Young tree training
+
+  - key: plum
+    display_name: Plum (nursery / stone fruit)
+    category: fruit_tree
+    source: Stone fruit nursery; similar to peach
+    substrate: soilless_mix / large container
+    watering_style: pulse_dryback
+    cousin_of: peach
+    stages:
+      - stage: seedling
+        ec_min: 0.80
+        ec_target: 1.00
+        ec_max: 1.20
+        ph_min: 5.5
+        ph_max: 6.5
+        vpd_min_kpa: 0.60
+        vpd_max_kpa: 0.90
+        temp_min_c: 12.0
+        temp_max_c: 24.0
+        rh_min_pct: 55
+        rh_max_pct: 70
+        dli_target: 18.0
+        photoperiod_hrs: 16.0
+        notes: Bench graft
+      - stage: early_veg
+        ec_min: 1.00
+        ec_target: 1.30
+        ec_max: 1.60
+        ph_min: 5.5
+        ph_max: 6.5
+        vpd_min_kpa: 0.80
+        vpd_max_kpa: 1.10
+        temp_min_c: 15.0
+        temp_max_c: 28.0
+        rh_min_pct: 45
+        rh_max_pct: 60
+        dli_target: 28.0
+        photoperiod_hrs: 16.0
+        notes: Spring growth flush
+      - stage: late_veg
+        ec_min: 1.10
+        ec_target: 1.50
+        ec_max: 1.80
+        ph_min: 5.5
+        ph_max: 6.5
+        vpd_min_kpa: 0.90
+        vpd_max_kpa: 1.20
+        temp_min_c: 15.0
+        temp_max_c: 28.0
+        rh_min_pct: 40
+        rh_max_pct: 55
+        dli_target: 32.0
+        photoperiod_hrs: 16.0
+        notes: Young tree — fruit years 3–5
+
+  - key: mango
+    display_name: Mango (container nursery)
+    category: fruit_tree
+    source: Tropical greenhouse nursery; warm only
+    substrate: coarse soilless_mix
+    watering_style: pulse_dryback
+    cousin_of: citrus
+    stages:
+      - stage: seedling
+        ec_min: 0.80
+        ec_target: 1.00
+        ec_max: 1.20
+        ph_min: 5.5
+        ph_max: 6.5
+        vpd_min_kpa: 0.70
+        vpd_max_kpa: 1.00
+        temp_min_c: 22.0
+        temp_max_c: 32.0
+        rh_min_pct: 55
+        rh_max_pct: 75
+        dli_target: 20.0
+        photoperiod_hrs: 14.0
+        notes: Warm bench only — no cold roots
+      - stage: early_veg
+        ec_min: 1.00
+        ec_target: 1.40
+        ec_max: 1.70
+        ph_min: 5.5
+        ph_max: 6.5
+        vpd_min_kpa: 0.90
+        vpd_max_kpa: 1.20
+        temp_min_c: 24.0
+        temp_max_c: 34.0
+        rh_min_pct: 50
+        rh_max_pct: 70
+        dli_target: 30.0
+        photoperiod_hrs: 14.0
+        notes: Container vigor; anthracnose in high RH
+      - stage: late_veg
+        ec_min: 1.20
+        ec_target: 1.60
+        ec_max: 2.00
+        ph_min: 5.5
+        ph_max: 6.5
+        vpd_min_kpa: 1.00
+        vpd_max_kpa: 1.30
+        temp_min_c: 22.0
+        temp_max_c: 34.0
+        rh_min_pct: 45
+        rh_max_pct: 65
+        dli_target: 35.0
+        photoperiod_hrs: 14.0
+        notes: Juvenile years — fruit 3–5+ in pots
+
+# ── Unsupported — no structured EC/VPD targets; Guardian honest blocks (WS4e) ─
+# Not shown in the UI picker. Resolved via alias registry for chat only.
 unsupported:
   - key: ramps
+    display_name: Ramps (wild leek)
     aliases: [wild_leek, allium_tricoccum]
-    reason: Woodland spring ephemeral — not indoor fertigation
+    reason: Woodland spring ephemeral — not indoor fertigation; foraged crop, not bench automation
     cousin_of: null
 
   - key: mushroom
+    display_name: Mushroom / fungi
     aliases: [fungi, shiitake]
-    reason: Different production domain — use husbandry / animals module
+    reason: Different production domain — substrate bags and humidity rooms; use husbandry module, not fertigation profiles
     cousin_of: null
 
   - key: in_ground_root
+    display_name: In-ground root crops (carrot / potato)
     aliases: [carrot, potato, sweet_potato]
-    reason: Field / deep soil crops — gr33n targets hydroponic and container
+    reason: Field and deep-soil crops — gr33n targets hydroponic and container; no bench EC curve for tubers or taproots
     cousin_of: lettuce
 
-  - key: fruit_tree
-    aliases: [apple, grape, grapevine]
-    reason: Perennial tree/vine scale — years to bearing; greenhouse seedling caveat only
-    cousin_of: tomato
-
   - key: ginseng
-    aliases: []
-    reason: Multi-year woodland medicinal — not fertigation automation
+    display_name: Ginseng (woodland medicinal)
+    aliases: [panax]
+    reason: Multi-year shaded woodland medicinal — not fertigation automation
     cousin_of: null

@@ -1,4 +1,5 @@
 // Phase 64 WS3 — crop knowledge read tool (lookup_crop_targets).
+// Phase 82 WS3 — multi-crop compare + YAML alias registry.
 
 package farmguardian
 
@@ -8,17 +9,44 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+	"sync"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 
+	"gr33n-api/internal/croplibrary"
 	db "gr33n-api/internal/db"
 )
 
 // CropTargetsGroundingRule is injected into every grounded chat system prompt.
 const CropTargetsGroundingRule = `Crop targets (Phase 64): NEVER state an EC, pH, VPD, DLI, or photoperiod target unless lookup_crop_targets (or an explicit crop profile stage row in read-tool results) provides it. EC is in mS/cm. If no crop profile is assigned to the plant/cycle, say so and offer to set one in Start grow or Plants — do not guess from general knowledge.`
 
-var lookupCropTargetsIntent = regexp.MustCompile(`(?i)\b(ec|ph|vpd|dli|photoperiod|target|targets|nutrient|feed strength)\b|\bcrop\s+profile\b|\bwhat should (ec|ph|vpd)\b|\b(is my ec|is my ph)\b`)
+const (
+	maxMultiCropProfiles    = 6
+	maxMultiUnsupportedCrops = 2
+)
+
+var lookupCropTargetsIntent = regexp.MustCompile(`(?i)\b(ec|ph|vpd|dli|photoperiod|target|targets|nutrient|feed strength|feed|water|watering|wet|moisture|irrigation|fertigation|how wet|light|lighting|hours|cycle|program|compare|vs|versus|difference between|each plant)\b|\bcrop\s+profile\b|\bwhat should (ec|ph|vpd)\b|\b(is my ec|is my ph)\b`)
+
+var compareCropQuestion = regexp.MustCompile(`(?i)\b(compare|vs|versus|difference between|each plant)\b`)
+
+var (
+	cropRegOnce sync.Once
+	cropReg     *croplibrary.Registry
+	cropRegErr  error
+)
+
+func defaultCropRegistry() (*croplibrary.Registry, error) {
+	cropRegOnce.Do(func() {
+		cat, err := croplibrary.DefaultCatalog()
+		if err != nil {
+			cropRegErr = err
+			return
+		}
+		cropReg = croplibrary.NewRegistry(cat)
+	})
+	return cropReg, cropRegErr
+}
 
 func shouldRunLookupCropTargetsReadIntent(question string, ref *ContextRef) bool {
 	q := strings.TrimSpace(question)
@@ -26,11 +54,22 @@ func shouldRunLookupCropTargetsReadIntent(question string, ref *ContextRef) bool
 		return false
 	}
 	if ref != nil && (ref.CropCycleID > 0 || (strings.EqualFold(ref.Type, "zone") && ref.ID > 0)) {
-		if q == "" || lookupCropTargetsIntent.MatchString(q) {
+		if q == "" || lookupCropTargetsIntent.MatchString(q) || questionMentionsCrop(q) {
 			return true
 		}
 	}
-	return lookupCropTargetsIntent.MatchString(q)
+	if lookupCropTargetsIntent.MatchString(q) || questionMentionsCrop(q) {
+		return true
+	}
+	return false
+}
+
+func questionMentionsCrop(question string) bool {
+	reg, err := defaultCropRegistry()
+	if err != nil || reg == nil {
+		return false
+	}
+	return len(reg.FindMentions(question)) > 0
 }
 
 func renderLookupCropTargets(ctx context.Context, q db.Querier, farmID int64, question string, ref *ContextRef) (string, error) {
@@ -38,9 +77,38 @@ func renderLookupCropTargets(ctx context.Context, q db.Querier, farmID int64, qu
 	if err != nil {
 		return "", err
 	}
+
+	reg, regErr := defaultCropRegistry()
+	var mentions []croplibrary.ResolvedMention
+	if regErr == nil && reg != nil {
+		mentions = reg.FindMentions(question)
+	}
+	cropMentions, unsupMentions := splitMentions(mentions)
+
+	useMulti := len(cropMentions) >= 2 ||
+		(len(unsupMentions) > 0 && len(cropMentions) > 0) ||
+		(profileID <= 0 && len(cropMentions)+len(unsupMentions) > 0)
+
+	if useMulti {
+		return renderLookupCropTargetsMulti(ctx, q, farmID, question, cropMentions, unsupMentions)
+	}
+
+	if profileID <= 0 && len(cropMentions) == 1 {
+		if id, ok := lookupBuiltinProfileID(ctx, q, farmID, cropMentions[0].Key); ok {
+			profileID = id
+		}
+	}
+	if profileID <= 0 && len(unsupMentions) == 1 && len(cropMentions) == 0 {
+		return formatUnsupportedCropBlock(unsupMentions[0]), nil
+	}
 	if profileID <= 0 {
 		return "lookup_crop_targets: no crop profile assigned to the active grow or plant. Offer to pick a profile in Start grow or Plants.", nil
 	}
+
+	return renderSingleCropTargets(ctx, q, profileID, stage, plantName)
+}
+
+func renderSingleCropTargets(ctx context.Context, q db.Querier, profileID int64, stage db.Gr33nfertigationGrowthStageEnum, plantName string) (string, error) {
 	profile, err := q.GetCropProfile(ctx, profileID)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -99,6 +167,114 @@ func renderLookupCropTargets(ctx context.Context, q db.Querier, farmID int64, qu
 	return b.String(), nil
 }
 
+func renderLookupCropTargetsMulti(ctx context.Context, q db.Querier, farmID int64, question string, cropMentions, unsupMentions []croplibrary.ResolvedMention) (string, error) {
+	var b strings.Builder
+	b.WriteString("lookup_crop_targets — multi-crop")
+	compare := compareCropQuestion.MatchString(question)
+	stages := defaultStagesForMulti(compare)
+
+	profileCount := 0
+	for _, m := range cropMentions {
+		if profileCount >= maxMultiCropProfiles {
+			break
+		}
+		profileID, ok := lookupBuiltinProfileID(ctx, q, farmID, m.Key)
+		if !ok {
+			b.WriteString(fmt.Sprintf("\n---\n%s: no built-in profile — clone from nearest cousin in Plants or request a profile.", m.DisplayName))
+			continue
+		}
+		profile, err := q.GetCropProfile(ctx, profileID)
+		if err != nil {
+			if errors.Is(err, pgx.ErrNoRows) {
+				continue
+			}
+			return "", err
+		}
+		b.WriteString(fmt.Sprintf("\n---\n%s (%s)", profile.DisplayName, profile.CropKey))
+		for _, stageName := range stages {
+			st, err := q.GetCropProfileStage(ctx, db.GetCropProfileStageParams{
+				CropProfileID: profileID,
+				Stage:         stageName,
+			})
+			if err != nil {
+				if errors.Is(err, pgx.ErrNoRows) {
+					continue
+				}
+				return "", err
+			}
+			b.WriteString(fmt.Sprintf("\n  %s: EC %s mS/cm", stageName, formatEcRange(st.EcMin, st.EcTarget, st.EcMax)))
+			if st.PhotoperiodHrs.Valid {
+				b.WriteString(fmt.Sprintf("; photoperiod %s h", formatNumeric(st.PhotoperiodHrs)))
+			}
+			if st.DliTarget.Valid {
+				b.WriteString(fmt.Sprintf("; DLI %s mol/m²/day", formatNumeric(st.DliTarget)))
+			}
+		}
+		profileCount++
+	}
+
+	unsupCount := 0
+	for _, m := range unsupMentions {
+		if unsupCount >= maxMultiUnsupportedCrops {
+			break
+		}
+		b.WriteString("\n")
+		b.WriteString(formatUnsupportedCropBlock(m))
+		unsupCount++
+	}
+
+	if profileCount == 0 && unsupCount == 0 {
+		return "lookup_crop_targets: no crop profile assigned to the active grow or plant. Offer to pick a profile in Start grow or Plants.", nil
+	}
+	return b.String(), nil
+}
+
+func formatUnsupportedCropBlock(m croplibrary.ResolvedMention) string {
+	var b strings.Builder
+	b.WriteString(fmt.Sprintf("lookup_crop_targets — %s — not supported as a gr33n indoor fertigation crop.", m.DisplayName))
+	if strings.TrimSpace(m.Reason) != "" {
+		b.WriteString("\nReason: " + strings.TrimSpace(m.Reason))
+	}
+	if m.CousinOf != nil && strings.TrimSpace(*m.CousinOf) != "" {
+		b.WriteString("\nNearest cousin crop key: " + strings.TrimSpace(*m.CousinOf))
+	}
+	b.WriteString("\nDo not state EC, pH, VPD, DLI, or photoperiod targets for this crop.")
+	return b.String()
+}
+
+func splitMentions(mentions []croplibrary.ResolvedMention) (crops, unsupported []croplibrary.ResolvedMention) {
+	for _, m := range mentions {
+		switch m.Kind {
+		case croplibrary.MentionCrop:
+			crops = append(crops, m)
+		case croplibrary.MentionUnsupported:
+			unsupported = append(unsupported, m)
+		}
+	}
+	return crops, unsupported
+}
+
+func defaultStagesForMulti(compare bool) []db.Gr33nfertigationGrowthStageEnum {
+	if compare {
+		return []db.Gr33nfertigationGrowthStageEnum{
+			db.Gr33nfertigationGrowthStageEnumEarlyVeg,
+			db.Gr33nfertigationGrowthStageEnumEarlyFlower,
+		}
+	}
+	return []db.Gr33nfertigationGrowthStageEnum{
+		db.Gr33nfertigationGrowthStageEnumEarlyVeg,
+	}
+}
+
+func lookupBuiltinProfileID(ctx context.Context, q db.Querier, farmID int64, cropKey string) (int64, bool) {
+	farmPtr := farmID
+	p, err := q.GetCropProfileByKey(ctx, db.GetCropProfileByKeyParams{CropKey: cropKey, FarmID: &farmPtr})
+	if err != nil {
+		return 0, false
+	}
+	return p.ID, true
+}
+
 func resolveCropProfileContext(ctx context.Context, q db.Querier, farmID int64, question string, ref *ContextRef) (profileID int64, stage db.Gr33nfertigationGrowthStageEnum, plantName string, err error) {
 	var cycle db.Gr33nfertigationCropCycle
 	var haveCycle bool
@@ -140,18 +316,14 @@ func resolveCropProfileContext(ctx context.Context, q db.Querier, farmID int64, 
 		}
 	}
 	if profileID <= 0 {
-		// Try crop_key in question against builtin profiles.
-		lower := strings.ToLower(question)
-		for _, key := range []string{"cannabis", "tomato", "pepper", "lettuce", "phalaenopsis", "orchid", "basil", "strawberry"} {
-			if strings.Contains(lower, key) {
-				lookupKey := key
-				if key == "orchid" {
-					lookupKey = "phalaenopsis"
+		reg, rerr := defaultCropRegistry()
+		if rerr == nil && reg != nil {
+			for _, m := range reg.FindMentions(question) {
+				if m.Kind != croplibrary.MentionCrop {
+					continue
 				}
-				farmPtr := farmID
-				p, perr := q.GetCropProfileByKey(ctx, db.GetCropProfileByKeyParams{CropKey: lookupKey, FarmID: &farmPtr})
-				if perr == nil {
-					profileID = p.ID
+				if id, ok := lookupBuiltinProfileID(ctx, q, farmID, m.Key); ok {
+					profileID = id
 					break
 				}
 			}

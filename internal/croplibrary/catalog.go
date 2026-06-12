@@ -71,10 +71,11 @@ type StageRow struct {
 
 // UnsupportedCrop has no structured targets — honest Guardian handling (WS4e).
 type UnsupportedCrop struct {
-	Key      string   `yaml:"key"`
-	Aliases  []string `yaml:"aliases,omitempty"`
-	Reason   string   `yaml:"reason"`
-	CousinOf *string  `yaml:"cousin_of"`
+	Key         string   `yaml:"key"`
+	DisplayName string   `yaml:"display_name,omitempty"`
+	Aliases     []string `yaml:"aliases,omitempty"`
+	Reason      string   `yaml:"reason"`
+	CousinOf    *string  `yaml:"cousin_of"`
 }
 
 // LoadCatalog reads and validates the YAML catalog at repoRoot/data/crop_library.yaml

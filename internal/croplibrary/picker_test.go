@@ -45,10 +45,10 @@ func TestBuildPicker_CompleteCatalog(t *testing.T) {
 		t.Fatal(err)
 	}
 	out := croplibrary.BuildPicker(cat, nil)
-	if out.Counts.Total != 36 {
-		t.Fatalf("want 36 catalog crops, got %d", out.Counts.Total)
+	if out.Counts.Total != 46 {
+		t.Fatalf("want 46 catalog crops, got %d", out.Counts.Total)
 	}
-	if out.Counts.CatalogOnly != 36 {
+	if out.Counts.CatalogOnly != 46 {
 		t.Fatalf("without DB all should be catalog-only, got %d", out.Counts.CatalogOnly)
 	}
 }

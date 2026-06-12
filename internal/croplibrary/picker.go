@@ -57,6 +57,7 @@ var categoryOrder = []struct {
 	key   string
 	label string
 }{
+	{"fruit_tree", "Fruit trees"},
 	{"fruiting", "Fruiting"},
 	{"leafy", "Leafy greens"},
 	{"herb", "Herbs"},
@@ -193,6 +194,8 @@ func normalizeCategory(category string) string {
 		return "herb"
 	case "leafy":
 		return "leafy"
+	case "fruit_tree":
+		return "fruit_tree"
 	default:
 		return "fruiting"
 	}

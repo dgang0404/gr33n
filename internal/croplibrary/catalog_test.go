@@ -37,12 +37,12 @@ func TestCropLibraryYAML_Validates(t *testing.T) {
 	if cat.Version < 3 {
 		t.Fatalf("want version >= 3, got %d", cat.Version)
 	}
-	if len(cat.Crops) < 36 {
-		t.Fatalf("want >= 36 crops, got %d", len(cat.Crops))
+	if len(cat.Crops) < 46 {
+		t.Fatalf("want >= 46 crops, got %d", len(cat.Crops))
 	}
 	withStages := cat.CropsWithStages()
-	if len(withStages) < 36 {
-		t.Fatalf("want >= 36 crops with stages (complete library), got %d", len(withStages))
+	if len(withStages) < 46 {
+		t.Fatalf("want >= 46 crops with stages (complete library), got %d", len(withStages))
 	}
 	if len(cat.Unsupported) < 3 {
 		t.Fatalf("want >= 3 unsupported entries, got %d", len(cat.Unsupported))
