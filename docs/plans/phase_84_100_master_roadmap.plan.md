@@ -52,7 +52,7 @@ Arc C — BLIND SPOTS & ENTERPRISE
 Arc D — GUARDIAN, DATA, ANALYTICS (after 85–87 core)
   101 (Guardian create_plant crop_key — with 85)
   103 (legacy dedupe — with 85 backfill)
-  102 (program metadata — before/with 96)
+  102 (program + recipe crop_key metadata — before/with 96 v2)
   104 (analytics by crop_key — after 86/93)
   105 (audit + OC-84 closure — anytime)
 ```
@@ -71,7 +71,7 @@ Arc D — GUARDIAN, DATA, ANALYTICS (after 85–87 core)
 | 4 | Catalog growth cadence | **95** | Integrator playbook + CI |
 | 5 | Picker 404 fallback hides broken deploy | **85** WS6 | Upgrade banner vs offline cache |
 | 6 | `strain_or_variety` / `tab=strains` | **93** | `batch_label`, `tab=plants` |
-| 7 | Feeding program ↔ stage mismatch | **96** | Warn UI + Guardian |
+| 7 | Feeding program ↔ stage mismatch | **96** (warn) + **102** (recipe↔profile metadata) | Full chain: crop_key → profile EC → program → recipe |
 | 8 | RAG vs structured targets | **97** | Persona + re-ingest triggers |
 | 9 | Multi-farm / commons promotion | **98** | Promote vs local matrix |
 | 10 | CI enum drift (SetpointRow bug) | **99** + **88** | `check-ui-domain-parity` |
@@ -108,7 +108,7 @@ Domain enums, lighting presets API, device taxonomy, bootstrap catalog, zone voc
 | Phase | Plan |
 |-------|------|
 | **101** | [Guardian write tools crop_key](phase_101_guardian_write_tools_crop_key.plan.md) |
-| **102** | [Fertigation program catalog metadata](phase_102_fertigation_program_catalog_metadata.plan.md) |
+| **102** | [Fertigation & recipe ↔ crop profile linkage](phase_102_fertigation_program_catalog_metadata.plan.md) |
 | **103** | [Legacy plant dedupe & backfill](phase_103_legacy_plant_dedupe_backfill.plan.md) |
 | **104** | [Harvest analytics by crop_key](phase_104_harvest_analytics_by_crop_key.plan.md) |
 | **105** | [Catalog audit & OC-84 closure](phase_105_catalog_audit_oc84_closure.plan.md) |

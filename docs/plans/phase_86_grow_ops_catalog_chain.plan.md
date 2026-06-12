@@ -162,6 +162,15 @@ POST /farms/{id}/crop-cycles
 
 ---
 
+## Downstream — feeding program ↔ profile (Phases 96 + 102)
+
+Phase 86 wires **crop_key → profile EC** on the strip. **Fertigation programs/recipes** are still untagged until:
+
+- **[Phase 96](phase_96_grow_feeding_program_validation.plan.md)** — warn on stage/program mismatch at attach
+- **[Phase 102](phase_102_fertigation_program_catalog_metadata.plan.md)** — `crop_key` + stage tags on programs and `application_recipes`; EC band aligned to profile stages
+
+---
+
 ## Acceptance
 
 - [ ] Flower Room: catalog cannabis → start grow → EC chip on strip

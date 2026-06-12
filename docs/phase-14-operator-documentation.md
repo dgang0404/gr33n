@@ -92,7 +92,7 @@ Hub: [`phase_68_73_spa_workspace_roadmap.plan.md`](plans/phase_68_73_spa_workspa
 | **91** | Bootstrap template catalog — replace `bootstrapTemplates.js` | [`phase_91_bootstrap_template_catalog.plan.md`](plans/phase_91_bootstrap_template_catalog.plan.md) |
 | **92** | Zone types + greenhouse enums from API | [`phase_92_zone_greenhouse_vocabulary.plan.md`](plans/phase_92_zone_greenhouse_vocabulary.plan.md) |
 | **101** | Guardian write tools — `crop_key` on create_plant | [`phase_101_guardian_write_tools_crop_key.plan.md`](plans/phase_101_guardian_write_tools_crop_key.plan.md) |
-| **102** | Fertigation program crop/stage metadata | [`phase_102_fertigation_program_catalog_metadata.plan.md`](plans/phase_102_fertigation_program_catalog_metadata.plan.md) |
+| **102** | Fertigation + recipe ↔ crop_key / profile EC linkage | [`phase_102_fertigation_program_catalog_metadata.plan.md`](plans/phase_102_fertigation_program_catalog_metadata.plan.md) |
 | **103** | Legacy plant dedupe & backfill | [`phase_103_legacy_plant_dedupe_backfill.plan.md`](plans/phase_103_legacy_plant_dedupe_backfill.plan.md) |
 | **104** | Harvest analytics by crop_key | [`phase_104_harvest_analytics_by_crop_key.plan.md`](plans/phase_104_harvest_analytics_by_crop_key.plan.md) |
 | **105** | Catalog override audit + OC-84 | [`phase_105_catalog_audit_oc84_closure.plan.md`](plans/phase_105_catalog_audit_oc84_closure.plan.md) |
@@ -107,7 +107,7 @@ Hub: [`phase_68_73_spa_workspace_roadmap.plan.md`](plans/phase_68_73_spa_workspa
 |-------|--------|
 | **93–100** | Blind spots (see master roadmap) |
 | **101** | Guardian `create_plant` requires `crop_key` |
-| **102** | Fertigation program crop/stage tags |
+| **102** | Fertigation + recipe ↔ crop profile linkage |
 | **103** | Legacy plant dedupe on existing farms |
 | **104** | Compare/analytics by `crop_key` |
 | **105** | Override audit + OC-84 closure |
