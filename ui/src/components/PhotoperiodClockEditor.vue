@@ -1,7 +1,7 @@
 <template>
   <div class="photoperiod-clock-editor">
     <!-- Preset chips -->
-    <div class="preset-chips" v-if="showPresets">
+    <div class="preset-chips" v-if="showPresets && presetChips.length">
       <span class="preset-label">Presets:</span>
       <button
         v-for="p in presetChips"
@@ -72,6 +72,8 @@ const props = defineProps({
   modelOnHours:    { type: Number, default: 18 },
   timezone:        { type: String, default: 'UTC' },
   showPresets:     { type: Boolean, default: true },
+  /** Phase 89 — from GET /lighting-programs/presets ({ key, label, onHours }). */
+  presets:         { type: Array, default: () => [] },
 })
 
 const emit = defineEmits(['update:modelLightsOnAt', 'update:modelOnHours', 'change'])
@@ -82,12 +84,9 @@ const lightsOnAt = ref(props.modelLightsOnAt)
 const onHours    = ref(props.modelOnHours)
 const errorMsg   = ref('')
 
-const presetChips = [
-  { key: 'peas_22_2',    label: '22/2',  onHours: 22 },
-  { key: 'veg_18_6',     label: '18/6',  onHours: 18 },
-  { key: 'flower_12_12', label: '12/12', onHours: 12 },
-  { key: 'seedling_16_8',label: '16/8',  onHours: 16 },
-]
+const presetChips = computed(() =>
+  (props.presets || []).filter((p) => p.key && p.onHours != null),
+)
 
 // ── computed ─────────────────────────────────────────────────────────────────
 
@@ -101,7 +100,7 @@ const lightsOffAt = computed(() => {
 })
 
 const activePresetKey = computed(() => {
-  const match = presetChips.find(p => p.onHours === onHours.value)
+  const match = presetChips.value.find(p => p.onHours === onHours.value)
   return match?.key ?? null
 })
 

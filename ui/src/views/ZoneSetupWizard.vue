@@ -240,7 +240,6 @@ import {
   ZONE_SETUP_TYPES,
   GREENHOUSE_COVER_TYPES,
   GREENHOUSE_AUTOMATION_POLICIES,
-  ZONE_LIGHTING_PRESETS,
   buildZoneCreatePayload,
   buildLightingPresetRequest,
   filterLightActuators,
@@ -248,6 +247,7 @@ import {
   isGreenhouseZoneType,
   supportsLightingPreset,
 } from '../lib/zoneSetupWizard.js'
+import { LIGHTING_PRESET_SKIP, loadLightingPresets } from '../lib/lightingPresets.js'
 import { deviceSetupRoute } from '../lib/deviceSetupWizard.js'
 
 const route = useRoute()
@@ -283,7 +283,8 @@ const farmId = computed(() => {
 const zoneTypes = ZONE_SETUP_TYPES
 const coverTypes = GREENHOUSE_COVER_TYPES
 const automationPolicies = GREENHOUSE_AUTOMATION_POLICIES
-const lightingPresets = ZONE_LIGHTING_PRESETS
+const apiLightingPresets = ref([])
+const lightingPresets = computed(() => [LIGHTING_PRESET_SKIP, ...apiLightingPresets.value])
 
 const isGreenhouse = computed(() => isGreenhouseZoneType(form.zoneType))
 const showLighting = computed(() => supportsLightingPreset(form.zoneType))
@@ -359,6 +360,7 @@ async function createZone() {
       actuatorId: form.actuatorId,
       lightsOnAt: form.lightsOnAt,
       timezone: farmTimezone.value,
+      presets: apiLightingPresets.value,
     })
     if (lightingReq && form.actuatorId) {
       try {
@@ -381,6 +383,9 @@ async function createZone() {
 
 onMounted(() => {
   void ensureFarmContext()
+  void loadLightingPresets(api).then((rows) => {
+    apiLightingPresets.value = rows ?? []
+  })
 })
 
 watch(farmId, () => {

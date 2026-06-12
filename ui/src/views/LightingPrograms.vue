@@ -169,6 +169,7 @@
               v-model:model-lights-on-at="form.lightsOnAt"
               v-model:model-on-hours="form.onHours"
               :timezone="form.timezone"
+              :presets="presets"
               @change="onClockChange"
             />
           </div>
@@ -234,6 +235,7 @@ import ZoneContextBanner from '../components/ZoneContextBanner.vue'
 import EmptyStateHint from '../components/EmptyStateHint.vue'
 import { parseZoneIdQuery } from '../lib/zoneContext.js'
 import { computeOffTime } from '../lib/lightingDisplay.js'
+import { loadLightingPresets, presetDisplayLabel } from '../lib/lightingPresets.js'
 
 const route = useRoute()
 const farmContext = useFarmContextStore()
@@ -258,13 +260,7 @@ const editTarget  = ref(null)
 const deleteTarget= ref(null)
 const modalError  = ref('')
 
-const PRESET_CHIPS = [
-  { key: 'peas_22_2',     label: '22/2 Peas',    onHours: 22 },
-  { key: 'veg_18_6',      label: '18/6 Veg',     onHours: 18 },
-  { key: 'flower_12_12',  label: '12/12 Flower',  onHours: 12 },
-  { key: 'seedling_16_8', label: '16/8 Seedling', onHours: 16 },
-]
-const presets = PRESET_CHIPS
+const presets = ref([])
 
 const blankForm = () => ({
   name: '',
@@ -301,14 +297,16 @@ async function load() {
   loading.value = true
   error.value = ''
   try {
-    const [p, z, a] = await Promise.all([
+    const [p, z, a, presetRows] = await Promise.all([
       api.get(`/farms/${farmId.value}/lighting-programs`),
       api.get(`/farms/${farmId.value}/zones`),
       api.get(`/farms/${farmId.value}/actuators`),
+      loadLightingPresets(api),
     ])
     programs.value = p.data ?? []
     zones.value    = z.data ?? []
     actuators.value= a.data ?? []
+    presets.value  = presetRows ?? []
   } catch (e) {
     error.value = e.response?.data?.error ?? e.message
   } finally {
@@ -325,8 +323,7 @@ function presetLabel(metadata) {
   try {
     const meta = typeof metadata === 'string' ? JSON.parse(metadata) : metadata
     if (meta?.preset_key) {
-      const chip = PRESET_CHIPS.find(p => p.key === meta.preset_key)
-      return chip ? chip.label : meta.preset_key
+      return presetDisplayLabel(presets.value, meta.preset_key)
     }
   } catch {}
   return ''

@@ -21,13 +21,6 @@ export const GREENHOUSE_AUTOMATION_POLICIES = [
   { value: 'schedule_only', label: 'Schedule only', hint: 'Time-based, not sensor-driven' },
 ]
 
-export const ZONE_LIGHTING_PRESETS = [
-  { key: '', label: 'Skip for now', onHours: null },
-  { key: 'veg_18_6', label: '18/6 Vegetative', onHours: 18 },
-  { key: 'flower_12_12', label: '12/12 Flower', onHours: 12 },
-  { key: 'seedling_16_8', label: '16/8 Seedling', onHours: 16 },
-]
-
 export function zoneSetupRoute(farmId) {
   return `/farms/${farmId}/zones/new`
 }
@@ -83,9 +76,10 @@ export function buildLightingPresetRequest({
   actuatorId,
   lightsOnAt = '06:00',
   timezone = 'America/New_York',
+  presets = [],
 }) {
   if (!presetKey || !actuatorId || !zoneId) return null
-  const preset = ZONE_LIGHTING_PRESETS.find((p) => p.key === presetKey)
+  const preset = presets.find((p) => p.key === presetKey)
   const label = preset?.label || presetKey
   return {
     url: `/farms/${farmId}/lighting-programs/from-preset`,

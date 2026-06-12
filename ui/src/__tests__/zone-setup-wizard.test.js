@@ -46,6 +46,7 @@ describe('Phase 44 WS2 — zone setup wizard helpers', () => {
       presetKey: 'veg_18_6',
       actuatorId: 3,
       timezone: 'America/Chicago',
+      presets: [{ key: 'veg_18_6', label: '18/6 Vegetative', onHours: 18 }],
     })
     expect(req.body.zone_id).toBe(9)
     expect(req.body.preset_key).toBe('veg_18_6')

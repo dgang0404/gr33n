@@ -91,6 +91,7 @@ import api from '../api'
 import EmptyStateHint from './EmptyStateHint.vue'
 import LightingProgramForm from './LightingProgramForm.vue'
 import { formatLightingProgramSummary } from '../lib/lightingDisplay.js'
+import { loadLightingPresets } from '../lib/lightingPresets.js'
 
 const props = defineProps({
   zoneId: { type: Number, required: true },
@@ -108,12 +109,7 @@ const showModal = ref(false)
 const editTarget = ref(null)
 const modalError = ref('')
 
-const presets = [
-  { key: 'peas_22_2', label: '22/2 Peas', onHours: 22 },
-  { key: 'veg_18_6', label: '18/6 Veg', onHours: 18 },
-  { key: 'flower_12_12', label: '12/12 Flower', onHours: 12 },
-  { key: 'seedling_16_8', label: '16/8 Seedling', onHours: 16 },
-]
+const presets = ref([])
 
 const blankForm = () => ({
   name: '',
@@ -141,13 +137,15 @@ async function load() {
   loading.value = true
   error.value = ''
   try {
-    const [p, a] = await Promise.all([
+    const [p, a, presetRows] = await Promise.all([
       api.get(`/farms/${props.farmId}/lighting-programs`),
       api.get(`/farms/${props.farmId}/actuators`),
+      loadLightingPresets(api),
     ])
     const all = p.data?.programs ?? p.data ?? []
     programs.value = all.filter((prog) => Number(prog.zone_id) === props.zoneId)
     actuators.value = a.data ?? []
+    presets.value = presetRows ?? []
   } catch (e) {
     error.value = e.response?.data?.error ?? e.message
   } finally {

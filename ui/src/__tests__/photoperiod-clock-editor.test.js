@@ -40,6 +40,7 @@ describe('PhotoperiodClockEditor — Phase 35 WS8', () => {
       props: {
         modelLightsOnAt: '06:00',
         modelOnHours: 18,
+        presets: [{ key: 'flower_12_12', label: '12/12', onHours: 12 }],
       },
     })
 

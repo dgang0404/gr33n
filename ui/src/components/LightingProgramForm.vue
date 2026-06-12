@@ -53,6 +53,7 @@
         v-model:model-lights-on-at="form.lightsOnAt"
         v-model:model-on-hours="form.onHours"
         :timezone="form.timezone"
+        :presets="presets"
         @change="$emit('clock-change', $event)"
       />
     </div>
