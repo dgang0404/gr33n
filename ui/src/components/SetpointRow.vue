@@ -44,7 +44,7 @@
     <!-- Stage -->
     <select v-model="stageModel" class="input-field text-sm md:col-span-1">
       <option value="">Any stage</option>
-      <option v-for="s in stageOptions" :key="s" :value="s">{{ s }}</option>
+      <option v-for="s in stageOptions" :key="s" :value="s">{{ formatStageLabel(s) }}</option>
     </select>
 
     <!-- Sensor type -->
@@ -89,6 +89,8 @@
 
 <script setup>
 import { ref, watch, computed } from 'vue'
+import { formatStageLabel } from '../lib/growHub.js'
+import { FALLBACK_GROWTH_STAGE_VALUES } from '../lib/domainEnums.fallback.js'
 
 const props = defineProps({
   value:      { type: Object, required: true },
@@ -96,7 +98,7 @@ const props = defineProps({
   cropCycles: { type: Array,  default: () => [] },
   stageOptions: {
     type: Array,
-    default: () => ['clone', 'seedling', 'early_veg', 'late_veg', 'early_flower', 'mid_flower', 'late_flower', 'harvest', 'dry_cure'],
+    default: () => [...FALLBACK_GROWTH_STAGE_VALUES],
   },
   busy:       { type: Boolean, default: false },
   fixedScope: { type: Boolean, default: false },

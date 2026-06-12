@@ -56,13 +56,7 @@
         <input v-model="resForm.name" placeholder="Name" required
           class="input-field" />
         <select v-model="resForm.status" class="input-field">
-          <option value="ready">Ready</option>
-          <option value="mixing">Mixing</option>
-          <option value="needs_top_up">Needs Top-Up</option>
-          <option value="needs_flush">Needs Flush</option>
-          <option value="flushing">Flushing</option>
-          <option value="offline">Offline</option>
-          <option value="empty">Empty</option>
+          <option v-for="s in reservoirStatuses" :key="s.value" :value="s.value">{{ s.label }}</option>
         </select>
         <input v-model.number="resForm.capacity_liters" type="number" step="0.1" min="0"
           placeholder="Capacity (L)" required class="input-field" />
@@ -125,7 +119,7 @@
         class="bg-zinc-900 border border-zinc-800 rounded-xl p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
         <select v-model="ecForm.growth_stage" required class="input-field">
           <option value="" disabled>Growth stage</option>
-          <option v-for="gs in growthStages" :key="gs" :value="gs">{{ gs }}</option>
+          <option v-for="gs in growthStages" :key="gs" :value="gs">{{ formatStageLabel(gs) }}</option>
         </select>
         <select v-model="ecForm.zone_id" class="input-field">
           <option :value="null">All zones</option>
@@ -446,7 +440,7 @@
         <input v-model="cycleForm.name" placeholder="Cycle name" required class="input-field" />
         <input v-model="cycleForm.batch_label" placeholder="Batch label (optional)" class="input-field" />
         <select v-model="cycleForm.current_stage" class="input-field">
-          <option v-for="gs in growthStages" :key="gs" :value="gs">{{ gs.replace(/_/g, ' ') }}</option>
+          <option v-for="gs in growthStages" :key="gs" :value="gs">{{ formatStageLabel(gs) }}</option>
         </select>
         <input v-model="cycleForm.started_at" type="date" required class="input-field" />
         <select v-model.number="cycleForm.primary_program_id" class="input-field">
@@ -490,7 +484,7 @@
           </div>
           <div class="flex flex-wrap gap-2 items-center">
             <select v-model="stageDraft[c.id]" class="input-field text-xs py-1 max-w-[10rem]">
-              <option v-for="gs in growthStages" :key="gs" :value="gs">{{ gs.replace(/_/g, ' ') }}</option>
+              <option v-for="gs in growthStages" :key="gs" :value="gs">{{ formatStageLabel(gs) }}</option>
             </select>
             <button type="button" @click="patchStage(c)" :disabled="saving"
               class="text-xs px-2 py-1 rounded bg-zinc-800 text-zinc-300 hover:bg-zinc-700">Set stage</button>
@@ -616,7 +610,9 @@ import {
   parseZoneIdQuery,
   programAppliesToZone,
 } from '../lib/zoneContext.js'
-import { cycleBatchLabel } from '../lib/growHub.js'
+import { cycleBatchLabel, formatStageLabel } from '../lib/growHub.js'
+import { loadDomainEnums, enumValues, getDomainEnums } from '../lib/domainEnums.js'
+import api from '../api/index.js'
 import { comfortTabRoute, moneyTabRoute } from '../lib/workspaceRoutes.js'
 
 const comfortScheduleRoute = comfortTabRoute('schedules')
@@ -678,7 +674,9 @@ watch(
   { immediate: true },
 )
 
-const growthStages = ['clone', 'seedling', 'early_veg', 'late_veg', 'transition', 'early_flower', 'mid_flower', 'late_flower', 'flush', 'harvest', 'dry_cure']
+const domainEnums = ref(null)
+const growthStages = computed(() => enumValues(domainEnums.value, 'growth_stages'))
+const reservoirStatuses = computed(() => (domainEnums.value || getDomainEnums()).reservoir_statuses)
 
 const zones = computed(() => store.zones)
 const farmId = computed(() => farmContext.farmId)
@@ -869,6 +867,9 @@ async function refresh() {
   try {
     await Promise.race([
       (async () => {
+        if (!domainEnums.value) {
+          domainEnums.value = await loadDomainEnums(api)
+        }
         if (!store.zones.length) await store.loadAll(fid)
         const cropQ = eventCropFilter.value ? Number(eventCropFilter.value) : undefined
         const [r, ec, p, ev, cc, recipes, sch, inputs, mix, batches] = await Promise.all([

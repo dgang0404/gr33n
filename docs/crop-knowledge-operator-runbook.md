@@ -36,6 +36,8 @@ make check-crop-catalog-parity
 
 **Copy:** Use **plant** and **crop** — not “strain” in operator UI.
 
+**Growth stages:** UI dropdowns load all 11 stages (`transition`, `flush`, …) from `GET /platform/domain-enums` — same vocabulary as Postgres `growth_stage_enum`, OpenAPI, and Guardian `lookup_crop_targets` / cycle tools.
+
 **Extend the catalog** (new crops, aliases): edit `data/crop_library.yaml` → regenerate seed SQL → migrate. Operators do not type new crop identities in the UI.
 
 ---

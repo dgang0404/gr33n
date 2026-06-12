@@ -26,9 +26,9 @@ describe('Phase 43 WS4 — money hub helpers', () => {
     expect(summary.monthLabel).toContain('June')
   })
 
-  it('maps farmer spend category labels', () => {
-    expect(formatSpendCategory('miscellaneous')).toBe('Other')
-    expect(formatSpendCategory('labor_wages')).toBe('Labor')
+  it('maps spend category labels from domain enums', () => {
+    expect(formatSpendCategory('miscellaneous')).toBe('miscellaneous')
+    expect(formatSpendCategory('labor_wages')).toBe('labor wages')
   })
 
   it('builds activity rows without COA fields', () => {
@@ -43,7 +43,7 @@ describe('Phase 43 WS4 — money hub helpers', () => {
       receipt_file_id: 3,
     })
     expect(row.label).toBe('OHN restock')
-    expect(row.categoryLabel).toBe('Supplies & inputs')
+    expect(row.categoryLabel).toBe('fertilizers soil amendments')
     expect(row.hasReceipt).toBe(true)
     expect(row.advancedLink).toEqual({ path: '/costs', query: { highlight: '9' } })
   })

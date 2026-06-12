@@ -79,6 +79,7 @@
         :value="newRow"
         :zones="zones"
         :crop-cycles="cropCycles"
+        :stage-options="stageOptions"
         :busy="saving"
         @save="onCreate"
       />
@@ -96,6 +97,7 @@
           :value="sp"
           :zones="zones"
           :crop-cycles="cropCycles"
+          :stage-options="stageOptions"
           :busy="saving"
           @save="onUpdate"
           @delete="onDelete"
@@ -114,6 +116,8 @@ import { useFarmContextStore } from '../stores/farmContext'
 import HelpTip from '../components/HelpTip.vue'
 import SetpointRow from '../components/SetpointRow.vue'
 import PowerUserBanner from '../components/PowerUserBanner.vue'
+import { loadDomainEnums, growthStageValues } from '../lib/domainEnums.js'
+import { FALLBACK_GROWTH_STAGE_VALUES } from '../lib/domainEnums.fallback.js'
 
 defineProps({
   embedded: { type: Boolean, default: false },
@@ -124,6 +128,7 @@ const farmContext = useFarmContextStore()
 const setpoints = ref([])
 const zones = ref([])
 const cropCycles = ref([])
+const stageOptions = ref([...FALLBACK_GROWTH_STAGE_VALUES])
 
 const loading = ref(false)
 const saving = ref(false)
@@ -163,14 +168,16 @@ async function refresh() {
   loading.value = true
   errorMsg.value = ''
   try {
-    const [spRes, zRes, ccRes] = await Promise.all([
+    const [spRes, zRes, ccRes, enums] = await Promise.all([
       api.get(`/farms/${farmContext.farmId}/setpoints`),
       api.get(`/farms/${farmContext.farmId}/zones`),
       api.get(`/farms/${farmContext.farmId}/crop-cycles`).catch(() => ({ data: [] })),
+      loadDomainEnums(api),
     ])
     setpoints.value = spRes.data ?? []
     zones.value = zRes.data ?? []
     cropCycles.value = ccRes.data ?? []
+    stageOptions.value = growthStageValues(enums)
     if (newRow.value.zone_id == null && zones.value.length) {
       newRow.value.zone_id = zones.value[0].id
     }

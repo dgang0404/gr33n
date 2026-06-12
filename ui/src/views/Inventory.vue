@@ -289,10 +289,12 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useFarmStore } from '../stores/farm'
 import { useFarmContextStore } from '../stores/farmContext'
+import api from '../api'
+import { loadDomainEnums, enumValues, enumLabel } from '../lib/domainEnums.js'
 
 const route = useRoute()
 
@@ -322,11 +324,11 @@ const recipeForm = ref(emptyRecipeForm())
 const componentRecipe = ref(null)
 const recipeComponents = ref([])
 const compForm = ref({ input_definition_id: '', part_value: 1 })
+const domainEnums = ref(null)
 
-const applicationTargets = [
-  'soil_drench', 'foliar_spray', 'seed_treatment', 'compost_pile_inoculant',
-  'livestock_water_supplement', 'other',
-]
+const applicationTargets = computed(() => enumValues(domainEnums.value, 'application_targets'))
+const categories = computed(() => enumValues(domainEnums.value, 'input_definition_categories'))
+const batchStatuses = computed(() => enumValues(domainEnums.value, 'batch_statuses'))
 
 const showInputForm = ref(false)
 const editInput = ref(null)
@@ -335,19 +337,6 @@ const inputForm = ref(emptyInputForm())
 const showBatchForm = ref(false)
 const editBatch = ref(null)
 const batchForm = ref(emptyBatchForm())
-
-const categories = [
-  'microbial_inoculant', 'fermented_plant_juice', 'water_soluble_nutrient',
-  'oriental_herbal_nutrient', 'fish_amino_acid', 'insect_attractant_repellent',
-  'soil_conditioner', 'compost_tea_extract', 'biochar_preparation',
-  'other_ferment', 'other_extract',
-]
-
-const batchStatuses = [
-  'planning', 'ingredients_gathered', 'mixing_in_progress', 'fermenting_brewing',
-  'maturing_aging', 'ready_for_use', 'partially_used', 'fully_used',
-  'expired_discarded', 'failed_production',
-]
 
 function emptyInputForm() {
   return { name: '', category: '', description: '', typical_ingredients: '', preparation_summary: '', storage_guidelines: '', safety_precautions: '', reference_source: '' }
@@ -385,11 +374,13 @@ function applyInventoryTabFromRoute() {
 onMounted(async () => {
   try {
     const fid = farmContext.farmId
-    const [i, b, mixEvents] = await Promise.all([
+    const [i, b, mixEvents, enums] = await Promise.all([
       store.loadNfInputs(fid),
       store.loadNfBatches(fid),
       store.loadMixingEvents(fid),
+      loadDomainEnums(api),
     ])
+    domainEnums.value = enums
     inputs.value  = i
     batches.value = b
     applyInventoryTabFromRoute()
@@ -569,10 +560,10 @@ const inputName = (id) => {
 }
 
 const formatCategory = (c) =>
-  c ? c.replace(/_/g, ' ') : ''
+  enumLabel('input_definition_categories', c, domainEnums.value)
 
 const formatStatus = (s) =>
-  s ? s.replace(/_/g, ' ') : ''
+  enumLabel('batch_statuses', s, domainEnums.value)
 
 const formatDate = (d) => {
   if (!d) return '—'

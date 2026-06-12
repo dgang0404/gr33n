@@ -3,23 +3,22 @@
  */
 
 import { cycleBatchLabel } from './growHub.js'
+import { enumLabel, getDomainEnums } from './domainEnums.js'
 
-/** Simplified spend categories for receipt capture (maps to cost API enums). */
-export const FARMER_SPEND_CATEGORIES = [
-  { label: 'Supplies & inputs', value: 'fertilizers_soil_amendments' },
-  { label: 'Utilities', value: 'utilities_electricity_gas' },
-  { label: 'Equipment', value: 'equipment_purchase_rental' },
-  { label: 'Labor', value: 'labor_wages' },
-  { label: 'Packaging & shipping', value: 'packaging_supplies' },
-  { label: 'Other', value: 'miscellaneous' },
-]
-
-/** Income-friendly categories when "Money in" is checked. */
+/** Income-friendly categories when "Money in" is checked (UI-only). */
 export const FARMER_INCOME_CATEGORIES = [
   { label: 'Sold harvest', value: 'miscellaneous' },
   { label: 'Grant or subsidy', value: 'miscellaneous' },
   { label: 'Other income', value: 'miscellaneous' },
 ]
+
+/**
+ * @param {object|null|undefined} enums
+ */
+export function spendCategoryOptions(enums) {
+  const rows = enums?.cost_categories || getDomainEnums().cost_categories
+  return rows.map((c) => ({ label: c.label, value: c.value }))
+}
 
 /**
  * @param {string|object} raw
@@ -68,11 +67,11 @@ export function computeMonthSummary(transactions, referenceDate = new Date()) {
 
 /**
  * @param {string} category
+ * @param {object|null|undefined} [enums]
  */
-export function formatSpendCategory(category) {
-  const farmer = FARMER_SPEND_CATEGORIES.find((c) => c.value === category)
-  if (farmer) return farmer.label
-  return category ? String(category).replace(/_/g, ' ') : 'Spend'
+export function formatSpendCategory(category, enums) {
+  const label = enumLabel('cost_categories', category, enums)
+  return label || (category ? String(category).replace(/_/g, ' ') : 'Spend')
 }
 
 /**

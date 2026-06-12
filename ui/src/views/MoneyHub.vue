@@ -254,10 +254,10 @@ import { useFarmContextStore } from '../stores/farmContext.js'
 import EmptyStateHint from '../components/EmptyStateHint.vue'
 import GuardianStarterChips from '../components/GuardianStarterChips.vue'
 import { buildMoneyHubStarters } from '../lib/guardianStarters.js'
-import { cycleBatchLabel } from '../lib/growHub.js'
+import { loadDomainEnums } from '../lib/domainEnums.js'
 import {
-  FARMER_SPEND_CATEGORIES,
   FARMER_INCOME_CATEGORIES,
+  spendCategoryOptions,
   computeMonthSummary,
   buildAutologMoneyRows,
   buildManualMoneyRows,
@@ -290,6 +290,7 @@ const formSuccess = ref('')
 const transactions = ref([])
 const cropCycles = ref([])
 const energyPrices = ref([])
+const domainEnums = ref(null)
 const receiptFile = ref(null)
 const isOnline = ref(typeof navigator === 'undefined' ? true : navigator.onLine)
 
@@ -314,7 +315,7 @@ const autologRows = computed(() => buildAutologMoneyRows(transactions.value))
 const manualRows = computed(() => buildManualMoneyRows(transactions.value))
 
 const receiptCategories = computed(() =>
-  receiptForm.is_income ? FARMER_INCOME_CATEGORIES : FARMER_SPEND_CATEGORIES,
+  receiptForm.is_income ? FARMER_INCOME_CATEGORIES : spendCategoryOptions(domainEnums.value),
 )
 
 const tagCycleOptions = computed(() => {
@@ -402,7 +403,7 @@ async function refresh() {
   formError.value = ''
   try {
     if (!store.zones.length) await store.loadAll(fid)
-    const [costs, cycles, prices] = await Promise.all([
+    const [costs, cycles, prices, enums] = await Promise.all([
       store.loadCosts(fid, {
         limit: 100,
         offset: 0,
@@ -410,10 +411,12 @@ async function refresh() {
       }),
       store.loadCropCycles(fid),
       api.get(`/farms/${fid}/energy-prices`).then((r) => r.data).catch(() => []),
+      loadDomainEnums(api),
     ])
     transactions.value = costs
     cropCycles.value = cycles
     energyPrices.value = Array.isArray(prices) ? prices : []
+    domainEnums.value = enums
   } finally {
     loading.value = false
   }

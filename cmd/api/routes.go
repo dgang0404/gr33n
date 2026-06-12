@@ -36,6 +36,7 @@ import (
 	fileattachhandler "gr33n-api/internal/handler/fileattach"
 	nfhandler "gr33n-api/internal/handler/naturalfarming"
 	organizationhandler "gr33n-api/internal/handler/organization"
+	platformhandler "gr33n-api/internal/handler/platform"
 	planthandler "gr33n-api/internal/handler/plants"
 	profilehandler "gr33n-api/internal/handler/profile"
 	raghandler "gr33n-api/internal/handler/rag"
@@ -96,6 +97,7 @@ func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationwo
 	cost := costhandler.NewHandler(pool, fileStore)
 	files := fileattachhandler.NewHandler(pool, fileStore, fileCfg.DownloadURLTTL)
 	commonsCatalog := commonscataloghandler.NewHandler(pool)
+	platform := platformhandler.NewHandler()
 	commonsCropCatalog := commonscropcataloghandler.NewHandler(pool)
 
 	jwtChain := func(h http.Handler) http.Handler {
@@ -182,6 +184,9 @@ func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationwo
 		}
 		httputil.WriteJSON(w, http.StatusOK, units)
 	})))
+
+	// Phase 88 — platform domain enums (growth stages, reservoir status, cost categories, NF inventory)
+	mux.Handle("GET /platform/domain-enums", jwt(http.HandlerFunc(platform.ListDomainEnums)))
 
 	// Commons catalog (gr33n_inserts — browse + per-farm import audit)
 	mux.Handle("GET /commons/catalog", jwt(http.HandlerFunc(commonsCatalog.List)))

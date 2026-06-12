@@ -2,19 +2,16 @@
  * Phase 53 WS1 — grow cycle helpers (start, harvest, compare).
  */
 
-export const GROWTH_STAGES = [
-  'clone',
-  'seedling',
-  'early_veg',
-  'late_veg',
-  'transition',
-  'early_flower',
-  'mid_flower',
-  'late_flower',
-  'flush',
-  'harvest',
-  'dry_cure',
-]
+import { FALLBACK_GROWTH_STAGE_VALUES } from './domainEnums.fallback.js'
+import { growthStageValues } from './domainEnums.js'
+
+/** Fallback list — prefer growthStageValues() after loadDomainEnums. */
+export const GROWTH_STAGES = FALLBACK_GROWTH_STAGE_VALUES
+
+/** @param {object|null|undefined} enums */
+export function getGrowthStages(enums) {
+  return growthStageValues(enums)
+}
 
 /**
  * @param {string|null|undefined} stage

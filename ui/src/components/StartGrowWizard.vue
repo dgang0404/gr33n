@@ -134,13 +134,16 @@
 <script setup>
 import { computed, ref, watch } from 'vue'
 import { useFarmStore } from '../stores/farm.js'
+import api from '../api/index.js'
 import {
   GROWTH_STAGES,
   buildStartGrowPayload,
   defaultCycleName,
   formatStageLabel,
+  getGrowthStages,
   strainFromPlant,
 } from '../lib/growHub.js'
+import { loadDomainEnums } from '../lib/domainEnums.js'
 import CropLibraryPicker from './CropLibraryPicker.vue'
 
 const props = defineProps({
@@ -157,7 +160,7 @@ const props = defineProps({
 const emit = defineEmits(['close', 'created'])
 
 const store = useFarmStore()
-const growthStages = GROWTH_STAGES
+const growthStages = ref([...GROWTH_STAGES])
 const submitting = ref(false)
 const formError = ref('')
 const plantPickId = ref('')
@@ -221,6 +224,9 @@ watch(
   () => props.open,
   async (isOpen) => {
     if (!isOpen) return
+    void loadDomainEnums(api).then((enums) => {
+      growthStages.value = getGrowthStages(enums)
+    })
     formError.value = ''
     plantPickId.value = ''
     const f = emptyForm()
