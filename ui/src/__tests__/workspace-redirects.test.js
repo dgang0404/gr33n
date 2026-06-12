@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import router from '../router/index.js'
-import { buildLegacyRedirectRoutes, redirectSunsetWorkspace } from '../lib/workspaces.js'
+import { buildLegacyRedirectRoutes, buildSunsetWorkspaceRedirects, redirectSunsetWorkspace } from '../lib/workspaces.js'
 
 describe('Phase 68 / 78 WS4 — workspace legacy redirects', () => {
   const legacyPaths = buildLegacyRedirectRoutes().map((r) => r.path)
@@ -11,6 +11,14 @@ describe('Phase 68 / 78 WS4 — workspace legacy redirects', () => {
       expect(resolved.matched.length).toBeGreaterThan(0)
       expect(resolved.name).not.toBe('login')
     }
+  })
+
+  it('redirect config sends /feeding without zone_id to feed-water daily tab', () => {
+    const entry = buildLegacyRedirectRoutes().find((r) => r.path === '/feeding')
+    expect(entry).toBeTruthy()
+    const result = entry.redirect({ path: '/feeding', query: {}, hash: '', fullPath: '/feeding', matched: [], meta: {}, name: undefined, params: {}, redirectedFrom: undefined })
+    expect(result.path).toBe('/feed-water')
+    expect(result.query.tab).toBe('daily')
   })
 
   it('redirect config sends /feeding with zone_id to zone water tab', () => {
@@ -43,11 +51,16 @@ describe('Phase 68 / 78 WS4 — workspace legacy redirects', () => {
     expect(result.query.tab).toBe('schedules')
   })
 
-  it('sunset redirects /feed-water and /hardware away from retired workspace routes', () => {
-    expect(redirectSunsetWorkspace({ path: '/feed-water', query: { zone_id: '3' } }).path).toBe('/zones/3')
-    expect(redirectSunsetWorkspace({ path: '/hardware', query: {} }).path).toBe('/zones')
-    expect(router.resolve('/hardware').matched.length).toBeGreaterThan(0)
-    expect(router.resolve('/feed-water').matched.length).toBeGreaterThan(0)
+  it('zone-scoped feed-water visits redirect to zone water tab', () => {
+    const result = redirectSunsetWorkspace({ path: '/feed-water', query: { zone_id: '3', tab: 'daily' } })
+    expect(result.path).toBe('/zones/3')
+    expect(result.query.tab).toBe('water')
+  })
+
+  it('registers hardware and feed-water workspace routes', () => {
+    expect(router.resolve('/hardware').name).toBe('hardware')
+    expect(router.resolve('/feed-water').name).toBe('feed-water')
+    expect(buildSunsetWorkspaceRedirects()).toEqual([])
   })
 
   it('registers active workspace routes by name', () => {

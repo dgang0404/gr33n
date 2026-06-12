@@ -10,22 +10,22 @@ overview: >
 todos:
   - id: ws1-daily-tab
     content: "WS1: Daily tab = FeedingHub (per-zone next-run cards), the farmer entry; deep-links to zone Water tab kept"
-    status: pending
+    status: completed
   - id: ws2-programs-tanks-tab
     content: "WS2: Programs & tanks tab = FeedingAdminHub cards + Fertigation reservoirs/EC-targets, edit-in-place (promote read-only admin cards to editors)"
-    status: pending
+    status: cancelled
   - id: ws3-nutrients-mix-tab
     content: "WS3: Nutrients & mix tab = supplies mixing + recipes + mixing log (the supplies↔fertigation overlap), one mixing surface"
-    status: pending
+    status: cancelled
   - id: ws4-advanced-tab
     content: "WS4: Advanced tab = full Fertigation console (events, crop cycles, raw program editor) behind progressive disclosure"
-    status: pending
+    status: completed
   - id: ws5-redirects-vocab
     content: "WS5: Redirect /feeding,/operations/feeding,/fertigation → /feed-water?tab=; keep farmer vocab on Daily/Programs, allow 'fertigation' only on Advanced; update wiggle"
-    status: pending
+    status: completed
   - id: ws6-docs-tests
     content: "WS6: feed-water tabs Vitest, farmer-vocabulary-grow-path guard, phase-71-closure.test.js; operator-tour; OC-71"
-    status: pending
+    status: completed
 isProject: false
 ---
 
@@ -33,9 +33,9 @@ isProject: false
 
 ## Status
 
-**Planned.** Builds on the [workspace shell](phase_68_workspace_shell_spa_nav.plan.md) (Phase 68, which declared the `/feed-water` workspace + tabs). UI-only — no schema, no API, no Pi. Reuses the shipped feeding/fertigation/supplies components and endpoints.
+**Shipped** on `main` (v1). Closure: [`phase-71-closure.md`](phase-71-closure.md) (**OC-71**). WS2–WS3 editor/mixing merge deferred to v2; v1 restores the workspace shell, tab hosting, and legacy redirects.
 
-**Closure:** **OC-71** — tracked in this plan's DoD + [arc hub OC table](phase_68_73_spa_workspace_roadmap.plan.md#operational-closure-oc-rows). Do not add to the archived Phase 35 closure doc.
+**Closure:** **OC-71** — tracked in this plan's DoD + [arc hub OC table](phase_68_73_spa_workspace_roadmap.plan.md#operational-closure-oc-rows).
 
 ---
 
@@ -134,12 +134,12 @@ Resolve the **Supplies ↔ Fertigation mixing overlap** in one place:
 
 ## Definition of done
 
-- [ ] `/feed-water` workspace has Daily / Programs & tanks / Nutrients & mix / Advanced tabs
-- [ ] Programs admin cards are editable inline (admin + editor tiers merged)
-- [ ] Mixing/recipes live in one Nutrients & mix tab (Supplies↔Fertigation overlap resolved)
-- [ ] `/feeding`, `/operations/feeding`, `/fertigation` redirect into the workspace
-- [ ] Farmer vocab guard green; technical terms confined to Advanced
-- [ ] Vitest green; OC-71 closed
+- [x] `/feed-water` workspace has Daily / Programs & tanks / Nutrients & mix / Advanced tabs
+- [ ] Programs admin cards are editable inline (admin + editor tiers merged) — **deferred v2**
+- [ ] Mixing/recipes live in one Nutrients & mix tab (Supplies↔Fertigation overlap resolved) — **deferred v2**
+- [x] `/feeding`, `/operations/feeding`, `/fertigation` redirect into the workspace
+- [x] Farmer vocab guard green; technical terms confined to Advanced
+- [x] Vitest green; OC-71 closed (v1)
 
 ---
 

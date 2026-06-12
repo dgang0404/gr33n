@@ -21,6 +21,8 @@ import DeviceSetupWizard from '../views/DeviceSetupWizard.vue'
 import PiSetupGuide from '../views/PiSetupGuide.vue'
 import MoneyWorkspace from '../views/workspaces/MoneyWorkspace.vue'
 import ComfortWorkspace from '../views/workspaces/ComfortWorkspace.vue'
+import HardwareWorkspace from '../views/workspaces/HardwareWorkspace.vue'
+import FeedWaterWorkspace from '../views/workspaces/FeedWaterWorkspace.vue'
 import Login from '../views/Login.vue'
 import { buildLegacyRedirectRoutes, buildSunsetWorkspaceRedirects, buildZoneOpsRedirectRoutes } from '../lib/workspaces.js'
 
@@ -31,6 +33,20 @@ const routes = [
   { path: '/zones',        component: ZonesWorkspace, name: 'zones' },
   { path: '/zones/:id',    component: ZoneDetail,   name: 'zone-detail' },
   ...buildSunsetWorkspaceRedirects(),
+  { path: '/hardware',     component: HardwareWorkspace, name: 'hardware' },
+  {
+    path: '/feed-water',
+    component: FeedWaterWorkspace,
+    name: 'feed-water',
+    beforeEnter: (to) => {
+      const raw = to.query?.zone_id
+      const zoneId = raw != null ? String(Array.isArray(raw) ? raw[0] : raw).trim() : ''
+      if (!zoneId) return true
+      const query = { ...to.query }
+      delete query.zone_id
+      return { path: `/zones/${zoneId}`, query: { ...query, tab: 'water' } }
+    },
+  },
   { path: '/money',        component: MoneyWorkspace, name: 'money' },
   { path: '/sensors/:id', component: SensorDetail, name: 'sensor-detail' },
   { path: '/comfort-targets', component: ComfortWorkspace, name: 'comfort-targets' },

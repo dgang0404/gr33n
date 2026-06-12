@@ -13,9 +13,9 @@ describe('Phase 49/68/78 — nav relations', () => {
     expect(relatedTo('/comfort-targets')).toContain('/zones')
   })
 
-  it('maps legacy hint paths to zones sidebar route', () => {
-    expect(canonicalSidebarPath('/feeding')).toBe('/zones')
-    expect(relatedTo('/feeding')).toContain('/zones')
+  it('maps legacy hint paths to feed-water workspace route', () => {
+    expect(canonicalSidebarPath('/feeding')).toBe('/feed-water')
+    expect(relatedTo('/feeding')).toContain('/feed-water')
   })
 
   it('returns empty for unknown routes', () => {
@@ -30,11 +30,12 @@ describe('Phase 49/68/78 — nav relations', () => {
   it('only points primary relations at routes that exist in the sidebar', () => {
     for (const [from, targets] of Object.entries(NAV_RELATIONS)) {
       const fromSidebar = navRoutes.has(from) || navRoutes.has(canonicalSidebarPath(from))
-      if (!fromSidebar && !['/feeding', '/fertigation', '/operations/feeding', '/operations/supplies', '/operations/money', '/sensors', '/actuators', '/lighting', '/pi-setup', '/costs', '/inventory', '/tasks', '/alerts', '/plants', '/schedules', '/automation', '/setpoints'].includes(from)) {
+      if (!fromSidebar && !['/feeding', '/fertigation', '/operations/feeding', '/operations/supplies', '/operations/money', '/sensors', '/actuators', '/lighting', '/pi-setup', '/costs', '/inventory', '/tasks', '/alerts', '/plants', '/schedules', '/automation', '/setpoints', '/feed-water', '/hardware'].includes(from)) {
         expect(navRoutes.has(from), `missing nav route ${from}`).toBe(true)
       }
       for (const to of targets) {
-        expect(navRoutes.has(to), `${from} → ${to} not in sidebar`).toBe(true)
+        const workspaceOk = ['/feed-water', '/hardware'].includes(to)
+        expect(navRoutes.has(to) || workspaceOk, `${from} → ${to} not in sidebar`).toBe(true)
       }
     }
   })

@@ -27,14 +27,14 @@ describe('Phase 68 / 78 WS1 — workspaces model', () => {
   it('workspaceFor fleet and zone-scoped legacy paths', () => {
     expect(workspaceFor('/sensors')).toMatchObject({ route: '/zones', tab: 'fleet', fleet: 'sensors' })
     expect(workspaceFor('/actuators')).toMatchObject({ route: '/zones', tab: 'fleet', fleet: 'controls' })
-    expect(workspaceFor('/feeding')).toMatchObject({ route: '/zones', zoneTab: 'water' })
-    expect(workspaceFor('/fertigation')).toMatchObject({ route: '/zones', zoneTab: 'water' })
+    expect(workspaceFor('/feeding')).toMatchObject({ route: '/feed-water', tab: 'daily' })
+    expect(workspaceFor('/fertigation')).toMatchObject({ route: '/feed-water', tab: 'advanced' })
     expect(workspaceFor('/costs')).toMatchObject({ route: '/money', tab: 'ledger' })
-    expect(workspaceFor('/pi-setup')).toBeNull()
+    expect(workspaceFor('/pi-setup')).toMatchObject({ route: '/hardware', tab: 'reference' })
   })
 
   it('canonicalSidebarPath maps legacy routes to workspace sidebar entries', () => {
-    expect(canonicalSidebarPath('/feeding')).toBe('/zones')
+    expect(canonicalSidebarPath('/feeding')).toBe('/feed-water')
     expect(canonicalSidebarPath('/operations/money')).toBe('/money')
     expect(canonicalSidebarPath('/sensors')).toBe('/zones')
     expect(canonicalSidebarPath('/comfort-targets')).toBe('/comfort-targets')

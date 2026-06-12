@@ -23,9 +23,6 @@ export const WORKSPACES = {
       '/actuators': { tab: 'fleet', fleet: 'controls' },
       '/lighting': { tab: 'fleet', fleet: 'lighting' },
       '/plants': { tab: 'plants' },
-      '/feeding': { zoneTab: 'water' },
-      '/operations/feeding': { zoneTab: 'water' },
-      '/fertigation': { zoneTab: 'water' },
     },
   },
   money: {
@@ -80,6 +77,37 @@ export const WORKSPACES = {
       '/setpoints': { tab: 'raw' },
     },
   },
+  hardware: {
+    label: 'Hardware',
+    icon: '🖥️',
+    route: '/hardware',
+    subtitle: 'GPIO board, Pi devices, and wiring reference',
+    tabs: [
+      { id: 'board', label: 'GPIO board' },
+      { id: 'devices', label: 'Pi devices' },
+      { id: 'reference', label: 'Wiring guide' },
+    ],
+    absorbs: {
+      '/pi-setup': { tab: 'reference' },
+    },
+  },
+  feedwater: {
+    label: 'Feed & water',
+    icon: '💧',
+    route: '/feed-water',
+    subtitle: 'Daily watering, programs, nutrients, and advanced fertigation',
+    tabs: [
+      { id: 'daily', label: 'Daily' },
+      { id: 'programs', label: 'Programs & tanks' },
+      { id: 'nutrients', label: 'Nutrients & mix' },
+      { id: 'advanced', label: 'Advanced' },
+    ],
+    absorbs: {
+      '/feeding': { tab: 'daily' },
+      '/operations/feeding': { tab: 'programs' },
+      '/fertigation': { tab: 'advanced' },
+    },
+  },
 }
 
 /** Hardware sub-views inside Zones → Hardware & devices tab. */
@@ -91,11 +119,13 @@ export const FLEET_SUB_TABS = [
 
 /** Cross-workspace jump targets (Phase 68 WS5, Phase 78 zone-first). */
 export const WORKSPACE_RELATIONS = {
-  '/zones': ['/money', '/comfort-targets', '/operator-guide'],
-  '/money': ['/zones', '/operator-guide'],
-  '/comfort-targets': ['/zones'],
-  '/operator-guide': ['/zones', '/money'],
-  '/chat': ['/zones', '/operator-guide'],
+  '/zones': ['/feed-water', '/hardware', '/money', '/comfort-targets', '/operator-guide'],
+  '/hardware': ['/zones', '/feed-water', '/operator-guide'],
+  '/feed-water': ['/zones', '/money', '/operator-guide'],
+  '/money': ['/zones', '/feed-water', '/operator-guide'],
+  '/comfort-targets': ['/zones', '/feed-water'],
+  '/operator-guide': ['/zones', '/money', '/feed-water'],
+  '/chat': ['/zones', '/feed-water', '/operator-guide'],
 }
 
 const LEGACY_ABSORB_INDEX = buildLegacyAbsorbIndex()
@@ -124,7 +154,7 @@ function parseZoneIdFromQuery(query) {
 }
 
 /**
- * Phase 78 — retired workspace routes → zones hub or zone detail.
+ * Phase 78 — retired workspace routes with zone_id → zone detail (feed-water/hardware are live again in 70/71).
  * @param {import('vue-router').RouteLocationNormalized} to
  */
 export function redirectSunsetWorkspace(to) {
@@ -132,13 +162,8 @@ export function redirectSunsetWorkspace(to) {
   const query = { ...to.query }
   delete query.zone_id
 
-  if (zoneId) {
-    const tab = to.path === '/feed-water' ? 'water' : 'overview'
-    return { path: `/zones/${zoneId}`, query: { ...query, tab } }
-  }
-
-  if (to.path === '/hardware') {
-    return { path: '/zones', query: { ...query, tab: 'fleet', fleet: 'sensors' } }
+  if (zoneId && to.path === '/feed-water') {
+    return { path: `/zones/${zoneId}`, query: { ...query, tab: 'water' } }
   }
 
   return { path: '/zones', query }
@@ -146,10 +171,7 @@ export function redirectSunsetWorkspace(to) {
 
 /** @returns {Array<{ path: string, redirect: (to: import('vue-router').RouteLocationNormalized) => object }>} */
 export function buildSunsetWorkspaceRedirects() {
-  return [
-    { path: '/feed-water', redirect: redirectSunsetWorkspace },
-    { path: '/hardware', redirect: redirectSunsetWorkspace },
-  ]
+  return []
 }
 
 /**
@@ -226,6 +248,15 @@ const ZONES_TAB_ALIASES = {
   fleet: 'fleet',
 }
 
+/** Legacy feed-water tab ids → workspace tab ids (Phase 71). */
+const FEEDWATER_TAB_ALIASES = {
+  daily: 'daily',
+  programs: 'programs',
+  nutrients: 'nutrients',
+  advanced: 'advanced',
+  water: 'daily',
+}
+
 /**
  * @param {string} workspaceId
  * @param {string | undefined | null} tabId
@@ -239,6 +270,9 @@ export function resolveWorkspaceTab(workspaceId, tabId) {
   }
   if (workspaceId === 'zones' && tabId) {
     resolved = ZONES_TAB_ALIASES[tabId] ?? tabId
+  }
+  if (workspaceId === 'feedwater' && tabId) {
+    resolved = FEEDWATER_TAB_ALIASES[tabId] ?? tabId
   }
   if (resolved && tabs.some((t) => t.id === resolved)) return resolved
   return defaultTabFor(workspaceId)
@@ -293,6 +327,12 @@ export function buildLegacyRedirectRoutes() {
         const query = { ...to.query }
         delete query.zone_id
         return { path: `/zones/${zoneId}`, query: { ...query, tab: hit.zoneTab } }
+      }
+
+      if (zoneId && (legacyPath === '/feeding' || legacyPath === '/operations/feeding' || legacyPath === '/fertigation')) {
+        const query = { ...to.query }
+        delete query.zone_id
+        return { path: `/zones/${zoneId}`, query: { ...query, tab: 'water' } }
       }
 
       const query = { ...to.query, tab: hit.tab }

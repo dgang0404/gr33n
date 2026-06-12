@@ -68,7 +68,7 @@ describe('Phase 54 WS4 / OC-54 — connection nav closure', () => {
     expect(relatedTo('/tasks')).toContain('/zones')
     expect(relatedTo('/alerts')).toContain('/zones')
     expect(relatedTo('/fertigation')).toContain('/zones')
-    expect(relatedTo('/fertigation')).not.toContain('/feed-water')
+    expect(relatedTo('/fertigation')).toContain('/feed-water')
     expect(relatedTo('/operations/money')).toContain('/money')
     expect(relatedTo('/plants')).toContain('/zones')
   })
@@ -78,13 +78,15 @@ describe('Phase 54 WS4 / OC-54 — connection nav closure', () => {
       '/feeding', '/fertigation', '/operations/feeding', '/operations/supplies', '/operations/money',
       '/sensors', '/actuators', '/lighting', '/pi-setup', '/costs', '/inventory',
       '/tasks', '/alerts', '/plants', '/schedules', '/automation', '/setpoints',
+      '/feed-water', '/hardware',
     ])
+    const workspaceTargets = new Set(['/feed-water', '/hardware'])
     for (const [from, targets] of Object.entries(NAV_RELATIONS)) {
       if (!navRoutes.has(from) && !legacyOk.has(from)) {
         expect(navRoutes.has(from), `missing nav route ${from}`).toBe(true)
       }
       for (const to of targets) {
-        expect(navRoutes.has(to), `${from} → ${to} not in sidebar`).toBe(true)
+        expect(navRoutes.has(to) || workspaceTargets.has(to), `${from} → ${to} not in sidebar`).toBe(true)
       }
     }
   })

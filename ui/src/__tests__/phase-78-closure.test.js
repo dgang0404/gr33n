@@ -15,6 +15,7 @@ vi.mock('../api', () => ({
 
 import { buildNavGroups, mobileBottomNav } from '../lib/navGroups.js'
 import { buildSunsetWorkspaceRedirects, redirectSunsetWorkspace } from '../lib/workspaces.js'
+import router from '../router/index.js'
 import ZoneAlertsPanel from '../components/ZoneAlertsPanel.vue'
 import ZoneHardwarePanel from '../components/ZoneHardwarePanel.vue'
 import { useFarmStore } from '../stores/farm'
@@ -37,7 +38,7 @@ describe('Phase 78 — zone-first hardware & feed consolidation', () => {
     expect(mobileBottomNav.find((i) => i.to === '/money')?.label).toBe('Money')
   })
 
-  it('sunset redirects send /feed-water with zone_id to zone water tab', () => {
+  it('zone-scoped feed-water visits redirect to zone water tab', () => {
     const result = redirectSunsetWorkspace({
       path: '/feed-water',
       query: { zone_id: '4', tab: 'daily' },
@@ -47,17 +48,10 @@ describe('Phase 78 — zone-first hardware & feed consolidation', () => {
     expect(result.query.zone_id).toBeUndefined()
   })
 
-  it('sunset redirects send /hardware without zone to zones fleet', () => {
-    const result = redirectSunsetWorkspace({ path: '/hardware', query: {} })
-    expect(result.path).toBe('/zones')
-    expect(result.query.tab).toBe('fleet')
-    expect(result.query.fleet).toBe('sensors')
-  })
-
-  it('registers sunset redirect routes', () => {
-    const paths = buildSunsetWorkspaceRedirects().map((r) => r.path)
-    expect(paths).toContain('/feed-water')
-    expect(paths).toContain('/hardware')
+  it('registers hardware and feed-water workspace routes', () => {
+    expect(router.resolve('/hardware').name).toBe('hardware')
+    expect(router.resolve('/feed-water').name).toBe('feed-water')
+    expect(buildSunsetWorkspaceRedirects()).toEqual([])
   })
 
   it('ZoneAlertsPanel shows GPIO line on sensor alerts', () => {

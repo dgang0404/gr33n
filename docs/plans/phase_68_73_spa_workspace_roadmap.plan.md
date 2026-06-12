@@ -46,7 +46,7 @@ isProject: false
 
 ## Status
 
-**Arc complete through Phase 81 (UI polish).** Phases **68–69, 70, 74–81 shipped**; **71–73** remain planned (feed/water, money, Guardian PR discoverability).
+**Arc complete through Phase 81 (UI polish).** Phases **68–69, 70–71, 74–81 shipped**; **72–73** remain planned (money unification, Guardian PR discoverability).
 
 Operator feedback (2026-06): *sidebar too deep, pages overlap, zone detail requires too much jumping.*
 
@@ -106,7 +106,7 @@ Operator feedback (2026-06): *sidebar too deep, pages overlap, zone detail requi
 | **68** ✅ | Workspace shell, redirects, wiggle | No | [phase_68](phase_68_workspace_shell_spa_nav.plan.md) |
 | **69** ✅ | Zone inline sensors/controls/lighting; Fleet | No | [phase_69](phase_69_zone_workspace_hub.plan.md) |
 | **70** | Live GPIO board + export gaps | **Yes** | [phase_70 ✅](phase_70_hardware_pi_control_spa.plan.md) · [`phase-70-closure.md`](phase-70-closure.md) |
-| **71** | Feed & Water SPA | No | [phase_71](phase_71_feed_water_unification.plan.md) |
+| **71** | Feed & Water SPA | No | [phase_71 ✅](phase_71_feed_water_unification.plan.md) · [`phase-71-closure.md`](phase-71-closure.md) |
 | **72** | Money SPA | No | [phase_72](phase_72_money_unification.plan.md) |
 | **73** | Guardian PR discoverability + read tools | **Yes** | [phase_73](phase_73_guardian_pr_discoverability.plan.md) |
 | **74** | Zone ops inbox (Tasks, Alerts, Plants) | No | [phase_74](phase_74_zone_ops_inbox.plan.md) |
@@ -162,7 +162,7 @@ flowchart TB
 | OC-68 | 68 workspace shell | ✅ Shipped |
 | OC-69 | 69 zone workspace | ✅ Shipped |
 | OC-70 | 70 hardware Pi SPA | ✅ Shipped (`phase-70-closure.md`) |
-| OC-71 | 71 feed & water | Planned |
+| OC-71 | 71 feed & water | ✅ Shipped (`phase-71-closure.md`) |
 | OC-72 | 72 money | Planned |
 | OC-73 | 73 guardian PRs | Planned |
 | OC-74 | 74 zone ops inbox | ✅ Shipped |
@@ -189,4 +189,4 @@ flowchart TB
 
 ## Using this in a new chat
 
-> Read `docs/plans/phase_68_73_spa_workspace_roadmap.plan.md` (covers **68–77**). Implement from the specific phase plan. Never delete routes — redirect. **UI shipped:** 68–69, 70, 74–77. **Planned:** 71–73 (feed/water, money, Guardian PR badge).
+> Read `docs/plans/phase_68_73_spa_workspace_roadmap.plan.md` (covers **68–77**). Implement from the specific phase plan. Never delete routes — redirect. **UI shipped:** 68–69, 70–71, 74–77. **Planned:** 72–73 (money, Guardian PR badge).
