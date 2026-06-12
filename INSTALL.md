@@ -233,6 +233,9 @@ curl http://localhost:8080/devices
 # Default suite (includes cmd/api smoke tests; auth-bypass via the dev tag).
 # GPIO / live-hardware tests are NOT compiled here.
 make test            # == go test -tags dev ./... -v -count=1
+
+# Phase 99 — UI enum lists must match backend/OpenAPI (growth stages, lighting presets).
+make check-ui-domain-parity
 ```
 
 Live GPIO / edge-hardware tests live behind the **`hardware` build tag** and are

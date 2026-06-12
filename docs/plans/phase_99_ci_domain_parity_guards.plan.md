@@ -6,19 +6,19 @@ overview: >
 todos:
   - id: ws1-script
     content: "WS1: scripts/check-ui-domain-parity.sh — growth stages, lighting presets, …"
-    status: pending
+    status: completed
   - id: ws2-make
     content: "WS2: make check-ui-domain-parity + CI workflow step"
-    status: pending
+    status: completed
   - id: ws3-fixtures
     content: "WS3: Golden files from OpenAPI / Go enum exports"
-    status: pending
+    status: completed
   - id: ws4-setpoint
     content: "WS4: Fail if SetpointRow default ≠ GROWTH_STAGES length"
-    status: pending
+    status: completed
   - id: ws5-phase88-link
     content: "WS5: After Phase 88 — UI fetches enums; parity checks API response shape"
-    status: pending
+    status: completed
 isProject: false
 ---
 
@@ -26,11 +26,11 @@ isProject: false
 
 ## Status
 
-**Planned.** Closes **blind spot #10** (enum drift ships for months undetected).
+**Shipped.** Closes **blind spot #10** (enum drift ships for months undetected).
 
-**Depends on:** [Phase 88](phase_88_domain_enums_api.plan.md) (ideal end state); can start earlier with static extraction.
+**Depends on:** [Phase 88](phase_88_domain_enums_api.plan.md) (ideal end state); parity guards fallback + backend sources.
 
-**Closure:** **OC-99**
+**Closure:** [`phase-99-closure.md`](phase-99-closure.md) · **OC-99**
 
 ---
 
@@ -55,8 +55,8 @@ Exit non-zero on mismatch.
 
 ## Acceptance
 
-- [ ] CI fails PR that drops a growth stage from UI only
-- [ ] Document in INSTALL.md / developer onboarding
-- [ ] Linked from Phase 88 closure
+- [x] CI fails PR that drops a growth stage from UI only
+- [x] Document in INSTALL.md / developer onboarding
+- [x] Linked from Phase 88 closure
 
 **Prompt loop:** **`phase 99`**.

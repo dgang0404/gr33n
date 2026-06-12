@@ -146,7 +146,7 @@ Phase **90** should expose taxonomy to Guardian read tools the same way crop cat
 | **96** | Feeding program vs stage |
 | **97** | RAG vs structured truth |
 | **98** | Enterprise promotion model |
-| **99** | CI domain parity guards |
+| **99** ✅ | CI domain parity guards |
 | **100** | Offline catalog cache |
 
 ---

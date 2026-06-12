@@ -1,17 +1,7 @@
 /**
  * Phase 82 WS4f — crop library picker helpers (search + grouping).
+ * Category order comes from GET …/crop-library/picker groups (Phase 84/99).
  */
-
-export const CATEGORY_ORDER = [
-  'fruiting',
-  'leafy',
-  'herb',
-  'flower',
-  'epiphyte',
-  'industrial',
-  'ornamental',
-  'custom',
-]
 
 /** @param {string} q */
 export function normalizeSearchQuery(q) {

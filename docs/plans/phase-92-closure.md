@@ -71,4 +71,4 @@ Legacy types (`veg`, `flower`, etc.) remain selectable in admin with `(legacy)` 
 
 Phase 92 is **closed** when smokes pass and zone create / greenhouse forms load vocabulary from **`GET /platform/domain-enums`**.
 
-**Arc B note:** Phases **88–92** are now closed; **Phase 99** (CI domain parity guards) remains open in the arc.
+**Arc B note:** Phases **88–92** and **99** are now closed — Arc B complete.

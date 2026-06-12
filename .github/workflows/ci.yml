@@ -63,6 +63,20 @@ jobs:
       - name: Verify crop catalog seed (Phase 84 WS-B/K)
         run: make check-crop-catalog-db
 
+      - name: UI domain parity guards (Phase 99)
+        run: |
+          go test ./internal/platform/domainenums/... ./internal/handler/lighting/... -run 'Parity|GrowthStages|PresetList' -count=1
+          PRESET_PATTERN='peas_22_2|veg_18_6|flower_12_12|seedling_16_8'
+          if rg -n "$PRESET_PATTERN" ui/src \
+            --glob '*.vue' --glob '*.js' \
+            --glob '!**/__tests__/**' \
+            --glob '!**/lightingPresets.js' \
+            --glob '!**/bootstrapCatalog.fallback.js' \
+            2>/dev/null; then
+            echo "::error::hardcoded lighting preset keys in production UI"
+            exit 1
+          fi
+
       - name: Verify pgvector extension (RAG parity)
         run: |
           count=$(psql "$DATABASE_URL" -tAc "SELECT count(*) FROM pg_extension WHERE extname='vector'" | tr -d '[:space:]')

@@ -6,7 +6,7 @@
 
 **Depends on:** Postgres enum alignment with `croplibrary.ValidGrowthStages`.
 
-**Follow-on:** Phase 99 CI parity guards (`check-ui-domain-parity`); Phase 100 offline cache for domain enums.
+**Follow-on:** Phase 99 CI parity guards — [`phase-99-closure.md`](phase-99-closure.md) · `make check-ui-domain-parity`; Phase 100 offline cache for domain enums.
 
 ---
 
@@ -66,4 +66,4 @@ Bundled fallback in `domainEnums.fallback.js` keeps forms usable when API is bri
 
 ## OC-88
 
-Phase 88 is **closed** when smokes pass and every stage/cost/reservoir dropdown loads from **`GET /platform/domain-enums`** (or bundled fallback). Phase **99** adds CI guards so UI fallbacks cannot drift from Go/OpenAPI again.
+Phase 88 is **closed** when smokes pass and every stage/cost/reservoir dropdown loads from **`GET /platform/domain-enums`** (or bundled fallback). Phase **99** adds CI guards so UI fallbacks cannot drift from Go/OpenAPI again — see [`phase-99-closure.md`](phase-99-closure.md).
