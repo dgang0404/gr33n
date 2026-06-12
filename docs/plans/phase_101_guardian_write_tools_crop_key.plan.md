@@ -6,19 +6,19 @@ overview: >
 todos:
   - id: ws1-create-plant
     content: "WS1: execCreatePlant requires crop_key; server display_name; reject unsupported"
-    status: pending
+    status: completed
   - id: ws2-grow-pack
     content: "WS2: apply_grow_setup_pack uses crop_key + plant_id chain"
-    status: pending
+    status: completed
   - id: ws3-proposals
     content: "WS3: Proposal schema + impact summary — crop_key not display_name"
-    status: pending
+    status: completed
   - id: ws4-openapi
     content: "WS4: OpenAPI Guardian tool docs mirror POST /plants contract"
-    status: pending
+    status: completed
   - id: ws5-smokes
     content: "WS5: grow_create_test + smoke — duplicate crop_key upsert; ramps block"
-    status: pending
+    status: completed
 isProject: false
 ---
 
@@ -26,7 +26,7 @@ isProject: false
 
 ## Status
 
-**Planned.** Guardian must not bypass catalog rules the UI enforces.
+**Shipped (OC-101).** Closure: [`phase-101-closure.md`](phase-101-closure.md).
 
 **Depends on:** [Phase 85](phase_85_catalog_bound_plants.plan.md).
 
@@ -68,8 +68,8 @@ Same upsert as `POST /farms/{id}/plants`.
 
 ## Acceptance
 
-- [ ] Grow setup pack proposal cannot create plant without `crop_key`
-- [ ] Persona lists crop_key in write tool examples
-- [ ] Smokes mirror Phase 85 plant API
+- [x] Grow setup pack proposal cannot create plant without `crop_key`
+- [x] Persona lists crop_key in write tool examples
+- [x] Smokes mirror Phase 85 plant API
 
 **Prompt loop:** **`phase 101`**.

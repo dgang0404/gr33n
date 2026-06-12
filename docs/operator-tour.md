@@ -319,7 +319,7 @@ Includes everything from Phase 30 — alert ack/read, **create task**, cycle sta
 
 | Tool | Tier | What Confirm does |
 |------|------|-------------------|
-| `create_plant` | medium | Adds one plant catalog row |
+| `create_plant` | medium | Adds one catalog plant (`crop_key` required — Phase 101) |
 | `create_crop_cycle` | medium | Starts an active cycle in a zone (fails if zone already busy) |
 | `create_fertigation_program` | medium | Creates a fertigation program for a zone |
 | `apply_grow_setup_pack` | **high** | One transaction: optional plant + cycle + program + optional monitor task |

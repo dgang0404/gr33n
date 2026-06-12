@@ -831,7 +831,7 @@ Guardian **proposes**; the operator **confirms**. Viewers may chat and see propo
 | `patch_schedule` | medium | Patch schedule name, cron, or active flag |
 | `patch_fertigation_program` | medium | Patch program EC target, volume, or active |
 | `patch_rule` | medium (high if disabling) | Patch rule active flag or threshold |
-| `create_plant` | medium | Add a row to the farm plant catalog |
+| `create_plant` | medium | Catalog-bound plant (`crop_key` required; Phase 101) |
 | `create_crop_cycle` | medium | Start an active crop cycle in a zone (rejects busy zones) |
 | `create_fertigation_program` | medium | Create a fertigation program for a zone |
 | `apply_bootstrap_template` | high | Apply farm bootstrap template (admin only) |
