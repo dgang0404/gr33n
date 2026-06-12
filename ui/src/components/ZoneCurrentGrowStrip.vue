@@ -172,9 +172,12 @@ async function loadCropTargets() {
   if (!cycle?.plant_id || !cycle.current_stage) return
   try {
     const plant = await store.getPlant(cycle.plant_id)
-    if (!plant?.crop_profile_id) return
-    cropProfileId.value = plant.crop_profile_id
-    const profile = await store.getCropProfile(plant.crop_profile_id)
+    if (!plant?.crop_key) return
+    const profile = await store.getEffectiveCropProfile(props.farmId, {
+      cropKey: plant.crop_key,
+      variety: plant.variety_or_cultivar,
+    })
+    cropProfileId.value = profile.id
     const stageRow = (profile.stages || []).find(
       (s) => s.stage === cycle.current_stage,
     )

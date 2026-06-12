@@ -376,6 +376,10 @@ func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationwo
 
 	// Crop knowledge base (Phase 64)
 	mux.Handle("GET /farms/{id}/guardian-nudge", jwt(http.HandlerFunc(guardianNudge.Nudge)))
+	mux.Handle("GET /farms/{id}/crop-profiles/effective", jwt(http.HandlerFunc(cropProfiles.GetEffective)))
+	mux.Handle("GET /farms/{id}/crop-profiles/{crop_key}/genetics/{variety_slug}", jwt(http.HandlerFunc(cropProfiles.GetGenetics)))
+	mux.Handle("PUT /farms/{id}/crop-profiles/{crop_key}/genetics/{variety_slug}", jwt(http.HandlerFunc(cropProfiles.PutGenetics)))
+	mux.Handle("DELETE /farms/{id}/crop-profiles/{crop_key}/genetics/{variety_slug}", jwt(http.HandlerFunc(cropProfiles.DeleteGenetics)))
 	mux.Handle("GET /farms/{id}/crop-profiles", jwt(http.HandlerFunc(cropProfiles.List)))
 	mux.Handle("GET /farms/{id}/crop-profiles/{crop_key}", jwt(http.HandlerFunc(cropProfiles.GetByCropKey)))
 	mux.Handle("PUT /farms/{id}/crop-profiles/{crop_key}", jwt(http.HandlerFunc(cropProfiles.PutByCropKey)))

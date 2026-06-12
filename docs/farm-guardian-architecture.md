@@ -476,17 +476,18 @@ Plan: [`plans/phase_83_enterprise_agronomy_seed_pack.plan.md`](plans/phase_83_en
 | Plants | `plants.crop_key` UNIQUE per farm; POST by `crop_key`; server `display_name` from catalog |
 | Picker API | `GET /farms/{id}/crop-library/picker` — same effective profiles as Settings |
 | Overrides | `PUT /farms/{id}/crop-profiles/{crop_key}` — immediate on strip + Guardian (no re-ingest) |
+| Genetics (Phase 94) | `PUT /farms/{id}/crop-profiles/{crop_key}/genetics/{variety_slug}` — per-variety EC above farm override; `GET …/effective?crop_key=&variety=` |
 | Active grow | `POST /crop-cycles` with `is_active=true` requires catalog-bound `plant_id` |
-| UI | `CropLibraryPicker`; grow strip EC chip; `ZoneCropStageTargetHint` on Water/Light |
-| Read tool | `lookup_crop_targets` — `cycle → plant → crop_key → GetCropProfileByKey`; blocks active grow without plant |
+| UI | `CropLibraryPicker`; grow strip EC chip; `ZoneCropStageTargetHint` on Water/Light; Plants **Tune EC for this variety →** |
+| Read tool | `lookup_crop_targets` — `cycle → plant → ResolveProfileID(crop_key, variety)`; genetics > farm > builtin |
 | Hard rule | No EC/pH/VPD/DLI/photoperiod without read-tool output; EC in **mS/cm** |
 | Narrative | RAG field guides — supplement only ([Phase 97](plans/phase_97_rag_structured_truth_governance.plan.md)) |
 
-**OC-87** · Operator: [`crop-knowledge-operator-runbook.md`](crop-knowledge-operator-runbook.md) · Closure: [`plans/phase-87-closure.md`](plans/phase-87-closure.md).
+**OC-87** · Operator: [`crop-knowledge-operator-runbook.md`](crop-knowledge-operator-runbook.md) · Closure: [`plans/phase-87-closure.md`](plans/phase-87-closure.md) · **Genetics EC (Phase 94):** [`plans/phase-94-closure.md`](plans/phase-94-closure.md).
 
-Plans: [85](plans/phase_85_catalog_bound_plants.plan.md) · [86](plans/phase_86_grow_ops_catalog_chain.plan.md) · [87](plans/phase_87_crop_knowledge_operator_closure.plan.md) · Roadmap: [84–87](plans/phase_84_87_crop_identity_roadmap.plan.md).
+Plans: [85](plans/phase_85_catalog_bound_plants.plan.md) · [86](plans/phase_86_grow_ops_catalog_chain.plan.md) · [87](plans/phase_87_crop_knowledge_operator_closure.plan.md) · [94](plans/phase_94_genetics_batch_ec_profiles.plan.md) · Roadmap: [84–87](plans/phase_84_87_crop_identity_roadmap.plan.md).
 
-**Go smokes:** `smoke_phase85_test.go`, `smoke_phase86_test.go`, `smoke_phase87_test.go`.
+**Go smokes:** `smoke_phase85_test.go`, `smoke_phase86_test.go`, `smoke_phase87_test.go`, `smoke_phase94_test.go`.
 
 ### 7.0ag Guardian plant intelligence (Phase 82 — partial shipped)
 

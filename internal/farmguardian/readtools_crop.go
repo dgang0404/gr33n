@@ -17,6 +17,7 @@ import (
 
 	"gr33n-api/internal/cropcycle"
 	"gr33n-api/internal/croplibrary"
+	"gr33n-api/internal/cropprofile"
 	db "gr33n-api/internal/db"
 )
 
@@ -367,13 +368,22 @@ func resolveCropProfileContext(ctx context.Context, q db.Querier, farmID int64, 
 					plantName += " (" + strings.TrimSpace(*plant.VarietyOrCultivar) + ")"
 				}
 				if plant.CropKey != nil && strings.TrimSpace(*plant.CropKey) != "" {
-					farmPtr := farmID
-					prof, perr := q.GetCropProfileByKey(ctx, db.GetCropProfileByKeyParams{
-						CropKey: strings.TrimSpace(*plant.CropKey),
-						FarmID:  &farmPtr,
-					})
-					if perr == nil {
-						profileID = prof.ID
+					ck := strings.TrimSpace(*plant.CropKey)
+					var variety *string
+					if plant.VarietyOrCultivar != nil && strings.TrimSpace(*plant.VarietyOrCultivar) != "" {
+						v := strings.TrimSpace(*plant.VarietyOrCultivar)
+						variety = &v
+					}
+					if id, rerr := cropprofile.ResolveProfileID(ctx, q, farmID, ck, variety); rerr == nil {
+						profileID = id
+					} else if variety == nil {
+						farmPtr := farmID
+						if prof, perr := q.GetCropProfileByKey(ctx, db.GetCropProfileByKeyParams{
+							CropKey: ck,
+							FarmID:  &farmPtr,
+						}); perr == nil {
+							profileID = prof.ID
+						}
 					}
 				} else if plant.CropProfileID != nil {
 					profileID = *plant.CropProfileID

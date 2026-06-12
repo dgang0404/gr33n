@@ -52,11 +52,11 @@ After at least one successful load while online, the UI caches the crop picker i
 
 ---
 
-## What Settings EC affects (v1 scope)
+## What Settings EC affects (v1 vs v2)
 
-- **Now:** A Settings override for `crop_key` (e.g. `cannabis`) applies to **all grows of that crop on this farm** — strip, Water/Light hints, picker preview, and Guardian on the next chat turn (no RAG re-ingest).
-- **Not v1:** Per-genetics EC (Blue Dream vs OG Kush) → [Phase 94](plans/phase_94_genetics_batch_ec_profiles.plan.md).
-- **Not v1:** Per-batch run EC → Phase 94 or a separate farm override model.
+- **Farm-wide (v1):** A Settings override for `crop_key` (e.g. `cannabis`) applies to **all grows of that crop on this farm** when no genetics profile is linked — strip, Water/Light hints, picker preview, and Guardian on the next chat turn (no RAG re-ingest).
+- **Per-genetics (v2 — Phase 94):** When a plant has **`variety_or_cultivar`** and the farm has a **genetics EC profile** for that variety, that profile wins over the farm-wide `crop_key` table. Manage via API `PUT /farms/{id}/crop-profiles/{crop_key}/genetics/{variety_slug}` or the **Tune EC for this variety →** link on Plants.
+- **Not yet:** Per-batch run EC without a reusable variety label → separate farm override model or future phase.
 
 ---
 
@@ -105,6 +105,7 @@ Field guides supplement RAG; structured numbers still come from `lookup_crop_tar
 | `TestPhase106_*` | Guardian `lookup_crop_symptoms` — tomato yellow leaves + EC targets |
 | `TestPhase107_*` | Commons + picker `image_url` for ornamentals |
 | `TestPhase64_*` / `TestPhase82_*` | Profile library + picker API |
+| `TestPhase94_*` | Genetics EC profile beats farm `crop_key` override on effective API |
 
 ---
 

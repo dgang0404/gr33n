@@ -54,6 +54,15 @@
           <div class="min-w-0">
             <p class="text-white text-sm font-medium truncate">{{ p.display_name }}</p>
             <p v-if="p.variety_or_cultivar" class="text-zinc-500 text-xs mt-0.5">{{ p.variety_or_cultivar }}</p>
+            <router-link
+              v-if="p.variety_or_cultivar && p.crop_key"
+              v-nav-hint="'/settings'"
+              :to="{ path: '/settings', query: { tab: 'crops', crop_key: p.crop_key, genetics: p.variety_or_cultivar } }"
+              class="text-[10px] text-green-600 hover:text-green-400 mt-0.5 inline-block"
+              data-test="plant-genetics-ec-link"
+            >
+              Tune EC for this variety →
+            </router-link>
           </div>
           <span class="text-lg shrink-0">🌱</span>
         </div>

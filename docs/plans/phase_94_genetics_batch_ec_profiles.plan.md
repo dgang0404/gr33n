@@ -1,27 +1,27 @@
 ---
 name: Phase 94 — Genetics & batch EC profiles
 overview: >
-  Document and optionally implement per-genetics or per-batch EC overrides beyond
-  farm-wide crop_key Settings — closes operator expectation gap for Blue Dream vs OG Kush.
+  Per-genetics EC overrides beyond farm-wide crop_key Settings — closes operator
+  expectation gap for Blue Dream vs OG Kush.
 todos:
   - id: ws0-scope
     content: "WS0: Phase 87 runbook — v1 = farm crop_key only; link to Phase 94 for genetics"
-    status: pending
+    status: completed
   - id: ws1-schema
-    content: "WS1: plant_genetics_profiles or plants.profile_override_id — optional FK"
-    status: pending
+    content: "WS1: plant_genetics_profiles link table + synthetic genetics crop_key"
+    status: completed
   - id: ws2-api
     content: "WS2: PUT genetics profile; effective profile resolution order documented"
-    status: pending
+    status: completed
   - id: ws3-ui
-    content: "WS3: Plants workspace — optional 'Tune EC for this variety' (advanced)"
-    status: pending
+    content: "WS3: Plants workspace — 'Tune EC for this variety' link"
+    status: completed
   - id: ws4-guardian
-    content: "WS4: lookup_crop_targets prefers batch/genetics override when set on active plant"
-    status: pending
+    content: "WS4: lookup_crop_targets prefers genetics override when variety linked"
+    status: completed
   - id: ws5-smokes
     content: "WS5: Farm cannabis override vs genetics override precedence smoke"
-    status: pending
+    status: completed
 isProject: false
 ---
 
@@ -29,7 +29,7 @@ isProject: false
 
 ## Status
 
-**Planned.** Closes **blind spot #3** (farm override vs “this Blue Dream run”).
+**Shipped (OC-94).** Closure: [`phase-94-closure.md`](phase-94-closure.md).
 
 **Depends on:** [Phase 87](phase_87_crop_knowledge_operator_closure.plan.md) (v1 docs must ship first).
 
@@ -70,8 +70,8 @@ Same chain for UI strip, picker preview, and **`lookup_crop_targets`**.
 
 ## Acceptance
 
-- [ ] Phase 87 runbook states v1 vs v2 clearly
-- [ ] When genetics override set, Guardian EC ≠ farm-wide cannabis override
-- [ ] Precedence documented in architecture §7.0af
+- [x] Phase 87 runbook states v1 vs v2 clearly
+- [x] When genetics override set, Guardian EC ≠ farm-wide cannabis override
+- [x] Precedence documented in architecture §7.0af
 
 **Prompt loop:** **`phase 94`**.

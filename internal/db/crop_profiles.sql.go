@@ -198,6 +198,7 @@ SELECT id, farm_id, crop_key, display_name, category, source, version, is_builti
 FROM gr33ncrops.crop_profiles
 WHERE crop_key = $1
   AND (farm_id IS NULL AND is_builtin = TRUE OR farm_id = $2)
+  AND COALESCE(meta->>'genetics', 'false') <> 'true'
 ORDER BY is_builtin ASC
 LIMIT 1
 `
@@ -311,8 +312,11 @@ func (q *Queries) ListCropProfileStages(ctx context.Context, cropProfileID int64
 const listCropProfilesForFarm = `-- name: ListCropProfilesForFarm :many
 SELECT id, farm_id, crop_key, display_name, category, source, version, is_builtin, meta, created_at, updated_at
 FROM gr33ncrops.crop_profiles
-WHERE farm_id IS NULL AND is_builtin = TRUE
-   OR farm_id = $1
+WHERE COALESCE(meta->>'genetics', 'false') <> 'true'
+  AND (
+    farm_id IS NULL AND is_builtin = TRUE
+    OR farm_id = $1
+  )
 ORDER BY is_builtin ASC, display_name
 `
 

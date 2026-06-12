@@ -847,6 +847,13 @@ export const useFarmStore = defineStore('farm', {
       return r.data
     },
 
+    async getEffectiveCropProfile(farmId, { cropKey, variety } = {}) {
+      const params = new URLSearchParams({ crop_key: cropKey })
+      if (variety) params.set('variety', variety)
+      const r = await api.get(`/farms/${farmId}/crop-profiles/effective?${params}`)
+      return r.data
+    },
+
     async upsertCropProfileOverride(farmId, cropKey, body) {
       const r = await api.put(`/farms/${farmId}/crop-profiles/${encodeURIComponent(cropKey)}`, body)
       return r.data

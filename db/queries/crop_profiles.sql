@@ -1,8 +1,11 @@
 -- name: ListCropProfilesForFarm :many
 SELECT *
 FROM gr33ncrops.crop_profiles
-WHERE farm_id IS NULL AND is_builtin = TRUE
-   OR farm_id = sqlc.arg(farm_id)
+WHERE COALESCE(meta->>'genetics', 'false') <> 'true'
+  AND (
+    farm_id IS NULL AND is_builtin = TRUE
+    OR farm_id = sqlc.arg(farm_id)
+  )
 ORDER BY is_builtin ASC, display_name;
 
 -- name: GetCropProfile :one
@@ -13,6 +16,7 @@ SELECT *
 FROM gr33ncrops.crop_profiles
 WHERE crop_key = $1
   AND (farm_id IS NULL AND is_builtin = TRUE OR farm_id = sqlc.arg(farm_id))
+  AND COALESCE(meta->>'genetics', 'false') <> 'true'
 ORDER BY is_builtin ASC
 LIMIT 1;
 

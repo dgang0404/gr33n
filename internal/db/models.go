@@ -2043,6 +2043,16 @@ type Gr33ncropsPlant struct {
 	DeletedAt         pgtype.Timestamptz `db:"deleted_at" json:"deleted_at"`
 }
 
+type Gr33ncropsPlantGeneticsProfile struct {
+	FarmID        int64     `db:"farm_id" json:"farm_id"`
+	CropKey       string    `db:"crop_key" json:"crop_key"`
+	VarietySlug   string    `db:"variety_slug" json:"variety_slug"`
+	VarietyLabel  string    `db:"variety_label" json:"variety_label"`
+	CropProfileID int64     `db:"crop_profile_id" json:"crop_profile_id"`
+	CreatedAt     time.Time `db:"created_at" json:"created_at"`
+	UpdatedAt     time.Time `db:"updated_at" json:"updated_at"`
+}
+
 type Gr33nfertigationCropCycle struct {
 	ID               int64                            `db:"id" json:"id"`
 	FarmID           int64                            `db:"farm_id" json:"farm_id"`

@@ -154,9 +154,11 @@ type Querier interface {
 	DeleteConversationSession(ctx context.Context, arg DeleteConversationSessionParams) (int64, error)
 	DeleteConversationTurnsBySession(ctx context.Context, arg DeleteConversationTurnsBySessionParams) error
 	DeleteCostTransaction(ctx context.Context, id int64) error
+	DeleteCropProfileByID(ctx context.Context, id int64) error
 	DeleteExecutableAction(ctx context.Context, id int64) error
 	DeleteFarmCropProfileByKey(ctx context.Context, arg DeleteFarmCropProfileByKeyParams) error
 	DeleteFarmEnergyPrice(ctx context.Context, id int64) error
+	DeleteGeneticsProfileLink(ctx context.Context, arg DeleteGeneticsProfileLinkParams) error
 	DeleteInsertCommonsReceivedPayloadsBefore(ctx context.Context, receivedAt time.Time) error
 	DeleteLifecycleEvent(ctx context.Context, id int64) error
 	DeleteLightingProgram(ctx context.Context, id int64) error
@@ -267,6 +269,7 @@ type Querier interface {
 	GetFertigationProgramByID(ctx context.Context, id int64) (Gr33nfertigationProgram, error)
 	GetFertigationReservoirByID(ctx context.Context, id int64) (Gr33nfertigationReservoir, error)
 	GetFileAttachmentByID(ctx context.Context, id int64) (Gr33ncoreFileAttachment, error)
+	GetGeneticsProfileLink(ctx context.Context, arg GetGeneticsProfileLinkParams) (Gr33ncropsPlantGeneticsProfile, error)
 	GetGuardianProposalByID(ctx context.Context, proposalID uuid.UUID) (Gr33ncoreGuardianActionProposal, error)
 	GetInputBatchByID(ctx context.Context, id int64) (Gr33nnaturalfarmingInputBatch, error)
 	// ============================================================
@@ -374,6 +377,7 @@ type Querier interface {
 	// Queries: gr33ncore.device_api_keys (Phase 57)
 	// ============================================================
 	InsertDeviceAPIKey(ctx context.Context, arg InsertDeviceAPIKeyParams) (Gr33ncoreDeviceApiKey, error)
+	InsertGeneticsProfileLink(ctx context.Context, arg InsertGeneticsProfileLinkParams) (Gr33ncropsPlantGeneticsProfile, error)
 	// Phase 29 WS3 — Guardian action proposals (propose → confirm).
 	// Phase 34 — revise/supersede chain + operator-supplied facts in meta.
 	InsertGuardianProposal(ctx context.Context, arg InsertGuardianProposalParams) (Gr33ncoreGuardianActionProposal, error)
