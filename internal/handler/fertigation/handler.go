@@ -425,20 +425,25 @@ func (h *Handler) CreateProgram(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var req struct {
-		Name                string  `json:"name"`
-		Description         *string `json:"description"`
-		ApplicationRecipeID *int64  `json:"application_recipe_id"`
-		ReservoirID         *int64  `json:"reservoir_id"`
-		TargetZoneID        *int64  `json:"target_zone_id"`
-		ScheduleID          *int64  `json:"schedule_id"`
-		EcTargetID          *int64  `json:"ec_target_id"`
-		TotalVolumeLiters   float64 `json:"total_volume_liters"`
-		RunDurationSeconds  *int32  `json:"run_duration_seconds"`
-		EcTriggerLow        float64 `json:"ec_trigger_low"`
-		PhTriggerLow        float64 `json:"ph_trigger_low"`
-		PhTriggerHigh       float64 `json:"ph_trigger_high"`
-		IsActive            bool    `json:"is_active"`
-		IrrigationOnly      bool    `json:"irrigation_only"`
+		Name                string             `json:"name"`
+		Description         *string            `json:"description"`
+		ApplicationRecipeID *int64             `json:"application_recipe_id"`
+		ReservoirID         *int64             `json:"reservoir_id"`
+		TargetZoneID        *int64             `json:"target_zone_id"`
+		ScheduleID          *int64             `json:"schedule_id"`
+		EcTargetID          *int64             `json:"ec_target_id"`
+		TotalVolumeLiters   float64            `json:"total_volume_liters"`
+		RunDurationSeconds  *int32             `json:"run_duration_seconds"`
+		EcTriggerLow        float64            `json:"ec_trigger_low"`
+		PhTriggerLow        float64            `json:"ph_trigger_low"`
+		PhTriggerHigh       float64            `json:"ph_trigger_high"`
+		IsActive            bool               `json:"is_active"`
+		IrrigationOnly      bool               `json:"irrigation_only"`
+		Metadata            map[string]any     `json:"metadata"`
+		RecommendedCropKeys []string           `json:"recommended_crop_keys"`
+		RecommendedStages   []string           `json:"recommended_stages"`
+		ProfileECSource     *programmeta.ProfileECSource `json:"profile_ec_source"`
+		ECBandMSCM          *programmeta.ECBand          `json:"ec_band_mscm"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid request body")
@@ -492,7 +497,110 @@ func (h *Handler) CreateProgram(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
+	if patched, err := h.applyProgramMetadataPatch(r, row, req.Metadata, programmeta.Meta{
+		RecommendedCropKeys: req.RecommendedCropKeys,
+		RecommendedStages:   req.RecommendedStages,
+		ProfileECSource:     req.ProfileECSource,
+		ECBandMSCM:          req.ECBandMSCM,
+	}); err != nil {
+		httputil.WriteError(w, http.StatusBadRequest, err.Error())
+		return
+	} else if patched != nil {
+		row = *patched
+	}
 	httputil.WriteJSON(w, http.StatusCreated, row)
+}
+
+// PATCH /fertigation/programs/{rid}/metadata
+func (h *Handler) PatchProgramMetadata(w http.ResponseWriter, r *http.Request) {
+	id, err := resourceIDFromPath(r)
+	if err != nil {
+		httputil.WriteError(w, http.StatusBadRequest, "invalid program id")
+		return
+	}
+	prog, err := h.q.GetFertigationProgramByID(r.Context(), id)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			httputil.WriteError(w, http.StatusNotFound, "program not found")
+			return
+		}
+		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	if !farmauthz.RequireFarmOperate(w, r, h.q, prog.FarmID) {
+		return
+	}
+	var req struct {
+		Metadata            map[string]any     `json:"metadata"`
+		RecommendedCropKeys []string           `json:"recommended_crop_keys"`
+		RecommendedStages   []string           `json:"recommended_stages"`
+		ProfileECSource     *programmeta.ProfileECSource `json:"profile_ec_source"`
+		ECBandMSCM          *programmeta.ECBand          `json:"ec_band_mscm"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		httputil.WriteError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+	row, err := h.applyProgramMetadataPatch(r, prog, req.Metadata, programmeta.Meta{
+		RecommendedCropKeys: req.RecommendedCropKeys,
+		RecommendedStages:   req.RecommendedStages,
+		ProfileECSource:     req.ProfileECSource,
+		ECBandMSCM:          req.ECBandMSCM,
+	})
+	if err != nil {
+		httputil.WriteError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	if row == nil {
+		httputil.WriteJSON(w, http.StatusOK, prog)
+		return
+	}
+	httputil.WriteJSON(w, http.StatusOK, *row)
+}
+
+func (h *Handler) applyProgramMetadataPatch(
+	r *http.Request,
+	prog db.Gr33nfertigationProgram,
+	raw map[string]any,
+	patch programmeta.Meta,
+) (*db.Gr33nfertigationProgram, error) {
+	if len(raw) > 0 {
+		b, err := json.Marshal(raw)
+		if err != nil {
+			return nil, err
+		}
+		var fromMap programmeta.Meta
+		if err := json.Unmarshal(b, &fromMap); err != nil {
+			return nil, err
+		}
+		if len(fromMap.RecommendedCropKeys) > 0 {
+			patch.RecommendedCropKeys = fromMap.RecommendedCropKeys
+		}
+		if len(fromMap.RecommendedStages) > 0 {
+			patch.RecommendedStages = fromMap.RecommendedStages
+		}
+		if fromMap.ProfileECSource != nil {
+			patch.ProfileECSource = fromMap.ProfileECSource
+		}
+		if fromMap.ECBandMSCM != nil {
+			patch.ECBandMSCM = fromMap.ECBandMSCM
+		}
+	}
+	if !patch.HasCatalogTags() && patch.ProfileECSource == nil && patch.ECBandMSCM == nil {
+		return nil, nil
+	}
+	merged, err := programmeta.MergeMetadata(prog.Metadata, patch)
+	if err != nil {
+		return nil, err
+	}
+	updated, err := h.q.UpdateProgramMetadata(r.Context(), db.UpdateProgramMetadataParams{
+		ID:       prog.ID,
+		Metadata: merged,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return &updated, nil
 }
 
 // GET /farms/{id}/fertigation/events

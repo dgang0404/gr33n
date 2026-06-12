@@ -18,7 +18,21 @@ Phase 14 **WS3** introduces a **published catalog** of contribution-style packs:
 - **`gr33ncore.commons_catalog_entries`** — curator-published rows (`slug`, `title`, `summary`, `body` JSONB, `contributor_*`, `license_spdx`, `tags`, `published`).
 - **`gr33ncore.farm_commons_catalog_imports`** — `(farm_id, catalog_entry_id)` unique; `imported_by`, `imported_at`, optional `note`.
 
-Apply **`db/migrations/20260426_commons_catalog.sql`** (includes one demo documentation pack). Phase 31 WS5 adds **`20260527_phase31_commons_recipe_pack_v7.sql`** (fertigation recipe pack demo) — promote with [`scripts/enterprise/import-recipe-pack.sh`](../../scripts/enterprise/import-recipe-pack.sh). Phase 83 adds **`20260618_phase83_cultivator_seed_pack_v1.sql`** — agronomy seed pack — promote with [`scripts/enterprise/import-agronomy-seed-pack.sh`](../../scripts/enterprise/import-agronomy-seed-pack.sh).
+Apply **`db/migrations/20260426_commons_catalog.sql`** (includes one demo documentation pack). Phase 31 WS5 adds **`20260527_phase31_commons_recipe_pack_v7.sql`** (fertigation recipe pack demo) — promote with [`scripts/enterprise/import-recipe-pack.sh`](../../scripts/enterprise/import-recipe-pack.sh). Phase 108 tags pack programs with **`recommended_crop_keys`** / **`recommended_stages`** (Phase 102 metadata) via **`20260627_phase108_commons_recipe_pack_crop_tags.sql`**. Phase 83 adds **`20260618_phase83_cultivator_seed_pack_v1.sql`** — agronomy seed pack — promote with [`scripts/enterprise/import-agronomy-seed-pack.sh`](../../scripts/enterprise/import-agronomy-seed-pack.sh).
+
+## Recipe pack (`gr33n-recipe-pack-v7-lettuce-veg`)
+
+**Kind:** `fertigation_recipe_pack` in catalog `body`.
+
+| Field | Meaning |
+|-------|---------|
+| `programs[]` | Fertigation program payloads promoted per farm |
+| `programs[].recommended_crop_keys` | Phase 102 tags — validated against `GET /commons/crop-catalog` on import |
+| `programs[].recommended_stages` | Growth stages for program suggest / fit warnings |
+| `programs[].profile_ec_source` | Optional `{ crop_key, stage }` for EC band provenance |
+| `programs[].ec_band_mscm` | Optional denormalized EC min/max (mS/cm) |
+
+**Import semantics:** `import-recipe-pack.sh` records **`POST /farms/{id}/commons/catalog-imports`**, creates programs idempotently by **`name`**, and applies metadata via **`PATCH /fertigation/programs/{id}/metadata`**. Unknown **`crop_key`** values fail the import (parity with catalog).
 
 ## Agronomy seed pack (`gr33n-cultivator-seed-pack-v1`)
 

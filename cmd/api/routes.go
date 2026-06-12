@@ -335,6 +335,7 @@ func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationwo
 	mux.Handle("POST /farms/{id}/fertigation/programs", jwt(http.HandlerFunc(fertigation.CreateProgram)))
 	mux.Handle("POST /farms/{id}/fertigation/programs/{rid}/run-now", jwt(http.HandlerFunc(fertigation.RunProgramNow)))
 	mux.Handle("PATCH /fertigation/programs/{rid}", jwt(http.HandlerFunc(fertigation.UpdateProgram)))
+	mux.Handle("PATCH /fertigation/programs/{rid}/metadata", jwt(http.HandlerFunc(fertigation.PatchProgramMetadata)))
 	mux.Handle("DELETE /fertigation/programs/{rid}", jwt(http.HandlerFunc(fertigation.DeleteProgram)))
 	// Program-bound executable actions (Phase 20.9 WS4)
 	mux.Handle("GET /fertigation/programs/{id}/actions", jwt(http.HandlerFunc(automation.ListActionsByProgram)))

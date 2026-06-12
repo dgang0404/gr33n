@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Phase 31 WS5 — promote a commons Recipe Pack to one or more farms via public API.
-# Records catalog import audit + creates fertigation programs (idempotent by name).
+# Phase 31 WS5 / Phase 108 — promote a commons Recipe Pack to one or more farms via public API.
+# Records catalog import audit + creates fertigation programs (idempotent by name) + crop_key metadata.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
@@ -22,11 +22,11 @@ Promote Recipe Pack v7 (demo) to multiple farms without a core broadcast feature
   --farm-ids      Comma-separated farm_id list (default: 1)
   --slug          Commons catalog slug (default: gr33n-recipe-pack-v7-lettuce-veg)
 
-Real run requires: API up, farm admin JWT, migration 20260527_phase31_commons_recipe_pack_v7.sql applied.
+Real run requires: API up, farm admin JWT, migrations through phase 108 applied.
 
 Env: GR33N_API_URL, GR33N_LOGIN_USER, GR33N_LOGIN_PASS, GR33N_FARM_IDS, CATALOG_SLUG
 
-See scripts/enterprise/README.md and docs/hypothetical-enterprise-topology.md
+See scripts/enterprise/README.md and docs/commons-catalog-operator-playbook.md
 EOF
 }
 
@@ -56,7 +56,7 @@ login_jwt() {
 
 run_dry() {
   CATALOG_SLUG="$CATALOG_SLUG" FARM_IDS="$FARM_IDS" PACK_JSON="$PACK_JSON" python3 - <<'PY'
-import json, os
+import json, os, sys
 
 farm_ids = [int(x) for x in os.environ["FARM_IDS"].split(",") if x.strip()]
 slug = os.environ["CATALOG_SLUG"]
@@ -64,16 +64,32 @@ pack_path = os.environ["PACK_JSON"]
 with open(pack_path, encoding="utf-8") as f:
     body = json.load(f)
 programs = body.get("programs") or []
+
+def validate_programs(programs):
+    for p in programs:
+        keys = p.get("recommended_crop_keys") or []
+        for ck in keys:
+            if not isinstance(ck, str) or not ck.strip():
+                print(f"Invalid recommended_crop_keys on {p.get('name')!r}", file=sys.stderr)
+                sys.exit(1)
+
+validate_programs(programs)
 print(f"Recipe pack: slug={slug} pack_version={body.get('pack_version')} programs={len(programs)}")
 print(f"Source JSON: {pack_path}")
+print("(dry-run: crop_key validation against live catalog skipped)")
 print("")
 for fid in farm_ids:
     print(f"[farm {fid}] POST /farms/{fid}/commons/catalog-imports")
-    print(f'         body: {{"slug": "{slug}", "note": "Phase 31 WS5 import-recipe-pack"}}')
+    print(f'         body: {{"slug": "{slug}", "note": "Phase 108 import-recipe-pack"}}')
     for p in programs:
         name = p["name"]
+        meta = {k: p[k] for k in (
+            "recommended_crop_keys", "recommended_stages", "profile_ec_source", "ec_band_mscm"
+        ) if p.get(k)}
         print(f"[farm {fid}] POST /farms/{fid}/fertigation/programs  (skip if name exists)")
         print(f"         name={name!r} ec_low={p.get('ec_trigger_low')} is_active={p.get('is_active', False)}")
+        if meta:
+            print(f"         PATCH /fertigation/programs/{{id}}/metadata  {meta!r}")
     print("")
 print("Dry-run only — no HTTP calls made.")
 PY
@@ -108,27 +124,75 @@ def req(method, path, data=None):
         print(f"HTTP {e.code} {method} {path}: {err[:500]}", file=sys.stderr)
         sys.exit(1)
 
-# Prefer live catalog body (curator-published); fall back to local JSON file.
+def catalog_crop_keys():
+    status, cat = req("GET", "/commons/crop-catalog")
+    entries = cat.get("entries") or []
+    return {str(e.get("crop_key", "")).strip().lower() for e in entries if e.get("crop_key")}
+
+def program_metadata_payload(p):
+    payload = {}
+    for key in ("recommended_crop_keys", "recommended_stages", "profile_ec_source", "ec_band_mscm"):
+        if p.get(key):
+            payload[key] = p[key]
+    return payload
+
+def validate_crop_keys(programs, valid_keys):
+    for p in programs:
+        for ck in p.get("recommended_crop_keys") or []:
+            norm = str(ck).strip().lower()
+            if norm not in valid_keys:
+                print(
+                    f"Unknown crop_key {ck!r} in program {p.get('name')!r} "
+                    f"(not in /commons/crop-catalog)",
+                    file=sys.stderr,
+                )
+                sys.exit(1)
+        src = p.get("profile_ec_source") or {}
+        src_key = str(src.get("crop_key", "")).strip().lower()
+        if src_key and src_key not in valid_keys:
+            print(
+                f"Unknown profile_ec_source.crop_key {src.get('crop_key')!r} "
+                f"in program {p.get('name')!r}",
+                file=sys.stderr,
+            )
+            sys.exit(1)
+
+def apply_metadata(pid, p):
+    meta = program_metadata_payload(p)
+    if not meta:
+        return
+    status, _ = req("PATCH", f"/fertigation/programs/{pid}/metadata", meta)
+    print(f"    metadata applied (HTTP {status}) keys={meta.get('recommended_crop_keys')}")
+
+valid_keys = catalog_crop_keys()
+if not valid_keys:
+    print("No crop keys from /commons/crop-catalog", file=sys.stderr)
+    sys.exit(1)
+
 status, cat = req("GET", f"/commons/catalog/{slug}")
 body = cat.get("body") or local_body
 programs = body.get("programs") or []
+validate_crop_keys(programs, valid_keys)
 print(f"Loaded catalog slug={slug} programs={len(programs)}")
 
 for fid in farm_ids:
     print(f"--- farm_id={fid} ---")
-    status, out = req("POST", f"/farms/{fid}/commons/catalog-imports", {
+    status, _ = req("POST", f"/farms/{fid}/commons/catalog-imports", {
         "slug": slug,
-        "note": "Phase 31 WS5 import-recipe-pack.sh",
+        "note": "Phase 108 import-recipe-pack.sh",
     })
     print(f"  catalog import recorded (HTTP {status})")
 
     status, existing = req("GET", f"/farms/{fid}/fertigation/programs")
-    names = {p.get("name") for p in existing if isinstance(p, dict)}
+    by_name = {p.get("name"): p for p in existing if isinstance(p, dict)}
 
     for p in programs:
         name = p["name"]
-        if name in names:
-            print(f"  SKIP program {name!r} (already exists)")
+        meta = program_metadata_payload(p)
+        if name in by_name:
+            pid = by_name[name]["id"]
+            print(f"  SKIP program {name!r} id={pid} (already exists)")
+            apply_metadata(pid, p)
             continue
         payload = {
             "name": name,
@@ -139,10 +203,11 @@ for fid in farm_ids:
             "ph_trigger_high": p["ph_trigger_high"],
             "is_active": bool(p.get("is_active", False)),
         }
+        payload.update(meta)
         status, created = req("POST", f"/farms/{fid}/fertigation/programs", payload)
         pid = created.get("id")
         print(f"  CREATED program {name!r} id={pid} (HTTP {status})")
-        names.add(name)
+        by_name[name] = created
 
 print("Done.")
 PY

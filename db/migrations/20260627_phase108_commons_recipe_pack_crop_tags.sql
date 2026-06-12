@@ -1,9 +1,14 @@
+-- Phase 108 — tag commons recipe pack v7 programs with Phase 102 crop_key metadata.
+-- Source mirror: scripts/enterprise/sample-recipe-pack-v7.body.json
+
+UPDATE gr33ncore.commons_catalog_entries
+SET body = $body$
 {
   "catalog_version": "gr33n.commons_catalog.v1",
   "kind": "fertigation_recipe_pack",
   "pack_version": "7",
   "pack_id": "gr33n-recipe-pack-v7-lettuce-veg",
-  "readme_md": "# Recipe Pack v7 — Lettuce veg / flower (demo)\n\nHypothetical **HQ → site** promotion pack for multi-farm integrators. This JSON is **opaque payload** stored in `commons_catalog_entries.body` — the API does not auto-apply it.\n\n## What integrators do\n\n1. Curator publishes this row in the commons catalog (migration `20260527_phase31_commons_recipe_pack_v7.sql`).\n2. Per site, farm admin runs [`import-recipe-pack.sh`](import-recipe-pack.sh) (or your pipeline) to:\n   - Record **`POST /farms/{id}/commons/catalog-imports`** (audit / provenance)\n   - Create fertigation programs via **`POST /farms/{id}/fertigation/programs`** (idempotent by program `name`)\n   - Apply Phase 102 **`recommended_crop_keys`** / **`recommended_stages`** metadata via **`PATCH /fertigation/programs/{id}/metadata`**\n\n## Safety\n\nPrograms import with **`is_active: false`** — operators review in Fertigation UI before enabling automation.\n\nNo core \"broadcast to 500 farms\" feature — promotion is **deliberate API calls** per `farm_id`.\n",
+  "readme_md": "# Recipe Pack v7 — Lettuce veg / flower (demo)\n\nHypothetical **HQ → site** promotion pack for multi-farm integrators. This JSON is **opaque payload** stored in `commons_catalog_entries.body` — the API does not auto-apply it.\n\n## What integrators do\n\n1. Curator publishes this row in the commons catalog.\n2. Per site, farm admin runs `scripts/enterprise/import-recipe-pack.sh` to record catalog import audit + create programs via public API.\n\nPrograms import with **`is_active: false`** — review before enabling automation.\n",
   "promotion_note": "Phase 31 WS5 demo — not a live agronomic prescription.",
   "programs": [
     {
@@ -53,3 +58,6 @@
     }
   ]
 }
+$body$::jsonb,
+    updated_at = NOW()
+WHERE slug = 'gr33n-recipe-pack-v7-lettuce-veg';

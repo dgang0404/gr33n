@@ -87,6 +87,17 @@
               </span>
             </div>
 
+            <div v-if="packCropKeys.length" class="flex flex-wrap items-center gap-1.5 mb-3">
+              <span class="text-[10px] text-zinc-500 uppercase tracking-wide">Crops</span>
+              <span
+                v-for="key in packCropKeys"
+                :key="key"
+                class="text-[10px] px-1.5 py-0.5 rounded bg-green-950/60 text-green-400 border border-green-900/50"
+              >
+                {{ key }}
+              </span>
+            </div>
+
             <div class="flex items-center gap-3 text-xs text-zinc-500 mb-4">
               <span v-if="detail.contributor_display">{{ detail.contributor_display }}</span>
               <span v-if="detail.contributor_uri">
@@ -147,7 +158,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useFarmStore } from '../stores/farm'
 import { useFarmContextStore } from '../stores/farmContext'
 
@@ -197,6 +208,17 @@ async function selectEntry(entry) {
 }
 
 const readmeText = ref('')
+const packCropKeys = computed(() => {
+  const d = detail.value
+  if (!d?.body) return []
+  const b = typeof d.body === 'string' ? JSON.parse(d.body) : d.body
+  if (b?.kind !== 'fertigation_recipe_pack') return []
+  const keys = new Set()
+  for (const p of b.programs || []) {
+    for (const k of p.recommended_crop_keys || []) keys.add(k)
+  }
+  return [...keys].sort()
+})
 watch(detail, (d) => {
   if (!d?.body) { readmeText.value = ''; return }
   const b = typeof d.body === 'string' ? JSON.parse(d.body) : d.body
