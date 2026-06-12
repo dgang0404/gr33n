@@ -101,13 +101,13 @@ export function autologPlainLabel(tx) {
 export function autologContextLink(tx) {
   const table = String(tx?.related_table_name || '')
   if (table.includes('mixing')) {
-    return { path: '/operations/feeding', query: { tab: 'mixing' } }
+    return { path: '/feed-water', query: { tab: 'nutrients' } }
   }
   if (table.includes('consumption') || table.includes('labor')) {
     return { path: '/tasks' }
   }
   if (table.includes('energy') || tx?.category === 'utilities_electricity_gas') {
-    return { path: '/costs' }
+    return { path: '/money', query: { tab: 'ledger' } }
   }
   return null
 }
@@ -158,7 +158,7 @@ export function buildMoneyActivityRow(tx) {
     isAutolog: autolog,
     autologLink: autolog ? autologContextLink(tx) : null,
     cropCycleId: tx.crop_cycle_id ?? null,
-    advancedLink: tx.id ? { path: '/costs', query: { highlight: String(tx.id) } } : null,
+    advancedLink: tx.id ? { path: '/money', query: { tab: 'ledger', highlight: String(tx.id) } } : null,
   }
 }
 

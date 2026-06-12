@@ -93,8 +93,8 @@
         </div>
         <router-link
           v-if="summary.cycle"
-          v-nav-hint="'/operations/money'"
-          :to="{ path: '/operations/money', query: { cycle_id: summary.cycle.id } }"
+          v-nav-hint="'/money'"
+          :to="{ path: '/money', query: { cycle_id: summary.cycle.id, tab: 'summary' } }"
           class="inline-block mt-3 text-xs text-green-500 hover:text-green-300"
           data-test="summary-income-for-grow-link"
         >

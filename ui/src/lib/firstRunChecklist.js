@@ -118,7 +118,7 @@ export function computeFirstRunChecklist({
       id: 'log_receipt',
       label: 'Log first receipt',
       done: hasManualReceipt(costTransactions),
-      to: '/operations/money',
+      to: '/money',
       optional: true,
     },
   ]

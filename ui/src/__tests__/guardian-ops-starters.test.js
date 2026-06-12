@@ -52,7 +52,7 @@ describe('Phase 43 WS8 — operations Guardian starters', () => {
     expect(starters.length).toBeGreaterThanOrEqual(2)
     expect(starters.some((s) => s.message.includes('by category'))).toBe(true)
     expect(starters.some((s) => s.message.includes('no accounting jargon'))).toBe(true)
-    expect(starters[0].contextRef.path).toBe('/operations/money')
+    expect(starters[0].contextRef.path).toBe('/money')
   })
 
   it('supplies hub offers restock-first when low stock', () => {

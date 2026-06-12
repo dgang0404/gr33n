@@ -28,7 +28,7 @@ describe('Phase 53 WS3 — money closure', () => {
     }
     expect(isAutologgedTransaction(tx)).toBe(true)
     expect(autologPlainLabel(tx)).toBe('From a nutrient mix')
-    expect(autologContextLink(tx)?.path).toBe('/operations/feeding')
+    expect(autologContextLink(tx)?.path).toBe('/feed-water')
   })
 
   it('splits autolog vs manual recent rows', () => {

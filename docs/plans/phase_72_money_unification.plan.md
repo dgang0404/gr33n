@@ -10,19 +10,19 @@ overview: >
 todos:
   - id: ws1-summary-tab
     content: "WS1: This month tab = MoneyHub (spent/received/net, receipt capture, autologged rows with deep links)"
-    status: pending
+    status: completed
   - id: ws2-ledger-tab
     content: "WS2: Ledger tab = Costs (full transaction ledger, GL mapping, CSV/GL export, energy prices) behind progressive disclosure"
-    status: pending
+    status: completed
   - id: ws3-supplies-tab
     content: "WS3: Supplies & costs tab = SuppliesHub (on-hand batches, low-stock, restock, unit costs) + Inventory editor link; unit costs feed cost calc"
-    status: pending
+    status: completed
   - id: ws4-redirects-crosslinks
     content: "WS4: Redirect /operations/money,/costs,/operations/supplies,/inventory → /money?tab=; wire autolog deep-links to ledger/feed-water; update wiggle"
-    status: pending
+    status: completed
   - id: ws5-docs-tests
     content: "WS5: money-tabs Vitest, autolog deep-link test, phase-72-closure.test.js; operator-tour; OC-72"
-    status: pending
+    status: completed
 isProject: false
 ---
 
@@ -30,9 +30,9 @@ isProject: false
 
 ## Status
 
-**Planned.** Builds on the [workspace shell](phase_68_workspace_shell_spa_nav.plan.md) (Phase 68, which declared the `/money` workspace + tabs). UI-only — no schema, no API, no Pi. Reuses shipped money/cost/supplies components and endpoints.
+**Shipped** on `main`. Closure: [`phase-72-closure.md`](phase-72-closure.md) (**OC-72**).
 
-**Closure:** **OC-72** — tracked in this plan's DoD + [arc hub OC table](phase_68_73_spa_workspace_roadmap.plan.md#operational-closure-oc-rows). Do not add to the archived Phase 35 closure doc.
+**Closure:** **OC-72** — tracked in this plan's DoD + [arc hub OC table](phase_68_73_spa_workspace_roadmap.plan.md#operational-closure-oc-rows).
 
 ---
 
@@ -121,12 +121,12 @@ All three (Money/Costs/Supplies) ride the **same cost-transaction backend** — 
 
 ## Definition of done
 
-- [ ] `/money` workspace has This month / Ledger / Supplies & costs tabs
-- [ ] Orphan `/costs` and `/inventory` are reachable as tabs/links, not URL-only
-- [ ] Supplies unit-costs' relationship to cost totals is visible
-- [ ] `/operations/money`, `/costs`, `/operations/supplies`, `/inventory` redirect into the workspace
-- [ ] Autolog deep-links resolve; wiggle connects Money↔Supplies↔Feed & Water↔Plants
-- [ ] Vitest green; OC-72 closed
+- [x] `/money` workspace has This month / Ledger / Supplies & costs tabs
+- [x] Orphan `/costs` and `/inventory` are reachable as tabs/links, not URL-only
+- [x] Supplies unit-costs' relationship to cost totals is visible
+- [x] `/operations/money`, `/costs`, `/operations/supplies`, `/inventory` redirect into the workspace
+- [x] Autolog deep-links resolve; wiggle connects Money↔Supplies↔Feed & Water↔Plants
+- [x] Vitest green; OC-72 closed
 
 ---
 

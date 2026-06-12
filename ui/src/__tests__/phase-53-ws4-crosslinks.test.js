@@ -20,7 +20,7 @@ describe('Phase 53 WS4 — cross-links & checklist', () => {
     expect(items).toHaveLength(7)
     expect(items.find((i) => i.id === 'start_grow')?.optional).toBe(true)
     expect(items.find((i) => i.id === 'restock_input')?.to).toBe('/operations/supplies')
-    expect(items.find((i) => i.id === 'log_receipt')?.to).toBe('/operations/money')
+    expect(items.find((i) => i.id === 'log_receipt')?.to).toBe('/money')
     expect(items.find((i) => i.id === 'start_grow')?.to).toEqual({
       path: '/zones/2',
       query: { start_grow: '1' },
@@ -86,7 +86,7 @@ describe('Phase 53 WS4 — cross-links & checklist', () => {
     const guide = readFileSync(join(uiSrc, 'views/OperatorGuide.vue'), 'utf8')
     expect(guide).toContain('/operations/supplies')
     expect(guide).toContain('Harvest weigh-in')
-    expect(guide).toContain('/operations/money')
+    expect(guide).toContain('/money')
   })
 
   it('manual receipt detection excludes autolog rows', () => {

@@ -45,7 +45,7 @@ describe('Phase 43 WS4 — money hub helpers', () => {
     expect(row.label).toBe('OHN restock')
     expect(row.categoryLabel).toBe('fertilizers soil amendments')
     expect(row.hasReceipt).toBe(true)
-    expect(row.advancedLink).toEqual({ path: '/costs', query: { highlight: '9' } })
+    expect(row.advancedLink).toEqual({ path: '/money', query: { tab: 'ledger', highlight: '9' } })
   })
 
   it('sorts recent rows newest first', () => {

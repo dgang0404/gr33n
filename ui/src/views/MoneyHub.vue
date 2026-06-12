@@ -32,8 +32,8 @@
         No electricity price set — automatic power-cost logging stays off until you add a $/kWh rate.
       </p>
       <router-link
-        v-nav-hint="'/costs'"
-        to="/costs"
+        v-nav-hint="'/money'"
+        :to="{ path: '/money', query: { tab: 'ledger' } }"
         class="text-xs text-green-500 hover:text-green-400 shrink-0"
       >
         Set energy price →
@@ -52,7 +52,7 @@
         <span v-if="filterCycleLabel" class="text-emerald-400">({{ filterCycleLabel }})</span>
       </p>
       <router-link
-        to="/operations/money"
+        :to="{ path: '/money', query: { tab: 'summary' } }"
         class="text-xs text-zinc-400 hover:text-zinc-200"
       >
         Clear filter
@@ -134,7 +134,7 @@
           </div>
           <button
             type="submit"
-            v-nav-hint="'/operations/money'"
+            v-nav-hint="'/money'"
             :disabled="saving"
             class="px-4 py-2 bg-green-700 hover:bg-green-600 text-white text-sm rounded-lg disabled:opacity-50"
             data-test="money-save-receipt"
@@ -234,8 +234,8 @@
 
     <footer class="pt-2 border-t border-zinc-800">
       <router-link
-        v-nav-hint="'/operations/money'"
-        to="/costs"
+        v-nav-hint="'/money'"
+        :to="{ path: '/money', query: { tab: 'ledger' } }"
         class="text-xs text-zinc-400 hover:text-green-400"
         data-test="money-advanced-footer"
       >

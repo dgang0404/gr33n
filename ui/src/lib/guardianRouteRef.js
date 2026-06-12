@@ -14,6 +14,7 @@ const ROUTE_LABELS = {
   '/operations/supplies': 'Supplies',
   '/operations/feeding': 'Feeding (details)',
   '/operations/money': 'Money',
+  '/money': 'Money',
   '/comfort-targets': 'Targets & schedules',
   '/fertigation': 'Feeding (technical)',
   '/setpoints': 'Setpoints (raw)',

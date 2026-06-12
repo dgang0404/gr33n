@@ -29,7 +29,7 @@
         <li>
           <router-link v-nav-hint="'/plants'" class="text-gr33n-400 hover:underline" to="/zones?tab=plants">Plants</router-link>
           · <router-link v-nav-hint="'/operations/supplies'" class="text-gr33n-400 hover:underline" to="/money?tab=supplies">Supplies</router-link>
-          · <router-link v-nav-hint="'/operations/money'" class="text-gr33n-400 hover:underline" to="/money">Money</router-link>
+          · <router-link v-nav-hint="'/money'" class="text-gr33n-400 hover:underline" to="/money">Money</router-link>
           — start a grow, restock inputs, log receipts
         </li>
         <li><router-link v-nav-hint="'/fertigation'" class="text-gr33n-400 hover:underline" to="/fertigation">Fertigation</router-link> — advanced crop cycles &amp; mixing</li>
@@ -41,12 +41,12 @@
         <router-link v-nav-hint="'/plants'" class="text-gr33n-500 hover:underline" to="/zones?tab=plants">Plants → Start a grow</router-link>;
         <strong class="text-zinc-400">Harvest weigh-in</strong> on the zone strip → post-harvest compare;
         <router-link v-nav-hint="'/operations/supplies'" class="text-gr33n-500 hover:underline" to="/money?tab=supplies">Supplies → + Add qty</router-link> to restock;
-        <router-link v-nav-hint="'/operations/money'" class="text-gr33n-500 hover:underline" to="/money?tab=ledger">Money → Save receipt</router-link> (tag to room/grow).
+        <router-link v-nav-hint="'/money'" class="text-gr33n-500 hover:underline" to="/money?tab=ledger">Money → Save receipt</router-link> (tag to room/grow).
       </p>
       <p class="text-xs text-zinc-600 pt-2">
         Also: <router-link v-nav-hint="'/alerts'" class="text-gr33n-500 hover:underline" to="/alerts">Alerts</router-link>,
         <router-link v-nav-hint="'/chat'" class="text-gr33n-500 hover:underline" to="/chat?tab=pending">Guardian pending requests</router-link>,
-        <router-link v-nav-hint="'/costs'" class="text-gr33n-500 hover:underline" to="/costs">Costs</router-link>,
+        <router-link v-nav-hint="'/money'" class="text-gr33n-500 hover:underline" to="/money?tab=ledger">Ledger</router-link>,
         <router-link v-nav-hint="'/farm-knowledge'" class="text-gr33n-500 hover:underline" to="/farm-knowledge">Knowledge</router-link> (RAG).
       </p>
     </section>

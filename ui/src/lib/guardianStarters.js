@@ -660,7 +660,7 @@ export function buildFeedingAdminStarters({
  * Phase 43 WS8 + Phase 53 WS5 — Money hub Guardian starters.
  */
 export function buildMoneyHubStarters() {
-  const routeRef = operationsRouteRef('/operations/money', 'Money', 'money_hub')
+  const routeRef = operationsRouteRef('/money', 'Money', 'money_hub')
   return dedupeStarters([
     {
       id: 'month-spend-by-category',

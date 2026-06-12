@@ -4,7 +4,10 @@
       <div>
         <h1 class="text-xl font-semibold text-white">Supplies</h1>
         <p class="text-zinc-500 text-sm mt-1 max-w-2xl">
-          What you have on hand, what is running low, and where to log a mix. Farm-wide stock — not tied to one zone.
+          What you have on hand, what is running low, and where to log a mix. Unit costs here feed into
+          <router-link v-nav-hint="'/money'" :to="{ path: '/money', query: { tab: 'summary' } }" class="text-green-600 hover:text-green-400">This month</router-link>
+          and the
+          <router-link v-nav-hint="'/money'" :to="{ path: '/money', query: { tab: 'ledger' } }" class="text-green-600 hover:text-green-400">Ledger</router-link>.
         </p>
       </div>
       <div class="flex flex-wrap gap-2 shrink-0">
@@ -32,7 +35,7 @@
       :zone-name="zoneName(zoneContextId)"
       page-label="Supplies"
       back-to-zone-tab="water"
-      :clear-route="{ path: '/operations/supplies' }"
+      :clear-route="{ path: '/money', query: { tab: 'supplies' } }"
     />
 
     <GuardianStarterChips :starters="suppliesStarters" />
