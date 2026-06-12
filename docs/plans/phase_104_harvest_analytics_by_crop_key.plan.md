@@ -26,7 +26,9 @@ isProject: false
 
 ## Status
 
-**Planned.** Analytics still keyed on cycle **name** / `strain_or_variety` — useless once catalog identity ships.
+**Shipped** on `main`. Closure: [`phase-104-closure.md`](phase-104-closure.md) (**OC-104**).
+
+Analytics keyed on catalog **`crop_key`** via `plant_id` — not cycle name or legacy strain fields.
 
 **Depends on:** [Phase 86](phase_86_grow_ops_catalog_chain.plan.md), [Phase 93](phase_93_plant_identity_vocabulary_cleanup.plan.md).
 
@@ -56,7 +58,7 @@ isProject: false
 
 ## Acceptance
 
-- [ ] Post-harvest compare route pre-filters same crop_key cycles
-- [ ] Guardian “compare last two tomato runs” resolves via plant → crop_key
+- [x] Post-harvest compare route pre-filters same crop_key cycles
+- [x] Guardian “compare last two tomato runs” resolves via plant → crop_key
 
 **Prompt loop:** **`phase 104`**.
