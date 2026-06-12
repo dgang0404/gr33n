@@ -6,22 +6,22 @@ overview: >
 todos:
   - id: ws1-display-name
     content: "WS1: Remove display_name from plant create UI — read-only catalog label in list"
-    status: pending
+    status: completed
   - id: ws2-batch-label
     content: "WS2: Migration crop_cycles.strain_or_variety → batch_label (+ OpenAPI alias period)"
-    status: pending
+    status: completed
   - id: ws3-routes
     content: "WS3: tab=strains → tab=plants; router redirects; growHub compare routes"
-    status: pending
+    status: completed
   - id: ws4-api-copy
     content: "WS4: OpenAPI descriptions — batch_label semantics; deprecate strain_or_variety"
-    status: pending
+    status: completed
   - id: ws5-guardian
     content: "WS5: Guardian tools/read tools use batch_label; never treat as crop_key"
-    status: pending
+    status: completed
   - id: ws6-smokes
     content: "WS6: Vitest closure + smoke — no strain in operator JSON responses"
-    status: pending
+    status: completed
 isProject: false
 ---
 
@@ -29,11 +29,11 @@ isProject: false
 
 ## Status
 
-**Planned.** Closes **blind spots #1 (label as identity)** and **#6 (strain_or_variety / tab=strains)**.
+**Shipped.** Closes **blind spots #1** and **#6**.
 
 **Depends on:** [Phase 85](phase_85_catalog_bound_plants.plan.md) (`plants.crop_key` shipped).
 
-**Closure:** **OC-93**
+**Closure:** [`phase-93-closure.md`](phase-93-closure.md) · **OC-93**
 
 ---
 
