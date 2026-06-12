@@ -228,8 +228,10 @@ func (h *Handler) PostV1(w http.ResponseWriter, r *http.Request) {
 		if snapshotBlock != "" {
 			system += snapshotBlock + "\n\n"
 		}
+		var readBlock string
 		if h.q != nil {
-			if readBlock := farmguardian.EnrichPromptBlock(r.Context(), h.q, farmID, question, liveSnap, pb.ContextRef); readBlock != "" {
+			readBlock = farmguardian.EnrichPromptBlock(r.Context(), h.q, farmID, question, liveSnap, pb.ContextRef)
+			if readBlock != "" {
 				system += readBlock + "\n\n"
 			}
 		}
@@ -259,6 +261,10 @@ func (h *Handler) PostV1(w http.ResponseWriter, r *http.Request) {
 				}
 				// Phase 37 WS1 — offline field mode: snapshot + procedures still work without RAG.
 			} else if len(chunks) > 0 {
+				if farmguardian.ReadBlockHasCropTargets(readBlock) {
+					chunks = synthesis.StripNutrientNumbersFromChunks(chunks)
+					system += synthesis.StructuredTruthRAGBlock() + "\n\n"
+				}
 				system += synthesis.GuardianRAGInstructions(chunks)
 				user = synthesis.BuildUserMessage(question, chunks)
 			} else {

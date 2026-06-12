@@ -26,6 +26,9 @@ const CropTargetsGroundingRule = `Crop targets (Phase 64): NEVER state an EC, pH
 
 Plant writes (Phase 101): create_plant and grow setup pack plant sections require crop_key from the knowledge base (e.g. tomato, basil, cannabis) — never free-text display_name as crop identity.`
 
+// StructuredTruthGroundingRule — Phase 97: structured profiles beat stale RAG narrative numbers.
+const StructuredTruthGroundingRule = `Structured truth (Phase 97): When lookup_crop_targets output appears in this prompt, those EC/pH/VPD/DLI/photoperiod values are authoritative — including farm Settings overrides and per-variety genetics profiles (immediate; no RAG re-ingest). Field-guide chunks supplement qualitative context only; if narrative EC in sources conflicts with read-tool output, cite read-tool mS/cm and ignore stale guide numbers.`
+
 const (
 	maxMultiCropProfiles    = 6
 	maxMultiUnsupportedCrops = 2
@@ -588,4 +591,9 @@ func cropKeysMentionedInQuestion(question string) []string {
 	}
 	sort.Strings(out)
 	return out
+}
+
+// ReadBlockHasCropTargets reports whether EnrichPromptBlock included lookup_crop_targets (Phase 97).
+func ReadBlockHasCropTargets(readBlock string) bool {
+	return strings.Contains(readBlock, "lookup_crop_targets")
 }

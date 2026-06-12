@@ -18,6 +18,25 @@ func TestDryRunFieldGuides_FileManifest(t *testing.T) {
 	}
 }
 
+func TestFieldGuideMetadata(t *testing.T) {
+	meta := fieldGuideMetadata("crop-cannabis-nutrition.md", "general", "safe", "cannabis", 4)
+	if !strings.Contains(string(meta), `"crop_key":"cannabis"`) {
+		t.Fatalf("meta: %s", meta)
+	}
+	if !strings.Contains(string(meta), `"catalog_version":4`) {
+		t.Fatalf("meta: %s", meta)
+	}
+}
+
+func TestCropKeyFromFieldGuideSlug(t *testing.T) {
+	if got := cropKeyFromFieldGuideSlug("crop-tomato-nutrition.md"); got != "tomato" {
+		t.Fatalf("got %q", got)
+	}
+	if got := cropKeyFromFieldGuideSlug("pi-wiring-basics.md"); got != "" {
+		t.Fatalf("got %q", got)
+	}
+}
+
 func TestFieldGuideDocument(t *testing.T) {
 	doc := FieldGuideDocument("pi-wiring-basics.md", "GPIO 17", 0, 1)
 	if !strings.Contains(doc, "field_guide") || !strings.Contains(doc, "pi-wiring-basics") {

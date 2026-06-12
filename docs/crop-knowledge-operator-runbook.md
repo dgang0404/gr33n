@@ -60,7 +60,35 @@ After at least one successful load while online, the UI caches the crop picker i
 
 ---
 
-## Guardian checks (manual)
+## Structured truth vs RAG (Phase 97)
+
+Guardian uses **two layers** for crop knowledge:
+
+| Source | Updates when | Use for |
+|--------|--------------|---------|
+| **Structured** (`crop_profiles`, farm override, genetics) | Immediately on Settings PUT / effective API | EC, pH, VPD, DLI, photoperiod (**mS/cm**) |
+| **RAG** (field guides) | After `make rag-ingest-field-guides` | Qualitative narrative — deficiency signs, timing, mistakes |
+
+**Rule:** When `lookup_crop_targets` runs on a chat turn, those numbers **win** over field-guide narrative EC. Farm EC overrides do **not** require RAG re-ingest.
+
+### When to re-ingest field guides
+
+| Event | Structured profile | Re-ingest RAG? |
+|-------|-------------------|----------------|
+| Farm EC override (Settings) | ✅ immediate | ❌ not required for numbers |
+| Genetics EC profile (Phase 94) | ✅ immediate | ❌ not required for numbers |
+| Platform catalog seed bump + migrate | ✅ after migrate | ✅ if guide **body** changed |
+| YAML EC edit + new migration | ✅ after migrate | ✅ re-ingest affected farms |
+| Operator chat (feed / EC question) | Read tool first | Narrative supplement only |
+
+```bash
+make rag-ingest-field-guides          # per farm; needs EMBEDDING_API_KEY
+make rag-ingest-field-guides-dry-run  # chunk estimate only
+```
+
+RAG chunks store `crop_key` + `catalog_version` metadata (Phase 97) for stale detection after catalog bumps.
+
+---
 
 With an **active cannabis grow** in early flower:
 
@@ -75,7 +103,7 @@ With an **active cannabis grow** in early flower:
 make guardian-bootstrap-farm FARM_ID=1
 ```
 
-Field guides supplement RAG; structured numbers still come from `lookup_crop_targets`. See [Phase 97 — RAG vs structured truth](plans/phase_97_rag_structured_truth_governance.plan.md).
+Field guides supplement RAG; structured numbers still come from `lookup_crop_targets`. See [`phase-97-closure.md`](plans/phase-97-closure.md).
 
 **Enterprise promotion:** [Phase 98](plans/phase_98_enterprise_catalog_promotion.plan.md) (when applicable).
 
@@ -107,6 +135,7 @@ Field guides supplement RAG; structured numbers still come from `lookup_crop_tar
 | `TestPhase64_*` / `TestPhase82_*` | Profile library + picker API |
 | `TestPhase94_*` | Genetics EC profile beats farm `crop_key` override on effective API |
 | `TestPhase95_*` | Picker `version` matches YAML; catalog crop in commons + picker |
+| `TestPhase97_*` | Farm override EC in `lookup_crop_targets`; stale RAG numbers stripped |
 
 ---
 

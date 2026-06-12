@@ -173,7 +173,7 @@ func (w *Worker) IngestFieldGuides(ctx context.Context, farmID int64, repoRoot, 
 		body, meta := splitYAMLFrontmatter(string(data))
 		chunks := chunkMarkdown(strings.TrimSpace(body))
 		domain, safety := fieldGuideMetaDefaults(f.RelPath, meta)
-		n, err := w.upsertFieldGuideFile(ctx, farmID, f.RelPath, f.SourceID, chunks, domain, safety)
+		n, err := w.upsertFieldGuideFile(ctx, farmID, f.RelPath, f.SourceID, chunks, domain, safety, cropKeyFromFieldGuideSlug(f.RelPath), 0)
 		if err != nil {
 			return total, fmt.Errorf("%s: %w", f.RelPath, err)
 		}
@@ -182,7 +182,7 @@ func (w *Worker) IngestFieldGuides(ctx context.Context, farmID int64, repoRoot, 
 	return total, nil
 }
 
-func (w *Worker) upsertFieldGuideFile(ctx context.Context, farmID int64, relPath string, sourceID int64, chunks []string, domain, safety string) (int, error) {
+func (w *Worker) upsertFieldGuideFile(ctx context.Context, farmID int64, relPath string, sourceID int64, chunks []string, domain, safety, cropKey string, catalogVersion int) (int, error) {
 	if len(chunks) == 0 {
 		return 0, nil
 	}
@@ -204,7 +204,7 @@ func (w *Worker) upsertFieldGuideFile(ctx context.Context, farmID int64, relPath
 	if len(vecs) != len(texts) {
 		return 0, fmt.Errorf("embed count %d != chunk count %d", len(vecs), len(texts))
 	}
-	meta := fieldGuideMetadata(relPath, domain, safety)
+	meta := fieldGuideMetadata(relPath, domain, safety, cropKey, catalogVersion)
 	modelID := w.Embedder.ModelID()
 	n := 0
 	for i, text := range texts {
@@ -251,18 +251,36 @@ func FieldGuideDocument(relPath, chunk string, chunkIndex, chunkTotal int) strin
 	return b.String()
 }
 
-func fieldGuideMetadata(relPath, domain, safety string) []byte {
-	m := map[string]string{
+func fieldGuideMetadata(relPath, domain, safety, cropKey string, catalogVersion int) []byte {
+	m := map[string]any{
 		"module":      metadataModuleFieldGuide,
 		"doc_path":    "field-guides/" + relPath,
 		"domain":      domain,
 		"safety_tier": safety,
+	}
+	if ck := strings.TrimSpace(cropKey); ck != "" {
+		m["crop_key"] = ck
+	}
+	if catalogVersion > 0 {
+		m["catalog_version"] = catalogVersion
 	}
 	b, err := json.Marshal(m)
 	if err != nil {
 		return emptyJSON()
 	}
 	return b
+}
+
+func cropKeyFromFieldGuideSlug(slugOrPath string) string {
+	base := strings.TrimSuffix(strings.TrimSpace(slugOrPath), ".md")
+	if !strings.HasPrefix(base, "crop-") {
+		return ""
+	}
+	rest := strings.TrimPrefix(base, "crop-")
+	if strings.HasSuffix(rest, "-nutrition") {
+		return strings.TrimSuffix(rest, "-nutrition")
+	}
+	return ""
 }
 
 func fieldGuideMetaDefaults(relPath string, front map[string]string) (domain, safety string) {

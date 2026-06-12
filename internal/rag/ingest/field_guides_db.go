@@ -50,7 +50,7 @@ func (w *Worker) IngestFieldGuidesFromDB(ctx context.Context, farmID int64) (int
 			safety = "safe"
 		}
 		relPath := g.Slug + ".md"
-		n, err := w.upsertFieldGuideFile(ctx, farmID, relPath, g.ID, chunks, domain, safety)
+		n, err := w.upsertFieldGuideFile(ctx, farmID, relPath, g.ID, chunks, domain, safety, cropKeyFromFieldGuideSlug(g.Slug), int(g.CatalogVersion))
 		if err != nil {
 			return total, fmt.Errorf("%s: %w", g.Slug, err)
 		}

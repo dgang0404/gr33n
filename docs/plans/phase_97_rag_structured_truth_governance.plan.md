@@ -6,19 +6,19 @@ overview: >
 todos:
   - id: ws1-persona
     content: "WS1: Persona block — structured lookup_crop_targets wins over RAG on numbers"
-    status: pending
+    status: completed
   - id: ws2-triggers
     content: "WS2: Re-ingest runbook triggers table — override vs catalog bump vs guide edit"
-    status: pending
+    status: completed
   - id: ws3-chunk-meta
     content: "WS3: RAG chunk metadata catalog_version + crop_key for stale detection"
-    status: pending
+    status: completed
   - id: ws4-guardian
     content: "WS4: Chat handler tag — if RAG chunk EC conflicts with read tool, drop chunk numbers"
-    status: pending
+    status: completed
   - id: ws5-smokes
     content: "WS5: Override cannabis EC → Guardian uses new mS/cm even if RAG chunk old"
-    status: pending
+    status: completed
 isProject: false
 ---
 
@@ -26,7 +26,7 @@ isProject: false
 
 ## Status
 
-**Planned.** Closes **blind spot #8** (field guides vs `crop_profiles` contradiction).
+**Shipped (OC-97).** Closure: [`phase-97-closure.md`](phase-97-closure.md).
 
 **Depends on:** [Phase 87](phase_87_crop_knowledge_operator_closure.plan.md).
 
@@ -68,8 +68,8 @@ Hard rule in `readtools_crop.go` / chat composer:
 
 ## Acceptance
 
-- [ ] Persona + platform_context mirror structured-wins rule
-- [ ] Smoke: override EC → chat answer matches strip, not stale chunk
-- [ ] Runbook “when to re-ingest” table
+- [x] Persona + platform_context mirror structured-wins rule
+- [x] Smoke: override EC → chat answer matches strip, not stale chunk
+- [x] Runbook “when to re-ingest” table
 
 **Prompt loop:** **`phase 97`**.
