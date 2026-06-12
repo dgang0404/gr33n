@@ -96,7 +96,7 @@ Hub: [`phase_68_73_spa_workspace_roadmap.plan.md`](plans/phase_68_73_spa_workspa
 | **101** ✅ | Guardian write tools — `crop_key` on create_plant | [`phase_101_guardian_write_tools_crop_key.plan.md`](plans/phase_101_guardian_write_tools_crop_key.plan.md) · [`phase-101-closure.md`](plans/phase-101-closure.md) |
 | **102** ✅ | Fertigation + recipe ↔ crop_key / profile EC linkage | [`phase_102_fertigation_program_catalog_metadata.plan.md`](plans/phase_102_fertigation_program_catalog_metadata.plan.md) · [`phase-102-closure.md`](plans/phase-102-closure.md) |
 | **103** ✅ | Legacy plant dedupe & backfill | [`phase_103_legacy_plant_dedupe_backfill.plan.md`](plans/phase_103_legacy_plant_dedupe_backfill.plan.md) · [`phase-103-closure.md`](plans/phase-103-closure.md) |
-| **104** | Harvest analytics by crop_key | [`phase_104_harvest_analytics_by_crop_key.plan.md`](plans/phase_104_harvest_analytics_by_crop_key.plan.md) |
+| **104** ✅ | Harvest analytics by crop_key | [`phase_104_harvest_analytics_by_crop_key.plan.md`](plans/phase_104_harvest_analytics_by_crop_key.plan.md) · [`phase-104-closure.md`](plans/phase-104-closure.md) |
 | **105** ✅ | Catalog override audit + OC-84 | [`phase_105_catalog_audit_oc84_closure.plan.md`](plans/phase_105_catalog_audit_oc84_closure.plan.md) · [`phase-84-closure.md`](plans/phase-84-closure.md) |
 | **106** ✅ | Deficiency / pest symptom catalog + `lookup_crop_symptoms` | [`phase_106_deficiency_pest_symptom_catalog.plan.md`](plans/phase_106_deficiency_pest_symptom_catalog.plan.md) |
 | **107** ✅ | Crop catalog photos — picker thumbnails + commons `image_url` | [`phase_107_crop_catalog_photos.plan.md`](plans/phase_107_crop_catalog_photos.plan.md) |

@@ -6,19 +6,19 @@ overview: >
 todos:
   - id: ws1-api
     content: "WS1: Compare/summary responses include crop_key from plant_id join"
-    status: pending
+    status: completed
   - id: ws2-aggregate
     content: "WS2: GET /farms/{id}/crop-analytics — yield/cost/EC by crop_key"
-    status: pending
+    status: completed
   - id: ws3-ui
     content: "WS3: CropCycleCompare + Money grows section — group by catalog crop"
-    status: pending
+    status: completed
   - id: ws4-guardian
     content: "WS4: Read tool summarize_farm_crops_by_key for compare questions"
-    status: pending
+    status: completed
   - id: ws5-smokes
     content: "WS5: Compare two cannabis cycles — same crop_key bucket"
-    status: pending
+    status: completed
 isProject: false
 ---
 
