@@ -980,6 +980,23 @@
         <span v-if="pushSaving" class="text-xs text-zinc-500">Saving…</span>
         <span v-if="pushError" class="text-xs text-red-400">{{ pushError }}</span>
       </div>
+      <div class="flex items-center gap-3 mb-4">
+        <label class="flex items-center gap-2 text-zinc-300 text-sm">
+          <input v-model="catalogUpdates" type="checkbox" class="rounded bg-zinc-800 border-zinc-700" @change="onCatalogUpdatesToggle" />
+          Knowledge base update notices
+        </label>
+        <span v-if="catalogPrefsSaving" class="text-xs text-zinc-500">Saving…</span>
+      </div>
+      <p class="text-zinc-600 text-xs mb-4">
+        When the platform crop catalog version bumps after migrate, farm admins receive an in-app alert (and push when enabled).
+      </p>
+      <div
+        v-if="catalogUpdateBanner"
+        class="mb-4 rounded-lg border border-green-800/60 bg-green-950/40 px-3 py-2 text-xs text-green-300"
+      >
+        {{ catalogUpdateBanner.subject }}
+        <span class="block mt-1 text-green-400/80">{{ catalogUpdateBanner.message }}</span>
+      </div>
       <div v-if="pushTokens.length" class="space-y-2">
         <p class="text-zinc-400 text-xs uppercase tracking-wide mb-1">Registered devices</p>
         <div v-for="tok in pushTokens" :key="tok.id"
@@ -1898,19 +1915,56 @@ const tokenExpiry = computed(() => {
 
 // ── Push notifications ───────────────────────────────────────────────────────
 const pushEnabled = ref(false)
+const catalogUpdates = ref(true)
 const pushSaving = ref(false)
+const catalogPrefsSaving = ref(false)
 const pushError = ref('')
 const pushTokens = ref([])
+const catalogUpdateBanner = ref(null)
 
 async function loadPushState() {
   try {
     const prefs = await api.get('/profile/notification-preferences')
     pushEnabled.value = prefs.data?.push_enabled ?? false
+    catalogUpdates.value = prefs.data?.catalog_updates ?? true
   } catch { /* no prefs yet */ }
   try {
     const r = await api.get('/profile/push-tokens')
     pushTokens.value = Array.isArray(r.data) ? r.data : []
   } catch { /* ignore */ }
+  await loadCatalogUpdateBanner()
+}
+
+async function loadCatalogUpdateBanner() {
+  catalogUpdateBanner.value = null
+  const fid = farmContext.farmId
+  if (!fid) return
+  try {
+    const r = await api.get(`/farms/${fid}/alerts?limit=20`)
+    const rows = Array.isArray(r.data) ? r.data : []
+    const hit = rows.find((a) =>
+      !a.is_read &&
+      a.triggering_event_source_type === 'catalog_version_bump'
+    )
+    if (hit) {
+      catalogUpdateBanner.value = {
+        subject: hit.subject_rendered || 'Knowledge base updated',
+        message: hit.message_text_rendered || '',
+      }
+    }
+  } catch { /* ignore */ }
+}
+
+async function onCatalogUpdatesToggle() {
+  catalogPrefsSaving.value = true
+  try {
+    await api.patch('/profile/notification-preferences', { catalog_updates: catalogUpdates.value })
+  } catch (e) {
+    catalogUpdates.value = !catalogUpdates.value
+    pushError.value = e.response?.data?.error || e.message || 'Failed to save'
+  } finally {
+    catalogPrefsSaving.value = false
+  }
 }
 
 async function onPushToggle() {

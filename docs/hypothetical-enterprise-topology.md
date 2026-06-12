@@ -5,7 +5,7 @@
 
 This document maps **existing** gr33n nouns (organization, farm, zone, fertigation program, commons catalog, Pi edge) onto a large deployment **without** rewriting the platform. Treat it as a thought experiment and integration guide.
 
-**Companion docs:** [`raspberry-pi-and-deployment-topology.md`](raspberry-pi-and-deployment-topology.md), [`pi-integration-guide.md`](pi-integration-guide.md), [`mqtt-edge-operator-playbook.md`](mqtt-edge-operator-playbook.md), [`commons-catalog-operator-playbook.md`](commons-catalog-operator-playbook.md), [`insert-commons-pipeline-runbook.md`](insert-commons-pipeline-runbook.md), [`offline-or-intranet-deployment.md`](offline-or-intranet-deployment.md), [`phase-14-operator-documentation.md`](phase-14-operator-documentation.md#phase-31-field-validation-edge) (Phase 31 operator index), [`scripts/enterprise/README.md`](../scripts/enterprise/README.md).
+**Companion docs:** [`raspberry-pi-and-deployment-topology.md`](raspberry-pi-and-deployment-topology.md), [`pi-integration-guide.md`](pi-integration-guide.md), [`mqtt-edge-operator-playbook.md`](mqtt-edge-operator-playbook.md), [`commons-catalog-operator-playbook.md`](commons-catalog-operator-playbook.md), [`enterprise-catalog-version-notifications.md`](enterprise-catalog-version-notifications.md), [`insert-commons-pipeline-runbook.md`](insert-commons-pipeline-runbook.md), [`offline-or-intranet-deployment.md`](offline-or-intranet-deployment.md), [`phase-14-operator-documentation.md`](phase-14-operator-documentation.md#phase-31-field-validation-edge) (Phase 31 operator index), [`scripts/enterprise/README.md`](../scripts/enterprise/README.md).
 
 ---
 

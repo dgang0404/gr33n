@@ -18,6 +18,7 @@ import (
 	"github.com/joho/godotenv"
 	"gr33n-api/internal/ai"
 	automationworker "gr33n-api/internal/automation"
+	"gr33n-api/internal/catalognotify"
 	"gr33n-api/internal/croplibrary"
 	db "gr33n-api/internal/db"
 	"gr33n-api/internal/farmguardian"
@@ -120,6 +121,13 @@ func main() {
 		}
 	}
 	pushDispatch := pushnotify.NewDispatcher(pool)
+	go func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer cancel()
+		if _, err := catalognotify.SyncOnStartup(ctx, pool, pushDispatch); err != nil {
+			log.Printf("catalognotify startup sync: %v", err)
+		}
+	}()
 	workerOpts = append(workerOpts, automationworker.WithPushNotifier(pushDispatch))
 	worker := automationworker.NewWorker(pool, simulationMode, workerOpts...)
 	go worker.Start(context.Background())

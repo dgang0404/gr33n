@@ -1480,6 +1480,13 @@ type Gr33ncoreFarmActiveModule struct {
 	ActivatedAt      time.Time       `db:"activated_at" json:"activated_at"`
 }
 
+type Gr33ncoreFarmCatalogVersionSeen struct {
+	FarmID             int64              `db:"farm_id" json:"farm_id"`
+	CatalogVersionSeen int32              `db:"catalog_version_seen" json:"catalog_version_seen"`
+	NotifiedAt         pgtype.Timestamptz `db:"notified_at" json:"notified_at"`
+	UpdatedAt          time.Time          `db:"updated_at" json:"updated_at"`
+}
+
 type Gr33ncoreFarmCommonsCatalogImport struct {
 	ID             int64     `db:"id" json:"id"`
 	FarmID         int64     `db:"farm_id" json:"farm_id"`
@@ -1645,6 +1652,12 @@ type Gr33ncoreOrganizationMembership struct {
 	UserID         uuid.UUID `db:"user_id" json:"user_id"`
 	RoleInOrg      string    `db:"role_in_org" json:"role_in_org"`
 	JoinedAt       time.Time `db:"joined_at" json:"joined_at"`
+}
+
+type Gr33ncorePlatformCatalogState struct {
+	ID             int16     `db:"id" json:"id"`
+	CatalogVersion int32     `db:"catalog_version" json:"catalog_version"`
+	UpdatedAt      time.Time `db:"updated_at" json:"updated_at"`
 }
 
 type Gr33ncoreProfile struct {

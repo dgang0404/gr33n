@@ -394,6 +394,21 @@ CREATE TRIGGER trg_commons_catalog_entries_updated_at
     BEFORE UPDATE ON gr33ncore.commons_catalog_entries
     FOR EACH ROW EXECUTE FUNCTION gr33ncore.set_updated_at();
 
+-- Phase 109 — platform catalog version bump tracking
+CREATE TABLE IF NOT EXISTS gr33ncore.platform_catalog_state (
+    id               SMALLINT    PRIMARY KEY CHECK (id = 1),
+    catalog_version  INTEGER     NOT NULL DEFAULT 1,
+    updated_at       TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE TABLE IF NOT EXISTS gr33ncore.farm_catalog_version_seen (
+    farm_id              BIGINT      PRIMARY KEY REFERENCES gr33ncore.farms(id) ON DELETE CASCADE,
+    catalog_version_seen INTEGER     NOT NULL DEFAULT 0,
+    notified_at          TIMESTAMPTZ,
+    updated_at           TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_farm_catalog_version_seen_version
+    ON gr33ncore.farm_catalog_version_seen (catalog_version_seen);
+
 -- Farm memberships
 CREATE TABLE IF NOT EXISTS gr33ncore.farm_memberships (
     farm_id      BIGINT NOT NULL REFERENCES gr33ncore.farms(id)    ON DELETE CASCADE,

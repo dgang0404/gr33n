@@ -92,12 +92,45 @@ func (d *Dispatcher) DispatchFarmAlert(ctx context.Context, alert db.Gr33ncoreAl
 			continue
 		}
 		for _, t := range tokens {
-			d.sendOne(ctx, alert, t.FcmToken)
+			d.sendOne(ctx, alert, t.FcmToken, "farm_alert")
 		}
 	}
 }
 
-func (d *Dispatcher) sendOne(ctx context.Context, alert db.Gr33ncoreAlertsNotification, token string) {
+// DispatchCatalogUpdate sends FCM for catalog version bump alerts when prefs allow.
+func (d *Dispatcher) DispatchCatalogUpdate(ctx context.Context, alert db.Gr33ncoreAlertsNotification) {
+	if d.client == nil {
+		return
+	}
+	if alert.RecipientUserID.Valid {
+		p, err := d.q.GetProfileByUserID(ctx, alert.RecipientUserID.Bytes)
+		if err != nil {
+			return
+		}
+		np := notifyprefs.FromPreferencesJSON(p.Preferences)
+		if !np.PushEnabled || !np.CatalogUpdates {
+			return
+		}
+	}
+	d.sendCatalogOne(ctx, alert)
+}
+
+func (d *Dispatcher) sendCatalogOne(ctx context.Context, alert db.Gr33ncoreAlertsNotification) {
+	if alert.RecipientUserID.Valid {
+		tokens, err := d.q.ListPushTokensByUserID(ctx, alert.RecipientUserID.Bytes)
+		if err != nil || len(tokens) == 0 {
+			return
+		}
+		for _, t := range tokens {
+			d.sendOne(ctx, alert, t.FcmToken, "catalog_update")
+		}
+	}
+}
+
+func (d *Dispatcher) sendOne(ctx context.Context, alert db.Gr33ncoreAlertsNotification, token string, kind string) {
+	if kind == "" {
+		kind = "farm_alert"
+	}
 	title := "Farm alert"
 	if alert.SubjectRendered != nil && *alert.SubjectRendered != "" {
 		title = *alert.SubjectRendered
@@ -122,7 +155,7 @@ func (d *Dispatcher) sendOne(ctx context.Context, alert db.Gr33ncoreAlertsNotifi
 		Data: map[string]string{
 			"farm_id":  strconv.FormatInt(alert.FarmID, 10),
 			"alert_id": strconv.FormatInt(alert.ID, 10),
-			"kind":     "farm_alert",
+			"kind":     kind,
 		},
 	}
 	_, err := d.client.Send(ctx, msg)

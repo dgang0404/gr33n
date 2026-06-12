@@ -118,14 +118,15 @@ func (h *Handler) PatchNotificationPreferences(w http.ResponseWriter, r *http.Re
 		return
 	}
 	var body struct {
-		PushEnabled *bool   `json:"push_enabled"`
-		MinPriority *string `json:"min_priority"`
+		PushEnabled    *bool   `json:"push_enabled"`
+		MinPriority    *string `json:"min_priority"`
+		CatalogUpdates *bool   `json:"catalog_updates"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid body")
 		return
 	}
-	if body.PushEnabled == nil && body.MinPriority == nil {
+	if body.PushEnabled == nil && body.MinPriority == nil && body.CatalogUpdates == nil {
 		httputil.WriteError(w, http.StatusBadRequest, "no fields to patch")
 		return
 	}
@@ -150,6 +151,9 @@ func (h *Handler) PatchNotificationPreferences(w http.ResponseWriter, r *http.Re
 			return
 		}
 		cur.MinPriority = s
+	}
+	if body.CatalogUpdates != nil {
+		cur.CatalogUpdates = *body.CatalogUpdates
 	}
 	mergedPrefs, err := notifyprefs.SetNotify(existing.Preferences, cur)
 	if err != nil {

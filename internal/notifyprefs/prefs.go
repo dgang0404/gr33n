@@ -9,12 +9,13 @@ import (
 
 // Notify is stored under profiles.preferences JSON as key "notify".
 type Notify struct {
-	PushEnabled bool   `json:"push_enabled"`
-	MinPriority string `json:"min_priority"`
+	PushEnabled     bool   `json:"push_enabled"`
+	MinPriority     string `json:"min_priority"`
+	CatalogUpdates  bool   `json:"catalog_updates"`
 }
 
 func Defaults() Notify {
-	return Notify{PushEnabled: false, MinPriority: "medium"}
+	return Notify{PushEnabled: false, MinPriority: "medium", CatalogUpdates: true}
 }
 
 func FromPreferencesJSON(raw []byte) Notify {
@@ -37,6 +38,12 @@ func FromPreferencesJSON(raw []byte) Notify {
 	n.MinPriority = normalizePriority(n.MinPriority)
 	if n.MinPriority == "" {
 		n.MinPriority = out.MinPriority
+	}
+	var notifyKeys map[string]json.RawMessage
+	if err := json.Unmarshal(nraw, &notifyKeys); err == nil {
+		if _, ok := notifyKeys["catalog_updates"]; !ok {
+			n.CatalogUpdates = true
+		}
 	}
 	return n
 }

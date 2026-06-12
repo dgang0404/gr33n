@@ -226,6 +226,7 @@ type Querier interface {
 	GetBaseUnitForType(ctx context.Context, unitType string) (Gr33ncoreUnit, error)
 	GetBuiltinCropProfileByKey(ctx context.Context, cropKey string) (Gr33ncropsCropProfile, error)
 	GetBuiltinCropProfileIDByCropKey(ctx context.Context, cropKey string) (int64, error)
+	GetCatalogVersionBumpAlertForFarm(ctx context.Context, arg GetCatalogVersionBumpAlertForFarmParams) (int64, error)
 	GetConversationSessionMeta(ctx context.Context, arg GetConversationSessionMetaParams) (json.RawMessage, error)
 	GetCostCategoryTotalsByFarm(ctx context.Context, farmID int64) ([]GetCostCategoryTotalsByFarmRow, error)
 	GetCostCategoryTotalsByFarmForYear(ctx context.Context, arg GetCostCategoryTotalsByFarmForYearParams) ([]GetCostCategoryTotalsByFarmForYearRow, error)
@@ -252,6 +253,7 @@ type Querier interface {
 	GetEcTargetByID(ctx context.Context, id int64) (Gr33nfertigationEcTarget, error)
 	GetExecutableActionByID(ctx context.Context, id int64) (Gr33ncoreExecutableAction, error)
 	GetFarmByID(ctx context.Context, id int64) (Gr33ncoreFarm, error)
+	GetFarmCatalogVersionSeen(ctx context.Context, farmID int64) (Gr33ncoreFarmCatalogVersionSeen, error)
 	GetFarmEnergyPriceByID(ctx context.Context, id int64) (Gr33ncoreFarmEnergyPrice, error)
 	GetFarmMembers(ctx context.Context, farmID int64) ([]GetFarmMembersRow, error)
 	GetFarmMembership(ctx context.Context, arg GetFarmMembershipParams) (Gr33ncoreFarmMembership, error)
@@ -305,6 +307,8 @@ type Querier interface {
 	GetLatestWeatherForFarm(ctx context.Context, farmID int64) (Gr33ncoreWeatherDatum, error)
 	GetLifecycleEventByID(ctx context.Context, id int64) (Gr33nanimalsAnimalLifecycleEvent, error)
 	GetLightingProgramByID(ctx context.Context, id int64) (Gr33ncoreLightingProgram, error)
+	// Phase 109 — platform catalog version bump detection + farm admin notifications.
+	GetMaxCropCatalogVersion(ctx context.Context) (int32, error)
 	GetMixingEventByID(ctx context.Context, id int64) (Gr33nfertigationMixingEvent, error)
 	// Returns the oldest pending command for a device and marks it in_progress atomically.
 	// Pi-key path: Pi calls this, gets one command, executes, then calls AckDeviceCommand.
@@ -319,6 +323,7 @@ type Querier interface {
 	GetPlant(ctx context.Context, id int64) (Gr33ncropsPlant, error)
 	GetPlantByFarmCropKey(ctx context.Context, arg GetPlantByFarmCropKeyParams) (Gr33ncropsPlant, error)
 	GetPlantCropProfileStage(ctx context.Context, arg GetPlantCropProfileStageParams) (GetPlantCropProfileStageRow, error)
+	GetPlatformCatalogState(ctx context.Context) (Gr33ncorePlatformCatalogState, error)
 	GetProfileByEmail(ctx context.Context, email string) (Gr33ncoreProfile, error)
 	// ============================================================
 	// Queries: gr33ncore.profiles
@@ -419,6 +424,7 @@ type Querier interface {
 	// Subsequent pages keyed by (created_at, id).
 	ListAlertsByFarmCreatedAfterNext(ctx context.Context, arg ListAlertsByFarmCreatedAfterNextParams) ([]Gr33ncoreAlertsNotification, error)
 	ListAlertsByRecipient(ctx context.Context, arg ListAlertsByRecipientParams) ([]Gr33ncoreAlertsNotification, error)
+	ListAllFarmIDs(ctx context.Context) ([]int64, error)
 	ListAllFarms(ctx context.Context) ([]Gr33ncoreFarm, error)
 	ListAllUnits(ctx context.Context) ([]Gr33ncoreUnit, error)
 	// ============================================================
@@ -485,6 +491,7 @@ type Querier interface {
 	// ============================================================
 	ListExecutableActionsByRule(ctx context.Context, ruleID *int64) ([]Gr33ncoreExecutableAction, error)
 	ListExecutableActionsBySchedule(ctx context.Context, scheduleID *int64) ([]Gr33ncoreExecutableAction, error)
+	ListFarmCatalogNotifyAdminUserIDs(ctx context.Context, farmID int64) ([]uuid.UUID, error)
 	ListFarmCommonsCatalogImports(ctx context.Context, farmID int64) ([]ListFarmCommonsCatalogImportsRow, error)
 	// ============================================================
 	// Queries: gr33ncore.farm_energy_prices (Phase 20.95 WS2)
@@ -700,9 +707,11 @@ type Querier interface {
 	// tracks the latest turn for ordering. The set_updated_at trigger handles
 	// updated_at on the conflict branch.
 	UpsertConversationSession(ctx context.Context, arg UpsertConversationSessionParams) error
+	UpsertFarmCatalogVersionSeen(ctx context.Context, arg UpsertFarmCatalogVersionSeenParams) (Gr33ncoreFarmCatalogVersionSeen, error)
 	UpsertFarmCommonsCatalogImport(ctx context.Context, arg UpsertFarmCommonsCatalogImportParams) (Gr33ncoreFarmCommonsCatalogImport, error)
 	UpsertFarmFinanceAccountMapping(ctx context.Context, arg UpsertFarmFinanceAccountMappingParams) (Gr33ncoreFarmFinanceAccountMapping, error)
 	UpsertInsertCommonsSyncEvent(ctx context.Context, arg UpsertInsertCommonsSyncEventParams) (Gr33ncoreInsertCommonsSyncEvent, error)
+	UpsertPlatformCatalogState(ctx context.Context, catalogVersion int32) (Gr33ncorePlatformCatalogState, error)
 	// ============================================================
 	// Queries: gr33ncore.rag_embedding_chunks (Phase 24 RAG)
 	// ============================================================
