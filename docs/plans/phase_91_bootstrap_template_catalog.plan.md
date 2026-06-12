@@ -6,19 +6,19 @@ overview: >
 todos:
   - id: ws1-schema
     content: "WS1: bootstrap_templates table or commons_catalog_entries kind=bootstrap"
-    status: pending
+    status: completed
   - id: ws2-api
     content: "WS2: GET /platform/bootstrap-templates — key, label, summary bullets, module hints"
-    status: pending
+    status: completed
   - id: ws3-ui
     content: "WS3: Settings, farm setup wizard, moduleEmptyShell — fetch list"
-    status: pending
+    status: completed
   - id: ws4-enterprise
     content: "WS4: Link agronomy seed pack + jadam templates in catalog; site-manifest refs"
-    status: pending
+    status: completed
   - id: ws5-guardian
     content: "WS5: apply_grow_setup_pack / bootstrap proposals use catalog keys only"
-    status: pending
+    status: completed
 isProject: false
 ---
 
@@ -26,9 +26,9 @@ isProject: false
 
 ## Status
 
-**Planned.** New farms and **Settings → Apply template** should not depend on a static JS file.
+**Shipped.** Bootstrap pickers and Guardian validation use Postgres catalog.
 
-**Closure:** **OC-91**
+**Closure:** [`phase-91-closure.md`](phase-91-closure.md) · **OC-91**
 
 ---
 
@@ -83,8 +83,8 @@ Keep `bootstrapTemplates.js` as **deprecated fallback** until API guaranteed on 
 
 ## Acceptance
 
-- [ ] Add template row in migration → appears in UI without JS edit
-- [ ] Summary bullets match operator-visible zones/programs after apply
-- [ ] Phase 83 agronomy pack cross-linked where relevant
+- [x] Add template row in migration → appears in UI without JS edit
+- [x] Summary bullets match operator-visible zones/programs after apply
+- [x] Phase 83 agronomy pack cross-linked where relevant
 
 **Prompt loop:** **`phase 91`**.

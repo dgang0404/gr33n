@@ -16,7 +16,7 @@ todos:
     status: completed
   - id: p91-bootstrap
     content: "Phase 91 — Bootstrap template catalog API (replace bootstrapTemplates.js)"
-    status: pending
+    status: completed
   - id: p92-zones
     content: "Phase 92 — Zone types + greenhouse enums from API"
     status: pending
