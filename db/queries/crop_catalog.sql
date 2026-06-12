@@ -1,0 +1,31 @@
+-- name: ListCropCatalogEntries :many
+SELECT *
+FROM gr33ncrops.crop_catalog_entries
+ORDER BY supported DESC, display_name;
+
+-- name: ListCropCatalogAliases :many
+SELECT *
+FROM gr33ncrops.crop_catalog_aliases
+ORDER BY alias;
+
+-- name: GetCropCatalogEntry :one
+SELECT *
+FROM gr33ncrops.crop_catalog_entries
+WHERE crop_key = $1;
+
+-- name: ListAgronomyFieldGuides :many
+SELECT *
+FROM gr33ncrops.agronomy_field_guides
+WHERE published = TRUE
+ORDER BY sort_order, slug;
+
+-- name: GetAgronomyFieldGuideBySlug :one
+SELECT *
+FROM gr33ncrops.agronomy_field_guides
+WHERE slug = $1;
+
+-- name: CountCropCatalogEntries :one
+SELECT COUNT(*)::bigint AS count FROM gr33ncrops.crop_catalog_entries;
+
+-- name: CountAgronomyFieldGuides :one
+SELECT COUNT(*)::bigint AS count FROM gr33ncrops.agronomy_field_guides WHERE published = TRUE;

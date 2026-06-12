@@ -109,8 +109,9 @@ Phase 82 WS0 documents manual ops (`make rag-ingest-field-guides`, model floor).
 - [ ] Phase 82 **WS4b–4d** — Tier A profiles + per-crop field guides in manifest
 - [ ] Phase 82 **WS1** — zero-chunk guardrail (smokes assume honest behaviour)
 - [ ] Phase 82 **WS3** — multi-crop `lookup_crop_targets` (smoke questions use compare intent)
+- [ ] **Sit-in:** [crop catalog enterprise DB](../workstreams/sit-in-crop-catalog-enterprise-db.md) — WS-B migrations (`crop_catalog_*`, `agronomy_field_guides`) before seed pack points at DB not YAML/MD
 
-Phase 83 may **start WS1 catalog body authoring in parallel** if it references Phase 82 file paths as stable contracts.
+Phase 83 may **start WS1 catalog body authoring in parallel** if it references stable **`catalog_version`** contracts (DB rows after sit-in WS-B, not file paths). Target schema, later encounters (platform docs, pack upgrades, re-ingest): **[sit-in-crop-catalog-enterprise-db.md](../workstreams/sit-in-crop-catalog-enterprise-db.md)**.
 
 ---
 

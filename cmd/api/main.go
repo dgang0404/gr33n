@@ -18,6 +18,7 @@ import (
 	"github.com/joho/godotenv"
 	"gr33n-api/internal/ai"
 	automationworker "gr33n-api/internal/automation"
+	"gr33n-api/internal/croplibrary"
 	db "gr33n-api/internal/db"
 	"gr33n-api/internal/farmguardian"
 	"gr33n-api/internal/filestorage"
@@ -93,6 +94,13 @@ func main() {
 	}
 	defer pool.Close()
 	log.Println("Connected to gr33n database")
+	croplibrary.SetRuntimeCatalogQuerier(db.New(pool))
+	switch croplibrary.CatalogSource() {
+	case "db":
+		log.Println("📚 Crop catalog: database (gr33ncrops.crop_catalog_*)")
+	default:
+		log.Println("📚 Crop catalog: data/crop_library.yaml (set CROP_CATALOG_SOURCE=db after migrate)")
+	}
 	log.Printf("AUTH_MODE=%s  (dev_bypass_compiled=%v)", authMode, devBypassAllowed)
 	switch authMode {
 	case "dev":

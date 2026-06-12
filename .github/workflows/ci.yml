@@ -56,7 +56,14 @@ jobs:
         run: ./scripts/bootstrap-local.sh --seed
 
       - name: Validate crop library YAML (Phase 82 WS4a)
-        run: make check-crop-library
+        run: make check-crop-catalog-parity
+
+      - name: Verify crop catalog seed (Phase 84 WS-B)
+        run: |
+          entries=$(psql "$DATABASE_URL" -tAc "SELECT count(*) FROM gr33ncrops.crop_catalog_entries" | tr -d '[:space:]')
+          guides=$(psql "$DATABASE_URL" -tAc "SELECT count(*) FROM gr33ncrops.agronomy_field_guides WHERE published" | tr -d '[:space:]')
+          test "$entries" -ge 50
+          test "$guides" -ge 50
 
       - name: Verify pgvector extension (RAG parity)
         run: |

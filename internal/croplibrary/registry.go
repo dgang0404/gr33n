@@ -32,15 +32,10 @@ var (
 	defaultCatalogErr  error
 )
 
-// DefaultCatalog loads data/crop_library.yaml once per process.
+// DefaultCatalog loads the platform crop catalog once per process (YAML or DB).
 func DefaultCatalog() (*Catalog, error) {
 	defaultCatalogOnce.Do(func() {
-		root, err := FindRepoRoot()
-		if err != nil {
-			defaultCatalogErr = err
-			return
-		}
-		defaultCatalog, defaultCatalogErr = LoadCatalog(root, DefaultCatalogPath)
+		defaultCatalog, defaultCatalogErr = loadDefaultCatalog()
 	})
 	return defaultCatalog, defaultCatalogErr
 }

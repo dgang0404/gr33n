@@ -29,11 +29,13 @@ type Querier interface {
 	CloseTaskLaborLog(ctx context.Context, arg CloseTaskLaborLogParams) (Gr33ncoreTaskLaborLog, error)
 	ConfirmGuardianProposal(ctx context.Context, arg ConfirmGuardianProposalParams) (Gr33ncoreGuardianActionProposal, error)
 	CountActiveDeviceAPIKeysByDevice(ctx context.Context, deviceID int64) (int64, error)
+	CountAgronomyFieldGuides(ctx context.Context) (int64, error)
 	CountAlertsByFarm(ctx context.Context, farmID int64) (int64, error)
 	CountAlertsByFarmCreatedAfter(ctx context.Context, arg CountAlertsByFarmCreatedAfterParams) (int64, error)
 	CountAutomationRunsByFarmExecutedAfter(ctx context.Context, arg CountAutomationRunsByFarmExecutedAfterParams) (int64, error)
 	CountCostTransactionsByFarm(ctx context.Context, farmID int64) (int64, error)
 	CountCostTransactionsByFarmUpdatedAfter(ctx context.Context, arg CountCostTransactionsByFarmUpdatedAfterParams) (int64, error)
+	CountCropCatalogEntries(ctx context.Context) (int64, error)
 	CountDevicesByStatusForFarm(ctx context.Context, farmID int64) ([]CountDevicesByStatusForFarmRow, error)
 	CountGuardianProposalsByUser(ctx context.Context, arg CountGuardianProposalsByUserParams) (int64, error)
 	CountInsertCommonsSyncAttemptsSince(ctx context.Context, arg CountInsertCommonsSyncAttemptsSinceParams) (int64, error)
@@ -209,6 +211,7 @@ type Querier interface {
 	// — rank 1 and 3 drop out, leaving any zone-wide fallback.
 	GetActiveSetpointForScope(ctx context.Context, arg GetActiveSetpointForScopeParams) (GetActiveSetpointForScopeRow, error)
 	GetActuatorByID(ctx context.Context, id int64) (Gr33ncoreActuator, error)
+	GetAgronomyFieldGuideBySlug(ctx context.Context, slug string) (Gr33ncropsAgronomyFieldGuide, error)
 	GetAlertNotificationByID(ctx context.Context, id int64) (Gr33ncoreAlertsNotification, error)
 	GetAnimalGroupByID(ctx context.Context, id int64) (Gr33nanimalsAnimalGroup, error)
 	GetAquaponicsLoopByID(ctx context.Context, id int64) (Gr33naquaponicsLoop, error)
@@ -235,6 +238,7 @@ type Querier interface {
 	// Cost transaction idempotency
 	// ============================================================
 	GetCostTransactionIDByIdempotencyKey(ctx context.Context, arg GetCostTransactionIDByIdempotencyKeyParams) (int64, error)
+	GetCropCatalogEntry(ctx context.Context, cropKey string) (Gr33ncropsCropCatalogEntry, error)
 	GetCropCycleByID(ctx context.Context, id int64) (Gr33nfertigationCropCycle, error)
 	GetCropProfile(ctx context.Context, id int64) (Gr33ncropsCropProfile, error)
 	GetCropProfileByKey(ctx context.Context, arg GetCropProfileByKeyParams) (Gr33ncropsCropProfile, error)
@@ -398,6 +402,7 @@ type Querier interface {
 	// event_time so the Go side can do a single linear pass.
 	ListActuatorEventsForRollup(ctx context.Context, arg ListActuatorEventsForRollupParams) ([]ListActuatorEventsForRollupRow, error)
 	ListActuatorsByFarm(ctx context.Context, farmID int64) ([]Gr33ncoreActuator, error)
+	ListAgronomyFieldGuides(ctx context.Context) ([]Gr33ncropsAgronomyFieldGuide, error)
 	ListAlertsByFarm(ctx context.Context, arg ListAlertsByFarmParams) ([]Gr33ncoreAlertsNotification, error)
 	// RAG ingest cursor (id order).
 	ListAlertsByFarmAfterID(ctx context.Context, arg ListAlertsByFarmAfterIDParams) ([]Gr33ncoreAlertsNotification, error)
@@ -441,6 +446,8 @@ type Querier interface {
 	ListCostTransactionsByFarmUpdatedAfterFirst(ctx context.Context, arg ListCostTransactionsByFarmUpdatedAfterFirstParams) ([]Gr33ncoreCostTransaction, error)
 	// Subsequent pages keyed by (updated_at, id).
 	ListCostTransactionsByFarmUpdatedAfterNext(ctx context.Context, arg ListCostTransactionsByFarmUpdatedAfterNextParams) ([]Gr33ncoreCostTransaction, error)
+	ListCropCatalogAliases(ctx context.Context) ([]Gr33ncropsCropCatalogAlias, error)
+	ListCropCatalogEntries(ctx context.Context) ([]Gr33ncropsCropCatalogEntry, error)
 	ListCropCycleStageEventsByCycle(ctx context.Context, cropCycleID int64) ([]Gr33nfertigationCropCycleStageEvent, error)
 	ListCropCyclesByFarm(ctx context.Context, farmID int64) ([]Gr33nfertigationCropCycle, error)
 	ListCropCyclesByFarmUpdatedAfter(ctx context.Context, arg ListCropCyclesByFarmUpdatedAfterParams) ([]Gr33nfertigationCropCycle, error)

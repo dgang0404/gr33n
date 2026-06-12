@@ -16,9 +16,9 @@ import (
 )
 
 const (
-	SourceTypeFieldGuide         = "field_guide"
-	metadataModuleFieldGuide     = "field_guide"
-	defaultFieldGuideManifest    = "docs/rag/field-guide-manifest.yaml"
+	SourceTypeFieldGuide      = "field_guide"
+	metadataModuleFieldGuide  = "field_guide"
+	defaultFieldGuideManifest = "docs/rag/field-guide-manifest.yaml"
 )
 
 // FieldGuideManifest lists authored field/trades markdown under docs/field-guides/.
@@ -114,8 +114,19 @@ func (m FieldGuideManifest) ResolveFieldGuideFiles() ([]FieldGuideFileSummary, e
 	return out, nil
 }
 
-// DryRunFieldGuides returns file list + chunk estimates.
-func DryRunFieldGuides(repoRoot, manifestPath string) (FieldGuideDryRun, error) {
+// FieldGuideQuerier loads published agronomy field guides from DB.
+type FieldGuideQuerier interface {
+	ListAgronomyFieldGuides(ctx context.Context) ([]db.Gr33ncropsAgronomyFieldGuide, error)
+}
+
+// DryRunFieldGuides returns chunk estimates from files or DB (AGRONOMY_FIELD_GUIDES_SOURCE).
+func DryRunFieldGuides(ctx context.Context, q FieldGuideQuerier, repoRoot, manifestPath string) (FieldGuideDryRun, error) {
+	if FieldGuidesSource() == "db" {
+		if q == nil {
+			return FieldGuideDryRun{}, fmt.Errorf("AGRONOMY_FIELD_GUIDES_SOURCE=db requires database querier")
+		}
+		return DryRunFieldGuidesFromDB(ctx, q)
+	}
 	m, err := LoadFieldGuideManifest(repoRoot, manifestPath)
 	if err != nil {
 		return FieldGuideDryRun{}, err
@@ -131,10 +142,13 @@ func DryRunFieldGuides(repoRoot, manifestPath string) (FieldGuideDryRun, error) 
 	return FieldGuideDryRun{Files: files, TotalChunks: total}, nil
 }
 
-// IngestFieldGuides embeds manifest markdown into rag_embedding_chunks (source_type field_guide).
+// IngestFieldGuides embeds field guides into rag_embedding_chunks (source_type field_guide).
 func (w *Worker) IngestFieldGuides(ctx context.Context, farmID int64, repoRoot, manifestPath string) (int, error) {
 	if w == nil || w.Q == nil || w.Embedder == nil {
 		return 0, fmt.Errorf("ingest worker not configured")
+	}
+	if FieldGuidesSource() == "db" {
+		return w.IngestFieldGuidesFromDB(ctx, farmID)
 	}
 	m, err := LoadFieldGuideManifest(repoRoot, manifestPath)
 	if err != nil {

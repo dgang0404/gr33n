@@ -72,8 +72,8 @@ func main() {
 			return
 		}
 	}
-	if *dryRun && *doFieldGuide {
-		dry, err := ingest.DryRunFieldGuides(*repoRoot, *fieldManifest)
+	if *dryRun && *doFieldGuide && FieldGuidesSource() != "db" {
+		dry, err := ingest.DryRunFieldGuides(context.Background(), nil, *repoRoot, *fieldManifest)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -279,6 +279,19 @@ func main() {
 					log.Fatal(err)
 				}
 				nAlerts = cnt
+			}
+		}
+		if *doFieldGuide {
+			dry, err := ingest.DryRunFieldGuides(ctx, q, *repoRoot, *fieldManifest)
+			if err != nil {
+				log.Fatal(err)
+			}
+			fmt.Printf("dry-run farm=%d field_guides files=%d estimated_chunks=%d\n", *farmID, len(dry.Files), dry.TotalChunks)
+			for _, f := range dry.Files {
+				fmt.Printf("  %s source_id=%d domain=%s safety=%s bytes=%d chunks=%d\n", f.RelPath, f.SourceID, f.Domain, f.Safety, f.Bytes, f.Chunks)
+			}
+			if onlyField {
+				return
 			}
 		}
 		fmt.Printf("dry-run farm=%d tasks=%d automation_runs=%d crop_cycles=%d programs=%d schedules=%d automation_rules=%d executable_actions=%d cost_transactions=%d input_definitions=%d input_batches=%d alerts=%d\n",

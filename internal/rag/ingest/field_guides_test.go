@@ -1,13 +1,14 @@
 package ingest
 
 import (
+	"context"
 	"strings"
 	"testing"
 )
 
 func TestDryRunFieldGuides(t *testing.T) {
 	root := findRepoRoot(t)
-	dry, err := DryRunFieldGuides(root, "")
+	dry, err := DryRunFieldGuides(context.Background(), nil, root, "")
 	if err != nil {
 		t.Fatal(err)
 	}

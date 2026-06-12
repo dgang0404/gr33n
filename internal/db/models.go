@@ -1928,6 +1928,45 @@ type Gr33ncoreZoneSetpoint struct {
 	UpdatedAt   time.Time       `db:"updated_at" json:"updated_at"`
 }
 
+type Gr33ncropsAgronomyFieldGuide struct {
+	ID             int64     `db:"id" json:"id"`
+	Slug           string    `db:"slug" json:"slug"`
+	Title          string    `db:"title" json:"title"`
+	CropKey        *string   `db:"crop_key" json:"crop_key"`
+	GuideKind      string    `db:"guide_kind" json:"guide_kind"`
+	Domain         *string   `db:"domain" json:"domain"`
+	SafetyTier     string    `db:"safety_tier" json:"safety_tier"`
+	BodyMd         string    `db:"body_md" json:"body_md"`
+	CatalogVersion int32     `db:"catalog_version" json:"catalog_version"`
+	Published      bool      `db:"published" json:"published"`
+	SortOrder      int32     `db:"sort_order" json:"sort_order"`
+	CreatedAt      time.Time `db:"created_at" json:"created_at"`
+	UpdatedAt      time.Time `db:"updated_at" json:"updated_at"`
+}
+
+type Gr33ncropsCropCatalogAlias struct {
+	Alias   string `db:"alias" json:"alias"`
+	CropKey string `db:"crop_key" json:"crop_key"`
+}
+
+type Gr33ncropsCropCatalogEntry struct {
+	CropKey           string          `db:"crop_key" json:"crop_key"`
+	DisplayName       string          `db:"display_name" json:"display_name"`
+	Supported         bool            `db:"supported" json:"supported"`
+	Category          *string         `db:"category" json:"category"`
+	Source            *string         `db:"source" json:"source"`
+	Substrate         *string         `db:"substrate" json:"substrate"`
+	WateringStyle     *string         `db:"watering_style" json:"watering_style"`
+	RunoffPctTarget   *string         `db:"runoff_pct_target" json:"runoff_pct_target"`
+	MoistureGuidance  *string         `db:"moisture_guidance" json:"moisture_guidance"`
+	CousinOf          *string         `db:"cousin_of" json:"cousin_of"`
+	UnsupportedReason *string         `db:"unsupported_reason" json:"unsupported_reason"`
+	CatalogVersion    int32           `db:"catalog_version" json:"catalog_version"`
+	Meta              json.RawMessage `db:"meta" json:"meta"`
+	CreatedAt         time.Time       `db:"created_at" json:"created_at"`
+	UpdatedAt         time.Time       `db:"updated_at" json:"updated_at"`
+}
+
 type Gr33ncropsCropProfile struct {
 	ID          int64           `db:"id" json:"id"`
 	FarmID      *int64          `db:"farm_id" json:"farm_id"`

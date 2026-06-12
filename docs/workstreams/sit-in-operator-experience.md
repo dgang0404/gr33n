@@ -72,6 +72,8 @@ Phase 25 plans should **assume** this sit-in stream has at least **operator tour
 
 **Phase 45 farmer sit-in (calendar):** one-time validation after Phases 40–44 — scripted Guardian PR paths (ack, setup pack, dismiss). Protocol: **[farmer-sit-in-protocol.md](farmer-sit-in-protocol.md)** · spec: **[phase_45_guardian_pr_spec.md](../plans/phase_45_guardian_pr_spec.md)**. Distinct from this ongoing sit-in stream (logging, tour, tasks-first).
 
+**Crop catalog → enterprise DB (ongoing):** plant intelligence (supported targets, unsupported registry, field guide source text) should live in **Postgres**, not runtime YAML/MD. Unsupported crops have **no EC targets** — sit-in matrix and migration plan: **[sit-in-crop-catalog-enterprise-db.md](sit-in-crop-catalog-enterprise-db.md)**.
+
 ---
 
 ## Changelog
@@ -110,3 +112,4 @@ Phase 25 plans should **assume** this sit-in stream has at least **operator tour
 | 2026-05-19 | Phase **27 WS5 follow-up — streaming token usage**: LLM client now sets `stream_options.include_usage: true` and `ChatCompletionStreamMessagesWithUsage` returns the OpenAI-style token block parsed from the terminal SSE chunk. Chat handler prefers the new `UsageAwareStreamingChatCompleter` and falls back to the legacy interface, so `prompt_tokens` / `completion_tokens` now flow into the streaming SSE `done` event **and** the persisted `conversation_turns` row — closing the gap where non-streaming turns recorded usage but streaming turns did not. Servers that ignore `include_usage` still work (row lands with zero tokens). |
 | 2026-05-15 | §6: **[Phase 27](../plans/phase_27_farm_guardian_ai_layer.md)** pointer — Farm Guardian / `AI_ENABLED` / capabilities API (calendar phase; not sit-in backlog unless UX asks). |
 | 2026-05-18 | §6: **Phase 27 WS4/WS5/WS6 v1** — `internal/farmguardian` persona, `POST /v1/chat` non-streaming with 503 Lite, `/capabilities` Pinia store, Settings Lite/Full label, FarmKnowledge Ask-LLM gating. |
+| 2026-06-11 | **Crop catalog enterprise DB sit-in:** [sit-in-crop-catalog-enterprise-db.md](sit-in-crop-catalog-enterprise-db.md) — polished plan: unsupported **no EC**, schema WS A–K, 56 field guides, §9 later encounters (platform docs, overrides, pack bumps, re-ingest, CI parity). |

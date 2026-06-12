@@ -68,7 +68,7 @@ func (h *Handler) Picker(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	catalogPath := os.Getenv("CROP_LIBRARY_PATH")
-	cat, err := croplibrary.LoadCatalog(h.repoRoot, catalogPath)
+	cat, err := croplibrary.LoadCatalogForRuntime(r.Context(), h.repoRoot, catalogPath, h.q)
 	if err != nil {
 		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
 		return
