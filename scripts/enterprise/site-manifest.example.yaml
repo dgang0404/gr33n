@@ -30,6 +30,18 @@ zones:
 # Omit to skip recipe import.
 recipe_pack_slug: gr33n-recipe-pack-v7-lettuce-veg
 
+# Phase 83 — optional Guardian agronomy bootstrap (after farm + zones exist).
+guardian_seed:
+  enabled: false
+  agronomy_pack_slug: gr33n-cultivator-seed-pack-v1
+  bootstrap:
+    import_pack: true
+    ingest_field_guides: true
+    ingest_platform_docs: true
+    ingest_operational: true
+    run_smokes: false
+  llm_model_hint: llama3.1:8b-instruct-q4_K_M   # informational only
+
 # Informational only — printed for the installer; not provisioned by the API.
 # Pairs with the Phase 37 guided Pi-wiring procedures.
 pi_device_hints:

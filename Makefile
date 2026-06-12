@@ -1,4 +1,4 @@
-.PHONY: run run-receiver build build-receiver test seed sqlc migrate ui dev dev-auth-test rag-ingest-help rag-ingest-demo rag-ingest-platform-docs compose-db-up compose-db-status compose-logging-up compose-logging-down setup-compose-dev dev-stack dev-stack-fresh dev-stack-fresh-rag local-up restart-local restart-local-serve db-sanity-report check-stack check-crop-library check-crop-catalog check-crop-catalog-parity clean lint bootstrap-local bootstrap-local-docker install-deps-debian install-pi-edge-deps first-clone first-clone-docker first-clone-install-deps audit-openapi edge-smoke-help edge-actuator-smoke-help recipe-pack-import-help
+.PHONY: run run-receiver build build-receiver test seed sqlc migrate ui dev dev-auth-test rag-ingest-help rag-ingest-demo rag-ingest-platform-docs compose-db-up compose-db-status compose-logging-up compose-logging-down setup-compose-dev dev-stack dev-stack-fresh dev-stack-fresh-rag local-up restart-local restart-local-serve db-sanity-report check-stack check-crop-library check-crop-catalog check-crop-catalog-parity clean lint bootstrap-local bootstrap-local-docker install-deps-debian install-pi-edge-deps first-clone first-clone-docker first-clone-install-deps audit-openapi edge-smoke-help edge-actuator-smoke-help recipe-pack-import-help agronomy-seed-pack-help guardian-bootstrap-farm import-agronomy-seed-pack
 
 # dash (common default /bin/sh) can report "wait: No child processes" for dev / dev-auth-test;
 # bash handles background jobs + wait reliably.
@@ -147,6 +147,23 @@ recipe-pack-import-help: ## Phase 31 WS5 — print recipe pack promotion command
 	@echo "  2. make dev-auth-test"
 	@echo "  3. ./scripts/enterprise/import-recipe-pack.sh --dry-run"
 	@echo "  4. ./scripts/enterprise/import-recipe-pack.sh --farm-ids 1,2"
+
+agronomy-seed-pack-help: ## Phase 83 WS1 — print agronomy seed pack import + bootstrap commands
+	@echo "Cultivator Agronomy Seed Pack v1 (Phase 83 WS1 + WS3)"
+	@echo "Docs: docs/crop-catalog-db-cutover-runbook.md · scripts/enterprise/README.md"
+	@echo ""
+	@echo "  1. make migrate && make check-crop-catalog-parity"
+	@echo "  2. make dev-auth-test"
+	@echo "  3. ./scripts/enterprise/import-agronomy-seed-pack.sh --dry-run"
+	@echo "  4. ./scripts/enterprise/import-agronomy-seed-pack.sh --farm-ids 1"
+	@echo "  5. ./scripts/enterprise/guardian-bootstrap-farm.sh --dry-run --farm-id 1"
+	@echo "  6. ./scripts/enterprise/guardian-bootstrap-farm.sh --farm-id 1 [--smoke]"
+
+import-agronomy-seed-pack: ## Phase 83 WS1 — record agronomy pack import + verify DB (FARM_IDS=1)
+	@./scripts/enterprise/import-agronomy-seed-pack.sh --farm-ids $(or $(FARM_IDS),1)
+
+guardian-bootstrap-farm: ## Phase 83 WS3 — RAG ingest + readiness report (FARM_ID=1)
+	@./scripts/enterprise/guardian-bootstrap-farm.sh --farm-id $(or $(FARM_ID),1) $(ARGS)
 
 compose-db-up: ## Start only the Postgres image from docker-compose.yml (Timescale + pgvector build)
 	docker compose up -d db --build

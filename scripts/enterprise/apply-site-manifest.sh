@@ -81,6 +81,22 @@ for z in zones:
     print(f"[zone] POST /farms/{{farm_id}}/zones  name={z['name']!r} zone_type={z.get('type')!r}")
 if pack:
     print(f"[pack] POST /farms/{{farm_id}}/commons/catalog-imports  slug={pack!r}")
+gs = m.get("guardian_seed") or {}
+if gs.get("enabled"):
+    print(f"[guardian] import-agronomy-seed-pack.sh --farm-ids {{farm_id}}")
+    b = gs.get("bootstrap") or {}
+    flags = f"--farm-id {{farm_id}}"
+    if not b.get("ingest_field_guides", True):
+        flags += " --skip-field-guides"
+    if not b.get("ingest_platform_docs", True):
+        flags += " --skip-platform-docs"
+    if not b.get("ingest_operational", True):
+        flags += " --skip-operational"
+    if b.get("run_smokes"):
+        flags += " --smoke"
+    if b.get("import_pack", True):
+        flags = "--import-pack " + flags
+    print(f"[guardian] guardian-bootstrap-farm.sh {flags}")
 print("")
 if hints:
     print("Pi/edge wiring hints (informational — provision on-site):")
@@ -145,8 +161,61 @@ if m.get("recipe_pack_slug"):
 for h in (m.get("pi_device_hints") or []):
     print(f"  Pi hint: {h.get('device_uid')} — {h.get('role')} (zone {h.get('zone')!r}) — provision on-site")
 
+gs = m.get("guardian_seed") or {}
+if gs.get("enabled"):
+    print(f"FARM_ID={farm_id}")
+    print(f"GUARDIAN_SEED=1")
+
 print(f"Done. Smoke: curl {api}/farms/{farm_id}/zones")
 PY
+}
+
+run_guardian_bootstrap() {
+  local farm_id="$1"
+  local manifest="$2"
+  GUARDIAN_MANIFEST="$manifest" GUARDIAN_FARM_ID="$farm_id" GR33N_ROOT="$ROOT" python3 - <<'PY'
+import os, subprocess, sys
+try:
+    import yaml
+except ImportError:
+    print("PyYAML required for guardian_seed — pip install pyyaml", file=sys.stderr)
+    sys.exit(1)
+with open(os.environ["GUARDIAN_MANIFEST"], encoding="utf-8") as f:
+    m = yaml.safe_load(f)
+gs = m.get("guardian_seed") or {}
+if not gs.get("enabled"):
+    sys.exit(0)
+fid = os.environ["GUARDIAN_FARM_ID"]
+root = os.environ["GR33N_ROOT"]
+b = gs.get("bootstrap") or {}
+if b.get("import_pack", True):
+    subprocess.check_call([
+        os.path.join(root, "scripts/enterprise/import-agronomy-seed-pack.sh"),
+        "--farm-ids", fid,
+    ])
+args = [os.path.join(root, "scripts/enterprise/guardian-bootstrap-farm.sh"), "--farm-id", fid]
+if not b.get("ingest_field_guides", True):
+    args.append("--skip-field-guides")
+if not b.get("ingest_platform_docs", True):
+    args.append("--skip-platform-docs")
+if not b.get("ingest_operational", True):
+    args.append("--skip-operational")
+if b.get("run_smokes"):
+    args.append("--smoke")
+subprocess.check_call(args)
+PY
+}
+
+run_apply_with_guardian() {
+  local tmp farm_id
+  tmp=$(mktemp)
+  run_apply 2>&1 | tee "$tmp"
+  if grep -q '^GUARDIAN_SEED=1' "$tmp"; then
+    farm_id=$(grep '^FARM_ID=' "$tmp" | tail -1 | cut -d= -f2)
+    echo "==> guardian_seed bootstrap (Phase 83)"
+    run_guardian_bootstrap "$farm_id" "$MANIFEST"
+  fi
+  rm -f "$tmp"
 }
 
 while [[ $# -gt 0 ]]; do
@@ -168,5 +237,5 @@ fi
 if [[ "$DRY_RUN" -eq 1 ]]; then
   run_dry
 else
-  run_apply
+  run_apply_with_guardian
 fi

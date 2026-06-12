@@ -51,18 +51,41 @@ Large multi-site operators (see [`docs/hypothetical-enterprise-topology.md`](../
 
 See [`docs/commons-catalog-operator-playbook.md`](../../docs/commons-catalog-operator-playbook.md) for catalog semantics (import records audit — does not auto-run SQL).
 
-## Planned (Phase 83 — agronomy seed pack)
+## Shipped (Phase 83) — agronomy seed pack + Guardian bootstrap
 
 **Plan:** [`docs/plans/phase_83_enterprise_agronomy_seed_pack.plan.md`](../../docs/plans/phase_83_enterprise_agronomy_seed_pack.plan.md)
 
+| Tool | Purpose |
+|------|---------|
+| [`import-agronomy-seed-pack.sh`](import-agronomy-seed-pack.sh) | Promote **`gr33n-cultivator-seed-pack-v1`** + verify Postgres `catalog_version` / row counts |
+| [`guardian-bootstrap-farm.sh`](guardian-bootstrap-farm.sh) | Field-guide + platform-doc + operational RAG ingest + readiness report |
+| [`sample-cultivator-seed-pack-v1.body.json`](sample-cultivator-seed-pack-v1.body.json) | Commons catalog body mirror (DB contract, smoke prompts) |
+| [`db/migrations/20260618_phase83_cultivator_seed_pack_v1.sql`](../../db/migrations/20260618_phase83_cultivator_seed_pack_v1.sql) | Publishes catalog slug `gr33n-cultivator-seed-pack-v1` |
+
+```bash
+make migrate
+make check-crop-catalog-parity
+make dev-auth-test   # optional for import POST
+
+./scripts/enterprise/import-agronomy-seed-pack.sh --dry-run
+./scripts/enterprise/import-agronomy-seed-pack.sh --farm-ids 1
+
+./scripts/enterprise/guardian-bootstrap-farm.sh --dry-run --farm-id 1
+./scripts/enterprise/guardian-bootstrap-farm.sh --farm-id 1   # needs EMBEDDING_API_KEY for ingest
+# or:
+make guardian-bootstrap-farm FARM_ID=1
+```
+
+**Site manifest:** set `guardian_seed.enabled: true` in YAML — `apply-site-manifest.sh` calls import + bootstrap after farm create. See [`site-manifest.example.yaml`](site-manifest.example.yaml).
+
+**Depends on Phase 82 + Phase 84** (crop profiles + `crop_catalog_*` in Postgres). Cutover: [`docs/crop-catalog-db-cutover-runbook.md`](../../docs/crop-catalog-db-cutover-runbook.md).
+
+## Planned (Phase 83 — remaining)
+
 | Tool (planned) | Purpose |
 |----------------|---------|
-| `import-agronomy-seed-pack.sh` | Promote **`gr33n-cultivator-seed-pack-v1`** to farm(s) via commons catalog |
-| `guardian-bootstrap-farm.sh` | Field-guide + platform-doc + operational RAG ingest + readiness report |
-| `apply-agronomy-overrides.sh` | Farm-specific EC/VPD/DLI overrides (YAML) on top of Phase 82 builtins |
-| `site-manifest.yaml` → `guardian_seed:` | Extend site bring-up to call bootstrap after zones + recipe pack |
-
-**Depends on Phase 82** (`crop_library.yaml`, field guides, zero-chunk guardrail). Run readiness smokes on **8B + full seed** before upgrading to 70B — same pipelines, better synthesis.
+| `apply-agronomy-overrides.sh` | Farm-specific EC/VPD/DLI overrides (WS2 YAML) |
+| Farm admin crop override UI | Settings → Crops & targets (WS6) |
 
 ## Contributing
 

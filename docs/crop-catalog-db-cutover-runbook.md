@@ -31,6 +31,9 @@ export CROP_CATALOG_SOURCE=db
 export AGRONOMY_FIELD_GUIDES_SOURCE=db
 
 make rag-ingest-field-guides     # per farm; needs EMBEDDING_API_KEY
+
+# Enterprise one-command bootstrap (Phase 83):
+# ./scripts/enterprise/guardian-bootstrap-farm.sh --farm-id 1
 ```
 
 Restart the API after migrate so Guardian and the crop picker load catalog from DB.

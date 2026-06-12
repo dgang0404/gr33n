@@ -1,0 +1,32 @@
+{
+  "catalog_version": "gr33n.agronomy_seed_pack.v1",
+  "kind": "agronomy_seed_pack",
+  "pack_id": "gr33n-cultivator-seed-pack-v1",
+  "platform_catalog_version": 4,
+  "crop_library_version": 4,
+  "data_source": {
+    "crop_catalog": "gr33ncrops.crop_catalog_entries",
+    "field_guides": "gr33ncrops.agronomy_field_guides",
+    "crop_profiles": "gr33ncrops.crop_profiles WHERE is_builtin"
+  },
+  "expected_counts": {
+    "crop_catalog_entries": 50,
+    "supported_crops": 46,
+    "unsupported_crops": 4,
+    "field_guides_published": 55,
+    "builtin_profiles": 46
+  },
+  "unsupported_keys": ["ramps", "mushroom", "in_ground_root", "ginseng"],
+  "guardian_smoke_prompts": [
+    "Compare cannabis and eggplant feed targets in mS/cm",
+    "What watering style does phalaenopsis want?",
+    "What EC for ramps?"
+  ],
+  "bootstrap": {
+    "ingest_field_guides": true,
+    "ingest_platform_docs": true,
+    "ingest_operational": true,
+    "min_field_guide_chunks": 12
+  },
+  "readme_md": "# gr33n Cultivator Agronomy Seed Pack v1\n\nEnterprise **Guardian readiness** pack — platform crop catalog, builtin profiles, and field guides live in **Postgres** (Phase 84). This commons entry records provenance; integrators run `guardian-bootstrap-farm.sh` to embed RAG chunks per farm.\n\n## Prerequisites\n\n1. `make migrate` — Phase 82 crop profiles + Phase 84 catalog seed\n2. `make check-crop-catalog-parity`\n3. `EMBEDDING_API_KEY` for RAG ingest\n\n## Apply per farm\n\n```bash\n./scripts/enterprise/import-agronomy-seed-pack.sh --farm-ids 1\n./scripts/enterprise/guardian-bootstrap-farm.sh --farm-id 1\n```\n\n## Verify\n\n- `platform_catalog_version` in this pack matches `crop_catalog_entries.catalog_version`\n- Unsupported crops (`ramps`, …) never receive EC targets in Guardian\n- Re-ingest field guides after DB cutover — see `docs/crop-catalog-db-cutover-runbook.md`\n"
+}
