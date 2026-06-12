@@ -90,7 +90,7 @@ Hub: [`phase_68_73_spa_workspace_roadmap.plan.md`](plans/phase_68_73_spa_workspa
 | **89** ✅ | Lighting presets — wire `GET /lighting-programs/presets` (API exists, UI unused) | [`phase_89_lighting_presets_api_wiring.plan.md`](plans/phase_89_lighting_presets_api_wiring.plan.md) · [`phase-89-closure.md`](plans/phase-89-closure.md) |
 | **90** ✅ | Device taxonomy registry — sensor/actuator → water/light/climate + Guardian | [`phase_90_device_taxonomy_registry.plan.md`](plans/phase_90_device_taxonomy_registry.plan.md) · [`phase-90-closure.md`](plans/phase-90-closure.md) |
 | **91** ✅ | Bootstrap template catalog — replace `bootstrapTemplates.js` | [`phase_91_bootstrap_template_catalog.plan.md`](plans/phase_91_bootstrap_template_catalog.plan.md) · [`phase-91-closure.md`](plans/phase-91-closure.md) |
-| **92** | Zone types + greenhouse enums from API | [`phase_92_zone_greenhouse_vocabulary.plan.md`](plans/phase_92_zone_greenhouse_vocabulary.plan.md) |
+| **92** ✅ | Zone types + greenhouse enums from API | [`phase_92_zone_greenhouse_vocabulary.plan.md`](plans/phase_92_zone_greenhouse_vocabulary.plan.md) · [`phase-92-closure.md`](plans/phase-92-closure.md) |
 | **101** | Guardian write tools — `crop_key` on create_plant | [`phase_101_guardian_write_tools_crop_key.plan.md`](plans/phase_101_guardian_write_tools_crop_key.plan.md) |
 | **102** | Fertigation + recipe ↔ crop_key / profile EC linkage | [`phase_102_fertigation_program_catalog_metadata.plan.md`](plans/phase_102_fertigation_program_catalog_metadata.plan.md) |
 | **103** | Legacy plant dedupe & backfill | [`phase_103_legacy_plant_dedupe_backfill.plan.md`](plans/phase_103_legacy_plant_dedupe_backfill.plan.md) |

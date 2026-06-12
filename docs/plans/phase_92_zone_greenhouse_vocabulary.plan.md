@@ -6,19 +6,19 @@ overview: >
 todos:
   - id: ws1-api
     content: "WS1: Extend domain-enums or GET /platform/zone-vocabulary — zone_types, gh_cover, gh_policy"
-    status: pending
+    status: completed
   - id: ws2-zones-admin
     content: "WS2: Zones.vue — zone type select from API (include legacy veg/flower with labels)"
-    status: pending
+    status: completed
   - id: ws3-wizard
     content: "WS3: zoneSetupWizard.js — remove ZONE_SETUP_TYPES, GREENHOUSE_* constants"
-    status: pending
+    status: completed
   - id: ws4-greenhouse-tab
     content: "WS4: ZoneGreenhouseTab.vue — cover/policy options from API"
-    status: pending
+    status: completed
   - id: ws5-guardian
     content: "WS5: summarize_zone_greenhouse_climate uses canonical enum labels"
-    status: pending
+    status: completed
 isProject: false
 ---
 
@@ -26,11 +26,11 @@ isProject: false
 
 ## Status
 
-**Planned.** Aligns **zone create** paths and **greenhouse climate** forms.
+**Shipped.** Zone create paths and greenhouse climate forms use domain-enums vocabulary.
 
 **Depends on:** [Phase 88](phase_88_domain_enums_api.plan.md) (shared enums endpoint pattern).
 
-**Closure:** **OC-92**
+**Closure:** [`phase-92-closure.md`](phase-92-closure.md) · **OC-92**
 
 ---
 
@@ -78,8 +78,8 @@ Greenhouse read tool output uses same labels as UI when describing cover type an
 
 ## Acceptance
 
-- [ ] Wizard and Zones admin show consistent labels
-- [ ] `film` cover available everywhere greenhouse meta is edited
-- [ ] Legacy zone types still selectable in admin for existing farms
+- [x] Wizard and Zones admin show consistent labels
+- [x] `film` cover available everywhere greenhouse meta is edited
+- [x] Legacy zone types still selectable in admin for existing farms
 
 **Prompt loop:** **`phase 92`**.

@@ -19,7 +19,7 @@ todos:
     status: completed
   - id: p92-zones
     content: "Phase 92 — Zone types + greenhouse enums from API"
-    status: pending
+    status: completed
 isProject: false
 ---
 
