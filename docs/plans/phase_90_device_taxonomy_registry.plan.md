@@ -6,22 +6,22 @@ overview: >
 todos:
   - id: ws1-schema
     content: "WS1: gr33ncore.device_type_registry migration + seed from plantNeeds.js sets"
-    status: pending
+    status: completed
   - id: ws2-api
     content: "WS2: GET /platform/device-taxonomy — sensors + actuators grouped by plant_need"
-    status: pending
+    status: completed
   - id: ws3-ui
     content: "WS3: plantNeeds.js, sensorTypeLabel.js, ZoneGreenhouseTab — fetch not hardcode"
-    status: pending
+    status: completed
   - id: ws4-pi-setup
     content: "WS4: deviceSetupWizard + hardwareWiring — wiring sources from registry extension"
-    status: pending
+    status: completed
   - id: ws5-guardian
     content: "WS5: Guardian summarize_zone_* uses registry for sensor/actuator grouping in prompt"
-    status: pending
+    status: completed
   - id: ws6-smokes
     content: "WS6: New sensor type in seed appears in correct Water/Light/Climate tab"
-    status: pending
+    status: completed
 isProject: false
 ---
 
@@ -29,11 +29,9 @@ isProject: false
 
 ## Status
 
-**Planned.** Fixes **zone cockpit** mis-routing when Pi or integrators add sensor types not in UI hardcoded sets.
+**Shipped.** Zone cockpit and Guardian classify devices from Postgres registry.
 
-**Depends on:** [Phase 88](phase_88_domain_enums_api.plan.md) optional (shared platform metadata pattern).
-
-**Closure:** **OC-90**
+**Closure:** [`phase-90-closure.md`](phase-90-closure.md) · **OC-90**
 
 ---
 
@@ -110,9 +108,9 @@ When building zone snapshot / read-tool blocks:
 
 ## Acceptance
 
-- [ ] Seed ≥ current hardcoded type count
-- [ ] Add `temp_f` sensor in seed → appears under Climate tab
-- [ ] Pulse UI shows for actuators with `supports_pulse=true`
-- [ ] Guardian zone question routes to correct need tab in guidance text
+- [x] Seed ≥ current hardcoded type count
+- [x] Add `temp_f` sensor in seed → appears under Climate tab
+- [x] Pulse UI shows for actuators with `supports_pulse=true`
+- [x] Guardian zone question routes to correct need tab in guidance text
 
 **Prompt loop:** `phase 90 ws1` … or **`phase 90`**.

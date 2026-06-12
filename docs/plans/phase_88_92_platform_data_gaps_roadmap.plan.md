@@ -13,7 +13,7 @@ todos:
     status: completed
   - id: p90-devices
     content: "Phase 90 — Device taxonomy registry (sensor/actuator → water/light/climate)"
-    status: pending
+    status: completed
   - id: p91-bootstrap
     content: "Phase 91 — Bootstrap template catalog API (replace bootstrapTemplates.js)"
     status: pending
