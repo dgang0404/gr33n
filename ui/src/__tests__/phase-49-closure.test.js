@@ -20,12 +20,16 @@ describe('Phase 49 WS4 / OC-49 — sidebar nav closure', () => {
     expect(grow.items.some((i) => i.to === '/comfort-targets')).toBe(true)
   })
 
-  it('SideNav implements related-route hover affordance', () => {
+  it('SideNav wiggles only the hinted sidebar tab (no related-route fan-out)', () => {
     const sideNav = readFileSync(join(process.cwd(), 'src/components/SideNav.vue'), 'utf8')
-    expect(sideNav).toContain('navRelations.js')
+    expect(sideNav).not.toContain('navRelations.js')
     expect(sideNav).toContain('nav-related')
+    expect(sideNav).toContain('isHighlightedNav')
+    expect(sideNav).toContain('navHighlight')
+    expect(sideNav).toContain('useNavHighlightStore')
     expect(sideNav).toContain('prefers-reduced-motion')
-    expect(sideNav).toContain('hoveredRoute')
+    expect(sideNav).not.toContain('hoveredRoute')
+    expect(sideNav).not.toContain('relatedTo')
   })
 
   it('navRelations map exists', () => {

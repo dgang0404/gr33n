@@ -153,6 +153,27 @@ describe('CropCycleSummary.vue', () => {
     await flushPromises()
     expect(wrapper.text()).toContain('crop cycle not found')
   })
+
+  it('renders when cost totals and by_category are null (no tagged costs)', async () => {
+    api.get.mockResolvedValue({
+      data: sampleSummary({
+        cost: { totals: null, by_category: null },
+      }),
+    })
+    routeMock.params = { id: '42' }
+    const wrapper = mount(CropCycleSummary, {
+      global: {
+        stubs: {
+          'router-link': { template: '<a><slot /></a>' },
+          HelpTip: { template: '<span><slot /></span>' },
+        },
+      },
+    })
+    await flushPromises()
+    const costCard = wrapper.find('[data-test="card-cost"]')
+    expect(costCard.exists()).toBe(true)
+    expect(costCard.text()).toContain('No costs tagged to this cycle yet')
+  })
 })
 
 describe('CropCycleCompare.vue', () => {

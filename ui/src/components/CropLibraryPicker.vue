@@ -67,8 +67,9 @@
             :key="item.crop_key + String(item.crop_profile_id || '')"
             type="button"
             class="w-full flex items-center gap-2 px-3 py-2 text-left text-sm hover:bg-zinc-900/80 transition-colors disabled:opacity-40"
-            :class="Number(modelValue) === Number(item.crop_profile_id) ? 'bg-green-950/40 text-white' : 'text-zinc-300'"
+            :class="isSelected(item) ? 'bg-green-950/40 text-white' : 'text-zinc-300'"
             :disabled="!item.has_targets || !item.crop_profile_id"
+            :aria-selected="isSelected(item)"
             @click="selectItem(item)"
           >
             <img
@@ -76,12 +77,16 @@
               :src="item.image_url"
               :alt="cropImageAlt(item)"
               class="w-8 h-8 rounded object-cover shrink-0 bg-zinc-900"
+              :class="isSelected(item) ? 'ring-2 ring-green-500' : ''"
             />
             <span
               v-else
-              class="w-8 h-8 rounded shrink-0 bg-zinc-800 border border-zinc-700"
+              class="w-8 h-8 rounded shrink-0 flex items-center justify-center border text-xs font-semibold"
+              :class="isSelected(item) ? 'bg-green-700 border-green-600 text-white' : 'bg-zinc-800 border-zinc-700 text-transparent'"
               aria-hidden="true"
-            />
+            >
+              ✓
+            </span>
             <span class="min-w-0 truncate">{{ optionLabel(item) }}</span>
           </button>
         </div>
@@ -172,6 +177,10 @@ function optionLabel(item) {
   let s = item.display_name || item.crop_key
   if (item.substrate) s += ` — ${item.substrate}`
   return s
+}
+
+function isSelected(item) {
+  return Number(props.modelValue) === Number(item.crop_profile_id)
 }
 
 async function loadPicker() {

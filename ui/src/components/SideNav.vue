@@ -37,14 +37,10 @@
               class="flex items-center rounded-lg text-sm text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
               :class="[
                 collapsed ? 'justify-center px-0 py-2' : 'gap-3 px-3 py-2',
-                isRelatedNav(item.to) ? 'nav-related' : '',
+                isHighlightedNav(item.to) ? 'nav-related' : '',
               ]"
               active-class="bg-gr33n-900 text-gr33n-400 font-semibold"
               :title="item.navTitle ?? (collapsed ? item.label : undefined)"
-              @mouseenter="hoveredRoute = item.to"
-              @mouseleave="hoveredRoute = null"
-              @focus="hoveredRoute = item.to"
-              @blur="onNavBlur"
             >
               <span class="text-lg shrink-0">{{ item.icon }}</span>
               <span v-if="!collapsed" class="flex-1 min-w-0">{{ item.label }}</span>
@@ -56,13 +52,9 @@
                 :key="child.to"
                 :to="child.to"
                 class="flex items-center gap-2 rounded-lg text-xs text-gray-500 hover:text-white hover:bg-gray-800 transition-colors pl-8 pr-3 py-1.5"
-                :class="isRelatedNav(child.to) ? 'nav-related' : ''"
+                :class="isHighlightedNav(child.to) ? 'nav-related' : ''"
                 active-class="text-gr33n-400 font-semibold"
                 :title="child.navTitle"
-                @mouseenter="hoveredRoute = child.to"
-                @mouseleave="hoveredRoute = null"
-                @focus="hoveredRoute = child.to"
-                @blur="onNavBlur"
               >
                 <span class="text-sm shrink-0 opacity-70">{{ child.icon }}</span>
                 <span class="flex-1 min-w-0 truncate">{{ child.label }}</span>
@@ -95,12 +87,11 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useFarmContextStore } from '../stores/farmContext'
 import { useAuthStore } from '../stores/auth'
 import { useGuardianProposalsStore } from '../stores/guardianProposals'
 import { buildNavGroups } from '../lib/navGroups.js'
-import { relatedTo } from '../lib/navRelations.js'
 import { useNavHighlightStore } from '../stores/navHighlight'
 import GuardianNavLaunch from './GuardianNavLaunch.vue'
 
@@ -143,26 +134,10 @@ watch(
 const navGroups = computed(() => buildNavGroups())
 
 const navHighlight = useNavHighlightStore()
-const hoveredRoute = ref(null)
 
-function isRelatedNav(route) {
-  // In-page link hover (v-nav-hint) → wiggle destination + its related routes
-  // (e.g. wiring badge → Pi setup + Sensors + Controls).
-  if (navHighlight.route) {
-    if (route === navHighlight.route) return true
-    if (relatedTo(navHighlight.route).includes(route)) return true
-  }
-  // Sidebar self-hover → wiggle declared sibling routes (zones ↔ feed ↔ targets).
-  if (!hoveredRoute.value || route === hoveredRoute.value) return false
-  return relatedTo(hoveredRoute.value).includes(route)
-}
-
-function onNavBlur() {
-  requestAnimationFrame(() => {
-    if (!document.activeElement?.closest('aside nav')) {
-      hoveredRoute.value = null
-    }
-  })
+/** Wiggle only the single sidebar tab that matches v-nav-hint (no related-route fan-out). */
+function isHighlightedNav(route) {
+  return navHighlight.route != null && route === navHighlight.route
 }
 </script>
 

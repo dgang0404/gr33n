@@ -6,7 +6,7 @@ import { canonicalSidebarPath } from '../lib/workspaces.js'
  *
  * Attach to any in-page link or button that navigates somewhere. On hover or
  * keyboard focus it tells the sidebar (via the navHighlight store) which route
- * the element leads to, so the matching sidebar item wiggles. Clears on leave.
+ * the element leads to, so the matching sidebar tab wiggles once. Clears on leave.
  *
  * Accepts a route-location: a string path (`'/feeding'`) or a router object
  * (`{ path: '/feeding', query: {...} }`). Legacy paths map to workspace routes.

@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
 import { resolveHintPath } from '../directives/navHint.js'
 import { useNavHighlightStore } from '../stores/navHighlight.js'
+import { buildNavGroups, collectSidebarRoutes } from '../lib/navGroups.js'
 
 describe('Phase 49 / 71 WS5 — nav-hint path resolution', () => {
   it('resolves a string path and maps legacy routes to feed-water workspace', () => {
@@ -42,5 +43,17 @@ describe('Phase 49 WS3 — navHighlight store', () => {
     const store = useNavHighlightStore()
     store.set('')
     expect(store.route).toBe(null)
+  })
+})
+
+describe('Phase 78 — sidebar hint targets base tabs only', () => {
+  const sidebarRoutes = new Set(collectSidebarRoutes(buildNavGroups()))
+
+  it('resolved hint paths are top-level sidebar routes when possible', () => {
+    for (const path of ['/zones', '/money', '/comfort-targets', '/sensors', '/plants']) {
+      const resolved = resolveHintPath(path)
+      expect(resolved).toBeTruthy()
+      expect(sidebarRoutes.has(resolved)).toBe(true)
+    }
   })
 })

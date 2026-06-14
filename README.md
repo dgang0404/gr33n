@@ -7,43 +7,21 @@ An open-source farm operating system — run it on your LAN, keep your data clos
 [![Vue](https://img.shields.io/badge/Vue-3-4FC08D?logo=vue.js)](https://vuejs.org)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-14+-336791?logo=postgresql)](https://postgresql.org)
 
-**Current focus:** Phases **40→67** and **SPA workspace UI (68–81)** shipped on `main`. **Active:** [Phase 82](docs/plans/phase_82_guardian_crop_grounding_hardening.plan.md) (Guardian crop library + grounding) · [Phase 83](docs/plans/phase_83_enterprise_agronomy_seed_pack.plan.md) (enterprise seed pack + bootstrap). [Phases 70–73](docs/plans/phase_68_73_spa_workspace_roadmap.plan.md) — Pi GPIO SPA, workspace depth, Guardian PR discoverability. Hub: [`phase_68_73`](docs/plans/phase_68_73_spa_workspace_roadmap.plan.md) · operator index: [`phase-14`](docs/phase-14-operator-documentation.md) · **Hooking up a real grow?** [`guardian-real-grow-readiness.md`](docs/guardian-real-grow-readiness.md) · nav map: [operator tour §7e–§7j](docs/operator-tour.md#7e-workspaces--sidebar-jobs-tabs-inside-phase-68).
+**Status:** Farmer UX (**40–67**), SPA workspaces (**68–81**), and crop intelligence (**82–110**) are **shipped on `main`**. No active numbered phase — use the docs index below for operator paths and plan history.
 
-### First session after clone
+**Start here:** [First session after clone](docs/first-session-after-clone.md) · [Operator tour](docs/operator-tour.md) · [Phase index (plans + runbooks)](docs/phase-14-operator-documentation.md) · **Real grow?** [Guardian readiness](docs/guardian-real-grow-readiness.md)
 
-**Just cloned?** → **[First session after clone](docs/first-session-after-clone.md)** — Docker DB path, login, demo farm, UI tour. Wall-clock varies (first `go run` compile, Docker pulls); goal is **dashboard + live sensors in one sitting**, not a stopwatch.
+### What's on `main` (operator-facing)
 
-### Farmer-ready v1 (Phase 45)
+| Area | What you get |
+|------|----------------|
+| **Workspaces** | Compact sidebar — **Today**, **My zones** (rooms + hardware + plants), **Comfort & automation**, **Money**, **Farm Guardian**, **Help** |
+| **Plants & grows** | ~46 crops from Postgres (`GET /farms/{id}/crop-library/picker`); EC / DLI / photoperiod targets; plants bound to catalog; grows link to feeding programs & recipes |
+| **Farm Guardian** | On-prem Llama via Ollama; read tools + propose→**Confirm** writes; global pending badge; empty-zone setup nudge; optional vision on zone photos |
+| **Edge** | Pi sensor daemon, actuator `pending_command`, MQTT bridge, GPIO board in UI |
+| **Ops** | Tasks (offline queue), costs/receipts, fertigation, crop-cycle analytics, Insert Commons opt-in |
 
-| Layer | Status |
-|-------|--------|
-| **Code polish** (WS1–WS7) | ✅ On `main` — protocol kit, zones-not-rooms copy, module shells, a11y, docs |
-| **Validation** (WS2/WS8) | ✅ Facilitator dry-run + Vitest — [sit-in-45-dry-run-log.md](docs/workstreams/sit-in-45-dry-run-log.md) |
-| **Mobile Session C** (WS4) | ✅ PWA LAN path + scripts — store TestFlight deferred |
-
-Detail: [operator tour §9](docs/operator-tour.md#9-farmer-validation-sit-in-phase-45--polish-shipped-sit-in-gate-open) · plan: [phase_45](docs/plans/phase_45_farmer_validation_whole_app_polish.plan.md) · Vitest: `ui/src/__tests__/phase-45-closure.test.js`.
-
-### Guardian LLM tool proposals (Phase 46)
-
-| Layer | Status |
-|-------|--------|
-| **Hybrid C** (WS1–WS3) | ✅ Matchers first; LLM JSON fallback on miss when `GUARDIAN_LLM_PROPOSALS=true` |
-| **Validation + safety** (WS2/WS4) | ✅ Allowlist, farm ID binding, smoke + unit tests |
-| **Observability** (WS5) | ✅ `guardian_matcher_proposal_hit` / `guardian_llm_proposal_*` slog |
-| **Docs / OC-46** (WS6) | ✅ Guide §3.3, operator-tour §6h, architecture §7.0l |
-
-Detail: [operator tour §6h](docs/operator-tour.md#6h-when-guardian-opens-a-card-from-your-words-phase-46--shipped) · [guardian-change-requests-guide §3.3](docs/guardian-change-requests-guide.md#33-when-the-llm-opens-a-card-phase-46--shipped) · plan: [phase_46](docs/plans/phase_46_guardian_llm_tool_proposals.plan.md) · Vitest: `ui/src/__tests__/phase-46-closure.test.js`.
-
-### Dev seed hygiene (Phase 48)
-
-| Layer | Status |
-|-------|--------|
-| **Profiles** (WS1) | ✅ `small_indoor` / `demo_showcase` — [dev-farm-profiles.md](docs/dev-farm-profiles.md) |
-| **Idempotent seed** (WS2) | ✅ Sensor `(farm_id, name)` unique; re-run `make seed` safe |
-| **Surgical reset** (WS3) | ✅ `make dev-reset-farm` without volume wipe |
-| **Sanity + retention** (WS5–WS6) | ✅ `make db-sanity-report`; optional `TIMESCALE_RETENTION_DAYS` |
-
-Detail: [local-operator-bootstrap § slow UI](docs/local-operator-bootstrap.md#slow-ui-and-dev-db-hygiene) · plan: [phase_48](docs/plans/phase_48_dev_seed_and_small_farm_profiles.plan.md) · Vitest: `ui/src/__tests__/phase-48-closure.test.js`.
+After `git pull`, restart the API (`make dev-auth-test` or `make run-auth-test`) so new routes (e.g. crop picker) register. DB: `make migrate` on existing installs.
 
 ---
 
@@ -75,7 +53,7 @@ gr33n offers a different default:
 | **Farmer** (default on `main`) | Single-farm grow, supplies batches, receipts, tasks, Pi edge, Guardian read tools | [operator tour](docs/operator-tour.md) |
 | **Enterprise** (future — not shipping) | POs, METRC/traceability, multi-entity GL, WMS — explicitly **out of scope** for farmer UX | [enterprise-tier-boundary.md](docs/enterprise-tier-boundary.md) |
 
-Phases 40–67 (farmer UX + Guardian arcs), Phase 59 (enterprise boundary doc), and **SPA workspace UI through Phase 81** shipped on `main`. **Active work:** [Phases 70–73](docs/plans/phase_68_73_spa_workspace_roadmap.plan.md) (Pi GPIO SPA, workspace backend polish, Guardian PR badge). Accountant handoff today: cost **CSV export** only — not a full general ledger.
+Phases **10–110** shipped on `main` (farmer UX, Guardian, SPA workspaces, crop catalog in Postgres). **Enterprise tier** (POs, traceability, multi-entity GL) is documented but not shipping — see [enterprise-tier-boundary.md](docs/enterprise-tier-boundary.md). Full phase ledger: [phase-14 operator index](docs/phase-14-operator-documentation.md). Accountant handoff today: cost **CSV export** only.
 
 ### 🔌 What Does "Don't Call Home" Mean?
 
@@ -424,6 +402,24 @@ Integration tests under `cmd/api/` (`TestMain` in [`cmd/api/smoke_test.go`](cmd/
 | GET | `/farms/:id/fertigation/events` | List fertigation events (`?crop_cycle_id=` optional) |
 | POST | `/farms/:id/fertigation/events` | Create fertigation event (optional `crop_cycle_id`) |
 
+#### Plants & crop knowledge (Phases 84–87, JWT)
+
+Catalog data lives in **`gr33ncrops`** (seeded from [`data/crop_library.yaml`](data/crop_library.yaml) via migrations — not read from the YAML at runtime).
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/farms/{id}/crop-library/picker` | Grouped crop picker (~46 profiles with EC/DLI targets) for UI dropdowns |
+| GET | `/farms/{id}/crop-profiles` | List effective crop profiles for the farm |
+| GET | `/farms/{id}/crop-profiles/{crop_key}` | Profile + stage targets by crop key |
+| GET | `/crop-profiles/{id}` | Profile detail by id |
+| GET | `/farms/{id}/plants` | Farm plants (catalog-bound via `crop_key`) |
+| POST | `/farms/{id}/plants` | Create plant from catalog |
+| GET | `/plants/{id}` | Plant detail |
+| PUT | `/plants/{id}` | Update plant |
+| DELETE | `/plants/{id}` | Delete plant |
+
+Runbook: [`crop-knowledge-operator-runbook.md`](docs/crop-knowledge-operator-runbook.md) · cutover: [`crop-catalog-db-cutover-runbook.md`](docs/crop-catalog-db-cutover-runbook.md)
+
 #### Crop cycles
 
 | Method | Path | Description |
@@ -664,163 +660,19 @@ See [`docs/farm-guardian-architecture.md`](docs/farm-guardian-architecture.md) f
 
 ---
 
-## Roadmap Status
+## Roadmap & history
 
-A phase-by-phase ledger of what's live on `main`. Each row links to the governing plan doc where one exists; undated rows predate the phase-plan convention.
+All numbered phases through **110** are **shipped**. The README no longer lists every phase row-by-row — use these indexes instead:
 
-| Phase | Focus | Status | Links |
-|------:|-------|--------|-------|
-| 10 | JWT smoke tests, farm-scoped write auth, fertigation ↔ crop cycle link, costs CSV, SensorDetail UX | ✅ Done | — |
-| 11 | Farm RBAC, cost receipts + local storage, PWA shell, Insert Commons opt-in | ✅ Done | — |
-| 12 | Insert Commons federation | ✅ Done | `db/migrations/20260416_phase12_insert_commons_federation.sql` |
-| 13 | Platform evolution — receiver, audit/compliance, offline, finance depth, tenancy | ✅ Done | [plan](docs/plans/phase_13_platform_evolution.plan.md) · [ops doc](docs/phase-13-operator-documentation.md) |
-| 14 | Field network & commons — MQTT/edge, insert pipeline, catalog, receiver, FCM, org governance, domain schema stubs | ✅ Done | [plan](docs/plans/phase_14_network_and_commons.plan.md) · [ops doc](docs/phase-14-operator-documentation.md) |
-| 15 | Farm onboarding & templates | ✅ Done | [plan](docs/plans/phase_15_farm_onboarding.plan.md) |
-| 18 | Platform polish | ✅ Done | [plan](docs/plans/phase_18_platform_polish.plan.md) |
-| 19 | Safety & alert rules | ✅ Done | [plan](docs/plans/phase_19_safety_and_alert_rules.plan.md) |
-| 20 | Automation rule engine (sensor-driven rules, dispatch, cooldowns, notifier fan-out) | ✅ Done | [plan](docs/plans/phase_20_automation_rule_engine.plan.md) |
-| 20.6 | Stage-scoped setpoints (`gr33ncore.zone_setpoints`) + rule engine integration + UI | ✅ Done | — |
-| 20.7 | Cost/energy rollups — nightly runtime × watts × kWh price; per-cycle P&L via `cost_transactions.crop_cycle_id` | ✅ Done | — |
-| 20.8 | Animal husbandry (groups + lifecycle events), typed `aquaponics.loops`, feed autologging, bootstrap upgrade | ✅ Done | — |
-| 20.9 | Labor auto-cost (timer + manual entry + profile rate); program `executable_actions` surface + `metadata.steps` backfill + `ResolveProgramActions` fallback | ✅ Done | — |
-| 20.95 | RAG-prep column adds & housekeeping (executable_actions.program_id, cost/energy columns, labor schema, animal/aquaponics scope) | ✅ Done | [plan](docs/plans/phase_20_95_rag_prep_and_housekeeping.plan.md) |
-| 21 | Crop cycle analytics & yield (`GET /crop-cycles/{id}/summary`, compare, UI, CSV per plan) | ✅ Done (Phase 28 WS1) | [plan](docs/plans/phase_21_crop_cycle_analytics.plan.md) · [Phase 28](docs/plans/phase_28_crop_intelligence_guardian_depth.md) |
-| **22** | **Worker program-tick + final `metadata.steps` backfill sweep** — `runProgramTick` dispatches `executable_actions` per program, `automation_runs.program_id` attribution, 20260517 sweep + per-program NOTICE log, structured fallback warning | ✅ Done | — |
-| **23** | **Stabilization sprint** — CI gates, smoke + `DATABASE_URL` docs, OpenAPI parity, Pi/API key runbook, workflow + MQTT accuracy, worker monitoring docs | ✅ Done (2026-04-18) | [plan](docs/plans/phase_23_stabilization_sprint.plan.md) · [exit sign-off](docs/plans/phase_23_stabilization_sprint.plan.md#exit-sign-off) |
-| **24** | **RAG retrieval system** — embeddings + farm-scoped retrieval API (+ optional LLM synthesis); builds on [20.95 RAG-prep](docs/plans/phase_20_95_rag_prep_and_housekeeping.plan.md) | ✅ Done | [plan](docs/plans/phase_24_rag_retrieval_system.plan.md) |
-| **25** | **RAG operations & expansion** — ingest breadth, incremental re-embed, CI/pgvector parity, integration tests + synthesis limits, UX/docs ([schema ERD text](docs/schema-erd-text.md)) | ✅ Done | [plan](docs/plans/phase_25_rag_operations_and_expansion.plan.md) |
-| **26** | **Operator tutorial, observability, RAG scope** — operator-guide UI, Loki/Promtail/Grafana logging overlay, RAG scope/threat-model, LLM retry/backoff, Ollama setup runbook | ✅ Done | [plan](docs/plans/phase_26_operator_tutorial_observability_rag.plan.md) |
-| **27** | **Farm Guardian AI layer** — on-premise Llama 3.1 70B via Ollama, `AI_ENABLED` + `/capabilities`, streaming `POST /v1/chat`, multi-turn history + RAG grounding + live farm-state snapshot, session CRUD, token usage, cost guards, `/chat` UI panel with session sidebar + bulk-delete | ✅ Done | [plan](docs/plans/phase_27_farm_guardian_ai_layer.md) |
-| **28** | **Crop intelligence & Guardian depth** — crop-cycle analytics, Guardian ↔ cycles + alerts, token-usage dashboard, 80% budget warnings, OpenAPI 0.3.0 | ✅ Done | [plan](docs/plans/phase_28_crop_intelligence_guardian_depth.md) |
-| **29** | **Guardian agent layer** — propose→confirm alert ack/read, slide-out drawer, Ask Guardian entry points, OpenAPI 0.4.0 | ✅ Done | [plan](docs/plans/phase_29_guardian_agent_layer.md) |
-| **30** | **Guardian change requests (PR queue)** — pending inbox, risk tiers, config + actuator tools, zone photos, optional vision, OpenAPI 0.4.3 | ✅ Done | [plan](docs/plans/phase_30_guardian_change_requests.plan.md) |
-| **31** | **Field validation & safe edge** — stub/Pi readings → dashboard; actuator bench; MQTT pattern; enterprise script stubs; Guardian read tools | ✅ Done | [plan](docs/plans/phase_31_field_validation_and_edge.plan.md) · [enterprise topology](docs/hypothetical-enterprise-topology.md) · [phase-14 index](docs/phase-14-operator-documentation.md#phase-31-field-validation-edge) |
-| **32** | **Guardian grow setup PRs** — conversational plant + cycle + fertigation bundles (Confirm-only) + platform doc RAG | ✅ Done | [plan](docs/plans/phase_32_guardian_grow_setup_prs.plan.md) |
-| **33** | **Guardian polish & enterprise ops** — read-tool hardening, context_ref dedup, hardware CI, site manifest | ✅ Done | [plan](docs/plans/phase_33_guardian_polish_and_enterprise_ops.plan.md) |
-| **34** | **Guardian PR iteration** — revise/supersede pending PRs, operator blind-spot facts, impact explanations | ✅ Done | [plan](docs/plans/phase_34_guardian_pr_iteration.plan.md) |
-| **35** | **Lighting domain** — `lighting_programs`, presets (22/2, 18/6, 12/12), PhotoperiodClockEditor, TZ-aware worker | ✅ Done | [plan](docs/plans/phase_35_lighting_domain.plan.md) |
-| **36** | **Greenhouse climate** — `greenhouse_climate` zone profile, typed actuators, rule templates, Guardian read | ✅ Done | [plan](docs/plans/phase_36_greenhouse_climate.plan.md) |
-| **37** | **Guardian offline field assistant** — Pi wiring / plumbing walkthroughs, trades corpus, safety gating | ✅ Done | [plan](docs/plans/phase_37_guardian_offline_field_assistant.plan.md) |
-| **38** | **Plant-needs UI + pulse commands** — zone Water/Light/Climate tabs, timed `pending_command` | ✅ Done | [plan](docs/plans/phase_38_plant_needs_ui_and_pulse_commands.plan.md) |
-| **39** | **Edge fertigation execution** — device command queue, `mix_batch`, Pi mix | ✅ Done | [plan](docs/plans/phase_39_edge_fertigation_execution.plan.md) |
-| **39b** | **Plain irrigation (RO/well)** — `irrigation_only` programs | ✅ Done | [plan](docs/plans/phase_39b_plain_irrigation.plan.md) |
-| **40** | **Zone cockpit** — daily grow in the room (Today strip, Water story wedge) | ✅ Done | [plan](docs/plans/phase_40_unified_farmer_ux_zone_cockpit.plan.md) |
-| **41** | **Farm hub** — morning Dashboard, `?zone_id=`, why-empty hints | ✅ Done | [plan](docs/plans/phase_41_farm_hub_coherence.plan.md) |
-| **47** | **Feeding & water plain language** — zone Water primary, `/feeding` hub | ✅ Done | [plan](docs/plans/phase_47_feeding_water_plain_language.plan.md) |
-| **42** | **Comfort targets & automation** — farmer-facing bands, schedules, rules | ✅ Done | [plan](docs/plans/phase_42_comfort_targets_automation_plain_language.plan.md) |
-| **43** | **Operations hub** — Supplies, Feeding (details), Money | ✅ Done | [plan](docs/plans/phase_43_operations_stock_feeding_finance.plan.md) |
-| **44** | **Getting started & edge wizards** — farm/zone/device setup, Dashboard checklist, Guardian setup mode | ✅ Done | [plan](docs/plans/phase_44_getting_started_edge_wizard.plan.md) |
-| **45** | **Farmer validation & polish** — sit-in dry-run, copy pass, mobile path | ✅ Shipped | [plan](docs/plans/phase_45_farmer_validation_whole_app_polish.plan.md) |
-| **46–67** | Farmer closure (48–59), Guardian intelligence (60–63), crop/weather/field assistant (64–67) | ✅ Shipped | [phase-14 index](docs/phase-14-operator-documentation.md#phases-48-67--farmer-closure--guardian-arcs-shipped) · [53–59 hub](docs/plans/phase_53_59_roadmap.plan.md) |
-| **68–69, 74–81** | SPA workspace UI — sidebar → workspaces, zone ops, comfort hub, routing polish, Pi guide restore | ✅ Shipped | [hub](docs/plans/phase_68_73_spa_workspace_roadmap.plan.md) · Vitest: `phase-78-closure.test.js` … `phase-81-closure.test.js` |
-| **70–73** | Pi GPIO SPA, feed/money depth, Guardian PR discoverability | 📋 Planned | [hub](docs/plans/phase_68_73_spa_workspace_roadmap.plan.md) |
+| Doc | Contents |
+|-----|----------|
+| [`docs/phase-14-operator-documentation.md`](docs/phase-14-operator-documentation.md) | Master operator index — phases 14–110, runbooks, closure links |
+| [`docs/plans/phase_84_100_master_roadmap.plan.md`](docs/plans/phase_84_100_master_roadmap.plan.md) | Crop / intelligence arc (84–110) |
+| [`docs/plans/phase_68_73_spa_workspace_roadmap.plan.md`](docs/plans/phase_68_73_spa_workspace_roadmap.plan.md) | SPA workspace arc (68–81) |
+| [`docs/plans/farmer_ux_roadmap_40_plus.plan.md`](docs/plans/farmer_ux_roadmap_40_plus.plan.md) | Farmer UX arc (40–67) |
+| [`docs/plans/product_backlog_operator_runtime.plan.md`](docs/plans/product_backlog_operator_runtime.plan.md) | Documented backlog (not phase-gated) |
 
-### Phase 23 exit sign-off
-
-Stabilization sprint **closed** on **`main`** **2026-04-18**. Criterion-by-criterion table and next-phase links: **[`docs/plans/phase_23_stabilization_sprint.plan.md` — Exit sign-off](docs/plans/phase_23_stabilization_sprint.plan.md#exit-sign-off)**.
-
-| Gate | Status |
-|------|--------|
-| CI matrix (`make test`, `make lint`, `make audit-openapi`; pytest + UI build — see [Make Commands](#make-commands) and Phase 23 note there) | ✅ |
-| OpenAPI ↔ `routes.go` | ✅ |
-| Smoke / `DATABASE_URL` + CI without DB | ✅ Documented + `TestMain` behavior |
-| Operator docs (workflow, MQTT, Pi auth, automation logs) | ✅ |
-
-**Next up** (priority order):
-
-- [ ] **[Phases 70–73 — SPA workspace backend & Pi depth](docs/plans/phase_68_73_spa_workspace_roadmap.plan.md)** — live Pi GPIO board ([Phase 70](docs/plans/phase_70_hardware_pi_control_spa.plan.md)); feed/water + money unification ([71–72](docs/plans/phase_71_feed_water_unification.plan.md)); Guardian pending badge + site-coords nudge ([73](docs/plans/phase_73_guardian_pr_discoverability.plan.md)).
-- [x] **[Phases 68–69, 74–77 — SPA workspace UI](docs/plans/phase_68_73_spa_workspace_roadmap.plan.md)** — workspaces, zone ops, comfort hub, Today/mobile nav, Help hub, compact sidebar.
-- [x] **Phases 78–81 — zone SPA polish** — zone-first hardware/GPIO, comfort routing hashes, operator glossary, `/pi-setup` restore, Help **Pi + HAT setup** tab, **Sensors & controls** on zone Overview only (Vitest closure tests in `ui/src/__tests__/phase-78-closure.test.js` … `phase-81-closure.test.js`).
-
-<details>
-<summary>Phases 23–67 (shipped — historical checklist)</summary>
-
-- [x] **Phase 23 — stabilization** — **done**; [exit sign-off](docs/plans/phase_23_stabilization_sprint.plan.md#exit-sign-off).
-- [x] **Phase 24 — RAG retrieval** — vectors + farm-scoped API + optional LLM synthesis; Knowledge UI.
-- [x] **Phase 25 — RAG operations & expansion** — CI parity, ingest breadth, incremental re-embed, limits/tests, docs/UX polish.
-- [x] **Phase 26 — operator tutorial, observability, RAG scope** — guide UI, Loki overlay, RAG boundary doc, LLM retry, Ollama runbook.
-- [x] **Phase 27 — Farm Guardian AI layer** — streaming chat, multi-turn history, RAG grounding, live snapshot, session management, cost guards.
-- [x] **Pi ↔ API contract pass** — smoke tests `TestPiContract*` in [`cmd/api/smoke_pi_contract_test.go`](cmd/api/smoke_pi_contract_test.go): enqueue `pending_command` → Pi-key `GET /farms/1/devices` → `POST /actuators/{id}/events` → `DELETE` pending.
-- [x] **Phase 28 — crop intelligence & Guardian depth** — crop analytics, Guardian snapshot depth, usage dashboard, OpenAPI 0.3.0.
-- [x] **Phase 29 — Guardian agent layer** — propose→confirm alert ack/read, slide-out drawer, contextual entry points, OpenAPI 0.4.0 — [plan](docs/plans/phase_29_guardian_agent_layer.md)
-- [x] **Phase 30 — Guardian change requests (PR queue)** — inbox, risk tiers, config + actuator tools, zone photos, vision, OpenAPI 0.4.3 — [plan](docs/plans/phase_30_guardian_change_requests.plan.md)
-- [x] **Phase 31 — field validation & safe edge** — stub loop, Pi checklist, actuator bench, MQTT room-scale, recipe-pack demo, Guardian read tools — [plan](docs/plans/phase_31_field_validation_and_edge.plan.md) · [enterprise topology](docs/hypothetical-enterprise-topology.md) · [phase-14 index](docs/phase-14-operator-documentation.md#phase-31-field-validation-edge)
-- [x] **Phase 32 — Guardian grow setup PRs** — plant + cycle + fertigation bundles from chat + platform doc RAG — [plan](docs/plans/phase_32_guardian_grow_setup_prs.plan.md)
-- [x] **Phase 33 — Guardian polish & enterprise ops** — read-tool hardening, context_ref dedup, read audit log, @hardware lane, site manifest — [plan](docs/plans/phase_33_guardian_polish_and_enterprise_ops.plan.md)
-- [x] **Phase 34 — Guardian PR iteration** — revise/supersede pending PR + operator-stated blind-spot facts — [plan](docs/plans/phase_34_guardian_pr_iteration.plan.md)
-- [x] **Phase 35 — Lighting domain** — photoperiod programs, presets (22/2, 18/6, 12/12), `/lighting` UI — [plan](docs/plans/phase_35_lighting_domain.plan.md) · [operator tour §5](docs/operator-tour.md#5-set-up-186-vegetative-lights-phase-35)
-- [x] **Phase 36 — Greenhouse climate** — shade/vents/fans backend + Guardian tools + OC-36B docs (Climate tab → Phase 38) — [plan](docs/plans/phase_36_greenhouse_climate.plan.md) · [operator tour §5b](docs/operator-tour.md#5b-greenhouse-shade-vents-and-fans-phase-36)
-- [x] **Phase 37 — Guardian offline field assistant** — `field_guide` corpus, procedures, safety stops, degrade, print, background chat — [plan](docs/plans/phase_37_guardian_offline_field_assistant.plan.md) · [operator tour §6d](docs/operator-tour.md#6d-first-field-install-with-guardian-offline-phase-37)
-- [x] **Phase 38 — Plant-needs UI + pulse commands** — zone Water/Light/Climate tabs, Advanced nav, `duration_seconds` on `pending_command` — [plan](docs/plans/phase_38_plant_needs_ui_and_pulse_commands.plan.md) · [operator tour §4a](docs/operator-tour.md#4a-plant-needs-per-zone-phase-38)
-- [ ] **Product backlog (documented)** — program run now, `metadata.steps` deprecation, Guardian lighting propose, mobile distribution — [`docs/plans/product_backlog_operator_runtime.plan.md`](docs/plans/product_backlog_operator_runtime.plan.md)
-- [x] **Phase 39** — edge fertigation queue + mix — [plan](docs/plans/phase_39_edge_fertigation_execution.plan.md)
-- [x] **Phase 39b** — plain irrigation (RO/well) — [plan](docs/plans/phase_39b_plain_irrigation.plan.md)
-- [x] **Phase 40** — unified zone cockpit — [plan](docs/plans/phase_40_unified_farmer_ux_zone_cockpit.plan.md)
-- [x] **Phase 41** — farm hub coherence — [plan](docs/plans/phase_41_farm_hub_coherence.plan.md)
-- [x] **Phase 47** — feeding & water plain language — [plan](docs/plans/phase_47_feeding_water_plain_language.plan.md)
-- [x] **Phase 42** — comfort targets & automation — [plan](docs/plans/phase_42_comfort_targets_automation_plain_language.plan.md)
-- [x] **Phase 43** — operations hub — [plan](docs/plans/phase_43_operations_stock_feeding_finance.plan.md)
-- [x] **Phase 44** — getting started & edge wizards — [plan](docs/plans/phase_44_getting_started_edge_wizard.plan.md)
-- [x] **Phase 45** — farmer validation & polish — [plan](docs/plans/phase_45_farmer_validation_whole_app_polish.plan.md)
-- [x] **Phases 46–67** — see [phase-14 operator index](docs/phase-14-operator-documentation.md#phases-48-67--farmer-closure--guardian-arcs-shipped)
-
-</details>
-
-## Project Roadmap
-
-- [x] gr33ncore schema — users, sensors, schedules, zones, automation rules
-- [x] gr33nnaturalfarming schema — inputs, recipes, batches
-- [x] Go REST API — farms, zones, devices, sensors, tasks, readings
-- [x] Natural farming demo seed — 15 inputs, 14 recipes, full automation (JADAM-style labels)
-- [x] sqlc query layer + enum types
-- [x] Vue 3 frontend — Dashboard, Zones, Sensors, Actuators, Schedules, Settings, Inventory
-- [x] Raspberry Pi sensor client with systemd daemon
-- [x] OpenAPI spec (openapi.yaml)
-- [x] Sensor readings live on dashboard (SSE stream with JWT query param auth)
-- [x] Phase 10 — JWT smoke tests (`AUTH_MODE=auth_test`), farm-scoped write authorization, fertigation ↔ crop cycle link, costs CSV export, SensorDetail export UX
-- [x] Phase 11 — Farm RBAC (viewer / operator / finance / manager / owner), cost receipts + local `FILE_STORAGE_DIR` storage, **PWA-first** installable shell (manifest + SW in production builds; Capacitor still an option for store-distributed apps), Insert Commons opt-in + early sync hook, OpenAPI updates
-- [x] Phase 13 — Platform evolution (receiver-side Insert Commons, audit/compliance API, offline + finance depth, tenancy experiments, optional Capacitor scaffold; [`docs/phase-13-operator-documentation.md`](docs/phase-13-operator-documentation.md) indexes plans and playbooks)
-- [x] Phase 14 — Field network & commons (MQTT/edge, insert pipeline, gr33n_inserts catalog, federation/receiver depth, FCM notifications, org governance, domain schema stubs; [`docs/plans/phase_14_network_and_commons.plan.md`](docs/plans/phase_14_network_and_commons.plan.md), [`docs/phase-14-operator-documentation.md`](docs/phase-14-operator-documentation.md))
-- [x] Actuator control pipeline (automation worker → pending_command → Pi poll → execute → report)
-- [x] Fertigation module — reservoirs, EC targets, programs, events
-- [x] Natural farming inventory UI — input definitions & batch tracking
-- [x] Pi heartbeat loop — devices show online/offline in real time
-- [x] Docker Compose + Dockerfile for containerized deployment
-- [x] Microcontroller integrations — MQTT → HTTP bridge ([`pi_client/mqtt_telemetry_bridge.py`](pi_client/mqtt_telemetry_bridge.py), [`docs/mqtt-edge-operator-playbook.md`](docs/mqtt-edge-operator-playbook.md)); field tasking unchanged (`pending_command` + Pi / bridge poll)
-- [x] Data insert pipeline (Insert Commons validation, approval bundles, export — [`docs/insert-commons-pipeline-runbook.md`](docs/insert-commons-pipeline-runbook.md))
-- [ ] LM Studio integration and AI scaffolds for insert-sharing
-- [x] gr33n_inserts — commons catalog API (browse + farm import audit; [`docs/commons-catalog-operator-playbook.md`](docs/commons-catalog-operator-playbook.md))
-- [x] Stub schemas `gr33ncrops`, `gr33nanimals`, `gr33naquaponics` (placeholder tables; enable via `farm_active_modules` — [`docs/domain-modules-operator-playbook.md`](docs/domain-modules-operator-playbook.md))
-- [x] Phase 20 — automation rule engine (sensor-driven conditions, action dispatch, cooldowns, rule-driven notifications) — [plan](docs/plans/phase_20_automation_rule_engine.plan.md)
-- [x] Phase 20.6–20.9 — stage-scoped setpoints, cost/energy nightly rollups, animal husbandry, labor auto-cost, program actions + `metadata.steps` backfill
-- [x] Phase 20.95 — RAG-prep schema housekeeping for AI consumption — [plan](docs/plans/phase_20_95_rag_prep_and_housekeeping.plan.md)
-- [ ] Phase 21 — crop cycle analytics & yield (summary, compare, UI, CSV) — [plan](docs/plans/phase_21_crop_cycle_analytics.plan.md) *(superseded by Phase 28 WS1 — endpoints shipped)*
-- [x] Phase 22 — worker program-tick (`runProgramTick`), `automation_runs.program_id`, final `metadata.steps` backfill sweep, observable fallback warning
-- [x] Phase 23 — stabilization sprint (CI, smoke, OpenAPI parity, docs, small fixes) — [plan](docs/plans/phase_23_stabilization_sprint.plan.md) · [exit sign-off](docs/plans/phase_23_stabilization_sprint.plan.md#exit-sign-off)
-- [x] Phase 24 — RAG retrieval system (vectors + farm-scoped API + optional LLM) — [plan](docs/plans/phase_24_rag_retrieval_system.plan.md)
-- [x] Phase 25 — RAG operations & expansion (ingest breadth, incremental re-embed, CI parity, limits, UX/docs) — [plan](docs/plans/phase_25_rag_operations_and_expansion.plan.md)
-- [x] Phase 26 — operator tutorial, observability, RAG scope (guide UI, Loki overlay, RAG boundary, LLM retry, Ollama runbook) — [plan](docs/plans/phase_26_operator_tutorial_observability_rag.plan.md)
-- [x] Phase 27 — Farm Guardian AI layer (streaming chat, multi-turn sessions, RAG grounding + live snapshot, cost guards, `/chat` UI panel) — [plan](docs/plans/phase_27_farm_guardian_ai_layer.md)
-- [x] Phase 28 — crop intelligence & Guardian depth (crop analytics, Guardian ↔ cycles/alerts, usage dashboard, OpenAPI 0.3.0) — [plan](docs/plans/phase_28_crop_intelligence_guardian_depth.md)
-- [x] Phase 29 — Guardian agent layer (propose→confirm, slide-out drawer, Ask Guardian entry points, OpenAPI 0.4.0) — [plan](docs/plans/phase_29_guardian_agent_layer.md)
-- [x] Phase 30 — Guardian PR queue (inbox, risk tiers, config + actuator tools, zone photos, vision, OpenAPI 0.4.3) — [plan](docs/plans/phase_30_guardian_change_requests.plan.md)
-- [x] Phase 31 — field validation & edge (stub loop, Pi checklist, actuator bench, MQTT, enterprise scripts, Guardian read tools) — [plan](docs/plans/phase_31_field_validation_and_edge.plan.md) · [enterprise topology](docs/hypothetical-enterprise-topology.md) · [phase-14 index](docs/phase-14-operator-documentation.md#phase-31-field-validation-edge)
-- [x] Phase 32 — Guardian grow setup PRs (plant + cycle + fertigation bundles + platform doc RAG) — [plan](docs/plans/phase_32_guardian_grow_setup_prs.plan.md)
-- [x] Phase 33 — Guardian polish & enterprise ops (read-tool hardening, context_ref dedup, read audit log, @hardware lane, site manifest) — [plan](docs/plans/phase_33_guardian_polish_and_enterprise_ops.plan.md)
-- [x] Phase 34 — Guardian PR iteration & blind-spot inputs — [plan](docs/plans/phase_34_guardian_pr_iteration.plan.md)
-- [x] Phase 35 — Lighting domain (photoperiod, presets, `/lighting` UI) — [plan](docs/plans/phase_35_lighting_domain.plan.md)
-- [x] Phase 36 — Greenhouse climate (shade, panels, fans; Guardian + bootstrap) — [plan](docs/plans/phase_36_greenhouse_climate.plan.md)
-- [x] Phase 37 — Guardian offline field assistant (procedures, field_guide, offline degrade) — [plan](docs/plans/phase_37_guardian_offline_field_assistant.plan.md)
-- [x] Phase 38 — Plant-needs UI + timed actuator pulse (`POST /actuators/{id}/command`) — [plan](docs/plans/phase_38_plant_needs_ui_and_pulse_commands.plan.md)
-- [x] Phase 39 — Edge fertigation execution (command queue, `mix_batch`, Pi mix) — [plan](docs/plans/phase_39_edge_fertigation_execution.plan.md)
-- [x] Phase 39b — Plain irrigation (RO/well) — [plan](docs/plans/phase_39b_plain_irrigation.plan.md)
-- [x] Phase 40 — Unified farmer UX / zone cockpit — [plan](docs/plans/phase_40_unified_farmer_ux_zone_cockpit.plan.md)
-- [x] Phase 41 — Farm hub coherence — [plan](docs/plans/phase_41_farm_hub_coherence.plan.md)
-- [x] Phase 47 — Feeding & water plain language — [plan](docs/plans/phase_47_feeding_water_plain_language.plan.md)
-- [x] Phase 42 — Comfort targets & automation — [plan](docs/plans/phase_42_comfort_targets_automation_plain_language.plan.md)
-- [x] Phase 43 — Operations hub — [plan](docs/plans/phase_43_operations_stock_feeding_finance.plan.md)
-- [x] Phase 44 — Getting started & edge wizards — [plan](docs/plans/phase_44_getting_started_edge_wizard.plan.md)
-- [x] Phase 45 — Farmer validation & polish — [plan](docs/plans/phase_45_farmer_validation_whole_app_polish.plan.md)
+**Local dev gates:** `make test` · `make lint` · `make audit-openapi` · `make check-ui-domain-parity` · UI `npm run build` — see [Make Commands](#make-commands).
 
 ---
 

@@ -124,17 +124,17 @@
             💰 Cost
             <HelpTip>Only cost_transactions explicitly linked to this cycle. Zone-level costs that don't reference the cycle are excluded.</HelpTip>
           </h2>
-          <div v-if="!summary.cost.totals.length" class="text-zinc-500 text-xs">No costs tagged to this cycle yet.</div>
+          <div v-if="!costTotals.length" class="text-zinc-500 text-xs">No costs tagged to this cycle yet.</div>
           <div v-else class="space-y-3">
-            <div v-for="t in summary.cost.totals" :key="t.currency" class="grid grid-cols-3 gap-3 text-sm">
+            <div v-for="t in costTotals" :key="t.currency" class="grid grid-cols-3 gap-3 text-sm">
               <Metric label="Expenses" :value="fmt(t.total_expenses)" :suffix="' ' + t.currency" />
               <Metric label="Income"   :value="fmt(t.total_income)"   :suffix="' ' + t.currency" />
               <Metric label="Net"      :value="fmt(t.net)"            :suffix="' ' + t.currency" />
             </div>
-            <div v-if="summary.cost.by_category.length" class="border-t border-zinc-700 pt-3">
+            <div v-if="costByCategory.length" class="border-t border-zinc-700 pt-3">
               <p class="text-zinc-500 text-[11px] uppercase tracking-wide mb-2">By category</p>
               <ul class="text-xs text-zinc-300 space-y-1">
-                <li v-for="row in summary.cost.by_category" :key="row.category + row.currency" class="flex items-center justify-between">
+                <li v-for="row in costByCategory" :key="row.category + row.currency" class="flex items-center justify-between">
                   <span>{{ row.category }} <span class="text-zinc-500">({{ row.tx_count }} tx)</span></span>
                   <span class="font-mono">{{ fmt(row.expense - row.income) }} {{ row.currency }}</span>
                 </li>
@@ -207,8 +207,11 @@ const compareRoute = computed(() => {
   return buildPostHarvestCompareRoute(cycle.farm_id, farmCycles.value, cycleId.value, cycle.zone_id)
 })
 
+const costTotals = computed(() => summary.value?.cost?.totals ?? [])
+const costByCategory = computed(() => summary.value?.cost?.by_category ?? [])
+
 const harvestEconomics = computed(() => {
-  const totals = summary.value?.cost?.totals || []
+  const totals = costTotals.value
   const row = totals.find((t) => Number(t.total_income) > 0)
   if (!row) return null
   return {
