@@ -1122,18 +1122,21 @@ paths:
     get:
       tags: [sensors]
       summary: Get latest reading for a sensor
-      description: Returns 404 if the sensor has no readings yet.
+      description: Returns 200 with null body if the sensor has no readings yet.
       security: [{ bearerAuth: [] }]
       parameters:
         - { $ref: "#/components/parameters/ID" }
       responses:
         "200":
-          description: Latest sensor reading
+          description: Latest sensor reading, or JSON null when none exist yet
           content:
             application/json:
-              schema: { $ref: "#/components/schemas/SensorReading" }
+              schema:
+                oneOf:
+                  - { $ref: "#/components/schemas/SensorReading" }
+                  - { type: "null" }
         "404":
-          description: No readings yet
+          description: Sensor not found
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Error" }

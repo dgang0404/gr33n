@@ -7,8 +7,10 @@ import { join } from 'node:path'
 import { WORKSPACES } from '../lib/workspaces.js'
 import {
   COMFORT_ADVANCED_SCHEDULES_HASH,
+  ZONE_HARDWARE_HASH,
   ZONE_WATER_PLAN_HASH,
   comfortAdvancedSchedulesRoute,
+  zoneHardwareRoute,
   zoneWaterPlanRoute,
   moneyTabRoute,
 } from '../lib/workspaceRoutes.js'
@@ -32,6 +34,11 @@ describe('Phase 80 — routing & zones tab labels', () => {
       query: { tab: 'water' },
       hash: ZONE_WATER_PLAN_HASH,
     })
+    expect(zoneHardwareRoute(5)).toMatchObject({
+      path: '/zones/5',
+      query: {},
+      hash: ZONE_HARDWARE_HASH,
+    })
     expect(moneyTabRoute('inventory', { inv: 'recipes' })).toEqual({
       path: '/money',
       query: { tab: 'inventory', inv: 'recipes' },
@@ -51,6 +58,7 @@ describe('Phase 80 — routing & zones tab labels', () => {
     expect(story).toContain('id="zone-water-plan"')
     const need = readFileSync(join(uiSrc, 'components/ZoneNeedSection.vue'), 'utf8')
     expect(need).toContain('zoneWaterPlanRoute')
+    expect(need).toContain('zoneHardwareRoute')
   })
 
   it('router enables scrollBehavior for hash navigation', () => {

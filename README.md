@@ -363,7 +363,7 @@ Integration tests under `cmd/api/` (`TestMain` in [`cmd/api/smoke_test.go`](cmd/
 | GET | `/sensors/:id` | Sensor detail |
 | POST | `/farms/:id/sensors` | Create sensor |
 | DELETE | `/sensors/:id` | Delete sensor |
-| GET | `/sensors/:id/readings/latest` | Latest reading |
+| GET | `/sensors/:id/readings/latest` | Latest reading (JSON `null` when none yet) |
 | GET | `/sensors/:id/readings` | List readings (`since`, `until`, `limit`, …) |
 | GET | `/sensors/:id/readings/stats` | Aggregate stats for a time range |
 

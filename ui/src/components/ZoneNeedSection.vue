@@ -32,7 +32,7 @@
         reason="no_telemetry"
         :message="needSensorsEmptyMessage"
         :action-label="otherSensorsInZone ? 'GPIO & wiring below' : undefined"
-        :action-to="otherSensorsInZone ? `#zone-hardware` : undefined"
+        :action-to="otherSensorsInZone ? zoneHardwareRoute(zoneId) : undefined"
         compact
       />
       <div v-else class="space-y-3">
@@ -235,6 +235,7 @@ import { scheduleRunsLabel } from '../lib/cronHumanize.js'
 import { formatEntityHardwareLabel } from '../lib/hardwareWiring.js'
 import {
   comfortTabRoute,
+  zoneHardwareRoute,
   zoneWaterPlanRoute,
   zonesWorkspaceTabRoute,
 } from '../lib/workspaceRoutes.js'

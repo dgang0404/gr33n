@@ -4,6 +4,8 @@
 
 export const COMFORT_ADVANCED_SCHEDULES_HASH = '#comfort-advanced-schedules'
 export const ZONE_WATER_PLAN_HASH = '#zone-water-plan'
+export const ZONE_FEED_HISTORY_HASH = '#zone-feed-history'
+export const ZONE_HARDWARE_HASH = '#zone-hardware'
 
 /**
  * @param {string} tab comfort | schedules | automations | raw
@@ -42,6 +44,10 @@ export function zoneTabRoute(zoneId, tab = 'overview', hash) {
 
 export function zoneWaterPlanRoute(zoneId) {
   return zoneTabRoute(zoneId, 'water', ZONE_WATER_PLAN_HASH)
+}
+
+export function zoneHardwareRoute(zoneId) {
+  return zoneTabRoute(zoneId, 'overview', ZONE_HARDWARE_HASH)
 }
 
 /**

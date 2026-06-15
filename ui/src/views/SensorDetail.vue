@@ -557,7 +557,7 @@ watch(() => route.params.id, async (id) => {
   await fetchHistory()
   try {
     const r = await api.get(`/sensors/${id}/readings/latest`)
-    store.readings[id] = r.data
+    if (r.data) store.readings[id] = r.data
   } catch { /* ignore */ }
 })
 
@@ -577,7 +577,7 @@ onMounted(async () => {
     await fetchHistory()
     try {
       const r = await api.get(`/sensors/${id}/readings/latest`)
-      store.readings[id] = r.data
+      if (r.data) store.readings[id] = r.data
     } catch { /* ignore */ }
   }
 })

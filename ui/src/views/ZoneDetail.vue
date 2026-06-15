@@ -311,7 +311,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import api from '../api'
 import { useFarmStore } from '../stores/farm'
@@ -348,6 +348,7 @@ import {
 import { buildSetupStarters, buildZoneStarters } from '../lib/guardianStarters.js'
 import { computeZoneTodaySnapshot, pickNextZoneSchedule } from '../lib/zoneGrowSummary.js'
 import { lastHarvestedCycleInZone, strainFromPlant } from '../lib/growHub.js'
+import { ZONE_HARDWARE_HASH } from '../lib/workspaceRoutes.js'
 
 const route = useRoute()
 const router = useRouter()
@@ -610,8 +611,16 @@ async function onHarvestComplete(cycle) {
 }
 
 watch(
-  () => route.query.tab,
-  (tab) => {
+  () => [route.hash, route.query.tab],
+  ([hash, tab]) => {
+    if (hash === ZONE_HARDWARE_HASH) {
+      if (activeTab.value !== 'overview') activeTab.value = 'overview'
+      nextTick(() => {
+        const el = document.querySelector(ZONE_HARDWARE_HASH)
+        el?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      })
+      return
+    }
     if (typeof tab === 'string' && zoneTabs.some((t) => t.id === tab)) {
       activeTab.value = tab
     } else if (!tab) {

@@ -275,6 +275,7 @@ import ZoneGrowConnectionLine from './ZoneGrowConnectionLine.vue'
 import ZoneCropStageTargetHint from './ZoneCropStageTargetHint.vue'
 import { FARMER_FOCUS_RING, runFeedNowAriaLabel } from '../lib/farmerA11y.js'
 import {
+  ZONE_FEED_HISTORY_HASH,
   moneyTabRoute,
   zoneTabRoute,
   zoneWaterPlanRoute,
@@ -354,7 +355,7 @@ const reservoirChipClass = computed(() => {
 })
 
 const feedHistoryLink = computed(() =>
-  zoneTabRoute(props.zoneId, 'water', '#zone-feed-history'),
+  zoneTabRoute(props.zoneId, 'water', ZONE_FEED_HISTORY_HASH),
 )
 
 const logFeedLink = computed(() => zoneWaterPlanRoute(props.zoneId))

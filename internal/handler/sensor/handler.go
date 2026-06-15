@@ -386,7 +386,7 @@ func (h *Handler) LatestReading(w http.ResponseWriter, r *http.Request) {
 	reading, err := h.q.GetLatestReadingBySensor(r.Context(), id)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			httputil.WriteError(w, http.StatusNotFound, "no readings yet")
+			httputil.WriteJSON(w, http.StatusOK, nil)
 			return
 		}
 		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
