@@ -13,6 +13,13 @@
         Add Pi device
       </RouterLink>
       <RouterLink
+        v-nav-hint="'/hardware'"
+        to="/pi-setup-wizard"
+        class="inline-flex items-center px-4 py-2 rounded-lg bg-blue-700 hover:bg-blue-600 text-white text-sm font-medium"
+      >
+        🧙 Pi Setup Wizard
+      </RouterLink>
+      <RouterLink
         v-nav-hint="'/settings'"
         to="/settings"
         class="inline-flex items-center px-4 py-2 rounded-lg border border-zinc-700 text-zinc-300 hover:text-white text-sm"
