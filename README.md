@@ -11,15 +11,47 @@ An open-source farm operating system — run it on your LAN, keep your data clos
 
 **Start here:** [First session after clone](docs/first-session-after-clone.md) · [Operator tour](docs/operator-tour.md) · [Phase index (plans + runbooks)](docs/phase-14-operator-documentation.md) · **Real grow?** [Guardian readiness](docs/guardian-real-grow-readiness.md)
 
-### What's on `main` (operator-facing)
+---
 
-| Area | What you get |
-|------|----------------|
-| **Workspaces** | Compact sidebar — **Today**, **My zones** (rooms + hardware + plants), **Comfort & automation**, **Money**, **Farm Guardian**, **Help** |
-| **Plants & grows** | ~46 crops from Postgres (`GET /farms/{id}/crop-library/picker`); EC / DLI / photoperiod targets; plants bound to catalog; grows link to feeding programs & recipes |
-| **Farm Guardian** | On-prem Llama via Ollama; read tools + propose→**Confirm** writes; global pending badge; empty-zone setup nudge; optional vision on zone photos |
-| **Edge** | Pi sensor daemon, actuator `pending_command`, MQTT bridge, GPIO board in UI |
-| **Ops** | Tasks (offline queue), costs/receipts, fertigation, crop-cycle analytics, Insert Commons opt-in |
+## What You Can Do
+
+
+🌡️ **Live Sensor Dashboards** — Temperature, humidity, light, EC, pH, CO₂, soil moisture. Real-time readings in your zones; historical graphs; automated alerts ("humidity above 75 %"). SSE live-stream stays current even offline.
+
+🕹️ **Manual or Scheduled Control** — Turn fans, pumps, lights on/off manually via dashboard toggle, or set up cron-based schedules ("lights on 18:00, off 06:00"). Rules with thresholds ("if temp > 28°C, turn on exhaust fan"). All execution audited.
+
+🧠 **Ask Farm Guardian** — Push-to-talk in the field (or type): *"Is my humidity high? What's this leaf discoloration?"* Guardian answers grounded on:
+  - Your live farm snapshot (zones, current grows, unread alerts)  
+  - ~46 crop profiles with EC/DLI/photoperiod targets  
+  - Symptom catalog + field guides (if indexed)  
+  - General agronomy (Llama 3.1 70B weights)  
+
+✅ **Guardian Proposals** — Guardian suggests actions ("acknowledge this alert," "create a task," "start a flower run in Zone 3," "enqueue pump on for 30s"). You see a card, click **Confirm**, it executes. Nothing silent — all changes audit-logged.
+
+📱 **Offline-First Mobile** — Install as PWA in your browser. When wifi drops:
+  - Dashboard still shows cached readings
+  - Task creation queues locally  
+  - Sensor readings and actuator commands buffer  
+  - On reconnect, everything syncs automatically  
+
+🧑‍🌾 **Easy Pi Setup** — **Phase 60 Pi Setup Wizard:** 6-step guided flow to wire a Relay HAT, assign pumps/fans to channels, test network, download config. Zero manual YAML editing. See `http://localhost:5173/pi-setup-wizard`.
+
+💰 **Costs & Cycle Profitability** — Upload receipts (photos scanned for text), tag costs to crops. Export as CSV or GL ledger. Compare cycle-to-cycle costs/yield. See [Costs section](#costs-finance--receipts) in API docs.
+
+🌾 **Natural Farming** — JADAM input batches (JMS, LAB, FPJ, FFJ, etc.), field application recipes with mixing ratios, batch tracking, farm notes. Starter inventory seeded from `master_seed.sql`.
+
+🔐 **Role-Based Permissions** — Owner (full), Manager (ops + finance), Operator (field + Guardian actions), Viewer (read-only). Confirm gate prevents unauthorized writes.
+
+🌐 **Data Commons** (Optional) — Opt-in to send coarse, pseudonymous aggregates to [Insert Commons](https://www.insercommons.org/) for collective learning. Your farm data never leaves your server without explicit approval.
+
+| Feature | Offline? | Mobile? | Multi-user? | Automation? |
+|---------|----------|---------|-------------|-------------|
+| Sensors & alerts | ✅ (cached) | ✅ (PWA) | ✅ | ✅ (rules) |
+| Guardian chat | ❌ (needs LLM) | ✅ (browser voice) | ✅ (read-only) | ✅ (propose→confirm) |
+| Tasks | ✅ (queued) | ✅ (PWA) | ✅ | — |
+| Actuator control | ✅ (pending) | ✅ (PWA) | ✅ (RBAC) | ✅ (schedules) |
+| Costs | ❌ | ✅ | ✅ | — |
+| Crop cycles | ❌ | ✅ | ✅ | ✅ (stage auto-advance) |
 
 After `git pull`, restart the API (`make dev-auth-test` or `make run-auth-test`) so new routes (e.g. crop picker) register. DB: `make migrate` on existing installs.
 
@@ -62,6 +94,59 @@ gr33n will never require a permanent internet connection, forced login, or hidde
 ### 🌿 Hooking up a real grow?
 
 Demo seed ≠ your room. Before Guardian or automation touches live plants, read **[Guardian & real grows — readiness](docs/guardian-real-grow-readiness.md)** (Confirm gate, ingest checklist, 8B smokes → 70B, bench-first actuators). Guardian **writes** always go propose → **Confirm** — [change requests guide](docs/guardian-change-requests-guide.md).
+
+### ⏰ Automation: Rules & Schedules
+
+gr33n runs autonomous **schedules** and **rules** on a task worker. You define them once, they run forever (until you disable):
+
+| Type | Example | Execution |
+|------|---------|-----------|
+| **Schedule** | "Turn lights on at 18:00, off at 06:00" | Runs daily; posts to `POST /schedules/{id}/actuator-events` at the specified time |
+| **Rule** (threshold-based) | "If temp > 28°C, turn on exhaust fan" | Evaluated every poll (~1 min); triggers only once per state change (no spam) |
+| **One-shot task** | "Water in 2 hours" (created manually) | Queued; executes once; task status updated to done |
+
+All automation is **audited** (task worker logs every execution). You can pause/resume schedules and rules without deleting them. Actual GPIO execution happens on the Pi (`pi_client/gr33n_client.py` polls `GET /farms/:id/devices` for `pending_command` in device config, executes, and clears).
+
+**Guardian integration:** Guardian can suggest pausing a rule ("Humidity is high; pause exhaust rule for now?") or creating a new schedule on the fly. You Confirm, it updates the automation, and schedules re-load automatically.
+
+### 🌐 Offline-First: Work Anywhere
+
+gr33n is designed for connectivity interruptions. Core workflows stay functional without internet:
+
+| What | When Offline | When Back Online |
+|-----|--------------|------------------|
+| **Sensor readings** | Cached in-memory, shown on dashboard | Synced to Postgres; time-series rebuilt |
+| **Tasks** | Create/status-update queued locally in SQLite (`offline_queue.db`) | Auto-synced; conflict resolution offered if edited elsewhere |
+| **Actuator commands** | Queued locally on Pi as `pending_command` | Pi syncs, applies any new commands |
+| **Guardian chat** | ❌ Unavailable (needs LLM) | Restored when API back up |
+| **Dashboard** | Shows last-known state + local queued actions | Real-time updates resume |
+
+**PWA install:** Install gr33n from your browser (iOS/Android/desktop) — gives you offline persistence + icons + notification support. Queued writes are shown with a "⏳ pending sync" indicator until confirmed on the server.
+
+**Phase 12 feature:** The offline queue is explicitly scoped to Tasks (create/status update). For sensors/actuators, the Pi client manages its own offline buffer (`pi_client/offline_queue.db` SQLite) and syncs on reconnect.
+
+### 👥 Roles & Permissions (RBAC)
+
+gr33n uses **farm-scoped roles**. Each user has one role per farm:
+
+| Role | Permissions |
+|------|-------------|
+| **Owner** | Everything: settings, membership, costs, Guardian Confirm, farm deletion |
+| **Manager** | Field ops, costs/finance, Guardian Confirm, Guardian read tools |
+| **Operator** | Field ops (zones, sensors, actuators, tasks, schedules, automation), Guardian Confirm |
+| **Viewer** | Read-only dashboards, Guardian chat (but NO Confirm capability — returns 403 when they try) |
+
+**Guardian enforce:** Only Manager/Operator can Confirm proposals. Viewer can ask Guardian questions, but cannot click the Confirm button (disabled in UI + 403 on API if they bypass).
+
+**Per-action caps:**  
+- Viewing costs → anyone (Owner/Manager/Operator)  
+- Exporting costs → Finance role (Owner/Manager)  
+- Changing membership → Owner only  
+- Changing farm settings → Owner/Manager  
+- Creating/updating crop cycles → Operator+  
+- Guardian Confirm → Operator+  
+
+Exact checks live in `internal/farmauthz`. See [`docs/audit-events-operator-playbook.md`](docs/audit-events-operator-playbook.md) for audit trail details.
 
 ---
 
@@ -625,22 +710,49 @@ gr33n's AI layer runs **fully on your intranet** — no data leaves the LAN in F
 
 The AI features are gated by `AI_ENABLED` (default on) and degrade gracefully: in **Lite mode** (no LLM configured) `POST /v1/chat` returns 503 and the "Ask (LLM)" button in the Knowledge UI is disabled with an explanation. In **Full mode**, Guardian is available from the **global slide-out drawer** on any page (sidebar, TopBar ✨, right-edge tab) and at `/chat`.
 
-**What Guardian does today (Phase 27–37):** conversational Q&A grounded on your farm snapshot, optional **RAG** (farm rows + curated platform docs via `make rag-ingest-platform-docs`; **field guides** via `make rag-ingest-field-guides`), and **read tools** (zones, alerts, fertigation, lighting, greenhouse climate). **Offline field mode (37):** guided procedures (`start procedure …`), safety hard-stops, static print checklists, graceful degrade when the LLM is down — see [§6d](docs/operator-tour.md#6d-first-field-install-with-guardian-offline-phase-37). **Writes** always use propose→**Confirm** — nothing hits the DB until you approve.
+### Guardian Tool Registry (What Guardian Can Actually Do)
 
-| Phase | Guardian capability (shipped) |
-|-------|------------------------------|
-| **27–28** | Streaming chat, sessions, live snapshot, crop-cycle context |
-| **29** | Alert **ack** / **mark read** via propose→confirm (not autonomous) |
-| **30** | **PR inbox** (`/guardian/requests`), risk tiers, config patches, **`enqueue_actuator_command`** → Pi `pending_command`, zone photos, optional vision |
-| **31** | Read-only zone / alert / plant lookups from chat |
-| **32** | **Grow setup pack** (plant + cycle + fertigation bundle) + platform doc RAG corpus |
-| **33** | Read-tool hardening, `context_ref` dedup, read-tool audit log |
-| **34** | **Revise** a pending PR in-session; **operator-stated facts** (labeled, not sensor readings); impact explanations on cards |
-| **35** | **`summarize_zone_lighting`** — photoperiod programs (separate from greenhouse shade) |
-| **36** | **`summarize_zone_greenhouse_climate`**; actuator commands `deploy`/`retract`/`open`/`close` via Confirm — [operator tour §5b](docs/operator-tour.md#5b-greenhouse-shade-vents-and-fans-phase-36) |
-| **37** | **`field_guide` RAG** + **guided procedures** (confirm-per-step), **safety stops** (mains / pressurized water), **`GET /v1/chat/health`**, LLM-down **field degrade**, **Pinia background chat** — [operator tour §6d](docs/operator-tour.md#6d-first-field-install-with-guardian-offline-phase-37) |
+**Read-only tools** (Guardian looks things up for you):
+- **Zone/plant/alert lookup** — List active zones, plants in cycle, unread alerts, crop profiles  
+- **`summarize_zone_lighting`** — Active photoperiod schedules (18-6 veg, 12-12 flower, etc.) for a zone  
+- **`summarize_zone_greenhouse_climate`** — Shade/vent/fan profiles, recent events, linked actuators  
 
-Viewers can chat but cannot **Confirm**. Confirmed actions log `guardian_tool_executed`. Automation **rules/alerts** still run without chat — Guardian PRs are intentional, reviewed changes only. Architecture: [`docs/farm-guardian-architecture.md`](docs/farm-guardian-architecture.md). Operator walkthrough: [`docs/operator-tour.md`](docs/operator-tour.md) · [`docs/phase-14-operator-documentation.md`](docs/phase-14-operator-documentation.md).
+**Write tools** (propose→confirm — you approve, nothing happens automatically):
+
+| Action | Guardian suggests | You confirm | Result |
+|--------|------------------|-------------|--------|
+| Alert mgmt | Acknowledge humidity alarm | ✅ | Alert moved to acknowledged; audit log |
+| Task creation | "Create task: Check dehumidifier drain" | ✅ | Task queued (syncs offline) |
+| Crop setup | "Start OG Kush in Flower Room, 12-12 schedule" | ✅ | Plant + cycle + program created atomically (Phase 32) |
+| Fertigation | "Increase EC target to 1.8 mS/cm" | ✅ | Program updated; next feed uses new target |
+| Scheduling | "Pause the 18-6 light schedule" | ✅ | Schedule toggled; rule paused in audit log |
+| Automation | "Bump exhaust rule threshold to 28°C" | ✅ | Rule updated; will trigger at new setpoint |
+| Lighting | "Create 12-12 flower schedule for Flower Room" | ✅ | ON/OFF schedules created and linked (Phase 35) |
+| Climate control | "Deploy greenhouse shade now" | ✅ | Actuator command queued to Pi `pending_command` (Phase 36) |
+| Actuators | "Turn main pump on for 30 seconds" | ✅ | Relay command queued to Pi; executes when pi_client polls |
+
+**Example workflow:**
+```
+9 AM — Operator in the field with phone
+  Q: "Is this leaf discoloration a problem?"
+  A: Guardian retrieves zone photo + crop profile (OG Kush, Day 32 flower)
+     "I see possible early magnesium deficiency (purple stems at EC 1.8).
+      Recommend foliar Mg sulfate or nutrient rebalance.
+      [Confirm] to create a task for this."
+     ✅ Operator: Confirms
+     → Task created: "Apply Mg foliar or rebalance nutrients (photo attached)"
+     → Logged in audit: guardian_tool_executed / create_task / operator_id
+```
+
+**What Guardian does today (Phase 27–67):** conversational Q&A grounded on your farm snapshot, optional **RAG** (farm rows + curated platform docs via `make rag-ingest-platform-docs`; **field guides** via `make rag-ingest-field-guides`), and **read tools** (zones, alerts, fertigation, lighting, greenhouse climate, plant lookup). **Offline field mode (37):** guided procedures (`start procedure …`), safety hard-stops, static print checklists, graceful degrade when the LLM is down — see [§6d](docs/operator-tour.md#6d-first-field-install-with-guardian-offline-phase-37). **Hands-free field (67):** push-to-talk mic + optional voice readback so you can ask questions while carrying water or pruning. **Writes** always use propose→**Confirm** — nothing hits the DB until you approve.
+
+**Safety & governance:**
+- ✅ **Audit logged** — every confirmed tool execution is recorded with user, timestamp, tool ID, arguments  
+- ✅ **RBAC-gated** — Operator role required to Confirm; Viewer can chat but cannot execute  
+- ✅ **Never autonomous** — Guardian proposes; you approve; nothing is silent  
+- ✅ **Reversible** — Edit a proposal in-session before Confirm (Phase 34)  
+
+Automation **rules/alerts** still run without chat — Guardian PRs are intentional, reviewed changes only. Architecture: [`docs/farm-guardian-architecture.md`](docs/farm-guardian-architecture.md). Operator walkthrough: [`docs/operator-tour.md`](docs/operator-tour.md) · [`docs/phase-14-operator-documentation.md`](docs/phase-14-operator-documentation.md).
 
 All AI calls remain inside your farm's intranet:
 
