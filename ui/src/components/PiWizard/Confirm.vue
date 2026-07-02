@@ -142,3 +142,4 @@ async function testRelay() {
   // TODO: Call API to test relay
   console.log('Pulse relay:', selectedRelay.value)
 }
+</script>
