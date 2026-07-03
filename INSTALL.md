@@ -267,6 +267,16 @@ In CI it is a **manual** `hardware-smoke` job (`workflow_dispatch`, self-hosted
 
 ### Ollama E2E smokes (Phase 112)
 
+**Database first:** smokes need a migrated Postgres with `auth.users` and demo seed.
+If you see `relation "auth.users" does not exist`, run once:
+
+```bash
+./scripts/bootstrap-local.sh --seed
+# Docker Compose instead: make dev-stack
+```
+
+Ensure `.env` has `DATABASE_URL` pointing at that database (same as `make dev-auth-test`).
+
 Guardian model-selector E2E tests (`TestPhase112_*`) compile only with the
 `ollama` build tag and expect a running Ollama at `LLM_BASE_URL`:
 

@@ -89,9 +89,15 @@ ollama-smoke-help: ## Phase 112/118 — print Ollama Guardian E2E smoke commands
 	@echo "Full notes: INSTALL.md § Ollama E2E smokes"
 	@echo ""
 	@echo "These are Go tests — they do NOT run inside make dev-auth-test."
-	@echo "They start their own test API + DB (like make test). You only need:"
-	@echo "  • Ollama running at LLM_BASE_URL"
-	@echo "  • DATABASE_URL, JWT_SECRET, PI_API_KEY in .env (same as dev-auth-test)"
+	@echo "They start their own test API against DATABASE_URL (like make test)."
+	@echo ""
+	@echo "One-time DB setup (if smokes fail with auth.users does not exist):"
+	@echo "  ./scripts/bootstrap-local.sh --seed"
+	@echo "  # or Docker: make dev-stack"
+	@echo ""
+	@echo "Before each run:"
+	@echo "  • Ollama running at LLM_BASE_URL (.env)"
+	@echo "  • .env with DATABASE_URL, JWT_SECRET, PI_API_KEY"
 	@echo "  • AI_ENABLED=true, LLM_MODEL set (e.g. tinyllama)"
 	@echo ""
 	@echo "  make ollama-smoke          # standard run"
@@ -100,10 +106,12 @@ ollama-smoke-help: ## Phase 112/118 — print Ollama Guardian E2E smoke commands
 	@echo "Optional pulls before first run:"
 	@echo "  ollama pull tinyllama && ollama pull phi3:mini"
 
-ollama-smoke: ## Run Phase 112+118 Ollama smokes (Ollama + .env LLM_* required)
+ollama-smoke: ## Run Phase 112+118 Ollama smokes (bootstrap-local --seed + .env required)
+	@if [ -f .env ]; then set -a && . ./.env && set +a; fi; \
 	$(GO) test -tags 'dev ollama' ./cmd/api/ -run 'TestPhase112|TestPhase118' -count=1 -v
 
 ollama-smoke-cpu: ## Ollama smokes for CPU-only hosts (longer timeout, lower max tokens)
+	@if [ -f .env ]; then set -a && . ./.env && set +a; fi; \
 	$(GO) test -tags 'dev ollama' ./cmd/api/ -run 'TestPhase112|TestPhase118' -count=1 -v \
 		-timeout 40m LLM_TIMEOUT_SECONDS=150 LLM_MAX_TOKENS=60
 
