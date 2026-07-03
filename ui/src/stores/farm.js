@@ -57,6 +57,12 @@ export const useFarmStore = defineStore('farm', {
 
   actions: {
     async loadAll(farmId) {
+      // Some callers (GPIO board, Pi setup guide) don't know the farm — fall
+      // back to the persisted selection instead of requesting /farms/undefined.
+      if (farmId == null) {
+        farmId = Number(localStorage.getItem('gr33n_farm_id')) || null
+      }
+      if (!farmId) return
       this.loading = true
       try {
         const [farm, zones, sensors, devices, actuators] = await Promise.all([

@@ -103,6 +103,11 @@ gr33n offers a different default:
 
 Phases **10–110** shipped on `main` (farmer UX, Guardian, SPA workspaces, crop catalog in Postgres). **Enterprise tier** (POs, traceability, multi-entity GL) is documented but not shipping — see [enterprise-tier-boundary.md](docs/enterprise-tier-boundary.md). Full phase ledger: [phase-14 operator index](docs/phase-14-operator-documentation.md). Accountant handoff today: cost **CSV export** only.
 
+Two foundational milestones stay called out here because closure tests guard them:
+
+- **Phase 45 — Farmer-ready v1** (shipped): farmer validation sit-in and whole-app polish. Dry-run results: [`docs/workstreams/sit-in-45-dry-run-log.md`](docs/workstreams/sit-in-45-dry-run-log.md); plan: [`docs/plans/phase_45_farmer_validation_whole_app_polish.plan.md`](docs/plans/phase_45_farmer_validation_whole_app_polish.plan.md).
+- **Phase 46 — Guardian LLM tool proposals** (shipped, hybrid C): the LLM can open change-request cards behind the `GUARDIAN_LLM_PROPOSALS` flag. Plan: [`docs/plans/phase_46_guardian_llm_tool_proposals.plan.md`](docs/plans/phase_46_guardian_llm_tool_proposals.plan.md); guard: `ui/src/__tests__/phase-46-closure.test.js`.
+
 ### 🔌 What Does "Don't Call Home" Mean?
 
 gr33n will never require a permanent internet connection, forced login, or hidden check-in with third-party servers. Whether you're on an island, a mountaintop, or a mesh-netted greenhouse, gr33n works where you live, without compromise.

@@ -234,9 +234,11 @@ describe('CropCycleCompare.vue', () => {
       },
     })
     await flushPromises()
-    const checkboxes = wrapper.findAll('input[type="checkbox"]')
-    await checkboxes[0].trigger('change')
-    await checkboxes[1].trigger('change')
+    // The picker sorts cycles newest-first, so select by label instead of position.
+    const checkboxFor = (name) =>
+      wrapper.findAll('label').find((l) => l.text().includes(name)).find('input[type="checkbox"]')
+    await checkboxFor('Cycle A').trigger('change')
+    await checkboxFor('Cycle B').trigger('change')
     await flushPromises()
     expect(api.get).toHaveBeenCalledWith('/farms/1/crop-cycles/compare?ids=1,2')
     expect(wrapper.find('[data-test="compare-table"]').exists()).toBe(true)

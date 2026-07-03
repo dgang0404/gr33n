@@ -8,6 +8,7 @@
         v-nav-hint="seg.hint"
         class="font-medium text-zinc-400 hover:text-green-400 hover:underline motion-reduce:hover:no-underline focus:outline-none focus-visible:text-green-400"
         :data-test="`pipeline-segment-${seg.id}`"
+        @click="router.push(seg.hint)"
       >
         {{ seg.label }}
       </button>
@@ -17,10 +18,13 @@
 
 <script setup>
 import { computed } from 'vue'
+import { useRouter } from 'vue-router'
 import {
   buildZoneConnectionSegments,
   resolvePipelineDeviceHint,
 } from '../lib/zoneConnectionPipeline.js'
+
+const router = useRouter()
 
 const props = defineProps({
   need: { type: String, default: '' },
