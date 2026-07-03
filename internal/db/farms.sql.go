@@ -21,7 +21,7 @@ INSERT INTO gr33ncore.farms (
     organization_id,
     created_at, updated_at
 ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW(), NOW())
-RETURNING id, name, description, location_text, location_gis, size_hectares, farm_type, scale_tier, owner_user_id, timezone, currency, operational_status, created_at, updated_at, updated_by_user_id, deleted_at, organization_id, insert_commons_opt_in, insert_commons_last_sync_at, insert_commons_last_attempt_at, insert_commons_last_delivery_status, insert_commons_last_error, insert_commons_backoff_until, insert_commons_consecutive_failures, insert_commons_require_approval, meta_data
+RETURNING id, name, description, location_text, location_gis, size_hectares, farm_type, scale_tier, owner_user_id, timezone, currency, operational_status, created_at, updated_at, updated_by_user_id, deleted_at, organization_id, insert_commons_opt_in, insert_commons_last_sync_at, insert_commons_last_attempt_at, insert_commons_last_delivery_status, insert_commons_last_error, insert_commons_backoff_until, insert_commons_consecutive_failures, insert_commons_require_approval, meta_data, guardian_preferred_model
 `
 
 type CreateFarmParams struct {
@@ -83,12 +83,13 @@ func (q *Queries) CreateFarm(ctx context.Context, arg CreateFarmParams) (Gr33nco
 		&i.InsertCommonsConsecutiveFailures,
 		&i.InsertCommonsRequireApproval,
 		&i.MetaData,
+		&i.GuardianPreferredModel,
 	)
 	return i, err
 }
 
 const getFarmByID = `-- name: GetFarmByID :one
-SELECT id, name, description, location_text, location_gis, size_hectares, farm_type, scale_tier, owner_user_id, timezone, currency, operational_status, created_at, updated_at, updated_by_user_id, deleted_at, organization_id, insert_commons_opt_in, insert_commons_last_sync_at, insert_commons_last_attempt_at, insert_commons_last_delivery_status, insert_commons_last_error, insert_commons_backoff_until, insert_commons_consecutive_failures, insert_commons_require_approval, meta_data FROM gr33ncore.farms
+SELECT id, name, description, location_text, location_gis, size_hectares, farm_type, scale_tier, owner_user_id, timezone, currency, operational_status, created_at, updated_at, updated_by_user_id, deleted_at, organization_id, insert_commons_opt_in, insert_commons_last_sync_at, insert_commons_last_attempt_at, insert_commons_last_delivery_status, insert_commons_last_error, insert_commons_backoff_until, insert_commons_consecutive_failures, insert_commons_require_approval, meta_data, guardian_preferred_model FROM gr33ncore.farms
 WHERE id = $1 AND deleted_at IS NULL
 `
 
@@ -122,6 +123,7 @@ func (q *Queries) GetFarmByID(ctx context.Context, id int64) (Gr33ncoreFarm, err
 		&i.InsertCommonsConsecutiveFailures,
 		&i.InsertCommonsRequireApproval,
 		&i.MetaData,
+		&i.GuardianPreferredModel,
 	)
 	return i, err
 }
@@ -159,7 +161,7 @@ func (q *Queries) GetFarmSiteCoords(ctx context.Context, id int64) (GetFarmSiteC
 }
 
 const listAllFarms = `-- name: ListAllFarms :many
-SELECT id, name, description, location_text, location_gis, size_hectares, farm_type, scale_tier, owner_user_id, timezone, currency, operational_status, created_at, updated_at, updated_by_user_id, deleted_at, organization_id, insert_commons_opt_in, insert_commons_last_sync_at, insert_commons_last_attempt_at, insert_commons_last_delivery_status, insert_commons_last_error, insert_commons_backoff_until, insert_commons_consecutive_failures, insert_commons_require_approval, meta_data FROM gr33ncore.farms
+SELECT id, name, description, location_text, location_gis, size_hectares, farm_type, scale_tier, owner_user_id, timezone, currency, operational_status, created_at, updated_at, updated_by_user_id, deleted_at, organization_id, insert_commons_opt_in, insert_commons_last_sync_at, insert_commons_last_attempt_at, insert_commons_last_delivery_status, insert_commons_last_error, insert_commons_backoff_until, insert_commons_consecutive_failures, insert_commons_require_approval, meta_data, guardian_preferred_model FROM gr33ncore.farms
 WHERE deleted_at IS NULL
 ORDER BY name ASC
 `
@@ -200,6 +202,7 @@ func (q *Queries) ListAllFarms(ctx context.Context) ([]Gr33ncoreFarm, error) {
 			&i.InsertCommonsConsecutiveFailures,
 			&i.InsertCommonsRequireApproval,
 			&i.MetaData,
+			&i.GuardianPreferredModel,
 		); err != nil {
 			return nil, err
 		}
@@ -212,7 +215,7 @@ func (q *Queries) ListAllFarms(ctx context.Context) ([]Gr33ncoreFarm, error) {
 }
 
 const listFarmsByOwner = `-- name: ListFarmsByOwner :many
-SELECT id, name, description, location_text, location_gis, size_hectares, farm_type, scale_tier, owner_user_id, timezone, currency, operational_status, created_at, updated_at, updated_by_user_id, deleted_at, organization_id, insert_commons_opt_in, insert_commons_last_sync_at, insert_commons_last_attempt_at, insert_commons_last_delivery_status, insert_commons_last_error, insert_commons_backoff_until, insert_commons_consecutive_failures, insert_commons_require_approval, meta_data FROM gr33ncore.farms
+SELECT id, name, description, location_text, location_gis, size_hectares, farm_type, scale_tier, owner_user_id, timezone, currency, operational_status, created_at, updated_at, updated_by_user_id, deleted_at, organization_id, insert_commons_opt_in, insert_commons_last_sync_at, insert_commons_last_attempt_at, insert_commons_last_delivery_status, insert_commons_last_error, insert_commons_backoff_until, insert_commons_consecutive_failures, insert_commons_require_approval, meta_data, guardian_preferred_model FROM gr33ncore.farms
 WHERE owner_user_id = $1 AND deleted_at IS NULL
 ORDER BY created_at DESC
 `
@@ -253,6 +256,7 @@ func (q *Queries) ListFarmsByOwner(ctx context.Context, ownerUserID uuid.UUID) (
 			&i.InsertCommonsConsecutiveFailures,
 			&i.InsertCommonsRequireApproval,
 			&i.MetaData,
+			&i.GuardianPreferredModel,
 		); err != nil {
 			return nil, err
 		}
@@ -265,7 +269,7 @@ func (q *Queries) ListFarmsByOwner(ctx context.Context, ownerUserID uuid.UUID) (
 }
 
 const listFarmsForUser = `-- name: ListFarmsForUser :many
-SELECT f.id, f.name, f.description, f.location_text, f.location_gis, f.size_hectares, f.farm_type, f.scale_tier, f.owner_user_id, f.timezone, f.currency, f.operational_status, f.created_at, f.updated_at, f.updated_by_user_id, f.deleted_at, f.organization_id, f.insert_commons_opt_in, f.insert_commons_last_sync_at, f.insert_commons_last_attempt_at, f.insert_commons_last_delivery_status, f.insert_commons_last_error, f.insert_commons_backoff_until, f.insert_commons_consecutive_failures, f.insert_commons_require_approval, f.meta_data
+SELECT f.id, f.name, f.description, f.location_text, f.location_gis, f.size_hectares, f.farm_type, f.scale_tier, f.owner_user_id, f.timezone, f.currency, f.operational_status, f.created_at, f.updated_at, f.updated_by_user_id, f.deleted_at, f.organization_id, f.insert_commons_opt_in, f.insert_commons_last_sync_at, f.insert_commons_last_attempt_at, f.insert_commons_last_delivery_status, f.insert_commons_last_error, f.insert_commons_backoff_until, f.insert_commons_consecutive_failures, f.insert_commons_require_approval, f.meta_data, f.guardian_preferred_model
 FROM gr33ncore.farms f
 JOIN gr33ncore.farm_memberships m ON m.farm_id = f.id
 WHERE m.user_id = $1 AND f.deleted_at IS NULL
@@ -308,6 +312,7 @@ func (q *Queries) ListFarmsForUser(ctx context.Context, userID uuid.UUID) ([]Gr3
 			&i.InsertCommonsConsecutiveFailures,
 			&i.InsertCommonsRequireApproval,
 			&i.MetaData,
+			&i.GuardianPreferredModel,
 		); err != nil {
 			return nil, err
 		}
@@ -323,7 +328,7 @@ const markFarmInsertCommonsAttempt = `-- name: MarkFarmInsertCommonsAttempt :one
 UPDATE gr33ncore.farms
 SET insert_commons_last_attempt_at = NOW(), updated_at = NOW()
 WHERE id = $1 AND deleted_at IS NULL AND insert_commons_opt_in = TRUE
-RETURNING id, name, description, location_text, location_gis, size_hectares, farm_type, scale_tier, owner_user_id, timezone, currency, operational_status, created_at, updated_at, updated_by_user_id, deleted_at, organization_id, insert_commons_opt_in, insert_commons_last_sync_at, insert_commons_last_attempt_at, insert_commons_last_delivery_status, insert_commons_last_error, insert_commons_backoff_until, insert_commons_consecutive_failures, insert_commons_require_approval, meta_data
+RETURNING id, name, description, location_text, location_gis, size_hectares, farm_type, scale_tier, owner_user_id, timezone, currency, operational_status, created_at, updated_at, updated_by_user_id, deleted_at, organization_id, insert_commons_opt_in, insert_commons_last_sync_at, insert_commons_last_attempt_at, insert_commons_last_delivery_status, insert_commons_last_error, insert_commons_backoff_until, insert_commons_consecutive_failures, insert_commons_require_approval, meta_data, guardian_preferred_model
 `
 
 func (q *Queries) MarkFarmInsertCommonsAttempt(ctx context.Context, id int64) (Gr33ncoreFarm, error) {
@@ -356,6 +361,7 @@ func (q *Queries) MarkFarmInsertCommonsAttempt(ctx context.Context, id int64) (G
 		&i.InsertCommonsConsecutiveFailures,
 		&i.InsertCommonsRequireApproval,
 		&i.MetaData,
+		&i.GuardianPreferredModel,
 	)
 	return i, err
 }
@@ -370,7 +376,7 @@ SET insert_commons_last_sync_at = NOW(),
     insert_commons_consecutive_failures = 0,
     updated_at = NOW()
 WHERE id = $1 AND deleted_at IS NULL AND insert_commons_opt_in = TRUE
-RETURNING id, name, description, location_text, location_gis, size_hectares, farm_type, scale_tier, owner_user_id, timezone, currency, operational_status, created_at, updated_at, updated_by_user_id, deleted_at, organization_id, insert_commons_opt_in, insert_commons_last_sync_at, insert_commons_last_attempt_at, insert_commons_last_delivery_status, insert_commons_last_error, insert_commons_backoff_until, insert_commons_consecutive_failures, insert_commons_require_approval, meta_data
+RETURNING id, name, description, location_text, location_gis, size_hectares, farm_type, scale_tier, owner_user_id, timezone, currency, operational_status, created_at, updated_at, updated_by_user_id, deleted_at, organization_id, insert_commons_opt_in, insert_commons_last_sync_at, insert_commons_last_attempt_at, insert_commons_last_delivery_status, insert_commons_last_error, insert_commons_backoff_until, insert_commons_consecutive_failures, insert_commons_require_approval, meta_data, guardian_preferred_model
 `
 
 type MarkFarmInsertCommonsDeliveredParams struct {
@@ -408,6 +414,7 @@ func (q *Queries) MarkFarmInsertCommonsDelivered(ctx context.Context, arg MarkFa
 		&i.InsertCommonsConsecutiveFailures,
 		&i.InsertCommonsRequireApproval,
 		&i.MetaData,
+		&i.GuardianPreferredModel,
 	)
 	return i, err
 }
@@ -421,7 +428,7 @@ SET insert_commons_last_attempt_at = NOW(),
     insert_commons_consecutive_failures = 0,
     updated_at = NOW()
 WHERE id = $1 AND deleted_at IS NULL AND insert_commons_opt_in = TRUE
-RETURNING id, name, description, location_text, location_gis, size_hectares, farm_type, scale_tier, owner_user_id, timezone, currency, operational_status, created_at, updated_at, updated_by_user_id, deleted_at, organization_id, insert_commons_opt_in, insert_commons_last_sync_at, insert_commons_last_attempt_at, insert_commons_last_delivery_status, insert_commons_last_error, insert_commons_backoff_until, insert_commons_consecutive_failures, insert_commons_require_approval, meta_data
+RETURNING id, name, description, location_text, location_gis, size_hectares, farm_type, scale_tier, owner_user_id, timezone, currency, operational_status, created_at, updated_at, updated_by_user_id, deleted_at, organization_id, insert_commons_opt_in, insert_commons_last_sync_at, insert_commons_last_attempt_at, insert_commons_last_delivery_status, insert_commons_last_error, insert_commons_backoff_until, insert_commons_consecutive_failures, insert_commons_require_approval, meta_data, guardian_preferred_model
 `
 
 type MarkFarmInsertCommonsSkippedReceiverParams struct {
@@ -459,6 +466,7 @@ func (q *Queries) MarkFarmInsertCommonsSkippedReceiver(ctx context.Context, arg 
 		&i.InsertCommonsConsecutiveFailures,
 		&i.InsertCommonsRequireApproval,
 		&i.MetaData,
+		&i.GuardianPreferredModel,
 	)
 	return i, err
 }
@@ -472,7 +480,7 @@ SET insert_commons_last_attempt_at = NOW(),
     insert_commons_consecutive_failures = insert_commons_consecutive_failures + 1,
     updated_at = NOW()
 WHERE id = $1 AND deleted_at IS NULL AND insert_commons_opt_in = TRUE
-RETURNING id, name, description, location_text, location_gis, size_hectares, farm_type, scale_tier, owner_user_id, timezone, currency, operational_status, created_at, updated_at, updated_by_user_id, deleted_at, organization_id, insert_commons_opt_in, insert_commons_last_sync_at, insert_commons_last_attempt_at, insert_commons_last_delivery_status, insert_commons_last_error, insert_commons_backoff_until, insert_commons_consecutive_failures, insert_commons_require_approval, meta_data
+RETURNING id, name, description, location_text, location_gis, size_hectares, farm_type, scale_tier, owner_user_id, timezone, currency, operational_status, created_at, updated_at, updated_by_user_id, deleted_at, organization_id, insert_commons_opt_in, insert_commons_last_sync_at, insert_commons_last_attempt_at, insert_commons_last_delivery_status, insert_commons_last_error, insert_commons_backoff_until, insert_commons_consecutive_failures, insert_commons_require_approval, meta_data, guardian_preferred_model
 `
 
 type MarkFarmInsertCommonsSyncFailureParams struct {
@@ -517,6 +525,7 @@ func (q *Queries) MarkFarmInsertCommonsSyncFailure(ctx context.Context, arg Mark
 		&i.InsertCommonsConsecutiveFailures,
 		&i.InsertCommonsRequireApproval,
 		&i.MetaData,
+		&i.GuardianPreferredModel,
 	)
 	return i, err
 }
@@ -531,7 +540,7 @@ SET insert_commons_opt_in = $2,
     insert_commons_last_delivery_status = CASE WHEN $2 THEN insert_commons_last_delivery_status ELSE NULL END,
     updated_at = NOW()
 WHERE id = $1 AND deleted_at IS NULL
-RETURNING id, name, description, location_text, location_gis, size_hectares, farm_type, scale_tier, owner_user_id, timezone, currency, operational_status, created_at, updated_at, updated_by_user_id, deleted_at, organization_id, insert_commons_opt_in, insert_commons_last_sync_at, insert_commons_last_attempt_at, insert_commons_last_delivery_status, insert_commons_last_error, insert_commons_backoff_until, insert_commons_consecutive_failures, insert_commons_require_approval, meta_data
+RETURNING id, name, description, location_text, location_gis, size_hectares, farm_type, scale_tier, owner_user_id, timezone, currency, operational_status, created_at, updated_at, updated_by_user_id, deleted_at, organization_id, insert_commons_opt_in, insert_commons_last_sync_at, insert_commons_last_attempt_at, insert_commons_last_delivery_status, insert_commons_last_error, insert_commons_backoff_until, insert_commons_consecutive_failures, insert_commons_require_approval, meta_data, guardian_preferred_model
 `
 
 type SetFarmInsertCommonsOptInParams struct {
@@ -570,6 +579,7 @@ func (q *Queries) SetFarmInsertCommonsOptIn(ctx context.Context, arg SetFarmInse
 		&i.InsertCommonsConsecutiveFailures,
 		&i.InsertCommonsRequireApproval,
 		&i.MetaData,
+		&i.GuardianPreferredModel,
 	)
 	return i, err
 }
@@ -579,7 +589,7 @@ UPDATE gr33ncore.farms
 SET organization_id = $2,
     updated_at = NOW()
 WHERE id = $1 AND deleted_at IS NULL
-RETURNING id, name, description, location_text, location_gis, size_hectares, farm_type, scale_tier, owner_user_id, timezone, currency, operational_status, created_at, updated_at, updated_by_user_id, deleted_at, organization_id, insert_commons_opt_in, insert_commons_last_sync_at, insert_commons_last_attempt_at, insert_commons_last_delivery_status, insert_commons_last_error, insert_commons_backoff_until, insert_commons_consecutive_failures, insert_commons_require_approval, meta_data
+RETURNING id, name, description, location_text, location_gis, size_hectares, farm_type, scale_tier, owner_user_id, timezone, currency, operational_status, created_at, updated_at, updated_by_user_id, deleted_at, organization_id, insert_commons_opt_in, insert_commons_last_sync_at, insert_commons_last_attempt_at, insert_commons_last_delivery_status, insert_commons_last_error, insert_commons_backoff_until, insert_commons_consecutive_failures, insert_commons_require_approval, meta_data, guardian_preferred_model
 `
 
 type SetFarmOrganizationParams struct {
@@ -617,6 +627,7 @@ func (q *Queries) SetFarmOrganization(ctx context.Context, arg SetFarmOrganizati
 		&i.InsertCommonsConsecutiveFailures,
 		&i.InsertCommonsRequireApproval,
 		&i.MetaData,
+		&i.GuardianPreferredModel,
 	)
 	return i, err
 }
@@ -645,7 +656,7 @@ SET name = $2, description = $3, location_text = $4, size_hectares = $5,
     organization_id = $12,
     updated_at = NOW()
 WHERE id = $1 AND deleted_at IS NULL
-RETURNING id, name, description, location_text, location_gis, size_hectares, farm_type, scale_tier, owner_user_id, timezone, currency, operational_status, created_at, updated_at, updated_by_user_id, deleted_at, organization_id, insert_commons_opt_in, insert_commons_last_sync_at, insert_commons_last_attempt_at, insert_commons_last_delivery_status, insert_commons_last_error, insert_commons_backoff_until, insert_commons_consecutive_failures, insert_commons_require_approval, meta_data
+RETURNING id, name, description, location_text, location_gis, size_hectares, farm_type, scale_tier, owner_user_id, timezone, currency, operational_status, created_at, updated_at, updated_by_user_id, deleted_at, organization_id, insert_commons_opt_in, insert_commons_last_sync_at, insert_commons_last_attempt_at, insert_commons_last_delivery_status, insert_commons_last_error, insert_commons_backoff_until, insert_commons_consecutive_failures, insert_commons_require_approval, meta_data, guardian_preferred_model
 `
 
 type UpdateFarmParams struct {
@@ -706,6 +717,55 @@ func (q *Queries) UpdateFarm(ctx context.Context, arg UpdateFarmParams) (Gr33nco
 		&i.InsertCommonsConsecutiveFailures,
 		&i.InsertCommonsRequireApproval,
 		&i.MetaData,
+		&i.GuardianPreferredModel,
+	)
+	return i, err
+}
+
+const updateFarmGuardianPreferredModel = `-- name: UpdateFarmGuardianPreferredModel :one
+UPDATE gr33ncore.farms
+SET guardian_preferred_model = $1,
+    updated_at = NOW()
+WHERE id = $2 AND deleted_at IS NULL
+RETURNING id, name, description, location_text, location_gis, size_hectares, farm_type, scale_tier, owner_user_id, timezone, currency, operational_status, created_at, updated_at, updated_by_user_id, deleted_at, organization_id, insert_commons_opt_in, insert_commons_last_sync_at, insert_commons_last_attempt_at, insert_commons_last_delivery_status, insert_commons_last_error, insert_commons_backoff_until, insert_commons_consecutive_failures, insert_commons_require_approval, meta_data, guardian_preferred_model
+`
+
+type UpdateFarmGuardianPreferredModelParams struct {
+	GuardianPreferredModel *string `db:"guardian_preferred_model" json:"guardian_preferred_model"`
+	ID                     int64   `db:"id" json:"id"`
+}
+
+func (q *Queries) UpdateFarmGuardianPreferredModel(ctx context.Context, arg UpdateFarmGuardianPreferredModelParams) (Gr33ncoreFarm, error) {
+	row := q.db.QueryRow(ctx, updateFarmGuardianPreferredModel, arg.GuardianPreferredModel, arg.ID)
+	var i Gr33ncoreFarm
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Description,
+		&i.LocationText,
+		&i.LocationGis,
+		&i.SizeHectares,
+		&i.FarmType,
+		&i.ScaleTier,
+		&i.OwnerUserID,
+		&i.Timezone,
+		&i.Currency,
+		&i.OperationalStatus,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.UpdatedByUserID,
+		&i.DeletedAt,
+		&i.OrganizationID,
+		&i.InsertCommonsOptIn,
+		&i.InsertCommonsLastSyncAt,
+		&i.InsertCommonsLastAttemptAt,
+		&i.InsertCommonsLastDeliveryStatus,
+		&i.InsertCommonsLastError,
+		&i.InsertCommonsBackoffUntil,
+		&i.InsertCommonsConsecutiveFailures,
+		&i.InsertCommonsRequireApproval,
+		&i.MetaData,
+		&i.GuardianPreferredModel,
 	)
 	return i, err
 }
@@ -719,7 +779,7 @@ SET location_gis = ST_SetSRID(ST_MakePoint($1, $2), 4326),
     END,
     updated_at = NOW()
 WHERE id = $4 AND deleted_at IS NULL
-RETURNING id, name, description, location_text, location_gis, size_hectares, farm_type, scale_tier, owner_user_id, timezone, currency, operational_status, created_at, updated_at, updated_by_user_id, deleted_at, organization_id, insert_commons_opt_in, insert_commons_last_sync_at, insert_commons_last_attempt_at, insert_commons_last_delivery_status, insert_commons_last_error, insert_commons_backoff_until, insert_commons_consecutive_failures, insert_commons_require_approval, meta_data
+RETURNING id, name, description, location_text, location_gis, size_hectares, farm_type, scale_tier, owner_user_id, timezone, currency, operational_status, created_at, updated_at, updated_by_user_id, deleted_at, organization_id, insert_commons_opt_in, insert_commons_last_sync_at, insert_commons_last_attempt_at, insert_commons_last_delivery_status, insert_commons_last_error, insert_commons_backoff_until, insert_commons_consecutive_failures, insert_commons_require_approval, meta_data, guardian_preferred_model
 `
 
 type UpdateFarmSiteCoordsParams struct {
@@ -764,6 +824,7 @@ func (q *Queries) UpdateFarmSiteCoords(ctx context.Context, arg UpdateFarmSiteCo
 		&i.InsertCommonsConsecutiveFailures,
 		&i.InsertCommonsRequireApproval,
 		&i.MetaData,
+		&i.GuardianPreferredModel,
 	)
 	return i, err
 }

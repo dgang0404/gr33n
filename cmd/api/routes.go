@@ -14,6 +14,7 @@ import (
 	automationworker "gr33n-api/internal/automation"
 	db "gr33n-api/internal/db"
 	"gr33n-api/internal/filestorage"
+	"gr33n-api/internal/farmguardian"
 	actuatorhandler "gr33n-api/internal/handler/actuator"
 	alerthandler "gr33n-api/internal/handler/alert"
 	animalhandler "gr33n-api/internal/handler/animal"
@@ -53,7 +54,13 @@ import (
 )
 
 func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationworker.Worker, pushDispatch *pushnotify.Dispatcher, adminUser string, adminHash []byte, hashFilePath string, fileStore filestorage.Store, fileCfg filestorage.Config, adminBindUserID uuid.UUID, adminBindEmail string, aiCfg ai.Config) {
-	farm := farmhandler.NewHandler(pool)
+	modelCache := farmguardian.NewModelCache()
+	if aiCfg.Enabled {
+		if err := modelCache.RefreshFromEnv(context.Background()); err != nil {
+			log.Printf("guardian: ollama model discovery: %v", err)
+		}
+	}
+	farm := farmhandler.NewHandler(pool, modelCache)
 	weather := weatherhandler.NewHandler(pool)
 	org := organizationhandler.NewHandler(pool)
 	audit := audithandler.NewHandler(pool)
@@ -74,7 +81,7 @@ func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationwo
 	recipe := recipehandler.NewHandler(pool)
 	cropcycle := cropcyclehandler.NewHandler(pool)
 	rag := raghandler.NewHandler(pool, aiCfg.Enabled)
-	aichat := chathandler.NewHandler(pool, aiCfg, fileStore)
+	aichat := chathandler.NewHandler(pool, aiCfg, fileStore, modelCache)
 	fieldGuides := fieldguideshandler.NewHandler("")
 	plants := planthandler.NewHandler(pool)
 	cropProfiles := cropprofilehandler.NewHandler(pool)
@@ -154,6 +161,7 @@ func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationwo
 	mux.Handle("PATCH /auth/password", jwt(http.HandlerFunc(auth.ChangePassword)))
 
 	// Phase 27 — Farm Guardian chat + session history
+	mux.Handle("GET /guardian/models", jwt(http.HandlerFunc(aichat.GetModels)))
 	mux.Handle("GET /v1/chat/health", jwt(http.HandlerFunc(aichat.GetHealth)))
 	mux.Handle("POST /v1/chat", jwt(http.HandlerFunc(aichat.PostV1)))
 	mux.Handle("POST /v1/chat/stt", jwt(http.HandlerFunc(aichat.TranscribeSTT)))
@@ -212,6 +220,7 @@ func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationwo
 	mux.Handle("POST /farms/{id}/bootstrap-template", jwt(http.HandlerFunc(farm.ApplyFarmBootstrapTemplate)))
 	mux.Handle("PUT /farms/{id}", jwt(http.HandlerFunc(farm.Update)))
 	mux.Handle("PATCH /farms/{id}/site", jwt(http.HandlerFunc(farm.PatchSite)))
+	mux.Handle("PATCH /farms/{id}/settings", jwt(http.HandlerFunc(farm.PatchGuardianSettings)))
 	mux.Handle("GET /farms/{id}/site-weather", jwt(http.HandlerFunc(weather.GetSiteWeather)))
 	mux.Handle("POST /farms/{id}/weather/manual", jwt(http.HandlerFunc(weather.PostManual)))
 	mux.Handle("PATCH /farms/{id}/organization", jwt(http.HandlerFunc(farm.SetOrganization)))

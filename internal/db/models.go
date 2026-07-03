@@ -656,6 +656,7 @@ const (
 	Gr33ncoreUserActionTypeEnumExportData           Gr33ncoreUserActionTypeEnum = "export_data"
 	Gr33ncoreUserActionTypeEnumImportData           Gr33ncoreUserActionTypeEnum = "import_data"
 	Gr33ncoreUserActionTypeEnumGuardianToolExecuted Gr33ncoreUserActionTypeEnum = "guardian_tool_executed"
+	Gr33ncoreUserActionTypeEnumGuardianModelChanged Gr33ncoreUserActionTypeEnum = "guardian_model_changed"
 )
 
 func (e *Gr33ncoreUserActionTypeEnum) Scan(src interface{}) error {
@@ -1470,6 +1471,7 @@ type Gr33ncoreFarm struct {
 	InsertCommonsConsecutiveFailures int32                             `db:"insert_commons_consecutive_failures" json:"insert_commons_consecutive_failures"`
 	InsertCommonsRequireApproval     bool                              `db:"insert_commons_require_approval" json:"insert_commons_require_approval"`
 	MetaData                         json.RawMessage                   `db:"meta_data" json:"meta_data"`
+	GuardianPreferredModel           *string                           `db:"guardian_preferred_model" json:"guardian_preferred_model"`
 }
 
 type Gr33ncoreFarmActiveModule struct {

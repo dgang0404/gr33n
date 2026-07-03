@@ -46,24 +46,25 @@ const MaxRecentSessions = 50
 
 // Handler exposes Phase 27 Farm Guardian routes.
 type Handler struct {
-	cfg       ai.Config
-	q         *db.Queries
-	pool      *pgxpool.Pool
-	llm       llm.ChatCompleter
-	visionLLM llm.ChatCompleter // optional multimodal client (Phase 30 WS6)
-	fileStore filestorage.Store
-	embedder  embed.Embedder
-	costGuard farmguardian.CostGuardConfig // zero value = disabled
+	cfg        ai.Config
+	q          *db.Queries
+	pool       *pgxpool.Pool
+	llm        llm.ChatCompleter
+	baseLLM    *llm.Client
+	visionLLM  llm.ChatCompleter // optional multimodal client (Phase 30 WS6)
+	modelCache *farmguardian.ModelCache
+	fileStore  filestorage.Store
+	embedder   embed.Embedder
+	costGuard  farmguardian.CostGuardConfig // zero value = disabled
 }
 
 // NewHandler wires the configured chat + embedding clients when AI is enabled.
-// When AI is off, both stay nil and POST /v1/chat answers 503 — same contract
-// as POST /farms/{id}/rag/answer in Lite mode.
-func NewHandler(pool *pgxpool.Pool, cfg ai.Config, fileStore filestorage.Store) *Handler {
-	h := &Handler{cfg: cfg, q: db.New(pool), pool: pool, fileStore: fileStore}
+func NewHandler(pool *pgxpool.Pool, cfg ai.Config, fileStore filestorage.Store, modelCache *farmguardian.ModelCache) *Handler {
+	h := &Handler{cfg: cfg, q: db.New(pool), pool: pool, fileStore: fileStore, modelCache: modelCache}
 	if cfg.Enabled {
 		if c, err := llm.NewChatClientFromEnv(); err == nil {
 			h.llm = c
+			h.baseLLM = c
 		}
 		if c, err := llm.NewVisionChatClientFromEnv(); err == nil {
 			h.visionLLM = c
@@ -73,14 +74,28 @@ func NewHandler(pool *pgxpool.Pool, cfg ai.Config, fileStore filestorage.Store) 
 		}
 		h.costGuard = farmguardian.LoadCostGuardConfigFromEnv()
 	}
+	if h.modelCache == nil {
+		h.modelCache = farmguardian.NewModelCache()
+	}
 	return h
 }
 
 // NewHandlerWithDeps is the test seam — inject any chat client or embedder
-// (real or mock) without depending on env vars or a real pool. Tests can
-// further configure cost guards via WithCostGuard.
+// (real or mock) without depending on env vars or a real pool.
 func NewHandlerWithDeps(cfg ai.Config, q *db.Queries, client llm.ChatCompleter, embedder embed.Embedder) *Handler {
-	return &Handler{cfg: cfg, q: q, llm: client, embedder: embedder}
+	h := &Handler{cfg: cfg, q: q, llm: client, embedder: embedder, modelCache: farmguardian.NewModelCache()}
+	if c, ok := client.(*llm.Client); ok {
+		h.baseLLM = c
+	}
+	return h
+}
+
+// WithModelCache overrides the Ollama model cache (tests).
+func (h *Handler) WithModelCache(cache *farmguardian.ModelCache) *Handler {
+	if cache != nil {
+		h.modelCache = cache
+	}
+	return h
 }
 
 // WithVisionLLM sets the multimodal client for tests (Phase 30 WS6).
@@ -126,6 +141,8 @@ type postBody struct {
 	// SetupMode opts into the setup-mode persona (Phase 44 WS4). Also activates
 	// when the farm snapshot has zero zones or POST ?setup=1.
 	SetupMode bool `json:"setup_mode,omitempty"`
+	// Model overrides the chat model for this turn only (Phase 111).
+	Model string `json:"model,omitempty"`
 }
 
 type postResponse struct {
@@ -144,6 +161,8 @@ type postResponse struct {
 	FieldDegraded    bool                          `json:"field_degraded,omitempty"`
 	VisionUsed       bool                          `json:"vision_used,omitempty"`
 	AttachmentIDs    []int64                       `json:"attachment_ids,omitempty"`
+	ModelUsed        string                        `json:"model_used,omitempty"`
+	ModelFallback    bool                          `json:"model_fallback,omitempty"`
 }
 
 // PostV1 handles POST /v1/chat — JWT required by route wiring.
@@ -355,8 +374,26 @@ func (h *Handler) PostV1(w http.ResponseWriter, r *http.Request) {
 	}
 
 	chatClient := h.llm
+	modelOutcome := farmguardian.ResolveOutcome{}
 	if len(visionImages) > 0 {
 		chatClient = h.visionLLM
+		if chatClient != nil {
+			modelOutcome = farmguardian.ResolveOutcome{ModelName: chatClient.ModelLabel()}
+		}
+	} else {
+		var resolved llm.ChatCompleter
+		resolved, modelOutcome = h.resolveChatClient(r.Context(), pb.Model, farmID, grounded, false)
+		if modelOutcome.RejectReason != "" {
+			httputil.WriteError(w, http.StatusBadRequest, modelOutcome.RejectReason)
+			return
+		}
+		if resolved != nil {
+			chatClient = resolved
+		}
+	}
+	if chatClient == nil {
+		httputil.WriteError(w, http.StatusServiceUnavailable, "Farm Guardian chat is not configured (set LLM_BASE_URL and LLM_MODEL)")
+		return
 	}
 
 	currentUser := llm.UserMessageWithImages(user, visionImages)
@@ -381,7 +418,7 @@ func (h *Handler) PostV1(w http.ResponseWriter, r *http.Request) {
 			httputil.WriteError(w, http.StatusNotImplemented, "configured LLM client does not support streaming")
 			return
 		}
-		h.streamResponse(w, r, stream, chatClient, messages, farmID, grounded, chunks, sessionID, userID, hasUser, question, liveSnap, len(visionImages) > 0, attachmentIDs)
+		h.streamResponse(w, r, stream, chatClient, messages, farmID, grounded, chunks, sessionID, userID, hasUser, question, liveSnap, len(visionImages) > 0, attachmentIDs, modelOutcome)
 		return
 	}
 
@@ -424,6 +461,7 @@ func (h *Handler) PostV1(w http.ResponseWriter, r *http.Request) {
 		VisionUsed:       len(visionImages) > 0,
 		AttachmentIDs:    attachmentIDs,
 	}
+	applyModelMeta(&resp, modelOutcome)
 	if grounded {
 		resp.Citations = synthesis.BuildCitations(answer, chunks)
 		resp.ContextCount = len(chunks)
@@ -432,7 +470,7 @@ func (h *Handler) PostV1(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	if turnIdx, perr := h.persistTurn(r.Context(), sessionID, userID, hasUser, farmID, grounded, question, answer, resp.Citations, len(chunks), usage); perr == nil {
+	if turnIdx, perr := h.persistTurn(r.Context(), sessionID, userID, hasUser, farmID, grounded, question, answer, resp.Citations, len(chunks), usage, chatClient.ModelLabel()); perr == nil {
 		resp.TurnIndex = turnIdx
 	}
 	h.attachProposals(r.Context(), farmID, hasUser, userID, sessionID, question, answer, liveSnap, &resp)
@@ -473,6 +511,7 @@ func (h *Handler) streamResponse(
 	liveSnap farmguardian.Snapshot,
 	visionUsed bool,
 	attachmentIDs []int64,
+	modelOutcome farmguardian.ResolveOutcome,
 ) {
 	flusher, ok := w.(http.Flusher)
 	if !ok {
@@ -528,6 +567,7 @@ func (h *Handler) streamResponse(
 		VisionUsed:       visionUsed,
 		AttachmentIDs:    attachmentIDs,
 	}
+	applyModelMeta(&done, modelOutcome)
 	if grounded {
 		done.Citations = synthesis.BuildCitations(answer, chunks)
 		done.ContextCount = len(chunks)
@@ -540,7 +580,7 @@ func (h *Handler) streamResponse(
 	// (OpenAI + recent Ollama) return real token counts; older Ollama builds
 	// leave usage zero and the row still lands so the UI sidebar count stays
 	// honest about "this session had N streaming turns".
-	if turnIdx, perr := h.persistTurn(r.Context(), sessionID, userID, hasUser, farmID, grounded, question, answer, done.Citations, len(chunks), usage); perr == nil {
+	if turnIdx, perr := h.persistTurn(r.Context(), sessionID, userID, hasUser, farmID, grounded, question, answer, done.Citations, len(chunks), usage, chatClient.ModelLabel()); perr == nil {
 		done.TurnIndex = turnIdx
 	}
 	h.attachProposals(r.Context(), farmID, hasUser, userID, sessionID, question, answer, liveSnap, &done)
@@ -643,6 +683,7 @@ func (h *Handler) persistTurn(
 	citations []synthesis.Citation,
 	contextCount int,
 	usage llm.Usage,
+	llmModel string,
 ) (int32, error) {
 	if !hasUser || h.q == nil {
 		return -1, nil
@@ -664,7 +705,7 @@ func (h *Handler) persistTurn(
 		FarmID:           farmPtr,
 		UserMessage:      question,
 		AssistantMessage: answer,
-		LlmModel:         h.llm.ModelLabel(),
+		LlmModel:         llmModel,
 		Grounded:         grounded,
 		ContextCount:     int32(contextCount),
 		Citations:        citationsJSON,

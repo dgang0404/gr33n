@@ -122,6 +122,17 @@
     </div>
 
     <div :class="layout === 'compact' ? 'flex flex-col gap-3 min-h-0 flex-1' : 'space-y-4'">
+      <GuardianModelSelector
+        v-if="capabilities.aiEnabled && useFarmContext && farmContext.farmId"
+        v-model:session-model="sessionModelOverride"
+      />
+      <p
+        v-if="modelFallbackNotice"
+        class="text-[11px] text-amber-300/90 rounded border border-amber-900/50 bg-amber-950/30 px-3 py-2"
+        data-test="guardian-model-fallback-notice"
+      >
+        {{ modelFallbackNotice }}
+      </p>
       <!-- Transcript -->
       <section
         v-if="transcript.length || streaming"
@@ -510,6 +521,7 @@ import GuardianProcedureCard from './GuardianProcedureCard.vue'
 import GuardianNudgeStrip from './GuardianNudgeStrip.vue'
 import GuardianRecentTopicChip from './GuardianRecentTopicChip.vue'
 import GuardianStarterChips from './GuardianStarterChips.vue'
+import GuardianModelSelector from './GuardianModelSelector.vue'
 import { topicChipLabel } from '../lib/guardianSessionMemory.js'
 import { computeFirstRunChecklist, isFirstRunIncomplete } from '../lib/firstRunChecklist.js'
 import { buildMorningWalkthroughStarters, buildSetupStarters } from '../lib/guardianStarters.js'
@@ -564,6 +576,8 @@ let micRecognizer = null
 const photoThumbUrls = ref({})
 const photoUploading = ref(false)
 const selectedAttachmentIds = ref([])
+const sessionModelOverride = ref('')
+const modelFallbackNotice = ref('')
 const { canOperate } = useFarmOperate(farmIdRef)
 
 const firstRunChecklistItems = computed(() => computeFirstRunChecklist({
@@ -1051,6 +1065,7 @@ async function send() {
   if (!message.value.trim()) return
   if (useFarmContext.value && !farmContext.farmId) return
   guardianChat.clearError()
+  modelFallbackNotice.value = ''
 
   const attachedIds = [...selectedAttachmentIds.value]
   const farmId = useFarmContext.value && farmContext.farmId ? Number(farmContext.farmId) : null
@@ -1062,10 +1077,14 @@ async function send() {
     navHistory: guardianPanel.navHistory,
     attachmentIds: attachedIds,
     setupMode: setupModeActive.value,
+    model: sessionModelOverride.value || undefined,
   })
   if (!result?.finalEvent) return
 
   const { finalEvent, userMessage, attachedIds: sentIds, body } = result
+  if (finalEvent.model_fallback) {
+    modelFallbackNotice.value = 'Selected model was unavailable — used server default for this turn.'
+  }
   sessionId.value = finalEvent.session_id || sessionId.value
   guardianChat.appendTurn({
     turn_index: finalEvent.turn_index,

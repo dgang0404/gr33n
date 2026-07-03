@@ -212,7 +212,7 @@ CREATE TYPE gr33ncore.cost_category_enum         AS ENUM (
 );
 CREATE TYPE gr33ncore.validation_rule_type_enum  AS ENUM ('range_check','required_field','format_validation','regex_match','lookup_in_list','cross_field_comparison','custom_function_check');
 CREATE TYPE gr33ncore.validation_severity_enum   AS ENUM ('warning','error','critical_stop');
-CREATE TYPE gr33ncore.user_action_type_enum      AS ENUM ('login_success','login_failure','logout','create_record','view_record','update_record','delete_record','list_records','execute_action','change_setting','system_event','export_data','import_data','guardian_tool_executed');
+CREATE TYPE gr33ncore.user_action_type_enum      AS ENUM ('login_success','login_failure','logout','create_record','view_record','update_record','delete_record','list_records','execute_action','change_setting','system_event','export_data','import_data','guardian_tool_executed','guardian_model_changed');
 
 -- ============================================================
 -- TABLES
@@ -287,7 +287,8 @@ CREATE TABLE IF NOT EXISTS gr33ncore.farms (
     insert_commons_backoff_until TIMESTAMPTZ,
     insert_commons_consecutive_failures INT NOT NULL DEFAULT 0,
     insert_commons_require_approval BOOLEAN NOT NULL DEFAULT FALSE,
-    meta_data            JSONB NOT NULL DEFAULT '{}'::jsonb
+    meta_data            JSONB NOT NULL DEFAULT '{}'::jsonb,
+    guardian_preferred_model TEXT
 );
 CREATE TRIGGER trg_farms_updated_at
     BEFORE UPDATE ON gr33ncore.farms

@@ -671,6 +671,7 @@ type Querier interface {
 	UpdateExecutableAction(ctx context.Context, arg UpdateExecutableActionParams) (Gr33ncoreExecutableAction, error)
 	UpdateFarm(ctx context.Context, arg UpdateFarmParams) (Gr33ncoreFarm, error)
 	UpdateFarmEnergyPrice(ctx context.Context, arg UpdateFarmEnergyPriceParams) (Gr33ncoreFarmEnergyPrice, error)
+	UpdateFarmGuardianPreferredModel(ctx context.Context, arg UpdateFarmGuardianPreferredModelParams) (Gr33ncoreFarm, error)
 	UpdateFarmMemberRole(ctx context.Context, arg UpdateFarmMemberRoleParams) (Gr33ncoreFarmMembership, error)
 	UpdateFarmSiteCoords(ctx context.Context, arg UpdateFarmSiteCoordsParams) (Gr33ncoreFarm, error)
 	UpdateInputBatch(ctx context.Context, arg UpdateInputBatchParams) (Gr33nnaturalfarmingInputBatch, error)

@@ -20,6 +20,7 @@ import (
 	db "gr33n-api/internal/db"
 	"gr33n-api/internal/farmauthz"
 	"gr33n-api/internal/farmbootstrap"
+	"gr33n-api/internal/farmguardian"
 	"gr33n-api/internal/httputil"
 )
 
@@ -37,12 +38,14 @@ type Handler struct {
 	q          db.Querier
 	pool       *pgxpool.Pool
 	httpClient *http.Client
+	modelCache *farmguardian.ModelCache
 }
 
-func NewHandler(pool *pgxpool.Pool) *Handler {
+func NewHandler(pool *pgxpool.Pool, modelCache *farmguardian.ModelCache) *Handler {
 	return &Handler{
-		q:    db.New(pool),
-		pool: pool,
+		q:          db.New(pool),
+		pool:       pool,
+		modelCache: modelCache,
 		httpClient: &http.Client{
 			Timeout: 20 * time.Second,
 		},

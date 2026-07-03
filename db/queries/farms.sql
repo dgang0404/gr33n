@@ -138,3 +138,10 @@ SET insert_commons_last_attempt_at = NOW(),
     updated_at = NOW()
 WHERE id = $1 AND deleted_at IS NULL AND insert_commons_opt_in = TRUE
 RETURNING *;
+
+-- name: UpdateFarmGuardianPreferredModel :one
+UPDATE gr33ncore.farms
+SET guardian_preferred_model = sqlc.narg(guardian_preferred_model),
+    updated_at = NOW()
+WHERE id = sqlc.arg(id) AND deleted_at IS NULL
+RETURNING *;

@@ -5081,6 +5081,24 @@ paths:
             text/markdown:
               schema: { type: string }
 
+  /guardian/models:
+    get:
+      tags: [chat]
+      summary: List Ollama models available to Guardian (server-wide)
+      description: >
+        Returns models currently reported by the Ollama runtime at `LLM_BASE_URL`.
+        This endpoint is **server-wide** — Ollama is a single shared process, not
+        farm-scoped. Per-farm preference is stored on the farm record and updated via
+        `PATCH /farms/{id}/settings`.
+      responses:
+        "200":
+          description: Discovery snapshot
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/GuardianModelsResponse" }
+        "503":
+          description: AI disabled
+
   /v1/chat:
     post:
       tags: [chat]
@@ -6039,6 +6057,54 @@ components:
           description: >
             Zone reference photo attachment ids for a multimodal turn (Phase 30 WS6).
             Requires `farm_id` and vision LLM configuration. JPEG/PNG/WebP only.
+        model:
+          type: string
+          description: >
+            Optional session-only Ollama model override for this turn (Phase 111).
+            Resolution order: session `model` → farm `guardian_preferred_model` →
+            server `LLM_MODEL`. Must meet the grounded context minimum when `farm_id`
+            is set and the model reports a context window.
+
+    GuardianModelInfo:
+      type: object
+      required: [name, context_window, speed_class]
+      properties:
+        name: { type: string }
+        context_window:
+          type: integer
+          description: Reported context length in tokens; `0` when Ollama did not report it.
+        parameter_count: { type: integer, format: int64 }
+        speed_class:
+          type: string
+          enum: [fast, general, reasoning]
+
+    GuardianModelsResponse:
+      type: object
+      required: [available_models, server_default]
+      properties:
+        available_models:
+          type: array
+          items: { $ref: "#/components/schemas/GuardianModelInfo" }
+        server_default:
+          type: string
+          description: Server env default (`LLM_MODEL`). Lists Ollama runtime models — not farm-scoped.
+
+    FarmGuardianSettingsPatch:
+      type: object
+      required: [guardian_preferred_model]
+      properties:
+        guardian_preferred_model:
+          type: string
+          nullable: true
+          description: Farm-default chat model. Must be loaded in Ollama. `null` clears the farm override.
+
+    FarmGuardianSettingsResponse:
+      type: object
+      properties:
+        id: { type: integer, format: int64 }
+        guardian_preferred_model:
+          type: string
+          nullable: true
 
     ChatCitation:
       type: object
@@ -6062,6 +6128,12 @@ components:
         llm_model:
           type: string
           description: "Model label the API reported to the client (`llm.ChatCompleter.ModelLabel`)."
+        model_used:
+          type: string
+          description: Resolved model that served this turn (Phase 111).
+        model_fallback:
+          type: boolean
+          description: True when the requested model was unavailable and the server default was used.
         grounded:
           type: boolean
           description: "`true` when the turn ran the RAG + snapshot path."

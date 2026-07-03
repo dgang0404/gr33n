@@ -268,6 +268,20 @@ func (c *Client) ModelLabel() string {
 	return c.Model
 }
 
+// WithModel returns a shallow copy of the client using a different model id.
+func (c *Client) WithModel(model string) *Client {
+	if c == nil {
+		return nil
+	}
+	model = strings.TrimSpace(model)
+	if model == "" || model == c.Model {
+		return c
+	}
+	clone := *c
+	clone.Model = model
+	return &clone
+}
+
 func truncateErr(b []byte, n int) string {
 	s := string(b)
 	if len(s) <= n {
