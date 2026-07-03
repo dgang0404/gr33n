@@ -14,6 +14,40 @@ import (
 	"gr33n-api/internal/platform/commontypes"
 )
 
+const bumpDeviceConfigVersion = `-- name: BumpDeviceConfigVersion :one
+UPDATE gr33ncore.devices
+SET config_version = config_version + 1,
+    updated_at = NOW()
+WHERE id = $1 AND deleted_at IS NULL
+RETURNING id, farm_id, zone_id, name, device_uid, device_type, ip_address, firmware_version, status, last_heartbeat, api_key, config, meta_data, config_version, created_at, updated_at, updated_by_user_id, deleted_at
+`
+
+func (q *Queries) BumpDeviceConfigVersion(ctx context.Context, id int64) (Gr33ncoreDevice, error) {
+	row := q.db.QueryRow(ctx, bumpDeviceConfigVersion, id)
+	var i Gr33ncoreDevice
+	err := row.Scan(
+		&i.ID,
+		&i.FarmID,
+		&i.ZoneID,
+		&i.Name,
+		&i.DeviceUid,
+		&i.DeviceType,
+		&i.IpAddress,
+		&i.FirmwareVersion,
+		&i.Status,
+		&i.LastHeartbeat,
+		&i.ApiKey,
+		&i.Config,
+		&i.MetaData,
+		&i.ConfigVersion,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.UpdatedByUserID,
+		&i.DeletedAt,
+	)
+	return i, err
+}
+
 const clearDevicePendingCommand = `-- name: ClearDevicePendingCommand :exec
 UPDATE gr33ncore.devices
 SET config = config - 'pending_command', updated_at = NOW()

@@ -409,6 +409,29 @@ paths:
               schema: { type: string }
         "404": { $ref: "#/components/responses/NotFound" }
 
+  /devices/{id}/push-config:
+    post:
+      tags: [devices]
+      summary: Notify Pi to reload platform wiring
+      description: |
+        Increments `config_version` so platform-sync Pis fetch updated wiring on
+        their next config poll (typically within 30s). Requires farm operate role.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      responses:
+        "200":
+          description: Config version bumped
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  device_id: { type: integer }
+                  config_version: { type: integer }
+                  message: { type: string }
+        "404": { $ref: "#/components/responses/NotFound" }
+
   /devices/{id}/status:
     patch:
       tags: [devices]

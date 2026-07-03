@@ -94,3 +94,10 @@ FROM gr33ncore.devices
 WHERE farm_id = $1 AND deleted_at IS NULL
 GROUP BY status
 ORDER BY status ASC;
+
+-- name: BumpDeviceConfigVersion :one
+UPDATE gr33ncore.devices
+SET config_version = config_version + 1,
+    updated_at = NOW()
+WHERE id = $1 AND deleted_at IS NULL
+RETURNING *;

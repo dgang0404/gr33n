@@ -19,6 +19,7 @@ type Querier interface {
 	AddRecipeComponent(ctx context.Context, arg AddRecipeComponentParams) error
 	ApproveInsertCommonsBundle(ctx context.Context, arg ApproveInsertCommonsBundleParams) (Gr33ncoreInsertCommonsBundle, error)
 	ArchiveAnimalGroup(ctx context.Context, arg ArchiveAnimalGroupParams) (Gr33nanimalsAnimalGroup, error)
+	BumpDeviceConfigVersion(ctx context.Context, id int64) (Gr33ncoreDevice, error)
 	// Cancel a pending command (operator or worker safety valve).
 	CancelDeviceCommand(ctx context.Context, id int64) (Gr33ncoreDeviceCommand, error)
 	ClearDevicePendingCommand(ctx context.Context, id int64) error

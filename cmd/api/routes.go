@@ -321,6 +321,7 @@ func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationwo
 	// Devices
 	mux.Handle("GET /devices/{id}", jwt(http.HandlerFunc(device.Get)))
 	mux.Handle("GET /devices/{id}/pi-config", jwt(http.HandlerFunc(device.GetPiConfig)))
+	mux.Handle("POST /devices/{id}/push-config", jwt(http.HandlerFunc(device.PushConfig)))
 	mux.Handle("GET /devices/{id}/api-keys", jwt(http.HandlerFunc(device.ListAPIKeys)))
 	mux.Handle("POST /devices/{id}/api-keys", jwt(http.HandlerFunc(device.IssueAPIKey)))
 	mux.Handle("POST /devices/{id}/api-keys/{key_id}/revoke", jwt(http.HandlerFunc(device.RevokeAPIKey)))

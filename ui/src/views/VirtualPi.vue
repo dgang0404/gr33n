@@ -64,6 +64,16 @@
         >
           Print wiring sheet
         </button>
+        <button
+          v-if="canPushToPi"
+          type="button"
+          class="text-xs border border-zinc-700 rounded-lg px-3 py-2 text-zinc-300 hover:border-amber-600 hover:text-amber-300"
+          data-test="virtual-pi-push-config"
+          :disabled="pushConfigLoading || !selectedDeviceId"
+          @click="pushConfigToPi"
+        >
+          {{ pushConfigLoading ? 'Notifying…' : 'Notify Pi to reload' }}
+        </button>
         <router-link
           v-nav-hint="'/hardware'"
           :to="{ path: '/hardware', query: { tab: 'board' } }"
@@ -78,6 +88,14 @@
         >
           Pi setup →
         </router-link>
+      </div>
+
+      <div
+        v-if="pushConfigMessage"
+        class="rounded-lg border border-amber-800/50 bg-amber-950/20 px-3 py-2 text-xs text-amber-200 virtual-pi-screen-only"
+        data-test="virtual-pi-push-ok"
+      >
+        {{ pushConfigMessage }}
       </div>
 
       <div
@@ -118,6 +136,7 @@ import EmptyStateHint from '../components/EmptyStateHint.vue'
 import { devicesWithWiring } from '../lib/piPinMap.js'
 import { loadDeviceTaxonomy } from '../lib/deviceTaxonomy.js'
 import { wiringDriftStatus, wiringDriftLabel } from '../lib/piConfigDrift.js'
+import { deviceUsesPlatformSync } from '../lib/deviceConfigSync.js'
 import api from '../api'
 
 const store = useFarmStore()
@@ -127,6 +146,8 @@ const loading = ref(true)
 const loadError = ref('')
 const selectedDeviceId = ref(null)
 const configDownloading = ref(false)
+const pushConfigLoading = ref(false)
+const pushConfigMessage = ref('')
 const expectedConfigSha = ref('')
 
 const printMode = computed(() => route.query.print === '1')
@@ -148,6 +169,8 @@ const selectedDevice = computed(() =>
 const wiringDrift = computed(() =>
   wiringDriftStatus(selectedDevice.value, expectedConfigSha.value),
 )
+
+const canPushToPi = computed(() => deviceUsesPlatformSync(selectedDevice.value))
 
 function deviceLabel(d) {
   const status = d.status === 'online' ? ' · online' : ''
@@ -171,6 +194,23 @@ async function fetchExpectedConfigSha(deviceId) {
     expectedConfigSha.value = r.data?.config_sha256 || ''
   } catch {
     expectedConfigSha.value = ''
+  }
+}
+
+async function pushConfigToPi() {
+  if (!selectedDeviceId.value) return
+  pushConfigLoading.value = true
+  pushConfigMessage.value = ''
+  loadError.value = ''
+  try {
+    const r = await api.post(`/devices/${selectedDeviceId.value}/push-config`)
+    pushConfigMessage.value = r.data?.message || 'Pi notified — wiring reloads on next poll.'
+    const fid = farmContext.farmId
+    if (fid) await store.loadAll(fid)
+  } catch (e) {
+    loadError.value = e?.response?.data?.error || e?.message || 'Could not notify Pi'
+  } finally {
+    pushConfigLoading.value = false
   }
 }
 

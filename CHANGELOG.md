@@ -8,6 +8,14 @@ Format: coarse era blocks for early history, then per-phase entries from Phase 1
 
 ## Unreleased
 
+### Phases 119–123 — Virtual Pi wiring arc
+
+- **119** — Read-only 40-pin board at `/virtual-pi` (Wiring sidebar)
+- **120** — Tap-to-wire GPIO, relay stack view (Sequent 8-layer HAT), conflict highlights
+- **121** — Driver hookup steps, print wiring sheet, `config.yaml` download, `config_sha256` drift badge
+- **122** — `make guardian-eval` model quality scores; context budget guard; proposal JSON repair
+- **123** — **Notify Pi to reload** (`POST /devices/{id}/push-config`) for platform-sync edge devices
+
 ### Phase 116 — Documentation refresh
 
 - Central [environment variables reference](docs/environment-variables.md) with CI parity check (`make audit-env`)

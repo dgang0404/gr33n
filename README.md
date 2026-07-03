@@ -7,7 +7,7 @@ An open-source farm operating system — run it on your LAN, keep your data clos
 [![Vue](https://img.shields.io/badge/Vue-3-4FC08D?logo=vue.js)](https://vuejs.org)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-14+-336791?logo=postgresql)](https://postgresql.org)
 
-**Status:** Farmer UX (**40–67**), SPA workspaces (**68–81**), crop intelligence (**82–110**), Guardian model selection (**111–112**), and hardening arc **113–115** are **shipped on `main`**. Docs refresh (**116**) and test depth (**117–118**) — see [phase index](docs/phase-14-operator-documentation.md).
+**Status:** Farmer UX (**40–67**), SPA workspaces (**68–81**), crop intelligence (**82–110**), Guardian model selection (**111–118**), hardening **113–115**, Virtual Pi wiring arc (**119–122**), and Guardian eval (**122**) are **shipped on `main`**. Docs refresh (**116**) and test depth (**117–118**) — see [phase index](docs/phase-14-operator-documentation.md).
 
 **Start here:** [First session after clone](docs/first-session-after-clone.md) · [Operator tour](docs/operator-tour.md) · [Upgrade guide](docs/upgrade-guide.md) · [CHANGELOG](CHANGELOG.md) · **Real grow?** [Guardian readiness](docs/guardian-real-grow-readiness.md) · **Offline/air-gap?** [Connectivity requirements](docs/connectivity-requirements.md)
 
@@ -34,7 +34,7 @@ An open-source farm operating system — run it on your LAN, keep your data clos
   - Sensor readings and actuator commands buffer  
   - On reconnect, everything syncs automatically  
 
-🧑‍🌾 **Easy Pi Setup** — **Phase 60 Pi Setup Wizard:** 6-step guided flow to wire a Relay HAT, assign pumps/fans to channels, test network, download config. Zero manual YAML editing. See `http://localhost:5173/pi-setup-wizard`.
+🧑‍🌾 **Easy Pi Setup** — **Phase 60 Pi Setup Wizard:** 6-step guided flow to wire a Relay HAT, assign pumps/fans to channels, test network, download config. **Virtual Pi** (`/virtual-pi`, Phases 119–123): graphical 40-pin board, interactive wiring, config export, drift detection, and **Notify Pi to reload** for platform-sync devices. See `http://localhost:5173/pi-setup-wizard`.
 
 🤖 **Guardian model picker** — Choose and **pull** Ollama models in-app (Phases 111–112). No manual `ollama pull` on the server unless you prefer CLI.
 

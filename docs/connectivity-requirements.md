@@ -28,6 +28,7 @@ needs to leave the property.
 | Dashboard, zones, sensors, alerts, tasks, schedules | None / LAN only | Browser (UI) ↔ API ↔ Postgres, all on your network |
 | Actuator control (manual + automation rules) | LAN only | API → Pi edge client over your LAN (or loopback if API and Pi client share a host) |
 | Pi sensor/actuator edge loop | LAN only | Pi client posts to the API's LAN/loopback address — never calls out to the internet itself |
+| **Virtual Pi** (`/virtual-pi`) — board view, wiring edit, config.yaml download | LAN only | UI ↔ your API; generates config from DB wiring. **Notify Pi to reload** bumps `config_version` so platform-sync Pis refetch on LAN |
 | PWA offline queue (Tasks create/status) | None while offline | Queues in browser SQLite (`offline_queue.db`); syncs to your API once it's reachable again — that sync is LAN, not WAN |
 | **Guardian chat — using an already-installed model** | **LAN only** | API calls `LLM_BASE_URL` (e.g. `http://127.0.0.1:11434/v1` for Ollama). If Ollama runs on the same box or LAN, this is 100% local — no internet |
 | **Guardian model switch (session/farm default dropdown)** | **None** | Only changes which already-downloaded model the next request uses — no network call happens at all until you actually send a chat message |
