@@ -9,25 +9,25 @@ overview: >
 todos:
   - id: ws1-env-reference
     content: "WS1: Env reference — extend .env.example with all LLM_*, GUARDIAN_*, STT_*, FCM_*, CHAT_* vars; new docs/environment-variables.md generated/verified against os.Getenv usage; retire stale docs/example-env.md"
-    status: pending
+    status: completed
   - id: ws2-readme-refresh
     content: "WS2: README — status banner + feature list through Phase 118 plans; model selector + Ollama pull in features; enterprise scripts positioning fixed; screenshots section"
-    status: pending
+    status: completed
   - id: ws3-upgrade-backup
     content: "WS3: Upgrade + backup — docs/upgrade-guide.md (pull → migrate → restart order, version-specific runbook links); backup/restore extracted from receipt-storage-cutover-runbook.md into docs/backup-restore-runbook.md; linked from README, INSTALL.md, troubleshooting"
-    status: pending
+    status: completed
   - id: ws4-changelog-contributing
     content: "WS4: CHANGELOG.md (operator-visible changes: API breaks, migrations, Guardian behavior, back-filled from phase closures at coarse grain) + CONTRIBUTING.md (test gates, make targets, plan lifecycle)"
-    status: pending
+    status: completed
   - id: ws5-api-browsing
     content: "WS5: API browsing — serve Swagger UI (or Redoc) for openapi.yaml at /openapi on the API in dev builds; docs/api-quickstart.md curl cookbook (auth, farm, Pi key, chat)"
-    status: pending
+    status: completed
   - id: ws6-screenshots
     content: "WS6: Screenshots — docs/images/ with dashboard, Guardian chat + Confirm card, Pi wizard, model selector; referenced from README + operator tour"
-    status: pending
+    status: completed
   - id: ws7-operator-tour
     content: "WS7: Operator tour — add Guardian model picker + pull workflow section (Phase 111/112); verify tour steps against current SPA routes"
-    status: pending
+    status: completed
 isProject: false
 ---
 
@@ -35,9 +35,7 @@ isProject: false
 
 ## Status
 
-**Planned.** From the July 2026 audit (documentation workstream). Two one-line
-doc-truth fixes ship immediately with this plan commit (not deferred): README status
-ceiling 110 → 112, and `phase_60_pi_setup_wizard_ux.plan.md` "Not started" → shipped.
+**Shipped.** Env reference + CI parity, README/CHANGELOG/CONTRIBUTING, upgrade & backup guides, `/openapi` Redoc UI, api-quickstart, screenshots, operator tour model picker section.
 
 ---
 

@@ -7,9 +7,9 @@ An open-source farm operating system — run it on your LAN, keep your data clos
 [![Vue](https://img.shields.io/badge/Vue-3-4FC08D?logo=vue.js)](https://vuejs.org)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-14+-336791?logo=postgresql)](https://postgresql.org)
 
-**Status:** Farmer UX (**40–67**), SPA workspaces (**68–81**), crop intelligence (**82–110**), and Guardian model selection (**111–112**) are **shipped on `main`**. Next up: hardening arc **113–118** (security, Pi-chain integrity, schema surfacing, docs, tests, model capabilities) — see the docs index below for plans.
+**Status:** Farmer UX (**40–67**), SPA workspaces (**68–81**), crop intelligence (**82–110**), Guardian model selection (**111–112**), and hardening arc **113–115** are **shipped on `main`**. Docs refresh (**116**) and test depth (**117–118**) — see [phase index](docs/phase-14-operator-documentation.md).
 
-**Start here:** [First session after clone](docs/first-session-after-clone.md) · [Operator tour](docs/operator-tour.md) · [Phase index (plans + runbooks)](docs/phase-14-operator-documentation.md) · **Real grow?** [Guardian readiness](docs/guardian-real-grow-readiness.md)
+**Start here:** [First session after clone](docs/first-session-after-clone.md) · [Operator tour](docs/operator-tour.md) · [Upgrade guide](docs/upgrade-guide.md) · [CHANGELOG](CHANGELOG.md) · **Real grow?** [Guardian readiness](docs/guardian-real-grow-readiness.md)
 
 ---
 
@@ -36,6 +36,8 @@ An open-source farm operating system — run it on your LAN, keep your data clos
 
 🧑‍🌾 **Easy Pi Setup** — **Phase 60 Pi Setup Wizard:** 6-step guided flow to wire a Relay HAT, assign pumps/fans to channels, test network, download config. Zero manual YAML editing. See `http://localhost:5173/pi-setup-wizard`.
 
+🤖 **Guardian model picker** — Choose and **pull** Ollama models in-app (Phases 111–112). No manual `ollama pull` on the server unless you prefer CLI.
+
 💰 **Costs & Cycle Profitability** — Upload receipts (photos scanned for text), tag costs to crops. Export as CSV or GL ledger. Compare cycle-to-cycle costs/yield. See [Costs section](#costs-finance--receipts) in API docs.
 
 🌾 **Natural Farming** — JADAM input batches (JMS, LAB, FPJ, FFJ, etc.), field application recipes with mixing ratios, batch tracking, farm notes. Starter inventory seeded from `master_seed.sql`.
@@ -53,7 +55,19 @@ An open-source farm operating system — run it on your LAN, keep your data clos
 | Costs | ❌ | ✅ | ✅ | — |
 | Crop cycles | ❌ | ✅ | ✅ | ✅ (stage auto-advance) |
 
-After `git pull`, restart the API (`make dev-auth-test` or `make run-auth-test`) so new routes (e.g. crop picker) register. DB: `make migrate` on existing installs.
+After `git pull`, restart the API (`make dev-auth-test` or `make run-auth-test`) so new routes register. DB: `make migrate` on existing installs. See [upgrade guide](docs/upgrade-guide.md).
+
+### Screenshots
+
+| Dashboard (Today) | Farm Guardian + Confirm |
+|-------------------|-------------------------|
+| ![Today dashboard](docs/images/dashboard.png) | ![Guardian chat](docs/images/guardian-chat.png) |
+
+| Pi setup wizard | Model selector |
+|-----------------|----------------|
+| ![Pi wizard](docs/images/pi-wizard.png) | ![Model selector](docs/images/model-selector.png) |
+
+More walkthroughs: [operator tour](docs/operator-tour.md).
 
 ---
 
@@ -222,7 +236,7 @@ gr33n/
 │   └── setup.sh             # One-time Pi bootstrap
 ├── sqlc.yaml
 ├── go.mod / go.sum
-├── openapi.yaml             # Full API spec (paste into editor.swagger.io for live UI)
+├── openapi.yaml             # Full API spec — browse at http://localhost:8080/openapi (dev) or see docs/api-quickstart.md
 ├── INSTALL.md
 ├── ARCHITECTURE.md
 └── SECURITY.md
@@ -311,7 +325,7 @@ go run ./cmd/filebackfill --source-dir /path/to/old/files --file-type cost_recei
 
 The backfill preserves each attachment's existing `storage_path`, so DB rows do not change. After the copy is complete, switch the API to the new `FILE_STORAGE_BACKEND` and verify a few receipt downloads before removing the old local storage.
 
-For operator guidance on receipt storage cutover plus DB/blob backup and restore, see `docs/receipt-storage-cutover-runbook.md`.
+For backup, restore, and receipt storage cutover, see [docs/backup-restore-runbook.md](docs/backup-restore-runbook.md) (summary) and [docs/receipt-storage-cutover-runbook.md](docs/receipt-storage-cutover-runbook.md) (full cutover).
 
 ### PWA install + offline task writes
 
@@ -335,7 +349,7 @@ For **Play Store / App Store / MDM** distribution without replacing the PWA, use
 
 ## API Endpoints
 
-Base URL: `http://localhost:8080` — authoritative request/response schemas in [openapi.yaml](openapi.yaml). Path placeholders use `:id`, `:rid`, `:uid`, `:iid` for readability (the server matches the same paths with `{id}` style).
+Base URL: `http://localhost:8080` — authoritative request/response schemas in [openapi.yaml](openapi.yaml). **Browse interactively:** `http://localhost:8080/openapi` on dev builds (`-tags dev`) or set `OPENAPI_UI=true`. Curl examples: [docs/api-quickstart.md](docs/api-quickstart.md).
 
 ### Public
 
@@ -664,6 +678,7 @@ make build-ui   # Build the Vue frontend for production
 make test       # Run Go tests (-tags dev, ./...)
 make lint       # Run go vet (-tags dev, ./...)
 make audit-openapi  # OpenAPI ↔ cmd/api/routes.go shell diff + Go parity test in cmd/api/openapi_parity_test.go
+make audit-env      # Environment variables ↔ docs/environment-variables.md
 make sqlc       # Regenerate sqlc Go code from SQL queries
 make seed       # Apply seed data to the database
 make schema     # Apply the schema to the database
@@ -673,7 +688,9 @@ make logs       # Tail Docker Compose logs
 make clean      # Remove build artifacts
 ```
 
-**Phase 23 / pre-merge gate (local):** `make test`, `make lint`, `make audit-openapi`, `python3 -m pytest pi_client/test_gr33n_client.py pi_client/test_mqtt_telemetry_bridge.py -q`, and `npm --prefix ui run build`. **`make test`** expects a reachable **`DATABASE_URL`** (see [bootstrap — smoke tests](docs/local-operator-bootstrap.md#api-integration-smoke-tests)) so `cmd/api` integration tests actually run.
+**Phase 23 / pre-merge gate (local):** `make test`, `make lint`, `make audit-openapi`, `make audit-env`, `python3 -m pytest pi_client/test_gr33n_client.py pi_client/test_mqtt_telemetry_bridge.py -q`, and `npm --prefix ui run build`. **`make test`** expects a reachable **`DATABASE_URL`** (see [bootstrap — smoke tests](docs/local-operator-bootstrap.md#api-integration-smoke-tests)) so `cmd/api` integration tests actually run.
+
+**Contributing:** [CONTRIBUTING.md](CONTRIBUTING.md) · **Changes:** [CHANGELOG.md](CHANGELOG.md)
 
 ---
 

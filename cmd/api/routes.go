@@ -52,6 +52,7 @@ import (
 	lightinghandler "gr33n-api/internal/handler/lighting"
 	zonehandler "gr33n-api/internal/handler/zone"
 	"gr33n-api/internal/httputil"
+	"gr33n-api/internal/openapiui"
 	"gr33n-api/internal/pushnotify"
 )
 
@@ -155,6 +156,10 @@ func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationwo
 			"stt_local_enabled":   sttLocal,
 		})
 	})))
+
+	if openapiui.Enabled() {
+		openapiui.Register(mux)
+	}
 
 	// ── Pi routes — API key required ─────────────────────────────────────────
 	mux.Handle("POST /sensors/{id}/readings", piChain(http.HandlerFunc(sensor.PostReading)))

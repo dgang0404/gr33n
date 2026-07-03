@@ -34,7 +34,11 @@ import (
 // routes that don't appear in openapi.yaml on purpose. Keep this set
 // small — every entry needs a comment.
 var routesIntentionallyUndocumented = map[string]bool{
-	// (empty — every Phase 24–28 route is documented as of WS6.)
+	// Phase 116 — static OpenAPI browser (not part of REST contract).
+	"GET /openapi":                    true,
+	"GET /openapi/":                   true,
+	"GET /openapi/spec.yaml":          true,
+	"GET /openapi/redoc.standalone.js": true,
 }
 
 func TestOpenAPI_AllRoutesDocumented(t *testing.T) {

@@ -24,6 +24,7 @@ import (
 	db "gr33n-api/internal/db"
 	"gr33n-api/internal/farmguardian"
 	"gr33n-api/internal/filestorage"
+	"gr33n-api/internal/openapiui"
 	"gr33n-api/internal/pgxutil"
 	"gr33n-api/internal/pushnotify"
 )
@@ -180,6 +181,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("file storage init: %v", err)
 	}
+	openapiui.SetDevBuild(devBypassAllowed)
 	registerRoutes(mux, pool, worker, pushDispatch, adminUser, adminHash, hashFilePath, fileStore, fileCfg, adminBindUserID, adminBindEmail, aiCfg)
 	log.Printf("FILE_STORAGE_BACKEND=%s", fileCfg.Backend)
 	if fileCfg.Backend == "local" {

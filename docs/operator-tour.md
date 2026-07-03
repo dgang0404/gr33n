@@ -305,6 +305,20 @@ Nothing in the database changes from Guardian until you **Confirm** (or you edit
 
 **Find pending changes:** The ✨ launcher in the side nav and TopBar show a **numeric badge** when you have waiting proposals — tap to open the **Pending** inbox directly (Phase 73).
 
+### Model selection & pull (Phases 111–112 — shipped)
+
+On **`/chat`** (Farm Guardian full page) or the slide-out drawer, use the **model selector** in the composer toolbar:
+
+1. **Pick a model** — lists models discovered from your Ollama (or OpenAI-compatible) endpoint via `LLM_BASE_URL`. The chosen model is sent on each `POST /v1/chat` turn.
+2. **Pull a model** — when a tag is missing locally, use **Pull** (or `POST /guardian/models/pull`) to download weights before chatting. Large pulls can take minutes; timeout is controlled by `GUARDIAN_OLLAMA_PULL_TIMEOUT_SECONDS`.
+3. **Settings check** — **Settings → Guardian usage** shows token bars when cost guards are enabled.
+
+**Env:** `LLM_BASE_URL`, `LLM_MODEL` (default), `GUARDIAN_OLLAMA_AUTO_PULL`, `GUARDIAN_OLLAMA_SHOW_CONCURRENCY` — see [environment-variables.md](environment-variables.md).
+
+![Guardian model selector](images/model-selector.png)
+
+**Routes verified:** `/chat`, `GET /guardian/models`, `POST /guardian/models/pull`, `GET /v1/chat/health`.
+
 ### PR inbox workflow
 
 1. Ask Guardian to do something (or accept a rule-assisted proposal, e.g. ack an alert).
