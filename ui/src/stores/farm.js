@@ -49,6 +49,7 @@ export const useFarmStore = defineStore('farm', {
     devicesByZone:  (state) => (zoneId) => state.devices.filter(d => d.zone_id === zoneId),
     sensorsByZone:  (state) => (zoneId) => state.sensors.filter(s => s.zone_id === zoneId),
     actuatorsByZone: (state) => (zoneId) => state.actuators.filter(a => a.zone_id === zoneId),
+    actuatorsByDevice: (state) => (deviceId) => state.actuators.filter(a => a.device_id === deviceId),
     taskQueuePendingCount: (state) => (farmId) => pendingCount(state.taskWriteQueue, farmId),
   },
 
@@ -1356,6 +1357,25 @@ export const useFarmStore = defineStore('farm', {
         body.duration_seconds = Math.round(durationSeconds)
       }
       const r = await api.post(`/actuators/${actuatorId}/command`, body)
+      return r.data
+    },
+
+    async listDeviceCommands(deviceId, status = '') {
+      const qs = status ? `?status=${encodeURIComponent(status)}` : ''
+      const r = await api.get(`/devices/${deviceId}/commands${qs}`)
+      return r.data
+    },
+
+    async cancelDeviceCommand(deviceId, commandId) {
+      const r = await api.post(`/devices/${deviceId}/commands/${commandId}/cancel`, {})
+      return r.data
+    },
+
+    async enqueueFertigationMixJob(farmId, programId) {
+      const r = await api.post(`/farms/${farmId}/fertigation/mix-jobs`, {
+        program_id: programId,
+        preview_only: false,
+      })
       return r.data
     },
   },

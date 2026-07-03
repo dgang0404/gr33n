@@ -272,6 +272,50 @@ func (q *Queries) ListDevicesByZone(ctx context.Context, zoneID *int64) ([]Gr33n
 	return items, nil
 }
 
+const markStaleDevicesOffline = `-- name: MarkStaleDevicesOffline :many
+UPDATE gr33ncore.devices
+SET status = 'offline', updated_at = NOW()
+WHERE status = 'online'
+  AND deleted_at IS NULL
+  AND (
+    last_heartbeat IS NULL
+    OR last_heartbeat < NOW() - ($1::bigint * INTERVAL '1 second')
+  )
+RETURNING id, farm_id, name, device_uid
+`
+
+type MarkStaleDevicesOfflineRow struct {
+	ID        int64   `db:"id" json:"id"`
+	FarmID    int64   `db:"farm_id" json:"farm_id"`
+	Name      string  `db:"name" json:"name"`
+	DeviceUid *string `db:"device_uid" json:"device_uid"`
+}
+
+func (q *Queries) MarkStaleDevicesOffline(ctx context.Context, dollar_1 int64) ([]MarkStaleDevicesOfflineRow, error) {
+	rows, err := q.db.Query(ctx, markStaleDevicesOffline, dollar_1)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []MarkStaleDevicesOfflineRow{}
+	for rows.Next() {
+		var i MarkStaleDevicesOfflineRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.FarmID,
+			&i.Name,
+			&i.DeviceUid,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const setDevicePendingCommand = `-- name: SetDevicePendingCommand :exec
 UPDATE gr33ncore.devices
 SET config = jsonb_set(
@@ -333,6 +377,66 @@ type UpdateDeviceStatusParams struct {
 
 func (q *Queries) UpdateDeviceStatus(ctx context.Context, arg UpdateDeviceStatusParams) (Gr33ncoreDevice, error) {
 	row := q.db.QueryRow(ctx, updateDeviceStatus, arg.ID, arg.Status, arg.Column3)
+	var i Gr33ncoreDevice
+	err := row.Scan(
+		&i.ID,
+		&i.FarmID,
+		&i.ZoneID,
+		&i.Name,
+		&i.DeviceUid,
+		&i.DeviceType,
+		&i.IpAddress,
+		&i.FirmwareVersion,
+		&i.Status,
+		&i.LastHeartbeat,
+		&i.ApiKey,
+		&i.Config,
+		&i.MetaData,
+		&i.ConfigVersion,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.UpdatedByUserID,
+		&i.DeletedAt,
+	)
+	return i, err
+}
+
+const updateDeviceStatusTelemetry = `-- name: UpdateDeviceStatusTelemetry :one
+UPDATE gr33ncore.devices
+SET status = $2,
+    last_heartbeat = NOW(),
+    updated_at = NOW(),
+    firmware_version = COALESCE(NULLIF($4::text, ''), firmware_version),
+    config = coalesce(config, '{}'::jsonb)
+      || CASE WHEN $3::text IS NOT NULL AND $3::text <> ''
+         THEN jsonb_build_object('last_config_fetch_at', $3::text) ELSE '{}'::jsonb END
+      || CASE WHEN $5::text IS NOT NULL AND $5::text <> ''
+         THEN jsonb_build_object('client_version', $5::text) ELSE '{}'::jsonb END
+      || CASE WHEN $6::bigint >= 0
+         THEN jsonb_build_object('client_uptime_seconds', $6::bigint) ELSE '{}'::jsonb END
+WHERE id = $1 AND deleted_at IS NULL
+RETURNING id, farm_id, zone_id, name, device_uid, device_type, ip_address, firmware_version, status, last_heartbeat, api_key, config, meta_data, config_version, created_at, updated_at, updated_by_user_id, deleted_at
+`
+
+type UpdateDeviceStatusTelemetryParams struct {
+	ID      int64                        `db:"id" json:"id"`
+	Status  commontypes.DeviceStatusEnum `db:"status" json:"status"`
+	Column3 string                       `db:"column_3" json:"column_3"`
+	Column4 string                       `db:"column_4" json:"column_4"`
+	Column5 string                       `db:"column_5" json:"column_5"`
+	Column6 int64                        `db:"column_6" json:"column_6"`
+}
+
+// Pi-key heartbeat: status + optional config fetch timestamp, firmware/client version, uptime.
+func (q *Queries) UpdateDeviceStatusTelemetry(ctx context.Context, arg UpdateDeviceStatusTelemetryParams) (Gr33ncoreDevice, error) {
+	row := q.db.QueryRow(ctx, updateDeviceStatusTelemetry,
+		arg.ID,
+		arg.Status,
+		arg.Column3,
+		arg.Column4,
+		arg.Column5,
+		arg.Column6,
+	)
 	var i Gr33ncoreDevice
 	err := row.Scan(
 		&i.ID,

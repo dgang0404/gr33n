@@ -267,6 +267,7 @@ func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationwo
 	// Phase 39 WS1 — operator JWT routes for device command queue
 	mux.Handle("POST /devices/{id}/commands", jwt(http.HandlerFunc(devicecmd.Enqueue)))
 	mux.Handle("GET /devices/{id}/commands", jwt(http.HandlerFunc(devicecmd.List)))
+	mux.Handle("POST /devices/{id}/commands/{cid}/cancel", jwt(http.HandlerFunc(devicecmd.Cancel)))
 	mux.Handle("GET /farms/{id}/sensors/readings/latest", jwt(http.HandlerFunc(sensor.LatestReadingsByFarm)))
 	mux.Handle("GET /farms/{id}/sensors", jwt(http.HandlerFunc(sensor.ListByFarm)))
 	mux.Handle("GET /farms/{id}/schedules", jwt(http.HandlerFunc(automation.ListSchedulesByFarm)))
@@ -292,6 +293,7 @@ func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationwo
 	// Sensors
 	mux.Handle("GET /sensors/{id}", jwt(http.HandlerFunc(sensor.Get)))
 	mux.Handle("PATCH /sensors/{id}/wiring", jwt(http.HandlerFunc(sensor.PatchWiring)))
+	mux.Handle("PATCH /sensors/{id}/calibration", jwt(http.HandlerFunc(sensor.PatchCalibration)))
 	mux.Handle("POST /farms/{id}/sensors", jwt(http.HandlerFunc(sensor.Create)))
 	mux.Handle("PUT /sensors/{id}", jwt(http.HandlerFunc(sensor.Update)))
 	mux.Handle("DELETE /sensors/{id}", jwt(http.HandlerFunc(sensor.Delete)))
@@ -367,7 +369,7 @@ func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationwo
 	mux.Handle("GET /farms/{id}/fertigation/events", jwt(http.HandlerFunc(fertigation.ListEventsByFarm)))
 	mux.Handle("POST /farms/{id}/fertigation/events", jwt(http.HandlerFunc(fertigation.CreateEvent)))
 	mux.Handle("GET /farms/{id}/fertigation/mixing-events", jwt(http.HandlerFunc(fertigation.ListMixingEventsByFarm)))
-	mux.Handle("POST /farms/{id}/fertigation/mixing-events", jwt(http.HandlerFunc(fertigation.CreateMixingEvent)))
+	mux.Handle("POST /farms/{id}/fertigation/mixing-events", jwtOrPiChain(http.HandlerFunc(fertigation.CreateMixingEvent)))
 	mux.Handle("GET /farms/{id}/fertigation/mixing-events/{mid}/components", jwt(http.HandlerFunc(fertigation.ListMixingEventComponents)))
 	// Phase 39 WS3 — mix_batch enqueue + preview
 	mux.Handle("POST /farms/{id}/fertigation/mix-jobs", jwt(http.HandlerFunc(fertigation.EnqueueMixJob)))

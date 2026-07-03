@@ -138,6 +138,12 @@ func main() {
 		}
 	}()
 	workerOpts = append(workerOpts, automationworker.WithPushNotifier(pushDispatch))
+	if offlineSec := getEnv("DEVICE_OFFLINE_AFTER_SECONDS", ""); offlineSec != "" {
+		if n, err := strconv.ParseInt(offlineSec, 10, 64); err == nil && n > 0 {
+			workerOpts = append(workerOpts, automationworker.WithOfflineThreshold(n))
+			log.Printf("📡 Device offline threshold set to %ds", n)
+		}
+	}
 	worker := automationworker.NewWorker(pool, simulationMode, workerOpts...)
 	go worker.Start(context.Background())
 	log.Printf("🧠 Automation worker started (simulation_mode=%v)", simulationMode)

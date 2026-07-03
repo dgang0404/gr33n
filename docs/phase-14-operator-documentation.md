@@ -187,7 +187,7 @@ After operator-doc edits, re-ingest Guardian RAG: **`make rag-ingest-platform-do
 | Phase 111 — Guardian model selector ✅ | [`plans/phase_111_guardian_model_selector.plan.md`](plans/phase_111_guardian_model_selector.plan.md) — Ollama discovery, farm default, session override |
 | Phase 112 — Guardian Ollama hardening ✅ | [`plans/phase_112_guardian_ollama_hardening.plan.md`](plans/phase_112_guardian_ollama_hardening.plan.md) — auto-pull, `/api/show` context, CI E2E smokes |
 | Phase 113 — Security hardening ✅ | [`plans/phase_113_security_hardening.plan.md`](plans/phase_113_security_hardening.plan.md) — registration gate, login rate limit, headers, cost guard |
-| Phase 114 — Pi/edge integrity 🔜 | [`plans/phase_114_pi_edge_integrity.plan.md`](plans/phase_114_pi_edge_integrity.plan.md) — offline detection, ActuatorCard fix, calibration, mix audit, relay HAT |
+| Phase 114 — Pi/edge integrity ✅ | [`plans/phase_114_pi_edge_integrity.plan.md`](plans/phase_114_pi_edge_integrity.plan.md) — offline detection, ActuatorCard fix, calibration, mix audit, relay HAT |
 | Phase 115 — Schema utilization 🔜 | [`plans/phase_115_schema_utilization.plan.md`](plans/phase_115_schema_utilization.plan.md) — farm modules gating, notification templates, system logs, symptom guide |
 | Phase 116 — Documentation refresh 🔜 | [`plans/phase_116_docs_refresh.plan.md`](plans/phase_116_docs_refresh.plan.md) — env reference, upgrade/backup guides, CHANGELOG, Swagger UI, screenshots |
 | Phase 117 — Test depth 🔜 | [`plans/phase_117_test_depth.plan.md`](plans/phase_117_test_depth.plan.md) — zero-coverage packages, handler smokes, timeout hygiene, browser E2E seed |

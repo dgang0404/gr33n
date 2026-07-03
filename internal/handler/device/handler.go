@@ -109,6 +109,9 @@ func (h *Handler) UpdateStatus(w http.ResponseWriter, r *http.Request) {
 	var body struct {
 		Status            string  `json:"status"`
 		LastConfigFetchAt *string `json:"last_config_fetch_at"`
+		FirmwareVersion   *string `json:"firmware_version"`
+		ClientVersion     *string `json:"client_version"`
+		UptimeSeconds     *int64  `json:"uptime_seconds"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid request body")
@@ -121,12 +124,40 @@ func (h *Handler) UpdateStatus(w http.ResponseWriter, r *http.Request) {
 	if body.LastConfigFetchAt != nil {
 		lastFetch = strings.TrimSpace(*body.LastConfigFetchAt)
 	}
-	device, err := h.q.UpdateDeviceStatus(ctx, db.UpdateDeviceStatusParams{
-		ID:      id,
-		Status:  commontypes.DeviceStatusEnum(body.Status),
-		Column3: lastFetch,
-	})
-	if err != nil {
+	status := commontypes.DeviceStatusEnum(body.Status)
+
+	hasTelemetry := body.FirmwareVersion != nil || body.ClientVersion != nil || body.UptimeSeconds != nil
+	var device db.Gr33ncoreDevice
+	var err2 error
+	if hasTelemetry {
+		fw := ""
+		if body.FirmwareVersion != nil {
+			fw = strings.TrimSpace(*body.FirmwareVersion)
+		}
+		cv := ""
+		if body.ClientVersion != nil {
+			cv = strings.TrimSpace(*body.ClientVersion)
+		}
+		uptime := int64(-1)
+		if body.UptimeSeconds != nil {
+			uptime = *body.UptimeSeconds
+		}
+		device, err2 = h.q.UpdateDeviceStatusTelemetry(ctx, db.UpdateDeviceStatusTelemetryParams{
+			ID:      id,
+			Status:  status,
+			Column3: lastFetch,
+			Column4: fw,
+			Column5: cv,
+			Column6: uptime,
+		})
+	} else {
+		device, err2 = h.q.UpdateDeviceStatus(ctx, db.UpdateDeviceStatusParams{
+			ID:      id,
+			Status:  status,
+			Column3: lastFetch,
+		})
+	}
+	if err2 != nil {
 		httputil.WriteError(w, http.StatusInternalServerError, "failed to update device status")
 		return
 	}

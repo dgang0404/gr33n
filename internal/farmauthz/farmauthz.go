@@ -35,6 +35,15 @@ func RequireFarmMemberOrPiEdge(w http.ResponseWriter, r *http.Request, q db.Quer
 	return RequireFarmMember(w, r, q, farmID)
 }
 
+// RequireFarmOperateOrPiEdge allows Pi edge auth (shared or device key) for
+// operate-level mutations such as automated mixing-event audit rows.
+func RequireFarmOperateOrPiEdge(w http.ResponseWriter, r *http.Request, q db.Querier, farmID int64) bool {
+	if authctx.PiEdgeAuth(r.Context()) {
+		return true
+	}
+	return RequireFarmOperate(w, r, q, farmID)
+}
+
 func requireFarmAccess(w http.ResponseWriter, r *http.Request, q db.Querier, farmID int64, uid uuid.UUID) bool {
 	hasPtr, err := q.UserHasFarmAccess(r.Context(), db.UserHasFarmAccessParams{
 		FarmID: farmID,

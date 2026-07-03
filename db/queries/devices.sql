@@ -44,6 +44,34 @@ SET status = $2,
 WHERE id = $1 AND deleted_at IS NULL
 RETURNING *;
 
+-- name: UpdateDeviceStatusTelemetry :one
+-- Pi-key heartbeat: status + optional config fetch timestamp, firmware/client version, uptime.
+UPDATE gr33ncore.devices
+SET status = $2,
+    last_heartbeat = NOW(),
+    updated_at = NOW(),
+    firmware_version = COALESCE(NULLIF($4::text, ''), firmware_version),
+    config = coalesce(config, '{}'::jsonb)
+      || CASE WHEN $3::text IS NOT NULL AND $3::text <> ''
+         THEN jsonb_build_object('last_config_fetch_at', $3::text) ELSE '{}'::jsonb END
+      || CASE WHEN $5::text IS NOT NULL AND $5::text <> ''
+         THEN jsonb_build_object('client_version', $5::text) ELSE '{}'::jsonb END
+      || CASE WHEN $6::bigint >= 0
+         THEN jsonb_build_object('client_uptime_seconds', $6::bigint) ELSE '{}'::jsonb END
+WHERE id = $1 AND deleted_at IS NULL
+RETURNING *;
+
+-- name: MarkStaleDevicesOffline :many
+UPDATE gr33ncore.devices
+SET status = 'offline', updated_at = NOW()
+WHERE status = 'online'
+  AND deleted_at IS NULL
+  AND (
+    last_heartbeat IS NULL
+    OR last_heartbeat < NOW() - ($1::bigint * INTERVAL '1 second')
+  )
+RETURNING id, farm_id, name, device_uid;
+
 -- name: SetDevicePendingCommand :exec
 UPDATE gr33ncore.devices
 SET config = jsonb_set(

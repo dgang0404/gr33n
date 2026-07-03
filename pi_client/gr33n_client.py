@@ -7,6 +7,7 @@ import json as py_json
 import logging
 import math
 import os
+import signal
 import sqlite3
 import threading
 import time
@@ -80,6 +81,8 @@ logging.basicConfig(
     format='%(asctime)s [%(levelname)s] %(name)s - %(message)s',
 )
 log = logging.getLogger('gr33n.client')
+
+CLIENT_VERSION = os.environ.get('PI_CLIENT_VERSION', '1.114.0')
 
 
 # --- CONFIG -----------------------------------------------------------------
@@ -524,11 +527,20 @@ class Gr33nApiClient:
         return []
 
     def patch_device_status(self, device_id: int, status: str,
-                            last_config_fetch_at: Optional[str] = None) -> bool:
-        # PATCH /devices/{id}/status — optional last_config_fetch_at (Phase 51 WS4).
+                            last_config_fetch_at: Optional[str] = None,
+                            firmware_version: Optional[str] = None,
+                            client_version: Optional[str] = None,
+                            uptime_seconds: Optional[int] = None) -> bool:
+        # PATCH /devices/{id}/status — optional telemetry (Phase 114 WS3).
         payload: dict = {'status': status}
         if last_config_fetch_at:
             payload['last_config_fetch_at'] = last_config_fetch_at
+        if firmware_version:
+            payload['firmware_version'] = firmware_version
+        if client_version:
+            payload['client_version'] = client_version
+        if uptime_seconds is not None:
+            payload['uptime_seconds'] = int(uptime_seconds)
         try:
             r = self._s.patch(f'{self.base_url}/devices/{device_id}/status',
                               json=payload, timeout=self.timeout)
@@ -542,7 +554,10 @@ class Gr33nApiClient:
                              rule_id: Optional[int] = None,
                              program_id: Optional[int] = None,
                              meta_data: Optional[dict] = None,
-                             parameters_sent: Optional[dict] = None) -> bool:
+                             parameters_sent: Optional[dict] = None,
+                             execution_status: str = 'execution_completed_success_on_device',
+                             resulting_state_text: Optional[str] = None,
+                             resulting_state_numeric: Optional[float] = None) -> bool:
         """Report command execution to the API (Pi feedback).
 
         Pass through provenance from ``pending_command`` so actuator_events
@@ -555,8 +570,12 @@ class Gr33nApiClient:
             'command_sent':     command,
             'source':           source,
             'event_time':       datetime.now(timezone.utc).isoformat(),
-            'execution_status': 'command_sent_to_device',
+            'execution_status': execution_status,
         }
+        if resulting_state_text is not None:
+            payload['resulting_state_text'] = resulting_state_text
+        if resulting_state_numeric is not None:
+            payload['resulting_state_numeric'] = resulting_state_numeric
         if schedule_id is not None:
             payload['triggered_by_schedule_id'] = schedule_id
         if rule_id is not None:
@@ -830,6 +849,13 @@ class SensorReader:
                                 self.cfg.get('sensor_id'), key)
 
     def read(self) -> Optional[float]:
+        raw = self._read_raw()
+        if raw is None:
+            return None
+        return _apply_calibration(raw, self.cfg.get('calibration'))
+
+    def _read_raw(self) -> Optional[float]:
+        """Hardware read without calibration."""
         src   = self.cfg.get('source', '')
         stype = self.cfg.get('sensor_type', '')
         if src == 'derived':
@@ -846,13 +872,10 @@ class SensorReader:
                 return self._mock(stype)
             v = self._adc.voltage
             if stype == 'soil_moisture':
-                # Capacitive sensor: 3.0V=0%(dry), 1.5V=100%(wet)
                 return round(max(0.0, min(100.0, (3.0 - v) / 1.5 * 100.0)), 1)
             elif stype == 'ec':
-                # Linear 0-5 mS/cm on 0-3.3V
                 return round(v / 3.3 * 5.0, 3)
             elif stype == 'ph':
-                # Atlas Scientific analog: 7pH=2.5V, ~0.18V/pH
                 return round(7.0 + (2.5 - v) / 0.18, 2)
             return v
         elif src == 'mhz19':
@@ -872,7 +895,7 @@ class SensorReader:
                 time.sleep(0.18)
                 data = self._i2c.read_i2c_block_data(0x23, 0x10, 2)
                 lux = (data[0] << 8 | data[1]) / 1.2
-                return round(lux * 0.0185, 1)  # lux to PAR umol/m2/s
+                return round(lux * 0.0185, 1)
             except Exception:
                 return None
         return self._mock(stype)
@@ -1021,11 +1044,39 @@ class ActuatorController:
         return 'on' if self._state else 'off'
 
 
+def _apply_calibration(value: float, cal: Optional[dict]) -> float:
+    """Apply slope/offset from sensors.calibration_data when present."""
+    if not cal or value is None:
+        return value
+    try:
+        slope = float(cal.get('slope', 1.0))
+        offset = float(cal.get('offset', 0.0))
+        return round(value * slope + offset, 4)
+    except (TypeError, ValueError):
+        return value
+
+
 class RelayHATActuatorController:
-    """Sequent 8-relay HAT channel driver (Phase 70). Uses smbus when available."""
+    """Sequent 8-relay HAT channel driver (Phase 70/114). Uses smbus when available."""
 
     ON_COMMANDS = ActuatorController.ON_COMMANDS
     OFF_COMMANDS = ActuatorController.OFF_COMMANDS
+    _bus = None
+    _bus_lock = threading.Lock()
+
+    @classmethod
+    def _get_bus(cls):
+        if cls._bus is None and I2C_BUS_AVAILABLE:
+            cls._bus = smbus2.SMBus(1)
+        return cls._bus
+
+    @staticmethod
+    def _addr_and_reg(channel: int) -> tuple:
+        """Map global channel (0–63) to I²C address and relay register (1–8)."""
+        stack = int(channel) // 8
+        relay_reg = (int(channel) % 8) + 1
+        addr = 0x27 - stack
+        return addr, relay_reg
 
     def __init__(self, cfg: dict):
         self.cfg = cfg
@@ -1041,12 +1092,28 @@ class RelayHATActuatorController:
                  self.actuator_id, self.device_type, self.channel)
 
     def turn_on(self):
-        self._state = True
-        log.info('Actuator %s relay-HAT ch %s -> ON', self.actuator_id, self.channel)
+        self._set_relay(True)
 
     def turn_off(self):
-        self._state = False
-        log.info('Actuator %s relay-HAT ch %s -> OFF', self.actuator_id, self.channel)
+        self._set_relay(False)
+
+    def _set_relay(self, on: bool):
+        bus = self._get_bus()
+        if bus is None:
+            log.warning('Actuator %s relay-HAT ch %s -> %s (smbus unavailable)',
+                        self.actuator_id, self.channel, 'ON' if on else 'OFF')
+            self._state = on
+            return
+        addr, reg = self._addr_and_reg(self.channel)
+        try:
+            with self._bus_lock:
+                bus.write_byte_data(addr, reg, 1 if on else 0)
+            self._state = on
+            log.info('Actuator %s relay-HAT ch %s (addr=0x%02x reg=%s) -> %s',
+                     self.actuator_id, self.channel, addr, reg, 'ON' if on else 'OFF')
+        except Exception as exc:
+            log.warning('relay-HAT I/O failed actuator=%s ch=%s: %s', self.actuator_id, self.channel, exc)
+            raise
 
     def _effective_pulse_seconds(self, duration_seconds):
         try:
@@ -1115,6 +1182,7 @@ class Gr33nPiClient:
             self._report_config_sync()
         self.queue      = OfflineQueue(self.cfg['offline_queue_path'])
         self._stop      = threading.Event()
+        self._started_at = time.monotonic()
         self._hw_lock   = threading.Lock()
         self._last_read: dict = {}
         # Shared across all readers so `source: derived` sensors can compute
@@ -1252,13 +1320,18 @@ class Gr33nPiClient:
             batch = self.queue.pop_batch(50)
             if not batch:
                 continue
-            acked = []
-            for item in batch:
-                if self.api.post_reading(item['sensor_id'], item['value_raw'], item['reading_time']):
-                    acked.append(item['_qid'])
-            self.queue.ack(acked)
-            if acked:
-                log.info('Flushed %d queued readings to API', len(acked))
+            items = [
+                {
+                    'sensor_id': item['sensor_id'],
+                    'value_raw': item['value_raw'],
+                    'reading_time': item['reading_time'],
+                    'is_valid': True,
+                }
+                for item in batch
+            ]
+            if self.api.post_readings_batch(items):
+                self.queue.ack([item['_qid'] for item in batch])
+                log.info('Flushed %d queued readings to API (batch)', len(batch))
 
     def _heartbeat_loop(self):
         while not self._stop.is_set():
@@ -1268,7 +1341,13 @@ class Gr33nPiClient:
             with self._hw_lock:
                 device_ids = {a.device_id for a in self._actuators.values()}
             for did in device_ids:
-                self.api.patch_device_status(did, 'online')
+                uptime = int(time.monotonic() - self._started_at)
+                self.api.patch_device_status(
+                    did, 'online',
+                    client_version=CLIENT_VERSION,
+                    firmware_version=CLIENT_VERSION,
+                    uptime_seconds=uptime,
+                )
             log.debug('Heartbeat sent for %d device(s)', len(device_ids))
 
     # ── Phase 39 WS4 mix executor ────────────────────────────────────────────
@@ -1409,8 +1488,6 @@ class Gr33nPiClient:
                 processed += 1
                 continue
 
-            actuator.execute(cmd, duration_seconds=duration_seconds)
-
             if rule_id is not None:
                 src = 'automation_rule_trigger'
             elif pending_source in ('guardian', 'operator'):
@@ -1426,14 +1503,27 @@ class Gr33nPiClient:
             if duration_seconds:
                 meta['duration_seconds'] = duration_seconds
 
-            self.api.post_actuator_event(
-                actuator_id=actuator.actuator_id, command=cmd,
-                source=src, schedule_id=sched_id, rule_id=rule_id,
-                program_id=prog_id,
-                meta_data=meta or None,
-            )
-            self.api.ack_command(device_id, command_id, status='completed')
-            self.api.patch_device_status(device_id, 'online')
+            resulting = 'on' if cmd in ActuatorController.ON_COMMANDS else 'off'
+            try:
+                actuator.execute(cmd, duration_seconds=duration_seconds)
+                self.api.post_actuator_event(
+                    actuator_id=actuator.actuator_id, command=cmd,
+                    source=src, schedule_id=sched_id, rule_id=rule_id,
+                    program_id=prog_id,
+                    meta_data=meta or None,
+                    resulting_state_text=resulting,
+                    resulting_state_numeric=1.0 if resulting == 'on' else 0.0,
+                )
+                self.api.ack_command(device_id, command_id, status='completed',
+                                     result={
+                                         'resulting_state': resulting,
+                                         'execution_status': 'execution_completed_success_on_device',
+                                     })
+            except Exception as exc:
+                log.warning('actuator command failed device=%s cmd=%s: %s', device_id, cmd, exc)
+                self.api.ack_command(device_id, command_id, status='failed',
+                                     result={'error': str(exc), 'error_class': 'error_hardware'})
+            self.api.patch_device_status(device_id, 'online', client_version=CLIENT_VERSION)
             processed += 1
 
         return processed
@@ -1517,13 +1607,26 @@ class Gr33nPiClient:
 
     def run(self):
         log.info(
-            'gr33n Pi Client starting - farm_id=%s  api=%s  device_uid=%s  sensors=%d  actuators=%d',
+            'gr33n Pi Client starting - farm_id=%s  api=%s  device_uid=%s  sensors=%d  actuators=%d  version=%s',
             self.cfg['farm']['farm_id'],
             self.cfg['api']['base_url'],
             self.device_uid or '(local wiring)',
             len(self.cfg.get('sensors', [])),
             len(self.cfg.get('actuators', [])),
+            CLIENT_VERSION,
         )
+
+        def _shutdown(signum, _frame):
+            log.info('Shutdown signal %s received — marking devices offline.', signum)
+            self._stop.set()
+            with self._hw_lock:
+                device_ids = {a.device_id for a in self._actuators.values()}
+            for did in device_ids:
+                self.api.patch_device_status(did, 'offline', client_version=CLIENT_VERSION)
+
+        signal.signal(signal.SIGTERM, _shutdown)
+        signal.signal(signal.SIGINT, _shutdown)
+
         threads = [
             threading.Thread(target=self._sensor_loop,    name='sensor-loop',    daemon=True),
             threading.Thread(target=self._flush_loop,     name='flush-loop',     daemon=True),
@@ -1533,11 +1636,16 @@ class Gr33nPiClient:
         for t in threads:
             t.start()
         try:
-            while True:
+            while not self._stop.is_set():
                 time.sleep(1)
         except KeyboardInterrupt:
             log.info('Shutdown requested.')
             self._stop.set()
+        finally:
+            with self._hw_lock:
+                device_ids = {a.device_id for a in self._actuators.values()}
+            for did in device_ids:
+                self.api.patch_device_status(did, 'offline', client_version=CLIENT_VERSION)
             for t in threads:
                 t.join(timeout=5)
             log.info('gr33n Pi Client stopped.')

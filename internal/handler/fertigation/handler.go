@@ -785,7 +785,7 @@ func (h *Handler) CreateMixingEvent(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid farm id")
 		return
 	}
-	if !farmauthz.RequireFarmOperate(w, r, h.q, farmID) {
+	if !farmauthz.RequireFarmOperateOrPiEdge(w, r, h.q, farmID) {
 		return
 	}
 

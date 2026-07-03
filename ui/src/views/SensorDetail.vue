@@ -176,6 +176,52 @@
           </form>
         </div>
 
+        <div
+          v-if="supportsCalibration"
+          class="bg-zinc-900 border border-zinc-800 rounded-xl p-4 space-y-3"
+          data-test="sensor-calibration-panel"
+        >
+          <div class="flex items-center justify-between">
+            <h2 class="text-sm font-semibold text-white">Calibration</h2>
+            <span v-if="sensor.is_calibrated" class="text-[10px] text-emerald-400">
+              Calibrated {{ calibrationDateLabel }}
+            </span>
+            <span v-else class="text-[10px] text-amber-500">Never calibrated</span>
+          </div>
+          <p class="text-xs text-zinc-500">
+            Place the probe in a buffer, enter the live raw reading and known reference value for each point.
+          </p>
+          <div class="grid grid-cols-2 gap-3 text-xs">
+            <label class="block">
+              <span class="text-zinc-400">Point A raw</span>
+              <input v-model.number="calForm.aRaw" type="number" step="any" class="mt-1 w-full rounded bg-zinc-950 border border-zinc-700 px-2 py-1.5 text-white" />
+            </label>
+            <label class="block">
+              <span class="text-zinc-400">Point A reference</span>
+              <input v-model.number="calForm.aRef" type="number" step="any" class="mt-1 w-full rounded bg-zinc-950 border border-zinc-700 px-2 py-1.5 text-white" />
+            </label>
+            <label class="block">
+              <span class="text-zinc-400">Point B raw</span>
+              <input v-model.number="calForm.bRaw" type="number" step="any" class="mt-1 w-full rounded bg-zinc-950 border border-zinc-700 px-2 py-1.5 text-white" />
+            </label>
+            <label class="block">
+              <span class="text-zinc-400">Point B reference</span>
+              <input v-model.number="calForm.bRef" type="number" step="any" class="mt-1 w-full rounded bg-zinc-950 border border-zinc-700 px-2 py-1.5 text-white" />
+            </label>
+          </div>
+          <p v-if="calError" class="text-xs text-red-400">{{ calError }}</p>
+          <p v-if="calOk" class="text-xs text-emerald-400">{{ calOk }}</p>
+          <button
+            type="button"
+            class="text-xs px-3 py-1.5 rounded-lg bg-green-800 hover:bg-green-700 text-white disabled:opacity-50"
+            :disabled="calSaving"
+            data-test="save-calibration"
+            @click="saveCalibration"
+          >
+            {{ calSaving ? 'Saving…' : 'Save calibration' }}
+          </button>
+        </div>
+
         <HardwareWiringPanel
           :sensor-id="route.params.id"
           :sensor="sensor"
@@ -231,6 +277,46 @@ const editForm = ref({
   alert_duration_minutes: 0,
   alert_cooldown_minutes: 5,
 })
+
+const calForm = ref({ aRaw: null, aRef: null, bRaw: null, bRef: null })
+const calSaving = ref(false)
+const calError = ref('')
+const calOk = ref('')
+
+const supportsCalibration = computed(() => {
+  const t = (sensor.value?.sensor_type || '').toLowerCase()
+  return t === 'ec' || t === 'ph' || t === 'temperature'
+})
+
+const calibrationDateLabel = computed(() => {
+  const d = sensor.value?.last_calibration_date
+  if (!d) return ''
+  try {
+    return new Date(d).toLocaleDateString()
+  } catch {
+    return d
+  }
+})
+
+async function saveCalibration() {
+  calError.value = ''
+  calOk.value = ''
+  const id = route.params.id
+  if (!id) return
+  calSaving.value = true
+  try {
+    const r = await api.patch(`/sensors/${id}/calibration`, {
+      point_a: { raw: calForm.value.aRaw, reference: calForm.value.aRef },
+      point_b: { raw: calForm.value.bRaw, reference: calForm.value.bRef },
+    })
+    sensor.value = r.data
+    calOk.value = 'Calibration saved — Pi will pick up coefficients on next config sync.'
+  } catch (e) {
+    calError.value = e.response?.data?.error || e.message || 'Calibration failed'
+  } finally {
+    calSaving.value = false
+  }
+}
 
 function formatSecondsAsMinutes(secs) {
   if (secs == null || !Number.isFinite(Number(secs))) return '—'

@@ -28,6 +28,7 @@ type PiConfigSensor struct {
 	SensorType             string
 	ReadingIntervalSeconds *int32
 	Config                 json.RawMessage
+	CalibrationData        json.RawMessage
 }
 
 // PiConfigActuator is an actuator row + optional wiring for generation.
@@ -65,6 +66,7 @@ type piSensorEntry struct {
 	Inputs              map[string]int         `yaml:"inputs,omitempty"`
 	InputMaxAgeSeconds  *int                   `yaml:"input_max_age_seconds,omitempty"`
 	IntervalSeconds     int                    `yaml:"interval_seconds"`
+	Calibration         map[string]float64     `yaml:"calibration,omitempty"`
 }
 
 type piActuatorEntry struct {
@@ -295,6 +297,12 @@ func sensorToPiEntry(row PiConfigSensor, w *Wiring) (piSensorEntry, error) {
 		}
 	case "bh1750":
 		// I2C-only; no extra keys in pi yaml
+	}
+	if len(row.CalibrationData) > 0 {
+		var cal map[string]float64
+		if err := json.Unmarshal(row.CalibrationData, &cal); err == nil && len(cal) > 0 {
+			entry.Calibration = cal
+		}
 	}
 	return entry, nil
 }

@@ -56,6 +56,7 @@ type Worker struct {
 	// idempotency table handles retries separately).
 	lastElecRollupDate time.Time
 	metadataStepsFallbackTotal atomic.Uint64
+	offlineAfterSeconds      int64
 }
 
 func NewWorker(pool *pgxpool.Pool, simulation bool, opts ...WorkerOption) *Worker {
@@ -199,6 +200,9 @@ func (w *Worker) runTick(ctx context.Context) {
 	// Safe to run every tick; the dedupe inside maybeFireLowStock
 	// keeps the alert table from filling up.
 	w.TickLowStockAlerts(ctx)
+
+	// Phase 114 WS1 — stale heartbeat → offline + alert.
+	w.TickDeviceHealth(ctx)
 
 	// Phase 20.7 WS4 — once-per-day electricity rollup. We target
 	// the *previous* UTC calendar day so all its events have landed.

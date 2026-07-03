@@ -618,6 +618,7 @@ type Querier interface {
 	MarkProgramTriggered(ctx context.Context, arg MarkProgramTriggeredParams) (Gr33nfertigationProgram, error)
 	MarkRegistrationInviteUsed(ctx context.Context, arg MarkRegistrationInviteUsedParams) error
 	MarkScheduleTriggered(ctx context.Context, arg MarkScheduleTriggeredParams) (Gr33ncoreSchedule, error)
+	MarkStaleDevicesOffline(ctx context.Context, dollar_1 int64) ([]MarkStaleDevicesOfflineRow, error)
 	// Running SUM over surviving rows. Called by handler after INSERT/DELETE.
 	RecalcTaskTimeSpentMinutes(ctx context.Context, taskID int64) error
 	RejectInsertCommonsBundle(ctx context.Context, arg RejectInsertCommonsBundleParams) (Gr33ncoreInsertCommonsBundle, error)
@@ -675,6 +676,8 @@ type Querier interface {
 	UpdateCropCycle(ctx context.Context, arg UpdateCropCycleParams) (Gr33nfertigationCropCycle, error)
 	UpdateCropCycleStage(ctx context.Context, arg UpdateCropCycleStageParams) (Gr33nfertigationCropCycle, error)
 	UpdateDeviceStatus(ctx context.Context, arg UpdateDeviceStatusParams) (Gr33ncoreDevice, error)
+	// Pi-key heartbeat: status + optional config fetch timestamp, firmware/client version, uptime.
+	UpdateDeviceStatusTelemetry(ctx context.Context, arg UpdateDeviceStatusTelemetryParams) (Gr33ncoreDevice, error)
 	UpdateExecutableAction(ctx context.Context, arg UpdateExecutableActionParams) (Gr33ncoreExecutableAction, error)
 	UpdateFarm(ctx context.Context, arg UpdateFarmParams) (Gr33ncoreFarm, error)
 	UpdateFarmEnergyPrice(ctx context.Context, arg UpdateFarmEnergyPriceParams) (Gr33ncoreFarmEnergyPrice, error)
@@ -707,6 +710,7 @@ type Querier interface {
 	// pass NULL to leave the existing value untouched. alert_breach_started_at is managed
 	// by the evaluator and is not editable via this query.
 	UpdateSensor(ctx context.Context, arg UpdateSensorParams) (Gr33ncoreSensor, error)
+	UpdateSensorCalibration(ctx context.Context, arg UpdateSensorCalibrationParams) (Gr33ncoreSensor, error)
 	UpdateSensorConfig(ctx context.Context, arg UpdateSensorConfigParams) (Gr33ncoreSensor, error)
 	UpdateSetpoint(ctx context.Context, arg UpdateSetpointParams) (Gr33ncoreZoneSetpoint, error)
 	UpdateTask(ctx context.Context, arg UpdateTaskParams) (Gr33ncoreTask, error)

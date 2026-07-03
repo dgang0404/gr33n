@@ -330,6 +330,50 @@ func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// POST /devices/{id}/commands/{cid}/cancel
+// JWT operator: cancel a pending command.
+func (h *Handler) Cancel(w http.ResponseWriter, r *http.Request) {
+	deviceID, err := httputil.PathID(r.URL.Path, 2)
+	if err != nil {
+		httputil.WriteError(w, http.StatusBadRequest, "invalid device id")
+		return
+	}
+	cmdID, err := httputil.PathID(r.URL.Path, 4)
+	if err != nil {
+		httputil.WriteError(w, http.StatusBadRequest, "invalid command id")
+		return
+	}
+
+	ctx := r.Context()
+	device, err := h.q.GetDeviceByID(ctx, deviceID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			httputil.WriteError(w, http.StatusNotFound, "device not found")
+			return
+		}
+		httputil.WriteError(w, http.StatusInternalServerError, "failed to load device")
+		return
+	}
+	if !farmauthz.RequireFarmOperate(w, r, h.q, device.FarmID) {
+		return
+	}
+
+	cmd, err := h.q.CancelDeviceCommand(ctx, cmdID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			httputil.WriteError(w, http.StatusNotFound, "command not found or not pending")
+			return
+		}
+		httputil.WriteError(w, http.StatusInternalServerError, "failed to cancel command")
+		return
+	}
+	if cmd.DeviceID != deviceID {
+		httputil.WriteError(w, http.StatusBadRequest, "command does not belong to this device")
+		return
+	}
+	httputil.WriteJSON(w, http.StatusOK, cmd)
+}
+
 // pathSegment returns the Nth segment (0-indexed) of a URL path split by '/'.
 // e.g. "/devices/5/commands/3/ack" → segments [devices 5 commands 3 ack]
 func pathSegment(path string, n int) (string, error) {

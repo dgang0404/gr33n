@@ -110,22 +110,25 @@ const insertActuatorEvent = `-- name: InsertActuatorEvent :one
 INSERT INTO gr33ncore.actuator_events (
     event_time, actuator_id, command_sent, parameters_sent,
     triggered_by_user_id, triggered_by_schedule_id, triggered_by_rule_id,
-    source, execution_status, meta_data
-) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+    source, execution_status, resulting_state_numeric_actual, resulting_state_text_actual,
+    meta_data
+) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
 RETURNING event_time, actuator_id, command_sent, parameters_sent, triggered_by_user_id, triggered_by_schedule_id, triggered_by_rule_id, source, response_received_from_device, execution_status, resulting_state_numeric_actual, resulting_state_text_actual, meta_data
 `
 
 type InsertActuatorEventParams struct {
-	EventTime             time.Time                             `db:"event_time" json:"event_time"`
-	ActuatorID            int64                                 `db:"actuator_id" json:"actuator_id"`
-	CommandSent           *string                               `db:"command_sent" json:"command_sent"`
-	ParametersSent        []byte                                `db:"parameters_sent" json:"parameters_sent"`
-	TriggeredByUserID     pgtype.UUID                           `db:"triggered_by_user_id" json:"triggered_by_user_id"`
-	TriggeredByScheduleID *int64                                `db:"triggered_by_schedule_id" json:"triggered_by_schedule_id"`
-	TriggeredByRuleID     *int64                                `db:"triggered_by_rule_id" json:"triggered_by_rule_id"`
-	Source                Gr33ncoreActuatorEventSourceEnum      `db:"source" json:"source"`
-	ExecutionStatus       *Gr33ncoreActuatorExecutionStatusEnum `db:"execution_status" json:"execution_status"`
-	MetaData              json.RawMessage                       `db:"meta_data" json:"meta_data"`
+	EventTime                   time.Time                             `db:"event_time" json:"event_time"`
+	ActuatorID                  int64                                 `db:"actuator_id" json:"actuator_id"`
+	CommandSent                 *string                               `db:"command_sent" json:"command_sent"`
+	ParametersSent              []byte                                `db:"parameters_sent" json:"parameters_sent"`
+	TriggeredByUserID           pgtype.UUID                           `db:"triggered_by_user_id" json:"triggered_by_user_id"`
+	TriggeredByScheduleID       *int64                                `db:"triggered_by_schedule_id" json:"triggered_by_schedule_id"`
+	TriggeredByRuleID           *int64                                `db:"triggered_by_rule_id" json:"triggered_by_rule_id"`
+	Source                      Gr33ncoreActuatorEventSourceEnum      `db:"source" json:"source"`
+	ExecutionStatus             *Gr33ncoreActuatorExecutionStatusEnum `db:"execution_status" json:"execution_status"`
+	ResultingStateNumericActual pgtype.Numeric                        `db:"resulting_state_numeric_actual" json:"resulting_state_numeric_actual"`
+	ResultingStateTextActual    *string                               `db:"resulting_state_text_actual" json:"resulting_state_text_actual"`
+	MetaData                    json.RawMessage                       `db:"meta_data" json:"meta_data"`
 }
 
 func (q *Queries) InsertActuatorEvent(ctx context.Context, arg InsertActuatorEventParams) (Gr33ncoreActuatorEvent, error) {
@@ -139,6 +142,8 @@ func (q *Queries) InsertActuatorEvent(ctx context.Context, arg InsertActuatorEve
 		arg.TriggeredByRuleID,
 		arg.Source,
 		arg.ExecutionStatus,
+		arg.ResultingStateNumericActual,
+		arg.ResultingStateTextActual,
 		arg.MetaData,
 	)
 	var i Gr33ncoreActuatorEvent

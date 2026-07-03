@@ -37,6 +37,15 @@ SELECT * FROM gr33ncore.sensors
 WHERE device_id = $1 AND deleted_at IS NULL
 ORDER BY name ASC;
 
+-- name: UpdateSensorCalibration :one
+UPDATE gr33ncore.sensors
+SET calibration_data = $2,
+    is_calibrated = true,
+    last_calibration_date = NOW(),
+    updated_at = NOW()
+WHERE id = $1 AND deleted_at IS NULL
+RETURNING *;
+
 -- name: UpdateSensor :one
 -- Patch-style update: each field overwritten when the caller passes a non-NULL value;
 -- pass NULL to leave the existing value untouched. alert_breach_started_at is managed

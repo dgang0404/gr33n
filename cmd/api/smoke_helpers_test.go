@@ -288,6 +288,26 @@ func piPostJSON(t *testing.T, path string, body any) *http.Response {
 	return resp
 }
 
+// piPatchJSON performs PATCH with JSON body and X-API-Key (Pi edge auth).
+func piPatchJSON(t *testing.T, path string, body any) *http.Response {
+	t.Helper()
+	b, err := json.Marshal(body)
+	if err != nil {
+		t.Fatal(err)
+	}
+	req, err := http.NewRequest(http.MethodPatch, testServer.URL+path, bytes.NewReader(b))
+	if err != nil {
+		t.Fatal(err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-API-Key", piAPIKey)
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatalf("PATCH %s: %v", path, err)
+	}
+	return resp
+}
+
 // piDelete performs DELETE with X-API-Key (Pi edge auth).
 func piDelete(t *testing.T, path string) *http.Response {
 	t.Helper()

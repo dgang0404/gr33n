@@ -43,8 +43,9 @@ RETURNING *;
 INSERT INTO gr33ncore.actuator_events (
     event_time, actuator_id, command_sent, parameters_sent,
     triggered_by_user_id, triggered_by_schedule_id, triggered_by_rule_id,
-    source, execution_status, meta_data
-) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+    source, execution_status, resulting_state_numeric_actual, resulting_state_text_actual,
+    meta_data
+) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
 RETURNING *;
 
 -- name: ListActuatorEventsByActuator :many

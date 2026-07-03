@@ -327,6 +327,8 @@ func (h *Handler) RecordEvent(w http.ResponseWriter, r *http.Request) {
 		Source                  string          `json:"source"`
 		EventTime               string          `json:"event_time"`
 		ExecutionStatus         string          `json:"execution_status"`
+		ResultingStateNumeric   *float64        `json:"resulting_state_numeric"`
+		ResultingStateText      *string         `json:"resulting_state_text"`
 		TriggeredByScheduleID   *int64          `json:"triggered_by_schedule_id"`
 		TriggeredByRuleID       *int64          `json:"triggered_by_rule_id"`
 		ProgramID               *int64          `json:"program_id"`
@@ -413,17 +415,27 @@ func (h *Handler) RecordEvent(w http.ResponseWriter, r *http.Request) {
 		status = db.Gr33ncoreActuatorExecutionStatusEnumCommandSentToDevice
 	}
 
+	var resultingNumeric pgtype.Numeric
+	if body.ResultingStateNumeric != nil {
+		if err := resultingNumeric.Scan(strconv.FormatFloat(*body.ResultingStateNumeric, 'f', -1, 64)); err != nil {
+			httputil.WriteError(w, http.StatusBadRequest, "invalid resulting_state_numeric")
+			return
+		}
+	}
+
 	row, err := h.q.InsertActuatorEvent(ctx, db.InsertActuatorEventParams{
-		EventTime:             evtTime,
-		ActuatorID:            actuatorID,
-		CommandSent:           &body.CommandSent,
-		ParametersSent:        params,
-		TriggeredByUserID:     pgtype.UUID{},
-		TriggeredByScheduleID: body.TriggeredByScheduleID,
-		TriggeredByRuleID:     body.TriggeredByRuleID,
-		Source:                src,
-		ExecutionStatus: &status,
-		MetaData:        metaBytes,
+		EventTime:                   evtTime,
+		ActuatorID:                  actuatorID,
+		CommandSent:                 &body.CommandSent,
+		ParametersSent:              params,
+		TriggeredByUserID:           pgtype.UUID{},
+		TriggeredByScheduleID:       body.TriggeredByScheduleID,
+		TriggeredByRuleID:           body.TriggeredByRuleID,
+		Source:                      src,
+		ExecutionStatus:             &status,
+		ResultingStateNumericActual: resultingNumeric,
+		ResultingStateTextActual:    body.ResultingStateText,
+		MetaData:                    metaBytes,
 	})
 	if err != nil {
 		httputil.WriteError(w, http.StatusInternalServerError, "failed to record actuator event")

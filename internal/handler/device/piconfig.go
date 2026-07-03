@@ -94,6 +94,7 @@ func mapSensorsForPi(rows []db.Gr33ncoreSensor) []hardware.PiConfigSensor {
 			SensorType:             s.SensorType,
 			ReadingIntervalSeconds: s.ReadingIntervalSeconds,
 			Config:                 s.Config,
+			CalibrationData:        s.CalibrationData,
 		}
 	}
 	return out

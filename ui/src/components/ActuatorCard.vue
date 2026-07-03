@@ -5,7 +5,11 @@
         <span class="text-2xl">{{ icon }}</span>
         <div class="min-w-0">
           <div class="text-sm font-semibold text-white truncate">{{ device.name }}</div>
-          <div class="text-xs text-gray-500">{{ device.device_type }} · Zone {{ device.zone_id }}</div>
+          <div class="text-xs text-gray-500">
+            {{ device.device_type }} · Zone {{ device.zone_id }}
+            <span v-if="deviceStatusLabel" class="ml-1" :class="deviceStatusClass">{{ deviceStatusLabel }}</span>
+          </div>
+          <div v-if="telemetryLine" class="text-[10px] text-zinc-500 mt-0.5">{{ telemetryLine }}</div>
           <span
             v-if="syncBadge"
             v-nav-hint="syncBadgeNavHint"
@@ -31,15 +35,50 @@
         >
           {{ showKeys ? 'Hide key' : 'API key' }}
         </button>
-        <button @click="toggle"
-          :class="isOn
-            ? 'bg-gr33n-600 hover:bg-gr33n-700 text-white'
-            : 'bg-gray-800 hover:bg-gray-700 text-gray-400'"
-          class="px-4 py-1.5 rounded-full text-sm font-semibold transition-colors">
-          {{ isOn ? 'ON' : 'OFF' }}
-        </button>
       </div>
     </div>
+
+    <div v-if="deviceActuators.length" class="space-y-2 pl-1">
+      <div
+        v-for="actuator in deviceActuators"
+        :key="actuator.id"
+        class="rounded-lg border border-zinc-800 bg-zinc-950/50 px-3 py-2"
+        data-test="device-actuator-row"
+      >
+        <div class="flex items-center justify-between gap-2">
+          <div class="min-w-0">
+            <div class="text-xs font-medium text-white truncate">{{ actuator.name }}</div>
+            <div class="text-[10px] text-zinc-500 capitalize">{{ actuator.actuator_type }}</div>
+          </div>
+          <div class="flex items-center gap-1 shrink-0">
+            <button
+              type="button"
+              class="px-3 py-1 rounded-full text-xs font-semibold bg-gr33n-600 hover:bg-gr33n-700 text-white disabled:opacity-40"
+              :disabled="busyId === actuator.id"
+              data-test="actuator-on"
+              @click="sendCommand(actuator, 'on')"
+            >
+              ON
+            </button>
+            <button
+              type="button"
+              class="px-3 py-1 rounded-full text-xs font-semibold bg-gray-800 hover:bg-gray-700 text-gray-300 disabled:opacity-40"
+              :disabled="busyId === actuator.id"
+              data-test="actuator-off"
+              @click="sendCommand(actuator, 'off')"
+            >
+              OFF
+            </button>
+          </div>
+        </div>
+        <p v-if="queueHint[actuator.id]" class="text-[10px] text-amber-400 mt-1">{{ queueHint[actuator.id] }}</p>
+        <ActuatorPulseControl :actuator="actuator" />
+      </div>
+    </div>
+    <p v-else class="text-[10px] text-zinc-600 px-1">No actuators bound to this device.</p>
+
+    <DeviceCommandQueue :device-id="device.id" />
+
     <DeviceApiKeyPanel v-if="showKeys" :device-id="device.id" />
   </div>
 </template>
@@ -49,15 +88,51 @@ import { computed, ref } from 'vue'
 import { useFarmStore } from '../stores/farm'
 import { configSyncBadge } from '../lib/deviceConfigSync'
 import DeviceApiKeyPanel from './DeviceApiKeyPanel.vue'
+import DeviceCommandQueue from './DeviceCommandQueue.vue'
+import ActuatorPulseControl from './ActuatorPulseControl.vue'
 
 const props = defineProps({ device: Object })
 const store = useFarmStore()
 const showKeys = ref(false)
+const busyId = ref(null)
+const queueHint = ref({})
 
 const ICONS = { light: '💡', irrigation: '💧', fan: '🌀', pump: '⚙️', heater: '🔥' }
-const icon  = computed(() => ICONS[props.device?.device_type] ?? '⚡')
-const isOn  = computed(() => props.device?.status === 'online')
+const icon = computed(() => ICONS[props.device?.device_type] ?? '⚡')
 const syncBadge = computed(() => configSyncBadge(props.device))
+const deviceActuators = computed(() => store.actuatorsByDevice(props.device?.id))
+
+const deviceConfig = computed(() => {
+  const c = props.device?.config
+  if (!c) return {}
+  if (typeof c === 'object') return c
+  return {}
+})
+
+const telemetryLine = computed(() => {
+  const parts = []
+  const ver = deviceConfig.value.client_version || props.device?.firmware_version
+  if (ver) parts.push(`client ${ver}`)
+  if (props.device?.last_heartbeat) {
+    const ageMin = Math.round((Date.now() - new Date(props.device.last_heartbeat).getTime()) / 60000)
+    parts.push(`heartbeat ${ageMin}m ago`)
+  }
+  return parts.join(' · ')
+})
+
+const deviceStatusLabel = computed(() => {
+  const s = props.device?.status
+  if (!s) return ''
+  return s === 'online' ? '● online' : `● ${s}`
+})
+
+const deviceStatusClass = computed(() => {
+  const s = props.device?.status
+  if (s === 'online') return 'text-emerald-500'
+  if (s === 'offline') return 'text-zinc-500'
+  return 'text-amber-400'
+})
+
 const syncBadgeNavHint = computed(() => {
   const tone = syncBadge.value?.tone
   return tone === 'warn' || tone === 'muted' ? '/pi-setup' : null
@@ -69,7 +144,16 @@ const syncBadgeClass = computed(() => {
   return 'text-gray-500'
 })
 
-function toggle() {
-  store.toggleDevice(props.device.id, props.device.status)
+async function sendCommand(actuator, command) {
+  busyId.value = actuator.id
+  queueHint.value = { ...queueHint.value, [actuator.id]: '' }
+  try {
+    await store.enqueueActuatorCommand(actuator.id, command, `Dashboard: ${command}`)
+    queueHint.value = { ...queueHint.value, [actuator.id]: `Queued ${command.toUpperCase()} — waiting for Pi ack` }
+  } catch (e) {
+    queueHint.value = { ...queueHint.value, [actuator.id]: e.response?.data?.error || e.message || 'Command failed' }
+  } finally {
+    busyId.value = null
+  }
 }
 </script>

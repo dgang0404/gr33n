@@ -9,25 +9,25 @@ overview: >
 todos:
   - id: ws1-stale-heartbeat
     content: "WS1: Offline detection — worker job marks devices offline when last_heartbeat older than threshold (default 3× report interval, env override); Pi graceful-shutdown PATCH offline; alert on transition"
-    status: pending
+    status: completed
   - id: ws2-actuator-card-fix
     content: "WS2: ActuatorCard bug — replace toggleDevice() PATCH /devices/{id}/status (Pi-key-only route!) with enqueueActuatorCommand; reflect queued/confirmed state"
-    status: pending
+    status: completed
   - id: ws3-firmware-telemetry
     content: "WS3: Edge telemetry — Pi status PATCH reports client_version + uptime; accept battery_level_percent / signal_strength_dbm in readings; offline flush uses batch endpoint; surface version + battery in DeviceDetail"
-    status: pending
+    status: completed
   - id: ws4-mix-audit-route
     content: "WS4: Mixing-event audit — Pi-key route POST for mixing events (or fold into command ack payload); Pi client posts with device key; UI 'Mix now' button calls existing mix-jobs API"
-    status: pending
+    status: completed
   - id: ws5-relay-hat
     content: "WS5: Relay HAT — implement smbus I/O in RelayHATActuatorController (Sequent 8-relay register map) or hard-disable HAT channels in wizard UI until implemented; bench-test doc"
-    status: pending
+    status: completed
   - id: ws6-calibration
     content: "WS6: Sensor calibration — API to save calibration points (raw vs reference), compute slope/offset into sensors.calibration_data; Pi pulls calibration in config sync and applies instead of hardcoded EC/pH formulas; SensorDetail calibration wizard"
-    status: pending
+    status: completed
   - id: ws7-queue-inspector
     content: "WS7: Command queue inspector — per-device command list UI (status, payload, age); cancel pending; resulting_state + execution_status written on Pi ack; error_comms/error_hardware used by Pi client"
-    status: pending
+    status: completed
 isProject: false
 ---
 
@@ -35,7 +35,7 @@ isProject: false
 
 ## Status
 
-**Planned.** From the July 2026 audit, Pi-chain findings. Sibling phases:
+**Shipped.** July 2026 audit Pi-chain fixes. Sibling phases:
 [113](phase_113_security_hardening.plan.md) security,
 [115](phase_115_schema_utilization.plan.md) schema surfacing,
 [116](phase_116_docs_refresh.plan.md) docs, [117](phase_117_test_depth.plan.md) tests.

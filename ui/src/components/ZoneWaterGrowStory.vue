@@ -169,6 +169,16 @@
         <button
           v-if="plan.mixRequired && !plan.irrigationOnly"
           type="button"
+          class="text-xs px-2.5 py-1 rounded-md border border-green-800 text-green-300 hover:bg-green-900/40 disabled:opacity-50"
+          :disabled="mixNowBusy"
+          data-test="grow-story-mix-now"
+          @click="enqueueMixNow"
+        >
+          {{ mixNowBusy ? 'Queuing…' : 'Mix now' }}
+        </button>
+        <button
+          v-if="plan.mixRequired && !plan.irrigationOnly"
+          type="button"
           class="text-xs px-2.5 py-1 rounded-md border border-zinc-700 text-zinc-300 hover:border-green-700 hover:text-green-300 disabled:opacity-50"
           :disabled="mixPreviewLoading"
           data-test="grow-story-preview-mix"
@@ -186,6 +196,7 @@
         </router-link>
       </div>
 
+      <p v-if="mixNowFeedback" class="text-[11px] text-zinc-400">{{ mixNowFeedback }}</p>
       <div v-if="waterStatus?.last_mixing_event" class="flex items-center gap-2 text-xs text-zinc-400">
         <span>Last mix:</span>
         <span class="text-zinc-200">{{ formatMixDate(waterStatus.last_mixing_event.mixed_at) }}</span>
@@ -306,6 +317,8 @@ const focusRingClass = FARMER_FOCUS_RING
 const waterStatus = ref(null)
 const queueHead = ref(null)
 const mixPreviewLoading = ref(false)
+const mixNowBusy = ref(false)
+const mixNowFeedback = ref('')
 const showMixPreview = ref(false)
 const runNowBusy = ref(false)
 const runNowFeedback = ref('')
@@ -410,6 +423,23 @@ async function loadMixPreview() {
   await loadWaterStatus()
   mixPreviewLoading.value = false
   showMixPreview.value = true
+}
+
+async function enqueueMixNow() {
+  if (!props.farmId || !props.activeProgram?.id) return
+  mixNowBusy.value = true
+  mixNowFeedback.value = ''
+  try {
+    const res = await store.enqueueFertigationMixJob(props.farmId, props.activeProgram.id)
+    mixNowFeedback.value = res.command_id
+      ? `Mix queued (command #${res.command_id}) — Pi will run steps in order.`
+      : 'Mix job queued.'
+    await loadWaterStatus()
+  } catch (e) {
+    mixNowFeedback.value = e?.response?.data?.error || e?.message || 'Mix enqueue failed'
+  } finally {
+    mixNowBusy.value = false
+  }
 }
 
 async function runActiveProgramNow() {
