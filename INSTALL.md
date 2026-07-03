@@ -281,6 +281,19 @@ ollama pull phi3:mini   # context-window guardrail test
 go test -tags 'dev ollama' ./cmd/api/ -run TestPhase112 -count=1 -v
 ```
 
+**CPU-only Ollama boxes** (no GPU): the full grounding prompt + tinyllama can exceed
+go-test's default 10-minute deadline. Use a longer test timeout and cap generation:
+
+```bash
+go test -tags 'dev ollama' ./cmd/api/ -run TestPhase112 -count=1 -v \
+  -timeout 40m \
+  LLM_TIMEOUT_SECONDS=150 LLM_MAX_TOKENS=60
+```
+
+Smoke helpers use a shared 60 s HTTP client (`cmd/api/smoke_helpers_test.go`) so a
+wedged handler fails one test instead of hanging the suite. The default LLM client
+timeout is 120 s (`internal/rag/llm/chat.go`); override with `LLM_TIMEOUT_SECONDS`.
+
 Optional farm-settings auto-pull:
 
 ```bash

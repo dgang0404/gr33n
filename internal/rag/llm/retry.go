@@ -29,7 +29,7 @@ type RetryConfig struct {
 }
 
 // Defaults are intentionally conservative — three attempts at 500ms / 1s / 2s
-// (with jitter) keeps the worst-case latency below the default 666s LLM
+// (with jitter) keeps the worst-case latency below the default 120s LLM
 // timeout while still papering over the most common transient failures.
 const (
 	DefaultRetryMaxAttempts    = 3

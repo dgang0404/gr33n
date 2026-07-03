@@ -188,3 +188,75 @@ jobs:
 
       - name: Phase 112 Ollama E2E smokes
         run: go test -tags 'dev ollama' ./cmd/api/ -run TestPhase112 -count=1 -v
+
+  # Phase 117 WS5 — Browser E2E (Playwright). Manual workflow_dispatch only.
+  # Expects a running dev stack at E2E_BASE_URL (default http://127.0.0.1:5173)
+  # with AUTH_MODE=auth_test and demo seed — typically on a self-hosted runner
+  # beside `make dev-auth-test`, or start API+UI in job steps before npm test.
+  browser-e2e:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      E2E_BASE_URL: http://127.0.0.1:5173
+      E2E_DEV_EMAIL: dev@gr33n.local
+      E2E_DEV_PASSWORD: devpassword
+      DATABASE_URL: postgres://gr33n:gr33n@127.0.0.1:5433/gr33n?sslmode=disable
+      JWT_SECRET: ci-browser-e2e-jwt-secret-min-32-chars
+      PI_API_KEY: ci-browser-e2e-pi-key
+      AUTH_MODE: auth_test
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install psql client
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+
+      - name: Build and start Compose Postgres
+        run: docker compose up -d db --build
+
+      - name: Wait for Postgres
+        run: |
+          set -euo pipefail
+          for i in $(seq 1 90); do
+            if docker compose exec -T db pg_isready -U gr33n -d gr33n; then
+              exit 0
+            fi
+            sleep 2
+          done
+          exit 1
+
+      - name: Bootstrap schema, migrations, and demo seed
+        run: ./scripts/bootstrap-local.sh --seed
+
+      - name: Start API and UI
+        run: |
+          set -euo pipefail
+          go run -tags dev ./cmd/api/ &
+          echo $! > /tmp/gr33n-api.pid
+          cd ui && npm ci --legacy-peer-deps && npm run dev -- --host 127.0.0.1 --port 5173 &
+          echo $! > /tmp/gr33n-ui.pid
+          for i in $(seq 1 90); do
+            if curl -sf http://127.0.0.1:8080/health >/dev/null && curl -sf http://127.0.0.1:5173 >/dev/null; then
+              exit 0
+            fi
+            sleep 2
+          done
+          exit 1
+
+      - name: Playwright browser E2E
+        working-directory: e2e
+        run: npm ci && npx playwright install chromium && npm test
+
+      - name: Stop background services
+        if: always()
+        run: |
+          kill $(cat /tmp/gr33n-api.pid 2>/dev/null) 2>/dev/null || true
+          kill $(cat /tmp/gr33n-ui.pid 2>/dev/null) 2>/dev/null || true

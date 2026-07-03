@@ -18,6 +18,7 @@ import (
 	"net/textproto"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -35,7 +36,14 @@ var (
 	smokeTokenOnce sync.Once
 	smokeToken     string
 	smokeTokenErr  error
+
+	// smokeHTTPClient bounds hung-handler smokes so one bad route fails fast.
+	smokeHTTPClient = &http.Client{Timeout: 60 * time.Second}
 )
+
+func smokeDo(req *http.Request) (*http.Response, error) {
+	return smokeHTTPClient.Do(req)
+}
 
 // recordingNotifier is a PushNotifier double used by the rule-driven
 // send_notification smoke test to assert the worker fans out an alert
@@ -80,7 +88,7 @@ func smokeJWT(t *testing.T) string {
 
 func get(t *testing.T, path string) *http.Response {
 	t.Helper()
-	resp, err := http.Get(testServer.URL + path)
+	resp, err := smokeHTTPClient.Get(testServer.URL + path)
 	if err != nil {
 		t.Fatalf("GET %s: %v", path, err)
 	}
@@ -94,7 +102,7 @@ func authGet(t *testing.T, token, path string) *http.Response {
 		t.Fatal(err)
 	}
 	req.Header.Set("Authorization", "Bearer "+token)
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := smokeDo(req)
 	if err != nil {
 		t.Fatalf("GET %s: %v", path, err)
 	}
@@ -112,7 +120,7 @@ func authPost(t *testing.T, token, path string, body any) *http.Response {
 	if token != "" {
 		req.Header.Set("Authorization", "Bearer "+token)
 	}
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := smokeDo(req)
 	if err != nil {
 		t.Fatalf("POST %s: %v", path, err)
 	}
@@ -128,7 +136,7 @@ func authPatch(t *testing.T, token, path string, body any) *http.Response {
 	}
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+token)
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := smokeDo(req)
 	if err != nil {
 		t.Fatalf("PATCH %s: %v", path, err)
 	}
@@ -144,7 +152,7 @@ func authPut(t *testing.T, token, path string, body any) *http.Response {
 	}
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+token)
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := smokeDo(req)
 	if err != nil {
 		t.Fatalf("PUT %s: %v", path, err)
 	}
@@ -158,7 +166,7 @@ func authDelete(t *testing.T, token, path string) *http.Response {
 		t.Fatal(err)
 	}
 	req.Header.Set("Authorization", "Bearer "+token)
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := smokeDo(req)
 	if err != nil {
 		t.Fatalf("DELETE %s: %v", path, err)
 	}
@@ -174,7 +182,7 @@ func authDeleteJSON(t *testing.T, token, path string, body any) *http.Response {
 	}
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+token)
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := smokeDo(req)
 	if err != nil {
 		t.Fatalf("DELETE %s: %v", path, err)
 	}
@@ -209,7 +217,7 @@ func authMultipartPost(t *testing.T, token, path, fieldName, fileName, contentTy
 	}
 	req.Header.Set("Content-Type", w.FormDataContentType())
 	req.Header.Set("Authorization", "Bearer "+token)
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := smokeDo(req)
 	if err != nil {
 		t.Fatalf("POST %s: %v", path, err)
 	}
@@ -218,7 +226,7 @@ func authMultipartPost(t *testing.T, token, path, fieldName, fileName, contentTy
 
 func postNoAuth(path string, body any) *http.Response {
 	b, _ := json.Marshal(body)
-	resp, err := http.Post(testServer.URL+path, "application/json", bytes.NewReader(b))
+	resp, err := smokeHTTPClient.Post(testServer.URL+path, "application/json", bytes.NewReader(b))
 	if err != nil {
 		panic(err)
 	}
@@ -233,7 +241,7 @@ func patchNoAuth(path string, body any) *http.Response {
 		panic(err)
 	}
 	req.Header.Set("Content-Type", "application/json")
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := smokeDo(req)
 	if err != nil {
 		panic(err)
 	}
@@ -246,7 +254,7 @@ func deleteNoAuth(path string) *http.Response {
 	if err != nil {
 		panic(err)
 	}
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := smokeDo(req)
 	if err != nil {
 		panic(err)
 	}
@@ -261,7 +269,7 @@ func piGet(t *testing.T, path string) *http.Response {
 		t.Fatal(err)
 	}
 	req.Header.Set("X-API-Key", piAPIKey)
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := smokeDo(req)
 	if err != nil {
 		t.Fatalf("GET %s: %v", path, err)
 	}
@@ -281,7 +289,7 @@ func piPostJSON(t *testing.T, path string, body any) *http.Response {
 	}
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("X-API-Key", piAPIKey)
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := smokeDo(req)
 	if err != nil {
 		t.Fatalf("POST %s: %v", path, err)
 	}
@@ -301,7 +309,7 @@ func piPatchJSON(t *testing.T, path string, body any) *http.Response {
 	}
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("X-API-Key", piAPIKey)
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := smokeDo(req)
 	if err != nil {
 		t.Fatalf("PATCH %s: %v", path, err)
 	}
@@ -316,7 +324,7 @@ func piDelete(t *testing.T, path string) *http.Response {
 		t.Fatal(err)
 	}
 	req.Header.Set("X-API-Key", piAPIKey)
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := smokeDo(req)
 	if err != nil {
 		t.Fatalf("DELETE %s: %v", path, err)
 	}

@@ -9,22 +9,22 @@ overview: >
 todos:
   - id: ws1-security-pkgs
     content: "WS1: Security-relevant units first — farmauthz (role matrix), authctx, auditlog, pushnotify dispatch (fake FCM), httputil error paths"
-    status: pending
+    status: completed
   - id: ws2-handler-smokes
     content: "WS2: Handler coverage — smoke tests for auth (register/login/password modes), cost, farm settings, guardian proposals list/dismiss, alert ack, fileattach limits, organization RBAC"
-    status: pending
+    status: completed
   - id: ws3-timeout-hygiene
     content: "WS3: Timeout hygiene — llm.DefaultTimeout 666s → 120s (env-tunable, doc'd); smoke helpers use shared http.Client with sane timeout; CPU-Ollama guidance (-timeout, LLM_TIMEOUT_SECONDS, LLM_MAX_TOKENS) in INSTALL.md ollama-smoke section"
-    status: pending
+    status: completed
   - id: ws4-ui-components
     content: "WS4: UI component tests — Pi wizard steps, GuardianModelSelector, ActuatorCard (post-114 fix), workspace nav gating; target the untested-SFC list from the audit"
-    status: pending
+    status: completed
   - id: ws5-browser-e2e
     content: "WS5: Browser E2E seed — Playwright with 3 journeys: login → dashboard; create task offline → sync; Guardian chat → proposal Confirm; wired as manual CI lane like hardware/ollama smokes"
-    status: pending
+    status: completed
   - id: ws6-worker-pkgs
     content: "WS6: Remaining units — costing, farmbootstrap, catalognotify, insertcommonsreceiver, fertigation/programfit, rag/embed (fixture-based)"
-    status: pending
+    status: completed
 isProject: false
 ---
 
@@ -32,10 +32,9 @@ isProject: false
 
 ## Status
 
-**Planned.** From the July 2026 audit (test-coverage workstream). Ordered so the
-security-relevant packages land first and pair with
-[Phase 113](phase_113_security_hardening.plan.md) — the new auth behavior in 113
-should be built against WS1/WS2 test scaffolding.
+**Shipped** (2026-07-03). Security-relevant unit tests, handler gap smokes,
+timeout hygiene, UI component tests, Playwright E2E scaffolding, and worker-package
+units landed in Phase 117.
 
 ---
 
@@ -100,13 +99,13 @@ scaffolding that future phases add journeys to, not a full regression net now.
 
 ## Acceptance
 
-- [ ] `farmauthz` role×action matrix table-driven test; `authctx`, `auditlog`, `pushnotify`, `httputil` covered
-- [ ] Smoke tests exist for every currently-untested handler package (at minimum happy path + RBAC deny)
-- [ ] `DefaultTimeout` 120 s; suite-wide smoke client timeout; both documented
-- [ ] INSTALL.md documents CPU-Ollama E2E flags
-- [ ] UI component tests for Pi wizard steps + GuardianModelSelector + ActuatorCard
-- [ ] `make e2e-browser` runs 3 green Playwright journeys against a seeded dev stack; CI lane documented
-- [ ] `go test ./...` and `npm test` remain green
+- [x] `farmauthz` role×action matrix table-driven test; `authctx`, `auditlog`, `pushnotify`, `httputil` covered
+- [x] Smoke tests exist for every currently-untested handler package (at minimum happy path + RBAC deny)
+- [x] `DefaultTimeout` 120 s; suite-wide smoke client timeout; both documented
+- [x] INSTALL.md documents CPU-Ollama E2E flags
+- [x] UI component tests for Pi wizard steps + GuardianModelSelector + ActuatorCard
+- [x] `make e2e-browser` runs 3 green Playwright journeys against a seeded dev stack; CI lane documented
+- [x] `go test ./...` and `npm test` remain green
 
 ---
 

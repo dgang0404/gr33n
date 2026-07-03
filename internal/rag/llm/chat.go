@@ -16,7 +16,7 @@ import (
 	"time"
 )
 
-const DefaultTimeout = 666 * time.Second
+const DefaultTimeout = 120 * time.Second
 
 // Client calls POST /v1/chat/completions (OpenAI-compatible; LM Studio, local gateways).
 type Client struct {
