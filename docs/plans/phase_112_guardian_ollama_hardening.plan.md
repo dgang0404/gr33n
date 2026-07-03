@@ -9,25 +9,25 @@ overview: >
 todos:
   - id: ws0-show-enrichment
     content: "WS0: Context enrichment — after /api/tags, POST /api/show per model (bounded concurrency); parse *.context_length from model_info; store in ModelCache; unit tests with fixture JSON"
-    status: pending
+    status: done
   - id: ws1-pull-api
     content: "WS1: Model pull — POST /guardian/models/pull {name}; farmauthz.RequireFarmAdmin; Ollama POST /api/pull; refresh cache on success; env GUARDIAN_OLLAMA_AUTO_PULL (default false) + GUARDIAN_OLLAMA_PULL_TIMEOUT_SECONDS (default 600)"
-    status: pending
+    status: done
   - id: ws2-auto-pull-settings
     content: "WS2: Auto-pull on farm save — when GUARDIAN_OLLAMA_AUTO_PULL=true and admin PATCH /farms/{id}/settings names an unknown model, pull then persist; otherwise 400 with actionable message pointing at POST /guardian/models/pull"
-    status: pending
+    status: done
   - id: ws3-ui-pull
     content: "WS3: UI — GuardianModelSelector pull row for admins (model name + Pull button, progress/disabled state); show enriched context_window; toast on pull success/failure"
-    status: pending
+    status: done
   - id: ws4-openapi
     content: "WS4: OpenAPI — POST /guardian/models/pull; document enriched context_window; note pull is server-wide and admin-only"
-    status: pending
+    status: done
   - id: ws5-e2e-smokes
     content: "WS5: E2E smokes — cmd/api/smoke_phase112_ollama_e2e_test.go with //go:build ollama: session override → conversation_turns.llm_model; farm switch audit; phi3:mini grounded 400; missing-model fallback; pull tinyllama then discovery lists it"
-    status: pending
+    status: done
   - id: ws6-ci-lane
     content: "WS6: CI lane — .github/workflows/ci.yml job ollama-smoke (workflow_dispatch); Ollama service container; pull tinyllama + phi3:mini; go test -tags 'dev ollama' -run TestPhase112; document in INSTALL.md"
-    status: pending
+    status: done
 isProject: false
 ---
 
@@ -35,8 +35,7 @@ isProject: false
 
 ## Status
 
-**Not started.** Builds on **Phase 111** (shipped): model cache, `GET /guardian/models`,
-`PATCH /farms/{id}/settings`, session/farm/env resolution, 8192 grounded guardrail.
+**Shipped** on `main`. Builds on **Phase 111** (model cache, discovery, farm/session resolution).
 
 **Preconditions (met on `main`):**
 - [`internal/farmguardian/ollama_discovery.go`](../../internal/farmguardian/ollama_discovery.go) — `/api/tags` only; `context_window` always `0`
@@ -277,14 +276,14 @@ INSTALL.md section
 
 ## Acceptance
 
-- [ ] Discovery enriches `context_window` via `/api/show` for installed models
-- [ ] Grounded chat rejects models with known `context_window < 8192` (phi3:mini E2E)
-- [ ] `POST /guardian/models/pull` works for farm admins on local Ollama only
-- [ ] `GUARDIAN_OLLAMA_AUTO_PULL=true` enables pull-on-save for farm settings; default off
-- [ ] UI pull control for admins; enriched context shown in selector
-- [ ] `TestPhase112_*` pass under `-tags ollama` with real Ollama (no skips)
-- [ ] `ollama-smoke` CI job documented and runnable via workflow_dispatch
-- [ ] OpenAPI updated
+- [x] Discovery enriches `context_window` via `/api/show` for installed models
+- [x] Grounded chat rejects models with known `context_window < 8192` (phi3:mini E2E)
+- [x] `POST /guardian/models/pull` works for farm admins on local Ollama only
+- [x] `GUARDIAN_OLLAMA_AUTO_PULL=true` enables pull-on-save for farm settings; default off
+- [x] UI pull control for admins; enriched context shown in selector
+- [x] `TestPhase112_*` pass under `-tags ollama` with real Ollama (no skips)
+- [x] `ollama-smoke` CI job documented and runnable via workflow_dispatch
+- [x] OpenAPI updated
 
 ---
 

@@ -35,6 +35,30 @@
         </select>
       </div>
 
+      <div v-if="canAdmin" class="flex flex-wrap items-end gap-2 border-t border-zinc-800 pt-2">
+        <div class="flex-1 min-w-[8rem]">
+          <label class="text-[10px] text-zinc-500 block mb-1" for="guardian-pull-model">Pull model into Ollama</label>
+          <input
+            id="guardian-pull-model"
+            v-model="pullName"
+            type="text"
+            placeholder="e.g. tinyllama"
+            class="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-2 py-1.5 text-zinc-200"
+            data-test="guardian-pull-model-input"
+            :disabled="pulling"
+          >
+        </div>
+        <button
+          type="button"
+          class="px-3 py-1.5 rounded-lg bg-zinc-800 border border-zinc-700 text-zinc-200 hover:bg-zinc-700 disabled:opacity-40"
+          data-test="guardian-pull-model-btn"
+          :disabled="pulling || !pullName.trim() || !effectiveFarmId"
+          @click="pullModel"
+        >
+          {{ pulling ? 'Pulling…' : 'Pull' }}
+        </button>
+      </div>
+
       <div v-if="canAdmin" class="flex flex-wrap items-end gap-2">
         <div class="flex-1 min-w-[8rem]">
           <label class="text-[10px] text-zinc-500 block mb-1" for="guardian-farm-model">Farm default</label>
@@ -80,6 +104,8 @@
       </p>
       <p v-if="saveError" class="text-[10px] text-red-300/90">{{ saveError }}</p>
       <p v-if="saveOk" class="text-[10px] text-green-400/90">Farm default saved.</p>
+      <p v-if="pullError" class="text-[10px] text-red-300/90">{{ pullError }}</p>
+      <p v-if="pullOk" class="text-[10px] text-green-400/90">Model pulled — list refreshed.</p>
     </div>
   </div>
 </template>
@@ -111,6 +137,10 @@ const members = ref([])
 const saving = ref(false)
 const saveError = ref('')
 const saveOk = ref(false)
+const pullName = ref('')
+const pulling = ref(false)
+const pullError = ref('')
+const pullOk = ref(false)
 
 const effectiveFarmId = computed(() => {
   const id = props.farmId ?? farmContext.farmId
@@ -181,6 +211,24 @@ async function syncFarmDraft() {
   const saved = activeFarmModel.value || ''
   farmModelDraft.value = saved
   farmModelSaved.value = saved
+}
+
+async function pullModel() {
+  const fid = effectiveFarmId.value
+  const name = pullName.value.trim()
+  if (!fid || !canAdmin.value || !name) return
+  pulling.value = true
+  pullError.value = ''
+  pullOk.value = false
+  try {
+    await api.post('/guardian/models/pull', { name, farm_id: fid })
+    pullOk.value = true
+    await loadModels()
+  } catch (e) {
+    pullError.value = e.response?.data?.error || 'Pull failed'
+  } finally {
+    pulling.value = false
+  }
 }
 
 async function saveFarmDefault() {

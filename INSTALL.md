@@ -252,6 +252,34 @@ round-trip via [`scripts/run-edge-actuator-smoke.sh`](scripts/run-edge-actuator-
 In CI it is a **manual** `hardware-smoke` job (`workflow_dispatch`, self-hosted
 `gr33n-hardware` runner) — it never runs on push/PR.
 
+### Ollama E2E smokes (Phase 112)
+
+Guardian model-selector E2E tests (`TestPhase112_*`) compile only with the
+`ollama` build tag and expect a running Ollama at `LLM_BASE_URL`:
+
+```bash
+# Local (Ollama running, models pulled)
+export AI_ENABLED=true
+export LLM_BASE_URL=http://127.0.0.1:11434/v1
+export LLM_MODEL=tinyllama
+ollama pull tinyllama
+ollama pull phi3:mini   # context-window guardrail test
+
+go test -tags 'dev ollama' ./cmd/api/ -run TestPhase112 -count=1 -v
+```
+
+Optional farm-settings auto-pull:
+
+```bash
+export GUARDIAN_OLLAMA_AUTO_PULL=true
+export GUARDIAN_OLLAMA_PULL_TIMEOUT_SECONDS=600
+```
+
+In CI, run the manual **`ollama-smoke`** job from the Actions tab
+(`workflow_dispatch`) — it starts an Ollama service container, pulls
+`tinyllama` and `phi3:mini`, then runs the Phase 112 smokes. It never runs on
+push/PR.
+
 ---
 
 ## 7. Code generation (sqlc)

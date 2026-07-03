@@ -5099,6 +5099,35 @@ paths:
         "503":
           description: AI disabled
 
+  /guardian/models/pull:
+    post:
+      tags: [chat]
+      summary: Pull an Ollama model into the local runtime (farm admin)
+      description: >
+        Downloads a model via Ollama `POST /api/pull`, refreshes the server model
+        cache, then returns. **Server-wide** — affects all farms on this host.
+        Requires `LLM_BASE_URL` pointing at local Ollama. Caller must be a farm
+        admin on the supplied `farm_id`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/GuardianModelPullRequest" }
+      responses:
+        "200":
+          description: Pull completed
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/GuardianModelPullResponse" }
+        "400":
+          description: Not local Ollama or invalid body
+        "403":
+          description: Not a farm admin
+        "502":
+          description: Pull failed
+        "504":
+          description: Pull timed out
+
   /v1/chat:
     post:
       tags: [chat]
@@ -6088,6 +6117,27 @@ components:
         server_default:
           type: string
           description: Server env default (`LLM_MODEL`). Lists Ollama runtime models — not farm-scoped.
+
+    GuardianModelPullRequest:
+      type: object
+      required: [name, farm_id]
+      properties:
+        name:
+          type: string
+          description: Ollama model tag to pull (e.g. `tinyllama`, `llama3.2`).
+        farm_id:
+          type: integer
+          format: int64
+          description: Farm used for admin RBAC check.
+
+    GuardianModelPullResponse:
+      type: object
+      required: [name, status]
+      properties:
+        name: { type: string }
+        status:
+          type: string
+          enum: [success]
 
     FarmGuardianSettingsPatch:
       type: object

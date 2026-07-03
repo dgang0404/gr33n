@@ -3,6 +3,7 @@ package farm
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"strings"
@@ -14,6 +15,7 @@ import (
 	"gr33n-api/internal/authctx"
 	db "gr33n-api/internal/db"
 	"gr33n-api/internal/farmauthz"
+	"gr33n-api/internal/farmguardian"
 	"gr33n-api/internal/httputil"
 )
 
@@ -47,7 +49,12 @@ func (h *Handler) PatchGuardianSettings(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+	candidateModel, parseErr := parsePreferredModelCandidate(fieldRaw)
+	if parseErr != nil {
+		httputil.WriteError(w, http.StatusBadRequest, parseErr.Error())
+		return
+	}
+	ctx, cancel := context.WithTimeout(r.Context(), settingsRequestTimeout(candidateModel))
 	defer cancel()
 
 	existing, err := h.q.GetFarmByID(ctx, id)
@@ -57,24 +64,18 @@ func (h *Handler) PatchGuardianSettings(w http.ResponseWriter, r *http.Request) 
 	}
 
 	var newModel *string
-	if string(fieldRaw) == "null" {
+	if candidateModel == "" {
 		newModel = nil
-	} else {
-		var modelName string
-		if err := json.Unmarshal(fieldRaw, &modelName); err != nil {
-			httputil.WriteError(w, http.StatusBadRequest, "guardian_preferred_model must be a string or null")
+	} else if err := h.ensureModelAvailable(ctx, candidateModel); err != nil {
+		if strings.Contains(err.Error(), "not loaded") {
+			httputil.WriteError(w, http.StatusBadRequest, err.Error())
 			return
 		}
-		trimmed := strings.TrimSpace(modelName)
-		if trimmed == "" {
-			newModel = nil
-		} else {
-			if h.modelCache != nil && !h.modelCache.Contains(trimmed) {
-				httputil.WriteError(w, http.StatusBadRequest, "model is not loaded in Ollama — pull it first or pick an available model from GET /guardian/models")
-				return
-			}
-			newModel = &trimmed
-		}
+		httputil.WriteError(w, http.StatusBadGateway, err.Error())
+		return
+	} else {
+		trimmed := candidateModel
+		newModel = &trimmed
 	}
 
 	updated, err := h.q.UpdateFarmGuardianPreferredModel(ctx, db.UpdateFarmGuardianPreferredModelParams{
@@ -115,4 +116,40 @@ func modelLabelPtr(s *string) string {
 		return ""
 	}
 	return strings.TrimSpace(*s)
+}
+
+func settingsRequestTimeout(candidate string) time.Duration {
+	if strings.TrimSpace(candidate) == "" {
+		return 5 * time.Second
+	}
+	if farmguardian.AutoPullEnabled() && farmguardian.IsLocalOllamaConfigured() {
+		return farmguardian.PullTimeoutFromEnv() + 10*time.Second
+	}
+	return 5 * time.Second
+}
+
+func parsePreferredModelCandidate(fieldRaw json.RawMessage) (string, error) {
+	if string(fieldRaw) == "null" {
+		return "", nil
+	}
+	var modelName string
+	if err := json.Unmarshal(fieldRaw, &modelName); err != nil {
+		return "", fmt.Errorf("guardian_preferred_model must be a string or null")
+	}
+	return strings.TrimSpace(modelName), nil
+}
+
+func (h *Handler) ensureModelAvailable(ctx context.Context, name string) error {
+	if h.modelCache != nil && h.modelCache.Contains(name) {
+		return nil
+	}
+	if farmguardian.AutoPullEnabled() && farmguardian.IsLocalOllamaConfigured() && h.modelCache != nil {
+		if err := h.modelCache.PullAndRefresh(ctx, name); err != nil {
+			return fmt.Errorf("model pull failed: %w", err)
+		}
+		if h.modelCache.Contains(name) {
+			return nil
+		}
+	}
+	return fmt.Errorf("model is not loaded in Ollama — use POST /guardian/models/pull or enable GUARDIAN_OLLAMA_AUTO_PULL")
 }

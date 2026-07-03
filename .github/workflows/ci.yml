@@ -121,3 +121,64 @@ jobs:
 
       - name: Hardware actuator GPIO round-trip
         run: go test -tags 'dev hardware' -run Hardware ./cmd/api/ -count=1 -v
+
+  # Phase 112 WS6 — Ollama E2E smokes. Manual workflow_dispatch only (model pulls
+  # are slow). Requires Ollama service + Postgres bootstrap like the main go job.
+  ollama-smoke:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      CI: true
+      DATABASE_URL: postgres://gr33n:gr33n@127.0.0.1:5433/gr33n?sslmode=disable
+      CROP_CATALOG_SOURCE: db
+      AGRONOMY_FIELD_GUIDES_SOURCE: db
+      AI_ENABLED: "true"
+      LLM_BASE_URL: http://127.0.0.1:11434/v1
+      LLM_MODEL: tinyllama
+    services:
+      ollama:
+        image: ollama/ollama:latest
+        ports:
+          - 11434:11434
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Install psql client
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client curl
+
+      - name: Build and start Compose Postgres
+        run: docker compose up -d db --build
+
+      - name: Wait for Postgres
+        run: |
+          set -euo pipefail
+          for i in $(seq 1 90); do
+            if docker compose exec -T db pg_isready -U gr33n -d gr33n; then
+              exit 0
+            fi
+            sleep 2
+          done
+          exit 1
+
+      - name: Bootstrap schema, migrations, and demo seed
+        run: ./scripts/bootstrap-local.sh --seed
+
+      - name: Wait for Ollama and pull test models
+        run: |
+          set -euo pipefail
+          for i in $(seq 1 60); do
+            if curl -sf http://127.0.0.1:11434/api/tags >/dev/null; then
+              break
+            fi
+            sleep 2
+          done
+          curl -sf http://127.0.0.1:11434/api/pull -d '{"name":"tinyllama","stream":false}'
+          curl -sf http://127.0.0.1:11434/api/pull -d '{"name":"phi3:mini","stream":false}'
+
+      - name: Phase 112 Ollama E2E smokes
+        run: go test -tags 'dev ollama' ./cmd/api/ -run TestPhase112 -count=1 -v

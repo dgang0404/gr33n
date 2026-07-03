@@ -162,6 +162,7 @@ func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationwo
 
 	// Phase 27 — Farm Guardian chat + session history
 	mux.Handle("GET /guardian/models", jwt(http.HandlerFunc(aichat.GetModels)))
+	mux.Handle("POST /guardian/models/pull", jwt(http.HandlerFunc(aichat.PostPullModel)))
 	mux.Handle("GET /v1/chat/health", jwt(http.HandlerFunc(aichat.GetHealth)))
 	mux.Handle("POST /v1/chat", jwt(http.HandlerFunc(aichat.PostV1)))
 	mux.Handle("POST /v1/chat/stt", jwt(http.HandlerFunc(aichat.TranscribeSTT)))

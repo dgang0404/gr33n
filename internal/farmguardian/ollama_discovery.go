@@ -92,6 +92,7 @@ func DiscoverOllamaModels(ctx context.Context, llmBaseURL string, client *http.C
 			SpeedClass:     classifySpeedClass(name, params),
 		})
 	}
+	out = EnrichModelContextWindows(ctx, llmBaseURL, out, client, ShowConcurrencyFromEnv())
 	return out, nil
 }
 
