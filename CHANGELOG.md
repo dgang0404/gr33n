@@ -8,6 +8,11 @@ Format: coarse era blocks for early history, then per-phase entries from Phase 1
 
 ## Unreleased
 
+### Bug fixes
+
+- Zone **How it connects** pipeline links now navigate (sensors → comfort → automation → controls → device); hover still highlights the sidebar tab
+- **GPIO board** and **Pi setup** pages no longer request `/farms/undefined` when farm context is missing
+
 ### Phases 119–123 — Virtual Pi wiring arc
 
 - **119** — Read-only 40-pin board at `/virtual-pi` (Wiring sidebar)
