@@ -21,6 +21,7 @@ import ZoneSetupWizard from '../views/ZoneSetupWizard.vue'
 import DeviceSetupWizard from '../views/DeviceSetupWizard.vue'
 import PiSetupGuide from '../views/PiSetupGuide.vue'
 import PiSetupWizard from '../views/PiSetupWizard.vue'
+import VirtualPi from '../views/VirtualPi.vue'
 import MoneyWorkspace from '../views/workspaces/MoneyWorkspace.vue'
 import ComfortWorkspace from '../views/workspaces/ComfortWorkspace.vue'
 import HardwareWorkspace from '../views/workspaces/HardwareWorkspace.vue'
@@ -73,6 +74,7 @@ const routes = [
   { path: '/farms/:id/devices/new', component: DeviceSetupWizard, name: 'device-setup' },
   { path: '/pi-setup', component: PiSetupGuide, name: 'pi-setup' },
   { path: '/pi-setup-wizard', component: PiSetupWizard, name: 'pi-setup-wizard' },
+  { path: '/virtual-pi', component: VirtualPi, name: 'virtual-pi' },
   ...buildZoneOpsRedirectRoutes(),
   ...buildLegacyRedirectRoutes(),
 ]

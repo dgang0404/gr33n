@@ -31,6 +31,7 @@ describe('Phase 78 — zone-first hardware & feed consolidation', () => {
     expect(grow.items.some((i) => i.to === '/feed-water')).toBe(false)
     expect(grow.items.some((i) => i.to === '/hardware')).toBe(false)
     expect(grow.items.some((i) => i.to === '/zones')).toBe(true)
+    expect(grow.items.some((i) => i.to === '/virtual-pi')).toBe(true)
   })
 
   it('mobile nav uses Money instead of Feed workspace', () => {

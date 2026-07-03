@@ -54,6 +54,12 @@ export function buildNavGroups(opts = {}) {
           navTitle: 'Comfort bands, what runs when, automations, and raw setpoints',
         },
         {
+          to: '/virtual-pi',
+          icon: '🔌',
+          label: 'Wiring',
+          navTitle: 'Virtual Pi — see what\'s wired to every pin',
+        },
+        {
           to: '/money',
           icon: '💰',
           label: 'Money',

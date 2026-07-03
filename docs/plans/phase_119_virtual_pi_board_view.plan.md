@@ -9,23 +9,27 @@ overview: >
 todos:
   - id: ws1-pin-map-lib
     content: "WS1: Pin map library — ui/src/lib/piPinMap.js with the canonical 40-pin table (physical position ↔ BCM number, power/ground/reserved roles, I2C/SPI/UART buses); pure data + helpers, unit tested"
-    status: pending
+    status: completed
   - id: ws2-board-svg
     content: "WS2: Board component — VirtualPiBoard.vue renders the 2x20 header as SVG/CSS grid; pins colored by role (power/ground/reserved/assigned/free); assignment data resolved from store wiring via hardwareWiring.js"
-    status: pending
+    status: completed
   - id: ws3-view-route
     content: "WS3: View + route — /virtual-pi view with per-device selector (farm Pis from store.devices), board + assigned-pin legend, link to zone wiring editors; empty state when no Pi registered"
-    status: pending
+    status: completed
   - id: ws4-sidebar
     content: "WS4: Sidebar — add Wiring entry to navGroups 'Grow & operate' (icon 🔌, navTitle 'Virtual Pi — see what's wired to every pin'); mobile stays unchanged; update phase-78 sidebar tests"
-    status: pending
+    status: completed
   - id: ws5-tests
     content: "WS5: Tests — pin map table integrity (40 pins, no duplicate BCM, known power/ground positions), assignment resolution from mock store, route + sidebar presence"
-    status: pending
+    status: completed
 isProject: false
 ---
 
 # Phase 119 — Virtual Pi (WS1): pin map foundation + graphical board view
+
+## Status
+
+**Shipped** (2026-07-03). Pin map library, read-only `/virtual-pi` board view, sidebar Wiring entry.
 
 ## Why
 
@@ -74,13 +78,13 @@ is a renderer on top of it.
 
 ## Acceptance
 
-- [ ] `/virtual-pi` renders a 40-pin header for the selected farm Pi
-- [ ] Sensors/actuators with `wiring.gpio_pin` appear on the correct physical pin (BCM→physical verified against pinout.xyz)
-- [ ] Power/ground/reserved pins visually distinct and never shown as assignable
-- [ ] I2C-attached hardware (relay HAT, ADS1115, BH1750) shown on the bus, not on random pins
-- [ ] Sidebar shows the Wiring entry; navigating works on desktop + mobile drawer
-- [ ] Empty state when the farm has no registered Pi devices, linking to Pi setup
-- [ ] Unit tests: pin table integrity, BCM↔physical mapping, assignment resolution
+- [x] `/virtual-pi` renders a 40-pin header for the selected farm Pi
+- [x] Sensors/actuators with `wiring.gpio_pin` appear on the correct physical pin (BCM→physical verified against pinout.xyz)
+- [x] Power/ground/reserved pins visually distinct and never shown as assignable
+- [x] I2C-attached hardware (relay HAT, ADS1115, BH1750) shown on the bus, not on random pins
+- [x] Sidebar shows the Wiring entry; navigating works on desktop + mobile drawer
+- [x] Empty state when the farm has no registered Pi devices, linking to Pi setup
+- [x] Unit tests: pin table integrity, BCM↔physical mapping, assignment resolution
 
 ## Files expected to change
 
