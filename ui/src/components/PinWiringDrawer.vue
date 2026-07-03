@@ -18,6 +18,8 @@
         <button type="button" class="text-zinc-500 hover:text-white text-lg leading-none" @click="$emit('close')">×</button>
       </div>
 
+      <DriverHookupSteps v-if="activeDriver" :driver="activeDriver" />
+
       <template v-if="!selectedEntity">
         <p class="text-xs text-zinc-400 mb-2">Pick hardware to wire to this pin:</p>
         <div v-if="!unwired.unwiredSensors.length && !unwired.unwiredActuators.length" class="text-xs text-zinc-500 mb-4">
@@ -100,7 +102,10 @@
 import { computed, ref, watch } from 'vue'
 import HardwareWiringPanel from './HardwareWiringPanel.vue'
 import ActuatorWiringPanel from './ActuatorWiringPanel.vue'
+import DriverHookupSteps from './DriverHookupSteps.vue'
 import { listUnwiredEntities } from '../lib/wiringConflicts.js'
+import { hookupStepsForDriver, wiringSourceForEntity, driverHookupsFromTaxonomy } from '../lib/driverHookups.js'
+import { getDeviceTaxonomy } from '../lib/deviceTaxonomy.js'
 
 const props = defineProps({
   open: { type: Boolean, default: false },
@@ -112,7 +117,7 @@ const props = defineProps({
   devices: { type: Array, default: () => [] },
 })
 
-const emit = defineEmits(['close', 'updated'])
+const emit = defineEmits(['close', 'updated', 'hookup-change'])
 
 const selectedEntity = ref(null)
 
@@ -129,9 +134,41 @@ const presetSensorWiring = computed(() => ({
   source: 'dht22',
 }))
 
+const activeDriver = computed(() => {
+  if (selectedEntity.value) {
+    return wiringSourceForEntity(selectedEntity.value.kind, selectedEntity.value.entity)
+  }
+  if (props.assignments.length === 1) {
+    const a = props.assignments[0]
+    if (a.kind === 'sensor') {
+      const s = props.sensors.find((x) => x.id === a.id)
+      return wiringSourceForEntity('sensor', s)
+    }
+    const act = props.actuators.find((x) => x.id === a.id)
+    return wiringSourceForEntity('actuator', act)
+  }
+  return ''
+})
+
+function emitHookupHighlight() {
+  const driver = activeDriver.value
+  if (!driver) {
+    emit('hookup-change', { roles: [], bcmPin: null })
+    return
+  }
+  const hookups = driverHookupsFromTaxonomy(getDeviceTaxonomy())
+  const steps = hookupStepsForDriver(hookups, driver)
+  const roles = steps.map((s) => s.role)
+  emit('hookup-change', { roles, bcmPin: props.pin?.bcm ?? null })
+}
+
+watch(activeDriver, () => emitHookupHighlight(), { immediate: true })
+watch(() => props.pin, () => emitHookupHighlight())
+
 watch(() => props.open, (isOpen) => {
   if (!isOpen) {
     selectedEntity.value = null
+    emit('hookup-change', { roles: [], bcmPin: null })
     return
   }
   if (!props.pin && props.assignments.length === 1) {

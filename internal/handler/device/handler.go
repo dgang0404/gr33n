@@ -112,6 +112,7 @@ func (h *Handler) UpdateStatus(w http.ResponseWriter, r *http.Request) {
 		FirmwareVersion   *string `json:"firmware_version"`
 		ClientVersion     *string `json:"client_version"`
 		UptimeSeconds     *int64  `json:"uptime_seconds"`
+		ConfigSHA256      *string `json:"config_sha256"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid request body")
@@ -123,6 +124,10 @@ func (h *Handler) UpdateStatus(w http.ResponseWriter, r *http.Request) {
 	lastFetch := ""
 	if body.LastConfigFetchAt != nil {
 		lastFetch = strings.TrimSpace(*body.LastConfigFetchAt)
+	}
+	configHash := ""
+	if body.ConfigSHA256 != nil {
+		configHash = strings.TrimSpace(*body.ConfigSHA256)
 	}
 	status := commontypes.DeviceStatusEnum(body.Status)
 
@@ -149,12 +154,14 @@ func (h *Handler) UpdateStatus(w http.ResponseWriter, r *http.Request) {
 			Column4: fw,
 			Column5: cv,
 			Column6: uptime,
+			Column7: configHash,
 		})
 	} else {
 		device, err2 = h.q.UpdateDeviceStatus(ctx, db.UpdateDeviceStatusParams{
 			ID:      id,
 			Status:  status,
 			Column3: lastFetch,
+			Column4: configHash,
 		})
 	}
 	if err2 != nil {

@@ -24,9 +24,12 @@ func (h *Handler) GetModels(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	includeAll := r.URL.Query().Get("all") == "true"
+	farmguardian.RefreshEvalCache()
 	models, serverDefault := h.modelCache.Snapshot(includeAll)
 	if models == nil {
 		models = []farmguardian.ModelInfo{}
+	} else {
+		models = farmguardian.MergeEvalIntoModels(models)
 	}
 	if serverDefault == "" && h.baseLLM != nil {
 		serverDefault = h.baseLLM.ModelLabel()

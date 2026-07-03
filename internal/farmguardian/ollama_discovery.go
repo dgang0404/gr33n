@@ -22,7 +22,8 @@ type ModelInfo struct {
 	Capabilities   []string `json:"capabilities,omitempty"`
 	Loaded         bool     `json:"loaded,omitempty"`
 	Processor      string   `json:"processor,omitempty"`
-	RuntimeHint    string   `json:"runtime_hint,omitempty"`
+	RuntimeHint    string       `json:"runtime_hint,omitempty"`
+	Eval           *EvalSummary `json:"eval,omitempty"`
 }
 
 type ollamaTagsResponse struct {

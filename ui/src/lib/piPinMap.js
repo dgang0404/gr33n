@@ -76,6 +76,41 @@ export function pinByPhysical(physical) {
   return PI_HEADER_PINS.find((p) => p.physical === physical) || null
 }
 
+/** @param {string[]} roles @param {number|null|undefined} bcmPin */
+export function physicalPinsForHookupRoles(roles, bcmPin = null) {
+  /** @type {Set<number>} */
+  const out = new Set()
+  for (const role of roles || []) {
+    if (role === 'gpio' && bcmPin != null) {
+      const p = pinByBcm(bcmPin)
+      if (p) out.add(p.physical)
+      continue
+    }
+    if (role === 'i2c_sda') {
+      out.add(3)
+      continue
+    }
+    if (role === 'i2c_scl') {
+      out.add(5)
+      continue
+    }
+    if (role === 'uart_tx') {
+      out.add(8)
+      continue
+    }
+    if (role === 'uart_rx') {
+      out.add(10)
+      continue
+    }
+    for (const pin of PI_HEADER_PINS) {
+      if (role === 'power3v3' && pin.role === 'power3v3') out.add(pin.physical)
+      if (role === 'power5v' && pin.role === 'power5v') out.add(pin.physical)
+      if (role === 'gnd' && pin.role === 'ground') out.add(pin.physical)
+    }
+  }
+  return out
+}
+
 /** Odd pins column (left), even pins column (right) — 20 rows. */
 export function headerGridRows() {
   const rows = []

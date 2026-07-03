@@ -21,3 +21,10 @@ func TestCurrent_PulsePump(t *testing.T) {
 		t.Fatal("shade_screen gh_role")
 	}
 }
+
+func TestCurrent_DriverHookupsInPayload(t *testing.T) {
+	payload := Current().Payload()
+	if len(payload.DriverHookups["dht22"]) < 3 {
+		t.Fatalf("expected dht22 hookup steps, got %#v", payload.DriverHookups["dht22"])
+	}
+}

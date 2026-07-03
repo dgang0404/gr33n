@@ -373,6 +373,42 @@ paths:
               schema: { $ref: "#/components/schemas/SensorReadingBatchResponse" }
         "400": { $ref: "#/components/responses/BadRequest" }
 
+  /devices/{id}/pi-config:
+    get:
+      tags: [devices]
+      summary: Generate pi_client config.yaml for an edge device
+      description: |
+        Renders sensors, actuators, GPIO pins, and relay channels from DB wiring.
+        Returns JSON with `yaml`, `filename`, and `config_sha256` (wiring drift hash).
+        Use `?format=yaml` or `?download=1` for raw YAML download.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+        - name: base_url
+          in: query
+          schema: { type: string }
+          description: LAN API URL embedded in generated config (optional)
+        - name: format
+          in: query
+          schema: { type: string, enum: [yaml] }
+        - name: download
+          in: query
+          schema: { type: string, enum: ['1'] }
+      responses:
+        "200":
+          description: Generated config
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  yaml: { type: string }
+                  filename: { type: string }
+                  config_sha256: { type: string }
+            text/yaml:
+              schema: { type: string }
+        "404": { $ref: "#/components/responses/NotFound" }
+
   /devices/{id}/status:
     patch:
       tags: [devices]
@@ -391,6 +427,11 @@ paths:
               required: [status]
               properties:
                 status: { $ref: "#/components/schemas/DeviceStatusEnum" }
+                last_config_fetch_at: { type: string, format: date-time }
+                firmware_version: { type: string }
+                client_version: { type: string }
+                uptime_seconds: { type: integer, format: int64 }
+                config_sha256: { type: string, description: "SHA-256 of Pi sensors/actuators wiring (Phase 121 drift check)" }
             example: { status: online }
       responses:
         "200":

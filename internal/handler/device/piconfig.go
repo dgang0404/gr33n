@@ -67,6 +67,19 @@ func (h *Handler) GetPiConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	runtimeCfg, err := hardware.BuildPiRuntimeConfig(hardware.PiConfigOptions{
+		FarmID:     device.FarmID,
+		DeviceID:   device.ID,
+		DeviceUID:  derefStr(device.DeviceUid),
+		Sensors:    mapSensorsForPi(sensors),
+		Actuators:  mapActuatorsForPi(actuators),
+	}, device.ConfigVersion, device.Config)
+	if err != nil {
+		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	configSHA := hardware.PiRuntimeConfigWiringSHA256(runtimeCfg)
+
 	filename := piConfigFilename(device)
 	wantYAML := r.URL.Query().Get("format") == "yaml" ||
 		strings.Contains(r.Header.Get("Accept"), "text/yaml") ||
@@ -81,8 +94,9 @@ func (h *Handler) GetPiConfig(w http.ResponseWriter, r *http.Request) {
 	}
 
 	httputil.WriteJSON(w, http.StatusOK, map[string]string{
-		"yaml":     string(yamlBytes),
-		"filename": filename,
+		"yaml":           string(yamlBytes),
+		"filename":       filename,
+		"config_sha256":  configSHA,
 	})
 }
 

@@ -32,10 +32,11 @@ type WiringSourceOption struct {
 
 // Payload is returned by GET /platform/device-taxonomy.
 type Payload struct {
-	Sensors             []Entry              `json:"sensors"`
-	Actuators           []Entry              `json:"actuators"`
-	ByPlantNeed         map[string][]Entry   `json:"by_plant_need"`
-	WiringSourceOptions []WiringSourceOption `json:"wiring_source_options"`
+	Sensors             []Entry                   `json:"sensors"`
+	Actuators           []Entry                   `json:"actuators"`
+	ByPlantNeed         map[string][]Entry        `json:"by_plant_need"`
+	WiringSourceOptions []WiringSourceOption      `json:"wiring_source_options"`
+	DriverHookups       map[string][]HookupStep   `json:"driver_hookups"`
 }
 
 // Registry is an indexed view of device_type_registry.
@@ -202,6 +203,7 @@ func (r *Registry) Payload() Payload {
 		Actuators:           actuators,
 		ByPlantNeed:         byNeed,
 		WiringSourceOptions: wiringOpts,
+		DriverHookups:       DriverHookups(),
 	}
 }
 

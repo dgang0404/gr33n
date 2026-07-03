@@ -1175,6 +1175,16 @@ class TestPhase51ConfigSync(unittest.TestCase):
         self.assertEqual(cfg['config_version'], 3)
         self.assertEqual(cfg['api']['base_url'], bootstrap['api']['base_url'])
 
+    def test_compute_wiring_config_sha256_stable(self):
+        cfg = client.resolve_config(
+            {'api': {'base_url': 'http://x'}, 'farm': {'farm_id': 1}, 'device': {'uid': 'u'}},
+            self.REMOTE_CONFIG,
+        )
+        h1 = client.compute_wiring_config_sha256(cfg)
+        h2 = client.compute_wiring_config_sha256(cfg)
+        self.assertEqual(h1, h2)
+        self.assertEqual(len(h1), 64)
+
     def test_local_wiring_takes_precedence(self):
         bootstrap = {
             'api': {'base_url': 'http://10.0.0.2:8080', 'timeout_seconds': 5, 'api_key': ''},
@@ -1358,6 +1368,8 @@ class TestPhase51LiveReload(unittest.TestCase):
             self.assertEqual(args[0], 42)
             self.assertEqual(args[1], 'online')
             self.assertIn('last_config_fetch_at', kwargs)
+            self.assertIn('config_sha256', kwargs)
+            self.assertTrue(len(kwargs['config_sha256']) == 64)
         finally:
             os.unlink(cfg_path)
 

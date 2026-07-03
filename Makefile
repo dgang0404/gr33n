@@ -1,4 +1,4 @@
-.PHONY: run run-receiver build build-receiver test seed sqlc migrate merge-legacy-plants ui dev dev-auth-test e2e-browser ollama-smoke ollama-smoke-cpu ollama-smoke-help rag-ingest-help rag-ingest-demo rag-ingest-platform-docs compose-db-up compose-db-status compose-logging-up compose-logging-down setup-compose-dev dev-stack dev-stack-fresh dev-stack-fresh-rag local-up restart-local restart-local-serve db-sanity-report check-stack check-crop-library check-crop-catalog check-crop-catalog-parity check-catalog-seed-drift add-crop-check check-catalog-release check-ui-domain-parity clean lint bootstrap-local bootstrap-local-docker install-deps-debian install-pi-edge-deps first-clone first-clone-docker first-clone-install-deps audit-openapi audit-env edge-smoke-help edge-actuator-smoke-help recipe-pack-import-help agronomy-seed-pack-help guardian-bootstrap-farm import-agronomy-seed-pack apply-agronomy-overrides rag-ingest-farm-operational
+.PHONY: run run-receiver build build-receiver test seed sqlc migrate merge-legacy-plants ui dev dev-auth-test e2e-browser ollama-smoke ollama-smoke-cpu ollama-smoke-help guardian-eval rag-ingest-help rag-ingest-demo rag-ingest-platform-docs compose-db-up compose-db-status compose-logging-up compose-logging-down setup-compose-dev dev-stack dev-stack-fresh dev-stack-fresh-rag local-up restart-local restart-local-serve db-sanity-report check-stack check-crop-library check-crop-catalog check-crop-catalog-parity check-catalog-seed-drift add-crop-check check-catalog-release check-ui-domain-parity clean lint bootstrap-local bootstrap-local-docker install-deps-debian install-pi-edge-deps first-clone first-clone-docker first-clone-install-deps audit-openapi audit-env edge-smoke-help edge-actuator-smoke-help recipe-pack-import-help agronomy-seed-pack-help guardian-bootstrap-farm import-agronomy-seed-pack apply-agronomy-overrides rag-ingest-farm-operational
 
 # dash (common default /bin/sh) can report "wait: No child processes" for dev / dev-auth-test;
 # bash handles background jobs + wait reliably.
@@ -121,6 +121,11 @@ ollama-smoke-cpu: ## Ollama smokes for CPU-only hosts (longer timeout, lower max
 	else export LLM_MODEL=tinyllama; fi; \
 	$(GO) test -tags 'dev ollama' ./cmd/api/ -run 'TestPhase112|TestPhase118' -count=1 -v \
 		-timeout 40m LLM_TIMEOUT_SECONDS=150 LLM_MAX_TOKENS=60
+
+guardian-eval: ## Phase 122 — run Guardian model quality eval (API + Ollama must be up; set GUARDIAN_EVAL_TOKEN)
+	@if [ -f .env ]; then set -a && . ./.env && set +a; fi; \
+	$(GO) run ./cmd/guardian-eval/ -models $${MODEL:-all} -farm-id $${FARM_ID:-1} \
+		-report $${GUARDIAN_EVAL_REPORT:-data/guardian_model_eval.json}
 
 lint: ## Run go vet
 	$(GO) vet -tags dev ./...

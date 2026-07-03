@@ -356,15 +356,11 @@ UPDATE gr33ncore.devices
 SET status = $2,
     last_heartbeat = NOW(),
     updated_at = NOW(),
-    config = CASE
-      WHEN $3::text IS NOT NULL AND $3::text <> '' THEN
-        jsonb_set(
-          coalesce(config, '{}'::jsonb),
-          '{last_config_fetch_at}',
-          to_jsonb($3::text)
-        )
-      ELSE config
-    END
+    config = coalesce(config, '{}'::jsonb)
+      || CASE WHEN $3::text IS NOT NULL AND $3::text <> ''
+         THEN jsonb_build_object('last_config_fetch_at', $3::text) ELSE '{}'::jsonb END
+      || CASE WHEN $4::text IS NOT NULL AND $4::text <> ''
+         THEN jsonb_build_object('config_sha256', $4::text) ELSE '{}'::jsonb END
 WHERE id = $1 AND deleted_at IS NULL
 RETURNING id, farm_id, zone_id, name, device_uid, device_type, ip_address, firmware_version, status, last_heartbeat, api_key, config, meta_data, config_version, created_at, updated_at, updated_by_user_id, deleted_at
 `
@@ -373,10 +369,16 @@ type UpdateDeviceStatusParams struct {
 	ID      int64                        `db:"id" json:"id"`
 	Status  commontypes.DeviceStatusEnum `db:"status" json:"status"`
 	Column3 string                       `db:"column_3" json:"column_3"`
+	Column4 string                       `db:"column_4" json:"column_4"`
 }
 
 func (q *Queries) UpdateDeviceStatus(ctx context.Context, arg UpdateDeviceStatusParams) (Gr33ncoreDevice, error) {
-	row := q.db.QueryRow(ctx, updateDeviceStatus, arg.ID, arg.Status, arg.Column3)
+	row := q.db.QueryRow(ctx, updateDeviceStatus,
+		arg.ID,
+		arg.Status,
+		arg.Column3,
+		arg.Column4,
+	)
 	var i Gr33ncoreDevice
 	err := row.Scan(
 		&i.ID,
@@ -414,6 +416,8 @@ SET status = $2,
          THEN jsonb_build_object('client_version', $5::text) ELSE '{}'::jsonb END
       || CASE WHEN $6::bigint >= 0
          THEN jsonb_build_object('client_uptime_seconds', $6::bigint) ELSE '{}'::jsonb END
+      || CASE WHEN $7::text IS NOT NULL AND $7::text <> ''
+         THEN jsonb_build_object('config_sha256', $7::text) ELSE '{}'::jsonb END
 WHERE id = $1 AND deleted_at IS NULL
 RETURNING id, farm_id, zone_id, name, device_uid, device_type, ip_address, firmware_version, status, last_heartbeat, api_key, config, meta_data, config_version, created_at, updated_at, updated_by_user_id, deleted_at
 `
@@ -425,6 +429,7 @@ type UpdateDeviceStatusTelemetryParams struct {
 	Column4 string                       `db:"column_4" json:"column_4"`
 	Column5 string                       `db:"column_5" json:"column_5"`
 	Column6 int64                        `db:"column_6" json:"column_6"`
+	Column7 string                       `db:"column_7" json:"column_7"`
 }
 
 // Pi-key heartbeat: status + optional config fetch timestamp, firmware/client version, uptime.
@@ -436,6 +441,7 @@ func (q *Queries) UpdateDeviceStatusTelemetry(ctx context.Context, arg UpdateDev
 		arg.Column4,
 		arg.Column5,
 		arg.Column6,
+		arg.Column7,
 	)
 	var i Gr33ncoreDevice
 	err := row.Scan(

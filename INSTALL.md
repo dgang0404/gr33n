@@ -52,7 +52,7 @@ _operator narrative and troubleshooting:_ **`docs/local-operator-bootstrap.md`**
 
 ### Raspberry Pi OS (edge daemon or experimental full stack)
 
-- **Edge-only Pi** (sensors/actuators talking to an API elsewhere): **`./scripts/install-pi-edge-deps.sh`** (`make install-pi-edge-deps`), then **`pi_client/setup.sh`** — see **`docs/raspberry-pi-and-deployment-topology.md`**.
+- **Edge-only Pi** (sensors/actuators talking to an API elsewhere): **`./scripts/install-pi-edge-deps.sh`** (`make install-pi-edge-deps`), then **`pi_client/setup.sh`** — see **`docs/raspberry-pi-and-deployment-topology.md`**. After wiring sensors and actuators in the dashboard, use **Wiring → Virtual Pi → Download config.yaml** (or **`GET /devices/{id}/pi-config`**) instead of hand-editing pins and channels.
 - **Docker on the Pi** (for `docker compose` experiments): **`./scripts/install-pi-edge-deps.sh --with-docker`** or **`make install-pi-edge-deps-docker`**.
 - Pi OS is Debian-derived; **do not** run `install-system-deps-debian.sh` on a small Pi unless you intend to host Postgres locally — see the topology doc for RAM/storage warnings.
 
@@ -304,6 +304,24 @@ make ollama-smoke          # Phase 112 + 118 smokes
 make ollama-smoke-cpu        # CPU-only box (40m timeout, LLM_MAX_TOKENS=60)
 make ollama-smoke-help       # print prerequisites
 ```
+
+**Model quality eval (Phase 122):** compare grounded answers across installed Ollama models:
+
+```bash
+# API + Ollama running; JWT from dashboard login or smoke helper
+export GUARDIAN_EVAL_TOKEN="<jwt>"
+make guardian-eval                    # all chat-capable models, demo farm id 1
+make guardian-eval MODEL=phi3:mini  # one model
+```
+
+Report: `data/guardian_model_eval.json`. Scores surface in **Guardian model selector**
+(`GET /guardian/models` → `eval` field). Re-run after pulling a new model.
+
+**Context budget (Phase 122):** models with `context_window` below 8192 get trimmed
+history, RAG top-K, and snapshot detail before the prompt is sent. This is separate
+from the grounded-chat *gate* (also 8192): `phi3:mini` reports rope-extended 131072 via
+Ollama but quality is best within its original training window — eval scores help you
+pick models for a low-power box.
 
 Or run directly (same as the make targets):
 

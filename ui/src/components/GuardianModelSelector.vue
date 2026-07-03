@@ -102,6 +102,14 @@
         {{ selectedRuntimeHint }}
       </p>
 
+      <p
+        v-if="selectedEvalHint"
+        class="text-[10px] text-zinc-400 leading-snug"
+        data-test="guardian-eval-hint"
+      >
+        {{ selectedEvalHint }}
+      </p>
+
       <p class="text-[10px] text-zinc-600 leading-snug">
         Session model applies to your chat only and does not change the farm default.
         Models come from the server Ollama runtime (shared across farms on this host).
@@ -190,6 +198,23 @@ const selectedModelInfo = computed(() => {
 })
 
 const selectedRuntimeHint = computed(() => selectedModelInfo.value?.runtime_hint || '')
+
+const selectedEvalHint = computed(() => evalHintForModel(selectedModelInfo.value))
+
+function evalHintForModel(m) {
+  if (!m?.eval) {
+    return 'Quality: not yet evaluated — run make guardian-eval on the server'
+  }
+  const e = m.eval
+  if (e.eval_status === 'not_evaluated') {
+    return 'Quality: not yet evaluated — run make guardian-eval'
+  }
+  const cite = Math.round((e.grounded_citation_rate || 0) * 100)
+  const prop = Math.round((e.proposal_valid_rate || 0) * 100)
+  const lat = Math.round(e.mean_latency_ms || 0)
+  const repair = e.repair_attempts_avg != null ? ` · repair ${(e.repair_attempts_avg * 100).toFixed(0)}%` : ''
+  return `Quality: ${cite}% grounded cite · ${prop}% proposals · ~${lat}ms${repair} (${e.total_questions || '?'} questions)`
+}
 
 function capabilityLabel(m) {
   const caps = m.capabilities || []

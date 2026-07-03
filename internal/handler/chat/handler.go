@@ -207,29 +207,35 @@ func (h *Handler) PostV1(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var farmID int64
+	if pb.FarmID != nil {
+		farmID = *pb.FarmID
+	}
+	grounded := farmID > 0
+	if farmID > 0 && !farmauthz.RequireFarmMember(w, r, h.q, farmID) {
+		return
+	}
+	if pb.FarmID != nil && farmID <= 0 {
+		httputil.WriteError(w, http.StatusBadRequest, "invalid farm_id")
+		return
+	}
+
+	modelPreview := h.previewModelOutcome(r.Context(), pb.Model, farmID, grounded)
+	contextWindow := h.contextWindowForModel(modelPreview.ModelName)
+	promptBudget, trimLog := farmguardian.ComputePromptBudget(contextWindow, MaxHistoryTurns)
+	h.logPromptBudgetTrims(modelPreview.ModelName, contextWindow, trimLog)
+
 	// Resolve grounded vs plain path. Plain path needs only an LLM. When farm_id
 	// is set we always attach the live snapshot; RAG chunk retrieval is optional
 	// and only runs when an embedder is configured (EMBEDDING_API_KEY).
 	var (
-		grounded bool
 		chunks   []db.SearchRagNearestNeighborsFilteredRow
 		system   = farmguardian.ChatSystemPrompt(h.cfg, h.llm != nil)
 		user     = question
-		farmID   int64
 		liveSnap farmguardian.Snapshot
 	)
 
-	if pb.FarmID != nil {
-		farmID = *pb.FarmID
-		if farmID <= 0 {
-			httputil.WriteError(w, http.StatusBadRequest, "invalid farm_id")
-			return
-		}
-		if !farmauthz.RequireFarmMember(w, r, h.q, farmID) {
-			return
-		}
-		grounded = true
-
+	if grounded {
 		// Live farm-state snapshot (WS4 follow-up). Best-effort: a snapshot
 		// failure is logged but never blocks the chat turn.
 		snapshotBlock := ""
@@ -239,6 +245,7 @@ func (h *Handler) PostV1(w http.ResponseWriter, r *http.Request) {
 				slog.Warn("farm guardian snapshot failed", "farm_id", farmID, "err", serr)
 			} else {
 				liveSnap = snap
+				liveSnap.ApplyBudgetLimits(promptBudget.Snapshot)
 			}
 			snapshotBlock = liveSnap.PromptBlock()
 		}
@@ -271,7 +278,7 @@ func (h *Handler) PostV1(w http.ResponseWriter, r *http.Request) {
 
 		if h.embedder != nil {
 			var rerr error
-			chunks, rerr = h.retrieveChunks(r.Context(), farmID, question, farmguardian.RAGTopK)
+			chunks, rerr = h.retrieveChunks(r.Context(), farmID, question, promptBudget.RAGTopK)
 			if rerr != nil {
 				slog.Warn("farm guardian retrieval failed", "farm_id", farmID, "err", rerr)
 				if !farmguardian.IsLocalInferenceURL(strings.TrimSpace(os.Getenv("LLM_BASE_URL"))) {
@@ -343,7 +350,7 @@ func (h *Handler) PostV1(w http.ResponseWriter, r *http.Request) {
 		if herr != nil {
 			slog.Warn("conversation history load failed", "session_id", sessionID, "err", herr)
 		} else {
-			history = replayHistory(rows, MaxHistoryTurns)
+			history = replayHistory(rows, promptBudget.MaxHistoryTurns)
 		}
 	}
 
@@ -446,6 +453,14 @@ func (h *Handler) PostV1(w http.ResponseWriter, r *http.Request) {
 		}
 		httputil.WriteError(w, http.StatusBadGateway, "LLM request failed")
 		return
+	}
+	answer, usage, repairOutcome := h.maybeRepairProposalAnswer(r.Context(), chatClient, messages, question, answer, usage)
+	if repairOutcome.Attempted {
+		slog.Info("guardian: proposal repair",
+			"model", chatClient.ModelLabel(),
+			"recovered", repairOutcome.Recovered,
+			"parse_err", repairOutcome.ParseErr,
+		)
 	}
 	if grounded {
 		answer = synthesis.StripOrphanCitationRefs(answer, len(chunks))

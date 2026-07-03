@@ -1,6 +1,7 @@
 /**
  * Phase 90 — bundled device taxonomy fallback (mirrors migration seed).
  */
+import { FALLBACK_DRIVER_HOOKUPS } from './driverHookups.js'
 
 /** @param {object[]} entries */
 function indexEntries(entries) {
@@ -105,6 +106,7 @@ export function indexTaxonomy(payload) {
     sensorsByKey,
     actuatorsByKey,
     wiring_source_options: payload?.wiring_source_options || FALLBACK_WIRING_SOURCE_OPTIONS,
+    driver_hookups: payload?.driver_hookups || FALLBACK_DRIVER_HOOKUPS,
   }
 }
 

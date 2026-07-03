@@ -28,6 +28,7 @@
             :assignments="assignmentsForPin(row.left?.physical)"
             :zone-names="zoneNames"
             :conflicted="isConflictPin(row.left?.physical)"
+            :highlighted="isHookupPin(row.left?.physical)"
             :clickable="isClickablePin(row.left)"
             @pin-click="onPinClick"
           />
@@ -36,6 +37,7 @@
             :assignments="assignmentsForPin(row.right?.physical)"
             :zone-names="zoneNames"
             :conflicted="isConflictPin(row.right?.physical)"
+            :highlighted="isHookupPin(row.right?.physical)"
             :clickable="isClickablePin(row.right)"
             @pin-click="onPinClick"
           />
@@ -97,6 +99,7 @@
       :devices="devices"
       @close="closeDrawer"
       @updated="$emit('updated')"
+      @hookup-change="onHookupChange"
     />
   </div>
 </template>
@@ -106,6 +109,7 @@ import { computed, ref } from 'vue'
 import {
   assignmentsForDevice,
   headerGridRows,
+  physicalPinsForHookupRoles,
 } from '../lib/piPinMap.js'
 import { collectDeviceWiringConflicts } from '../lib/wiringConflicts.js'
 import { zoneHardwareRoute } from '../lib/workspaceRoutes.js'
@@ -127,6 +131,11 @@ const gridRows = headerGridRows()
 const drawerOpen = ref(false)
 const drawerPin = ref(null)
 const drawerAssignments = ref([])
+const hookupHighlight = ref({ roles: [], bcmPin: null })
+
+const hookupPhysicalPins = computed(() =>
+  physicalPinsForHookupRoles(hookupHighlight.value.roles, hookupHighlight.value.bcmPin),
+)
 
 const assignmentBundle = computed(() =>
   assignmentsForDevice(props.deviceId, props.sensors, props.actuators),
@@ -161,6 +170,15 @@ function isConflictPin(physical) {
   return conflictReport.value.conflictPhysicalPins.has(physical)
 }
 
+function isHookupPin(physical) {
+  if (physical == null) return false
+  return hookupPhysicalPins.value.has(physical)
+}
+
+function onHookupChange(payload) {
+  hookupHighlight.value = payload || { roles: [], bcmPin: null }
+}
+
 function isClickablePin(pin) {
   return pin?.role === 'gpio' && pin.bcm != null
 }
@@ -185,5 +203,6 @@ function closeDrawer() {
   drawerOpen.value = false
   drawerPin.value = null
   drawerAssignments.value = []
+  hookupHighlight.value = { roles: [], bcmPin: null }
 }
 </script>

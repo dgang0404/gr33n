@@ -3,6 +3,7 @@
 
 import base64
 import copy
+import hashlib
 import json as py_json
 import logging
 import math
@@ -254,6 +255,18 @@ def resolve_config(bootstrap: dict, remote: Optional[dict] = None) -> dict:
             cfg['device_id'] = remote['device_id']
 
     return cfg
+
+
+def compute_wiring_config_sha256(cfg: dict) -> str:
+    """SHA-256 of sensors/actuators wiring — must match Go PiRuntimeConfigWiringSHA256."""
+    sensors = sorted(cfg.get('sensors') or [], key=lambda s: s.get('sensor_id', 0))
+    actuators = sorted(cfg.get('actuators') or [], key=lambda a: a.get('actuator_id', 0))
+    payload: dict = {'sensors': sensors, 'actuators': actuators}
+    mix = cfg.get('mix_channels')
+    if mix:
+        payload['mix_channels'] = mix
+    canonical = py_json.dumps(payload, sort_keys=True, separators=(',', ':'))
+    return hashlib.sha256(canonical.encode('utf-8')).hexdigest()
 
 
 def resolve_startup_config(bootstrap: dict, api: 'Gr33nApiClient', cache_path: str) -> tuple:
@@ -530,7 +543,8 @@ class Gr33nApiClient:
                             last_config_fetch_at: Optional[str] = None,
                             firmware_version: Optional[str] = None,
                             client_version: Optional[str] = None,
-                            uptime_seconds: Optional[int] = None) -> bool:
+                            uptime_seconds: Optional[int] = None,
+                            config_sha256: Optional[str] = None) -> bool:
         # PATCH /devices/{id}/status — optional telemetry (Phase 114 WS3).
         payload: dict = {'status': status}
         if last_config_fetch_at:
@@ -541,6 +555,8 @@ class Gr33nApiClient:
             payload['client_version'] = client_version
         if uptime_seconds is not None:
             payload['uptime_seconds'] = int(uptime_seconds)
+        if config_sha256:
+            payload['config_sha256'] = config_sha256
         try:
             r = self._s.patch(f'{self.base_url}/devices/{device_id}/status',
                               json=payload, timeout=self.timeout)
@@ -1267,7 +1283,11 @@ class Gr33nPiClient:
         if not device_id:
             return
         ts = datetime.now(timezone.utc).isoformat()
-        if not self.api.patch_device_status(int(device_id), 'online', last_config_fetch_at=ts):
+        wiring_hash = compute_wiring_config_sha256(self.cfg)
+        if not self.api.patch_device_status(
+                int(device_id), 'online',
+                last_config_fetch_at=ts,
+                config_sha256=wiring_hash):
             log.debug('config sync report failed for device_id=%s', device_id)
 
     def _poll_config_version(self) -> None:
@@ -1342,11 +1362,15 @@ class Gr33nPiClient:
                 device_ids = {a.device_id for a in self._actuators.values()}
             for did in device_ids:
                 uptime = int(time.monotonic() - self._started_at)
+                with self._hw_lock:
+                    cfg_snapshot = copy.deepcopy(self.cfg)
+                wiring_hash = compute_wiring_config_sha256(cfg_snapshot)
                 self.api.patch_device_status(
                     did, 'online',
                     client_version=CLIENT_VERSION,
                     firmware_version=CLIENT_VERSION,
                     uptime_seconds=uptime,
+                    config_sha256=wiring_hash,
                 )
             log.debug('Heartbeat sent for %d device(s)', len(device_ids))
 

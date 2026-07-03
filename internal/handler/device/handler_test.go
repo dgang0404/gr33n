@@ -40,7 +40,7 @@ func TestUpdateStatus_WithLastConfigFetchAt_200(t *testing.T) {
 	var gotFetch *string
 	mq := &mockQuerier{
 		updateStatusFn: func(_ context.Context, arg db.UpdateDeviceStatusParams) (db.Gr33ncoreDevice, error) {
-			gotFetch = arg.LastConfigFetchAt
+			gotFetch = &arg.Column3
 			return db.Gr33ncoreDevice{
 				ID:        arg.ID,
 				Status:    arg.Status,

@@ -137,7 +137,11 @@
         </div>
       </div>
       <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-4 space-y-2">
-        <div class="text-xs font-semibold text-zinc-400">config.yaml snippet (Phase 51 wiring)</div>
+        <div class="text-xs font-semibold text-zinc-400">config.yaml — generate from platform wiring</div>
+        <p class="text-[11px] text-zinc-500 leading-relaxed">
+          Prefer <router-link v-nav-hint="'/virtual-pi'" to="/virtual-pi" class="text-green-500 hover:text-green-400">Virtual Pi → Download config.yaml</router-link>
+          or the device wizard after wiring zones — the API renders pins, channels, and intervals from your farm DB.
+        </p>
         <pre class="text-xs font-mono text-zinc-300 leading-5">{{ yamlExample }}</pre>
       </div>
     </section>

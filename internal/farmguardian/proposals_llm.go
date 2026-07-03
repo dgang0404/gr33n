@@ -89,6 +89,13 @@ type LLMProposalDraft struct {
 
 // ParseLLMProposalFromAssistant extracts a tool proposal JSON block from LLM text.
 func ParseLLMProposalFromAssistant(text string) (LLMProposalDraft, bool) {
+	draft, ok, _ := ParseLLMProposalFromAssistantDetailed(text)
+	return draft, ok
+}
+
+// ParseLLMProposalFromAssistantDetailed returns a parse failure reason when no valid block is found.
+func ParseLLMProposalFromAssistantDetailed(text string) (LLMProposalDraft, bool, string) {
+	var lastErr string
 	for _, block := range extractJSONBlocks(text) {
 		var raw struct {
 			Tool       string         `json:"tool"`
@@ -97,10 +104,12 @@ func ParseLLMProposalFromAssistant(text string) (LLMProposalDraft, bool) {
 			Confidence string         `json:"confidence"`
 		}
 		if err := json.Unmarshal([]byte(block), &raw); err != nil {
+			lastErr = err.Error()
 			continue
 		}
 		tool := strings.TrimSpace(raw.Tool)
 		if tool == "" {
+			lastErr = "missing tool field"
 			continue
 		}
 		args := raw.Args
@@ -112,9 +121,31 @@ func ParseLLMProposalFromAssistant(text string) (LLMProposalDraft, bool) {
 			Args:       args,
 			Summary:    strings.TrimSpace(raw.Summary),
 			Confidence: strings.TrimSpace(raw.Confidence),
-		}, true
+		}, true, ""
 	}
-	return LLMProposalDraft{}, false
+	if lastErr == "" {
+		lastErr = "no proposal JSON block found"
+	}
+	return LLMProposalDraft{}, false, lastErr
+}
+
+// ProposalRepairSystemAddendum is the one-shot corrective system message (Phase 122).
+func ProposalRepairSystemAddendum(parseErr string) string {
+	parseErr = strings.TrimSpace(parseErr)
+	if parseErr == "" {
+		parseErr = "invalid JSON"
+	}
+	return strings.TrimSpace(`
+Your previous reply did not include a valid action proposal JSON block.
+Re-send ONLY a fenced JSON block with this exact shape (no extra prose):
+` + "```json\n" + `{
+  "tool": "<one of: patch_fertigation_program, patch_schedule, patch_rule, ack_alert, create_task, create_task_from_alert, update_cycle_stage>",
+  "args": { },
+  "summary": "one line for the operator",
+  "confidence": "medium"
+}
+` + "```" + `
+Parse error: ` + parseErr)
 }
 
 func extractJSONBlocks(text string) []string {

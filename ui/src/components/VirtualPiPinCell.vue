@@ -41,6 +41,7 @@ const props = defineProps({
   assignments: { type: Array, default: () => [] },
   zoneNames: { type: Object, default: () => ({}) },
   conflicted: { type: Boolean, default: false },
+  highlighted: { type: Boolean, default: false },
   clickable: { type: Boolean, default: false },
 })
 
@@ -49,6 +50,9 @@ defineEmits(['pin-click'])
 const cellClass = computed(() => {
   if (props.conflicted) {
     return 'bg-red-950/50 border-red-700 ring-1 ring-red-800/80 cursor-pointer'
+  }
+  if (props.highlighted) {
+    return `${props.clickable ? 'cursor-pointer ' : ''}bg-amber-950/40 border-amber-600 ring-1 ring-amber-500/70`
   }
   if (!props.pin) return 'bg-zinc-900 border-zinc-800'
   if (props.assignments.length) {
