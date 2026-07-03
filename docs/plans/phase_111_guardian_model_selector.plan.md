@@ -11,31 +11,31 @@ overview: >
 todos:
   - id: ws0-discovery
     content: "WS0: Ollama discovery — query /api/tags at startup, cache model list in memory; expose GET /guardian/models (server-wide, not farm-scoped — Ollama is a single runtime)"
-    status: pending
+    status: done
   - id: ws1-schema
     content: "WS1: Schema — ADD guardian_preferred_model TEXT NULL to gr33ncore.farms; migration 20260703_phase111_guardian_preferred_model.sql; update farm_settings struct"
-    status: pending
+    status: done
   - id: ws2-ui
     content: "WS2: UI — GuardianModelSelector.vue in Guardian panel header; shows model name + context window + speed_class; admin can save farm default; non-admin sees read-only badge"
-    status: pending
+    status: done
   - id: ws3-chat-param
     content: "WS3: /v1/chat model param — accept optional model field; resolve: session param → farm guardian_preferred_model → env LLM_MODEL; record resolved model in conversation_turns.llm_model"
-    status: pending
+    status: done
   - id: ws4-fallback
     content: "WS4: Graceful fallback — missing model → log warning + use env fallback, never silent; context_window < 8192 → reject with actionable error suggesting model switch"
-    status: pending
+    status: done
   - id: ws5-rbac
     content: "WS5: RBAC — PATCH /farms/{id}/settings guardian_preferred_model gated to farmauthz.RequireFarmAdmin; session-level model param open to any farm member"
-    status: pending
+    status: done
   - id: ws6-audit
     content: "WS6: Audit — farm-level model switch writes user_activity_log row (action_type='guardian_model_changed', details: {from, to, farm_id}); session overrides not audited (visible in conversation_turns.llm_model)"
-    status: pending
+    status: done
   - id: ws7-openapi
     content: "WS7: OpenAPI — document GET /guardian/models and model param on POST /v1/chat; note farm-scope vs server-scope distinction"
-    status: pending
+    status: done
   - id: ws8-smokes
     content: "WS8: Smokes — cmd/api/smoke_phase111_model_selector_test.go: discovery returns models, session override, fallback on missing model, RBAC denial on non-admin farm switch, context guardrail"
-    status: pending
+    status: done
 isProject: false
 ---
 
@@ -43,8 +43,8 @@ isProject: false
 
 ## Status
 
-**Not started.** Depends on existing Guardian chat infrastructure (Phases 27–34) and
-Ollama running locally (`LLM_BASE_URL` configured). No changes to RAG/embedding model path.
+**Shipped** on `main` (commit `d86dfc3`). Depends on Guardian chat (Phases 27–34) and
+Ollama at `LLM_BASE_URL`. Embedding model path unchanged (`EMBEDDING_MODEL` env).
 
 **Preconditions (all met on `main`):**
 - [`internal/rag/llm/chat.go`](../../internal/rag/llm/chat.go) — `NewChatClientFromEnv`, `ModelLabel()`
@@ -309,15 +309,15 @@ Tests (all skip if `LLM_BASE_URL` not set — same pattern as other Guardian smo
 
 ## Acceptance
 
-- [ ] `GET /guardian/models` returns all models loaded in Ollama at runtime (server-wide, documented as such)
-- [ ] `farms.guardian_preferred_model` column exists; admin PATCH persists it; non-admin PATCH → 403
-- [ ] `/v1/chat` respects session → farm → env resolution order; `llm_model` in `conversation_turns` always reflects the model that actually served the response
-- [ ] Missing model falls back gracefully with `model_fallback: true` in response — never silent
-- [ ] Model with known context window < 8 192 rejected with actionable error message
-- [ ] Farm-level model switch produces `guardian_model_changed` audit row
-- [ ] `GuardianModelSelector.vue` in Guardian panel; admin editable, non-admin read-only
-- [ ] OpenAPI documents `/guardian/models` and `model` param with scope note
-- [ ] `smoke_phase111_*` green; `make test` passes
+- [x] `GET /guardian/models` returns all models loaded in Ollama at runtime (server-wide, documented as such)
+- [x] `farms.guardian_preferred_model` column exists; admin PATCH persists it; non-admin PATCH → 403
+- [x] `/v1/chat` respects session → farm → env resolution order; `llm_model` in `conversation_turns` always reflects the model that actually served the response
+- [x] Missing model falls back gracefully with `model_fallback: true` in response — never silent
+- [x] Model with known context window < 8 192 rejected with actionable error message (grounded turns)
+- [x] Farm-level model switch produces `guardian_model_changed` audit row
+- [x] `GuardianModelSelector.vue` in Guardian panel; admin editable, non-admin read-only
+- [x] OpenAPI documents `/guardian/models` and `model` param with scope note
+- [x] `smoke_phase111_*` green; unit tests for model resolution
 
 ---
 
