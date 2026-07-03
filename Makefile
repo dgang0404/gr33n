@@ -1,4 +1,4 @@
-.PHONY: run run-receiver build build-receiver test seed sqlc migrate merge-legacy-plants ui dev dev-auth-test e2e-browser rag-ingest-help rag-ingest-demo rag-ingest-platform-docs compose-db-up compose-db-status compose-logging-up compose-logging-down setup-compose-dev dev-stack dev-stack-fresh dev-stack-fresh-rag local-up restart-local restart-local-serve db-sanity-report check-stack check-crop-library check-crop-catalog check-crop-catalog-parity check-catalog-seed-drift add-crop-check check-catalog-release check-ui-domain-parity clean lint bootstrap-local bootstrap-local-docker install-deps-debian install-pi-edge-deps first-clone first-clone-docker first-clone-install-deps audit-openapi audit-env edge-smoke-help edge-actuator-smoke-help recipe-pack-import-help agronomy-seed-pack-help guardian-bootstrap-farm import-agronomy-seed-pack apply-agronomy-overrides rag-ingest-farm-operational
+.PHONY: run run-receiver build build-receiver test seed sqlc migrate merge-legacy-plants ui dev dev-auth-test e2e-browser ollama-smoke ollama-smoke-cpu ollama-smoke-help rag-ingest-help rag-ingest-demo rag-ingest-platform-docs compose-db-up compose-db-status compose-logging-up compose-logging-down setup-compose-dev dev-stack dev-stack-fresh dev-stack-fresh-rag local-up restart-local restart-local-serve db-sanity-report check-stack check-crop-library check-crop-catalog check-crop-catalog-parity check-catalog-seed-drift add-crop-check check-catalog-release check-ui-domain-parity clean lint bootstrap-local bootstrap-local-docker install-deps-debian install-pi-edge-deps first-clone first-clone-docker first-clone-install-deps audit-openapi audit-env edge-smoke-help edge-actuator-smoke-help recipe-pack-import-help agronomy-seed-pack-help guardian-bootstrap-farm import-agronomy-seed-pack apply-agronomy-overrides rag-ingest-farm-operational
 
 # dash (common default /bin/sh) can report "wait: No child processes" for dev / dev-auth-test;
 # bash handles background jobs + wait reliably.
@@ -83,6 +83,29 @@ test: ## Run Go tests (dev build so smoke tests can use auth bypass)
 
 e2e-browser: ## Playwright browser E2E (requires dev-auth-test stack; see e2e/README.md)
 	cd e2e && npm ci && npx playwright install chromium && npm test
+
+ollama-smoke-help: ## Phase 112/118 — print Ollama Guardian E2E smoke commands
+	@echo "Ollama Guardian smokes (Phase 112 + 118)"
+	@echo "Full notes: INSTALL.md § Ollama E2E smokes"
+	@echo ""
+	@echo "These are Go tests — they do NOT run inside make dev-auth-test."
+	@echo "They start their own test API + DB (like make test). You only need:"
+	@echo "  • Ollama running at LLM_BASE_URL"
+	@echo "  • DATABASE_URL, JWT_SECRET, PI_API_KEY in .env (same as dev-auth-test)"
+	@echo "  • AI_ENABLED=true, LLM_MODEL set (e.g. tinyllama)"
+	@echo ""
+	@echo "  make ollama-smoke          # standard run"
+	@echo "  make ollama-smoke-cpu      # CPU-only box: -timeout 40m + token cap"
+	@echo ""
+	@echo "Optional pulls before first run:"
+	@echo "  ollama pull tinyllama && ollama pull phi3:mini"
+
+ollama-smoke: ## Run Phase 112+118 Ollama smokes (Ollama + .env LLM_* required)
+	$(GO) test -tags 'dev ollama' ./cmd/api/ -run 'TestPhase112|TestPhase118' -count=1 -v
+
+ollama-smoke-cpu: ## Ollama smokes for CPU-only hosts (longer timeout, lower max tokens)
+	$(GO) test -tags 'dev ollama' ./cmd/api/ -run 'TestPhase112|TestPhase118' -count=1 -v \
+		-timeout 40m LLM_TIMEOUT_SECONDS=150 LLM_MAX_TOKENS=60
 
 lint: ## Run go vet
 	$(GO) vet -tags dev ./...

@@ -282,11 +282,15 @@ go test -tags 'dev ollama' ./cmd/api/ -run TestPhase112 -count=1 -v
 ```
 
 Phase 118 adds `TestPhase118_*` (capabilities filter, tag normalization guardrail,
-runtime hints). Run alongside Phase 112:
+runtime hints). Makefile shortcuts:
 
 ```bash
-go test -tags 'dev ollama' ./cmd/api/ -run 'TestPhase112|TestPhase118' -count=1 -v
+make ollama-smoke          # Phase 112 + 118 smokes
+make ollama-smoke-cpu        # CPU-only box (40m timeout, LLM_MAX_TOKENS=60)
+make ollama-smoke-help       # print prerequisites
 ```
+
+Or run directly (same as the make targets):
 
 **Model selector notes (Phase 118):** `GET /guardian/models` returns chat-capable
 models only; embedding models appear with `?all=true`. The UI shows Ollama
