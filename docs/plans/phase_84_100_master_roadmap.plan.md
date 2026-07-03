@@ -161,3 +161,9 @@ Template for new gaps found in testing:
 |-------|--------|------|
 | **111** ✅ | Guardian model selector & Ollama discovery | [`phase_111_guardian_model_selector.plan.md`](phase_111_guardian_model_selector.plan.md) |
 | **112** ✅ | Ollama hardening — pull, context enrichment, CI E2E | [`phase_112_guardian_ollama_hardening.plan.md`](phase_112_guardian_ollama_hardening.plan.md) |
+| **113** 🔜 | Security hardening — registration gate, rate limits, headers, cost guard | [`phase_113_security_hardening.plan.md`](phase_113_security_hardening.plan.md) |
+| **114** 🔜 | Pi/edge integrity — offline detection, actuator truth, calibration | [`phase_114_pi_edge_integrity.plan.md`](phase_114_pi_edge_integrity.plan.md) |
+| **115** 🔜 | Schema utilization — module gating, templates, system logs, symptom guide | [`phase_115_schema_utilization.plan.md`](phase_115_schema_utilization.plan.md) |
+| **116** 🔜 | Documentation refresh — env reference, upgrade/backup, Swagger UI | [`phase_116_docs_refresh.plan.md`](phase_116_docs_refresh.plan.md) |
+| **117** 🔜 | Test depth — zero-coverage packages, handler smokes, browser E2E seed | [`phase_117_test_depth.plan.md`](phase_117_test_depth.plan.md) |
+| **118** 🔜 | Guardian model capabilities — chat-only filter, tag normalization, runtime hints | [`phase_118_guardian_model_capabilities.plan.md`](phase_118_guardian_model_capabilities.plan.md) |

@@ -44,7 +44,7 @@ isProject: false
 
 ## Status
 
-**Not started.** Scoped as a standalone sprint; does not depend on or modify Phases 50–59 beyond read-only API calls.
+**Shipped** on `main` — the 6-step wizard lives at `/pi-setup-wizard` (`ui/src/views/PiSetupWizard.vue`, `ui/src/stores/piWizardStore.js`). This status line lagged the code and was corrected in the July 2026 doc audit. Originally scoped as a standalone sprint; does not depend on or modify Phases 50–59 beyond read-only API calls.
 
 ---
 

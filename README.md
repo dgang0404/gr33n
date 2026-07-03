@@ -7,7 +7,7 @@ An open-source farm operating system — run it on your LAN, keep your data clos
 [![Vue](https://img.shields.io/badge/Vue-3-4FC08D?logo=vue.js)](https://vuejs.org)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-14+-336791?logo=postgresql)](https://postgresql.org)
 
-**Status:** Farmer UX (**40–67**), SPA workspaces (**68–81**), and crop intelligence (**82–110**) are **shipped on `main`**. No active numbered phase — use the docs index below for operator paths and plan history.
+**Status:** Farmer UX (**40–67**), SPA workspaces (**68–81**), crop intelligence (**82–110**), and Guardian model selection (**111–112**) are **shipped on `main`**. Next up: hardening arc **113–118** (security, Pi-chain integrity, schema surfacing, docs, tests, model capabilities) — see the docs index below for plans.
 
 **Start here:** [First session after clone](docs/first-session-after-clone.md) · [Operator tour](docs/operator-tour.md) · [Phase index (plans + runbooks)](docs/phase-14-operator-documentation.md) · **Real grow?** [Guardian readiness](docs/guardian-real-grow-readiness.md)
 

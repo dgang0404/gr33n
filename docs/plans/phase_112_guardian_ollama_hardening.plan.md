@@ -37,6 +37,14 @@ isProject: false
 
 **Shipped** on `main`. Builds on **Phase 111** (model cache, discovery, farm/session resolution).
 
+**Verified 2026-07-03** against live Ollama 0.24 on a CPU-only host: all 6 `TestPhase112_*`
+pass (`go test -tags 'dev ollama' -timeout 40m ./cmd/api/ -run TestPhase112` with
+`LLM_TIMEOUT_SECONDS=150 LLM_MAX_TOKENS=60` — CPU boxes need the raised budgets; the
+go-test default 10 min is not enough for grounded tinyllama turns). Follow-on gaps found
+during the run (embedding models offered for chat, `:latest` tag normalization bypassing
+the context guardrail on env-default fallback) are planned in
+[Phase 118](phase_118_guardian_model_capabilities.plan.md).
+
 **Preconditions (met on `main`):**
 - [`internal/farmguardian/ollama_discovery.go`](../../internal/farmguardian/ollama_discovery.go) — `/api/tags` only; `context_window` always `0`
 - [`internal/farmguardian/model_cache.go`](../../internal/farmguardian/model_cache.go) — `GuardianMinContextWindow = 8192`
