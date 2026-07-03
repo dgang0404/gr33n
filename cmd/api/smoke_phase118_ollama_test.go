@@ -84,7 +84,6 @@ func TestPhase118_EnvDefaultTagNormalizationGuardrail(t *testing.T) {
 
 	ungrounded := authPost(t, tok, "/v1/chat", map[string]any{
 		"message": "Say hello in one word.",
-		"farm_id": 0,
 		"stream":  false,
 	})
 	if ungrounded.StatusCode == http.StatusBadGateway {

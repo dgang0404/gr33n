@@ -114,10 +114,9 @@ func TestPhase112_SessionOverride(t *testing.T) {
 	serverDefault, _ := discBody["server_default"].(string)
 	overrideModel := pickLightChatModel(t, models, serverDefault)
 
-	// Ungrounded hello — verifies session model override without context guardrail.
+	// Omit farm_id (null) for ungrounded chat — farm_id: 0 is rejected as invalid.
 	chatResp := authPost(t, tok, "/v1/chat", map[string]any{
 		"message": "Say hello in one word.",
-		"farm_id": 0,
 		"model":   overrideModel,
 		"stream":  false,
 	})
