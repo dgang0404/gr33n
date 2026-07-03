@@ -9,7 +9,7 @@ An open-source farm operating system — run it on your LAN, keep your data clos
 
 **Status:** Farmer UX (**40–67**), SPA workspaces (**68–81**), crop intelligence (**82–110**), Guardian model selection (**111–112**), and hardening arc **113–115** are **shipped on `main`**. Docs refresh (**116**) and test depth (**117–118**) — see [phase index](docs/phase-14-operator-documentation.md).
 
-**Start here:** [First session after clone](docs/first-session-after-clone.md) · [Operator tour](docs/operator-tour.md) · [Upgrade guide](docs/upgrade-guide.md) · [CHANGELOG](CHANGELOG.md) · **Real grow?** [Guardian readiness](docs/guardian-real-grow-readiness.md)
+**Start here:** [First session after clone](docs/first-session-after-clone.md) · [Operator tour](docs/operator-tour.md) · [Upgrade guide](docs/upgrade-guide.md) · [CHANGELOG](CHANGELOG.md) · **Real grow?** [Guardian readiness](docs/guardian-real-grow-readiness.md) · **Offline/air-gap?** [Connectivity requirements](docs/connectivity-requirements.md)
 
 ---
 
@@ -24,7 +24,7 @@ An open-source farm operating system — run it on your LAN, keep your data clos
   - Your live farm snapshot (zones, current grows, unread alerts)  
   - ~46 crop profiles with EC/DLI/photoperiod targets  
   - Symptom catalog + field guides (if indexed)  
-  - General agronomy (Llama 3.1 70B weights)  
+  - General agronomy reasoning from whichever local Ollama model you've selected (server default is a small, CPU-friendly model; swap in a larger one any time via the model picker below)  
 
 ✅ **Guardian Proposals** — Guardian suggests actions ("acknowledge this alert," "create a task," "start a flower run in Zone 3," "enqueue pump on for 30s"). You see a card, click **Confirm**, it executes. Nothing silent — all changes audit-logged.
 
@@ -49,11 +49,13 @@ An open-source farm operating system — run it on your LAN, keep your data clos
 | Feature | Offline? | Mobile? | Multi-user? | Automation? |
 |---------|----------|---------|-------------|-------------|
 | Sensors & alerts | ✅ (cached) | ✅ (PWA) | ✅ | ✅ (rules) |
-| Guardian chat | ❌ (needs LLM) | ✅ (browser voice) | ✅ (read-only) | ✅ (propose→confirm) |
+| Guardian chat | ❌ (needs an LLM running — can be fully local, see below) | ✅ (browser voice) | ✅ (read-only) | ✅ (propose→confirm) |
 | Tasks | ✅ (queued) | ✅ (PWA) | ✅ | — |
 | Actuator control | ✅ (pending) | ✅ (PWA) | ✅ (RBAC) | ✅ (schedules) |
 | Costs | ❌ | ✅ | ✅ | — |
 | Crop cycles | ❌ | ✅ | ✅ | ✅ (stage auto-advance) |
+
+"Offline" above means the **PWA queue** (works with wifi down but the API reachable later) — a different question from **needing the internet**. gr33n is local-first: sensors, alerts, tasks, actuator control, and Guardian chat against an already-installed model all run on your LAN with zero internet, including fully air-gapped. The only things that need the public internet are pulling a *new* Guardian model, the optional Data Commons opt-in, and software updates. Full breakdown: [connectivity-requirements.md](docs/connectivity-requirements.md).
 
 After `git pull`, restart the API (`make dev-auth-test` or `make run-auth-test`) so new routes register. DB: `make migrate` on existing installs. See [upgrade guide](docs/upgrade-guide.md).
 

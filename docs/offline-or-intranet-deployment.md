@@ -2,7 +2,7 @@
 
 This page is a **starting sketch** for running gr33n **without using the public internet** for database, dashboard, or **RAG** (embeddings + optional chat synthesis). Treat “offline” here as **no WAN dependency for AI services**: components still talk to each other over **HTTP on your network** (including loopback). Update this doc once your **offline-mode farm** topology is fixed so reality matches the checklist.
 
-**Related:** [rag-scope-and-threat-model.md](rag-scope-and-threat-model.md) (trust boundaries), [INSTALL.md](../INSTALL.md) (`EMBEDDING_*`, `LLM_*`), [example-env.md](example-env.md).
+**Related:** [connectivity-requirements.md](connectivity-requirements.md) (feature-by-feature: what needs internet vs LAN vs nothing), [rag-scope-and-threat-model.md](rag-scope-and-threat-model.md) (trust boundaries), [INSTALL.md](../INSTALL.md) (`EMBEDDING_*`, `LLM_*`), [example-env.md](example-env.md).
 
 ## Rough layout on a private network
 
