@@ -323,7 +323,7 @@ Tests (all skip if `LLM_BASE_URL` not set — same pattern as other Guardian smo
 
 ## Out of scope
 
-- **Model auto-pull** — if the selected model is not in Ollama, Phase 111 fails gracefully; pulling via `ollama pull` is a future phase
+- **Model auto-pull** — deferred to **Phase 112** ([`phase_112_guardian_ollama_hardening.plan.md`](phase_112_guardian_ollama_hardening.plan.md))
 - **RAG / embedding model selection** — embedding model stays in `EMBEDDING_MODEL` env; this phase governs the chat/reasoning model only. Conflating the two would break retrieval quality silently
 - **Per-session cost tracking** — local Ollama has no token billing; speed class in the UI is the only cost-proxy surfaced
 - **Retroactive reprocessing** — switching models mid-session affects new turns only; earlier turns are not replayed under the new model

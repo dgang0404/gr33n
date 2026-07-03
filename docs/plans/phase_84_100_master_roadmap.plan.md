@@ -156,3 +156,8 @@ Template for new gaps found in testing:
 2. Create `docs/plans/phase_NNN_<slug>.plan.md` with frontmatter todos
 3. Link from this master roadmap
 4. One line in phase-14 index
+
+| Phase | Topic | Plan |
+|-------|--------|------|
+| **111** ✅ | Guardian model selector & Ollama discovery | [`phase_111_guardian_model_selector.plan.md`](phase_111_guardian_model_selector.plan.md) |
+| **112** | Ollama hardening — pull, context enrichment, CI E2E | [`phase_112_guardian_ollama_hardening.plan.md`](phase_112_guardian_ollama_hardening.plan.md) |
