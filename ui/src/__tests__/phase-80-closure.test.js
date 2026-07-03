@@ -66,4 +66,10 @@ describe('Phase 80 — routing & zones tab labels', () => {
     expect(router).toContain('scrollBehavior')
     expect(router).toContain('to.hash')
   })
+
+  it('router imports every route component it references', () => {
+    const router = readFileSync(join(uiSrc, 'router/index.js'), 'utf8')
+    expect(router).toContain("import SymptomGuide from '../views/SymptomGuide.vue'")
+    expect(router).toContain("component: SymptomGuide")
+  })
 })

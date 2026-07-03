@@ -40,5 +40,10 @@ export default defineConfig(({ mode }) => {
       },
     },
     base: capacitor ? './' : '/',
+    server: {
+      // Bind IPv4 + IPv6 so http://127.0.0.1:5173 works (not just [::1]).
+      host: true,
+      port: 5173,
+    },
   }
 })
