@@ -13,6 +13,24 @@
       <p class="text-xs text-zinc-400 truncate" :title="task?.title">{{ task?.title }}</p>
 
       <label class="flex items-center gap-2 text-sm text-zinc-300">
+        <input v-model="recordTimes" type="checkbox" class="rounded bg-zinc-800 border-zinc-700" />
+        Record actual start/end times (optional)
+      </label>
+
+      <div v-if="recordTimes" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div>
+          <label class="block text-xs text-zinc-500 mb-1">Actual start</label>
+          <input v-model="actualStartLocal" type="datetime-local"
+            class="w-full bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white" />
+        </div>
+        <div>
+          <label class="block text-xs text-zinc-500 mb-1">Actual end</label>
+          <input v-model="actualEndLocal" type="datetime-local"
+            class="w-full bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white" />
+        </div>
+      </div>
+
+      <label class="flex items-center gap-2 text-sm text-zinc-300">
         <input v-model="logConsumption" type="checkbox" class="rounded bg-zinc-800 border-zinc-700" data-test="task-complete-log-consumption" />
         Log supply used (optional)
       </label>
@@ -83,6 +101,9 @@ const props = defineProps({
 const emit = defineEmits(['cancel', 'complete'])
 
 const logConsumption = ref(false)
+const recordTimes = ref(false)
+const actualStartLocal = ref('')
+const actualEndLocal = ref('')
 const batchId = ref('')
 const quantity = ref(null)
 const error = ref('')
@@ -104,6 +125,9 @@ const qtyError = computed(() => {
 watch(() => props.open, (isOpen) => {
   if (!isOpen) return
   logConsumption.value = false
+  recordTimes.value = false
+  actualStartLocal.value = ''
+  actualEndLocal.value = ''
   batchId.value = ''
   quantity.value = null
   error.value = ''
@@ -115,6 +139,13 @@ function batchLabel(b) {
   const name = input?.name || `Input #${b.input_definition_id}`
   const rem = b.current_quantity_remaining ?? '—'
   return `${name} (${rem} on hand)`
+}
+
+function localToRFC3339(local) {
+  if (!local) return null
+  const d = new Date(local)
+  if (Number.isNaN(d.getTime())) return null
+  return d.toISOString()
 }
 
 function onCancel() {
@@ -144,12 +175,19 @@ async function onSubmit() {
         quantity: Number(quantity.value),
         unit_id: Number(unitId),
       },
+      actualStart: recordTimes.value ? localToRFC3339(actualStartLocal.value) : null,
+      actualEnd: recordTimes.value ? localToRFC3339(actualEndLocal.value) : null,
     })
     submitting.value = false
     return
   }
   submitting.value = true
-  emit('complete', { task: props.task, consumption: null })
+  emit('complete', {
+    task: props.task,
+    consumption: null,
+    actualStart: recordTimes.value ? localToRFC3339(actualStartLocal.value) : null,
+    actualEnd: recordTimes.value ? localToRFC3339(actualEndLocal.value) : null,
+  })
   submitting.value = false
 }
 </script>

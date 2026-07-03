@@ -285,23 +285,23 @@
             <div class="flex items-start gap-2">
               <div class="flex-1">
                 <label class="text-[10px] text-zinc-500 block mb-0.5 flex items-center">
-                  Notification template ID
+                  Notification template
                   <HelpTip position="top">
-                    <span v-pre>
-                      Points at a row in <span class="font-mono">gr33ncore.notification_templates</span>.
-                      The template's subject and body are rendered with
-                      <span class="font-mono">{{rule_name}}</span>,
-                      <span class="font-mono">{{rule_id}}</span>,
-                      <span class="font-mono">{{triggered_at}}</span>,
-                      plus any key/value pairs you add below as
-                      <span class="font-mono">variables</span>.
-                      Template management UI comes in a later phase.
-                    </span>
+                    Pick a farm notification template. Subject and body render with rule context and optional variables below.
                   </HelpTip>
                 </label>
-                <input type="number" v-model.number="a.target_notification_template_id"
+                <select
+                  v-model.number="a.target_notification_template_id"
                   class="w-full bg-zinc-950 border border-zinc-700 rounded px-2 py-1 text-xs text-white"
-                  placeholder="e.g. 1" />
+                >
+                  <option :value="null">— Select template —</option>
+                  <option v-for="t in notificationTemplates" :key="t.id" :value="t.id">
+                    {{ t.template_key }}{{ t.description ? ` — ${t.description}` : '' }}
+                  </option>
+                </select>
+                <p v-if="!notificationTemplates.length && farmId" class="text-[10px] text-zinc-600 mt-1">
+                  No templates yet — create one via API or Settings (coming soon).
+                </p>
               </div>
             </div>
             <div>
@@ -343,8 +343,9 @@
 </template>
 
 <script setup>
-import { ref, watch, computed } from 'vue'
+import { ref, watch, computed, onMounted } from 'vue'
 import HelpTip from './HelpTip.vue'
+import api from '../api'
 
 const props = defineProps({
   rule: { type: Object, default: null },
@@ -352,11 +353,31 @@ const props = defineProps({
   sensors: { type: Array, default: () => [] },
   actuators: { type: Array, default: () => [] },
   zones: { type: Array, default: () => [] },
+  farmId: { type: [Number, String], default: null },
   saving: { type: Boolean, default: false },
   errorMessage: { type: String, default: '' },
 })
 
 const emit = defineEmits(['submit', 'cancel'])
+
+const notificationTemplates = ref([])
+
+async function loadNotificationTemplates() {
+  const fid = props.farmId
+  if (!fid) {
+    notificationTemplates.value = []
+    return
+  }
+  try {
+    const r = await api.get(`/farms/${fid}/notification-templates`)
+    notificationTemplates.value = Array.isArray(r.data) ? r.data : []
+  } catch {
+    notificationTemplates.value = []
+  }
+}
+
+onMounted(loadNotificationTemplates)
+watch(() => props.farmId, loadNotificationTemplates)
 
 const editing = computed(() => !!props.rule?.id)
 

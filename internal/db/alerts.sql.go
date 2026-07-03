@@ -7,6 +7,7 @@ package db
 
 import (
 	"context"
+	"encoding/json"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgtype"
@@ -764,4 +765,21 @@ func (q *Queries) MarkAlertRead(ctx context.Context, id int64) (Gr33ncoreAlertsN
 		&i.ScheduledSendAt,
 	)
 	return i, err
+}
+
+const updateAlertDeliveryAttempts = `-- name: UpdateAlertDeliveryAttempts :exec
+UPDATE gr33ncore.alerts_notifications
+SET delivery_attempts = $2, status = COALESCE(NULLIF($3::text, ''), status)
+WHERE id = $1
+`
+
+type UpdateAlertDeliveryAttemptsParams struct {
+	ID               int64           `db:"id" json:"id"`
+	DeliveryAttempts json.RawMessage `db:"delivery_attempts" json:"delivery_attempts"`
+	Column3          string          `db:"column_3" json:"column_3"`
+}
+
+func (q *Queries) UpdateAlertDeliveryAttempts(ctx context.Context, arg UpdateAlertDeliveryAttemptsParams) error {
+	_, err := q.db.Exec(ctx, updateAlertDeliveryAttempts, arg.ID, arg.DeliveryAttempts, arg.Column3)
+	return err
 }

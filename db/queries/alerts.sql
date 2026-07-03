@@ -152,3 +152,8 @@ RETURNING *;
 
 -- name: GetNotificationTemplateByID :one
 SELECT * FROM gr33ncore.notification_templates WHERE id = $1;
+
+-- name: UpdateAlertDeliveryAttempts :exec
+UPDATE gr33ncore.alerts_notifications
+SET delivery_attempts = $2, status = COALESCE(NULLIF($3::text, ''), status)
+WHERE id = $1;

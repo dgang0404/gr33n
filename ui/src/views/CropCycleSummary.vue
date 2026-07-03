@@ -162,8 +162,8 @@
           <h2 class="text-white text-sm font-semibold flex items-center gap-2 mb-3">
             ⏳ Stage timeline
             <HelpTip>
-              The schema only stores <code>current_stage</code> right now, so the timeline shows a single entry pinned to <code>started_at</code>.
-              A future migration can add a real stage_transitions table and the same endpoint will start returning full history without breaking the contract.
+              Stage transitions recorded when you advance a grow appear here with dates.
+              Older cycles may show only the current stage until history is backfilled.
             </HelpTip>
           </h2>
           <ol class="border-l border-zinc-700 ml-2 space-y-3">

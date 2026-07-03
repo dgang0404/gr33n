@@ -73,6 +73,12 @@
             :actuators="alertContextActuators"
           />
           <p class="text-zinc-600 text-xs mt-1">{{ formatTime(a.created_at) }}</p>
+          <div v-if="a.scheduled_send_at" class="text-zinc-600 text-[10px] mt-0.5">
+            Scheduled send: {{ formatTime(a.scheduled_send_at) }}
+          </div>
+          <div v-if="deliverySummary(a)" class="text-zinc-500 text-[10px] mt-1 font-mono">
+            Delivery: {{ deliverySummary(a) }}
+          </div>
           <div v-if="linkedTasks(a.id).length" class="mt-1 flex flex-wrap gap-1">
             <router-link
               v-for="t in linkedTasks(a.id)"
@@ -270,6 +276,28 @@ function formatTime(ts) {
   if (!ts) return ''
   const d = new Date(ts)
   return d.toLocaleString()
+}
+
+function deliverySummary(alert) {
+  const attempts = alert.delivery_attempts
+  if (!attempts || (typeof attempts === 'object' && Object.keys(attempts).length === 0)) {
+    return alert.status && alert.status !== 'pending' ? `status=${alert.status}` : ''
+  }
+  let raw = attempts
+  if (typeof raw === 'string') {
+    try { raw = JSON.parse(raw) } catch { return '' }
+  }
+  const parts = []
+  for (const [channel, entries] of Object.entries(raw)) {
+    const list = Array.isArray(entries) ? entries : [entries]
+    const last = list[list.length - 1]
+    if (last && typeof last === 'object') {
+      parts.push(`${channel}:${last.ok ? 'ok' : 'fail'}`)
+    } else {
+      parts.push(channel)
+    }
+  }
+  return parts.join(', ')
 }
 
 function linkedTasks(alertId) {

@@ -1012,6 +1012,90 @@
       <p v-else class="text-zinc-600 text-xs">No push tokens registered.</p>
     </section>
 
+    <!-- Phase 115 — Farm modules -->
+    <section v-if="farmContext.farmId" class="bg-zinc-800 border border-zinc-700 rounded-xl p-5 mb-5">
+      <h2 class="text-white font-semibold mb-3 flex items-center gap-2">
+        <span>🧩</span> Farm modules
+      </h2>
+      <p class="text-xs text-zinc-500 mb-3">
+        Turn optional workspaces on or off for this farm. Disabled modules hide sidebar links and return 403 on their API routes.
+      </p>
+      <div v-if="modulesLoading" class="text-zinc-500 text-xs">Loading modules…</div>
+      <div v-else class="space-y-2">
+        <div
+          v-for="mod in farmModuleRows"
+          :key="mod.schema"
+          class="flex items-center justify-between bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2"
+        >
+          <div>
+            <p class="text-sm text-white">{{ mod.label }}</p>
+            <p class="text-[10px] text-zinc-600 font-mono">{{ mod.schema }}</p>
+          </div>
+          <label v-if="isFarmAdmin" class="flex items-center gap-2 text-xs text-zinc-400">
+            <input
+              type="checkbox"
+              :checked="mod.enabled"
+              :disabled="moduleSaving === mod.schema"
+              @change="toggleModule(mod.schema, $event.target.checked)"
+            />
+            {{ mod.enabled ? 'On' : 'Off' }}
+          </label>
+          <span v-else class="text-xs text-zinc-500">{{ mod.enabled ? 'Enabled' : 'Disabled' }}</span>
+        </div>
+      </div>
+      <p v-if="moduleMessage" class="mt-2 text-xs text-emerald-400">{{ moduleMessage }}</p>
+      <p v-if="moduleError" class="mt-2 text-xs text-red-400">{{ moduleError }}</p>
+    </section>
+
+    <!-- Phase 115 — Diagnostics (system logs) -->
+    <section v-if="farmContext.farmId && isFarmAdmin" class="bg-zinc-800 border border-zinc-700 rounded-xl p-5 mb-5">
+      <h2 class="text-white font-semibold mb-3 flex items-center gap-2">
+        <span>🩺</span> Diagnostics
+      </h2>
+      <p class="text-xs text-zinc-500 mb-3">
+        Recent system warnings and errors — device command failures, negative stock, stale heartbeats, and worker issues.
+      </p>
+      <div class="flex items-center gap-2 mb-3">
+        <select
+          v-model="systemLogLevel"
+          class="bg-zinc-950 border border-zinc-700 rounded-lg px-2 py-1 text-xs text-white"
+          @change="loadSystemLogs"
+        >
+          <option value="">All levels</option>
+          <option value="debug">Debug</option>
+          <option value="info">Info</option>
+          <option value="warning">Warning</option>
+          <option value="error">Error</option>
+          <option value="critical">Critical</option>
+        </select>
+        <button
+          type="button"
+          class="text-xs px-2 py-1 rounded border border-zinc-700 text-zinc-400 hover:text-white"
+          @click="loadSystemLogs"
+        >
+          Refresh
+        </button>
+      </div>
+      <div v-if="systemLogsLoading" class="text-zinc-500 text-xs">Loading…</div>
+      <div v-else-if="systemLogs.length === 0" class="text-zinc-600 text-xs">No log entries yet.</div>
+      <ul v-else class="space-y-2 max-h-64 overflow-y-auto text-xs">
+        <li
+          v-for="log in systemLogs"
+          :key="log.id"
+          class="bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2"
+        >
+          <div class="flex items-center justify-between gap-2">
+            <span class="uppercase text-[10px] font-semibold" :class="logLevelClass(log.log_level)">
+              {{ log.log_level }}
+            </span>
+            <span class="text-zinc-600 shrink-0">{{ formatLogTime(log.log_time) }}</span>
+          </div>
+          <p class="text-zinc-200 mt-1">{{ log.message }}</p>
+          <p v-if="log.source_component" class="text-zinc-600 mt-0.5 font-mono">{{ log.source_component }}</p>
+        </li>
+      </ul>
+    </section>
+
     <section class="bg-zinc-800 border border-zinc-700 rounded-xl p-5">
       <h2 class="text-white font-semibold mb-3 flex items-center gap-2">
         <span>🚪</span> Session
@@ -1046,6 +1130,7 @@ import {
 import { loadBootstrapCatalog } from '../lib/bootstrapCatalog.js'
 import CropTargetsSettings from '../components/CropTargetsSettings.vue'
 import { farmSetupRoute } from '../lib/farmSetupWizard.js'
+import { MODULE_SCHEMA } from '../lib/farmModules.js'
 
 const router = useRouter()
 const auth   = useAuthStore()
@@ -1609,9 +1694,106 @@ watch(
   () => [farmContext.farmId, isFarmAdmin.value],
   () => {
     loadFarmAudit()
+    loadFarmModulesSettings()
+    if (isFarmAdmin.value) loadSystemLogs()
   },
   { flush: 'post', immediate: true },
 )
+
+const modulesLoading = ref(false)
+const moduleSaving = ref('')
+const moduleMessage = ref('')
+const moduleError = ref('')
+const systemLogs = ref([])
+const systemLogsLoading = ref(false)
+const systemLogLevel = ref('')
+
+const farmModuleRows = computed(() => {
+  const catalog = farmStore.moduleCatalog.length
+    ? farmStore.moduleCatalog
+    : [
+        { schema: MODULE_SCHEMA.crops, label: 'Crops & grow cycles', default_enabled: true },
+        { schema: MODULE_SCHEMA.naturalFarming, label: 'Natural farming inputs', default_enabled: true },
+        { schema: MODULE_SCHEMA.animals, label: 'Animal husbandry', default_enabled: false },
+        { schema: MODULE_SCHEMA.aquaponics, label: 'Aquaponics', default_enabled: false },
+      ]
+  const bySchema = Object.fromEntries(
+    (farmStore.farmModules || []).map((m) => [m.module_schema_name, m]),
+  )
+  return catalog.map((c) => ({
+    schema: c.schema,
+    label: c.label,
+    enabled: bySchema[c.schema]?.is_enabled ?? c.default_enabled ?? false,
+  }))
+})
+
+async function loadFarmModulesSettings() {
+  const fid = farmContext.farmId
+  if (!fid) return
+  modulesLoading.value = true
+  moduleError.value = ''
+  try {
+    await Promise.all([
+      farmStore.loadModuleCatalog(),
+      farmStore.loadFarmModules(fid),
+    ])
+  } catch (e) {
+    moduleError.value = e.response?.data?.error ?? 'Could not load farm modules'
+  } finally {
+    modulesLoading.value = false
+  }
+}
+
+async function toggleModule(schema, enabled) {
+  const fid = farmContext.farmId
+  if (!fid || !isFarmAdmin.value) return
+  moduleSaving.value = schema
+  moduleMessage.value = ''
+  moduleError.value = ''
+  try {
+    await farmStore.patchFarmModule(fid, schema, { is_enabled: enabled })
+    moduleMessage.value = 'Module settings saved.'
+  } catch (e) {
+    moduleError.value = e.response?.data?.error ?? 'Failed to update module'
+  } finally {
+    moduleSaving.value = ''
+  }
+}
+
+async function loadSystemLogs() {
+  const fid = farmContext.farmId
+  if (!fid || !isFarmAdmin.value) {
+    systemLogs.value = []
+    return
+  }
+  systemLogsLoading.value = true
+  try {
+    const params = {}
+    if (systemLogLevel.value) params.level = systemLogLevel.value
+    const r = await api.get(`/farms/${fid}/system-logs`, { params })
+    systemLogs.value = Array.isArray(r.data?.logs) ? r.data.logs : []
+  } catch {
+    systemLogs.value = []
+  } finally {
+    systemLogsLoading.value = false
+  }
+}
+
+function logLevelClass(level) {
+  const l = String(level || '').toLowerCase()
+  if (l === 'error' || l === 'critical') return 'text-red-400'
+  if (l === 'warning') return 'text-amber-400'
+  return 'text-zinc-400'
+}
+
+function formatLogTime(ts) {
+  if (!ts) return '—'
+  try {
+    return new Date(ts).toLocaleString()
+  } catch {
+    return String(ts)
+  }
+}
 
 const canViewInsertCommons = computed(() => {
   const uid = auth.userId

@@ -138,6 +138,7 @@
           :sensors="sensors"
           :actuators="actuators"
           :zones="zones"
+          :farm-id="farmContext.farmId"
           :saving="saving"
           :errorMessage="formError"
           @submit="onSubmit"

@@ -1,10 +1,31 @@
 import { GROW_PATH_ZONE_LABELS as Z } from './farmerVocabulary.js'
+import { isModuleEnabled, MODULE_SCHEMA } from './farmModules.js'
 
 /**
  * Phase 68 / 77 / 78 — workspace-first sidebar navigation.
- * Guardian full page lives in More; drawer remains via Ask gr33n at top.
+ * Phase 115 — optional modules map gates Animals / Aquaponics links.
  */
-export function buildNavGroups() {
+export function buildNavGroups(opts = {}) {
+  const modules = opts.modules ?? {}
+  const items = []
+
+  if (isModuleEnabled(modules, MODULE_SCHEMA.animals)) {
+    items.push({ to: '/animals', icon: '🐔', label: 'Animals' })
+  }
+  if (isModuleEnabled(modules, MODULE_SCHEMA.aquaponics)) {
+    items.push({ to: '/aquaponics', icon: '🐟', label: 'Aquaponics' })
+  }
+
+  items.push(
+    {
+      to: '/operator-guide',
+      icon: '📖',
+      label: 'Help',
+      navTitle: 'Operator guide, farm knowledge search, and commons catalog',
+    },
+    { to: '/settings', icon: '⚙️', label: 'Settings' },
+  )
+
   return [
     {
       label: 'Today',
@@ -49,15 +70,7 @@ export function buildNavGroups() {
           label: 'Farm Guardian',
           navTitle: 'Full-page chat, session history, and pending requests',
         },
-        { to: '/animals', icon: '🐔', label: 'Animals' },
-        { to: '/aquaponics', icon: '🐟', label: 'Aquaponics' },
-        {
-          to: '/operator-guide',
-          icon: '📖',
-          label: 'Help',
-          navTitle: 'Operator guide, farm knowledge search, and commons catalog',
-        },
-        { to: '/settings', icon: '⚙️', label: 'Settings' },
+        ...items,
       ],
     },
   ]

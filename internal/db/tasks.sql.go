@@ -13,6 +13,55 @@ import (
 	"gr33n-api/internal/platform/commontypes"
 )
 
+const completeTaskWithActualTimes = `-- name: CompleteTaskWithActualTimes :one
+UPDATE gr33ncore.tasks
+SET status = 'completed',
+    actual_start_time = COALESCE($2, actual_start_time),
+    actual_end_time = COALESCE($3, actual_end_time, NOW()),
+    updated_at = NOW()
+WHERE id = $1 AND deleted_at IS NULL
+RETURNING id, farm_id, zone_id, schedule_id, title, description, task_type, status, priority, assigned_to_user_id, due_date, estimated_duration_minutes, actual_start_time, actual_end_time, related_module_schema, related_table_name, related_record_id, source_alert_id, source_rule_id, created_by_user_id, created_at, updated_at, updated_by_user_id, deleted_at, time_spent_minutes
+`
+
+type CompleteTaskWithActualTimesParams struct {
+	ID              int64              `db:"id" json:"id"`
+	ActualStartTime pgtype.Timestamptz `db:"actual_start_time" json:"actual_start_time"`
+	ActualEndTime   pgtype.Timestamptz `db:"actual_end_time" json:"actual_end_time"`
+}
+
+func (q *Queries) CompleteTaskWithActualTimes(ctx context.Context, arg CompleteTaskWithActualTimesParams) (Gr33ncoreTask, error) {
+	row := q.db.QueryRow(ctx, completeTaskWithActualTimes, arg.ID, arg.ActualStartTime, arg.ActualEndTime)
+	var i Gr33ncoreTask
+	err := row.Scan(
+		&i.ID,
+		&i.FarmID,
+		&i.ZoneID,
+		&i.ScheduleID,
+		&i.Title,
+		&i.Description,
+		&i.TaskType,
+		&i.Status,
+		&i.Priority,
+		&i.AssignedToUserID,
+		&i.DueDate,
+		&i.EstimatedDurationMinutes,
+		&i.ActualStartTime,
+		&i.ActualEndTime,
+		&i.RelatedModuleSchema,
+		&i.RelatedTableName,
+		&i.RelatedRecordID,
+		&i.SourceAlertID,
+		&i.SourceRuleID,
+		&i.CreatedByUserID,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.UpdatedByUserID,
+		&i.DeletedAt,
+		&i.TimeSpentMinutes,
+	)
+	return i, err
+}
+
 const countTasksByStatusForFarm = `-- name: CountTasksByStatusForFarm :many
 SELECT status, COUNT(*)::bigint AS cnt
 FROM gr33ncore.tasks

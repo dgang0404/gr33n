@@ -35,6 +35,7 @@ import (
 	devicecmdhandler "gr33n-api/internal/handler/devicecmd"
 	farmhandler "gr33n-api/internal/handler/farm"
 	fertigationhandler "gr33n-api/internal/handler/fertigation"
+	notificationtemplatehandler "gr33n-api/internal/handler/notificationtemplate"
 	fileattachhandler "gr33n-api/internal/handler/fileattach"
 	nfhandler "gr33n-api/internal/handler/naturalfarming"
 	organizationhandler "gr33n-api/internal/handler/organization"
@@ -77,6 +78,7 @@ func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationwo
 	}
 	sensor := sensorhandler.NewHandler(pool, sse, pushDispatch)
 	task := taskhandler.NewHandler(pool)
+	notificationTemplate := notificationtemplatehandler.NewHandler(pool)
 	fertigation := fertigationhandler.NewHandler(pool, worker)
 	nf := nfhandler.NewHandler(pool)
 	recipe := recipehandler.NewHandler(pool)
@@ -226,6 +228,10 @@ func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationwo
 	mux.Handle("GET /commons/crop-catalog/{crop_key}", jwt(http.HandlerFunc(commonsCropCatalog.GetCropCatalogEntry)))
 	mux.Handle("GET /commons/agronomy-field-guides", jwt(http.HandlerFunc(commonsCropCatalog.ListFieldGuides)))
 	mux.Handle("GET /commons/agronomy-field-guides/{slug}", jwt(http.HandlerFunc(commonsCropCatalog.GetFieldGuide)))
+	mux.Handle("GET /commons/agronomy-symptoms", jwt(http.HandlerFunc(commonsCatalog.ListAgronomySymptoms)))
+
+	// Phase 115 — farm module catalog (static metadata)
+	mux.Handle("GET /farm-modules/catalog", jwt(http.HandlerFunc(farm.ModuleCatalog)))
 
 	// Farms
 	mux.Handle("GET /farms", jwt(http.HandlerFunc(farm.List)))
@@ -239,6 +245,12 @@ func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationwo
 	mux.Handle("PATCH /farms/{id}/organization", jwt(http.HandlerFunc(farm.SetOrganization)))
 	mux.Handle("DELETE /farms/{id}", jwt(http.HandlerFunc(farm.Delete)))
 	mux.Handle("GET /farms/{id}", jwt(http.HandlerFunc(farm.Get)))
+	mux.Handle("GET /farms/{id}/modules", jwt(http.HandlerFunc(farm.ListModules)))
+	mux.Handle("PATCH /farms/{id}/modules/{schema}", jwt(http.HandlerFunc(farm.PatchModule)))
+	mux.Handle("GET /farms/{id}/system-logs", jwt(http.HandlerFunc(farm.ListSystemLogs)))
+	mux.Handle("GET /farms/{id}/notification-templates", jwt(http.HandlerFunc(notificationTemplate.ListByFarm)))
+	mux.Handle("POST /farms/{id}/notification-templates", jwt(http.HandlerFunc(notificationTemplate.Create)))
+	mux.Handle("PATCH /notification-templates/{id}", jwt(http.HandlerFunc(notificationTemplate.Patch)))
 
 	// Organizations (multi-farm tenant grouping)
 	mux.Handle("POST /organizations", jwt(http.HandlerFunc(org.Create)))
@@ -338,6 +350,7 @@ func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationwo
 	mux.Handle("PUT /tasks/{id}", jwt(http.HandlerFunc(task.Update)))
 	mux.Handle("DELETE /tasks/{id}", jwt(http.HandlerFunc(task.Delete)))
 	mux.Handle("PATCH /tasks/{id}/status", jwt(http.HandlerFunc(task.UpdateStatus)))
+	mux.Handle("PATCH /tasks/{id}/complete", jwt(http.HandlerFunc(task.Complete)))
 	// Task labor log (Phase 20.95 WS1 + Phase 20.9 WS1 timer)
 	mux.Handle("GET /tasks/{id}/labor", jwt(http.HandlerFunc(task.ListLabor)))
 	mux.Handle("POST /tasks/{id}/labor", jwt(http.HandlerFunc(task.CreateLabor)))

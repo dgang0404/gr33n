@@ -8,6 +8,8 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 
 	db "gr33n-api/internal/db"
+	commontypes "gr33n-api/internal/platform/commontypes"
+	"gr33n-api/internal/systemlog"
 )
 
 const deviceOfflineSourceType = "device_offline"
@@ -38,6 +40,9 @@ func (w *Worker) TickDeviceHealth(ctx context.Context) {
 		return
 	}
 	for _, d := range rows {
+		systemlog.Submit(ctx, w.q, systemlog.FarmIDPtr(d.FarmID), commontypes.LogLevelWarning,
+			"device_health", fmt.Sprintf("Device %q marked offline (stale heartbeat)", d.Name),
+			map[string]any{"device_id": d.ID, "device_uid": d.DeviceUid})
 		name := d.Name
 		subject := fmt.Sprintf("Device offline: %s", name)
 		body := fmt.Sprintf("Device %q (id %d) stopped reporting heartbeats and was marked offline.", name, d.ID)

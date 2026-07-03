@@ -60,6 +60,15 @@ UPDATE gr33ncore.tasks
 SET deleted_at = NOW(), updated_at = NOW(), updated_by_user_id = $2
 WHERE id = $1;
 
+-- name: CompleteTaskWithActualTimes :one
+UPDATE gr33ncore.tasks
+SET status = 'completed',
+    actual_start_time = COALESCE($2, actual_start_time),
+    actual_end_time = COALESCE($3, actual_end_time, NOW()),
+    updated_at = NOW()
+WHERE id = $1 AND deleted_at IS NULL
+RETURNING *;
+
 -- name: CountTasksByStatusForFarm :many
 SELECT status, COUNT(*)::bigint AS cnt
 FROM gr33ncore.tasks

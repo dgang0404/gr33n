@@ -59,16 +59,17 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var body struct {
-		Title            string     `json:"title"`
-		Description      *string    `json:"description"`
-		ZoneID           *int64     `json:"zone_id"`
-		ScheduleID       *int64     `json:"schedule_id"`
-		TaskType         *string    `json:"task_type"`
-		Priority         *int32     `json:"priority"`
-		DueDate          *string    `json:"due_date"`
-		AssignedToUserID *uuid.UUID `json:"assigned_to_user_id"`
-		SourceAlertID    *int64     `json:"source_alert_id"`
-		SourceRuleID     *int64     `json:"source_rule_id"`
+		Title                    string     `json:"title"`
+		Description              *string    `json:"description"`
+		ZoneID                   *int64     `json:"zone_id"`
+		ScheduleID               *int64     `json:"schedule_id"`
+		TaskType                 *string    `json:"task_type"`
+		Priority                 *int32     `json:"priority"`
+		DueDate                  *string    `json:"due_date"`
+		AssignedToUserID         *uuid.UUID `json:"assigned_to_user_id"`
+		SourceAlertID            *int64     `json:"source_alert_id"`
+		SourceRuleID             *int64     `json:"source_rule_id"`
+		EstimatedDurationMinutes *int32     `json:"estimated_duration_minutes"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid body")
@@ -160,7 +161,7 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		Priority:                 &priority,
 		AssignedToUserID:         assignID,
 		DueDate:                  dueDate,
-		EstimatedDurationMinutes: nil,
+		EstimatedDurationMinutes: body.EstimatedDurationMinutes,
 		SourceAlertID:            body.SourceAlertID,
 		SourceRuleID:             body.SourceRuleID,
 		CreatedByUserID:          createdBy,
@@ -294,6 +295,71 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 		AssignedToUserID:         assignID,
 		EstimatedDurationMinutes: body.EstimatedDurationMinutes,
 		UpdatedByUserID:          updatedBy,
+	})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			httputil.WriteError(w, http.StatusNotFound, "task not found")
+			return
+		}
+		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	httputil.WriteJSON(w, http.StatusOK, task)
+}
+
+// Complete — PATCH /tasks/{id}/complete
+// Body: { "actual_start_time"?: RFC3339, "actual_end_time"?: RFC3339 }
+func (h *Handler) Complete(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	if err != nil {
+		httputil.WriteError(w, http.StatusBadRequest, "invalid task id")
+		return
+	}
+	q := db.New(h.pool)
+	t0, err := q.GetTaskByID(r.Context(), id)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			httputil.WriteError(w, http.StatusNotFound, "task not found")
+			return
+		}
+		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	if !farmauthz.RequireFarmOperate(w, r, q, t0.FarmID) {
+		return
+	}
+	var body struct {
+		ActualStartTime *string `json:"actual_start_time"`
+		ActualEndTime   *string `json:"actual_end_time"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		httputil.WriteError(w, http.StatusBadRequest, "invalid body")
+		return
+	}
+	parseTS := func(raw *string) (pgtype.Timestamptz, error) {
+		if raw == nil || strings.TrimSpace(*raw) == "" {
+			return pgtype.Timestamptz{}, nil
+		}
+		t, err := time.Parse(time.RFC3339, strings.TrimSpace(*raw))
+		if err != nil {
+			return pgtype.Timestamptz{}, err
+		}
+		return pgtype.Timestamptz{Time: t, Valid: true}, nil
+	}
+	start, err := parseTS(body.ActualStartTime)
+	if err != nil {
+		httputil.WriteError(w, http.StatusBadRequest, "invalid actual_start_time (use RFC3339)")
+		return
+	}
+	end, err := parseTS(body.ActualEndTime)
+	if err != nil {
+		httputil.WriteError(w, http.StatusBadRequest, "invalid actual_end_time (use RFC3339)")
+		return
+	}
+	task, err := q.CompleteTaskWithActualTimes(r.Context(), db.CompleteTaskWithActualTimesParams{
+		ID:              id,
+		ActualStartTime: start,
+		ActualEndTime:   end,
 	})
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {

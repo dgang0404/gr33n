@@ -23,6 +23,8 @@ import (
 	acthandler "gr33n-api/internal/handler/actuator"
 	"gr33n-api/internal/farmauthz"
 	"gr33n-api/internal/httputil"
+	commontypes "gr33n-api/internal/platform/commontypes"
+	"gr33n-api/internal/systemlog"
 )
 
 // Handler holds the query layer.
@@ -277,6 +279,11 @@ func (h *Handler) Ack(w http.ResponseWriter, r *http.Request) {
 	// old Pi clients don't re-execute it.
 	if body.Status == "completed" {
 		_ = h.q.ClearDevicePendingCommand(ctx, deviceID)
+	}
+	if body.Status == "failed" {
+		systemlog.Submit(ctx, h.q, systemlog.FarmIDPtr(device.FarmID), commontypes.LogLevelWarning,
+			"device_command", fmt.Sprintf("Device command %d failed on device %q", cmdID, device.Name),
+			map[string]any{"device_id": deviceID, "command_id": cmdID, "result": body.Result})
 	}
 
 	httputil.WriteJSON(w, http.StatusOK, cmd)

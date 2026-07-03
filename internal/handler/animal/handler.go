@@ -21,6 +21,7 @@ import (
 	"gr33n-api/internal/authctx"
 	db "gr33n-api/internal/db"
 	"gr33n-api/internal/farmauthz"
+	"gr33n-api/internal/farmmodules"
 	"gr33n-api/internal/httputil"
 )
 
@@ -40,6 +41,9 @@ func (h *Handler) ListGroups(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if !farmauthz.RequireFarmMember(w, r, h.q, farmID) {
+		return
+	}
+	if !farmauthz.RequireFarmModule(w, r, h.q, farmID, farmmodules.SchemaAnimals) {
 		return
 	}
 	rows, err := h.q.ListAnimalGroupsByFarm(r.Context(), farmID)
@@ -72,6 +76,9 @@ func (h *Handler) GetGroup(w http.ResponseWriter, r *http.Request) {
 	if !farmauthz.RequireFarmMember(w, r, h.q, row.FarmID) {
 		return
 	}
+	if !farmauthz.RequireFarmModule(w, r, h.q, row.FarmID, farmmodules.SchemaAnimals) {
+		return
+	}
 	// Return the group plus the summed lifecycle deltas so the UI can
 	// surface "stored count vs events delta" without a second round-trip.
 	delta, _ := h.q.SumLifecycleDeltasByGroup(r.Context(), id)
@@ -97,6 +104,9 @@ func (h *Handler) CreateGroup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if !farmauthz.RequireFarmOperate(w, r, h.q, farmID) {
+		return
+	}
+	if !farmauthz.RequireFarmModule(w, r, h.q, farmID, farmmodules.SchemaAnimals) {
 		return
 	}
 	var body groupCreateReq

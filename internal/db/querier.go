@@ -27,6 +27,7 @@ type Querier interface {
 	// time, not start, so a rate change mid-shift applies to the rest of
 	// the shift, not retroactively.
 	CloseTaskLaborLog(ctx context.Context, arg CloseTaskLaborLogParams) (Gr33ncoreTaskLaborLog, error)
+	CompleteTaskWithActualTimes(ctx context.Context, arg CompleteTaskWithActualTimesParams) (Gr33ncoreTask, error)
 	ConfirmGuardianProposal(ctx context.Context, arg ConfirmGuardianProposalParams) (Gr33ncoreGuardianActionProposal, error)
 	CountActiveDeviceAPIKeysByDevice(ctx context.Context, deviceID int64) (int64, error)
 	CountAgronomyFieldGuides(ctx context.Context) (int64, error)
@@ -112,6 +113,7 @@ type Querier interface {
 	CreateLightingProgram(ctx context.Context, arg CreateLightingProgramParams) (Gr33ncoreLightingProgram, error)
 	CreateMixingEvent(ctx context.Context, arg CreateMixingEventParams) (Gr33nfertigationMixingEvent, error)
 	CreateMixingEventComponent(ctx context.Context, arg CreateMixingEventComponentParams) (Gr33nfertigationMixingEventComponent, error)
+	CreateNotificationTemplate(ctx context.Context, arg CreateNotificationTemplateParams) (Gr33ncoreNotificationTemplate, error)
 	// ============================================================
 	// Queries: organizations & org membership
 	// ============================================================
@@ -190,6 +192,7 @@ type Querier interface {
 	// ============================================================
 	EnqueueDeviceCommand(ctx context.Context, arg EnqueueDeviceCommandParams) (Gr33ncoreDeviceCommand, error)
 	ExpireStaleGuardianProposals(ctx context.Context) error
+	FarmModuleIsEnabled(ctx context.Context, arg FarmModuleIsEnabledParams) (bool, error)
 	// Returns the newest summary whose topics overlap any of the requested tags.
 	FindMatchingSessionSummary(ctx context.Context, arg FindMatchingSessionSummaryParams) (Gr33ncoreSessionSummary, error)
 	// Phase 20.6 WS3 — the rule engine calls this to translate a rule's zone
@@ -400,6 +403,10 @@ type Querier interface {
 	// ============================================================
 	InsertSensorReading(ctx context.Context, arg InsertSensorReadingParams) (Gr33ncoreSensorReading, error)
 	// ============================================================
+	// Queries: gr33ncore.system_logs (Phase 115 WS3)
+	// ============================================================
+	InsertSystemLog(ctx context.Context, arg InsertSystemLogParams) error
+	// ============================================================
 	// Queries: gr33ncore.user_activity_log (compliance / audit trail)
 	// ============================================================
 	InsertUserActivityLog(ctx context.Context, arg InsertUserActivityLogParams) error
@@ -502,6 +509,10 @@ type Querier interface {
 	// ============================================================
 	ListExecutableActionsByRule(ctx context.Context, ruleID *int64) ([]Gr33ncoreExecutableAction, error)
 	ListExecutableActionsBySchedule(ctx context.Context, scheduleID *int64) ([]Gr33ncoreExecutableAction, error)
+	// ============================================================
+	// Queries: gr33ncore.farm_active_modules (Phase 115 WS1)
+	// ============================================================
+	ListFarmActiveModules(ctx context.Context, farmID int64) ([]Gr33ncoreFarmActiveModule, error)
 	ListFarmCatalogNotifyAdminUserIDs(ctx context.Context, farmID int64) ([]uuid.UUID, error)
 	ListFarmCommonsCatalogImports(ctx context.Context, farmID int64) ([]ListFarmCommonsCatalogImportsRow, error)
 	// ============================================================
@@ -536,6 +547,10 @@ type Querier interface {
 	ListLowStockBatchesByFarm(ctx context.Context, farmID int64) ([]ListLowStockBatchesByFarmRow, error)
 	ListMixingEventComponents(ctx context.Context, mixingEventID int64) ([]Gr33nfertigationMixingEventComponent, error)
 	ListMixingEventsByFarm(ctx context.Context, farmID int64) ([]Gr33nfertigationMixingEvent, error)
+	// ============================================================
+	// Queries: gr33ncore.notification_templates (Phase 115 WS2)
+	// ============================================================
+	ListNotificationTemplatesByFarm(ctx context.Context, farmID *int64) ([]Gr33ncoreNotificationTemplate, error)
 	ListOrganizationsForUser(ctx context.Context, userID uuid.UUID) ([]ListOrganizationsForUserRow, error)
 	ListPlantsByFarm(ctx context.Context, farmID int64) ([]Gr33ncropsPlant, error)
 	ListProgramsByFarm(ctx context.Context, farmID int64) ([]Gr33nfertigationProgram, error)
@@ -583,6 +598,7 @@ type Querier interface {
 	// nullable filter args avoids the handler having to branch.
 	ListSetpointsByFarmFiltered(ctx context.Context, arg ListSetpointsByFarmFilteredParams) ([]Gr33ncoreZoneSetpoint, error)
 	ListSetpointsByZone(ctx context.Context, zoneID *int64) ([]Gr33ncoreZoneSetpoint, error)
+	ListSystemLogsByFarm(ctx context.Context, arg ListSystemLogsByFarmParams) ([]Gr33ncoreSystemLog, error)
 	ListTaskInputConsumptionsByFarm(ctx context.Context, arg ListTaskInputConsumptionsByFarmParams) ([]ListTaskInputConsumptionsByFarmRow, error)
 	// Phase 20.7 WS3 — task_input_consumptions CRUD. The handler wraps
 	// each Create in the autologger so the paired batch-decrement +
@@ -631,6 +647,7 @@ type Querier interface {
 	SearchRagNearestNeighbors(ctx context.Context, arg SearchRagNearestNeighborsParams) ([]SearchRagNearestNeighborsRow, error)
 	// Same as above with optional metadata module + created_at range (hybrid filters).
 	SearchRagNearestNeighborsFiltered(ctx context.Context, arg SearchRagNearestNeighborsFilteredParams) ([]SearchRagNearestNeighborsFilteredRow, error)
+	SeedFarmActiveModule(ctx context.Context, arg SeedFarmActiveModuleParams) error
 	SetDevicePendingCommand(ctx context.Context, arg SetDevicePendingCommandParams) error
 	SetFarmInsertCommonsOptIn(ctx context.Context, arg SetFarmInsertCommonsOptInParams) (Gr33ncoreFarm, error)
 	SetFarmOrganization(ctx context.Context, arg SetFarmOrganizationParams) (Gr33ncoreFarm, error)
@@ -663,6 +680,7 @@ type Querier interface {
 	UpdateActuatorAssignment(ctx context.Context, arg UpdateActuatorAssignmentParams) (Gr33ncoreActuator, error)
 	UpdateActuatorConfig(ctx context.Context, arg UpdateActuatorConfigParams) (Gr33ncoreActuator, error)
 	UpdateActuatorState(ctx context.Context, arg UpdateActuatorStateParams) (Gr33ncoreActuator, error)
+	UpdateAlertDeliveryAttempts(ctx context.Context, arg UpdateAlertDeliveryAttemptsParams) error
 	UpdateAnimalGroup(ctx context.Context, arg UpdateAnimalGroupParams) (Gr33nanimalsAnimalGroup, error)
 	UpdateAquaponicsLoop(ctx context.Context, arg UpdateAquaponicsLoopParams) (Gr33naquaponicsLoop, error)
 	UpdateAuthUserPasswordHash(ctx context.Context, arg UpdateAuthUserPasswordHashParams) error
@@ -689,6 +707,7 @@ type Querier interface {
 	UpdateLightingProgram(ctx context.Context, arg UpdateLightingProgramParams) (Gr33ncoreLightingProgram, error)
 	UpdateLightingProgramActive(ctx context.Context, arg UpdateLightingProgramActiveParams) (Gr33ncoreLightingProgram, error)
 	UpdateLightingProgramSchedules(ctx context.Context, arg UpdateLightingProgramSchedulesParams) (Gr33ncoreLightingProgram, error)
+	UpdateNotificationTemplate(ctx context.Context, arg UpdateNotificationTemplateParams) (Gr33ncoreNotificationTemplate, error)
 	UpdateOrganization(ctx context.Context, arg UpdateOrganizationParams) (Gr33ncoreOrganization, error)
 	UpdatePlant(ctx context.Context, arg UpdatePlantParams) (Gr33ncropsPlant, error)
 	UpdatePlantVariety(ctx context.Context, arg UpdatePlantVarietyParams) (Gr33ncropsPlant, error)
@@ -724,6 +743,7 @@ type Querier interface {
 	// tracks the latest turn for ordering. The set_updated_at trigger handles
 	// updated_at on the conflict branch.
 	UpsertConversationSession(ctx context.Context, arg UpsertConversationSessionParams) error
+	UpsertFarmActiveModule(ctx context.Context, arg UpsertFarmActiveModuleParams) (Gr33ncoreFarmActiveModule, error)
 	UpsertFarmCatalogVersionSeen(ctx context.Context, arg UpsertFarmCatalogVersionSeenParams) (Gr33ncoreFarmCatalogVersionSeen, error)
 	UpsertFarmCommonsCatalogImport(ctx context.Context, arg UpsertFarmCommonsCatalogImportParams) (Gr33ncoreFarmCommonsCatalogImport, error)
 	UpsertFarmFinanceAccountMapping(ctx context.Context, arg UpsertFarmFinanceAccountMappingParams) (Gr33ncoreFarmFinanceAccountMapping, error)

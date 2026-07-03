@@ -16,6 +16,7 @@ import (
 
 	db "gr33n-api/internal/db"
 	"gr33n-api/internal/farmauthz"
+	"gr33n-api/internal/farmmodules"
 	"gr33n-api/internal/httputil"
 )
 
@@ -33,6 +34,9 @@ func (h *Handler) ListLoops(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if !farmauthz.RequireFarmMember(w, r, h.q, farmID) {
+		return
+	}
+	if !farmauthz.RequireFarmModule(w, r, h.q, farmID, farmmodules.SchemaAquaponics) {
 		return
 	}
 	rows, err := h.q.ListAquaponicsLoopsByFarm(r.Context(), farmID)
@@ -84,6 +88,9 @@ func (h *Handler) CreateLoop(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if !farmauthz.RequireFarmOperate(w, r, h.q, farmID) {
+		return
+	}
+	if !farmauthz.RequireFarmModule(w, r, h.q, farmID, farmmodules.SchemaAquaponics) {
 		return
 	}
 	var body loopReq

@@ -9,28 +9,28 @@ overview: >
 todos:
   - id: ws1-active-modules
     content: "WS1: farm_active_modules — API CRUD + Settings toggles per domain (animals, aquaponics, naturalfarming…); nav/workspace links gated on is_enabled; default rows seeded on farm create"
-    status: pending
+    status: completed
   - id: ws2-notification-templates
     content: "WS2: notification_templates — GET/POST/PATCH routes; template picker in RuleForm + fertigation notify actions (replace raw numeric template ID inputs)"
-    status: pending
+    status: completed
   - id: ws3-system-logs
     content: "WS3: system_logs — wire worker/handler WARN+ERROR events to INSERT (negative stock, currency mismatch, command failures); read-only Diagnostics panel in Settings with severity filter"
-    status: pending
+    status: completed
   - id: ws4-symptom-catalog
     content: "WS4: agronomy_symptom_entries — GET /commons/agronomy-symptoms route; browsable symptom guide page (filter by crop/category); link from Guardian citations"
-    status: pending
+    status: completed
   - id: ws5-cycle-timeline
     content: "WS5: crop_cycle_stage_events — visible stage-transition timeline on CropCycleSummary (who/when/auto-vs-manual)"
-    status: pending
+    status: completed
   - id: ws6-task-fields
     content: "WS6: tasks — expose estimated_duration_minutes + actual start/end in Tasks.vue (est. duration on create; timer or manual times on complete); duration in labor cost rollups"
-    status: pending
+    status: completed
   - id: ws7-alert-delivery
     content: "WS7: alerts_notifications — show delivery status (scheduled_send_at, delivery_attempts, channel results) on Alerts page for push/email debugging"
-    status: pending
+    status: completed
   - id: ws8-kill-or-keep
     content: "WS8: validation_rules kill-or-keep — no reader exists; either drop table + schema comment or write one-page design for evaluator; document decision in plan closure"
-    status: pending
+    status: completed
 isProject: false
 ---
 
@@ -38,7 +38,8 @@ isProject: false
 
 ## Status
 
-**Planned.** From the July 2026 audit (schema/UI workstream). Sibling phases:
+**Shipped.** WS8 dropped `validation_rules` via migration (per-field validation stays in handlers).
+From the July 2026 audit (schema/UI workstream). Sibling phases:
 [113](phase_113_security_hardening.plan.md) security,
 [114](phase_114_pi_edge_integrity.plan.md) Pi chain,
 [116](phase_116_docs_refresh.plan.md) docs, [117](phase_117_test_depth.plan.md) tests.

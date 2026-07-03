@@ -303,9 +303,14 @@
                 <input v-if="programActionDraft[p.id].action_type === 'control_actuator'"
                   v-model.number="programActionDraft[p.id].target_actuator_id" type="number" placeholder="actuator id"
                   class="input-field text-xs" />
-                <input v-if="programActionDraft[p.id].action_type === 'send_notification'"
-                  v-model.number="programActionDraft[p.id].target_notification_template_id" type="number" placeholder="template id"
-                  class="input-field text-xs sm:col-span-2" />
+                <select v-if="programActionDraft[p.id].action_type === 'send_notification'"
+                  v-model.number="programActionDraft[p.id].target_notification_template_id"
+                  class="input-field text-xs sm:col-span-2">
+                  <option :value="null">— template —</option>
+                  <option v-for="t in notificationTemplates" :key="t.id" :value="t.id">
+                    {{ t.template_key }}
+                  </option>
+                </select>
                 <input v-if="programActionDraft[p.id].action_type === 'create_task'"
                   v-model="programActionDraft[p.id].task_title" placeholder="task title"
                   class="input-field text-xs sm:col-span-2" />
@@ -626,6 +631,7 @@ const store = useFarmStore()
 const farmContext = useFarmContextStore()
 const loading = ref(false)
 const saving = ref(false)
+const notificationTemplates = ref([])
 const runNowBusy = reactive({})
 const runNowMessage = reactive({})
 const activeTab = ref('reservoirs')
@@ -872,7 +878,7 @@ async function refresh() {
         }
         if (!store.zones.length) await store.loadAll(fid)
         const cropQ = eventCropFilter.value ? Number(eventCropFilter.value) : undefined
-        const [r, ec, p, ev, cc, recipes, sch, inputs, mix, batches] = await Promise.all([
+        const [r, ec, p, ev, cc, recipes, sch, inputs, mix, batches, templates] = await Promise.all([
           store.loadReservoirs(fid),
           store.loadEcTargets(fid),
           store.loadFertigationPrograms(fid),
@@ -883,6 +889,7 @@ async function refresh() {
           store.loadNfInputs(fid),
           store.loadMixingEvents(fid),
           store.loadNfBatches(fid),
+          store.loadNotificationTemplates(fid),
         ])
         reservoirs.value = r
         ecTargets.value = ec
@@ -894,6 +901,7 @@ async function refresh() {
         nfInputs.value = inputs
         mixingEvents.value = mix
         nfBatches.value = batches
+        notificationTemplates.value = templates
         for (const c of cropCycles.value) {
           if (stageDraft[c.id] == null) stageDraft[c.id] = cycleStageRaw(c)
         }

@@ -33,6 +33,7 @@ import (
 
 	db "gr33n-api/internal/db"
 	"gr33n-api/internal/platform/commontypes"
+	"gr33n-api/internal/systemlog"
 )
 
 const (
@@ -210,6 +211,9 @@ func LogMixingComponent(
 		} else if remaining, ok := numericToFloat(deducted.CurrentQuantityRemaining); ok && remaining < 0 {
 			log.Printf("autologger: input_batch %d remaining went negative (%.3f) after mixing_component %d; stock tracking will under-report until operator adjusts",
 				*component.InputBatchID, remaining, component.ID)
+			systemlog.Submit(ctx, q, systemlog.FarmIDPtr(farmID), commontypes.LogLevelWarning,
+				"costing", fmt.Sprintf("Input batch %d went negative (%.3f remaining)", *component.InputBatchID, remaining),
+				map[string]any{"input_batch_id": *component.InputBatchID, "mixing_component_id": component.ID})
 		}
 	}
 
@@ -289,6 +293,9 @@ func LogTaskConsumption(
 	if remaining, ok := numericToFloat(deducted.CurrentQuantityRemaining); ok && remaining < 0 {
 		log.Printf("autologger: input_batch %d remaining went negative (%.3f) after task_consumption %d",
 			consumption.InputBatchID, remaining, consumption.ID)
+		systemlog.Submit(ctx, q, systemlog.FarmIDPtr(consumption.FarmID), commontypes.LogLevelWarning,
+			"costing", fmt.Sprintf("Input batch %d went negative (%.3f remaining)", consumption.InputBatchID, remaining),
+			map[string]any{"input_batch_id": consumption.InputBatchID, "task_consumption_id": consumption.ID})
 	}
 
 	if !price.costKnown {

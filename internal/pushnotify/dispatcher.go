@@ -2,11 +2,13 @@ package pushnotify
 
 import (
 	"context"
+	"encoding/json"
 	"log"
 	"os"
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	firebase "firebase.google.com/go/v4"
 	"firebase.google.com/go/v4/messaging"
@@ -68,6 +70,7 @@ func (d *Dispatcher) DispatchFarmAlert(ctx context.Context, alert db.Gr33ncoreAl
 		noopLog.Do(func() {
 			log.Printf("pushnotify: FCM disabled (set FCM_SERVICE_ACCOUNT_JSON or GOOGLE_APPLICATION_CREDENTIALS)")
 		})
+		d.recordDelivery(ctx, alert.ID, "push", false, "FCM not configured")
 		return
 	}
 	userIDs, err := d.q.ListFarmPushNotifyMemberUserIDs(ctx, alert.FarmID)
@@ -94,6 +97,9 @@ func (d *Dispatcher) DispatchFarmAlert(ctx context.Context, alert db.Gr33ncoreAl
 		for _, t := range tokens {
 			d.sendOne(ctx, alert, t.FcmToken, "farm_alert")
 		}
+	}
+	if len(userIDs) == 0 {
+		d.recordDelivery(ctx, alert.ID, "push", false, "no eligible recipients")
 	}
 }
 
@@ -160,13 +166,60 @@ func (d *Dispatcher) sendOne(ctx context.Context, alert db.Gr33ncoreAlertsNotifi
 	}
 	_, err := d.client.Send(ctx, msg)
 	if err == nil {
+		d.recordDelivery(ctx, alert.ID, "push", true, "")
 		return
 	}
 	if messaging.IsUnregistered(err) || messaging.IsInvalidArgument(err) {
+		d.recordDelivery(ctx, alert.ID, "push", false, err.Error())
 		if delErr := d.q.DeletePushTokenByFCMToken(ctx, token); delErr != nil {
 			log.Printf("pushnotify: drop bad token: %v", delErr)
 		}
 		return
 	}
 	log.Printf("pushnotify: alert %d send: %v", alert.ID, err)
+	d.recordDelivery(ctx, alert.ID, "push", false, err.Error())
+}
+
+func (d *Dispatcher) recordDelivery(ctx context.Context, alertID int64, channel string, ok bool, detail string) {
+	alert, err := d.q.GetAlertNotificationByID(ctx, alertID)
+	if err != nil {
+		return
+	}
+	merged := mergeDeliveryAttempt(alert.DeliveryAttempts, channel, ok, detail)
+	status := ""
+	if !ok {
+		status = "delivery_failed"
+	}
+	_ = d.q.UpdateAlertDeliveryAttempts(ctx, db.UpdateAlertDeliveryAttemptsParams{
+		ID:               alertID,
+		DeliveryAttempts: merged,
+		Column3:          status,
+	})
+}
+
+func mergeDeliveryAttempt(existing json.RawMessage, channel string, ok bool, detail string) json.RawMessage {
+	root := map[string]any{}
+	if len(existing) > 0 {
+		_ = json.Unmarshal(existing, &root)
+	}
+	entry := map[string]any{
+		"at":  time.Now().UTC().Format(time.RFC3339),
+		"ok":  ok,
+	}
+	if detail != "" {
+		entry["detail"] = detail
+	}
+	var list []any
+	if raw, exists := root[channel]; exists {
+		if arr, ok := raw.([]any); ok {
+			list = arr
+		}
+	}
+	list = append(list, entry)
+	root[channel] = list
+	out, err := json.Marshal(root)
+	if err != nil {
+		return existing
+	}
+	return out
 }

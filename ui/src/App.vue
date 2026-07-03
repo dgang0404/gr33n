@@ -92,6 +92,7 @@ import { useAuthStore } from './stores/auth'
 import { usePush } from './composables/usePush'
 import { onMounted, onUnmounted, ref, watch, computed } from 'vue'
 import { buildNavGroups, mobileBottomNav } from './lib/navGroups.js'
+import { moduleMapFromRows } from './lib/farmModules.js'
 
 const store = useFarmStore()
 const farmContext = useFarmContextStore()
@@ -110,7 +111,7 @@ function syncMobile() {
 
 const mobileNav = mobileBottomNav
 
-const drawerNavGroups = computed(() => buildNavGroups())
+const drawerNavGroups = computed(() => buildNavGroups({ modules: moduleMapFromRows(store.farmModules) }))
 
 function connectSSE(farmId) {
   if (evtSource) evtSource.close()

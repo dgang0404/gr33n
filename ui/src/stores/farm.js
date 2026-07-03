@@ -27,6 +27,8 @@ export const useFarmStore = defineStore('farm', {
     readings: {},
     alerts: [],
     unreadAlertCount: 0,
+    farmModules: [],
+    moduleCatalog: [],
     taskWriteQueue: loadOfflineQueue(),
     taskQueueBusy: false,
     taskSyncStatus: {
@@ -118,6 +120,44 @@ export const useFarmStore = defineStore('farm', {
       this.taskConsumptionsByTaskId = byTask
       this.taskConsumptionsByBatchId = byBatch
       return rows
+    },
+
+    async loadFarmModules(farmId) {
+      if (!farmId) {
+        this.farmModules = []
+        return []
+      }
+      const r = await api.get(`/farms/${farmId}/modules`)
+      this.farmModules = Array.isArray(r.data) ? r.data : []
+      return this.farmModules
+    },
+
+    async patchFarmModule(farmId, schema, payload) {
+      const r = await api.patch(`/farms/${farmId}/modules/${encodeURIComponent(schema)}`, payload)
+      const row = r.data
+      const idx = this.farmModules.findIndex((m) => m.module_schema_name === schema)
+      if (idx >= 0) this.farmModules[idx] = row
+      else this.farmModules.push(row)
+      return row
+    },
+
+    async loadModuleCatalog() {
+      const r = await api.get('/farm-modules/catalog')
+      this.moduleCatalog = Array.isArray(r.data) ? r.data : []
+      return this.moduleCatalog
+    },
+
+    async loadNotificationTemplates(farmId) {
+      if (!farmId) return []
+      const r = await api.get(`/farms/${farmId}/notification-templates`)
+      return Array.isArray(r.data) ? r.data : []
+    },
+
+    async completeTask(taskId, payload = {}) {
+      const r = await api.patch(`/tasks/${taskId}/complete`, payload)
+      const idx = this.tasks.findIndex((t) => t.id === taskId)
+      if (idx >= 0) this.tasks[idx] = r.data
+      return r.data
     },
 
     async createTask(farmId, data) {

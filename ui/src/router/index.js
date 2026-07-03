@@ -64,6 +64,7 @@ const routes = [
   },
   { path: '/settings',     component: Settings,     name: 'settings' },
   { path: '/operator-guide', component: HelpWorkspace, name: 'operator-guide' },
+  { path: '/symptom-guide', component: SymptomGuide, name: 'symptom-guide' },
   { path: '/crop-cycles/:id/summary', component: CropCycleSummary, name: 'crop-cycle-summary' },
   { path: '/farms/:fid/crop-cycles/compare', component: CropCycleCompare, name: 'crop-cycle-compare' },
   { path: '/farms/:id/setup', component: FarmSetupWizard, name: 'farm-setup' },

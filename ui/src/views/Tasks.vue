@@ -129,6 +129,12 @@
           <input v-model="form.task_type" type="text" placeholder="e.g. inspection"
             class="w-full bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white" />
         </div>
+        <div>
+          <label class="block text-xs text-zinc-500 mb-1">Est. duration (minutes)</label>
+          <input v-model.number="form.estimated_duration_minutes" type="number" min="0" step="1"
+            placeholder="optional"
+            class="w-full bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white" />
+        </div>
       </div>
       <p v-if="formError" class="text-xs text-red-400">{{ formError }}</p>
       <div class="flex gap-2">
@@ -533,7 +539,7 @@ function taskConsumptions(taskId) {
 }
 
 function emptyForm() {
-  return { title: '', description: '', zone_id: '', schedule_id: '', task_type: '', priority: 1, due_date: '' }
+  return { title: '', description: '', zone_id: '', schedule_id: '', task_type: '', priority: 1, due_date: '', estimated_duration_minutes: null }
 }
 
 function openCreate() {
@@ -554,6 +560,7 @@ function openEdit(task) {
     task_type: task.task_type || '',
     priority: task.priority ?? 1,
     due_date: task.due_date ? String(task.due_date).slice(0, 10) : '',
+    estimated_duration_minutes: task.estimated_duration_minutes ?? null,
   }
   formError.value = ''
   showForm.value = true
@@ -780,6 +787,9 @@ async function submitTask() {
     else payload.task_type = null
     if (form.value.due_date) payload.due_date = form.value.due_date
     else payload.due_date = null
+    if (form.value.estimated_duration_minutes != null && form.value.estimated_duration_minutes !== '') {
+      payload.estimated_duration_minutes = Number(form.value.estimated_duration_minutes)
+    }
 
     if (editingTask.value) {
       await store.updateTask(editingTask.value.id, payload)
@@ -831,10 +841,13 @@ function requestAdvance(task, nextStatus) {
   void advance(task, nextStatus)
 }
 
-async function onCompleteSheet({ task, consumption }) {
+async function onCompleteSheet({ task, consumption, actualStart, actualEnd }) {
   if (!task) return
   try {
-    await store.updateTaskStatus(task.id, completeNextStatus.value)
+    const completePayload = {}
+    if (actualStart) completePayload.actual_start_time = actualStart
+    if (actualEnd) completePayload.actual_end_time = actualEnd
+    await store.completeTask(task.id, completePayload)
     if (consumption) {
       await store.recordTaskConsumption(task.id, consumption)
       const fid = farmContext.farmId

@@ -89,13 +89,16 @@
 <script setup>
 import { ref, computed, watch } from 'vue'
 import { useFarmContextStore } from '../stores/farmContext'
+import { useFarmStore } from '../stores/farm'
 import { useAuthStore } from '../stores/auth'
 import { useGuardianProposalsStore } from '../stores/guardianProposals'
 import { buildNavGroups } from '../lib/navGroups.js'
+import { moduleMapFromRows } from '../lib/farmModules.js'
 import { useNavHighlightStore } from '../stores/navHighlight'
 import GuardianNavLaunch from './GuardianNavLaunch.vue'
 
 const farmContext = useFarmContextStore()
+const farmStore = useFarmStore()
 const auth = useAuthStore()
 const proposalsStore = useGuardianProposalsStore()
 
@@ -125,13 +128,18 @@ function onFarmSelect(ev) {
 watch(
   () => farmContext.farmId,
   (id) => {
-    if (id) proposalsStore.refreshPendingCount(id)
-    else proposalsStore.pendingCount = 0
+    if (id) {
+      proposalsStore.refreshPendingCount(id)
+      farmStore.loadFarmModules(id).catch(() => {})
+    } else {
+      proposalsStore.pendingCount = 0
+      farmStore.farmModules = []
+    }
   },
   { immediate: true },
 )
 
-const navGroups = computed(() => buildNavGroups())
+const navGroups = computed(() => buildNavGroups({ modules: moduleMapFromRows(farmStore.farmModules) }))
 
 const navHighlight = useNavHighlightStore()
 

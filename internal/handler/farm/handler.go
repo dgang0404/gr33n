@@ -20,6 +20,7 @@ import (
 	db "gr33n-api/internal/db"
 	"gr33n-api/internal/farmauthz"
 	"gr33n-api/internal/farmbootstrap"
+	"gr33n-api/internal/farmmodules"
 	"gr33n-api/internal/farmguardian"
 	"gr33n-api/internal/httputil"
 )
@@ -158,6 +159,7 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusInternalServerError, "failed to create farm")
 		return
 	}
+	_ = farmmodules.SeedDefaults(ctx, h.q, farm.ID)
 
 	tmplVal, tmplRequested := farmbootstrap.RequestedTemplate(effectiveBootstrap)
 	var boot map[string]any
