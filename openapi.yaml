@@ -225,6 +225,7 @@ paths:
                 email: { type: string, format: email }
                 password: { type: string, format: password, minLength: 8 }
                 full_name: { type: string }
+                invite_code: { type: string, description: Required when REGISTRATION_MODE=invite }
       responses:
         "201":
           description: User registered
@@ -236,11 +237,53 @@ paths:
                   token: { type: string }
                   expires_in: { type: integer }
                   user_id: { type: string, format: uuid }
+        "403":
+          description: Registration closed or missing invite
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
         "409":
           description: User already exists
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Error" }
+
+  /auth/registration-mode:
+    get:
+      tags: [auth]
+      summary: Current registration policy
+      responses:
+        "200":
+          description: Mode
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  mode: { type: string, enum: [open, invite, closed] }
+
+  /auth/invites:
+    get:
+      tags: [auth]
+      summary: List active registration invite codes
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          description: Active invites
+    post:
+      tags: [auth]
+      summary: Create a registration invite code
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                ttl_hours: { type: integer, minimum: 1, maximum: 720 }
+      responses:
+        "201":
+          description: Invite created
 
   # ── Pi routes (API key) ────────────────────────────────────
 

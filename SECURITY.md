@@ -19,8 +19,13 @@ Whether deployed in a cabin, co-op greenhouse, or airgapped industrial farm, gr3
 | Feature | Status | Notes |
 |---------|--------|-------|
 | Auth Modes | ✅ Explicit | `dev` (bypass, dev-tagged binary only), `auth_test` (enforce like production, dev-tagged binary only), `production` (enforce). Non-dev modes fatals if secrets missing |
-| JWT Auth | ✅ Supported | HS256 via `JWT_SECRET`. Dashboard routes require Bearer token when enabled |
-| Pi API Key | ✅ Supported | `PI_API_KEY` env var. Pi sends `X-API-Key` header on sensor/device routes |
+| JWT Auth | ✅ Supported | HS256 via `JWT_SECRET`. Dashboard routes require Bearer token when enabled. Query-string `?token=` allowed **only** on SSE `/farms/{id}/sensors/stream` (Phase 113) |
+| Registration | ✅ Gated (Phase 113) | `REGISTRATION_MODE=open\|invite\|closed` (default **invite** in production; **open** in dev/auth_test). Invite codes via `POST /auth/invites` |
+| Login rate limit | ✅ Supported | `AUTH_LOGIN_MAX_PER_MINUTE` (default 10/min per IP+username) |
+| Security headers | ✅ Supported | `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, CSP report-only; optional HSTS via `SECURITY_HSTS_ENABLED=true` |
+| Pi API Key | ✅ Supported | Legacy `PI_API_KEY` (deprecated — migrate to per-device keys). Set `PI_LEGACY_KEY_DISABLED=true` when done |
+| Per-device Pi keys | ✅ Supported | Bcrypt-hashed; mint via device settings API |
+| Chat cost guard | ✅ On by default (Phase 113) | 200k tokens/user/day unless `GUARDIAN_COST_GUARD=off` |
 | Row-Level Security (RLS) | ⚙️ Schema-ready | Tables support RLS policies; enable per-table for Supabase or multi-user deployments |
 | Role Separation | ⚙️ Recommended | Use `gr33n_admin`, `gr33n_operator`, `gr33n_guest_inserter` with minimal permissions |
 | TLS / HTTPS | ✅ Local-ready | Use Caddy or nginx to terminate HTTPS on your LAN |

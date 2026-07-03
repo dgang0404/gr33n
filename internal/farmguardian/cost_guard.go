@@ -25,7 +25,7 @@ import (
 // "enforce a billing budget". Operators tighten the caps via env vars on
 // shared / multi-farm deployments.
 //
-// Both caps default to 0 = disabled. Set either or both as needed.
+// Both caps default to 0 = disabled unless GUARDIAN_COST_GUARD enables prod defaults.
 
 // CostGuardConfig controls per-user / per-farm token budgets.
 type CostGuardConfig struct {
@@ -42,11 +42,11 @@ type CostGuardConfig struct {
 
 // Defaults & clamps.
 const (
-	DefaultCostWindowHours  = 1
-	MaxCostWindowHours      = 168       // 1 week
-	MaxCostMaxTokens        = 100000000 // 100 M / window — anything beyond is "off"
-	DefaultPerUserMaxTokens = 0         // disabled
-	DefaultPerFarmMaxTokens = 0         // disabled
+	DefaultCostWindowHours      = 24
+	MaxCostWindowHours          = 168 // 1 week
+	MaxCostMaxTokens            = 100000000 // 100 M / window — anything beyond is "off"
+	DefaultPerUserMaxTokens     = 200000
+	DefaultPerFarmMaxTokens     = 0 // disabled unless set
 )
 
 // AnyEnabled is true when at least one of the two caps is set.
@@ -54,15 +54,30 @@ func (c CostGuardConfig) AnyEnabled() bool {
 	return c.PerUserMaxTokens > 0 || c.PerFarmMaxTokens > 0
 }
 
-// LoadCostGuardConfigFromEnv reads three env vars:
-//   - CHAT_COST_WINDOW_HOURS (default 1, clamp 1..168)
-//   - CHAT_COST_MAX_TOKENS_PER_USER (default 0, disabled when 0; clamp 0..100M)
-//   - CHAT_COST_MAX_TOKENS_PER_FARM (default 0, disabled when 0; clamp 0..100M)
+// LoadCostGuardConfigFromEnv reads env vars. When GUARDIAN_COST_GUARD is unset,
+// guards are enabled in production-style installs (200k tokens/user/day) and
+// disabled for dev/auth_test. Set GUARDIAN_COST_GUARD=off to opt out explicitly.
 func LoadCostGuardConfigFromEnv() CostGuardConfig {
+	if !costGuardEnabledFromEnv() {
+		return CostGuardConfig{Window: costWindowFromEnv()}
+	}
 	return CostGuardConfig{
 		Window:           costWindowFromEnv(),
 		PerUserMaxTokens: costMaxFromEnv("CHAT_COST_MAX_TOKENS_PER_USER", DefaultPerUserMaxTokens),
 		PerFarmMaxTokens: costMaxFromEnv("CHAT_COST_MAX_TOKENS_PER_FARM", DefaultPerFarmMaxTokens),
+	}
+}
+
+func costGuardEnabledFromEnv() bool {
+	raw := strings.ToLower(strings.TrimSpace(os.Getenv("GUARDIAN_COST_GUARD")))
+	switch raw {
+	case "off", "false", "0", "disabled":
+		return false
+	case "on", "true", "1", "enabled":
+		return true
+	default:
+		mode := strings.ToLower(strings.TrimSpace(os.Getenv("AUTH_MODE")))
+		return mode != "dev" && mode != "auth_test"
 	}
 }
 

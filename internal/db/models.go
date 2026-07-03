@@ -1167,6 +1167,16 @@ func (ns NullGr33nnaturalfarmingInputCategoryEnum) Value() (driver.Value, error)
 	return string(ns.Gr33nnaturalfarmingInputCategoryEnum), nil
 }
 
+type AuthRegistrationInvite struct {
+	ID        uuid.UUID          `db:"id" json:"id"`
+	Code      string             `db:"code" json:"code"`
+	CreatedBy pgtype.UUID        `db:"created_by" json:"created_by"`
+	ExpiresAt time.Time          `db:"expires_at" json:"expires_at"`
+	UsedBy    pgtype.UUID        `db:"used_by" json:"used_by"`
+	UsedAt    pgtype.Timestamptz `db:"used_at" json:"used_at"`
+	CreatedAt time.Time          `db:"created_at" json:"created_at"`
+}
+
 type AuthUser struct {
 	ID           uuid.UUID          `db:"id" json:"id"`
 	Email        *string            `db:"email" json:"email"`

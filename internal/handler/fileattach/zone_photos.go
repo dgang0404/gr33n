@@ -3,7 +3,6 @@ package fileattach
 import (
 	"net/http"
 	"strconv"
-	"strings"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
@@ -58,16 +57,18 @@ func (h *Handler) UploadZonePhoto(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer file.Close()
+	_ = hdr
 
-	mime := strings.ToLower(strings.TrimSpace(hdr.Header.Get("Content-Type")))
-	if _, ok := zonePhotoMimeOK[mime]; !ok {
-		httputil.WriteError(w, http.StatusBadRequest, "unsupported file type (use JPEG, PNG, or WebP)")
+	detected, body, err := fileattachutil.SniffAndValidate(file, zonePhotoMimeOK)
+	if err != nil {
+		httputil.WriteError(w, http.StatusBadRequest, err.Error())
 		return
 	}
+	mime := detected
 
 	ext := filestorage.ExtForMime(mime)
 	key := "farm-" + strconv.FormatInt(z.FarmID, 10) + "/zones/" + strconv.FormatInt(zoneID, 10) + "/" + uuid.New().String() + ext
-	n, err := h.store.Put(r.Context(), key, file, maxZonePhotoUpload)
+	n, err := h.store.Put(r.Context(), key, body, maxZonePhotoUpload)
 	if err != nil {
 		httputil.WriteError(w, http.StatusBadRequest, err.Error())
 		return

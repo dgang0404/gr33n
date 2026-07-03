@@ -13,6 +13,7 @@ import (
 	"gr33n-api/internal/ai"
 	automationworker "gr33n-api/internal/automation"
 	db "gr33n-api/internal/db"
+	"gr33n-api/internal/authsecurity"
 	"gr33n-api/internal/filestorage"
 	"gr33n-api/internal/farmguardian"
 	actuatorhandler "gr33n-api/internal/handler/actuator"
@@ -92,7 +93,11 @@ func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationwo
 	prof := profilehandler.NewHandler(pool)
 	setpoint := setpointhandler.NewHandler(pool)
 	lighting := lightinghandler.NewHandler(pool)
-	auth := authhandler.NewHandler(adminUser, adminHash, hashFilePath, IssueToken, pool, adminBindUserID, adminBindEmail)
+	auth := authhandler.NewHandler(
+		adminUser, adminHash, hashFilePath, IssueToken, pool, adminBindUserID, adminBindEmail,
+		authsecurity.RegistrationModeFromEnv(authMode),
+		authsecurity.NewLoginLimiter(authsecurity.LoginMaxPerMinuteFromEnv()),
+	)
 
 	if fileStore == nil {
 		store, err := filestorage.NewStore(context.Background(), filestorage.Config{Backend: "local", LocalRoot: "./data/files"})
@@ -130,6 +135,13 @@ func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationwo
 	})))
 	mux.Handle("POST /auth/login", withRequestLog("public", http.HandlerFunc(auth.Login)))
 	mux.Handle("POST /auth/register", withRequestLog("public", http.HandlerFunc(auth.Register)))
+	mux.Handle("GET /auth/registration-mode", withRequestLog("public", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		httputil.WriteJSON(w, http.StatusOK, map[string]string{
+			"mode": string(authsecurity.RegistrationModeFromEnv(authMode)),
+		})
+	})))
+	mux.Handle("POST /auth/invites", jwt(http.HandlerFunc(auth.CreateInvite)))
+	mux.Handle("GET /auth/invites", jwt(http.HandlerFunc(auth.ListInvites)))
 	mux.Handle("GET /auth/mode", withRequestLog("public", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteJSON(w, http.StatusOK, map[string]string{"mode": authMode})
 	})))

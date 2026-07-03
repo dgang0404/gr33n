@@ -10,6 +10,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"gr33n-api/internal/authctx"
+	"gr33n-api/internal/authsecurity"
 	"gr33n-api/internal/deviceapikey"
 	"gr33n-api/internal/httputil"
 )
@@ -62,6 +63,13 @@ func requireJWTOrPiEdge(next http.Handler) http.Handler {
 		}
 		key := strings.TrimSpace(r.Header.Get("X-API-Key"))
 		if key != "" {
+			if authsecurity.LegacyPiKeyDisabled() {
+				if authDebug {
+					slog.Warn("auth_rejected", "reason", "legacy_pi_key_disabled", "path", r.URL.Path)
+				}
+				httputil.WriteError(w, http.StatusForbidden, "legacy shared API key disabled; use per-device key")
+				return
+			}
 			if key != piAPIKey {
 				if authDebug {
 					slog.Warn("auth_rejected", "reason", "invalid_x_api_key", "path", r.URL.Path)
@@ -92,6 +100,13 @@ func requireJWT(next http.Handler) http.Handler {
 		if strings.HasPrefix(header, "Bearer ") {
 			tokenStr = strings.TrimPrefix(header, "Bearer ")
 		} else if q := r.URL.Query().Get("token"); q != "" {
+			if !jwtQueryTokenAllowed(r.URL.Path) {
+				if authDebug {
+					slog.Warn("auth_rejected", "reason", "query_token_not_allowed", "path", r.URL.Path)
+				}
+				httputil.WriteError(w, http.StatusUnauthorized, "Authorization: Bearer <token> required (query token not allowed on this route)")
+				return
+			}
 			tokenStr = q
 		} else {
 			if authDebug {

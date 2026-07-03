@@ -20,13 +20,12 @@
           </HelpTip>
         </h1>
       </div>
-      <a
+      <button
         v-if="selectedIds.length"
-        :href="csvUrl"
-        target="_blank"
-        rel="noopener"
+        type="button"
         class="text-xs font-medium px-3 py-1.5 rounded-lg bg-zinc-900 text-zinc-300 border border-zinc-700 hover:bg-zinc-800"
-      >Download CSV</a>
+        @click="downloadCsv"
+      >Download CSV</button>
     </div>
 
     <!-- Farm hint -->
@@ -157,6 +156,7 @@ import HelpTip from '../components/HelpTip.vue'
 import { groupCyclesByCropKey, cyclePickerLabel } from '../lib/cropAnalytics.js'
 import { useFarmContextStore } from '../stores/farmContext'
 import { useFarmStore } from '../stores/farm'
+import { downloadWithAuth } from '../lib/downloadAuth.js'
 
 // Mirror the backend MaxCompareCycles. Drift between server + UI would
 // only ever show as a 400, not a security issue, but keeping them in
@@ -198,13 +198,15 @@ const groupedCycles = computed(() => {
   return groupCyclesByCropKey(list)
 })
 
-const csvUrl = computed(() => {
-  if (!farmId.value || !selectedIds.value.length) return '#'
+async function downloadCsv() {
+  if (!farmId.value || !selectedIds.value.length) return
   const base = import.meta.env.VITE_API_URL ?? 'http://localhost:8080'
-  const tok = localStorage.getItem('gr33n_token') ?? ''
   const ids = selectedIds.value.join(',')
-  return `${base}/farms/${farmId.value}/crop-cycles/compare.csv?ids=${ids}&token=${encodeURIComponent(tok)}`
-})
+  await downloadWithAuth(
+    `${base}/farms/${farmId.value}/crop-cycles/compare.csv?ids=${ids}`,
+    `farm-${farmId.value}-crop-cycles-compare.csv`,
+  )
+}
 
 function isSelected(id) {
   return selectedIds.value.includes(id)

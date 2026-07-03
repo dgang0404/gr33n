@@ -28,13 +28,12 @@
           :prefilled-message="'Summarize this cycle and compare to typical flower targets'"
           :context-ref="{ type: 'crop_cycle', id: cycleId }"
         />
-        <a
+        <button
           v-if="cycleId"
-          :href="csvUrl"
-          target="_blank"
-          rel="noopener"
+          type="button"
           class="text-xs font-medium px-3 py-1.5 rounded-lg bg-zinc-900 text-zinc-300 border border-zinc-700 hover:bg-zinc-800"
-        >Download CSV</a>
+          @click="downloadCsv"
+        >Download CSV</button>
         <router-link
           v-if="summary && summary.cycle && compareRoute"
           v-nav-hint="'/fertigation'"
@@ -191,6 +190,7 @@ import { buildPostHarvestCompareRoute, cycleBatchLabel, formatStageLabel } from 
 import HelpTip from '../components/HelpTip.vue'
 import Metric from '../components/MetricChip.vue'
 import AskGuardianButton from '../components/AskGuardianButton.vue'
+import { downloadWithAuth } from '../lib/downloadAuth.js'
 
 const route = useRoute()
 const store = useFarmStore()
@@ -222,26 +222,20 @@ const harvestEconomics = computed(() => {
   }
 })
 
-const csvUrl = computed(() => {
-  if (!cycleId.value) return '#'
-  // Same axios baseURL the store uses. Operators paste this into a new tab
-  // and the browser inherits the JWT cookie / localStorage token via the
-  // Authorization header injected by axios — but this `target="_blank"`
-  // link is downloaded directly by the browser, so we attach the token
-  // here as a query param ONLY if we don't already get cookies. Today
-  // the API accepts the same token on SSE via `?token=`, so reuse that
-  // convention.
+async function downloadCsv() {
+  if (!cycleId.value) return
   const base = import.meta.env.VITE_API_URL ?? 'http://localhost:8080'
-  const tok = localStorage.getItem('gr33n_token') ?? ''
-  return `${base}/crop-cycles/${cycleId.value}/summary.csv?token=${encodeURIComponent(tok)}`
-})
+  await downloadWithAuth(
+    `${base}/crop-cycles/${cycleId.value}/summary.csv`,
+    `crop-cycle-${cycleId.value}-summary.csv`,
+  )
+}
 
 const currentStageLabel = computed(() => {
   if (!summary.value || !summary.value.cycle) return '—'
   const s = summary.value.cycle.current_stage
   if (!s) return '—'
   if (typeof s === 'string') return s
-  // sqlc emits a NullEnum shape like { Gr33nfertigationGrowthStageEnum: "veg", Valid: true }
   if (s.Valid && s.Gr33nfertigationGrowthStageEnum) {
     return formatStageLabel(s.Gr33nfertigationGrowthStageEnum)
   }

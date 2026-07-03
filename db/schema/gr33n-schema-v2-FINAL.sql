@@ -23,6 +23,19 @@ CREATE TABLE IF NOT EXISTS auth.users (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+CREATE TABLE IF NOT EXISTS auth.registration_invites (
+    id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    code       TEXT UNIQUE NOT NULL,
+    created_by UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+    expires_at TIMESTAMPTZ NOT NULL,
+    used_by    UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+    used_at    TIMESTAMPTZ,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_registration_invites_code_active
+    ON auth.registration_invites (code)
+    WHERE used_at IS NULL;
+
 -- ============================================================
 -- OPTIONAL BUT RECOMMENDED EXTENSIONS
 -- Uncomment when PostGIS and TimescaleDB are installed locally

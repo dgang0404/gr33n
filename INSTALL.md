@@ -171,9 +171,22 @@ Add this to your `~/.bashrc` or `~/.zshrc` to avoid typing it every time.
 | `CHAT_SESSION_TTL_DAYS` | `/v1/chat` history retention | Sessions whose newest turn is older than this are pruned by a background loop. Default **30**, clamped **0..3650**. **0** disables pruning (history grows forever). |
 | `CHAT_SESSION_PRUNE_INTERVAL_HOURS` | Prune loop cadence | How often the loop runs after the startup delay. Default **24**, clamped **1..168**. |
 | `CHAT_SESSION_PRUNE_STARTUP_DELAY_SECONDS` | Prune loop startup | Delay before the first prune at API boot. Default **30**, clamped **0..600**. Lets RAG ingest / automation worker settle before the loop touches the chat tables. |
-| `CHAT_COST_WINDOW_HOURS` | `/v1/chat` cost guards | Rolling-window length for token accumulation. Default **1**, clamped **1..168**. |
-| `CHAT_COST_MAX_TOKENS_PER_USER` | `/v1/chat` cost guards | Total prompt+completion tokens a single user may burn within the window before `POST /v1/chat` returns **429** with `Retry-After`. Default **0** (disabled). Clamped **0..100_000_000**. |
-| `CHAT_COST_MAX_TOKENS_PER_FARM` | `/v1/chat` cost guards | Same as above but per `farm_id` (only enforced on grounded turns that carry a farm_id). Default **0** (disabled). Clamped **0..100_000_000**. |
+| `CHAT_COST_WINDOW_HOURS` | `/v1/chat` cost guards | Rolling-window length for token accumulation. Default **24** when cost guard enabled (Phase 113), else **1**. Clamped **1..168**. |
+| `CHAT_COST_MAX_TOKENS_PER_USER` | `/v1/chat` cost guards | Total prompt+completion tokens a single user may burn within the window before **429**. Default **200000** when cost guard enabled (Phase 113). Set **`GUARDIAN_COST_GUARD=off`** to disable caps. |
+| `CHAT_COST_MAX_TOKENS_PER_FARM` | `/v1/chat` cost guards | Same as above but per `farm_id`. Default **0** (disabled). |
+| `GUARDIAN_COST_GUARD` | `/v1/chat` cost guards | **`off`** disables token caps. When unset: **on** in production, **off** in dev/auth_test. |
+
+### Phase 113 — auth hardening
+
+| Variable | Description |
+|----------|-------------|
+| `REGISTRATION_MODE` | **`open`**, **`invite`** (default in production), or **`closed`**. dev/auth_test default **open**. Invite codes: **`POST /auth/invites`** (JWT) then register with **`invite_code`**. |
+| `AUTH_LOGIN_MAX_PER_MINUTE` | Brute-force cap on **`POST /auth/login`** (default **10**/min per IP+username). |
+| `PI_LEGACY_KEY_DISABLED` | Set **`true`** after migrating Pi clients to per-device keys (disables shared **`PI_API_KEY`** auth). |
+| `SECURITY_HSTS_ENABLED` | Set **`true`** when this process terminates TLS and should emit **Strict-Transport-Security**. |
+
+Per-device Pi keys: mint from device settings in the UI; see **`SECURITY.md`**. Legacy **`PI_API_KEY`** logs a startup deprecation warning until disabled.
+
 
 **Operator-facing usage dashboard** (Phase 28 WS5): when `AI_ENABLED=true`, **`GET /v1/chat/usage`** (JWT) returns the caller's rolling-window totals + remaining budget. Pass `?farm_id=N` to additionally include per-farm totals (farm-member auth required). The Settings → **Guardian usage** card calls this endpoint and renders progress bars. Crossing **80 %** of the per-user cap fires a one-shot `chat_budget_warning` alert into `gr33ncore.alerts_notifications` so the existing alerts UI surfaces the warning without operators having to poll the endpoint.
 | `RAG_SYNTHESIS_MAX_PER_MINUTE` | Answer endpoint | Default `30` requests/minute per API process (rolling minute window). |

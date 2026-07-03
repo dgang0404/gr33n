@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -14,6 +16,9 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"golang.org/x/crypto/bcrypt"
 
+	"gr33n-api/internal/auditlog"
+	"gr33n-api/internal/authctx"
+	"gr33n-api/internal/authsecurity"
 	db "gr33n-api/internal/db"
 	"gr33n-api/internal/httputil"
 	"gr33n-api/internal/platform/commontypes"
@@ -22,17 +27,22 @@ import (
 type IssueTokenFunc func(username string, exp time.Duration, extra map[string]any) (string, error)
 
 type Handler struct {
-	mu               sync.RWMutex
-	adminUsername    string
-	passwordHash     []byte
-	hashFilePath     string
-	issueToken       IssueTokenFunc
-	pool             *pgxpool.Pool
-	adminBindUserID  uuid.UUID // JWT user_id for env-admin login (farm RBAC requires it)
-	adminBindEmail   string    // optional email claim for env-admin (matches seeded profile)
+	mu              sync.RWMutex
+	adminUsername   string
+	passwordHash    []byte
+	hashFilePath    string
+	issueToken      IssueTokenFunc
+	pool            *pgxpool.Pool
+	adminBindUserID uuid.UUID
+	adminBindEmail  string
+	regMode         authsecurity.RegistrationMode
+	loginLimiter    *authsecurity.LoginLimiter
 }
 
-func NewHandler(adminUsername string, passwordHash []byte, hashFilePath string, issueToken IssueTokenFunc, pool *pgxpool.Pool, adminBindUserID uuid.UUID, adminBindEmail string) *Handler {
+func NewHandler(adminUsername string, passwordHash []byte, hashFilePath string, issueToken IssueTokenFunc, pool *pgxpool.Pool, adminBindUserID uuid.UUID, adminBindEmail string, regMode authsecurity.RegistrationMode, loginLimiter *authsecurity.LoginLimiter) *Handler {
+	if loginLimiter == nil {
+		loginLimiter = authsecurity.NewLoginLimiter(authsecurity.LoginMaxPerMinuteFromEnv())
+	}
 	return &Handler{
 		adminUsername:   adminUsername,
 		passwordHash:    passwordHash,
@@ -41,7 +51,26 @@ func NewHandler(adminUsername string, passwordHash []byte, hashFilePath string, 
 		pool:            pool,
 		adminBindUserID: adminBindUserID,
 		adminBindEmail:  adminBindEmail,
+		regMode:         regMode,
+		loginLimiter:    loginLimiter,
 	}
+}
+
+func clientIP(r *http.Request) string {
+	if xff := strings.TrimSpace(r.Header.Get("X-Forwarded-For")); xff != "" {
+		if i := strings.Index(xff, ","); i >= 0 {
+			return strings.TrimSpace(xff[:i])
+		}
+		return xff
+	}
+	if xrip := strings.TrimSpace(r.Header.Get("X-Real-IP")); xrip != "" {
+		return xrip
+	}
+	host := r.RemoteAddr
+	if i := strings.LastIndex(host, ":"); i >= 0 {
+		return host[:i]
+	}
+	return host
 }
 
 func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
@@ -53,17 +82,33 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid body")
 		return
 	}
+	username := strings.TrimSpace(body.Username)
+	ip := clientIP(r)
+	if !h.loginLimiter.Allow(ip, strings.ToLower(username)) {
+		retry := h.loginLimiter.RetryAfter(ip, strings.ToLower(username))
+		w.Header().Set("Retry-After", retryAfterSeconds(retry))
+		auditlog.Submit(r.Context(), db.New(h.pool), r, auditlog.Event{
+			Action: db.Gr33ncoreUserActionTypeEnumLoginFailure,
+			Status: "failure",
+			Details: map[string]any{
+				"reason":   "rate_limited",
+				"username": username,
+				"ip":       ip,
+			},
+		})
+		httputil.WriteError(w, http.StatusTooManyRequests, "too many login attempts; try again later")
+		return
+	}
 
 	const tokenExp = 24 * time.Hour
 
-	// Try DB-backed login first
 	if h.pool != nil {
 		q := db.New(h.pool)
-		email := body.Username
+		email := username
 		authUser, err := q.GetAuthUserByEmail(r.Context(), &email)
 		if err == nil && authUser.PasswordHash != nil {
 			if err := bcrypt.CompareHashAndPassword(authUser.PasswordHash, []byte(body.Password)); err == nil {
-				token, err := h.issueToken(body.Username, tokenExp, map[string]any{
+				token, err := h.issueToken(username, tokenExp, map[string]any{
 					"user_id": authUser.ID.String(),
 					"email":   email,
 				})
@@ -83,8 +128,7 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// Fallback: env-admin login
-	if body.Username != h.adminUsername {
+	if username != h.adminUsername {
 		httputil.WriteError(w, http.StatusUnauthorized, "invalid credentials")
 		return
 	}
@@ -106,7 +150,7 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 			extra["email"] = h.adminBindEmail
 		}
 	}
-	token, err := h.issueToken(body.Username, tokenExp, extra)
+	token, err := h.issueToken(username, tokenExp, extra)
 	if err != nil {
 		httputil.WriteError(w, http.StatusInternalServerError, "could not issue token")
 		return
@@ -118,11 +162,26 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 	httputil.WriteJSON(w, http.StatusOK, out)
 }
 
+func retryAfterSeconds(d time.Duration) string {
+	sec := int(d.Seconds())
+	if sec < 1 {
+		sec = 1
+	}
+	return strconv.Itoa(sec)
+}
+
 func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
+	mode := h.registrationMode()
+	if mode == authsecurity.RegistrationClosed {
+		httputil.WriteError(w, http.StatusForbidden, "registration is closed; contact your farm operator for access")
+		return
+	}
+
 	var body struct {
-		Email    string `json:"email"`
-		Password string `json:"password"`
-		FullName string `json:"full_name"`
+		Email      string `json:"email"`
+		Password   string `json:"password"`
+		FullName   string `json:"full_name"`
+		InviteCode string `json:"invite_code"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid body")
@@ -145,14 +204,13 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 
 	q := db.New(h.pool)
 
-	// Check if user already exists (invite flow: null password_hash)
 	existing, err := q.GetAuthUserByEmail(r.Context(), &body.Email)
 	if err == nil {
 		if existing.PasswordHash != nil {
 			httputil.WriteError(w, http.StatusConflict, "user already exists")
 			return
 		}
-		// Invited user setting password for the first time
+		const tokenExp = 24 * time.Hour
 		if err := q.UpdateAuthUserPasswordHash(r.Context(), db.UpdateAuthUserPasswordHashParams{
 			ID:           existing.ID,
 			PasswordHash: hash,
@@ -160,7 +218,6 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 			httputil.WriteError(w, http.StatusInternalServerError, err.Error())
 			return
 		}
-		const tokenExp = 24 * time.Hour
 		token, err := h.issueToken(body.Email, tokenExp, map[string]any{
 			"user_id": existing.ID.String(),
 			"email":   body.Email,
@@ -181,7 +238,15 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// New user registration
+	var invite *db.AuthRegistrationInvite
+	if mode == authsecurity.RegistrationInvite {
+		invite, err = h.validateInviteForRegister(r.Context(), body.InviteCode)
+		if err != nil {
+			httputil.WriteError(w, http.StatusForbidden, err.Error())
+			return
+		}
+	}
+
 	authUser, err := q.CreateAuthUser(r.Context(), db.CreateAuthUserParams{
 		Email:        &body.Email,
 		PasswordHash: hash,
@@ -190,6 +255,7 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusInternalServerError, "failed to create user: "+err.Error())
 		return
 	}
+	h.consumeInvite(r.Context(), invite, authUser.ID)
 
 	fullName := body.FullName
 	if fullName == "" {
@@ -236,6 +302,45 @@ func (h *Handler) ChangePassword(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusBadRequest, "new password must be at least 8 characters")
 		return
 	}
+
+	if userID, ok := authctx.UserID(r.Context()); ok && h.pool != nil {
+		q := db.New(h.pool)
+		email := authctx.Email(r.Context())
+		if email == "" {
+			httputil.WriteError(w, http.StatusBadRequest, "email claim required")
+			return
+		}
+		authUser, err := q.GetAuthUserByEmail(r.Context(), &email)
+		if err == nil && authUser.PasswordHash != nil {
+			if err := bcrypt.CompareHashAndPassword(authUser.PasswordHash, []byte(body.CurrentPassword)); err != nil {
+				httputil.WriteError(w, http.StatusUnauthorized, "current password is incorrect")
+				return
+			}
+			newHash, err := bcrypt.GenerateFromPassword([]byte(body.NewPassword), 12)
+			if err != nil {
+				httputil.WriteError(w, http.StatusInternalServerError, "failed to hash password")
+				return
+			}
+			if err := q.UpdateAuthUserPasswordHash(r.Context(), db.UpdateAuthUserPasswordHashParams{
+				ID:           authUser.ID,
+				PasswordHash: newHash,
+			}); err != nil {
+				httputil.WriteError(w, http.StatusInternalServerError, err.Error())
+				return
+			}
+			auditlog.Submit(r.Context(), q, r, auditlog.Event{
+				Action: db.Gr33ncoreUserActionTypeEnumChangeSetting,
+				Status: "success",
+				Details: map[string]any{
+					"setting": "password",
+					"user_id": userID.String(),
+				},
+			})
+			httputil.WriteJSON(w, http.StatusOK, map[string]string{"status": "password updated"})
+			return
+		}
+	}
+
 	h.mu.RLock()
 	currentHash := h.passwordHash
 	h.mu.RUnlock()

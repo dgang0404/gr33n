@@ -8,6 +8,7 @@ import (
 
 	db "gr33n-api/internal/db"
 	"gr33n-api/internal/authctx"
+	"gr33n-api/internal/authsecurity"
 	"gr33n-api/internal/deviceapikey"
 
 )
@@ -77,6 +78,12 @@ func authenticatePiEdge(r *http.Request) (ctx context.Context, ok bool) {
 	if legacy == "" {
 		if authDebug {
 			slog.Warn("auth_rejected", "reason", "missing_edge_credentials", "path", r.URL.Path)
+		}
+		return r.Context(), false
+	}
+	if authsecurity.LegacyPiKeyDisabled() {
+		if authDebug {
+			slog.Warn("auth_rejected", "reason", "legacy_pi_key_disabled", "path", r.URL.Path)
 		}
 		return r.Context(), false
 	}

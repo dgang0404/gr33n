@@ -18,6 +18,7 @@ import (
 	"github.com/joho/godotenv"
 	"gr33n-api/internal/ai"
 	automationworker "gr33n-api/internal/automation"
+	"gr33n-api/internal/authsecurity"
 	"gr33n-api/internal/catalognotify"
 	"gr33n-api/internal/croplibrary"
 	db "gr33n-api/internal/db"
@@ -80,12 +81,20 @@ func main() {
 			"Use AUTH_MODE=production in QA/production.")
 	}
 
+	if piAPIKey != "" {
+		if authsecurity.LegacyPiKeyDisabled() {
+			log.Println("⚠️  PI_API_KEY is set but PI_LEGACY_KEY_DISABLED=true — shared edge key auth is off; use per-device keys only")
+		} else {
+			log.Println("⚠️  PI_API_KEY (legacy shared edge key) is configured — migrate to per-device keys and set PI_LEGACY_KEY_DISABLED=true when done")
+		}
+	}
+
 	if authMode != "dev" {
 		if len(jwtSecret) == 0 {
 			log.Fatal("JWT_SECRET must be set when AUTH_MODE != dev")
 		}
-		if piAPIKey == "" {
-			log.Fatal("PI_API_KEY must be set when AUTH_MODE != dev")
+		if piAPIKey == "" && !authsecurity.LegacyPiKeyDisabled() {
+			log.Fatal("PI_API_KEY must be set when AUTH_MODE != dev (or configure per-device keys and set PI_LEGACY_KEY_DISABLED=true)")
 		}
 	}
 
@@ -174,7 +183,7 @@ func main() {
 	}
 	addr := fmt.Sprintf(":%s", port)
 	log.Printf("🌱 gr33n API running on http://localhost%s", addr)
-	if err := http.ListenAndServe(addr, corsMiddleware(mux)); err != nil {
+	if err := http.ListenAndServe(addr, wrapHTTPMiddleware(mux)); err != nil {
 		log.Fatalf("❌ Server error: %v", err)
 	}
 }

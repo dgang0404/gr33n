@@ -124,6 +124,7 @@ type Querier interface {
 	// Queries: gr33nnaturalfarming.application_recipes & recipe_input_components
 	// ============================================================
 	CreateRecipe(ctx context.Context, arg CreateRecipeParams) (Gr33nnaturalfarmingApplicationRecipe, error)
+	CreateRegistrationInvite(ctx context.Context, arg CreateRegistrationInviteParams) (AuthRegistrationInvite, error)
 	CreateReservoir(ctx context.Context, arg CreateReservoirParams) (Gr33nfertigationReservoir, error)
 	CreateSchedule(ctx context.Context, arg CreateScheduleParams) (Gr33ncoreSchedule, error)
 	// ============================================================
@@ -344,6 +345,10 @@ type Querier interface {
 	GetRecentChatBudgetWarningForUser(ctx context.Context, arg GetRecentChatBudgetWarningForUserParams) (int64, error)
 	GetRecentUnacknowledgedAlertForSource(ctx context.Context, arg GetRecentUnacknowledgedAlertForSourceParams) (int64, error)
 	GetRecipeByID(ctx context.Context, id int64) (Gr33nnaturalfarmingApplicationRecipe, error)
+	// ============================================================
+	// Queries: auth.registration_invites
+	// ============================================================
+	GetRegistrationInviteByCode(ctx context.Context, code string) (AuthRegistrationInvite, error)
 	GetScheduleByID(ctx context.Context, id int64) (Gr33ncoreSchedule, error)
 	GetSensorByID(ctx context.Context, id int64) (Gr33ncoreSensor, error)
 	GetSensorReadingStats(ctx context.Context, arg GetSensorReadingStatsParams) (GetSensorReadingStatsRow, error)
@@ -408,6 +413,7 @@ type Querier interface {
 	// bound schedule are dispatched automatically (unscheduled programs are
 	// template-only and require an explicit "run now" API call, added later).
 	ListActivePrograms(ctx context.Context) ([]Gr33nfertigationProgram, error)
+	ListActiveRegistrationInvites(ctx context.Context) ([]AuthRegistrationInvite, error)
 	ListActiveSchedules(ctx context.Context) ([]Gr33ncoreSchedule, error)
 	ListActuatorEventsByActuator(ctx context.Context, arg ListActuatorEventsByActuatorParams) ([]Gr33ncoreActuatorEvent, error)
 	ListActuatorEventsBySchedule(ctx context.Context, arg ListActuatorEventsByScheduleParams) ([]Gr33ncoreActuatorEvent, error)
@@ -610,6 +616,7 @@ type Querier interface {
 	MarkInsertCommonsBundleDelivered(ctx context.Context, arg MarkInsertCommonsBundleDeliveredParams) (Gr33ncoreInsertCommonsBundle, error)
 	MarkInsertCommonsBundleDeliveryFailed(ctx context.Context, arg MarkInsertCommonsBundleDeliveryFailedParams) (Gr33ncoreInsertCommonsBundle, error)
 	MarkProgramTriggered(ctx context.Context, arg MarkProgramTriggeredParams) (Gr33nfertigationProgram, error)
+	MarkRegistrationInviteUsed(ctx context.Context, arg MarkRegistrationInviteUsedParams) error
 	MarkScheduleTriggered(ctx context.Context, arg MarkScheduleTriggeredParams) (Gr33ncoreSchedule, error)
 	// Running SUM over surviving rows. Called by handler after INSERT/DELETE.
 	RecalcTaskTimeSpentMinutes(ctx context.Context, taskID int64) error

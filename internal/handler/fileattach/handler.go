@@ -68,16 +68,18 @@ func (h *Handler) UploadCostReceipt(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer file.Close()
+	_ = hdr
 
-	mime := strings.ToLower(strings.TrimSpace(hdr.Header.Get("Content-Type")))
-	if _, ok := receiptMimeOK[mime]; !ok {
-		httputil.WriteError(w, http.StatusBadRequest, "unsupported file type (use PDF, JPEG, PNG, or WebP)")
+	detected, body, err := fileattachutil.SniffAndValidate(file, receiptMimeOK)
+	if err != nil {
+		httputil.WriteError(w, http.StatusBadRequest, err.Error())
 		return
 	}
+	mime := detected
 
 	ext := filestorage.ExtForMime(mime)
 	key := "farm-" + strconv.FormatInt(farmID, 10) + "/" + uuid.New().String() + ext
-	n, err := h.store.Put(r.Context(), key, file, maxReceiptUpload)
+	n, err := h.store.Put(r.Context(), key, body, maxReceiptUpload)
 	if err != nil {
 		httputil.WriteError(w, http.StatusBadRequest, err.Error())
 		return

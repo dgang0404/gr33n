@@ -287,7 +287,7 @@ func TestMain(m *testing.M) {
 	}
 	seedUID := uuid.MustParse(smokeDevUserUUID)
 	registerRoutes(mux, pool, worker, nil, "admin", nil, "", store, filestorage.Config{Backend: "local"}, seedUID, smokeDevEmail, ai.LoadConfigFromEnv())
-	testServer = httptest.NewServer(corsMiddleware(mux))
+	testServer = httptest.NewServer(wrapHTTPMiddleware(mux))
 
 	code := m.Run()
 	testServer.Close()
