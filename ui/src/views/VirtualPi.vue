@@ -56,6 +56,8 @@
         :sensors="store.sensors"
         :actuators="store.actuators"
         :zones="store.zones"
+        :devices="store.devices"
+        @updated="onHardwareUpdated"
       />
     </template>
   </div>
@@ -87,6 +89,14 @@ const piDevices = computed(() => {
 function deviceLabel(d) {
   const status = d.status === 'online' ? ' · online' : ''
   return `${d.name || d.device_uid || 'Device ' + d.id}${status}`
+}
+
+async function onHardwareUpdated() {
+  const fid = farmContext.farmId
+  if (!fid) return
+  try {
+    await store.loadAll(fid)
+  } catch { /* best-effort refresh */ }
 }
 
 watch(piDevices, (list) => {

@@ -127,7 +127,7 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import api from '../api'
 import HelpTip from './HelpTip.vue'
 import HardwareWiringBadge from './HardwareWiringBadge.vue'
@@ -136,6 +136,9 @@ import { resolveWiring } from '../lib/hardwareWiring.js'
 const props = defineProps({
   actuator: { type: Object, required: true },
   devices:  { type: Array, default: () => [] },
+  autoEdit: { type: Boolean, default: false },
+  presetGpioPin: { type: Number, default: null },
+  presetMode: { type: String, default: '' },
 })
 
 const emit = defineEmits(['updated'])
@@ -172,12 +175,22 @@ const deviceLabel = computed(() => {
 
 function beginEdit() {
   const w = currentWiring.value
-  if (w?.gpio_pin != null) {
+  if (props.presetMode === 'gpio_relay' || w?.gpio_pin != null) {
     mode.value = 'gpio_relay'
-    form.value = { channel: null, gpioPin: w.gpio_pin, deviceId: props.actuator.device_id ?? null, notes: w.notes || '' }
+    form.value = {
+      channel: null,
+      gpioPin: w?.gpio_pin ?? props.presetGpioPin ?? null,
+      deviceId: props.actuator.device_id ?? null,
+      notes: w?.notes || '',
+    }
   } else {
     mode.value = 'relay_hat'
-    form.value = { channel: currentChannel.value, gpioPin: null, deviceId: props.actuator.device_id ?? null, notes: '' }
+    form.value = {
+      channel: currentChannel.value,
+      gpioPin: null,
+      deviceId: props.actuator.device_id ?? null,
+      notes: '',
+    }
   }
   error.value = ''
   editing.value = true
@@ -245,4 +258,12 @@ async function clearWiring() {
     saving.value = false
   }
 }
+
+watch(
+  () => [props.autoEdit, props.actuator?.id],
+  ([auto]) => {
+    if (auto) beginEdit()
+  },
+  { immediate: true },
+)
 </script>

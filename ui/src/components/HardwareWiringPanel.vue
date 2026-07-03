@@ -147,6 +147,8 @@ const props = defineProps({
   devices: { type: Array, default: () => [] },
   sensors: { type: Array, default: () => [] },
   actuators: { type: Array, default: () => [] },
+  autoEdit: { type: Boolean, default: false },
+  presetWiring: { type: Object, default: null },
 })
 
 const emit = defineEmits(['updated'])
@@ -192,16 +194,25 @@ function emptyForm() {
 
 function beginEdit() {
   const w = displayWiring.value
+  const preset = props.presetWiring || {}
   form.value = w
     ? {
-        source: w.source || '',
-        gpio_pin: w.gpio_pin ?? null,
-        i2c_channel: w.i2c_channel ?? null,
-        serial_port: w.serial_port || '',
-        device_id: w.device_id ?? null,
-        notes: w.notes || '',
+        source: w.source || preset.source || '',
+        gpio_pin: w.gpio_pin ?? preset.gpio_pin ?? null,
+        i2c_channel: w.i2c_channel ?? preset.i2c_channel ?? null,
+        serial_port: w.serial_port || preset.serial_port || '',
+        device_id: w.device_id ?? preset.device_id ?? null,
+        notes: w.notes || preset.notes || '',
       }
-    : emptyForm()
+    : {
+        ...emptyForm(),
+        source: preset.source || '',
+        gpio_pin: preset.gpio_pin ?? null,
+        i2c_channel: preset.i2c_channel ?? null,
+        serial_port: preset.serial_port || '',
+        device_id: preset.device_id ?? null,
+        notes: preset.notes || '',
+      }
   error.value = ''
   editing.value = true
 }
@@ -255,4 +266,12 @@ async function clearWiring() {
 watch(() => props.sensor, () => {
   if (!editing.value) error.value = ''
 })
+
+watch(
+  () => [props.autoEdit, props.sensorId],
+  ([auto]) => {
+    if (auto) beginEdit()
+  },
+  { immediate: true },
+)
 </script>

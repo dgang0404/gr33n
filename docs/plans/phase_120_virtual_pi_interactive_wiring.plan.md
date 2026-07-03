@@ -8,23 +8,27 @@ overview: >
 todos:
   - id: ws1-pin-click-assign
     content: "WS1: Assign from board — click free GPIO pin opens a wiring drawer (entity picker: unwired sensors/actuators on that device's zones, driver/source select from deviceTaxonomy); saves via existing PATCH wiring endpoints"
-    status: pending
+    status: completed
   - id: ws2-edit-move
     content: "WS2: Edit/move — click assigned pin shows current wiring (reuse HardwareWiringPanel form logic); 'move to pin' flow revalidates with findWiringConflict before save"
-    status: pending
+    status: completed
   - id: ws3-conflict-surface
     content: "WS3: Farm-wide conflict surface — board highlights double-booked pins/channels in red (data already detectable via findWiringConflict, today only checked at edit time per-entity); banner lists conflicts with links to both claimants"
-    status: pending
+    status: completed
   - id: ws4-relay-stack
     content: "WS4: Relay stack view — derive stack levels from relay channel numbers in use (ch 0–7 = stack 0 @0x27, ch 8–15 = stack 1 @0x26 …); render each card with its DIP switch setting and per-channel actuator labels; empty channels shown as available"
-    status: pending
+    status: completed
   - id: ws5-tests
     content: "WS5: Tests — assign flow (mock PATCH), conflict highlight from seeded double-booking, stack derivation math (channel → stack level → I2C address → DIP bits)"
-    status: pending
+    status: completed
 isProject: false
 ---
 
 # Phase 120 — Virtual Pi (WS2): interactive wiring + relay stack visualization
+
+## Status
+
+**Shipped** (2026-07-03). Click-to-wire GPIO pins, conflict banner, relay stack view with DIP hints.
 
 ## Why
 
@@ -70,12 +74,12 @@ start from the hardware ("this pin is free, what should I put on it?").
 
 ## Acceptance
 
-- [ ] Wire a brand-new sensor to a free pin entirely from `/virtual-pi`
-- [ ] Move an actuator to a different pin; old pin frees, conflict check blocks a taken pin
-- [ ] Pre-existing double-booked pin renders red with both claimants linked
-- [ ] Relay stack view shows correct card count, DIP settings, and channel labels for the demo farm
-- [ ] Adding an actuator on ch 8 makes a second card appear with ID0=ON
-- [ ] Existing zone wiring editors untouched and passing (`phase-78`, `zone-feeding-water` suites)
+- [x] Wire a brand-new sensor to a free pin entirely from `/virtual-pi`
+- [x] Move an actuator to a different pin; old pin frees, conflict check blocks a taken pin
+- [x] Pre-existing double-booked pin renders red with both claimants linked
+- [x] Relay stack view shows correct card count, DIP settings, and channel labels for the demo farm
+- [x] Adding an actuator on ch 8 makes a second card appear with ID0=ON
+- [x] Existing zone wiring editors untouched and passing (`phase-78`, `zone-feeding-water` suites)
 
 ## Files expected to change
 
