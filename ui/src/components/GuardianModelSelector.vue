@@ -98,6 +98,10 @@
         <span class="text-zinc-300">{{ activeFarmModel || serverDefault || 'server default' }}</span>
       </p>
 
+      <p v-if="selectedRuntimeHint" class="text-[10px] text-amber-300/80" data-test="guardian-runtime-hint">
+        {{ selectedRuntimeHint }}
+      </p>
+
       <p class="text-[10px] text-zinc-600 leading-snug">
         Session model applies to your chat only and does not change the farm default.
         Models come from the server Ollama runtime (shared across farms on this host).
@@ -173,10 +177,34 @@ const activeFarmModel = computed(() => {
 
 const farmDirty = computed(() => farmModelDraft.value !== (farmModelSaved.value || ''))
 
+const effectiveSessionModel = computed(() => {
+  if (sessionModel.value) return sessionModel.value
+  if (farmModelDraft.value) return farmModelDraft.value
+  return serverDefault.value || ''
+})
+
+const selectedModelInfo = computed(() => {
+  const name = effectiveSessionModel.value
+  if (!name) return null
+  return models.value.find((m) => m.name === name || m.name === `${name}:latest` || name === m.name.replace(/:latest$/, '')) || null
+})
+
+const selectedRuntimeHint = computed(() => selectedModelInfo.value?.runtime_hint || '')
+
+function capabilityLabel(m) {
+  const caps = m.capabilities || []
+  if (caps.includes('vision')) return 'vision'
+  if (caps.includes('completion')) return 'chat'
+  return ''
+}
+
 function modelOptionLabel(m) {
   const bits = [m.name]
+  const cap = capabilityLabel(m)
+  if (cap) bits.push(cap)
   if (m.speed_class) bits.push(m.speed_class)
   if (m.context_window > 0) bits.push(`${m.context_window} ctx`)
+  if (m.runtime_hint) bits.push(m.loaded ? 'loaded' : 'cold')
   return bits.join(' · ')
 }
 

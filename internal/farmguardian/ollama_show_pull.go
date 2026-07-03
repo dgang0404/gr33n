@@ -13,7 +13,13 @@ import (
 )
 
 type ollamaShowResponse struct {
-	ModelInfo map[string]any `json:"model_info"`
+	ModelInfo    map[string]any `json:"model_info"`
+	Capabilities []string       `json:"capabilities"`
+}
+
+type modelShowDetails struct {
+	ContextWindow int
+	Capabilities  []string
 }
 
 type ollamaPullRequest struct {
@@ -59,37 +65,48 @@ func jsonNumberInt(v any) int {
 	}
 }
 
-func fetchModelContextWindow(ctx context.Context, nativeBase, name string, client *http.Client) (int, error) {
+func fetchModelShowDetails(ctx context.Context, nativeBase, name string, client *http.Client) (modelShowDetails, error) {
 	name = strings.TrimSpace(name)
 	if name == "" {
-		return 0, fmt.Errorf("model name required")
+		return modelShowDetails{}, fmt.Errorf("model name required")
 	}
 	body, err := json.Marshal(map[string]string{"name": name})
 	if err != nil {
-		return 0, err
+		return modelShowDetails{}, err
 	}
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, nativeBase+"/api/show", bytes.NewReader(body))
 	if err != nil {
-		return 0, err
+		return modelShowDetails{}, err
 	}
 	req.Header.Set("Content-Type", "application/json")
 	resp, err := client.Do(req)
 	if err != nil {
-		return 0, err
+		return modelShowDetails{}, err
 	}
 	defer resp.Body.Close()
 	raw, err := io.ReadAll(io.LimitReader(resp.Body, 4<<20))
 	if err != nil {
-		return 0, err
+		return modelShowDetails{}, err
 	}
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return 0, fmt.Errorf("ollama /api/show: HTTP %d: %s", resp.StatusCode, truncateBytes(raw, 256))
+		return modelShowDetails{}, fmt.Errorf("ollama /api/show: HTTP %d: %s", resp.StatusCode, truncateBytes(raw, 256))
 	}
 	var parsed ollamaShowResponse
 	if err := json.Unmarshal(raw, &parsed); err != nil {
-		return 0, fmt.Errorf("ollama show decode: %w", err)
+		return modelShowDetails{}, fmt.Errorf("ollama show decode: %w", err)
 	}
-	return parseContextLength(parsed.ModelInfo), nil
+	return modelShowDetails{
+		ContextWindow: parseContextLength(parsed.ModelInfo),
+		Capabilities:  append([]string(nil), parsed.Capabilities...),
+	}, nil
+}
+
+func fetchModelContextWindow(ctx context.Context, nativeBase, name string, client *http.Client) (int, error) {
+	details, err := fetchModelShowDetails(ctx, nativeBase, name, client)
+	if err != nil {
+		return 0, err
+	}
+	return details.ContextWindow, nil
 }
 
 // EnrichModelContextWindows fills ContextWindow via parallel POST /api/show calls.
@@ -121,12 +138,13 @@ func EnrichModelContextWindows(ctx context.Context, llmBaseURL string, models []
 			case sem <- struct{}{}:
 			}
 			defer func() { <-sem }()
-			cw, err := fetchModelContextWindow(ctx, base, out[i].Name, client)
+			details, err := fetchModelShowDetails(ctx, base, out[i].Name, client)
 			if err != nil {
 				slog.Warn("guardian: ollama show failed", "model", out[i].Name, "err", err)
 				return
 			}
-			out[i].ContextWindow = cw
+			out[i].ContextWindow = details.ContextWindow
+			out[i].Capabilities = details.Capabilities
 		}(i)
 	}
 	wg.Wait()

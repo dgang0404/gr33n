@@ -25,9 +25,9 @@ function stubApi({ members = [], farmModel = '' } = {}) {
       return Promise.resolve({
         data: {
           server_default: 'tinyllama',
-          available_models: [
-            { name: 'tinyllama', speed_class: 'fast', context_window: 2048 },
-          ],
+            available_models: [
+              { name: 'tinyllama', speed_class: 'fast', context_window: 2048, capabilities: ['completion'], loaded: false, runtime_hint: 'cold — first message may load the model' },
+            ],
         },
       })
     }

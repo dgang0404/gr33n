@@ -187,7 +187,7 @@ jobs:
           curl -sf http://127.0.0.1:11434/api/pull -d '{"name":"phi3:mini","stream":false}'
 
       - name: Phase 112 Ollama E2E smokes
-        run: go test -tags 'dev ollama' ./cmd/api/ -run TestPhase112 -count=1 -v
+        run: go test -tags 'dev ollama' ./cmd/api/ -run 'TestPhase112|TestPhase118' -count=1 -v
 
   # Phase 117 WS5 — Browser E2E (Playwright). Manual workflow_dispatch only.
   # Expects a running dev stack at E2E_BASE_URL (default http://127.0.0.1:5173)

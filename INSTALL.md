@@ -281,6 +281,20 @@ ollama pull phi3:mini   # context-window guardrail test
 go test -tags 'dev ollama' ./cmd/api/ -run TestPhase112 -count=1 -v
 ```
 
+Phase 118 adds `TestPhase118_*` (capabilities filter, tag normalization guardrail,
+runtime hints). Run alongside Phase 112:
+
+```bash
+go test -tags 'dev ollama' ./cmd/api/ -run 'TestPhase112|TestPhase118' -count=1 -v
+```
+
+**Model selector notes (Phase 118):** `GET /guardian/models` returns chat-capable
+models only; embedding models appear with `?all=true`. The UI shows Ollama
+`runtime_hint` (loaded/cold, CPU vs GPU). `LLM_MODEL=tinyllama` resolves to
+`tinyllama:latest` for guardrails — grounded chat rejects models below 8192 context.
+Extended-rope models like `phi3:mini` report the max `*.context_length` from
+Ollama `/api/show` (intentional).
+
 **CPU-only Ollama boxes** (no GPU): the full grounding prompt + tinyllama can exceed
 go-test's default 10-minute deadline. Use a longer test timeout and cap generation:
 

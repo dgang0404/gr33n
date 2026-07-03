@@ -16,7 +16,8 @@ const GuardianMinContextWindow = 8192
 // ModelCache holds the last Ollama /api/tags discovery snapshot (server-wide).
 type ModelCache struct {
 	mu            sync.RWMutex
-	models        []ModelInfo
+	allModels     []ModelInfo
+	chatModels    []ModelInfo
 	byName        map[string]ModelInfo
 	serverDefault string
 }
@@ -30,7 +31,8 @@ func (c *ModelCache) RefreshFromEnv(ctx context.Context) error {
 	base := strings.TrimSpace(os.Getenv("LLM_BASE_URL"))
 	if base == "" {
 		c.mu.Lock()
-		c.models = nil
+		c.allModels = nil
+		c.chatModels = nil
 		c.byName = make(map[string]ModelInfo)
 		c.serverDefault = EnvServerDefaultModel()
 		c.mu.Unlock()
@@ -41,32 +43,72 @@ func (c *ModelCache) RefreshFromEnv(ctx context.Context) error {
 		return err
 	}
 	c.Set(models, EnvServerDefaultModel())
-	slog.Info("guardian: discovered ollama models", "count", len(models))
+	slog.Info("guardian: discovered ollama models", "count", len(models), "chat_capable", len(c.chatModelsSnapshot()))
 	return nil
 }
 
 // Set replaces the cache contents (tests and manual refresh).
 func (c *ModelCache) Set(models []ModelInfo, serverDefault string) {
-	byName := make(map[string]ModelInfo, len(models))
-	for _, m := range models {
-		byName[m.Name] = m
-	}
+	all := append([]ModelInfo(nil), models...)
+	chat := filterChatModels(all)
+	byName := indexModelsByLookupKeys(chat)
 	c.mu.Lock()
-	c.models = append([]ModelInfo(nil), models...)
+	c.allModels = all
+	c.chatModels = chat
 	c.byName = byName
 	c.serverDefault = strings.TrimSpace(serverDefault)
 	c.mu.Unlock()
 }
 
-func (c *ModelCache) Snapshot() (models []ModelInfo, serverDefault string) {
+func filterChatModels(models []ModelInfo) []ModelInfo {
+	out := make([]ModelInfo, 0, len(models))
+	for _, m := range models {
+		if IsChatCapable(m.Capabilities) {
+			out = append(out, m)
+		}
+	}
+	return out
+}
+
+func indexModelsByLookupKeys(models []ModelInfo) map[string]ModelInfo {
+	byName := make(map[string]ModelInfo, len(models)*2)
+	for _, m := range models {
+		for _, key := range modelLookupKeys(m.Name) {
+			if _, exists := byName[key]; !exists {
+				byName[key] = m
+			}
+		}
+	}
+	return byName
+}
+
+// Snapshot returns chat-capable models by default. Pass includeAll=true for the
+// raw Ollama list (includes embedding-only models for debugging).
+func (c *ModelCache) Snapshot(includeAll ...bool) (models []ModelInfo, serverDefault string) {
+	all := len(includeAll) > 0 && includeAll[0]
 	c.mu.RLock()
 	defer c.mu.RUnlock()
-	if len(c.models) == 0 {
+	src := c.chatModels
+	if all {
+		src = c.allModels
+	}
+	if len(src) == 0 {
 		return nil, c.serverDefault
 	}
-	out := make([]ModelInfo, len(c.models))
-	copy(out, c.models)
+	out := make([]ModelInfo, len(src))
+	copy(out, src)
 	return out, c.serverDefault
+}
+
+func (c *ModelCache) chatModelsSnapshot() []ModelInfo {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	if len(c.chatModels) == 0 {
+		return nil
+	}
+	out := make([]ModelInfo, len(c.chatModels))
+	copy(out, c.chatModels)
+	return out
 }
 
 func (c *ModelCache) ServerDefault() string {
@@ -76,14 +118,14 @@ func (c *ModelCache) ServerDefault() string {
 }
 
 func (c *ModelCache) Get(name string) (ModelInfo, bool) {
-	name = strings.TrimSpace(name)
-	if name == "" {
-		return ModelInfo{}, false
-	}
 	c.mu.RLock()
 	defer c.mu.RUnlock()
-	m, ok := c.byName[name]
-	return m, ok
+	for _, key := range modelLookupKeys(name) {
+		if m, ok := c.byName[key]; ok {
+			return m, true
+		}
+	}
+	return ModelInfo{}, false
 }
 
 func (c *ModelCache) Contains(name string) bool {
@@ -126,10 +168,10 @@ func ResolveChatModel(cache *ModelCache, sessionModel string, farmPreferred *str
 		}
 		if grounded && info.ContextWindow > 0 && info.ContextWindow < GuardianMinContextWindow {
 			return ResolveOutcome{
-				RejectReason: formatContextReject(name, info.ContextWindow),
+				RejectReason: formatContextReject(info.Name, info.ContextWindow),
 			}, true
 		}
-		return ResolveOutcome{ModelName: name}, true
+		return ResolveOutcome{ModelName: info.Name}, true
 	}
 
 	if out, ok := try(requested); ok {
@@ -143,15 +185,20 @@ func ResolveChatModel(cache *ModelCache, sessionModel string, farmPreferred *str
 		}
 	}
 
-	// Unknown model and no cache match — still attempt env default path for bare installs.
 	if cache == nil || len(cache.byNameSnapshot()) == 0 {
 		return ResolveOutcome{ModelName: requested}
 	}
 
 	if envDefault != "" {
-		return ResolveOutcome{ModelName: envDefault, Fallback: true}
+		if out, ok := try(envDefault); ok {
+			out.Fallback = true
+			return out
+		}
 	}
-	return ResolveOutcome{ModelName: requested, Fallback: true}
+
+	return ResolveOutcome{
+		RejectReason: fmt.Sprintf("model %q is not installed in Ollama (chat-capable)", requested),
+	}
 }
 
 func (c *ModelCache) byNameSnapshot() map[string]ModelInfo {

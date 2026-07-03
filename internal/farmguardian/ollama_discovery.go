@@ -15,10 +15,14 @@ import (
 
 // ModelInfo describes one model reported by the Ollama runtime.
 type ModelInfo struct {
-	Name           string `json:"name"`
-	ContextWindow  int    `json:"context_window"`
-	ParameterCount int64  `json:"parameter_count,omitempty"`
-	SpeedClass     string `json:"speed_class"`
+	Name           string   `json:"name"`
+	ContextWindow  int      `json:"context_window"`
+	ParameterCount int64    `json:"parameter_count,omitempty"`
+	SpeedClass     string   `json:"speed_class"`
+	Capabilities   []string `json:"capabilities,omitempty"`
+	Loaded         bool     `json:"loaded,omitempty"`
+	Processor      string   `json:"processor,omitempty"`
+	RuntimeHint    string   `json:"runtime_hint,omitempty"`
 }
 
 type ollamaTagsResponse struct {
@@ -93,6 +97,7 @@ func DiscoverOllamaModels(ctx context.Context, llmBaseURL string, client *http.C
 		})
 	}
 	out = EnrichModelContextWindows(ctx, llmBaseURL, out, client, ShowConcurrencyFromEnv())
+	out = EnrichModelRuntimeHints(ctx, llmBaseURL, out, client)
 	return out, nil
 }
 

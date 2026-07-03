@@ -5129,10 +5129,18 @@ paths:
       tags: [chat]
       summary: List Ollama models available to Guardian (server-wide)
       description: >
-        Returns models currently reported by the Ollama runtime at `LLM_BASE_URL`.
+        Returns chat-capable models currently reported by the Ollama runtime at
+        `LLM_BASE_URL`. Embedding-only models are excluded by default; pass
+        `?all=true` to include the full Ollama tag list for debugging.
         This endpoint is **server-wide** — Ollama is a single shared process, not
         farm-scoped. Per-farm preference is stored on the farm record and updated via
         `PATCH /farms/{id}/settings`.
+      parameters:
+        - name: all
+          in: query
+          required: false
+          schema: { type: boolean, default: false }
+          description: When true, include embedding-only models from Ollama.
       responses:
         "200":
           description: Discovery snapshot
@@ -6149,6 +6157,20 @@ components:
         speed_class:
           type: string
           enum: [fast, general, reasoning]
+        capabilities:
+          type: array
+          items: { type: string }
+          description: Ollama model capabilities (e.g. completion, embedding, vision).
+        loaded:
+          type: boolean
+          description: Whether the model is currently loaded in Ollama (`/api/ps`).
+        processor:
+          type: string
+          enum: [cpu, gpu]
+          description: Placement hint when loaded.
+        runtime_hint:
+          type: string
+          description: Advisory text about load state and expected latency (CPU-only boxes).
 
     GuardianModelsResponse:
       type: object

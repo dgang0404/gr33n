@@ -32,8 +32,8 @@ func TestClassifySpeedClass(t *testing.T) {
 func TestResolveChatModel(t *testing.T) {
 	cache := NewModelCache()
 	cache.Set([]ModelInfo{
-		{Name: "llama3.1:8b", ContextWindow: 8192},
-		{Name: "phi3:mini", ContextWindow: 4096},
+		{Name: "llama3.1:8b", ContextWindow: 8192, Capabilities: []string{"completion"}},
+		{Name: "phi3:mini", ContextWindow: 4096, Capabilities: []string{"completion"}},
 	}, "llama3.1:8b")
 
 	out := ResolveChatModel(cache, "llama3.1:8b", nil, "llama3.1:8b", true)
@@ -55,6 +55,75 @@ func TestResolveChatModel(t *testing.T) {
 	out = ResolveChatModel(cache, "", &farm, "llama3.1:8b", true)
 	if !out.Fallback || out.ModelName != "llama3.1:8b" {
 		t.Fatalf("missing farm model should fallback: %+v", out)
+	}
+}
+
+func TestResolveChatModel_NameNormalization(t *testing.T) {
+	cache := NewModelCache()
+	cache.Set([]ModelInfo{
+		{Name: "tinyllama:latest", ContextWindow: 2048, Capabilities: []string{"completion"}},
+	}, "tinyllama")
+
+	out := ResolveChatModel(cache, "", nil, "tinyllama", true)
+	if out.RejectReason == "" {
+		t.Fatal("grounded tinyllama via env default should reject on context window")
+	}
+	if out.ModelName != "" {
+		t.Fatalf("reject should not set model name: %+v", out)
+	}
+
+	out = ResolveChatModel(cache, "", nil, "tinyllama", false)
+	if out.ModelName != "tinyllama:latest" {
+		t.Fatalf("ungrounded should resolve canonical name: %+v", out)
+	}
+
+	out = ResolveChatModel(cache, "tinyllama", nil, "tinyllama", true)
+	if out.RejectReason == "" {
+		t.Fatal("explicit bare tinyllama should hit same guardrail")
+	}
+}
+
+func TestResolveChatModel_EnvDefaultGuardrailNotBypassed(t *testing.T) {
+	cache := NewModelCache()
+	cache.Set([]ModelInfo{
+		{Name: "tinyllama:latest", ContextWindow: 2048, Capabilities: []string{"completion"}},
+	}, "tinyllama")
+
+	// Simulates session model == env default where first lookup used to bypass guardrail.
+	out := ResolveChatModel(cache, "tinyllama", nil, "tinyllama", true)
+	if out.RejectReason == "" {
+		t.Fatal("env-default path must not bypass grounded context check")
+	}
+}
+
+func TestModelCache_GetNormalization(t *testing.T) {
+	cache := NewModelCache()
+	cache.Set([]ModelInfo{
+		{Name: "tinyllama:latest", ContextWindow: 2048, Capabilities: []string{"completion"}},
+	}, "tinyllama")
+	if !cache.Contains("tinyllama") {
+		t.Fatal("Contains should match bare name")
+	}
+	info, ok := cache.Get("tinyllama")
+	if !ok || info.Name != "tinyllama:latest" {
+		t.Fatalf("Get: %+v ok=%v", info, ok)
+	}
+}
+
+func TestModelCache_SnapshotAll(t *testing.T) {
+	cache := NewModelCache()
+	cache.Set([]ModelInfo{
+		{Name: "llama3.2:latest", Capabilities: []string{"completion"}},
+		{Name: "nomic-embed-text", Capabilities: []string{"embedding"}},
+	}, "llama3.2:latest")
+
+	chat, _ := cache.Snapshot(false)
+	if len(chat) != 1 {
+		t.Fatalf("chat snapshot len=%d", len(chat))
+	}
+	all, _ := cache.Snapshot(true)
+	if len(all) != 2 {
+		t.Fatalf("all snapshot len=%d", len(all))
 	}
 }
 

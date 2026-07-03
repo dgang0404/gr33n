@@ -13,6 +13,7 @@ type modelsResponse struct {
 }
 
 // GetModels handles GET /guardian/models — server-wide Ollama snapshot (not farm-scoped).
+// Query ?all=true includes embedding-only models for debugging.
 func (h *Handler) GetModels(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		httputil.WriteError(w, http.StatusMethodNotAllowed, "method not allowed")
@@ -22,7 +23,8 @@ func (h *Handler) GetModels(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusServiceUnavailable, "AI features are disabled on this installation")
 		return
 	}
-	models, serverDefault := h.modelCache.Snapshot()
+	includeAll := r.URL.Query().Get("all") == "true"
+	models, serverDefault := h.modelCache.Snapshot(includeAll)
 	if models == nil {
 		models = []farmguardian.ModelInfo{}
 	}

@@ -36,6 +36,7 @@ func TestEnrichModelContextWindows(t *testing.T) {
 			"model_info": map[string]any{
 				"llama.context_length": float64(8192),
 			},
+			"capabilities": []string{"completion"},
 		})
 	}))
 	defer srv.Close()
@@ -44,6 +45,9 @@ func TestEnrichModelContextWindows(t *testing.T) {
 	enriched := EnrichModelContextWindows(context.Background(), srv.URL+"/v1", models, srv.Client(), 2)
 	if len(enriched) != 1 || enriched[0].ContextWindow != 8192 {
 		t.Fatalf("got %+v", enriched)
+	}
+	if len(enriched[0].Capabilities) != 1 || enriched[0].Capabilities[0] != "completion" {
+		t.Fatalf("capabilities: %+v", enriched[0].Capabilities)
 	}
 }
 

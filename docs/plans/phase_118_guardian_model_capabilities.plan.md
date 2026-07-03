@@ -9,19 +9,19 @@ overview: >
 todos:
   - id: ws1-capabilities
     content: "WS1: Capabilities filter — /api/show already returns capabilities[]; keep only models with 'completion' in the chat selector/cache resolution; expose capabilities in ModelInfo + GET /guardian/models; vision capability tagged for future vision routing"
-    status: pending
+    status: completed
   - id: ws2-name-normalization
     content: "WS2: Name normalization — cache lookups treat 'name' and 'name:latest' as the same model; ResolveChatModel fallback paths (unknown model, env default) must re-check the context guardrail after normalization; unit tests for both spellings"
-    status: pending
+    status: completed
   - id: ws3-guardrail-fallback
     content: "WS3: Guardrail on fallback — the 'unknown model → env default' branches in ResolveChatModel return without the grounded context check; route them through the same try() gate; smoke: grounded chat with env default tinyllama (ctx 2048) → 400, ungrounded → 200"
-    status: pending
+    status: completed
   - id: ws4-runtime-hints
     content: "WS4: Runtime hints — query /api/ps at discovery refresh; surface loaded-vs-cold and CPU/GPU placement per model in the selector ('loaded, CPU-only — expect slow replies'); no hard blocks, advisory only"
-    status: pending
+    status: completed
   - id: ws5-ui-polish
     content: "WS5: UI — hide embedding models; badge capabilities (chat/vision); cold-model warning before first message; keep admin pull row"
-    status: pending
+    status: completed
 isProject: false
 ---
 
@@ -29,9 +29,8 @@ isProject: false
 
 ## Status
 
-**Planned.** Found during the 2026-07-03 verification run of the Phase 112 E2E suite
-against live Ollama 0.24 (6 models, CPU-only host). All Phase 112 tests pass; these
-are correctness/UX gaps one layer deeper.
+**Shipped** (2026-07-03). Chat-only model filtering, `:latest` normalization with
+guardrail on env-default paths, `/api/ps` runtime hints, and selector UI polish.
 
 ---
 
@@ -90,12 +89,12 @@ Related quirk (document, don't fix): `phi3:mini` reports
 
 ## Acceptance
 
-- [ ] Embedding-only models absent from `GET /guardian/models` default response and the selector
-- [ ] `LLM_MODEL=tinyllama` with Ollama reporting `tinyllama:latest`: grounded chat → 400 context reject; ungrounded → 200
-- [ ] Explicit and env-default paths produce identical guardrail outcomes for the same effective model
-- [ ] Selector shows loaded/cold + CPU/GPU hint when Ollama exposes it; absent gracefully otherwise
-- [ ] Unit tests cover normalization matrix (bare/`:latest`/custom tag × session/farm/env sources)
-- [ ] `TestPhase112_*` still green; new `TestPhase118_*` ollama-tagged smokes for WS1–WS3
+- [x] Embedding-only models absent from `GET /guardian/models` default response and the selector
+- [x] `LLM_MODEL=tinyllama` with Ollama reporting `tinyllama:latest`: grounded chat → 400 context reject; ungrounded → 200
+- [x] Explicit and env-default paths produce identical guardrail outcomes for the same effective model
+- [x] Selector shows loaded/cold + CPU/GPU hint when Ollama exposes it; absent gracefully otherwise
+- [x] Unit tests cover normalization matrix (bare/`:latest`/custom tag × session/farm/env sources)
+- [x] `TestPhase112_*` still green; new `TestPhase118_*` ollama-tagged smokes for WS1–WS3
 
 ---
 
