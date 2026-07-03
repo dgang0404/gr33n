@@ -22,6 +22,59 @@ func requireOllamaE2E(t *testing.T) {
 	}
 }
 
+// pickLightChatModel prefers tinyllama/phi3 for ungrounded smokes on low-RAM laptops.
+func pickLightChatModel(t *testing.T, models []any, serverDefault string) string {
+	t.Helper()
+	prefs := []string{"tinyllama", "phi3:mini", "phi3"}
+	for _, pref := range prefs {
+		for _, raw := range models {
+			m, _ := raw.(map[string]any)
+			name, _ := m["name"].(string)
+			if strings.HasPrefix(name, pref) {
+				return name
+			}
+		}
+	}
+	for _, raw := range models {
+		m, _ := raw.(map[string]any)
+		name, _ := m["name"].(string)
+		if name != "" && name != serverDefault {
+			return name
+		}
+	}
+	if len(models) > 0 {
+		m, _ := models[0].(map[string]any)
+		name, _ := m["name"].(string)
+		if name != "" {
+			return name
+		}
+	}
+	t.Skip("no chat model available for override test")
+	return ""
+}
+
+func requireEnvModelPrefix(t *testing.T, prefix string) {
+	t.Helper()
+	envModel := strings.TrimSpace(os.Getenv("LLM_MODEL"))
+	bare := strings.TrimSuffix(envModel, ":latest")
+	if !strings.HasPrefix(bare, prefix) {
+		t.Skipf("LLM_MODEL=%q — this smoke requires LLM_MODEL=%s", envModel, prefix)
+	}
+}
+
+func skipIfOllamaOOM(t *testing.T, resp *http.Response) {
+	t.Helper()
+	if resp.StatusCode != http.StatusBadGateway {
+		return
+	}
+	body := decodeMap(t, resp)
+	resp.Body.Close()
+	errMsg, _ := body["error"].(string)
+	if strings.Contains(errMsg, "system memory") || strings.Contains(errMsg, "memory") {
+		t.Skip("Ollama OOM — stop make dev-auth-test to free RAM, then retry ollama-smoke")
+	}
+}
+
 func TestPhase112_ShowEnrichment(t *testing.T) {
 	requireOllamaE2E(t)
 	tok := smokeJWT(t)
@@ -58,26 +111,22 @@ func TestPhase112_SessionOverride(t *testing.T) {
 	if len(models) == 0 {
 		t.Skip("no ollama models")
 	}
-	first, _ := models[0].(map[string]any)
-	overrideModel, _ := first["name"].(string)
 	serverDefault, _ := discBody["server_default"].(string)
-	if overrideModel == "" || overrideModel == serverDefault {
-		if len(models) < 2 {
-			t.Skip("need distinct model for override test")
-		}
-		second, _ := models[1].(map[string]any)
-		overrideModel, _ = second["name"].(string)
-	}
+	overrideModel := pickLightChatModel(t, models, serverDefault)
 
+	// Ungrounded hello — verifies session model override without context guardrail.
 	chatResp := authPost(t, tok, "/v1/chat", map[string]any{
 		"message": "Say hello in one word.",
-		"farm_id": 1,
+		"farm_id": 0,
 		"model":   overrideModel,
 		"stream":  false,
 	})
 	if chatResp.StatusCode == http.StatusServiceUnavailable {
 		chatResp.Body.Close()
 		t.Skip("LLM not configured in test server")
+	}
+	if chatResp.StatusCode == http.StatusBadGateway {
+		skipIfOllamaOOM(t, chatResp)
 	}
 	if chatResp.StatusCode != http.StatusOK && chatResp.StatusCode != http.StatusBadGateway {
 		t.Fatalf("chat status %d", chatResp.StatusCode)

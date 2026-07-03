@@ -6,7 +6,6 @@ package main
 import (
 	"context"
 	"net/http"
-	"os"
 	"strings"
 	"testing"
 	"time"
@@ -43,12 +42,8 @@ func TestPhase118_ChatModelsExcludeEmbeddingOnly(t *testing.T) {
 
 func TestPhase118_EnvDefaultTagNormalizationGuardrail(t *testing.T) {
 	requireOllamaE2E(t)
+	requireEnvModelPrefix(t, "tinyllama")
 	tok := smokeJWT(t)
-
-	envModel := strings.TrimSpace(os.Getenv("LLM_MODEL"))
-	if envModel == "" {
-		t.Skip("LLM_MODEL not set")
-	}
 
 	disc := authGet(t, tok, "/guardian/models")
 	expectStatus(t, disc, 200)
@@ -56,24 +51,20 @@ func TestPhase118_EnvDefaultTagNormalizationGuardrail(t *testing.T) {
 	disc.Body.Close()
 	models, _ := discBody["available_models"].([]any)
 
-	var tinyCtx float64
 	var tinyName string
 	for _, raw := range models {
 		m, _ := raw.(map[string]any)
 		name, _ := m["name"].(string)
 		cw, _ := m["context_window"].(float64)
 		if strings.HasPrefix(name, "tinyllama") && cw > 0 && cw < 8192 {
-			tinyCtx = cw
 			tinyName = name
 			break
 		}
 	}
 	if tinyName == "" {
-		t.Skip("tinyllama with context_window < 8192 not in chat list — pull tinyllama for this test")
+		t.Skip("tinyllama with context_window < 8192 not in chat list — ollama pull tinyllama")
 	}
-	_ = tinyCtx
 
-	// Clear session/farm overrides so resolution uses env default (often bare "tinyllama").
 	ctx, cancel := contextWithTimeout(t)
 	defer cancel()
 	_, _ = testPool.Exec(ctx, `UPDATE gr33ncore.farms SET guardian_preferred_model = NULL WHERE id = 1`)
@@ -83,8 +74,11 @@ func TestPhase118_EnvDefaultTagNormalizationGuardrail(t *testing.T) {
 		"farm_id": 1,
 		"stream":  false,
 	})
+	if grounded.StatusCode == http.StatusBadGateway {
+		skipIfOllamaOOM(t, grounded)
+	}
 	if grounded.StatusCode != http.StatusBadRequest {
-		t.Fatalf("grounded env-default tinyllama want 400, got %d", grounded.StatusCode)
+		t.Fatalf("grounded env-default tinyllama want 400 context reject, got %d (is LLM_MODEL=tinyllama in .env?)", grounded.StatusCode)
 	}
 	grounded.Body.Close()
 
@@ -93,6 +87,9 @@ func TestPhase118_EnvDefaultTagNormalizationGuardrail(t *testing.T) {
 		"farm_id": 0,
 		"stream":  false,
 	})
+	if ungrounded.StatusCode == http.StatusBadGateway {
+		skipIfOllamaOOM(t, ungrounded)
+	}
 	if ungrounded.StatusCode != http.StatusOK && ungrounded.StatusCode != http.StatusBadGateway {
 		t.Fatalf("ungrounded tinyllama want 200/502, got %d", ungrounded.StatusCode)
 	}

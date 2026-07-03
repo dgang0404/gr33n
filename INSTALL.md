@@ -277,6 +277,11 @@ If you see `relation "auth.users" does not exist`, run once:
 
 Ensure `.env` has `DATABASE_URL` pointing at that database (same as `make dev-auth-test`).
 
+**Stop `make dev-auth-test` before smokes** — the dev API and Ollama both consume RAM;
+on a 16 GB laptop you may see Ollama `502` / “requires more system memory” if both run.
+
+Set **`LLM_MODEL=tinyllama`** in `.env` for Phase 118 guardrail smokes (not `llama3.1:8b`).
+
 Guardian model-selector E2E tests (`TestPhase112_*`) compile only with the
 `ollama` build tag and expect a running Ollama at `LLM_BASE_URL`:
 
