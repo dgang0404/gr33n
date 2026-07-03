@@ -384,6 +384,52 @@ from inside it. The command itself still executes correctly.
 
 ---
 
+## Scripts & Make targets reference
+
+Quick-reference for what to run and when. Full details: `make help` or read the target comments in the Makefile.
+
+### Daily dev (you will use these)
+
+| Command | When to run |
+|---------|-------------|
+| `make dev-auth-test` | **Start the stack** — API on `:8080` + UI on `:5173` (Ctrl+C to stop) |
+| `make migrate` | After `git pull` brings new migrations |
+| `make test` | Run all Go unit + smoke tests |
+| `make ollama-smoke-cpu` | Smoke-test Guardian/Ollama integration (stop `dev-auth-test` first) |
+| `make lint` | Quick sanity check before committing |
+| `scripts/restart-local.sh` | **After a reboot** — starts Postgres, waits, runs `db-sanity-report` |
+
+### One-time setup (already done on this machine)
+
+| Command | What it did |
+|---------|-------------|
+| `make install-deps-debian` | Installed Postgres, PostGIS, pgvector, TimescaleDB, Node via apt |
+| `make first-clone` | `go mod download`, `.env` from template, `npm ci` |
+| `scripts/bootstrap-local.sh --seed` | Applied schema + migrations + demo seed data |
+| `echo -n 'password' \| go run scripts/gen-admin-hash.go > ~/.gr33n/admin.hash` | Set env-admin login password |
+
+### LLM / Guardian model defaults
+
+`.env` controls the model `make dev-auth-test` uses.
+Your laptop `.env` should have `LLM_MODEL=phi3:mini` (2.2 GB, fits 16 GB RAM, supports grounded farm chat).
+The production server uses `LLM_MODEL=llama3.1:8b`.
+Smokes (`make ollama-smoke-cpu`) always default to `tinyllama` regardless of `.env`.
+
+### You probably won't touch these
+
+| Script / target | What it's for |
+|-----------------|---------------|
+| `generate-crop-*.sh` | Regenerate crop catalog seed SQL from YAML |
+| `rag-ingest-*.sh` | Ingest documents into the vector/RAG store |
+| `run-edge-*.sh` / `install-pi-edge-deps.sh` | Raspberry Pi sensor & actuator integration |
+| `scripts/enterprise/` | Multi-tenant operator scripts (future) |
+| `sit-in-*.sh` | QA session prep & dry-run |
+| `make sqlc` | Regenerate Go DB query layer from SQL (after schema changes) |
+| `make audit-openapi` / `make audit-env` | Pre-release validation checks |
+| `make build` | Compile a production binary (for server deploy) |
+
+---
+
 ## Repository layout
 
 ```
