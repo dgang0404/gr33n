@@ -99,7 +99,7 @@ ollama-smoke-help: ## Phase 112/118 — print Ollama Guardian E2E smoke commands
 	@echo "  • Stop make dev-auth-test in other terminals (API + Ollama compete for RAM)"
 	@echo "  • Ollama running at LLM_BASE_URL (.env)"
 	@echo "  • .env with DATABASE_URL, JWT_SECRET, PI_API_KEY"
-	@echo "  • AI_ENABLED=true, LLM_MODEL=tinyllama (required for Phase 118 guardrail smoke)"
+	@echo "  • AI_ENABLED=true (smokes default LLM_MODEL=tinyllama; override: LLM_MODEL=… make ollama-smoke-cpu)"
 	@echo ""
 	@echo "  make ollama-smoke          # standard run"
 	@echo "  make ollama-smoke-cpu      # CPU-only box: -timeout 40m + token cap"
@@ -110,13 +110,15 @@ ollama-smoke-help: ## Phase 112/118 — print Ollama Guardian E2E smoke commands
 ollama-smoke: ## Run Phase 112+118 Ollama smokes (bootstrap-local --seed + .env required)
 	@OLLAMA_SMOKE_LLM="$$LLM_MODEL"; \
 	if [ -f .env ]; then set -a && . ./.env && set +a; fi; \
-	if [ -n "$$OLLAMA_SMOKE_LLM" ]; then export LLM_MODEL="$$OLLAMA_SMOKE_LLM"; fi; \
+	if [ -n "$$OLLAMA_SMOKE_LLM" ]; then export LLM_MODEL="$$OLLAMA_SMOKE_LLM"; \
+	else export LLM_MODEL=tinyllama; fi; \
 	$(GO) test -tags 'dev ollama' ./cmd/api/ -run 'TestPhase112|TestPhase118' -count=1 -v
 
 ollama-smoke-cpu: ## Ollama smokes for CPU-only hosts (longer timeout, lower max tokens)
 	@OLLAMA_SMOKE_LLM="$$LLM_MODEL"; \
 	if [ -f .env ]; then set -a && . ./.env && set +a; fi; \
-	if [ -n "$$OLLAMA_SMOKE_LLM" ]; then export LLM_MODEL="$$OLLAMA_SMOKE_LLM"; fi; \
+	if [ -n "$$OLLAMA_SMOKE_LLM" ]; then export LLM_MODEL="$$OLLAMA_SMOKE_LLM"; \
+	else export LLM_MODEL=tinyllama; fi; \
 	$(GO) test -tags 'dev ollama' ./cmd/api/ -run 'TestPhase112|TestPhase118' -count=1 -v \
 		-timeout 40m LLM_TIMEOUT_SECONDS=150 LLM_MAX_TOKENS=60
 

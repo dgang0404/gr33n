@@ -247,16 +247,26 @@ UPDATE gr33ncore.farms SET guardian_preferred_model = NULL WHERE id = 1`)
 		"farm_id": 1,
 		"stream":  false,
 	})
-	if chatResp.StatusCode != http.StatusOK && chatResp.StatusCode != http.StatusBadGateway {
-		t.Fatalf("chat status %d", chatResp.StatusCode)
+	if chatResp.StatusCode == http.StatusBadGateway {
+		skipIfOllamaOOM(t, chatResp)
 	}
 	body := decodeMap(t, chatResp)
 	chatResp.Body.Close()
-	if chatResp.StatusCode == http.StatusOK {
-		fallback, _ := body["model_fallback"].(bool)
-		if !fallback {
-			t.Fatal("expected model_fallback true for missing farm model")
+	if chatResp.StatusCode == http.StatusBadRequest {
+		errMsg, _ := body["error"].(string)
+		if strings.Contains(errMsg, "below the minimum required for grounded") {
+			// Missing farm model fell back to env default (e.g. tinyllama); Phase 118
+			// guardrail correctly rejects grounded chat on small context windows.
+			return
 		}
+		t.Fatalf("chat status 400: %s", errMsg)
+	}
+	if chatResp.StatusCode != http.StatusOK {
+		t.Fatalf("chat status %d", chatResp.StatusCode)
+	}
+	fallback, _ := body["model_fallback"].(bool)
+	if !fallback {
+		t.Fatal("expected model_fallback true for missing farm model")
 	}
 }
 
