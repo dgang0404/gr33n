@@ -2,7 +2,7 @@
 
 **Audience:** Operators on a **16 GB CPU-only laptop** (or any box without a GPU) running local Ollama for Farm Guardian.
 
-**Related:** [INSTALL.md](../INSTALL.md) · [local-operator-bootstrap.md](local-operator-bootstrap.md) · [farm-guardian-ollama-setup.md](farm-guardian-ollama-setup.md) · [Phase 126 plan](plans/phase_126_guardian_cpu_efficiency.plan.md)
+**Related:** [INSTALL.md](../INSTALL.md) · [local-operator-bootstrap.md](local-operator-bootstrap.md) (daily cheat sheet) · [farm-guardian-ollama-setup.md](farm-guardian-ollama-setup.md) · [Phase 126 plan](plans/phase_126_guardian_cpu_efficiency.plan.md)
 
 ---
 

@@ -6,6 +6,43 @@
 
 Single happy path for standing up **Postgres → API → dashboard → optional Insert Commons receiver → optional Pi / MQTT bridge**, with explicit env templates and pointers to federation and audit docs. For farm template behavior (blank vs starter pack), see [`plans/phase_15_farm_onboarding.plan.md`](plans/phase_15_farm_onboarding.plan.md).
 
+## Laptop daily cheat sheet (Guardian + Ollama)
+
+**Where to run commands:** `pgrep`, `ollama ps`, and `ollama stop` work from **any directory** (they talk to the system Ollama service). **`make …`** and **`./scripts/…`** must be run from the **repository root** (`cd ~/gr33n-platform`).
+
+```bash
+# ── Ollama (any directory — not inside gr33n repo required) ──
+pgrep -a 'ollama run'    # should be empty; kill any PIDs listed
+ollama ps                # empty = no model loaded in RAM (good before chat)
+ollama stop phi3:mini
+ollama stop rjmalagon/gte-qwen2-1.5b-instruct-embed-f16   # match EMBEDDING_MODEL in .env
+
+# ── gr33n (repository root only) ──
+cd ~/gr33n-platform
+
+# After reboot — DB + API + UI (one terminal; Go compile may take minutes)
+make restart-local-serve          # → scripts/restart-local.sh --serve
+
+# Or stepwise:
+make restart-local              # → scripts/restart-local.sh (db + sanity only)
+make dev-auth-test              # API :8080 + UI :5173
+
+# If API/UI already running → open http://localhost:5173/chat (nothing to start)
+
+# Optional: RAG ingest when Ollama idle (not while chatting)
+make rag-ingest-farm-operational FARM_ID=1    # → scripts/rag-ingest-farm-operational.sh
+make rag-ingest-platform-docs               # → scripts/rag-ingest-platform-docs.sh
+# Full bootstrap: make guardian-bootstrap-farm FARM_ID=1
+#   → scripts/enterprise/guardian-bootstrap-farm.sh
+
+# Verify stack
+make check-stack                # → scripts/check-local-stack.sh
+```
+
+**Script map:** [`scripts/restart-local.sh`](../scripts/restart-local.sh) · [`scripts/check-local-stack.sh`](../scripts/check-local-stack.sh) · [`scripts/rag-ingest-farm-operational.sh`](../scripts/rag-ingest-farm-operational.sh) · [`scripts/rag-ingest-platform-docs.sh`](../scripts/rag-ingest-platform-docs.sh) · [`scripts/enterprise/guardian-bootstrap-farm.sh`](../scripts/enterprise/guardian-bootstrap-farm.sh)
+
+**Guardian CPU / timeouts / pull vs dropdown:** [guardian-ollama-laptop-playbook.md](guardian-ollama-laptop-playbook.md)
+
 ## Prerequisites
 
 | Need | Native install | Docker only |
