@@ -339,6 +339,21 @@ func expectStatus(t *testing.T, resp *http.Response, code int) {
 	}
 }
 
+// expectStatusOneOf is for endpoints with get-or-create semantics (e.g.
+// POST /farms/{id}/plants) where the exact status depends on whether the
+// row already existed — acceptable for smoke tests that don't own the
+// farm's full state (Phase 124 — demo farm 1 now ships pre-seeded plants).
+func expectStatusOneOf(t *testing.T, resp *http.Response, codes ...int) {
+	t.Helper()
+	for _, c := range codes {
+		if resp.StatusCode == c {
+			return
+		}
+	}
+	b, _ := io.ReadAll(resp.Body)
+	t.Fatalf("expected status in %v, got %d: %s", codes, resp.StatusCode, string(b))
+}
+
 func decodeMap(t *testing.T, resp *http.Response) map[string]any {
 	t.Helper()
 	defer resp.Body.Close()

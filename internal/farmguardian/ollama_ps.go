@@ -74,7 +74,7 @@ func EnrichModelRuntimeHints(ctx context.Context, llmBaseURL string, models []Mo
 			}
 		}
 		if !found {
-			out[i].RuntimeHint = "cold — first message may load the model"
+			out[i].RuntimeHint = "cold — first message loads the model from local disk (no internet needed); may take a while"
 			continue
 		}
 		out[i].Loaded = true

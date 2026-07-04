@@ -55,6 +55,14 @@ needs to leave the property.
 Once a model is pulled, it lives on disk — using it from then on is LAN-only
 (or fully offline if the API and Ollama share a machine).
 
+**Why the first reply after a restart is slow:** if the model selector shows a
+**"cold"** hint, it means Ollama hasn't loaded that model into RAM/VRAM yet.
+The first chat message triggers that load from local disk — it can take
+anywhere from a few seconds to a couple of minutes depending on model size
+and hardware, but it is 100% local (no internet, no download). Subsequent
+messages are fast because the model stays warm in memory until Ollama evicts
+it for inactivity or another model is requested.
+
 ## Air-gapped sites
 
 If you have zero WAN access at the install site:

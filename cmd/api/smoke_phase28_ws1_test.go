@@ -45,8 +45,13 @@ func seedCropCycleForAnalytics(t *testing.T, tok string, name string, harvestedA
 	zone := decodeMap(t, resp)
 	zoneID := int64(zone["id"].(float64))
 
+	// Active cycles require a catalog plant_id (Phase 86). "lettuce" is part
+	// of the Phase 124 demo seed — smokeEnsureCatalogPlant finds-or-creates,
+	// never mutating it, so this is safe regardless of seed state.
+	plantID := smokeEnsureCatalogPlant(t, tok, 1, "lettuce")
 	createBody := map[string]any{
 		"zone_id":           zoneID,
+		"plant_id":          plantID,
 		"name":              name,
 		"strain_or_variety": "OG Kush",
 		"current_stage":     "early_veg",

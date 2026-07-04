@@ -1,10 +1,16 @@
 -- =============================================================================
--- gr33n Master Seed File  v1.007
+-- gr33n Master Seed File  v1.008
 -- Phase 48: idempotent sensors/automation_rules; demo_showcase profile tag on farm 1.
 -- + Demo input_batches (inventory), flower reservoir + fertigation program,
 --   Phase 29 WS7 — three unread Guardian demo alerts (farm 1).
 --   mixing_events + components, crop_cycles, protocol tasks (18/6 veg vs 12/12 flower).
 -- v1.004: schedules table has no metadata column — notes moved to description
+-- v1.008 (Phase 124): fixed stale crop_cycles.strain_or_variety → batch_label
+--   (renamed in Phase 93, seed was never updated); added dev-hygiene purge of
+--   smoke-test artifacts on farm 1; added 4 more zones (Propagation Room,
+--   Herb & Greens Room, Outdoor Pepper Bed, Outdoor Berry Patch), a `plants`
+--   catalog row per crop, and 11 crop_cycles across active + harvested states
+--   so the demo farm reads like a real small farm, not phase-test debris.
 -- =============================================================================
 -- Run once after schema:
 --   psql -d gr33n -f db/seeds/master_seed.sql
@@ -55,12 +61,36 @@ UPDATE gr33ncore.farms
 SET meta_data = COALESCE(meta_data, '{}'::jsonb) || '{"dev_seed_profile":"demo_showcase"}'::jsonb
 WHERE id = 1;
 
+-- Phase 124 WS0 — dev hygiene: the Go integration test suite (`cmd/api` smoke
+-- tests) writes real plants/crop-cycles into farm 1 without cleanup when run
+-- against a local DATABASE_URL. Purge that leftover test debris every time
+-- the seed runs so the demo farm doesn't accumulate "Phase98", "smoke_cycle_…",
+-- "typo A/B", etc. Root cause (smoke tests not cleaning up farm 1) tracked in
+-- docs/plans/phase_124_realistic_seed_data.plan.md.
+DELETE FROM gr33nfertigation.crop_cycles
+WHERE farm_id = 1
+  AND (
+    name ~* '^(smoke_|phase[0-9]+|typo )'
+    OR batch_label ~* '^(smoke_|phase[0-9]+|typo )'
+  );
+DELETE FROM gr33ncrops.plants
+WHERE farm_id = 1
+  AND (
+    display_name ~* '^(typo |smoke_|phase[0-9]+)'
+    OR variety_or_cultivar ~* '^(typo |smoke_|phase[0-9]+)'
+    OR crop_key IS NULL
+  );
+
 INSERT INTO gr33ncore.zones (farm_id, name, description, zone_type)
 SELECT 1, v.name, v.description, v.zone_type
 FROM (VALUES
     ('Veg Room',        'Vegetative growth stage. 18/6 light, JLF+JMS feeding.',           'indoor'),
     ('Flower Room',     'Flowering and fruiting stage. 12/12 light, FFJ+WCA program.',     'indoor'),
-    ('Outdoor Garden',  'Outdoor raised beds and garden rows. Natural light. JADAM soil program.', 'outdoor')
+    ('Outdoor Garden',  'Outdoor raised beds and garden rows. Natural light. JADAM soil program.', 'outdoor'),
+    ('Propagation Room', 'Clones and seedlings under T5s until they graduate to Veg Room or outside.', 'indoor'),
+    ('Herb & Greens Room', 'Perpetual indoor herbs and leafy greens under LED, cut-and-come-again.', 'indoor'),
+    ('Outdoor Pepper Bed', 'Raised bed, full sun. Peppers direct-planted after last frost.', 'outdoor'),
+    ('Outdoor Berry Patch', 'Perennial strawberry patch, drip-irrigated.', 'outdoor')
 ) AS v(name, description, zone_type)
 WHERE NOT EXISTS (
     SELECT 1 FROM gr33ncore.zones z
@@ -1361,13 +1391,27 @@ WHERE fe.farm_id = 1
   AND rv.name = 'Outdoor Drench Tank'
   AND me.notes LIKE '%[seed:outdoor-mix-demo]%';
 
+-- Phase 124 WS1 — one `plants` catalog row per crop grown on this farm. The
+-- specific strain/variety per grow lives on crop_cycles.batch_label instead
+-- (Phase 93); this row is just "we grow cannabis / tomato / etc. here".
+INSERT INTO gr33ncrops.plants (farm_id, display_name, variety_or_cultivar, crop_key)
+VALUES
+    (1, 'Cannabis',   'Mixed photoperiod',    'cannabis'),
+    (1, 'Tomato',     'Roma',                 'tomato'),
+    (1, 'Pepper',     'California Wonder',    'pepper'),
+    (1, 'Basil',      'Genovese',             'basil'),
+    (1, 'Strawberry', 'Albion (everbearing)', 'strawberry'),
+    (1, 'Cilantro',   'Santo',                'cilantro'),
+    (1, 'Lettuce',    'Buttercrunch',         'lettuce')
+ON CONFLICT DO NOTHING;
+
 INSERT INTO gr33nfertigation.crop_cycles
-    (farm_id, zone_id, name, strain_or_variety, current_stage, is_active, started_at, cycle_notes)
+    (farm_id, zone_id, name, batch_label, current_stage, is_active, started_at, cycle_notes)
 SELECT
     1,
     z.id,
     'Veg canopy (18/6)',
-    'Generic photoperiod',
+    'Blue Dream',
     'late_veg'::gr33nfertigation.growth_stage_enum,
     TRUE,
     CURRENT_DATE - 35,
@@ -1380,12 +1424,12 @@ WHERE z.farm_id = 1 AND z.name = 'Veg Room'
   );
 
 INSERT INTO gr33nfertigation.crop_cycles
-    (farm_id, zone_id, name, strain_or_variety, current_stage, is_active, started_at, cycle_notes)
+    (farm_id, zone_id, name, batch_label, current_stage, is_active, started_at, cycle_notes)
 SELECT
     1,
     z.id,
     'Flower run (12/12)',
-    'Generic photoperiod',
+    'Gorilla Glue #4',
     'early_flower'::gr33nfertigation.growth_stage_enum,
     TRUE,
     CURRENT_DATE - 14,
@@ -1398,12 +1442,12 @@ WHERE z.farm_id = 1 AND z.name = 'Flower Room'
   );
 
 INSERT INTO gr33nfertigation.crop_cycles
-    (farm_id, zone_id, name, strain_or_variety, current_stage, is_active, started_at, cycle_notes)
+    (farm_id, zone_id, name, batch_label, current_stage, is_active, started_at, cycle_notes)
 SELECT
     1,
     z.id,
     'Outdoor raised beds — spring',
-    'Mixed greens / herbs',
+    'Roma',
     'early_veg'::gr33nfertigation.growth_stage_enum,
     TRUE,
     CURRENT_DATE - 21,
@@ -1414,6 +1458,55 @@ WHERE z.farm_id = 1 AND z.name = 'Outdoor Garden'
     SELECT 1 FROM gr33nfertigation.crop_cycles cc
     WHERE cc.zone_id = z.id AND cc.is_active = TRUE
   );
+
+-- Phase 124 WS2 — attach the anchor cycles above to their plant catalog row
+-- (they predate the plants table backfill) and give the 3 new beds/rooms
+-- + harvested history so the demo farm shows a real mix of grow stages.
+UPDATE gr33nfertigation.crop_cycles cc
+SET plant_id = p.id
+FROM gr33ncrops.plants p, gr33ncore.zones z
+WHERE cc.farm_id = 1 AND cc.plant_id IS NULL AND cc.zone_id = z.id
+  AND ((z.name = 'Veg Room' AND p.crop_key = 'cannabis' AND cc.name = 'Veg canopy (18/6)')
+    OR (z.name = 'Flower Room' AND p.crop_key = 'cannabis' AND cc.name = 'Flower run (12/12)')
+    OR (z.name = 'Outdoor Garden' AND p.crop_key = 'tomato' AND cc.name = 'Outdoor raised beds — spring'))
+  AND p.farm_id = 1;
+
+INSERT INTO gr33nfertigation.crop_cycles
+    (farm_id, zone_id, plant_id, name, batch_label, current_stage, is_active, started_at, harvested_at, yield_grams, cycle_notes)
+SELECT 1, z.id, p.id, v.name, v.batch_label, v.stage::gr33nfertigation.growth_stage_enum, v.is_active, v.started_at::date, v.harvested_at::date, v.yield_grams, v.notes
+FROM (VALUES
+    ('Flower Room',         'cannabis',   'Blue Dream — Run 3 (harvested)',              'Blue Dream',         'dry_cure',     FALSE, (CURRENT_DATE-100)::text, (CURRENT_DATE-15)::text, 412.5, 'Previous flower run. Dried 10 days, curing in jars.'),
+    ('Propagation Room',    'cannabis',   'OG Kush — Clone Batch 12',                     'OG Kush',            'clone',        TRUE,  (CURRENT_DATE-9)::text,   NULL,                    NULL,  'Rooting under dome, 24h light, misted 2x daily.'),
+    ('Propagation Room',    'tomato',     'Roma — Seedling Tray 4 (transplanted)',        'Roma',               'seedling',     FALSE, (CURRENT_DATE-35)::text, NULL,                    NULL,  'Transplanted to Outdoor Garden after hardening off.'),
+    ('Herb & Greens Room',  'basil',      'Genovese Basil — Perpetual Bed',               'Genovese',           'late_veg',     TRUE,  (CURRENT_DATE-25)::text, NULL,                    NULL,  'Cut-and-come-again. Harvest outer leaves weekly.'),
+    ('Herb & Greens Room',  'cilantro',   'Santo Cilantro — Cut Batch 2 (harvested)',     'Santo',              'harvest',      FALSE, (CURRENT_DATE-60)::text, (CURRENT_DATE-10)::text, 180,   'Bolted in warm spell, harvested whole plants.'),
+    ('Outdoor Pepper Bed',  'pepper',     'California Wonder — Bed 2',                    'California Wonder',  'late_veg',     TRUE,  (CURRENT_DATE-45)::text, NULL,                    NULL,  'Direct-planted after last frost. First flowers forming.'),
+    ('Outdoor Berry Patch', 'strawberry', 'Albion Strawberries — Patch A',                'Albion',             'early_flower', TRUE,  (CURRENT_DATE-60)::text, NULL,                    NULL,  'Perennial everbearing patch, second season.'),
+    ('Outdoor Garden',      'lettuce',    'Buttercrunch Lettuce — Spring Bed (harvested)','Buttercrunch',       'harvest',      FALSE, (CURRENT_DATE-70)::text, (CURRENT_DATE-25)::text, 2200,  'Spring succession crop, cleared to make way for tomatoes.')
+) AS v(zone_name, crop_key, name, batch_label, stage, is_active, started_at, harvested_at, yield_grams, notes)
+JOIN gr33ncore.zones z ON z.farm_id = 1 AND z.name = v.zone_name AND z.deleted_at IS NULL
+JOIN gr33ncrops.plants p ON p.farm_id = 1 AND p.crop_key = v.crop_key
+WHERE NOT EXISTS (
+    SELECT 1 FROM gr33nfertigation.crop_cycles cc WHERE cc.zone_id = z.id AND cc.name = v.name
+);
+
+-- Phase 124 WS3 — one representative sensor per new bed/room (unwired until
+-- an operator assigns real hardware via Virtual Pi, same as other sensors).
+INSERT INTO gr33ncore.sensors
+    (farm_id, zone_id, name, sensor_type, unit_id, value_min_expected, value_max_expected,
+     alert_threshold_low, alert_threshold_high, reading_interval_seconds, config)
+SELECT 1, z.id, s.name, s.sensor_type, u.id, s.vmin, s.vmax, s.alert_low, s.alert_high, s.interval_sec, s.config::jsonb
+FROM (VALUES
+    ('Propagation Room',    'Propagation Dome Temp',     'temperature',   'celsius', 15, 35, 20, 29, 60,  '{"notes":"Clones like it warm: 22-26C dome temp."}'),
+    ('Herb & Greens Room',  'Herb Room Air Temp',        'temperature',   'celsius', 10, 35, 16, 28, 60,  '{"notes":"Leafy greens/herbs prefer 18-24C."}'),
+    ('Outdoor Pepper Bed',  'Pepper Bed Soil Moisture',  'soil_moisture', 'percent', 0,  100,20, 85, 300, '{"notes":"Peppers: water at 30-40%, drought-tolerant once established."}'),
+    ('Outdoor Berry Patch', 'Berry Patch Soil Moisture', 'soil_moisture', 'percent', 0,  100,25, 80, 300, '{"notes":"Strawberries: shallow roots, keep evenly moist 40-60%."}')
+) AS s(zone_name, name, sensor_type, unit_name, vmin, vmax, alert_low, alert_high, interval_sec, config)
+JOIN gr33ncore.zones z ON z.farm_id = 1 AND z.name = s.zone_name AND z.deleted_at IS NULL
+JOIN gr33ncore.units u ON u.name = s.unit_name
+WHERE NOT EXISTS (
+    SELECT 1 FROM gr33ncore.sensors existing WHERE existing.farm_id = 1 AND existing.name = s.name AND existing.deleted_at IS NULL
+);
 
 -- Set primary_program_id on crop cycles
 UPDATE gr33nfertigation.crop_cycles cc

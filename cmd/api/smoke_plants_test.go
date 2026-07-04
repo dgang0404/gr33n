@@ -13,17 +13,19 @@ import (
 func TestPlantCRUD(t *testing.T) {
 	tok := smokeJWT(t)
 
-	// Create (Phase 85 — catalog-bound by crop_key)
+	// Create (Phase 85 — catalog-bound by crop_key). Uses "mint" — a crop_key
+	// the Phase 124 demo seed doesn't touch — so this full create/update/delete
+	// lifecycle never mutates the farm's permanent seeded plants.
 	resp := authPost(t, tok, "/farms/1/plants", map[string]any{
-		"crop_key":            "basil",
-		"variety_or_cultivar": "Genovese",
+		"crop_key":            "mint",
+		"variety_or_cultivar": "Spearmint",
 		"meta":                map[string]any{"photoperiod": "long-day"},
 	})
 	expectStatus(t, resp, http.StatusCreated)
 	created := decodeMap(t, resp)
 	plantID := int64(created["id"].(float64))
-	if created["crop_key"] != "basil" {
-		t.Fatalf("expected crop_key=basil, got %v", created["crop_key"])
+	if created["crop_key"] != "mint" {
+		t.Fatalf("expected crop_key=mint, got %v", created["crop_key"])
 	}
 	if created["display_name"] == nil || created["display_name"] == "" {
 		t.Fatal("expected server-set display_name from catalog")
@@ -50,19 +52,19 @@ func TestPlantCRUD(t *testing.T) {
 	resp = authGet(t, tok, fmt.Sprintf("/plants/%d", plantID))
 	expectStatus(t, resp, http.StatusOK)
 	got := decodeMap(t, resp)
-	if got["crop_key"] != "basil" {
-		t.Fatalf("get: expected crop_key=basil, got %v", got["crop_key"])
+	if got["crop_key"] != "mint" {
+		t.Fatalf("get: expected crop_key=mint, got %v", got["crop_key"])
 	}
 
 	// Update (variety + meta only for catalog-bound plants)
 	resp = authPut(t, tok, fmt.Sprintf("/plants/%d", plantID), map[string]any{
-		"variety_or_cultivar": "Thai",
+		"variety_or_cultivar": "Peppermint",
 		"meta":                map[string]any{"photoperiod": "long-day", "notes": "bench A"},
 	})
 	expectStatus(t, resp, http.StatusOK)
 	updated := decodeMap(t, resp)
-	if updated["variety_or_cultivar"] != "Thai" {
-		t.Fatalf("expected updated variety=Thai, got %v", updated["variety_or_cultivar"])
+	if updated["variety_or_cultivar"] != "Peppermint" {
+		t.Fatalf("expected updated variety=Peppermint, got %v", updated["variety_or_cultivar"])
 	}
 
 	// Soft delete

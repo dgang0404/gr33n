@@ -678,7 +678,7 @@ func (h *Handler) PostReading(w http.ResponseWriter, r *http.Request) {
 		BatteryLevelPercent: battery,
 		SignalStrengthDbm:   body.SignalStrengthDbm,
 		IsValid:             pIsValid,
-		MetaData:            nil,
+		MetaData:            []byte("{}"), // meta_data is NOT NULL
 	}
 	reading, err := h.q.InsertSensorReading(r.Context(), params)
 	if err != nil {
@@ -805,7 +805,7 @@ func (h *Handler) insertSensorReadingBatch(ctx context.Context, q db.Querier, it
 			BatteryLevelPercent: battery,
 			SignalStrengthDbm:   item.SignalStrengthDbm,
 			IsValid:             pIsValid,
-			MetaData:            nil,
+			MetaData:            []byte("{}"), // meta_data is NOT NULL
 		})
 		if err != nil {
 			return nil, err

@@ -45,13 +45,15 @@ func TestPhase32WS2_CreatePlantConfirm(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 
+	// "mint" — a crop_key the Phase 124 demo seed doesn't touch — so this
+	// test's cleanup never soft-deletes a permanently-seeded plant.
 	proposalID := insertGuardianProposal(t, "create_plant", map[string]any{
-		"crop_key":            "basil",
-		"variety_or_cultivar": "Genovese",
-	}, "Create catalog plant: basil")
+		"crop_key":            "mint",
+		"variety_or_cultivar": "Spearmint",
+	}, "Create catalog plant: mint")
 	t.Cleanup(func() {
 		_, _ = testPool.Exec(context.Background(),
-			`UPDATE gr33ncrops.plants SET deleted_at = NOW() WHERE farm_id = 1 AND crop_key = 'basil'`)
+			`UPDATE gr33ncrops.plants SET deleted_at = NOW() WHERE farm_id = 1 AND crop_key = 'mint'`)
 	})
 
 	tok := smokeJWT(t)
@@ -67,8 +69,8 @@ func TestPhase32WS2_CreatePlantConfirm(t *testing.T) {
 	if plantID == 0 {
 		t.Fatalf("missing plant_id: %+v", confirmBody.Result)
 	}
-	if confirmBody.Result["crop_key"] != "basil" {
-		t.Fatalf("expected crop_key basil, got %v", confirmBody.Result["crop_key"])
+	if confirmBody.Result["crop_key"] != "mint" {
+		t.Fatalf("expected crop_key mint, got %v", confirmBody.Result["crop_key"])
 	}
 
 	var gotKey string
@@ -78,8 +80,8 @@ SELECT crop_key FROM gr33ncrops.plants WHERE id = $1 AND farm_id = 1 AND deleted
 	if err != nil {
 		t.Fatalf("plant row: %v", err)
 	}
-	if gotKey != "basil" {
-		t.Fatalf("crop_key %q want basil", gotKey)
+	if gotKey != "mint" {
+		t.Fatalf("crop_key %q want mint", gotKey)
 	}
 
 	assertGuardianToolAudit(t, ctx, "create_plant", proposalID)
@@ -106,8 +108,12 @@ RETURNING id`, fmt.Sprintf("WS2 smoke zone %d", time.Now().UnixNano())).Scan(&zo
 	})
 
 	plantProposal := insertGuardianProposal(t, "create_plant", map[string]any{
-		"crop_key": "basil",
+		"crop_key": "mint",
 	}, "Create plant for cycle smoke")
+	t.Cleanup(func() {
+		_, _ = testPool.Exec(context.Background(),
+			`UPDATE gr33ncrops.plants SET deleted_at = NOW() WHERE farm_id = 1 AND crop_key = 'mint'`)
+	})
 	tok := smokeJWT(t)
 	plantConfirm := authPost(t, tok, "/v1/chat/confirm", map[string]string{"proposal_id": plantProposal})
 	expectStatus(t, plantConfirm, http.StatusOK)

@@ -37,7 +37,10 @@
 
       <div v-if="canAdmin" class="flex flex-wrap items-end gap-2 border-t border-zinc-800 pt-2">
         <div class="flex-1 min-w-[8rem]">
-          <label class="text-[10px] text-zinc-500 block mb-1" for="guardian-pull-model">Pull model into Ollama</label>
+          <label class="text-[10px] text-zinc-500 block mb-1" for="guardian-pull-model">
+            Pull model into Ollama
+            <span class="text-amber-300/80">— needs internet (one-time download)</span>
+          </label>
           <input
             id="guardian-pull-model"
             v-model="pullName"

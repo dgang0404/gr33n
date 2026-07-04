@@ -3,6 +3,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"testing"
@@ -13,13 +14,19 @@ func TestPhase93_CycleBatchLabelPrimaryAndAlias(t *testing.T) {
 	zoneID, restore := smokeZoneWithoutActiveCycle(t)
 	defer restore()
 
+	// "kale" — a crop_key the Phase 124 demo seed doesn't touch — so this
+	// stays a clean 201 regardless of what's already seeded on farm 1.
 	resp := authPost(t, tok, "/farms/1/plants", map[string]any{
-		"crop_key":            "tomato",
+		"crop_key":            "kale",
 		"variety_or_cultivar": "Cherokee Purple",
 	})
 	expectStatus(t, resp, http.StatusCreated)
 	plant := decodeMap(t, resp)
 	plantID := int64(plant["id"].(float64))
+	t.Cleanup(func() {
+		_, _ = testPool.Exec(context.Background(),
+			`UPDATE gr33ncrops.plants SET deleted_at = NOW() WHERE farm_id = 1 AND crop_key = 'kale'`)
+	})
 
 	resp = authPost(t, tok, "/farms/1/crop-cycles", map[string]any{
 		"zone_id":       zoneID,
@@ -66,9 +73,14 @@ func TestPhase93_CycleStrainOrVarietyWriteAlias(t *testing.T) {
 	zoneID, restore := smokeZoneWithoutActiveCycle(t)
 	defer restore()
 
-	resp := authPost(t, tok, "/farms/1/plants", map[string]any{"crop_key": "basil"})
+	// "spinach" — a crop_key the Phase 124 demo seed doesn't touch.
+	resp := authPost(t, tok, "/farms/1/plants", map[string]any{"crop_key": "spinach"})
 	expectStatus(t, resp, http.StatusCreated)
 	plantID := int64(decodeMap(t, resp)["id"].(float64))
+	t.Cleanup(func() {
+		_, _ = testPool.Exec(context.Background(),
+			`UPDATE gr33ncrops.plants SET deleted_at = NOW() WHERE farm_id = 1 AND crop_key = 'spinach'`)
+	})
 
 	resp = authPost(t, tok, "/farms/1/crop-cycles", map[string]any{
 		"zone_id":           zoneID,

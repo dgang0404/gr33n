@@ -76,6 +76,12 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	params.FarmID = farmID
+	// meta_data is NOT NULL in the schema; most callers (e.g. the plain
+	// "Add zone" form) don't send it at all, which would otherwise insert
+	// SQL NULL and fail the constraint.
+	if len(params.MetaData) == 0 || !json.Valid(params.MetaData) {
+		params.MetaData = json.RawMessage("{}")
+	}
 	if !farmauthz.RequireFarmOperate(w, r, h.q, farmID) {
 		return
 	}

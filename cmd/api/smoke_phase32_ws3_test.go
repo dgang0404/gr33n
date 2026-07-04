@@ -48,7 +48,9 @@ func TestPhase32WS3_ApplyGrowSetupPackConfirm(t *testing.T) {
 	defer cancel()
 
 	zoneName := fmt.Sprintf("Living Room WS3 %d", time.Now().UnixNano())
-	cropKey := "basil"
+	// "kale" — a crop_key the Phase 124 demo seed doesn't touch — so this
+	// test's cleanup below never soft-deletes a permanently-seeded plant.
+	cropKey := "kale"
 
 	var zoneID int64
 	err := testPool.QueryRow(ctx, `
@@ -61,8 +63,8 @@ RETURNING id`, zoneName).Scan(&zoneID)
 	t.Cleanup(func() {
 		c, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
-		_, _ = testPool.Exec(c, `DELETE FROM gr33ncore.tasks WHERE farm_id = 1 AND title LIKE $1`, "Monitor new Basil%")
-		_, _ = testPool.Exec(c, `UPDATE gr33nfertigation.programs SET deleted_at = NOW() WHERE farm_id = 1 AND name = $1`, "Basil light feed")
+		_, _ = testPool.Exec(c, `DELETE FROM gr33ncore.tasks WHERE farm_id = 1 AND title LIKE $1`, "Monitor new Kale%")
+		_, _ = testPool.Exec(c, `UPDATE gr33nfertigation.programs SET deleted_at = NOW() WHERE farm_id = 1 AND name = $1`, "Kale light feed")
 		_, _ = testPool.Exec(c, `DELETE FROM gr33nfertigation.crop_cycles WHERE zone_id = $1`, zoneID)
 		_, _ = testPool.Exec(c, `UPDATE gr33ncrops.plants SET deleted_at = NOW() WHERE farm_id = 1 AND crop_key = $1`, cropKey)
 		_, _ = testPool.Exec(c, `DELETE FROM gr33ncore.zones WHERE id = $1`, zoneID)
@@ -119,7 +121,7 @@ SELECT primary_program_id FROM gr33nfertigation.crop_cycles WHERE id = $1`, int6
 	var taskCount int
 	_ = testPool.QueryRow(ctx, `
 SELECT COUNT(*) FROM gr33ncore.tasks
-WHERE farm_id = 1 AND title LIKE $1`, "Monitor new Basil%").Scan(&taskCount)
+WHERE farm_id = 1 AND title LIKE $1`, "Monitor new Kale%").Scan(&taskCount)
 	if taskCount < 1 {
 		t.Fatal("expected optional monitor task")
 	}

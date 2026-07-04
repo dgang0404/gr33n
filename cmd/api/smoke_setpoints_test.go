@@ -175,9 +175,12 @@ func TestSetpointPrecedenceCycleOverZone(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 
-	// Crop cycle on that zone, stage=early_veg, is_active=true.
+	// Crop cycle on that zone, stage=early_veg, is_active=true. Active
+	// cycles require a catalog plant_id (Phase 86).
+	plantID := smokeEnsureCatalogPlant(t, tok, 1, "lettuce")
 	resp := authPost(t, tok, "/farms/1/crop-cycles", map[string]any{
 		"zone_id":       zoneID,
+		"plant_id":      plantID,
 		"name":          uniqueName("sp_cycle"),
 		"current_stage": "early_veg",
 		"started_at":    "2025-04-01",
@@ -299,9 +302,12 @@ func TestAutomationRuleSetpointGracefulSkip(t *testing.T) {
 	}
 
 	// Active crop cycle on the zone so scope resolution can reach
-	// rank 1 / rank 2 when we eventually land a setpoint.
+	// rank 1 / rank 2 when we eventually land a setpoint. Active cycles
+	// require a catalog plant_id (Phase 86).
+	plantID := smokeEnsureCatalogPlant(t, tok, 1, "lettuce")
 	resp = authPost(t, tok, "/farms/1/crop-cycles", map[string]any{
 		"zone_id":       zoneID,
+		"plant_id":      plantID,
 		"name":          uniqueName("sp_skip_cycle"),
 		"current_stage": "early_veg",
 		"started_at":    "2025-04-01",
