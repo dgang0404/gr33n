@@ -5,7 +5,8 @@
 **Related:**
 - [Farm Guardian + Ollama install](farm-guardian-ollama-setup.md) — inference host detail
 - [Farm Guardian architecture](farm-guardian-architecture.md) — what runs on each chat turn
-- [Local operator bootstrap](local-operator-bootstrap.md) — dev laptop path
+- [Local operator bootstrap](local-operator-bootstrap.md) — **laptop daily cheat sheet** + **server & frontier delta**
+- [Guardian Ollama laptop playbook](guardian-ollama-laptop-playbook.md) — CPU contention, pull, timeouts
 - [Raspberry Pi & deployment topology](raspberry-pi-and-deployment-topology.md) — edge vs central server
 
 ---

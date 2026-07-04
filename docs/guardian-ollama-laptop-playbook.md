@@ -159,6 +159,8 @@ After changing API code (e.g. Phase 126), **restart** API/UI so `GET /guardian/m
 
 ## Model pull vs fast dropdown (hardware tiers)
 
+See also: [local-operator-bootstrap.md](local-operator-bootstrap.md) § Server & frontier delta.
+
 | Profile | RAM / GPU | Typical models pulled | Dropdown “switch” speed |
 |---------|-----------|------------------------|-------------------------|
 | **Laptop** | 16 GB, CPU only | `phi3:mini` + embed model | **Slow** — loading/switching can take minutes; keep **one** chat model loaded. |

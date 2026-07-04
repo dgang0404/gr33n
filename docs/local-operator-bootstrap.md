@@ -43,6 +43,54 @@ make check-stack                # → scripts/check-local-stack.sh
 
 **Guardian CPU / timeouts / pull vs dropdown:** [guardian-ollama-laptop-playbook.md](guardian-ollama-laptop-playbook.md)
 
+## Server & frontier delta (from laptop)
+
+Same **repository root** commands as the laptop sheet (`make migrate`, `make guardian-bootstrap-farm`, `make check-stack`, RAG scripts). What changes is **hardware**, **`.env`**, and **how you run API/UI in production** — not a second script tree.
+
+| Topic | Laptop (Profile A) | Standard server (Profile C/D) | Frontier / multi-site |
+|-------|-------------------|--------------------------------|------------------------|
+| **Goal** | Dev, demo, CPU phi3 | On-prem Guardian + GPU | Per-site full stack, offline-capable |
+| **API + UI** | `make dev-auth-test` | **Production:** built binary + **systemd**; UI static via **nginx/Caddy** — see [farm-guardian-ollama-setup.md](farm-guardian-ollama-setup.md) | Same per site; Pis edge-only |
+| **Postgres** | Docker `db` on `:5433` | Dedicated host, 16–32 GB RAM, NVMe | Local DB per site (Topology B) |
+| **Ollama** | Same machine, CPU | Often **split host**: `LLM_BASE_URL=http://ollama.farm.local:11434/v1` | Local Ollama per site; optional multi-model pre-pulled |
+| **Default chat model** | `phi3:mini` | `llama3.1:8b` (single-box GPU) or **70B** on 24 GB VRAM box | Farm default in Settings + pre-pull 2+ chat models |
+| **Embeddings** | Same Ollama host | Same or cloud `EMBEDDING_*` | Same; cron refresh (below) |
+| **Pull large models** | Terminal `ollama pull` (UI 600 s often fails) | `ollama pull` on inference box; set `GUARDIAN_OLLAMA_PULL_TIMEOUT_SECONDS=3600` if using UI pull | Pre-pull during site bring-up |
+| **RAM hygiene** | Often need `ollama stop` embed before chat | GPU + 32–64 GB: usually **skip** manual stop; use `OLLAMA_KEEP_ALIVE` to keep chat model warm | Keep chat + embed loaded if RAM allows |
+| **Guardian UX** | Minutes per grounded turn on CPU | Selector shows **`loaded on GPU`**; seconds to first token | Fast model switch if weights already in RAM |
+| **RAG bootstrap** | `make guardian-bootstrap-farm FARM_ID=1` | Same per farm after migrate | + [`scripts/enterprise/apply-site-manifest.sh`](../scripts/enterprise/apply-site-manifest.sh) (`guardian_seed` in YAML) |
+| **RAG refresh** | Manual / when idle | Cron: `make rag-ingest-farm-operational FARM_ID=N` every 6h — [enterprise README](../scripts/enterprise/README.md) | Per-farm cron on each site |
+
+### Server bring-up (delta commands)
+
+```bash
+cd ~/gr33n-platform   # or /opt/gr33n-platform on the app host
+
+# Schema + seed (once per environment)
+make migrate
+./scripts/bootstrap-local.sh --seed    # or your prod migration pipeline
+
+# Inference host (often a separate machine) — pull once over LAN/internet
+ollama pull llama3.1:8b                # Profile D single-box
+# ollama pull llama3.1:70b-instruct-q4_K_M   # Profile C dedicated GPU box
+
+# App host .env (examples — tune for your LAN)
+# LLM_BASE_URL=http://192.168.1.50:11434/v1
+# LLM_MODEL=llama3.1:8b
+# GUARDIAN_OLLAMA_PULL_TIMEOUT_SECONDS=3600
+# LLM_TIMEOUT_SECONDS=666
+
+# Guardian corpus per farm
+make guardian-bootstrap-farm FARM_ID=1 ARGS="--smoke"
+
+# Verify (from app host)
+make check-stack
+```
+
+**Sizing detail:** [recommended-hardware-and-sizing.md](recommended-hardware-and-sizing.md) (Profiles B–D).
+
+**Multi-site / warehouse:** [hypothetical-enterprise-topology.md](hypothetical-enterprise-topology.md) · [scripts/enterprise/README.md](../scripts/enterprise/README.md) — site manifest, agronomy pack, recipe promotion. No third full cheat sheet; extend the enterprise README when you provision farm #2+.
+
 ## Prerequisites
 
 | Need | Native install | Docker only |
