@@ -38,14 +38,14 @@
       <div v-if="canAdmin" class="flex flex-wrap items-end gap-2 border-t border-zinc-800 pt-2">
         <div class="flex-1 min-w-[8rem]">
           <label class="text-[10px] text-zinc-500 block mb-1" for="guardian-pull-model">
-            Pull model into Ollama
-            <span class="text-amber-300/80">— needs internet (one-time download)</span>
+            Pull new model into Ollama (type tag — not in list above)
+            <span class="text-amber-300/80">— internet; large models often exceed 10 min (use terminal: ollama pull)</span>
           </label>
           <input
             id="guardian-pull-model"
             v-model="pullName"
             type="text"
-            placeholder="e.g. tinyllama"
+            placeholder="e.g. llama3.1:8b (only if not already in dropdown)"
             class="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-2 py-1.5 text-zinc-200"
             data-test="guardian-pull-model-input"
             :disabled="pulling"

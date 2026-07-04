@@ -80,6 +80,8 @@ Pull means: **download model weights from the internet once**, then they live un
 
 ### Path A — UI (farm admin)
 
+**Pull is a text box, not a dropdown.** “This chat” and “Farm default” list models **already on disk** (`ollama list`). Pull is only for typing a **new** tag you want to download (e.g. a model **not** in those lists yet). If `llama3.1:8b` already appears in the chat dropdown, you do **not** pull it again — it is installed.
+
 ```
 Browser  →  POST /guardian/models/pull  { "name": "llama3.1:8b", "farm_id": 1 }
          →  API checks farm admin JWT + LLM_BASE_URL is local Ollama
@@ -88,8 +90,20 @@ Browser  →  POST /guardian/models/pull  { "name": "llama3.1:8b", "farm_id": 1 
          →  API refreshes GET /guardian/models  →  new tag appears in dropdown
 ```
 
-- Button shows **“Pulling…”** until the HTTP request finishes or **times out** (default **600 s**).
-- Large models on slow internet often **exceed 600 s** → UI shows “Pull failed” / timeout even though Ollama may still be downloading in the background. Fix: run CLI pull (below) or raise `GUARDIAN_OLLAMA_PULL_TIMEOUT_SECONDS` in `.env`.
+- Button shows **“Pulling…”** until the HTTP request finishes or **times out** (default **600 s = 10 minutes**).
+- **`llama3.1:8b` is ~4.9 GB** — on a 20 Mbps link that is ~30+ minutes; on 100 Mbps ~6–8 minutes. **10 minutes is often not enough** on home internet → UI shows timeout even while `ollama pull` continues in the background.
+- **Fix for big models:** use the terminal (no API timeout) or raise in `.env`:
+
+  ```bash
+  GUARDIAN_OLLAMA_PULL_TIMEOUT_SECONDS=3600   # 1 hour
+  ```
+
+  Then restart the API and retry UI pull, or prefer:
+
+  ```bash
+  ollama pull llama3.1:8b
+  ```
+
 - Requires **farm owner/manager** role (`canAdmin` in the selector).
 
 ### Path B — Terminal (most reliable for big models)
