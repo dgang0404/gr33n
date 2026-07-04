@@ -49,6 +49,73 @@ Grounded chat **always** uses the **embedding** model briefly (RAG query vector)
 
 ---
 
+## Switching models (tinyllama ↔ phi3 ↔ llama3.1:8b)
+
+The **“This chat”** dropdown only changes which **tag** the API sends on the **next** `POST /v1/chat`. It does **not** download, delete, or unload models.
+
+| Model (example) | Farm context **off** | Farm context **on** (grounded) | On your laptop |
+|-------------------|----------------------|--------------------------------|----------------|
+| **tinyllama** | Fast smoke, general Q&A | **Rejected** — advertised context 2048 &lt; 8192 minimum for grounded | Good for “hi”, bad for demo-farm RAG |
+| **phi3:mini** | Works; ~10–60s first load on CPU | **Supported** — prompts trimmed to effective 4096 (Phase 126) | Default for quality grounded chat |
+| **llama3.1:8b** (bigger) | Works if pulled | **Supported** if installed — slower/heavier on 16 GB CPU | Usually needs more RAM; GPU helps |
+
+**What happens when you switch in the dropdown:**
+
+1. **Next message** uses the new tag (e.g. tinyllama → phi3:mini).
+2. Ollama **loads** that model from **local disk** if not already in RAM (cold load — minutes on CPU).
+3. The **previous** model may **stay in RAM** until you `ollama stop <name>` or Ollama evicts it under memory pressure.
+4. **Embedding model** still runs for grounded turns regardless of chat dropdown — that is a separate `EMBEDDING_MODEL` in `.env`, not the chat selector.
+
+**Practical laptop pattern:**
+
+- **Grounded demo farm** → `phi3:mini`, farm context on, one message at a time.
+- **Quick ungrounded test** → `tinyllama`, farm context **off**.
+- **Do not** expect to hop tinyllama ↔ phi3 ↔ llama3.1 rapidly on 16 GB CPU without stalls — each cold load competes for RAM.
+
+---
+
+## How pull works (UI and CLI)
+
+Pull means: **download model weights from the internet once**, then they live under Ollama’s store (`~/.ollama/models` or `/usr/share/ollama`) forever. Chat after that is **offline** (local disk only).
+
+### Path A — UI (farm admin)
+
+```
+Browser  →  POST /guardian/models/pull  { "name": "llama3.1:8b", "farm_id": 1 }
+         →  API checks farm admin JWT + LLM_BASE_URL is local Ollama
+         →  Ollama POST /api/pull  { "name": "llama3.1:8b", "stream": false }
+         →  (downloads layers from registry.ollama.com — needs internet)
+         →  API refreshes GET /guardian/models  →  new tag appears in dropdown
+```
+
+- Button shows **“Pulling…”** until the HTTP request finishes or **times out** (default **600 s**).
+- Large models on slow internet often **exceed 600 s** → UI shows “Pull failed” / timeout even though Ollama may still be downloading in the background. Fix: run CLI pull (below) or raise `GUARDIAN_OLLAMA_PULL_TIMEOUT_SECONDS` in `.env`.
+- Requires **farm owner/manager** role (`canAdmin` in the selector).
+
+### Path B — Terminal (most reliable for big models)
+
+```bash
+ollama pull llama3.1:8b    # or phi3:mini, tinyllama, etc.
+ollama list                # confirm tag appears
+```
+
+Then refresh the Guardian page — `GET /guardian/models` reads **`ollama list`** / `/api/tags`; no second pull needed.
+
+### When pull is **not** needed
+
+If `ollama list` already shows the tag (you pulled during setup), the UI **Pull** box is only for **adding new** tags. Your laptop already has `phi3:mini` and `tinyllama` — switching dropdown uses those **local** weights; no download.
+
+### Why pull can feel “broken”
+
+| Issue | What’s going on |
+|-------|------------------|
+| Timeout at 10 min | Model &gt; ~2 GB on slow link; API gave up at 600 s |
+| “Pull failed” immediately | No internet, wrong tag name, or not farm admin |
+| Pulled but not in dropdown | Only **chat-capable** models appear (embedding-only tags hidden unless `?all=true`) |
+| Pull “worked” but chat slow | Download done; **first chat** still **loads weights into RAM** (cold) — separate step |
+
+---
+
 ## RAG bring-up (replicable sequence)
 
 From the **repository root** (`cd ~/gr33n-platform`):
