@@ -63,6 +63,12 @@ and hardware, but it is 100% local (no internet, no download). Subsequent
 messages are fast because the model stays warm in memory until Ollama evicts
 it for inactivity or another model is requested.
 
+**Grounded chat while Ollama is busy:** when farm context triggers RAG
+embedding, Ollama may be slow on `GET /v1/models` even though the daemon is
+healthy. The API uses a longer local probe (12s default), retries unreachable
+probes after 2s, and treats a live `GET /api/ps` as reachable so grounded turns
+are not rejected with a false "LLM unreachable" error.
+
 ## Air-gapped sites
 
 If you have zero WAN access at the install site:
