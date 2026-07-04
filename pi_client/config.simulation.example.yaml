@@ -1,0 +1,90 @@
+# Phase 125 — LED simulation rig (rig v1 / demo-veg-relay-01)
+# Copy to config.yaml alongside api/device/farm bootstrap.
+# Sensor IDs: run ./scripts/print-demo-sensor-ids.sh after make dev-stack-fresh
+# if your local DB order differs from a fresh seed.
+
+api:
+  base_url: "http://localhost:8080"
+  timeout_seconds: 5
+  api_key: ""   # PI_API_KEY or per-device gdev_ key
+
+device:
+  uid: "demo-veg-relay-01"
+
+farm:
+  farm_id: 1
+
+schedule_poll_interval_seconds: 30
+offline_queue_path: ".gr33n-edge-queue.db"
+offline_flush_interval_seconds: 30
+
+simulation:
+  enabled: true
+  driver: neopixel
+  poll_interval_seconds: 2
+
+  neopixel:
+    pin: 18
+    count: 8
+    brightness: 0.4
+    pixel_order: GRB
+
+  gpio_leds:
+    heartbeat_pin: 17
+    fault_pin: 27
+
+  sensors:
+    - match_name: "Media Moisture Indoor"
+      sensor_id: 7
+      pixel: 0
+      alert_threshold_low: 25
+      alert_threshold_high: 80
+      interval_seconds: 120
+    - match_name: "EC Sensor"
+      sensor_id: 8
+      pixel: 1
+      alert_threshold_low: 0.5
+      alert_threshold_high: 3.5
+      interval_seconds: 60
+    - match_name: "Air Temp Indoor"
+      sensor_id: 3
+      pixel: 2
+      alert_threshold_low: 16
+      alert_threshold_high: 32
+      interval_seconds: 60
+    - match_name: "Air Humidity Indoor"
+      sensor_id: 5
+      pixel: 3
+      alert_threshold_low: 35
+      alert_threshold_high: 75
+      interval_seconds: 60
+    - match_name: "pH Sensor"
+      sensor_id: 9
+      pixel: 4
+      alert_threshold_low: 5.5
+      alert_threshold_high: 7.0
+      interval_seconds: 60
+
+  actuators:
+    - match_name: "Veg Room Grow Light"
+      actuator_id: 1
+      actuator_type: light
+      pixel: 5
+    - match_name: "Veg Room Irrigation Pump"
+      actuator_id: 2
+      actuator_type: pump
+      pixel: 6
+
+  activity_pixel: 7
+
+  # WS3 — synthetic readings through POST /sensors/{id}/readings (feeds LEDs + automation)
+  synthetic_sensors:
+    - sensor_id: 7
+      mode: demo_moisture
+      interval_seconds: 5
+    - sensor_id: 8
+      mode: sine
+      center: 1.5
+      amplitude: 0.4
+      period_seconds: 90
+      interval_seconds: 10

@@ -16,13 +16,13 @@ overview: >
 todos:
   - id: ws1-mapping-spec
     content: "WS1: Sensor/actuator -> light mapping spec (doc): which color/zone LED = which sensor; which blink pattern = which actuator action/state (idle, running, fault)"
-    status: pending
+    status: completed
   - id: ws2-pi-light-driver
     content: "WS2: pi_client light driver — consumes existing device/actuator state (poll or SSE) and drives NeoPixel/GPIO instead of a real relay; config-driven pin/zone mapping, no new server-side endpoints"
-    status: pending
+    status: completed
   - id: ws3-simulated-sensor-loopback
     content: "WS3: Simulated sensor loopback mode — pi_client can optionally generate synthetic sensor readings (e.g. slow sine-wave EC/moisture drift, or a manual test-panel script) and POST them through the normal /sensors/{id}/readings path so the full automation loop fires for real"
-    status: pending
+    status: completed
   - id: ws4-demo-script
     content: "WS4: Guided demo script/checklist — a short runbook for triggering each automation path on the rig (e.g. drop simulated soil moisture -> watch irrigation light blink -> confirm task/alert appears in UI) for hands-on walkthroughs"
     status: pending
@@ -34,7 +34,7 @@ isProject: false
 
 # Phase 125 — Pi light/LED simulation rig for sensors + actuators (pre-plant dry run)
 
-**Status: planned — not started**
+**Status: in progress — WS1–WS3 shipped** ([`pi-light-simulation-mapping.md`](../pi-light-simulation-mapping.md))
 
 ## Why
 
@@ -46,7 +46,7 @@ and safely, with zero risk to a crop. It's also just a good demo: anyone can
 walk up, watch colored lights react, and understand what the platform does
 without reading a dashboard.
 
-## Design sketch (subject to change once WS1 is written up)
+## Design sketch (normative detail in [`pi-light-simulation-mapping.md`](../pi-light-simulation-mapping.md))
 
 - **One light/zone per sensor** (e.g. soil moisture, EC, pH, temp, humidity)
   — color encodes "in band" (green) vs "low" (blue-ish/blink) vs "high"
@@ -76,12 +76,12 @@ without reading a dashboard.
 
 ## Acceptance (draft — refine once WS1 mapping spec exists)
 
-- [ ] Mapping spec document lists every sensor/actuator type in the demo
+- [x] Mapping spec document lists every sensor/actuator type in the demo
       farm and its light/color/blink assignment
-- [ ] `pi_client` simulation driver mode boots, reads config the same way
+- [x] `pi_client` simulation driver mode boots, reads config the same way
       the real driver does, and drives at least one LED per mapped
       sensor/actuator
-- [ ] A synthetic sensor reading pushed through the normal ingestion path
+- [x] A synthetic sensor reading pushed through the normal ingestion path
       visibly changes the correct light within a few seconds
 - [ ] A forced out-of-band reading triggers the same alert/automation path
       as production and the corresponding actuator light blinks

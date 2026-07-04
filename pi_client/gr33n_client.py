@@ -248,6 +248,9 @@ def resolve_config(bootstrap: dict, remote: Optional[dict] = None) -> dict:
     elif remote and 'mix_channels' in remote:
         cfg['mix_channels'] = copy.deepcopy(remote['mix_channels'])
 
+    if 'simulation' in bootstrap:
+        cfg['simulation'] = copy.deepcopy(bootstrap['simulation'])
+
     if not _has_local_wiring(bootstrap) and remote:
         if 'config_version' in remote:
             cfg['config_version'] = remote['config_version']
@@ -372,8 +375,10 @@ def _actuator_wiring_key(acfg: dict) -> tuple:
     )
 
 
-def make_actuator_controller(cfg: dict):
-    """Build GPIO-direct or relay-HAT controller from runtime config row."""
+def make_actuator_controller(cfg: dict, simulation_mode: bool = False):
+    """Build GPIO-direct, relay-HAT, or simulation (no relay) controller."""
+    if simulation_mode and not cfg.get('mirror_relay_gpio'):
+        return SimulationActuatorController(cfg)
     driver = (cfg.get('driver') or 'gpio').lower()
     if driver == 'relay_hat':
         return RelayHATActuatorController(cfg)
@@ -1060,6 +1065,74 @@ class ActuatorController:
         return 'on' if self._state else 'off'
 
 
+class SimulationActuatorController:
+    """Phase 125 — actuator state without relay GPIO (LED rig reflects commands)."""
+
+    ON_COMMANDS = ActuatorController.ON_COMMANDS
+    OFF_COMMANDS = ActuatorController.OFF_COMMANDS
+
+    def __init__(self, cfg: dict):
+        self.cfg = cfg
+        self.actuator_id = cfg['actuator_id']
+        self.device_id = cfg.get('device_id', cfg['actuator_id'])
+        self.device_type = cfg.get('device_type', cfg.get('actuator_type', 'relay'))
+        self.driver = 'simulation'
+        self.max_run_seconds = cfg.get('max_run_seconds')
+        self._state = False
+        self._pulse_lock = threading.Lock()
+        log.info('Actuator %s (%s) simulation mode (no relay GPIO)', self.actuator_id, self.device_type)
+
+    def turn_on(self):
+        self._state = True
+        log.info('Actuator %s (%s) [sim] -> ON', self.actuator_id, self.device_type)
+
+    def turn_off(self):
+        self._state = False
+        log.info('Actuator %s (%s) [sim] -> OFF', self.actuator_id, self.device_type)
+
+    def _effective_pulse_seconds(self, duration_seconds):
+        try:
+            d = int(duration_seconds)
+        except (TypeError, ValueError):
+            return None
+        if d <= 0:
+            return None
+        cap = d
+        if self.max_run_seconds is not None:
+            try:
+                cap = min(cap, int(self.max_run_seconds))
+            except (TypeError, ValueError):
+                pass
+        return min(cap, 3600)
+
+    def execute(self, command: str, duration_seconds=None):
+        cmd = command.strip().lower()
+        pulse_s = self._effective_pulse_seconds(duration_seconds)
+        if pulse_s and cmd in self.ON_COMMANDS:
+            def _run_pulse():
+                with self._pulse_lock:
+                    try:
+                        self.turn_on()
+                        time.sleep(pulse_s)
+                    finally:
+                        self.turn_off()
+            threading.Thread(target=_run_pulse, name=f'sim-pulse-{self.actuator_id}', daemon=True).start()
+            return
+        if cmd in self.ON_COMMANDS:
+            self.turn_on()
+        elif cmd in self.OFF_COMMANDS:
+            self.turn_off()
+        else:
+            log.warning('Unknown command %r for actuator %s', command, self.actuator_id)
+
+    def close(self) -> None:
+        self.turn_off()
+
+    @property
+    def state(self) -> str:
+        return 'on' if self._state else 'off'
+
+
 def _apply_calibration(value: float, cal: Optional[dict]) -> float:
     """Apply slope/offset from sensors.calibration_data when present."""
     if not cal or value is None:
@@ -1204,7 +1277,17 @@ class Gr33nPiClient:
         # Shared across all readers so `source: derived` sensors can compute
         # from the freshest values physical sensors posted this tick.
         self._reading_cache = ReadingCache()
+        self._sim_enabled = bool((bootstrap.get('simulation') or {}).get('enabled'))
+        self._sim_activity_until = 0.0
+        self._sim_actuator_pending: dict = {}
+        self._sim_actuator_failed: dict = {}
+        self._light_sim = None
+        self._synthetic_loop = None
+        self._synthetic_ids: set = set()
         self._readers, self._actuators = self._build_hardware(self.cfg, {}, {})
+        if self._sim_enabled:
+            self._start_light_simulation()
+        self._start_synthetic_sensors()
 
     def _build_hardware(self, cfg: dict, old_readers: dict, old_actuators: dict):
         """Reuse unchanged readers/actuators; close and replace when wiring differs."""
@@ -1231,7 +1314,7 @@ class Gr33nPiClient:
             else:
                 if prev:
                     prev.close()
-                actuators[aid] = make_actuator_controller(acfg)
+                actuators[aid] = make_actuator_controller(acfg, simulation_mode=getattr(self, '_sim_enabled', False))
         for aid, prev in old_actuators.items():
             if aid not in actuators:
                 prev.close()
@@ -1275,6 +1358,62 @@ class Gr33nPiClient:
         self._report_config_sync()
         return True
 
+    def _simulation_cfg(self) -> dict:
+        return self.cfg.get('simulation') or {}
+
+    def _start_light_simulation(self) -> None:
+        from light_simulation import LightSimulationDriver
+
+        def get_actuators():
+            with self._hw_lock:
+                return dict(self._actuators)
+
+        def get_actuator_flags(actuator_id: int) -> tuple:
+            now = time.monotonic()
+            queued = self._sim_actuator_pending.get(actuator_id, 0) > now
+            failed = self._sim_actuator_failed.get(actuator_id, 0) > now
+            return queued, failed
+
+        self._light_sim = LightSimulationDriver(
+            simulation_cfg=self._simulation_cfg(),
+            reading_cache=self._reading_cache,
+            get_actuators=get_actuators,
+            get_actuator_flags=get_actuator_flags,
+            is_api_reachable=self.api.is_reachable,
+            get_activity_until=lambda: self._sim_activity_until,
+        )
+        self._light_sim.start()
+
+    def _start_synthetic_sensors(self) -> None:
+        sim = self._simulation_cfg()
+        entries = sim.get('synthetic_sensors') or []
+        if not entries:
+            return
+        from synthetic_sensors import SyntheticSensorLoop
+
+        self._synthetic_loop = SyntheticSensorLoop(
+            entries=entries,
+            reading_cache=self._reading_cache,
+            post_reading=lambda sid, val, ts: self.api.post_reading(sid, val, ts),
+            queue_push=lambda sid, val, ts: self.queue.push(sid, val, ts),
+            is_reachable=self.api.is_reachable,
+            stop_event=self._stop,
+        )
+        self._synthetic_ids = set(self._synthetic_loop.sensor_ids)
+        self._synthetic_loop.start()
+
+    def _mark_sim_activity(self) -> None:
+        self._sim_activity_until = time.monotonic() + 0.2
+
+    def _mark_sim_actuator_pending(self, actuator_id: int) -> None:
+        self._sim_actuator_pending[int(actuator_id)] = time.monotonic() + 30.0
+
+    def _clear_sim_actuator_pending(self, actuator_id: int) -> None:
+        self._sim_actuator_pending.pop(int(actuator_id), None)
+
+    def _mark_sim_actuator_failed(self, actuator_id: int, seconds: float = 5.0) -> None:
+        self._sim_actuator_failed[int(actuator_id)] = time.monotonic() + seconds
+
     def _report_config_sync(self) -> None:
         """Tell the platform the Pi applied platform wiring (staleness badge)."""
         if _has_local_wiring(self._bootstrap):
@@ -1309,6 +1448,8 @@ class Gr33nPiClient:
                 readers = dict(self._readers)
             for scfg in sensor_cfgs:
                 sid      = scfg['sensor_id']
+                if sid in self._synthetic_ids:
+                    continue
                 interval = scfg.get('interval_seconds', 60)
                 if now - self._last_read.get(sid, 0) < interval:
                     continue
@@ -1529,7 +1670,9 @@ class Gr33nPiClient:
 
             resulting = 'on' if cmd in ActuatorController.ON_COMMANDS else 'off'
             try:
+                self._mark_sim_actuator_pending(actuator.actuator_id)
                 actuator.execute(cmd, duration_seconds=duration_seconds)
+                self._clear_sim_actuator_pending(actuator.actuator_id)
                 self.api.post_actuator_event(
                     actuator_id=actuator.actuator_id, command=cmd,
                     source=src, schedule_id=sched_id, rule_id=rule_id,
@@ -1545,9 +1688,12 @@ class Gr33nPiClient:
                                      })
             except Exception as exc:
                 log.warning('actuator command failed device=%s cmd=%s: %s', device_id, cmd, exc)
+                self._clear_sim_actuator_pending(actuator.actuator_id)
+                self._mark_sim_actuator_failed(actuator.actuator_id)
                 self.api.ack_command(device_id, command_id, status='failed',
                                      result={'error': str(exc), 'error_class': 'error_hardware'})
             self.api.patch_device_status(device_id, 'online', client_version=CLIENT_VERSION)
+            self._mark_sim_activity()
             processed += 1
 
         return processed
@@ -1631,12 +1777,13 @@ class Gr33nPiClient:
 
     def run(self):
         log.info(
-            'gr33n Pi Client starting - farm_id=%s  api=%s  device_uid=%s  sensors=%d  actuators=%d  version=%s',
+            'gr33n Pi Client starting - farm_id=%s  api=%s  device_uid=%s  sensors=%d  actuators=%d  simulation=%s  version=%s',
             self.cfg['farm']['farm_id'],
             self.cfg['api']['base_url'],
             self.device_uid or '(local wiring)',
             len(self.cfg.get('sensors', [])),
             len(self.cfg.get('actuators', [])),
+            self._sim_enabled,
             CLIENT_VERSION,
         )
 
@@ -1666,6 +1813,10 @@ class Gr33nPiClient:
             log.info('Shutdown requested.')
             self._stop.set()
         finally:
+            if self._synthetic_loop:
+                self._synthetic_loop.stop()
+            if self._light_sim:
+                self._light_sim.stop()
             with self._hw_lock:
                 device_ids = {a.device_id for a in self._actuators.values()}
             for did in device_ids:
