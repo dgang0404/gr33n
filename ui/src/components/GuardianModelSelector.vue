@@ -124,6 +124,9 @@
       <p class="text-[10px] text-zinc-600 leading-snug">
         Session model applies to your chat only and does not change the farm default.
         Models come from the server Ollama runtime (shared across farms on this host).
+        Switching the dropdown does not unload other models from RAM
+        (see <span class="text-zinc-500">docs/guardian-ollama-laptop-playbook.md</span>).
+        Pull downloads weights once — can take many minutes on slow internet; not per chat.
       </p>
       <p v-if="saveError" class="text-[10px] text-red-300/90">{{ saveError }}</p>
       <p v-if="saveOk" class="text-[10px] text-green-400/90">Farm default saved.</p>

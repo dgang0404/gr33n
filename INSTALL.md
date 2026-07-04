@@ -326,13 +326,17 @@ the prompt is sent. The grounded-chat *gate* still uses advertised `context_wind
 minimum): `phi3:mini` reports rope-extended 131072 via Ollama but runs at 4096 on CPU —
 Phase 126 trims grounded prompts accordingly.
 
-**CPU laptop Guardian playbook (Phase 126):**
+**CPU laptop Guardian playbook (Phase 126):** full troubleshooting, RAG bring-up, and what the UI
+means by “CPU” → **[docs/guardian-ollama-laptop-playbook.md](docs/guardian-ollama-laptop-playbook.md)**.
+
+Summary:
 
 - `phi3:mini` + **Use farm context** is supported but **slow** on CPU-only boxes (minutes
   per grounded turn). First ungrounded message is a good warm-up while the model loads.
 - Before long chat sessions, free RAM: `ollama stop <embed-model>` (embedding and chat
-  models compete on one Ollama host).
-- Use **tinyllama** for fast smoke; **phi3:mini** for quality when you can wait.
+  models compete on one Ollama host). The UI **does not** run this when you switch models.
+- Check for stale jobs: `pgrep -a 'ollama run'` (kill any PIDs — they can wedge Ollama for hours).
+- Use **tinyllama** for fast ungrounded smoke; **phi3:mini** for grounded quality when you can wait.
 - Off-farm horticulture (e.g. cherry tree, forest garden) → turn **farm context off**;
   Guardian still answers from general knowledge.
 

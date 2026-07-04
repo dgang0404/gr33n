@@ -554,7 +554,7 @@ func (h *Handler) streamResponse(
 	if grounded {
 		sendEvent("status", map[string]string{
 			"phase":   "generating",
-			"message": "Generating answer — CPU models may take a few minutes.",
+			"message": "Generating answer — running on CPU (no GPU). Grounded turns may take several minutes; wait before sending another message.",
 		})
 	}
 

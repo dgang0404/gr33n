@@ -168,6 +168,8 @@ Farm Guardian layers three knowledge sources ([`farm-guardian-architecture.md`](
 
    **Platform how-to docs** (Confirm workflow, Pi setup, operator tour, **greenhouse climate §5b**, lighting §5) are a separate index: **`make rag-ingest-platform-docs`**. Re-run whenever you change curated markdown in [`docs/rag/platform-doc-manifest.yaml`](rag/platform-doc-manifest.yaml) — ingest is idempotent per file. Dry-run without API key: `./scripts/rag-ingest-platform-docs.sh --dry-run`.
 
+   **Full bootstrap (field guides + platform + operational):** `make guardian-bootstrap-farm FARM_ID=1`. **CPU laptop pitfalls** (slow phi3, embed contention, manual `ollama stop`): [guardian-ollama-laptop-playbook.md](guardian-ollama-laptop-playbook.md).
+
 3. **Live snapshot** — built automatically on each grounded chat turn (zones, active cycles, unread alerts).
 
 **Phase 29 WS7 — sample unread alerts:** [`db/seeds/master_seed.sql`](../db/seeds/master_seed.sql) inserts three unread `alerts_notifications` rows for demo **farm_id = 1** (OHN inventory low, Flower Room humidity high, 12/12 light transition reminder). Re-run **`make seed`** or **`make dev-stack-fresh`** to apply; subjects are idempotent.
@@ -186,7 +188,7 @@ make restart-local-serve    # API + UI (or: make dev-auth-test in one terminal)
 
 With **AI_ENABLED** and Ollama running, grounded chat includes the three seed alerts in the live snapshot. **Change requests** use proposal cards + **Confirm** (`POST /v1/chat/confirm`); pending items also appear in the drawer **Pending** tab and **`/guardian/requests`**. Audit rows: `guardian_tool_executed`. See [operator tour §6](operator-tour.md#6-farm-guardian-change-requests-with-your-ok) and [farm-guardian-architecture §8](farm-guardian-architecture.md#8-operator-expectations-at-phase-30-ship).
 
-**Hardware expectations:** Guardian chat is GPU/LLM-bound on weak laptops — see [recommended-hardware-and-sizing.md](recommended-hardware-and-sizing.md) (dev vs production profiles, Lite mode without GPU).
+**Hardware expectations:** Guardian chat is GPU/LLM-bound on weak laptops — see [recommended-hardware-and-sizing.md](recommended-hardware-and-sizing.md) (dev vs production profiles, Lite mode without GPU). **CPU-only laptops:** [guardian-ollama-laptop-playbook.md](guardian-ollama-laptop-playbook.md) (RAG bring-up, `ollama stop`, stale `ollama run`, what “CPU” means in the UI).
 
 **Real grow (live plants):** do not skip **[guardian-real-grow-readiness.md](guardian-real-grow-readiness.md)** — ingest checklist, Confirm vs automation, bench actuators first, Phase 82/83 bootstrap when shipped.
 
