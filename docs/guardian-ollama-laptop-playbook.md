@@ -203,6 +203,18 @@ curl -sf -H "Authorization: Bearer $TOKEN" http://127.0.0.1:8080/guardian/models
 3. **Grounded demo farm:** farm context **on**, farm **gr33n Demo Farm (id 1)**, wait for the amber **Generating…** banner — **one message at a time**.
 4. If the banner never completes → run the **manual Ollama cleanup** above, then retry.
 
+### Timeout profile (16 GB CPU laptop — validated)
+
+Keep these in `.env` unless you prefer fast-fail over slow answers:
+
+| Variable | Value | Why |
+|----------|-------|-----|
+| `LLM_TIMEOUT_SECONDS` | **666** | Cold `phi3:mini` on CPU can take many minutes; 666 s is the project default and enough for ungrounded + trimmed grounded turns |
+| `LLM_RETRY_MAX_ATTEMPTS` | **1** | Avoids stacking two full generation runs after a transient blip |
+| `GUARDIAN_OLLAMA_PULL_TIMEOUT_SECONDS` | **600** (default) | Pull only — use terminal for large models if the UI times out |
+
+The Guardian chat UI has **no client-side fetch timeout**; only **Stop** aborts an in-flight stream. A hung “Generating…” banner is almost always Ollama contention or a stale `ollama run`, not the browser cutting off at 666 s.
+
 ---
 
 ## Troubleshooting
@@ -222,3 +234,4 @@ curl -sf -H "Authorization: Bearer $TOKEN" http://127.0.0.1:8080/guardian/models
 | Date | Note |
 |------|------|
 | 2026-07-04 | Initial playbook — laptop validation, Phase 126, RAG bring-up, UI vs CLI cleanup |
+| 2026-07-04 | Document validated 666 s timeout profile for 16 GB CPU laptop |
