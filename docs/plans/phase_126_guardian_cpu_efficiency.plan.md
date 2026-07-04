@@ -12,31 +12,31 @@ overview: >
 todos:
   - id: ws1-effective-context-resolution
     content: "WS1: Effective context window — parse rope.scaling.original_context_length from /api/show; add EffectiveContextWindow on ModelInfo; built-in override map (phi3:mini→4096, tinyllama→2048); env GUARDIAN_EFFECTIVE_CONTEXT_OVERRIDES"
-    status: pending
+    status: completed
   - id: ws2-prompt-budget-uses-effective
     content: "WS2: Prompt budget uses effective window — ComputePromptBudget(contextWindow) called with EffectiveContextWindow; grounded gate still uses advertised window for 8192 minimum OR documents phi3 allowed with trim; log effective vs advertised"
-    status: pending
+    status: completed
   - id: ws3-phi3-4096-override
     content: "WS3: phi3:mini 4096 budget override — harden default override; unit test grounded demo farm prompt trims history/RAG/snapshot when effective=4096; regression: no full-size prompt sent for phi3 on CPU box"
-    status: pending
+    status: completed
   - id: ws4-classified-llm-errors
     content: "WS4: Classified LLM errors — map timeout/cancel/unreachable/context to error_code + operator_message in SSE error + JSON 502; UI GuardianChatPanel shows specific text (not generic LLM request failed)"
-    status: pending
+    status: completed
   - id: ws5-stream-progress-hints
     content: "WS5: Stream progress — optional SSE status events (embedding, retrieving, generating) before first delta; selector shows effective_context_window + trim warning for phi3"
-    status: pending
+    status: completed
   - id: ws6-ollama-contention-docs
     content: "WS6: Ollama contention — document unload embed before chat; optional GET /v1/chat/health field loaded_models; INSTALL.md CPU laptop playbook"
-    status: pending
+    status: completed
   - id: ws7-tests-smoke
     content: "WS7: Tests — ollama_show effective context parse; prompt_budget effective 4096; handler error classification; optional //go:build ollama smoke grounded phi3 trim"
-    status: pending
+    status: completed
 isProject: false
 ---
 
 # Phase 126 — Guardian CPU efficiency (effective context cap, phi3 4096 budget, clearer errors)
 
-**Status: planned** (follow-up to Phase 122, discovered on CPU laptop with phi3:mini + farm context)
+**Status: shipped** (follow-up to Phase 122, discovered on CPU laptop with phi3:mini + farm context)
 
 **Related:** [Phase 118](phase_118_guardian_model_capabilities.plan.md) (rope quirk documented),
 [Phase 122](phase_122_guardian_model_eval_and_context_budget.plan.md) (budget guard shipped),

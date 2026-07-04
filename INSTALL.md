@@ -317,11 +317,24 @@ make guardian-eval MODEL=phi3:mini  # one model
 Report: `data/guardian_model_eval.json`. Scores surface in **Guardian model selector**
 (`GET /guardian/models` → `eval` field). Re-run after pulling a new model.
 
-**Context budget (Phase 122):** models with `context_window` below 8192 get trimmed
-history, RAG top-K, and snapshot detail before the prompt is sent. This is separate
-from the grounded-chat *gate* (also 8192): `phi3:mini` reports rope-extended 131072 via
-Ollama but quality is best within its original training window — eval scores help you
-pick models for a low-power box.
+**Context budget (Phase 122 + 126):** prompt trimming uses the model's **effective**
+context window (`effective_context_window` on `GET /guardian/models`), not rope-extended
+metadata alone. Built-in overrides include `phi3:mini` → 4096 and `tinyllama` → 2048;
+override more with `GUARDIAN_EFFECTIVE_CONTEXT_OVERRIDES=phi3:mini=4096`. Models whose
+effective window is below 8192 get trimmed history, RAG top-K, and snapshot detail before
+the prompt is sent. The grounded-chat *gate* still uses advertised `context_window` (8192
+minimum): `phi3:mini` reports rope-extended 131072 via Ollama but runs at 4096 on CPU —
+Phase 126 trims grounded prompts accordingly.
+
+**CPU laptop Guardian playbook (Phase 126):**
+
+- `phi3:mini` + **Use farm context** is supported but **slow** on CPU-only boxes (minutes
+  per grounded turn). First ungrounded message is a good warm-up while the model loads.
+- Before long chat sessions, free RAM: `ollama stop <embed-model>` (embedding and chat
+  models compete on one Ollama host).
+- Use **tinyllama** for fast smoke; **phi3:mini** for quality when you can wait.
+- Off-farm horticulture (e.g. cherry tree, forest garden) → turn **farm context off**;
+  Guardian still answers from general knowledge.
 
 Or run directly (same as the make targets):
 

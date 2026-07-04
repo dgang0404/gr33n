@@ -221,9 +221,10 @@ func (h *Handler) PostV1(w http.ResponseWriter, r *http.Request) {
 	}
 
 	modelPreview := h.previewModelOutcome(r.Context(), pb.Model, farmID, grounded)
-	contextWindow := h.contextWindowForModel(modelPreview.ModelName)
-	promptBudget, trimLog := farmguardian.ComputePromptBudget(contextWindow, MaxHistoryTurns)
-	h.logPromptBudgetTrims(modelPreview.ModelName, contextWindow, trimLog)
+	effectiveWindow := h.effectiveContextWindowForModel(modelPreview.ModelName)
+	advertisedWindow := h.advertisedContextWindowForModel(modelPreview.ModelName)
+	promptBudget, trimLog := farmguardian.ComputePromptBudget(effectiveWindow, MaxHistoryTurns)
+	h.logPromptBudgetTrims(modelPreview.ModelName, effectiveWindow, advertisedWindow, trimLog)
 
 	// Resolve grounded vs plain path. Plain path needs only an LLM. When farm_id
 	// is set we always attach the live snapshot; RAG chunk retrieval is optional
@@ -451,7 +452,8 @@ func (h *Handler) PostV1(w http.ResponseWriter, r *http.Request) {
 		if h.tryFieldDegradeTurn(w, r, question, pb, sessionID, userID, hasUser, farmID, pb.Stream) {
 			return
 		}
-		httputil.WriteError(w, http.StatusBadGateway, "LLM request failed")
+		payload := classifyLLMError(err)
+		httputil.WriteJSON(w, http.StatusBadGateway, payload)
 		return
 	}
 	answer, usage, repairOutcome := h.maybeRepairProposalAnswer(r.Context(), chatClient, messages, question, answer, usage)
@@ -549,6 +551,13 @@ func (h *Handler) streamResponse(
 		return true
 	}
 
+	if grounded {
+		sendEvent("status", map[string]string{
+			"phase":   "generating",
+			"message": "Generating answer — CPU models may take a few minutes.",
+		})
+	}
+
 	var collected strings.Builder
 	onDelta := func(delta string) {
 		collected.WriteString(delta)
@@ -562,7 +571,8 @@ func (h *Handler) streamResponse(
 		}
 		slog.Warn("farm guardian stream failed", "farm_id", farmID, "err", streamErr)
 		ResetLLMReachabilityCache()
-		sendEvent("error", map[string]string{"error": "LLM request failed"})
+		payload := classifyLLMError(streamErr)
+		sendEvent("error", payload)
 		_, _ = w.Write([]byte("data: [DONE]\n\n"))
 		flusher.Flush()
 		return

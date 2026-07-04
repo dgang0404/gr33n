@@ -15,9 +15,10 @@ import (
 
 // ModelInfo describes one model reported by the Ollama runtime.
 type ModelInfo struct {
-	Name           string   `json:"name"`
-	ContextWindow  int      `json:"context_window"`
-	ParameterCount int64    `json:"parameter_count,omitempty"`
+	Name                   string   `json:"name"`
+	ContextWindow          int      `json:"context_window"`
+	EffectiveContextWindow int      `json:"effective_context_window,omitempty"`
+	ParameterCount         int64    `json:"parameter_count,omitempty"`
 	SpeedClass     string   `json:"speed_class"`
 	Capabilities   []string `json:"capabilities,omitempty"`
 	Loaded         bool     `json:"loaded,omitempty"`

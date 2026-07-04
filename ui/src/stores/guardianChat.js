@@ -7,10 +7,20 @@ function apiBaseURL() {
   return import.meta.env.VITE_API_URL ?? 'http://localhost:8080'
 }
 
+function formatChatError(payload) {
+  if (!payload || typeof payload !== 'object') return 'LLM request failed'
+  let msg = payload.error || 'LLM request failed'
+  if (payload.error_code === 'llm_busy') {
+    msg += ' Tip: run `ollama stop <embed-model>` to free RAM (see INSTALL.md).'
+  }
+  return msg
+}
+
 export const useGuardianChatStore = defineStore('guardianChat', {
   state: () => ({
     streaming: false,
     streamingText: '',
+    streamingStatus: '',
     error: '',
     transcript: [],
     lastFarmId: null,
@@ -46,6 +56,7 @@ export const useGuardianChatStore = defineStore('guardianChat', {
       }
       this.streaming = false
       this.streamingText = ''
+      this.streamingStatus = ''
     },
 
     findProposalTurn(proposalId) {
@@ -79,6 +90,7 @@ export const useGuardianChatStore = defineStore('guardianChat', {
 
       this.error = ''
       this.streamingText = ''
+      this.streamingStatus = ''
       this.streaming = true
       this.lastFarmId = farmId != null ? Number(farmId) : null
 
@@ -110,7 +122,7 @@ export const useGuardianChatStore = defineStore('guardianChat', {
           let text = `HTTP ${resp.status}`
           try {
             const j = await resp.json()
-            text = j.error || text
+            text = formatChatError(j) || j.error || text
           } catch { /* ignore */ }
           this.error = text
           return null
@@ -166,7 +178,9 @@ export const useGuardianChatStore = defineStore('guardianChat', {
       } else if (eventType === 'done') {
         return parsed
       } else if (eventType === 'error') {
-        this.error = parsed.error || 'LLM request failed'
+        this.error = formatChatError(parsed)
+      } else if (eventType === 'status' && parsed.message) {
+        this.streamingStatus = parsed.message
       }
       return null
     },

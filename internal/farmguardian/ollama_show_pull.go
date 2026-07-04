@@ -18,8 +18,9 @@ type ollamaShowResponse struct {
 }
 
 type modelShowDetails struct {
-	ContextWindow int
-	Capabilities  []string
+	ContextWindow          int
+	EffectiveContextWindow int
+	Capabilities           []string
 }
 
 type ollamaPullRequest struct {
@@ -96,8 +97,9 @@ func fetchModelShowDetails(ctx context.Context, nativeBase, name string, client 
 		return modelShowDetails{}, fmt.Errorf("ollama show decode: %w", err)
 	}
 	return modelShowDetails{
-		ContextWindow: parseContextLength(parsed.ModelInfo),
-		Capabilities:  append([]string(nil), parsed.Capabilities...),
+		ContextWindow:          parseContextLength(parsed.ModelInfo),
+		EffectiveContextWindow: ResolveEffectiveContextWindow(name, parseContextLength(parsed.ModelInfo), parsed.ModelInfo),
+		Capabilities:           append([]string(nil), parsed.Capabilities...),
 	}, nil
 }
 
@@ -144,6 +146,10 @@ func EnrichModelContextWindows(ctx context.Context, llmBaseURL string, models []
 				return
 			}
 			out[i].ContextWindow = details.ContextWindow
+			out[i].EffectiveContextWindow = details.EffectiveContextWindow
+			if out[i].EffectiveContextWindow <= 0 && out[i].ContextWindow > 0 {
+				out[i].EffectiveContextWindow = ResolveEffectiveContextWindow(out[i].Name, out[i].ContextWindow, nil)
+			}
 			out[i].Capabilities = details.Capabilities
 		}(i)
 	}

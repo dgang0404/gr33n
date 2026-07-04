@@ -226,6 +226,7 @@
         </article>
         <div v-if="streaming" class="text-zinc-100 text-sm space-y-2" data-test="chat-streaming-row">
           <span class="text-[10px] uppercase tracking-widest text-green-500 mr-2">guardian</span>
+          <p v-if="streamingStatus && !streamingText" class="text-xs text-amber-300/80">{{ streamingStatus }}</p>
           <span class="whitespace-pre-wrap">{{ streamingText }}<span class="text-zinc-500 animate-pulse">▍</span></span>
         </div>
       </section>
@@ -568,7 +569,7 @@ const farmContext = useFarmContextStore()
 const farmStore = useFarmStore()
 const guardianPanel = useGuardianPanelStore()
 const guardianChat = useGuardianChatStore()
-const { streaming, streamingText, error: errorMessage, transcript } = storeToRefs(guardianChat)
+const { streaming, streamingText, streamingStatus, error: errorMessage, transcript } = storeToRefs(guardianChat)
 const guardianProposals = useGuardianProposalsStore()
 const capabilities = useCapabilitiesStore()
 const farmIdRef = computed(() => farmContext.farmId)

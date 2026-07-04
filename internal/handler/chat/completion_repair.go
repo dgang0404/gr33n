@@ -17,6 +17,20 @@ func (h *Handler) previewModelOutcome(ctx context.Context, sessionModel string, 
 }
 
 func (h *Handler) contextWindowForModel(modelName string) int {
+	return h.effectiveContextWindowForModel(modelName)
+}
+
+func (h *Handler) effectiveContextWindowForModel(modelName string) int {
+	if h == nil || h.modelCache == nil || modelName == "" {
+		return 0
+	}
+	if info, ok := h.modelCache.Get(modelName); ok {
+		return farmguardian.PromptBudgetContextWindow(info)
+	}
+	return 0
+}
+
+func (h *Handler) advertisedContextWindowForModel(modelName string) int {
 	if h == nil || h.modelCache == nil || modelName == "" {
 		return 0
 	}
@@ -26,11 +40,12 @@ func (h *Handler) contextWindowForModel(modelName string) int {
 	return 0
 }
 
-func (h *Handler) logPromptBudgetTrims(modelName string, contextWindow int, trimLog []string) {
+func (h *Handler) logPromptBudgetTrims(modelName string, effectiveWindow, advertisedWindow int, trimLog []string) {
 	for _, detail := range trimLog {
 		slog.Info("guardian: prompt budget trim",
 			"model", modelName,
-			"context_window", contextWindow,
+			"context_window", effectiveWindow,
+			"advertised_context_window", advertisedWindow,
 			"detail", detail,
 		)
 	}

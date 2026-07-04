@@ -106,6 +106,14 @@
       </p>
 
       <p
+        v-if="selectedTrimHint"
+        class="text-[10px] text-amber-300/80 leading-snug"
+        data-test="guardian-trim-hint"
+      >
+        {{ selectedTrimHint }}
+      </p>
+
+      <p
         v-if="selectedEvalHint"
         class="text-[10px] text-zinc-400 leading-snug"
         data-test="guardian-eval-hint"
@@ -203,6 +211,17 @@ const selectedModelInfo = computed(() => {
 const selectedRuntimeHint = computed(() => selectedModelInfo.value?.runtime_hint || '')
 
 const selectedEvalHint = computed(() => evalHintForModel(selectedModelInfo.value))
+
+const selectedTrimHint = computed(() => {
+  const m = selectedModelInfo.value
+  if (!m) return ''
+  const effective = m.effective_context_window || 0
+  const advertised = m.context_window || 0
+  if (effective > 0 && effective < 8192 && advertised > effective) {
+    return `Grounded prompts trimmed to ${effective} tokens (${m.name} CPU mode).`
+  }
+  return ''
+})
 
 function evalHintForModel(m) {
   if (!m?.eval) {

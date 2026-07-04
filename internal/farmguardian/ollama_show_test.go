@@ -51,6 +51,35 @@ func TestEnrichModelContextWindows(t *testing.T) {
 	}
 }
 
+func TestEnrichModelContextWindows_phi3Effective(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/api/show" {
+			http.NotFound(w, r)
+			return
+		}
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"model_info": map[string]any{
+				"phi3.context_length":                        float64(131072),
+				"phi3.rope.scaling.original_context_length": float64(4096),
+			},
+			"capabilities": []string{"completion"},
+		})
+	}))
+	defer srv.Close()
+
+	models := []ModelInfo{{Name: "phi3:mini"}}
+	enriched := EnrichModelContextWindows(context.Background(), srv.URL+"/v1", models, srv.Client(), 2)
+	if len(enriched) != 1 {
+		t.Fatalf("got %+v", enriched)
+	}
+	if enriched[0].ContextWindow != 131072 {
+		t.Fatalf("advertised want 131072, got %d", enriched[0].ContextWindow)
+	}
+	if enriched[0].EffectiveContextWindow != 4096 {
+		t.Fatalf("effective want 4096, got %d", enriched[0].EffectiveContextWindow)
+	}
+}
+
 func TestPullOllamaModel(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != "/api/pull" {
