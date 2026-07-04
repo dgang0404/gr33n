@@ -28,6 +28,17 @@ RUN set -eux; \
     cd /tmp/pgvector; \
     command -v clang-19 >/dev/null 2>&1 || { echo "clang-19 missing (apk clang19)"; exit 1; }; \
     test -x /usr/lib/llvm19/bin/llvm-lto || { echo "llvm-lto missing (apk llvm19)"; exit 1; }; \
+    if ! command -v clang-21 >/dev/null 2>&1; then \
+      for c in /usr/lib/llvm19/bin/clang /usr/bin/clang-19; do \
+        if [ -x "$c" ]; then ln -sf "$c" /usr/bin/clang-21; break; fi; \
+      done; \
+    fi; \
+    command -v clang-21 >/dev/null 2>&1 || { echo "clang-21 missing (PGXS bitcode for pgvector)"; exit 1; }; \
+    if [ ! -x /usr/lib/llvm21/bin/llvm-lto ]; then \
+      mkdir -p /usr/lib/llvm21/bin; \
+      ln -sf /usr/lib/llvm19/bin/llvm-lto /usr/lib/llvm21/bin/llvm-lto; \
+    fi; \
+    test -x /usr/lib/llvm21/bin/llvm-lto || { echo "llvm-lto missing (PGXS thinlink for pgvector)"; exit 1; }; \
     make OPTFLAGS=""; \
     make install; \
     cd /; \

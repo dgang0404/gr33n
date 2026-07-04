@@ -435,6 +435,9 @@ Do **not** wire mains AC to the breadboard. Rated enclosures only for line-volta
 
 ### 8.3 Copy-paste field checklist
 
+**Headless Pi simulation rig (laptop API + Pi client):** step-by-step install in
+[`pi-headless-first-boot.md`](pi-headless-first-boot.md).
+
 Use this on first deploy; tick items in order.
 
 ```

@@ -1538,13 +1538,6 @@ CREATE TRIGGER trg_programs_updated_at
 ALTER TABLE gr33nfertigation.crop_cycles
     ADD COLUMN primary_program_id BIGINT REFERENCES gr33nfertigation.programs(id) ON DELETE SET NULL;
 
--- Phase 56 WS1 — optional link to Plants catalog.
-ALTER TABLE gr33nfertigation.crop_cycles
-    ADD COLUMN plant_id BIGINT REFERENCES gr33ncrops.plants(id) ON DELETE SET NULL;
-CREATE INDEX IF NOT EXISTS idx_crop_cycles_plant_id
-    ON gr33nfertigation.crop_cycles (plant_id)
-    WHERE plant_id IS NOT NULL;
-
 -- Phase 56 WS2 — stage transition history for grow timelines.
 CREATE TABLE IF NOT EXISTS gr33nfertigation.crop_cycle_stage_events (
     id            BIGSERIAL PRIMARY KEY,
@@ -1894,6 +1887,13 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_plants_farm_crop_key
 CREATE TRIGGER trg_gr33ncrops_plants_updated_at
     BEFORE UPDATE ON gr33ncrops.plants
     FOR EACH ROW EXECUTE FUNCTION gr33ncore.set_updated_at();
+
+-- Phase 56 WS1 — optional link to Plants catalog (after gr33ncrops.plants exists).
+ALTER TABLE gr33nfertigation.crop_cycles
+    ADD COLUMN plant_id BIGINT REFERENCES gr33ncrops.plants(id) ON DELETE SET NULL;
+CREATE INDEX IF NOT EXISTS idx_crop_cycles_plant_id
+    ON gr33nfertigation.crop_cycles (plant_id)
+    WHERE plant_id IS NOT NULL;
 
 CREATE SCHEMA IF NOT EXISTS gr33nanimals;
 

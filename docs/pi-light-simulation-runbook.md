@@ -4,7 +4,8 @@ Hands-on walkthrough for rig v1: watch sensor comfort bands → automation → a
 commands on the NeoPixel strip **and** in the gr33n UI. No live plants required.
 
 **Prerequisites:** mapping spec [`pi-light-simulation-mapping.md`](pi-light-simulation-mapping.md),
-hardware/setup [`../pi_client/README-simulation-rig.md`](../pi_client/README-simulation-rig.md).
+hardware/setup [`../pi_client/README-simulation-rig.md`](../pi_client/README-simulation-rig.md),
+headless Pi install [`pi-headless-first-boot.md`](pi-headless-first-boot.md).
 
 ---
 

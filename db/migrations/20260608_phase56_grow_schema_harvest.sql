@@ -11,17 +11,44 @@ CREATE INDEX IF NOT EXISTS idx_crop_cycles_plant_id
 COMMENT ON COLUMN gr33nfertigation.crop_cycles.plant_id IS
     'Optional FK to gr33ncrops.plants — strain catalog link (Phase 56).';
 
--- Best-effort backfill from strain_or_variety text → plant display_name.
-UPDATE gr33nfertigation.crop_cycles c
-SET plant_id = p.id
-FROM gr33ncrops.plants p
-WHERE c.plant_id IS NULL
-  AND c.farm_id = p.farm_id
-  AND c.strain_or_variety IS NOT NULL
-  AND (
-    lower(trim(c.strain_or_variety)) = lower(trim(p.display_name))
-    OR lower(trim(c.strain_or_variety)) LIKE lower(trim(p.display_name)) || ' (%'
-  );
+-- Best-effort backfill from batch label text → plant display_name.
+-- Fresh schema (v2) already has batch_label; incremental DBs may still have strain_or_variety until Phase 93.
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'gr33nfertigation' AND table_name = 'crop_cycles' AND column_name = 'strain_or_variety'
+  ) THEN
+    EXECUTE $q$
+      UPDATE gr33nfertigation.crop_cycles c
+      SET plant_id = p.id
+      FROM gr33ncrops.plants p
+      WHERE c.plant_id IS NULL
+        AND c.farm_id = p.farm_id
+        AND c.strain_or_variety IS NOT NULL
+        AND (
+          lower(trim(c.strain_or_variety)) = lower(trim(p.display_name))
+          OR lower(trim(c.strain_or_variety)) LIKE lower(trim(p.display_name)) || ' (%'
+        )
+    $q$;
+  ELSIF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'gr33nfertigation' AND table_name = 'crop_cycles' AND column_name = 'batch_label'
+  ) THEN
+    EXECUTE $q$
+      UPDATE gr33nfertigation.crop_cycles c
+      SET plant_id = p.id
+      FROM gr33ncrops.plants p
+      WHERE c.plant_id IS NULL
+        AND c.farm_id = p.farm_id
+        AND c.batch_label IS NOT NULL
+        AND (
+          lower(trim(c.batch_label)) = lower(trim(p.display_name))
+          OR lower(trim(c.batch_label)) LIKE lower(trim(p.display_name)) || ' (%'
+        )
+    $q$;
+  END IF;
+END $$;
 
 CREATE TABLE IF NOT EXISTS gr33nfertigation.crop_cycle_stage_events (
     id            BIGSERIAL PRIMARY KEY,

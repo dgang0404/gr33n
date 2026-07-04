@@ -5,6 +5,7 @@ Same `pi_client` + platform sync as production — only the bottom-layer driver
 changes when you go live.
 
 **See also:**
+- Headless Pi first boot: [`../docs/pi-headless-first-boot.md`](../docs/pi-headless-first-boot.md)
 - LED mapping: [`../docs/pi-light-simulation-mapping.md`](../docs/pi-light-simulation-mapping.md)
 - Demo walkthrough: [`../docs/pi-light-simulation-runbook.md`](../docs/pi-light-simulation-runbook.md)
 - Platform sync: [`../docs/pi-integration-guide.md`](../docs/pi-integration-guide.md)
