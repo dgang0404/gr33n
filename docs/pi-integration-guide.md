@@ -4,6 +4,8 @@
 >
 > **Phase 51 (platform sync — recommended):** Minimal `config.yaml` on the Pi (`api`, `device.uid`, `farm_id`); wiring is fetched from the API on startup, cached offline, and **hot-reloaded** when you edit pins in the dashboard — see [§2](#2-platform-sync-phase-51--recommended). [§2a](#2a-db-first-wiring-in-the-dashboard-phase-50) is how wiring gets into the DB; [§2b](#2b-legacy-full-local-yaml-opt-out) keeps old full-YAML Pis working unchanged.
 >
+> **Phase 125 LED simulation rig:** Pre-plant dry-run with NeoPixel stand-ins for sensors/actuators — [`pi-light-simulation-runbook.md`](pi-light-simulation-runbook.md) · [`pi_client/README-simulation-rig.md`](../pi_client/README-simulation-rig.md).
+>
 > **Companion docs:**
 > - API spec: [`openapi.yaml`](../openapi.yaml) — source of truth for every route used below.
 > - MQTT edge playbook: [`mqtt-edge-operator-playbook.md`](mqtt-edge-operator-playbook.md) — MQTT → API bridge; **room-scale warehouse topics (Phase 31 WS4)** in § Room-scale pattern.

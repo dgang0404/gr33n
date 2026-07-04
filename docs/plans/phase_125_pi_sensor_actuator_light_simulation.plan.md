@@ -25,16 +25,16 @@ todos:
     status: completed
   - id: ws4-demo-script
     content: "WS4: Guided demo script/checklist — a short runbook for triggering each automation path on the rig (e.g. drop simulated soil moisture -> watch irrigation light blink -> confirm task/alert appears in UI) for hands-on walkthroughs"
-    status: pending
+    status: completed
   - id: ws5-docs
     content: "WS5: Docs — wiring diagram, parts list (Pi, LED strip, resistors/level shifter if needed), and README for swapping simulation driver for real relay driver later"
-    status: pending
+    status: completed
 isProject: false
 ---
 
 # Phase 125 — Pi light/LED simulation rig for sensors + actuators (pre-plant dry run)
 
-**Status: in progress — WS1–WS3 shipped** ([`pi-light-simulation-mapping.md`](../pi-light-simulation-mapping.md))
+**Status: shipped** — [`pi-light-simulation-mapping.md`](../pi-light-simulation-mapping.md) · [`pi-light-simulation-runbook.md`](../pi-light-simulation-runbook.md) · [`pi_client/README-simulation-rig.md`](../pi_client/README-simulation-rig.md)
 
 ## Why
 
@@ -83,8 +83,8 @@ without reading a dashboard.
       sensor/actuator
 - [x] A synthetic sensor reading pushed through the normal ingestion path
       visibly changes the correct light within a few seconds
-- [ ] A forced out-of-band reading triggers the same alert/automation path
+- [x] A forced out-of-band reading triggers the same alert/automation path
       as production and the corresponding actuator light blinks
-- [ ] Demo runbook exists and was walked through end-to-end at least once
-- [ ] README documents the exact steps to swap the simulation driver for a
+- [x] Demo runbook exists and was walked through end-to-end at least once
+- [x] README documents the exact steps to swap the simulation driver for a
       real relay/pump driver with no platform-side changes

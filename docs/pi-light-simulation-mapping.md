@@ -239,6 +239,9 @@ Add `simulation.synthetic_sensors[]` to post generated values through the same
 
 Example — see [`config.simulation.example.yaml`](../pi_client/config.simulation.example.yaml).
 
+**WS4 runbook:** [`pi-light-simulation-runbook.md`](pi-light-simulation-runbook.md)  
+**WS5 hardware + relay swap:** [`pi_client/README-simulation-rig.md`](../pi_client/README-simulation-rig.md)
+
 ---
 
 ## 7. Primary demo loop (pointer to WS4)
@@ -276,6 +279,8 @@ Secondary paths for WS4: EC/pH out of band (pixels 1, 4), Veg light schedule
 ## Related docs
 
 - [Phase 125 plan](plans/phase_125_pi_sensor_actuator_light_simulation.plan.md)
+- [Demo runbook (WS4)](pi-light-simulation-runbook.md)
+- [Hardware & relay swap (WS5)](../pi_client/README-simulation-rig.md)
 - [Pi integration guide](pi-integration-guide.md)
 - [Virtual Pi config export](plans/phase_121_virtual_pi_hookup_export.plan.md) — `GET /devices/{id}/pi-config`
 - [Connectivity requirements](connectivity-requirements.md) — LAN-only; no WAN for LED driver
