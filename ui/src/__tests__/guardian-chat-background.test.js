@@ -83,6 +83,23 @@ describe('Phase 37 WS9 — Guardian chat background stream', () => {
     vi.unstubAllGlobals()
   })
 
+  it('stop button cancels an in-flight stream', async () => {
+    const farmContext = useFarmContextStore()
+    farmContext.farmId = 1
+    const chatStore = useGuardianChatStore()
+    chatStore.streaming = true
+    chatStore.streamingText = 'partial answer'
+
+    const wrapper = mountChatPanel()
+    await flushPromises()
+
+    await wrapper.find('[data-test="chat-stop-button"]').trigger('click')
+    expect(chatStore.streaming).toBe(false)
+    expect(chatStore.streamingText).toBe('')
+    expect(wrapper.find('[data-test="chat-send-button"]').exists()).toBe(true)
+    wrapper.unmount()
+  })
+
   it('remount shows accumulated streamingText from the store', async () => {
     const farmContext = useFarmContextStore()
     farmContext.farmId = 1

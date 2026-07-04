@@ -376,14 +376,25 @@
             🎤
           </button>
           <button
+            v-if="streaming"
+            type="button"
+            data-test="chat-stop-button"
+            class="ml-auto px-4 py-2 rounded-lg bg-red-950/50 text-red-300 border border-red-800 hover:bg-red-900/70 text-sm font-medium"
+            :class="layout === 'compact' ? 'min-h-[2.75rem]' : ''"
+            @click="stopStream"
+          >
+            Stop
+          </button>
+          <button
+            v-else
             type="button"
             data-test="chat-send-button"
-            :disabled="streaming || !message.trim() || (useFarmContext && !farmContext.farmId)"
+            :disabled="!message.trim() || (useFarmContext && !farmContext.farmId)"
             class="ml-auto px-4 py-2 rounded-lg bg-green-900/50 text-green-400 border border-green-800 hover:bg-green-900/70 disabled:opacity-40 text-sm font-medium"
             :class="layout === 'compact' ? 'min-h-[2.75rem]' : ''"
             @click="send"
           >
-            {{ streaming ? 'Streaming…' : 'Send' }}
+            Send
           </button>
         </div>
         <p v-if="errorMessage" data-test="chat-error" class="text-sm text-red-400 bg-red-950/50 border border-red-900 rounded-lg px-3 py-2">
@@ -1059,6 +1070,10 @@ async function onFollowUp(chip) {
   useFarmContext.value = true
   await nextTick()
   await send()
+}
+
+function stopStream() {
+  guardianChat.cancelStream()
 }
 
 async function send() {
