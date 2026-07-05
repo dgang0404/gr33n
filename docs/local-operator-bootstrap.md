@@ -69,6 +69,8 @@ LLM_RETRY_MAX_ATTEMPTS=1
 
 **RAG ingest** (`make rag-ingest-farm-operational`, `guardian-bootstrap-farm`) uses **`EMBEDDING_MODEL` only** — not `LLM_MODEL`. Ingest works the same whether chat is tinyllama or phi3.
 
+**Field guides** (`docs/field-guides/`, `make rag-ingest-field-guides`) are only injected when **farm context is on** — not for quick/off-farm chat. After adding guides: `make migrate` then `make rag-ingest-field-guides`. See [field-guides/README.md](field-guides/README.md) and [phase_127 plan](plans/phase_127_snapshot_devices_fertigation_guides.plan.md).
+
 **Warm-up trick for phi3:** if you stay on phi3, send a one-line “hi” first and wait for completion so the model stays in RAM; then send the real question. Cold phi3 on CPU dominates wait time.
 
 ## Server & frontier delta (from laptop)

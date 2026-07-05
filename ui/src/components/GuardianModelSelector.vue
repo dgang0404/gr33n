@@ -41,47 +41,68 @@
         </select>
       </div>
 
+      <p
+        class="text-[10px] leading-snug rounded border px-2 py-1.5"
+        :class="props.farmContextActive ? 'border-green-900/40 bg-green-950/20 text-green-200/90' : 'border-zinc-800 bg-zinc-900/40 text-zinc-300'"
+        data-test="guardian-mode-banner"
+      >
+        <span class="font-medium text-zinc-200">{{ modeBannerTitle }}</span>
+        {{ modeBannerBody }}
+      </p>
+
+      <p
+        v-if="effectiveModelSummary"
+        class="text-[10px] text-zinc-500"
+        data-test="guardian-effective-model"
+      >
+        This turn:
+        <span class="text-zinc-300">{{ effectiveModelSummary }}</span>
+      </p>
+
       <details class="rounded border border-zinc-800 bg-zinc-900/50 px-2 py-1.5 text-[10px] text-zinc-400 leading-snug" data-test="guardian-model-help">
-        <summary class="cursor-pointer text-zinc-300 select-none">What do these models mean?</summary>
-        <ul class="mt-2 space-y-1.5 list-disc pl-4">
-          <li>
-            <span class="text-zinc-300">Farm / server default</span> — uses the
-            <span class="text-zinc-300">saved</span> farm default when set; otherwise
-            <span class="text-zinc-300">{{ serverDefault || 'LLM_MODEL' }}</span>
-            from server <span class="text-zinc-500">.env</span>.
-            Changing the farm default dropdown does nothing until you click
-            <span class="text-zinc-300">Save</span>.
-          </li>
-          <li>
-            <span class="text-zinc-300">chat</span> — writes answers.
-            <span class="text-zinc-300">fast</span> — small model (faster on CPU).
-            <span class="text-zinc-300">general</span> — larger (slower, often smarter).
-          </li>
-          <li>
-            <span class="text-zinc-300">ctx</span> — context window Ollama reports.
-            On CPU, <span class="text-zinc-300">phi3:mini</span> is trimmed to
-            <span class="text-zinc-300">4096</span> for grounded chat (see amber hint below).
-          </li>
-          <li>
-            <span class="text-zinc-300">cold</span> — not in RAM; first message loads from disk (slow).
-            <span class="text-zinc-300">loaded</span> — already in RAM.
-            Status can be stale until you refresh the page.
-          </li>
-          <li>
-            <span class="text-zinc-300">RAG / farm context</span> uses a separate
-            <span class="text-zinc-300">embedding</span> model from
-            <span class="text-zinc-500">EMBEDDING_MODEL</span> in <span class="text-zinc-500">.env</span>
-            — not this dropdown. Ingest (<span class="text-zinc-500">make rag-ingest-farm-operational</span>)
-            also uses the embed model only.
-          </li>
-          <li>
-            <span class="text-zinc-300">Laptop tips:</span>
-            <span class="text-zinc-300">phi3:mini</span> for quality;
-            <span class="text-zinc-300">tinyllama</span> for quick ungrounded chat only.
-            Turn <span class="text-zinc-300">Use farm context</span> off for off-farm questions
-            (e.g. home forest garden). Grounded + CPU can take many minutes.
-          </li>
-        </ul>
+        <summary class="cursor-pointer text-zinc-300 select-none">How models, field guides, and farm context work</summary>
+        <div class="mt-2 space-y-2">
+          <p data-test="guardian-field-guides-help">
+            <span class="text-zinc-300">Field guides</span>
+            (<span class="text-zinc-500">docs/field-guides/</span>)
+            are curated gr33n docs — crop care, Pi wiring, safety, procedures.
+            They are <span class="text-zinc-300">only</span> injected when
+            <span class="text-zinc-300">Use farm context</span> is on, a farm is selected,
+            and RAG has ingested them (<span class="text-zinc-500">make rag-ingest-field-guides</span>).
+            <span class="text-zinc-300">tinyllama</span> and
+            <span class="text-zinc-300">phi3:mini</span> both use the same RAG chunks when grounded;
+            a larger model (e.g. llama3.1:8b) reads those chunks more reliably but is slower on CPU.
+            With farm context <span class="text-zinc-300">off</span>, no field guides — only the model's
+            general training (often wrong on niche horticulture).
+          </p>
+          <ul class="space-y-1.5 list-disc pl-4">
+            <li v-if="props.farmContextActive">
+              <span class="text-zinc-300">Farm context on</span> — live farm snapshot + RAG
+              (field guides, platform docs, farm rows) + read tools. Requires
+              {{ GROUNDED_MIN_CONTEXT_WINDOW }}+ ctx; small models are hidden.
+            </li>
+            <li v-else>
+              <span class="text-zinc-300">Quick chat</span> — no farm data, no field guides, no embed model.
+              Empty <span class="text-zinc-300">This chat</span> uses
+              <span class="text-zinc-300">{{ serverDefault || 'LLM_MODEL' }}</span> from
+              <span class="text-zinc-500">.env</span>. Pick
+              <span class="text-zinc-300">phi3:mini</span> here for better off-farm answers (slower).
+            </li>
+            <li>
+              <span class="text-zinc-300">This chat</span> — session override for you only.
+              <span class="text-zinc-300">Farm default</span> (when farm context on) — saved per farm; click
+              <span class="text-zinc-300">Save</span> after changing.
+            </li>
+            <li>
+              <span class="text-zinc-300">chat · fast · general · ctx · cold · loaded</span> — capability,
+              speed class, context window, and whether the weights are already in RAM.
+            </li>
+            <li>
+              <span class="text-zinc-300">Embedding model</span> (<span class="text-zinc-500">EMBEDDING_MODEL</span>)
+              is separate — used for RAG search when farm context is on, not listed in this dropdown.
+            </li>
+          </ul>
+        </div>
       </details>
 
       <div v-if="canAdmin && props.farmContextActive && effectiveFarmId" class="flex flex-wrap items-end gap-2 border-t border-zinc-800 pt-2">
@@ -147,11 +168,11 @@
         </button>
       </div>
       <p
-        v-else
+        v-else-if="props.farmContextActive && effectiveFarmId"
         class="text-zinc-500"
         data-test="guardian-farm-model-readonly"
       >
-        Farm default:
+        Farm default (saved):
         <span class="text-zinc-300">{{ activeFarmModel || serverDefault || 'server default' }}</span>
       </p>
 
@@ -172,24 +193,11 @@
       </p>
 
       <p
-        v-else-if="props.farmContextActive"
-        class="text-[10px] text-zinc-500 leading-snug"
-        data-test="guardian-grounded-only-hint"
+        v-else-if="props.farmContextActive && selectedTrimHint"
+        class="text-[10px] text-amber-300/80 leading-snug"
+        data-test="guardian-trim-hint"
       >
-        Farm context requires {{ GROUNDED_MIN_CONTEXT_WINDOW }}+ context — small models (e.g. tinyllama) are not listed.
-      </p>
-
-      <p
-        v-else
-        class="text-[10px] text-zinc-500 leading-snug"
-        data-test="guardian-ungrounded-hint"
-      >
-        Quick chat — all installed chat models are listed. Empty
-        <span class="text-zinc-400">This chat</span>
-        uses farm default when set, otherwise
-        <span class="text-zinc-400">{{ serverDefault || 'LLM_MODEL' }}</span>
-        from server <span class="text-zinc-500">.env</span>.
-        Pick <span class="text-zinc-400">phi3:mini</span> here for better answers (slower on CPU).
+        {{ selectedTrimHint }}
       </p>
 
       <p v-if="selectedRuntimeHint" class="text-[10px] text-amber-300/80" data-test="guardian-runtime-hint">
@@ -197,15 +205,7 @@
       </p>
 
       <p
-        v-if="selectedTrimHint"
-        class="text-[10px] text-amber-300/80 leading-snug"
-        data-test="guardian-trim-hint"
-      >
-        {{ selectedTrimHint }}
-      </p>
-
-      <p
-        v-if="selectedEvalHint"
+        v-if="selectedEvalHint && props.farmContextActive"
         class="text-[10px] text-zinc-400 leading-snug"
         data-test="guardian-eval-hint"
       >
@@ -245,6 +245,7 @@ import {
   resolvedDefaultBlocksGrounded,
   serverDefaultUsableForGrounded,
   sessionDefaultOptionLabel as buildSessionDefaultOptionLabel,
+  effectiveModelSource,
 } from '../lib/guardianModelGrounded'
 
 const props = defineProps({
@@ -348,6 +349,36 @@ const farmServerDefaultOptionLabel = computed(() =>
 )
 
 const selectedModelInfo = computed(() => findModelByName(resolvedChatModelName.value, models.value))
+
+const modeBannerTitle = computed(() =>
+  props.farmContextActive ? 'Farm context on.' : 'Quick chat (farm context off).',
+)
+
+const modeBannerBody = computed(() => {
+  if (props.farmContextActive) {
+    return (
+      ' Answers use this farm\'s live data plus RAG — including field guides ' +
+      '(docs/field-guides) when ingested. Same chunks for any grounded model; larger models read them better. ' +
+      'Can take many minutes on CPU.'
+    )
+  }
+  return (
+    ' General LLM only — no field guides, no farm RAG, no live snapshot. ' +
+    'Off-farm horticulture (home garden, forest understory) stays guesswork unless you add your own notes elsewhere.'
+  )
+})
+
+const effectiveModelSummary = computed(() => {
+  const name = resolvedChatModelName.value
+  if (!name) return ''
+  const src = effectiveModelSource({
+    sessionModel: sessionModel.value,
+    farmModel: activeFarmModel.value,
+    serverDefault: serverDefault.value,
+  })
+  const rag = props.farmContextActive ? ' · field guides + farm RAG when ingested' : ' · no field guides'
+  return `${name} (${src})${rag}`
+})
 
 const noGroundedModelsHint = computed(() => {
   if (!props.farmContextActive || groundedCapableModels.value.length) return ''

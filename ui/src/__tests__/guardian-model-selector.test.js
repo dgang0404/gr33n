@@ -74,11 +74,27 @@ describe('Phase 117 — GuardianModelSelector', () => {
     const auth = useAuthStore()
     auth.userId = viewerID
 
-    const wrapper = mount(GuardianModelSelector, { props: { farmId: 1 } })
+    const wrapper = mount(GuardianModelSelector, {
+      props: { farmId: 1, farmContextActive: true },
+    })
     await flushPromises()
 
     expect(wrapper.find('[data-test="guardian-farm-model-readonly"]').exists()).toBe(true)
     expect(wrapper.find('[data-test="guardian-pull-model-btn"]').exists()).toBe(false)
+  })
+
+  it('explains field guides are not used in quick chat mode', async () => {
+    stubApi()
+    const wrapper = mount(GuardianModelSelector, {
+      props: { farmId: 1, farmContextActive: false },
+    })
+    await flushPromises()
+
+    const banner = wrapper.find('[data-test="guardian-mode-banner"]')
+    expect(banner.text()).toContain('Quick chat')
+    const help = wrapper.find('[data-test="guardian-field-guides-help"]')
+    expect(help.text()).toContain('only')
+    expect(help.text()).toContain('off')
   })
 
   it('shows grounded block hint when farm context on and tinyllama selected', async () => {

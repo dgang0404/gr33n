@@ -14,6 +14,8 @@ include:
   - irrigation-and-plumbing-basics.md
   - electrical-safety.md
   - field-troubleshooting.md
+  - fertigation-troubleshooting.md
+  - demo-farm-pi-layout.md
   - crop-cannabis-nutrition.md
   - crop-tomato-nutrition.md
   - crop-orchid-care.md

@@ -241,6 +241,33 @@ func TestSnapshot_AlertWithMessageOnlyTrimmedAndCapped(t *testing.T) {
 	}
 }
 
+func TestSnapshot_RenderDevicesAndFertigationSchedule(t *testing.T) {
+	s := Snapshot{
+		Devices: DeviceSummary{Total: 2, Online: 1, Offline: 1, OfflineNames: []string{"Flower Relay Controller"}},
+		FertigationSchedule: FertigationScheduleSummary{
+			ScheduledActive:   2,
+			UnscheduledActive: 1,
+			UnscheduledNames:  []string{"Outdoor JLF Soil Drench"},
+		},
+	}
+	got := s.Render()
+	for _, want := range []string{
+		"Edge devices: 1 online, 1 offline (Flower Relay Controller)",
+		"Fertigation programs: 2 on schedule, 1 manual-only",
+		"Manual-only: Outdoor JLF Soil Drench",
+	} {
+		if !strings.Contains(got, want) {
+			t.Fatalf("render missing %q:\n%s", want, got)
+		}
+	}
+}
+
+func TestSnapshot_IsEmptyIncludesDevices(t *testing.T) {
+	if (Snapshot{Devices: DeviceSummary{Total: 1, Online: 1}}).IsEmpty() {
+		t.Fatal("snapshot with devices is not empty")
+	}
+}
+
 func TestHumanizeAge(t *testing.T) {
 	cases := []struct {
 		d    time.Duration

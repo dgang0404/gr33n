@@ -28,7 +28,11 @@ const SnapshotMaxProgramsPerZone = 4
 // SnapshotMaxProgramZones caps how many zones get a programs-by-zone line.
 const SnapshotMaxProgramZones = 8
 
-// SnapshotMaxAlertDetails caps how many unread alerts get full detail
+// SnapshotMaxOfflineDeviceNames caps offline device names in the snapshot.
+const SnapshotMaxOfflineDeviceNames = 2
+
+// SnapshotMaxUnscheduledProgramNames caps manual-only program names listed.
+const SnapshotMaxUnscheduledProgramNames = 3
 // (severity, subject, source, age) rendered into the prompt. The
 // surviving alerts beyond the cap are still represented by the
 // UnreadAlerts count so the LLM knows there are more. Phase 28 WS4.
@@ -55,6 +59,8 @@ type Snapshot struct {
 	UnreadAlerts       int64
 	UnreadAlertDetails []UnreadAlertDetail
 	ZonePhotoHints     []ZonePhotoHint
+	Devices            DeviceSummary
+	FertigationSchedule FertigationScheduleSummary
 }
 
 // ZoneProgramsSummary lists active fertigation program names targeting a zone.
@@ -62,6 +68,21 @@ type ZoneProgramsSummary struct {
 	ZoneID   int64
 	ZoneName string
 	Programs []string
+}
+
+// DeviceSummary is a compact edge-device posture line for grounded chat (Phase 127).
+type DeviceSummary struct {
+	Total        int
+	Online       int
+	Offline      int
+	OfflineNames []string
+}
+
+// FertigationScheduleSummary counts how active programs are scheduled vs manual-only.
+type FertigationScheduleSummary struct {
+	ScheduledActive   int
+	UnscheduledActive int
+	UnscheduledNames  []string
 }
 
 // ZonePhotoHint tells the model which zones have operator reference photos on file.
@@ -106,7 +127,7 @@ type ActiveCycle struct {
 // "Current farm snapshot:" header with zero bullets).
 func (s Snapshot) IsEmpty() bool {
 	return s.ZoneCount == 0 && len(s.ActiveCycles) == 0 && s.UnreadAlerts == 0 &&
-		s.PlantCount == 0 && len(s.ProgramsByZone) == 0
+		s.PlantCount == 0 && len(s.ProgramsByZone) == 0 && s.Devices.Total == 0
 }
 
 // Render returns the prompt-ready text block (no trailing newline). Empty
@@ -181,6 +202,28 @@ func (s Snapshot) Render() string {
 		if extraZones > 0 {
 			b.WriteString(fmt.Sprintf("  - (+ %d more zones with programs)\n", extraZones))
 		}
+	}
+	if s.FertigationSchedule.ScheduledActive > 0 || s.FertigationSchedule.UnscheduledActive > 0 {
+		b.WriteString(fmt.Sprintf(
+			"- Fertigation programs: %d on schedule, %d manual-only (no cron)\n",
+			s.FertigationSchedule.ScheduledActive,
+			s.FertigationSchedule.UnscheduledActive,
+		))
+		names := s.FertigationSchedule.UnscheduledNames
+		if len(names) > 0 {
+			b.WriteString("  - Manual-only: ")
+			b.WriteString(strings.Join(names, ", "))
+			b.WriteString("\n")
+		}
+	}
+	if s.Devices.Total > 0 {
+		b.WriteString(fmt.Sprintf("- Edge devices: %d online, %d offline", s.Devices.Online, s.Devices.Offline))
+		if len(s.Devices.OfflineNames) > 0 {
+			b.WriteString(" (")
+			b.WriteString(strings.Join(s.Devices.OfflineNames, ", "))
+			b.WriteString(")")
+		}
+		b.WriteString("\n")
 	}
 	if len(s.ActiveCycles) > 0 {
 		cycles := s.ActiveCycles
@@ -437,8 +480,20 @@ func BuildSnapshot(ctx context.Context, q *db.Queries, farmID int64) (Snapshot, 
 			programs []string
 		}
 		buckets := make(map[int64]*zoneBucket)
+		var unscheduled []string
 		for _, p := range programs {
-			if !p.IsActive || p.TargetZoneID == nil {
+			if !p.IsActive {
+				continue
+			}
+			if p.ScheduleID != nil {
+				s.FertigationSchedule.ScheduledActive++
+			} else {
+				s.FertigationSchedule.UnscheduledActive++
+				if len(unscheduled) < SnapshotMaxUnscheduledProgramNames {
+					unscheduled = append(unscheduled, strings.TrimSpace(p.Name))
+				}
+			}
+			if p.TargetZoneID == nil {
 				continue
 			}
 			zid := *p.TargetZoneID
@@ -453,6 +508,7 @@ func BuildSnapshot(ctx context.Context, q *db.Queries, farmID int64) (Snapshot, 
 			}
 			b.programs = append(b.programs, strings.TrimSpace(p.Name))
 		}
+		s.FertigationSchedule.UnscheduledNames = unscheduled
 		for _, b := range buckets {
 			sort.Strings(b.programs)
 			s.ProgramsByZone = append(s.ProgramsByZone, ZoneProgramsSummary{
@@ -466,6 +522,33 @@ func BuildSnapshot(ctx context.Context, q *db.Queries, farmID int64) (Snapshot, 
 		})
 	} else {
 		slog.Warn("farm guardian programs-by-zone failed", "farm_id", farmID, "err", prErr)
+	}
+
+	if counts, dErr := q.CountDevicesByStatusForFarm(ctx, farmID); dErr == nil {
+		for _, row := range counts {
+			s.Devices.Total += int(row.Cnt)
+			switch string(row.Status) {
+			case "online":
+				s.Devices.Online = int(row.Cnt)
+			case "offline":
+				s.Devices.Offline = int(row.Cnt)
+			}
+		}
+	} else {
+		slog.Warn("farm guardian device counts failed", "farm_id", farmID, "err", dErr)
+	}
+	if s.Devices.Offline > 0 {
+		if devices, err := q.ListDevicesByFarm(ctx, farmID); err == nil {
+			for _, d := range devices {
+				if string(d.Status) != "online" {
+					continue
+				}
+				if len(s.Devices.OfflineNames) >= SnapshotMaxOfflineDeviceNames {
+					break
+				}
+				s.Devices.OfflineNames = append(s.Devices.OfflineNames, strings.TrimSpace(d.Name))
+			}
+		}
 	}
 
 	if cnt, aErr := q.CountUnreadAlertsByFarm(ctx, farmID); aErr == nil {
