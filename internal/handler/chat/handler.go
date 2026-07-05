@@ -17,6 +17,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 	"unicode/utf8"
 
 	"github.com/google/uuid"
@@ -407,6 +408,20 @@ func (h *Handler) PostV1(w http.ResponseWriter, r *http.Request) {
 	currentUser := llm.UserMessageWithImages(user, visionImages)
 	messages := buildMessages(system, history, currentUser)
 
+	turnMeta := chatTurnMeta{
+		farmID:          farmID,
+		grounded:        grounded,
+		stream:          pb.Stream,
+		model:           chatClient.ModelLabel(),
+		question:        question,
+		historyTurns:    len(history) / 2,
+		contextChunks:   len(chunks),
+		effectiveWindow: effectiveWindow,
+		sessionID:       sessionID.String(),
+	}
+	turnStarted := time.Now()
+	h.logChatTurnStarted(r.Context(), turnMeta)
+
 	if pb.Stream {
 		// Pick the most capable streaming surface. Phase 27 WS5 follow-up:
 		// UsageAwareStreamingChatCompleter (preferred) returns the OpenAI-style
@@ -426,7 +441,7 @@ func (h *Handler) PostV1(w http.ResponseWriter, r *http.Request) {
 			httputil.WriteError(w, http.StatusNotImplemented, "configured LLM client does not support streaming")
 			return
 		}
-		h.streamResponse(w, r, stream, chatClient, messages, farmID, grounded, chunks, sessionID, userID, hasUser, question, liveSnap, len(visionImages) > 0, attachmentIDs, modelOutcome)
+		h.streamResponse(w, r, stream, chatClient, messages, farmID, grounded, chunks, sessionID, userID, hasUser, question, liveSnap, len(visionImages) > 0, attachmentIDs, modelOutcome, turnMeta, turnStarted)
 		return
 	}
 
@@ -447,7 +462,7 @@ func (h *Handler) PostV1(w http.ResponseWriter, r *http.Request) {
 		if errors.Is(err, r.Context().Err()) {
 			return
 		}
-		slog.Warn("farm guardian chat failed", "farm_id", farmID, "grounded", grounded, "err", err)
+		h.logChatTurnFailed(r.Context(), turnMeta, turnStarted, err)
 		ResetLLMReachabilityCache()
 		if h.tryFieldDegradeTurn(w, r, question, pb, sessionID, userID, hasUser, farmID, pb.Stream) {
 			return
@@ -492,7 +507,8 @@ func (h *Handler) PostV1(w http.ResponseWriter, r *http.Request) {
 	}
 	h.attachProposals(r.Context(), farmID, hasUser, userID, sessionID, question, answer, liveSnap, &resp)
 
-	slog.Info("farm guardian chat completed",
+	slog.Info("guardian: chat turn completed",
+		"request_id", authctx.RequestID(r.Context()),
 		"farm_id", farmID,
 		"session_id", sessionID,
 		"model", chatClient.ModelLabel(),
@@ -503,6 +519,8 @@ func (h *Handler) PostV1(w http.ResponseWriter, r *http.Request) {
 		"history_turns", len(history)/2,
 		"prompt_tokens", usage.PromptTokens,
 		"completion_tokens", usage.CompletionTokens,
+		"elapsed_ms", time.Since(turnStarted).Milliseconds(),
+		"stream", false,
 	)
 	httputil.WriteJSON(w, http.StatusOK, resp)
 }
@@ -529,6 +547,8 @@ func (h *Handler) streamResponse(
 	visionUsed bool,
 	attachmentIDs []int64,
 	modelOutcome farmguardian.ResolveOutcome,
+	turnMeta chatTurnMeta,
+	turnStarted time.Time,
 ) {
 	flusher, ok := w.(http.Flusher)
 	if !ok {
@@ -556,10 +576,25 @@ func (h *Handler) streamResponse(
 			"phase":   "generating",
 			"message": "Generating answer — running on CPU (no GPU). Grounded turns may take several minutes; wait before sending another message.",
 		})
+	} else {
+		sendEvent("status", map[string]string{
+			"phase":   "generating",
+			"message": "Generating answer — phi3 on CPU can take several minutes for the first token.",
+		})
 	}
 
 	var collected strings.Builder
+	var firstTokenAt time.Time
 	onDelta := func(delta string) {
+		if firstTokenAt.IsZero() && delta != "" {
+			firstTokenAt = time.Now()
+			slog.Info("guardian: first token",
+				"request_id", authctx.RequestID(r.Context()),
+				"model", chatClient.ModelLabel(),
+				"grounded", grounded,
+				"ttft_ms", firstTokenAt.Sub(turnStarted).Milliseconds(),
+			)
+		}
 		collected.WriteString(delta)
 		sendEvent("delta", map[string]string{"text": delta})
 	}
@@ -569,7 +604,7 @@ func (h *Handler) streamResponse(
 		if errors.Is(streamErr, r.Context().Err()) {
 			return
 		}
-		slog.Warn("farm guardian stream failed", "farm_id", farmID, "err", streamErr)
+		h.logChatTurnFailed(r.Context(), turnMeta, turnStarted, streamErr)
 		ResetLLMReachabilityCache()
 		payload := classifyLLMError(streamErr)
 		sendEvent("error", payload)
@@ -614,7 +649,8 @@ func (h *Handler) streamResponse(
 	_, _ = w.Write([]byte("data: [DONE]\n\n"))
 	flusher.Flush()
 
-	slog.Info("farm guardian chat streamed",
+	slog.Info("guardian: chat turn completed",
+		"request_id", authctx.RequestID(r.Context()),
 		"farm_id", farmID,
 		"session_id", sessionID,
 		"model", chatClient.ModelLabel(),
@@ -624,7 +660,16 @@ func (h *Handler) streamResponse(
 		"citations", len(done.Citations),
 		"prompt_tokens", usage.PromptTokens,
 		"completion_tokens", usage.CompletionTokens,
+		"elapsed_ms", time.Since(turnStarted).Milliseconds(),
+		"ttft_ms", ttftMs(firstTokenAt, turnStarted),
 	)
+}
+
+func ttftMs(firstTokenAt, started time.Time) int64 {
+	if firstTokenAt.IsZero() {
+		return 0
+	}
+	return firstTokenAt.Sub(started).Milliseconds()
 }
 
 // checkCostBudget runs the per-user / per-farm rolling-window cap. Returns

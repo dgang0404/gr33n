@@ -123,8 +123,10 @@
 
     <div :class="layout === 'compact' ? 'flex flex-col gap-3 min-h-0 flex-1' : 'space-y-4'">
       <GuardianModelSelector
-        v-if="capabilities.aiEnabled && useFarmContext && farmContext.farmId"
+        v-if="capabilities.aiEnabled"
         v-model:session-model="sessionModelOverride"
+        :farm-id="farmContext.farmId"
+        :farm-context-active="useFarmContext && !!farmContext.farmId"
       />
       <p
         v-if="modelFallbackNotice"
@@ -357,6 +359,30 @@
           <span v-if="useFarmContext && !farmContext.farmId" class="text-amber-300/80 text-xs">
             Select a farm in the sidebar first to ground answers.
           </span>
+        </div>
+        <div
+          v-if="groundedModelBlockReason"
+          class="rounded-lg border border-amber-900/50 bg-amber-950/30 px-3 py-2 text-xs text-amber-200/90 space-y-2"
+          data-test="chat-grounded-model-block"
+          role="status"
+        >
+          <p>{{ groundedModelBlockReason }}</p>
+          <div v-if="!groundedCapableModels.length" class="flex flex-wrap gap-2">
+            <button
+              type="button"
+              class="px-2 py-1 rounded border border-amber-800/80 bg-amber-950/50 text-amber-100 text-[11px] hover:bg-amber-900/40"
+              data-test="chat-grounded-fix-ungrounded"
+              @click="useFarmContext = false"
+            >
+              Turn off farm context (use quick chat)
+            </button>
+          </div>
+        </div>
+        <div
+          class="flex flex-wrap items-center gap-3"
+          :class="layout === 'compact' ? 'gap-2' : ''"
+          data-test="chat-field-actions-send-row"
+        >
           <button
             v-if="micSupported"
             type="button"
@@ -390,7 +416,7 @@
             v-else
             type="button"
             data-test="chat-send-button"
-            :disabled="!message.trim() || (useFarmContext && !farmContext.farmId)"
+            :disabled="!message.trim() || (useFarmContext && !farmContext.farmId) || !!groundedModelBlockReason"
             class="ml-auto px-4 py-2 rounded-lg bg-green-900/50 text-green-400 border border-green-800 hover:bg-green-900/70 disabled:opacity-40 text-sm font-medium"
             :class="layout === 'compact' ? 'min-h-[2.75rem]' : ''"
             @click="send"
@@ -546,7 +572,13 @@ import { useGuardianChatStore } from '../stores/guardianChat'
 import { useGuardianPanelStore } from '../stores/guardianPanel'
 import { useGuardianProposalsStore } from '../stores/guardianProposals'
 import { useCapabilitiesStore } from '../stores/capabilities'
-import { loadGuardianFieldPrefs } from '../lib/guardianFieldPrefs.js'
+import {
+  filterGroundedCapableModels,
+  findModelByName,
+  groundedChatBlockReason,
+  resolveEffectiveChatModelName,
+} from '../lib/guardianModelGrounded'
+import { useGuardianModels } from '../composables/useGuardianModels'
 import {
   createPushToTalkRecognizer,
   speechRecognitionSupported,
@@ -590,6 +622,34 @@ const photoUploading = ref(false)
 const selectedAttachmentIds = ref([])
 const sessionModelOverride = ref('')
 const modelFallbackNotice = ref('')
+const { models: guardianModels, serverDefault: guardianServerDefault, loadModels: loadGuardianModels } = useGuardianModels()
+
+const effectiveChatModelName = computed(() =>
+  resolveEffectiveChatModelName({
+    sessionModel: sessionModelOverride.value,
+    farmModel: farmStore.farm?.guardian_preferred_model || '',
+    serverDefault: guardianServerDefault.value,
+  }),
+)
+
+const effectiveChatModelInfo = computed(() =>
+  findModelByName(effectiveChatModelName.value, guardianModels.value),
+)
+
+const groundedCapableModels = computed(() => filterGroundedCapableModels(guardianModels.value))
+
+const groundedModelBlockReason = computed(() => {
+  if (!useFarmContext.value || !farmContext.farmId) return ''
+  if (!groundedCapableModels.value.length) {
+    return (
+      'No grounded-capable models are installed on this server. ' +
+      'Pull phi3:mini or llama3.1:8b, then refresh this page.'
+    )
+  }
+  return groundedChatBlockReason(effectiveChatModelInfo.value)
+})
+
+
 const { canOperate } = useFarmOperate(farmIdRef)
 
 const firstRunChecklistItems = computed(() => computeFirstRunChecklist({
@@ -1080,6 +1140,7 @@ function stopStream() {
 async function send() {
   if (!message.value.trim()) return
   if (useFarmContext.value && !farmContext.farmId) return
+  if (groundedModelBlockReason.value) return
   guardianChat.clearError()
   modelFallbackNotice.value = ''
 
@@ -1134,6 +1195,9 @@ onUnmounted(() => {
 })
 
 onMounted(async () => {
+  if (capabilities.aiEnabled) {
+    void loadGuardianModels()
+  }
   await refreshSessions()
   if (sessionId.value) await loadSession(sessionId.value)
   if (guardianPanel.prefilledMessage) message.value = guardianPanel.prefilledMessage

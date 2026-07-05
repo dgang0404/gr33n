@@ -203,14 +203,32 @@ curl -sf -H "Authorization: Bearer $TOKEN" http://127.0.0.1:8080/guardian/models
 3. **Grounded demo farm:** farm context **on**, farm **gr33n Demo Farm (id 1)**, wait for the amber **Generating…** banner — **one message at a time**.
 4. If the banner never completes → run the **manual Ollama cleanup** above, then retry.
 
+### Watching API logs while a turn runs
+
+Dev API logs often land in **`/tmp/gr33n-api.log`** (when started via `make dev`). Tail in another terminal:
+
+```bash
+tail -f /tmp/gr33n-api.log | grep -E 'guardian:|farm guardian|POST path=/v1/chat'
+```
+
+| Log line | Meaning |
+|----------|---------|
+| `guardian: chat turn started` | Turn accepted — includes `request_id`, `grounded`, `model`, `llm_timeout_seconds` |
+| `guardian: first token` | Ollama began streaming — `ttft_ms` = time to first visible word |
+| `guardian: chat turn completed` | Success — `elapsed_ms`, token counts |
+| `guardian: chat turn failed` | Timeout/busy/etc. — `error_code` (`llm_timeout`, `llm_busy`, …) |
+| `request … POST path=/v1/chat` | **Only after the stream ends** — `duration_ms` is total wall time |
+
+While **Generating…** is showing, the `request` line has **not** been written yet — that is normal for SSE.
+
 ### Timeout profile (16 GB CPU laptop — validated)
 
 Keep these in `.env` unless you prefer fast-fail over slow answers:
 
 | Variable | Value | Why |
 |----------|-------|-----|
-| `LLM_TIMEOUT_SECONDS` | **666** | Cold `phi3:mini` on CPU can take many minutes; 666 s is the project default and enough for ungrounded + trimmed grounded turns |
-| `LLM_RETRY_MAX_ATTEMPTS` | **1** | Avoids stacking two full generation runs after a transient blip |
+| `LLM_TIMEOUT_SECONDS` | **666** (default) · **777** on this 16 GB laptop after validation | Cold `phi3:mini` on CPU can take many minutes; raise if logs show `duration_ms` ≈ 666000 with no completion |
+| `LLM_RETRY_MAX_ATTEMPTS` | **1** | Avoids stacking multiple full 666–777 s runs on timeout (was ~22 min with default 3) |
 | `GUARDIAN_OLLAMA_PULL_TIMEOUT_SECONDS` | **600** (default) | Pull only — use terminal for large models if the UI times out |
 
 The Guardian chat UI has **no client-side fetch timeout**; only **Stop** aborts an in-flight stream. A hung “Generating…” banner is almost always Ollama contention or a stale `ollama run`, not the browser cutting off at 666 s.
@@ -235,3 +253,4 @@ The Guardian chat UI has **no client-side fetch timeout**; only **Stop** aborts 
 |------|------|
 | 2026-07-04 | Initial playbook — laptop validation, Phase 126, RAG bring-up, UI vs CLI cleanup |
 | 2026-07-04 | Document validated 666 s timeout profile for 16 GB CPU laptop |
+| 2026-07-04 | Playbook: tail `/tmp/gr33n-api.log` for in-flight Guardian turns |

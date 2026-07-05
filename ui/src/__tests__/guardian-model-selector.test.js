@@ -27,6 +27,7 @@ function stubApi({ members = [], farmModel = '' } = {}) {
           server_default: 'tinyllama',
             available_models: [
               { name: 'tinyllama', speed_class: 'fast', context_window: 2048, capabilities: ['completion'], loaded: false, runtime_hint: 'cold — first message may load the model' },
+              { name: 'phi3:mini', speed_class: 'fast', context_window: 131072, effective_context_window: 4096, capabilities: ['completion'], loaded: false, runtime_hint: 'cold' },
             ],
         },
       })
@@ -78,5 +79,43 @@ describe('Phase 117 — GuardianModelSelector', () => {
 
     expect(wrapper.find('[data-test="guardian-farm-model-readonly"]').exists()).toBe(true)
     expect(wrapper.find('[data-test="guardian-pull-model-btn"]').exists()).toBe(false)
+  })
+
+  it('shows grounded block hint when farm context on and tinyllama selected', async () => {
+    stubApi()
+    const auth = useAuthStore()
+    auth.userId = ownerID
+    useFarmContextStore().farmId = 1
+    useFarmStore().farm = { id: 1, owner_user_id: ownerID, guardian_preferred_model: '' }
+
+    const wrapper = mount(GuardianModelSelector, {
+      props: { farmId: 1, farmContextActive: true },
+    })
+    await flushPromises()
+
+    const options = wrapper.find('[data-test="guardian-session-model"]').findAll('option')
+    const values = options.map((o) => o.element.value)
+    expect(values).not.toContain('tinyllama')
+    expect(wrapper.find('[data-test="guardian-session-model"]').element.value).toBe('phi3:mini')
+    expect(wrapper.find('[data-test="guardian-grounded-block-hint"]').exists()).toBe(false)
+  })
+
+  it('disables farm save when draft is server default and server default blocks grounded', async () => {
+    stubApi()
+    const auth = useAuthStore()
+    auth.userId = ownerID
+    useFarmContextStore().farmId = 1
+    useFarmStore().farm = { id: 1, owner_user_id: ownerID, guardian_preferred_model: 'phi3:mini' }
+
+    const wrapper = mount(GuardianModelSelector, {
+      props: { farmId: 1, farmContextActive: true },
+    })
+    await flushPromises()
+
+    await wrapper.find('[data-test="guardian-farm-model"]').setValue('')
+    await flushPromises()
+
+    const save = wrapper.find('[data-test="guardian-farm-model-save"]')
+    expect(save.attributes('disabled')).toBeDefined()
   })
 })

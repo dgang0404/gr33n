@@ -63,7 +63,7 @@ func (c *ModelCache) Set(models []ModelInfo, serverDefault string) {
 func filterChatModels(models []ModelInfo) []ModelInfo {
 	out := make([]ModelInfo, 0, len(models))
 	for _, m := range models {
-		if IsChatCapable(m.Capabilities) {
+		if IsSelectableChatModel(m) {
 			out = append(out, m)
 		}
 	}

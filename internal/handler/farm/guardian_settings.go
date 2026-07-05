@@ -67,11 +67,14 @@ func (h *Handler) PatchGuardianSettings(w http.ResponseWriter, r *http.Request) 
 	if candidateModel == "" {
 		newModel = nil
 	} else if err := h.ensureModelAvailable(ctx, candidateModel); err != nil {
-		if strings.Contains(err.Error(), "not loaded") {
+		if strings.Contains(err.Error(), "not loaded") || strings.Contains(err.Error(), "too small") {
 			httputil.WriteError(w, http.StatusBadRequest, err.Error())
 			return
 		}
 		httputil.WriteError(w, http.StatusBadGateway, err.Error())
+		return
+	} else if err := h.ensureGroundedFarmModel(candidateModel); err != nil {
+		httputil.WriteError(w, http.StatusBadRequest, err.Error())
 		return
 	} else {
 		trimmed := candidateModel
@@ -152,4 +155,22 @@ func (h *Handler) ensureModelAvailable(ctx context.Context, name string) error {
 		}
 	}
 	return fmt.Errorf("model is not loaded in Ollama — use POST /guardian/models/pull or enable GUARDIAN_OLLAMA_AUTO_PULL")
+}
+
+// Farm default is used for grounded Guardian chat — reject models below the context minimum.
+func (h *Handler) ensureGroundedFarmModel(name string) error {
+	if h.modelCache == nil {
+		return nil
+	}
+	info, ok := h.modelCache.Get(name)
+	if !ok {
+		return nil
+	}
+	if info.ContextWindow > 0 && info.ContextWindow < farmguardian.GuardianMinContextWindow {
+		return fmt.Errorf(
+			"guardian_preferred_model %q context window (%d) is below the minimum required for grounded Guardian chat (%d)",
+			info.Name, info.ContextWindow, farmguardian.GuardianMinContextWindow,
+		)
+	}
+	return nil
 }

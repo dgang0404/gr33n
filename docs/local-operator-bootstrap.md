@@ -43,6 +43,34 @@ make check-stack                # → scripts/check-local-stack.sh
 
 **Guardian CPU / timeouts / pull vs dropdown:** [guardian-ollama-laptop-playbook.md](guardian-ollama-laptop-playbook.md)
 
+### Chat model on a 16 GB CPU laptop — tinyllama vs phi3:mini
+
+**You were right:** for *local* ungrounded chat (farm context **off**), **`tinyllama` is often the better default** than `phi3:mini`. Logs on this profile showed phi3 taking **~9+ minutes to the first token** (`ttft_ms≈558000`) and still **timing out at 777 s** before the answer finished. Tinyllama is much smaller (~638 MB vs ~2.3 GB) and typically answers in seconds to a few minutes on CPU.
+
+| Question type | Farm context | Model | Why |
+|---------------|--------------|-------|-----|
+| Home garden, general Q&A, “hi”, cherry/forest-garden prompts | **Off** | **tinyllama** (session dropdown or `.env`) | No RAG/embed; fast CPU replies |
+| Demo farm beds, alerts, RAG, morning walkthrough | **On** | **phi3:mini** | Needs ≥8192 ctx gate; tinyllama **rejected** (2048 ctx) — UI blocks Send if you pick tinyllama + farm context |
+| Best quality, patient wait | Off | phi3:mini | Slower; raise `LLM_TIMEOUT_SECONDS` (e.g. 900–1200) if you insist on phi3 for long answers |
+
+**`.env` examples (repo root, then restart API):**
+
+```bash
+# Fast local default (ungrounded chat)
+LLM_MODEL=tinyllama:latest
+LLM_TIMEOUT_SECONDS=300
+LLM_RETRY_MAX_ATTEMPTS=1
+
+# Grounded demo / quality (farm context on) — keep phi3; expect minutes per turn on CPU
+# LLM_MODEL=phi3:mini
+# LLM_TIMEOUT_SECONDS=900
+# LLM_MAX_TOKENS=512          # optional — shorter answers finish sooner
+```
+
+**RAG ingest** (`make rag-ingest-farm-operational`, `guardian-bootstrap-farm`) uses **`EMBEDDING_MODEL` only** — not `LLM_MODEL`. Ingest works the same whether chat is tinyllama or phi3.
+
+**Warm-up trick for phi3:** if you stay on phi3, send a one-line “hi” first and wait for completion so the model stays in RAM; then send the real question. Cold phi3 on CPU dominates wait time.
+
 ## Server & frontier delta (from laptop)
 
 Same **repository root** commands as the laptop sheet (`make migrate`, `make guardian-bootstrap-farm`, `make check-stack`, RAG scripts). What changes is **hardware**, **`.env`**, and **how you run API/UI in production** — not a second script tree.
@@ -53,7 +81,7 @@ Same **repository root** commands as the laptop sheet (`make migrate`, `make gua
 | **API + UI** | `make dev-auth-test` | **Production:** built binary + **systemd**; UI static via **nginx/Caddy** — see [farm-guardian-ollama-setup.md](farm-guardian-ollama-setup.md) | Same per site; Pis edge-only |
 | **Postgres** | Docker `db` on `:5433` | Dedicated host, 16–32 GB RAM, NVMe | Local DB per site (Topology B) |
 | **Ollama** | Same machine, CPU | Often **split host**: `LLM_BASE_URL=http://ollama.farm.local:11434/v1` | Local Ollama per site; optional multi-model pre-pulled |
-| **Default chat model** | `phi3:mini` | `llama3.1:8b` (single-box GPU) or **70B** on 24 GB VRAM box | Farm default in Settings + pre-pull 2+ chat models |
+| **Default chat model** | **`tinyllama`** for speed, or **`phi3:mini`** for grounded demo (slow on CPU) | `llama3.1:8b` (single-box GPU) or **70B** on 24 GB VRAM box | Farm default in Settings + pre-pull 2+ chat models |
 | **Embeddings** | Same Ollama host | Same or cloud `EMBEDDING_*` | Same; cron refresh (below) |
 | **Pull large models** | Terminal `ollama pull` (UI 600 s often fails) | `ollama pull` on inference box; set `GUARDIAN_OLLAMA_PULL_TIMEOUT_SECONDS=3600` if using UI pull | Pre-pull during site bring-up |
 | **RAM hygiene** | Often need `ollama stop` embed before chat | GPU + 32–64 GB: usually **skip** manual stop; use `OLLAMA_KEEP_ALIVE` to keep chat model warm | Keep chat + embed loaded if RAM allows |

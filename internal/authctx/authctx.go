@@ -15,7 +15,17 @@ const (
 	piEdgeAuthKey      ctxKey = "pi_edge_auth"
 	deviceKeyIDKey     ctxKey = "device_api_key_id"
 	deviceKeyDeviceKey ctxKey = "device_api_key_device_id"
+	requestIDKey       ctxKey = "request_id"
 )
+
+func WithRequestID(ctx context.Context, id string) context.Context {
+	return context.WithValue(ctx, requestIDKey, id)
+}
+
+func RequestID(ctx context.Context) string {
+	s, _ := ctx.Value(requestIDKey).(string)
+	return s
+}
 
 func WithUserID(ctx context.Context, uid uuid.UUID) context.Context {
 	return context.WithValue(ctx, userIDKey, uid)

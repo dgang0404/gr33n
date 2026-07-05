@@ -7,6 +7,17 @@ import (
 	"github.com/google/uuid"
 )
 
+func TestRequestID(t *testing.T) {
+	t.Parallel()
+	ctx := WithRequestID(context.Background(), "abc-123")
+	if RequestID(ctx) != "abc-123" {
+		t.Fatalf("RequestID = %q", RequestID(ctx))
+	}
+	if RequestID(context.Background()) != "" {
+		t.Fatal("expected empty request id")
+	}
+}
+
 func TestUserIDAndEmail(t *testing.T) {
 	t.Parallel()
 	uid := uuid.New()

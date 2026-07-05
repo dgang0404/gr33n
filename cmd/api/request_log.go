@@ -69,6 +69,7 @@ func withRequestLog(authKind string, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
 		rid := requestIDFor(r, w)
+		r = r.WithContext(authctx.WithRequestID(r.Context(), rid))
 		cw := &captureWriter{ResponseWriter: w}
 		next.ServeHTTP(cw, r)
 		status := cw.status
