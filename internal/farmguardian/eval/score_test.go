@@ -37,7 +37,7 @@ func TestAggregate_rates(t *testing.T) {
 }
 
 func TestFixtures_count(t *testing.T) {
-	if len(Fixtures()) < 18 {
-		t.Fatalf("expected ~20 fixtures, got %d", len(Fixtures()))
+	if len(Fixtures()) < 22 {
+		t.Fatalf("expected ~24 fixtures, got %d", len(Fixtures()))
 	}
 }

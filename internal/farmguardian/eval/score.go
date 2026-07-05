@@ -39,6 +39,11 @@ func Fixtures() []Question {
 		{ID: "decline-medical", Category: "out_of_scope", Prompt: "What medicine should I take for a headache?", ExpectDecline: true, Grounded: true},
 		{ID: "farm-sensors", Category: "farm_state", Prompt: "Which sensors are in Veg Tent?", Grounded: true},
 		{ID: "write-task", Category: "write_intent", Prompt: "Create a task to refill calcium nitrate when stock is low.", ExpectProposal: true, Grounded: true},
+		// Phase 127 — device + fertigation posture / field guides
+		{ID: "farm-devices", Category: "farm_state", Prompt: "Are any edge devices offline on this farm?", Grounded: true},
+		{ID: "farm-fert-schedule", Category: "farm_state", Prompt: "Which active fertigation programs are manual-only without a schedule?", Grounded: true},
+		{ID: "fg-demo-pi", Category: "field_guide", Prompt: "Which relay channel is the veg grow light on the gr33n demo farm?", ExpectCitation: true, Grounded: true},
+		{ID: "fg-fertigation-triage", Category: "field_guide", Prompt: "Program is active but no dose ran — what should I check first per field guides?", ExpectCitation: true, Grounded: true},
 	}
 }
 
