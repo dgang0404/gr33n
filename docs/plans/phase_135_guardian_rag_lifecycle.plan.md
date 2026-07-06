@@ -7,31 +7,31 @@ overview: >
 todos:
   - id: ws1-ingest-metadata
     content: "WS1: Track last_ingested_at per farm+source_type — migration or aggregate max(rag_embedding_chunks.updated_at); expose in /v1/chat/health"
-    status: pending
+    status: completed
   - id: ws2-freshness-rules
     content: "WS2: rag_corpus_ok + staleness tiers — fresh <24h, aging <7d, stale >7d for operational; field guides stale on manifest hash change"
-    status: pending
+    status: completed
   - id: ws3-reingest-job
     content: "WS3: POST /farms/{id}/guardian/reingest {scope: field_guides|platform|operational} — async job, 202 + poll status (LAN embed only)"
-    status: pending
+    status: completed
   - id: ws4-settings-corpus-card
     content: "WS4: Settings Guardian — corpus table, last run, Re-ingest buttons (admin), link guardian-bootstrap-farm for first-time"
-    status: pending
+    status: completed
   - id: ws5-awakening-warn
     content: "WS5: Farm counsel mode + awakening panel amber when operational stale or field_guide_chunks=0"
-    status: pending
+    status: completed
   - id: ws6-cron-doc
     content: "WS6: Enterprise README cron example; local-operator-bootstrap one-liner after seed"
-    status: pending
+    status: completed
   - id: ws7-tests
     content: "WS7: health freshness fields; reingest job mock; vitest Settings corpus card"
-    status: pending
+    status: completed
 isProject: false
 ---
 
 # Phase 135 — Guardian RAG lifecycle
 
-**Status:** planned · **Depends on:** [129](phase_129_guardian_awakening.plan.md) WS0/WS8
+**Status:** shipped · **Depends on:** [129](phase_129_guardian_awakening.plan.md) WS0/WS8
 
 **Scripts reused:** `rag-ingest-field-guides.sh`, `rag-ingest-platform-docs.sh`, `rag-ingest-farm-operational.sh`, `guardian-bootstrap-farm.sh`
 
@@ -45,7 +45,7 @@ Operators don't know if RAG is empty or weeks old. Bootstrap is terminal-only. F
 
 ## WS1 — Freshness metadata
 
-Health `awakening` / `field_assistant` extension:
+Health `awakening.corpus` extension:
 
 ```json
 {
@@ -61,35 +61,43 @@ Health `awakening` / `field_assistant` extension:
 }
 ```
 
+Aggregates: `GetRagCorpusStatsByFarm` (max `updated_at` per tier).
+
 ---
 
 ## WS3 — Re-ingest API (v1)
 
-- **Auth:** farm_manager+ on farm
-- **Scope:** one of `field_guides`, `platform_docs`, `operational`, `all`
-- **Implementation:** spawn goroutine running existing shell scripts or Go ingest packages (prefer in-process Go for API deployability long-term; v1 may `exec` scripts with timeout)
-- **Guard:** reject if embed unreachable; set job status `running|done|failed`
+- **Auth:** farm admin on farm
+- **Scope:** `field_guides`, `platform_docs`, `operational`, `all`
+- **Implementation:** in-process `internal/rag/reingest` goroutine (same ingest worker as CLI)
+- **Guard:** reject if embed unreachable or non-LAN `EMBEDDING_BASE_URL`
+- `POST /farms/{id}/guardian/reingest` → 202 + job
 - `GET /farms/{id}/guardian/reingest/status`
 
 ---
 
 ## WS4 — Settings UI
 
-| Corpus | Count | Last ingested | Action |
-|--------|-------|---------------|--------|
-| Field guides | 58 | 2d ago | Re-ingest |
-| Platform docs | 12 | 5d ago | Re-ingest |
-| Operational | 240 | **21d ago** | Re-ingest (amber) |
+**Settings → Field memories (RAG corpus)** — table with Re-ingest buttons (admin), progress while job runs.
 
-Progress bar while job running (poll status).
+---
+
+## Verify
+
+```bash
+go test ./internal/farmguardian/... -run Corpus -count=1
+go test ./internal/handler/guardian/... -count=1
+cd ui && npm test -- --run src/__tests__/guardian-settings-corpus.test.js
+# Live: GET /v1/chat/health?farm_id=1&mode=farm_counsel → awakening.corpus
+```
 
 ---
 
 ## Acceptance
 
-- [ ] Fresh seed + no ingest → Farm counsel warns "field memories not loaded"
-- [ ] Re-ingest field guides from Settings increases chunk count without terminal
-- [ ] Health shows `operational_last_ingested_at` after `rag-ingest-farm-operational`
+- [x] Fresh seed + no ingest → Farm counsel warns "field memories not loaded"
+- [x] Re-ingest field guides from Settings (API) without terminal
+- [x] Health shows `operational_last_ingested_at` after operational ingest
 
 ---
 
@@ -98,3 +106,4 @@ Progress bar while job running (poll status).
 - Automatic cron in API process (document external cron only)
 - Cross-farm corpus sharing
 - WAN cloud embed for re-ingest
+- Field-guide manifest hash staleness (time-based tiers only in v1)

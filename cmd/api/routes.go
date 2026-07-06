@@ -89,7 +89,7 @@ func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationwo
 	fieldGuides := fieldguideshandler.NewHandler("")
 	plants := planthandler.NewHandler(pool)
 	cropProfiles := cropprofilehandler.NewHandler(pool)
-	guardianNudge := guardianhandler.NewHandler(pool)
+	guardianNudge := guardianhandler.NewHandler(pool, aiCfg)
 	animals := animalhandler.NewHandler(pool)
 	aquaponics := aquaponicshandler.NewHandler(pool)
 	alert := alerthandler.NewHandler(pool)
@@ -424,6 +424,8 @@ func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationwo
 
 	// Crop knowledge base (Phase 64)
 	mux.Handle("GET /farms/{id}/guardian-nudge", jwt(http.HandlerFunc(guardianNudge.Nudge)))
+	mux.Handle("POST /farms/{id}/guardian/reingest", jwt(http.HandlerFunc(guardianNudge.PostReingest)))
+	mux.Handle("GET /farms/{id}/guardian/reingest/status", jwt(http.HandlerFunc(guardianNudge.GetReingestStatus)))
 	mux.Handle("GET /farms/{id}/crop-profiles/effective", jwt(http.HandlerFunc(cropProfiles.GetEffective)))
 	mux.Handle("GET /farms/{id}/crop-profiles/{crop_key}/genetics/{variety_slug}", jwt(http.HandlerFunc(cropProfiles.GetGenetics)))
 	mux.Handle("PUT /farms/{id}/crop-profiles/{crop_key}/genetics/{variety_slug}", jwt(http.HandlerFunc(cropProfiles.PutGenetics)))

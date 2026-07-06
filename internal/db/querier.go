@@ -342,6 +342,8 @@ type Querier interface {
 	GetProposalChainRoot(ctx context.Context, proposalID uuid.UUID) (uuid.UUID, error)
 	GetPublishedAgronomyFieldGuideBySlug(ctx context.Context, slug string) (Gr33ncropsAgronomyFieldGuide, error)
 	GetPublishedCommonsCatalogEntryBySlug(ctx context.Context, slug string) (GetPublishedCommonsCatalogEntryBySlugRow, error)
+	// Phase 135 — corpus freshness aggregates per farm (max updated_at per tier).
+	GetRagCorpusStatsByFarm(ctx context.Context, farmID int64) (GetRagCorpusStatsByFarmRow, error)
 	// Phase 28 WS5 — debounce lookup for the chat-budget-warning alert. The
 	// chat handler fires at most one warning per user per cost-guard
 	// window; this query is how it decides whether a warning already

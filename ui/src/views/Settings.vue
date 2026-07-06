@@ -861,6 +861,9 @@
     <!-- Phase 129 WS8 — Guardian awakening readiness -->
     <GuardianSettingsAwakeningCard :is-farm-admin="isFarmAdmin" />
 
+    <!-- Phase 135 WS4 — RAG corpus freshness + re-ingest -->
+    <GuardianSettingsCorpusCard :is-farm-admin="isFarmAdmin" />
+
     <!-- Phase 28 WS5 — Guardian token usage / rolling-window budget -->
     <section
       v-if="capabilities.aiEnabled && (chatUsage.hasAnyCap || chatUsage.user.used_tokens > 0)"
@@ -1133,6 +1136,7 @@ import {
 import { loadBootstrapCatalog } from '../lib/bootstrapCatalog.js'
 import CropTargetsSettings from '../components/CropTargetsSettings.vue'
 import GuardianSettingsAwakeningCard from '../components/GuardianSettingsAwakeningCard.vue'
+import GuardianSettingsCorpusCard from '../components/GuardianSettingsCorpusCard.vue'
 import { farmSetupRoute } from '../lib/farmSetupWizard.js'
 import { MODULE_SCHEMA } from '../lib/farmModules.js'
 

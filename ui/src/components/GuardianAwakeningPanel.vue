@@ -52,14 +52,24 @@ const { awakening, isStirring, hasStirTimedOut } = storeToRefs(readiness)
 
 const visible = computed(() => {
   const s = awakening.value?.state
+  const corpusWarn = props.mode === 'farm_counsel' && corpusNeedsAttention.value
   if (!s || s === 'ready') {
-    return !!awakening.value?.stale_ollama_cli
+    return !!awakening.value?.stale_ollama_cli || corpusWarn
   }
   if (hasStirTimedOut.value && (s === 'stirring' || isStirring.value)) return true
   return s === 'sleeping' || s === 'stirring' || s === 'unavailable' || s === 'busy' || !!awakening.value?.stale_ollama_cli
 })
 
+const corpusNeedsAttention = computed(() => {
+  const c = awakening.value?.corpus
+  if (!c) return awakening.value?.field_guide_chunks === 0 && !awakening.value?.rag_corpus_ok
+  return c.staleness === 'field_guide_empty' || c.staleness === 'operational_stale' || c.field_guide_chunks === 0
+})
+
 const headline = computed(() => {
+  if (corpusNeedsAttention.value && awakening.value?.state === 'ready') {
+    return 'Field memories need attention'
+  }
   if (hasStirTimedOut.value && (isStirring.value || awakening.value?.state === 'stirring')) {
     return 'Awakening is taking longer than expected'
   }
@@ -87,6 +97,14 @@ const checklist = computed(() => {
 
 const messages = computed(() => {
   const msgs = [...(awakening.value?.messages || [])]
+  if (corpusNeedsAttention.value && awakening.value?.state === 'ready') {
+    const c = awakening.value?.corpus
+    if (c?.staleness === 'operational_stale') {
+      msgs.push('Operational memories are stale — re-ingest from Settings → Field memories.')
+    } else if (c?.field_guide_chunks === 0 || c?.staleness === 'field_guide_empty') {
+      msgs.push('Field guide memories not loaded — bootstrap or re-ingest from Settings.')
+    }
+  }
   if (awakening.value?.stale_ollama_cli && !msgs.some((m) => m.includes('ollama run'))) {
     msgs.push('Close stray terminal ollama run sessions (pgrep -a "ollama run"), then retry awakening.')
   }
@@ -99,6 +117,9 @@ const messages = computed(() => {
 
 const panelClass = computed(() => {
   const s = awakening.value?.state
+  if (corpusNeedsAttention.value && s === 'ready') {
+    return 'border-amber-900/50 bg-amber-950/25 text-amber-100/90'
+  }
   if (s === 'unavailable') return 'border-red-900/50 bg-red-950/20 text-red-100/90'
   if (s === 'stirring') return 'border-amber-900/50 bg-amber-950/25 text-amber-100/90'
   return 'border-zinc-700 bg-zinc-900/60 text-zinc-200'

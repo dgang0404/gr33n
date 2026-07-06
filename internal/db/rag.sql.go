@@ -80,6 +80,42 @@ func (q *Queries) DeleteRagChunksByFarmSource(ctx context.Context, arg DeleteRag
 	return err
 }
 
+const getRagCorpusStatsByFarm = `-- name: GetRagCorpusStatsByFarm :one
+SELECT
+    COUNT(*) FILTER (WHERE source_type = 'field_guide')::bigint AS field_guide_chunks,
+    MAX(updated_at) FILTER (WHERE source_type = 'field_guide') AS field_guide_last_ingested_at,
+    COUNT(*) FILTER (WHERE source_type = 'platform_doc')::bigint AS platform_doc_chunks,
+    MAX(updated_at) FILTER (WHERE source_type = 'platform_doc') AS platform_last_ingested_at,
+    COUNT(*) FILTER (WHERE source_type NOT IN ('field_guide', 'platform_doc', 'symptom_guide'))::bigint AS operational_chunks,
+    MAX(updated_at) FILTER (WHERE source_type NOT IN ('field_guide', 'platform_doc', 'symptom_guide')) AS operational_last_ingested_at
+FROM gr33ncore.rag_embedding_chunks
+WHERE farm_id = $1
+`
+
+type GetRagCorpusStatsByFarmRow struct {
+	FieldGuideChunks          int64       `db:"field_guide_chunks" json:"field_guide_chunks"`
+	FieldGuideLastIngestedAt  interface{} `db:"field_guide_last_ingested_at" json:"field_guide_last_ingested_at"`
+	PlatformDocChunks         int64       `db:"platform_doc_chunks" json:"platform_doc_chunks"`
+	PlatformLastIngestedAt    interface{} `db:"platform_last_ingested_at" json:"platform_last_ingested_at"`
+	OperationalChunks         int64       `db:"operational_chunks" json:"operational_chunks"`
+	OperationalLastIngestedAt interface{} `db:"operational_last_ingested_at" json:"operational_last_ingested_at"`
+}
+
+// Phase 135 — corpus freshness aggregates per farm (max updated_at per tier).
+func (q *Queries) GetRagCorpusStatsByFarm(ctx context.Context, farmID int64) (GetRagCorpusStatsByFarmRow, error) {
+	row := q.db.QueryRow(ctx, getRagCorpusStatsByFarm, farmID)
+	var i GetRagCorpusStatsByFarmRow
+	err := row.Scan(
+		&i.FieldGuideChunks,
+		&i.FieldGuideLastIngestedAt,
+		&i.PlatformDocChunks,
+		&i.PlatformLastIngestedAt,
+		&i.OperationalChunks,
+		&i.OperationalLastIngestedAt,
+	)
+	return i, err
+}
+
 const searchRagNearestNeighbors = `-- name: SearchRagNearestNeighbors :many
 SELECT
     id,

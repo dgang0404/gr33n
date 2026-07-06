@@ -33,10 +33,11 @@ type AwakeningHealth struct {
 	EmbedLoaded        bool     `json:"embed_loaded"`
 	EmbedBlocksChat    bool     `json:"embed_blocks_chat"`
 	OllamaLoadedModels []string `json:"ollama_loaded_models,omitempty"`
-	RagCorpusOK        bool     `json:"rag_corpus_ok"`
-	FieldGuideChunks   int64    `json:"field_guide_chunks"`
-	PlatformDocChunks  int64    `json:"platform_doc_chunks"`
-	Messages           []string `json:"messages,omitempty"`
+	RagCorpusOK        bool          `json:"rag_corpus_ok"`
+	FieldGuideChunks   int64         `json:"field_guide_chunks"`
+	PlatformDocChunks  int64         `json:"platform_doc_chunks"`
+	Corpus             *CorpusHealth `json:"corpus,omitempty"`
+	Messages           []string      `json:"messages,omitempty"`
 	WarmupInProgress   bool     `json:"warmup_in_progress"`
 	LastWarmupError    string   `json:"last_warmup_error,omitempty"`
 	StaleOllamaCLI     bool     `json:"stale_ollama_cli,omitempty"`
@@ -50,6 +51,7 @@ type AwakeningBuildInput struct {
 	FarmID             int64
 	FieldGuideChunks   int64
 	PlatformDocChunks  int64
+	Corpus             *CorpusHealth
 	Cache              *ModelCache
 	FarmPreferredModel *string
 	EnvDefault         string
@@ -67,6 +69,7 @@ func BuildAwakeningHealth(ctx context.Context, in AwakeningBuildInput) Awakening
 		FieldGuideChunks:  in.FieldGuideChunks,
 		PlatformDocChunks: in.PlatformDocChunks,
 		RagCorpusOK:       in.FieldGuideChunks > 0 || in.PlatformDocChunks > 0,
+		Corpus:            in.Corpus,
 		EmbedModel:        EmbedModelFromEnv(),
 	}
 
@@ -134,8 +137,12 @@ func BuildAwakeningHealth(ctx context.Context, in AwakeningBuildInput) Awakening
 		return out
 	}
 	out.State = AwakeningStateSleeping
-	if mode == WarmupModeFarmCounsel && !out.RagCorpusOK && in.FarmID > 0 {
-		out.Messages = append(out.Messages, "Field memories not ingested — run make guardian-bootstrap-farm.")
+	if mode == WarmupModeFarmCounsel && in.FarmID > 0 {
+		if in.Corpus != nil {
+			out.Messages = append(out.Messages, CorpusWarningMessages(*in.Corpus, mode)...)
+		} else if !out.RagCorpusOK {
+			out.Messages = append(out.Messages, "Field memories not ingested — run make guardian-bootstrap-farm.")
+		}
 	}
 	return out
 }

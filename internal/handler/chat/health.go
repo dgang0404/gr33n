@@ -3,6 +3,7 @@ package chat
 import (
 	"net/http"
 	"strconv"
+	"time"
 
 	db "gr33n-api/internal/db"
 	"gr33n-api/internal/farmguardian"
@@ -36,16 +37,24 @@ func (h *Handler) GetHealth(w http.ResponseWriter, r *http.Request) {
 
 	ctx := r.Context()
 	var fieldChunks, platformChunks int64
+	var corpus *farmguardian.CorpusHealth
 	if h.q != nil && farmID > 0 {
-		if n, err := h.q.CountRagChunksByFarmSourceType(ctx, db.CountRagChunksByFarmSourceTypeParams{
-			FarmID: farmID, SourceType: ingest.SourceTypeFieldGuide,
-		}); err == nil {
-			fieldChunks = n
-		}
-		if n, err := h.q.CountRagChunksByFarmSourceType(ctx, db.CountRagChunksByFarmSourceTypeParams{
-			FarmID: farmID, SourceType: ingest.SourceTypePlatformDoc,
-		}); err == nil {
-			platformChunks = n
+		if stats, err := h.q.GetRagCorpusStatsByFarm(ctx, farmID); err == nil {
+			fieldChunks = stats.FieldGuideChunks
+			platformChunks = stats.PlatformDocChunks
+			c := farmguardian.BuildCorpusHealth(farmguardian.CorpusStatsFromRow(stats), time.Now().UTC())
+			corpus = &c
+		} else {
+			if n, err := h.q.CountRagChunksByFarmSourceType(ctx, db.CountRagChunksByFarmSourceTypeParams{
+				FarmID: farmID, SourceType: ingest.SourceTypeFieldGuide,
+			}); err == nil {
+				fieldChunks = n
+			}
+			if n, err := h.q.CountRagChunksByFarmSourceType(ctx, db.CountRagChunksByFarmSourceTypeParams{
+				FarmID: farmID, SourceType: ingest.SourceTypePlatformDoc,
+			}); err == nil {
+				platformChunks = n
+			}
 		}
 	}
 
@@ -69,6 +78,7 @@ func (h *Handler) GetHealth(w http.ResponseWriter, r *http.Request) {
 		FarmID:             farmID,
 		FieldGuideChunks:   fieldChunks,
 		PlatformDocChunks:  platformChunks,
+		Corpus:             corpus,
 		Cache:              h.modelCache,
 		FarmPreferredModel: farmPref,
 		EnvDefault:         envDefault,

@@ -7,6 +7,7 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"gr33n-api/internal/ai"
 	db "gr33n-api/internal/db"
 	"gr33n-api/internal/farmauthz"
 	"gr33n-api/internal/farmguardian"
@@ -14,11 +15,12 @@ import (
 )
 
 type Handler struct {
-	q *db.Queries
+	q   *db.Queries
+	cfg ai.Config
 }
 
-func NewHandler(pool *pgxpool.Pool) *Handler {
-	return &Handler{q: db.New(pool)}
+func NewHandler(pool *pgxpool.Pool, cfg ai.Config) *Handler {
+	return &Handler{q: db.New(pool), cfg: cfg}
 }
 
 // Nudge — GET /farms/{id}/guardian-nudge

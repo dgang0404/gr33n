@@ -104,6 +104,8 @@ Example cron on the API host (`/etc/cron.d/gr33n-rag-ingest`):
 
 Or: `make rag-ingest-farm-operational FARM_ID=1`
 
+**Phase 135 — Settings alternative:** farm admins can trigger the same ingest scopes from **Settings → Field memories** (`POST /farms/{id}/guardian/reingest`) when `EMBEDDING_BASE_URL` is LAN-local. Cron remains the enterprise default for unattended refresh.
+
 ## Shipped (Phase 83 WS2) — farm agronomy overrides
 
 | Tool | Purpose |

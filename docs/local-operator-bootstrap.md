@@ -343,6 +343,8 @@ Farm Guardian layers three knowledge sources ([`farm-guardian-architecture.md`](
 
    **Full bootstrap (field guides + platform + operational):** `make guardian-bootstrap-farm FARM_ID=1`. **CPU laptop pitfalls** (slow phi3, embed contention, manual `ollama stop`): [guardian-ollama-laptop-playbook.md](guardian-ollama-laptop-playbook.md).
 
+   **Phase 135 — Settings corpus card:** After first bootstrap, **Settings → Field memories (RAG corpus)** shows chunk counts, last-ingest age, and amber staleness when operational rows are >7d old. Farm admins can **Re-ingest** per scope (`field_guides`, `platform_docs`, `operational`) without terminal scripts — requires LAN `EMBEDDING_BASE_URL` + `EMBEDDING_API_KEY`. `GET /v1/chat/health?farm_id=N` exposes the same `awakening.corpus` block.
+
 3. **Live snapshot** — built automatically on each grounded chat turn (zones, active cycles, unread alerts).
 
 **Phase 29 WS7 — sample unread alerts:** [`db/seeds/master_seed.sql`](../db/seeds/master_seed.sql) inserts three unread `alerts_notifications` rows for demo **farm_id = 1** (OHN inventory low, Flower Room humidity high, 12/12 light transition reminder). Re-run **`make seed`** or **`make dev-stack-fresh`** to apply; subjects are idempotent.

@@ -47,6 +47,18 @@ FROM gr33ncore.rag_embedding_chunks
 WHERE farm_id = $1
   AND source_type = $2;
 
+-- Phase 135 — corpus freshness aggregates per farm (max updated_at per tier).
+-- name: GetRagCorpusStatsByFarm :one
+SELECT
+    COUNT(*) FILTER (WHERE source_type = 'field_guide')::bigint AS field_guide_chunks,
+    MAX(updated_at) FILTER (WHERE source_type = 'field_guide') AS field_guide_last_ingested_at,
+    COUNT(*) FILTER (WHERE source_type = 'platform_doc')::bigint AS platform_doc_chunks,
+    MAX(updated_at) FILTER (WHERE source_type = 'platform_doc') AS platform_last_ingested_at,
+    COUNT(*) FILTER (WHERE source_type NOT IN ('field_guide', 'platform_doc', 'symptom_guide'))::bigint AS operational_chunks,
+    MAX(updated_at) FILTER (WHERE source_type NOT IN ('field_guide', 'platform_doc', 'symptom_guide')) AS operational_last_ingested_at
+FROM gr33ncore.rag_embedding_chunks
+WHERE farm_id = $1;
+
 -- Farm-scoped nearest-neighbor search (caller supplies query embedding; WS4 retrieval API).
 -- name: SearchRagNearestNeighbors :many
 SELECT
