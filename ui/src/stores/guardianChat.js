@@ -13,6 +13,9 @@ function formatChatError(payload) {
   if (payload.error_code === 'llm_busy') {
     msg += ' Tip: run `ollama stop <embed-model>` to free RAM (see INSTALL.md).'
   }
+  if (payload.error_code === 'chat_busy') {
+    return payload.error || 'Guardian is answering another farm counsel question — wait for it to finish.'
+  }
   return msg
 }
 

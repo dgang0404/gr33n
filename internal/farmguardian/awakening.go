@@ -119,6 +119,10 @@ func BuildAwakeningHealth(ctx context.Context, in AwakeningBuildInput) Awakening
 		out.State = AwakeningStateStirring
 		return out
 	}
+	if GroundedChatBusy() {
+		out.State = AwakeningStateBusy
+		return out
+	}
 	if out.ChatModelLoaded {
 		out.State = AwakeningStateReady
 		return out

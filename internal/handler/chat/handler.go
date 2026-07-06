@@ -237,72 +237,42 @@ func (h *Handler) PostV1(w http.ResponseWriter, r *http.Request) {
 		liveSnap farmguardian.Snapshot
 	)
 
+	setupExplicit := pb.SetupMode || strings.TrimSpace(r.URL.Query().Get("setup")) == "1"
+
+	var earlyEmit sseEmitter
+	var earlySSEOpen bool
 	if grounded {
-		// Live farm-state snapshot (WS4 follow-up). Best-effort: a snapshot
-		// failure is logged but never blocks the chat turn.
-		snapshotBlock := ""
-		if h.q != nil {
-			snap, serr := farmguardian.BuildSnapshot(r.Context(), h.q, farmID)
-			if serr != nil {
-				slog.Warn("farm guardian snapshot failed", "farm_id", farmID, "err", serr)
-			} else {
-				liveSnap = snap
-				liveSnap.ApplyBudgetLimits(promptBudget.Snapshot)
-			}
-			snapshotBlock = liveSnap.PromptBlock()
+		if !farmguardian.TryAcquireGroundedChat() {
+			writeChatBusyJSON(w)
+			return
 		}
+		defer farmguardian.ReleaseGroundedChat()
 
-		system = farmguardian.ChatSystemPrompt(h.cfg, h.llm != nil) + "\n\n"
-		if snapshotBlock != "" {
-			system += snapshotBlock + "\n\n"
-		}
-		var readBlock string
-		if h.q != nil {
-			readBlock = farmguardian.EnrichPromptBlock(r.Context(), h.q, farmID, question, liveSnap, pb.ContextRef)
-			if readBlock != "" {
-				system += readBlock + "\n\n"
-			}
-		}
-		if pb.ContextRef != nil {
-			if focus := farmguardian.ContextRefPromptBlock(r.Context(), h.q, farmID, *pb.ContextRef, pb.NavHistory); focus != "" {
-				system += focus + "\n\n"
-			}
-		}
-		if uid, uok := authctx.UserID(r.Context()); uok {
-			h.injectPriorSessionMemory(r.Context(), &system, farmID, uid, question, pb.ContextRef)
-		}
-		setupExplicit := pb.SetupMode || strings.TrimSpace(r.URL.Query().Get("setup")) == "1"
-		if farmguardian.SetupModeActive(liveSnap, setupExplicit) {
-			if setupBlock := farmguardian.SetupModePromptBlock(liveSnap); setupBlock != "" {
-				system += setupBlock + "\n\n"
+		if pb.Stream && farmguardian.EarlySSEEnabled() {
+			_, earlyEmit, earlySSEOpen = openSSE(w)
+			if !earlySSEOpen {
+				httputil.WriteError(w, http.StatusInternalServerError, "server does not support streaming")
+				return
 			}
 		}
 
-		if h.embedder != nil {
-			var rerr error
-			chunks, rerr = h.retrieveChunks(r.Context(), farmID, question, promptBudget.RAGTopK)
-			if rerr != nil {
-				slog.Warn("farm guardian retrieval failed", "farm_id", farmID, "err", rerr)
-				if !farmguardian.IsLocalInferenceURL(strings.TrimSpace(os.Getenv("LLM_BASE_URL"))) {
-					httputil.WriteError(w, http.StatusBadGateway, "retrieval failed")
-					return
+		parts, gerr := h.buildGroundedTurn(r.Context(), farmID, question, pb, promptBudget, setupExplicit, earlyEmit)
+		if gerr != nil {
+			if earlySSEOpen {
+				earlyEmit("error", map[string]string{"error": "retrieval failed", "error_code": "retrieval_failed"})
+				_, _ = w.Write([]byte("data: [DONE]\n\n"))
+				if fl, ok := w.(http.Flusher); ok {
+					fl.Flush()
 				}
-				// Phase 37 WS1 — offline field mode: snapshot + procedures still work without RAG.
-			} else if len(chunks) > 0 {
-				if farmguardian.ReadBlockHasCropTargets(readBlock) {
-					chunks = synthesis.StripNutrientNumbersFromChunks(chunks)
-					system += synthesis.StructuredTruthRAGBlock() + "\n\n"
-				}
-				system += synthesis.GuardianRAGInstructions(chunks)
-				user = synthesis.BuildUserMessage(question, chunks)
 			} else {
-				system += synthesis.ZeroChunkGuardBlock()
+				httputil.WriteError(w, http.StatusBadGateway, "retrieval failed")
 			}
+			return
 		}
-		if farmguardian.IsLocalInferenceURL(strings.TrimSpace(os.Getenv("LLM_BASE_URL"))) ||
-			synthesis.HasFieldGuideChunks(chunks) {
-			system += "\n\n" + farmguardian.FieldAssistantPromptBlock()
-		}
+		system = parts.system
+		user = parts.user
+		chunks = parts.chunks
+		liveSnap = parts.liveSnap
 	}
 
 	// Resolve / validate session_id and load any prior history (DB only when
@@ -393,7 +363,15 @@ func (h *Handler) PostV1(w http.ResponseWriter, r *http.Request) {
 		var resolved llm.ChatCompleter
 		resolved, modelOutcome = h.resolveChatClient(r.Context(), pb.Model, farmID, grounded, false)
 		if modelOutcome.RejectReason != "" {
-			httputil.WriteError(w, http.StatusBadRequest, modelOutcome.RejectReason)
+			if earlySSEOpen && earlyEmit != nil {
+				earlyEmit("error", map[string]string{"error": modelOutcome.RejectReason, "error_code": "model_unavailable"})
+				_, _ = w.Write([]byte("data: [DONE]\n\n"))
+				if fl, ok := w.(http.Flusher); ok {
+					fl.Flush()
+				}
+			} else {
+				httputil.WriteError(w, http.StatusBadRequest, modelOutcome.RejectReason)
+			}
 			return
 		}
 		if resolved != nil {
@@ -406,6 +384,16 @@ func (h *Handler) PostV1(w http.ResponseWriter, r *http.Request) {
 	}
 
 	maybeUnloadEmbedBeforeChat(r.Context(), chatClient, grounded)
+	if grounded {
+		llmBase := os.Getenv("LLM_BASE_URL")
+		if h.baseLLM != nil && strings.TrimSpace(h.baseLLM.BaseURL) != "" {
+			llmBase = h.baseLLM.BaseURL
+		}
+		if earlySSEOpen && earlyEmit != nil {
+			earlyEmit("status", phaseStatus("awakening", "Warming counsel model…"))
+		}
+		farmguardian.MaybeInlineWarmupOnSend(r.Context(), llmBase, chatClient.ModelLabel(), 60*time.Second)
+	}
 	chatClient = applyChatClientForTurn(chatClient, grounded)
 
 	currentUser := llm.UserMessageWithImages(user, visionImages)
@@ -444,7 +432,7 @@ func (h *Handler) PostV1(w http.ResponseWriter, r *http.Request) {
 			httputil.WriteError(w, http.StatusNotImplemented, "configured LLM client does not support streaming")
 			return
 		}
-		h.streamResponse(w, r, stream, chatClient, messages, farmID, grounded, chunks, sessionID, userID, hasUser, question, liveSnap, len(visionImages) > 0, attachmentIDs, modelOutcome, turnMeta, turnStarted)
+		h.streamResponse(w, r, stream, chatClient, messages, farmID, grounded, chunks, sessionID, userID, hasUser, question, liveSnap, len(visionImages) > 0, attachmentIDs, modelOutcome, turnMeta, turnStarted, earlySSEOpen)
 		return
 	}
 
@@ -552,17 +540,20 @@ func (h *Handler) streamResponse(
 	modelOutcome farmguardian.ResolveOutcome,
 	turnMeta chatTurnMeta,
 	turnStarted time.Time,
+	sseAlreadyOpen bool,
 ) {
 	flusher, ok := w.(http.Flusher)
 	if !ok {
 		httputil.WriteError(w, http.StatusInternalServerError, "server does not support streaming")
 		return
 	}
-	w.Header().Set("Content-Type", "text/event-stream")
-	w.Header().Set("Cache-Control", "no-cache")
-	w.Header().Set("Connection", "keep-alive")
-	w.Header().Set("X-Accel-Buffering", "no")
-	w.WriteHeader(http.StatusOK)
+	if !sseAlreadyOpen {
+		w.Header().Set("Content-Type", "text/event-stream")
+		w.Header().Set("Cache-Control", "no-cache")
+		w.Header().Set("Connection", "keep-alive")
+		w.Header().Set("X-Accel-Buffering", "no")
+		w.WriteHeader(http.StatusOK)
+	}
 
 	sendEvent := func(eventType string, payload any) bool {
 		b, _ := json.Marshal(payload)
@@ -575,15 +566,15 @@ func (h *Handler) streamResponse(
 	}
 
 	if grounded {
-		sendEvent("status", map[string]string{
-			"phase":   "generating",
-			"message": "Generating answer — running on CPU (no GPU). Grounded turns may take several minutes; wait before sending another message.",
-		})
-	} else {
-		sendEvent("status", map[string]string{
-			"phase":   "generating",
-			"message": "Generating answer — phi3 on CPU can take several minutes for the first token.",
-		})
+		msg := "Composing answer…"
+		if farmguardian.EarlySSEEnabled() && sseAlreadyOpen {
+			msg = "Composing answer — running on CPU (no GPU). Grounded turns may take several minutes."
+		} else if !sseAlreadyOpen {
+			msg = "Generating answer — running on CPU (no GPU). Grounded turns may take several minutes; wait before sending another message."
+		}
+		sendEvent("status", phaseStatus("generating", msg))
+	} else if !sseAlreadyOpen {
+		sendEvent("status", phaseStatus("generating", "Generating answer — phi3 on CPU can take several minutes for the first token."))
 	}
 
 	var collected strings.Builder
