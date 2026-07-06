@@ -24,7 +24,7 @@ func PlatformContextBlock(cfg ai.Config, llmConfigured bool, toolIDs []string) s
 
 	cropRule := CropTargetsGroundingRule + "\n\n" + StructuredTruthGroundingRule
 	symptomRule := SymptomGroundingRule
-	growRule := GrowAdvisorPersonaRule
+	growRule := GrowAdvisorPersonaRule + "\n\n" + PlantContextBundleRule
 	deviceRule := DeviceHealthGroundingRule
 	walkRule := WalkFarmPersonaRule
 	weatherRule := SiteWeatherPersonaRule

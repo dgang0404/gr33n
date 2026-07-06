@@ -500,11 +500,12 @@ Plans: [85](plans/phase_85_catalog_bound_plants.plan.md) · [86](plans/phase_86_
 | Grounding | `ZeroChunkGuardBlock` + `StripOrphanCitationRefs` when RAG returns 0 chunks |
 | UI | `CropLibraryPicker`; Guardian **farm context · 0 doc chunks** label + amber warning |
 | Symptoms | **Phase 106** — `lookup_crop_symptoms` (WS9 re-homed) |
-| Deferred | **WS7** plant context bundle; **WS11** full EC/DLI/photoperiod deltas → Phase 97 |
+| Plant bundle | **Phase 136** — `plant_context_bundle` fuses cycle, targets, sensors, fert, light, grow_advisor |
+| Deferred | **WS11** full EC/DLI/photoperiod deltas → Phase 97 |
 
 **OC-82** · Closure: [`plans/phase-82-closure.md`](plans/phase-82-closure.md). Plan: [`plans/phase_82_guardian_crop_grounding_hardening.plan.md`](plans/phase_82_guardian_crop_grounding_hardening.plan.md).
 
-**Tests:** `smoke_phase82_test.go`, `phase-82-closure.test.js`, `readtools_crop_test.go`.
+**Tests:** `smoke_phase82_test.go`, `smoke_phase136_test.go`, `phase-82-closure.test.js`, `readtools_crop_test.go`, `readtools_plant_bundle_test.go`.
 
 ### 7.0h Comfort targets & automation (Phase 42 — shipped)
 

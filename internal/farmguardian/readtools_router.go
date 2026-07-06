@@ -39,6 +39,10 @@ func PlanReadTools(question string, ref *ContextRef, snap Snapshot) ToolPlan {
 		add("summarize_device_health", "device health intent")
 	}
 
+	if ShouldRunPlantContextBundleIntent(question, ref) {
+		add("plant_context_bundle", "grow/plant intent or crop_cycle ref")
+	}
+
 	slog.Info("farm guardian read tool plan",
 		"event", "guardian_tool_plan",
 		"tool_ids", plan.ToolIDs,

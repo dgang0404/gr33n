@@ -42,7 +42,7 @@ After at least one successful load while online, the UI caches the crop picker i
 | 4 | **Start grow** | Pick catalog crop type → creates/links a catalog plant → active cycle with `plant_id` |
 | 5 | **Zone grow strip** | EC chip for `current_stage` from effective profile |
 | 6 | **Water / Light** tabs | **Crop targets** hint from the same profile stage |
-| 7 | **Farm Guardian** | Feed / light / compare questions → **`lookup_crop_targets`** (mS/cm) — not guesswork |
+| 7 | **Farm Guardian** | Grow questions → **`plant_context_bundle`** (cycle + targets + sensors + feed + light) or **`lookup_crop_targets`** alone (mS/cm) |
 
 **Copy:** Use **plant** and **crop** — not “strain” in operator UI.
 
@@ -69,7 +69,9 @@ Guardian uses **two layers** for crop knowledge:
 | **Structured** (`crop_profiles`, farm override, genetics) | Immediately on Settings PUT / effective API | EC, pH, VPD, DLI, photoperiod (**mS/cm**) |
 | **RAG** (field guides) | After `make rag-ingest-field-guides` | Qualitative narrative — deficiency signs, timing, mistakes |
 
-**Rule:** When `lookup_crop_targets` runs on a chat turn, those numbers **win** over field-guide narrative EC. Farm EC overrides do **not** require RAG re-ingest.
+**Rule:** When `lookup_crop_targets` or **`plant_context_bundle`** runs on a chat turn, those numbers **win** over field-guide narrative EC. Farm EC overrides do **not** require RAG re-ingest.
+
+**Phase 136 — plant context bundle:** From the zone grow strip, **How is this grow doing?** sends `crop_cycle_id` so Guardian fuses cycle stage, targets, live sensors, fertigation, lighting, and `grow_advisor` in one block (~800 token cap). Symptom questions append `lookup_crop_symptoms` in the same bundle.
 
 ### When to re-ingest field guides
 
@@ -135,6 +137,7 @@ Field guides supplement RAG; structured numbers still come from `lookup_crop_tar
 | `TestPhase64_*` / `TestPhase82_*` | Profile library + picker API |
 | `TestPhase94_*` | Genetics EC profile beats farm `crop_key` override on effective API |
 | `TestPhase95_*` | Picker `version` matches YAML; catalog crop in commons + picker |
+| `TestPhase136_*` | `plant_context_bundle` on demo veg grow |
 | `TestPhase97_*` | Farm override EC in `lookup_crop_targets`; stale RAG numbers stripped |
 | `TestPhase98_*` | Farm A EC override does not change Farm B builtin profile |
 

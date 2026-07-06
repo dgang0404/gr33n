@@ -1,6 +1,6 @@
 # Phase 82 — closure (OC-82)
 
-**Status:** **Partially shipped** on `main` — catalog + grounding core delivered; plant context bundle and full target-vs-actual deferred.
+**Status:** **Partially shipped** on `main` — catalog + grounding core delivered; **WS7 plant context bundle shipped (Phase 136)**; full target-vs-actual deltas remain partial.
 
 **Canonical plan:** [`phase_82_guardian_crop_grounding_hardening.plan.md`](phase_82_guardian_crop_grounding_hardening.plan.md)
 
@@ -31,7 +31,7 @@
 | **WS4f** | Grouped searchable picker | **Shipped** | `crop-library-picker.test.js` |
 | **WS5** | Follow-up chips | **Partial** | `guardianFollowUps.js` |
 | **WS6** | Docs + smokes + OC-82 | **Shipped** (110) | This doc |
-| **WS7** | Plant context bundle | **Deferred** | [Phase 97](phase_97_rag_structured_truth_governance.plan.md) |
+| **WS7** | Plant context bundle | **Shipped** ([Phase 136](phase_136_guardian_plant_context_bundle.plan.md)) | `readtools_plant_bundle_test.go`, `smoke_phase136_test.go` |
 | **WS8** | Substrate watering | **Shipped** | `readtools_crop.go` |
 | **WS9** | Symptom / deficiency | **→ Phase 106** | `smoke_phase106_test.go` |
 | **WS10** | Stage transitions | **Partial** | `readtools_grow.go` |

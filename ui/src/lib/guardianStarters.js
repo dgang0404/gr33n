@@ -384,6 +384,12 @@ export function buildZoneGrowStripStarters({
 
   const growAdvisorStarters = [
     {
+      id: 'how-is-grow',
+      label: 'How is this grow doing?',
+      message: `How is "${cycleName}" doing in ${zoneName}? Use plant_context_bundle — stage, targets vs live readings, feeding, and light.`,
+      contextRef: { ...contextRef, crop_cycle_id: activeCycle.id },
+    },
+    {
       id: 'vpd-on-target',
       label: 'Is my VPD on target?',
       message: `Is my VPD on target in ${zoneName} for "${cycleName}" right now? Use grow_advisor — compare current VPD to the stage target from lookup_crop_targets.`,

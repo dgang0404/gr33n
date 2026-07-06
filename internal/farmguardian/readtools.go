@@ -58,6 +58,7 @@ func ReadToolIDs() []string {
 		"lookup_crop_symptoms",
 		"summarize_farm_crops_by_key",
 		"grow_advisor",
+		"plant_context_bundle",
 		"summarize_device_health",
 		"walk_farm",
 		"site_weather",
@@ -78,6 +79,17 @@ func EnrichPromptBlock(ctx context.Context, q db.Querier, farmID int64, question
 	}
 	plan := PlanReadTools(question, ref, snap)
 	blocks, ran := runPlannedReadTools(ctx, q, farmID, question, snap, ref, plan)
+
+	bundleRan := false
+	if ShouldRunPlantContextBundleIntent(question, ref) {
+		if block, err := renderPlantContextBundle(ctx, q, farmID, question, snap, ref); err != nil {
+			slog.Warn("farm guardian read tool failed", "tool", "plant_context_bundle", "farm_id", farmID, "err", err)
+		} else if block != "" {
+			blocks = append(blocks, block)
+			bundleRan = true
+			logReadToolUse(ctx, "plant_context_bundle", farmID)
+		}
+	}
 
 	if !skipIfPlanned(ran, "list_unread_alerts") && matchListUnreadAlertsIntent(question) {
 		if block, err := renderListUnreadAlerts(ctx, q, farmID); err != nil {
@@ -140,7 +152,7 @@ func EnrichPromptBlock(ctx context.Context, q db.Querier, farmID int64, question
 		}
 	}
 
-	if shouldRunSummarizeZoneReadIntent(question) {
+	if !bundleCoversReadTool(bundleRan, "summarize_zone") && shouldRunSummarizeZoneReadIntent(question) {
 		if zone, ok := resolveZoneForSummary(ctx, q, farmID, question, snap); ok {
 			if zoneContextRefCovers(ref, zone) {
 				// Phase 33 WS2: the zone Ask Guardian focus block already carries
@@ -155,7 +167,7 @@ func EnrichPromptBlock(ctx context.Context, q db.Querier, farmID int64, question
 		}
 	}
 
-	if shouldRunSummarizeZoneFertigationReadIntent(question) {
+	if !bundleCoversReadTool(bundleRan, "summarize_zone_fertigation") && shouldRunSummarizeZoneFertigationReadIntent(question) {
 		if zone, ok := resolveZoneForSummary(ctx, q, farmID, question, snap); ok {
 			if block, err := renderSummarizeZoneFertigation(ctx, q, farmID, zone); err != nil {
 				slog.Warn("farm guardian read tool failed", "tool", "summarize_zone_fertigation", "farm_id", farmID, "zone_id", zone.ID, "err", err)
@@ -166,7 +178,7 @@ func EnrichPromptBlock(ctx context.Context, q db.Querier, farmID int64, question
 		}
 	}
 
-	if shouldRunLookupCropTargetsReadIntent(question, ref) {
+	if !bundleCoversReadTool(bundleRan, "lookup_crop_targets") && shouldRunLookupCropTargetsReadIntent(question, ref) {
 		if block, err := renderLookupCropTargets(ctx, q, farmID, question, ref); err != nil {
 			slog.Warn("farm guardian read tool failed", "tool", "lookup_crop_targets", "farm_id", farmID, "err", err)
 		} else if block != "" {
@@ -175,7 +187,7 @@ func EnrichPromptBlock(ctx context.Context, q db.Querier, farmID int64, question
 		}
 	}
 
-	if shouldRunLookupCropSymptomsIntent(question, ref) {
+	if !bundleCoversReadTool(bundleRan, "lookup_crop_symptoms") && shouldRunLookupCropSymptomsIntent(question, ref) {
 		if block, err := renderLookupCropSymptoms(ctx, q, farmID, question, ref); err != nil {
 			slog.Warn("farm guardian read tool failed", "tool", "lookup_crop_symptoms", "farm_id", farmID, "err", err)
 		} else if block != "" {
@@ -193,7 +205,7 @@ func EnrichPromptBlock(ctx context.Context, q db.Querier, farmID int64, question
 		}
 	}
 
-	if shouldRunGrowAdvisorReadIntent(question, ref) {
+	if !bundleCoversReadTool(bundleRan, "grow_advisor") && shouldRunGrowAdvisorReadIntent(question, ref) {
 		if block, err := renderGrowAdvisor(ctx, q, farmID, question, ref); err != nil {
 			slog.Warn("farm guardian read tool failed", "tool", "grow_advisor", "farm_id", farmID, "err", err)
 		} else if block != "" {
