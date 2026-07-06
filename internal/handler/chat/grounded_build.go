@@ -18,6 +18,7 @@ type groundedTurnParts struct {
 	chunks    []db.SearchRagNearestNeighborsFilteredRow
 	liveSnap  farmguardian.Snapshot
 	readBlock string
+	toolPlan  farmguardian.ToolPlan
 }
 
 func (h *Handler) buildGroundedTurn(
@@ -58,6 +59,7 @@ func (h *Handler) buildGroundedTurn(
 		if emit != nil {
 			emit("status", phaseStatus("read_tools", "Checking alerts and devices…"))
 		}
+		out.toolPlan = farmguardian.PlanReadTools(question, pb.ContextRef, out.liveSnap)
 		out.readBlock = farmguardian.EnrichPromptBlock(ctx, h.q, farmID, question, out.liveSnap, pb.ContextRef)
 		if out.readBlock != "" {
 			system += out.readBlock + "\n\n"

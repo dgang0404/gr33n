@@ -405,6 +405,7 @@
         >
           {{ counselCostHint }}
         </p>
+        <GuardianTurnDebug v-if="showTurnDebug" :debug="lastTurnDebug" />
         <div
           v-if="groundedModelBlockReason"
           class="rounded-lg border border-amber-900/50 bg-amber-950/30 px-3 py-2 text-xs text-amber-200/90 space-y-2"
@@ -607,6 +608,7 @@ import GuardianStarterChips from './GuardianStarterChips.vue'
 import GuardianModelSelector from './GuardianModelSelector.vue'
 import GuardianAwakeningPanel from './GuardianAwakeningPanel.vue'
 import GuardianContextModeCards from './GuardianContextModeCards.vue'
+import GuardianTurnDebug from './GuardianTurnDebug.vue'
 import GuardianTurnFeedback from './GuardianTurnFeedback.vue'
 import { topicChipLabel } from '../lib/guardianSessionMemory.js'
 import { computeFirstRunChecklist, isFirstRunIncomplete } from '../lib/firstRunChecklist.js'
@@ -620,6 +622,7 @@ import { useFarmStore } from '../stores/farm'
 import { useGuardianChatStore } from '../stores/guardianChat'
 import { useGuardianPanelStore } from '../stores/guardianPanel'
 import { useGuardianProposalsStore } from '../stores/guardianProposals'
+import { useAuthStore } from '../stores/auth'
 import { useCapabilitiesStore } from '../stores/capabilities'
 import { useGuardianReadinessStore } from '../stores/guardianReadiness'
 import { useChatUsageStore } from '../stores/chatUsage'
@@ -654,6 +657,7 @@ const guardianPanel = useGuardianPanelStore()
 const guardianChat = useGuardianChatStore()
 const { streaming, streamingText, streamingStatus, error: errorMessage, transcript } = storeToRefs(guardianChat)
 const guardianProposals = useGuardianProposalsStore()
+const auth = useAuthStore()
 const capabilities = useCapabilitiesStore()
 const guardianReadiness = useGuardianReadinessStore()
 const chatUsage = useChatUsageStore()
@@ -675,6 +679,10 @@ const photoUploading = ref(false)
 const selectedAttachmentIds = ref([])
 const sessionModelOverride = ref('')
 const modelFallbackNotice = ref('')
+const lastTurnDebug = ref(null)
+const showTurnDebug = computed(
+  () => import.meta.env.DEV || auth.isDevMode || auth.isAuthTestMode,
+)
 const { models: guardianModels, serverDefault: guardianServerDefault, loadModels: loadGuardianModels } = useGuardianModels()
 
 const effectiveChatModelName = computed(() =>
@@ -1269,6 +1277,9 @@ async function send() {
     modelFallbackNotice.value = 'Selected model was unavailable — used server default for this turn.'
   }
   sessionId.value = finalEvent.session_id || sessionId.value
+  if (showTurnDebug.value && finalEvent.debug) {
+    lastTurnDebug.value = finalEvent.debug
+  }
   guardianChat.appendTurn({
     turn_index: finalEvent.turn_index,
     user_message: userMessage,

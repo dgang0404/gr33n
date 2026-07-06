@@ -246,3 +246,13 @@ Eliminates drift between automated and manual docs.
 2. WS4 (log header + scrape script)
 3. WS6 + WS8 (manual mode + docs)
 4. WS7 optional UI
+
+---
+
+## Non-goals (Phase 131 + 139)
+
+- **LLM-as-judge** — automated grading of answer quality by a second LLM is **out of scope** for v1. Quality loop instead:
+  1. `make guardian-qa-smoke` heuristic pass/fail + archived full answers
+  2. Operator thumbs + reasons ([Phase 134](phase_134_guardian_answer_feedback.plan.md))
+  3. Human agronomy review via feedback export JSON
+- Revisit LLM-as-judge when **self-hosted GPU CI** is stable (`docs/ci-guardian-qa.md`).

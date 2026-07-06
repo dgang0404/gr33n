@@ -7,31 +7,33 @@ overview: >
 todos:
   - id: ws1-architecture-refresh
     content: "WS1: farm-guardian-architecture.md — Profile A laptop CPU (phi3/tinyllama) + Profile D GPU server; request flow diagram with router + awakening"
-    status: pending
+    status: completed
   - id: ws2-bootstrap-refresh
     content: "WS2: local-operator-bootstrap + connectivity-requirements — point to 129–138 roadmap; remove ritual steps"
-    status: pending
+    status: completed
   - id: ws3-turn-debugger
     content: "WS3: Dev-only Guardian turn inspector — last turn meta in AUTH_MODE=dev: tools_planned, chunks, trim_summary, request_id, model; data-test guardian-turn-debug"
-    status: pending
+    status: completed
   - id: ws4-api-debug-endpoint
     content: "WS4: GET /v1/chat/sessions/{id}/turns/{n}/debug (dev/auth_test only) — prompt budget breakdown, read tool ids"
-    status: pending
+    status: completed
   - id: ws5-nightly-ci-doc
     content: "WS5: .github or docs/ci-guardian-qa.md — self-hosted runner, make guardian-qa-smoke, artifact upload guardian_qa_runs/"
-    status: pending
+    status: completed
   - id: ws6-llm-judge-defer
     content: "WS6: Document in phase 131 — LLM-as-judge out of scope; human review of 134 feedback + 131 JSON"
-    status: pending
+    status: completed
   - id: ws7-roadmap-closure
     content: "WS7: phase-129-139-closure checklist; update phase-14-operator-documentation.md index"
-    status: pending
+    status: completed
 isProject: false
 ---
 
 # Phase 139 — Guardian docs & engineering CI
 
-**Status:** planned · **Depends on:** [131](phase_131_guardian_qa_harness.plan.md), [133](phase_133_guardian_answer_grounding_honesty.plan.md)
+**Status:** **Shipped.** · **Depends on:** [131](phase_131_guardian_qa_harness.plan.md), [133](phase_133_guardian_answer_grounding_honesty.plan.md)
+
+**Closure:** [`phase-129-139-closure.md`](phase-129-139-closure.md)
 
 ---
 
@@ -102,10 +104,10 @@ Revisit when GPU CI stable.
 
 ## Acceptance
 
-- [ ] New developer reads architecture doc and understands laptop vs server
-- [ ] Dev mode shows turn debug after chat completes
-- [ ] Roadmap doc linked from INSTALL.md Guardian section
-- [ ] phase-129-139 closure checklist all boxes documented
+- [x] New developer reads architecture doc and understands laptop vs server
+- [x] Dev mode shows turn debug after chat completes
+- [x] Roadmap doc linked from INSTALL.md Guardian section
+- [x] phase-129-139 closure checklist all boxes documented
 
 ---
 

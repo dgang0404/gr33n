@@ -7,7 +7,7 @@ reach further out. This page is the single place that says, per feature,
 
 Related: [offline-or-intranet-deployment.md](offline-or-intranet-deployment.md)
 (how to lay out hosts for a no-WAN site), [environment-variables.md](environment-variables.md)
-(the variables referenced below).
+(the variables referenced below). Guardian **129–139** shipped awakening, runtime, QA, and inference profiles — see the [next-level roadmap](plans/phase_129_139_guardian_next_level_roadmap.plan.md).
 
 ## Three connection tiers
 

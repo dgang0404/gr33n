@@ -77,28 +77,18 @@ curl -H "Authorization: Bearer $GUARDIAN_EVAL_TOKEN" \
   'http://127.0.0.1:8080/v1/chat/feedback/export?farm_id=1&since=7d'
 ```
 
-See [phase_128 plan](plans/phase_128_validate_phase127_guardian.plan.md) — Phase 127 grounding validation.
+See [phase_128 plan](plans/phase_128_validate_phase127_guardian.plan.md) — Phase 127 grounding validation. For the full **129–138** arc (awakening, runtime, QA, router, honesty, feedback, RAG lifecycle, counsel UX, inference policy), see the [Guardian next-level roadmap](plans/phase_129_139_guardian_next_level_roadmap.plan.md).
 
-### Phase 128 — validate Phase 127 grounding
+### Phase 128 — validate Phase 127 grounding (legacy)
 
-After `make migrate` and `make guardian-bootstrap-farm FARM_ID=1` (field guides ingested):
+Prefer **`make guardian-qa-smoke`** and **`make guardian-qa-manual SUITE=phase127`** over ad-hoc log greps. Fast automated checks:
 
 ```bash
-# Fast automated (no LLM)
 go test ./cmd/api/... -run 'Phase127|Phase128' -count=1
-
-# Manual UI — Farm counsel ON, phi3:mini, Demo Farm
 make guardian-qa-manual SUITE=phase127
-
-# Automated live API (slow on CPU — ~30–60 min for 4 prompts)
+# Optional live API (slow on CPU):
 export GUARDIAN_EVAL_TOKEN="<jwt>"
 make guardian-qa-phase127 MODEL=phi3:mini FARM_ID=1
-```
-
-Log tools during live runs:
-
-```bash
-tail -f /tmp/gr33n-api.log | grep -E 'summarize_device|summarize_zone_fertigation'
 ```
 
 ### Chat model on a 16 GB CPU laptop — tinyllama vs phi3:mini

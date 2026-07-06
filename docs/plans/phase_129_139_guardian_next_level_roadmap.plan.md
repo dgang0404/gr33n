@@ -26,7 +26,7 @@ isProject: false
 
 # Guardian next-level roadmap — Phases 129–139
 
-**Status:** planned (129–131 drafted; 132–139 drafted)
+**Status:** **Shipped** (129–139 complete; see [closure checklist](phase-129-139-closure.md))
 
 **Prerequisite:** Phases 27–127 shipped (chat, RAG, read tools, morning walkthrough, field guides).
 
@@ -160,12 +160,12 @@ Exit: architecture doc matches laptop + server; dev turn inspector; CI doc for s
 
 ## Acceptance (roadmap complete)
 
-- [ ] Laptop: login → Farm counsel → morning walkthrough → answer with sources cited
-- [ ] `make guardian-qa-smoke` green on phi3 CPU (recorded JSON archived)
-- [ ] No manual `ollama stop` in operator bootstrap doc
-- [ ] Settings: corpus freshness + re-ingest + readiness + last QA run
-- [ ] Server profile: split embed/chat health documented and tested
-- [ ] `farm-guardian-architecture.md` leads with Profile A + D, not 70B-only
+- [x] Laptop: login → Farm counsel → morning walkthrough → answer with sources cited
+- [x] `make guardian-qa-smoke` green on phi3 CPU (recorded JSON archived)
+- [x] No manual `ollama stop` in operator bootstrap doc
+- [x] Settings: corpus freshness + re-ingest + readiness + last QA run
+- [x] Server profile: split embed/chat health documented and tested
+- [x] `farm-guardian-architecture.md` leads with Profile A + D, not 70B-only
 
 ---
 

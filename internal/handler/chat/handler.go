@@ -168,6 +168,7 @@ type postResponse struct {
 	ModelUsed        string                        `json:"model_used,omitempty"`
 	ModelFallback    bool                          `json:"model_fallback,omitempty"`
 	TrimSummary      *farmguardian.TrimSummary     `json:"trim_summary,omitempty"`
+	Debug            *farmguardian.TurnDebug       `json:"debug,omitempty"`
 }
 
 // PostV1 handles POST /v1/chat — JWT required by route wiring.
@@ -248,6 +249,7 @@ func (h *Handler) PostV1(w http.ResponseWriter, r *http.Request) {
 		system   = farmguardian.ChatSystemPrompt(h.cfg, h.llm != nil)
 		user     = question
 		liveSnap farmguardian.Snapshot
+		toolPlan farmguardian.ToolPlan
 	)
 
 	setupExplicit := pb.SetupMode || strings.TrimSpace(r.URL.Query().Get("setup")) == "1"
@@ -286,6 +288,7 @@ func (h *Handler) PostV1(w http.ResponseWriter, r *http.Request) {
 		user = parts.user
 		chunks = parts.chunks
 		liveSnap = parts.liveSnap
+		toolPlan = parts.toolPlan
 	}
 
 	// Resolve / validate session_id and load any prior history (DB only when
@@ -426,6 +429,16 @@ func (h *Handler) PostV1(w http.ResponseWriter, r *http.Request) {
 	turnStarted := time.Now()
 	h.logChatTurnStarted(r.Context(), turnMeta)
 
+	debugIn := turnDebugBuildInput{
+		toolPlan:         toolPlan,
+		chunks:           chunks,
+		trimSummary:      trimSummary,
+		model:            chatClient.ModelLabel(),
+		effectiveWindow:  effectiveWindow,
+		advertisedWindow: advertisedWindow,
+		promptBudget:     promptBudget,
+	}
+
 	if pb.Stream {
 		// Pick the most capable streaming surface. Phase 27 WS5 follow-up:
 		// UsageAwareStreamingChatCompleter (preferred) returns the OpenAI-style
@@ -445,7 +458,7 @@ func (h *Handler) PostV1(w http.ResponseWriter, r *http.Request) {
 			httputil.WriteError(w, http.StatusNotImplemented, "configured LLM client does not support streaming")
 			return
 		}
-		h.streamResponse(w, r, stream, chatClient, messages, farmID, grounded, chunks, sessionID, userID, hasUser, question, liveSnap, len(visionImages) > 0, attachmentIDs, modelOutcome, turnMeta, turnStarted, earlySSEOpen, pb.ContextRef, trimSummary)
+		h.streamResponse(w, r, stream, chatClient, messages, farmID, grounded, chunks, sessionID, userID, hasUser, question, liveSnap, len(visionImages) > 0, attachmentIDs, modelOutcome, turnMeta, turnStarted, earlySSEOpen, pb.ContextRef, trimSummary, debugIn)
 		return
 	}
 
@@ -499,6 +512,8 @@ func (h *Handler) PostV1(w http.ResponseWriter, r *http.Request) {
 	}
 	applyModelMeta(&resp, modelOutcome)
 	resp.TrimSummary = trimSummary
+	dbg := buildTurnDebug(r.Context(), debugIn)
+	attachTurnDebug(&resp, dbg)
 	if grounded {
 		resp.Citations = synthesis.BuildCitations(answer, chunks)
 		resp.ContextCount = len(chunks)
@@ -509,6 +524,9 @@ func (h *Handler) PostV1(w http.ResponseWriter, r *http.Request) {
 
 	if turnIdx, perr := h.persistTurn(r.Context(), sessionID, userID, hasUser, farmID, grounded, question, answer, resp.Citations, len(chunks), usage, chatClient.ModelLabel()); perr == nil {
 		resp.TurnIndex = turnIdx
+		if dbg != nil {
+			storeTurnDebug(sessionID, turnIdx, *dbg)
+		}
 	}
 	h.attachProposals(r.Context(), farmID, hasUser, userID, sessionID, question, answer, liveSnap, pb.ContextRef, &resp)
 
@@ -557,6 +575,7 @@ func (h *Handler) streamResponse(
 	sseAlreadyOpen bool,
 	contextRef *farmguardian.ContextRef,
 	trimSummary *farmguardian.TrimSummary,
+	debugIn turnDebugBuildInput,
 ) {
 	flusher, ok := w.(http.Flusher)
 	if !ok {
@@ -639,6 +658,8 @@ func (h *Handler) streamResponse(
 	}
 	applyModelMeta(&done, modelOutcome)
 	done.TrimSummary = trimSummary
+	dbg := buildTurnDebug(r.Context(), debugIn)
+	attachTurnDebug(&done, dbg)
 	if grounded {
 		done.Citations = synthesis.BuildCitations(answer, chunks)
 		done.ContextCount = len(chunks)
@@ -653,6 +674,9 @@ func (h *Handler) streamResponse(
 	// honest about "this session had N streaming turns".
 	if turnIdx, perr := h.persistTurn(r.Context(), sessionID, userID, hasUser, farmID, grounded, question, answer, done.Citations, len(chunks), usage, chatClient.ModelLabel()); perr == nil {
 		done.TurnIndex = turnIdx
+		if dbg != nil {
+			storeTurnDebug(sessionID, turnIdx, *dbg)
+		}
 	}
 	h.attachProposals(r.Context(), farmID, hasUser, userID, sessionID, question, answer, liveSnap, contextRef, &done)
 

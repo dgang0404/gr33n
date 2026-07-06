@@ -18,16 +18,27 @@
 
 ## 1. The 30-second mental model
 
-Farm Guardian is a conversational AI assistant that runs **entirely on your intranet**. It combines three knowledge sources on every grounded turn:
+Farm Guardian is a conversational AI assistant that runs **entirely on your intranet**. The **chat model** depends on your hardware profile — not every site runs a 70B GPU box. See the profile table below and [`recommended-hardware-and-sizing.md`](recommended-hardware-and-sizing.md) for sizing.
+
+| Profile | Hardware | Quick chat | Farm counsel | Awakening |
+|---------|----------|------------|--------------|-----------|
+| **Profile A — Laptop dev** | 16 GB CPU | `tinyllama` | `phi3:mini` counsel | Required — badge warms counsel model after login |
+| **Profile D — Server** | GPU 24 GB+ | 8B+ quick | 8B / 70B counsel | Optional warm — split embed vs chat hosts ([Phase 138](plans/phase_138_guardian_inference_policy.plan.md)) |
+
+Per-farm **Counsel** and **Quick** model settings (Settings → Farm Guardian) override defaults on server farms. Laptop operators typically leave Quick chat on `tinyllama` and Farm counsel on `phi3:mini`.
+
+On every **grounded** (Farm counsel) turn, the handler combines three knowledge sources:
 
 | Layer | Source | What it gives the model |
 |-------|--------|-------------------------|
-| **General agronomy** | Llama 3.1 70B Q4 training weights | "What does high humidity do to bud-rot risk?" type knowledge baked in. |
+| **General agronomy** | LLM weights (model-dependent — 3B–70B) | "What does high humidity do to bud-rot risk?" type knowledge baked in. |
 | **Platform operator docs** | `gr33ncore.rag_embedding_chunks` with `source_type=platform_doc` | How gr33n works — Guardian PR inbox, Pi setup, fertigation workflows, troubleshooting — from curated `docs/` markdown ingested via `./scripts/rag-ingest-platform-docs.sh`. |
 | **Per-farm RAG corpus** | Same table — operational `source_type` rows (tasks, cycles, alerts, …) | Operator notes and farm DB text ingested via `rag-ingest` / demo script for THIS farm. |
 | **Live farm-state snapshot** | DB query at request time (zones, active cycles, plants, programs, unread alerts) | "Right now" context — never stale, never indexed. |
 
-The first layer is universal; platform docs and per-farm RAG are private indexed text; the snapshot reflects the database the moment the request fires. The handler combines them into a single system prompt before streaming to Ollama.
+The first layer is universal; platform docs and per-farm RAG are private indexed text; the snapshot reflects the database the moment the request fires. Before streaming, the handler may **plan read tools** (Phase 132 router), **embed + kNN search** RAG chunks, **trim** history/RAG to the effective context window (Phase 133), then compose a single system prompt and stream to Ollama.
+
+**Phases 129–139** shipped the awakening flow, runtime orchestration, QA harness, read-tool router, answer honesty, feedback loop, RAG lifecycle, plant context, counsel integration, inference policy, and this doc/debugger closure — see the [Guardian next-level roadmap (129–139)](plans/phase_129_139_guardian_next_level_roadmap.plan.md) and [closure checklist](plans/phase-129-139-closure.md).
 
 ---
 
@@ -43,10 +54,12 @@ What happens when an operator types **"how is my flower room cycle going?"** in 
    ├── Auth gate         JWT required (route wiring); farm-member if farm_id is set
    ├── Cost guard        Have you blown your token budget? → 429 with Retry-After
    ├── If farm_id set → grounded path:
+   │   ├── Plan read tools        (Phase 132: walk_farm, summarize_unread_alerts, …)
    │   ├── Embed the question     (OpenAI-compat embedding model)
    │   ├── pgvector kNN search    (over farm_knowledge_chunks)
    │   ├── Build live snapshot    (zones / active cycles / unread alerts)
-   │   ├── Read-tool enrichment   (Phase 31/33: list_unread_alerts, summarize_zone when intent matches)
+   │   ├── Read-tool enrichment   (Phase 31/33: execute planned tools when intent matches)
+   │   ├── Trim prompt budget     (Phase 133: history/RAG/snapshot when ctx tight)
    │   └── Compose prompt         persona + snapshot + RAG instructions
    ├── Else (no farm_id) → plain path: persona only
    ├── Replay prior turns         from conversation_turns (multi-turn context)
@@ -77,7 +90,7 @@ No step in this flow touches the public internet in Full mode. The model lives o
 
 ### 3.1 Layer 1 — General agronomy (the LLM weights)
 
-Llama 3.1 70B Q4 was trained on the open internet, so it knows the basics of nutrient deficiency symptoms, EC ranges per stage, common pest patterns, IPM, and so on. This layer answers "**what does** high humidity do?" without ever looking at your farm.
+The counsel or quick model you configure (e.g. `phi3:mini` on a laptop, `llama3.1:70b` on a GPU server) was trained on open agronomy and general text, so it knows nutrient deficiency symptoms, EC ranges per stage, common pest patterns, IPM, and so on. This layer answers "**what does** high humidity do?" without ever looking at your farm.
 
 You don't manage this layer — it's frozen in the model weights. To upgrade it, swap `LLM_MODEL` to a newer model.
 
