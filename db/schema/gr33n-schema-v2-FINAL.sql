@@ -2044,6 +2044,9 @@ CREATE TABLE IF NOT EXISTS gr33ncore.conversation_turns (
     citations           JSONB NOT NULL DEFAULT '[]'::jsonb,
     prompt_tokens       INTEGER NOT NULL DEFAULT 0 CHECK (prompt_tokens     >= 0),
     completion_tokens   INTEGER NOT NULL DEFAULT 0 CHECK (completion_tokens >= 0),
+    feedback_rating     TEXT NULL CHECK (feedback_rating IS NULL OR feedback_rating IN ('up', 'down')),
+    feedback_reason     TEXT NULL,
+    feedback_at         TIMESTAMPTZ NULL,
     created_at          TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     CONSTRAINT uq_conversation_turns_session_index UNIQUE (session_id, turn_index)
 );

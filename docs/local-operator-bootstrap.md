@@ -71,6 +71,10 @@ make guardian-qa-regression MODEL=phi3:mini
 
 # Grep logs for walk_farm evidence after morning-walk step:
 ./scripts/guardian-qa-scrape-logs.sh --expect walk_farm
+
+# After smoke, review thumbs-down feedback (farm admin):
+curl -H "Authorization: Bearer $GUARDIAN_EVAL_TOKEN" \
+  'http://127.0.0.1:8080/v1/chat/feedback/export?farm_id=1&since=7d'
 ```
 
 See [phase_128 plan](plans/phase_128_validate_phase127_guardian.plan.md) — manual UI checklist is now `make guardian-qa-manual`.

@@ -882,6 +882,9 @@ type sessionTurn struct {
 	PromptTokens     int32                `json:"prompt_tokens"`
 	CompletionTokens int32                `json:"completion_tokens"`
 	CreatedAt        string               `json:"created_at"`
+	FeedbackRating   *string              `json:"feedback_rating,omitempty"`
+	FeedbackReason   *string              `json:"feedback_reason,omitempty"`
+	FeedbackAt       string               `json:"feedback_at,omitempty"`
 }
 
 // ListSessions handles GET /v1/chat/sessions — returns the calling user's most
@@ -974,6 +977,9 @@ func (h *Handler) GetSession(w http.ResponseWriter, r *http.Request) {
 			PromptTokens:     row.PromptTokens,
 			CompletionTokens: row.CompletionTokens,
 			CreatedAt:        row.CreatedAt.UTC().Format("2006-01-02T15:04:05Z"),
+			FeedbackRating:   row.FeedbackRating,
+			FeedbackReason:   row.FeedbackReason,
+			FeedbackAt:       formatPGTime(row.FeedbackAt),
 		})
 	}
 	httputil.WriteJSON(w, http.StatusOK, map[string]any{

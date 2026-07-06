@@ -171,6 +171,15 @@
               </span>
             </div>
           </div>
+          <GuardianTurnFeedback
+            v-if="sessionId && t.turn_index != null && t.assistant_message"
+            :session-id="sessionId"
+            :turn-index="t.turn_index"
+            :initial-rating="t.feedback_rating"
+            :initial-reason="t.feedback_reason"
+            :streaming="streaming"
+            @updated="(patch) => onTurnFeedbackUpdated(t, patch)"
+          />
           <ul v-if="t.citations?.length && (t.context_count || 0) > 0" class="space-y-1 pl-6">
             <li
               v-for="c in t.citations"
@@ -574,6 +583,7 @@ import GuardianStarterChips from './GuardianStarterChips.vue'
 import GuardianModelSelector from './GuardianModelSelector.vue'
 import GuardianAwakeningPanel from './GuardianAwakeningPanel.vue'
 import GuardianContextModeCards from './GuardianContextModeCards.vue'
+import GuardianTurnFeedback from './GuardianTurnFeedback.vue'
 import { topicChipLabel } from '../lib/guardianSessionMemory.js'
 import { computeFirstRunChecklist, isFirstRunIncomplete } from '../lib/firstRunChecklist.js'
 import { buildMorningWalkthroughStarters, buildSetupStarters } from '../lib/guardianStarters.js'
@@ -1012,6 +1022,13 @@ async function refreshAfterAlertAction(proposal, result) {
   } catch {
     /* best-effort — confirm already succeeded server-side */
   }
+}
+
+function onTurnFeedbackUpdated(turn, patch) {
+  if (!turn || !patch) return
+  turn.feedback_rating = patch.feedback_rating
+  turn.feedback_reason = patch.feedback_reason
+  turn.feedback_at = patch.feedback_at
 }
 
 function onProposalConfirmed({ proposal, summary, result }) {

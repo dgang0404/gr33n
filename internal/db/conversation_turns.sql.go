@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const deleteConversationSession = `-- name: DeleteConversationSession :execrows
@@ -202,6 +203,74 @@ func (q *Queries) InsertConversationTurn(ctx context.Context, arg InsertConversa
 	return i, err
 }
 
+const listConversationFeedbackForFarm = `-- name: ListConversationFeedbackForFarm :many
+SELECT
+    session_id,
+    turn_index,
+    user_message,
+    assistant_message,
+    feedback_rating,
+    feedback_reason,
+    grounded,
+    llm_model,
+    created_at,
+    feedback_at
+FROM gr33ncore.conversation_turns
+WHERE farm_id = $1
+  AND feedback_rating IS NOT NULL
+  AND COALESCE(feedback_at, created_at) >= $2
+ORDER BY COALESCE(feedback_at, created_at) DESC
+`
+
+type ListConversationFeedbackForFarmParams struct {
+	FarmID *int64             `db:"farm_id" json:"farm_id"`
+	Since  pgtype.Timestamptz `db:"since" json:"since"`
+}
+
+type ListConversationFeedbackForFarmRow struct {
+	SessionID        uuid.UUID          `db:"session_id" json:"session_id"`
+	TurnIndex        int32              `db:"turn_index" json:"turn_index"`
+	UserMessage      string             `db:"user_message" json:"user_message"`
+	AssistantMessage string             `db:"assistant_message" json:"assistant_message"`
+	FeedbackRating   *string            `db:"feedback_rating" json:"feedback_rating"`
+	FeedbackReason   *string            `db:"feedback_reason" json:"feedback_reason"`
+	Grounded         bool               `db:"grounded" json:"grounded"`
+	LlmModel         string             `db:"llm_model" json:"llm_model"`
+	CreatedAt        time.Time          `db:"created_at" json:"created_at"`
+	FeedbackAt       pgtype.Timestamptz `db:"feedback_at" json:"feedback_at"`
+}
+
+func (q *Queries) ListConversationFeedbackForFarm(ctx context.Context, arg ListConversationFeedbackForFarmParams) ([]ListConversationFeedbackForFarmRow, error) {
+	rows, err := q.db.Query(ctx, listConversationFeedbackForFarm, arg.FarmID, arg.Since)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListConversationFeedbackForFarmRow{}
+	for rows.Next() {
+		var i ListConversationFeedbackForFarmRow
+		if err := rows.Scan(
+			&i.SessionID,
+			&i.TurnIndex,
+			&i.UserMessage,
+			&i.AssistantMessage,
+			&i.FeedbackRating,
+			&i.FeedbackReason,
+			&i.Grounded,
+			&i.LlmModel,
+			&i.CreatedAt,
+			&i.FeedbackAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listConversationTurnsBySession = `-- name: ListConversationTurnsBySession :many
 SELECT
     id,
@@ -215,7 +284,10 @@ SELECT
     citations,
     prompt_tokens,
     completion_tokens,
-    created_at
+    created_at,
+    feedback_rating,
+    feedback_reason,
+    feedback_at
 FROM gr33ncore.conversation_turns
 WHERE session_id = $1
   AND user_id    = $2
@@ -228,18 +300,21 @@ type ListConversationTurnsBySessionParams struct {
 }
 
 type ListConversationTurnsBySessionRow struct {
-	ID               int64           `db:"id" json:"id"`
-	TurnIndex        int32           `db:"turn_index" json:"turn_index"`
-	FarmID           *int64          `db:"farm_id" json:"farm_id"`
-	UserMessage      string          `db:"user_message" json:"user_message"`
-	AssistantMessage string          `db:"assistant_message" json:"assistant_message"`
-	LlmModel         string          `db:"llm_model" json:"llm_model"`
-	Grounded         bool            `db:"grounded" json:"grounded"`
-	ContextCount     int32           `db:"context_count" json:"context_count"`
-	Citations        json.RawMessage `db:"citations" json:"citations"`
-	PromptTokens     int32           `db:"prompt_tokens" json:"prompt_tokens"`
-	CompletionTokens int32           `db:"completion_tokens" json:"completion_tokens"`
-	CreatedAt        time.Time       `db:"created_at" json:"created_at"`
+	ID               int64              `db:"id" json:"id"`
+	TurnIndex        int32              `db:"turn_index" json:"turn_index"`
+	FarmID           *int64             `db:"farm_id" json:"farm_id"`
+	UserMessage      string             `db:"user_message" json:"user_message"`
+	AssistantMessage string             `db:"assistant_message" json:"assistant_message"`
+	LlmModel         string             `db:"llm_model" json:"llm_model"`
+	Grounded         bool               `db:"grounded" json:"grounded"`
+	ContextCount     int32              `db:"context_count" json:"context_count"`
+	Citations        json.RawMessage    `db:"citations" json:"citations"`
+	PromptTokens     int32              `db:"prompt_tokens" json:"prompt_tokens"`
+	CompletionTokens int32              `db:"completion_tokens" json:"completion_tokens"`
+	CreatedAt        time.Time          `db:"created_at" json:"created_at"`
+	FeedbackRating   *string            `db:"feedback_rating" json:"feedback_rating"`
+	FeedbackReason   *string            `db:"feedback_reason" json:"feedback_reason"`
+	FeedbackAt       pgtype.Timestamptz `db:"feedback_at" json:"feedback_at"`
 }
 
 func (q *Queries) ListConversationTurnsBySession(ctx context.Context, arg ListConversationTurnsBySessionParams) ([]ListConversationTurnsBySessionRow, error) {
@@ -264,6 +339,9 @@ func (q *Queries) ListConversationTurnsBySession(ctx context.Context, arg ListCo
 			&i.PromptTokens,
 			&i.CompletionTokens,
 			&i.CreatedAt,
+			&i.FeedbackRating,
+			&i.FeedbackReason,
+			&i.FeedbackAt,
 		); err != nil {
 			return nil, err
 		}
@@ -480,6 +558,58 @@ func (q *Queries) UpdateConversationSessionTitle(ctx context.Context, arg Update
 	row := q.db.QueryRow(ctx, updateConversationSessionTitle, arg.Title, arg.ID, arg.UserID)
 	var i UpdateConversationSessionTitleRow
 	err := row.Scan(&i.ID, &i.Title, &i.UpdatedAt)
+	return i, err
+}
+
+const updateConversationTurnFeedback = `-- name: UpdateConversationTurnFeedback :one
+UPDATE gr33ncore.conversation_turns
+SET
+    feedback_rating = $1,
+    feedback_reason = $2,
+    feedback_at = NOW()
+WHERE session_id = $3
+  AND user_id = $4
+  AND turn_index = $5
+RETURNING
+    session_id,
+    turn_index,
+    feedback_rating,
+    feedback_reason,
+    feedback_at
+`
+
+type UpdateConversationTurnFeedbackParams struct {
+	FeedbackRating *string   `db:"feedback_rating" json:"feedback_rating"`
+	FeedbackReason *string   `db:"feedback_reason" json:"feedback_reason"`
+	SessionID      uuid.UUID `db:"session_id" json:"session_id"`
+	UserID         uuid.UUID `db:"user_id" json:"user_id"`
+	TurnIndex      int32     `db:"turn_index" json:"turn_index"`
+}
+
+type UpdateConversationTurnFeedbackRow struct {
+	SessionID      uuid.UUID          `db:"session_id" json:"session_id"`
+	TurnIndex      int32              `db:"turn_index" json:"turn_index"`
+	FeedbackRating *string            `db:"feedback_rating" json:"feedback_rating"`
+	FeedbackReason *string            `db:"feedback_reason" json:"feedback_reason"`
+	FeedbackAt     pgtype.Timestamptz `db:"feedback_at" json:"feedback_at"`
+}
+
+func (q *Queries) UpdateConversationTurnFeedback(ctx context.Context, arg UpdateConversationTurnFeedbackParams) (UpdateConversationTurnFeedbackRow, error) {
+	row := q.db.QueryRow(ctx, updateConversationTurnFeedback,
+		arg.FeedbackRating,
+		arg.FeedbackReason,
+		arg.SessionID,
+		arg.UserID,
+		arg.TurnIndex,
+	)
+	var i UpdateConversationTurnFeedbackRow
+	err := row.Scan(
+		&i.SessionID,
+		&i.TurnIndex,
+		&i.FeedbackRating,
+		&i.FeedbackReason,
+		&i.FeedbackAt,
+	)
 	return i, err
 }
 

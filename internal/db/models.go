@@ -1344,20 +1344,23 @@ type Gr33ncoreConversationSession struct {
 
 // Per-session (user_message, assistant_message) history for Farm Guardian (Phase 27 WS5). Same farm_id trust boundary as gr33ncore.rag_embedding_chunks.
 type Gr33ncoreConversationTurn struct {
-	ID               int64           `db:"id" json:"id"`
-	SessionID        uuid.UUID       `db:"session_id" json:"session_id"`
-	UserID           uuid.UUID       `db:"user_id" json:"user_id"`
-	FarmID           *int64          `db:"farm_id" json:"farm_id"`
-	TurnIndex        int32           `db:"turn_index" json:"turn_index"`
-	UserMessage      string          `db:"user_message" json:"user_message"`
-	AssistantMessage string          `db:"assistant_message" json:"assistant_message"`
-	LlmModel         string          `db:"llm_model" json:"llm_model"`
-	Grounded         bool            `db:"grounded" json:"grounded"`
-	ContextCount     int32           `db:"context_count" json:"context_count"`
-	Citations        json.RawMessage `db:"citations" json:"citations"`
-	PromptTokens     int32           `db:"prompt_tokens" json:"prompt_tokens"`
-	CompletionTokens int32           `db:"completion_tokens" json:"completion_tokens"`
-	CreatedAt        time.Time       `db:"created_at" json:"created_at"`
+	ID               int64              `db:"id" json:"id"`
+	SessionID        uuid.UUID          `db:"session_id" json:"session_id"`
+	UserID           uuid.UUID          `db:"user_id" json:"user_id"`
+	FarmID           *int64             `db:"farm_id" json:"farm_id"`
+	TurnIndex        int32              `db:"turn_index" json:"turn_index"`
+	UserMessage      string             `db:"user_message" json:"user_message"`
+	AssistantMessage string             `db:"assistant_message" json:"assistant_message"`
+	LlmModel         string             `db:"llm_model" json:"llm_model"`
+	Grounded         bool               `db:"grounded" json:"grounded"`
+	ContextCount     int32              `db:"context_count" json:"context_count"`
+	Citations        json.RawMessage    `db:"citations" json:"citations"`
+	PromptTokens     int32              `db:"prompt_tokens" json:"prompt_tokens"`
+	CompletionTokens int32              `db:"completion_tokens" json:"completion_tokens"`
+	FeedbackRating   *string            `db:"feedback_rating" json:"feedback_rating"`
+	FeedbackReason   *string            `db:"feedback_reason" json:"feedback_reason"`
+	FeedbackAt       pgtype.Timestamptz `db:"feedback_at" json:"feedback_at"`
+	CreatedAt        time.Time          `db:"created_at" json:"created_at"`
 }
 
 type Gr33ncoreCostTransaction struct {

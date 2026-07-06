@@ -469,6 +469,7 @@ type Querier interface {
 	// iterates these per farm and sums their on-intervals. Soft-deleted
 	// actuators are excluded so retired hardware doesn't keep billing.
 	ListBillableActuatorsByFarm(ctx context.Context, farmID int64) ([]ListBillableActuatorsByFarmRow, error)
+	ListConversationFeedbackForFarm(ctx context.Context, arg ListConversationFeedbackForFarmParams) ([]ListConversationFeedbackForFarmRow, error)
 	ListConversationTurnsBySession(ctx context.Context, arg ListConversationTurnsBySessionParams) ([]ListConversationTurnsBySessionRow, error)
 	ListCostTransactionsByCropCycle(ctx context.Context, cropCycleID *int64) ([]Gr33ncoreCostTransaction, error)
 	ListCostTransactionsByFarm(ctx context.Context, arg ListCostTransactionsByFarmParams) ([]Gr33ncoreCostTransaction, error)
@@ -691,6 +692,7 @@ type Querier interface {
 	// Operator rename. Returns the row so the API can confirm ownership in one
 	// query — RowsAffected = 0 means "not found / not yours" → 404.
 	UpdateConversationSessionTitle(ctx context.Context, arg UpdateConversationSessionTitleParams) (UpdateConversationSessionTitleRow, error)
+	UpdateConversationTurnFeedback(ctx context.Context, arg UpdateConversationTurnFeedbackParams) (UpdateConversationTurnFeedbackRow, error)
 	UpdateCostTransaction(ctx context.Context, arg UpdateCostTransactionParams) (Gr33ncoreCostTransaction, error)
 	UpdateCropCycle(ctx context.Context, arg UpdateCropCycleParams) (Gr33nfertigationCropCycle, error)
 	UpdateCropCycleStage(ctx context.Context, arg UpdateCropCycleStageParams) (Gr33nfertigationCropCycle, error)

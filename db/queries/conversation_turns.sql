@@ -53,7 +53,10 @@ SELECT
     citations,
     prompt_tokens,
     completion_tokens,
-    created_at
+    created_at,
+    feedback_rating,
+    feedback_reason,
+    feedback_at
 FROM gr33ncore.conversation_turns
 WHERE session_id = sqlc.arg(session_id)
   AND user_id    = sqlc.arg(user_id)
@@ -196,3 +199,37 @@ SELECT
 FROM gr33ncore.conversation_turns
 WHERE farm_id = sqlc.arg(farm_id)
   AND created_at >= sqlc.arg(since);
+
+-- name: UpdateConversationTurnFeedback :one
+UPDATE gr33ncore.conversation_turns
+SET
+    feedback_rating = sqlc.arg(feedback_rating),
+    feedback_reason = sqlc.narg(feedback_reason),
+    feedback_at = NOW()
+WHERE session_id = sqlc.arg(session_id)
+  AND user_id = sqlc.arg(user_id)
+  AND turn_index = sqlc.arg(turn_index)
+RETURNING
+    session_id,
+    turn_index,
+    feedback_rating,
+    feedback_reason,
+    feedback_at;
+
+-- name: ListConversationFeedbackForFarm :many
+SELECT
+    session_id,
+    turn_index,
+    user_message,
+    assistant_message,
+    feedback_rating,
+    feedback_reason,
+    grounded,
+    llm_model,
+    created_at,
+    feedback_at
+FROM gr33ncore.conversation_turns
+WHERE farm_id = sqlc.arg(farm_id)
+  AND feedback_rating IS NOT NULL
+  AND COALESCE(feedback_at, created_at) >= sqlc.arg(since)
+ORDER BY COALESCE(feedback_at, created_at) DESC;

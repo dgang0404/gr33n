@@ -194,6 +194,8 @@ func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationwo
 	mux.Handle("GET /v1/chat/sessions/{session_id}", jwt(http.HandlerFunc(aichat.GetSession)))
 	mux.Handle("PATCH /v1/chat/sessions/{session_id}", jwt(http.HandlerFunc(aichat.PatchSession)))
 	mux.Handle("DELETE /v1/chat/sessions/{session_id}", jwt(http.HandlerFunc(aichat.DeleteSession)))
+	mux.Handle("PATCH /v1/chat/sessions/{session_id}/turns/{turn_index}/feedback", jwt(http.HandlerFunc(aichat.PatchTurnFeedback)))
+	mux.Handle("GET /v1/chat/feedback/export", jwt(http.HandlerFunc(aichat.ExportFeedback)))
 	mux.Handle("POST /v1/chat/sessions/{session_id}/close", jwt(http.HandlerFunc(aichat.CloseSession)))
 	mux.Handle("GET /farms/{id}/guardian-memory/recent", jwt(http.HandlerFunc(aichat.RecentMemory)))
 	mux.Handle("GET /farms/{id}/guardian-memory/export", jwt(http.HandlerFunc(aichat.ExportMemory)))
