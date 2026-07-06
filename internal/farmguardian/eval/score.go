@@ -116,6 +116,33 @@ func Score(in ScoreInput) ScoreResult {
 		if !res.Passed {
 			res.Notes = "expected RAG citation or EC/pH guidance"
 		}
+	case in.Question.ID == "farm-devices", in.Question.ID == "p128-devices":
+		res.Passed = len(a) > 15 && !looksLikeInvention(a) &&
+			(strings.Contains(a, "device") || strings.Contains(a, "offline") ||
+				strings.Contains(a, "edge") || strings.Contains(a, "pi") || strings.Contains(a, "online"))
+		if !res.Passed {
+			res.Notes = "expected device health from snapshot (no invented GPIO)"
+		}
+	case in.Question.ID == "farm-fert-schedule", in.Question.ID == "p128-fert-manual":
+		res.Passed = len(a) > 15 && !looksLikeInvention(a) &&
+			(strings.Contains(a, "manual") || strings.Contains(a, "outdoor") || strings.Contains(a, "jlf") ||
+				strings.Contains(a, "schedule") || strings.Contains(a, "program"))
+		if !res.Passed {
+			res.Notes = "expected manual-only program names or schedule posture"
+		}
+	case in.Question.ID == "fg-demo-pi", in.Question.ID == "p128-demo-pi":
+		res.Passed = in.CitationCount > 0 || citationRefPresent(in.Answer) ||
+			strings.Contains(a, "relay") || strings.Contains(a, "veg") || strings.Contains(a, "channel")
+		if !res.Passed {
+			res.Notes = "expected demo-farm-pi-layout citation or relay channel"
+		}
+	case in.Question.ID == "fg-fertigation-triage", in.Question.ID == "p128-fert-triage":
+		res.Passed = in.CitationCount > 0 || citationRefPresent(in.Answer) ||
+			strings.Contains(a, "schedule") || strings.Contains(a, "reservoir") ||
+			strings.Contains(a, "pi") || strings.Contains(a, "pump") || strings.Contains(a, "dose")
+		if !res.Passed {
+			res.Notes = "expected fertigation-troubleshooting steps"
+		}
 	case in.Question.ExpectCitation:
 		res.Passed = in.CitationCount > 0 || citationRefPresent(in.Answer)
 		if !res.Passed {

@@ -1,5 +1,7 @@
 package eval
 
+import "strings"
+
 // SmokeFixtures returns the Phase 131 four-step smoke suite (sequential, one at a time).
 func SmokeFixtures() []Question {
 	return []Question{
@@ -36,14 +38,17 @@ func SmokeFixtures() []Question {
 	}
 }
 
-// FixturesForSuite returns prompts for smoke, regression (default), or all.
+// FixturesForSuite returns prompts for smoke, phase127, regression (default), or all.
 func FixturesForSuite(suite string) []Question {
-	switch suite {
+	switch strings.ToLower(strings.TrimSpace(suite)) {
 	case "smoke":
 		return SmokeFixtures()
+	case "phase127", "phase128", "p128":
+		return Phase127Fixtures()
 	case "all":
-		out := make([]Question, 0, len(Fixtures())+len(SmokeFixtures()))
+		out := make([]Question, 0, len(Fixtures())+len(SmokeFixtures())+len(Phase127Fixtures()))
 		out = append(out, SmokeFixtures()...)
+		out = append(out, Phase127Fixtures()...)
 		out = append(out, Fixtures()...)
 		return out
 	default:

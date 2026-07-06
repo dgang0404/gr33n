@@ -20,7 +20,7 @@ func main() {
 	farmID := flag.Int64("farm-id", 1, "demo farm id for grounded questions")
 	modelsFlag := flag.String("models", "all", "comma-separated model names or 'all'")
 	manualFlag := flag.Bool("manual", false, "print UI checklist for -suite and exit")
-	suiteFlag := flag.String("suite", envOr("GUARDIAN_EVAL_SUITE", "regression"), "smoke | regression | all")
+	suiteFlag := flag.String("suite", envOr("GUARDIAN_EVAL_SUITE", "regression"), "smoke | phase127 | regression | all")
 	reportPath := flag.String("report", farmguardian.DefaultEvalReportPath(), "output JSON report path")
 	qaArchive := flag.String("qa-archive", "", "optional full QA run JSON path (default data/guardian_qa_runs/…)")
 	llmBase := flag.String("llama-url", os.Getenv("LLM_BASE_URL"), "Ollama OpenAI base (for model discovery when models=all)")
@@ -55,7 +55,7 @@ func main() {
 	client := eval.NewAPIClient(*apiURL, *token, *farmID)
 
 	runOpts := eval.RunSuiteOptions{
-		WarmupGrounded: suite == "smoke",
+		WarmupGrounded: suite == "smoke" || suite == "phase127" || suite == "phase128" || suite == "p128",
 		WarmupTimeout:  5 * time.Minute,
 		LogPath:        strings.TrimSpace(os.Getenv("GUARDIAN_EVAL_LOG")),
 	}

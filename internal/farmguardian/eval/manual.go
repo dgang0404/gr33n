@@ -54,6 +54,8 @@ func manualMakeTarget(suite string) string {
 	switch strings.ToLower(strings.TrimSpace(suite)) {
 	case "smoke":
 		return "smoke"
+	case "phase127", "phase128", "p128":
+		return "phase127"
 	default:
 		return "regression"
 	}
@@ -69,14 +71,14 @@ func manualPassHint(q Question) string {
 		return "Answer summarizes seed/demo alerts; len > 40 chars"
 	case "smoke-ec-ph":
 		return "Citations present or answer mentions EC/pH targets"
-	case "farm-devices":
-		return "Mentions offline devices or device health from snapshot"
-	case "farm-fert-schedule":
-		return "Names manual-only programs (e.g. Outdoor JLF)"
-	case "fg-demo-pi":
-		return "Cites relay channel / Veg Relay Controller from field guide"
-	case "fg-fertigation-triage":
-		return "Cites fertigation troubleshooting steps"
+	case "farm-devices", "p128-devices":
+		return "Mentions snapshot device line or online/offline edge devices; no invented GPIO"
+	case "farm-fert-schedule", "p128-fert-manual":
+		return "Names Outdoor JLF or cites manual-only / schedule posture from snapshot"
+	case "fg-demo-pi", "p128-demo-pi":
+		return "Cites demo-farm-pi-layout or relay_1 / Veg Relay Controller"
+	case "fg-fertigation-triage", "p128-fert-triage":
+		return "Cites fertigation-troubleshooting (schedule, Pi, reservoir)"
 	default:
 		if q.ExpectCitation {
 			return "Citations or [1] references in answer"

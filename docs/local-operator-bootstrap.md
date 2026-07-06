@@ -77,7 +77,29 @@ curl -H "Authorization: Bearer $GUARDIAN_EVAL_TOKEN" \
   'http://127.0.0.1:8080/v1/chat/feedback/export?farm_id=1&since=7d'
 ```
 
-See [phase_128 plan](plans/phase_128_validate_phase127_guardian.plan.md) — manual UI checklist is now `make guardian-qa-manual`.
+See [phase_128 plan](plans/phase_128_validate_phase127_guardian.plan.md) — Phase 127 grounding validation.
+
+### Phase 128 — validate Phase 127 grounding
+
+After `make migrate` and `make guardian-bootstrap-farm FARM_ID=1` (field guides ingested):
+
+```bash
+# Fast automated (no LLM)
+go test ./cmd/api/... -run 'Phase127|Phase128' -count=1
+
+# Manual UI — Farm counsel ON, phi3:mini, Demo Farm
+make guardian-qa-manual SUITE=phase127
+
+# Automated live API (slow on CPU — ~30–60 min for 4 prompts)
+export GUARDIAN_EVAL_TOKEN="<jwt>"
+make guardian-qa-phase127 MODEL=phi3:mini FARM_ID=1
+```
+
+Log tools during live runs:
+
+```bash
+tail -f /tmp/gr33n-api.log | grep -E 'summarize_device|summarize_zone_fertigation'
+```
 
 ### Chat model on a 16 GB CPU laptop — tinyllama vs phi3:mini
 

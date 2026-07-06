@@ -12,25 +12,33 @@ todos:
     status: completed
   - id: ws3-manual-ui
     content: "WS3: Manual UI checklist — farm context ON, phi3, four Phase 127 prompts"
-    status: pending
+    status: completed
   - id: ws4-guardian-eval
-    content: "WS4: make guardian-eval on phi3:mini after UI passes (optional, slow on CPU)"
-    status: pending
+    content: "WS4: make guardian-qa-phase127 on phi3:mini after UI passes (optional, slow on CPU)"
+    status: completed
 isProject: false
 ---
 
 # Phase 128 — Validate Phase 127 grounding
 
-## Automated (done in repo)
+**Status:** complete
+
+## Automated (repo)
 
 ```bash
 go test ./internal/farmguardian/... -run Snapshot -count=1
 go test ./cmd/api/... -run Phase127 -count=1   # needs test DB + seed
+go test ./cmd/api/... -run Phase128 -count=1   # suite wiring + score heuristics
+go test ./internal/farmguardian/eval/... -run Phase127 -count=1
 ```
 
 ## Manual UI checklist (farm context ON, phi3:mini, gr33n Demo Farm)
 
-**Single source of truth:** run `make guardian-qa-manual` (smoke) or `make guardian-qa-manual SUITE=regression` — same prompts as automated `make guardian-qa-smoke`.
+**Single source of truth:**
+
+```bash
+make guardian-qa-manual SUITE=phase127
+```
 
 | # | Prompt | Pass if |
 |---|--------|---------|
@@ -39,16 +47,21 @@ go test ./cmd/api/... -run Phase127 -count=1   # needs test DB + seed
 | 3 | Which relay channel is the veg grow light on the demo farm? | Cites demo-farm-pi-layout or `relay_1` / Veg Relay Controller |
 | 4 | Program active but no dose — what to check first? | Cites fertigation-troubleshooting (schedule, Pi, reservoir) |
 
-## Optional slow path
+## Automated slow path (after manual passes)
 
 ```bash
-make guardian-qa-smoke MODEL=phi3:mini   # 4-prompt smoke (recommended before full regression)
-make guardian-qa-regression              # full fixture set
-make guardian-eval                       # alias regression
+export GUARDIAN_EVAL_TOKEN="<jwt>"
+export GUARDIAN_EVAL_LOG=/tmp/gr33n-api.log
+make guardian-qa-phase127 MODEL=phi3:mini FARM_ID=1
+# Archives: data/guardian_qa_runs/<timestamp>_phase127_phi3-mini.json
+
+# Broader regression (optional):
+make guardian-qa-regression MODEL=phi3:mini
 ```
 
-Log tail during manual tests:
+Log tail during tests:
 
 ```bash
 tail -f /tmp/gr33n-api.log | grep -E 'guardian:|summarize_device|summarize_zone_fertigation'
+./scripts/guardian-qa-scrape-logs.sh --expect summarize_device_health
 ```
