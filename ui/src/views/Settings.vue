@@ -870,6 +870,9 @@
     <!-- Phase 140 — last guardian-qa-smoke archive -->
     <GuardianSettingsQARunCard />
 
+    <!-- Phase 141 — thumbs-down review queue -->
+    <GuardianSettingsFeedbackReviewCard :is-farm-admin="isFarmAdmin" />
+
     <!-- Phase 28 WS5 — Guardian token usage / rolling-window budget -->
     <section
       v-if="capabilities.aiEnabled && (chatUsage.hasAnyCap || chatUsage.user.used_tokens > 0)"
@@ -1145,6 +1148,7 @@ import GuardianSettingsAwakeningCard from '../components/GuardianSettingsAwakeni
 import GuardianSettingsModelPolicyCard from '../components/GuardianSettingsModelPolicyCard.vue'
 import GuardianSettingsCorpusCard from '../components/GuardianSettingsCorpusCard.vue'
 import GuardianSettingsQARunCard from '../components/GuardianSettingsQARunCard.vue'
+import GuardianSettingsFeedbackReviewCard from '../components/GuardianSettingsFeedbackReviewCard.vue'
 import { farmSetupRoute } from '../lib/farmSetupWizard.js'
 import { MODULE_SCHEMA } from '../lib/farmModules.js'
 

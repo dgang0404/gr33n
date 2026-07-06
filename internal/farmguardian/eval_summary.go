@@ -154,10 +154,11 @@ func MergeEvalIntoModels(models []ModelInfo) []ModelInfo {
 
 // QARunArchive is a full recorded eval run (Phase 131).
 type QARunArchive struct {
-	UpdatedAt string              `json:"updated_at"`
-	Suite     string              `json:"suite"`
-	Model     string              `json:"model"`
-	Scores    []EvalQuestionScore `json:"scores"`
+	UpdatedAt              string              `json:"updated_at"`
+	Suite                  string              `json:"suite"`
+	Model                  string              `json:"model"`
+	FeedbackReviewPrompt   string              `json:"feedback_review_prompt,omitempty"`
+	Scores                 []EvalQuestionScore `json:"scores"`
 }
 
 // DefaultQARunsDir returns the guardian QA run archive directory.
@@ -282,10 +283,11 @@ func SaveQARunArchive(path, suite, model string, scores []EvalQuestionScore) err
 		return nil
 	}
 	arch := QARunArchive{
-		UpdatedAt: time.Now().UTC().Format(time.RFC3339),
-		Suite:     suite,
-		Model:     model,
-		Scores:    scores,
+		UpdatedAt:            time.Now().UTC().Format(time.RFC3339),
+		Suite:                suite,
+		Model:                model,
+		FeedbackReviewPrompt: "After smoke, review thumbs-down in Settings → Guardian feedback or GET /v1/chat/feedback/export",
+		Scores:               scores,
 	}
 	raw, err := json.MarshalIndent(arch, "", "  ")
 	if err != nil {

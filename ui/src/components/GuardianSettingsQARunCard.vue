@@ -90,11 +90,11 @@ async function loadLatest() {
   summary.value = null
   scores.value = []
   try {
-    const data = await api.get('/v1/guardian/qa/latest')
+    const { data } = await api.get('/v1/guardian/qa/latest')
     summary.value = data.summary
     scores.value = Array.isArray(data.scores) ? data.scores : []
   } catch (e) {
-    if (e?.status === 404) {
+    if (e?.response?.status === 404) {
       error.value = 'No QA runs archived yet — run make guardian-qa-smoke from the repo root.'
     } else {
       error.value = e?.message || 'Could not load QA summary.'

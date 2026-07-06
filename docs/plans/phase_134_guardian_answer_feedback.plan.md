@@ -7,28 +7,28 @@ overview: >
 todos:
   - id: ws1-schema
     content: "WS1: Migration — conversation_turns.feedback_rating (up|down|null), feedback_reason text, feedback_at; optional operator_user_id"
-    status: pending
+    status: completed
   - id: ws2-api
     content: "WS2: PATCH /v1/chat/sessions/{id}/turns/{turn_index}/feedback {rating, reason}"
-    status: pending
+    status: completed
   - id: ws3-ui
     content: "WS3: GuardianChatPanel — thumbs on assistant messages; optional reason popover on down"
-    status: pending
+    status: completed
   - id: ws4-export
     content: "WS4: GET /v1/chat/feedback/export?farm_id= (admin) CSV/JSON for agronomy review; exclude PII beyond user id"
-    status: pending
+    status: completed
   - id: ws5-qa-link
     content: "WS5: guardian-qa JSON includes feedback_prompt field; doc runbook: review down votes after smoke"
-    status: pending
+    status: completed
   - id: ws6-tests
     content: "WS6: handler test feedback PATCH; vitest thumbs; smoke_phase134_test.go"
-    status: pending
+    status: completed
 isProject: false
 ---
 
 # Phase 134 — Guardian answer feedback loop
 
-**Status:** planned · **Depends on:** [131](phase_131_guardian_qa_harness.plan.md)
+**Status:** **Shipped.** · **Depends on:** [131](phase_131_guardian_qa_harness.plan.md)
 
 ---
 
@@ -82,9 +82,9 @@ Columns: `turn_index`, `question`, `answer_excerpt`, `rating`, `reason`, `ground
 
 ## Acceptance
 
-- [ ] Operator can thumbs-down morning walkthrough answer with reason
-- [ ] Export returns row linked to session
-- [ ] Feedback does not block chat or require network beyond API
+- [x] Operator can thumbs-down morning walkthrough answer with reason
+- [x] Export returns row linked to session
+- [x] Feedback does not block chat or require network beyond API
 
 ---
 

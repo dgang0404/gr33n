@@ -64,6 +64,8 @@ jobs:
 
 Smoke uses **recorded JSON + heuristic checks** (answer length, citation count, optional log scrape for `walk_farm`). Human review of archived runs and **thumbs feedback** ([Phase 134](plans/phase_134_guardian_answer_feedback.plan.md)) is the quality loop — **LLM-as-judge is explicitly deferred** (see Phase 131 non-goals).
 
+**After smoke:** Settings → Guardian feedback ([runbook](guardian-feedback-review-runbook.md)) · Settings → Guardian QA last run (Phase 140).
+
 ---
 
 ## Troubleshooting

@@ -7,28 +7,28 @@ overview: >
 todos:
   - id: ws1-source-labeling-persona
     content: "WS1: Persona + synthesis rules — label Live farm / Field guide [n] / Farm note [n]; forbid presenting stale RAG as current sensor state"
-    status: pending
+    status: completed
   - id: ws2-trim-banner-ui
     content: "WS2: API returns trim_summary on chat done event; GuardianChatPanel amber banner + New chat CTA when history/RAG/snapshot trimmed"
-    status: pending
+    status: completed
   - id: ws3-citation-metadata
     content: "WS3: Citations include source_type (field_guide|platform_doc|operational); UI chip colors per type"
-    status: pending
+    status: completed
   - id: ws4-rag-trust-tiers
     content: "WS4: synthesis — operator-ingested chunks tagged untrusted_operational in prompt; field_guide/platform_doc trusted_curated"
-    status: pending
+    status: completed
   - id: ws5-mode-card-sources
     content: "WS5: Farm counsel mode card legend — what each layer means for truth (pairs 129 WS5)"
-    status: pending
+    status: completed
   - id: ws6-tests
     content: "WS6: Unit tests trim_summary payload; vitest citation chips; smoke grounded answer contains Live farm when snapshot used"
-    status: pending
+    status: completed
 isProject: false
 ---
 
 # Phase 133 — Guardian answer grounding & honesty
 
-**Status:** planned · **Depends on:** [129](phase_129_guardian_awakening.plan.md) WS5, [132](phase_132_guardian_read_tool_router.plan.md)
+**Status:** **Shipped.** · **Depends on:** [129](phase_129_guardian_awakening.plan.md) WS5, [132](phase_132_guardian_read_tool_router.plan.md)
 
 **Related:** [rag-scope-and-threat-model.md](../rag-scope-and-threat-model.md), Phase 97 structured truth
 

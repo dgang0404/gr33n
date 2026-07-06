@@ -9,46 +9,46 @@ overview: >
 todos:
   - id: ws0-health-consolidation
     content: "WS0: Extend GET /v1/chat/health (Phase 37) — add ollama_loaded_models, chat_model_loaded, embed_blocks_chat, awakening_state, rag_corpus_ok; avoid duplicate /guardian/readiness unless alias"
-    status: pending
+    status: completed
   - id: ws1-warmup-api
     content: "WS1: POST /guardian/warmup {mode, farm_id} — async stir→ready; idempotent; returns 202 + poll health"
-    status: pending
+    status: completed
   - id: ws2-warmup-orchestration
     content: "WS2: Warmup backend — unload embed if blocking; preload chat model (phi3 farm_counsel / tinyllama quick) via Ollama generate+keep_alive; verify RAG chunk counts"
-    status: pending
+    status: completed
   - id: ws3-laptop-tune-script
     content: "WS3: scripts/tune-guardian-laptop.sh + make guardian-laptop-tune — cpu-16gb profile; LLM_TIMEOUT≥1500, RETRY=1; --apply; optional GUARDIAN_AUTO_TUNE on restart-local --serve"
-    status: pending
+    status: completed
   - id: ws4-awakening-ui
     content: "WS4: GuardianAwakeningPanel — poll /v1/chat/health; druid copy + checklist; Quick chat fallback; hide when ready"
-    status: pending
+    status: completed
   - id: ws5-context-mode-cards
     content: "WS5: Quick chat vs Farm counsel mode cards with layer chips (snapshot, read tools, RAG, chat); link connectivity-requirements"
-    status: pending
+    status: completed
   - id: ws6-login-badge
     content: "WS6: guardianReadiness store — post-login fetch; TopBar/GuardianNavLaunch asleep|stirring|ready|busy dot; background warmup once per session"
-    status: pending
+    status: completed
   - id: ws7-morning-walkthrough-cta
     content: "WS7: Farm counsel + awakening — Morning check starter pre-warms farm_counsel; dashboard chip opens drawer in walkthrough mode"
-    status: pending
+    status: completed
   - id: ws8-settings-surface
     content: "WS8: Settings Guardian card — readiness summary, corpus counts, Tune laptop link, last warmup error"
-    status: pending
+    status: completed
   - id: ws9-stack-scripts
     content: "WS9: check-local-stack + restart-local — probe Ollama /api/tags; warn if down; print guardian-laptop-tune hint on --serve"
-    status: pending
+    status: completed
   - id: ws10-lite-degrade
     content: "WS10: AI_ENABLED=false / Ollama down — mode cards show Lite path; no infinite awakening spinner"
-    status: pending
+    status: completed
   - id: ws11-docs-tests
     content: "WS11: Bootstrap + playbook rewrite; health/warmup handler tests; UI tests mode cards + awakening + morning CTA"
-    status: pending
+    status: completed
 isProject: false
 ---
 
 # Phase 129 — Guardian awakening (login-and-go operator UX)
 
-**Status:** planned
+**Status:** **Shipped.** · see [129–139 closure](phase-129-139-closure.md)
 
 **Blocks:** [Phase 128](phase_128_validate_phase127_guardian.plan.md) WS3 manual UI (morning walkthrough needs timeout + awakening first)
 

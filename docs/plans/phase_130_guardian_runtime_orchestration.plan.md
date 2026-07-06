@@ -9,34 +9,34 @@ overview: >
 todos:
   - id: ws1-grounded-timeout
     content: "WS1: GUARDIAN_GROUNDED_TIMEOUT_SECONDS env — grounded streams use max(LLM_TIMEOUT, grounded, 1500); document in environment-variables.md"
-    status: pending
+    status: completed
   - id: ws2-embed-unload-on-send
     content: "WS2: Before grounded LLM call — if embed loaded and chat model cold/contended, Ollama unload embed (Phase 126 deferred); log guardian: embed unloaded for chat"
-    status: pending
+    status: completed
   - id: ws3-early-sse-phases
     content: "WS3: Refactor POST /v1/chat stream — flush SSE early; status phases: preparing, snapshot, read_tools, embedding, generating; UI guardianChat shows phase line"
-    status: pending
+    status: completed
   - id: ws4-chat-busy-lock
     content: "WS4: Single-flight grounded chat per farm (or global on laptop) — health awakening.state=busy; 429 llm_busy with clear message if second send"
-    status: pending
+    status: completed
   - id: ws5-eval-timeout
     content: "WS5: cmd/guardian-eval HTTP client uses max(120, LLM_TIMEOUT_SECONDS) or GUARDIAN_EVAL_TIMEOUT_SECONDS; morning walkthrough fixture in eval set"
-    status: pending
+    status: completed
   - id: ws6-stale-ollama-detect
     content: "WS6: Health flag stale_ollama_cli — detect orphan ollama run / high CPU with no ps models; message in awakening"
-    status: pending
+    status: completed
   - id: ws7-auto-warm-on-send
     content: "WS7: If farm_counsel send while sleeping — inline mini-warmup before build prompt (fallback when user skips awakening panel)"
-    status: pending
+    status: completed
   - id: ws8-tests-smoke
     content: "WS8: Handler tests embed unload decision, grounded timeout, busy lock; optional //go:build ollama smoke grounded morning walkthrough"
-    status: pending
+    status: completed
 isProject: false
 ---
 
 # Phase 130 — Guardian runtime orchestration (chat path hardening)
 
-**Status:** planned (depends on [Phase 129](phase_129_guardian_awakening.plan.md) WS0 health fields)
+**Status:** **Shipped.** · Depends on [Phase 129](phase_129_guardian_awakening.plan.md) WS0 health fields
 
 **Closes:** Phase 126 "Out of scope / later" — auto-unload embed before chat
 

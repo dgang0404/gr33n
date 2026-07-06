@@ -9,34 +9,34 @@ overview: >
 todos:
   - id: ws1-fixture-tiers
     content: "WS1: eval.Fixtures split — SmokeFixtures (4-step order), RegressionFixtures (existing 24), UngroundedFixtures (cherry); YAML or Go table with id, prompt, grounded, model, expect_tool, pass_criteria"
-    status: pending
+    status: completed
   - id: ws2-record-answers
     content: "WS2: EvalQuestionScore + report — store answer text, citations, proposals, error, http_status; write data/guardian_qa_runs/{timestamp}_{suite}_{model}.json"
-    status: pending
+    status: completed
   - id: ws3-sequential-runner
     content: "WS3: RunSuite — one prompt at a time (no parallel); timeout from GUARDIAN_EVAL_TIMEOUT_SECONDS; optional POST /guardian/warmup before grounded block"
-    status: pending
+    status: completed
   - id: ws4-log-correlation
     content: "WS4: Eval requests send X-Eval-Run-Id header; document grep for walk_farm/summarize in /tmp/gr33n-api.log; optional post-run log scrape for expect_tool"
-    status: pending
+    status: completed
   - id: ws5-make-targets
     content: "WS5: make guardian-qa-smoke (4 prompts), make guardian-qa-regression (full), make guardian-eval unchanged alias; INSTALL.md tier table"
-    status: pending
+    status: completed
   - id: ws6-manual-mode
     content: "WS6: guardian-qa --manual prints UI checklist (farm context on/off, model, wait guidance) from same fixture source — single source of truth"
-    status: pending
+    status: completed
   - id: ws7-ui-optional
     content: "WS7 (optional): Settings → last QA run summary + link to report file; not required for v1"
     status: completed
   - id: ws8-docs
     content: "WS8: Phase 128 checklist points at make guardian-qa-smoke; local-operator-bootstrap QA section"
-    status: pending
+    status: completed
 isProject: false
 ---
 
 # Phase 131 — Guardian QA harness (smoke prompts, recorded answers)
 
-**Status:** planned
+**Status:** **Shipped.** · see [129–139 closure](phase-129-139-closure.md)
 
 **Depends on:** [Phase 130](phase_130_guardian_runtime_orchestration.plan.md) WS5 (eval timeout), ideally 129 WS2 (warmup before smoke)
 

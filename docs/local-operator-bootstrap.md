@@ -77,6 +77,8 @@ curl -H "Authorization: Bearer $GUARDIAN_EVAL_TOKEN" \
   'http://127.0.0.1:8080/v1/chat/feedback/export?farm_id=1&since=7d'
 ```
 
+Or use **Settings → Guardian feedback** (Phase 141) — see [guardian-feedback-review-runbook.md](guardian-feedback-review-runbook.md).
+
 See [phase_128 plan](plans/phase_128_validate_phase127_guardian.plan.md) — Phase 127 grounding validation. For the full **129–138** arc (awakening, runtime, QA, router, honesty, feedback, RAG lifecycle, counsel UX, inference policy), see the [Guardian next-level roadmap](plans/phase_129_139_guardian_next_level_roadmap.plan.md).
 
 ### Phase 128 — validate Phase 127 grounding (legacy)

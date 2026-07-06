@@ -8,19 +8,19 @@ overview: >
 todos:
   - id: wave1-foundation
     content: "Wave 1 (129–131): awakening, runtime, QA smoke — laptop must complete morning walkthrough"
-    status: pending
+    status: completed
   - id: wave2-truth
     content: "Wave 2 (132–134): read-tool router, answer honesty, operator feedback"
-    status: pending
+    status: completed
   - id: wave3-intelligence
     content: "Wave 3 (135–136): RAG lifecycle, plant context bundle"
-    status: pending
+    status: completed
   - id: wave4-integration
     content: "Wave 4 (137–138): nudges/vision/offline UX, inference policy & enterprise"
-    status: pending
+    status: completed
   - id: wave5-engineering
     content: "Wave 5 (139): architecture docs, turn debugger, nightly QA CI"
-    status: pending
+    status: completed
 isProject: false
 ---
 
