@@ -29,6 +29,8 @@ type AwakeningHealth struct {
 	Profile            string   `json:"profile"`
 	ChatModel          string   `json:"chat_model,omitempty"`
 	ChatModelLoaded    bool     `json:"chat_model_loaded"`
+	VisionModel        string   `json:"vision_model,omitempty"`
+	VisionModelLoaded  bool     `json:"vision_model_loaded"`
 	EmbedModel         string   `json:"embed_model,omitempty"`
 	EmbedLoaded        bool     `json:"embed_loaded"`
 	EmbedBlocksChat    bool     `json:"embed_blocks_chat"`
@@ -109,6 +111,10 @@ func BuildAwakeningHealth(ctx context.Context, in AwakeningBuildInput) Awakening
 	}
 	if chatModel != "" {
 		out.ChatModelLoaded, _ = psEntry(loadedMap, chatModel)
+	}
+	if visionModel := VisionModelFromEnv(); visionModel != "" {
+		out.VisionModel = visionModel
+		out.VisionModelLoaded, _ = psEntry(loadedMap, visionModel)
 	}
 	if out.EmbedLoaded && !out.ChatModelLoaded && out.EmbedModel != "" {
 		_, embedCPU := psEntry(loadedMap, out.EmbedModel)

@@ -128,6 +128,32 @@ export function buildSetupStarters({
   return dedupeStarters(candidates).slice(0, max)
 }
 
+/** Phase 137 — procedure starters when Ollama is down but field guides are available. */
+export function buildOfflineProcedureStarters() {
+  return [
+    {
+      id: 'offline-wire-pi',
+      label: 'Wire Pi checklist',
+      message: 'start procedure wire-pi-relay-light',
+    },
+    {
+      id: 'offline-pi-down',
+      label: 'Why is my Pi offline?',
+      message: 'start procedure diagnose-pi-offline',
+    },
+    {
+      id: 'offline-actuator',
+      label: 'Actuator won\'t fire',
+      message: 'start procedure diagnose-actuator-wont-fire',
+    },
+    {
+      id: 'offline-sensor',
+      label: 'No sensor reading',
+      message: 'start procedure diagnose-sensor-no-reading',
+    },
+  ]
+}
+
 import { buildZoneGuardianPrompt, buildZoneGuardianContextRef } from './guardianContextPrompts.js'
 
 const FEEDING_STARTER_IDS = ['next-feed', 'run-feed-safe', 'water-only']

@@ -34,6 +34,26 @@ func TestBuildAwakeningHealth_SleepingWhenModelCold(t *testing.T) {
 	}
 }
 
+func TestBuildAwakeningHealth_VisionModelFields(t *testing.T) {
+	srv := startMockOllamaPS(t, []map[string]any{
+		{"name": "llava:latest", "size_vram": 0},
+	})
+	t.Setenv("LLM_BASE_URL", srv.URL+"/v1")
+	t.Setenv("LLM_VISION_MODEL", "llava:latest")
+	field := BuildFieldAssistantHealth(t.Context(), nil, 1, 1)
+	h := BuildAwakeningHealth(t.Context(), AwakeningBuildInput{
+		AIEnabled:  true,
+		Field:      field,
+		EnvDefault: "phi3:mini",
+	})
+	if h.VisionModel != "llava:latest" {
+		t.Fatalf("vision_model=%q", h.VisionModel)
+	}
+	if !h.VisionModelLoaded {
+		t.Fatal("expected vision_model_loaded")
+	}
+}
+
 func TestNormalizeWarmupMode(t *testing.T) {
 	if got := normalizeWarmupMode("quick"); got != WarmupModeQuick {
 		t.Fatalf("got %q", got)

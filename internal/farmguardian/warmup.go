@@ -32,7 +32,8 @@ func snapshotWarmupState() warmupSnapshot {
 
 // StartWarmup kicks off async model preload when not already warm or stirring.
 // Returns current state: stirring (202), ready (200), or unavailable.
-func StartWarmup(ctx context.Context, llmBaseURL, mode string, farmPreferred *string, envDefault string, cache *ModelCache) (state string, chatModel string) {
+// When includeVision is true and LLM_VISION_MODEL is set, the vision model is preloaded after chat.
+func StartWarmup(ctx context.Context, llmBaseURL, mode string, farmPreferred *string, envDefault string, cache *ModelCache, includeVision bool) (state string, chatModel string) {
 	mode = normalizeWarmupMode(mode)
 	chatModel, _, reject := ResolveWarmupModel(cache, mode, farmPreferred, envDefault)
 	if reject != "" {
@@ -68,11 +69,11 @@ func StartWarmup(ctx context.Context, llmBaseURL, mode string, farmPreferred *st
 	}
 	warmupMu.Unlock()
 
-	go runWarmup(context.WithoutCancel(ctx), llmBaseURL, mode, chatModel)
+	go runWarmup(context.WithoutCancel(ctx), llmBaseURL, mode, chatModel, includeVision)
 	return AwakeningStateStirring, chatModel
 }
 
-func runWarmup(ctx context.Context, llmBaseURL, mode, chatModel string) {
+func runWarmup(ctx context.Context, llmBaseURL, mode, chatModel string, includeVision bool) {
 	var lastErr string
 	defer func() {
 		warmupMu.Lock()
@@ -99,4 +100,13 @@ func runWarmup(ctx context.Context, llmBaseURL, mode, chatModel string) {
 		return
 	}
 	slog.Info("guardian: warmup ready", "chat_model", chatModel, "mode", mode)
+
+	if includeVision {
+		visionModel := VisionModelFromEnv()
+		if visionModel != "" && visionModel != chatModel {
+			if err := preloadOllamaChatModel(ctx, llmBaseURL, visionModel, warmupKeepAlive); err != nil {
+				slog.Warn("guardian: vision warmup preload failed", "vision_model", visionModel, "err", err)
+			}
+		}
+	}
 }

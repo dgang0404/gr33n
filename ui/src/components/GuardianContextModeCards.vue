@@ -49,10 +49,21 @@
             No grounded models installed — pull phi3:mini in Settings, then refresh.
           </span>
           <span v-else-if="ragWarning" class="block text-amber-300/80 text-[11px] mt-1">Field memories not ingested — run bootstrap.</span>
+          <span
+            v-if="farmSelected && capabilities.visionChatEnabled"
+            class="block text-zinc-500 text-[10px] mt-1.5 leading-snug"
+            data-test="guardian-mode-vision-note"
+          >
+            Zone photos use a separate vision model — first photo question may take extra time on CPU.
+          </span>
         </button>
       </div>
       <p class="text-[10px] text-zinc-500">
         Cold models and CPU timing — see docs/connectivity-requirements.md in the repo.
+      </p>
+      <p class="text-[10px] text-zinc-600 leading-snug" data-test="guardian-mode-session-memory-note">
+        Session memory uses keyword tags only — not semantic recall.
+        <a href="/operator-guide#6k-guardian-session-memory-phase-63--shipped" class="text-green-500/70 hover:underline">Phase 63</a>
       </p>
     </template>
   </div>

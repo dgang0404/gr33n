@@ -19,7 +19,7 @@ describe('Phase 61 WS5 / OC-61 — proactive nudges closure', () => {
     expect(plan).toContain('**Shipped.**')
   })
 
-  it('buildNudgeReviewPayload frames context_ref with nudge_category', () => {
+  it('buildNudgeReviewPayload frames alert context_ref for critical nudges', () => {
     const payload = buildNudgeReviewPayload({
       category: 'critical_alert',
       message: 'Humidity alert — tap to review',
@@ -27,9 +27,10 @@ describe('Phase 61 WS5 / OC-61 — proactive nudges closure', () => {
       nudge_id: 'alert-99',
     })
     expect(payload.message).toContain('Humidity alert')
+    expect(payload.contextRef.type).toBe('alert')
+    expect(payload.contextRef.id).toBe(99)
     expect(payload.contextRef.nudge_category).toBe('critical_alert')
     expect(payload.contextRef.nudge_id).toBe('alert-99')
-    expect(payload.contextRef.path).toBe('/alerts')
   })
 
   it('UI wires nudge dot, strip, and guardianPanel store', () => {

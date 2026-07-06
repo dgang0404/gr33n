@@ -11,6 +11,8 @@ export const useGuardianReadinessStore = defineStore('guardianReadiness', {
     loading: false,
     error: '',
     awakening: null,
+    fieldAssistant: null,
+    proceduresAvailable: false,
     farmId: null,
     mode: 'farm_counsel',
     lastCheckedAt: null,
@@ -50,6 +52,10 @@ export const useGuardianReadinessStore = defineStore('guardianReadiness', {
       if (s === 'busy') return true
       return (s === 'stirring' || !!state.awakening?.warmup_in_progress) && !state.stirTimedOut
     },
+    /** Phase 137 — LLM down but guided procedures still work (Phase 37). */
+    showOfflineFieldBanner(state) {
+      return !!state.proceduresAvailable && state.fieldAssistant?.llm_reachable === false
+    },
   },
 
   actions: {
@@ -64,6 +70,8 @@ export const useGuardianReadinessStore = defineStore('guardianReadiness', {
         if (mode) params.mode = mode
         const { data } = await api.get('/v1/chat/health', { params })
         this.awakening = data?.awakening ?? null
+        this.fieldAssistant = data?.field_assistant ?? null
+        this.proceduresAvailable = !!data?.procedures_available
         this.lastCheckedAt = Date.now()
         this.loaded = true
       } catch (e) {
@@ -73,10 +81,11 @@ export const useGuardianReadinessStore = defineStore('guardianReadiness', {
       }
     },
 
-    async warmup(farmId, mode = 'farm_counsel') {
+    async warmup(farmId, mode = 'farm_counsel', opts = {}) {
       try {
         const body = { mode }
         if (farmId) body.farm_id = Number(farmId)
+        if (opts.includeVision) body.include_vision = true
         await api.post('/guardian/warmup', body)
         this.warmupStarted = true
         await this.fetchHealth(farmId, mode)
@@ -139,6 +148,8 @@ export const useGuardianReadinessStore = defineStore('guardianReadiness', {
       this.loaded = false
       this.stirTimedOut = false
       this.awakening = null
+      this.fieldAssistant = null
+      this.proceduresAvailable = false
       this.error = ''
     },
   },

@@ -14,8 +14,10 @@
         ✨
         <span
           v-if="guardianPanel.showNudgeDot"
-          class="absolute -top-0.5 -right-1 h-2 w-2 rounded-full bg-amber-400 ring-2 ring-zinc-950"
+          class="absolute -top-0.5 -right-1 h-2 w-2 rounded-full ring-2 ring-zinc-950"
+          :class="nudgeDotStirring ? 'bg-amber-500 animate-pulse' : 'bg-amber-400'"
           data-test="guardian-nudge-dot"
+          :data-stirring="nudgeDotStirring ? 'true' : undefined"
           aria-hidden="true"
         />
       </span>
@@ -34,6 +36,7 @@ import { computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useGuardianChatStore } from '../stores/guardianChat'
 import { useGuardianPanelStore } from '../stores/guardianPanel'
+import { useGuardianReadinessStore } from '../stores/guardianReadiness'
 import { useCapabilitiesStore } from '../stores/capabilities'
 
 defineProps({
@@ -45,8 +48,13 @@ const route = useRoute()
 const guardianPanel = useGuardianPanelStore()
 const guardianChat = useGuardianChatStore()
 const capabilities = useCapabilitiesStore()
+const guardianReadiness = useGuardianReadinessStore()
 
 const aiAvailable = computed(() => capabilities.loaded && !capabilities.isLite)
+
+const nudgeDotStirring = computed(() =>
+  guardianPanel.criticalNudgePending && guardianReadiness.isStirring,
+)
 
 /** Full-page /chat already is Guardian — hide duplicate edge chrome. */
 const onChatPage = computed(() => route.path === '/chat' || route.path.startsWith('/chat/'))

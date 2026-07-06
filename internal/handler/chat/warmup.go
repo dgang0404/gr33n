@@ -10,8 +10,9 @@ import (
 )
 
 type warmupRequest struct {
-	Mode   string `json:"mode"`
-	FarmID int64  `json:"farm_id"`
+	Mode          string `json:"mode"`
+	FarmID        int64  `json:"farm_id"`
+	IncludeVision bool   `json:"include_vision"`
 }
 
 type warmupResponse struct {
@@ -56,7 +57,7 @@ func (h *Handler) PostWarmup(w http.ResponseWriter, r *http.Request) {
 	if h.baseLLM != nil {
 		llmBase = h.baseLLM.BaseURL
 	}
-	state, chatModel := farmguardian.StartWarmup(r.Context(), llmBase, req.Mode, farmPref, envDefault, h.modelCache)
+	state, chatModel := farmguardian.StartWarmup(r.Context(), llmBase, req.Mode, farmPref, envDefault, h.modelCache, req.IncludeVision)
 
 	status := http.StatusAccepted
 	if state == farmguardian.AwakeningStateReady {

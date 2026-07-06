@@ -25,3 +25,10 @@ func TestEmbedModelFromEnv(t *testing.T) {
 		t.Fatalf("got %q", got)
 	}
 }
+
+func TestVisionModelFromEnv(t *testing.T) {
+	t.Setenv("LLM_VISION_MODEL", "llava")
+	if got := VisionModelFromEnv(); got != "llava" {
+		t.Fatalf("got %q", got)
+	}
+}

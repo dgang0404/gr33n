@@ -56,6 +56,17 @@
             {{ readiness.awakening.platform_doc_chunks ?? 0 }}
           </dd>
         </div>
+        <div
+          v-if="readiness.awakening.vision_model"
+          class="bg-zinc-900/60 border border-zinc-700 rounded-lg px-3 py-2"
+          data-test="settings-guardian-vision-model"
+        >
+          <dt class="text-zinc-500">Vision model</dt>
+          <dd class="text-zinc-200 mt-0.5 font-mono">{{ readiness.awakening.vision_model }}</dd>
+          <dd class="text-zinc-600 mt-0.5">
+            {{ readiness.awakening.vision_model_loaded ? 'Loaded in Ollama' : 'Cold — loads on first photo question' }}
+          </dd>
+        </div>
       </dl>
 
       <p

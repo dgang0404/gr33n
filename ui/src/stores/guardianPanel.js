@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import api from '../api'
 import { routeContextRefFromRoute } from '../lib/guardianRouteRef.js'
+import { useGuardianReadinessStore } from './guardianReadiness'
 
 const NAV_HISTORY_MAX = 3
 
@@ -34,6 +35,12 @@ export const useGuardianPanelStore = defineStore('guardianPanel', {
     showNudgeDot(state) {
       if (!state.activeNudge || state.open) return false
       return !state.snoozedNudgeCategories.includes(state.activeNudge.category)
+    },
+
+    /** Phase 137 — critical nudge pre-warms Farm counsel; dot pulses while stirring. */
+    criticalNudgePending(state) {
+      return state.activeNudge?.category === 'critical_alert' && !state.open
+        && !state.snoozedNudgeCategories.includes('critical_alert')
     },
 
     /** Nudge strip inside the Guardian panel (above starters). */
@@ -118,6 +125,10 @@ export const useGuardianPanelStore = defineStore('guardianPanel', {
         const nudge = r.status === 200 ? r.data : null
         if (nudge?.category && !this.snoozedNudgeCategories.includes(nudge.category)) {
           this.activeNudge = nudge
+          if (nudge.category === 'critical_alert') {
+            const readiness = useGuardianReadinessStore()
+            void readiness.ensureAwake(farmId, 'farm_counsel')
+          }
         } else {
           this.activeNudge = null
         }

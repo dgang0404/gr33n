@@ -126,3 +126,8 @@ func unloadOllamaModel(ctx context.Context, base, model string, client *http.Cli
 func EmbedModelFromEnv() string {
 	return strings.TrimSpace(os.Getenv("EMBEDDING_MODEL"))
 }
+
+// VisionModelFromEnv returns LLM_VISION_MODEL when zone photo analysis is configured.
+func VisionModelFromEnv() string {
+	return strings.TrimSpace(os.Getenv("LLM_VISION_MODEL"))
+}

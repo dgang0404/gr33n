@@ -56,8 +56,10 @@
             </span>
             <span
               v-else-if="guardianPanel.showNudgeDot"
-              class="absolute -top-1 -right-1.5 h-2 w-2 rounded-full bg-amber-400 ring-2 ring-gray-900"
+              class="absolute -top-1 -right-1.5 h-2 w-2 rounded-full ring-2 ring-gray-900"
+              :class="nudgeDotStirring ? 'bg-amber-500 animate-pulse' : 'bg-amber-400'"
               data-test="topbar-guardian-nudge-dot"
+              :data-stirring="nudgeDotStirring ? 'true' : undefined"
               aria-hidden="true"
             />
           </span>
@@ -92,6 +94,7 @@ import { useFarmContextStore } from '../stores/farmContext'
 import { useCapabilitiesStore } from '../stores/capabilities'
 import { useGuardianPanelStore } from '../stores/guardianPanel'
 import { useGuardianProposalsStore } from '../stores/guardianProposals'
+import { useGuardianReadinessStore } from '../stores/guardianReadiness'
 import api from '../api'
 
 defineEmits(['toggle-drawer'])
@@ -103,8 +106,13 @@ const farmContext = useFarmContextStore()
 const capabilities = useCapabilitiesStore()
 const guardianPanel = useGuardianPanelStore()
 const proposalsStore = useGuardianProposalsStore()
+const guardianReadiness = useGuardianReadinessStore()
 
 const guardianAvailable = computed(() => capabilities.loaded && !capabilities.isLite)
+
+const nudgeDotStirring = computed(() =>
+  guardianPanel.criticalNudgePending && guardianReadiness.isStirring,
+)
 
 function openGuardianDrawer() {
   if (proposalsStore.pendingCount > 0) {

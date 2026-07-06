@@ -7,28 +7,28 @@ overview: >
 todos:
   - id: ws1-nudge-to-counsel
     content: "WS1: Nudge Review tap — set farm counsel on, POST warmup farm_counsel, open drawer with context_ref alert_id/category"
-    status: pending
+    status: completed
   - id: ws2-nudge-awakening
     content: "WS2: If nudge category critical — badge stirring until counsel ready (129 readiness store)"
-    status: pending
+    status: completed
   - id: ws3-vision-warmup
     content: "WS3: Health + awakening — vision_model_loaded; Farm counsel card note: zone photos may load vision model; warmup optional scope vision"
-    status: pending
+    status: completed
   - id: ws4-offline-field-banner
     content: "WS4: When llm_reachable=false — Lite banner in Guardian: procedures + static checklists work; procedure starters visible"
-    status: pending
+    status: completed
   - id: ws5-session-memory-doc
     content: "WS5: Mode card footnote — session memory is keyword tags only, not semantic; link Phase 63"
-    status: pending
+    status: completed
   - id: ws6-tests
     content: "WS6: vitest nudge→counsel; health vision flag; offline banner when LLM unreachable mock"
-    status: pending
+    status: completed
 isProject: false
 ---
 
 # Phase 137 — Guardian counsel integration
 
-**Status:** planned · **Depends on:** [129](phase_129_guardian_awakening.plan.md), [Phase 61](phase_61_guardian_proactive_nudges.plan.md), [Phase 37](phase_37_guardian_offline_field_assistant.plan.md)
+**Status:** **Shipped.** · **Depends on:** [129](phase_129_guardian_awakening.plan.md), [Phase 61](phase_61_guardian_proactive_nudges.plan.md), [Phase 37](phase_37_guardian_offline_field_assistant.plan.md)
 
 ---
 
@@ -39,8 +39,8 @@ Today: nudge opens drawer with prefilled prompt.
 After:
 
 1. `useFarmContext = true` (Farm counsel)
-2. `guardianReadiness.warmup('farm_counsel')`
-3. `context_ref` from nudge payload (`alert_id`, `nudge_category`)
+2. `guardianReadiness.ensureAwake('farm_counsel')` before send
+3. `context_ref` from nudge payload (`alert` type when `nudge_id` is `alert-{id}`)
 4. Starter message from nudge template
 
 ---
@@ -50,7 +50,7 @@ After:
 Extend health:
 
 ```json
-"vision_model": "llava" ,
+"vision_model": "llava",
 "vision_model_loaded": false
 ```
 
@@ -77,9 +77,9 @@ Show procedure starters (`start procedure …`) — Phase 37.
 
 ## Acceptance
 
-- [ ] Tap humidity nudge → Farm counsel on + warming + alert context
-- [ ] LLM stopped → procedure starter still sendable (degraded path)
-- [ ] Vision model status visible in Settings readiness
+- [x] Tap humidity nudge → Farm counsel on + warming + alert context
+- [x] LLM stopped → procedure starter still sendable (degraded path)
+- [x] Vision model status visible in Settings readiness
 
 ---
 

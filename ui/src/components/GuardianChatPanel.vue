@@ -354,6 +354,22 @@
           :auto-warm="useFarmContext && !!farmContext.farmId"
           @switch-quick="useFarmContext = false"
         />
+        <p
+          v-if="guardianReadiness.showOfflineFieldBanner"
+          class="text-xs text-amber-200/90 rounded border border-amber-900/50 bg-amber-950/30 px-3 py-2"
+          data-test="guardian-offline-field-banner"
+        >
+          The Guardian's voice is resting (Ollama unreachable).
+          Guided procedures and checklists still work offline.
+        </p>
+        <div
+          v-if="offlineProcedureStarters.length"
+          class="space-y-1.5"
+          data-test="chat-offline-procedure-starters"
+        >
+          <p class="text-[10px] uppercase tracking-widest text-zinc-500">Offline procedures</p>
+          <GuardianStarterChips :starters="offlineProcedureStarters" inline @pick="onOfflineProcedureStarter" />
+        </div>
         <GuardianNudgeStrip @review="onNudgeReview" />
         <GuardianRecentTopicChip :route-path="route.path" @continue="onNudgeReview" />
         <div v-if="morningWalkthroughStarters.length" class="space-y-1.5" data-test="chat-morning-starters">
@@ -586,7 +602,7 @@ import GuardianContextModeCards from './GuardianContextModeCards.vue'
 import GuardianTurnFeedback from './GuardianTurnFeedback.vue'
 import { topicChipLabel } from '../lib/guardianSessionMemory.js'
 import { computeFirstRunChecklist, isFirstRunIncomplete } from '../lib/firstRunChecklist.js'
-import { buildMorningWalkthroughStarters, buildSetupStarters } from '../lib/guardianStarters.js'
+import { buildMorningWalkthroughStarters, buildSetupStarters, buildOfflineProcedureStarters } from '../lib/guardianStarters.js'
 import { deriveFollowUps } from '../lib/guardianFollowUps.js'
 import { turnContextLabel, zeroChunkWarning } from '../lib/guardianChatHonesty.js'
 import { citationChipClass, citationSourceLabel, trimWarningMessage } from '../lib/guardianCitationLabels.js'
@@ -720,6 +736,11 @@ const setupStarters = computed(() => {
     unreadAlerts,
     deviceOffline,
   })
+})
+
+const offlineProcedureStarters = computed(() => {
+  if (!guardianReadiness.showOfflineFieldBanner) return []
+  return buildOfflineProcedureStarters()
 })
 
 const followUps = computed(() => {
@@ -1166,11 +1187,20 @@ async function onMorningStarter(s) {
   await send()
 }
 
+async function onOfflineProcedureStarter(s) {
+  if (!s?.message) return
+  message.value = s.message
+  guardianPanel.contextRef = s.contextRef ?? null
+  await nextTick()
+  await send()
+}
+
 async function onNudgeReview(payload) {
   if (!payload?.message) return
+  useFarmContext.value = true
   guardianPanel.contextRef = payload.contextRef ?? null
   message.value = payload.message
-  useFarmContext.value = true
+  await guardianReadiness.ensureAwake(farmContext.farmId, 'farm_counsel')
   await nextTick()
   await send()
 }
@@ -1251,6 +1281,7 @@ onUnmounted(() => {
 onMounted(async () => {
   if (capabilities.aiEnabled) {
     void loadGuardianModels()
+    void guardianReadiness.fetchHealth(farmContext.farmId, 'farm_counsel')
   }
   await refreshSessions()
   if (sessionId.value) await loadSession(sessionId.value)
