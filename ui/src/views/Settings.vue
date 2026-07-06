@@ -873,6 +873,9 @@
     <!-- Phase 141 — thumbs-down review queue -->
     <GuardianSettingsFeedbackReviewCard :is-farm-admin="isFarmAdmin" />
 
+    <!-- Phase 142 — Virtual Pi field validation path -->
+    <SettingsEdgeValidationCard />
+
     <!-- Phase 28 WS5 — Guardian token usage / rolling-window budget -->
     <section
       v-if="capabilities.aiEnabled && (chatUsage.hasAnyCap || chatUsage.user.used_tokens > 0)"
@@ -1149,6 +1152,7 @@ import GuardianSettingsModelPolicyCard from '../components/GuardianSettingsModel
 import GuardianSettingsCorpusCard from '../components/GuardianSettingsCorpusCard.vue'
 import GuardianSettingsQARunCard from '../components/GuardianSettingsQARunCard.vue'
 import GuardianSettingsFeedbackReviewCard from '../components/GuardianSettingsFeedbackReviewCard.vue'
+import SettingsEdgeValidationCard from '../components/SettingsEdgeValidationCard.vue'
 import { farmSetupRoute } from '../lib/farmSetupWizard.js'
 import { MODULE_SCHEMA } from '../lib/farmModules.js'
 

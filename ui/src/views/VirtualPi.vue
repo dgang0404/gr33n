@@ -99,6 +99,26 @@
       </div>
 
       <div
+        v-if="selectedDeviceId && validation"
+        class="rounded-lg border px-3 py-3 text-xs space-y-2 virtual-pi-screen-only"
+        :class="validationBannerClass(validation.status)"
+        data-test="virtual-pi-validation-banner"
+      >
+        <p class="font-semibold" data-test="virtual-pi-validation-title">{{ validation.title }}</p>
+        <ul class="space-y-1">
+          <li
+            v-for="item in validation.checklist"
+            :key="item.id"
+            :class="item.ok ? 'text-green-300/90' : 'text-amber-200/80'"
+            :data-test="`virtual-pi-validation-${item.id}`"
+          >
+            {{ item.ok ? '✓' : '○' }} {{ item.label }}
+          </li>
+        </ul>
+        <p class="text-[10px] opacity-90 leading-snug">{{ validation.hint }}</p>
+      </div>
+
+      <div
         v-if="wiringDrift === 'stale'"
         class="rounded-lg border border-amber-700/70 bg-amber-950/30 px-3 py-2 text-xs text-amber-200"
         data-test="virtual-pi-wiring-stale"
@@ -136,6 +156,7 @@ import EmptyStateHint from '../components/EmptyStateHint.vue'
 import { devicesWithWiring } from '../lib/piPinMap.js'
 import { loadDeviceTaxonomy } from '../lib/deviceTaxonomy.js'
 import { wiringDriftStatus, wiringDriftLabel } from '../lib/piConfigDrift.js'
+import { computeVirtualPiValidation, validationBannerClass } from '../lib/virtualPiValidation.js'
 import { deviceUsesPlatformSync } from '../lib/deviceConfigSync.js'
 import api from '../api'
 
@@ -149,6 +170,7 @@ const configDownloading = ref(false)
 const pushConfigLoading = ref(false)
 const pushConfigMessage = ref('')
 const expectedConfigSha = ref('')
+const configDownloaded = ref(false)
 
 const printMode = computed(() => route.query.print === '1')
 const printDate = computed(() => new Date().toLocaleString())
@@ -169,6 +191,17 @@ const selectedDevice = computed(() =>
 const wiringDrift = computed(() =>
   wiringDriftStatus(selectedDevice.value, expectedConfigSha.value),
 )
+
+const validation = computed(() => {
+  if (!selectedDevice.value) return null
+  return computeVirtualPiValidation({
+    device: selectedDevice.value,
+    sensors: store.sensors,
+    actuators: store.actuators,
+    expectedConfigSha: expectedConfigSha.value,
+    configDownloaded: configDownloaded.value,
+  })
+})
 
 const canPushToPi = computed(() => deviceUsesPlatformSync(selectedDevice.value))
 
@@ -224,6 +257,7 @@ async function downloadConfig() {
     const yaml = r.data?.yaml || ''
     const filename = r.data?.filename || `config-device-${selectedDeviceId.value}.yaml`
     expectedConfigSha.value = r.data?.config_sha256 || expectedConfigSha.value
+    configDownloaded.value = true
     const blob = new Blob([yaml], { type: 'text/yaml;charset=utf-8' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
@@ -268,6 +302,7 @@ watch(piDevices, (list) => {
 }, { immediate: true })
 
 watch(selectedDeviceId, (id) => {
+  configDownloaded.value = false
   fetchExpectedConfigSha(id)
 })
 
