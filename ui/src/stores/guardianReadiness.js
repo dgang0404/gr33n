@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import api from '../api'
 
 const POLL_MS = 2000
+const MAX_STIR_MS = 30000
 
 /** Phase 129 WS6 — Guardian awakening readiness (polls GET /v1/chat/health). */
 export const useGuardianReadinessStore = defineStore('guardianReadiness', {
@@ -12,8 +13,11 @@ export const useGuardianReadinessStore = defineStore('guardianReadiness', {
     awakening: null,
     farmId: null,
     mode: 'farm_counsel',
+    lastCheckedAt: null,
     pollTimer: null,
     warmupStarted: false,
+    stirTimedOut: false,
+    _stirTimer: null,
   }),
 
   getters: {
@@ -37,9 +41,14 @@ export const useGuardianReadinessStore = defineStore('guardianReadiness', {
     isReady(state) {
       return state.awakening?.state === 'ready'
     },
+    hasStirTimedOut(state) {
+      return !!state.stirTimedOut
+    },
     farmCounselBlocked(state) {
-      return state.mode === 'farm_counsel' &&
-        (state.awakening?.state === 'stirring' || !!state.awakening?.warmup_in_progress)
+      const s = state.awakening?.state
+      if (state.mode !== 'farm_counsel') return false
+      if (s === 'busy') return true
+      return (s === 'stirring' || !!state.awakening?.warmup_in_progress) && !state.stirTimedOut
     },
   },
 
@@ -55,6 +64,7 @@ export const useGuardianReadinessStore = defineStore('guardianReadiness', {
         if (mode) params.mode = mode
         const { data } = await api.get('/v1/chat/health', { params })
         this.awakening = data?.awakening ?? null
+        this.lastCheckedAt = Date.now()
         this.loaded = true
       } catch (e) {
         this.error = e.response?.data?.error || e.message || 'Health check failed'
@@ -92,6 +102,13 @@ export const useGuardianReadinessStore = defineStore('guardianReadiness', {
 
     startPolling(farmId, mode = 'farm_counsel') {
       this.stopPolling()
+      this._clearStirTimer()
+      this.stirTimedOut = false
+      if (this.isStirring) {
+        this._stirTimer = setTimeout(() => {
+          if (this.isStirring) this.stirTimedOut = true
+        }, MAX_STIR_MS)
+      }
       this.pollTimer = setInterval(() => {
         void this.fetchHealth(farmId, mode).then(() => {
           if (this.awakening?.state === 'ready' || this.awakening?.state === 'unavailable') {
@@ -101,17 +118,26 @@ export const useGuardianReadinessStore = defineStore('guardianReadiness', {
       }, POLL_MS)
     },
 
+    _clearStirTimer() {
+      if (this._stirTimer) {
+        clearTimeout(this._stirTimer)
+        this._stirTimer = null
+      }
+    },
+
     stopPolling() {
       if (this.pollTimer) {
         clearInterval(this.pollTimer)
         this.pollTimer = null
       }
+      this._clearStirTimer()
     },
 
     resetSession() {
       this.stopPolling()
       this.warmupStarted = false
       this.loaded = false
+      this.stirTimedOut = false
       this.awakening = null
       this.error = ''
     },

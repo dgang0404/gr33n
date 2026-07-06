@@ -19,11 +19,17 @@ func main() {
 	token := flag.String("token", os.Getenv("GUARDIAN_EVAL_TOKEN"), "JWT bearer token (or set GUARDIAN_EVAL_TOKEN)")
 	farmID := flag.Int64("farm-id", 1, "demo farm id for grounded questions")
 	modelsFlag := flag.String("models", "all", "comma-separated model names or 'all'")
+	manualFlag := flag.Bool("manual", false, "print UI checklist for -suite and exit")
 	suiteFlag := flag.String("suite", envOr("GUARDIAN_EVAL_SUITE", "regression"), "smoke | regression | all")
 	reportPath := flag.String("report", farmguardian.DefaultEvalReportPath(), "output JSON report path")
 	qaArchive := flag.String("qa-archive", "", "optional full QA run JSON path (default data/guardian_qa_runs/…)")
 	llmBase := flag.String("llama-url", os.Getenv("LLM_BASE_URL"), "Ollama OpenAI base (for model discovery when models=all)")
 	flag.Parse()
+
+	if *manualFlag {
+		eval.PrintManualChecklist(*suiteFlag)
+		return
+	}
 
 	if strings.TrimSpace(*token) == "" {
 		log.Fatal("JWT required: pass -token or set GUARDIAN_EVAL_TOKEN (use make dev-auth-test login token)")
@@ -48,13 +54,19 @@ func main() {
 
 	client := eval.NewAPIClient(*apiURL, *token, *farmID)
 
+	runOpts := eval.RunSuiteOptions{
+		WarmupGrounded: suite == "smoke",
+		WarmupTimeout:  5 * time.Minute,
+		LogPath:        strings.TrimSpace(os.Getenv("GUARDIAN_EVAL_LOG")),
+	}
+
 	rep := farmguardian.EvalReport{
 		Models:  map[string]farmguardian.EvalSummary{},
 		Details: map[string][]farmguardian.EvalQuestionScore{},
 	}
 	for _, model := range modelNames {
 		log.Printf("evaluating model %q suite=%s (%d questions)…", model, suite, len(fixtures))
-		scores := eval.RunSuite(ctx, client, model, fixtures)
+		scores := eval.RunSuite(ctx, client, model, fixtures, runOpts)
 		rep.Models[normalizeModelKey(model)] = eval.BuildReport(model, scores, *reportPath)
 		details := eval.ToEvalQuestionScores(scores)
 		rep.Details[normalizeModelKey(model)] = details

@@ -6,6 +6,24 @@
 
 ---
 
+## Login-and-go (Phase 129)
+
+Operators should **not** need a daily `ollama stop` ritual. One-time laptop tune, then reboot flow:
+
+```bash
+cd ~/gr33n-platform
+make guardian-laptop-tune ARGS="--apply"   # once per machine — raises LLM_TIMEOUT etc.
+make restart-local-serve                   # DB + API + UI
+# Login → open Farm Guardian — awakening preloads phi3 in background
+# Settings → Farm Guardian readiness — Awaken now after model changes
+```
+
+`make check-stack` probes Ollama (`/api/tags`) and warns when `AI_ENABLED=true` but Ollama is down.
+
+Set `GUARDIAN_AUTO_TUNE=1` in `.env` if you want `restart-local.sh --serve` to run `tune-guardian-laptop.sh --apply` quietly on each serve.
+
+---
+
 ## What “CPU” means in the UI (not a different model)
 
 Farm Guardian uses the **same Ollama models** everywhere (`phi3:mini`, `llama3.1:8b`, etc.). The label **CPU** describes **where inference runs**, not a separate model SKU:

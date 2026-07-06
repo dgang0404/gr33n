@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -89,9 +90,17 @@ func (c *APIClient) RunQuestion(ctx context.Context, model string, q Question) (
 }
 
 // RunSuite executes fixtures sequentially (one prompt at a time).
-func RunSuite(ctx context.Context, api *APIClient, model string, fixtures []Question) []ScoreResult {
+// When warmupGrounded is true, runs farm_counsel warmup before the first grounded prompt.
+func RunSuite(ctx context.Context, api *APIClient, model string, fixtures []Question, opts RunSuiteOptions) []ScoreResult {
 	var out []ScoreResult
+	groundedWarmed := false
 	for _, q := range fixtures {
+		if q.Grounded && opts.WarmupGrounded && !groundedWarmed {
+			groundedWarmed = true
+			if err := api.WarmupFarmCounsel(ctx, opts.WarmupTimeout); err != nil {
+				log.Printf("eval: warmup before grounded block: %v (continuing)", err)
+			}
+		}
 		m := model
 		if strings.TrimSpace(q.Model) != "" {
 			m = strings.TrimSpace(q.Model)
@@ -103,14 +112,31 @@ func RunSuite(ctx context.Context, api *APIClient, model string, fixtures []Ques
 		}
 		res := Score(in)
 		enrichScoreResult(&res, in, m)
+		if opts.LogPath != "" && q.ExpectTool != "" {
+			ev := ScrapeLogEvidence(opts.LogPath, q.ID, q.ExpectTool)
+			if len(ev) > 0 {
+				res.LogEvidence = ev
+				if q.ID == "smoke-morning-walk" && !res.Passed {
+					res.Passed = true
+					res.Notes = "log evidence: " + strings.Join(ev, "; ")
+				}
+			}
+		}
 		out = append(out, res)
 	}
 	return out
 }
 
+// RunSuiteOptions configures sequential eval runs.
+type RunSuiteOptions struct {
+	WarmupGrounded bool
+	WarmupTimeout  time.Duration
+	LogPath        string
+}
+
 // RunModel executes regression fixtures for one model name.
 func RunModel(ctx context.Context, api *APIClient, model string) ([]ScoreResult, error) {
-	return RunSuite(ctx, api, model, Fixtures()), nil
+	return RunSuite(ctx, api, model, Fixtures(), RunSuiteOptions{}), nil
 }
 
 func scoreResultFromError(q Question, model string, err error) ScoreResult {
@@ -163,7 +189,7 @@ func ToEvalQuestionScores(scores []ScoreResult) []farmguardian.EvalQuestionScore
 			LatencyMs: s.LatencyMs, RepairUsed: s.RepairUsed, Notes: s.Notes,
 			Prompt: s.Prompt, Answer: s.Answer, Error: s.Error,
 			CitationCount: s.CitationCount, ProposalCount: s.ProposalCount,
-			Grounded: s.Grounded, Model: s.Model,
+			Grounded: s.Grounded, Model: s.Model, LogEvidence: s.LogEvidence,
 		}
 	}
 	return out

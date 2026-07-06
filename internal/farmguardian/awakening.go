@@ -39,6 +39,7 @@ type AwakeningHealth struct {
 	Messages           []string `json:"messages,omitempty"`
 	WarmupInProgress   bool     `json:"warmup_in_progress"`
 	LastWarmupError    string   `json:"last_warmup_error,omitempty"`
+	StaleOllamaCLI     bool     `json:"stale_ollama_cli,omitempty"`
 }
 
 // AwakeningBuildInput collects probes for BuildAwakeningHealth.
@@ -94,6 +95,11 @@ func BuildAwakeningHealth(ctx context.Context, in AwakeningBuildInput) Awakening
 	loadedNames, loadedMap, profile := probeOllamaRuntime(ctx, in.Field.LLMBaseURL)
 	out.Profile = profile
 	out.OllamaLoadedModels = loadedNames
+
+	if DetectStaleOllamaCLI(ctx, in.Field.LLMBaseURL) {
+		out.StaleOllamaCLI = true
+		out.Messages = append(out.Messages, staleOllamaMessage)
+	}
 
 	if out.EmbedModel != "" {
 		out.EmbedLoaded, _ = psEntry(loadedMap, out.EmbedModel)

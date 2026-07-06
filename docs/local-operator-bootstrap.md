@@ -8,17 +8,15 @@ Single happy path for standing up **Postgres → API → dashboard → optional 
 
 ## Laptop daily cheat sheet (Guardian + Ollama)
 
-**Where to run commands:** `pgrep`, `ollama ps`, and `ollama stop` work from **any directory** (they talk to the system Ollama service). **`make …`** and **`./scripts/…`** must be run from the **repository root** (`cd ~/gr33n-platform`).
+**Login-and-go:** after reboot you should not need manual `ollama stop` rituals. Tune once per machine, restart the stack, log in, and open Guardian — awakening preloads the counsel model in the background.
+
+**Where to run commands:** `make …` and `./scripts/…` must be run from the **repository root** (`cd ~/gr33n-platform`). `systemctl start ollama` works from any directory.
 
 ```bash
-# ── Ollama (any directory — not inside gr33n repo required) ──
-pgrep -a 'ollama run'    # should be empty; kill any PIDs listed
-ollama ps                # empty = no model loaded in RAM (good before chat)
-ollama stop phi3:mini
-ollama stop rjmalagon/gte-qwen2-1.5b-instruct-embed-f16   # match EMBEDDING_MODEL in .env
-
-# ── gr33n (repository root only) ──
 cd ~/gr33n-platform
+
+# One-time per laptop (CPU timeouts + retry policy)
+make guardian-laptop-tune ARGS="--apply"
 
 # After reboot — DB + API + UI (one terminal; Go compile may take minutes)
 make restart-local-serve          # → scripts/restart-local.sh --serve
@@ -27,21 +25,55 @@ make restart-local-serve          # → scripts/restart-local.sh --serve
 make restart-local              # → scripts/restart-local.sh (db + sanity only)
 make dev-auth-test              # API :8080 + UI :5173
 
-# If API/UI already running → open http://localhost:5173/chat (nothing to start)
+# Login → open Farm Guardian — badge goes amber → green while awakening runs
+# Settings → Farm Guardian readiness shows state, corpus counts, Awaken now
+
+# Verify stack (Postgres, API, Ollama probe)
+make check-stack                # → scripts/check-local-stack.sh
 
 # Optional: RAG ingest when Ollama idle (not while chatting)
-make rag-ingest-farm-operational FARM_ID=1    # → scripts/rag-ingest-farm-operational.sh
-make rag-ingest-platform-docs               # → scripts/rag-ingest-platform-docs.sh
+make rag-ingest-farm-operational FARM_ID=1
+make rag-ingest-platform-docs
 # Full bootstrap: make guardian-bootstrap-farm FARM_ID=1
-#   → scripts/enterprise/guardian-bootstrap-farm.sh
-
-# Verify stack
-make check-stack                # → scripts/check-local-stack.sh
 ```
 
-**Script map:** [`scripts/restart-local.sh`](../scripts/restart-local.sh) · [`scripts/check-local-stack.sh`](../scripts/check-local-stack.sh) · [`scripts/rag-ingest-farm-operational.sh`](../scripts/rag-ingest-farm-operational.sh) · [`scripts/rag-ingest-platform-docs.sh`](../scripts/rag-ingest-platform-docs.sh) · [`scripts/enterprise/guardian-bootstrap-farm.sh`](../scripts/enterprise/guardian-bootstrap-farm.sh)
+**If awakening stalls > 30s:** check Ollama is running (`systemctl start ollama` or open the Ollama app), then **Awaken now** in Settings. Use **Quick chat** for fast ungrounded questions while phi3 warms up.
+
+**Manual RAM hygiene (rare):** only if the box is wedged after heavy ingest + chat:
+
+```bash
+ollama stop phi3:mini
+ollama stop rjmalagon/gte-qwen2-1.5b-instruct-embed-f16   # match EMBEDDING_MODEL in .env
+```
+
+**Script map:** [`scripts/restart-local.sh`](../scripts/restart-local.sh) · [`scripts/check-local-stack.sh`](../scripts/check-local-stack.sh) · [`scripts/tune-guardian-laptop.sh`](../scripts/tune-guardian-laptop.sh) · [`scripts/rag-ingest-farm-operational.sh`](../scripts/rag-ingest-farm-operational.sh) · [`scripts/enterprise/guardian-bootstrap-farm.sh`](../scripts/enterprise/guardian-bootstrap-farm.sh)
 
 **Guardian CPU / timeouts / pull vs dropdown:** [guardian-ollama-laptop-playbook.md](guardian-ollama-laptop-playbook.md)
+
+### Guardian QA (Phase 131)
+
+After Guardian changes, validate with the **smoke suite** (4 prompts, sequential, full answers archived):
+
+```bash
+# JWT from dev login — export or put in .env
+export GUARDIAN_EVAL_TOKEN="<jwt from browser localStorage gr33n_token>"
+export GUARDIAN_EVAL_LOG=/tmp/gr33n-api.log   # optional log correlation
+
+make guardian-qa-smoke MODEL=phi3:mini FARM_ID=1
+# Archives: data/guardian_qa_runs/<timestamp>_smoke_phi3-mini.json
+
+# Print the same steps for manual UI validation:
+make guardian-qa-manual              # smoke checklist (default)
+make guardian-qa-manual SUITE=regression
+
+# Full regression (~24 prompts, slow on CPU):
+make guardian-qa-regression MODEL=phi3:mini
+
+# Grep logs for walk_farm evidence after morning-walk step:
+./scripts/guardian-qa-scrape-logs.sh --expect walk_farm
+```
+
+See [phase_128 plan](plans/phase_128_validate_phase127_guardian.plan.md) — manual UI checklist is now `make guardian-qa-manual`.
 
 ### Chat model on a 16 GB CPU laptop — tinyllama vs phi3:mini
 

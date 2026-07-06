@@ -657,6 +657,12 @@ const groundedCapableModels = computed(() => filterGroundedCapableModels(guardia
 
 const groundedModelBlockReason = computed(() => {
   if (!useFarmContext.value || !farmContext.farmId) return ''
+  if (guardianReadiness.farmCounselBlocked) {
+    if (guardianReadiness.awakening?.state === 'busy') {
+      return 'Guardian is answering — wait for the current reply before sending another farm counsel message.'
+    }
+    return 'Farm counsel is awakening — wait a moment or switch to Quick chat.'
+  }
   if (!groundedCapableModels.value.length) {
     return (
       'No grounded-capable models are installed on this server. ' +

@@ -372,4 +372,48 @@ describe('Phase 129 — Guardian awakening + mode cards', () => {
     vi.unstubAllGlobals()
     wrapper.unmount()
   })
+
+  it('shows stir timeout guidance after prolonged awakening', async () => {
+    vi.useFakeTimers()
+    api.get.mockImplementation((url) => {
+      if (url === '/capabilities') return Promise.resolve({ data: { ai_enabled: true } })
+      if (url === '/v1/chat/sessions') return Promise.resolve({ data: { sessions: [] } })
+      if (url === '/v1/chat/health') {
+        return Promise.resolve({
+          data: {
+            awakening: {
+              state: 'stirring',
+              warmup_in_progress: true,
+              rag_corpus_ok: true,
+            },
+          },
+        })
+      }
+      if (url === '/guardian/models') {
+        return Promise.resolve({ data: { available_models: [{ name: 'phi3:mini', context_window: 8192 }], server_default: 'phi3:mini' } })
+      }
+      return Promise.resolve({ data: {} })
+    })
+    api.post.mockResolvedValue({ data: { state: 'stirring' } })
+
+    const farmContext = useFarmContextStore()
+    farmContext.farmId = 1
+
+    const wrapper = mount(GuardianChatPanel, {
+      props: { layout: 'compact' },
+      global: { plugins: [router] },
+    })
+    await flushPromises()
+    await flushPromises()
+
+    vi.advanceTimersByTime(31000)
+    await flushPromises()
+
+    const panel = wrapper.find('[data-test="guardian-awakening-panel"]')
+    expect(panel.exists()).toBe(true)
+    expect(panel.text()).toMatch(/Ollama is running/i)
+
+    vi.useRealTimers()
+    wrapper.unmount()
+  })
 })

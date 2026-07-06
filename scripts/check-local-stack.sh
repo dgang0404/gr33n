@@ -83,6 +83,39 @@ else
   warn "API not reachable on port ${PORT_VAL} — run: make dev-auth-test   (or make dev) from repo root"
 fi
 
+OLLAMA_URL="http://127.0.0.1:11434"
+if grep -qE '^[[:space:]]*OLLAMA_HOST=' "$ENV_FILE"; then
+  OLLAMA_HOST="$(grep -E '^[[:space:]]*OLLAMA_HOST=' "$ENV_FILE" | head -1 | sed 's/^[[:space:]]*OLLAMA_HOST=//' | tr -d \"\' )"
+  if [[ -n "$OLLAMA_HOST" ]]; then
+    OLLAMA_URL="http://${OLLAMA_HOST}"
+  fi
+elif grep -qE '^[[:space:]]*LLM_BASE_URL=' "$ENV_FILE"; then
+  LLM_BASE="$(grep -E '^[[:space:]]*LLM_BASE_URL=' "$ENV_FILE" | head -1 | sed 's/^[[:space:]]*LLM_BASE_URL=//' | tr -d \"\' )"
+  if [[ "$LLM_BASE" =~ ^https?:// ]]; then
+    OLLAMA_URL="${LLM_BASE%/v1}"
+    OLLAMA_URL="${OLLAMA_URL%/}"
+  fi
+fi
+
+AI_ENABLED_VAL="true"
+if grep -qE '^[[:space:]]*AI_ENABLED=' "$ENV_FILE"; then
+  AI_ENABLED_VAL="$(grep -E '^[[:space:]]*AI_ENABLED=' "$ENV_FILE" | head -1 | sed 's/^[[:space:]]*AI_ENABLED=//' | tr -d \"\' | tr '[:upper:]' '[:lower:]')"
+fi
+
+echo "==> Ollama ${OLLAMA_URL}/api/tags"
+if curl -sf "${OLLAMA_URL}/api/tags" >/dev/null 2>&1; then
+  ok "Ollama responds"
+else
+  if [[ "$AI_ENABLED_VAL" == "true" ]]; then
+    warn "Ollama not reachable but AI_ENABLED=true — Farm Guardian needs Ollama."
+    echo "    Start Ollama: systemctl start ollama   (Linux) or open the Ollama app (macOS/Windows)"
+    echo "    Then log in and open Guardian — awakening preloads models automatically."
+    echo "    Laptop timeouts: make guardian-laptop-tune ARGS=\"--apply\"   (repo root)"
+  else
+    warn "Ollama not reachable — OK in Lite mode (AI_ENABLED=false)"
+  fi
+fi
+
 echo ""
 echo "Next: make dev-auth-test   # or make dev"
 exit 0

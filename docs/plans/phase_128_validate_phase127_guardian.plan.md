@@ -30,6 +30,8 @@ go test ./cmd/api/... -run Phase127 -count=1   # needs test DB + seed
 
 ## Manual UI checklist (farm context ON, phi3:mini, gr33n Demo Farm)
 
+**Single source of truth:** run `make guardian-qa-manual` (smoke) or `make guardian-qa-manual SUITE=regression` — same prompts as automated `make guardian-qa-smoke`.
+
 | # | Prompt | Pass if |
 |---|--------|---------|
 | 1 | Are any edge devices offline? | Mentions snapshot device line or `summarize_device_health`; no invented GPIO |
@@ -40,7 +42,9 @@ go test ./cmd/api/... -run Phase127 -count=1   # needs test DB + seed
 ## Optional slow path
 
 ```bash
-make guardian-eval   # phi3 on CPU — many minutes
+make guardian-qa-smoke MODEL=phi3:mini   # 4-prompt smoke (recommended before full regression)
+make guardian-qa-regression              # full fixture set
+make guardian-eval                       # alias regression
 ```
 
 Log tail during manual tests:

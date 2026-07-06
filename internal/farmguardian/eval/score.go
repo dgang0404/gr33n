@@ -25,6 +25,13 @@ func Fixtures() []Question {
 		{ID: "fg-tomato-veg", Category: "field_guide", Prompt: "Summarize tomato vegetative stage care from our field guides.", ExpectCitation: true, Grounded: true},
 		{ID: "fg-citation-format", Category: "field_guide", Prompt: "What EC range does the platform recommend for hydro lettuce?", ExpectCitation: true, Grounded: true},
 		{ID: "farm-alerts", Category: "farm_state", Prompt: "What unread alerts do I have right now?", Grounded: true},
+		{
+			ID:         "farm-morning-walkthrough",
+			Category:   "farm_state",
+			Prompt:     "What should I check first on a morning walkthrough of this farm today?",
+			Grounded:   true,
+			ExpectTool: "walk_farm",
+		},
 		{ID: "farm-zones", Category: "farm_state", Prompt: "List my zone names and active crop cycles.", Grounded: true},
 		{ID: "farm-plants", Category: "farm_state", Prompt: "Which plants are registered on this farm?", Grounded: true},
 		{ID: "farm-low-stock", Category: "farm_state", Prompt: "Anything running low in supplies?", Grounded: true},
@@ -75,6 +82,7 @@ type ScoreResult struct {
 	ProposalCount int
 	Grounded      bool
 	Model         string
+	LogEvidence   []string
 }
 
 // Score evaluates one answer heuristically.
@@ -92,10 +100,21 @@ func Score(in ScoreInput) ScoreResult {
 		if !res.Passed {
 			res.Notes = "expected forest-garden answer mentioning cherry/goldenrod/blackberry"
 		}
-	case in.Question.ID == "smoke-morning-walk":
+	case in.Question.ID == "smoke-morning-walk" || in.Question.ID == "farm-morning-walkthrough":
 		res.Passed = len(a) > 40 && !looksLikeInvention(a)
 		if !res.Passed {
 			res.Notes = "expected morning walkthrough answer with farm specifics"
+		}
+	case in.Question.ID == "smoke-unread-alerts":
+		res.Passed = len(a) > 40 && (strings.Contains(a, "alert") || strings.Contains(a, "seed"))
+		if !res.Passed {
+			res.Notes = "expected alert summary mentioning alerts"
+		}
+	case in.Question.ID == "smoke-ec-ph":
+		res.Passed = in.CitationCount > 0 || citationRefPresent(in.Answer) ||
+			(strings.Contains(a, "ec") && strings.Contains(a, "ph"))
+		if !res.Passed {
+			res.Notes = "expected RAG citation or EC/pH guidance"
 		}
 	case in.Question.ExpectCitation:
 		res.Passed = in.CitationCount > 0 || citationRefPresent(in.Answer)

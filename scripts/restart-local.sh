@@ -117,7 +117,14 @@ fi
 echo ""
 echo "==> Done."
 if [[ "$SERVE" -eq 1 ]]; then
+  if [[ "${GUARDIAN_AUTO_TUNE:-}" == "1" ]] && [[ -x "$ROOT/scripts/tune-guardian-laptop.sh" ]]; then
+    echo "==> GUARDIAN_AUTO_TUNE=1 — applying laptop Guardian .env recommendations"
+    "$ROOT/scripts/tune-guardian-laptop.sh" --apply || true
+  fi
   echo "Starting API + UI (make dev-auth-test) — first compile may take several minutes."
+  echo ""
+  echo "Guardian tip: after login, open Farm Guardian — awakening preloads models (no manual ollama stop)."
+  echo "  One-time laptop tune: make guardian-laptop-tune ARGS=\"--apply\""
   exec make dev-auth-test
 fi
 

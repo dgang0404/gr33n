@@ -48,16 +48,26 @@ const props = defineProps({
 defineEmits(['switch-quick'])
 
 const readiness = useGuardianReadinessStore()
-const { awakening, isStirring } = storeToRefs(readiness)
+const { awakening, isStirring, hasStirTimedOut } = storeToRefs(readiness)
 
 const visible = computed(() => {
   const s = awakening.value?.state
-  if (!s || s === 'ready') return false
-  return s === 'sleeping' || s === 'stirring' || s === 'unavailable'
+  if (!s || s === 'ready') {
+    return !!awakening.value?.stale_ollama_cli
+  }
+  if (hasStirTimedOut.value && (s === 'stirring' || isStirring.value)) return true
+  return s === 'sleeping' || s === 'stirring' || s === 'unavailable' || s === 'busy' || !!awakening.value?.stale_ollama_cli
 })
 
 const headline = computed(() => {
+  if (hasStirTimedOut.value && (isStirring.value || awakening.value?.state === 'stirring')) {
+    return 'Awakening is taking longer than expected'
+  }
+  if (awakening.value?.stale_ollama_cli) {
+    return 'Stray Ollama terminal sessions detected'
+  }
   const s = awakening.value?.state
+  if (s === 'busy') return 'Guardian is answering…'
   if (s === 'stirring' || isStirring.value) return 'The Guardian is stirring…'
   if (s === 'sleeping') return 'The Guardian rests. Awakening…'
   if (s === 'unavailable') return 'Guardian unavailable'
@@ -77,6 +87,12 @@ const checklist = computed(() => {
 
 const messages = computed(() => {
   const msgs = [...(awakening.value?.messages || [])]
+  if (awakening.value?.stale_ollama_cli && !msgs.some((m) => m.includes('ollama run'))) {
+    msgs.push('Close stray terminal ollama run sessions (pgrep -a "ollama run"), then retry awakening.')
+  }
+  if (hasStirTimedOut.value) {
+    msgs.push('Check that Ollama is running (systemctl start ollama or open the Ollama app). You can try Quick chat or retry awakening.')
+  }
   if (awakening.value?.last_warmup_error) msgs.push(awakening.value.last_warmup_error)
   return msgs
 })
@@ -89,7 +105,7 @@ const panelClass = computed(() => {
 })
 
 const showQuickFallback = computed(() =>
-  awakening.value?.state === 'unavailable' || !!awakening.value?.last_warmup_error,
+  awakening.value?.state === 'unavailable' || !!awakening.value?.last_warmup_error || hasStirTimedOut.value,
 )
 
 const canRetry = computed(() => awakening.value?.state !== 'stirring')
