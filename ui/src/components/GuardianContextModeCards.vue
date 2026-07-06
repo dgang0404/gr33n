@@ -24,9 +24,9 @@
         <span class="block text-sm font-medium text-zinc-100">Farm counsel</span>
         <span class="block text-[11px] text-zinc-400 mt-0.5">Reads your farm — may take many minutes on CPU</span>
         <span class="flex flex-wrap gap-1 mt-2">
-          <span class="text-[10px] px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-300">Snapshot</span>
-          <span class="text-[10px] px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-300">Read tools</span>
-          <span class="text-[10px] px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-300">RAG</span>
+          <span class="text-[10px] px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-300" title="Live DB snapshot">Snapshot · live</span>
+          <span class="text-[10px] px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-300" title="Read-only tools">Read tools · live</span>
+          <span class="text-[10px] px-1.5 py-0.5 rounded bg-green-950/50 text-green-300/90" title="Field guides & docs">RAG · guides/notes</span>
           <span class="text-[10px] px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-300">Chat</span>
         </span>
         <span v-if="!farmContext.farmId" class="block text-amber-300/80 text-[11px] mt-1">Select a farm in the sidebar first.</span>

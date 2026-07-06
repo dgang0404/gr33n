@@ -29,6 +29,24 @@ func hasSourceType(chunks []db.SearchRagNearestNeighborsFilteredRow, want string
 	return false
 }
 
+const operationalNoteGrounding = `The following numbered sources marked as farm notes or operational rows may be outdated — prefer LIVE FARM DATA (snapshot and read tools) for current sensor values, alert counts, and zone state.`
+
+// HasOperationalChunks reports retrieval rows that are not curated guides/docs.
+func HasOperationalChunks(chunks []db.SearchRagNearestNeighborsFilteredRow) bool {
+	for _, ch := range chunks {
+		st := strings.ToLower(strings.TrimSpace(ch.SourceType))
+		switch st {
+		case "field_guide", "platform_doc", "symptom_guide":
+			continue
+		default:
+			if st != "" {
+				return true
+			}
+		}
+	}
+	return false
+}
+
 // GuardianRAGInstructions returns synthesis citation rules plus corpus-specific guidance when relevant.
 // Call only when len(chunks) > 0 — use ZeroChunkGuardBlock for empty retrieval.
 func GuardianRAGInstructions(chunks []db.SearchRagNearestNeighborsFilteredRow) string {
@@ -38,6 +56,9 @@ func GuardianRAGInstructions(chunks []db.SearchRagNearestNeighborsFilteredRow) s
 	}
 	if HasPlatformDocChunks(chunks) {
 		out += "\n\n" + platformDocGrounding
+	}
+	if HasOperationalChunks(chunks) {
+		out += "\n\n" + operationalNoteGrounding
 	}
 	return out
 }

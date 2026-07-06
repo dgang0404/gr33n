@@ -164,6 +164,7 @@ type postResponse struct {
 	AttachmentIDs    []int64                       `json:"attachment_ids,omitempty"`
 	ModelUsed        string                        `json:"model_used,omitempty"`
 	ModelFallback    bool                          `json:"model_fallback,omitempty"`
+	TrimSummary      *farmguardian.TrimSummary     `json:"trim_summary,omitempty"`
 }
 
 // PostV1 handles POST /v1/chat — JWT required by route wiring.
@@ -225,6 +226,8 @@ func (h *Handler) PostV1(w http.ResponseWriter, r *http.Request) {
 	effectiveWindow := h.effectiveContextWindowForModel(modelPreview.ModelName)
 	advertisedWindow := h.advertisedContextWindowForModel(modelPreview.ModelName)
 	promptBudget, trimLog := farmguardian.ComputePromptBudget(effectiveWindow, MaxHistoryTurns)
+	fullBudget := farmguardian.DefaultPromptBudget(MaxHistoryTurns)
+	trimSummary := farmguardian.BuildTrimSummary(fullBudget, promptBudget, trimLog, effectiveWindow)
 	h.logPromptBudgetTrims(modelPreview.ModelName, effectiveWindow, advertisedWindow, trimLog)
 
 	// Resolve grounded vs plain path. Plain path needs only an LLM. When farm_id
@@ -432,7 +435,7 @@ func (h *Handler) PostV1(w http.ResponseWriter, r *http.Request) {
 			httputil.WriteError(w, http.StatusNotImplemented, "configured LLM client does not support streaming")
 			return
 		}
-		h.streamResponse(w, r, stream, chatClient, messages, farmID, grounded, chunks, sessionID, userID, hasUser, question, liveSnap, len(visionImages) > 0, attachmentIDs, modelOutcome, turnMeta, turnStarted, earlySSEOpen)
+		h.streamResponse(w, r, stream, chatClient, messages, farmID, grounded, chunks, sessionID, userID, hasUser, question, liveSnap, len(visionImages) > 0, attachmentIDs, modelOutcome, turnMeta, turnStarted, earlySSEOpen, pb.ContextRef, trimSummary)
 		return
 	}
 
@@ -485,6 +488,7 @@ func (h *Handler) PostV1(w http.ResponseWriter, r *http.Request) {
 		AttachmentIDs:    attachmentIDs,
 	}
 	applyModelMeta(&resp, modelOutcome)
+	resp.TrimSummary = trimSummary
 	if grounded {
 		resp.Citations = synthesis.BuildCitations(answer, chunks)
 		resp.ContextCount = len(chunks)
@@ -496,7 +500,7 @@ func (h *Handler) PostV1(w http.ResponseWriter, r *http.Request) {
 	if turnIdx, perr := h.persistTurn(r.Context(), sessionID, userID, hasUser, farmID, grounded, question, answer, resp.Citations, len(chunks), usage, chatClient.ModelLabel()); perr == nil {
 		resp.TurnIndex = turnIdx
 	}
-	h.attachProposals(r.Context(), farmID, hasUser, userID, sessionID, question, answer, liveSnap, &resp)
+	h.attachProposals(r.Context(), farmID, hasUser, userID, sessionID, question, answer, liveSnap, pb.ContextRef, &resp)
 
 	slog.Info("guardian: chat turn completed",
 		"request_id", authctx.RequestID(r.Context()),
@@ -541,6 +545,8 @@ func (h *Handler) streamResponse(
 	turnMeta chatTurnMeta,
 	turnStarted time.Time,
 	sseAlreadyOpen bool,
+	contextRef *farmguardian.ContextRef,
+	trimSummary *farmguardian.TrimSummary,
 ) {
 	flusher, ok := w.(http.Flusher)
 	if !ok {
@@ -622,6 +628,7 @@ func (h *Handler) streamResponse(
 		AttachmentIDs:    attachmentIDs,
 	}
 	applyModelMeta(&done, modelOutcome)
+	done.TrimSummary = trimSummary
 	if grounded {
 		done.Citations = synthesis.BuildCitations(answer, chunks)
 		done.ContextCount = len(chunks)
@@ -637,7 +644,7 @@ func (h *Handler) streamResponse(
 	if turnIdx, perr := h.persistTurn(r.Context(), sessionID, userID, hasUser, farmID, grounded, question, answer, done.Citations, len(chunks), usage, chatClient.ModelLabel()); perr == nil {
 		done.TurnIndex = turnIdx
 	}
-	h.attachProposals(r.Context(), farmID, hasUser, userID, sessionID, question, answer, liveSnap, &done)
+	h.attachProposals(r.Context(), farmID, hasUser, userID, sessionID, question, answer, liveSnap, contextRef, &done)
 
 	sendEvent("done", done)
 	_, _ = w.Write([]byte("data: [DONE]\n\n"))

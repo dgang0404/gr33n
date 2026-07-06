@@ -3,6 +3,7 @@ package farmguardian
 import (
 	"fmt"
 	"unicode/utf8"
+	"strings"
 )
 
 const (
@@ -93,6 +94,38 @@ func ComputePromptBudget(contextWindow, maxHistoryTurns int) (PromptBudget, []st
 		log = append(log, fmt.Sprintf("snapshot caps reduced (context_window=%d)", contextWindow))
 	}
 	return out, log
+}
+
+// TrimSummary is returned on chat done when prompt budget trimming occurred (Phase 133 WS2).
+type TrimSummary struct {
+	HistoryTurns           string `json:"history_turns,omitempty"`
+	RAGTopK                string `json:"rag_top_k,omitempty"`
+	SnapshotReduced        bool   `json:"snapshot_reduced"`
+	EffectiveContextWindow int    `json:"effective_context_window"`
+}
+
+// BuildTrimSummary builds a client-visible trim summary from budget computation.
+func BuildTrimSummary(full, applied PromptBudget, trimLog []string, effectiveWindow int) *TrimSummary {
+	if len(trimLog) == 0 {
+		return nil
+	}
+	out := &TrimSummary{EffectiveContextWindow: effectiveWindow}
+	if applied.MaxHistoryTurns < full.MaxHistoryTurns {
+		out.HistoryTurns = fmt.Sprintf("%d→%d", full.MaxHistoryTurns, applied.MaxHistoryTurns)
+	}
+	if applied.RAGTopK < full.RAGTopK {
+		out.RAGTopK = fmt.Sprintf("%d→%d", full.RAGTopK, applied.RAGTopK)
+	}
+	for _, line := range trimLog {
+		if strings.Contains(line, "snapshot caps reduced") {
+			out.SnapshotReduced = true
+			break
+		}
+	}
+	if out.HistoryTurns == "" && out.RAGTopK == "" && !out.SnapshotReduced {
+		return nil
+	}
+	return out
 }
 
 // ApplyBudgetLimits truncates snapshot fields before PromptBlock rendering.

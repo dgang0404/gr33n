@@ -31,6 +31,7 @@ type walkFinding struct {
 	Severity    string // warn | ok
 	PlainText   string
 	ActionRoute string
+	AlertID     int64 // alerts category — Phase 132 walkthrough proposals
 }
 
 func shouldRunWalkFarmReadIntent(question string, ref *ContextRef) bool {
@@ -52,45 +53,21 @@ func renderWalkFarm(ctx context.Context, q db.Querier, farmID int64) (string, er
 		}
 	}
 
+	findings, err := collectWalkFarmFindings(ctx, q, farmID)
+	if err != nil {
+		return "", err
+	}
+
 	zones, _ := q.ListZonesByFarm(ctx, farmID)
 	zoneName := map[int64]string{}
 	for _, z := range zones {
 		zoneName[z.ID] = strings.TrimSpace(z.Name)
 	}
-
-	var findings []walkFinding
-	var okHighlights []string
-
-	alertFindings, err := walkFarmAlertFindings(ctx, q, farmID)
+	feedOK, _, err := walkFarmFeedFindings(ctx, q, farmID, zoneName)
 	if err != nil {
 		return "", err
 	}
-	findings = append(findings, alertFindings...)
-
-	feedOK, feedWarn, err := walkFarmFeedFindings(ctx, q, farmID, zoneName)
-	if err != nil {
-		return "", err
-	}
-	findings = append(findings, feedWarn...)
-	okHighlights = append(okHighlights, feedOK...)
-
-	deviceFindings, err := walkFarmDeviceFindings(ctx, q, farmID)
-	if err != nil {
-		return "", err
-	}
-	findings = append(findings, deviceFindings...)
-
-	comfortFindings, err := walkFarmComfortFindings(ctx, q, farmID, zoneName)
-	if err != nil {
-		return "", err
-	}
-	findings = append(findings, comfortFindings...)
-
-	stockFindings, err := walkFarmLowStockFindings(ctx, q, farmID)
-	if err != nil {
-		return "", err
-	}
-	findings = append(findings, stockFindings...)
+	okHighlights := append([]string(nil), feedOK...)
 
 	var b strings.Builder
 	b.WriteString("walk_farm — " + farmLabel)
@@ -172,6 +149,7 @@ func walkFarmAlertFindings(ctx context.Context, q db.Querier, farmID int64) ([]w
 			Severity:    "warn",
 			PlainText:   line,
 			ActionRoute: "/alerts",
+			AlertID:     a.ID,
 		})
 		if len(out) >= walkFarmMaxAlertFindings {
 			break

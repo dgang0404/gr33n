@@ -104,6 +104,7 @@ func (h *Handler) buildGroundedTurn(
 		synthesis.HasFieldGuideChunks(out.chunks) {
 		system += "\n\n" + farmguardian.FieldAssistantPromptBlock()
 	}
+	system += "\n\n" + farmguardian.GroundedHonestyPromptBlock()
 	out.system = system
 	return out, nil
 }

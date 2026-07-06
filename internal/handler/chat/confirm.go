@@ -439,6 +439,7 @@ func (h *Handler) attachProposals(
 	question string,
 	assistantText string,
 	snap farmguardian.Snapshot,
+	contextRef *farmguardian.ContextRef,
 	resp *postResponse,
 ) {
 	if !hasUser || farmID <= 0 || h.q == nil {
@@ -447,6 +448,12 @@ func (h *Handler) attachProposals(
 	props, err := farmguardian.BuildRuleAssistedProposals(ctx, h.q, userID, farmID, sessionID, question, snap)
 	if err != nil {
 		return
+	}
+	if len(props) == 0 {
+		props, err = farmguardian.BuildWalkthroughProposals(ctx, h.q, userID, farmID, sessionID, contextRef)
+		if err != nil {
+			return
+		}
 	}
 	if len(props) > 0 {
 		resp.Proposals = props

@@ -175,13 +175,30 @@
             <li
               v-for="c in t.citations"
               :key="c.ref + '-' + c.chunk_id"
-              class="text-[11px] bg-zinc-950 border border-zinc-800 rounded p-2 text-zinc-400"
+              class="text-[11px] rounded p-2 border"
+              :class="citationChipClass(c.source_type)"
             >
               <span class="text-gr33n-500 font-mono">[{{ c.ref }}]</span>
-              {{ c.source_type }} #{{ c.source_id }} · chunk {{ c.chunk_id }}
+              <span class="ml-1 font-medium">{{ citationSourceLabel(c.source_type) }}</span>
+              <span class="text-zinc-500"> · #{{ c.source_id }}</span>
               <p class="mt-1 text-zinc-500">{{ c.excerpt }}</p>
             </li>
           </ul>
+          <p
+            v-if="trimWarningMessage(t.trim_summary)"
+            class="text-[10px] text-amber-300/90 px-3 rounded border border-amber-900/50 bg-amber-950/30 py-2"
+            data-test="chat-trim-warning"
+          >
+            {{ trimWarningMessage(t.trim_summary) }}
+            <button
+              type="button"
+              class="ml-2 underline text-amber-200/90 hover:text-amber-100"
+              data-test="chat-trim-new-session"
+              @click="newSession"
+            >
+              New chat
+            </button>
+          </p>
           <p
             v-if="t.field_degraded"
             class="text-[10px] text-amber-300/90 px-3"
@@ -562,6 +579,7 @@ import { computeFirstRunChecklist, isFirstRunIncomplete } from '../lib/firstRunC
 import { buildMorningWalkthroughStarters, buildSetupStarters } from '../lib/guardianStarters.js'
 import { deriveFollowUps } from '../lib/guardianFollowUps.js'
 import { turnContextLabel, zeroChunkWarning } from '../lib/guardianChatHonesty.js'
+import { citationChipClass, citationSourceLabel, trimWarningMessage } from '../lib/guardianCitationLabels.js'
 import { useFarmOperate } from '../composables/useFarmOperate'
 import { useFarmContextStore } from '../stores/farmContext'
 import { useFarmStore } from '../stores/farm'
@@ -1189,6 +1207,7 @@ async function send() {
     farm_id: body.farm_id ?? null,
     attachment_ids: sentIds,
     vision_used: !!finalEvent.vision_used,
+    trim_summary: finalEvent.trim_summary ?? null,
   })
   message.value = ''
   selectedAttachmentIds.value = []
