@@ -38,4 +38,11 @@ func TestGetHealth_AIEnabled(t *testing.T) {
 	if fa["llm_reachable"] != true {
 		t.Fatalf("llm_reachable: %v", fa["llm_reachable"])
 	}
+	aw, ok := body["awakening"].(map[string]any)
+	if !ok {
+		t.Fatalf("missing awakening block: %v", body)
+	}
+	if aw["state"] == nil {
+		t.Fatalf("awakening.state missing: %v", aw)
+	}
 }

@@ -322,11 +322,18 @@
         >
           Image analysis is advisory only — hypotheses, not certified diagnosis. Any change still needs Confirm.
         </p>
+        <GuardianAwakeningPanel
+          :farm-id="useFarmContext ? farmContext.farmId : null"
+          :mode="useFarmContext ? 'farm_counsel' : 'quick'"
+          :auto-warm="useFarmContext && !!farmContext.farmId"
+          @switch-quick="useFarmContext = false"
+        />
         <GuardianNudgeStrip @review="onNudgeReview" />
         <GuardianRecentTopicChip :route-path="route.path" @continue="onNudgeReview" />
         <div v-if="morningWalkthroughStarters.length" class="space-y-1.5" data-test="chat-morning-starters">
           <p class="text-[10px] uppercase tracking-widest text-zinc-500">Daily check</p>
-          <GuardianStarterChips :starters="morningWalkthroughStarters" />
+          <p class="text-[10px] text-zinc-500">Morning check uses Farm counsel — the Guardian reads your farm first.</p>
+          <GuardianStarterChips :starters="morningWalkthroughStarters" inline @pick="onMorningStarter" />
         </div>
         <div v-if="setupStarters.length" class="space-y-1.5" data-test="chat-setup-starters">
           <p class="text-[10px] uppercase tracking-widest text-zinc-500">Try asking</p>
@@ -347,19 +354,7 @@
         <p v-if="micListening" class="text-xs text-amber-300/90 animate-pulse" data-test="chat-mic-listening">
           Listening… release to stop
         </p>
-        <div
-          class="flex flex-wrap items-center gap-3"
-          :class="layout === 'compact' ? 'gap-2' : ''"
-          data-test="chat-field-actions"
-        >
-          <label class="flex items-center gap-2 text-zinc-300 text-sm">
-            <input v-model="useFarmContext" type="checkbox" class="rounded bg-zinc-800 border-zinc-700" data-test="chat-use-farm-context" />
-            Use farm context
-          </label>
-          <span v-if="useFarmContext && !farmContext.farmId" class="text-amber-300/80 text-xs">
-            Select a farm in the sidebar first to ground answers.
-          </span>
-        </div>
+        <GuardianContextModeCards v-model:use-farm-context="useFarmContext" />
         <div
           v-if="groundedModelBlockReason"
           class="rounded-lg border border-amber-900/50 bg-amber-950/30 px-3 py-2 text-xs text-amber-200/90 space-y-2"
@@ -374,7 +369,7 @@
               data-test="chat-grounded-fix-ungrounded"
               @click="useFarmContext = false"
             >
-              Turn off farm context (use quick chat)
+              Use Quick chat instead
             </button>
           </div>
         </div>
@@ -560,6 +555,8 @@ import GuardianNudgeStrip from './GuardianNudgeStrip.vue'
 import GuardianRecentTopicChip from './GuardianRecentTopicChip.vue'
 import GuardianStarterChips from './GuardianStarterChips.vue'
 import GuardianModelSelector from './GuardianModelSelector.vue'
+import GuardianAwakeningPanel from './GuardianAwakeningPanel.vue'
+import GuardianContextModeCards from './GuardianContextModeCards.vue'
 import { topicChipLabel } from '../lib/guardianSessionMemory.js'
 import { computeFirstRunChecklist, isFirstRunIncomplete } from '../lib/firstRunChecklist.js'
 import { buildMorningWalkthroughStarters, buildSetupStarters } from '../lib/guardianStarters.js'
@@ -572,6 +569,7 @@ import { useGuardianChatStore } from '../stores/guardianChat'
 import { useGuardianPanelStore } from '../stores/guardianPanel'
 import { useGuardianProposalsStore } from '../stores/guardianProposals'
 import { useCapabilitiesStore } from '../stores/capabilities'
+import { useGuardianReadinessStore } from '../stores/guardianReadiness'
 import {
   filterGroundedCapableModels,
   findModelByName,
@@ -604,6 +602,7 @@ const guardianChat = useGuardianChatStore()
 const { streaming, streamingText, streamingStatus, error: errorMessage, transcript } = storeToRefs(guardianChat)
 const guardianProposals = useGuardianProposalsStore()
 const capabilities = useCapabilitiesStore()
+const guardianReadiness = useGuardianReadinessStore()
 const farmIdRef = computed(() => farmContext.farmId)
 const zoneContextId = computed(() => {
   const ref = guardianPanel.contextRef
@@ -1116,6 +1115,16 @@ async function onChatPhotoSelected(ev) {
   }
 }
 
+async function onMorningStarter(s) {
+  if (!s?.message) return
+  useFarmContext.value = true
+  guardianPanel.contextRef = s.contextRef ?? null
+  message.value = s.message
+  await guardianReadiness.ensureAwake(farmContext.farmId, 'farm_counsel')
+  await nextTick()
+  await send()
+}
+
 async function onNudgeReview(payload) {
   if (!payload?.message) return
   guardianPanel.contextRef = payload.contextRef ?? null
@@ -1141,6 +1150,9 @@ async function send() {
   if (!message.value.trim()) return
   if (useFarmContext.value && !farmContext.farmId) return
   if (groundedModelBlockReason.value) return
+  if (useFarmContext.value && farmContext.farmId) {
+    await guardianReadiness.ensureAwake(farmContext.farmId, 'farm_counsel')
+  }
   guardianChat.clearError()
   modelFallbackNotice.value = ''
 

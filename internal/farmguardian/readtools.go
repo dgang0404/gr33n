@@ -76,9 +76,10 @@ func EnrichPromptBlock(ctx context.Context, q db.Querier, farmID int64, question
 	if q == nil || farmID <= 0 {
 		return ""
 	}
-	var blocks []string
+	plan := PlanReadTools(question, ref, snap)
+	blocks, ran := runPlannedReadTools(ctx, q, farmID, question, snap, ref, plan)
 
-	if matchListUnreadAlertsIntent(question) {
+	if !skipIfPlanned(ran, "list_unread_alerts") && matchListUnreadAlertsIntent(question) {
 		if block, err := renderListUnreadAlerts(ctx, q, farmID); err != nil {
 			slog.Warn("farm guardian read tool failed", "tool", "list_unread_alerts", "farm_id", farmID, "err", err)
 		} else if block != "" {
@@ -201,7 +202,7 @@ func EnrichPromptBlock(ctx context.Context, q db.Querier, farmID int64, question
 		}
 	}
 
-	if shouldRunSummarizeDeviceHealthReadIntent(question, ref) {
+	if !skipIfPlanned(ran, "summarize_device_health") && shouldRunSummarizeDeviceHealthReadIntent(question, ref) {
 		if block, err := renderSummarizeDeviceHealth(ctx, q, farmID, question, ref); err != nil {
 			slog.Warn("farm guardian read tool failed", "tool", "summarize_device_health", "farm_id", farmID, "err", err)
 		} else if block != "" {
@@ -210,7 +211,7 @@ func EnrichPromptBlock(ctx context.Context, q db.Querier, farmID int64, question
 		}
 	}
 
-	if shouldRunWalkFarmReadIntent(question, ref) {
+	if !skipIfPlanned(ran, "walk_farm") && shouldRunWalkFarmReadIntent(question, ref) {
 		if block, err := renderWalkFarm(ctx, q, farmID); err != nil {
 			slog.Warn("farm guardian read tool failed", "tool", "walk_farm", "farm_id", farmID, "err", err)
 		} else if block != "" {

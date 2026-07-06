@@ -37,6 +37,29 @@ function stubCapabilities() {
     if (url === '/v1/chat/sessions') return Promise.resolve({ data: { sessions: [] } })
     if (url === '/farms') return Promise.resolve({ data: [{ id: 1, name: 'Demo Farm' }] })
     if (url === '/health') return Promise.resolve({ data: { ok: true } })
+    if (url === '/v1/chat/health') {
+      return Promise.resolve({
+        data: {
+          awakening: {
+            state: 'ready',
+            rag_corpus_ok: true,
+            chat_model_loaded: true,
+          },
+        },
+      })
+    }
+    if (url === '/guardian/models') {
+      return Promise.resolve({
+        data: {
+          available_models: [{ name: 'phi3:mini', context_window: 8192 }],
+          server_default: 'phi3:mini',
+        },
+      })
+    }
+    return Promise.resolve({ data: {} })
+  })
+  api.post.mockImplementation((url) => {
+    if (url === '/guardian/warmup') return Promise.resolve({ data: { state: 'ready' } })
     return Promise.resolve({ data: {} })
   })
 }
@@ -163,8 +186,8 @@ describe('Phase 29 WS1 — GuardianChatPanel farm context', () => {
     await flushPromises()
 
     await wrapper.find('[data-test="chat-message-input"]').setValue('what is the humidity trend?')
-    const farmCheckbox = wrapper.find('[data-test="chat-use-farm-context"]')
-    expect(farmCheckbox.element.checked).toBe(true)
+    const farmCounsel = wrapper.find('[data-test="guardian-mode-farm-counsel"]')
+    expect(farmCounsel.classes().join(' ')).toMatch(/ring-green/)
 
     await wrapper.find('[data-test="chat-send-button"]').trigger('click')
     await flushPromises()
@@ -279,6 +302,74 @@ describe('Phase 40 bug-guardian-nav — GuardianNavLaunch', () => {
     await flushPromises()
     await wrapper.get('[data-test="guardian-nav-open-drawer"]').trigger('click')
     expect(panel.open).toBe(true)
+    wrapper.unmount()
+  })
+})
+
+describe('Phase 129 — Guardian awakening + mode cards', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia())
+    vi.clearAllMocks()
+    localStorage.setItem('gr33n_farm_id', '1')
+  })
+
+  it('shows awakening panel when health reports sleeping', async () => {
+    api.get.mockImplementation((url) => {
+      if (url === '/capabilities') return Promise.resolve({ data: { ai_enabled: true } })
+      if (url === '/v1/chat/sessions') return Promise.resolve({ data: { sessions: [] } })
+      if (url === '/v1/chat/health') {
+        return Promise.resolve({ data: { awakening: { state: 'sleeping', rag_corpus_ok: true } } })
+      }
+      if (url === '/guardian/models') {
+        return Promise.resolve({ data: { available_models: [], server_default: 'phi3:mini' } })
+      }
+      return Promise.resolve({ data: {} })
+    })
+    api.post.mockResolvedValue({ data: { state: 'stirring' } })
+
+    const farmContext = useFarmContextStore()
+    farmContext.farmId = 1
+
+    const wrapper = mount(GuardianChatPanel, {
+      props: { layout: 'compact' },
+      global: { plugins: [router] },
+    })
+    await flushPromises()
+    await flushPromises()
+
+    expect(wrapper.find('[data-test="guardian-awakening-panel"]').exists()).toBe(true)
+    expect(wrapper.find('[data-test="guardian-context-mode-cards"]').exists()).toBe(true)
+    wrapper.unmount()
+  })
+
+  it('Quick chat mode omits farm_id from POST body', async () => {
+    stubCapabilities()
+    const farmContext = useFarmContextStore()
+    farmContext.farmId = 1
+
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      body: { getReader: () => ({ read: async () => ({ done: true, value: undefined }) }) },
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    const wrapper = mount(GuardianChatPanel, {
+      props: { layout: 'compact' },
+      global: { plugins: [router] },
+    })
+    await flushPromises()
+    await flushPromises()
+
+    await wrapper.find('[data-test="guardian-mode-quick"]').trigger('click')
+    await wrapper.find('[data-test="chat-message-input"]').setValue('general lettuce question')
+    await wrapper.find('[data-test="chat-send-button"]').trigger('click')
+    await flushPromises()
+
+    const [, opts] = fetchMock.mock.calls[0]
+    const body = JSON.parse(opts.body)
+    expect(body.farm_id).toBeUndefined()
+
+    vi.unstubAllGlobals()
     wrapper.unmount()
   })
 })

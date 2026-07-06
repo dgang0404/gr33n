@@ -24,7 +24,7 @@ const (
 // WalkFarmPersonaRule guides Guardian during morning walkthrough turns.
 const WalkFarmPersonaRule = `Morning walkthrough (Phase 60): Use walk_farm for structured daily checks. Report only categories with findings — skip empty sections. Use zone names, not IDs. Plain farmer language; no schema terms. Read-only — never propose changes during the walkthrough unless the operator asks.`
 
-var walkFarmIntent = regexp.MustCompile(`(?i)\b(morning (check|walkthrough|walk)|walk_farm|walk the farm|what needs attention|what should i (check|do) (this )?morning|daily check|farm walk)\b`)
+var walkFarmIntent = regexp.MustCompile(`(?i)\b(morning (check|walkthrough|walk)|walk_farm|walk the farm|what needs attention|urgent issue|what should i (check|do) (this )?morning|daily check|farm walk|anything urgent)\b`)
 
 type walkFinding struct {
 	Category    string

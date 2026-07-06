@@ -50,6 +50,30 @@ func (h *Handler) GetHealth(w http.ResponseWriter, r *http.Request) {
 	}
 
 	health := farmguardian.BuildFieldAssistantHealth(ctx, nil, fieldChunks, platformChunks)
+	mode := r.URL.Query().Get("mode")
+
+	envDefault := farmguardian.EnvServerDefaultModel()
+	if h.baseLLM != nil {
+		envDefault = h.baseLLM.ModelLabel()
+	}
+	var farmPref *string
+	if farmID > 0 && h.q != nil {
+		if farm, err := h.q.GetFarmByID(ctx, farmID); err == nil {
+			farmPref = farm.GuardianPreferredModel
+		}
+	}
+	awakening := farmguardian.BuildAwakeningHealth(ctx, farmguardian.AwakeningBuildInput{
+		AIEnabled:          true,
+		Field:              health,
+		Mode:               mode,
+		FarmID:             farmID,
+		FieldGuideChunks:   fieldChunks,
+		PlatformDocChunks:  platformChunks,
+		Cache:              h.modelCache,
+		FarmPreferredModel: farmPref,
+		EnvDefault:         envDefault,
+	})
+
 	procsOK := ProceduresAvailable()
 	httputil.WriteJSON(w, http.StatusOK, map[string]any{
 		"ai_enabled":           true,
@@ -57,5 +81,6 @@ func (h *Handler) GetHealth(w http.ResponseWriter, r *http.Request) {
 		"procedures_available": procsOK,
 		"field_degrade_ready":  procsOK && health.FieldMode,
 		"field_assistant":      health,
+		"awakening":            awakening,
 	})
 }

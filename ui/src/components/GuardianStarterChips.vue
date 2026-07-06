@@ -30,12 +30,20 @@ const focusRingClass = FARMER_FOCUS_RING
 
 const props = defineProps({
   starters: { type: Array, default: () => [] },
+  /** When true, emit pick instead of opening the drawer (in-panel chat). */
+  inline: { type: Boolean, default: false },
 })
+
+const emit = defineEmits(['pick'])
 
 const guardianPanel = useGuardianPanelStore()
 const capabilities = useCapabilitiesStore()
 
 function pickStarter(s) {
+  if (props.inline) {
+    emit('pick', s)
+    return
+  }
   guardianPanel.openDrawer({
     prefilledMessage: s.message,
     contextRef: s.contextRef ?? null,

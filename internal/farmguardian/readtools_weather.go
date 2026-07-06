@@ -20,7 +20,7 @@ import (
 // SiteWeatherPersonaRule guides Guardian weather answers.
 const SiteWeatherPersonaRule = `Site weather (Phase 66): Use site_weather for daylight, DLI, frost, supplemental-light gaps. State tier: solar_math (offline), local sensor/manual, or online forecast — never invent forecast when offline.`
 
-var siteWeatherIntent = regexp.MustCompile(`(?i)\b(daylight|daylength|sunrise|sunset|solar noon|frost|supplemental light|extra light|dli|photoperiod|vent the greenhouse|outdoor temp|site weather|weather today|bright enough|bright today|enough light|enough sun)\b|\bhow long is (the )?day\b|\bneed (supplemental|extra) light\b|\bis it (bright|sunny|cloudy) enough\b`)
+var siteWeatherIntent = regexp.MustCompile(`(?i)\b(daylight|daylength|sunrise|sunset|solar noon|frost|supplemental light|extra light|dli|photoperiod|vent the greenhouse|outdoor temp|site weather|weather today|bright enough|bright today|enough light|enough sun|fertigation schedule|when to feed|feeding window)\b|\bhow long is (the )?day\b|\bneed (supplemental|extra) light\b|\bis it (bright|sunny|cloudy) enough\b|\b(out of band|out-of-band).{0,20}(reading|ec|ph)\b`)
 
 func shouldRunSiteWeatherReadIntent(question string) bool {
 	q := strings.TrimSpace(question)
