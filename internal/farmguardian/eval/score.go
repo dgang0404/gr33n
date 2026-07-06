@@ -8,12 +8,14 @@ import (
 // Question is one eval fixture prompt.
 type Question struct {
 	ID              string
-	Category        string // field_guide | farm_state | out_of_scope | write_intent
+	Category        string // field_guide | farm_state | out_of_scope | write_intent | ungrounded
 	Prompt          string
 	ExpectCitation  bool
 	ExpectDecline   bool
 	ExpectProposal  bool
+	ExpectTool      string // optional log/tool evidence hint (Phase 131)
 	Grounded        bool
+	Model           string // optional per-fixture model override (Phase 131 smoke)
 }
 
 // Fixtures returns the Phase 122 eval question set (~20 prompts).
@@ -60,12 +62,19 @@ type ScoreInput struct {
 
 // ScoreResult is the automatic scoring outcome.
 type ScoreResult struct {
-	ID       string
-	Category string
-	Passed   bool
-	Notes    string
-	LatencyMs float64
-	RepairUsed bool
+	ID            string
+	Category      string
+	Passed        bool
+	Notes         string
+	LatencyMs     float64
+	RepairUsed    bool
+	Prompt        string
+	Answer        string
+	Error         string
+	CitationCount int
+	ProposalCount int
+	Grounded      bool
+	Model         string
 }
 
 // Score evaluates one answer heuristically.
@@ -78,6 +87,16 @@ func Score(in ScoreInput) ScoreResult {
 	}
 	a := strings.ToLower(strings.TrimSpace(in.Answer))
 	switch {
+	case in.Question.ID == "smoke-cherry-forest":
+		res.Passed = len(a) > 80 && (strings.Contains(a, "goldenrod") || strings.Contains(a, "blackberry") || strings.Contains(a, "cherry"))
+		if !res.Passed {
+			res.Notes = "expected forest-garden answer mentioning cherry/goldenrod/blackberry"
+		}
+	case in.Question.ID == "smoke-morning-walk":
+		res.Passed = len(a) > 40 && !looksLikeInvention(a)
+		if !res.Passed {
+			res.Notes = "expected morning walkthrough answer with farm specifics"
+		}
 	case in.Question.ExpectCitation:
 		res.Passed = in.CitationCount > 0 || citationRefPresent(in.Answer)
 		if !res.Passed {

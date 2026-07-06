@@ -2,6 +2,7 @@ package farmguardian
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -31,12 +32,19 @@ type EvalReport struct {
 
 // EvalQuestionScore is one fixture result row.
 type EvalQuestionScore struct {
-	ID           string  `json:"id"`
-	Category     string  `json:"category"`
-	Passed       bool    `json:"passed"`
-	LatencyMs    float64 `json:"latency_ms"`
-	RepairUsed   bool    `json:"repair_used,omitempty"`
-	Notes        string  `json:"notes,omitempty"`
+	ID            string  `json:"id"`
+	Category      string  `json:"category"`
+	Passed        bool    `json:"passed"`
+	LatencyMs     float64 `json:"latency_ms"`
+	RepairUsed    bool    `json:"repair_used,omitempty"`
+	Notes         string  `json:"notes,omitempty"`
+	Prompt        string  `json:"prompt,omitempty"`
+	Answer        string  `json:"answer,omitempty"`
+	Error         string  `json:"error,omitempty"`
+	CitationCount int     `json:"citation_count,omitempty"`
+	ProposalCount int     `json:"proposal_count,omitempty"`
+	Grounded      bool    `json:"grounded,omitempty"`
+	Model         string  `json:"model,omitempty"`
 }
 
 var (
@@ -141,4 +149,56 @@ func MergeEvalIntoModels(models []ModelInfo) []ModelInfo {
 		out[i] = m
 	}
 	return out
+}
+
+// QARunArchive is a full recorded eval run (Phase 131).
+type QARunArchive struct {
+	UpdatedAt string              `json:"updated_at"`
+	Suite     string              `json:"suite"`
+	Model     string              `json:"model"`
+	Scores    []EvalQuestionScore `json:"scores"`
+}
+
+// DefaultQARunsDir returns the guardian QA run archive directory.
+func DefaultQARunsDir() string {
+	if p := strings.TrimSpace(os.Getenv("GUARDIAN_QA_RUNS_DIR")); p != "" {
+		return p
+	}
+	return filepath.Join("data", "guardian_qa_runs")
+}
+
+// DefaultQARunArchivePath builds a timestamped archive path for one suite+model run.
+func DefaultQARunArchivePath(suite, model string) string {
+	stamp := time.Now().UTC().Format("20060102T150405")
+	safe := strings.NewReplacer(":", "-", "/", "-").Replace(strings.TrimSpace(model))
+	if safe == "" {
+		safe = "model"
+	}
+	name := fmt.Sprintf("%s_%s_%s.json", stamp, strings.TrimSpace(suite), safe)
+	return filepath.Join(DefaultQARunsDir(), name)
+}
+
+// SaveQARunArchive writes a full QA run with answers to disk.
+func SaveQARunArchive(path, suite, model string, scores []EvalQuestionScore) error {
+	if path == "" {
+		return nil
+	}
+	arch := QARunArchive{
+		UpdatedAt: time.Now().UTC().Format(time.RFC3339),
+		Suite:     suite,
+		Model:     model,
+		Scores:    scores,
+	}
+	raw, err := json.MarshalIndent(arch, "", "  ")
+	if err != nil {
+		return err
+	}
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		return err
+	}
+	tmp := path + ".tmp"
+	if err := os.WriteFile(tmp, raw, 0o644); err != nil {
+		return err
+	}
+	return os.Rename(tmp, path)
 }

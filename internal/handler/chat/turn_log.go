@@ -3,12 +3,10 @@ package chat
 import (
 	"context"
 	"log/slog"
-	"os"
-	"strconv"
-	"strings"
 	"time"
 
 	"gr33n-api/internal/authctx"
+	"gr33n-api/internal/rag/llm"
 )
 
 type chatTurnMeta struct {
@@ -34,7 +32,7 @@ func (h *Handler) logChatTurnStarted(ctx context.Context, meta chatTurnMeta) {
 		"history_turns", meta.historyTurns,
 		"context_chunks", meta.contextChunks,
 		"effective_context_window", meta.effectiveWindow,
-		"llm_timeout_seconds", llmTimeoutSecondsForLog(),
+		"llm_timeout_seconds", llmTimeoutSecondsForLog(meta.grounded),
 	}
 	if meta.sessionID != "" {
 		attrs = append(attrs, "session_id", meta.sessionID)
@@ -60,14 +58,12 @@ func (h *Handler) logChatTurnFailed(ctx context.Context, meta chatTurnMeta, star
 	slog.Warn("guardian: chat turn failed", attrs...)
 }
 
-func llmTimeoutSecondsForLog() int {
-	s := strings.TrimSpace(os.Getenv("LLM_TIMEOUT_SECONDS"))
-	if s == "" {
-		return 120
+func llmTimeoutSecondsForLog(grounded bool) int {
+	var d time.Duration
+	if grounded {
+		d = llm.GroundedChatTimeoutFromEnv()
+	} else {
+		d = llm.ChatTimeoutFromEnv()
 	}
-	n, err := strconv.Atoi(s)
-	if err != nil || n < 1 {
-		return 120
-	}
-	return n
+	return int(d / time.Second)
 }

@@ -1,4 +1,4 @@
-.PHONY: run run-receiver build build-receiver test seed sqlc migrate merge-legacy-plants ui dev dev-auth-test e2e-browser ollama-smoke ollama-smoke-cpu ollama-smoke-help guardian-eval rag-ingest-help rag-ingest-demo rag-ingest-platform-docs compose-db-up compose-db-status compose-logging-up compose-logging-down setup-compose-dev dev-stack dev-stack-fresh dev-stack-fresh-rag local-up restart-local restart-local-serve db-sanity-report check-stack check-crop-library check-crop-catalog check-crop-catalog-parity check-catalog-seed-drift add-crop-check check-catalog-release check-ui-domain-parity clean lint bootstrap-local bootstrap-local-docker install-deps-debian install-pi-edge-deps first-clone first-clone-docker first-clone-install-deps audit-openapi audit-env edge-smoke-help edge-actuator-smoke-help recipe-pack-import-help agronomy-seed-pack-help guardian-bootstrap-farm import-agronomy-seed-pack apply-agronomy-overrides rag-ingest-farm-operational
+.PHONY: run run-receiver build build-receiver test seed sqlc migrate merge-legacy-plants ui dev dev-auth-test e2e-browser ollama-smoke ollama-smoke-cpu ollama-smoke-help guardian-eval guardian-qa-smoke guardian-qa-regression guardian-laptop-tune rag-ingest-help rag-ingest-demo rag-ingest-platform-docs compose-db-up compose-db-status compose-logging-up compose-logging-down setup-compose-dev dev-stack dev-stack-fresh dev-stack-fresh-rag local-up restart-local restart-local-serve db-sanity-report check-stack check-crop-library check-crop-catalog check-crop-catalog-parity check-catalog-seed-drift add-crop-check check-catalog-release check-ui-domain-parity clean lint bootstrap-local bootstrap-local-docker install-deps-debian install-pi-edge-deps first-clone first-clone-docker first-clone-install-deps audit-openapi audit-env edge-smoke-help edge-actuator-smoke-help recipe-pack-import-help agronomy-seed-pack-help guardian-bootstrap-farm import-agronomy-seed-pack apply-agronomy-overrides rag-ingest-farm-operational
 
 # dash (common default /bin/sh) can report "wait: No child processes" for dev / dev-auth-test;
 # bash handles background jobs + wait reliably.
@@ -125,7 +125,24 @@ ollama-smoke-cpu: ## Ollama smokes for CPU-only hosts (longer timeout, lower max
 guardian-eval: ## Phase 122 — run Guardian model quality eval (API + Ollama must be up; set GUARDIAN_EVAL_TOKEN)
 	@if [ -f .env ]; then set -a && . ./.env && set +a; fi; \
 	$(GO) run ./cmd/guardian-eval/ -models $${MODEL:-all} -farm-id $${FARM_ID:-1} \
+		-suite $${SUITE:-regression} \
 		-report $${GUARDIAN_EVAL_REPORT:-data/guardian_model_eval.json}
+
+guardian-qa-smoke: ## Phase 131 — 4-prompt smoke suite, sequential, full answers archived
+	@if [ -f .env ]; then set -a && . ./.env && set +a; fi; \
+	$(GO) run ./cmd/guardian-eval/ -models $${MODEL:-phi3:mini} -farm-id $${FARM_ID:-1} \
+		-suite smoke \
+		-report $${GUARDIAN_EVAL_REPORT:-data/guardian_model_eval.json}
+
+guardian-qa-regression: ## Phase 131 — full regression fixture set (~24 prompts)
+	@if [ -f .env ]; then set -a && . ./.env && set +a; fi; \
+	$(GO) run ./cmd/guardian-eval/ -models $${MODEL:-all} -farm-id $${FARM_ID:-1} \
+		-suite regression \
+		-report $${GUARDIAN_EVAL_REPORT:-data/guardian_model_eval.json}
+
+guardian-laptop-tune: ## Phase 129 — print or apply Guardian laptop .env recommendations (ARGS="--apply")
+	@chmod +x ./scripts/tune-guardian-laptop.sh
+	@./scripts/tune-guardian-laptop.sh $(ARGS)
 
 lint: ## Run go vet
 	$(GO) vet -tags dev ./...

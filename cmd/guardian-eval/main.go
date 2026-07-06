@@ -19,7 +19,9 @@ func main() {
 	token := flag.String("token", os.Getenv("GUARDIAN_EVAL_TOKEN"), "JWT bearer token (or set GUARDIAN_EVAL_TOKEN)")
 	farmID := flag.Int64("farm-id", 1, "demo farm id for grounded questions")
 	modelsFlag := flag.String("models", "all", "comma-separated model names or 'all'")
+	suiteFlag := flag.String("suite", envOr("GUARDIAN_EVAL_SUITE", "regression"), "smoke | regression | all")
 	reportPath := flag.String("report", farmguardian.DefaultEvalReportPath(), "output JSON report path")
+	qaArchive := flag.String("qa-archive", "", "optional full QA run JSON path (default data/guardian_qa_runs/…)")
 	llmBase := flag.String("llama-url", os.Getenv("LLM_BASE_URL"), "Ollama OpenAI base (for model discovery when models=all)")
 	flag.Parse()
 
@@ -27,7 +29,13 @@ func main() {
 		log.Fatal("JWT required: pass -token or set GUARDIAN_EVAL_TOKEN (use make dev-auth-test login token)")
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Minute)
+	suite := strings.ToLower(strings.TrimSpace(*suiteFlag))
+	fixtures := eval.FixturesForSuite(suite)
+	if len(fixtures) == 0 {
+		log.Fatalf("no fixtures for suite %q", suite)
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 4*time.Hour)
 	defer cancel()
 
 	modelNames, err := resolveModels(ctx, *modelsFlag, *llmBase)
@@ -38,34 +46,26 @@ func main() {
 		log.Fatal("no chat-capable models to evaluate")
 	}
 
-	client := &eval.APIClient{
-		BaseURL: *apiURL,
-		Token:   *token,
-		FarmID:  *farmID,
-		HTTP:    &http.Client{Timeout: 120 * time.Second},
-	}
+	client := eval.NewAPIClient(*apiURL, *token, *farmID)
 
 	rep := farmguardian.EvalReport{
 		Models:  map[string]farmguardian.EvalSummary{},
 		Details: map[string][]farmguardian.EvalQuestionScore{},
 	}
 	for _, model := range modelNames {
-		log.Printf("evaluating model %q (%d questions)…", model, len(eval.Fixtures()))
-		scores, err := eval.RunModel(ctx, client, model)
-		if err != nil {
-			log.Printf("model %q failed: %v", model, err)
-			continue
-		}
+		log.Printf("evaluating model %q suite=%s (%d questions)…", model, suite, len(fixtures))
+		scores := eval.RunSuite(ctx, client, model, fixtures)
 		rep.Models[normalizeModelKey(model)] = eval.BuildReport(model, scores, *reportPath)
-		details := make([]farmguardian.EvalQuestionScore, len(scores))
-		for i, s := range scores {
-			details[i] = farmguardian.EvalQuestionScore{
-				ID: s.ID, Category: s.Category, Passed: s.Passed,
-				LatencyMs: s.LatencyMs, RepairUsed: s.RepairUsed, Notes: s.Notes,
-			}
-		}
+		details := eval.ToEvalQuestionScores(scores)
 		rep.Details[normalizeModelKey(model)] = details
 		printModelSummary(model, rep.Models[normalizeModelKey(model)])
+		if archive := qaArchivePath(*qaArchive, suite, model); archive != "" {
+			if err := farmguardian.SaveQARunArchive(archive, suite, model, details); err != nil {
+				log.Printf("qa archive %q: %v", archive, err)
+			} else {
+				fmt.Printf("  QA archive: %s\n", archive)
+			}
+		}
 	}
 
 	if err := farmguardian.SaveEvalReport(*reportPath, rep); err != nil {
@@ -73,6 +73,16 @@ func main() {
 	}
 	farmguardian.RefreshEvalCache()
 	fmt.Printf("\nEval report written to %s\n", *reportPath)
+}
+
+func qaArchivePath(explicit, suite, model string) string {
+	if strings.TrimSpace(explicit) == "none" {
+		return ""
+	}
+	if strings.TrimSpace(explicit) != "" {
+		return explicit
+	}
+	return farmguardian.DefaultQARunArchivePath(suite, model)
 }
 
 func resolveModels(ctx context.Context, modelsFlag, llmBase string) ([]string, error) {

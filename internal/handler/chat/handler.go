@@ -405,6 +405,9 @@ func (h *Handler) PostV1(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	maybeUnloadEmbedBeforeChat(r.Context(), chatClient, grounded)
+	chatClient = applyChatClientForTurn(chatClient, grounded)
+
 	currentUser := llm.UserMessageWithImages(user, visionImages)
 	messages := buildMessages(system, history, currentUser)
 

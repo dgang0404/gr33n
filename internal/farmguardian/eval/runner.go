@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"gr33n-api/internal/farmguardian"
+	"gr33n-api/internal/rag/llm"
 )
 
 // APIClient runs grounded chat turns against a live gr33n API.
@@ -19,6 +20,16 @@ type APIClient struct {
 	Token   string
 	FarmID  int64
 	HTTP    *http.Client
+}
+
+// NewAPIClient builds a client with eval-appropriate HTTP timeout.
+func NewAPIClient(baseURL, token string, farmID int64) *APIClient {
+	return &APIClient{
+		BaseURL: baseURL,
+		Token:   token,
+		FarmID:  farmID,
+		HTTP:    &http.Client{Timeout: llm.EvalTimeoutFromEnv()},
+	}
 }
 
 type chatResponse struct {
@@ -31,6 +42,9 @@ type chatResponse struct {
 func (c *APIClient) RunQuestion(ctx context.Context, model string, q Question) (ScoreInput, error) {
 	if c == nil || c.HTTP == nil {
 		return ScoreInput{}, fmt.Errorf("eval API client not configured")
+	}
+	if strings.TrimSpace(q.Model) != "" {
+		model = strings.TrimSpace(q.Model)
 	}
 	body := map[string]any{
 		"message": q.Prompt,
@@ -46,6 +60,7 @@ func (c *APIClient) RunQuestion(ctx context.Context, model string, q Question) (
 		return ScoreInput{}, err
 	}
 	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-Guardian-Eval-Id", q.ID)
 	if c.Token != "" {
 		req.Header.Set("Authorization", "Bearer "+c.Token)
 	}
@@ -73,18 +88,54 @@ func (c *APIClient) RunQuestion(ctx context.Context, model string, q Question) (
 	}, nil
 }
 
-// RunModel executes all fixtures for one model name.
-func RunModel(ctx context.Context, api *APIClient, model string) ([]ScoreResult, error) {
+// RunSuite executes fixtures sequentially (one prompt at a time).
+func RunSuite(ctx context.Context, api *APIClient, model string, fixtures []Question) []ScoreResult {
 	var out []ScoreResult
-	for _, q := range Fixtures() {
-		in, err := api.RunQuestion(ctx, model, q)
+	for _, q := range fixtures {
+		m := model
+		if strings.TrimSpace(q.Model) != "" {
+			m = strings.TrimSpace(q.Model)
+		}
+		in, err := api.RunQuestion(ctx, m, q)
 		if err != nil {
-			out = append(out, ScoreResult{ID: q.ID, Category: q.Category, Passed: false, Notes: err.Error()})
+			out = append(out, scoreResultFromError(q, m, err))
 			continue
 		}
-		out = append(out, Score(in))
+		res := Score(in)
+		enrichScoreResult(&res, in, m)
+		out = append(out, res)
 	}
-	return out, nil
+	return out
+}
+
+// RunModel executes regression fixtures for one model name.
+func RunModel(ctx context.Context, api *APIClient, model string) ([]ScoreResult, error) {
+	return RunSuite(ctx, api, model, Fixtures()), nil
+}
+
+func scoreResultFromError(q Question, model string, err error) ScoreResult {
+	return ScoreResult{
+		ID:       q.ID,
+		Category: q.Category,
+		Passed:   false,
+		Notes:    err.Error(),
+		Error:    err.Error(),
+		Prompt:   q.Prompt,
+		Grounded: q.Grounded,
+		Model:    model,
+	}
+}
+
+func enrichScoreResult(res *ScoreResult, in ScoreInput, model string) {
+	if res == nil {
+		return
+	}
+	res.Prompt = in.Question.Prompt
+	res.Answer = in.Answer
+	res.CitationCount = in.CitationCount
+	res.ProposalCount = in.ProposalCount
+	res.Grounded = in.Question.Grounded
+	res.Model = model
 }
 
 // BuildReport aggregates scores into a farmguardian.EvalSummary for one model.
@@ -101,6 +152,21 @@ func BuildReport(model string, scores []ScoreResult, reportPath string) farmguar
 		RepairAttemptsAvg:    repair,
 		ReportPath:           reportPath,
 	}
+}
+
+// ToEvalQuestionScores maps runner results for JSON persistence.
+func ToEvalQuestionScores(scores []ScoreResult) []farmguardian.EvalQuestionScore {
+	out := make([]farmguardian.EvalQuestionScore, len(scores))
+	for i, s := range scores {
+		out[i] = farmguardian.EvalQuestionScore{
+			ID: s.ID, Category: s.Category, Passed: s.Passed,
+			LatencyMs: s.LatencyMs, RepairUsed: s.RepairUsed, Notes: s.Notes,
+			Prompt: s.Prompt, Answer: s.Answer, Error: s.Error,
+			CitationCount: s.CitationCount, ProposalCount: s.ProposalCount,
+			Grounded: s.Grounded, Model: s.Model,
+		}
+	}
+	return out
 }
 
 func truncate(s string, n int) string {

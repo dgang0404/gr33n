@@ -13,8 +13,9 @@ ui/node_modules/
 ui/dist/
 dist/
 
-# Environment
-.env
+# Local eval / QA artifacts (Phase 131)
+data/guardian_qa_runs/
+
 .env.local
 .env.*.local
 .env.production

@@ -18,6 +18,54 @@ import (
 
 const DefaultTimeout = 120 * time.Second
 
+// DefaultGroundedTimeoutMinimum is the floor for grounded chat on CPU laptops (Phase 130).
+const DefaultGroundedTimeoutMinimum = 1500 * time.Second
+
+// ChatTimeoutFromEnv reads LLM_TIMEOUT_SECONDS (default DefaultTimeout).
+func ChatTimeoutFromEnv() time.Duration {
+	return timeoutFromEnv()
+}
+
+// GroundedChatTimeoutFromEnv returns max(ChatTimeoutFromEnv, GUARDIAN_GROUNDED_TIMEOUT_SECONDS, 1500s default).
+func GroundedChatTimeoutFromEnv() time.Duration {
+	base := ChatTimeoutFromEnv()
+	const minSec = 1500
+	s := strings.TrimSpace(os.Getenv("GUARDIAN_GROUNDED_TIMEOUT_SECONDS"))
+	if s == "" {
+		if base >= DefaultGroundedTimeoutMinimum {
+			return base
+		}
+		return DefaultGroundedTimeoutMinimum
+	}
+	n, err := strconv.Atoi(s)
+	if err != nil || n < 1 {
+		if base >= DefaultGroundedTimeoutMinimum {
+			return base
+		}
+		return DefaultGroundedTimeoutMinimum
+	}
+	g := time.Duration(n) * time.Second
+	if base > g {
+		return base
+	}
+	return g
+}
+
+// EvalTimeoutFromEnv is the HTTP client timeout for cmd/guardian-eval (Phase 131).
+func EvalTimeoutFromEnv() time.Duration {
+	s := strings.TrimSpace(os.Getenv("GUARDIAN_EVAL_TIMEOUT_SECONDS"))
+	if s != "" {
+		if n, err := strconv.Atoi(s); err == nil && n > 0 {
+			return time.Duration(n) * time.Second
+		}
+	}
+	base := ChatTimeoutFromEnv()
+	if base < GroundedChatTimeoutFromEnv() {
+		return GroundedChatTimeoutFromEnv()
+	}
+	return base
+}
+
 // Client calls POST /v1/chat/completions (OpenAI-compatible; LM Studio, local gateways).
 type Client struct {
 	BaseURL     string
@@ -266,6 +314,22 @@ func (c *Client) doChatOnce(ctx context.Context, raw []byte) (string, Usage, err
 // ModelLabel returns the configured chat model id for API responses.
 func (c *Client) ModelLabel() string {
 	return c.Model
+}
+
+// WithHTTPTimeout returns a shallow copy using a different HTTP client timeout.
+func (c *Client) WithHTTPTimeout(d time.Duration) *Client {
+	if c == nil || d <= 0 {
+		return c
+	}
+	clone := *c
+	if clone.HTTPClient == nil {
+		clone.HTTPClient = &http.Client{Timeout: d}
+	} else {
+		hc := *clone.HTTPClient
+		hc.Timeout = d
+		clone.HTTPClient = &hc
+	}
+	return &clone
 }
 
 // WithModel returns a shallow copy of the client using a different model id.
