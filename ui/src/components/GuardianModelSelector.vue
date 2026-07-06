@@ -298,7 +298,13 @@ const canAdmin = computed(() => {
 const activeFarmModel = computed(() => {
   const f = farmStore.farm
   if (!f || Number(f.id) !== effectiveFarmId.value) return ''
-  return f.guardian_preferred_model || ''
+  return f.guardian_counsel_model || f.guardian_preferred_model || ''
+})
+
+const activeQuickFarmModel = computed(() => {
+  const f = farmStore.farm
+  if (!f || Number(f.id) !== effectiveFarmId.value) return ''
+  return f.guardian_quick_model || ''
 })
 
 const farmDirty = computed(() => farmModelDraft.value !== (farmModelSaved.value || ''))
@@ -307,8 +313,10 @@ const farmDirty = computed(() => farmModelDraft.value !== (farmModelSaved.value 
 const resolvedChatModelName = computed(() =>
   resolveEffectiveChatModelName({
     sessionModel: sessionModel.value,
-    farmModel: activeFarmModel.value,
+    farmCounselModel: activeFarmModel.value,
+    farmQuickModel: activeQuickFarmModel.value,
     serverDefault: serverDefault.value,
+    grounded: props.farmContextActive,
   }),
 )
 
@@ -518,7 +526,7 @@ async function saveFarmDefault() {
   saveOk.value = false
   try {
     const body = {
-      guardian_preferred_model: farmModelDraft.value ? farmModelDraft.value : null,
+      guardian_counsel_model: farmModelDraft.value ? farmModelDraft.value : null,
     }
     await api.patch(`/farms/${fid}/settings`, body)
     farmModelSaved.value = farmModelDraft.value

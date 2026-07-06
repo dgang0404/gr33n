@@ -57,18 +57,23 @@ export function findModelByName(name, models) {
 }
 
 /**
- * Effective chat model for this session: session override → farm default → server default.
- * Matches server ResolveChatModel (internal/farmguardian/model_cache.go).
+ * Effective chat model for this session: session override → farm policy → server default.
+ * @param {{ sessionModel?: string, farmModel?: string, farmCounselModel?: string, farmQuickModel?: string, serverDefault?: string, grounded?: boolean }} opts
  */
 export function resolveEffectiveChatModelName({
   sessionModel = '',
   farmModel = '',
+  farmCounselModel = '',
+  farmQuickModel = '',
   serverDefault = '',
+  grounded = true,
 } = {}) {
   const s = String(sessionModel || '').trim()
   if (s) return s
-  const f = String(farmModel || '').trim()
-  if (f) return f
+  const policy = grounded
+    ? (String(farmCounselModel || farmModel || '').trim())
+    : String(farmQuickModel || '').trim()
+  if (policy) return policy
   return String(serverDefault || '').trim()
 }
 

@@ -858,6 +858,9 @@
       </p>
     </section>
 
+    <!-- Phase 138 — per-farm counsel/quick model policy -->
+    <GuardianSettingsModelPolicyCard :is-farm-admin="isFarmAdmin" />
+
     <!-- Phase 129 WS8 — Guardian awakening readiness -->
     <GuardianSettingsAwakeningCard :is-farm-admin="isFarmAdmin" />
 
@@ -1136,6 +1139,7 @@ import {
 import { loadBootstrapCatalog } from '../lib/bootstrapCatalog.js'
 import CropTargetsSettings from '../components/CropTargetsSettings.vue'
 import GuardianSettingsAwakeningCard from '../components/GuardianSettingsAwakeningCard.vue'
+import GuardianSettingsModelPolicyCard from '../components/GuardianSettingsModelPolicyCard.vue'
 import GuardianSettingsCorpusCard from '../components/GuardianSettingsCorpusCard.vue'
 import { farmSetupRoute } from '../lib/farmSetupWizard.js'
 import { MODULE_SCHEMA } from '../lib/farmModules.js'

@@ -145,3 +145,27 @@ SET guardian_preferred_model = sqlc.narg(guardian_preferred_model),
     updated_at = NOW()
 WHERE id = sqlc.arg(id) AND deleted_at IS NULL
 RETURNING *;
+
+-- name: UpdateFarmGuardianModelPolicy :one
+UPDATE gr33ncore.farms
+SET guardian_counsel_model = sqlc.narg(guardian_counsel_model),
+    guardian_quick_model = sqlc.narg(guardian_quick_model),
+    guardian_grounded_timeout_seconds = sqlc.narg(guardian_grounded_timeout_seconds),
+    guardian_preferred_model = COALESCE(sqlc.narg(guardian_counsel_model), guardian_preferred_model),
+    updated_at = NOW()
+WHERE id = sqlc.arg(id) AND deleted_at IS NULL
+RETURNING *;
+
+-- name: AvgGroundedPromptTokensRecentByFarm :one
+SELECT
+    COALESCE(AVG(prompt_tokens), 0)::float8 AS avg_prompt_tokens,
+    COUNT(*)::int AS sample_turns
+FROM (
+    SELECT prompt_tokens
+    FROM gr33ncore.conversation_turns
+    WHERE farm_id = sqlc.arg(farm_id)
+      AND grounded = TRUE
+      AND prompt_tokens > 0
+    ORDER BY created_at DESC
+    LIMIT 5
+) recent;

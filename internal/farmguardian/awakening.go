@@ -55,7 +55,8 @@ type AwakeningBuildInput struct {
 	PlatformDocChunks  int64
 	Corpus             *CorpusHealth
 	Cache              *ModelCache
-	FarmPreferredModel *string
+	FarmCounselModel   *string
+	FarmQuickModel     *string
 	EnvDefault         string
 }
 
@@ -91,7 +92,7 @@ func BuildAwakeningHealth(ctx context.Context, in AwakeningBuildInput) Awakening
 		return out
 	}
 
-	chatModel, _, reject := ResolveWarmupModel(in.Cache, mode, in.FarmPreferredModel, envDefault)
+	chatModel, _, reject := ResolveWarmupModel(in.Cache, mode, in.FarmCounselModel, in.FarmQuickModel, envDefault)
 	out.ChatModel = chatModel
 	if reject != "" && mode == WarmupModeFarmCounsel {
 		out.Messages = append(out.Messages, reject)
@@ -106,7 +107,7 @@ func BuildAwakeningHealth(ctx context.Context, in AwakeningBuildInput) Awakening
 		out.Messages = append(out.Messages, staleOllamaMessage)
 	}
 
-	if out.EmbedModel != "" {
+	if out.EmbedModel != "" && !InferenceHostsSplit() {
 		out.EmbedLoaded, _ = psEntry(loadedMap, out.EmbedModel)
 	}
 	if chatModel != "" {
@@ -116,7 +117,7 @@ func BuildAwakeningHealth(ctx context.Context, in AwakeningBuildInput) Awakening
 		out.VisionModel = visionModel
 		out.VisionModelLoaded, _ = psEntry(loadedMap, visionModel)
 	}
-	if out.EmbedLoaded && !out.ChatModelLoaded && out.EmbedModel != "" {
+	if out.EmbedLoaded && !out.ChatModelLoaded && out.EmbedModel != "" && !InferenceHostsSplit() {
 		_, embedCPU := psEntry(loadedMap, out.EmbedModel)
 		if embedCPU || !out.ChatModelLoaded {
 			out.EmbedBlocksChat = true
@@ -163,10 +164,16 @@ func normalizeWarmupMode(mode string) string {
 }
 
 // ResolveWarmupModel picks the chat model to preload for a warmup mode.
-func ResolveWarmupModel(cache *ModelCache, mode string, farmPreferred *string, envDefault string) (model string, grounded bool, reject string) {
+func ResolveWarmupModel(cache *ModelCache, mode string, farmCounsel, farmQuick *string, envDefault string) (model string, grounded bool, reject string) {
 	mode = normalizeWarmupMode(mode)
 	grounded = mode == WarmupModeFarmCounsel
-	out := ResolveChatModel(cache, "", farmPreferred, envDefault, grounded)
+	var farmPref *string
+	if grounded {
+		farmPref = farmCounsel
+	} else {
+		farmPref = farmQuick
+	}
+	out := ResolveChatModel(cache, "", farmPref, envDefault, grounded)
 	if out.RejectReason != "" {
 		return "", grounded, out.RejectReason
 	}

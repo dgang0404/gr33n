@@ -29,7 +29,11 @@ func (h *Handler) resolveChatClient(ctx context.Context, sessionModel string, fa
 	var farmPref *string
 	if farmID > 0 && h.q != nil {
 		if farm, err := h.q.GetFarmByID(ctx, farmID); err == nil {
-			farmPref = farm.GuardianPreferredModel
+			if grounded {
+				farmPref = farmguardian.FarmCounselModel(&farm)
+			} else {
+				farmPref = farmguardian.FarmQuickModel(&farm)
+			}
 		}
 	}
 

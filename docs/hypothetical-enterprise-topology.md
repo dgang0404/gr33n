@@ -164,6 +164,27 @@ gr33n wins on **sovereignty and transparency**; it does not try to out-Deere Dee
 
 ---
 
+## Guardian inference at scale (Phase 138)
+
+Enterprise farms may run **split Ollama hosts**:
+
+| Role | Env | Health field |
+|------|-----|--------------|
+| Chat / counsel / quick | `LLM_BASE_URL` | `field_assistant.llm_reachable` |
+| RAG embeddings | `EMBEDDING_BASE_URL` | `field_assistant.embedding_reachable` |
+
+When URLs differ, `split_inference_hosts: true` and embed unload contention is skipped on the chat host (Phase 130 + 138).
+
+**Per-farm policy** (Settings → Guardian inference policy):
+
+- `guardian_counsel_model` — grounded Farm counsel (RAG + snapshot)
+- `guardian_quick_model` — Quick chat when farm context is off
+- `guardian_grounded_timeout_seconds` — optional override of `GUARDIAN_GROUNDED_TIMEOUT_SECONDS`
+
+`GET /v1/chat/health?farm_id=` reports awakening state for the counsel model; `GET /v1/chat/usage?farm_id=` includes `avg_counsel_prompt_tokens` for the pre-send cost hint in the Guardian drawer.
+
+---
+
 ## Suggested reading order for integrators
 
 1. [`local-operator-bootstrap.md`](local-operator-bootstrap.md) — one laptop demo  

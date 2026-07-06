@@ -61,7 +61,9 @@ type usageDimension struct {
 }
 
 type usageFarmDimension struct {
-	FarmID int64 `json:"farm_id"`
+	FarmID                    int64    `json:"farm_id"`
+	AvgCounselPromptTokens    int64    `json:"avg_counsel_prompt_tokens,omitempty"`
+	CounselPromptSampleTurns  int      `json:"counsel_prompt_sample_turns,omitempty"`
 	usageDimension
 }
 
@@ -118,6 +120,10 @@ func (h *Handler) GetUsage(w http.ResponseWriter, r *http.Request) {
 		}
 		if h.q != nil {
 			fd := buildFarmDimension(r, h.q, farmID, cfg)
+			if row, err := h.q.AvgGroundedPromptTokensRecentByFarm(r.Context(), &farmID); err == nil && row.SampleTurns > 0 {
+				fd.AvgCounselPromptTokens = int64(row.AvgPromptTokens)
+				fd.CounselPromptSampleTurns = int(row.SampleTurns)
+			}
 			resp.Farm = &fd
 		}
 	}

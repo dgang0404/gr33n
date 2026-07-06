@@ -9,20 +9,23 @@ import (
 	"gr33n-api/internal/rag/llm"
 )
 
-func applyChatClientForTurn(client llm.ChatCompleter, grounded bool) llm.ChatCompleter {
+func applyChatClientForTurn(client llm.ChatCompleter, grounded bool, groundedTimeout time.Duration) llm.ChatCompleter {
 	c, ok := client.(*llm.Client)
 	if !ok {
 		return client
 	}
 	timeout := llm.ChatTimeoutFromEnv()
 	if grounded {
-		timeout = llm.GroundedChatTimeoutFromEnv()
+		if groundedTimeout <= 0 {
+			groundedTimeout = llm.GroundedChatTimeoutFromEnv()
+		}
+		timeout = groundedTimeout
 	}
 	return c.WithHTTPTimeout(timeout)
 }
 
 func maybeUnloadEmbedBeforeChat(ctx context.Context, client llm.ChatCompleter, grounded bool) {
-	if !grounded {
+	if !grounded || farmguardian.InferenceHostsSplit() {
 		return
 	}
 	embedModel := farmguardian.EmbedModelFromEnv()

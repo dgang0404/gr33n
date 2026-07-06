@@ -2,6 +2,8 @@ package farmguardian
 
 import (
 	"context"
+	"net/http"
+	"net/http/httptest"
 	"testing"
 )
 
@@ -34,7 +36,38 @@ func TestBuildFieldAssistantHealth_FieldMode(t *testing.T) {
 	if !h.LLMReachable {
 		t.Fatal("expected llm_reachable when probe succeeds")
 	}
+	if !h.EmbeddingReachable {
+		t.Fatal("expected embedding_reachable when probe succeeds")
+	}
 	if h.FieldGuideChunkCount != 3 || h.PlatformDocChunkCount != 10 {
 		t.Fatalf("chunk counts: field=%d platform=%d", h.FieldGuideChunkCount, h.PlatformDocChunkCount)
+	}
+}
+
+func TestBuildFieldAssistantHealth_SplitHosts(t *testing.T) {
+	chat := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/models" || r.URL.Path == "/v1/models" {
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+		http.NotFound(w, r)
+	}))
+	defer chat.Close()
+	embed := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/models" || r.URL.Path == "/v1/models" {
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+		http.NotFound(w, r)
+	}))
+	defer embed.Close()
+	t.Setenv("LLM_BASE_URL", chat.URL+"/v1")
+	t.Setenv("EMBEDDING_BASE_URL", embed.URL+"/v1")
+	h := BuildFieldAssistantHealth(t.Context(), nil, 0, 0)
+	if !h.SplitInferenceHosts {
+		t.Fatal("expected split_inference_hosts")
+	}
+	if !h.LLMReachable || !h.EmbeddingReachable {
+		t.Fatalf("reachability chat=%v embed=%v", h.LLMReachable, h.EmbeddingReachable)
 	}
 }

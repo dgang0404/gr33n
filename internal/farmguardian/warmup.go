@@ -33,9 +33,9 @@ func snapshotWarmupState() warmupSnapshot {
 // StartWarmup kicks off async model preload when not already warm or stirring.
 // Returns current state: stirring (202), ready (200), or unavailable.
 // When includeVision is true and LLM_VISION_MODEL is set, the vision model is preloaded after chat.
-func StartWarmup(ctx context.Context, llmBaseURL, mode string, farmPreferred *string, envDefault string, cache *ModelCache, includeVision bool) (state string, chatModel string) {
+func StartWarmup(ctx context.Context, llmBaseURL, mode string, farmCounsel, farmQuick *string, envDefault string, cache *ModelCache, includeVision bool) (state string, chatModel string) {
 	mode = normalizeWarmupMode(mode)
-	chatModel, _, reject := ResolveWarmupModel(cache, mode, farmPreferred, envDefault)
+	chatModel, _, reject := ResolveWarmupModel(cache, mode, farmCounsel, farmQuick, envDefault)
 	if reject != "" {
 		return AwakeningStateUnavailable, ""
 	}

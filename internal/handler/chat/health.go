@@ -65,10 +65,11 @@ func (h *Handler) GetHealth(w http.ResponseWriter, r *http.Request) {
 	if h.baseLLM != nil {
 		envDefault = h.baseLLM.ModelLabel()
 	}
-	var farmPref *string
+	var farmCounsel, farmQuick *string
 	if farmID > 0 && h.q != nil {
 		if farm, err := h.q.GetFarmByID(ctx, farmID); err == nil {
-			farmPref = farm.GuardianPreferredModel
+			farmCounsel = farmguardian.FarmCounselModel(&farm)
+			farmQuick = farmguardian.FarmQuickModel(&farm)
 		}
 	}
 	awakening := farmguardian.BuildAwakeningHealth(ctx, farmguardian.AwakeningBuildInput{
@@ -80,7 +81,8 @@ func (h *Handler) GetHealth(w http.ResponseWriter, r *http.Request) {
 		PlatformDocChunks:  platformChunks,
 		Corpus:             corpus,
 		Cache:              h.modelCache,
-		FarmPreferredModel: farmPref,
+		FarmCounselModel:   farmCounsel,
+		FarmQuickModel:     farmQuick,
 		EnvDefault:         envDefault,
 	})
 

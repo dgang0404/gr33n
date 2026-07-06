@@ -140,7 +140,8 @@ type ResolveOutcome struct {
 	RejectReason string
 }
 
-// ResolveChatModel picks session → farm → env and validates against the cache.
+// ResolveChatModel picks session → farm policy → env and validates against the cache.
+// farmPreferred is counsel or quick model depending on grounded.
 func ResolveChatModel(cache *ModelCache, sessionModel string, farmPreferred *string, envDefault string, grounded bool) ResolveOutcome {
 	envDefault = strings.TrimSpace(envDefault)
 	requested := strings.TrimSpace(sessionModel)

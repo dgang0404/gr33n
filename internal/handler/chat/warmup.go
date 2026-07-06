@@ -46,10 +46,11 @@ func (h *Handler) PostWarmup(w http.ResponseWriter, r *http.Request) {
 		envDefault = h.baseLLM.ModelLabel()
 	}
 
-	var farmPref *string
+	var farmCounsel, farmQuick *string
 	if req.FarmID > 0 && h.q != nil {
 		if farm, err := h.q.GetFarmByID(r.Context(), req.FarmID); err == nil {
-			farmPref = farm.GuardianPreferredModel
+			farmCounsel = farmguardian.FarmCounselModel(&farm)
+			farmQuick = farmguardian.FarmQuickModel(&farm)
 		}
 	}
 
@@ -57,7 +58,7 @@ func (h *Handler) PostWarmup(w http.ResponseWriter, r *http.Request) {
 	if h.baseLLM != nil {
 		llmBase = h.baseLLM.BaseURL
 	}
-	state, chatModel := farmguardian.StartWarmup(r.Context(), llmBase, req.Mode, farmPref, envDefault, h.modelCache, req.IncludeVision)
+	state, chatModel := farmguardian.StartWarmup(r.Context(), llmBase, req.Mode, farmCounsel, farmQuick, envDefault, h.modelCache, req.IncludeVision)
 
 	status := http.StatusAccepted
 	if state == farmguardian.AwakeningStateReady {

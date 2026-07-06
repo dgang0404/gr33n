@@ -19,6 +19,7 @@ type Querier interface {
 	AddRecipeComponent(ctx context.Context, arg AddRecipeComponentParams) error
 	ApproveInsertCommonsBundle(ctx context.Context, arg ApproveInsertCommonsBundleParams) (Gr33ncoreInsertCommonsBundle, error)
 	ArchiveAnimalGroup(ctx context.Context, arg ArchiveAnimalGroupParams) (Gr33nanimalsAnimalGroup, error)
+	AvgGroundedPromptTokensRecentByFarm(ctx context.Context, farmID *int64) (AvgGroundedPromptTokensRecentByFarmRow, error)
 	BumpDeviceConfigVersion(ctx context.Context, id int64) (Gr33ncoreDevice, error)
 	// Cancel a pending command (operator or worker safety valve).
 	CancelDeviceCommand(ctx context.Context, id int64) (Gr33ncoreDeviceCommand, error)
@@ -704,6 +705,7 @@ type Querier interface {
 	UpdateExecutableAction(ctx context.Context, arg UpdateExecutableActionParams) (Gr33ncoreExecutableAction, error)
 	UpdateFarm(ctx context.Context, arg UpdateFarmParams) (Gr33ncoreFarm, error)
 	UpdateFarmEnergyPrice(ctx context.Context, arg UpdateFarmEnergyPriceParams) (Gr33ncoreFarmEnergyPrice, error)
+	UpdateFarmGuardianModelPolicy(ctx context.Context, arg UpdateFarmGuardianModelPolicyParams) (Gr33ncoreFarm, error)
 	UpdateFarmGuardianPreferredModel(ctx context.Context, arg UpdateFarmGuardianPreferredModelParams) (Gr33ncoreFarm, error)
 	UpdateFarmMemberRole(ctx context.Context, arg UpdateFarmMemberRoleParams) (Gr33ncoreFarmMembership, error)
 	UpdateFarmSiteCoords(ctx context.Context, arg UpdateFarmSiteCoordsParams) (Gr33ncoreFarm, error)

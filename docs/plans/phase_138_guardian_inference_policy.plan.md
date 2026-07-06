@@ -7,31 +7,31 @@ overview: >
 todos:
   - id: ws1-split-host-health
     content: "WS1: Health — llm_host + embedding_host reachability, loaded models per host; warmup targets chat host only"
-    status: pending
+    status: completed
   - id: ws2-farm-model-policy
     content: "WS2: farms.meta_data or settings — guardian_counsel_model, guardian_quick_model, grounded_timeout_seconds; UI Settings two dropdowns"
-    status: pending
+    status: completed
   - id: ws3-presolve-models
     content: "WS3: ResolveOutcome — Quick chat uses quick model; Farm counsel uses counsel model; farm default becomes counsel"
-    status: pending
+    status: completed
   - id: ws4-cost-estimate
     content: "WS4: GET /v1/chat/usage + last-turn avg — UI hint before send: ~Nk prompt tokens typical for farm counsel"
-    status: pending
+    status: completed
   - id: ws5-org-defaults
     content: "WS5 (optional): org-level guardian policy JSON — max models, allowed pull list for enterprise"
-    status: pending
+    status: cancelled
   - id: ws6-docs
     content: "WS6: recommended-hardware Profile C/D; hypothetical-enterprise-topology Guardian section; env vars"
-    status: pending
+    status: completed
   - id: ws7-tests
     content: "WS7: resolve model smoke; health dual-host mock; settings save counsel/quick"
-    status: pending
+    status: completed
 isProject: false
 ---
 
 # Phase 138 — Guardian inference policy
 
-**Status:** planned · **Depends on:** [129](phase_129_guardian_awakening.plan.md), [130](phase_130_guardian_runtime_orchestration.plan.md)
+**Status:** **Shipped.** · **Depends on:** [129](phase_129_guardian_awakening.plan.md), [130](phase_130_guardian_runtime_orchestration.plan.md)
 
 **Related:** [recommended-hardware-and-sizing.md](../recommended-hardware-and-sizing.md), [hypothetical-enterprise-topology.md](../hypothetical-enterprise-topology.md)
 
@@ -60,7 +60,7 @@ Settings per farm:
 | Quick model | tinyllama | llama3.1:8b or tiny |
 | Grounded timeout | 1500 | 666 |
 
-Stored in existing farm Guardian settings path (extend `guardian_settings` handler).
+Stored via `PATCH /farms/{id}/settings` (`guardian_counsel_model`, `guardian_quick_model`, `guardian_grounded_timeout_seconds`).
 
 ---
 
@@ -76,9 +76,9 @@ From `GET /v1/chat/usage` + session history stats. If near budget cap → amber 
 
 ## Acceptance
 
-- [ ] Server .env with different embed URL — health shows both reachable
-- [ ] Quick chat uses tinyllama while counsel uses phi3 on same farm
-- [ ] Cost hint appears on Farm counsel mode only
+- [x] Server .env with different embed URL — health shows both reachable
+- [x] Quick chat uses tinyllama while counsel uses phi3 on same farm
+- [x] Cost hint appears on Farm counsel mode only
 
 ---
 
@@ -86,3 +86,4 @@ From `GET /v1/chat/usage` + session history stats. If near budget cap → amber 
 
 - Auto-provision Ollama on second host
 - Billing / chargeback per farm
+- WS5 org-level policy JSON (deferred)

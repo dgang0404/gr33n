@@ -18,7 +18,11 @@ import (
 
 // MaybeUnloadEmbedForChat unloads the embedding model from Ollama when it is loaded
 // but the chat model is not (or both are CPU-only), freeing RAM for chat prefill.
+// Skipped when chat and embed run on different hosts (Phase 138 split inference).
 func MaybeUnloadEmbedForChat(ctx context.Context, llmBaseURL, embedModel, chatModel string) {
+	if InferenceHostsSplit() {
+		return
+	}
 	embedModel = strings.TrimSpace(embedModel)
 	chatModel = strings.TrimSpace(chatModel)
 	if embedModel == "" || chatModel == "" {

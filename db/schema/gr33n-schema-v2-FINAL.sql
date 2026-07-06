@@ -301,7 +301,10 @@ CREATE TABLE IF NOT EXISTS gr33ncore.farms (
     insert_commons_consecutive_failures INT NOT NULL DEFAULT 0,
     insert_commons_require_approval BOOLEAN NOT NULL DEFAULT FALSE,
     meta_data            JSONB NOT NULL DEFAULT '{}'::jsonb,
-    guardian_preferred_model TEXT
+    guardian_preferred_model TEXT,
+    guardian_counsel_model TEXT,
+    guardian_quick_model TEXT,
+    guardian_grounded_timeout_seconds INTEGER
 );
 CREATE TRIGGER trg_farms_updated_at
     BEFORE UPDATE ON gr33ncore.farms

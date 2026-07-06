@@ -19,15 +19,18 @@ const (
 
 // FieldAssistantHealth summarizes offline-capable Guardian backends (Phase 37 WS1).
 type FieldAssistantHealth struct {
-	FieldMode              bool   `json:"field_mode"`
-	LLMBaseURL             string `json:"llm_base_url,omitempty"`
-	LLMReachable           bool   `json:"llm_reachable"`
-	LLMReachableError      string `json:"llm_reachable_error,omitempty"`
-	EmbeddingBaseURL       string `json:"embedding_base_url,omitempty"`
-	EmbeddingConfigured    bool   `json:"embedding_configured"`
-	EmbeddingLocalEndpoint bool   `json:"embedding_local_endpoint"`
-	FieldGuideChunkCount   int64  `json:"field_guide_chunk_count"`
-	PlatformDocChunkCount  int64  `json:"platform_doc_chunk_count"`
+	FieldMode               bool   `json:"field_mode"`
+	LLMBaseURL              string `json:"llm_base_url,omitempty"`
+	LLMReachable            bool   `json:"llm_reachable"`
+	LLMReachableError       string `json:"llm_reachable_error,omitempty"`
+	EmbeddingBaseURL        string `json:"embedding_base_url,omitempty"`
+	EmbeddingConfigured     bool   `json:"embedding_configured"`
+	EmbeddingLocalEndpoint  bool   `json:"embedding_local_endpoint"`
+	EmbeddingReachable      bool   `json:"embedding_reachable"`
+	EmbeddingReachableError string `json:"embedding_reachable_error,omitempty"`
+	SplitInferenceHosts     bool   `json:"split_inference_hosts"`
+	FieldGuideChunkCount    int64  `json:"field_guide_chunk_count"`
+	PlatformDocChunkCount   int64  `json:"platform_doc_chunk_count"`
 }
 
 // IsLocalInferenceURL reports whether baseURL points at loopback or a private LAN host
@@ -52,31 +55,42 @@ func IsLocalInferenceURL(baseURL string) bool {
 func BuildFieldAssistantHealth(ctx context.Context, llmReachable func(context.Context, string, string) error, fieldGuideChunks, platformDocChunks int64) FieldAssistantHealth {
 	llmBase := strings.TrimSpace(os.Getenv("LLM_BASE_URL"))
 	embBase := strings.TrimSpace(os.Getenv("EMBEDDING_BASE_URL"))
+	if embBase == "" {
+		embBase = llmBase
+	}
 	embKey := strings.TrimSpace(os.Getenv("EMBEDDING_API_KEY"))
 	llmKey := strings.TrimSpace(os.Getenv("LLM_API_KEY"))
 
 	out := FieldAssistantHealth{
 		LLMBaseURL:             llmBase,
 		EmbeddingBaseURL:       embBase,
-		EmbeddingConfigured:    embKey != "",
+		EmbeddingConfigured:    embKey != "" || embBase != "",
 		EmbeddingLocalEndpoint: embBase != "" && IsLocalInferenceURL(embBase),
+		SplitInferenceHosts:    InferenceHostsSplit(),
 		FieldGuideChunkCount:   fieldGuideChunks,
 		PlatformDocChunkCount:  platformDocChunks,
 	}
 	out.FieldMode = llmBase != "" && IsLocalInferenceURL(llmBase)
 
-	if llmBase == "" {
-		out.LLMReachableError = "LLM_BASE_URL not set"
-		return out
-	}
 	check := llmReachable
 	if check == nil {
 		check = ai.VerifyChatBackend
 	}
-	if err := check(ctx, llmBase, llmKey); err != nil {
+
+	if llmBase == "" {
+		out.LLMReachableError = "LLM_BASE_URL not set"
+	} else if err := check(ctx, llmBase, llmKey); err != nil {
 		out.LLMReachableError = err.Error()
-		return out
+	} else {
+		out.LLMReachable = true
 	}
-	out.LLMReachable = true
+
+	if embBase == "" {
+		out.EmbeddingReachableError = "EMBEDDING_BASE_URL not set"
+	} else if err := check(ctx, embBase, embKey); err != nil {
+		out.EmbeddingReachableError = err.Error()
+	} else {
+		out.EmbeddingReachable = true
+	}
 	return out
 }

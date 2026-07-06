@@ -1485,6 +1485,9 @@ type Gr33ncoreFarm struct {
 	InsertCommonsRequireApproval     bool                              `db:"insert_commons_require_approval" json:"insert_commons_require_approval"`
 	MetaData                         json.RawMessage                   `db:"meta_data" json:"meta_data"`
 	GuardianPreferredModel           *string                           `db:"guardian_preferred_model" json:"guardian_preferred_model"`
+	GuardianCounselModel             *string                           `db:"guardian_counsel_model" json:"guardian_counsel_model"`
+	GuardianQuickModel               *string                           `db:"guardian_quick_model" json:"guardian_quick_model"`
+	GuardianGroundedTimeoutSeconds   *int32                            `db:"guardian_grounded_timeout_seconds" json:"guardian_grounded_timeout_seconds"`
 }
 
 type Gr33ncoreFarmActiveModule struct {

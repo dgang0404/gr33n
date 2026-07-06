@@ -397,6 +397,14 @@
           Listening… release to stop
         </p>
         <GuardianContextModeCards v-model:use-farm-context="useFarmContext" />
+        <p
+          v-if="counselCostHint"
+          class="text-[10px] text-zinc-500 leading-snug"
+          :class="chatUsage.nearLimit ? 'text-amber-300/80' : ''"
+          data-test="chat-counsel-cost-hint"
+        >
+          {{ counselCostHint }}
+        </p>
         <div
           v-if="groundedModelBlockReason"
           class="rounded-lg border border-amber-900/50 bg-amber-950/30 px-3 py-2 text-xs text-amber-200/90 space-y-2"
@@ -614,6 +622,7 @@ import { useGuardianPanelStore } from '../stores/guardianPanel'
 import { useGuardianProposalsStore } from '../stores/guardianProposals'
 import { useCapabilitiesStore } from '../stores/capabilities'
 import { useGuardianReadinessStore } from '../stores/guardianReadiness'
+import { useChatUsageStore } from '../stores/chatUsage'
 import {
   filterGroundedCapableModels,
   findModelByName,
@@ -647,6 +656,7 @@ const { streaming, streamingText, streamingStatus, error: errorMessage, transcri
 const guardianProposals = useGuardianProposalsStore()
 const capabilities = useCapabilitiesStore()
 const guardianReadiness = useGuardianReadinessStore()
+const chatUsage = useChatUsageStore()
 const farmIdRef = computed(() => farmContext.farmId)
 const zoneContextId = computed(() => {
   const ref = guardianPanel.contextRef
@@ -670,10 +680,21 @@ const { models: guardianModels, serverDefault: guardianServerDefault, loadModels
 const effectiveChatModelName = computed(() =>
   resolveEffectiveChatModelName({
     sessionModel: sessionModelOverride.value,
-    farmModel: farmStore.farm?.guardian_preferred_model || '',
+    farmCounselModel: farmStore.farm?.guardian_counsel_model || farmStore.farm?.guardian_preferred_model || '',
+    farmQuickModel: farmStore.farm?.guardian_quick_model || '',
     serverDefault: guardianServerDefault.value,
+    grounded: useFarmContext.value,
   }),
 )
+
+const counselCostHint = computed(() => {
+  if (!useFarmContext.value || !farmContext.farmId) return ''
+  const avg = chatUsage.farm?.avg_counsel_prompt_tokens
+  if (!avg) return ''
+  const samples = chatUsage.farm?.counsel_prompt_sample_turns || 5
+  const near = chatUsage.nearLimit ? ' Approaching budget cap — see Settings → Guardian usage.' : ''
+  return `Farm counsel typically uses ~${Math.round(avg).toLocaleString()} prompt tokens on this farm (last ${samples} turns avg).${near}`
+})
 
 const effectiveChatModelInfo = computed(() =>
   findModelByName(effectiveChatModelName.value, guardianModels.value),
@@ -1228,10 +1249,12 @@ async function send() {
   modelFallbackNotice.value = ''
 
   const attachedIds = [...selectedAttachmentIds.value]
-  const farmId = useFarmContext.value && farmContext.farmId ? Number(farmContext.farmId) : null
+  const scopedFarmId = farmContext.farmId ? Number(farmContext.farmId) : null
+  const counsel = useFarmContext.value && !!scopedFarmId
   const result = await guardianChat.sendMessage({
     message: message.value,
-    farmId,
+    farmId: scopedFarmId,
+    grounded: counsel,
     sessionId: sessionId.value || undefined,
     contextRef: resolveChatContextRef(attachedIds),
     navHistory: guardianPanel.navHistory,
@@ -1282,6 +1305,7 @@ onMounted(async () => {
   if (capabilities.aiEnabled) {
     void loadGuardianModels()
     void guardianReadiness.fetchHealth(farmContext.farmId, 'farm_counsel')
+    if (farmContext.farmId) void chatUsage.load({ farmId: farmContext.farmId })
   }
   await refreshSessions()
   if (sessionId.value) await loadSession(sessionId.value)

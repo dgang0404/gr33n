@@ -144,6 +144,9 @@ type postBody struct {
 	SetupMode bool `json:"setup_mode,omitempty"`
 	// Model overrides the chat model for this turn only (Phase 111).
 	Model string `json:"model,omitempty"`
+	// Grounded opts into farm counsel (RAG + snapshot). When farm_id is set,
+	// defaults true; set false for quick chat with per-farm quick model (Phase 138).
+	Grounded *bool `json:"grounded,omitempty"`
 }
 
 type postResponse struct {
@@ -213,7 +216,14 @@ func (h *Handler) PostV1(w http.ResponseWriter, r *http.Request) {
 	if pb.FarmID != nil {
 		farmID = *pb.FarmID
 	}
-	grounded := farmID > 0
+	grounded := false
+	if farmID > 0 {
+		if pb.Grounded != nil {
+			grounded = *pb.Grounded
+		} else {
+			grounded = true
+		}
+	}
 	if farmID > 0 && !farmauthz.RequireFarmMember(w, r, h.q, farmID) {
 		return
 	}
@@ -397,7 +407,7 @@ func (h *Handler) PostV1(w http.ResponseWriter, r *http.Request) {
 		}
 		farmguardian.MaybeInlineWarmupOnSend(r.Context(), llmBase, chatClient.ModelLabel(), 60*time.Second)
 	}
-	chatClient = applyChatClientForTurn(chatClient, grounded)
+	chatClient = applyChatClientForTurn(chatClient, grounded, farmGroundedTimeout(r.Context(), h.q, farmID, grounded))
 
 	currentUser := llm.UserMessageWithImages(user, visionImages)
 	messages := buildMessages(system, history, currentUser)
