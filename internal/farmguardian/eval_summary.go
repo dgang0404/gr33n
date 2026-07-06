@@ -179,6 +179,103 @@ func DefaultQARunArchivePath(suite, model string) string {
 	return filepath.Join(DefaultQARunsDir(), name)
 }
 
+// QARunSummary is the operator-facing snapshot of one archived QA run (Phase 140).
+type QARunSummary struct {
+	UpdatedAt  string `json:"updated_at"`
+	Suite      string `json:"suite"`
+	Model      string `json:"model"`
+	ReportPath string `json:"report_path"`
+	Passed     int    `json:"passed"`
+	Total      int    `json:"total"`
+	AllPassed  bool   `json:"all_passed"`
+}
+
+// SummarizeQARun counts heuristic pass/fail rows in an archive.
+func SummarizeQARun(arch QARunArchive) QARunSummary {
+	out := QARunSummary{
+		UpdatedAt: arch.UpdatedAt,
+		Suite:     arch.Suite,
+		Model:     arch.Model,
+		Total:     len(arch.Scores),
+	}
+	for _, s := range arch.Scores {
+		if s.Passed {
+			out.Passed++
+		}
+	}
+	out.AllPassed = out.Total > 0 && out.Passed == out.Total
+	return out
+}
+
+// LoadLatestQARun reads the newest JSON archive from dir (by UpdatedAt, then filename).
+func LoadLatestQARun(dir string) (QARunArchive, string, error) {
+	if dir == "" {
+		dir = DefaultQARunsDir()
+	}
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return QARunArchive{}, "", err
+		}
+		return QARunArchive{}, "", err
+	}
+	var (
+		bestArch  QARunArchive
+		bestPath  string
+		bestStamp time.Time
+		found     bool
+	)
+	for _, ent := range entries {
+		if ent.IsDir() || !strings.HasSuffix(ent.Name(), ".json") {
+			continue
+		}
+		path := filepath.Join(dir, ent.Name())
+		raw, err := os.ReadFile(path)
+		if err != nil {
+			continue
+		}
+		var arch QARunArchive
+		if err := json.Unmarshal(raw, &arch); err != nil {
+			continue
+		}
+		stamp := parseQARunTimestamp(arch.UpdatedAt, ent.Name())
+		if !found || stamp.After(bestStamp) {
+			found = true
+			bestStamp = stamp
+			bestArch = arch
+			bestPath = path
+		}
+	}
+	if !found {
+		return QARunArchive{}, "", os.ErrNotExist
+	}
+	return bestArch, bestPath, nil
+}
+
+func parseQARunTimestamp(updatedAt, filename string) time.Time {
+	if t, err := time.Parse(time.RFC3339, strings.TrimSpace(updatedAt)); err == nil {
+		return t
+	}
+	// Filenames: 20060102T150405_smoke_phi3-mini.json
+	if len(filename) >= 15 {
+		if t, err := time.Parse("20060102T150405", filename[:15]); err == nil {
+			return t
+		}
+	}
+	return time.Time{}
+}
+
+// LatestQARunSummary loads the newest archive and returns summary + full scores.
+func LatestQARunSummary() (QARunSummary, []EvalQuestionScore, error) {
+	arch, path, err := LoadLatestQARun("")
+	if err != nil {
+		return QARunSummary{}, nil, err
+	}
+	sum := SummarizeQARun(arch)
+	sum.ReportPath = path
+	return sum, arch.Scores, nil
+}
+
 // SaveQARunArchive writes a full QA run with answers to disk.
 func SaveQARunArchive(path, suite, model string, scores []EvalQuestionScore) error {
 	if path == "" {

@@ -204,6 +204,7 @@ After operator-doc edits, re-ingest Guardian RAG: **`make rag-ingest-platform-do
 | First session after clone | [`first-session-after-clone.md`](first-session-after-clone.md) |
 | Farm Guardian — architecture & operator expectations | [`farm-guardian-architecture.md`](farm-guardian-architecture.md) (§8), [`operator-tour.md`](operator-tour.md#6-farm-guardian-change-requests-with-your-ok) |
 | Guardian next-level arc 129–139 (shipped) | [`plans/phase_129_139_guardian_next_level_roadmap.plan.md`](plans/phase_129_139_guardian_next_level_roadmap.plan.md) · [`plans/phase-129-139-closure.md`](plans/phase-129-139-closure.md) · [`ci-guardian-qa.md`](ci-guardian-qa.md) |
+| Phase 140 — Guardian QA Settings summary | [`plans/phase_140_guardian_qa_settings.plan.md`](plans/phase_140_guardian_qa_settings.plan.md) — last smoke run in Settings |
 | Farm Guardian — platform persona (WS9 mirror) | [`farm-guardian-persona-platform-context.md`](farm-guardian-persona-platform-context.md) |
 | Phase 30 — Guardian PR queue (plan) | [`plans/phase_30_guardian_change_requests.plan.md`](plans/phase_30_guardian_change_requests.plan.md) |
 | Phase 31 — field validation & edge (plan) | [`plans/phase_31_field_validation_and_edge.plan.md`](plans/phase_31_field_validation_and_edge.plan.md) · [operator index § Phase 31](#phase-31-field-validation-edge) |

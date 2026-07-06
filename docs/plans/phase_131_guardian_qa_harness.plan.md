@@ -27,7 +27,7 @@ todos:
     status: pending
   - id: ws7-ui-optional
     content: "WS7 (optional): Settings → last QA run summary + link to report file; not required for v1"
-    status: pending
+    status: completed
   - id: ws8-docs
     content: "WS8: Phase 128 checklist points at make guardian-qa-smoke; local-operator-bootstrap QA section"
     status: pending

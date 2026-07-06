@@ -867,6 +867,9 @@
     <!-- Phase 135 WS4 — RAG corpus freshness + re-ingest -->
     <GuardianSettingsCorpusCard :is-farm-admin="isFarmAdmin" />
 
+    <!-- Phase 140 — last guardian-qa-smoke archive -->
+    <GuardianSettingsQARunCard />
+
     <!-- Phase 28 WS5 — Guardian token usage / rolling-window budget -->
     <section
       v-if="capabilities.aiEnabled && (chatUsage.hasAnyCap || chatUsage.user.used_tokens > 0)"
@@ -1141,6 +1144,7 @@ import CropTargetsSettings from '../components/CropTargetsSettings.vue'
 import GuardianSettingsAwakeningCard from '../components/GuardianSettingsAwakeningCard.vue'
 import GuardianSettingsModelPolicyCard from '../components/GuardianSettingsModelPolicyCard.vue'
 import GuardianSettingsCorpusCard from '../components/GuardianSettingsCorpusCard.vue'
+import GuardianSettingsQARunCard from '../components/GuardianSettingsQARunCard.vue'
 import { farmSetupRoute } from '../lib/farmSetupWizard.js'
 import { MODULE_SCHEMA } from '../lib/farmModules.js'
 
