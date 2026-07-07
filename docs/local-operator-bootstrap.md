@@ -256,7 +256,7 @@ Or one line including servers: **`make restart-local-serve`** (same as `./script
 ## Order of operations
 
 1. **Database** — Full schema: `db/schema/gr33n-schema-v2-FINAL.sql`. Upgrades on older snapshots: apply `db/migrations/*.sql` in **filename sort order** (the bootstrap script does this after the schema).
-2. **Environment** — Root [`.env.example`](../.env.example): `DATABASE_URL`, `AUTH_MODE`, and for real auth `JWT_SECRET` / `PI_API_KEY`. The API loads `.env` then `.env.local` from the repo root.
+2. **Environment** — Root [`.env.example`](../.env.example): `DATABASE_URL`, `AUTH_MODE`, and for real auth `JWT_SECRET` / `PI_API_KEY`. The API loads `.env` then `.env.local` from the repo root. To export secrets into your shell: **`source scripts/source-local-env.sh`** (refresh smoke JWT: **`source scripts/source-local-env.sh --refresh-eval-token`**).
 3. **API** — `make run` (dev auth bypass) or `make run-auth` / production-style config; see comments in `.env.example`.
 4. **UI** — `make ui` or `make dev` (API + UI). Copy [`ui/.env.example`](../ui/.env.example) to `ui/.env` if you need a non-default API URL (`VITE_API_URL`; otherwise the code defaults to `http://localhost:8080`).
 
