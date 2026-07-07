@@ -12,7 +12,7 @@ todos:
     status: completed
   - id: ws2-citation-alignment
     content: "WS2: Citation corpus alignment — answer terms vs cited excerpts; smoke/eval fail when tail uncited"
-    status: pending
+    status: completed
   - id: ws3-rag-retrieval-guard
     content: "WS3: field_guide retrieval guardrails — source_type/doc_path filters for agronomy prompts"
     status: pending
@@ -30,7 +30,7 @@ isProject: false
 
 # Phase 145 — Guardian topic drift & grounding depth
 
-**Status:** **In progress** (WS1 shipped) · **Depends on:** [144](phase_144_guardian_answer_quality_residuals.plan.md) · [131](phase_131_guardian_qa_harness.plan.md)
+**Status:** **In progress** (WS1–WS2 shipped) · **Depends on:** [144](phase_144_guardian_answer_quality_residuals.plan.md) · [131](phase_131_guardian_qa_harness.plan.md)
 
 **Evidence:** Run #3 archive `20260707T175718_smoke_phi3-mini.json` — ec-ph **4174 chars** with endocrine tail; morning-walk **gr33n-docs** + apology (144 trims on *new* turns only).
 
@@ -67,18 +67,9 @@ Phase 144 **keyword heuristics** are regression guards for *known* run #3 failur
 
 **Shipped:** `internal/farmguardian/answer_relevance.go` — `ScoreAnswerRelevanceFromText`, `GUARDIAN_RELEVANCE_MIN`; wired in chat finalize → turn debug (`question_answer_relevance`, `opening_tail_relevance`, `low_relevance`); `GuardianTurnDebug.vue`.
 
-### WS2 — Citation corpus alignment
+### WS2 — Citation corpus alignment ✅
 
-**Where:** `internal/farmguardian/answer_citation_align.go`, `eval/runner.go`, `eval_summary.go`.
-
-| Step | Detail |
-|------|--------|
-| Input | Citation excerpts from `/v1/chat` response (already returned; not persisted in QA archive today) |
-| Rule | Extract top terms from answer tail; require ≥1 cited excerpt to share crop/agronomy token OR fail `uncited_tail` |
-| Smoke | `smoke-ec-ph`, all `field_guide` fixtures with `ExpectCitation` |
-| Archive | `EvalQuestionScore.Citations []CitationSummary` with `ref`, `source_type`, `excerpt` |
-
-**Tests:** run #3 ec-ph citations (endocrine excerpts) → fail alignment; lettuce EC answer with matching cite → pass.
+**Shipped:** `internal/farmguardian/answer_citation_align.go` — `CitationAlignmentNote`; eval `Score` applies after field_guide pass when citations present; QA archive persists `citations[]` via `eval/runner.go` + `EvalQuestionScore.Citations`.
 
 ### WS3 — RAG retrieval guardrails
 

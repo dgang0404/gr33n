@@ -64,6 +64,7 @@ type ScoreInput struct {
 	Answer         string
 	CitationCount  int
 	ProposalCount  int
+	Citations      []farmguardian.CitationSummary
 	Latency        time.Duration
 	RepairAttempt  bool
 	RepairRecovered bool
@@ -85,6 +86,7 @@ type ScoreResult struct {
 	Grounded      bool
 	Model         string
 	LogEvidence   []string
+	Citations     []farmguardian.CitationSummary
 }
 
 // Score evaluates one answer heuristically.
@@ -182,7 +184,18 @@ func Score(in ScoreInput) ScoreResult {
 		res.Passed = true
 		res.Notes = "proposal repair recovered"
 	}
+	applyCitationAlignment(&res, in)
 	return res
+}
+
+func applyCitationAlignment(res *ScoreResult, in ScoreInput) {
+	if !res.Passed || in.Question.Category != "field_guide" || len(in.Citations) == 0 {
+		return
+	}
+	if note := farmguardian.CitationAlignmentNote(in.Question.Prompt, in.Answer, in.Citations); note != "" {
+		res.Passed = false
+		res.Notes = note
+	}
 }
 
 func citationRefPresent(answer string) bool {

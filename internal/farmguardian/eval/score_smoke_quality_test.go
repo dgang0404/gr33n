@@ -3,6 +3,8 @@ package eval
 import (
 	"strings"
 	"testing"
+
+	"gr33n-api/internal/farmguardian"
 )
 
 // Archived run #2 (2026-07-07) morning-walk answer — must fail WS4 quality heuristics.
@@ -101,9 +103,49 @@ func TestScore_smokeECPH_requiresPH(t *testing.T) {
 		Question: Question{ID: "smoke-ec-ph", Category: "field_guide"},
 		Answer:   "Leafy greens here target EC 0.8–1.3 mS/cm and pH 5.5–6.0 per our field guide [1].",
 		CitationCount: 1,
+		Citations: []farmguardian.CitationSummary{
+			{Ref: 1, SourceType: "field_guide", Excerpt: "Leafy greens EC 0.8–1.3 mS/cm and pH 5.5–6.0."},
+		},
 	})
 	if !res.Passed {
 		t.Fatalf("expected pass with EC and pH: %+v", res)
+	}
+}
+
+func TestScore_smokeECPH_citationMisalignedRun3Fails(t *testing.T) {
+	t.Parallel()
+	answer := `Our operational documentation for leafy greens indicates lettuce EC 1.0–1.3 mS/cm and pH 5.5–6.0.
+Sources on endocrine disruptors in Lake Erie wildlife show profound effects on hormonal systems.`
+	cites := []farmguardian.CitationSummary{
+		{Ref: 1, SourceType: "field_guide", Excerpt: "Lettuce EC targets 0.8–1.3 mS/cm; pH 5.5–6.0."},
+		{Ref: 6, SourceType: "field_guide", Excerpt: "Endocrine disruptors in aquatic lifeforms and Lake Erie ecosystem."},
+	}
+	res := Score(ScoreInput{
+		Question:      Question{ID: "smoke-ec-ph", Category: "field_guide", Prompt: "What does our operational documentation say about EC and pH targets for leafy greens here?"},
+		Answer:        answer,
+		CitationCount: len(cites),
+		Citations:     cites,
+	})
+	if res.Passed {
+		t.Fatalf("misaligned citations should fail: %+v", res)
+	}
+	if !strings.Contains(res.Notes, "misaligned") && !strings.Contains(res.Notes, "off-topic") {
+		t.Fatalf("notes=%q", res.Notes)
+	}
+}
+
+func TestScore_smokeECPH_citationAlignedPasses(t *testing.T) {
+	t.Parallel()
+	res := Score(ScoreInput{
+		Question: Question{ID: "fg-citation-format", Category: "field_guide", Prompt: "What EC range does the platform recommend for hydro lettuce?"},
+		Answer:   "Hydro lettuce targets EC 0.8–1.3 mS/cm and pH 5.5–6.0 per our field guide [1].",
+		CitationCount: 1,
+		Citations: []farmguardian.CitationSummary{
+			{Ref: 1, SourceType: "field_guide", Excerpt: "Hydro lettuce EC 0.8–1.3 mS/cm; pH 5.5–6.0."},
+		},
+	})
+	if !res.Passed {
+		t.Fatalf("aligned citations should pass: %+v", res)
 	}
 }
 

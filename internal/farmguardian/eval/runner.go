@@ -34,9 +34,9 @@ func NewAPIClient(baseURL, token string, farmID int64) *APIClient {
 }
 
 type chatResponse struct {
-	Answer    string `json:"answer"`
-	Citations []any  `json:"citations"`
-	Proposals []any  `json:"proposals"`
+	Answer    string                           `json:"answer"`
+	Citations []farmguardian.CitationSummary   `json:"citations"`
+	Proposals []any                            `json:"proposals"`
 }
 
 // RunQuestion posts one eval prompt with a model override.
@@ -85,6 +85,7 @@ func (c *APIClient) RunQuestion(ctx context.Context, model string, q Question) (
 		Answer:        parsed.Answer,
 		CitationCount: len(parsed.Citations),
 		ProposalCount: len(parsed.Proposals),
+		Citations:     parsed.Citations,
 		Latency:       latency,
 	}, nil
 }
@@ -164,6 +165,7 @@ func enrichScoreResult(res *ScoreResult, in ScoreInput, model string) {
 	res.Answer = in.Answer
 	res.CitationCount = in.CitationCount
 	res.ProposalCount = in.ProposalCount
+	res.Citations = in.Citations
 	res.Grounded = in.Question.Grounded
 	res.Model = model
 }
@@ -194,6 +196,7 @@ func ToEvalQuestionScores(scores []ScoreResult) []farmguardian.EvalQuestionScore
 			Prompt: s.Prompt, Answer: s.Answer, Error: s.Error,
 			CitationCount: s.CitationCount, ProposalCount: s.ProposalCount,
 			Grounded: s.Grounded, Model: s.Model, LogEvidence: s.LogEvidence,
+			Citations: s.Citations,
 		}
 	}
 	return out

@@ -47,6 +47,7 @@ type EvalQuestionScore struct {
 	Grounded      bool    `json:"grounded,omitempty"`
 	Model         string  `json:"model,omitempty"`
 	LogEvidence   []string `json:"log_evidence,omitempty"`
+	Citations     []CitationSummary `json:"citations,omitempty"`
 }
 
 var (
