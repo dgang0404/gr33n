@@ -12,7 +12,7 @@ todos:
     status: completed
   - id: ws2-citation-url-hygiene
     content: "WS2: Block or rewrite fake gr33n.com markdown links; prefer [source#N] only in rendered answers"
-    status: pending
+    status: completed
   - id: ws3-warmup-eval-model
     content: "WS3: guardian-eval warmup passes explicit model; fix 503 when farm counsel model rejects tinyllama ctx floor"
     status: completed
@@ -56,15 +56,9 @@ isProject: false
 
 **Shipped:** `internal/farmguardian/answer_leak.go` — `TrimInstructionLeak` before turn persist (sync + stream); `guardian: answer_leak_trimmed` log; `leak_trimmed` on dev turn debug + `GuardianTurnDebug.vue`.
 
-### WS2 — Citation URL hygiene
+### WS2 — Citation URL hygiene ✅
 
-**Where:** answer post-process or markdown render path.
-
-- Reject/rewrite markdown links whose host is not allowlisted (empty allowlist → strip `https://gr33n.com/*` hallucinations).
-- Keep numeric refs `[1]`, `[source#N]`, `per our field guide` phrasing.
-- Optional: normalize `([live farm snapshot](#))` to plain text.
-
-**Tests:** `answer_sanitize_test.go` with fake URL fixtures.
+**Shipped:** `SanitizeCitationURLs` rewrites `gr33n.com` and `#` markdown links to plain labels; `AnswerContainsFakeCitationURL` for eval (WS4); dev turn debug shows `citation_urls_sanitized`.
 
 ### WS3 — Warmup + eval model alignment ✅
 

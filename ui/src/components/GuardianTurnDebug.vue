@@ -26,6 +26,10 @@
         <dt class="text-violet-400/80 inline">leak_trim:</dt>
         <dd class="inline ml-1">removed {{ debug.leak_chars_removed }} chars</dd>
       </div>
+      <div v-if="debug.citation_urls_sanitized">
+        <dt class="text-violet-400/80 inline">citation_urls:</dt>
+        <dd class="inline ml-1">rewrote {{ debug.citation_links_rewritten }} fake links</dd>
+      </div>
       <div v-if="modelLine">
         <dt class="text-violet-400/80 inline">model:</dt>
         <dd class="inline ml-1">{{ modelLine }}</dd>

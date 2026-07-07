@@ -499,13 +499,7 @@ func (h *Handler) PostV1(w http.ResponseWriter, r *http.Request) {
 	if grounded {
 		answer = synthesis.StripOrphanCitationRefs(answer, len(chunks))
 	}
-	answer, leakTrim := farmguardian.TrimInstructionLeak(answer, question)
-	if leakTrim.Trimmed {
-		slog.Info("guardian: answer_leak_trimmed",
-			"chars_removed", leakTrim.CharsRemoved,
-			"marker", leakTrim.Marker,
-		)
-	}
+	answer, hygiene := sanitizeAssistantAnswer(answer, question)
 
 	resp := postResponse{
 		Answer:           answer,
@@ -520,10 +514,7 @@ func (h *Handler) PostV1(w http.ResponseWriter, r *http.Request) {
 	applyModelMeta(&resp, modelOutcome)
 	resp.TrimSummary = trimSummary
 	dbg := buildTurnDebug(r.Context(), debugIn)
-	if dbg != nil && leakTrim.Trimmed {
-		dbg.LeakTrimmed = true
-		dbg.LeakCharsRemoved = leakTrim.CharsRemoved
-	}
+	applyAnswerHygieneDebug(dbg, hygiene)
 	attachTurnDebug(&resp, dbg)
 	if grounded {
 		resp.Citations = synthesis.BuildCitations(answer, chunks)
@@ -657,13 +648,7 @@ func (h *Handler) streamResponse(
 	if grounded {
 		answer = synthesis.StripOrphanCitationRefs(answer, len(chunks))
 	}
-	answer, leakTrim := farmguardian.TrimInstructionLeak(answer, question)
-	if leakTrim.Trimmed {
-		slog.Info("guardian: answer_leak_trimmed",
-			"chars_removed", leakTrim.CharsRemoved,
-			"marker", leakTrim.Marker,
-		)
-	}
+	answer, hygiene := sanitizeAssistantAnswer(answer, question)
 	done := postResponse{
 		Answer:           answer,
 		LLMModel:         chatClient.ModelLabel(),
@@ -677,10 +662,7 @@ func (h *Handler) streamResponse(
 	applyModelMeta(&done, modelOutcome)
 	done.TrimSummary = trimSummary
 	dbg := buildTurnDebug(r.Context(), debugIn)
-	if dbg != nil && leakTrim.Trimmed {
-		dbg.LeakTrimmed = true
-		dbg.LeakCharsRemoved = leakTrim.CharsRemoved
-	}
+	applyAnswerHygieneDebug(dbg, hygiene)
 	attachTurnDebug(&done, dbg)
 	if grounded {
 		done.Citations = synthesis.BuildCitations(answer, chunks)

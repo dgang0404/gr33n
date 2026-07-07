@@ -19,6 +19,8 @@ type TurnDebug struct {
 	PromptBudget            *PromptBudget  `json:"prompt_budget,omitempty"`
 	LeakTrimmed             bool         `json:"leak_trimmed,omitempty"`
 	LeakCharsRemoved        int          `json:"leak_chars_removed,omitempty"`
+	CitationURLsSanitized   bool         `json:"citation_urls_sanitized,omitempty"`
+	CitationLinksRewritten  int          `json:"citation_links_rewritten,omitempty"`
 }
 
 // CountRAGChunksBySource groups retrieved chunks by source_type for the turn inspector.
