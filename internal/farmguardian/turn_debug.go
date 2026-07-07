@@ -25,6 +25,7 @@ type TurnDebug struct {
 	OpeningTailRelevance       float64      `json:"opening_tail_relevance,omitempty"`
 	LowRelevance               bool         `json:"low_relevance,omitempty"`
 	RelevanceMinThreshold      float64      `json:"relevance_min_threshold,omitempty"`
+	RAGFilterApplied           string       `json:"rag_filter_applied,omitempty"`
 	CitationURLsSanitized      bool         `json:"citation_urls_sanitized,omitempty"`
 	CitationLinksRewritten  int          `json:"citation_links_rewritten,omitempty"`
 }

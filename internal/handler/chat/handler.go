@@ -245,8 +245,9 @@ func (h *Handler) PostV1(w http.ResponseWriter, r *http.Request) {
 	// is set we always attach the live snapshot; RAG chunk retrieval is optional
 	// and only runs when an embedder is configured (EMBEDDING_API_KEY).
 	var (
-		chunks   []db.SearchRagNearestNeighborsFilteredRow
-		system   = farmguardian.ChatSystemPrompt(h.cfg, h.llm != nil)
+		chunks           []db.SearchRagNearestNeighborsFilteredRow
+		ragFilterApplied string
+		system           = farmguardian.ChatSystemPrompt(h.cfg, h.llm != nil)
 		user     = question
 		liveSnap farmguardian.Snapshot
 		toolPlan farmguardian.ToolPlan
@@ -287,6 +288,7 @@ func (h *Handler) PostV1(w http.ResponseWriter, r *http.Request) {
 		system = parts.system
 		user = parts.user
 		chunks = parts.chunks
+		ragFilterApplied = parts.ragFilterNote
 		liveSnap = parts.liveSnap
 		toolPlan = parts.toolPlan
 	}
@@ -432,6 +434,7 @@ func (h *Handler) PostV1(w http.ResponseWriter, r *http.Request) {
 	debugIn := turnDebugBuildInput{
 		toolPlan:         toolPlan,
 		chunks:           chunks,
+		ragFilterApplied: ragFilterApplied,
 		trimSummary:      trimSummary,
 		model:            chatClient.ModelLabel(),
 		effectiveWindow:  effectiveWindow,
@@ -760,22 +763,28 @@ func (h *Handler) checkCostBudget(ctx context.Context, w http.ResponseWriter, us
 	return false
 }
 
-func (h *Handler) retrieveChunks(ctx context.Context, farmID int64, query string, topK int) ([]db.SearchRagNearestNeighborsFilteredRow, error) {
+func (h *Handler) retrieveChunks(ctx context.Context, farmID int64, query string, topK int) ([]db.SearchRagNearestNeighborsFilteredRow, string, error) {
 	vecs, err := h.embedder.Embed(ctx, []string{query})
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 	if len(vecs) != 1 || len(vecs[0]) == 0 {
-		return nil, errors.New("invalid embedding response")
+		return nil, "", errors.New("invalid embedding response")
 	}
 	if topK <= 0 {
 		topK = farmguardian.RAGTopK
 	}
-	return h.q.SearchRagNearestNeighborsFiltered(ctx, db.SearchRagNearestNeighborsFilteredParams{
+	fetchK := farmguardian.RAGRetrieveLimit(query, topK)
+	rows, err := h.q.SearchRagNearestNeighborsFiltered(ctx, db.SearchRagNearestNeighborsFilteredParams{
 		QueryEmbedding: pgvector.NewVector(vecs[0]),
 		FarmID:         farmID,
-		MatchLimit:     int32(topK),
+		MatchLimit:     int32(fetchK),
 	})
+	if err != nil {
+		return nil, "", err
+	}
+	filtered := farmguardian.FilterRAGChunks(query, rows, topK)
+	return filtered.Chunks, filtered.Note, nil
 }
 
 // persistTurn inserts the just-completed (user, assistant) pair when we have

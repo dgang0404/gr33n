@@ -69,6 +69,7 @@ func lookupTurnDebug(sessionID uuid.UUID, turnIndex int32) (farmguardian.TurnDeb
 type turnDebugBuildInput struct {
 	toolPlan         farmguardian.ToolPlan
 	chunks           []db.SearchRagNearestNeighborsFilteredRow
+	ragFilterApplied string
 	trimSummary      *farmguardian.TrimSummary
 	model            string
 	effectiveWindow  int
@@ -80,7 +81,7 @@ func buildTurnDebug(ctx context.Context, in turnDebugBuildInput) *farmguardian.T
 	if !debugModeEnabled() {
 		return nil
 	}
-	return farmguardian.BuildTurnDebug(
+	dbg := farmguardian.BuildTurnDebug(
 		authctx.RequestID(ctx),
 		in.toolPlan,
 		in.chunks,
@@ -90,6 +91,10 @@ func buildTurnDebug(ctx context.Context, in turnDebugBuildInput) *farmguardian.T
 		in.advertisedWindow,
 		in.promptBudget,
 	)
+	if dbg != nil && in.ragFilterApplied != "" {
+		dbg.RAGFilterApplied = in.ragFilterApplied
+	}
+	return dbg
 }
 
 func attachTurnDebug(resp *postResponse, dbg *farmguardian.TurnDebug) {

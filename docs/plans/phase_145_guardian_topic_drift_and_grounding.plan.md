@@ -15,7 +15,7 @@ todos:
     status: completed
   - id: ws3-rag-retrieval-guard
     content: "WS3: field_guide retrieval guardrails — source_type/doc_path filters for agronomy prompts"
-    status: pending
+    status: completed
   - id: ws4-answer-tail-hygiene
     content: "WS4: Trim raw Sources: dumps, relative .md plan links, max grounded length by model profile"
     status: pending
@@ -30,7 +30,7 @@ isProject: false
 
 # Phase 145 — Guardian topic drift & grounding depth
 
-**Status:** **In progress** (WS1–WS2 shipped) · **Depends on:** [144](phase_144_guardian_answer_quality_residuals.plan.md) · [131](phase_131_guardian_qa_harness.plan.md)
+**Status:** **In progress** (WS1–WS3 shipped) · **Depends on:** [144](phase_144_guardian_answer_quality_residuals.plan.md) · [131](phase_131_guardian_qa_harness.plan.md)
 
 **Evidence:** Run #3 archive `20260707T175718_smoke_phi3-mini.json` — ec-ph **4174 chars** with endocrine tail; morning-walk **gr33n-docs** + apology (144 trims on *new* turns only).
 
@@ -71,18 +71,9 @@ Phase 144 **keyword heuristics** are regression guards for *known* run #3 failur
 
 **Shipped:** `internal/farmguardian/answer_citation_align.go` — `CitationAlignmentNote`; eval `Score` applies after field_guide pass when citations present; QA archive persists `citations[]` via `eval/runner.go` + `EvalQuestionScore.Citations`.
 
-### WS3 — RAG retrieval guardrails
+### WS3 — RAG retrieval guardrails ✅
 
-**Where:** `internal/handler/chat/handler.go` `retrieveChunks`, new `internal/farmguardian/rag_filter.go`.
-
-| Step | Detail |
-|------|--------|
-| Intent | Detect agronomy EC/pH / crop prompts via lightweight keyword router (reuse readtools patterns) |
-| Filter | For agronomy intent: prefer `platform_doc`, `field_guide` with `doc_path` matching crop/water; demote chunks whose `doc_path` contains unrelated domains (e.g. `endocrine`, `wildlife`) |
-| Cap | Optional `GUARDIAN_RAG_MAX_CHUNKS_FIELD_GUIDE=5` on cpu_laptop profile |
-| Debug | `rag_chunks` in turn debug already shows source_type counts — add `rag_filter_applied` note |
-
-**Tests:** integration test with seeded chunk metadata; smoke-ec-ph retrieval no longer surfaces endocrine doc in top-3 (mock DB or recorded chunk fixture).
+**Shipped:** `internal/farmguardian/rag_filter.go` — `AgronomyQueryIntent`, `FilterRAGChunks`, `RAGRetrieveLimit`; wired in `retrieveChunks` with over-fetch + post-filter; turn debug `rag_filter_applied`; optional `GUARDIAN_RAG_MAX_CHUNKS_FIELD_GUIDE`.
 
 ### WS4 — Answer tail hygiene (structural)
 

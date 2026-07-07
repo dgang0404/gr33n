@@ -13,12 +13,13 @@ import (
 )
 
 type groundedTurnParts struct {
-	system    string
-	user      string
-	chunks    []db.SearchRagNearestNeighborsFilteredRow
-	liveSnap  farmguardian.Snapshot
-	readBlock string
-	toolPlan  farmguardian.ToolPlan
+	system        string
+	user          string
+	chunks        []db.SearchRagNearestNeighborsFilteredRow
+	ragFilterNote string
+	liveSnap      farmguardian.Snapshot
+	readBlock     string
+	toolPlan      farmguardian.ToolPlan
 }
 
 func (h *Handler) buildGroundedTurn(
@@ -84,13 +85,14 @@ func (h *Handler) buildGroundedTurn(
 		if emit != nil {
 			emit("status", phaseStatus("embedding", "Searching field memories…"))
 		}
-		chunks, rerr := h.retrieveChunks(ctx, farmID, question, promptBudget.RAGTopK)
+		chunks, ragFilterNote, rerr := h.retrieveChunks(ctx, farmID, question, promptBudget.RAGTopK)
 		if rerr != nil {
 			slog.Warn("farm guardian retrieval failed", "farm_id", farmID, "err", rerr)
 			if !farmguardian.IsLocalInferenceURL(strings.TrimSpace(os.Getenv("LLM_BASE_URL"))) {
 				return out, rerr
 			}
 		} else if len(chunks) > 0 {
+			out.ragFilterNote = ragFilterNote
 			if farmguardian.ReadBlockHasCropTargets(out.readBlock) {
 				chunks = synthesis.StripNutrientNumbersFromChunks(chunks)
 				system += synthesis.StructuredTruthRAGBlock() + "\n\n"
