@@ -10,7 +10,7 @@
     <p class="text-xs text-zinc-500 mb-4 leading-relaxed">
       Thumbs-down turns from Farm Guardian chat. Review after
       <code class="text-zinc-400">make guardian-qa-smoke</code> or weekly agronomy triage.
-      See <code class="text-zinc-400">docs/guardian-feedback-review-runbook.md</code> for triage steps.
+      See <code class="text-zinc-400">docs/guardian-feedback-review-runbook.md</code> for the smoke quality checklist and triage steps.
     </p>
 
     <div class="flex flex-wrap items-center gap-2 mb-3 text-xs">

@@ -1,8 +1,8 @@
-# Guardian feedback review — operator runbook (Phase 141)
+# Guardian feedback review — operator runbook (Phase 141 · quality checklist Phase 143)
 
 **Audience:** Farm admins and agronomy reviewers closing the Guardian quality loop after smoke tests or field use.
 
-**Related:** [Phase 134 plan](plans/phase_134_guardian_answer_feedback.plan.md) · [Phase 131 QA harness](plans/phase_131_guardian_qa_harness.plan.md) · [ci-guardian-qa.md](ci-guardian-qa.md)
+**Related:** [Phase 134 plan](plans/phase_134_guardian_answer_feedback.plan.md) · [Phase 131 QA harness](plans/phase_131_guardian_qa_harness.plan.md) · [Phase 143 answer quality](plans/phase_143_guardian_answer_quality.plan.md) · [ci-guardian-qa.md](ci-guardian-qa.md)
 
 ---
 
@@ -10,11 +10,35 @@
 
 | Trigger | Action |
 |---------|--------|
-| After `make guardian-qa-smoke` | Open Settings → **Guardian feedback**; check for down votes on the 4 smoke prompts |
+| After `make guardian-qa-smoke` | Run [Smoke quality checklist](#smoke-quality-checklist-phase-143) on archived answers; then Settings → **Guardian feedback** |
 | Weekly ops | Export last 7d down votes; triage invented data vs missed alerts |
-| Before a demo | Confirm no open down votes on morning-walkthrough answers |
+| Before a demo | Confirm no open down votes on morning-walkthrough answers; no template leaks or fake URLs in last smoke archive |
 
-Archived smoke JSON includes `feedback_review_prompt` reminding you to check this workflow.
+Archived smoke JSON includes `feedback_review_prompt` reminding you to check this workflow. The eval runner also logs the same line when the archive is written.
+
+---
+
+## Smoke quality checklist (Phase 143)
+
+**Heuristic 4/4 ≠ operator-trustworthy.** After smoke passes, spot-check each archived answer (`data/guardian_qa_runs/*.json` or Settings → **Guardian QA — last run**).
+
+| Prompt | What to verify | Fail signals (thumbs-down + triage) |
+|--------|----------------|--------------------------------------|
+| `smoke-morning-walk` | Farm-specific walkthrough; no debug text | `## Your task`, echoed `Question:` block, instruction template at end of answer |
+| `smoke-morning-walk` | Citations are labels, not fake links | `gr33n.com/`, `https://gr33n.com/tasks`, markdown links to non-existent platform paths |
+| `smoke-ec-ph` | Both EC **and** pH from docs | EC ranges only; no `ph` / pH targets or ranges |
+| `smoke-cherry-forest` | On-topic forest-garden counsel | Invented farm (`secret mars dome`), off-topic filler |
+| `smoke-unread-alerts` | Concrete seeded alerts | Generic “check your alerts” without humidity, stock, or photoperiod specifics |
+
+**Dev turn debug** (local `import.meta.env.DEV`): confirm `leak_trimmed` and `citation_urls_sanitized` when WS1–2 hygiene fired on finalize.
+
+**If any row fails:**
+
+1. Open the smoke session in chat; **thumbs-down** with the closest reason chip (`invented_data`, `missed_alert`, `other`).
+2. Settings → **Guardian feedback** — confirm the row appears; export CSV if sharing with agronomy.
+3. Do **not** treat the run as demo-ready until WS1–4 fixes are deployed and smoke is re-run (Phase 143 WS6).
+
+Eval heuristics (WS4) now encode several of these checks — failed rows show notes such as `instruction template leak`, `hallucinated gr33n.com citation URLs`, or `expected EC guidance and explicit pH targets`.
 
 ---
 
@@ -66,10 +90,11 @@ Columns: `session_id`, `turn_index`, `question`, `answer_excerpt`, `rating`, `re
 Recommended order after Guardian changes:
 
 1. `make guardian-qa-smoke MODEL=phi3:mini FARM_ID=1`
-2. Settings → **Guardian QA — last run** (Phase 140) — confirm 4/4 heuristic pass
-3. Manually thumbs-down any bad answers in the chat drawer during smoke
-4. Settings → **Guardian feedback** — export or review down queue
-5. *(Later)* Full manual walkthrough with turn debugger (`import.meta.env.DEV` / auth_test)
+2. Settings → **Guardian QA — last run** (Phase 140) — confirm heuristic pass/fail per step
+3. [Smoke quality checklist](#smoke-quality-checklist-phase-143) — read full answers in the archive JSON
+4. Manually thumbs-down any bad answers in the chat drawer during smoke
+5. Settings → **Guardian feedback** — export or review down queue
+6. *(Later)* Full manual walkthrough with turn debugger (`import.meta.env.DEV` / auth_test)
 
 ---
 

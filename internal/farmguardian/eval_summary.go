@@ -3,6 +3,7 @@ package farmguardian
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -152,6 +153,9 @@ func MergeEvalIntoModels(models []ModelInfo) []ModelInfo {
 	return out
 }
 
+// QAFeedbackReviewPrompt is stored on smoke/regression archives and logged after save.
+const QAFeedbackReviewPrompt = "After smoke: run docs/guardian-feedback-review-runbook.md § Smoke quality checklist, then Settings → Guardian feedback (or GET /v1/chat/feedback/export)"
+
 // QARunArchive is a full recorded eval run (Phase 131).
 type QARunArchive struct {
 	UpdatedAt              string              `json:"updated_at"`
@@ -286,7 +290,7 @@ func SaveQARunArchive(path, suite, model string, scores []EvalQuestionScore) err
 		UpdatedAt:            time.Now().UTC().Format(time.RFC3339),
 		Suite:                suite,
 		Model:                model,
-		FeedbackReviewPrompt: "After smoke, review thumbs-down in Settings → Guardian feedback or GET /v1/chat/feedback/export",
+		FeedbackReviewPrompt: QAFeedbackReviewPrompt,
 		Scores:               scores,
 	}
 	raw, err := json.MarshalIndent(arch, "", "  ")
@@ -300,5 +304,9 @@ func SaveQARunArchive(path, suite, model string, scores []EvalQuestionScore) err
 	if err := os.WriteFile(tmp, raw, 0o644); err != nil {
 		return err
 	}
-	return os.Rename(tmp, path)
+	if err := os.Rename(tmp, path); err != nil {
+		return err
+	}
+	log.Printf("guardian qa: archive saved %s — %s", path, QAFeedbackReviewPrompt)
+	return nil
 }

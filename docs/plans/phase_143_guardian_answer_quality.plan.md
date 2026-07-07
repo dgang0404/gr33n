@@ -21,7 +21,7 @@ todos:
     status: completed
   - id: ws5-feedback-review-run
     content: "WS5: Document post-smoke feedback checklist; optional Settings nudge after QA archive write"
-    status: pending
+    status: completed
   - id: ws6-closure
     content: "WS6: Re-run make guardian-qa-smoke; update smoke report; architecture § pointer; phase-143-closure test"
     status: pending
@@ -70,12 +70,9 @@ isProject: false
 
 **Tests:** `score_smoke_quality_test.go` — archived run #2 morning-walk → fail; clean answer → pass; EC-only ec-ph → fail; pH+EC → pass.
 
-### WS5 — Feedback review loop
+### WS5 — Feedback review loop ✅
 
-**Where:** docs only (+ optional UI toast).
-
-- Extend [`guardian-feedback-review-runbook.md`](../guardian-feedback-review-runbook.md) with smoke quality checklist (leak, URLs, pH).
-- After `SaveQARunArchive`, log reminder line (already have `feedback_review_prompt` in JSON).
+**Shipped:** [`guardian-feedback-review-runbook.md`](../guardian-feedback-review-runbook.md) § Smoke quality checklist (leak, fake URLs, pH, alerts); `QAFeedbackReviewPrompt` on archives + log after `SaveQARunArchive`; Settings QA card quality nudge.
 
 ### WS6 — Closure
 

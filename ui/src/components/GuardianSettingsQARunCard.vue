@@ -58,6 +58,12 @@
         </table>
       </div>
 
+      <p v-if="summary" class="text-[10px] text-zinc-500" data-test="settings-guardian-qa-quality-nudge">
+        Heuristic pass is not a quality sign-off — spot-check archived answers per
+        <code class="text-zinc-400">docs/guardian-feedback-review-runbook.md</code>
+        (Smoke quality checklist), then Settings → Guardian feedback.
+      </p>
+
       <p class="text-[10px] text-zinc-600">
         Re-run:
         <code class="text-zinc-400">make guardian-qa-smoke MODEL=phi3:mini FARM_ID=1</code>

@@ -64,7 +64,7 @@ jobs:
 
 Smoke uses **recorded JSON + heuristic checks** (answer length, citation count, optional log scrape for `walk_farm`). **Heuristic pass ≠ operator-quality pass** — see [smoke report 2026-07-07](guardian-qa-smoke-report-20260707.md) and [Phase 143](plans/phase_143_guardian_answer_quality.plan.md) for leak/URL/pH hardening. Human review of archived runs and **thumbs feedback** ([Phase 134](plans/phase_134_guardian_answer_feedback.plan.md)) is the quality loop — **LLM-as-judge is explicitly deferred** (see Phase 131 non-goals).
 
-**After smoke:** Settings → Guardian feedback ([runbook](guardian-feedback-review-runbook.md)) · Settings → Guardian QA last run (Phase 140).
+**After smoke:** Run the [smoke quality checklist](guardian-feedback-review-runbook.md#smoke-quality-checklist-phase-143) · Settings → Guardian feedback ([runbook](guardian-feedback-review-runbook.md)) · Settings → Guardian QA last run (Phase 140).
 
 ---
 
