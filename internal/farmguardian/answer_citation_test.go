@@ -7,6 +7,8 @@ import (
 
 const smokeMorningWalkURLs = `Check [source#2](https://gr33n.com/sources/field_guide) and [task#5](https://gr33n.com/tasks) plus ([live farm snapshot](#)).`
 
+const smokeMorningWalkGr33nDocs = `See [task #5](https://gr33n-docs/phase_40_unified_farmer_ux_zone_cockpit.plan.md#tasks) and [platform_doc #2](https://gr33n-docs/local-operator-bootstrap.md#14-confirmed-actions).`
+
 func TestSanitizeCitationURLs_smokeMorningWalk(t *testing.T) {
 	t.Parallel()
 	got, meta := SanitizeCitationURLs(smokeMorningWalkURLs)
@@ -21,6 +23,20 @@ func TestSanitizeCitationURLs_smokeMorningWalk(t *testing.T) {
 	}
 	if AnswerContainsFakeCitationURL(got) {
 		t.Fatal("sanitized answer should not contain fake URLs")
+	}
+}
+
+func TestSanitizeCitationURLs_gr33nDocs(t *testing.T) {
+	t.Parallel()
+	got, meta := SanitizeCitationURLs(smokeMorningWalkGr33nDocs)
+	if !meta.Sanitized || meta.LinksRewritten != 2 {
+		t.Fatalf("meta=%+v", meta)
+	}
+	if strings.Contains(got, "gr33n-docs") {
+		t.Fatalf("gr33n-docs still present: %q", got)
+	}
+	if !strings.Contains(got, "task #5") || !strings.Contains(got, "platform_doc #2") {
+		t.Fatalf("labels lost: %q", got)
 	}
 }
 

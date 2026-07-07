@@ -19,7 +19,7 @@
 | Grounded cite rate | 0% | **100%** (3/3 grounded) | **100%** (3/3 grounded) |
 | Tools | partial | `walk_farm`, `list_unread_alerts` | `walk_farm` (log scrape) |
 
-**Verdict (run #3):** Phase 143 hygiene ships — **no `gr33n.com` fake URLs**, **no `## Your task` template leak** on morning-walk, **ec-ph includes pH + EC** in the scored answer. Heuristics **4/4**. Human review still finds **model hallucination** on ec-ph (off-topic endocrine-disruptor tail) and **gr33n-docs/** markdown links on morning-walk — document in feedback runbook, not auto-fail v1 heuristics.
+**Verdict (run #3):** Phase 143 hygiene ships — **no `gr33n.com` fake URLs**, **no `## Your task` template leak** on morning-walk, **ec-ph includes pH + EC** in the scored answer. Heuristics **4/4**. **[Phase 144](plans/phase_144_guardian_answer_quality_residuals.plan.md)** adds `gr33n-docs/` sanitize, apology-tail trim, and ec-ph drift heuristics for run #3 residuals.
 
 ---
 

@@ -15,7 +15,7 @@ type CitationURLSanitize struct {
 	LinksRewritten int  `json:"citation_links_rewritten,omitempty"`
 }
 
-// SanitizeCitationURLs rewrites markdown links to gr33n.com (or bare # anchors) as plain labels.
+// SanitizeCitationURLs rewrites markdown links to gr33n.com, gr33n-docs, or bare # anchors as plain labels.
 func SanitizeCitationURLs(answer string) (string, CitationURLSanitize) {
 	if strings.TrimSpace(answer) == "" {
 		return answer, CitationURLSanitize{}
@@ -61,5 +61,5 @@ func isHallucinatedCitationURL(url string) bool {
 	if strings.HasPrefix(u, "#") {
 		return true
 	}
-	return strings.Contains(u, "gr33n.com")
+	return strings.Contains(u, "gr33n.com") || strings.Contains(u, "gr33n-docs")
 }

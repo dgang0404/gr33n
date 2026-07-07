@@ -17,9 +17,11 @@ type TurnDebug struct {
 	EffectiveContextWindow  int            `json:"effective_context_window,omitempty"`
 	AdvertisedContextWindow int            `json:"advertised_context_window,omitempty"`
 	PromptBudget            *PromptBudget  `json:"prompt_budget,omitempty"`
-	LeakTrimmed             bool         `json:"leak_trimmed,omitempty"`
-	LeakCharsRemoved        int          `json:"leak_chars_removed,omitempty"`
-	CitationURLsSanitized   bool         `json:"citation_urls_sanitized,omitempty"`
+	LeakTrimmed                bool         `json:"leak_trimmed,omitempty"`
+	LeakCharsRemoved           int          `json:"leak_chars_removed,omitempty"`
+	MetaCorrectionTrimmed      bool         `json:"meta_correction_trimmed,omitempty"`
+	MetaCorrectionCharsRemoved int          `json:"meta_correction_chars_removed,omitempty"`
+	CitationURLsSanitized      bool         `json:"citation_urls_sanitized,omitempty"`
 	CitationLinksRewritten  int          `json:"citation_links_rewritten,omitempty"`
 }
 

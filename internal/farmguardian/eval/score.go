@@ -121,7 +121,13 @@ func Score(in ScoreInput) ScoreResult {
 		hasPH := strings.Contains(a, "ph")
 		hasEC := strings.Contains(a, "ec") || in.CitationCount > 0 || citationRefPresent(in.Answer)
 		res.Passed = hasPH && hasEC
-		if !res.Passed {
+		if res.Passed {
+			if note := smokeECPHQualityNote(in.Answer); note != "" {
+				res.Passed = false
+				res.Notes = note
+			}
+		}
+		if !res.Passed && res.Notes == "" {
 			res.Notes = "expected EC guidance and explicit pH targets from documentation"
 		}
 	case in.Question.ID == "farm-devices", in.Question.ID == "p128-devices":
@@ -208,8 +214,24 @@ func smokeMorningWalkQualityNote(answer, prompt string) string {
 	if farmguardian.AnswerLooksLikePromptLeak(answer, prompt) {
 		return "answer contains instruction template leak"
 	}
+	if farmguardian.AnswerContainsMetaCorrection(answer) {
+		return "answer contains model self-correction / apology tail"
+	}
 	if farmguardian.AnswerContainsFakeCitationURL(answer) {
-		return "answer contains hallucinated gr33n.com citation URLs"
+		return "answer contains hallucinated citation URLs"
+	}
+	return ""
+}
+
+func smokeECPHQualityNote(answer string) string {
+	a := strings.ToLower(answer)
+	for _, term := range []string{"endocrine-disruptor", "endocrine disruptor", "endocrine_disruptor", "lake erie", "lake superior", "typha latifolia"} {
+		if strings.Contains(a, term) {
+			return "answer drifts off-topic from leafy greens EC/pH"
+		}
+	}
+	if strings.Contains(a, "endocrine") && !strings.Contains(a, "leafy green") {
+		return "answer drifts off-topic from leafy greens EC/pH"
 	}
 	return ""
 }

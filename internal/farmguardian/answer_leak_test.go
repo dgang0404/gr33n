@@ -68,3 +68,31 @@ func TestTrimInstructionLeak_empty(t *testing.T) {
 		t.Fatalf("got %q meta=%+v", got, meta)
 	}
 }
+
+const smokeMorningWalkMetaCorrection = `Check veg EC 1.2–2.0 mS/cm first, then flower room humidity.
+I apologize for misunderstanding. The instruction requires a focus on immediate actions. Here's an updated answer:`
+
+func TestTrimMetaCorrection_smokeMorningWalk(t *testing.T) {
+	t.Parallel()
+	got, meta := TrimMetaCorrection(smokeMorningWalkMetaCorrection)
+	if !meta.Trimmed {
+		t.Fatal("expected meta correction trim")
+	}
+	if strings.Contains(strings.ToLower(got), "apolog") {
+		t.Fatalf("apology still present: %q", got)
+	}
+	if !strings.Contains(got, "veg EC") {
+		t.Fatal("expected farm content preserved")
+	}
+}
+
+func TestAnswerContainsMetaCorrection(t *testing.T) {
+	t.Parallel()
+	if !AnswerContainsMetaCorrection(smokeMorningWalkMetaCorrection) {
+		t.Fatal("expected detection")
+	}
+	clean, _ := TrimMetaCorrection(smokeMorningWalkMetaCorrection)
+	if AnswerContainsMetaCorrection(clean) {
+		t.Fatal("expected clean after trim")
+	}
+}

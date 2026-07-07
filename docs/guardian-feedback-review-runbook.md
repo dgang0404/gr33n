@@ -24,9 +24,9 @@ Archived smoke JSON includes `feedback_review_prompt` reminding you to check thi
 
 | Prompt | What to verify | Fail signals (thumbs-down + triage) |
 |--------|----------------|--------------------------------------|
-| `smoke-morning-walk` | Farm-specific walkthrough; no debug text | `## Your task`, echoed `Question:` block, instruction template at end of answer |
-| `smoke-morning-walk` | Citations are labels, not fake links | `gr33n.com/`, `https://gr33n.com/tasks`, markdown links to non-existent platform paths |
-| `smoke-ec-ph` | Both EC **and** pH from docs | EC ranges only; no `ph` / pH targets or ranges |
+| `smoke-morning-walk` | Farm-specific walkthrough; no debug text | `## Your task`, echoed `Question:` block, **apology / “updated answer” tail**, instruction template at end of answer |
+| `smoke-morning-walk` | Citations are labels, not fake links | `gr33n.com/`, **`gr33n-docs/`**, `https://gr33n.com/tasks`, markdown links to non-existent platform paths |
+| `smoke-ec-ph` | Both EC **and** pH from docs | EC ranges only; no `ph` / pH targets; **off-topic tail** (endocrine, Lake Erie, unrelated field guides) |
 | `smoke-cherry-forest` | On-topic forest-garden counsel | Invented farm (`secret mars dome`), off-topic filler |
 | `smoke-unread-alerts` | Concrete seeded alerts | Generic “check your alerts” without humidity, stock, or photoperiod specifics |
 

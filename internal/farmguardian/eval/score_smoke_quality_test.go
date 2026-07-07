@@ -31,7 +31,42 @@ func TestScore_smokeMorningWalk_archivedRun2Fails(t *testing.T) {
 	if res.Passed {
 		t.Fatalf("archived run #2 should fail WS4 quality: %+v", res)
 	}
-	if !strings.Contains(res.Notes, "leak") && !strings.Contains(res.Notes, "gr33n.com") {
+	if !strings.Contains(res.Notes, "leak") && !strings.Contains(res.Notes, "citation") {
+		t.Fatalf("notes=%q", res.Notes)
+	}
+}
+
+// Archived run #3 (2026-07-07) morning-walk — gr33n-docs links + apology tail.
+const archivedRun3MorningWalk = `Check veg EC per [task #5](https://gr33n-docs/phase_40_unified_farmer_ux_zone_cockpit.plan.md#tasks).
+I apologize for misunderstanding. Here's an updated answer:`
+
+// Archived run #3 ec-ph — opens on-topic then drifts to endocrine content.
+const archivedRun3ECPHDrift = `Our operational documentation for leafy greens indicates lettuce EC 1.0–1.3 mS/cm and pH 5.5–6.0.
+Sources on endocrine disruptors in Lake Erie wildlife show profound effects on hormonal systems.`
+
+func TestScore_smokeMorningWalk_archivedRun3Fails(t *testing.T) {
+	t.Parallel()
+	prompt := "What should I check first on a morning walkthrough of this farm today?"
+	res := Score(ScoreInput{
+		Question: Question{ID: "smoke-morning-walk", Category: "farm_state", Prompt: prompt},
+		Answer:   archivedRun3MorningWalk,
+	})
+	if res.Passed {
+		t.Fatalf("archived run #3 should fail Phase 144 quality: %+v", res)
+	}
+}
+
+func TestScore_smokeECPH_archivedRun3DriftFails(t *testing.T) {
+	t.Parallel()
+	res := Score(ScoreInput{
+		Question:      Question{ID: "smoke-ec-ph", Category: "field_guide"},
+		Answer:        archivedRun3ECPHDrift,
+		CitationCount: 5,
+	})
+	if res.Passed {
+		t.Fatalf("endocrine drift should fail: %+v", res)
+	}
+	if !strings.Contains(res.Notes, "off-topic") {
 		t.Fatalf("notes=%q", res.Notes)
 	}
 }

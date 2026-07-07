@@ -8,6 +8,7 @@ import (
 
 type answerHygiene struct {
 	leak farmguardian.AnswerLeakTrim
+	meta farmguardian.AnswerMetaTrim
 	cite farmguardian.CitationURLSanitize
 }
 
@@ -18,6 +19,13 @@ func sanitizeAssistantAnswer(answer, question string) (string, answerHygiene) {
 		slog.Info("guardian: answer_leak_trimmed",
 			"chars_removed", h.leak.CharsRemoved,
 			"marker", h.leak.Marker,
+		)
+	}
+	answer, h.meta = farmguardian.TrimMetaCorrection(answer)
+	if h.meta.Trimmed {
+		slog.Info("guardian: answer_meta_correction_trimmed",
+			"chars_removed", h.meta.CharsRemoved,
+			"marker", h.meta.Marker,
 		)
 	}
 	answer, h.cite = farmguardian.SanitizeCitationURLs(answer)
@@ -36,6 +44,10 @@ func applyAnswerHygieneDebug(dbg *farmguardian.TurnDebug, h answerHygiene) {
 	if h.leak.Trimmed {
 		dbg.LeakTrimmed = true
 		dbg.LeakCharsRemoved = h.leak.CharsRemoved
+	}
+	if h.meta.Trimmed {
+		dbg.MetaCorrectionTrimmed = true
+		dbg.MetaCorrectionCharsRemoved = h.meta.CharsRemoved
 	}
 	if h.cite.Sanitized {
 		dbg.CitationURLsSanitized = true

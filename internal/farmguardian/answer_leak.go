@@ -111,3 +111,56 @@ func AnswerLooksLikePromptLeak(answer, question string) bool {
 	_, meta := TrimInstructionLeak(answer, question)
 	return meta.Trimmed
 }
+
+// AnswerMetaTrim records model self-correction / apology tails removed before persist.
+type AnswerMetaTrim struct {
+	Trimmed      bool   `json:"meta_correction_trimmed,omitempty"`
+	CharsRemoved int    `json:"meta_correction_chars_removed,omitempty"`
+	Marker       string `json:"meta_correction_marker,omitempty"`
+}
+
+var metaCorrectionMarkers = []string{
+	"\ni apologize for misunderstanding",
+	"\ni apologise for misunderstanding",
+	"\ni apologize for the misunderstanding",
+	"\nhere's an updated answer:",
+	"\nhere is an updated answer:",
+}
+
+// TrimMetaCorrection removes trailing model self-correction blocks (e.g. apology + "updated answer").
+func TrimMetaCorrection(answer string) (string, AnswerMetaTrim) {
+	orig := answer
+	answer = strings.TrimRight(answer, " \t\r\n")
+	if answer == "" {
+		return orig, AnswerMetaTrim{}
+	}
+	lower := strings.ToLower(answer)
+	best := -1
+	marker := ""
+	for _, m := range metaCorrectionMarkers {
+		if idx := strings.Index(lower, m); idx >= 0 {
+			if best < 0 || idx < best {
+				best = idx
+				marker = strings.TrimSpace(m)
+			}
+		}
+	}
+	if best < 0 {
+		return orig, AnswerMetaTrim{}
+	}
+	trimmed := strings.TrimRight(answer[:best], " \t\r\n")
+	if trimmed == "" {
+		return orig, AnswerMetaTrim{}
+	}
+	return trimmed, AnswerMetaTrim{
+		Trimmed:      true,
+		CharsRemoved: len(answer) - len(trimmed),
+		Marker:       marker,
+	}
+}
+
+// AnswerContainsMetaCorrection reports whether answer still has a self-correction tail.
+func AnswerContainsMetaCorrection(answer string) bool {
+	_, meta := TrimMetaCorrection(answer)
+	return meta.Trimmed
+}
