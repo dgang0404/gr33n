@@ -2,71 +2,83 @@
 
 **Suite:** `make guardian-qa-smoke MODEL=phi3:mini FARM_ID=1`  
 **Machine:** CPU laptop (`cpu_laptop` profile)  
-**Run #2 finished:** 2026-07-06 21:15 → 22:37 local (~**81 min**)  
-**Archive:** `data/guardian_qa_runs/20260707T023729_smoke_phi3-mini.json`  
+**Phase 143 closure run:** **#3** — finished 2026-07-07 12:12 → 13:57 local (~**105 min**)  
+**Archive (run #3):** `data/guardian_qa_runs/20260707T175718_smoke_phi3-mini.json`  
+**Prior archive (run #2):** `data/guardian_qa_runs/20260707T023729_smoke_phi3-mini.json`  
 **Eval index:** `data/guardian_model_eval.json` (local, do not commit)
 
 ---
 
 ## Executive summary
 
-| Metric | Run #1 (777s) | Run #2 (1500/1800s) |
-|--------|---------------|---------------------|
-| Heuristic pass | **0/4** | **4/4** |
-| HTTP completions | 0 | 4 |
-| Mean latency | — | **~20.4 min/prompt** |
-| Grounded cite rate | 0% | **100%** (3/3 grounded) |
-| Tools | partial | `walk_farm`, `list_unread_alerts` confirmed |
+| Metric | Run #1 (777s) | Run #2 (pre-143) | Run #3 (Phase 143) |
+|--------|---------------|------------------|---------------------|
+| Heuristic pass | **0/4** | **4/4** | **4/4** |
+| HTTP completions | 0 | 4 | 4 |
+| Mean latency | — | **~20.4 min/prompt** | **~25.0 min/prompt** |
+| Grounded cite rate | 0% | **100%** (3/3 grounded) | **100%** (3/3 grounded) |
+| Tools | partial | `walk_farm`, `list_unread_alerts` | `walk_farm` (log scrape) |
 
-**Verdict:** Guardian smoke **passes heuristics** on phi3:mini CPU after laptop tune + fresh API. Answer **quality** has known gaps (prompt leak, fake URLs, weak pH coverage) — heuristics are lenient; operator review recommended.
-
----
-
-## Per-prompt results (run #2)
-
-| # | ID | Grounded | Pass | Latency | Citations | Tools |
-|---|-----|----------|------|---------|-----------|-------|
-| 1 | `smoke-cherry-forest` | No | ✅ | 11.7 min | 0 | — |
-| 2 | `smoke-morning-walk` | Yes | ✅ | 24.0 min | 0 | `walk_farm` |
-| 3 | `smoke-unread-alerts` | Yes | ✅ | 22.7 min | 3 | `list_unread_alerts` |
-| 4 | `smoke-ec-ph` | Yes | ✅ | 23.2 min | 5 | RAG |
-
-**Eval summary line:**
-```
-phi3:mini: grounded cite 100% · decline 0% · proposal 0% · latency 1224102ms
-```
+**Verdict (run #3):** Phase 143 hygiene ships — **no `gr33n.com` fake URLs**, **no `## Your task` template leak** on morning-walk, **ec-ph includes pH + EC** in the scored answer. Heuristics **4/4**. Human review still finds **model hallucination** on ec-ph (off-topic endocrine-disruptor tail) and **gr33n-docs/** markdown links on morning-walk — document in feedback runbook, not auto-fail v1 heuristics.
 
 ---
 
-## Answer quality notes (human review)
+## Per-prompt results (run #3 — Phase 143 closure)
+
+| # | ID | Grounded | Pass | Latency | Citations | Tools / notes |
+|---|-----|----------|------|---------|-----------|---------------|
+| 1 | `smoke-cherry-forest` | No | ✅ | 15.7 min | 0 | On-topic forest-garden counsel |
+| 2 | `smoke-morning-walk` | Yes | ✅ | 29.2 min | 0 | `walk_farm` log evidence; no `gr33n.com` / `## Your task` |
+| 3 | `smoke-unread-alerts` | Yes | ✅ | 27.1 min | 4 | Concrete humidity, OHN, photoperiod alerts |
+| 4 | `smoke-ec-ph` | Yes | ✅ | 27.9 min | 5 | EC + pH in opening; long off-topic tail (human review) |
+
+**Eval summary line (run #3):**
+```
+phi3:mini: grounded cite 100% · decline 0% · proposal 0% · latency 1498128ms
+```
+
+---
+
+## Phase 143 acceptance vs run #3
+
+| Criterion | Run #2 | Run #3 |
+|-----------|--------|--------|
+| No instruction template leak (`## Your task`) | ❌ | ✅ trimmed / not present in archive |
+| No `gr33n.com` fake URLs | ❌ | ✅ none in any answer |
+| `smoke-ec-ph` mentions pH | ⚠️ EC-only pass | ✅ pH + EC in answer text |
+| Eval warmup with `chat_model` | 503 (env tinyllama) | `POST /guardian/warmup` **200**; eval block warmup **timed out 5m** → inline warmup on send |
+| WS4 regression on run #2 archive | — | ✅ fails in `score_smoke_quality_test.go` |
+
+---
+
+## Answer quality notes (run #3 human review)
 
 ### 1. `smoke-cherry-forest` — Good ✅
-On-topic: cherry tree, goldenrod removal, blackberry/thorns, forest-garden framing. Sensible ungrounded counsel.
+Cherry tree, goldenrod removal, blackberry/thorns, forest-garden framing. Sensible ungrounded counsel.
 
-### 2. `smoke-morning-walk` — Pass but quality issues ⚠️
-- **Prompt template leak:** Answer ends with `## Your task:Given the sources...` — instruction block echoed into user-visible reply.
-- **Hallucinated links:** `https://gr33n.com/sources/field_guide`, `gr33n.com/tasks` — not real platform URLs.
-- **Farm signal present:** Flower Room humidity, powdery mildew, veg EC 1.2–2.0 mS/cm — grounded in snapshot.
-- **Tools:** `walk_farm` log evidence; heuristic pass also backed by tool scrape override.
+### 2. `smoke-morning-walk` — Heuristic pass; residual issues ⚠️
+- **WS1/WS2 wins:** No `## Your task` leak; no `gr33n.com` links.
+- **Residual:** Markdown links to `gr33n-docs/…` paths; meta apology paragraph (“I apologize for misunderstanding…”) — not in v1 heuristics; flag via [feedback runbook](guardian-feedback-review-runbook.md).
+- **Farm signal:** Veg EC 1.2–2.0 mS/cm, flower room humidity / powdery mildew.
+- **Tools:** `walk_farm` log evidence.
 
 ### 3. `smoke-unread-alerts` — Strong ✅
-Three concrete alerts: Flower Room humidity 72.4%, OHN-001 low stock, photoperiod transition. Actionable next steps. Citations `[2]`–`[4]`.
+Four concrete alerts with actionable steps. Citations present.
 
-### 4. `smoke-ec-ph` — Pass, incomplete ⚠️
-- EC ranges for lettuce/kale/spinach cited from docs.
-- **pH barely addressed** — prompt asked EC **and** pH; answer is EC-heavy.
-- Minor garbling: `1.0–1 endorsed`, `00.8–1.3` — small-model token noise.
+### 4. `smoke-ec-ph` — Heuristic pass; severe tail hallucination ⚠️
+- Opening cites lettuce EC **1.0–1.3 mS/cm** and pH context (meets WS4 `ph` + EC rule).
+- Answer then diverges into unrelated endocrine-disruptor / Lake Erie content — **human review required**; consider thumbs-down `invented_data` / `other`.
 
 ---
 
-## Infrastructure observations
+## Infrastructure observations (run #3)
 
 | Issue | Severity | Notes |
 |-------|----------|-------|
-| `POST /guardian/warmup` → **503** before grounded block | Medium | Eval continued; inline warmup on send worked. Warmup likely `unavailable` because default env model is `tinyllama` (2048 ctx &lt; 8192 grounded floor). |
-| `guardian_counsel_model` column missing | Medium | Background ticks error every 30s — **Phase 138 migration not applied** on local DB. |
-| phi3 latency ~20 min/prompt | Operational | Expected on CPU; laptop tune required. Not a functional bug. |
-| `data/guardian_model_eval.json` untracked | Low | Runtime artifact; should gitignore alongside `guardian_qa_runs/`. |
+| Eval grounded-block warmup **5m timeout** | Low | Inline warmup on first grounded send succeeded; `POST /guardian/warmup` returned **200** (WS3) |
+| Stale `GUARDIAN_EVAL_TOKEN` in `.env.local` | Ops | First attempt 0/4 @ 401; re-run with fresh login JWT |
+| phi3 latency ~25 min/prompt | Operational | Expected on CPU; `LLM_TIMEOUT_SECONDS=1500` / `1800` grounded |
+| `guardian_counsel_model` column | Medium | Background tick noise if Phase 138 migration not applied locally |
 
 ---
 
@@ -75,35 +87,23 @@ Three concrete alerts: Flower Room humidity 72.4%, OHN-001 low stock, photoperio
 | Run | Started | Timeouts | API | Result |
 |-----|---------|----------|-----|--------|
 | **#1** | 20:12 | 777s | Stale binary (warmup 404) | 0/4 `llm_timeout` |
-| **#2** | 21:15 | 1500 / 1800 | `./bin/api` + phi3 pre-warm | **4/4 pass** |
+| **#2** | 21:15 | 1500 / 1800 | `./bin/api` + phi3 pre-warm | **4/4 pass** (quality gaps) |
+| **#3** | 12:12 | 1500 / 1800 | `./bin/api` rebuilt `-tags dev` + fresh JWT | **4/4 pass** (Phase 143 closure) |
 
-**Pre-run fixes (run #2):** `make guardian-laptop-tune ARGS="--apply"`, API rebuild, `smoke_phase135_test.go` package fix, secrets → `.env.local`.
+**Pre-run fixes (run #3):** `go build -tags dev -o bin/api`, restart API, fresh JWT (expired token in `.env.local`), Phase 143 WS1–5 on `main`.
 
 ---
 
-## Recommended fixes → Phase 143 planning
+## Phase 143 — shipped workstreams
 
-### Ship now (hygiene, no new features)
-
-1. **Apply Phase 138 migration** — `guardian_counsel_model` / `guardian_quick_model` on local DB (`make migrate` or bootstrap).
-2. **Gitignore** `data/guardian_model_eval.json`.
-3. **Document** smoke pass ≠ quality pass in `docs/ci-guardian-qa.md` — link this report.
-
-### Phase 143 — Guardian answer quality (proposed)
-
-| WS | Title | Scope |
-|----|-------|-------|
-| WS1 | **Instruction leak guard** | Strip/detect `## Your task` and similar template echoes before persisting turn; optional eval heuristic `no_prompt_leak`. |
-| WS2 | **Citation URL hygiene** | Reject or rewrite fake `gr33n.com` markdown links; prefer `[source#N]` only. |
-| WS3 | **Warmup fix for eval** | `POST /guardian/warmup` with explicit `phi3:mini` or farm counsel model when eval model ≠ env default; fix 503 path. |
-| WS4 | **Smoke heuristic hardening** | Morning-walk: fail on prompt leak / fake URL patterns; ec-ph: require `ph` in answer. |
-| WS5 | **Manual review pass** | Settings → Guardian feedback on 4 smoke turns per `docs/guardian-feedback-review-runbook.md`. |
-
-### Defer
-
-- Full `make guardian-qa-regression` (~24 prompts, hours on CPU).
-- LLM-as-judge (Phase 131 non-goal).
-- Mandatory PR CI gate.
+| WS | Title | Outcome |
+|----|-------|---------|
+| WS1 | Instruction leak guard | `TrimInstructionLeak` before persist |
+| WS2 | Citation URL hygiene | `SanitizeCitationURLs`; no `gr33n.com` in run #3 |
+| WS3 | Warmup + eval model | `chat_model` on warmup; 200 on `/guardian/warmup` |
+| WS4 | Smoke heuristic hardening | Leak/URL/pH gates in `score.go` |
+| WS5 | Feedback checklist | [Runbook § Smoke quality](guardian-feedback-review-runbook.md#smoke-quality-checklist-phase-143) |
+| WS6 | Closure | This report + architecture §8.8 + `phase-143-closure.test.js` |
 
 ---
 
@@ -111,9 +111,9 @@ Three concrete alerts: Flower Room humidity 72.4%, OHN-001 low stock, photoperio
 
 | Path | Purpose |
 |------|---------|
-| `data/guardian_qa_runs/20260707T023729_smoke_phi3-mini.json` | Full answers (gitignored) |
-| `data/guardian_model_eval.json` | Eval index (local) |
-| `/tmp/guardian-qa-smoke-run2.log` | Runner stdout |
+| `data/guardian_qa_runs/20260707T175718_smoke_phi3-mini.json` | Run #3 full answers (gitignored) |
+| `data/guardian_qa_runs/20260707T023729_smoke_phi3-mini.json` | Run #2 regression fixture (gitignored) |
+| `/tmp/guardian-qa-smoke-run3.log` | Runner stdout |
 | `/tmp/gr33n-api.log` | API timing + tools |
 
-**Settings:** `GET /v1/guardian/qa/latest` should show this run (4 passed).
+**Settings:** `GET /v1/guardian/qa/latest` should show run #3 (4 passed).

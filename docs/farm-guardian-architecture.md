@@ -1076,6 +1076,10 @@ Software on a laptop can prove propose→confirm→`pending_command`. **Phase 31
 
 Guardian **never** silently applies doc text as live data. Citations from `platform_doc` explain procedure; snapshot and read tools answer "what is happening on my farm today."
 
+### 8.8 Answer hygiene (Phase 143)
+
+Before persisting an assistant turn, the chat handler runs **finalize** steps on the model output: `TrimInstructionLeak` strips echoed prompt templates (`## Your task`, trailing `Question:` blocks); `SanitizeCitationURLs` rewrites fake `gr33n.com` markdown links and bare `#` anchors to plain citation labels. Dev turn debug exposes `leak_trimmed` and `citation_urls_sanitized` when either step fired ([`answer_finalize.go`](../internal/handler/chat/answer_finalize.go), [`answer_leak.go`](../internal/farmguardian/answer_leak.go), [`answer_citation.go`](../internal/farmguardian/answer_citation.go)). The smoke harness (`make guardian-qa-smoke`) scores archived answers for leak/URL/pH gaps and pairs with the [feedback review runbook](guardian-feedback-review-runbook.md) — heuristic pass is necessary but not sufficient for operator trust. See [Phase 143](plans/phase_143_guardian_answer_quality.plan.md) and the [2026-07-07 smoke report](guardian-qa-smoke-report-20260707.md).
+
 ---
 
 ## 9. Why this design (vs alternatives)

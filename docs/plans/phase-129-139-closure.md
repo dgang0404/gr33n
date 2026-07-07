@@ -46,7 +46,7 @@
 ### Smoke validation (2026-07-07)
 
 - [x] `make guardian-qa-smoke MODEL=phi3:mini FARM_ID=1` — **4/4 heuristic pass** on CPU laptop after `make guardian-laptop-tune` ([report](../guardian-qa-smoke-report-20260707.md))
-- [ ] Answer **quality** gaps (prompt leak, fake URLs, warmup 503, ec-ph pH) — **[Phase 143](phase_143_guardian_answer_quality.plan.md)**
+- [x] Answer **quality** hygiene (prompt leak, fake URLs, warmup model, ec-ph pH, smoke heuristics) — **[Phase 143](phase_143_guardian_answer_quality.plan.md)** shipped
 
 ---
 
