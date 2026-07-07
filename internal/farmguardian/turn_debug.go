@@ -17,6 +17,8 @@ type TurnDebug struct {
 	EffectiveContextWindow  int            `json:"effective_context_window,omitempty"`
 	AdvertisedContextWindow int            `json:"advertised_context_window,omitempty"`
 	PromptBudget            *PromptBudget  `json:"prompt_budget,omitempty"`
+	LeakTrimmed             bool         `json:"leak_trimmed,omitempty"`
+	LeakCharsRemoved        int          `json:"leak_chars_removed,omitempty"`
 }
 
 // CountRAGChunksBySource groups retrieved chunks by source_type for the turn inspector.

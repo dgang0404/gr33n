@@ -9,7 +9,7 @@ overview: >
 todos:
   - id: ws1-instruction-leak-guard
     content: "WS1: Strip/detect template echoes (## Your task, Question:) before persisting assistant turns; warn in turn debug"
-    status: pending
+    status: completed
   - id: ws2-citation-url-hygiene
     content: "WS2: Block or rewrite fake gr33n.com markdown links; prefer [source#N] only in rendered answers"
     status: pending
@@ -30,7 +30,7 @@ isProject: false
 
 # Phase 143 — Guardian answer quality
 
-**Status:** **Planned** · **Depends on:** [131](phase_131_guardian_qa_harness.plan.md) (smoke harness), [129](phase_129_guardian_awakening.plan.md) (warmup)
+**Status:** **In progress** (WS1 shipped) · **Depends on:** [131](phase_131_guardian_qa_harness.plan.md) (smoke harness), [129](phase_129_guardian_awakening.plan.md) (warmup)
 
 **Evidence:** [`guardian-qa-smoke-report-20260707.md`](../guardian-qa-smoke-report-20260707.md) — run #2 **4/4 heuristic pass**, quality gaps documented.
 
@@ -52,16 +52,9 @@ isProject: false
 
 ## Workstreams
 
-### WS1 — Instruction leak guard
+### WS1 — Instruction leak guard ✅
 
-**Where:** `internal/handler/chat` turn persist path (after LLM, before DB write).
-
-- Detect markers: `## Your task`, `Question:\n` echo of user prompt, repeated system-instruction blocks.
-- **Strip** trailing leak from stored `answer` (and streamed final if applicable).
-- Log `guardian: answer_leak_trimmed` with chars removed.
-- Expose `leak_trimmed: true` in dev turn debug (Phase 139).
-
-**Tests:** unit table on sample leaked morning-walk text; smoke does not regress latency.
+**Shipped:** `internal/farmguardian/answer_leak.go` — `TrimInstructionLeak` before turn persist (sync + stream); `guardian: answer_leak_trimmed` log; `leak_trimmed` on dev turn debug + `GuardianTurnDebug.vue`.
 
 ### WS2 — Citation URL hygiene
 

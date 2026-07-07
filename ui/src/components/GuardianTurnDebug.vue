@@ -22,6 +22,10 @@
         <dt class="text-violet-400/80 inline">trim:</dt>
         <dd class="inline ml-1">{{ trimLine }}</dd>
       </div>
+      <div v-if="debug.leak_trimmed">
+        <dt class="text-violet-400/80 inline">leak_trim:</dt>
+        <dd class="inline ml-1">removed {{ debug.leak_chars_removed }} chars</dd>
+      </div>
       <div v-if="modelLine">
         <dt class="text-violet-400/80 inline">model:</dt>
         <dd class="inline ml-1">{{ modelLine }}</dd>
