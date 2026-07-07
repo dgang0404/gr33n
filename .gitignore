@@ -15,6 +15,7 @@ dist/
 
 # Local eval / QA artifacts (Phase 131)
 data/guardian_qa_runs/
+data/guardian_model_eval.json
 
 .env.local
 .env.*.local

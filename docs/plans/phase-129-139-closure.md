@@ -43,6 +43,11 @@
 - [x] Dev turn debugger after chat completes (139)
 - [x] Optional self-hosted nightly QA workflow documented (139)
 
+### Smoke validation (2026-07-07)
+
+- [x] `make guardian-qa-smoke MODEL=phi3:mini FARM_ID=1` — **4/4 heuristic pass** on CPU laptop after `make guardian-laptop-tune` ([report](../guardian-qa-smoke-report-20260707.md))
+- [ ] Answer **quality** gaps (prompt leak, fake URLs, warmup 503, ec-ph pH) — **[Phase 143](phase_143_guardian_answer_quality.plan.md)**
+
 ---
 
 ## Automated tests
