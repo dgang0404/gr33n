@@ -14,17 +14,22 @@ import (
 const defaultWarmupPoll = 2 * time.Second
 
 // WarmupFarmCounsel triggers POST /guardian/warmup and polls until ready or timeout.
-func (c *APIClient) WarmupFarmCounsel(ctx context.Context, timeout time.Duration) error {
+// model is the eval/chat model to preload (overrides env LLM_MODEL when set).
+func (c *APIClient) WarmupFarmCounsel(ctx context.Context, model string, timeout time.Duration) error {
 	if c == nil || c.HTTP == nil {
 		return fmt.Errorf("eval API client not configured")
 	}
 	if timeout <= 0 {
 		timeout = 5 * time.Minute
 	}
-	body, _ := json.Marshal(map[string]any{
+	bodyObj := map[string]any{
 		"mode":    "farm_counsel",
 		"farm_id": c.FarmID,
-	})
+	}
+	if m := strings.TrimSpace(model); m != "" {
+		bodyObj["chat_model"] = m
+	}
+	body, _ := json.Marshal(bodyObj)
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, strings.TrimRight(c.BaseURL, "/")+"/guardian/warmup", bytes.NewReader(body))
 	if err != nil {
 		return err

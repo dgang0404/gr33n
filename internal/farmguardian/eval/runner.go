@@ -97,7 +97,11 @@ func RunSuite(ctx context.Context, api *APIClient, model string, fixtures []Ques
 	for _, q := range fixtures {
 		if q.Grounded && opts.WarmupGrounded && !groundedWarmed {
 			groundedWarmed = true
-			if err := api.WarmupFarmCounsel(ctx, opts.WarmupTimeout); err != nil {
+			warmModel := model
+			if strings.TrimSpace(q.Model) != "" {
+				warmModel = strings.TrimSpace(q.Model)
+			}
+			if err := api.WarmupFarmCounsel(ctx, warmModel, opts.WarmupTimeout); err != nil {
 				log.Printf("eval: warmup before grounded block: %v (continuing)", err)
 			}
 		}

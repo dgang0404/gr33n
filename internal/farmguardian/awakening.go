@@ -92,7 +92,7 @@ func BuildAwakeningHealth(ctx context.Context, in AwakeningBuildInput) Awakening
 		return out
 	}
 
-	chatModel, _, reject := ResolveWarmupModel(in.Cache, mode, in.FarmCounselModel, in.FarmQuickModel, envDefault)
+	chatModel, _, reject := ResolveWarmupModel(in.Cache, mode, "", in.FarmCounselModel, in.FarmQuickModel, envDefault)
 	out.ChatModel = chatModel
 	if reject != "" && mode == WarmupModeFarmCounsel {
 		out.Messages = append(out.Messages, reject)
@@ -164,7 +164,8 @@ func normalizeWarmupMode(mode string) string {
 }
 
 // ResolveWarmupModel picks the chat model to preload for a warmup mode.
-func ResolveWarmupModel(cache *ModelCache, mode string, farmCounsel, farmQuick *string, envDefault string) (model string, grounded bool, reject string) {
+// requestModel is an optional caller override (e.g. guardian-eval -models).
+func ResolveWarmupModel(cache *ModelCache, mode string, requestModel string, farmCounsel, farmQuick *string, envDefault string) (model string, grounded bool, reject string) {
 	mode = normalizeWarmupMode(mode)
 	grounded = mode == WarmupModeFarmCounsel
 	var farmPref *string
@@ -173,7 +174,7 @@ func ResolveWarmupModel(cache *ModelCache, mode string, farmCounsel, farmQuick *
 	} else {
 		farmPref = farmQuick
 	}
-	out := ResolveChatModel(cache, "", farmPref, envDefault, grounded)
+	out := ResolveChatModel(cache, requestModel, farmPref, envDefault, grounded)
 	if out.RejectReason != "" {
 		return "", grounded, out.RejectReason
 	}

@@ -3,6 +3,7 @@ package chat
 import (
 	"encoding/json"
 	"net/http"
+	"strings"
 
 	"gr33n-api/internal/farmauthz"
 	"gr33n-api/internal/farmguardian"
@@ -13,6 +14,7 @@ type warmupRequest struct {
 	Mode          string `json:"mode"`
 	FarmID        int64  `json:"farm_id"`
 	IncludeVision bool   `json:"include_vision"`
+	ChatModel     string `json:"chat_model"`
 }
 
 type warmupResponse struct {
@@ -58,7 +60,7 @@ func (h *Handler) PostWarmup(w http.ResponseWriter, r *http.Request) {
 	if h.baseLLM != nil {
 		llmBase = h.baseLLM.BaseURL
 	}
-	state, chatModel := farmguardian.StartWarmup(r.Context(), llmBase, req.Mode, farmCounsel, farmQuick, envDefault, h.modelCache, req.IncludeVision)
+	state, chatModel := farmguardian.StartWarmup(r.Context(), llmBase, req.Mode, strings.TrimSpace(req.ChatModel), farmCounsel, farmQuick, envDefault, h.modelCache, req.IncludeVision)
 
 	status := http.StatusAccepted
 	if state == farmguardian.AwakeningStateReady {

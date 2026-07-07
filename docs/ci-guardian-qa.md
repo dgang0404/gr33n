@@ -74,6 +74,7 @@ Smoke uses **recorded JSON + heuristic checks** (answer length, citation count, 
 |---------|--------|
 | Timeouts on CPU | `make guardian-laptop-tune ARGS="--apply"`; use smoke model `phi3:mini`; raise `LLM_TIMEOUT_SECONDS` |
 | Missing `walk_farm` in logs | `./scripts/guardian-qa-scrape-logs.sh --expect walk_farm` |
+| Warmup HTTP 503 before grounded smoke | Eval now sends `chat_model` matching `-models`; ensure `phi3:mini` is installed when `.env` `LLM_MODEL` is tinyllama |
 | 401 on eval | Refresh `GUARDIAN_EVAL_TOKEN`; API must be `AUTH_MODE=dev` or `auth_test` |
 
 ---

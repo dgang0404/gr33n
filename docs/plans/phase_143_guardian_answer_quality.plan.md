@@ -15,7 +15,7 @@ todos:
     status: pending
   - id: ws3-warmup-eval-model
     content: "WS3: guardian-eval warmup passes explicit model; fix 503 when farm counsel model rejects tinyllama ctx floor"
-    status: pending
+    status: completed
   - id: ws4-smoke-heuristics
     content: "WS4: eval score.go — no_prompt_leak, no_fake_url, ec-ph requires ph; keep walk_farm log override"
     status: pending
@@ -66,15 +66,9 @@ isProject: false
 
 **Tests:** `answer_sanitize_test.go` with fake URL fixtures.
 
-### WS3 — Warmup + eval model alignment
+### WS3 — Warmup + eval model alignment ✅
 
-**Where:** `internal/farmguardian/eval/warmup.go`, `POST /guardian/warmup` body.
-
-- `WarmupFarmCounsel` accepts optional `chat_model` from eval runner (same as `-models` flag).
-- When unset, use farm `guardian_counsel_model` or eval model, not only env default.
-- Document: smoke should pre-warm **phi3:mini** even when `.env` has `tinyllama:latest`.
-
-**Tests:** eval warmup unit with mock HTTP; awakening test for counsel model resolution.
+**Shipped:** `POST /guardian/warmup` accepts optional `chat_model`; `WarmupFarmCounsel` passes eval `-models` flag so phi3 pre-warms when `.env` has `tinyllama:latest`.
 
 ### WS4 — Tighter smoke heuristics
 
