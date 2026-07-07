@@ -237,6 +237,9 @@ func smokeMorningWalkQualityNote(answer, prompt string) string {
 }
 
 func smokeECPHQualityNote(answer string) string {
+	if farmguardian.AnswerContainsSourceDump(answer) {
+		return "answer contains raw source metadata dump"
+	}
 	a := strings.ToLower(answer)
 	for _, term := range []string{"endocrine-disruptor", "endocrine disruptor", "endocrine_disruptor", "lake erie", "lake superior", "typha latifolia"} {
 		if strings.Contains(a, term) {

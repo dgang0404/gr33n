@@ -96,3 +96,72 @@ func TestAnswerContainsMetaCorrection(t *testing.T) {
 		t.Fatal("expected clean after trim")
 	}
 }
+
+func TestTrimMetaCorrection_disregardMarkers(t *testing.T) {
+	t.Parallel()
+	answer := "Check veg EC first.\nPlease disregard the earlier paragraph about wildlife."
+	got, meta := TrimMetaCorrection(answer)
+	if !meta.Trimmed {
+		t.Fatal("expected disregard trim")
+	}
+	if strings.Contains(strings.ToLower(got), "disregard") {
+		t.Fatalf("disregard tail still present: %q", got)
+	}
+}
+
+const run3ECPHSourceDump = `Our operational documentation for leafy greens indicates lettuce EC 1.0–1.3 mS/cm and pH 5.5–6.0 per [1].
+
+Sources (cite using [n] only from this list):
+
+[6] type=field_guide source_id=123 chunk_id=456
+field_guide
+doc_path: field-guides/endocrine-disruptors.md
+Endocrine disruptors in Lake Erie wildlife show profound effects.`
+
+func TestTrimSourceDump_run3ECPH(t *testing.T) {
+	t.Parallel()
+	got, meta := TrimSourceDump(run3ECPHSourceDump)
+	if !meta.Trimmed {
+		t.Fatal("expected source dump trim")
+	}
+	if strings.Contains(got, "type=field_guide") || strings.Contains(got, "Sources (cite") {
+		t.Fatalf("dump still present: %q", got[len(got)-120:])
+	}
+	if !strings.Contains(got, "lettuce EC") {
+		t.Fatal("expected opening preserved")
+	}
+}
+
+func TestTrimSourceDump_metadataLineTail(t *testing.T) {
+	t.Parallel()
+	opening := strings.Repeat("Lettuce EC 1.0–1.3 mS/cm and pH 5.5–6.0. ", 12)
+	answer := opening + "\n\n[6] type=field_guide source_id=99 chunk_id=1\nTypha latifolia biosorption."
+	got, meta := TrimSourceDump(answer)
+	if !meta.Trimmed {
+		t.Fatal("expected metadata dump trim")
+	}
+	if strings.Contains(got, "type=field_guide") {
+		t.Fatalf("metadata dump still present: %q", got)
+	}
+}
+
+func TestTrimGroundedAnswerLength_cpuLaptopCap(t *testing.T) {
+	t.Parallel()
+	long := strings.Repeat("Hydro lettuce EC 0.8–1.3 mS/cm. ", 200)
+	got, meta := TrimGroundedAnswerLength(long, 4096)
+	if !meta.Trimmed || meta.MaxChars != 2500 {
+		t.Fatalf("meta=%+v len=%d", meta, len(got))
+	}
+	if len(got) > 2600 {
+		t.Fatalf("trimmed too long: %d", len(got))
+	}
+}
+
+func TestTrimGroundedAnswerLength_largeWindowNoCap(t *testing.T) {
+	t.Parallel()
+	answer := strings.Repeat("word ", 1000)
+	got, meta := TrimGroundedAnswerLength(answer, 32768)
+	if meta.Trimmed || got != answer {
+		t.Fatalf("unexpected trim: meta=%+v", meta)
+	}
+}

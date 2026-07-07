@@ -149,6 +149,30 @@ func TestScore_smokeECPH_citationAlignedPasses(t *testing.T) {
 	}
 }
 
+func TestScore_smokeECPH_sourceDumpFails(t *testing.T) {
+	t.Parallel()
+	res := Score(ScoreInput{
+		Question: Question{ID: "smoke-ec-ph", Category: "field_guide"},
+		Answer:   run3ECPHSourceDumpForEval(),
+		CitationCount: 2,
+	})
+	if res.Passed {
+		t.Fatalf("source dump should fail: %+v", res)
+	}
+	if !strings.Contains(res.Notes, "source metadata") && !strings.Contains(res.Notes, "off-topic") {
+		t.Fatalf("notes=%q", res.Notes)
+	}
+}
+
+func run3ECPHSourceDumpForEval() string {
+	return `Our operational documentation for leafy greens indicates lettuce EC 1.0–1.3 mS/cm and pH 5.5–6.0.
+
+Sources (cite using [n] only from this list):
+
+[6] type=field_guide source_id=123 chunk_id=456
+Endocrine disruptors in Lake Erie wildlife.`
+}
+
 func TestSmokeAnswerAllowsLogOverride_blocksLeakyAnswer(t *testing.T) {
 	t.Parallel()
 	q := Question{ID: "smoke-morning-walk", Prompt: "What should I check first on a morning walkthrough of this farm today?"}

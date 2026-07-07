@@ -26,6 +26,11 @@ type TurnDebug struct {
 	LowRelevance               bool         `json:"low_relevance,omitempty"`
 	RelevanceMinThreshold      float64      `json:"relevance_min_threshold,omitempty"`
 	RAGFilterApplied           string       `json:"rag_filter_applied,omitempty"`
+	SourceDumpTrimmed          bool         `json:"source_dump_trimmed,omitempty"`
+	SourceDumpCharsRemoved     int          `json:"source_dump_chars_removed,omitempty"`
+	AnswerLengthTrimmed        bool         `json:"answer_length_trimmed,omitempty"`
+	AnswerLengthCharsRemoved   int          `json:"answer_length_chars_removed,omitempty"`
+	AnswerLengthMax            int          `json:"answer_length_max,omitempty"`
 	CitationURLsSanitized      bool         `json:"citation_urls_sanitized,omitempty"`
 	CitationLinksRewritten  int          `json:"citation_links_rewritten,omitempty"`
 }

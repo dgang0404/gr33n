@@ -18,7 +18,7 @@ todos:
     status: completed
   - id: ws4-answer-tail-hygiene
     content: "WS4: Trim raw Sources: dumps, relative .md plan links, max grounded length by model profile"
-    status: pending
+    status: completed
   - id: ws5-eval-archive-enrich
     content: "WS5: QA archive stores citation excerpts; generalized smokeTopicDriftNote(category, prompt, answer, cites)"
     status: pending
@@ -30,7 +30,7 @@ isProject: false
 
 # Phase 145 — Guardian topic drift & grounding depth
 
-**Status:** **In progress** (WS1–WS3 shipped) · **Depends on:** [144](phase_144_guardian_answer_quality_residuals.plan.md) · [131](phase_131_guardian_qa_harness.plan.md)
+**Status:** **In progress** (WS1–WS4 shipped) · **Depends on:** [144](phase_144_guardian_answer_quality_residuals.plan.md) · [131](phase_131_guardian_qa_harness.plan.md)
 
 **Evidence:** Run #3 archive `20260707T175718_smoke_phi3-mini.json` — ec-ph **4174 chars** with endocrine tail; morning-walk **gr33n-docs** + apology (144 trims on *new* turns only).
 
@@ -75,18 +75,9 @@ Phase 144 **keyword heuristics** are regression guards for *known* run #3 failur
 
 **Shipped:** `internal/farmguardian/rag_filter.go` — `AgronomyQueryIntent`, `FilterRAGChunks`, `RAGRetrieveLimit`; wired in `retrieveChunks` with over-fetch + post-filter; turn debug `rag_filter_applied`; optional `GUARDIAN_RAG_MAX_CHUNKS_FIELD_GUIDE`.
 
-### WS4 — Answer tail hygiene (structural)
+### WS4 — Answer tail hygiene (structural) ✅
 
-**Where:** extend `answer_leak.go` / `answer_citation.go`.
-
-| Pattern | Action |
-|---------|--------|
-| Raw source dump | Trim from `\nSources:\n` or `\n[type=field_guide` repeated blocks |
-| Relative plan links | Sanitize `[label](phase_*.plan.md#…)` and `[label](*.md#…)` without real URL host |
-| Meta correction v2 | Extend markers: `please disregard`, `disregard any references` |
-| Length cap | `TrimGroundedAnswerLength(answer, modelProfile)` — e.g. 2500 chars on cpu_laptop after finalize chain |
-
-**Tests:** run #3 ec-ph tail dump → trimmed; morning-walk gr33n-docs relative links → sanitized.
+**Shipped:** `TrimSourceDump`, relative `.md` link sanitize in `answer_citation.go`, meta-correction v2 markers, `TrimGroundedAnswerLength` + `GUARDIAN_GROUNDED_ANSWER_MAX_CHARS`; wired in finalize chain with turn debug fields.
 
 ### WS5 — Eval harness enrichment
 

@@ -26,6 +26,22 @@ func TestSanitizeCitationURLs_smokeMorningWalk(t *testing.T) {
 	}
 }
 
+const smokeRelativePlanLink = `See [zone cockpit](phase_40_unified_farmer_ux_zone_cockpit.plan.md#tasks) and [bootstrap](local-operator-bootstrap.md#14-confirmed-actions).`
+
+func TestSanitizeCitationURLs_relativePlanLinks(t *testing.T) {
+	t.Parallel()
+	got, meta := SanitizeCitationURLs(smokeRelativePlanLink)
+	if !meta.Sanitized || meta.LinksRewritten != 2 {
+		t.Fatalf("meta=%+v", meta)
+	}
+	if strings.Contains(got, ".plan.md") || strings.Contains(got, ".md#") {
+		t.Fatalf("relative md links still present: %q", got)
+	}
+	if !strings.Contains(got, "zone cockpit") || !strings.Contains(got, "bootstrap") {
+		t.Fatalf("labels lost: %q", got)
+	}
+}
+
 func TestSanitizeCitationURLs_gr33nDocs(t *testing.T) {
 	t.Parallel()
 	got, meta := SanitizeCitationURLs(smokeMorningWalkGr33nDocs)

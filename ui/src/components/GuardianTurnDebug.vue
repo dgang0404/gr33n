@@ -26,6 +26,14 @@
         <dt class="text-violet-400/80 inline">rag_filter:</dt>
         <dd class="inline ml-1">{{ debug.rag_filter_applied }}</dd>
       </div>
+      <div v-if="debug.source_dump_trimmed">
+        <dt class="text-violet-400/80 inline">source_dump:</dt>
+        <dd class="inline ml-1">removed {{ debug.source_dump_chars_removed }} chars</dd>
+      </div>
+      <div v-if="debug.answer_length_trimmed">
+        <dt class="text-violet-400/80 inline">length_cap:</dt>
+        <dd class="inline ml-1">trimmed to {{ debug.answer_length_max }} (removed {{ debug.answer_length_chars_removed }})</dd>
+      </div>
       <div v-if="debug.leak_trimmed">
         <dt class="text-violet-400/80 inline">leak_trim:</dt>
         <dd class="inline ml-1">removed {{ debug.leak_chars_removed }} chars</dd>

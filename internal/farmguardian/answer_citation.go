@@ -61,5 +61,24 @@ func isHallucinatedCitationURL(url string) bool {
 	if strings.HasPrefix(u, "#") {
 		return true
 	}
-	return strings.Contains(u, "gr33n.com") || strings.Contains(u, "gr33n-docs")
+	if strings.Contains(u, "gr33n.com") || strings.Contains(u, "gr33n-docs") {
+		return true
+	}
+	return isRelativeMarkdownLink(u)
+}
+
+func isRelativeMarkdownLink(url string) bool {
+	if strings.Contains(url, "://") {
+		return false
+	}
+	if strings.HasSuffix(url, ".md") {
+		return true
+	}
+	if idx := strings.Index(url, ".md"); idx > 0 {
+		rest := url[idx+3:]
+		if rest == "" || strings.HasPrefix(rest, "#") {
+			return true
+		}
+	}
+	return strings.Contains(url, ".plan.md")
 }

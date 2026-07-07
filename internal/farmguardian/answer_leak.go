@@ -3,6 +3,9 @@
 package farmguardian
 
 import (
+	"os"
+	"regexp"
+	"strconv"
 	"strings"
 	"unicode"
 )
@@ -125,6 +128,8 @@ var metaCorrectionMarkers = []string{
 	"\ni apologize for the misunderstanding",
 	"\nhere's an updated answer:",
 	"\nhere is an updated answer:",
+	"\nplease disregard",
+	"\ndisregard any references",
 }
 
 // TrimMetaCorrection removes trailing model self-correction blocks (e.g. apology + "updated answer").
@@ -163,4 +168,128 @@ func TrimMetaCorrection(answer string) (string, AnswerMetaTrim) {
 func AnswerContainsMetaCorrection(answer string) bool {
 	_, meta := TrimMetaCorrection(answer)
 	return meta.Trimmed
+}
+
+var (
+	sourceDumpLineRE     = regexp.MustCompile(`(?i)\n\[\d+\]\s+type=(?:field_guide|platform_doc)\s+source_id=`)
+	sourceDumpMarkers    = []string{"\nsources:\n", "\nsources (cite", "\n\nsources:", "\n[type=field_guide", "\n[type=platform_doc"}
+)
+
+// AnswerSourceDumpTrim records raw RAG source metadata dumps removed before persist.
+type AnswerSourceDumpTrim struct {
+	Trimmed      bool   `json:"source_dump_trimmed,omitempty"`
+	CharsRemoved int    `json:"source_dump_chars_removed,omitempty"`
+	Marker       string `json:"source_dump_marker,omitempty"`
+}
+
+// TrimSourceDump removes echoed Sources blocks and raw chunk metadata tails from answers.
+func TrimSourceDump(answer string) (string, AnswerSourceDumpTrim) {
+	orig := answer
+	answer = strings.TrimRight(answer, " \t\r\n")
+	if answer == "" {
+		return orig, AnswerSourceDumpTrim{}
+	}
+	cut := sourceDumpCutIndex(answer)
+	if cut < 0 || cut >= len(answer) {
+		return orig, AnswerSourceDumpTrim{}
+	}
+	trimmed := strings.TrimRight(answer[:cut], " \t\r\n")
+	if trimmed == "" {
+		return orig, AnswerSourceDumpTrim{}
+	}
+	return trimmed, AnswerSourceDumpTrim{
+		Trimmed:      true,
+		CharsRemoved: len(answer) - len(trimmed),
+		Marker:       sourceDumpMarkerAt(answer, cut),
+	}
+}
+
+func sourceDumpCutIndex(answer string) int {
+	lower := strings.ToLower(answer)
+	best := -1
+	for _, marker := range sourceDumpMarkers {
+		if idx := strings.Index(lower, marker); idx >= 0 {
+			if best < 0 || idx < best {
+				best = idx
+			}
+		}
+	}
+	if loc := sourceDumpLineRE.FindStringIndex(answer); loc != nil && loc[0] >= 200 {
+		if best < 0 || loc[0] < best {
+			best = loc[0]
+		}
+	}
+	return best
+}
+
+func sourceDumpMarkerAt(answer string, cut int) string {
+	if cut <= 0 || cut > len(answer) {
+		return "sources"
+	}
+	snip := strings.TrimSpace(answer[cut:])
+	if len(snip) > 48 {
+		snip = snip[:48]
+	}
+	return snip
+}
+
+// AnswerContainsSourceDump reports whether answer still echoes raw source metadata blocks.
+func AnswerContainsSourceDump(answer string) bool {
+	_, meta := TrimSourceDump(answer)
+	return meta.Trimmed
+}
+
+// AnswerLengthTrim records grounded answer length caps applied before persist.
+type AnswerLengthTrim struct {
+	Trimmed      bool `json:"answer_length_trimmed,omitempty"`
+	CharsRemoved int  `json:"answer_length_chars_removed,omitempty"`
+	MaxChars     int  `json:"answer_length_max,omitempty"`
+}
+
+// GroundedAnswerMaxChars returns the post-finalize length cap (0 = no cap).
+func GroundedAnswerMaxChars(effectiveContextWindow int) int {
+	if raw := strings.TrimSpace(os.Getenv("GUARDIAN_GROUNDED_ANSWER_MAX_CHARS")); raw != "" {
+		if n, err := strconv.Atoi(raw); err == nil && n > 0 {
+			return n
+		}
+	}
+	if effectiveContextWindow > 0 && effectiveContextWindow <= 4096 {
+		return 2500
+	}
+	return 0
+}
+
+// TrimGroundedAnswerLength caps long grounded answers on small-context profiles.
+func TrimGroundedAnswerLength(answer string, effectiveContextWindow int) (string, AnswerLengthTrim) {
+	orig := answer
+	max := GroundedAnswerMaxChars(effectiveContextWindow)
+	if max <= 0 || len(answer) <= max {
+		return orig, AnswerLengthTrim{}
+	}
+	trimmed := trimAnswerToMaxChars(answer, max)
+	if trimmed == "" || trimmed == orig {
+		return orig, AnswerLengthTrim{}
+	}
+	return trimmed, AnswerLengthTrim{
+		Trimmed:      true,
+		CharsRemoved: len(orig) - len(trimmed),
+		MaxChars:     max,
+	}
+}
+
+func trimAnswerToMaxChars(answer string, max int) string {
+	if len(answer) <= max {
+		return answer
+	}
+	cut := max
+	if idx := strings.LastIndex(answer[:max], "\n\n"); idx > max/2 {
+		cut = idx
+	} else if idx := strings.LastIndex(answer[:max], "\n"); idx > max/2 {
+		cut = idx
+	}
+	trimmed := strings.TrimRight(answer[:cut], " \t\r\n")
+	if trimmed == "" {
+		return answer[:max]
+	}
+	return trimmed + "…"
 }

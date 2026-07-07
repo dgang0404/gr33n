@@ -502,7 +502,7 @@ func (h *Handler) PostV1(w http.ResponseWriter, r *http.Request) {
 	if grounded {
 		answer = synthesis.StripOrphanCitationRefs(answer, len(chunks))
 	}
-	answer, hygiene := sanitizeAssistantAnswer(answer, question)
+	answer, hygiene := sanitizeAssistantAnswer(answer, question, grounded, effectiveWindow)
 
 	resp := postResponse{
 		Answer:           answer,
@@ -652,7 +652,7 @@ func (h *Handler) streamResponse(
 	if grounded {
 		answer = synthesis.StripOrphanCitationRefs(answer, len(chunks))
 	}
-	answer, hygiene := sanitizeAssistantAnswer(answer, question)
+	answer, hygiene := sanitizeAssistantAnswer(answer, question, grounded, debugIn.effectiveWindow)
 	done := postResponse{
 		Answer:           answer,
 		LLMModel:         chatClient.ModelLabel(),
