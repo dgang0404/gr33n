@@ -19,7 +19,9 @@
 | Grounded cite rate | 0% | **100%** (3/3 grounded) | **100%** (3/3 grounded) |
 | Tools | partial | `walk_farm`, `list_unread_alerts` | `walk_farm` (log scrape) |
 
-**Verdict (run #3):** Phase 143 hygiene ships — **no `gr33n.com` fake URLs**, **no `## Your task` template leak** on morning-walk, **ec-ph includes pH + EC** in the scored answer. Heuristics **4/4**. **[Phase 144](plans/phase_144_guardian_answer_quality_residuals.plan.md)** adds `gr33n-docs/` sanitize, apology-tail trim, and ec-ph drift heuristics for run #3 residuals.
+**Verdict (run #3):** Phase 143 hygiene ships — **no `gr33n.com` fake URLs**, **no `## Your task` template leak** on morning-walk, **ec-ph includes pH + EC** in the scored answer. Heuristics **4/4**. **[Phase 144](plans/phase_144_guardian_answer_quality_residuals.plan.md)** adds `gr33n-docs/` sanitize, apology-tail trim, and ec-ph keyword drift heuristics for run #3 residuals.
+
+**Next:** **[Phase 145](plans/phase_145_guardian_topic_drift_and_grounding.plan.md)** — embedding relevance, citation alignment, RAG guardrails (generalized drift beyond keywords). **[Phase 146](plans/phase_146_guardian_quality_loop_and_judge.plan.md)** — optional GPU self-critique, eval ops, feedback→fixtures.
 
 ---
 

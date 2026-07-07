@@ -209,6 +209,8 @@ After operator-doc edits, re-ingest Guardian RAG: **`make rag-ingest-platform-do
 | Phase 142 — Virtual Pi field validation (shipped) | [`plans/phase_142_virtual_pi_field_validation.plan.md`](plans/phase_142_virtual_pi_field_validation.plan.md) · [`virtual-pi-field-validation-path.md`](virtual-pi-field-validation-path.md) |
 | Phase 143 — Guardian answer quality | [`plans/phase_143_guardian_answer_quality.plan.md`](plans/phase_143_guardian_answer_quality.plan.md) · [`guardian-qa-smoke-report-20260707.md`](guardian-qa-smoke-report-20260707.md) · [`guardian-feedback-review-runbook.md`](guardian-feedback-review-runbook.md) |
 | Phase 144 — Guardian answer quality (run #3 residuals) | [`plans/phase_144_guardian_answer_quality_residuals.plan.md`](plans/phase_144_guardian_answer_quality_residuals.plan.md) |
+| Phase 145 — Topic drift & grounding (planned) | [`plans/phase_145_guardian_topic_drift_and_grounding.plan.md`](plans/phase_145_guardian_topic_drift_and_grounding.plan.md) |
+| Phase 146 — Quality loop & optional judge (planned) | [`plans/phase_146_guardian_quality_loop_and_judge.plan.md`](plans/phase_146_guardian_quality_loop_and_judge.plan.md) |
 | Farm Guardian — platform persona (WS9 mirror) | [`farm-guardian-persona-platform-context.md`](farm-guardian-persona-platform-context.md) |
 | Phase 30 — Guardian PR queue (plan) | [`plans/phase_30_guardian_change_requests.plan.md`](plans/phase_30_guardian_change_requests.plan.md) |
 | Phase 31 — field validation & edge (plan) | [`plans/phase_31_field_validation_and_edge.plan.md`](plans/phase_31_field_validation_and_edge.plan.md) · [operator index § Phase 31](#phase-31-field-validation-edge) |
