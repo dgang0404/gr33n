@@ -21,6 +21,10 @@ type TurnDebug struct {
 	LeakCharsRemoved           int          `json:"leak_chars_removed,omitempty"`
 	MetaCorrectionTrimmed      bool         `json:"meta_correction_trimmed,omitempty"`
 	MetaCorrectionCharsRemoved int          `json:"meta_correction_chars_removed,omitempty"`
+	QuestionAnswerRelevance    float64      `json:"question_answer_relevance,omitempty"`
+	OpeningTailRelevance       float64      `json:"opening_tail_relevance,omitempty"`
+	LowRelevance               bool         `json:"low_relevance,omitempty"`
+	RelevanceMinThreshold      float64      `json:"relevance_min_threshold,omitempty"`
 	CitationURLsSanitized      bool         `json:"citation_urls_sanitized,omitempty"`
 	CitationLinksRewritten  int          `json:"citation_links_rewritten,omitempty"`
 }

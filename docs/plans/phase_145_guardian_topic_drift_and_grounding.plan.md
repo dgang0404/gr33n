@@ -9,7 +9,7 @@ overview: >
 todos:
   - id: ws1-embed-relevance
     content: "WS1: answer_relevance.go — embed cosine question↔answer + paragraph tail drift; turn debug + optional trim"
-    status: pending
+    status: completed
   - id: ws2-citation-alignment
     content: "WS2: Citation corpus alignment — answer terms vs cited excerpts; smoke/eval fail when tail uncited"
     status: pending
@@ -30,7 +30,7 @@ isProject: false
 
 # Phase 145 — Guardian topic drift & grounding depth
 
-**Status:** **Planned** · **Depends on:** [144](phase_144_guardian_answer_quality_residuals.plan.md) · [131](phase_131_guardian_qa_harness.plan.md)
+**Status:** **In progress** (WS1 shipped) · **Depends on:** [144](phase_144_guardian_answer_quality_residuals.plan.md) · [131](phase_131_guardian_qa_harness.plan.md)
 
 **Evidence:** Run #3 archive `20260707T175718_smoke_phi3-mini.json` — ec-ph **4174 chars** with endocrine tail; morning-walk **gr33n-docs** + apology (144 trims on *new* turns only).
 
@@ -63,19 +63,9 @@ Phase 144 **keyword heuristics** are regression guards for *known* run #3 failur
 
 ## Workstreams
 
-### WS1 — Embedding relevance scorer
+### WS1 — Embedding relevance scorer ✅
 
-**Where:** `internal/farmguardian/answer_relevance.go`, wire in `answer_finalize.go`, `TurnDebug`.
-
-| Step | Detail |
-|------|--------|
-| API | `ScoreAnswerRelevance(ctx, embedder, question, answer) → RelevanceScore` |
-| Metrics | `question_answer_cosine`, `opening_vs_tail_cosine` (split at first `\n\n` after 400 chars) |
-| Thresholds | Env `GUARDIAN_RELEVANCE_MIN=0.35` (tune on run #3 archive); profile override in laptop tune script |
-| Finalize | Below threshold → log `guardian: answer_low_relevance`; optional `TrimLowRelevanceTail` (trim paragraphs after score cliff) |
-| Eval | `AnswerDriftsFromQuestion(prompt, answer, min)` used by `smokeTopicDriftNote` |
-
-**Tests:** run #3 ec-ph full answer → fail relevance; run #3 unread-alerts → pass; unit tests with mock embedder returning fixed vectors.
+**Shipped:** `internal/farmguardian/answer_relevance.go` — `ScoreAnswerRelevanceFromText`, `GUARDIAN_RELEVANCE_MIN`; wired in chat finalize → turn debug (`question_answer_relevance`, `opening_tail_relevance`, `low_relevance`); `GuardianTurnDebug.vue`.
 
 ### WS2 — Citation corpus alignment
 

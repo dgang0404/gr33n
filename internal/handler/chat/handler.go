@@ -515,6 +515,7 @@ func (h *Handler) PostV1(w http.ResponseWriter, r *http.Request) {
 	resp.TrimSummary = trimSummary
 	dbg := buildTurnDebug(r.Context(), debugIn)
 	applyAnswerHygieneDebug(dbg, hygiene)
+	applyAnswerRelevanceDebug(r.Context(), dbg, h.embedder, question, answer)
 	attachTurnDebug(&resp, dbg)
 	if grounded {
 		resp.Citations = synthesis.BuildCitations(answer, chunks)
@@ -663,6 +664,7 @@ func (h *Handler) streamResponse(
 	done.TrimSummary = trimSummary
 	dbg := buildTurnDebug(r.Context(), debugIn)
 	applyAnswerHygieneDebug(dbg, hygiene)
+	applyAnswerRelevanceDebug(r.Context(), dbg, h.embedder, question, answer)
 	attachTurnDebug(&done, dbg)
 	if grounded {
 		done.Citations = synthesis.BuildCitations(answer, chunks)

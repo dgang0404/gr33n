@@ -30,6 +30,18 @@
         <dt class="text-violet-400/80 inline">meta_correction:</dt>
         <dd class="inline ml-1">removed {{ debug.meta_correction_chars_removed }} chars</dd>
       </div>
+      <div v-if="debug.low_relevance">
+        <dt class="text-violet-400/80 inline">relevance:</dt>
+        <dd class="inline ml-1">
+          low (q↔a {{ formatRel(debug.question_answer_relevance) }}, open↔tail {{ formatRel(debug.opening_tail_relevance) }}, min {{ formatRel(debug.relevance_min_threshold) }})
+        </dd>
+      </div>
+      <div v-else-if="debug.question_answer_relevance != null">
+        <dt class="text-violet-400/80 inline">relevance:</dt>
+        <dd class="inline ml-1">
+          q↔a {{ formatRel(debug.question_answer_relevance) }}, open↔tail {{ formatRel(debug.opening_tail_relevance) }}
+        </dd>
+      </div>
       <div v-if="debug.citation_urls_sanitized">
         <dt class="text-violet-400/80 inline">citation_urls:</dt>
         <dd class="inline ml-1">rewrote {{ debug.citation_links_rewritten }} fake links</dd>
@@ -78,4 +90,9 @@ const modelLine = computed(() => {
   const eff = d.effective_context_window
   return eff ? `${d.model} · ${eff} effective ctx` : d.model
 })
+
+function formatRel(v) {
+  if (v == null || Number.isNaN(Number(v))) return '—'
+  return Number(v).toFixed(2)
+}
 </script>

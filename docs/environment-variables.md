@@ -72,6 +72,7 @@ The API loads `.env` and `.env.local` automatically when started from the repo r
 | `GUARDIAN_EARLY_SSE` | on | `0`/`false` disables early SSE phase status before prompt build |
 | `GUARDIAN_INLINE_WARMUP_ON_SEND` | on | `0`/`false` skips inline chat preload on grounded send |
 | `GUARDIAN_EVAL_TIMEOUT_SECONDS` | inherits grounded timeout | `cmd/guardian-eval` / `make guardian-qa-smoke` HTTP client timeout |
+| `GUARDIAN_RELEVANCE_MIN` | `0.35` | Embed cosine floor for `low_relevance` on turn debug (Phase 145) |
 | `STT_BASE_URL` | — | Local speech-to-text (Whisper-compatible) — enables `/v1/chat/stt` |
 
 See also [INSTALL.md](../INSTALL.md) § Guardian, [farm-guardian-architecture.md](farm-guardian-architecture.md).

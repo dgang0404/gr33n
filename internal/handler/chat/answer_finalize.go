@@ -1,6 +1,7 @@
 package chat
 
 import (
+	"context"
 	"log/slog"
 
 	"gr33n-api/internal/farmguardian"
@@ -52,5 +53,27 @@ func applyAnswerHygieneDebug(dbg *farmguardian.TurnDebug, h answerHygiene) {
 	if h.cite.Sanitized {
 		dbg.CitationURLsSanitized = true
 		dbg.CitationLinksRewritten = h.cite.LinksRewritten
+	}
+}
+
+func applyAnswerRelevanceDebug(ctx context.Context, dbg *farmguardian.TurnDebug, embedder farmguardian.TextEmbedder, question, answer string) {
+	if dbg == nil || embedder == nil {
+		return
+	}
+	rel, err := farmguardian.ScoreAnswerRelevanceFromText(ctx, embedder, question, answer)
+	if err != nil {
+		slog.Warn("guardian: answer_relevance_failed", "err", err)
+		return
+	}
+	dbg.QuestionAnswerRelevance = rel.QuestionAnswerCosine
+	dbg.OpeningTailRelevance = rel.OpeningTailCosine
+	dbg.LowRelevance = rel.LowRelevance
+	dbg.RelevanceMinThreshold = rel.MinThreshold
+	if rel.LowRelevance {
+		slog.Info("guardian: answer_low_relevance",
+			"question_answer_cosine", rel.QuestionAnswerCosine,
+			"opening_tail_cosine", rel.OpeningTailCosine,
+			"min", rel.MinThreshold,
+		)
 	}
 }
