@@ -38,7 +38,19 @@ Archived smoke JSON includes `feedback_review_prompt` reminding you to check thi
 2. Settings → **Guardian feedback** — confirm the row appears; export CSV if sharing with agronomy.
 3. Do **not** treat the run as demo-ready until WS1–4 fixes are deployed and smoke is re-run (Phase 143 WS6).
 
-Eval heuristics (WS4) now encode several of these checks — failed rows show notes such as `instruction template leak`, `hallucinated gr33n.com citation URLs`, or `expected EC guidance and explicit pH targets`.
+Eval heuristics (Phase 145 WS5) use `SmokeTopicDriftNote` — failed rows may show `low_relevance`, `citation_misaligned`, `uncited_tail`, `topic_drift`, or Phase 143 hygiene notes (`instruction template leak`, `hallucinated citation URLs`, `raw source metadata dump`).
+
+### Phase 145 drift notes (eval archive)
+
+| Note | Meaning | Typical prompt |
+|------|---------|----------------|
+| `low_relevance` | Embed cosine below `GUARDIAN_RELEVANCE_MIN` (from turn debug when dev smoke runs) | `smoke-ec-ph`, `field_guide` |
+| `citation_misaligned` | Cited excerpts don't support the question / off-topic chunks cited | `smoke-ec-ph` |
+| `uncited_tail` | Answer tail terms absent from cited excerpts | long `field_guide` answers |
+| `topic_drift` | Phase 144 keyword regression (endocrine, Lake Erie, etc.) | `smoke-ec-ph` |
+| `raw source metadata dump` | Model echoed `Sources:` or `[n] type=field_guide` blocks | rambling grounded turns |
+
+Relevance scores appear in QA archives when the API returns dev `debug` (AUTH_MODE=dev); Settings → **Guardian QA — last run** shows a **Relevance** column when present.
 
 ---
 

@@ -41,6 +41,7 @@
             <tr>
               <th class="px-3 py-2 font-medium">Step</th>
               <th class="px-3 py-2 font-medium">Result</th>
+              <th v-if="showRelevanceCol" class="px-3 py-2 font-medium">Relevance</th>
               <th class="px-3 py-2 font-medium">Notes</th>
             </tr>
           </thead>
@@ -51,6 +52,13 @@
                 <span :class="row.passed ? 'text-green-400' : 'text-amber-300'">
                   {{ row.passed ? 'pass' : 'fail' }}
                 </span>
+              </td>
+              <td v-if="showRelevanceCol" class="px-3 py-2 text-zinc-500 font-mono whitespace-nowrap">
+                <span v-if="row.question_answer_relevance != null">
+                  {{ formatRel(row.question_answer_relevance) }}
+                  <span v-if="row.low_relevance" class="text-amber-400"> low</span>
+                </span>
+                <span v-else>—</span>
               </td>
               <td class="px-3 py-2 text-zinc-500 max-w-xs truncate" :title="row.notes">{{ row.notes || '—' }}</td>
             </tr>
@@ -89,6 +97,15 @@ const whenLabel = computed(() => {
   const d = new Date(raw)
   return Number.isNaN(d.getTime()) ? raw : d.toLocaleString()
 })
+
+const showRelevanceCol = computed(() =>
+  scores.value.some((row) => row.question_answer_relevance != null),
+)
+
+function formatRel(v) {
+  if (v == null || Number.isNaN(Number(v))) return '—'
+  return Number(v).toFixed(2)
+}
 
 async function loadLatest() {
   loading.value = true

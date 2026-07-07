@@ -68,7 +68,7 @@ func TestScore_smokeECPH_archivedRun3DriftFails(t *testing.T) {
 	if res.Passed {
 		t.Fatalf("endocrine drift should fail: %+v", res)
 	}
-	if !strings.Contains(res.Notes, "off-topic") {
+	if !strings.Contains(res.Notes, "topic_drift") && !strings.Contains(res.Notes, "off-topic") && !strings.Contains(res.Notes, "citation") {
 		t.Fatalf("notes=%q", res.Notes)
 	}
 }
@@ -149,6 +149,26 @@ func TestScore_smokeECPH_citationAlignedPasses(t *testing.T) {
 	}
 }
 
+func TestScore_smokeECPH_lowRelevanceFails(t *testing.T) {
+	t.Parallel()
+	res := Score(ScoreInput{
+		Question: Question{ID: "smoke-ec-ph", Category: "field_guide", Prompt: "EC and pH for lettuce"},
+		Answer:   "Lettuce EC 0.8–1.3 mS/cm and pH 5.5–6.0 per field guide [1].",
+		CitationCount: 1,
+		Relevance: farmguardian.AnswerRelevance{
+			QuestionAnswerCosine: 0.1,
+			LowRelevance:         true,
+			MinThreshold:         0.35,
+		},
+	})
+	if res.Passed {
+		t.Fatalf("low relevance should fail: %+v", res)
+	}
+	if !strings.Contains(res.Notes, "low_relevance") {
+		t.Fatalf("notes=%q", res.Notes)
+	}
+}
+
 func TestScore_smokeECPH_sourceDumpFails(t *testing.T) {
 	t.Parallel()
 	res := Score(ScoreInput{
@@ -159,7 +179,7 @@ func TestScore_smokeECPH_sourceDumpFails(t *testing.T) {
 	if res.Passed {
 		t.Fatalf("source dump should fail: %+v", res)
 	}
-	if !strings.Contains(res.Notes, "source metadata") && !strings.Contains(res.Notes, "off-topic") {
+	if !strings.Contains(res.Notes, "source") && !strings.Contains(res.Notes, "topic_drift") && !strings.Contains(res.Notes, "citation") {
 		t.Fatalf("notes=%q", res.Notes)
 	}
 }

@@ -31,7 +31,7 @@ describe('Phase 144 — answer quality residuals closure', () => {
   it('smoke heuristics cover run #3 residuals', () => {
     const score = readFileSync(join(repoRoot, 'internal/farmguardian/eval/score.go'), 'utf8')
     const tests = readFileSync(join(repoRoot, 'internal/farmguardian/eval/score_smoke_quality_test.go'), 'utf8')
-    expect(score).toContain('smokeECPHQualityNote')
+    expect(score).toContain('SmokeTopicDriftNote')
     expect(score).toContain('AnswerContainsMetaCorrection')
     expect(tests).toContain('archivedRun3MorningWalk')
     expect(tests).toContain('archivedRun3ECPHDrift')

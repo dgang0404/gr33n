@@ -34,9 +34,10 @@ func NewAPIClient(baseURL, token string, farmID int64) *APIClient {
 }
 
 type chatResponse struct {
-	Answer    string                           `json:"answer"`
-	Citations []farmguardian.CitationSummary   `json:"citations"`
-	Proposals []any                            `json:"proposals"`
+	Answer    string                         `json:"answer"`
+	Citations []farmguardian.CitationSummary `json:"citations"`
+	Proposals []any                          `json:"proposals"`
+	Debug     *farmguardian.TurnDebug        `json:"debug,omitempty"`
 }
 
 // RunQuestion posts one eval prompt with a model override.
@@ -86,6 +87,7 @@ func (c *APIClient) RunQuestion(ctx context.Context, model string, q Question) (
 		CitationCount: len(parsed.Citations),
 		ProposalCount: len(parsed.Proposals),
 		Citations:     parsed.Citations,
+		Relevance:     farmguardian.RelevanceFromTurnDebug(parsed.Debug),
 		Latency:       latency,
 	}, nil
 }
@@ -166,6 +168,7 @@ func enrichScoreResult(res *ScoreResult, in ScoreInput, model string) {
 	res.CitationCount = in.CitationCount
 	res.ProposalCount = in.ProposalCount
 	res.Citations = in.Citations
+	res.Relevance = in.Relevance
 	res.Grounded = in.Question.Grounded
 	res.Model = model
 }
@@ -197,6 +200,9 @@ func ToEvalQuestionScores(scores []ScoreResult) []farmguardian.EvalQuestionScore
 			CitationCount: s.CitationCount, ProposalCount: s.ProposalCount,
 			Grounded: s.Grounded, Model: s.Model, LogEvidence: s.LogEvidence,
 			Citations: s.Citations,
+			QuestionAnswerRelevance: s.Relevance.QuestionAnswerCosine,
+			OpeningTailRelevance:    s.Relevance.OpeningTailCosine,
+			LowRelevance:            s.Relevance.LowRelevance,
 		}
 	}
 	return out

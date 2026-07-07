@@ -48,6 +48,9 @@ type EvalQuestionScore struct {
 	Model         string  `json:"model,omitempty"`
 	LogEvidence   []string `json:"log_evidence,omitempty"`
 	Citations     []CitationSummary `json:"citations,omitempty"`
+	QuestionAnswerRelevance float64 `json:"question_answer_relevance,omitempty"`
+	OpeningTailRelevance    float64 `json:"opening_tail_relevance,omitempty"`
+	LowRelevance            bool    `json:"low_relevance,omitempty"`
 }
 
 var (

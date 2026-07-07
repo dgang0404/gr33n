@@ -65,6 +65,7 @@ type ScoreInput struct {
 	CitationCount  int
 	ProposalCount  int
 	Citations      []farmguardian.CitationSummary
+	Relevance      farmguardian.AnswerRelevance
 	Latency        time.Duration
 	RepairAttempt  bool
 	RepairRecovered bool
@@ -87,6 +88,7 @@ type ScoreResult struct {
 	Model         string
 	LogEvidence   []string
 	Citations     []farmguardian.CitationSummary
+	Relevance     farmguardian.AnswerRelevance
 }
 
 // Score evaluates one answer heuristically.
@@ -106,12 +108,7 @@ func Score(in ScoreInput) ScoreResult {
 		}
 	case in.Question.ID == "smoke-morning-walk", in.Question.ID == "farm-morning-walkthrough":
 		res.Passed = len(a) > 40 && !looksLikeInvention(a)
-		if res.Passed {
-			if note := smokeMorningWalkQualityNote(in.Answer, in.Question.Prompt); note != "" {
-				res.Passed = false
-				res.Notes = note
-			}
-		} else if res.Notes == "" {
+		if !res.Passed && res.Notes == "" {
 			res.Notes = "expected morning walkthrough answer with farm specifics"
 		}
 	case in.Question.ID == "smoke-unread-alerts":
@@ -123,12 +120,6 @@ func Score(in ScoreInput) ScoreResult {
 		hasPH := strings.Contains(a, "ph")
 		hasEC := strings.Contains(a, "ec") || in.CitationCount > 0 || citationRefPresent(in.Answer)
 		res.Passed = hasPH && hasEC
-		if res.Passed {
-			if note := smokeECPHQualityNote(in.Answer); note != "" {
-				res.Passed = false
-				res.Notes = note
-			}
-		}
 		if !res.Passed && res.Notes == "" {
 			res.Notes = "expected EC guidance and explicit pH targets from documentation"
 		}
@@ -184,15 +175,31 @@ func Score(in ScoreInput) ScoreResult {
 		res.Passed = true
 		res.Notes = "proposal repair recovered"
 	}
-	applyCitationAlignment(&res, in)
+	applySmokeTopicDrift(&res, in)
 	return res
 }
 
-func applyCitationAlignment(res *ScoreResult, in ScoreInput) {
-	if !res.Passed || in.Question.Category != "field_guide" || len(in.Citations) == 0 {
+func shouldApplySmokeTopicDrift(q Question) bool {
+	switch q.ID {
+	case "smoke-morning-walk", "smoke-ec-ph", "smoke-cherry-forest", "smoke-unread-alerts", "farm-morning-walkthrough":
+		return true
+	default:
+		return q.Category == "field_guide" && q.ExpectCitation
+	}
+}
+
+func applySmokeTopicDrift(res *ScoreResult, in ScoreInput) {
+	if !res.Passed || !shouldApplySmokeTopicDrift(in.Question) {
 		return
 	}
-	if note := farmguardian.CitationAlignmentNote(in.Question.Prompt, in.Answer, in.Citations); note != "" {
+	if note := farmguardian.SmokeTopicDriftNote(farmguardian.SmokeTopicDriftInput{
+		QuestionID: in.Question.ID,
+		Category:   in.Question.Category,
+		Prompt:     in.Question.Prompt,
+		Answer:     in.Answer,
+		Citations:  in.Citations,
+		Relevance:  in.Relevance,
+	}); note != "" {
 		res.Passed = false
 		res.Notes = note
 	}
@@ -223,39 +230,15 @@ func looksLikeInvention(lowerAnswer string) bool {
 	return strings.Contains(lowerAnswer, "secret mars dome") || strings.Contains(lowerAnswer, "mars dome")
 }
 
-func smokeMorningWalkQualityNote(answer, prompt string) string {
-	if farmguardian.AnswerLooksLikePromptLeak(answer, prompt) {
-		return "answer contains instruction template leak"
-	}
-	if farmguardian.AnswerContainsMetaCorrection(answer) {
-		return "answer contains model self-correction / apology tail"
-	}
-	if farmguardian.AnswerContainsFakeCitationURL(answer) {
-		return "answer contains hallucinated citation URLs"
-	}
-	return ""
-}
-
-func smokeECPHQualityNote(answer string) string {
-	if farmguardian.AnswerContainsSourceDump(answer) {
-		return "answer contains raw source metadata dump"
-	}
-	a := strings.ToLower(answer)
-	for _, term := range []string{"endocrine-disruptor", "endocrine disruptor", "endocrine_disruptor", "lake erie", "lake superior", "typha latifolia"} {
-		if strings.Contains(a, term) {
-			return "answer drifts off-topic from leafy greens EC/pH"
-		}
-	}
-	if strings.Contains(a, "endocrine") && !strings.Contains(a, "leafy green") {
-		return "answer drifts off-topic from leafy greens EC/pH"
-	}
-	return ""
-}
-
 func smokeAnswerAllowsLogOverride(q Question, answer string) bool {
 	switch q.ID {
 	case "smoke-morning-walk", "farm-morning-walkthrough":
-		return smokeMorningWalkQualityNote(answer, q.Prompt) == ""
+		return farmguardian.SmokeTopicDriftNote(farmguardian.SmokeTopicDriftInput{
+			QuestionID: q.ID,
+			Category:   q.Category,
+			Prompt:     q.Prompt,
+			Answer:     answer,
+		}) == ""
 	default:
 		return true
 	}

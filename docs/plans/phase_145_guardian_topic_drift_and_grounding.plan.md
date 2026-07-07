@@ -21,7 +21,7 @@ todos:
     status: completed
   - id: ws5-eval-archive-enrich
     content: "WS5: QA archive stores citation excerpts; generalized smokeTopicDriftNote(category, prompt, answer, cites)"
-    status: pending
+    status: completed
   - id: ws6-smoke-run4-closure
     content: "WS6: Smoke run #4 post-145; update report; architecture §8.9; phase-145-closure.test.js"
     status: pending
@@ -30,7 +30,7 @@ isProject: false
 
 # Phase 145 — Guardian topic drift & grounding depth
 
-**Status:** **In progress** (WS1–WS4 shipped) · **Depends on:** [144](phase_144_guardian_answer_quality_residuals.plan.md) · [131](phase_131_guardian_qa_harness.plan.md)
+**Status:** **In progress** (WS1–WS5 shipped) · **Depends on:** [144](phase_144_guardian_answer_quality_residuals.plan.md) · [131](phase_131_guardian_qa_harness.plan.md)
 
 **Evidence:** Run #3 archive `20260707T175718_smoke_phi3-mini.json` — ec-ph **4174 chars** with endocrine tail; morning-walk **gr33n-docs** + apology (144 trims on *new* turns only).
 
@@ -79,14 +79,9 @@ Phase 144 **keyword heuristics** are regression guards for *known* run #3 failur
 
 **Shipped:** `TrimSourceDump`, relative `.md` link sanitize in `answer_citation.go`, meta-correction v2 markers, `TrimGroundedAnswerLength` + `GUARDIAN_GROUNDED_ANSWER_MAX_CHARS`; wired in finalize chain with turn debug fields.
 
-### WS5 — Eval harness enrichment
+### WS5 — Eval harness enrichment ✅
 
-**Where:** `eval/score.go`, `eval/runner.go`, `docs/guardian-feedback-review-runbook.md`.
-
-- Replace per-prompt keyword drift with shared `smokeTopicDriftNote(category, prompt, answer, cites, relevance)`.
-- Keep Phase 144 keyword blocklist as **fast regression layer** inside drift note (defense in depth).
-- Document new failure notes: `low_relevance`, `uncited_tail`, `citation_misaligned`.
-- Settings QA card: show relevance score when present in archive (optional column).
+**Shipped:** `SmokeTopicDriftNote` consolidates hygiene, relevance, citation alignment, and keyword regression; eval runner captures turn-debug relevance + citations into QA archives; runbook § Phase 145 drift notes; Settings QA **Relevance** column.
 
 ### WS6 — Closure
 
