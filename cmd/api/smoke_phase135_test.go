@@ -1,4 +1,4 @@
-package api_test
+package main
 
 import (
 	"encoding/json"
