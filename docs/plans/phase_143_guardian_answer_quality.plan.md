@@ -18,7 +18,7 @@ todos:
     status: completed
   - id: ws4-smoke-heuristics
     content: "WS4: eval score.go — no_prompt_leak, no_fake_url, ec-ph requires ph; keep walk_farm log override"
-    status: pending
+    status: completed
   - id: ws5-feedback-review-run
     content: "WS5: Document post-smoke feedback checklist; optional Settings nudge after QA archive write"
     status: pending
@@ -64,19 +64,11 @@ isProject: false
 
 **Shipped:** `POST /guardian/warmup` accepts optional `chat_model`; `WarmupFarmCounsel` passes eval `-models` flag so phi3 pre-warms when `.env` has `tinyllama:latest`.
 
-### WS4 — Tighter smoke heuristics
+### WS4 — Tighter smoke heuristics ✅
 
-**Where:** `internal/farmguardian/eval/score.go`, `fixtures_smoke.go` notes.
+**Shipped:** `score.go` — morning-walk fails on `AnswerLooksLikePromptLeak` or `AnswerContainsFakeCitationURL`; `smoke-ec-ph` requires both `ph` and EC; `runner.go` log-evidence override gated by `smokeAnswerAllowsLogOverride`.
 
-| Prompt | Add |
-|--------|-----|
-| `smoke-morning-walk` | Fail if `looksLikePromptLeak(a)` or `fakeCitationURL(a)` |
-| `smoke-ec-ph` | Require `ph` in answer (in addition to EC/citation) |
-| All grounded | Optional: `no_fake_url` shared helper |
-
-Keep `walk_farm` log-evidence override only when answer passes leak/URL checks.
-
-**Tests:** `score_test.go` with archived run #2 morning-walk text → should **fail** new rules until WS1–2 ship.
+**Tests:** `score_smoke_quality_test.go` — archived run #2 morning-walk → fail; clean answer → pass; EC-only ec-ph → fail; pH+EC → pass.
 
 ### WS5 — Feedback review loop
 

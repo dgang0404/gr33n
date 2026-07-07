@@ -105,3 +105,9 @@ func normalizeLeakText(s string) string {
 	}
 	return strings.TrimSpace(b.String())
 }
+
+// AnswerLooksLikePromptLeak reports whether answer still contains a template leak marker.
+func AnswerLooksLikePromptLeak(answer, question string) bool {
+	_, meta := TrimInstructionLeak(answer, question)
+	return meta.Trimmed
+}

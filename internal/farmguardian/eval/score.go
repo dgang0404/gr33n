@@ -3,6 +3,8 @@ package eval
 import (
 	"strings"
 	"time"
+
+	"gr33n-api/internal/farmguardian"
 )
 
 // Question is one eval fixture prompt.
@@ -100,9 +102,14 @@ func Score(in ScoreInput) ScoreResult {
 		if !res.Passed {
 			res.Notes = "expected forest-garden answer mentioning cherry/goldenrod/blackberry"
 		}
-	case in.Question.ID == "smoke-morning-walk" || in.Question.ID == "farm-morning-walkthrough":
+	case in.Question.ID == "smoke-morning-walk", in.Question.ID == "farm-morning-walkthrough":
 		res.Passed = len(a) > 40 && !looksLikeInvention(a)
-		if !res.Passed {
+		if res.Passed {
+			if note := smokeMorningWalkQualityNote(in.Answer, in.Question.Prompt); note != "" {
+				res.Passed = false
+				res.Notes = note
+			}
+		} else if res.Notes == "" {
 			res.Notes = "expected morning walkthrough answer with farm specifics"
 		}
 	case in.Question.ID == "smoke-unread-alerts":
@@ -111,10 +118,11 @@ func Score(in ScoreInput) ScoreResult {
 			res.Notes = "expected alert summary mentioning alerts"
 		}
 	case in.Question.ID == "smoke-ec-ph":
-		res.Passed = in.CitationCount > 0 || citationRefPresent(in.Answer) ||
-			(strings.Contains(a, "ec") && strings.Contains(a, "ph"))
+		hasPH := strings.Contains(a, "ph")
+		hasEC := strings.Contains(a, "ec") || in.CitationCount > 0 || citationRefPresent(in.Answer)
+		res.Passed = hasPH && hasEC
 		if !res.Passed {
-			res.Notes = "expected RAG citation or EC/pH guidance"
+			res.Notes = "expected EC guidance and explicit pH targets from documentation"
 		}
 	case in.Question.ID == "farm-devices", in.Question.ID == "p128-devices":
 		res.Passed = len(a) > 15 && !looksLikeInvention(a) &&
@@ -194,6 +202,25 @@ func looksLikeDecline(lowerAnswer string) bool {
 
 func looksLikeInvention(lowerAnswer string) bool {
 	return strings.Contains(lowerAnswer, "secret mars dome") || strings.Contains(lowerAnswer, "mars dome")
+}
+
+func smokeMorningWalkQualityNote(answer, prompt string) string {
+	if farmguardian.AnswerLooksLikePromptLeak(answer, prompt) {
+		return "answer contains instruction template leak"
+	}
+	if farmguardian.AnswerContainsFakeCitationURL(answer) {
+		return "answer contains hallucinated gr33n.com citation URLs"
+	}
+	return ""
+}
+
+func smokeAnswerAllowsLogOverride(q Question, answer string) bool {
+	switch q.ID {
+	case "smoke-morning-walk", "farm-morning-walkthrough":
+		return smokeMorningWalkQualityNote(answer, q.Prompt) == ""
+	default:
+		return true
+	}
 }
 
 // Aggregate builds per-model summary rates from score rows.
