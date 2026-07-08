@@ -145,6 +145,42 @@ func TestTrimSourceDump_metadataLineTail(t *testing.T) {
 	}
 }
 
+const run6UnreadAlertsDevJargon = "Confirm this alert to acknowledge the issue: `PATCH /alerts/{id}/acknowledge` → proposal card for confirmation (Confirm action required by you after reviewing in chat with Guardian or directly on your farm interface) [3]."
+
+func TestRedactDevAPIJargon_run6UnreadAlerts(t *testing.T) {
+	t.Parallel()
+	got, meta := RedactDevAPIJargon(run6UnreadAlertsDevJargon)
+	if !meta.Redacted {
+		t.Fatal("expected dev jargon redaction")
+	}
+	if strings.Contains(got, "PATCH /alerts") {
+		t.Fatalf("raw HTTP path still present: %q", got)
+	}
+	if !strings.Contains(got, "Confirm this alert") {
+		t.Fatal("expected surrounding farm content preserved")
+	}
+}
+
+func TestRedactDevAPIJargon_noJargonUnchanged(t *testing.T) {
+	t.Parallel()
+	answer := "Check humidity in the Flower Room and confirm the alert once resolved."
+	got, meta := RedactDevAPIJargon(answer)
+	if meta.Redacted || got != answer {
+		t.Fatalf("unexpected redaction: meta=%+v got=%q", meta, got)
+	}
+}
+
+func TestAnswerContainsDevAPIJargon(t *testing.T) {
+	t.Parallel()
+	if !AnswerContainsDevAPIJargon(run6UnreadAlertsDevJargon) {
+		t.Fatal("expected detection")
+	}
+	clean, _ := RedactDevAPIJargon(run6UnreadAlertsDevJargon)
+	if AnswerContainsDevAPIJargon(clean) {
+		t.Fatal("expected clean after redaction")
+	}
+}
+
 func TestTrimGroundedAnswerLength_cpuLaptopCap(t *testing.T) {
 	t.Parallel()
 	long := strings.Repeat("Hydro lettuce EC 0.8–1.3 mS/cm. ", 200)

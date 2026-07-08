@@ -13,6 +13,7 @@ type answerHygiene struct {
 	meta       farmguardian.AnswerMetaTrim
 	cite       farmguardian.CitationURLSanitize
 	sourceDump farmguardian.AnswerSourceDumpTrim
+	devJargon  farmguardian.AnswerDevJargonRedaction
 	length     farmguardian.AnswerLengthTrim
 }
 
@@ -43,6 +44,13 @@ func sanitizeAssistantAnswer(answer, question string, grounded bool, effectiveCo
 		slog.Info("guardian: answer_source_dump_trimmed",
 			"chars_removed", h.sourceDump.CharsRemoved,
 			"marker", h.sourceDump.Marker,
+		)
+	}
+	answer, h.devJargon = farmguardian.RedactDevAPIJargon(answer)
+	if h.devJargon.Redacted {
+		slog.Info("guardian: answer_dev_jargon_redacted",
+			"occurrences", h.devJargon.Occurrences,
+			"chars_removed", h.devJargon.CharsRemoved,
 		)
 	}
 	if grounded {
@@ -76,6 +84,10 @@ func applyAnswerHygieneDebug(dbg *farmguardian.TurnDebug, h answerHygiene) {
 	if h.sourceDump.Trimmed {
 		dbg.SourceDumpTrimmed = true
 		dbg.SourceDumpCharsRemoved = h.sourceDump.CharsRemoved
+	}
+	if h.devJargon.Redacted {
+		dbg.DevJargonRedacted = true
+		dbg.DevJargonCharsRemoved = h.devJargon.CharsRemoved
 	}
 	if h.length.Trimmed {
 		dbg.AnswerLengthTrimmed = true

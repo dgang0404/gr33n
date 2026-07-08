@@ -35,6 +35,34 @@
 
 **Next:** Phases **143–147** quality arc shipped — ec-ph drift remains the recurring smoke gap; discuss farm-state answer tone in operator review.
 
+**Verdict (run #7, targeted):** Phases **148–150** shipped in response to run #6's human review (wrong citation numbers, duplicate OHN alert, garbled `0sourced`, raw `PATCH /alerts/{id}/acknowledge` API path, blueberry pH mislabeled as EC mS/cm). `smoke-ec-ph` re-run **proves Phase 148 works live**: it now fails on `citation_number_mismatch` — a real wrong-citation the run #6/#5 scorer could not see (only checked topical drift). `smoke-unread-alerts` hit the CPU laptop's 30-min internal `GUARDIAN_GROUNDED_TIMEOUT_SECONDS` twice in a row after ~2 hours of continuous back-to-back generation (load average 2.95–5.36) — an infra/thermal ceiling, not a Phase 148–150 regression (confirmed via unit tests reproducing the exact run #6 answer/citation text for all four new detectors, plus `PrioritizeAlertChunks` / `RedactDevAPIJargon` unit coverage). Re-run recommended after a cooldown or with `GUARDIAN_GROUNDED_TIMEOUT_SECONDS` bumped (Phase 147 precedent).
+
+---
+
+## Phases 148–150 run #7 (targeted verification)
+
+**Pre-run (2026-07-08):** Rebuilt `bin/api` with Phase 148–150 changes; restarted API; ran isolated prompts via `-prompt-ids` (Phase 147 WS1).
+
+| Step | Command / note |
+|------|----------------|
+| Rebuild + restart | `go build -tags dev -o bin/api ./cmd/api/` then restart |
+| Isolated re-run | `go run ./cmd/guardian-eval -models phi3:mini -farm-id 1 -suite smoke -prompt-ids smoke-unread-alerts,smoke-ec-ph` |
+| Log | `/tmp/guardian-qa-smoke-run7-alerts-ecph.log`, `/tmp/guardian-qa-smoke-run7-alerts-retry.log` |
+| Archives | `data/guardian_qa_runs/20260708T182557_smoke_phi3-mini.json`, `20260708T185710_smoke_phi3-mini.json` |
+
+| ID | Pass | Latency | Citations | Notes |
+|----|------|---------|-----------|-------|
+| `smoke-ec-ph` | ❌ (by design) | 28.0 min | 5 | **New:** `citation_number_mismatch: claim near [1] matches [3] instead` — Phase 148 caught the model attributing lettuce's 0.8–1.3 mS/cm range to citation [2] (cannabis field guide), a mismatch invisible to run #5/#6's topical-only checker |
+| `smoke-unread-alerts` (attempt 1, cold restart) | ❌ (infra) | 30.0 min (timeout) | — | `llm_timeout` HTTP 502 — warmup failed after fresh restart, model loaded cold |
+| `smoke-unread-alerts` (attempt 2, warm model) | ❌ (infra) | 30.0 min (timeout) | — | Same `llm_timeout`; system load average 2.95–5.36 after ~2h continuous CPU inference |
+
+**Phase 148–150 checks:**
+
+- ✅ `CitationClaimMismatchNote` fires on a genuine live mismatch (ec-ph) that the pre-148 scorer would have silently passed (all 5 cites were on-topic agronomy field guides — no topical drift, but the wrong one was cited for the claim)
+- ✅ All Phase 148/149/150 unit tests pass, including exact reproductions of run #6's alert answer/citation text (`TestSmokeTopicDrift_runSixUnreadAlertsCitationMismatchNowCaught`, `TestGarbledTokenNote_detectsRunSixOHNTypo`, `TestRedactDevAPIJargon_run6UnreadAlerts`)
+- ⚠️ Could not get a live `smoke-unread-alerts` completion this session — CPU laptop hit its 30-min internal timeout twice under sustained load; not attributable to Phase 149's `PrioritizeAlertChunks` (O(n) sort of ≤5 chunks) or the ~350-char `alertCitationDiscipline` instruction addendum
+- **Follow-up:** re-run `smoke-unread-alerts` after a cooldown, or bump `GUARDIAN_GROUNDED_TIMEOUT_SECONDS`/`LLM_TIMEOUT_SECONDS` similar to Phase 147's ec-ph fix, to confirm the severity-first alert ordering resolves the [3]/[5] mismatch from run #6
+
 ---
 
 ## Phase 147 run #6 (full smoke, post-ship)

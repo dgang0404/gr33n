@@ -49,6 +49,36 @@ func TestGuardianRAGInstructionsIncludesFieldGuideHint(t *testing.T) {
 	}
 }
 
+func TestHasMultipleAlertChunks(t *testing.T) {
+	if HasMultipleAlertChunks(nil) {
+		t.Fatal("expected false for nil")
+	}
+	if HasMultipleAlertChunks([]db.SearchRagNearestNeighborsFilteredRow{{SourceType: "alert_notification"}}) {
+		t.Fatal("expected false for single alert")
+	}
+	if !HasMultipleAlertChunks([]db.SearchRagNearestNeighborsFilteredRow{
+		{SourceType: "alert_notification"},
+		{SourceType: "alert_notification"},
+	}) {
+		t.Fatal("expected true for 2+ alerts")
+	}
+}
+
+func TestGuardianRAGInstructionsIncludesAlertCitationDiscipline(t *testing.T) {
+	base := GuardianRAGInstructions([]db.SearchRagNearestNeighborsFilteredRow{{SourceType: "platform_doc"}})
+	withAlerts := GuardianRAGInstructions([]db.SearchRagNearestNeighborsFilteredRow{
+		{SourceType: "alert_notification"},
+		{SourceType: "alert_notification"},
+		{SourceType: "platform_doc"},
+	})
+	if !strings.Contains(withAlerts, "most severe to least severe") {
+		t.Fatal("expected alert citation discipline instruction")
+	}
+	if strings.Contains(base, "most severe to least severe") {
+		t.Fatal("did not expect alert discipline instruction without 2+ alerts")
+	}
+}
+
 func TestZeroChunkGuardBlock(t *testing.T) {
 	block := ZeroChunkGuardBlock()
 	if !strings.Contains(block, "0 RAG chunks") || !strings.Contains(block, "Do NOT use [n]") {

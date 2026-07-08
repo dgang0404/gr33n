@@ -25,6 +25,9 @@ func SmokeTopicDriftNote(in SmokeTopicDriftInput) string {
 	if note := smokeAnswerHygieneNote(in.Prompt, in.Answer); note != "" {
 		return note
 	}
+	if note := AnswerAccuracyNote(in.Answer, in.Citations); note != "" {
+		return note
+	}
 	if relevanceScored(in.Relevance) && in.Relevance.LowRelevance {
 		return fmt.Sprintf("low_relevance (q↔a %.2f, open↔tail %.2f)",
 			in.Relevance.QuestionAnswerCosine, in.Relevance.OpeningTailCosine)
@@ -54,6 +57,9 @@ func smokeAnswerHygieneNote(prompt, answer string) string {
 	}
 	if AnswerContainsSourceDump(answer) {
 		return "raw source metadata dump"
+	}
+	if AnswerContainsDevAPIJargon(answer) {
+		return "raw developer API jargon (HTTP verb + path) in farmer-facing answer"
 	}
 	return ""
 }

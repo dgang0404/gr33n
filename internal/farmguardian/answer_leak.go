@@ -171,8 +171,8 @@ func AnswerContainsMetaCorrection(answer string) bool {
 }
 
 var (
-	sourceDumpLineRE     = regexp.MustCompile(`(?i)\n\[\d+\]\s+type=(?:field_guide|platform_doc)\s+source_id=`)
-	sourceDumpMarkers    = []string{"\nsources:\n", "\nsources (cite", "\n\nsources:", "\n[type=field_guide", "\n[type=platform_doc"}
+	sourceDumpLineRE  = regexp.MustCompile(`(?i)\n\[\d+\]\s+type=(?:field_guide|platform_doc)\s+source_id=`)
+	sourceDumpMarkers = []string{"\nsources:\n", "\nsources (cite", "\n\nsources:", "\n[type=field_guide", "\n[type=platform_doc"}
 )
 
 // AnswerSourceDumpTrim records raw RAG source metadata dumps removed before persist.
@@ -237,6 +237,51 @@ func sourceDumpMarkerAt(answer string, cut int) string {
 func AnswerContainsSourceDump(answer string) bool {
 	_, meta := TrimSourceDump(answer)
 	return meta.Trimmed
+}
+
+// Phase 150 WS1 — strip raw developer HTTP verb+path jargon (e.g. from
+// docs/local-operator-bootstrap.md onboarding command blocks) that leaks
+// verbatim into farmer-facing grounded answers, such as
+// "`PATCH /alerts/{id}/acknowledge`".
+var devAPIPathRE = regexp.MustCompile("`?\\b(GET|POST|PATCH|PUT|DELETE)\\s+/[^\\s`)]+`?")
+
+// AnswerDevJargonRedaction records raw HTTP verb+path removals before persist.
+type AnswerDevJargonRedaction struct {
+	Redacted     bool `json:"dev_jargon_redacted,omitempty"`
+	Occurrences  int  `json:"dev_jargon_occurrences,omitempty"`
+	CharsRemoved int  `json:"dev_jargon_chars_removed,omitempty"`
+}
+
+// RedactDevAPIJargon removes literal "METHOD /path" developer jargon from an
+// otherwise-farmer-facing answer, collapsing empty parens and doubled spaces
+// left behind.
+func RedactDevAPIJargon(answer string) (string, AnswerDevJargonRedaction) {
+	matches := devAPIPathRE.FindAllString(answer, -1)
+	if len(matches) == 0 {
+		return answer, AnswerDevJargonRedaction{}
+	}
+	out := devAPIPathRE.ReplaceAllString(answer, "")
+	charsRemoved := len(answer) - len(out)
+	out = collapseDevJargonArtifacts(out)
+	return out, AnswerDevJargonRedaction{Redacted: true, Occurrences: len(matches), CharsRemoved: charsRemoved}
+}
+
+var (
+	emptyParensRE   = regexp.MustCompile(`\(\s*\)`)
+	doubleSpaceRE   = regexp.MustCompile(`[ \t]{2,}`)
+	danglingArrowRE = regexp.MustCompile(`:\s*→`)
+)
+
+func collapseDevJargonArtifacts(s string) string {
+	s = emptyParensRE.ReplaceAllString(s, "")
+	s = danglingArrowRE.ReplaceAllString(s, ":")
+	s = doubleSpaceRE.ReplaceAllString(s, " ")
+	return s
+}
+
+// AnswerContainsDevAPIJargon reports whether answer still has raw HTTP verb+path text.
+func AnswerContainsDevAPIJargon(answer string) bool {
+	return devAPIPathRE.MatchString(answer)
 }
 
 // AnswerLengthTrim records grounded answer length caps applied before persist.

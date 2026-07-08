@@ -1115,6 +1115,27 @@ QA archives persist `citations[]` excerpts and optional relevance scores from de
 
 Run #4 ended **3/4** on CPU (`smoke-ec-ph` eval client timeout). Phase 147 re-runs ec-ph with Phase 146 timeout buffer + explicit laptop tune. See [smoke report](guardian-qa-smoke-report-20260707.md) § run #5 and [Phase 147](plans/phase_147_guardian_smoke_run5_closure.plan.md).
 
+### 8.12 Citation-claim accuracy (Phase 148)
+
+Run #6 (full smoke, post-147) surfaced accuracy failures Phase 145's topical drift check cannot see: a claim's `[n]` pointing at the wrong source, a duplicated alert re-listed under a second number, a garbled digit/word merge, and a pH value relabeled with EC's `mS/cm` units.
+
+| Detector | Module | Catches |
+|----------|--------|---------|
+| **Citation-claim mismatch** | [`answer_accuracy.go`](../internal/farmguardian/answer_accuracy.go) `CitationClaimMismatchNote` | `[n]` claim's discriminating terms match a *different* cite's excerpt |
+| **Duplicate list item** | `DuplicateListItemNote` | Same alert/fact re-listed under a second number (Jaccard ≥0.4) |
+| **Garbled token** | `GarbledTokenNote` | Digit glued to a word, e.g. `0sourced` (space/token dropped) |
+| **EC/pH unit confusion** | `ECPHUnitConfusionNote` | A `mS/cm`-labeled range that is actually a cited `pH` value |
+
+Wired into `SmokeTopicDriftNote` for **every** category (not just `field_guide`), so `smoke-unread-alerts`-style farm-state answers are checked too.
+
+### 8.13 Alert citation ordering (Phase 149)
+
+Prevention, not just detection: [`alert_chunk_order.go`](../internal/farmguardian/alert_chunk_order.go) `PrioritizeAlertChunks` sorts retrieved `alert_notification` chunks **most-severe-first** before numbering (wired into `retrieveChunks` in [`handler.go`](../internal/handler/chat/handler.go)), so a model's "most urgent first" instinct lines up with the citation numbers it was given. `GuardianRAGInstructions` in [`guardian.go`](../internal/rag/synthesis/guardian.go) appends an explicit numbering-discipline instruction when 2+ alert sources are present.
+
+### 8.14 Developer-jargon answer hygiene (Phase 150)
+
+`docs/local-operator-bootstrap.md` is correct developer-facing documentation but is also RAG-indexed as a `platform_doc` — its literal HTTP verb+path strings (e.g. `` `PATCH /alerts/{id}/acknowledge` ``) can leak mid-sentence into farmer-facing answers. [`answer_leak.go`](../internal/farmguardian/answer_leak.go) `RedactDevAPIJargon` strips these at the answer boundary (any doc, not just this one) as part of `sanitizeAssistantAnswer` finalize; `AnswerContainsDevAPIJargon` is a drift-scorer backstop.
+
 ---
 
 ## 9. Why this design (vs alternatives)

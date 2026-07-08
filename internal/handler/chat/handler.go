@@ -786,7 +786,8 @@ func (h *Handler) retrieveChunks(ctx context.Context, farmID int64, query string
 		return nil, "", err
 	}
 	filtered := farmguardian.FilterRAGChunks(query, rows, topK)
-	return filtered.Chunks, filtered.Note, nil
+	chunks := farmguardian.PrioritizeAlertChunks(filtered.Chunks)
+	return chunks, filtered.Note, nil
 }
 
 // persistTurn inserts the just-completed (user, assistant) pair when we have

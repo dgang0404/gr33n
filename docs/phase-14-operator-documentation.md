@@ -212,6 +212,9 @@ After operator-doc edits, re-ingest Guardian RAG: **`make rag-ingest-platform-do
 | Phase 145 — Topic drift & grounding (shipped) | [`plans/phase_145_guardian_topic_drift_and_grounding.plan.md`](plans/phase_145_guardian_topic_drift_and_grounding.plan.md) · [`guardian-qa-smoke-report-20260707.md`](guardian-qa-smoke-report-20260707.md) § run #4 |
 | Phase 146 — Quality loop & optional judge (shipped) | [`plans/phase_146_guardian_quality_loop_and_judge.plan.md`](plans/phase_146_guardian_quality_loop_and_judge.plan.md) · [`ci-guardian-qa.md`](ci-guardian-qa.md) |
 | Phase 147 — Smoke run #5 & eval isolation (shipped) | [`plans/phase_147_guardian_smoke_run5_closure.plan.md`](plans/phase_147_guardian_smoke_run5_closure.plan.md) · [`guardian-qa-smoke-report-20260707.md`](guardian-qa-smoke-report-20260707.md) § run #5 |
+| Phase 148 — Citation-claim accuracy hardening (shipped) | [`plans/phase_148_guardian_citation_claim_accuracy.plan.md`](plans/phase_148_guardian_citation_claim_accuracy.plan.md) — run #6 mismatch/duplicate/garbled/unit detectors |
+| Phase 149 — Alert citation ordering (shipped) | [`plans/phase_149_guardian_alert_citation_ordering.plan.md`](plans/phase_149_guardian_alert_citation_ordering.plan.md) — severity-first alert numbering |
+| Phase 150 — Dev-jargon answer hygiene (shipped) | [`plans/phase_150_guardian_dev_jargon_hygiene.plan.md`](plans/phase_150_guardian_dev_jargon_hygiene.plan.md) — strip raw HTTP verb+path from answers |
 | Farm Guardian — platform persona (WS9 mirror) | [`farm-guardian-persona-platform-context.md`](farm-guardian-persona-platform-context.md) |
 | Phase 30 — Guardian PR queue (plan) | [`plans/phase_30_guardian_change_requests.plan.md`](plans/phase_30_guardian_change_requests.plan.md) |
 | Phase 31 — field validation & edge (plan) | [`plans/phase_31_field_validation_and_edge.plan.md`](plans/phase_31_field_validation_and_edge.plan.md) · [operator index § Phase 31](#phase-31-field-validation-edge) |

@@ -31,6 +31,12 @@ func hasSourceType(chunks []db.SearchRagNearestNeighborsFilteredRow, want string
 
 const operationalNoteGrounding = `The following numbered sources marked as farm notes or operational rows may be outdated — prefer LIVE FARM DATA (snapshot and read tools) for current sensor values, alert counts, and zone state.`
 
+// alertCitationDiscipline is Phase 149's fix for run #6's mislabeled alert
+// citations: sources are pre-sorted most-severe-first, so telling the model
+// to number its list in source order removes the need for it to independently
+// re-derive which claim belongs to which bracket number.
+const alertCitationDiscipline = `Multiple alert sources are listed below, ordered most severe to least severe. When you list them, use exactly that order: your list item 1 must cite [1] (the same number as its position in the Sources list), item 2 must cite [2], and so on. Do not repeat the same alert under a second number, and do not renumber or reorder alerts.`
+
 // HasOperationalChunks reports retrieval rows that are not curated guides/docs.
 func HasOperationalChunks(chunks []db.SearchRagNearestNeighborsFilteredRow) bool {
 	for _, ch := range chunks {
@@ -40,6 +46,20 @@ func HasOperationalChunks(chunks []db.SearchRagNearestNeighborsFilteredRow) bool
 			continue
 		default:
 			if st != "" {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// HasMultipleAlertChunks reports whether retrieval returned 2+ alert_notification sources.
+func HasMultipleAlertChunks(chunks []db.SearchRagNearestNeighborsFilteredRow) bool {
+	n := 0
+	for _, ch := range chunks {
+		if strings.EqualFold(strings.TrimSpace(ch.SourceType), "alert_notification") {
+			n++
+			if n >= 2 {
 				return true
 			}
 		}
@@ -59,6 +79,9 @@ func GuardianRAGInstructions(chunks []db.SearchRagNearestNeighborsFilteredRow) s
 	}
 	if HasOperationalChunks(chunks) {
 		out += "\n\n" + operationalNoteGrounding
+	}
+	if HasMultipleAlertChunks(chunks) {
+		out += "\n\n" + alertCitationDiscipline
 	}
 	return out
 }
