@@ -1078,7 +1078,21 @@ Guardian **never** silently applies doc text as live data. Citations from `platf
 
 ### 8.8 Answer hygiene (Phase 143)
 
-Before persisting an assistant turn, the chat handler runs **finalize** steps on the model output: `TrimInstructionLeak` strips echoed prompt templates (`## Your task`, trailing `Question:` blocks); `TrimMetaCorrection` removes apology / “updated answer” tails; `SanitizeCitationURLs` rewrites fake `gr33n.com` and `gr33n-docs` markdown links and bare `#` anchors to plain citation labels. Dev turn debug exposes `leak_trimmed`, `meta_correction_trimmed`, and `citation_urls_sanitized` when any step fired ([`answer_finalize.go`](../internal/handler/chat/answer_finalize.go), [`answer_leak.go`](../internal/farmguardian/answer_leak.go), [`answer_citation.go`](../internal/farmguardian/answer_citation.go)). The smoke harness (`make guardian-qa-smoke`) scores archived answers for leak/URL/apology/pH/drift gaps and pairs with the [feedback review runbook](guardian-feedback-review-runbook.md) — heuristic pass is necessary but not sufficient for operator trust. See [Phase 143](plans/phase_143_guardian_answer_quality.plan.md), [Phase 144](plans/phase_144_guardian_answer_quality_residuals.plan.md), planned [Phase 145](plans/phase_145_guardian_topic_drift_and_grounding.plan.md) (embed relevance + citation alignment), and the [2026-07-07 smoke report](guardian-qa-smoke-report-20260707.md).
+Before persisting an assistant turn, the chat handler runs **finalize** steps on the model output: `TrimInstructionLeak` strips echoed prompt templates (`## Your task`, trailing `Question:` blocks); `TrimMetaCorrection` removes apology / “updated answer” tails; `SanitizeCitationURLs` rewrites fake `gr33n.com` and `gr33n-docs` markdown links and bare `#` anchors to plain citation labels. Dev turn debug exposes `leak_trimmed`, `meta_correction_trimmed`, and `citation_urls_sanitized` when any step fired ([`answer_finalize.go`](../internal/handler/chat/answer_finalize.go), [`answer_leak.go`](../internal/farmguardian/answer_leak.go), [`answer_citation.go`](../internal/farmguardian/answer_citation.go)). The smoke harness (`make guardian-qa-smoke`) scores archived answers for leak/URL/apology/pH/drift gaps and pairs with the [feedback review runbook](guardian-feedback-review-runbook.md) — heuristic pass is necessary but not sufficient for operator trust. See [Phase 143](plans/phase_143_guardian_answer_quality.plan.md) and [Phase 144](plans/phase_144_guardian_answer_quality_residuals.plan.md).
+
+### 8.9 Topic drift & grounding (Phase 145)
+
+Phase 145 generalizes run #3 drift detection beyond static keyword blocklists:
+
+| Layer | Module | Behavior |
+|-------|--------|----------|
+| **Embed relevance** | [`answer_relevance.go`](../internal/farmguardian/answer_relevance.go) | Cosine similarity question↔answer and opening↔tail; `low_relevance` on dev turn debug when below `GUARDIAN_RELEVANCE_MIN` |
+| **Citation alignment** | [`answer_citation_align.go`](../internal/farmguardian/answer_citation_align.go) | Compare answer tail vs cited excerpts; eval notes `citation_misaligned` / `uncited_tail` |
+| **RAG guardrails** | [`rag_filter.go`](../internal/farmguardian/rag_filter.go) | Agronomy prompts over-fetch then filter off-topic `field_guide` chunks; `rag_filter_applied` on turn debug |
+| **Tail hygiene** | [`answer_leak.go`](../internal/farmguardian/answer_leak.go), [`answer_citation.go`](../internal/farmguardian/answer_citation.go) | `TrimSourceDump`, relative `.md` link sanitize, `TrimGroundedAnswerLength` on small-context profiles |
+| **Eval drift scorer** | [`topic_drift.go`](../internal/farmguardian/topic_drift.go) | `SmokeTopicDriftNote` unifies hygiene + relevance + citation alignment + Phase 144 keyword regression for `make guardian-qa-smoke` archives |
+
+QA archives persist `citations[]` excerpts and optional relevance scores from dev `debug` payloads. Settings → **Guardian QA — last run** shows a **Relevance** column when present. See [Phase 145](plans/phase_145_guardian_topic_drift_and_grounding.plan.md), [smoke report](guardian-qa-smoke-report-20260707.md) run #4, and [Phase 146](plans/phase_146_guardian_quality_loop_and_judge.plan.md) for optional GPU self-critique.
 
 ---
 
