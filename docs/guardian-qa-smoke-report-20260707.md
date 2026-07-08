@@ -5,9 +5,11 @@
 **Phase 143 closure run:** **#3** — finished 2026-07-07 12:12 → 13:57 local (~**105 min**)  
 **Phase 145 closure run:** **#4** — finished 2026-07-07 22:43 → 00:27 local (~**103 min**)  
 **Phase 147 closure run:** **#5** — ec-ph isolation via `make guardian-qa-smoke-ec-ph` (~**25 min**)  
+**Post-147 operator run:** **#6** — full smoke 2026-07-08 10:02 → 11:38 local (~**96 min**)  
 **Archive (run #3):** `data/guardian_qa_runs/20260707T175718_smoke_phi3-mini.json`  
 **Archive (run #4):** `data/guardian_qa_runs/20260708T042653_smoke_phi3-mini.json`  
 **Archive (run #5):** `data/guardian_qa_runs/20260708T130745_smoke_phi3-mini.json`  
+**Archive (run #6):** `data/guardian_qa_runs/20260708T153829_smoke_phi3-mini.json`  
 **Prior archive (run #2):** `data/guardian_qa_runs/20260707T023729_smoke_phi3-mini.json`  
 **Eval index:** `data/guardian_model_eval.json` (local, do not commit)
 
@@ -15,13 +17,13 @@
 
 ## Executive summary
 
-| Metric | Run #1 (777s) | Run #2 (pre-143) | Run #3 (Phase 143) | Run #4 (Phase 145) |
-|--------|---------------|------------------|---------------------|---------------------|
-| Heuristic pass | **0/4** | **4/4** | **4/4** | **3/4** |
-| HTTP completions | 0 | 4 | 4 | 3 |
-| Mean latency | — | **~20.4 min/prompt** | **~25.0 min/prompt** | **~17.0 min/prompt** (3 completed) |
-| Grounded cite rate | 0% | **100%** (3/3 grounded) | **100%** (3/3 grounded) | **100%** (2/2 grounded completed) |
-| Tools | partial | `walk_farm`, `list_unread_alerts` | `walk_farm` (log scrape) | RAG filter active |
+| Metric | Run #1 (777s) | Run #2 (pre-143) | Run #3 (Phase 143) | Run #4 (Phase 145) | Run #6 (post-147) |
+|--------|---------------|------------------|---------------------|---------------------|-------------------|
+| Heuristic pass | **0/4** | **4/4** | **4/4** | **3/4** | **3/4** |
+| HTTP completions | 0 | 4 | 4 | 3 | **4** |
+| Mean latency | — | **~20.4 min/prompt** | **~25.0 min/prompt** | **~17.0 min/prompt** (3 completed) | **~24.0 min/prompt** |
+| Grounded cite rate | 0% | **100%** (3/3 grounded) | **100%** (3/3 grounded) | **100%** (2/2 grounded completed) | **100%** (3/3 grounded) |
+| Tools | partial | `walk_farm`, `list_unread_alerts` | `walk_farm` (log scrape) | RAG filter active | `walk_farm`, `list_unread_alerts` |
 
 **Verdict (run #3):** Phase 143 hygiene ships — **no `gr33n.com` fake URLs**, **no `## Your task` template leak** on morning-walk, **ec-ph includes pH + EC** in the scored answer. Heuristics **4/4**. **[Phase 144](plans/phase_144_guardian_answer_quality_residuals.plan.md)** adds `gr33n-docs/` sanitize, apology-tail trim, and ec-ph keyword drift heuristics for run #3 residuals.
 
@@ -29,7 +31,42 @@
 
 **Verdict (run #5):** Phase 147 **eval isolation + timeout fix verified** — `make guardian-qa-smoke-ec-ph` completed in **~25 min** with HTTP 200 and full archive (no client timeout). Heuristic **fail** on `uncited_tail` (model appended unrelated blueberry question); relevance **0.64**; EC + pH in opening with 3 citations. Operator spot-check still required per runbook.
 
-**Next:** Phases **143–147** quality arc shipped — use `make guardian-qa-smoke-ec-ph` for fast ec-ph re-runs; full **4/4** smoke when changing Guardian core paths.
+**Verdict (run #6):** First **full 4/4 HTTP completion** post-147 timeout fix (~**96 min**). Heuristics **3/4** — same `smoke-ec-ph` **`uncited_tail`** (blueberry/pH unit confusion). Prompts 2–3 **pass** but are long and **template-heavy** (`proposal card → Confirm`, API path snippets); morning-walk answer **trimmed** 1068 chars at finalize. Human review recommended for farm-state answers even when heuristics pass.
+
+**Next:** Phases **143–147** quality arc shipped — ec-ph drift remains the recurring smoke gap; discuss farm-state answer tone in operator review.
+
+---
+
+## Phase 147 run #6 (full smoke, post-ship)
+
+**Pre-run (2026-07-08):**
+
+| Step | Command / note |
+|------|----------------|
+| Full smoke | `make guardian-qa-smoke MODEL=phi3:mini FARM_ID=1` |
+| Log | `/tmp/guardian-qa-smoke-full-run6.log` |
+| Archive | `data/guardian_qa_runs/20260708T153829_smoke_phi3-mini.json` |
+
+| # | ID | Grounded | Pass | Latency | Citations | Relevance (Q↔A) | Notes |
+|---|-----|----------|------|---------|-----------|-----------------|-------|
+| 1 | `smoke-cherry-forest` | No | ✅ | 10.9 min | 0 | 0.74 | On-topic forest-garden counsel |
+| 2 | `smoke-morning-walk` | Yes | ✅ | 29.5 min | 3 | 0.40 | `walk_farm`; answer trimmed; low q↔a (tail template-heavy) |
+| 3 | `smoke-unread-alerts` | Yes | ✅ | 27.5 min | 5 | 0.55 | Concrete alerts; API/proposal-card phrasing |
+| 4 | `smoke-ec-ph` | Yes | ❌ | 28.0 min | 5 | 0.71 | `uncited_tail`; blueberry drift; pH/EC unit mix-up |
+
+**Phase 147 checks on run #6 archive:**
+
+- ✅ All four prompts HTTP 200 — no eval client timeout (fixes run #4 ops gap)
+- ✅ `citations[]` excerpts on all grounded rows
+- ✅ `walk_farm` + alert tools used on farm-state prompts
+- ⚠️ `smoke-ec-ph` heuristic fail — same drift class as run #5
+- ⚠️ Morning-walk / unread-alerts pass heuristics but read like operator-bootstrap tutorial text
+
+**Eval summary line (run #6):**
+```
+phi3:mini: grounded cite 0% · decline 0% · proposal 0% · latency 1439823ms
+```
+*(Aggregate summary line skewed; all three grounded rows had citations.)*
 
 ---
 
