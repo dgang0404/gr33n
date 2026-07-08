@@ -33,6 +33,9 @@ type TurnDebug struct {
 	AnswerLengthMax            int          `json:"answer_length_max,omitempty"`
 	CitationURLsSanitized      bool         `json:"citation_urls_sanitized,omitempty"`
 	CitationLinksRewritten  int          `json:"citation_links_rewritten,omitempty"`
+	CritiqueEnabled         bool         `json:"critique_enabled,omitempty"`
+	CritiquePass            *bool        `json:"critique_pass,omitempty"`
+	CritiqueReason          string       `json:"critique_reason,omitempty"`
 }
 
 // CountRAGChunksBySource groups retrieved chunks by source_type for the turn inspector.

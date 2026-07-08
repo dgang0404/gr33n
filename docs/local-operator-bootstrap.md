@@ -83,7 +83,9 @@ See [phase_128 plan](plans/phase_128_validate_phase127_guardian.plan.md) — Pha
 
 ### Phase 128 — validate Phase 127 grounding (legacy)
 
-Prefer **`make guardian-qa-smoke`** and **`make guardian-qa-manual SUITE=phase127`** over ad-hoc log greps. Fast automated checks:
+Prefer **`make guardian-qa-smoke`** and **`make guardian-qa-manual SUITE=phase127`** over ad-hoc log greps. **`make guardian-qa-smoke`** refreshes the eval JWT automatically (Phase 146). Before first smoke on a fresh DB, run **`make migrate`** so Phase 138 columns (`guardian_counsel_model`, etc.) exist — missing migration causes background tick noise but not chat failure.
+
+Fast automated checks:
 
 ```bash
 go test ./cmd/api/... -run 'Phase127|Phase128' -count=1

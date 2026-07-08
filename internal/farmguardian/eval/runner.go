@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"gr33n-api/internal/farmguardian"
-	"gr33n-api/internal/rag/llm"
 )
 
 // APIClient runs grounded chat turns against a live gr33n API.
@@ -29,7 +28,7 @@ func NewAPIClient(baseURL, token string, farmID int64) *APIClient {
 		BaseURL: baseURL,
 		Token:   token,
 		FarmID:  farmID,
-		HTTP:    &http.Client{Timeout: llm.EvalTimeoutFromEnv()},
+		HTTP:    &http.Client{Timeout: ClientTimeoutFromEnv()},
 	}
 }
 
@@ -88,6 +87,7 @@ func (c *APIClient) RunQuestion(ctx context.Context, model string, q Question) (
 		ProposalCount: len(parsed.Proposals),
 		Citations:     parsed.Citations,
 		Relevance:     farmguardian.RelevanceFromTurnDebug(parsed.Debug),
+		Critique:      farmguardian.CritiqueFromTurnDebug(parsed.Debug),
 		Latency:       latency,
 	}, nil
 }
@@ -104,8 +104,15 @@ func RunSuite(ctx context.Context, api *APIClient, model string, fixtures []Ques
 			if strings.TrimSpace(q.Model) != "" {
 				warmModel = strings.TrimSpace(q.Model)
 			}
-			if err := api.WarmupFarmCounsel(ctx, warmModel, opts.WarmupTimeout); err != nil {
-				log.Printf("eval: warmup before grounded block: %v (continuing)", err)
+			warmFn := func() {
+				if err := api.WarmupFarmCounsel(ctx, warmModel, opts.WarmupTimeout); err != nil {
+					log.Printf("eval: warmup before grounded block: %v (continuing)", err)
+				}
+			}
+			if opts.WarmupAsync {
+				go warmFn()
+			} else {
+				warmFn()
 			}
 		}
 		m := model
@@ -138,6 +145,7 @@ func RunSuite(ctx context.Context, api *APIClient, model string, fixtures []Ques
 type RunSuiteOptions struct {
 	WarmupGrounded bool
 	WarmupTimeout  time.Duration
+	WarmupAsync    bool
 	LogPath        string
 }
 
@@ -169,6 +177,11 @@ func enrichScoreResult(res *ScoreResult, in ScoreInput, model string) {
 	res.ProposalCount = in.ProposalCount
 	res.Citations = in.Citations
 	res.Relevance = in.Relevance
+	if in.Critique.Enabled && !in.Critique.Skipped {
+		pass := in.Critique.Pass
+		res.CritiquePass = &pass
+		res.CritiqueReason = in.Critique.Reason
+	}
 	res.Grounded = in.Question.Grounded
 	res.Model = model
 }
@@ -203,6 +216,8 @@ func ToEvalQuestionScores(scores []ScoreResult) []farmguardian.EvalQuestionScore
 			QuestionAnswerRelevance: s.Relevance.QuestionAnswerCosine,
 			OpeningTailRelevance:    s.Relevance.OpeningTailCosine,
 			LowRelevance:            s.Relevance.LowRelevance,
+			CritiquePass:            s.CritiquePass,
+			CritiqueReason:          s.CritiqueReason,
 		}
 	}
 	return out

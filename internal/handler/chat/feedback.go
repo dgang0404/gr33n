@@ -165,6 +165,8 @@ func (h *Handler) ExportFeedback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	ratingFilter := strings.ToLower(strings.TrimSpace(r.URL.Query().Get("rating")))
+
 	format := strings.ToLower(strings.TrimSpace(r.URL.Query().Get("format")))
 	if format == "csv" {
 		writeFeedbackCSV(w, rows)
@@ -173,7 +175,11 @@ func (h *Handler) ExportFeedback(w http.ResponseWriter, r *http.Request) {
 
 	out := make([]feedbackExportRow, 0, len(rows))
 	for _, row := range rows {
-		out = append(out, feedbackExportRowFromDB(row))
+		exp := feedbackExportRowFromDB(row)
+		if ratingFilter != "" && !strings.EqualFold(exp.Rating, ratingFilter) {
+			continue
+		}
+		out = append(out, exp)
 	}
 	httputil.WriteJSON(w, http.StatusOK, map[string]any{
 		"farm_id": farmID,

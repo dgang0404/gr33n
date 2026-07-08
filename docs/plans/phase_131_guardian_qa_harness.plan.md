@@ -255,4 +255,4 @@ Eliminates drift between automated and manual docs.
   1. `make guardian-qa-smoke` heuristic pass/fail + archived full answers
   2. Operator thumbs + reasons ([Phase 134](phase_134_guardian_answer_feedback.plan.md))
   3. Human agronomy review via feedback export JSON
-- Revisit LLM-as-judge when **self-hosted GPU CI** is stable (`docs/ci-guardian-qa.md`).
+- Revisit full LLM-as-judge when **self-hosted GPU CI** is stable (`docs/ci-guardian-qa.md`). **Phase 146** supersedes this for **GPU profile only** — optional binary `GUARDIAN_ANSWER_CRITIQUE=1` gate, not rubric grading.

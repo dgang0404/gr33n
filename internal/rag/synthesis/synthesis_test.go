@@ -43,3 +43,17 @@ func TestStripOrphanCitationRefs(t *testing.T) {
 		t.Fatalf("expected unchanged with chunks, got %q", unchanged)
 	}
 }
+
+func TestSystemPrompt_noSourceDumpRule(t *testing.T) {
+	p := SystemPrompt()
+	for _, frag := range []string{
+		`Do NOT append a "Sources:" list`,
+		"never invent citation lines",
+		"at most four short paragraphs",
+		"do not elaborate on unrelated chunks",
+	} {
+		if !strings.Contains(p, frag) {
+			t.Fatalf("system prompt missing %q:\n%s", frag, p)
+		}
+	}
+}

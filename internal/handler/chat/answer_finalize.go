@@ -5,6 +5,7 @@ import (
 	"log/slog"
 
 	"gr33n-api/internal/farmguardian"
+	"gr33n-api/internal/rag/llm"
 )
 
 type answerHygiene struct {
@@ -102,5 +103,22 @@ func applyAnswerRelevanceDebug(ctx context.Context, dbg *farmguardian.TurnDebug,
 			"opening_tail_cosine", rel.OpeningTailCosine,
 			"min", rel.MinThreshold,
 		)
+	}
+}
+
+func applyAnswerCritiqueDebug(ctx context.Context, dbg *farmguardian.TurnDebug, client llm.ChatCompleter, question, answer string) {
+	if dbg == nil || !farmguardian.AnswerCritiqueEnabled() {
+		return
+	}
+	out := farmguardian.CritiqueAnswer(ctx, client, question, answer)
+	dbg.CritiqueEnabled = out.Enabled
+	if out.Skipped {
+		return
+	}
+	pass := out.Pass
+	dbg.CritiquePass = &pass
+	dbg.CritiqueReason = out.Reason
+	if !out.Pass {
+		slog.Info("guardian: answer_critique_fail", "reason", out.Reason)
 	}
 }

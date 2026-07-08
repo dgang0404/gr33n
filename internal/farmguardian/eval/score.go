@@ -66,6 +66,7 @@ type ScoreInput struct {
 	ProposalCount  int
 	Citations      []farmguardian.CitationSummary
 	Relevance      farmguardian.AnswerRelevance
+	Critique       farmguardian.AnswerCritique
 	Latency        time.Duration
 	RepairAttempt  bool
 	RepairRecovered bool
@@ -89,6 +90,8 @@ type ScoreResult struct {
 	LogEvidence   []string
 	Citations     []farmguardian.CitationSummary
 	Relevance     farmguardian.AnswerRelevance
+	CritiquePass  *bool
+	CritiqueReason string
 }
 
 // Score evaluates one answer heuristically.
@@ -176,12 +179,14 @@ func Score(in ScoreInput) ScoreResult {
 		res.Notes = "proposal repair recovered"
 	}
 	applySmokeTopicDrift(&res, in)
+	applyAnswerCritique(&res, in)
 	return res
 }
 
 func shouldApplySmokeTopicDrift(q Question) bool {
 	switch q.ID {
-	case "smoke-morning-walk", "smoke-ec-ph", "smoke-cherry-forest", "smoke-unread-alerts", "farm-morning-walkthrough":
+	case "smoke-morning-walk", "smoke-ec-ph", "smoke-cherry-forest", "smoke-unread-alerts", "farm-morning-walkthrough",
+		"p128-fert-triage", "p128-demo-pi", "fg-fertigation-triage", "fg-demo-pi":
 		return true
 	default:
 		return q.Category == "field_guide" && q.ExpectCitation
@@ -202,6 +207,21 @@ func applySmokeTopicDrift(res *ScoreResult, in ScoreInput) {
 	}); note != "" {
 		res.Passed = false
 		res.Notes = note
+	}
+}
+
+func applyAnswerCritique(res *ScoreResult, in ScoreInput) {
+	if !res.Passed || !in.Critique.Enabled || in.Critique.Skipped {
+		return
+	}
+	if in.Critique.Pass {
+		return
+	}
+	res.Passed = false
+	if in.Critique.Reason != "" {
+		res.Notes = "critique_fail: " + in.Critique.Reason
+	} else {
+		res.Notes = "critique_fail"
 	}
 }
 

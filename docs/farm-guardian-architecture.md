@@ -1094,6 +1094,16 @@ Phase 145 generalizes run #3 drift detection beyond static keyword blocklists:
 
 QA archives persist `citations[]` excerpts and optional relevance scores from dev `debug` payloads. Settings → **Guardian QA — last run** shows a **Relevance** column when present. See [Phase 145](plans/phase_145_guardian_topic_drift_and_grounding.plan.md), [smoke report](guardian-qa-smoke-report-20260707.md) run #4, and [Phase 146](plans/phase_146_guardian_quality_loop_and_judge.plan.md) for optional GPU self-critique.
 
+### 8.10 Quality loop & optional critique (Phase 146)
+
+| Layer | Module / target | Behavior |
+|-------|-----------------|----------|
+| **Synthesis prevention** | [`synthesis.go`](../internal/rag/synthesis/synthesis.go) | System prompt forbids `Sources:` dumps and invented citation lines |
+| **Optional critique** | [`answer_critique.go`](../internal/farmguardian/answer_critique.go) | `GUARDIAN_ANSWER_CRITIQUE=1` → one YES/NO gate; off by default on CPU |
+| **Eval ops** | [`eval/env.go`](../internal/farmguardian/eval/env.go), `Makefile` | `GUARDIAN_EVAL_WARMUP_TIMEOUT`, async warmup, token refresh before smoke |
+| **Feedback loop** | [`scripts/guardian-feedback-to-fixture.sh`](../scripts/guardian-feedback-to-fixture.sh) | Export thumbs-down → fixture candidates for human promotion |
+| **Regression drift** | [`eval/score.go`](../internal/farmguardian/eval/score.go) | `SmokeTopicDriftNote` on all `field_guide` + phase127 agronomy fixtures |
+
 ---
 
 ## 9. Why this design (vs alternatives)

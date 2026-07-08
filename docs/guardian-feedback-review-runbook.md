@@ -52,6 +52,15 @@ Eval heuristics (Phase 145 WS5) use `SmokeTopicDriftNote` — failed rows may sh
 
 Relevance scores appear in QA archives when the API returns dev `debug` (AUTH_MODE=dev); Settings → **Guardian QA — last run** shows a **Relevance** column when present.
 
+### Promote feedback to regression (Phase 146)
+
+1. Export thumbs-down rows: `./scripts/guardian-feedback-to-fixture.sh --farm-id 1 --since 30d`
+2. Review `data/guardian_feedback_fixtures.json` candidates (question, excerpt, reason chip).
+3. After human triage, promote archived answer text into `internal/farmguardian/eval/score_*_test.go` and optionally `eval/fixtures_feedback.go`.
+4. Re-run `go test ./internal/farmguardian/eval/ -run Score_`.
+
+Filter export API: `GET /v1/chat/feedback/export?farm_id=1&since=30d&rating=down`.
+
 ---
 
 ## In the UI (Settings)

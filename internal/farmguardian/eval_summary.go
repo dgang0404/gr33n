@@ -51,6 +51,8 @@ type EvalQuestionScore struct {
 	QuestionAnswerRelevance float64 `json:"question_answer_relevance,omitempty"`
 	OpeningTailRelevance    float64 `json:"opening_tail_relevance,omitempty"`
 	LowRelevance            bool    `json:"low_relevance,omitempty"`
+	CritiquePass            *bool   `json:"critique_pass,omitempty"`
+	CritiqueReason          string  `json:"critique_reason,omitempty"`
 }
 
 var (

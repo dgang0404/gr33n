@@ -129,16 +129,20 @@ guardian-eval: ## Phase 122 — run Guardian model quality eval (API + Ollama mu
 		-report $${GUARDIAN_EVAL_REPORT:-data/guardian_model_eval.json}
 
 guardian-qa-smoke: ## Phase 131 — 4-prompt smoke suite, sequential, full answers archived
-	@if [ -f .env ]; then set -a && . ./.env && set +a; fi; \
-	$(GO) run ./cmd/guardian-eval/ -models $${MODEL:-phi3:mini} -farm-id $${FARM_ID:-1} \
-		-suite smoke \
-		-report $${GUARDIAN_EVAL_REPORT:-data/guardian_model_eval.json}
+	@bash -lc 'set -e; cd "$(CURDIR)"; \
+		if [ -f .env ]; then set -a && . ./.env && set +a; fi; \
+		source scripts/source-local-env.sh --refresh-eval-token; \
+		$(GO) run ./cmd/guardian-eval/ -models $${MODEL:-phi3:mini} -farm-id $${FARM_ID:-1} \
+			-suite smoke \
+			-report $${GUARDIAN_EVAL_REPORT:-data/guardian_model_eval.json}'
 
 guardian-qa-phase127: ## Phase 128 — 4-prompt Phase 127 grounding validation (devices, fert, Pi, triage)
-	@if [ -f .env ]; then set -a && . ./.env && set +a; fi; \
-	$(GO) run ./cmd/guardian-eval/ -models $${MODEL:-phi3:mini} -farm-id $${FARM_ID:-1} \
-		-suite phase127 \
-		-report $${GUARDIAN_EVAL_REPORT:-data/guardian_model_eval.json}
+	@bash -lc 'set -e; cd "$(CURDIR)"; \
+		if [ -f .env ]; then set -a && . ./.env && set +a; fi; \
+		source scripts/source-local-env.sh --refresh-eval-token; \
+		$(GO) run ./cmd/guardian-eval/ -models $${MODEL:-phi3:mini} -farm-id $${FARM_ID:-1} \
+			-suite phase127 \
+			-report $${GUARDIAN_EVAL_REPORT:-data/guardian_model_eval.json}'
 
 guardian-qa-regression: ## Phase 131 — full regression fixture set (~24 prompts)
 	@if [ -f .env ]; then set -a && . ./.env && set +a; fi; \

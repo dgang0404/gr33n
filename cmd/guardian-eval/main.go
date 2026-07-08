@@ -56,7 +56,8 @@ func main() {
 
 	runOpts := eval.RunSuiteOptions{
 		WarmupGrounded: suite == "smoke" || suite == "phase127" || suite == "phase128" || suite == "p128",
-		WarmupTimeout:  5 * time.Minute,
+		WarmupTimeout:  eval.WarmupTimeoutFromEnv(),
+		WarmupAsync:    suite == "smoke" || suite == "phase127",
 		LogPath:        strings.TrimSpace(os.Getenv("GUARDIAN_EVAL_LOG")),
 	}
 
