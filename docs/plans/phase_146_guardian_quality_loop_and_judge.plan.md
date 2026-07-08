@@ -80,6 +80,8 @@ Phase 145 stays **embedding-first** (cheap, deterministic, CPU-safe). Some gaps 
 
 **Shipped:** `phase-146-closure.test.js`; `ci-guardian-qa.md` judge section; Phase 131 footnote superseded for GPU critique only.
 
+**Next arc:** [147](phase_147_guardian_smoke_run5_closure.plan.md) — smoke run #5 ec-ph isolation; closes 143–147 quality arc.
+
 ---
 
 ## Acceptance

@@ -4,8 +4,10 @@
 **Machine:** CPU laptop (`cpu_laptop` profile)  
 **Phase 143 closure run:** **#3** — finished 2026-07-07 12:12 → 13:57 local (~**105 min**)  
 **Phase 145 closure run:** **#4** — finished 2026-07-07 22:43 → 00:27 local (~**103 min**)  
+**Phase 147 closure run:** **#5** — ec-ph isolation via `make guardian-qa-smoke-ec-ph` (~**25 min**)  
 **Archive (run #3):** `data/guardian_qa_runs/20260707T175718_smoke_phi3-mini.json`  
 **Archive (run #4):** `data/guardian_qa_runs/20260708T042653_smoke_phi3-mini.json`  
+**Archive (run #5):** `data/guardian_qa_runs/20260708T130745_smoke_phi3-mini.json`  
 **Prior archive (run #2):** `data/guardian_qa_runs/20260707T023729_smoke_phi3-mini.json`  
 **Eval index:** `data/guardian_model_eval.json` (local, do not commit)
 
@@ -25,7 +27,40 @@
 
 **Verdict (run #4):** Phase 145 stack verified on CPU laptop — embed relevance + `citations[]` excerpts in archive, RAG filter + finalize trims active. Heuristics **3/4** (`smoke-ec-ph` **client timeout** after ~103 min total run; not a drift-scorer failure). Attempt #1 was 0/4 @ 401 (stale JWT). Attempt #2 completed with fresh token.
 
-**Next:** **[Phase 146](plans/phase_146_guardian_quality_loop_and_judge.plan.md)** — optional GPU self-critique, eval ops, feedback→fixtures; consider longer eval client timeout for 4th grounded prompt on CPU.
+**Verdict (run #5):** Phase 147 **eval isolation + timeout fix verified** — `make guardian-qa-smoke-ec-ph` completed in **~25 min** with HTTP 200 and full archive (no client timeout). Heuristic **fail** on `uncited_tail` (model appended unrelated blueberry question); relevance **0.64**; EC + pH in opening with 3 citations. Operator spot-check still required per runbook.
+
+**Next:** Phases **143–147** quality arc shipped — use `make guardian-qa-smoke-ec-ph` for fast ec-ph re-runs; full **4/4** smoke when changing Guardian core paths.
+
+---
+
+## Phase 147 run #5 (ec-ph isolation)
+
+**Pre-run (2026-07-08):**
+
+| Step | Command / note |
+|------|----------------|
+| Phase 146 shipped | `ClientTimeoutFromEnv` +15m buffer; Makefile JWT refresh |
+| Isolated re-run | `make guardian-qa-smoke-ec-ph MODEL=phi3:mini FARM_ID=1` |
+| Log | `/tmp/guardian-qa-smoke-run5-ecph.log` |
+| Archive | `data/guardian_qa_runs/20260708T130745_smoke_phi3-mini.json` |
+
+| # | ID | Grounded | Pass | Latency | Citations | Relevance (Q↔A) | Notes |
+|---|-----|----------|------|---------|-----------|-----------------|-------|
+| 1 | `smoke-ec-ph` | Yes | ❌ | 25.1 min | 3 | 0.64 | **No client timeout**; eval notes `uncited_tail` (blueberry question appended) |
+
+**Phase 147 checks on run #5 archive:**
+
+- ✅ HTTP completion within eval client timeout (~25 min vs run #4 timeout)
+- ✅ `citations[]` excerpts present (lettuce, cannabis, spinach field guides)
+- ✅ `question_answer_relevance` / `opening_tail_relevance` scored
+- ⚠️ Heuristic fail — uncited tail drift (human review; not eval ops regression)
+- ✅ Opening mentions EC mS/cm targets for leafy greens
+
+**Eval summary line (run #5):**
+```
+phi3:mini: grounded cite 0% · decline 0% · proposal 0% · latency 1507496ms
+```
+*(Summary line shows 0% cite rate because only one prompt and scorer uses aggregate; row has 3 citations.)*
 
 ---
 

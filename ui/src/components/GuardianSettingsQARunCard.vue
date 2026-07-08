@@ -42,6 +42,7 @@
               <th class="px-3 py-2 font-medium">Step</th>
               <th class="px-3 py-2 font-medium">Result</th>
               <th v-if="showRelevanceCol" class="px-3 py-2 font-medium">Relevance</th>
+              <th v-if="showCritiqueCol" class="px-3 py-2 font-medium">Critique</th>
               <th class="px-3 py-2 font-medium">Notes</th>
             </tr>
           </thead>
@@ -59,6 +60,11 @@
                   <span v-if="row.low_relevance" class="text-amber-400"> low</span>
                 </span>
                 <span v-else>—</span>
+              </td>
+              <td v-if="showCritiqueCol" class="px-3 py-2 whitespace-nowrap">
+                <span v-if="row.critique_pass === true" class="text-green-400">yes</span>
+                <span v-else-if="row.critique_pass === false" class="text-amber-300">no</span>
+                <span v-else class="text-zinc-600">—</span>
               </td>
               <td class="px-3 py-2 text-zinc-500 max-w-xs truncate" :title="row.notes">{{ row.notes || '—' }}</td>
             </tr>
@@ -100,6 +106,10 @@ const whenLabel = computed(() => {
 
 const showRelevanceCol = computed(() =>
   scores.value.some((row) => row.question_answer_relevance != null),
+)
+
+const showCritiqueCol = computed(() =>
+  scores.value.some((row) => row.critique_pass != null),
 )
 
 function formatRel(v) {

@@ -1104,6 +1104,17 @@ QA archives persist `citations[]` excerpts and optional relevance scores from de
 | **Feedback loop** | [`scripts/guardian-feedback-to-fixture.sh`](../scripts/guardian-feedback-to-fixture.sh) | Export thumbs-down → fixture candidates for human promotion |
 | **Regression drift** | [`eval/score.go`](../internal/farmguardian/eval/score.go) | `SmokeTopicDriftNote` on all `field_guide` + phase127 agronomy fixtures |
 
+### 8.11 Smoke run #5 & eval isolation (Phase 147)
+
+| Layer | Module / target | Behavior |
+|-------|-----------------|----------|
+| **Prompt isolation** | [`eval/filter.go`](../internal/farmguardian/eval/filter.go), `guardian-eval -prompt-ids` | Re-run one smoke fixture (e.g. `smoke-ec-ph`) without full ~2h suite |
+| **Make target** | `make guardian-qa-smoke-ec-ph` | Same JWT refresh as full smoke; archives to `data/guardian_qa_runs/` |
+| **Laptop timeout** | [`eval/env.go`](../internal/farmguardian/eval/env.go), `tune-guardian-laptop.sh` | `GUARDIAN_EVAL_TIMEOUT_SECONDS>=2100` on cpu-16gb profile |
+| **Settings QA** | `GuardianSettingsQARunCard.vue` | **Critique** column when `critique_pass` in archive (GPU critique enabled) |
+
+Run #4 ended **3/4** on CPU (`smoke-ec-ph` eval client timeout). Phase 147 re-runs ec-ph with Phase 146 timeout buffer + explicit laptop tune. See [smoke report](guardian-qa-smoke-report-20260707.md) § run #5 and [Phase 147](plans/phase_147_guardian_smoke_run5_closure.plan.md).
+
 ---
 
 ## 9. Why this design (vs alternatives)

@@ -75,6 +75,7 @@ ensure_min GUARDIAN_GROUNDED_TIMEOUT_SECONDS "$MIN_GROUNDED_TIMEOUT"
 ensure_exact LLM_RETRY_MAX_ATTEMPTS 1
 if [[ "$PROFILE" == "cpu-16gb" ]]; then
   ensure_min GUARDIAN_EVAL_WARMUP_TIMEOUT 90
+  ensure_min GUARDIAN_EVAL_TIMEOUT_SECONDS 2100
 fi
 
 if [[ ${#CHANGES[@]} -eq 0 ]]; then

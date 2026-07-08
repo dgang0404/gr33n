@@ -21,6 +21,7 @@ func main() {
 	modelsFlag := flag.String("models", "all", "comma-separated model names or 'all'")
 	manualFlag := flag.Bool("manual", false, "print UI checklist for -suite and exit")
 	suiteFlag := flag.String("suite", envOr("GUARDIAN_EVAL_SUITE", "regression"), "smoke | phase127 | regression | all")
+	promptIDsFlag := flag.String("prompt-ids", envOr("GUARDIAN_EVAL_PROMPT_IDS", ""), "comma-separated fixture IDs to run (subset of suite)")
 	reportPath := flag.String("report", farmguardian.DefaultEvalReportPath(), "output JSON report path")
 	qaArchive := flag.String("qa-archive", "", "optional full QA run JSON path (default data/guardian_qa_runs/…)")
 	llmBase := flag.String("llama-url", os.Getenv("LLM_BASE_URL"), "Ollama OpenAI base (for model discovery when models=all)")
@@ -37,7 +38,11 @@ func main() {
 
 	suite := strings.ToLower(strings.TrimSpace(*suiteFlag))
 	fixtures := eval.FixturesForSuite(suite)
+	fixtures = eval.FilterFixturesByIDs(fixtures, *promptIDsFlag)
 	if len(fixtures) == 0 {
+		if strings.TrimSpace(*promptIDsFlag) != "" {
+			log.Fatalf("no fixtures for suite %q prompt-ids %q", suite, *promptIDsFlag)
+		}
 		log.Fatalf("no fixtures for suite %q", suite)
 	}
 
