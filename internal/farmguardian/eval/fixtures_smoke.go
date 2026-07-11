@@ -38,13 +38,15 @@ func SmokeFixtures() []Question {
 	}
 }
 
-// FixturesForSuite returns prompts for smoke, phase127, regression (default), or all.
+// FixturesForSuite returns prompts for smoke, phase127, change-requests, regression (default), or all.
 func FixturesForSuite(suite string) []Question {
 	switch strings.ToLower(strings.TrimSpace(suite)) {
 	case "smoke":
 		return SmokeFixtures()
 	case "phase127", "phase128", "p128":
 		return Phase127Fixtures()
+	case "change-requests", "change_requests", "proposals", "pr":
+		return ChangeRequestFixtures()
 	case "all":
 		out := make([]Question, 0, len(Fixtures())+len(SmokeFixtures())+len(Phase127Fixtures()))
 		out = append(out, SmokeFixtures()...)

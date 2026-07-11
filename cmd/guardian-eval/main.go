@@ -26,7 +26,8 @@ func main() {
 	reportPath := flag.String("report", farmguardian.DefaultEvalReportPath(), "output JSON report path")
 	qaArchive := flag.String("qa-archive", "", "optional full QA run JSON path (default data/guardian_qa_runs/…)")
 	llmBase := flag.String("llama-url", os.Getenv("LLM_BASE_URL"), "Ollama OpenAI base (for model discovery when models=all)")
-	failOnRegression := flag.Bool("fail-on-regression", false, "Phase 153 — exit non-zero if any fixture fails its heuristic (for CI/PR gating)")
+	failOnRegression := flag.Bool("fail-on-regression", false, "exit non-zero if any fixture fails its heuristic, instead of always exiting 0")
+	checkPendingProposals := flag.Bool("check-pending-proposals", false, "after the run, fetch GET /v1/chat/proposals?status=pending and confirm write-intent fixtures actually landed a row in Guardian's change-request queue (not just an inline chat proposal)")
 	flag.Parse()
 
 	if *manualFlag {
@@ -72,6 +73,7 @@ func main() {
 		Models:  map[string]farmguardian.EvalSummary{},
 		Details: map[string][]farmguardian.EvalQuestionScore{},
 	}
+	expectedProposals := 0
 	for _, model := range modelNames {
 		log.Printf("evaluating model %q suite=%s (%d questions)…", model, suite, len(fixtures))
 		scores := eval.RunSuite(ctx, client, model, fixtures, runOpts)
@@ -79,6 +81,7 @@ func main() {
 		details := eval.ToEvalQuestionScores(scores)
 		rep.Details[normalizeModelKey(model)] = details
 		printModelSummary(model, rep.Models[normalizeModelKey(model)])
+		expectedProposals += passedProposalFixtures(fixtures, details)
 		if archive := qaArchivePath(*qaArchive, suite, model); archive != "" {
 			if err := farmguardian.SaveQARunArchive(archive, suite, model, details); err != nil {
 				log.Printf("qa archive %q: %v", archive, err)
@@ -94,21 +97,73 @@ func main() {
 	farmguardian.RefreshEvalCache()
 	fmt.Printf("\nEval report written to %s\n", *reportPath)
 
+	failed := false
 	if *failOnRegression {
-		if failed := regressionFailures(rep.Details); len(failed) > 0 {
-			fmt.Printf("\nGuardian eval regression — %d fixture(s) failed their heuristic:\n", len(failed))
-			for _, f := range failed {
+		if regressions := regressionFailures(rep.Details); len(regressions) > 0 {
+			fmt.Printf("\nGuardian eval regression — %d fixture(s) failed their heuristic:\n", len(regressions))
+			for _, f := range regressions {
 				fmt.Println("  - " + f)
 			}
-			os.Exit(1)
+			failed = true
 		}
 	}
+
+	if *checkPendingProposals {
+		if err := reportPendingProposals(ctx, client, expectedProposals); err != nil {
+			fmt.Printf("\nPending change-request queue check failed: %v\n", err)
+			failed = true
+		}
+	}
+
+	if failed {
+		os.Exit(1)
+	}
+}
+
+// passedProposalFixtures counts how many of this run's ExpectProposal
+// fixtures actually passed their heuristic — the number of pending
+// change-request rows we'd expect to find afterward.
+func passedProposalFixtures(fixtures []eval.Question, scores []farmguardian.EvalQuestionScore) int {
+	expectByID := make(map[string]bool, len(fixtures))
+	for _, q := range fixtures {
+		if q.ExpectProposal {
+			expectByID[q.ID] = true
+		}
+	}
+	n := 0
+	for _, s := range scores {
+		if expectByID[s.ID] && s.Passed {
+			n++
+		}
+	}
+	return n
+}
+
+// reportPendingProposals fetches Guardian's pending change-request queue
+// (GET /v1/chat/proposals?status=pending — the same endpoint the UI's PR
+// queue reads) and confirms at least `expected` rows are sitting there,
+// printing each one found. This is the actual functional check: a chat
+// response can echo a "proposal" object without ever persisting a
+// confirmable row, so this is what proves the write-intent flow really
+// works end to end, not just that the LLM formatted valid proposal JSON.
+func reportPendingProposals(ctx context.Context, client *eval.APIClient, expected int) error {
+	pending, err := client.FetchPendingProposals(ctx)
+	if err != nil {
+		return err
+	}
+	fmt.Printf("\nPending change-request queue: %d row(s)\n", len(pending))
+	for _, p := range pending {
+		fmt.Printf("  - [%s] %s — %s (risk: %s)\n", p.ProposalID, p.Tool, p.Summary, p.RiskTier)
+	}
+	if expected > 0 && len(pending) < expected {
+		return fmt.Errorf("expected at least %d pending proposal(s) from this run's write-intent fixtures, found %d — a proposal may be echoed in the chat response without actually being persisted", expected, len(pending))
+	}
+	return nil
 }
 
 // regressionFailures returns a sorted "<model>/<id>: <notes>" line for every
 // fixture that failed its heuristic — the pure logic behind
-// -fail-on-regression, split out so it's unit-testable without a live LLM
-// (Phase 153 WS1: Guardian PR gate).
+// -fail-on-regression, split out so it's unit-testable without a live LLM.
 func regressionFailures(details map[string][]farmguardian.EvalQuestionScore) []string {
 	var out []string
 	for model, scores := range details {

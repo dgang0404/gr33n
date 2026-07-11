@@ -1,5 +1,7 @@
 /**
- * Phase 153 — Guardian PR smoke gate (-fail-on-regression + opt-in CI job).
+ * Phase 153 — Guardian change-request ("PR queue") smoke fetcher.
+ * Script-only (no CI/GitHub involvement) — fires write-intent prompts, then
+ * fetches GET /v1/chat/proposals?status=pending to confirm they landed.
  */
 import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'node:fs'
@@ -8,34 +10,48 @@ import { join } from 'node:path'
 const repoDocs = join(process.cwd(), '..', 'docs')
 const repoRoot = join(process.cwd(), '..')
 
-describe('Phase 153 — Guardian PR smoke gate', () => {
-  it('plan documents the exit-code fix and the opt-in CI trigger', () => {
+describe('Phase 153 — Guardian change-request smoke fetcher', () => {
+  it('plan documents the pending-proposal fetch, not a GitHub PR gate', () => {
     const plan = readFileSync(
       join(repoDocs, 'plans/phase_153_guardian_pr_smoke_gate.plan.md'),
       'utf8',
     )
-    expect(plan).toContain('fail-on-regression')
-    expect(plan).toContain('regressionFailures')
-    expect(plan).toContain('guardian-smoke')
-    expect(plan).toContain('Not a required check')
+    expect(plan).toContain('FetchPendingProposals')
+    expect(plan).toContain('check-pending-proposals')
+    expect(plan).toContain('guardian-qa-change-requests')
+    expect(plan).toContain('Not tied to GitHub in any way')
   })
 
-  it('cmd/guardian-eval exits non-zero on a fixture regression', () => {
+  it('eval package ships change-request fixtures and a pending-proposal fetcher', () => {
+    const fixtures = readFileSync(
+      join(repoRoot, 'internal/farmguardian/eval/fixtures_change_requests.go'),
+      'utf8',
+    )
+    expect(fixtures).toContain('func ChangeRequestFixtures')
+
+    const proposals = readFileSync(join(repoRoot, 'internal/farmguardian/eval/proposals.go'), 'utf8')
+    expect(proposals).toContain('func (c *APIClient) FetchPendingProposals')
+    expect(proposals).toContain('/v1/chat/proposals')
+    expect(proposals).toContain('status=pending')
+
+    const smoke = readFileSync(join(repoRoot, 'internal/farmguardian/eval/fixtures_smoke.go'), 'utf8')
+    expect(smoke).toContain('change-requests')
+  })
+
+  it('cmd/guardian-eval fails when fewer pending rows than expected show up', () => {
     const main = readFileSync(join(repoRoot, 'cmd/guardian-eval/main.go'), 'utf8')
-    expect(main).toContain('fail-on-regression')
-    expect(main).toContain('func regressionFailures')
-    expect(main).toContain('os.Exit(1)')
-
-    const makefile = readFileSync(join(repoRoot, 'Makefile'), 'utf8')
-    expect(makefile).toContain('guardian-qa-pr-check')
-    expect(makefile).toContain('-fail-on-regression')
+    expect(main).toContain('check-pending-proposals')
+    expect(main).toContain('func reportPendingProposals')
+    expect(main).toContain('func passedProposalFixtures')
   })
 
-  it('CI job is opt-in — label or workflow_dispatch, self-hosted+ollama runner, never a required default gate', () => {
+  it('Makefile ships guardian-qa-change-requests, no GitHub workflow changes for it', () => {
+    const makefile = readFileSync(join(repoRoot, 'Makefile'), 'utf8')
+    expect(makefile).toContain('guardian-qa-change-requests')
+    expect(makefile).toContain('check-pending-proposals')
+
     const ci = readFileSync(join(repoRoot, '.github/workflows/ci.yml'), 'utf8')
-    expect(ci).toContain('guardian-qa-pr:')
-    expect(ci).toContain('guardian-smoke')
-    expect(ci).toContain('[self-hosted, ollama]')
-    expect(ci).toContain('guardian-qa-pr-check')
+    expect(ci).not.toContain('guardian-qa-pr')
+    expect(ci).not.toContain('guardian-smoke')
   })
 })

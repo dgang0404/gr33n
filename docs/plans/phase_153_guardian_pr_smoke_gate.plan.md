@@ -1,106 +1,96 @@
 ---
-name: Phase 153 — Guardian PR smoke gate
+name: Phase 153 — Guardian change-request smoke fetcher
 overview: >
-  guardian-eval always exited 0 regardless of heuristic pass/fail, so
-  guardian-qa-smoke was an artifact generator, not a gate — nothing failed a
-  build when a fixture regressed. Phase 153 adds a real -fail-on-regression
-  exit code and an opt-in (label-triggered) CI job so a PR can actually be
-  smoke-tested against live Ollama, without violating Phase 131's documented
-  non-goal of a mandatory LLM gate on every push.
+  "Guardian PR" in this repo means the propose→confirm change-request queue
+  (gr33ncore.guardian_action_proposals) — the cards a farmer confirms in the
+  UI, not a GitHub pull request. Phase 153 adds a script-based smoke check
+  (same style/tooling as the existing guardian-qa-smoke suite, no UI) that
+  fires a few preset write-intent prompts at Guardian and then fetches
+  GET /v1/chat/proposals?status=pending to confirm each one actually landed
+  a row in the pending queue — not just that the chat response echoed a
+  proposal object inline.
 todos:
-  - id: ws1-fail-on-regression
-    content: "WS1: -fail-on-regression flag in cmd/guardian-eval; exits non-zero on any fixture failure"
+  - id: ws1-fixtures
+    content: "WS1: change-requests fixture set (write-feed/write-ack/write-schedule/write-task) + -suite change-requests"
     status: completed
-  - id: ws2-make-target
-    content: "WS2: make guardian-qa-pr-check wraps smoke suite with -fail-on-regression"
+  - id: ws2-pending-fetch
+    content: "WS2: APIClient.FetchPendingProposals hits GET /v1/chat/proposals?status=pending"
     status: completed
-  - id: ws3-ci-job
-    content: "WS3: guardian-qa-pr CI job — opt-in via `guardian-smoke` PR label or workflow_dispatch, self-hosted+ollama runner"
+  - id: ws3-check-flag
+    content: "WS3: -check-pending-proposals flag — fetch queue after the run, fail if fewer pending rows than passed write-intent fixtures"
     status: completed
-  - id: ws4-docs
-    content: "WS4: ci-guardian-qa.md updated; phase-14 index; architecture doc"
+  - id: ws4-make-target
+    content: "WS4: make guardian-qa-change-requests wraps the suite + fetch check"
     status: completed
 isProject: false
 ---
 
-# Phase 153 — Guardian PR smoke gate
+# Phase 153 — Guardian change-request smoke fetcher
 
-**Status:** **Shipped** (CI job unverified end-to-end — no self-hosted `ollama`-labeled runner registered on this repo yet; see Verification below) · **Depends on:** [131](phase_131_guardian_qa_harness.plan.md) · [146](phase_146_guardian_quality_loop_and_judge.plan.md) · [152](phase_152_guardian_live_accuracy_guardrails.plan.md)
+**Status:** **Shipped** · **Depends on:** [131](phase_131_guardian_qa_harness.plan.md) (existing smoke harness) · [30](phase_30_guardian_change_requests.plan.md) (the change-request queue this tests) · [152](phase_152_guardian_live_accuracy_guardrails.plan.md)
 
 ---
 
-## Why this phase
+## Why this phase (and a correction)
 
-Every Guardian smoke/regression run this whole 143–152 arc was analyzed **by a human reading the report** — `cmd/guardian-eval` never inspected its own `EvalQuestionScore.Passed` results before exiting, so `make guardian-qa-smoke` always printed "Eval report written to ..." and exited 0, pass or fail. Phase 148–151's detectors are real regression tests for a specific bug, but they only run inside `guardian-eval`'s own process — nothing in CI or a PR check ever asked "did any of them fail?"
+An earlier pass at this phase misread "Guardian pull request" as a **GitHub pull request** and built a CI job (`guardian-qa-pr`) plus a `pull_request:` label trigger. That's not what was asked for and it's been fully removed — no GitHub Actions automation runs against Guardian, opt-in or otherwise. Nothing here touches `.github/workflows/`.
 
-The user asked for "pull request added to smoke test for Guardian." Two things needed to be true for that to mean anything:
-1. A failing fixture had to be able to **fail a command** (not just a JSON file nobody reads).
-2. A PR had to be able to **trigger that command** without breaking [Phase 131's explicit non-goal](../ci-guardian-qa.md): *"Mandatory PR gate on every push (too slow, LLM-flaky on shared CI)."* GitHub-hosted runners have no Ollama, and a full smoke suite runs 30–90+ minutes on a CPU laptop — making it a *required* check on every PR would be exactly the flaky, slow gate Phase 131 explicitly rejected.
+What was actually meant: Guardian's own **change-request ("PR") queue** — `gr33ncore.guardian_action_proposals`, surfaced in the UI as proposal cards a farmer clicks Confirm on (Phase 30). The ask was a **script** — same shape as `make guardian-qa-smoke` — that fires a few preset prompts designed to trigger a proposal, then checks the pending-request queue actually got populated. That's what this phase ships.
 
-Phase 153 resolves the tension: real exit code, opt-in trigger.
+**Why the check matters (not just re-testing what already existed):** `guardian-eval`'s existing `write_intent` fixtures already check `ProposalCount > 0` on the raw chat response — but that only confirms the LLM's JSON *echoed back* in that one response looked like a proposal. It says nothing about whether a row was actually persisted to `guardian_action_proposals` and would show up for the farmer to confirm later. Those are two different code paths (`attachProposals` building the inline response object vs. `InsertGuardianProposal` writing the row) and a bug could break either independently.
 
 ## Workstreams
 
-### WS1 — Real pass/fail exit code ✅
+### WS1 — Change-request fixture set ✅
 
-**Shipped:** `cmd/guardian-eval/main.go` — new `-fail-on-regression` flag. After the report is built and saved (so the JSON/QA archive is always written, pass or fail — you still get the evidence), `regressionFailures(rep.Details)` scans every model's scored fixtures for `Passed == false` and `os.Exit(1)` with a printed list of `<model>/<fixture-id>: <notes>` if any failed. Without the flag, behavior is unchanged (existing local `make guardian-qa-smoke` usage stays exit-0/artifact-only).
+**Shipped:** [`fixtures_change_requests.go`](../../internal/farmguardian/eval/fixtures_change_requests.go) — `ChangeRequestFixtures()` pulls the 4 existing `write_intent` prompts out of the regression set (`write-feed`, `write-ack`, `write-schedule`, `write-task`) so a dedicated run stays short instead of dragging in the full ~24-prompt regression suite. Wired into `FixturesForSuite` as `-suite change-requests` (aliases: `proposals`, `pr`).
 
-`regressionFailures` is a pure function over already-scored results — no LLM/DB — so it's fully unit-tested in `cmd/guardian-eval/main_test.go` without needing a live model.
+### WS2 — Fetch the actual pending queue ✅
 
-### WS2 — Make target ✅
+**Shipped:** [`proposals.go`](../../internal/farmguardian/eval/proposals.go) — `APIClient.FetchPendingProposals(ctx)` calls `GET /v1/chat/proposals?status=pending&farm_id=...` — the exact endpoint [`GuardianSettingsFeedbackReviewCard.vue`](../../ui/src/components/GuardianSettingsFeedbackReviewCard.vue)/the UI's proposal inbox reads from (`internal/handler/chat/proposals.go` `ListProposals`). Returns `proposal_id`, `tool`, `summary`, `risk_tier` for each pending row.
 
-**Shipped:** `make guardian-qa-pr-check` (`Makefile`) — same shape as `guardian-qa-smoke` but adds `-fail-on-regression`. Defaults to `SUITE=smoke MODEL=phi3:mini FARM_ID=1`, overridable like every other `guardian-qa-*` target. This is the command a developer runs locally before opening/updating a Guardian-touching PR — same command the opt-in CI job runs.
+### WS3 — `-check-pending-proposals` ✅
 
-### WS3 — Opt-in CI job ✅
+**Shipped:** `cmd/guardian-eval/main.go` — new flag. After the run, counts how many `ExpectProposal` fixtures **passed** their heuristic (`passedProposalFixtures`), then calls `FetchPendingProposals` and prints every pending row found. If the pending queue has fewer rows than that count, it prints an explanation and the process exits non-zero — the concrete signal that a prompt looked fine in the chat response but never actually reached the confirmable queue.
 
-**Shipped:** `.github/workflows/ci.yml` — `guardian-qa-pr` job, gated by:
+### WS4 — Make target ✅
 
-```yaml
-if: >
-  (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'guardian-smoke'))
-  || github.event_name == 'workflow_dispatch'
-runs-on: [self-hosted, ollama]
+**Shipped:** `make guardian-qa-change-requests` — `guardian-eval -suite change-requests -check-pending-proposals`, same JWT-refresh/`.env`-sourcing pattern as every other `guardian-qa-*` target. Run it exactly like `make guardian-qa-smoke`:
+
+```
+make guardian-qa-change-requests MODEL=phi3:mini FARM_ID=1
 ```
 
-- **Not a required check** and **not run on every PR** — only when the `guardian-smoke` label is applied (or manually via Actions → Run workflow). Adding a label to an already-open PR needed the `pull_request:` trigger's `types:` widened to include `labeled` (previously implicit `[opened, synchronize, reopened]` only) — done at the top-level `on:` block.
-- Same shape as the existing `ollama-smoke` job (Compose Postgres, bootstrap+seed, pull `phi3:mini`) but starts the real API (not just `cmd/api` in-process tests) so `/v1/chat` is live for `guardian-eval` to hit, then runs `make guardian-qa-pr-check` as the pass/fail step.
-- Uploads `data/guardian_qa_runs/` as a build artifact either way (`if: always()`), so a failed gate still leaves the full transcript for review — same "artifact even on failure" pattern as `ollama-smoke`.
+## What this is not
 
-### WS4 — Docs ✅
-
-**Shipped:** [`ci-guardian-qa.md`](../ci-guardian-qa.md) documents the label-triggered path alongside the existing self-hosted-nightly pattern; architecture doc and phase-14 index cross-link this phase.
+- **Not tied to GitHub in any way.** No workflow file changes, no PR labels, no required checks. `-fail-on-regression` (a separate, small exit-code fix for `guardian-eval` itself — it always used to exit 0 no matter what) is still there as a standalone flag because it's harmless and useful on its own, but nothing invokes it automatically.
+- **Not a UI test.** This hits `/v1/chat` and `/v1/chat/proposals` directly over HTTP, exactly like `guardian-qa-smoke` already does — no browser, no Playwright.
+- **Not confirming the proposal.** This only checks the propose step landed in the pending queue, not the Confirm→execute path (that's `internal/handler/chat/proposals.go` `PostConfirmProposal` + the tool's actual side effect, already covered elsewhere).
 
 ## Verification
 
-Unit-level (`regressionFailures`) is verified, plus a **live end-to-end run** of the exact command the CI job runs:
+Live end-to-end run (not just unit tests) against the real API + a real `phi3:mini` chat turn:
 
 ```
-$ go run ./cmd/guardian-eval/ -models phi3:mini -farm-id 1 -suite smoke -prompt-ids smoke-ec-ph -fail-on-regression ...
+$ go run ./cmd/guardian-eval/ -models phi3:mini -farm-id 1 -suite change-requests -prompt-ids write-ack -check-pending-proposals ...
 ...
-Guardian eval regression — 1 fixture(s) failed their heuristic:
-  - phi3:mini/smoke-ec-ph: uncited_tail
-exit status 1
+  phi3:mini: grounded cite 0% · decline 0% · proposal 100% · latency 1672923ms
+...
+Pending change-request queue: 1 row(s)
+  - [91523e33-eb25-4b88-811e-754511c4b05e] ack_alert — Acknowledge: Humidity high — Flower Room (risk: low)
 ```
 
-The machine was under heavy load from other work at the time (grounded warmup timed out, latency ~28 min, 0% citation rate) — a genuine degraded run, not a synthetic test — and `-fail-on-regression` correctly turned that into a process exit code of `1` while still writing the report and QA archive first. This is exactly the failure mode the gate exists to catch.
-
-**The GitHub Actions job itself is still unverified end-to-end** — this repo has no `[self-hosted, ollama]`-labeled runner registered, so `guardian-qa-pr` will simply never pick up a runner and sit queued if triggered (same caveat as the existing `ollama-smoke`/`hardware-smoke` jobs, which are also unverified beyond their own `workflow_dispatch` runs by whoever owns a matching runner). To use this for real:
-
-1. Register a self-hosted runner labeled `self-hosted, ollama` with Ollama installed and `phi3:mini` pullable.
-2. Set the `guardian-smoke` label on a PR (or trigger `workflow_dispatch`) to run it.
-3. No new secret needed for auth — `make guardian-qa-pr-check` refreshes its own dev-mode JWT via `scripts/source-local-env.sh --refresh-eval-token`, the same path the local Make target already uses.
+The `write-ack` prompt ("Acknowledge the highest severity unread alert") passed its heuristic, and `-check-pending-proposals` then fetched the real queue and found the actual persisted row waiting to be confirmed — proof the script exercises the real propose→pending-queue path end to end, not just the inline chat response.
 
 ## Acceptance
 
-- [x] `guardian-eval -fail-on-regression` exits 1 when any fixture's heuristic fails, 0 when all pass — verified both by unit test and a live run against phi3:mini (see Verification).
-- [x] `regressionFailures` unit-tested (all-pass, some-fail, multi-model sort) without a live LLM.
-- [x] `make guardian-qa-pr-check` exists and dry-run (`make -n`) produces valid shell.
-- [x] `guardian-qa-pr` CI job added, gated to label/workflow_dispatch + self-hosted runner — never blocks a default hosted-runner PR.
-- [x] Report/QA archive is still written even when the gate fails (evidence survives a red check).
-- [ ] End-to-end run against a real self-hosted `ollama` runner (needs runner registration outside this repo's control — see Verification).
+- [x] `make guardian-qa-change-requests` runs the 4 write-intent prompts and fetches the pending queue afterward — verified live against phi3:mini (see Verification).
+- [x] Exits non-zero and prints an explanation if fewer pending rows exist than passed write-intent fixtures.
+- [x] Prints every pending row found (`proposal_id`, `tool`, `summary`, `risk_tier`) so a human can eyeball the queue without opening the UI.
+- [x] `passedProposalFixtures` / `reportPendingProposals` unit-tested against a local `httptest` stand-in for `/v1/chat/proposals` — no live LLM needed for the logic itself.
+- [x] No GitHub Actions changes of any kind.
 
 ## Non-goals
 
-- Making `guardian-qa-pr` a required/default check on every PR — explicitly rejected by Phase 131 and reaffirmed here; hosted runners have no Ollama and the suite is too slow to gate merges by default.
-- Auto-labeling PRs based on changed paths (e.g. auto-add `guardian-smoke` when `internal/farmguardian/**` changes) — a reasonable follow-up, not done here to keep the trigger surface simple and explicit.
-- Comparing against a historical baseline report (regression *magnitude*, not just pass/fail) — `-fail-on-regression` is binary per-fixture; trend tracking would be its own phase.
+- Automated Confirm-and-verify-side-effect testing (separate concern from "did the request get queued").
+- Comparing proposal content/args against an expected shape — this is a presence/count smoke check, not a deep-equality assertion on proposal payloads.

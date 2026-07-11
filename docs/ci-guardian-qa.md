@@ -13,7 +13,8 @@
 | Target | When | Output |
 |--------|------|--------|
 | `make guardian-qa-smoke MODEL=phi3:mini FARM_ID=1` | After Guardian changes; optional nightly/weekly | `data/guardian_qa_runs/<timestamp>_smoke_phi3-mini.json` — always exits 0 (artifact only) |
-| `make guardian-qa-pr-check MODEL=phi3:mini FARM_ID=1` | Before/during a PR that touches Guardian (Phase 153) | Same archive, but **exits non-zero if any fixture fails its heuristic** — run this locally before opening a Guardian PR |
+| `make guardian-qa-smoke-strict MODEL=phi3:mini FARM_ID=1` | When you want a real pass/fail instead of a report to read | Same archive, but **exits non-zero if any fixture fails its heuristic** |
+| `make guardian-qa-change-requests MODEL=phi3:mini FARM_ID=1` | After touching proposal/change-request code (Phase 153) | Fires the 4 write-intent prompts, then fetches `GET /v1/chat/proposals?status=pending` and fails if the queue didn't actually get populated |
 | `make guardian-qa-regression MODEL=phi3:mini` | Pre-release (slow) | Same directory, regression suite |
 | `make guardian-qa-manual` | Human UI parity | Prints checklist from same fixtures |
 
@@ -21,14 +22,15 @@ Set `GUARDIAN_EVAL_TOKEN` (JWT from dev login) and optionally `GUARDIAN_EVAL_LOG
 
 ---
 
-## PR gate (Phase 153 — opt-in, shipped in `ci.yml`)
+## Guardian's change-request ("PR") queue smoke check (Phase 153)
 
-`guardian-qa-pr` in [`.github/workflows/ci.yml`](../.github/workflows/ci.yml) runs `make guardian-qa-pr-check` (smoke suite + `-fail-on-regression`) on a self-hosted `[self-hosted, ollama]` runner. It is **not a required check and does not run on every PR** — it only fires when:
+"Guardian PR" in this codebase means the propose→confirm change-request queue (`gr33ncore.guardian_action_proposals`) — the proposal cards a farmer clicks Confirm on in the UI, **not** a GitHub pull request. This is a plain script, run the same way as `guardian-qa-smoke` — no CI, no GitHub automation of any kind:
 
-- the `guardian-smoke` label is added to a PR, or
-- it's triggered manually via **Actions → CI → Run workflow**.
+```
+make guardian-qa-change-requests MODEL=phi3:mini FARM_ID=1
+```
 
-This keeps the Phase 131 non-goal intact (below) while making "smoke-test this PR" a real, one-click action once a self-hosted Ollama runner is registered. `cmd/guardian-eval -fail-on-regression` is what turns a fixture failure into an actual red check — see [`plans/phase_153_guardian_pr_smoke_gate.plan.md`](plans/phase_153_guardian_pr_smoke_gate.plan.md).
+It fires 4 preset write-intent prompts ("set the feed volume to...", "acknowledge the alert...", etc.), then calls `GET /v1/chat/proposals?status=pending` — the same endpoint the UI's proposal inbox reads — and fails if fewer pending rows show up than write-intent prompts passed. See [`plans/phase_153_guardian_pr_smoke_gate.plan.md`](plans/phase_153_guardian_pr_smoke_gate.plan.md).
 
 ## Example workflow (documented pattern — not enabled in default repo CI)
 
@@ -104,7 +106,8 @@ Phase 131 deferred full LLM-as-judge — **Phase 146 supersedes that for GPU pro
 
 ## Non-goals
 
-- Mandatory PR gate on every push (too slow, LLM-flaky on shared CI) — Phase 153's `guardian-qa-pr` is opt-in (label/`workflow_dispatch`) precisely to avoid this
+- Mandatory PR gate on every push (too slow, LLM-flaky on shared CI)
 - GitHub-hosted runner without Ollama
+- Any GitHub Actions automation tied to Guardian's change-request smoke check (Phase 153) — it's a local/self-hosted script only, run on demand
 - Automated LLM grading of answer quality (deferred to a future phase when GPU CI is stable)
-- Historical-baseline regression tracking (Phase 153 is pass/fail per fixture, not "did this get worse than last week")
+- Historical-baseline regression tracking (pass/fail per fixture, not "did this get worse than last week")

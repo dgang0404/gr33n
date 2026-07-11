@@ -1162,17 +1162,18 @@ Phase 148/151's detectors (`AnswerAccuracyNote`) only ran inside `guardian-eval`
 
 **Citation deep links (WS2):** [`citation_route.go`](../internal/farmguardian/citation_route.go) `ResolveCitationRoute` mirrors `ContextRef`'s page→Guardian mapping in the opposite direction — given a citation's `source_type` + `source_id`, it resolves a UI route (`/crop-cycles/{id}/summary` for `crop_cycle`, `/zones/{id}?tab=water` for `fertigation_program`, `/zones/{id}` for `task`), farm-scope-checked against the row it looks up. `attachCitationRoutes` wires it into both chat handlers right after citations are built; `GuardianChatPanel.vue` renders the chip as a `v-nav-hint`-wired `<router-link>` (the same sidebar-wiggle affordance every other in-app cross-link uses) when a route resolves, plain text otherwise. `schedule`, `alert_notification`, `field_guide`, and `platform_doc` sources are deliberately left unresolved — see WS2b in the plan doc for why each needs its own join/scoping decision.
 
-### 8.17 Guardian PR smoke gate (Phase 153)
+### 8.17 Guardian change-request smoke fetcher (Phase 153)
 
-Every `guardian-eval` run this whole 143–152 arc exited 0 whether its fixtures passed or failed — the smoke report was an artifact a human had to read, never a gate. Phase 153 adds:
+"Guardian PR" here means the propose→confirm change-request queue (`gr33ncore.guardian_action_proposals`) — the proposal cards a farmer confirms in the UI — not a GitHub pull request. The existing `write_intent` smoke fixtures only checked that a chat response's inline `proposals` field looked valid; they never confirmed a row actually reached the pending queue a farmer would see. Phase 153 closes that gap with a script (no GitHub/CI involvement of any kind):
 
 | Layer | Module | Behavior |
 |-------|--------|----------|
-| Exit code | [`cmd/guardian-eval/main.go`](../cmd/guardian-eval/main.go) `-fail-on-regression` | After the report/QA archive is still saved, `regressionFailures` scans every model's scored fixtures and `os.Exit(1)` if any `Passed == false`, printing `<model>/<id>: <notes>` for each |
-| Local command | `Makefile` `guardian-qa-pr-check` | `guardian-qa-smoke` + `-fail-on-regression` — the command to run before opening a Guardian PR |
-| CI | [`ci.yml`](../.github/workflows/ci.yml) `guardian-qa-pr` job | Opt-in only — fires when a PR has the `guardian-smoke` label or via manual `workflow_dispatch`; runs on a `[self-hosted, ollama]` runner so it never blocks a default hosted-runner PR (Phase 131's non-goal of a mandatory LLM PR gate stays intact) |
+| Fixtures | [`fixtures_change_requests.go`](../internal/farmguardian/eval/fixtures_change_requests.go) `ChangeRequestFixtures` | The 4 `write_intent` prompts, run via `-suite change-requests` |
+| Fetch | [`proposals.go`](../internal/farmguardian/eval/proposals.go) `APIClient.FetchPendingProposals` | Calls `GET /v1/chat/proposals?status=pending` — the same endpoint the UI's proposal inbox (`internal/handler/chat/proposals.go` `ListProposals`) reads |
+| Check | [`cmd/guardian-eval/main.go`](../cmd/guardian-eval/main.go) `-check-pending-proposals` | After the run, counts passed `ExpectProposal` fixtures and fails if the pending queue has fewer rows than that — proof the write-intent flow persisted, not just that the LLM emitted proposal-shaped JSON |
+| Command | `Makefile` `guardian-qa-change-requests` | Wraps both, same style as every other `guardian-qa-*` target |
 
-See [`plans/phase_153_guardian_pr_smoke_gate.plan.md`](plans/phase_153_guardian_pr_smoke_gate.plan.md) — the CI job itself is unverified end-to-end (no self-hosted `ollama` runner registered on this repo), same caveat as the pre-existing `ollama-smoke`/`hardware-smoke` jobs.
+See [`plans/phase_153_guardian_pr_smoke_gate.plan.md`](plans/phase_153_guardian_pr_smoke_gate.plan.md) for the full writeup (including a note correcting an earlier draft of this phase that misread "PR" as a GitHub pull request and added CI automation — since removed).
 
 ---
 

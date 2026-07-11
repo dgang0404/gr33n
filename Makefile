@@ -1,4 +1,4 @@
-.PHONY: run run-receiver build build-receiver test seed sqlc migrate merge-legacy-plants ui dev dev-auth-test e2e-browser ollama-smoke ollama-smoke-cpu ollama-smoke-help guardian-eval guardian-qa-smoke guardian-qa-smoke-ec-ph guardian-qa-smoke-unread-alerts guardian-qa-phase127 guardian-qa-regression guardian-qa-manual guardian-qa-pr-check guardian-laptop-tune rag-ingest-help rag-ingest-demo rag-ingest-platform-docs compose-db-up compose-db-status compose-logging-up compose-logging-down setup-compose-dev dev-stack dev-stack-fresh dev-stack-fresh-rag local-up restart-local restart-local-serve db-sanity-report check-stack check-crop-library check-crop-catalog check-crop-catalog-parity check-catalog-seed-drift add-crop-check check-catalog-release check-ui-domain-parity clean lint bootstrap-local bootstrap-local-docker install-deps-debian install-pi-edge-deps first-clone first-clone-docker first-clone-install-deps audit-openapi audit-env edge-smoke-help edge-actuator-smoke-help recipe-pack-import-help agronomy-seed-pack-help guardian-bootstrap-farm import-agronomy-seed-pack apply-agronomy-overrides rag-ingest-farm-operational
+.PHONY: run run-receiver build build-receiver test seed sqlc migrate merge-legacy-plants ui dev dev-auth-test e2e-browser ollama-smoke ollama-smoke-cpu ollama-smoke-help guardian-eval guardian-qa-smoke guardian-qa-smoke-ec-ph guardian-qa-smoke-unread-alerts guardian-qa-phase127 guardian-qa-regression guardian-qa-manual guardian-qa-smoke-strict guardian-qa-change-requests guardian-laptop-tune rag-ingest-help rag-ingest-demo rag-ingest-platform-docs compose-db-up compose-db-status compose-logging-up compose-logging-down setup-compose-dev dev-stack dev-stack-fresh dev-stack-fresh-rag local-up restart-local restart-local-serve db-sanity-report check-stack check-crop-library check-crop-catalog check-crop-catalog-parity check-catalog-seed-drift add-crop-check check-catalog-release check-ui-domain-parity clean lint bootstrap-local bootstrap-local-docker install-deps-debian install-pi-edge-deps first-clone first-clone-docker first-clone-install-deps audit-openapi audit-env edge-smoke-help edge-actuator-smoke-help recipe-pack-import-help agronomy-seed-pack-help guardian-bootstrap-farm import-agronomy-seed-pack apply-agronomy-overrides rag-ingest-farm-operational
 
 # dash (common default /bin/sh) can report "wait: No child processes" for dev / dev-auth-test;
 # bash handles background jobs + wait reliably.
@@ -169,12 +169,20 @@ guardian-qa-regression: ## Phase 131 — full regression fixture set (~24 prompt
 guardian-qa-manual: ## Phase 131/128 — print UI checklist (SUITE=smoke|phase127|regression)
 	@$(GO) run ./cmd/guardian-eval/ -manual -suite $${SUITE:-smoke}
 
-guardian-qa-pr-check: ## Phase 153 — smoke suite as a PR gate; exits non-zero on any fixture regression
+guardian-qa-smoke-strict: ## Smoke suite that exits non-zero on any fixture regression (vs. guardian-qa-smoke's always-0 artifact run)
 	@bash -lc 'set -e; cd "$(CURDIR)"; \
 		if [ -f .env ]; then set -a && . ./.env && set +a; fi; \
 		source scripts/source-local-env.sh --refresh-eval-token; \
 		$(GO) run ./cmd/guardian-eval/ -models $${MODEL:-phi3:mini} -farm-id $${FARM_ID:-1} \
 			-suite $${SUITE:-smoke} -fail-on-regression \
+			-report $${GUARDIAN_EVAL_REPORT:-data/guardian_model_eval.json}'
+
+guardian-qa-change-requests: ## Fires write-intent prompts, then fetches Guardian's pending change-request queue to confirm they landed
+	@bash -lc 'set -e; cd "$(CURDIR)"; \
+		if [ -f .env ]; then set -a && . ./.env && set +a; fi; \
+		source scripts/source-local-env.sh --refresh-eval-token; \
+		$(GO) run ./cmd/guardian-eval/ -models $${MODEL:-phi3:mini} -farm-id $${FARM_ID:-1} \
+			-suite change-requests -check-pending-proposals \
 			-report $${GUARDIAN_EVAL_REPORT:-data/guardian_model_eval.json}'
 
 guardian-laptop-tune: ## Phase 129 — print or apply Guardian laptop .env recommendations (ARGS="--apply")
