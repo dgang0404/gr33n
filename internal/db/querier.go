@@ -221,6 +221,8 @@ type Querier interface {
 	// — rank 1 and 3 drop out, leaving any zone-wide fallback.
 	GetActiveSetpointForScope(ctx context.Context, arg GetActiveSetpointForScopeParams) (GetActiveSetpointForScopeRow, error)
 	GetActuatorByID(ctx context.Context, id int64) (Gr33ncoreActuator, error)
+	// Phase 159 — schedule citation fallback via executable action actuator.
+	GetActuatorZoneBySchedule(ctx context.Context, arg GetActuatorZoneByScheduleParams) (*int64, error)
 	GetAgronomyFieldGuideBySlug(ctx context.Context, slug string) (Gr33ncropsAgronomyFieldGuide, error)
 	GetAlertNotificationByID(ctx context.Context, id int64) (Gr33ncoreAlertsNotification, error)
 	GetAnimalGroupByID(ctx context.Context, id int64) (Gr33nanimalsAnimalGroup, error)
@@ -274,6 +276,8 @@ type Querier interface {
 	// number reflects the working solution, not just the freshly-mixed batch.
 	GetFertigationAggregatesByCropCycle(ctx context.Context, cropCycleID *int64) (GetFertigationAggregatesByCropCycleRow, error)
 	GetFertigationProgramByID(ctx context.Context, id int64) (Gr33nfertigationProgram, error)
+	// Phase 159 — citation route for schedule sources via bound program.
+	GetFertigationProgramZoneBySchedule(ctx context.Context, arg GetFertigationProgramZoneByScheduleParams) (*int64, error)
 	GetFertigationReservoirByID(ctx context.Context, id int64) (Gr33nfertigationReservoir, error)
 	GetFileAttachmentByID(ctx context.Context, id int64) (Gr33ncoreFileAttachment, error)
 	GetGeneticsProfileLink(ctx context.Context, arg GetGeneticsProfileLinkParams) (Gr33ncropsPlantGeneticsProfile, error)
@@ -343,6 +347,8 @@ type Querier interface {
 	GetProposalChainRoot(ctx context.Context, proposalID uuid.UUID) (uuid.UUID, error)
 	GetPublishedAgronomyFieldGuideBySlug(ctx context.Context, slug string) (Gr33ncropsAgronomyFieldGuide, error)
 	GetPublishedCommonsCatalogEntryBySlug(ctx context.Context, slug string) (GetPublishedCommonsCatalogEntryBySlugRow, error)
+	// Phase 159 — citation route metadata for curated doc sources.
+	GetRagChunkMetadataByFarmSource(ctx context.Context, arg GetRagChunkMetadataByFarmSourceParams) (json.RawMessage, error)
 	// Phase 135 — corpus freshness aggregates per farm (max updated_at per tier).
 	GetRagCorpusStatsByFarm(ctx context.Context, farmID int64) (GetRagCorpusStatsByFarmRow, error)
 	// Phase 28 WS5 — debounce lookup for the chat-budget-warning alert. The

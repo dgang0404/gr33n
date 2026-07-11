@@ -125,7 +125,8 @@ INSERT INTO gr33ncore.conversation_turns (
     context_count,
     citations,
     prompt_tokens,
-    completion_tokens
+    completion_tokens,
+    accuracy_note
 ) VALUES (
     $1,
     $2,
@@ -143,7 +144,8 @@ INSERT INTO gr33ncore.conversation_turns (
     $8,
     $9,
     $10,
-    $11
+    $11,
+    $12
 )
 RETURNING id, session_id, user_id, farm_id, turn_index, created_at
 `
@@ -160,6 +162,7 @@ type InsertConversationTurnParams struct {
 	Citations        json.RawMessage `db:"citations" json:"citations"`
 	PromptTokens     int32           `db:"prompt_tokens" json:"prompt_tokens"`
 	CompletionTokens int32           `db:"completion_tokens" json:"completion_tokens"`
+	AccuracyNote     *string         `db:"accuracy_note" json:"accuracy_note"`
 }
 
 type InsertConversationTurnRow struct {
@@ -190,6 +193,7 @@ func (q *Queries) InsertConversationTurn(ctx context.Context, arg InsertConversa
 		arg.Citations,
 		arg.PromptTokens,
 		arg.CompletionTokens,
+		arg.AccuracyNote,
 	)
 	var i InsertConversationTurnRow
 	err := row.Scan(
@@ -287,7 +291,8 @@ SELECT
     created_at,
     feedback_rating,
     feedback_reason,
-    feedback_at
+    feedback_at,
+    accuracy_note
 FROM gr33ncore.conversation_turns
 WHERE session_id = $1
   AND user_id    = $2
@@ -315,6 +320,7 @@ type ListConversationTurnsBySessionRow struct {
 	FeedbackRating   *string            `db:"feedback_rating" json:"feedback_rating"`
 	FeedbackReason   *string            `db:"feedback_reason" json:"feedback_reason"`
 	FeedbackAt       pgtype.Timestamptz `db:"feedback_at" json:"feedback_at"`
+	AccuracyNote     *string            `db:"accuracy_note" json:"accuracy_note"`
 }
 
 func (q *Queries) ListConversationTurnsBySession(ctx context.Context, arg ListConversationTurnsBySessionParams) ([]ListConversationTurnsBySessionRow, error) {
@@ -342,6 +348,7 @@ func (q *Queries) ListConversationTurnsBySession(ctx context.Context, arg ListCo
 			&i.FeedbackRating,
 			&i.FeedbackReason,
 			&i.FeedbackAt,
+			&i.AccuracyNote,
 		); err != nil {
 			return nil, err
 		}

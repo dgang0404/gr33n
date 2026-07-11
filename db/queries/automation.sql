@@ -12,6 +12,19 @@ SELECT * FROM gr33ncore.schedules
 WHERE farm_id = sqlc.arg('farm_id') AND updated_at > sqlc.arg('updated_after')::timestamptz
 ORDER BY updated_at ASC, id ASC;
 
+-- name: GetActuatorZoneBySchedule :one
+-- Phase 159 — schedule citation fallback via executable action actuator.
+SELECT a.zone_id
+FROM gr33ncore.executable_actions ea
+JOIN gr33ncore.schedules s ON s.id = ea.schedule_id
+JOIN gr33ncore.actuators a ON a.id = ea.target_actuator_id
+WHERE ea.schedule_id = $1
+  AND s.farm_id = $2
+  AND a.zone_id IS NOT NULL
+  AND a.deleted_at IS NULL
+ORDER BY ea.execution_order ASC, ea.id ASC
+LIMIT 1;
+
 -- name: GetScheduleByID :one
 SELECT * FROM gr33ncore.schedules
 WHERE id = $1;

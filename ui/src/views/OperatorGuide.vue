@@ -12,6 +12,16 @@
       </p>
     </header>
 
+    <p
+      v-if="citedDoc"
+      class="rounded-xl border border-amber-900/60 bg-amber-950/40 px-4 py-3 text-sm text-amber-200"
+      data-test="operator-guide-cited-doc"
+      role="status"
+    >
+      Guardian cited platform doc: <code class="text-amber-100/90 text-xs">{{ citedDoc }}</code>
+      — full text lives in the repo under <code class="text-amber-100/80 text-xs">docs/</code>.
+    </p>
+
     <section class="bg-zinc-900 border border-zinc-800 rounded-xl p-5 space-y-3">
       <h2 class="text-white font-semibold text-sm uppercase tracking-widest text-zinc-500">Suggested walk</h2>
       <ol class="list-decimal list-inside space-y-2 text-sm text-zinc-300">
@@ -73,11 +83,24 @@
 </template>
 
 <script setup>
+import { onMounted, ref, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import HelpTip from '../components/HelpTip.vue'
 
 defineProps({
   embedded: { type: Boolean, default: false },
 })
+
+const route = useRoute()
+const citedDoc = ref('')
+
+function applyCitationQuery() {
+  const raw = route.query.cited_doc
+  citedDoc.value = typeof raw === 'string' ? raw : ''
+}
+
+onMounted(applyCitationQuery)
+watch(() => route.query.cited_doc, applyCitationQuery)
 
 const glossary = [
   {

@@ -1360,6 +1360,7 @@ type Gr33ncoreConversationTurn struct {
 	FeedbackRating   *string            `db:"feedback_rating" json:"feedback_rating"`
 	FeedbackReason   *string            `db:"feedback_reason" json:"feedback_reason"`
 	FeedbackAt       pgtype.Timestamptz `db:"feedback_at" json:"feedback_at"`
+	AccuracyNote     *string            `db:"accuracy_note" json:"accuracy_note"`
 	CreatedAt        time.Time          `db:"created_at" json:"created_at"`
 }
 

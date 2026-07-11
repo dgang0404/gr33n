@@ -100,3 +100,13 @@ WHERE farm_id = sqlc.arg(farm_id)
   AND (sqlc.narg('created_until')::timestamptz IS NULL OR created_at <= sqlc.narg('created_until')::timestamptz)
 ORDER BY embedding <=> sqlc.arg(query_embedding)::vector
 LIMIT sqlc.arg(match_limit);
+
+-- Phase 159 — citation route metadata for curated doc sources.
+-- name: GetRagChunkMetadataByFarmSource :one
+SELECT metadata
+FROM gr33ncore.rag_embedding_chunks
+WHERE farm_id = $1
+  AND source_type = $2
+  AND source_id = $3
+ORDER BY chunk_index ASC
+LIMIT 1;

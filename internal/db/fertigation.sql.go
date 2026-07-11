@@ -477,6 +477,30 @@ func (q *Queries) GetFertigationProgramByID(ctx context.Context, id int64) (Gr33
 	return i, err
 }
 
+const getFertigationProgramZoneBySchedule = `-- name: GetFertigationProgramZoneBySchedule :one
+SELECT target_zone_id
+FROM gr33nfertigation.programs
+WHERE farm_id = $1
+  AND schedule_id = $2
+  AND deleted_at IS NULL
+  AND target_zone_id IS NOT NULL
+ORDER BY is_active DESC, id ASC
+LIMIT 1
+`
+
+type GetFertigationProgramZoneByScheduleParams struct {
+	FarmID     int64  `db:"farm_id" json:"farm_id"`
+	ScheduleID *int64 `db:"schedule_id" json:"schedule_id"`
+}
+
+// Phase 159 — citation route for schedule sources via bound program.
+func (q *Queries) GetFertigationProgramZoneBySchedule(ctx context.Context, arg GetFertigationProgramZoneByScheduleParams) (*int64, error) {
+	row := q.db.QueryRow(ctx, getFertigationProgramZoneBySchedule, arg.FarmID, arg.ScheduleID)
+	var target_zone_id *int64
+	err := row.Scan(&target_zone_id)
+	return target_zone_id, err
+}
+
 const getFertigationReservoirByID = `-- name: GetFertigationReservoirByID :one
 SELECT id, farm_id, zone_id, name, description, capacity_liters, current_volume_liters, status, ec_sensor_id, ph_sensor_id, temp_sensor_id, water_level_sensor_id, delivery_actuator_id, last_ec_mscm, last_ph, last_reading_time, metadata, created_at, updated_at, deleted_at FROM gr33nfertigation.reservoirs
 WHERE id = $1 AND deleted_at IS NULL

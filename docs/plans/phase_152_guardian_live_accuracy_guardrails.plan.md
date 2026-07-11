@@ -22,14 +22,14 @@ todos:
     content: "WS2: Citation chips route to the zone/crop-cycle the source came from (crop_cycle, fertigation_program, task)"
     status: completed
   - id: ws2b-remaining-source-types
-    content: "WS2b: Resolve routes for schedule (needs reverse join), alert_notification (needs triggering_event hop), field_guide/platform_doc (needs a farm-knowledge anchor) — not started"
-    status: pending
+    content: "WS2b: Resolve routes for schedule, alert_notification, field_guide, platform_doc — shipped Phase 159"
+    status: completed
 isProject: false
 ---
 
 # Phase 152 — Guardian live accuracy guardrails + citation deep links
 
-**Status:** WS1 + WS2 shipped · WS2b planned · **Depends on:** [148](phase_148_guardian_citation_claim_accuracy.plan.md) · [151](phase_151_guardian_alert_citation_enforcement.plan.md)
+**Status:** WS1 + WS2 + WS2b shipped · **Depends on:** [148](phase_148_guardian_citation_claim_accuracy.plan.md) · [151](phase_151_guardian_alert_citation_enforcement.plan.md) · [159](phase_159_guardian_citation_completeness.plan.md)
 
 ---
 

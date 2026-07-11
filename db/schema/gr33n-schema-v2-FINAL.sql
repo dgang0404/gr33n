@@ -2050,6 +2050,7 @@ CREATE TABLE IF NOT EXISTS gr33ncore.conversation_turns (
     feedback_rating     TEXT NULL CHECK (feedback_rating IS NULL OR feedback_rating IN ('up', 'down')),
     feedback_reason     TEXT NULL,
     feedback_at         TIMESTAMPTZ NULL,
+    accuracy_note       TEXT NULL,
     created_at          TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     CONSTRAINT uq_conversation_turns_session_index UNIQUE (session_id, turn_index)
 );

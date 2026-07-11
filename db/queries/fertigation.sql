@@ -94,6 +94,17 @@ SET last_ec_mscm      = $2,
 WHERE id = $1 AND deleted_at IS NULL
 RETURNING *;
 
+-- name: GetFertigationProgramZoneBySchedule :one
+-- Phase 159 — citation route for schedule sources via bound program.
+SELECT target_zone_id
+FROM gr33nfertigation.programs
+WHERE farm_id = $1
+  AND schedule_id = $2
+  AND deleted_at IS NULL
+  AND target_zone_id IS NOT NULL
+ORDER BY is_active DESC, id ASC
+LIMIT 1;
+
 -- name: GetFertigationProgramByID :one
 SELECT * FROM gr33nfertigation.programs
 WHERE id = $1 AND deleted_at IS NULL;

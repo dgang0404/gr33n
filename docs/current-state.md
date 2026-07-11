@@ -19,7 +19,7 @@
 | **Sensors & alerts** | Live dashboards, SSE stream, rules, unread alert inbox |
 | **Control** | Manual toggles, cron schedules, automation rules, Pi `device_commands` FIFO queue |
 | **Zones** | Zone cockpit — Water / Light / Climate tabs, plants, tasks, grow cycles |
-| **Guardian** | Farm Counsel (RAG + live data) vs Quick Chat (LLM-only); proposals → Confirm; citation deep links; live accuracy banners |
+| **Guardian** | Farm Counsel (RAG + live data) vs Quick Chat; proposals → Confirm; **full citation deep links** (schedule, alert, docs); accuracy banners **persist on reload** |
 | **Crops** | Postgres catalog (~50 crops), `crop_key` on plants, Guardian `lookup_crop_targets` |
 | **Edge** | Pi client, MQTT bridge, Virtual Pi wiring, `/pi-setup-wizard` |
 | **Ops** | Costs/receipts, tasks, audit events, optional Insert Commons export |
@@ -115,13 +115,16 @@ Full list: [`environment-variables.md`](environment-variables.md).
 
 ---
 
-## Infra & trust (Phases 154–156)
+## Infra & trust (Phases 154–158)
 
 | Command | Purpose |
 |---------|---------|
 | `make test-unit` | Fast Go tests (no DB smokes) |
 | `make backup` / `make verify-backup` | Automated farm backup |
 | `make vuln-check` | govulncheck + npm audit |
+| `make docs-current-state-hint` | Regenerate OpenAPI/migration counts for this page |
+
+Accessibility: skip link, Guardian drawer focus trap, zone tab semantics — [`a11y-audit-2026-07-11.md`](a11y-audit-2026-07-11.md).
 
 ---
 
@@ -129,8 +132,7 @@ Full list: [`environment-variables.md`](environment-variables.md).
 
 | Item | Notes |
 |------|--------|
-| **Phase 115** schema utilization | Farm modules gating, notification templates — planned |
-| **Phase 158** accessibility | Dedicated a11y pass not started |
+| **Phase 160** a11y residuals | Lighting modal, mobile drawer trap — [`phase_160_a11y_residuals.plan.md`](plans/phase_160_a11y_residuals.plan.md) |
 | **Insert Commons** | Opt-in federation; not required for single-farm LAN |
 | **Hosted-only** | Not required — but `LLM_BASE_URL` supports remote OpenAI-compatible APIs |
 
@@ -138,6 +140,6 @@ Full list: [`environment-variables.md`](environment-variables.md).
 
 ## Phase history
 
-- **Shipped arcs:** 40–67 farmer UX · 68–81 SPA · 82–110 crop intelligence · 111–122 Guardian/Pi · 129–153 Guardian QA · 154–156 infra/trust
-- **Active / planned:** [157 docs](plans/phase_157_docs_consolidation.plan.md) · [158 a11y](plans/phase_158_accessibility_pass.plan.md) · [115 schema](plans/phase_115_schema_utilization.plan.md)
+- **Shipped arcs:** 40–67 farmer UX · 68–81 SPA · 82–110 crop intelligence · 111–122 Guardian/Pi · 129–153 Guardian QA · **154–159** infra/trust + citation completeness
+- **Active / planned:** [160 a11y residuals](plans/phase_160_a11y_residuals.plan.md)
 - **Archive:** [`plans/archive/`](plans/archive/) — closed plans (e.g. 88–92)

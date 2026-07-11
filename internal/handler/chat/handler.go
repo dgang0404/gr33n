@@ -535,7 +535,7 @@ func (h *Handler) PostV1(w http.ResponseWriter, r *http.Request) {
 		dbg.AccuracyNote = resp.AccuracyNote
 	}
 
-	if turnIdx, perr := h.persistTurn(r.Context(), sessionID, userID, hasUser, farmID, grounded, question, answer, resp.Citations, len(chunks), usage, chatClient.ModelLabel()); perr == nil {
+	if turnIdx, perr := h.persistTurn(r.Context(), sessionID, userID, hasUser, farmID, grounded, question, answer, resp.Citations, len(chunks), usage, chatClient.ModelLabel(), resp.AccuracyNote); perr == nil {
 		resp.TurnIndex = turnIdx
 		if dbg != nil {
 			storeTurnDebug(sessionID, turnIdx, *dbg)
@@ -694,7 +694,7 @@ func (h *Handler) streamResponse(
 	// (OpenAI + recent Ollama) return real token counts; older Ollama builds
 	// leave usage zero and the row still lands so the UI sidebar count stays
 	// honest about "this session had N streaming turns".
-	if turnIdx, perr := h.persistTurn(r.Context(), sessionID, userID, hasUser, farmID, grounded, question, answer, done.Citations, len(chunks), usage, chatClient.ModelLabel()); perr == nil {
+	if turnIdx, perr := h.persistTurn(r.Context(), sessionID, userID, hasUser, farmID, grounded, question, answer, done.Citations, len(chunks), usage, chatClient.ModelLabel(), done.AccuracyNote); perr == nil {
 		done.TurnIndex = turnIdx
 		if dbg != nil {
 			storeTurnDebug(sessionID, turnIdx, *dbg)
@@ -819,6 +819,7 @@ func (h *Handler) persistTurn(
 	contextCount int,
 	usage llm.Usage,
 	llmModel string,
+	accuracyNote string,
 ) (int32, error) {
 	if !hasUser || h.q == nil {
 		return -1, nil
@@ -846,6 +847,7 @@ func (h *Handler) persistTurn(
 		Citations:        citationsJSON,
 		PromptTokens:     int32(usage.PromptTokens),
 		CompletionTokens: int32(usage.CompletionTokens),
+		AccuracyNote:     stringPtrOrNil(accuracyNote),
 	})
 	if err != nil {
 		slog.Warn("conversation_turns insert failed", "session_id", sessionID, "err", err)
@@ -949,6 +951,7 @@ type sessionTurn struct {
 	FeedbackRating   *string              `json:"feedback_rating,omitempty"`
 	FeedbackReason   *string              `json:"feedback_reason,omitempty"`
 	FeedbackAt       string               `json:"feedback_at,omitempty"`
+	AccuracyNote     string               `json:"accuracy_note,omitempty"`
 }
 
 // ListSessions handles GET /v1/chat/sessions — returns the calling user's most
@@ -1029,6 +1032,17 @@ func (h *Handler) GetSession(w http.ResponseWriter, r *http.Request) {
 		if len(row.Citations) > 0 {
 			_ = json.Unmarshal(row.Citations, &cites)
 		}
+		farmID := int64(0)
+		if row.FarmID != nil {
+			farmID = *row.FarmID
+		}
+		if farmID > 0 {
+			attachCitationRoutes(r.Context(), h.q, farmID, cites)
+		}
+		accuracyNote := ""
+		if row.AccuracyNote != nil {
+			accuracyNote = strings.TrimSpace(*row.AccuracyNote)
+		}
 		out = append(out, sessionTurn{
 			TurnIndex:        row.TurnIndex,
 			UserMessage:      row.UserMessage,
@@ -1044,6 +1058,7 @@ func (h *Handler) GetSession(w http.ResponseWriter, r *http.Request) {
 			FeedbackRating:   row.FeedbackRating,
 			FeedbackReason:   row.FeedbackReason,
 			FeedbackAt:       formatPGTime(row.FeedbackAt),
+			AccuracyNote:     accuracyNote,
 		})
 	}
 	httputil.WriteJSON(w, http.StatusOK, map[string]any{
@@ -1169,6 +1184,14 @@ func normaliseTitle(in *string) *string {
 		t = string(out) + "…"
 	}
 	return &t
+}
+
+func stringPtrOrNil(s string) *string {
+	s = strings.TrimSpace(s)
+	if s == "" {
+		return nil
+	}
+	return &s
 }
 
 // isNoRowsErr matches the pgx error returned by Scan when an UPDATE … RETURNING

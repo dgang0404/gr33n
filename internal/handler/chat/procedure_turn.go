@@ -96,7 +96,7 @@ func (h *Handler) writeStaticTurn(
 		Procedure:     procedure,
 		FieldDegraded: fieldDegraded,
 	}
-	if turnIdx, err := h.persistTurn(r.Context(), sessionID, userID, hasUser, farmID, resp.Grounded, question, answer, nil, 0, llm.Usage{}, modelLabel); err == nil {
+	if turnIdx, err := h.persistTurn(r.Context(), sessionID, userID, hasUser, farmID, resp.Grounded, question, answer, nil, 0, llm.Usage{}, modelLabel, ""); err == nil {
 		resp.TurnIndex = turnIdx
 	}
 	if stream {

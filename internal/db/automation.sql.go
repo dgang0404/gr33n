@@ -362,6 +362,32 @@ func (q *Queries) DeleteSchedule(ctx context.Context, id int64) error {
 	return err
 }
 
+const getActuatorZoneBySchedule = `-- name: GetActuatorZoneBySchedule :one
+SELECT a.zone_id
+FROM gr33ncore.executable_actions ea
+JOIN gr33ncore.schedules s ON s.id = ea.schedule_id
+JOIN gr33ncore.actuators a ON a.id = ea.target_actuator_id
+WHERE ea.schedule_id = $1
+  AND s.farm_id = $2
+  AND a.zone_id IS NOT NULL
+  AND a.deleted_at IS NULL
+ORDER BY ea.execution_order ASC, ea.id ASC
+LIMIT 1
+`
+
+type GetActuatorZoneByScheduleParams struct {
+	ScheduleID *int64 `db:"schedule_id" json:"schedule_id"`
+	FarmID     int64  `db:"farm_id" json:"farm_id"`
+}
+
+// Phase 159 — schedule citation fallback via executable action actuator.
+func (q *Queries) GetActuatorZoneBySchedule(ctx context.Context, arg GetActuatorZoneByScheduleParams) (*int64, error) {
+	row := q.db.QueryRow(ctx, getActuatorZoneBySchedule, arg.ScheduleID, arg.FarmID)
+	var zone_id *int64
+	err := row.Scan(&zone_id)
+	return zone_id, err
+}
+
 const getAutomationRuleByID = `-- name: GetAutomationRuleByID :one
 SELECT id, farm_id, name, description, is_active, trigger_source, trigger_configuration, condition_logic, conditions_jsonb, last_evaluated_time, last_triggered_time, cooldown_period_seconds, created_at, updated_at FROM gr33ncore.automation_rules
 WHERE id = $1

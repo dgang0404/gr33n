@@ -17,10 +17,8 @@ func TestResolveCitationRoute_guardClauses(t *testing.T) {
 		{"nil queries always fails regardless of args", 1, "crop_cycle", 2},
 		{"zero farm id", 0, "crop_cycle", 2},
 		{"zero source id", 1, "crop_cycle", 0},
-		{"unknown source type", 1, "schedule", 10},
-		{"unmapped alert type (needs a follow-up hop)", 1, "alert_notification", 5},
-		{"unmapped platform doc", 1, "platform_doc", 5},
-		{"unmapped field guide", 1, "field_guide", 5},
+		{"unknown source type", 1, "symptom_guide", 5},
+		{"nil queries for schedule", 1, "schedule", 10},
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
@@ -28,5 +26,21 @@ func TestResolveCitationRoute_guardClauses(t *testing.T) {
 				t.Fatalf("expected no route for %q", tc.name)
 			}
 		})
+	}
+}
+
+func TestLandingDocRoute(t *testing.T) {
+	if route, ok := landingDocRoute("platform_doc", ""); !ok || route != "/operator-guide" {
+		t.Fatalf("platform_doc landing = %q,%v", route, ok)
+	}
+	if route, ok := landingDocRoute("field_guide", "basil"); !ok || route != "/symptom-guide?crop_key=basil" {
+		t.Fatalf("field_guide crop landing = %q,%v", route, ok)
+	}
+}
+
+func TestZonePath(t *testing.T) {
+	got := zonePath(3, "ops", "alerts")
+	if got != "/zones/3?ops=alerts&tab=ops" {
+		t.Fatalf("zonePath = %q", got)
 	}
 }

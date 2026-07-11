@@ -80,6 +80,30 @@ func (q *Queries) DeleteRagChunksByFarmSource(ctx context.Context, arg DeleteRag
 	return err
 }
 
+const getRagChunkMetadataByFarmSource = `-- name: GetRagChunkMetadataByFarmSource :one
+SELECT metadata
+FROM gr33ncore.rag_embedding_chunks
+WHERE farm_id = $1
+  AND source_type = $2
+  AND source_id = $3
+ORDER BY chunk_index ASC
+LIMIT 1
+`
+
+type GetRagChunkMetadataByFarmSourceParams struct {
+	FarmID     int64  `db:"farm_id" json:"farm_id"`
+	SourceType string `db:"source_type" json:"source_type"`
+	SourceID   int64  `db:"source_id" json:"source_id"`
+}
+
+// Phase 159 — citation route metadata for curated doc sources.
+func (q *Queries) GetRagChunkMetadataByFarmSource(ctx context.Context, arg GetRagChunkMetadataByFarmSourceParams) (json.RawMessage, error) {
+	row := q.db.QueryRow(ctx, getRagChunkMetadataByFarmSource, arg.FarmID, arg.SourceType, arg.SourceID)
+	var metadata json.RawMessage
+	err := row.Scan(&metadata)
+	return metadata, err
+}
+
 const getRagCorpusStatsByFarm = `-- name: GetRagCorpusStatsByFarm :one
 SELECT
     COUNT(*) FILTER (WHERE source_type = 'field_guide')::bigint AS field_guide_chunks,

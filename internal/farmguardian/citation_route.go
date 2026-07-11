@@ -1,14 +1,16 @@
-// Phase 152 WS2 — citation deep links. Mirrors ContextRef's page→Guardian
-// mapping (context_ref.go) in the opposite direction: given a citation's
-// source_type + source_id, resolve the UI route an operator can click
-// through to (their zone, crop cycle, etc.) so the sidebar becomes a way to
-// navigate from an answer, not just read it.
+// Phase 152 WS2 + Phase 159 WS2b — citation deep links.
 
 package farmguardian
 
 import (
 	"context"
+	"encoding/json"
+	"errors"
+	"net/url"
 	"strconv"
+	"strings"
+
+	"github.com/jackc/pgx/v5"
 
 	db "gr33n-api/internal/db"
 )
@@ -18,12 +20,6 @@ import (
 // different farm (defense in depth beyond the already farm-scoped RAG
 // retrieval — a citation should never be able to route a click into another
 // farm's data).
-//
-// Scoped to source types with a single, always-reliable FK to a zone or a
-// dedicated summary page. Source types without a direct FK (schedule has no
-// zone_id of its own; alert_notification only has an indirect
-// triggering_event_source_type/id) are left unresolved for now — see Phase
-// 152 plan WS2b.
 func ResolveCitationRoute(ctx context.Context, q *db.Queries, farmID int64, sourceType string, sourceID int64) (string, bool) {
 	if q == nil || farmID <= 0 || sourceID <= 0 {
 		return "", false
@@ -40,14 +36,177 @@ func ResolveCitationRoute(ctx context.Context, q *db.Queries, farmID int64, sour
 		if err != nil || p.FarmID != farmID || p.TargetZoneID == nil || *p.TargetZoneID <= 0 {
 			return "", false
 		}
-		return "/zones/" + strconv.FormatInt(*p.TargetZoneID, 10) + "?tab=water", true
+		return zonePath(*p.TargetZoneID, "water", ""), true
 	case "task":
 		t, err := q.GetTaskByID(ctx, sourceID)
 		if err != nil || t.FarmID != farmID || t.ZoneID == nil || *t.ZoneID <= 0 {
 			return "", false
 		}
-		return "/zones/" + strconv.FormatInt(*t.ZoneID, 10), true
+		return zonePath(*t.ZoneID, "", ""), true
+	case "schedule":
+		return resolveScheduleCitationRoute(ctx, q, farmID, sourceID)
+	case "alert_notification":
+		return resolveAlertCitationRoute(ctx, q, farmID, sourceID)
+	case "field_guide", "platform_doc":
+		return resolveDocCitationRoute(ctx, q, farmID, sourceType, sourceID)
 	default:
 		return "", false
 	}
+}
+
+func resolveScheduleCitationRoute(ctx context.Context, q *db.Queries, farmID, scheduleID int64) (string, bool) {
+	s, err := q.GetScheduleByID(ctx, scheduleID)
+	if err != nil || s.FarmID != farmID {
+		return "", false
+	}
+	if zonePtr, err := q.GetFertigationProgramZoneBySchedule(ctx, db.GetFertigationProgramZoneByScheduleParams{
+		FarmID:     farmID,
+		ScheduleID: &scheduleID,
+	}); err == nil && zonePtr != nil && *zonePtr > 0 {
+		return zonePath(*zonePtr, "water", ""), true
+	}
+	if zonePtr, err := q.GetActuatorZoneBySchedule(ctx, db.GetActuatorZoneByScheduleParams{
+		ScheduleID: &scheduleID,
+		FarmID:     farmID,
+	}); err == nil && zonePtr != nil && *zonePtr > 0 {
+		return zonePath(*zonePtr, "ops", "automations"), true
+	}
+	return "", false
+}
+
+func resolveAlertCitationRoute(ctx context.Context, q *db.Queries, farmID, alertID int64) (string, bool) {
+	alert, err := q.GetAlertNotificationByID(ctx, alertID)
+	if err != nil || alert.FarmID != farmID {
+		return "", false
+	}
+	zoneID, ok := zoneIDFromAlertTrigger(ctx, q, alert)
+	if !ok || zoneID <= 0 {
+		return "", false
+	}
+	return zonePath(zoneID, "ops", "alerts"), true
+}
+
+func zoneIDFromAlertTrigger(ctx context.Context, q *db.Queries, alert db.Gr33ncoreAlertsNotification) (int64, bool) {
+	if alert.TriggeringEventSourceType == nil || alert.TriggeringEventSourceID == nil {
+		return 0, false
+	}
+	srcType := strings.TrimSpace(*alert.TriggeringEventSourceType)
+	srcID := *alert.TriggeringEventSourceID
+	switch srcType {
+	case "sensor_reading":
+		sensor, err := q.GetSensorByID(ctx, srcID)
+		if err != nil || sensor.FarmID != alert.FarmID || sensor.ZoneID == nil {
+			return 0, false
+		}
+		return *sensor.ZoneID, true
+	case "automation_rule":
+		rule, err := q.GetAutomationRuleByID(ctx, srcID)
+		if err != nil || rule.FarmID != alert.FarmID {
+			return 0, false
+		}
+		if z := ruleZoneIDFromConfig(rule.TriggerConfiguration); z != nil {
+			return *z, true
+		}
+		if z := zoneIDFromRuleConditions(ctx, q, rule); z != nil {
+			return *z, true
+		}
+		return 0, false
+	case "automation_program":
+		prog, err := q.GetFertigationProgramByID(ctx, srcID)
+		if err != nil || prog.FarmID != alert.FarmID || prog.TargetZoneID == nil {
+			return 0, false
+		}
+		return *prog.TargetZoneID, true
+	default:
+		return 0, false
+	}
+}
+
+type ruleConditionsWire struct {
+	Predicates []struct {
+		SensorID int64 `json:"sensor_id"`
+	} `json:"predicates"`
+}
+
+func zoneIDFromRuleConditions(ctx context.Context, q *db.Queries, rule db.Gr33ncoreAutomationRule) *int64 {
+	if len(rule.ConditionsJsonb) == 0 {
+		return nil
+	}
+	var wire ruleConditionsWire
+	if err := json.Unmarshal(rule.ConditionsJsonb, &wire); err != nil {
+		return nil
+	}
+	for _, p := range wire.Predicates {
+		if p.SensorID <= 0 {
+			continue
+		}
+		sensor, err := q.GetSensorByID(ctx, p.SensorID)
+		if err != nil || sensor.FarmID != rule.FarmID || sensor.ZoneID == nil {
+			continue
+		}
+		z := *sensor.ZoneID
+		return &z
+	}
+	return nil
+}
+
+type ragDocCitationMeta struct {
+	DocPath string `json:"doc_path"`
+	CropKey string `json:"crop_key"`
+}
+
+func resolveDocCitationRoute(ctx context.Context, q *db.Queries, farmID int64, sourceType string, sourceID int64) (string, bool) {
+	metaRaw, err := q.GetRagChunkMetadataByFarmSource(ctx, db.GetRagChunkMetadataByFarmSourceParams{
+		FarmID:     farmID,
+		SourceType: sourceType,
+		SourceID:   sourceID,
+	})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return landingDocRoute(sourceType, "")
+		}
+		return "", false
+	}
+	var meta ragDocCitationMeta
+	_ = json.Unmarshal(metaRaw, &meta)
+	docPath := strings.TrimSpace(meta.DocPath)
+	cropKey := strings.TrimSpace(meta.CropKey)
+	if sourceType == "field_guide" && cropKey != "" {
+		return "/symptom-guide?crop_key=" + url.QueryEscape(cropKey), true
+	}
+	if docPath != "" {
+		if sourceType == "platform_doc" {
+			return "/operator-guide?cited_doc=" + url.QueryEscape(docPath), true
+		}
+		return "/farm-knowledge?cited_doc=" + url.QueryEscape(docPath) + "&cited_type=field_guide", true
+	}
+	return landingDocRoute(sourceType, cropKey)
+}
+
+func landingDocRoute(sourceType, cropKey string) (string, bool) {
+	if sourceType == "field_guide" {
+		if cropKey != "" {
+			return "/symptom-guide?crop_key=" + url.QueryEscape(cropKey), true
+		}
+		return "/farm-knowledge", true
+	}
+	if sourceType == "platform_doc" {
+		return "/operator-guide", true
+	}
+	return "", false
+}
+
+func zonePath(zoneID int64, tab, ops string) string {
+	path := "/zones/" + strconv.FormatInt(zoneID, 10)
+	q := url.Values{}
+	if tab != "" {
+		q.Set("tab", tab)
+	}
+	if ops != "" {
+		q.Set("ops", ops)
+	}
+	if enc := q.Encode(); enc != "" {
+		path += "?" + enc
+	}
+	return path
 }

@@ -18,7 +18,8 @@ INSERT INTO gr33ncore.conversation_turns (
     context_count,
     citations,
     prompt_tokens,
-    completion_tokens
+    completion_tokens,
+    accuracy_note
 ) VALUES (
     sqlc.arg(session_id),
     sqlc.arg(user_id),
@@ -36,7 +37,8 @@ INSERT INTO gr33ncore.conversation_turns (
     sqlc.arg(context_count),
     sqlc.arg(citations),
     sqlc.arg(prompt_tokens),
-    sqlc.arg(completion_tokens)
+    sqlc.arg(completion_tokens),
+    sqlc.narg(accuracy_note)
 )
 RETURNING id, session_id, user_id, farm_id, turn_index, created_at;
 
@@ -56,7 +58,8 @@ SELECT
     created_at,
     feedback_rating,
     feedback_reason,
-    feedback_at
+    feedback_at,
+    accuracy_note
 FROM gr33ncore.conversation_turns
 WHERE session_id = sqlc.arg(session_id)
   AND user_id    = sqlc.arg(user_id)

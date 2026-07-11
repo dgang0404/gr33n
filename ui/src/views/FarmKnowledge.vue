@@ -20,6 +20,14 @@
     </div>
 
     <template v-else>
+      <p
+        v-if="citedDoc"
+        class="rounded-xl border border-amber-900/60 bg-amber-950/40 px-4 py-3 text-sm text-amber-200"
+        data-test="farm-knowledge-cited-doc"
+        role="status"
+      >
+        Guardian cited indexed doc: <code class="text-amber-100/90 text-xs">{{ citedDoc }}</code>
+      </p>
       <!-- Search form -->
       <section class="bg-zinc-900 border border-zinc-800 rounded-xl p-5 space-y-4">
         <h2 class="text-white font-semibold text-sm uppercase tracking-widest text-zinc-500">Search</h2>
@@ -179,7 +187,8 @@
 </template>
 
 <script setup>
-import { onMounted, ref } from 'vue'
+import { onMounted, ref, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import api from '../api'
 import HelpTip from '../components/HelpTip.vue'
 import { useFarmContextStore } from '../stores/farmContext'
@@ -191,9 +200,25 @@ defineProps({
 
 const farmContext = useFarmContextStore()
 const capabilities = useCapabilitiesStore()
+const route = useRoute()
+const citedDoc = ref('')
+
+function applyCitationQuery() {
+  const raw = route.query.cited_doc
+  citedDoc.value = typeof raw === 'string' ? raw : ''
+  if (citedDoc.value) {
+    moduleFilter.value = String(route.query.cited_type || 'field_guide')
+    const base = citedDoc.value.split('/').pop() || citedDoc.value
+    query.value = base.replace(/\.md$/i, '').replace(/[-_]/g, ' ')
+  }
+}
+
 onMounted(() => {
   if (!capabilities.loaded) capabilities.fetch()
+  applyCitationQuery()
 })
+
+watch(() => route.query.cited_doc, applyCitationQuery)
 
 const query = ref('')
 const moduleFilter = ref('')
