@@ -1,20 +1,34 @@
 <template>
   <div class="flex h-screen overflow-hidden">
+    <a
+      href="#main-content"
+      class="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[100] focus:px-4 focus:py-2 focus:rounded-lg focus:bg-green-700 focus:text-white focus:text-sm focus:font-medium"
+    >
+      Skip to main content
+    </a>
     <SideNav class="hidden md:flex" />
 
     <div class="flex-1 flex flex-col overflow-hidden">
       <TopBar @toggle-drawer="drawerOpen = !drawerOpen" />
-      <main class="flex-1 overflow-y-auto p-3 sm:p-6 pb-20 md:pb-6">
+      <main id="main-content" tabindex="-1" class="flex-1 overflow-y-auto p-3 sm:p-6 pb-20 md:pb-6">
         <RouterView />
       </main>
     </div>
 
     <!-- Mobile bottom nav -->
-    <nav class="md:hidden fixed bottom-0 inset-x-0 bg-gray-900 border-t border-gray-800 flex justify-around py-2 z-40"
-         style="padding-bottom: max(0.5rem, env(safe-area-inset-bottom))">
-      <RouterLink v-for="item in mobileNav" :key="item.to" :to="item.to"
-        class="flex flex-col items-center gap-0.5 text-gray-500 text-[10px]"
-        active-class="text-green-400">
+    <nav
+      class="md:hidden fixed bottom-0 inset-x-0 bg-gray-900 border-t border-gray-800 flex justify-around py-2 z-40"
+      aria-label="Main navigation"
+      style="padding-bottom: max(0.5rem, env(safe-area-inset-bottom))"
+    >
+      <RouterLink
+        v-for="item in mobileNav"
+        :key="item.to"
+        :to="item.to"
+        class="flex flex-col items-center justify-center gap-0.5 text-gray-500 text-[10px] min-h-[44px] min-w-[44px] px-2"
+        active-class="text-green-400"
+        :aria-current="isMobileNavCurrent(item.to) ? 'page' : undefined"
+      >
         <span class="text-base">{{ item.icon }}</span>
         {{ item.label }}
       </RouterLink>
@@ -60,6 +74,7 @@
                     @click="drawerOpen = false"
                     class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
                     active-class="bg-gr33n-900 text-gr33n-400 font-semibold"
+                    :aria-current="isMobileNavCurrent(item.to) ? 'page' : undefined"
                   >
                     <span class="text-lg">{{ item.icon }}</span>
                     {{ item.label }}
@@ -91,6 +106,7 @@ import { useGuardianPanelStore } from './stores/guardianPanel'
 import { useAuthStore } from './stores/auth'
 import { usePush } from './composables/usePush'
 import { onMounted, onUnmounted, ref, watch, computed } from 'vue'
+import { useRoute } from 'vue-router'
 import { buildNavGroups, mobileBottomNav } from './lib/navGroups.js'
 import { moduleMapFromRows } from './lib/farmModules.js'
 
@@ -103,6 +119,12 @@ let evtSource = null
 
 const drawerOpen = ref(false)
 const isMobile = ref(false)
+const route = useRoute()
+
+function isMobileNavCurrent(to) {
+  if (to === '/') return route.path === '/' || route.path === '/today'
+  return route.path === to || route.path.startsWith(`${to}/`)
+}
 
 function syncMobile() {
   if (typeof window === 'undefined' || !window.matchMedia) return

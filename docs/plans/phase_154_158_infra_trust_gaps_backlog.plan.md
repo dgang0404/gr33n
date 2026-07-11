@@ -3,7 +3,7 @@ name: Phases 154–158 — infra & trust gaps arc
 overview: >
   Gap-analysis pass (post-153): operator asked for an honest look at what the
   app needs beyond Guardian QA. All five phases now have dedicated plan docs.
-  Phase 154–157 are shipped; Phase 158 is written up and ready for Composer to build.
+  Phase 154–158 are shipped.
 todos:
   - id: verdict-pr-ci-gate
     content: "Verdict on the reverted GitHub PR CI gate — see verdict section below"
@@ -21,14 +21,14 @@ todos:
     content: "Phase 157 — docs consolidation"
     status: completed
   - id: phase-158-accessibility-pass
-    content: "Phase 158 — accessibility pass (plan doc ready)"
-    status: pending
+    content: "Phase 158 — accessibility pass"
+    status: completed
 isProject: false
 ---
 
 # Phases 154–158 — infra & trust gaps arc
 
-**Origin:** operator asked, deliberately open-ended, "is the app missing something, push back if I'm wrong — make phase docs, don't code yet." All five items are now **fully written up** as individual phase plans. Phases **154–157** are shipped; **158** is plan-only until you point Composer at it.
+**Origin:** operator asked, deliberately open-ended, "is the app missing something, push back if I'm wrong — make phase docs, don't code yet." All five items are now **fully written up** as individual phase plans. Phases **154–158** are shipped.
 
 | Phase | Status | Plan |
 |-------|--------|------|
@@ -36,7 +36,7 @@ isProject: false
 | **155** | ✅ Shipped | [`phase_155_automated_backups.plan.md`](phase_155_automated_backups.plan.md) |
 | **156** | ✅ Shipped | [`phase_156_dependency_scanning.plan.md`](phase_156_dependency_scanning.plan.md) |
 | **157** | ✅ Shipped | [`phase_157_docs_consolidation.plan.md`](phase_157_docs_consolidation.plan.md) |
-| **158** | 📋 Planned | [`phase_158_accessibility_pass.plan.md`](phase_158_accessibility_pass.plan.md) |
+| **158** | ✅ Shipped | [`phase_158_accessibility_pass.plan.md`](phase_158_accessibility_pass.plan.md) |
 
 **Suggested build order:** 155 → 156 → 157 → 158 (154 already done).
 

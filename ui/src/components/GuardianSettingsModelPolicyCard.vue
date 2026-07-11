@@ -78,8 +78,8 @@
           {{ saving ? 'Saving…' : 'Save model policy' }}
         </button>
       </div>
-      <p v-if="saveError" class="text-xs text-red-300/90">{{ saveError }}</p>
-      <p v-if="saveOk" class="text-xs text-green-400/90">Model policy saved.</p>
+      <p v-if="saveError" class="text-xs text-red-300/90" role="alert" aria-live="assertive">{{ saveError }}</p>
+      <p v-if="saveOk" class="text-xs text-green-400/90" role="status" aria-live="polite">Model policy saved.</p>
     </div>
   </section>
 </template>

@@ -1,5 +1,5 @@
 <template>
-  <div :class="layout === 'full' ? 'grid grid-cols-1 lg:grid-cols-[260px_1fr] gap-4' : 'flex flex-col gap-3 min-h-0'">
+  <div ref="panelRootRef" :class="layout === 'full' ? 'grid grid-cols-1 lg:grid-cols-[260px_1fr] gap-4' : 'flex flex-col gap-3 min-h-0'">
     <!-- Sessions: full sidebar or compact picker -->
     <aside
       v-if="layout === 'full'"
@@ -194,6 +194,7 @@
                 class="hover:underline"
                 data-test="chat-citation-link"
                 :title="`Open ${citationSourceLabel(c.source_type)} #${c.source_id}`"
+                :aria-label="citationLinkAriaLabel(c)"
               >
                 <span class="text-gr33n-500 font-mono">[{{ c.ref }}]</span>
                 <span class="ml-1 font-medium">{{ citationSourceLabel(c.source_type) }}</span>
@@ -211,6 +212,7 @@
             v-if="trimWarningMessage(t.trim_summary)"
             class="text-[10px] text-amber-300/90 px-3 rounded border border-amber-900/50 bg-amber-950/30 py-2"
             data-test="chat-trim-warning"
+            role="status"
           >
             {{ trimWarningMessage(t.trim_summary) }}
             <button
@@ -226,6 +228,7 @@
             v-if="t.field_degraded"
             class="text-[10px] text-amber-300/90 px-3"
             data-test="chat-field-degraded-banner"
+            role="status"
           >
             LLM offline — showing authored procedure steps only.
           </p>
@@ -233,6 +236,7 @@
             v-if="zeroChunkWarning(t)"
             class="text-[10px] text-amber-300/90 px-3 rounded border border-amber-900/50 bg-amber-950/30 py-2"
             data-test="chat-zero-chunk-banner"
+            role="status"
           >
             No indexed docs matched — numbers may be unreliable unless from crop profiles. Run field-guide ingest or assign crops in Plants.
           </p>
@@ -240,6 +244,7 @@
             v-if="accuracyNoteMessage(t.accuracy_note)"
             class="text-[10px] text-amber-300/90 px-3 rounded border border-amber-900/50 bg-amber-950/30 py-2"
             data-test="chat-accuracy-banner"
+            role="alert"
           >
             ⚠ {{ accuracyNoteMessage(t.accuracy_note) }}
           </p>
@@ -403,14 +408,17 @@
           <GuardianStarterChips :starters="setupStarters" />
         </div>
         <div class="flex flex-col gap-2">
-          <label class="text-xs text-zinc-400">Your message</label>
+          <label class="text-xs text-zinc-400" for="chat-message-input">Your message</label>
+          <span id="chat-message-input-hint" class="sr-only">Press Enter to send. Shift+Enter adds a new line.</span>
           <textarea
             ref="messageInputRef"
+            id="chat-message-input"
             v-model="message"
             :rows="layout === 'compact' ? 2 : 3"
             placeholder="e.g. What should I check on the morning walkthrough?"
             class="bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-600 focus:outline-none focus:ring-1 focus:ring-gr33n-600"
             data-test="chat-message-input"
+            aria-describedby="chat-message-input-hint"
             @keydown.enter.exact.prevent="send"
           />
         </div>
@@ -461,6 +469,7 @@
               micListening ? 'border-amber-600 bg-amber-950/50 text-amber-200' : 'border-zinc-700 bg-zinc-950 text-zinc-200 hover:border-zinc-500',
             ]"
             :title="micSupported ? 'Hold to talk (push-to-talk)' : 'Speech recognition not supported in this browser'"
+            :aria-label="micListening ? 'Listening — release to stop' : 'Hold to talk (push-to-talk)'"
             @mousedown="startMic"
             @mouseup="stopMic"
             @mouseleave="stopMic"
@@ -636,7 +645,7 @@ import { computeFirstRunChecklist, isFirstRunIncomplete } from '../lib/firstRunC
 import { buildMorningWalkthroughStarters, buildSetupStarters, buildOfflineProcedureStarters } from '../lib/guardianStarters.js'
 import { deriveFollowUps } from '../lib/guardianFollowUps.js'
 import { turnContextLabel, zeroChunkWarning } from '../lib/guardianChatHonesty.js'
-import { citationChipClass, citationSourceLabel, trimWarningMessage, accuracyNoteMessage } from '../lib/guardianCitationLabels.js'
+import { citationChipClass, citationSourceLabel, citationLinkAriaLabel, trimWarningMessage, accuracyNoteMessage } from '../lib/guardianCitationLabels.js'
 import { useFarmOperate } from '../composables/useFarmOperate'
 import { useFarmContextStore } from '../stores/farmContext'
 import { useFarmStore } from '../stores/farm'
@@ -803,6 +812,7 @@ const followUps = computed(() => {
 const message = ref('')
 const useFarmContext = ref(!!farmContext.farmId)
 const messageInputRef = ref(null)
+const panelRootRef = ref(null)
 
 const sessionId = computed({
   get: () => guardianPanel.activeSessionId,
@@ -1324,6 +1334,10 @@ async function send() {
   maybeReadAloud(finalEvent.answer || streamingText.value)
   if (finalEvent.proposals?.length && farmContext.farmId) {
     await guardianProposals.refreshPendingCount(farmContext.farmId)
+  }
+  if (finalEvent.proposals?.length) {
+    await nextTick()
+    panelRootRef.value?.querySelector('[data-test="guardian-proposal-confirm"]')?.focus()
   }
   await refreshSessions()
 }

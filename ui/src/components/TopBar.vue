@@ -25,6 +25,7 @@
         <!-- Mobile hamburger -->
         <button
           class="md:hidden p-1.5 rounded-md text-gray-400 hover:text-white hover:bg-gray-800"
+          aria-label="Open navigation menu"
           @click="$emit('toggle-drawer')"
         >
           <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none"

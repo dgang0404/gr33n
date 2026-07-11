@@ -29,16 +29,18 @@
     <template v-else>
       <ZoneAdvancedHint class="mb-2" />
 
-      <div class="flex flex-wrap gap-1 border-b border-zinc-800">
+      <div class="flex flex-wrap gap-1 border-b border-zinc-800" role="tablist" aria-label="Zone sections">
         <button
           v-for="tab in zoneTabs"
           :key="tab.id"
           type="button"
+          role="tab"
+          :aria-selected="activeTab === tab.id"
           class="px-4 py-2 text-sm font-medium rounded-t-lg transition-colors"
           :class="activeTab === tab.id ? 'bg-zinc-800 text-white' : 'text-zinc-500 hover:text-zinc-300'"
           @click="goNeedTab(tab.id)"
         >
-          {{ tab.icon }} {{ tab.label }}
+          <span aria-hidden="true">{{ tab.icon }}</span> {{ tab.label }}
         </button>
       </div>
 

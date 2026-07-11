@@ -70,3 +70,12 @@ export function accuracyNoteMessage(accuracyNote) {
   const detail = match ? match[1] : 'Guardian flagged part of this answer for review.'
   return `${detail} Double-check citations before acting.`
 }
+
+/** Phase 158 — screen-reader label for citation deep links. */
+export function citationLinkAriaLabel(citation) {
+  const source = citationSourceLabel(citation?.source_type)
+  const id = citation?.source_id ?? ''
+  const excerpt = String(citation?.excerpt || '').replace(/\s+/g, ' ').trim().slice(0, 80)
+  const excerptBit = excerpt ? ` — ${excerpt}` : ''
+  return `Open ${source} #${id}${excerptBit}`
+}

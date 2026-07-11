@@ -41,6 +41,7 @@
               ]"
               active-class="bg-gr33n-900 text-gr33n-400 font-semibold"
               :title="item.navTitle ?? (collapsed ? item.label : undefined)"
+              :aria-current="isNavCurrent(item.to) ? 'page' : undefined"
             >
               <span class="text-lg shrink-0">{{ item.icon }}</span>
               <span v-if="!collapsed" class="flex-1 min-w-0">{{ item.label }}</span>
@@ -55,6 +56,7 @@
                 :class="isHighlightedNav(child.to) ? 'nav-related' : ''"
                 active-class="text-gr33n-400 font-semibold"
                 :title="child.navTitle"
+                :aria-current="isNavCurrent(child.to) ? 'page' : undefined"
               >
                 <span class="text-sm shrink-0 opacity-70">{{ child.icon }}</span>
                 <span class="flex-1 min-w-0 truncate">{{ child.label }}</span>
@@ -88,6 +90,7 @@
 
 <script setup>
 import { ref, computed, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import { useFarmContextStore } from '../stores/farmContext'
 import { useFarmStore } from '../stores/farm'
 import { useAuthStore } from '../stores/auth'
@@ -142,6 +145,12 @@ watch(
 const navGroups = computed(() => buildNavGroups({ modules: moduleMapFromRows(farmStore.farmModules) }))
 
 const navHighlight = useNavHighlightStore()
+const route = useRoute()
+
+function isNavCurrent(to) {
+  if (to === '/') return route.path === '/' || route.path === '/today'
+  return route.path === to || route.path.startsWith(`${to}/`)
+}
 
 /** Wiggle only the single sidebar tab that matches v-nav-hint (no related-route fan-out). */
 function isHighlightedNav(route) {

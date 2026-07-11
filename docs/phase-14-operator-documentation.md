@@ -22,7 +22,7 @@ This page is the **Phase 14** counterpart to [`phase-13-operator-documentation.m
 |-------|--------|------|
 | **115** | Planned | [`phase_115_schema_utilization.plan.md`](plans/phase_115_schema_utilization.plan.md) |
 | **157** | Shipped | [`phase_157_docs_consolidation.plan.md`](plans/phase_157_docs_consolidation.plan.md) — `current-state.md`, plans archive |
-| **158** | Planned | [`phase_158_accessibility_pass.plan.md`](plans/phase_158_accessibility_pass.plan.md) |
+| **158** | Shipped | [`phase_158_accessibility_pass.plan.md`](plans/phase_158_accessibility_pass.plan.md) — skip link, Guardian a11y, zone tabs |
 
 ## Shipped arcs (hub links)
 
@@ -32,7 +32,7 @@ This page is the **Phase 14** counterpart to [`phase-13-operator-documentation.m
 | SPA 68–81 | [`phase_68_73_spa_workspace_roadmap.plan.md`](plans/phase_68_73_spa_workspace_roadmap.plan.md) |
 | Crop intelligence 82–110 | [`phase-84-110-closure.md`](plans/phase-84-110-closure.md) |
 | Guardian 111–153 | [`phase-129-139-closure.md`](plans/phase-129-139-closure.md) · [`guardian-qa-smoke-report-20260707.md`](guardian-qa-smoke-report-20260707.md) |
-| Infra & trust 154–158 | [`phase_154_158_infra_trust_gaps_backlog.plan.md`](plans/phase_154_158_infra_trust_gaps_backlog.plan.md) — 154–157 shipped |
+| Infra & trust 154–158 | [`phase_154_158_infra_trust_gaps_backlog.plan.md`](plans/phase_154_158_infra_trust_gaps_backlog.plan.md) — 154–158 shipped |
 
 ## Done in Phase 14 (reference)
 

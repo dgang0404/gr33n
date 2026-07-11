@@ -33,6 +33,7 @@
         >
           <aside
             v-if="guardianPanel.open"
+            ref="drawerPanelRef"
             role="dialog"
             aria-modal="true"
             aria-labelledby="guardian-drawer-title"
@@ -111,10 +112,12 @@
 </template>
 
 <script setup>
-import { onMounted, watch } from 'vue'
+import { onMounted, ref, watch } from 'vue'
+import { storeToRefs } from 'pinia'
 import GuardianChatPanel from './GuardianChatPanel.vue'
 import GuardianRequestsInbox from './GuardianRequestsInbox.vue'
 import GuardianTabNav from './GuardianTabNav.vue'
+import { useDialogFocusTrap } from '../composables/useDialogFocusTrap'
 import { useCapabilitiesStore } from '../stores/capabilities'
 import { useFarmContextStore } from '../stores/farmContext'
 import { useGuardianChatStore } from '../stores/guardianChat'
@@ -122,10 +125,17 @@ import { useGuardianPanelStore } from '../stores/guardianPanel'
 import { useGuardianProposalsStore } from '../stores/guardianProposals'
 
 const guardianPanel = useGuardianPanelStore()
+const { open: drawerOpen } = storeToRefs(guardianPanel)
 const guardianChat = useGuardianChatStore()
 const farmContext = useFarmContextStore()
 const capabilities = useCapabilitiesStore()
 const proposalsStore = useGuardianProposalsStore()
+const drawerPanelRef = ref(null)
+
+useDialogFocusTrap(drawerOpen, drawerPanelRef, {
+  initialFocusSelector: '[data-test="chat-message-input"]',
+  onEscape: () => guardianPanel.close(),
+})
 
 onMounted(async () => {
   if (!capabilities.loaded) await capabilities.fetch()

@@ -63,6 +63,7 @@
         v-if="isHighRisk"
         class="text-xs text-red-300/95 bg-red-950/40 border border-red-900/60 rounded-md px-2.5 py-2"
         data-test="guardian-proposal-high-warning"
+        role="alert"
       >
         {{ highRiskWarning }}
       </p>
