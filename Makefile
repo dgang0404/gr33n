@@ -96,6 +96,10 @@ vuln-check: ## Phase 156 — govulncheck + npm audit (high+)
 	@chmod +x ./scripts/vuln-check.sh
 	@./scripts/vuln-check.sh
 
+docs-current-state-hint: ## Phase 157 — counts for regenerating docs/current-state.md
+	@chmod +x ./scripts/docs-current-state-hint.sh
+	@./scripts/docs-current-state-hint.sh
+
 e2e-browser: ## Playwright browser E2E (requires dev-auth-test stack; see e2e/README.md)
 	cd e2e && npm ci && npx playwright install chromium && npm test
 

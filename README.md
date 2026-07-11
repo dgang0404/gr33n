@@ -9,7 +9,7 @@ An open-source farm operating system — run it on your LAN, keep your data clos
 
 **Status:** Farmer UX (**40–67**), SPA workspaces (**68–81**), crop intelligence (**82–110**), Guardian model selection (**111–118**), hardening **113–115**, Virtual Pi wiring arc (**119–122**), and Guardian eval (**122**) are **shipped on `main`**. Docs refresh (**116**) and test depth (**117–118**) — see [phase index](docs/phase-14-operator-documentation.md).
 
-**Start here:** [First session after clone](docs/first-session-after-clone.md) · [Operator tour](docs/operator-tour.md) · [Upgrade guide](docs/upgrade-guide.md) · [CHANGELOG](CHANGELOG.md) · **Real grow?** [Guardian readiness](docs/guardian-real-grow-readiness.md) · **Offline/air-gap?** [Connectivity requirements](docs/connectivity-requirements.md)
+**Start here:** [**What's in the box**](docs/current-state.md) · [First session after clone](docs/first-session-after-clone.md) · [Operator tour](docs/operator-tour.md) · [Upgrade guide](docs/upgrade-guide.md) · [CHANGELOG](CHANGELOG.md) · **Real grow?** [Guardian readiness](docs/guardian-real-grow-readiness.md) · **Offline/air-gap?** [Connectivity requirements](docs/connectivity-requirements.md)
 
 ---
 

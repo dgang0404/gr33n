@@ -1,6 +1,6 @@
 # gr33n-api — Local Development Setup
 
-**New here?** After cloning, run **`./scripts/setup-first-clone.sh`** (or **`make first-clone`**) from the repo root — it prepares env files, installs UI dependencies, and applies schema/migrations when your database is ready. Use **`./scripts/setup-first-clone.sh --docker`** if you prefer Docker Compose for Postgres. **Readable walkthrough:** [`docs/first-session-after-clone.md`](docs/first-session-after-clone.md). Full happy-path narrative: [`docs/local-operator-bootstrap.md`](docs/local-operator-bootstrap.md). **Schema source of truth** (not informal diagrams): [`docs/database-schema-overview.md`](docs/database-schema-overview.md).
+**New here?** After cloning, run **`./scripts/setup-first-clone.sh`** (or **`make first-clone`**) from the repo root — it prepares env files, installs UI dependencies, and applies schema/migrations when your database is ready. Use **`./scripts/setup-first-clone.sh --docker`** if you prefer Docker Compose for Postgres. **What's in the box:** [`docs/current-state.md`](docs/current-state.md). **Readable walkthrough:** [`docs/first-session-after-clone.md`](docs/first-session-after-clone.md). Full happy-path narrative: [`docs/local-operator-bootstrap.md`](docs/local-operator-bootstrap.md). **Schema source of truth** (not informal diagrams): [`docs/database-schema-overview.md`](docs/database-schema-overview.md).
 
 ## Prerequisites
 

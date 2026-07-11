@@ -4,6 +4,36 @@ This page is the **Phase 14** counterpart to [`phase-13-operator-documentation.m
 
 **Canonical plan:** [`plans/phase_14_network_and_commons.plan.md`](plans/phase_14_network_and_commons.plan.md)
 
+## Start here (Phase 157)
+
+| Doc | Use when |
+|-----|----------|
+| **[`current-state.md`](current-state.md)** | **What gr33n looks like today** — routes, schemas, Guardian, smoke commands |
+| [`operator-tour.md`](operator-tour.md) | Walkthrough of the live UI |
+| [`first-session-after-clone.md`](first-session-after-clone.md) | Bootstrap after `git clone` |
+| [`farm-guardian-architecture.md`](farm-guardian-architecture.md) | Guardian design & operator expectations |
+| [`plans/archive/`](plans/archive/) | Closed phase plans (history preserved) |
+
+**Regenerate snapshot:** `make docs-current-state-hint` then edit `current-state.md` prose.
+
+## Active & recent phases
+
+| Phase | Status | Plan |
+|-------|--------|------|
+| **115** | Planned | [`phase_115_schema_utilization.plan.md`](plans/phase_115_schema_utilization.plan.md) |
+| **157** | Shipped | [`phase_157_docs_consolidation.plan.md`](plans/phase_157_docs_consolidation.plan.md) — `current-state.md`, plans archive |
+| **158** | Planned | [`phase_158_accessibility_pass.plan.md`](plans/phase_158_accessibility_pass.plan.md) |
+
+## Shipped arcs (hub links)
+
+| Arc | Closure / hub |
+|-----|----------------|
+| Farmer UX 40–67 | [`farmer_ux_roadmap_40_plus.plan.md`](plans/farmer_ux_roadmap_40_plus.plan.md) |
+| SPA 68–81 | [`phase_68_73_spa_workspace_roadmap.plan.md`](plans/phase_68_73_spa_workspace_roadmap.plan.md) |
+| Crop intelligence 82–110 | [`phase-84-110-closure.md`](plans/phase-84-110-closure.md) |
+| Guardian 111–153 | [`phase-129-139-closure.md`](plans/phase-129-139-closure.md) · [`guardian-qa-smoke-report-20260707.md`](guardian-qa-smoke-report-20260707.md) |
+| Infra & trust 154–158 | [`phase_154_158_infra_trust_gaps_backlog.plan.md`](plans/phase_154_158_infra_trust_gaps_backlog.plan.md) — 154–157 shipped |
+
 ## Done in Phase 14 (reference)
 
 | Area | Notes |
@@ -135,11 +165,9 @@ Hub: [`phase_68_73_spa_workspace_roadmap.plan.md`](plans/phase_68_73_spa_workspa
 
 **Prompt loop:** `phase 85 ws1`, … or `phase 85` for full phase.
 
-## Phases 88–92 — UI static data → DB/API
+## Phases 88–92 — UI static data → DB/API (archived)
 
-**Hub:** [`plans/phase_88_92_platform_data_gaps_roadmap.plan.md`](plans/phase_88_92_platform_data_gaps_roadmap.plan.md)
-
-Hardcoded UI constants (growth stages, lighting presets, sensor taxonomy, bootstrap templates, zone types) that should be **fetched from API/DB** so operators and Guardian stay aligned. Suggested order: **89** (quick) → **88** → **90** → **91** → **92**.
+**Shipped** — plans moved to [`plans/archive/`](plans/archive/) (stubs at old paths). Hub: [`archive/phase_88_92_platform_data_gaps_roadmap.plan.md`](plans/archive/phase_88_92_platform_data_gaps_roadmap.plan.md) · closure: [`phase-84-110-closure.md`](plans/phase-84-110-closure.md).
 
 ## Phase 83 — Enterprise agronomy seed pack (shipped)
 
@@ -166,84 +194,21 @@ After operator-doc edits, re-ingest Guardian RAG: **`make rag-ingest-platform-do
 
 | Topic | Doc |
 |--------|-----|
+| **Current state (today)** | [`current-state.md`](current-state.md) |
 | OpenAPI | [`openapi.yaml`](../openapi.yaml) |
-| Insert Commons farm pipeline | [`insert-commons-pipeline-runbook.md`](insert-commons-pipeline-runbook.md) |
-| Insert Commons receiver | [`insert-commons-receiver-playbook.md`](insert-commons-receiver-playbook.md) |
-| Commons catalog (gr33n_inserts) | [`commons-catalog-operator-playbook.md`](commons-catalog-operator-playbook.md) |
-| Audit | [`audit-events-operator-playbook.md`](audit-events-operator-playbook.md) |
-| Receipt / storage cutover | [`receipt-storage-cutover-runbook.md`](receipt-storage-cutover-runbook.md) |
-| Mobile | [`mobile-distribution.md`](mobile-distribution.md) |
-| Push / FCM (alerts) | [`notifications-operator-playbook.md`](notifications-operator-playbook.md) |
-| Domain module stubs (crops / animals / aquaponics) | [`domain-modules-operator-playbook.md`](domain-modules-operator-playbook.md) |
-| Hypothetical multi-site / enterprise topology (sketch) | [`hypothetical-enterprise-topology.md`](hypothetical-enterprise-topology.md) — central HQ vs frontier sites, commons promotion, [`scripts/enterprise/`](../scripts/enterprise/README.md) |
-| Phase 31 — field validation & edge (operator index) | [§ Phase 31 below](#phase-31-field-validation-edge) · [`plans/phase_31_field_validation_and_edge.plan.md`](plans/phase_31_field_validation_and_edge.plan.md) |
-| Pi integration + field checklist | [`pi-integration-guide.md`](pi-integration-guide.md) §8–§9 |
-| Edge actuator safety | [`operator-troubleshooting.md`](operator-troubleshooting.md) §5 |
-| Enterprise deployment scripts | [`scripts/enterprise/README.md`](../scripts/enterprise/README.md) |
-| Phase 83 — Enterprise agronomy seed pack (**shipped**) | [`plans/phase_83_enterprise_agronomy_seed_pack.plan.md`](plans/phase_83_enterprise_agronomy_seed_pack.plan.md) · [`phase-83-closure.md`](plans/phase-83-closure.md) — Guardian bootstrap, commons pack, crop overrides |
-| Phases 84–87 — Crop identity & knowledge base | [`plans/phase_84_87_crop_identity_roadmap.plan.md`](plans/phase_84_87_crop_identity_roadmap.plan.md) · [84](plans/phase_84_crop_catalog_enterprise_db.plan.md) · [85](plans/phase_85_catalog_bound_plants.plan.md) · [86](plans/phase_86_grow_ops_catalog_chain.plan.md) · [87](plans/phase_87_crop_knowledge_operator_closure.plan.md) |
-| Phases 88–92 — UI static data → DB/API | [`plans/phase_88_92_platform_data_gaps_roadmap.plan.md`](plans/phase_88_92_platform_data_gaps_roadmap.plan.md) |
-| Phases 84–110 — Master roadmap ✅ | [`plans/phase_84_100_master_roadmap.plan.md`](plans/phase_84_100_master_roadmap.plan.md) · [`phase-84-110-closure.md`](plans/phase-84-110-closure.md) |
-| Phase 111 — Guardian model selector ✅ | [`plans/phase_111_guardian_model_selector.plan.md`](plans/phase_111_guardian_model_selector.plan.md) — Ollama discovery, farm default, session override |
-| Phase 112 — Guardian Ollama hardening ✅ | [`plans/phase_112_guardian_ollama_hardening.plan.md`](plans/phase_112_guardian_ollama_hardening.plan.md) — auto-pull, `/api/show` context, CI E2E smokes |
-| Phase 113 — Security hardening ✅ | [`plans/phase_113_security_hardening.plan.md`](plans/phase_113_security_hardening.plan.md) — registration gate, login rate limit, headers, cost guard |
-| Phase 114 — Pi/edge integrity ✅ | [`plans/phase_114_pi_edge_integrity.plan.md`](plans/phase_114_pi_edge_integrity.plan.md) — offline detection, ActuatorCard fix, calibration, mix audit, relay HAT |
-| Phase 115 — Schema utilization 🔜 | [`plans/phase_115_schema_utilization.plan.md`](plans/phase_115_schema_utilization.plan.md) — farm modules gating, notification templates, system logs, symptom guide |
-| Phase 116 — Documentation refresh ✅ | [`plans/phase_116_docs_refresh.plan.md`](plans/phase_116_docs_refresh.plan.md) — env reference, upgrade/backup guides, CHANGELOG, `/openapi` Redoc, screenshots |
-| Phase 117 — Test depth ✅ | [`plans/phase_117_test_depth.plan.md`](plans/phase_117_test_depth.plan.md) — zero-coverage packages, handler smokes, timeout hygiene, browser E2E seed |
-| Phase 118 — Guardian model capabilities ✅ | [`plans/phase_118_guardian_model_capabilities.plan.md`](plans/phase_118_guardian_model_capabilities.plan.md) — chat-only filtering, tag normalization guardrail fix, runtime hints |
-| Phases 119–122 — Virtual Pi + Guardian eval ✅ | [119 board](plans/phase_119_virtual_pi_board_view.plan.md) · [120 wiring](plans/phase_120_virtual_pi_interactive_wiring.plan.md) · [121 export](plans/phase_121_virtual_pi_hookup_export.plan.md) · [122 eval](plans/phase_122_guardian_model_eval_and_context_budget.plan.md) — `/virtual-pi`, hookup steps, config export, drift, `make guardian-eval` |
-| Phase 123 — Virtual Pi push notify ✅ | [`plans/phase_123_virtual_pi_push_config.plan.md`](plans/phase_123_virtual_pi_push_config.plan.md) — `POST /devices/{id}/push-config`, Notify Pi button |
-| Phase 125 — Pi LED simulation rig ✅ | [`plans/phase_125_pi_sensor_actuator_light_simulation.plan.md`](plans/phase_125_pi_sensor_actuator_light_simulation.plan.md) · [`pi-light-simulation-mapping.md`](pi-light-simulation-mapping.md) · [`pi-light-simulation-runbook.md`](pi-light-simulation-runbook.md) · [`pi_client/README-simulation-rig.md`](../pi_client/README-simulation-rig.md) |
-| Phases 106–110 — Intelligence & enterprise polish | [106 ✅](plans/phase_106_deficiency_pest_symptom_catalog.plan.md) · [`phase-106-closure.md`](plans/phase-106-closure.md) · [107 ✅](plans/phase_107_crop_catalog_photos.plan.md) · [`phase-107-closure.md`](plans/phase-107-closure.md) · [108 ✅](plans/phase_108_commons_recipe_packs_crop_key.plan.md) · [`phase-108-closure.md`](plans/phase-108-closure.md) · [109 ✅](plans/phase_109_catalog_version_push_notifications.plan.md) · [`phase-109-closure.md`](plans/phase-109-closure.md) · [110 ✅](plans/phase_110_phase_82_formal_closure.plan.md) · [`phase-110-closure.md`](plans/phase-110-closure.md) |
-| Phases 93–100 — Blind spot closure | [93 ✅](plans/phase_93_plant_identity_vocabulary_cleanup.plan.md) · [`phase-93-closure.md`](plans/phase-93-closure.md) · [94 ✅](plans/phase_94_genetics_batch_ec_profiles.plan.md) · [`phase-94-closure.md`](plans/phase-94-closure.md) · [95 ✅](plans/phase_95_catalog_integrator_ops.plan.md) · [`phase-95-closure.md`](plans/phase-95-closure.md) · [96 ✅](plans/phase_96_grow_feeding_program_validation.plan.md) · [`phase-96-closure.md`](plans/phase-96-closure.md) · [97 ✅](plans/phase_97_rag_structured_truth_governance.plan.md) · [`phase-97-closure.md`](plans/phase-97-closure.md) · [98 ✅](plans/phase_98_enterprise_catalog_promotion.plan.md) · [`phase-98-closure.md`](plans/phase-98-closure.md) · [99 ✅](plans/phase_99_ci_domain_parity_guards.plan.md) · [`phase-99-closure.md`](plans/phase-99-closure.md) · [100 ✅](plans/phase_100_offline_catalog_cache.plan.md) · [`phase-100-closure.md`](plans/phase-100-closure.md) |
-| Phases 101–105 — Guardian, programs, analytics | [101 ✅](plans/phase_101_guardian_write_tools_crop_key.plan.md) · [`phase-101-closure.md`](plans/phase-101-closure.md) · [102 ✅](plans/phase_102_fertigation_program_catalog_metadata.plan.md) · [`phase-102-closure.md`](plans/phase-102-closure.md) · [103 ✅](plans/phase_103_legacy_plant_dedupe_backfill.plan.md) · [`phase-103-closure.md`](plans/phase-103-closure.md) · [104 ✅](plans/phase_104_harvest_analytics_by_crop_key.plan.md) · [`phase-104-closure.md`](plans/phase-104-closure.md) · [105 ✅](plans/phase_105_catalog_audit_oc84_closure.plan.md) · [`phase-105-closure.md`](plans/phase-105-closure.md) |
-| Crop catalog DB cutover | [`crop-catalog-db-cutover-runbook.md`](crop-catalog-db-cutover-runbook.md) |
-| Hardware sizing (API, DB, Ollama, RAG, chat) | [`recommended-hardware-and-sizing.md`](recommended-hardware-and-sizing.md) |
-| Guardian real-grow readiness (live plants) | [`guardian-real-grow-readiness.md`](guardian-real-grow-readiness.md) |
-| First session after clone | [`first-session-after-clone.md`](first-session-after-clone.md) |
-| Farm Guardian — architecture & operator expectations | [`farm-guardian-architecture.md`](farm-guardian-architecture.md) (§8), [`operator-tour.md`](operator-tour.md#6-farm-guardian-change-requests-with-your-ok) |
-| Guardian next-level arc 129–139 (shipped) | [`plans/phase_129_139_guardian_next_level_roadmap.plan.md`](plans/phase_129_139_guardian_next_level_roadmap.plan.md) · [`plans/phase-129-139-closure.md`](plans/phase-129-139-closure.md) · [`ci-guardian-qa.md`](ci-guardian-qa.md) |
-| Phase 140 — Guardian QA Settings summary | [`plans/phase_140_guardian_qa_settings.plan.md`](plans/phase_140_guardian_qa_settings.plan.md) — last smoke run in Settings |
-| Phase 141 — Guardian feedback review | [`plans/phase_141_guardian_feedback_review.plan.md`](plans/phase_141_guardian_feedback_review.plan.md) · [`guardian-feedback-review-runbook.md`](guardian-feedback-review-runbook.md) |
-| Phase 142 — Virtual Pi field validation (shipped) | [`plans/phase_142_virtual_pi_field_validation.plan.md`](plans/phase_142_virtual_pi_field_validation.plan.md) · [`virtual-pi-field-validation-path.md`](virtual-pi-field-validation-path.md) |
-| Phase 143 — Guardian answer quality (143–147 arc) | [`plans/phase_143_guardian_answer_quality.plan.md`](plans/phase_143_guardian_answer_quality.plan.md) · [`guardian-qa-smoke-report-20260707.md`](guardian-qa-smoke-report-20260707.md) · [`guardian-feedback-review-runbook.md`](guardian-feedback-review-runbook.md) · phases [144](plans/phase_144_guardian_answer_quality_residuals.plan.md)–[147](plans/phase_147_guardian_smoke_run5_closure.plan.md) shipped |
-| Phase 144 — Guardian answer quality (run #3 residuals) | [`plans/phase_144_guardian_answer_quality_residuals.plan.md`](plans/phase_144_guardian_answer_quality_residuals.plan.md) |
-| Phase 145 — Topic drift & grounding (shipped) | [`plans/phase_145_guardian_topic_drift_and_grounding.plan.md`](plans/phase_145_guardian_topic_drift_and_grounding.plan.md) · [`guardian-qa-smoke-report-20260707.md`](guardian-qa-smoke-report-20260707.md) § run #4 |
-| Phase 146 — Quality loop & optional judge (shipped) | [`plans/phase_146_guardian_quality_loop_and_judge.plan.md`](plans/phase_146_guardian_quality_loop_and_judge.plan.md) · [`ci-guardian-qa.md`](ci-guardian-qa.md) |
-| Phase 147 — Smoke run #5 & eval isolation (shipped) | [`plans/phase_147_guardian_smoke_run5_closure.plan.md`](plans/phase_147_guardian_smoke_run5_closure.plan.md) · [`guardian-qa-smoke-report-20260707.md`](guardian-qa-smoke-report-20260707.md) § run #5 |
-| Phase 148 — Citation-claim accuracy hardening (shipped) | [`plans/phase_148_guardian_citation_claim_accuracy.plan.md`](plans/phase_148_guardian_citation_claim_accuracy.plan.md) — run #6 mismatch/duplicate/garbled/unit detectors |
-| Phase 149 — Alert citation ordering (shipped) | [`plans/phase_149_guardian_alert_citation_ordering.plan.md`](plans/phase_149_guardian_alert_citation_ordering.plan.md) — severity-first alert numbering |
-| Phase 150 — Dev-jargon answer hygiene (shipped) | [`plans/phase_150_guardian_dev_jargon_hygiene.plan.md`](plans/phase_150_guardian_dev_jargon_hygiene.plan.md) — strip raw HTTP verb+path from answers |
-| Phase 151 — Alert citation enforcement (shipped) | [`plans/phase_151_guardian_alert_citation_enforcement.plan.md`](plans/phase_151_guardian_alert_citation_enforcement.plan.md) — force/detect `[n]` alert cites, alert-only retrieval, cite injection |
-| Phase 152 — Live accuracy guardrails + citation deep links (WS1 + WS2 shipped) | [`plans/phase_152_guardian_live_accuracy_guardrails.plan.md`](plans/phase_152_guardian_live_accuracy_guardrails.plan.md) — Phase 148/151 detectors now run on every live chat turn, not just guardian-eval; citation chips route to their zone/crop-cycle for crop_cycle/fertigation_program/task sources |
-| Phase 153 — Guardian change-request smoke fetcher | [`plans/phase_153_guardian_pr_smoke_gate.plan.md`](plans/phase_153_guardian_pr_smoke_gate.plan.md) — `make guardian-qa-change-requests` fires write-intent prompts and fetches the pending change-request queue to confirm they landed; script only, no GitHub/CI involvement |
-| Phases 154–158 — infra & trust gaps arc | [`plans/phase_154_158_infra_trust_gaps_backlog.plan.md`](plans/phase_154_158_infra_trust_gaps_backlog.plan.md) — hub for test health, backups, vuln scanning, docs consolidation, a11y |
-| Phase 154 — test suite health (shipped) | [`plans/phase_154_test_suite_health.plan.md`](plans/phase_154_test_suite_health.plan.md) — `make test-unit` green without Postgres |
-| Phase 155 — automated backups (shipped) | [`plans/phase_155_automated_backups.plan.md`](plans/phase_155_automated_backups.plan.md) — `make backup`, retention, scratch-DB verify |
-| Phase 156 — dependency scanning (shipped) | [`plans/phase_156_dependency_scanning.plan.md`](plans/phase_156_dependency_scanning.plan.md) — Dependabot, govulncheck, npm audit, `make vuln-check` |
-| Phase 157 — docs consolidation (planned) | [`plans/phase_157_docs_consolidation.plan.md`](plans/phase_157_docs_consolidation.plan.md) — `current-state.md`, plans archive |
-| Phase 158 — accessibility pass (planned) | [`plans/phase_158_accessibility_pass.plan.md`](plans/phase_158_accessibility_pass.plan.md) — keyboard + screen-reader on Guardian + core workspaces |
-| Farm Guardian — platform persona (WS9 mirror) | [`farm-guardian-persona-platform-context.md`](farm-guardian-persona-platform-context.md) |
-| Phase 30 — Guardian PR queue (plan) | [`plans/phase_30_guardian_change_requests.plan.md`](plans/phase_30_guardian_change_requests.plan.md) |
-| Phase 31 — field validation & edge (plan) | [`plans/phase_31_field_validation_and_edge.plan.md`](plans/phase_31_field_validation_and_edge.plan.md) · [operator index § Phase 31](#phase-31-field-validation-edge) |
-| Phase 32 — Guardian grow setup PRs (plan) | [`plans/phase_32_guardian_grow_setup_prs.plan.md`](plans/phase_32_guardian_grow_setup_prs.plan.md) — setup pack + platform doc RAG |
-| Phase 33 — Guardian polish & enterprise ops (plan) | [`plans/phase_33_guardian_polish_and_enterprise_ops.plan.md`](plans/phase_33_guardian_polish_and_enterprise_ops.plan.md) — read-tool hardening, hardware CI, site manifest |
-| Phase 34 — Guardian PR iteration (plan) | [`plans/phase_34_guardian_pr_iteration.plan.md`](plans/phase_34_guardian_pr_iteration.plan.md) — revise/supersede loop, operator-stated facts |
-| Phase 35 — Lighting domain (plan) | [`plans/phase_35_lighting_domain.plan.md`](plans/phase_35_lighting_domain.plan.md) — photoperiod programs, presets, PhotoperiodClockEditor |
-| Phase 36 — Greenhouse climate (plan) | [`plans/phase_36_greenhouse_climate.plan.md`](plans/phase_36_greenhouse_climate.plan.md) — shipped (interlocks + smokes) |
-| Phase 38 — Plant-needs UI + pulse (plan) | [`plans/phase_38_plant_needs_ui_and_pulse_commands.plan.md`](plans/phase_38_plant_needs_ui_and_pulse_commands.plan.md) — Zones Water/Light/Climate; `duration_seconds` |
-| Phase 39 — Edge fertigation execution (plan) | [`plans/phase_39_edge_fertigation_execution.plan.md`](plans/phase_39_edge_fertigation_execution.plan.md) — command queue + automated mix |
-| Farmer UX roadmap 40–47 | [`plans/farmer_ux_roadmap_40_plus.plan.md`](plans/farmer_ux_roadmap_40_plus.plan.md) — full site vision + phase order |
-| Phase 40–47 plans | 40 cockpit · 41 hub · **47 feed/water** · 42 comfort · 43 ops · 44 setup · 45 sit-in · 46 LLM PRs |
-| Farmer vocabulary | [`farmer-vocabulary.md`](farmer-vocabulary.md) — grow-path language contract |
-| Pre-development gaps index (archived) | [`plans/pre_development_gaps_index.plan.md`](plans/pre_development_gaps_index.plan.md) |
-| Product backlog (run now, mobile, …) | [`plans/product_backlog_operator_runtime.plan.md`](plans/product_backlog_operator_runtime.plan.md) — shipped |
-| Operational closure (archived OC-35 … OC-67) | [`plans/phase_35_37_operational_closure.plan.md`](plans/phase_35_37_operational_closure.plan.md) — frozen; do not extend |
-| SPA workspace arc 68–81 (all shipped) | [`plans/phase_68_73_spa_workspace_roadmap.plan.md`](plans/phase_68_73_spa_workspace_roadmap.plan.md) · [operator tour §7e–§7j](operator-tour.md#7e-workspaces--sidebar-jobs-tabs-inside-phase-68) |
-| Phase 37 — Guardian offline field assistant (plan) | [`plans/phase_37_guardian_offline_field_assistant.plan.md`](plans/phase_37_guardian_offline_field_assistant.plan.md) — Pi wiring / plumbing walkthroughs, trades corpus, safety gating, offline |
-| Pi pending_command + pulse | [`pi-integration-guide.md`](pi-integration-guide.md) §1.1 |
-| Workflow — single slot + manual mix | [`workflow-guide.md`](workflow-guide.md) |
+| First session / bootstrap | [`first-session-after-clone.md`](first-session-after-clone.md) · [`local-operator-bootstrap.md`](local-operator-bootstrap.md) |
+| Guardian architecture & QA | [`farm-guardian-architecture.md`](farm-guardian-architecture.md) · [`ci-guardian-qa.md`](ci-guardian-qa.md) |
+| Pi / edge | [`pi-integration-guide.md`](pi-integration-guide.md) · [`mqtt-edge-operator-playbook.md`](mqtt-edge-operator-playbook.md) |
+| Crop catalog | [`crop-catalog-db-cutover-runbook.md`](crop-catalog-db-cutover-runbook.md) · [`crop-knowledge-operator-runbook.md`](crop-knowledge-operator-runbook.md) |
+| Backup & upgrade | [`backup-restore-runbook.md`](backup-restore-runbook.md) · [`upgrade-guide.md`](upgrade-guide.md) |
+| Security & deps | [`SECURITY.md`](../SECURITY.md) · [`vuln-allowlist.md`](vuln-allowlist.md) |
+| Enterprise / commons | [`scripts/enterprise/README.md`](../scripts/enterprise/README.md) · [`commons-catalog-operator-playbook.md`](commons-catalog-operator-playbook.md) |
+| **Phase archive** | [`plans/archive/README.md`](plans/archive/README.md) |
+| **Full phase history** | Sections below + [`phase-84-110-closure.md`](plans/phase-84-110-closure.md) |
+
+### Legacy per-phase quick links (pre-157)
+
+Older per-phase rows remain in git history; use **Shipped arcs** above and [`current-state.md`](current-state.md) instead of scanning 80+ individual phase links.
 
 ## Using this in a new chat
 
