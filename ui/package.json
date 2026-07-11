@@ -17,7 +17,7 @@
   },
   "dependencies": {
     "@capacitor/app": "^7.1.2",
-    "@capacitor/core": "^7.6.2",
+    "@capacitor/core": "^8.4.1",
     "@capacitor/push-notifications": "^8.0.3",
     "axios": "^1.13.6",
     "chart.js": "^4.5.1",
