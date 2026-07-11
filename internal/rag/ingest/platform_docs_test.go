@@ -108,7 +108,7 @@ func TestOperatorTourChunksIncludePlantNeedsPhase38(t *testing.T) {
 	for _, needle := range []string{
 		"4a. Plant needs",
 		"Water / Light / Climate",
-		"last write wins",
+		"without last-write-wins",
 		"duration_seconds",
 		"Phase 39",
 	} {

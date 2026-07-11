@@ -31,8 +31,8 @@ func TestParseFeedbackSince_invalid(t *testing.T) {
 
 func TestExcerptText(t *testing.T) {
 	long := strings.Repeat("a", 300)
-	if got := excerptText(long, 240); len(got) != 241 {
-		t.Fatalf("len=%d", len(got))
+	if got := excerptText(long, 240); len(got) != 243 {
+		t.Fatalf("len=%d want 243 (240 runes + UTF-8 ellipsis)", len(got))
 	}
 }
 

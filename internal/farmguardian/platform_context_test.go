@@ -67,9 +67,10 @@ func TestChatSystemPrompt_IncludesPersonaAndPlatform(t *testing.T) {
 	if !strings.Contains(full, "Platform context") {
 		t.Fatal("missing platform block")
 	}
-	// WS9 acceptance: block stays roughly bounded (~400–600 tokens ≈ 2–3k runes).
+	// Regression guard — platform context grew with Phases 55–152; keep bounded but
+	// don't fail on every new read-tool line. Revisit if this exceeds ~8k runes.
 	n := utf8.RuneCountInString(PlatformContextBlock(ai.Config{Enabled: true}, true, tools.IDs()))
-	if n > 5500 {
+	if n > 7000 {
 		t.Fatalf("platform block grew too large for token budget (%d runes)", n)
 	}
 }

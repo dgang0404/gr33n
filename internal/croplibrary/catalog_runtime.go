@@ -2,6 +2,7 @@ package croplibrary
 
 import (
 	"context"
+	"fmt"
 	"sync"
 )
 
@@ -29,7 +30,7 @@ func loadDefaultCatalog() (*Catalog, error) {
 	if CatalogSource() == "db" {
 		q := runtimeCatalogQuerierOrNil()
 		if q == nil {
-			return LoadCatalogFromDB(context.Background(), nil)
+			return nil, fmt.Errorf("CROP_CATALOG_SOURCE=db requires database querier")
 		}
 		return LoadCatalogFromDB(context.Background(), q)
 	}

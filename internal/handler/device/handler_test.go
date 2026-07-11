@@ -58,6 +58,7 @@ func TestUpdateStatus_WithLastConfigFetchAt_200(t *testing.T) {
 		"last_config_fetch_at": "2026-06-08T12:00:00Z",
 	})
 	req := httptest.NewRequest(http.MethodPatch, "/devices/1/status", bytes.NewReader(body))
+	req = req.WithContext(authctx.WithPiEdgeAuth(context.Background()))
 	rec := httptest.NewRecorder()
 
 	h.UpdateStatus(rec, req)
@@ -88,6 +89,7 @@ func TestUpdateStatus_ValidBody_200(t *testing.T) {
 
 	body, _ := json.Marshal(map[string]string{"status": "online"})
 	req := httptest.NewRequest(http.MethodPatch, "/devices/1/status", bytes.NewReader(body))
+	req = req.WithContext(authctx.WithPiEdgeAuth(context.Background()))
 	rec := httptest.NewRecorder()
 
 	h.UpdateStatus(rec, req)
@@ -106,6 +108,7 @@ func TestUpdateStatus_InvalidBody_400(t *testing.T) {
 	h := NewHandlerWithQuerier(&mockQuerier{})
 
 	req := httptest.NewRequest(http.MethodPatch, "/devices/1/status", bytes.NewReader([]byte("bad")))
+	req = req.WithContext(authctx.WithPiEdgeAuth(context.Background()))
 	rec := httptest.NewRecorder()
 
 	h.UpdateStatus(rec, req)
@@ -138,6 +141,7 @@ func TestClearPendingCommand_204(t *testing.T) {
 	h := NewHandlerWithQuerier(mq)
 
 	req := httptest.NewRequest(http.MethodDelete, "/devices/1/pending-command", nil)
+	req = req.WithContext(authctx.WithPiEdgeAuth(context.Background()))
 	rec := httptest.NewRecorder()
 
 	h.ClearPendingCommand(rec, req)

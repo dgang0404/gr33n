@@ -81,6 +81,9 @@ build-ui: ## Build the Vue frontend for production
 test: ## Run Go tests (dev build so smoke tests can use auth bypass)
 	$(GO) test -tags dev ./... -v -count=1
 
+test-unit: ## Run unit-testable packages only (excludes cmd/api DB smokes; needs no live Postgres)
+	$(GO) test -tags dev $$(go list ./... | grep -v 'gr33n-api/cmd/api$$') -count=1
+
 e2e-browser: ## Playwright browser E2E (requires dev-auth-test stack; see e2e/README.md)
 	cd e2e && npm ci && npx playwright install chromium && npm test
 

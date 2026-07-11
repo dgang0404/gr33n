@@ -12,12 +12,13 @@ import (
 )
 
 func TestLoadCostGuardConfigFromEnv_Defaults(t *testing.T) {
+	t.Setenv("GUARDIAN_COST_GUARD", "off")
 	t.Setenv("CHAT_COST_WINDOW_HOURS", "")
 	t.Setenv("CHAT_COST_MAX_TOKENS_PER_USER", "")
 	t.Setenv("CHAT_COST_MAX_TOKENS_PER_FARM", "")
 
 	cfg := LoadCostGuardConfigFromEnv()
-	if got, want := cfg.Window, time.Hour; got != want {
+	if got, want := cfg.Window, 24*time.Hour; got != want {
 		t.Fatalf("window default: got %s want %s", got, want)
 	}
 	if cfg.PerUserMaxTokens != 0 {
@@ -32,6 +33,7 @@ func TestLoadCostGuardConfigFromEnv_Defaults(t *testing.T) {
 }
 
 func TestLoadCostGuardConfigFromEnv_ParsesAndClamps(t *testing.T) {
+	t.Setenv("GUARDIAN_COST_GUARD", "on")
 	t.Setenv("CHAT_COST_WINDOW_HOURS", "6")
 	t.Setenv("CHAT_COST_MAX_TOKENS_PER_USER", "50000")
 	t.Setenv("CHAT_COST_MAX_TOKENS_PER_FARM", "100000")
@@ -63,9 +65,10 @@ func TestLoadCostGuardConfigFromEnv_ParsesAndClamps(t *testing.T) {
 	t.Setenv("CHAT_COST_WINDOW_HOURS", "not-a-number")
 	t.Setenv("CHAT_COST_MAX_TOKENS_PER_USER", "-5")
 	t.Setenv("CHAT_COST_MAX_TOKENS_PER_FARM", "garbage")
+	t.Setenv("GUARDIAN_COST_GUARD", "off")
 	cfg3 := LoadCostGuardConfigFromEnv()
-	if cfg3.Window != time.Hour {
-		t.Fatalf("garbage window should fall back to 1h, got %s", cfg3.Window)
+	if cfg3.Window != 24*time.Hour {
+		t.Fatalf("garbage window should fall back to 24h, got %s", cfg3.Window)
 	}
 	if cfg3.PerUserMaxTokens != 0 || cfg3.PerFarmMaxTokens != 0 {
 		t.Fatalf("garbage caps should fall back to 0, got %d / %d", cfg3.PerUserMaxTokens, cfg3.PerFarmMaxTokens)

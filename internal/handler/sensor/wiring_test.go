@@ -28,13 +28,13 @@ func (m *wiringMockQuerier) GetSensorByID(_ context.Context, _ int64) (db.Gr33nc
 	return m.sensor, nil
 }
 
-func (m *wiringMockQuerier) UpdateSensorConfig(ctx context.Context, id int64, config json.RawMessage) (db.Gr33ncoreSensor, error) {
+func (m *wiringMockQuerier) UpdateSensorConfig(ctx context.Context, arg db.UpdateSensorConfigParams) (db.Gr33ncoreSensor, error) {
 	if m.updateFn != nil {
-		return m.updateFn(ctx, id, config)
+		return m.updateFn(ctx, arg.ID, arg.Config)
 	}
-	m.updated = config
+	m.updated = arg.Config
 	row := m.sensor
-	row.Config = config
+	row.Config = arg.Config
 	return row, nil
 }
 

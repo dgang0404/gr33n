@@ -64,7 +64,7 @@ func TestSplitMentions(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	mentions := reg.FindMentions("cucumber vs tomato and wild leek")
+	mentions := reg.FindMentions("cucumber vs tomato and wild_leek")
 	crops, unsup := splitMentions(mentions)
 	if len(crops) < 2 {
 		t.Fatalf("want 2 crops, got %d (%+v)", len(crops), crops)

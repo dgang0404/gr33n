@@ -24,8 +24,8 @@ func (m *mockQuerier) InsertSensorReading(ctx context.Context, arg db.InsertSens
 	return m.insertReadingFn(ctx, arg)
 }
 
-func (m *mockQuerier) GetSensorByID(_ context.Context, _ int64) (db.Gr33ncoreSensor, error) {
-	return db.Gr33ncoreSensor{}, fmt.Errorf("not found")
+func (m *mockQuerier) GetSensorByID(_ context.Context, id int64) (db.Gr33ncoreSensor, error) {
+	return db.Gr33ncoreSensor{ID: id, FarmID: 1}, nil
 }
 
 func (m *mockQuerier) GetRecentUnacknowledgedAlertForSource(_ context.Context, _ db.GetRecentUnacknowledgedAlertForSourceParams) (int64, error) {
@@ -53,7 +53,7 @@ func TestPostReading_ValidBody_201(t *testing.T) {
 	h := NewHandlerWithQuerier(mq, noopSSE{}, nil)
 
 	body, _ := json.Marshal(map[string]any{"value_raw": 22.5, "is_valid": true})
-	req := httptest.NewRequest(http.MethodPost, "/sensors/1/readings", bytes.NewReader(body))
+	req := reqWithAuthSkip(httptest.NewRequest(http.MethodPost, "/sensors/1/readings", bytes.NewReader(body)))
 	req.SetPathValue("id", "1")
 	rec := httptest.NewRecorder()
 
@@ -113,7 +113,7 @@ func TestPostReading_SSENotified(t *testing.T) {
 	h := NewHandlerWithQuerier(mq, sse, nil)
 
 	body, _ := json.Marshal(map[string]any{"value_raw": 22.5})
-	req := httptest.NewRequest(http.MethodPost, "/sensors/1/readings", bytes.NewReader(body))
+	req := reqWithAuthSkip(httptest.NewRequest(http.MethodPost, "/sensors/1/readings", bytes.NewReader(body)))
 	req.SetPathValue("id", "1")
 	rec := httptest.NewRecorder()
 
@@ -148,7 +148,7 @@ func TestPostReadingsBatch_Valid_201(t *testing.T) {
 		{"sensor_id": 1, "value_raw": 21.0},
 		{"sensor_id": 2, "value_raw": 55.2},
 	})
-	req := httptest.NewRequest(http.MethodPost, "/sensors/readings/batch", bytes.NewReader(body))
+	req := reqWithAuthSkip(httptest.NewRequest(http.MethodPost, "/sensors/readings/batch", bytes.NewReader(body)))
 	rec := httptest.NewRecorder()
 
 	h.PostReadingsBatch(rec, req)
@@ -171,7 +171,7 @@ func TestPostReadingsBatch_Valid_201(t *testing.T) {
 func TestPostReadingsBatch_Empty_400(t *testing.T) {
 	h := NewHandlerWithQuerier(&mockQuerier{}, noopSSE{}, nil)
 	body, _ := json.Marshal([]map[string]any{})
-	req := httptest.NewRequest(http.MethodPost, "/sensors/readings/batch", bytes.NewReader(body))
+	req := reqWithAuthSkip(httptest.NewRequest(http.MethodPost, "/sensors/readings/batch", bytes.NewReader(body)))
 	rec := httptest.NewRecorder()
 	h.PostReadingsBatch(rec, req)
 	if rec.Code != http.StatusBadRequest {
@@ -182,7 +182,7 @@ func TestPostReadingsBatch_Empty_400(t *testing.T) {
 func TestPostReadingsBatch_MissingSensorID_400(t *testing.T) {
 	h := NewHandlerWithQuerier(&mockQuerier{}, noopSSE{}, nil)
 	body, _ := json.Marshal([]map[string]any{{"value_raw": 1.0}})
-	req := httptest.NewRequest(http.MethodPost, "/sensors/readings/batch", bytes.NewReader(body))
+	req := reqWithAuthSkip(httptest.NewRequest(http.MethodPost, "/sensors/readings/batch", bytes.NewReader(body)))
 	rec := httptest.NewRecorder()
 	h.PostReadingsBatch(rec, req)
 	if rec.Code != http.StatusBadRequest {
@@ -204,7 +204,7 @@ func TestPostReadingsBatch_SSENotified(t *testing.T) {
 	}
 	h := NewHandlerWithQuerier(mq, sse, nil)
 	body, _ := json.Marshal([]map[string]any{{"sensor_id": 3, "value_raw": 7.0}})
-	req := httptest.NewRequest(http.MethodPost, "/sensors/readings/batch", bytes.NewReader(body))
+	req := reqWithAuthSkip(httptest.NewRequest(http.MethodPost, "/sensors/readings/batch", bytes.NewReader(body)))
 	rec := httptest.NewRecorder()
 	h.PostReadingsBatch(rec, req)
 	if !notified {
