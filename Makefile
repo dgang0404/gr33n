@@ -84,6 +84,14 @@ test: ## Run Go tests (dev build so smoke tests can use auth bypass)
 test-unit: ## Run unit-testable packages only (excludes cmd/api DB smokes; needs no live Postgres)
 	$(GO) test -tags dev $$(go list ./... | grep -v 'gr33n-api/cmd/api$$') -count=1
 
+backup: ## Phase 155 — pg_dump + local file storage backup (see docs/backup-restore-runbook.md)
+	@chmod +x ./scripts/backup-gr33n.sh ./scripts/verify-backup-gr33n.sh
+	@./scripts/backup-gr33n.sh
+
+verify-backup: ## Phase 155 — restore dump to scratch DB and spot-check (BACKUP=path optional)
+	@chmod +x ./scripts/backup-gr33n.sh ./scripts/verify-backup-gr33n.sh
+	@./scripts/verify-backup-gr33n.sh $(BACKUP)
+
 e2e-browser: ## Playwright browser E2E (requires dev-auth-test stack; see e2e/README.md)
 	cd e2e && npm ci && npx playwright install chromium && npm test
 

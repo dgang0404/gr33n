@@ -14,6 +14,7 @@
 |--------|------|--------|
 | `make guardian-qa-smoke MODEL=phi3:mini FARM_ID=1` | After Guardian changes; optional nightly/weekly | `data/guardian_qa_runs/<timestamp>_smoke_phi3-mini.json` — always exits 0 (artifact only) |
 | `make guardian-qa-smoke-strict MODEL=phi3:mini FARM_ID=1` | When you want a real pass/fail instead of a report to read | Same archive, but **exits non-zero if any fixture fails its heuristic** |
+| **Opt-in PR check** `guardian-qa-pr` CI job | Self-hosted runner + Ollama; add `guardian-smoke` label to PR | Runs `make guardian-qa-smoke-strict` — **not mandatory** on every PR (standard label-gated pattern) |
 | `make guardian-qa-change-requests MODEL=phi3:mini FARM_ID=1` | After touching proposal/change-request code (Phase 153) | Fires the 4 write-intent prompts, then fetches `GET /v1/chat/proposals?status=pending` and fails if the queue didn't actually get populated |
 | `make guardian-qa-regression MODEL=phi3:mini` | Pre-release (slow) | Same directory, regression suite |
 | `make guardian-qa-manual` | Human UI parity | Prints checklist from same fixtures |
@@ -24,13 +25,24 @@ Set `GUARDIAN_EVAL_TOKEN` (JWT from dev login) and optionally `GUARDIAN_EVAL_LOG
 
 ## Guardian's change-request ("PR") queue smoke check (Phase 153)
 
-"Guardian PR" in this codebase means the propose→confirm change-request queue (`gr33ncore.guardian_action_proposals`) — the proposal cards a farmer clicks Confirm on in the UI, **not** a GitHub pull request. This is a plain script, run the same way as `guardian-qa-smoke` — no CI, no GitHub automation of any kind:
+"Guardian PR" in this codebase means the propose→confirm change-request queue (`gr33ncore.guardian_action_proposals`) — the proposal cards a farmer clicks Confirm on in the UI, **not** a GitHub pull request. Script-only smoke (no GitHub automation):
 
 ```
 make guardian-qa-change-requests MODEL=phi3:mini FARM_ID=1
 ```
 
-It fires 4 preset write-intent prompts ("set the feed volume to...", "acknowledge the alert...", etc.), then calls `GET /v1/chat/proposals?status=pending` — the same endpoint the UI's proposal inbox reads — and fails if fewer pending rows show up than write-intent prompts passed. See [`plans/phase_153_guardian_pr_smoke_gate.plan.md`](plans/phase_153_guardian_pr_smoke_gate.plan.md).
+It fires 4 preset write-intent prompts, then calls `GET /v1/chat/proposals?status=pending` — the same endpoint the UI's proposal inbox reads — and fails if fewer pending rows show up than write-intent prompts passed. See [`plans/phase_153_guardian_pr_smoke_gate.plan.md`](plans/phase_153_guardian_pr_smoke_gate.plan.md).
+
+## Opt-in GitHub PR check (Guardian answer smoke — not change-request queue)
+
+A **label-gated** CI job (`guardian-qa-pr` in `.github/workflows/ci.yml`) is **not bad or weird** — it's a standard pattern for slow, model-dependent tests. It was briefly reverted when scope wasn't consented to; it's back as **opt-in only**:
+
+- Add label **`guardian-smoke`** to a GitHub PR, or run **workflow_dispatch** on the CI workflow
+- Requires a **self-hosted** runner tagged `ollama` with Ollama + phi3:mini
+- Runs `make guardian-qa-smoke-strict` (heuristic pass/fail on the 4-prompt smoke suite)
+- **Not** a required check on every push — GitHub-hosted runners can't run this
+
+This is separate from `guardian-qa-change-requests` (internal proposal queue), which stays script-only.
 
 ## Example workflow (documented pattern — not enabled in default repo CI)
 
@@ -106,8 +118,8 @@ Phase 131 deferred full LLM-as-judge — **Phase 146 supersedes that for GPU pro
 
 ## Non-goals
 
-- Mandatory PR gate on every push (too slow, LLM-flaky on shared CI)
-- GitHub-hosted runner without Ollama
-- Any GitHub Actions automation tied to Guardian's change-request smoke check (Phase 153) — it's a local/self-hosted script only, run on demand
+- Mandatory PR gate on every push (too slow, LLM-flaky on shared CI) — use **`guardian-smoke` label** instead
+- GitHub-hosted runner without Ollama for the smoke gate
+- GitHub Actions automation for Guardian's **change-request** smoke (`guardian-qa-change-requests`) — script only
 - Automated LLM grading of answer quality (deferred to a future phase when GPU CI is stable)
 - Historical-baseline regression tracking (pass/fail per fixture, not "did this get worse than last week")

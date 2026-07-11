@@ -45,13 +45,16 @@ describe('Phase 153 — Guardian change-request smoke fetcher', () => {
     expect(main).toContain('func passedProposalFixtures')
   })
 
-  it('Makefile ships guardian-qa-change-requests, no GitHub workflow changes for it', () => {
+  it('Makefile ships guardian-qa-change-requests; smoke gate is opt-in CI only', () => {
     const makefile = readFileSync(join(repoRoot, 'Makefile'), 'utf8')
     expect(makefile).toContain('guardian-qa-change-requests')
     expect(makefile).toContain('check-pending-proposals')
+    expect(makefile).toContain('guardian-qa-smoke-strict')
 
     const ci = readFileSync(join(repoRoot, '.github/workflows/ci.yml'), 'utf8')
-    expect(ci).not.toContain('guardian-qa-pr')
-    expect(ci).not.toContain('guardian-smoke')
+    expect(ci).toContain('guardian-qa-pr')
+    expect(ci).toContain('guardian-smoke')
+    expect(ci).toContain('guardian-qa-smoke-strict')
+    expect(ci).not.toMatch(/make guardian-qa-change-requests/)
   })
 })

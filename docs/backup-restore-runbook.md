@@ -23,7 +23,29 @@ Treat **PostgreSQL** and **receipt/file blob storage** as one recovery unit. Bac
 
 ---
 
-## Backup (typical)
+## Automated backup (Phase 155)
+
+```bash
+make backup                              # pg_dump + local files tar + manifest
+make verify-backup                       # latest dump → scratch DB spot-check
+make verify-backup BACKUP=path/to.sql    # specific dump
+```
+
+**Cron example** (adjust paths):
+
+```cron
+0 3 * * * cd /opt/gr33n-platform && make backup >> /var/log/gr33n-backup.log 2>&1
+```
+
+**Off-box copy:** rsync `data/backups/` to NAS or `aws s3 sync` — keep secrets out of git; encrypt backup volume at rest.
+
+**Monthly:** `make verify-backup` after a fresh `make backup`.
+
+Env: `GR33N_BACKUP_DIR`, `GR33N_BACKUP_KEEP_DAILY` (default 7), `GR33N_BACKUP_KEEP_WEEKLY` (default 4).
+
+---
+
+## Backup (manual — same as scripts)
 
 ```bash
 # Database

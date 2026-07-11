@@ -220,7 +220,7 @@ After operator-doc edits, re-ingest Guardian RAG: **`make rag-ingest-platform-do
 | Phase 153 — Guardian change-request smoke fetcher | [`plans/phase_153_guardian_pr_smoke_gate.plan.md`](plans/phase_153_guardian_pr_smoke_gate.plan.md) — `make guardian-qa-change-requests` fires write-intent prompts and fetches the pending change-request queue to confirm they landed; script only, no GitHub/CI involvement |
 | Phases 154–158 — infra & trust gaps arc | [`plans/phase_154_158_infra_trust_gaps_backlog.plan.md`](plans/phase_154_158_infra_trust_gaps_backlog.plan.md) — hub for test health, backups, vuln scanning, docs consolidation, a11y |
 | Phase 154 — test suite health (shipped) | [`plans/phase_154_test_suite_health.plan.md`](plans/phase_154_test_suite_health.plan.md) — `make test-unit` green without Postgres |
-| Phase 155 — automated backups (planned) | [`plans/phase_155_automated_backups.plan.md`](plans/phase_155_automated_backups.plan.md) — `make backup`, retention, scratch-DB verify |
+| Phase 155 — automated backups (shipped) | [`plans/phase_155_automated_backups.plan.md`](plans/phase_155_automated_backups.plan.md) — `make backup`, retention, scratch-DB verify |
 | Phase 156 — dependency scanning (planned) | [`plans/phase_156_dependency_scanning.plan.md`](plans/phase_156_dependency_scanning.plan.md) — Dependabot, govulncheck, npm audit |
 | Phase 157 — docs consolidation (planned) | [`plans/phase_157_docs_consolidation.plan.md`](plans/phase_157_docs_consolidation.plan.md) — `current-state.md`, plans archive |
 | Phase 158 — accessibility pass (planned) | [`plans/phase_158_accessibility_pass.plan.md`](plans/phase_158_accessibility_pass.plan.md) — keyboard + screen-reader on Guardian + core workspaces |

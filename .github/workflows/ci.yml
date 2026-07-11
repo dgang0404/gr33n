@@ -7,6 +7,7 @@ on:
   push:
     branches: [main]
   pull_request:
+    types: [opened, synchronize, reopened, labeled]
   workflow_dispatch:
 
 concurrency:
@@ -188,6 +189,75 @@ jobs:
 
       - name: Phase 112 Ollama E2E smokes
         run: go test -tags 'dev ollama' ./cmd/api/ -run 'TestPhase112|TestPhase118' -count=1 -v
+
+  # Opt-in Guardian smoke PR check — label-gated, self-hosted + Ollama only.
+  # NOT mandatory on every PR (too slow for GitHub-hosted runners). Add the
+  # `guardian-smoke` label to a PR or use workflow_dispatch. Uses
+  # make guardian-qa-smoke-strict (-fail-on-regression) for a real pass/fail.
+  # See docs/ci-guardian-qa.md — this is standard opt-in CI, not Guardian's
+  # internal change-request queue (that stays script-only: guardian-qa-change-requests).
+  guardian-qa-pr:
+    if: >
+      (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'guardian-smoke'))
+      || github.event_name == 'workflow_dispatch'
+    runs-on: [self-hosted, ollama]
+    timeout-minutes: 90
+    env:
+      GUARDIAN_EVAL_LOG: /tmp/gr33n-api.log
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Install psql client
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+
+      - name: Build and start Compose Postgres
+        run: docker compose up -d db --build
+
+      - name: Wait for Postgres
+        run: |
+          set -euo pipefail
+          for i in $(seq 1 90); do
+            if docker compose exec -T db pg_isready -U gr33n -d gr33n; then
+              exit 0
+            fi
+            sleep 2
+          done
+          exit 1
+
+      - name: Bootstrap schema, migrations, and demo seed
+        run: ./scripts/bootstrap-local.sh --seed
+
+      - name: Start API
+        run: |
+          set -euo pipefail
+          go run -tags dev ./cmd/api/ > /tmp/gr33n-api.log 2>&1 &
+          echo $! > /tmp/gr33n-api.pid
+          for i in $(seq 1 90); do
+            if curl -sf http://127.0.0.1:8080/health >/dev/null; then exit 0; fi
+            sleep 2
+          done
+          exit 1
+
+      - name: Pull smoke model
+        run: curl -sf http://127.0.0.1:11434/api/pull -d '{"name":"phi3:mini","stream":false}'
+
+      - name: Guardian smoke gate — fails on any fixture regression
+        run: make guardian-qa-smoke-strict MODEL=phi3:mini FARM_ID=1
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: guardian-qa-pr-${{ github.run_id }}
+          path: data/guardian_qa_runs/
+          retention-days: 30
+
+      - name: Stop API
+        if: always()
+        run: kill $(cat /tmp/gr33n-api.pid 2>/dev/null) 2>/dev/null || true
 
   # Phase 117 WS5 — Browser E2E (Playwright). Manual workflow_dispatch only.
   # Expects a running dev stack at E2E_BASE_URL (default http://127.0.0.1:5173)
