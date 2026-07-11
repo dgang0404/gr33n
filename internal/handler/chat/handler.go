@@ -169,6 +169,7 @@ type postResponse struct {
 	ModelFallback    bool                          `json:"model_fallback,omitempty"`
 	TrimSummary      *farmguardian.TrimSummary     `json:"trim_summary,omitempty"`
 	Debug            *farmguardian.TurnDebug       `json:"debug,omitempty"`
+	AccuracyNote     string                        `json:"accuracy_note,omitempty"`
 }
 
 // PostV1 handles POST /v1/chat — JWT required by route wiring.
@@ -500,7 +501,7 @@ func (h *Handler) PostV1(w http.ResponseWriter, r *http.Request) {
 		)
 	}
 	if grounded {
-		answer = synthesis.StripOrphanCitationRefs(answer, len(chunks))
+		answer = finalizeGroundedAnswer(answer, chunks)
 	}
 	answer, hygiene := sanitizeAssistantAnswer(answer, question, grounded, effectiveWindow)
 
@@ -527,6 +528,11 @@ func (h *Handler) PostV1(w http.ResponseWriter, r *http.Request) {
 		if h.embedder != nil {
 			resp.EmbeddingID = h.embedder.ModelID()
 		}
+		attachCitationRoutes(r.Context(), h.q, farmID, resp.Citations)
+	}
+	resp.AccuracyNote = applyAnswerAccuracyNote(answer, resp.Citations)
+	if dbg != nil {
+		dbg.AccuracyNote = resp.AccuracyNote
 	}
 
 	if turnIdx, perr := h.persistTurn(r.Context(), sessionID, userID, hasUser, farmID, grounded, question, answer, resp.Citations, len(chunks), usage, chatClient.ModelLabel()); perr == nil {
@@ -651,7 +657,7 @@ func (h *Handler) streamResponse(
 
 	answer := collected.String()
 	if grounded {
-		answer = synthesis.StripOrphanCitationRefs(answer, len(chunks))
+		answer = finalizeGroundedAnswer(answer, chunks)
 	}
 	answer, hygiene := sanitizeAssistantAnswer(answer, question, grounded, debugIn.effectiveWindow)
 	done := postResponse{
@@ -677,6 +683,11 @@ func (h *Handler) streamResponse(
 		if h.embedder != nil {
 			done.EmbeddingID = h.embedder.ModelID()
 		}
+		attachCitationRoutes(r.Context(), h.q, farmID, done.Citations)
+	}
+	done.AccuracyNote = applyAnswerAccuracyNote(answer, done.Citations)
+	if dbg != nil {
+		dbg.AccuracyNote = done.AccuracyNote
 	}
 
 	// Phase 27 WS5 follow-up: backends that support stream_options.include_usage
@@ -787,6 +798,7 @@ func (h *Handler) retrieveChunks(ctx context.Context, farmID int64, query string
 	}
 	filtered := farmguardian.FilterRAGChunks(query, rows, topK)
 	chunks := farmguardian.PrioritizeAlertChunks(filtered.Chunks)
+	chunks = farmguardian.FilterChunksForAlertSummary(query, chunks)
 	return chunks, filtered.Note, nil
 }
 

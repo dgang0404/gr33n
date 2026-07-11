@@ -31,11 +31,24 @@ func hasSourceType(chunks []db.SearchRagNearestNeighborsFilteredRow, want string
 
 const operationalNoteGrounding = `The following numbered sources marked as farm notes or operational rows may be outdated — prefer LIVE FARM DATA (snapshot and read tools) for current sensor values, alert counts, and zone state.`
 
-// alertCitationDiscipline is Phase 149's fix for run #6's mislabeled alert
-// citations: sources are pre-sorted most-severe-first, so telling the model
-// to number its list in source order removes the need for it to independently
-// re-derive which claim belongs to which bracket number.
-const alertCitationDiscipline = `Multiple alert sources are listed below, ordered most severe to least severe. When you list them, use exactly that order: your list item 1 must cite [1] (the same number as its position in the Sources list), item 2 must cite [2], and so on. Do not repeat the same alert under a second number, and do not renumber or reorder alerts.`
+// alertCitationDiscipline is Phase 149/151's fix for run #6's mislabeled alert
+// citations and run #8's markdown-link skip: sources are pre-sorted
+// most-severe-first, and LIVE FARM STATE is context only — each list item gets
+// exactly one [n] matching its position (run #9: stray [3] on item 2).
+const alertCitationDiscipline = `Multiple alert sources are listed below, ordered most severe to least severe. LIVE FARM STATE and list_unread_alerts blocks in the system prompt are context only — do not treat them as citations and do not invent markdown links or URLs for alerts.
+
+When you list alerts:
+- Use exactly the source order: list item 1 must cite [1] (same number as its position in the Sources list), item 2 must cite [2], and so on.
+- Use exactly one [n] citation per numbered list item — item N must have only [N], never a second [n] on the same item.
+- Place that single [n] at the end of the alert summary for that item.
+- Do not cite platform_doc, field_guide, or documentation that is not in the Sources list.
+- Do not use markdown links, invented URLs, or uncited alert summaries.
+- Do not repeat the same alert under a second number, and do not renumber or reorder alerts.`
+
+// alertOnlyCitationDiscipline applies when numbered Sources are exclusively
+// alert_notification rows (Phase 151 WS4 filter) — removes run #9's "platform
+// docs [3]" hallucination on an alert-only source list.
+const alertOnlyCitationDiscipline = `The Sources list below contains only alert_notification rows. Every [n] you write must refer to one of those alert sources only. Do not mention or cite platform documentation, field guides, or operator bootstrap material with a [n] bracket — those sources are not in the list.`
 
 // HasOperationalChunks reports retrieval rows that are not curated guides/docs.
 func HasOperationalChunks(chunks []db.SearchRagNearestNeighborsFilteredRow) bool {
@@ -67,6 +80,19 @@ func HasMultipleAlertChunks(chunks []db.SearchRagNearestNeighborsFilteredRow) bo
 	return false
 }
 
+// HasOnlyAlertChunks reports whether every numbered source is alert_notification.
+func HasOnlyAlertChunks(chunks []db.SearchRagNearestNeighborsFilteredRow) bool {
+	if len(chunks) < 2 {
+		return false
+	}
+	for _, ch := range chunks {
+		if !strings.EqualFold(strings.TrimSpace(ch.SourceType), "alert_notification") {
+			return false
+		}
+	}
+	return true
+}
+
 // GuardianRAGInstructions returns synthesis citation rules plus corpus-specific guidance when relevant.
 // Call only when len(chunks) > 0 — use ZeroChunkGuardBlock for empty retrieval.
 func GuardianRAGInstructions(chunks []db.SearchRagNearestNeighborsFilteredRow) string {
@@ -82,6 +108,9 @@ func GuardianRAGInstructions(chunks []db.SearchRagNearestNeighborsFilteredRow) s
 	}
 	if HasMultipleAlertChunks(chunks) {
 		out += "\n\n" + alertCitationDiscipline
+	}
+	if HasOnlyAlertChunks(chunks) {
+		out += "\n\n" + alertOnlyCitationDiscipline
 	}
 	return out
 }

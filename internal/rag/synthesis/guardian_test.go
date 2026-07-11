@@ -71,8 +71,66 @@ func TestGuardianRAGInstructionsIncludesAlertCitationDiscipline(t *testing.T) {
 		{SourceType: "alert_notification"},
 		{SourceType: "platform_doc"},
 	})
+	if !strings.Contains(withAlerts, "exactly one [n] citation per numbered list item") {
+		t.Fatal("expected one-cite-per-item instruction")
+	}
+	if strings.Contains(base, "most severe to least severe") {
+		t.Fatal("did not expect alert discipline instruction without 2+ alerts")
+	}
+}
+
+func TestGuardianRAGInstructionsIncludesAlertOnlyDiscipline(t *testing.T) {
+	withAlertsOnly := GuardianRAGInstructions([]db.SearchRagNearestNeighborsFilteredRow{
+		{SourceType: "alert_notification"},
+		{SourceType: "alert_notification"},
+		{SourceType: "alert_notification"},
+	})
+	if !strings.Contains(withAlertsOnly, "only alert_notification rows") {
+		t.Fatal("expected alert-only discipline when all chunks are alerts")
+	}
+	withMixed := GuardianRAGInstructions([]db.SearchRagNearestNeighborsFilteredRow{
+		{SourceType: "alert_notification"},
+		{SourceType: "alert_notification"},
+		{SourceType: "platform_doc"},
+	})
+	if strings.Contains(withMixed, "only alert_notification rows") {
+		t.Fatal("did not expect alert-only discipline with mixed chunks")
+	}
+}
+
+func TestHasOnlyAlertChunks(t *testing.T) {
+	if HasOnlyAlertChunks(nil) {
+		t.Fatal("expected false for nil")
+	}
+	if !HasOnlyAlertChunks([]db.SearchRagNearestNeighborsFilteredRow{
+		{SourceType: "alert_notification"},
+		{SourceType: "alert_notification"},
+	}) {
+		t.Fatal("expected true for alert-only")
+	}
+	if HasOnlyAlertChunks([]db.SearchRagNearestNeighborsFilteredRow{
+		{SourceType: "alert_notification"},
+		{SourceType: "platform_doc"},
+	}) {
+		t.Fatal("expected false for mixed")
+	}
+}
+
+func TestGuardianRAGInstructionsIncludesAlertCitationDiscipline_tail(t *testing.T) {
+	base := GuardianRAGInstructions([]db.SearchRagNearestNeighborsFilteredRow{{SourceType: "platform_doc"}})
+	withAlerts := GuardianRAGInstructions([]db.SearchRagNearestNeighborsFilteredRow{
+		{SourceType: "alert_notification"},
+		{SourceType: "alert_notification"},
+		{SourceType: "platform_doc"},
+	})
 	if !strings.Contains(withAlerts, "most severe to least severe") {
 		t.Fatal("expected alert citation discipline instruction")
+	}
+	if !strings.Contains(withAlerts, "LIVE FARM STATE") {
+		t.Fatal("expected LIVE FARM STATE context-only instruction")
+	}
+	if !strings.Contains(withAlerts, "Do not use markdown links") {
+		t.Fatal("expected no-markdown-links instruction")
 	}
 	if strings.Contains(base, "most severe to least severe") {
 		t.Fatal("did not expect alert discipline instruction without 2+ alerts")

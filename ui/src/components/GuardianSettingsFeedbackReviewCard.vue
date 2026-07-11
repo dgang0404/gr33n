@@ -56,7 +56,7 @@
 
       <div v-if="!downRows.length" class="text-xs text-zinc-500 italic">
         No thumbs-down in this window — good sign after smoke, or operators haven't rated yet.
-      </p>
+      </div>
 
       <div v-else class="overflow-x-auto rounded-lg border border-zinc-700">
         <table class="w-full text-xs" data-test="settings-guardian-feedback-table">

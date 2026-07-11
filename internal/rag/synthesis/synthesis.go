@@ -64,6 +64,7 @@ type Citation struct {
 	ChunkID    int64  `json:"chunk_id"`
 	SourceType string `json:"source_type"`
 	SourceID   int64  `json:"source_id"`
+	Route      string `json:"route,omitempty"`
 	Excerpt    string `json:"excerpt"`
 }
 

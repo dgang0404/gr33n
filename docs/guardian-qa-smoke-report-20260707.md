@@ -37,6 +37,8 @@
 
 **Verdict (run #7, targeted):** Phases **148–150** shipped in response to run #6's human review (wrong citation numbers, duplicate OHN alert, garbled `0sourced`, raw `PATCH /alerts/{id}/acknowledge` API path, blueberry pH mislabeled as EC mS/cm). `smoke-ec-ph` re-run **proves Phase 148 works live**: it now fails on `citation_number_mismatch` — a real wrong-citation the run #6/#5 scorer could not see (only checked topical drift). `smoke-unread-alerts` hit the CPU laptop's 30-min internal `GUARDIAN_GROUNDED_TIMEOUT_SECONDS` twice in a row after ~2 hours of continuous back-to-back generation (load average 2.95–5.36) — an infra/thermal ceiling, not a Phase 148–150 regression (confirmed via unit tests reproducing the exact run #6 answer/citation text for all four new detectors, plus `PrioritizeAlertChunks` / `RedactDevAPIJargon` unit coverage). Re-run recommended after a cooldown or with `GUARDIAN_GROUNDED_TIMEOUT_SECONDS` bumped (Phase 147 precedent).
 
+**Verdict (run #8, unread-alerts follow-up):** Bumped `GUARDIAN_GROUNDED_TIMEOUT_SECONDS` 1800→**2400**, `LLM_TIMEOUT_SECONDS` 1500→**2100**, added `GUARDIAN_EVAL_TIMEOUT_SECONDS=**2700**`; restarted API (`llm_timeout_seconds=2400` confirmed in logs). `make guardian-qa-smoke-unread-alerts` completed in **~29.8 min** (HTTP 200, heuristic **pass**). Alert list order is **severity-first** (humidity high → OHN medium → light schedule low) — run #6's [3]/[5] swap class resolved in prose. Model used markdown links instead of `[N]` citation markers (`citations=0` in turn log), so Phase 148 numbered-cite mismatch cannot be re-checked on this archive; no raw `PATCH /alerts/…` API path (Phase 150). Operator review still recommended for proposal-card / Confirm template tone.
+
 ---
 
 ## Phases 148–150 run #7 (targeted verification)
@@ -61,7 +63,33 @@
 - ✅ `CitationClaimMismatchNote` fires on a genuine live mismatch (ec-ph) that the pre-148 scorer would have silently passed (all 5 cites were on-topic agronomy field guides — no topical drift, but the wrong one was cited for the claim)
 - ✅ All Phase 148/149/150 unit tests pass, including exact reproductions of run #6's alert answer/citation text (`TestSmokeTopicDrift_runSixUnreadAlertsCitationMismatchNowCaught`, `TestGarbledTokenNote_detectsRunSixOHNTypo`, `TestRedactDevAPIJargon_run6UnreadAlerts`)
 - ⚠️ Could not get a live `smoke-unread-alerts` completion this session — CPU laptop hit its 30-min internal timeout twice under sustained load; not attributable to Phase 149's `PrioritizeAlertChunks` (O(n) sort of ≤5 chunks) or the ~350-char `alertCitationDiscipline` instruction addendum
-- **Follow-up:** re-run `smoke-unread-alerts` after a cooldown, or bump `GUARDIAN_GROUNDED_TIMEOUT_SECONDS`/`LLM_TIMEOUT_SECONDS` similar to Phase 147's ec-ph fix, to confirm the severity-first alert ordering resolves the [3]/[5] mismatch from run #6
+- **Follow-up (done run #8):** see § Phases 148–150 run #8 below
+
+---
+
+## Phases 148–150 run #8 (unread-alerts follow-up)
+
+**Pre-run (2026-07-08):** Machine cooled (load ~0.9); bumped timeouts in `.env`; extended `scripts/tune-guardian-laptop.sh` cpu-16gb floor; added `make guardian-qa-smoke-unread-alerts`; rebuilt + restarted API.
+
+| Step | Command / note |
+|------|----------------|
+| Timeout bump | `GUARDIAN_GROUNDED_TIMEOUT_SECONDS=2400`, `LLM_TIMEOUT_SECONDS=2100`, `GUARDIAN_EVAL_TIMEOUT_SECONDS=2700` |
+| Rebuild + restart | `go build -tags dev -o bin/api ./cmd/api/` → `AUTH_MODE=auth_test ./bin/api` |
+| Isolated re-run | `make guardian-qa-smoke-unread-alerts MODEL=phi3:mini FARM_ID=1` |
+| Log | `/tmp/guardian-qa-smoke-run8-unread-alerts.log`, `/tmp/gr33n-api-run8.log` |
+| Archive | `data/guardian_qa_runs/20260708T224619_smoke_phi3-mini.json` |
+
+| ID | Pass | Latency | Citations | Notes |
+|----|------|---------|-----------|-------|
+| `smoke-unread-alerts` | ✅ | 29.8 min | 0 (`[N]` markers absent) | HTTP 200; `llm_timeout_seconds=2400` in API log; alert list **severity-first** (humidity → OHN → light schedule) — run #6 [3]/[5] class fixed in prose; model used markdown links not numbered cites; proposal-card / Confirm tone remains |
+
+**Phase 148–150 checks (run #8):**
+
+- ✅ Infra follow-up closed — completion under bumped 2400s grounded ceiling (would have timed out at 1800s under similar ~30 min generation)
+- ✅ Phase 149 intent — alerts listed most-severe-first; humidity no longer cited as `[3]` while sitting at `[5]` (model skipped `[N]` markers entirely this run)
+- ✅ Phase 150 — no inline `PATCH /alerts/{id}/acknowledge` dev API path in answer
+- ⚠️ `citations=0` in turn log — cannot live-verify Phase 148 `citation_number_mismatch` on this archive; heuristic pass is lenient (`alert` keyword only)
+- ⚠️ Operator tone — still template-heavy (`proposal card`, `Confirm`); fake-looking `gr33ncore.sensor_alerts` links (one sanitized by `citation_url_sanitized`)
 
 ---
 

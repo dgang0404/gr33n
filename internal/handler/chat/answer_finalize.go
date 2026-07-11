@@ -6,7 +6,71 @@ import (
 
 	"gr33n-api/internal/farmguardian"
 	"gr33n-api/internal/rag/llm"
+	"gr33n-api/internal/rag/synthesis"
+
+	db "gr33n-api/internal/db"
 )
+
+// citationSummariesFromCitations adapts the response-level citation shape
+// (which carries chunk_id/source_id for the UI) to the compact accuracy-note
+// input shape used by farmguardian.AnswerAccuracyNote.
+func citationSummariesFromCitations(cites []synthesis.Citation) []farmguardian.CitationSummary {
+	if len(cites) == 0 {
+		return nil
+	}
+	out := make([]farmguardian.CitationSummary, 0, len(cites))
+	for _, c := range cites {
+		out = append(out, farmguardian.CitationSummary{
+			Ref:        c.Ref,
+			SourceType: c.SourceType,
+			Excerpt:    c.Excerpt,
+		})
+	}
+	return out
+}
+
+// attachCitationRoutes resolves a click-through UI route (zone, crop-cycle
+// summary, ...) for each citation in place (Phase 152 WS2). Best-effort —
+// citations whose source type has no route mapping, or whose row lookup
+// fails, are left with an empty Route and render as plain text in the UI.
+func attachCitationRoutes(ctx context.Context, q *db.Queries, farmID int64, cites []synthesis.Citation) {
+	if q == nil || farmID <= 0 {
+		return
+	}
+	for i := range cites {
+		if route, ok := farmguardian.ResolveCitationRoute(ctx, q, farmID, cites[i].SourceType, cites[i].SourceID); ok {
+			cites[i].Route = route
+		}
+	}
+}
+
+// applyAnswerAccuracyNote runs the live Phase 148/151/152 accuracy detectors
+// (garbled truncation, citation-number mismatch, invented assumption math,
+// uncited timeline claims, etc.) so bad answers are flagged in the UI and in
+// logs the moment they happen, not only when someone re-runs guardian-eval.
+// This never mutates the answer text — the detectors are heuristic and could
+// false-positive, so we surface a warning rather than silently rewriting or
+// blocking a farmer-facing answer.
+func applyAnswerAccuracyNote(answer string, cites []synthesis.Citation) string {
+	note := farmguardian.AnswerAccuracyNote(answer, citationSummariesFromCitations(cites))
+	if note != "" {
+		slog.Info("guardian: answer_accuracy_flagged", "note", note)
+	}
+	return note
+}
+
+func finalizeGroundedAnswer(answer string, chunks []db.SearchRagNearestNeighborsFilteredRow) string {
+	answer = synthesis.StripOrphanCitationRefs(answer, len(chunks))
+	if injected, ok := farmguardian.InjectAlertCitationRefs(answer, chunks); ok {
+		slog.Info("guardian: alert_citation_refs_injected")
+		answer = injected
+	}
+	if normalized, ok := farmguardian.NormalizeAlertListCitations(answer, chunks); ok {
+		slog.Info("guardian: alert_list_citations_normalized")
+		answer = normalized
+	}
+	return answer
+}
 
 type answerHygiene struct {
 	leak       farmguardian.AnswerLeakTrim

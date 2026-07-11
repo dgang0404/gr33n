@@ -42,3 +42,31 @@ export function trimWarningMessage(trimSummary) {
   const windowBit = window ? ` (${window} token budget)` : ''
   return `Long chat — ${parts.join(', ')} for CPU model${windowBit}. Start a new chat for best results.`
 }
+
+/**
+ * Phase 152 WS1 — farmer-facing text for a live AnswerAccuracyNote flag.
+ * The backend note is a terse `code: detail` string (e.g.
+ * "citation_number_mismatch: ..."); map the code prefix to a short, honest
+ * caveat so operators know to double-check before acting, without exposing
+ * the internal detector name.
+ */
+const ACCURACY_NOTE_MESSAGES = [
+  ['citation_number_mismatch', 'Guardian may have attached the wrong source number to a claim.'],
+  ['truncated_answer_tail', "Guardian's answer looks cut off mid-sentence."],
+  ['uncited_timeline_claim', 'Guardian mentioned a week/day count without citing where it came from.'],
+  ['invented_assumption_math', 'Guardian estimated a number using an assumption, not a farm record.'],
+  ['duplicate_list_item', 'Guardian may have listed the same item twice under different numbers.'],
+  ['garbled_token', "Guardian's answer contains a garbled word — generation may have glitched."],
+  ['missing_numbered_citations', "Guardian listed items without citing its sources."],
+  ['multiple_citations_per_list_item', 'Guardian attached more than one source number to a single item.'],
+  ['ph_ec_unit_confusion', 'Guardian may have mislabeled a pH value with EC units (or vice versa).'],
+]
+
+export function accuracyNoteMessage(accuracyNote) {
+  const note = String(accuracyNote || '').trim()
+  if (!note) return ''
+  const code = note.split(':')[0].trim()
+  const match = ACCURACY_NOTE_MESSAGES.find(([prefix]) => prefix === code)
+  const detail = match ? match[1] : 'Guardian flagged part of this answer for review.'
+  return `${detail} Double-check citations before acting.`
+}

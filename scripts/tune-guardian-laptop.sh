@@ -15,7 +15,7 @@ usage() {
   cat <<'EOF'
 Usage: scripts/tune-guardian-laptop.sh [--apply] [--profile cpu-16gb|gpu-server]
 
-  cpu-16gb (default)  LLM_TIMEOUT_SECONDS>=1500, GUARDIAN_GROUNDED_TIMEOUT_SECONDS>=1800
+  cpu-16gb (default)  LLM_TIMEOUT_SECONDS>=2100, GUARDIAN_GROUNDED_TIMEOUT_SECONDS>=2400, GUARDIAN_EVAL_TIMEOUT_SECONDS>=2700
   gpu-server          LLM_TIMEOUT_SECONDS>=666, LLM_RETRY_MAX_ATTEMPTS=1
 
 Without --apply, prints recommended changes only.
@@ -39,8 +39,9 @@ read_env_val() {
   grep -E "^[[:space:]]*${key}=" "$ENV_FILE" 2>/dev/null | tail -1 | sed "s/^[[:space:]]*${key}=//" | sed 's/^"\(.*\)"$/\1/' | sed "s/^'\(.*\)'$/\1/" || true
 }
 
-MIN_LLM_TIMEOUT=1500
-MIN_GROUNDED_TIMEOUT=1800
+MIN_LLM_TIMEOUT=2100
+MIN_GROUNDED_TIMEOUT=2400
+MIN_EVAL_TIMEOUT=2700
 if [[ "$PROFILE" == "gpu-server" ]]; then
   MIN_LLM_TIMEOUT=666
   MIN_GROUNDED_TIMEOUT=900
@@ -75,7 +76,7 @@ ensure_min GUARDIAN_GROUNDED_TIMEOUT_SECONDS "$MIN_GROUNDED_TIMEOUT"
 ensure_exact LLM_RETRY_MAX_ATTEMPTS 1
 if [[ "$PROFILE" == "cpu-16gb" ]]; then
   ensure_min GUARDIAN_EVAL_WARMUP_TIMEOUT 90
-  ensure_min GUARDIAN_EVAL_TIMEOUT_SECONDS 2100
+  ensure_min GUARDIAN_EVAL_TIMEOUT_SECONDS "$MIN_EVAL_TIMEOUT"
 fi
 
 if [[ ${#CHANGES[@]} -eq 0 ]]; then

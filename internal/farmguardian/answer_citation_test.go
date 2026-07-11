@@ -28,6 +28,29 @@ func TestSanitizeCitationURLs_smokeMorningWalk(t *testing.T) {
 
 const smokeRelativePlanLink = `See [zone cockpit](phase_40_unified_farmer_ux_zone_cockpit.plan.md#tasks) and [bootstrap](local-operator-bootstrap.md#14-confirmed-actions).`
 
+func TestSanitizeCitationURLs_gr33ncoreSensorAlerts(t *testing.T) {
+	t.Parallel()
+	in := `1. [Humidity High](https://gr33ncore.sensor_alerts/unread): reading 72.4% RH.`
+	got, meta := SanitizeCitationURLs(in)
+	if !meta.Sanitized || meta.LinksRewritten != 1 {
+		t.Fatalf("meta=%+v", meta)
+	}
+	if strings.Contains(got, "gr33ncore") || strings.Contains(got, "sensor_alerts") {
+		t.Fatalf("url still present: %q", got)
+	}
+	if !strings.Contains(got, "Humidity High") {
+		t.Fatalf("label lost: %q", got)
+	}
+}
+
+func TestAnswerContainsFakeCitationURL_gr33ncore(t *testing.T) {
+	t.Parallel()
+	in := `[OHN low](https://gr33ncore.sensor_alerts/unread)`
+	if !AnswerContainsFakeCitationURL(in) {
+		t.Fatal("expected gr33ncore link flagged as fake")
+	}
+}
+
 func TestSanitizeCitationURLs_relativePlanLinks(t *testing.T) {
 	t.Parallel()
 	got, meta := SanitizeCitationURLs(smokeRelativePlanLink)

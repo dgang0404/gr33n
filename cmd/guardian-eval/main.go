@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"sort"
 	"strings"
 	"time"
 
@@ -25,6 +26,7 @@ func main() {
 	reportPath := flag.String("report", farmguardian.DefaultEvalReportPath(), "output JSON report path")
 	qaArchive := flag.String("qa-archive", "", "optional full QA run JSON path (default data/guardian_qa_runs/…)")
 	llmBase := flag.String("llama-url", os.Getenv("LLM_BASE_URL"), "Ollama OpenAI base (for model discovery when models=all)")
+	failOnRegression := flag.Bool("fail-on-regression", false, "Phase 153 — exit non-zero if any fixture fails its heuristic (for CI/PR gating)")
 	flag.Parse()
 
 	if *manualFlag {
@@ -91,6 +93,33 @@ func main() {
 	}
 	farmguardian.RefreshEvalCache()
 	fmt.Printf("\nEval report written to %s\n", *reportPath)
+
+	if *failOnRegression {
+		if failed := regressionFailures(rep.Details); len(failed) > 0 {
+			fmt.Printf("\nGuardian eval regression — %d fixture(s) failed their heuristic:\n", len(failed))
+			for _, f := range failed {
+				fmt.Println("  - " + f)
+			}
+			os.Exit(1)
+		}
+	}
+}
+
+// regressionFailures returns a sorted "<model>/<id>: <notes>" line for every
+// fixture that failed its heuristic — the pure logic behind
+// -fail-on-regression, split out so it's unit-testable without a live LLM
+// (Phase 153 WS1: Guardian PR gate).
+func regressionFailures(details map[string][]farmguardian.EvalQuestionScore) []string {
+	var out []string
+	for model, scores := range details {
+		for _, s := range scores {
+			if !s.Passed {
+				out = append(out, fmt.Sprintf("%s/%s: %s", model, s.ID, s.Notes))
+			}
+		}
+	}
+	sort.Strings(out)
+	return out
 }
 
 func qaArchivePath(explicit, suite, model string) string {

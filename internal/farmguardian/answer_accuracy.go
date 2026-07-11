@@ -222,10 +222,116 @@ func ECPHUnitConfusionNote(answer string, cites []CitationSummary) string {
 	return ""
 }
 
-// AnswerAccuracyNote runs all Phase 148 accuracy detectors and returns the
-// first failure reason, or "" when the answer passes all checks.
+// MissingNumberedCitationsNote flags alert-style numbered lists that omit all
+// [n] bracket markers (run #8: markdown links instead of [1]/[2]/[3]).
+func MissingNumberedCitationsNote(answer string) string {
+	if len(claimBracketRE.FindAllString(answer, -1)) > 0 {
+		return ""
+	}
+	items := numberedListItemRE.FindAllStringSubmatch(answer, -1)
+	if len(items) < 2 {
+		return ""
+	}
+	if !looksLikeAlertSummaryAnswer(answer) {
+		return ""
+	}
+	return "missing_numbered_citations"
+}
+
+// truncatedTailRE matches a word fragment glued to trailing digits (and an
+// optional colon) at the very end of an answer — a generation was cut off
+// mid-token, e.g. "...consistent and ade0:" (Phase 152 WS2, live UI run).
+// A short allowlist covers legitimate unit-style words so "2CO2" style
+// chemistry mentions never trip this at the boundary.
+var truncatedTailRE = regexp.MustCompile(`(?i)\b([a-z]{2,}\d{1,2}):?\s*$`)
+
+var truncatedTailAllowlist = map[string]struct{}{
+	"co2": {}, "h2o": {}, "no2": {}, "so2": {}, "n2": {}, "o2": {}, "3d": {}, "24x7": {},
+}
+
+// TruncatedAnswerTailNote flags an answer whose final token looks like a
+// broken mid-word cutoff rather than a completed sentence.
+func TruncatedAnswerTailNote(answer string) string {
+	trimmed := strings.TrimSpace(answer)
+	if trimmed == "" {
+		return ""
+	}
+	m := truncatedTailRE.FindStringSubmatch(trimmed)
+	if m == nil {
+		return ""
+	}
+	if _, ok := truncatedTailAllowlist[strings.ToLower(m[1])]; ok {
+		return ""
+	}
+	return "truncated_answer_tail: " + m[0]
+}
+
+var weekOrDayClaimRE = regexp.MustCompile(`(?i)\b(week|day)\s+\d+\b`)
+
+// UncitedTimelineClaimNote flags a "Week N" / "Day N" progress claim that has
+// no [n] citation nearby. Crop-cycle chunks never carry a week/day-of-cycle
+// field themselves (only started_at/stage), so any such claim can only be
+// grounded by citing the specific task/note chunk it came from — otherwise
+// it's likely borrowed from an unrelated (e.g. already-completed) chunk.
+func UncitedTimelineClaimNote(answer string) string {
+	loc := weekOrDayClaimRE.FindStringIndex(answer)
+	if loc == nil {
+		return ""
+	}
+	winStart := loc[0] - 60
+	if winStart < 0 {
+		winStart = 0
+	}
+	winEnd := loc[1] + 60
+	if winEnd > len(answer) {
+		winEnd = len(answer)
+	}
+	if claimBracketRE.MatchString(answer[winStart:winEnd]) {
+		return ""
+	}
+	return "uncited_timeline_claim: " + strings.TrimSpace(answer[loc[0]:loc[1]])
+}
+
+var assumptionHedgeRE = regexp.MustCompile(`(?i)\b(assuming|if we assume|let'?s assume|for the sake of (?:estimate|argument)|hypothetically|for estimation purposes)\b`)
+
+// InventedAssumptionMathNote flags a numeric claim justified by a hedge
+// phrase like "assuming an average yield density" — the model is disclosing,
+// in its own words, that a number was derived rather than sourced. The
+// system prompt forbids inventing facts, so any assumption-qualified number
+// is itself the violation.
+func InventedAssumptionMathNote(answer string) string {
+	loc := assumptionHedgeRE.FindStringIndex(answer)
+	if loc == nil {
+		return ""
+	}
+	winStart := loc[0] - 80
+	if winStart < 0 {
+		winStart = 0
+	}
+	winEnd := loc[1] + 80
+	if winEnd > len(answer) {
+		winEnd = len(answer)
+	}
+	window := answer[winStart:winEnd]
+	if !regexp.MustCompile(`\d`).MatchString(window) {
+		return ""
+	}
+	return "invented_assumption_math: " + strings.TrimSpace(answer[loc[0]:loc[1]])
+}
+
+// AnswerAccuracyNote runs all Phase 148/151/152 accuracy detectors and
+// returns the first failure reason, or "" when the answer passes all checks.
 func AnswerAccuracyNote(answer string, cites []CitationSummary) string {
+	if note := MissingNumberedCitationsNote(answer); note != "" {
+		return note
+	}
+	if note := MultipleCitationsPerListItemNote(answer); note != "" {
+		return note
+	}
 	if note := GarbledTokenNote(answer); note != "" {
+		return note
+	}
+	if note := TruncatedAnswerTailNote(answer); note != "" {
 		return note
 	}
 	if note := DuplicateListItemNote(answer); note != "" {
@@ -236,6 +342,14 @@ func AnswerAccuracyNote(answer string, cites []CitationSummary) string {
 	}
 	if note := ECPHUnitConfusionNote(answer, cites); note != "" {
 		return note
+	}
+	if note := InventedAssumptionMathNote(answer); note != "" {
+		return note
+	}
+	if len(cites) > 0 {
+		if note := UncitedTimelineClaimNote(answer); note != "" {
+			return note
+		}
 	}
 	return ""
 }

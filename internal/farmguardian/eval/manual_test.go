@@ -55,9 +55,25 @@ func TestScrapeLogEvidence_tool(t *testing.T) {
 func TestScore_smokeUnreadAlerts(t *testing.T) {
 	pass := Score(ScoreInput{
 		Question: Question{ID: "smoke-unread-alerts"},
-		Answer:   "You have one unread seed alert about Veg Tent EC — review and acknowledge when ready.",
+		Answer:   "1. Veg Tent EC alert [1] — review and acknowledge.\n2. Humidity high [2] — check dehumidifier.",
+		CitationCount: 2,
 	})
 	if !pass.Passed {
 		t.Fatalf("expected pass: %s", pass.Notes)
+	}
+}
+
+func TestScore_smokeUnreadAlerts_run8UncitedFails(t *testing.T) {
+	t.Parallel()
+	res := Score(ScoreInput{
+		Question: Question{ID: "smoke-unread-alerts", Category: "farm_state"},
+		Answer: `You have three unread alerts on your farm:
+1. Humidity high in Flower Room — 72.4% RH.
+2. OHN batch below minimum — 0.35 L remaining.
+3. Light schedule change in 48 hours.`,
+		CitationCount: 0,
+	})
+	if res.Passed {
+		t.Fatalf("run #8-style uncited list should fail: %+v", res)
 	}
 }

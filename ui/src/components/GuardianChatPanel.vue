@@ -187,9 +187,23 @@
               class="text-[11px] rounded p-2 border"
               :class="citationChipClass(c.source_type)"
             >
-              <span class="text-gr33n-500 font-mono">[{{ c.ref }}]</span>
-              <span class="ml-1 font-medium">{{ citationSourceLabel(c.source_type) }}</span>
-              <span class="text-zinc-500"> · #{{ c.source_id }}</span>
+              <router-link
+                v-if="c.route"
+                :to="c.route"
+                v-nav-hint="c.route"
+                class="hover:underline"
+                data-test="chat-citation-link"
+                :title="`Open ${citationSourceLabel(c.source_type)} #${c.source_id}`"
+              >
+                <span class="text-gr33n-500 font-mono">[{{ c.ref }}]</span>
+                <span class="ml-1 font-medium">{{ citationSourceLabel(c.source_type) }}</span>
+                <span class="text-zinc-500"> · #{{ c.source_id }} ↗</span>
+              </router-link>
+              <template v-else>
+                <span class="text-gr33n-500 font-mono">[{{ c.ref }}]</span>
+                <span class="ml-1 font-medium">{{ citationSourceLabel(c.source_type) }}</span>
+                <span class="text-zinc-500"> · #{{ c.source_id }}</span>
+              </template>
               <p class="mt-1 text-zinc-500">{{ c.excerpt }}</p>
             </li>
           </ul>
@@ -221,6 +235,13 @@
             data-test="chat-zero-chunk-banner"
           >
             No indexed docs matched — numbers may be unreliable unless from crop profiles. Run field-guide ingest or assign crops in Plants.
+          </p>
+          <p
+            v-if="accuracyNoteMessage(t.accuracy_note)"
+            class="text-[10px] text-amber-300/90 px-3 rounded border border-amber-900/50 bg-amber-950/30 py-2"
+            data-test="chat-accuracy-banner"
+          >
+            ⚠ {{ accuracyNoteMessage(t.accuracy_note) }}
           </p>
           <GuardianProcedureCard v-if="t.procedure" :procedure="t.procedure" class="pl-6" />
           <div v-if="t.proposals?.length" class="pl-6 space-y-2" data-test="chat-turn-proposals">
@@ -615,7 +636,7 @@ import { computeFirstRunChecklist, isFirstRunIncomplete } from '../lib/firstRunC
 import { buildMorningWalkthroughStarters, buildSetupStarters, buildOfflineProcedureStarters } from '../lib/guardianStarters.js'
 import { deriveFollowUps } from '../lib/guardianFollowUps.js'
 import { turnContextLabel, zeroChunkWarning } from '../lib/guardianChatHonesty.js'
-import { citationChipClass, citationSourceLabel, trimWarningMessage } from '../lib/guardianCitationLabels.js'
+import { citationChipClass, citationSourceLabel, trimWarningMessage, accuracyNoteMessage } from '../lib/guardianCitationLabels.js'
 import { useFarmOperate } from '../composables/useFarmOperate'
 import { useFarmContextStore } from '../stores/farmContext'
 import { useFarmStore } from '../stores/farm'
@@ -1295,6 +1316,7 @@ async function send() {
     attachment_ids: sentIds,
     vision_used: !!finalEvent.vision_used,
     trim_summary: finalEvent.trim_summary ?? null,
+    accuracy_note: finalEvent.accuracy_note || '',
   })
   message.value = ''
   selectedAttachmentIds.value = []

@@ -1136,6 +1136,44 @@ Prevention, not just detection: [`alert_chunk_order.go`](../internal/farmguardia
 
 `docs/local-operator-bootstrap.md` is correct developer-facing documentation but is also RAG-indexed as a `platform_doc` — its literal HTTP verb+path strings (e.g. `` `PATCH /alerts/{id}/acknowledge` ``) can leak mid-sentence into farmer-facing answers. [`answer_leak.go`](../internal/farmguardian/answer_leak.go) `RedactDevAPIJargon` strips these at the answer boundary (any doc, not just this one) as part of `sanitizeAssistantAnswer` finalize; `AnswerContainsDevAPIJargon` is a drift-scorer backstop.
 
+### 8.15 Alert citation enforcement (Phase 151)
+
+Smoke run #8 listed alerts in the right severity order but used markdown links instead of `[n]` markers (`citations=0`), so Phase 148/149 could not verify alignment live. Phase 151 closes the loop:
+
+| Layer | Module | Behavior |
+|-------|--------|----------|
+| Prompt | [`guardian.go`](../internal/rag/synthesis/guardian.go) | `alertCitationDiscipline` — LIVE FARM STATE is context only; each list item must end with `[n]`; no markdown links |
+| Retrieval | [`alert_summary.go`](../internal/farmguardian/alert_summary.go) | `FilterChunksForAlertSummary` — summarize-alerts questions get **alert-only** numbered sources when 2+ alerts retrieved |
+| Post-gen | [`alert_cite_inject.go`](../internal/farmguardian/alert_cite_inject.go) | `InjectAlertCitationRefs` appends `[1]`…`[n]` to numbered list lines when the model omits markers |
+| Eval | [`score.go`](../internal/farmguardian/eval/score.go), [`answer_accuracy.go`](../internal/farmguardian/answer_accuracy.go) | `smoke-unread-alerts` requires cites; `MissingNumberedCitationsNote`; `gr33ncore` fake URLs sanitized |
+
+### 8.16 Live accuracy guardrails (Phase 152)
+
+Phase 148/151's detectors (`AnswerAccuracyNote`) only ran inside `guardian-eval`'s offline smoke harness — never on real chat turns. A live Farm Counsel run showed why that mattered: a truncated mid-word cutoff, an uncited "Week 9" claim borrowed from an unrelated *completed* task chunk, and a per-plant dosing number justified by "if we assume an average yield density" all shipped to the operator unflagged.
+
+| Layer | Module | Behavior |
+|-------|--------|----------|
+| Wiring | [`answer_finalize.go`](../internal/handler/chat/answer_finalize.go) `applyAnswerAccuracyNote` | Runs `AnswerAccuracyNote` on every chat turn (streaming and non-streaming), right after citations are built. Non-mutating — flags, never rewrites or blocks. |
+| New detectors | [`answer_accuracy.go`](../internal/farmguardian/answer_accuracy.go) | `TruncatedAnswerTailNote` (mid-word cutoff like `ade0:`), `UncitedTimelineClaimNote` (`Week N`/`Day N` with no nearby `[n]`), `InventedAssumptionMathNote` (a number justified by "assuming"/"if we assume" instead of a citation) |
+| Response | [`handler.go`](../internal/handler/chat/handler.go) `postResponse.AccuracyNote` | Top-level `accuracy_note` field — always present when non-empty, **not** gated behind `AUTH_MODE=dev/auth_test` like `Debug`, so it reaches real farm operators |
+| UI | [`guardianCitationLabels.js`](../ui/src/lib/guardianCitationLabels.js) `accuracyNoteMessage`, `GuardianChatPanel.vue` | Maps the terse backend code to a farmer-facing caveat banner (`data-test="chat-accuracy-banner"`), same amber-banner treatment as the existing zero-chunk/trim-warning banners |
+
+**Known limitation:** `accuracy_note` isn't persisted to `conversation_turns` yet, so it won't reappear when reloading an old session (same scope limitation as `trim_summary` today).
+
+**Citation deep links (WS2):** [`citation_route.go`](../internal/farmguardian/citation_route.go) `ResolveCitationRoute` mirrors `ContextRef`'s page→Guardian mapping in the opposite direction — given a citation's `source_type` + `source_id`, it resolves a UI route (`/crop-cycles/{id}/summary` for `crop_cycle`, `/zones/{id}?tab=water` for `fertigation_program`, `/zones/{id}` for `task`), farm-scope-checked against the row it looks up. `attachCitationRoutes` wires it into both chat handlers right after citations are built; `GuardianChatPanel.vue` renders the chip as a `v-nav-hint`-wired `<router-link>` (the same sidebar-wiggle affordance every other in-app cross-link uses) when a route resolves, plain text otherwise. `schedule`, `alert_notification`, `field_guide`, and `platform_doc` sources are deliberately left unresolved — see WS2b in the plan doc for why each needs its own join/scoping decision.
+
+### 8.17 Guardian PR smoke gate (Phase 153)
+
+Every `guardian-eval` run this whole 143–152 arc exited 0 whether its fixtures passed or failed — the smoke report was an artifact a human had to read, never a gate. Phase 153 adds:
+
+| Layer | Module | Behavior |
+|-------|--------|----------|
+| Exit code | [`cmd/guardian-eval/main.go`](../cmd/guardian-eval/main.go) `-fail-on-regression` | After the report/QA archive is still saved, `regressionFailures` scans every model's scored fixtures and `os.Exit(1)` if any `Passed == false`, printing `<model>/<id>: <notes>` for each |
+| Local command | `Makefile` `guardian-qa-pr-check` | `guardian-qa-smoke` + `-fail-on-regression` — the command to run before opening a Guardian PR |
+| CI | [`ci.yml`](../.github/workflows/ci.yml) `guardian-qa-pr` job | Opt-in only — fires when a PR has the `guardian-smoke` label or via manual `workflow_dispatch`; runs on a `[self-hosted, ollama]` runner so it never blocks a default hosted-runner PR (Phase 131's non-goal of a mandatory LLM PR gate stays intact) |
+
+See [`plans/phase_153_guardian_pr_smoke_gate.plan.md`](plans/phase_153_guardian_pr_smoke_gate.plan.md) — the CI job itself is unverified end-to-end (no self-hosted `ollama` runner registered on this repo), same caveat as the pre-existing `ollama-smoke`/`hardware-smoke` jobs.
+
 ---
 
 ## 9. Why this design (vs alternatives)

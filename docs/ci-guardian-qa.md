@@ -12,13 +12,23 @@
 
 | Target | When | Output |
 |--------|------|--------|
-| `make guardian-qa-smoke MODEL=phi3:mini FARM_ID=1` | After Guardian changes; optional nightly/weekly | `data/guardian_qa_runs/<timestamp>_smoke_phi3-mini.json` |
+| `make guardian-qa-smoke MODEL=phi3:mini FARM_ID=1` | After Guardian changes; optional nightly/weekly | `data/guardian_qa_runs/<timestamp>_smoke_phi3-mini.json` — always exits 0 (artifact only) |
+| `make guardian-qa-pr-check MODEL=phi3:mini FARM_ID=1` | Before/during a PR that touches Guardian (Phase 153) | Same archive, but **exits non-zero if any fixture fails its heuristic** — run this locally before opening a Guardian PR |
 | `make guardian-qa-regression MODEL=phi3:mini` | Pre-release (slow) | Same directory, regression suite |
 | `make guardian-qa-manual` | Human UI parity | Prints checklist from same fixtures |
 
 Set `GUARDIAN_EVAL_TOKEN` (JWT from dev login) and optionally `GUARDIAN_EVAL_LOG=/tmp/gr33n-api.log` for log correlation.
 
 ---
+
+## PR gate (Phase 153 — opt-in, shipped in `ci.yml`)
+
+`guardian-qa-pr` in [`.github/workflows/ci.yml`](../.github/workflows/ci.yml) runs `make guardian-qa-pr-check` (smoke suite + `-fail-on-regression`) on a self-hosted `[self-hosted, ollama]` runner. It is **not a required check and does not run on every PR** — it only fires when:
+
+- the `guardian-smoke` label is added to a PR, or
+- it's triggered manually via **Actions → CI → Run workflow**.
+
+This keeps the Phase 131 non-goal intact (below) while making "smoke-test this PR" a real, one-click action once a self-hosted Ollama runner is registered. `cmd/guardian-eval -fail-on-regression` is what turns a fixture failure into an actual red check — see [`plans/phase_153_guardian_pr_smoke_gate.plan.md`](plans/phase_153_guardian_pr_smoke_gate.plan.md).
 
 ## Example workflow (documented pattern — not enabled in default repo CI)
 
@@ -94,6 +104,7 @@ Phase 131 deferred full LLM-as-judge — **Phase 146 supersedes that for GPU pro
 
 ## Non-goals
 
-- Mandatory PR gate on every push (too slow, LLM-flaky on shared CI)
+- Mandatory PR gate on every push (too slow, LLM-flaky on shared CI) — Phase 153's `guardian-qa-pr` is opt-in (label/`workflow_dispatch`) precisely to avoid this
 - GitHub-hosted runner without Ollama
 - Automated LLM grading of answer quality (deferred to a future phase when GPU CI is stable)
+- Historical-baseline regression tracking (Phase 153 is pass/fail per fixture, not "did this get worse than last week")

@@ -115,9 +115,12 @@ func Score(in ScoreInput) ScoreResult {
 			res.Notes = "expected morning walkthrough answer with farm specifics"
 		}
 	case in.Question.ID == "smoke-unread-alerts":
-		res.Passed = len(a) > 40 && (strings.Contains(a, "alert") || strings.Contains(a, "seed"))
-		if !res.Passed {
-			res.Notes = "expected alert summary mentioning alerts"
+		hasFarmContent := strings.Contains(a, "alert") || strings.Contains(a, "humidity") ||
+			strings.Contains(a, "ohn") || strings.Contains(a, "photoperiod") || strings.Contains(a, "seed")
+		res.Passed = len(a) > 40 && hasFarmContent &&
+			(in.CitationCount > 0 || citationRefPresent(in.Answer))
+		if !res.Passed && res.Notes == "" {
+			res.Notes = "expected alert summary with numbered citations [1]/[2] or citation_count > 0"
 		}
 	case in.Question.ID == "smoke-ec-ph":
 		hasPH := strings.Contains(a, "ph")

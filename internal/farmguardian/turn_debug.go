@@ -38,6 +38,7 @@ type TurnDebug struct {
 	CritiqueEnabled            bool           `json:"critique_enabled,omitempty"`
 	CritiquePass               *bool          `json:"critique_pass,omitempty"`
 	CritiqueReason             string         `json:"critique_reason,omitempty"`
+	AccuracyNote               string         `json:"accuracy_note,omitempty"`
 }
 
 // CountRAGChunksBySource groups retrieved chunks by source_type for the turn inspector.

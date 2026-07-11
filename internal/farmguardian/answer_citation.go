@@ -64,6 +64,9 @@ func isHallucinatedCitationURL(url string) bool {
 	if strings.Contains(u, "gr33n.com") || strings.Contains(u, "gr33n-docs") {
 		return true
 	}
+	if strings.Contains(u, "gr33ncore") || strings.Contains(u, "sensor_alerts") {
+		return true
+	}
 	return isRelativeMarkdownLink(u)
 }
 
