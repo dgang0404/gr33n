@@ -125,6 +125,90 @@ func uncitedTailNote(answer, corpus string) string {
 	return ""
 }
 
+// AnswerUncitedTailTrim records tail removal when grounded answers drift off citations.
+type AnswerUncitedTailTrim struct {
+	Trimmed      bool `json:"uncited_tail_trimmed,omitempty"`
+	CharsRemoved int  `json:"uncited_tail_chars_removed,omitempty"`
+}
+
+// EcphCropDriftNote flags off-topic fruiting crops appended to leafy-greens EC/pH answers.
+func EcphCropDriftNote(prompt, answer string) string {
+	p := strings.ToLower(strings.TrimSpace(prompt))
+	if !leafyGreensECPHPrompt(p) {
+		return ""
+	}
+	_, tail := SplitAnswerOpeningTail(answer)
+	check := strings.ToLower(answer)
+	if tail != "" {
+		check = strings.ToLower(tail)
+	}
+	for _, crop := range []string{
+		"blueberry", "strawberry", "cannabis", "tomato", "cucumber", "pepper", "melon",
+	} {
+		if strings.Contains(check, crop) && !strings.Contains(p, crop) {
+			return "topic_drift: off-topic crop in leafy greens EC/pH answer"
+		}
+	}
+	return ""
+}
+
+func leafyGreensECPHPrompt(p string) bool {
+	for _, m := range []string{"leafy green", "lettuce", "kale", "spinach"} {
+		if strings.Contains(p, m) {
+			return true
+		}
+	}
+	return strings.Contains(p, "ec") && strings.Contains(p, "ph")
+}
+
+func shouldTrimUncitedTail(prompt, answer, corpus string) bool {
+	if uncitedTailNote(answer, corpus) != "" {
+		return true
+	}
+	q := strings.ToLower(strings.TrimSpace(prompt))
+	if agronomyQuestion(q) && EcphCropDriftNote(prompt, answer) != "" {
+		return true
+	}
+	return false
+}
+
+// TrimUncitedTail removes paragraphs that drift off cited excerpts or introduce
+// off-topic crops into leafy-greens EC/pH answers (Phase 161).
+func TrimUncitedTail(answer, prompt string, cites []CitationSummary) (string, AnswerUncitedTailTrim) {
+	orig := answer
+	if strings.TrimSpace(orig) == "" || len(cites) == 0 {
+		return orig, AnswerUncitedTailTrim{}
+	}
+	corpus := citedCorpusLower(cites)
+	if !shouldTrimUncitedTail(prompt, orig, corpus) {
+		return orig, AnswerUncitedTailTrim{}
+	}
+	trimmed := trimAnswerBeforeDrift(orig, prompt, corpus)
+	if trimmed == orig || strings.TrimSpace(trimmed) == "" {
+		return orig, AnswerUncitedTailTrim{}
+	}
+	return trimmed, AnswerUncitedTailTrim{
+		Trimmed:      true,
+		CharsRemoved: len(orig) - len(trimmed),
+	}
+}
+
+func trimAnswerBeforeDrift(answer, prompt, corpus string) string {
+	opening, tail := SplitAnswerOpeningTail(answer)
+	if tail != "" && opening != "" {
+		return opening
+	}
+	paras := strings.Split(answer, "\n\n")
+	for len(paras) > 1 {
+		candidate := strings.Join(paras[:len(paras)-1], "\n\n")
+		if !shouldTrimUncitedTail(prompt, candidate, corpus) {
+			return strings.TrimSpace(candidate)
+		}
+		paras = paras[:len(paras)-1]
+	}
+	return answer
+}
+
 func significantTailTerms(tail string) []string {
 	seen := make(map[string]struct{})
 	var out []string

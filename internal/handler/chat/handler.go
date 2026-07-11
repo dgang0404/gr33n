@@ -504,6 +504,7 @@ func (h *Handler) PostV1(w http.ResponseWriter, r *http.Request) {
 		answer = finalizeGroundedAnswer(answer, chunks)
 	}
 	answer, hygiene := sanitizeAssistantAnswer(answer, question, grounded, effectiveWindow)
+	answer = applyUncitedTailTrim(answer, question, grounded, chunks, &hygiene)
 
 	resp := postResponse{
 		Answer:           answer,
@@ -660,6 +661,7 @@ func (h *Handler) streamResponse(
 		answer = finalizeGroundedAnswer(answer, chunks)
 	}
 	answer, hygiene := sanitizeAssistantAnswer(answer, question, grounded, debugIn.effectiveWindow)
+	answer = applyUncitedTailTrim(answer, question, grounded, chunks, &hygiene)
 	done := postResponse{
 		Answer:           answer,
 		LLMModel:         chatClient.ModelLabel(),

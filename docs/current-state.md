@@ -139,6 +139,6 @@ Accessibility: skip link, Guardian drawer focus trap, zone tab semantics — [`a
 
 ## Phase history
 
-- **Shipped arcs:** 40–67 farmer UX · 68–81 SPA · 82–110 crop intelligence · 111–122 Guardian/Pi · 129–153 Guardian QA · **154–160** infra/trust + citation + a11y residuals
-- **Active / planned:** (none in 159–160 arc — see phase-14 for new work)
+- **Shipped arcs:** 40–67 farmer UX · 68–81 SPA · 82–110 crop intelligence · 111–122 Guardian/Pi · 129–153 Guardian QA · **154–161** infra/trust + citation + a11y + ec-ph trim
+- **Active / planned:** Insert Commons (opt-in); full `smoke-ec-ph` re-run on CPU (operator)
 - **Archive:** [`plans/archive/`](plans/archive/) — closed plans (e.g. 88–92)

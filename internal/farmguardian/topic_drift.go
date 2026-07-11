@@ -38,7 +38,7 @@ func SmokeTopicDriftNote(in SmokeTopicDriftInput) string {
 		}
 	}
 	if shouldCheckECPHKeywordDrift(in.QuestionID, in.Prompt) {
-		if note := ecphKeywordDriftNote(in.Answer); note != "" {
+		if note := ecphKeywordDriftNote(in.Prompt, in.Answer); note != "" {
 			return note
 		}
 	}
@@ -89,7 +89,7 @@ func shouldCheckECPHKeywordDrift(questionID, prompt string) bool {
 	return AgronomyQueryIntent(prompt)
 }
 
-func ecphKeywordDriftNote(answer string) string {
+func ecphKeywordDriftNote(prompt, answer string) string {
 	a := strings.ToLower(answer)
 	for _, term := range []string{
 		"endocrine-disruptor", "endocrine disruptor", "endocrine_disruptor",
@@ -101,6 +101,9 @@ func ecphKeywordDriftNote(answer string) string {
 	}
 	if strings.Contains(a, "endocrine") && !strings.Contains(a, "leafy green") {
 		return "topic_drift: off-topic from leafy greens EC/pH"
+	}
+	if note := EcphCropDriftNote(prompt, answer); note != "" {
+		return note
 	}
 	return ""
 }

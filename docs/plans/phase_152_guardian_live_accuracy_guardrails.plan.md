@@ -31,10 +31,6 @@ isProject: false
 
 **Status:** WS1 + WS2 + WS2b shipped · **Depends on:** [148](phase_148_guardian_citation_claim_accuracy.plan.md) · [151](phase_151_guardian_alert_citation_enforcement.plan.md) · [159](phase_159_guardian_citation_completeness.plan.md)
 
----
-
-## Why this phase
-
 A live "Flower run (12/12)" Farm Counsel answer (`phi3:mini`, grounded, 5 chunks) contained four real defects in one turn:
 
 1. **Truncated generation** — the answer stopped mid-word: `"...receiving consistent and ade0:"`.
@@ -107,7 +103,7 @@ Left unresolved on purpose — each needs its own join/scoping decision rather t
 - [x] UI shows a farmer-facing caveat banner, not the raw detector code.
 - [x] Citation chips link to their source zone/crop-cycle for `crop_cycle`, `fertigation_program`, and `task` sources.
 - [x] Cross-farm and zone-less lookups fail closed (no route) rather than guessing.
-- [ ] `schedule`, `alert_notification`, `field_guide`, `platform_doc` routes (WS2b — not started, see reasons above).
+- [x] `schedule`, `alert_notification`, `field_guide`, `platform_doc` routes (WS2b — shipped Phase 159).
 
 ## Non-goals
 

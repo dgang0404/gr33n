@@ -79,6 +79,7 @@ type answerHygiene struct {
 	sourceDump farmguardian.AnswerSourceDumpTrim
 	devJargon  farmguardian.AnswerDevJargonRedaction
 	length     farmguardian.AnswerLengthTrim
+	uncited    farmguardian.AnswerUncitedTailTrim
 }
 
 func sanitizeAssistantAnswer(answer, question string, grounded bool, effectiveContextWindow int) (string, answerHygiene) {
@@ -129,6 +130,53 @@ func sanitizeAssistantAnswer(answer, question string, grounded bool, effectiveCo
 	return answer, h
 }
 
+func citationSummariesFromAnswerChunks(answer string, chunks []db.SearchRagNearestNeighborsFilteredRow) []farmguardian.CitationSummary {
+	refs := synthesis.RefNumbersInAnswer(answer)
+	if len(refs) == 0 || len(chunks) == 0 {
+		return nil
+	}
+	out := make([]farmguardian.CitationSummary, 0, len(refs))
+	for _, ref := range refs {
+		if ref < 1 || ref > len(chunks) {
+			continue
+		}
+		ch := chunks[ref-1]
+		ex := ch.ContentText
+		if len(ex) > 400 {
+			ex = ex[:400] + "…"
+		}
+		out = append(out, farmguardian.CitationSummary{
+			Ref:        ref,
+			SourceType: ch.SourceType,
+			Excerpt:    ex,
+		})
+	}
+	return out
+}
+
+func trimUncitedTailAnswer(answer, question string, chunks []db.SearchRagNearestNeighborsFilteredRow) (string, farmguardian.AnswerUncitedTailTrim) {
+	cites := citationSummariesFromAnswerChunks(answer, chunks)
+	if len(cites) == 0 {
+		return answer, farmguardian.AnswerUncitedTailTrim{}
+	}
+	trimmed, meta := farmguardian.TrimUncitedTail(answer, question, cites)
+	if meta.Trimmed {
+		slog.Info("guardian: uncited_tail_trimmed", "chars_removed", meta.CharsRemoved)
+	}
+	return trimmed, meta
+}
+
+func applyUncitedTailTrim(answer, question string, grounded bool, chunks []db.SearchRagNearestNeighborsFilteredRow, h *answerHygiene) string {
+	if !grounded || len(chunks) == 0 {
+		return answer
+	}
+	trimmed, meta := trimUncitedTailAnswer(answer, question, chunks)
+	if meta.Trimmed {
+		h.uncited = meta
+	}
+	return trimmed
+}
+
 func applyAnswerHygieneDebug(dbg *farmguardian.TurnDebug, h answerHygiene) {
 	if dbg == nil {
 		return
@@ -157,6 +205,10 @@ func applyAnswerHygieneDebug(dbg *farmguardian.TurnDebug, h answerHygiene) {
 		dbg.AnswerLengthTrimmed = true
 		dbg.AnswerLengthCharsRemoved = h.length.CharsRemoved
 		dbg.AnswerLengthMax = h.length.MaxChars
+	}
+	if h.uncited.Trimmed {
+		dbg.UncitedTailTrimmed = true
+		dbg.UncitedTailCharsRemoved = h.uncited.CharsRemoved
 	}
 }
 

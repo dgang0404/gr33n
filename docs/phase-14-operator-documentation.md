@@ -20,11 +20,12 @@ This page is the **Phase 14** counterpart to [`phase-13-operator-documentation.m
 
 | Phase | Status | Plan |
 |-------|--------|------|
-| **115** | Planned | [`phase_115_schema_utilization.plan.md`](plans/phase_115_schema_utilization.plan.md) |
+| **115** | Shipped | [`phase_115_schema_utilization.plan.md`](plans/phase_115_schema_utilization.plan.md) |
 | **157** | Shipped | [`phase_157_docs_consolidation.plan.md`](plans/phase_157_docs_consolidation.plan.md) — `current-state.md`, plans archive |
 | **158** | Shipped | [`phase_158_accessibility_pass.plan.md`](plans/phase_158_accessibility_pass.plan.md) — skip link, Guardian a11y, zone tabs |
 | **159** | Shipped | [`phase_159_guardian_citation_completeness.plan.md`](plans/phase_159_guardian_citation_completeness.plan.md) — citation WS2b + accuracy_note persist |
 | **160** | Shipped | [`phase_160_a11y_residuals.plan.md`](plans/phase_160_a11y_residuals.plan.md) — lighting modal, mobile drawer trap |
+| **161** | Shipped | [`phase_161_guardian_ecph_smoke_closure.plan.md`](plans/phase_161_guardian_ecph_smoke_closure.plan.md) — ec-ph tail trim + crop drift |
 
 ## Shipped arcs (hub links)
 
@@ -36,6 +37,7 @@ This page is the **Phase 14** counterpart to [`phase-13-operator-documentation.m
 | Guardian 111–153 | [`phase-129-139-closure.md`](plans/phase-129-139-closure.md) · [`guardian-qa-smoke-report-20260707.md`](guardian-qa-smoke-report-20260707.md) |
 | Infra & trust 154–158 | [`phase_154_158_infra_trust_gaps_backlog.plan.md`](plans/phase_154_158_infra_trust_gaps_backlog.plan.md) — 154–158 shipped |
 | Post-158 follow-through 159–160 | [`phase_159_160_post_158_gaps_backlog.plan.md`](plans/phase_159_160_post_158_gaps_backlog.plan.md) — Guardian citations + a11y residuals |
+| Guardian ec-ph smoke 161 | [`phase_161_guardian_ecph_smoke_closure.plan.md`](plans/phase_161_guardian_ecph_smoke_closure.plan.md) — tail trim + crop drift |
 
 ## Done in Phase 14 (reference)
 
