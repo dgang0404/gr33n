@@ -11,7 +11,7 @@ todos:
     status: completed
   - id: phase-160-a11y-residuals
     content: "Phase 160 — a11y residuals + advisory axe smoke"
-    status: pending
+    status: completed
 isProject: false
 ---
 
@@ -24,7 +24,7 @@ isProject: false
 | Phase | Status | Plan | Priority |
 |-------|--------|------|----------|
 | **159** | ✅ Shipped | [`phase_159_guardian_citation_completeness.plan.md`](phase_159_guardian_citation_completeness.plan.md) | **P0** — completes Guardian trust loop |
-| **160** | 📋 Planned | [`phase_160_a11y_residuals.plan.md`](phase_160_a11y_residuals.plan.md) | **P1** — field UX polish |
+| **160** | ✅ Shipped | [`phase_160_a11y_residuals.plan.md`](phase_160_a11y_residuals.plan.md) | **P1** — field UX polish |
 
 **Suggested build order:** 159 → 160.
 

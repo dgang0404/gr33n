@@ -53,10 +53,21 @@
           leave-to-class="-translate-x-full"
           appear
         >
-          <aside class="w-64 bg-gray-900 border-r border-gray-800 flex flex-col overflow-y-auto">
+          <aside
+            ref="mobileDrawerRef"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Navigation menu"
+            class="w-64 bg-gray-900 border-r border-gray-800 flex flex-col overflow-y-auto"
+          >
             <div class="px-4 py-4 flex items-center justify-between border-b border-gray-800">
               <span class="text-gr33n-400 text-2xl font-bold tracking-tight">gr33n</span>
-              <button @click="drawerOpen = false" class="p-1 text-gray-400 hover:text-white">
+              <button
+                type="button"
+                class="p-1 text-gray-400 hover:text-white"
+                aria-label="Close navigation menu"
+                @click="drawerOpen = false"
+              >
                 <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
                 </svg>
@@ -84,7 +95,7 @@
             </nav>
           </aside>
         </Transition>
-        <div class="flex-1 bg-black/60" @click="drawerOpen = false" />
+        <div class="flex-1 bg-black/60" aria-hidden="true" @click="drawerOpen = false" />
       </div>
     </Transition>
 
@@ -105,6 +116,7 @@ import { useFarmContextStore } from './stores/farmContext'
 import { useGuardianPanelStore } from './stores/guardianPanel'
 import { useAuthStore } from './stores/auth'
 import { usePush } from './composables/usePush'
+import { useDialogFocusTrap } from './composables/useDialogFocusTrap'
 import { onMounted, onUnmounted, ref, watch, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { buildNavGroups, mobileBottomNav } from './lib/navGroups.js'
@@ -118,8 +130,13 @@ const push = usePush()
 let evtSource = null
 
 const drawerOpen = ref(false)
+const mobileDrawerRef = ref(null)
 const isMobile = ref(false)
 const route = useRoute()
+
+useDialogFocusTrap(drawerOpen, mobileDrawerRef, {
+  onEscape: () => { drawerOpen.value = false },
+})
 
 function isMobileNavCurrent(to) {
   if (to === '/') return route.path === '/' || route.path === '/today'

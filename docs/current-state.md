@@ -132,7 +132,6 @@ Accessibility: skip link, Guardian drawer focus trap, zone tab semantics — [`a
 
 | Item | Notes |
 |------|--------|
-| **Phase 160** a11y residuals | Lighting modal, mobile drawer trap — [`phase_160_a11y_residuals.plan.md`](plans/phase_160_a11y_residuals.plan.md) |
 | **Insert Commons** | Opt-in federation; not required for single-farm LAN |
 | **Hosted-only** | Not required — but `LLM_BASE_URL` supports remote OpenAI-compatible APIs |
 
@@ -140,6 +139,6 @@ Accessibility: skip link, Guardian drawer focus trap, zone tab semantics — [`a
 
 ## Phase history
 
-- **Shipped arcs:** 40–67 farmer UX · 68–81 SPA · 82–110 crop intelligence · 111–122 Guardian/Pi · 129–153 Guardian QA · **154–159** infra/trust + citation completeness
-- **Active / planned:** [160 a11y residuals](plans/phase_160_a11y_residuals.plan.md)
+- **Shipped arcs:** 40–67 farmer UX · 68–81 SPA · 82–110 crop intelligence · 111–122 Guardian/Pi · 129–153 Guardian QA · **154–160** infra/trust + citation + a11y residuals
+- **Active / planned:** (none in 159–160 arc — see phase-14 for new work)
 - **Archive:** [`plans/archive/`](plans/archive/) — closed plans (e.g. 88–92)

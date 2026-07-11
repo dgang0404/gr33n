@@ -61,9 +61,16 @@
     </ul>
 
     <div v-if="showModal" class="fixed inset-0 z-50 flex items-center justify-center">
-      <div class="absolute inset-0 bg-black/60" @click="closeModal"></div>
-      <div class="relative bg-zinc-950 border border-zinc-800 rounded-xl shadow-2xl p-6 w-full max-w-md mx-4 max-h-[90vh] overflow-y-auto">
-        <h2 class="text-white font-semibold text-base mb-4">{{ editTarget ? 'Edit lighting program' : 'New lighting program' }}</h2>
+      <div class="absolute inset-0 bg-black/60" aria-hidden="true" @click="closeModal"></div>
+      <div
+        ref="modalPanelRef"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="zone-lighting-modal-title"
+        class="relative bg-zinc-950 border border-zinc-800 rounded-xl shadow-2xl p-6 w-full max-w-md mx-4 max-h-[90vh] overflow-y-auto"
+        data-test="zone-lighting-modal"
+      >
+        <h2 id="zone-lighting-modal-title" class="text-white font-semibold text-base mb-4">{{ editTarget ? 'Edit lighting program' : 'New lighting program' }}</h2>
         <LightingProgramForm
           :form="form"
           :presets="presets"
@@ -73,7 +80,12 @@
           @pick-preset="pickPreset"
           @clock-change="onClockChange"
         />
-        <p v-if="modalError" class="mt-3 text-xs text-red-400">{{ modalError }}</p>
+        <p
+          v-if="modalError"
+          id="zone-lighting-modal-error"
+          class="mt-3 text-xs text-red-400"
+          role="alert"
+        >{{ modalError }}</p>
         <div class="flex justify-end gap-2 mt-5">
           <button type="button" class="px-4 py-2 text-sm text-zinc-400 border border-zinc-700 rounded-lg" @click="closeModal">Cancel</button>
           <button type="button" class="px-4 py-2 text-sm bg-gr33n-600 text-white rounded-lg disabled:opacity-50" :disabled="saving" @click="submitForm">
@@ -90,6 +102,7 @@ import { ref, computed, onMounted, watch } from 'vue'
 import api from '../api'
 import EmptyStateHint from './EmptyStateHint.vue'
 import LightingProgramForm from './LightingProgramForm.vue'
+import { useDialogFocusTrap } from '../composables/useDialogFocusTrap'
 import { formatLightingProgramSummary } from '../lib/lightingDisplay.js'
 import { loadLightingPresets } from '../lib/lightingPresets.js'
 
@@ -106,6 +119,7 @@ const loading = ref(false)
 const error = ref('')
 const saving = ref(false)
 const showModal = ref(false)
+const modalPanelRef = ref(null)
 const editTarget = ref(null)
 const modalError = ref('')
 
@@ -182,6 +196,11 @@ function closeModal() {
   showModal.value = false
   editTarget.value = null
 }
+
+useDialogFocusTrap(showModal, modalPanelRef, {
+  initialFocusSelector: '#lighting-program-name',
+  onEscape: closeModal,
+})
 
 function pickPreset(p) {
   form.value.presetKey = p.key

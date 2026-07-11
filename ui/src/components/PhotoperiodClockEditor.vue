@@ -9,15 +9,17 @@
         class="chip"
         :class="{ active: activePresetKey === p.key }"
         type="button"
+        :aria-pressed="activePresetKey === p.key"
         @click="applyPreset(p)"
       >{{ p.label }}</button>
     </div>
 
     <!-- Three linked fields -->
-    <div class="clock-fields">
+    <div class="clock-fields" role="group" aria-label="Photoperiod schedule">
       <div class="field">
-        <label>Lights ON</label>
+        <label for="photoperiod-lights-on">Lights ON</label>
         <input
+          id="photoperiod-lights-on"
           type="time"
           :value="lightsOnAt"
           @change="onStartChange($event.target.value)"
@@ -27,13 +29,15 @@
       </div>
 
       <div class="field">
-        <label>Duration (hours)</label>
+        <label for="photoperiod-duration">Duration (hours)</label>
         <input
+          id="photoperiod-duration"
           type="number"
           :value="onHours"
           min="1"
           max="24"
           step="1"
+          :aria-describedby="errorMsg ? 'photoperiod-error' : undefined"
           @change="onDurationChange(Number($event.target.value))"
           class="num-input"
         />
@@ -41,8 +45,9 @@
       </div>
 
       <div class="field">
-        <label>Lights OFF</label>
+        <label for="photoperiod-lights-off">Lights OFF</label>
         <input
+          id="photoperiod-lights-off"
           type="time"
           :value="lightsOffAt"
           @change="onEndChange($event.target.value)"
@@ -59,7 +64,7 @@
       <span class="next-label" v-if="nextOnLabel">{{ nextOnLabel }}</span>
     </div>
 
-    <p class="error-msg" v-if="errorMsg">{{ errorMsg }}</p>
+    <p id="photoperiod-error" class="error-msg" v-if="errorMsg" role="alert">{{ errorMsg }}</p>
   </div>
 </template>
 

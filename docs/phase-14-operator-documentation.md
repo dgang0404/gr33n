@@ -24,7 +24,7 @@ This page is the **Phase 14** counterpart to [`phase-13-operator-documentation.m
 | **157** | Shipped | [`phase_157_docs_consolidation.plan.md`](plans/phase_157_docs_consolidation.plan.md) — `current-state.md`, plans archive |
 | **158** | Shipped | [`phase_158_accessibility_pass.plan.md`](plans/phase_158_accessibility_pass.plan.md) — skip link, Guardian a11y, zone tabs |
 | **159** | Shipped | [`phase_159_guardian_citation_completeness.plan.md`](plans/phase_159_guardian_citation_completeness.plan.md) — citation WS2b + accuracy_note persist |
-| **160** | Planned | [`phase_160_a11y_residuals.plan.md`](plans/phase_160_a11y_residuals.plan.md) — lighting modal, mobile drawer trap |
+| **160** | Shipped | [`phase_160_a11y_residuals.plan.md`](plans/phase_160_a11y_residuals.plan.md) — lighting modal, mobile drawer trap |
 
 ## Shipped arcs (hub links)
 
