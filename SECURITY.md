@@ -99,6 +99,21 @@ We'll respond within 72 hours.
 
 ---
 
+## Dependency vulnerabilities (Phase 156)
+
+| Check | When | Command |
+|-------|------|---------|
+| Go (reachable symbols) | Every PR + `main` push (CI) | `govulncheck ./...` via `go` job |
+| npm (high+) | Every PR + `main` push (CI) | `npm audit --audit-level=high` in `ui` job |
+| Local pre-release | Maintainer | `make vuln-check` |
+| Weekly bumps | GitHub Dependabot | `.github/dependabot.yml` — grouped minor/patch for Go + `ui/` |
+
+**Triage:** merge Dependabot PRs when CI passes; for `govulncheck` failures bump `go.mod` / `go` version or document in [docs/vuln-allowlist.md](docs/vuln-allowlist.md) with an issue link. For npm, prefer `npm audit fix --legacy-peer-deps` in `ui/`; avoid `--force` without running `npm test`.
+
+This lane is **dependency-only** — it does not run Guardian/Ollama smokes (see [ci-guardian-qa.md](docs/ci-guardian-qa.md) for opt-in `guardian-smoke` label CI).
+
+---
+
 ## 🧱 Future Work
 
 - Automated `gr33n-scrub-bot` CI pipeline for insert validation

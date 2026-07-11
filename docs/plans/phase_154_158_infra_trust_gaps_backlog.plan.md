@@ -15,8 +15,8 @@ todos:
     content: "Phase 155 — automated backups"
     status: completed
   - id: phase-156-dependency-scanning
-    content: "Phase 156 — dependency/vuln scanning (plan doc ready)"
-    status: pending
+    content: "Phase 156 — dependency/vuln scanning"
+    status: completed
   - id: phase-157-docs-consolidation
     content: "Phase 157 — docs consolidation (plan doc ready)"
     status: pending
@@ -34,7 +34,7 @@ isProject: false
 |-------|--------|------|
 | **154** | ✅ Shipped | [`phase_154_test_suite_health.plan.md`](phase_154_test_suite_health.plan.md) |
 | **155** | ✅ Shipped | [`phase_155_automated_backups.plan.md`](phase_155_automated_backups.plan.md) |
-| **156** | 📋 Planned | [`phase_156_dependency_scanning.plan.md`](phase_156_dependency_scanning.plan.md) |
+| **156** | ✅ Shipped | [`phase_156_dependency_scanning.plan.md`](phase_156_dependency_scanning.plan.md) |
 | **157** | 📋 Planned | [`phase_157_docs_consolidation.plan.md`](phase_157_docs_consolidation.plan.md) |
 | **158** | 📋 Planned | [`phase_158_accessibility_pass.plan.md`](phase_158_accessibility_pass.plan.md) |
 

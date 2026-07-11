@@ -96,6 +96,9 @@ jobs:
       - name: Run Go tests (includes cmd/api smoke tests)
         run: go test -tags dev ./... -count=1
 
+      - name: Govulncheck (Phase 156)
+        run: go run golang.org/x/vuln/cmd/govulncheck@latest ./...
+
   ui:
     runs-on: ubuntu-latest
     steps:
@@ -105,9 +108,9 @@ jobs:
         with:
           node-version: "22"
 
-      - name: Install UI deps and test
+      - name: Install UI deps, audit, and test
         working-directory: ui
-        run: npm ci --legacy-peer-deps && npm test -- --run
+        run: npm ci --legacy-peer-deps && npm audit --audit-level=high && npm test -- --run
 
   # Phase 33 WS4 — opt-in @hardware lane. Drives real GPIO via the
   # `hardware` build tag. NEVER runs on push/PR; trigger manually from the

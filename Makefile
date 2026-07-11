@@ -92,6 +92,10 @@ verify-backup: ## Phase 155 — restore dump to scratch DB and spot-check (BACKU
 	@chmod +x ./scripts/backup-gr33n.sh ./scripts/verify-backup-gr33n.sh
 	@./scripts/verify-backup-gr33n.sh $(BACKUP)
 
+vuln-check: ## Phase 156 — govulncheck + npm audit (high+)
+	@chmod +x ./scripts/vuln-check.sh
+	@./scripts/vuln-check.sh
+
 e2e-browser: ## Playwright browser E2E (requires dev-auth-test stack; see e2e/README.md)
 	cd e2e && npm ci && npx playwright install chromium && npm test
 

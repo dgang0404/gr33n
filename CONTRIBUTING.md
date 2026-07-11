@@ -11,6 +11,8 @@ Thank you for helping improve an open-source farm OS. This guide covers how we w
 
 ```bash
 make test              # Go tests + cmd/api smokes (needs DATABASE_URL + migrated DB)
+make test-unit         # fast unit lane (no cmd/api DB smokes)
+make vuln-check        # govulncheck + npm audit --audit-level=high (Phase 156)
 make lint              # go vet
 make audit-openapi     # routes.go ↔ openapi.yaml
 make audit-env         # os.Getenv ↔ docs/environment-variables.md
@@ -63,6 +65,8 @@ Phases are numbered sequentially (113 security, 114 Pi, 115 schema, 116 docs, �
 ## Security
 
 See [SECURITY.md](SECURITY.md). Do not commit secrets, real `.env` files, or production credentials.
+
+**Dependency vulnerabilities (Phase 156):** run `make vuln-check` before release; triage Dependabot PRs when CI is green. Document accepted findings in [docs/vuln-allowlist.md](docs/vuln-allowlist.md).
 
 ---
 
