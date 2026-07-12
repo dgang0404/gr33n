@@ -216,7 +216,7 @@ CREATE TYPE gr33ncore.notification_priority_enum AS ENUM ('low','medium','high',
 CREATE TYPE gr33ncore.notification_status_enum   AS ENUM ('pending','queued','sent','delivered','failed_to_send','read_by_user','acknowledged_by_user','archived_by_user','system_cleared');
 CREATE TYPE gr33ncore.actuator_event_source_enum AS ENUM ('manual_ui_input','manual_api_call','schedule_trigger','automation_rule_trigger','device_internal_feedback_loop','system_initialization_routine','emergency_stop_signal');
 CREATE TYPE gr33ncore.actuator_execution_status_enum AS ENUM ('command_sent_to_device','acknowledged_by_device','execution_started_on_device','execution_completed_success_on_device','execution_completed_with_error_on_device','execution_failed_to_start_on_device','pending_confirmation_from_feedback','timeout_waiting_for_acknowledgement','cancelled_by_user_or_system');
-CREATE TYPE gr33ncore.weather_data_source_enum   AS ENUM ('farm_weather_station','api_openweather','api_visualcrossing','manual_entry','iot_sensor_reading');
+CREATE TYPE gr33ncore.weather_data_source_enum   AS ENUM ('farm_weather_station','api_openweather','api_visualcrossing','api_openmeteo','manual_entry','iot_sensor_reading');
 CREATE TYPE gr33ncore.cost_category_enum         AS ENUM (
     'seeds_plants','fertilizers_soil_amendments','pest_disease_control','water_irrigation',
     'labor_wages','equipment_purchase_rental','equipment_maintenance_fuel','utilities_electricity_gas',

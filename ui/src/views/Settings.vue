@@ -204,6 +204,47 @@
       </form>
       <p v-if="siteMessage" class="mt-2 text-xs text-emerald-400">{{ siteMessage }}</p>
       <p v-if="siteError" class="mt-2 text-xs text-red-400">{{ siteError }}</p>
+
+      <div
+        class="mt-4 pt-4 border-t border-zinc-700"
+        data-test="settings-weather-forecast"
+      >
+        <h3 class="text-sm font-semibold text-zinc-200 mb-2">Online forecast</h3>
+        <p class="text-xs text-zinc-500 mb-3 leading-relaxed">
+          Optional live outdoor temp and cloud cover from
+          <span class="text-zinc-400">{{ capabilities.weatherProviderLabel || 'a weather API' }}</span>.
+          Sun times still work offline without this.
+        </p>
+        <label class="flex items-center gap-2 text-sm text-zinc-300">
+          <input
+            v-model="forecastOptIn"
+            type="checkbox"
+            class="rounded bg-zinc-800 border-zinc-700"
+            :disabled="!capabilities.weatherForecastAvailable || forecastSaving"
+            data-test="settings-weather-forecast-toggle"
+            @change="saveForecastOptIn"
+          />
+          Use live weather forecast
+        </label>
+        <p v-if="!capabilities.weatherForecastAvailable" class="text-[10px] text-zinc-600 mt-2">
+          Set <code class="text-zinc-400">WEATHER_PROVIDER=openmeteo</code> on the API server to enable (free, no API key).
+        </p>
+        <p
+          v-else-if="forecastOptIn"
+          class="text-[10px] text-amber-400/90 mt-2 leading-relaxed"
+        >
+          Opening Today will contact an external weather service. Last-good readings are cached when offline.
+        </p>
+        <p
+          v-if="forecastStatusLabel"
+          class="text-[10px] font-mono mt-2"
+          :class="forecastStatusTone"
+          data-test="settings-weather-forecast-status"
+        >
+          {{ forecastStatusLabel }}
+        </p>
+        <p v-if="forecastError" class="text-xs text-red-400 mt-2">{{ forecastError }}</p>
+      </div>
     </section>
 
     <!-- Field assistant voice (Phase 67) -->
@@ -1130,7 +1171,12 @@ import { useFarmContextStore } from '../stores/farmContext'
 import { useCapabilitiesStore } from '../stores/capabilities'
 import { useChatUsageStore } from '../stores/chatUsage'
 import api from '../api'
-import { parseFarmCoordinates, parseFarmElevationM } from '../lib/siteWeather.js'
+import { parseFarmCoordinates, parseFarmElevationM, fetchSiteWeather } from '../lib/siteWeather.js'
+import {
+  farmForecastOptedIn,
+  forecastStatusLabel as forecastStatusLabelFn,
+  forecastStatusTone as forecastStatusToneFn,
+} from '../lib/siteWeatherForecast.js'
 import { loadGuardianFieldPrefs, saveGuardianFieldPrefs } from '../lib/guardianFieldPrefs.js'
 import {
   BOOTSTRAP_TEMPLATE_KEYS,
@@ -1259,6 +1305,55 @@ async function saveFarmSite() {
 }
 
 watch(() => farmContext.selectedFarm, syncSiteFormFromFarm, { immediate: true })
+
+const forecastOptIn = ref(false)
+const forecastSaving = ref(false)
+const forecastError = ref('')
+const forecastStatus = ref('disabled')
+
+const forecastStatusLabel = computed(() => forecastStatusLabelFn(forecastStatus.value))
+const forecastStatusTone = computed(() => forecastStatusToneFn(forecastStatus.value))
+
+function syncForecastFromFarm() {
+  forecastOptIn.value = farmForecastOptedIn(farmContext.selectedFarm)
+}
+
+async function refreshForecastStatus() {
+  const farmId = farmContext.farmId
+  if (!farmId || !forecastOptIn.value) {
+    forecastStatus.value = forecastOptIn.value ? 'disabled' : 'disabled'
+    return
+  }
+  try {
+    const wx = await fetchSiteWeather(farmId)
+    forecastStatus.value = wx?.online_forecast?.status || 'disabled'
+  } catch {
+    forecastStatus.value = 'offline'
+  }
+}
+
+async function saveForecastOptIn() {
+  const farmId = farmContext.farmId
+  if (!farmId) return
+  forecastSaving.value = true
+  forecastError.value = ''
+  try {
+    await farmContext.patchWeatherSettings(farmId, {
+      weather_forecast_enabled: forecastOptIn.value,
+    })
+    await refreshForecastStatus()
+  } catch (e) {
+    forecastError.value = e?.response?.data?.error || e.message || 'Save failed'
+    syncForecastFromFarm()
+  } finally {
+    forecastSaving.value = false
+  }
+}
+
+watch(() => farmContext.selectedFarm, () => {
+  syncForecastFromFarm()
+  void refreshForecastStatus()
+}, { immediate: true })
 
 const guardianMemoryBusy = ref(false)
 const guardianMemoryError = ref('')

@@ -13,6 +13,46 @@ import (
 	"gr33n-api/internal/platform/commontypes"
 )
 
+const getLatestAPIWeatherForFarm = `-- name: GetLatestAPIWeatherForFarm :one
+SELECT id, farm_id, zone_id, recorded_at, data_source, source_sensor_id,
+       temperature_celsius, humidity_percent, precipitation_mm,
+       wind_speed_ms, wind_direction_degrees, barometric_pressure_hpa,
+       solar_radiation_wm2, dew_point_celsius, uv_index, cloud_cover_percent,
+       forecast_data, raw_data, created_at
+FROM gr33ncore.weather_data
+WHERE farm_id = $1
+  AND data_source IN ('api_openmeteo', 'api_openweather', 'api_visualcrossing')
+ORDER BY recorded_at DESC
+LIMIT 1
+`
+
+func (q *Queries) GetLatestAPIWeatherForFarm(ctx context.Context, farmID int64) (Gr33ncoreWeatherDatum, error) {
+	row := q.db.QueryRow(ctx, getLatestAPIWeatherForFarm, farmID)
+	var i Gr33ncoreWeatherDatum
+	err := row.Scan(
+		&i.ID,
+		&i.FarmID,
+		&i.ZoneID,
+		&i.RecordedAt,
+		&i.DataSource,
+		&i.SourceSensorID,
+		&i.TemperatureCelsius,
+		&i.HumidityPercent,
+		&i.PrecipitationMm,
+		&i.WindSpeedMs,
+		&i.WindDirectionDegrees,
+		&i.BarometricPressureHpa,
+		&i.SolarRadiationWm2,
+		&i.DewPointCelsius,
+		&i.UvIndex,
+		&i.CloudCoverPercent,
+		&i.ForecastData,
+		&i.RawData,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
 const getLatestWeatherForFarm = `-- name: GetLatestWeatherForFarm :one
 SELECT id, farm_id, zone_id, recorded_at, data_source, source_sensor_id,
        temperature_celsius, humidity_percent, precipitation_mm,

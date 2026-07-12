@@ -78,7 +78,21 @@ The API loads `.env` and `.env.local` automatically when started from the repo r
 | `GUARDIAN_GROUNDED_ANSWER_MAX_CHARS` | `2500` when effective ctx ≤ 4096 | Max assistant answer length after finalize trim (Phase 145) |
 | `STT_BASE_URL` | — | Local speech-to-text (Whisper-compatible) — enables `/v1/chat/stt` |
 
-See also [INSTALL.md](../INSTALL.md) § Guardian, [farm-guardian-architecture.md](farm-guardian-architecture.md).
+---
+
+## Weather forecast (Phase 178)
+
+| Variable | Default | Purpose |
+|----------|---------|---------|
+| `WEATHER_PROVIDER` | `off` | `off` \| `openmeteo` \| `openweather` \| `visualcrossing` |
+| `OPENWEATHER_API_KEY` | — | Required when `WEATHER_PROVIDER=openweather` |
+| `VISUALCROSSING_API_KEY` | — | Required when `WEATHER_PROVIDER=visualcrossing` |
+| `WEATHER_CACHE_MINUTES` | `30` | Reuse cached API row before refetch |
+| `WEATHER_FETCH_TIMEOUT_SEC` | `8` | Outbound forecast HTTP timeout |
+
+Farm-level opt-in: Settings → Farm site → **Use live weather forecast** (`meta_data.weather_forecast_enabled`). Sun times (Tier 1) work without these vars.
+
+See [phase_178_online_weather_forecast.plan.md](plans/phase_178_online_weather_forecast.plan.md).
 
 ---
 

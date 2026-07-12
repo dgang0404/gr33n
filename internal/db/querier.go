@@ -302,6 +302,7 @@ type Querier interface {
 	// NULL row → assume OFF at window start.
 	GetLastActuatorEventBefore(ctx context.Context, arg GetLastActuatorEventBeforeParams) (GetLastActuatorEventBeforeRow, error)
 	GetLastSuccessfulRunBySchedule(ctx context.Context, scheduleID *int64) (Gr33ncoreAutomationRun, error)
+	GetLatestAPIWeatherForFarm(ctx context.Context, farmID int64) (Gr33ncoreWeatherDatum, error)
 	// Returns the created_at of the most recent alert for this (farm, source_type, source_id)
 	// regardless of ack status. Used by the sensor threshold evaluator to enforce per-sensor
 	// cooldown windows.
@@ -719,6 +720,7 @@ type Querier interface {
 	UpdateFarmGuardianPreferredModel(ctx context.Context, arg UpdateFarmGuardianPreferredModelParams) (Gr33ncoreFarm, error)
 	UpdateFarmMemberRole(ctx context.Context, arg UpdateFarmMemberRoleParams) (Gr33ncoreFarmMembership, error)
 	UpdateFarmSiteCoords(ctx context.Context, arg UpdateFarmSiteCoordsParams) (Gr33ncoreFarm, error)
+	UpdateFarmWeatherForecastOptIn(ctx context.Context, arg UpdateFarmWeatherForecastOptInParams) (Gr33ncoreFarm, error)
 	UpdateInputBatch(ctx context.Context, arg UpdateInputBatchParams) (Gr33nnaturalfarmingInputBatch, error)
 	UpdateInputDefinition(ctx context.Context, arg UpdateInputDefinitionParams) (Gr33nnaturalfarmingInputDefinition, error)
 	UpdateLightingProgram(ctx context.Context, arg UpdateLightingProgramParams) (Gr33ncoreLightingProgram, error)

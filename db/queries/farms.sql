@@ -60,9 +60,18 @@ SELECT
     ST_Y(location_gis::geometry) AS latitude,
     ST_X(location_gis::geometry) AS longitude,
     COALESCE((meta_data->>'elevation_m')::double precision, NULL) AS elevation_m,
-    timezone
+    timezone,
+    COALESCE(meta_data, '{}'::jsonb) AS meta_data
 FROM gr33ncore.farms
 WHERE id = $1 AND deleted_at IS NULL;
+
+-- name: UpdateFarmWeatherForecastOptIn :one
+UPDATE gr33ncore.farms
+SET meta_data = COALESCE(meta_data, '{}'::jsonb)
+    || jsonb_build_object('weather_forecast_enabled', sqlc.arg(weather_forecast_enabled)::boolean),
+    updated_at = NOW()
+WHERE id = sqlc.arg(id) AND deleted_at IS NULL
+RETURNING *;
 
 -- name: UpdateFarmSiteCoords :one
 UPDATE gr33ncore.farms

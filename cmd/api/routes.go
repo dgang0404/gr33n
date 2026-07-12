@@ -53,6 +53,7 @@ import (
 	zonehandler "gr33n-api/internal/handler/zone"
 	"gr33n-api/internal/httputil"
 	"gr33n-api/internal/openapiui"
+	wxsvc "gr33n-api/internal/weather"
 	"gr33n-api/internal/pushnotify"
 )
 
@@ -150,10 +151,14 @@ func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationwo
 	})))
 	mux.Handle("GET /capabilities", withRequestLog("public", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		sttLocal := strings.TrimSpace(os.Getenv("STT_BASE_URL")) != ""
+		wxCfg := wxsvc.LoadConfigFromEnv()
 		httputil.WriteJSON(w, http.StatusOK, map[string]any{
-			"ai_enabled":          aiCfg.Enabled,
-			"vision_chat_enabled": ai.VisionConfigured(),
-			"stt_local_enabled":   sttLocal,
+			"ai_enabled":                 aiCfg.Enabled,
+			"vision_chat_enabled":        ai.VisionConfigured(),
+			"stt_local_enabled":          sttLocal,
+			"weather_forecast_available": wxCfg.Available(),
+			"weather_provider":           string(wxCfg.Provider),
+			"weather_provider_label":     wxCfg.Label(),
 		})
 	})))
 
@@ -253,6 +258,7 @@ func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationwo
 	mux.Handle("PATCH /farms/{id}/settings", jwt(http.HandlerFunc(farm.PatchGuardianSettings)))
 	mux.Handle("GET /farms/{id}/site-weather", jwt(http.HandlerFunc(weather.GetSiteWeather)))
 	mux.Handle("POST /farms/{id}/weather/manual", jwt(http.HandlerFunc(weather.PostManual)))
+	mux.Handle("PATCH /farms/{id}/weather/settings", jwt(http.HandlerFunc(weather.PatchSettings)))
 	mux.Handle("PATCH /farms/{id}/organization", jwt(http.HandlerFunc(farm.SetOrganization)))
 	mux.Handle("DELETE /farms/{id}", jwt(http.HandlerFunc(farm.Delete)))
 	mux.Handle("GET /farms/{id}", jwt(http.HandlerFunc(farm.Get)))

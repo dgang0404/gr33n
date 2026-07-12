@@ -28,3 +28,15 @@ FROM gr33ncore.weather_data
 WHERE farm_id = $1
 ORDER BY recorded_at DESC
 LIMIT 1;
+
+-- name: GetLatestAPIWeatherForFarm :one
+SELECT id, farm_id, zone_id, recorded_at, data_source, source_sensor_id,
+       temperature_celsius, humidity_percent, precipitation_mm,
+       wind_speed_ms, wind_direction_degrees, barometric_pressure_hpa,
+       solar_radiation_wm2, dew_point_celsius, uv_index, cloud_cover_percent,
+       forecast_data, raw_data, created_at
+FROM gr33ncore.weather_data
+WHERE farm_id = $1
+  AND data_source IN ('api_openmeteo', 'api_openweather', 'api_visualcrossing')
+ORDER BY recorded_at DESC
+LIMIT 1;

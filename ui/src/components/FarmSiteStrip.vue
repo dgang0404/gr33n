@@ -25,6 +25,9 @@
           </p>
           <p v-if="sunTimes.daylength" class="text-zinc-500">{{ sunTimes.daylength }} daylight</p>
         </div>
+        <p v-else-if="coordsSet" class="text-[11px] text-zinc-500">
+          Sun times loading…
+        </p>
         <p v-else class="text-[11px] text-zinc-500">Set farm coordinates for sun times</p>
       </div>
 
@@ -63,20 +66,42 @@
         </router-link>
       </div>
 
-      <!-- Lat/long chip -->
-      <div v-if="!coordsSet" class="flex items-center gap-2" data-test="farm-site-coords-prompt">
+      <!-- Forecast (Phase 178) -->
+      <div class="text-[11px] min-w-[150px]" data-test="farm-site-forecast">
+        <p class="text-zinc-500 uppercase tracking-wide text-[10px]">Forecast</p>
+        <p v-if="forecastReading" class="text-zinc-300 mt-0.5" data-test="farm-site-forecast-reading">
+          {{ forecastReading }}
+        </p>
+        <p v-else class="text-zinc-500 mt-0.5">—</p>
+        <p
+          class="mt-0.5 font-mono text-[10px]"
+          :class="forecastStatusTone(forecastStatus)"
+          data-test="farm-site-forecast-status"
+        >
+          {{ forecastStatusLabel(forecastStatus) }}
+        </p>
+      </div>
+
+      <!-- Farm location -->
+      <div class="flex items-center gap-2 min-w-[140px]" data-test="farm-site-coords-prompt">
         <button
           type="button"
-          class="text-[11px] px-2.5 py-1 rounded-full bg-zinc-800 text-amber-300/90 border border-amber-900/50 hover:border-amber-700"
-          @click="showCoords = !showCoords"
+          class="text-[11px] px-2.5 py-1 rounded-full border transition-colors"
+          :class="coordsSet
+            ? 'bg-zinc-800/80 text-zinc-300 border-zinc-700 hover:border-zinc-600'
+            : 'bg-zinc-800 text-amber-300/90 border-amber-900/50 hover:border-amber-700'"
+          @click="toggleCoordsForm"
         >
-          Set farm location for sun &amp; weather
+          {{ coordsSet ? 'Edit location' : 'Set farm location' }}
         </button>
+        <p v-if="coordsSet && coordsLabel" class="text-[10px] text-zinc-500 truncate max-w-[120px]" :title="coordsLabel">
+          {{ coordsLabel }}
+        </p>
       </div>
     </div>
 
     <form
-      v-if="showCoords && !coordsSet"
+      v-if="showCoords"
       class="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1 border-t border-zinc-800"
       data-test="farm-site-coords-form"
       @submit.prevent="saveSite"
@@ -105,7 +130,7 @@
         class="text-xs px-3 py-2 rounded-lg bg-green-900/50 text-green-400 border border-green-800 disabled:opacity-40"
         :disabled="siteSaving || !coordsValid"
       >
-        {{ siteSaving ? 'Saving…' : 'Save location' }}
+        {{ siteSaving ? 'Saving…' : (coordsSet ? 'Update location' : 'Save location') }}
       </button>
       <p v-if="siteError" class="text-xs text-red-400 sm:col-span-3">{{ siteError }}</p>
     </form>
@@ -116,6 +141,11 @@
 import { computed, reactive, ref, watch } from 'vue'
 import { useFarmContextStore } from '../stores/farmContext'
 import { parseFarmCoordinates } from '../lib/siteWeather.js'
+import {
+  forecastStatusLabel,
+  forecastStatusTone,
+  formatForecastCurrent,
+} from '../lib/siteWeatherForecast.js'
 import { formatSunTimes, sunDialProgress } from '../lib/farmCanvasLayout.js'
 import { classifySensorHardwareState } from '../lib/farmVisualStatus.js'
 import { feedWaterRoute } from '../lib/dashboardWorkspaceLinks.js'
@@ -148,6 +178,8 @@ const siteError = ref('')
 
 const sunTimes = computed(() => formatSunTimes(props.siteWeather?.solar))
 const sunProgress = computed(() => sunDialProgress(props.siteWeather?.solar))
+const forecastStatus = computed(() => props.siteWeather?.online_forecast?.status || 'disabled')
+const forecastReading = computed(() => formatForecastCurrent(props.siteWeather?.online_forecast))
 const sunMarker = computed(() => {
   if (sunProgress.value == null) return null
   const p = sunProgress.value
@@ -157,6 +189,14 @@ const sunMarker = computed(() => {
 const coordsSet = computed(() => {
   const { latitude, longitude } = parseFarmCoordinates(farmContext.selectedFarm)
   return Number.isFinite(latitude) && Number.isFinite(longitude)
+})
+
+const coordsLabel = computed(() => {
+  const { latitude, longitude } = parseFarmCoordinates(farmContext.selectedFarm)
+  if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return ''
+  const latHem = latitude >= 0 ? 'N' : 'S'
+  const lonHem = longitude >= 0 ? 'E' : 'W'
+  return `${Math.abs(latitude).toFixed(2)}°${latHem}, ${Math.abs(longitude).toFixed(2)}°${lonHem}`
 })
 
 const coordsValid = computed(() =>
@@ -218,6 +258,11 @@ const waterSourceLine = computed(() => {
   }
   return 'Set up feeding plans →'
 })
+
+function toggleCoordsForm() {
+  showCoords.value = !showCoords.value
+  if (showCoords.value) syncFromFarm()
+}
 
 function syncFromFarm() {
   const { latitude, longitude } = parseFarmCoordinates(farmContext.selectedFarm)

@@ -834,6 +834,7 @@ const (
 	Gr33ncoreWeatherDataSourceEnumFarmWeatherStation Gr33ncoreWeatherDataSourceEnum = "farm_weather_station"
 	Gr33ncoreWeatherDataSourceEnumApiOpenweather     Gr33ncoreWeatherDataSourceEnum = "api_openweather"
 	Gr33ncoreWeatherDataSourceEnumApiVisualcrossing  Gr33ncoreWeatherDataSourceEnum = "api_visualcrossing"
+	Gr33ncoreWeatherDataSourceEnumApiOpenmeteo       Gr33ncoreWeatherDataSourceEnum = "api_openmeteo"
 	Gr33ncoreWeatherDataSourceEnumManualEntry        Gr33ncoreWeatherDataSourceEnum = "manual_entry"
 	Gr33ncoreWeatherDataSourceEnumIotSensorReading   Gr33ncoreWeatherDataSourceEnum = "iot_sensor_reading"
 )

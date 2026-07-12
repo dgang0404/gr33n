@@ -14,6 +14,7 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 
 	db "gr33n-api/internal/db"
+	wxsvc "gr33n-api/internal/weather"
 	"gr33n-api/internal/solar"
 )
 
@@ -86,26 +87,66 @@ func renderSiteWeather(ctx context.Context, q db.Querier, farmID int64) (string,
 
 	latest, err := q.GetLatestWeatherForFarm(ctx, farmID)
 	if err == nil {
-		b.WriteString("\nLatest reading:")
-		b.WriteString(fmt.Sprintf("\n- Source: %s at %s", latest.DataSource, latest.RecordedAt.Format(time.RFC3339)))
-		if t := numericToFloatPtr(latest.TemperatureCelsius); t != nil {
-			b.WriteString(fmt.Sprintf("\n- Outdoor temp: %.1f °C", *t))
-		}
-		if h := numericToFloatPtr(latest.HumidityPercent); h != nil {
-			b.WriteString(fmt.Sprintf("\n- Outdoor RH: %.0f%%", *h))
-		}
-		if c := numericToFloatPtr(latest.CloudCoverPercent); c != nil {
-			b.WriteString(fmt.Sprintf("\n- Cloud cover: %.0f%%", *c))
-			if latOK && lngOK {
-				day := solar.SolarForDate(lat, lng, tz, now)
-				cloudFactor := 1.0 - (*c / 100.0 * 0.65)
-				if gap, target, ok := supplementalGapForFarm(ctx, q, farmID, day.ClearSkyDLI, cloudFactor); ok && gap > 0.5 {
-					b.WriteString(fmt.Sprintf("\n- Supplemental light gap (cloud-adjusted): ~%.1f mol/m²/day (target %.1f)", gap, target))
+		src := string(latest.DataSource)
+		if !strings.HasPrefix(src, "api_") {
+			b.WriteString("\nLatest local reading:")
+			b.WriteString(fmt.Sprintf("\n- Source: %s at %s", latest.DataSource, latest.RecordedAt.Format(time.RFC3339)))
+			if t := numericToFloatPtr(latest.TemperatureCelsius); t != nil {
+				b.WriteString(fmt.Sprintf("\n- Outdoor temp: %.1f °C", *t))
+			}
+			if h := numericToFloatPtr(latest.HumidityPercent); h != nil {
+				b.WriteString(fmt.Sprintf("\n- Outdoor RH: %.0f%%", *h))
+			}
+			if c := numericToFloatPtr(latest.CloudCoverPercent); c != nil {
+				b.WriteString(fmt.Sprintf("\n- Cloud cover: %.0f%%", *c))
+				if latOK && lngOK {
+					day := solar.SolarForDate(lat, lng, tz, now)
+					cloudFactor := 1.0 - (*c / 100.0 * 0.65)
+					if gap, target, ok := supplementalGapForFarm(ctx, q, farmID, day.ClearSkyDLI, cloudFactor); ok && gap > 0.5 {
+						b.WriteString(fmt.Sprintf("\n- Supplemental light gap (cloud-adjusted): ~%.1f mol/m²/day (target %.1f)", gap, target))
+					}
 				}
 			}
 		}
 	} else if !errors.Is(err, pgx.ErrNoRows) {
 		return "", err
+	}
+
+	cfg := wxsvc.LoadConfigFromEnv()
+	optedIn := wxsvc.FarmForecastOptedIn(site.MetaData)
+	forecast, _, ferr := wxsvc.ResolveOnlineForecast(ctx, q, cfg, farmID, lat, lng, latOK && lngOK, optedIn)
+	if ferr != nil {
+		return "", ferr
+	}
+	switch forecast.Status {
+	case wxsvc.StatusConnected, wxsvc.StatusCached, wxsvc.StatusCachedStale:
+		b.WriteString(" online_forecast")
+		b.WriteString(fmt.Sprintf("\nOnline forecast (%s, %s):", forecast.ProviderLabel, forecast.Status))
+		if forecast.FetchedAt != nil {
+			b.WriteString(fmt.Sprintf("\n- Fetched: %s", forecast.FetchedAt.Format(time.RFC3339)))
+		}
+		if forecast.Current != nil {
+			if t, ok := forecast.Current["temperature_celsius"].(float64); ok {
+				b.WriteString(fmt.Sprintf("\n- Outdoor temp: %.1f °C", t))
+			}
+			if c, ok := forecast.Current["cloud_cover_percent"].(float64); ok {
+				b.WriteString(fmt.Sprintf("\n- Cloud cover: %.0f%%", c))
+			}
+		}
+		if forecast.TonightLowC != nil {
+			b.WriteString(fmt.Sprintf("\n- Tonight low: %.1f °C", *forecast.TonightLowC))
+		}
+		if forecast.FrostRisk {
+			b.WriteString("\n- Frost risk tonight: yes")
+		} else if forecast.TonightLowC != nil {
+			b.WriteString("\n- Frost risk tonight: low")
+		}
+	case wxsvc.StatusOffline:
+		b.WriteString("\nOnline forecast: offline (no live or cached API reading)")
+	case wxsvc.StatusDisabled:
+		b.WriteString("\nOnline forecast: disabled on server")
+	case wxsvc.StatusMisconfigured:
+		b.WriteString("\nOnline forecast: misconfigured — check API keys")
 	}
 
 	b.WriteString("\nPersona: cite tier — solar math needs no internet; sensor/manual is LAN; forecast is optional opt-in.")

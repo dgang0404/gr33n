@@ -32,7 +32,7 @@ isProject: false
 
 ## Status
 
-**Shipped.** Offline solar engine, site coords in Settings, `site_weather` read tool, dashboard daylight chip + weather starters, manual weather API. Online forecast provider deferred (Tier 3 flag).
+**Shipped.** Offline solar engine, site coords in Settings, `site_weather` read tool, dashboard daylight chip + weather starters, manual weather API. Online forecast provider deferred (Tier 3 flag) → **[Phase 178](phase_178_online_weather_forecast.plan.md)**.
 
 ---
 
@@ -136,7 +136,7 @@ Greenhouse vs sealed-indoor: effects scale by `zone` type — sealed rooms get H
 
 - [x] Daylight hours + DLI computed with internet disabled
 - [x] Supplemental-light recommendation uses natural DLI vs crop target
-- [ ] Optional online provider opt-in, caches, degrades gracefully (Tier 3 deferred)
+- [ ] Optional online provider opt-in, caches, degrades gracefully (Tier 3 → [Phase 178](phase_178_online_weather_forecast.plan.md))
 - [x] Guardian states which tier it answered from
 - [x] OC-66 closed
 

@@ -113,6 +113,22 @@ export const useFarmContextStore = defineStore('farmContext', {
       return farm
     },
 
+    /** Phase 178 — opt in/out of online weather forecast for this farm. */
+    async patchWeatherSettings(id, { weather_forecast_enabled }) {
+      const r = await api.patch(`/farms/${id}/weather/settings`, { weather_forecast_enabled })
+      const idx = this.farms.findIndex(f => f.id === id)
+      if (idx >= 0) {
+        const prev = this.farms[idx]
+        const meta = {
+          ...(prev.meta_data && typeof prev.meta_data === 'object' ? prev.meta_data : {}),
+          ...(r.data?.meta_data && typeof r.data.meta_data === 'object' ? r.data.meta_data : {}),
+          weather_forecast_enabled,
+        }
+        this.farms[idx] = { ...prev, ...r.data, meta_data: meta }
+      }
+      return r.data
+    },
+
     async deleteFarm(id) {
       await api.delete(`/farms/${id}`)
       this.farms = this.farms.filter(f => f.id !== id)

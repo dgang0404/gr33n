@@ -429,14 +429,19 @@ Operator: [operator-tour §7c.1](operator-tour.md#7c1-task-consumptions--operato
 |------|--------|-----------|------|
 | **1 — Solar math** | `location_gis` + date | **None** | Sunrise, sunset, daylength, clear-sky DLI |
 | **2 — Local** | Manual entry / outdoor sensor | **LAN only** | Temp, RH, cloud cover |
-| **3 — Forecast** | Optional provider (future flag) | Optional | Cached forecast; degrades to Tier 1+2 |
+| **3 — Forecast** | Open-Meteo (default) / optional paid APIs | Optional WAN | Cached live readings; degrades to Tier 1+2 — [Phase 178](plans/phase_178_online_weather_forecast.plan.md) |
 
 | API / tool | Role |
 |------------|------|
 | `PATCH /farms/{id}/site` | Set lat/long + `meta_data.elevation_m` |
-| `GET /farms/{id}/site-weather` | Solar + latest `weather_data` row |
+| `GET /farms/{id}/site-weather` | Solar + `online_forecast` status + latest `weather_data` |
+| `PATCH /farms/{id}/weather/settings` | Farm opt-in: `meta_data.weather_forecast_enabled` |
 | `POST /farms/{id}/weather/manual` | Quick outdoor log |
 | **`site_weather`** read tool | Guardian grounding; states which tier answered |
+
+**Forecast status** (`online_forecast.status`): `connected`, `cached`, `cached_stale`, `offline`, `disabled`, `no_coords`, `misconfigured` — surfaced on Today Site Strip and Settings.
+
+**Env:** `WEATHER_PROVIDER=openmeteo` (free, no key). Farm must opt in under Settings → Farm site.
 
 **Supplemental light:** `site_weather` compares clear-sky DLI (cloud-adjusted when readings exist) to crop profile DLI target from Phase 64.
 

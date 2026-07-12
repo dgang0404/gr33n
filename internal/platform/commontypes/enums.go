@@ -121,9 +121,14 @@ const (
 type WeatherDataSourceEnum string
 
 const (
-	WeatherDataSourceSensor   WeatherDataSourceEnum = "on_site_sensor"
+	WeatherDataSourceSensor         WeatherDataSourceEnum = "farm_weather_station"
+	WeatherDataSourceIoT            WeatherDataSourceEnum = "iot_sensor_reading"
+	WeatherDataSourceManual         WeatherDataSourceEnum = "manual_entry"
+	WeatherDataSourceAPIOpenMeteo   WeatherDataSourceEnum = "api_openmeteo"
+	WeatherDataSourceAPIOpenWeather WeatherDataSourceEnum = "api_openweather"
+	WeatherDataSourceAPIVisualCross WeatherDataSourceEnum = "api_visualcrossing"
+	// Legacy aliases kept for back-compat in tests/docs.
 	WeatherDataSourceAPI      WeatherDataSourceEnum = "weather_api"
-	WeatherDataSourceManual   WeatherDataSourceEnum = "manual_entry"
 	WeatherDataSourceForecast WeatherDataSourceEnum = "forecast"
 )
 

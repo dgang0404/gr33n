@@ -16,6 +16,9 @@ export const useCapabilitiesStore = defineStore('capabilities', {
     aiEnabled: true,
     visionChatEnabled: false,
     sttLocalEnabled: false,
+    weatherForecastAvailable: false,
+    weatherProvider: 'off',
+    weatherProviderLabel: '',
     loaded: false,
     fetchError: null,
   }),
@@ -31,12 +34,18 @@ export const useCapabilitiesStore = defineStore('capabilities', {
         this.aiEnabled = r.data?.ai_enabled !== false
         this.visionChatEnabled = r.data?.vision_chat_enabled === true
         this.sttLocalEnabled = r.data?.stt_local_enabled === true
+        this.weatherForecastAvailable = r.data?.weather_forecast_available === true
+        this.weatherProvider = r.data?.weather_provider || 'off'
+        this.weatherProviderLabel = r.data?.weather_provider_label || ''
         this.fetchError = null
       } catch (e) {
         // Older API builds without /capabilities → treat as AI on (back-compat).
         this.aiEnabled = true
         this.visionChatEnabled = false
         this.sttLocalEnabled = false
+        this.weatherForecastAvailable = false
+        this.weatherProvider = 'off'
+        this.weatherProviderLabel = ''
         this.fetchError = e.message || 'capabilities fetch failed'
       } finally {
         this.loaded = true

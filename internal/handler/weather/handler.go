@@ -1,4 +1,4 @@
-// Package weather — Phase 66 site solar + manual weather ingestion.
+// Package weather — Phase 66 site solar + Phase 178 online forecast.
 package weather
 
 import (
@@ -15,6 +15,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	db "gr33n-api/internal/db"
+	wxsvc "gr33n-api/internal/weather"
 	"gr33n-api/internal/platform/commontypes"
 	"gr33n-api/internal/farmauthz"
 	"gr33n-api/internal/httputil"
@@ -22,11 +23,12 @@ import (
 )
 
 type Handler struct {
-	q db.Querier
+	q   db.Querier
+	cfg wxsvc.Config
 }
 
 func NewHandler(pool *pgxpool.Pool) *Handler {
-	return &Handler{q: db.New(pool)}
+	return &Handler{q: db.New(pool), cfg: wxsvc.LoadConfigFromEnv()}
 }
 
 // GET /farms/{id}/site-weather?date=YYYY-MM-DD
@@ -42,7 +44,7 @@ func (h *Handler) GetSiteWeather(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()
 
-	resp, err := buildSiteWeatherResponse(ctx, h.q, farmID, r.URL.Query().Get("date"))
+	resp, err := buildSiteWeatherResponse(ctx, h.q, h.cfg, farmID, r.URL.Query().Get("date"))
 	if err != nil {
 		httputil.WriteError(w, http.StatusInternalServerError, "failed to load site weather")
 		return
@@ -95,7 +97,38 @@ func (h *Handler) PostManual(w http.ResponseWriter, r *http.Request) {
 	httputil.WriteJSON(w, http.StatusCreated, row)
 }
 
-func buildSiteWeatherResponse(ctx context.Context, q db.Querier, farmID int64, dateStr string) (map[string]any, error) {
+// PATCH /farms/{id}/weather/settings — farm admin opt-in for online forecast (Phase 178).
+func (h *Handler) PatchSettings(w http.ResponseWriter, r *http.Request) {
+	farmID, err := httputil.PathID(r.URL.Path, 2)
+	if err != nil {
+		httputil.WriteError(w, http.StatusBadRequest, "invalid farm id")
+		return
+	}
+	if !farmauthz.RequireFarmAdmin(w, r, h.q, farmID) {
+		return
+	}
+	var req struct {
+		WeatherForecastEnabled bool `json:"weather_forecast_enabled"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		httputil.WriteError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+	defer cancel()
+
+	farm, err := h.q.UpdateFarmWeatherForecastOptIn(ctx, db.UpdateFarmWeatherForecastOptInParams{
+		ID:                      farmID,
+		WeatherForecastEnabled: req.WeatherForecastEnabled,
+	})
+	if err != nil {
+		httputil.WriteError(w, http.StatusInternalServerError, "failed to update weather settings")
+		return
+	}
+	httputil.WriteJSON(w, http.StatusOK, farm)
+}
+
+func buildSiteWeatherResponse(ctx context.Context, q db.Querier, cfg wxsvc.Config, farmID int64, dateStr string) (map[string]any, error) {
 	site, err := q.GetFarmSiteCoords(ctx, farmID)
 	if err != nil {
 		return nil, err
@@ -132,9 +165,9 @@ func buildSiteWeatherResponse(ctx context.Context, q db.Querier, farmID int64, d
 		}
 		out["solar"] = map[string]any{
 			"date":                  date.Format("2006-01-02"),
-			"sunrise":               day.Sunrise.Format(time.RFC3339),
-			"sunset":                day.Sunset.Format(time.RFC3339),
-			"solar_noon":            day.SolarNoon.Format(time.RFC3339),
+			"sunrise_at":            day.Sunrise.Format(time.RFC3339),
+			"sunset_at":             day.Sunset.Format(time.RFC3339),
+			"solar_noon_at":         day.SolarNoon.Format(time.RFC3339),
 			"daylength_hours":       round2(day.DaylengthHours),
 			"clear_sky_dli":         round2(day.ClearSkyDLI),
 			"max_sun_elevation_deg": round2(day.MaxSunElevationDeg),
@@ -168,6 +201,16 @@ func buildSiteWeatherResponse(ctx context.Context, q db.Querier, farmID int64, d
 		out["tiers"] = tiers
 	} else if err != nil && !errors.Is(err, pgx.ErrNoRows) {
 		return nil, err
+	}
+
+	optedIn := wxsvc.FarmForecastOptedIn(site.MetaData)
+	forecast, _, ferr := wxsvc.ResolveOnlineForecast(ctx, q, cfg, farmID, lat, lng, latOK && lngOK, optedIn)
+	if ferr != nil {
+		return nil, ferr
+	}
+	out["online_forecast"] = forecast
+	if tiers, ok := out["tiers"].([]string); ok {
+		out["tiers"] = wxsvc.AppendForecastTier(tiers, forecast.Status)
 	}
 
 	return out, nil
