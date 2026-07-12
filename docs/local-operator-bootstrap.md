@@ -52,6 +52,15 @@ make rag-ingest-platform-docs
 
 After service stop, run `./scripts/guardian-power.sh wake` then **Awaken now**.
 
+**Scheduled deep sleep (cron):** on the host where Ollama runs (may differ from the UI/API box), install overnight stop/start:
+
+```bash
+./scripts/guardian-power-schedule.sh print-crontab   # example 22:00 sleep / 06:00 wake
+./scripts/guardian-power-schedule.sh print-sudoers   # optional NOPASSWD for cron only
+```
+
+Cron calls `cron-sleep` / `cron-wake` (logged wrappers around `guardian-power.sh`). Daytime RAM saving stays in the API via `GUARDIAN_AUTO_DORMANT_MINUTES` — no sudo.
+
 **Manual RAM hygiene (rare):** only if the box is wedged after heavy ingest + chat:
 
 ```bash
@@ -59,7 +68,7 @@ ollama stop phi3:mini
 ollama stop rjmalagon/gte-qwen2-1.5b-instruct-embed-f16   # match EMBEDDING_MODEL in .env
 ```
 
-**Script map:** [`scripts/restart-local.sh`](../scripts/restart-local.sh) · [`scripts/check-local-stack.sh`](../scripts/check-local-stack.sh) · [`scripts/tune-guardian-laptop.sh`](../scripts/tune-guardian-laptop.sh) · [`scripts/guardian-power.sh`](../scripts/guardian-power.sh) · [`scripts/rag-ingest-farm-operational.sh`](../scripts/rag-ingest-farm-operational.sh) · [`scripts/enterprise/guardian-bootstrap-farm.sh`](../scripts/enterprise/guardian-bootstrap-farm.sh)
+**Script map:** [`scripts/restart-local.sh`](../scripts/restart-local.sh) · [`scripts/check-local-stack.sh`](../scripts/check-local-stack.sh) · [`scripts/tune-guardian-laptop.sh`](../scripts/tune-guardian-laptop.sh) · [`scripts/guardian-power.sh`](../scripts/guardian-power.sh) · [`scripts/guardian-power-schedule.sh`](../scripts/guardian-power-schedule.sh) · [`scripts/rag-ingest-farm-operational.sh`](../scripts/rag-ingest-farm-operational.sh) · [`scripts/enterprise/guardian-bootstrap-farm.sh`](../scripts/enterprise/guardian-bootstrap-farm.sh)
 
 **Guardian CPU / timeouts / pull vs dropdown:** [guardian-ollama-laptop-playbook.md](guardian-ollama-laptop-playbook.md)
 
