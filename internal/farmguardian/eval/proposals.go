@@ -14,11 +14,12 @@ import (
 // actually needs — kept local to eval instead of importing internal/handler/chat
 // (which already imports farmguardian and would create an import cycle).
 type PendingProposal struct {
-	ProposalID string `json:"proposal_id"`
-	Tool       string `json:"tool"`
-	Summary    string `json:"summary"`
-	RiskTier   string `json:"risk_tier"`
-	Status     string `json:"status"`
+	ProposalID string         `json:"proposal_id"`
+	Tool       string         `json:"tool"`
+	Summary    string         `json:"summary"`
+	RiskTier   string         `json:"risk_tier"`
+	Status     string         `json:"status"`
+	Args       map[string]any `json:"args"`
 }
 
 // FetchPendingProposals calls GET /v1/chat/proposals?farm_id=...&status=pending

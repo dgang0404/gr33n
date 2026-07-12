@@ -212,6 +212,22 @@ guardian-qa-change-requests-ack: ## Re-run write-ack only (~25 min) — fast cha
 			-suite change-requests -prompt-ids write-ack -check-pending-proposals \
 			-report $${GUARDIAN_EVAL_REPORT:-data/guardian_model_eval.json}'
 
+guardian-qa-change-requests-confirm: ## Phase 162 — propose + pending queue + Confirm→DB for write-intent prompts
+	@bash -lc 'set -e; cd "$(CURDIR)"; \
+		if [ -f .env ]; then set -a && . ./.env && set +a; fi; \
+		source scripts/source-local-env.sh --refresh-eval-token; \
+		$(GO) run ./cmd/guardian-eval/ -models $${MODEL:-phi3:mini} -farm-id $${FARM_ID:-1} \
+			-suite change-requests -check-pending-proposals -confirm-proposals \
+			-report $${GUARDIAN_EVAL_REPORT:-data/guardian_model_eval.json}'
+
+guardian-qa-change-requests-ack-confirm: ## Phase 162 fast path — write-ack propose + Confirm→DB (~25 min)
+	@bash -lc 'set -e; cd "$(CURDIR)"; \
+		if [ -f .env ]; then set -a && . ./.env && set +a; fi; \
+		source scripts/source-local-env.sh --refresh-eval-token; \
+		$(GO) run ./cmd/guardian-eval/ -models $${MODEL:-phi3:mini} -farm-id $${FARM_ID:-1} \
+			-suite change-requests -prompt-ids write-ack -check-pending-proposals -confirm-proposals \
+			-report $${GUARDIAN_EVAL_REPORT:-data/guardian_model_eval.json}'
+
 guardian-laptop-tune: ## Phase 129 — print or apply Guardian laptop .env recommendations (ARGS="--apply")
 	@chmod +x ./scripts/tune-guardian-laptop.sh
 	@./scripts/tune-guardian-laptop.sh $(ARGS)

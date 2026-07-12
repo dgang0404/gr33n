@@ -16,7 +16,7 @@
 | `make guardian-qa-smoke-strict MODEL=phi3:mini FARM_ID=1` | When you want a real pass/fail instead of a report to read | Same archive, but **exits non-zero if any fixture fails its heuristic** |
 | **Opt-in PR check** `guardian-qa-pr` CI job | Self-hosted runner + Ollama; add `guardian-smoke` label to PR | Runs `make guardian-qa-smoke-strict` — **not mandatory** on every PR (standard label-gated pattern) |
 | `make guardian-qa-change-requests MODEL=phi3:mini FARM_ID=1` | After touching proposal/change-request code (Phase 153) | Fires the 4 write-intent prompts, then fetches `GET /v1/chat/proposals?status=pending` and verifies **proposal_id(s) from this run** are pending |
-| `make guardian-qa-change-requests-ack MODEL=phi3:mini FARM_ID=1` | Fast check (~25 min) | Same as above but only `write-ack` |
+| `make guardian-qa-change-requests-confirm MODEL=phi3:mini FARM_ID=1` | Full propose→confirm→DB loop (Phase 162) | 4 write-intent prompts + pending check + Confirm + side-effect GETs |
 | `make guardian-qa-regression MODEL=phi3:mini` | Pre-release (slow) | Same directory, regression suite |
 | `make guardian-qa-manual` | Human UI parity | Prints checklist from same fixtures |
 
@@ -30,10 +30,10 @@ Set `GUARDIAN_EVAL_TOKEN` (JWT from dev login) and optionally `GUARDIAN_EVAL_LOG
 
 ```
 make guardian-qa-change-requests MODEL=phi3:mini FARM_ID=1
-make guardian-qa-change-requests-ack MODEL=phi3:mini FARM_ID=1   # ~25 min, write-ack only
+make guardian-qa-change-requests-confirm MODEL=phi3:mini FARM_ID=1 # full Confirm→DB loop
 ```
 
-It fires 4 preset write-intent prompts (or one with `-ack`), logs per-prompt progress, then calls `GET /v1/chat/proposals?status=pending` and verifies **proposal_id(s) returned in this run's chat responses** are in the queue — not just a stale row count. **Confirm → DB** is planned in [Phase 162](plans/phase_162_guardian_confirm_db_smoke.plan.md). See [Phase 153](plans/phase_153_guardian_pr_smoke_gate.plan.md).
+It fires 4 preset write-intent prompts (or one with `-ack`), logs per-prompt progress, then calls `GET /v1/chat/proposals?status=pending` and verifies **proposal_id(s) from this run** are pending. **Confirm → DB:** `make guardian-qa-change-requests-confirm` (Phase 162). See [Phase 153](plans/phase_153_guardian_pr_smoke_gate.plan.md) · [Phase 162](plans/phase_162_guardian_confirm_db_smoke.plan.md).
 
 ## Opt-in GitHub PR check (Guardian answer smoke — not change-request queue)
 

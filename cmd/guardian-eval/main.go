@@ -28,6 +28,7 @@ func main() {
 	llmBase := flag.String("llama-url", os.Getenv("LLM_BASE_URL"), "Ollama OpenAI base (for model discovery when models=all)")
 	failOnRegression := flag.Bool("fail-on-regression", false, "exit non-zero if any fixture fails its heuristic, instead of always exiting 0")
 	checkPendingProposals := flag.Bool("check-pending-proposals", false, "after the run, fetch GET /v1/chat/proposals?status=pending and confirm write-intent fixtures actually landed a row in Guardian's change-request queue (not just an inline chat proposal)")
+	confirmProposals := flag.Bool("confirm-proposals", false, "after pending check, POST /v1/chat/confirm for each passed write-intent proposal and verify DB side effects (Phase 162)")
 	flag.Parse()
 
 	if *manualFlag {
@@ -63,9 +64,9 @@ func main() {
 	client := eval.NewAPIClient(*apiURL, *token, *farmID)
 
 	runOpts := eval.RunSuiteOptions{
-		WarmupGrounded: suite == "smoke" || suite == "phase127" || suite == "phase128" || suite == "p128",
+		WarmupGrounded: suite == "smoke" || suite == "phase127" || suite == "phase128" || suite == "p128" || suite == "change-requests" || suite == "change_requests" || suite == "proposals" || suite == "pr",
 		WarmupTimeout:  eval.WarmupTimeoutFromEnv(),
-		WarmupAsync:    suite == "smoke" || suite == "phase127",
+		WarmupAsync:    suite == "smoke" || suite == "phase127" || suite == "change-requests" || suite == "change_requests" || suite == "proposals" || suite == "pr",
 		LogPath:        strings.TrimSpace(os.Getenv("GUARDIAN_EVAL_LOG")),
 	}
 
@@ -114,6 +115,23 @@ func main() {
 		if err := reportPendingProposals(ctx, client, expectedProposals, requiredProposalIDs); err != nil {
 			fmt.Printf("\nPending change-request queue check failed: %v\n", err)
 			failed = true
+		}
+	}
+
+	if *confirmProposals {
+		if !*checkPendingProposals {
+			fmt.Println("\nConfirm skipped: -confirm-proposals requires -check-pending-proposals")
+			failed = true
+		} else if !failed {
+			for model, details := range rep.Details {
+				fmt.Printf("\nConfirming passed write-intent proposals (%s)…\n", model)
+				if err := eval.ConfirmAndVerifyPassedProposals(ctx, client, fixtures, details); err != nil {
+					fmt.Printf("Confirm→DB check failed: %v\n", err)
+					failed = true
+				} else {
+					fmt.Printf("Confirm→DB check passed for %s\n", model)
+				}
+			}
 		}
 	}
 

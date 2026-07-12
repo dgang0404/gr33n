@@ -83,6 +83,7 @@ Migrations: `db/migrations/` · overview: [`database-schema-overview.md`](databa
 make guardian-qa-smoke              # artifact run (always exits 0)
 make guardian-qa-smoke-strict       # pass/fail heuristics
 make guardian-qa-change-requests    # internal proposal queue persistence
+make guardian-qa-change-requests-confirm  # propose → Confirm → DB (Phase 162)
 make guardian-eval -manual          # UI checklist
 ```
 
