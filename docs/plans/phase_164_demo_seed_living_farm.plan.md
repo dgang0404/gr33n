@@ -27,13 +27,24 @@ todos:
     status: completed
   - id: ws6-closure
     content: "WS6: Seed verify queries + phase-164-closure test + docs note"
-    status: pending
+    status: completed
 isProject: false
 ---
 
 # Phase 164 — Demo seed: living farm, no cannabis
 
-**Status:** planned · **Feeds:** Phase 165 (layout API) → 166 (visual canvas)
+**Status:** shipped · **Feeds:** Phase 165 (layout API) → 166 (visual canvas)
+
+## Shipped
+
+| WS | Deliverable |
+|----|-------------|
+| **WS1** | Demo farm cannabis → chrysanthemum (idempotent migration + fresh inserts) |
+| **WS2** | `sensor_readings` sparse history for 10 wired sensors |
+| **WS3** | Three health states — healthy / attention (72.4% RH) / unwired beds |
+| **WS4** | Herb & Greens gravity-drip — device, valve, header tank, program, event |
+| **WS5** | `smoke_phase164_test.go` + fixture updates (phase86, accuracy, citations) |
+| **WS6** | Seed VERIFY queries, `current-state.md` demo farm section, closure tests |
 
 ## Why
 

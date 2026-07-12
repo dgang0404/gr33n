@@ -27,6 +27,23 @@
 
 ---
 
+## Demo farm seed (`farm_id = 1`, Phase 164)
+
+After `make seed` or `make dev-stack-fresh`, **gr33n Demo Farm** is a **living** operational snapshot (not cannabis-themed):
+
+| Aspect | Demo contents |
+|--------|----------------|
+| **Zones** | 7 — Veg/Flower rooms, propagation, herbs, outdoor beds/patch |
+| **Crops** | Chrysanthemum veg/bloom runs (`Anastasia Green`, `Zembla White`), basil, tomato, pepper, strawberry, etc. |
+| **Cannabis** | **Not** in demo plant/cycle rows — catalog + field guides still include `cannabis` |
+| **Sensors** | Wired sensors have recent `sensor_readings`; bed sensors stay unwired (“not set up yet”) |
+| **Attention** | Flower Room humidity 72.4% RH matches a seeded alert |
+| **Irrigation** | Herb & Greens **gravity-fed drip** (`Herb Room Gravity Drip`, plain water) |
+
+Smoke assertions: `go test ./cmd/api/... -run Phase164` (needs seeded DB).
+
+---
+
 ## UI workspaces & routes
 
 | Route | Workspace |
@@ -140,6 +157,6 @@ Accessibility: skip link, Guardian drawer focus trap, zone tab semantics — [`a
 
 ## Phase history
 
-- **Shipped arcs:** 40–67 farmer UX · 68–81 SPA · 82–110 crop intelligence · 111–122 Guardian/Pi · 129–153 Guardian QA · **154–161** infra/trust + citation + a11y + ec-ph trim
+- **Shipped arcs:** 40–67 farmer UX · 68–81 SPA · 82–110 crop intelligence · 111–122 Guardian/Pi · 129–153 Guardian QA · **154–161** infra/trust + citation + a11y + ec-ph trim · **164** living demo seed (chrysanthemum, sensor readings, gravity drip)
 - **Active / planned:** Insert Commons (opt-in); full `smoke-ec-ph` re-run on CPU (operator)
 - **Archive:** [`plans/archive/`](plans/archive/) — closed plans (e.g. 88–92)

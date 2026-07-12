@@ -78,3 +78,22 @@ describe('Phase 164 WS5 — smoke test audit', () => {
     expect(smoke).toContain('TestPhase164_Farm1GravityDripProgram')
   })
 })
+
+describe('Phase 164 WS6 — closure', () => {
+  const seed = readFileSync(join(repoRoot, 'db/seeds/master_seed.sql'), 'utf8')
+  const currentState = readFileSync(join(repoRoot, 'docs/current-state.md'), 'utf8')
+
+  it('ships phase164 verify queries in master seed', () => {
+    expect(seed).toContain('Phase 164 WS6 — VERIFY')
+    expect(seed).toContain('phase164_cannabis_plants_farm1')
+    expect(seed).toContain('phase164_demo_sensor_readings')
+    expect(seed).toContain('phase164_gravity_drip_program')
+  })
+
+  it('documents living demo farm in current-state', () => {
+    expect(currentState).toContain('Demo farm seed')
+    expect(currentState).toContain('Anastasia Green')
+    expect(currentState).toContain('gravity-fed drip')
+    expect(currentState).toContain('Phase164')
+  })
+})

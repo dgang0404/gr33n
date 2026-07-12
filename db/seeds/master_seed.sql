@@ -1904,3 +1904,33 @@ JOIN (VALUES
 ) AS v(sensor_name, base_val) ON v.sensor_name = s.name
 CROSS JOIN generate_series(0, 12) AS gs(n)
 WHERE s.farm_id = 1 AND s.deleted_at IS NULL;
+
+-- ===========================================================================
+-- Phase 164 WS6 — VERIFY (living demo farm)
+-- ===========================================================================
+SELECT 'phase164_cannabis_plants_farm1' AS check_name, count(*)::int AS n
+FROM gr33ncrops.plants
+WHERE farm_id = 1 AND crop_key = 'cannabis' AND deleted_at IS NULL
+UNION ALL
+SELECT 'phase164_chrysanthemum_plants_farm1', count(*)::int
+FROM gr33ncrops.plants
+WHERE farm_id = 1 AND crop_key = 'chrysanthemum' AND deleted_at IS NULL
+UNION ALL
+SELECT 'phase164_legacy_cannabis_batch_labels', count(*)::int
+FROM gr33nfertigation.crop_cycles
+WHERE farm_id = 1 AND deleted_at IS NULL
+  AND batch_label ~* 'blue dream|gorilla|og kush'
+UNION ALL
+SELECT 'phase164_demo_sensor_readings', count(*)::int
+FROM gr33ncore.sensor_readings sr
+JOIN gr33ncore.sensors s ON s.id = sr.sensor_id
+WHERE s.farm_id = 1 AND s.deleted_at IS NULL
+  AND sr.meta_data @> '{"seed":"phase164_demo"}'::jsonb
+UNION ALL
+SELECT 'phase164_gravity_drip_program', count(*)::int
+FROM gr33nfertigation.programs
+WHERE farm_id = 1 AND name = 'Herb Room Gravity Drip' AND deleted_at IS NULL
+UNION ALL
+SELECT 'phase164_gravity_drip_event', count(*)::int
+FROM gr33nfertigation.fertigation_events
+WHERE farm_id = 1 AND notes LIKE '%[seed:herb-gravity-drip-demo]%';
