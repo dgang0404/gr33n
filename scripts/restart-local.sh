@@ -22,7 +22,7 @@ usage() {
 Usage: scripts/restart-local.sh [options]
 
   (default)      docker compose up -d db, wait for Postgres, db sanity report
-  --serve        Run make dev-auth-test after checks (API + UI; Go may compile 1–5+ min cold)
+  --serve        Run make dev-auth-test after checks; also starts local Ollama when LLM_BASE_URL is loopback
   --skip-report  Skip scripts/db-sanity-report.sh
   --no-quick     docker compose build db --no-cache before up (slow; rare)
   -h, --help     This message
@@ -63,6 +63,56 @@ need docker
 docker compose version >/dev/null 2>&1 || die "need Compose v2 (docker compose)"
 
 [[ -f "$ROOT/.env" ]] || die "missing .env — copy .env.example"
+
+# Laptop dev only — start local Ollama when LLM_BASE_URL points at this machine.
+# Enterprise / split inference: LLM_BASE_URL aims at another host — skip auto-start.
+maybe_start_local_ollama() {
+  set -a
+  # shellcheck disable=1091
+  source "$ROOT/.env"
+  set +a
+
+  [[ "${AI_ENABLED:-true}" != "false" ]] || return 0
+
+  local llm_base="${LLM_BASE_URL:-http://127.0.0.1:11434/v1}"
+  if [[ ! "$llm_base" =~ ^https?://(127\.0\.0\.1|localhost)(:|/|$) ]]; then
+    echo "==> Ollama: remote LLM_BASE_URL — not auto-starting a local service"
+    return 0
+  fi
+
+  local ollama_base="${llm_base%/v1}"
+  ollama_base="${ollama_base%/}"
+  if curl -sf "${ollama_base}/api/tags" >/dev/null 2>&1; then
+    echo "==> Ollama: already running (${ollama_base})"
+    return 0
+  fi
+
+  if ! command -v systemctl >/dev/null 2>&1; then
+    echo "==> Ollama: not running — start the Ollama app or service manually"
+    return 0
+  fi
+
+  if ! systemctl list-unit-files ollama.service >/dev/null 2>&1; then
+    echo "==> Ollama: not running — no ollama.service unit (open the Ollama app?)"
+    return 0
+  fi
+
+  echo "==> Ollama: starting ollama.service (laptop dev)"
+  if systemctl start ollama 2>/dev/null || sudo systemctl start ollama 2>/dev/null; then
+    for _ in $(seq 1 15); do
+      if curl -sf "${ollama_base}/api/tags" >/dev/null 2>&1; then
+        echo "    Ollama ready."
+        return 0
+      fi
+      sleep 1
+    done
+    echo "    Ollama service started — waiting for HTTP (Guardian may show unavailable briefly)"
+    return 0
+  fi
+
+  echo "==> Ollama: could not start automatically — from any terminal run: systemctl start ollama"
+  return 0
+}
 
 compose() {
   if docker info >/dev/null 2>&1; then
@@ -123,7 +173,9 @@ if [[ "$SERVE" -eq 1 ]]; then
   fi
   echo "Starting API + UI (make dev-auth-test) — first compile may take several minutes."
   echo ""
-  echo "Guardian tip: after login, open Farm Guardian — awakening preloads models (no manual ollama stop)."
+  maybe_start_local_ollama
+  echo ""
+  echo "Guardian tip: after login, open Farm Guardian — awakening preloads models."
   echo "  One-time laptop tune: make guardian-laptop-tune ARGS=\"--apply\""
   exec make dev-auth-test
 fi

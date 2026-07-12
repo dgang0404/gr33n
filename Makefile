@@ -1,4 +1,4 @@
-.PHONY: run run-receiver build build-receiver test seed sqlc migrate merge-legacy-plants ui dev dev-auth-test e2e-browser ollama-smoke ollama-smoke-cpu ollama-smoke-help guardian-eval guardian-qa-smoke guardian-qa-smoke-ec-ph guardian-qa-smoke-unread-alerts guardian-qa-phase127 guardian-qa-regression guardian-qa-manual guardian-qa-smoke-strict guardian-qa-change-requests guardian-laptop-tune rag-ingest-help rag-ingest-demo rag-ingest-platform-docs compose-db-up compose-db-status compose-logging-up compose-logging-down setup-compose-dev dev-stack dev-stack-fresh dev-stack-fresh-rag local-up restart-local restart-local-serve db-sanity-report check-stack check-crop-library check-crop-catalog check-crop-catalog-parity check-catalog-seed-drift add-crop-check check-catalog-release check-ui-domain-parity clean lint bootstrap-local bootstrap-local-docker install-deps-debian install-pi-edge-deps first-clone first-clone-docker first-clone-install-deps audit-openapi audit-env edge-smoke-help edge-actuator-smoke-help recipe-pack-import-help agronomy-seed-pack-help guardian-bootstrap-farm import-agronomy-seed-pack apply-agronomy-overrides rag-ingest-farm-operational
+.PHONY: run run-receiver build build-receiver test seed sqlc migrate merge-legacy-plants ui dev dev-auth-test e2e-browser ollama-smoke ollama-smoke-cpu ollama-smoke-help guardian-eval guardian-qa-smoke guardian-qa-smoke-ec-ph guardian-qa-smoke-unread-alerts guardian-qa-phase127 guardian-qa-regression guardian-qa-manual guardian-qa-smoke-strict guardian-qa-change-requests guardian-laptop-tune rag-ingest-help rag-ingest-demo rag-ingest-platform-docs compose-db-up compose-db-status compose-logging-up compose-logging-down setup-compose-dev dev-stack dev-stack-fresh dev-stack-fresh-rag local-up restart-local restart-local-serve laptop-up db-sanity-report check-stack check-crop-library check-crop-catalog check-crop-catalog-parity check-catalog-seed-drift add-crop-check check-catalog-release check-ui-domain-parity clean lint bootstrap-local bootstrap-local-docker install-deps-debian install-pi-edge-deps first-clone first-clone-docker first-clone-install-deps audit-openapi audit-env edge-smoke-help edge-actuator-smoke-help recipe-pack-import-help agronomy-seed-pack-help guardian-bootstrap-farm import-agronomy-seed-pack apply-agronomy-overrides rag-ingest-farm-operational
 
 # dash (common default /bin/sh) can report "wait: No child processes" for dev / dev-auth-test;
 # bash handles background jobs + wait reliably.
@@ -385,6 +385,9 @@ restart-local: ## After reboot: Compose db up + wait + db sanity report (no migr
 	@./scripts/restart-local.sh
 
 restart-local-serve: ## Same as restart-local then make dev-auth-test (Go compile may be slow cold)
+	@./scripts/restart-local.sh --serve
+
+laptop-up: ## Laptop dev one-liner: DB + local Ollama (if loopback) + API + UI — run from repo root
 	@./scripts/restart-local.sh --serve
 
 db-sanity-report: ## Read-only SQL checks (duplicate zones/sensors, profile, extensions)

@@ -10,16 +10,16 @@ Single happy path for standing up **Postgres → API → dashboard → optional 
 
 **Login-and-go:** after reboot you should not need manual `ollama stop` rituals. Tune once per machine, restart the stack, log in, and open Guardian — awakening preloads the counsel model in the background.
 
-**Where to run commands:** `make …` and `./scripts/…` must be run from the **repository root** (`cd ~/gr33n-platform`). `systemctl start ollama` works from any directory.
+**Where to run commands:** `make …` and `./scripts/…` must be run from the **repository root** (`cd ~/gr33n-platform`). `systemctl start ollama` works from **any directory** — you do not need to `cd` into the repo first.
 
 ```bash
 cd ~/gr33n-platform
 
+# After reboot — one line on your laptop (DB + Ollama + API + UI)
+make laptop-up                    # same as make restart-local-serve
+
 # One-time per laptop (CPU timeouts + retry policy)
 make guardian-laptop-tune ARGS="--apply"
-
-# After reboot — DB + API + UI (one terminal; Go compile may take minutes)
-make restart-local-serve          # → scripts/restart-local.sh --serve
 
 # Or stepwise:
 make restart-local              # → scripts/restart-local.sh (db + sanity only)
@@ -40,7 +40,9 @@ make rag-ingest-platform-docs
 # Full bootstrap: make guardian-bootstrap-farm FARM_ID=1
 ```
 
-**If awakening stalls > 30s:** check Ollama is running (`systemctl start ollama`, `./scripts/guardian-power.sh wake`, or open the Ollama app), then **Awaken now** in Settings. Use **Quick chat** for fast ungrounded questions while phi3 warms up.
+**If awakening stalls > 30s:** Ollama may still be starting — wait a few seconds and tap **Awaken now** in Settings. If you stopped Ollama for testing, `systemctl start ollama` from any terminal (no `cd` into the repo). Use **Quick chat** while the counsel model warms up.
+
+**Laptop vs enterprise:** `make laptop-up` assumes **everything on one machine** (Postgres in Docker, Ollama on loopback, API + UI on localhost). Production / enterprise sites split roles — Postgres, API, UI, and Ollama may each live on different hosts. There is no single “bring up the farm” command across servers; admins start each tier on its own box (see [offline-or-intranet-deployment.md](offline-or-intranet-deployment.md)).
 
 **Power saving (Phase 163):** three tiers — pick what fits your site:
 

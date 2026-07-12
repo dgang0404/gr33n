@@ -296,17 +296,11 @@ UI  → `http://localhost:5173`
 You do **not** need to re-clone or re-seed every time. From the repo root:
 
 ```bash
-make restart-local-serve   # starts Postgres (Compose), waits, sanity-checks, then API + UI
+cd ~/gr33n-platform
+make laptop-up   # DB + local Ollama + API + UI — one terminal after reboot
 ```
 
-Or step by step:
-
-```bash
-make restart-local           # Postgres only + db sanity report
-make dev-auth-test           # API + UI in separate jobs (JWT login like production)
-```
-
-Details: [`docs/local-operator-bootstrap.md`](docs/local-operator-bootstrap.md#after-a-reboot-same-db-volume--no-full-reinstall). First cold `go run` after reboot can take several minutes — pre-build with `go build -tags dev -o ./bin/api ./cmd/api/` if you want faster restarts.
+Same as `make restart-local-serve`. First cold `go run` after reboot can take several minutes — pre-build with `go build -tags dev -o ./bin/api ./cmd/api/` if you want faster restarts. `systemctl start ollama` alone works from any directory if you only need Ollama back.
 
 Receipt storage defaults to local disk for development:
 
@@ -684,8 +678,9 @@ make run-auth-test # API with AUTH_MODE=auth_test (JWT + PI_API_KEY; restart aft
 make rag-ingest-demo   # Index farm_id=1 only (skip message if no embedding key)
 make rag-ingest-platform-docs  # Curated operator docs (tour, playbooks, phase guides) for Guardian RAG
 make local-up        # dev-stack then API + UI (same as ./scripts/dev-stack.sh --serve)
+make laptop-up       # Laptop one-liner: DB + local Ollama + API + UI (after reboot)
 make restart-local   # After reboot: Compose db + wait + sanity report (no migrations)
-make restart-local-serve  # restart-local then API + UI (make dev-auth-test)
+make restart-local-serve  # same as laptop-up
 # Admin Ollama service stop/start (solar sites): ./scripts/guardian-power.sh sleep|wake|status
 make check-stack     # Verify DATABASE_URL + pgvector + optional API /health (see docs/local-operator-bootstrap.md)
 make run        # Run the API server
