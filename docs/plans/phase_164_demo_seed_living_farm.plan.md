@@ -12,7 +12,7 @@ overview: >
 todos:
   - id: ws1-decannabis-crops
     content: "WS1: Retheme farm-1 crop cycles/plants — cannabis → chrysanthemum (catalog + field guide untouched)"
-    status: pending
+    status: completed
   - id: ws2-seed-readings
     content: "WS2: Seed recent sensor_readings for wired sensors — healthy baseline values"
     status: pending

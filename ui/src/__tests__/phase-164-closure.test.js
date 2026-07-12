@@ -1,0 +1,35 @@
+/**
+ * Phase 164 — Demo seed: living farm, no cannabis.
+ */
+import { describe, it, expect } from 'vitest'
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
+
+const repoRoot = join(process.cwd(), '..')
+
+describe('Phase 164 WS1 — decannabis demo seed', () => {
+  const seed = readFileSync(join(repoRoot, 'db/seeds/master_seed.sql'), 'utf8')
+
+  it('rethemes farm-1 plants to chrysanthemum', () => {
+    expect(seed).toContain("'Chrysanthemum', 'Mixed spray varieties', 'chrysanthemum'")
+    expect(seed).toContain("DELETE FROM gr33ncrops.plants\nWHERE farm_id = 1 AND crop_key = 'cannabis'")
+    expect(seed).not.toMatch(/INSERT INTO gr33ncrops\.plants[\s\S]*?'cannabis'/)
+  })
+
+  it('uses chrysanthemum batch labels instead of cannabis strains', () => {
+    expect(seed).toContain("'Anastasia Green'")
+    expect(seed).toContain("'Zembla White'")
+    expect(seed).toContain("'Bloom run (12/12)'")
+    expect(seed).toContain('Chrysanthemum — Cutting Batch 12')
+    // Fresh INSERT rows — legacy names only appear in idempotent migration UPDATEs.
+    expect(seed).not.toMatch(/INSERT INTO gr33nfertigation\.crop_cycles[\s\S]*'Gorilla Glue/)
+    expect(seed).not.toMatch(/INSERT INTO gr33nfertigation\.crop_cycles[\s\S]*'Blue Dream'/)
+    expect(seed).not.toMatch(/\) AS v\(zone_name[\s\S]*'OG Kush'/)
+  })
+
+  it('updates grower-facing copy for bloom stage', () => {
+    expect(seed).toContain('bloom openness and stem length')
+    expect(seed).toContain('bloom stage')
+    expect(seed).not.toContain('Check trichomes')
+  })
+})

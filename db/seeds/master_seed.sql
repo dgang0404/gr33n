@@ -1002,10 +1002,10 @@ FROM (VALUES
   ('Veg Room',        'Water Late Veg Daily',        'Mix JMS batch for veg reservoir',           'Brew 20L JMS from forest leaf mold. Needs 3–7 days ferment. Use in next veg reservoir mix.',  'jadam_prep',    'todo',        2, CURRENT_DATE + 1),
   ('Veg Room',        'Water Late Veg Daily',        'Check veg room EC levels',                  'Target 1.2–2.0 mS/cm for late veg. Adjust JLF drench ratio if drifting.', 'monitoring',    'todo',        2, CURRENT_DATE),
   ('Flower Room',     'Water Early Flower Daily',    'Apply FFJ + WCA foliar spray',              'FFJ 1:500 + WCA 1:1000. Morning spray before lights peak. Follow schedule.', 'jadam_apply',   'in_progress', 3, CURRENT_DATE),
-  ('Flower Room',     'Water Early Flower Daily',    'Inspect flower room for powdery mildew',    'Check leaf undersides. Prep JS spray if found. Critical during flower.', 'scouting',     'in_progress', 2, CURRENT_DATE),
+  ('Flower Room',     'Water Early Flower Daily',    'Inspect flower room for powdery mildew',    'Check leaf undersides. Prep JS spray if found. Critical during bloom.', 'scouting',     'in_progress', 2, CURRENT_DATE),
   ('Outdoor Garden',  'Water Outdoor Garden Daily',  'Apply JLF soil drench — outdoor beds',      '1:20 JLF dilution. 3L per sqm. Combine with JMS 1:500 in drench tank.', 'jadam_apply',   'todo',        1, CURRENT_DATE + 2),
   ('Veg Room',        NULL,                          'Calibrate pH sensor',                       'pH drifting — recalibrate with 6.86 and 4.01 buffer solution.', 'maintenance',  'on_hold',     2, CURRENT_DATE + 1),
-  ('Flower Room',     NULL,                          'Harvest Flower Room A',                     'Week 9 photoperiod crop. Flush complete. Check trichomes.', 'harvest',       'completed',   3, CURRENT_DATE - 2),
+  ('Flower Room',     NULL,                          'Harvest Flower Room A',                     'Week 9 short-day crop. Flush complete. Check bloom openness and stem length.', 'harvest',       'completed',   3, CURRENT_DATE - 2),
   ('Outdoor Garden',  NULL,                          'Turn compost pile',                         'Aerate pile. Check temp 55–65C. Moisture should clump not drip.', 'soil_prep',    'completed',   1, CURRENT_DATE - 5)
 ) AS t(z, sched, title, description, task_type, status, priority, due_date)
 WHERE NOT EXISTS (
@@ -1391,12 +1391,63 @@ WHERE fe.farm_id = 1
   AND rv.name = 'Outdoor Drench Tank'
   AND me.notes LIKE '%[seed:outdoor-mix-demo]%';
 
+-- Phase 164 WS1 — retheme demo farm: cannabis → chrysanthemum (catalog + field
+-- guides keep cannabis). Idempotent for already-seeded DBs.
+DELETE FROM gr33ncrops.plants
+WHERE farm_id = 1 AND crop_key = 'cannabis' AND deleted_at IS NULL;
+
+UPDATE gr33nfertigation.crop_cycles
+SET batch_label = 'Anastasia Green',
+    cycle_notes = 'Match light schedule "Light ON/OFF 18/6 Veg" and Veg Daily JLF fertigation program.'
+WHERE farm_id = 1 AND deleted_at IS NULL
+  AND name = 'Veg canopy (18/6)'
+  AND batch_label = 'Blue Dream';
+
+UPDATE gr33nfertigation.crop_cycles
+SET name = 'Bloom run (12/12)',
+    batch_label = 'Zembla White',
+    cycle_notes = 'Match "Light ON/OFF 12/12 Flower" and Flower Daily FFJ+WCA program.'
+WHERE farm_id = 1 AND deleted_at IS NULL
+  AND name = 'Flower run (12/12)'
+  AND batch_label = 'Gorilla Glue #4';
+
+UPDATE gr33nfertigation.crop_cycles
+SET name = 'Anastasia Green — Run 3 (harvested)',
+    batch_label = 'Anastasia Green',
+    cycle_notes = 'Previous bloom run. Held in cooler 5 days; graded for stem length and ship date.'
+WHERE farm_id = 1 AND deleted_at IS NULL
+  AND name = 'Blue Dream — Run 3 (harvested)';
+
+UPDATE gr33nfertigation.crop_cycles
+SET name = 'Chrysanthemum — Cutting Batch 12',
+    batch_label = 'Zembla White',
+    cycle_notes = 'Rooting under dome, 24h light, misted 2x daily. Chrysanthemum tip cuttings.'
+WHERE farm_id = 1 AND deleted_at IS NULL
+  AND name = 'OG Kush — Clone Batch 12';
+
+UPDATE gr33ncore.tasks
+SET description = 'Week 9 short-day crop. Flush complete. Check bloom openness and stem length.'
+WHERE farm_id = 1 AND deleted_at IS NULL AND title = 'Harvest Flower Room A'
+  AND description LIKE '%trichomes%';
+
+UPDATE gr33ncore.tasks
+SET description = 'Check leaf undersides. Prep JS spray if found. Critical during bloom.'
+WHERE farm_id = 1 AND deleted_at IS NULL AND title = 'Inspect flower room for powdery mildew'
+  AND description LIKE '%Critical during flower%';
+
+UPDATE gr33ncore.alerts_notifications
+SET message_text_rendered = 'Air Humidity Indoor read 72.4% RH (alert threshold 65% for bloom stage). '
+    || 'Zone: Flower Room. Consider dehumidification or increased airflow before powdery mildew risk.'
+WHERE farm_id = 1 AND deleted_at IS NULL
+  AND subject_rendered = 'Humidity high — Flower Room'
+  AND message_text_rendered LIKE '%late flower%';
+
 -- Phase 124 WS1 — one `plants` catalog row per crop grown on this farm. The
--- specific strain/variety per grow lives on crop_cycles.batch_label instead
--- (Phase 93); this row is just "we grow cannabis / tomato / etc. here".
+-- specific variety per grow lives on crop_cycles.batch_label instead
+-- (Phase 93); this row is just "we grow chrysanthemum / tomato / etc. here".
 INSERT INTO gr33ncrops.plants (farm_id, display_name, variety_or_cultivar, crop_key)
 VALUES
-    (1, 'Cannabis',   'Mixed photoperiod',    'cannabis'),
+    (1, 'Chrysanthemum', 'Mixed spray varieties', 'chrysanthemum'),
     (1, 'Tomato',     'Roma',                 'tomato'),
     (1, 'Pepper',     'California Wonder',    'pepper'),
     (1, 'Basil',      'Genovese',             'basil'),
@@ -1405,13 +1456,26 @@ VALUES
     (1, 'Lettuce',    'Buttercrunch',         'lettuce')
 ON CONFLICT DO NOTHING;
 
+-- Re-link chrysanthemum cycles after cannabis plant row removal (Phase 164).
+UPDATE gr33nfertigation.crop_cycles cc
+SET plant_id = p.id
+FROM gr33ncrops.plants p
+WHERE cc.farm_id = 1 AND cc.deleted_at IS NULL
+  AND p.farm_id = 1 AND p.crop_key = 'chrysanthemum' AND p.deleted_at IS NULL
+  AND cc.name IN (
+    'Veg canopy (18/6)',
+    'Bloom run (12/12)', 'Flower run (12/12)',
+    'Anastasia Green — Run 3 (harvested)', 'Blue Dream — Run 3 (harvested)',
+    'Chrysanthemum — Cutting Batch 12', 'OG Kush — Clone Batch 12'
+  );
+
 INSERT INTO gr33nfertigation.crop_cycles
     (farm_id, zone_id, name, batch_label, current_stage, is_active, started_at, cycle_notes)
 SELECT
     1,
     z.id,
     'Veg canopy (18/6)',
-    'Blue Dream',
+    'Anastasia Green',
     'late_veg'::gr33nfertigation.growth_stage_enum,
     TRUE,
     CURRENT_DATE - 35,
@@ -1428,8 +1492,8 @@ INSERT INTO gr33nfertigation.crop_cycles
 SELECT
     1,
     z.id,
-    'Flower run (12/12)',
-    'Gorilla Glue #4',
+    'Bloom run (12/12)',
+    'Zembla White',
     'early_flower'::gr33nfertigation.growth_stage_enum,
     TRUE,
     CURRENT_DATE - 14,
@@ -1466,8 +1530,8 @@ UPDATE gr33nfertigation.crop_cycles cc
 SET plant_id = p.id
 FROM gr33ncrops.plants p, gr33ncore.zones z
 WHERE cc.farm_id = 1 AND cc.plant_id IS NULL AND cc.zone_id = z.id
-  AND ((z.name = 'Veg Room' AND p.crop_key = 'cannabis' AND cc.name = 'Veg canopy (18/6)')
-    OR (z.name = 'Flower Room' AND p.crop_key = 'cannabis' AND cc.name = 'Flower run (12/12)')
+  AND ((z.name = 'Veg Room' AND p.crop_key = 'chrysanthemum' AND cc.name = 'Veg canopy (18/6)')
+    OR (z.name = 'Flower Room' AND p.crop_key = 'chrysanthemum' AND cc.name = 'Bloom run (12/12)')
     OR (z.name = 'Outdoor Garden' AND p.crop_key = 'tomato' AND cc.name = 'Outdoor raised beds — spring'))
   AND p.farm_id = 1;
 
@@ -1475,8 +1539,8 @@ INSERT INTO gr33nfertigation.crop_cycles
     (farm_id, zone_id, plant_id, name, batch_label, current_stage, is_active, started_at, harvested_at, yield_grams, cycle_notes)
 SELECT 1, z.id, p.id, v.name, v.batch_label, v.stage::gr33nfertigation.growth_stage_enum, v.is_active, v.started_at::date, v.harvested_at::date, v.yield_grams, v.notes
 FROM (VALUES
-    ('Flower Room',         'cannabis',   'Blue Dream — Run 3 (harvested)',              'Blue Dream',         'dry_cure',     FALSE, (CURRENT_DATE-100)::text, (CURRENT_DATE-15)::text, 412.5, 'Previous flower run. Dried 10 days, curing in jars.'),
-    ('Propagation Room',    'cannabis',   'OG Kush — Clone Batch 12',                     'OG Kush',            'clone',        TRUE,  (CURRENT_DATE-9)::text,   NULL,                    NULL,  'Rooting under dome, 24h light, misted 2x daily.'),
+    ('Flower Room',         'chrysanthemum', 'Anastasia Green — Run 3 (harvested)',      'Anastasia Green',    'dry_cure',     FALSE, (CURRENT_DATE-100)::text, (CURRENT_DATE-15)::text, 412.5, 'Previous bloom run. Held in cooler 5 days; graded for stem length and ship date.'),
+    ('Propagation Room',    'chrysanthemum', 'Chrysanthemum — Cutting Batch 12',         'Zembla White',       'clone',        TRUE,  (CURRENT_DATE-9)::text,   NULL,                    NULL,  'Rooting under dome, 24h light, misted 2x daily. Chrysanthemum tip cuttings.'),
     ('Propagation Room',    'tomato',     'Roma — Seedling Tray 4 (transplanted)',        'Roma',               'seedling',     FALSE, (CURRENT_DATE-35)::text, NULL,                    NULL,  'Transplanted to Outdoor Garden after hardening off.'),
     ('Herb & Greens Room',  'basil',      'Genovese Basil — Perpetual Bed',               'Genovese',           'late_veg',     TRUE,  (CURRENT_DATE-25)::text, NULL,                    NULL,  'Cut-and-come-again. Harvest outer leaves weekly.'),
     ('Herb & Greens Room',  'cilantro',   'Santo Cilantro — Cut Batch 2 (harvested)',     'Santo',              'harvest',      FALSE, (CURRENT_DATE-60)::text, (CURRENT_DATE-10)::text, 180,   'Bolted in warm spell, harvested whole plants.'),
@@ -1497,7 +1561,7 @@ INSERT INTO gr33ncore.sensors
      alert_threshold_low, alert_threshold_high, reading_interval_seconds, config)
 SELECT 1, z.id, s.name, s.sensor_type, u.id, s.vmin, s.vmax, s.alert_low, s.alert_high, s.interval_sec, s.config::jsonb
 FROM (VALUES
-    ('Propagation Room',    'Propagation Dome Temp',     'temperature',   'celsius', 15, 35, 20, 29, 60,  '{"notes":"Clones like it warm: 22-26C dome temp."}'),
+    ('Propagation Room',    'Propagation Dome Temp',     'temperature',   'celsius', 15, 35, 20, 29, 60,  '{"notes":"Chrysanthemum cuttings like it warm: 22-26C dome temp."}'),
     ('Herb & Greens Room',  'Herb Room Air Temp',        'temperature',   'celsius', 10, 35, 16, 28, 60,  '{"notes":"Leafy greens/herbs prefer 18-24C."}'),
     ('Outdoor Pepper Bed',  'Pepper Bed Soil Moisture',  'soil_moisture', 'percent', 0,  100,20, 85, 300, '{"notes":"Peppers: water at 30-40%, drought-tolerant once established."}'),
     ('Outdoor Berry Patch', 'Berry Patch Soil Moisture', 'soil_moisture', 'percent', 0,  100,25, 80, 300, '{"notes":"Strawberries: shallow roots, keep evenly moist 40-60%."}')
@@ -1519,7 +1583,7 @@ WHERE cc.farm_id = 1
   AND p.deleted_at IS NULL
   AND (
     (cc.name = 'Veg canopy (18/6)'             AND p.name = 'Veg Daily JLF Program')
-    OR (cc.name = 'Flower run (12/12)'          AND p.name = 'Flower Daily FFJ+WCA Program')
+    OR (cc.name = 'Bloom run (12/12)'            AND p.name = 'Flower Daily FFJ+WCA Program')
     OR (cc.name = 'Outdoor raised beds — spring' AND p.name = 'Outdoor JLF Soil Drench')
   );
 
@@ -1605,7 +1669,7 @@ SELECT
     s.id,
     'high'::gr33ncore.notification_priority_enum,
     'Humidity high — Flower Room',
-    'Air Humidity Indoor read 72.4% RH (alert threshold 65% for late flower). '
+    'Air Humidity Indoor read 72.4% RH (alert threshold 65% for bloom stage). '
     || 'Zone: Flower Room. Consider dehumidification or increased airflow before powdery mildew risk.',
     'pending',
     FALSE,
