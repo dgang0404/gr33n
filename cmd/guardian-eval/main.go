@@ -27,8 +27,8 @@ func main() {
 	qaArchive := flag.String("qa-archive", "", "optional full QA run JSON path (default data/guardian_qa_runs/…)")
 	llmBase := flag.String("llama-url", os.Getenv("LLM_BASE_URL"), "Ollama OpenAI base (for model discovery when models=all)")
 	failOnRegression := flag.Bool("fail-on-regression", false, "exit non-zero if any fixture fails its heuristic, instead of always exiting 0")
-	checkPendingProposals := flag.Bool("check-pending-proposals", false, "after the run, fetch GET /v1/chat/proposals?status=pending and confirm write-intent fixtures actually landed a row in Guardian's change-request queue (not just an inline chat proposal)")
-	confirmProposals := flag.Bool("confirm-proposals", false, "after pending check, POST /v1/chat/confirm for each passed write-intent proposal and verify DB side effects (Phase 162)")
+	checkPendingProposals := flag.Bool("check-pending-proposals", false, "after each passed write-intent prompt, verify its proposal_id is in the pending queue (and skip the end-of-run batch check — proposals expire after 5m while prompts take 20+ min)")
+	confirmProposals := flag.Bool("confirm-proposals", false, "with -check-pending-proposals: confirm each passed proposal immediately after its prompt and verify DB side effects (requires -check-pending-proposals)")
 	flag.Parse()
 
 	if *manualFlag {
@@ -68,6 +68,8 @@ func main() {
 		WarmupTimeout:  eval.WarmupTimeoutFromEnv(),
 		WarmupAsync:    suite == "smoke" || suite == "phase127" || suite == "change-requests" || suite == "change_requests" || suite == "proposals" || suite == "pr",
 		LogPath:        strings.TrimSpace(os.Getenv("GUARDIAN_EVAL_LOG")),
+		CheckPendingPerPrompt: *checkPendingProposals,
+		ConfirmPerPrompt:      *confirmProposals,
 	}
 
 	rep := farmguardian.EvalReport{
@@ -76,9 +78,14 @@ func main() {
 	}
 	expectedProposals := 0
 	var requiredProposalIDs []string
+	failed := false
 	for _, model := range modelNames {
 		log.Printf("evaluating model %q suite=%s (%d questions)…", model, suite, len(fixtures))
-		scores := eval.RunSuite(ctx, client, model, fixtures, runOpts)
+		scores, runErr := eval.RunSuite(ctx, client, model, fixtures, runOpts)
+		if runErr != nil {
+			log.Printf("eval suite error: %v", runErr)
+			failed = true
+		}
 		rep.Models[normalizeModelKey(model)] = eval.BuildReport(model, scores, *reportPath)
 		details := eval.ToEvalQuestionScores(scores)
 		rep.Details[normalizeModelKey(model)] = details
@@ -100,7 +107,6 @@ func main() {
 	farmguardian.RefreshEvalCache()
 	fmt.Printf("\nEval report written to %s\n", *reportPath)
 
-	failed := false
 	if *failOnRegression {
 		if regressions := regressionFailures(rep.Details); len(regressions) > 0 {
 			fmt.Printf("\nGuardian eval regression — %d fixture(s) failed their heuristic:\n", len(regressions))
@@ -112,7 +118,9 @@ func main() {
 	}
 
 	if *checkPendingProposals {
-		if err := reportPendingProposals(ctx, client, expectedProposals, requiredProposalIDs); err != nil {
+		if runOpts.CheckPendingPerPrompt {
+			fmt.Printf("\nPending queue verified per prompt (%d proposal_id(s) from passed write-intent fixtures).\n", len(requiredProposalIDs))
+		} else if err := reportPendingProposals(ctx, client, expectedProposals, requiredProposalIDs); err != nil {
 			fmt.Printf("\nPending change-request queue check failed: %v\n", err)
 			failed = true
 		}
@@ -122,6 +130,8 @@ func main() {
 		if !*checkPendingProposals {
 			fmt.Println("\nConfirm skipped: -confirm-proposals requires -check-pending-proposals")
 			failed = true
+		} else if runOpts.ConfirmPerPrompt {
+			fmt.Printf("\nConfirm→DB verified per prompt for passed write-intent fixtures.\n")
 		} else if !failed {
 			for model, details := range rep.Details {
 				fmt.Printf("\nConfirming passed write-intent proposals (%s)…\n", model)

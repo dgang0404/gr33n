@@ -22,6 +22,45 @@ type ConfirmVerificationInput struct {
 	Result    map[string]any
 }
 
+// ConfirmAndVerifyProposal confirms one pending proposal and verifies its DB side effect.
+func ConfirmAndVerifyProposal(ctx context.Context, client *APIClient, fixtureID, proposalID string) error {
+	proposalID = strings.TrimSpace(proposalID)
+	if proposalID == "" {
+		return fmt.Errorf("%s: empty proposal_id", fixtureID)
+	}
+	pending, err := client.FetchPendingProposals(ctx)
+	if err != nil {
+		return err
+	}
+	var prop PendingProposal
+	found := false
+	for _, p := range pending {
+		if strings.TrimSpace(p.ProposalID) == proposalID {
+			prop = p
+			found = true
+			break
+		}
+	}
+	if !found {
+		return fmt.Errorf("%s: proposal %s not in pending queue before confirm", fixtureID, proposalID)
+	}
+	log.Printf("confirm: %s proposal=%s tool=%s", fixtureID, proposalID, prop.Tool)
+	cr, err := client.ConfirmProposal(ctx, proposalID)
+	if err != nil {
+		return fmt.Errorf("%s confirm %s: %w", fixtureID, proposalID, err)
+	}
+	if err := VerifyConfirmSideEffect(ctx, client, ConfirmVerificationInput{
+		FixtureID: fixtureID,
+		Tool:      prop.Tool,
+		Args:      prop.Args,
+		Result:    cr.Result,
+	}); err != nil {
+		return fmt.Errorf("%s post-confirm: %w", fixtureID, err)
+	}
+	log.Printf("confirm: %s verified DB side effect", fixtureID)
+	return nil
+}
+
 // ConfirmAndVerifyPassedProposals confirms each passed write-intent proposal and
 // asserts the expected DB side effect via confirm result + follow-up GETs.
 func ConfirmAndVerifyPassedProposals(
@@ -34,33 +73,10 @@ func ConfirmAndVerifyPassedProposals(
 	if len(targets) == 0 {
 		return fmt.Errorf("no passed write-intent proposals to confirm")
 	}
-	pending, err := client.FetchPendingProposals(ctx)
-	if err != nil {
-		return err
-	}
-	byID := make(map[string]PendingProposal, len(pending))
-	for _, p := range pending {
-		byID[p.ProposalID] = p
-	}
 	for _, t := range targets {
-		prop, ok := byID[t.ProposalID]
-		if !ok {
-			return fmt.Errorf("%s: proposal %s not in pending queue before confirm", t.FixtureID, t.ProposalID)
+		if err := ConfirmAndVerifyProposal(ctx, client, t.FixtureID, t.ProposalID); err != nil {
+			return err
 		}
-		log.Printf("confirm: %s proposal=%s tool=%s", t.FixtureID, t.ProposalID, prop.Tool)
-		cr, err := client.ConfirmProposal(ctx, t.ProposalID)
-		if err != nil {
-			return fmt.Errorf("%s confirm %s: %w", t.FixtureID, t.ProposalID, err)
-		}
-		if err := VerifyConfirmSideEffect(ctx, client, ConfirmVerificationInput{
-			FixtureID: t.FixtureID,
-			Tool:      prop.Tool,
-			Args:      prop.Args,
-			Result:    cr.Result,
-		}); err != nil {
-			return fmt.Errorf("%s post-confirm: %w", t.FixtureID, err)
-		}
-		log.Printf("confirm: %s verified DB side effect", t.FixtureID)
 	}
 	return nil
 }

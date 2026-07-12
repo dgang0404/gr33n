@@ -58,3 +58,38 @@ func (c *APIClient) FetchPendingProposals(ctx context.Context) ([]PendingProposa
 	}
 	return parsed.Proposals, nil
 }
+
+// VerifyPendingProposalIDs confirms each proposal_id from this prompt is still
+// in the pending queue. Call immediately after the chat turn — proposals expire
+// after ProposalTTL (5m) while eval prompts can take 20+ minutes each.
+func VerifyPendingProposalIDs(ctx context.Context, client *APIClient, proposalIDs []string) error {
+	var ids []string
+	for _, id := range proposalIDs {
+		if id = strings.TrimSpace(id); id != "" {
+			ids = append(ids, id)
+		}
+	}
+	if len(ids) == 0 {
+		return fmt.Errorf("no proposal_id(s) to verify")
+	}
+	pending, err := client.FetchPendingProposals(ctx)
+	if err != nil {
+		return err
+	}
+	pendingSet := make(map[string]PendingProposal, len(pending))
+	for _, p := range pending {
+		if id := strings.TrimSpace(p.ProposalID); id != "" {
+			pendingSet[id] = p
+		}
+	}
+	var missing []string
+	for _, id := range ids {
+		if _, ok := pendingSet[id]; !ok {
+			missing = append(missing, id)
+		}
+	}
+	if len(missing) > 0 {
+		return fmt.Errorf("proposal_id(s) not in pending queue: %s", strings.Join(missing, ", "))
+	}
+	return nil
+}

@@ -108,7 +108,10 @@ func proposalIDsFromResponse(props []farmguardian.ActionProposal) []string {
 
 // RunSuite executes fixtures sequentially (one prompt at a time).
 // When warmupGrounded is true, runs farm_counsel warmup before the first grounded prompt.
-func RunSuite(ctx context.Context, api *APIClient, model string, fixtures []Question, opts RunSuiteOptions) []ScoreResult {
+// When CheckPendingPerPrompt is set, verifies each passed write-intent proposal is still
+// pending immediately after its chat turn (before ProposalTTL expires).
+// When ConfirmPerPrompt is set, confirms and verifies DB side effects the same way.
+func RunSuite(ctx context.Context, api *APIClient, model string, fixtures []Question, opts RunSuiteOptions) ([]ScoreResult, error) {
 	var out []ScoreResult
 	groundedWarmed := false
 	for i, q := range fixtures {
@@ -148,6 +151,22 @@ func RunSuite(ctx context.Context, api *APIClient, model string, fixtures []Ques
 		}
 		log.Printf("eval: [%d/%d] %q %s in %.1fs (proposals=%d citations=%d)",
 			i+1, len(fixtures), q.ID, status, in.Latency.Seconds(), res.ProposalCount, res.CitationCount)
+		if q.ExpectProposal && res.Passed && len(res.ProposalIDs) > 0 {
+			if opts.CheckPendingPerPrompt {
+				if err := VerifyPendingProposalIDs(ctx, api, res.ProposalIDs); err != nil {
+					return out, fmt.Errorf("%s pending queue: %w", q.ID, err)
+				}
+				log.Printf("eval: [%d/%d] %q verified pending queue (%d proposal_id(s))",
+					i+1, len(fixtures), q.ID, len(res.ProposalIDs))
+			}
+			if opts.ConfirmPerPrompt {
+				for _, pid := range res.ProposalIDs {
+					if err := ConfirmAndVerifyProposal(ctx, api, q.ID, pid); err != nil {
+						return out, err
+					}
+				}
+			}
+		}
 		if opts.LogPath != "" && q.ExpectTool != "" {
 			ev := ScrapeLogEvidence(opts.LogPath, q.ID, q.ExpectTool)
 			if len(ev) > 0 {
@@ -160,20 +179,22 @@ func RunSuite(ctx context.Context, api *APIClient, model string, fixtures []Ques
 		}
 		out = append(out, res)
 	}
-	return out
+	return out, nil
 }
 
 // RunSuiteOptions configures sequential eval runs.
 type RunSuiteOptions struct {
-	WarmupGrounded bool
-	WarmupTimeout  time.Duration
-	WarmupAsync    bool
-	LogPath        string
+	WarmupGrounded       bool
+	WarmupTimeout        time.Duration
+	WarmupAsync          bool
+	LogPath              string
+	CheckPendingPerPrompt bool
+	ConfirmPerPrompt     bool
 }
 
 // RunModel executes regression fixtures for one model name.
 func RunModel(ctx context.Context, api *APIClient, model string) ([]ScoreResult, error) {
-	return RunSuite(ctx, api, model, Fixtures(), RunSuiteOptions{}), nil
+	return RunSuite(ctx, api, model, Fixtures(), RunSuiteOptions{})
 }
 
 func scoreResultFromError(q Question, model string, err error) ScoreResult {
