@@ -14,7 +14,7 @@ var (
 	feedVolumeAlt    = regexp.MustCompile(`(?i)(\d+(?:\.\d+)?)\s*l\s+(?:per\s+)?(?:feed|run|watering)`)
 	irrigationOnlyIntent = regexp.MustCompile(`(?i)(?:switch|change|set).*(?:plain\s+)?(?:water[\s-]*only|irrigation[\s-]*only|plain\s+water(?:[\s-]*only)?)`)
 	pauseFeedingIntent   = regexp.MustCompile(`(?i)(?:pause|disable|stop|turn\s+off)\s+(?:the\s+)?(?:feed(?:ing)?|watering|irrigation)`)
-	pauseScheduleIntent  = regexp.MustCompile(`(?i)(?:pause|disable|stop|turn\s+off)\s+(?:the\s+)?schedule`)
+	pauseScheduleIntent  = regexp.MustCompile(`(?i)(?:pause|disable|stop|turn\s+off).*\bschedule\b`)
 	enableScheduleIntent = regexp.MustCompile(`(?i)(?:enable|resume|turn\s+on|start)\s+(?:the\s+)?schedule`)
 )
 
@@ -131,15 +131,158 @@ func resolveScheduleForIntent(ctx context.Context, querier farmMatchQuerier, far
 		return db.Gr33ncoreSchedule{}, false
 	}
 	lower := strings.ToLower(question)
+	zoneID := resolveZoneIDForIntent(ctx, querier, question, farmID, snap)
+	zoneName := resolveZoneNameForIntent(ctx, querier, question, farmID, snap)
+	lightingIntent := strings.Contains(lower, "light")
+
 	for _, s := range schedules {
-		if strings.Contains(lower, strings.ToLower(s.Name)) {
+		if s.Name != "" && strings.Contains(lower, strings.ToLower(s.Name)) {
 			return s, true
 		}
 	}
+
+	if lightingIntent && zoneID > 0 {
+		if sch, ok := resolveLightingScheduleForZone(ctx, querier, schedules, farmID, zoneID); ok {
+			return sch, true
+		}
+	}
+
+	if zoneName != "" || zoneID > 0 {
+		var candidates []db.Gr33ncoreSchedule
+		for _, s := range schedules {
+			if lightingIntent && s.ScheduleType != "lighting" {
+				continue
+			}
+			if zoneName != "" && !scheduleDescribesZone(s, zoneName) {
+				continue
+			}
+			candidates = append(candidates, s)
+		}
+		if sch, ok := pickScheduleForIntent(candidates, lightingIntent, lower); ok {
+			return sch, true
+		}
+	}
+
+	if lightingIntent {
+		var lighting []db.Gr33ncoreSchedule
+		for _, s := range schedules {
+			if s.ScheduleType == "lighting" {
+				lighting = append(lighting, s)
+			}
+		}
+		if sch, ok := pickScheduleForIntent(lighting, true, lower); ok {
+			return sch, true
+		}
+	}
+
 	if len(schedules) == 1 {
 		return schedules[0], true
 	}
 	return db.Gr33ncoreSchedule{}, false
+}
+
+type lightingProgramQuerier interface {
+	ListLightingProgramsByFarm(ctx context.Context, farmID int64) ([]db.Gr33ncoreLightingProgram, error)
+}
+
+func resolveLightingScheduleForZone(
+	ctx context.Context,
+	querier farmMatchQuerier,
+	schedules []db.Gr33ncoreSchedule,
+	farmID, zoneID int64,
+) (db.Gr33ncoreSchedule, bool) {
+	lpq, ok := querier.(lightingProgramQuerier)
+	if !ok {
+		return db.Gr33ncoreSchedule{}, false
+	}
+	programs, err := lpq.ListLightingProgramsByFarm(ctx, farmID)
+	if err != nil || len(programs) == 0 {
+		return db.Gr33ncoreSchedule{}, false
+	}
+	for _, lp := range programs {
+		if lp.ZoneID != zoneID || !lp.IsActive {
+			continue
+		}
+		if lp.ScheduleOnID != nil {
+			if sch, ok := scheduleByID(schedules, *lp.ScheduleOnID); ok {
+				return sch, true
+			}
+		}
+	}
+	return db.Gr33ncoreSchedule{}, false
+}
+
+func scheduleByID(schedules []db.Gr33ncoreSchedule, id int64) (db.Gr33ncoreSchedule, bool) {
+	for _, s := range schedules {
+		if s.ID == id {
+			return s, true
+		}
+	}
+	return db.Gr33ncoreSchedule{}, false
+}
+
+func scheduleDescribesZone(s db.Gr33ncoreSchedule, zoneName string) bool {
+	if zoneName == "" {
+		return true
+	}
+	if s.Description != nil {
+		desc := strings.ToLower(*s.Description)
+		zoneLower := strings.ToLower(zoneName)
+		if strings.Contains(desc, "zone: "+zoneLower) || strings.Contains(desc, zoneLower) {
+			return true
+		}
+	}
+	nameLower := strings.ToLower(s.Name)
+	zoneLower := strings.ToLower(zoneName)
+	return strings.Contains(nameLower, zoneLower)
+}
+
+func pickScheduleForIntent(candidates []db.Gr33ncoreSchedule, lightingIntent bool, lowerQuestion string) (db.Gr33ncoreSchedule, bool) {
+	if len(candidates) == 0 {
+		return db.Gr33ncoreSchedule{}, false
+	}
+	if len(candidates) == 1 {
+		return candidates[0], true
+	}
+	if lightingIntent {
+		for _, s := range candidates {
+			nameLower := strings.ToLower(s.Name)
+			if !s.IsActive {
+				continue
+			}
+			if strings.Contains(nameLower, "light on") || strings.Contains(nameLower, "lights on") {
+				return s, true
+			}
+		}
+		for _, s := range candidates {
+			if s.IsActive {
+				return s, true
+			}
+		}
+	}
+	for _, s := range candidates {
+		if s.IsActive {
+			return s, true
+		}
+	}
+	return candidates[0], true
+}
+
+func resolveZoneNameForIntent(ctx context.Context, querier farmMatchQuerier, question string, farmID int64, snap Snapshot) string {
+	zoneID := resolveZoneIDForIntent(ctx, querier, question, farmID, snap)
+	if zoneID <= 0 {
+		return ""
+	}
+	zones, err := querier.ListZonesByFarm(ctx, farmID)
+	if err != nil {
+		return ""
+	}
+	for _, z := range zones {
+		if z.ID == zoneID {
+			return z.Name
+		}
+	}
+	return ""
 }
 
 func resolveZoneIDForIntent(ctx context.Context, querier farmMatchQuerier, question string, farmID int64, snap Snapshot) int64 {
@@ -148,6 +291,11 @@ func resolveZoneIDForIntent(ctx context.Context, querier farmMatchQuerier, quest
 	if err == nil {
 		for _, z := range zones {
 			if z.Name != "" && strings.Contains(lower, strings.ToLower(z.Name)) {
+				return z.ID
+			}
+		}
+		for _, z := range zones {
+			if zoneIntentMatchesNickname(lower, z.Name) {
 				return z.ID
 			}
 		}
@@ -160,6 +308,36 @@ func resolveZoneIDForIntent(ctx context.Context, querier farmMatchQuerier, quest
 				}
 			}
 		}
+		if zoneIntentMatchesNickname(lower, name) {
+			for _, z := range zones {
+				if z.Name == name {
+					return z.ID
+				}
+			}
+		}
 	}
 	return 0
+}
+
+func zoneIntentMatchesNickname(questionLower, zoneName string) bool {
+	zoneLower := strings.ToLower(strings.TrimSpace(zoneName))
+	for _, nick := range zoneNicknamesFor(zoneLower) {
+		if strings.Contains(questionLower, nick) {
+			return true
+		}
+	}
+	return false
+}
+
+func zoneNicknamesFor(zoneNameLower string) []string {
+	switch {
+	case strings.Contains(zoneNameLower, "veg"):
+		return []string{"veg tent", "veg stage", "vegetative tent"}
+	case strings.Contains(zoneNameLower, "flower"):
+		return []string{"flower tent", "bloom room", "flowering tent"}
+	case strings.Contains(zoneNameLower, "propagation"):
+		return []string{"prop room", "clone room", "propagation tent"}
+	default:
+		return nil
+	}
 }

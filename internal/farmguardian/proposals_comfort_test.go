@@ -9,11 +9,12 @@ import (
 )
 
 type fakeComfortQuerier struct {
-	rules     []db.Gr33ncoreAutomationRule
-	schedules []db.Gr33ncoreSchedule
-	programs  []db.Gr33nfertigationProgram
-	zones     []db.Gr33ncoreZone
-	sensors   []db.Gr33ncoreSensor
+	rules            []db.Gr33ncoreAutomationRule
+	schedules        []db.Gr33ncoreSchedule
+	programs         []db.Gr33nfertigationProgram
+	zones            []db.Gr33ncoreZone
+	sensors          []db.Gr33ncoreSensor
+	lightingPrograms []db.Gr33ncoreLightingProgram
 }
 
 func (f *fakeComfortQuerier) ListAutomationRulesByFarm(context.Context, int64) ([]db.Gr33ncoreAutomationRule, error) {
@@ -34,6 +35,10 @@ func (f *fakeComfortQuerier) ListZonesByFarm(context.Context, int64) ([]db.Gr33n
 
 func (f *fakeComfortQuerier) ListSensorsByFarm(context.Context, int64) ([]db.Gr33ncoreSensor, error) {
 	return f.sensors, nil
+}
+
+func (f *fakeComfortQuerier) ListLightingProgramsByFarm(context.Context, int64) ([]db.Gr33ncoreLightingProgram, error) {
+	return f.lightingPrograms, nil
 }
 
 func TestMatchComfortAutomationIntent_DisableShadeRule(t *testing.T) {
@@ -82,6 +87,47 @@ func TestMatchComfortAutomationIntent_PauseLightsSchedule(t *testing.T) {
 		t.Fatalf("schedule_id=%v", args["schedule_id"])
 	}
 }
+
+func TestMatchComfortAutomationIntent_PauseVegTentLightsMultiScheduleFarm(t *testing.T) {
+	ctx := context.Background()
+	zoneID := int64(1)
+	onID := int64(10)
+	offID := int64(11)
+	vegDesc := "Lights on at 06:00. 18 hours on for active vegetative growth."
+	fq := &fakeComfortQuerier{
+		zones: []db.Gr33ncoreZone{{ID: zoneID, Name: "Veg Room"}},
+		lightingPrograms: []db.Gr33ncoreLightingProgram{{
+			ID:            1,
+			ZoneID:        zoneID,
+			Name:          "Veg Room 18/6 Photoperiod",
+			IsActive:      true,
+			ScheduleOnID:  &onID,
+			ScheduleOffID: &offID,
+		}},
+		schedules: []db.Gr33ncoreSchedule{
+			{ID: 3, Name: "Light ON 12/12 Flower", ScheduleType: "lighting", IsActive: false},
+			{ID: onID, Name: "Light ON 18/6 Veg", ScheduleType: "lighting", Description: &vegDesc, IsActive: true},
+			{ID: offID, Name: "Light OFF 18/6 Veg", ScheduleType: "lighting", IsActive: true},
+			{ID: 20, Name: "Water Late Veg Daily", ScheduleType: "irrigation", Description: strPtr("Zone: Veg Room. Light: 18/6."), IsActive: true},
+		},
+	}
+	prompt := "Pause the lights schedule for Veg Tent until tomorrow."
+	tool, args, summary, ok := matchComfortAutomationIntent(ctx, fq, 1, prompt, Snapshot{ZoneNames: []string{"Veg Room"}})
+	if !ok || tool != "patch_schedule" {
+		t.Fatalf("got tool=%q ok=%v want patch_schedule for %q", tool, ok, prompt)
+	}
+	if args["schedule_id"] != onID {
+		t.Fatalf("schedule_id=%v want %d (lighting program ON schedule)", args["schedule_id"], onID)
+	}
+	if active, _ := args["is_active"].(bool); active {
+		t.Fatalf("is_active=%v want false", active)
+	}
+	if !strings.Contains(summary, "Light ON 18/6 Veg") {
+		t.Fatalf("summary=%q", summary)
+	}
+}
+
+func strPtr(s string) *string { return &s }
 
 func TestMatchComfortAutomationIntent_SetEC(t *testing.T) {
 	ctx := context.Background()
