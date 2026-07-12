@@ -71,6 +71,7 @@ The API loads `.env` and `.env.local` automatically when started from the repo r
 | `GUARDIAN_GROUNDED_TIMEOUT_SECONDS` | `max(1500, LLM_TIMEOUT_SECONDS)` | Grounded `/v1/chat` HTTP timeout floor (farm counsel on CPU). Per-farm override: `guardian_grounded_timeout_seconds` via Settings (Phase 138). |
 | `GUARDIAN_EARLY_SSE` | on | `0`/`false` disables early SSE phase status before prompt build |
 | `GUARDIAN_INLINE_WARMUP_ON_SEND` | on | `0`/`false` skips inline chat preload on grounded send |
+| `GUARDIAN_AUTO_DORMANT_MINUTES` | `0` (off) | After N idle minutes with no chat/warmup, unload the warm chat model (Phase 163). Settings shows countdown when ready. |
 | `GUARDIAN_EVAL_TIMEOUT_SECONDS` | inherits grounded timeout | `cmd/guardian-eval` / `make guardian-qa-smoke` HTTP client timeout |
 | `GUARDIAN_RELEVANCE_MIN` | `0.35` | Embed cosine floor for `low_relevance` on turn debug (Phase 145) |
 | `GUARDIAN_RAG_MAX_CHUNKS_FIELD_GUIDE` | — | Max `field_guide` chunks kept after agronomy retrieval filter (Phase 145; e.g. `5` on cpu laptop) |

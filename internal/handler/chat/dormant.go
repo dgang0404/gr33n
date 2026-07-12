@@ -72,7 +72,7 @@ func (h *Handler) PostDormant(w http.ResponseWriter, r *http.Request) {
 	if h.baseLLM != nil && strings.TrimSpace(h.baseLLM.BaseURL) != "" {
 		llmBase = h.baseLLM.BaseURL
 	}
-	if err := farmguardian.RequestDormant(r.Context(), llmBase, chatModel, visionModel); err != nil {
+	if err := farmguardian.RequestDormant(r.Context(), llmBase, chatModel, visionModel, false); err != nil {
 		httputil.WriteError(w, http.StatusBadGateway, "failed to rest Guardian: "+err.Error())
 		return
 	}

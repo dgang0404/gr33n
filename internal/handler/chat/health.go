@@ -3,6 +3,7 @@ package chat
 import (
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	db "gr33n-api/internal/db"
@@ -36,6 +37,14 @@ func (h *Handler) GetHealth(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ctx := r.Context()
+	llmBase := farmguardian.LLMBaseURLFromEnv()
+	if h.baseLLM != nil && strings.TrimSpace(h.baseLLM.BaseURL) != "" {
+		llmBase = h.baseLLM.BaseURL
+	}
+	if farmguardian.AutoDormantMinutesFromEnv() > 0 && llmBase != "" {
+		_, _ = farmguardian.MaybeAutoDormant(ctx)
+	}
+
 	var fieldChunks, platformChunks int64
 	var corpus *farmguardian.CorpusHealth
 	if h.q != nil && farmID > 0 {

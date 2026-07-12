@@ -82,6 +82,16 @@
       </p>
 
       <p v-for="(msg, i) in readiness.awakening.messages" :key="i" class="text-xs text-zinc-500">{{ msg }}</p>
+      <p
+        v-if="readiness.awakening.auto_dormant_minutes"
+        class="text-xs text-zinc-500"
+        data-test="settings-guardian-auto-dormant"
+      >
+        Auto-rest after {{ readiness.awakening.auto_dormant_minutes }} minutes idle
+        <template v-if="readiness.awakening.state === 'ready' && readiness.awakening.idle_until_dormant_sec > 0">
+          — ~{{ idleMinutesLabel }} until rest
+        </template>
+      </p>
       <p v-if="readiness.awakening.last_warmup_error" class="text-xs text-red-300/90">
         {{ readiness.awakening.last_warmup_error }}
       </p>
@@ -213,6 +223,12 @@ const lastCheckedLabel = computed(() => {
   } catch {
     return ''
   }
+})
+
+const idleMinutesLabel = computed(() => {
+  const sec = readiness.awakening?.idle_until_dormant_sec
+  if (!sec || sec <= 0) return ''
+  return String(Math.max(1, Math.ceil(sec / 60)))
 })
 
 async function refreshHealth() {

@@ -35,13 +35,13 @@ func TestRequestDormant_unloadsChatModelAndSetsFlag(t *testing.T) {
 	})
 	defer srv.Close()
 
-	if err := RequestDormant(t.Context(), srv.URL+"/v1", "phi3:mini", ""); err != nil {
+	if err := RequestDormant(t.Context(), srv.URL+"/v1", "phi3:mini", "", false); err != nil {
 		t.Fatal(err)
 	}
 	if gotKeepAlive != float64(0) {
 		t.Fatalf("keep_alive=%v want 0", gotKeepAlive)
 	}
-	requested, at := snapshotDormantState()
+	requested, _, at := snapshotDormantState()
 	if !requested {
 		t.Fatal("expected dormantRequested=true")
 	}
@@ -60,7 +60,7 @@ func TestRequestDormant_alsoUnloadsVisionModel(t *testing.T) {
 	})
 	defer srv.Close()
 
-	if err := RequestDormant(t.Context(), srv.URL+"/v1", "phi3:mini", "llava:latest"); err != nil {
+	if err := RequestDormant(t.Context(), srv.URL+"/v1", "phi3:mini", "llava:latest", false); err != nil {
 		t.Fatal(err)
 	}
 	if !seen["phi3:mini"] || !seen["llava:latest"] {
@@ -69,7 +69,7 @@ func TestRequestDormant_alsoUnloadsVisionModel(t *testing.T) {
 }
 
 func TestRequestDormant_emptyChatModelErrors(t *testing.T) {
-	if err := RequestDormant(t.Context(), "http://127.0.0.1:11434/v1", "", ""); err == nil {
+	if err := RequestDormant(t.Context(), "http://127.0.0.1:11434/v1", "", "", false); err == nil {
 		t.Fatal("expected error for empty chat model")
 	}
 }
@@ -79,11 +79,11 @@ func TestClearDormantFlag_resetsState(t *testing.T) {
 	srv := startMockOllamaGenerate(t, nil)
 	defer srv.Close()
 
-	if err := RequestDormant(t.Context(), srv.URL+"/v1", "phi3:mini", ""); err != nil {
+	if err := RequestDormant(t.Context(), srv.URL+"/v1", "phi3:mini", "", false); err != nil {
 		t.Fatal(err)
 	}
 	ClearDormantFlag()
-	requested, _ := snapshotDormantState()
+	requested, _, _ := snapshotDormantState()
 	if requested {
 		t.Fatal("expected dormantRequested=false after ClearDormantFlag")
 	}
@@ -96,7 +96,7 @@ func TestBuildAwakeningHealth_DormantWhenRequested(t *testing.T) {
 
 	genSrv := startMockOllamaGenerate(t, nil)
 	defer genSrv.Close()
-	if err := RequestDormant(t.Context(), genSrv.URL+"/v1", "phi3:mini", ""); err != nil {
+	if err := RequestDormant(t.Context(), genSrv.URL+"/v1", "phi3:mini", "", false); err != nil {
 		t.Fatal(err)
 	}
 
@@ -116,10 +116,10 @@ func TestStartWarmup_clearsDormantFlag(t *testing.T) {
 	t.Cleanup(ClearDormantFlag)
 	genSrv := startMockOllamaGenerate(t, nil)
 	defer genSrv.Close()
-	if err := RequestDormant(t.Context(), genSrv.URL+"/v1", "phi3:mini", ""); err != nil {
+	if err := RequestDormant(t.Context(), genSrv.URL+"/v1", "phi3:mini", "", false); err != nil {
 		t.Fatal(err)
 	}
-	requested, _ := snapshotDormantState()
+	requested, _, _ := snapshotDormantState()
 	if !requested {
 		t.Fatal("setup: expected dormant flag set before warmup")
 	}
@@ -127,7 +127,7 @@ func TestStartWarmup_clearsDormantFlag(t *testing.T) {
 	srv := startMockOllamaPS(t, nil)
 	StartWarmup(t.Context(), srv.URL+"/v1", "farm_counsel", "phi3:mini", nil, nil, "phi3:mini", nil, false)
 
-	requested, _ = snapshotDormantState()
+	requested, _, _ = snapshotDormantState()
 	if requested {
 		t.Fatal("expected StartWarmup to clear dormant flag")
 	}

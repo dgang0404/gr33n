@@ -118,4 +118,16 @@ describe('Phase 129 WS8 — GuardianSettingsAwakeningCard', () => {
     expect(wrapper.get('[data-test="settings-guardian-state"]').text()).toContain('Resting')
     wrapper.unmount()
   })
+
+  it('Phase 163 WS3 — shows auto-rest countdown when configured', async () => {
+    stubHealth({ state: 'ready', chat_model_loaded: true, auto_dormant_minutes: 45, idle_until_dormant_sec: 1800 })
+    const wrapper = mount(GuardianSettingsAwakeningCard, {
+      props: { isFarmAdmin: true },
+    })
+    await flushPromises()
+    const hint = wrapper.get('[data-test="settings-guardian-auto-dormant"]')
+    expect(hint.text()).toContain('45')
+    expect(hint.text()).toContain('30')
+    wrapper.unmount()
+  })
 })

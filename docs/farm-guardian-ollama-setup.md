@@ -277,6 +277,7 @@ CI smokes skip live vision unless `GR33N_VISION_TEST=1`.
 | **Disk pressure** | `ollama list` / `ollama rm <tag>` to retire old weights. Put `/var/lib/ollama` on a dedicated SSD volume so it can't fill the root partition. |
 | **GPU monitoring** | `nvidia-smi` and `journalctl -u ollama -f`. If you run the Phase 26 Loki overlay, Promtail will pick up the Ollama unit's journal automatically. |
 | **First-token latency** | Tune `OLLAMA_KEEP_ALIVE=24h` (above) — without it the model unloads after a few minutes and the next request pays the cold-start tax. |
+| **Idle power (Phase 163)** | **Rest now** / `GUARDIAN_AUTO_DORMANT_MINUTES` unload the warm model from RAM via the API. For full process stop on solar sites, admins use [`scripts/guardian-power.sh`](../scripts/guardian-power.sh) — not exposed in the web UI. |
 | **Concurrent requests** | Ollama serializes per model. If you start seeing tail latency on a busy farm, scale **vertically** (bigger GPU) or split RAG synthesis off to a separate Ollama instance behind a different `LLM_BASE_URL` for each consumer — both still OpenAI-compatible. |
 | **Switching to cloud** | Flip `LLM_BASE_URL` + `LLM_MODEL` + `LLM_API_KEY`. No code change. Useful for outage failover during GPU maintenance. |
 

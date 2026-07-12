@@ -175,6 +175,7 @@ func main() {
 		} else {
 			log.Printf("🧹 Chat session prune loop: disabled (CHAT_SESSION_TTL_DAYS=%d)", pruneCfg.TTLDays)
 		}
+		farmguardian.StartAutoDormantLoop(context.Background())
 	}
 
 	fileStore, fileCfg, err := filestorage.NewFromEnv(context.Background())

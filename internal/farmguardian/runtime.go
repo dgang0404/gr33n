@@ -47,4 +47,5 @@ func MaybeInlineWarmupOnSend(ctx context.Context, llmBaseURL, chatModel string, 
 		return
 	}
 	slog.Info("guardian: inline warmup on send", "chat_model", chatModel)
+	ClearDormantFlag()
 }

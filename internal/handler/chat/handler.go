@@ -559,6 +559,7 @@ func (h *Handler) PostV1(w http.ResponseWriter, r *http.Request) {
 		"elapsed_ms", time.Since(turnStarted).Milliseconds(),
 		"stream", false,
 	)
+	farmguardian.NoteGuardianActivity(chatClient.ModelLabel())
 	httputil.WriteJSON(w, http.StatusOK, resp)
 }
 
@@ -722,6 +723,7 @@ func (h *Handler) streamResponse(
 		"elapsed_ms", time.Since(turnStarted).Milliseconds(),
 		"ttft_ms", ttftMs(firstTokenAt, turnStarted),
 	)
+	farmguardian.NoteGuardianActivity(chatClient.ModelLabel())
 }
 
 func ttftMs(firstTokenAt, started time.Time) int64 {

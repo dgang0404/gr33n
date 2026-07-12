@@ -102,6 +102,7 @@ func runWarmup(ctx context.Context, llmBaseURL, mode, chatModel string, includeV
 		return
 	}
 	slog.Info("guardian: warmup ready", "chat_model", chatModel, "mode", mode)
+	NoteGuardianActivity(chatModel)
 
 	if includeVision {
 		visionModel := VisionModelFromEnv()

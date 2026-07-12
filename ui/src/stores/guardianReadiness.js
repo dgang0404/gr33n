@@ -116,7 +116,7 @@ export const useGuardianReadinessStore = defineStore('guardianReadiness', {
       if (this.awakening?.state === 'ready' || this.awakening?.state === 'unavailable') {
         return
       }
-      if (!this.warmupStarted && (this.awakening?.state === 'sleeping' || !this.awakening)) {
+      if (!this.warmupStarted && (this.awakening?.state === 'sleeping' || this.awakening?.state === 'dormant' || !this.awakening)) {
         await this.warmup(farmId, mode)
         return
       }

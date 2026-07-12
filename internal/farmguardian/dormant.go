@@ -23,13 +23,15 @@ import (
 var (
 	dormantMu        sync.Mutex
 	dormantRequested bool
+	dormantAuto      bool
 	dormantAt        time.Time
 )
 
 // RequestDormant unloads the given chat model (and vision model, if set and
 // different) from Ollama. Returns an error only if the chat model unload
-// fails — vision unload is best-effort.
-func RequestDormant(ctx context.Context, llmBaseURL, chatModel, visionModel string) error {
+// fails — vision unload is best-effort. Set auto true when the idle timer
+// triggered the rest (Phase 163 WS3); false for operator Rest now.
+func RequestDormant(ctx context.Context, llmBaseURL, chatModel, visionModel string, auto bool) error {
 	chatModel = strings.TrimSpace(chatModel)
 	if chatModel == "" {
 		return fmt.Errorf("empty chat model")
@@ -47,9 +49,18 @@ func RequestDormant(ctx context.Context, llmBaseURL, chatModel, visionModel stri
 	}
 	dormantMu.Lock()
 	dormantRequested = true
+	dormantAuto = auto
 	dormantAt = time.Now()
 	dormantMu.Unlock()
 	return nil
+}
+
+// DormantWasAuto reports whether the current rest state was triggered by the
+// idle timer (WS3) rather than an explicit Rest now click.
+func DormantWasAuto() bool {
+	dormantMu.Lock()
+	defer dormantMu.Unlock()
+	return dormantAuto
 }
 
 // ClearDormantFlag marks Guardian as no longer deliberately resting — called
@@ -58,13 +69,14 @@ func RequestDormant(ctx context.Context, llmBaseURL, chatModel, visionModel stri
 func ClearDormantFlag() {
 	dormantMu.Lock()
 	dormantRequested = false
+	dormantAuto = false
 	dormantMu.Unlock()
 }
 
 // snapshotDormantState reports whether Guardian is currently in a
-// deliberate rest state and when that was requested.
-func snapshotDormantState() (bool, time.Time) {
+// deliberate rest state, whether it was auto-triggered, and when.
+func snapshotDormantState() (requested bool, auto bool, at time.Time) {
 	dormantMu.Lock()
 	defer dormantMu.Unlock()
-	return dormantRequested, dormantAt
+	return dormantRequested, dormantAuto, dormantAt
 }

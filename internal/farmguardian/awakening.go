@@ -4,8 +4,10 @@ package farmguardian
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"strings"
+	"time"
 )
 
 const (
@@ -41,9 +43,11 @@ type AwakeningHealth struct {
 	PlatformDocChunks  int64         `json:"platform_doc_chunks"`
 	Corpus             *CorpusHealth `json:"corpus,omitempty"`
 	Messages           []string      `json:"messages,omitempty"`
-	WarmupInProgress   bool     `json:"warmup_in_progress"`
-	LastWarmupError    string   `json:"last_warmup_error,omitempty"`
-	StaleOllamaCLI     bool     `json:"stale_ollama_cli,omitempty"`
+	WarmupInProgress   bool          `json:"warmup_in_progress"`
+	LastWarmupError    string        `json:"last_warmup_error,omitempty"`
+	StaleOllamaCLI     bool          `json:"stale_ollama_cli,omitempty"`
+	AutoDormantMinutes int           `json:"auto_dormant_minutes,omitempty"`
+	IdleUntilDormantSec int          `json:"idle_until_dormant_sec,omitempty"`
 }
 
 // AwakeningBuildInput collects probes for BuildAwakeningHealth.
@@ -142,11 +146,21 @@ func BuildAwakeningHealth(ctx context.Context, in AwakeningBuildInput) Awakening
 	}
 	if out.ChatModelLoaded {
 		out.State = AwakeningStateReady
+		if enabled, remaining := AutoDormantIdleRemaining(); enabled {
+			out.AutoDormantMinutes = int(AutoDormantMinutesFromEnv() / time.Minute)
+			out.IdleUntilDormantSec = int(remaining.Seconds())
+		}
 		return out
 	}
-	if dormantRequested, _ := snapshotDormantState(); dormantRequested {
+	if dormantRequested, dormantAuto, _ := snapshotDormantState(); dormantRequested {
 		out.State = AwakeningStateDormant
-		out.Messages = append(out.Messages, "Resting to save power — tap Awaken now when you need Guardian again.")
+		if dormantAuto {
+			mins := int(AutoDormantMinutesFromEnv() / time.Minute)
+			out.Messages = append(out.Messages,
+				fmt.Sprintf("Guardian rested automatically after %d minutes idle — tap Awaken now when you need counsel again.", mins))
+		} else {
+			out.Messages = append(out.Messages, "Resting to save power — tap Awaken now when you need Guardian again.")
+		}
 		return out
 	}
 	out.State = AwakeningStateSleeping

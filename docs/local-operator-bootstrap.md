@@ -26,7 +26,10 @@ make restart-local              # → scripts/restart-local.sh (db + sanity only
 make dev-auth-test              # API :8080 + UI :5173
 
 # Login → open Farm Guardian — badge goes amber → green while awakening runs
-# Settings → Farm Guardian readiness shows state, corpus counts, Awaken now
+# Settings → Farm Guardian readiness shows state, corpus counts, Awaken now / Rest now
+
+# Solar/battery: optional auto-rest after idle (unload model RAM — not the Ollama service)
+# GUARDIAN_AUTO_DORMANT_MINUTES=45   # in .env, then restart API
 
 # Verify stack (Postgres, API, Ollama probe)
 make check-stack                # → scripts/check-local-stack.sh
@@ -37,7 +40,17 @@ make rag-ingest-platform-docs
 # Full bootstrap: make guardian-bootstrap-farm FARM_ID=1
 ```
 
-**If awakening stalls > 30s:** check Ollama is running (`systemctl start ollama` or open the Ollama app), then **Awaken now** in Settings. Use **Quick chat** for fast ungrounded questions while phi3 warms up.
+**If awakening stalls > 30s:** check Ollama is running (`systemctl start ollama`, `./scripts/guardian-power.sh wake`, or open the Ollama app), then **Awaken now** in Settings. Use **Quick chat** for fast ungrounded questions while phi3 warms up.
+
+**Power saving (Phase 163):** three tiers — pick what fits your site:
+
+| Tier | What | How |
+|------|------|-----|
+| **Rest now** | Unload warm chat model from RAM | Settings → Farm Guardian readiness → **Rest now** |
+| **Auto-rest** | Same, after N idle minutes | `GUARDIAN_AUTO_DORMANT_MINUTES=45` in `.env`, restart API |
+| **Service stop** | Stop Ollama process entirely (admin) | `./scripts/guardian-power.sh sleep` (sudo) — not in web UI |
+
+After service stop, run `./scripts/guardian-power.sh wake` then **Awaken now**.
 
 **Manual RAM hygiene (rare):** only if the box is wedged after heavy ingest + chat:
 
@@ -46,7 +59,7 @@ ollama stop phi3:mini
 ollama stop rjmalagon/gte-qwen2-1.5b-instruct-embed-f16   # match EMBEDDING_MODEL in .env
 ```
 
-**Script map:** [`scripts/restart-local.sh`](../scripts/restart-local.sh) · [`scripts/check-local-stack.sh`](../scripts/check-local-stack.sh) · [`scripts/tune-guardian-laptop.sh`](../scripts/tune-guardian-laptop.sh) · [`scripts/rag-ingest-farm-operational.sh`](../scripts/rag-ingest-farm-operational.sh) · [`scripts/enterprise/guardian-bootstrap-farm.sh`](../scripts/enterprise/guardian-bootstrap-farm.sh)
+**Script map:** [`scripts/restart-local.sh`](../scripts/restart-local.sh) · [`scripts/check-local-stack.sh`](../scripts/check-local-stack.sh) · [`scripts/tune-guardian-laptop.sh`](../scripts/tune-guardian-laptop.sh) · [`scripts/guardian-power.sh`](../scripts/guardian-power.sh) · [`scripts/rag-ingest-farm-operational.sh`](../scripts/rag-ingest-farm-operational.sh) · [`scripts/enterprise/guardian-bootstrap-farm.sh`](../scripts/enterprise/guardian-bootstrap-farm.sh)
 
 **Guardian CPU / timeouts / pull vs dropdown:** [guardian-ollama-laptop-playbook.md](guardian-ollama-laptop-playbook.md)
 
