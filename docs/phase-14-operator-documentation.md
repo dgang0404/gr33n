@@ -141,6 +141,27 @@ Hub: [`phase_68_73_spa_workspace_roadmap.plan.md`](plans/phase_68_73_spa_workspa
 | **109** ✅ | Catalog version push notifications | [`phase_109_catalog_version_push_notifications.plan.md`](plans/phase_109_catalog_version_push_notifications.plan.md) · [`phase-109-closure.md`](plans/phase-109-closure.md) · [`enterprise-catalog-version-notifications.md`](enterprise-catalog-version-notifications.md) |
 | **110** ✅ | Phase 82 formal closure audit (OC-82) | [`phase_110_phase_82_formal_closure.plan.md`](plans/phase_110_phase_82_formal_closure.plan.md) · [`phase-110-closure.md`](plans/phase-110-closure.md) · [`phase-82-closure.md`](plans/phase-82-closure.md) |
 
+## Phases 164–171 — Visual Today farm cockpit
+
+Hub: operator tour [§7k](operator-tour.md#7k-visual-farm-cockpit-phases-164168--shipped). **Shipped** on `main` — transforms **Today** (`/`) into the grower cockpit: spatial farm map, quick actions, attention strip, one-tap Farm counsel.
+
+| Phase | Focus | Plan / tests |
+|-------|--------|--------------|
+| **164** ✅ | Living demo seed — chrysanthemum, sensor readings, gravity drip, health states | [`phase_164_demo_seed_living_farm.plan.md`](plans/phase_164_demo_seed_living_farm.plan.md) · `phase-164-closure.test.js` · `go test -run Phase164` |
+| **165** ✅ | Farm layout API + background image | [`phase_165_farm_layout_api.plan.md`](plans/phase_165_farm_layout_api.plan.md) · `phase-165-closure.test.js` |
+| **166** ✅ | Today visual farm canvas (desktop) | [`phase_166_today_visual_farm_canvas.plan.md`](plans/phase_166_today_visual_farm_canvas.plan.md) · `farm-canvas.test.js` |
+| **167** ✅ | Mobile zone stack + quick actions | [`phase_167_mobile_stack_quick_actions.plan.md`](plans/phase_167_mobile_stack_quick_actions.plan.md) · `zone-quick-actions.test.js` |
+| **168** ✅ | Checklist removal + farmer copy polish | [`phase_168_today_cleanup_polish.plan.md`](plans/phase_168_today_cleanup_polish.plan.md) · `phase-168-closure.test.js` |
+| **169** ✅ | Attention strip + Guardian attention starters | [`phase_169_today_attention_cockpit.plan.md`](plans/phase_169_today_attention_cockpit.plan.md) |
+| **170** ✅ | One-tap Farm counsel from Today starters | [`phase_170_today_guardian_one_tap.plan.md`](plans/phase_170_today_guardian_one_tap.plan.md) |
+| **171** ✅ | Demo zone layouts in seed | [`phase_171_demo_zone_layouts_seed.plan.md`](plans/phase_171_demo_zone_layouts_seed.plan.md) |
+
+## Phase 172 — Field guides + documentation
+
+| Phase | Focus | Artifacts |
+|-------|--------|-----------|
+| **172** ✅ | Expand demo-farm crop field guides; add **marigold** + **geranium** to catalog; phase-14 + current-state sync | `docs/field-guides/crop-*.md` · `data/crop_library.yaml` · `db/seed/crop_catalog_from_yaml.sql` |
+
 ## Master roadmap — Phases 84–110
 
 **Locked order:** [`plans/phase_84_100_master_roadmap.plan.md`](plans/phase_84_100_master_roadmap.plan.md)

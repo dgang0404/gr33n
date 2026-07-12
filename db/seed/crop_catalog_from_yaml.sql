@@ -45,6 +45,8 @@ FROM (VALUES
     ('rosemary', 'Rosemary', true, 'herb', 'Woody Mediterranean herb; lean feed; excellent drainage', 'coco / gritty_mix', 'pulse_dryback', NULL, NULL, NULL, NULL, 4),
     ('lavender', 'Lavender', true, 'herb', 'Dry-lean aromatic; low EC; alkaline-leaning ok', 'gritty_mix / coco', 'dry_down_succulent', NULL, NULL, NULL, NULL, 4),
     ('chrysanthemum', 'Chrysanthemum (mum)', true, 'flower', 'Photoperiod-sensitive cut flower; moderate EC', 'rockwool / coco', 'pulse_dryback', NULL, NULL, NULL, NULL, 4),
+    ('marigold', 'Marigold (bedding)', true, 'flower', 'Short-cycle bedding flower; outdoor and bench', 'peat / coco / field', 'pulse_dryback', NULL, NULL, NULL, NULL, 4),
+    ('geranium', 'Geranium (zonal bedding)', true, 'flower', 'Sun-loving pot and bench bedding; drainage critical', 'peat / coco', 'pulse_dryback', NULL, NULL, NULL, NULL, 4),
     ('apple', 'Apple (nursery / young tree)', true, 'fruit_tree', 'Container or greenhouse nursery — multi-year to bearing; not full orchard automation', 'soilless_mix / large container', 'pulse_dryback', NULL, NULL, NULL, NULL, 4),
     ('citrus', 'Citrus (lemon / orange nursery)', true, 'fruit_tree', 'Warm greenhouse citrus nursery; container citrus production', 'soilless_mix / large container', 'pulse_dryback', NULL, NULL, NULL, NULL, 4),
     ('fig', 'Fig (container)', true, 'fruit_tree', 'Warm container fig; breba/main crop cultivar-dependent', 'soilless_mix / large container', 'pulse_dryback', NULL, NULL, NULL, NULL, 4),
@@ -103,6 +105,8 @@ UPDATE gr33ncrops.crop_catalog_entries SET cousin_of = 'basil' WHERE crop_key = 
 UPDATE gr33ncrops.crop_catalog_entries SET cousin_of = 'thyme' WHERE crop_key = 'rosemary';
 UPDATE gr33ncrops.crop_catalog_entries SET cousin_of = 'rosemary' WHERE crop_key = 'lavender';
 UPDATE gr33ncrops.crop_catalog_entries SET cousin_of = 'rose' WHERE crop_key = 'chrysanthemum';
+UPDATE gr33ncrops.crop_catalog_entries SET cousin_of = 'sunflower' WHERE crop_key = 'marigold';
+UPDATE gr33ncrops.crop_catalog_entries SET cousin_of = 'marigold' WHERE crop_key = 'geranium';
 UPDATE gr33ncrops.crop_catalog_entries SET cousin_of = 'tomato' WHERE crop_key = 'apple';
 UPDATE gr33ncrops.crop_catalog_entries SET cousin_of = 'tomato' WHERE crop_key = 'citrus';
 UPDATE gr33ncrops.crop_catalog_entries SET cousin_of = 'tomato' WHERE crop_key = 'fig';
@@ -141,13 +145,16 @@ FROM (VALUES
     ('pak_choi', 'bok_choy'),
     ('pak_choy', 'bok_choy'),
     ('panax', 'ginseng'),
+    ('pelargonium', 'geranium'),
     ('potato', 'in_ground_root'),
     ('shiitake', 'mushroom'),
     ('sweet_potato', 'in_ground_root'),
     ('swiss_chard', 'chard'),
+    ('tagetes', 'marigold'),
     ('trichocereus', 'san_pedro'),
     ('weed', 'cannabis'),
-    ('wild_leek', 'ramps')
+    ('wild_leek', 'ramps'),
+    ('zonal_geranium', 'geranium')
 ) AS v(alias, crop_key)
 ON CONFLICT (alias) DO UPDATE SET crop_key = EXCLUDED.crop_key;
 
@@ -369,7 +376,30 @@ Orchids are the **opposite** of high-EC fruiting crops: target EC often **0.4–
 Use the phalaenopsis built-in profile for Guardian targets; narrative here explains *why* the numbers are low.$fg_crop_orchid_care$, 4, TRUE, 10),
     ('crop-pepper-nutrition', 'Pepper nutrition (fruiting hydro)', 'pepper', 'crop_nutrition', 'general', 'safe', $fg_crop_pepper_nutrition$# Pepper nutrition (fruiting hydro)
 
-Peppers fruit at **moderate-high EC** — similar curve to tomato but **lower peak** (~2.2–3.0 mS/cm in heavy fruit). They want **warm** root zones; cold irrigation in winter rooms stalls set.
+Peppers fruit at **moderate-high EC** — similar curve to tomato but **lower peak** (~2.2–3.0 mS/cm in heavy fruit). They want **warm** root zones; cold irrigation in spring outdoor beds stalls set.
+
+## Feed
+
+| Stage | EC target (mS/cm) | Notes |
+|-------|-------------------|--------|
+| Early veg | ~1.6 | Establish canopy |
+| Late veg | ~2.0 | First flowers |
+| Early flower | ~2.4 | Fruit set |
+| Late flower | ~2.8 | Peak fruit load |
+
+pH 5.5–6.0. Outdoor raised beds with drip: match run length to soil moisture — sandy mixes need shorter, more frequent pulses than heavy loam.
+
+## Climate
+
+- **Temp:** 21–28 °C day for fruit set; below 15 °C nights drop fruit.
+- **RH:** 50–60% in fruiting — very high RH reduces pollen viability.
+- **Light:** Full sun outdoors; greenhouse peppers need high DLI.
+
+## Outdoor bed notes
+
+- Mulch reduces oscillating dry/wet that causes blossom drop.
+- Calcium is mobile — inconsistent watering shows as blossom-end rot on fruit (like tomato).
+- Watch for aphids and spider mites on stressed, dusty foliage.
 
 Guardian uses the pepper built-in profile stage row — not tomato peak EC by default.$fg_crop_pepper_nutrition$, 4, TRUE, 11),
     ('crop-lettuce-nutrition', 'Lettuce nutrition (leafy hydro)', 'lettuce', 'crop_nutrition', 'general', 'safe', $fg_crop_lettuce_nutrition$# Lettuce nutrition (leafy hydro)
@@ -381,10 +411,58 @@ Assign the lettuce profile in Start grow or Plants so Guardian cites structured 
 
 Basil is a **warm-weather** continuous-harvest herb — EC ramps ~1.0–1.8 mS/cm through vegetative pulls. Cold irrigation or sub-18 °C nights stall growth and darken leaves.
 
-Use the basil profile for Guardian feed targets; it is not interchangeable with cilantro or lettuce bands.$fg_crop_basil_nutrition$, 4, TRUE, 13),
+## Feed
+
+| Stage | EC target (mS/cm) | Notes |
+|-------|-------------------|--------|
+| Seedling | ~1.0 | Warm, humid dome |
+| Early veg | ~1.4 | First harvest cuts |
+| Late veg | ~1.6 | Continuous harvest |
+
+pH 5.5–6.0. Basil tolerates **constant feed** or short pulse cycles; aim 10–15% runoff if you measure it.
+
+## Climate
+
+- **Temp:** 22–28 °C day — below 18 °C nights cause chilling injury.
+- **RH:** 55–65% in veg; avoid saturated canopy overnight.
+- **Light:** 16 h photoperiod, DLI ~20–22 for bench herbs.
+
+## Gravity drip / plain water
+
+Perpetual herb beds often run **plain irrigation** (no reservoir mix) on a morning schedule — enough to rewet the root zone without flooding. If leaves cup or roots smell sour, shorten run time or add dry-back between feeds.
+
+## Common issues
+
+- **Blackening / downy mildew:** cool, wet nights — warm the zone and improve airflow.
+- **Tip burn:** EC too high for small roots or inconsistent irrigation.
+- **Flowering:** long days + stress — pinch flower spikes on culinary lines.
+
+Guardian uses the basil profile for feed targets; it is not interchangeable with cilantro or lettuce bands.$fg_crop_basil_nutrition$, 4, TRUE, 13),
     ('crop-strawberry-nutrition', 'Strawberry nutrition (day-neutral)', 'strawberry', 'crop_nutrition', 'general', 'safe', $fg_crop_strawberry_nutrition$# Strawberry nutrition (day-neutral)
 
 Day-neutral strawberries run **moderate EC** (~1.0–2.0 mS/cm) with **shorter photoperiod** than tomato (often ~14 h). Crown health and consistent moisture matter as much as peak EC — oscillating dry/wet shrinks fruit size.
+
+## Feed
+
+| Stage | EC target (mS/cm) | Notes |
+|-------|-------------------|--------|
+| Early veg | ~1.2 | Crown establishment |
+| Late veg | ~1.6 | Runner control |
+| Early flower | ~1.8 | First fruit |
+| Late flower | ~2.0 | Peak harvest |
+
+pH 5.5–6.0. Drip on perennial matted rows: keep crown **above** the wet line — buried crowns rot.
+
+## Climate
+
+- **Temp:** 18–24 °C — heat above 30 °C shrinks fruit and pauses flowering.
+- **RH:** 50–60% — botrytis risk in dense, wet canopy.
+- **Light:** ~14 h photoperiod for day-neutral lines in controlled environments.
+
+## Perennial patch
+
+- Renovate beds after peak season — thin old crowns, refresh drip emitters.
+- Gray mold (botrytis) on ripe fruit: pick frequently, improve airflow, avoid overhead irrigation.
 
 Guardian cites the strawberry profile; June-bearing vs day-neutral genetics may need a cloned farm override.$fg_crop_strawberry_nutrition$, 4, TRUE, 14),
     ('crop-eggplant-nutrition', 'Eggplant nutrition (fruiting hydro)', 'eggplant', 'crop_nutrition', 'general', 'safe', $fg_crop_eggplant_nutrition$# Eggplant nutrition (fruiting hydro)
@@ -529,74 +607,144 @@ Lavender is **dry, lean, and aromatic** — target ~0.6–1.0 mS/cm with infrequ
 Guardian compares your readings to the lavender profile stage row assigned to the plant.$fg_crop_lavender_nutrition$, 4, TRUE, 42),
     ('crop-chrysanthemum-care', 'Chrysanthemum care (short-day bloom)', 'chrysanthemum', 'crop_care', 'general', 'safe', $fg_crop_chrysanthemum_care$# Chrysanthemum care (short-day bloom)
 
-Mums are **photoperiod crops** — short days trigger bloom; long days keep vegetative growth. EC stays moderate (~1.2–1.8 mS/cm) through veg and bud, not fruiting-tomato peaks.
+Mums are **photoperiod crops** — uninterrupted short nights trigger bloom; long days keep vegetative growth. The demo farm runs **18/6 veg** and **12/12 bloom**, matching standard cut-flower practice.
 
-Guardian cites the chrysanthemum profile for stage targets tied to your photoperiod schedule.$fg_crop_chrysanthemum_care$, 4, TRUE, 43),
+## Photoperiod
+
+- **Veg (long day):** 16–18 h light — vegetative growth, cuttings root, branches fill out.
+- **Bloom (short day):** 12 h light / 12 h dark — **no light leaks** during the dark period or buds revert or stall.
+- **Propagation:** tip cuttings under dome, 24 h light until roots show — then move to veg photoperiod.
+
+## Feed and EC
+
+Moderate EC through the run — not tomato fruiting peaks:
+
+| Stage | EC target (mS/cm) | Notes |
+|-------|-------------------|--------|
+| Early veg | ~1.6 | Long-day growth |
+| Late veg | ~2.0 | Pinch for branchiness before flip |
+| Early bloom | ~2.2 | Short-day — photoperiod is the main driver |
+
+pH 5.5–6.0 on rockwool or coco. Pulse irrigation with dry-back between runs; constant wet feet invite root issues.
+
+## Climate
+
+- **Veg:** 18–24 °C, RH 55–65%, moderate VPD.
+- **Bloom:** Slightly cooler (16–22 °C), **lower RH 45–55%** — high humidity in dense canopy invites powdery mildew (common on mums and roses in bloom).
+
+If humidity reads above band (e.g. 72% RH in bloom), improve airflow, shorten irrigation, or run dehumidification before chasing feed changes.
+
+## Harvest cues
+
+Check **bloom openness and stem length** — not trichomes. Cut when outer petals show color and stems are firm enough to ship. Over-mature blooms shatter in the cooler.
+
+## Guardian
+
+Guardian cites the chrysanthemum profile for stage targets tied to your photoperiod schedule and compares live sensor readings to the bloom-stage humidity band.$fg_crop_chrysanthemum_care$, 4, TRUE, 43),
+    ('crop-marigold-care', 'Marigold care (bedding flower)', 'marigold', 'crop_care', 'general', 'safe', $fg_crop_marigold_care$# Marigold care (bedding flower)
+
+French and African marigolds are **short-cycle bedding flowers** — moderate EC, high light, fast turnover. They tolerate outdoor beds and greenhouse benches; primary failures are over-watering and low light stretch.
+
+## Feed
+
+EC ~1.2–1.8 mS/cm through vegetative growth; leaner than fruiting tomato. pH 5.8–6.2. Constant wet media causes root rot on young plugs.
+
+## Climate
+
+- **Temp:** 18–26 °C — marigolds handle warm days; frost kills outdoor plantings.
+- **Light:** High DLI — under-lighting produces weak stems and delayed bloom.
+- **RH:** 50–65% — avoid saturated overnight canopy.
+
+## Outdoor use
+
+Common as **companion rows** near vegetables — plant after last frost. Drip or hand water at the root line; wet foliage overnight encourages mildew on dense African types.
+
+Guardian cites the marigold profile for stage targets when a plant row is assigned `crop_key: marigold`.$fg_crop_marigold_care$, 4, TRUE, 44),
+    ('crop-geranium-care', 'Geranium care (bedding / pot)', 'geranium', 'crop_care', 'general', 'safe', $fg_crop_geranium_care$# Geranium care (bedding / pot)
+
+Zonal geraniums (*Pelargonium*) are **sun-loving bedding plants** — moderate feed, excellent drainage, and dry-down between irrigation. They fail from root rot before salt deficiency.
+
+## Feed
+
+EC ~1.0–1.6 mS/cm — leaner than heavy fruiting crops. pH 5.8–6.2. Let the top of the root zone dry slightly between runs; geraniums hate constant saturation.
+
+## Climate
+
+- **Temp:** 18–24 °C day — cool nights (10–15 °C) improve flower color on many lines.
+- **Light:** Full sun to very high DLI in greenhouse; shade stretches and reduces bloom count.
+- **RH:** 45–55% — humid, stagnant benches invite botrytis on spent flowers.
+
+## Bench and pot culture
+
+- Remove spent bloom heads to redirect energy.
+- Yellow lower leaves often mean **over-watering**, not nitrogen deficiency — check drainage first.
+
+Guardian cites the geranium profile when plants use `crop_key: geranium`.$fg_crop_geranium_care$, 4, TRUE, 45),
     ('crop-apple-nursery', 'Apple nursery (container / bench)', 'apple', 'crop_nutrition', 'general', 'safe', $fg_crop_apple_nursery$# Apple nursery (container / bench)
 
 Young apple trees in **greenhouse nursery or large containers** — not full orchard automation. EC stays **moderate (≈1.0–1.6 mS/cm)** in early years; focus on **winter chill** for the cultivar and **dry-back** between pulses to avoid crown rot.
 
-Fruit on bench-scale trees typically **years 3–5+**. Train central leader early; increase light (DLI) as wood hardens.$fg_crop_apple_nursery$, 4, TRUE, 44),
+Fruit on bench-scale trees typically **years 3–5+**. Train central leader early; increase light (DLI) as wood hardens.$fg_crop_apple_nursery$, 4, TRUE, 46),
     ('crop-citrus-nursery', 'Citrus nursery (lemon / orange)', 'citrus', 'crop_nutrition', 'general', 'safe', $fg_crop_citrus_nursery$# Citrus nursery (lemon / orange)
 
 Container citrus needs a **warm root zone** — never cold irrigation water. Keep pH **5.5–6.2** and watch **iron deficiency** if pH drifts high. EC **≈1.0–1.6 mS/cm** for young trees.
 
-Fruit in pots often **year 2–4** depending on cultivar and graft. Reduce feed slightly if new flush is weak after repotting.$fg_crop_citrus_nursery$, 4, TRUE, 45),
+Fruit in pots often **year 2–4** depending on cultivar and graft. Reduce feed slightly if new flush is weak after repotting.$fg_crop_citrus_nursery$, 4, TRUE, 47),
     ('crop-fig-container', 'Fig (container)', 'fig', 'crop_nutrition', 'general', 'safe', $fg_crop_fig_container$# Fig (container)
 
 Figs tolerate **dry-down** between feeds — soggy roots invite collapse. EC **≈0.9–1.5 mS/cm** for container culture; warm temps accelerate growth.
 
-Breba vs main crop timing is **cultivar-dependent**. If trees go dormant, cut feed and let substrate dry more between irrigations.$fg_crop_fig_container$, 4, TRUE, 46),
+Breba vs main crop timing is **cultivar-dependent**. If trees go dormant, cut feed and let substrate dry more between irrigations.$fg_crop_fig_container$, 4, TRUE, 48),
     ('crop-peach-nursery', 'Peach / nectarine nursery', 'peach', 'crop_nutrition', 'general', 'safe', $fg_crop_peach_nursery$# Peach / nectarine nursery
 
 Stone fruit nursery stock needs **chill hours** for the cultivar and **high light** during spring flush. EC **≈1.0–1.6 mS/cm**; watch **bacterial spot** when RH stays high on wet foliage.
 
-Nectarine shares the same bench targets as peach. Fruiting in containers often **years 2–4**.$fg_crop_peach_nursery$, 4, TRUE, 47),
+Nectarine shares the same bench targets as peach. Fruiting in containers often **years 2–4**.$fg_crop_peach_nursery$, 4, TRUE, 49),
     ('crop-cherry-nursery', 'Cherry nursery (sweet)', 'cherry', 'crop_nutrition', 'general', 'safe', $fg_crop_cherry_nursery$# Cherry nursery (sweet)
 
 Sweet cherry liners need **cool starts** and **high DLI** for quality wood. EC stays **moderate (≈1.0–1.5 mS/cm)** — avoid lush weak growth from over-feeding.
 
-Rain at harvest causes **cracking** outdoors; in greenhouse, keep VPD stable during fruit swell if you push early crops.$fg_crop_cherry_nursery$, 4, TRUE, 48),
+Rain at harvest causes **cracking** outdoors; in greenhouse, keep VPD stable during fruit swell if you push early crops.$fg_crop_cherry_nursery$, 4, TRUE, 50),
     ('crop-grape-vine', 'Grape (vine / nursery)', 'grape', 'crop_nutrition', 'general', 'safe', $fg_crop_grape_vine$# Grape (vine / nursery)
 
 Greenhouse or container **vine nursery** — trellis from year one. EC **≈1.0–1.6 mS/cm** during cane training; increase light as bines lengthen.
 
-First meaningful crop often **year 2–3** on greenhouse vines. Alias terms: grapevine, grape vine.$fg_crop_grape_vine$, 4, TRUE, 49),
+First meaningful crop often **year 2–3** on greenhouse vines. Alias terms: grapevine, grape vine.$fg_crop_grape_vine$, 4, TRUE, 51),
     ('crop-avocado-nursery', 'Avocado (container nursery)', 'avocado', 'crop_nutrition', 'general', 'safe', $fg_crop_avocado_nursery$# Avocado (container nursery)
 
 Avocado roots are **sensitive to waterlogging** — pulse to dry-back on coarse mix. EC **≈0.8–1.4 mS/cm**; **chloride-sensitive** — avoid salty source water.
 
-Juvenile phase is long; fruit in pots may take **several years**. Graft union must stay above the substrate line.$fg_crop_avocado_nursery$, 4, TRUE, 50),
+Juvenile phase is long; fruit in pots may take **several years**. Graft union must stay above the substrate line.$fg_crop_avocado_nursery$, 4, TRUE, 52),
     ('crop-pear-nursery', 'Pear nursery', 'pear', 'crop_nutrition', 'general', 'safe', $fg_crop_pear_nursery$# Pear nursery
 
 Bench pear culture mirrors **apple nursery** targets — moderate EC, good airflow. **Fire blight** risk rises with dense canopy and prolonged leaf wetness.
 
-Train scaffolds early in containers; fruiting years similar to apple on bench scale.$fg_crop_pear_nursery$, 4, TRUE, 51),
+Train scaffolds early in containers; fruiting years similar to apple on bench scale.$fg_crop_pear_nursery$, 4, TRUE, 53),
     ('crop-plum-nursery', 'Plum nursery (stone fruit)', 'plum', 'crop_nutrition', 'general', 'safe', $fg_crop_plum_nursery$# Plum nursery (stone fruit)
 
 Plum nursery stock follows **peach-class** feed and light — chill-dependent, spring flush management. EC **≈1.0–1.5 mS/cm** for young trees.
 
-Fruit in containers typically **years 3–5**. Thin heavy sets on small trees to avoid branch break.$fg_crop_plum_nursery$, 4, TRUE, 52),
+Fruit in containers typically **years 3–5**. Thin heavy sets on small trees to avoid branch break.$fg_crop_plum_nursery$, 4, TRUE, 54),
     ('crop-mango-nursery', 'Mango (container nursery)', 'mango', 'crop_nutrition', 'general', 'safe', $fg_crop_mango_nursery$# Mango (container nursery)
 
 **Tropical warm-only** — cold roots stop growth fast. EC **≈1.0–1.6 mS/cm**; watch **anthracnose** when RH stays high on flush.
 
-Juvenile mangoes in pots may fruit **years 3–5+**. Never ship cold-stressed liners into warm zones without acclimation.$fg_crop_mango_nursery$, 4, TRUE, 53),
+Juvenile mangoes in pots may fruit **years 3–5+**. Never ship cold-stressed liners into warm zones without acclimation.$fg_crop_mango_nursery$, 4, TRUE, 55),
     ('crop-unsupported-woodland', 'Unsupported woodland crops (ramps, ginseng)', NULL, 'unsupported', 'general', 'safe', $fg_crop_unsupported_woodland$# Unsupported woodland crops (ramps, ginseng)
 
 **Ramps** (wild leek) and **ginseng** are woodland ephemerals or multi-year shade medicinals — not indoor fertigation crops. gr33n does not ship EC, VPD, or photoperiod targets for them.
 
-If an operator asks about bench automation, explain honestly: these are foraged or long-cycle outdoor/forest production. For general greenhouse questions, suggest a supported **leafy** or **herb** cousin only when they want a hydro starting point — never invent woodland feed schedules.$fg_crop_unsupported_woodland$, 4, TRUE, 54),
+If an operator asks about bench automation, explain honestly: these are foraged or long-cycle outdoor/forest production. For general greenhouse questions, suggest a supported **leafy** or **herb** cousin only when they want a hydro starting point — never invent woodland feed schedules.$fg_crop_unsupported_woodland$, 4, TRUE, 56),
     ('crop-unsupported-mushroom', 'Mushroom production (unsupported fertigation profile)', NULL, 'unsupported', 'general', 'safe', $fg_crop_unsupported_mushroom$# Mushroom production (unsupported fertigation profile)
 
 Mushrooms and other **fungi** use bag/substrate colonization and humidity rooms — a different domain from plant EC/VPD profiles. gr33n crop targets do not apply.
 
-Direct operators to husbandry / substrate workflows when available. Do not map shiitake or other fungi to cannabis or tomato nutrient curves.$fg_crop_unsupported_mushroom$, 4, TRUE, 55),
+Direct operators to husbandry / substrate workflows when available. Do not map shiitake or other fungi to cannabis or tomato nutrient curves.$fg_crop_unsupported_mushroom$, 4, TRUE, 57),
     ('crop-unsupported-field-roots', 'In-ground root crops (carrot, potato)', NULL, 'unsupported', 'general', 'safe', $fg_crop_unsupported_field_roots$# In-ground root crops (carrot, potato)
 
 **Carrots, potatoes, and sweet potatoes** are field or deep-container taproot/tuber crops. gr33n structured targets cover hydroponic and bench container production — not deep soil beds or field scale.
 
-If an operator wants indoor hydro only, suggest cloning from **lettuce** (fast leafy baseline) or **tomato** (fruiting hydro) and adjusting manually — do not state fake EC targets for tubers.$fg_crop_unsupported_field_roots$, 4, TRUE, 56)
+If an operator wants indoor hydro only, suggest cloning from **lettuce** (fast leafy baseline) or **tomato** (fruiting hydro) and adjusting manually — do not state fake EC targets for tubers.$fg_crop_unsupported_field_roots$, 4, TRUE, 58)
 ) AS v(slug, title, crop_key, guide_kind, domain, safety_tier, body_md, catalog_version, published, sort_order)
 ON CONFLICT (slug) DO UPDATE SET
     title = EXCLUDED.title,

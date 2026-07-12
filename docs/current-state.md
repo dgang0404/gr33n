@@ -1,6 +1,6 @@
 # gr33n — current state
 
-> **Generated:** 2026-07-11 · Regenerate after major phase ship · **Canonical history:** [`phase-14-operator-documentation.md`](phase-14-operator-documentation.md) · **Numbers hint:** `make docs-current-state-hint`
+> **Generated:** 2026-07-12 · Regenerate after major phase ship · **Canonical history:** [`phase-14-operator-documentation.md`](phase-14-operator-documentation.md) · **Numbers hint:** `make docs-current-state-hint`
 
 ---
 
@@ -20,7 +20,7 @@
 | **Control** | Manual toggles, cron schedules, automation rules, Pi `device_commands` FIFO queue |
 | **Zones** | Zone cockpit — Water / Light / Climate tabs, plants, tasks, grow cycles |
 | **Guardian** | Farm Counsel (RAG + live data) vs Quick Chat; proposals → Confirm; **full citation deep links** (schedule, alert, docs); accuracy banners **persist on reload** |
-| **Crops** | Postgres catalog (~50 crops), `crop_key` on plants, Guardian `lookup_crop_targets` |
+| **Crops** | Postgres catalog (~52 crops), `crop_key` on plants, Guardian `lookup_crop_targets` |
 | **Edge** | Pi client, MQTT bridge, Virtual Pi wiring, `/pi-setup-wizard` |
 | **Ops** | Costs/receipts, tasks, audit events, optional Insert Commons export |
 | **Quality** | `make test-unit`, `make backup`, `make vuln-check`, `make guardian-qa-smoke` |
@@ -93,6 +93,10 @@ Today starters that need farm data (morning check, attention chips, zone quick a
 ## Demo farm zone layouts (Phase 171)
 
 After `make seed`, farm-1 zones include `meta_data.layout` positions matching the Today canvas defaults — the spatial map renders correctly on first open without manual arrange.
+
+## Field guide expansion (Phase 172)
+
+Demo-farm crop guides (chrysanthemum, basil, pepper, strawberry) expanded for Guardian RAG. **Marigold** and **geranium** added to the crop catalog with new field guides. Regenerate after edits: `./scripts/generate-crop-catalog-seed.sql.sh -o db/seed/crop_catalog_from_yaml.sql` then `make rag-ingest-field-guides`.
 
 ---
 
@@ -209,6 +213,6 @@ Accessibility: skip link, Guardian drawer focus trap, zone tab semantics — [`a
 
 ## Phase history
 
-- **Shipped arcs:** 40–67 farmer UX · 68–81 SPA · 82–110 crop intelligence · 111–122 Guardian/Pi · 129–153 Guardian QA · **154–161** infra/trust + citation + a11y + ec-ph trim · **164** living demo seed (chrysanthemum, sensor readings, gravity drip)
+- **Shipped arcs:** 40–67 farmer UX · 68–81 SPA · 82–110 crop intelligence · 111–122 Guardian/Pi · 129–153 Guardian QA · **154–161** infra/trust + citation + a11y + ec-ph trim · **164–171** visual Today farm cockpit (seed, canvas, mobile, attention, one-tap counsel, demo layouts) · **172** demo field guides + marigold/geranium catalog
 - **Active / planned:** Insert Commons (opt-in); full `smoke-ec-ph` re-run on CPU (operator)
 - **Archive:** [`plans/archive/`](plans/archive/) — closed plans (e.g. 88–92)

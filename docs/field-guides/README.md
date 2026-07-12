@@ -30,6 +30,8 @@ Author for **reviewed, citeable facts** — not open-ended LLM guesses. After ed
 
 Existing related files:
 
+- `crop-chrysanthemum-care.md` — short-day mums (demo farm veg/bloom); photoperiod, humidity, harvest cues
+- `crop-marigold-care.md` · `crop-geranium-care.md` — bedding flowers (Phase 172 catalog)
 - `crop-cherry-nursery.md` — sweet cherry **nursery/production**, not backyard forest garden
 - `crop-unsupported-woodland.md` — ramps/ginseng; explains gr33n does not invent woodland feed schedules
 - `crop-strawberry-nutrition.md` — bench crop targets, not wild bramble management

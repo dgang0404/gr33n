@@ -27,6 +27,9 @@ aliases:
   pak_choy: bok_choy
   mum: chrysanthemum
   chrysanthemum_mum: chrysanthemum
+  tagetes: marigold
+  pelargonium: geranium
+  zonal_geranium: geranium
   cherry_tomato: tomato
   beefsteak_tomato: tomato
   fungi: mushroom
@@ -1946,6 +1949,116 @@ crops:
         dli_target: 25.0
         photoperiod_hrs: 12.0
         notes: Short-day bloom — photoperiod critical
+
+  - key: marigold
+    display_name: Marigold (bedding)
+    category: flower
+    source: Short-cycle bedding flower; outdoor and bench
+    substrate: peat / coco / field
+    watering_style: pulse_dryback
+    cousin_of: sunflower
+    aliases: [tagetes]
+    stages:
+      - stage: seedling
+        ec_min: 0.80
+        ec_target: 1.00
+        ec_max: 1.20
+        ph_min: 5.5
+        ph_max: 6.2
+        vpd_min_kpa: 0.60
+        vpd_max_kpa: 0.90
+        temp_min_c: 18.0
+        temp_max_c: 24.0
+        rh_min_pct: 55
+        rh_max_pct: 65
+        dli_target: 18.0
+        photoperiod_hrs: 16.0
+        notes: Plug stage — avoid saturated media
+      - stage: early_veg
+        ec_min: 1.00
+        ec_target: 1.40
+        ec_max: 1.80
+        ph_min: 5.5
+        ph_max: 6.2
+        vpd_min_kpa: 0.80
+        vpd_max_kpa: 1.10
+        temp_min_c: 18.0
+        temp_max_c: 26.0
+        rh_min_pct: 50
+        rh_max_pct: 60
+        dli_target: 25.0
+        photoperiod_hrs: 16.0
+        notes: Transplant after last frost outdoors
+      - stage: early_flower
+        ec_min: 1.20
+        ec_target: 1.60
+        ec_max: 2.00
+        ph_min: 5.5
+        ph_max: 6.2
+        vpd_min_kpa: 0.90
+        vpd_max_kpa: 1.20
+        temp_min_c: 18.0
+        temp_max_c: 26.0
+        rh_min_pct: 45
+        rh_max_pct: 55
+        dli_target: 28.0
+        photoperiod_hrs: 14.0
+        notes: Bedding bloom — deadhead for repeat color
+
+  - key: geranium
+    display_name: Geranium (zonal bedding)
+    category: flower
+    source: Sun-loving pot and bench bedding; drainage critical
+    substrate: peat / coco
+    watering_style: pulse_dryback
+    cousin_of: marigold
+    aliases: [pelargonium, zonal_geranium]
+    stages:
+      - stage: seedling
+        ec_min: 0.60
+        ec_target: 0.80
+        ec_max: 1.00
+        ph_min: 5.8
+        ph_max: 6.2
+        vpd_min_kpa: 0.60
+        vpd_max_kpa: 0.90
+        temp_min_c: 18.0
+        temp_max_c: 24.0
+        rh_min_pct: 50
+        rh_max_pct: 60
+        dli_target: 18.0
+        photoperiod_hrs: 16.0
+        notes: Lean feed — sensitive roots
+      - stage: early_veg
+        ec_min: 0.80
+        ec_target: 1.20
+        ec_max: 1.50
+        ph_min: 5.8
+        ph_max: 6.2
+        vpd_min_kpa: 0.80
+        vpd_max_kpa: 1.10
+        temp_min_c: 18.0
+        temp_max_c: 24.0
+        rh_min_pct: 45
+        rh_max_pct: 55
+        dli_target: 22.0
+        photoperiod_hrs: 16.0
+        notes: Allow dry-down between irrigation
+      - stage: early_flower
+        ec_min: 1.00
+        ec_target: 1.40
+        ec_max: 1.70
+        ph_min: 5.8
+        ph_max: 6.2
+        vpd_min_kpa: 0.90
+        vpd_max_kpa: 1.20
+        temp_min_c: 16.0
+        temp_max_c: 24.0
+        rh_min_pct: 45
+        rh_max_pct: 55
+        dli_target: 25.0
+        photoperiod_hrs: 14.0
+        notes: Remove spent blooms; cool nights deepen color
 
   # ── Fruit trees — greenhouse nursery / young container (years to bearing) ─
   - key: apple
