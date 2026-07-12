@@ -321,6 +321,8 @@ type Querier interface {
 	GetLatestWeatherForFarm(ctx context.Context, farmID int64) (Gr33ncoreWeatherDatum, error)
 	GetLifecycleEventByID(ctx context.Context, id int64) (Gr33nanimalsAnimalLifecycleEvent, error)
 	GetLightingProgramByID(ctx context.Context, id int64) (Gr33ncoreLightingProgram, error)
+	// Phase 159 WS1 follow-up — schedule citation via lighting_program ON/OFF pair.
+	GetLightingProgramZoneBySchedule(ctx context.Context, arg GetLightingProgramZoneByScheduleParams) (int64, error)
 	// Phase 109 — platform catalog version bump detection + farm admin notifications.
 	GetMaxCropCatalogVersion(ctx context.Context) (int32, error)
 	GetMixingEventByID(ctx context.Context, id int64) (Gr33nfertigationMixingEvent, error)

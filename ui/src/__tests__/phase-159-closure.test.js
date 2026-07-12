@@ -26,6 +26,8 @@ describe('Phase 159 — citation completeness closure', () => {
       'case "field_guide", "platform_doc"',
       'GetRagChunkMetadataByFarmSource',
       'GetFertigationProgramZoneBySchedule',
+      'GetLightingProgramZoneBySchedule',
+      'zoneFromScheduleNameHint',
     ]) {
       expect(route).toContain(needle)
     }

@@ -669,6 +669,7 @@ import {
   speakText,
   stopSpeaking,
 } from '../lib/guardianFieldVoice.js'
+import { loadGuardianFieldPrefs } from '../lib/guardianFieldPrefs.js'
 const props = defineProps({
   /** `full` — sidebar session list (page). `compact` — dropdown (drawer). */
   layout: {
@@ -979,7 +980,10 @@ async function closeActiveSessionForMemory() {
   try {
     await api.post(`/v1/chat/sessions/${id}/close`, {
       farm_id: farmContext.farmId || undefined,
-    }, { validateStatus: (s) => s >= 200 && s < 300 || s === 204 })
+    }, {
+      timeout: 60000,
+      validateStatus: (s) => s >= 200 && s < 300 || s === 204,
+    })
     await refreshSessions()
   } catch {
     /* best-effort */

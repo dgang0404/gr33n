@@ -43,4 +43,7 @@ func TestZonePath(t *testing.T) {
 	if got != "/zones/3?ops=alerts&tab=ops" {
 		t.Fatalf("zonePath = %q", got)
 	}
+	if got := zonePath(2, "light", ""); got != "/zones/2?tab=light" {
+		t.Fatalf("zonePath light = %q", got)
+	}
 }

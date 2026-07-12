@@ -59,19 +59,81 @@ func resolveScheduleCitationRoute(ctx context.Context, q *db.Queries, farmID, sc
 	if err != nil || s.FarmID != farmID {
 		return "", false
 	}
+	isLighting := strings.EqualFold(strings.TrimSpace(s.ScheduleType), "lighting")
+
 	if zonePtr, err := q.GetFertigationProgramZoneBySchedule(ctx, db.GetFertigationProgramZoneByScheduleParams{
 		FarmID:     farmID,
 		ScheduleID: &scheduleID,
 	}); err == nil && zonePtr != nil && *zonePtr > 0 {
 		return zonePath(*zonePtr, "water", ""), true
 	}
+	if zoneID, err := q.GetLightingProgramZoneBySchedule(ctx, db.GetLightingProgramZoneByScheduleParams{
+		FarmID:     farmID,
+		ScheduleID: &scheduleID,
+	}); err == nil && zoneID > 0 {
+		return zonePath(zoneID, "light", ""), true
+	}
 	if zonePtr, err := q.GetActuatorZoneBySchedule(ctx, db.GetActuatorZoneByScheduleParams{
 		ScheduleID: &scheduleID,
 		FarmID:     farmID,
 	}); err == nil && zonePtr != nil && *zonePtr > 0 {
+		if isLighting {
+			return zonePath(*zonePtr, "light", ""), true
+		}
 		return zonePath(*zonePtr, "ops", "automations"), true
 	}
+	if zoneID, ok := zoneFromScheduleNameHint(ctx, q, farmID, s); ok {
+		if isLighting {
+			return zonePath(zoneID, "light", ""), true
+		}
+		return zonePath(zoneID, "water", ""), true
+	}
 	return "", false
+}
+
+// zoneFromScheduleNameHint resolves legacy orphan schedules (bootstrap lighting
+// pairs without lighting_programs or executable_actions) by matching the
+// schedule name/description to a zone label on the farm.
+func zoneFromScheduleNameHint(ctx context.Context, q *db.Queries, farmID int64, s db.Gr33ncoreSchedule) (int64, bool) {
+	zones, err := q.ListZonesByFarm(ctx, farmID)
+	if err != nil || len(zones) == 0 {
+		return 0, false
+	}
+	nameLower := strings.ToLower(strings.TrimSpace(s.Name))
+	var bestID int64
+	bestScore := 0
+	for _, z := range zones {
+		if scheduleDescribesZone(s, z.Name) {
+			return z.ID, true
+		}
+		zoneName := strings.TrimSpace(z.Name)
+		if zoneName == "" {
+			continue
+		}
+		zoneLower := strings.ToLower(zoneName)
+		score := 0
+		if strings.Contains(nameLower, zoneLower) {
+			score = len(zoneLower)
+		} else {
+			// "Light ON 12/12 Flower" ↔ zone "Flower Room"
+			for _, word := range strings.Fields(zoneLower) {
+				if len(word) < 3 {
+					continue
+				}
+				if strings.Contains(nameLower, word) && len(word) > score {
+					score = len(word)
+				}
+			}
+		}
+		if score > bestScore {
+			bestScore = score
+			bestID = z.ID
+		}
+	}
+	if bestScore > 0 {
+		return bestID, true
+	}
+	return 0, false
 }
 
 func resolveAlertCitationRoute(ctx context.Context, q *db.Queries, farmID, alertID int64) (string, bool) {

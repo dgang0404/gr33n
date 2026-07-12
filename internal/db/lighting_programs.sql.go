@@ -116,6 +116,29 @@ func (q *Queries) GetLightingProgramByID(ctx context.Context, id int64) (Gr33nco
 	return i, err
 }
 
+const getLightingProgramZoneBySchedule = `-- name: GetLightingProgramZoneBySchedule :one
+SELECT zone_id
+FROM gr33ncore.lighting_programs
+WHERE farm_id = $1
+  AND (schedule_on_id = $2 OR schedule_off_id = $2)
+  AND zone_id IS NOT NULL
+ORDER BY is_active DESC, id ASC
+LIMIT 1
+`
+
+type GetLightingProgramZoneByScheduleParams struct {
+	FarmID     int64  `db:"farm_id" json:"farm_id"`
+	ScheduleID *int64 `db:"schedule_id" json:"schedule_id"`
+}
+
+// Phase 159 WS1 follow-up — schedule citation via lighting_program ON/OFF pair.
+func (q *Queries) GetLightingProgramZoneBySchedule(ctx context.Context, arg GetLightingProgramZoneByScheduleParams) (int64, error) {
+	row := q.db.QueryRow(ctx, getLightingProgramZoneBySchedule, arg.FarmID, arg.ScheduleID)
+	var zone_id int64
+	err := row.Scan(&zone_id)
+	return zone_id, err
+}
+
 const listLightingProgramsByFarm = `-- name: ListLightingProgramsByFarm :many
 
 SELECT id, farm_id, zone_id, actuator_id, name, description, on_hours, off_hours, lights_on_at, timezone, schedule_on_id, schedule_off_id, crop_cycle_id, is_active, metadata, created_at, updated_at FROM gr33ncore.lighting_programs

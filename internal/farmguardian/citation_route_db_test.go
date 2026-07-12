@@ -161,3 +161,35 @@ func TestResolveCitationRoute_taskWithoutZoneUnresolved(t *testing.T) {
 		t.Fatal("expected no route for a task without a zone")
 	}
 }
+
+func TestResolveCitationRoute_irrigationSchedule(t *testing.T) {
+	pool := testPool(t)
+	defer pool.Close()
+	ctx := t.Context()
+	q := db.New(pool)
+	const farmID = int64(1)
+
+	route, ok := ResolveCitationRoute(ctx, q, farmID, "schedule", 10)
+	if !ok {
+		t.Fatal("expected route for Water Early Flower Daily schedule")
+	}
+	if route != "/zones/2?tab=water" {
+		t.Fatalf("irrigation schedule route = %q", route)
+	}
+}
+
+func TestResolveCitationRoute_lightingScheduleOrphan(t *testing.T) {
+	pool := testPool(t)
+	defer pool.Close()
+	ctx := t.Context()
+	q := db.New(pool)
+	const farmID = int64(1)
+
+	route, ok := ResolveCitationRoute(ctx, q, farmID, "schedule", 6)
+	if !ok {
+		t.Fatal("expected route for Light ON 12/12 Flower orphan schedule")
+	}
+	if route != "/zones/2?tab=light" {
+		t.Fatalf("lighting schedule route = %q, want /zones/2?tab=light", route)
+	}
+}

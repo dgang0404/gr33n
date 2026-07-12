@@ -25,6 +25,7 @@ api.interceptors.request.use((config) => {
 function shouldLogApiError(err) {
   const url = err.config?.url || ''
   if (err.response?.status === 404 && url.includes('/readings/latest')) return false
+  if (url.includes('/v1/chat/sessions/') && url.endsWith('/close')) return false
   if (err.code === 'ERR_CANCELED' || axios.isCancel?.(err)) return false
   if (/abort|canceled/i.test(String(err.message || ''))) return false
   return true

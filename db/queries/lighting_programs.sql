@@ -11,6 +11,16 @@ ORDER BY name ASC;
 SELECT * FROM gr33ncore.lighting_programs
 WHERE id = $1;
 
+-- name: GetLightingProgramZoneBySchedule :one
+-- Phase 159 WS1 follow-up — schedule citation via lighting_program ON/OFF pair.
+SELECT zone_id
+FROM gr33ncore.lighting_programs
+WHERE farm_id = sqlc.arg(farm_id)
+  AND (schedule_on_id = sqlc.arg(schedule_id) OR schedule_off_id = sqlc.arg(schedule_id))
+  AND zone_id IS NOT NULL
+ORDER BY is_active DESC, id ASC
+LIMIT 1;
+
 -- name: CreateLightingProgram :one
 INSERT INTO gr33ncore.lighting_programs (
     farm_id, zone_id, actuator_id, name, description,
