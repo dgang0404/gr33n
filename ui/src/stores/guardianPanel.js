@@ -25,6 +25,8 @@ export const useGuardianPanelStore = defineStore('guardianPanel', {
     navHistory: [], // [{ type:'route', path, name }, ...] — previous pages (most recent first, excl. current)
     activeSessionId: '',
     setupMode: false, // Phase 44 WS4 — setup-mode persona for grounded chat
+    preferFarmCounsel: false, // Phase 170 — open drawer in Farm counsel mode
+    autoSendOnOpen: false, // Phase 170 — send prefilled prompt on drawer open
     activeNudge: null, // Phase 61 — { category, message, severity, action_route, nudge_id }
     snoozedNudgeCategories: [], // session-only dismiss/snooze
     nudgeLoading: false,
@@ -63,6 +65,8 @@ export const useGuardianPanelStore = defineStore('guardianPanel', {
       if (opts.contextRef != null) this.contextRef = opts.contextRef
       if (opts.activeSessionId != null) this.activeSessionId = opts.activeSessionId
       if (opts.setupMode != null) this.setupMode = !!opts.setupMode
+      this.preferFarmCounsel = !!opts.farmCounsel
+      this.autoSendOnOpen = !!opts.autoSend
     },
 
     openPendingTab() {
@@ -77,11 +81,15 @@ export const useGuardianPanelStore = defineStore('guardianPanel', {
     close() {
       this.open = false
       this.setupMode = false
+      this.preferFarmCounsel = false
+      this.autoSendOnOpen = false
     },
 
     clearPrefill() {
       this.prefilledMessage = ''
       this.contextRef = null
+      this.preferFarmCounsel = false
+      this.autoSendOnOpen = false
     },
 
     /**

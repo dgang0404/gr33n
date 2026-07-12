@@ -42,6 +42,58 @@ After `make seed` or `make dev-stack-fresh`, **gr33n Demo Farm** is a **living**
 
 Smoke assertions: `go test ./cmd/api/... -run Phase164` (needs seeded DB).
 
+## Today farm canvas API (Phase 165)
+
+Backend + store plumbing for the visual farm map (Phase 166 UI):
+
+- **Zone layout** — `zones.meta_data.layout` `{x,y,w,h}` (normalized 0–1); validated on `PUT /zones/{id}`; server merges with existing meta keys (greenhouse climate, photos).
+- **Farm background** — `POST/GET/DELETE /farms/{id}/layout-background`; attachment id at `farms.meta_data.layout_background_attachment_id`; image via `/file-attachments/{id}/content`.
+- **Store** — `saveZoneLayout`, `zoneLayout`, `loadLayoutBackground`, `uploadLayoutBackground`, `clearLayoutBackground` in `ui/src/stores/farm.js`.
+
+## Today visual farm canvas (Phase 166)
+
+The **Today** tab (`/`) is a spatial farm map:
+
+- **FarmSiteStrip** — sunrise/sunset/daylength, outdoor sensor rollup, water source hint
+- **FarmCanvas** — draggable zone tiles over optional background photo; arrange mode persists layout via Phase 165 API
+- **FarmCanvasZoneTile** — plants, light, water, sensor health per zone (healthy / needs attention / not set up yet)
+- **Dashboard** — canvas is the hero; tasks/alerts/schedules/sensors/actuators live under collapsed “All the details”
+
+## Mobile stack + quick actions (Phase 167)
+
+On phones (`md` breakpoint), Today shows **stacked zone cards** instead of the spatial canvas. Tapping any zone opens a **quick-action sheet**:
+
+- Water now (program `run-now` or actuator pulse)
+- Light on/off, greenhouse vent/shade when applicable
+- Complete today's tasks / acknowledge alerts inline
+- Ask Guardian with zone-scoped prompts
+- Open zone → `/zones/:id`
+
+## Today cleanup + polish (Phase 168)
+
+Phase 168 finishes the Today redesign arc (164–167):
+
+- **Removed** IT-style getting-started checklist from Dashboard — growers see a farm, not sysadmin todos
+- **Empty farm** — canvas/stack CTA + Guardian setup chips (when 0 zones or 0 devices)
+- **Copy sweep** — farmer-facing zone type labels on tiles and quick-action sheet; vocabulary test covers new Today surfaces
+- **Docs** — operator tour §7k; `phase-168-closure.test.js`
+
+## Today attention cockpit (Phase 169)
+
+When zones need care, Today surfaces them explicitly:
+
+- **Attention strip** — compact chips above the farm map (warn/alert zones); tap opens quick actions
+- **Canvas sort** — desktop tiles order attention-first (parity with mobile stack)
+- **Guardian attention starters** — contextual chips when flagged zones exist (`buildTodayAttentionStarters`)
+
+## Today Guardian one-tap counsel (Phase 170)
+
+Today starters that need farm data (morning check, attention chips, zone quick actions) open the Guardian drawer in **Farm counsel** and **auto-send** — one tap, same as in-panel morning walkthrough. Setup starters still prefill only.
+
+## Demo farm zone layouts (Phase 171)
+
+After `make seed`, farm-1 zones include `meta_data.layout` positions matching the Today canvas defaults — the spatial map renders correctly on first open without manual arrange.
+
 ---
 
 ## UI workspaces & routes

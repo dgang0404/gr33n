@@ -95,6 +95,12 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	}
+	if normalized, err := NormalizeZoneLayoutMeta(params.MetaData); err != nil {
+		httputil.WriteError(w, http.StatusBadRequest, err.Error())
+		return
+	} else {
+		params.MetaData = normalized
+	}
 
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()
@@ -146,6 +152,13 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	}
+
+	mergedMeta, err := MergeZoneMetaData(z0.MetaData, params.MetaData)
+	if err != nil {
+		httputil.WriteError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	params.MetaData = mergedMeta
 
 	zone, err := h.q.UpdateZone(ctx, params)
 	if err != nil {

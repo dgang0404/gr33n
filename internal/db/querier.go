@@ -24,6 +24,7 @@ type Querier interface {
 	// Cancel a pending command (operator or worker safety valve).
 	CancelDeviceCommand(ctx context.Context, id int64) (Gr33ncoreDeviceCommand, error)
 	ClearDevicePendingCommand(ctx context.Context, id int64) error
+	ClearFarmLayoutBackgroundAttachment(ctx context.Context, arg ClearFarmLayoutBackgroundAttachmentParams) (Gr33ncoreFarm, error)
 	ClearSensorAlertBreachStart(ctx context.Context, id int64) error
 	// Phase 20.9 WS1 — stops a running timer. Rate is captured at close
 	// time, not start, so a rate change mid-shift applies to the rest of
@@ -663,6 +664,7 @@ type Querier interface {
 	SeedFarmActiveModule(ctx context.Context, arg SeedFarmActiveModuleParams) error
 	SetDevicePendingCommand(ctx context.Context, arg SetDevicePendingCommandParams) error
 	SetFarmInsertCommonsOptIn(ctx context.Context, arg SetFarmInsertCommonsOptInParams) (Gr33ncoreFarm, error)
+	SetFarmLayoutBackgroundAttachment(ctx context.Context, arg SetFarmLayoutBackgroundAttachmentParams) (Gr33ncoreFarm, error)
 	SetFarmOrganization(ctx context.Context, arg SetFarmOrganizationParams) (Gr33ncoreFarm, error)
 	SetSensorAlertBreachStart(ctx context.Context, arg SetSensorAlertBreachStartParams) error
 	SoftDeleteAnimalGroup(ctx context.Context, id int64) error

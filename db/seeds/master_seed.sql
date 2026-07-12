@@ -97,6 +97,20 @@ WHERE NOT EXISTS (
     WHERE z.farm_id = 1 AND z.name = v.name AND z.deleted_at IS NULL
 );
 
+-- Phase 171 — demo farm canvas: persist spatial zone layouts (normalized 0–1).
+UPDATE gr33ncore.zones z
+SET meta_data = COALESCE(z.meta_data, '{}'::jsonb) || jsonb_build_object('layout', v.layout::jsonb)
+FROM (VALUES
+    ('Veg Room',            '{"x":0.04,"y":0.06,"w":0.20,"h":0.18}'),
+    ('Flower Room',         '{"x":0.28,"y":0.06,"w":0.20,"h":0.18}'),
+    ('Propagation Room',    '{"x":0.52,"y":0.06,"w":0.20,"h":0.18}'),
+    ('Herb & Greens Room',  '{"x":0.76,"y":0.06,"w":0.20,"h":0.18}'),
+    ('Outdoor Garden',      '{"x":0.10,"y":0.32,"w":0.24,"h":0.20}'),
+    ('Outdoor Pepper Bed',  '{"x":0.38,"y":0.34,"w":0.20,"h":0.18}'),
+    ('Outdoor Berry Patch', '{"x":0.62,"y":0.34,"w":0.20,"h":0.18}')
+) AS v(zone_name, layout)
+WHERE z.farm_id = 1 AND z.deleted_at IS NULL AND z.name = v.zone_name;
+
 -- ===========================================================================
 -- SECTION 1: JADAM INPUT DEFINITIONS
 -- ===========================================================================

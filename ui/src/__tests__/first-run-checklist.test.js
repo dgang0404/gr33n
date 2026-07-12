@@ -1,7 +1,4 @@
 import { afterEach, describe, expect, it } from 'vitest'
-import { mount } from '@vue/test-utils'
-import { createPinia, setActivePinia } from 'pinia'
-import GettingStartedChecklist from '../components/GettingStartedChecklist.vue'
 import {
   computeFirstRunChecklist,
   dismissFirstRunChecklist,
@@ -50,24 +47,5 @@ describe('Phase 44 WS5 — first-run checklist logic', () => {
     expect(shouldShowFirstRunChecklist(42, items)).toBe(false)
     clearFirstRunChecklistDismiss(42)
     expect(shouldShowFirstRunChecklist(42, items)).toBe(true)
-  })
-})
-
-describe('Phase 44 WS5 — GettingStartedChecklist component', () => {
-  it('renders checklist rows and emits dismiss', async () => {
-    setActivePinia(createPinia())
-    const items = computeFirstRunChecklist({ farmId: 5 })
-    const wrapper = mount(GettingStartedChecklist, {
-      props: { items, farmId: 5, starters: [] },
-      global: {
-        stubs: { GuardianStarterChips: true, RouterLink: { template: '<a><slot /></a>' } },
-      },
-    })
-    expect(wrapper.find('[data-test="first-run-checklist"]').exists()).toBe(true)
-    expect(wrapper.find('[data-test="first-run-item-add_zone"]').text()).toContain('Add a zone')
-    await wrapper.find('[data-test="first-run-dismiss"]').trigger('click')
-    expect(wrapper.emitted('dismiss')).toHaveLength(1)
-    expect(isFirstRunChecklistDismissed(5)).toBe(true)
-    clearFirstRunChecklistDismiss(5)
   })
 })

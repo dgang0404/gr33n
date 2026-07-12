@@ -12,6 +12,18 @@ import {
   saveOfflineQueue,
 } from '../offline/taskQueue'
 
+function parseZoneMeta(raw) {
+  if (!raw) return {}
+  if (typeof raw === 'string') {
+    try {
+      return JSON.parse(raw)
+    } catch {
+      return {}
+    }
+  }
+  return { ...raw }
+}
+
 export const useFarmStore = defineStore('farm', {
   state: () => ({
     farm: null,
@@ -38,6 +50,7 @@ export const useFarmStore = defineStore('farm', {
     },
     loading: false,
     error: null,
+    layoutBackgroundBlobUrl: null,
   }),
 
   getters: {
@@ -53,6 +66,12 @@ export const useFarmStore = defineStore('farm', {
     actuatorsByZone: (state) => (zoneId) => state.actuators.filter(a => a.zone_id === zoneId),
     actuatorsByDevice: (state) => (deviceId) => state.actuators.filter(a => a.device_id === deviceId),
     taskQueuePendingCount: (state) => (farmId) => pendingCount(state.taskWriteQueue, farmId),
+    zoneLayout: (state) => (zoneId) => {
+      const zone = state.zones.find((z) => z.id === zoneId)
+      if (!zone?.meta_data) return null
+      const meta = parseZoneMeta(zone.meta_data)
+      return meta.layout ?? null
+    },
   },
 
   actions: {
@@ -783,6 +802,77 @@ export const useFarmStore = defineStore('farm', {
     async deleteZone(id) {
       await api.delete(`/zones/${id}`)
       this.zones = this.zones.filter(z => z.id !== id)
+    },
+
+    async saveZoneLayout(zoneId, layout) {
+      const zone = this.zones.find((z) => z.id === zoneId)
+      if (!zone) throw new Error('zone not found')
+      const meta = parseZoneMeta(zone.meta_data)
+      meta.layout = layout
+      return this.updateZone(zoneId, {
+        name: zone.name,
+        description: zone.description ?? null,
+        zone_type: zone.zone_type ?? null,
+        area_sqm: zone.area_sqm ?? null,
+        meta_data: meta,
+      })
+    },
+
+    revokeLayoutBackgroundUrl() {
+      if (this.layoutBackgroundBlobUrl) {
+        URL.revokeObjectURL(this.layoutBackgroundBlobUrl)
+        this.layoutBackgroundBlobUrl = null
+      }
+    },
+
+    async loadLayoutBackground(farmId) {
+      try {
+        const r = await api.get(`/farms/${farmId}/layout-background`)
+        const attId = r.data?.attachment_id
+        if (!attId) {
+          this.revokeLayoutBackgroundUrl()
+          return null
+        }
+        const img = await api.get(`/file-attachments/${attId}/content`, { responseType: 'blob' })
+        this.revokeLayoutBackgroundUrl()
+        this.layoutBackgroundBlobUrl = URL.createObjectURL(img.data)
+        return {
+          attachment_id: attId,
+          url: this.layoutBackgroundBlobUrl,
+          content_url: r.data?.content_url,
+        }
+      } catch (e) {
+        if (e.response?.status === 404) {
+          this.revokeLayoutBackgroundUrl()
+          return null
+        }
+        throw e
+      }
+    },
+
+    async uploadLayoutBackground(farmId, file) {
+      const fd = new FormData()
+      fd.append('file', file)
+      const r = await api.post(`/farms/${farmId}/layout-background`, fd)
+      if (this.farm?.id === farmId && r.data?.farm) {
+        this.farm = r.data.farm
+      }
+      const attId = r.data?.attachment_id ?? r.data?.file_attachment?.id
+      if (attId) {
+        const img = await api.get(`/file-attachments/${attId}/content`, { responseType: 'blob' })
+        this.revokeLayoutBackgroundUrl()
+        this.layoutBackgroundBlobUrl = URL.createObjectURL(img.data)
+      }
+      return r.data
+    },
+
+    async clearLayoutBackground(farmId) {
+      const r = await api.delete(`/farms/${farmId}/layout-background`)
+      if (this.farm?.id === farmId && r.data?.farm) {
+        this.farm = r.data.farm
+      }
+      this.revokeLayoutBackgroundUrl()
+      return r.data
     },
 
     async createDevice(farmId, data) {

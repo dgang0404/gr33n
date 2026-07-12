@@ -12,28 +12,39 @@ overview: >
 todos:
   - id: ws1-zone-status-lib
     content: "WS1: farmVisualStatus.js — per-zone rollup (plants, light, water, sensor health, attention) + 3 hardware states"
-    status: pending
+    status: completed
   - id: ws2-canvas-component
     content: "WS2: FarmCanvas.vue — positioned zone tiles, drag-to-arrange (persist via Phase 165), background image slot"
-    status: pending
+    status: completed
   - id: ws3-zone-tile
     content: "WS3: FarmCanvasZoneTile.vue — crop/stage, light state, next/last water, health color, greenhouse variant"
-    status: pending
+    status: completed
   - id: ws4-site-layer
     content: "WS4: Site strip — sunrise/sunset/daylength arc, outdoor summary, irrigation source → zone hints"
-    status: pending
+    status: completed
   - id: ws5-dashboard-rewire
     content: "WS5: Dashboard.vue — canvas as hero; demote tables to collapsed 'More' section; keep actuator control + Guardian starters"
-    status: pending
+    status: completed
   - id: ws6-closure
     content: "WS6: Component/unit tests, a11y pass on drag + tiles, phase-166-closure"
-    status: pending
+    status: completed
 isProject: false
 ---
 
 # Phase 166 — Today visual farm canvas
 
-**Status:** planned · **Depends on:** [164](phase_164_demo_seed_living_farm.plan.md) (living seed data) · [165](phase_165_farm_layout_api.plan.md) (layout persistence)
+**Status:** shipped · **Depends on:** [164](phase_164_demo_seed_living_farm.plan.md) (living seed data) · [165](phase_165_farm_layout_api.plan.md) (layout persistence)
+
+## Shipped
+
+| WS | Deliverable |
+|----|-------------|
+| **WS1** | `farmVisualStatus.js` — 3 hardware states, water/light/plants rollup |
+| **WS2** | `FarmCanvas.vue` — drag/resize arrange mode, background photo, layout persist |
+| **WS3** | `FarmCanvasZoneTile.vue` — zone tile with farmer copy + health border |
+| **WS4** | `FarmSiteStrip.vue` — sun dial, outdoor rollup, water source line |
+| **WS5** | `Dashboard.vue` rewire — canvas hero, compact attention row, details disclosure |
+| **WS6** | `farm-visual-status.test.js`, `farm-canvas.test.js`, `phase-166-closure.test.js` |
 
 ## Product intent
 

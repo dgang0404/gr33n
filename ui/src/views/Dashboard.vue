@@ -19,47 +19,151 @@
       </button>
     </div>
 
-    <!-- Phase 44 WS5 — first-run getting started checklist -->
-    <GettingStartedChecklist
-      v-if="showFirstRunChecklist"
-      :items="firstRunItems"
-      :farm-id="farmContext.farmId"
-      :starters="firstRunStarters"
-      @dismiss="firstRunDismissed = true"
+    <!-- Phase 168 — empty farm: canvas CTA + Guardian setup (no IT checklist) -->
+    <section
+      v-if="showEmptyFarmStarters"
+      class="rounded-xl border border-dashed border-zinc-700 bg-zinc-900/40 px-4 py-4 space-y-3"
+      data-test="dashboard-empty-farm-starters"
+    >
+      <p class="text-sm text-zinc-300">
+        {{ emptyFarmHint }}
+      </p>
+      <GuardianStarterChips :starters="emptyFarmStarters" data-test="dashboard-setup-starters" />
+    </section>
+
+    <!-- Phase 166 — site layer + visual farm canvas -->
+    <FarmSiteStrip
+      :site-weather="siteWeather"
+      :zones="store.zones"
+      :sensors="store.sensors"
+      :readings="store.readings"
+      :reservoirs="reservoirs"
+      :programs="programs"
+      :actuators="store.actuators"
     />
 
-    <!-- Phase 41 WS1 — morning cockpit -->
-    <FarmMorningStrip :chips="morningChips" />
+    <FarmTodayAttentionStrip
+      v-if="store.zones.length"
+      :zones="store.zones"
+      :sensors="store.sensors"
+      :readings="store.readings"
+      :actuators="store.actuators"
+      :tasks="store.tasks"
+      :alerts="alerts"
+      :schedules="schedules"
+      :programs="programs"
+      :crop-cycles="cropCycles"
+      :fertigation-events="fertigationEvents"
+      @select-zone="openZoneQuickActions"
+    />
 
-    <FarmConfigCard />
+    <FarmCanvas
+      class="hidden md:block"
+      :farm-id="farmContext.farmId"
+      :zones="store.zones"
+      :sensors="store.sensors"
+      :readings="store.readings"
+      :actuators="store.actuators"
+      :tasks="store.tasks"
+      :alerts="alerts"
+      :schedules="schedules"
+      :programs="programs"
+      :crop-cycles="cropCycles"
+      :fertigation-events="fertigationEvents"
+      :background-url="store.layoutBackgroundBlobUrl"
+      @select-zone="openZoneQuickActions"
+    />
 
+    <FarmZoneStack
+      :zones="store.zones"
+      :sensors="store.sensors"
+      :readings="store.readings"
+      :actuators="store.actuators"
+      :tasks="store.tasks"
+      :alerts="alerts"
+      :schedules="schedules"
+      :programs="programs"
+      :crop-cycles="cropCycles"
+      :fertigation-events="fertigationEvents"
+      @select-zone="openZoneQuickActions"
+    />
+
+    <ZoneQuickActions
+      :open="quickActionsOpen"
+      :zone="quickZone"
+      :status="quickStatus"
+      :farm-id="farmContext.farmId"
+      :programs="programs"
+      :actuators="store.actuators"
+      :tasks="store.tasks"
+      :alerts="alerts"
+      :sensors="store.sensors"
+      @close="closeZoneQuickActions"
+      @refresh="refreshAll"
+    />
+
+    <!-- Compact attention row -->
+    <section class="flex flex-wrap gap-3" data-test="dashboard-attention-row">
+      <router-link
+        v-nav-hint="tasksViewAllLink"
+        :to="tasksViewAllLink"
+        class="flex items-center gap-2 px-4 py-2 rounded-xl bg-zinc-900 border border-zinc-800 hover:border-zinc-700 transition-colors"
+      >
+        <span class="text-xs text-zinc-500 uppercase tracking-wide">Tasks due</span>
+        <span class="text-sm font-semibold text-white">{{ todayTasks.length }}</span>
+        <span v-if="overdueTaskCount" class="text-[10px] text-amber-400">{{ overdueTaskCount }} overdue</span>
+      </router-link>
+      <router-link
+        v-nav-hint="alertsViewAllLink"
+        :to="alertsViewAllLink"
+        class="flex items-center gap-2 px-4 py-2 rounded-xl bg-zinc-900 border border-zinc-800 hover:border-zinc-700 transition-colors"
+      >
+        <span class="text-xs text-zinc-500 uppercase tracking-wide">Alerts</span>
+        <span class="text-sm font-semibold text-white">{{ unreadAlerts }}</span>
+        <span v-if="unreadAlerts" class="text-[10px] px-1.5 py-0.5 rounded-full bg-red-600 text-white font-bold">{{ unreadAlerts }}</span>
+      </router-link>
+    </section>
+
+    <GuardianStarterChips
+      v-if="attentionStarters.length"
+      :starters="attentionStarters"
+      data-test="dashboard-attention-starters"
+    />
     <GuardianStarterChips :starters="morningWalkthroughStarters" data-test="dashboard-morning-check-starters" />
     <GuardianStarterChips :starters="weatherStarters" data-test="dashboard-weather-starters" />
 
     <GuardianStarterChips :starters="dashboardOpsStarters" />
 
-    <!-- Quick actions -->
-    <section class="flex flex-wrap gap-3">
-      <router-link v-nav-hint="'/zones'" :to="newTaskLink"
-        class="px-4 py-2 text-sm font-medium rounded-lg bg-green-900/50 text-green-400 border border-green-800 hover:bg-green-900/70 transition-colors">
-        + New Task
-      </router-link>
-      <router-link v-nav-hint="'/zones'" :to="feedWaterDailyLink"
-        class="px-4 py-2 text-sm font-medium rounded-lg bg-blue-900/50 text-blue-400 border border-blue-800 hover:bg-blue-900/70 transition-colors">
-        Feed &amp; water
-      </router-link>
-      <router-link v-nav-hint="'/zones'" :to="feedWaterNutrientsLink"
-        class="px-4 py-2 text-sm font-medium rounded-lg bg-zinc-800 text-zinc-400 border border-zinc-700 hover:bg-zinc-700 transition-colors">
-        Log mix (advanced)
-      </router-link>
-      <router-link v-nav-hint="'/operator-guide'" to="/operator-guide"
-        class="px-4 py-2 text-sm font-medium rounded-lg bg-zinc-800 text-gr33n-400 border border-zinc-600 hover:bg-zinc-700 transition-colors">
-        Operator guide
-      </router-link>
-    </section>
+    <!-- Power-user details (collapsed by default) -->
+    <details class="bg-zinc-900 border border-zinc-800 rounded-xl p-4 group" data-test="dashboard-details">
+      <summary class="text-xs font-semibold text-gray-500 uppercase tracking-widest cursor-pointer list-none flex items-center justify-between">
+        <span>All the details</span>
+        <span class="text-zinc-600 group-open:rotate-180 transition-transform">▾</span>
+      </summary>
 
-    <!-- Today's Tasks + Alerts row -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div class="mt-4 space-y-6">
+        <!-- Quick actions -->
+        <section class="flex flex-wrap gap-3">
+          <router-link v-nav-hint="'/zones'" :to="newTaskLink"
+            class="px-4 py-2 text-sm font-medium rounded-lg bg-green-900/50 text-green-400 border border-green-800 hover:bg-green-900/70 transition-colors">
+            + New Task
+          </router-link>
+          <router-link v-nav-hint="'/zones'" :to="feedWaterDailyLink"
+            class="px-4 py-2 text-sm font-medium rounded-lg bg-blue-900/50 text-blue-400 border border-blue-800 hover:bg-blue-900/70 transition-colors">
+            Feed &amp; water
+          </router-link>
+          <router-link v-nav-hint="'/zones'" :to="feedWaterNutrientsLink"
+            class="px-4 py-2 text-sm font-medium rounded-lg bg-zinc-800 text-zinc-400 border border-zinc-700 hover:bg-zinc-700 transition-colors">
+            Log mix (advanced)
+          </router-link>
+          <router-link v-nav-hint="'/operator-guide'" to="/operator-guide"
+            class="px-4 py-2 text-sm font-medium rounded-lg bg-zinc-800 text-gr33n-400 border border-zinc-600 hover:bg-zinc-700 transition-colors">
+            Operator guide
+          </router-link>
+        </section>
+
+        <!-- Today's Tasks + Alerts row -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
 
       <!-- Today's Tasks -->
       <section class="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
@@ -207,31 +311,7 @@
       />
     </section>
 
-    <!-- Zone cards -->
-    <section>
-      <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-widest mb-3">Zones</h3>
-      <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-        <div v-for="zone in store.zones" :key="zone.id" class="card space-y-3">
-          <div class="flex items-center justify-between">
-            <span class="font-semibold text-white">{{ zone.name }}</span>
-            <span class="text-xs text-gray-500">{{ zone.zone_type }}</span>
-          </div>
-          <div class="grid grid-cols-2 gap-2">
-            <SensorTile v-for="s in store.sensorsByZone(zone.id)" :key="s.id"
-              :sensor="s" :reading="store.readings[s.id]" />
-          </div>
-          <div class="space-y-2 pt-1 border-t border-gray-800">
-            <ActuatorCard v-for="d in store.devicesByZone(zone.id)" :key="d.id" :device="d" />
-          </div>
-          <div v-if="!store.devicesByZone(zone.id).length && !store.sensorsByZone(zone.id).length"
-            class="text-xs text-gray-600">No devices assigned to this zone yet.</div>
-        </div>
-        <div v-if="!store.zones.length" class="text-sm text-gray-600">
-          No zones found.
-          <p class="text-xs text-zinc-500 mt-1"><router-link v-nav-hint="'/zones'" class="text-gr33n-500 hover:underline" to="/zones">Create zones</router-link> first — sensors and actuators attach to them.</p>
-        </div>
-      </div>
-    </section>
+    <!-- Zone cards removed — FarmCanvas is the hero (Phase 166) -->
 
     <!-- Quick actuator panel -->
     <section>
@@ -244,37 +324,36 @@
         </div>
       </div>
     </section>
+      </div>
+    </details>
 
   </div>
 </template>
 
 <script setup>
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useFarmStore } from '../stores/farm'
 import { useFarmContextStore } from '../stores/farmContext'
 import SensorTile   from '../components/SensorTile.vue'
 import ActuatorCard from '../components/ActuatorCard.vue'
 import HelpTip from '../components/HelpTip.vue'
-import FarmMorningStrip from '../components/FarmMorningStrip.vue'
-import FarmConfigCard from '../components/FarmConfigCard.vue'
+import FarmSiteStrip from '../components/FarmSiteStrip.vue'
+import FarmTodayAttentionStrip from '../components/FarmTodayAttentionStrip.vue'
+import FarmCanvas from '../components/FarmCanvas.vue'
+import FarmZoneStack from '../components/FarmZoneStack.vue'
+import ZoneQuickActions from '../components/ZoneQuickActions.vue'
 import EmptyStateHint from '../components/EmptyStateHint.vue'
-import GettingStartedChecklist from '../components/GettingStartedChecklist.vue'
 import GuardianStarterChips from '../components/GuardianStarterChips.vue'
-import { computeFarmMorningSnapshot } from '../lib/farmGrowSummary.js'
 import { sumFarmPendingQueueDepth } from '../lib/farmQueueDepth.js'
-import {
-  computeFirstRunChecklist,
-  shouldShowFirstRunChecklist,
-} from '../lib/firstRunChecklist.js'
 import {
   buildDashboardOpsStarters,
   buildMorningWalkthroughStarters,
   buildSetupStarters,
+  buildTodayAttentionStarters,
   buildWeatherStarters,
 } from '../lib/guardianStarters.js'
-import { fetchSiteWeather, daylightChipFromSiteWeather } from '../lib/siteWeather.js'
+import { fetchSiteWeather } from '../lib/siteWeather.js'
 import { filterLowStockAlerts, listLowStockBatches } from '../lib/suppliesHub.js'
-import { computeMonthSummary } from '../lib/moneyHub.js'
 import { scheduleRunsLabel } from '../lib/cronHumanize.js'
 import {
   alertsViewAllRoute,
@@ -284,6 +363,7 @@ import {
   tasksViewAllRoute,
   zoneOpsRoute,
 } from '../lib/dashboardWorkspaceLinks.js'
+import { computeZoneVisualStatus } from '../lib/farmVisualStatus.js'
 
 const store = useFarmStore()
 const farmContext = useFarmContextStore()
@@ -292,7 +372,6 @@ const schedules = ref([])
 const setpoints = ref([])
 const fertigationEvents = ref([])
 const alerts = ref([])
-const firstRunDismissed = ref(false)
 const unreadAlerts = ref(0)
 const programs = ref([])
 const queueDepth = ref(0)
@@ -301,6 +380,10 @@ const nfInputs = ref([])
 const costTransactions = ref([])
 const cropCycles = ref([])
 const siteWeather = ref(null)
+const reservoirs = ref([])
+const quickActionsOpen = ref(false)
+const quickZone = ref(null)
+const quickStatus = ref(null)
 
 const lowStockCount = computed(() =>
   listLowStockBatches(nfBatches.value, nfInputs.value).length,
@@ -308,25 +391,18 @@ const lowStockCount = computed(() =>
 
 const lowStockAlerts = computed(() => filterLowStockAlerts(alerts.value))
 
-const firstRunItems = computed(() => computeFirstRunChecklist({
-  zones: store.zones,
-  devices: store.devices,
-  setpoints: setpoints.value,
-  schedules: schedules.value,
-  cropCycles: cropCycles.value,
-  nfBatches: nfBatches.value,
-  costTransactions: costTransactions.value,
-  includeGrowClosure: true,
-  farmId: farmContext.farmId,
-}))
+const showEmptyFarmStarters = computed(() =>
+  store.zones.length === 0 || store.devices.length === 0,
+)
 
-const showFirstRunChecklist = computed(() => {
-  if (firstRunDismissed.value) return false
-  return shouldShowFirstRunChecklist(farmContext.farmId, firstRunItems.value)
+const emptyFarmHint = computed(() => {
+  if (!store.zones.length) return 'Add your first grow area to see your farm here.'
+  if (!store.devices.length) return 'Connect your Pi or edge device when you are ready — zones work without hardware too.'
+  return ''
 })
 
-const firstRunStarters = computed(() => {
-  if (!showFirstRunChecklist.value) return []
+const emptyFarmStarters = computed(() => {
+  if (!showEmptyFarmStarters.value) return []
   return buildSetupStarters({
     surface: 'first_run_dashboard',
     farmId: farmContext.farmId,
@@ -336,6 +412,28 @@ const firstRunStarters = computed(() => {
     deviceOffline: store.devices.length > 0 && store.devices.some((d) => d.status !== 'online'),
   })
 })
+
+function zoneVisualStatus(zone) {
+  return computeZoneVisualStatus({
+    zone,
+    sensors: store.sensors,
+    readings: store.readings,
+    actuators: store.actuators,
+    tasks: store.tasks,
+    alerts: alerts.value,
+    schedules: schedules.value,
+    programs: programs.value,
+    cropCycles: cropCycles.value,
+    fertigationEvents: fertigationEvents.value,
+  })
+}
+
+const attentionStarters = computed(() => buildTodayAttentionStarters({
+  zones: store.zones,
+  getStatus: zoneVisualStatus,
+  farmId: farmContext.farmId,
+  farmName: store.farm?.name || '',
+}))
 
 const morningWalkthroughStarters = computed(() => buildMorningWalkthroughStarters({
   surface: 'dashboard',
@@ -352,8 +450,6 @@ const dashboardOpsStarters = computed(() => buildDashboardOpsStarters({
   lowStockAlerts: lowStockAlerts.value,
 }))
 
-const monthExpenses = computed(() => computeMonthSummary(costTransactions.value).expenses)
-
 const feedWaterDailyLink = computed(() => feedWaterRoute(store.zones))
 const feedWaterNutrientsLink = computed(() => feedWaterRoute(store.zones))
 const comfortAutomationsLink = computed(() => comfortRoute('automations'))
@@ -365,22 +461,28 @@ function zoneTaskLink(zoneId) {
   return zoneOpsRoute(zoneId, 'tasks')
 }
 
-const morningChips = computed(() => {
-  const chips = computeFarmMorningSnapshot({
+function openZoneQuickActions(zone, status) {
+  quickZone.value = zone
+  quickStatus.value = status || computeZoneVisualStatus({
+    zone,
+    sensors: store.sensors,
+    readings: store.readings,
+    actuators: store.actuators,
     tasks: store.tasks,
     alerts: alerts.value,
     schedules: schedules.value,
-    devices: store.devices,
-    zones: store.zones,
     programs: programs.value,
-    queueDepth: queueDepth.value,
-    lowStockCount: lowStockCount.value,
-    monthExpenses: monthExpenses.value,
-    sensors: store.sensors,
-  }).chips
-  const daylight = daylightChipFromSiteWeather(siteWeather.value)
-  return daylight ? [daylight, ...chips] : chips
-})
+    cropCycles: cropCycles.value,
+    fertigationEvents: fertigationEvents.value,
+  })
+  quickActionsOpen.value = true
+}
+
+function closeZoneQuickActions() {
+  quickActionsOpen.value = false
+  quickZone.value = null
+  quickStatus.value = null
+}
 
 const todayTasks = computed(() => {
   const today = new Date().toISOString().slice(0, 10)
@@ -393,6 +495,10 @@ const todayTasks = computed(() => {
     })
     .slice(0, 8)
 })
+
+const overdueTaskCount = computed(() =>
+  todayTasks.value.filter((t) => isOverdue(t.due_date)).length,
+)
 
 const activeSchedules = computed(() =>
   schedules.value.filter(s => s.is_active).slice(0, 6)
@@ -483,19 +589,22 @@ async function refreshAll() {
   cropCycles.value = cycles
   await store.loadTasks(fid)
   queueDepth.value = await sumFarmPendingQueueDepth(store.devices)
+  await store.refreshReadings(fid)
   try {
     siteWeather.value = await fetchSiteWeather(fid)
   } catch {
     siteWeather.value = null
   }
+  try {
+    reservoirs.value = await store.loadReservoirs(fid)
+  } catch {
+    reservoirs.value = []
+  }
+  if (fid) {
+    await store.loadLayoutBackground(fid)
+  }
 }
 
-watch(
-  () => farmContext.farmId,
-  () => {
-    firstRunDismissed.value = false
-  },
-)
 
 onMounted(() => refreshAll())
 </script>

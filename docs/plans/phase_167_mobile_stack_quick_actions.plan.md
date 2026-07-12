@@ -10,28 +10,39 @@ overview: >
 todos:
   - id: ws1-responsive-stack
     content: "WS1: FarmZoneStack.vue — stacked FarmCanvasZoneTile list below md breakpoint; canvas hidden on phone"
-    status: pending
+    status: completed
   - id: ws2-quick-action-sheet
     content: "WS2: ZoneQuickActions.vue — bottom sheet: water now, light toggle, task/alert actions, links"
-    status: pending
+    status: completed
   - id: ws3-water-now
     content: "WS3: Water now — run-now on zone's program, or pulse pump/drip actuator when no program"
-    status: pending
+    status: completed
   - id: ws4-guardian-zone-link
     content: "WS4: 'Ask Guardian about this zone' — open drawer with zone-scoped starter prompt"
-    status: pending
+    status: completed
   - id: ws5-inline-triage
     content: "WS5: Complete task / acknowledge alert inline from the sheet (existing endpoints)"
-    status: pending
+    status: completed
   - id: ws6-closure
     content: "WS6: Touch-target a11y, tests, phase-167-closure"
-    status: pending
+    status: completed
 isProject: false
 ---
 
 # Phase 167 — Mobile zone stack + quick actions
 
-**Status:** planned · **Depends on:** [166](phase_166_today_visual_farm_canvas.plan.md)
+**Status:** shipped · **Depends on:** [166](phase_166_today_visual_farm_canvas.plan.md)
+
+## Shipped
+
+| WS | Deliverable |
+|----|-------------|
+| **WS1** | `FarmZoneStack.vue` — mobile stacked tiles, attention-first order |
+| **WS2** | `ZoneQuickActions.vue` — bottom sheet / dialog with focus trap |
+| **WS3** | Water now — program run-now or actuator pulse via `zoneQuickActions.js` |
+| **WS4** | `buildZoneQuickStarters` → Guardian drawer with zone context |
+| **WS5** | Inline task complete + alert acknowledge in sheet |
+| **WS6** | `useActuatorCommands`, tests, `phase-167-closure.test.js` |
 
 ## WS1 — Responsive stack
 

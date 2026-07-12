@@ -5,6 +5,7 @@ vi.mock('../api', () => ({
   default: {
     get: vi.fn(),
     post: vi.fn(),
+    put: vi.fn(),
     patch: vi.fn(),
     delete: vi.fn(),
     interceptors: { request: { use: vi.fn() }, response: { use: vi.fn() } },
@@ -116,5 +117,51 @@ describe('farm store', () => {
     expect(discarded).toBe(true)
     expect(farm.taskWriteQueue).toHaveLength(0)
     expect(farm.tasks.find((t) => t.id === created.id)).toBeUndefined()
+  })
+
+  it('saveZoneLayout merges layout into zone meta_data', async () => {
+    const farm = useFarmStore()
+    farm.zones = [{
+      id: 3,
+      name: 'Flower Room',
+      description: 'Indoor',
+      zone_type: 'flower',
+      area_sqm: 12,
+      meta_data: { greenhouse_climate: { cover_type: 'film' } },
+    }]
+    api.put.mockResolvedValueOnce({
+      data: {
+        id: 3,
+        name: 'Flower Room',
+        meta_data: {
+          greenhouse_climate: { cover_type: 'film' },
+          layout: { x: 0.1, y: 0.2, w: 0.22, h: 0.18 },
+        },
+      },
+    })
+
+    await farm.saveZoneLayout(3, { x: 0.1, y: 0.2, w: 0.22, h: 0.18 })
+
+    expect(api.put).toHaveBeenCalledWith('/zones/3', {
+      name: 'Flower Room',
+      description: 'Indoor',
+      zone_type: 'flower',
+      area_sqm: 12,
+      meta_data: {
+        greenhouse_climate: { cover_type: 'film' },
+        layout: { x: 0.1, y: 0.2, w: 0.22, h: 0.18 },
+      },
+    })
+    expect(farm.zoneLayout(3)).toEqual({ x: 0.1, y: 0.2, w: 0.22, h: 0.18 })
+  })
+
+  it('loadLayoutBackground returns null on 404', async () => {
+    const farm = useFarmStore()
+    api.get.mockRejectedValueOnce({ response: { status: 404 } })
+
+    const result = await farm.loadLayoutBackground(1)
+
+    expect(result).toBeNull()
+    expect(farm.layoutBackgroundBlobUrl).toBeNull()
   })
 })

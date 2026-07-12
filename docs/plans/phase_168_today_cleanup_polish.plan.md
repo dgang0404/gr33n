@@ -10,22 +10,22 @@ overview: >
 todos:
   - id: ws1-remove-checklist
     content: "WS1: Remove GettingStartedChecklist from Dashboard.vue; retire or quarantine component + firstRunChecklist lib usage"
-    status: pending
+    status: completed
   - id: ws2-empty-farm-path
     content: "WS2: Grower-native first-run — canvas empty state + Guardian setup starters cover the new-farm journey"
-    status: pending
+    status: completed
   - id: ws3-copy-sweep
     content: "WS3: Farmer-vocabulary sweep of all new Today surfaces (canvas, tiles, sheet, site strip)"
-    status: pending
+    status: completed
   - id: ws4-docs-tests
     content: "WS4: Update operator-tour/current-state docs, prune dead tests, phase-168-closure"
-    status: pending
+    status: completed
 isProject: false
 ---
 
 # Phase 168 — Today cleanup: checklist removal + polish
 
-**Status:** planned · **Depends on:** [166](phase_166_today_visual_farm_canvas.plan.md), [167](phase_167_mobile_stack_quick_actions.plan.md)
+**Status:** shipped · **Depends on:** [166](phase_166_today_visual_farm_canvas.plan.md), [167](phase_167_mobile_stack_quick_actions.plan.md)
 
 ## WS1 — Remove the getting-started checklist
 

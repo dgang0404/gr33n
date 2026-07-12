@@ -94,6 +94,20 @@ describe('Phase 29 WS1 — guardian panel store', () => {
     expect(panel.activeSessionId).toBe('sess-abc')
   })
 
+  it('Phase 170 — openDrawer sets farm counsel and auto-send flags', () => {
+    const panel = useGuardianPanelStore()
+    panel.openDrawer({
+      prefilledMessage: 'Morning check',
+      farmCounsel: true,
+      autoSend: true,
+    })
+    expect(panel.preferFarmCounsel).toBe(true)
+    expect(panel.autoSendOnOpen).toBe(true)
+    panel.close()
+    expect(panel.preferFarmCounsel).toBe(false)
+    expect(panel.autoSendOnOpen).toBe(false)
+  })
+
   it('chatContextRef prefers entity ref over route ref', () => {
     const panel = useGuardianPanelStore()
     panel.setRouteFromRouter({ path: '/plants', meta: {} })

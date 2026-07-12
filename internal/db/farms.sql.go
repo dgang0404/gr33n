@@ -7,6 +7,7 @@ package db
 
 import (
 	"context"
+	"encoding/json"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
@@ -37,6 +38,57 @@ func (q *Queries) AvgGroundedPromptTokensRecentByFarm(ctx context.Context, farmI
 	row := q.db.QueryRow(ctx, avgGroundedPromptTokensRecentByFarm, farmID)
 	var i AvgGroundedPromptTokensRecentByFarmRow
 	err := row.Scan(&i.AvgPromptTokens, &i.SampleTurns)
+	return i, err
+}
+
+const clearFarmLayoutBackgroundAttachment = `-- name: ClearFarmLayoutBackgroundAttachment :one
+UPDATE gr33ncore.farms
+SET meta_data = $1::jsonb,
+    updated_at = NOW()
+WHERE id = $2 AND deleted_at IS NULL
+RETURNING id, name, description, location_text, location_gis, size_hectares, farm_type, scale_tier, owner_user_id, timezone, currency, operational_status, created_at, updated_at, updated_by_user_id, deleted_at, organization_id, insert_commons_opt_in, insert_commons_last_sync_at, insert_commons_last_attempt_at, insert_commons_last_delivery_status, insert_commons_last_error, insert_commons_backoff_until, insert_commons_consecutive_failures, insert_commons_require_approval, meta_data, guardian_preferred_model, guardian_counsel_model, guardian_quick_model, guardian_grounded_timeout_seconds
+`
+
+type ClearFarmLayoutBackgroundAttachmentParams struct {
+	MetaData json.RawMessage `db:"meta_data" json:"meta_data"`
+	ID       int64           `db:"id" json:"id"`
+}
+
+func (q *Queries) ClearFarmLayoutBackgroundAttachment(ctx context.Context, arg ClearFarmLayoutBackgroundAttachmentParams) (Gr33ncoreFarm, error) {
+	row := q.db.QueryRow(ctx, clearFarmLayoutBackgroundAttachment, arg.MetaData, arg.ID)
+	var i Gr33ncoreFarm
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Description,
+		&i.LocationText,
+		&i.LocationGis,
+		&i.SizeHectares,
+		&i.FarmType,
+		&i.ScaleTier,
+		&i.OwnerUserID,
+		&i.Timezone,
+		&i.Currency,
+		&i.OperationalStatus,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.UpdatedByUserID,
+		&i.DeletedAt,
+		&i.OrganizationID,
+		&i.InsertCommonsOptIn,
+		&i.InsertCommonsLastSyncAt,
+		&i.InsertCommonsLastAttemptAt,
+		&i.InsertCommonsLastDeliveryStatus,
+		&i.InsertCommonsLastError,
+		&i.InsertCommonsBackoffUntil,
+		&i.InsertCommonsConsecutiveFailures,
+		&i.InsertCommonsRequireApproval,
+		&i.MetaData,
+		&i.GuardianPreferredModel,
+		&i.GuardianCounselModel,
+		&i.GuardianQuickModel,
+		&i.GuardianGroundedTimeoutSeconds,
+	)
 	return i, err
 }
 
@@ -605,6 +657,57 @@ type SetFarmInsertCommonsOptInParams struct {
 
 func (q *Queries) SetFarmInsertCommonsOptIn(ctx context.Context, arg SetFarmInsertCommonsOptInParams) (Gr33ncoreFarm, error) {
 	row := q.db.QueryRow(ctx, setFarmInsertCommonsOptIn, arg.ID, arg.InsertCommonsOptIn, arg.InsertCommonsRequireApproval)
+	var i Gr33ncoreFarm
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Description,
+		&i.LocationText,
+		&i.LocationGis,
+		&i.SizeHectares,
+		&i.FarmType,
+		&i.ScaleTier,
+		&i.OwnerUserID,
+		&i.Timezone,
+		&i.Currency,
+		&i.OperationalStatus,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.UpdatedByUserID,
+		&i.DeletedAt,
+		&i.OrganizationID,
+		&i.InsertCommonsOptIn,
+		&i.InsertCommonsLastSyncAt,
+		&i.InsertCommonsLastAttemptAt,
+		&i.InsertCommonsLastDeliveryStatus,
+		&i.InsertCommonsLastError,
+		&i.InsertCommonsBackoffUntil,
+		&i.InsertCommonsConsecutiveFailures,
+		&i.InsertCommonsRequireApproval,
+		&i.MetaData,
+		&i.GuardianPreferredModel,
+		&i.GuardianCounselModel,
+		&i.GuardianQuickModel,
+		&i.GuardianGroundedTimeoutSeconds,
+	)
+	return i, err
+}
+
+const setFarmLayoutBackgroundAttachment = `-- name: SetFarmLayoutBackgroundAttachment :one
+UPDATE gr33ncore.farms
+SET meta_data = $1::jsonb,
+    updated_at = NOW()
+WHERE id = $2 AND deleted_at IS NULL
+RETURNING id, name, description, location_text, location_gis, size_hectares, farm_type, scale_tier, owner_user_id, timezone, currency, operational_status, created_at, updated_at, updated_by_user_id, deleted_at, organization_id, insert_commons_opt_in, insert_commons_last_sync_at, insert_commons_last_attempt_at, insert_commons_last_delivery_status, insert_commons_last_error, insert_commons_backoff_until, insert_commons_consecutive_failures, insert_commons_require_approval, meta_data, guardian_preferred_model, guardian_counsel_model, guardian_quick_model, guardian_grounded_timeout_seconds
+`
+
+type SetFarmLayoutBackgroundAttachmentParams struct {
+	MetaData json.RawMessage `db:"meta_data" json:"meta_data"`
+	ID       int64           `db:"id" json:"id"`
+}
+
+func (q *Queries) SetFarmLayoutBackgroundAttachment(ctx context.Context, arg SetFarmLayoutBackgroundAttachmentParams) (Gr33ncoreFarm, error) {
+	row := q.db.QueryRow(ctx, setFarmLayoutBackgroundAttachment, arg.MetaData, arg.ID)
 	var i Gr33ncoreFarm
 	err := row.Scan(
 		&i.ID,

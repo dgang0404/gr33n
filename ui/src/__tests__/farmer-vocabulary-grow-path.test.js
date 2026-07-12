@@ -32,6 +32,9 @@ const GROW_PATH_JS_LIBS = [
   'lib/zoneFeedingPlan.js',
   'lib/zoneWaterGrowStory.js',
   'lib/farmGrowSummary.js',
+  'lib/farmVisualStatus.js',
+  'lib/farmCanvasLayout.js',
+  'lib/zoneQuickActions.js',
   'lib/firstRunChecklist.js',
   'lib/farmSetupWizard.js',
   'lib/guardianRouteRef.js',
@@ -46,7 +49,9 @@ function growPathSourceFiles() {
     }
   })
   collectVue(join(uiSrc, 'components'), (rel) => {
-    if (rel.startsWith('Zone')) files.push(join(uiSrc, 'components', rel))
+    if (rel.startsWith('Zone') || rel.startsWith('Farm')) {
+      files.push(join(uiSrc, 'components', rel))
+    }
   })
   for (const rel of GROW_PATH_JS_LIBS) {
     files.push(join(uiSrc, rel))
@@ -83,10 +88,12 @@ describe('Phase 47 WS5 + Phase 45 WS3 — grow-path farmer vocabulary', () => {
     expect(GROW_PATH_GENERIC_ROOM_BANS.some((b) => b.id === 'this-room')).toBe(true)
   })
 
-  it('scans zone, feeding hub, dashboard, wizards, and farmer copy libs', () => {
+  it('scans zone, feeding hub, dashboard, wizards, Today canvas, and farmer copy libs', () => {
     const files = growPathSourceFiles()
     expect(files.some((f) => f.endsWith('FeedingHub.vue'))).toBe(true)
     expect(files.some((f) => f.endsWith('guardianStarters.js'))).toBe(true)
+    expect(files.some((f) => f.endsWith('FarmCanvas.vue'))).toBe(true)
+    expect(files.some((f) => f.endsWith('ZoneQuickActions.vue'))).toBe(true)
     expect(files.some((f) => f.endsWith('navGroups.js'))).toBe(true)
     expect(files.length).toBeGreaterThan(15)
   })

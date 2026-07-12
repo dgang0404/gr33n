@@ -156,6 +156,20 @@ SET guardian_counsel_model = sqlc.narg(guardian_counsel_model),
 WHERE id = sqlc.arg(id) AND deleted_at IS NULL
 RETURNING *;
 
+-- name: SetFarmLayoutBackgroundAttachment :one
+UPDATE gr33ncore.farms
+SET meta_data = sqlc.arg(meta_data)::jsonb,
+    updated_at = NOW()
+WHERE id = sqlc.arg(id) AND deleted_at IS NULL
+RETURNING *;
+
+-- name: ClearFarmLayoutBackgroundAttachment :one
+UPDATE gr33ncore.farms
+SET meta_data = sqlc.arg(meta_data)::jsonb,
+    updated_at = NOW()
+WHERE id = sqlc.arg(id) AND deleted_at IS NULL
+RETURNING *;
+
 -- name: AvgGroundedPromptTokensRecentByFarm :one
 SELECT
     COALESCE(AVG(prompt_tokens), 0)::float8 AS avg_prompt_tokens,

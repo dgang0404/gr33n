@@ -300,6 +300,14 @@ func (h *Handler) loadReadableAttachment(w http.ResponseWriter, r *http.Request)
 		if !farmauthz.RequireFarmMember(w, r, h.q, att.FarmID) {
 			return db.Gr33ncoreFileAttachment{}, errors.New("forbidden")
 		}
+	case "farms":
+		if att.FileType != "farm_layout_background" {
+			httputil.WriteError(w, http.StatusNotFound, "attachment not found")
+			return db.Gr33ncoreFileAttachment{}, errors.New("unsupported attachment type")
+		}
+		if !farmauthz.RequireFarmMember(w, r, h.q, att.FarmID) {
+			return db.Gr33ncoreFileAttachment{}, errors.New("forbidden")
+		}
 	default:
 		httputil.WriteError(w, http.StatusNotFound, "attachment not found")
 		return db.Gr33ncoreFileAttachment{}, errors.New("unsupported attachment table")

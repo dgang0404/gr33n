@@ -154,6 +154,14 @@ describe('Phase 29 WS6 — GuardianChatPanel context_ref POST', () => {
     api.get.mockImplementation((url) => {
       if (url === '/capabilities') return Promise.resolve({ data: { ai_enabled: true } })
       if (url === '/v1/chat/sessions') return Promise.resolve({ data: { sessions: [] } })
+      if (url === '/guardian/models') {
+        return Promise.resolve({
+          data: { available_models: [{ name: 'phi3:mini', context_window: 8192 }], server_default: 'phi3:mini' },
+        })
+      }
+      if (url === '/v1/chat/health') {
+        return Promise.resolve({ data: { awakening: { state: 'stirred', rag_corpus_ok: true } } })
+      }
       return Promise.resolve({ data: {} })
     })
     localStorage.setItem('gr33n_farm_id', '1')

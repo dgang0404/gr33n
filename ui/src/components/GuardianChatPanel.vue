@@ -848,20 +848,25 @@ watch(effectivePhotoZoneId, () => {
 })
 
 watch(
-  () => guardianPanel.prefilledMessage,
-  (msg) => {
-    if (msg) message.value = msg
-  },
-)
-
-watch(
   () => guardianPanel.open,
   async (isOpen) => {
-    if (isOpen && guardianPanel.prefilledMessage) {
+    if (!isOpen) return
+    if (guardianPanel.prefilledMessage) {
       message.value = guardianPanel.prefilledMessage
-      await nextTick()
-      messageInputRef.value?.focus?.()
     }
+    if (guardianPanel.preferFarmCounsel && farmContext.farmId) {
+      useFarmContext.value = true
+    }
+    await nextTick()
+    if (guardianPanel.autoSendOnOpen && message.value.trim()) {
+      guardianPanel.autoSendOnOpen = false
+      await sendCounselStarter({
+        message: message.value,
+        contextRef: guardianPanel.contextRef,
+      })
+      return
+    }
+    messageInputRef.value?.focus?.()
   },
 )
 
@@ -1241,14 +1246,20 @@ async function onChatPhotoSelected(ev) {
   }
 }
 
-async function onMorningStarter(s) {
-  if (!s?.message) return
+async function sendCounselStarter(s) {
+  if (!s?.message?.trim()) return
   useFarmContext.value = true
-  guardianPanel.contextRef = s.contextRef ?? null
+  if (s.contextRef != null) guardianPanel.contextRef = s.contextRef
   message.value = s.message
-  await guardianReadiness.ensureAwake(farmContext.farmId, 'farm_counsel')
+  if (farmContext.farmId) {
+    await guardianReadiness.ensureAwake(farmContext.farmId, 'farm_counsel')
+  }
   await nextTick()
   await send()
+}
+
+async function onMorningStarter(s) {
+  await sendCounselStarter(s)
 }
 
 async function onOfflineProcedureStarter(s) {
@@ -1296,7 +1307,7 @@ async function send() {
   const counsel = useFarmContext.value && !!scopedFarmId
   const result = await guardianChat.sendMessage({
     message: message.value,
-    farmId: scopedFarmId,
+    farmId: counsel ? scopedFarmId : null,
     grounded: counsel,
     sessionId: sessionId.value || undefined,
     contextRef: resolveChatContextRef(attachedIds),

@@ -712,7 +712,7 @@ Architecture: [`farm-guardian-architecture.md` §7.0r](farm-guardian-architectur
 
 | Workspace | Route | Tabs |
 |-----------|-------|------|
-| **Today** | `/` | Farm-wide triage — morning strip, tasks/alerts preview, farm site card |
+| **Today** | `/` | Visual farm map — site strip, zone tiles (desktop) or stacked cards (mobile), quick actions sheet |
 | **Zones** | `/zones` | Rooms · Fleet (sensors, controls, lighting) · **Strains** (compare harvests) |
 | **Feed & Water** | `/feed-water` | Daily · Programs & tanks · Nutrients & mix · Advanced |
 | **Comfort & automation** | `/comfort-targets` | Comfort · What runs when · Automations · Raw setpoints |
@@ -799,6 +799,27 @@ Plan: [`plans/phase_76_today_dashboard_nav_alignment.plan.md`](plans/phase_76_to
 **Final sidebar:** Today · Zones · Feed & water · Comfort & automation · Hardware · Money · (Animals*) · (Aquaponics*) · Help · Settings.
 
 Plan: [`plans/phase_77_post_arc_ui_polish.plan.md`](plans/phase_77_post_arc_ui_polish.plan.md) · Arc hub: [`plans/phase_68_73_spa_workspace_roadmap.plan.md`](plans/phase_68_73_spa_workspace_roadmap.plan.md) (68–77 **complete**).
+
+### 7k. Visual farm cockpit (Phases 164–168 — shipped)
+
+**Shipped.** **Today** (`/`) is the grower cockpit — a spatial farm map, not an IT setup checklist.
+
+| Surface | Job |
+|---------|-----|
+| **Farm site strip** | Sunrise/sunset, outdoor rollup, water source hint |
+| **Farm canvas** (desktop) | Draggable zone tiles over optional background photo; arrange mode saves layout |
+| **Zone stack** (mobile) | Same zone cards stacked; tap opens quick actions |
+| **Quick actions sheet** | Water now, light on/off, complete tasks, acknowledge alerts, Ask Guardian |
+| **Attention row** | Tasks due + unread alerts (compact links) |
+| **Needs attention strip** | Flagged zone chips → quick actions; Guardian attention starters (Phase 169) |
+| **Guardian one-tap** | Morning / attention / zone starters auto-send in Farm counsel (Phase 170) |
+| **All the details** | Collapsed power-user section — sensors, actuators, schedules |
+
+**Empty farm:** canvas/stack empty state → **My zones**; **Guardian setup chips** on Today when the farm has no zones or no devices (conversational setup — no static checklist).
+
+**Vitest:** `farm-visual-status.test.js`, `farm-canvas.test.js`, `farm-zone-stack.test.js`, `zone-quick-actions.test.js`, `phase-164-closure.test.js` … `phase-168-closure.test.js`.
+
+Plans: [`phase_164_demo_seed_overhaul.plan.md`](plans/phase_164_demo_seed_overhaul.plan.md) · [`phase_165_today_farm_layout_api.plan.md`](plans/phase_165_today_farm_layout_api.plan.md) · [`phase_166_today_visual_farm_canvas.plan.md`](plans/phase_166_today_visual_farm_canvas.plan.md) · [`phase_167_mobile_stack_quick_actions.plan.md`](plans/phase_167_mobile_stack_quick_actions.plan.md) · [`phase_168_today_cleanup_polish.plan.md`](plans/phase_168_today_cleanup_polish.plan.md) · [`phase_169_today_attention_cockpit.plan.md`](plans/phase_169_today_attention_cockpit.plan.md) · [`phase_170_today_guardian_one_tap.plan.md`](plans/phase_170_today_guardian_one_tap.plan.md).
 
 ---
 
@@ -887,24 +908,24 @@ Architecture: [`farm-guardian-architecture.md` §7.0ac](farm-guardian-architectu
 
 **Shipped.** Plan: [`plans/phase_44_getting_started_edge_wizard.plan.md`](plans/phase_44_getting_started_edge_wizard.plan.md) · Guardian: [§6g](#6g-guardian-during-setup-phase-44--shipped).
 
-**Rule:** Use **wizards and checklist buttons** first. Guardian is for questions and the grow-setup **Confirm** bundle — not the only path.
+**Rule:** Use **wizards** first. Guardian is for questions and the grow-setup **Confirm** bundle — not the only path.
 
 ### Suggested click path (new farm)
 
 1. **Settings** → create farm (or open **Farm setup wizard** for an existing blank farm).
 2. **`/farms/{id}/setup`** — choose **Start blank** or a template card → preview → **Apply starter pack** (farm admin; idempotent).
-3. **Today** (`/`) — **Getting started** checklist when steps remain: zone → edge device → comfort targets → one schedule.
+3. **Today** (`/`) — empty canvas/stack CTA → **My zones**; **Guardian setup chips** when no zones or no devices yet.
 4. **`/farms/{id}/zones/new`** — name, zone type, optional greenhouse profile or lighting preset.
 5. **`/farms/{id}/devices/new`** — register Pi, **download bootstrap or generated config.yaml** (Phase 50/51) from platform wiring, embedded field checklist, poll **online**, optional actuators. After the Pi syncs, Dashboard device cards show **Config synced** / **Config stale** / **Never fetched** (Phase 51).
 6. **`/comfort-targets`** — set first comfort band; **Schedules** tab to turn on one run.
-7. Optional — **Ask Guardian** from checklist chips, wizard **Need help?** footers, or **empty zone** grow starters on zone cockpit ([§6g](#6g-guardian-during-setup-phase-44--shipped)).
+7. Optional — **Ask Guardian** from setup chips, wizard **Need help?** footers, or **empty zone** grow starters on zone cockpit ([§6g](#6g-guardian-during-setup-phase-44--shipped)).
 
 | Wizard / surface | Job | Route |
 |------------------|-----|-------|
 | Farm setup | Pick template → preview → apply bootstrap | `/farms/{id}/setup` |
 | Add zone | Name, type, optional lighting preset | `/farms/{id}/zones/new` |
 | Edge device | Wiring in UI → generated Pi config, connection test, actuators | `/farms/{id}/devices/new` |
-| First-run checklist | Zone → device → comfort band → one schedule | Dashboard `GettingStartedChecklist` |
+| Today empty farm | Canvas CTA + Guardian setup chips | `/` (Phase 168) |
 
 Pi steps stay in-app: **DB-first** wiring ([pi-integration-guide.md](pi-integration-guide.md) §2a) — set pins in Sensors/Controls, **download config** in the device wizard; checklist §8.3; offline physical wiring procedures in [§6d](#6d-first-field-install-with-guardian-offline-phase-37).
 

@@ -25,6 +25,7 @@
 import { useGuardianPanelStore } from '../stores/guardianPanel'
 import { useCapabilitiesStore } from '../stores/capabilities'
 import { FARMER_FOCUS_RING } from '../lib/farmerA11y.js'
+import { starterPrefersFarmCounsel, starterShouldAutoSend } from '../lib/guardianStarterEntry.js'
 
 const focusRingClass = FARMER_FOCUS_RING
 
@@ -48,6 +49,8 @@ function pickStarter(s) {
     prefilledMessage: s.message,
     contextRef: s.contextRef ?? null,
     setupMode: !!s.setupMode,
+    farmCounsel: starterPrefersFarmCounsel(s),
+    autoSend: starterShouldAutoSend(s),
   })
 }
 </script>

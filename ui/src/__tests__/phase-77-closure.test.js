@@ -63,9 +63,11 @@ describe('Phase 77 WS6 / OC-77 — post-arc polish closure', () => {
     expect(settings).toContain("tab: 'fleet', fleet: 'sensors'")
   })
 
-  it('Today dashboard surfaces farm config card', () => {
+  it('Today dashboard surfaces site layer via FarmSiteStrip (Phase 166)', () => {
     const dash = readFileSync(join(uiSrc, 'views/Dashboard.vue'), 'utf8')
-    expect(dash).toContain('FarmConfigCard')
+    expect(dash).toContain('FarmSiteStrip')
+    expect(dash).toContain('FarmCanvas')
+    expect(existsSync(join(uiSrc, 'components/FarmConfigCard.vue'))).toBe(true)
   })
 
   it('plan and operator-tour document Phase 77 shipped', () => {

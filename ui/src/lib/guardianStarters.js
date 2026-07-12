@@ -773,6 +773,73 @@ export function buildMorningWalkthroughStarters({
 }
 
 /**
+ * Phase 169 — farm-wide Guardian prompts when Today flags attention zones.
+ * @param {{
+ *   zones?: object[],
+ *   getStatus?: (zone: object) => object,
+ *   farmId?: number|null,
+ *   farmName?: string,
+ * }} params
+ */
+export function buildTodayAttentionStarters({
+  zones = [],
+  getStatus,
+  farmId = null,
+  farmName = '',
+} = {}) {
+  if (!zones.length || typeof getStatus !== 'function') return []
+
+  const flagged = zones
+    .map((zone) => ({ zone, status: getStatus(zone) }))
+    .filter(({ status }) =>
+      status?.health === 'alert'
+      || status?.health === 'warn'
+      || (status?.attention?.length > 0),
+    )
+  if (!flagged.length) return []
+
+  const routeRef = {
+    type: 'route',
+    path: '/',
+    name: 'Today',
+    surface: 'dashboard_attention',
+    guardian_mode: 'farm_counsel',
+  }
+  const starters = []
+
+  if (flagged.length === 1) {
+    const { zone, status } = flagged[0]
+    const summary = status?.attention?.[0]?.label || status?.sensors?.summary || 'needs attention'
+    starters.push({
+      id: 'attention-why-one',
+      label: `Why ${zone.name}?`,
+      message: `Why is ${summary} in ${zone.name}? What should I do about it today?`,
+      contextRef: buildZoneGuardianContextRef({ zone, activeTab: 'overview', farmId }),
+    })
+  } else {
+    const names = flagged.map((f) => f.zone.name).join(', ')
+    starters.push({
+      id: 'attention-triage',
+      label: 'What needs attention?',
+      message: `Walk me through what needs attention on ${farmName || 'this farm'} today. Start with the most urgent zones: ${names}.`,
+      contextRef: routeRef,
+    })
+    for (const { zone, status } of flagged.slice(0, 2)) {
+      const summary = status?.attention?.[0]?.label || status?.sensors?.summary
+      if (!summary) continue
+      starters.push({
+        id: `attention-zone-${zone.id}`,
+        label: zone.name,
+        message: `What's going on in ${zone.name} (${summary})? What should I do first?`,
+        contextRef: buildZoneGuardianContextRef({ zone, activeTab: 'overview', farmId }),
+      })
+    }
+  }
+
+  return dedupeStarters(starters).slice(0, 3)
+}
+
+/**
  * Phase 43 WS8 — Dashboard starters when supplies are low.
  */
 export function buildDashboardOpsStarters({ lowStockCount = 0, lowStockAlerts = [] }) {
@@ -1016,4 +1083,47 @@ export function buildRulesFarmerStarters({
     contextRef: routeRef,
   })
   return dedupeStarters(starters).slice(0, 3)
+}
+
+/**
+ * Phase 167 — zone-scoped Guardian prompts from Today quick-action sheet.
+ * @param {{ zone: object, status: object, farmId?: number }} params
+ */
+export function buildZoneQuickStarters({ zone, status, farmId = null }) {
+  if (!zone?.id) return []
+  const name = zone.name || 'this zone'
+  const starters = []
+  const overviewRef = buildZoneGuardianContextRef({ zone, activeTab: 'overview', farmId })
+
+  const attention = status?.sensors?.worst === 'attention'
+    || status?.health === 'warn'
+    || status?.health === 'alert'
+  const summary = status?.sensors?.summary || 'needs attention'
+
+  if (attention) {
+    starters.push({
+      id: 'zone-why-flagged',
+      label: `Why is ${name} flagged?`,
+      message: `Why is ${summary} in ${name}? What should I do about it today?`,
+      contextRef: overviewRef,
+    })
+  } else {
+    starters.push({
+      id: 'zone-today-plan',
+      label: `Plan for ${name}`,
+      message: `What should I do in ${name} today? Cover plants, water, light, and anything overdue.`,
+      contextRef: overviewRef,
+    })
+  }
+
+  if (status?.water?.kind === 'gravity_drip' || status?.water?.kind === 'pump') {
+    starters.push({
+      id: 'zone-water-check',
+      label: 'Watering check',
+      message: `Is watering set up correctly in ${name}? When is the next run and did the last feed succeed?`,
+      contextRef: buildZoneGuardianContextRef({ zone, activeTab: 'water', farmId }),
+    })
+  }
+
+  return dedupeStarters(starters).slice(0, 2)
 }

@@ -10,22 +10,31 @@ overview: >
 todos:
   - id: ws1-zone-layout-metadata
     content: "WS1: zones.meta_data.layout {x,y,w,h} — validation in zone Update + PATCH round-trip"
-    status: pending
+    status: completed
   - id: ws2-farm-background
     content: "WS2: Farm background image upload/get/delete via file_attachments (farm entity)"
-    status: pending
+    status: completed
   - id: ws3-ui-store
     content: "WS3: farm store — saveZoneLayout / loadFarmLayout / background URL helpers"
-    status: pending
+    status: completed
   - id: ws4-closure
     content: "WS4: Go handler tests + store unit tests + phase-165-closure guard"
-    status: pending
+    status: completed
 isProject: false
 ---
 
 # Phase 165 — Farm layout API + background image
 
-**Status:** planned · **Depends on:** none (parallel with 164) · **Feeds:** 166, 167
+**Status:** shipped · **Depends on:** none (parallel with 164) · **Feeds:** 166, 167
+
+## Shipped
+
+| WS | Deliverable |
+|----|-------------|
+| **WS1** | `layout.go` validation + `MergeZoneMetaData` on zone PUT |
+| **WS2** | `POST/GET/DELETE /farms/{id}/layout-background` + download auth |
+| **WS3** | `farm.js` — `saveZoneLayout`, `zoneLayout`, background blob helpers |
+| **WS4** | `layout_test.go`, `farm-store.test.js`, `phase-165-closure.test.js` |
 
 ## Design decisions
 

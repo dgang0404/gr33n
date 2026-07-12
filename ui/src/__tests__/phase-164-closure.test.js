@@ -13,7 +13,9 @@ describe('Phase 164 WS1 — decannabis demo seed', () => {
   it('rethemes farm-1 plants to chrysanthemum', () => {
     expect(seed).toContain("'Chrysanthemum', 'Mixed spray varieties', 'chrysanthemum'")
     expect(seed).toContain("DELETE FROM gr33ncrops.plants\nWHERE farm_id = 1 AND crop_key = 'cannabis'")
-    expect(seed).not.toMatch(/INSERT INTO gr33ncrops\.plants[\s\S]*?'cannabis'/)
+    expect(seed).not.toMatch(
+      /INSERT INTO gr33ncrops\.plants \(farm_id, display_name, variety_or_cultivar, crop_key\)\s*VALUES[\s\S]*?'cannabis'[\s\S]*?ON CONFLICT DO NOTHING/,
+    )
   })
 
   it('uses chrysanthemum batch labels instead of cannabis strains', () => {

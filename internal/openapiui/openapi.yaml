@@ -4372,13 +4372,77 @@ paths:
                 type: object
                 additionalProperties: true
 
+  /farms/{id}/layout-background:
+    get:
+      tags: [farms]
+      summary: Get farm canvas layout background (Phase 165)
+      description: >
+        Returns the `file_attachments` id stored at
+        `farms.meta_data.layout_background_attachment_id`. Image bytes are
+        fetched from `/file-attachments/{id}/content`.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      responses:
+        "200":
+          description: Background attachment metadata
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/FarmLayoutBackgroundResponse" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    post:
+      tags: [farms]
+      summary: Upload farm canvas layout background (Phase 165)
+      description: >
+        Multipart upload (JPEG, PNG, or WebP, max 8 MiB). Replaces any prior
+        background on the farm. Requires `FarmCaps.Operate`.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        "201":
+          description: Attachment created and farm updated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/FarmLayoutBackgroundUploadResponse" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    delete:
+      tags: [farms]
+      summary: Remove farm canvas layout background (Phase 165)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      responses:
+        "200":
+          description: Background unlinked and attachment deleted when unreferenced
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  farm: { $ref: "#/components/schemas/Farm" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
   /file-attachments/{id}/content:
     get:
       tags: [costs]
-      summary: Download attachment bytes (cost receipt or zone photo)
+      summary: Download attachment bytes (cost receipt, zone photo, or farm layout background)
       description: >
         Streams attachment content. Cost receipts require cost read on the farm;
-        zone reference photos (`file_type=zone_photo`) require farm membership.
+        zone reference photos (`file_type=zone_photo`) and farm layout backgrounds
+        (`file_type=farm_layout_background`) require farm membership.
       security: [{ bearerAuth: [] }]
       parameters:
         - { $ref: "#/components/parameters/ID" }
@@ -6833,6 +6897,8 @@ components:
           properties:
             greenhouse_climate:
               { $ref: "#/components/schemas/GreenhouseClimate" }
+            layout:
+              { $ref: "#/components/schemas/ZoneLayout" }
 
     ZoneUpdate:
       type: object
@@ -6847,7 +6913,39 @@ components:
           properties:
             greenhouse_climate:
               { $ref: "#/components/schemas/GreenhouseClimate" }
+            layout:
+              { $ref: "#/components/schemas/ZoneLayout" }
         updated_by_user_id: { type: string, format: uuid }
+
+    ZoneLayout:
+      type: object
+      description: >
+        Phase 165 — normalized 0–1 coordinates for the Today farm canvas.
+        Stored at `zones.meta_data.layout`. Width and height default server-side
+        when omitted.
+      required: [x, y]
+      properties:
+        x: { type: number, minimum: 0, maximum: 1 }
+        y: { type: number, minimum: 0, maximum: 1 }
+        w: { type: number, minimum: 0, maximum: 1 }
+        h: { type: number, minimum: 0, maximum: 1 }
+
+    FarmLayoutBackgroundResponse:
+      type: object
+      properties:
+        farm_id: { type: integer, format: int64 }
+        attachment_id: { type: integer, format: int64 }
+        file_name: { type: string }
+        content_url: { type: string }
+        download_url: { type: string }
+
+    FarmLayoutBackgroundUploadResponse:
+      type: object
+      properties:
+        attachment_id: { type: integer, format: int64 }
+        content_url: { type: string }
+        file_attachment: { type: object, additionalProperties: true }
+        farm: { $ref: "#/components/schemas/Farm" }
 
     GreenhouseClimate:
       type: object

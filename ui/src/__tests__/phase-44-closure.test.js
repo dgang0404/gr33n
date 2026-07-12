@@ -29,7 +29,7 @@ describe('Phase 44 WS6 / OC-44 — setup wizard closure', () => {
     expect(tour).toContain('**Shipped.**')
     expect(tour).toContain('### 6g. Guardian during setup (Phase 44')
     expect(tour).toContain('/farms/')
-    expect(tour).toContain('GettingStartedChecklist')
+    expect(tour).toContain('Guardian setup chips')
     expect(tour).not.toContain('## 8. Getting started & edge install (Phase 44 — planned)')
     expect(tour).not.toContain('### 6g. Guardian during setup (Phase 44 — planned)')
   })
@@ -103,7 +103,6 @@ describe('Phase 44 WS6 / OC-44 — setup wizard closure', () => {
       'views/FarmSetupWizard.vue',
       'views/ZoneSetupWizard.vue',
       'views/DeviceSetupWizard.vue',
-      'components/GettingStartedChecklist.vue',
       'lib/firstRunChecklist.js',
     ]) {
       expect(existsSync(join(uiSrc, f))).toBe(true)

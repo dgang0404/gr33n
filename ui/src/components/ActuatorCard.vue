@@ -87,14 +87,15 @@
 import { computed, ref } from 'vue'
 import { useFarmStore } from '../stores/farm'
 import { configSyncBadge } from '../lib/deviceConfigSync'
+import { useActuatorCommands } from '../composables/useActuatorCommands'
 import DeviceApiKeyPanel from './DeviceApiKeyPanel.vue'
 import DeviceCommandQueue from './DeviceCommandQueue.vue'
 import ActuatorPulseControl from './ActuatorPulseControl.vue'
 
 const props = defineProps({ device: Object })
 const store = useFarmStore()
+const { busyId, feedback, sendCommand: queueCommand } = useActuatorCommands()
 const showKeys = ref(false)
-const busyId = ref(null)
 const queueHint = ref({})
 
 const ICONS = { light: '💡', irrigation: '💧', fan: '🌀', pump: '⚙️', heater: '🔥' }
@@ -145,15 +146,12 @@ const syncBadgeClass = computed(() => {
 })
 
 async function sendCommand(actuator, command) {
-  busyId.value = actuator.id
-  queueHint.value = { ...queueHint.value, [actuator.id]: '' }
-  try {
-    await store.enqueueActuatorCommand(actuator.id, command, `Dashboard: ${command}`)
-    queueHint.value = { ...queueHint.value, [actuator.id]: `Queued ${command.toUpperCase()} — waiting for Pi ack` }
-  } catch (e) {
-    queueHint.value = { ...queueHint.value, [actuator.id]: e.response?.data?.error || e.message || 'Command failed' }
-  } finally {
-    busyId.value = null
+  const ok = await queueCommand(actuator, command, `Dashboard: ${command}`)
+  queueHint.value = {
+    ...queueHint.value,
+    [actuator.id]: ok
+      ? feedback.value
+      : feedback.value,
   }
 }
 </script>
