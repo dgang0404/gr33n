@@ -22,7 +22,7 @@ usage() {
 Usage: scripts/restart-local.sh [options]
 
   (default)      docker compose up -d db, wait for Postgres, db sanity report
-  --serve        Run make dev-auth-test after checks; also starts local Ollama when LLM_BASE_URL is loopback
+  --serve        Run make dev-auth-test after checks (skips if API+UI already up); starts local Ollama when loopback
   --skip-report  Skip scripts/db-sanity-report.sh
   --no-quick     docker compose build db --no-cache before up (slow; rare)
   -h, --help     This message
@@ -114,6 +114,50 @@ maybe_start_local_ollama() {
   return 0
 }
 
+# Avoid a second API/UI dev stack when ports are already serving gr33n.
+maybe_serve_api_ui() {
+  set -a
+  # shellcheck disable=1091
+  source "$ROOT/.env"
+  set +a
+
+  local port="${PORT:-8080}"
+  local api_ok=0 ui_ok=0
+
+  if curl -sf "http://127.0.0.1:${port}/health" >/dev/null 2>&1; then
+    api_ok=1
+  fi
+  if curl -sf "http://127.0.0.1:5173/" >/dev/null 2>&1 || curl -sf "http://localhost:5173/" >/dev/null 2>&1; then
+    ui_ok=1
+  fi
+
+  if [[ "$api_ok" -eq 1 && "$ui_ok" -eq 1 ]]; then
+    echo "==> API (:${port}) and UI (:5173) already running — leaving them up."
+    echo "    Open http://localhost:5173/  ·  stop with Ctrl+C in the terminal that started make dev-auth-test"
+    return 0
+  fi
+
+  if [[ "$api_ok" -eq 1 || "$ui_ok" -eq 1 ]]; then
+    echo "warning: partial dev stack — API up=$api_ok UI up=$ui_ok" >&2
+    echo "    Stop the old terminal (Ctrl+C) or free ports :${port} and :5173 before starting another copy." >&2
+    if command -v ss >/dev/null 2>&1; then
+      ss -tlnp 2>/dev/null | grep -E ":${port}\\b|:5173\\b" || true
+    fi
+    die "refusing to start a second API/UI — fix the running processes first"
+  fi
+
+  if command -v ss >/dev/null 2>&1; then
+    if ss -tln 2>/dev/null | grep -qE ":${port}\\b"; then
+      die "port :${port} is in use but /health did not respond — free the port or fix the other process"
+    fi
+    if ss -tln 2>/dev/null | grep -qE ':5173\b'; then
+      die "port :5173 is in use but UI did not respond — free the port or fix the other process"
+    fi
+  fi
+
+  exec make dev-auth-test
+}
+
 compose() {
   if docker info >/dev/null 2>&1; then
     docker compose "$@"
@@ -177,7 +221,7 @@ if [[ "$SERVE" -eq 1 ]]; then
   echo ""
   echo "Guardian tip: after login, open Farm Guardian — awakening preloads models."
   echo "  One-time laptop tune: make guardian-laptop-tune ARGS=\"--apply\""
-  exec make dev-auth-test
+  maybe_serve_api_ui
 fi
 
 echo "Next:"

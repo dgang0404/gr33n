@@ -42,7 +42,7 @@ make rag-ingest-platform-docs
 
 **If awakening stalls > 30s:** Ollama may still be starting — wait a few seconds and tap **Awaken now** in Settings. If you stopped Ollama for testing, `systemctl start ollama` from any terminal (no `cd` into the repo). Use **Quick chat** while the counsel model warms up.
 
-**Laptop vs enterprise:** `make laptop-up` assumes **everything on one machine** (Postgres in Docker, Ollama on loopback, API + UI on localhost). Production / enterprise sites split roles — Postgres, API, UI, and Ollama may each live on different hosts. There is no single “bring up the farm” command across servers; admins start each tier on its own box (see [offline-or-intranet-deployment.md](offline-or-intranet-deployment.md)).
+**Laptop vs enterprise:** `make laptop-up` assumes **everything on one machine** (Postgres in Docker, Ollama on loopback, API + UI on localhost). Safe to re-run: already-up DB, Ollama, and API+UI are detected and left alone; it refuses to start a second API/UI on busy ports. Production / enterprise sites split roles — Postgres, API, UI, and Ollama may each live on different hosts. There is no single “bring up the farm” command across servers; admins start each tier on its own box (see [offline-or-intranet-deployment.md](offline-or-intranet-deployment.md)).
 
 **Power saving (Phase 163):** three tiers — pick what fits your site:
 
