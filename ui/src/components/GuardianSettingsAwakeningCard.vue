@@ -10,7 +10,9 @@
     <p class="text-xs text-zinc-500 mb-4 leading-relaxed">
       Awakening preloads the counsel model so morning checks and farm-grounded chat start without manual
       <code class="text-zinc-400">ollama stop</code> rituals. Login triggers background warmup; use
-      <strong class="text-zinc-400">Awaken now</strong> after reboot or model changes.
+      <strong class="text-zinc-400">Awaken now</strong> after reboot or model changes. On solar or
+      battery sites, use <strong class="text-zinc-400">Rest now</strong> to release the model's RAM/CPU
+      draw between sessions — Guardian wakes back up the next time you ask it something.
     </p>
 
     <div v-if="!readiness.loaded && readiness.loading" class="text-zinc-500 text-sm">Checking…</div>
@@ -96,6 +98,16 @@
         </button>
         <button
           type="button"
+          class="text-xs px-3 py-1.5 rounded-lg bg-zinc-900/70 text-zinc-300 border border-zinc-700 hover:bg-zinc-800 disabled:opacity-40"
+          data-test="settings-guardian-rest-btn"
+          :disabled="restBusy || !farmId || !readiness.awakening?.chat_model_loaded"
+          title="Unload the chat model to save power — Guardian wakes back up on the next question"
+          @click="restNow"
+        >
+          {{ restBusy ? 'Resting…' : 'Rest now' }}
+        </button>
+        <button
+          type="button"
           class="text-xs px-3 py-1.5 rounded-lg bg-zinc-900 border border-zinc-700 text-zinc-300 hover:bg-zinc-800"
           data-test="settings-guardian-refresh-health"
           :disabled="readiness.loading"
@@ -165,6 +177,7 @@ const pullName = ref('phi3:mini')
 const pulling = ref(false)
 const pullError = ref('')
 const pullOk = ref(false)
+const restBusy = ref(false)
 
 const awakeningBusy = computed(() =>
   readiness.loading || readiness.isStirring || !!readiness.awakening?.warmup_in_progress,
@@ -176,6 +189,7 @@ const stateLabel = computed(() => {
     ready: 'Ready',
     stirring: 'Awakening',
     sleeping: 'Sleeping',
+    dormant: 'Resting',
     busy: 'Answering',
     unavailable: 'Unavailable',
   }
@@ -187,6 +201,7 @@ const stateBadgeClass = computed(() => {
   if (s === 'ready') return 'bg-green-950/50 border-green-800 text-green-300'
   if (s === 'stirring' || s === 'busy') return 'bg-amber-950/50 border-amber-800 text-amber-200'
   if (s === 'unavailable') return 'bg-red-950/40 border-red-900 text-red-200'
+  if (s === 'dormant') return 'bg-zinc-900/80 border-zinc-600 text-zinc-400'
   return 'bg-zinc-900 border-zinc-600 text-zinc-300'
 })
 
@@ -212,6 +227,16 @@ async function awakenNow() {
   if (!farmId.value) return
   pullOk.value = false
   await readiness.warmup(farmId.value, 'farm_counsel')
+}
+
+async function restNow() {
+  if (!farmId.value) return
+  restBusy.value = true
+  try {
+    await readiness.restNow(farmId.value, 'farm_counsel')
+  } finally {
+    restBusy.value = false
+  }
 }
 
 async function pullModel() {

@@ -85,4 +85,37 @@ describe('Phase 129 WS8 — GuardianSettingsAwakeningCard', () => {
     expect(api.post).toHaveBeenCalledWith('/guardian/warmup', { mode: 'farm_counsel', farm_id: 1 })
     wrapper.unmount()
   })
+
+  it('Phase 163 — Rest now posts dormant when a model is loaded', async () => {
+    stubHealth({ state: 'ready', chat_model_loaded: true })
+    api.post.mockResolvedValue({ data: { state: 'dormant' } })
+    const wrapper = mount(GuardianSettingsAwakeningCard, {
+      props: { isFarmAdmin: true },
+    })
+    await flushPromises()
+    await wrapper.get('[data-test="settings-guardian-rest-btn"]').trigger('click')
+    await flushPromises()
+    expect(api.post).toHaveBeenCalledWith('/guardian/dormant', { mode: 'farm_counsel', farm_id: 1 })
+    wrapper.unmount()
+  })
+
+  it('Phase 163 — Rest now is disabled when no chat model is loaded', async () => {
+    stubHealth({ state: 'sleeping', chat_model_loaded: false })
+    const wrapper = mount(GuardianSettingsAwakeningCard, {
+      props: { isFarmAdmin: true },
+    })
+    await flushPromises()
+    expect(wrapper.get('[data-test="settings-guardian-rest-btn"]').attributes('disabled')).toBeDefined()
+    wrapper.unmount()
+  })
+
+  it('Phase 163 — shows Resting state label for dormant', async () => {
+    stubHealth({ state: 'dormant', chat_model_loaded: false })
+    const wrapper = mount(GuardianSettingsAwakeningCard, {
+      props: { isFarmAdmin: true },
+    })
+    await flushPromises()
+    expect(wrapper.get('[data-test="settings-guardian-state"]').text()).toContain('Resting')
+    wrapper.unmount()
+  })
 })

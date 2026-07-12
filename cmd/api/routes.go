@@ -183,6 +183,7 @@ func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationwo
 	mux.Handle("GET /guardian/models", jwt(http.HandlerFunc(aichat.GetModels)))
 	mux.Handle("POST /guardian/models/pull", jwt(http.HandlerFunc(aichat.PostPullModel)))
 	mux.Handle("POST /guardian/warmup", jwt(http.HandlerFunc(aichat.PostWarmup)))
+	mux.Handle("POST /guardian/dormant", jwt(http.HandlerFunc(aichat.PostDormant)))
 	mux.Handle("GET /v1/guardian/qa/latest", jwt(http.HandlerFunc(aichat.GetLatestQARun)))
 	mux.Handle("GET /v1/chat/health", jwt(http.HandlerFunc(aichat.GetHealth)))
 	mux.Handle("POST /v1/chat", jwt(http.HandlerFunc(aichat.PostV1)))

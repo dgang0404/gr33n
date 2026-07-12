@@ -35,6 +35,7 @@ func snapshotWarmupState() warmupSnapshot {
 // requestModel is an optional override (POST /guardian/warmup chat_model, eval runner).
 // When includeVision is true and LLM_VISION_MODEL is set, the vision model is preloaded after chat.
 func StartWarmup(ctx context.Context, llmBaseURL, mode string, requestModel string, farmCounsel, farmQuick *string, envDefault string, cache *ModelCache, includeVision bool) (state string, chatModel string) {
+	ClearDormantFlag()
 	mode = normalizeWarmupMode(mode)
 	chatModel, _, reject := ResolveWarmupModel(cache, mode, requestModel, farmCounsel, farmQuick, envDefault)
 	if reject != "" {

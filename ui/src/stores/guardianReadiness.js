@@ -31,6 +31,7 @@ export const useGuardianReadinessStore = defineStore('guardianReadiness', {
       if (s === 'ready') return 'bg-green-500'
       if (s === 'stirring') return 'bg-amber-500 animate-pulse'
       if (s === 'sleeping') return 'bg-zinc-500'
+      if (s === 'dormant') return 'bg-zinc-600'
       if (s === 'unavailable') return 'bg-red-800/80'
       return 'bg-zinc-600'
     },
@@ -92,6 +93,21 @@ export const useGuardianReadinessStore = defineStore('guardianReadiness', {
         this.startPolling(farmId, mode)
       } catch (e) {
         this.error = e.response?.data?.error || e.message || 'Warmup failed'
+      }
+    },
+
+    /** Phase 163 — deliberate rest: unload the chat model to save power (solar/battery sites). */
+    async restNow(farmId, mode = 'farm_counsel', opts = {}) {
+      try {
+        const body = { mode }
+        if (farmId) body.farm_id = Number(farmId)
+        if (opts.includeVision) body.include_vision = true
+        await api.post('/guardian/dormant', body)
+        this.warmupStarted = false
+        this.stopPolling()
+        await this.fetchHealth(farmId, mode)
+      } catch (e) {
+        this.error = e.response?.data?.error || e.message || 'Rest failed'
       }
     },
 

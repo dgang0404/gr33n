@@ -10,6 +10,7 @@ import (
 
 const (
 	AwakeningStateUnavailable = "unavailable"
+	AwakeningStateDormant     = "dormant"
 	AwakeningStateSleeping    = "sleeping"
 	AwakeningStateStirring    = "stirring"
 	AwakeningStateReady       = "ready"
@@ -141,6 +142,11 @@ func BuildAwakeningHealth(ctx context.Context, in AwakeningBuildInput) Awakening
 	}
 	if out.ChatModelLoaded {
 		out.State = AwakeningStateReady
+		return out
+	}
+	if dormantRequested, _ := snapshotDormantState(); dormantRequested {
+		out.State = AwakeningStateDormant
+		out.Messages = append(out.Messages, "Resting to save power — tap Awaken now when you need Guardian again.")
 		return out
 	}
 	out.State = AwakeningStateSleeping

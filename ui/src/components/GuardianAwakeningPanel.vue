@@ -57,7 +57,7 @@ const visible = computed(() => {
     return !!awakening.value?.stale_ollama_cli || corpusWarn
   }
   if (hasStirTimedOut.value && (s === 'stirring' || isStirring.value)) return true
-  return s === 'sleeping' || s === 'stirring' || s === 'unavailable' || s === 'busy' || !!awakening.value?.stale_ollama_cli
+  return s === 'sleeping' || s === 'dormant' || s === 'stirring' || s === 'unavailable' || s === 'busy' || !!awakening.value?.stale_ollama_cli
 })
 
 const corpusNeedsAttention = computed(() => {
@@ -79,6 +79,7 @@ const headline = computed(() => {
   const s = awakening.value?.state
   if (s === 'busy') return 'Guardian is answering…'
   if (s === 'stirring' || isStirring.value) return 'The Guardian is stirring…'
+  if (s === 'dormant') return 'The Guardian rests to save power.'
   if (s === 'sleeping') return 'The Guardian rests. Awakening…'
   if (s === 'unavailable') return 'Guardian unavailable'
   return 'Checking Guardian…'
@@ -97,6 +98,9 @@ const checklist = computed(() => {
 
 const messages = computed(() => {
   const msgs = [...(awakening.value?.messages || [])]
+  if (awakening.value?.state === 'dormant' && !msgs.some((m) => m.includes('Awaken now'))) {
+    msgs.push('Tap Awaken now in Settings → Farm Guardian readiness when you need Guardian again.')
+  }
   if (corpusNeedsAttention.value && awakening.value?.state === 'ready') {
     const c = awakening.value?.corpus
     if (c?.staleness === 'operational_stale') {
