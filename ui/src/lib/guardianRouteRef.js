@@ -4,7 +4,7 @@
  */
 
 const ROUTE_LABELS = {
-  '/': 'Dashboard',
+  '/': 'Today',
   '/zones': 'Zones',
   '/sensors': 'Sensors',
   '/actuators': 'Actuators',

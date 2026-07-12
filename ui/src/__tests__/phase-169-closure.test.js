@@ -17,7 +17,7 @@ describe('Phase 169 WS1–WS3 — attention cockpit', () => {
     const dash = readFileSync(join(uiSrc, 'views/Dashboard.vue'), 'utf8')
     expect(dash).toContain('FarmTodayAttentionStrip')
     expect(dash).toContain('buildTodayAttentionStarters')
-    expect(dash).toContain('dashboard-attention-starters')
+    expect(dash).toContain('dashboard-details-guardian')
   })
 
   it('sorts FarmCanvas zones attention-first', () => {

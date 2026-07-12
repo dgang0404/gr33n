@@ -1,23 +1,19 @@
 <template>
-  <div class="space-y-6">
+  <div class="space-y-5">
 
-    <!-- Farm header -->
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-      <div>
-        <h2 class="text-xl font-bold text-white">{{ store.farm?.name ?? 'Loading...' }}
-          <HelpTip position="bottom">
-            <strong>How it all connects:</strong> Your farm has <em>zones</em> (grow areas), each with <em>sensors</em>
-            (reading temp, humidity, EC) and <em>controls</em> (pumps, lights, fans). <em>Feeding plans</em> say when each zone
-            gets water and nutrients. <em>Automations</em> react to readings. <em>Tasks</em> are your daily to-do list.
-            Open <router-link v-nav-hint="'/operator-guide'" to="/operator-guide" class="text-gr33n-400 underline">Guide</router-link> for a suggested click path.
-          </HelpTip>
-        </h2>
-        <p class="text-sm text-gray-500">{{ store.zones.length }} zones · {{ store.sensors.length }} sensors · {{ store.devices.length }} devices</p>
-      </div>
-      <button @click="refreshAll" class="text-xs text-gr33n-400 hover:text-gr33n-300 transition-colors self-start sm:self-auto">
-        &#x21bb; Refresh
-      </button>
-    </div>
+    <FarmTodayHeader
+      :farm-name="store.farm?.name ?? ''"
+      :zones="store.zones"
+      :get-status="zoneVisualStatus"
+      :tasks-today-count="todayTasks.length"
+      :unread-alerts="unreadAlerts"
+      :overdue-task-count="overdueTaskCount"
+      :tasks-link="tasksViewAllLink"
+      :alerts-link="alertsViewAllLink"
+      :site-weather="siteWeather"
+      @refresh="refreshAll"
+      @filter-attention="todayZoneFilter = 'attention'"
+    />
 
     <!-- Phase 168 — empty farm: canvas CTA + Guardian setup (no IT checklist) -->
     <section
@@ -57,10 +53,19 @@
       @select-zone="openZoneQuickActions"
     />
 
+    <FarmTodayZoneFilterBar
+      v-if="store.zones.length"
+      v-model="todayZoneFilter"
+      :zones="store.zones"
+      :get-status="zoneVisualStatus"
+    />
+
     <FarmCanvas
       class="hidden md:block"
       :farm-id="farmContext.farmId"
-      :zones="store.zones"
+      :zones="filteredZones"
+      :total-zone-count="store.zones.length"
+      :filter-label="activeFilterLabel"
       :sensors="store.sensors"
       :readings="store.readings"
       :actuators="store.actuators"
@@ -75,7 +80,9 @@
     />
 
     <FarmZoneStack
-      :zones="store.zones"
+      :zones="filteredZones"
+      :total-zone-count="store.zones.length"
+      :filter-label="activeFilterLabel"
       :sensors="store.sensors"
       :readings="store.readings"
       :actuators="store.actuators"
@@ -102,37 +109,18 @@
       @refresh="refreshAll"
     />
 
-    <!-- Compact attention row -->
-    <section class="flex flex-wrap gap-3" data-test="dashboard-attention-row">
-      <router-link
-        v-nav-hint="tasksViewAllLink"
-        :to="tasksViewAllLink"
-        class="flex items-center gap-2 px-4 py-2 rounded-xl bg-zinc-900 border border-zinc-800 hover:border-zinc-700 transition-colors"
-      >
-        <span class="text-xs text-zinc-500 uppercase tracking-wide">Tasks due</span>
-        <span class="text-sm font-semibold text-white">{{ todayTasks.length }}</span>
-        <span v-if="overdueTaskCount" class="text-[10px] text-amber-400">{{ overdueTaskCount }} overdue</span>
-      </router-link>
-      <router-link
-        v-nav-hint="alertsViewAllLink"
-        :to="alertsViewAllLink"
-        class="flex items-center gap-2 px-4 py-2 rounded-xl bg-zinc-900 border border-zinc-800 hover:border-zinc-700 transition-colors"
-      >
-        <span class="text-xs text-zinc-500 uppercase tracking-wide">Alerts</span>
-        <span class="text-sm font-semibold text-white">{{ unreadAlerts }}</span>
-        <span v-if="unreadAlerts" class="text-[10px] px-1.5 py-0.5 rounded-full bg-red-600 text-white font-bold">{{ unreadAlerts }}</span>
-      </router-link>
-    </section>
-
-    <GuardianStarterChips
-      v-if="attentionStarters.length"
-      :starters="attentionStarters"
-      data-test="dashboard-attention-starters"
+    <FarmTodayActionBar
+      v-if="store.zones.length"
+      :feed-water-link="feedWaterDailyLink"
+      :new-task-link="newTaskLink"
+      :schedules-link="comfortSchedulesLink"
+      :low-stock-count="lowStockCount"
     />
-    <GuardianStarterChips :starters="morningWalkthroughStarters" data-test="dashboard-morning-check-starters" />
-    <GuardianStarterChips :starters="weatherStarters" data-test="dashboard-weather-starters" />
 
-    <GuardianStarterChips :starters="dashboardOpsStarters" />
+    <FarmTodayAskGr33n
+      v-if="store.zones.length"
+      :starters="curatedTodayAskStarters"
+    />
 
     <!-- Power-user details (collapsed by default) -->
     <details class="bg-zinc-900 border border-zinc-800 rounded-xl p-4 group" data-test="dashboard-details">
@@ -142,6 +130,15 @@
       </summary>
 
       <div class="mt-4 space-y-6">
+        <section
+          v-if="detailsGuardianStarters.length"
+          class="space-y-2"
+          data-test="dashboard-details-guardian"
+        >
+          <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-widest">Ask gr33n</h3>
+          <GuardianStarterChips :starters="detailsGuardianStarters" />
+        </section>
+
         <!-- Quick actions -->
         <section class="flex flex-wrap gap-3">
           <router-link v-nav-hint="'/zones'" :to="newTaskLink"
@@ -331,16 +328,19 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useFarmStore } from '../stores/farm'
 import { useFarmContextStore } from '../stores/farmContext'
 import SensorTile   from '../components/SensorTile.vue'
 import ActuatorCard from '../components/ActuatorCard.vue'
-import HelpTip from '../components/HelpTip.vue'
+import FarmTodayHeader from '../components/FarmTodayHeader.vue'
 import FarmSiteStrip from '../components/FarmSiteStrip.vue'
 import FarmTodayAttentionStrip from '../components/FarmTodayAttentionStrip.vue'
+import FarmTodayZoneFilterBar from '../components/FarmTodayZoneFilterBar.vue'
 import FarmCanvas from '../components/FarmCanvas.vue'
 import FarmZoneStack from '../components/FarmZoneStack.vue'
+import FarmTodayActionBar from '../components/FarmTodayActionBar.vue'
+import FarmTodayAskGr33n from '../components/FarmTodayAskGr33n.vue'
 import ZoneQuickActions from '../components/ZoneQuickActions.vue'
 import EmptyStateHint from '../components/EmptyStateHint.vue'
 import GuardianStarterChips from '../components/GuardianStarterChips.vue'
@@ -364,6 +364,17 @@ import {
   zoneOpsRoute,
 } from '../lib/dashboardWorkspaceLinks.js'
 import { computeZoneVisualStatus } from '../lib/farmVisualStatus.js'
+import {
+  TODAY_ZONE_FILTERS,
+  filterZonesForToday,
+  readTodayZoneFilter,
+  writeTodayZoneFilter,
+} from '../lib/farmTodayZoneFilter.js'
+import {
+  buildCuratedTodayAskStarters,
+  mergeTodayDetailsGuardianStarters,
+  shouldOfferMorningCheckOnToday,
+} from '../lib/farmTodayAskGr33n.js'
 
 const store = useFarmStore()
 const farmContext = useFarmContextStore()
@@ -428,6 +439,19 @@ function zoneVisualStatus(zone) {
   })
 }
 
+// Phase 173 — large-farm zone filter (chip bar only shows for ≥9 zones)
+const todayZoneFilter = ref(readTodayZoneFilter())
+watch(todayZoneFilter, (id) => writeTodayZoneFilter(id))
+
+const filteredZones = computed(() =>
+  filterZonesForToday(store.zones, todayZoneFilter.value, zoneVisualStatus),
+)
+
+const activeFilterLabel = computed(() => {
+  if (todayZoneFilter.value === 'all') return ''
+  return TODAY_ZONE_FILTERS.find((f) => f.id === todayZoneFilter.value)?.label ?? ''
+})
+
 const attentionStarters = computed(() => buildTodayAttentionStarters({
   zones: store.zones,
   getStatus: zoneVisualStatus,
@@ -450,9 +474,23 @@ const dashboardOpsStarters = computed(() => buildDashboardOpsStarters({
   lowStockAlerts: lowStockAlerts.value,
 }))
 
+const curatedTodayAskStarters = computed(() => buildCuratedTodayAskStarters({
+  morningStarters: morningWalkthroughStarters.value,
+  showMorningCheck: shouldOfferMorningCheckOnToday(),
+  farmName: store.farm?.name || '',
+}))
+
+const detailsGuardianStarters = computed(() => mergeTodayDetailsGuardianStarters(
+  attentionStarters.value,
+  morningWalkthroughStarters.value,
+  weatherStarters.value,
+  dashboardOpsStarters.value,
+))
+
 const feedWaterDailyLink = computed(() => feedWaterRoute(store.zones))
 const feedWaterNutrientsLink = computed(() => feedWaterRoute(store.zones))
 const comfortAutomationsLink = computed(() => comfortRoute('automations'))
+const comfortSchedulesLink = computed(() => comfortRoute('schedules'))
 const newTaskLink = computed(() => newTaskRoute(store.tasks, store.zones))
 const tasksViewAllLink = computed(() => tasksViewAllRoute(store.tasks, store.zones))
 const alertsViewAllLink = computed(() => alertsViewAllRoute(alerts.value, store.zones, store.sensors))
@@ -607,4 +645,15 @@ async function refreshAll() {
 
 
 onMounted(() => refreshAll())
+
+function syncDocumentTitle() {
+  const name = store.farm?.name
+  document.title = name ? `Today · ${name}` : 'Today'
+}
+
+watch(() => store.farm?.name, syncDocumentTitle, { immediate: true })
+
+onUnmounted(() => {
+  document.title = 'gr33n'
+})
 </script>

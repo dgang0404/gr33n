@@ -126,7 +126,7 @@ function openGuardianDrawer() {
 const apiOk = ref(true)
 const now   = ref('')
 const labels = {
-  '/': 'Dashboard',
+  '/': 'Today',
   '/zones': 'Zones',
   '/sensors': 'Sensors',
   '/actuators': 'Controls',

@@ -130,7 +130,7 @@ describe('Phase 29 WS1 — guardian panel store', () => {
     expect(panel.navHistory).toHaveLength(3)
     expect(panel.navHistory[0].name).toBe('Sensors')
     expect(panel.navHistory[1].name).toBe('Zones')
-    expect(panel.navHistory[2].name).toBe('Dashboard')
+    expect(panel.navHistory[2].name).toBe('Today')
     expect(panel.routeRef.name).toBe('Tasks')
   })
 

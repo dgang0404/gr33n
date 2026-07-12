@@ -38,7 +38,7 @@ describe('Phase 60 WS5 / OC-60 — morning walkthrough closure', () => {
     const dash = readFileSync(join(process.cwd(), 'src/views/Dashboard.vue'), 'utf8')
     const chat = readFileSync(join(process.cwd(), 'src/components/GuardianChatPanel.vue'), 'utf8')
     expect(dash).toContain('buildMorningWalkthroughStarters')
-    expect(dash).toContain('dashboard-morning-check-starters')
+    expect(dash).toContain('FarmTodayAskGr33n')
     expect(chat).toContain('chat-morning-starters')
     expect(chat).toContain('buildMorningWalkthroughStarters')
   })

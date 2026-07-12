@@ -39,7 +39,7 @@ describe('Phase 166 WS5 — Dashboard rewire', () => {
     const dash = readFileSync(join(repoRoot, 'ui/src/views/Dashboard.vue'), 'utf8')
     expect(dash).toContain('FarmCanvas')
     expect(dash).toContain('FarmSiteStrip')
-    expect(dash).toContain('dashboard-attention-row')
+    expect(dash).toContain('FarmTodayHeader')
     expect(dash).toContain('All the details')
     expect(dash).toContain('loadLayoutBackground')
     expect(dash).toContain('refreshReadings')

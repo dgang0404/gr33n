@@ -98,6 +98,34 @@ After `make seed`, farm-1 zones include `meta_data.layout` positions matching th
 
 Demo-farm crop guides (chrysanthemum, basil, pepper, strawberry) expanded for Guardian RAG. **Marigold** and **geranium** added to the crop catalog with new field guides. Regenerate after edits: `./scripts/generate-crop-catalog-seed.sql.sh -o db/seed/crop_catalog_from_yaml.sql` then `make rag-ingest-field-guides`.
 
+## Today excellence arc (Phases 173–177 — planned)
+
+Locked roadmap after Phase 172: [`phase_173_177_today_excellence_roadmap.plan.md`](plans/phase_173_177_today_excellence_roadmap.plan.md)
+
+| Phase | Focus |
+|-------|--------|
+| **173** ✅ | Large farms — filter chips (All/Attention/Indoor/Outdoor/Greenhouse), mobile paging (8/page), desktop Map/List toggle beyond 13 zones |
+| **174** ✅ | Visual hierarchy — **Today** naming, `FarmTodayHeader` health pills, taller canvas, tile polish; duplicate tasks/alerts row removed |
+| **175** ✅ | Farm-first — action bar (feed, task, schedules, zones); ≤2 Ask gr33n chips; full starters in details |
+| **176** | Farm pulse — next runs, active crops, devices, folded into Site Strip (no new row) |
+| **177** | First impression — demo showcase, coach marks, arc closure |
+
+**North star:** `/` reads as a grower cockpit, not an AI chat launcher.
+
+## Today visual hierarchy (Phase 174)
+
+- **FarmTodayHeader** — farm name, time greeting, health rollup pills (`N healthy`, `N need attention`, tasks, alerts)
+- TopBar and browser tab say **Today** (not Dashboard)
+- Attention pill applies the Phase 173 **Needs attention** filter
+- Canvas min-height increased; zone tiles get hover lift and attention glow
+
+## Today farm-first actions (Phase 175)
+
+- **FarmTodayActionBar** below the map — Feed & water, New task, What runs when, My zones
+- **FarmTodayAskGr33n** — at most two curated chips (morning check + ask about your farm)
+- Full Guardian starter set (attention, weather, ops) moved under **All the details → Ask gr33n**
+- Zone-scoped Guardian remains in the quick-action sheet (Phase 170 one-tap counsel unchanged)
+
 ---
 
 ## UI workspaces & routes

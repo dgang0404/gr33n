@@ -155,6 +155,13 @@ Hub: operator tour [§7k](operator-tour.md#7k-visual-farm-cockpit-phases-164168-
 | **169** ✅ | Attention strip + Guardian attention starters | [`phase_169_today_attention_cockpit.plan.md`](plans/phase_169_today_attention_cockpit.plan.md) |
 | **170** ✅ | One-tap Farm counsel from Today starters | [`phase_170_today_guardian_one_tap.plan.md`](plans/phase_170_today_guardian_one_tap.plan.md) |
 | **171** ✅ | Demo zone layouts in seed | [`phase_171_demo_zone_layouts_seed.plan.md`](plans/phase_171_demo_zone_layouts_seed.plan.md) |
+| **173** ✅ | Large-farm Today filters + paging | [`phase_173_today_large_farm_navigation.plan.md`](plans/phase_173_today_large_farm_navigation.plan.md) · `phase-173-closure.test.js` |
+| **174** ✅ | Today visual hierarchy — health header, naming, tile polish | [`phase_174_today_visual_hierarchy.plan.md`](plans/phase_174_today_visual_hierarchy.plan.md) · `phase-174-closure.test.js` |
+| **175** ✅ | Farm-first actions; Guardian demoted | [`phase_175_today_farm_first_actions.plan.md`](plans/phase_175_today_farm_first_actions.plan.md) · `phase-175-closure.test.js` |
+| **176** 📋 | Farm pulse — operational “now” strip | [`phase_176_today_farm_pulse.plan.md`](plans/phase_176_today_farm_pulse.plan.md) |
+| **177** 📋 | First impression + arc closure | [`phase_177_today_first_impression.plan.md`](plans/phase_177_today_first_impression.plan.md) |
+
+**Roadmap:** [`phase_173_177_today_excellence_roadmap.plan.md`](plans/phase_173_177_today_excellence_roadmap.plan.md) — locked order after Phase 172.
 
 ## Phase 172 — Field guides + documentation
 

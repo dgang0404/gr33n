@@ -724,7 +724,7 @@ export function buildMoneyHubStarters() {
  */
 export function buildWeatherStarters({ surface = 'dashboard', farmName = '' } = {}) {
   const path = surface === 'chat' ? '/chat' : '/'
-  const pageName = surface === 'chat' ? 'Farm Guardian chat' : 'Dashboard'
+  const pageName = surface === 'chat' ? 'Farm Guardian chat' : 'Today'
   const contextRef = { type: 'route', path, name: pageName, surface: `weather_${surface}` }
   const farmBit = farmName ? ` at ${farmName}` : ''
   return dedupeStarters([
@@ -755,7 +755,7 @@ export function buildMorningWalkthroughStarters({
 } = {}) {
   const onChat = surface === 'chat'
   const path = onChat ? '/chat' : '/'
-  const pageName = onChat ? 'Farm Guardian chat' : 'Dashboard'
+  const pageName = onChat ? 'Farm Guardian chat' : 'Today'
   const contextRef = {
     type: 'route',
     path,
@@ -844,7 +844,7 @@ export function buildTodayAttentionStarters({
  */
 export function buildDashboardOpsStarters({ lowStockCount = 0, lowStockAlerts = [] }) {
   if (!lowStockCount) return []
-  const routeRef = operationsRouteRef('/', 'Dashboard', 'dashboard_ops')
+  const routeRef = operationsRouteRef('/', 'Today', 'dashboard_ops')
   const suppliesRef = operationsRouteRef('/money?tab=supplies', 'Supplies', 'dashboard_ops')
   const starters = [{
     id: 'whats-running-low',

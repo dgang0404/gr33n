@@ -4,11 +4,37 @@
       <div>
         <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-widest">Your farm</h3>
         <p class="text-[11px] text-zinc-500 mt-0.5">
-          {{ arrangeMode ? 'Drag zones to match your space — positions save automatically.' : 'Tap a zone for quick actions.' }}
+          <template v-if="filterLabel">Showing {{ zones.length }} of {{ totalZoneCountResolved }} zones · {{ filterLabel }}</template>
+          <template v-else>{{ arrangeMode ? 'Drag zones to match your space — positions save automatically.' : 'Tap a zone for quick actions.' }}</template>
         </p>
       </div>
       <div class="flex items-center gap-2">
+        <div
+          v-if="showListToggle"
+          class="flex items-center rounded-lg border border-zinc-700 overflow-hidden"
+          data-test="farm-canvas-view-toggle"
+        >
+          <button
+            type="button"
+            class="text-xs px-3 py-1.5 transition-colors"
+            :class="effectiveViewMode === 'map' ? 'bg-green-900/50 text-green-300' : 'bg-zinc-800 text-zinc-400 hover:text-zinc-200'"
+            data-test="farm-canvas-view-map"
+            @click="setViewMode('map')"
+          >
+            Map
+          </button>
+          <button
+            type="button"
+            class="text-xs px-3 py-1.5 transition-colors"
+            :class="effectiveViewMode === 'list' ? 'bg-green-900/50 text-green-300' : 'bg-zinc-800 text-zinc-400 hover:text-zinc-200'"
+            data-test="farm-canvas-view-list"
+            @click="setViewMode('list')"
+          >
+            List
+          </button>
+        </div>
         <button
+          v-if="effectiveViewMode === 'map'"
           type="button"
           class="text-xs px-3 py-1.5 rounded-lg border transition-colors"
           :class="arrangeMode ? 'bg-green-900/50 text-green-300 border-green-700' : 'bg-zinc-800 text-zinc-400 border-zinc-700 hover:border-zinc-600'"
@@ -43,7 +69,15 @@
     </div>
 
     <div
-      v-if="!zones.length"
+      v-if="!zones.length && filterLabel"
+      class="rounded-xl border border-dashed border-zinc-700 bg-zinc-900/50 p-8 text-center"
+      data-test="farm-canvas-filter-empty"
+    >
+      <p class="text-sm text-zinc-300">No zones match "{{ filterLabel }}" right now.</p>
+    </div>
+
+    <div
+      v-else-if="!zones.length"
       class="rounded-xl border border-dashed border-zinc-700 bg-zinc-900/50 p-8 text-center"
       data-test="farm-canvas-empty"
     >
@@ -55,6 +89,29 @@
       >
         Go to My zones →
       </router-link>
+    </div>
+
+    <div
+      v-else-if="effectiveViewMode === 'list'"
+      class="space-y-2 max-h-[560px] overflow-y-auto pr-1"
+      data-test="farm-canvas-list"
+    >
+      <button
+        v-for="entry in zoneEntries"
+        :key="entry.zone.id"
+        type="button"
+        class="w-full text-left min-h-[44px] rounded-xl focus:outline-none focus:ring-2 focus:ring-green-600"
+        :data-test="`farm-canvas-list-zone-${entry.zone.id}`"
+        :aria-label="`Open actions for ${entry.zone.name}`"
+        @click="(e) => onTileClick(e, entry.zone.id)"
+      >
+        <FarmCanvasZoneTile
+          :zone="entry.zone"
+          :status="entry.status"
+          :arrange-mode="false"
+          class="min-h-[96px]"
+        />
+      </button>
     </div>
 
     <div
@@ -70,7 +127,7 @@
         v-if="backgroundUrl"
         :src="backgroundUrl"
         alt=""
-        class="absolute inset-0 w-full h-full object-cover opacity-35 pointer-events-none"
+        class="absolute inset-0 w-full h-full object-cover opacity-45 pointer-events-none"
         data-test="farm-canvas-background"
       />
       <div
@@ -122,10 +179,17 @@ import {
   resizeLayout,
 } from '../lib/farmCanvasLayout.js'
 import { sortZonesForStack, zoneHasTasksDueToday } from '../lib/zoneQuickActions.js'
+import {
+  readTodayDesktopView,
+  shouldOfferDesktopListView,
+  writeTodayDesktopView,
+} from '../lib/farmTodayZoneFilter.js'
 
 const props = defineProps({
   farmId: { type: Number, default: null },
   zones: { type: Array, default: () => [] },
+  totalZoneCount: { type: Number, default: null },
+  filterLabel: { type: String, default: '' },
   sensors: { type: Array, default: () => [] },
   readings: { type: Object, default: () => ({}) },
   actuators: { type: Array, default: () => [] },
@@ -149,6 +213,17 @@ const localLayouts = ref({})
 const focusedZoneId = ref(null)
 const backgroundUploading = ref(false)
 const saveTimers = ref({})
+const viewMode = ref(readTodayDesktopView())
+
+const showListToggle = computed(() => shouldOfferDesktopListView(props.zones.length))
+const effectiveViewMode = computed(() => (showListToggle.value ? viewMode.value : 'map'))
+const totalZoneCountResolved = computed(() => props.totalZoneCount ?? props.zones.length)
+
+function setViewMode(mode) {
+  viewMode.value = mode
+  writeTodayDesktopView(mode)
+  if (mode === 'list') arrangeMode.value = false
+}
 
 const dragState = ref(null)
 const resizeState = ref(null)
@@ -361,6 +436,11 @@ watch(() => props.zones, syncLayoutsFromStore, { deep: true })
 <style scoped>
 .farm-canvas-stage {
   aspect-ratio: 16 / 10;
-  min-height: 280px;
+  min-height: 420px;
+}
+@media (min-width: 768px) {
+  .farm-canvas-stage {
+    min-height: 480px;
+  }
 }
 </style>

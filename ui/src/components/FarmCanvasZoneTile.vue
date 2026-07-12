@@ -1,6 +1,6 @@
 <template>
   <article
-    class="farm-zone-tile relative flex flex-col h-full min-h-0 rounded-xl border-2 bg-zinc-950/90 backdrop-blur-sm shadow-lg transition-shadow"
+    class="farm-zone-tile relative flex flex-col h-full min-h-0 rounded-xl border-2 bg-zinc-950/90 backdrop-blur-sm shadow-lg transition-all duration-200"
     :class="tileClasses"
     :aria-label="ariaLabel"
     data-test="farm-canvas-zone-tile"
@@ -27,8 +27,16 @@
       </span>
     </header>
 
-    <div class="flex-1 min-h-0 px-2 pb-2 space-y-1 text-[11px] leading-snug overflow-hidden">
-      <p v-if="plantsLine" class="text-zinc-200 truncate" data-test="farm-tile-plants">
+    <div
+      class="flex-1 min-h-0 px-2 pb-2 space-y-1 text-[11px] leading-snug overflow-hidden"
+      :class="{ 'rounded-lg border border-dashed border-zinc-700/80 m-1': isEmptyZone }"
+    >
+      <p
+        v-if="plantsLine"
+        class="text-zinc-200 truncate"
+        :title="plantsLine"
+        data-test="farm-tile-plants"
+      >
         <span class="text-zinc-500">Plants ·</span> {{ plantsLine }}
       </p>
       <p v-if="lightLine" class="text-zinc-300 truncate" data-test="farm-tile-light">
@@ -88,20 +96,24 @@ const tileClasses = computed(() => {
   const h = props.status?.health || 'ok'
   const border = {
     ok: 'border-green-800/70',
-    warn: 'border-amber-600/80',
-    alert: 'border-red-600/80',
+    warn: 'border-amber-600/80 shadow-amber-900/20 shadow-lg',
+    alert: 'border-red-600/80 shadow-red-900/25 shadow-lg',
     unconfigured: 'border-zinc-700',
   }[h] || 'border-zinc-700'
   const greenhouse = String(props.zone?.zone_type || '').toLowerCase().includes('greenhouse')
     ? 'ring-1 ring-emerald-900/40'
     : ''
-  const focus = props.focused ? 'ring-2 ring-green-500' : ''
-  return [border, greenhouse, focus]
+  const focus = props.focused ? 'ring-2 ring-green-500 ring-offset-1 ring-offset-zinc-950' : ''
+  const hover = !props.arrangeMode ? 'hover:shadow-xl hover:border-zinc-500' : ''
+  const empty = isEmptyZone.value ? 'border-dashed border-zinc-600/70' : ''
+  return [border, greenhouse, focus, hover, empty]
 })
+
+const isEmptyZone = computed(() => props.status?.plants?.state === 'empty')
 
 const plantsLine = computed(() => {
   const p = props.status?.plants
-  if (!p || p.state === 'empty') return p?.label || 'Empty — ready to plant'
+  if (!p || p.state === 'empty') return 'Ready to plant'
   const parts = [p.cropName, p.stage].filter(Boolean)
   return parts.join(', ')
 })
