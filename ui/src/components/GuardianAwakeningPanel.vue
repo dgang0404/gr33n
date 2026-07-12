@@ -6,13 +6,16 @@
     role="status"
     data-test="guardian-awakening-panel"
   >
-    <p class="font-medium" data-test="guardian-awakening-headline">{{ headline }}</p>
-    <ul v-if="checklist.length" class="space-y-1 text-zinc-300" data-test="guardian-awakening-checklist">
-      <li v-for="(item, i) in checklist" :key="i">{{ item }}</li>
-    </ul>
-    <p v-for="(msg, i) in messages" :key="'m'+i" class="text-zinc-400">{{ msg }}</p>
-    <p v-if="readiness.error" class="text-red-300/90" data-test="guardian-awakening-error">{{ readiness.error }}</p>
-    <div v-if="showQuickFallback" class="flex flex-wrap gap-2">
+    <div class="flex gap-3 items-start">
+      <GuardianStateArt :state="awakening?.state" size="panel" />
+      <div class="flex-1 min-w-0 space-y-2">
+        <p class="font-medium" data-test="guardian-awakening-headline">{{ headline }}</p>
+        <ul v-if="checklist.length" class="space-y-1 text-zinc-300" data-test="guardian-awakening-checklist">
+          <li v-for="(item, i) in checklist" :key="i">{{ item }}</li>
+        </ul>
+        <p v-for="(msg, i) in messages" :key="'m'+i" class="text-zinc-400">{{ msg }}</p>
+        <p v-if="readiness.error" class="text-red-300/90" data-test="guardian-awakening-error">{{ readiness.error }}</p>
+      <div v-if="showQuickFallback" class="flex flex-wrap gap-2">
       <button
         type="button"
         class="px-2 py-1 rounded border border-zinc-600 bg-zinc-900 text-zinc-200 hover:bg-zinc-800"
@@ -30,6 +33,8 @@
       >
         Retry awakening
       </button>
+      </div>
+      </div>
     </div>
   </div>
 </template>
@@ -38,6 +43,7 @@
 import { computed, onMounted, onUnmounted, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useGuardianReadinessStore } from '../stores/guardianReadiness'
+import GuardianStateArt from './GuardianStateArt.vue'
 
 const props = defineProps({
   farmId: { type: [Number, String], default: null },

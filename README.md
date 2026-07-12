@@ -26,6 +26,13 @@ An open-source farm operating system — run it on your LAN, keep your data clos
   - Symptom catalog + field guides (if indexed)  
   - General agronomy reasoning from whichever local Ollama model you've selected (server default is a small, CPU-friendly model; swap in a larger one any time via the model picker below)  
 
+⚡ **Guardian power states** — On solar, battery, or metered sites, control when the LLM uses RAM/CPU:
+  - **Awaken now** / login warmup preloads the counsel model for morning checks  
+  - **Rest now** (Settings) unloads the chat model between sessions — Guardian wakes on the next question  
+  - **Auto-rest** after idle minutes (`GUARDIAN_AUTO_DORMANT_MINUTES` in `.env`)  
+  - **Admin service stop** — `./scripts/guardian-power.sh sleep|wake` stops/starts the full Ollama process (not in the web API)  
+  - **Readiness UI** — Settings card + chat awakening panel show state (`sleeping`, `stirring`, `ready`, `resting`, `unavailable`) with swappable hand-drawn druid art (`ui/public/assets/guardian/druid/`; placeholder SVGs ship until artists replace them)
+
 ✅ **Guardian Proposals** — Guardian suggests actions ("acknowledge this alert," "create a task," "start a flower run in Zone 3," "enqueue pump on for 30s"). You see a card, click **Confirm**, it executes. Nothing silent — all changes audit-logged.
 
 📱 **Offline-First Mobile** — Install as PWA in your browser. When wifi drops:
@@ -50,6 +57,7 @@ An open-source farm operating system — run it on your LAN, keep your data clos
 |---------|----------|---------|-------------|-------------|
 | Sensors & alerts | ✅ (cached) | ✅ (PWA) | ✅ | ✅ (rules) |
 | Guardian chat | ❌ (needs an LLM running — can be fully local, see below) | ✅ (browser voice) | ✅ (read-only) | ✅ (propose→confirm) |
+| Guardian power (Rest / auto-rest) | ✅ (unload model; Ollama may stay running) | ✅ | ✅ (Operator+) | — |
 | Tasks | ✅ (queued) | ✅ (PWA) | ✅ | — |
 | Actuator control | ✅ (pending) | ✅ (PWA) | ✅ (RBAC) | ✅ (schedules) |
 | Costs | ❌ | ✅ | ✅ | — |
@@ -139,7 +147,7 @@ gr33n is designed for connectivity interruptions. Core workflows stay functional
 | **Sensor readings** | Cached in-memory, shown on dashboard | Synced to Postgres; time-series rebuilt |
 | **Tasks** | Create/status-update queued locally in SQLite (`offline_queue.db`) | Auto-synced; conflict resolution offered if edited elsewhere |
 | **Actuator commands** | Queued locally on Pi as `pending_command` | Pi syncs, applies any new commands |
-| **Guardian chat** | ❌ Unavailable (needs LLM) | Restored when API back up |
+| **Guardian chat** | ❌ Unavailable (needs LLM / Ollama running) | Restored when Ollama is up; tap **Awaken now** in Settings |
 | **Dashboard** | Shows last-known state + local queued actions | Real-time updates resume |
 
 **PWA install:** Install gr33n from your browser (iOS/Android/desktop) — gives you offline persistence + icons + notification support. Queued writes are shown with a "⏳ pending sync" indicator until confirmed on the server.
@@ -570,6 +578,9 @@ Runbook: [`crop-knowledge-operator-runbook.md`](docs/crop-knowledge-operator-run
 
 | Method | Path | Description |
 |--------|------|-------------|
+| GET | `/v1/chat/health` | Guardian awakening readiness — model loaded, RAG corpus, `awakening.state`, auto-rest countdown (`?farm_id=`, `?mode=farm_counsel`). Settings card + chat panel poll this. |
+| POST | `/guardian/warmup` | Preload counsel model (**Awaken now**). Body: `{"farm_id": N, "mode": "farm_counsel"}`. |
+| POST | `/guardian/dormant` | Unload chat model (**Rest now**). Body: `{"farm_id": N, "mode": "farm_counsel"}`. |
 | POST | `/v1/chat` | Send a message to Farm Guardian. Optional `farm_id` → RAG grounding + live snapshot. Optional `session_id` (UUID) for multi-turn context replay. Optional `context_ref` (alert / crop cycle / zone / route from **Ask Guardian**). Optional `setup_mode` or `?setup=1` for onboarding persona. Optional `attachment_ids` for zone photos (vision). Optional `"stream": true` for SSE streaming. Response includes `answer`, `grounded`, `citations`, `proposals[]`, `session_id`, `turn_index`, `prompt_tokens`, `completion_tokens`. |
 | POST | `/v1/chat/confirm` | Execute a frozen change request (`{"proposal_id": "..."}`). Requires Operate role for write tools. |
 | GET | `/v1/chat/proposals` | Pending change-request inbox (`?farm_id=`, `?status=pending`, pagination). Same queue as `/guardian/requests`. |
@@ -675,6 +686,7 @@ make rag-ingest-platform-docs  # Curated operator docs (tour, playbooks, phase g
 make local-up        # dev-stack then API + UI (same as ./scripts/dev-stack.sh --serve)
 make restart-local   # After reboot: Compose db + wait + sanity report (no migrations)
 make restart-local-serve  # restart-local then API + UI (make dev-auth-test)
+# Admin Ollama service stop/start (solar sites): ./scripts/guardian-power.sh sleep|wake|status
 make check-stack     # Verify DATABASE_URL + pgvector + optional API /health (see docs/local-operator-bootstrap.md)
 make run        # Run the API server
 make run-receiver # Run optional Insert Commons receiver (see docs/insert-commons-receiver-playbook.md)
@@ -768,7 +780,7 @@ The AI features are gated by `AI_ENABLED` (default on) and degrade gracefully: i
      → Logged in audit: guardian_tool_executed / create_task / operator_id
 ```
 
-**What Guardian does today (Phase 27–67):** conversational Q&A grounded on your farm snapshot, optional **RAG** (farm rows + curated platform docs via `make rag-ingest-platform-docs`; **field guides** via `make rag-ingest-field-guides`), and **read tools** (zones, alerts, fertigation, lighting, greenhouse climate, plant lookup). **Offline field mode (37):** guided procedures (`start procedure …`), safety hard-stops, static print checklists, graceful degrade when the LLM is down — see [§6d](docs/operator-tour.md#6d-first-field-install-with-guardian-offline-phase-37). **Hands-free field (67):** push-to-talk mic + optional voice readback so you can ask questions while carrying water or pruning. **Writes** always use propose→**Confirm** — nothing hits the DB until you approve.
+**What Guardian does today (Phase 27–67, 129, 163):** conversational Q&A grounded on your farm snapshot, optional **RAG** (farm rows + curated platform docs via `make rag-ingest-platform-docs`; **field guides** via `make rag-ingest-field-guides`), and **read tools** (zones, alerts, fertigation, lighting, greenhouse climate, plant lookup). **Awakening (129):** login triggers background model warmup; Settings **Farm Guardian readiness** shows loaded models, corpus counts, and **Awaken now**. **Power states (163):** **Rest now** and optional **auto-rest** unload the chat model between sessions; `./scripts/guardian-power.sh` stops the Ollama service for deeper savings on remote sites. **Offline field mode (37):** guided procedures (`start procedure …`), safety hard-stops, static print checklists, graceful degrade when Ollama is down — see [§6d](docs/operator-tour.md#6d-first-field-install-with-guardian-offline-phase-37). **Hands-free field (67):** push-to-talk mic + optional voice readback so you can ask questions while carrying water or pruning. **Writes** always use propose→**Confirm** — nothing hits the DB until you approve.
 
 **Safety & governance:**
 - ✅ **Audit logged** — every confirmed tool execution is recorded with user, timestamp, tool ID, arguments  

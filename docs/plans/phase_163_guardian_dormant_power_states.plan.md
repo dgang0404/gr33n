@@ -22,14 +22,14 @@ todos:
     content: "WS4: Power-tier docs + scripts/guardian-power.sh admin helper"
     status: completed
   - id: ws5-state-art-hook
-    content: "WS5 (future): swappable art slot per Guardian state for hand-drawn (non-AI) druid artwork"
-    status: pending
+    content: "WS5: swappable art slot per Guardian state for hand-drawn (non-AI) druid artwork"
+    status: completed
 isProject: false
 ---
 
 # Phase 163 — Guardian dormant/wake power states
 
-**Status:** WS1–WS4 shipped · WS5 (druid artwork) deferred
+**Status:** WS1–WS5 shipped
 
 **Depends on:** [Phase 129](phase_129_guardian_awakening.plan.md)
 
@@ -43,6 +43,7 @@ isProject: false
 | **WS2** | Settings **Rest now** + **Awaken now**; awakening panel dormant copy |
 | **WS3** | `GUARDIAN_AUTO_DORMANT_MINUTES` — background loop + health `idle_until_dormant_sec` + Settings countdown |
 | **WS4** | Power-tier docs (`local-operator-bootstrap.md`, `environment-variables.md`) + `scripts/guardian-power.sh` |
+| **WS5** | Hand-drawn druid art hook — `ui/public/assets/guardian/druid/` + manifest + `GuardianStateArt.vue` |
 
 ---
 
@@ -77,9 +78,14 @@ Awakening / chat / **Awaken now** clears dormant and resets the idle clock.
 
 ---
 
-## WS5 — Druid artwork (future, not this phase)
+## WS5 — Druid artwork hook ✅
 
-Hand-drawn, non-AI-generated art per `awakening.state`. Hook: `guardianReadiness.awakening.state` in UI — no placeholder art shipped.
+Hand-drawn, **non-AI** art per `awakening.state`. Six minimal SVG placeholders (watermarked) ship in `manifest.json`; artists replace per state when ready.
+
+- `ui/src/lib/guardianStateArt.js` — manifest fetch + URL helpers
+- `ui/src/components/GuardianStateArt.vue` — image slot (hidden until manifest + load succeed)
+- Wired into `GuardianSettingsAwakeningCard` and `GuardianAwakeningPanel`
+- Artist brief: `ui/public/assets/guardian/druid/README.md`
 
 ---
 
@@ -87,7 +93,7 @@ Hand-drawn, non-AI-generated art per `awakening.state`. Hook: `guardianReadiness
 
 ```bash
 go test ./internal/farmguardian/... ./internal/handler/chat/... -run 'Dormant|AutoDormant' -count=1
-cd ui && npm test -- --run src/__tests__/guardian-settings-awakening.test.js
+cd ui && npm test -- --run src/__tests__/guardian-settings-awakening.test.js src/__tests__/phase-163-ws5-guardian-state-art.test.js
 ```
 
 **Try auto-rest locally:** add `GUARDIAN_AUTO_DORMANT_MINUTES=2` to `.env`, restart API, awaken Guardian, wait 2+ min idle — state should flip to `dormant` with auto-rest message.

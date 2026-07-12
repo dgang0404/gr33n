@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "placeholder": true,
+  "files": {
+    "sleeping": "sleeping.svg",
+    "dormant": "dormant.svg",
+    "stirring": "stirring.svg",
+    "ready": "ready.svg",
+    "busy": "busy.svg",
+    "unavailable": "unavailable.svg"
+  }
+}

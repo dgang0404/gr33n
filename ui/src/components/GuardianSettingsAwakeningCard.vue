@@ -22,6 +22,7 @@
 
     <div v-if="readiness.awakening" class="space-y-3 text-sm" data-test="settings-guardian-awakening-body">
       <div class="flex flex-wrap items-center gap-2">
+        <GuardianStateArt :state="readiness.awakening.state" size="md" />
         <span class="text-zinc-500 text-xs uppercase tracking-wide">State</span>
         <span
           class="px-2 py-0.5 rounded-md text-xs font-semibold border"
@@ -173,6 +174,7 @@ import { useCapabilitiesStore } from '../stores/capabilities'
 import { useFarmContextStore } from '../stores/farmContext'
 import { useGuardianReadinessStore } from '../stores/guardianReadiness'
 import api from '../api'
+import GuardianStateArt from './GuardianStateArt.vue'
 
 const props = defineProps({
   isFarmAdmin: { type: Boolean, default: false },

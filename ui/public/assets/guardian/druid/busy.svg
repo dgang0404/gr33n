@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-label="Guardian busy placeholder">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#1a2818"/>
+      <stop offset="100%" stop-color="#0e140e"/>
+    </linearGradient>
+  </defs>
+  <rect width="256" height="256" rx="32" fill="url(#bg)"/>
+  <text x="128" y="200" fill="#3d5a42" font-family="system-ui,sans-serif" font-size="11" font-weight="600" letter-spacing="2" text-anchor="middle" transform="rotate(-24 128 128)" opacity="0.35">PLACEHOLDER</text>
+  <ellipse cx="128" cy="200" rx="52" ry="10" fill="#060a06" opacity="0.6"/>
+  <path d="M88 168 Q128 92 168 168 Z" fill="#264a2e"/>
+  <circle cx="128" cy="118" r="36" fill="#3a6244"/>
+  <path d="M96 108 Q128 78 160 108 L152 96 Q128 72 104 96 Z" fill="#1c3824"/>
+  <circle cx="118" cy="118" r="4" fill="#8ed4a0"/>
+  <circle cx="138" cy="118" r="4" fill="#8ed4a0"/>
+  <rect x="162" y="72" width="52" height="36" rx="10" fill="#1a3020" stroke="#5aaa6a" stroke-width="2"/>
+  <circle cx="176" cy="90" r="3" fill="#8ed4a0"/><circle cx="188" cy="90" r="3" fill="#8ed4a0"/><circle cx="200" cy="90" r="3" fill="#8ed4a0"/>
+</svg>
