@@ -2,19 +2,12 @@
  * Phase 176 — operational "farm pulse" cells for FarmSiteStrip.
  */
 
-import { scheduleRunsLabel } from './cronHumanize.js'
+import { cronSortHourFromSchedule, scheduleRunsLabel } from './cronHumanize.js'
 import { computeZoneVisualStatus } from './farmVisualStatus.js'
 import { comfortRoute, feedWaterRoute } from './dashboardWorkspaceLinks.js'
 
 function zoneName(zones, zoneId) {
   return zones.find((z) => Number(z.id) === Number(zoneId))?.name || 'Zone'
-}
-
-function cronHour(cron) {
-  const fields = String(cron || '').trim().split(/\s+/)
-  if (fields.length < 2) return 99
-  const hour = Number(fields[1])
-  return Number.isNaN(hour) ? 99 : hour
 }
 
 function stageBucket(stage) {
@@ -38,7 +31,7 @@ export function resolveNextWaterCell({ zones = [], programs = [], schedules = []
     const when = scheduleRunsLabel(sched)
     if (!when || when === 'No run scheduled') return null
     const name = zoneName(zones, program.target_zone_id)
-    const hour = cronHour(sched.cron_expression)
+    const hour = cronSortHourFromSchedule(sched)
     return { name, when, zoneId: program.target_zone_id, hour }
   }).filter(Boolean)
 

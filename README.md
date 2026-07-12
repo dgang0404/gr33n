@@ -18,6 +18,8 @@ An open-source farm operating system — run it on your LAN, keep your data clos
 
 🌡️ **Live Sensor Dashboards** — Temperature, humidity, light, EC, pH, CO₂, soil moisture. Real-time readings in your zones; historical graphs; automated alerts ("humidity above 75 %"). SSE live-stream stays current even offline.
 
+📍 **Today — visual farm cockpit** — Open `/` to see your zones, operational pulse, and what needs attention first — not an AI launcher ([operator tour §7l](docs/operator-tour.md#7l-today-excellence-phases-173177--shipped)).
+
 🕹️ **Manual or Scheduled Control** — Turn fans, pumps, lights on/off manually via dashboard toggle, or set up cron-based schedules ("lights on 18:00, off 06:00"). Rules with thresholds ("if temp > 28°C, turn on exhaust fan"). All execution audited.
 
 🧠 **Ask Farm Guardian** — Push-to-talk in the field (or type): *"Is my humidity high? What's this leaf discoloration?"* Guardian answers grounded on:

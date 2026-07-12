@@ -10,7 +10,7 @@ isProject: false
 
 # Today excellence roadmap — Phases 173–177
 
-**Status:** planned · **Follows:** [172](phase_172_field_guide_demo_docs.plan.md) · **Prerequisite:** CORS `PUT` for zone layout saves (`cmd/api/cors.go`)
+**Status:** shipped (arc complete) · **Follows:** [172](phase_172_field_guide_demo_docs.plan.md) · **Prerequisite:** CORS `PUT` for zone layout saves (`cmd/api/cors.go`)
 
 ## North star
 

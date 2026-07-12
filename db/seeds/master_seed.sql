@@ -1948,3 +1948,105 @@ UNION ALL
 SELECT 'phase164_gravity_drip_event', count(*)::int
 FROM gr33nfertigation.fertigation_events
 WHERE farm_id = 1 AND notes LIKE '%[seed:herb-gravity-drip-demo]%';
+
+-- ===========================================================================
+-- SECTION 10: PHASE 177 — propagation light for demo tile story
+-- Gives Propagation Room a 24h T5 schedule so Today tiles show plants + light.
+-- ===========================================================================
+
+INSERT INTO gr33ncore.devices
+    (farm_id, zone_id, name, device_uid, device_type, status, config)
+SELECT
+    1,
+    (SELECT id FROM gr33ncore.zones WHERE farm_id = 1 AND name = 'Propagation Room' AND deleted_at IS NULL ORDER BY id LIMIT 1),
+    'Propagation Relay Controller',
+    'demo-propagation-relay-01',
+    'relay_controller',
+    'online'::gr33ncore.device_status_enum,
+    '{"simulation": true}'::jsonb
+WHERE NOT EXISTS (
+    SELECT 1 FROM gr33ncore.devices WHERE farm_id = 1 AND device_uid = 'demo-propagation-relay-01'
+);
+
+INSERT INTO gr33ncore.actuators
+    (device_id, farm_id, zone_id, name, actuator_type, hardware_identifier, current_state_text, config)
+SELECT
+    d.id,
+    1,
+    d.zone_id,
+    'Propagation T5 Rack',
+    'light',
+    'relay_1',
+    'on',
+    '{"channel": 1, "simulation": true}'::jsonb
+FROM gr33ncore.devices d
+WHERE d.farm_id = 1
+  AND d.device_uid = 'demo-propagation-relay-01'
+  AND NOT EXISTS (
+      SELECT 1 FROM gr33ncore.actuators a
+      WHERE a.farm_id = 1 AND a.name = 'Propagation T5 Rack' AND a.deleted_at IS NULL
+  );
+
+INSERT INTO gr33ncore.executable_actions
+    (schedule_id, execution_order, action_type, target_actuator_id, action_command, action_parameters)
+SELECT
+    s.id,
+    0,
+    'control_actuator'::gr33ncore.executable_action_type_enum,
+    a.id,
+    'on',
+    '{"source":"seed_phase177"}'::jsonb
+FROM gr33ncore.schedules s
+JOIN gr33ncore.actuators a ON a.farm_id = 1 AND a.name = 'Propagation T5 Rack' AND a.deleted_at IS NULL
+WHERE s.farm_id = 1
+  AND s.name = 'Light ON 24/0 Continuous'
+  AND NOT EXISTS (
+      SELECT 1 FROM gr33ncore.executable_actions ea
+      WHERE ea.schedule_id = s.id AND ea.target_actuator_id = a.id AND ea.action_command = 'on'
+  );
+
+UPDATE gr33ncore.schedules
+SET is_active = TRUE
+WHERE farm_id = 1
+  AND name = 'Light ON 24/0 Continuous';
+
+DO $$
+DECLARE
+  v_zone_id      BIGINT;
+  v_actuator_id  BIGINT;
+  v_sch_on_id    BIGINT;
+  v_prog_id      BIGINT;
+BEGIN
+  SELECT id INTO v_zone_id     FROM gr33ncore.zones     WHERE farm_id = 1 AND name = 'Propagation Room' AND deleted_at IS NULL ORDER BY id LIMIT 1;
+  SELECT id INTO v_actuator_id FROM gr33ncore.actuators WHERE farm_id = 1 AND name = 'Propagation T5 Rack' AND deleted_at IS NULL ORDER BY id LIMIT 1;
+  SELECT id INTO v_sch_on_id   FROM gr33ncore.schedules WHERE farm_id = 1 AND name = 'Light ON 24/0 Continuous' ORDER BY id LIMIT 1;
+
+  IF v_zone_id IS NOT NULL AND v_actuator_id IS NOT NULL AND v_sch_on_id IS NOT NULL
+     AND NOT EXISTS (
+         SELECT 1 FROM gr33ncore.lighting_programs
+         WHERE farm_id = 1 AND name = 'Propagation 24h Photoperiod'
+     ) THEN
+
+    INSERT INTO gr33ncore.lighting_programs
+      (farm_id, zone_id, actuator_id, name, description,
+       on_hours, off_hours, lights_on_at, timezone,
+       schedule_on_id, schedule_off_id,
+       is_active, metadata)
+    VALUES
+      (1, v_zone_id, v_actuator_id,
+       'Propagation 24h Photoperiod',
+       'Clone dome — T5 rack on 24/0 for rooting cuttings. Zone: Propagation Room.',
+       24, 0, '00:00', 'America/New_York',
+       v_sch_on_id, NULL,
+       true, '{"preset_key":"propagation_24_0","source":"seed_phase177"}'::jsonb)
+    RETURNING id INTO v_prog_id;
+
+    UPDATE gr33ncore.schedules
+       SET meta_data = jsonb_set(COALESCE(meta_data, '{}'::jsonb), '{lighting_program_id}', to_jsonb(v_prog_id))
+     WHERE id = v_sch_on_id;
+
+    UPDATE gr33ncore.zones
+       SET meta_data = jsonb_set(COALESCE(meta_data, '{}'::jsonb), '{lighting_program_id}', to_jsonb(v_prog_id))
+     WHERE id = v_zone_id;
+  END IF;
+END $$;

@@ -67,39 +67,46 @@
       :get-status="zoneVisualStatus"
     />
 
-    <FarmCanvas
-      class="hidden md:block"
-      :farm-id="farmContext.farmId"
-      :zones="filteredZones"
-      :total-zone-count="store.zones.length"
-      :filter-label="activeFilterLabel"
-      :sensors="store.sensors"
-      :readings="store.readings"
-      :actuators="store.actuators"
-      :tasks="store.tasks"
-      :alerts="alerts"
-      :schedules="schedules"
-      :programs="programs"
-      :crop-cycles="cropCycles"
-      :fertigation-events="fertigationEvents"
-      :background-url="store.layoutBackgroundBlobUrl"
-      @select-zone="openZoneQuickActions"
-    />
+    <div data-test="today-farm-hero" class="space-y-3">
+      <FarmCanvas
+        class="hidden md:block"
+        :farm-id="farmContext.farmId"
+        :zones="filteredZones"
+        :total-zone-count="store.zones.length"
+        :filter-label="activeFilterLabel"
+        :sensors="store.sensors"
+        :readings="store.readings"
+        :actuators="store.actuators"
+        :tasks="store.tasks"
+        :alerts="alerts"
+        :schedules="schedules"
+        :programs="programs"
+        :crop-cycles="cropCycles"
+        :fertigation-events="fertigationEvents"
+        :background-url="store.layoutBackgroundBlobUrl"
+        @select-zone="openZoneQuickActions"
+      />
 
-    <FarmZoneStack
-      :zones="filteredZones"
-      :total-zone-count="store.zones.length"
-      :filter-label="activeFilterLabel"
-      :sensors="store.sensors"
-      :readings="store.readings"
-      :actuators="store.actuators"
-      :tasks="store.tasks"
-      :alerts="alerts"
-      :schedules="schedules"
-      :programs="programs"
-      :crop-cycles="cropCycles"
-      :fertigation-events="fertigationEvents"
-      @select-zone="openZoneQuickActions"
+      <FarmZoneStack
+        :zones="filteredZones"
+        :total-zone-count="store.zones.length"
+        :filter-label="activeFilterLabel"
+        :sensors="store.sensors"
+        :readings="store.readings"
+        :actuators="store.actuators"
+        :tasks="store.tasks"
+        :alerts="alerts"
+        :schedules="schedules"
+        :programs="programs"
+        :crop-cycles="cropCycles"
+        :fertigation-events="fertigationEvents"
+        @select-zone="openZoneQuickActions"
+      />
+    </div>
+
+    <TodayCoachMarks
+      :enabled="store.zones.length > 0"
+      :has-attention="hasAttentionZones"
     />
 
     <ZoneQuickActions
@@ -348,6 +355,7 @@ import FarmCanvas from '../components/FarmCanvas.vue'
 import FarmZoneStack from '../components/FarmZoneStack.vue'
 import FarmTodayActionBar from '../components/FarmTodayActionBar.vue'
 import FarmTodayAskGr33n from '../components/FarmTodayAskGr33n.vue'
+import TodayCoachMarks from '../components/TodayCoachMarks.vue'
 import ZoneQuickActions from '../components/ZoneQuickActions.vue'
 import EmptyStateHint from '../components/EmptyStateHint.vue'
 import GuardianStarterChips from '../components/GuardianStarterChips.vue'
@@ -377,6 +385,7 @@ import {
   readTodayZoneFilter,
   writeTodayZoneFilter,
 } from '../lib/farmTodayZoneFilter.js'
+import { listAttentionZones } from '../lib/zoneQuickActions.js'
 import {
   buildCuratedTodayAskStarters,
   mergeTodayDetailsGuardianStarters,
@@ -430,6 +439,10 @@ const emptyFarmStarters = computed(() => {
     deviceOffline: store.devices.length > 0 && store.devices.some((d) => d.status !== 'online'),
   })
 })
+
+const hasAttentionZones = computed(() =>
+  listAttentionZones(store.zones, zoneVisualStatus).length > 0,
+)
 
 function zoneVisualStatus(zone) {
   return computeZoneVisualStatus({
@@ -609,7 +622,14 @@ function alertSeverityClass(sev) {
 async function refreshAll() {
   const fid = farmContext.farmId
   if (!fid) return
-  await store.loadAll(fid)
+
+  const zonesCached = Number(store.farm?.id) === Number(fid) && store.zones.length > 0
+  if (zonesCached) {
+    void store.loadAll(fid)
+  } else {
+    await store.loadAll(fid)
+  }
+
   const [sch, sp, ev, al, unread, prog, batches, inputs, costs, cycles] = await Promise.all([
     store.loadSchedules(fid),
     store.loadSetpoints(fid),
@@ -632,22 +652,22 @@ async function refreshAll() {
   nfInputs.value = inputs
   costTransactions.value = costs
   cropCycles.value = cycles
-  await store.loadTasks(fid)
-  queueDepth.value = await sumFarmPendingQueueDepth(store.devices)
-  await store.refreshReadings(fid)
-  try {
-    siteWeather.value = await fetchSiteWeather(fid)
-  } catch {
-    siteWeather.value = null
-  }
-  try {
-    reservoirs.value = await store.loadReservoirs(fid)
-  } catch {
-    reservoirs.value = []
-  }
-  if (fid) {
-    await store.loadLayoutBackground(fid)
-  }
+
+  await Promise.all([
+    store.loadTasks(fid),
+    store.refreshReadings(fid),
+  ])
+
+  void sumFarmPendingQueueDepth(store.devices).then((depth) => {
+    queueDepth.value = depth
+  })
+  void fetchSiteWeather(fid)
+    .then((wx) => { siteWeather.value = wx })
+    .catch(() => { siteWeather.value = null })
+  void store.loadReservoirs(fid)
+    .then((res) => { reservoirs.value = res })
+    .catch(() => { reservoirs.value = [] })
+  void store.loadLayoutBackground(fid)
 }
 
 

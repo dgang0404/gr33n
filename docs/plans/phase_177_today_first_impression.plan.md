@@ -7,25 +7,35 @@ overview: >
 todos:
   - id: ws1-demo-showcase
     content: "WS1: Demo seed + optional bundled layout background — screenshot-ready farm 1"
-    status: pending
+    status: completed
   - id: ws2-coach-marks
     content: "WS2: TodayCoachMarks — 3-step first visit (tap zone, attention, arrange); sessionStorage dismiss"
-    status: pending
+    status: completed
   - id: ws3-perf-a11y
     content: "WS3: Today load order, reduced motion, focus order, vocabulary final sweep"
-    status: pending
+    status: completed
   - id: ws4-docs-arc
     content: "WS4: operator-tour §7l, phase-14 table 173–177, current-state arc summary"
-    status: pending
+    status: completed
   - id: ws5-closure
     content: "WS5: phase-177-closure + today-excellence bundle test"
-    status: pending
+    status: completed
 isProject: false
 ---
 
 # Phase 177 — Today first impression & arc closure
 
-**Status:** planned · **Follows:** [176](phase_176_today_farm_pulse.plan.md)
+**Status:** shipped · **Follows:** [176](phase_176_today_farm_pulse.plan.md)
+
+## Shipped
+
+| WS | Deliverable |
+|----|-------------|
+| **WS1** | `master_seed.sql` — propagation T5 + 24h photoperiod for demo tile story |
+| **WS2** | `TodayCoachMarks.vue`, `farmTodayCoachMarks.js` — session dismiss, no Guardian step |
+| **WS3** | `refreshAll()` background loads; attention `aria-live`; `phase-177-today-a11y.test.js` |
+| **WS4** | operator-tour §7l, current-state arc summary, README one-liner |
+| **WS5** | `phase-177-closure.test.js`, `today-excellence-arc.test.js`, `farm-today-coach-marks.test.js` |
 
 ## Why
 

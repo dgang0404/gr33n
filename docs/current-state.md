@@ -98,19 +98,19 @@ After `make seed`, farm-1 zones include `meta_data.layout` positions matching th
 
 Demo-farm crop guides (chrysanthemum, basil, pepper, strawberry) expanded for Guardian RAG. **Marigold** and **geranium** added to the crop catalog with new field guides. Regenerate after edits: `./scripts/generate-crop-catalog-seed.sql.sh -o db/seed/crop_catalog_from_yaml.sql` then `make rag-ingest-field-guides`.
 
-## Today excellence arc (Phases 173–177 — planned)
+## Today excellence arc (Phases 173–177 — shipped)
 
-Locked roadmap after Phase 172: [`phase_173_177_today_excellence_roadmap.plan.md`](plans/phase_173_177_today_excellence_roadmap.plan.md)
+Locked roadmap after Phase 172: [`phase_173_177_today_excellence_roadmap.plan.md`](plans/phase_173_177_today_excellence_roadmap.plan.md) · Operator tour [§7l](operator-tour.md#7l-today-excellence-phases-173177--shipped)
 
 | Phase | Focus |
 |-------|--------|
-| **173** ✅ | Large farms — filter chips (All/Attention/Indoor/Outdoor/Greenhouse), mobile paging (8/page), desktop Map/List toggle beyond 13 zones |
-| **174** ✅ | Visual hierarchy — **Today** naming, `FarmTodayHeader` health pills, taller canvas, tile polish; duplicate tasks/alerts row removed |
-| **175** ✅ | Farm-first — action bar (feed, task, schedules, zones); ≤2 Ask gr33n chips; full starters in details |
+| **173** ✅ | Large farms — filter chips, mobile paging (8/page), desktop Map/List toggle beyond 13 zones |
+| **174** ✅ | Visual hierarchy — **Today** naming, `FarmTodayHeader` health pills, taller canvas, tile polish |
+| **175** ✅ | Farm-first — action bar; ≤2 Ask gr33n chips; full starters in details |
 | **176** ✅ | Farm pulse — next water, growing runs, devices in Site Strip (same card) |
-| **177** | First impression — demo showcase, coach marks, arc closure |
+| **177** ✅ | First impression — demo seed polish, `TodayCoachMarks`, perf/a11y closure |
 
-**North star:** `/` reads as a grower cockpit, not an AI chat launcher.
+**North star:** `/` reads as a grower cockpit, not an AI chat launcher. Fresh `make dev-stack-fresh` opens to sun, pulse, zones, and at most two Ask chips — Guardian stays in the sidebar and details.
 
 ## Today visual hierarchy (Phase 174)
 
@@ -134,6 +134,13 @@ Locked roadmap after Phase 172: [`phase_173_177_today_excellence_roadmap.plan.md
 - **Lights** — zones on now, or next light schedule
 - **Growing** — active crop runs and bloom count
 - **Devices** — online count and command queue depth
+
+## Today first impression (Phase 177)
+
+- **Demo seed** — propagation room gets 24h T5 light so ≥5/7 zones show plants plus water or light on tiles
+- **TodayCoachMarks** — three-step first visit (farm map → tap zone → attention or pulse); session dismiss via `gr33n_today_coach_done`; no Guardian step
+- **Perf** — `refreshAll()` paints cached zones immediately; weather, layout background, and queue depth load in background
+- **A11y** — attention strip `aria-live="polite"`; coach controls meet 44px touch targets
 
 ---
 

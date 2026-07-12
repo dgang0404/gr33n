@@ -821,6 +821,25 @@ Plan: [`plans/phase_77_post_arc_ui_polish.plan.md`](plans/phase_77_post_arc_ui_p
 
 Plans: [`phase_164_demo_seed_overhaul.plan.md`](plans/phase_164_demo_seed_overhaul.plan.md) · [`phase_165_today_farm_layout_api.plan.md`](plans/phase_165_today_farm_layout_api.plan.md) · [`phase_166_today_visual_farm_canvas.plan.md`](plans/phase_166_today_visual_farm_canvas.plan.md) · [`phase_167_mobile_stack_quick_actions.plan.md`](plans/phase_167_mobile_stack_quick_actions.plan.md) · [`phase_168_today_cleanup_polish.plan.md`](plans/phase_168_today_cleanup_polish.plan.md) · [`phase_169_today_attention_cockpit.plan.md`](plans/phase_169_today_attention_cockpit.plan.md) · [`phase_170_today_guardian_one_tap.plan.md`](plans/phase_170_today_guardian_one_tap.plan.md).
 
+### 7l. Today excellence (Phases 173–177 — shipped)
+
+**Shipped.** Today arc closure — large-farm navigation, farm-first layout, operational pulse, and first-visit coach marks. **Today is a visual farm cockpit** — see [operator tour §7l](operator-tour.md#7l-today-excellence-phases-173177--shipped).
+
+| Surface | Job |
+|---------|-----|
+| **FarmTodayHeader** | Health rollup, tasks/alerts pills, refresh |
+| **FarmSiteStrip + pulse** | Sun, outdoor, water source, next water, lights, growing, devices |
+| **Needs attention strip** | Flagged zone chips → quick actions (`aria-live` on count changes) |
+| **Zone filter bar** | All / Attention / Indoor / Outdoor / Greenhouse when ≥9 zones |
+| **Farm canvas / stack** | Hero map; tap zone for quick actions |
+| **FarmTodayActionBar** | Feed & water, new task, schedules, My zones |
+| **FarmTodayAskGr33n** | ≤2 curated chips; full starters under **All the details** |
+| **TodayCoachMarks** | First-visit tips (session dismiss); farm-first, not Guardian |
+
+**Vitest:** `phase-173-closure.test.js` … `phase-177-closure.test.js`, `today-excellence-arc.test.js`, `farm-today-coach-marks.test.js`
+
+Plans: [`phase_173_today_large_farm_navigation.plan.md`](plans/phase_173_today_large_farm_navigation.plan.md) · [`phase_174_today_visual_hierarchy.plan.md`](plans/phase_174_today_visual_hierarchy.plan.md) · [`phase_175_today_farm_first_actions.plan.md`](plans/phase_175_today_farm_first_actions.plan.md) · [`phase_176_today_farm_pulse.plan.md`](plans/phase_176_today_farm_pulse.plan.md) · [`phase_177_today_first_impression.plan.md`](plans/phase_177_today_first_impression.plan.md) · Roadmap: [`phase_173_177_today_excellence_roadmap.plan.md`](plans/phase_173_177_today_excellence_roadmap.plan.md)
+
 ---
 
 ## 7b. Feeding & water for this zone (Phase 47)

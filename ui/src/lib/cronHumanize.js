@@ -70,3 +70,15 @@ export function buildDailyCron(hour, minute = 0) {
   const m = Math.min(59, Math.max(0, Number(minute) || 0))
   return `${m} ${h} * * *`
 }
+
+/**
+ * Hour field from a schedule for sorting (internal — not farmer-facing).
+ * @param {{ cron_expression?: string }|null|undefined} schedule
+ */
+export function cronSortHourFromSchedule(schedule) {
+  const expr = String(schedule?.cron_expression || '').trim()
+  const fields = expr.split(/\s+/)
+  if (fields.length < 2) return 99
+  const hour = Number(fields[1])
+  return Number.isNaN(hour) ? 99 : hour
+}

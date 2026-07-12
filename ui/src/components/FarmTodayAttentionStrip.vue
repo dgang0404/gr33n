@@ -3,7 +3,11 @@
     v-if="entries.length"
     class="rounded-xl border border-amber-900/50 bg-amber-950/20 px-4 py-3 space-y-2"
     data-test="farm-today-attention"
+    aria-live="polite"
   >
+    <p class="sr-only" :key="`attention-count-${entries.length}`">
+      {{ entries.length }} zone{{ entries.length === 1 ? '' : 's' }} need attention
+    </p>
     <div class="flex items-center justify-between gap-2">
       <h3 class="text-xs font-semibold text-amber-200/90 uppercase tracking-widest">
         Needs attention
