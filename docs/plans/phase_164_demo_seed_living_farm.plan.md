@@ -24,7 +24,7 @@ todos:
     status: completed
   - id: ws5-test-audit
     content: "WS5: Audit + update smoke tests that assume farm-1 cannabis seed rows"
-    status: pending
+    status: completed
   - id: ws6-closure
     content: "WS6: Seed verify queries + phase-164-closure test + docs note"
     status: pending

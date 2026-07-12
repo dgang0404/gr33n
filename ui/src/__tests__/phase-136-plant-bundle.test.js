@@ -5,7 +5,7 @@ describe('Phase 136 — plant context bundle starter', () => {
   it('includes How is this grow doing chip with crop_cycle_id', () => {
     const starters = buildZoneGrowStripStarters({
       zone: { id: 3, name: 'Veg Room' },
-      activeCycle: { id: 9, name: 'Veg canopy (18/6)', current_stage: 'late_veg', crop_key: 'cannabis' },
+      activeCycle: { id: 9, name: 'Veg canopy (18/6)', current_stage: 'late_veg', crop_key: 'chrysanthemum' },
       farmId: 1,
     })
     const chip = starters.find((s) => s.id === 'how-is-grow')

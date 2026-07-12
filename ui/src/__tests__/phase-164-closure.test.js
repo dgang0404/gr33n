@@ -68,3 +68,13 @@ describe('Phase 164 WS4 — gravity drip demo zone', () => {
     expect(seed).toContain('[seed:herb-gravity-drip-demo]')
   })
 })
+
+describe('Phase 164 WS5 — smoke test audit', () => {
+  it('ships farm-1 seed assertion smokes', () => {
+    const smoke = readFileSync(join(repoRoot, 'cmd/api/smoke_phase164_test.go'), 'utf8')
+    expect(smoke).toContain('TestPhase164_Farm1NoCannabisPlantRow')
+    expect(smoke).toContain('TestPhase164_Farm1ChrysanthemumDemoCycles')
+    expect(smoke).toContain('TestPhase164_Farm1WiredSensorsHaveReadings')
+    expect(smoke).toContain('TestPhase164_Farm1GravityDripProgram')
+  })
+})

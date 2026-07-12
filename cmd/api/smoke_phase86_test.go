@@ -44,14 +44,12 @@ func TestPhase86_GuardianECMatchesCropProfileStage(t *testing.T) {
 	zoneID, restore := smokeZoneWithoutActiveCycle(t)
 	defer restore()
 
-	// Catalog-bound cannabis plant — must be "cannabis" specifically since this
-	// test exercises the built-in cannabis crop-profile EC lookup below. The
-	// Phase 124 demo seed already has a permanent "cannabis" plants row on
-	// farm 1, so use get-or-create semantics and only clean up a row this
-	// test actually created (never delete the farm's seeded plant).
+	// Catalog-bound cannabis plant for built-in crop-profile EC lookup below.
+	// Demo seed (Phase 164) uses chrysanthemum on farm 1 — this test creates its
+	// own temporary cannabis plant and only deletes it when this test created it.
 	resp := authPost(t, tok, "/farms/1/plants", map[string]any{
 		"crop_key":            "cannabis",
-		"variety_or_cultivar": "Blue Dream",
+		"variety_or_cultivar": "Phase86 smoke variety",
 	})
 	expectStatusOneOf(t, resp, http.StatusCreated, http.StatusOK)
 	plantCreated := resp.StatusCode == http.StatusCreated

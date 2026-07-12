@@ -161,23 +161,22 @@ func TestInventedAssumptionMathNote_noNumberPasses(t *testing.T) {
 	}
 }
 
-// TestAnswerAccuracyNote_liveUIFlowerRunRun152 replays the actual Farm
-// Counsel "Flower run (12/12)" answer from the live UI (Phase 152) against
-// the full detector chain, to lock in that at least one of the new checks
-// would have flagged it.
-func TestAnswerAccuracyNote_liveUIFlowerRunRun152(t *testing.T) {
+// TestAnswerAccuracyNote_liveUIBloomRunRun152 replays a Farm Counsel
+// "Bloom run (12/12)" answer shape (Phase 152 / 164 demo farm) against the
+// full detector chain.
+func TestAnswerAccuracyNote_liveUIBloomRunRun152(t *testing.T) {
 	t.Parallel()
-	answer := `The "Flower run (12/12)" in the Flower Room is currently at stage [1] early_flower, as indicated by both farm notes and fertigation programs active for this cycle on your farm today ([5]). The fertigation program is scheduled to run daily... and aims to deliver approximately 95 liters total volume, which translates into about [4] ~1.2 mL per plant if we assume an average yield density for your cultivar in this stage ([2]).
+	answer := `The "Bloom run (12/12)" in the Flower Room is currently at stage [1] early_flower, as indicated by both farm notes and fertigation programs active for this cycle on your farm today ([5]). The fertigation program is scheduled to run daily... and aims to deliver approximately 95 liters total volume, which translates into about [4] ~1.2 mL per plant if we assume an average yield density for your cultivar in this stage ([2]).
 
-As the cycle started on June 20th of last year with no prior harvest tasks noted and considering it's now Week 9, you should be observing well-developed trichomes as part of a photoperiod crop. This suggests that your plants are receiving consistent and ade0:`
+As the cycle started on June 20th of last year with no prior harvest tasks noted and considering it's now Week 9, you should be checking bloom openness and stem length on your chrysanthemum run. This suggests that your plants are receiving consistent and ade0:`
 	cites := []CitationSummary{
-		{Ref: 1, Excerpt: "crop_cycle: Flower run (12/12) stage: early_flower active: yes started_at: 2026-06-20"},
+		{Ref: 1, Excerpt: "crop_cycle: Bloom run (12/12) stage: early_flower active: yes started_at: 2026-06-20"},
 		{Ref: 2, Excerpt: "fertigation_program: Flower Daily FFJ+WCA Program total_volume_liters: 95 ec_trigger_low: 1.4 ph_trigger_low: 5.8"},
 		{Ref: 3, Excerpt: "schedule: Water Early Flower Daily ~900mL per plant daily."},
 		{Ref: 4, Excerpt: "schedule: Light ON 12/12 Flower Lights on at 06:00. active: no"},
-		{Ref: 5, Excerpt: "task: Harvest Flower Room A status: completed Week 9 photoperiod crop. Flush complete."},
+		{Ref: 5, Excerpt: "task: Harvest Flower Room A status: completed Week 9 short-day crop. Flush complete."},
 	}
 	if note := AnswerAccuracyNote(answer, cites); note == "" {
-		t.Fatal("expected an accuracy note for the live-UI flower-run answer")
+		t.Fatal("expected an accuracy note for the live-UI bloom-run answer")
 	}
 }

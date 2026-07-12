@@ -74,13 +74,13 @@ describe('GuardianChatPanel citation deep links', () => {
 
     useGuardianChatStore().appendTurn({
       turn_index: 0,
-      user_message: 'How is the Flower run doing?',
+      user_message: 'How is the Bloom run doing?',
       assistant_message: 'Stage is early_flower [1], per the fertigation plan [2].',
       llm_model: 'phi3:mini',
       grounded: true,
       context_count: 2,
       citations: [
-        { ref: 1, chunk_id: 10, source_type: 'crop_cycle', source_id: 2, route: '/crop-cycles/2/summary', excerpt: 'crop_cycle: Flower run' },
+        { ref: 1, chunk_id: 10, source_type: 'crop_cycle', source_id: 2, route: '/crop-cycles/2/summary', excerpt: 'crop_cycle: Bloom run' },
         { ref: 2, chunk_id: 11, source_type: 'schedule', source_id: 10, excerpt: 'schedule: Water Early Flower Daily' },
       ],
     })
