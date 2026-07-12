@@ -22,6 +22,7 @@
     </div>
 
     <form class="grid grid-cols-1 sm:grid-cols-3 gap-3" @submit.prevent="saveSite">
+      <FarmMapsCoordsPaste span-class="sm:col-span-3" @parsed="onMapsPaste" />
       <div>
         <label class="text-zinc-500 text-[10px] uppercase tracking-wide">Latitude</label>
         <input
@@ -69,6 +70,7 @@
 import { computed, reactive, ref, watch } from 'vue'
 import { useFarmContextStore } from '../stores/farmContext'
 import { parseFarmCoordinates } from '../lib/siteWeather.js'
+import FarmMapsCoordsPaste from './FarmMapsCoordsPaste.vue'
 
 const farmContext = useFarmContextStore()
 
@@ -85,6 +87,11 @@ function syncFromFarm() {
   const farm = farmContext.selectedFarm
   if (!farm) return
   const { latitude, longitude } = parseFarmCoordinates(farm)
+  siteForm.latitude = latitude
+  siteForm.longitude = longitude
+}
+
+function onMapsPaste({ latitude, longitude }) {
   siteForm.latitude = latitude
   siteForm.longitude = longitude
 }

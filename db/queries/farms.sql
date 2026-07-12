@@ -67,10 +67,15 @@ WHERE id = $1 AND deleted_at IS NULL;
 -- name: UpdateFarmSiteCoords :one
 UPDATE gr33ncore.farms
 SET location_gis = ST_SetSRID(ST_MakePoint(sqlc.arg(longitude), sqlc.arg(latitude)), 4326),
-    meta_data = CASE
+    meta_data = (
+      CASE
         WHEN sqlc.narg(elevation_m)::double precision IS NULL THEN COALESCE(meta_data, '{}'::jsonb) - 'elevation_m'
         ELSE COALESCE(meta_data, '{}'::jsonb) || jsonb_build_object('elevation_m', sqlc.narg(elevation_m)::double precision)
-    END,
+      END
+    ) || jsonb_build_object(
+      'latitude', sqlc.arg(latitude),
+      'longitude', sqlc.arg(longitude)
+    ),
     updated_at = NOW()
 WHERE id = sqlc.arg(id) AND deleted_at IS NULL
 RETURNING *;

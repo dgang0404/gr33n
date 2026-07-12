@@ -1,6 +1,22 @@
 import { defineStore } from 'pinia'
 import api from '../api'
 import { useFarmStore } from './farm'
+import { parseFarmCoordinates } from '../lib/siteWeather.js'
+
+/** Prefer GeoJSON Point when meta has lat/lon (PostGIS EWKB is not UI-parseable). */
+function normalizeFarmCoordinates(farm) {
+  if (!farm) return farm
+  const { latitude, longitude } = parseFarmCoordinates(farm)
+  if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return farm
+  const gis = farm.location_gis
+  if (typeof gis === 'object' && gis?.type === 'Point' && Array.isArray(gis.coordinates)) {
+    return farm
+  }
+  return {
+    ...farm,
+    location_gis: { type: 'Point', coordinates: [longitude, latitude] },
+  }
+}
 
 export const useFarmContextStore = defineStore('farmContext', {
   state: () => ({
@@ -16,7 +32,7 @@ export const useFarmContextStore = defineStore('farmContext', {
   actions: {
     async fetchFarms() {
       const r = await api.get('/farms')
-      this.farms = Array.isArray(r.data) ? r.data : []
+      this.farms = (Array.isArray(r.data) ? r.data : []).map(normalizeFarmCoordinates)
       // Recover from stale persisted farm IDs (e.g. after DB reset/reseed).
       // If selected farm is missing, switch to first available farm.
       if (this.farmId && !this.farms.some(f => f.id === this.farmId)) {
@@ -72,9 +88,29 @@ export const useFarmContextStore = defineStore('farmContext', {
     /** Phase 66 — set farm site coordinates for offline solar math. */
     async patchSite(id, { latitude, longitude, elevation_m }) {
       const r = await api.patch(`/farms/${id}/site`, { latitude, longitude, elevation_m })
+      const lat = Number(latitude)
+      const lon = Number(longitude)
+      const prev = this.farms.find(f => f.id === id) || {}
+      const prevMeta = prev.meta_data && typeof prev.meta_data === 'object' ? { ...prev.meta_data } : {}
+      const meta = {
+        ...(r.data?.meta_data && typeof r.data.meta_data === 'object' ? r.data.meta_data : prevMeta),
+        latitude: lat,
+        longitude: lon,
+      }
+      if (elevation_m == null) delete meta.elevation_m
+      else meta.elevation_m = elevation_m
+      // API may return PostGIS EWKB for location_gis — keep a GeoJSON Point the UI can parse.
+      const farm = {
+        ...r.data,
+        location_gis: {
+          type: 'Point',
+          coordinates: [lon, lat],
+        },
+        meta_data: meta,
+      }
       const idx = this.farms.findIndex(f => f.id === id)
-      if (idx >= 0) this.farms[idx] = r.data
-      return r.data
+      if (idx >= 0) this.farms[idx] = farm
+      return farm
     },
 
     async deleteFarm(id) {

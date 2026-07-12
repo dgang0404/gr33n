@@ -1559,7 +1559,7 @@ WHERE farm_id = 1 AND crop_key = 'cannabis' AND deleted_at IS NULL;
 UPDATE gr33nfertigation.crop_cycles
 SET batch_label = 'Anastasia Green',
     cycle_notes = 'Match light schedule "Light ON/OFF 18/6 Veg" and Veg Daily JLF fertigation program.'
-WHERE farm_id = 1 AND deleted_at IS NULL
+WHERE farm_id = 1
   AND name = 'Veg canopy (18/6)'
   AND batch_label = 'Blue Dream';
 
@@ -1567,7 +1567,7 @@ UPDATE gr33nfertigation.crop_cycles
 SET name = 'Bloom run (12/12)',
     batch_label = 'Zembla White',
     cycle_notes = 'Match "Light ON/OFF 12/12 Flower" and Flower Daily FFJ+WCA program.'
-WHERE farm_id = 1 AND deleted_at IS NULL
+WHERE farm_id = 1
   AND name = 'Flower run (12/12)'
   AND batch_label = 'Gorilla Glue #4';
 
@@ -1575,14 +1575,14 @@ UPDATE gr33nfertigation.crop_cycles
 SET name = 'Anastasia Green — Run 3 (harvested)',
     batch_label = 'Anastasia Green',
     cycle_notes = 'Previous bloom run. Held in cooler 5 days; graded for stem length and ship date.'
-WHERE farm_id = 1 AND deleted_at IS NULL
+WHERE farm_id = 1
   AND name = 'Blue Dream — Run 3 (harvested)';
 
 UPDATE gr33nfertigation.crop_cycles
 SET name = 'Chrysanthemum — Cutting Batch 12',
     batch_label = 'Zembla White',
     cycle_notes = 'Rooting under dome, 24h light, misted 2x daily. Chrysanthemum tip cuttings.'
-WHERE farm_id = 1 AND deleted_at IS NULL
+WHERE farm_id = 1
   AND name = 'OG Kush — Clone Batch 12';
 
 UPDATE gr33ncore.tasks
@@ -1598,7 +1598,7 @@ WHERE farm_id = 1 AND deleted_at IS NULL AND title = 'Inspect flower room for po
 UPDATE gr33ncore.alerts_notifications
 SET message_text_rendered = 'Air Humidity Indoor read 72.4% RH (alert threshold 65% for bloom stage). '
     || 'Zone: Flower Room. Consider dehumidification or increased airflow before powdery mildew risk.'
-WHERE farm_id = 1 AND deleted_at IS NULL
+WHERE farm_id = 1
   AND subject_rendered = 'Humidity high — Flower Room'
   AND message_text_rendered LIKE '%late flower%';
 
@@ -1620,7 +1620,7 @@ ON CONFLICT DO NOTHING;
 UPDATE gr33nfertigation.crop_cycles cc
 SET plant_id = p.id
 FROM gr33ncrops.plants p
-WHERE cc.farm_id = 1 AND cc.deleted_at IS NULL
+WHERE cc.farm_id = 1
   AND p.farm_id = 1 AND p.crop_key = 'chrysanthemum' AND p.deleted_at IS NULL
   AND cc.name IN (
     'Veg canopy (18/6)',
@@ -1932,7 +1932,7 @@ WHERE farm_id = 1 AND crop_key = 'chrysanthemum' AND deleted_at IS NULL
 UNION ALL
 SELECT 'phase164_legacy_cannabis_batch_labels', count(*)::int
 FROM gr33nfertigation.crop_cycles
-WHERE farm_id = 1 AND deleted_at IS NULL
+WHERE farm_id = 1
   AND batch_label ~* 'blue dream|gorilla|og kush'
 UNION ALL
 SELECT 'phase164_demo_sensor_readings', count(*)::int

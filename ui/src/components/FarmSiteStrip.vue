@@ -81,13 +81,14 @@
       data-test="farm-site-coords-form"
       @submit.prevent="saveSite"
     >
+      <FarmMapsCoordsPaste @parsed="onMapsPaste" />
       <input
         v-model.number="siteForm.latitude"
         type="number"
         step="any"
         min="-90"
         max="90"
-        placeholder="Latitude"
+        placeholder="Latitude (e.g. 40.89)"
         class="bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white"
       />
       <input
@@ -96,7 +97,7 @@
         step="any"
         min="-180"
         max="180"
-        placeholder="Longitude"
+        placeholder="Longitude (west = negative)"
         class="bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white"
       />
       <button
@@ -119,6 +120,7 @@ import { formatSunTimes, sunDialProgress } from '../lib/farmCanvasLayout.js'
 import { classifySensorHardwareState } from '../lib/farmVisualStatus.js'
 import { feedWaterRoute } from '../lib/dashboardWorkspaceLinks.js'
 import { buildFarmTodayPulse } from '../lib/farmTodayPulse.js'
+import FarmMapsCoordsPaste from './FarmMapsCoordsPaste.vue'
 
 const props = defineProps({
   siteWeather: { type: Object, default: null },
@@ -138,6 +140,7 @@ const props = defineProps({
 })
 
 const farmContext = useFarmContextStore()
+const emit = defineEmits(['site-saved'])
 const showCoords = ref(false)
 const siteForm = reactive({ latitude: null, longitude: null })
 const siteSaving = ref(false)
@@ -222,6 +225,11 @@ function syncFromFarm() {
   siteForm.longitude = longitude
 }
 
+function onMapsPaste({ latitude, longitude }) {
+  siteForm.latitude = latitude
+  siteForm.longitude = longitude
+}
+
 async function saveSite() {
   const farmId = farmContext.farmId
   if (!farmId || !coordsValid.value) return
@@ -234,6 +242,7 @@ async function saveSite() {
       elevation_m: null,
     })
     showCoords.value = false
+    emit('site-saved')
   } catch (e) {
     siteError.value = e?.response?.data?.error || e.message || 'Save failed'
   } finally {

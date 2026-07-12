@@ -67,6 +67,9 @@
         </button>
       </div>
     </div>
+    <p v-if="backgroundError" class="text-xs text-red-400" data-test="farm-canvas-background-error">
+      {{ backgroundError }} — use JPEG, PNG, or WebP under 8&nbsp;MB.
+    </p>
 
     <div
       v-if="!zones.length && filterLabel"
@@ -212,6 +215,7 @@ const canvasSize = ref({ width: 1, height: 1 })
 const localLayouts = ref({})
 const focusedZoneId = ref(null)
 const backgroundUploading = ref(false)
+const backgroundError = ref('')
 const saveTimers = ref({})
 const viewMode = ref(readTodayDesktopView())
 
@@ -398,8 +402,11 @@ async function onBackgroundPick(event) {
   const file = event.target.files?.[0]
   if (!file || !props.farmId) return
   backgroundUploading.value = true
+  backgroundError.value = ''
   try {
     await store.uploadLayoutBackground(props.farmId, file)
+  } catch (e) {
+    backgroundError.value = e?.response?.data?.error || e.message || 'Upload failed'
   } finally {
     backgroundUploading.value = false
     event.target.value = ''

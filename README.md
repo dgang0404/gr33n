@@ -18,7 +18,7 @@ An open-source farm operating system — run it on your LAN, keep your data clos
 
 🌡️ **Live Sensor Dashboards** — Temperature, humidity, light, EC, pH, CO₂, soil moisture. Real-time readings in your zones; historical graphs; automated alerts ("humidity above 75 %"). SSE live-stream stays current even offline.
 
-📍 **Today — visual farm cockpit** — Open `/` to see your zones, operational pulse, and what needs attention first — not an AI launcher ([operator tour §7l](docs/operator-tour.md#7l-today-excellence-phases-173177--shipped)).
+📍 **Today — visual farm cockpit** — Open `/` to see your zones, operational pulse, and what needs attention first — not an AI launcher ([operator tour §7l](docs/operator-tour.md#7l-today-excellence-phases-173177--shipped)). Set **farm site coordinates** on Today or **Settings → Farm site**: paste from Google Maps (e.g. `40.8938° N, 81.4055° W`) — N/S/E/W set the sign automatically (west → negative longitude). Sunrise/sunset use those coords offline. In **Arrange** on the canvas, upload a layout background (JPEG/PNG/WebP, ≤8 MB).
 
 🕹️ **Manual or Scheduled Control** — Turn fans, pumps, lights on/off manually via dashboard toggle, or set up cron-based schedules ("lights on 18:00, off 06:00"). Rules with thresholds ("if temp > 28°C, turn on exhaust fan"). All execution audited.
 
@@ -703,6 +703,8 @@ make down       # Stop Docker Compose services
 make logs       # Tail Docker Compose logs
 make clean      # Remove build artifacts
 ```
+
+**Today setup after a fresh seed:** open `/`, use **Paste from Google Maps** under farm site coordinates, save, then run **`make rag-ingest-field-guides`** so Farm Guardian has crop field-guide memories. Restart the API after pulling (`make dev-auth-test` or `make local-up`) so file uploads and zone layout saves pick up the latest CORS/routes.
 
 **Phase 23 / pre-merge gate (local):** `make test`, `make lint`, `make audit-openapi`, `make audit-env`, `python3 -m pytest pi_client/test_gr33n_client.py pi_client/test_mqtt_telemetry_bridge.py -q`, and `npm --prefix ui run build`. **`make test`** expects a reachable **`DATABASE_URL`** (see [bootstrap — smoke tests](docs/local-operator-bootstrap.md#api-integration-smoke-tests)) so `cmd/api` integration tests actually run.
 

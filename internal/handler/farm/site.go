@@ -47,5 +47,35 @@ func (h *Handler) PatchSite(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusInternalServerError, "failed to update site coordinates")
 		return
 	}
-	httputil.WriteJSON(w, http.StatusOK, farm)
+	// PostGIS geometry JSON-encodes as EWKB/base64 — rewrite as GeoJSON so the UI can parse it.
+	httputil.WriteJSON(w, http.StatusOK, farmWithGeoJSONPoint(farm, req.Longitude, req.Latitude))
+}
+
+// farmWithGeoJSONPoint returns the farm as a JSON object with location_gis as a GeoJSON Point.
+func farmWithGeoJSONPoint(farm db.Gr33ncoreFarm, longitude, latitude float64) map[string]any {
+	raw, err := json.Marshal(farm)
+	if err != nil {
+		return map[string]any{
+			"id": farm.ID,
+			"location_gis": map[string]any{
+				"type":        "Point",
+				"coordinates": []float64{longitude, latitude},
+			},
+		}
+	}
+	out := map[string]any{}
+	if err := json.Unmarshal(raw, &out); err != nil {
+		return map[string]any{
+			"id": farm.ID,
+			"location_gis": map[string]any{
+				"type":        "Point",
+				"coordinates": []float64{longitude, latitude},
+			},
+		}
+	}
+	out["location_gis"] = map[string]any{
+		"type":        "Point",
+		"coordinates": []float64{longitude, latitude},
+	}
+	return out
 }

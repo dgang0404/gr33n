@@ -154,6 +154,7 @@
         Farm Guardian uses these coordinates for supplemental-light and DLI answers.
       </p>
       <form class="grid grid-cols-1 sm:grid-cols-3 gap-3" @submit.prevent="saveFarmSite">
+        <FarmMapsCoordsPaste span-class="sm:col-span-3" @parsed="onMapsPaste" />
         <div>
           <label class="text-zinc-400 text-[11px] uppercase tracking-wide">Latitude</label>
           <input
@@ -1144,6 +1145,7 @@ import GuardianSettingsCorpusCard from '../components/GuardianSettingsCorpusCard
 import GuardianSettingsQARunCard from '../components/GuardianSettingsQARunCard.vue'
 import GuardianSettingsFeedbackReviewCard from '../components/GuardianSettingsFeedbackReviewCard.vue'
 import SettingsEdgeValidationCard from '../components/SettingsEdgeValidationCard.vue'
+import FarmMapsCoordsPaste from '../components/FarmMapsCoordsPaste.vue'
 import { farmSetupRoute } from '../lib/farmSetupWizard.js'
 import { MODULE_SCHEMA } from '../lib/farmModules.js'
 
@@ -1229,6 +1231,11 @@ function syncSiteFormFromFarm() {
   siteForm.latitude = latitude
   siteForm.longitude = longitude
   siteForm.elevation_m = parseFarmElevationM(farm)
+}
+
+function onMapsPaste({ latitude, longitude }) {
+  siteForm.latitude = latitude
+  siteForm.longitude = longitude
 }
 
 async function saveFarmSite() {

@@ -43,6 +43,7 @@
       :tasks="store.tasks"
       :alerts="alerts"
       :fertigation-events="fertigationEvents"
+      @site-saved="onSiteSaved"
     />
 
     <FarmTodayAttentionStrip
@@ -617,6 +618,16 @@ function alertSeverityClass(sev) {
   if (sev === 'critical' || sev === 'high') return 'bg-red-900/50 text-red-300'
   if (sev === 'warning' || sev === 'medium') return 'bg-yellow-900/50 text-yellow-300'
   return 'bg-zinc-800 text-zinc-400'
+}
+
+async function onSiteSaved() {
+  const fid = farmContext.farmId
+  if (!fid) return
+  try {
+    siteWeather.value = await fetchSiteWeather(fid)
+  } catch {
+    siteWeather.value = null
+  }
 }
 
 async function refreshAll() {

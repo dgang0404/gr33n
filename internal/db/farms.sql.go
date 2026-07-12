@@ -1003,10 +1003,15 @@ func (q *Queries) UpdateFarmGuardianPreferredModel(ctx context.Context, arg Upda
 const updateFarmSiteCoords = `-- name: UpdateFarmSiteCoords :one
 UPDATE gr33ncore.farms
 SET location_gis = ST_SetSRID(ST_MakePoint($1, $2), 4326),
-    meta_data = CASE
+    meta_data = (
+      CASE
         WHEN $3::double precision IS NULL THEN COALESCE(meta_data, '{}'::jsonb) - 'elevation_m'
         ELSE COALESCE(meta_data, '{}'::jsonb) || jsonb_build_object('elevation_m', $3::double precision)
-    END,
+      END
+    ) || jsonb_build_object(
+      'latitude', $2,
+      'longitude', $1
+    ),
     updated_at = NOW()
 WHERE id = $4 AND deleted_at IS NULL
 RETURNING id, name, description, location_text, location_gis, size_hectares, farm_type, scale_tier, owner_user_id, timezone, currency, operational_status, created_at, updated_at, updated_by_user_id, deleted_at, organization_id, insert_commons_opt_in, insert_commons_last_sync_at, insert_commons_last_attempt_at, insert_commons_last_delivery_status, insert_commons_last_error, insert_commons_backoff_until, insert_commons_consecutive_failures, insert_commons_require_approval, meta_data, guardian_preferred_model, guardian_counsel_model, guardian_quick_model, guardian_grounded_timeout_seconds
