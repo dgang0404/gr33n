@@ -35,7 +35,7 @@ func NewAPIClient(baseURL, token string, farmID int64) *APIClient {
 type chatResponse struct {
 	Answer    string                         `json:"answer"`
 	Citations []farmguardian.CitationSummary `json:"citations"`
-	Proposals []any                          `json:"proposals"`
+	Proposals []farmguardian.ActionProposal  `json:"proposals"`
 	Debug     *farmguardian.TurnDebug        `json:"debug,omitempty"`
 }
 
@@ -85,6 +85,7 @@ func (c *APIClient) RunQuestion(ctx context.Context, model string, q Question) (
 		Answer:        parsed.Answer,
 		CitationCount: len(parsed.Citations),
 		ProposalCount: len(parsed.Proposals),
+		ProposalIDs:   proposalIDsFromResponse(parsed.Proposals),
 		Citations:     parsed.Citations,
 		Relevance:     farmguardian.RelevanceFromTurnDebug(parsed.Debug),
 		Critique:      farmguardian.CritiqueFromTurnDebug(parsed.Debug),
@@ -92,12 +93,26 @@ func (c *APIClient) RunQuestion(ctx context.Context, model string, q Question) (
 	}, nil
 }
 
+func proposalIDsFromResponse(props []farmguardian.ActionProposal) []string {
+	if len(props) == 0 {
+		return nil
+	}
+	out := make([]string, 0, len(props))
+	for _, p := range props {
+		if id := strings.TrimSpace(p.ProposalID); id != "" {
+			out = append(out, id)
+		}
+	}
+	return out
+}
+
 // RunSuite executes fixtures sequentially (one prompt at a time).
 // When warmupGrounded is true, runs farm_counsel warmup before the first grounded prompt.
 func RunSuite(ctx context.Context, api *APIClient, model string, fixtures []Question, opts RunSuiteOptions) []ScoreResult {
 	var out []ScoreResult
 	groundedWarmed := false
-	for _, q := range fixtures {
+	for i, q := range fixtures {
+		log.Printf("eval: [%d/%d] starting %q (grounded=%v)", i+1, len(fixtures), q.ID, q.Grounded)
 		if q.Grounded && opts.WarmupGrounded && !groundedWarmed {
 			groundedWarmed = true
 			warmModel := model
@@ -121,11 +136,18 @@ func RunSuite(ctx context.Context, api *APIClient, model string, fixtures []Ques
 		}
 		in, err := api.RunQuestion(ctx, m, q)
 		if err != nil {
+			log.Printf("eval: [%d/%d] %q failed: %v", i+1, len(fixtures), q.ID, err)
 			out = append(out, scoreResultFromError(q, m, err))
 			continue
 		}
 		res := Score(in)
 		enrichScoreResult(&res, in, m)
+		status := "pass"
+		if !res.Passed {
+			status = "fail"
+		}
+		log.Printf("eval: [%d/%d] %q %s in %.1fs (proposals=%d citations=%d)",
+			i+1, len(fixtures), q.ID, status, in.Latency.Seconds(), res.ProposalCount, res.CitationCount)
 		if opts.LogPath != "" && q.ExpectTool != "" {
 			ev := ScrapeLogEvidence(opts.LogPath, q.ID, q.ExpectTool)
 			if len(ev) > 0 {
@@ -175,6 +197,7 @@ func enrichScoreResult(res *ScoreResult, in ScoreInput, model string) {
 	res.Answer = in.Answer
 	res.CitationCount = in.CitationCount
 	res.ProposalCount = in.ProposalCount
+	res.ProposalIDs = append([]string(nil), in.ProposalIDs...)
 	res.Citations = in.Citations
 	res.Relevance = in.Relevance
 	if in.Critique.Enabled && !in.Critique.Skipped {
@@ -211,6 +234,7 @@ func ToEvalQuestionScores(scores []ScoreResult) []farmguardian.EvalQuestionScore
 			LatencyMs: s.LatencyMs, RepairUsed: s.RepairUsed, Notes: s.Notes,
 			Prompt: s.Prompt, Answer: s.Answer, Error: s.Error,
 			CitationCount: s.CitationCount, ProposalCount: s.ProposalCount,
+			ProposalIDs: append([]string(nil), s.ProposalIDs...),
 			Grounded: s.Grounded, Model: s.Model, LogEvidence: s.LogEvidence,
 			Citations: s.Citations,
 			QuestionAnswerRelevance: s.Relevance.QuestionAnswerCosine,

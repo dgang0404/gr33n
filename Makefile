@@ -204,6 +204,14 @@ guardian-qa-change-requests: ## Fires write-intent prompts, then fetches Guardia
 			-suite change-requests -check-pending-proposals \
 			-report $${GUARDIAN_EVAL_REPORT:-data/guardian_model_eval.json}'
 
+guardian-qa-change-requests-ack: ## Re-run write-ack only (~25 min) — fast change-request smoke
+	@bash -lc 'set -e; cd "$(CURDIR)"; \
+		if [ -f .env ]; then set -a && . ./.env && set +a; fi; \
+		source scripts/source-local-env.sh --refresh-eval-token; \
+		$(GO) run ./cmd/guardian-eval/ -models $${MODEL:-phi3:mini} -farm-id $${FARM_ID:-1} \
+			-suite change-requests -prompt-ids write-ack -check-pending-proposals \
+			-report $${GUARDIAN_EVAL_REPORT:-data/guardian_model_eval.json}'
+
 guardian-laptop-tune: ## Phase 129 — print or apply Guardian laptop .env recommendations (ARGS="--apply")
 	@chmod +x ./scripts/tune-guardian-laptop.sh
 	@./scripts/tune-guardian-laptop.sh $(ARGS)

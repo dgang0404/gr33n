@@ -74,6 +74,7 @@ func main() {
 		Details: map[string][]farmguardian.EvalQuestionScore{},
 	}
 	expectedProposals := 0
+	var requiredProposalIDs []string
 	for _, model := range modelNames {
 		log.Printf("evaluating model %q suite=%s (%d questions)…", model, suite, len(fixtures))
 		scores := eval.RunSuite(ctx, client, model, fixtures, runOpts)
@@ -82,6 +83,7 @@ func main() {
 		rep.Details[normalizeModelKey(model)] = details
 		printModelSummary(model, rep.Models[normalizeModelKey(model)])
 		expectedProposals += passedProposalFixtures(fixtures, details)
+		requiredProposalIDs = append(requiredProposalIDs, passedProposalIDs(fixtures, details)...)
 		if archive := qaArchivePath(*qaArchive, suite, model); archive != "" {
 			if err := farmguardian.SaveQARunArchive(archive, suite, model, details); err != nil {
 				log.Printf("qa archive %q: %v", archive, err)
@@ -109,7 +111,7 @@ func main() {
 	}
 
 	if *checkPendingProposals {
-		if err := reportPendingProposals(ctx, client, expectedProposals); err != nil {
+		if err := reportPendingProposals(ctx, client, expectedProposals, requiredProposalIDs); err != nil {
 			fmt.Printf("\nPending change-request queue check failed: %v\n", err)
 			failed = true
 		}
@@ -139,6 +141,30 @@ func passedProposalFixtures(fixtures []eval.Question, scores []farmguardian.Eval
 	return n
 }
 
+// passedProposalIDs collects proposal_id values from write-intent fixtures that
+// passed their heuristic — used to verify those exact rows reached the pending
+// queue instead of counting stale proposals left from earlier runs.
+func passedProposalIDs(fixtures []eval.Question, scores []farmguardian.EvalQuestionScore) []string {
+	expectByID := make(map[string]bool, len(fixtures))
+	for _, q := range fixtures {
+		if q.ExpectProposal {
+			expectByID[q.ID] = true
+		}
+	}
+	var out []string
+	for _, s := range scores {
+		if !expectByID[s.ID] || !s.Passed {
+			continue
+		}
+		for _, id := range s.ProposalIDs {
+			if id = strings.TrimSpace(id); id != "" {
+				out = append(out, id)
+			}
+		}
+	}
+	return out
+}
+
 // reportPendingProposals fetches Guardian's pending change-request queue
 // (GET /v1/chat/proposals?status=pending — the same endpoint the UI's PR
 // queue reads) and confirms at least `expected` rows are sitting there,
@@ -146,7 +172,7 @@ func passedProposalFixtures(fixtures []eval.Question, scores []farmguardian.Eval
 // response can echo a "proposal" object without ever persisting a
 // confirmable row, so this is what proves the write-intent flow really
 // works end to end, not just that the LLM formatted valid proposal JSON.
-func reportPendingProposals(ctx context.Context, client *eval.APIClient, expected int) error {
+func reportPendingProposals(ctx context.Context, client *eval.APIClient, expected int, requiredIDs []string) error {
 	pending, err := client.FetchPendingProposals(ctx)
 	if err != nil {
 		return err
@@ -154,6 +180,25 @@ func reportPendingProposals(ctx context.Context, client *eval.APIClient, expecte
 	fmt.Printf("\nPending change-request queue: %d row(s)\n", len(pending))
 	for _, p := range pending {
 		fmt.Printf("  - [%s] %s — %s (risk: %s)\n", p.ProposalID, p.Tool, p.Summary, p.RiskTier)
+	}
+	if len(requiredIDs) > 0 {
+		pendingSet := make(map[string]struct{}, len(pending))
+		for _, p := range pending {
+			if id := strings.TrimSpace(p.ProposalID); id != "" {
+				pendingSet[id] = struct{}{}
+			}
+		}
+		var missing []string
+		for _, id := range requiredIDs {
+			if _, ok := pendingSet[id]; !ok {
+				missing = append(missing, id)
+			}
+		}
+		if len(missing) > 0 {
+			return fmt.Errorf("expected proposal_id(s) from this run in pending queue, missing: %s", strings.Join(missing, ", "))
+		}
+		fmt.Printf("Verified %d proposal_id(s) from this run are pending.\n", len(requiredIDs))
+		return nil
 	}
 	if expected > 0 && len(pending) < expected {
 		return fmt.Errorf("expected at least %d pending proposal(s) from this run's write-intent fixtures, found %d — a proposal may be echoed in the chat response without actually being persisted", expected, len(pending))

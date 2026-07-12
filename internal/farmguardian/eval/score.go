@@ -64,6 +64,7 @@ type ScoreInput struct {
 	Answer         string
 	CitationCount  int
 	ProposalCount  int
+	ProposalIDs    []string
 	Citations      []farmguardian.CitationSummary
 	Relevance      farmguardian.AnswerRelevance
 	Critique       farmguardian.AnswerCritique
@@ -85,6 +86,7 @@ type ScoreResult struct {
 	Error         string
 	CitationCount int
 	ProposalCount int
+	ProposalIDs   []string
 	Grounded      bool
 	Model         string
 	LogEvidence   []string

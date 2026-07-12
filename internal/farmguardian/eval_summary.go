@@ -44,6 +44,7 @@ type EvalQuestionScore struct {
 	Error         string  `json:"error,omitempty"`
 	CitationCount int     `json:"citation_count,omitempty"`
 	ProposalCount int     `json:"proposal_count,omitempty"`
+	ProposalIDs   []string `json:"proposal_ids,omitempty"`
 	Grounded      bool    `json:"grounded,omitempty"`
 	Model         string  `json:"model,omitempty"`
 	LogEvidence   []string `json:"log_evidence,omitempty"`

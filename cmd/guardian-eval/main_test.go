@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"gr33n-api/internal/farmguardian"
@@ -84,7 +85,7 @@ func TestReportPendingProposals_enoughRowsIsNil(t *testing.T) {
 	defer srv.Close()
 
 	client := eval.NewAPIClient(srv.URL, "test-token", 1)
-	if err := reportPendingProposals(t.Context(), client, 1); err != nil {
+	if err := reportPendingProposals(t.Context(), client, 1, nil); err != nil {
 		t.Fatalf("expected nil error with enough pending rows, got %v", err)
 	}
 }
@@ -96,9 +97,57 @@ func TestReportPendingProposals_tooFewRowsErrors(t *testing.T) {
 	defer srv.Close()
 
 	client := eval.NewAPIClient(srv.URL, "test-token", 1)
-	err := reportPendingProposals(t.Context(), client, 2)
+	err := reportPendingProposals(t.Context(), client, 2, nil)
 	if err == nil {
 		t.Fatal("expected error when fewer pending rows than expected")
+	}
+}
+
+func TestPassedProposalIDs_collectsFromPassedWriteFixtures(t *testing.T) {
+	fixtures := []eval.Question{
+		{ID: "write-feed", ExpectProposal: true},
+		{ID: "write-ack", ExpectProposal: true},
+	}
+	scores := []farmguardian.EvalQuestionScore{
+		{ID: "write-feed", Passed: true, ProposalIDs: []string{"p-feed"}},
+		{ID: "write-ack", Passed: false, ProposalIDs: []string{"p-ack"}},
+	}
+	got := passedProposalIDs(fixtures, scores)
+	if len(got) != 1 || got[0] != "p-feed" {
+		t.Fatalf("got %v want [p-feed]", got)
+	}
+}
+
+func TestReportPendingProposals_requiredIDsMustMatch(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"proposals": []map[string]any{
+				{"proposal_id": "stale-old", "tool": "ack_alert", "summary": "old", "risk_tier": "low"},
+			},
+		})
+	}))
+	defer srv.Close()
+
+	client := eval.NewAPIClient(srv.URL, "test-token", 1)
+	err := reportPendingProposals(t.Context(), client, 1, []string{"fresh-new"})
+	if err == nil || !strings.Contains(err.Error(), "fresh-new") {
+		t.Fatalf("expected missing fresh-new error, got %v", err)
+	}
+}
+
+func TestReportPendingProposals_requiredIDsPassWhenPresent(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"proposals": []map[string]any{
+				{"proposal_id": "p1", "tool": "ack_alert", "summary": "Ack", "risk_tier": "low"},
+			},
+		})
+	}))
+	defer srv.Close()
+
+	client := eval.NewAPIClient(srv.URL, "test-token", 1)
+	if err := reportPendingProposals(t.Context(), client, 0, []string{"p1"}); err != nil {
+		t.Fatalf("expected nil, got %v", err)
 	}
 }
 
@@ -109,7 +158,7 @@ func TestReportPendingProposals_zeroExpectedNeverErrors(t *testing.T) {
 	defer srv.Close()
 
 	client := eval.NewAPIClient(srv.URL, "test-token", 1)
-	if err := reportPendingProposals(t.Context(), client, 0); err != nil {
+	if err := reportPendingProposals(t.Context(), client, 0, nil); err != nil {
 		t.Fatalf("expected nil error when nothing was expected, got %v", err)
 	}
 }
