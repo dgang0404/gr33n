@@ -33,3 +33,23 @@ describe('Phase 164 WS1 — decannabis demo seed', () => {
     expect(seed).not.toContain('Check trichomes')
   })
 })
+
+describe('Phase 164 WS2+WS3 — seeded sensor readings', () => {
+  const seed = readFileSync(join(repoRoot, 'db/seeds/master_seed.sql'), 'utf8')
+
+  it('inserts phase164_demo sensor_readings for wired sensors', () => {
+    expect(seed).toContain('INSERT INTO gr33ncore.sensor_readings')
+    expect(seed).toContain('"seed":"phase164_demo"')
+    expect(seed).toContain("'Air Humidity Indoor',     72.4")
+    expect(seed).toContain("'PAR Sensor Indoor',      620.0")
+  })
+
+  it('documents intentionally unwired bed sensors', () => {
+    expect(seed).toContain('not set up')
+    expect(seed).toContain('Propagation Dome Temp')
+    expect(seed).toContain('Herb Room Air Temp')
+    expect(seed).not.toMatch(
+      /INSERT INTO gr33ncore\.sensor_readings[\s\S]*'Propagation Dome Temp'/,
+    )
+  })
+})

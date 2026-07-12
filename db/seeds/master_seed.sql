@@ -1711,3 +1711,49 @@ WHERE sch.farm_id = 1
       AND a.subject_rendered = 'Light schedule change in 48 hours — Flower Room'
   );
 
+-- ===========================================================================
+-- Phase 164 WS2+WS3 — demo sensor readings (living farm, three health states)
+-- ===========================================================================
+-- Wired sensors (SECTION 6): sparse 6 h history + latest row tagged seed:phase164.
+--   healthy  — Veg Room cluster + Outdoor soil + Flower PAR (in-range baselines)
+--   attention — Flower Room Air Humidity Indoor latest 72.4% (matches humidity alert)
+--   not set up — Phase 124 bed sensors intentionally have NO readings:
+--     Propagation Dome Temp, Herb Room Air Temp, Pepper/Berry soil moisture
+-- Re-run safe: delete prior phase164_demo rows then reinsert.
+DELETE FROM gr33ncore.sensor_readings sr
+USING gr33ncore.sensors s
+WHERE sr.sensor_id = s.id
+  AND s.farm_id = 1
+  AND s.deleted_at IS NULL
+  AND sr.meta_data @> '{"seed":"phase164_demo"}'::jsonb;
+
+-- Align humidity alert threshold with seeded alert copy (65% bloom-stage band).
+UPDATE gr33ncore.sensors
+SET alert_threshold_high = 65
+WHERE farm_id = 1 AND deleted_at IS NULL AND name = 'Air Humidity Indoor';
+
+INSERT INTO gr33ncore.sensor_readings (reading_time, sensor_id, value_raw, is_valid, meta_data)
+SELECT
+  NOW() - (gs.n * INTERVAL '30 minutes'),
+  s.id,
+  ROUND(
+    (v.base_val + CASE WHEN gs.n = 0 THEN 0 ELSE 0.08 * ((gs.n % 3) - 1) END)::numeric,
+    2
+  ),
+  TRUE,
+  '{"seed":"phase164_demo"}'::jsonb
+FROM gr33ncore.sensors s
+JOIN (VALUES
+  ('PAR Sensor Indoor',      620.0),
+  ('Lux Sensor Indoor',    28000.0),
+  ('Air Temp Indoor',         24.2),
+  ('Root Zone Temp',          21.5),
+  ('Air Humidity Indoor',     72.4),
+  ('Soil Moisture Outdoor',   41.0),
+  ('Media Moisture Indoor',   46.0),
+  ('EC Sensor',                1.6),
+  ('pH Sensor',                6.1),
+  ('CO2 Sensor Indoor',      950.0)
+) AS v(sensor_name, base_val) ON v.sensor_name = s.name
+CROSS JOIN generate_series(0, 12) AS gs(n)
+WHERE s.farm_id = 1 AND s.deleted_at IS NULL;

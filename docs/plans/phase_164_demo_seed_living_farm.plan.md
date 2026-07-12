@@ -15,10 +15,10 @@ todos:
     status: completed
   - id: ws2-seed-readings
     content: "WS2: Seed recent sensor_readings for wired sensors — healthy baseline values"
-    status: pending
+    status: completed
   - id: ws3-health-states
     content: "WS3: Curate three hardware states — healthy / needs attention / not set up yet"
-    status: pending
+    status: completed
   - id: ws4-gravity-drip
     content: "WS4: Gravity-drip demo — Herb & Greens Room drip actuator + irrigation_only program"
     status: pending
