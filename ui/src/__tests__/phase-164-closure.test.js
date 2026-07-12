@@ -53,3 +53,18 @@ describe('Phase 164 WS2+WS3 — seeded sensor readings', () => {
     )
   })
 })
+
+describe('Phase 164 WS4 — gravity drip demo zone', () => {
+  const seed = readFileSync(join(repoRoot, 'db/seeds/master_seed.sql'), 'utf8')
+
+  it('seeds herb room gravity drip hardware and program', () => {
+    expect(seed).toContain('demo-herb-relay-01')
+    expect(seed).toContain('Herb Room Gravity Drip Valve')
+    expect(seed).toContain("'drip'")
+    expect(seed).toContain('Herb Room Gravity Header')
+    expect(seed).toContain('Herb Room Gravity Drip')
+    expect(seed).toContain('irrigation_only')
+    expect(seed).toContain('Water Herbs Gravity Drip Daily')
+    expect(seed).toContain('[seed:herb-gravity-drip-demo]')
+  })
+})

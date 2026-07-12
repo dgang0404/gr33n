@@ -518,6 +518,11 @@ FROM (VALUES
  'Morning irrigation for outdoor garden beds. ~3L per sqm. '
  'Disable during rain periods. Increase in heat waves. '
  'Apply JLF soil drench here. Zone: Outdoor Garden.',
+ 'irrigation', '0 7 * * *', 'America/New_York', true),
+
+('Water Herbs Gravity Drip Daily',
+ 'Morning gravity drip for Herb & Greens tent. ~8L from elevated header tank; '
+ 'drip valve open 3 min — no pump required. Zone: Herb & Greens Room.',
  'irrigation', '0 7 * * *', 'America/New_York', true)
 ) AS v(name, description, schedule_type, cron_expression, timezone, is_active)
 WHERE NOT EXISTS (
@@ -556,6 +561,20 @@ WHERE NOT EXISTS (
     SELECT 1 FROM gr33ncore.devices WHERE farm_id = 1 AND device_uid = 'demo-flower-relay-01'
 );
 
+INSERT INTO gr33ncore.devices
+    (farm_id, zone_id, name, device_uid, device_type, status, config)
+SELECT
+    1,
+    (SELECT id FROM gr33ncore.zones WHERE farm_id = 1 AND name = 'Herb & Greens Room' AND deleted_at IS NULL ORDER BY id LIMIT 1),
+    'Herb Relay Controller',
+    'demo-herb-relay-01',
+    'relay_controller',
+    'online'::gr33ncore.device_status_enum,
+    '{"simulation": true}'::jsonb
+WHERE NOT EXISTS (
+    SELECT 1 FROM gr33ncore.devices WHERE farm_id = 1 AND device_uid = 'demo-herb-relay-01'
+);
+
 INSERT INTO gr33ncore.actuators
     (device_id, farm_id, zone_id, name, actuator_type, hardware_identifier, current_state_text, config)
 SELECT
@@ -592,6 +611,25 @@ WHERE d.farm_id = 1
   AND NOT EXISTS (
       SELECT 1 FROM gr33ncore.actuators a
       WHERE a.farm_id = 1 AND a.name = 'Flower Room Irrigation Pump' AND a.deleted_at IS NULL
+  );
+
+INSERT INTO gr33ncore.actuators
+    (device_id, farm_id, zone_id, name, actuator_type, hardware_identifier, current_state_text, config)
+SELECT
+    d.id,
+    1,
+    d.zone_id,
+    'Herb Room Gravity Drip Valve',
+    'drip',
+    'relay_1',
+    'offline',
+    '{"channel": 1, "simulation": true, "irrigation_mode": "gravity_drip"}'::jsonb
+FROM gr33ncore.devices d
+WHERE d.farm_id = 1
+  AND d.device_uid = 'demo-herb-relay-01'
+  AND NOT EXISTS (
+      SELECT 1 FROM gr33ncore.actuators a
+      WHERE a.farm_id = 1 AND a.name = 'Herb Room Gravity Drip Valve' AND a.deleted_at IS NULL
   );
 
 INSERT INTO gr33ncore.executable_actions
@@ -1095,6 +1133,31 @@ SELECT
     'ready'::gr33nfertigation.reservoir_status_enum
 ON CONFLICT (farm_id, name) DO NOTHING;
 
+INSERT INTO gr33nfertigation.reservoirs
+    (farm_id, zone_id, name, description, capacity_liters, current_volume_liters, status)
+SELECT
+    1,
+    (SELECT id FROM gr33ncore.zones WHERE farm_id = 1 AND name = 'Herb & Greens Room' AND deleted_at IS NULL ORDER BY id LIMIT 1),
+    'Herb Room Gravity Header',
+    'Elevated bucket/tank feeding the gravity drip line. Plain water only — no pump.',
+    40.00,
+    32.00,
+    'ready'::gr33nfertigation.reservoir_status_enum
+ON CONFLICT (farm_id, name) DO NOTHING;
+
+UPDATE gr33nfertigation.reservoirs rv
+SET delivery_actuator_id = (
+    SELECT a.id FROM gr33ncore.actuators a
+    WHERE a.farm_id = 1 AND a.name = 'Herb Room Gravity Drip Valve' AND a.deleted_at IS NULL
+    LIMIT 1
+),
+    last_ec_mscm = 0.15,
+    last_ph = 7.0,
+    last_reading_time = NOW()
+WHERE rv.farm_id = 1
+  AND rv.name = 'Herb Room Gravity Header'
+  AND rv.deleted_at IS NULL;
+
 INSERT INTO gr33nfertigation.programs
     (farm_id, name, description, application_recipe_id, reservoir_id, target_zone_id, schedule_id,
      ec_target_id, total_volume_liters, run_duration_seconds, ec_trigger_low, ph_trigger_low, ph_trigger_high, is_active)
@@ -1164,6 +1227,89 @@ WHERE z.farm_id = 1
       WHERE p.farm_id = 1
         AND p.name = 'Outdoor JLF Soil Drench'
         AND p.deleted_at IS NULL
+  );
+
+-- Phase 164 WS4 — gravity-fed drip demo (plain irrigation, timed drip valve).
+INSERT INTO gr33nfertigation.programs
+    (farm_id, name, description, application_recipe_id, reservoir_id, target_zone_id, schedule_id,
+     total_volume_liters, run_duration_seconds, ec_trigger_low, ph_trigger_low, ph_trigger_high,
+     is_active, irrigation_only)
+SELECT
+    1,
+    'Herb Room Gravity Drip',
+    'Gravity-fed drip: elevated header tank, drip line, timed valve — no pump required (Phase 164 demo).',
+    NULL,
+    rv.id,
+    z.id,
+    s.id,
+    8.000,
+    180,
+    0.0,
+    6.0,
+    8.0,
+    TRUE,
+    TRUE
+FROM gr33ncore.zones z
+LEFT JOIN gr33ncore.schedules s
+    ON s.farm_id = 1 AND s.name = 'Water Herbs Gravity Drip Daily'
+LEFT JOIN gr33nfertigation.reservoirs rv
+    ON rv.farm_id = 1 AND rv.name = 'Herb Room Gravity Header'
+WHERE z.farm_id = 1
+  AND z.name = 'Herb & Greens Room'
+  AND NOT EXISTS (
+      SELECT 1 FROM gr33nfertigation.programs p
+      WHERE p.farm_id = 1 AND p.name = 'Herb Room Gravity Drip' AND p.deleted_at IS NULL
+  );
+
+INSERT INTO gr33ncore.executable_actions
+    (program_id, execution_order, action_type, target_actuator_id, action_command, action_parameters)
+SELECT
+    p.id,
+    0,
+    'control_actuator'::gr33ncore.executable_action_type_enum,
+    a.id,
+    'on',
+    '{"source":"seed_phase164_gravity_drip"}'::jsonb
+FROM gr33nfertigation.programs p
+JOIN gr33ncore.actuators a
+    ON a.farm_id = 1 AND a.name = 'Herb Room Gravity Drip Valve' AND a.deleted_at IS NULL
+WHERE p.farm_id = 1
+  AND p.name = 'Herb Room Gravity Drip'
+  AND p.deleted_at IS NULL
+  AND NOT EXISTS (
+      SELECT 1 FROM gr33ncore.executable_actions ea
+      WHERE ea.program_id = p.id AND ea.target_actuator_id = a.id
+  );
+
+INSERT INTO gr33nfertigation.fertigation_events
+    (farm_id, program_id, reservoir_id, zone_id, applied_at, growth_stage,
+     volume_applied_liters, run_duration_seconds, ec_before_mscm, ec_after_mscm,
+     ph_before, ph_after, trigger_source, notes)
+SELECT
+    1,
+    p.id,
+    rv.id,
+    z.id,
+    NOW() - INTERVAL '18 hours',
+    'late_veg'::gr33nfertigation.growth_stage_enum,
+    8.000,
+    180,
+    0.12,
+    0.15,
+    7.00,
+    7.02,
+    'schedule_cron'::gr33nfertigation.program_trigger_enum,
+    '[seed:herb-gravity-drip-demo] Plain water gravity drip — header tank to herb bed.'
+FROM gr33ncore.zones z
+JOIN gr33nfertigation.programs p
+    ON p.farm_id = 1 AND p.name = 'Herb Room Gravity Drip' AND p.deleted_at IS NULL
+JOIN gr33nfertigation.reservoirs rv
+    ON rv.farm_id = 1 AND rv.name = 'Herb Room Gravity Header'
+WHERE z.farm_id = 1
+  AND z.name = 'Herb & Greens Room'
+  AND NOT EXISTS (
+      SELECT 1 FROM gr33nfertigation.fertigation_events fe
+      WHERE fe.farm_id = 1 AND fe.notes LIKE '%[seed:herb-gravity-drip-demo]%'
   );
 
 INSERT INTO gr33nfertigation.fertigation_events
@@ -1585,6 +1731,7 @@ WHERE cc.farm_id = 1
     (cc.name = 'Veg canopy (18/6)'             AND p.name = 'Veg Daily JLF Program')
     OR (cc.name = 'Bloom run (12/12)'            AND p.name = 'Flower Daily FFJ+WCA Program')
     OR (cc.name = 'Outdoor raised beds — spring' AND p.name = 'Outdoor JLF Soil Drench')
+    OR (cc.name = 'Genovese Basil — Perpetual Bed' AND p.name = 'Herb Room Gravity Drip')
   );
 
 -- Link fertigation events to their crop cycles

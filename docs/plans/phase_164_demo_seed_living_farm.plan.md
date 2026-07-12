@@ -21,7 +21,7 @@ todos:
     status: completed
   - id: ws4-gravity-drip
     content: "WS4: Gravity-drip demo — Herb & Greens Room drip actuator + irrigation_only program"
-    status: pending
+    status: completed
   - id: ws5-test-audit
     content: "WS5: Audit + update smoke tests that assume farm-1 cannabis seed rows"
     status: pending
