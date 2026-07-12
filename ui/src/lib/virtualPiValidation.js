@@ -109,7 +109,7 @@ export function computeVirtualPiValidation({
     return {
       status: 'ready_live',
       title: 'Ready for live field validation',
-      hint: 'Pi matches platform. Follow docs/virtual-pi-field-validation-path.md step 3 for real relays.',
+      hint: 'Pi matches platform. Continue with live relay testing on the field.',
       checklist,
     }
   }
@@ -117,7 +117,7 @@ export function computeVirtualPiValidation({
   return {
     status: 'ready_dry_run',
     title: 'Ready for LED simulation dry run',
-    hint: 'Download config.yaml, merge into pi_client/config.yaml, then run pi-light-simulation-runbook Demo A.',
+    hint: 'Download config from Virtual Pi, merge into your Pi client config, then run the LED simulation demo.',
     checklist,
   }
 }

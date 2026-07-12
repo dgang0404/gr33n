@@ -16,7 +16,7 @@ describe('Phase 122 — Guardian model eval + context budget', () => {
     const sel = readFileSync(join(process.cwd(), 'src/components/GuardianModelSelector.vue'), 'utf8')
     expect(sel).toContain('guardian-eval-hint')
     expect(sel).toContain('grounded_citation_rate')
-    expect(sel).toContain('make guardian-eval')
+    expect(sel).toContain('not yet evaluated')
   })
 
   it('guardian-eval CLI and makefile target exist', () => {

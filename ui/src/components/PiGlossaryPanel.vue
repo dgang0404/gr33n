@@ -143,7 +143,7 @@ const terms = [
   },
   {
     id: 'sync',
-    label: 'Phase 51 Sync',
+    label: 'Platform sync',
     definition: 'The minimal bootstrap config model where Pi gets full config from API on startup.',
     link: '/docs/phase-13-operator-documentation.md',
   },

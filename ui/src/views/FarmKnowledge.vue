@@ -6,8 +6,7 @@
         <HelpTip position="bottom">
           <strong>Semantic search</strong> over text the farm has already indexed (tasks, automation runs, etc.).
           Results come from your database — not the open web, not API access logs. Static how-to lives under <strong>System → Guide</strong>.
-          <strong>Ask (LLM)</strong> only appears if the API has embedding and optional chat model env vars configured (see <code class="text-gr33n-400">INSTALL.md</code>).
-          Scope: <code class="text-zinc-500 text-[10px]">docs/rag-scope-and-threat-model.md</code> §9.
+          <strong>Ask (LLM)</strong> only appears when the server has AI features enabled.
         </HelpTip>
       </h1>
       <p class="text-sm text-zinc-500">
@@ -107,7 +106,7 @@
         >
           Farm Guardian and answer synthesis are off on this installation.
           Search still works; the API runs in <strong>Lite mode</strong>.
-          See <code class="text-gr33n-400">docs/plans/phase_27_farm_guardian_ai_layer.md</code>.
+          Ask your farm admin to enable AI on the server if you need synthesized answers.
         </p>
         <div
           v-if="searchFeedback"
@@ -155,8 +154,7 @@
       >
         <p class="text-zinc-300 font-medium mb-1">No chunks matched</p>
         <p class="leading-relaxed">
-          Try different keywords, widen the date filters, or confirm <strong class="text-zinc-200">rag-ingest</strong> has indexed this farm
-          (see <code class="text-gr33n-400 text-xs">docs/workflow-guide.md</code> §10.6).
+          Try different keywords, widen the date filters, or ask your farm admin to index field memories for this farm in Settings.
         </p>
       </section>
 

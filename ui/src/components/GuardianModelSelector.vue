@@ -64,11 +64,10 @@
         <div class="mt-2 space-y-2">
           <p data-test="guardian-field-guides-help">
             <span class="text-zinc-300">Field guides</span>
-            (<span class="text-zinc-500">docs/field-guides/</span>)
-            are curated gr33n docs — crop care, Pi wiring, safety, procedures.
+            are curated crop-care, Pi wiring, safety, and procedure docs.
             They are <span class="text-zinc-300">only</span> injected when
             <span class="text-zinc-300">Use farm context</span> is on, a farm is selected,
-            and RAG has ingested them (<span class="text-zinc-500">make rag-ingest-field-guides</span>).
+            and field memories have been ingested in Settings.
             <span class="text-zinc-300">tinyllama</span> and
             <span class="text-zinc-300">phi3:mini</span> both use the same RAG chunks when grounded;
             a larger model (e.g. llama3.1:8b) reads those chunks more reliably but is slower on CPU.
@@ -215,8 +214,7 @@
       <p class="text-[10px] text-zinc-600 leading-snug">
         Session model applies to your chat only and does not change the farm default.
         Models come from the server Ollama runtime (shared across farms on this host).
-        Switching the dropdown does not unload other models from RAM
-        (see <span class="text-zinc-500">docs/guardian-ollama-laptop-playbook.md</span>).
+        Switching the dropdown does not unload other models from RAM — use Rest now in Settings to free memory.
         Pull downloads weights once — can take many minutes on slow internet; not per chat.
       </p>
       <p v-if="saveError" class="text-[10px] text-red-300/90">{{ saveError }}</p>
@@ -365,8 +363,7 @@ const modeBannerTitle = computed(() =>
 const modeBannerBody = computed(() => {
   if (props.farmContextActive) {
     return (
-      ' Answers use this farm\'s live data plus RAG — including field guides ' +
-      '(docs/field-guides) when ingested. Same chunks for any grounded model; larger models read them better. ' +
+      ' Answers use this farm\'s live data plus indexed field memories — including field guides when ingested. Same chunks for any grounded model; larger models read them better. ' +
       'Can take many minutes on CPU.'
     )
   }
@@ -429,11 +426,11 @@ const selectedTrimHint = computed(() => {
 
 function evalHintForModel(m) {
   if (!m?.eval) {
-    return 'Quality: not yet evaluated — run make guardian-eval on the server'
+    return 'Quality: not yet evaluated on this server'
   }
   const e = m.eval
   if (e.eval_status === 'not_evaluated') {
-    return 'Quality: not yet evaluated — run make guardian-eval'
+    return 'Quality: not yet evaluated'
   }
   const cite = Math.round((e.grounded_citation_rate || 0) * 100)
   const prop = Math.round((e.proposal_valid_rate || 0) * 100)

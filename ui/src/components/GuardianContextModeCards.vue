@@ -59,11 +59,10 @@
         </button>
       </div>
       <p class="text-[10px] text-zinc-500">
-        Cold models and CPU timing — see docs/connectivity-requirements.md in the repo.
+        First chat after a cold start may take several minutes on CPU — use Quick chat for faster general answers.
       </p>
       <p class="text-[10px] text-zinc-600 leading-snug" data-test="guardian-mode-session-memory-note">
         Session memory uses keyword tags only — not semantic recall.
-        <a href="/operator-guide#6k-guardian-session-memory-phase-63--shipped" class="text-green-500/70 hover:underline">Phase 63</a>
       </p>
     </template>
   </div>

@@ -353,8 +353,7 @@
         </div>
       </div>
       <p class="text-xs text-zinc-600 border-t border-zinc-800 pt-3">
-        Full reference: <code class="text-zinc-500">docs/pi-sequent-hat-setup.md</code> ·
-        <code class="text-zinc-500">docs/pi-integration-guide.md</code> ·
+        More detail: Sequent Microsystems hat docs at
         <a href="https://sequentmicrosystems.com" target="_blank" rel="noopener" class="text-zinc-500 hover:text-zinc-400">sequentmicrosystems.com ↗</a>
       </p>
     </section>

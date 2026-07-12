@@ -8,9 +8,7 @@
       <span>🧪</span> Guardian QA — last run
     </h2>
     <p class="text-xs text-zinc-500 mb-4 leading-relaxed">
-      Latest archived smoke or regression from
-      <code class="text-zinc-400">make guardian-qa-smoke</code>. Full answers live under
-      <code class="text-zinc-400">data/guardian_qa_runs/</code> on the API host.
+      Latest archived smoke or regression run from your server’s quality checks.
     </p>
 
     <div v-if="loading" class="text-zinc-500 text-sm">Loading…</div>
@@ -73,14 +71,11 @@
       </div>
 
       <p v-if="summary" class="text-[10px] text-zinc-500" data-test="settings-guardian-qa-quality-nudge">
-        Heuristic pass is not a quality sign-off — spot-check archived answers per
-        <code class="text-zinc-400">docs/guardian-feedback-review-runbook.md</code>
-        (Smoke quality checklist), then Settings → Guardian feedback.
+        Automated pass is not a quality sign-off — spot-check archived answers, then review Settings → Guardian feedback.
       </p>
 
       <p class="text-[10px] text-zinc-600">
-        Re-run:
-        <code class="text-zinc-400">make guardian-qa-smoke MODEL=phi3:mini FARM_ID=1</code>
+        Ask your farm admin to re-run quality checks after Guardian upgrades.
       </p>
     </div>
   </section>
@@ -128,7 +123,7 @@ async function loadLatest() {
     scores.value = Array.isArray(data.scores) ? data.scores : []
   } catch (e) {
     if (e?.response?.status === 404) {
-      error.value = 'No QA runs archived yet — run make guardian-qa-smoke from the repo root.'
+      error.value = 'No QA runs archived yet — ask your farm admin to run a smoke check.'
     } else {
       error.value = e?.message || 'Could not load QA summary.'
     }

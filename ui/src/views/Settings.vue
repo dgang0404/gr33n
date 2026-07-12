@@ -848,13 +848,7 @@
         Could not read <code class="text-zinc-400">/capabilities</code>: {{ capabilities.fetchError }} — treating as AI on.
       </p>
       <p class="text-zinc-500 text-xs mt-3">
-        Guardian proposes changes; you confirm. Confirmed actions appear in the farm audit log
-        (<code class="text-zinc-400">guardian_tool_executed</code>).
-        See <code class="text-gr33n-400">docs/farm-guardian-architecture.md</code> §7.
-      </p>
-      <p class="text-zinc-500 text-xs mt-2">
-        Plans: Phase 27 chat layer · Phase 29 confirmed actions —
-        <code class="text-gr33n-400">docs/plans/phase_29_guardian_agent_layer.md</code>.
+        Guardian proposes changes; you confirm. Confirmed actions are recorded in the farm audit log.
       </p>
     </section>
 
@@ -949,10 +943,7 @@
       </div>
 
       <p class="text-zinc-600 text-xs mt-3">
-        Source:
-        <code class="text-zinc-500">GET /v1/chat/usage</code>
-        (Phase 28 WS5). Warnings appear under the farm’s Alerts page as
-        <code class="text-zinc-500">chat_budget_warning</code>.
+        Budget warnings appear under the farm’s Alerts page when you approach your rolling limit.
       </p>
     </section>
 

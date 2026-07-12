@@ -191,7 +191,7 @@
         <div class="flex items-center justify-between mb-3">
           <h2 class="text-sm font-semibold text-white">Energy price ($/kWh)</h2>
           <span class="text-[11px] text-zinc-500">
-            Phase 20.7 — enables the nightly electricity rollup (watts × runtime × price).
+            Enables the nightly electricity rollup (watts × runtime × price).
           </span>
         </div>
         <p v-if="!energyPrices.length" class="text-xs text-zinc-500 mb-3">

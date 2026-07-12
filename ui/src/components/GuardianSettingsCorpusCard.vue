@@ -7,11 +7,10 @@
     <h2 class="text-white font-semibold mb-2 flex items-center gap-2">
       <span>📚</span> Field memories (RAG corpus)
     </h2>
-    <p class="text-xs text-zinc-500 mb-4 leading-relaxed">
-      Indexed guides and farm rows power Farm counsel citations. Re-ingest when guides change or
-      operational data is stale. First-time setup:
-      <code class="text-zinc-400">make guardian-bootstrap-farm FARM_ID={{ farmId }}</code>
-    </p>
+      <p class="text-xs text-zinc-500 mb-4 leading-relaxed">
+        Indexed guides and farm rows power Farm counsel citations. Re-ingest when guides change or
+        operational data is stale.
+      </p>
 
     <div v-if="!readiness.loaded && readiness.loading" class="text-zinc-500 text-sm">Loading corpus…</div>
 

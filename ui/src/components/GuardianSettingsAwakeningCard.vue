@@ -77,9 +77,7 @@
         class="text-xs text-amber-300/90 rounded border border-amber-900/50 bg-amber-950/30 px-3 py-2"
         data-test="settings-guardian-rag-warn"
       >
-        Field memories not ingested for this farm — run
-        <code class="text-amber-200/90">make guardian-bootstrap-farm FARM_ID={{ farmId }}</code>
-        from the repo root.
+        Field memories not ingested for this farm — use <strong class="text-amber-200/90">Re-ingest</strong> below or ask your farm admin to bootstrap field memories.
       </p>
 
       <p v-for="(msg, i) in readiness.awakening.messages" :key="i" class="text-xs text-zinc-500">{{ msg }}</p>
@@ -129,10 +127,7 @@
       </div>
 
       <p class="text-[10px] text-zinc-600 leading-relaxed">
-        Laptop CPU timeouts:
-        <code class="text-zinc-500">make guardian-laptop-tune ARGS="--apply"</code>
-        then restart the API — see
-        <a href="https://github.com/gr33n-platform/gr33n-platform/blob/main/docs/local-operator-bootstrap.md" target="_blank" rel="noopener" class="text-green-500/80 hover:underline">local-operator-bootstrap.md</a>.
+        If awakening times out on a slow laptop, ask your farm admin to tune CPU timeouts and restart the API.
       </p>
 
       <details v-if="isFarmAdmin && farmId" class="rounded border border-zinc-700 bg-zinc-900/50 px-3 py-2 text-xs">

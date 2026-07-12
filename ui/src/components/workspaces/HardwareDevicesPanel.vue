@@ -1,7 +1,7 @@
 <template>
   <div class="p-4 sm:p-6 space-y-4 max-w-2xl">
     <p class="text-sm text-zinc-400">
-      Register Pis, rotate API keys, and open the device wizard from here. Full fleet wiring lands in Phase 70.
+      Register Pis, rotate API keys, and open the device wizard from here.
     </p>
     <div class="flex flex-wrap gap-3">
       <RouterLink

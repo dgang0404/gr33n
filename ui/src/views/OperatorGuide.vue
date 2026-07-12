@@ -4,7 +4,7 @@
       <h1 class="text-2xl font-bold text-green-400 flex items-center gap-2">
         Operator guide
         <HelpTip position="bottom">
-          Same mental model as <strong>docs/operator-tour.md</strong> in the repo. Use this page when you want terms and a click path without leaving the app.
+          In-app guide for terms and click paths. For deeper install and troubleshooting, ask your farm admin.
         </HelpTip>
       </h1>
       <p class="text-sm text-zinc-500 leading-relaxed">
@@ -19,7 +19,6 @@
       role="status"
     >
       Guardian cited platform doc: <code class="text-amber-100/90 text-xs">{{ citedDoc }}</code>
-      — full text lives in the repo under <code class="text-amber-100/80 text-xs">docs/</code>.
     </p>
 
     <section class="bg-zinc-900 border border-zinc-800 rounded-xl p-5 space-y-3">
@@ -46,7 +45,7 @@
         <li><router-link v-nav-hint="'/chat'" class="text-gr33n-400 hover:underline" to="/chat">Farm Guardian</router-link> — optional AI; change requests need Confirm (see glossary)</li>
       </ol>
       <p class="text-xs text-zinc-600 pt-2">
-        <strong class="text-zinc-500">Grow closure (Phase 53):</strong>
+        <strong class="text-zinc-500">Grow workflow:</strong>
         zone <strong class="text-zinc-400">Overview → Start a grow</strong> or
         <router-link v-nav-hint="'/plants'" class="text-gr33n-500 hover:underline" to="/zones?tab=plants">Plants → Start a grow</router-link>;
         <strong class="text-zinc-400">Harvest weigh-in</strong> on the zone strip → post-harvest compare;
@@ -64,7 +63,7 @@
     <section class="space-y-4">
       <h2 class="text-white font-semibold text-sm uppercase tracking-widest text-zinc-500">Glossary</h2>
       <p class="text-xs text-zinc-600">
-        Stable wording for UI copy and farm-scoped help (aligns with <code class="text-zinc-500">workflow-guide.md</code> §11).
+        Stable wording for UI copy and farm-scoped help.
       </p>
       <dl class="space-y-4">
         <div v-for="entry in glossary" :key="entry.term" class="bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3">
@@ -76,8 +75,7 @@
 
     <section class="rounded-xl border border-zinc-800 bg-zinc-950/50 px-4 py-3 text-xs text-zinc-500 space-y-2">
       <p><strong class="text-zinc-400">Why lists look empty</strong> — wrong farm selected, no data yet, telemetry not reaching the API (Pi / URL / key), or automation not configured. Compare <strong class="text-zinc-300">setpoints</strong> (targets) to <strong class="text-zinc-300">live readings</strong>.</p>
-      <p>For Pi hardware wiring see <router-link v-nav-hint="'/pi-setup'" to="/pi-setup" class="text-gr33n-500 hover:underline">Pi + HAT setup</router-link>. For install and logs see <strong class="text-zinc-400">docs/local-operator-bootstrap.md</strong> and <strong class="text-zinc-400">docs/operator-troubleshooting.md</strong> in the repo.</p>
-      <p>For Docker/systemd capture, rotation, Loki demo stack (<strong class="text-zinc-400">docker-compose.logging.yml</strong>), and archival (vs Timescale row pruning): <strong class="text-zinc-400">docs/operator-logging-runbook.md</strong>.</p>
+      <p>For Pi hardware wiring see <router-link v-nav-hint="'/pi-setup'" to="/pi-setup" class="text-gr33n-500 hover:underline">Pi + HAT setup</router-link>. For install issues or server logs, contact your farm admin.</p>
     </section>
   </div>
 </template>
@@ -137,11 +135,11 @@ const glossary = [
   },
   {
     term: 'Farm Guardian',
-    body: 'On-prem copilot chat (snapshot + optional RAG). It proposes changes like pull requests — tasks, alert ack, schedule patches, Pi pending_command — but nothing writes until you Confirm. Automation rules/alerts run separately without chat. See docs/operator-tour.md §6 and docs/farm-guardian-architecture.md §8.',
+    body: 'On-prem copilot chat (snapshot + optional field memories). It proposes changes — tasks, alert ack, schedule patches, Pi commands — but nothing writes until you Confirm. Automation rules and alerts run separately without chat.',
   },
   {
     term: 'Knowledge (RAG)',
-    body: 'Semantic search over indexed farm text chunks from approved database domains (via rag-ingest); optional LLM answer when the API is configured. Not the same as static Help/Guide copy or Docker/API logs — see docs/rag-scope-and-threat-model.md §9.',
+    body: 'Semantic search over indexed farm text from your database; optional LLM answer when AI is enabled. Not the same as this Help guide or server log files.',
   },
   {
     term: 'Operational logs',
