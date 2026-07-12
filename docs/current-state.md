@@ -107,7 +107,7 @@ Locked roadmap after Phase 172: [`phase_173_177_today_excellence_roadmap.plan.md
 | **173** ✅ | Large farms — filter chips (All/Attention/Indoor/Outdoor/Greenhouse), mobile paging (8/page), desktop Map/List toggle beyond 13 zones |
 | **174** ✅ | Visual hierarchy — **Today** naming, `FarmTodayHeader` health pills, taller canvas, tile polish; duplicate tasks/alerts row removed |
 | **175** ✅ | Farm-first — action bar (feed, task, schedules, zones); ≤2 Ask gr33n chips; full starters in details |
-| **176** | Farm pulse — next runs, active crops, devices, folded into Site Strip (no new row) |
+| **176** ✅ | Farm pulse — next water, growing runs, devices in Site Strip (same card) |
 | **177** | First impression — demo showcase, coach marks, arc closure |
 
 **North star:** `/` reads as a grower cockpit, not an AI chat launcher.
@@ -125,6 +125,15 @@ Locked roadmap after Phase 172: [`phase_173_177_today_excellence_roadmap.plan.md
 - **FarmTodayAskGr33n** — at most two curated chips (morning check + ask about your farm)
 - Full Guardian starter set (attention, weather, ops) moved under **All the details → Ask gr33n**
 - Zone-scoped Guardian remains in the quick-action sheet (Phase 170 one-tap counsel unchanged)
+
+## Today farm pulse (Phase 176)
+
+`FarmSiteStrip` now includes operational pulse cells in the **same card** — no extra row:
+
+- **Next water** — earliest active feeding plan + zone name
+- **Lights** — zones on now, or next light schedule
+- **Growing** — active crop runs and bloom count
+- **Devices** — online count and command queue depth
 
 ---
 

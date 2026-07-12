@@ -8,25 +8,35 @@ overview: >
 todos:
   - id: ws1-pulse-lib
     content: "WS1: farmTodayPulse.js — next runs, active cycles, device rollup"
-    status: pending
+    status: completed
   - id: ws2-pulse-component
     content: "WS2: Add pulse cells INTO FarmSiteStrip.vue (no new component/row)"
-    status: pending
+    status: completed
   - id: ws3-dashboard-wire
-    content: "WS3: No Dashboard wiring change needed — FarmSiteStrip already gets the data it needs via existing props"
-    status: pending
+    content: "WS3: Dashboard passes schedules, cropCycles, devices, queueDepth to FarmSiteStrip"
+    status: completed
   - id: ws4-seed-align
     content: "WS4: Demo seed sanity — pulse shows meaningful lines on farm 1"
-    status: pending
+    status: completed
   - id: ws5-closure
     content: "WS5: farm-today-pulse.test.js + phase-176-closure"
-    status: pending
+    status: completed
 isProject: false
 ---
 
 # Phase 176 — Today farm pulse
 
-**Status:** planned · **Follows:** [175](phase_175_today_farm_first_actions.plan.md)
+**Status:** shipped · **Follows:** [175](phase_175_today_farm_first_actions.plan.md)
+
+## Shipped
+
+| WS | Deliverable |
+|----|-------------|
+| **WS1** | `farmTodayPulse.js` — next water, lights, growing, devices cells |
+| **WS2** | `FarmSiteStrip.vue` — pulse cells in same card (`farm-site-pulse-*`) |
+| **WS3** | `Dashboard.vue` passes schedules, crop cycles, devices, queue depth |
+| **WS4** | Demo seed already has active programs, crop cycles, and devices |
+| **WS5** | `farm-today-pulse.test.js`, `phase-176-closure.test.js` |
 
 ## Why
 

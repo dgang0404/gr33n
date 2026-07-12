@@ -158,7 +158,7 @@ Hub: operator tour [§7k](operator-tour.md#7k-visual-farm-cockpit-phases-164168-
 | **173** ✅ | Large-farm Today filters + paging | [`phase_173_today_large_farm_navigation.plan.md`](plans/phase_173_today_large_farm_navigation.plan.md) · `phase-173-closure.test.js` |
 | **174** ✅ | Today visual hierarchy — health header, naming, tile polish | [`phase_174_today_visual_hierarchy.plan.md`](plans/phase_174_today_visual_hierarchy.plan.md) · `phase-174-closure.test.js` |
 | **175** ✅ | Farm-first actions; Guardian demoted | [`phase_175_today_farm_first_actions.plan.md`](plans/phase_175_today_farm_first_actions.plan.md) · `phase-175-closure.test.js` |
-| **176** 📋 | Farm pulse — operational “now” strip | [`phase_176_today_farm_pulse.plan.md`](plans/phase_176_today_farm_pulse.plan.md) |
+| **176** ✅ | Farm pulse in Site Strip | [`phase_176_today_farm_pulse.plan.md`](plans/phase_176_today_farm_pulse.plan.md) · `phase-176-closure.test.js` |
 | **177** 📋 | First impression + arc closure | [`phase_177_today_first_impression.plan.md`](plans/phase_177_today_first_impression.plan.md) |
 
 **Roadmap:** [`phase_173_177_today_excellence_roadmap.plan.md`](plans/phase_173_177_today_excellence_roadmap.plan.md) — locked order after Phase 172.

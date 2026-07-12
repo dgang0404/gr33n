@@ -46,6 +46,23 @@
         </router-link>
       </div>
 
+      <!-- Phase 176 — farm pulse cells -->
+      <div
+        v-for="cell in pulseCells"
+        :key="cell.id"
+        class="text-[11px] min-w-[140px]"
+        :data-test="`farm-site-pulse-${cell.id}`"
+      >
+        <p class="text-zinc-500 uppercase tracking-wide text-[10px]">{{ cell.label }}</p>
+        <router-link
+          v-nav-hint="cell.link"
+          :to="cell.link"
+          class="text-zinc-300 mt-0.5 hover:text-green-400 block"
+        >
+          {{ cell.value }}
+        </router-link>
+      </div>
+
       <!-- Lat/long chip -->
       <div v-if="!coordsSet" class="flex items-center gap-2" data-test="farm-site-coords-prompt">
         <button
@@ -101,6 +118,7 @@ import { parseFarmCoordinates } from '../lib/siteWeather.js'
 import { formatSunTimes, sunDialProgress } from '../lib/farmCanvasLayout.js'
 import { classifySensorHardwareState } from '../lib/farmVisualStatus.js'
 import { feedWaterRoute } from '../lib/dashboardWorkspaceLinks.js'
+import { buildFarmTodayPulse } from '../lib/farmTodayPulse.js'
 
 const props = defineProps({
   siteWeather: { type: Object, default: null },
@@ -110,6 +128,13 @@ const props = defineProps({
   reservoirs: { type: Array, default: () => [] },
   programs: { type: Array, default: () => [] },
   actuators: { type: Array, default: () => [] },
+  schedules: { type: Array, default: () => [] },
+  cropCycles: { type: Array, default: () => [] },
+  devices: { type: Array, default: () => [] },
+  queueDepth: { type: Number, default: 0 },
+  tasks: { type: Array, default: () => [] },
+  alerts: { type: Array, default: () => [] },
+  fertigationEvents: { type: Array, default: () => [] },
 })
 
 const farmContext = useFarmContextStore()
@@ -155,6 +180,21 @@ const outdoorSummary = computed(() => {
 })
 
 const feedWaterLink = computed(() => feedWaterRoute(props.zones))
+
+const pulseCells = computed(() => buildFarmTodayPulse({
+  zones: props.zones,
+  programs: props.programs,
+  schedules: props.schedules,
+  cropCycles: props.cropCycles,
+  devices: props.devices,
+  queueDepth: props.queueDepth,
+  actuators: props.actuators,
+  sensors: props.sensors,
+  readings: props.readings,
+  tasks: props.tasks,
+  alerts: props.alerts,
+  fertigationEvents: props.fertigationEvents,
+}).cells)
 
 const waterSourceLine = computed(() => {
   const res = props.reservoirs?.[0]

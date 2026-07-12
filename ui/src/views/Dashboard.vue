@@ -36,6 +36,13 @@
       :reservoirs="reservoirs"
       :programs="programs"
       :actuators="store.actuators"
+      :schedules="schedules"
+      :crop-cycles="cropCycles"
+      :devices="store.devices"
+      :queue-depth="queueDepth"
+      :tasks="store.tasks"
+      :alerts="alerts"
+      :fertigation-events="fertigationEvents"
     />
 
     <FarmTodayAttentionStrip

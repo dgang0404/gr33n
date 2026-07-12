@@ -38,6 +38,7 @@ const GROW_PATH_JS_LIBS = [
   'lib/farmTodayZoneFilter.js',
   'lib/farmTodayHeader.js',
   'lib/farmTodayAskGr33n.js',
+  'lib/farmTodayPulse.js',
   'lib/firstRunChecklist.js',
   'lib/farmSetupWizard.js',
   'lib/guardianRouteRef.js',
