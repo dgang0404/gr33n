@@ -137,13 +137,16 @@ maybe_serve_api_ui() {
     return 0
   fi
 
-  if [[ "$api_ok" -eq 1 || "$ui_ok" -eq 1 ]]; then
-    echo "warning: partial dev stack — API up=$api_ok UI up=$ui_ok" >&2
-    echo "    Stop the old terminal (Ctrl+C) or free ports :${port} and :5173 before starting another copy." >&2
-    if command -v ss >/dev/null 2>&1; then
-      ss -tlnp 2>/dev/null | grep -E ":${port}\\b|:5173\\b" || true
-    fi
-    die "refusing to start a second API/UI — fix the running processes first"
+  if [[ "$api_ok" -eq 1 && "$ui_ok" -eq 0 ]]; then
+    echo "==> API (:${port}) already running — starting UI only (:5173)."
+    cd "$ROOT/ui"
+    exec npm run dev
+  fi
+
+  if [[ "$api_ok" -eq 0 && "$ui_ok" -eq 1 ]]; then
+    echo "==> UI (:5173) already running — starting API only (:${port}, AUTH_MODE=auth_test)."
+    cd "$ROOT"
+    exec make run-auth-test
   fi
 
   if command -v ss >/dev/null 2>&1; then

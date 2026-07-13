@@ -55,8 +55,20 @@ func FarmForecastOptedIn(meta json.RawMessage) bool {
 	return ok && v
 }
 
+// forecastStore is the DB surface ResolveOnlineForecast needs (testable without a full Querier).
+type forecastStore interface {
+	GetLatestAPIWeatherForFarm(ctx context.Context, farmID int64) (db.Gr33ncoreWeatherDatum, error)
+	InsertWeatherData(ctx context.Context, arg db.InsertWeatherDataParams) (db.Gr33ncoreWeatherDatum, error)
+}
+
 // ResolveOnlineForecast fetches or serves cached API weather for a farm.
+// Recoverable failures (cache read, provider fetch, cache write) return a
+// degraded OnlineForecast and nil error so site-weather can still return 200.
 func ResolveOnlineForecast(ctx context.Context, q db.Querier, cfg Config, farmID int64, lat, lng float64, coordsOK bool, optedIn bool) (OnlineForecast, *db.Gr33ncoreWeatherDatum, error) {
+	return resolveOnlineForecast(ctx, q, cfg, farmID, lat, lng, coordsOK, optedIn)
+}
+
+func resolveOnlineForecast(ctx context.Context, q forecastStore, cfg Config, farmID int64, lat, lng float64, coordsOK bool, optedIn bool) (OnlineForecast, *db.Gr33ncoreWeatherDatum, error) {
 	out := OnlineForecast{
 		Status:        StatusDisabled,
 		Provider:      string(cfg.Provider),
@@ -85,8 +97,9 @@ func ResolveOnlineForecast(ctx context.Context, q db.Querier, cfg Config, farmID
 
 	cached, cacheErr := q.GetLatestAPIWeatherForFarm(ctx, farmID)
 	hasCache := cacheErr == nil
+	// Treat cache read errors like a miss — still try a live fetch or return offline.
 	if cacheErr != nil && !errors.Is(cacheErr, pgx.ErrNoRows) {
-		return out, nil, cacheErr
+		hasCache = false
 	}
 
 	needsFetch := !hasCache || time.Since(cached.RecordedAt) >= cfg.CacheTTL
@@ -94,10 +107,12 @@ func ResolveOnlineForecast(ctx context.Context, q db.Querier, cfg Config, farmID
 		snap, fetchErr := fetchForProvider(ctx, cfg, lat, lng)
 		if fetchErr == nil && snap != nil {
 			row, insErr := insertSnapshot(ctx, q, farmID, snap)
-			if insErr != nil {
-				return out, nil, insErr
+			if insErr == nil {
+				return forecastFromRow(cfg, row, StatusConnected, "Live forecast", false), &row, nil
 			}
-			return forecastFromRow(cfg, row, StatusConnected, "Live forecast", false), &row, nil
+			// Cache write failed — still serve the live fetch so the UI stays usable.
+			fc := forecastFromSnap(cfg, snap, StatusConnected, "Live forecast (cache unavailable)", false)
+			return fc, nil, nil
 		}
 		if hasCache {
 			st := StatusCachedStale
@@ -127,7 +142,7 @@ func fetchForProvider(ctx context.Context, cfg Config, lat, lng float64) (*Snaps
 	}
 }
 
-func insertSnapshot(ctx context.Context, q db.Querier, farmID int64, snap *Snapshot) (db.Gr33ncoreWeatherDatum, error) {
+func insertSnapshot(ctx context.Context, q forecastStore, farmID int64, snap *Snapshot) (db.Gr33ncoreWeatherDatum, error) {
 	src := commontypes.WeatherDataSourceAPIOpenMeteo
 	switch snap.Provider {
 	case ProviderOpenWeather:
@@ -147,6 +162,74 @@ func insertSnapshot(ctx context.Context, q db.Querier, farmID int64, snap *Snaps
 		ForecastData:       snap.ForecastJSON,
 		RawData:            snap.RawJSON,
 	})
+}
+
+func forecastFromSnap(cfg Config, snap *Snapshot, status ForecastStatus, message string, stale bool) OnlineForecast {
+	out := OnlineForecast{
+		Status:        status,
+		Provider:      string(cfg.Provider),
+		ProviderLabel: cfg.Label(),
+		Enabled:       true,
+		OptedIn:       true,
+		Stale:         stale,
+		Message:       message,
+	}
+	t := snap.FetchedAt
+	out.FetchedAt = &t
+
+	current := map[string]any{}
+	if snap.TemperatureC != nil {
+		current["temperature_celsius"] = *snap.TemperatureC
+	}
+	if snap.HumidityPercent != nil {
+		current["humidity_percent"] = *snap.HumidityPercent
+	}
+	if snap.CloudCoverPercent != nil {
+		current["cloud_cover_percent"] = *snap.CloudCoverPercent
+	}
+	if snap.WindSpeedMs != nil {
+		current["wind_speed_ms"] = *snap.WindSpeedMs
+	}
+	if len(current) > 0 {
+		out.Current = current
+	}
+	if snap.TonightLowC != nil {
+		out.TonightLowC = snap.TonightLowC
+		out.FrostRisk = snap.FrostRisk
+	}
+	return out
+}
+
+// OfflineForecast is a safe fallback when forecast resolution hits an unexpected error.
+func OfflineForecast(cfg Config, optedIn bool, coordsOK bool, message string) OnlineForecast {
+	out := OnlineForecast{
+		Status:        StatusOffline,
+		Provider:      string(cfg.Provider),
+		ProviderLabel: cfg.Label(),
+		Enabled:       cfg.Available(),
+		OptedIn:       optedIn,
+		Message:       message,
+	}
+	if cfg.Provider == ProviderOff || !cfg.Available() {
+		if cfg.Misconfigured() {
+			out.Status = StatusMisconfigured
+			out.Message = "Forecast misconfigured — check API keys on server"
+		} else {
+			out.Status = StatusDisabled
+			out.Message = "Forecast off"
+		}
+		return out
+	}
+	if !optedIn {
+		out.Status = StatusDisabled
+		out.Message = "Enable live forecast in Settings"
+		return out
+	}
+	if !coordsOK {
+		out.Status = StatusNoCoords
+		out.Message = "Set farm location for forecast"
+	}
+	return out
 }
 
 func forecastFromRow(cfg Config, row db.Gr33ncoreWeatherDatum, status ForecastStatus, message string, stale bool) OnlineForecast {

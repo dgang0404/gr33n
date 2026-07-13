@@ -29,7 +29,12 @@ func main() {
 	failOnRegression := flag.Bool("fail-on-regression", false, "exit non-zero if any fixture fails its heuristic, instead of always exiting 0")
 	checkPendingProposals := flag.Bool("check-pending-proposals", false, "after each passed write-intent prompt, verify its proposal_id is in the pending queue (and skip the end-of-run batch check — proposals expire after 5m while prompts take 20+ min)")
 	confirmProposals := flag.Bool("confirm-proposals", false, "with -check-pending-proposals: confirm each passed proposal immediately after its prompt and verify DB side effects (requires -check-pending-proposals)")
+	leavePending := flag.Bool("leave-pending", false, "after each passed write-intent prompt, bump proposal TTL in DB so Pending tab stays populated for UI review (implies -check-pending-proposals; uses DATABASE_URL)")
 	flag.Parse()
+
+	if *leavePending {
+		*checkPendingProposals = true
+	}
 
 	if *manualFlag {
 		eval.PrintManualChecklist(*suiteFlag)
@@ -70,6 +75,8 @@ func main() {
 		LogPath:        strings.TrimSpace(os.Getenv("GUARDIAN_EVAL_LOG")),
 		CheckPendingPerPrompt: *checkPendingProposals,
 		ConfirmPerPrompt:      *confirmProposals,
+		LeavePending:          *leavePending,
+		LeavePendingTTL:       eval.LeavePendingTTLFromEnv(),
 	}
 
 	rep := farmguardian.EvalReport{
@@ -119,7 +126,12 @@ func main() {
 
 	if *checkPendingProposals {
 		if runOpts.CheckPendingPerPrompt {
-			fmt.Printf("\nPending queue verified per prompt (%d proposal_id(s) from passed write-intent fixtures).\n", len(requiredProposalIDs))
+			if *leavePending {
+				fmt.Printf("\nPending queue verified per prompt; TTL bumped for UI review (%d proposal_id(s)).\n", len(requiredProposalIDs))
+				fmt.Println("  Open http://localhost:5173/chat?tab=pending to Confirm or Dismiss.")
+			} else {
+				fmt.Printf("\nPending queue verified per prompt (%d proposal_id(s) from passed write-intent fixtures).\n", len(requiredProposalIDs))
+			}
 		} else if err := reportPendingProposals(ctx, client, expectedProposals, requiredProposalIDs); err != nil {
 			fmt.Printf("\nPending change-request queue check failed: %v\n", err)
 			failed = true

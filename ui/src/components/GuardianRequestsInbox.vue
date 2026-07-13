@@ -31,6 +31,7 @@
         @confirmed="onConfirmed"
         @dismissed="onDismissed"
         @error="onError"
+        @refine="onRefine"
       />
     </div>
   </div>
@@ -42,6 +43,7 @@ import GuardianActionProposal from './GuardianActionProposal.vue'
 import { useFarmOperate } from '../composables/useFarmOperate'
 import { useFarmContextStore } from '../stores/farmContext'
 import { useGuardianProposalsStore } from '../stores/guardianProposals'
+import { useGuardianPanelStore } from '../stores/guardianPanel'
 
 const props = defineProps({
   /** When true, reload pending proposals (drawer or full-page Pending tab). */
@@ -50,6 +52,9 @@ const props = defineProps({
 
 const farmContext = useFarmContextStore()
 const store = useGuardianProposalsStore()
+const guardianPanel = useGuardianPanelStore()
+
+const emit = defineEmits(['refine'])
 
 const farmId = computed(() => farmContext.farmId)
 const farmIdRef = computed(() => farmId.value)
@@ -64,6 +69,8 @@ function normalizeForCard(p) {
     risk_tier: p.risk_tier || 'medium',
     expires_at: p.expires_at,
     status: p.status === 'pending' ? 'pending' : p.status,
+    session_id: p.session_id,
+    revision: p.revision,
   }
 }
 
@@ -84,6 +91,11 @@ function onDismissed({ proposal }) {
 
 function onError({ proposal, error }) {
   store.patchProposal(proposal.proposal_id, { error })
+}
+
+function onRefine({ proposal }) {
+  guardianPanel.requestRefine(proposal)
+  emit('refine', { proposal })
 }
 
 watch(farmId, () => {

@@ -27,6 +27,16 @@ func WarmupTimeoutFromEnv() time.Duration {
 	return defaultWarmupTimeout
 }
 
+// LeavePendingTTLFromEnv is how long bumped proposals stay in the Pending tab after eval.
+func LeavePendingTTLFromEnv() time.Duration {
+	if s := strings.TrimSpace(os.Getenv("GUARDIAN_LEAVE_PENDING_HOURS")); s != "" {
+		if h, err := strconv.Atoi(s); err == nil && h > 0 {
+			return time.Duration(h) * time.Hour
+		}
+	}
+	return 24 * time.Hour
+}
+
 // ClientTimeoutFromEnv is the HTTP client timeout for each eval chat POST.
 func ClientTimeoutFromEnv() time.Duration {
 	if s := strings.TrimSpace(os.Getenv("GUARDIAN_EVAL_TIMEOUT_SECONDS")); s != "" {

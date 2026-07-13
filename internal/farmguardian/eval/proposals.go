@@ -6,8 +6,13 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
+	"time"
+
+	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 )
 
 // PendingProposal mirrors the fields of chat.proposalListItem this client
@@ -92,4 +97,42 @@ func VerifyPendingProposalIDs(ctx context.Context, client *APIClient, proposalID
 		return fmt.Errorf("proposal_id(s) not in pending queue: %s", strings.Join(missing, ", "))
 	}
 	return nil
+}
+
+// BumpProposalExpiry extends expires_at on pending proposals so they remain visible
+// in the UI Pending tab after long eval runs (default ProposalTTL is only 5m).
+func BumpProposalExpiry(ctx context.Context, proposalIDs []string, ttl time.Duration) (int, error) {
+	var ids []uuid.UUID
+	for _, raw := range proposalIDs {
+		id, err := uuid.Parse(strings.TrimSpace(raw))
+		if err != nil {
+			continue
+		}
+		ids = append(ids, id)
+	}
+	if len(ids) == 0 {
+		return 0, fmt.Errorf("no valid proposal_id(s) to bump")
+	}
+	dsn := strings.TrimSpace(os.Getenv("DATABASE_URL"))
+	if dsn == "" {
+		return 0, fmt.Errorf("DATABASE_URL required for -leave-pending")
+	}
+	if ttl <= 0 {
+		ttl = LeavePendingTTLFromEnv()
+	}
+	conn, err := pgx.Connect(ctx, dsn)
+	if err != nil {
+		return 0, err
+	}
+	defer conn.Close(ctx)
+	expires := time.Now().UTC().Add(ttl)
+	tag, err := conn.Exec(ctx, `
+		UPDATE gr33ncore.guardian_action_proposals
+		SET expires_at = $1
+		WHERE status = 'pending' AND proposal_id = ANY($2::uuid[])`,
+		expires, ids)
+	if err != nil {
+		return 0, err
+	}
+	return int(tag.RowsAffected()), nil
 }

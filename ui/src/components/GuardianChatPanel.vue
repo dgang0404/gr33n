@@ -258,6 +258,7 @@
               @confirmed="onProposalConfirmed"
               @dismissed="onProposalDismissed"
               @error="onProposalError"
+              @refine="onProposalRefine"
             />
           </div>
           <!-- Follow-up chips: only on the last completed turn -->
@@ -1142,6 +1143,22 @@ function onProposalDismissed({ proposal }) {
 function onProposalError({ proposal, error }) {
   patchProposal(proposal.proposal_id, { error: error || 'Confirm failed' })
 }
+
+async function onProposalRefine({ proposal }) {
+  guardianPanel.requestRefine(proposal)
+}
+
+watch(
+  () => guardianPanel.refineTick,
+  async (tick) => {
+    if (!tick) return
+    const sid = guardianPanel.activeSessionId
+    if (sid) await loadSession(sid)
+    if (guardianPanel.prefilledMessage) message.value = guardianPanel.prefilledMessage
+    await nextTick()
+    messageInputRef.value?.focus?.()
+  },
+)
 
 function isAttachmentSelected(id) {
   return selectedAttachmentIds.value.includes(id)

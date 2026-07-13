@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import api from '../api'
+import { refinePrefillForProposal } from '../lib/guardianRefine.js'
 import { routeContextRefFromRoute } from '../lib/guardianRouteRef.js'
 import { useGuardianReadinessStore } from './guardianReadiness'
 
@@ -27,6 +28,7 @@ export const useGuardianPanelStore = defineStore('guardianPanel', {
     setupMode: false, // Phase 44 WS4 — setup-mode persona for grounded chat
     preferFarmCounsel: false, // Phase 170 — open drawer in Farm counsel mode
     autoSendOnOpen: false, // Phase 170 — send prefilled prompt on drawer open
+    refineTick: 0, // increments when Refine is tapped — chat panel loads session + prefill
     activeNudge: null, // Phase 61 — { category, message, severity, action_route, nudge_id }
     snoozedNudgeCategories: [], // session-only dismiss/snooze
     nudgeLoading: false,
@@ -90,6 +92,15 @@ export const useGuardianPanelStore = defineStore('guardianPanel', {
       this.contextRef = null
       this.preferFarmCounsel = false
       this.autoSendOnOpen = false
+    },
+
+    /** Open chat with the proposal's session and a correction prefill (Phase 34 WS5). */
+    requestRefine(proposal) {
+      if (!proposal) return
+      this.prefilledMessage = refinePrefillForProposal(proposal)
+      if (proposal.session_id) this.activeSessionId = proposal.session_id
+      this.drawerTab = 'chat'
+      this.refineTick += 1
     },
 
     /**

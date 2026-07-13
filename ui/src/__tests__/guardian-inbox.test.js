@@ -92,4 +92,45 @@ describe('Phase 30 WS1 — guardian inbox', () => {
     await store.refreshPendingCount(1)
     expect(store.pendingCount).toBe(3)
   })
+
+  it('Refine switches to chat with session prefill', async () => {
+    api.get.mockResolvedValue({
+      data: {
+        proposals: [
+          {
+            proposal_id: 'p-1',
+            session_id: 'sess-abc',
+            tool: 'patch_fertigation_program',
+            args: { program_id: 1, total_volume_liters: 0.3 },
+            summary: 'Set feeding plan volume to 0.3L',
+            risk_tier: 'medium',
+            expires_at: new Date(Date.now() + 60000).toISOString(),
+            created_at: new Date().toISOString(),
+            farm_id: 1,
+            status: 'pending',
+          },
+        ],
+        total: 1,
+        limit: 50,
+        offset: 0,
+      },
+    })
+
+    const farmContext = useFarmContextStore()
+    farmContext.farmId = 1
+
+    const wrapper = mount(GuardianRequestsInbox, {
+      global: { plugins: [router] },
+    })
+    await flushPromises()
+
+    await wrapper.find('[data-test="guardian-proposal-refine"]').trigger('click')
+
+    const { useGuardianPanelStore } = await import('../stores/guardianPanel')
+    const panel = useGuardianPanelStore()
+    expect(panel.drawerTab).toBe('chat')
+    expect(panel.activeSessionId).toBe('sess-abc')
+    expect(panel.prefilledMessage).toContain('0.3L')
+    expect(wrapper.emitted('refine')).toBeTruthy()
+  })
 })

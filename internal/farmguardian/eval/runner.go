@@ -159,6 +159,18 @@ func RunSuite(ctx context.Context, api *APIClient, model string, fixtures []Ques
 				log.Printf("eval: [%d/%d] %q verified pending queue (%d proposal_id(s))",
 					i+1, len(fixtures), q.ID, len(res.ProposalIDs))
 			}
+			if opts.LeavePending {
+				ttl := opts.LeavePendingTTL
+				if ttl <= 0 {
+					ttl = LeavePendingTTLFromEnv()
+				}
+				n, err := BumpProposalExpiry(ctx, res.ProposalIDs, ttl)
+				if err != nil {
+					return out, fmt.Errorf("%s bump pending TTL: %w", q.ID, err)
+				}
+				log.Printf("eval: [%d/%d] %q left pending for UI (%d proposal(s), expires ~%s)",
+					i+1, len(fixtures), q.ID, n, time.Now().UTC().Add(ttl).Format(time.RFC3339))
+			}
 			if opts.ConfirmPerPrompt {
 				for _, pid := range res.ProposalIDs {
 					if err := ConfirmAndVerifyProposal(ctx, api, q.ID, pid); err != nil {
@@ -190,6 +202,8 @@ type RunSuiteOptions struct {
 	LogPath              string
 	CheckPendingPerPrompt bool
 	ConfirmPerPrompt     bool
+	LeavePending         bool
+	LeavePendingTTL      time.Duration
 }
 
 // RunModel executes regression fixtures for one model name.

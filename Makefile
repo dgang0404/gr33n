@@ -212,6 +212,22 @@ guardian-qa-change-requests-ack: ## Re-run write-ack only (~25 min) — fast cha
 			-suite change-requests -prompt-ids write-ack -check-pending-proposals \
 			-report $${GUARDIAN_EVAL_REPORT:-data/guardian_model_eval.json}'
 
+guardian-qa-change-requests-pending: ## All 4 write-intents; bump TTL so Pending tab stays populated for UI review
+	@bash -lc 'set -e; cd "$(CURDIR)"; \
+		if [ -f .env ]; then set -a && . ./.env && set +a; fi; \
+		source scripts/source-local-env.sh --refresh-eval-token; \
+		$(GO) run ./cmd/guardian-eval/ -models $${MODEL:-phi3:mini} -farm-id $${FARM_ID:-1} \
+			-suite change-requests -check-pending-proposals -leave-pending \
+			-report $${GUARDIAN_EVAL_REPORT:-data/guardian_model_eval.json}'
+
+guardian-qa-change-requests-pending-quick: ## One write-ack prompt + leave pending (~25 min) — fastest UI demo
+	@bash -lc 'set -e; cd "$(CURDIR)"; \
+		if [ -f .env ]; then set -a && . ./.env && set +a; fi; \
+		source scripts/source-local-env.sh --refresh-eval-token; \
+		$(GO) run ./cmd/guardian-eval/ -models $${MODEL:-phi3:mini} -farm-id $${FARM_ID:-1} \
+			-suite change-requests -prompt-ids write-ack -check-pending-proposals -leave-pending \
+			-report $${GUARDIAN_EVAL_REPORT:-data/guardian_model_eval.json}'
+
 guardian-qa-change-requests-confirm: ## Phase 162 — propose + per-prompt pending + Confirm→DB for write-intent prompts
 	@bash -lc 'set -e; cd "$(CURDIR)"; \
 		if [ -f .env ]; then set -a && . ./.env && set +a; fi; \

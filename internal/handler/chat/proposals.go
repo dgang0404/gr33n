@@ -10,6 +10,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
 
 	"gr33n-api/internal/authctx"
 	db "gr33n-api/internal/db"
@@ -35,6 +36,7 @@ type proposalListItem struct {
 	CreatedAt  time.Time      `json:"created_at"`
 	FarmID     int64          `json:"farm_id"`
 	Status     string         `json:"status"`
+	SessionID  string         `json:"session_id,omitempty"`
 
 	Revision             int                         `json:"revision,omitempty"`
 	SupersedesProposalID string                      `json:"supersedes_proposal_id,omitempty"`
@@ -238,6 +240,17 @@ func (h *Handler) PostSuggestEmptyZoneProposal(w http.ResponseWriter, r *http.Re
 	httputil.WriteJSON(w, http.StatusCreated, rowToProposalListItem(row))
 }
 
+func pgUUIDString(u pgtype.UUID) string {
+	if !u.Valid {
+		return ""
+	}
+	id, err := uuid.FromBytes(u.Bytes[:])
+	if err != nil {
+		return ""
+	}
+	return id.String()
+}
+
 func rowToProposalListItem(row db.Gr33ncoreGuardianActionProposal) proposalListItem {
 	ap := farmguardian.ActionProposalFromRow(row)
 	return proposalListItem{
@@ -250,6 +263,7 @@ func rowToProposalListItem(row db.Gr33ncoreGuardianActionProposal) proposalListI
 		CreatedAt:            row.CreatedAt,
 		FarmID:               row.FarmID,
 		Status:               row.Status,
+		SessionID:            pgUUIDString(row.SessionID),
 		Revision:             ap.Revision,
 		SupersedesProposalID: ap.SupersedesProposalID,
 		OperatorProvided:     ap.OperatorProvided,

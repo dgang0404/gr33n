@@ -4,13 +4,11 @@ package weather
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"net/http"
 	"strconv"
 	"strings"
 	"time"
 
-	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 
@@ -199,14 +197,13 @@ func buildSiteWeatherResponse(ctx context.Context, q db.Querier, cfg wxsvc.Confi
 			tiers = append(tiers, "online_forecast")
 		}
 		out["tiers"] = tiers
-	} else if err != nil && !errors.Is(err, pgx.ErrNoRows) {
-		return nil, err
 	}
+	// Skip latest_reading on DB errors — solar + forecast tiers still useful.
 
 	optedIn := wxsvc.FarmForecastOptedIn(site.MetaData)
 	forecast, _, ferr := wxsvc.ResolveOnlineForecast(ctx, q, cfg, farmID, lat, lng, latOK && lngOK, optedIn)
 	if ferr != nil {
-		return nil, ferr
+		forecast = wxsvc.OfflineForecast(cfg, optedIn, latOK && lngOK, "Forecast unavailable")
 	}
 	out["online_forecast"] = forecast
 	if tiers, ok := out["tiers"].([]string); ok {
