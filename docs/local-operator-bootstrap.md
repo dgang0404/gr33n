@@ -257,7 +257,7 @@ make restart-local        # docker compose db only + wait + db sanity report
 make dev-auth-test        # API + UI (compile happens here unless you use a pre-built binary)
 ```
 
-**`make dev-auth-test`** uses the same port checks as **`restart-local.sh --serve`** ([`scripts/maybe-serve-api-ui.sh`](../scripts/maybe-serve-api-ui.sh)): if `:8080/health` and `:5173` already respond, it leaves them up; if only one is running, it starts the missing piece; if a port is taken but unhealthy, it errors instead of spawning a second stack on `:5174`.
+**`make dev-auth-test`** uses the same port checks as **`restart-local.sh --serve`** ([`scripts/maybe-serve-api-ui.sh`](../scripts/maybe-serve-api-ui.sh)): if `:8080/health` and `:5173` already respond, it leaves them up; if only one is running, it starts the missing piece; if a port is taken but unhealthy, it errors instead of spawning a second stack on `:5174`. **After `git pull`, stop the running dev terminal and run `make dev-auth-test` again** — the maybe logic will not restart a healthy stack, so you will not pick up new API/UI code until you do.
 
 Or one line including servers: **`make restart-local-serve`** (same as `./scripts/restart-local.sh --serve`).
 

@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 # Port-aware dev stack bring-up: start only what's missing, or leave a healthy stack alone.
 # Used by make dev-auth-test and restart-local.sh --serve.
+#
+# Intentional: when :8080/health and :5173 already respond, this script does NOT
+# restart them — you will not pick up new API/UI code until you stop the old
+# process (Ctrl+C in the dev terminal, or kill the listener) and run again.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -30,17 +34,20 @@ maybe_serve_api_ui() {
   if [[ "$api_ok" -eq 1 && "$ui_ok" -eq 1 ]]; then
     echo "==> API (:${port}) and UI (:5173) already running — leaving them up."
     echo "    Open http://localhost:5173/  ·  stop with Ctrl+C in the terminal that started make dev-auth-test"
+    echo "    Note: won't pick up new API/UI code until you stop the old process and start again."
     return 0
   fi
 
   if [[ "$api_ok" -eq 1 && "$ui_ok" -eq 0 ]]; then
     echo "==> API (:${port}) already running — starting UI only (:5173)."
+    echo "    Note: existing API process is unchanged (restart it separately to pick up new Go code)."
     cd "$ROOT/ui"
     exec npm run dev
   fi
 
   if [[ "$api_ok" -eq 0 && "$ui_ok" -eq 1 ]]; then
     echo "==> UI (:5173) already running — starting API only (:${port}, AUTH_MODE=auth_test)."
+    echo "    Note: existing Vite process is unchanged (restart it separately to pick up new UI code)."
     cd "$ROOT"
     exec make run-auth-test
   fi
