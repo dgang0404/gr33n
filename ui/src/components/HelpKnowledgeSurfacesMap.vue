@@ -50,7 +50,7 @@ const cards = [
     id: 'symptoms',
     title: 'Symptom guide',
     blurb: 'Crop symptom lookup — what wilting, spotting, or deficiency patterns mean for a given crop.',
-    to: { path: '/symptom-guide' },
+    to: { path: '/operator-guide', query: { tab: 'symptoms' } },
   },
 ]
 </script>

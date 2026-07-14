@@ -10,8 +10,8 @@ import (
 
 // GET /commons/agronomy-symptoms
 func (h *Handler) ListAgronomySymptoms(w http.ResponseWriter, r *http.Request) {
-	cropKey := strings.TrimSpace(r.URL.Query().Get("crop_key"))
-	category := strings.TrimSpace(r.URL.Query().Get("category"))
+	cropKey := strings.ToLower(strings.TrimSpace(r.URL.Query().Get("crop_key")))
+	category := strings.ToLower(strings.TrimSpace(r.URL.Query().Get("category")))
 	ctx := r.Context()
 
 	if cropKey == "" && category == "" {

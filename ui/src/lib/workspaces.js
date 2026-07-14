@@ -48,16 +48,18 @@ export const WORKSPACES = {
     label: 'Help',
     icon: '📖',
     route: '/operator-guide',
-    subtitle: 'Operator guide, knowledge search, and commons catalog',
+    subtitle: 'Operator guide, knowledge search, symptoms, and commons catalog',
     tabs: [
       { id: 'guide', label: 'Guide' },
       { id: 'pi-setup', label: 'Pi + HAT setup' },
       { id: 'knowledge', label: 'Knowledge' },
+      { id: 'symptoms', label: 'Symptoms' },
       { id: 'catalog', label: 'Catalog' },
     ],
     absorbs: {
       '/farm-knowledge': { tab: 'knowledge' },
       '/catalog': { tab: 'catalog' },
+      '/symptom-guide': { tab: 'symptoms' },
     },
   },
   comfort: {
