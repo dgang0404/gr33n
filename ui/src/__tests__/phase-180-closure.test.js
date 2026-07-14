@@ -3,6 +3,7 @@
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
+import { createPinia, setActivePinia } from 'pinia'
 import { createRouter, createMemoryHistory } from 'vue-router'
 import HelpKnowledgeSurfacesMap from '../components/HelpKnowledgeSurfacesMap.vue'
 import SymptomGuide from '../views/SymptomGuide.vue'
@@ -12,6 +13,7 @@ import { uniqueCropKeys, uniqueCategories } from '../lib/symptomGuideFilters.js'
 vi.mock('../api', () => ({
   default: {
     get: vi.fn(),
+    post: vi.fn(),
     interceptors: { request: { use: vi.fn() }, response: { use: vi.fn() } },
   },
   isUnauthorizedError: () => false,
@@ -113,5 +115,36 @@ describe('Phase 180 WS2 — symptoms tab + dropdowns', () => {
     expect(api.get).toHaveBeenCalledWith('/commons/agronomy-symptoms', {
       params: { crop_key: 'lettuce', category: 'deficiency' },
     })
+  })
+})
+
+describe('Phase 180 WS3 — knowledge search simplification', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia())
+    vi.clearAllMocks()
+    api.get.mockResolvedValue({ data: { ai_enabled: true } })
+    api.post.mockResolvedValue({ data: { results: [] } })
+  })
+
+  it('hides advanced filters by default and shows semantic hint', async () => {
+    const FarmKnowledge = (await import('../views/FarmKnowledge.vue')).default
+    const { useFarmContextStore } = await import('../stores/farmContext')
+    const { useCapabilitiesStore } = await import('../stores/capabilities')
+    useFarmContextStore().farmId = 1
+    useCapabilitiesStore().loaded = true
+    useCapabilitiesStore().isLite = false
+
+    const wrapper = mount(FarmKnowledge, {
+      props: { embedded: true },
+      global: { plugins: [router] },
+    })
+    await flushPromises()
+
+    expect(wrapper.find('[data-test="farm-knowledge-semantic-hint"]').text()).toMatch(/plain language/i)
+    expect(wrapper.find('[data-test="farm-knowledge-advanced"]').exists()).toBe(false)
+    expect(wrapper.find('[data-test="farm-knowledge-examples"]').exists()).toBe(true)
+
+    await wrapper.find('[data-test="farm-knowledge-advanced-toggle"]').trigger('click')
+    expect(wrapper.find('[data-test="farm-knowledge-advanced"]').exists()).toBe(true)
   })
 })

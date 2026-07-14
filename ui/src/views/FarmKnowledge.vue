@@ -10,7 +10,7 @@
         </HelpTip>
       </h1>
       <p class="text-sm text-zinc-500">
-        Search indexed chunks for this farm. Citations in answers reference numbered sources from retrieval.
+        Search indexed chunks for this farm — plain language works; results match by meaning.
       </p>
     </header>
 
@@ -28,23 +28,68 @@
         Guardian cited indexed doc: <code class="text-amber-100/90 text-xs">{{ citedDoc }}</code>
       </p>
       <!-- Search form -->
-      <section class="bg-zinc-900 border border-zinc-800 rounded-xl p-5 space-y-4">
-        <h2 class="text-white font-semibold text-sm uppercase tracking-widest text-zinc-500">Search</h2>
-        <div class="flex flex-col gap-3">
-          <label class="text-xs text-zinc-400">Question or keywords</label>
+      <section class="bg-zinc-900 border border-zinc-800 rounded-xl p-5 space-y-4" data-test="farm-knowledge-search">
+        <div class="space-y-1">
+          <h2 class="text-white font-semibold text-sm uppercase tracking-widest text-zinc-500">Search</h2>
+          <p class="text-sm text-zinc-400 leading-relaxed" data-test="farm-knowledge-semantic-hint">
+            Ask in plain language — search is by <strong class="text-zinc-300 font-medium">meaning</strong>, not exact words.
+          </p>
+        </div>
+        <div class="flex flex-col gap-2">
+          <label class="sr-only" for="farm-knowledge-query">Question or keywords</label>
           <textarea
+            id="farm-knowledge-query"
             v-model="query"
-            rows="3"
-            placeholder="e.g. When did the irrigation rule last fail?"
-            class="bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-600 focus:outline-none focus:ring-1 focus:ring-gr33n-600"
+            rows="4"
+            placeholder="e.g. wilting in the flower room, when did feed volume change, what failed on the irrigation rule"
+            class="bg-zinc-950 border border-zinc-700 rounded-lg px-4 py-3 text-base text-white placeholder-zinc-600 focus:outline-none focus:ring-1 focus:ring-gr33n-600"
+            data-test="farm-knowledge-query"
+            @keydown.enter.exact.prevent="runSearch"
           />
         </div>
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div class="flex flex-col gap-1">
+        <p v-if="!query.trim() && !results.length && answerText === null" class="text-xs text-zinc-600" data-test="farm-knowledge-examples">
+          Try: “wilting in flower room”, “when did feed volume change”, “unread humidity alerts”
+        </p>
+        <div class="flex flex-wrap gap-3">
+          <button
+            type="button"
+            data-test="farm-knowledge-search-button"
+            :disabled="searchLoading || !query.trim()"
+            @click="runSearch"
+            class="px-5 py-2.5 rounded-lg bg-green-900/50 text-green-400 border border-green-800 hover:bg-green-900/70 disabled:opacity-40 text-sm font-medium"
+          >
+            {{ searchLoading ? 'Searching…' : 'Search' }}
+          </button>
+          <button
+            type="button"
+            data-test="ask-llm-button"
+            :disabled="answerLoading || !query.trim() || capabilities.isLite"
+            :title="capabilities.isLite ? 'AI is disabled on this installation (Lite mode) — set AI_ENABLED=true and restart the API.' : ''"
+            @click="runAnswer"
+            class="px-5 py-2.5 rounded-lg bg-zinc-800 text-gr33n-400 border border-zinc-600 hover:bg-zinc-700 disabled:opacity-40 text-sm font-medium"
+          >
+            {{ answerLoading ? 'Asking…' : (capabilities.isLite ? 'Ask (LLM) — Lite mode' : 'Ask (LLM)') }}
+          </button>
+          <button
+            type="button"
+            class="text-xs text-zinc-500 hover:text-zinc-300 px-2 py-2"
+            data-test="farm-knowledge-advanced-toggle"
+            :aria-expanded="showAdvanced ? 'true' : 'false'"
+            @click="showAdvanced = !showAdvanced"
+          >
+            {{ showAdvanced ? 'Hide advanced filters' : 'Advanced filters' }}
+          </button>
+        </div>
+        <div
+          v-if="showAdvanced"
+          class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1 border-t border-zinc-800"
+          data-test="farm-knowledge-advanced"
+        >
+          <div class="flex flex-col gap-1 sm:col-span-2">
             <label class="text-[11px] text-zinc-500 uppercase tracking-wide">Module filter</label>
             <input
               v-model="moduleFilter"
-              placeholder="core, automation…"
+              placeholder="core, automation, field_guide…"
               class="bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-1.5 text-sm text-white"
             />
           </div>
@@ -58,8 +103,6 @@
               class="bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-1.5 text-sm text-white"
             />
           </div>
-        </div>
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div class="flex flex-col gap-1">
             <label class="text-[11px] text-zinc-500 uppercase tracking-wide">Since (RFC3339)</label>
             <input
@@ -69,7 +112,7 @@
               class="bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-1.5 text-sm text-white font-mono"
             />
           </div>
-          <div class="flex flex-col gap-1">
+          <div class="flex flex-col gap-1 sm:col-span-2">
             <label class="text-[11px] text-zinc-500 uppercase tracking-wide">Until (RFC3339)</label>
             <input
               v-model="untilIso"
@@ -78,26 +121,6 @@
               class="bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-1.5 text-sm text-white font-mono"
             />
           </div>
-        </div>
-        <div class="flex flex-wrap gap-3">
-          <button
-            type="button"
-            :disabled="searchLoading || !query.trim()"
-            @click="runSearch"
-            class="px-4 py-2 rounded-lg bg-green-900/50 text-green-400 border border-green-800 hover:bg-green-900/70 disabled:opacity-40 text-sm font-medium"
-          >
-            {{ searchLoading ? 'Searching…' : 'Search chunks' }}
-          </button>
-          <button
-            type="button"
-            data-test="ask-llm-button"
-            :disabled="answerLoading || !query.trim() || capabilities.isLite"
-            :title="capabilities.isLite ? 'AI is disabled on this installation (Lite mode) — set AI_ENABLED=true and restart the API.' : ''"
-            @click="runAnswer"
-            class="px-4 py-2 rounded-lg bg-zinc-800 text-gr33n-400 border border-zinc-600 hover:bg-zinc-700 disabled:opacity-40 text-sm font-medium"
-          >
-            {{ answerLoading ? 'Asking…' : (capabilities.isLite ? 'Ask (LLM) — Lite mode' : 'Ask (LLM)') }}
-          </button>
         </div>
         <p
           v-if="capabilities.isLite"
@@ -206,6 +229,7 @@ function applyCitationQuery() {
   citedDoc.value = typeof raw === 'string' ? raw : ''
   if (citedDoc.value) {
     moduleFilter.value = String(route.query.cited_type || 'field_guide')
+    showAdvanced.value = true
     const base = citedDoc.value.split('/').pop() || citedDoc.value
     query.value = base.replace(/\.md$/i, '').replace(/[-_]/g, ' ')
   }
@@ -219,6 +243,7 @@ onMounted(() => {
 watch(() => route.query.cited_doc, applyCitationQuery)
 
 const query = ref('')
+const showAdvanced = ref(false)
 const moduleFilter = ref('')
 const sinceIso = ref('')
 const untilIso = ref('')
