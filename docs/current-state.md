@@ -154,7 +154,8 @@ Locked roadmap after Phase 172: [`phase_173_177_today_excellence_roadmap.plan.md
 | `/chat`, `/guardian/requests` | Farm Guardian + pending change-request tab |
 | `/settings` | Farm, Guardian, crops, QA, feedback |
 | `/virtual-pi`, `/pi-setup`, `/pi-setup-wizard` | Pi wiring & config |
-| `/catalog`, `/farm-knowledge`, `/symptom-guide` | Commons, RAG knowledge, symptoms |
+| `/operator-guide` | Help — Guide, Pi setup, **Knowledge** (semantic search + field guides), **Symptoms**, Catalog ([§7m](operator-tour.md#7m-help-knowledge-surfaces-phase-180--shipped)) |
+| `/catalog`, `/farm-knowledge`, `/symptom-guide` | Redirect into Help tabs (Commons, knowledge, symptoms) |
 | `/crop-cycles/:id/summary` | Grow run summary (Guardian citation target) |
 
 Source: [`ui/src/router/index.js`](../ui/src/router/index.js).

@@ -26,6 +26,7 @@ An open-source farm operating system — run it on your LAN, keep your data clos
   - Your live farm snapshot (zones, current grows, unread alerts)  
   - ~46 crop profiles with EC/DLI/photoperiod targets  
   - Symptom catalog + field guides (if indexed)  
+  - Citation chips open readable doc views in **Help → Knowledge**; browse symptoms and guides without chat ([operator tour §7m](docs/operator-tour.md#7m-help-knowledge-surfaces-phase-180--shipped))  
   - General agronomy reasoning from whichever local Ollama model you've selected (server default is a small, CPU-friendly model; swap in a larger one any time via the model picker below)  
 
 ⚡ **Guardian power states** — On solar, battery, or metered sites, control when the LLM uses RAM/CPU:
