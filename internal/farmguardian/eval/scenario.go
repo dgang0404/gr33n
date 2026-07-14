@@ -92,6 +92,7 @@ func runOneScenario(ctx context.Context, api *APIClient, model string, sc Scenar
 	sessionID := uuid.New().String()
 	var lastIn ScoreInput
 	var lastTurnIdx int
+	var sessionProposalIDs []string
 	for ti, turn := range sc.Turns {
 		q := scenarioTurnQuestion(sc, ti, turn)
 		in, sid, err := api.RunQuestionInSession(ctx, m, q, sessionID)
@@ -103,16 +104,20 @@ func runOneScenario(ctx context.Context, api *APIClient, model string, sc Scenar
 		}
 		lastIn = in
 		lastTurnIdx = ti + 1
+		sessionProposalIDs = append(sessionProposalIDs, in.ProposalIDs...)
 		log.Printf("eval: scenario %q turn %d/%d done in %.1fs (proposals=%d session=%s)",
 			sc.ID, ti+1, len(sc.Turns), in.Latency.Seconds(), in.ProposalCount, truncate(sessionID, 8))
+		if len(in.ProposalIDs) > 0 && (len(sc.Turns) > 1 || sc.LeavePending) {
+			extendScenarioProposalTTL(ctx, sc.ID, ti+1, in.ProposalIDs, opts)
+		}
 	}
 
 	scoreQ := scenarioScoreQuestion(sc, sc.Turns[len(sc.Turns)-1].Prompt)
 	lastIn.Question = scoreQ
 	if sc.ExpectProposal {
-		enrichProposalFromPending(ctx, api, sessionID, &lastIn, sc)
+		enrichProposalFromPending(ctx, api, sessionID, &lastIn, sc, sessionProposalIDs)
 	}
-	res := Score(lastIn)
+	res := scoreScenario(lastIn, sc)
 	enrichScoreResult(&res, lastIn, m)
 	res.ID = sc.ID
 	res.Category = sc.Category
@@ -214,16 +219,44 @@ func scoreResultFromScenarioError(sc Scenario, model string, err error) ScoreRes
 	}
 }
 
-func enrichProposalFromPending(ctx context.Context, api *APIClient, sessionID string, in *ScoreInput, sc Scenario) {
+func enrichProposalFromPending(ctx context.Context, api *APIClient, sessionID string, in *ScoreInput, sc Scenario, turnProposalIDs []string) {
 	if in == nil || in.ProposalCount > 0 {
 		return
 	}
-	propID, _, err := resolveScenarioProposal(ctx, api, sessionID, in.ProposalIDs, Scenario{ID: sc.ID})
+	propID, _, err := resolveScenarioProposal(ctx, api, sessionID, append(turnProposalIDs, in.ProposalIDs...), Scenario{ID: sc.ID})
 	if err != nil {
 		return
 	}
 	in.ProposalCount = 1
 	in.ProposalIDs = []string{propID}
+}
+
+// scoreScenario scores a multi-turn scenario. Last-turn answers may be dialogue-only
+// (no inline proposal) while the write-intent row from an earlier turn stays pending.
+func scoreScenario(in ScoreInput, sc Scenario) ScoreResult {
+	res := Score(in)
+	if len(sc.Turns) <= 1 || !sc.ExpectProposal || in.ProposalCount == 0 {
+		return res
+	}
+	if !res.Passed && res.Notes == "expected valid proposal" {
+		res.Passed = true
+		res.Notes = "multi-turn: proposal from session pending queue (last turn may be dialogue only)"
+	}
+	return res
+}
+
+func extendScenarioProposalTTL(ctx context.Context, scenarioID string, turn int, proposalIDs []string, opts RunSuiteOptions) {
+	ttl := opts.LeavePendingTTL
+	if ttl <= 0 {
+		ttl = LeavePendingTTLFromEnv()
+	}
+	n, err := BumpProposalExpiry(ctx, proposalIDs, ttl)
+	if err != nil {
+		log.Printf("eval: scenario %q turn %d TTL bump: %v (continuing)", scenarioID, turn, err)
+		return
+	}
+	log.Printf("eval: scenario %q turn %d extended proposal TTL (%d row(s), expires ~%s)",
+		scenarioID, turn, n, time.Now().UTC().Add(ttl).Format(time.RFC3339))
 }
 
 func resolveScenarioProposal(ctx context.Context, api *APIClient, sessionID string, responseIDs []string, sc Scenario) (string, PendingProposal, error) {

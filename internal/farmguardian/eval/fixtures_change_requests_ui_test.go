@@ -35,6 +35,13 @@ func TestChangeRequestUIScenariosQuick_subset(t *testing.T) {
 	if len(quick) != 2 {
 		t.Fatalf("want 2 quick scenarios, got %d", len(quick))
 	}
+	ids := map[string]bool{}
+	for _, sc := range quick {
+		ids[sc.ID] = true
+	}
+	if !ids["scenario-ack-pending"] || !ids["scenario-schedule-pending"] {
+		t.Fatalf("quick subset should be ack + schedule, got %+v", ids)
+	}
 }
 
 func TestFilterScenariosByIDs(t *testing.T) {

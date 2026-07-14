@@ -68,12 +68,12 @@ func ChangeRequestUIScenarios() []Scenario {
 	}
 }
 
-// ChangeRequestUIScenariosQuick is a shorter mix for faster Pending-tab demos (~2 scenarios).
+// ChangeRequestUIScenariosQuick is a shorter mix for faster Pending-tab demos (~2 single-turn scenarios).
 func ChangeRequestUIScenariosQuick() []Scenario {
 	all := ChangeRequestUIScenarios()
 	want := map[string]bool{
-		"scenario-feed-revise-pending":   true,
-		"scenario-task-dialogue-pending": true,
+		"scenario-ack-pending":       true,
+		"scenario-schedule-pending":  true,
 	}
 	out := make([]Scenario, 0, len(want))
 	for _, sc := range all {

@@ -20,7 +20,7 @@
 | `make guardian-qa-change-requests-pending-quick MODEL=phi3:mini FARM_ID=1` | Fast single-proposal demo (~25 min) | `write-ack` only + leave pending for UI |
 | `make guardian-qa-change-requests-confirm MODEL=phi3:mini FARM_ID=1` | Full propose→confirm→DB loop (Phase 162) | Same, plus **per-prompt Confirm** and side-effect GETs |
 | `make guardian-qa-change-requests-ui MODEL=phi3:mini FARM_ID=1` | Multi-turn Pending-tab prep + one API confirm | 5 scenarios: feed revise (confirm + pending), task dialogue, schedule, ack — **shared session_id** per scenario; 4 left pending (24h TTL) |
-| `make guardian-qa-change-requests-ui-quick MODEL=phi3:mini FARM_ID=1` | Fast multi-turn UI demo (~50 min) | Feed revise pending + task dialogue pending only |
+| `make guardian-qa-change-requests-ui-quick MODEL=phi3:mini FARM_ID=1` | Fast multi-turn UI demo (~50 min) | Ack + schedule single-turn scenarios (reliable CPU path) |
 | `make guardian-qa-regression MODEL=phi3:mini` | Pre-release (slow) | Same directory, regression suite |
 | `make guardian-qa-manual` | Human UI parity | Prints checklist from same fixtures |
 
@@ -45,7 +45,7 @@ For testing **Refine**, **Confirm**, and **Dismiss** on real back-and-forth dial
 
 ```
 make guardian-qa-change-requests-ui MODEL=phi3:mini FARM_ID=1
-make guardian-qa-change-requests-ui-quick MODEL=phi3:mini FARM_ID=1   # ~50 min subset
+make guardian-qa-change-requests-ui-quick MODEL=phi3:mini FARM_ID=1   # ~50 min: ack + schedule (single-turn)
 ```
 
 Each scenario reuses one `session_id` across turns. The full suite runs **5 scenarios**:

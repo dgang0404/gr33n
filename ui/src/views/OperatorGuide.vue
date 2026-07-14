@@ -21,6 +21,8 @@
       Guardian cited platform doc: <code class="text-amber-100/90 text-xs">{{ citedDoc }}</code>
     </p>
 
+    <HelpKnowledgeSurfacesMap />
+
     <section class="bg-zinc-900 border border-zinc-800 rounded-xl p-5 space-y-3">
       <h2 class="text-white font-semibold text-sm uppercase tracking-widest text-zinc-500">Suggested walk</h2>
       <ol class="list-decimal list-inside space-y-2 text-sm text-zinc-300">
@@ -84,6 +86,7 @@
 import { onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import HelpTip from '../components/HelpTip.vue'
+import HelpKnowledgeSurfacesMap from '../components/HelpKnowledgeSurfacesMap.vue'
 
 defineProps({
   embedded: { type: Boolean, default: false },
