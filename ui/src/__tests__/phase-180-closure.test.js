@@ -148,3 +148,109 @@ describe('Phase 180 WS3 — knowledge search simplification', () => {
     expect(wrapper.find('[data-test="farm-knowledge-advanced"]').exists()).toBe(true)
   })
 })
+
+describe('Phase 180 WS4 — field guide browse list', () => {
+  const sampleGuides = [
+    {
+      id: 1,
+      slug: 'crop-lettuce-nutrition',
+      title: 'Lettuce nutrition',
+      crop_key: 'lettuce',
+      guide_kind: 'nutrition',
+      safety_tier: 'informational',
+      catalog_version: 1,
+      sort_order: 10,
+    },
+    {
+      id: 2,
+      slug: 'crop-tomato-nutrition',
+      title: 'Tomato nutrition',
+      crop_key: 'tomato',
+      guide_kind: 'nutrition',
+      safety_tier: 'informational',
+      catalog_version: 1,
+      sort_order: 20,
+    },
+  ]
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    api.get.mockImplementation((url) => {
+      if (url === '/commons/agronomy-field-guides') {
+        return Promise.resolve({ data: sampleGuides })
+      }
+      if (url === '/commons/agronomy-field-guides/crop-lettuce-nutrition') {
+        return Promise.resolve({
+          data: {
+            ...sampleGuides[0],
+            body_md: '## Lettuce\nFeed EC 1.2–1.6.',
+          },
+        })
+      }
+      return Promise.resolve({ data: {} })
+    })
+  })
+
+  it('FieldGuideBrowse lists guides and filters by crop', async () => {
+    const FieldGuideBrowse = (await import('../components/FieldGuideBrowse.vue')).default
+    const wrapper = mount(FieldGuideBrowse, {
+      global: { plugins: [router] },
+    })
+    await flushPromises()
+
+    expect(wrapper.find('[data-test="field-guide-browse"]').exists()).toBe(true)
+    expect(wrapper.findAll('[data-test^="field-guide-row-"]')).toHaveLength(2)
+
+    await wrapper.find('[data-test="field-guide-crop-filter"]').setValue('lettuce')
+    expect(wrapper.findAll('[data-test^="field-guide-row-"]')).toHaveLength(1)
+    expect(wrapper.find('[data-test="field-guide-row-crop-lettuce-nutrition"]').exists()).toBe(true)
+  })
+
+  it('selecting a guide loads detail and search-in-knowledge action', async () => {
+    const FieldGuideBrowse = (await import('../components/FieldGuideBrowse.vue')).default
+    const wrapper = mount(FieldGuideBrowse, {
+      global: { plugins: [router] },
+    })
+    await flushPromises()
+
+    await wrapper.find('[data-test="field-guide-row-crop-lettuce-nutrition"]').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.find('[data-test="field-guide-detail"]').exists()).toBe(true)
+    expect(wrapper.find('[data-test="field-guide-body"]').text()).toMatch(/Lettuce/)
+
+    await wrapper.find('[data-test="field-guide-search-knowledge"]').trigger('click')
+    expect(wrapper.emitted('search-guide')?.[0]?.[0]).toEqual({
+      citedDoc: 'field-guides/crop-lettuce-nutrition.md',
+      title: 'Lettuce nutrition',
+    })
+  })
+
+  it('FarmKnowledge embeds field guide browse section', async () => {
+    setActivePinia(createPinia())
+    const FarmKnowledge = (await import('../views/FarmKnowledge.vue')).default
+    const { useFarmContextStore } = await import('../stores/farmContext')
+    const { useCapabilitiesStore } = await import('../stores/capabilities')
+    useFarmContextStore().farmId = 1
+    useCapabilitiesStore().loaded = true
+    useCapabilitiesStore().isLite = false
+
+    api.get.mockImplementation((url) => {
+      if (url === '/commons/agronomy-field-guides') {
+        return Promise.resolve({ data: sampleGuides })
+      }
+      if (url.includes('/ai/status') || url.includes('/capabilities')) {
+        return Promise.resolve({ data: { ai_enabled: true } })
+      }
+      return Promise.resolve({ data: {} })
+    })
+
+    const wrapper = mount(FarmKnowledge, {
+      props: { embedded: true },
+      global: { plugins: [router] },
+    })
+    await flushPromises()
+
+    expect(wrapper.find('[data-test="field-guide-browse"]').exists()).toBe(true)
+  })
+})

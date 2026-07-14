@@ -151,6 +151,8 @@
         </div>
       </section>
 
+      <FieldGuideBrowse @search-guide="onSearchFieldGuide" />
+
       <!-- Vector results -->
       <section v-if="results.length" class="space-y-3">
         <h2 class="text-white font-semibold text-sm uppercase tracking-widest text-zinc-500">
@@ -212,6 +214,7 @@ import { onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import api from '../api'
 import HelpTip from '../components/HelpTip.vue'
+import FieldGuideBrowse from '../components/FieldGuideBrowse.vue'
 import { useFarmContextStore } from '../stores/farmContext'
 import { useCapabilitiesStore } from '../stores/capabilities'
 
@@ -233,6 +236,16 @@ function applyCitationQuery() {
     const base = citedDoc.value.split('/').pop() || citedDoc.value
     query.value = base.replace(/\.md$/i, '').replace(/[-_]/g, ' ')
   }
+}
+
+function onSearchFieldGuide({ citedDoc: doc }) {
+  if (!doc) return
+  citedDoc.value = doc
+  moduleFilter.value = 'field_guide'
+  showAdvanced.value = true
+  const base = doc.split('/').pop() || doc
+  query.value = base.replace(/\.md$/i, '').replace(/[-_]/g, ' ')
+  void runSearch()
 }
 
 onMounted(() => {
