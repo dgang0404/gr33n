@@ -10,28 +10,28 @@ overview: >
 todos:
   - id: ws1-help-map
     content: "WS1: Help landing 'What lives where' map — Guide / Knowledge / Catalog / Symptom guide one-liners with links"
-    status: pending
+    status: completed
   - id: ws2-symptom-nav
     content: "WS2: Symptom guide gets a Help tab (or card link) + crop/category dropdowns fed from distinct values; keep deep-link query params"
-    status: pending
+    status: completed
   - id: ws3-knowledge-simplify
     content: "WS3: Knowledge search — semantic hint copy, big single search box, advanced filters (module/since/until/limit) behind a disclosure"
-    status: pending
+    status: completed
   - id: ws4-field-guide-browse
     content: "WS4: Browsable field-guide list (title + crop + ingested-at from manifest/chunks) so citations aren't the only door in"
-    status: pending
+    status: completed
   - id: ws5-citation-roundtrip
     content: "WS5: Citation chips land on a readable doc view (not raw chunk filter); back-link 'Ask Guardian about this' returns to chat"
-    status: pending
+    status: completed
   - id: ws6-tests-docs
     content: "WS6: Vitest for nav + dropdowns + disclosure; operator-tour §Help update; phase-180-closure"
-    status: pending
+    status: completed
 isProject: false
 ---
 
 # Phase 180 — Knowledge surfaces discoverability
 
-**Status:** planned · **Follows:** [179](phase_179_guardian_chat_status_consolidation.plan.md)
+**Status:** shipped · **Follows:** [179](phase_179_guardian_chat_status_consolidation.plan.md)
 
 ## The problem
 
@@ -120,9 +120,9 @@ Knowledge tab.
 
 ## Acceptance
 
-- [ ] Symptom guide reachable from Help without a Guardian citation.
-- [ ] Symptom filters are dropdowns; wrong-case input can no longer zero-out results.
-- [ ] Knowledge tab: advanced filters hidden until expanded; semantic hint visible.
-- [ ] Field guides listed and openable without searching.
-- [ ] Citation chip → doc view → "Ask Guardian" round-trip works.
-- [ ] Help landing explains all four surfaces in one screen.
+- [x] Symptom guide reachable from Help without a Guardian citation.
+- [x] Symptom filters are dropdowns; wrong-case input can no longer zero-out results.
+- [x] Knowledge tab: advanced filters hidden until expanded; semantic hint visible.
+- [x] Field guides listed and openable without searching.
+- [x] Citation chip → doc view → "Ask Guardian" round-trip works.
+- [x] Help landing explains all four surfaces in one screen.

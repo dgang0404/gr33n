@@ -5,6 +5,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import { createRouter, createMemoryHistory } from 'vue-router'
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import HelpKnowledgeSurfacesMap from '../components/HelpKnowledgeSurfacesMap.vue'
 import SymptomGuide from '../views/SymptomGuide.vue'
 import { WORKSPACES } from '../lib/workspaces.js'
@@ -336,5 +338,79 @@ describe('Phase 180 WS5 — citation doc view round-trip', () => {
     expect(text).toMatch(/^## Lettuce/)
     expect(text).not.toMatch(/doc_path:/)
     expect(guardianDocPrefill('Lettuce nutrition')).toMatch(/Lettuce nutrition/)
+  })
+})
+
+describe('Phase 180 WS6 — closure docs and nav', () => {
+  const repoRoot = join(process.cwd(), '..')
+  const repoDocs = join(repoRoot, 'docs')
+
+  it('SymptomGuide dropdowns populate from mocked catalog API', async () => {
+    vi.clearAllMocks()
+    api.get.mockResolvedValue({
+      data: {
+        symptoms: [
+          {
+            id: 1,
+            symptom_key: 'lettuce-tip-burn',
+            display_name: 'Tip burn',
+            crop_keys: ['lettuce'],
+            categories: ['deficiency'],
+            body_md: 'Edge necrosis.',
+          },
+          {
+            id: 2,
+            symptom_key: 'tomato-blossom',
+            display_name: 'Blossom end rot',
+            crop_keys: ['tomato'],
+            categories: ['pest'],
+            body_md: 'Fruit lesion.',
+          },
+        ],
+      },
+    })
+
+    await router.push('/operator-guide?tab=symptoms')
+    const wrapper = mount(SymptomGuide, {
+      props: { embedded: true },
+      global: { plugins: [router] },
+    })
+    await flushPromises()
+
+    const cropSelect = wrapper.find('[data-test="symptom-crop-select"]')
+    const categorySelect = wrapper.find('[data-test="symptom-category-select"]')
+    expect(cropSelect.findAll('option')).toHaveLength(3)
+    expect(categorySelect.findAll('option')).toHaveLength(3)
+    expect(cropSelect.text()).toMatch(/lettuce/)
+    expect(cropSelect.text()).toMatch(/tomato/)
+    expect(categorySelect.text()).toMatch(/deficiency/)
+    expect(categorySelect.text()).toMatch(/pest/)
+  })
+
+  it('OperatorGuide embeds the knowledge surfaces map', async () => {
+    const OperatorGuide = (await import('../views/OperatorGuide.vue')).default
+    const wrapper = mount(OperatorGuide, {
+      props: { embedded: true },
+      global: { plugins: [router] },
+    })
+    await flushPromises()
+    expect(wrapper.find('[data-test="help-knowledge-surfaces-map"]').exists()).toBe(true)
+  })
+
+  it('plan and operator-tour document Phase 180 shipped', () => {
+    const plan = readFileSync(
+      join(repoDocs, 'plans/phase_180_knowledge_surfaces_discoverability.plan.md'),
+      'utf8',
+    )
+    const tour = readFileSync(join(repoDocs, 'operator-tour.md'), 'utf8')
+    const routes = readFileSync(join(repoRoot, 'cmd/api/routes.go'), 'utf8')
+
+    expect(plan).toContain('**Status:** shipped')
+    expect(plan).toMatch(/- \[x\] Symptom guide reachable/)
+    expect(tour).toMatch(/7m\. Help knowledge surfaces \(Phase 180/i)
+    expect(tour).toMatch(/What lives where/)
+    expect(tour).toMatch(/tab=symptoms/)
+    expect(tour).toMatch(/semantic search/i)
+    expect(routes).toContain('/farms/{id}/rag/docs')
   })
 })

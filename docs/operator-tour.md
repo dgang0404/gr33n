@@ -8,7 +8,7 @@
 
 ## 1. Start here: farm context
 
-After login, the app works in the context of **one selected farm** (name, zones, devices, sensors). The dashboard header summarizes **zones · sensors · devices** and includes a short **How it all connects** help tip — same mental model as this doc. **In the UI**, **More → Help** (`/operator-guide`) has the glossary and a clickable walk (**Guide · Pi + HAT setup · Knowledge · Catalog** tabs). For Raspberry Pi + Sequent relay HAT wiring, open **`/pi-setup`** or **Help → Pi + HAT setup** — or use the link on empty sensor/actuator wiring badges. The Pi setup page shows a live **Your farm channels** section — your actual wired actuators and sensors, each linking to its detail page. To change what's wired to a relay channel, expand **Edit wiring** on a card in **Zones → Hardware & devices → Controls** (Sequent HAT channel or direct GPIO). **Edge device (Pi)** on sensor wiring comes from **Settings / Connect edge device** — registered devices for the farm (`GET /farms/:id/devices`).
+After login, the app works in the context of **one selected farm** (name, zones, devices, sensors). The dashboard header summarizes **zones · sensors · devices** and includes a short **How it all connects** help tip — same mental model as this doc. **In the UI**, **More → Help** (`/operator-guide`) has the glossary, a **What lives where** map for four knowledge surfaces, and tabs (**Guide · Pi + HAT setup · Knowledge · Symptoms · Catalog**). See [§7m](#7m-help-knowledge-surfaces-phase-180--shipped) for how Guide, Knowledge, field guides, symptoms, and Catalog differ. For Raspberry Pi + Sequent relay HAT wiring, open **`/pi-setup`** or **Help → Pi + HAT setup** — or use the link on empty sensor/actuator wiring badges. The Pi setup page shows a live **Your farm channels** section — your actual wired actuators and sensors, each linking to its detail page. To change what's wired to a relay channel, expand **Edit wiring** on a card in **Zones → Hardware & devices → Controls** (Sequent HAT channel or direct GPIO). **Edge device (Pi)** on sensor wiring comes from **Settings / Connect edge device** — registered devices for the farm (`GET /farms/:id/devices`).
 
 If lists look empty, see [**Why is this empty?**](#4-why-is-this-empty-future-ux) below; detailed hints are tracked as separate UX work in the [sit-in workstream](workstreams/sit-in-operator-experience.md).
 
@@ -34,7 +34,7 @@ Think **physical layout → signals → automation → work tracking → feeding
 | **6c. Fertigation** | `/fertigation` under **Advanced** | Full six-tab console — mixing log, crop cycles, bulk program edit. |
 | **7. Guardian (optional AI)** | Side nav `/chat`, drawer robot tab | **Farm Guardian** — grounded Q&A + **change requests** (propose → Confirm). Pending inbox: `/chat?tab=pending`. See [§6](#6-farm-guardian-change-requests-with-your-ok). Starters on **Water** and **Feed & water** for next feed / run now / water-only. |
 
-**Around the edges (same session):** **Alerts** (`/alerts`), **Knowledge** (`/farm-knowledge` — farm-scoped RAG), **Plants / Animals / Aquaponics** when those modules matter, **Settings** / **Catalog** for account and reference data. Legacy **Inventory** / **Costs** routes remain under Advanced for power users.
+**Around the edges (same session):** **Alerts** (`/alerts`), **Help → Knowledge** (`/operator-guide?tab=knowledge` — semantic search + browsable field guides; `/farm-knowledge` redirects), **Help → Symptoms** (`/symptom-guide` redirects), **Plants / Animals / Aquaponics** when those modules matter, **Settings** / **Help → Catalog** for account and Commons import packs.
 
 ---
 
@@ -718,7 +718,7 @@ Architecture: [`farm-guardian-architecture.md` §7.0r](farm-guardian-architectur
 | **Comfort & automation** | `/comfort-targets` | Comfort · What runs when · Automations · Raw setpoints |
 | **Hardware** | `/hardware` | GPIO board · Pi devices · Wiring guide |
 | **Money** | `/money` | This month · Ledger · Supplies & costs · **Grows** |
-| **Help** | `/operator-guide` | Guide · Knowledge · Catalog |
+| **Help** | `/operator-guide` | Guide · Pi + HAT setup · Knowledge · Symptoms · Catalog |
 | **More** | `/animals`, `/aquaponics`, `/settings` | Module-gated domains + account |
 
 **Guardian** — drawer (edge tab + TopBar), not a sidebar item; **Open full chat →** for sessions and pending inbox (`/chat`).
@@ -792,7 +792,7 @@ Plan: [`plans/phase_76_today_dashboard_nav_alignment.plan.md`](plans/phase_76_to
 | **Compare harvests** | **Zones → Strains** banner → `/farms/:id/crop-cycles/compare`; legacy `/analytics` redirects |
 | **Grow economics** | **Money → Grows** tab — cycle list + compare link |
 | **Guardian** | **Drawer** (edge tab + TopBar) is primary; **Open full chat →** for sessions / pending inbox; `/chat` not in sidebar |
-| **Help** | **More → Help** (`/operator-guide`) — Guide · Knowledge · Catalog tabs; `/farm-knowledge` and `/catalog` redirect |
+| **Help** | **More → Help** (`/operator-guide`) — **What lives where** map + Guide · Pi + HAT setup · Knowledge · Symptoms · Catalog; `/farm-knowledge`, `/symptom-guide`, `/catalog` redirect ([§7m](#7m-help-knowledge-surfaces-phase-180--shipped)) |
 | **Farm site** | **Today** farm card (lat/long) + full detail in Settings |
 | **Pi devices** | **Hardware → Pi devices** — Settings links out instead of duplicating wizard |
 
@@ -839,6 +839,25 @@ Plans: [`phase_164_demo_seed_overhaul.plan.md`](plans/phase_164_demo_seed_overha
 **Vitest:** `phase-173-closure.test.js` … `phase-177-closure.test.js`, `today-excellence-arc.test.js`, `farm-today-coach-marks.test.js`
 
 Plans: [`phase_173_today_large_farm_navigation.plan.md`](plans/phase_173_today_large_farm_navigation.plan.md) · [`phase_174_today_visual_hierarchy.plan.md`](plans/phase_174_today_visual_hierarchy.plan.md) · [`phase_175_today_farm_first_actions.plan.md`](plans/phase_175_today_farm_first_actions.plan.md) · [`phase_176_today_farm_pulse.plan.md`](plans/phase_176_today_farm_pulse.plan.md) · [`phase_177_today_first_impression.plan.md`](plans/phase_177_today_first_impression.plan.md) · Roadmap: [`phase_173_177_today_excellence_roadmap.plan.md`](plans/phase_173_177_today_excellence_roadmap.plan.md)
+
+### 7m. Help knowledge surfaces (Phase 180 — shipped)
+
+**Shipped.** Operators no longer need a Guardian citation to discover what **Knowledge**, **Catalog**, **field guides**, and the **symptom guide** are for. Open **More → Help** (`/operator-guide`).
+
+**What lives where** — four cards at the top of the **Guide** tab explain each surface in one sentence and link to the right tab:
+
+| Surface | Tab / route | What it is |
+|---------|-------------|------------|
+| **Guide** | `tab=guide` | In-app how-to: glossary, suggested click path, platform docs when cited |
+| **Knowledge** | `tab=knowledge` | **Semantic search** over this farm’s indexed chunks (tasks, runs, ingested docs) — plain language, not exact keywords. **Field guides** list below search. Citation chips open a **readable doc view** with highlighted section + **Ask Guardian** |
+| **Symptoms** | `tab=symptoms` | Crop symptom catalog — **dropdown** filters by crop and category; Guardian deep links (`?crop_key=&category=`) still work |
+| **Catalog** | `tab=catalog` | **Commons import packs** (recipes, seed packs) — separate from search; brings starter content into the farm |
+
+**Guardian citations** remain a shortcut: field-guide chips land on **Knowledge** doc view; symptom chips land on **Symptoms** with filters applied; platform docs land on **Guide** doc view. You can always browse the same material from Help without chat.
+
+**API:** `GET /farms/{id}/rag/docs?doc_path=…` — ordered chunks for citation doc view (farm-scoped).
+
+**Vitest:** `phase-180-closure.test.js` · Plan: [`phase_180_knowledge_surfaces_discoverability.plan.md`](plans/phase_180_knowledge_surfaces_discoverability.plan.md)
 
 ---
 
@@ -1060,7 +1079,7 @@ Matcher misses from sit-in feed Phase 46 — not a blocker for polish closure (O
 | [database-schema-overview.md](database-schema-overview.md) | Where major tables live |
 | [workflow-guide.md](workflow-guide.md) | Deeper workflows (incl. Insert Commons, RAG pointers) |
 | [sit-in-operator-experience.md](workstreams/sit-in-operator-experience.md) | Backlog: logging, tasks-first, empty-state UX |
-| **In-app:** **System → Guide** (`/operator-guide`) | Phase 26 WS1 — glossary + suggested click path (offline-safe) |
+| **In-app:** **More → Help** (`/operator-guide`) | Glossary, **What lives where** map, Knowledge search, Symptoms, Catalog ([§7m](#7m-help-knowledge-surfaces-phase-180--shipped)) |
 
 ---
 
