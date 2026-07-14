@@ -52,10 +52,11 @@ describe('Phase 180 WS1 — help knowledge surfaces map', () => {
     expect(symptoms.exists()).toBe(true)
 
     expect(guide.attributes('href')).toContain('/operator-guide')
-    expect(guide.attributes('href')).toContain('tab=guide')
-    expect(knowledge.attributes('href')).toContain('tab=knowledge')
-    expect(catalog.attributes('href')).toContain('tab=catalog')
-    expect(symptoms.attributes('href')).toContain('tab=symptoms')
+    expect(guide.attributes('href')).toContain('tab=library')
+    expect(guide.attributes('href')).toContain('section=guide')
+    expect(knowledge.attributes('href')).toContain('section=knowledge')
+    expect(catalog.attributes('href')).toContain('section=catalog')
+    expect(symptoms.attributes('href')).toContain('section=symptoms')
 
     expect(guide.text()).toMatch(/Guide/i)
     expect(knowledge.text()).toMatch(/semantic search/i)
@@ -91,9 +92,9 @@ describe('Phase 180 WS2 — symptoms tab + dropdowns', () => {
     })
   })
 
-  it('help workspace includes symptoms tab', () => {
-    expect(WORKSPACES.help.tabs.map((t) => t.id)).toContain('symptoms')
-    expect(WORKSPACES.help.absorbs['/symptom-guide']).toEqual({ tab: 'symptoms' })
+  it('help workspace includes symptoms via library hub', () => {
+    expect(WORKSPACES.help.tabs.map((t) => t.id)).toContain('library')
+    expect(WORKSPACES.help.absorbs['/symptom-guide']).toEqual({ tab: 'library', section: 'symptoms' })
   })
 
   it('filter helpers derive distinct crop and category values', () => {
@@ -210,7 +211,7 @@ describe('Phase 180 WS4 — field guide browse list', () => {
   })
 
   it('selecting a guide loads detail and open-indexed-doc action', async () => {
-    await router.push('/operator-guide?tab=knowledge')
+    await router.push('/operator-guide?tab=library&section=knowledge')
     const FieldGuideBrowse = (await import('../components/FieldGuideBrowse.vue')).default
     const wrapper = mount(FieldGuideBrowse, {
       global: { plugins: [router] },
@@ -370,7 +371,7 @@ describe('Phase 180 WS6 — closure docs and nav', () => {
       },
     })
 
-    await router.push('/operator-guide?tab=symptoms')
+    await router.push('/operator-guide?tab=library&section=symptoms')
     const wrapper = mount(SymptomGuide, {
       props: { embedded: true },
       global: { plugins: [router] },
@@ -409,7 +410,8 @@ describe('Phase 180 WS6 — closure docs and nav', () => {
     expect(plan).toMatch(/- \[x\] Symptom guide reachable/)
     expect(tour).toMatch(/7m\. Help knowledge surfaces \(Phase 180/i)
     expect(tour).toMatch(/What lives where/)
-    expect(tour).toMatch(/tab=symptoms/)
+    expect(tour).toMatch(/tab=library/)
+    expect(tour).toMatch(/section=symptoms/)
     expect(tour).toMatch(/semantic search/i)
     expect(routes).toContain('/farms/{id}/rag/docs')
   })

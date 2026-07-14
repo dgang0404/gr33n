@@ -32,25 +32,25 @@ const cards = [
     id: 'guide',
     title: 'Guide',
     blurb: 'How-to for gr33n screens, terms, and click paths in this app.',
-    to: { path: '/operator-guide', query: { tab: 'guide' } },
+    to: { path: '/operator-guide', query: { tab: 'library', section: 'guide' } },
   },
   {
     id: 'knowledge',
     title: 'Knowledge',
     blurb: 'Semantic search over your farm’s indexed notes, tasks, and ingested docs — plain language, not exact keywords.',
-    to: { path: '/operator-guide', query: { tab: 'knowledge' } },
+    to: { path: '/operator-guide', query: { tab: 'library', section: 'knowledge' } },
   },
   {
     id: 'catalog',
     title: 'Catalog',
     blurb: 'Import Commons packs (recipes, seed packs) — separate from search; for bringing in starter content.',
-    to: { path: '/operator-guide', query: { tab: 'catalog' } },
+    to: { path: '/operator-guide', query: { tab: 'library', section: 'catalog' } },
   },
   {
     id: 'symptoms',
     title: 'Symptom guide',
     blurb: 'Crop symptom lookup — what wilting, spotting, or deficiency patterns mean for a given crop.',
-    to: { path: '/operator-guide', query: { tab: 'symptoms' } },
+    to: { path: '/operator-guide', query: { tab: 'library', section: 'symptoms' } },
   },
 ]
 </script>

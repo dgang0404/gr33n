@@ -1,20 +1,14 @@
 <template>
   <WorkspaceShell workspace-id="help">
     <template #default="{ activeTab }">
-      <OperatorGuide v-if="activeTab === 'guide'" embedded />
+      <HelpLibraryHub v-if="activeTab === 'library'" />
       <PiSetupGuide v-else-if="activeTab === 'pi-setup'" embedded />
-      <FarmKnowledge v-else-if="activeTab === 'knowledge'" embedded />
-      <SymptomGuide v-else-if="activeTab === 'symptoms'" embedded />
-      <CommonsCatalog v-else-if="activeTab === 'catalog'" embedded />
     </template>
   </WorkspaceShell>
 </template>
 
 <script setup>
 import WorkspaceShell from '../../components/WorkspaceShell.vue'
-import OperatorGuide from '../OperatorGuide.vue'
+import HelpLibraryHub from '../HelpLibraryHub.vue'
 import PiSetupGuide from '../PiSetupGuide.vue'
-import FarmKnowledge from '../FarmKnowledge.vue'
-import SymptomGuide from '../SymptomGuide.vue'
-import CommonsCatalog from '../CommonsCatalog.vue'
 </script>

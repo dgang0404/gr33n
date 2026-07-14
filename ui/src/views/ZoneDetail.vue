@@ -187,6 +187,7 @@
           v-if="zone"
           :zone-id="zoneId"
           :zone-name="zone.name"
+          :crop-key="activeGrowFitContext.cropKey"
           :sensors="sensors"
           :actuators="actuators"
           :alerts="store.alerts"

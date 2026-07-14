@@ -844,20 +844,22 @@ Plans: [`phase_173_today_large_farm_navigation.plan.md`](plans/phase_173_today_l
 
 **Shipped.** Operators no longer need a Guardian citation to discover what **Knowledge**, **Catalog**, **field guides**, and the **symptom guide** are for. Open **More → Help** (`/operator-guide`).
 
-**What lives where** — four cards at the top of the **Guide** tab explain each surface in one sentence and link to the right tab:
+**Library hub (Phase 183)** — Help now opens on one **Library** page (`tab=library`) with four scrollable sections instead of four equal tabs. The **What lives where** map stays at the top; jump pills scroll to each section. Legacy deep links (`?tab=knowledge`, `?tab=symptoms`, etc.) still resolve to the right section.
+
+**What lives where** — four cards at the top explain each surface in one sentence and link to the right library section:
 
 | Surface | Tab / route | What it is |
 |---------|-------------|------------|
-| **Guide** | `tab=guide` | In-app how-to: glossary, suggested click path, platform docs when cited |
-| **Knowledge** | `tab=knowledge` | **Semantic search** over this farm’s indexed chunks (tasks, runs, ingested docs) — plain language, not exact keywords. **Field guides** list below search. Citation chips open a **readable doc view** with highlighted section + **Ask Guardian** |
-| **Symptoms** | `tab=symptoms` | Crop symptom catalog — **dropdown** filters by crop and category; Guardian deep links (`?crop_key=&category=`) still work |
-| **Catalog** | `tab=catalog` | **Commons import packs** (recipes, seed packs) — separate from search; brings starter content into the farm |
+| **Guide** | `tab=library&section=guide` | In-app how-to: glossary, suggested click path, platform docs when cited |
+| **Knowledge** | `tab=library&section=knowledge` | **Semantic search** over this farm’s indexed chunks (tasks, runs, ingested docs) — plain language, not exact keywords. **Field guides** list below search. Citation chips open a **readable doc view** with highlighted section + **Ask Guardian** |
+| **Symptoms** | `tab=library&section=symptoms` | Crop symptom catalog — **dropdown** filters by crop and category; contextual **Symptoms for this crop** links from Plants/zones/alerts and Guardian deep links (`?crop_key=&category=`) still work |
+| **Catalog** | `tab=library&section=catalog` | **Commons import packs** (recipes, seed packs) — separate from search; brings starter content into the farm |
 
 **Guardian citations** remain a shortcut: field-guide chips land on **Knowledge** doc view; symptom chips land on **Symptoms** with filters applied; platform docs land on **Guide** doc view. You can always browse the same material from Help without chat.
 
 **API:** `GET /farms/{id}/rag/docs?doc_path=…` — ordered chunks for citation doc view (farm-scoped).
 
-**Vitest:** `phase-180-closure.test.js` · Plan: [`phase_180_knowledge_surfaces_discoverability.plan.md`](plans/phase_180_knowledge_surfaces_discoverability.plan.md)
+**Vitest:** `phase-180-closure.test.js`, `phase-183-closure.test.js` · Plans: [`phase_180_knowledge_surfaces_discoverability.plan.md`](plans/phase_180_knowledge_surfaces_discoverability.plan.md) · [`phase_183_guardian_knowledge_and_revise_followups.plan.md`](plans/phase_183_guardian_knowledge_and_revise_followups.plan.md)
 
 ---
 

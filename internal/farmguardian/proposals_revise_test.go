@@ -65,6 +65,47 @@ func TestApplyRevisionDeltas_NoActionableChange(t *testing.T) {
 	}
 }
 
+func TestApplyRevisionDeltas_CreateTaskTitleCallIt(t *testing.T) {
+	prior := map[string]any{"title": "Check humidity in grow room", "zone_id": float64(3)}
+	next, changed := applyRevisionDeltas("create_task", prior, "call it Inspect tent RH instead")
+	if !changed {
+		t.Fatal("expected changed=true")
+	}
+	if next["title"] != "Inspect tent RH" {
+		t.Fatalf("title = %#v want Inspect tent RH", next["title"])
+	}
+}
+
+func TestApplyRevisionDeltas_CreateTaskInsteadOf(t *testing.T) {
+	prior := map[string]any{"title": "Check humidity in grow room"}
+	next, changed := applyRevisionDeltas("create_task", prior, "Inspect tent RH instead of Check humidity in grow room")
+	if !changed {
+		t.Fatal("expected changed=true")
+	}
+	if next["title"] != "Inspect tent RH" {
+		t.Fatalf("title = %#v", next["title"])
+	}
+}
+
+func TestApplyRevisionDeltas_CreateTaskDescription(t *testing.T) {
+	prior := map[string]any{"title": "Refill OHN", "description": "Low stock alert"}
+	next, changed := applyRevisionDeltas("create_task_from_alert", prior, "description should be Restock OHN from Supplies")
+	if !changed {
+		t.Fatal("expected changed=true")
+	}
+	if next["description"] != "Restock OHN from Supplies" {
+		t.Fatalf("description = %#v", next["description"])
+	}
+}
+
+func TestApplyRevisionDeltas_CreateTaskNoSpuriousChange(t *testing.T) {
+	prior := map[string]any{"title": "Check humidity"}
+	_, changed := applyRevisionDeltas("create_task", prior, "when should I run this?")
+	if changed {
+		t.Fatal("expected changed=false for clarifying question")
+	}
+}
+
 func TestExtractOperatorFacts_RH(t *testing.T) {
 	facts := extractOperatorFacts("there's no humidity sensor in Tent A — assume RH around 60%")
 	if len(facts) != 1 {

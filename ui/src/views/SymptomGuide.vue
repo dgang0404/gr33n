@@ -109,7 +109,8 @@ function onFilterChange() {
   if (category.value) query.category = category.value
   else delete query.category
   if (route.path === '/operator-guide') {
-    query.tab = 'symptoms'
+    query.tab = 'library'
+    query.section = 'symptoms'
     router.replace({ path: '/operator-guide', query })
   } else {
     router.replace({ path: route.path, query })

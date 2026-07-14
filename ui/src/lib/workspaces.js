@@ -4,7 +4,7 @@
  */
 
 /** @typedef {{ id: string, label: string }} WorkspaceTab */
-/** @typedef {{ tab: string, fleet?: string }} AbsorbTarget */
+/** @typedef {{ tab: string, fleet?: string, section?: string }} AbsorbTarget */
 
 /** @type {Record<string, { label: string, icon: string, route: string, subtitle: string, tabs: WorkspaceTab[], absorbs?: Record<string, AbsorbTarget> }>} */
 export const WORKSPACES = {
@@ -48,18 +48,15 @@ export const WORKSPACES = {
     label: 'Help',
     icon: '📖',
     route: '/operator-guide',
-    subtitle: 'Operator guide, knowledge search, symptoms, and commons catalog',
+    subtitle: 'Library — how-to, knowledge search, symptoms, and commons catalog',
     tabs: [
-      { id: 'guide', label: 'Guide' },
+      { id: 'library', label: 'Library' },
       { id: 'pi-setup', label: 'Pi + HAT setup' },
-      { id: 'knowledge', label: 'Knowledge' },
-      { id: 'symptoms', label: 'Symptoms' },
-      { id: 'catalog', label: 'Catalog' },
     ],
     absorbs: {
-      '/farm-knowledge': { tab: 'knowledge' },
-      '/catalog': { tab: 'catalog' },
-      '/symptom-guide': { tab: 'symptoms' },
+      '/farm-knowledge': { tab: 'library', section: 'knowledge' },
+      '/catalog': { tab: 'library', section: 'catalog' },
+      '/symptom-guide': { tab: 'library', section: 'symptoms' },
     },
   },
   comfort: {
@@ -143,6 +140,7 @@ function buildLegacyAbsorbIndex() {
         tab: target.tab ?? ws.tabs[0]?.id ?? 'rooms',
         fleet: target.fleet,
         zoneTab: target.zoneTab,
+        section: target.section,
       }
     }
   }
@@ -259,6 +257,14 @@ const FEEDWATER_TAB_ALIASES = {
   water: 'daily',
 }
 
+/** Phase 183 — legacy Help tab ids map to Library hub. */
+const HELP_TAB_ALIASES = {
+  guide: 'library',
+  knowledge: 'library',
+  symptoms: 'library',
+  catalog: 'library',
+}
+
 /**
  * @param {string} workspaceId
  * @param {string | undefined | null} tabId
@@ -275,6 +281,9 @@ export function resolveWorkspaceTab(workspaceId, tabId) {
   }
   if (workspaceId === 'feedwater' && tabId) {
     resolved = FEEDWATER_TAB_ALIASES[tabId] ?? tabId
+  }
+  if (workspaceId === 'help' && tabId) {
+    resolved = HELP_TAB_ALIASES[tabId] ?? tabId
   }
   if (resolved && tabs.some((t) => t.id === resolved)) return resolved
   return defaultTabFor(workspaceId)
@@ -339,6 +348,7 @@ export function buildLegacyRedirectRoutes() {
 
       const query = { ...to.query, tab: hit.tab }
       if (hit.fleet) query.fleet = hit.fleet
+      if (hit.section) query.section = hit.section
       return { path: hit.route, query }
     },
   }))

@@ -18,6 +18,11 @@
               · {{ cycleBatchLabel(activeCycle) }}
             </span>
           </p>
+          <SymptomCropLink
+            v-if="cropKey"
+            :crop-key="cropKey"
+            class="inline-block mt-1.5"
+          />
           <p
             v-if="ecTargetLabel"
             class="text-xs mt-1.5 inline-flex items-center gap-1 px-2 py-0.5 rounded-md border"
@@ -93,6 +98,7 @@ import {
 } from '../lib/growHub.js'
 import { buildZoneGrowStripStarters } from '../lib/guardianStarters.js'
 import GuardianStarterChips from './GuardianStarterChips.vue'
+import SymptomCropLink from './SymptomCropLink.vue'
 
 const props = defineProps({
   zoneId: { type: Number, required: true },
@@ -120,6 +126,12 @@ const dayCount = computed(() =>
 const summaryLink = computed(() => ({
   path: `/crop-cycles/${activeCycle.value?.id}/summary`,
 }))
+
+const cropKey = computed(() => {
+  const cycle = activeCycle.value
+  if (!cycle) return ''
+  return String(cycle.crop_key || '').trim()
+})
 
 const growStarters = computed(() => {
   if (!activeCycle.value) return []

@@ -20,7 +20,7 @@
       @dismiss="clearCitation"
     />
 
-    <HelpKnowledgeSurfacesMap />
+    <HelpKnowledgeSurfacesMap v-if="!hideSurfacesMap" />
 
     <section class="bg-zinc-900 border border-zinc-800 rounded-xl p-5 space-y-3">
       <h2 class="text-white font-semibold text-sm uppercase tracking-widest text-zinc-500">Suggested walk</h2>
@@ -90,6 +90,7 @@ import CitationDocView from '../components/CitationDocView.vue'
 
 defineProps({
   embedded: { type: Boolean, default: false },
+  hideSurfacesMap: { type: Boolean, default: false },
 })
 
 const route = useRoute()

@@ -21,6 +21,9 @@ var (
 	reviseECPattern      = regexp.MustCompile(`(?i)\bec\s*(?:target|of|to|=|:)?\s*(\d+(?:\.\d+)?)`)
 	revisePHRangePattern = regexp.MustCompile(`(?i)\bph\s*(?:of|to|=|:)?\s*(\d(?:\.\d+)?)\s*(?:-|–|to)\s*(\d(?:\.\d+)?)`)
 	reviseRHPattern      = regexp.MustCompile(`(?i)(?:rh|humidity)[^\d%]{0,24}?(\d{1,3})\s*%?`)
+	reviseTitleCallPattern = regexp.MustCompile(`(?i)(?:call it|title(?:\s+should be)?|rename (?:it )?to|make (?:it|the title))\s+["']?([^"'\n.;]+?)["']?(?:\s+instead|\s*$|\.)`)
+	reviseInsteadOfPattern = regexp.MustCompile(`(?i)^\s*["']?([^"'\n]+?)["']?\s+instead\s+of\s+["']?([^"'\n]+?)["']?\s*$`)
+	reviseDescriptionPattern = regexp.MustCompile(`(?i)(?:description|details?)\s*(?:should be|:)\s*["']?([^"'\n.]+)`)
 )
 
 // tryReviseActiveProposal revises the live draft in a session when the turn reads
@@ -81,6 +84,11 @@ func tryReviseActiveProposal(
 	summary := prior.Summary
 	if prior.ToolID == "apply_grow_setup_pack" {
 		summary = tools.GrowSetupPackSummary(newArgs)
+	}
+	if prior.ToolID == "create_task" || prior.ToolID == "create_task_from_alert" {
+		if title, ok := newArgs["title"].(string); ok && strings.TrimSpace(title) != "" {
+			summary = "Create task: " + strings.TrimSpace(title)
+		}
 	}
 
 	row, err := insertProposal(ctx, q, insertProposalInput{
@@ -150,6 +158,15 @@ func applyRevisionDeltas(toolID string, priorArgs map[string]any, question strin
 	case "create_crop_cycle", "update_cycle_stage":
 		if stage := parseStage(question); stage != "" {
 			next["current_stage"] = stage
+			changed = true
+		}
+	case "create_task", "create_task_from_alert":
+		if title, ok := parseTaskTitleRevision(question, priorArgs); ok {
+			next["title"] = title
+			changed = true
+		}
+		if desc, ok := parseTaskDescriptionRevision(question); ok {
+			next["description"] = desc
 			changed = true
 		}
 	}
@@ -247,6 +264,56 @@ func parsePHRange(question string) (float64, float64, bool) {
 func parseStage(question string) string {
 	lower := strings.ToLower(question)
 	return inferStageKeyword(lower)
+}
+
+func parseTaskTitleRevision(question string, priorArgs map[string]any) (string, bool) {
+	priorTitle := strings.TrimSpace(argString(priorArgs, "title"))
+	q := strings.TrimSpace(question)
+	if q == "" {
+		return "", false
+	}
+	if m := reviseInsteadOfPattern.FindStringSubmatch(q); len(m) > 2 {
+		newTitle := strings.TrimSpace(m[1])
+		oldTitle := strings.TrimSpace(m[2])
+		if newTitle != "" && titleRevisionMatchesPrior(oldTitle, priorTitle) {
+			return newTitle, true
+		}
+	}
+	if m := reviseTitleCallPattern.FindStringSubmatch(q); len(m) > 1 {
+		if title := strings.TrimSpace(m[1]); title != "" {
+			return title, true
+		}
+	}
+	lower := strings.ToLower(q)
+	if strings.Contains(lower, "instead of") {
+		parts := strings.SplitN(lower, "instead of", 2)
+		if len(parts) == 2 {
+			candidate := strings.TrimSpace(strings.Trim(parts[0], `"'`))
+			oldPart := strings.TrimSpace(strings.Trim(parts[1], `"'`))
+			if candidate != "" && titleRevisionMatchesPrior(oldPart, priorTitle) {
+				return candidate, true
+			}
+		}
+	}
+	return "", false
+}
+
+func parseTaskDescriptionRevision(question string) (string, bool) {
+	if m := reviseDescriptionPattern.FindStringSubmatch(question); len(m) > 1 {
+		if desc := strings.TrimSpace(m[1]); desc != "" {
+			return desc, true
+		}
+	}
+	return "", false
+}
+
+func titleRevisionMatchesPrior(oldPart, priorTitle string) bool {
+	oldPart = strings.TrimSpace(strings.ToLower(oldPart))
+	priorTitle = strings.TrimSpace(strings.ToLower(priorTitle))
+	if oldPart == "" || priorTitle == "" {
+		return oldPart == "" && priorTitle == ""
+	}
+	return strings.Contains(priorTitle, oldPart) || strings.Contains(oldPart, priorTitle)
 }
 
 func priorMetaFacts(meta []byte) []OperatorFact {

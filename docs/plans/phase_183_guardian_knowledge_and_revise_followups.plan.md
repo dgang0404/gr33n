@@ -9,22 +9,22 @@ overview: >
 todos:
   - id: ws1-contextual-links
     content: "WS1: 'Symptoms for this crop' link from Plants / zone detail / alert cards → /symptom-guide with crop pre-selected"
-    status: pending
+    status: completed
   - id: ws2-help-hub
     content: "WS2: Collapse Help's four equal tabs (Guide/Knowledge/Catalog/Symptoms) into one Library hub with sections, built on Phase 180's 'what lives where' map"
-    status: pending
+    status: completed
   - id: ws3-task-revise-matchers
     content: "WS3: Extend internal/farmguardian rule-based proposals_revise.go so create_task title/description corrections bump Revision (parity with volume/schedule revise)"
-    status: pending
+    status: completed
   - id: ws4-tests-docs
     content: "WS4: Vitest for contextual links + hub sections; Go tests for task-title revise matcher; phase-183-closure"
-    status: pending
+    status: completed
 isProject: false
 ---
 
 # Phase 183 — Contextual knowledge links + Help hub + task revise matchers
 
-**Status:** planned · **Follows:** [182](phase_182_guardian_quick_ux_wins.plan.md) · **Builds on:** [180](phase_180_knowledge_surfaces_discoverability.plan.md)
+**Status:** shipped · **Follows:** [182](phase_182_guardian_quick_ux_wins.plan.md) · **Builds on:** [180](phase_180_knowledge_surfaces_discoverability.plan.md)
 
 ## The problem
 
@@ -90,10 +90,10 @@ medium-sized rather than quick:
 
 ## Acceptance
 
-- [ ] "Symptoms for this crop" link visible on Plants/zone/alert where a
+- [x] "Symptoms for this crop" link visible on Plants/zone/alert where a
       crop is known; lands on symptom guide pre-filtered.
-- [ ] Help workspace reads as one Library with sections, not four
+- [x] Help workspace reads as one Library with sections, not four
       unexplained tabs; existing deep links still resolve.
-- [ ] `create_task` title/description corrections bump proposal `Revision`
+- [x] `create_task` title/description corrections bump proposal `Revision`
       via rule-based revise (no LLM round-trip required).
-- [ ] Vitest + Go test closure green.
+- [x] Vitest + Go test closure green.
