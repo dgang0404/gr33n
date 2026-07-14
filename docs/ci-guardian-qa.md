@@ -19,6 +19,8 @@
 | `make guardian-qa-change-requests-pending MODEL=phi3:mini FARM_ID=1` | Leave proposals in UI Pending tab for manual review | Same 4 prompts; **bumps TTL to 24h** after each (needs `DATABASE_URL`) — open `/chat?tab=pending` when done |
 | `make guardian-qa-change-requests-pending-quick MODEL=phi3:mini FARM_ID=1` | Fast single-proposal demo (~25 min) | `write-ack` only + leave pending for UI |
 | `make guardian-qa-change-requests-confirm MODEL=phi3:mini FARM_ID=1` | Full propose→confirm→DB loop (Phase 162) | Same, plus **per-prompt Confirm** and side-effect GETs |
+| `make guardian-qa-change-requests-ui MODEL=phi3:mini FARM_ID=1` | Multi-turn Pending-tab prep + one API confirm | 5 scenarios: feed revise (confirm + pending), task dialogue, schedule, ack — **shared session_id** per scenario; 4 left pending (24h TTL) |
+| `make guardian-qa-change-requests-ui-quick MODEL=phi3:mini FARM_ID=1` | Fast multi-turn UI demo (~50 min) | Feed revise pending + task dialogue pending only |
 | `make guardian-qa-regression MODEL=phi3:mini` | Pre-release (slow) | Same directory, regression suite |
 | `make guardian-qa-manual` | Human UI parity | Prints checklist from same fixtures |
 
@@ -36,6 +38,29 @@ make guardian-qa-change-requests-confirm MODEL=phi3:mini FARM_ID=1 # full Confir
 ```
 
 It fires 4 preset write-intent prompts (or one with `-ack`), logs per-prompt progress, then **immediately after each passed write-intent prompt** calls `GET /v1/chat/proposals?status=pending` and verifies that prompt's `proposal_id`(s) are still pending (batch end-of-run check was removed — proposals expire after 5m while each prompt takes 20+ min). **Confirm → DB:** `make guardian-qa-change-requests-confirm` confirms each proposal right after its prompt (Phase 162). See [Phase 153](plans/phase_153_guardian_pr_smoke_gate.plan.md) · [Phase 162](plans/phase_162_guardian_confirm_db_smoke.plan.md).
+
+### Multi-turn UI scenarios (`change-requests-ui`)
+
+For testing **Refine**, **Confirm**, and **Dismiss** on real back-and-forth dialogues (not single-shot prompts):
+
+```
+make guardian-qa-change-requests-ui MODEL=phi3:mini FARM_ID=1
+make guardian-qa-change-requests-ui-quick MODEL=phi3:mini FARM_ID=1   # ~50 min subset
+```
+
+Each scenario reuses one `session_id` across turns. The full suite runs **5 scenarios**:
+
+| Scenario | Turns | End state |
+|----------|-------|-----------|
+| `scenario-feed-revise-confirm` | propose 0.5L → revise to 0.3L | Confirmed via API (DB verified) |
+| `scenario-feed-revise-pending` | same dialogue | Left pending (rev 2, 0.3L) — test **Confirm** in UI |
+| `scenario-task-dialogue-pending` | create task → ask which zone | Left pending — test **Refine** / **Confirm** |
+| `scenario-schedule-pending` | pause schedule | Left pending |
+| `scenario-ack-pending` | acknowledge alert | Left pending |
+
+Requires `DATABASE_URL` for TTL bump on leave-pending scenarios. Open `/chat?tab=pending` when the run finishes.
+
+Subset one scenario: `guardian-eval -suite change-requests-ui -prompt-ids scenario-ack-pending`
 
 ## Opt-in GitHub PR check (Guardian answer smoke — not change-request queue)
 

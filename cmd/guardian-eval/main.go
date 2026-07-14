@@ -46,13 +46,28 @@ func main() {
 	}
 
 	suite := strings.ToLower(strings.TrimSpace(*suiteFlag))
-	fixtures := eval.FixturesForSuite(suite)
-	fixtures = eval.FilterFixturesByIDs(fixtures, *promptIDsFlag)
-	if len(fixtures) == 0 {
-		if strings.TrimSpace(*promptIDsFlag) != "" {
-			log.Fatalf("no fixtures for suite %q prompt-ids %q", suite, *promptIDsFlag)
+	scenarioSuite := eval.IsScenarioSuite(suite)
+
+	var fixtures []eval.Question
+	var scenarios []eval.Scenario
+	if scenarioSuite {
+		scenarios = eval.ScenariosForSuite(suite)
+		scenarios = eval.FilterScenariosByIDs(scenarios, *promptIDsFlag)
+		if len(scenarios) == 0 {
+			if strings.TrimSpace(*promptIDsFlag) != "" {
+				log.Fatalf("no scenarios for suite %q prompt-ids %q", suite, *promptIDsFlag)
+			}
+			log.Fatalf("no scenarios for suite %q", suite)
 		}
-		log.Fatalf("no fixtures for suite %q", suite)
+	} else {
+		fixtures = eval.FixturesForSuite(suite)
+		fixtures = eval.FilterFixturesByIDs(fixtures, *promptIDsFlag)
+		if len(fixtures) == 0 {
+			if strings.TrimSpace(*promptIDsFlag) != "" {
+				log.Fatalf("no fixtures for suite %q prompt-ids %q", suite, *promptIDsFlag)
+			}
+			log.Fatalf("no fixtures for suite %q", suite)
+		}
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 4*time.Hour)
@@ -69,9 +84,9 @@ func main() {
 	client := eval.NewAPIClient(*apiURL, *token, *farmID)
 
 	runOpts := eval.RunSuiteOptions{
-		WarmupGrounded: suite == "smoke" || suite == "phase127" || suite == "phase128" || suite == "p128" || suite == "change-requests" || suite == "change_requests" || suite == "proposals" || suite == "pr",
+		WarmupGrounded: suite == "smoke" || suite == "phase127" || suite == "phase128" || suite == "p128" || suite == "change-requests" || suite == "change_requests" || suite == "proposals" || suite == "pr" || scenarioSuite,
 		WarmupTimeout:  eval.WarmupTimeoutFromEnv(),
-		WarmupAsync:    suite == "smoke" || suite == "phase127" || suite == "change-requests" || suite == "change_requests" || suite == "proposals" || suite == "pr",
+		WarmupAsync:    suite == "smoke" || suite == "phase127" || suite == "change-requests" || suite == "change_requests" || suite == "proposals" || suite == "pr" || scenarioSuite,
 		LogPath:        strings.TrimSpace(os.Getenv("GUARDIAN_EVAL_LOG")),
 		CheckPendingPerPrompt: *checkPendingProposals,
 		ConfirmPerPrompt:      *confirmProposals,
@@ -87,6 +102,27 @@ func main() {
 	var requiredProposalIDs []string
 	failed := false
 	for _, model := range modelNames {
+		if scenarioSuite {
+			log.Printf("evaluating model %q suite=%s (%d scenarios)…", model, suite, len(scenarios))
+			scores, runErr := eval.RunScenarioSuite(ctx, client, model, scenarios, runOpts)
+			if runErr != nil {
+				log.Printf("eval scenario suite error: %v", runErr)
+				failed = true
+			}
+			rep.Models[normalizeModelKey(model)] = eval.BuildReport(model, scores, *reportPath)
+			details := eval.ToEvalQuestionScores(scores)
+			rep.Details[normalizeModelKey(model)] = details
+			printModelSummary(model, rep.Models[normalizeModelKey(model)])
+			requiredProposalIDs = append(requiredProposalIDs, eval.PassedScenarioProposalIDs(scenarios, details)...)
+			if archive := qaArchivePath(*qaArchive, suite, model); archive != "" {
+				if err := farmguardian.SaveQARunArchive(archive, suite, model, details); err != nil {
+					log.Printf("qa archive %q: %v", archive, err)
+				} else {
+					fmt.Printf("  QA archive: %s\n", archive)
+				}
+			}
+			continue
+		}
 		log.Printf("evaluating model %q suite=%s (%d questions)…", model, suite, len(fixtures))
 		scores, runErr := eval.RunSuite(ctx, client, model, fixtures, runOpts)
 		if runErr != nil {
@@ -124,7 +160,15 @@ func main() {
 		}
 	}
 
-	if *checkPendingProposals {
+	if scenarioSuite && len(requiredProposalIDs) > 0 {
+		fmt.Printf("\nMulti-turn UI scenarios left %d proposal(s) pending (TTL bumped).\n", len(requiredProposalIDs))
+		fmt.Println("  Open http://localhost:5173/chat?tab=pending to Confirm, Refine, or Dismiss.")
+		for _, id := range requiredProposalIDs {
+			fmt.Printf("  - %s\n", id)
+		}
+	}
+
+	if *checkPendingProposals && !scenarioSuite {
 		if runOpts.CheckPendingPerPrompt {
 			if *leavePending {
 				fmt.Printf("\nPending queue verified per prompt; TTL bumped for UI review (%d proposal_id(s)).\n", len(requiredProposalIDs))
@@ -138,7 +182,7 @@ func main() {
 		}
 	}
 
-	if *confirmProposals {
+	if *confirmProposals && !scenarioSuite {
 		if !*checkPendingProposals {
 			fmt.Println("\nConfirm skipped: -confirm-proposals requires -check-pending-proposals")
 			failed = true

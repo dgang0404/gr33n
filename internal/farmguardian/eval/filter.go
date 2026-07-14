@@ -17,6 +17,21 @@ func FilterFixturesByIDs(fixtures []Question, ids string) []Question {
 	return out
 }
 
+// FilterScenariosByIDs returns scenarios whose ID is in ids (comma-separated). Empty ids returns all.
+func FilterScenariosByIDs(scenarios []Scenario, ids string) []Scenario {
+	want := parseIDSet(ids)
+	if len(want) == 0 {
+		return scenarios
+	}
+	out := make([]Scenario, 0, len(want))
+	for _, sc := range scenarios {
+		if want[strings.TrimSpace(sc.ID)] {
+			out = append(out, sc)
+		}
+	}
+	return out
+}
+
 func parseIDSet(ids string) map[string]bool {
 	ids = strings.TrimSpace(ids)
 	if ids == "" {
