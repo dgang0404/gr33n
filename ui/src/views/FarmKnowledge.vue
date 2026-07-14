@@ -19,14 +19,15 @@
     </div>
 
     <template v-else>
-      <p
-        v-if="citedDoc"
-        class="rounded-xl border border-amber-900/60 bg-amber-950/40 px-4 py-3 text-sm text-amber-200"
-        data-test="farm-knowledge-cited-doc"
-        role="status"
-      >
-        Guardian cited indexed doc: <code class="text-amber-100/90 text-xs">{{ citedDoc }}</code>
-      </p>
+      <CitationDocView
+        v-if="citationDoc"
+        :doc-path="citationDoc"
+        :doc-type="citationType"
+        :highlight-chunk-id="citationChunkId"
+        class="mb-2"
+        @dismiss="clearCitation"
+      />
+
       <!-- Search form -->
       <section class="bg-zinc-900 border border-zinc-800 rounded-xl p-5 space-y-4" data-test="farm-knowledge-search">
         <div class="space-y-1">
@@ -151,7 +152,7 @@
         </div>
       </section>
 
-      <FieldGuideBrowse @search-guide="onSearchFieldGuide" />
+      <FieldGuideBrowse />
 
       <!-- Vector results -->
       <section v-if="results.length" class="space-y-3">
@@ -211,10 +212,11 @@
 
 <script setup>
 import { onMounted, ref, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import api from '../api'
 import HelpTip from '../components/HelpTip.vue'
 import FieldGuideBrowse from '../components/FieldGuideBrowse.vue'
+import CitationDocView from '../components/CitationDocView.vue'
 import { useFarmContextStore } from '../stores/farmContext'
 import { useCapabilitiesStore } from '../stores/capabilities'
 
@@ -225,27 +227,31 @@ defineProps({
 const farmContext = useFarmContextStore()
 const capabilities = useCapabilitiesStore()
 const route = useRoute()
-const citedDoc = ref('')
+const router = useRouter()
+const citationDoc = ref('')
+const citationType = ref('field_guide')
+const citationChunkId = ref(0)
+
+function parseCitationChunk(raw) {
+  const n = Number(raw)
+  return Number.isFinite(n) && n > 0 ? n : 0
+}
 
 function applyCitationQuery() {
   const raw = route.query.cited_doc
-  citedDoc.value = typeof raw === 'string' ? raw : ''
-  if (citedDoc.value) {
-    moduleFilter.value = String(route.query.cited_type || 'field_guide')
-    showAdvanced.value = true
-    const base = citedDoc.value.split('/').pop() || citedDoc.value
-    query.value = base.replace(/\.md$/i, '').replace(/[-_]/g, ' ')
-  }
+  citationDoc.value = typeof raw === 'string' ? raw.trim() : ''
+  citationType.value = String(route.query.cited_type || 'field_guide')
+  citationChunkId.value = parseCitationChunk(route.query.cited_chunk)
 }
 
-function onSearchFieldGuide({ citedDoc: doc }) {
-  if (!doc) return
-  citedDoc.value = doc
-  moduleFilter.value = 'field_guide'
-  showAdvanced.value = true
-  const base = doc.split('/').pop() || doc
-  query.value = base.replace(/\.md$/i, '').replace(/[-_]/g, ' ')
-  void runSearch()
+function clearCitation() {
+  citationDoc.value = ''
+  citationChunkId.value = 0
+  const query = { ...route.query }
+  delete query.cited_doc
+  delete query.cited_type
+  delete query.cited_chunk
+  router.replace({ path: route.path, query })
 }
 
 onMounted(() => {
@@ -253,7 +259,7 @@ onMounted(() => {
   applyCitationQuery()
 })
 
-watch(() => route.query.cited_doc, applyCitationQuery)
+watch(() => [route.query.cited_doc, route.query.cited_chunk, route.query.cited_type], applyCitationQuery)
 
 const query = ref('')
 const showAdvanced = ref(false)

@@ -72,10 +72,10 @@
           <button
             type="button"
             class="text-xs px-3 py-1.5 rounded-lg bg-green-900/50 text-green-400 border border-green-800"
-            data-test="field-guide-search-knowledge"
-            @click="searchInKnowledge(selectedDetail)"
+            data-test="field-guide-open-doc"
+            @click="openInKnowledge(selectedDetail)"
           >
-            Search this guide in Knowledge
+            Open indexed doc
           </button>
           <router-link
             :to="guardianChatLink(selectedDetail)"
@@ -95,7 +95,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import api from '../api'
 
-const emit = defineEmits(['search-guide'])
+const emit = defineEmits([])
 
 const router = useRouter()
 const guides = ref([])
@@ -129,10 +129,9 @@ function citedDocPath(guide) {
   return slug.endsWith('.md') ? `field-guides/${slug}` : `field-guides/${slug}.md`
 }
 
-function searchInKnowledge(guide) {
+function openInKnowledge(guide) {
   const cited = citedDocPath(guide)
   if (!cited) return
-  emit('search-guide', { citedDoc: cited, title: guide.title })
   router.replace({
     path: '/operator-guide',
     query: {

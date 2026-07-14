@@ -3,6 +3,8 @@ package chat
 import (
 	"context"
 	"log/slog"
+	"strconv"
+	"strings"
 
 	"gr33n-api/internal/farmguardian"
 	"gr33n-api/internal/rag/llm"
@@ -39,9 +41,24 @@ func attachCitationRoutes(ctx context.Context, q *db.Queries, farmID int64, cite
 	}
 	for i := range cites {
 		if route, ok := farmguardian.ResolveCitationRoute(ctx, q, farmID, cites[i].SourceType, cites[i].SourceID); ok {
-			cites[i].Route = route
+			cites[i].Route = enrichDocCitationRoute(route, cites[i])
 		}
 	}
+}
+
+func enrichDocCitationRoute(route string, c synthesis.Citation) string {
+	st := strings.TrimSpace(c.SourceType)
+	if st != "field_guide" && st != "platform_doc" {
+		return route
+	}
+	if c.ChunkID <= 0 {
+		return route
+	}
+	sep := "?"
+	if strings.Contains(route, "?") {
+		sep = "&"
+	}
+	return route + sep + "cited_chunk=" + strconv.FormatInt(c.ChunkID, 10)
 }
 
 // applyAnswerAccuracyNote runs the live Phase 148/151/152 accuracy detectors

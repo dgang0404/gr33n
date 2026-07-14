@@ -140,6 +140,74 @@ func (q *Queries) GetRagCorpusStatsByFarm(ctx context.Context, farmID int64) (Ge
 	return i, err
 }
 
+const listRagChunksByFarmDocPath = `-- name: ListRagChunksByFarmDocPath :many
+SELECT
+    id,
+    farm_id,
+    source_type,
+    source_id,
+    chunk_index,
+    content_text,
+    model_id,
+    metadata,
+    created_at,
+    updated_at
+FROM gr33ncore.rag_embedding_chunks
+WHERE farm_id = $1
+  AND metadata->>'doc_path' = $2::text
+ORDER BY chunk_index ASC
+`
+
+type ListRagChunksByFarmDocPathParams struct {
+	FarmID        int64  `db:"farm_id" json:"farm_id"`
+	DocPathFilter string `db:"doc_path_filter" json:"doc_path_filter"`
+}
+
+type ListRagChunksByFarmDocPathRow struct {
+	ID          int64           `db:"id" json:"id"`
+	FarmID      int64           `db:"farm_id" json:"farm_id"`
+	SourceType  string          `db:"source_type" json:"source_type"`
+	SourceID    int64           `db:"source_id" json:"source_id"`
+	ChunkIndex  int32           `db:"chunk_index" json:"chunk_index"`
+	ContentText string          `db:"content_text" json:"content_text"`
+	ModelID     string          `db:"model_id" json:"model_id"`
+	Metadata    json.RawMessage `db:"metadata" json:"metadata"`
+	CreatedAt   time.Time       `db:"created_at" json:"created_at"`
+	UpdatedAt   time.Time       `db:"updated_at" json:"updated_at"`
+}
+
+// Phase 180 WS5 — ordered chunks for a cited doc_path (citation doc view).
+func (q *Queries) ListRagChunksByFarmDocPath(ctx context.Context, arg ListRagChunksByFarmDocPathParams) ([]ListRagChunksByFarmDocPathRow, error) {
+	rows, err := q.db.Query(ctx, listRagChunksByFarmDocPath, arg.FarmID, arg.DocPathFilter)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListRagChunksByFarmDocPathRow{}
+	for rows.Next() {
+		var i ListRagChunksByFarmDocPathRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.FarmID,
+			&i.SourceType,
+			&i.SourceID,
+			&i.ChunkIndex,
+			&i.ContentText,
+			&i.ModelID,
+			&i.Metadata,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const searchRagNearestNeighbors = `-- name: SearchRagNearestNeighbors :many
 SELECT
     id,

@@ -305,6 +305,7 @@ func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationwo
 	mux.Handle("POST /farms/{id}/tasks", jwt(http.HandlerFunc(task.Create)))
 	mux.Handle("GET /farms/{id}/rag/search", jwt(http.HandlerFunc(rag.Search)))
 	mux.Handle("POST /farms/{id}/rag/search", jwt(http.HandlerFunc(rag.Search)))
+	mux.Handle("GET /farms/{id}/rag/docs", jwt(http.HandlerFunc(rag.ListDocChunks)))
 	mux.Handle("POST /farms/{id}/rag/answer", jwt(http.HandlerFunc(rag.Answer)))
 	mux.Handle("GET /farms/{id}/automation/runs", jwt(http.HandlerFunc(automation.ListRunsByFarm)))
 	mux.Handle("GET /farms/{id}/automation/rules", jwt(http.HandlerFunc(automation.ListAutomationRulesByFarm)))

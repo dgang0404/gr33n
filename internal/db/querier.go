@@ -575,6 +575,8 @@ type Querier interface {
 	// ============================================================
 	ListPublishedCommonsCatalogEntries(ctx context.Context, arg ListPublishedCommonsCatalogEntriesParams) ([]ListPublishedCommonsCatalogEntriesRow, error)
 	ListPushTokensByUserID(ctx context.Context, userID uuid.UUID) ([]Gr33ncoreUserPushToken, error)
+	// Phase 180 WS5 — ordered chunks for a cited doc_path (citation doc view).
+	ListRagChunksByFarmDocPath(ctx context.Context, arg ListRagChunksByFarmDocPathParams) ([]ListRagChunksByFarmDocPathRow, error)
 	ListReadingsBySensorAndTimeRange(ctx context.Context, arg ListReadingsBySensorAndTimeRangeParams) ([]Gr33ncoreSensorReading, error)
 	// LEFT JOIN gr33ncore.conversation_sessions so the title surfaces when the
 	// operator has renamed the session; otherwise we fall back to the first user

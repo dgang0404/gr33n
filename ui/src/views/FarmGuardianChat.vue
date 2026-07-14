@@ -58,6 +58,7 @@ import { useCapabilitiesStore } from '../stores/capabilities'
 import { useFarmContextStore } from '../stores/farmContext'
 import { useGuardianPanelStore } from '../stores/guardianPanel'
 import { useGuardianProposalsStore } from '../stores/guardianProposals'
+import { humanDocTitle, guardianDocPrefill } from '../lib/citationDoc.js'
 
 const route = useRoute()
 const router = useRouter()
@@ -80,6 +81,15 @@ onMounted(async () => {
   if (!capabilities.loaded) await capabilities.fetch()
   if (route.query.setup === '1') {
     guardianPanel.setupMode = true
+  }
+  const cited = route.query.cited_doc
+  if (typeof cited === 'string' && cited.trim()) {
+    guardianPanel.prefilledMessage = guardianDocPrefill(humanDocTitle(cited))
+    const query = { ...route.query }
+    delete query.cited_doc
+    delete query.cited_type
+    delete query.cited_chunk
+    router.replace({ path: '/chat', query })
   }
   if (farmContext.farmId) {
     await proposalsStore.refreshPendingCount(farmContext.farmId)

@@ -40,9 +40,10 @@ describe('Phase 159 — citation completeness closure', () => {
     expect(handler).toContain('attachCitationRoutes(r.Context(), h.q, farmID, cites)')
   })
 
-  it('doc citation landing pages read cited_doc query', () => {
-    expect(readFileSync(join(uiSrc, 'views/FarmKnowledge.vue'), 'utf8')).toContain('farm-knowledge-cited-doc')
-    expect(readFileSync(join(uiSrc, 'views/OperatorGuide.vue'), 'utf8')).toContain('operator-guide-cited-doc')
+  it('doc citation landing pages use readable doc view', () => {
+    expect(readFileSync(join(uiSrc, 'views/FarmKnowledge.vue'), 'utf8')).toContain('CitationDocView')
+    expect(readFileSync(join(uiSrc, 'views/OperatorGuide.vue'), 'utf8')).toContain('CitationDocView')
+    expect(readFileSync(join(uiSrc, 'components/CitationDocView.vue'), 'utf8')).toContain('data-test="citation-doc-view"')
   })
 
   it('current-state reflects 154-158 shipped', () => {

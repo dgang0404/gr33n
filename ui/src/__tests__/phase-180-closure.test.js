@@ -27,6 +27,7 @@ const router = createRouter({
   routes: [
     { path: '/operator-guide', component: { template: '<div/>' } },
     { path: '/symptom-guide', component: { template: '<div/>' } },
+    { path: '/chat', component: { template: '<div/>' } },
   ],
 })
 
@@ -206,7 +207,8 @@ describe('Phase 180 WS4 — field guide browse list', () => {
     expect(wrapper.find('[data-test="field-guide-row-crop-lettuce-nutrition"]').exists()).toBe(true)
   })
 
-  it('selecting a guide loads detail and search-in-knowledge action', async () => {
+  it('selecting a guide loads detail and open-indexed-doc action', async () => {
+    await router.push('/operator-guide?tab=knowledge')
     const FieldGuideBrowse = (await import('../components/FieldGuideBrowse.vue')).default
     const wrapper = mount(FieldGuideBrowse, {
       global: { plugins: [router] },
@@ -219,11 +221,10 @@ describe('Phase 180 WS4 — field guide browse list', () => {
     expect(wrapper.find('[data-test="field-guide-detail"]').exists()).toBe(true)
     expect(wrapper.find('[data-test="field-guide-body"]').text()).toMatch(/Lettuce/)
 
-    await wrapper.find('[data-test="field-guide-search-knowledge"]').trigger('click')
-    expect(wrapper.emitted('search-guide')?.[0]?.[0]).toEqual({
-      citedDoc: 'field-guides/crop-lettuce-nutrition.md',
-      title: 'Lettuce nutrition',
-    })
+    await wrapper.find('[data-test="field-guide-open-doc"]').trigger('click')
+    await flushPromises()
+    expect(router.currentRoute.value.path).toBe('/operator-guide')
+    expect(router.currentRoute.value.query.cited_doc).toBe('field-guides/crop-lettuce-nutrition.md')
   })
 
   it('FarmKnowledge embeds field guide browse section', async () => {
@@ -252,5 +253,88 @@ describe('Phase 180 WS4 — field guide browse list', () => {
     await flushPromises()
 
     expect(wrapper.find('[data-test="field-guide-browse"]').exists()).toBe(true)
+  })
+})
+
+describe('Phase 180 WS5 — citation doc view round-trip', () => {
+  const sampleChunks = [
+    {
+      id: 101,
+      chunk_index: 0,
+      content_text: 'field_guide\ndoc_path: field-guides/crop-lettuce-nutrition.md\n\n## Lettuce\nFeed EC 1.2–1.6.',
+    },
+    {
+      id: 102,
+      chunk_index: 1,
+      content_text: 'field_guide\ndoc_path: field-guides/crop-lettuce-nutrition.md\n\nWatch for tip burn in summer.',
+    },
+  ]
+
+  beforeEach(() => {
+    setActivePinia(createPinia())
+    vi.clearAllMocks()
+    api.get.mockImplementation((url, config) => {
+      if (url.includes('/rag/docs')) {
+        return Promise.resolve({
+          data: {
+            doc_path: config?.params?.doc_path,
+            chunks: sampleChunks,
+          },
+        })
+      }
+      if (url === '/commons/agronomy-field-guides/crop-lettuce-nutrition') {
+        return Promise.resolve({ data: { title: 'Lettuce nutrition' } })
+      }
+      return Promise.resolve({ data: {} })
+    })
+  })
+
+  it('CitationDocView renders chunks and highlights cited section', async () => {
+    const CitationDocView = (await import('../components/CitationDocView.vue')).default
+    const { useFarmContextStore } = await import('../stores/farmContext')
+    useFarmContextStore().farmId = 1
+
+    const wrapper = mount(CitationDocView, {
+      props: {
+        docPath: 'field-guides/crop-lettuce-nutrition.md',
+        docType: 'field_guide',
+        highlightChunkId: 102,
+      },
+      global: { plugins: [router] },
+    })
+    await flushPromises()
+
+    expect(wrapper.find('[data-test="citation-doc-view"]').exists()).toBe(true)
+    expect(wrapper.find('[data-test="citation-doc-title"]').text()).toBe('Lettuce nutrition')
+    expect(wrapper.findAll('[data-test^="citation-doc-chunk-"]')).toHaveLength(2)
+    expect(wrapper.find('[data-test="citation-doc-chunk-highlight"]').exists()).toBe(true)
+    expect(wrapper.find('[data-test="citation-doc-chunk-highlight"]').text()).toMatch(/tip burn/i)
+  })
+
+  it('FarmKnowledge shows doc view instead of cited-doc banner when deep-linked', async () => {
+    await router.push('/operator-guide?tab=knowledge&cited_doc=field-guides/crop-lettuce-nutrition.md&cited_chunk=102')
+    const FarmKnowledge = (await import('../views/FarmKnowledge.vue')).default
+    const { useFarmContextStore } = await import('../stores/farmContext')
+    const { useCapabilitiesStore } = await import('../stores/capabilities')
+    useFarmContextStore().farmId = 1
+    useCapabilitiesStore().loaded = true
+    useCapabilitiesStore().isLite = false
+
+    const wrapper = mount(FarmKnowledge, {
+      props: { embedded: true },
+      global: { plugins: [router] },
+    })
+    await flushPromises()
+
+    expect(wrapper.find('[data-test="citation-doc-view"]').exists()).toBe(true)
+    expect(wrapper.find('[data-test="farm-knowledge-cited-doc"]').exists()).toBe(false)
+  })
+
+  it('citationDoc helpers strip ingest headers and build Guardian prefill', async () => {
+    const { chunkDisplayText, guardianDocPrefill } = await import('../lib/citationDoc.js')
+    const text = chunkDisplayText(sampleChunks[0].content_text)
+    expect(text).toMatch(/^## Lettuce/)
+    expect(text).not.toMatch(/doc_path:/)
+    expect(guardianDocPrefill('Lettuce nutrition')).toMatch(/Lettuce nutrition/)
   })
 })
