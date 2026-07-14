@@ -280,7 +280,16 @@
           </div>
         </article>
         <div v-if="streaming" class="text-zinc-100 text-sm space-y-2" data-test="chat-streaming-row">
-          <span class="text-[10px] uppercase tracking-widest text-green-500 mr-2">guardian</span>
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="text-[10px] uppercase tracking-widest text-green-500">guardian</span>
+            <span
+              v-if="streamingElapsedLabel"
+              class="text-[10px] font-mono text-zinc-500"
+              data-test="chat-streaming-elapsed"
+            >
+              {{ streamingElapsedLabel }}
+            </span>
+          </div>
           <p v-if="streamingStatus && !streamingText" class="text-xs text-amber-300/80">{{ streamingStatus }}</p>
           <span class="whitespace-pre-wrap">{{ streamingText }}<span class="text-zinc-500 animate-pulse">▍</span></span>
         </div>
@@ -300,6 +309,31 @@
         >
           Snap a leaf photo — pick the room it came from, then ask Guardian.
         </p>
+        <button
+          v-if="isFullPageDiet && !composerExtrasOpen"
+          type="button"
+          class="text-xs text-zinc-500 hover:text-zinc-300 border border-zinc-800 rounded-lg px-3 py-1.5 w-fit"
+          data-test="chat-composer-more"
+          @click="composerExtrasOpen = true"
+        >
+          + Attach photos, starters, mode
+        </button>
+        <GuardianAwakeningPanel
+          :farm-id="useFarmContext ? farmContext.farmId : null"
+          :mode="useFarmContext ? 'farm_counsel' : 'quick'"
+          :auto-warm="useFarmContext && !!farmContext.farmId"
+          :suppress-busy="streaming"
+          @switch-quick="useFarmContext = false"
+        />
+        <p
+          v-if="guardianReadiness.showOfflineFieldBanner"
+          class="text-xs text-amber-200/90 rounded border border-amber-900/50 bg-amber-950/30 px-3 py-2"
+          data-test="guardian-offline-field-banner"
+        >
+          The Guardian's voice is resting (Ollama unreachable).
+          Guided procedures and checklists still work offline.
+        </p>
+        <template v-if="showComposerExtras">
         <div
           v-if="useFarmContext && farmContext.farmId && capabilities.visionChatEnabled"
           class="rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 space-y-2"
@@ -375,20 +409,6 @@
         >
           Image analysis is advisory only — hypotheses, not certified diagnosis. Any change still needs Confirm.
         </p>
-        <GuardianAwakeningPanel
-          :farm-id="useFarmContext ? farmContext.farmId : null"
-          :mode="useFarmContext ? 'farm_counsel' : 'quick'"
-          :auto-warm="useFarmContext && !!farmContext.farmId"
-          @switch-quick="useFarmContext = false"
-        />
-        <p
-          v-if="guardianReadiness.showOfflineFieldBanner"
-          class="text-xs text-amber-200/90 rounded border border-amber-900/50 bg-amber-950/30 px-3 py-2"
-          data-test="guardian-offline-field-banner"
-        >
-          The Guardian's voice is resting (Ollama unreachable).
-          Guided procedures and checklists still work offline.
-        </p>
         <div
           v-if="offlineProcedureStarters.length"
           class="space-y-1.5"
@@ -397,8 +417,6 @@
           <p class="text-[10px] uppercase tracking-widest text-zinc-500">Offline procedures</p>
           <GuardianStarterChips :starters="offlineProcedureStarters" inline @pick="onOfflineProcedureStarter" />
         </div>
-        <GuardianNudgeStrip @review="onNudgeReview" />
-        <GuardianRecentTopicChip :route-path="route.path" @continue="onNudgeReview" />
         <div v-if="morningWalkthroughStarters.length" class="space-y-1.5" data-test="chat-morning-starters">
           <p class="text-[10px] uppercase tracking-widest text-zinc-500">Daily check</p>
           <p class="text-[10px] text-zinc-500">Morning check uses Farm counsel — the Guardian reads your farm first.</p>
@@ -408,6 +426,9 @@
           <p class="text-[10px] uppercase tracking-widest text-zinc-500">Try asking</p>
           <GuardianStarterChips :starters="setupStarters" />
         </div>
+        </template>
+        <GuardianNudgeStrip @review="onNudgeReview" />
+        <GuardianRecentTopicChip :route-path="route.path" @continue="onNudgeReview" />
         <div class="flex flex-col gap-2">
           <label class="text-xs text-zinc-400" for="chat-message-input">Your message</label>
           <span id="chat-message-input-hint" class="sr-only">Press Enter to send. Shift+Enter adds a new line.</span>
@@ -423,12 +444,19 @@
             @keydown.enter.exact.prevent="send"
           />
         </div>
+        <p
+          v-if="showRefineHint"
+          class="text-[11px] text-zinc-500 leading-snug"
+          data-test="chat-refine-hint"
+        >
+          Type after Correction: or ask a question first — same session.
+        </p>
         <p v-if="micListening" class="text-xs text-amber-300/90 animate-pulse" data-test="chat-mic-listening">
           Listening… release to stop
         </p>
-        <GuardianContextModeCards v-model:use-farm-context="useFarmContext" />
+        <GuardianContextModeCards v-if="showComposerExtras" v-model:use-farm-context="useFarmContext" />
         <p
-          v-if="counselCostHint"
+          v-if="counselCostHint && showComposerExtras"
           class="text-[10px] text-zinc-500 leading-snug"
           :class="chatUsage.nearLimit ? 'text-amber-300/80' : ''"
           data-test="chat-counsel-cost-hint"
@@ -746,6 +774,8 @@ const groundedModelBlockReason = computed(() => {
   if (!useFarmContext.value || !farmContext.farmId) return ''
   if (guardianReadiness.farmCounselBlocked) {
     if (guardianReadiness.awakening?.state === 'busy') {
+      // Local streaming row owns busy status (Phase 179) — keep cross-session block only.
+      if (streaming.value) return ''
       return 'Guardian is answering — wait for the current reply before sending another farm counsel message.'
     }
     return 'Farm counsel is awakening — wait a moment or switch to Quick chat.'
@@ -812,9 +842,42 @@ const followUps = computed(() => {
 })
 
 const message = ref('')
+const composerExtrasOpen = ref(false)
 const useFarmContext = ref(!!farmContext.farmId)
 const messageInputRef = ref(null)
 const panelRootRef = ref(null)
+const streamingElapsedSec = ref(0)
+let streamingElapsedTimer = null
+
+const hasSessionTurns = computed(() => transcript.value.length > 0)
+const isFullPageDiet = computed(() => props.layout === 'full' && hasSessionTurns.value)
+const showComposerExtras = computed(() => props.layout !== 'full' || !hasSessionTurns.value || composerExtrasOpen.value)
+const showRefineHint = computed(() => String(message.value || '').includes('Correction:'))
+const streamingElapsedLabel = computed(() => {
+  if (!streaming.value || streamingElapsedSec.value <= 0) return ''
+  const m = Math.floor(streamingElapsedSec.value / 60)
+  const s = streamingElapsedSec.value % 60
+  return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
+})
+
+watch(streaming, (on) => {
+  if (streamingElapsedTimer) {
+    clearInterval(streamingElapsedTimer)
+    streamingElapsedTimer = null
+  }
+  if (on) {
+    streamingElapsedSec.value = 0
+    streamingElapsedTimer = setInterval(() => {
+      streamingElapsedSec.value += 1
+    }, 1000)
+  } else {
+    streamingElapsedSec.value = 0
+  }
+})
+
+watch(hasSessionTurns, (hasTurns) => {
+  if (!hasTurns) composerExtrasOpen.value = false
+})
 
 const sessionId = computed({
   get: () => guardianPanel.activeSessionId,
@@ -1378,6 +1441,10 @@ onUnmounted(() => {
   revokeChatPhotoThumbs()
   micRecognizer?.abort()
   stopSpeaking()
+  if (streamingElapsedTimer) {
+    clearInterval(streamingElapsedTimer)
+    streamingElapsedTimer = null
+  }
 })
 
 onMounted(async () => {

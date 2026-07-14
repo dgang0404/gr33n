@@ -20,14 +20,7 @@
         />
       </span>
       <span v-if="!collapsed" class="flex-1 min-w-0 text-left font-semibold">Ask gr33n</span>
-      <span
-        v-if="proposalsStore.pendingCount > 0"
-        class="absolute -top-1 -right-1 min-w-[1.125rem] h-[1.125rem] px-1 rounded-full bg-amber-600 text-[10px] font-bold text-amber-950 flex items-center justify-center shrink-0"
-        :class="collapsed ? '' : 'relative top-0 right-0'"
-        data-test="guardian-nav-pending-badge"
-      >
-        {{ proposalsStore.pendingCount > 9 ? '9+' : proposalsStore.pendingCount }}
-      </span>
+      <!-- Pending count badge lives on TopBar only (Phase 181) — readiness dot stays here -->
     </button>
   </div>
 </template>

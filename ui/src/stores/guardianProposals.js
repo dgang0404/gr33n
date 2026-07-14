@@ -30,7 +30,12 @@ export const useGuardianProposalsStore = defineStore('guardianProposals', {
         const r = await api.get('/v1/chat/proposals', {
           params: { farm_id: farmId, status, limit: 50, offset: 0 },
         })
-        this.proposals = r.data?.proposals ?? []
+        const proposals = r.data?.proposals ?? []
+        this.proposals = proposals.slice().sort((a, b) => {
+          const ta = Date.parse(a.created_at) || 0
+          const tb = Date.parse(b.created_at) || 0
+          return tb - ta
+        })
         this.total = r.data?.total ?? 0
         if (status === 'pending') {
           this.pendingCount = this.total

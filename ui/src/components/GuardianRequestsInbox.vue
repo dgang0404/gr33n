@@ -23,16 +23,27 @@
     </p>
 
     <div v-else class="space-y-2" data-test="guardian-inbox-list">
-      <GuardianActionProposal
-        v-for="p in store.proposals"
-        :key="p.proposal_id"
-        :proposal="normalizeForCard(p)"
-        :can-operate="canOperate"
-        @confirmed="onConfirmed"
-        @dismissed="onDismissed"
-        @error="onError"
-        @refine="onRefine"
-      />
+      <p
+        class="sticky top-0 z-10 -mx-1 px-1 py-1.5 text-xs font-medium text-zinc-400 bg-zinc-950/95 backdrop-blur-sm border-b border-zinc-800/80"
+        data-test="guardian-inbox-count"
+      >
+        {{ store.proposals.length }} request{{ store.proposals.length === 1 ? '' : 's' }} — newest first
+      </p>
+      <div
+        class="max-h-[min(70vh,32rem)] overflow-y-auto space-y-2 pr-1"
+        data-test="guardian-inbox-scroll"
+      >
+        <GuardianActionProposal
+          v-for="p in store.proposals"
+          :key="p.proposal_id"
+          :proposal="normalizeForCard(p)"
+          :can-operate="canOperate"
+          @confirmed="onConfirmed"
+          @dismissed="onDismissed"
+          @error="onError"
+          @refine="onRefine"
+        />
+      </div>
     </div>
   </div>
 </template>

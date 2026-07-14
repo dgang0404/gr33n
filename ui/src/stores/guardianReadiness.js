@@ -77,6 +77,9 @@ export const useGuardianReadinessStore = defineStore('guardianReadiness', {
         this.loaded = true
       } catch (e) {
         this.error = e.response?.data?.error || e.message || 'Health check failed'
+        if (e.response?.status === 401) {
+          this.stopPolling()
+        }
       } finally {
         this.loading = false
       }

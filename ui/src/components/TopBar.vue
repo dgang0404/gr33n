@@ -96,7 +96,7 @@ import { useCapabilitiesStore } from '../stores/capabilities'
 import { useGuardianPanelStore } from '../stores/guardianPanel'
 import { useGuardianProposalsStore } from '../stores/guardianProposals'
 import { useGuardianReadinessStore } from '../stores/guardianReadiness'
-import api from '../api'
+import api, { isUnauthorizedError } from '../api'
 
 defineEmits(['toggle-drawer'])
 
@@ -157,7 +157,14 @@ onMounted(async () => {
     try { await api.get('/health'); apiOk.value = true }
     catch { apiOk.value = false }
     if (farmContext.farmId) {
-      try { await farmStore.countUnreadAlerts(farmContext.farmId) } catch {}
+      try {
+        await farmStore.countUnreadAlerts(farmContext.farmId)
+      } catch (e) {
+        if (isUnauthorizedError(e) && tick) {
+          clearInterval(tick)
+          tick = null
+        }
+      }
     }
   }, 5000)
   now.value = new Date().toLocaleTimeString()
