@@ -30,8 +30,9 @@ type Scenario struct {
 	VerifyFixtureID string  // maps to write-feed / write-task confirm verification
 	ConfirmFinal    bool    // API confirm + DB verify after all turns
 	LeavePending    bool    // bump TTL so Pending tab stays populated
-	MinRevision     int     // optional: require pending proposal revision >= N
+	MinRevision      int     // optional: require pending proposal revision >= N
 	WantVolumeLiters float64 // optional feed revise check (0.3 after correction)
+	WantTitle        string  // optional create_task title after revise
 }
 
 // IsScenarioSuite reports whether the eval suite runs multi-turn scenarios.
@@ -303,6 +304,15 @@ func resolveScenarioProposal(ctx context.Context, api *APIClient, sessionID stri
 		}
 		if math.Abs(got-sc.WantVolumeLiters) > 0.05 {
 			return "", PendingProposal{}, fmt.Errorf("proposal volume %.3f want ~%.3f L", got, sc.WantVolumeLiters)
+		}
+	}
+	if wantTitle := strings.TrimSpace(sc.WantTitle); wantTitle != "" {
+		got, err := stringFromAny(best.Args["title"])
+		if err != nil {
+			return "", PendingProposal{}, fmt.Errorf("proposal args missing title")
+		}
+		if !strings.EqualFold(got, wantTitle) {
+			return "", PendingProposal{}, fmt.Errorf("proposal title %q want %q", got, wantTitle)
 		}
 	}
 	return strings.TrimSpace(best.ProposalID), best, nil

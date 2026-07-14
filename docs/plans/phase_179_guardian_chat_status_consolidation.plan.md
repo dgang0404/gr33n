@@ -9,28 +9,28 @@ overview: >
 todos:
   - id: ws1-status-inventory
     content: "WS1: Inventory + test map — every streaming/busy indicator in GuardianChatPanel, GuardianAwakeningPanel, chatUsage strip, mode cards"
-    status: pending
+    status: completed
   - id: ws2-single-progress
     content: "WS2: Single progress row — streamingStatus + elapsed timer live only in the transcript streaming row; Stop stays beside it"
-    status: pending
+    status: completed
   - id: ws3-composer-quiet
     content: "WS3: Composer during streaming — disable Send + input with subtle hint; remove amber groundedModelBlockReason duplicate when the busy turn is OURS"
-    status: pending
+    status: completed
   - id: ws4-awakening-scope
     content: "WS4: Awakening panel shows readiness states only (dormant/stirring/awake); hide its busy box while this session's turn is streaming"
-    status: pending
+    status: completed
   - id: ws5-mode-cards-collapse
     content: "WS5: Collapse Quick chat / Farm counsel cards to a compact segmented control once a session has ≥1 turn (full cards only on empty session)"
-    status: pending
+    status: completed
   - id: ws6-tests-docs
     content: "WS6: Vitest — exactly one visible status element while streaming; update operator-tour chat section; phase-179-closure"
-    status: pending
+    status: completed
 isProject: false
 ---
 
 # Phase 179 — Guardian chat status consolidation
 
-**Status:** planned · **Follows:** [178](phase_178_online_weather_forecast.plan.md)
+**Status:** shipped · **Follows:** [178](phase_178_online_weather_forecast.plan.md)
 
 ## The problem
 
@@ -106,8 +106,8 @@ session (first-run education stays).
 
 ## Acceptance
 
-- [ ] One visible busy/status element during a local streaming turn.
-- [ ] Stop button unchanged and adjacent to the progress row.
-- [ ] Cross-session busy (`chat_busy`) still explains itself in the composer.
-- [ ] Mode cards collapse after first turn; full cards on empty session.
-- [ ] All existing chat Vitest suites green; closure test added.
+- [x] One visible busy/status element during a local streaming turn.
+- [x] Stop button unchanged and adjacent to the progress row.
+- [x] Cross-session busy (`chat_busy`) still explains itself in the composer.
+- [x] Mode cards collapse after first turn; full cards on empty session.
+- [x] All existing chat Vitest suites green; closure test added.

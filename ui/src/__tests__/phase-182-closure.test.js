@@ -26,7 +26,11 @@ vi.mock('../composables/useFarmOperate', () => ({
   useFarmOperate: () => ({ canOperate: { value: true }, loading: { value: false } }),
 }))
 
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import api from '../api'
+
+const uiSrc = join(process.cwd(), 'src')
 
 const router = createRouter({
   history: createMemoryHistory(),
@@ -137,5 +141,13 @@ describe('Phase 182 — refine hint', () => {
 
     expect(wrapper.find('[data-test="chat-refine-hint"]').exists()).toBe(true)
     expect(wrapper.find('[data-test="chat-refine-hint"]').text()).toContain('same session')
+  })
+})
+
+describe('Phase 182 — 401 poll backoff wiring', () => {
+  it('TopBar stops unread poll interval on 401', () => {
+    const topbar = readFileSync(join(uiSrc, 'components/TopBar.vue'), 'utf8')
+    expect(topbar).toContain('isUnauthorizedError')
+    expect(topbar).toContain('clearInterval(tick)')
   })
 })

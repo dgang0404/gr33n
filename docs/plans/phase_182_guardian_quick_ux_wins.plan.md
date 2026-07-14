@@ -8,22 +8,22 @@ overview: >
 todos:
   - id: ws1-401-backoff
     content: "WS1: On 401 from unread-count/proposals polling, stop polling + redirect to login once instead of hammering the endpoint every interval"
-    status: pending
+    status: completed
   - id: ws2-pending-tab-scroll
     content: "WS2: Pending tab — sticky 'N requests' count + scrollable list (newest first) so all N cards are reachable, not just the first 2-3"
-    status: pending
+    status: completed
   - id: ws3-refine-hint
     content: "WS3: One-line hint under the composer input during Refine: 'Type after Correction: or ask a question first — same session.'"
-    status: pending
+    status: completed
   - id: ws4-tests-docs
     content: "WS4: Vitest for 401 single-redirect + no re-poll; Pending tab scroll/order; refine hint visibility; phase-182-closure"
-    status: pending
+    status: completed
 isProject: false
 ---
 
 # Phase 182 — Guardian quick UX wins
 
-**Status:** planned · **Follows:** [181](phase_181_guardian_composer_diet.plan.md)
+**Status:** shipped · **Follows:** [181](phase_181_guardian_composer_diet.plan.md)
 
 ## The problem
 
@@ -78,9 +78,9 @@ question first — same session."* Dismisses once the user sends a message.
 
 ## Acceptance
 
-- [ ] 401 on nav polling logs once, redirects once, does not repeat every
+- [x] 401 on nav polling logs once, redirects once, does not repeat every
       interval.
-- [ ] Pending tab: every pending card reachable via scroll; count matches
+- [x] Pending tab: every pending card reachable via scroll; count matches
       visible list; newest-first order.
-- [ ] Refine flow shows the one-line hint under the input.
-- [ ] Vitest closure green.
+- [x] Refine flow shows the one-line hint under the input.
+- [x] Vitest closure green.

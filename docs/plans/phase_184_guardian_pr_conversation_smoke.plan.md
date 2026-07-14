@@ -62,7 +62,7 @@ UI and test the confirm button."*
 |----------|-------|-----------|
 | `scenario-feed-revise-confirm` | "Set feed to 0.5L for Veg Tent" → "revise — use 0.3L instead" | **Confirmed via API**, DB-verified (`write-feed` side-effect check, ≈0.3L) |
 | `scenario-feed-revise-pending` | same dialogue | **Left pending** (revision ≥2, 0.3L) — test **Confirm** in UI |
-| `scenario-task-dialogue-pending` | "Create a task to refill calcium nitrate" → "which zone should this refer to?" | **Left pending** — test **Refine** / **Confirm** |
+| `scenario-task-dialogue-pending` | create task → clarify zone → **call it Refill calcium nitrate** | **Left pending** (rev ≥2) — test **Refine** title revise + **Confirm** |
 | `scenario-schedule-pending` | "Pause the lights schedule for Veg Tent until tomorrow" | **Left pending** |
 | `scenario-ack-pending` | "Acknowledge the highest severity unread alert" | **Left pending** |
 
@@ -116,10 +116,10 @@ confirmed row's DB side effect matches (0.3L on the Veg Tent program).
   the browser stays a manual step (that's the point — it's UI testing
   prep, not UI test replacement).
 - GitHub CI automation — stays script-only like Phase 153/162.
-- Extending revise matchers for `create_task` titles (tracked separately
-  as [Phase 183](phase_183_guardian_knowledge_and_revise_followups.plan.md)
-  WS3 — `scenario-task-dialogue-pending` today only asks a clarifying
-  question, not a hard correction, until that matcher work lands).
+- Extending revise matchers for `create_task` titles — shipped in
+  [Phase 183](phase_183_guardian_knowledge_and_revise_followups.plan.md) WS3;
+  `scenario-task-dialogue-pending` now includes a third turn that asserts
+  title revise via `WantTitle` + `MinRevision`.
 
 ## Acceptance
 

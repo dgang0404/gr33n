@@ -8,22 +8,22 @@ overview: >
 todos:
   - id: ws1-audit-entries
     content: "WS1: Inventory composer chrome (vision attach, starters, mode cards, usage strip) in full-page chat vs drawer; inventory both 'Ask gr33n' nav entries + badge source"
-    status: pending
+    status: completed
   - id: ws2-progressive-disclosure
     content: "WS2: Full-page chat — starters + vision attach + usage strip collapse behind a compact toggle/disclosure once session has ≥1 turn; drawer keeps richer always-on layout"
-    status: pending
+    status: completed
   - id: ws3-single-primary-entry
     content: "WS3: Pick one primary 'Ask gr33n' entry point (sidebar or top bar); demote the other to icon-only, no duplicate badge count"
-    status: pending
+    status: completed
   - id: ws4-tests-docs
     content: "WS4: Vitest for disclosure collapse + single-badge assertion; operator-tour nav update; phase-181-closure"
-    status: pending
+    status: completed
 isProject: false
 ---
 
 # Phase 181 — Guardian composer diet + single "Ask gr33n" entry
 
-**Status:** planned · **Follows:** [180](phase_180_knowledge_surfaces_discoverability.plan.md)
+**Status:** shipped · **Follows:** [180](phase_180_knowledge_surfaces_discoverability.plan.md)
 
 ## The problem
 
@@ -92,9 +92,9 @@ intentional (quick access) or accidental copy-paste.
 
 ## Acceptance
 
-- [ ] Full-page chat: starters/attach/usage strip are collapsed by default
+- [x] Full-page chat: starters/attach/usage strip are collapsed by default
       once a session has a turn; reachable via one toggle.
-- [ ] Drawer chat unchanged (richer, always-on).
-- [ ] Only one "Ask gr33n" entry shows the live badge; the other is
+- [x] Drawer chat unchanged (richer, always-on).
+- [x] Only one "Ask gr33n" entry shows the live badge; the other is
       icon-only or removed.
-- [ ] Vitest closure green.
+- [x] Vitest closure green.

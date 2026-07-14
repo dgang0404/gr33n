@@ -44,6 +44,29 @@ func TestChangeRequestUIScenariosQuick_subset(t *testing.T) {
 	}
 }
 
+func TestChangeRequestUIScenarios_taskReviseTurns(t *testing.T) {
+	all := ChangeRequestUIScenarios()
+	var task *Scenario
+	for i := range all {
+		if all[i].ID == "scenario-task-dialogue-pending" {
+			task = &all[i]
+			break
+		}
+	}
+	if task == nil {
+		t.Fatal("missing scenario-task-dialogue-pending")
+	}
+	if len(task.Turns) != 3 {
+		t.Fatalf("task scenario turns = %d want 3", len(task.Turns))
+	}
+	if task.MinRevision != 2 {
+		t.Fatalf("MinRevision = %d want 2", task.MinRevision)
+	}
+	if task.WantTitle != "Refill calcium nitrate" {
+		t.Fatalf("WantTitle = %q", task.WantTitle)
+	}
+}
+
 func TestFilterScenariosByIDs(t *testing.T) {
 	all := ChangeRequestUIScenarios()
 	got := FilterScenariosByIDs(all, "scenario-ack-pending")

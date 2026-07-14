@@ -40,9 +40,12 @@ func ChangeRequestUIScenarios() []Scenario {
 			Grounded:       true,
 			ExpectProposal: true,
 			LeavePending:   true,
+			MinRevision:      2,
+			WantTitle:        "Refill calcium nitrate",
 			Turns: []ScenarioTurn{
 				{Prompt: "Create a task to refill calcium nitrate when stock is low."},
 				{Prompt: "Before I confirm — which zone should this task refer to?"},
+				{Prompt: "call it Refill calcium nitrate instead"},
 			},
 		},
 		{
