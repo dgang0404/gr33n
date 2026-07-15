@@ -188,6 +188,13 @@ Plan: [`phase_185_guardian_task_zone_revise.plan.md`](plans/phase_185_guardian_t
 
 Plan: [`phase_186_guardian_task_due_date_revise.plan.md`](plans/phase_186_guardian_task_due_date_revise.plan.md) · Vitest: `phase-186-closure.test.js`
 
+## Relative due_date revise (Phase 187)
+
+- **Plain-language deadlines** — pending task proposals accept `make it due tomorrow`, `due in 3 days`, `due next week` (ISO patterns from Phase 186 still work)
+- **Smoke** — `scenario-task-dialogue-pending` turn 4 uses `make it due tomorrow` with `WantDueDateOffsetDays: 1`
+
+Plan: [`phase_187_guardian_relative_due_date_revise.plan.md`](plans/phase_187_guardian_relative_due_date_revise.plan.md) · Vitest: `phase-187-closure.test.js`
+
 ## Multi-turn PR smoke (Phase 184)
 
 `make guardian-qa-change-requests-ui` runs **5 multi-turn scenarios** (shared `session_id` per dialogue): 1 feed revise **confirmed via API** + 4 left pending (feed, task, schedule, ack) for manual Confirm/Refine/Dismiss on `/chat?tab=pending`. Quick subset: ack + schedule (`change-requests-ui-quick`).
@@ -313,6 +320,6 @@ Accessibility: skip link, Guardian drawer focus trap, zone tab semantics — [`a
 
 ## Phase history
 
-- **Shipped arcs:** 40–67 farmer UX · 68–81 SPA · 82–110 crop intelligence · 111–122 Guardian/Pi · 129–153 Guardian QA · **154–161** infra/trust + citation + a11y + ec-ph trim · **164–177** visual Today farm cockpit + excellence arc · **178** online weather forecast · **179–186** Guardian UX polish, Help Library, multi-turn PR smoke, task revise chain
+- **Shipped arcs:** 40–67 farmer UX · 68–81 SPA · 82–110 crop intelligence · 111–122 Guardian/Pi · 129–153 Guardian QA · **154–161** infra/trust + citation + a11y + ec-ph trim · **164–177** visual Today farm cockpit + excellence arc · **178** online weather forecast · **179–187** Guardian UX polish, Help Library, multi-turn PR smoke, task revise chain
 - **Active / planned:** Insert Commons (opt-in); Phase 184 WS5 live Pending-tab verification (operator); full `smoke-ec-ph` re-run on CPU (operator)
 - **Archive:** [`plans/archive/`](plans/archive/) — closed plans (e.g. 88–92)

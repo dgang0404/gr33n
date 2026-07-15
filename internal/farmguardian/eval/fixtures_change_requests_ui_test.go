@@ -65,8 +65,11 @@ func TestChangeRequestUIScenarios_taskReviseTurns(t *testing.T) {
 	if !task.RequireTaskZone {
 		t.Fatal("expected RequireTaskZone on task scenario")
 	}
-	if task.WantDueDate != "2026-07-20" {
-		t.Fatalf("WantDueDate = %q", task.WantDueDate)
+	if task.WantDueDateOffsetDays != 1 {
+		t.Fatalf("WantDueDateOffsetDays = %d want 1", task.WantDueDateOffsetDays)
+	}
+	if task.WantDueDate != "" {
+		t.Fatalf("WantDueDate should be empty for relative due revise, got %q", task.WantDueDate)
 	}
 	if task.WantTitle != "Refill calcium nitrate" {
 		t.Fatalf("WantTitle = %q", task.WantTitle)

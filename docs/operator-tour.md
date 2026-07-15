@@ -893,6 +893,12 @@ Plan: [`phase_185_guardian_task_zone_revise.plan.md`](plans/phase_185_guardian_t
 
 Plan: [`phase_186_guardian_task_due_date_revise.plan.md`](plans/phase_186_guardian_task_due_date_revise.plan.md)
 
+### 7s. Relative due_date revise (Phase 187 — shipped)
+
+**Shipped.** Refine turns like `make it due tomorrow` or `due in 3 days` now resolve to `YYYY-MM-DD` and bump `Revision`. The task dialogue smoke uses `WantDueDateOffsetDays` so the assertion tracks the run date.
+
+Plan: [`phase_187_guardian_relative_due_date_revise.plan.md`](plans/phase_187_guardian_relative_due_date_revise.plan.md)
+
 ---
 
 ## 7b. Feeding & water for this zone (Phase 47)

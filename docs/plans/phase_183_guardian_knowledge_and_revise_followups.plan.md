@@ -98,4 +98,5 @@ medium-sized rather than quick:
       via rule-based revise (no LLM round-trip required).
 - Zone assignment revise shipped in [Phase 185](phase_185_guardian_task_zone_revise.plan.md).
 - Due-date revise + tool execution shipped in [Phase 186](phase_186_guardian_task_due_date_revise.plan.md).
+- Relative due-date revise (`due tomorrow`, `due in N days`) shipped in [Phase 187](phase_187_guardian_relative_due_date_revise.plan.md).
 - [x] Vitest + Go test closure green.

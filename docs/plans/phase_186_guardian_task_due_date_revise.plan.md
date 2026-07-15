@@ -38,8 +38,9 @@ it — so even a matched revise could not persist a deadline on Confirm.
 
 ### WS2 — Revise matchers (`proposals_revise.go`)
 
-- `parseTaskDueDateRevision` handles `due date should be 2026-07-20` and
-  `set the due date to 2026-07-20`.
+- Parses `set the due date to 2026-07-20` and `due date should be …`.
+- Relative phrases (`due tomorrow`, `due in N days`, `due next week`) shipped
+  in [Phase 187](phase_187_guardian_relative_due_date_revise.plan.md).
 - LLM proposal validation rejects malformed `due_date` strings.
 
 ### WS3 — Smoke + docs

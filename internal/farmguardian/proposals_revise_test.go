@@ -3,6 +3,7 @@ package farmguardian
 import (
 	"strings"
 	"testing"
+	"time"
 )
 
 func setupPackArgsFixture() map[string]any {
@@ -136,25 +137,33 @@ func TestParseTaskZoneIDNumeric(t *testing.T) {
 }
 
 func TestParseTaskDueDateRevision(t *testing.T) {
-	if due, ok := parseTaskDueDateRevision("set the due date to 2026-07-20"); !ok || due != "2026-07-20" {
+	fixed := time.Date(2026, 7, 14, 15, 30, 0, 0, time.UTC)
+	if due, ok := parseTaskDueDateRevisionAt("set the due date to 2026-07-20", fixed); !ok || due != "2026-07-20" {
 		t.Fatalf("set due date: got %q ok=%v", due, ok)
 	}
-	if due, ok := parseTaskDueDateRevision("due date should be 2026-08-01"); !ok || due != "2026-08-01" {
+	if due, ok := parseTaskDueDateRevisionAt("due date should be 2026-08-01", fixed); !ok || due != "2026-08-01" {
 		t.Fatalf("due date should be: got %q ok=%v", due, ok)
 	}
-	if _, ok := parseTaskDueDateRevision("when should I run this?"); ok {
+	if due, ok := parseTaskDueDateRevisionAt("make it due tomorrow", fixed); !ok || due != "2026-07-15" {
+		t.Fatalf("due tomorrow: got %q ok=%v", due, ok)
+	}
+	if due, ok := parseTaskDueDateRevisionAt("due in 3 days", fixed); !ok || due != "2026-07-17" {
+		t.Fatalf("due in 3 days: got %q ok=%v", due, ok)
+	}
+	if _, ok := parseTaskDueDateRevisionAt("when should I run this?", fixed); ok {
 		t.Fatal("clarifying question should not match due date")
 	}
 }
 
 func TestApplyRevisionDeltas_CreateTaskDueDate(t *testing.T) {
 	prior := map[string]any{"title": "Refill calcium nitrate"}
-	next, changed := applyRevisionDeltas("create_task", prior, "set the due date to 2026-07-20")
+	next, changed := applyRevisionDeltas("create_task", prior, "make it due tomorrow")
 	if !changed {
 		t.Fatal("expected changed=true")
 	}
-	if next["due_date"] != "2026-07-20" {
-		t.Fatalf("due_date = %#v want 2026-07-20", next["due_date"])
+	want := time.Now().UTC().AddDate(0, 0, 1).Format("2006-01-02")
+	if next["due_date"] != want {
+		t.Fatalf("due_date = %#v want %s", next["due_date"], want)
 	}
 }
 

@@ -42,13 +42,13 @@ func ChangeRequestUIScenarios() []Scenario {
 			LeavePending:   true,
 			MinRevision:      4,
 			RequireTaskZone:  true,
-			WantTitle:        "Refill calcium nitrate",
-			WantDueDate:      "2026-07-20",
+			WantTitle:               "Refill calcium nitrate",
+			WantDueDateOffsetDays:   1,
 			Turns: []ScenarioTurn{
 				{Prompt: "Create a task to refill calcium nitrate when stock is low."},
 				{Prompt: "Put it in Veg Room — that is the zone for this task."},
 				{Prompt: "call it Refill calcium nitrate instead"},
-				{Prompt: "set the due date to 2026-07-20"},
+				{Prompt: "make it due tomorrow"},
 			},
 		},
 		{

@@ -28,6 +28,7 @@ var (
 	reviseTaskZoneIDPattern  = regexp.MustCompile(`(?i)\bzone(?:\s+id)?\s*#?(\d+)\b`)
 	reviseDueDatePattern     = regexp.MustCompile(`(?i)(?:due(?:\s+date)?|deadline)\s*(?:should be|is|=|:|to)\s*(\d{4}-\d{2}-\d{2})`)
 	reviseSetDueDatePattern  = regexp.MustCompile(`(?i)set (?:the )?due date to (\d{4}-\d{2}-\d{2})`)
+	reviseDueInDaysPattern   = regexp.MustCompile(`(?i)due in (\d{1,3}) days?`)
 )
 
 // tryReviseActiveProposal revises the live draft in a session when the turn reads
@@ -334,6 +335,10 @@ func parseTaskZoneIDNumeric(question string) (int64, bool) {
 }
 
 func parseTaskDueDateRevision(question string) (string, bool) {
+	return parseTaskDueDateRevisionAt(question, time.Now().UTC())
+}
+
+func parseTaskDueDateRevisionAt(question string, now time.Time) (string, bool) {
 	for _, p := range []*regexp.Regexp{reviseDueDatePattern, reviseSetDueDatePattern} {
 		if m := p.FindStringSubmatch(question); len(m) > 1 {
 			if date := strings.TrimSpace(m[1]); isISODateString(date) {
@@ -341,7 +346,41 @@ func parseTaskDueDateRevision(question string) (string, bool) {
 			}
 		}
 	}
+	return parseTaskRelativeDueDateAt(question, now)
+}
+
+func parseTaskRelativeDueDateAt(question string, now time.Time) (string, bool) {
+	lower := strings.ToLower(strings.TrimSpace(question))
+	if !taskDueDateRevisionCue(lower) {
+		return "", false
+	}
+	base := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC)
+	switch {
+	case strings.Contains(lower, "tomorrow"):
+		return base.AddDate(0, 0, 1).Format("2006-01-02"), true
+	case strings.Contains(lower, "today"):
+		return base.Format("2006-01-02"), true
+	case strings.Contains(lower, "next week"):
+		return base.AddDate(0, 0, 7).Format("2006-01-02"), true
+	}
+	if m := reviseDueInDaysPattern.FindStringSubmatch(question); len(m) > 1 {
+		if n, err := strconv.Atoi(m[1]); err == nil && n >= 0 && n <= 365 {
+			return base.AddDate(0, 0, n).Format("2006-01-02"), true
+		}
+	}
 	return "", false
+}
+
+func taskDueDateRevisionCue(lower string) bool {
+	for _, cue := range []string{
+		"due tomorrow", "due today", "due in ", "due next week",
+		"make it due", "set the due date", "due date should be", "deadline",
+	} {
+		if strings.Contains(lower, cue) {
+			return true
+		}
+	}
+	return false
 }
 
 func isISODateString(s string) bool {

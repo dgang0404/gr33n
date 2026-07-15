@@ -32,7 +32,7 @@ describe('Phase 186 — task due_date revise', () => {
     expect(tasks).toContain('optionalDateFromArgs(args, "due_date")')
   })
 
-  it('task dialogue scenario adds due-date turn and WantDueDate', () => {
+  it('task dialogue scenario adds due-date turn and due-date assertions', () => {
     const fixtures = readFileSync(
       join(repoRoot, 'internal/farmguardian/eval/fixtures_change_requests_ui.go'),
       'utf8',
@@ -41,10 +41,10 @@ describe('Phase 186 — task due_date revise', () => {
       join(repoRoot, 'internal/farmguardian/eval/scenario.go'),
       'utf8',
     )
-    expect(fixtures).toContain('WantDueDate')
-    expect(fixtures).toContain('set the due date to 2026-07-20')
+    expect(fixtures).toContain('WantDueDateOffsetDays')
     expect(fixtures).toContain('MinRevision:      4')
     expect(scenario).toContain('WantDueDate')
+    expect(scenario).toContain('WantDueDateOffsetDays')
     expect(scenario).toContain('proposal args missing due_date')
   })
 })

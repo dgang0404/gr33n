@@ -34,7 +34,8 @@ type Scenario struct {
 	WantVolumeLiters float64 // optional feed revise check (0.3 after correction)
 	WantTitle        string  // optional create_task title after revise
 	RequireTaskZone  bool    // optional: require zone_id on final create_task proposal
-	WantDueDate      string  // optional create_task due_date (YYYY-MM-DD) after revise
+	WantDueDate            string  // optional create_task due_date (YYYY-MM-DD) after revise
+	WantDueDateOffsetDays  int     // optional: due_date = UTC today + N days (for relative revise)
 }
 
 // IsScenarioSuite reports whether the eval suite runs multi-turn scenarios.
@@ -323,13 +324,17 @@ func resolveScenarioProposal(ctx context.Context, api *APIClient, sessionID stri
 			return "", PendingProposal{}, fmt.Errorf("proposal args missing zone_id")
 		}
 	}
-	if wantDue := strings.TrimSpace(sc.WantDueDate); wantDue != "" {
+	if wantDue := strings.TrimSpace(sc.WantDueDate); wantDue != "" || sc.WantDueDateOffsetDays > 0 {
 		got, err := stringFromAny(best.Args["due_date"])
 		if err != nil {
 			return "", PendingProposal{}, fmt.Errorf("proposal args missing due_date")
 		}
-		if got != wantDue {
-			return "", PendingProposal{}, fmt.Errorf("proposal due_date %q want %q", got, wantDue)
+		want := wantDue
+		if sc.WantDueDateOffsetDays > 0 {
+			want = time.Now().UTC().AddDate(0, 0, sc.WantDueDateOffsetDays).Format("2006-01-02")
+		}
+		if got != want {
+			return "", PendingProposal{}, fmt.Errorf("proposal due_date %q want %q", got, want)
 		}
 	}
 	return strings.TrimSpace(best.ProposalID), best, nil
