@@ -255,7 +255,7 @@ guardian-qa-change-requests-ui: ## Multi-turn PR dialogues: 1 confirm via API + 
 			-suite change-requests-ui \
 			-report $${GUARDIAN_EVAL_REPORT:-data/guardian_model_eval.json}'
 
-guardian-qa-change-requests-ui-quick: ## Fast multi-turn UI prep: feed revise + task dialogue (~50 min)
+guardian-qa-change-requests-ui-quick: ## Fast multi-turn UI prep: ack + schedule pending (~25 min)
 	@bash -lc 'set -e; cd "$(CURDIR)"; \
 		if [ -f .env ]; then set -a && . ./.env && set +a; fi; \
 		source scripts/source-local-env.sh --refresh-eval-token; \

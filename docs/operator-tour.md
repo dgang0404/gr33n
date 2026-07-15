@@ -863,6 +863,26 @@ Plans: [`phase_173_today_large_farm_navigation.plan.md`](plans/phase_173_today_l
 
 ---
 
+### 7n. Online weather forecast (Phase 178 — shipped)
+
+**Shipped.** Optional Tier 3 on Today — sun times always work offline; when the API has `WEATHER_PROVIDER=openmeteo` (or a paid provider) and the farm **opts in** under **Settings → Farm site**, the Site Strip shows outdoor temp/cloud cover and a forecast badge (`● Forecast live`, `● Forecast cached (offline)`, `● Forecast off`). WAN loss degrades to cached-then-offline without breaking the sun dial.
+
+**Env:** `WEATHER_PROVIDER`, `WEATHER_CACHE_MINUTES` — see [`environment-variables.md`](environment-variables.md). Plan: [`phase_178_online_weather_forecast.plan.md`](plans/phase_178_online_weather_forecast.plan.md)
+
+### 7o. Guardian chat polish (Phases 179–182 — shipped)
+
+**Shipped.** Full-page `/chat` is calmer during streaming (one progress row), the composer collapses starters/attach/mode behind **+ Attach photos, starters, mode** after the first turn, and the pending-count badge lives on the **TopBar** only (sidebar ✨ shows readiness, not duplicate counts). Pending tab lists are scrollable newest-first; **Refine** shows a one-line hint under the input. Expired JWT stops nav polling after one 401 redirect.
+
+Plans: [`phase_179_guardian_chat_status_consolidation.plan.md`](plans/phase_179_guardian_chat_status_consolidation.plan.md) · [`phase_181_guardian_composer_diet.plan.md`](plans/phase_181_guardian_composer_diet.plan.md) · [`phase_182_guardian_quick_ux_wins.plan.md`](plans/phase_182_guardian_quick_ux_wins.plan.md)
+
+### 7p. Multi-turn PR smoke (Phase 184 — shipped code)
+
+**Shipped (script).** `make guardian-qa-change-requests-ui` seeds **1 confirmed + 4 pending** change requests from realistic back-and-forth dialogues (feed revise, task title revise, schedule, ack) — open `/chat?tab=pending` to exercise Confirm / Refine / Dismiss manually. Quick CPU path: `make guardian-qa-change-requests-ui-quick` (ack + schedule only).
+
+Plan: [`phase_184_guardian_pr_conversation_smoke.plan.md`](plans/phase_184_guardian_pr_conversation_smoke.plan.md) · [`ci-guardian-qa.md`](ci-guardian-qa.md)
+
+---
+
 ## 7b. Feeding & water for this zone (Phase 47)
 
 **Shipped.** Completes the Water story from [Phase 40](plans/phase_40_unified_farmer_ux_zone_cockpit.plan.md) WS5 and [Phase 41](plans/phase_41_farm_hub_coherence.plan.md) farm hub links. Plan: [`plans/phase_47_feeding_water_plain_language.plan.md`](plans/phase_47_feeding_water_plain_language.plan.md) · Words: [`farmer-vocabulary.md`](farmer-vocabulary.md).

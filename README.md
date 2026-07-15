@@ -18,7 +18,7 @@ An open-source farm operating system — run it on your LAN, keep your data clos
 
 🌡️ **Live Sensor Dashboards** — Temperature, humidity, light, EC, pH, CO₂, soil moisture. Real-time readings in your zones; historical graphs; automated alerts ("humidity above 75 %"). SSE live-stream stays current even offline.
 
-📍 **Today — visual farm cockpit** — Open `/` to see your zones, operational pulse, and what needs attention first — not an AI launcher ([operator tour §7l](docs/operator-tour.md#7l-today-excellence-phases-173177--shipped)). Set **farm site coordinates** on Today or **Settings → Farm site**: paste from Google Maps (e.g. `40.8938° N, 81.4055° W`) — N/S/E/W set the sign automatically (west → negative longitude). Sunrise/sunset use those coords offline. In **Arrange** on the canvas, upload a layout background (JPEG/PNG/WebP, ≤8 MB).
+📍 **Today — visual farm cockpit** — Open `/` to see your zones, operational pulse, and what needs attention first — not an AI launcher ([operator tour §7l](docs/operator-tour.md#7l-today-excellence-phases-173177--shipped)). Set **farm site coordinates** on Today or **Settings → Farm site**: paste from Google Maps (e.g. `40.8938° N, 81.4055° W`) — N/S/E/W set the sign automatically (west → negative longitude). Sunrise/sunset use those coords offline. Optional **live forecast** when `WEATHER_PROVIDER=openmeteo` and the farm opts in ([§7n](docs/operator-tour.md#7n-online-weather-forecast-phase-178--shipped)). In **Arrange** on the canvas, upload a layout background (JPEG/PNG/WebP, ≤8 MB).
 
 🕹️ **Manual or Scheduled Control** — Turn fans, pumps, lights on/off manually via dashboard toggle, or set up cron-based schedules ("lights on 18:00, off 06:00"). Rules with thresholds ("if temp > 28°C, turn on exhaust fan"). All execution audited.
 
@@ -26,7 +26,8 @@ An open-source farm operating system — run it on your LAN, keep your data clos
   - Your live farm snapshot (zones, current grows, unread alerts)  
   - ~46 crop profiles with EC/DLI/photoperiod targets  
   - Symptom catalog + field guides (if indexed)  
-  - Citation chips open readable doc views in **Help → Knowledge**; browse symptoms and guides without chat ([operator tour §7m](docs/operator-tour.md#7m-help-knowledge-surfaces-phase-180--shipped))  
+  - Citation chips open readable doc views in **Help → Library → Knowledge**; browse symptoms and guides without chat ([operator tour §7m](docs/operator-tour.md#7m-help-knowledge-surfaces-phase-180--shipped))  
+  - **Symptoms for this crop** links from Plants and zone pages pre-filter the symptom guide ([Phase 183](docs/plans/phase_183_guardian_knowledge_and_revise_followups.plan.md))  
   - General agronomy reasoning from whichever local Ollama model you've selected (server default is a small, CPU-friendly model; swap in a larger one any time via the model picker below)  
 
 ⚡ **Guardian power states** — On solar, battery, or metered sites, control when the LLM uses RAM/CPU:
@@ -36,7 +37,7 @@ An open-source farm operating system — run it on your LAN, keep your data clos
   - **Admin service stop** — `./scripts/guardian-power.sh sleep|wake` stops/starts the full Ollama process (not in the web API)  
   - **Readiness UI** — Settings card + chat awakening panel show state (`sleeping`, `stirring`, `ready`, `resting`, `unavailable`) with swappable hand-drawn druid art (`ui/public/assets/guardian/druid/`; placeholder SVGs ship until artists replace them)
 
-✅ **Guardian Proposals** — Guardian suggests actions ("acknowledge this alert," "create a task," "start a flower run in Zone 3," "enqueue pump on for 30s"). You see a card, click **Confirm**, it executes. Nothing silent — all changes audit-logged.
+✅ **Guardian Proposals** — Guardian suggests actions ("acknowledge this alert," "create a task," "start a flower run in Zone 3," "enqueue pump on for 30s"). You see a card, click **Confirm**, it executes. Nothing silent — all changes audit-logged. **Refine** sends a correction in the same session; multi-turn smoke prep: `make guardian-qa-change-requests-ui` ([Phase 184](docs/ci-guardian-qa.md)).
 
 📱 **Offline-First Mobile** — Install as PWA in your browser. When wifi drops:
   - Dashboard still shows cached readings

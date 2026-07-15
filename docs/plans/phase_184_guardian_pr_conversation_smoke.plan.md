@@ -17,7 +17,7 @@ todos:
     content: "WS3: -suite change-requests-ui[-quick] in cmd/guardian-eval + make guardian-qa-change-requests-ui[-quick] targets"
     status: completed
   - id: ws4-tests-docs
-    content: "WS4: Go tests (scenario counts, filter, suite detection) + docs/ci-guardian-qa.md scenario table"
+    content: "WS4: Go tests (scenario counts, filter, suite detection) + docs/ci-guardian-qa.md scenario table + phase-184-closure"
     status: completed
   - id: ws5-live-verification
     content: "WS5: Run guardian-qa-change-requests-ui[-quick] live against a local stack; confirm 4 pending cards + 1 confirmed row match expectations in the UI"
@@ -53,7 +53,7 @@ UI and test the confirm button."*
 | **WS1** | `internal/farmguardian/eval/scenario.go` — `Scenario`, `ScenarioTurn`, `RunScenarioSuite`; each scenario keeps one `session_id` across turns via new `APIClient.RunQuestionInSession` (chat's `session_id` echoed back and reused). |
 | **WS2** | `fixtures_change_requests_ui.go` — 5 scenarios (see table below); `ChangeRequestUIScenariosQuick()` for a 2-scenario fast subset. |
 | **WS3** | `-suite change-requests-ui` / `change-requests-ui-quick` in `cmd/guardian-eval`; `make guardian-qa-change-requests-ui[-quick]`. |
-| **WS4** | `fixtures_change_requests_ui_test.go`; `docs/ci-guardian-qa.md` scenario table + subset command. |
+| **WS4** | `fixtures_change_requests_ui_test.go`; `docs/ci-guardian-qa.md` scenario table + subset command; `phase-184-closure.test.js`. |
 | **WS5** | Not yet run against a live local stack — needs Ollama + `DATABASE_URL` + a logged-in JWT (see Verification). |
 
 ## Scenario → outcome
@@ -87,7 +87,7 @@ than just that *a* proposal exists.
 # Full mix: 1 confirmed + 4 pending, different tools (~2-3h CPU)
 make guardian-qa-change-requests-ui MODEL=phi3:mini FARM_ID=1
 
-# Fast subset: feed-revise-pending + task-dialogue-pending (~50 min)
+# Fast subset: ack + schedule single-turn scenarios (~25 min)
 make guardian-qa-change-requests-ui-quick MODEL=phi3:mini FARM_ID=1
 
 # Single scenario

@@ -1,6 +1,6 @@
 # gr33n — current state
 
-> **Generated:** 2026-07-12 · Regenerate after major phase ship · **Canonical history:** [`phase-14-operator-documentation.md`](phase-14-operator-documentation.md) · **Numbers hint:** `make docs-current-state-hint`
+> **Generated:** 2026-07-14 · Regenerate after major phase ship · **Canonical history:** [`phase-14-operator-documentation.md`](phase-14-operator-documentation.md) · **Numbers hint:** `make docs-current-state-hint`
 
 ---
 
@@ -142,6 +142,43 @@ Locked roadmap after Phase 172: [`phase_173_177_today_excellence_roadmap.plan.md
 - **Perf** — `refreshAll()` paints cached zones immediately; weather, layout background, and queue depth load in background
 - **A11y** — attention strip `aria-live="polite"`; coach controls meet 44px touch targets
 
+## Online weather forecast (Phase 178)
+
+Optional Tier 3 forecast on top of Phase 66 offline solar math:
+
+- **API** — `WEATHER_PROVIDER=openmeteo` (free, no key); farm opt-in via `meta_data.weather_forecast_enabled` + **Settings → Farm site**
+- **`GET /farms/{id}/site-weather`** — `online_forecast` block with status (`connected`, `cached`, `cached_stale`, `offline`, `disabled`, …)
+- **Today** — `FarmSiteStrip` forecast cell + `● Forecast live` / `cached (offline)` badge (sun dial unchanged when WAN drops)
+- **Guardian** — `site_weather` read tool cites tonight low + frost when forecast tier is present
+
+Plan: [`phase_178_online_weather_forecast.plan.md`](plans/phase_178_online_weather_forecast.plan.md) · Operator tour [§7n](operator-tour.md#7n-online-weather-forecast-phase-178--shipped)
+
+## Guardian chat polish (Phases 179–182)
+
+Sit-in follow-ups on full-page `/chat` and nav polling:
+
+| Phase | Focus |
+|-------|--------|
+| **179** ✅ | One streaming status row; awakening panel quiet during local stream; mode cards collapse after first turn |
+| **181** ✅ | Full-page composer diet — `+ Attach photos, starters, mode` toggle after turn 1; pending badge **only on TopBar** (sidebar shows readiness dot) |
+| **182** ✅ | 401 → stop nav poll + single login redirect; Pending tab scroll + newest-first; Refine hint under composer |
+
+Vitest: `phase-179-closure.test.js`, `phase-181-closure.test.js`, `phase-182-closure.test.js`
+
+## Help Library + contextual knowledge (Phase 183)
+
+- **Library hub** — Help opens on one **Library** page (`tab=library`) with scrollable sections (guide, knowledge, symptoms, catalog); legacy `?tab=knowledge` etc. still resolve
+- **Contextual links** — **Symptoms for this crop** from Plants, zone grow strip, and alert cards → `/symptom-guide?crop_key=…`
+- **Task revise** — rule-based `create_task` title/description corrections bump `Revision` (parity with feed volume revise)
+
+Plan: [`phase_183_guardian_knowledge_and_revise_followups.plan.md`](plans/phase_183_guardian_knowledge_and_revise_followups.plan.md) · Operator tour [§7m](operator-tour.md#7m-help-knowledge-surfaces-phase-180--shipped)
+
+## Multi-turn PR smoke (Phase 184)
+
+`make guardian-qa-change-requests-ui` runs **5 multi-turn scenarios** (shared `session_id` per dialogue): 1 feed revise **confirmed via API** + 4 left pending (feed, task, schedule, ack) for manual Confirm/Refine/Dismiss on `/chat?tab=pending`. Quick subset: ack + schedule (`change-requests-ui-quick`).
+
+Plan: [`phase_184_guardian_pr_conversation_smoke.plan.md`](plans/phase_184_guardian_pr_conversation_smoke.plan.md) · [`ci-guardian-qa.md`](ci-guardian-qa.md)
+
 ---
 
 ## UI workspaces & routes
@@ -154,8 +191,8 @@ Locked roadmap after Phase 172: [`phase_173_177_today_excellence_roadmap.plan.md
 | `/chat`, `/guardian/requests` | Farm Guardian + pending change-request tab |
 | `/settings` | Farm, Guardian, crops, QA, feedback |
 | `/virtual-pi`, `/pi-setup`, `/pi-setup-wizard` | Pi wiring & config |
-| `/operator-guide` | Help — Guide, Pi setup, **Knowledge** (semantic search + field guides), **Symptoms**, Catalog ([§7m](operator-tour.md#7m-help-knowledge-surfaces-phase-180--shipped)) |
-| `/catalog`, `/farm-knowledge`, `/symptom-guide` | Redirect into Help tabs (Commons, knowledge, symptoms) |
+| `/operator-guide` | Help — **Library** hub (guide, knowledge, symptoms, catalog sections) + Pi setup ([§7m](operator-tour.md#7m-help-knowledge-surfaces-phase-180--shipped)) |
+| `/catalog`, `/farm-knowledge`, `/symptom-guide` | Redirect into Help Library sections (`tab=library&section=…`) |
 | `/crop-cycles/:id/summary` | Grow run summary (Guardian citation target) |
 
 Source: [`ui/src/router/index.js`](../ui/src/router/index.js).
@@ -202,6 +239,8 @@ make guardian-qa-smoke              # artifact run (always exits 0)
 make guardian-qa-smoke-strict       # pass/fail heuristics
 make guardian-qa-change-requests    # internal proposal queue persistence
 make guardian-qa-change-requests-confirm  # propose → Confirm → DB (Phase 162)
+make guardian-qa-change-requests-ui       # multi-turn: 1 confirm + 4 pending (Phase 184)
+make guardian-qa-change-requests-ui-quick # fast subset: ack + schedule pending
 make guardian-eval -manual          # UI checklist
 ```
 
@@ -226,6 +265,7 @@ Playbooks: [`pi-integration-guide.md`](pi-integration-guide.md) · [`mqtt-edge-o
 | `DATABASE_URL` | Postgres connection |
 | `JWT_SECRET`, `AUTH_MODE` | Auth (`dev` / `auth_test` / `production`) |
 | `LLM_BASE_URL`, `LLM_MODEL` | Guardian provider (Ollama default) |
+| `WEATHER_PROVIDER` | Online forecast: `off` (default), `openmeteo`, … — see Phase 178 |
 | `CROP_CATALOG_SOURCE` | `db` (default) or `yaml` |
 | `FILE_STORAGE_DIR` | Receipt blobs (local) |
 | `GUARDIAN_COST_GUARD` | Token budget (`off` in dev) |
@@ -258,6 +298,6 @@ Accessibility: skip link, Guardian drawer focus trap, zone tab semantics — [`a
 
 ## Phase history
 
-- **Shipped arcs:** 40–67 farmer UX · 68–81 SPA · 82–110 crop intelligence · 111–122 Guardian/Pi · 129–153 Guardian QA · **154–161** infra/trust + citation + a11y + ec-ph trim · **164–171** visual Today farm cockpit (seed, canvas, mobile, attention, one-tap counsel, demo layouts) · **172** demo field guides + marigold/geranium catalog
-- **Active / planned:** Insert Commons (opt-in); full `smoke-ec-ph` re-run on CPU (operator)
+- **Shipped arcs:** 40–67 farmer UX · 68–81 SPA · 82–110 crop intelligence · 111–122 Guardian/Pi · 129–153 Guardian QA · **154–161** infra/trust + citation + a11y + ec-ph trim · **164–177** visual Today farm cockpit + excellence arc · **178** online weather forecast · **179–184** Guardian UX polish, Help Library, multi-turn PR smoke
+- **Active / planned:** Insert Commons (opt-in); Phase 184 WS5 live Pending-tab verification (operator); full `smoke-ec-ph` re-run on CPU (operator)
 - **Archive:** [`plans/archive/`](plans/archive/) — closed plans (e.g. 88–92)
