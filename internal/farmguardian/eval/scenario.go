@@ -34,6 +34,7 @@ type Scenario struct {
 	WantVolumeLiters float64 // optional feed revise check (0.3 after correction)
 	WantTitle        string  // optional create_task title after revise
 	RequireTaskZone  bool    // optional: require zone_id on final create_task proposal
+	WantDueDate      string  // optional create_task due_date (YYYY-MM-DD) after revise
 }
 
 // IsScenarioSuite reports whether the eval suite runs multi-turn scenarios.
@@ -320,6 +321,15 @@ func resolveScenarioProposal(ctx context.Context, api *APIClient, sessionID stri
 		zid, err := int64FromAny(best.Args["zone_id"])
 		if err != nil || zid <= 0 {
 			return "", PendingProposal{}, fmt.Errorf("proposal args missing zone_id")
+		}
+	}
+	if wantDue := strings.TrimSpace(sc.WantDueDate); wantDue != "" {
+		got, err := stringFromAny(best.Args["due_date"])
+		if err != nil {
+			return "", PendingProposal{}, fmt.Errorf("proposal args missing due_date")
+		}
+		if got != wantDue {
+			return "", PendingProposal{}, fmt.Errorf("proposal due_date %q want %q", got, wantDue)
 		}
 	}
 	return strings.TrimSpace(best.ProposalID), best, nil

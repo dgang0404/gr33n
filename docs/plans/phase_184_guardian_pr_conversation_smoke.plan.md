@@ -62,7 +62,7 @@ UI and test the confirm button."*
 |----------|-------|-----------|
 | `scenario-feed-revise-confirm` | "Set feed to 0.5L for Veg Tent" → "revise — use 0.3L instead" | **Confirmed via API**, DB-verified (`write-feed` side-effect check, ≈0.3L) |
 | `scenario-feed-revise-pending` | same dialogue | **Left pending** (revision ≥2, 0.3L) — test **Confirm** in UI |
-| `scenario-task-dialogue-pending` | create task → zone assign → **call it Refill calcium nitrate** | **Left pending** (rev ≥3, zone + title) — test **Refine** zone/title + **Confirm** |
+| `scenario-task-dialogue-pending` | create task → zone assign → title revise → due date | **Left pending** (rev ≥4, zone + title + due) — test **Refine** chain + **Confirm** |
 | `scenario-schedule-pending` | "Pause the lights schedule for Veg Tent until tomorrow" | **Left pending** |
 | `scenario-ack-pending` | "Acknowledge the highest severity unread alert" | **Left pending** |
 
@@ -118,8 +118,10 @@ confirmed row's DB side effect matches (0.3L on the Veg Tent program).
 - GitHub CI automation — stays script-only like Phase 153/162.
 - Extending revise matchers for `create_task` titles — shipped in
   [Phase 183](phase_183_guardian_knowledge_and_revise_followups.plan.md) WS3;
-  `scenario-task-dialogue-pending` now includes a third turn that asserts
-  title revise via `WantTitle` + `MinRevision`.
+  zone revise in [Phase 185](phase_185_guardian_task_zone_revise.plan.md);
+  due-date revise in [Phase 186](phase_186_guardian_task_due_date_revise.plan.md).
+  `scenario-task-dialogue-pending` exercises the full chain (zone, title,
+  due date) at `MinRevision` 4.
 
 ## Acceptance
 

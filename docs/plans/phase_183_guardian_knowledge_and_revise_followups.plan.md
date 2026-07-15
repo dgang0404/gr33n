@@ -97,4 +97,5 @@ medium-sized rather than quick:
 - [x] `create_task` title/description corrections bump proposal `Revision`
       via rule-based revise (no LLM round-trip required).
 - Zone assignment revise shipped in [Phase 185](phase_185_guardian_task_zone_revise.plan.md).
+- Due-date revise + tool execution shipped in [Phase 186](phase_186_guardian_task_due_date_revise.plan.md).
 - [x] Vitest + Go test closure green.

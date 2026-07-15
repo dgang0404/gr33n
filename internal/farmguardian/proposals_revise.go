@@ -7,6 +7,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
@@ -25,6 +26,8 @@ var (
 	reviseInsteadOfPattern = regexp.MustCompile(`(?i)^\s*["']?([^"'\n]+?)["']?\s+instead\s+of\s+["']?([^"'\n]+?)["']?\s*$`)
 	reviseDescriptionPattern = regexp.MustCompile(`(?i)(?:description|details?)\s*(?:should be|:)\s*["']?([^"'\n.]+)`)
 	reviseTaskZoneIDPattern  = regexp.MustCompile(`(?i)\bzone(?:\s+id)?\s*#?(\d+)\b`)
+	reviseDueDatePattern     = regexp.MustCompile(`(?i)(?:due(?:\s+date)?|deadline)\s*(?:should be|is|=|:|to)\s*(\d{4}-\d{2}-\d{2})`)
+	reviseSetDueDatePattern  = regexp.MustCompile(`(?i)set (?:the )?due date to (\d{4}-\d{2}-\d{2})`)
 )
 
 // tryReviseActiveProposal revises the live draft in a session when the turn reads
@@ -178,6 +181,10 @@ func applyRevisionDeltas(toolID string, priorArgs map[string]any, question strin
 			next["zone_id"] = float64(zid)
 			changed = true
 		}
+		if due, ok := parseTaskDueDateRevision(question); ok {
+			next["due_date"] = due
+			changed = true
+		}
 	}
 
 	if !changed {
@@ -324,6 +331,22 @@ func parseTaskZoneIDNumeric(question string) (int64, bool) {
 		}
 	}
 	return 0, false
+}
+
+func parseTaskDueDateRevision(question string) (string, bool) {
+	for _, p := range []*regexp.Regexp{reviseDueDatePattern, reviseSetDueDatePattern} {
+		if m := p.FindStringSubmatch(question); len(m) > 1 {
+			if date := strings.TrimSpace(m[1]); isISODateString(date) {
+				return date, true
+			}
+		}
+	}
+	return "", false
+}
+
+func isISODateString(s string) bool {
+	_, err := time.Parse("2006-01-02", s)
+	return err == nil
 }
 
 func taskZoneRevisionCue(question string) bool {

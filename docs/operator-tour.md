@@ -887,6 +887,12 @@ Plan: [`phase_184_guardian_pr_conversation_smoke.plan.md`](plans/phase_184_guard
 
 Plan: [`phase_185_guardian_task_zone_revise.plan.md`](plans/phase_185_guardian_task_zone_revise.plan.md)
 
+### 7r. Task due_date revise (Phase 186 — shipped)
+
+**Shipped.** Pending **create task** proposals accept due-date Refine turns (`set the due date to 2026-07-20`); Confirm persists `due_date` on the task row. The `scenario-task-dialogue-pending` smoke dialogue now runs four turns (create → zone → title → due date).
+
+Plan: [`phase_186_guardian_task_due_date_revise.plan.md`](plans/phase_186_guardian_task_due_date_revise.plan.md)
+
 ---
 
 ## 7b. Feeding & water for this zone (Phase 47)

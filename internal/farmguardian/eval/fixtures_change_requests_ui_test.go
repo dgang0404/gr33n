@@ -56,14 +56,17 @@ func TestChangeRequestUIScenarios_taskReviseTurns(t *testing.T) {
 	if task == nil {
 		t.Fatal("missing scenario-task-dialogue-pending")
 	}
-	if len(task.Turns) != 3 {
-		t.Fatalf("task scenario turns = %d want 3", len(task.Turns))
+	if len(task.Turns) != 4 {
+		t.Fatalf("task scenario turns = %d want 4", len(task.Turns))
 	}
-	if task.MinRevision != 3 {
-		t.Fatalf("MinRevision = %d want 3", task.MinRevision)
+	if task.MinRevision != 4 {
+		t.Fatalf("MinRevision = %d want 4", task.MinRevision)
 	}
 	if !task.RequireTaskZone {
 		t.Fatal("expected RequireTaskZone on task scenario")
+	}
+	if task.WantDueDate != "2026-07-20" {
+		t.Fatalf("WantDueDate = %q", task.WantDueDate)
 	}
 	if task.WantTitle != "Refill calcium nitrate" {
 		t.Fatalf("WantTitle = %q", task.WantTitle)
