@@ -33,6 +33,7 @@ type Scenario struct {
 	MinRevision      int     // optional: require pending proposal revision >= N
 	WantVolumeLiters float64 // optional feed revise check (0.3 after correction)
 	WantTitle        string  // optional create_task title after revise
+	RequireTaskZone  bool    // optional: require zone_id on final create_task proposal
 }
 
 // IsScenarioSuite reports whether the eval suite runs multi-turn scenarios.
@@ -313,6 +314,12 @@ func resolveScenarioProposal(ctx context.Context, api *APIClient, sessionID stri
 		}
 		if !strings.EqualFold(got, wantTitle) {
 			return "", PendingProposal{}, fmt.Errorf("proposal title %q want %q", got, wantTitle)
+		}
+	}
+	if sc.RequireTaskZone {
+		zid, err := int64FromAny(best.Args["zone_id"])
+		if err != nil || zid <= 0 {
+			return "", PendingProposal{}, fmt.Errorf("proposal args missing zone_id")
 		}
 	}
 	return strings.TrimSpace(best.ProposalID), best, nil

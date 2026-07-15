@@ -54,7 +54,7 @@ Each scenario reuses one `session_id` across turns. The full suite runs **5 scen
 |----------|-------|-----------|
 | `scenario-feed-revise-confirm` | propose 0.5L → revise to 0.3L | Confirmed via API (DB verified) |
 | `scenario-feed-revise-pending` | same dialogue | Left pending (rev 2, 0.3L) — test **Confirm** in UI |
-| `scenario-task-dialogue-pending` | create task → clarify zone → title revise | Left pending (rev ≥2, title) — test **Refine** / **Confirm** |
+| `scenario-task-dialogue-pending` | create task → zone assign → title revise | Left pending (rev ≥3, zone + title) — test **Refine** / **Confirm** |
 | `scenario-schedule-pending` | pause schedule | Left pending |
 | `scenario-ack-pending` | acknowledge alert | Left pending |
 

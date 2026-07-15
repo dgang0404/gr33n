@@ -881,6 +881,12 @@ Plans: [`phase_179_guardian_chat_status_consolidation.plan.md`](plans/phase_179_
 
 Plan: [`phase_184_guardian_pr_conversation_smoke.plan.md`](plans/phase_184_guardian_pr_conversation_smoke.plan.md) · [`ci-guardian-qa.md`](ci-guardian-qa.md)
 
+### 7q. Task zone revise (Phase 185 — shipped)
+
+**Shipped.** Pending **create task** proposals now accept zone assignment in a Refine turn (`Put it in Veg Room — that is the zone for this task.`) or numeric `zone N` — same revision chain as title/description. The `scenario-task-dialogue-pending` smoke dialogue exercises create → zone → title (rev 3).
+
+Plan: [`phase_185_guardian_task_zone_revise.plan.md`](plans/phase_185_guardian_task_zone_revise.plan.md)
+
 ---
 
 ## 7b. Feeding & water for this zone (Phase 47)

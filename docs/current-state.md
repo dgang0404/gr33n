@@ -173,6 +173,13 @@ Vitest: `phase-179-closure.test.js`, `phase-181-closure.test.js`, `phase-182-clo
 
 Plan: [`phase_183_guardian_knowledge_and_revise_followups.plan.md`](plans/phase_183_guardian_knowledge_and_revise_followups.plan.md) · Operator tour [§7m](operator-tour.md#7m-help-knowledge-surfaces-phase-180--shipped)
 
+## Task zone revise (Phase 185)
+
+- **Zone assignment** — pending `create_task` / `create_task_from_alert` proposals accept name-based zone turns (`Put it in Veg Room — that is the zone…`) and numeric `zone N` / `zone id N` patterns; each bumps `Revision` like title/description revise
+- **Smoke** — `scenario-task-dialogue-pending` now runs create → zone assign → title revise (`MinRevision: 3`, `RequireTaskZone`)
+
+Plan: [`phase_185_guardian_task_zone_revise.plan.md`](plans/phase_185_guardian_task_zone_revise.plan.md) · Vitest: `phase-185-closure.test.js`
+
 ## Multi-turn PR smoke (Phase 184)
 
 `make guardian-qa-change-requests-ui` runs **5 multi-turn scenarios** (shared `session_id` per dialogue): 1 feed revise **confirmed via API** + 4 left pending (feed, task, schedule, ack) for manual Confirm/Refine/Dismiss on `/chat?tab=pending`. Quick subset: ack + schedule (`change-requests-ui-quick`).
@@ -298,6 +305,6 @@ Accessibility: skip link, Guardian drawer focus trap, zone tab semantics — [`a
 
 ## Phase history
 
-- **Shipped arcs:** 40–67 farmer UX · 68–81 SPA · 82–110 crop intelligence · 111–122 Guardian/Pi · 129–153 Guardian QA · **154–161** infra/trust + citation + a11y + ec-ph trim · **164–177** visual Today farm cockpit + excellence arc · **178** online weather forecast · **179–184** Guardian UX polish, Help Library, multi-turn PR smoke
+- **Shipped arcs:** 40–67 farmer UX · 68–81 SPA · 82–110 crop intelligence · 111–122 Guardian/Pi · 129–153 Guardian QA · **154–161** infra/trust + citation + a11y + ec-ph trim · **164–177** visual Today farm cockpit + excellence arc · **178** online weather forecast · **179–185** Guardian UX polish, Help Library, multi-turn PR smoke, task zone revise
 - **Active / planned:** Insert Commons (opt-in); Phase 184 WS5 live Pending-tab verification (operator); full `smoke-ec-ph` re-run on CPU (operator)
 - **Archive:** [`plans/archive/`](plans/archive/) — closed plans (e.g. 88–92)

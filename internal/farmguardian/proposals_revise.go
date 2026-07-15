@@ -24,6 +24,7 @@ var (
 	reviseTitleCallPattern = regexp.MustCompile(`(?i)(?:call it|title(?:\s+should be)?|rename (?:it )?to|make (?:it|the title))\s+["']?([^"'\n.;]+?)["']?(?:\s+instead|\s*$|\.)`)
 	reviseInsteadOfPattern = regexp.MustCompile(`(?i)^\s*["']?([^"'\n]+?)["']?\s+instead\s+of\s+["']?([^"'\n]+?)["']?\s*$`)
 	reviseDescriptionPattern = regexp.MustCompile(`(?i)(?:description|details?)\s*(?:should be|:)\s*["']?([^"'\n.]+)`)
+	reviseTaskZoneIDPattern  = regexp.MustCompile(`(?i)\bzone(?:\s+id)?\s*#?(\d+)\b`)
 )
 
 // tryReviseActiveProposal revises the live draft in a session when the turn reads
@@ -59,6 +60,10 @@ func tryReviseActiveProposal(
 	}
 
 	newArgs, changed := applyRevisionDeltas(prior.ToolID, priorArgs, question)
+	if zoneArgs, zoneChanged := applyTaskZoneRevision(ctx, q, prior.ToolID, question, prior.FarmID, snap, newArgs, priorArgs); zoneChanged {
+		newArgs = zoneArgs
+		changed = true
+	}
 	facts := extractOperatorFacts(question)
 
 	// Nothing actionable in this turn — let normal matching / the model answer it.
@@ -167,6 +172,10 @@ func applyRevisionDeltas(toolID string, priorArgs map[string]any, question strin
 		}
 		if desc, ok := parseTaskDescriptionRevision(question); ok {
 			next["description"] = desc
+			changed = true
+		}
+		if zid, ok := parseTaskZoneIDNumeric(question); ok {
+			next["zone_id"] = float64(zid)
 			changed = true
 		}
 	}
@@ -305,6 +314,71 @@ func parseTaskDescriptionRevision(question string) (string, bool) {
 		}
 	}
 	return "", false
+}
+
+func parseTaskZoneIDNumeric(question string) (int64, bool) {
+	if m := reviseTaskZoneIDPattern.FindStringSubmatch(question); len(m) > 1 {
+		zid, err := strconv.ParseInt(m[1], 10, 64)
+		if err == nil && zid > 0 {
+			return zid, true
+		}
+	}
+	return 0, false
+}
+
+func taskZoneRevisionCue(question string) bool {
+	lower := strings.ToLower(strings.TrimSpace(question))
+	if strings.Contains(lower, "which zone") && !strings.Contains(lower, "that is the zone") {
+		return false
+	}
+	for _, cue := range []string{
+		"that is the zone", "use that zone", "put it in", "assign it to",
+		"zone should be", "for veg room", "in veg room", "for the veg", "in the veg",
+	} {
+		if strings.Contains(lower, cue) {
+			return true
+		}
+	}
+	return false
+}
+
+func applyTaskZoneRevision(
+	ctx context.Context,
+	q db.Querier,
+	toolID, question string,
+	farmID int64,
+	snap Snapshot,
+	next, priorArgs map[string]any,
+) (map[string]any, bool) {
+	if toolID != "create_task" && toolID != "create_task_from_alert" {
+		return next, false
+	}
+	if !taskZoneRevisionCue(question) {
+		return next, false
+	}
+	zoneID := resolveZoneIDForIntent(ctx, q, question, farmID, snap)
+	if zoneID <= 0 {
+		return next, false
+	}
+	if sameTaskZoneID(next["zone_id"], zoneID) {
+		return next, false
+	}
+	out := deepCopyArgs(next)
+	out["zone_id"] = float64(zoneID)
+	return out, true
+}
+
+func sameTaskZoneID(v any, want int64) bool {
+	switch n := v.(type) {
+	case float64:
+		return int64(n) == want
+	case int64:
+		return n == want
+	case int:
+		return int64(n) == want
+	default:
+		return false
+	}
 }
 
 func titleRevisionMatchesPrior(oldPart, priorTitle string) bool {

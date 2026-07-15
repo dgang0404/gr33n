@@ -62,7 +62,7 @@ UI and test the confirm button."*
 |----------|-------|-----------|
 | `scenario-feed-revise-confirm` | "Set feed to 0.5L for Veg Tent" → "revise — use 0.3L instead" | **Confirmed via API**, DB-verified (`write-feed` side-effect check, ≈0.3L) |
 | `scenario-feed-revise-pending` | same dialogue | **Left pending** (revision ≥2, 0.3L) — test **Confirm** in UI |
-| `scenario-task-dialogue-pending` | create task → clarify zone → **call it Refill calcium nitrate** | **Left pending** (rev ≥2) — test **Refine** title revise + **Confirm** |
+| `scenario-task-dialogue-pending` | create task → zone assign → **call it Refill calcium nitrate** | **Left pending** (rev ≥3, zone + title) — test **Refine** zone/title + **Confirm** |
 | `scenario-schedule-pending` | "Pause the lights schedule for Veg Tent until tomorrow" | **Left pending** |
 | `scenario-ack-pending` | "Acknowledge the highest severity unread alert" | **Left pending** |
 

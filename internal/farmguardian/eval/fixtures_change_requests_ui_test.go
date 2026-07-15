@@ -59,8 +59,11 @@ func TestChangeRequestUIScenarios_taskReviseTurns(t *testing.T) {
 	if len(task.Turns) != 3 {
 		t.Fatalf("task scenario turns = %d want 3", len(task.Turns))
 	}
-	if task.MinRevision != 2 {
-		t.Fatalf("MinRevision = %d want 2", task.MinRevision)
+	if task.MinRevision != 3 {
+		t.Fatalf("MinRevision = %d want 3", task.MinRevision)
+	}
+	if !task.RequireTaskZone {
+		t.Fatal("expected RequireTaskZone on task scenario")
 	}
 	if task.WantTitle != "Refill calcium nitrate" {
 		t.Fatalf("WantTitle = %q", task.WantTitle)

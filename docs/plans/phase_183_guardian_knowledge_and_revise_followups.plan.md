@@ -96,4 +96,5 @@ medium-sized rather than quick:
       unexplained tabs; existing deep links still resolve.
 - [x] `create_task` title/description corrections bump proposal `Revision`
       via rule-based revise (no LLM round-trip required).
+- Zone assignment revise shipped in [Phase 185](phase_185_guardian_task_zone_revise.plan.md).
 - [x] Vitest + Go test closure green.

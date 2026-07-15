@@ -106,6 +106,35 @@ func TestApplyRevisionDeltas_CreateTaskNoSpuriousChange(t *testing.T) {
 	}
 }
 
+func TestApplyRevisionDeltas_CreateTaskZoneIDNumeric(t *testing.T) {
+	prior := map[string]any{"title": "Refill calcium nitrate"}
+	next, changed := applyRevisionDeltas("create_task", prior, "assign it to zone 3 for now")
+	if !changed {
+		t.Fatal("expected changed=true")
+	}
+	if next["zone_id"].(float64) != 3 {
+		t.Fatalf("zone_id = %#v want 3", next["zone_id"])
+	}
+}
+
+func TestTaskZoneRevisionCue(t *testing.T) {
+	if !taskZoneRevisionCue("Put it in Veg Room — that is the zone for this task.") {
+		t.Fatal("expected zone revision cue for assignment turn")
+	}
+	if taskZoneRevisionCue("Before I confirm — which zone should this task refer to?") {
+		t.Fatal("clarifying question should not trigger zone revise")
+	}
+}
+
+func TestParseTaskZoneIDNumeric(t *testing.T) {
+	if zid, ok := parseTaskZoneIDNumeric("use zone id 12"); !ok || zid != 12 {
+		t.Fatalf("zone id 12: got %d ok=%v", zid, ok)
+	}
+	if _, ok := parseTaskZoneIDNumeric("which zone should this refer to?"); ok {
+		t.Fatal("expected no numeric zone match")
+	}
+}
+
 func TestExtractOperatorFacts_RH(t *testing.T) {
 	facts := extractOperatorFacts("there's no humidity sensor in Tent A — assume RH around 60%")
 	if len(facts) != 1 {
