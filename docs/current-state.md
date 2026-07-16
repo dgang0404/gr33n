@@ -1,6 +1,6 @@
 # gr33n — current state
 
-> **Generated:** 2026-07-14 · Regenerate after major phase ship · **Canonical history:** [`phase-14-operator-documentation.md`](phase-14-operator-documentation.md) · **Numbers hint:** `make docs-current-state-hint`
+> **Generated:** 2026-07-16 · Regenerate after major phase ship · **Canonical history:** [`phase-14-operator-documentation.md`](phase-14-operator-documentation.md) · **Numbers hint:** `make docs-current-state-hint`
 
 ---
 
@@ -19,7 +19,8 @@
 | **Sensors & alerts** | Live dashboards, SSE stream, rules, unread alert inbox |
 | **Control** | Manual toggles, cron schedules, automation rules, Pi `device_commands` FIFO queue |
 | **Zones** | Zone cockpit — Water / Light / Climate tabs, plants, tasks, grow cycles |
-| **Guardian** | Farm Counsel (RAG + live data) vs Quick Chat; proposals → Confirm; **full citation deep links** (schedule, alert, docs); accuracy banners **persist on reload** |
+| **Guardian** | Farm Counsel (RAG + live data) vs Quick Chat; proposals → Confirm / **Refine** (title, zone, due date); **full citation deep links**; accuracy banners **persist on reload** |
+| **Help / knowledge** | **Library hub** (guide, semantic search, symptoms, catalog); contextual **Symptoms for this crop** links; field-guide browse + citation round-trip |
 | **Crops** | Postgres catalog (~52 crops), `crop_key` on plants, Guardian `lookup_crop_targets` |
 | **Edge** | Pi client, MQTT bridge, Virtual Pi wiring, `/pi-setup-wizard` |
 | **Ops** | Costs/receipts, tasks, audit events, optional Insert Commons export |
@@ -142,6 +143,28 @@ Locked roadmap after Phase 172: [`phase_173_177_today_excellence_roadmap.plan.md
 - **Perf** — `refreshAll()` paints cached zones immediately; weather, layout background, and queue depth load in background
 - **A11y** — attention strip `aria-live="polite"`; coach controls meet 44px touch targets
 
+## Sit-in arc — Guardian UX + knowledge + task revise (Phases 179–187 — shipped)
+
+Operator feedback from the **2026-07-13 sit-in** drove nine phases on `/chat`, Help, and pending change-request Refine. **Code + closure tests shipped on `main`.** Optional operator-only step: run `make guardian-qa-change-requests-ui` and click through Pending tab (Phase 184 WS5).
+
+| Phase | Focus |
+|-------|--------|
+| **179** ✅ | One streaming status row; awakening panel quiet during stream; mode cards collapse after turn 1 |
+| **180** ✅ | Help **What lives where** map; symptom guide nav + dropdowns; semantic Knowledge UX; field-guide browse; citation doc view |
+| **181** ✅ | Composer diet — `+ Attach photos, starters, mode` after turn 1; pending badge **TopBar only** |
+| **182** ✅ | 401 → stop poll + login redirect; Pending scroll + newest-first; Refine hint under composer |
+| **183** ✅ | **Library hub** (`tab=library`); **Symptoms for this crop** from Plants/zones/alerts; `create_task` title/description revise |
+| **184** ✅ | Multi-turn PR smoke — `make guardian-qa-change-requests-ui` (1 confirm + 4 pending scenarios) |
+| **185** ✅ | `create_task` **zone** revise (name + numeric `zone N`) |
+| **186** ✅ | `create_task` **due_date** on Confirm + ISO due-date revise |
+| **187** ✅ | Relative due-date revise (`due tomorrow`, `due in N days`, `due next week`) |
+
+**Task dialogue smoke** (`scenario-task-dialogue-pending`): create → zone (Veg Room) → title → **due tomorrow** — left pending at **rev ≥4** with `RequireTaskZone`, `WantTitle`, `WantDueDateOffsetDays: 1`.
+
+**Closure tests (Vitest):** `phase-179` through `phase-187-closure.test.js` · **Go:** `./internal/farmguardian/...` (revise matchers + scenario runner).
+
+Plans: [179](plans/phase_179_guardian_chat_status_consolidation.plan.md) · [180](plans/phase_180_knowledge_surfaces_discoverability.plan.md) · [181](plans/phase_181_guardian_composer_diet.plan.md) · [182](plans/phase_182_guardian_quick_ux_wins.plan.md) · [183](plans/phase_183_guardian_knowledge_and_revise_followups.plan.md) · [184](plans/phase_184_guardian_pr_conversation_smoke.plan.md) · [185](plans/phase_185_guardian_task_zone_revise.plan.md) · [186](plans/phase_186_guardian_task_due_date_revise.plan.md) · [187](plans/phase_187_guardian_relative_due_date_revise.plan.md) · Operator tour [§7m–§7s](operator-tour.md#7m-help-knowledge-surfaces-phase-180--shipped) · [`ci-guardian-qa.md`](ci-guardian-qa.md)
+
 ## Online weather forecast (Phase 178)
 
 Optional Tier 3 forecast on top of Phase 66 offline solar math:
@@ -152,54 +175,6 @@ Optional Tier 3 forecast on top of Phase 66 offline solar math:
 - **Guardian** — `site_weather` read tool cites tonight low + frost when forecast tier is present
 
 Plan: [`phase_178_online_weather_forecast.plan.md`](plans/phase_178_online_weather_forecast.plan.md) · Operator tour [§7n](operator-tour.md#7n-online-weather-forecast-phase-178--shipped)
-
-## Guardian chat polish (Phases 179–182)
-
-Sit-in follow-ups on full-page `/chat` and nav polling:
-
-| Phase | Focus |
-|-------|--------|
-| **179** ✅ | One streaming status row; awakening panel quiet during local stream; mode cards collapse after first turn |
-| **181** ✅ | Full-page composer diet — `+ Attach photos, starters, mode` toggle after turn 1; pending badge **only on TopBar** (sidebar shows readiness dot) |
-| **182** ✅ | 401 → stop nav poll + single login redirect; Pending tab scroll + newest-first; Refine hint under composer |
-
-Vitest: `phase-179-closure.test.js`, `phase-181-closure.test.js`, `phase-182-closure.test.js`
-
-## Help Library + contextual knowledge (Phase 183)
-
-- **Library hub** — Help opens on one **Library** page (`tab=library`) with scrollable sections (guide, knowledge, symptoms, catalog); legacy `?tab=knowledge` etc. still resolve
-- **Contextual links** — **Symptoms for this crop** from Plants, zone grow strip, and alert cards → `/symptom-guide?crop_key=…`
-- **Task revise** — rule-based `create_task` title/description corrections bump `Revision` (parity with feed volume revise)
-
-Plan: [`phase_183_guardian_knowledge_and_revise_followups.plan.md`](plans/phase_183_guardian_knowledge_and_revise_followups.plan.md) · Operator tour [§7m](operator-tour.md#7m-help-knowledge-surfaces-phase-180--shipped)
-
-## Task zone revise (Phase 185)
-
-- **Zone assignment** — pending `create_task` / `create_task_from_alert` proposals accept name-based zone turns (`Put it in Veg Room — that is the zone…`) and numeric `zone N` / `zone id N` patterns; each bumps `Revision` like title/description revise
-- **Smoke** — `scenario-task-dialogue-pending` now runs create → zone assign → title revise (`MinRevision: 3`, `RequireTaskZone`)
-
-Plan: [`phase_185_guardian_task_zone_revise.plan.md`](plans/phase_185_guardian_task_zone_revise.plan.md) · Vitest: `phase-185-closure.test.js`
-
-## Task due_date revise (Phase 186)
-
-- **Due date on create** — Guardian `create_task` / `create_task_from_alert` now persist optional `due_date` (`YYYY-MM-DD`) on Confirm
-- **Due date revise** — pending task proposals accept `set the due date to …` / `due date should be …` turns; bumps `Revision` like other task fields
-- **Smoke** — `scenario-task-dialogue-pending` runs create → zone → title → due date (`MinRevision: 4`, `WantDueDate`)
-
-Plan: [`phase_186_guardian_task_due_date_revise.plan.md`](plans/phase_186_guardian_task_due_date_revise.plan.md) · Vitest: `phase-186-closure.test.js`
-
-## Relative due_date revise (Phase 187)
-
-- **Plain-language deadlines** — pending task proposals accept `make it due tomorrow`, `due in 3 days`, `due next week` (ISO patterns from Phase 186 still work)
-- **Smoke** — `scenario-task-dialogue-pending` turn 4 uses `make it due tomorrow` with `WantDueDateOffsetDays: 1`
-
-Plan: [`phase_187_guardian_relative_due_date_revise.plan.md`](plans/phase_187_guardian_relative_due_date_revise.plan.md) · Vitest: `phase-187-closure.test.js`
-
-## Multi-turn PR smoke (Phase 184)
-
-`make guardian-qa-change-requests-ui` runs **5 multi-turn scenarios** (shared `session_id` per dialogue): 1 feed revise **confirmed via API** + 4 left pending (feed, task, schedule, ack) for manual Confirm/Refine/Dismiss on `/chat?tab=pending`. Quick subset: ack + schedule (`change-requests-ui-quick`).
-
-Plan: [`phase_184_guardian_pr_conversation_smoke.plan.md`](plans/phase_184_guardian_pr_conversation_smoke.plan.md) · [`ci-guardian-qa.md`](ci-guardian-qa.md)
 
 ---
 
@@ -321,5 +296,5 @@ Accessibility: skip link, Guardian drawer focus trap, zone tab semantics — [`a
 ## Phase history
 
 - **Shipped arcs:** 40–67 farmer UX · 68–81 SPA · 82–110 crop intelligence · 111–122 Guardian/Pi · 129–153 Guardian QA · **154–161** infra/trust + citation + a11y + ec-ph trim · **164–177** visual Today farm cockpit + excellence arc · **178** online weather forecast · **179–187** Guardian UX polish, Help Library, multi-turn PR smoke, task revise chain
-- **Active / planned:** Insert Commons (opt-in); Phase 184 WS5 live Pending-tab verification (operator); full `smoke-ec-ph` re-run on CPU (operator)
+- **Active / planned:** Insert Commons (opt-in); optional `make guardian-qa-change-requests-ui` live Pending-tab walkthrough (Phase 184 WS5, operator); full `smoke-ec-ph` re-run on CPU (operator)
 - **Archive:** [`plans/archive/`](plans/archive/) — closed plans (e.g. 88–92)

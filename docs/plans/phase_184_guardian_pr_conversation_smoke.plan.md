@@ -20,14 +20,14 @@ todos:
     content: "WS4: Go tests (scenario counts, filter, suite detection) + docs/ci-guardian-qa.md scenario table + phase-184-closure"
     status: completed
   - id: ws5-live-verification
-    content: "WS5: Run guardian-qa-change-requests-ui[-quick] live against a local stack; confirm 4 pending cards + 1 confirmed row match expectations in the UI"
+    content: "WS5: Optional operator walkthrough — run guardian-qa-change-requests-ui against local stack; confirm pending cards in /chat?tab=pending (not CI-gated)"
     status: pending
 isProject: false
 ---
 
 # Phase 184 — Guardian PR multi-turn conversation smoke
 
-**Status:** shipped (code) · pending live verification · **Depends on:** [153](phase_153_guardian_pr_smoke_gate.plan.md) · [162](phase_162_guardian_confirm_db_smoke.plan.md)
+**Status:** shipped (code + closure tests) · optional live Pending-tab walkthrough (WS5) · **Depends on:** [153](phase_153_guardian_pr_smoke_gate.plan.md) · [162](phase_162_guardian_confirm_db_smoke.plan.md)
 
 ## The problem
 

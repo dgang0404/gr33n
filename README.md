@@ -7,7 +7,7 @@ An open-source farm operating system — run it on your LAN, keep your data clos
 [![Vue](https://img.shields.io/badge/Vue-3-4FC08D?logo=vue.js)](https://vuejs.org)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-14+-336791?logo=postgresql)](https://postgresql.org)
 
-**Status:** Farmer UX (**40–67**), SPA workspaces (**68–81**), crop intelligence (**82–110**), Guardian model selection (**111–118**), hardening **113–115**, Virtual Pi wiring arc (**119–122**), and Guardian eval (**122**) are **shipped on `main`**. Docs refresh (**116**) and test depth (**117–118**) — see [phase index](docs/phase-14-operator-documentation.md).
+**Status:** Farmer UX (**40–67**), SPA workspaces (**68–81**), crop intelligence (**82–110**), Guardian model selection (**111–118**), hardening **113–115**, Virtual Pi wiring arc (**119–122**), Guardian eval (**122**), Today excellence (**173–177**), online weather (**178**), and the **2026-07 sit-in arc** — Guardian UX, Help Library, multi-turn PR smoke, task Refine chain (**179–187**) — are **shipped on `main`**. Docs refresh (**116**) and test depth (**117–118**) — see [phase index](docs/phase-14-operator-documentation.md).
 
 **Start here:** [**What's in the box**](docs/current-state.md) · [First session after clone](docs/first-session-after-clone.md) · [Operator tour](docs/operator-tour.md) · [Upgrade guide](docs/upgrade-guide.md) · [CHANGELOG](CHANGELOG.md) · **Real grow?** [Guardian readiness](docs/guardian-real-grow-readiness.md) · **Offline/air-gap?** [Connectivity requirements](docs/connectivity-requirements.md)
 
@@ -37,7 +37,7 @@ An open-source farm operating system — run it on your LAN, keep your data clos
   - **Admin service stop** — `./scripts/guardian-power.sh sleep|wake` stops/starts the full Ollama process (not in the web API)  
   - **Readiness UI** — Settings card + chat awakening panel show state (`sleeping`, `stirring`, `ready`, `resting`, `unavailable`) with swappable hand-drawn druid art (`ui/public/assets/guardian/druid/`; placeholder SVGs ship until artists replace them)
 
-✅ **Guardian Proposals** — Guardian suggests actions ("acknowledge this alert," "create a task," "start a flower run in Zone 3," "enqueue pump on for 30s"). You see a card, click **Confirm**, it executes. Nothing silent — all changes audit-logged. **Refine** sends a correction in the same session; multi-turn smoke prep: `make guardian-qa-change-requests-ui` ([Phase 184](docs/ci-guardian-qa.md)).
+✅ **Guardian Proposals** — Guardian suggests actions ("acknowledge this alert," "create a task," "start a flower run in Zone 3," "enqueue pump on for 30s"). You see a card, click **Confirm**, it executes. Nothing silent — all changes audit-logged. **Refine** sends corrections in the same session (title, zone, due date — [Phases 183–187](docs/current-state.md#sit-in-arc--guardian-ux--knowledge--task-revise-phases-179187--shipped)); multi-turn smoke: `make guardian-qa-change-requests-ui` ([Phase 184](docs/ci-guardian-qa.md)).
 
 📱 **Offline-First Mobile** — Install as PWA in your browser. When wifi drops:
   - Dashboard still shows cached readings

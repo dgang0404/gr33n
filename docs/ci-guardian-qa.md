@@ -58,7 +58,9 @@ Each scenario reuses one `session_id` across turns. The full suite runs **5 scen
 | `scenario-schedule-pending` | pause schedule | Left pending |
 | `scenario-ack-pending` | acknowledge alert | Left pending |
 
-Requires `DATABASE_URL` for TTL bump on leave-pending scenarios. Open `/chat?tab=pending` when the run finishes.
+Requires `DATABASE_URL` for TTL bump on leave-pending scenarios. Optional: open `/chat?tab=pending` when the run finishes (operator walkthrough).
+
+**Closure tests (2026-07-16):** `go test ./internal/farmguardian/...` and Vitest `phase-179` … `phase-187-closure.test.js` — all green on `main`.
 
 Subset one scenario: `guardian-eval -suite change-requests-ui -prompt-ids scenario-ack-pending`
 

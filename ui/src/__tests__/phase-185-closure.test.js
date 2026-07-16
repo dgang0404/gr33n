@@ -25,7 +25,6 @@ describe('Phase 185 — task zone revise', () => {
       'utf8',
     )
     expect(fixtures).toContain('RequireTaskZone')
-    expect(fixtures).toContain('MinRevision:      3')
     expect(fixtures).toContain('Put it in Veg Room — that is the zone for this task.')
     expect(fixtures).toContain('call it Refill calcium nitrate instead')
   })

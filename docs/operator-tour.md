@@ -875,29 +875,29 @@ Plans: [`phase_173_today_large_farm_navigation.plan.md`](plans/phase_173_today_l
 
 Plans: [`phase_179_guardian_chat_status_consolidation.plan.md`](plans/phase_179_guardian_chat_status_consolidation.plan.md) · [`phase_181_guardian_composer_diet.plan.md`](plans/phase_181_guardian_composer_diet.plan.md) · [`phase_182_guardian_quick_ux_wins.plan.md`](plans/phase_182_guardian_quick_ux_wins.plan.md)
 
-### 7p. Multi-turn PR smoke (Phase 184 — shipped code)
+### 7p. Multi-turn PR smoke (Phase 184 — shipped)
 
-**Shipped (script).** `make guardian-qa-change-requests-ui` seeds **1 confirmed + 4 pending** change requests from realistic back-and-forth dialogues (feed revise, task title revise, schedule, ack) — open `/chat?tab=pending` to exercise Confirm / Refine / Dismiss manually. Quick CPU path: `make guardian-qa-change-requests-ui-quick` (ack + schedule only).
+**Shipped (script + closure tests).** `make guardian-qa-change-requests-ui` seeds **1 confirmed + 4 pending** change requests from multi-turn dialogues (feed revise, full task Refine chain, schedule, ack). Optional operator walkthrough: open `/chat?tab=pending` to exercise Confirm / Refine / Dismiss. Quick CPU path: `make guardian-qa-change-requests-ui-quick` (ack + schedule only).
 
 Plan: [`phase_184_guardian_pr_conversation_smoke.plan.md`](plans/phase_184_guardian_pr_conversation_smoke.plan.md) · [`ci-guardian-qa.md`](ci-guardian-qa.md)
 
 ### 7q. Task zone revise (Phase 185 — shipped)
 
-**Shipped.** Pending **create task** proposals now accept zone assignment in a Refine turn (`Put it in Veg Room — that is the zone for this task.`) or numeric `zone N` — same revision chain as title/description. The `scenario-task-dialogue-pending` smoke dialogue exercises create → zone → title (rev 3).
+**Shipped.** Pending **create task** proposals accept zone assignment in a Refine turn (`Put it in Veg Room — that is the zone for this task.`) or numeric `zone N` — same revision chain as title/description.
 
 Plan: [`phase_185_guardian_task_zone_revise.plan.md`](plans/phase_185_guardian_task_zone_revise.plan.md)
 
 ### 7r. Task due_date revise (Phase 186 — shipped)
 
-**Shipped.** Pending **create task** proposals accept due-date Refine turns (`set the due date to 2026-07-20`); Confirm persists `due_date` on the task row. The `scenario-task-dialogue-pending` smoke dialogue now runs four turns (create → zone → title → due date).
+**Shipped.** Pending **create task** proposals accept ISO due-date Refine turns (`set the due date to 2026-07-20`); Confirm persists `due_date` on the task row.
 
 Plan: [`phase_186_guardian_task_due_date_revise.plan.md`](plans/phase_186_guardian_task_due_date_revise.plan.md)
 
 ### 7s. Relative due_date revise (Phase 187 — shipped)
 
-**Shipped.** Refine turns like `make it due tomorrow` or `due in 3 days` now resolve to `YYYY-MM-DD` and bump `Revision`. The task dialogue smoke uses `WantDueDateOffsetDays` so the assertion tracks the run date.
+**Shipped.** Refine turns like `make it due tomorrow` or `due in 3 days` resolve to `YYYY-MM-DD` and bump `Revision`. Together with 185–186, the task smoke dialogue runs **four turns** (create → zone → title → due tomorrow) at **rev ≥4**.
 
-Plan: [`phase_187_guardian_relative_due_date_revise.plan.md`](plans/phase_187_guardian_relative_due_date_revise.plan.md)
+Plan: [`phase_187_guardian_relative_due_date_revise.plan.md`](plans/phase_187_guardian_relative_due_date_revise.plan.md) · Arc summary: [`current-state.md` § sit-in 179–187](current-state.md#sit-in-arc--guardian-ux--knowledge--task-revise-phases-179187--shipped)
 
 ---
 
