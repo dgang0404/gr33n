@@ -2,7 +2,12 @@ import axios from 'axios'
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL ?? 'http://localhost:8080',
-  timeout: 8000,
+  // 8s was too tight — Guardian endpoints can share the process with a CPU
+  // LLM call in flight (warmup polling, session close summarization, etc.)
+  // and would surface as a hard "timeout of 8000ms exceeded" error. Callers
+  // doing known-slow work (session close, knowledge search) still set their
+  // own larger per-request timeout below this default.
+  timeout: 30000,
   headers: { 'Content-Type': 'application/json' },
 })
 

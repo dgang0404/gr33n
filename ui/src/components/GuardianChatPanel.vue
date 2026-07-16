@@ -3,7 +3,7 @@
     <!-- Sessions: full sidebar or compact picker -->
     <aside
       v-if="layout === 'full'"
-      class="bg-zinc-900 border border-zinc-800 rounded-xl p-4 space-y-3 max-h-[36rem] overflow-y-auto"
+      class="bg-zinc-900 border border-zinc-800 rounded-xl p-4 space-y-3"
       data-test="chat-sessions"
     >
       <div class="flex items-center justify-between">
@@ -139,8 +139,8 @@
       <section
         v-if="transcript.length || streaming"
         :class="[
-          'bg-zinc-900 border border-zinc-800 rounded-xl p-4 space-y-4 overflow-y-auto',
-          layout === 'compact' ? 'flex-1 min-h-[8rem] max-h-[50vh]' : 'p-5 max-h-[36rem]',
+          'bg-zinc-900 border border-zinc-800 rounded-xl p-4 space-y-4',
+          layout === 'compact' ? 'overflow-y-auto flex-1 min-h-[8rem] max-h-[50vh]' : 'p-5',
         ]"
         data-test="chat-transcript"
       >
@@ -1022,7 +1022,10 @@ async function refreshSessions() {
 async function loadSession(id) {
   if (streaming.value || !id) return
   if (sessionId.value && sessionId.value !== id) {
-    await closeActiveSessionForMemory()
+    // Fire-and-forget: memory summarization calls the LLM and can take a
+    // long time on CPU inference. Don't block switching sessions on it —
+    // it's best-effort and already swallows its own errors.
+    closeActiveSessionForMemory()
   }
   try {
     const r = await api.get('/v1/chat/sessions/' + id)
@@ -1043,9 +1046,17 @@ function onCompactSessionChange(ev) {
   loadSession(id)
 }
 
+const closingSessionIds = new Set()
+
 async function closeActiveSessionForMemory() {
   const id = sessionId.value
   if (!id || !guardianChat.transcript?.length) return
+  // Guard against firing a second concurrent close-for-memory call on the
+  // same session (e.g. rapid clicks through the sidebar) — the backend LLM
+  // summarization can take 40-100s+ on CPU, and racing duplicate calls for
+  // the same session_id was observed to 500.
+  if (closingSessionIds.has(id)) return
+  closingSessionIds.add(id)
   try {
     await api.post(`/v1/chat/sessions/${id}/close`, {
       farm_id: farmContext.farmId || undefined,
@@ -1056,12 +1067,14 @@ async function closeActiveSessionForMemory() {
     await refreshSessions()
   } catch {
     /* best-effort */
+  } finally {
+    closingSessionIds.delete(id)
   }
 }
 
 async function newSession() {
   if (streaming.value) return
-  await closeActiveSessionForMemory()
+  closeActiveSessionForMemory()
   sessionId.value = ''
   guardianChat.clearTranscript()
 }
