@@ -14,7 +14,7 @@
     </header>
 
     <div
-      class="workspace-shell__subnav sticky top-0 z-20 bg-zinc-950/95 backdrop-blur border-b border-zinc-800/80 px-4 sm:px-6"
+      class="workspace-shell__subnav sticky top-0 z-20 bg-zinc-950 border-b border-zinc-800/80 px-4 sm:px-6"
     >
       <div class="hidden sm:flex gap-1 py-2 overflow-x-auto" role="tablist" :aria-label="`${headerTitle} sections`">
         <button

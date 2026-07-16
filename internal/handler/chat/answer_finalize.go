@@ -90,13 +90,15 @@ func finalizeGroundedAnswer(answer string, chunks []db.SearchRagNearestNeighbors
 }
 
 type answerHygiene struct {
-	leak       farmguardian.AnswerLeakTrim
-	meta       farmguardian.AnswerMetaTrim
-	cite       farmguardian.CitationURLSanitize
-	sourceDump farmguardian.AnswerSourceDumpTrim
-	devJargon  farmguardian.AnswerDevJargonRedaction
-	length     farmguardian.AnswerLengthTrim
-	uncited    farmguardian.AnswerUncitedTailTrim
+	leak            farmguardian.AnswerLeakTrim
+	meta            farmguardian.AnswerMetaTrim
+	cite            farmguardian.CitationURLSanitize
+	sourceDump      farmguardian.AnswerSourceDumpTrim
+	devJargon       farmguardian.AnswerDevJargonRedaction
+	length          farmguardian.AnswerLengthTrim
+	uncited         farmguardian.AnswerUncitedTailTrim
+	inlineMetadata  farmguardian.AnswerInlineMetadataRedaction
+	placeholderCite farmguardian.AnswerPlaceholderCitationRedaction
 }
 
 func sanitizeAssistantAnswer(answer, question string, grounded bool, effectiveContextWindow int) (string, answerHygiene) {
@@ -126,6 +128,20 @@ func sanitizeAssistantAnswer(answer, question string, grounded bool, effectiveCo
 		slog.Info("guardian: answer_source_dump_trimmed",
 			"chars_removed", h.sourceDump.CharsRemoved,
 			"marker", h.sourceDump.Marker,
+		)
+	}
+	answer, h.inlineMetadata = farmguardian.RedactInlineSourceMetadata(answer)
+	if h.inlineMetadata.Redacted {
+		slog.Info("guardian: answer_inline_metadata_redacted",
+			"occurrences", h.inlineMetadata.Occurrences,
+			"chars_removed", h.inlineMetadata.CharsRemoved,
+		)
+	}
+	answer, h.placeholderCite = farmguardian.RedactPlaceholderCitationMarkers(answer)
+	if h.placeholderCite.Redacted {
+		slog.Info("guardian: answer_placeholder_citation_redacted",
+			"occurrences", h.placeholderCite.Occurrences,
+			"chars_removed", h.placeholderCite.CharsRemoved,
 		)
 	}
 	answer, h.devJargon = farmguardian.RedactDevAPIJargon(answer)
@@ -226,6 +242,14 @@ func applyAnswerHygieneDebug(dbg *farmguardian.TurnDebug, h answerHygiene) {
 	if h.uncited.Trimmed {
 		dbg.UncitedTailTrimmed = true
 		dbg.UncitedTailCharsRemoved = h.uncited.CharsRemoved
+	}
+	if h.inlineMetadata.Redacted {
+		dbg.InlineMetadataRedacted = true
+		dbg.InlineMetadataCharsRemoved = h.inlineMetadata.CharsRemoved
+	}
+	if h.placeholderCite.Redacted {
+		dbg.PlaceholderCitationRedacted = true
+		dbg.PlaceholderCitationCharsRemoved = h.placeholderCite.CharsRemoved
 	}
 }
 

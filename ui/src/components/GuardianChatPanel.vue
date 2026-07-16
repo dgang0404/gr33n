@@ -60,17 +60,24 @@
             :class="selectMode ? 'cursor-default' : 'cursor-pointer'"
             @click="selectMode ? toggleSelection(s.session_id) : loadSession(s.session_id)"
           >
-            <div class="flex items-center gap-2 min-w-0">
+            <div class="flex items-center gap-2 min-w-0 flex-1">
               <input v-if="selectMode" type="checkbox" class="rounded bg-zinc-800 border-zinc-700 shrink-0" data-test="chat-session-checkbox" :checked="isSelected(s.session_id)" :disabled="bulkSubmitting" @click.stop @change="toggleSelection(s.session_id)" />
-              <span class="font-medium truncate" :title="sessionLabel(s)">{{ sessionLabel(s) }}</span>
-              <span
-                v-for="topic in (s.topics || []).slice(0, 3)"
-                :key="topic"
-                class="shrink-0 text-[9px] uppercase tracking-wide px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-400 border border-zinc-700"
-                :data-test="`session-topic-${topic}`"
-              >{{ topicChipLabel(topic) }}</span>
+              <span class="font-medium truncate min-w-0" :title="sessionLabel(s)">{{ sessionLabel(s) }}</span>
             </div>
             <span class="text-[10px] text-zinc-500 shrink-0">{{ s.turn_count }} turn{{ s.turn_count === 1 ? '' : 's' }}</span>
+          </div>
+          <div
+            v-if="(s.topics || []).length"
+            class="flex items-center gap-1 flex-wrap"
+            :class="selectMode ? 'cursor-default' : 'cursor-pointer'"
+            @click="selectMode ? toggleSelection(s.session_id) : loadSession(s.session_id)"
+          >
+            <span
+              v-for="topic in (s.topics || []).slice(0, 3)"
+              :key="topic"
+              class="shrink-0 text-[9px] uppercase tracking-wide px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-400 border border-zinc-700"
+              :data-test="`session-topic-${topic}`"
+            >{{ topicChipLabel(topic) }}</span>
           </div>
           <div class="text-[10px] text-zinc-500 flex items-center justify-between gap-1">
             <div class="flex items-center gap-2">

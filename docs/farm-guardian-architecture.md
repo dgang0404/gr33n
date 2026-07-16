@@ -1180,6 +1180,19 @@ Phase 148/151's detectors (`AnswerAccuracyNote`) only ran inside `guardian-eval`
 
 See [`plans/phase_153_guardian_pr_smoke_gate.plan.md`](plans/phase_153_guardian_pr_smoke_gate.plan.md) for the full writeup (including a note correcting an earlier draft of this phase that misread "PR" as a GitHub pull request and added CI automation — since removed).
 
+### 8.18 Live conversation-turn audit (Phases 188–191)
+
+The hygiene pipeline above (8.8–8.16) was built entirely from `guardian-eval` smoke archives and one live UI incident report. Phases 188–191 instead read every row (20) in the dev DB's `gr33ncore.conversation_turns` end to end and rated each answer, finding four reproducible defect classes the existing detectors let through:
+
+| Phase | Module | New detector/redactor | What it catches |
+|-------|--------|------------------------|-------------------|
+| **188** | [`answer_leak.go`](../internal/farmguardian/answer_leak.go) | `leakTopMarkers`, `leakEssayTells`, `bareQuestionHeadingCutIndex` | A *different* few-shot template leaking in (essay-writing / document-QA benchmark shape) using markers Phase 143's narrow `## Your task` check didn't recognize |
+| **189** | [`answer_inline_metadata.go`](../internal/farmguardian/answer_inline_metadata.go) | `RedactInlineSourceMetadata`, `RedactPlaceholderCitationMarkers` | Raw `source_id=N`/`chunk_id=N`/`type=field_guide`/`doc_path=…` leaking *inline* mid-sentence (Phase 143's `TrimSourceDump` only catches a trailing block dump) and a literal `[n]` citation placeholder echoed instead of a real number |
+| **190** | [`answer_accuracy.go`](../internal/farmguardian/answer_accuracy.go), [`chat.go`](../internal/rag/llm/chat.go) | `DanglingListIntroNote`; `LLM_MAX_TOKENS` default 1024→1536 | An answer ending on a bare colon with nothing after — a sibling of Phase 152's mid-word `TruncatedAnswerTailNote` but at a sentence boundary. One live turn hit exactly the old 1024-token cap. |
+| **191** | [`proposals_revise.go`](../internal/farmguardian/proposals_revise.go) | `reviseDescriptionAppendPattern` / `parseTaskDescriptionAppendRevision` | A revise turn phrased as a question ("Should this task mention X?") instead of a directive — previously matched nothing and fell through to open-ended chat, silently dropping the correction |
+
+All four follow the same non-mutating-where-possible / flag-don't-guess philosophy as 8.8–8.16: 188/189 rewrite text that carries zero legitimate farmer-facing information (template leaks, RAG bookkeeping), while 190 only flags (the model's own choice to stop early isn't something a regex should "fix") and 191 only fires on an unambiguous, narrow pattern so it can't misfire on an unrelated clarifying question. See the phase plan docs ([188](plans/phase_188_guardian_answer_quality_audit.plan.md)–[191](plans/phase_191_guardian_revise_question_phrased_clarification.plan.md)) for the exact live-turn text each fix was built from.
+
 ---
 
 ## 9. Why this design (vs alternatives)

@@ -266,6 +266,26 @@ func TruncatedAnswerTailNote(answer string) string {
 	return "truncated_answer_tail: " + m[0]
 }
 
+// DanglingListIntroNote flags an answer whose final character is a colon —
+// e.g. "...while refilling calcium nitrate:" or "Once you confirm this
+// setup:" with nothing after it. Phase 148's TruncatedAnswerTailNote only
+// catches a word glued to trailing digits (a mid-token cutoff); this catches
+// the sibling shape where generation stopped cleanly at a sentence boundary
+// but right where the model had just promised a list, steps, or a
+// confirmation that never arrives (Phase 190, two live turns — one hit
+// exactly LLM_MAX_TOKENS completion tokens, confirming a real budget cutoff).
+func DanglingListIntroNote(answer string) string {
+	trimmed := strings.TrimSpace(answer)
+	if len(trimmed) < 20 || !strings.HasSuffix(trimmed, ":") {
+		return ""
+	}
+	tail := trimmed
+	if len(tail) > 60 {
+		tail = tail[len(tail)-60:]
+	}
+	return "dangling_list_intro: " + tail
+}
+
 var weekOrDayClaimRE = regexp.MustCompile(`(?i)\b(week|day)\s+\d+\b`)
 
 // UncitedTimelineClaimNote flags a "Week N" / "Day N" progress claim that has
@@ -332,6 +352,9 @@ func AnswerAccuracyNote(answer string, cites []CitationSummary) string {
 		return note
 	}
 	if note := TruncatedAnswerTailNote(answer); note != "" {
+		return note
+	}
+	if note := DanglingListIntroNote(answer); note != "" {
 		return note
 	}
 	if note := DuplicateListItemNote(answer); note != "" {

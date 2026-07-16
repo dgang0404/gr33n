@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unicode"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
@@ -18,17 +19,23 @@ import (
 )
 
 var (
-	reviseVolumePattern  = regexp.MustCompile(`(?i)(\d+(?:\.\d+)?)\s*(?:l\b|liters?\b|litres?\b)`)
-	reviseECPattern      = regexp.MustCompile(`(?i)\bec\s*(?:target|of|to|=|:)?\s*(\d+(?:\.\d+)?)`)
-	revisePHRangePattern = regexp.MustCompile(`(?i)\bph\s*(?:of|to|=|:)?\s*(\d(?:\.\d+)?)\s*(?:-|–|to)\s*(\d(?:\.\d+)?)`)
-	reviseRHPattern      = regexp.MustCompile(`(?i)(?:rh|humidity)[^\d%]{0,24}?(\d{1,3})\s*%?`)
-	reviseTitleCallPattern = regexp.MustCompile(`(?i)(?:call it|title(?:\s+should be)?|rename (?:it )?to|make (?:it|the title))\s+["']?([^"'\n.;]+?)["']?(?:\s+instead|\s*$|\.)`)
-	reviseInsteadOfPattern = regexp.MustCompile(`(?i)^\s*["']?([^"'\n]+?)["']?\s+instead\s+of\s+["']?([^"'\n]+?)["']?\s*$`)
+	reviseVolumePattern      = regexp.MustCompile(`(?i)(\d+(?:\.\d+)?)\s*(?:l\b|liters?\b|litres?\b)`)
+	reviseECPattern          = regexp.MustCompile(`(?i)\bec\s*(?:target|of|to|=|:)?\s*(\d+(?:\.\d+)?)`)
+	revisePHRangePattern     = regexp.MustCompile(`(?i)\bph\s*(?:of|to|=|:)?\s*(\d(?:\.\d+)?)\s*(?:-|–|to)\s*(\d(?:\.\d+)?)`)
+	reviseRHPattern          = regexp.MustCompile(`(?i)(?:rh|humidity)[^\d%]{0,24}?(\d{1,3})\s*%?`)
+	reviseTitleCallPattern   = regexp.MustCompile(`(?i)(?:call it|title(?:\s+should be)?|rename (?:it )?to|make (?:it|the title))\s+["']?([^"'\n.;]+?)["']?(?:\s+instead|\s*$|\.)`)
+	reviseInsteadOfPattern   = regexp.MustCompile(`(?i)^\s*["']?([^"'\n]+?)["']?\s+instead\s+of\s+["']?([^"'\n]+?)["']?\s*$`)
 	reviseDescriptionPattern = regexp.MustCompile(`(?i)(?:description|details?)\s*(?:should be|:)\s*["']?([^"'\n.]+)`)
-	reviseTaskZoneIDPattern  = regexp.MustCompile(`(?i)\bzone(?:\s+id)?\s*#?(\d+)\b`)
-	reviseDueDatePattern     = regexp.MustCompile(`(?i)(?:due(?:\s+date)?|deadline)\s*(?:should be|is|=|:|to)\s*(\d{4}-\d{2}-\d{2})`)
-	reviseSetDueDatePattern  = regexp.MustCompile(`(?i)set (?:the )?due date to (\d{4}-\d{2}-\d{2})`)
-	reviseDueInDaysPattern   = regexp.MustCompile(`(?i)due in (\d{1,3}) days?`)
+	// Phase 191 — a farmer naturally phrases a correction as a question
+	// instead of a directive ("Should this task mention checking stock in
+	// Veg Tent?"). None of the other revise patterns match a bare question,
+	// so without this the turn fell through to open-ended chat and silently
+	// dropped the correction.
+	reviseDescriptionAppendPattern = regexp.MustCompile(`(?i)\b(?:should\s+(?:this|it)(?:\s+task)?|does\s+(?:this|it)(?:\s+task)?\s+need\s+to|can\s+(?:you|we)(?:\s+also)?)\s+(?:also\s+)?(?:mention|include|say|note|add)\b[:,]?\s+(.+?)[?.]?\s*$`)
+	reviseTaskZoneIDPattern        = regexp.MustCompile(`(?i)\bzone(?:\s+id)?\s*#?(\d+)\b`)
+	reviseDueDatePattern           = regexp.MustCompile(`(?i)(?:due(?:\s+date)?|deadline)\s*(?:should be|is|=|:|to)\s*(\d{4}-\d{2}-\d{2})`)
+	reviseSetDueDatePattern        = regexp.MustCompile(`(?i)set (?:the )?due date to (\d{4}-\d{2}-\d{2})`)
+	reviseDueInDaysPattern         = regexp.MustCompile(`(?i)due in (\d{1,3}) days?`)
 )
 
 // tryReviseActiveProposal revises the live draft in a session when the turn reads
@@ -177,6 +184,9 @@ func applyRevisionDeltas(toolID string, priorArgs map[string]any, question strin
 		if desc, ok := parseTaskDescriptionRevision(question); ok {
 			next["description"] = desc
 			changed = true
+		} else if desc, ok := parseTaskDescriptionAppendRevision(question, priorArgs); ok {
+			next["description"] = desc
+			changed = true
 		}
 		if zid, ok := parseTaskZoneIDNumeric(question); ok {
 			next["zone_id"] = float64(zid)
@@ -322,6 +332,38 @@ func parseTaskDescriptionRevision(question string) (string, bool) {
 		}
 	}
 	return "", false
+}
+
+// parseTaskDescriptionAppendRevision handles a question-phrased correction
+// ("Should this task mention checking stock in Veg Tent?") by appending the
+// suggested addition onto the existing description as a new sentence,
+// rather than replacing it outright like parseTaskDescriptionRevision does
+// for an explicit "description should be X".
+func parseTaskDescriptionAppendRevision(question string, priorArgs map[string]any) (string, bool) {
+	m := reviseDescriptionAppendPattern.FindStringSubmatch(question)
+	if len(m) < 2 {
+		return "", false
+	}
+	addition := strings.TrimSpace(m[1])
+	addition = strings.TrimRight(addition, "?.")
+	addition = strings.TrimSpace(addition)
+	if addition == "" {
+		return "", false
+	}
+	existing := strings.TrimSpace(argString(priorArgs, "description"))
+	if existing == "" {
+		return capitalizeFirstRune(addition) + ".", true
+	}
+	return existing + " Also " + addition + ".", true
+}
+
+func capitalizeFirstRune(s string) string {
+	if s == "" {
+		return s
+	}
+	r := []rune(s)
+	r[0] = unicode.ToUpper(r[0])
+	return string(r)
 }
 
 func parseTaskZoneIDNumeric(question string) (int64, bool) {

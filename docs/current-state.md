@@ -165,6 +165,23 @@ Operator feedback from the **2026-07-13 sit-in** drove nine phases on `/chat`, H
 
 Plans: [179](plans/phase_179_guardian_chat_status_consolidation.plan.md) · [180](plans/phase_180_knowledge_surfaces_discoverability.plan.md) · [181](plans/phase_181_guardian_composer_diet.plan.md) · [182](plans/phase_182_guardian_quick_ux_wins.plan.md) · [183](plans/phase_183_guardian_knowledge_and_revise_followups.plan.md) · [184](plans/phase_184_guardian_pr_conversation_smoke.plan.md) · [185](plans/phase_185_guardian_task_zone_revise.plan.md) · [186](plans/phase_186_guardian_task_due_date_revise.plan.md) · [187](plans/phase_187_guardian_relative_due_date_revise.plan.md) · Operator tour [§7m–§7s](operator-tour.md#7m-help-knowledge-surfaces-phase-180--shipped) · [`ci-guardian-qa.md`](ci-guardian-qa.md)
 
+## Guardian answer-quality audit (Phases 188–191 — shipped)
+
+Read all 20 live `conversation_turns` rows in the dev DB (phi3:mini, farm 1) end to end and rated each Q&A against the Phase 143/145/148/150/151/152 answer-hygiene pipeline. Found four reproducible defect classes the pipeline didn't yet catch and fixed each with a targeted, low-risk addition to the same pipeline (never a full rewrite — heuristics flag or strip, they don't rewrite meaning).
+
+| Phase | Defect found in a live turn | Fix |
+|-------|------------------------------|-----|
+| **188** ✅ | A "which zone should this go in?" clarification came back with a hallucinated essay-writing prompt about *The Great Gatsby* and a fabricated Faulkner novel — a different few-shot template leaking in, using `## Instruction>` and a bare `Question` heading that the old `## Your task` marker didn't recognize | Broadened `TrimInstructionLeak`'s marker set (`leakTopMarkers`, `leakEssayTells`, `bareQuestionHeadingCutIndex`) |
+| **189** ✅ | Raw RAG bookkeeping leaking *inline*, mid-sentence — `(field_guide source id=8, chunk id=66)`, `source_id=17 chunk_id=18`, `doc_path=field-guides/…` — plus the citation-format instruction's own `[n]` placeholder echoed literally instead of a real number | New `RedactInlineSourceMetadata` + `RedactPlaceholderCitationMarkers`, wired into the same finalize pipeline as Phase 143's `TrimSourceDump` |
+| **190** ✅ | Three turns end mid-promise on a bare colon — `"...while refilling calcium nitrate:"` with nothing after; one hit exactly `1024/1024` completion tokens (a real budget cutoff), two stopped well under budget (the model itself stopped early) | New `DanglingListIntroNote` accuracy flag; default `LLM_MAX_TOKENS` raised 1024 → 1536 |
+| **191** ✅ | A revise turn phrased as a question — *"Should this task mention checking stock in Veg Tent?"* — matched none of the revise patterns (all directive-only), so it fell through to open-ended chat and silently dropped the correction | New `reviseDescriptionAppendPattern` / `parseTaskDescriptionAppendRevision` — appends the suggested addition onto the pending task's description instead of falling through |
+
+Same pass also fixed two live UI reports: Guardian chat session-list topic chips (`Feeding`/`Comfort`/`Grow`) now render on their own row instead of crowding into the title/turn-count line and reading like a stray tab bar, and `WorkspaceShell`'s sticky sub-nav bar is fully opaque (`bg-zinc-950`, no `backdrop-blur`) so scrolled page content can't show through it.
+
+**Closure tests (Vitest):** `phase-188` through `phase-191-closure.test.js` · **Go:** `./internal/farmguardian/...` (`answer_leak_test.go`, `answer_inline_metadata_test.go`, `answer_accuracy_test.go`, `proposals_revise_test.go`) + `./internal/rag/llm/...` (`max_tokens_test.go`).
+
+Plans: [188](plans/phase_188_guardian_answer_quality_audit.plan.md) · [189](plans/phase_189_guardian_inline_source_metadata_redaction.plan.md) · [190](plans/phase_190_guardian_dangling_list_intro_truncation.plan.md) · [191](plans/phase_191_guardian_revise_question_phrased_clarification.plan.md)
+
 ## Online weather forecast (Phase 178)
 
 Optional Tier 3 forecast on top of Phase 66 offline solar math:

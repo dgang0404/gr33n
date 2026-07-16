@@ -99,6 +99,53 @@ func TestApplyRevisionDeltas_CreateTaskDescription(t *testing.T) {
 	}
 }
 
+// Phase 191 — live turn: "Please revise this change request — Create task:
+// Follow up from Guardian chat. Correction: Should this task mention
+// checking stock in Veg Tent?" This question-phrased correction previously
+// matched no revise pattern, so the turn fell through to open-ended chat and
+// the pending create_task proposal was never actually revised.
+func TestApplyRevisionDeltas_CreateTaskDescriptionAppend_questionPhrased(t *testing.T) {
+	prior := map[string]any{"title": "Follow up from Guardian chat"}
+	next, changed := applyRevisionDeltas("create_task", prior, "Should this task mention checking stock in Veg Tent?")
+	if !changed {
+		t.Fatal("expected changed=true")
+	}
+	if next["description"] != "Checking stock in Veg Tent." {
+		t.Fatalf("description = %#v", next["description"])
+	}
+}
+
+func TestApplyRevisionDeltas_CreateTaskDescriptionAppend_appendsToExisting(t *testing.T) {
+	prior := map[string]any{"title": "Refill calcium nitrate", "description": "Refill when stock is low."}
+	next, changed := applyRevisionDeltas("create_task", prior, "Should it also mention checking stock in Veg Tent?")
+	if !changed {
+		t.Fatal("expected changed=true")
+	}
+	want := "Refill when stock is low. Also checking stock in Veg Tent."
+	if next["description"] != want {
+		t.Fatalf("description = %#v, want %q", next["description"], want)
+	}
+}
+
+func TestApplyRevisionDeltas_CreateTaskDescriptionAppend_explicitReplaceStillWins(t *testing.T) {
+	prior := map[string]any{"title": "Refill OHN", "description": "Old description"}
+	next, changed := applyRevisionDeltas("create_task", prior, "description should be Check stock levels first")
+	if !changed {
+		t.Fatal("expected changed=true")
+	}
+	if next["description"] != "Check stock levels first" {
+		t.Fatalf("description = %#v", next["description"])
+	}
+}
+
+func TestApplyRevisionDeltas_CreateTaskDescriptionAppend_unrelatedQuestionNoMatch(t *testing.T) {
+	prior := map[string]any{"title": "Refill OHN"}
+	_, changed := applyRevisionDeltas("create_task", prior, "Before I confirm — which zone should this task refer to?")
+	if changed {
+		t.Fatal("expected changed=false — this is a zone clarification, not a description addition")
+	}
+}
+
 func TestApplyRevisionDeltas_CreateTaskNoSpuriousChange(t *testing.T) {
 	prior := map[string]any{"title": "Check humidity"}
 	_, changed := applyRevisionDeltas("create_task", prior, "when should I run this?")
