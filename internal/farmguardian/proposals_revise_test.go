@@ -208,9 +208,39 @@ func TestApplyRevisionDeltas_CreateTaskDueDate(t *testing.T) {
 	if !changed {
 		t.Fatal("expected changed=true")
 	}
+	if next["title"] != "Refill calcium nitrate" {
+		t.Fatalf("title = %#v want preserved Refill calcium nitrate", next["title"])
+	}
 	want := time.Now().UTC().AddDate(0, 0, 1).Format("2006-01-02")
 	if next["due_date"] != want {
 		t.Fatalf("due_date = %#v want %s", next["due_date"], want)
+	}
+}
+
+func TestParseTaskTitleRevision_rejectsDueTomorrowAsTitle(t *testing.T) {
+	prior := map[string]any{"title": "Refill calcium nitrate"}
+	if title, ok := parseTaskTitleRevision("make it due tomorrow", prior); ok {
+		t.Fatalf("expected no title revision, got %q", title)
+	}
+}
+
+func TestParseTaskTitleRevision_callItStillWorks(t *testing.T) {
+	prior := map[string]any{"title": "Follow up from Guardian chat"}
+	if title, ok := parseTaskTitleRevision("call it Refill calcium nitrate instead", prior); !ok || title != "Refill calcium nitrate" {
+		t.Fatalf("got title=%q ok=%v", title, ok)
+	}
+}
+
+func TestLooksLikeDueDatePhrase(t *testing.T) {
+	for _, s := range []string{"due tomorrow", "tomorrow", "due in 3 days", "2026-07-20"} {
+		if !looksLikeDueDatePhrase(s) {
+			t.Fatalf("want due-date phrase: %q", s)
+		}
+	}
+	for _, s := range []string{"Refill calcium nitrate", "Inspect tent RH", ""} {
+		if looksLikeDueDatePhrase(s) {
+			t.Fatalf("want not due-date phrase: %q", s)
+		}
 	}
 }
 

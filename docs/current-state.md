@@ -182,6 +182,22 @@ Same pass also fixed two live UI reports: Guardian chat session-list topic chips
 
 Plans: [188](plans/phase_188_guardian_answer_quality_audit.plan.md) · [189](plans/phase_189_guardian_inline_source_metadata_redaction.plan.md) · [190](plans/phase_190_guardian_dangling_list_intro_truncation.plan.md) · [191](plans/phase_191_guardian_revise_question_phrased_clarification.plan.md)
 
+## Pending + UI polish arc (Phases 192–200 — 192 shipped)
+
+| Phase | Focus | Status |
+|-------|--------|--------|
+| **192** ✅ | `create_task` due-date revise must not clobber title (`make it due tomorrow`) | shipped |
+| **193** | Help Library sticky nav opaque backgrounds | planned |
+| **194** | Pending **View conversation** | planned |
+| **195** | Pending inbox sticky count bar opaque | planned |
+| **196** | Proposal revision timeline on Pending card | planned |
+| **197** | Session sidebar pending labels | planned |
+| **198** | Re-run `scenario-task-dialogue-pending` after 192 | planned |
+| **199** | Consolidate Help workspace stickies | planned |
+| **200** | `accuracy_note` round-trip audit | planned |
+
+Plan: [192](plans/phase_192_guardian_due_date_title_clobber.plan.md) · [193–200](plans/phase_193_help_library_sticky_bleed.plan.md)
+
 ## Online weather forecast (Phase 178)
 
 Optional Tier 3 forecast on top of Phase 66 offline solar math:

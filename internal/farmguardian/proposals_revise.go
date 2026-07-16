@@ -177,6 +177,12 @@ func applyRevisionDeltas(toolID string, priorArgs map[string]any, question strin
 			changed = true
 		}
 	case "create_task", "create_task_from_alert":
+		// Due date before title — "make it due tomorrow" matches both parsers;
+		// parseTaskTitleRevision rejects due-date-only captures (Phase 192).
+		if due, ok := parseTaskDueDateRevision(question); ok {
+			next["due_date"] = due
+			changed = true
+		}
 		if title, ok := parseTaskTitleRevision(question, priorArgs); ok {
 			next["title"] = title
 			changed = true
@@ -190,10 +196,6 @@ func applyRevisionDeltas(toolID string, priorArgs map[string]any, question strin
 		}
 		if zid, ok := parseTaskZoneIDNumeric(question); ok {
 			next["zone_id"] = float64(zid)
-			changed = true
-		}
-		if due, ok := parseTaskDueDateRevision(question); ok {
-			next["due_date"] = due
 			changed = true
 		}
 	}
@@ -302,12 +304,12 @@ func parseTaskTitleRevision(question string, priorArgs map[string]any) (string, 
 	if m := reviseInsteadOfPattern.FindStringSubmatch(q); len(m) > 2 {
 		newTitle := strings.TrimSpace(m[1])
 		oldTitle := strings.TrimSpace(m[2])
-		if newTitle != "" && titleRevisionMatchesPrior(oldTitle, priorTitle) {
+		if newTitle != "" && !looksLikeDueDatePhrase(newTitle) && titleRevisionMatchesPrior(oldTitle, priorTitle) {
 			return newTitle, true
 		}
 	}
 	if m := reviseTitleCallPattern.FindStringSubmatch(q); len(m) > 1 {
-		if title := strings.TrimSpace(m[1]); title != "" {
+		if title := strings.TrimSpace(m[1]); title != "" && !looksLikeDueDatePhrase(title) {
 			return title, true
 		}
 	}
@@ -317,12 +319,33 @@ func parseTaskTitleRevision(question string, priorArgs map[string]any) (string, 
 		if len(parts) == 2 {
 			candidate := strings.TrimSpace(strings.Trim(parts[0], `"'`))
 			oldPart := strings.TrimSpace(strings.Trim(parts[1], `"'`))
-			if candidate != "" && titleRevisionMatchesPrior(oldPart, priorTitle) {
+			if candidate != "" && !looksLikeDueDatePhrase(candidate) && titleRevisionMatchesPrior(oldPart, priorTitle) {
 				return candidate, true
 			}
 		}
 	}
 	return "", false
+}
+
+// looksLikeDueDatePhrase reports whether s is a relative/ISO due-date correction,
+// not a task title — e.g. "due tomorrow" from "make it due tomorrow" (Phase 192).
+func looksLikeDueDatePhrase(s string) bool {
+	s = strings.TrimSpace(strings.ToLower(s))
+	if s == "" {
+		return false
+	}
+	switch s {
+	case "tomorrow", "today", "next week",
+		"due tomorrow", "due today", "due next week":
+		return true
+	}
+	if strings.HasPrefix(s, "due in ") {
+		return reviseDueInDaysPattern.MatchString(s)
+	}
+	if isISODateString(s) {
+		return true
+	}
+	return false
 }
 
 func parseTaskDescriptionRevision(question string) (string, bool) {
