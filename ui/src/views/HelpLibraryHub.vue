@@ -3,7 +3,7 @@
     <HelpKnowledgeSurfacesMap />
 
     <nav
-      class="sticky top-[7.5rem] z-10 -mx-4 sm:-mx-6 px-4 sm:px-6 py-2 bg-zinc-950/95 backdrop-blur border-b border-zinc-800/80 flex flex-wrap gap-2"
+      class="sticky top-[7.5rem] z-10 -mx-4 sm:-mx-6 px-4 sm:px-6 py-2 bg-zinc-950 border-b border-zinc-800/80 flex flex-wrap gap-2"
       data-test="help-library-jump"
       aria-label="Library sections"
     >

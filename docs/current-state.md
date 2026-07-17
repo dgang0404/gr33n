@@ -187,7 +187,7 @@ Plans: [188](plans/phase_188_guardian_answer_quality_audit.plan.md) · [189](pla
 | Phase | Focus | Status |
 |-------|--------|--------|
 | **192** ✅ | `create_task` due-date revise must not clobber title (`make it due tomorrow`) | shipped |
-| **193** | Help Library sticky nav opaque backgrounds | planned |
+| **193** ✅ | Help Library sticky nav opaque backgrounds | shipped |
 | **194** | Pending **View conversation** | planned |
 | **195** | Pending inbox sticky count bar opaque | planned |
 | **196** | Proposal revision timeline on Pending card | planned |

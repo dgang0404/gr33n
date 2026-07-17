@@ -844,7 +844,7 @@ Plans: [`phase_173_today_large_farm_navigation.plan.md`](plans/phase_173_today_l
 
 **Shipped.** Operators no longer need a Guardian citation to discover what **Knowledge**, **Catalog**, **field guides**, and the **symptom guide** are for. Open **More → Help** (`/operator-guide`).
 
-**Library hub (Phase 183)** — Help now opens on one **Library** page (`tab=library`) with four scrollable sections instead of four equal tabs. The **What lives where** map stays at the top; jump pills scroll to each section. Legacy deep links (`?tab=knowledge`, `?tab=symptoms`, etc.) still resolve to the right section.
+**Library hub (Phase 183)** — Help now opens on one **Library** page (`tab=library`) with four scrollable sections instead of four equal tabs. The **What lives where** map stays at the top; jump pills scroll to each section. Legacy deep links (`?tab=knowledge`, `?tab=symptoms`, etc.) still resolve to the right section. **Phase 193:** How-to / Search / Symptoms / Import jump bar uses a solid background so field-guide table text does not show through when scrolling.
 
 **What lives where** — four cards at the top explain each surface in one sentence and link to the right library section:
 
