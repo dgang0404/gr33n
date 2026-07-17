@@ -68,13 +68,14 @@ describe('Phase 183 WS2 — Help Library hub', () => {
     api.get.mockResolvedValue({ data: { symptoms: [], ai_enabled: true } })
   })
 
-  it('help workspace uses Library tab and dedicated Symptom guide tab', () => {
-    expect(WORKSPACES.help.tabs.map((t) => t.id)).toEqual(['library', 'pi-setup', 'symptoms'])
-    expect(WORKSPACES.help.absorbs['/farm-knowledge']).toEqual({ tab: 'library', section: 'knowledge' })
+  it('help workspace uses dedicated tabs for knowledge surfaces', () => {
+    expect(WORKSPACES.help.tabs.map((t) => t.id)).toEqual(['library', 'pi-setup', 'knowledge', 'symptoms', 'catalog'])
+    expect(WORKSPACES.help.absorbs['/farm-knowledge']).toEqual({ tab: 'knowledge' })
+    expect(WORKSPACES.help.absorbs['/catalog']).toEqual({ tab: 'catalog' })
     expect(WORKSPACES.help.absorbs['/symptom-guide']).toEqual({ tab: 'symptoms' })
   })
 
-  it('HelpLibraryHub renders three library sections (symptoms is a Help tab)', async () => {
+  it('HelpLibraryHub is how-to only (knowledge/catalog are Help tabs)', async () => {
     await router.push('/operator-guide?tab=library')
     const wrapper = mount(HelpLibraryHub, {
       global: { plugins: [router] },
@@ -83,18 +84,18 @@ describe('Phase 183 WS2 — Help Library hub', () => {
 
     expect(wrapper.find('[data-test="help-library-hub"]').exists()).toBe(true)
     expect(wrapper.find('[data-test="help-library-section-guide"]').exists()).toBe(true)
-    expect(wrapper.find('[data-test="help-library-section-knowledge"]').exists()).toBe(true)
+    expect(wrapper.find('[data-test="help-library-section-knowledge"]').exists()).toBe(false)
     expect(wrapper.find('[data-test="help-library-section-symptoms"]').exists()).toBe(false)
-    expect(wrapper.find('[data-test="help-library-section-catalog"]').exists()).toBe(true)
+    expect(wrapper.find('[data-test="help-library-section-catalog"]').exists()).toBe(false)
   })
 
-  it('legacy tab=knowledge deep link resolves to library hub', async () => {
+  it('legacy tab=knowledge is not embedded in HelpLibraryHub (Phase 201 tab)', async () => {
     await router.push('/operator-guide?tab=knowledge&cited_doc=field-guides/crop-lettuce-nutrition.md')
     const wrapper = mount(HelpLibraryHub, {
       global: { plugins: [router] },
     })
     await flushPromises()
-    expect(wrapper.find('[data-test="help-library-section-knowledge"]').exists()).toBe(true)
+    expect(wrapper.find('[data-test="help-library-section-knowledge"]').exists()).toBe(false)
   })
 })
 
@@ -109,9 +110,9 @@ describe('Phase 183 WS4 — closure', () => {
     expect(tests).toContain('TestApplyRevisionDeltas_CreateTaskTitleCallIt')
   })
 
-  it('citation routes use library sections', () => {
+  it('citation routes use Help knowledge tab', () => {
     const route = readFileSync(join(repoRoot, 'internal/farmguardian/citation_route.go'), 'utf8')
-    expect(route).toContain('tab=library')
-    expect(route).toContain('section=knowledge')
+    expect(route).toContain('tab=knowledge')
+    expect(route).toContain('tab=symptoms')
   })
 })

@@ -10,25 +10,25 @@ overview: >
 todos:
   - id: ws1-help-tabs
     content: "WS1: add Help workspace tabs `knowledge` and `catalog` (or `import`); remove embedded FarmKnowledge + CommonsCatalog from HelpLibraryHub scroll stack"
-    status: pending
+    status: completed
   - id: ws2-redirects-routes
     content: "WS2: remove shadow standalone routes for /farm-knowledge and /catalog from router/index.js; rely on absorbs → /operator-guide?tab=…; keep query params (cited_doc, crop_key, section legacy)"
-    status: pending
+    status: completed
   - id: ws3-surfaces-map-nav
     content: "WS3: update HelpKnowledgeSurfacesMap + What lives where copy; Library section pills become How-to | Search | Import only (or drop pills if tabs replace them); legacy ?section=knowledge|catalog → tab redirect in HelpWorkspace"
-    status: pending
+    status: completed
   - id: ws4-guardian-citations
     content: "WS4: align internal/farmguardian/citation_route.go landing URLs with Help tabs (field_guide → knowledge tab, platform_doc → library/how-to); verify Symptom guide tab links unchanged"
-    status: pending
+    status: completed
   - id: ws5-tests-docs
     content: "WS5: update phase-180/183/199 closure tests; operator-tour Help §7m; current-state.md one-liner"
-    status: pending
+    status: completed
 isProject: false
 ---
 
 # Phase 201 — Help knowledge surfaces unification
 
-**Status:** planned (Symptom tab shipped in-session 2026-07-17) · **Depends on:** [199](phase_199_help_workspace_sticky_consolidation.plan.md), [180](phase_180_knowledge_surfaces_discoverability.plan.md)
+**Status:** shipped · **Depends on:** [199](phase_199_help_workspace_sticky_consolidation.plan.md), [180](phase_180_knowledge_surfaces_discoverability.plan.md)
 
 ## The problem
 
@@ -95,11 +95,11 @@ Audit `citation_route.go` + UI citation links so field guides land on `?tab=know
 
 ## Acceptance criteria
 
-- [ ] One FarmKnowledge surface (Help tab only; redirect from legacy URL)
-- [ ] One CommonsCatalog surface (Help tab only; redirect from legacy URL)
-- [ ] Library hub is shorter — how-to + surfaces map, not four apps stacked
-- [ ] Guardian citations and SymptomCropLink still resolve correctly
-- [ ] phase-201-closure.test.js
+- [x] One FarmKnowledge surface (Help tab only; redirect from legacy URL)
+- [x] One CommonsCatalog surface (Help tab only; redirect from legacy URL)
+- [x] Library hub is shorter — how-to + surfaces map, not four apps stacked
+- [x] Guardian citations and SymptomCropLink still resolve correctly
+- [x] phase-201-closure.test.js
 
 ## Out of scope
 

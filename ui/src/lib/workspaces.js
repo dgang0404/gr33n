@@ -48,15 +48,17 @@ export const WORKSPACES = {
     label: 'Help',
     icon: '📖',
     route: '/operator-guide',
-    subtitle: 'Library — how-to, knowledge search, symptoms, and commons catalog',
+    subtitle: 'How-to, search, symptoms, and import packs',
     tabs: [
       { id: 'library', label: 'Library' },
       { id: 'pi-setup', label: 'Pi + HAT setup' },
+      { id: 'knowledge', label: 'Search' },
       { id: 'symptoms', label: 'Symptom guide' },
+      { id: 'catalog', label: 'Import' },
     ],
     absorbs: {
-      '/farm-knowledge': { tab: 'library', section: 'knowledge' },
-      '/catalog': { tab: 'library', section: 'catalog' },
+      '/farm-knowledge': { tab: 'knowledge' },
+      '/catalog': { tab: 'catalog' },
       '/symptom-guide': { tab: 'symptoms' },
     },
   },
@@ -261,9 +263,9 @@ const FEEDWATER_TAB_ALIASES = {
 /** Phase 183 — legacy Help tab ids map to workspace tabs. */
 const HELP_TAB_ALIASES = {
   guide: 'library',
-  knowledge: 'library',
+  knowledge: 'knowledge',
   symptoms: 'symptoms',
-  catalog: 'library',
+  catalog: 'catalog',
 }
 
 /**

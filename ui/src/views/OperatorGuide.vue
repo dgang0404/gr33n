@@ -57,7 +57,7 @@
         Also: <router-link v-nav-hint="'/alerts'" class="text-gr33n-500 hover:underline" to="/alerts">Alerts</router-link>,
         <router-link v-nav-hint="'/chat'" class="text-gr33n-500 hover:underline" to="/chat?tab=pending">Guardian pending requests</router-link>,
         <router-link v-nav-hint="'/money'" class="text-gr33n-500 hover:underline" to="/money?tab=ledger">Ledger</router-link>,
-        <router-link v-nav-hint="'/farm-knowledge'" class="text-gr33n-500 hover:underline" to="/farm-knowledge">Knowledge</router-link> (RAG).
+        <router-link v-nav-hint="'/operator-guide'" class="text-gr33n-500 hover:underline" :to="{ path: '/operator-guide', query: { tab: 'knowledge' } }">Knowledge</router-link> (RAG).
       </p>
     </section>
 

@@ -53,8 +53,8 @@ describe('Phase 180 WS1 — help knowledge surfaces map', () => {
 
     expect(knowledge.attributes('href')).toContain('/operator-guide')
     expect(knowledge.attributes('href')).toContain('tab=library')
-    expect(knowledge.attributes('href')).toContain('section=knowledge')
-    expect(catalog.attributes('href')).toContain('section=catalog')
+    expect(knowledge.attributes('href')).toContain('tab=knowledge')
+    expect(catalog.attributes('href')).toContain('tab=catalog')
     expect(symptoms.attributes('href')).toContain('tab=symptoms')
 
     expect(knowledge.text()).toMatch(/semantic search/i)
@@ -209,7 +209,7 @@ describe('Phase 180 WS4 — field guide browse list', () => {
   })
 
   it('selecting a guide loads detail and open-indexed-doc action', async () => {
-    await router.push('/operator-guide?tab=library&section=knowledge')
+    await router.push('/operator-guide?tab=knowledge')
     const FieldGuideBrowse = (await import('../components/FieldGuideBrowse.vue')).default
     const wrapper = mount(FieldGuideBrowse, {
       global: { plugins: [router] },

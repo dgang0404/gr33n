@@ -13,36 +13,10 @@
       </header>
       <OperatorGuide embedded hide-surfaces-map />
     </section>
-
-    <section
-      id="help-section-knowledge"
-      class="scroll-mt-4 border-t border-zinc-800/80 pt-6"
-      data-test="help-library-section-knowledge"
-    >
-      <header class="space-y-1 mb-4">
-        <h2 class="text-white font-semibold text-sm uppercase tracking-widest text-zinc-500">Search your farm</h2>
-        <p class="text-xs text-zinc-500">Semantic search and browsable field guides — plain language works.</p>
-      </header>
-      <FarmKnowledge embedded />
-    </section>
-
-    <section
-      id="help-section-catalog"
-      class="scroll-mt-4 border-t border-zinc-800/80 pt-6"
-      data-test="help-library-section-catalog"
-    >
-      <header class="space-y-1 mb-4">
-        <h2 class="text-white font-semibold text-sm uppercase tracking-widest text-zinc-500">Import packs</h2>
-        <p class="text-xs text-zinc-500">Commons recipes and seed packs — separate from search.</p>
-      </header>
-      <CommonsCatalog embedded />
-    </section>
   </div>
 </template>
 
 <script setup>
 import HelpKnowledgeSurfacesMap from '../components/HelpKnowledgeSurfacesMap.vue'
 import OperatorGuide from './OperatorGuide.vue'
-import FarmKnowledge from './FarmKnowledge.vue'
-import CommonsCatalog from './CommonsCatalog.vue'
 </script>

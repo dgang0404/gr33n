@@ -32,13 +32,13 @@ const cards = [
     id: 'knowledge',
     title: 'Knowledge',
     blurb: 'Semantic search over your farm’s indexed notes, tasks, and ingested docs — plain language, not exact keywords.',
-    to: { path: '/operator-guide', query: { tab: 'library', section: 'knowledge' } },
+    to: { path: '/operator-guide', query: { tab: 'knowledge' } },
   },
   {
     id: 'catalog',
     title: 'Catalog',
     blurb: 'Import Commons packs (recipes, seed packs) — separate from search; for bringing in starter content.',
-    to: { path: '/operator-guide', query: { tab: 'library', section: 'catalog' } },
+    to: { path: '/operator-guide', query: { tab: 'catalog' } },
   },
   {
     id: 'symptoms',

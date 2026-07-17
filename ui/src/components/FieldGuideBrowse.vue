@@ -139,8 +139,7 @@ function openInKnowledge(guide) {
   router.replace({
     path: '/operator-guide',
     query: {
-      tab: 'library',
-      section: 'knowledge',
+      tab: 'knowledge',
       cited_doc: cited,
       cited_type: 'field_guide',
     },

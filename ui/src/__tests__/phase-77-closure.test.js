@@ -36,8 +36,8 @@ describe('Phase 77 WS6 / OC-77 — post-arc polish closure', () => {
   })
 
   it('help and money grows workspaces ship', () => {
-    expect(WORKSPACES.help.tabs.map((t) => t.id)).toEqual(['library', 'pi-setup', 'symptoms'])
-    expect(WORKSPACES.help.absorbs['/farm-knowledge']).toEqual({ tab: 'library', section: 'knowledge' })
+    expect(WORKSPACES.help.tabs.map((t) => t.id)).toEqual(['library', 'pi-setup', 'knowledge', 'symptoms', 'catalog'])
+    expect(WORKSPACES.help.absorbs['/farm-knowledge']).toEqual({ tab: 'knowledge' })
     expect(WORKSPACES.help.absorbs['/symptom-guide']).toEqual({ tab: 'symptoms' })
     expect(WORKSPACES.money.tabs.some((t) => t.id === 'grows')).toBe(true)
     expect(existsSync(join(uiSrc, 'views/workspaces/HelpWorkspace.vue'))).toBe(true)

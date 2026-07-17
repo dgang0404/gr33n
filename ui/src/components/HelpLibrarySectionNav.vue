@@ -5,17 +5,15 @@
     aria-label="Library sections"
   >
     <a
-      v-for="s in sections"
-      :key="s.id"
-      :href="`#help-section-${s.id}`"
+      href="#help-section-guide"
       class="text-xs px-2.5 py-1 rounded-full border transition-colors"
-      :class="activeSection === s.id
+      :class="activeSection === 'guide'
         ? 'border-green-700 text-green-300 bg-green-950/40'
         : 'border-zinc-700 text-zinc-400 hover:text-zinc-200'"
-      :data-test="`help-library-jump-${s.id}`"
-      @click.prevent="scrollToSection(s.id)"
+      data-test="help-library-jump-guide"
+      @click.prevent="scrollToSection('guide')"
     >
-      {{ s.label }}
+      How-to
     </a>
   </nav>
 </template>
@@ -25,29 +23,9 @@ import { nextTick, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { scrollToHelpLibrarySection } from '../lib/helpLibraryScroll.js'
 
-const LEGACY_SECTIONS = new Set(['guide', 'knowledge', 'catalog'])
-
 const route = useRoute()
 const router = useRouter()
 const activeSection = ref('guide')
-
-const sections = [
-  { id: 'guide', label: 'How-to' },
-  { id: 'knowledge', label: 'Search' },
-  { id: 'catalog', label: 'Import' },
-]
-
-function resolveSection() {
-  const section = route.query.section
-  if (typeof section === 'string' && LEGACY_SECTIONS.has(section)) {
-    return section
-  }
-  const tab = route.query.tab
-  if (typeof tab === 'string' && LEGACY_SECTIONS.has(tab)) {
-    return tab
-  }
-  return 'guide'
-}
 
 function scrollToSection(id) {
   activeSection.value = id
@@ -58,18 +36,17 @@ function scrollToSection(id) {
 }
 
 async function applyDeepLink() {
-  const section = resolveSection()
-  activeSection.value = section
+  activeSection.value = 'guide'
   await nextTick()
-  if (typeof route.query.section === 'string' && LEGACY_SECTIONS.has(route.query.section)) {
-    scrollToHelpLibrarySection(section, { smooth: false })
+  if (route.query.section === 'guide') {
+    scrollToHelpLibrarySection('guide', { smooth: false })
   }
 }
 
 onMounted(() => { void applyDeepLink() })
 
 watch(
-  () => [route.query.tab, route.query.section, route.query.cited_doc, route.query.crop_key],
+  () => [route.query.tab, route.query.section, route.query.cited_doc],
   () => { void applyDeepLink() },
 )
 </script>

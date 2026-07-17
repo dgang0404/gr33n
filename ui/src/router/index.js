@@ -7,9 +7,7 @@ import SensorDetail from '../views/SensorDetail.vue'
 import Actuators from '../views/Actuators.vue'
 import Animals from '../views/Animals.vue'
 import Aquaponics from '../views/Aquaponics.vue'
-import CommonsCatalog from '../views/CommonsCatalog.vue'
 import Settings from '../views/Settings.vue'
-import FarmKnowledge from '../views/FarmKnowledge.vue'
 import FarmGuardianChat from '../views/FarmGuardianChat.vue'
 import HelpWorkspace from '../views/workspaces/HelpWorkspace.vue'
 import CropProfileDetail from '../views/CropProfileDetail.vue'
@@ -56,8 +54,6 @@ const routes = [
   { path: '/crop-profiles/:id', component: CropProfileDetail, name: 'crop-profile-detail' },
   { path: '/animals',      component: Animals,      name: 'animals' },
   { path: '/aquaponics',   component: Aquaponics,   name: 'aquaponics' },
-  { path: '/catalog',      component: CommonsCatalog, name: 'catalog' },
-  { path: '/farm-knowledge', component: FarmKnowledge, name: 'farm-knowledge' },
   { path: '/chat',         component: FarmGuardianChat, name: 'farm-guardian-chat' },
   { path: '/guardian/requests', redirect: { path: '/chat', query: { tab: 'pending' } } },
   {
