@@ -323,7 +323,7 @@ On **`/chat`** (Farm Guardian full page) or the slide-out drawer, use the **mode
 
 1. Ask Guardian to do something (or accept a rule-assisted proposal, e.g. ack an alert).
 2. A **proposal card** appears in the chat transcript (summary + risk tier + frozen args).
-3. Review later: Guardian drawer → **Pending** tab, or **`/guardian/requests`** (TopBar badge shows count). **View conversation** (Phase 194) opens the linked chat thread on the Chat tab without prefilling a correction.
+3. Review later: Guardian drawer → **Pending** tab, or **`/guardian/requests`** (TopBar badge shows count). **View conversation** (Phase 194) opens the linked chat thread on the Chat tab without prefilling a correction. **Revision history** (Phase 196) on multi-revision cards expands inline to show your chat turns that built the draft.
 4. **Confirm** (needs **Operate** role) or **Dismiss**. High-risk cards (actuator, bootstrap, disable rule) deserve extra care.
 5. Check the result (Alerts, Tasks, Devices) and optional audit `guardian_tool_executed`.
 

@@ -115,6 +115,13 @@
         <p v-for="(d, i) in revisionDiff" :key="i">{{ d }}</p>
       </div>
 
+      <GuardianProposalRevisionTimeline
+        v-if="showRevisionTimeline"
+        :session-id="local.session_id"
+        :revision="local.revision || 1"
+        :tool="local.tool"
+      />
+
       <p v-if="uiError" data-test="guardian-proposal-error" class="text-xs text-red-400">
         {{ uiError }}
       </p>
@@ -180,6 +187,7 @@
 import { computed, reactive, ref, watch } from 'vue'
 import api from '../api'
 import SetupPackProposalCard from './SetupPackProposalCard.vue'
+import GuardianProposalRevisionTimeline from './GuardianProposalRevisionTimeline.vue'
 import { SETUP_PACK_HIGH_RISK_COPY } from '../lib/guardianSetupPack.js'
 import { impactForProposal, revisionLabel } from '../lib/guardianImpact.js'
 import {
@@ -284,6 +292,7 @@ const impact = computed(() => impactForProposal(local))
 const impactLines = computed(() => impact.value.lines)
 const operatorFacts = computed(() => impact.value.facts)
 const revisionDiff = computed(() => computeArgsDiff(local.previous_args, local.args))
+const showRevisionTimeline = computed(() => (local.revision || 0) > 1 && !!local.session_id)
 
 const targetHint = computed(() => {
   if (isSetupPack.value) {
