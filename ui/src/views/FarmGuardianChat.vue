@@ -38,6 +38,7 @@
           v-show="activeTab === 'pending'"
           :active="activeTab === 'pending'"
           @refine="onInboxRefine"
+          @view-conversation="onInboxViewConversation"
         />
       </div>
       <footer class="px-4 py-2 border-t border-zinc-800 text-[10px] text-zinc-600 shrink-0">
@@ -106,6 +107,10 @@ watch(
 )
 
 function onInboxRefine() {
+  activeTab.value = 'chat'
+}
+
+function onInboxViewConversation() {
   activeTab.value = 'chat'
 }
 </script>

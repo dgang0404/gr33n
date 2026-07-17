@@ -42,6 +42,7 @@
           @dismissed="onDismissed"
           @error="onError"
           @refine="onRefine"
+          @view-conversation="onViewConversation"
         />
       </div>
     </div>
@@ -65,7 +66,7 @@ const farmContext = useFarmContextStore()
 const store = useGuardianProposalsStore()
 const guardianPanel = useGuardianPanelStore()
 
-const emit = defineEmits(['refine'])
+const emit = defineEmits(['refine', 'view-conversation'])
 
 const farmId = computed(() => farmContext.farmId)
 const farmIdRef = computed(() => farmId.value)
@@ -107,6 +108,11 @@ function onError({ proposal, error }) {
 function onRefine({ proposal }) {
   guardianPanel.requestRefine(proposal)
   emit('refine', { proposal })
+}
+
+function onViewConversation({ proposal }) {
+  guardianPanel.requestViewConversation(proposal)
+  emit('view-conversation', { proposal })
 }
 
 watch(farmId, () => {

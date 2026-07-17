@@ -136,6 +136,18 @@
           {{ confirming ? 'Confirming…' : 'Confirm' }}
         </button>
         <button
+          v-if="hasLinkedSession"
+          type="button"
+          data-test="guardian-proposal-view-conversation"
+          class="px-3 py-2 rounded-lg border border-zinc-700 bg-zinc-900/50 text-zinc-300 hover:bg-zinc-800 text-xs disabled:opacity-40"
+          :class="[touchTargetClass, focusRingClass]"
+          :disabled="confirming || isExpired"
+          :aria-label="viewConversationAriaLabel"
+          @click="onViewConversation"
+        >
+          View conversation
+        </button>
+        <button
           type="button"
           data-test="guardian-proposal-refine"
           class="px-3 py-2 rounded-lg bg-violet-900/50 text-violet-200 border border-violet-800 hover:bg-violet-900/70 text-xs disabled:opacity-40"
@@ -181,7 +193,7 @@ const props = defineProps({
   canOperate: { type: Boolean, default: true },
 })
 
-const emit = defineEmits(['confirmed', 'dismissed', 'error', 'refine'])
+const emit = defineEmits(['confirmed', 'dismissed', 'error', 'refine', 'view-conversation'])
 
 const confirming = ref(false)
 const local = reactive({ ...props.proposal })
@@ -330,6 +342,8 @@ const touchTargetClass = FARMER_TOUCH_TARGET
 const confirmAriaLabel = computed(() => guardianProposalAriaLabel('confirm', local.summary))
 const dismissAriaLabel = computed(() => guardianProposalAriaLabel('dismiss', local.summary))
 const refineAriaLabel = computed(() => guardianProposalAriaLabel('refine', local.summary))
+const viewConversationAriaLabel = computed(() => guardianProposalAriaLabel('view-conversation', local.summary))
+const hasLinkedSession = computed(() => !!local.session_id)
 
 function toolLabel(id) {
   return TOOL_LABELS[id] || id
@@ -388,6 +402,11 @@ async function onDismiss() {
 function onRefine() {
   if (confirming.value || !props.canOperate || isExpired.value) return
   emit('refine', { proposal: props.proposal })
+}
+
+function onViewConversation() {
+  if (confirming.value || isExpired.value || !local.session_id) return
+  emit('view-conversation', { proposal: props.proposal })
 }
 
 // computeArgsDiff renders "path: old → new" lines between two frozen arg objects,

@@ -266,6 +266,7 @@
               @dismissed="onProposalDismissed"
               @error="onProposalError"
               @refine="onProposalRefine"
+              @view-conversation="onProposalViewConversation"
             />
           </div>
           <!-- Follow-up chips: only on the last completed turn -->
@@ -1231,6 +1232,10 @@ async function onProposalRefine({ proposal }) {
   guardianPanel.requestRefine(proposal)
 }
 
+function onProposalViewConversation({ proposal }) {
+  guardianPanel.requestViewConversation(proposal)
+}
+
 watch(
   () => guardianPanel.refineTick,
   async (tick) => {
@@ -1240,6 +1245,17 @@ watch(
     if (guardianPanel.prefilledMessage) message.value = guardianPanel.prefilledMessage
     await nextTick()
     messageInputRef.value?.focus?.()
+  },
+)
+
+watch(
+  () => guardianPanel.viewConversationTick,
+  async (tick) => {
+    if (!tick) return
+    const sid = guardianPanel.activeSessionId
+    if (sid) await loadSession(sid)
+    message.value = ''
+    await nextTick()
   },
 )
 
