@@ -62,6 +62,11 @@
           >
             <div class="flex items-center gap-2 min-w-0 flex-1">
               <input v-if="selectMode" type="checkbox" class="rounded bg-zinc-800 border-zinc-700 shrink-0" data-test="chat-session-checkbox" :checked="isSelected(s.session_id)" :disabled="bulkSubmitting" @click.stop @change="toggleSelection(s.session_id)" />
+              <span
+                v-if="sessionHasPendingProposal(s)"
+                class="shrink-0 text-[9px] uppercase tracking-wide px-1.5 py-0.5 rounded bg-amber-950/50 text-amber-300 border border-amber-800/70"
+                data-test="session-pending-chip"
+              >pending</span>
               <span class="font-medium truncate min-w-0" :title="sessionLabel(s)">{{ sessionLabel(s) }}</span>
             </div>
             <span class="text-[10px] text-zinc-500 shrink-0">{{ s.turn_count }} turn{{ s.turn_count === 1 ? '' : 's' }}</span>
@@ -678,6 +683,7 @@ import GuardianContextModeCards from './GuardianContextModeCards.vue'
 import GuardianTurnDebug from './GuardianTurnDebug.vue'
 import GuardianTurnFeedback from './GuardianTurnFeedback.vue'
 import { topicChipLabel } from '../lib/guardianSessionMemory.js'
+import { sessionDisplayLabel } from '../lib/guardianSessionLabel.js'
 import { computeFirstRunChecklist, isFirstRunIncomplete } from '../lib/firstRunChecklist.js'
 import { buildMorningWalkthroughStarters, buildSetupStarters, buildOfflineProcedureStarters } from '../lib/guardianStarters.js'
 import { deriveFollowUps } from '../lib/guardianFollowUps.js'
@@ -909,7 +915,10 @@ const bulkError = ref('')
 watch(
   () => farmContext.farmId,
   (id) => {
-    if (id) useFarmContext.value = true
+    if (id) {
+      useFarmContext.value = true
+      void guardianProposals.fetch(id)
+    }
     void loadZonePhotosForChat()
   },
 )
@@ -1025,6 +1034,9 @@ async function refreshSessions() {
   } catch {
     sessions.value = []
   }
+  if (farmContext.farmId) {
+    void guardianProposals.fetch(farmContext.farmId)
+  }
 }
 
 async function loadSession(id) {
@@ -1088,9 +1100,12 @@ async function newSession() {
 }
 
 function sessionLabel(s) {
-  if (s.title && s.title.trim()) return s.title
-  if (s.first_user_message && s.first_user_message.trim()) return s.first_user_message
-  return 'Untitled'
+  const pending = guardianProposals.pendingBySessionId[s?.session_id]
+  return sessionDisplayLabel(s, pending)
+}
+
+function sessionHasPendingProposal(s) {
+  return !!guardianProposals.pendingBySessionId[s?.session_id]
 }
 
 function renameSession(s) {

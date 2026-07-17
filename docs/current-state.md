@@ -191,7 +191,7 @@ Plans: [188](plans/phase_188_guardian_answer_quality_audit.plan.md) · [189](pla
 | **194** | Pending **View conversation** | ✅ |
 | **195** | Pending inbox sticky count bar opaque | ✅ |
 | **196** | Proposal revision timeline on Pending card | ✅ |
-| **197** | Session sidebar pending labels | planned |
+| **197** | Session sidebar pending labels | ✅ |
 | **198** | Re-run `scenario-task-dialogue-pending` after 192 | planned |
 | **199** | Consolidate Help workspace stickies | planned |
 | **200** | `accuracy_note` round-trip audit | planned |
