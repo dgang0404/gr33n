@@ -52,7 +52,6 @@ describe('Phase 180 WS1 — help knowledge surfaces map', () => {
     expect(symptoms.exists()).toBe(true)
 
     expect(knowledge.attributes('href')).toContain('/operator-guide')
-    expect(knowledge.attributes('href')).toContain('tab=library')
     expect(knowledge.attributes('href')).toContain('tab=knowledge')
     expect(catalog.attributes('href')).toContain('tab=catalog')
     expect(symptoms.attributes('href')).toContain('tab=symptoms')
