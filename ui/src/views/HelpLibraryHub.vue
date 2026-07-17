@@ -27,18 +27,6 @@
     </section>
 
     <section
-      id="help-section-symptoms"
-      class="scroll-mt-4 border-t border-zinc-800/80 pt-6"
-      data-test="help-library-section-symptoms"
-    >
-      <header class="space-y-1 mb-2">
-        <h2 class="text-white font-semibold text-sm uppercase tracking-widest text-zinc-500">Diagnose a symptom</h2>
-        <p class="text-xs text-zinc-500">Crop symptom lookup — filter by crop or category.</p>
-      </header>
-      <SymptomGuide embedded />
-    </section>
-
-    <section
       id="help-section-catalog"
       class="scroll-mt-4 border-t border-zinc-800/80 pt-6"
       data-test="help-library-section-catalog"
@@ -56,6 +44,5 @@
 import HelpKnowledgeSurfacesMap from '../components/HelpKnowledgeSurfacesMap.vue'
 import OperatorGuide from './OperatorGuide.vue'
 import FarmKnowledge from './FarmKnowledge.vue'
-import SymptomGuide from './SymptomGuide.vue'
 import CommonsCatalog from './CommonsCatalog.vue'
 </script>

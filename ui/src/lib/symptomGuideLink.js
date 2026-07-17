@@ -6,7 +6,7 @@
 export function symptomGuideRoute(cropKey) {
   const key = String(cropKey || '').trim()
   if (!key) return null
-  return { path: '/symptom-guide', query: { crop_key: key } }
+  return { path: '/operator-guide', query: { tab: 'symptoms', crop_key: key } }
 }
 
 /** @param {string | null | undefined} cropKey */

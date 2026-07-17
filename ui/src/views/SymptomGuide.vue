@@ -103,18 +103,13 @@ function syncFromRoute() {
 }
 
 function onFilterChange() {
-  const query = { ...route.query }
+  const query = { ...route.query, tab: 'symptoms' }
   if (cropKey.value) query.crop_key = cropKey.value
   else delete query.crop_key
   if (category.value) query.category = category.value
   else delete query.category
-  if (route.path === '/operator-guide') {
-    query.tab = 'library'
-    query.section = 'symptoms'
-    router.replace({ path: '/operator-guide', query })
-  } else {
-    router.replace({ path: route.path, query })
-  }
+  delete query.section
+  router.replace({ path: '/operator-guide', query })
 }
 
 async function loadCatalog() {

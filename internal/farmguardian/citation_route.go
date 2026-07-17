@@ -234,7 +234,7 @@ func resolveDocCitationRoute(ctx context.Context, q *db.Queries, farmID int64, s
 	docPath := strings.TrimSpace(meta.DocPath)
 	cropKey := strings.TrimSpace(meta.CropKey)
 	if sourceType == "field_guide" && cropKey != "" {
-		return "/symptom-guide?crop_key=" + url.QueryEscape(cropKey), true
+		return "/operator-guide?tab=symptoms&crop_key=" + url.QueryEscape(cropKey), true
 	}
 	if docPath != "" {
 		if sourceType == "platform_doc" {
@@ -257,7 +257,7 @@ func docCitationRoute(section, docPath, citedType string) string {
 func landingDocRoute(sourceType, cropKey string) (string, bool) {
 	if sourceType == "field_guide" {
 		if cropKey != "" {
-			return "/symptom-guide?crop_key=" + url.QueryEscape(cropKey), true
+			return "/operator-guide?tab=symptoms&crop_key=" + url.QueryEscape(cropKey), true
 		}
 		return "/operator-guide?tab=library&section=knowledge", true
 	}

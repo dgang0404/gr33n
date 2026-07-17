@@ -52,11 +52,12 @@ export const WORKSPACES = {
     tabs: [
       { id: 'library', label: 'Library' },
       { id: 'pi-setup', label: 'Pi + HAT setup' },
+      { id: 'symptoms', label: 'Symptom guide' },
     ],
     absorbs: {
       '/farm-knowledge': { tab: 'library', section: 'knowledge' },
       '/catalog': { tab: 'library', section: 'catalog' },
-      '/symptom-guide': { tab: 'library', section: 'symptoms' },
+      '/symptom-guide': { tab: 'symptoms' },
     },
   },
   comfort: {
@@ -257,11 +258,11 @@ const FEEDWATER_TAB_ALIASES = {
   water: 'daily',
 }
 
-/** Phase 183 — legacy Help tab ids map to Library hub. */
+/** Phase 183 — legacy Help tab ids map to workspace tabs. */
 const HELP_TAB_ALIASES = {
   guide: 'library',
   knowledge: 'library',
-  symptoms: 'library',
+  symptoms: 'symptoms',
   catalog: 'library',
 }
 

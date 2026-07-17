@@ -61,8 +61,17 @@ describe('Phase 199 — Help sticky chrome consolidation', () => {
     const subnav = wrapper.find('[data-test="workspace-shell-subnav-extra"]')
     expect(subnav.exists()).toBe(true)
     expect(subnav.find('[data-test="help-library-jump"]').exists()).toBe(true)
-    expect(subnav.find('[data-test="help-library-jump-symptoms"]').exists()).toBe(true)
+    expect(subnav.find('[data-test="help-library-jump-symptoms"]').exists()).toBe(false)
     expect(wrapper.find('[data-test="help-library-hub"]').exists()).toBe(true)
+  })
+
+  it('Help workspace renders Symptom guide as its own tab', async () => {
+    await router.push('/operator-guide?tab=symptoms')
+    const wrapper = mount(HelpWorkspace, { global: { plugins: [router] } })
+    await flushPromises()
+
+    expect(wrapper.find('[data-test="symptom-guide-filters"]').exists()).toBe(true)
+    expect(wrapper.find('[data-test="help-library-hub"]').exists()).toBe(false)
   })
 
   it('hides library section pills on pi-setup tab', async () => {

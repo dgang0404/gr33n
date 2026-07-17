@@ -55,7 +55,7 @@ describe('Phase 180 WS1 — help knowledge surfaces map', () => {
     expect(knowledge.attributes('href')).toContain('tab=library')
     expect(knowledge.attributes('href')).toContain('section=knowledge')
     expect(catalog.attributes('href')).toContain('section=catalog')
-    expect(symptoms.attributes('href')).toContain('section=symptoms')
+    expect(symptoms.attributes('href')).toContain('tab=symptoms')
 
     expect(knowledge.text()).toMatch(/semantic search/i)
     expect(catalog.text()).toMatch(/Commons/i)
@@ -90,9 +90,9 @@ describe('Phase 180 WS2 — symptoms tab + dropdowns', () => {
     })
   })
 
-  it('help workspace includes symptoms via library hub', () => {
-    expect(WORKSPACES.help.tabs.map((t) => t.id)).toContain('library')
-    expect(WORKSPACES.help.absorbs['/symptom-guide']).toEqual({ tab: 'library', section: 'symptoms' })
+  it('help workspace includes symptoms as its own tab', () => {
+    expect(WORKSPACES.help.tabs.map((t) => t.id)).toContain('symptoms')
+    expect(WORKSPACES.help.absorbs['/symptom-guide']).toEqual({ tab: 'symptoms' })
   })
 
   it('filter helpers derive distinct crop and category values', () => {
@@ -105,7 +105,7 @@ describe('Phase 180 WS2 — symptoms tab + dropdowns', () => {
   })
 
   it('SymptomGuide renders dropdowns and applies deep-link query params', async () => {
-    await router.push('/symptom-guide?crop_key=lettuce&category=deficiency')
+    await router.push('/operator-guide?tab=symptoms&crop_key=lettuce&category=deficiency')
     const wrapper = mount(SymptomGuide, {
       global: { plugins: [router] },
     })
@@ -392,7 +392,7 @@ describe('Phase 180 WS6 — closure docs and nav', () => {
       },
     })
 
-    await router.push('/operator-guide?tab=library&section=symptoms')
+    await router.push('/operator-guide?tab=symptoms')
     const wrapper = mount(SymptomGuide, {
       props: { embedded: true },
       global: { plugins: [router] },

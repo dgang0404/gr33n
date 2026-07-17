@@ -67,9 +67,11 @@ describe('Phase 80 — routing & zones tab labels', () => {
     expect(router).toContain('to.hash')
   })
 
-  it('router imports every route component it references', () => {
+  it('symptom guide lives in Help workspace, not as a standalone router page', () => {
     const router = readFileSync(join(uiSrc, 'router/index.js'), 'utf8')
-    expect(router).toContain("import SymptomGuide from '../views/SymptomGuide.vue'")
-    expect(router).toContain("component: SymptomGuide")
+    expect(router).not.toContain("component: SymptomGuide")
+    const help = readFileSync(join(uiSrc, 'views/workspaces/HelpWorkspace.vue'), 'utf8')
+    expect(help).toContain("activeTab === 'symptoms'")
+    expect(help).toContain('SymptomGuide')
   })
 })

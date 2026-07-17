@@ -12,7 +12,6 @@ import Settings from '../views/Settings.vue'
 import FarmKnowledge from '../views/FarmKnowledge.vue'
 import FarmGuardianChat from '../views/FarmGuardianChat.vue'
 import HelpWorkspace from '../views/workspaces/HelpWorkspace.vue'
-import SymptomGuide from '../views/SymptomGuide.vue'
 import CropProfileDetail from '../views/CropProfileDetail.vue'
 import CropCycleSummary from '../views/CropCycleSummary.vue'
 import CropCycleCompare from '../views/CropCycleCompare.vue'
@@ -80,7 +79,6 @@ const routes = [
     },
   },
   { path: '/operator-guide', component: HelpWorkspace, name: 'operator-guide' },
-  { path: '/symptom-guide', component: SymptomGuide, name: 'symptom-guide' },
   { path: '/crop-cycles/:id/summary', component: CropCycleSummary, name: 'crop-cycle-summary' },
   { path: '/farms/:fid/crop-cycles/compare', component: CropCycleCompare, name: 'crop-cycle-compare' },
   { path: '/farms/:id/setup', component: FarmSetupWizard, name: 'farm-setup' },

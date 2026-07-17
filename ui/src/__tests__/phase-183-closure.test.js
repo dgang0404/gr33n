@@ -38,10 +38,10 @@ describe('Phase 183 WS1 — contextual symptom links', () => {
     expect(symptomGuideRoute(null)).toBeNull()
   })
 
-  it('symptomGuideRoute builds pre-filtered symptom guide path', () => {
+  it('symptomGuideRoute builds pre-filtered Help symptom tab path', () => {
     expect(symptomGuideRoute('lettuce')).toEqual({
-      path: '/symptom-guide',
-      query: { crop_key: 'lettuce' },
+      path: '/operator-guide',
+      query: { tab: 'symptoms', crop_key: 'lettuce' },
     })
   })
 
@@ -68,13 +68,13 @@ describe('Phase 183 WS2 — Help Library hub', () => {
     api.get.mockResolvedValue({ data: { symptoms: [], ai_enabled: true } })
   })
 
-  it('help workspace uses Library tab instead of four equal tabs', () => {
-    expect(WORKSPACES.help.tabs.map((t) => t.id)).toEqual(['library', 'pi-setup'])
+  it('help workspace uses Library tab and dedicated Symptom guide tab', () => {
+    expect(WORKSPACES.help.tabs.map((t) => t.id)).toEqual(['library', 'pi-setup', 'symptoms'])
     expect(WORKSPACES.help.absorbs['/farm-knowledge']).toEqual({ tab: 'library', section: 'knowledge' })
-    expect(WORKSPACES.help.absorbs['/symptom-guide']).toEqual({ tab: 'library', section: 'symptoms' })
+    expect(WORKSPACES.help.absorbs['/symptom-guide']).toEqual({ tab: 'symptoms' })
   })
 
-  it('HelpLibraryHub renders four library sections', async () => {
+  it('HelpLibraryHub renders three library sections (symptoms is a Help tab)', async () => {
     await router.push('/operator-guide?tab=library')
     const wrapper = mount(HelpLibraryHub, {
       global: { plugins: [router] },
@@ -84,7 +84,7 @@ describe('Phase 183 WS2 — Help Library hub', () => {
     expect(wrapper.find('[data-test="help-library-hub"]').exists()).toBe(true)
     expect(wrapper.find('[data-test="help-library-section-guide"]').exists()).toBe(true)
     expect(wrapper.find('[data-test="help-library-section-knowledge"]').exists()).toBe(true)
-    expect(wrapper.find('[data-test="help-library-section-symptoms"]').exists()).toBe(true)
+    expect(wrapper.find('[data-test="help-library-section-symptoms"]').exists()).toBe(false)
     expect(wrapper.find('[data-test="help-library-section-catalog"]').exists()).toBe(true)
   })
 

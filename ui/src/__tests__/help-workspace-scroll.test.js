@@ -44,12 +44,14 @@ describe('Help workspace scroll + alerts inbox', () => {
   it('HelpLibraryHub shows What lives where map without duplicate Guide card', () => {
     const hub = readFileSync(join(repoRoot, 'ui/src/views/HelpLibraryHub.vue'), 'utf8')
     expect(hub).toContain('HelpKnowledgeSurfacesMap')
+    expect(hub).not.toContain('SymptomGuide')
 
     const map = readFileSync(join(repoRoot, 'ui/src/components/HelpKnowledgeSurfacesMap.vue'), 'utf8')
     expect(map).not.toContain("id: 'guide'")
     expect(map).toContain("id: 'knowledge'")
     expect(map).toContain("id: 'catalog'")
     expect(map).toContain("id: 'symptoms'")
+    expect(map).toContain("tab: 'symptoms'")
   })
 
   it('App shell opens Guardian from TopBar only, not edge tab', () => {

@@ -25,7 +25,7 @@ import { nextTick, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { scrollToHelpLibrarySection } from '../lib/helpLibraryScroll.js'
 
-const LEGACY_SECTIONS = new Set(['guide', 'knowledge', 'symptoms', 'catalog'])
+const LEGACY_SECTIONS = new Set(['guide', 'knowledge', 'catalog'])
 
 const route = useRoute()
 const router = useRouter()
@@ -34,7 +34,6 @@ const activeSection = ref('guide')
 const sections = [
   { id: 'guide', label: 'How-to' },
   { id: 'knowledge', label: 'Search' },
-  { id: 'symptoms', label: 'Symptoms' },
   { id: 'catalog', label: 'Import' },
 ]
 
