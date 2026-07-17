@@ -80,7 +80,6 @@
 
 <script setup>
 import { computed, nextTick, onMounted, ref, watch } from 'vue'
-import { useRouter } from 'vue-router'
 import api from '../api'
 import {
   chunkDisplayText,
@@ -101,7 +100,6 @@ const props = defineProps({
 
 const emit = defineEmits(['dismiss'])
 
-const router = useRouter()
 const farmContext = useFarmContextStore()
 const guardianPanel = useGuardianPanelStore()
 
@@ -163,15 +161,10 @@ async function loadDoc() {
 }
 
 function askGuardian() {
-  const query = {
-    cited_doc: props.docPath,
-    cited_type: props.docType,
-  }
-  if (props.highlightChunkId > 0) {
-    query.cited_chunk = String(props.highlightChunkId)
-  }
-  guardianPanel.prefilledMessage = guardianDocPrefill(title.value)
-  router.push({ path: '/chat', query })
+  guardianPanel.openDrawer({
+    tab: 'chat',
+    prefilledMessage: guardianDocPrefill(title.value),
+  })
 }
 
 onMounted(loadDoc)

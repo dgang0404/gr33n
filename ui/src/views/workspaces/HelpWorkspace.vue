@@ -1,5 +1,5 @@
 <template>
-  <WorkspaceShell workspace-id="help">
+  <WorkspaceShell workspace-id="help" unified-header>
     <template v-if="isLibraryTab" #subnav-extra>
       <HelpLibrarySectionNav />
     </template>

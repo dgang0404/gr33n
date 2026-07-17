@@ -61,6 +61,10 @@ export const useGuardianReadinessStore = defineStore('guardianReadiness', {
 
   actions: {
     async fetchHealth(farmId, mode = 'farm_counsel') {
+      if (!localStorage.getItem('gr33n_token')) {
+        this.stopPolling()
+        return
+      }
       this.loading = true
       this.error = ''
       this.farmId = farmId ?? null

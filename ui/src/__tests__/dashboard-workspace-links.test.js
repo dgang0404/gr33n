@@ -39,13 +39,25 @@ describe('Phase 76 — dashboard workspace links', () => {
     expect(route).toEqual({ path: '/zones/2', query: { tab: 'ops', ops: 'tasks' } })
   })
 
-  it('alerts view-all falls back to zones list when unread alerts are farm-wide', () => {
-    expect(alertsViewAllRoute([{ is_read: false }], [{ id: 1 }], [])).toEqual({
+  it('alerts view-all uses farm inbox when unread spans zones or farm-wide alerts', () => {
+    expect(alertsViewAllRoute(
+      [{ is_read: false, subject_rendered: 'Humidity high — Flower Room' }],
+      [{ id: 1, name: 'Flower Room' }],
+      [],
+    )).toEqual({
       path: '/zones/1',
       query: { tab: 'ops', ops: 'alerts' },
     })
+    expect(alertsViewAllRoute(
+      [
+        { is_read: false, subject_rendered: 'Humidity high — Flower Room' },
+        { is_read: false, subject_rendered: 'Device offline: Veg Relay Controller' },
+      ],
+      [{ id: 1, name: 'Flower Room' }, { id: 2, name: 'Veg Room' }],
+      [],
+    )).toEqual({ path: '/alerts' })
     expect(alertsViewAllRoute([{ is_read: false }], [{ id: 1 }, { id: 2 }], [])).toEqual({
-      path: '/zones',
+      path: '/alerts',
     })
   })
 

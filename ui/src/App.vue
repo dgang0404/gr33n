@@ -10,8 +10,14 @@
 
     <div class="flex-1 flex flex-col overflow-hidden">
       <TopBar @toggle-drawer="drawerOpen = !drawerOpen" />
-      <main id="main-content" tabindex="-1" class="flex-1 overflow-y-auto p-3 sm:p-6 pb-20 md:pb-6">
-        <RouterView />
+      <main
+        id="main-content"
+        tabindex="-1"
+        :class="mainClass"
+      >
+        <div :class="routeShellClass">
+          <RouterView />
+        </div>
       </main>
     </div>
 
@@ -99,8 +105,7 @@
       </div>
     </Transition>
 
-    <!-- Phase 29 WS1 — global Farm Guardian slide-out + right-edge trigger -->
-    <GuardianEdgeTab v-if="auth.token" :compact="isMobile" />
+    <!-- Farm Guardian drawer (opened from TopBar, sidebar, or mobile nav) -->
     <GuardianDrawer v-if="auth.token" />
   </div>
 </template>
@@ -109,7 +114,6 @@
 import SideNav from './components/SideNav.vue'
 import TopBar  from './components/TopBar.vue'
 import GuardianDrawer from './components/GuardianDrawer.vue'
-import GuardianEdgeTab from './components/GuardianEdgeTab.vue'
 import GuardianNavLaunch from './components/GuardianNavLaunch.vue'
 import { useFarmStore } from './stores/farm'
 import { useFarmContextStore } from './stores/farmContext'
@@ -121,6 +125,7 @@ import { onMounted, onUnmounted, ref, watch, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { buildNavGroups, mobileBottomNav } from './lib/navGroups.js'
 import { moduleMapFromRows } from './lib/farmModules.js'
+import { workspaceByRoute } from './lib/workspaces.js'
 
 const store = useFarmStore()
 const farmContext = useFarmContextStore()
@@ -131,8 +136,18 @@ let evtSource = null
 
 const drawerOpen = ref(false)
 const mobileDrawerRef = ref(null)
-const isMobile = ref(false)
 const route = useRoute()
+
+/** Workspace shells scroll internally — chrome stays pinned below TopBar. */
+const isWorkspaceRoute = computed(() => !!workspaceByRoute(route.path))
+const mainClass = computed(() =>
+  isWorkspaceRoute.value
+    ? 'flex-1 min-h-0 overflow-hidden flex flex-col'
+    : 'flex-1 min-h-0 overflow-y-auto p-3 sm:p-6 pb-20 md:pb-6',
+)
+const routeShellClass = computed(() =>
+  isWorkspaceRoute.value ? 'flex-1 min-h-0 flex flex-col overflow-hidden' : '',
+)
 
 useDialogFocusTrap(drawerOpen, mobileDrawerRef, {
   onEscape: () => { drawerOpen.value = false },
@@ -141,11 +156,6 @@ useDialogFocusTrap(drawerOpen, mobileDrawerRef, {
 function isMobileNavCurrent(to) {
   if (to === '/') return route.path === '/' || route.path === '/today'
   return route.path === to || route.path.startsWith(`${to}/`)
-}
-
-function syncMobile() {
-  if (typeof window === 'undefined' || !window.matchMedia) return
-  isMobile.value = window.matchMedia('(max-width: 767px)').matches
 }
 
 const mobileNav = mobileBottomNav
@@ -168,14 +178,16 @@ function connectSSE(farmId) {
     } catch { /* ignore parse errors */ }
   })
   evtSource.onerror = () => {
+    if (evtSource.readyState === EventSource.CONNECTING) return
     evtSource.close()
+    evtSource = null
     setTimeout(() => connectSSE(farmContext.farmId), 5000)
   }
 }
 
 watch(() => farmContext.farmId, (id) => {
   if (id) connectSSE(id)
-  if (id) void guardianPanel.fetchNudge(id)
+  if (id && auth.token) void guardianPanel.fetchNudge(id)
 })
 
 async function bootstrapFarmData() {
@@ -195,8 +207,6 @@ async function bootstrapFarmData() {
 onMounted(() => {
   bootstrapFarmData()
   if (localStorage.getItem('gr33n_token')) push.init()
-  syncMobile()
-  window.addEventListener('resize', syncMobile)
 })
 
 watch(
@@ -208,6 +218,5 @@ watch(
 
 onUnmounted(() => {
   if (evtSource) evtSource.close()
-  window.removeEventListener('resize', syncMobile)
 })
 </script>

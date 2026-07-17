@@ -23,6 +23,7 @@
 <script setup>
 import { nextTick, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { scrollToHelpLibrarySection } from '../lib/helpLibraryScroll.js'
 
 const LEGACY_SECTIONS = new Set(['guide', 'knowledge', 'symptoms', 'catalog'])
 
@@ -51,8 +52,7 @@ function resolveSection() {
 
 function scrollToSection(id) {
   activeSection.value = id
-  const el = document.getElementById(`help-section-${id}`)
-  el?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  scrollToHelpLibrarySection(id)
   const query = { ...route.query, tab: 'library', section: id }
   delete query.fleet
   router.replace({ path: route.path, query })
@@ -62,8 +62,8 @@ async function applyDeepLink() {
   const section = resolveSection()
   activeSection.value = section
   await nextTick()
-  if (section !== 'guide') {
-    document.getElementById(`help-section-${section}`)?.scrollIntoView({ block: 'start' })
+  if (typeof route.query.section === 'string' && LEGACY_SECTIONS.has(route.query.section)) {
+    scrollToHelpLibrarySection(section, { smooth: false })
   }
 }
 

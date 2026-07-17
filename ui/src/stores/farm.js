@@ -148,7 +148,7 @@ export const useFarmStore = defineStore('farm', {
     },
 
     async loadFarmModules(farmId) {
-      if (!farmId) {
+      if (!farmId || !localStorage.getItem('gr33n_token')) {
         this.farmModules = []
         return []
       }
@@ -1405,6 +1405,10 @@ export const useFarmStore = defineStore('farm', {
     },
 
     async countUnreadAlerts(farmId) {
+      if (!farmId || !localStorage.getItem('gr33n_token')) {
+        this.unreadAlertCount = 0
+        return 0
+      }
       const r = await api.get(`/farms/${farmId}/alerts/unread-count`)
       this.unreadAlertCount = r.data?.unread_count ?? 0
       return this.unreadAlertCount
@@ -1413,7 +1417,11 @@ export const useFarmStore = defineStore('farm', {
     async markAlertRead(id) {
       const r = await api.patch(`/alerts/${id}/read`)
       const idx = this.alerts.findIndex(a => a.id === id)
+      const wasUnread = idx >= 0 && !this.alerts[idx].is_read
       if (idx >= 0) this.alerts[idx] = r.data
+      if (wasUnread && r.data?.is_read) {
+        this.unreadAlertCount = Math.max(0, this.unreadAlertCount - 1)
+      }
       return r.data
     },
 

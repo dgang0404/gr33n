@@ -77,13 +77,14 @@
           >
             Open indexed doc
           </button>
-          <router-link
-            :to="guardianChatLink(selectedDetail)"
+          <button
+            type="button"
             class="text-xs px-3 py-1.5 rounded-lg border border-zinc-700 text-zinc-300 hover:text-green-300"
             data-test="field-guide-ask-guardian"
+            @click="askGuardianAboutGuide(selectedDetail)"
           >
             Ask Guardian about this
-          </router-link>
+          </button>
         </div>
       </article>
     </template>
@@ -94,10 +95,13 @@
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import api from '../api'
+import { guardianDocPrefill } from '../lib/citationDoc.js'
+import { useGuardianPanelStore } from '../stores/guardianPanel'
 
 const emit = defineEmits([])
 
 const router = useRouter()
+const guardianPanel = useGuardianPanelStore()
 const guides = ref([])
 const loading = ref(false)
 const error = ref('')
@@ -143,12 +147,12 @@ function openInKnowledge(guide) {
   })
 }
 
-function guardianChatLink(guide) {
-  const cited = citedDocPath(guide)
-  return {
-    path: '/chat',
-    query: cited ? { cited_doc: cited, cited_type: 'field_guide' } : {},
-  }
+function askGuardianAboutGuide(guide) {
+  const title = String(guide?.title || '').trim()
+  guardianPanel.openDrawer({
+    tab: 'chat',
+    prefilledMessage: guardianDocPrefill(title || 'this field guide'),
+  })
 }
 
 async function selectGuide(guide) {

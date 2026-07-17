@@ -28,7 +28,7 @@ export const useGuardianProposalsStore = defineStore('guardianProposals', {
 
   actions: {
     async fetch(farmId, { status = 'pending' } = {}) {
-      if (!farmId) {
+      if (!farmId || !localStorage.getItem('gr33n_token')) {
         this.proposals = []
         this.total = 0
         this.pendingCount = 0
@@ -63,7 +63,7 @@ export const useGuardianProposalsStore = defineStore('guardianProposals', {
     },
 
     async refreshPendingCount(farmId) {
-      if (!farmId) {
+      if (!farmId || !localStorage.getItem('gr33n_token')) {
         this.pendingCount = 0
         return
       }

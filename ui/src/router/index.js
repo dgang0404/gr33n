@@ -27,6 +27,7 @@ import ComfortWorkspace from '../views/workspaces/ComfortWorkspace.vue'
 import HardwareWorkspace from '../views/workspaces/HardwareWorkspace.vue'
 import FeedWaterWorkspace from '../views/workspaces/FeedWaterWorkspace.vue'
 import Login from '../views/Login.vue'
+import Alerts from '../views/Alerts.vue'
 import { buildLegacyRedirectRoutes, buildSunsetWorkspaceRedirects, buildZoneOpsRedirectRoutes } from '../lib/workspaces.js'
 
 const routes = [
@@ -65,6 +66,19 @@ const routes = [
     redirect: (to) => ({ path: '/zones', query: { ...to.query, tab: 'plants', compare: '1' } }),
   },
   { path: '/settings',     component: Settings,     name: 'settings' },
+  {
+    path: '/alerts',
+    component: Alerts,
+    name: 'alerts',
+    beforeEnter: (to) => {
+      const raw = to.query?.zone_id
+      const zoneId = raw != null ? String(Array.isArray(raw) ? raw[0] : raw).trim() : ''
+      if (!zoneId) return true
+      const query = { ...to.query, tab: 'ops', ops: 'alerts' }
+      delete query.zone_id
+      return { path: `/zones/${zoneId}`, query }
+    },
+  },
   { path: '/operator-guide', component: HelpWorkspace, name: 'operator-guide' },
   { path: '/symptom-guide', component: SymptomGuide, name: 'symptom-guide' },
   { path: '/crop-cycles/:id/summary', component: CropCycleSummary, name: 'crop-cycle-summary' },

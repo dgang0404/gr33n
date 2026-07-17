@@ -305,10 +305,6 @@ export function buildZoneOpsRedirectRoutes() {
       path: '/tasks',
       redirect: (to) => redirectToZoneOps(to, 'tasks'),
     },
-    {
-      path: '/alerts',
-      redirect: (to) => redirectToZoneOps(to, 'alerts'),
-    },
   ]
 }
 

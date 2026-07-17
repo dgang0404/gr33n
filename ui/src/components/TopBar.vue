@@ -66,7 +66,12 @@
           </span>
           Ask gr33n
         </button>
-        <RouterLink v-nav-hint="'/alerts'" to="/alerts" class="relative text-gray-400 hover:text-white transition-colors" title="Alerts">
+        <RouterLink
+          v-nav-hint="'/alerts'"
+          to="/alerts"
+          class="relative text-gray-400 hover:text-white transition-colors"
+          :title="alertBellTitle"
+        >
           <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
             <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
@@ -115,6 +120,12 @@ const nudgeDotStirring = computed(() =>
   guardianPanel.criticalNudgePending && guardianReadiness.isStirring,
 )
 
+const alertBellTitle = computed(() => {
+  const n = farmStore.unreadAlertCount
+  if (n <= 0) return 'Alerts'
+  return `${n} unread alert${n === 1 ? '' : 's'} on this farm (includes device offline and supply alerts)`
+})
+
 function openGuardianDrawer() {
   if (proposalsStore.pendingCount > 0) {
     guardianPanel.openPendingTab()
@@ -151,12 +162,12 @@ let tick
 onMounted(async () => {
   auth.fetchAuthMode()
   if (!capabilities.loaded) await capabilities.fetch()
-  if (farmContext.farmId) proposalsStore.refreshPendingCount(farmContext.farmId)
+  if (auth.token && farmContext.farmId) proposalsStore.refreshPendingCount(farmContext.farmId)
   tick = setInterval(async () => {
     now.value = new Date().toLocaleTimeString()
     try { await api.get('/health'); apiOk.value = true }
     catch { apiOk.value = false }
-    if (farmContext.farmId) {
+    if (auth.token && farmContext.farmId) {
       try {
         await farmStore.countUnreadAlerts(farmContext.farmId)
       } catch (e) {
@@ -168,12 +179,12 @@ onMounted(async () => {
     }
   }, 5000)
   now.value = new Date().toLocaleTimeString()
-  if (farmContext.farmId) {
+  if (auth.token && farmContext.farmId) {
     try { await farmStore.countUnreadAlerts(farmContext.farmId) } catch {}
   }
 })
 watch(() => farmContext.farmId, (id) => {
-  if (id) proposalsStore.refreshPendingCount(id)
+  if (id && auth.token) proposalsStore.refreshPendingCount(id)
 })
 onUnmounted(() => clearInterval(tick))
 </script>

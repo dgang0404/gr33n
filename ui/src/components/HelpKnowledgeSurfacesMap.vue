@@ -8,7 +8,7 @@
         What lives where
       </h2>
       <p class="text-xs text-zinc-500 leading-relaxed">
-        Four related knowledge surfaces — each does something different. Browse here without waiting for a Guardian citation.
+        Three related knowledge surfaces — each does something different. Browse here without waiting for a Guardian citation.
       </p>
     </div>
     <div class="grid gap-3 sm:grid-cols-2">
@@ -28,12 +28,6 @@
 
 <script setup>
 const cards = [
-  {
-    id: 'guide',
-    title: 'Guide',
-    blurb: 'How-to for gr33n screens, terms, and click paths in this app.',
-    to: { path: '/operator-guide', query: { tab: 'library', section: 'guide' } },
-  },
   {
     id: 'knowledge',
     title: 'Knowledge',

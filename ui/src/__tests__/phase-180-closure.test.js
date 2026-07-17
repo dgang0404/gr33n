@@ -34,7 +34,7 @@ const router = createRouter({
 })
 
 describe('Phase 180 WS1 — help knowledge surfaces map', () => {
-  it('renders four surface cards with correct links', async () => {
+  it('renders three surface cards with correct links (Guide card removed)', async () => {
     const wrapper = mount(HelpKnowledgeSurfacesMap, {
       global: { plugins: [router] },
     })
@@ -46,19 +46,17 @@ describe('Phase 180 WS1 — help knowledge surfaces map', () => {
     const catalog = wrapper.find('[data-test="help-surface-card-catalog"]')
     const symptoms = wrapper.find('[data-test="help-surface-card-symptoms"]')
 
-    expect(guide.exists()).toBe(true)
+    expect(guide.exists()).toBe(false)
     expect(knowledge.exists()).toBe(true)
     expect(catalog.exists()).toBe(true)
     expect(symptoms.exists()).toBe(true)
 
-    expect(guide.attributes('href')).toContain('/operator-guide')
-    expect(guide.attributes('href')).toContain('tab=library')
-    expect(guide.attributes('href')).toContain('section=guide')
+    expect(knowledge.attributes('href')).toContain('/operator-guide')
+    expect(knowledge.attributes('href')).toContain('tab=library')
     expect(knowledge.attributes('href')).toContain('section=knowledge')
     expect(catalog.attributes('href')).toContain('section=catalog')
     expect(symptoms.attributes('href')).toContain('section=symptoms')
 
-    expect(guide.text()).toMatch(/Guide/i)
     expect(knowledge.text()).toMatch(/semantic search/i)
     expect(catalog.text()).toMatch(/Commons/i)
     expect(symptoms.text()).toMatch(/Symptom/i)
@@ -312,6 +310,29 @@ describe('Phase 180 WS5 — citation doc view round-trip', () => {
     expect(wrapper.findAll('[data-test^="citation-doc-chunk-"]')).toHaveLength(2)
     expect(wrapper.find('[data-test="citation-doc-chunk-highlight"]').exists()).toBe(true)
     expect(wrapper.find('[data-test="citation-doc-chunk-highlight"]').text()).toMatch(/tip burn/i)
+  })
+
+  it('CitationDocView Ask Guardian opens slide-out drawer instead of navigating to /chat', async () => {
+    const CitationDocView = (await import('../components/CitationDocView.vue')).default
+    const { useFarmContextStore } = await import('../stores/farmContext')
+    const { useGuardianPanelStore } = await import('../stores/guardianPanel')
+    useFarmContextStore().farmId = 1
+    const panel = useGuardianPanelStore()
+
+    const wrapper = mount(CitationDocView, {
+      props: {
+        docPath: 'field-guides/crop-lettuce-nutrition.md',
+        docType: 'field_guide',
+      },
+      global: { plugins: [router] },
+    })
+    await flushPromises()
+
+    await wrapper.find('[data-test="citation-doc-ask-guardian"]').trigger('click')
+    expect(panel.open).toBe(true)
+    expect(panel.drawerTab).toBe('chat')
+    expect(panel.prefilledMessage).toMatch(/Lettuce nutrition/)
+    expect(router.currentRoute.value.path).not.toBe('/chat')
   })
 
   it('FarmKnowledge shows doc view instead of cited-doc banner when deep-linked', async () => {

@@ -39,11 +39,13 @@ describe('Phase 199 — Help sticky chrome consolidation', () => {
     const hub = readFileSync(join(repoRoot, 'ui/src/views/HelpLibraryHub.vue'), 'utf8')
     expect(hub).not.toContain('sticky')
     expect(hub).not.toContain('help-library-jump')
-    expect(hub).toContain('scroll-mt-32')
+    expect(hub).toContain('scroll-mt-4')
 
     const shell = readFileSync(join(repoRoot, 'ui/src/components/WorkspaceShell.vue'), 'utf8')
     expect(shell).toContain('subnav-extra')
-    expect(shell).toContain('workspace-shell__subnav sticky top-0')
+    expect(shell).toContain('unifiedHeader')
+    expect(shell).toContain('workspace-shell-unified-chrome')
+    expect(shell).toContain('workspace-shell__content flex-1 min-h-0 overflow-y-auto')
 
     const nav = readFileSync(join(repoRoot, 'ui/src/components/HelpLibrarySectionNav.vue'), 'utf8')
     expect(nav).toContain('data-test="help-library-jump"')
@@ -55,6 +57,7 @@ describe('Phase 199 — Help sticky chrome consolidation', () => {
     const wrapper = mount(HelpWorkspace, { global: { plugins: [router] } })
     await flushPromises()
 
+    expect(wrapper.find('[data-test="workspace-shell-unified-chrome"]').exists()).toBe(true)
     const subnav = wrapper.find('[data-test="workspace-shell-subnav-extra"]')
     expect(subnav.exists()).toBe(true)
     expect(subnav.find('[data-test="help-library-jump"]').exists()).toBe(true)

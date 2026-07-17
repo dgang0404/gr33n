@@ -86,6 +86,8 @@
         :key="st"
         reason="no_setpoint"
         :message="`No comfort target for ${sensorTypeLabel(st)} yet.`"
+        action-label=""
+        :action-to="null"
         compact
       />
       <div class="flex flex-wrap gap-2">

@@ -27,6 +27,7 @@
 
 <script setup>
 import { computed, onMounted, watch } from 'vue'
+import { useAuthStore } from '../stores/auth'
 import { useCapabilitiesStore } from '../stores/capabilities'
 import { useFarmContextStore } from '../stores/farmContext'
 import { useGuardianPanelStore } from '../stores/guardianPanel'
@@ -37,6 +38,7 @@ defineProps({
   collapsed: { type: Boolean, default: false },
 })
 
+const auth = useAuthStore()
 const capabilities = useCapabilitiesStore()
 const farmContext = useFarmContextStore()
 const guardianPanel = useGuardianPanelStore()
@@ -54,7 +56,7 @@ function openDrawer() {
 }
 
 async function bootReadiness() {
-  if (!capabilities.aiEnabled || !farmContext.farmId) return
+  if (!auth.token || !capabilities.aiEnabled || !farmContext.farmId) return
   await readiness.fetchHealth(farmContext.farmId, 'farm_counsel')
   if (readiness.awakening?.state === 'sleeping') {
     await readiness.warmup(farmContext.farmId, 'farm_counsel')

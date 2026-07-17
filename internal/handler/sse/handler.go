@@ -66,6 +66,8 @@ func (h *Handler) Stream(w http.ResponseWriter, r *http.Request) {
 
 	ticker := time.NewTicker(10 * time.Second)
 	defer ticker.Stop()
+	keepalive := time.NewTicker(15 * time.Second)
+	defer keepalive.Stop()
 
 	farmID, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil || farmID == 0 {
@@ -104,6 +106,9 @@ func (h *Handler) Stream(w http.ResponseWriter, r *http.Request) {
 			return
 		case <-ticker.C:
 			sendReadings()
+		case <-keepalive.C:
+			fmt.Fprintf(w, ": keepalive\n\n")
+			flusher.Flush()
 		case <-wake:
 			sendReadings()
 		}
