@@ -33,11 +33,22 @@ func NewAPIClient(baseURL, token string, farmID int64) *APIClient {
 }
 
 type chatResponse struct {
-	Answer    string                         `json:"answer"`
-	SessionID string                         `json:"session_id"`
-	Citations []farmguardian.CitationSummary `json:"citations"`
-	Proposals []farmguardian.ActionProposal  `json:"proposals"`
-	Debug     *farmguardian.TurnDebug        `json:"debug,omitempty"`
+	Answer       string                         `json:"answer"`
+	SessionID    string                         `json:"session_id"`
+	Citations    []farmguardian.CitationSummary `json:"citations"`
+	Proposals    []farmguardian.ActionProposal  `json:"proposals"`
+	Debug        *farmguardian.TurnDebug        `json:"debug,omitempty"`
+	AccuracyNote string                         `json:"accuracy_note,omitempty"`
+}
+
+func accuracyNoteFromChatResponse(parsed chatResponse) string {
+	if note := strings.TrimSpace(parsed.AccuracyNote); note != "" {
+		return note
+	}
+	if parsed.Debug != nil {
+		return strings.TrimSpace(parsed.Debug.AccuracyNote)
+	}
+	return ""
 }
 
 // RunQuestion posts one eval prompt with a model override.
@@ -99,6 +110,7 @@ func (c *APIClient) RunQuestionInSession(ctx context.Context, model string, q Qu
 		Citations:     parsed.Citations,
 		Relevance:     farmguardian.RelevanceFromTurnDebug(parsed.Debug),
 		Critique:      farmguardian.CritiqueFromTurnDebug(parsed.Debug),
+		AccuracyNote:  accuracyNoteFromChatResponse(parsed),
 		Latency:       latency,
 	}, strings.TrimSpace(parsed.SessionID), nil
 }
@@ -252,6 +264,7 @@ func enrichScoreResult(res *ScoreResult, in ScoreInput, model string) {
 	}
 	res.Grounded = in.Question.Grounded
 	res.Model = model
+	res.AccuracyNote = in.AccuracyNote
 }
 
 // BuildReport aggregates scores into a farmguardian.EvalSummary for one model.
@@ -287,6 +300,7 @@ func ToEvalQuestionScores(scores []ScoreResult) []farmguardian.EvalQuestionScore
 			LowRelevance:            s.Relevance.LowRelevance,
 			CritiquePass:            s.CritiquePass,
 			CritiqueReason:          s.CritiqueReason,
+			AccuracyNote:            s.AccuracyNote,
 		}
 	}
 	return out

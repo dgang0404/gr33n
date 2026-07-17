@@ -182,7 +182,7 @@ Same pass also fixed two live UI reports: Guardian chat session-list topic chips
 
 Plans: [188](plans/phase_188_guardian_answer_quality_audit.plan.md) · [189](plans/phase_189_guardian_inline_source_metadata_redaction.plan.md) · [190](plans/phase_190_guardian_dangling_list_intro_truncation.plan.md) · [191](plans/phase_191_guardian_revise_question_phrased_clarification.plan.md)
 
-## Pending + UI polish arc (Phases 192–200 — 192 shipped)
+## Pending + UI polish arc (Phases 192–200 — shipped)
 
 | Phase | Focus | Status |
 |-------|--------|--------|
@@ -194,7 +194,7 @@ Plans: [188](plans/phase_188_guardian_answer_quality_audit.plan.md) · [189](pla
 | **197** | Session sidebar pending labels | ✅ |
 | **198** | Re-run `scenario-task-dialogue-pending` after 192 | ✅ |
 | **199** | Consolidate Help workspace stickies | ✅ |
-| **200** | `accuracy_note` round-trip audit | planned |
+| **200** ✅ | `accuracy_note` round-trip audit (persist → reload → banner; eval archive) | shipped |
 
 Plan: [192](plans/phase_192_guardian_due_date_title_clobber.plan.md) · [193–200](plans/phase_193_help_library_sticky_bleed.plan.md)
 

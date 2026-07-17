@@ -54,6 +54,7 @@ type EvalQuestionScore struct {
 	LowRelevance            bool    `json:"low_relevance,omitempty"`
 	CritiquePass            *bool   `json:"critique_pass,omitempty"`
 	CritiqueReason          string  `json:"critique_reason,omitempty"`
+	AccuracyNote            string  `json:"accuracy_note,omitempty"`
 }
 
 var (
