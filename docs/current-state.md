@@ -193,7 +193,7 @@ Plans: [188](plans/phase_188_guardian_answer_quality_audit.plan.md) · [189](pla
 | **196** | Proposal revision timeline on Pending card | ✅ |
 | **197** | Session sidebar pending labels | ✅ |
 | **198** | Re-run `scenario-task-dialogue-pending` after 192 | ✅ |
-| **199** | Consolidate Help workspace stickies | planned |
+| **199** | Consolidate Help workspace stickies | ✅ |
 | **200** | `accuracy_note` round-trip audit | planned |
 
 Plan: [192](plans/phase_192_guardian_due_date_title_clobber.plan.md) · [193–200](plans/phase_193_help_library_sticky_bleed.plan.md)

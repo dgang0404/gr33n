@@ -59,6 +59,14 @@
           {{ link.label }}
         </RouterLink>
       </div>
+
+      <div
+        v-if="$slots['subnav-extra']"
+        class="workspace-shell__subnav-extra border-t border-zinc-800/60 py-2"
+        data-test="workspace-shell-subnav-extra"
+      >
+        <slot name="subnav-extra" :active-tab="activeTab" />
+      </div>
     </div>
 
     <div class="flex-1 min-h-0">
