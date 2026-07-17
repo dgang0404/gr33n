@@ -871,7 +871,7 @@ Plans: [`phase_173_today_large_farm_navigation.plan.md`](plans/phase_173_today_l
 
 ### 7o. Guardian chat polish (Phases 179–182 — shipped)
 
-**Shipped.** Full-page `/chat` is calmer during streaming (one progress row), the composer collapses starters/attach/mode behind **+ Attach photos, starters, mode** after the first turn, and the pending-count badge lives on the **TopBar** only (sidebar ✨ shows readiness, not duplicate counts). Pending tab lists are scrollable newest-first; **Refine** shows a one-line hint under the input. Expired JWT stops nav polling after one 401 redirect.
+**Shipped.** Full-page `/chat` is calmer during streaming (one progress row), the composer collapses starters/attach/mode behind **+ Attach photos, starters, mode** after the first turn, and the pending-count badge lives on the **TopBar** only (sidebar ✨ shows readiness, not duplicate counts). Pending tab lists are scrollable newest-first; **Refine** shows a one-line hint under the input. **Phase 195:** the sticky "N requests — newest first" count row uses a solid background so proposal text does not show through when scrolling. Expired JWT stops nav polling after one 401 redirect.
 
 Plans: [`phase_179_guardian_chat_status_consolidation.plan.md`](plans/phase_179_guardian_chat_status_consolidation.plan.md) · [`phase_181_guardian_composer_diet.plan.md`](plans/phase_181_guardian_composer_diet.plan.md) · [`phase_182_guardian_quick_ux_wins.plan.md`](plans/phase_182_guardian_quick_ux_wins.plan.md)
 

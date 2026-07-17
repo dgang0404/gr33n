@@ -24,7 +24,7 @@
 
     <div v-else class="space-y-2" data-test="guardian-inbox-list">
       <p
-        class="sticky top-0 z-10 -mx-1 px-1 py-1.5 text-xs font-medium text-zinc-400 bg-zinc-950/95 backdrop-blur-sm border-b border-zinc-800/80"
+        class="sticky top-0 z-20 -mx-1 px-1 py-1.5 text-xs font-medium text-zinc-400 bg-zinc-950 border-b border-zinc-800/80"
         data-test="guardian-inbox-count"
       >
         {{ store.proposals.length }} request{{ store.proposals.length === 1 ? '' : 's' }} — newest first
