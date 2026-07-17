@@ -20,6 +20,7 @@
 | `make guardian-qa-change-requests-pending-quick MODEL=phi3:mini FARM_ID=1` | Fast single-proposal demo (~25 min) | `write-ack` only + leave pending for UI |
 | `make guardian-qa-change-requests-confirm MODEL=phi3:mini FARM_ID=1` | Full propose→confirm→DB loop (Phase 162) | Same, plus **per-prompt Confirm** and side-effect GETs |
 | `make guardian-qa-change-requests-ui MODEL=phi3:mini FARM_ID=1` | Multi-turn Pending-tab prep + one API confirm | 5 scenarios: feed revise (confirm + pending), task dialogue, schedule, ack — **shared session_id** per scenario; 4 left pending (24h TTL) |
+| `make guardian-qa-change-requests-ui-task MODEL=phi3:mini FARM_ID=1` | **Phase 198** — re-run `scenario-task-dialogue-pending` only after title-clobber fix | 4 turns; `-fail-on-regression`; ~25–40 min on CPU laptop (phi3:mini) |
 | `make guardian-qa-change-requests-ui-quick MODEL=phi3:mini FARM_ID=1` | Fast multi-turn UI demo (~50 min) | Ack + schedule single-turn scenarios (reliable CPU path) |
 | `make guardian-qa-regression MODEL=phi3:mini` | Pre-release (slow) | Same directory, regression suite |
 | `make guardian-qa-manual` | Human UI parity | Prints checklist from same fixtures |
@@ -45,22 +46,54 @@ For testing **Refine**, **Confirm**, and **Dismiss** on real back-and-forth dial
 
 ```
 make guardian-qa-change-requests-ui MODEL=phi3:mini FARM_ID=1
+make guardian-qa-change-requests-ui-task MODEL=phi3:mini FARM_ID=1   # Phase 198: task dialogue only (~25–40 min)
 make guardian-qa-change-requests-ui-quick MODEL=phi3:mini FARM_ID=1   # ~50 min: ack + schedule (single-turn)
 ```
 
 Each scenario reuses one `session_id` across turns. The full suite runs **5 scenarios**:
 
-| Scenario | Turns | End state |
-|----------|-------|-----------|
-| `scenario-feed-revise-confirm` | propose 0.5L → revise to 0.3L | Confirmed via API (DB verified) |
-| `scenario-feed-revise-pending` | same dialogue | Left pending (rev 2, 0.3L) — test **Confirm** in UI |
-| `scenario-task-dialogue-pending` | create task → zone → title → due tomorrow | Left pending (rev ≥4, zone + title + relative due) — test **Refine** / **Confirm**. Phase 192: `make it due tomorrow` must not overwrite title with `"due tomorrow"`. |
-| `scenario-schedule-pending` | pause schedule | Left pending |
-| `scenario-ack-pending` | acknowledge alert | Left pending |
+| Scenario | Turns | CPU time (phi3:mini laptop, observed) | End state |
+|----------|-------|----------------------------------------|-----------|
+| `scenario-feed-revise-confirm` | 2 | ~40–60 min | Confirmed via API (DB verified) |
+| `scenario-feed-revise-pending` | 2 | ~40–60 min | Left pending (rev 2, 0.3L) — test **Confirm** in UI |
+| `scenario-task-dialogue-pending` | 4 | **~90–120 min total** (2026-07-16: ~105 min, ~26 min/turn on CPU) | Left pending (rev ≥4, zone + title + relative due) — test **Refine** / **Confirm**. Phase 192: `make it due tomorrow` must not overwrite title with `"due tomorrow"`. |
+| `scenario-schedule-pending` | 1 | ~20–30 min | Left pending |
+| `scenario-ack-pending` | 1 | ~20–30 min | Left pending |
+
+**Full suite:** ~2–3 hours on CPU. Not a CI gate — operator/optional target only.
 
 Requires `DATABASE_URL` for TTL bump on leave-pending scenarios. Optional: open `/chat?tab=pending` when the run finishes (operator walkthrough).
 
-**Closure tests (2026-07-16):** `go test ./internal/farmguardian/...` and Vitest `phase-179` … `phase-187-closure.test.js` — all green on `main`.
+### Phase 198 — `scenario-task-dialogue-pending` re-run (after Phase 192)
+
+**2026-07-16 pre-192 failure** (all four turns completed; proposal left at rev 4):
+
+```
+eval: scenario "scenario-task-dialogue-pending" fail (proposals=1)
+notes: proposal title "due tomorrow" want "Refill calcium nitrate"
+```
+
+Root cause: `make it due tomorrow` matched the title-revise regex and clobbered `title` instead of setting `due_date` only. **Fixed in Phase 192** (`looksLikeDueDatePhrase`, parse order).
+
+**2026-07-16 post-192 re-run (stale API):** Eval was kicked off before restarting `go run ./cmd/api/`; all four turns completed (~105 min) but title assertion still failed with `"due tomorrow"`. **Restart the API** before re-running (see below).
+
+**2026-07-17 re-run (API restarted):** `passed: true`, rev 4, `title=Refill calcium nitrate`, zone + due_date satisfied (~111 min total). Archive: `data/guardian_qa_runs/20260717T035847_change-requests-ui_phi3-mini.json`.
+
+**Re-run after 192:**
+
+```bash
+# Restart API first — go run does not hot-reload; stale process still serves pre-192 revise logic.
+make restart-local-serve   # or kill the api binary and re-run go run ./cmd/api/
+make guardian-qa-change-requests-ui-task MODEL=phi3:mini FARM_ID=1
+```
+
+**Pass criteria** (check `data/guardian_model_eval.json` or `data/guardian_qa_runs/*_change-requests-ui_*.json`):
+
+- `passed: true` for `scenario-task-dialogue-pending`
+- Final pending proposal: `title` = `Refill calcium nitrate`, `zone_id` set, `due_date` = UTC tomorrow, `revision` ≥ 4
+- Row visible on `/chat?tab=pending` (24h TTL bump)
+
+**Closure tests (repo, no live LLM):** `go test ./internal/farmguardian/eval/...` · Vitest `phase-192-closure.test.js` · `phase-198-closure.test.js`
 
 Subset one scenario: `guardian-eval -suite change-requests-ui -prompt-ids scenario-ack-pending`
 

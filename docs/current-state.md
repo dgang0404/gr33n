@@ -192,7 +192,7 @@ Plans: [188](plans/phase_188_guardian_answer_quality_audit.plan.md) · [189](pla
 | **195** | Pending inbox sticky count bar opaque | ✅ |
 | **196** | Proposal revision timeline on Pending card | ✅ |
 | **197** | Session sidebar pending labels | ✅ |
-| **198** | Re-run `scenario-task-dialogue-pending` after 192 | planned |
+| **198** | Re-run `scenario-task-dialogue-pending` after 192 | ✅ |
 | **199** | Consolidate Help workspace stickies | planned |
 | **200** | `accuracy_note` round-trip audit | planned |
 
@@ -270,6 +270,7 @@ make guardian-qa-smoke-strict       # pass/fail heuristics
 make guardian-qa-change-requests    # internal proposal queue persistence
 make guardian-qa-change-requests-confirm  # propose → Confirm → DB (Phase 162)
 make guardian-qa-change-requests-ui       # multi-turn: 1 confirm + 4 pending (Phase 184)
+make guardian-qa-change-requests-ui-task  # Phase 198: task dialogue only (~90–120 min; restart API first)
 make guardian-qa-change-requests-ui-quick # fast subset: ack + schedule pending
 make guardian-eval -manual          # UI checklist
 ```

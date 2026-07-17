@@ -899,6 +899,12 @@ Plan: [`phase_186_guardian_task_due_date_revise.plan.md`](plans/phase_186_guardi
 
 Plan: [`phase_187_guardian_relative_due_date_revise.plan.md`](plans/phase_187_guardian_relative_due_date_revise.plan.md) · Arc summary: [`current-state.md` § sit-in 179–187](current-state.md#sit-in-arc--guardian-ux--knowledge--task-revise-phases-179187--shipped)
 
+### 7t. Task dialogue eval re-run (Phase 198 — shipped)
+
+**Shipped.** After Phase 192, `make guardian-qa-change-requests-ui-task` passes with API restarted (~90–120 min CPU): rev 4, `Refill calcium nitrate`, zone + due tomorrow. **Restart API first** (`go run` does not hot-reload). See [`ci-guardian-qa.md`](ci-guardian-qa.md) for failure signatures and timing.
+
+Plan: [`phase_198_guardian_task_dialogue_eval_rerun.plan.md`](plans/phase_198_guardian_task_dialogue_eval_rerun.plan.md)
+
 ---
 
 ## 7b. Feeding & water for this zone (Phase 47)

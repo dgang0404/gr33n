@@ -1,4 +1,4 @@
-.PHONY: run run-receiver build build-receiver test seed sqlc migrate merge-legacy-plants ui dev dev-auth-test dev-auth-test-run e2e-browser ollama-smoke ollama-smoke-cpu ollama-smoke-help guardian-eval guardian-qa-smoke guardian-qa-smoke-ec-ph guardian-qa-smoke-unread-alerts guardian-qa-phase127 guardian-qa-regression guardian-qa-manual guardian-qa-smoke-strict guardian-qa-change-requests guardian-qa-change-requests-ui guardian-qa-change-requests-ui-quick guardian-laptop-tune rag-ingest-help rag-ingest-demo rag-ingest-platform-docs compose-db-up compose-db-status compose-logging-up compose-logging-down setup-compose-dev dev-stack dev-stack-fresh dev-stack-fresh-rag local-up restart-local restart-local-serve laptop-up db-sanity-report check-stack check-crop-library check-crop-catalog check-crop-catalog-parity check-catalog-seed-drift add-crop-check check-catalog-release check-ui-domain-parity clean lint bootstrap-local bootstrap-local-docker install-deps-debian install-pi-edge-deps first-clone first-clone-docker first-clone-install-deps audit-openapi audit-env edge-smoke-help edge-actuator-smoke-help recipe-pack-import-help agronomy-seed-pack-help guardian-bootstrap-farm import-agronomy-seed-pack apply-agronomy-overrides rag-ingest-farm-operational
+.PHONY: run run-receiver build build-receiver test seed sqlc migrate merge-legacy-plants ui dev dev-auth-test dev-auth-test-run e2e-browser ollama-smoke ollama-smoke-cpu ollama-smoke-help guardian-eval guardian-qa-smoke guardian-qa-smoke-ec-ph guardian-qa-smoke-unread-alerts guardian-qa-phase127 guardian-qa-regression guardian-qa-manual guardian-qa-smoke-strict guardian-qa-change-requests guardian-qa-change-requests-ui guardian-qa-change-requests-ui-task guardian-qa-change-requests-ui-quick guardian-laptop-tune rag-ingest-help rag-ingest-demo rag-ingest-platform-docs compose-db-up compose-db-status compose-logging-up compose-logging-down setup-compose-dev dev-stack dev-stack-fresh dev-stack-fresh-rag local-up restart-local restart-local-serve laptop-up db-sanity-report check-stack check-crop-library check-crop-catalog check-crop-catalog-parity check-catalog-seed-drift add-crop-check check-catalog-release check-ui-domain-parity clean lint bootstrap-local bootstrap-local-docker install-deps-debian install-pi-edge-deps first-clone first-clone-docker first-clone-install-deps audit-openapi audit-env edge-smoke-help edge-actuator-smoke-help recipe-pack-import-help agronomy-seed-pack-help guardian-bootstrap-farm import-agronomy-seed-pack apply-agronomy-overrides rag-ingest-farm-operational
 
 # dash (common default /bin/sh) can report "wait: No child processes" for dev / dev-auth-test;
 # bash handles background jobs + wait reliably.
@@ -253,6 +253,16 @@ guardian-qa-change-requests-ui: ## Multi-turn PR dialogues: 1 confirm via API + 
 		source scripts/source-local-env.sh --refresh-eval-token; \
 		$(GO) run ./cmd/guardian-eval/ -models $${MODEL:-phi3:mini} -farm-id $${FARM_ID:-1} \
 			-suite change-requests-ui \
+			-report $${GUARDIAN_EVAL_REPORT:-data/guardian_model_eval.json}'
+
+guardian-qa-change-requests-ui-task: ## Re-run scenario-task-dialogue-pending only (~90–120 min CPU; Phase 198)
+	@bash -lc 'set -e; cd "$(CURDIR)"; \
+		if [ -f .env ]; then set -a && . ./.env && set +a; fi; \
+		source scripts/source-local-env.sh --refresh-eval-token; \
+		$(GO) run ./cmd/guardian-eval/ -models $${MODEL:-phi3:mini} -farm-id $${FARM_ID:-1} \
+			-suite change-requests-ui \
+			-prompt-ids scenario-task-dialogue-pending \
+			-fail-on-regression \
 			-report $${GUARDIAN_EVAL_REPORT:-data/guardian_model_eval.json}'
 
 guardian-qa-change-requests-ui-quick: ## Fast multi-turn UI prep: ack + schedule pending (~25 min)
