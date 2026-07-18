@@ -4,7 +4,7 @@
 
 **Companion doc:** If you want to understand **what happens inside** a chat request once Ollama is up (UI → handler → RAG → snapshot → LLM → persistence) and the cost-guard rationale, read **[`farm-guardian-architecture.md`](farm-guardian-architecture.md)** alongside this runbook.
 
-**Scope:** Single on-prem inference host running **Ollama** on the farm intranet, called by the gr33n Go API. This is the **Full mode** path described in [phase_27_farm_guardian_ai_layer.md](plans/phase_27_farm_guardian_ai_layer.md). For the **Lite mode** alternative (no LLM), set **`AI_ENABLED=false`** on the API and skip this whole document.
+**Scope:** Single on-prem inference host running **Ollama** on the farm intranet, called by the gr33n Go API. This is the **Full mode** path described in [phase_27_farm_guardian_ai_layer.md](plans/archive/phase_27_farm_guardian_ai_layer.md). For the **Lite mode** alternative (no LLM), set **`AI_ENABLED=false`** on the API and skip this whole document.
 
 **Not in scope:** Kubernetes manifests, multi-node inference clusters, GPU pooling. Phase 27 deliberately stays on **Compose + systemd** (see [Phase 26 logging runbook](operator-logging-runbook.md) — same posture).
 
@@ -232,7 +232,7 @@ curl -sS -X POST http://localhost:8080/v1/chat \
   -d '{"message":"Give me a one-sentence summary of what Farm Guardian is for."}'
 ```
 
-Expected status mapping (see [phase_27_farm_guardian_ai_layer.md](plans/phase_27_farm_guardian_ai_layer.md)):
+Expected status mapping (see [phase_27_farm_guardian_ai_layer.md](plans/archive/phase_27_farm_guardian_ai_layer.md)):
 
 | AI_ENABLED | LLM_BASE_URL + LLM_MODEL set | `POST /v1/chat` |
 |------------|------------------------------|------------------|
@@ -306,7 +306,7 @@ All operational features (schedules, rules, tasks, alerts, fertigation, sensors)
 
 ## 7. References
 
-- [Phase 27 — Farm Guardian AI layer](plans/phase_27_farm_guardian_ai_layer.md) — WS1 lives here.
+- [Phase 27 — Farm Guardian AI layer](plans/archive/phase_27_farm_guardian_ai_layer.md) — WS1 lives here.
 - [Phase 26 — Operator logging runbook](operator-logging-runbook.md) — Compose + systemd logging posture (RAG / chat / automation `slog` lines).
 - [RAG scope and threat model](rag-scope-and-threat-model.md) — §9 boundary between static guide, DB RAG, and ops logs.
 - [Ollama documentation](https://ollama.com/library/llama3.1) — official model list and runtime knobs.

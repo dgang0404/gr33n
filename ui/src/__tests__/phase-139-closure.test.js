@@ -39,7 +39,7 @@ describe('Phase 139 — docs & turn debugger closure', () => {
 
   it('CI QA doc and closure checklist exist', () => {
     const ci = readFileSync(join(repoDocs, 'ci-guardian-qa.md'), 'utf8')
-    const closure = readFileSync(join(repoDocs, 'plans/phase-129-139-closure.md'), 'utf8')
+    const closure = readFileSync(join(repoDocs, 'plans/archive/phase-129-139-closure.md'), 'utf8')
     expect(ci).toContain('guardian-qa-smoke')
     expect(ci).toContain('guardian_qa_runs')
     expect(closure).toContain('Phase 139')

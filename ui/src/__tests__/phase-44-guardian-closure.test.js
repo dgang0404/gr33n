@@ -78,7 +78,7 @@ describe('Phase 44 WS8 — Guardian PR slice closure', () => {
   })
 
   it('guardian PR spec definition of done is marked complete', () => {
-    const spec = readFileSync(join(repoDocs, 'plans/phase_44_guardian_pr_spec.md'), 'utf8')
+    const spec = readFileSync(join(repoDocs, 'plans/archive/phase_44_guardian_pr_spec.md'), 'utf8')
     expect(spec).toContain('status: completed')
     expect(spec).toContain('- [x] Starters on first-run checklist, wizards, empty zone')
     expect(spec).toContain('- [x] Setup-mode hint when `zone_count == 0` or `?setup=1`')

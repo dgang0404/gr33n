@@ -54,7 +54,7 @@ Apply **`db/migrations/20260426_commons_catalog.sql`** (includes one demo docume
 
 **Idempotency:** one import row per `(farm_id, catalog_entry_id)`; re-import updates audit timestamp only.
 
-See [`scripts/enterprise/README.md`](../../scripts/enterprise/README.md) and [`plans/phase-83-closure.md`](plans/phase-83-closure.md).
+See [`scripts/enterprise/README.md`](../../scripts/enterprise/README.md) and [`plans/archive/phase-83-closure.md`](plans/archive/phase-83-closure.md).
 
 ## Licensing and attribution
 

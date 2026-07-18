@@ -4,7 +4,7 @@
 
 **Closes blind spot #9:** What promotes **platform-wide** vs stays **farm-local** when one org runs many sites.
 
-**Closure:** [Phase 98](plans/archive/phase_98_enterprise_catalog_promotion.plan.md) · [`phase-98-closure.md`](plans/phase-98-closure.md)
+**Closure:** [Phase 98](plans/archive/phase_98_enterprise_catalog_promotion.plan.md) · [`phase-98-closure.md`](plans/archive/phase-98-closure.md)
 
 ---
 

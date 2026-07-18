@@ -9,7 +9,7 @@ parent_plan: phase_45_farmer_validation_whole_app_polish.plan.md
 
 # Phase 45 sit-in session log (template)
 
-**Protocol:** [farmer-sit-in-protocol.md](farmer-sit-in-protocol.md) · **Guardian PR detail:** [phase_45_guardian_pr_spec.md](../plans/phase_45_guardian_pr_spec.md)
+**Protocol:** [farmer-sit-in-protocol.md](farmer-sit-in-protocol.md) · **Guardian PR detail:** [phase_45_guardian_pr_spec.md](../plans/archive/phase_45_guardian_pr_spec.md)
 
 **Labels:** `sit-in-45` (session notes) · `sit-in-46-backlog` (matcher gaps only)
 

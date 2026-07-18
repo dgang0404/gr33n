@@ -7,8 +7,8 @@
 - [`farm-guardian-ollama-setup.md`](farm-guardian-ollama-setup.md) — operator install runbook for the inference host (Ollama).
 - [`rag-scope-and-threat-model.md`](rag-scope-and-threat-model.md) — privacy & scope boundaries (what RAG indexes, what it doesn't).
 - [`guardian-real-grow-readiness.md`](guardian-real-grow-readiness.md) — before live plants: ingest, Confirm, bench actuators, 8B smokes.
-- [`plans/phase_27_farm_guardian_ai_layer.md`](plans/phase_27_farm_guardian_ai_layer.md) — the calendar plan that shipped the chat layer.
-- [`plans/phase_29_guardian_agent_layer.md`](plans/phase_29_guardian_agent_layer.md) — confirmed agent actions (propose → confirm).
+- [`plans/archive/phase_27_farm_guardian_ai_layer.md`](plans/archive/phase_27_farm_guardian_ai_layer.md) — the calendar plan that shipped the chat layer.
+- [`plans/archive/phase_29_guardian_agent_layer.md`](plans/archive/phase_29_guardian_agent_layer.md) — confirmed agent actions (propose → confirm).
 - [`plans/archive/phase_30_guardian_change_requests.plan.md`](plans/archive/phase_30_guardian_change_requests.plan.md) — PR queue (config tools, risk tiers, zone photos, actuator enqueue).
 - [`plans/archive/phase_32_guardian_grow_setup_prs.plan.md`](plans/archive/phase_32_guardian_grow_setup_prs.plan.md) — grow setup PR bundle (plant + cycle + program).
 - [`farm-guardian-persona-platform-context.md`](farm-guardian-persona-platform-context.md) — operator mirror of what Guardian is told about gr33n (WS9).
@@ -38,7 +38,7 @@ On every **grounded** (Farm counsel) turn, the handler combines three knowledge 
 
 The first layer is universal; platform docs and per-farm RAG are private indexed text; the snapshot reflects the database the moment the request fires. Before streaming, the handler may **plan read tools** (Phase 132 router), **embed + kNN search** RAG chunks, **trim** history/RAG to the effective context window (Phase 133), then compose a single system prompt and stream to Ollama.
 
-**Phases 129–139** shipped the awakening flow, runtime orchestration, QA harness, read-tool router, answer honesty, feedback loop, RAG lifecycle, plant context, counsel integration, inference policy, and this doc/debugger closure — see the [Guardian next-level roadmap (129–139)](plans/archive/phase_129_139_guardian_next_level_roadmap.plan.md) and [closure checklist](plans/phase-129-139-closure.md).
+**Phases 129–139** shipped the awakening flow, runtime orchestration, QA harness, read-tool router, answer honesty, feedback loop, RAG lifecycle, plant context, counsel integration, inference policy, and this doc/debugger closure — see the [Guardian next-level roadmap (129–139)](plans/archive/phase_129_139_guardian_next_level_roadmap.plan.md) and [closure checklist](plans/archive/phase-129-139-closure.md).
 
 ---
 
@@ -480,7 +480,7 @@ Operator: [operator-tour §6n](operator-tour.md#6n-hands-free-field-assistant-ph
 | Read tool | `lookup_crop_targets` unchanged — reads effective farm override without re-ingest |
 | Smokes | `cmd/api/smoke_phase83_test.go` |
 
-**OC-83** · Closure: [`plans/phase-83-closure.md`](plans/phase-83-closure.md).
+**OC-83** · Closure: [`plans/archive/phase-83-closure.md`](plans/archive/phase-83-closure.md).
 
 Plan: [`plans/archive/phase_83_enterprise_agronomy_seed_pack.plan.md`](plans/archive/phase_83_enterprise_agronomy_seed_pack.plan.md). Operator: [operator-tour §6o](operator-tour.md#6o-enterprise-agronomy-bootstrap-phase-83--shipped) · Live plants: [`guardian-real-grow-readiness.md`](guardian-real-grow-readiness.md).
 
@@ -501,7 +501,7 @@ Plan: [`plans/archive/phase_83_enterprise_agronomy_seed_pack.plan.md`](plans/arc
 | Hard rule | No EC/pH/VPD/DLI/photoperiod without read-tool output; EC in **mS/cm** |
 | Narrative | RAG field guides — supplement only; **Phase 97** strips conflicting EC from chunks when `lookup_crop_targets` ran |
 
-**OC-87** · Operator: [`crop-knowledge-operator-runbook.md`](crop-knowledge-operator-runbook.md) · Closure: [`plans/phase-87-closure.md`](plans/phase-87-closure.md) · **Genetics EC (Phase 94):** [`plans/phase-94-closure.md`](plans/phase-94-closure.md).
+**OC-87** · Operator: [`crop-knowledge-operator-runbook.md`](crop-knowledge-operator-runbook.md) · Closure: [`plans/archive/phase-87-closure.md`](plans/archive/phase-87-closure.md) · **Genetics EC (Phase 94):** [`plans/archive/phase-94-closure.md`](plans/archive/phase-94-closure.md).
 
 Plans: [85](plans/archive/phase_85_catalog_bound_plants.plan.md) · [86](plans/archive/phase_86_grow_ops_catalog_chain.plan.md) · [87](plans/archive/phase_87_crop_knowledge_operator_closure.plan.md) · [94](plans/archive/phase_94_genetics_batch_ec_profiles.plan.md) · Roadmap: [84–87](plans/archive/phase_84_87_crop_identity_roadmap.plan.md).
 
@@ -521,13 +521,13 @@ Plans: [85](plans/archive/phase_85_catalog_bound_plants.plan.md) · [86](plans/a
 | Plant bundle | **Phase 136** — `plant_context_bundle` fuses cycle, targets, sensors, fert, light, grow_advisor |
 | Deferred | **WS11** full EC/DLI/photoperiod deltas → Phase 97 |
 
-**OC-82** · Closure: [`plans/phase-82-closure.md`](plans/phase-82-closure.md). Plan: [`plans/archive/phase_82_guardian_crop_grounding_hardening.plan.md`](plans/archive/phase_82_guardian_crop_grounding_hardening.plan.md).
+**OC-82** · Closure: [`plans/archive/phase-82-closure.md`](plans/archive/phase-82-closure.md). Plan: [`plans/archive/phase_82_guardian_crop_grounding_hardening.plan.md`](plans/archive/phase_82_guardian_crop_grounding_hardening.plan.md).
 
 **Tests:** `smoke_phase82_test.go`, `smoke_phase136_test.go`, `phase-82-closure.test.js`, `readtools_crop_test.go`, `readtools_plant_bundle_test.go`.
 
 ### 7.0h Comfort targets & automation (Phase 42 — shipped)
 
-Plans: [`plans/archive/phase_42_comfort_targets_automation_plain_language.plan.md`](plans/archive/phase_42_comfort_targets_automation_plain_language.plan.md) · Guardian PR slice: [`plans/phase_42_guardian_pr_spec.md`](plans/phase_42_guardian_pr_spec.md).
+Plans: [`plans/archive/phase_42_comfort_targets_automation_plain_language.plan.md`](plans/archive/phase_42_comfort_targets_automation_plain_language.plan.md) · Guardian PR slice: [`plans/archive/phase_42_guardian_pr_spec.md`](plans/archive/phase_42_guardian_pr_spec.md).
 
 - **Grow → Targets & schedules** (`/comfort-targets`) — comfort bands, humanized schedules, one-line rules with toggles. **Advanced** keeps raw `/setpoints`, `/automation`, `/schedules` with `PowerUserBanner` escape hatch.
 - **ComfortBandEditor** shared with zone Climate tab (too low / just right / too high).
@@ -539,7 +539,7 @@ Operator walkthrough: [operator-tour §5c](operator-tour.md#5c-comfort-bands--wh
 
 ### 7.0i Operations hub — supplies, feeding, money (Phase 43)
 
-**Shipped (WS1–WS7).** Plans: [`plans/archive/phase_43_operations_stock_feeding_finance.plan.md`](plans/archive/phase_43_operations_stock_feeding_finance.plan.md) · Guardian PR slice: [`plans/phase_43_guardian_pr_spec.md`](plans/phase_43_guardian_pr_spec.md).
+**Shipped (WS1–WS7).** Plans: [`plans/archive/phase_43_operations_stock_feeding_finance.plan.md`](plans/archive/phase_43_operations_stock_feeding_finance.plan.md) · Guardian PR slice: [`plans/archive/phase_43_guardian_pr_spec.md`](plans/archive/phase_43_guardian_pr_spec.md).
 
 | Surface | Operator job | Implementation |
 |---------|--------------|----------------|
@@ -559,7 +559,7 @@ Operator walkthrough: [operator-tour §7](operator-tour.md#7-supplies-feeding--m
 
 ### 7.0j Getting started & edge wizards (Phase 44)
 
-**Shipped (WS1–WS6).** Plans: [`plans/archive/phase_44_getting_started_edge_wizard.plan.md`](plans/archive/phase_44_getting_started_edge_wizard.plan.md) · Guardian: [`plans/phase_44_guardian_pr_spec.md`](plans/phase_44_guardian_pr_spec.md).
+**Shipped (WS1–WS6).** Plans: [`plans/archive/phase_44_getting_started_edge_wizard.plan.md`](plans/archive/phase_44_getting_started_edge_wizard.plan.md) · Guardian: [`plans/archive/phase_44_guardian_pr_spec.md`](plans/archive/phase_44_guardian_pr_spec.md).
 
 | Surface | Operator job | Implementation |
 |---------|--------------|----------------|
@@ -582,7 +582,7 @@ Operator: [operator-tour §8](operator-tour.md#8-getting-started--edge-install-p
 
 **Shipped:** sit-in protocol; **Vocabulary v2**; module shells; Guardian a11y; PWA mobile path; WS2/WS8 dry-run ([`sit-in-45-dry-run-log.md`](workstreams/sit-in-45-dry-run-log.md)); **OC-45** via `phase-45-closure.test.js`.
 
-Plans: [`plans/archive/phase_45_farmer_validation_whole_app_polish.plan.md`](plans/archive/phase_45_farmer_validation_whole_app_polish.plan.md) · Guardian: [`plans/phase_45_guardian_pr_spec.md`](plans/phase_45_guardian_pr_spec.md) · Protocol: [`workstreams/farmer-sit-in-protocol.md`](workstreams/farmer-sit-in-protocol.md) · Dry-run: [`workstreams/sit-in-45-dry-run-log.md`](workstreams/sit-in-45-dry-run-log.md).
+Plans: [`plans/archive/phase_45_farmer_validation_whole_app_polish.plan.md`](plans/archive/phase_45_farmer_validation_whole_app_polish.plan.md) · Guardian: [`plans/archive/phase_45_guardian_pr_spec.md`](plans/archive/phase_45_guardian_pr_spec.md) · Protocol: [`workstreams/farmer-sit-in-protocol.md`](workstreams/farmer-sit-in-protocol.md) · Dry-run: [`workstreams/sit-in-45-dry-run-log.md`](workstreams/sit-in-45-dry-run-log.md).
 
 - **`ack_alert`**, **`apply_grow_setup_pack`**, and **Dismiss** validated (Vitest + Go matchers + facilitator dry-run).
 - Matcher misses: none in dry-run; file Phase 46 backlog if external sit-in finds gaps.
@@ -696,7 +696,7 @@ Operator: [operator-tour §7d](operator-tour.md#7d-zone-connection-pipeline-phas
 
 ### 7.0s Guardian ops read depth (Phase 55 — shipped)
 
-**Shipped (WS1–WS5).** Deepens Guardian for grow/stock/money jobs shipped in Phases 43 and 53. Plan: [`plans/archive/phase_55_guardian_ops_grow_money.plan.md`](plans/archive/phase_55_guardian_ops_grow_money.plan.md) · Spec: [`plans/phase_55_guardian_pr_spec.md`](plans/phase_55_guardian_pr_spec.md).
+**Shipped (WS1–WS5).** Deepens Guardian for grow/stock/money jobs shipped in Phases 43 and 53. Plan: [`plans/archive/phase_55_guardian_ops_grow_money.plan.md`](plans/archive/phase_55_guardian_ops_grow_money.plan.md) · Spec: [`plans/archive/phase_55_guardian_pr_spec.md`](plans/archive/phase_55_guardian_pr_spec.md).
 
 | Read tool | Operator question | Implementation |
 |-----------|-------------------|----------------|
@@ -707,7 +707,7 @@ Operator: [operator-tour §7d](operator-tour.md#7d-zone-connection-pipeline-phas
 
 **Starters:** Supplies restock-first, Money tag-receipt + spending-by-category, grow strip stage advice, post-harvest compare/cost-per-gram, dashboard open-supplies.
 
-**No new Confirm tools** — restock, receipt, harvest stay hub UI ([spec §4](plans/phase_55_guardian_pr_spec.md)).
+**No new Confirm tools** — restock, receipt, harvest stay hub UI ([spec §4](plans/archive/phase_55_guardian_pr_spec.md)).
 
 **OC-55** via `phase-55-closure.test.js`.
 
@@ -1224,8 +1224,8 @@ The layer was built incrementally across these phases:
 - **Phase 25** — RAG operations & expansion (ingest breadth, incremental re-embed, CI parity).
 - **Phase 26** — Operator tutorial, observability, RAG scope/threat-model doc, LLM retry/backoff.
 - **Phase 27** — Farm Guardian AI layer (chat endpoint, multi-turn history, snapshot, sessions, streaming, cost guards, `/chat` UI panel). Closed 2026-05-19.
-- **Phase 28** — Crop intelligence & Guardian depth. WS3 extends the snapshot with active-cycle analytics; WS4 adds alert detail; WS5 surfaces token-usage to operators. See [`plans/phase_28_crop_intelligence_guardian_depth.md`](plans/phase_28_crop_intelligence_guardian_depth.md).
-- **Phase 29** — Guardian agent layer. Global slide-out drawer, rule-assisted proposals, `POST /v1/chat/confirm`, alert ack/read tools, audit + RBAC, contextual Ask Guardian entry points, OpenAPI 0.4.0. Closed 2026-05-20. See [`plans/phase_29_guardian_agent_layer.md`](plans/phase_29_guardian_agent_layer.md).
+- **Phase 28** — Crop intelligence & Guardian depth. WS3 extends the snapshot with active-cycle analytics; WS4 adds alert detail; WS5 surfaces token-usage to operators. See [`plans/archive/phase_28_crop_intelligence_guardian_depth.md`](plans/archive/phase_28_crop_intelligence_guardian_depth.md).
+- **Phase 29** — Guardian agent layer. Global slide-out drawer, rule-assisted proposals, `POST /v1/chat/confirm`, alert ack/read tools, audit + RBAC, contextual Ask Guardian entry points, OpenAPI 0.4.0. Closed 2026-05-20. See [`plans/archive/phase_29_guardian_agent_layer.md`](plans/archive/phase_29_guardian_agent_layer.md).
 - **Phase 30** — Change requests (PR queue). Pending inbox UI, risk tiers, config tools, zone photos, `enqueue_actuator_command`, platform persona block (WS9). Operator expectations: [§8](#8-operator-expectations-at-phase-30-ship). See [`plans/archive/phase_30_guardian_change_requests.plan.md`](plans/archive/phase_30_guardian_change_requests.plan.md).
 - **Phase 31** — Field validation & read tools. Edge loop docs + `list_unread_alerts` / `summarize_zone` live lookups (Confirm N/A). See [`plans/archive/phase_31_field_validation_and_edge.plan.md`](plans/archive/phase_31_field_validation_and_edge.plan.md).
 - **Phase 32** — Grow setup PRs + platform doc RAG. Read/create tools, setup pack, `rag-ingest-platform-docs`, Guardian citation rules for `platform_doc`. See [`plans/archive/phase_32_guardian_grow_setup_prs.plan.md`](plans/archive/phase_32_guardian_grow_setup_prs.plan.md).

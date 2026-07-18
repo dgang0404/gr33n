@@ -386,7 +386,7 @@ Architecture detail: [`farm-guardian-architecture.md` §7.7](farm-guardian-archi
 
 ### 6e. Guardian on comfort & automation (Phase 42 — shipped)
 
-**Spec:** [`plans/phase_42_guardian_pr_spec.md`](plans/phase_42_guardian_pr_spec.md) · **Not** the same as [Phase 46](plans/archive/phase_46_guardian_llm_tool_proposals.plan.md) (LLM opens PRs when matchers miss).
+**Spec:** [`plans/archive/phase_42_guardian_pr_spec.md`](plans/archive/phase_42_guardian_pr_spec.md) · **Not** the same as [Phase 46](plans/archive/phase_46_guardian_llm_tool_proposals.plan.md) (LLM opens PRs when matchers miss).
 
 **Starters (conversation chips):** On **Targets & schedules** (`/comfort-targets`) — tabs **Comfort bands**, **What runs when**, **Automation** — snapshot-aware prompts such as “Set humidity comfort band for Flower Room” or “Pause shade rule for this zone.” Chips **prefill chat**; they do not auto-Confirm.
 
@@ -404,7 +404,7 @@ If you get advice text but **no card**, matchers did not recognize the phrase �
 
 ### 6f. Guardian on supplies & money (Phase 43 — shipped)
 
-**Spec:** [`plans/phase_43_guardian_pr_spec.md`](plans/phase_43_guardian_pr_spec.md) · Persona: architecture [§7.0i](farm-guardian-architecture.md#70i-operations-hub--supplies-feeding-money-phase-43).
+**Spec:** [`plans/archive/phase_43_guardian_pr_spec.md`](plans/archive/phase_43_guardian_pr_spec.md) · Persona: architecture [§7.0i](farm-guardian-architecture.md#70i-operations-hub--supplies-feeding-money-phase-43).
 
 **Shipped (WS6):** Guardian says **Supplies**, **Feeding (details)**, and **Money** — not Inventory / Fertigation / Costs. Route `context_ref` on `/operations/*` hubs steers copy. **`create_task_from_alert`** on low-stock alerts (`inventory_low_stock`) proposes a **refill task** with input name in the impact line.
 
@@ -421,7 +421,7 @@ Guardian **cannot** adjust batch quantities or post receipts via Confirm — use
 
 ### 6g. Guardian during setup (Phase 44 — shipped)
 
-**Spec:** [`plans/phase_44_guardian_pr_spec.md`](plans/phase_44_guardian_pr_spec.md) · Architecture: [`farm-guardian-architecture.md` §7.0j](farm-guardian-architecture.md#70j-getting-started--edge-wizards-phase-44).
+**Spec:** [`plans/archive/phase_44_guardian_pr_spec.md`](plans/archive/phase_44_guardian_pr_spec.md) · Architecture: [`farm-guardian-architecture.md` §7.0j](farm-guardian-architecture.md#70j-getting-started--edge-wizards-phase-44).
 
 - **Wizards win** — farm template, zone, and device are **not** created by starter chips.
 - **Setup mode** — grounded chat adds a setup persona when the farm has **zero zones**, `POST /v1/chat` sends `setup_mode: true`, or you open `/chat?setup=1`.
@@ -466,7 +466,7 @@ Most cards still come from **pattern matchers** after you send a message. When m
 
 ### 6j. Guardian ops read depth (Phase 55 — shipped)
 
-**Plan:** [`plans/archive/phase_55_guardian_ops_grow_money.plan.md`](plans/archive/phase_55_guardian_ops_grow_money.plan.md) · Spec: [`plans/phase_55_guardian_pr_spec.md`](plans/phase_55_guardian_pr_spec.md) · Architecture: [§7.0s](farm-guardian-architecture.md#70s-guardian-ops-read-depth-phase-55--shipped).
+**Plan:** [`plans/archive/phase_55_guardian_ops_grow_money.plan.md`](plans/archive/phase_55_guardian_ops_grow_money.plan.md) · Spec: [`plans/archive/phase_55_guardian_pr_spec.md`](plans/archive/phase_55_guardian_pr_spec.md) · Architecture: [§7.0s](farm-guardian-architecture.md#70s-guardian-ops-read-depth-phase-55--shipped).
 
 Four new **read tools** (no Confirm): **`summarize_cycle_cost`**, **`summarize_farm_spending`**, **`restock_priority`**, **`summarize_active_grows`**.
 
@@ -624,7 +624,7 @@ Architecture: [`farm-guardian-architecture.md`](farm-guardian-architecture.md) �
 
 ## 7. Supplies, feeding & money (Phase 43)
 
-**Shipped.** Hubs WS1–WS8 on `main` including Guardian read + starters ([spec](plans/phase_43_guardian_pr_spec.md)). Plan: [`plans/archive/phase_43_operations_stock_feeding_finance.plan.md`](plans/archive/phase_43_operations_stock_feeding_finance.plan.md).
+**Shipped.** Hubs WS1–WS8 on `main` including Guardian read + starters ([spec](plans/archive/phase_43_guardian_pr_spec.md)). Plan: [`plans/archive/phase_43_operations_stock_feeding_finance.plan.md`](plans/archive/phase_43_operations_stock_feeding_finance.plan.md).
 
 **Goal:** One **Operations** area for restock, feeding admin, and receipts — not three separate schema apps.
 
@@ -948,7 +948,7 @@ Architecture: [`farm-guardian-architecture.md` §7.0m](farm-guardian-architectur
 
 ### 6o. Enterprise agronomy bootstrap (Phase 83 — shipped)
 
-**Plan:** [`plans/archive/phase_83_enterprise_agronomy_seed_pack.plan.md`](plans/archive/phase_83_enterprise_agronomy_seed_pack.plan.md) · Architecture: [§7.0ae](farm-guardian-architecture.md#70ae-enterprise-agronomy-bootstrap-phase-83--shipped) · Closure: [`phase-83-closure.md`](plans/phase-83-closure.md).
+**Plan:** [`plans/archive/phase_83_enterprise_agronomy_seed_pack.plan.md`](plans/archive/phase_83_enterprise_agronomy_seed_pack.plan.md) · Architecture: [§7.0ae](farm-guardian-architecture.md#70ae-enterprise-agronomy-bootstrap-phase-83--shipped) · Closure: [`phase-83-closure.md`](plans/archive/phase-83-closure.md).
 
 **Integrator path (new warehouse / farm):**
 
@@ -1035,7 +1035,7 @@ Architecture: [`farm-guardian-architecture.md` §7.0j](farm-guardian-architectur
 | Light a11y — Confirm/Dismiss, chips, focus | ✅ Shipped | WS6 — [§10b](#10b-light-accessibility-phase-45-ws6--shipped) |
 | README + OC-45 docs/tests closure | ✅ Shipped | WS7 — `phase-45-closure.test.js` |
 | ≥2 sit-ins; P0 friction backlog empty | ✅ Shipped | WS2 — dry-run DR-A/DR-B; P0 empty |
-| Guardian ack + setup pack + dismiss **pass** | ✅ Shipped | WS8 — dry-run + Vitest; [`phase_45_guardian_pr_spec.md`](plans/phase_45_guardian_pr_spec.md) |
+| Guardian ack + setup pack + dismiss **pass** | ✅ Shipped | WS8 — dry-run + Vitest; [`phase_45_guardian_pr_spec.md`](plans/archive/phase_45_guardian_pr_spec.md) |
 | Mobile sit-in path (PWA + scripts) | ✅ Shipped | WS4 — [§10c](#10c-mobile-distribution-phase-45-ws4--shipped) · store track deferred |
 
 **Goal:** Prove a non-technical operator can run the daily loop and trust Guardian **Confirm** vs **Dismiss**.

@@ -61,7 +61,7 @@ describe('Phase 45 WS8 — Guardian PR path closure', () => {
   })
 
   it('guardian PR spec marks WS8 definition of done complete', () => {
-    const spec = readFileSync(join(repoDocs, 'plans/phase_45_guardian_pr_spec.md'), 'utf8')
+    const spec = readFileSync(join(repoDocs, 'plans/archive/phase_45_guardian_pr_spec.md'), 'utf8')
     expect(spec).toMatch(/status: completed/)
     expect(spec).toContain('- [x] ack + setup pack + dismiss **pass** documented')
   })

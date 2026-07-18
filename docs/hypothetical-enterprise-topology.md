@@ -137,7 +137,7 @@ Large integrators will eventually want **repeatable** site bring-up:
 - Import commons pack version pin  
 - Smoke: `GET /health`, one reading POST, one pending_command round-trip  
 
-**Repository convention:** optional helpers live under [`scripts/enterprise/`](../scripts/enterprise/README.md). Phase 33 WS5 adds a **`site-manifest.yaml`** bring-up stub (farm + zones + recipe pack pin). **Phase 83 (shipped)** adds **`guardian_seed`** — commons agronomy pack import, **`guardian-bootstrap-farm.sh`** RAG ingest, farm crop overrides (YAML or **Settings → Crops & targets**), scheduled operational ingest, and readiness smokes ([`phase_83_enterprise_agronomy_seed_pack.plan.md`](plans/archive/phase_83_enterprise_agronomy_seed_pack.plan.md) · [`phase-83-closure.md`](plans/phase-83-closure.md)). The core team does not need to ship a full 500-site suite for the platform to be valid.
+**Repository convention:** optional helpers live under [`scripts/enterprise/`](../scripts/enterprise/README.md). Phase 33 WS5 adds a **`site-manifest.yaml`** bring-up stub (farm + zones + recipe pack pin). **Phase 83 (shipped)** adds **`guardian_seed`** — commons agronomy pack import, **`guardian-bootstrap-farm.sh`** RAG ingest, farm crop overrides (YAML or **Settings → Crops & targets**), scheduled operational ingest, and readiness smokes ([`phase_83_enterprise_agronomy_seed_pack.plan.md`](plans/archive/phase_83_enterprise_agronomy_seed_pack.plan.md) · [`phase-83-closure.md`](plans/archive/phase-83-closure.md)). The core team does not need to ship a full 500-site suite for the platform to be valid.
 
 ### AGPL and pull requests (why this matters)
 

@@ -4,7 +4,7 @@
 
 **Not for GitHub-hosted runners** — they have no Ollama and smoke runs take 30–90 minutes on a CPU laptop.
 
-**Related:** [Phase 131 plan](plans/archive/phase_131_guardian_qa_harness.plan.md) · [local-operator-bootstrap.md](local-operator-bootstrap.md) § Guardian QA · [Phase 129–139 closure](plans/phase-129-139-closure.md)
+**Related:** [Phase 131 plan](plans/archive/phase_131_guardian_qa_harness.plan.md) · [local-operator-bootstrap.md](local-operator-bootstrap.md) § Guardian QA · [Phase 129–139 closure](plans/archive/phase-129-139-closure.md)
 
 ---
 

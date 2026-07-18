@@ -4,7 +4,7 @@
 
 **Closes blind spot #4:** The Plants dropdown stays frozen unless someone runs a **repeatable cadence** from git YAML → Postgres → picker/Guardian.
 
-**Closure:** [Phase 95](plans/archive/phase_95_catalog_integrator_ops.plan.md) · [`phase-95-closure.md`](plans/phase-95-closure.md)
+**Closure:** [Phase 95](plans/archive/phase_95_catalog_integrator_ops.plan.md) · [`phase-95-closure.md`](plans/archive/phase-95-closure.md)
 
 ---
 

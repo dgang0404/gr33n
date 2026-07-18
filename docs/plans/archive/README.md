@@ -1,12 +1,12 @@
 # Archived phase plans
 
-Closed phase plans live here so [`../`](../) and [`phase-14-operator-documentation.md`](../../phase-14-operator-documentation.md) stay scannable. **Nothing is deleted** — Phase 206 moved ~198 shipped plans here in one scripted pass (replacing Phase 157's stub-at-old-path approach).
+Closed phase plans live here so [`../`](../) and [`phase-14-operator-documentation.md`](../../phase-14-operator-documentation.md) stay scannable. **Nothing is deleted** — Phase 206 moved ~198 shipped plans here in one scripted pass (replacing Phase 157's stub-at-old-path approach). A follow-up pass later swept the `*-closure.md` summaries and a handful of pre-206 loose spec docs that had accumulated back at `docs/plans/` root (Phase 206 only targeted `*.plan.md`).
 
 ## Index
 
 | Arc | Plans | Closure |
 |-----|-------|---------|
-| **88–92** UI static data → DB/API | [`phase_88_92_platform_data_gaps_roadmap.plan.md`](phase_88_92_platform_data_gaps_roadmap.plan.md) · [88](phase_88_domain_enums_api.plan.md) · [89](phase_89_lighting_presets_api_wiring.plan.md) · [90](phase_90_device_taxonomy_registry.plan.md) · [91](phase_91_bootstrap_template_catalog.plan.md) · [92](phase_92_zone_greenhouse_vocabulary.plan.md) | [`phase-84-110-closure.md`](../phase-84-110-closure.md) |
+| **88–92** UI static data → DB/API | [`phase_88_92_platform_data_gaps_roadmap.plan.md`](phase_88_92_platform_data_gaps_roadmap.plan.md) · [88](phase_88_domain_enums_api.plan.md) · [89](phase_89_lighting_presets_api_wiring.plan.md) · [90](phase_90_device_taxonomy_registry.plan.md) · [91](phase_91_bootstrap_template_catalog.plan.md) · [92](phase_92_zone_greenhouse_vocabulary.plan.md) | [`phase-84-110-closure.md`](phase-84-110-closure.md) |
 
 **Everything else:** use [`phase-14-operator-documentation.md`](../../phase-14-operator-documentation.md) or grep `docs/plans/archive/phase_N_*.plan.md` — the full set is flat in this directory (no nested folders).
 

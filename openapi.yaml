@@ -175,7 +175,7 @@ paths:
         to render LLM-backed actions (Farm Guardian chat, RAG answer synthesis,
         Guardian-usage card). Mirrors the server-side `AI_ENABLED` env var.
         Older API builds without this endpoint should be treated as AI on
-        (back-compat). See `docs/plans/phase_27_farm_guardian_ai_layer.md`.
+        (back-compat). See `docs/plans/archive/phase_27_farm_guardian_ai_layer.md`.
       responses:
         "200":
           description: Capability flags

@@ -96,6 +96,6 @@ Matcher gaps: **none** observed in dry-run phrases. File `sit-in-46-backlog` if 
 - [x] All three PR paths **pass** for both personas
 - [x] P0 backlog empty
 - [x] P1 triaged (none in dry-run)
-- [x] Linked from [phase_45_guardian_pr_spec.md](../plans/phase_45_guardian_pr_spec.md)
+- [x] Linked from [phase_45_guardian_pr_spec.md](../plans/archive/phase_45_guardian_pr_spec.md)
 
 **Vitest:** `phase-45-ws8-guardian-closure.test.js`, `phase-45-ws2-closure.test.js`

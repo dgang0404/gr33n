@@ -13,7 +13,7 @@ parent_plan: phase_45_farmer_validation_whole_app_polish.plan.md
 
 **Parent:** [phase_45_farmer_validation_whole_app_polish.plan.md](../plans/archive/phase_45_farmer_validation_whole_app_polish.plan.md)
 
-**Guardian PR script detail:** [phase_45_guardian_pr_spec.md](../plans/phase_45_guardian_pr_spec.md)
+**Guardian PR script detail:** [phase_45_guardian_pr_spec.md](../plans/archive/phase_45_guardian_pr_spec.md)
 
 **Session log (copy-paste):** [sit-in-45-session-log-template.md](sit-in-45-session-log-template.md)
 
@@ -192,7 +192,7 @@ Prefer UI composition fixes; schema only if sit-in proves data model gap.
 - [ ] All three PR paths **pass** for ≥2 testers (or documented skip with fix)
 - [ ] P0 backlog empty
 - [ ] P1 backlog triaged (fix or defer with reason)
-- [ ] Findings linked from [phase_45_guardian_pr_spec.md](../plans/phase_45_guardian_pr_spec.md)
+- [ ] Findings linked from [phase_45_guardian_pr_spec.md](../plans/archive/phase_45_guardian_pr_spec.md)
 
 ---
 

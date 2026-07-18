@@ -7,7 +7,7 @@
 - [`guardian-change-requests-guide.md`](guardian-change-requests-guide.md) — Confirm workflow
 - [`recommended-hardware-and-sizing.md`](recommended-hardware-and-sizing.md) — 8B vs 70B, GPU sizing
 - [`local-operator-bootstrap.md`](local-operator-bootstrap.md) — dev stack + ingest commands
-- [Phase 82](plans/archive/phase_82_guardian_crop_grounding_hardening.plan.md) (crop library + zero-chunk guardrails) · [Phase 83](plans/archive/phase_83_enterprise_agronomy_seed_pack.plan.md) (**shipped** — bootstrap + overrides) · [`phase-83-closure.md`](plans/phase-83-closure.md)
+- [Phase 82](plans/archive/phase_82_guardian_crop_grounding_hardening.plan.md) (crop library + zero-chunk guardrails) · [Phase 83](plans/archive/phase_83_enterprise_agronomy_seed_pack.plan.md) (**shipped** — bootstrap + overrides) · [`phase-83-closure.md`](plans/archive/phase-83-closure.md)
 
 ---
 
@@ -139,7 +139,7 @@ That honesty reads as **engineering**, not apology — and matches what AGPL ope
 | Phase | What it gives your live grow |
 |-------|------------------------------|
 | **82** | ≥46 crop profiles, field guides, zero-chunk guardrails, multi-crop lookup, plant context bundle |
-| **83** ✅ | `guardian-bootstrap-farm`, commons seed pack, farm EC overrides (UI + YAML), scheduled ingest, readiness smokes — [`phase-83-closure.md`](plans/phase-83-closure.md) |
+| **83** ✅ | `guardian-bootstrap-farm`, commons seed pack, farm EC overrides (UI + YAML), scheduled ingest, readiness smokes — [`phase-83-closure.md`](plans/archive/phase-83-closure.md) |
 
 **Suggested order for you:** migrate + parity check → **`make guardian-bootstrap-farm FARM_ID=N`** → smokes on 8B → optional EC overrides → wire actuators on bench → live plants.
 

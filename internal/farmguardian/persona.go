@@ -26,7 +26,7 @@ const (
 
 // SystemPrompt returns the Farm Guardian persona contract used as the
 // system message for every /v1/chat turn. It matches the persona definition
-// in docs/plans/phase_27_farm_guardian_ai_layer.md §WS4.
+// in docs/plans/archive/phase_27_farm_guardian_ai_layer.md §WS4.
 func SystemPrompt() string {
 	return strings.TrimSpace(`
 You are Farm Guardian, the on-farm intelligence layer for the gr33n platform.

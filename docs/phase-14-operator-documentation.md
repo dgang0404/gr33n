@@ -40,8 +40,8 @@ Full narrative history (all eras, plain language): **[`roadmap/README.md`](roadm
 |-----|----------------|
 | Farmer UX 40–67 | [`farmer_ux_roadmap_40_plus.plan.md`](plans/farmer_ux_roadmap_40_plus.plan.md) |
 | SPA 68–81 | [`phase_68_73_spa_workspace_roadmap.plan.md`](plans/phase_68_73_spa_workspace_roadmap.plan.md) |
-| Crop intelligence 82–110 | [`phase-84-110-closure.md`](plans/phase-84-110-closure.md) |
-| Guardian 111–153 | [`phase-129-139-closure.md`](plans/phase-129-139-closure.md) · [`guardian-qa-smoke-report-20260707.md`](guardian-qa-smoke-report-20260707.md) |
+| Crop intelligence 82–110 | [`phase-84-110-closure.md`](plans/archive/phase-84-110-closure.md) |
+| Guardian 111–153 | [`phase-129-139-closure.md`](plans/archive/phase-129-139-closure.md) · [`guardian-qa-smoke-report-20260707.md`](guardian-qa-smoke-report-20260707.md) |
 | Infra & trust 154–158 | [`phase_154_158_infra_trust_gaps_backlog.plan.md`](plans/archive/phase_154_158_infra_trust_gaps_backlog.plan.md) — 154–158 shipped |
 | Post-158 follow-through 159–160 | [`phase_159_160_post_158_gaps_backlog.plan.md`](plans/archive/phase_159_160_post_158_gaps_backlog.plan.md) — Guardian citations + a11y residuals |
 | Guardian ec-ph smoke 161 | [`phase_161_guardian_ecph_smoke_closure.plan.md`](plans/archive/phase_161_guardian_ecph_smoke_closure.plan.md) — tail trim + crop drift |
@@ -111,10 +111,10 @@ Hub: [`phase_68_73_spa_workspace_roadmap.plan.md`](plans/phase_68_73_spa_workspa
 |-------|--------|------|
 | **68** ✅ | Workspace shell | [`phase_68_workspace_shell_spa_nav.plan.md`](plans/archive/phase_68_workspace_shell_spa_nav.plan.md) |
 | **69** ✅ | Zone inline hub | [`phase_69_zone_workspace_hub.plan.md`](plans/archive/phase_69_zone_workspace_hub.plan.md) |
-| **70** ✅ | Hardware / Pi GPIO | [`phase_70_hardware_pi_control_spa.plan.md`](plans/archive/phase_70_hardware_pi_control_spa.plan.md) · [`phase-70-closure.md`](plans/phase-70-closure.md) |
-| **71** ✅ | Feed & Water SPA | [`phase_71_feed_water_unification.plan.md`](plans/archive/phase_71_feed_water_unification.plan.md) · [`phase-71-closure.md`](plans/phase-71-closure.md) |
-| **72** ✅ | Money SPA | [`phase_72_money_unification.plan.md`](plans/archive/phase_72_money_unification.plan.md) · [`phase-72-closure.md`](plans/phase-72-closure.md) |
-| **73** ✅ | Guardian discoverability | [`phase_73_guardian_pr_discoverability.plan.md`](plans/archive/phase_73_guardian_pr_discoverability.plan.md) · [`phase-73-closure.md`](plans/phase-73-closure.md) |
+| **70** ✅ | Hardware / Pi GPIO | [`phase_70_hardware_pi_control_spa.plan.md`](plans/archive/phase_70_hardware_pi_control_spa.plan.md) · [`phase-70-closure.md`](plans/archive/phase-70-closure.md) |
+| **71** ✅ | Feed & Water SPA | [`phase_71_feed_water_unification.plan.md`](plans/archive/phase_71_feed_water_unification.plan.md) · [`phase-71-closure.md`](plans/archive/phase-71-closure.md) |
+| **72** ✅ | Money SPA | [`phase_72_money_unification.plan.md`](plans/archive/phase_72_money_unification.plan.md) · [`phase-72-closure.md`](plans/archive/phase-72-closure.md) |
+| **73** ✅ | Guardian discoverability | [`phase_73_guardian_pr_discoverability.plan.md`](plans/archive/phase_73_guardian_pr_discoverability.plan.md) · [`phase-73-closure.md`](plans/archive/phase-73-closure.md) |
 | **74** ✅ | Zone ops (Tasks, Alerts, Plants) | [`phase_74_zone_ops_inbox.plan.md`](plans/archive/phase_74_zone_ops_inbox.plan.md) |
 | **75** ✅ | Comfort & automation workspace | [`phase_75_automation_comfort_workspace.plan.md`](plans/archive/phase_75_automation_comfort_workspace.plan.md) |
 | **76** ✅ | Today + mobile nav alignment | [`phase_76_today_dashboard_nav_alignment.plan.md`](plans/archive/phase_76_today_dashboard_nav_alignment.plan.md) |
@@ -123,29 +123,29 @@ Hub: [`phase_68_73_spa_workspace_roadmap.plan.md`](plans/phase_68_73_spa_workspa
 | **79** ✅ | Tasks fix, Money inventory tab, operator glossary | `ui/src/__tests__/phase-79-closure.test.js` |
 | **80** ✅ | Routing hashes, zones tab labels, workspace routes | `ui/src/__tests__/phase-80-closure.test.js` |
 | **81** ✅ | `/pi-setup` restore, Help Pi tab, zone hardware on Overview only | `ui/src/__tests__/phase-81-closure.test.js` |
-| **82** ✅ | Guardian plant intelligence — crop library, multi-crop lookup, zero-chunk guardrail (WS7/WS11 deferred) | [`phase_82_guardian_crop_grounding_hardening.plan.md`](plans/archive/phase_82_guardian_crop_grounding_hardening.plan.md) · [`phase-82-closure.md`](plans/phase-82-closure.md) |
-| **83** ✅ | Enterprise agronomy seed pack — commons cultivator pack, `guardian-bootstrap-farm`, site-manifest hook, farm crop overrides, scheduled RAG ingest, readiness smokes | [`phase_83_enterprise_agronomy_seed_pack.plan.md`](plans/archive/phase_83_enterprise_agronomy_seed_pack.plan.md) · [`phase-83-closure.md`](plans/phase-83-closure.md) |
-| **84** ✅ | Enterprise crop catalog in Postgres — picker API, EC/stage targets, field guides DB, commons API | [`phase_84_crop_catalog_enterprise_db.plan.md`](plans/archive/phase_84_crop_catalog_enterprise_db.plan.md) · [`phase-84-closure.md`](plans/phase-84-closure.md) · [`crop-catalog-db-cutover-runbook.md`](crop-catalog-db-cutover-runbook.md) |
+| **82** ✅ | Guardian plant intelligence — crop library, multi-crop lookup, zero-chunk guardrail (WS7/WS11 deferred) | [`phase_82_guardian_crop_grounding_hardening.plan.md`](plans/archive/phase_82_guardian_crop_grounding_hardening.plan.md) · [`phase-82-closure.md`](plans/archive/phase-82-closure.md) |
+| **83** ✅ | Enterprise agronomy seed pack — commons cultivator pack, `guardian-bootstrap-farm`, site-manifest hook, farm crop overrides, scheduled RAG ingest, readiness smokes | [`phase_83_enterprise_agronomy_seed_pack.plan.md`](plans/archive/phase_83_enterprise_agronomy_seed_pack.plan.md) · [`phase-83-closure.md`](plans/archive/phase-83-closure.md) |
+| **84** ✅ | Enterprise crop catalog in Postgres — picker API, EC/stage targets, field guides DB, commons API | [`phase_84_crop_catalog_enterprise_db.plan.md`](plans/archive/phase_84_crop_catalog_enterprise_db.plan.md) · [`phase-84-closure.md`](plans/archive/phase-84-closure.md) · [`crop-catalog-db-cutover-runbook.md`](crop-catalog-db-cutover-runbook.md) |
 | **85** ✅ | **Plants UX** — catalog dropdown, `plants.crop_key`, one slot per crop; Settings EC link | [`phase_85_catalog_bound_plants.plan.md`](plans/archive/phase_85_catalog_bound_plants.plan.md) |
 | **86** ✅ | Grow ops + **Guardian crop chain** — strip, Water/Light, `lookup_crop_targets` same as UI | [`phase_86_grow_ops_catalog_chain.plan.md`](plans/archive/phase_86_grow_ops_catalog_chain.plan.md) |
-| **87** ✅ | Guardian crop API smokes + operator runbook + OC-87 | [`phase_87_crop_knowledge_operator_closure.plan.md`](plans/archive/phase_87_crop_knowledge_operator_closure.plan.md) · [`phase-87-closure.md`](plans/phase-87-closure.md) · [`crop-knowledge-operator-runbook.md`](crop-knowledge-operator-runbook.md) |
-| **88** ✅ | Domain enums API — growth stages, reservoir, cost categories (UI drops duplicates) | [`phase_88_domain_enums_api.plan.md`](plans/archive/phase_88_domain_enums_api.plan.md) · [`phase-88-closure.md`](plans/phase-88-closure.md) |
-| **89** ✅ | Lighting presets — wire `GET /lighting-programs/presets` (API exists, UI unused) | [`phase_89_lighting_presets_api_wiring.plan.md`](plans/archive/phase_89_lighting_presets_api_wiring.plan.md) · [`phase-89-closure.md`](plans/phase-89-closure.md) |
-| **90** ✅ | Device taxonomy registry — sensor/actuator → water/light/climate + Guardian | [`phase_90_device_taxonomy_registry.plan.md`](plans/archive/phase_90_device_taxonomy_registry.plan.md) · [`phase-90-closure.md`](plans/phase-90-closure.md) |
-| **91** ✅ | Bootstrap template catalog — replace `bootstrapTemplates.js` | [`phase_91_bootstrap_template_catalog.plan.md`](plans/archive/phase_91_bootstrap_template_catalog.plan.md) · [`phase-91-closure.md`](plans/phase-91-closure.md) |
-| **92** ✅ | Zone types + greenhouse enums from API | [`phase_92_zone_greenhouse_vocabulary.plan.md`](plans/archive/phase_92_zone_greenhouse_vocabulary.plan.md) · [`phase-92-closure.md`](plans/phase-92-closure.md) |
-| **99** ✅ | CI domain parity guards — `make check-ui-domain-parity` | [`phase_99_ci_domain_parity_guards.plan.md`](plans/archive/phase_99_ci_domain_parity_guards.plan.md) · [`phase-99-closure.md`](plans/phase-99-closure.md) |
-| **96** ✅ | Grow feeding program validation — warn on stage/program mismatch | [`phase_96_grow_feeding_program_validation.plan.md`](plans/archive/phase_96_grow_feeding_program_validation.plan.md) · [`phase-96-closure.md`](plans/phase-96-closure.md) |
-| **101** ✅ | Guardian write tools — `crop_key` on create_plant | [`phase_101_guardian_write_tools_crop_key.plan.md`](plans/archive/phase_101_guardian_write_tools_crop_key.plan.md) · [`phase-101-closure.md`](plans/phase-101-closure.md) |
-| **102** ✅ | Fertigation + recipe ↔ crop_key / profile EC linkage | [`phase_102_fertigation_program_catalog_metadata.plan.md`](plans/archive/phase_102_fertigation_program_catalog_metadata.plan.md) · [`phase-102-closure.md`](plans/phase-102-closure.md) |
-| **103** ✅ | Legacy plant dedupe & backfill | [`phase_103_legacy_plant_dedupe_backfill.plan.md`](plans/archive/phase_103_legacy_plant_dedupe_backfill.plan.md) · [`phase-103-closure.md`](plans/phase-103-closure.md) |
-| **104** ✅ | Harvest analytics by crop_key | [`phase_104_harvest_analytics_by_crop_key.plan.md`](plans/archive/phase_104_harvest_analytics_by_crop_key.plan.md) · [`phase-104-closure.md`](plans/phase-104-closure.md) |
-| **105** ✅ | Catalog override audit + OC-84 | [`phase_105_catalog_audit_oc84_closure.plan.md`](plans/archive/phase_105_catalog_audit_oc84_closure.plan.md) · [`phase-84-closure.md`](plans/phase-84-closure.md) |
-| **106** ✅ | Deficiency / pest symptom catalog + `lookup_crop_symptoms` | [`phase_106_deficiency_pest_symptom_catalog.plan.md`](plans/archive/phase_106_deficiency_pest_symptom_catalog.plan.md) · [`phase-106-closure.md`](plans/phase-106-closure.md) |
-| **107** ✅ | Crop catalog photos — picker thumbnails + commons `image_url` | [`phase_107_crop_catalog_photos.plan.md`](plans/archive/phase_107_crop_catalog_photos.plan.md) · [`phase-107-closure.md`](plans/phase-107-closure.md) |
-| **108** ✅ | Commons recipe packs `crop_key` tags | [`phase_108_commons_recipe_packs_crop_key.plan.md`](plans/archive/phase_108_commons_recipe_packs_crop_key.plan.md) · [`phase-108-closure.md`](plans/phase-108-closure.md) |
-| **109** ✅ | Catalog version push notifications | [`phase_109_catalog_version_push_notifications.plan.md`](plans/archive/phase_109_catalog_version_push_notifications.plan.md) · [`phase-109-closure.md`](plans/phase-109-closure.md) · [`enterprise-catalog-version-notifications.md`](enterprise-catalog-version-notifications.md) |
-| **110** ✅ | Phase 82 formal closure audit (OC-82) | [`phase_110_phase_82_formal_closure.plan.md`](plans/archive/phase_110_phase_82_formal_closure.plan.md) · [`phase-110-closure.md`](plans/phase-110-closure.md) · [`phase-82-closure.md`](plans/phase-82-closure.md) |
+| **87** ✅ | Guardian crop API smokes + operator runbook + OC-87 | [`phase_87_crop_knowledge_operator_closure.plan.md`](plans/archive/phase_87_crop_knowledge_operator_closure.plan.md) · [`phase-87-closure.md`](plans/archive/phase-87-closure.md) · [`crop-knowledge-operator-runbook.md`](crop-knowledge-operator-runbook.md) |
+| **88** ✅ | Domain enums API — growth stages, reservoir, cost categories (UI drops duplicates) | [`phase_88_domain_enums_api.plan.md`](plans/archive/phase_88_domain_enums_api.plan.md) · [`phase-88-closure.md`](plans/archive/phase-88-closure.md) |
+| **89** ✅ | Lighting presets — wire `GET /lighting-programs/presets` (API exists, UI unused) | [`phase_89_lighting_presets_api_wiring.plan.md`](plans/archive/phase_89_lighting_presets_api_wiring.plan.md) · [`phase-89-closure.md`](plans/archive/phase-89-closure.md) |
+| **90** ✅ | Device taxonomy registry — sensor/actuator → water/light/climate + Guardian | [`phase_90_device_taxonomy_registry.plan.md`](plans/archive/phase_90_device_taxonomy_registry.plan.md) · [`phase-90-closure.md`](plans/archive/phase-90-closure.md) |
+| **91** ✅ | Bootstrap template catalog — replace `bootstrapTemplates.js` | [`phase_91_bootstrap_template_catalog.plan.md`](plans/archive/phase_91_bootstrap_template_catalog.plan.md) · [`phase-91-closure.md`](plans/archive/phase-91-closure.md) |
+| **92** ✅ | Zone types + greenhouse enums from API | [`phase_92_zone_greenhouse_vocabulary.plan.md`](plans/archive/phase_92_zone_greenhouse_vocabulary.plan.md) · [`phase-92-closure.md`](plans/archive/phase-92-closure.md) |
+| **99** ✅ | CI domain parity guards — `make check-ui-domain-parity` | [`phase_99_ci_domain_parity_guards.plan.md`](plans/archive/phase_99_ci_domain_parity_guards.plan.md) · [`phase-99-closure.md`](plans/archive/phase-99-closure.md) |
+| **96** ✅ | Grow feeding program validation — warn on stage/program mismatch | [`phase_96_grow_feeding_program_validation.plan.md`](plans/archive/phase_96_grow_feeding_program_validation.plan.md) · [`phase-96-closure.md`](plans/archive/phase-96-closure.md) |
+| **101** ✅ | Guardian write tools — `crop_key` on create_plant | [`phase_101_guardian_write_tools_crop_key.plan.md`](plans/archive/phase_101_guardian_write_tools_crop_key.plan.md) · [`phase-101-closure.md`](plans/archive/phase-101-closure.md) |
+| **102** ✅ | Fertigation + recipe ↔ crop_key / profile EC linkage | [`phase_102_fertigation_program_catalog_metadata.plan.md`](plans/archive/phase_102_fertigation_program_catalog_metadata.plan.md) · [`phase-102-closure.md`](plans/archive/phase-102-closure.md) |
+| **103** ✅ | Legacy plant dedupe & backfill | [`phase_103_legacy_plant_dedupe_backfill.plan.md`](plans/archive/phase_103_legacy_plant_dedupe_backfill.plan.md) · [`phase-103-closure.md`](plans/archive/phase-103-closure.md) |
+| **104** ✅ | Harvest analytics by crop_key | [`phase_104_harvest_analytics_by_crop_key.plan.md`](plans/archive/phase_104_harvest_analytics_by_crop_key.plan.md) · [`phase-104-closure.md`](plans/archive/phase-104-closure.md) |
+| **105** ✅ | Catalog override audit + OC-84 | [`phase_105_catalog_audit_oc84_closure.plan.md`](plans/archive/phase_105_catalog_audit_oc84_closure.plan.md) · [`phase-84-closure.md`](plans/archive/phase-84-closure.md) |
+| **106** ✅ | Deficiency / pest symptom catalog + `lookup_crop_symptoms` | [`phase_106_deficiency_pest_symptom_catalog.plan.md`](plans/archive/phase_106_deficiency_pest_symptom_catalog.plan.md) · [`phase-106-closure.md`](plans/archive/phase-106-closure.md) |
+| **107** ✅ | Crop catalog photos — picker thumbnails + commons `image_url` | [`phase_107_crop_catalog_photos.plan.md`](plans/archive/phase_107_crop_catalog_photos.plan.md) · [`phase-107-closure.md`](plans/archive/phase-107-closure.md) |
+| **108** ✅ | Commons recipe packs `crop_key` tags | [`phase_108_commons_recipe_packs_crop_key.plan.md`](plans/archive/phase_108_commons_recipe_packs_crop_key.plan.md) · [`phase-108-closure.md`](plans/archive/phase-108-closure.md) |
+| **109** ✅ | Catalog version push notifications | [`phase_109_catalog_version_push_notifications.plan.md`](plans/archive/phase_109_catalog_version_push_notifications.plan.md) · [`phase-109-closure.md`](plans/archive/phase-109-closure.md) · [`enterprise-catalog-version-notifications.md`](enterprise-catalog-version-notifications.md) |
+| **110** ✅ | Phase 82 formal closure audit (OC-82) | [`phase_110_phase_82_formal_closure.plan.md`](plans/archive/phase_110_phase_82_formal_closure.plan.md) · [`phase-110-closure.md`](plans/archive/phase-110-closure.md) · [`phase-82-closure.md`](plans/archive/phase-82-closure.md) |
 
 ## Phases 164–171 — Visual Today farm cockpit
 
@@ -200,7 +200,7 @@ Hub: operator tour [§7k](operator-tour.md#7k-visual-farm-cockpit-phases-164168-
 | **84** ✅ | Shipped | Full catalog + picker API + field guides in Postgres |
 | **85** ✅ | Shipped | Catalog-bound **plants** — dropdown only; no “strain” / free-text flooding |
 | **86** ✅ | Shipped | Grow strip + Water/Light + Guardian resolve `plants.crop_key` on active cycle |
-| **87** ✅ | Shipped | Guardian crop API smokes + operator runbook + OC-87 · [`phase-87-closure.md`](plans/phase-87-closure.md) |
+| **87** ✅ | Shipped | Guardian crop API smokes + operator runbook + OC-87 · [`phase-87-closure.md`](plans/archive/phase-87-closure.md) |
 
 **Picker 404?** `make migrate` · restart API · `CROP_CATALOG_SOURCE=db`.
 
@@ -208,11 +208,11 @@ Hub: operator tour [§7k](operator-tour.md#7k-visual-farm-cockpit-phases-164168-
 
 ## Phases 88–92 — UI static data → DB/API (archived)
 
-**Shipped** — plans moved to [`plans/archive/`](plans/archive/) (stubs at old paths). Hub: [`archive/phase_88_92_platform_data_gaps_roadmap.plan.md`](plans/archive/phase_88_92_platform_data_gaps_roadmap.plan.md) · closure: [`phase-84-110-closure.md`](plans/phase-84-110-closure.md).
+**Shipped** — plans moved to [`plans/archive/`](plans/archive/) (stubs at old paths). Hub: [`archive/phase_88_92_platform_data_gaps_roadmap.plan.md`](plans/archive/phase_88_92_platform_data_gaps_roadmap.plan.md) · closure: [`phase-84-110-closure.md`](plans/archive/phase-84-110-closure.md).
 
 ## Phase 83 — Enterprise agronomy seed pack (shipped)
 
-Cross-linked from Phase 82/84 crop catalog work. **Canonical plan:** [`plans/archive/phase_83_enterprise_agronomy_seed_pack.plan.md`](plans/archive/phase_83_enterprise_agronomy_seed_pack.plan.md) · **Closure:** [`plans/phase-83-closure.md`](plans/phase-83-closure.md).
+Cross-linked from Phase 82/84 crop catalog work. **Canonical plan:** [`plans/archive/phase_83_enterprise_agronomy_seed_pack.plan.md`](plans/archive/phase_83_enterprise_agronomy_seed_pack.plan.md) · **Closure:** [`plans/archive/phase-83-closure.md`](plans/archive/phase-83-closure.md).
 
 | WS | Operator path |
 |----|----------------|
@@ -245,7 +245,7 @@ After operator-doc edits, re-ingest Guardian RAG: **`make rag-ingest-platform-do
 | Security & deps | [`SECURITY.md`](../SECURITY.md) · [`vuln-allowlist.md`](vuln-allowlist.md) |
 | Enterprise / commons | [`scripts/enterprise/README.md`](../scripts/enterprise/README.md) · [`commons-catalog-operator-playbook.md`](commons-catalog-operator-playbook.md) |
 | **Phase archive** | [`plans/archive/README.md`](plans/archive/README.md) |
-| **Full phase history** | Sections below + [`phase-84-110-closure.md`](plans/phase-84-110-closure.md) |
+| **Full phase history** | Sections below + [`phase-84-110-closure.md`](plans/archive/phase-84-110-closure.md) |
 
 ### Legacy per-phase quick links (pre-157)
 

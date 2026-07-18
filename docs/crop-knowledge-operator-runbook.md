@@ -105,7 +105,7 @@ With an **active cannabis grow** in early flower:
 make guardian-bootstrap-farm FARM_ID=1
 ```
 
-Field guides supplement RAG; structured numbers still come from `lookup_crop_targets`. See [`phase-97-closure.md`](plans/phase-97-closure.md).
+Field guides supplement RAG; structured numbers still come from `lookup_crop_targets`. See [`phase-97-closure.md`](plans/archive/phase-97-closure.md).
 
 **Enterprise promotion:** [Phase 98](plans/archive/phase_98_enterprise_catalog_promotion.plan.md) (when applicable).
 
@@ -147,4 +147,4 @@ Field guides supplement RAG; structured numbers still come from `lookup_crop_tar
 
 - [Operator tour §6m — Plants & crop chain](operator-tour.md#6m-plants--crop-knowledge-chain-phases-8587--shipped)
 - [Farm Guardian architecture §7.0af](farm-guardian-architecture.md#70af-plants--crop-knowledge-chain-phases-8587--shipped)
-- [Phase 87 closure](plans/phase-87-closure.md)
+- [Phase 87 closure](plans/archive/phase-87-closure.md)

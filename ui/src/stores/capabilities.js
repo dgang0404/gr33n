@@ -9,7 +9,7 @@ import api from '../api'
  * letting calls return 503 mid-flow. `loaded` flips once fetch() has resolved,
  * so views can wait one tick before rendering the Lite/Full label.
  *
- * See docs/plans/phase_27_farm_guardian_ai_layer.md (WS2 + WS6).
+ * See docs/plans/archive/phase_27_farm_guardian_ai_layer.md (WS2 + WS6).
  */
 export const useCapabilitiesStore = defineStore('capabilities', {
   state: () => ({
