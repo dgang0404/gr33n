@@ -43,7 +43,7 @@ func TestCapabilitiesPublic(t *testing.T) {
 	if resp.StatusCode != http.StatusOK {
 		t.Fatalf("expected status 200, got %d", resp.StatusCode)
 	}
-	var body map[string]bool
+	var body map[string]any
 	if err := json.NewDecoder(resp.Body).Decode(&body); err != nil {
 		t.Fatal(err)
 	}

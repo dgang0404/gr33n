@@ -2077,3 +2077,8 @@ SET meta_data = jsonb_set(
 )
 FROM ins
 WHERE f.id = 1;
+
+-- Phase 164 guard — ensure demo farm 1 has no legacy cannabis plant row (seed
+-- sections after the first COMMIT can re-run on partial applies).
+DELETE FROM gr33ncrops.plants
+WHERE farm_id = 1 AND crop_key = 'cannabis' AND deleted_at IS NULL;

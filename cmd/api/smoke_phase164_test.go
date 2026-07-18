@@ -38,7 +38,7 @@ func TestPhase164_Farm1ChrysanthemumDemoCycles(t *testing.T) {
 SELECT cc.batch_label
 FROM gr33nfertigation.crop_cycles cc
 JOIN gr33ncore.zones z ON z.id = cc.zone_id
-WHERE cc.farm_id = 1 AND cc.deleted_at IS NULL
+WHERE cc.farm_id = 1
   AND z.name = 'Flower Room'
   AND cc.name = 'Bloom run (12/12)'
   AND cc.is_active = TRUE
@@ -55,7 +55,7 @@ LIMIT 1`).Scan(&bloomBatch)
 SELECT cc.batch_label
 FROM gr33nfertigation.crop_cycles cc
 JOIN gr33ncore.zones z ON z.id = cc.zone_id
-WHERE cc.farm_id = 1 AND cc.deleted_at IS NULL
+WHERE cc.farm_id = 1
   AND z.name = 'Veg Room'
   AND cc.name = 'Veg canopy (18/6)'
   AND cc.is_active = TRUE
