@@ -27,6 +27,11 @@ This page is the **Phase 14** counterpart to [`phase-13-operator-documentation.m
 | **160** | Shipped | [`phase_160_a11y_residuals.plan.md`](plans/phase_160_a11y_residuals.plan.md) — lighting modal, mobile drawer trap |
 | **161** | Shipped | [`phase_161_guardian_ecph_smoke_closure.plan.md`](plans/phase_161_guardian_ecph_smoke_closure.plan.md) — ec-ph tail trim + crop drift |
 | **162** | Shipped | [`phase_162_guardian_confirm_db_smoke.plan.md`](plans/phase_162_guardian_confirm_db_smoke.plan.md) — change-request Confirm→DB smoke |
+| **202** | Shipped | [`phase_202_closure_test_consolidation.plan.md`](plans/phase_202_closure_test_consolidation.plan.md) — UI closure-test consolidation |
+| **203** | Shipped | [`phase_203_handler_package_consolidation.plan.md`](plans/phase_203_handler_package_consolidation.plan.md) — backend helper/package consolidation |
+| **204** | Shipped | [`phase_204_docs_navigation_cleanup.plan.md`](plans/phase_204_docs_navigation_cleanup.plan.md) — README rewrite + [roadmap](roadmap/README.md) |
+
+Full narrative history (all eras, plain language): **[`roadmap/README.md`](roadmap/README.md)**. Phases 163–201 (Today cockpit, weather, sit-in arc, answer-quality audit, post-audit follow-through) are summarized there; see individual `plans/phase_N_*.plan.md` for implementation detail.
 
 ## Shipped arcs (hub links)
 

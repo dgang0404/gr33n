@@ -7,9 +7,11 @@ An open-source farm operating system — run it on your LAN, keep your data clos
 [![Vue](https://img.shields.io/badge/Vue-3-4FC08D?logo=vue.js)](https://vuejs.org)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-14+-336791?logo=postgresql)](https://postgresql.org)
 
-**Status:** Farmer UX (**40–67**), SPA workspaces (**68–81**), crop intelligence (**82–110**), Guardian model selection (**111–118**), hardening **113–115**, Virtual Pi wiring arc (**119–122**), Guardian eval (**122**), Today excellence (**173–177**), online weather (**178**), the **2026-07 sit-in arc** — Guardian UX, Help Library, multi-turn PR smoke, task Refine chain (**179–187**) — and a live conversation-turn answer-quality audit — off-topic template leak, inline RAG metadata redaction, dangling truncation, question-phrased revise (**188–191**) — are **shipped on `main`**. Docs refresh (**116**) and test depth (**117–118**) — see [phase index](docs/phase-14-operator-documentation.md).
+gr33n runs your farm's sensors, alerts, tasks, and scheduling from one dashboard, and lets you ask **Farm Guardian** — a local AI assistant — questions about your grow, grounded in your actual farm data. Everything works on your LAN; the internet is optional, not required.
 
-**Start here:** [**What's in the box**](docs/current-state.md) · [First session after clone](docs/first-session-after-clone.md) · [Operator tour](docs/operator-tour.md) · [Upgrade guide](docs/upgrade-guide.md) · [CHANGELOG](CHANGELOG.md) · **Real grow?** [Guardian readiness](docs/guardian-real-grow-readiness.md) · **Offline/air-gap?** [Connectivity requirements](docs/connectivity-requirements.md)
+**Status:** actively developed, everything below is shipped and running on `main`. Full history: [roadmap](docs/roadmap/README.md).
+
+**Start here:** [**What's in the box**](docs/current-state.md) · [First session after clone](docs/first-session-after-clone.md) · [Operator tour](docs/operator-tour.md) · [CHANGELOG](CHANGELOG.md)
 
 ---
 
@@ -45,9 +47,9 @@ An open-source farm operating system — run it on your LAN, keep your data clos
   - Sensor readings and actuator commands buffer  
   - On reconnect, everything syncs automatically  
 
-🧑‍🌾 **Easy Pi Setup** — **Phase 60 Pi Setup Wizard:** 6-step guided flow to wire a Relay HAT, assign pumps/fans to channels, test network, download config. **Virtual Pi** (`/virtual-pi`, Phases 119–123): graphical 40-pin board, interactive wiring, config export, drift detection, and **Notify Pi to reload** for platform-sync devices. See `http://localhost:5173/pi-setup-wizard`.
+🧑‍🌾 **Easy Pi Setup** — **Pi Setup Wizard:** 6-step guided flow to wire a Relay HAT, assign pumps/fans to channels, test network, download config. **Virtual Pi** (`/virtual-pi`): graphical 40-pin board, interactive wiring, config export, drift detection, and **Notify Pi to reload** for platform-sync devices. See `http://localhost:5173/pi-setup-wizard`.
 
-🤖 **Guardian model picker** — Choose and **pull** Ollama models in-app (Phases 111–112). No manual `ollama pull` on the server unless you prefer CLI.
+🤖 **Guardian model picker** — Choose and **pull** Ollama models in-app. No manual `ollama pull` on the server unless you prefer CLI.
 
 💰 **Costs & Cycle Profitability** — Upload receipts (photos scanned for text), tag costs to crops. Export as CSV or GL ledger. Compare cycle-to-cycle costs/yield. See [Costs section](#costs-finance--receipts) in API docs.
 
@@ -113,7 +115,7 @@ gr33n offers a different default:
 | **Farmer** (default on `main`) | Single-farm grow, supplies batches, receipts, tasks, Pi edge, Guardian read tools | [operator tour](docs/operator-tour.md) |
 | **Enterprise** (future — not shipping) | POs, METRC/traceability, multi-entity GL, WMS — explicitly **out of scope** for farmer UX | [enterprise-tier-boundary.md](docs/enterprise-tier-boundary.md) |
 
-Phases **10–110** shipped on `main` (farmer UX, Guardian, SPA workspaces, crop catalog in Postgres). **Enterprise tier** (POs, traceability, multi-entity GL) is documented but not shipping — see [enterprise-tier-boundary.md](docs/enterprise-tier-boundary.md). Full phase ledger: [phase-14 operator index](docs/phase-14-operator-documentation.md). Accountant handoff today: cost **CSV export** only.
+**Enterprise tier** (POs, traceability, multi-entity GL) is documented but not shipping — see [enterprise-tier-boundary.md](docs/enterprise-tier-boundary.md). Accountant handoff today: cost **CSV export** only. Full history: [roadmap](docs/roadmap/README.md) · [phase-14 operator index](docs/phase-14-operator-documentation.md).
 
 Two foundational milestones stay called out here because closure tests guard them:
 
@@ -811,15 +813,7 @@ See [`docs/farm-guardian-architecture.md`](docs/farm-guardian-architecture.md) f
 
 ## Roadmap & history
 
-All numbered phases through **110** are **shipped**. The README no longer lists every phase row-by-row — use these indexes instead:
-
-| Doc | Contents |
-|-----|----------|
-| [`docs/phase-14-operator-documentation.md`](docs/phase-14-operator-documentation.md) | Master operator index — phases 14–110, runbooks, closure links |
-| [`docs/plans/phase_84_100_master_roadmap.plan.md`](docs/plans/phase_84_100_master_roadmap.plan.md) | Crop / intelligence arc (84–110) |
-| [`docs/plans/phase_68_73_spa_workspace_roadmap.plan.md`](docs/plans/phase_68_73_spa_workspace_roadmap.plan.md) | SPA workspace arc (68–81) |
-| [`docs/plans/farmer_ux_roadmap_40_plus.plan.md`](docs/plans/farmer_ux_roadmap_40_plus.plan.md) | Farmer UX arc (40–67) |
-| [`docs/plans/product_backlog_operator_runtime.plan.md`](docs/plans/product_backlog_operator_runtime.plan.md) | Documented backlog (not phase-gated) |
+Read **[docs/roadmap/README.md](docs/roadmap/README.md)** — one page, every shipped era in plain language, plus what's next. Everything else (the per-phase plan docs, the exhaustive [phase-14 operator index](docs/phase-14-operator-documentation.md)) is implementation detail you shouldn't need for a normal read.
 
 **Local dev gates:** `make test` · `make lint` · `make audit-openapi` · `make check-ui-domain-parity` · UI `npm run build` — see [Make Commands](#make-commands).
 
