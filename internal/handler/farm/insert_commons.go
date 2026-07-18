@@ -823,31 +823,22 @@ func (h *Handler) ListInsertCommonsBundles(w http.ResponseWriter, r *http.Reques
 		return
 	}
 	statusFilter := strings.TrimSpace(r.URL.Query().Get("status"))
-	limit := int32(25)
-	if s := strings.TrimSpace(r.URL.Query().Get("limit")); s != "" {
-		v, err := strconv.Atoi(s)
-		if err != nil || v <= 0 || v > 100 {
+	limit, offset, err := httputil.ParseLimitOffsetStrict(r, 25, 100)
+	if err != nil {
+		if errors.Is(err, httputil.ErrInvalidLimit) {
 			httputil.WriteError(w, http.StatusBadRequest, "invalid limit")
 			return
 		}
-		limit = int32(v)
-	}
-	offset := int32(0)
-	if s := strings.TrimSpace(r.URL.Query().Get("offset")); s != "" {
-		v, err := strconv.Atoi(s)
-		if err != nil || v < 0 {
-			httputil.WriteError(w, http.StatusBadRequest, "invalid offset")
-			return
-		}
-		offset = int32(v)
+		httputil.WriteError(w, http.StatusBadRequest, "invalid offset")
+		return
 	}
 	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 	defer cancel()
 	rows, err := h.q.ListInsertCommonsBundlesByFarm(ctx, db.ListInsertCommonsBundlesByFarmParams{
 		FarmID:  farmID,
 		Column2: statusFilter,
-		Limit:   limit,
-		Offset:  offset,
+		Limit:   int32(limit),
+		Offset:  int32(offset),
 	})
 	if err != nil {
 		httputil.WriteError(w, http.StatusInternalServerError, "failed to list bundles")
@@ -1306,23 +1297,14 @@ func (h *Handler) InsertCommonsHistory(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	limit := int32(25)
-	if s := strings.TrimSpace(r.URL.Query().Get("limit")); s != "" {
-		v, err := strconv.Atoi(s)
-		if err != nil || v <= 0 || v > 100 {
+	limit, offset, err := httputil.ParseLimitOffsetStrict(r, 25, 100)
+	if err != nil {
+		if errors.Is(err, httputil.ErrInvalidLimit) {
 			httputil.WriteError(w, http.StatusBadRequest, "invalid limit")
 			return
 		}
-		limit = int32(v)
-	}
-	offset := int32(0)
-	if s := strings.TrimSpace(r.URL.Query().Get("offset")); s != "" {
-		v, err := strconv.Atoi(s)
-		if err != nil || v < 0 {
-			httputil.WriteError(w, http.StatusBadRequest, "invalid offset")
-			return
-		}
-		offset = int32(v)
+		httputil.WriteError(w, http.StatusBadRequest, "invalid offset")
+		return
 	}
 
 	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
@@ -1330,8 +1312,8 @@ func (h *Handler) InsertCommonsHistory(w http.ResponseWriter, r *http.Request) {
 
 	rows, err := h.q.ListInsertCommonsSyncEventsByFarm(ctx, db.ListInsertCommonsSyncEventsByFarmParams{
 		FarmID: farmID,
-		Limit:  limit,
-		Offset: offset,
+		Limit:  int32(limit),
+		Offset: int32(offset),
 	})
 	if err != nil {
 		httputil.WriteError(w, http.StatusInternalServerError, "failed to list sync events")

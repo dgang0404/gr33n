@@ -1,4 +1,4 @@
-package commonscropcatalog
+package commonscatalog
 
 import (
 	"context"
@@ -9,19 +9,10 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgxpool"
 
 	db "gr33n-api/internal/db"
 	"gr33n-api/internal/httputil"
 )
-
-type Handler struct {
-	q db.Querier
-}
-
-func NewHandler(pool *pgxpool.Pool) *Handler {
-	return &Handler{q: db.New(pool)}
-}
 
 type catalogListResponse struct {
 	CatalogVersion int32                       `json:"catalog_version"`

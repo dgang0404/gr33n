@@ -10,28 +10,28 @@ overview: >
 todos:
   - id: ws1-shared-helpers
     content: "WS1: httputil — ParsePathInt, ParseLimitOffset; single numericFromFloat64 in httputil or internal/conv; delete local copies in cost/cropcycle/fertigation/recipe + farmguardian/tools/args.go"
-    status: pending
+    status: completed
   - id: ws2-path-id-style
     content: "WS2: migrate inline strconv.ParseInt(r.PathValue) to httputil.PathID where path shape matches; delete dead pathSegment/idSegment in devicecmd/handler.go"
-    status: pending
+    status: completed
   - id: ws3-dead-exports
     content: "WS3: remove unused commontypes enums (ValidationRule*, UserActionTypeEnum), plantcatalog.ResolveCropKeyFromProfile if still unreferenced, farmbootstrap.IsKnownTemplate if internal-only"
-    status: pending
+    status: completed
   - id: ws4-naturalfarming-merge
     content: "WS4: merge handler/recipe into handler/naturalfarming (or rename package naturalfarming → recipes); single routes.go block; no URL changes"
-    status: pending
+    status: completed
   - id: ws5-commons-catalog-merge
     content: "WS5: merge handler/commonscropcatalog + handler/fieldguides agronomy overlap into handler/commonscatalog OR document sub-routers in one package; unify /commons/* registration in routes.go"
-    status: pending
+    status: completed
   - id: ws6-tests-openapi
     content: "WS6: cmd/api smoke tests pass; openapi.yaml tag descriptions updated; phase-203-closure.test.js (helper single-source grep)"
-    status: pending
+    status: completed
 isProject: false
 ---
 
 # Phase 203 — Handler package consolidation
 
-**Status:** planned · **Depends on:** none (backend janitorial)
+**Status:** shipped · **Depends on:** none (backend janitorial)
 
 ## The problem
 
@@ -107,12 +107,12 @@ Do **not** merge field_guide RAG chunks with agronomy DB in this phase — HTTP 
 
 ## Acceptance criteria
 
-- [ ] Single `NumericFromFloat64` (or equivalent) in codebase
-- [ ] `ParseLimitOffset` used by ≥4 handlers that duplicated logic
-- [ ] recipe package merged or explicitly documented as subfolder of naturalfarming
-- [ ] commons HTTP registration readable in one routes.go section
-- [ ] phase-203-closure.test.js
-- [ ] No API URL changes (breaking)
+- [x] Single `NumericFromFloat64` (or equivalent) in codebase
+- [x] `ParseLimitOffset` used by ≥4 handlers that duplicated logic
+- [x] recipe package merged or explicitly documented as subfolder of naturalfarming
+- [x] commons HTTP registration readable in one routes.go section
+- [x] phase-203-closure.test.js
+- [x] No API URL changes (breaking)
 
 ## Out of scope
 

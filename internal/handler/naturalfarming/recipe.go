@@ -1,36 +1,21 @@
-package recipe
+package naturalfarming
 
 import (
 	"encoding/json"
 	"errors"
 	"net/http"
-	"strconv"
 	"strings"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgtype"
-	"github.com/jackc/pgx/v5/pgxpool"
 
 	db "gr33n-api/internal/db"
 	"gr33n-api/internal/farmauthz"
 	"gr33n-api/internal/httputil"
 )
 
-type Handler struct{ q *db.Queries }
-
-func NewHandler(pool *pgxpool.Pool) *Handler {
-	return &Handler{q: db.New(pool)}
-}
-
-func numericFromFloat64(v float64) (pgtype.Numeric, error) {
-	var n pgtype.Numeric
-	err := n.Scan(strconv.FormatFloat(v, 'f', -1, 64))
-	return n, err
-}
-
-// List — GET /farms/{id}/naturalfarming/recipes
-func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
-	farmID, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+// ListRecipes — GET /farms/{id}/naturalfarming/recipes
+func (h *Handler) ListRecipes(w http.ResponseWriter, r *http.Request) {
+	farmID, err := httputil.PathValueInt64(r, "id")
 	if err != nil {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid farm id")
 		return
@@ -49,9 +34,9 @@ func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 	httputil.WriteJSON(w, http.StatusOK, rows)
 }
 
-// Get — GET /naturalfarming/recipes/{id}
-func (h *Handler) Get(w http.ResponseWriter, r *http.Request) {
-	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+// GetRecipe — GET /naturalfarming/recipes/{id}
+func (h *Handler) GetRecipe(w http.ResponseWriter, r *http.Request) {
+	id, err := httputil.PathValueInt64(r, "id")
 	if err != nil {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid recipe id")
 		return
@@ -71,9 +56,9 @@ func (h *Handler) Get(w http.ResponseWriter, r *http.Request) {
 	httputil.WriteJSON(w, http.StatusOK, row)
 }
 
-// Create — POST /farms/{id}/naturalfarming/recipes
-func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
-	farmID, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+// CreateRecipe — POST /farms/{id}/naturalfarming/recipes
+func (h *Handler) CreateRecipe(w http.ResponseWriter, r *http.Request) {
+	farmID, err := httputil.PathValueInt64(r, "id")
 	if err != nil {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid farm id")
 		return
@@ -118,9 +103,9 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 	httputil.WriteJSON(w, http.StatusCreated, row)
 }
 
-// Update — PUT /naturalfarming/recipes/{id}
-func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
-	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+// UpdateRecipe — PUT /naturalfarming/recipes/{id}
+func (h *Handler) UpdateRecipe(w http.ResponseWriter, r *http.Request) {
+	id, err := httputil.PathValueInt64(r, "id")
 	if err != nil {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid recipe id")
 		return
@@ -178,9 +163,9 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 	httputil.WriteJSON(w, http.StatusOK, row)
 }
 
-// Delete — DELETE /naturalfarming/recipes/{id}
-func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
-	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+// DeleteRecipe — DELETE /naturalfarming/recipes/{id}
+func (h *Handler) DeleteRecipe(w http.ResponseWriter, r *http.Request) {
+	id, err := httputil.PathValueInt64(r, "id")
 	if err != nil {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid recipe id")
 		return
@@ -204,9 +189,9 @@ func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-// ListComponents — GET /naturalfarming/recipes/{id}/components
-func (h *Handler) ListComponents(w http.ResponseWriter, r *http.Request) {
-	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+// ListRecipeComponents — GET /naturalfarming/recipes/{id}/components
+func (h *Handler) ListRecipeComponents(w http.ResponseWriter, r *http.Request) {
+	id, err := httputil.PathValueInt64(r, "id")
 	if err != nil {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid recipe id")
 		return
@@ -234,9 +219,9 @@ func (h *Handler) ListComponents(w http.ResponseWriter, r *http.Request) {
 	httputil.WriteJSON(w, http.StatusOK, rows)
 }
 
-// AddComponent — POST /naturalfarming/recipes/{id}/components
-func (h *Handler) AddComponent(w http.ResponseWriter, r *http.Request) {
-	recipeID, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+// AddRecipeComponent — POST /naturalfarming/recipes/{id}/components
+func (h *Handler) AddRecipeComponent(w http.ResponseWriter, r *http.Request) {
+	recipeID, err := httputil.PathValueInt64(r, "id")
 	if err != nil {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid recipe id")
 		return
@@ -267,7 +252,7 @@ func (h *Handler) AddComponent(w http.ResponseWriter, r *http.Request) {
 	if !farmauthz.RequireFarmOperate(w, r, h.q, rec.FarmID) {
 		return
 	}
-	pv, err := numericFromFloat64(body.PartValue)
+	pv, err := httputil.NumericFromFloat64(body.PartValue)
 	if err != nil {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid part_value")
 		return
@@ -285,14 +270,14 @@ func (h *Handler) AddComponent(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-// RemoveComponent — DELETE /naturalfarming/recipes/{id}/components/{iid}
-func (h *Handler) RemoveComponent(w http.ResponseWriter, r *http.Request) {
-	recipeID, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+// RemoveRecipeComponent — DELETE /naturalfarming/recipes/{id}/components/{iid}
+func (h *Handler) RemoveRecipeComponent(w http.ResponseWriter, r *http.Request) {
+	recipeID, err := httputil.PathValueInt64(r, "id")
 	if err != nil {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid recipe id")
 		return
 	}
-	inputID, err := strconv.ParseInt(r.PathValue("iid"), 10, 64)
+	inputID, err := httputil.PathValueInt64(r, "iid")
 	if err != nil {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid input_definition id")
 		return

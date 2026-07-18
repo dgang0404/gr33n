@@ -141,11 +141,6 @@ func float64FromArgs(args map[string]any, key string) (float64, error) {
 	}
 }
 
-func numericFromFloat64(v float64) (pgtype.Numeric, error) {
-	var n pgtype.Numeric
-	err := n.Scan(fmt.Sprintf("%g", v))
-	return n, err
-}
 
 func optionalDateFromArgs(args map[string]any, key string) (pgtype.Date, bool, error) {
 	s, err := optionalStringFromArgs(args, key)

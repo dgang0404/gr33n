@@ -31,14 +31,8 @@ func NewHandler(pool *pgxpool.Pool, worker *automationworker.Worker) *Handler {
 	return &Handler{pool: pool, q: db.New(pool), worker: worker}
 }
 
-func numericFromFloat64(v float64) (pgtype.Numeric, error) {
-	var n pgtype.Numeric
-	err := n.Scan(strconv.FormatFloat(v, 'f', -1, 64))
-	return n, err
-}
-
 func farmIDFromPath(r *http.Request) (int64, error) {
-	return strconv.ParseInt(r.PathValue("id"), 10, 64)
+	return httputil.PathValueInt64(r, "id")
 }
 
 func resourceIDFromPath(r *http.Request) (int64, error) {
@@ -79,12 +73,12 @@ func (h *Handler) UpdateReservoir(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid request body")
 		return
 	}
-	capacity, err := numericFromFloat64(req.CapacityLiters)
+	capacity, err := httputil.NumericFromFloat64(req.CapacityLiters)
 	if err != nil {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid capacity_liters")
 		return
 	}
-	current, err := numericFromFloat64(req.CurrentVolumeLiters)
+	current, err := httputil.NumericFromFloat64(req.CurrentVolumeLiters)
 	if err != nil {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid current_volume_liters")
 		return
@@ -172,7 +166,7 @@ func (h *Handler) UpdateProgram(w http.ResponseWriter, r *http.Request) {
 		writeProgramValidationError(w, err)
 		return
 	}
-	totalVol, err := numericFromFloat64(req.TotalVolumeLiters)
+	totalVol, err := httputil.NumericFromFloat64(req.TotalVolumeLiters)
 	if err != nil {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid total_volume_liters")
 		return
@@ -267,12 +261,12 @@ func (h *Handler) CreateReservoir(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	capacity, err := numericFromFloat64(req.CapacityLiters)
+	capacity, err := httputil.NumericFromFloat64(req.CapacityLiters)
 	if err != nil {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid capacity_liters")
 		return
 	}
-	current, err := numericFromFloat64(req.CurrentVolumeLiters)
+	current, err := httputil.NumericFromFloat64(req.CurrentVolumeLiters)
 	if err != nil {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid current_volume_liters")
 		return
@@ -341,22 +335,22 @@ func (h *Handler) CreateEcTarget(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ecMin, err := numericFromFloat64(req.EcMinMscm)
+	ecMin, err := httputil.NumericFromFloat64(req.EcMinMscm)
 	if err != nil {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid ec_min_mscm")
 		return
 	}
-	ecMax, err := numericFromFloat64(req.EcMaxMscm)
+	ecMax, err := httputil.NumericFromFloat64(req.EcMaxMscm)
 	if err != nil {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid ec_max_mscm")
 		return
 	}
-	phMin, err := numericFromFloat64(req.PhMin)
+	phMin, err := httputil.NumericFromFloat64(req.PhMin)
 	if err != nil {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid ph_min")
 		return
 	}
-	phMax, err := numericFromFloat64(req.PhMax)
+	phMax, err := httputil.NumericFromFloat64(req.PhMax)
 	if err != nil {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid ph_max")
 		return
@@ -455,22 +449,22 @@ func (h *Handler) CreateProgram(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	totalVol, err := numericFromFloat64(req.TotalVolumeLiters)
+	totalVol, err := httputil.NumericFromFloat64(req.TotalVolumeLiters)
 	if err != nil {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid total_volume_liters")
 		return
 	}
-	ecLow, err := numericFromFloat64(req.EcTriggerLow)
+	ecLow, err := httputil.NumericFromFloat64(req.EcTriggerLow)
 	if err != nil {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid ec_trigger_low")
 		return
 	}
-	phLow, err := numericFromFloat64(req.PhTriggerLow)
+	phLow, err := httputil.NumericFromFloat64(req.PhTriggerLow)
 	if err != nil {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid ph_trigger_low")
 		return
 	}
-	phHigh, err := numericFromFloat64(req.PhTriggerHigh)
+	phHigh, err := httputil.NumericFromFloat64(req.PhTriggerHigh)
 	if err != nil {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid ph_trigger_high")
 		return
@@ -701,27 +695,27 @@ func (h *Handler) CreateEvent(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	volumeApplied, err := numericFromFloat64(req.VolumeAppliedLiters)
+	volumeApplied, err := httputil.NumericFromFloat64(req.VolumeAppliedLiters)
 	if err != nil {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid volume_applied_liters")
 		return
 	}
-	ecBefore, err := numericFromFloat64(req.EcBeforeMscm)
+	ecBefore, err := httputil.NumericFromFloat64(req.EcBeforeMscm)
 	if err != nil {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid ec_before_mscm")
 		return
 	}
-	ecAfter, err := numericFromFloat64(req.EcAfterMscm)
+	ecAfter, err := httputil.NumericFromFloat64(req.EcAfterMscm)
 	if err != nil {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid ec_after_mscm")
 		return
 	}
-	phBefore, err := numericFromFloat64(req.PhBefore)
+	phBefore, err := httputil.NumericFromFloat64(req.PhBefore)
 	if err != nil {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid ph_before")
 		return
 	}
-	phAfter, err := numericFromFloat64(req.PhAfter)
+	phAfter, err := httputil.NumericFromFloat64(req.PhAfter)
 	if err != nil {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid ph_after")
 		return
@@ -834,22 +828,22 @@ func (h *Handler) CreateMixingEvent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	waterVol, _ := numericFromFloat64(req.WaterVolumeLiters)
+	waterVol, _ := httputil.NumericFromFloat64(req.WaterVolumeLiters)
 	var waterEc, waterPh, finalEc, finalPh, finalTemp pgtype.Numeric
 	if req.WaterEcMscm != nil {
-		waterEc, _ = numericFromFloat64(*req.WaterEcMscm)
+		waterEc, _ = httputil.NumericFromFloat64(*req.WaterEcMscm)
 	}
 	if req.WaterPh != nil {
-		waterPh, _ = numericFromFloat64(*req.WaterPh)
+		waterPh, _ = httputil.NumericFromFloat64(*req.WaterPh)
 	}
 	if req.FinalEcMscm != nil {
-		finalEc, _ = numericFromFloat64(*req.FinalEcMscm)
+		finalEc, _ = httputil.NumericFromFloat64(*req.FinalEcMscm)
 	}
 	if req.FinalPh != nil {
-		finalPh, _ = numericFromFloat64(*req.FinalPh)
+		finalPh, _ = httputil.NumericFromFloat64(*req.FinalPh)
 	}
 	if req.FinalTempCelsius != nil {
-		finalTemp, _ = numericFromFloat64(*req.FinalTempCelsius)
+		finalTemp, _ = httputil.NumericFromFloat64(*req.FinalTempCelsius)
 	}
 
 	var mixedBy pgtype.UUID
@@ -890,7 +884,7 @@ func (h *Handler) CreateMixingEvent(w http.ResponseWriter, r *http.Request) {
 
 	components := make([]db.Gr33nfertigationMixingEventComponent, 0, len(req.Components))
 	for _, c := range req.Components {
-		vol, _ := numericFromFloat64(c.VolumeAddedMl)
+		vol, _ := httputil.NumericFromFloat64(c.VolumeAddedMl)
 		comp, err := qtx.CreateMixingEventComponent(r.Context(), db.CreateMixingEventComponentParams{
 			MixingEventID:     event.ID,
 			InputDefinitionID: c.InputDefinitionID,

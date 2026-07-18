@@ -31,16 +31,11 @@ func (h *Handler) ListByFarm(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid farm id")
 		return
 	}
-	limit, _ := strconv.ParseInt(r.URL.Query().Get("limit"), 10, 32)
-	offset, _ := strconv.ParseInt(r.URL.Query().Get("offset"), 10, 32)
-	if limit <= 0 || limit > 200 {
-		limit = 50
-	}
-
 	q := db.New(h.pool)
 	if !farmauthz.RequireFarmMember(w, r, q, farmID) {
 		return
 	}
+	limit, offset := httputil.ParseLimitOffset(r, 50, 200)
 	rows, err := q.ListAlertsByFarm(r.Context(), db.ListAlertsByFarmParams{
 		FarmID: farmID,
 		Limit:  int32(limit),

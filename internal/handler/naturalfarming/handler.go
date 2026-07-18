@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
-	"strconv"
 	"strings"
 
 	"github.com/jackc/pgx/v5"
@@ -67,11 +66,11 @@ func (h *Handler) ListBatches(w http.ResponseWriter, r *http.Request) {
 }
 
 func farmIDFromPath(r *http.Request) (int64, error) {
-	return strconv.ParseInt(r.PathValue("id"), 10, 64)
+	return httputil.PathValueInt64(r, "id")
 }
 
 func resourceIDFromPath(r *http.Request) (int64, error) {
-	return strconv.ParseInt(r.PathValue("id"), 10, 64)
+	return httputil.PathValueInt64(r, "id")
 }
 
 // POST /farms/{id}/naturalfarming/inputs
@@ -195,9 +194,11 @@ func (h *Handler) UpdateInputDefinition(w http.ResponseWriter, r *http.Request) 
 func parseUnitCost(rawCost *float64, rawCurrency *string) (pgtype.Numeric, *string, error) {
 	var num pgtype.Numeric
 	if rawCost != nil {
-		if err := num.Scan(strconv.FormatFloat(*rawCost, 'f', -1, 64)); err != nil {
+		n, err := httputil.NumericFromFloat64(*rawCost)
+		if err != nil {
 			return pgtype.Numeric{}, nil, errors.New("invalid unit_cost")
 		}
+		num = n
 	}
 	var currencyOut *string
 	if rawCurrency != nil {
