@@ -38,9 +38,9 @@ Calm **farm steward**: short paragraphs, practical metaphors OK. Still: no model
 
 - [Farm Guardian architecture](farm-guardian-architecture.md) — §8 operator expectations
 - [Operator tour §6](operator-tour.md#6-farm-guardian-change-requests-with-your-ok) — narrative PR workflow
-- [Phase 32 — grow setup PRs](plans/phase_32_guardian_grow_setup_prs.plan.md)
-- [Phase 34 — PR iteration & blind-spot facts](plans/phase_34_guardian_pr_iteration.plan.md)
-- [Phase 31 — field validation](plans/phase_31_field_validation_and_edge.plan.md)
-- [Phase 37 — offline field assistant](plans/phase_37_guardian_offline_field_assistant.plan.md) · [operator tour §6d](operator-tour.md#6d-first-field-install-with-guardian-offline-phase-37) · [architecture §7.0e](farm-guardian-architecture.md#70e-offline-field-assistant-phase-37)
+- [Phase 32 — grow setup PRs](plans/archive/phase_32_guardian_grow_setup_prs.plan.md)
+- [Phase 34 — PR iteration & blind-spot facts](plans/archive/phase_34_guardian_pr_iteration.plan.md)
+- [Phase 31 — field validation](plans/archive/phase_31_field_validation_and_edge.plan.md)
+- [Phase 37 — offline field assistant](plans/archive/phase_37_guardian_offline_field_assistant.plan.md) · [operator tour §6d](operator-tour.md#6d-first-field-install-with-guardian-offline-phase-37) · [architecture §7.0e](farm-guardian-architecture.md#70e-offline-field-assistant-phase-37)
 - [Operator tour §4a — plant needs](operator-tour.md#4a-plant-needs-per-zone-phase-38)
 - [Architecture §7.0d — Phase 38 + Phase 39 honesty](farm-guardian-architecture.md#70d-plant-needs-ui--pulse-phase-38)

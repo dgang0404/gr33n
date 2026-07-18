@@ -2,7 +2,7 @@
 
 **Audience:** Operators standing up edge hardware before live plants.
 
-This doc orders the **already-shipped** pieces into one path. Implementation polish (UI banners, smokes) is [Phase 142](plans/phase_142_virtual_pi_field_validation.plan.md).
+This doc orders the **already-shipped** pieces into one path. Implementation polish (UI banners, smokes) is [Phase 142](plans/archive/phase_142_virtual_pi_field_validation.plan.md).
 
 ---
 
@@ -18,10 +18,10 @@ flowchart LR
 
 | Step | Doc / surface | Exit |
 |------|---------------|------|
-| 1 | [Phase 120–121 plans](plans/phase_120_virtual_pi_interactive_wiring.plan.md) — `/virtual-pi` | Wiring saved in DB; config export downloads |
-| 2 | [Phase 123 push-config](plans/phase_123_virtual_pi_push_config.plan.md) | `config_version` bumped; Pi refetches on LAN |
+| 1 | [Phase 120–121 plans](plans/archive/phase_120_virtual_pi_interactive_wiring.plan.md) — `/virtual-pi` | Wiring saved in DB; config export downloads |
+| 2 | [Phase 123 push-config](plans/archive/phase_123_virtual_pi_push_config.plan.md) | `config_version` bumped; Pi refetches on LAN |
 | 3 | [Phase 125 simulation rig](../pi_client/README-simulation-rig.md) | Demo A moisture loop: pixel + alert + pump blink |
-| 4 | [Phase 31 field validation](plans/phase_31_field_validation_and_edge.plan.md) | Live sensor on dashboard; safe actuator story |
+| 4 | [Phase 31 field validation](plans/archive/phase_31_field_validation_and_edge.plan.md) | Live sensor on dashboard; safe actuator story |
 | 5 | Swap `simulation:` for relay driver in `config.yaml` | Same platform APIs; no server changes |
 
 ---
@@ -42,7 +42,7 @@ Follow [pi-light-simulation-runbook.md](pi-light-simulation-runbook.md) **Demo A
 - Merge exported wiring / sensor IDs from step 1
 - Run `python3 gr33n_client.py` — watch NeoPixels track comfort bands
 
-**Why:** Abuse automation rules safely before anything alive is on the line ([Phase 125](plans/phase_125_pi_sensor_actuator_light_simulation.plan.md)).
+**Why:** Abuse automation rules safely before anything alive is on the line ([Phase 125](plans/archive/phase_125_pi_sensor_actuator_light_simulation.plan.md)).
 
 ---
 

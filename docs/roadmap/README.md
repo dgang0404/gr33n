@@ -6,7 +6,7 @@ closure tests) — but you never need to read all 200+ of them to understand
 where the project is or where it's going. That's what this page is for.
 
 **Status:** every phase below is **shipped on `main`** unless marked
-otherwise. Current phase: **206** (docs/plans archive migration).
+otherwise. Current phase: **207** (TBD — see product backlog).
 
 For what the app actually *does* today, read the [README](../../README.md).
 This page is history + direction, not features.
@@ -37,7 +37,7 @@ the description here is meant to be enough on its own.
 | **Janitorial consolidation** | 202–203 | No new features — paid down test and code duplication. Consolidated repeated UI closure-test assertions into canonical test files, merged duplicated backend helper functions and adjacent handler packages. |
 | **Docs & navigation cleanup** | 204 | Product-first README, `docs/roadmap/README.md`, retired duplicate Phase 60 doc pile. |
 | **Test debt + regression safety** | 205 | Fixed 24 pre-existing UI test failures (shared root cause: tests missing `gr33n_token` in localStorage); shipped `make check-ui-test-baseline` so future refactors can't add failures silently. Full suite green: 242 files / 1222 tests. |
-| **docs/plans archive migration** | **206** (planned) | Move ~200 shipped phase plans into `docs/plans/archive/` with scripted batch migration. |
+| **docs/plans archive migration** | 206 | Moved ~198 shipped phase plans into `docs/plans/archive/` via scripted migration; 7 era hubs + meta plans stay at `docs/plans/` root. |
 
 ---
 
@@ -51,6 +51,6 @@ Not phase-gated yet — see the documented backlog:
 You should rarely need these, but if you do:
 
 - **[`docs/phase-14-operator-documentation.md`](../phase-14-operator-documentation.md)** — the exhaustive phase-by-phase index (every phase, every closure test, every migration).
-- **`docs/plans/phase_N_*.plan.md`** — one plan per phase: problem statement, workstreams, acceptance criteria.
-- **[`docs/plans/archive/`](../plans/archive/)** — plans for phases old enough that nothing else in the repo (code, tests, docs) still points at them directly.
+- **`docs/plans/archive/phase_N_*.plan.md`** — closed phase plans (most shipped phases live here after Phase 206).
+- **`docs/plans/phase_N_*.plan.md`** — era hub docs and recent meta plans only at the top level.
 - **[`CHANGELOG.md`](../../CHANGELOG.md)** — operator-visible changes only, newest first.

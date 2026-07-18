@@ -64,7 +64,7 @@ Each tab shows the **connection chain**: live **reading** → **comfort target**
 
 ## 4b. Zone cockpit walkthrough (Phase 40)
 
-**Shipped.** The zone hub is the **grow cockpit** — fix targets, ack alerts, and read what runs today **without** hopping to Setpoints, Automation, or Schedules for routine work. Power users still use **Advanced** for farm-wide CRUD and expression editing. Plan: [`plans/phase_40_unified_farmer_ux_zone_cockpit.plan.md`](plans/phase_40_unified_farmer_ux_zone_cockpit.plan.md). Vocabulary: [`farmer-vocabulary.md`](farmer-vocabulary.md) (comfort targets, Feed & water, Ask gr33n).
+**Shipped.** The zone hub is the **grow cockpit** — fix targets, ack alerts, and read what runs today **without** hopping to Setpoints, Automation, or Schedules for routine work. Power users still use **Advanced** for farm-wide CRUD and expression editing. Plan: [`plans/archive/phase_40_unified_farmer_ux_zone_cockpit.plan.md`](plans/archive/phase_40_unified_farmer_ux_zone_cockpit.plan.md). Vocabulary: [`farmer-vocabulary.md`](farmer-vocabulary.md) (comfort targets, Feed & water, Ask gr33n).
 
 **Walkthrough — Flower Room example**
 
@@ -114,7 +114,7 @@ Keep using **Run pulse** for manual irrigate. Farm-wide program editing stays un
 | Run pulse, preview mix, see queue | Create programs, reservoirs, recipes |
 | Complete zone tasks due today | Farm-wide task backlog without zone filter |
 
-Farm-wide morning path and empty-state hints: [Phase 41](plans/phase_41_farm_hub_coherence.plan.md). Guardian zone-first guidance: [architecture §7.0f](farm-guardian-architecture.md#70f-zone-cockpit-phase-40).
+Farm-wide morning path and empty-state hints: [Phase 41](plans/archive/phase_41_farm_hub_coherence.plan.md). Guardian zone-first guidance: [architecture §7.0f](farm-guardian-architecture.md#70f-zone-cockpit-phase-40).
 
 ---
 
@@ -146,7 +146,7 @@ flowchart LR
 
 ## 3b. Farm hub & morning path (Phase 41)
 
-**Status:** Shipped. Plan: [`plans/phase_41_farm_hub_coherence.plan.md`](plans/phase_41_farm_hub_coherence.plan.md).
+**Status:** Shipped. Plan: [`plans/archive/phase_41_farm_hub_coherence.plan.md`](plans/archive/phase_41_farm_hub_coherence.plan.md).
 
 **Morning path (complements [tasks-first guide](tasks-first-operator-guide.md)):**
 
@@ -246,13 +246,13 @@ Clone inactive template rules for another zone: **`POST /farms/{id}/automation/r
 
 Open **Zones** → greenhouse zone → **Climate** tab: edit `greenhouse_climate` profile, view climate sensors, send typed commands (**deploy** / **retract** / **on** / **off** via `POST /actuators/{id}/command` or **Run pulse** where applicable → Pi `pending_command`), and review **GH —** rules. **Overview** tab shows farm-wide KPIs and photos; use **Climate** for motor commands and GH automation — not the legacy single-page scroll only.
 
-**Pattern detail:** [`pattern-playbooks.md`](pattern-playbooks.md) · Architecture: [`farm-guardian-architecture.md`](farm-guardian-architecture.md#70c-grow-environment-stack-phase-36-greenhouse-climate) · Plan: [`plans/phase_36_greenhouse_climate.plan.md`](plans/phase_36_greenhouse_climate.plan.md)
+**Pattern detail:** [`pattern-playbooks.md`](pattern-playbooks.md) · Architecture: [`farm-guardian-architecture.md`](farm-guardian-architecture.md#70c-grow-environment-stack-phase-36-greenhouse-climate) · Plan: [`plans/archive/phase_36_greenhouse_climate.plan.md`](plans/archive/phase_36_greenhouse_climate.plan.md)
 
 ---
 
 ## 5c. Comfort bands & what runs when (Phase 42 — shipped)
 
-**Status:** Shipped. Plan: [`plans/phase_42_comfort_targets_automation_plain_language.plan.md`](plans/phase_42_comfort_targets_automation_plain_language.plan.md). Depends on [Phase 40](plans/phase_40_unified_farmer_ux_zone_cockpit.plan.md) + [Phase 41](plans/phase_41_farm_hub_coherence.plan.md).
+**Status:** Shipped. Plan: [`plans/archive/phase_42_comfort_targets_automation_plain_language.plan.md`](plans/archive/phase_42_comfort_targets_automation_plain_language.plan.md). Depends on [Phase 40](plans/archive/phase_40_unified_farmer_ux_zone_cockpit.plan.md) + [Phase 41](plans/archive/phase_41_farm_hub_coherence.plan.md).
 
 **Goal:** Stop sending operators to raw **Setpoints**, **Schedules**, and **Rules** pages for everyday work. Same database fields; farmer labels and toggles.
 
@@ -287,7 +287,7 @@ Architecture: [`farm-guardian-architecture.md` §7.0h](farm-guardian-architectur
 
 **Requires:** `AI_ENABLED=true`, LLM configured ([`farm-guardian-ollama-setup.md`](farm-guardian-ollama-setup.md)), demo farm selected.
 
-**Full guide (triggers, inbox, starters, industry patterns):** [`guardian-change-requests-guide.md`](guardian-change-requests-guide.md) · Product spec through farmer phases: [`plans/guardian_pr_ux_through_farmer_phases.plan.md`](plans/guardian_pr_ux_through_farmer_phases.plan.md).
+**Full guide (triggers, inbox, starters, industry patterns):** [`guardian-change-requests-guide.md`](guardian-change-requests-guide.md) · Product spec through farmer phases: [`plans/archive/guardian_pr_ux_through_farmer_phases.plan.md`](plans/archive/guardian_pr_ux_through_farmer_phases.plan.md).
 
 Guardian is **not autonomous**. It is a **copilot** in chat and an **actor** only after you **Confirm** a change request (like approving a pull request). **Automation rules and alerts** are a separate layer — they run without chat and are not Guardian PRs.
 
@@ -386,7 +386,7 @@ Architecture detail: [`farm-guardian-architecture.md` §7.7](farm-guardian-archi
 
 ### 6e. Guardian on comfort & automation (Phase 42 — shipped)
 
-**Spec:** [`plans/phase_42_guardian_pr_spec.md`](plans/phase_42_guardian_pr_spec.md) · **Not** the same as [Phase 46](plans/phase_46_guardian_llm_tool_proposals.plan.md) (LLM opens PRs when matchers miss).
+**Spec:** [`plans/phase_42_guardian_pr_spec.md`](plans/phase_42_guardian_pr_spec.md) · **Not** the same as [Phase 46](plans/archive/phase_46_guardian_llm_tool_proposals.plan.md) (LLM opens PRs when matchers miss).
 
 **Starters (conversation chips):** On **Targets & schedules** (`/comfort-targets`) — tabs **Comfort bands**, **What runs when**, **Automation** — snapshot-aware prompts such as “Set humidity comfort band for Flower Room” or “Pause shade rule for this zone.” Chips **prefill chat**; they do not auto-Confirm.
 
@@ -417,7 +417,7 @@ If you get advice text but **no card**, matchers did not recognize the phrase �
 | Create a refill task from this low-stock alert | `create_task_from_alert` |
 | Create a task to check humidity | `create_task` |
 
-Guardian **cannot** adjust batch quantities or post receipts via Confirm — use the hub UI; broader NL writes are [Phase 46](plans/phase_46_guardian_llm_tool_proposals.plan.md).
+Guardian **cannot** adjust batch quantities or post receipts via Confirm — use the hub UI; broader NL writes are [Phase 46](plans/archive/phase_46_guardian_llm_tool_proposals.plan.md).
 
 ### 6g. Guardian during setup (Phase 44 — shipped)
 
@@ -431,7 +431,7 @@ Guardian **cannot** adjust batch quantities or post receipts via Confirm — use
 
 ### 6h. When Guardian opens a card from your words (Phase 46 — shipped)
 
-**Spec:** [`plans/phase_46_guardian_llm_tool_proposals.plan.md`](plans/phase_46_guardian_llm_tool_proposals.plan.md) · Guide: [`guardian-change-requests-guide.md` §3.3](guardian-change-requests-guide.md#33-when-the-llm-opens-a-card-phase-46--shipped)
+**Spec:** [`plans/archive/phase_46_guardian_llm_tool_proposals.plan.md`](plans/archive/phase_46_guardian_llm_tool_proposals.plan.md) · Guide: [`guardian-change-requests-guide.md` §3.3](guardian-change-requests-guide.md#33-when-the-llm-opens-a-card-phase-46--shipped)
 
 Most cards still come from **pattern matchers** after you send a message. When matchers miss, a **second path** may open a card: if you clearly asked for a change, you have **Operate**, and the API has **`GUARDIAN_LLM_PROPOSALS=true`**, Guardian parses **validated** structured tool JSON from the assistant reply — you still **Confirm**.
 
@@ -448,7 +448,7 @@ Most cards still come from **pattern matchers** after you send a message. When m
 
 ### 6i. Guardian on grow closure (Phase 53 — shipped)
 
-**Plan:** [`plans/phase_53_grow_stock_money_closure.plan.md`](plans/phase_53_grow_stock_money_closure.plan.md) · Architecture: [§7.0q](farm-guardian-architecture.md#70q-grow--stock--money-closure-phase-53--shipped).
+**Plan:** [`plans/archive/phase_53_grow_stock_money_closure.plan.md`](plans/archive/phase_53_grow_stock_money_closure.plan.md) · Architecture: [§7.0q](farm-guardian-architecture.md#70q-grow--stock--money-closure-phase-53--shipped).
 
 **Starters (no new Confirm tools):**
 
@@ -466,7 +466,7 @@ Most cards still come from **pattern matchers** after you send a message. When m
 
 ### 6j. Guardian ops read depth (Phase 55 — shipped)
 
-**Plan:** [`plans/phase_55_guardian_ops_grow_money.plan.md`](plans/phase_55_guardian_ops_grow_money.plan.md) · Spec: [`plans/phase_55_guardian_pr_spec.md`](plans/phase_55_guardian_pr_spec.md) · Architecture: [§7.0s](farm-guardian-architecture.md#70s-guardian-ops-read-depth-phase-55--shipped).
+**Plan:** [`plans/archive/phase_55_guardian_ops_grow_money.plan.md`](plans/archive/phase_55_guardian_ops_grow_money.plan.md) · Spec: [`plans/phase_55_guardian_pr_spec.md`](plans/phase_55_guardian_pr_spec.md) · Architecture: [§7.0s](farm-guardian-architecture.md#70s-guardian-ops-read-depth-phase-55--shipped).
 
 Four new **read tools** (no Confirm): **`summarize_cycle_cost`**, **`summarize_farm_spending`**, **`restock_priority`**, **`summarize_active_grows`**.
 
@@ -482,7 +482,7 @@ Four new **read tools** (no Confirm): **`summarize_cycle_cost`**, **`summarize_f
 
 ### 6k. Grow schema + harvest analytics (Phase 56 — shipped)
 
-**Plan:** [`plans/phase_56_grow_schema_harvest_analytics.plan.md`](plans/phase_56_grow_schema_harvest_analytics.plan.md) · Architecture: [§7.0t](farm-guardian-architecture.md#70t-grow-schema--harvest-analytics-phase-56--shipped).
+**Plan:** [`plans/archive/phase_56_grow_schema_harvest_analytics.plan.md`](plans/archive/phase_56_grow_schema_harvest_analytics.plan.md) · Architecture: [§7.0t](farm-guardian-architecture.md#70t-grow-schema--harvest-analytics-phase-56--shipped).
 
 | Surface | What you see |
 |---------|----------------|
@@ -498,7 +498,7 @@ Four new **read tools** (no Confirm): **`summarize_cycle_cost`**, **`summarize_f
 
 ### 6k-b. Crop knowledge base (Phase 64 — shipped)
 
-**Plan:** [`plans/phase_64_crop_knowledge_base.plan.md`](plans/phase_64_crop_knowledge_base.plan.md) · Architecture: [§7.0w](farm-guardian-architecture.md#70w-crop-knowledge-base-phase-64--shipped).
+**Plan:** [`plans/archive/phase_64_crop_knowledge_base.plan.md`](plans/archive/phase_64_crop_knowledge_base.plan.md) · Architecture: [§7.0w](farm-guardian-architecture.md#70w-crop-knowledge-base-phase-64--shipped).
 
 | Surface | What you do |
 |---------|-------------|
@@ -511,7 +511,7 @@ Four new **read tools** (no Confirm): **`summarize_cycle_cost`**, **`summarize_f
 
 ### 6m. Plants & crop knowledge chain (Phases 85–87 — shipped)
 
-**Plans:** [85](plans/phase_85_catalog_bound_plants.plan.md) · [86](plans/phase_86_grow_ops_catalog_chain.plan.md) · [87](plans/phase_87_crop_knowledge_operator_closure.plan.md) · **Runbook:** [`crop-knowledge-operator-runbook.md`](crop-knowledge-operator-runbook.md) · Architecture: [§7.0af](farm-guardian-architecture.md#70af-plants--crop-knowledge-chain-phases-8587--shipped).
+**Plans:** [85](plans/archive/phase_85_catalog_bound_plants.plan.md) · [86](plans/archive/phase_86_grow_ops_catalog_chain.plan.md) · [87](plans/archive/phase_87_crop_knowledge_operator_closure.plan.md) · **Runbook:** [`crop-knowledge-operator-runbook.md`](crop-knowledge-operator-runbook.md) · Architecture: [§7.0af](farm-guardian-architecture.md#70af-plants--crop-knowledge-chain-phases-8587--shipped).
 
 | Surface | What you do |
 |---------|-------------|
@@ -531,7 +531,7 @@ Four new **read tools** (no Confirm): **`summarize_cycle_cost`**, **`summarize_f
 
 ### 6l. Per-device Pi API keys (Phase 57 — shipped)
 
-**Plan:** [`plans/phase_57_pi_device_api_keys.plan.md`](plans/phase_57_pi_device_api_keys.plan.md) · Architecture: [§7.0u](farm-guardian-architecture.md#70u-per-device-pi-api-keys-phase-57--shipped).
+**Plan:** [`plans/archive/phase_57_pi_device_api_keys.plan.md`](plans/archive/phase_57_pi_device_api_keys.plan.md) · Architecture: [§7.0u](farm-guardian-architecture.md#70u-per-device-pi-api-keys-phase-57--shipped).
 
 | Surface | What you do |
 |---------|-------------|
@@ -545,7 +545,7 @@ Four new **read tools** (no Confirm): **`summarize_cycle_cost`**, **`summarize_f
 
 ### 6i. Morning walkthrough (Phase 60 — shipped)
 
-**Plan:** [`plans/phase_60_guardian_morning_walkthrough.plan.md`](plans/phase_60_guardian_morning_walkthrough.plan.md) · Architecture: [§7.0y](farm-guardian-architecture.md#70y-morning-walkthrough-phase-60--shipped).
+**Plan:** [`plans/archive/phase_60_guardian_morning_walkthrough.plan.md`](plans/archive/phase_60_guardian_morning_walkthrough.plan.md) · Architecture: [§7.0y](farm-guardian-architecture.md#70y-morning-walkthrough-phase-60--shipped).
 
 On the **Dashboard**, tap **Morning check** (or open **Farm Guardian** → **Morning walkthrough**). Guardian runs `walk_farm` — unacknowledged alerts, today's feeds, offline Pis, comfort band breaches, low stock — and reports only what needs attention. All-clear farms get a short positive summary.
 
@@ -553,7 +553,7 @@ On the **Dashboard**, tap **Morning check** (or open **Farm Guardian** → **Mor
 
 ### 6j. Proactive nudges (Phase 61 — shipped)
 
-**Plan:** [`plans/phase_61_guardian_proactive_nudges.plan.md`](plans/phase_61_guardian_proactive_nudges.plan.md) · Architecture: [§7.0z](farm-guardian-architecture.md#70z-proactive-nudges-phase-61--shipped).
+**Plan:** [`plans/archive/phase_61_guardian_proactive_nudges.plan.md`](plans/archive/phase_61_guardian_proactive_nudges.plan.md) · Architecture: [§7.0z](farm-guardian-architecture.md#70z-proactive-nudges-phase-61--shipped).
 
 When something crosses a threshold (unacked alert, missed feed, comfort breach, stale Pi config sync, low stock), the ✨ **Farm Guardian** tab shows an **amber dot**. Open Guardian to see one dismissable nudge strip — **Review** sends a grounded message with `nudge_category` context; **Dismiss** snoozes that category until the next page load.
 
@@ -563,7 +563,7 @@ Not browser push notifications — page-load only, one nudge at a time, rule-bas
 
 ### 6k. Guardian session memory (Phase 63 — shipped)
 
-**Plan:** [`plans/phase_63_guardian_session_memory.plan.md`](plans/phase_63_guardian_session_memory.plan.md) · Architecture: [§7.0aa](farm-guardian-architecture.md#70aa-session-memory-phase-63--shipped).
+**Plan:** [`plans/archive/phase_63_guardian_session_memory.plan.md`](plans/archive/phase_63_guardian_session_memory.plan.md) · Architecture: [§7.0aa](farm-guardian-architecture.md#70aa-session-memory-phase-63--shipped).
 
 When you start a **new** Guardian chat or switch sessions, the prior conversation is summarized (topic tags like `grow`, `comfort`, `feeding`) and stored per farm. The session list shows chips; on a related page you may see **Pick up where I left off**. Guardian uses matching summaries in the background — not shown in the transcript.
 
@@ -573,7 +573,7 @@ When you start a **new** Guardian chat or switch sessions, the prior conversatio
 
 ### 6m. Guardian Pi diagnostics (Phase 65 — shipped)
 
-**Plan:** [`plans/phase_65_guardian_pi_diagnostics.plan.md`](plans/phase_65_guardian_pi_diagnostics.plan.md) · Architecture: [§7.0v](farm-guardian-architecture.md#70v-guardian-pi--hardware-diagnostics-phase-65--shipped).
+**Plan:** [`plans/archive/phase_65_guardian_pi_diagnostics.plan.md`](plans/archive/phase_65_guardian_pi_diagnostics.plan.md) · Architecture: [§7.0v](farm-guardian-architecture.md#70v-guardian-pi--hardware-diagnostics-phase-65--shipped).
 
 On **Sensors**, **Controls**, or **Pi + HAT setup**, Ask Guardian can call `summarize_device_health` — Pi heartbeat, config sync age, sensor GPIO/source with reading staleness, actuator relay channels, and GPIO pin sharing. Guardian no longer asks you to read back wiring from memory; it reads the platform record and asks you to verify the physical wire matches.
 
@@ -598,7 +598,7 @@ Use this walkthrough on a **single box** (Postgres + API + UI + Ollama on one NU
 
 **Diagnostics:** `start procedure diagnose-sensor-no-reading`, `diagnose-actuator-wont-fire`, or `diagnose-pi-offline` for symptom-based checklists.
 
-Architecture: [`farm-guardian-architecture.md` §7.0e](farm-guardian-architecture.md#70e-offline-field-assistant-phase-37) · Plan: [`plans/phase_37_guardian_offline_field_assistant.plan.md`](plans/phase_37_guardian_offline_field_assistant.plan.md)
+Architecture: [`farm-guardian-architecture.md` §7.0e](farm-guardian-architecture.md#70e-offline-field-assistant-phase-37) · Plan: [`plans/archive/phase_37_guardian_offline_field_assistant.plan.md`](plans/archive/phase_37_guardian_offline_field_assistant.plan.md)
 
 ### Vision and photos — what to expect
 
@@ -618,13 +618,13 @@ On-prem gr33n, not a cloud subscription; Lite vs Full; LAN inference when config
 5. Optional — **grow setup:** empty zone + *"add my philodendron to {zone} with a light fertigation program"* → review setup pack card → Confirm → check `/plants` and `/fertigation` ([§6b](#6b-grow-setup-via-guardian-phase-32)).
 6. Optional: **Zones** → add a reference photo → ask Guardian about that zone.
 
-Architecture: [`farm-guardian-architecture.md`](farm-guardian-architecture.md) §7–§8 · Platform doc RAG: `make rag-ingest-platform-docs` · Bootstrap: [`local-operator-bootstrap.md`](local-operator-bootstrap.md#guardian-ready-demo-after-seed) · Phase 32 grow setup: [`plans/phase_32_guardian_grow_setup_prs.plan.md`](plans/phase_32_guardian_grow_setup_prs.plan.md) · Pi validation: [`plans/phase_31_field_validation_and_edge.plan.md`](plans/phase_31_field_validation_and_edge.plan.md).
+Architecture: [`farm-guardian-architecture.md`](farm-guardian-architecture.md) §7–§8 · Platform doc RAG: `make rag-ingest-platform-docs` · Bootstrap: [`local-operator-bootstrap.md`](local-operator-bootstrap.md#guardian-ready-demo-after-seed) · Phase 32 grow setup: [`plans/archive/phase_32_guardian_grow_setup_prs.plan.md`](plans/archive/phase_32_guardian_grow_setup_prs.plan.md) · Pi validation: [`plans/archive/phase_31_field_validation_and_edge.plan.md`](plans/archive/phase_31_field_validation_and_edge.plan.md).
 
 ---
 
 ## 7. Supplies, feeding & money (Phase 43)
 
-**Shipped.** Hubs WS1–WS8 on `main` including Guardian read + starters ([spec](plans/phase_43_guardian_pr_spec.md)). Plan: [`plans/phase_43_operations_stock_feeding_finance.plan.md`](plans/phase_43_operations_stock_feeding_finance.plan.md).
+**Shipped.** Hubs WS1–WS8 on `main` including Guardian read + starters ([spec](plans/phase_43_guardian_pr_spec.md)). Plan: [`plans/archive/phase_43_operations_stock_feeding_finance.plan.md`](plans/archive/phase_43_operations_stock_feeding_finance.plan.md).
 
 **Goal:** One **Operations** area for restock, feeding admin, and receipts — not three separate schema apps.
 
@@ -660,7 +660,7 @@ Architecture: [`farm-guardian-architecture.md` §7.0i](farm-guardian-architectur
 
 ### 7c. Grow + stock + money closure (Phase 53)
 
-**Shipped.** Closes the farmer loop without new migrations. Plan: [`plans/phase_53_grow_stock_money_closure.plan.md`](plans/phase_53_grow_stock_money_closure.plan.md).
+**Shipped.** Closes the farmer loop without new migrations. Plan: [`plans/archive/phase_53_grow_stock_money_closure.plan.md`](plans/archive/phase_53_grow_stock_money_closure.plan.md).
 
 | Job | Where | What to click |
 |-----|--------|----------------|
@@ -679,7 +679,7 @@ Architecture: [`farm-guardian-architecture.md` §7.0q](farm-guardian-architectur
 
 ### 7c.1 Task consumptions & operator runtime (Phase 58 — shipped)
 
-**Shipped.** Plan: [`plans/phase_58_task_consumptions_runtime.plan.md`](plans/phase_58_task_consumptions_runtime.plan.md).
+**Shipped.** Plan: [`plans/archive/phase_58_task_consumptions_runtime.plan.md`](plans/archive/phase_58_task_consumptions_runtime.plan.md).
 
 | Job | Where | What to click |
 |-----|--------|----------------|
@@ -725,7 +725,7 @@ Architecture: [`farm-guardian-architecture.md` §7.0r](farm-guardian-architectur
 
 Old bookmarks still work — `/feeding`, `/fertigation`, `/tasks`, `/alerts`, `/farm-knowledge`, `/catalog`, `/analytics`, and similar paths **redirect** into the right workspace tab. Use **Jump to** chips at the top of each workspace to cross-link (sidebar wiggle, Phase 49).
 
-Plan: [`plans/phase_68_workspace_shell_spa_nav.plan.md`](plans/phase_68_workspace_shell_spa_nav.plan.md) · **Vitest:** `phase-68-closure.test.js`, `workspaces.test.js`.
+Plan: [`plans/archive/phase_68_workspace_shell_spa_nav.plan.md`](plans/archive/phase_68_workspace_shell_spa_nav.plan.md) · **Vitest:** `phase-68-closure.test.js`, `workspaces.test.js`.
 
 ### 7f. Zone hub — edit everything here; Fleet for cross-zone (Phase 69)
 
@@ -737,7 +737,7 @@ Plan: [`plans/phase_68_workspace_shell_spa_nav.plan.md`](plans/phase_68_workspac
 
 Legacy list routes `/sensors`, `/actuators`, `/lighting` redirect to **Zones → Fleet**. Detail routes `/zones/:id` and `/sensors/:id` unchanged.
 
-Plan: [`plans/phase_69_zone_workspace_hub.plan.md`](plans/phase_69_zone_workspace_hub.plan.md) · **Vitest:** `phase-69-closure.test.js`, `zone-inline-edit.test.js`, `zone-fleet-tab.test.js`.
+Plan: [`plans/archive/phase_69_zone_workspace_hub.plan.md`](plans/archive/phase_69_zone_workspace_hub.plan.md) · **Vitest:** `phase-69-closure.test.js`, `zone-inline-edit.test.js`, `zone-fleet-tab.test.js`.
 
 ### 7g. Zone ops inbox — tasks, alerts, plants in the zone (Phase 74)
 
@@ -752,7 +752,7 @@ Plan: [`plans/phase_69_zone_workspace_hub.plan.md`](plans/phase_69_zone_workspac
 
 Legacy `/tasks`, `/alerts`, `/plants` redirect into zone or workspace tabs.
 
-Plan: [`plans/phase_74_zone_ops_inbox.plan.md`](plans/phase_74_zone_ops_inbox.plan.md).
+Plan: [`plans/archive/phase_74_zone_ops_inbox.plan.md`](plans/archive/phase_74_zone_ops_inbox.plan.md).
 
 ### 7h. Comfort & automation workspace (Phase 75)
 
@@ -767,7 +767,7 @@ Plan: [`plans/phase_74_zone_ops_inbox.plan.md`](plans/phase_74_zone_ops_inbox.pl
 
 Zone **Climate** tab stays the in-room editor; farm-wide admin = this workspace.
 
-Plan: [`plans/phase_75_automation_comfort_workspace.plan.md`](plans/phase_75_automation_comfort_workspace.plan.md).
+Plan: [`plans/archive/phase_75_automation_comfort_workspace.plan.md`](plans/archive/phase_75_automation_comfort_workspace.plan.md).
 
 ### 7i. Today dashboard alignment (Phase 76)
 
@@ -781,7 +781,7 @@ Plan: [`plans/phase_75_automation_comfort_workspace.plan.md`](plans/phase_75_aut
 | Morning strip chips | Same workspace paths (tasks → zone Ops, supplies → **Money**, schedules → **Comfort**) |
 | Mobile bottom bar | Today · Zones · Feed · **Targets** · More — **Alerts** removed (triage on Today + zone Ops) |
 
-Plan: [`plans/phase_76_today_dashboard_nav_alignment.plan.md`](plans/phase_76_today_dashboard_nav_alignment.plan.md).
+Plan: [`plans/archive/phase_76_today_dashboard_nav_alignment.plan.md`](plans/archive/phase_76_today_dashboard_nav_alignment.plan.md).
 
 ### 7j. Post-arc polish (Phase 77)
 
@@ -798,7 +798,7 @@ Plan: [`plans/phase_76_today_dashboard_nav_alignment.plan.md`](plans/phase_76_to
 
 **Final sidebar:** Today · Zones · Feed & water · Comfort & automation · Hardware · Money · (Animals*) · (Aquaponics*) · Help · Settings.
 
-Plan: [`plans/phase_77_post_arc_ui_polish.plan.md`](plans/phase_77_post_arc_ui_polish.plan.md) · Arc hub: [`plans/phase_68_73_spa_workspace_roadmap.plan.md`](plans/phase_68_73_spa_workspace_roadmap.plan.md) (68–77 **complete**).
+Plan: [`plans/archive/phase_77_post_arc_ui_polish.plan.md`](plans/archive/phase_77_post_arc_ui_polish.plan.md) · Arc hub: [`plans/phase_68_73_spa_workspace_roadmap.plan.md`](plans/phase_68_73_spa_workspace_roadmap.plan.md) (68–77 **complete**).
 
 ### 7k. Visual farm cockpit (Phases 164–168 — shipped)
 
@@ -819,7 +819,7 @@ Plan: [`plans/phase_77_post_arc_ui_polish.plan.md`](plans/phase_77_post_arc_ui_p
 
 **Vitest:** `farm-visual-status.test.js`, `farm-canvas.test.js`, `farm-zone-stack.test.js`, `zone-quick-actions.test.js`, `phase-164-closure.test.js` … `phase-168-closure.test.js`.
 
-Plans: [`phase_164_demo_seed_overhaul.plan.md`](plans/phase_164_demo_seed_overhaul.plan.md) · [`phase_165_today_farm_layout_api.plan.md`](plans/phase_165_today_farm_layout_api.plan.md) · [`phase_166_today_visual_farm_canvas.plan.md`](plans/phase_166_today_visual_farm_canvas.plan.md) · [`phase_167_mobile_stack_quick_actions.plan.md`](plans/phase_167_mobile_stack_quick_actions.plan.md) · [`phase_168_today_cleanup_polish.plan.md`](plans/phase_168_today_cleanup_polish.plan.md) · [`phase_169_today_attention_cockpit.plan.md`](plans/phase_169_today_attention_cockpit.plan.md) · [`phase_170_today_guardian_one_tap.plan.md`](plans/phase_170_today_guardian_one_tap.plan.md).
+Plans: [`phase_164_demo_seed_overhaul.plan.md`](plans/archive/phase_164_demo_seed_overhaul.plan.md) · [`phase_165_today_farm_layout_api.plan.md`](plans/archive/phase_165_today_farm_layout_api.plan.md) · [`phase_166_today_visual_farm_canvas.plan.md`](plans/archive/phase_166_today_visual_farm_canvas.plan.md) · [`phase_167_mobile_stack_quick_actions.plan.md`](plans/archive/phase_167_mobile_stack_quick_actions.plan.md) · [`phase_168_today_cleanup_polish.plan.md`](plans/archive/phase_168_today_cleanup_polish.plan.md) · [`phase_169_today_attention_cockpit.plan.md`](plans/archive/phase_169_today_attention_cockpit.plan.md) · [`phase_170_today_guardian_one_tap.plan.md`](plans/archive/phase_170_today_guardian_one_tap.plan.md).
 
 ### 7l. Today excellence (Phases 173–177 — shipped)
 
@@ -838,7 +838,7 @@ Plans: [`phase_164_demo_seed_overhaul.plan.md`](plans/phase_164_demo_seed_overha
 
 **Vitest:** `phase-173-closure.test.js` … `phase-177-closure.test.js`, `today-excellence-arc.test.js`, `farm-today-coach-marks.test.js`
 
-Plans: [`phase_173_today_large_farm_navigation.plan.md`](plans/phase_173_today_large_farm_navigation.plan.md) · [`phase_174_today_visual_hierarchy.plan.md`](plans/phase_174_today_visual_hierarchy.plan.md) · [`phase_175_today_farm_first_actions.plan.md`](plans/phase_175_today_farm_first_actions.plan.md) · [`phase_176_today_farm_pulse.plan.md`](plans/phase_176_today_farm_pulse.plan.md) · [`phase_177_today_first_impression.plan.md`](plans/phase_177_today_first_impression.plan.md) · Roadmap: [`phase_173_177_today_excellence_roadmap.plan.md`](plans/phase_173_177_today_excellence_roadmap.plan.md)
+Plans: [`phase_173_today_large_farm_navigation.plan.md`](plans/archive/phase_173_today_large_farm_navigation.plan.md) · [`phase_174_today_visual_hierarchy.plan.md`](plans/archive/phase_174_today_visual_hierarchy.plan.md) · [`phase_175_today_farm_first_actions.plan.md`](plans/archive/phase_175_today_farm_first_actions.plan.md) · [`phase_176_today_farm_pulse.plan.md`](plans/archive/phase_176_today_farm_pulse.plan.md) · [`phase_177_today_first_impression.plan.md`](plans/archive/phase_177_today_first_impression.plan.md) · Roadmap: [`phase_173_177_today_excellence_roadmap.plan.md`](plans/phase_173_177_today_excellence_roadmap.plan.md)
 
 ### 7m. Help knowledge surfaces (Phase 180 — shipped)
 
@@ -859,7 +859,7 @@ Plans: [`phase_173_today_large_farm_navigation.plan.md`](plans/phase_173_today_l
 
 **API:** `GET /farms/{id}/rag/docs?doc_path=…` — ordered chunks for citation doc view (farm-scoped).
 
-**Vitest:** `phase-180-closure.test.js`, `phase-183-closure.test.js` · Plans: [`phase_180_knowledge_surfaces_discoverability.plan.md`](plans/phase_180_knowledge_surfaces_discoverability.plan.md) · [`phase_183_guardian_knowledge_and_revise_followups.plan.md`](plans/phase_183_guardian_knowledge_and_revise_followups.plan.md)
+**Vitest:** `phase-180-closure.test.js`, `phase-183-closure.test.js` · Plans: [`phase_180_knowledge_surfaces_discoverability.plan.md`](plans/archive/phase_180_knowledge_surfaces_discoverability.plan.md) · [`phase_183_guardian_knowledge_and_revise_followups.plan.md`](plans/archive/phase_183_guardian_knowledge_and_revise_followups.plan.md)
 
 ---
 
@@ -867,49 +867,49 @@ Plans: [`phase_173_today_large_farm_navigation.plan.md`](plans/phase_173_today_l
 
 **Shipped.** Optional Tier 3 on Today — sun times always work offline; when the API has `WEATHER_PROVIDER=openmeteo` (or a paid provider) and the farm **opts in** under **Settings → Farm site**, the Site Strip shows outdoor temp/cloud cover and a forecast badge (`● Forecast live`, `● Forecast cached (offline)`, `● Forecast off`). WAN loss degrades to cached-then-offline without breaking the sun dial.
 
-**Env:** `WEATHER_PROVIDER`, `WEATHER_CACHE_MINUTES` — see [`environment-variables.md`](environment-variables.md). Plan: [`phase_178_online_weather_forecast.plan.md`](plans/phase_178_online_weather_forecast.plan.md)
+**Env:** `WEATHER_PROVIDER`, `WEATHER_CACHE_MINUTES` — see [`environment-variables.md`](environment-variables.md). Plan: [`phase_178_online_weather_forecast.plan.md`](plans/archive/phase_178_online_weather_forecast.plan.md)
 
 ### 7o. Guardian chat polish (Phases 179–182 — shipped)
 
 **Shipped.** Full-page `/chat` is calmer during streaming (one progress row), the composer collapses starters/attach/mode behind **+ Attach photos, starters, mode** after the first turn, and the pending-count badge lives on the **TopBar** only (sidebar ✨ shows readiness, not duplicate counts). Pending tab lists are scrollable newest-first; **Refine** shows a one-line hint under the input. **Phase 195:** the sticky "N requests — newest first" count row uses a solid background so proposal text does not show through when scrolling. Expired JWT stops nav polling after one 401 redirect.
 
-Plans: [`phase_179_guardian_chat_status_consolidation.plan.md`](plans/phase_179_guardian_chat_status_consolidation.plan.md) · [`phase_181_guardian_composer_diet.plan.md`](plans/phase_181_guardian_composer_diet.plan.md) · [`phase_182_guardian_quick_ux_wins.plan.md`](plans/phase_182_guardian_quick_ux_wins.plan.md)
+Plans: [`phase_179_guardian_chat_status_consolidation.plan.md`](plans/archive/phase_179_guardian_chat_status_consolidation.plan.md) · [`phase_181_guardian_composer_diet.plan.md`](plans/archive/phase_181_guardian_composer_diet.plan.md) · [`phase_182_guardian_quick_ux_wins.plan.md`](plans/archive/phase_182_guardian_quick_ux_wins.plan.md)
 
 ### 7p. Multi-turn PR smoke (Phase 184 — shipped)
 
 **Shipped (script + closure tests).** `make guardian-qa-change-requests-ui` seeds **1 confirmed + 4 pending** change requests from multi-turn dialogues (feed revise, full task Refine chain, schedule, ack). Optional operator walkthrough: open `/chat?tab=pending` to exercise Confirm / Refine / Dismiss. Quick CPU path: `make guardian-qa-change-requests-ui-quick` (ack + schedule only).
 
-Plan: [`phase_184_guardian_pr_conversation_smoke.plan.md`](plans/phase_184_guardian_pr_conversation_smoke.plan.md) · [`ci-guardian-qa.md`](ci-guardian-qa.md)
+Plan: [`phase_184_guardian_pr_conversation_smoke.plan.md`](plans/archive/phase_184_guardian_pr_conversation_smoke.plan.md) · [`ci-guardian-qa.md`](ci-guardian-qa.md)
 
 ### 7q. Task zone revise (Phase 185 — shipped)
 
 **Shipped.** Pending **create task** proposals accept zone assignment in a Refine turn (`Put it in Veg Room — that is the zone for this task.`) or numeric `zone N` — same revision chain as title/description.
 
-Plan: [`phase_185_guardian_task_zone_revise.plan.md`](plans/phase_185_guardian_task_zone_revise.plan.md)
+Plan: [`phase_185_guardian_task_zone_revise.plan.md`](plans/archive/phase_185_guardian_task_zone_revise.plan.md)
 
 ### 7r. Task due_date revise (Phase 186 — shipped)
 
 **Shipped.** Pending **create task** proposals accept ISO due-date Refine turns (`set the due date to 2026-07-20`); Confirm persists `due_date` on the task row.
 
-Plan: [`phase_186_guardian_task_due_date_revise.plan.md`](plans/phase_186_guardian_task_due_date_revise.plan.md)
+Plan: [`phase_186_guardian_task_due_date_revise.plan.md`](plans/archive/phase_186_guardian_task_due_date_revise.plan.md)
 
 ### 7s. Relative due_date revise (Phase 187 — shipped)
 
 **Shipped.** Refine turns like `make it due tomorrow` or `due in 3 days` resolve to `YYYY-MM-DD` and bump `Revision`. Together with 185–186, the task smoke dialogue runs **four turns** (create → zone → title → due tomorrow) at **rev ≥4**.
 
-Plan: [`phase_187_guardian_relative_due_date_revise.plan.md`](plans/phase_187_guardian_relative_due_date_revise.plan.md) · Arc summary: [`current-state.md` § sit-in 179–187](current-state.md#sit-in-arc--guardian-ux--knowledge--task-revise-phases-179187--shipped)
+Plan: [`phase_187_guardian_relative_due_date_revise.plan.md`](plans/archive/phase_187_guardian_relative_due_date_revise.plan.md) · Arc summary: [`current-state.md` § sit-in 179–187](current-state.md#sit-in-arc--guardian-ux--knowledge--task-revise-phases-179187--shipped)
 
 ### 7t. Task dialogue eval re-run (Phase 198 — shipped)
 
 **Shipped.** After Phase 192, `make guardian-qa-change-requests-ui-task` passes with API restarted (~90–120 min CPU): rev 4, `Refill calcium nitrate`, zone + due tomorrow. **Restart API first** (`go run` does not hot-reload). See [`ci-guardian-qa.md`](ci-guardian-qa.md) for failure signatures and timing.
 
-Plan: [`phase_198_guardian_task_dialogue_eval_rerun.plan.md`](plans/phase_198_guardian_task_dialogue_eval_rerun.plan.md)
+Plan: [`phase_198_guardian_task_dialogue_eval_rerun.plan.md`](plans/archive/phase_198_guardian_task_dialogue_eval_rerun.plan.md)
 
 ---
 
 ## 7b. Feeding & water for this zone (Phase 47)
 
-**Shipped.** Completes the Water story from [Phase 40](plans/phase_40_unified_farmer_ux_zone_cockpit.plan.md) WS5 and [Phase 41](plans/phase_41_farm_hub_coherence.plan.md) farm hub links. Plan: [`plans/phase_47_feeding_water_plain_language.plan.md`](plans/phase_47_feeding_water_plain_language.plan.md) · Words: [`farmer-vocabulary.md`](farmer-vocabulary.md).
+**Shipped.** Completes the Water story from [Phase 40](plans/archive/phase_40_unified_farmer_ux_zone_cockpit.plan.md) WS5 and [Phase 41](plans/archive/phase_41_farm_hub_coherence.plan.md) farm hub links. Plan: [`plans/archive/phase_47_feeding_water_plain_language.plan.md`](plans/archive/phase_47_feeding_water_plain_language.plan.md) · Words: [`farmer-vocabulary.md`](farmer-vocabulary.md).
 
 **One question:** *How does this zone get water?*
 
@@ -919,7 +919,7 @@ Plan: [`phase_198_guardian_task_dialogue_eval_rerun.plan.md`](plans/phase_198_gu
 4. **Feeding plan** card — inline edit volume, daily time, or **Water only** (irrigation without nutrients); wizard when no plan exists.
 5. **Run feed now** or **Pulse pump** when you need manual control.
 6. **Reservoir** — Ready or Needs top-up.
-7. Farm-wide list: **Feed & water** (`/feeding`) — one card per zone; `?zone_id=` filter from [Phase 41](plans/phase_41_farm_hub_coherence.plan.md).
+7. Farm-wide list: **Feed & water** (`/feeding`) — one card per zone; `?zone_id=` filter from [Phase 41](plans/archive/phase_41_farm_hub_coherence.plan.md).
 8. **Ask gr33n** starters on Water and the hub: next feed, run now safe?, switch to water-only.
 9. Recipes, mixing log, six tabs → **Operations → Feeding (details)** or **Advanced → Feeding (technical)**.
 
@@ -933,7 +933,7 @@ Architecture: [`farm-guardian-architecture.md` §7.0m](farm-guardian-architectur
 
 ### 6n. Hands-free field assistant (Phase 67 — shipped)
 
-**Plan:** [`plans/phase_67_guardian_field_assistant.plan.md`](plans/phase_67_guardian_field_assistant.plan.md) · Architecture: [§7.0ad](farm-guardian-architecture.md#70ad-hands-free-field-assistant-phase-67--shipped).
+**Plan:** [`plans/archive/phase_67_guardian_field_assistant.plan.md`](plans/archive/phase_67_guardian_field_assistant.plan.md) · Architecture: [§7.0ad](farm-guardian-architecture.md#70ad-hands-free-field-assistant-phase-67--shipped).
 
 | Job | Where | What to click |
 |-----|--------|----------------|
@@ -948,7 +948,7 @@ Architecture: [`farm-guardian-architecture.md` §7.0m](farm-guardian-architectur
 
 ### 6o. Enterprise agronomy bootstrap (Phase 83 — shipped)
 
-**Plan:** [`plans/phase_83_enterprise_agronomy_seed_pack.plan.md`](plans/phase_83_enterprise_agronomy_seed_pack.plan.md) · Architecture: [§7.0ae](farm-guardian-architecture.md#70ae-enterprise-agronomy-bootstrap-phase-83--shipped) · Closure: [`phase-83-closure.md`](plans/phase-83-closure.md).
+**Plan:** [`plans/archive/phase_83_enterprise_agronomy_seed_pack.plan.md`](plans/archive/phase_83_enterprise_agronomy_seed_pack.plan.md) · Architecture: [§7.0ae](farm-guardian-architecture.md#70ae-enterprise-agronomy-bootstrap-phase-83--shipped) · Closure: [`phase-83-closure.md`](plans/phase-83-closure.md).
 
 **Integrator path (new warehouse / farm):**
 
@@ -971,7 +971,7 @@ make guardian-bootstrap-farm FARM_ID=1   # needs EMBEDDING_API_KEY for ingest
 
 ### 8a. Farm site & daylight (Phase 66 — shipped)
 
-**Shipped.** Plan: [`plans/phase_66_weather_site_context.plan.md`](plans/phase_66_weather_site_context.plan.md).
+**Shipped.** Plan: [`plans/archive/phase_66_weather_site_context.plan.md`](plans/archive/phase_66_weather_site_context.plan.md).
 
 | Job | Where | What to click |
 |-----|--------|----------------|
@@ -990,7 +990,7 @@ Architecture: [`farm-guardian-architecture.md` §7.0ac](farm-guardian-architectu
 
 ## 8. Getting started & edge install (Phase 44 — shipped)
 
-**Shipped.** Plan: [`plans/phase_44_getting_started_edge_wizard.plan.md`](plans/phase_44_getting_started_edge_wizard.plan.md) · Guardian: [§6g](#6g-guardian-during-setup-phase-44--shipped).
+**Shipped.** Plan: [`plans/archive/phase_44_getting_started_edge_wizard.plan.md`](plans/archive/phase_44_getting_started_edge_wizard.plan.md) · Guardian: [§6g](#6g-guardian-during-setup-phase-44--shipped).
 
 **Rule:** Use **wizards** first. Guardian is for questions and the grow-setup **Confirm** bundle — not the only path.
 
@@ -1109,15 +1109,15 @@ Matcher misses from sit-in feed Phase 46 — not a blocker for polish closure (O
 | [local-operator-bootstrap.md](local-operator-bootstrap.md) | First-time env, DB, seed, URLs, Guardian agent demo |
 | [farm-guardian-architecture.md](farm-guardian-architecture.md) | Request flow, PR inbox, operator expectations (§8) |
 | [farm-guardian-persona-platform-context.md](farm-guardian-persona-platform-context.md) | What Guardian is told about on-prem gr33n (WS9) |
-| [plans/phase_35_lighting_domain.plan.md](plans/phase_35_lighting_domain.plan.md) | Photoperiod programs, presets, `/lighting` UI (Phase 35) |
-| [plans/phase_38_plant_needs_ui_and_pulse_commands.plan.md](plans/phase_38_plant_needs_ui_and_pulse_commands.plan.md) | Zone Water/Light/Climate tabs, timed pump pulses (Phase 38) |
-| [plans/phase_39_edge_fertigation_execution.plan.md](plans/phase_39_edge_fertigation_execution.plan.md) | Shipped: device command queue, automated mix on Pi (Phase 39) |
-| [plans/phase_36_greenhouse_climate.plan.md](plans/phase_36_greenhouse_climate.plan.md) | Greenhouse profile, typed actuators, shade/fan rules (Phase 36) |
+| [plans/archive/phase_35_lighting_domain.plan.md](plans/archive/phase_35_lighting_domain.plan.md) | Photoperiod programs, presets, `/lighting` UI (Phase 35) |
+| [plans/archive/phase_38_plant_needs_ui_and_pulse_commands.plan.md](plans/archive/phase_38_plant_needs_ui_and_pulse_commands.plan.md) | Zone Water/Light/Climate tabs, timed pump pulses (Phase 38) |
+| [plans/archive/phase_39_edge_fertigation_execution.plan.md](plans/archive/phase_39_edge_fertigation_execution.plan.md) | Shipped: device command queue, automated mix on Pi (Phase 39) |
+| [plans/archive/phase_36_greenhouse_climate.plan.md](plans/archive/phase_36_greenhouse_climate.plan.md) | Greenhouse profile, typed actuators, shade/fan rules (Phase 36) |
 | [pattern-playbooks.md](pattern-playbooks.md) | `greenhouse_climate_v1` bootstrap pattern |
-| [plans/phase_32_guardian_grow_setup_prs.plan.md](plans/phase_32_guardian_grow_setup_prs.plan.md) | Grow setup PR bundle (Phase 32) |
-| [plans/phase_47_feeding_water_plain_language.plan.md](plans/phase_47_feeding_water_plain_language.plan.md) | Feeding & water plain language (Phase 47) |
+| [plans/archive/phase_32_guardian_grow_setup_prs.plan.md](plans/archive/phase_32_guardian_grow_setup_prs.plan.md) | Grow setup PR bundle (Phase 32) |
+| [plans/archive/phase_47_feeding_water_plain_language.plan.md](plans/archive/phase_47_feeding_water_plain_language.plan.md) | Feeding & water plain language (Phase 47) |
 | [farmer-vocabulary.md](farmer-vocabulary.md) | UI language contract for grow paths |
-| [plans/phase_31_field_validation_and_edge.plan.md](plans/phase_31_field_validation_and_edge.plan.md) | Pi / breadboard validation after actuator PRs |
+| [plans/archive/phase_31_field_validation_and_edge.plan.md](plans/archive/phase_31_field_validation_and_edge.plan.md) | Pi / breadboard validation after actuator PRs |
 | [audit-events-operator-playbook.md](audit-events-operator-playbook.md) | `guardian_tool_executed` after Confirm |
 | [operator-troubleshooting.md](operator-troubleshooting.md) | 401 / empty farms / reading logs |
 | [operator-logging-runbook.md](operator-logging-runbook.md) | Capture & retention for **`slog`** — Compose rotation, Loki sketch; **logs ≠ hypertable pruning** |

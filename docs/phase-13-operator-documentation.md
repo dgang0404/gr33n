@@ -1,6 +1,6 @@
 # Phase 13 — operator documentation index
 
-Phase 13 extends Phase 12 with receiver-side Insert Commons, farm audit APIs, deeper finance and offline behavior, multi-farm organizations (usage metering hooks), and optional Capacitor packaging. This page is the **single map** for operators and integrators; implementation detail lives in linked documents and in [`openapi.yaml`](../openapi.yaml). **Current engineering focus** is Phase 14 — see [`plans/phase_14_network_and_commons.plan.md`](plans/phase_14_network_and_commons.plan.md) and the Phase 14 operator index [`phase-14-operator-documentation.md`](phase-14-operator-documentation.md).
+Phase 13 extends Phase 12 with receiver-side Insert Commons, farm audit APIs, deeper finance and offline behavior, multi-farm organizations (usage metering hooks), and optional Capacitor packaging. This page is the **single map** for operators and integrators; implementation detail lives in linked documents and in [`openapi.yaml`](../openapi.yaml). **Current engineering focus** is Phase 14 — see [`plans/archive/phase_14_network_and_commons.plan.md`](plans/archive/phase_14_network_and_commons.plan.md) and the Phase 14 operator index [`phase-14-operator-documentation.md`](phase-14-operator-documentation.md).
 
 ## API contract (machine-readable)
 
@@ -20,7 +20,7 @@ Phase 13 extends Phase 12 with receiver-side Insert Commons, farm audit APIs, de
 
 ## Planning and scope
 
-- **[`plans/phase_13_platform_evolution.plan.md`](plans/phase_13_platform_evolution.plan.md)** — Workstreams WS1–WS7 and explicit out-of-scope items.
+- **[`plans/archive/phase_13_platform_evolution.plan.md`](plans/archive/phase_13_platform_evolution.plan.md)** — Workstreams WS1–WS7 and explicit out-of-scope items.
 
 ## Quick environment pointers
 

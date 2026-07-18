@@ -12,7 +12,7 @@ const repoRoot = join(process.cwd(), '..')
 describe('Phase 60 WS5 / OC-60 — morning walkthrough closure', () => {
   it('documents walk_farm read tool and architecture section', () => {
     const arch = readFileSync(join(repoDocs, 'farm-guardian-architecture.md'), 'utf8')
-    const plan = readFileSync(join(repoDocs, 'plans/phase_60_guardian_morning_walkthrough.plan.md'), 'utf8')
+    const plan = readFileSync(join(repoDocs, 'plans/archive/phase_60_guardian_morning_walkthrough.plan.md'), 'utf8')
     expect(existsSync(join(repoRoot, 'internal/farmguardian/readtools_walk.go'))).toBe(true)
     expect(arch).toContain('walk_farm')
     expect(plan).toContain('**Shipped.**')

@@ -14,7 +14,7 @@ const repoRoot = join(process.cwd(), '..')
 describe('Phase 152 — live accuracy guardrails', () => {
   it('plan documents WS1 + WS2 shipped and WS2b planned', () => {
     const plan = readFileSync(
-      join(repoDocs, 'plans/phase_152_guardian_live_accuracy_guardrails.plan.md'),
+      join(repoDocs, 'plans/archive/phase_152_guardian_live_accuracy_guardrails.plan.md'),
       'utf8',
     )
     expect(plan).toContain('applyAnswerAccuracyNote')

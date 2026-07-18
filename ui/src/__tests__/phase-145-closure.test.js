@@ -11,7 +11,7 @@ const repoRoot = join(process.cwd(), '..')
 describe('Phase 145 — topic drift & grounding closure', () => {
   it('plan is shipped', () => {
     const plan = readFileSync(
-      join(repoDocs, 'plans/phase_145_guardian_topic_drift_and_grounding.plan.md'),
+      join(repoDocs, 'plans/archive/phase_145_guardian_topic_drift_and_grounding.plan.md'),
       'utf8',
     )
     expect(plan).toContain('**Shipped.**')

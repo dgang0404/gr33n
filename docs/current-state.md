@@ -163,7 +163,7 @@ Operator feedback from the **2026-07-13 sit-in** drove nine phases on `/chat`, H
 
 **Closure tests (Vitest):** `phase-179` through `phase-187-closure.test.js` · **Go:** `./internal/farmguardian/...` (revise matchers + scenario runner).
 
-Plans: [179](plans/phase_179_guardian_chat_status_consolidation.plan.md) · [180](plans/phase_180_knowledge_surfaces_discoverability.plan.md) · [181](plans/phase_181_guardian_composer_diet.plan.md) · [182](plans/phase_182_guardian_quick_ux_wins.plan.md) · [183](plans/phase_183_guardian_knowledge_and_revise_followups.plan.md) · [184](plans/phase_184_guardian_pr_conversation_smoke.plan.md) · [185](plans/phase_185_guardian_task_zone_revise.plan.md) · [186](plans/phase_186_guardian_task_due_date_revise.plan.md) · [187](plans/phase_187_guardian_relative_due_date_revise.plan.md) · Operator tour [§7m–§7s](operator-tour.md#7m-help-knowledge-surfaces-phase-180--shipped) · [`ci-guardian-qa.md`](ci-guardian-qa.md)
+Plans: [179](plans/archive/phase_179_guardian_chat_status_consolidation.plan.md) · [180](plans/archive/phase_180_knowledge_surfaces_discoverability.plan.md) · [181](plans/archive/phase_181_guardian_composer_diet.plan.md) · [182](plans/archive/phase_182_guardian_quick_ux_wins.plan.md) · [183](plans/archive/phase_183_guardian_knowledge_and_revise_followups.plan.md) · [184](plans/archive/phase_184_guardian_pr_conversation_smoke.plan.md) · [185](plans/archive/phase_185_guardian_task_zone_revise.plan.md) · [186](plans/archive/phase_186_guardian_task_due_date_revise.plan.md) · [187](plans/archive/phase_187_guardian_relative_due_date_revise.plan.md) · Operator tour [§7m–§7s](operator-tour.md#7m-help-knowledge-surfaces-phase-180--shipped) · [`ci-guardian-qa.md`](ci-guardian-qa.md)
 
 ## Guardian answer-quality audit (Phases 188–191 — shipped)
 
@@ -180,7 +180,7 @@ Same pass also fixed two live UI reports: Guardian chat session-list topic chips
 
 **Closure tests (Vitest):** `phase-188` through `phase-191-closure.test.js` · **Go:** `./internal/farmguardian/...` (`answer_leak_test.go`, `answer_inline_metadata_test.go`, `answer_accuracy_test.go`, `proposals_revise_test.go`) + `./internal/rag/llm/...` (`max_tokens_test.go`).
 
-Plans: [188](plans/phase_188_guardian_answer_quality_audit.plan.md) · [189](plans/phase_189_guardian_inline_source_metadata_redaction.plan.md) · [190](plans/phase_190_guardian_dangling_list_intro_truncation.plan.md) · [191](plans/phase_191_guardian_revise_question_phrased_clarification.plan.md)
+Plans: [188](plans/archive/phase_188_guardian_answer_quality_audit.plan.md) · [189](plans/archive/phase_189_guardian_inline_source_metadata_redaction.plan.md) · [190](plans/archive/phase_190_guardian_dangling_list_intro_truncation.plan.md) · [191](plans/archive/phase_191_guardian_revise_question_phrased_clarification.plan.md)
 
 ## Pending + UI polish arc (Phases 192–200 — shipped)
 
@@ -196,7 +196,7 @@ Plans: [188](plans/phase_188_guardian_answer_quality_audit.plan.md) · [189](pla
 | **199** | Consolidate Help workspace stickies | ✅ |
 | **200** ✅ | `accuracy_note` round-trip audit (persist → reload → banner; eval archive) | shipped |
 
-Plan: [192](plans/phase_192_guardian_due_date_title_clobber.plan.md) · [193–200](plans/phase_193_help_library_sticky_bleed.plan.md)
+Plan: [192](plans/archive/phase_192_guardian_due_date_title_clobber.plan.md) · [193–200](plans/archive/phase_193_help_library_sticky_bleed.plan.md)
 
 ## Online weather forecast (Phase 178)
 
@@ -207,7 +207,7 @@ Optional Tier 3 forecast on top of Phase 66 offline solar math:
 - **Today** — `FarmSiteStrip` forecast cell + `● Forecast live` / `cached (offline)` badge (sun dial unchanged when WAN drops)
 - **Guardian** — `site_weather` read tool cites tonight low + frost when forecast tier is present
 
-Plan: [`phase_178_online_weather_forecast.plan.md`](plans/phase_178_online_weather_forecast.plan.md) · Operator tour [§7n](operator-tour.md#7n-online-weather-forecast-phase-178--shipped)
+Plan: [`phase_178_online_weather_forecast.plan.md`](plans/archive/phase_178_online_weather_forecast.plan.md) · Operator tour [§7n](operator-tour.md#7n-online-weather-forecast-phase-178--shipped)
 
 ---
 

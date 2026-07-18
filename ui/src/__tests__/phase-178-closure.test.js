@@ -10,7 +10,7 @@ const repoDocs = join(repoRoot, 'docs')
 
 describe('Phase 178 — online weather forecast closure', () => {
   it('plan documents Tier 3 scope', () => {
-    const plan = readFileSync(join(repoDocs, 'plans/phase_178_online_weather_forecast.plan.md'), 'utf8')
+    const plan = readFileSync(join(repoDocs, 'plans/archive/phase_178_online_weather_forecast.plan.md'), 'utf8')
     expect(plan).toContain('WEATHER_PROVIDER')
     expect(plan).toContain('online_forecast')
   })

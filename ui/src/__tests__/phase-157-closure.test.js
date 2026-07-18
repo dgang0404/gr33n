@@ -21,10 +21,9 @@ describe('Phase 157 — docs consolidation', () => {
     }
   })
 
-  it('archives phase 88-92 with stubs at old paths', () => {
+  it('archives phase 88-92 under docs/plans/archive/ (Phase 206 removed stubs)', () => {
     expect(existsSync(join(docs, 'plans/archive/phase_88_domain_enums_api.plan.md'))).toBe(true)
-    const stub = readFileSync(join(docs, 'plans/phase_88_domain_enums_api.plan.md'), 'utf8')
-    expect(stub).toContain('archive/phase_88_domain_enums_api.plan.md')
+    expect(existsSync(join(docs, 'plans/phase_88_domain_enums_api.plan.md'))).toBe(false)
   })
 
   it('phase-14 index links current-state and archive', () => {

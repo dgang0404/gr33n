@@ -14,4 +14,4 @@ This note is for **docs, OpenAPI text, and UI copy** (not SQL schema names — t
 
 ## Related
 
-- Phase plan: [Phase 20.9b — terminology & copy pass](plans/phase_20_9b_terminology_and_copy_pass.plan.md) (checklist).
+- Phase plan: [Phase 20.9b — terminology & copy pass](plans/archive/phase_20_9b_terminology_and_copy_pass.plan.md) (checklist).

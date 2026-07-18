@@ -60,7 +60,7 @@ describe('Phase 76 WS6 / OC-76 — Today dashboard alignment', () => {
   })
 
   it('plan and operator-tour document Phase 76 shipped', () => {
-    const plan = readFileSync(join(repoDocs, 'plans/phase_76_today_dashboard_nav_alignment.plan.md'), 'utf8')
+    const plan = readFileSync(join(repoDocs, 'plans/archive/phase_76_today_dashboard_nav_alignment.plan.md'), 'utf8')
     const tour = readFileSync(join(repoDocs, 'operator-tour.md'), 'utf8')
     const roadmap = readFileSync(join(repoDocs, 'plans/phase_68_73_spa_workspace_roadmap.plan.md'), 'utf8')
     expect(plan).toContain('**Shipped.**')

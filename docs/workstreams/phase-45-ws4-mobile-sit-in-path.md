@@ -105,5 +105,5 @@ cd ui && npm run cap:open:android
 | Doc | Use |
 |-----|-----|
 | [operator-tour.md §10c](../operator-tour.md#10c-mobile-distribution-phase-45-ws4--shipped) | Operator summary |
-| [phase_45_farmer_validation_whole_app_polish.plan.md](../plans/phase_45_farmer_validation_whole_app_polish.plan.md) | Parent WS4 |
-| [phase_18_platform_polish.plan.md](../plans/phase_18_platform_polish.plan.md) | Mobile nav / drawer hardening |
+| [phase_45_farmer_validation_whole_app_polish.plan.md](../plans/archive/phase_45_farmer_validation_whole_app_polish.plan.md) | Parent WS4 |
+| [phase_18_platform_polish.plan.md](../plans/archive/phase_18_platform_polish.plan.md) | Mobile nav / drawer hardening |

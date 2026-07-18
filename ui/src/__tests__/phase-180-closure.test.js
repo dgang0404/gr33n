@@ -420,7 +420,7 @@ describe('Phase 180 WS6 — closure docs and nav', () => {
 
   it('plan and operator-tour document Phase 180 shipped', () => {
     const plan = readFileSync(
-      join(repoDocs, 'plans/phase_180_knowledge_surfaces_discoverability.plan.md'),
+      join(repoDocs, 'plans/archive/phase_180_knowledge_surfaces_discoverability.plan.md'),
       'utf8',
     )
     const tour = readFileSync(join(repoDocs, 'operator-tour.md'), 'utf8')

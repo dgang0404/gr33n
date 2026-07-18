@@ -278,9 +278,9 @@ Secondary paths for WS4: EC/pH out of band (pixels 1, 4), Veg light schedule
 
 ## Related docs
 
-- [Phase 125 plan](plans/phase_125_pi_sensor_actuator_light_simulation.plan.md)
+- [Phase 125 plan](plans/archive/phase_125_pi_sensor_actuator_light_simulation.plan.md)
 - [Demo runbook (WS4)](pi-light-simulation-runbook.md)
 - [Hardware & relay swap (WS5)](../pi_client/README-simulation-rig.md)
 - [Pi integration guide](pi-integration-guide.md)
-- [Virtual Pi config export](plans/phase_121_virtual_pi_hookup_export.plan.md) — `GET /devices/{id}/pi-config`
+- [Virtual Pi config export](plans/archive/phase_121_virtual_pi_hookup_export.plan.md) — `GET /devices/{id}/pi-config`
 - [Connectivity requirements](connectivity-requirements.md) — LAN-only; no WAN for LED driver

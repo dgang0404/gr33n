@@ -6,7 +6,7 @@
 
 **Where effort goes:** When **no sit-in items** are actively in flight (nothing queued here beyond standing maintenance), treat the team as **back on the current calendar phase** (e.g. Phase 25 RAG operations)—this stream does **not** block phase work. **Reopen** sit-in any time operator pain shows up (broken flows, unclear dashboards, logging gaps, onboarding gaps): add bullets under the right section or link a bugfix plan, same as the Fertigation tab sync fix.
 
-**Phase 26:** fuller **operator tutorial + glossary** (WS1 v1 **Guide**), **observability** (WS2 runbook + optional **Loki** overlay), and explicit **RAG vs education vs logs** (WS3 v1 **`rag-scope-and-threat-model.md` §9**) — see **[Phase 26 plan](../plans/phase_26_operator_tutorial_observability_rag.plan.md)**.
+**Phase 26:** fuller **operator tutorial + glossary** (WS1 v1 **Guide**), **observability** (WS2 runbook + optional **Loki** overlay), and explicit **RAG vs education vs logs** (WS3 v1 **`rag-scope-and-threat-model.md` §9**) — see **[Phase 26 plan](../plans/archive/phase_26_operator_tutorial_observability_rag.plan.md)**.
 
 ---
 
@@ -15,7 +15,7 @@
 | Item | Notes |
 |------|--------|
 | **Single-page operator tour** | **Done (v1):** [`docs/operator-tour.md`](../operator-tour.md) — narrative walk: Farm → Zones → Sensors/Controls → Schedules/Rules → Tasks → Fertigation; **mermaid data-flow** diagram; links to bootstrap + schema. Revise as nav/copy changes. **In-app (Phase 26 WS1 v1):** **System → Guide** — glossary + suggested route order (`/operator-guide`). |
-| **“Why empty?” UX** | Per major UI area, inline hints (telemetry vs setpoints vs automation inactive). **Planned:** [Phase 41 WS4](../plans/phase_41_farm_hub_coherence.plan.md#ws4--why-empty-inline-hints); gap index [pre_development_gaps_index](../plans/pre_development_gaps_index.plan.md). Tour §4 stays conceptual until WS4 ships. |
+| **“Why empty?” UX** | Per major UI area, inline hints (telemetry vs setpoints vs automation inactive). **Planned:** [Phase 41 WS4](../plans/archive/phase_41_farm_hub_coherence.plan.md#ws4--why-empty-inline-hints); gap index [pre_development_gaps_index](../plans/pre_development_gaps_index.plan.md). Tour §4 stays conceptual until WS4 ships. |
 
 **Artifact:** [`docs/operator-tour.md`](../operator-tour.md).
 
@@ -54,7 +54,7 @@
 | **Machine checklist** | **Done (v1):** [`docs/machine-setup-checklist.md`](../machine-setup-checklist.md) — extended with **second machine / browser profile** (CORS, Vite port, offline queue per device). Re-run on every new laptop or VM. |
 | **Troubleshooting link** | [operator-troubleshooting.md](../operator-troubleshooting.md) §3 — `localStorage` queue boundary across devices. |
 
-**Bugfix (Fertigation tabs):** [`docs/plans/bugfix_fertigation_tab_router_sync.plan.md`](../plans/bugfix_fertigation_tab_router_sync.plan.md) — closed; router **`?tab=`** sync, loading/retry UX, and **`trigger_source`** display (nullable enum JSON from the API) in `Fertigation.vue`. **Tests:** no updates required for **`cmd/api/smoke_pi_contract_test.go`**, **`smoke_fertigation_test.go`**, or existing Vitest files — behaviour was front-end only. **Optional later:** a short Vitest case if **`formatTriggerSource`** is moved to a small **`ui/src/utils`** helper; optional smoke assertion on **`GET /farms/…/fertigation/events`** JSON shape if we want to pin nullable enum serialization.
+**Bugfix (Fertigation tabs):** [`docs/plans/archive/bugfix_fertigation_tab_router_sync.plan.md`](../plans/archive/bugfix_fertigation_tab_router_sync.plan.md) — closed; router **`?tab=`** sync, loading/retry UX, and **`trigger_source`** display (nullable enum JSON from the API) in `Fertigation.vue`. **Tests:** no updates required for **`cmd/api/smoke_pi_contract_test.go`**, **`smoke_fertigation_test.go`**, or existing Vitest files — behaviour was front-end only. **Optional later:** a short Vitest case if **`formatTriggerSource`** is moved to a small **`ui/src/utils`** helper; optional smoke assertion on **`GET /farms/…/fertigation/events`** JSON shape if we want to pin nullable enum serialization.
 
 ---
 
@@ -84,9 +84,9 @@ Phase 25 plans should **assume** this sit-in stream has at least **operator tour
 | 2026-04-21 | Phase 26 hook: tutorial + glossary vs RAG; links to intranet doc from bootstrap + rag-scope. |
 | 2026-04-21 | §1: Added [`operator-tour.md`](../operator-tour.md) (narrative + mermaid); “why empty” remains UX tickets. |
 | 2026-04-21 | §2: Structured HTTP logs (`request_log.go`), `AUTH_DEBUG_LOG`, automation `slog` outcomes, [`operator-troubleshooting.md`](../operator-troubleshooting.md). |
-| 2026-04-21 | Linked **[Phase 26 plan](../plans/phase_26_operator_tutorial_observability_rag.plan.md)** (tutorial, log management/archival vs DB retention, RAG boundary). |
+| 2026-04-21 | Linked **[Phase 26 plan](../plans/archive/phase_26_operator_tutorial_observability_rag.plan.md)** (tutorial, log management/archival vs DB retention, RAG boundary). |
 | 2026-04-21 | §3: [`tasks-first-operator-guide.md`](../tasks-first-operator-guide.md) (golden path, automation×tasks, offline queue); Tasks.vue HelpTip. |
-| 2026-04-21 | §4: Checklist + multi-device notes; Fertigation **tab↔URL** fix + [bugfix plan](../plans/bugfix_fertigation_tab_router_sync.plan.md). |
+| 2026-04-21 | §4: Checklist + multi-device notes; Fertigation **tab↔URL** fix + [bugfix plan](../plans/archive/bugfix_fertigation_tab_router_sync.plan.md). |
 | 2026-04-21 | §4: Bugfix doc marked closed; noted **no mandatory Pi/API/UI test updates** (UI-only fix); optional Vitest/smoke follow-ups. |
 | 2026-05-13 | §1: Added in-app **Guide** (`/operator-guide`) — glossary + walk (Phase 26 WS1 v1); complements operator-tour.md. |
 | 2026-05-13 | §2: **[operator-logging-runbook.md](../operator-logging-runbook.md)** — Compose json-file rotation + runbook (Phase 26 WS2 v1). |

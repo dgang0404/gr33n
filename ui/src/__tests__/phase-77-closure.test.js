@@ -65,7 +65,7 @@ describe('Phase 77 WS6 / OC-77 — post-arc polish closure', () => {
   })
 
   it('plan and operator-tour document Phase 77 shipped', () => {
-    const plan = readFileSync(join(repoDocs, 'plans/phase_77_post_arc_ui_polish.plan.md'), 'utf8')
+    const plan = readFileSync(join(repoDocs, 'plans/archive/phase_77_post_arc_ui_polish.plan.md'), 'utf8')
     const tour = readFileSync(join(repoDocs, 'operator-tour.md'), 'utf8')
     const roadmap = readFileSync(join(repoDocs, 'plans/phase_68_73_spa_workspace_roadmap.plan.md'), 'utf8')
     expect(plan).toContain('**Shipped.**')

@@ -12,7 +12,7 @@ const repoRoot = join(process.cwd(), '..')
 describe('Phase 61 WS5 / OC-61 — proactive nudges closure', () => {
   it('documents guardian-nudge API and architecture section', () => {
     const arch = readFileSync(join(repoDocs, 'farm-guardian-architecture.md'), 'utf8')
-    const plan = readFileSync(join(repoDocs, 'plans/phase_61_guardian_proactive_nudges.plan.md'), 'utf8')
+    const plan = readFileSync(join(repoDocs, 'plans/archive/phase_61_guardian_proactive_nudges.plan.md'), 'utf8')
     expect(existsSync(join(repoRoot, 'internal/farmguardian/nudge.go'))).toBe(true)
     expect(existsSync(join(repoRoot, 'internal/handler/guardian/handler.go'))).toBe(true)
     expect(arch).toContain('guardian-nudge')

@@ -139,10 +139,10 @@ Copy the template below into store “What’s New” or internal release mail:
 
 ### Phase 18 alignment
 
-- [x] Re-read mobile hardening notes in [`phase_18_platform_polish.plan.md`](plans/phase_18_platform_polish.plan.md) (sidebar drawer, responsive nav) before store submission.
+- [x] Re-read mobile hardening notes in [`phase_18_platform_polish.plan.md`](plans/archive/phase_18_platform_polish.plan.md) (sidebar drawer, responsive nav) before store submission.
 
 ## References
 
 - [Capacitor](https://capacitorjs.com/docs)
 - Phase 13 doc index: [`phase-13-operator-documentation.md`](phase-13-operator-documentation.md)
-- Phase plan: [`phase_13_platform_evolution.plan.md`](plans/phase_13_platform_evolution.plan.md)
+- Phase plan: [`phase_13_platform_evolution.plan.md`](plans/archive/phase_13_platform_evolution.plan.md)

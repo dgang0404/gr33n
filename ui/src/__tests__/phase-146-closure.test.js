@@ -11,7 +11,7 @@ const repoRoot = join(process.cwd(), '..')
 describe('Phase 146 — quality loop closure', () => {
   it('plan documents optional critique and ops hardening', () => {
     const plan = readFileSync(
-      join(repoDocs, 'plans/phase_146_guardian_quality_loop_and_judge.plan.md'),
+      join(repoDocs, 'plans/archive/phase_146_guardian_quality_loop_and_judge.plan.md'),
       'utf8',
     )
     expect(plan).toContain('GUARDIAN_ANSWER_CRITIQUE')

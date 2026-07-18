@@ -49,10 +49,10 @@ Site A/B/C: pull → make migrate → restart API → admins see alert
 Optional: guardian-bootstrap-farm.sh per farm
 ```
 
-Pin expected version in site manifest — see [Phase 98 promotion model](plans/phase_98_enterprise_catalog_promotion.plan.md).
+Pin expected version in site manifest — see [Phase 98 promotion model](plans/archive/phase_98_enterprise_catalog_promotion.plan.md).
 
 ## Related
 
 - [`crop-catalog-db-cutover-runbook.md`](crop-catalog-db-cutover-runbook.md)
 - [`commons-catalog-operator-playbook.md`](commons-catalog-operator-playbook.md)
-- Phase 109 plan: [`plans/phase_109_catalog_version_push_notifications.plan.md`](plans/phase_109_catalog_version_push_notifications.plan.md)
+- Phase 109 plan: [`plans/archive/phase_109_catalog_version_push_notifications.plan.md`](plans/archive/phase_109_catalog_version_push_notifications.plan.md)

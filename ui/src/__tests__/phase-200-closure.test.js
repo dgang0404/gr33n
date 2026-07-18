@@ -62,7 +62,7 @@ describe('Phase 200 — accuracy_note round-trip', () => {
 
   it('phase 200 plan marked shipped', () => {
     const plan = readFileSync(
-      join(repoRoot, 'docs/plans/phase_200_accuracy_note_round_trip.plan.md'),
+      join(repoRoot, 'docs/plans/archive/phase_200_accuracy_note_round_trip.plan.md'),
       'utf8',
     )
     expect(plan).toContain('Status:** shipped')

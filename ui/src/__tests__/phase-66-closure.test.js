@@ -13,7 +13,7 @@ const repoRoot = join(process.cwd(), '..')
 describe('Phase 66 WS6 / OC-66 — weather & site closure', () => {
   it('documents offline solar and plan shipped', () => {
     const arch = readFileSync(join(repoDocs, 'farm-guardian-architecture.md'), 'utf8')
-    const plan = readFileSync(join(repoDocs, 'plans/phase_66_weather_site_context.plan.md'), 'utf8')
+    const plan = readFileSync(join(repoDocs, 'plans/archive/phase_66_weather_site_context.plan.md'), 'utf8')
     const tour = readFileSync(join(repoDocs, 'operator-tour.md'), 'utf8')
     expect(existsSync(join(repoRoot, 'internal/solar/solar.go'))).toBe(true)
     expect(arch).toContain('site_weather')

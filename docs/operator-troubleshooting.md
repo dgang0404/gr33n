@@ -26,7 +26,7 @@ Set **`AUTH_DEBUG_LOG=true`** in `.env` (API restart required). The API will emi
 | No farms at all | Seed data (`./scripts/bootstrap-local.sh --seed`) or create a farm in-app; confirm DB connection. |
 | Farm exists but no sensors / readings | Pi URL and **`PI_API_KEY`**; readings POST path; time skew on `reading_time`. |
 | Automation never fires | Schedules **active**, cron expression, worker running (same API process — check startup logs); **`AUTOMATION_SIMULATION_MODE`** if hardware not wired. |
-| Fertigation tab (e.g. **Events**) looks stuck or out of sync | Tab state is synced to **`?tab=`** in the URL (`selectTab` + router). Use `/fertigation?tab=events` deep links; hard-refresh should match the tab highlight. See [bugfix plan](plans/bugfix_fertigation_tab_router_sync.plan.md). |
+| Fertigation tab (e.g. **Events**) looks stuck or out of sync | Tab state is synced to **`?tab=`** in the URL (`selectTab` + router). Use `/fertigation?tab=events` deep links; hard-refresh should match the tab highlight. See [bugfix plan](plans/archive/bugfix_fertigation_tab_router_sync.plan.md). |
 
 ---
 

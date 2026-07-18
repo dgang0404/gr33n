@@ -11,7 +11,7 @@ parent_plan: phase_45_farmer_validation_whole_app_polish.plan.md
 
 **Status:** **Shipped** — facilitator kit + dry-run validation ([sit-in-45-dry-run-log.md](sit-in-45-dry-run-log.md)). External farmer sessions recommended post-v1.
 
-**Parent:** [phase_45_farmer_validation_whole_app_polish.plan.md](../plans/phase_45_farmer_validation_whole_app_polish.plan.md)
+**Parent:** [phase_45_farmer_validation_whole_app_polish.plan.md](../plans/archive/phase_45_farmer_validation_whole_app_polish.plan.md)
 
 **Guardian PR script detail:** [phase_45_guardian_pr_spec.md](../plans/phase_45_guardian_pr_spec.md)
 
@@ -37,7 +37,7 @@ parent_plan: phase_45_farmer_validation_whole_app_polish.plan.md
 | 10 | Open [phase-45-ws2-friction-backlog.md](phase-45-ws2-friction-backlog.md) for live P0/P1/P2 notes |
 | 11 | Facilitator rule: **no mouse** unless blocked **>3 minutes** — note verbatim quotes |
 
-**Recommended:** [Phase 48](../plans/phase_48_dev_seed_and_small_farm_profiles.plan.md) `small_indoor` profile before sit-in if demo farm has sensor sprawl — not blocking WS1.
+**Recommended:** [Phase 48](../plans/archive/phase_48_dev_seed_and_small_farm_profiles.plan.md) `small_indoor` profile before sit-in if demo farm has sensor sprawl — not blocking WS1.
 
 ---
 

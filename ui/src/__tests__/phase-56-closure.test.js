@@ -15,7 +15,7 @@ const repoDocs = join(process.cwd(), '..', 'docs')
 describe('Phase 56 WS5 / OC-56 — grow schema closure', () => {
   it('documents migration, architecture, and plan shipped status', () => {
     const arch = readFileSync(join(repoDocs, 'farm-guardian-architecture.md'), 'utf8')
-    const plan = readFileSync(join(repoDocs, 'plans/phase_56_grow_schema_harvest_analytics.plan.md'), 'utf8')
+    const plan = readFileSync(join(repoDocs, 'plans/archive/phase_56_grow_schema_harvest_analytics.plan.md'), 'utf8')
     const tour = readFileSync(join(repoDocs, 'operator-tour.md'), 'utf8')
     expect(existsSync(join(repoDocs, '../db/migrations/20260608_phase56_grow_schema_harvest.sql'))).toBe(true)
     expect(arch).toContain('### 7.0t Grow schema + harvest analytics (Phase 56 — shipped)')
@@ -28,7 +28,7 @@ describe('Phase 56 WS5 / OC-56 — grow schema closure', () => {
 
   it('OC-56 row is closed in operational closure doc', () => {
     const oc = readFileSync(
-      join(repoDocs, 'plans/phase_35_37_operational_closure.plan.md'),
+      join(repoDocs, 'plans/archive/phase_35_37_operational_closure.plan.md'),
       'utf8',
     )
     expect(oc).toContain('## Phase 56 — Grow schema + harvest analytics')

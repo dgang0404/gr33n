@@ -10,7 +10,7 @@ const repoRoot = join(process.cwd(), '..')
 
 describe('Phase 144 — answer quality residuals closure', () => {
   it('plan is shipped', () => {
-    const plan = readFileSync(join(repoDocs, 'plans/phase_144_guardian_answer_quality_residuals.plan.md'), 'utf8')
+    const plan = readFileSync(join(repoDocs, 'plans/archive/phase_144_guardian_answer_quality_residuals.plan.md'), 'utf8')
     expect(plan).toContain('**Shipped.**')
   })
 

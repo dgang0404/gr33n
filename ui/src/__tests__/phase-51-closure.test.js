@@ -89,7 +89,7 @@ describe('Phase 51 WS6 / OC-51 — Pi config sync closure', () => {
   })
 
   it('phase 51 plan marks all workstreams completed and shipped', () => {
-    const plan = readFileSync(join(repoDocs, 'plans/phase_51_pi_config_sync.plan.md'), 'utf8')
+    const plan = readFileSync(join(repoDocs, 'plans/archive/phase_51_pi_config_sync.plan.md'), 'utf8')
     for (const id of [
       'ws1-api-config-endpoint',
       'ws2-pi-bootstrap-rewrite',
@@ -105,7 +105,7 @@ describe('Phase 51 WS6 / OC-51 — Pi config sync closure', () => {
 
   it('OC-51 marked completed in operational closure plan', () => {
     const closure = readFileSync(
-      join(repoDocs, 'plans/phase_35_37_operational_closure.plan.md'),
+      join(repoDocs, 'plans/archive/phase_35_37_operational_closure.plan.md'),
       'utf8',
     )
     expect(closure).toContain('oc-51-closure')

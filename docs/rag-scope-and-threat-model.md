@@ -10,7 +10,7 @@ This document fixes **what** may enter the retrieval layer, **who** may query it
 - Keep **farm isolation** as strong as the rest of the dashboard: one farm’s vectors and retrieved text must never satisfy another farm’s query.
 - Make **optional LLM synthesis** (WS5) a deliberate, consent-gated path—not a silent data export.
 
-Non-goals for the initial cut are unchanged from [Phase 24 — RAG retrieval system](plans/phase_24_rag_retrieval_system.plan.md): no training of foundation models on customer data; no shipment of farm payloads to third-party clouds without configuration and consent aligned with Insert Commons and audit patterns.
+Non-goals for the initial cut are unchanged from [Phase 24 — RAG retrieval system](plans/archive/phase_24_rag_retrieval_system.plan.md): no training of foundation models on customer data; no shipment of farm payloads to third-party clouds without configuration and consent aligned with Insert Commons and audit patterns.
 
 ---
 
@@ -67,13 +67,13 @@ Classify sources by **sensitivity** and **utility** for operators. “Embed” m
 
 ### 4.2 Candidate sources (by domain)
 
-The list below ties to tables introduced or strengthened in Phase 20.95 and related work ([phase_20_95_rag_prep_and_housekeeping.plan.md](plans/phase_20_95_rag_prep_and_housekeeping.plan.md)). Prioritization for **v1 ingestion order** is a product call; a sensible default is **high-signal operator text first**, then structured rollups.
+The list below ties to tables introduced or strengthened in Phase 20.95 and related work ([phase_20_95_rag_prep_and_housekeeping.plan.md](plans/archive/phase_20_95_rag_prep_and_housekeeping.plan.md)). Prioritization for **v1 ingestion order** is a product call; a sensible default is **high-signal operator text first**, then structured rollups.
 
 | Domain | Tables / objects | Text useful for retrieval | Sanitization / notes |
 |--------|------------------|---------------------------|----------------------|
 | **Tasks** | `gr33ncore.tasks` | `title`, `description`, `task_type`, `status`, related module pointers | Exclude or tokenize assignee identifiers if displayed; `description` may be long—chunking strategy in WS3. |
 | **Task labor** | `gr33ncore.task_labor_log` | `notes` | **Sensitive**—may name people; consider exclude v1 or strip. |
-| **Crop cycles** | `gr33nfertigation.crop_cycles` | `name`, `strain_or_variety`, `yield_notes`, `cycle_notes`, stage + dates | Notes fields are **sensitive**; align with Phase 21 summary semantics when available ([phase_21_crop_cycle_analytics.plan.md](plans/phase_21_crop_cycle_analytics.plan.md)). |
+| **Crop cycles** | `gr33nfertigation.crop_cycles` | `name`, `strain_or_variety`, `yield_notes`, `cycle_notes`, stage + dates | Notes fields are **sensitive**; align with Phase 21 summary semantics when available ([phase_21_crop_cycle_analytics.plan.md](plans/archive/phase_21_crop_cycle_analytics.plan.md)). |
 | **Fertigation programs** | `gr33nfertigation.programs` | `name`, `description`, recipe linkage labels | `metadata` JSON—allowlist keys only if embedded. |
 | **Automation runs** | `gr33ncore.automation_runs` | `status`, `message` | `details` JSONB may contain payloads—**allowlist** or omit until WS3 defines a scrubber. |
 | **Automation rules / schedules** | `automation_rules`, `schedules`, `executable_actions` | Names, descriptions, human-readable condition summaries | **Exclude** `action_parameters` for action types that carry URLs/secrets (e.g. HTTP webhook parameters) unless scrubbed. |
@@ -104,7 +104,7 @@ For **intranet-only deployment**, point `EMBEDDING_BASE_URL` and `LLM_BASE_URL` 
 
 ## 6. Checklist — ship in v1 ingestion?
 
-**Engineering defaults below** are the Phase 25 implementation baseline (aligned with [Phase 25 plan](plans/phase_25_rag_operations_and_expansion.plan.md) decisions). Product may refine priority later; ingest code must still respect sanitization rules in §4.2 regardless.
+**Engineering defaults below** are the Phase 25 implementation baseline (aligned with [Phase 25 plan](plans/archive/phase_25_rag_operations_and_expansion.plan.md) decisions). Product may refine priority later; ingest code must still respect sanitization rules in §4.2 regardless.
 
 | Domain | Engineering default | Depends on / notes |
 |--------|---------------------|-------------------|
@@ -207,9 +207,9 @@ If the product ever wants “what broke Tuesday?” inside **Knowledge**, treat 
 
 - [RAG CI / staging / prod parity (Phase 25 WS4)](rag-ci-and-staging-parity.md)
 - [Offline / intranet deployment (LAN, VLAN, local LLM)](offline-or-intranet-deployment.md)
-- [Phase 24 — RAG retrieval system](plans/phase_24_rag_retrieval_system.plan.md)
-- [Phase 20.95 — RAG-prep columns](plans/phase_20_95_rag_prep_and_housekeeping.plan.md)
-- [Phase 26 — Operator tutorial, observability, RAG education layer](plans/phase_26_operator_tutorial_observability_rag.plan.md) — §9 education vs logs boundary (WS3)
+- [Phase 24 — RAG retrieval system](plans/archive/phase_24_rag_retrieval_system.plan.md)
+- [Phase 20.95 — RAG-prep columns](plans/archive/phase_20_95_rag_prep_and_housekeeping.plan.md)
+- [Phase 26 — Operator tutorial, observability, RAG education layer](plans/archive/phase_26_operator_tutorial_observability_rag.plan.md) — §9 education vs logs boundary (WS3)
 - Insert Commons: [insert-commons-pipeline-runbook.md](insert-commons-pipeline-runbook.md), [insert-commons-receiver-playbook.md](insert-commons-receiver-playbook.md)
 - Schema: `db/schema/gr33n-schema-v2-FINAL.sql`
 

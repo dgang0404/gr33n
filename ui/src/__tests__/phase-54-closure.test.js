@@ -18,7 +18,7 @@ describe('Phase 54 WS4 / OC-54 — connection nav closure', () => {
     const tour = readFileSync(join(repoDocs, 'operator-tour.md'), 'utf8')
     const arch = readFileSync(join(repoDocs, 'farm-guardian-architecture.md'), 'utf8')
     const plan = readFileSync(
-      join(repoDocs, 'plans/phase_54_zone_connection_nav.plan.md'),
+      join(repoDocs, 'plans/archive/phase_54_zone_connection_nav.plan.md'),
       'utf8',
     )
     expect(tour).toContain('connection pipeline')
@@ -30,7 +30,7 @@ describe('Phase 54 WS4 / OC-54 — connection nav closure', () => {
 
   it('OC-54 row is closed in operational closure doc', () => {
     const oc = readFileSync(
-      join(repoDocs, 'plans/phase_35_37_operational_closure.plan.md'),
+      join(repoDocs, 'plans/archive/phase_35_37_operational_closure.plan.md'),
       'utf8',
     )
     expect(oc).toContain('## Phase 54 — Zone connection nav')

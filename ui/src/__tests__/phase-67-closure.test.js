@@ -13,7 +13,7 @@ const repoRoot = join(process.cwd(), '..')
 describe('Phase 67 WS7 / OC-67 — field assistant closure', () => {
   it('documents field assistant and plan shipped', () => {
     const arch = readFileSync(join(repoDocs, 'farm-guardian-architecture.md'), 'utf8')
-    const plan = readFileSync(join(repoDocs, 'plans/phase_67_guardian_field_assistant.plan.md'), 'utf8')
+    const plan = readFileSync(join(repoDocs, 'plans/archive/phase_67_guardian_field_assistant.plan.md'), 'utf8')
     const tour = readFileSync(join(repoDocs, 'operator-tour.md'), 'utf8')
     expect(plan).toContain('**Shipped.**')
     expect(tour).toContain('Field assistant')

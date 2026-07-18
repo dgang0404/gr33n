@@ -11,7 +11,7 @@ const repoRoot = join(process.cwd(), '..')
 describe('Phase 147 — smoke run #5 closure', () => {
   it('plan documents prompt isolation and run #5', () => {
     const plan = readFileSync(
-      join(repoDocs, 'plans/phase_147_guardian_smoke_run5_closure.plan.md'),
+      join(repoDocs, 'plans/archive/phase_147_guardian_smoke_run5_closure.plan.md'),
       'utf8',
     )
     expect(plan).toContain('guardian-qa-smoke-ec-ph')

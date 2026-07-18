@@ -27,7 +27,7 @@ describe('Phase 46 WS1 — hybrid policy closure', () => {
 
   it('phase 46 plan marks WS1 completed', () => {
     const plan = readFileSync(
-      join(repoDocs, 'plans/phase_46_guardian_llm_tool_proposals.plan.md'),
+      join(repoDocs, 'plans/archive/phase_46_guardian_llm_tool_proposals.plan.md'),
       'utf8',
     )
     expect(plan).toContain('id: ws1-policy')

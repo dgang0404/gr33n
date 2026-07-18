@@ -12,7 +12,7 @@ const repoRoot = join(process.cwd(), '..')
 describe('Phase 63 WS5 / OC-63 — session memory closure', () => {
   it('documents session_summaries and architecture section', () => {
     const arch = readFileSync(join(repoDocs, 'farm-guardian-architecture.md'), 'utf8')
-    const plan = readFileSync(join(repoDocs, 'plans/phase_63_guardian_session_memory.plan.md'), 'utf8')
+    const plan = readFileSync(join(repoDocs, 'plans/archive/phase_63_guardian_session_memory.plan.md'), 'utf8')
     expect(existsSync(join(repoRoot, 'internal/farmguardian/session_memory.go'))).toBe(true)
     expect(existsSync(join(repoRoot, 'db/migrations/20260611_phase63_session_summaries.sql'))).toBe(true)
     expect(arch).toContain('Session memory')

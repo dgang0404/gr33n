@@ -1,6 +1,6 @@
 /**
  * Phase 68 WS1 — workspace model (SPA shells with internal tabs).
- * @see docs/plans/phase_68_workspace_shell_spa_nav.plan.md
+ * @see docs/plans/archive/phase_68_workspace_shell_spa_nav.plan.md
  */
 
 /** @typedef {{ id: string, label: string }} WorkspaceTab */

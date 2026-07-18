@@ -26,7 +26,7 @@ describe('Phase 62 WS5 / OC-62 — grow advisor closure', () => {
 
   it('documents grow_advisor read tool and architecture section', () => {
     const arch = readFileSync(join(repoDocs, 'farm-guardian-architecture.md'), 'utf8')
-    const plan = readFileSync(join(repoDocs, 'plans/phase_62_guardian_grow_advisor.plan.md'), 'utf8')
+    const plan = readFileSync(join(repoDocs, 'plans/archive/phase_62_guardian_grow_advisor.plan.md'), 'utf8')
     expect(existsSync(join(repoRoot, 'internal/farmguardian/readtools_grow.go'))).toBe(true)
     expect(arch).toContain('Phase 62')
     expect(arch).toContain('grow_advisor')

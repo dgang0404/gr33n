@@ -54,7 +54,7 @@ describe('Phase 159 — citation completeness closure', () => {
 
   it('phase 159 plan marked shipped', () => {
     const plan = readFileSync(
-      join(repoRoot, 'docs/plans/phase_159_guardian_citation_completeness.plan.md'),
+      join(repoRoot, 'docs/plans/archive/phase_159_guardian_citation_completeness.plan.md'),
       'utf8',
     )
     expect(plan).toContain('Status:** shipped')

@@ -10,7 +10,7 @@ const repoRoot = join(process.cwd(), '..')
 
 describe('Phase 141 — feedback review closure', () => {
   it('plan is shipped', () => {
-    const plan = readFileSync(join(repoDocs, 'plans/phase_141_guardian_feedback_review.plan.md'), 'utf8')
+    const plan = readFileSync(join(repoDocs, 'plans/archive/phase_141_guardian_feedback_review.plan.md'), 'utf8')
     expect(plan).toContain('**Shipped.**')
   })
 

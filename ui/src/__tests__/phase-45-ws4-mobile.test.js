@@ -54,7 +54,7 @@ describe('Phase 45 WS4 — mobile sit-in path closure', () => {
 
   it('phase 45 parent plan marks WS4 complete', () => {
     const plan = readFileSync(
-      join(repoDocs, 'plans/phase_45_farmer_validation_whole_app_polish.plan.md'),
+      join(repoDocs, 'plans/archive/phase_45_farmer_validation_whole_app_polish.plan.md'),
       'utf8',
     )
     expect(plan).toMatch(/ws4-mobile-b4[\s\S]*status: completed/)

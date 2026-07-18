@@ -4,7 +4,7 @@
 
 **Not for GitHub-hosted runners** — they have no Ollama and smoke runs take 30–90 minutes on a CPU laptop.
 
-**Related:** [Phase 131 plan](plans/phase_131_guardian_qa_harness.plan.md) · [local-operator-bootstrap.md](local-operator-bootstrap.md) § Guardian QA · [Phase 129–139 closure](plans/phase-129-139-closure.md)
+**Related:** [Phase 131 plan](plans/archive/phase_131_guardian_qa_harness.plan.md) · [local-operator-bootstrap.md](local-operator-bootstrap.md) § Guardian QA · [Phase 129–139 closure](plans/phase-129-139-closure.md)
 
 ---
 
@@ -38,7 +38,7 @@ make guardian-qa-change-requests MODEL=phi3:mini FARM_ID=1
 make guardian-qa-change-requests-confirm MODEL=phi3:mini FARM_ID=1 # full Confirm→DB loop
 ```
 
-It fires 4 preset write-intent prompts (or one with `-ack`), logs per-prompt progress, then **immediately after each passed write-intent prompt** calls `GET /v1/chat/proposals?status=pending` and verifies that prompt's `proposal_id`(s) are still pending (batch end-of-run check was removed — proposals expire after 5m while each prompt takes 20+ min). **Confirm → DB:** `make guardian-qa-change-requests-confirm` confirms each proposal right after its prompt (Phase 162). See [Phase 153](plans/phase_153_guardian_pr_smoke_gate.plan.md) · [Phase 162](plans/phase_162_guardian_confirm_db_smoke.plan.md).
+It fires 4 preset write-intent prompts (or one with `-ack`), logs per-prompt progress, then **immediately after each passed write-intent prompt** calls `GET /v1/chat/proposals?status=pending` and verifies that prompt's `proposal_id`(s) are still pending (batch end-of-run check was removed — proposals expire after 5m while each prompt takes 20+ min). **Confirm → DB:** `make guardian-qa-change-requests-confirm` confirms each proposal right after its prompt (Phase 162). See [Phase 153](plans/archive/phase_153_guardian_pr_smoke_gate.plan.md) · [Phase 162](plans/archive/phase_162_guardian_confirm_db_smoke.plan.md).
 
 ### Multi-turn UI scenarios (`change-requests-ui`)
 

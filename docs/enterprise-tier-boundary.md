@@ -90,7 +90,7 @@ Replace with farmer language or keep accountant/GL tooling on **Advanced** route
 
 | Doc | Use |
 |-----|-----|
-| [phase_59 plan](plans/phase_59_enterprise_tier_boundary.plan.md) | Implementation checklist |
+| [phase_59 plan](plans/archive/phase_59_enterprise_tier_boundary.plan.md) | Implementation checklist |
 | [phase_53_59 roadmap](plans/phase_53_59_roadmap.plan.md) | Farmer closure arc |
 | [pre_development_gaps_index](plans/pre_development_gaps_index.plan.md) | Tier D deferrals |
 | [operator-tour §7](operator-tour.md#7-supplies-feeding--money-phase-43) | Farmer money & supplies jobs |

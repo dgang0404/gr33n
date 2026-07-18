@@ -29,7 +29,7 @@ gr33n runs your farm's sensors, alerts, tasks, and scheduling from one dashboard
   - ~46 crop profiles with EC/DLI/photoperiod targets  
   - Symptom catalog + field guides (if indexed)  
   - Citation chips open readable doc views in **Help → Library → Knowledge**; browse symptoms and guides without chat ([operator tour §7m](docs/operator-tour.md#7m-help-knowledge-surfaces-phase-180--shipped))  
-  - **Symptoms for this crop** links from Plants and zone pages pre-filter the symptom guide ([Phase 183](docs/plans/phase_183_guardian_knowledge_and_revise_followups.plan.md))  
+  - **Symptoms for this crop** links from Plants and zone pages pre-filter the symptom guide ([Phase 183](docs/plans/archive/phase_183_guardian_knowledge_and_revise_followups.plan.md))  
   - General agronomy reasoning from whichever local Ollama model you've selected (server default is a small, CPU-friendly model; swap in a larger one any time via the model picker below)  
 
 ⚡ **Guardian power states** — On solar, battery, or metered sites, control when the LLM uses RAM/CPU:
@@ -119,8 +119,8 @@ gr33n offers a different default:
 
 Two foundational milestones stay called out here because closure tests guard them:
 
-- **Phase 45 — Farmer-ready v1** (shipped): farmer validation sit-in and whole-app polish. Dry-run results: [`docs/workstreams/sit-in-45-dry-run-log.md`](docs/workstreams/sit-in-45-dry-run-log.md); plan: [`docs/plans/phase_45_farmer_validation_whole_app_polish.plan.md`](docs/plans/phase_45_farmer_validation_whole_app_polish.plan.md).
-- **Phase 46 — Guardian LLM tool proposals** (shipped, hybrid C): the LLM can open change-request cards behind the `GUARDIAN_LLM_PROPOSALS` flag. Plan: [`docs/plans/phase_46_guardian_llm_tool_proposals.plan.md`](docs/plans/phase_46_guardian_llm_tool_proposals.plan.md); guard: `ui/src/__tests__/phase-46-closure.test.js`.
+- **Phase 45 — Farmer-ready v1** (shipped): farmer validation sit-in and whole-app polish. Dry-run results: [`docs/workstreams/sit-in-45-dry-run-log.md`](docs/workstreams/sit-in-45-dry-run-log.md); plan: [`docs/plans/archive/phase_45_farmer_validation_whole_app_polish.plan.md`](docs/plans/archive/phase_45_farmer_validation_whole_app_polish.plan.md).
+- **Phase 46 — Guardian LLM tool proposals** (shipped, hybrid C): the LLM can open change-request cards behind the `GUARDIAN_LLM_PROPOSALS` flag. Plan: [`docs/plans/archive/phase_46_guardian_llm_tool_proposals.plan.md`](docs/plans/archive/phase_46_guardian_llm_tool_proposals.plan.md); guard: `ui/src/__tests__/phase-46-closure.test.js`.
 
 ### 🔌 What Does "Don't Call Home" Mean?
 

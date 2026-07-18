@@ -11,7 +11,7 @@ const repoDocs = join(repoRoot, 'docs')
 describe('Phase 57 WS5 / OC-57 — device API keys closure', () => {
   it('documents migration, architecture, and plan shipped status', () => {
     const arch = readFileSync(join(repoDocs, 'farm-guardian-architecture.md'), 'utf8')
-    const plan = readFileSync(join(repoDocs, 'plans/phase_57_pi_device_api_keys.plan.md'), 'utf8')
+    const plan = readFileSync(join(repoDocs, 'plans/archive/phase_57_pi_device_api_keys.plan.md'), 'utf8')
     const tour = readFileSync(join(repoDocs, 'operator-tour.md'), 'utf8')
     const piGuide = readFileSync(join(repoDocs, 'pi-sequent-hat-setup.md'), 'utf8')
     expect(existsSync(join(repoRoot, 'db/migrations/20260609_phase57_device_api_keys.sql'))).toBe(true)
@@ -27,7 +27,7 @@ describe('Phase 57 WS5 / OC-57 — device API keys closure', () => {
 
   it('OC-57 row is closed in operational closure doc', () => {
     const oc = readFileSync(
-      join(repoDocs, 'plans/phase_35_37_operational_closure.plan.md'),
+      join(repoDocs, 'plans/archive/phase_35_37_operational_closure.plan.md'),
       'utf8',
     )
     expect(oc).toContain('## Phase 57 — Per-device Pi API keys')
