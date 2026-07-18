@@ -1,0 +1,5 @@
+{
+  "_comment": "Known pre-existing UI test failures tracked by scripts/check-ui-test-baseline.mjs. Empty as of Phase 205 WS2-6 (2026-07-18). If this file gains entries again, root-cause before adding — do not silence new failures without fixing or documenting why.",
+  "generated": "2026-07-18",
+  "failures": {}
+}

@@ -11,7 +11,7 @@ export const FARMER_TOUCH_TARGET =
   'min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 inline-flex items-center justify-center'
 
 /**
- * @param {'confirm'|'dismiss'|'refine'} action
+ * @param {'confirm'|'dismiss'|'refine'|'view-conversation'} action
  * @param {string} [summary]
  */
 export function guardianProposalAriaLabel(action, summary = '') {
@@ -24,6 +24,9 @@ export function guardianProposalAriaLabel(action, summary = '') {
   }
   if (action === 'refine') {
     return `Refine proposed action before confirming: ${short}`
+  }
+  if (action === 'view-conversation') {
+    return 'View chat history for this change request'
   }
   return short
 }

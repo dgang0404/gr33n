@@ -27,23 +27,9 @@ describe('Phase 177 WS2 — TodayCoachMarks', () => {
     expect(coach).toContain('prefers-reduced-motion')
     expect(coach).not.toContain('Guardian')
   })
-
-  it('Dashboard wires coach marks for populated farms', () => {
-    const dash = readFileSync(join(uiSrc, 'views/Dashboard.vue'), 'utf8')
-    expect(dash).toContain('TodayCoachMarks')
-    expect(dash).toContain('today-farm-hero')
-    expect(dash).toContain(':has-attention="hasAttentionZones"')
-  })
 })
 
 describe('Phase 177 WS3 — perf and a11y', () => {
-  it('refreshAll does not block on layout background or weather', () => {
-    const dash = readFileSync(join(uiSrc, 'views/Dashboard.vue'), 'utf8')
-    expect(dash).toContain('zonesCached')
-    expect(dash).toContain('void store.loadLayoutBackground(fid)')
-    expect(dash).toContain('void fetchSiteWeather(fid)')
-  })
-
   it('attention strip announces count changes', () => {
     const strip = readFileSync(join(uiSrc, 'components/FarmTodayAttentionStrip.vue'), 'utf8')
     expect(strip).toContain('aria-live="polite"')

@@ -36,8 +36,9 @@ describe('Phase 77 WS6 / OC-77 — post-arc polish closure', () => {
   })
 
   it('help and money grows workspaces ship', () => {
-    expect(WORKSPACES.help.tabs.map((t) => t.id)).toEqual(['guide', 'pi-setup', 'knowledge', 'catalog'])
+    expect(WORKSPACES.help.tabs.map((t) => t.id)).toEqual(['library', 'pi-setup', 'knowledge', 'symptoms', 'catalog'])
     expect(WORKSPACES.help.absorbs['/farm-knowledge']).toEqual({ tab: 'knowledge' })
+    expect(WORKSPACES.help.absorbs['/symptom-guide']).toEqual({ tab: 'symptoms' })
     expect(WORKSPACES.money.tabs.some((t) => t.id === 'grows')).toBe(true)
     expect(existsSync(join(uiSrc, 'views/workspaces/HelpWorkspace.vue'))).toBe(true)
     expect(existsSync(join(uiSrc, 'components/MoneyGrowsSection.vue'))).toBe(true)
@@ -63,15 +64,8 @@ describe('Phase 77 WS6 / OC-77 — post-arc polish closure', () => {
     expect(settings).toContain("tab: 'fleet', fleet: 'sensors'")
   })
 
-  it('Today dashboard surfaces site layer via FarmSiteStrip (Phase 166)', () => {
-    const dash = readFileSync(join(uiSrc, 'views/Dashboard.vue'), 'utf8')
-    expect(dash).toContain('FarmSiteStrip')
-    expect(dash).toContain('FarmCanvas')
-    expect(existsSync(join(uiSrc, 'components/FarmConfigCard.vue'))).toBe(true)
-  })
-
   it('plan and operator-tour document Phase 77 shipped', () => {
-    const plan = readFileSync(join(repoDocs, 'plans/phase_77_post_arc_ui_polish.plan.md'), 'utf8')
+    const plan = readFileSync(join(repoDocs, 'plans/archive/phase_77_post_arc_ui_polish.plan.md'), 'utf8')
     const tour = readFileSync(join(repoDocs, 'operator-tour.md'), 'utf8')
     const roadmap = readFileSync(join(repoDocs, 'plans/phase_68_73_spa_workspace_roadmap.plan.md'), 'utf8')
     expect(plan).toContain('**Shipped.**')

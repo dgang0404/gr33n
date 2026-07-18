@@ -11,7 +11,7 @@ const repoRoot = join(process.cwd(), '..')
 
 describe('Phase 142 — Virtual Pi field validation closure', () => {
   it('plan is shipped', () => {
-    const plan = readFileSync(join(repoDocs, 'plans/phase_142_virtual_pi_field_validation.plan.md'), 'utf8')
+    const plan = readFileSync(join(repoDocs, 'plans/archive/phase_142_virtual_pi_field_validation.plan.md'), 'utf8')
     expect(plan).toContain('**Shipped.**')
   })
 

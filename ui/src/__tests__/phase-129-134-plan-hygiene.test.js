@@ -5,7 +5,7 @@ import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 
-const plans = join(process.cwd(), '..', 'docs', 'plans')
+const plans = join(process.cwd(), '..', 'docs', 'plans', 'archive')
 
 const phaseFiles = [
   'phase_129_guardian_awakening.plan.md',

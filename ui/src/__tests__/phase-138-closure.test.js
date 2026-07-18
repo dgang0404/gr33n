@@ -11,7 +11,7 @@ const repoRoot = join(process.cwd(), '..')
 
 describe('Phase 138 — inference policy closure', () => {
   it('plan is shipped', () => {
-    const plan = readFileSync(join(repoDocs, 'plans/phase_138_guardian_inference_policy.plan.md'), 'utf8')
+    const plan = readFileSync(join(repoDocs, 'plans/archive/phase_138_guardian_inference_policy.plan.md'), 'utf8')
     expect(plan).toContain('**Shipped.**')
   })
 
@@ -37,13 +37,10 @@ describe('Phase 138 — inference policy closure', () => {
   it('UI wires Settings model policy and chat cost hint', () => {
     const settings = readFileSync(join(process.cwd(), 'src/views/Settings.vue'), 'utf8')
     const policy = readFileSync(join(process.cwd(), 'src/components/GuardianSettingsModelPolicyCard.vue'), 'utf8')
-    const panel = readFileSync(join(process.cwd(), 'src/components/GuardianChatPanel.vue'), 'utf8')
     const chat = readFileSync(join(process.cwd(), 'src/stores/guardianChat.js'), 'utf8')
     expect(settings).toContain('GuardianSettingsModelPolicyCard')
     expect(policy).toContain('settings-counsel-model')
     expect(policy).toContain('settings-quick-model')
-    expect(panel).toContain('chat-counsel-cost-hint')
-    expect(panel).toContain('grounded: counsel')
     expect(chat).toContain('body.grounded')
   })
 

@@ -166,6 +166,6 @@ ORDER BY activity_time DESC;
 ## Related documents
 
 - [`docs/phase-13-operator-documentation.md`](phase-13-operator-documentation.md) — Phase 13 operator doc index
-- [`docs/plans/phase_13_platform_evolution.plan.md`](plans/phase_13_platform_evolution.plan.md) — Phase 13 scope and workstreams
+- [`docs/plans/archive/phase_13_platform_evolution.plan.md`](plans/archive/phase_13_platform_evolution.plan.md) — Phase 13 scope and workstreams
 - [`docs/receipt-storage-cutover-runbook.md`](receipt-storage-cutover-runbook.md) — Sensitive-action checklist and evidence sources
 - [`docs/insert-commons-receiver-playbook.md`](insert-commons-receiver-playbook.md) — Receiver contract for the farm-side sender

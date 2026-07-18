@@ -52,7 +52,7 @@ describe('Phase 160 — a11y residuals closure', () => {
 
   it('phase 160 plan marked shipped', () => {
     const plan = readFileSync(
-      join(repoDocs, 'plans/phase_160_a11y_residuals.plan.md'),
+      join(repoDocs, 'plans/archive/phase_160_a11y_residuals.plan.md'),
       'utf8',
     )
     expect(plan).toContain('Status:** shipped')

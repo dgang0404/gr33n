@@ -37,7 +37,7 @@ describe('Phase 162 — confirm→DB smoke closure', () => {
 
   it('phase 162 plan marked shipped', () => {
     const plan = readFileSync(
-      join(repoRoot, 'docs/plans/phase_162_guardian_confirm_db_smoke.plan.md'),
+      join(repoRoot, 'docs/plans/archive/phase_162_guardian_confirm_db_smoke.plan.md'),
       'utf8',
     )
     expect(plan).toContain('Status:** shipped')

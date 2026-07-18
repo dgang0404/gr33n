@@ -59,7 +59,7 @@ tags:
   - name: units
     description: Units of measure reference
   - name: commons
-    description: Published commons catalog (gr33n_inserts) — browse metadata packs and record per-farm imports
+    description: Published commons catalog — gr33n_inserts browse/import, crop catalog, agronomy field guides, and symptoms (read-only)
   - name: farms
     description: Farm management, Insert Commons opt-in and sync, and farm-scoped audit events (owner/manager)
   - name: organizations

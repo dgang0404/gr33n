@@ -3,6 +3,7 @@ package farmguardian
 import (
 	"strings"
 	"testing"
+	"time"
 )
 
 func setupPackArgsFixture() map[string]any {
@@ -62,6 +63,184 @@ func TestApplyRevisionDeltas_NoActionableChange(t *testing.T) {
 		"what does this do again?")
 	if changed {
 		t.Fatal("expected changed=false for a non-correction turn")
+	}
+}
+
+func TestApplyRevisionDeltas_CreateTaskTitleCallIt(t *testing.T) {
+	prior := map[string]any{"title": "Check humidity in grow room", "zone_id": float64(3)}
+	next, changed := applyRevisionDeltas("create_task", prior, "call it Inspect tent RH instead")
+	if !changed {
+		t.Fatal("expected changed=true")
+	}
+	if next["title"] != "Inspect tent RH" {
+		t.Fatalf("title = %#v want Inspect tent RH", next["title"])
+	}
+}
+
+func TestApplyRevisionDeltas_CreateTaskInsteadOf(t *testing.T) {
+	prior := map[string]any{"title": "Check humidity in grow room"}
+	next, changed := applyRevisionDeltas("create_task", prior, "Inspect tent RH instead of Check humidity in grow room")
+	if !changed {
+		t.Fatal("expected changed=true")
+	}
+	if next["title"] != "Inspect tent RH" {
+		t.Fatalf("title = %#v", next["title"])
+	}
+}
+
+func TestApplyRevisionDeltas_CreateTaskDescription(t *testing.T) {
+	prior := map[string]any{"title": "Refill OHN", "description": "Low stock alert"}
+	next, changed := applyRevisionDeltas("create_task_from_alert", prior, "description should be Restock OHN from Supplies")
+	if !changed {
+		t.Fatal("expected changed=true")
+	}
+	if next["description"] != "Restock OHN from Supplies" {
+		t.Fatalf("description = %#v", next["description"])
+	}
+}
+
+// Phase 191 — live turn: "Please revise this change request — Create task:
+// Follow up from Guardian chat. Correction: Should this task mention
+// checking stock in Veg Tent?" This question-phrased correction previously
+// matched no revise pattern, so the turn fell through to open-ended chat and
+// the pending create_task proposal was never actually revised.
+func TestApplyRevisionDeltas_CreateTaskDescriptionAppend_questionPhrased(t *testing.T) {
+	prior := map[string]any{"title": "Follow up from Guardian chat"}
+	next, changed := applyRevisionDeltas("create_task", prior, "Should this task mention checking stock in Veg Tent?")
+	if !changed {
+		t.Fatal("expected changed=true")
+	}
+	if next["description"] != "Checking stock in Veg Tent." {
+		t.Fatalf("description = %#v", next["description"])
+	}
+}
+
+func TestApplyRevisionDeltas_CreateTaskDescriptionAppend_appendsToExisting(t *testing.T) {
+	prior := map[string]any{"title": "Refill calcium nitrate", "description": "Refill when stock is low."}
+	next, changed := applyRevisionDeltas("create_task", prior, "Should it also mention checking stock in Veg Tent?")
+	if !changed {
+		t.Fatal("expected changed=true")
+	}
+	want := "Refill when stock is low. Also checking stock in Veg Tent."
+	if next["description"] != want {
+		t.Fatalf("description = %#v, want %q", next["description"], want)
+	}
+}
+
+func TestApplyRevisionDeltas_CreateTaskDescriptionAppend_explicitReplaceStillWins(t *testing.T) {
+	prior := map[string]any{"title": "Refill OHN", "description": "Old description"}
+	next, changed := applyRevisionDeltas("create_task", prior, "description should be Check stock levels first")
+	if !changed {
+		t.Fatal("expected changed=true")
+	}
+	if next["description"] != "Check stock levels first" {
+		t.Fatalf("description = %#v", next["description"])
+	}
+}
+
+func TestApplyRevisionDeltas_CreateTaskDescriptionAppend_unrelatedQuestionNoMatch(t *testing.T) {
+	prior := map[string]any{"title": "Refill OHN"}
+	_, changed := applyRevisionDeltas("create_task", prior, "Before I confirm — which zone should this task refer to?")
+	if changed {
+		t.Fatal("expected changed=false — this is a zone clarification, not a description addition")
+	}
+}
+
+func TestApplyRevisionDeltas_CreateTaskNoSpuriousChange(t *testing.T) {
+	prior := map[string]any{"title": "Check humidity"}
+	_, changed := applyRevisionDeltas("create_task", prior, "when should I run this?")
+	if changed {
+		t.Fatal("expected changed=false for clarifying question")
+	}
+}
+
+func TestApplyRevisionDeltas_CreateTaskZoneIDNumeric(t *testing.T) {
+	prior := map[string]any{"title": "Refill calcium nitrate"}
+	next, changed := applyRevisionDeltas("create_task", prior, "assign it to zone 3 for now")
+	if !changed {
+		t.Fatal("expected changed=true")
+	}
+	if next["zone_id"].(float64) != 3 {
+		t.Fatalf("zone_id = %#v want 3", next["zone_id"])
+	}
+}
+
+func TestTaskZoneRevisionCue(t *testing.T) {
+	if !taskZoneRevisionCue("Put it in Veg Room — that is the zone for this task.") {
+		t.Fatal("expected zone revision cue for assignment turn")
+	}
+	if taskZoneRevisionCue("Before I confirm — which zone should this task refer to?") {
+		t.Fatal("clarifying question should not trigger zone revise")
+	}
+}
+
+func TestParseTaskZoneIDNumeric(t *testing.T) {
+	if zid, ok := parseTaskZoneIDNumeric("use zone id 12"); !ok || zid != 12 {
+		t.Fatalf("zone id 12: got %d ok=%v", zid, ok)
+	}
+	if _, ok := parseTaskZoneIDNumeric("which zone should this refer to?"); ok {
+		t.Fatal("expected no numeric zone match")
+	}
+}
+
+func TestParseTaskDueDateRevision(t *testing.T) {
+	fixed := time.Date(2026, 7, 14, 15, 30, 0, 0, time.UTC)
+	if due, ok := parseTaskDueDateRevisionAt("set the due date to 2026-07-20", fixed); !ok || due != "2026-07-20" {
+		t.Fatalf("set due date: got %q ok=%v", due, ok)
+	}
+	if due, ok := parseTaskDueDateRevisionAt("due date should be 2026-08-01", fixed); !ok || due != "2026-08-01" {
+		t.Fatalf("due date should be: got %q ok=%v", due, ok)
+	}
+	if due, ok := parseTaskDueDateRevisionAt("make it due tomorrow", fixed); !ok || due != "2026-07-15" {
+		t.Fatalf("due tomorrow: got %q ok=%v", due, ok)
+	}
+	if due, ok := parseTaskDueDateRevisionAt("due in 3 days", fixed); !ok || due != "2026-07-17" {
+		t.Fatalf("due in 3 days: got %q ok=%v", due, ok)
+	}
+	if _, ok := parseTaskDueDateRevisionAt("when should I run this?", fixed); ok {
+		t.Fatal("clarifying question should not match due date")
+	}
+}
+
+func TestApplyRevisionDeltas_CreateTaskDueDate(t *testing.T) {
+	prior := map[string]any{"title": "Refill calcium nitrate"}
+	next, changed := applyRevisionDeltas("create_task", prior, "make it due tomorrow")
+	if !changed {
+		t.Fatal("expected changed=true")
+	}
+	if next["title"] != "Refill calcium nitrate" {
+		t.Fatalf("title = %#v want preserved Refill calcium nitrate", next["title"])
+	}
+	want := time.Now().UTC().AddDate(0, 0, 1).Format("2006-01-02")
+	if next["due_date"] != want {
+		t.Fatalf("due_date = %#v want %s", next["due_date"], want)
+	}
+}
+
+func TestParseTaskTitleRevision_rejectsDueTomorrowAsTitle(t *testing.T) {
+	prior := map[string]any{"title": "Refill calcium nitrate"}
+	if title, ok := parseTaskTitleRevision("make it due tomorrow", prior); ok {
+		t.Fatalf("expected no title revision, got %q", title)
+	}
+}
+
+func TestParseTaskTitleRevision_callItStillWorks(t *testing.T) {
+	prior := map[string]any{"title": "Follow up from Guardian chat"}
+	if title, ok := parseTaskTitleRevision("call it Refill calcium nitrate instead", prior); !ok || title != "Refill calcium nitrate" {
+		t.Fatalf("got title=%q ok=%v", title, ok)
+	}
+}
+
+func TestLooksLikeDueDatePhrase(t *testing.T) {
+	for _, s := range []string{"due tomorrow", "tomorrow", "due in 3 days", "2026-07-20"} {
+		if !looksLikeDueDatePhrase(s) {
+			t.Fatalf("want due-date phrase: %q", s)
+		}
+	}
+	for _, s := range []string{"Refill calcium nitrate", "Inspect tent RH", ""} {
+		if looksLikeDueDatePhrase(s) {
+			t.Fatalf("want not due-date phrase: %q", s)
+		}
 	}
 }
 

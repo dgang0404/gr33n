@@ -44,7 +44,7 @@ describe('Phase 45 WS5 — module shells closure', () => {
 
   it('phase 45 parent plan marks WS5 complete', () => {
     const plan = readFileSync(
-      join(repoDocs, 'plans/phase_45_farmer_validation_whole_app_polish.plan.md'),
+      join(repoDocs, 'plans/archive/phase_45_farmer_validation_whole_app_polish.plan.md'),
       'utf8',
     )
     expect(plan).toMatch(/ws5-module-shells[\s\S]*status: completed/)

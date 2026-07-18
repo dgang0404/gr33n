@@ -48,5 +48,5 @@ DROP SCHEMA IF EXISTS gr33ncrops CASCADE;
 
 ## Related docs
 
-- Phase14 plan: [`plans/phase_14_network_and_commons.plan.md`](plans/phase_14_network_and_commons.plan.md)
+- Phase14 plan: [`plans/archive/phase_14_network_and_commons.plan.md`](plans/archive/phase_14_network_and_commons.plan.md)
 - Phase 14 operator index: [`phase-14-operator-documentation.md`](phase-14-operator-documentation.md)

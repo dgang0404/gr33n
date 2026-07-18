@@ -2,7 +2,7 @@
 
 **Audience:** Farm admins and agronomy reviewers closing the Guardian quality loop after smoke tests or field use.
 
-**Related:** [Phase 134 plan](plans/phase_134_guardian_answer_feedback.plan.md) · [Phase 131 QA harness](plans/phase_131_guardian_qa_harness.plan.md) · [Phase 143 answer quality](plans/phase_143_guardian_answer_quality.plan.md) · [ci-guardian-qa.md](ci-guardian-qa.md)
+**Related:** [Phase 134 plan](plans/archive/phase_134_guardian_answer_feedback.plan.md) · [Phase 131 QA harness](plans/archive/phase_131_guardian_qa_harness.plan.md) · [Phase 143 answer quality](plans/archive/phase_143_guardian_answer_quality.plan.md) · [ci-guardian-qa.md](ci-guardian-qa.md)
 
 ---
 
@@ -102,7 +102,7 @@ Columns: `session_id`, `turn_index`, `question`, `answer_excerpt`, `rating`, `re
 | Too slow | Runtime/timeouts (130); laptop tune; counsel vs quick model (138) |
 | Other | Read full answer in session; compare to `data/guardian_qa_runs/` archive |
 
-**Not in v1:** LLM-as-judge auto-scoring — human review only ([Phase 131 non-goals](plans/phase_131_guardian_qa_harness.plan.md)).
+**Not in v1:** LLM-as-judge auto-scoring — human review only ([Phase 131 non-goals](plans/archive/phase_131_guardian_qa_harness.plan.md)).
 
 ---
 

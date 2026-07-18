@@ -98,14 +98,19 @@ func temperatureFromEnv() float64 {
 	return f
 }
 
+// Phase 190 — default bumped 1024 -> 1536. Live turns on the phi3:mini CPU
+// profile showed grounded answers hitting exactly 1024/1024 completion
+// tokens mid-list ("...while refilling calcium nitrate:" with nothing
+// after) — a real budget cutoff, not the model choosing to stop. 1536 still
+// respects LLM_MAX_TOKENS for operators who need to tune it further.
 func maxTokensFromEnv() int {
 	s := strings.TrimSpace(os.Getenv("LLM_MAX_TOKENS"))
 	if s == "" {
-		return 1024
+		return 1536
 	}
 	n, err := strconv.Atoi(s)
 	if err != nil || n < 1 {
-		return 1024
+		return 1536
 	}
 	if n > 8192 {
 		return 8192

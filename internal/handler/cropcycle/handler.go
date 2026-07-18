@@ -27,12 +27,6 @@ func NewHandler(pool *pgxpool.Pool) *Handler {
 	return &Handler{q: db.New(pool)}
 }
 
-func numericFromFloat64(v float64) (pgtype.Numeric, error) {
-	var n pgtype.Numeric
-	err := n.Scan(strconv.FormatFloat(v, 'f', -1, 64))
-	return n, err
-}
-
 func parseGrowthStage(s string) *db.Gr33nfertigationGrowthStageEnum {
 	var v db.Gr33nfertigationGrowthStageEnum
 	if strings.TrimSpace(s) == "" {
@@ -41,18 +35,6 @@ func parseGrowthStage(s string) *db.Gr33nfertigationGrowthStageEnum {
 		v = db.Gr33nfertigationGrowthStageEnum(strings.TrimSpace(s))
 	}
 	return &v
-}
-
-func parseDate(s string) (pgtype.Date, error) {
-	s = strings.TrimSpace(s)
-	if s == "" {
-		return pgtype.Date{}, errors.New("empty date")
-	}
-	t, err := time.Parse("2006-01-02", s)
-	if err != nil {
-		return pgtype.Date{}, err
-	}
-	return pgtype.Date{Time: t, Valid: true}, nil
 }
 
 // List — GET /farms/{id}/crop-cycles
@@ -210,7 +192,7 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusBadRequest, "zone does not belong to this farm")
 		return
 	}
-	started, err := parseDate(body.StartedAt)
+	started, err := httputil.ParseDate(body.StartedAt)
 	if err != nil {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid started_at (use YYYY-MM-DD)")
 		return
@@ -330,7 +312,7 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 		if strings.TrimSpace(*body.HarvestedAt) == "" {
 			harvested = pgtype.Date{}
 		} else {
-			harvested, err = parseDate(*body.HarvestedAt)
+			harvested, err = httputil.ParseDate(*body.HarvestedAt)
 			if err != nil {
 				httputil.WriteError(w, http.StatusBadRequest, "invalid harvested_at")
 				return
@@ -339,7 +321,7 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 	}
 	yield := existing.YieldGrams
 	if body.YieldGrams != nil {
-		yield, err = numericFromFloat64(*body.YieldGrams)
+		yield, err = httputil.NumericFromFloat64(*body.YieldGrams)
 		if err != nil {
 			httputil.WriteError(w, http.StatusBadRequest, "invalid yield_grams")
 			return

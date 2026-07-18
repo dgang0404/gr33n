@@ -157,7 +157,7 @@ Push archives to **S3-compatible** cold storage with lifecycle rules (Glacier, e
 | [operator-troubleshooting.md](operator-troubleshooting.md) | Auth debug, reading **`request`** lines |
 | [local-operator-bootstrap.md](local-operator-bootstrap.md) | Local URLs, Compose DB |
 | [sit-in-operator-experience.md](workstreams/sit-in-operator-experience.md) | Logging workstream context |
-| [phase_26_operator_tutorial_observability_rag.plan.md](plans/phase_26_operator_tutorial_observability_rag.plan.md) | Phase 26 WS2 scope |
+| [phase_26_operator_tutorial_observability_rag.plan.md](plans/archive/phase_26_operator_tutorial_observability_rag.plan.md) | Phase 26 WS2 scope |
 | **Compose overlay:** `docker-compose.logging.yml` | Merge with `docker-compose.yml` — Loki + Promtail + Grafana |
 
 ---

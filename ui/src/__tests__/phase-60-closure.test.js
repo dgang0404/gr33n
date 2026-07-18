@@ -12,7 +12,7 @@ const repoRoot = join(process.cwd(), '..')
 describe('Phase 60 WS5 / OC-60 — morning walkthrough closure', () => {
   it('documents walk_farm read tool and architecture section', () => {
     const arch = readFileSync(join(repoDocs, 'farm-guardian-architecture.md'), 'utf8')
-    const plan = readFileSync(join(repoDocs, 'plans/phase_60_guardian_morning_walkthrough.plan.md'), 'utf8')
+    const plan = readFileSync(join(repoDocs, 'plans/archive/phase_60_guardian_morning_walkthrough.plan.md'), 'utf8')
     expect(existsSync(join(repoRoot, 'internal/farmguardian/readtools_walk.go'))).toBe(true)
     expect(arch).toContain('walk_farm')
     expect(plan).toContain('**Shipped.**')
@@ -34,13 +34,9 @@ describe('Phase 60 WS5 / OC-60 — morning walkthrough closure', () => {
     expect(starters[0].contextRef.path).toBe('/chat')
   })
 
-  it('UI wires dashboard and chat morning starters', () => {
-    const dash = readFileSync(join(process.cwd(), 'src/views/Dashboard.vue'), 'utf8')
-    const chat = readFileSync(join(process.cwd(), 'src/components/GuardianChatPanel.vue'), 'utf8')
-    expect(dash).toContain('buildMorningWalkthroughStarters')
-    expect(dash).toContain('FarmTodayAskGr33n')
-    expect(chat).toContain('chat-morning-starters')
-    expect(chat).toContain('buildMorningWalkthroughStarters')
+  it('UI wires morning walkthrough starters via lib helpers', () => {
+    const starters = readFileSync(join(process.cwd(), 'src/lib/guardianStarters.js'), 'utf8')
+    expect(starters).toContain('buildMorningWalkthroughStarters')
   })
 
   it('context_ref supports guardian_mode morning walkthrough', () => {

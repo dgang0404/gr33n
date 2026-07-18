@@ -7,6 +7,16 @@ function apiBaseURL() {
   return import.meta.env.VITE_API_URL ?? 'http://localhost:8080'
 }
 
+/** Normalize session reload turns so accuracy_note survives GET /v1/chat/sessions. */
+export function normalizeSessionTurn(t) {
+  if (!t || typeof t !== 'object') return t
+  const note = t.accuracy_note ?? t.accuracyNote ?? ''
+  return {
+    ...t,
+    accuracy_note: typeof note === 'string' ? note : String(note ?? ''),
+  }
+}
+
 function formatChatError(payload) {
   if (!payload || typeof payload !== 'object') return 'LLM request failed'
   let msg = payload.error || 'LLM request failed'
@@ -37,7 +47,7 @@ export const useGuardianChatStore = defineStore('guardianChat', {
 
   actions: {
     setTranscript(turns) {
-      this.transcript = Array.isArray(turns) ? [...turns] : []
+      this.transcript = Array.isArray(turns) ? turns.map(normalizeSessionTurn) : []
     },
 
     clearTranscript() {

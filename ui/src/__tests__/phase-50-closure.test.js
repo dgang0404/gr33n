@@ -133,7 +133,7 @@ describe('Phase 50 WS6 / OC-50 — hardware wiring closure', () => {
 
   it('phase 50 plan marks all workstreams completed', () => {
     const plan = readFileSync(
-      join(repoDocs, 'plans/phase_50_hardware_wiring_visibility.plan.md'),
+      join(repoDocs, 'plans/archive/phase_50_hardware_wiring_visibility.plan.md'),
       'utf8',
     )
     for (const id of [
@@ -151,7 +151,7 @@ describe('Phase 50 WS6 / OC-50 — hardware wiring closure', () => {
 
   it('OC-50 marked completed in operational closure plan', () => {
     const closure = readFileSync(
-      join(repoDocs, 'plans/phase_35_37_operational_closure.plan.md'),
+      join(repoDocs, 'plans/archive/phase_35_37_operational_closure.plan.md'),
       'utf8',
     )
     expect(closure).toContain('oc-50-closure')

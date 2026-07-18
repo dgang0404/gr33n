@@ -1,12 +1,12 @@
 # Farmer vocabulary — gr33n UI language contract
 
-**Status:** Published (Phase 47 WS5). **Vocabulary v2 (zones not rooms)** — **shipped** in [Phase 45 WS3](plans/phase_45_farmer_validation_whole_app_polish.plan.md#ws3--copy-pass-v2). Enforced on grow routes by `ui/src/__tests__/farmer-vocabulary-grow-path.test.js` and `phase-45-ws3-closure.test.js`.
+**Status:** Published (Phase 47 WS5). **Vocabulary v2 (zones not rooms)** — **shipped** in [Phase 45 WS3](plans/archive/phase_45_farmer_validation_whole_app_polish.plan.md#ws3--copy-pass-v2). Enforced on grow routes by `ui/src/__tests__/farmer-vocabulary-grow-path.test.js` and `phase-45-ws3-closure.test.js`.
 
 **Audience:** Product, UX, and developers shipping Phases 40–47 and 45 sit-in validation.
 
 **Purpose:** Farmers understand **EC, irrigation, fertigation, photoperiod, humidity** in the grow room. They should not need to learn **setpoint, cron, predicate, executable_action**, or six admin apps to run gr33n.
 
-**Canonical feeding phase:** [phase_47_feeding_water_plain_language.plan.md](plans/phase_47_feeding_water_plain_language.plan.md)
+**Canonical feeding phase:** [phase_47_feeding_water_plain_language.plan.md](plans/archive/phase_47_feeding_water_plain_language.plan.md)
 
 ---
 
@@ -147,5 +147,5 @@ Targets always come from the assigned crop profile (`lookup_crop_targets` / `gro
 | Doc | Use |
 |-----|-----|
 | [farmer_ux_roadmap_40_plus.plan.md](plans/farmer_ux_roadmap_40_plus.plan.md) | Full arc |
-| [phase_20_9b_terminology_and_copy_pass.plan.md](plans/phase_20_9b_terminology_and_copy_pass.plan.md) | Earlier pass |
+| [phase_20_9b_terminology_and_copy_pass.plan.md](plans/archive/phase_20_9b_terminology_and_copy_pass.plan.md) | Earlier pass |
 | [operator-tour.md](operator-tour.md) | Operator narrative |

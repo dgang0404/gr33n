@@ -4,7 +4,7 @@
 
 **Closes blind spot #9:** What promotes **platform-wide** vs stays **farm-local** when one org runs many sites.
 
-**Closure:** [Phase 98](plans/phase_98_enterprise_catalog_promotion.plan.md) · [`phase-98-closure.md`](plans/phase-98-closure.md)
+**Closure:** [Phase 98](plans/archive/phase_98_enterprise_catalog_promotion.plan.md) · [`phase-98-closure.md`](plans/phase-98-closure.md)
 
 ---
 
@@ -51,7 +51,7 @@ YAML override pack ─────────────► apply-agronomy-ove
 1. Platform team ships YAML + seed migration ([catalog integrator playbook](catalog-integrator-playbook.md)).
 2. **Every site** runs `make migrate` — bumps `crop_catalog_entries.catalog_version`.
 3. Phase 109 notifies farm admins (`catalog_version_bump` alerts) when API restarts.
-4. Each site optionally runs `make rag-ingest-field-guides` if guide bodies changed ([Phase 97](plans/phase_97_rag_structured_truth_governance.plan.md)).
+4. Each site optionally runs `make rag-ingest-field-guides` if guide bodies changed ([Phase 97](plans/archive/phase_97_rag_structured_truth_governance.plan.md)).
 5. Farm EC overrides **remain** — structured profiles still win over stale RAG.
 
 **Pin in site manifest:** `platform.catalog_version_min` must match post-migrate DB (see [`site-manifest.example.yaml`](../scripts/enterprise/site-manifest.example.yaml)).

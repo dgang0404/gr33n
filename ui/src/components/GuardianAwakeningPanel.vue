@@ -49,6 +49,8 @@ const props = defineProps({
   farmId: { type: [Number, String], default: null },
   mode: { type: String, default: 'farm_counsel' },
   autoWarm: { type: Boolean, default: true },
+  /** Hide the busy box when this session is already streaming (Phase 179). */
+  suppressBusy: { type: Boolean, default: false },
 })
 
 defineEmits(['switch-quick'])
@@ -58,6 +60,7 @@ const { awakening, isStirring, hasStirTimedOut } = storeToRefs(readiness)
 
 const visible = computed(() => {
   const s = awakening.value?.state
+  if (props.suppressBusy && s === 'busy') return false
   const corpusWarn = props.mode === 'farm_counsel' && corpusNeedsAttention.value
   if (!s || s === 'ready') {
     return !!awakening.value?.stale_ollama_cli || corpusWarn

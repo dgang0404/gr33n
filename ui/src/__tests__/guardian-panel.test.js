@@ -143,6 +143,20 @@ describe('Phase 29 WS1 — guardian panel store', () => {
     expect(panel.navHistory).toHaveLength(1)
     expect(panel.navHistory[0].path).toBe('/')
   })
+
+  it('requestViewConversation loads session without prefill (Phase 194)', () => {
+    const panel = useGuardianPanelStore()
+    panel.prefilledMessage = 'old prefill'
+    panel.drawerTab = 'pending'
+    panel.requestViewConversation({
+      session_id: 'sess-xyz',
+      summary: 'Create task: due tomorrow',
+    })
+    expect(panel.drawerTab).toBe('chat')
+    expect(panel.activeSessionId).toBe('sess-xyz')
+    expect(panel.prefilledMessage).toBe('')
+    expect(panel.viewConversationTick).toBe(1)
+  })
 })
 
 describe('Phase 29 WS1 — GuardianDrawer', () => {

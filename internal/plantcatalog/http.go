@@ -72,12 +72,3 @@ func CreateFromRequest(ctx context.Context, q *db.Queries, farmID int64, body js
 func WriteCreateResponse(w http.ResponseWriter, plant db.Gr33ncropsPlant, status int) {
 	httputil.WriteJSON(w, status, plant)
 }
-
-// ResolveCropKeyFromProfile returns crop_key for a profile id (legacy clients).
-func ResolveCropKeyFromProfile(ctx context.Context, q *db.Queries, profileID int64) (string, error) {
-	prof, err := q.GetCropProfile(ctx, profileID)
-	if err != nil {
-		return "", err
-	}
-	return strings.TrimSpace(prof.CropKey), nil
-}

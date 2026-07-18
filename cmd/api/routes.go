@@ -26,7 +26,6 @@ import (
 	chathandler "gr33n-api/internal/handler/chat"
 	fieldguideshandler "gr33n-api/internal/handler/fieldguides"
 	commonscataloghandler "gr33n-api/internal/handler/commonscatalog"
-	commonscropcataloghandler "gr33n-api/internal/handler/commonscropcatalog"
 	costhandler "gr33n-api/internal/handler/cost"
 	cropcyclehandler "gr33n-api/internal/handler/cropcycle"
 	cropprofilehandler "gr33n-api/internal/handler/cropprofile"
@@ -43,7 +42,6 @@ import (
 	planthandler "gr33n-api/internal/handler/plants"
 	profilehandler "gr33n-api/internal/handler/profile"
 	raghandler "gr33n-api/internal/handler/rag"
-	recipehandler "gr33n-api/internal/handler/recipe"
 	sensorhandler "gr33n-api/internal/handler/sensor"
 	setpointhandler "gr33n-api/internal/handler/setpoint"
 	ssehandler "gr33n-api/internal/handler/sse"
@@ -83,7 +81,6 @@ func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationwo
 	notificationTemplate := notificationtemplatehandler.NewHandler(pool)
 	fertigation := fertigationhandler.NewHandler(pool, worker)
 	nf := nfhandler.NewHandler(pool)
-	recipe := recipehandler.NewHandler(pool)
 	cropcycle := cropcyclehandler.NewHandler(pool)
 	rag := raghandler.NewHandler(pool, aiCfg.Enabled)
 	aichat := chathandler.NewHandler(pool, aiCfg, fileStore, modelCache)
@@ -114,7 +111,6 @@ func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationwo
 	files := fileattachhandler.NewHandler(pool, fileStore, fileCfg.DownloadURLTTL)
 	commonsCatalog := commonscataloghandler.NewHandler(pool)
 	platform := platformhandler.NewHandler(pool)
-	commonsCropCatalog := commonscropcataloghandler.NewHandler(pool)
 
 	jwtChain := func(h http.Handler) http.Handler {
 		return requireJWT(withRequestLog("jwt", h))
@@ -233,17 +229,15 @@ func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationwo
 	// Phase 91 — bootstrap template catalog (starter pack pickers)
 	mux.Handle("GET /platform/bootstrap-templates", jwt(http.HandlerFunc(platform.ListBootstrapTemplates)))
 
-	// Commons catalog (gr33n_inserts — browse + per-farm import audit)
+	// Commons — gr33n_inserts catalog, crop catalog, agronomy guides (read-only)
 	mux.Handle("GET /commons/catalog", jwt(http.HandlerFunc(commonsCatalog.List)))
 	mux.Handle("GET /commons/catalog/{slug}", jwt(http.HandlerFunc(commonsCatalog.GetBySlug)))
 	mux.Handle("GET /farms/{id}/commons/catalog-imports", jwt(http.HandlerFunc(commonsCatalog.ListFarmImports)))
 	mux.Handle("POST /farms/{id}/commons/catalog-imports", jwt(http.HandlerFunc(commonsCatalog.Import)))
-
-	// Phase 84 WS-J — platform crop catalog + agronomy field guides (read-only)
-	mux.Handle("GET /commons/crop-catalog", jwt(http.HandlerFunc(commonsCropCatalog.ListCropCatalog)))
-	mux.Handle("GET /commons/crop-catalog/{crop_key}", jwt(http.HandlerFunc(commonsCropCatalog.GetCropCatalogEntry)))
-	mux.Handle("GET /commons/agronomy-field-guides", jwt(http.HandlerFunc(commonsCropCatalog.ListFieldGuides)))
-	mux.Handle("GET /commons/agronomy-field-guides/{slug}", jwt(http.HandlerFunc(commonsCropCatalog.GetFieldGuide)))
+	mux.Handle("GET /commons/crop-catalog", jwt(http.HandlerFunc(commonsCatalog.ListCropCatalog)))
+	mux.Handle("GET /commons/crop-catalog/{crop_key}", jwt(http.HandlerFunc(commonsCatalog.GetCropCatalogEntry)))
+	mux.Handle("GET /commons/agronomy-field-guides", jwt(http.HandlerFunc(commonsCatalog.ListFieldGuides)))
+	mux.Handle("GET /commons/agronomy-field-guides/{slug}", jwt(http.HandlerFunc(commonsCatalog.GetFieldGuide)))
 	mux.Handle("GET /commons/agronomy-symptoms", jwt(http.HandlerFunc(commonsCatalog.ListAgronomySymptoms)))
 
 	// Phase 115 — farm module catalog (static metadata)
@@ -305,6 +299,7 @@ func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationwo
 	mux.Handle("POST /farms/{id}/tasks", jwt(http.HandlerFunc(task.Create)))
 	mux.Handle("GET /farms/{id}/rag/search", jwt(http.HandlerFunc(rag.Search)))
 	mux.Handle("POST /farms/{id}/rag/search", jwt(http.HandlerFunc(rag.Search)))
+	mux.Handle("GET /farms/{id}/rag/docs", jwt(http.HandlerFunc(rag.ListDocChunks)))
 	mux.Handle("POST /farms/{id}/rag/answer", jwt(http.HandlerFunc(rag.Answer)))
 	mux.Handle("GET /farms/{id}/automation/runs", jwt(http.HandlerFunc(automation.ListRunsByFarm)))
 	mux.Handle("GET /farms/{id}/automation/rules", jwt(http.HandlerFunc(automation.ListAutomationRulesByFarm)))
@@ -494,7 +489,7 @@ func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationwo
 	mux.Handle("GET /file-attachments/{id}/download", jwt(http.HandlerFunc(files.DownloadTarget)))
 	mux.Handle("GET /file-attachments/{id}/content", jwt(http.HandlerFunc(files.Download)))
 
-	// Natural farming
+	// Natural farming — inputs, batches, application recipes
 	mux.Handle("GET /farms/{id}/naturalfarming/inputs", jwt(http.HandlerFunc(nf.ListInputs)))
 	mux.Handle("POST /farms/{id}/naturalfarming/inputs", jwt(http.HandlerFunc(nf.CreateInputDefinition)))
 	mux.Handle("PUT /naturalfarming/inputs/{id}", jwt(http.HandlerFunc(nf.UpdateInputDefinition)))
@@ -503,15 +498,14 @@ func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationwo
 	mux.Handle("POST /farms/{id}/naturalfarming/batches", jwt(http.HandlerFunc(nf.CreateInputBatch)))
 	mux.Handle("PUT /naturalfarming/batches/{id}", jwt(http.HandlerFunc(nf.UpdateInputBatch)))
 	mux.Handle("DELETE /naturalfarming/batches/{id}", jwt(http.HandlerFunc(nf.DeleteInputBatch)))
-
-	mux.Handle("GET /farms/{id}/naturalfarming/recipes", jwt(http.HandlerFunc(recipe.List)))
-	mux.Handle("POST /farms/{id}/naturalfarming/recipes", jwt(http.HandlerFunc(recipe.Create)))
-	mux.Handle("GET /naturalfarming/recipes/{id}/components", jwt(http.HandlerFunc(recipe.ListComponents)))
-	mux.Handle("POST /naturalfarming/recipes/{id}/components", jwt(http.HandlerFunc(recipe.AddComponent)))
-	mux.Handle("DELETE /naturalfarming/recipes/{id}/components/{iid}", jwt(http.HandlerFunc(recipe.RemoveComponent)))
-	mux.Handle("GET /naturalfarming/recipes/{id}", jwt(http.HandlerFunc(recipe.Get)))
-	mux.Handle("PUT /naturalfarming/recipes/{id}", jwt(http.HandlerFunc(recipe.Update)))
-	mux.Handle("DELETE /naturalfarming/recipes/{id}", jwt(http.HandlerFunc(recipe.Delete)))
+	mux.Handle("GET /farms/{id}/naturalfarming/recipes", jwt(http.HandlerFunc(nf.ListRecipes)))
+	mux.Handle("POST /farms/{id}/naturalfarming/recipes", jwt(http.HandlerFunc(nf.CreateRecipe)))
+	mux.Handle("GET /naturalfarming/recipes/{id}/components", jwt(http.HandlerFunc(nf.ListRecipeComponents)))
+	mux.Handle("POST /naturalfarming/recipes/{id}/components", jwt(http.HandlerFunc(nf.AddRecipeComponent)))
+	mux.Handle("DELETE /naturalfarming/recipes/{id}/components/{iid}", jwt(http.HandlerFunc(nf.RemoveRecipeComponent)))
+	mux.Handle("GET /naturalfarming/recipes/{id}", jwt(http.HandlerFunc(nf.GetRecipe)))
+	mux.Handle("PUT /naturalfarming/recipes/{id}", jwt(http.HandlerFunc(nf.UpdateRecipe)))
+	mux.Handle("DELETE /naturalfarming/recipes/{id}", jwt(http.HandlerFunc(nf.DeleteRecipe)))
 
 	// Phase 35 — lighting programs (photoperiod domain)
 	mux.Handle("GET /lighting-programs/presets", jwt(http.HandlerFunc(lighting.ListPresets)))

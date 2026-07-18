@@ -58,6 +58,7 @@ describe('GuardianChatPanel grounded model gate', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
     vi.clearAllMocks()
+    localStorage.setItem('gr33n_token', 'test-token')
     localStorage.setItem('gr33n_farm_id', '1')
     stubChatApi()
     const caps = useCapabilitiesStore()
@@ -94,7 +95,7 @@ describe('GuardianChatPanel grounded model gate', () => {
     await flushPromises()
     await flushPromises()
 
-    await wrapper.find('[data-test="chat-use-farm-context"]').setValue(false)
+    await wrapper.find('[data-test="guardian-mode-quick"]').trigger('click')
     await flushPromises()
 
     expect(wrapper.find('[data-test="chat-grounded-model-block"]').exists()).toBe(false)

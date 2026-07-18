@@ -56,7 +56,7 @@ describe('Phase 48 WS7 / OC-48 — dev seed closure', () => {
 
   it('OC-48 marked completed in operational closure plan', () => {
     const closure = readFileSync(
-      join(repoDocs, 'plans/phase_35_37_operational_closure.plan.md'),
+      join(repoDocs, 'plans/archive/phase_35_37_operational_closure.plan.md'),
       'utf8',
     )
     expect(closure).toContain('oc-48-closure')
@@ -66,7 +66,7 @@ describe('Phase 48 WS7 / OC-48 — dev seed closure', () => {
 
   it('phase 48 plan marks all workstreams completed', () => {
     const plan = readFileSync(
-      join(repoDocs, 'plans/phase_48_dev_seed_and_small_farm_profiles.plan.md'),
+      join(repoDocs, 'plans/archive/phase_48_dev_seed_and_small_farm_profiles.plan.md'),
       'utf8',
     )
     for (const id of [

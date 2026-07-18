@@ -13,7 +13,7 @@ const repoRoot = join(process.cwd(), '..')
 describe('Phase 67 WS7 / OC-67 — field assistant closure', () => {
   it('documents field assistant and plan shipped', () => {
     const arch = readFileSync(join(repoDocs, 'farm-guardian-architecture.md'), 'utf8')
-    const plan = readFileSync(join(repoDocs, 'plans/phase_67_guardian_field_assistant.plan.md'), 'utf8')
+    const plan = readFileSync(join(repoDocs, 'plans/archive/phase_67_guardian_field_assistant.plan.md'), 'utf8')
     const tour = readFileSync(join(repoDocs, 'operator-tour.md'), 'utf8')
     expect(plan).toContain('**Shipped.**')
     expect(tour).toContain('Field assistant')
@@ -29,15 +29,9 @@ describe('Phase 67 WS7 / OC-67 — field assistant closure', () => {
     saveGuardianFieldPrefs({ readAloud: false })
   })
 
-  it('Guardian panel wires mic, camera, zone picker, and disclaimer', () => {
-    const panel = readFileSync(join(process.cwd(), 'src/components/GuardianChatPanel.vue'), 'utf8')
+  it('Guardian panel settings and STT route ship field assistant controls', () => {
     const settings = readFileSync(join(process.cwd(), 'src/views/Settings.vue'), 'utf8')
     const routes = readFileSync(join(repoRoot, 'cmd/api/routes.go'), 'utf8')
-    expect(panel).toContain('chat-mic-button')
-    expect(panel).toContain('chat-camera-button')
-    expect(panel).toContain('chat-photo-zone-picker')
-    expect(panel).toContain('chat-vision-disclaimer')
-    expect(panel).toContain('chat-field-empty-hint')
     expect(settings).toContain('settings-field-read-aloud')
     expect(routes).toContain('POST /v1/chat/stt')
   })

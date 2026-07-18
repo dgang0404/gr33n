@@ -126,7 +126,7 @@ python3 import_config_to_platform.py --config config.yaml \
 
 PATCHes wiring via JWT (`/sensors/{id}/wiring`, `/actuators/{id}/wiring`), then rewrites minimal bootstrap YAML. Idempotent.
 
-Plan: [`plans/phase_51_pi_config_sync.plan.md`](plans/phase_51_pi_config_sync.plan.md).
+Plan: [`plans/archive/phase_51_pi_config_sync.plan.md`](plans/archive/phase_51_pi_config_sync.plan.md).
 
 ---
 
@@ -176,7 +176,7 @@ The API side must have `PI_API_KEY` set (see `cmd/api/main.go` / deployment docs
 | `PATCH` | `/actuators/{id}/assign` | Set `device_id` + `hardware_identifier` (relay HAT channel) |
 | `GET` | `/devices/{id}/pi-config` | Generate full `config.yaml` for that edge device |
 
-Plan: [`plans/phase_50_hardware_wiring_visibility.plan.md`](plans/phase_50_hardware_wiring_visibility.plan.md). Runtime pull-from-API: [§2](#2-platform-sync-phase-51--recommended).
+Plan: [`plans/archive/phase_50_hardware_wiring_visibility.plan.md`](plans/archive/phase_50_hardware_wiring_visibility.plan.md). Runtime pull-from-API: [§2](#2-platform-sync-phase-51--recommended).
 
 ---
 

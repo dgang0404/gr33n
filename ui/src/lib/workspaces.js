@@ -1,10 +1,10 @@
 /**
  * Phase 68 WS1 — workspace model (SPA shells with internal tabs).
- * @see docs/plans/phase_68_workspace_shell_spa_nav.plan.md
+ * @see docs/plans/archive/phase_68_workspace_shell_spa_nav.plan.md
  */
 
 /** @typedef {{ id: string, label: string }} WorkspaceTab */
-/** @typedef {{ tab: string, fleet?: string }} AbsorbTarget */
+/** @typedef {{ tab: string, fleet?: string, section?: string }} AbsorbTarget */
 
 /** @type {Record<string, { label: string, icon: string, route: string, subtitle: string, tabs: WorkspaceTab[], absorbs?: Record<string, AbsorbTarget> }>} */
 export const WORKSPACES = {
@@ -48,16 +48,18 @@ export const WORKSPACES = {
     label: 'Help',
     icon: '📖',
     route: '/operator-guide',
-    subtitle: 'Operator guide, knowledge search, and commons catalog',
+    subtitle: 'How-to, search, symptoms, and import packs',
     tabs: [
-      { id: 'guide', label: 'Guide' },
+      { id: 'library', label: 'Library' },
       { id: 'pi-setup', label: 'Pi + HAT setup' },
-      { id: 'knowledge', label: 'Knowledge' },
-      { id: 'catalog', label: 'Catalog' },
+      { id: 'knowledge', label: 'Search' },
+      { id: 'symptoms', label: 'Symptom guide' },
+      { id: 'catalog', label: 'Import' },
     ],
     absorbs: {
       '/farm-knowledge': { tab: 'knowledge' },
       '/catalog': { tab: 'catalog' },
+      '/symptom-guide': { tab: 'symptoms' },
     },
   },
   comfort: {
@@ -141,6 +143,7 @@ function buildLegacyAbsorbIndex() {
         tab: target.tab ?? ws.tabs[0]?.id ?? 'rooms',
         fleet: target.fleet,
         zoneTab: target.zoneTab,
+        section: target.section,
       }
     }
   }
@@ -257,6 +260,14 @@ const FEEDWATER_TAB_ALIASES = {
   water: 'daily',
 }
 
+/** Phase 183 — legacy Help tab ids map to workspace tabs. */
+const HELP_TAB_ALIASES = {
+  guide: 'library',
+  knowledge: 'knowledge',
+  symptoms: 'symptoms',
+  catalog: 'catalog',
+}
+
 /**
  * @param {string} workspaceId
  * @param {string | undefined | null} tabId
@@ -273,6 +284,9 @@ export function resolveWorkspaceTab(workspaceId, tabId) {
   }
   if (workspaceId === 'feedwater' && tabId) {
     resolved = FEEDWATER_TAB_ALIASES[tabId] ?? tabId
+  }
+  if (workspaceId === 'help' && tabId) {
+    resolved = HELP_TAB_ALIASES[tabId] ?? tabId
   }
   if (resolved && tabs.some((t) => t.id === resolved)) return resolved
   return defaultTabFor(workspaceId)
@@ -293,10 +307,6 @@ export function buildZoneOpsRedirectRoutes() {
     {
       path: '/tasks',
       redirect: (to) => redirectToZoneOps(to, 'tasks'),
-    },
-    {
-      path: '/alerts',
-      redirect: (to) => redirectToZoneOps(to, 'alerts'),
     },
   ]
 }
@@ -337,6 +347,7 @@ export function buildLegacyRedirectRoutes() {
 
       const query = { ...to.query, tab: hit.tab }
       if (hit.fleet) query.fleet = hit.fleet
+      if (hit.section) query.section = hit.section
       return { path: hit.route, query }
     },
   }))

@@ -7,7 +7,7 @@
 - [`guardian-change-requests-guide.md`](guardian-change-requests-guide.md) — Confirm workflow
 - [`recommended-hardware-and-sizing.md`](recommended-hardware-and-sizing.md) — 8B vs 70B, GPU sizing
 - [`local-operator-bootstrap.md`](local-operator-bootstrap.md) — dev stack + ingest commands
-- [Phase 82](plans/phase_82_guardian_crop_grounding_hardening.plan.md) (crop library + zero-chunk guardrails) · [Phase 83](plans/phase_83_enterprise_agronomy_seed_pack.plan.md) (**shipped** — bootstrap + overrides) · [`phase-83-closure.md`](plans/phase-83-closure.md)
+- [Phase 82](plans/archive/phase_82_guardian_crop_grounding_hardening.plan.md) (crop library + zero-chunk guardrails) · [Phase 83](plans/archive/phase_83_enterprise_agronomy_seed_pack.plan.md) (**shipped** — bootstrap + overrides) · [`phase-83-closure.md`](plans/phase-83-closure.md)
 
 ---
 

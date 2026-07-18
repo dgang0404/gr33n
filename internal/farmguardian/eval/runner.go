@@ -33,16 +33,34 @@ func NewAPIClient(baseURL, token string, farmID int64) *APIClient {
 }
 
 type chatResponse struct {
-	Answer    string                         `json:"answer"`
-	Citations []farmguardian.CitationSummary `json:"citations"`
-	Proposals []farmguardian.ActionProposal  `json:"proposals"`
-	Debug     *farmguardian.TurnDebug        `json:"debug,omitempty"`
+	Answer       string                         `json:"answer"`
+	SessionID    string                         `json:"session_id"`
+	Citations    []farmguardian.CitationSummary `json:"citations"`
+	Proposals    []farmguardian.ActionProposal  `json:"proposals"`
+	Debug        *farmguardian.TurnDebug        `json:"debug,omitempty"`
+	AccuracyNote string                         `json:"accuracy_note,omitempty"`
+}
+
+func accuracyNoteFromChatResponse(parsed chatResponse) string {
+	if note := strings.TrimSpace(parsed.AccuracyNote); note != "" {
+		return note
+	}
+	if parsed.Debug != nil {
+		return strings.TrimSpace(parsed.Debug.AccuracyNote)
+	}
+	return ""
 }
 
 // RunQuestion posts one eval prompt with a model override.
 func (c *APIClient) RunQuestion(ctx context.Context, model string, q Question) (ScoreInput, error) {
+	in, _, err := c.RunQuestionInSession(ctx, model, q, "")
+	return in, err
+}
+
+// RunQuestionInSession posts one eval prompt, optionally continuing an existing session_id.
+func (c *APIClient) RunQuestionInSession(ctx context.Context, model string, q Question, sessionID string) (ScoreInput, string, error) {
 	if c == nil || c.HTTP == nil {
-		return ScoreInput{}, fmt.Errorf("eval API client not configured")
+		return ScoreInput{}, "", fmt.Errorf("eval API client not configured")
 	}
 	if strings.TrimSpace(q.Model) != "" {
 		model = strings.TrimSpace(q.Model)
@@ -55,10 +73,13 @@ func (c *APIClient) RunQuestion(ctx context.Context, model string, q Question) (
 	if q.Grounded && c.FarmID > 0 {
 		body["farm_id"] = c.FarmID
 	}
+	if sessionID = strings.TrimSpace(sessionID); sessionID != "" {
+		body["session_id"] = sessionID
+	}
 	raw, _ := json.Marshal(body)
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, strings.TrimRight(c.BaseURL, "/")+"/v1/chat", bytes.NewReader(raw))
 	if err != nil {
-		return ScoreInput{}, err
+		return ScoreInput{}, "", err
 	}
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("X-Guardian-Eval-Id", q.ID)
@@ -68,17 +89,17 @@ func (c *APIClient) RunQuestion(ctx context.Context, model string, q Question) (
 	start := time.Now()
 	resp, err := c.HTTP.Do(req)
 	if err != nil {
-		return ScoreInput{}, err
+		return ScoreInput{}, "", err
 	}
 	defer resp.Body.Close()
 	respBody, _ := io.ReadAll(io.LimitReader(resp.Body, 4<<20))
 	latency := time.Since(start)
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return ScoreInput{Question: q, Latency: latency}, fmt.Errorf("chat HTTP %d: %s", resp.StatusCode, truncate(string(respBody), 200))
+		return ScoreInput{Question: q, Latency: latency}, "", fmt.Errorf("chat HTTP %d: %s", resp.StatusCode, truncate(string(respBody), 200))
 	}
 	var parsed chatResponse
 	if err := json.Unmarshal(respBody, &parsed); err != nil {
-		return ScoreInput{}, err
+		return ScoreInput{}, "", err
 	}
 	return ScoreInput{
 		Question:      q,
@@ -89,8 +110,9 @@ func (c *APIClient) RunQuestion(ctx context.Context, model string, q Question) (
 		Citations:     parsed.Citations,
 		Relevance:     farmguardian.RelevanceFromTurnDebug(parsed.Debug),
 		Critique:      farmguardian.CritiqueFromTurnDebug(parsed.Debug),
+		AccuracyNote:  accuracyNoteFromChatResponse(parsed),
 		Latency:       latency,
-	}, nil
+	}, strings.TrimSpace(parsed.SessionID), nil
 }
 
 func proposalIDsFromResponse(props []farmguardian.ActionProposal) []string {
@@ -242,6 +264,7 @@ func enrichScoreResult(res *ScoreResult, in ScoreInput, model string) {
 	}
 	res.Grounded = in.Question.Grounded
 	res.Model = model
+	res.AccuracyNote = in.AccuracyNote
 }
 
 // BuildReport aggregates scores into a farmguardian.EvalSummary for one model.
@@ -277,6 +300,7 @@ func ToEvalQuestionScores(scores []ScoreResult) []farmguardian.EvalQuestionScore
 			LowRelevance:            s.Relevance.LowRelevance,
 			CritiquePass:            s.CritiquePass,
 			CritiqueReason:          s.CritiqueReason,
+			AccuracyNote:            s.AccuracyNote,
 		}
 	}
 	return out

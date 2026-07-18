@@ -19,7 +19,7 @@ describe('Phase 55 WS5 / OC-55 — Guardian ops closure', () => {
   it('documents architecture, spec, and plan shipped status', () => {
     const arch = readFileSync(join(repoDocs, 'farm-guardian-architecture.md'), 'utf8')
     const spec = readFileSync(join(repoDocs, 'plans/phase_55_guardian_pr_spec.md'), 'utf8')
-    const plan = readFileSync(join(repoDocs, 'plans/phase_55_guardian_ops_grow_money.plan.md'), 'utf8')
+    const plan = readFileSync(join(repoDocs, 'plans/archive/phase_55_guardian_ops_grow_money.plan.md'), 'utf8')
     expect(arch).toContain('### 7.0s Guardian ops read depth (Phase 55 — shipped)')
     expect(arch).toContain('summarize_cycle_cost')
     expect(arch).toContain('summarize_farm_spending')
@@ -31,7 +31,7 @@ describe('Phase 55 WS5 / OC-55 — Guardian ops closure', () => {
 
   it('OC-55 row is closed in operational closure doc', () => {
     const oc = readFileSync(
-      join(repoDocs, 'plans/phase_35_37_operational_closure.plan.md'),
+      join(repoDocs, 'plans/archive/phase_35_37_operational_closure.plan.md'),
       'utf8',
     )
     expect(oc).toContain('## Phase 55 — Guardian ops read depth')

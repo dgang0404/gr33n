@@ -25,7 +25,7 @@
 | Grounded cite rate | 0% | **100%** (3/3 grounded) | **100%** (3/3 grounded) | **100%** (2/2 grounded completed) | **100%** (3/3 grounded) |
 | Tools | partial | `walk_farm`, `list_unread_alerts` | `walk_farm` (log scrape) | RAG filter active | `walk_farm`, `list_unread_alerts` |
 
-**Verdict (run #3):** Phase 143 hygiene ships — **no `gr33n.com` fake URLs**, **no `## Your task` template leak** on morning-walk, **ec-ph includes pH + EC** in the scored answer. Heuristics **4/4**. **[Phase 144](plans/phase_144_guardian_answer_quality_residuals.plan.md)** adds `gr33n-docs/` sanitize, apology-tail trim, and ec-ph keyword drift heuristics for run #3 residuals.
+**Verdict (run #3):** Phase 143 hygiene ships — **no `gr33n.com` fake URLs**, **no `## Your task` template leak** on morning-walk, **ec-ph includes pH + EC** in the scored answer. Heuristics **4/4**. **[Phase 144](plans/archive/phase_144_guardian_answer_quality_residuals.plan.md)** adds `gr33n-docs/` sanitize, apology-tail trim, and ec-ph keyword drift heuristics for run #3 residuals.
 
 **Verdict (run #4):** Phase 145 stack verified on CPU laptop — embed relevance + `citations[]` excerpts in archive, RAG filter + finalize trims active. Heuristics **3/4** (`smoke-ec-ph` **client timeout** after ~103 min total run; not a drift-scorer failure). Attempt #1 was 0/4 @ 401 (stale JWT). Attempt #2 completed with fresh token.
 

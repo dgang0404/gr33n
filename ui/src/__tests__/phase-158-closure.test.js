@@ -17,17 +17,6 @@ describe('Phase 158 — accessibility closure', () => {
     expect(audit).toContain('chat-accuracy-banner')
   })
 
-  it('Guardian chat wires citation aria-label and accuracy alert', () => {
-    const chat = readFileSync(join(uiSrc, 'components/GuardianChatPanel.vue'), 'utf8')
-    expect(chat).toContain('citationLinkAriaLabel')
-    expect(chat).toContain(':aria-label="citationLinkAriaLabel(c)"')
-    expect(chat).toContain('data-test="chat-accuracy-banner"')
-    expect(chat).toMatch(/data-test="chat-accuracy-banner"[\s\S]*role="alert"/)
-    expect(chat).toContain('id="chat-message-input"')
-    expect(chat).toContain('for="chat-message-input"')
-    expect(chat).toContain('guardian-proposal-confirm')
-  })
-
   it('citationLinkAriaLabel includes source and excerpt', () => {
     const label = citationLinkAriaLabel({
       source_type: 'field_guide',

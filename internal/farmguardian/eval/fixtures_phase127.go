@@ -1,7 +1,7 @@
 package eval
 
 // Phase127Fixtures returns the Phase 128 four-prompt validation suite (Phase 127 grounding).
-// Wording matches docs/plans/phase_128_validate_phase127_guardian.plan.md for manual UI parity.
+// Wording matches docs/plans/archive/phase_128_validate_phase127_guardian.plan.md for manual UI parity.
 func Phase127Fixtures() []Question {
 	return []Question{
 		{

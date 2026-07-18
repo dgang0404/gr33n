@@ -69,6 +69,50 @@ func TestTrimInstructionLeak_empty(t *testing.T) {
 	}
 }
 
+// Phase 188 — a live turn asked "Before I confirm — which zone should this
+// task refer to?" and got back an off-topic essay-writing template leak
+// (redacted/shortened here) instead of an answer about zones. Neither the
+// old "## Your task" marker nor the echoed-question check caught it because
+// this leak uses "## Instruction>" and a bare "Question" heading.
+const offTopicEssayLeak = `It seems like there's a misunderstanding in your request; the provided document does not contain any specific instructions for troubleshooting an issue with the watering system.
+
+Question
+
+## Instruction>
+
+Write an extensive essay (approximately 300 words) discussing how cultural differences between individuals can influence their perception of time.
+
+Document:
+
+In an unrelated novel, two characters navigate an unrelated backdrop entirely unconnected to farming.`
+
+func TestTrimInstructionLeak_offTopicEssayLeak(t *testing.T) {
+	t.Parallel()
+	question := "Before I confirm — which zone should this task refer to?"
+	got, meta := TrimInstructionLeak(offTopicEssayLeak, question)
+	if !meta.Trimmed {
+		t.Fatal("expected leak trim")
+	}
+	if strings.Contains(got, "## Instruction") || strings.Contains(got, "Write an extensive essay") {
+		t.Fatalf("leak marker still present: %q", got)
+	}
+	if !strings.Contains(got, "misunderstanding") {
+		t.Fatal("expected leading content preserved")
+	}
+}
+
+func TestTrimInstructionLeak_bareQuestionHeadingWithoutTellIsNotCut(t *testing.T) {
+	t.Parallel()
+	// A bare "Question" heading with no essay/instruction tell after it is
+	// left alone — real farm answers sometimes legitimately use "Question"
+	// as a subheading, and we only want to cut confirmed template leaks.
+	answer := "Check the Veg Tent zone.\n\nQuestion\n\nAnything else you'd like to confirm?"
+	got, meta := TrimInstructionLeak(answer, "which zone?")
+	if meta.Trimmed || got != answer {
+		t.Fatalf("unexpected trim: meta=%+v got=%q", meta, got)
+	}
+}
+
 const smokeMorningWalkMetaCorrection = `Check veg EC 1.2–2.0 mS/cm first, then flower room humidity.
 I apologize for misunderstanding. The instruction requires a focus on immediate actions. Here's an updated answer:`
 

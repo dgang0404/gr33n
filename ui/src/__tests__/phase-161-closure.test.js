@@ -29,7 +29,7 @@ describe('Phase 161 — ec-ph smoke closure', () => {
 
   it('phase 161 plan marked shipped', () => {
     const plan = readFileSync(
-      join(repoRoot, 'docs/plans/phase_161_guardian_ecph_smoke_closure.plan.md'),
+      join(repoRoot, 'docs/plans/archive/phase_161_guardian_ecph_smoke_closure.plan.md'),
       'utf8',
     )
     expect(plan).toContain('Status:** shipped')

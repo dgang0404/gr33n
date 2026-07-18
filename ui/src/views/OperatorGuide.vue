@@ -12,14 +12,15 @@
       </p>
     </header>
 
-    <p
-      v-if="citedDoc"
-      class="rounded-xl border border-amber-900/60 bg-amber-950/40 px-4 py-3 text-sm text-amber-200"
-      data-test="operator-guide-cited-doc"
-      role="status"
-    >
-      Guardian cited platform doc: <code class="text-amber-100/90 text-xs">{{ citedDoc }}</code>
-    </p>
+    <CitationDocView
+      v-if="citationDoc"
+      :doc-path="citationDoc"
+      doc-type="platform_doc"
+      :highlight-chunk-id="citationChunkId"
+      @dismiss="clearCitation"
+    />
+
+    <HelpKnowledgeSurfacesMap v-if="!hideSurfacesMap" />
 
     <section class="bg-zinc-900 border border-zinc-800 rounded-xl p-5 space-y-3">
       <h2 class="text-white font-semibold text-sm uppercase tracking-widest text-zinc-500">Suggested walk</h2>
@@ -56,7 +57,7 @@
         Also: <router-link v-nav-hint="'/alerts'" class="text-gr33n-500 hover:underline" to="/alerts">Alerts</router-link>,
         <router-link v-nav-hint="'/chat'" class="text-gr33n-500 hover:underline" to="/chat?tab=pending">Guardian pending requests</router-link>,
         <router-link v-nav-hint="'/money'" class="text-gr33n-500 hover:underline" to="/money?tab=ledger">Ledger</router-link>,
-        <router-link v-nav-hint="'/farm-knowledge'" class="text-gr33n-500 hover:underline" to="/farm-knowledge">Knowledge</router-link> (RAG).
+        <router-link v-nav-hint="'/operator-guide'" class="text-gr33n-500 hover:underline" :to="{ path: '/operator-guide', query: { tab: 'knowledge' } }">Knowledge</router-link> (RAG).
       </p>
     </section>
 
@@ -82,23 +83,44 @@
 
 <script setup>
 import { onMounted, ref, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import HelpTip from '../components/HelpTip.vue'
+import HelpKnowledgeSurfacesMap from '../components/HelpKnowledgeSurfacesMap.vue'
+import CitationDocView from '../components/CitationDocView.vue'
 
 defineProps({
   embedded: { type: Boolean, default: false },
+  hideSurfacesMap: { type: Boolean, default: false },
 })
 
 const route = useRoute()
-const citedDoc = ref('')
+const router = useRouter()
+const citationDoc = ref('')
+const citationChunkId = ref(0)
+
+function parseCitationChunk(raw) {
+  const n = Number(raw)
+  return Number.isFinite(n) && n > 0 ? n : 0
+}
 
 function applyCitationQuery() {
   const raw = route.query.cited_doc
-  citedDoc.value = typeof raw === 'string' ? raw : ''
+  citationDoc.value = typeof raw === 'string' ? raw.trim() : ''
+  citationChunkId.value = parseCitationChunk(route.query.cited_chunk)
+}
+
+function clearCitation() {
+  citationDoc.value = ''
+  citationChunkId.value = 0
+  const query = { ...route.query }
+  delete query.cited_doc
+  delete query.cited_type
+  delete query.cited_chunk
+  router.replace({ path: route.path, query })
 }
 
 onMounted(applyCitationQuery)
-watch(() => route.query.cited_doc, applyCitationQuery)
+watch(() => [route.query.cited_doc, route.query.cited_chunk], applyCitationQuery)
 
 const glossary = [
   {

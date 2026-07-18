@@ -10,6 +10,7 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 
 	db "gr33n-api/internal/db"
+	"gr33n-api/internal/httputil"
 )
 
 func execCreateFertigationProgram(ctx context.Context, deps ExecutorDeps, args map[string]any) (any, error) {
@@ -52,19 +53,19 @@ func execCreateFertigationProgram(ctx context.Context, deps ExecutorDeps, args m
 		return nil, err
 	}
 
-	totalVol, err := numericFromFloat64(totalVolF)
+	totalVol, err := httputil.NumericFromFloat64(totalVolF)
 	if err != nil {
 		return nil, fmt.Errorf("invalid total_volume_liters")
 	}
-	ecLow, err := numericFromFloat64(ecLowF)
+	ecLow, err := httputil.NumericFromFloat64(ecLowF)
 	if err != nil {
 		return nil, fmt.Errorf("invalid ec_trigger_low")
 	}
-	phLow, err := numericFromFloat64(phLowF)
+	phLow, err := httputil.NumericFromFloat64(phLowF)
 	if err != nil {
 		return nil, fmt.Errorf("invalid ph_trigger_low")
 	}
-	phHigh, err := numericFromFloat64(phHighF)
+	phHigh, err := httputil.NumericFromFloat64(phHighF)
 	if err != nil {
 		return nil, fmt.Errorf("invalid ph_trigger_high")
 	}

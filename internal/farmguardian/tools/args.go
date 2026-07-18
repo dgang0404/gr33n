@@ -141,10 +141,17 @@ func float64FromArgs(args map[string]any, key string) (float64, error) {
 	}
 }
 
-func numericFromFloat64(v float64) (pgtype.Numeric, error) {
-	var n pgtype.Numeric
-	err := n.Scan(fmt.Sprintf("%g", v))
-	return n, err
+
+func optionalDateFromArgs(args map[string]any, key string) (pgtype.Date, bool, error) {
+	s, err := optionalStringFromArgs(args, key)
+	if err != nil || s == nil {
+		return pgtype.Date{}, false, err
+	}
+	t, err := time.Parse("2006-01-02", strings.TrimSpace(*s))
+	if err != nil {
+		return pgtype.Date{}, false, fmt.Errorf("%s must be YYYY-MM-DD", key)
+	}
+	return pgtype.Date{Time: t, Valid: true}, true, nil
 }
 
 func dateFromArgs(args map[string]any, key string) (pgtype.Date, error) {

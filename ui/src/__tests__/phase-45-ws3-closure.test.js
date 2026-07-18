@@ -52,7 +52,7 @@ describe('Phase 45 WS3 — vocabulary v2 closure', () => {
 
   it('phase 45 parent plan marks WS3 complete', () => {
     const plan = readFileSync(
-      join(repoDocs, 'plans/phase_45_farmer_validation_whole_app_polish.plan.md'),
+      join(repoDocs, 'plans/archive/phase_45_farmer_validation_whole_app_polish.plan.md'),
       'utf8',
     )
     expect(plan).toMatch(/ws3-copy-pass-v2[\s\S]*status: completed/)

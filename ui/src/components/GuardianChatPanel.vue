@@ -3,7 +3,7 @@
     <!-- Sessions: full sidebar or compact picker -->
     <aside
       v-if="layout === 'full'"
-      class="bg-zinc-900 border border-zinc-800 rounded-xl p-4 space-y-3 max-h-[36rem] overflow-y-auto"
+      class="bg-zinc-900 border border-zinc-800 rounded-xl p-4 space-y-3"
       data-test="chat-sessions"
     >
       <div class="flex items-center justify-between">
@@ -60,17 +60,29 @@
             :class="selectMode ? 'cursor-default' : 'cursor-pointer'"
             @click="selectMode ? toggleSelection(s.session_id) : loadSession(s.session_id)"
           >
-            <div class="flex items-center gap-2 min-w-0">
+            <div class="flex items-center gap-2 min-w-0 flex-1">
               <input v-if="selectMode" type="checkbox" class="rounded bg-zinc-800 border-zinc-700 shrink-0" data-test="chat-session-checkbox" :checked="isSelected(s.session_id)" :disabled="bulkSubmitting" @click.stop @change="toggleSelection(s.session_id)" />
-              <span class="font-medium truncate" :title="sessionLabel(s)">{{ sessionLabel(s) }}</span>
               <span
-                v-for="topic in (s.topics || []).slice(0, 3)"
-                :key="topic"
-                class="shrink-0 text-[9px] uppercase tracking-wide px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-400 border border-zinc-700"
-                :data-test="`session-topic-${topic}`"
-              >{{ topicChipLabel(topic) }}</span>
+                v-if="sessionHasPendingProposal(s)"
+                class="shrink-0 text-[9px] uppercase tracking-wide px-1.5 py-0.5 rounded bg-amber-950/50 text-amber-300 border border-amber-800/70"
+                data-test="session-pending-chip"
+              >pending</span>
+              <span class="font-medium truncate min-w-0" :title="sessionLabel(s)">{{ sessionLabel(s) }}</span>
             </div>
             <span class="text-[10px] text-zinc-500 shrink-0">{{ s.turn_count }} turn{{ s.turn_count === 1 ? '' : 's' }}</span>
+          </div>
+          <div
+            v-if="(s.topics || []).length"
+            class="flex items-center gap-1 flex-wrap"
+            :class="selectMode ? 'cursor-default' : 'cursor-pointer'"
+            @click="selectMode ? toggleSelection(s.session_id) : loadSession(s.session_id)"
+          >
+            <span
+              v-for="topic in (s.topics || []).slice(0, 3)"
+              :key="topic"
+              class="shrink-0 text-[9px] uppercase tracking-wide px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-400 border border-zinc-700"
+              :data-test="`session-topic-${topic}`"
+            >{{ topicChipLabel(topic) }}</span>
           </div>
           <div class="text-[10px] text-zinc-500 flex items-center justify-between gap-1">
             <div class="flex items-center gap-2">
@@ -139,8 +151,8 @@
       <section
         v-if="transcript.length || streaming"
         :class="[
-          'bg-zinc-900 border border-zinc-800 rounded-xl p-4 space-y-4 overflow-y-auto',
-          layout === 'compact' ? 'flex-1 min-h-[8rem] max-h-[50vh]' : 'p-5 max-h-[36rem]',
+          'bg-zinc-900 border border-zinc-800 rounded-xl p-4 space-y-4',
+          layout === 'compact' ? 'overflow-y-auto flex-1 min-h-[8rem] max-h-[50vh]' : 'p-5',
         ]"
         data-test="chat-transcript"
       >
@@ -259,6 +271,7 @@
               @dismissed="onProposalDismissed"
               @error="onProposalError"
               @refine="onProposalRefine"
+              @view-conversation="onProposalViewConversation"
             />
           </div>
           <!-- Follow-up chips: only on the last completed turn -->
@@ -280,7 +293,16 @@
           </div>
         </article>
         <div v-if="streaming" class="text-zinc-100 text-sm space-y-2" data-test="chat-streaming-row">
-          <span class="text-[10px] uppercase tracking-widest text-green-500 mr-2">guardian</span>
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="text-[10px] uppercase tracking-widest text-green-500">guardian</span>
+            <span
+              v-if="streamingElapsedLabel"
+              class="text-[10px] font-mono text-zinc-500"
+              data-test="chat-streaming-elapsed"
+            >
+              {{ streamingElapsedLabel }}
+            </span>
+          </div>
           <p v-if="streamingStatus && !streamingText" class="text-xs text-amber-300/80">{{ streamingStatus }}</p>
           <span class="whitespace-pre-wrap">{{ streamingText }}<span class="text-zinc-500 animate-pulse">▍</span></span>
         </div>
@@ -300,6 +322,31 @@
         >
           Snap a leaf photo — pick the room it came from, then ask Guardian.
         </p>
+        <button
+          v-if="isFullPageDiet && !composerExtrasOpen"
+          type="button"
+          class="text-xs text-zinc-500 hover:text-zinc-300 border border-zinc-800 rounded-lg px-3 py-1.5 w-fit"
+          data-test="chat-composer-more"
+          @click="composerExtrasOpen = true"
+        >
+          + Attach photos, starters, mode
+        </button>
+        <GuardianAwakeningPanel
+          :farm-id="useFarmContext ? farmContext.farmId : null"
+          :mode="useFarmContext ? 'farm_counsel' : 'quick'"
+          :auto-warm="useFarmContext && !!farmContext.farmId"
+          :suppress-busy="streaming"
+          @switch-quick="useFarmContext = false"
+        />
+        <p
+          v-if="guardianReadiness.showOfflineFieldBanner"
+          class="text-xs text-amber-200/90 rounded border border-amber-900/50 bg-amber-950/30 px-3 py-2"
+          data-test="guardian-offline-field-banner"
+        >
+          The Guardian's voice is resting (Ollama unreachable).
+          Guided procedures and checklists still work offline.
+        </p>
+        <template v-if="showComposerExtras">
         <div
           v-if="useFarmContext && farmContext.farmId && capabilities.visionChatEnabled"
           class="rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 space-y-2"
@@ -375,20 +422,6 @@
         >
           Image analysis is advisory only — hypotheses, not certified diagnosis. Any change still needs Confirm.
         </p>
-        <GuardianAwakeningPanel
-          :farm-id="useFarmContext ? farmContext.farmId : null"
-          :mode="useFarmContext ? 'farm_counsel' : 'quick'"
-          :auto-warm="useFarmContext && !!farmContext.farmId"
-          @switch-quick="useFarmContext = false"
-        />
-        <p
-          v-if="guardianReadiness.showOfflineFieldBanner"
-          class="text-xs text-amber-200/90 rounded border border-amber-900/50 bg-amber-950/30 px-3 py-2"
-          data-test="guardian-offline-field-banner"
-        >
-          The Guardian's voice is resting (Ollama unreachable).
-          Guided procedures and checklists still work offline.
-        </p>
         <div
           v-if="offlineProcedureStarters.length"
           class="space-y-1.5"
@@ -397,8 +430,6 @@
           <p class="text-[10px] uppercase tracking-widest text-zinc-500">Offline procedures</p>
           <GuardianStarterChips :starters="offlineProcedureStarters" inline @pick="onOfflineProcedureStarter" />
         </div>
-        <GuardianNudgeStrip @review="onNudgeReview" />
-        <GuardianRecentTopicChip :route-path="route.path" @continue="onNudgeReview" />
         <div v-if="morningWalkthroughStarters.length" class="space-y-1.5" data-test="chat-morning-starters">
           <p class="text-[10px] uppercase tracking-widest text-zinc-500">Daily check</p>
           <p class="text-[10px] text-zinc-500">Morning check uses Farm counsel — the Guardian reads your farm first.</p>
@@ -408,6 +439,9 @@
           <p class="text-[10px] uppercase tracking-widest text-zinc-500">Try asking</p>
           <GuardianStarterChips :starters="setupStarters" />
         </div>
+        </template>
+        <GuardianNudgeStrip @review="onNudgeReview" />
+        <GuardianRecentTopicChip :route-path="route.path" @continue="onNudgeReview" />
         <div class="flex flex-col gap-2">
           <label class="text-xs text-zinc-400" for="chat-message-input">Your message</label>
           <span id="chat-message-input-hint" class="sr-only">Press Enter to send. Shift+Enter adds a new line.</span>
@@ -423,12 +457,19 @@
             @keydown.enter.exact.prevent="send"
           />
         </div>
+        <p
+          v-if="showRefineHint"
+          class="text-[11px] text-zinc-500 leading-snug"
+          data-test="chat-refine-hint"
+        >
+          Type after Correction: or ask a question first — same session.
+        </p>
         <p v-if="micListening" class="text-xs text-amber-300/90 animate-pulse" data-test="chat-mic-listening">
           Listening… release to stop
         </p>
-        <GuardianContextModeCards v-model:use-farm-context="useFarmContext" />
+        <GuardianContextModeCards v-if="showComposerExtras" v-model:use-farm-context="useFarmContext" />
         <p
-          v-if="counselCostHint"
+          v-if="counselCostHint && showComposerExtras"
           class="text-[10px] text-zinc-500 leading-snug"
           :class="chatUsage.nearLimit ? 'text-amber-300/80' : ''"
           data-test="chat-counsel-cost-hint"
@@ -642,6 +683,7 @@ import GuardianContextModeCards from './GuardianContextModeCards.vue'
 import GuardianTurnDebug from './GuardianTurnDebug.vue'
 import GuardianTurnFeedback from './GuardianTurnFeedback.vue'
 import { topicChipLabel } from '../lib/guardianSessionMemory.js'
+import { sessionDisplayLabel } from '../lib/guardianSessionLabel.js'
 import { computeFirstRunChecklist, isFirstRunIncomplete } from '../lib/firstRunChecklist.js'
 import { buildMorningWalkthroughStarters, buildSetupStarters, buildOfflineProcedureStarters } from '../lib/guardianStarters.js'
 import { deriveFollowUps } from '../lib/guardianFollowUps.js'
@@ -746,6 +788,8 @@ const groundedModelBlockReason = computed(() => {
   if (!useFarmContext.value || !farmContext.farmId) return ''
   if (guardianReadiness.farmCounselBlocked) {
     if (guardianReadiness.awakening?.state === 'busy') {
+      // Local streaming row owns busy status (Phase 179) — keep cross-session block only.
+      if (streaming.value) return ''
       return 'Guardian is answering — wait for the current reply before sending another farm counsel message.'
     }
     return 'Farm counsel is awakening — wait a moment or switch to Quick chat.'
@@ -812,9 +856,42 @@ const followUps = computed(() => {
 })
 
 const message = ref('')
+const composerExtrasOpen = ref(false)
 const useFarmContext = ref(!!farmContext.farmId)
 const messageInputRef = ref(null)
 const panelRootRef = ref(null)
+const streamingElapsedSec = ref(0)
+let streamingElapsedTimer = null
+
+const hasSessionTurns = computed(() => transcript.value.length > 0)
+const isFullPageDiet = computed(() => props.layout === 'full' && hasSessionTurns.value)
+const showComposerExtras = computed(() => props.layout !== 'full' || !hasSessionTurns.value || composerExtrasOpen.value)
+const showRefineHint = computed(() => String(message.value || '').includes('Correction:'))
+const streamingElapsedLabel = computed(() => {
+  if (!streaming.value || streamingElapsedSec.value <= 0) return ''
+  const m = Math.floor(streamingElapsedSec.value / 60)
+  const s = streamingElapsedSec.value % 60
+  return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
+})
+
+watch(streaming, (on) => {
+  if (streamingElapsedTimer) {
+    clearInterval(streamingElapsedTimer)
+    streamingElapsedTimer = null
+  }
+  if (on) {
+    streamingElapsedSec.value = 0
+    streamingElapsedTimer = setInterval(() => {
+      streamingElapsedSec.value += 1
+    }, 1000)
+  } else {
+    streamingElapsedSec.value = 0
+  }
+})
+
+watch(hasSessionTurns, (hasTurns) => {
+  if (!hasTurns) composerExtrasOpen.value = false
+})
 
 const sessionId = computed({
   get: () => guardianPanel.activeSessionId,
@@ -838,7 +915,10 @@ const bulkError = ref('')
 watch(
   () => farmContext.farmId,
   (id) => {
-    if (id) useFarmContext.value = true
+    if (id) {
+      useFarmContext.value = true
+      void guardianProposals.fetch(id)
+    }
     void loadZonePhotosForChat()
   },
 )
@@ -954,12 +1034,18 @@ async function refreshSessions() {
   } catch {
     sessions.value = []
   }
+  if (farmContext.farmId) {
+    void guardianProposals.fetch(farmContext.farmId)
+  }
 }
 
 async function loadSession(id) {
   if (streaming.value || !id) return
   if (sessionId.value && sessionId.value !== id) {
-    await closeActiveSessionForMemory()
+    // Fire-and-forget: memory summarization calls the LLM and can take a
+    // long time on CPU inference. Don't block switching sessions on it —
+    // it's best-effort and already swallows its own errors.
+    closeActiveSessionForMemory()
   }
   try {
     const r = await api.get('/v1/chat/sessions/' + id)
@@ -980,9 +1066,17 @@ function onCompactSessionChange(ev) {
   loadSession(id)
 }
 
+const closingSessionIds = new Set()
+
 async function closeActiveSessionForMemory() {
   const id = sessionId.value
   if (!id || !guardianChat.transcript?.length) return
+  // Guard against firing a second concurrent close-for-memory call on the
+  // same session (e.g. rapid clicks through the sidebar) — the backend LLM
+  // summarization can take 40-100s+ on CPU, and racing duplicate calls for
+  // the same session_id was observed to 500.
+  if (closingSessionIds.has(id)) return
+  closingSessionIds.add(id)
   try {
     await api.post(`/v1/chat/sessions/${id}/close`, {
       farm_id: farmContext.farmId || undefined,
@@ -993,20 +1087,25 @@ async function closeActiveSessionForMemory() {
     await refreshSessions()
   } catch {
     /* best-effort */
+  } finally {
+    closingSessionIds.delete(id)
   }
 }
 
 async function newSession() {
   if (streaming.value) return
-  await closeActiveSessionForMemory()
+  closeActiveSessionForMemory()
   sessionId.value = ''
   guardianChat.clearTranscript()
 }
 
 function sessionLabel(s) {
-  if (s.title && s.title.trim()) return s.title
-  if (s.first_user_message && s.first_user_message.trim()) return s.first_user_message
-  return 'Untitled'
+  const pending = guardianProposals.pendingBySessionId[s?.session_id]
+  return sessionDisplayLabel(s, pending)
+}
+
+function sessionHasPendingProposal(s) {
+  return !!guardianProposals.pendingBySessionId[s?.session_id]
 }
 
 function renameSession(s) {
@@ -1148,6 +1247,10 @@ async function onProposalRefine({ proposal }) {
   guardianPanel.requestRefine(proposal)
 }
 
+function onProposalViewConversation({ proposal }) {
+  guardianPanel.requestViewConversation(proposal)
+}
+
 watch(
   () => guardianPanel.refineTick,
   async (tick) => {
@@ -1157,6 +1260,17 @@ watch(
     if (guardianPanel.prefilledMessage) message.value = guardianPanel.prefilledMessage
     await nextTick()
     messageInputRef.value?.focus?.()
+  },
+)
+
+watch(
+  () => guardianPanel.viewConversationTick,
+  async (tick) => {
+    if (!tick) return
+    const sid = guardianPanel.activeSessionId
+    if (sid) await loadSession(sid)
+    message.value = ''
+    await nextTick()
   },
 )
 
@@ -1378,6 +1492,10 @@ onUnmounted(() => {
   revokeChatPhotoThumbs()
   micRecognizer?.abort()
   stopSpeaking()
+  if (streamingElapsedTimer) {
+    clearInterval(streamingElapsedTimer)
+    streamingElapsedTimer = null
+  }
 })
 
 onMounted(async () => {

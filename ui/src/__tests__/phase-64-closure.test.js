@@ -12,7 +12,7 @@ const repoRoot = join(process.cwd(), '..')
 describe('Phase 64 WS6 / OC-64 — crop knowledge base closure', () => {
   it('documents migration, handler, read tool, and crop field guides', () => {
     const arch = readFileSync(join(repoDocs, 'farm-guardian-architecture.md'), 'utf8')
-    const plan = readFileSync(join(repoDocs, 'plans/phase_64_crop_knowledge_base.plan.md'), 'utf8')
+    const plan = readFileSync(join(repoDocs, 'plans/archive/phase_64_crop_knowledge_base.plan.md'), 'utf8')
     expect(existsSync(join(repoRoot, 'db/migrations/20260610_phase64_crop_knowledge_base.sql'))).toBe(true)
     expect(existsSync(join(repoRoot, 'internal/handler/cropprofile/handler.go'))).toBe(true)
     expect(existsSync(join(repoRoot, 'internal/farmguardian/readtools_crop.go'))).toBe(true)

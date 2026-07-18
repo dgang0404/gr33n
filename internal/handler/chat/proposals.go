@@ -95,34 +95,22 @@ func (h *Handler) ListProposals(w http.ResponseWriter, r *http.Request) {
 	}
 	statusPtr := &status
 
-	limit := int32(defaultProposalListLimit)
-	if raw := strings.TrimSpace(r.URL.Query().Get("limit")); raw != "" {
-		n, err := strconv.ParseInt(raw, 10, 32)
-		if err != nil || n < 1 {
+	limit, offset, err := httputil.ParseLimitOffsetStrict(r, defaultProposalListLimit, maxProposalListLimit)
+	if err != nil {
+		if errors.Is(err, httputil.ErrInvalidLimit) {
 			httputil.WriteError(w, http.StatusBadRequest, "invalid limit")
 			return
 		}
-		if n > maxProposalListLimit {
-			n = maxProposalListLimit
-		}
-		limit = int32(n)
-	}
-	offset := int32(0)
-	if raw := strings.TrimSpace(r.URL.Query().Get("offset")); raw != "" {
-		n, err := strconv.ParseInt(raw, 10, 32)
-		if err != nil || n < 0 {
-			httputil.WriteError(w, http.StatusBadRequest, "invalid offset")
-			return
-		}
-		offset = int32(n)
+		httputil.WriteError(w, http.StatusBadRequest, "invalid offset")
+		return
 	}
 
 	listParams := db.ListGuardianProposalsByUserParams{
 		UserID: userID,
 		FarmID: farmIDPtr,
 		Status: statusPtr,
-		Limit:  limit,
-		Offset: offset,
+		Limit:  int32(limit),
+		Offset: int32(offset),
 	}
 	rows, err := h.q.ListGuardianProposalsByUser(ctx, listParams)
 	if err != nil {
@@ -146,8 +134,8 @@ func (h *Handler) ListProposals(w http.ResponseWriter, r *http.Request) {
 	httputil.WriteJSON(w, http.StatusOK, proposalListResponse{
 		Proposals: items,
 		Total:     total,
-		Limit:     limit,
-		Offset:    offset,
+		Limit:     int32(limit),
+		Offset:    int32(offset),
 	})
 }
 

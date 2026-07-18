@@ -84,10 +84,26 @@ export function tasksViewAllRoute(tasks, zones = []) {
  * @param {object[]} sensors
  */
 export function alertsViewAllRoute(alerts, zones = [], sensors = []) {
-  const zid = firstUnreadAlertZoneId(alerts, zones, sensors)
-  if (zid) return zoneOpsRoute(zid, 'alerts')
-  if (zones.length === 1) return zoneOpsRoute(zones[0].id, 'alerts')
-  return { path: '/zones' }
+  const unread = (alerts || []).filter((a) => !a.is_read)
+  if (!unread.length) {
+    if (zones.length === 1) return zoneOpsRoute(zones[0].id, 'alerts')
+    return { path: '/zones' }
+  }
+  const zoneIds = new Set()
+  for (const zone of zones) {
+    const zoneSensors = sensors.filter((s) => Number(s.zone_id) === Number(zone.id))
+    if (unread.some((a) => alertMatchesZone(a, zoneSensors, zone.name))) {
+      zoneIds.add(zone.id)
+    }
+  }
+  if (zoneIds.size === 1 && unread.every((a) => {
+    const zone = zones.find((z) => z.id === [...zoneIds][0])
+    const zoneSensors = sensors.filter((s) => Number(s.zone_id) === Number(zone?.id))
+    return alertMatchesZone(a, zoneSensors, zone?.name)
+  })) {
+    return zoneOpsRoute([...zoneIds][0], 'alerts')
+  }
+  return { path: '/alerts' }
 }
 
 /**

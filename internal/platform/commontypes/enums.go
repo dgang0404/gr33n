@@ -168,36 +168,3 @@ const (
 	FarmScaleLarge      FarmScaleTierEnum = "large"
 	FarmScaleEnterprise FarmScaleTierEnum = "enterprise"
 )
-
-// ── Validation ────────────────────────────────────────────────────────────────
-
-type ValidationRuleTypeEnum string
-
-const (
-	ValidationRuleRange  ValidationRuleTypeEnum = "range"
-	ValidationRuleRegex  ValidationRuleTypeEnum = "regex"
-	ValidationRuleEnum   ValidationRuleTypeEnum = "enum"
-	ValidationRuleCustom ValidationRuleTypeEnum = "custom"
-)
-
-type ValidationSeverityEnum string
-
-const (
-	ValidationSeverityError   ValidationSeverityEnum = "error"
-	ValidationSeverityWarning ValidationSeverityEnum = "warning"
-	ValidationSeverityInfo    ValidationSeverityEnum = "info"
-)
-
-// ── User activity ─────────────────────────────────────────────────────────────
-
-type UserActionTypeEnum string
-
-const (
-	UserActionCreate UserActionTypeEnum = "create"
-	UserActionUpdate UserActionTypeEnum = "update"
-	UserActionDelete UserActionTypeEnum = "delete"
-	UserActionView   UserActionTypeEnum = "view"
-	UserActionExport UserActionTypeEnum = "export"
-	UserActionLogin  UserActionTypeEnum = "login"
-	UserActionLogout UserActionTypeEnum = "logout"
-)

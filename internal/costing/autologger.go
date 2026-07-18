@@ -43,7 +43,7 @@ const (
 	schemaCore = "gr33ncore"
 )
 
-// numericFromFloat mirrors internal/handler/cost/handler.go:numericFromFloat64.
+// numericFromFloat mirrors httputil.NumericFromFloat64.
 func numericFromFloat(v float64) (pgtype.Numeric, error) {
 	var n pgtype.Numeric
 	err := n.Scan(strconv.FormatFloat(v, 'f', -1, 64))

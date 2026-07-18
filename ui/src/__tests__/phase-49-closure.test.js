@@ -64,7 +64,7 @@ describe('Phase 49 WS4 / OC-49 — sidebar nav closure', () => {
 
   it('OC-49 marked completed in operational closure plan', () => {
     const closure = readFileSync(
-      join(repoDocs, 'plans/phase_35_37_operational_closure.plan.md'),
+      join(repoDocs, 'plans/archive/phase_35_37_operational_closure.plan.md'),
       'utf8',
     )
     expect(closure).toContain('oc-49-closure')
@@ -74,7 +74,7 @@ describe('Phase 49 WS4 / OC-49 — sidebar nav closure', () => {
 
   it('phase 49 plan marks all workstreams completed', () => {
     const plan = readFileSync(
-      join(repoDocs, 'plans/phase_49_sidebar_nav_polish.plan.md'),
+      join(repoDocs, 'plans/archive/phase_49_sidebar_nav_polish.plan.md'),
       'utf8',
     )
     for (const id of [

@@ -30,10 +30,10 @@ func TestResolveCitationRoute_guardClauses(t *testing.T) {
 }
 
 func TestLandingDocRoute(t *testing.T) {
-	if route, ok := landingDocRoute("platform_doc", ""); !ok || route != "/operator-guide" {
+	if route, ok := landingDocRoute("platform_doc", ""); !ok || route != "/operator-guide?tab=library&section=guide" {
 		t.Fatalf("platform_doc landing = %q,%v", route, ok)
 	}
-	if route, ok := landingDocRoute("field_guide", "basil"); !ok || route != "/symptom-guide?crop_key=basil" {
+	if route, ok := landingDocRoute("field_guide", "basil"); !ok || route != "/operator-guide?tab=symptoms&crop_key=basil" {
 		t.Fatalf("field_guide crop landing = %q,%v", route, ok)
 	}
 }

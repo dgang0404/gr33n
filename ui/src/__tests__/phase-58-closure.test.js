@@ -18,7 +18,7 @@ const repoRoot = join(process.cwd(), '..')
 
 describe('Phase 58 WS4 / OC-58 — task consumptions closure', () => {
   it('documents consumptions and plan shipped', () => {
-    const plan = readFileSync(join(repoDocs, 'plans/phase_58_task_consumptions_runtime.plan.md'), 'utf8')
+    const plan = readFileSync(join(repoDocs, 'plans/archive/phase_58_task_consumptions_runtime.plan.md'), 'utf8')
     const tour = readFileSync(join(repoDocs, 'operator-tour.md'), 'utf8')
     expect(plan).toContain('**Shipped.**')
     expect(tour).toContain('Task consumptions')

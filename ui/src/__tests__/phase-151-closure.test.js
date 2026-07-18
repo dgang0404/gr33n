@@ -12,7 +12,7 @@ const repoRoot = join(process.cwd(), '..')
 describe('Phase 151 — alert citation enforcement', () => {
   it('plan documents all five workstreams', () => {
     const plan = readFileSync(
-      join(repoDocs, 'plans/phase_151_guardian_alert_citation_enforcement.plan.md'),
+      join(repoDocs, 'plans/archive/phase_151_guardian_alert_citation_enforcement.plan.md'),
       'utf8',
     )
     expect(plan).toContain('alertCitationDiscipline')

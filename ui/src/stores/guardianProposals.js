@@ -14,9 +14,21 @@ export const useGuardianProposalsStore = defineStore('guardianProposals', {
     lastFarmId: null,
   }),
 
+  getters: {
+    /** Newest pending proposal per session_id (Phase 197). */
+    pendingBySessionId(state) {
+      const out = {}
+      for (const p of state.proposals) {
+        if (p.status !== 'pending' || !p.session_id) continue
+        if (!out[p.session_id]) out[p.session_id] = p
+      }
+      return out
+    },
+  },
+
   actions: {
     async fetch(farmId, { status = 'pending' } = {}) {
-      if (!farmId) {
+      if (!farmId || !localStorage.getItem('gr33n_token')) {
         this.proposals = []
         this.total = 0
         this.pendingCount = 0
@@ -30,7 +42,12 @@ export const useGuardianProposalsStore = defineStore('guardianProposals', {
         const r = await api.get('/v1/chat/proposals', {
           params: { farm_id: farmId, status, limit: 50, offset: 0 },
         })
-        this.proposals = r.data?.proposals ?? []
+        const proposals = r.data?.proposals ?? []
+        this.proposals = proposals.slice().sort((a, b) => {
+          const ta = Date.parse(a.created_at) || 0
+          const tb = Date.parse(b.created_at) || 0
+          return tb - ta
+        })
         this.total = r.data?.total ?? 0
         if (status === 'pending') {
           this.pendingCount = this.total
@@ -46,7 +63,7 @@ export const useGuardianProposalsStore = defineStore('guardianProposals', {
     },
 
     async refreshPendingCount(farmId) {
-      if (!farmId) {
+      if (!farmId || !localStorage.getItem('gr33n_token')) {
         this.pendingCount = 0
         return
       }

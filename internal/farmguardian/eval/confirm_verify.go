@@ -336,6 +336,16 @@ func float64FromAny(v any) (float64, error) {
 	}
 }
 
+func stringFromAny(v any) (string, error) {
+	if v == nil {
+		return "", fmt.Errorf("nil string")
+	}
+	if s, ok := v.(string); ok {
+		return strings.TrimSpace(s), nil
+	}
+	return strings.TrimSpace(fmt.Sprint(v)), nil
+}
+
 func boolFromAny(v any) (bool, bool) {
 	switch b := v.(type) {
 	case bool:

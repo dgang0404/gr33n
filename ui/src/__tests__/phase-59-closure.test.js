@@ -12,7 +12,7 @@ const repoRoot = join(process.cwd(), '..')
 describe('Phase 59 WS4 / OC-59 — enterprise tier boundary', () => {
   it('publishes enterprise-tier-boundary.md and marks plan shipped', () => {
     const boundary = readFileSync(join(repoDocs, 'enterprise-tier-boundary.md'), 'utf8')
-    const plan = readFileSync(join(repoDocs, 'plans/phase_59_enterprise_tier_boundary.plan.md'), 'utf8')
+    const plan = readFileSync(join(repoDocs, 'plans/archive/phase_59_enterprise_tier_boundary.plan.md'), 'utf8')
     expect(boundary).toContain('Out of scope (enterprise tier')
     expect(boundary).toContain('METRC')
     expect(boundary).toContain('Purchase orders')
@@ -44,7 +44,7 @@ describe('Phase 59 WS4 / OC-59 — enterprise tier boundary', () => {
       'phase_58_task_consumptions_runtime.plan.md',
     ]
     for (const name of plans) {
-      const text = readFileSync(join(repoDocs, 'plans', name), 'utf8')
+      const text = readFileSync(join(repoDocs, 'plans/archive', name), 'utf8')
       const defers =
         /phase_59|enterprise.tier|enterprise tier|METRC|purchase order/i.test(text) ||
         name.includes('phase_58')

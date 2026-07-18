@@ -42,11 +42,30 @@ func TrimInstructionLeak(answer, question string) (string, AnswerLeakTrim) {
 	}
 }
 
+// leakTopMarkers are unambiguous prompt-template headings — real farm answers
+// never contain these verbatim, so any match is cut regardless of context.
+var leakTopMarkers = []string{"\n## your task", "## your task", "\n## instruction", "## instruction"}
+
+// leakEssayTells mark a *different* few-shot template (a generic document-QA
+// or essay-writing benchmark) leaking into the answer — e.g. the model
+// completed "Question" with an unrelated "## Instruction> / Write an
+// extensive essay... / Document: ..." block instead of answering the farm
+// question (Phase 188, live turn: a "which zone should this task go in?"
+// clarification came back discussing "The Great Gatsby" and a fabricated
+// Faulkner novel). None of these phrases has any legitimate reason to appear
+// in a gr33n farm answer.
+var leakEssayTells = []string{
+	"## instruction",
+	"\ndocument:\n",
+	"write an extensive essay",
+	"write an essay",
+}
+
 func leakCutIndex(answer, question string) int {
 	lower := strings.ToLower(answer)
 	best := -1
 
-	for _, marker := range []string{"\n## your task", "## your task"} {
+	for _, marker := range leakTopMarkers {
 		if idx := strings.Index(lower, marker); idx >= 0 {
 			if best < 0 || idx < best {
 				best = idx
@@ -54,6 +73,12 @@ func leakCutIndex(answer, question string) int {
 					best++ // keep content before the blank line
 				}
 			}
+		}
+	}
+
+	if idx := bareQuestionHeadingCutIndex(lower); idx >= 0 {
+		if best < 0 || idx < best {
+			best = idx
 		}
 	}
 
@@ -66,6 +91,25 @@ func leakCutIndex(answer, question string) int {
 	}
 
 	return best
+}
+
+// bareQuestionHeadingCutIndex finds a standalone "Question" line (no colon,
+// no requirement that it echo the real question) that precedes one of
+// leakEssayTells later in the answer. A bare "Question" heading alone is too
+// common a word to cut on by itself, so this only fires once it's confirmed
+// to be followed by an unrelated instruction-template tell.
+func bareQuestionHeadingCutIndex(lower string) int {
+	idx := strings.Index(lower, "\nquestion\n")
+	if idx < 0 {
+		return -1
+	}
+	tail := lower[idx:]
+	for _, tell := range leakEssayTells {
+		if strings.Contains(tail, tell) {
+			return idx + 1 // keep content before the blank line
+		}
+	}
+	return -1
 }
 
 func trailingQuestionEchoIndex(answer, normQuestion string) int {

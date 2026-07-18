@@ -2,6 +2,7 @@ package audit
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"strconv"
 	"time"
@@ -28,26 +29,14 @@ func (h *Handler) ListByFarm(w http.ResponseWriter, r *http.Request) {
 	if !farmauthz.RequireFarmAdmin(w, r, q, farmID) {
 		return
 	}
-	limit := int32(50)
-	if s := r.URL.Query().Get("limit"); s != "" {
-		n, err := strconv.ParseInt(s, 10, 32)
-		if err != nil || n < 1 {
+	limit, offset, err := httputil.ParseLimitOffsetStrict(r, 50, 200)
+	if err != nil {
+		if errors.Is(err, httputil.ErrInvalidLimit) {
 			httputil.WriteError(w, http.StatusBadRequest, "invalid limit")
 			return
 		}
-		if n > 200 {
-			n = 200
-		}
-		limit = int32(n)
-	}
-	offset := int32(0)
-	if s := r.URL.Query().Get("offset"); s != "" {
-		n, err := strconv.ParseInt(s, 10, 32)
-		if err != nil || n < 0 {
-			httputil.WriteError(w, http.StatusBadRequest, "invalid offset")
-			return
-		}
-		offset = int32(n)
+		httputil.WriteError(w, http.StatusBadRequest, "invalid offset")
+		return
 	}
 
 	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
@@ -55,8 +44,8 @@ func (h *Handler) ListByFarm(w http.ResponseWriter, r *http.Request) {
 
 	rows, err := q.ListUserActivityLogByFarm(ctx, db.ListUserActivityLogByFarmParams{
 		FarmID: &farmID,
-		Limit:  limit,
-		Offset: offset,
+		Limit:  int32(limit),
+		Offset: int32(offset),
 	})
 	if err != nil {
 		httputil.WriteError(w, http.StatusInternalServerError, "failed to list audit events")
@@ -80,26 +69,14 @@ func (h *Handler) ListByOrganization(w http.ResponseWriter, r *http.Request) {
 	if !farmauthz.RequireOrgAdmin(w, r, q, orgID) {
 		return
 	}
-	limit := int32(50)
-	if s := r.URL.Query().Get("limit"); s != "" {
-		n, err := strconv.ParseInt(s, 10, 32)
-		if err != nil || n < 1 {
+	limit, offset, err := httputil.ParseLimitOffsetStrict(r, 50, 200)
+	if err != nil {
+		if errors.Is(err, httputil.ErrInvalidLimit) {
 			httputil.WriteError(w, http.StatusBadRequest, "invalid limit")
 			return
 		}
-		if n > 200 {
-			n = 200
-		}
-		limit = int32(n)
-	}
-	offset := int32(0)
-	if s := r.URL.Query().Get("offset"); s != "" {
-		n, err := strconv.ParseInt(s, 10, 32)
-		if err != nil || n < 0 {
-			httputil.WriteError(w, http.StatusBadRequest, "invalid offset")
-			return
-		}
-		offset = int32(n)
+		httputil.WriteError(w, http.StatusBadRequest, "invalid offset")
+		return
 	}
 
 	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
@@ -108,8 +85,8 @@ func (h *Handler) ListByOrganization(w http.ResponseWriter, r *http.Request) {
 	oid := orgID
 	rows, err := q.ListUserActivityLogForOrganization(ctx, db.ListUserActivityLogForOrganizationParams{
 		OrganizationID: &oid,
-		Limit:          limit,
-		Offset:         offset,
+		Limit:          int32(limit),
+		Offset:         int32(offset),
 	})
 	if err != nil {
 		httputil.WriteError(w, http.StatusInternalServerError, "failed to list audit events")

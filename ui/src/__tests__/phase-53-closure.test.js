@@ -29,7 +29,7 @@ describe('Phase 53 WS6 / OC-53 — grow + stock + money closure', () => {
     const tour = readFileSync(join(repoDocs, 'operator-tour.md'), 'utf8')
     const arch = readFileSync(join(repoDocs, 'farm-guardian-architecture.md'), 'utf8')
     const plan = readFileSync(
-      join(repoDocs, 'plans/phase_53_grow_stock_money_closure.plan.md'),
+      join(repoDocs, 'plans/archive/phase_53_grow_stock_money_closure.plan.md'),
       'utf8',
     )
     expect(tour).toContain('### 7c. Grow + stock + money closure (Phase 53)')
@@ -45,7 +45,7 @@ describe('Phase 53 WS6 / OC-53 — grow + stock + money closure', () => {
 
   it('OC-53 row is closed in operational closure doc', () => {
     const oc = readFileSync(
-      join(repoDocs, 'plans/phase_35_37_operational_closure.plan.md'),
+      join(repoDocs, 'plans/archive/phase_35_37_operational_closure.plan.md'),
       'utf8',
     )
     expect(oc).toContain('## Phase 53 — Grow + stock + money closure')

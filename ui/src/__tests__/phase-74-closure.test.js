@@ -28,14 +28,13 @@ describe('Phase 74 WS6 / OC-74 — zone ops inbox closure', () => {
     expect(WORKSPACES.zones.absorbs['/plants']).toEqual({ tab: 'plants' })
   })
 
-  it('/tasks and /alerts redirect into zone Ops or Today', () => {
+  it('/tasks redirects into zone Ops or Today', () => {
     const opsRoutes = buildZoneOpsRedirectRoutes()
     const tasks = opsRoutes.find((r) => r.path === '/tasks')
-    const alerts = opsRoutes.find((r) => r.path === '/alerts')
     expect(tasks?.redirect({ query: { zone_id: '3' } }).path).toBe('/zones/3')
     expect(tasks?.redirect({ query: { zone_id: '3' } }).query).toMatchObject({ tab: 'ops', ops: 'tasks' })
     expect(tasks?.redirect({ query: {} }).path).toBe('/')
-    expect(alerts?.redirect({ query: { zone_id: '2', create: '1' } }).query.ops).toBe('alerts')
+    expect(opsRoutes.some((r) => r.path === '/alerts')).toBe(false)
   })
 
   it('/plants redirects to zones plants tab', () => {

@@ -6,7 +6,6 @@ import (
 	"errors"
 	"io"
 	"net/http"
-	"strconv"
 	"strings"
 	"time"
 
@@ -35,21 +34,7 @@ func NewHandler(pool *pgxpool.Pool) *Handler {
 // List — GET /commons/catalog
 func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 	q := strings.TrimSpace(r.URL.Query().Get("q"))
-	limit := defaultListLimit
-	if s := strings.TrimSpace(r.URL.Query().Get("limit")); s != "" {
-		if n, err := strconv.Atoi(s); err == nil && n > 0 {
-			limit = n
-			if limit > maxListLimit {
-				limit = maxListLimit
-			}
-		}
-	}
-	offset := 0
-	if s := strings.TrimSpace(r.URL.Query().Get("offset")); s != "" {
-		if n, err := strconv.Atoi(s); err == nil && n >= 0 {
-			offset = n
-		}
-	}
+	limit, offset := httputil.ParseLimitOffset(r, defaultListLimit, maxListLimit)
 
 	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 	defer cancel()

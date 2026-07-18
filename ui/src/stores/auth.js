@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import api from '../api'
+import api, { resetUnauthorizedGate } from '../api'
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({
@@ -27,6 +27,7 @@ export const useAuthStore = defineStore('auth', {
 
     async login(username, password) {
       const res = await api.post('/auth/login', { username, password })
+      resetUnauthorizedGate()
       this.token = res.data.token
       this.username = username
       localStorage.setItem('gr33n_token', this.token)

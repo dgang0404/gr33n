@@ -18,7 +18,10 @@ make audit-openapi     # routes.go ↔ openapi.yaml
 make audit-env         # os.Getenv ↔ docs/environment-variables.md
 npm --prefix ui run build
 npm --prefix ui test -- --run
+make check-ui-test-baseline  # Phase 205 — fails only on failures NOT already tracked in ui/test-baseline-known-failures.json
 ```
+
+**Refactors and "janitorial" phases especially:** run the *full* UI suite (`npm --prefix ui test -- --run`), not just the new phase's own closure test, before marking a phase shipped. `make check-ui-test-baseline` is what actually enforces this — it fails if your change adds a failure that isn't already in the known-debt list, so collateral breakage in an unrelated component gets caught immediately instead of silently joining the pile. See `docs/plans/phase_205_pre_existing_test_debt.plan.md` for the debt this is paying down and why the baseline exists instead of just fixing everything up front.
 
 3. **Migrations** — SQL under `db/migrations/`; never edit applied migration files in place. Regenerate sqlc with `make sqlc` when queries change.
 4. **OpenAPI** — every new `mux.Handle` in `cmd/api/routes.go` needs a matching path in `openapi.yaml` (or an entry in `routesIntentionallyUndocumented` with a comment). Sync embed copy: `cp openapi.yaml internal/openapiui/openapi.yaml` when the spec changes.

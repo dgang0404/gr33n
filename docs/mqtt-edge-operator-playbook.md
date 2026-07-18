@@ -233,4 +233,4 @@ Environment variable: **`PI_API_KEY`** on the API; edge clients send **`X-API-Ke
 - [`pi-integration-guide.md`](pi-integration-guide.md#7-pi-api-key-security-middleware-and-least-privilege) — Pi + bridge auth, `PI_API_KEY` rotation, `requireAPIKey` / `RequireFarmMemberOrPiEdge` behavior.
 - [`openapi.yaml`](../openapi.yaml) — machine-readable contracts.
 - [`docs/phase-13-operator-documentation.md`](phase-13-operator-documentation.md) — operator index.
-- Phase 14 plan: [`plans/phase_14_network_and_commons.plan.md`](plans/phase_14_network_and_commons.plan.md).
+- Phase 14 plan: [`plans/archive/phase_14_network_and_commons.plan.md`](plans/archive/phase_14_network_and_commons.plan.md).

@@ -12,7 +12,7 @@ const repoRoot = join(process.cwd(), '..')
 describe('Phase 148 — citation-claim accuracy', () => {
   it('plan documents the run #6 failure modes', () => {
     const plan = readFileSync(
-      join(repoDocs, 'plans/phase_148_guardian_citation_claim_accuracy.plan.md'),
+      join(repoDocs, 'plans/archive/phase_148_guardian_citation_claim_accuracy.plan.md'),
       'utf8',
     )
     expect(plan).toContain('CitationClaimMismatchNote')
@@ -36,7 +36,7 @@ describe('Phase 148 — citation-claim accuracy', () => {
 describe('Phase 149 — alert citation ordering', () => {
   it('plan documents severity-first ordering', () => {
     const plan = readFileSync(
-      join(repoDocs, 'plans/phase_149_guardian_alert_citation_ordering.plan.md'),
+      join(repoDocs, 'plans/archive/phase_149_guardian_alert_citation_ordering.plan.md'),
       'utf8',
     )
     expect(plan).toContain('PrioritizeAlertChunks')
@@ -57,7 +57,7 @@ describe('Phase 149 — alert citation ordering', () => {
 describe('Phase 150 — dev jargon answer hygiene', () => {
   it('plan documents the redaction approach', () => {
     const plan = readFileSync(
-      join(repoDocs, 'plans/phase_150_guardian_dev_jargon_hygiene.plan.md'),
+      join(repoDocs, 'plans/archive/phase_150_guardian_dev_jargon_hygiene.plan.md'),
       'utf8',
     )
     expect(plan).toContain('RedactDevAPIJargon')

@@ -1,0 +1,256 @@
+---
+name: Phase 31 — Field validation & safe edge stories
+overview: >
+  Close the loop between software-on-a-laptop and real hardware: Pi/breadboard
+  validation, documented safe actuator paths, simulated + live sensor readings on
+  the dashboard, and optional deployment-script seeds for multi-site integrators.
+  Guardian may enqueue Pi commands only via Phase 30 confirmed change requests;
+  this phase proves the edge actually executes them safely.
+todos:
+  - id: ws1-breadboard-smoke
+    content: "WS1: Breadboard / stub loop — document + optional smoke: pi_client on laptop posts readings; dashboard Live Sensors shows data; automation simulation off path documented"
+    status: completed
+  - id: ws2-pi-contract-field
+    content: "WS2: Pi field checklist — extend pi-integration-guide with warehouse-room wiring sketch, one-relay-safe-test, offline queue drill; align with TestPiContract* smokes"
+    status: completed
+  - id: ws3-one-actuator-story
+    content: "WS3: Safe actuator story — end-to-end: Phase 30 PR confirm OR rule → pending_command → Pi executes → actuator_events → audit; E-stop checklist (doc)"
+    status: completed
+  - id: ws4-mqtt-room-scale
+    content: "WS4: MQTT room-scale pattern — topic convention for multi-zone warehouse; bridge config example; batch ingest load note (not performance guarantee)"
+    status: completed
+  - id: ws5-recipe-pack-demo
+    content: "WS5: Recipe pack promotion demo — sample commons catalog body for fertigation program v1→v2; script stub in scripts/enterprise/ importing to two farm_ids"
+    status: completed
+  - id: ws6-guardian-read-tools
+    content: "WS6: Guardian read-only edge tools — list unread alerts, summarize zone snapshot (read-only); actuator enqueue remains Phase 30 PR path only"
+    status: completed
+  - id: ws7-enterprise-doc-link
+    content: "WS7: Cross-link enterprise topology doc + phase-14 playbooks; README phase banner"
+    status: completed
+  - id: ws8-openapi-tests
+    content: "WS8: Smokes — live reading on dashboard path; optional tagged hardware test skipped in CI"
+    status: completed
+isProject: false
+---
+
+# Phase 31 — Field validation & safe edge stories
+
+## Status
+
+**Shipped (WS1–WS8).** Phase 29 (Guardian agent layer) WS6–WS9 ship criteria met for field validation scope. Phase 30 (Guardian change requests) remains the config/actuator write path; Phase 31 proves the Pi side executes confirmed PRs safely. **Follow-up polish:** [`phase_33_guardian_polish_and_enterprise_ops.plan.md`](phase_33_guardian_polish_and_enterprise_ops.plan.md) WS1 (read-tool hardening) — optional before Phase 32.
+
+**Preconditions (already met or in progress):**
+
+- Pi HTTP contract + smokes: [`cmd/api/smoke_pi_contract_test.go`](../../cmd/api/smoke_pi_contract_test.go)
+- [`pi_client/gr33n_client.py`](../../pi_client/gr33n_client.py) — stub drivers on non-Pi hosts
+- MQTT bridge: [`pi_client/mqtt_telemetry_bridge.py`](../../pi_client/mqtt_telemetry_bridge.py)
+- Multi-site **thought experiment** doc: [`docs/hypothetical-enterprise-topology.md`](../hypothetical-enterprise-topology.md)
+- Enterprise script hook: [`scripts/enterprise/README.md`](../../scripts/enterprise/README.md)
+- Guardian **PR queue** (Phase 30): confirmed `enqueue_actuator_command` (or equivalent) writes `pending_command` — this phase proves the Pi side
+
+---
+
+## Why this phase
+
+After Phase 29–30, gr33n is a **credible farm OS** with a safe configuration agent (human-approved change requests). Operators still see **404 on sensor readings** until something edge-shaped posts data. Phase 31 is about **proving the field loop** and **documenting safe physical I/O** — not about becoming a vertical-farm MES.
+
+Parallel activity (README already says this): Pi / MQTT validation can start **before** Phase 29 is fully done; this plan **names and gates** that work.
+
+---
+
+## Design principles
+
+1. **Software reuse** — edge paths call the same routes the smokes assert; no parallel GPIO API.
+2. **Safety first** — one relay, one pump, manual E-stop story before "automate the warehouse."
+3. **Actuator writes go through Phase 30 PRs** — Guardian never bypasses confirm; automation **rules/alerts** remain the autonomous layer (by design).
+4. **Offline is real** — exercise `offline_queue_path` flush at least once in docs/smoke.
+5. **Scale is ops** — multi-site promotion uses commons packs + [`scripts/enterprise/`](../../scripts/enterprise/README.md), not new core tables (see enterprise topology doc).
+
+---
+
+## Scope
+
+| WS | Focus | Primary artifacts |
+|----|-------|-------------------|
+| **WS1** | Laptop/breadboard loop | Docs + optional `make edge-smoke-help`; dashboard shows non-404 readings |
+| **WS2** | Pi field checklist | [`docs/pi-integration-guide.md`](../pi-integration-guide.md) §8, wiring annex |
+| **WS3** | One safe actuator E2E | Phase 30 PR → pending_command → Pi → event; safety checklist doc |
+| **WS4** | MQTT multi-zone pattern | [`docs/mqtt-edge-operator-playbook.md`](../mqtt-edge-operator-playbook.md) extension |
+| **WS5** | Recipe pack demo | Sample catalog JSON + import script stub |
+| **WS6** | Guardian read tools | Extend tool registry (list alerts, zone summary) — read-only |
+| **WS7** | Docs cross-link | README, enterprise topology, Phase 14 index |
+| **WS8** | Tests | Smokes; hardware tests tagged `hardware` skipped in CI |
+
+---
+
+## Work-stream detail
+
+### WS1 — Breadboard / stub loop
+
+**Goal:** Any developer can run `pi_client` on a laptop, post readings, see **Live Sensors** update.
+
+**Tasks:**
+
+- Document in [`docs/local-operator-bootstrap.md`](../local-operator-bootstrap.md): "Edge loop in 5 commands" (API up, seed, run client with stubs, verify SSE or polling).
+- Confirm [`pi_client/gr33n_client.py`](../../pi_client/gr33n_client.py) stub path matches seeded sensor IDs for farm 1.
+- Optional Makefile target `edge-smoke-help` (prints commands only — no new binary required for v1).
+
+**Acceptance:** Dashboard sensor card shows a value (not NO DATA / 404) after client run.
+
+---
+
+### WS2 — Pi field checklist
+
+**Goal:** Operator with a real Pi knows **exactly** what to wire first.
+
+**Tasks:**
+
+- Annex in [`pi-integration-guide.md`](../pi-integration-guide.md): power, relay module, **NO mains on breadboard**, `PI_API_KEY`, LAN firewall.
+- Reference [`scripts/install-pi-edge-deps.sh`](../../scripts/install-pi-edge-deps.sh) + [`raspberry-pi-and-deployment-topology.md`](../raspberry-pi-and-deployment-topology.md).
+- Map **one plastic room, three tiers** → three zones (naming example only).
+
+**Acceptance:** Checklist is copy-pasteable; links to existing smokes.
+
+**Shipped:** [`pi-integration-guide.md`](../pi-integration-guide.md) **§8** — safety table, three-tier zone naming + wiring sketches, copy-paste checklist (steps 0–9), offline queue drill (§8.5), one-relay bench (§8.6), `TestPiContract*` table (§8.7), troubleshooting (§8.8). Cross-links: [`local-operator-bootstrap.md`](../local-operator-bootstrap.md), [`raspberry-pi-and-deployment-topology.md`](../raspberry-pi-and-deployment-topology.md).
+
+---
+
+### WS3 — Safe actuator story
+
+**Goal:** One LED or relay proves **`pending_command`** round-trip — including from a **Phase 30 confirmed Guardian PR** when available.
+
+**Tasks:**
+
+- Manual test script: enqueue command from API, dashboard, **or confirmed Guardian PR** → Pi polls `GET /farms/{id}/devices` → GPIO → `POST /actuators/{id}/events` → clear pending.
+- **Safety doc** (new section or [`docs/operator-troubleshooting.md`](../operator-troubleshooting.md)): fail-safe defaults, flood risk, de-energize on comms loss (operator responsibility — gr33n documents, does not enforce in software v1).
+
+**Acceptance:** Reproduce [`TestPiContract*`](../../cmd/api/smoke_pi_contract_test.go) on a bench; audit row or actuator_events row visible.
+
+**Shipped:** [`pi-integration-guide.md`](../pi-integration-guide.md) **§9**; scripts [`run-edge-actuator-smoke.sh`](../../scripts/run-edge-actuator-smoke.sh), [`run-edge-actuator-client.sh`](../../scripts/run-edge-actuator-client.sh), [`enqueue-demo-pending-command.sh`](../../scripts/enqueue-demo-pending-command.sh); safety [operator-troubleshooting.md §5](../operator-troubleshooting.md#5-edge-actuator-safety-phase-31-ws3); `make edge-actuator-smoke-help`; pi_client passes `proposal_id` in actuator event `meta_data` for Guardian PRs.
+
+---
+
+### WS4 — MQTT room-scale pattern
+
+**Goal:** Hypothetical warehouse room publishes telemetry without one HTTP POST per sensor per second from custom code.
+
+**Tasks:**
+
+- Topic layout example: `gr33n/farm/{farm_id}/zone/{zone_id}/sensor/{sensor_id}`.
+- Bridge env vars documented; batch endpoint limits noted in playbook.
+
+**Acceptance:** One markdown section + example env block; no broker vendor lock-in.
+
+**Shipped:** [`mqtt-edge-operator-playbook.md`](../mqtt-edge-operator-playbook.md) § *Room-scale warehouse pattern*; `MQTT_TOPIC_LAYOUT=room` in [`mqtt_telemetry_bridge.py`](../../pi_client/mqtt_telemetry_bridge.py); [`mqtt_bridge_map.room-scale.example.yaml`](../../pi_client/mqtt_bridge_map.room-scale.example.yaml), [`mqtt-bridge.room-scale.example.env`](../../pi_client/mqtt-bridge.room-scale.example.env); tests in `test_mqtt_telemetry_bridge.py`.
+
+---
+
+### WS5 — Recipe pack promotion demo
+
+**Goal:** Show how **Recipe Pack v7** might propagate without a core "broadcast" feature.
+
+**Tasks:**
+
+- Sample `commons_catalog_entries.body` JSON (fertigation program definitions as opaque payload + readme).
+- Stub script `scripts/enterprise/import-recipe-pack.sh` (two farm IDs, idempotent, calls public API).
+- Cross-link [`hypothetical-enterprise-topology.md`](../hypothetical-enterprise-topology.md).
+
+**Acceptance:** `import-recipe-pack.sh --dry-run` prints actions; real run requires local API + JWT.
+
+**Shipped:** migration [`20260527_phase31_commons_recipe_pack_v7.sql`](../../db/migrations/20260527_phase31_commons_recipe_pack_v7.sql); [`sample-recipe-pack-v7.body.json`](../../scripts/enterprise/sample-recipe-pack-v7.body.json); [`import-recipe-pack.sh`](../../scripts/enterprise/import-recipe-pack.sh); [`scripts/enterprise/README.md`](../../scripts/enterprise/README.md).
+
+---
+
+### WS6 — Guardian read-only edge tools
+
+**Goal:** Guardian can **answer** "what's the humidity in Flower Room?" from live snapshot + sensor latest without new GPIO paths.
+
+**Tasks:**
+
+- Tools: `list_unread_alerts`, `summarize_zone` (read-only) — propose only if message asks; confirm N/A.
+- Reuse [`internal/farmguardian/snapshot.go`](../../internal/farmguardian/snapshot.go) + readings queries.
+
+**Shipped:** [`internal/farmguardian/readtools.go`](../../internal/farmguardian/readtools.go) — intent-matched `EnrichPromptBlock` injects up to 20 unread alerts or per-zone latest sensor readings into the grounded system prompt before the LLM call; [`internal/farmguardian/platform_context.go`](../../internal/farmguardian/platform_context.go) documents read vs write tools; chat handler wires enrichment on grounded turns.
+
+**Out of scope:** Direct actuator enqueue without Phase 30 PR table + confirm.
+
+---
+
+### WS7 — Docs
+
+- README phase banner: Phase 31 link.
+- [`phase-14-operator-documentation.md`](../phase-14-operator-documentation.md) row for enterprise topology + Phase 31.
+
+**Shipped:** README current-focus + roadmap rows mark Phase 31 **Done** with links to [`hypothetical-enterprise-topology.md`](../hypothetical-enterprise-topology.md); new [§ Phase 31](../phase-14-operator-documentation.md#phase-31-field-validation-edge) section in phase-14 index (WS1–WS8 operator paths); enterprise topology reading order + companion-doc cross-links.
+
+---
+
+### WS8 — Tests
+
+- Smoke: after WS1 path, assert `GET /sensors/{id}/readings/latest` ≠ 404 for seeded sensor when client posted.
+- Tag live-GPIO tests `@hardware` — skipped unless `GR33N_HARDWARE_TEST=1`.
+
+**Shipped:** [`cmd/api/smoke_phase31_ws8_test.go`](../../cmd/api/smoke_phase31_ws8_test.go).
+
+---
+
+## Out of scope (Phase 32+)
+
+- **Conversational grow setup PRs** (plant + cycle + fertigation bundle) — see [`phase_32_guardian_grow_setup_prs.plan.md`](phase_32_guardian_grow_setup_prs.plan.md) (WS2–WS5 writes; **WS8** platform doc RAG for how-to answers)
+- Automatic multi-farm recipe broadcast in core API
+- Hardware certification, UL listings, proprietary controller marketplace
+- 500-site performance guarantees
+- 3D-printed enclosure library (ops choice — mention in enterprise doc only)
+- **Autonomous Guardian** — never; see Phase 30 principles
+
+---
+
+## Suggested implementation order
+
+1. **WS1** — dashboard shows real (stub) readings (unblocks morale + demos)
+2. **WS2 + WS3** — Pi checklist + one relay story (after Phase 30 actuator PR tool if testing Guardian path)
+3. **WS8** — smokes for WS1/WS3
+4. **WS5** — recipe pack stub (integrator story)
+5. **WS4** — MQTT pattern
+6. **WS6** — Guardian read tools
+7. **WS7** — doc pass
+
+Phase 29 **WS6–WS9** can run **in parallel** with WS1–WS3.
+
+---
+
+## Definition of done (phase ship)
+
+- [x] Operator doc path: laptop stub readings → dashboard live
+- [x] Pi checklist + one actuator bench test documented
+- [x] `TestPiContract*` narrative matches field checklist
+- [x] Sample recipe pack + `scripts/enterprise/` import stub (dry-run OK)
+- [x] Enterprise topology doc linked from README
+- [x] Confirmed Phase 30 actuator PR → Pi execution demonstrated on bench (documented path; hardware opt-in)
+- [x] `make test` green; hardware tests opt-in only
+
+---
+
+## Using this plan in a new chat
+
+```text
+Implement Phase 31 per @docs/plans/archive/phase_31_field_validation_and_edge.plan.md.
+
+Start with WS1 (pi_client stub → dashboard readings). Read @docs/pi-integration-guide.md
+and @cmd/api/smoke_pi_contract_test.go. Actuator path may use Phase 30 Guardian PR confirm.
+Cross-link @docs/hypothetical-enterprise-topology.md in WS7.
+```
+
+---
+
+## Related
+
+| Doc | Role |
+|-----|------|
+| [`hypothetical-enterprise-topology.md`](../hypothetical-enterprise-topology.md) | 500-site **hypothetical** without core changes |
+| [`phase_29_guardian_agent_layer.md`](phase_29_guardian_agent_layer.md) | Alert ack PRs (v1) |
+| [`phase_30_guardian_change_requests.plan.md`](phase_30_guardian_change_requests.plan.md) | PR queue + config/actuator proposals |
+| [`phase_32_guardian_grow_setup_prs.plan.md`](phase_32_guardian_grow_setup_prs.plan.md) | Grow-setup PR bundles (next feature track) |
+| [`phase_33_guardian_polish_and_enterprise_ops.plan.md`](phase_33_guardian_polish_and_enterprise_ops.plan.md) | Post-ship read-tool hardening, hardware CI, site manifest |
+| [`scripts/enterprise/README.md`](../../scripts/enterprise/README.md) | PR-friendly deployment script home |

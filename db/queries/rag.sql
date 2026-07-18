@@ -110,3 +110,21 @@ WHERE farm_id = $1
   AND source_id = $3
 ORDER BY chunk_index ASC
 LIMIT 1;
+
+-- Phase 180 WS5 — ordered chunks for a cited doc_path (citation doc view).
+-- name: ListRagChunksByFarmDocPath :many
+SELECT
+    id,
+    farm_id,
+    source_type,
+    source_id,
+    chunk_index,
+    content_text,
+    model_id,
+    metadata,
+    created_at,
+    updated_at
+FROM gr33ncore.rag_embedding_chunks
+WHERE farm_id = sqlc.arg(farm_id)
+  AND metadata->>'doc_path' = sqlc.arg(doc_path_filter)::text
+ORDER BY chunk_index ASC;
