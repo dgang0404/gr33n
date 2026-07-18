@@ -140,6 +140,13 @@ func TestPhase208AnimalGroupCRUDAndTimeline(t *testing.T) {
 
 func TestPhase208AquaponicsLoopCRUD(t *testing.T) {
 	tok := smokeJWT(t)
+	resp := authPatch(t, tok, "/farms/1/modules/gr33naquaponics", map[string]any{"is_enabled": true})
+	expectStatus(t, resp, http.StatusOK)
+	t.Cleanup(func() {
+		off := authPatch(t, tok, "/farms/1/modules/gr33naquaponics", map[string]any{"is_enabled": false})
+		off.Body.Close()
+	})
+
 	tank := seedZoneForAnimal(t, tok)
 	bed := seedZoneForAnimal(t, tok)
 

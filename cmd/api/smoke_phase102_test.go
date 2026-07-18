@@ -86,5 +86,10 @@ func smokeEnsureCatalogPlant(t *testing.T, tok string, farmID int64, cropKey str
 		"crop_key": cropKey,
 	})
 	expectStatus(t, resp, http.StatusCreated)
-	return int64(decodeMap(t, resp)["id"].(float64))
+	id := int64(decodeMap(t, resp)["id"].(float64))
+	t.Cleanup(func() {
+		del := authDelete(t, tok, fmt.Sprintf("/plants/%d", id))
+		del.Body.Close()
+	})
+	return id
 }
