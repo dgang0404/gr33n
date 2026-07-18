@@ -34,8 +34,8 @@ jobs:
         with:
           node-version: "22"
 
-      - name: Install psql client
-        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+      - name: Install psql client and ripgrep
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client ripgrep
 
       - name: Build and start Compose Postgres (Timescale + pgvector + PostGIS)
         run: docker compose up -d db --build
