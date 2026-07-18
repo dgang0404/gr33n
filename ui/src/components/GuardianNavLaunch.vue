@@ -20,20 +20,14 @@
         />
       </span>
       <span v-if="!collapsed" class="flex-1 min-w-0 text-left font-semibold">Ask gr33n</span>
-      <span
-        v-if="proposalsStore.pendingCount > 0"
-        class="absolute -top-1 -right-1 min-w-[1.125rem] h-[1.125rem] px-1 rounded-full bg-amber-600 text-[10px] font-bold text-amber-950 flex items-center justify-center shrink-0"
-        :class="collapsed ? '' : 'relative top-0 right-0'"
-        data-test="guardian-nav-pending-badge"
-      >
-        {{ proposalsStore.pendingCount > 9 ? '9+' : proposalsStore.pendingCount }}
-      </span>
+      <!-- Pending count badge lives on TopBar only (Phase 181) — readiness dot stays here -->
     </button>
   </div>
 </template>
 
 <script setup>
 import { computed, onMounted, watch } from 'vue'
+import { useAuthStore } from '../stores/auth'
 import { useCapabilitiesStore } from '../stores/capabilities'
 import { useFarmContextStore } from '../stores/farmContext'
 import { useGuardianPanelStore } from '../stores/guardianPanel'
@@ -44,6 +38,7 @@ defineProps({
   collapsed: { type: Boolean, default: false },
 })
 
+const auth = useAuthStore()
 const capabilities = useCapabilitiesStore()
 const farmContext = useFarmContextStore()
 const guardianPanel = useGuardianPanelStore()
@@ -61,7 +56,7 @@ function openDrawer() {
 }
 
 async function bootReadiness() {
-  if (!capabilities.aiEnabled || !farmContext.farmId) return
+  if (!auth.token || !capabilities.aiEnabled || !farmContext.farmId) return
   await readiness.fetchHealth(farmContext.farmId, 'farm_counsel')
   if (readiness.awakening?.state === 'sleeping') {
     await readiness.warmup(farmContext.farmId, 'farm_counsel')

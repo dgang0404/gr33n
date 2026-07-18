@@ -24,6 +24,8 @@ type PendingProposal struct {
 	Summary    string         `json:"summary"`
 	RiskTier   string         `json:"risk_tier"`
 	Status     string         `json:"status"`
+	SessionID  string         `json:"session_id,omitempty"`
+	Revision   int            `json:"revision,omitempty"`
 	Args       map[string]any `json:"args"`
 }
 

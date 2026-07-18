@@ -92,7 +92,7 @@ The API loads `.env` and `.env.local` automatically when started from the repo r
 
 Farm-level opt-in: Settings → Farm site → **Use live weather forecast** (`meta_data.weather_forecast_enabled`). Sun times (Tier 1) work without these vars.
 
-See [phase_178_online_weather_forecast.plan.md](plans/phase_178_online_weather_forecast.plan.md).
+See [phase_178_online_weather_forecast.plan.md](plans/archive/phase_178_online_weather_forecast.plan.md).
 
 ---
 

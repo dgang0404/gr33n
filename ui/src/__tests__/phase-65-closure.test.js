@@ -11,7 +11,7 @@ const repoRoot = join(process.cwd(), '..')
 describe('Phase 65 WS4 / OC-65 — Pi diagnostics closure', () => {
   it('documents summarize_device_health read tool and architecture section', () => {
     const arch = readFileSync(join(repoDocs, 'farm-guardian-architecture.md'), 'utf8')
-    const plan = readFileSync(join(repoDocs, 'plans/phase_65_guardian_pi_diagnostics.plan.md'), 'utf8')
+    const plan = readFileSync(join(repoDocs, 'plans/archive/phase_65_guardian_pi_diagnostics.plan.md'), 'utf8')
     expect(existsSync(join(repoRoot, 'internal/farmguardian/readtools_device.go'))).toBe(true)
     expect(arch).toContain('summarize_device_health')
     expect(plan).toContain('**Shipped.**')

@@ -12,6 +12,14 @@ body {
   padding-right: env(safe-area-inset-right, 0px);
 }
 
+/* App shell — one scroll container per route (workspace content or main). */
+html,
+body,
+#app {
+  height: 100%;
+  overflow: hidden;
+}
+
 .card {
   @apply bg-gray-900 border border-gray-800 rounded-xl p-4;
 }

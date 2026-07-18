@@ -21,8 +21,8 @@ describe('Phase 46 WS3 — handler wiring closure', () => {
 
   it('handler passes assistant text into attachProposals (non-stream + SSE done)', () => {
     const src = readFileSync(join(chatHandler, 'handler.go'), 'utf8')
-    expect(src).toContain('attachProposals(r.Context(), farmID, hasUser, userID, sessionID, question, answer, liveSnap, &resp)')
-    expect(src).toContain('attachProposals(r.Context(), farmID, hasUser, userID, sessionID, question, answer, liveSnap, &done)')
+    expect(src).toContain('attachProposals(r.Context(), farmID, hasUser, userID, sessionID, question, answer, liveSnap, pb.ContextRef, &resp)')
+    expect(src).toContain('attachProposals(r.Context(), farmID, hasUser, userID, sessionID, question, answer, liveSnap, contextRef, &done)')
   })
 
   it('Go tests cover attachProposals guard', () => {
@@ -31,7 +31,7 @@ describe('Phase 46 WS3 — handler wiring closure', () => {
 
   it('phase 46 plan marks WS3 completed', () => {
     const plan = readFileSync(
-      join(repoDocs, 'plans/phase_46_guardian_llm_tool_proposals.plan.md'),
+      join(repoDocs, 'plans/archive/phase_46_guardian_llm_tool_proposals.plan.md'),
       'utf8',
     )
     expect(plan).toContain('id: ws3-handler')

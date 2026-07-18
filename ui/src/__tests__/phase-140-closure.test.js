@@ -10,12 +10,12 @@ const repoRoot = join(process.cwd(), '..')
 
 describe('Phase 140 — QA Settings summary closure', () => {
   it('plan is shipped', () => {
-    const plan = readFileSync(join(repoDocs, 'plans/phase_140_guardian_qa_settings.plan.md'), 'utf8')
+    const plan = readFileSync(join(repoDocs, 'plans/archive/phase_140_guardian_qa_settings.plan.md'), 'utf8')
     expect(plan).toContain('**Shipped.**')
   })
 
   it('131 WS7 marked completed', () => {
-    const plan = readFileSync(join(repoDocs, 'plans/phase_131_guardian_qa_harness.plan.md'), 'utf8')
+    const plan = readFileSync(join(repoDocs, 'plans/archive/phase_131_guardian_qa_harness.plan.md'), 'utf8')
     expect(plan).toContain('ws7-ui-optional')
     expect(plan).toMatch(/ws7-ui-optional[\s\S]*status: completed/)
   })

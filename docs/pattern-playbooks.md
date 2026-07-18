@@ -47,7 +47,7 @@
 
 ## Greenhouse / tent climate (`greenhouse_climate_v1`)
 
-**Best for:** controlled environment agriculture — shade screen, ridge vent, exhaust/circulation fans, humidifier, dehumidifier, optional CO₂. **Complements** supplemental lighting ([Phase 35](plans/phase_35_lighting_domain.plan.md)) — blocking sun is not the same control as adding light.
+**Best for:** controlled environment agriculture — shade screen, ridge vent, exhaust/circulation fans, humidifier, dehumidifier, optional CO₂. **Complements** supplemental lighting ([Phase 35](plans/archive/phase_35_lighting_domain.plan.md)) — blocking sun is not the same control as adding light.
 
 **What you get (after migration `20260603_phase36_greenhouse_climate_v2.sql`):** zone **Greenhouse** with `zone_type=greenhouse` and `meta_data.greenhouse_climate` profile (cover type, linked actuator ids, `automation_policy`); sensors air temp, RH, CO₂, **dew point**, **VPD**, **lux**; typed actuators **shade_screen**, **ridge_vent**, **exhaust_fan**, **circulation_fan**, humidifier, dehumidifier, CO₂ injector; threshold rules including high-lux → deploy shade and high-temp → fan (all **inactive** by default); weekly CO₂ checklist task.
 

@@ -63,6 +63,11 @@
             >
               Tune EC for this variety →
             </router-link>
+            <SymptomCropLink
+              v-if="p.crop_key"
+              :crop-key="p.crop_key"
+              class="block mt-1"
+            />
           </div>
           <span class="text-lg shrink-0">🌱</span>
         </div>
@@ -221,6 +226,7 @@ import HelpTip from '../components/HelpTip.vue'
 import EmptyStateHint from '../components/EmptyStateHint.vue'
 import StartGrowWizard from '../components/StartGrowWizard.vue'
 import CropLibraryPicker from '../components/CropLibraryPicker.vue'
+import SymptomCropLink from '../components/SymptomCropLink.vue'
 import { cycleBatchLabel, strainFromPlant } from '../lib/growHub.js'
 
 defineProps({

@@ -63,14 +63,14 @@ func (h *Handler) SetReservoirBaseWater(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	ecNum, err := numericFromFloat64(body.EcMscm)
+	ecNum, err := httputil.NumericFromFloat64(body.EcMscm)
 	if err != nil {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid ec_mscm value")
 		return
 	}
 	var phNum pgtype.Numeric
 	if body.Ph > 0 {
-		if phNum, err = numericFromFloat64(body.Ph); err != nil {
+		if phNum, err = httputil.NumericFromFloat64(body.Ph); err != nil {
 			httputil.WriteError(w, http.StatusBadRequest, "invalid ph value")
 			return
 		}

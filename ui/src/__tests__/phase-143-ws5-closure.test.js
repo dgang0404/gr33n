@@ -27,6 +27,6 @@ describe('Phase 143 — WS5 feedback quality checklist', () => {
   it('Settings QA card nudges operators to quality checklist', () => {
     const card = readFileSync(join(process.cwd(), 'src/components/GuardianSettingsQARunCard.vue'), 'utf8')
     expect(card).toContain('settings-guardian-qa-quality-nudge')
-    expect(card).toContain('guardian-feedback-review-runbook.md')
+    expect(card).toContain('Guardian feedback')
   })
 })

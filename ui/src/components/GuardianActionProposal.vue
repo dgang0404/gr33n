@@ -115,6 +115,13 @@
         <p v-for="(d, i) in revisionDiff" :key="i">{{ d }}</p>
       </div>
 
+      <GuardianProposalRevisionTimeline
+        v-if="showRevisionTimeline"
+        :session-id="local.session_id"
+        :revision="local.revision || 1"
+        :tool="local.tool"
+      />
+
       <p v-if="uiError" data-test="guardian-proposal-error" class="text-xs text-red-400">
         {{ uiError }}
       </p>
@@ -134,6 +141,18 @@
           @click="onConfirm"
         >
           {{ confirming ? 'Confirming…' : 'Confirm' }}
+        </button>
+        <button
+          v-if="hasLinkedSession"
+          type="button"
+          data-test="guardian-proposal-view-conversation"
+          class="px-3 py-2 rounded-lg border border-zinc-700 bg-zinc-900/50 text-zinc-300 hover:bg-zinc-800 text-xs disabled:opacity-40"
+          :class="[touchTargetClass, focusRingClass]"
+          :disabled="confirming || isExpired"
+          :aria-label="viewConversationAriaLabel"
+          @click="onViewConversation"
+        >
+          View conversation
         </button>
         <button
           type="button"
@@ -168,6 +187,7 @@
 import { computed, reactive, ref, watch } from 'vue'
 import api from '../api'
 import SetupPackProposalCard from './SetupPackProposalCard.vue'
+import GuardianProposalRevisionTimeline from './GuardianProposalRevisionTimeline.vue'
 import { SETUP_PACK_HIGH_RISK_COPY } from '../lib/guardianSetupPack.js'
 import { impactForProposal, revisionLabel } from '../lib/guardianImpact.js'
 import {
@@ -181,7 +201,7 @@ const props = defineProps({
   canOperate: { type: Boolean, default: true },
 })
 
-const emit = defineEmits(['confirmed', 'dismissed', 'error', 'refine'])
+const emit = defineEmits(['confirmed', 'dismissed', 'error', 'refine', 'view-conversation'])
 
 const confirming = ref(false)
 const local = reactive({ ...props.proposal })
@@ -272,6 +292,7 @@ const impact = computed(() => impactForProposal(local))
 const impactLines = computed(() => impact.value.lines)
 const operatorFacts = computed(() => impact.value.facts)
 const revisionDiff = computed(() => computeArgsDiff(local.previous_args, local.args))
+const showRevisionTimeline = computed(() => (local.revision || 0) > 1 && !!local.session_id)
 
 const targetHint = computed(() => {
   if (isSetupPack.value) {
@@ -330,6 +351,8 @@ const touchTargetClass = FARMER_TOUCH_TARGET
 const confirmAriaLabel = computed(() => guardianProposalAriaLabel('confirm', local.summary))
 const dismissAriaLabel = computed(() => guardianProposalAriaLabel('dismiss', local.summary))
 const refineAriaLabel = computed(() => guardianProposalAriaLabel('refine', local.summary))
+const viewConversationAriaLabel = computed(() => guardianProposalAriaLabel('view-conversation', local.summary))
+const hasLinkedSession = computed(() => !!local.session_id)
 
 function toolLabel(id) {
   return TOOL_LABELS[id] || id
@@ -388,6 +411,11 @@ async function onDismiss() {
 function onRefine() {
   if (confirming.value || !props.canOperate || isExpired.value) return
   emit('refine', { proposal: props.proposal })
+}
+
+function onViewConversation() {
+  if (confirming.value || isExpired.value || !local.session_id) return
+  emit('view-conversation', { proposal: props.proposal })
 }
 
 // computeArgsDiff renders "path: old → new" lines between two frozen arg objects,

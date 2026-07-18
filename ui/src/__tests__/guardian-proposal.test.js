@@ -263,6 +263,21 @@ describe('GuardianActionProposal — revise loop (Phase 34 WS5)', () => {
     expect(wrapper.emitted('refine')).toBeTruthy()
   })
 
+  it('shows View conversation when session_id is linked and emits on click', async () => {
+    const wrapper = mountRevision({ session_id: 'sess-rev-2' })
+    const btn = wrapper.find('[data-test="guardian-proposal-view-conversation"]')
+    expect(btn.exists()).toBe(true)
+    expect(btn.attributes('aria-label')).toContain('View chat history')
+    await btn.trigger('click')
+    expect(wrapper.emitted('view-conversation')).toBeTruthy()
+    expect(wrapper.emitted('view-conversation')[0][0].proposal.session_id).toBe('sess-rev-2')
+  })
+
+  it('hides View conversation when session_id is missing', () => {
+    const wrapper = mountRevision({ session_id: undefined })
+    expect(wrapper.find('[data-test="guardian-proposal-view-conversation"]').exists()).toBe(false)
+  })
+
   it('labels operator-stated facts and never as measurements', () => {
     const wrapper = mountRevision({
       operator_provided: [

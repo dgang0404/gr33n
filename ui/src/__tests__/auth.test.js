@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
 
 vi.mock('../api', () => ({
+  resetUnauthorizedGate: vi.fn(),
   default: {
     get: vi.fn(),
     post: vi.fn(),

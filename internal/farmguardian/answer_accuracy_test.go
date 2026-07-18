@@ -3,7 +3,10 @@
 
 package farmguardian
 
-import "testing"
+import (
+	"strings"
+	"testing"
+)
 
 func TestGarbledTokenNote_detectsRunSixOHNTypo(t *testing.T) {
 	t.Parallel()
@@ -125,6 +128,49 @@ func TestTruncatedAnswerTailNote_allowlistedChemistryPasses(t *testing.T) {
 	t.Parallel()
 	answer := "Aquaponics biofilter off-gasses excess CO2"
 	if note := TruncatedAnswerTailNote(answer); note != "" {
+		t.Fatalf("unexpected note %q", note)
+	}
+}
+
+// Phase 190 — live turn: "Create a task to refill calcium nitrate when stock
+// is low." Completion hit exactly 1024/1024 tokens; the answer stops right
+// after promising a step-by-step procedure.
+func TestDanglingListIntroNote_liveCalciumNitrateTask(t *testing.T) {
+	t.Parallel()
+	answer := "Objective: To ensure the lettuce crop's health, refill calcium nitrate in your hydroponic system when stock levels are low and maintain appropriate nutrient concentrations as per Guardian's field guide. Here is a step-by-step procedure for you to follow based on our sources [1] (Lettuce Nutrition), which will help manage the EC, pH balance, and prevent tip burn while refilling calcium nitrate:"
+	note := DanglingListIntroNote(answer)
+	if note == "" {
+		t.Fatal("expected dangling_list_intro note")
+	}
+	if !strings.HasPrefix(note, "dangling_list_intro:") {
+		t.Fatalf("got %q", note)
+	}
+}
+
+// Phase 190 — live turn: "Set the feed volume to 0.3 liters for the Veg Tent
+// program." The answer stops right after promising to walk through setup.
+func TestDanglingListIntroNote_liveFeedVolumeSetup(t *testing.T) {
+	t.Parallel()
+	answer := "Firstly, ensure to have assigned the appropriate lettuce nutrition profile using `lookup_crop_targets` or by starting a new grow in Start grow and selecting 'Lettuce' from Plants for structured EC mS/cm targeting as suggested [5]. Once you confirm this setup:"
+	if note := DanglingListIntroNote(answer); note == "" {
+		t.Fatal("expected dangling_list_intro note")
+	}
+}
+
+func TestDanglingListIntroNote_completeSentencePasses(t *testing.T) {
+	t.Parallel()
+	answer := "Set the feed volume to 0.3 liters per cycle for the Veg Tent program per [1]."
+	if note := DanglingListIntroNote(answer); note != "" {
+		t.Fatalf("unexpected note %q", note)
+	}
+}
+
+func TestDanglingListIntroNote_shortAnswerNotFlagged(t *testing.T) {
+	t.Parallel()
+	// Short trailing-colon fragments (e.g. a label) are below the length
+	// floor so they don't false-positive on tiny, legitimate answers.
+	answer := "Zone:"
+	if note := DanglingListIntroNote(answer); note != "" {
 		t.Fatalf("unexpected note %q", note)
 	}
 }

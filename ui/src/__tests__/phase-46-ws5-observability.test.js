@@ -41,7 +41,7 @@ describe('Phase 46 WS5 — observability closure', () => {
 
   it('phase 46 plan marks WS5 completed', () => {
     const plan = readFileSync(
-      join(repoDocs, 'plans/phase_46_guardian_llm_tool_proposals.plan.md'),
+      join(repoDocs, 'plans/archive/phase_46_guardian_llm_tool_proposals.plan.md'),
       'utf8',
     )
     expect(plan).toContain('id: ws5-observability')

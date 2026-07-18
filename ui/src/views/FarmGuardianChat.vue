@@ -38,6 +38,7 @@
           v-show="activeTab === 'pending'"
           :active="activeTab === 'pending'"
           @refine="onInboxRefine"
+          @view-conversation="onInboxViewConversation"
         />
       </div>
       <footer class="px-4 py-2 border-t border-zinc-800 text-[10px] text-zinc-600 shrink-0">
@@ -58,6 +59,7 @@ import { useCapabilitiesStore } from '../stores/capabilities'
 import { useFarmContextStore } from '../stores/farmContext'
 import { useGuardianPanelStore } from '../stores/guardianPanel'
 import { useGuardianProposalsStore } from '../stores/guardianProposals'
+import { humanDocTitle, guardianDocPrefill } from '../lib/citationDoc.js'
 
 const route = useRoute()
 const router = useRouter()
@@ -81,6 +83,15 @@ onMounted(async () => {
   if (route.query.setup === '1') {
     guardianPanel.setupMode = true
   }
+  const cited = route.query.cited_doc
+  if (typeof cited === 'string' && cited.trim()) {
+    guardianPanel.prefilledMessage = guardianDocPrefill(humanDocTitle(cited))
+    const query = { ...route.query }
+    delete query.cited_doc
+    delete query.cited_type
+    delete query.cited_chunk
+    router.replace({ path: '/chat', query })
+  }
   if (farmContext.farmId) {
     await proposalsStore.refreshPendingCount(farmContext.farmId)
   }
@@ -96,6 +107,10 @@ watch(
 )
 
 function onInboxRefine() {
+  activeTab.value = 'chat'
+}
+
+function onInboxViewConversation() {
   activeTab.value = 'chat'
 }
 </script>

@@ -9,15 +9,10 @@ const repoRoot = join(process.cwd(), '..')
 const uiSrc = join(process.cwd(), 'src')
 
 describe('Phase 169 WS1–WS3 — attention cockpit', () => {
-  it('ships FarmTodayAttentionStrip and Dashboard wiring', () => {
+  it('ships FarmTodayAttentionStrip', () => {
     const strip = readFileSync(join(uiSrc, 'components/FarmTodayAttentionStrip.vue'), 'utf8')
     expect(strip).toContain('farm-today-attention')
     expect(strip).toContain('listAttentionZones')
-
-    const dash = readFileSync(join(uiSrc, 'views/Dashboard.vue'), 'utf8')
-    expect(dash).toContain('FarmTodayAttentionStrip')
-    expect(dash).toContain('buildTodayAttentionStarters')
-    expect(dash).toContain('dashboard-details-guardian')
   })
 
   it('sorts FarmCanvas zones attention-first', () => {

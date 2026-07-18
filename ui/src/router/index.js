@@ -7,12 +7,9 @@ import SensorDetail from '../views/SensorDetail.vue'
 import Actuators from '../views/Actuators.vue'
 import Animals from '../views/Animals.vue'
 import Aquaponics from '../views/Aquaponics.vue'
-import CommonsCatalog from '../views/CommonsCatalog.vue'
 import Settings from '../views/Settings.vue'
-import FarmKnowledge from '../views/FarmKnowledge.vue'
 import FarmGuardianChat from '../views/FarmGuardianChat.vue'
 import HelpWorkspace from '../views/workspaces/HelpWorkspace.vue'
-import SymptomGuide from '../views/SymptomGuide.vue'
 import CropProfileDetail from '../views/CropProfileDetail.vue'
 import CropCycleSummary from '../views/CropCycleSummary.vue'
 import CropCycleCompare from '../views/CropCycleCompare.vue'
@@ -27,6 +24,7 @@ import ComfortWorkspace from '../views/workspaces/ComfortWorkspace.vue'
 import HardwareWorkspace from '../views/workspaces/HardwareWorkspace.vue'
 import FeedWaterWorkspace from '../views/workspaces/FeedWaterWorkspace.vue'
 import Login from '../views/Login.vue'
+import Alerts from '../views/Alerts.vue'
 import { buildLegacyRedirectRoutes, buildSunsetWorkspaceRedirects, buildZoneOpsRedirectRoutes } from '../lib/workspaces.js'
 
 const routes = [
@@ -56,8 +54,6 @@ const routes = [
   { path: '/crop-profiles/:id', component: CropProfileDetail, name: 'crop-profile-detail' },
   { path: '/animals',      component: Animals,      name: 'animals' },
   { path: '/aquaponics',   component: Aquaponics,   name: 'aquaponics' },
-  { path: '/catalog',      component: CommonsCatalog, name: 'catalog' },
-  { path: '/farm-knowledge', component: FarmKnowledge, name: 'farm-knowledge' },
   { path: '/chat',         component: FarmGuardianChat, name: 'farm-guardian-chat' },
   { path: '/guardian/requests', redirect: { path: '/chat', query: { tab: 'pending' } } },
   {
@@ -65,8 +61,20 @@ const routes = [
     redirect: (to) => ({ path: '/zones', query: { ...to.query, tab: 'plants', compare: '1' } }),
   },
   { path: '/settings',     component: Settings,     name: 'settings' },
+  {
+    path: '/alerts',
+    component: Alerts,
+    name: 'alerts',
+    beforeEnter: (to) => {
+      const raw = to.query?.zone_id
+      const zoneId = raw != null ? String(Array.isArray(raw) ? raw[0] : raw).trim() : ''
+      if (!zoneId) return true
+      const query = { ...to.query, tab: 'ops', ops: 'alerts' }
+      delete query.zone_id
+      return { path: `/zones/${zoneId}`, query }
+    },
+  },
   { path: '/operator-guide', component: HelpWorkspace, name: 'operator-guide' },
-  { path: '/symptom-guide', component: SymptomGuide, name: 'symptom-guide' },
   { path: '/crop-cycles/:id/summary', component: CropCycleSummary, name: 'crop-cycle-summary' },
   { path: '/farms/:fid/crop-cycles/compare', component: CropCycleCompare, name: 'crop-cycle-compare' },
   { path: '/farms/:id/setup', component: FarmSetupWizard, name: 'farm-setup' },

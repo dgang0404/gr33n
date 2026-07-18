@@ -13,7 +13,7 @@ const repoRoot = join(process.cwd(), '..')
 describe('Phase 153 — Guardian change-request smoke fetcher', () => {
   it('plan documents the pending-proposal fetch, not a GitHub PR gate', () => {
     const plan = readFileSync(
-      join(repoDocs, 'plans/phase_153_guardian_pr_smoke_gate.plan.md'),
+      join(repoDocs, 'plans/archive/phase_153_guardian_pr_smoke_gate.plan.md'),
       'utf8',
     )
     expect(plan).toContain('FetchPendingProposals')

@@ -234,26 +234,37 @@ func resolveDocCitationRoute(ctx context.Context, q *db.Queries, farmID int64, s
 	docPath := strings.TrimSpace(meta.DocPath)
 	cropKey := strings.TrimSpace(meta.CropKey)
 	if sourceType == "field_guide" && cropKey != "" {
-		return "/symptom-guide?crop_key=" + url.QueryEscape(cropKey), true
+		return "/operator-guide?tab=symptoms&crop_key=" + url.QueryEscape(cropKey), true
 	}
 	if docPath != "" {
 		if sourceType == "platform_doc" {
-			return "/operator-guide?cited_doc=" + url.QueryEscape(docPath), true
+			return docCitationRoute("library", docPath, "platform_doc", "guide"), true
 		}
-		return "/farm-knowledge?cited_doc=" + url.QueryEscape(docPath) + "&cited_type=field_guide", true
+		return docCitationRoute("knowledge", docPath, "field_guide", ""), true
 	}
 	return landingDocRoute(sourceType, cropKey)
+}
+
+func docCitationRoute(tab, docPath, citedType string, section string) string {
+	v := url.Values{}
+	v.Set("tab", tab)
+	if section != "" {
+		v.Set("section", section)
+	}
+	v.Set("cited_doc", docPath)
+	v.Set("cited_type", citedType)
+	return "/operator-guide?" + v.Encode()
 }
 
 func landingDocRoute(sourceType, cropKey string) (string, bool) {
 	if sourceType == "field_guide" {
 		if cropKey != "" {
-			return "/symptom-guide?crop_key=" + url.QueryEscape(cropKey), true
+			return "/operator-guide?tab=symptoms&crop_key=" + url.QueryEscape(cropKey), true
 		}
-		return "/farm-knowledge", true
+		return "/operator-guide?tab=knowledge", true
 	}
 	if sourceType == "platform_doc" {
-		return "/operator-guide", true
+		return "/operator-guide?tab=library&section=guide", true
 	}
 	return "", false
 }

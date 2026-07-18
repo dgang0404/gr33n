@@ -36,7 +36,7 @@ describe('Phase 46 WS4 — safety tests closure', () => {
 
   it('phase 46 plan marks WS4 completed', () => {
     const plan = readFileSync(
-      join(repoDocs, 'plans/phase_46_guardian_llm_tool_proposals.plan.md'),
+      join(repoDocs, 'plans/archive/phase_46_guardian_llm_tool_proposals.plan.md'),
       'utf8',
     )
     expect(plan).toContain('id: ws4-safety')
@@ -47,7 +47,7 @@ describe('Phase 46 WS4 — safety tests closure', () => {
 
   it('architecture §7.0l notes WS4 safety coverage', () => {
     const plan = readFileSync(
-      join(repoDocs, 'plans/phase_46_guardian_llm_tool_proposals.plan.md'),
+      join(repoDocs, 'plans/archive/phase_46_guardian_llm_tool_proposals.plan.md'),
       'utf8',
     )
     expect(plan).toContain('proposals_llm_safety_test.go')

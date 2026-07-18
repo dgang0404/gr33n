@@ -67,6 +67,12 @@ func execCreateTask(ctx context.Context, deps ExecutorDeps, args map[string]any)
 	if taskType != nil {
 		tt = *taskType
 	}
+	dueDate := pgtype.Date{}
+	if d, ok, err := optionalDateFromArgs(args, "due_date"); err != nil {
+		return nil, err
+	} else if ok {
+		dueDate = d
+	}
 	var createdBy pgtype.UUID
 	if deps.HasUser {
 		createdBy = pgtype.UUID{Bytes: deps.UserID, Valid: true}
@@ -79,6 +85,7 @@ func execCreateTask(ctx context.Context, deps ExecutorDeps, args map[string]any)
 		TaskType:         &tt,
 		Status:           commontypes.TaskStatusEnum("todo"),
 		Priority:         &priority,
+		DueDate:          dueDate,
 		CreatedByUserID:  createdBy,
 	})
 	if err != nil {
@@ -92,6 +99,8 @@ type taskFromAlertOpts struct {
 	Description *string
 	ZoneID      *int64
 	Priority    *int32
+	DueDate     pgtype.Date
+	HasDueDate  bool
 }
 
 func taskFromAlertOverrides(args map[string]any) taskFromAlertOpts {
@@ -107,6 +116,10 @@ func taskFromAlertOverrides(args map[string]any) taskFromAlertOpts {
 	}
 	if p, err := optionalInt32FromArgs(args, "priority"); err == nil {
 		o.Priority = p
+	}
+	if d, ok, err := optionalDateFromArgs(args, "due_date"); err == nil && ok {
+		o.DueDate = d
+		o.HasDueDate = true
 	}
 	return o
 }
@@ -177,6 +190,10 @@ func createTaskFromAlertRow(ctx context.Context, deps ExecutorDeps, alertID int6
 		createdBy = pgtype.UUID{Bytes: deps.UserID, Valid: true}
 	}
 	aid := alertRow.ID
+	dueDate := pgtype.Date{}
+	if overrides.HasDueDate {
+		dueDate = overrides.DueDate
+	}
 	row, err := deps.Q.CreateTask(ctx, db.CreateTaskParams{
 		FarmID:          alertRow.FarmID,
 		ZoneID:          zoneID,
@@ -185,6 +202,7 @@ func createTaskFromAlertRow(ctx context.Context, deps ExecutorDeps, alertID int6
 		TaskType:        &tt,
 		Status:          commontypes.TaskStatusEnum("todo"),
 		Priority:        &priority,
+		DueDate:         dueDate,
 		SourceAlertID:   &aid,
 		CreatedByUserID: createdBy,
 	})

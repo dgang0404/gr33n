@@ -7,7 +7,7 @@ import { defineStore } from 'pinia'
  * destination path on hover/focus via the `v-nav-hint` directive; SideNav
  * wiggles the matching sidebar item so users learn where each link lives.
  *
- * @see docs/plans/phase_49_sidebar_nav_polish.plan.md
+ * @see docs/plans/archive/phase_49_sidebar_nav_polish.plan.md
  */
 export const useNavHighlightStore = defineStore('navHighlight', {
   state: () => ({

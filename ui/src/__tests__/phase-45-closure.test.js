@@ -49,7 +49,7 @@ describe('Phase 45 WS7 / OC-45 — farmer polish closure', () => {
 
   it('OC-45 marked completed in operational closure plan', () => {
     const closure = readFileSync(
-      join(repoDocs, 'plans/phase_35_37_operational_closure.plan.md'),
+      join(repoDocs, 'plans/archive/phase_35_37_operational_closure.plan.md'),
       'utf8',
     )
     expect(closure).toContain('oc-45-closure')
@@ -60,7 +60,7 @@ describe('Phase 45 WS7 / OC-45 — farmer polish closure', () => {
 
   it('phase 45 plan marks WS7 completed', () => {
     const plan = readFileSync(
-      join(repoDocs, 'plans/phase_45_farmer_validation_whole_app_polish.plan.md'),
+      join(repoDocs, 'plans/archive/phase_45_farmer_validation_whole_app_polish.plan.md'),
       'utf8',
     )
     expect(plan).toContain('id: ws7-docs-tests')

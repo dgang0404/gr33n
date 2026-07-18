@@ -72,30 +72,12 @@ func NewHandler(pool *pgxpool.Pool, store filestorage.Store) *Handler {
 	return &Handler{pool: pool, q: db.New(pool), store: store}
 }
 
-func numericFromFloat64(v float64) (pgtype.Numeric, error) {
-	var n pgtype.Numeric
-	err := n.Scan(strconv.FormatFloat(v, 'f', -1, 64))
-	return n, err
-}
-
 func numericToFloat64(n pgtype.Numeric) float64 {
 	f, err := n.Float64Value()
 	if err != nil || !f.Valid {
 		return 0
 	}
 	return f.Float64
-}
-
-func parseDate(s string) (pgtype.Date, error) {
-	s = strings.TrimSpace(s)
-	if s == "" {
-		return pgtype.Date{}, errors.New("empty date")
-	}
-	t, err := time.Parse("2006-01-02", s)
-	if err != nil {
-		return pgtype.Date{}, err
-	}
-	return pgtype.Date{Time: t, Valid: true}, nil
 }
 
 const (
@@ -143,31 +125,19 @@ func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 	if !farmauthz.RequireCostRead(w, r, h.q, farmID) {
 		return
 	}
-	limit := int32(50)
-	offset := int32(0)
-	if v := r.URL.Query().Get("limit"); v != "" {
-		n, err := strconv.ParseInt(v, 10, 32)
-		if err != nil || n < 1 {
+	limit, offset, err := httputil.ParseLimitOffsetStrict(r, 50, 500)
+	if err != nil {
+		if errors.Is(err, httputil.ErrInvalidLimit) {
 			httputil.WriteError(w, http.StatusBadRequest, "invalid limit")
 			return
 		}
-		if n > 500 {
-			n = 500
-		}
-		limit = int32(n)
-	}
-	if v := r.URL.Query().Get("offset"); v != "" {
-		n, err := strconv.ParseInt(v, 10, 32)
-		if err != nil || n < 0 {
-			httputil.WriteError(w, http.StatusBadRequest, "invalid offset")
-			return
-		}
-		offset = int32(n)
+		httputil.WriteError(w, http.StatusBadRequest, "invalid offset")
+		return
 	}
 	rows, err := h.q.ListCostTransactionsByFarm(r.Context(), db.ListCostTransactionsByFarmParams{
 		FarmID: farmID,
-		Limit:  limit,
-		Offset: offset,
+		Limit:  int32(limit),
+		Offset: int32(offset),
 	})
 	if err != nil {
 		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
@@ -686,7 +656,7 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid body")
 		return
 	}
-	td, err := parseDate(body.TransactionDate)
+	td, err := httputil.ParseDate(body.TransactionDate)
 	if err != nil {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid transaction_date (YYYY-MM-DD)")
 		return
@@ -700,7 +670,7 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusBadRequest, "currency must be a 3-letter ISO code")
 		return
 	}
-	amt, err := numericFromFloat64(body.Amount)
+	amt, err := httputil.NumericFromFloat64(body.Amount)
 	if err != nil {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid amount")
 		return
@@ -879,7 +849,7 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 	if !farmauthz.RequireCostWrite(w, r, h.q, existing.FarmID) {
 		return
 	}
-	td, err := parseDate(body.TransactionDate)
+	td, err := httputil.ParseDate(body.TransactionDate)
 	if err != nil {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid transaction_date")
 		return
@@ -893,7 +863,7 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusBadRequest, "currency must be a 3-letter ISO code")
 		return
 	}
-	amt, err := numericFromFloat64(body.Amount)
+	amt, err := httputil.NumericFromFloat64(body.Amount)
 	if err != nil {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid amount")
 		return

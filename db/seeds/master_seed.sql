@@ -1,11 +1,12 @@
 -- =============================================================================
--- gr33n Master Seed File  v1.008
+-- gr33n Master Seed File  v1.009
 -- Phase 48: idempotent sensors/automation_rules; demo_showcase profile tag on farm 1.
 -- + Demo input_batches (inventory), flower reservoir + fertigation program,
 --   Phase 29 WS7 — three unread Guardian demo alerts (farm 1).
 --   mixing_events + components, crop_cycles, protocol tasks (18/6 veg vs 12/12 flower).
 -- v1.004: schedules table has no metadata column — notes moved to description
 -- v1.008 (Phase 124): fixed stale crop_cycles.strain_or_variety → batch_label
+-- v1.009: bundled demo farm Today layout background (data/files/farm-1/layout-background/)
 --   (renamed in Phase 93, seed was never updated); added dev-hygiene purge of
 --   smoke-test artifacts on farm 1; added 4 more zones (Propagation Room,
 --   Herb & Greens Room, Outdoor Pepper Bed, Outdoor Berry Patch), a `plants`
@@ -2050,3 +2051,29 @@ BEGIN
      WHERE id = v_zone_id;
   END IF;
 END $$;
+
+-- Demo farm Today canvas background (blob tracked in data/files/)
+DELETE FROM gr33ncore.file_attachments
+WHERE farm_id = 1 AND file_type = 'farm_layout_background';
+
+WITH ins AS (
+  INSERT INTO gr33ncore.file_attachments (
+    farm_id, related_module_schema, related_table_name, related_record_id,
+    file_name, file_type, file_size_bytes, storage_path, mime_type
+  ) VALUES (
+    1, 'gr33ncore', 'farms', '1',
+    'demo-farm-layout.jpg', 'farm_layout_background', 5676341,
+    'farm-1/layout-background/6f6c26e8-f753-4aef-839f-8b68729f0524.jpg',
+    'image/jpeg'
+  )
+  RETURNING id
+)
+UPDATE gr33ncore.farms f
+SET meta_data = jsonb_set(
+  COALESCE(f.meta_data, '{}'::jsonb),
+  '{layout_background_attachment_id}',
+  to_jsonb(ins.id),
+  true
+)
+FROM ins
+WHERE f.id = 1;

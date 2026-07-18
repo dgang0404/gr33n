@@ -3,7 +3,7 @@
 **Status:** WS-B through WS-K shipped (DB default runtime, commons API, profile meta, parity checks) — see [crop-catalog-db-cutover-runbook.md](../crop-catalog-db-cutover-runbook.md)  
 **Sit-in rule:** Name and lock decisions here **before** migrations or runtime cutover. Calendar phases 82/83 continue; this stream owns **operator-trust plant data** — where EC lives, what unsupported means, how integrators seed production.
 
-**Parent streams:** [sit-in-operator-experience.md](sit-in-operator-experience.md) · [Phase 82](../plans/phase_82_guardian_crop_grounding_hardening.plan.md) · [Phase 83](../plans/phase_83_enterprise_agronomy_seed_pack.plan.md)
+**Parent streams:** [sit-in-operator-experience.md](sit-in-operator-experience.md) · [Phase 82](../plans/archive/phase_82_guardian_crop_grounding_hardening.plan.md) · [Phase 83](../plans/archive/phase_83_enterprise_agronomy_seed_pack.plan.md)
 
 **One job:**
 

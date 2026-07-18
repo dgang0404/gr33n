@@ -131,7 +131,7 @@ function onFarmSelect(ev) {
 watch(
   () => farmContext.farmId,
   (id) => {
-    if (id) {
+    if (id && auth.token) {
       proposalsStore.refreshPendingCount(id)
       farmStore.loadFarmModules(id).catch(() => {})
     } else {

@@ -31,6 +31,7 @@ describe('Phase 30 WS1 — guardian inbox', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
     vi.clearAllMocks()
+    localStorage.setItem('gr33n_token', 'test-token')
   })
 
   it('loads pending proposals for selected farm', async () => {
@@ -132,5 +133,47 @@ describe('Phase 30 WS1 — guardian inbox', () => {
     expect(panel.activeSessionId).toBe('sess-abc')
     expect(panel.prefilledMessage).toContain('0.3L')
     expect(wrapper.emitted('refine')).toBeTruthy()
+  })
+
+  it('View conversation switches to chat without prefill', async () => {
+    api.get.mockResolvedValue({
+      data: {
+        proposals: [
+          {
+            proposal_id: 'p-2',
+            session_id: 'sess-view',
+            tool: 'create_task',
+            args: { title: 'Refill calcium nitrate' },
+            summary: 'Create task: Refill calcium nitrate',
+            risk_tier: 'medium',
+            expires_at: new Date(Date.now() + 60000).toISOString(),
+            created_at: new Date().toISOString(),
+            farm_id: 1,
+            status: 'pending',
+          },
+        ],
+        total: 1,
+        limit: 50,
+        offset: 0,
+      },
+    })
+
+    const farmContext = useFarmContextStore()
+    farmContext.farmId = 1
+
+    const wrapper = mount(GuardianRequestsInbox, {
+      global: { plugins: [router] },
+    })
+    await flushPromises()
+
+    await wrapper.find('[data-test="guardian-proposal-view-conversation"]').trigger('click')
+
+    const { useGuardianPanelStore } = await import('../stores/guardianPanel')
+    const panel = useGuardianPanelStore()
+    expect(panel.drawerTab).toBe('chat')
+    expect(panel.activeSessionId).toBe('sess-view')
+    expect(panel.prefilledMessage).toBe('')
+    expect(panel.viewConversationTick).toBe(1)
+    expect(wrapper.emitted('view-conversation')).toBeTruthy()
   })
 })

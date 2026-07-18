@@ -49,4 +49,4 @@ go run ./cmd/rag-ingest -farm-id 1 -tasks …   # see workflow-guide §10.6
 
 - Threat model + storage shape: **[rag-scope-and-threat-model.md](rag-scope-and-threat-model.md)**
 - Full operator bootstrap: **[local-operator-bootstrap.md](local-operator-bootstrap.md)**
-- Phase plan: **[plans/phase_25_rag_operations_and_expansion.plan.md](plans/phase_25_rag_operations_and_expansion.plan.md)**
+- Phase plan: **[plans/archive/phase_25_rag_operations_and_expansion.plan.md](plans/archive/phase_25_rag_operations_and_expansion.plan.md)**

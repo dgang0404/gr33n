@@ -66,7 +66,7 @@ curl "$API/commons/crop-catalog"
 |-----|--------|
 | [`crop-catalog-db-cutover-runbook.md`](../crop-catalog-db-cutover-runbook.md) | DB cutover |
 | [`crop-knowledge-operator-runbook.md`](../crop-knowledge-operator-runbook.md) | Operator + integrator hub |
-| [`plans/phase_84_87_crop_identity_roadmap.plan.md`](phase_84_87_crop_identity_roadmap.plan.md) | Phases 84–87 arc |
+| [`plans/archive/phase_84_87_crop_identity_roadmap.plan.md`](phase_84_87_crop_identity_roadmap.plan.md) | Phases 84–87 arc |
 | [`plans/phase-87-closure.md`](phase-87-closure.md) | Full crop knowledge closure |
 
 ---

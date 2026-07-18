@@ -14,11 +14,12 @@ describe('Phase 73 — guardian discoverability closure', () => {
     expect(topbar).toContain('refreshPendingCount')
   })
 
-  it('GuardianNavLaunch shows pending badge and opens pending inbox', () => {
+  it('GuardianNavLaunch opens pending inbox without duplicate pending badge (Phase 181)', () => {
     const nav = readFileSync(join(process.cwd(), 'src/components/GuardianNavLaunch.vue'), 'utf8')
-    expect(nav).toContain('data-test="guardian-nav-pending-badge"')
+    expect(nav).not.toContain('data-test="guardian-nav-pending-badge"')
     expect(nav).toContain('proposalsStore.pendingCount')
     expect(nav).toContain('openPendingTab')
+    expect(nav).toContain('guardian-readiness-dot')
   })
 
   it('dismiss persists via POST /v1/chat/proposals/{id}/dismiss', () => {

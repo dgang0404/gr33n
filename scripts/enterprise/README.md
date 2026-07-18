@@ -53,7 +53,7 @@ See [`docs/commons-catalog-operator-playbook.md`](../../docs/commons-catalog-ope
 
 ## Shipped (Phase 83) — agronomy seed pack + Guardian bootstrap
 
-**Plan:** [`docs/plans/phase_83_enterprise_agronomy_seed_pack.plan.md`](../../docs/plans/phase_83_enterprise_agronomy_seed_pack.plan.md)
+**Plan:** [`docs/plans/archive/phase_83_enterprise_agronomy_seed_pack.plan.md`](../../docs/plans/archive/phase_83_enterprise_agronomy_seed_pack.plan.md)
 
 | Tool | Purpose |
 |------|---------|
@@ -138,7 +138,7 @@ gr33n platform code is **[AGPL v3](../../LICENSE)**. Ops scripts in this folder 
 
 - [`docs/hypothetical-enterprise-topology.md`](../../docs/hypothetical-enterprise-topology.md)  
 - [`docs/phase-14-operator-documentation.md`](../../docs/phase-14-operator-documentation.md#phase-31-field-validation-edge) — Phase 31 operator index  
-- [`docs/plans/phase_33_guardian_polish_and_enterprise_ops.plan.md`](../../docs/plans/phase_33_guardian_polish_and_enterprise_ops.plan.md) — site manifest WS5  
-- [`docs/plans/phase_83_enterprise_agronomy_seed_pack.plan.md`](../../docs/plans/phase_83_enterprise_agronomy_seed_pack.plan.md) — **shipped** — Guardian agronomy seed pack + bootstrap · [`phase-83-closure.md`](../../docs/plans/phase-83-closure.md)  
-- [`docs/plans/phase_30_guardian_change_requests.plan.md`](../../docs/plans/phase_30_guardian_change_requests.plan.md)  
-- [`docs/plans/phase_31_field_validation_and_edge.plan.md`](../../docs/plans/phase_31_field_validation_and_edge.plan.md)
+- [`docs/plans/archive/phase_33_guardian_polish_and_enterprise_ops.plan.md`](../../docs/plans/archive/phase_33_guardian_polish_and_enterprise_ops.plan.md) — site manifest WS5  
+- [`docs/plans/archive/phase_83_enterprise_agronomy_seed_pack.plan.md`](../../docs/plans/archive/phase_83_enterprise_agronomy_seed_pack.plan.md) — **shipped** — Guardian agronomy seed pack + bootstrap · [`phase-83-closure.md`](../../docs/plans/phase-83-closure.md)  
+- [`docs/plans/archive/phase_30_guardian_change_requests.plan.md`](../../docs/plans/archive/phase_30_guardian_change_requests.plan.md)  
+- [`docs/plans/archive/phase_31_field_validation_and_edge.plan.md`](../../docs/plans/archive/phase_31_field_validation_and_edge.plan.md)

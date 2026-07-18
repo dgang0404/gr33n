@@ -5,6 +5,7 @@ import (
 	"errors"
 	"math"
 	"strings"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 
@@ -126,10 +127,22 @@ func validateLLMProposalSchema(tool string, args map[string]any) string {
 		if _, err := llmOptionalInt64(args, "zone_id"); err != nil {
 			return err.Error()
 		}
+		if raw, ok := args["due_date"]; ok && raw != nil {
+			s, err := llmArgString(args, "due_date")
+			if err != nil || !isISODate(s) {
+				return "due_date must be YYYY-MM-DD"
+			}
+		}
 		return ""
 	case "create_task_from_alert":
 		if _, err := llmArgInt64(args, "alert_id"); err != nil {
 			return "alert_id required"
+		}
+		if raw, ok := args["due_date"]; ok && raw != nil {
+			s, err := llmArgString(args, "due_date")
+			if err != nil || !isISODate(s) {
+				return "due_date must be YYYY-MM-DD"
+			}
 		}
 		return ""
 	case "update_cycle_stage":
@@ -328,4 +341,9 @@ func llmOptionalFloat64(args map[string]any, key string) error {
 	default:
 		return errors.New(key + " must be number")
 	}
+}
+
+func isISODate(s string) bool {
+	_, err := time.Parse("2006-01-02", strings.TrimSpace(s))
+	return err == nil
 }

@@ -46,7 +46,7 @@ describe('Phase 46 WS6 / OC-46 — LLM proposals closure', () => {
 
   it('guardian PR UX plan marks §8 implemented', () => {
     const prUx = readFileSync(
-      join(repoDocs, 'plans/guardian_pr_ux_through_farmer_phases.plan.md'),
+      join(repoDocs, 'plans/archive/guardian_pr_ux_through_farmer_phases.plan.md'),
       'utf8',
     )
     expect(prUx).toContain('## §8 — LLM structured tool proposals (Phase 46) ✅')
@@ -55,7 +55,7 @@ describe('Phase 46 WS6 / OC-46 — LLM proposals closure', () => {
 
   it('OC-46 marked completed in operational closure plan', () => {
     const closure = readFileSync(
-      join(repoDocs, 'plans/phase_35_37_operational_closure.plan.md'),
+      join(repoDocs, 'plans/archive/phase_35_37_operational_closure.plan.md'),
       'utf8',
     )
     expect(closure).toContain('oc-46-closure')
@@ -66,7 +66,7 @@ describe('Phase 46 WS6 / OC-46 — LLM proposals closure', () => {
 
   it('phase 46 plan marks all workstreams completed', () => {
     const plan = readFileSync(
-      join(repoDocs, 'plans/phase_46_guardian_llm_tool_proposals.plan.md'),
+      join(repoDocs, 'plans/archive/phase_46_guardian_llm_tool_proposals.plan.md'),
       'utf8',
     )
     for (const id of [

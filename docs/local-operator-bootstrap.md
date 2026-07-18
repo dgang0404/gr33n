@@ -4,7 +4,7 @@
 
 **Quick links:** [First session after clone](first-session-after-clone.md) · [Example `.env` (doc copy)](example-env.md) · [Machine setup checklist](machine-setup-checklist.md) · [Operator tour — dashboard narrative](operator-tour.md) · [Tasks-first guide (morning ops, automation, offline queue)](tasks-first-operator-guide.md) · [Operator troubleshooting (401, logs)](operator-troubleshooting.md) · [Sit-in workstream — operator UX + logging + tasks](workstreams/sit-in-operator-experience.md) · [Offline / intranet deployment (LAN, VLAN, local LLM)](offline-or-intranet-deployment.md)
 
-Single happy path for standing up **Postgres → API → dashboard → optional Insert Commons receiver → optional Pi / MQTT bridge**, with explicit env templates and pointers to federation and audit docs. For farm template behavior (blank vs starter pack), see [`plans/phase_15_farm_onboarding.plan.md`](plans/phase_15_farm_onboarding.plan.md).
+Single happy path for standing up **Postgres → API → dashboard → optional Insert Commons receiver → optional Pi / MQTT bridge**, with explicit env templates and pointers to federation and audit docs. For farm template behavior (blank vs starter pack), see [`plans/archive/phase_15_farm_onboarding.plan.md`](plans/archive/phase_15_farm_onboarding.plan.md).
 
 ## Laptop daily cheat sheet (Guardian + Ollama)
 
@@ -103,7 +103,7 @@ curl -H "Authorization: Bearer $GUARDIAN_EVAL_TOKEN" \
 
 Or use **Settings → Guardian feedback** (Phase 141) — see [guardian-feedback-review-runbook.md](guardian-feedback-review-runbook.md).
 
-See [phase_128 plan](plans/phase_128_validate_phase127_guardian.plan.md) — Phase 127 grounding validation. For the full **129–138** arc (awakening, runtime, QA, router, honesty, feedback, RAG lifecycle, counsel UX, inference policy), see the [Guardian next-level roadmap](plans/phase_129_139_guardian_next_level_roadmap.plan.md).
+See [phase_128 plan](plans/archive/phase_128_validate_phase127_guardian.plan.md) — Phase 127 grounding validation. For the full **129–138** arc (awakening, runtime, QA, router, honesty, feedback, RAG lifecycle, counsel UX, inference policy), see the [Guardian next-level roadmap](plans/archive/phase_129_139_guardian_next_level_roadmap.plan.md).
 
 ### Phase 128 — validate Phase 127 grounding (legacy)
 
@@ -145,7 +145,7 @@ LLM_RETRY_MAX_ATTEMPTS=1
 
 **RAG ingest** (`make rag-ingest-farm-operational`, `guardian-bootstrap-farm`) uses **`EMBEDDING_MODEL` only** — not `LLM_MODEL`. Ingest works the same whether chat is tinyllama or phi3.
 
-**Field guides** (`docs/field-guides/`, `make rag-ingest-field-guides`) are only injected when **farm context is on** — not for quick/off-farm chat. After adding guides: `make migrate` then `make rag-ingest-field-guides`. See [field-guides/README.md](field-guides/README.md) and [phase_127 plan](plans/phase_127_snapshot_devices_fertigation_guides.plan.md).
+**Field guides** (`docs/field-guides/`, `make rag-ingest-field-guides`) are only injected when **farm context is on** — not for quick/off-farm chat. After adding guides: `make migrate` then `make rag-ingest-field-guides`. See [field-guides/README.md](field-guides/README.md) and [phase_127 plan](plans/archive/phase_127_snapshot_devices_fertigation_guides.plan.md).
 
 **Warm-up trick for phi3:** if you stay on phi3, send a one-line “hi” first and wait for completion so the model stays in RAM; then send the real question. Cold phi3 on CPU dominates wait time.
 
@@ -411,9 +411,9 @@ TIMESCALE_RETENTION_DAYS=90 make apply-dev-retention
 
 **Do not** use **`./scripts/restart-local.sh`** alone when the API is down — it only starts Postgres unless you pass **`--serve`**. From repo root use **`make dev-auth-test`** (API + UI) or **`make local-up`**.
 
-Canonical plan: [`docs/plans/phase_48_dev_seed_and_small_farm_profiles.plan.md`](plans/phase_48_dev_seed_and_small_farm_profiles.plan.md).
+Canonical plan: [`docs/plans/archive/phase_48_dev_seed_and_small_farm_profiles.plan.md`](plans/archive/phase_48_dev_seed_and_small_farm_profiles.plan.md).
 
-**Multi-site / enterprise (hypothetical):** how 500 warehouse-scale sites map onto org/farm/zone + commons recipe packs — no core software changes required: [`hypothetical-enterprise-topology.md`](hypothetical-enterprise-topology.md). **Phase 30** — Guardian PR queue (config + Pi via confirm): [`plans/phase_30_guardian_change_requests.plan.md`](plans/phase_30_guardian_change_requests.plan.md). **Phase 31** — Pi/breadboard field validation: [`plans/phase_31_field_validation_and_edge.plan.md`](plans/phase_31_field_validation_and_edge.plan.md).
+**Multi-site / enterprise (hypothetical):** how 500 warehouse-scale sites map onto org/farm/zone + commons recipe packs — no core software changes required: [`hypothetical-enterprise-topology.md`](hypothetical-enterprise-topology.md). **Phase 30** — Guardian PR queue (config + Pi via confirm): [`plans/archive/phase_30_guardian_change_requests.plan.md`](plans/archive/phase_30_guardian_change_requests.plan.md). **Phase 31** — Pi/breadboard field validation: [`plans/archive/phase_31_field_validation_and_edge.plan.md`](plans/archive/phase_31_field_validation_and_edge.plan.md).
 
 **Edge vs dashboard auth in the spec:** paths wrapped with `requireAPIKey` in `routes.go` are **Pi / bridge** calls using header **`X-API-Key`** (same secret as `PI_API_KEY` in `.env`). `GET /farms/{id}/devices` uses **`requireJWTOrPiEdge`**: OpenAPI lists **both** `bearerAuth` and `apiKeyAuth` so operators know the Pi may poll device `config` (including `pending_command`) with the API key while the dashboard uses a JWT.
 

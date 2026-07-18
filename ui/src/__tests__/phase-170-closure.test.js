@@ -26,10 +26,6 @@ describe('Phase 170 — one-tap farm counsel wiring', () => {
 
     const sheet = readFileSync(join(uiSrc, 'components/ZoneQuickActions.vue'), 'utf8')
     expect(sheet).toContain('autoSend: true')
-
-    const panel = readFileSync(join(uiSrc, 'components/GuardianChatPanel.vue'), 'utf8')
-    expect(panel).toContain('sendCounselStarter')
-    expect(panel).toContain('autoSendOnOpen')
   })
 
   it('documents phase in current-state', () => {

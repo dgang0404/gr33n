@@ -2,14 +2,31 @@ import axios from 'axios'
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL ?? 'http://localhost:8080',
-  timeout: 8000,
+  // 8s was too tight — Guardian endpoints can share the process with a CPU
+  // LLM call in flight (warmup polling, session close summarization, etc.)
+  // and would surface as a hard "timeout of 8000ms exceeded" error. Callers
+  // doing known-slow work (session close, knowledge search) still set their
+  // own larger per-request timeout below this default.
+  timeout: 30000,
   headers: { 'Content-Type': 'application/json' },
 })
 
 /** Set from `main.js` so Pinia stays in sync with localStorage (avoids stale UI after 401). */
 let onUnauthorized = null
+let unauthorizedHandled = false
+
 export function setUnauthorizedHandler(fn) {
   onUnauthorized = fn
+}
+
+/** True when axios rejected with HTTP 401 — callers should stop polling. */
+export function isUnauthorizedError(err) {
+  return err?.response?.status === 401
+}
+
+/** Reset after login so a new session can receive 401 handling again. */
+export function resetUnauthorizedGate() {
+  unauthorizedHandled = false
 }
 
 // Attach JWT token to every request (if present)
@@ -34,6 +51,7 @@ api.interceptors.request.use((config) => {
 /** Noisy failures callers already handle or that happen during normal navigation / API restarts. */
 function shouldLogApiError(err) {
   const url = err.config?.url || ''
+  if (err.response?.status === 401) return false
   if (err.response?.status === 404 && url.includes('/readings/latest')) return false
   if (err.response?.status === 404 && url.includes('/layout-background')) return false
   if (url.includes('/v1/chat/sessions/') && url.endsWith('/close')) return false
@@ -47,16 +65,19 @@ api.interceptors.response.use(
   r => r,
   err => {
     if (err.response?.status === 401) {
-      if (onUnauthorized) onUnauthorized()
-      else {
-        localStorage.removeItem('gr33n_token')
-        localStorage.removeItem('gr33n_user')
-        localStorage.removeItem('gr33n_user_id')
+      if (!unauthorizedHandled) {
+        unauthorizedHandled = true
+        if (onUnauthorized) onUnauthorized()
+        else {
+          localStorage.removeItem('gr33n_token')
+          localStorage.removeItem('gr33n_user')
+          localStorage.removeItem('gr33n_user_id')
+        }
+        if (window.location.pathname !== '/login') {
+          window.location.href = '/login'
+        }
       }
-      // Only redirect if not already on /login to avoid loops
-      if (window.location.pathname !== '/login') {
-        window.location.href = '/login'
-      }
+      return Promise.reject(err)
     }
     if (shouldLogApiError(err)) {
       console.error('[gr33n api]', err.config?.url || '', err.message)

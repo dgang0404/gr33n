@@ -2,7 +2,7 @@
 
 **Audience:** Operators and developers running local/staging Postgres.
 
-**Plan:** [`plans/phase_48_dev_seed_and_small_farm_profiles.plan.md`](plans/phase_48_dev_seed_and_small_farm_profiles.plan.md)
+**Plan:** [`plans/archive/phase_48_dev_seed_and_small_farm_profiles.plan.md`](plans/archive/phase_48_dev_seed_and_small_farm_profiles.plan.md)
 
 Farm **profiles** control how much demo config `master_seed.sql` and reset scripts load. Profiles are stored on `gr33ncore.farms.meta_data->>'dev_seed_profile'`.
 

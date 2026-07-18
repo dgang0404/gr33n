@@ -41,6 +41,11 @@
           <p class="text-xs text-zinc-500 mt-0.5 line-clamp-2">{{ a.message_text_rendered }}</p>
           <AlertHardwareLine :alert="a" :sensors="sensors" :actuators="actuators" />
           <p class="text-[10px] text-zinc-600 mt-1">{{ formatTime(a.created_at) }}</p>
+          <SymptomCropLink
+            v-if="cropKey"
+            :crop-key="cropKey"
+            class="inline-block mt-1.5"
+          />
         </div>
         <div class="flex flex-wrap gap-2 shrink-0">
           <AskGuardianButton
@@ -80,10 +85,12 @@ import { useFarmStore } from '../stores/farm.js'
 import { filterZoneAlertsForRoom } from '../lib/zoneGrowSummary.js'
 import AskGuardianButton from './AskGuardianButton.vue'
 import AlertHardwareLine from './AlertHardwareLine.vue'
+import SymptomCropLink from './SymptomCropLink.vue'
 
 const props = defineProps({
   zoneId: { type: Number, required: true },
   zoneName: { type: String, default: '' },
+  cropKey: { type: String, default: '' },
   sensors: { type: Array, default: () => [] },
   actuators: { type: Array, default: () => [] },
   alerts: { type: Array, default: () => [] },

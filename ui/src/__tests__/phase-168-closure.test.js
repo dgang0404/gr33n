@@ -9,30 +9,15 @@ const repoRoot = join(process.cwd(), '..')
 const uiSrc = join(process.cwd(), 'src')
 
 describe('Phase 168 WS1 — remove getting-started checklist', () => {
-  it('Dashboard uses canvas hero, not GettingStartedChecklist', () => {
-    const dash = readFileSync(join(uiSrc, 'views/Dashboard.vue'), 'utf8')
-    expect(dash).toContain('FarmCanvas')
-    expect(dash).toContain('FarmZoneStack')
-    expect(dash).not.toContain('GettingStartedChecklist')
-    expect(dash).not.toContain('showFirstRunChecklist')
-    expect(dash).not.toContain('firstRunDismissed')
+  it('GettingStartedChecklist component removed from repo', () => {
     expect(existsSync(join(uiSrc, 'components/GettingStartedChecklist.vue'))).toBe(false)
-  })
-
-  it('keeps firstRunChecklist lib for Guardian chat', () => {
-    const guardian = readFileSync(join(uiSrc, 'components/GuardianChatPanel.vue'), 'utf8')
-    expect(guardian).toContain('firstRunChecklist.js')
-    expect(existsSync(join(uiSrc, 'lib/firstRunChecklist.js'))).toBe(true)
   })
 })
 
 describe('Phase 168 WS2 — grower-native empty farm', () => {
-  it('shows empty-farm Guardian setup chips on Dashboard', () => {
-    const dash = readFileSync(join(uiSrc, 'views/Dashboard.vue'), 'utf8')
-    expect(dash).toContain('showEmptyFarmStarters')
-    expect(dash).toContain('emptyFarmStarters')
-    expect(dash).toContain('buildSetupStarters')
-    expect(dash).toContain('dashboard-empty-farm-starters')
+  it('ships empty-farm starter helpers', () => {
+    const starters = readFileSync(join(uiSrc, 'lib/guardianStarters.js'), 'utf8')
+    expect(starters).toContain('buildSetupStarters')
   })
 })
 

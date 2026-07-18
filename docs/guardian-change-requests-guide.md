@@ -4,7 +4,7 @@
 
 **Technical name:** `guardian_action_proposals` — we say **change request**, **proposal**, or **PR** in docs (like approving a Git pull request, not a git branch).
 
-**Architecture:** [`farm-guardian-architecture.md`](farm-guardian-architecture.md) §7–§8 · **PR UX roadmap:** [`plans/guardian_pr_ux_through_farmer_phases.plan.md`](plans/guardian_pr_ux_through_farmer_phases.plan.md)
+**Architecture:** [`farm-guardian-architecture.md`](farm-guardian-architecture.md) §7–§8 · **PR UX roadmap:** [`plans/archive/guardian_pr_ux_through_farmer_phases.plan.md`](plans/archive/guardian_pr_ux_through_farmer_phases.plan.md)
 
 ---
 
@@ -81,7 +81,7 @@ sequenceDiagram
 | Operate role | Viewer sees chat only; no LLM proposal insert |
 | Feature flag | `GUARDIAN_LLM_PROPOSALS=true` in API env (default off) |
 | Valid JSON | Assistant text includes a fenced `tool` + `args` block that passes schema + farm ID binding |
-| Allowlist v1 | Narrow set only — see [phase 46 plan §5](plans/phase_46_guardian_llm_tool_proposals.plan.md) |
+| Allowlist v1 | Narrow set only — see [phase 46 plan §5](plans/archive/phase_46_guardian_llm_tool_proposals.plan.md) |
 
 **Still Confirm-gated.** `meta.llm_sourced: true` on the proposal row is for audit and ops logs — not autopilot.
 
@@ -166,7 +166,7 @@ High-tier cards should be read slowly. Actuator PRs only **enqueue** Pi commands
 |------------|---------|
 | **Better Ask Guardian + starter chips** | Snapshot-aware **questions** (alerts, missing bands, queue) |
 | **Phase 42 matchers** | More phrases → PR card without LLM |
-| **[Phase 46](plans/phase_46_guardian_llm_tool_proposals.plan.md)** | ✅ Shipped — LLM proposes **tool+args** when matchers still miss (flag-gated) |
+| **[Phase 46](plans/archive/phase_46_guardian_llm_tool_proposals.plan.md)** | ✅ Shipped — LLM proposes **tool+args** when matchers still miss (flag-gated) |
 
 Starters = **better prompts**. Phase 46 = **more proposals from free-form asks**. Both need Confirm.
 
@@ -190,7 +190,7 @@ Farmers should not **need** chat to run a day — PRs are for “help me phrase 
 |-----|-----|
 | [operator-tour §6](operator-tour.md#6-farm-guardian-change-requests-with-your-ok) | Walkthrough |
 | [farm-guardian-persona-platform-context.md](farm-guardian-persona-platform-context.md) | What Guardian is told |
-| [plans/guardian_pr_ux_through_farmer_phases.plan.md](plans/guardian_pr_ux_through_farmer_phases.plan.md) | Starters + triggers by phase |
+| [plans/archive/guardian_pr_ux_through_farmer_phases.plan.md](plans/archive/guardian_pr_ux_through_farmer_phases.plan.md) | Starters + triggers by phase |
 | [plans/farmer_ux_roadmap_40_plus.plan.md](plans/farmer_ux_roadmap_40_plus.plan.md) | Full UI arc 40–47 |
 | [farmer-vocabulary.md](farmer-vocabulary.md) | Grow-path words (feeding, comfort — not setpoint/cron) |
-| [plans/phase_47_feeding_water_plain_language.plan.md](plans/phase_47_feeding_water_plain_language.plan.md) | Room-first feeding |
+| [plans/archive/phase_47_feeding_water_plain_language.plan.md](plans/archive/phase_47_feeding_water_plain_language.plan.md) | Room-first feeding |

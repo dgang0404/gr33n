@@ -7,6 +7,8 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
+	"unicode"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
@@ -17,10 +19,23 @@ import (
 )
 
 var (
-	reviseVolumePattern  = regexp.MustCompile(`(?i)(\d+(?:\.\d+)?)\s*(?:l\b|liters?\b|litres?\b)`)
-	reviseECPattern      = regexp.MustCompile(`(?i)\bec\s*(?:target|of|to|=|:)?\s*(\d+(?:\.\d+)?)`)
-	revisePHRangePattern = regexp.MustCompile(`(?i)\bph\s*(?:of|to|=|:)?\s*(\d(?:\.\d+)?)\s*(?:-|–|to)\s*(\d(?:\.\d+)?)`)
-	reviseRHPattern      = regexp.MustCompile(`(?i)(?:rh|humidity)[^\d%]{0,24}?(\d{1,3})\s*%?`)
+	reviseVolumePattern      = regexp.MustCompile(`(?i)(\d+(?:\.\d+)?)\s*(?:l\b|liters?\b|litres?\b)`)
+	reviseECPattern          = regexp.MustCompile(`(?i)\bec\s*(?:target|of|to|=|:)?\s*(\d+(?:\.\d+)?)`)
+	revisePHRangePattern     = regexp.MustCompile(`(?i)\bph\s*(?:of|to|=|:)?\s*(\d(?:\.\d+)?)\s*(?:-|–|to)\s*(\d(?:\.\d+)?)`)
+	reviseRHPattern          = regexp.MustCompile(`(?i)(?:rh|humidity)[^\d%]{0,24}?(\d{1,3})\s*%?`)
+	reviseTitleCallPattern   = regexp.MustCompile(`(?i)(?:call it|title(?:\s+should be)?|rename (?:it )?to|make (?:it|the title))\s+["']?([^"'\n.;]+?)["']?(?:\s+instead|\s*$|\.)`)
+	reviseInsteadOfPattern   = regexp.MustCompile(`(?i)^\s*["']?([^"'\n]+?)["']?\s+instead\s+of\s+["']?([^"'\n]+?)["']?\s*$`)
+	reviseDescriptionPattern = regexp.MustCompile(`(?i)(?:description|details?)\s*(?:should be|:)\s*["']?([^"'\n.]+)`)
+	// Phase 191 — a farmer naturally phrases a correction as a question
+	// instead of a directive ("Should this task mention checking stock in
+	// Veg Tent?"). None of the other revise patterns match a bare question,
+	// so without this the turn fell through to open-ended chat and silently
+	// dropped the correction.
+	reviseDescriptionAppendPattern = regexp.MustCompile(`(?i)\b(?:should\s+(?:this|it)(?:\s+task)?|does\s+(?:this|it)(?:\s+task)?\s+need\s+to|can\s+(?:you|we)(?:\s+also)?)\s+(?:also\s+)?(?:mention|include|say|note|add)\b[:,]?\s+(.+?)[?.]?\s*$`)
+	reviseTaskZoneIDPattern        = regexp.MustCompile(`(?i)\bzone(?:\s+id)?\s*#?(\d+)\b`)
+	reviseDueDatePattern           = regexp.MustCompile(`(?i)(?:due(?:\s+date)?|deadline)\s*(?:should be|is|=|:|to)\s*(\d{4}-\d{2}-\d{2})`)
+	reviseSetDueDatePattern        = regexp.MustCompile(`(?i)set (?:the )?due date to (\d{4}-\d{2}-\d{2})`)
+	reviseDueInDaysPattern         = regexp.MustCompile(`(?i)due in (\d{1,3}) days?`)
 )
 
 // tryReviseActiveProposal revises the live draft in a session when the turn reads
@@ -56,6 +71,10 @@ func tryReviseActiveProposal(
 	}
 
 	newArgs, changed := applyRevisionDeltas(prior.ToolID, priorArgs, question)
+	if zoneArgs, zoneChanged := applyTaskZoneRevision(ctx, q, prior.ToolID, question, prior.FarmID, snap, newArgs, priorArgs); zoneChanged {
+		newArgs = zoneArgs
+		changed = true
+	}
 	facts := extractOperatorFacts(question)
 
 	// Nothing actionable in this turn — let normal matching / the model answer it.
@@ -81,6 +100,11 @@ func tryReviseActiveProposal(
 	summary := prior.Summary
 	if prior.ToolID == "apply_grow_setup_pack" {
 		summary = tools.GrowSetupPackSummary(newArgs)
+	}
+	if prior.ToolID == "create_task" || prior.ToolID == "create_task_from_alert" {
+		if title, ok := newArgs["title"].(string); ok && strings.TrimSpace(title) != "" {
+			summary = "Create task: " + strings.TrimSpace(title)
+		}
 	}
 
 	row, err := insertProposal(ctx, q, insertProposalInput{
@@ -150,6 +174,28 @@ func applyRevisionDeltas(toolID string, priorArgs map[string]any, question strin
 	case "create_crop_cycle", "update_cycle_stage":
 		if stage := parseStage(question); stage != "" {
 			next["current_stage"] = stage
+			changed = true
+		}
+	case "create_task", "create_task_from_alert":
+		// Due date before title — "make it due tomorrow" matches both parsers;
+		// parseTaskTitleRevision rejects due-date-only captures (Phase 192).
+		if due, ok := parseTaskDueDateRevision(question); ok {
+			next["due_date"] = due
+			changed = true
+		}
+		if title, ok := parseTaskTitleRevision(question, priorArgs); ok {
+			next["title"] = title
+			changed = true
+		}
+		if desc, ok := parseTaskDescriptionRevision(question); ok {
+			next["description"] = desc
+			changed = true
+		} else if desc, ok := parseTaskDescriptionAppendRevision(question, priorArgs); ok {
+			next["description"] = desc
+			changed = true
+		}
+		if zid, ok := parseTaskZoneIDNumeric(question); ok {
+			next["zone_id"] = float64(zid)
 			changed = true
 		}
 	}
@@ -247,6 +293,228 @@ func parsePHRange(question string) (float64, float64, bool) {
 func parseStage(question string) string {
 	lower := strings.ToLower(question)
 	return inferStageKeyword(lower)
+}
+
+func parseTaskTitleRevision(question string, priorArgs map[string]any) (string, bool) {
+	priorTitle := strings.TrimSpace(argString(priorArgs, "title"))
+	q := strings.TrimSpace(question)
+	if q == "" {
+		return "", false
+	}
+	if m := reviseInsteadOfPattern.FindStringSubmatch(q); len(m) > 2 {
+		newTitle := strings.TrimSpace(m[1])
+		oldTitle := strings.TrimSpace(m[2])
+		if newTitle != "" && !looksLikeDueDatePhrase(newTitle) && titleRevisionMatchesPrior(oldTitle, priorTitle) {
+			return newTitle, true
+		}
+	}
+	if m := reviseTitleCallPattern.FindStringSubmatch(q); len(m) > 1 {
+		if title := strings.TrimSpace(m[1]); title != "" && !looksLikeDueDatePhrase(title) {
+			return title, true
+		}
+	}
+	lower := strings.ToLower(q)
+	if strings.Contains(lower, "instead of") {
+		parts := strings.SplitN(lower, "instead of", 2)
+		if len(parts) == 2 {
+			candidate := strings.TrimSpace(strings.Trim(parts[0], `"'`))
+			oldPart := strings.TrimSpace(strings.Trim(parts[1], `"'`))
+			if candidate != "" && !looksLikeDueDatePhrase(candidate) && titleRevisionMatchesPrior(oldPart, priorTitle) {
+				return candidate, true
+			}
+		}
+	}
+	return "", false
+}
+
+// looksLikeDueDatePhrase reports whether s is a relative/ISO due-date correction,
+// not a task title — e.g. "due tomorrow" from "make it due tomorrow" (Phase 192).
+func looksLikeDueDatePhrase(s string) bool {
+	s = strings.TrimSpace(strings.ToLower(s))
+	if s == "" {
+		return false
+	}
+	switch s {
+	case "tomorrow", "today", "next week",
+		"due tomorrow", "due today", "due next week":
+		return true
+	}
+	if strings.HasPrefix(s, "due in ") {
+		return reviseDueInDaysPattern.MatchString(s)
+	}
+	if isISODateString(s) {
+		return true
+	}
+	return false
+}
+
+func parseTaskDescriptionRevision(question string) (string, bool) {
+	if m := reviseDescriptionPattern.FindStringSubmatch(question); len(m) > 1 {
+		if desc := strings.TrimSpace(m[1]); desc != "" {
+			return desc, true
+		}
+	}
+	return "", false
+}
+
+// parseTaskDescriptionAppendRevision handles a question-phrased correction
+// ("Should this task mention checking stock in Veg Tent?") by appending the
+// suggested addition onto the existing description as a new sentence,
+// rather than replacing it outright like parseTaskDescriptionRevision does
+// for an explicit "description should be X".
+func parseTaskDescriptionAppendRevision(question string, priorArgs map[string]any) (string, bool) {
+	m := reviseDescriptionAppendPattern.FindStringSubmatch(question)
+	if len(m) < 2 {
+		return "", false
+	}
+	addition := strings.TrimSpace(m[1])
+	addition = strings.TrimRight(addition, "?.")
+	addition = strings.TrimSpace(addition)
+	if addition == "" {
+		return "", false
+	}
+	existing := strings.TrimSpace(argString(priorArgs, "description"))
+	if existing == "" {
+		return capitalizeFirstRune(addition) + ".", true
+	}
+	return existing + " Also " + addition + ".", true
+}
+
+func capitalizeFirstRune(s string) string {
+	if s == "" {
+		return s
+	}
+	r := []rune(s)
+	r[0] = unicode.ToUpper(r[0])
+	return string(r)
+}
+
+func parseTaskZoneIDNumeric(question string) (int64, bool) {
+	if m := reviseTaskZoneIDPattern.FindStringSubmatch(question); len(m) > 1 {
+		zid, err := strconv.ParseInt(m[1], 10, 64)
+		if err == nil && zid > 0 {
+			return zid, true
+		}
+	}
+	return 0, false
+}
+
+func parseTaskDueDateRevision(question string) (string, bool) {
+	return parseTaskDueDateRevisionAt(question, time.Now().UTC())
+}
+
+func parseTaskDueDateRevisionAt(question string, now time.Time) (string, bool) {
+	for _, p := range []*regexp.Regexp{reviseDueDatePattern, reviseSetDueDatePattern} {
+		if m := p.FindStringSubmatch(question); len(m) > 1 {
+			if date := strings.TrimSpace(m[1]); isISODateString(date) {
+				return date, true
+			}
+		}
+	}
+	return parseTaskRelativeDueDateAt(question, now)
+}
+
+func parseTaskRelativeDueDateAt(question string, now time.Time) (string, bool) {
+	lower := strings.ToLower(strings.TrimSpace(question))
+	if !taskDueDateRevisionCue(lower) {
+		return "", false
+	}
+	base := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC)
+	switch {
+	case strings.Contains(lower, "tomorrow"):
+		return base.AddDate(0, 0, 1).Format("2006-01-02"), true
+	case strings.Contains(lower, "today"):
+		return base.Format("2006-01-02"), true
+	case strings.Contains(lower, "next week"):
+		return base.AddDate(0, 0, 7).Format("2006-01-02"), true
+	}
+	if m := reviseDueInDaysPattern.FindStringSubmatch(question); len(m) > 1 {
+		if n, err := strconv.Atoi(m[1]); err == nil && n >= 0 && n <= 365 {
+			return base.AddDate(0, 0, n).Format("2006-01-02"), true
+		}
+	}
+	return "", false
+}
+
+func taskDueDateRevisionCue(lower string) bool {
+	for _, cue := range []string{
+		"due tomorrow", "due today", "due in ", "due next week",
+		"make it due", "set the due date", "due date should be", "deadline",
+	} {
+		if strings.Contains(lower, cue) {
+			return true
+		}
+	}
+	return false
+}
+
+func isISODateString(s string) bool {
+	_, err := time.Parse("2006-01-02", s)
+	return err == nil
+}
+
+func taskZoneRevisionCue(question string) bool {
+	lower := strings.ToLower(strings.TrimSpace(question))
+	if strings.Contains(lower, "which zone") && !strings.Contains(lower, "that is the zone") {
+		return false
+	}
+	for _, cue := range []string{
+		"that is the zone", "use that zone", "put it in", "assign it to",
+		"zone should be", "for veg room", "in veg room", "for the veg", "in the veg",
+	} {
+		if strings.Contains(lower, cue) {
+			return true
+		}
+	}
+	return false
+}
+
+func applyTaskZoneRevision(
+	ctx context.Context,
+	q db.Querier,
+	toolID, question string,
+	farmID int64,
+	snap Snapshot,
+	next, priorArgs map[string]any,
+) (map[string]any, bool) {
+	if toolID != "create_task" && toolID != "create_task_from_alert" {
+		return next, false
+	}
+	if !taskZoneRevisionCue(question) {
+		return next, false
+	}
+	zoneID := resolveZoneIDForIntent(ctx, q, question, farmID, snap)
+	if zoneID <= 0 {
+		return next, false
+	}
+	if sameTaskZoneID(next["zone_id"], zoneID) {
+		return next, false
+	}
+	out := deepCopyArgs(next)
+	out["zone_id"] = float64(zoneID)
+	return out, true
+}
+
+func sameTaskZoneID(v any, want int64) bool {
+	switch n := v.(type) {
+	case float64:
+		return int64(n) == want
+	case int64:
+		return n == want
+	case int:
+		return int64(n) == want
+	default:
+		return false
+	}
+}
+
+func titleRevisionMatchesPrior(oldPart, priorTitle string) bool {
+	oldPart = strings.TrimSpace(strings.ToLower(oldPart))
+	priorTitle = strings.TrimSpace(strings.ToLower(priorTitle))
+	if oldPart == "" || priorTitle == "" {
+		return oldPart == "" && priorTitle == ""
+	}
+	return strings.Contains(priorTitle, oldPart) || strings.Contains(oldPart, priorTitle)
 }
 
 func priorMetaFacts(meta []byte) []OperatorFact {

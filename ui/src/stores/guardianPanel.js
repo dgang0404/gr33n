@@ -29,6 +29,7 @@ export const useGuardianPanelStore = defineStore('guardianPanel', {
     preferFarmCounsel: false, // Phase 170 — open drawer in Farm counsel mode
     autoSendOnOpen: false, // Phase 170 — send prefilled prompt on drawer open
     refineTick: 0, // increments when Refine is tapped — chat panel loads session + prefill
+    viewConversationTick: 0, // increments when View conversation is tapped — load session, no prefill
     activeNudge: null, // Phase 61 — { category, message, severity, action_route, nudge_id }
     snoozedNudgeCategories: [], // session-only dismiss/snooze
     nudgeLoading: false,
@@ -101,6 +102,15 @@ export const useGuardianPanelStore = defineStore('guardianPanel', {
       if (proposal.session_id) this.activeSessionId = proposal.session_id
       this.drawerTab = 'chat'
       this.refineTick += 1
+    },
+
+    /** Open chat with the proposal's session transcript only (Phase 194). */
+    requestViewConversation(proposal) {
+      if (!proposal?.session_id) return
+      this.prefilledMessage = ''
+      this.activeSessionId = proposal.session_id
+      this.drawerTab = 'chat'
+      this.viewConversationTick += 1
     },
 
     /**

@@ -13,7 +13,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"strconv"
 	"strings"
 
 	"github.com/jackc/pgx/v5"
@@ -379,22 +378,4 @@ func (h *Handler) Cancel(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	httputil.WriteJSON(w, http.StatusOK, cmd)
-}
-
-// pathSegment returns the Nth segment (0-indexed) of a URL path split by '/'.
-// e.g. "/devices/5/commands/3/ack" → segments [devices 5 commands 3 ack]
-func pathSegment(path string, n int) (string, error) {
-	parts := strings.Split(strings.Trim(path, "/"), "/")
-	if n >= len(parts) {
-		return "", fmt.Errorf("path segment %d out of range", n)
-	}
-	return parts[n], nil
-}
-
-func idSegment(path string, n int) (int64, error) {
-	s, err := pathSegment(path, n)
-	if err != nil {
-		return 0, err
-	}
-	return strconv.ParseInt(s, 10, 64)
 }

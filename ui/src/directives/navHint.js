@@ -11,7 +11,7 @@ import { canonicalSidebarPath } from '../lib/workspaces.js'
  * Accepts a route-location: a string path (`'/feeding'`) or a router object
  * (`{ path: '/feeding', query: {...} }`). Legacy paths map to workspace routes.
  *
- * @see docs/plans/phase_49_sidebar_nav_polish.plan.md
+ * @see docs/plans/archive/phase_49_sidebar_nav_polish.plan.md
  */
 
 /**

@@ -79,7 +79,7 @@ describe('Phase 45 WS1 — sit-in protocol closure', () => {
 
   it('phase 45 parent plan marks WS1 complete', () => {
     const plan = readFileSync(
-      join(repoDocs, 'plans/phase_45_farmer_validation_whole_app_polish.plan.md'),
+      join(repoDocs, 'plans/archive/phase_45_farmer_validation_whole_app_polish.plan.md'),
       'utf8',
     )
     expect(plan).toContain('id: ws1-sit-in-protocol')

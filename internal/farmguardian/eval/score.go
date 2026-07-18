@@ -69,8 +69,9 @@ type ScoreInput struct {
 	Relevance      farmguardian.AnswerRelevance
 	Critique       farmguardian.AnswerCritique
 	Latency        time.Duration
-	RepairAttempt  bool
+	RepairAttempt   bool
 	RepairRecovered bool
+	AccuracyNote    string
 }
 
 // ScoreResult is the automatic scoring outcome.
@@ -92,8 +93,9 @@ type ScoreResult struct {
 	LogEvidence   []string
 	Citations     []farmguardian.CitationSummary
 	Relevance     farmguardian.AnswerRelevance
-	CritiquePass  *bool
+	CritiquePass   *bool
 	CritiqueReason string
+	AccuracyNote   string
 }
 
 // Score evaluates one answer heuristically.

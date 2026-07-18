@@ -161,6 +161,74 @@ func (h *Handler) Search(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// ListDocChunks handles GET /farms/{id}/rag/docs — farm-scoped ordered chunks for one doc_path (Phase 180 WS5).
+func (h *Handler) ListDocChunks(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		httputil.WriteError(w, http.StatusMethodNotAllowed, "method not allowed")
+		return
+	}
+	ctx := r.Context()
+	farmID, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	if err != nil || farmID <= 0 {
+		httputil.WriteError(w, http.StatusBadRequest, "invalid farm id")
+		return
+	}
+	if !farmauthz.RequireFarmMember(w, r, h.q, farmID) {
+		return
+	}
+	docPath := strings.TrimSpace(r.URL.Query().Get("doc_path"))
+	if docPath == "" {
+		httputil.WriteError(w, http.StatusBadRequest, "doc_path is required")
+		return
+	}
+
+	rows, err := h.q.ListRagChunksByFarmDocPath(ctx, db.ListRagChunksByFarmDocPathParams{
+		FarmID:         farmID,
+		DocPathFilter: docPath,
+	})
+	if err != nil {
+		slog.Warn("rag list doc chunks failed", "farm_id", farmID, "doc_path", docPath, "err", err)
+		httputil.WriteError(w, http.StatusInternalServerError, "failed to list doc chunks")
+		return
+	}
+
+	chunks := make([]map[string]any, 0, len(rows))
+	var sourceType string
+	for _, row := range rows {
+		if sourceType == "" {
+			sourceType = row.SourceType
+		}
+		item := map[string]any{
+			"id":           row.ID,
+			"farm_id":      row.FarmID,
+			"source_type":  row.SourceType,
+			"source_id":    row.SourceID,
+			"chunk_index":  row.ChunkIndex,
+			"content_text": row.ContentText,
+			"model_id":     row.ModelID,
+			"created_at":   row.CreatedAt.UTC().Format(time.RFC3339Nano),
+			"updated_at":   row.UpdatedAt.UTC().Format(time.RFC3339Nano),
+		}
+		if len(row.Metadata) > 0 {
+			var meta any
+			if err := json.Unmarshal(row.Metadata, &meta); err == nil {
+				item["metadata"] = meta
+			} else {
+				item["metadata"] = json.RawMessage(row.Metadata)
+			}
+		} else {
+			item["metadata"] = map[string]any{}
+		}
+		chunks = append(chunks, item)
+	}
+	httputil.WriteJSON(w, http.StatusOK, map[string]any{
+		"doc_path":    docPath,
+		"source_type": sourceType,
+		"count":       len(chunks),
+		"chunks":      chunks,
+	})
+}
+
 func validateSearchArgs(args *searchArgs) error {
 	if strings.TrimSpace(args.Query) == "" {
 		return errors.New("query is required")

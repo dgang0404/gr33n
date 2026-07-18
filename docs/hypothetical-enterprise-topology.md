@@ -55,7 +55,7 @@ Best when sites have **reliable VPN/WAN** to headquarters and you want one opera
 ### How it works with today's software
 
 1. **Provision** — create org + 500 farms (script `POST /farms` or SQL seed for pilots).
-2. **Per site** — apply a **farm template** (zones, sensor/actuator placeholders, inactive rules) via onboarding patterns in [`plans/phase_15_farm_onboarding.plan.md`](plans/phase_15_farm_onboarding.plan.md).
+2. **Per site** — apply a **farm template** (zones, sensor/actuator placeholders, inactive rules) via onboarding patterns in [`plans/archive/phase_15_farm_onboarding.plan.md`](plans/archive/phase_15_farm_onboarding.plan.md).
 3. **Edge** — each warehouse runs [`pi_client/gr33n_client.py`](../pi_client/gr33n_client.py) or [`mqtt_telemetry_bridge.py`](../pi_client/mqtt_telemetry_bridge.py) pointing at `api.base_url` on the LAN/VPN; auth via shared **`PI_API_KEY`** (or split keys + multiple API deployments if you outgrow one secret).
 4. **Operate** — managers use the dashboard **farm selector**; alerts, tasks, fertigation, and Guardian are **scoped to the selected farm**.
 5. **Telemetry volume** — Timescale hypertables for readings; retention, partitioning, and read replicas are **operator infrastructure**, not app features.
@@ -137,7 +137,7 @@ Large integrators will eventually want **repeatable** site bring-up:
 - Import commons pack version pin  
 - Smoke: `GET /health`, one reading POST, one pending_command round-trip  
 
-**Repository convention:** optional helpers live under [`scripts/enterprise/`](../scripts/enterprise/README.md). Phase 33 WS5 adds a **`site-manifest.yaml`** bring-up stub (farm + zones + recipe pack pin). **Phase 83 (shipped)** adds **`guardian_seed`** — commons agronomy pack import, **`guardian-bootstrap-farm.sh`** RAG ingest, farm crop overrides (YAML or **Settings → Crops & targets**), scheduled operational ingest, and readiness smokes ([`phase_83_enterprise_agronomy_seed_pack.plan.md`](plans/phase_83_enterprise_agronomy_seed_pack.plan.md) · [`phase-83-closure.md`](plans/phase-83-closure.md)). The core team does not need to ship a full 500-site suite for the platform to be valid.
+**Repository convention:** optional helpers live under [`scripts/enterprise/`](../scripts/enterprise/README.md). Phase 33 WS5 adds a **`site-manifest.yaml`** bring-up stub (farm + zones + recipe pack pin). **Phase 83 (shipped)** adds **`guardian_seed`** — commons agronomy pack import, **`guardian-bootstrap-farm.sh`** RAG ingest, farm crop overrides (YAML or **Settings → Crops & targets**), scheduled operational ingest, and readiness smokes ([`phase_83_enterprise_agronomy_seed_pack.plan.md`](plans/archive/phase_83_enterprise_agronomy_seed_pack.plan.md) · [`phase-83-closure.md`](plans/phase-83-closure.md)). The core team does not need to ship a full 500-site suite for the platform to be valid.
 
 ### AGPL and pull requests (why this matters)
 
@@ -189,13 +189,13 @@ When URLs differ, `split_inference_hosts: true` and embed unload contention is s
 
 1. [`local-operator-bootstrap.md`](local-operator-bootstrap.md) — one laptop demo  
 2. [`pi-integration-guide.md`](pi-integration-guide.md) — close the Pi loop (§8 field checklist, §9 actuator bench)  
-3. [`plans/phase_30_guardian_change_requests.plan.md`](plans/phase_30_guardian_change_requests.plan.md) — **Guardian PR queue** (config + Pi via confirm, not autonomous)  
-4. [`plans/phase_31_field_validation_and_edge.plan.md`](plans/phase_31_field_validation_and_edge.plan.md) — **field / Pi validation** (shipped artifacts indexed in [`phase-14-operator-documentation.md` § Phase 31](phase-14-operator-documentation.md#phase-31-field-validation-edge))  
+3. [`plans/archive/phase_30_guardian_change_requests.plan.md`](plans/archive/phase_30_guardian_change_requests.plan.md) — **Guardian PR queue** (config + Pi via confirm, not autonomous)  
+4. [`plans/archive/phase_31_field_validation_and_edge.plan.md`](plans/archive/phase_31_field_validation_and_edge.plan.md) — **field / Pi validation** (shipped artifacts indexed in [`phase-14-operator-documentation.md` § Phase 31](phase-14-operator-documentation.md#phase-31-field-validation-edge))  
 5. This doc — scale-out thought experiment  
 6. [`commons-catalog-operator-playbook.md`](commons-catalog-operator-playbook.md) — recipe pack provenance; Phase 31 WS5 [`import-recipe-pack.sh`](../scripts/enterprise/import-recipe-pack.sh) demo  
 7. [`mqtt-edge-operator-playbook.md`](mqtt-edge-operator-playbook.md#room-scale-warehouse-pattern-phase-31-ws4) — room-scale MQTT ingest for multi-zone warehouses  
-8. [`plans/phase_33_guardian_polish_and_enterprise_ops.plan.md`](plans/phase_33_guardian_polish_and_enterprise_ops.plan.md) — site manifest + read-tool polish  
-9. [`plans/phase_83_enterprise_agronomy_seed_pack.plan.md`](plans/phase_83_enterprise_agronomy_seed_pack.plan.md) — **shipped** — Guardian bootstrap + agronomy pack on new warehouse ([`scripts/enterprise/README.md`](../scripts/enterprise/README.md))
+8. [`plans/archive/phase_33_guardian_polish_and_enterprise_ops.plan.md`](plans/archive/phase_33_guardian_polish_and_enterprise_ops.plan.md) — site manifest + read-tool polish  
+9. [`plans/archive/phase_83_enterprise_agronomy_seed_pack.plan.md`](plans/archive/phase_83_enterprise_agronomy_seed_pack.plan.md) — **shipped** — Guardian bootstrap + agronomy pack on new warehouse ([`scripts/enterprise/README.md`](../scripts/enterprise/README.md))
 
 **README entry point:** [Phase 31 row](../README.md) in the roadmap table links here for multi-site integrators.
 

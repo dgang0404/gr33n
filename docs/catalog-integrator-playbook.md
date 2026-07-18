@@ -4,7 +4,7 @@
 
 **Closes blind spot #4:** The Plants dropdown stays frozen unless someone runs a **repeatable cadence** from git YAML → Postgres → picker/Guardian.
 
-**Closure:** [Phase 95](plans/phase_95_catalog_integrator_ops.plan.md) · [`phase-95-closure.md`](plans/phase-95-closure.md)
+**Closure:** [Phase 95](plans/archive/phase_95_catalog_integrator_ops.plan.md) · [`phase-95-closure.md`](plans/phase-95-closure.md)
 
 ---
 
@@ -25,7 +25,7 @@
 - Add or update a field guide body tied to a crop
 - Bump **`catalog_version`** so enterprise packs and Phase 109 notifications stay aligned
 
-Farm-specific EC tweaks without new catalog rows → **Settings → Crops & targets** or [Phase 94 genetics profiles](plans/phase_94_genetics_batch_ec_profiles.plan.md).
+Farm-specific EC tweaks without new catalog rows → **Settings → Crops & targets** or [Phase 94 genetics profiles](plans/archive/phase_94_genetics_batch_ec_profiles.plan.md).
 
 ---
 
@@ -96,7 +96,7 @@ San Pedro (`san_pedro`) is already in the catalog — use this as a **PR walkthr
 
 1. **YAML** — crop block under `crops:` with stages, substrate, aliases (`trichocereus`, `echinopsis` in top-level `aliases:`).
 2. **Field guide** — `docs/field-guides/crop-san-pedro-nutrition.md` listed in `docs/rag/field-guide-manifest.yaml`.
-3. **Photos (optional)** — `image_url` in YAML or follow-on migration ([Phase 107](plans/phase_107_crop_catalog_photos.plan.md)).
+3. **Photos (optional)** — `image_url` in YAML or follow-on migration ([Phase 107](plans/archive/phase_107_crop_catalog_photos.plan.md)).
 4. **Regenerate** both canonical seed and dated migration.
 5. **PR checklist** — [`docs/templates/add-crop-pr-checklist.md`](templates/add-crop-pr-checklist.md).
 

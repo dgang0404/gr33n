@@ -41,6 +41,7 @@ describe('Phase 129 WS8 — GuardianSettingsAwakeningCard', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
     vi.clearAllMocks()
+    localStorage.setItem('gr33n_token', 'test-token')
     const caps = useCapabilitiesStore()
     caps.loaded = true
     caps.aiEnabled = true

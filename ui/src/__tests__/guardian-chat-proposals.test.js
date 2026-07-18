@@ -17,6 +17,41 @@ vi.mock('../api', () => ({
 import api from '../api'
 import GuardianChatPanel from '../components/GuardianChatPanel.vue'
 import { useFarmContextStore } from '../stores/farmContext'
+import { useCapabilitiesStore } from '../stores/capabilities'
+
+const ownerID = '00000000-0000-0000-0000-000000000001'
+
+function stubChatPanelApi() {
+  api.get.mockImplementation((url) => {
+    if (url === '/guardian/models') {
+      return Promise.resolve({
+        data: {
+          server_default: 'phi3:mini',
+          available_models: [
+            { name: 'phi3:mini', context_window: 131072, capabilities: ['completion'] },
+          ],
+        },
+      })
+    }
+    if (url === '/v1/chat/sessions') return Promise.resolve({ data: { sessions: [] } })
+    if (url === '/v1/chat/health') {
+      return Promise.resolve({
+        data: { awakening: { state: 'ready', rag_corpus_ok: true, chat_model_loaded: true } },
+      })
+    }
+    if (url === '/farms/1') {
+      return Promise.resolve({
+        data: { id: 1, owner_user_id: ownerID, guardian_preferred_model: '' },
+      })
+    }
+    if (url === '/farms/1/members') {
+      return Promise.resolve({
+        data: [{ user_id: ownerID, role_in_farm: 'owner' }],
+      })
+    }
+    return Promise.resolve({ data: {} })
+  })
+}
 
 const testRouter = createRouter({
   history: createMemoryHistory(),
@@ -27,17 +62,10 @@ describe('GuardianChatPanel — proposals in transcript (Phase 29 WS4)', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
     vi.clearAllMocks()
+    localStorage.setItem('gr33n_token', 'test-token')
     localStorage.setItem('gr33n_farm_id', '1')
-
-    api.get.mockImplementation((url) => {
-      if (url === '/v1/chat/sessions') return Promise.resolve({ data: { sessions: [] } })
-      if (url === '/farms/1/members') {
-        return Promise.resolve({
-          data: [{ user_id: '00000000-0000-0000-0000-000000000001', role_in_farm: 'owner' }],
-        })
-      }
-      return Promise.resolve({ data: {} })
-    })
+    useCapabilitiesStore().aiEnabled = true
+    stubChatPanelApi()
   })
 
   it('attaches proposal cards from SSE done payload', async () => {

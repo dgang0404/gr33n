@@ -27,7 +27,7 @@
 | **WS3** | Dev turn inspector UI | `GuardianTurnDebug.vue`, `data-test="guardian-turn-debug"` |
 | **WS4** | Turn debug API | `GET /v1/chat/sessions/{id}/turns/{n}/debug` (dev/auth_test) |
 | **WS5** | Nightly CI pattern doc | `docs/ci-guardian-qa.md` |
-| **WS6** | LLM-as-judge deferred in Phase 131 | `docs/plans/phase_131_guardian_qa_harness.plan.md` |
+| **WS6** | LLM-as-judge deferred in Phase 131 | `docs/plans/archive/phase_131_guardian_qa_harness.plan.md` |
 | **WS7** | Index + INSTALL link | `docs/phase-14-operator-documentation.md`, `INSTALL.md` |
 
 ---
