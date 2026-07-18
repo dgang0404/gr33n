@@ -150,7 +150,7 @@ func TestPhase208AquaponicsLoopCRUD(t *testing.T) {
 	tank := seedZoneForAnimal(t, tok)
 	bed := seedZoneForAnimal(t, tok)
 
-	resp := authPost(t, tok, "/farms/1/aquaponics-loops", map[string]any{
+	resp = authPost(t, tok, "/farms/1/aquaponics-loops", map[string]any{
 		"label":             uniqueName("ph208_loop"),
 		"fish_tank_zone_id": tank,
 		"grow_bed_zone_id":  bed,
