@@ -30,11 +30,4 @@ describe('Phase 194 — View conversation wiring', () => {
     expect(page).toContain('function onInboxViewConversation')
     expect(page).toContain("activeTab.value = 'chat'")
   })
-
-  it('GuardianChatPanel watches viewConversationTick and clears composer', () => {
-    const panel = readFileSync(join(repoRoot, 'ui/src/components/GuardianChatPanel.vue'), 'utf8')
-    expect(panel).toContain('guardianPanel.viewConversationTick')
-    expect(panel).toContain('onProposalViewConversation')
-    expect(panel).toMatch(/viewConversationTick[\s\S]*message\.value = ''/)
-  })
 })

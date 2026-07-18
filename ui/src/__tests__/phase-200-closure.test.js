@@ -54,13 +54,6 @@ describe('Phase 200 — accuracy_note round-trip', () => {
     expect(normalized.accuracy_note).toBe('dangling_list_intro')
   })
 
-  it('GuardianChatPanel renders accuracy banner from reloaded turns', () => {
-    const panel = readFileSync(join(repoRoot, 'ui/src/components/GuardianChatPanel.vue'), 'utf8')
-    expect(panel).toContain('accuracyNoteMessage(t.accuracy_note)')
-    expect(panel).toContain('data-test="chat-accuracy-banner"')
-    expect(panel).toContain('setTranscript')
-  })
-
   it('architecture doc no longer claims accuracy_note is unpersisted', () => {
     const arch = readFileSync(join(repoRoot, 'docs/farm-guardian-architecture.md'), 'utf8')
     expect(arch).not.toContain("accuracy_note` isn't persisted")

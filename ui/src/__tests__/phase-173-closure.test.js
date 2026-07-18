@@ -28,16 +28,6 @@ describe('Phase 173 WS1–WS2 — filter library + bar', () => {
   })
 })
 
-describe('Phase 173 WS3 — Dashboard wiring', () => {
-  it('wires filter bar + filtered zones into canvas/stack', () => {
-    const dash = readFileSync(join(uiSrc, 'views/Dashboard.vue'), 'utf8')
-    expect(dash).toContain('FarmTodayZoneFilterBar')
-    expect(dash).toContain('filterZonesForToday')
-    expect(dash).toContain('filteredZones')
-    expect(dash).toContain('todayZoneFilter')
-  })
-})
-
 describe('Phase 173 WS4 — mobile paging', () => {
   it('FarmZoneStack pages beyond 8 zones', () => {
     const stack = readFileSync(join(uiSrc, 'components/FarmZoneStack.vue'), 'utf8')

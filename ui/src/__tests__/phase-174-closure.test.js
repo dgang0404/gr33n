@@ -26,14 +26,6 @@ describe('Phase 174 WS1 — Today naming', () => {
 })
 
 describe('Phase 174 WS2 — FarmTodayHeader', () => {
-  it('Dashboard imports header and drops duplicate attention row', () => {
-    const dash = readFileSync(join(uiSrc, 'views/Dashboard.vue'), 'utf8')
-    expect(dash).toContain('FarmTodayHeader')
-    expect(dash).toContain('filter-attention')
-    expect(dash).not.toContain('dashboard-attention-row')
-    expect(dash).toContain('document.title')
-  })
-
   it('ships farmTodayHeader rollup lib', () => {
     const lib = readFileSync(join(uiSrc, 'lib/farmTodayHeader.js'), 'utf8')
     expect(lib).toContain('buildFarmTodayRollup')

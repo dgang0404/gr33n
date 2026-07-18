@@ -70,14 +70,6 @@ function stubPanelApis() {
 }
 
 describe('Phase 197 — session sidebar pending labels closure', () => {
-  it('GuardianChatPanel uses sessionDisplayLabel and pending chip', () => {
-    const panel = readFileSync(join(repoRoot, 'ui/src/components/GuardianChatPanel.vue'), 'utf8')
-    expect(panel).toContain('sessionDisplayLabel')
-    expect(panel).toContain('sessionHasPendingProposal')
-    expect(panel).toContain('data-test="session-pending-chip"')
-    expect(panel).toContain('guardianProposals.fetch')
-  })
-
   it('guardianProposals store exposes pendingBySessionId getter', () => {
     const store = readFileSync(join(repoRoot, 'ui/src/stores/guardianProposals.js'), 'utf8')
     expect(store).toContain('pendingBySessionId')

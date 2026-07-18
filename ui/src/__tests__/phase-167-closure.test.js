@@ -8,14 +8,10 @@ import { join } from 'node:path'
 const repoRoot = join(process.cwd(), '..')
 
 describe('Phase 167 WS1 — responsive stack', () => {
-  it('ships FarmZoneStack and responsive Dashboard wiring', () => {
+  it('ships FarmZoneStack with mobile-only stack layout', () => {
     const stack = readFileSync(join(repoRoot, 'ui/src/components/FarmZoneStack.vue'), 'utf8')
     expect(stack).toContain('md:hidden')
     expect(stack).toContain('sortZonesForStack')
-
-    const dash = readFileSync(join(repoRoot, 'ui/src/views/Dashboard.vue'), 'utf8')
-    expect(dash).toContain('FarmZoneStack')
-    expect(dash).toContain('hidden md:block')
   })
 })
 

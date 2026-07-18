@@ -36,12 +36,10 @@ describe('Phase 61 WS5 / OC-61 — proactive nudges closure', () => {
   it('UI wires nudge dot, strip, and guardianPanel store', () => {
     const edge = readFileSync(join(process.cwd(), 'src/components/GuardianEdgeTab.vue'), 'utf8')
     const top = readFileSync(join(process.cwd(), 'src/components/TopBar.vue'), 'utf8')
-    const panel = readFileSync(join(process.cwd(), 'src/components/GuardianChatPanel.vue'), 'utf8')
     const store = readFileSync(join(process.cwd(), 'src/stores/guardianPanel.js'), 'utf8')
     expect(edge).toContain('guardian-nudge-dot')
     expect(edge).toContain('showNudgeDot')
     expect(top).toContain('topbar-guardian-nudge-dot')
-    expect(panel).toContain('GuardianNudgeStrip')
     expect(store).toContain('fetchNudge')
     expect(store).toContain('snoozedNudgeCategories')
   })

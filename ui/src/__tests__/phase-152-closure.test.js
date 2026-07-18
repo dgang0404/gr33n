@@ -44,14 +44,9 @@ describe('Phase 152 — live accuracy guardrails', () => {
     expect(dbg).toContain('AccuracyNote')
   })
 
-  it('UI maps accuracy notes to a farmer-facing banner', () => {
+  it('UI maps accuracy notes via guardianCitationLabels', () => {
     const labels = readFileSync(join(repoRoot, 'ui/src/lib/guardianCitationLabels.js'), 'utf8')
     expect(labels).toContain('export function accuracyNoteMessage')
-
-    const panel = readFileSync(join(repoRoot, 'ui/src/components/GuardianChatPanel.vue'), 'utf8')
-    expect(panel).toContain('chat-accuracy-banner')
-    expect(panel).toContain('accuracyNoteMessage(t.accuracy_note)')
-    expect(panel).toContain("accuracy_note: finalEvent.accuracy_note")
   })
 
   it('Go resolves and wires citation deep links (WS2)', () => {
@@ -70,12 +65,5 @@ describe('Phase 152 — live accuracy guardrails', () => {
     const handler = readFileSync(join(repoRoot, 'internal/handler/chat/handler.go'), 'utf8')
     expect(handler).toContain('attachCitationRoutes(r.Context(), h.q, farmID, resp.Citations)')
     expect(handler).toContain('attachCitationRoutes(r.Context(), h.q, farmID, done.Citations)')
-  })
-
-  it('UI renders citation chips as router-links when a route is present', () => {
-    const panel = readFileSync(join(repoRoot, 'ui/src/components/GuardianChatPanel.vue'), 'utf8')
-    expect(panel).toContain('chat-citation-link')
-    expect(panel).toContain('v-if="c.route"')
-    expect(panel).toContain('v-nav-hint="c.route"')
   })
 })

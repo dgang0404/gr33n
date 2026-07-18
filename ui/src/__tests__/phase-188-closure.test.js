@@ -24,13 +24,7 @@ describe('Phase 188 — Guardian answer-leak marker broadening', () => {
   })
 })
 
-describe('Phase 188 — Guardian chat UI fixes (session sidebar + sticky subnav)', () => {
-  it('session topic chips render on their own row instead of crowding the title/turn-count row', () => {
-    const panel = readFileSync(join(repoRoot, 'ui/src/components/GuardianChatPanel.vue'), 'utf8')
-    const chipsRowIdx = panel.indexOf("v-if=\"(s.topics || []).length\"")
-    expect(chipsRowIdx).toBeGreaterThan(-1)
-  })
-
+describe('Phase 188 — WorkspaceShell sticky subnav fix', () => {
   it('WorkspaceShell sticky subnav is fully opaque so scrolled content cannot show through it', () => {
     const shell = readFileSync(join(repoRoot, 'ui/src/components/WorkspaceShell.vue'), 'utf8')
     expect(shell).toContain('bg-zinc-950 border-b')

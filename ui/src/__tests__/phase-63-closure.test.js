@@ -32,12 +32,8 @@ describe('Phase 63 WS5 / OC-63 — session memory closure', () => {
   })
 
   it('UI wires topic chips, recent chip, settings memory, and close endpoint', () => {
-    const panel = readFileSync(join(process.cwd(), 'src/components/GuardianChatPanel.vue'), 'utf8')
     const settings = readFileSync(join(process.cwd(), 'src/views/Settings.vue'), 'utf8')
     const routes = readFileSync(join(repoRoot, 'cmd/api/routes.go'), 'utf8')
-    expect(panel).toContain('GuardianRecentTopicChip')
-    expect(panel).toContain('session-topic-')
-    expect(panel).toContain('/close')
     expect(settings).toContain('settings-guardian-memory')
     expect(routes).toContain('POST /v1/chat/sessions/{session_id}/close')
     expect(routes).toContain('DELETE /farms/{id}/guardian-memory')

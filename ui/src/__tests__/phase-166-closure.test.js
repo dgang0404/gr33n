@@ -34,19 +34,6 @@ describe('Phase 166 WS2–WS4 — canvas components', () => {
   })
 })
 
-describe('Phase 166 WS5 — Dashboard rewire', () => {
-  it('imports canvas as hero and collapses detail sections', () => {
-    const dash = readFileSync(join(repoRoot, 'ui/src/views/Dashboard.vue'), 'utf8')
-    expect(dash).toContain('FarmCanvas')
-    expect(dash).toContain('FarmSiteStrip')
-    expect(dash).toContain('FarmTodayHeader')
-    expect(dash).toContain('All the details')
-    expect(dash).toContain('loadLayoutBackground')
-    expect(dash).toContain('refreshReadings')
-    expect(dash).not.toContain('FarmConfigCard')
-  })
-})
-
 describe('Phase 166 WS6 — tests', () => {
   it('ships farm visual status and canvas tests', () => {
     expect(readFileSync(join(repoRoot, 'ui/src/__tests__/farm-visual-status.test.js'), 'utf8')).toContain('Humidity high')

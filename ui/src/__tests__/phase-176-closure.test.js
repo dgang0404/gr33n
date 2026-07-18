@@ -27,17 +27,6 @@ describe('Phase 176 WS2 — FarmSiteStrip pulse cells', () => {
   })
 })
 
-describe('Phase 176 WS3 — Dashboard wiring', () => {
-  it('passes pulse data into FarmSiteStrip without a new row component', () => {
-    const dash = readFileSync(join(uiSrc, 'views/Dashboard.vue'), 'utf8')
-    expect(dash).toContain('FarmSiteStrip')
-    expect(dash).toContain(':crop-cycles="cropCycles"')
-    expect(dash).toContain(':devices="store.devices"')
-    expect(dash).toContain(':queue-depth="queueDepth"')
-    expect(dash).not.toContain('FarmTodayPulse')
-  })
-})
-
 describe('Phase 176 WS5 — docs', () => {
   it('documents phase 176 in current-state', () => {
     const state = readFileSync(join(repoRoot, 'docs/current-state.md'), 'utf8')

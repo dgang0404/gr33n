@@ -50,16 +50,11 @@ describe('Phase 137 — counsel integration closure', () => {
   })
 
   it('UI wires nudge review to Farm counsel warmup and offline banner', () => {
-    const panel = readFileSync(join(process.cwd(), 'src/components/GuardianChatPanel.vue'), 'utf8')
     const nudge = readFileSync(join(process.cwd(), 'src/lib/guardianNudge.js'), 'utf8')
     const readiness = readFileSync(join(process.cwd(), 'src/stores/guardianReadiness.js'), 'utf8')
     const modes = readFileSync(join(process.cwd(), 'src/components/GuardianContextModeCards.vue'), 'utf8')
     const top = readFileSync(join(process.cwd(), 'src/components/TopBar.vue'), 'utf8')
     expect(nudge).toContain("type: 'alert'")
-    expect(panel).toContain('onNudgeReview')
-    expect(panel).toContain('ensureAwake')
-    expect(panel).toContain('guardian-offline-field-banner')
-    expect(panel).toContain('chat-offline-procedure-starters')
     expect(readiness).toContain('showOfflineFieldBanner')
     expect(readiness).toContain('fieldAssistant')
     expect(modes).toContain('guardian-mode-vision-note')

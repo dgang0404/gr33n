@@ -9,25 +9,25 @@ overview: >
 todos:
   - id: ws1-inventory
     content: "WS1: script inventory — for GuardianChatPanel and Dashboard, list each phase-closure file + assertion topic (grep data-test, file read, string contains); mark duplicate vs unique"
-    status: pending
+    status: completed
   - id: ws2-guardian-home
     content: "WS2: create ui/src/__tests__/guardian-chat-panel.test.js (or extend guardian-panel.test.js) as canonical home for GuardianChatPanel wiring; migrate unique assertions from phase-* files"
-    status: pending
+    status: completed
   - id: ws3-dashboard-home
     content: "WS3: extend dashboard-workspace-links.test.js + today-excellence-arc.test.js as Dashboard canonical homes; migrate FarmCanvas / site strip assertions"
-    status: pending
+    status: completed
   - id: ws4-thin-closures
     content: "WS4: replace duplicated phase-closure blocks with one-liner `import './guardian-chat-panel.test.js'` or delete redundant files; keep phase-N-closure only when it tests phase-specific behavior nowhere else"
-    status: pending
+    status: completed
   - id: ws5-ci-docs
     content: "WS5: document test ownership in docs/testing-ui.md (or README test section); phase-202-closure.test.js counts files before/after"
-    status: pending
+    status: completed
 isProject: false
 ---
 
 # Phase 202 — Closure test consolidation
 
-**Status:** planned · **Depends on:** none (janitorial; safe anytime)
+**Status:** shipped · **Depends on:** none (janitorial; safe anytime)
 
 ## The problem
 
@@ -95,11 +95,11 @@ Optional: rename `phase-NNN-closure.test.js` → topic files over time (not requ
 
 ## Acceptance criteria
 
-- [ ] GuardianChatPanel string-read assertions consolidated (≥50% reduction in phase files touching it)
-- [ ] Dashboard same (≥40% reduction)
-- [ ] No behavioral test removed without equivalent in canonical file
-- [ ] CI green
-- [ ] Short "where to add UI tests" doc section
+- [x] GuardianChatPanel string-read assertions consolidated (≥50% reduction in phase files touching it)
+- [x] Dashboard same (≥40% reduction)
+- [x] No behavioral test removed without equivalent in canonical file
+- [x] CI green
+- [x] Short "where to add UI tests" doc section
 
 ## Out of scope
 

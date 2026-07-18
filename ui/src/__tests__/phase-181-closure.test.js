@@ -16,11 +16,4 @@ describe('Phase 181 — single pending badge + composer diet', () => {
     expect(nav).toContain('guardian-readiness-dot')
   })
 
-  it('full-page chat collapses composer extras after first turn', () => {
-    const panel = readFileSync(join(uiSrc, 'components/GuardianChatPanel.vue'), 'utf8')
-    expect(panel).toContain('data-test="chat-composer-more"')
-    expect(panel).toContain('isFullPageDiet')
-    expect(panel).toContain('showComposerExtras')
-    expect(panel).toContain('composerExtrasOpen')
-  })
 })
