@@ -32,7 +32,7 @@ func TestResolveCropKeyForSetupPack(t *testing.T) {
 		{"create a task to check humidity", "", false},
 	}
 	for _, c := range cases {
-		got, ok := resolveCropKeyForSetupPack(c.q)
+		got, _, ok := resolveCropKeyForSetupPack(c.q)
 		if ok != c.ok || (c.ok && got != c.want) {
 			t.Fatalf("resolveCropKeyForSetupPack(%q) = %q,%v want %q,%v", c.q, got, ok, c.want, c.ok)
 		}
@@ -74,7 +74,7 @@ func TestBuildSetupPackArgs_Profiles(t *testing.T) {
 	if !catalogReady(t) {
 		t.Skip("catalog unavailable in test environment")
 	}
-	house := buildSetupPackArgs("house_plant", 12, "Living Room", "basil")
+	house := buildSetupPackArgs("house_plant", 12, "Living Room", "basil", "")
 	if house["profile"] != "house_plant" {
 		t.Fatalf("profile %#v", house["profile"])
 	}
@@ -87,7 +87,7 @@ func TestBuildSetupPackArgs_Profiles(t *testing.T) {
 		t.Fatalf("house volume %#v", prog["total_volume_liters"])
 	}
 
-	comm := buildSetupPackArgs("commercial_zone", 3, "Veg Room", "tomato")
+	comm := buildSetupPackArgs("commercial_zone", 3, "Veg Room", "tomato", "")
 	prog2, _ := comm["program"].(map[string]any)
 	if prog2["total_volume_liters"].(float64) != 95.0 {
 		t.Fatalf("commercial volume %#v", prog2["total_volume_liters"])
@@ -119,7 +119,7 @@ func TestMatchSetupPackIntent_StarterPhrase(t *testing.T) {
 	if !setupPackVerbIntent.MatchString(msg) || !setupPackGrowIntent.MatchString(msg) {
 		t.Fatal("starter phrase should match verb + grow intent patterns")
 	}
-	key, ok := resolveCropKeyForSetupPack(msg)
+	key, _, ok := resolveCropKeyForSetupPack(msg)
 	if !ok || key != "basil" {
 		t.Fatalf("resolveCropKeyForSetupPack(%q) = %q,%v", msg, key, ok)
 	}

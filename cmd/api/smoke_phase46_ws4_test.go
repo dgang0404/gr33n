@@ -181,8 +181,11 @@ func TestPhase46WS4_ViewerNoLLMInsert(t *testing.T) {
 
 	before := countPendingProposals(ctx, viewerID)
 	assistant := llmSmokeProposalJSON("create_task", map[string]any{"title": "Viewer task"}, "Task")
+	// Deliberately avoids the rule-based createTaskIntent matcher (add|create|make + task)
+	// so this exercises the LLM-insertion path under test, not matcher-first rule handling
+	// (which is intentionally role-agnostic — confirm-time RequireFarmOperate is the gate).
 	props, err := phase46HybridAttach(ctx, q, viewerID, 1, uuid.New(),
-		"Create a task to inspect the reservoir",
+		"Flag the reservoir for someone to check on later",
 		assistant, snap,
 		farmguardian.LLMProposalPolicy{Enabled: true}, false, false)
 	if err != nil {

@@ -7,7 +7,7 @@
 | Tool | Version | Install |
 |------|---------|---------|
 | Go | 1.25+ | https://go.dev/dl/ or `snap install go --classic` |
-| PostgreSQL | 14+ | `sudo apt install postgresql` |
+| PostgreSQL | 15+ | `sudo apt install postgresql` (schema uses `UNIQUE NULLS NOT DISTINCT`, added in Postgres 15) |
 | PostGIS | 3.x (match Postgres) | `sudo apt install postgresql-14-postgis-3` (version as needed) |
 | TimescaleDB | 2.x | https://docs.timescale.com/self-hosted/latest/install/ |
 | pgvector | Match Postgres major | Required for Phase 24 RAG (`CREATE EXTENSION vector`). Install per [pgvector](https://github.com/pgvector/pgvector#installation), or use the repo `docker compose` database image (`db/Dockerfile` builds pgvector). |

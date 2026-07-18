@@ -1542,6 +1542,7 @@ crops:
     substrate: peat / soilless_mix
     watering_style: top_water_drydown
     cousin_of: null
+    aliases: [philodendron, pothos, monstera, ficus]
     stages:
       - stage: seedling
         ec_min: 0.60

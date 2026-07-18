@@ -33,6 +33,11 @@ func TestPhase164_Farm1ChrysanthemumDemoCycles(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
+	// Seed theming check only — is_active is intentionally not part of the
+	// WHERE clause. This suite shares farm 1 with ~150 other smoke tests
+	// that create/retire crop_cycles in the same zones (uq_active_crop_cycle
+	// permits only one active cycle per zone), so run order can flip the
+	// seeded row's is_active flag without touching its name/batch_label.
 	var bloomBatch string
 	err := testPool.QueryRow(ctx, `
 SELECT cc.batch_label
@@ -41,10 +46,10 @@ JOIN gr33ncore.zones z ON z.id = cc.zone_id
 WHERE cc.farm_id = 1
   AND z.name = 'Flower Room'
   AND cc.name = 'Bloom run (12/12)'
-  AND cc.is_active = TRUE
+ORDER BY cc.id
 LIMIT 1`).Scan(&bloomBatch)
 	if err != nil {
-		t.Fatalf("Bloom run (12/12) active cycle: %v", err)
+		t.Fatalf("Bloom run (12/12) cycle: %v", err)
 	}
 	if bloomBatch != "Zembla White" {
 		t.Fatalf("Bloom run batch_label = %q, want Zembla White", bloomBatch)
@@ -58,7 +63,7 @@ JOIN gr33ncore.zones z ON z.id = cc.zone_id
 WHERE cc.farm_id = 1
   AND z.name = 'Veg Room'
   AND cc.name = 'Veg canopy (18/6)'
-  AND cc.is_active = TRUE
+ORDER BY cc.id
 LIMIT 1`).Scan(&vegBatch)
 	if err != nil {
 		t.Fatalf("Veg canopy cycle: %v", err)

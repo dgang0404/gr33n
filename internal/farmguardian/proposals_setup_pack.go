@@ -46,7 +46,7 @@ func matchSetupPackIntent(
 		return nil, "", false
 	}
 
-	cropKey, ok := resolveCropKeyForSetupPack(question)
+	cropKey, cropLabel, ok := resolveCropKeyForSetupPack(question)
 	if !ok {
 		return nil, "", false
 	}
@@ -68,28 +68,31 @@ func matchSetupPackIntent(
 		return nil, "", false
 	}
 
-	args := buildSetupPackArgs(inferSetupProfile(zoneName, question), zoneID, zoneName, cropKey)
+	args := buildSetupPackArgs(inferSetupProfile(zoneName, question), zoneID, zoneName, cropKey, cropLabel)
 	return args, tools.GrowSetupPackSummary(args), true
 }
 
-func resolveCropKeyForSetupPack(question string) (string, bool) {
+// resolveCropKeyForSetupPack resolves the catalog crop_key plus the label the
+// farmer actually typed (e.g. "philodendron"), which is more specific than a
+// grouped catalog entry's generic display name (e.g. "Houseplant (general)").
+func resolveCropKeyForSetupPack(question string) (cropKey, label string, ok bool) {
 	reg, err := defaultCropRegistry()
 	if err != nil || reg == nil {
-		return "", false
+		return "", "", false
 	}
 	for _, m := range reg.FindMentions(question) {
 		if m.Kind == croplibrary.MentionCrop {
-			return m.Key, true
+			return m.Key, titleWords(m.MatchedTerm), true
 		}
 	}
 	if name, ok := extractPlantDisplayName(question); ok {
 		term := strings.ToLower(strings.TrimSpace(name))
 		term = strings.ReplaceAll(term, " ", "_")
 		if m, ok := reg.ResolveTerm(term); ok && m.Kind == croplibrary.MentionCrop {
-			return m.Key, true
+			return m.Key, name, true
 		}
 	}
-	return "", false
+	return "", "", false
 }
 
 func plantCropKeyOnFarm(ctx context.Context, q db.Querier, farmID int64, cropKey string) (bool, error) {
@@ -232,12 +235,15 @@ func inferSetupProfile(zoneName, question string) string {
 	return "house_plant"
 }
 
-func buildSetupPackArgs(profile string, zoneID int64, zoneName, cropKey string) map[string]any {
-	label := titleWords(strings.ReplaceAll(cropKey, "_", " "))
-	reg, _ := defaultCropRegistry()
-	if reg != nil {
-		if m, ok := reg.ResolveTerm(cropKey); ok && strings.TrimSpace(m.DisplayName) != "" {
-			label = m.DisplayName
+func buildSetupPackArgs(profile string, zoneID int64, zoneName, cropKey, matchedLabel string) map[string]any {
+	label := strings.TrimSpace(matchedLabel)
+	if label == "" {
+		label = titleWords(strings.ReplaceAll(cropKey, "_", " "))
+		reg, _ := defaultCropRegistry()
+		if reg != nil {
+			if m, ok := reg.ResolveTerm(cropKey); ok && strings.TrimSpace(m.DisplayName) != "" {
+				label = m.DisplayName
+			}
 		}
 	}
 	today := time.Now().UTC().Format("2006-01-02")
@@ -262,7 +268,8 @@ func buildSetupPackArgs(profile string, zoneID int64, zoneName, cropKey string) 
 		"zone_id":   zoneID,
 		"zone_name": zoneName,
 		"plant": map[string]any{
-			"crop_key": cropKey,
+			"crop_key":     cropKey,
+			"display_name": label,
 		},
 		"cycle": map[string]any{
 			"name":          cycleName,
@@ -322,7 +329,7 @@ func InsertEmptyZoneSetupProposal(
 	if exists {
 		return db.Gr33ncoreGuardianActionProposal{}, errors.New("crop already on farm")
 	}
-	args := buildSetupPackArgs(profile, zoneID, zone.Name, cropKey)
+	args := buildSetupPackArgs(profile, zoneID, zone.Name, cropKey, "")
 	return insertProposal(ctx, q, insertProposalInput{
 		userID:  userID,
 		farmID:  farmID,
