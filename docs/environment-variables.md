@@ -76,6 +76,16 @@ The API loads `.env` and `.env.local` automatically when started from the repo r
 | `GUARDIAN_RELEVANCE_MIN` | `0.35` | Embed cosine floor for `low_relevance` on turn debug (Phase 145) |
 | `GUARDIAN_RAG_MAX_CHUNKS_FIELD_GUIDE` | — | Max `field_guide` chunks kept after agronomy retrieval filter (Phase 145; e.g. `5` on cpu laptop) |
 | `GUARDIAN_GROUNDED_ANSWER_MAX_CHARS` | `2500` when effective ctx ≤ 4096 | Max assistant answer length after finalize trim (Phase 145) |
+| `GUARDIAN_ANSWER_CRITIQUE` | `0` (off) | Optional YES/NO LLM gate on eval/smoke (`1` enables; GPU-oriented) |
+| `GUARDIAN_EFFECTIVE_CONTEXT_OVERRIDES` | — | Comma `model=ctx` overrides for rope/context discovery (e.g. `phi3:mini=4096`) |
+| `GUARDIAN_EVAL_LOG` | — | API log path for `cmd/guardian-eval` / smoke log correlation |
+| `GUARDIAN_EVAL_REPORT` | — | Write eval summary JSON to this path |
+| `GUARDIAN_EVAL_TOKEN` | — | JWT for `cmd/guardian-eval` and `make guardian-qa-smoke` |
+| `GUARDIAN_EVAL_WARMUP_TIMEOUT` | `90` on cpu-16gb tune profile | Max seconds to wait for chat model warmup during eval/smoke |
+| `GUARDIAN_INFERENCE_PROFILE` | — | e.g. `gpu-server` — selects GPU-oriented inference behavior |
+| `GUARDIAN_LEAVE_PENDING_HOURS` | — | Hours before pending proposals expire in eval harness |
+| `GUARDIAN_QA_RUNS_DIR` | — | Directory for persisted Guardian QA smoke run JSON artifacts |
+| `GUARDIAN_TUNE_PROFILE` | — | Laptop tune profile (e.g. `cpu-16gb`) for eval warmup defaults |
 | `STT_BASE_URL` | — | Local speech-to-text (Whisper-compatible) — enables `/v1/chat/stt` |
 
 ---
