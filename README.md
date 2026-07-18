@@ -1,15 +1,17 @@
 # gr33n 🌱
 
-An open-source farm operating system — run it on your LAN, keep your data close, grow at your own pace.
+An open-source **farm operating system** for homesteads, market gardens, and small commercial grows — sensors, zones, fertigation, lighting, tasks, costs, and a local AI copilot in one dashboard you run on your LAN.
 
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
 [![Go](https://img.shields.io/badge/Go-1.25+-00ADD8?logo=go)](https://go.dev)
 [![Vue](https://img.shields.io/badge/Vue-3-4FC08D?logo=vue.js)](https://vuejs.org)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-14+-336791?logo=postgresql)](https://postgresql.org)
 
-gr33n runs your farm's sensors, alerts, tasks, and scheduling from one dashboard, and lets you ask **Farm Guardian** — a local AI assistant — questions about your grow, grounded in your actual farm data. Everything works on your LAN; the internet is optional, not required.
+**Today** opens to a visual farm map — zone tiles over your layout photo, what needs attention first, sunrise/sunset, and a farm pulse (next water, active runs, device health). Drill into any zone for a **grow cockpit** (water, light, climate) without hopping through admin screens. **Farm Guardian** answers questions grounded in your live data and can **propose** actions — acknowledge an alert, create a task, adjust a schedule — but nothing writes until you **Confirm**. Sensors stream over SSE; Raspberry Pis and MQTT microcontrollers execute relay commands; automation rules and photoperiod schedules run whether or not anyone is chatting.
 
-**Status:** actively developed, everything below is shipped and running on `main`. Full history: [roadmap](docs/roadmap/README.md).
+Everything works on your network. The internet is optional — not required for daily operation, Guardian against a local Ollama model, or Pi edge control.
+
+**Status:** actively developed; everything below is shipped on `main`. Full history: [roadmap](docs/roadmap/README.md).
 
 **Start here:** [**What's in the box**](docs/current-state.md) · [First session after clone](docs/first-session-after-clone.md) · [Operator tour](docs/operator-tour.md) · [CHANGELOG](CHANGELOG.md)
 
@@ -17,59 +19,77 @@ gr33n runs your farm's sensors, alerts, tasks, and scheduling from one dashboard
 
 ## What You Can Do
 
+### See the whole farm at a glance
 
-🌡️ **Live Sensor Dashboards** — Temperature, humidity, light, EC, pH, CO₂, soil moisture. Real-time readings in your zones; historical graphs; automated alerts ("humidity above 75 %"). SSE live-stream stays current even offline.
+**Today (`/`)** — Spatial farm canvas with draggable zone tiles, optional layout background photo, and an **attention strip** for zones that need care. **Farm pulse** shows next water, growing runs, and device health. Large farms get filter chips and mobile stack cards with **one-tap quick actions** (water now, light toggle, ack alert, ask Guardian). Set **farm site coordinates** (paste from Google Maps) for sunrise/sunset offline; optional **live forecast** when `WEATHER_PROVIDER=openmeteo` ([operator tour §7n](docs/operator-tour.md#7n-online-weather-forecast-phase-178--shipped)).
 
-📍 **Today — visual farm cockpit** — Open `/` to see your zones, operational pulse, and what needs attention first — not an AI launcher ([operator tour §7l](docs/operator-tour.md#7l-today-excellence-phases-173177--shipped)). Set **farm site coordinates** on Today or **Settings → Farm site**: paste from Google Maps (e.g. `40.8938° N, 81.4055° W`) — N/S/E/W set the sign automatically (west → negative longitude). Sunrise/sunset use those coords offline. Optional **live forecast** when `WEATHER_PROVIDER=openmeteo` and the farm opts in ([§7n](docs/operator-tour.md#7n-online-weather-forecast-phase-178--shipped)). In **Arrange** on the canvas, upload a layout background (JPEG/PNG/WebP, ≤8 MB).
+**Zone cockpits** — Each grow area is a hub: **Overview** (today's runs, alerts, tasks, device status), **Water** (feeding plan, fertigation preview, pump pulse), **Light** (photoperiod + comfort targets), **Climate** (temp/humidity targets, greenhouse shade/vent/fan). Edit comfort bands inline; ack alerts without leaving the zone.
 
-🕹️ **Manual or Scheduled Control** — Turn fans, pumps, lights on/off manually via dashboard toggle, or set up cron-based schedules ("lights on 18:00, off 06:00"). Rules with thresholds ("if temp > 28°C, turn on exhaust fan"). All execution audited.
+**Workspaces** — Farm-wide jobs grouped into focused SPAs: **Feed & water**, **Money** (costs, receipts, supplies), **Hardware** (Pi wiring, devices, Virtual Pi), **Comfort & automation**, and more — deep-linkable tabs instead of one endless scroll ([operator tour §7e](docs/operator-tour.md#7e-workspaces--sidebar-jobs-tabs-inside-phase-68)).
 
-🧠 **Ask Farm Guardian** — Push-to-talk in the field (or type): *"Is my humidity high? What's this leaf discoloration?"* Guardian answers grounded on:
-  - Your live farm snapshot (zones, current grows, unread alerts)  
-  - ~46 crop profiles with EC/DLI/photoperiod targets  
-  - Symptom catalog + field guides (if indexed)  
-  - Citation chips open readable doc views in **Help → Library → Knowledge**; browse symptoms and guides without chat ([operator tour §7m](docs/operator-tour.md#7m-help-knowledge-surfaces-phase-180--shipped))  
-  - **Symptoms for this crop** links from Plants and zone pages pre-filter the symptom guide ([Phase 183](docs/plans/archive/phase_183_guardian_knowledge_and_revise_followups.plan.md))  
-  - General agronomy reasoning from whichever local Ollama model you've selected (server default is a small, CPU-friendly model; swap in a larger one any time via the model picker below)  
+### Monitor, automate, and control hardware
 
-⚡ **Guardian power states** — On solar, battery, or metered sites, control when the LLM uses RAM/CPU:
-  - **Awaken now** / login warmup preloads the counsel model for morning checks  
-  - **Rest now** (Settings) unloads the chat model between sessions — Guardian wakes on the next question  
-  - **Auto-rest** after idle minutes (`GUARDIAN_AUTO_DORMANT_MINUTES` in `.env`)  
-  - **Admin service stop** — `./scripts/guardian-power.sh sleep|wake` stops/starts the full Ollama process (not in the web API)  
-  - **Readiness UI** — Settings card + chat awakening panel show state (`sleeping`, `stirring`, `ready`, `resting`, `unavailable`) with swappable hand-drawn druid art (`ui/public/assets/guardian/druid/`; placeholder SVGs ship until artists replace them)
+**Live sensors** — Temperature, humidity, light (lux/PAR), EC, pH, CO₂, soil moisture. Real-time SSE dashboard, historical graphs, threshold **alerts** with unread inbox. Rules fire on state change (no spam).
 
-✅ **Guardian Proposals** — Guardian suggests actions ("acknowledge this alert," "create a task," "start a flower run in Zone 3," "enqueue pump on for 30s"). You see a card, click **Confirm**, it executes. Nothing silent — all changes audit-logged. **Refine** sends corrections in the same session (title, zone, due date — [Phases 183–187](docs/current-state.md#sit-in-arc--guardian-ux--knowledge--task-revise-phases-179187--shipped)); multi-turn smoke: `make guardian-qa-change-requests-ui` ([Phase 184](docs/ci-guardian-qa.md)).
+**Schedules & automation** — Cron photoperiods ("lights 18:00–06:00"), threshold rules ("if temp > 28°C → exhaust fan"), one-shot delayed tasks. Pause/resume without deleting. All executions **audit-logged**.
 
-📱 **Offline-First Mobile** — Install as PWA in your browser. When wifi drops:
-  - Dashboard still shows cached readings
-  - Task creation queues locally  
-  - Sensor readings and actuator commands buffer  
-  - On reconnect, everything syncs automatically  
+**Lighting programs** — First-class 18/6, 12/12, or custom ON/OFF photoperiods tied to grow lights — not just generic cron.
 
-🧑‍🌾 **Easy Pi Setup** — **Pi Setup Wizard:** 6-step guided flow to wire a Relay HAT, assign pumps/fans to channels, test network, download config. **Virtual Pi** (`/virtual-pi`): graphical 40-pin board, interactive wiring, config export, drift detection, and **Notify Pi to reload** for platform-sync devices. See `http://localhost:5173/pi-setup-wizard`.
+**Fertigation** — Reservoirs, EC targets, feeding programs, mixing log. **Automated nutrient mixing** on the Pi when recipe + reservoir + base water EC are set; **irrigation-only** mode for plain water. Zone Water tab shows mix preview and queue depth.
 
-🤖 **Guardian model picker** — Choose and **pull** Ollama models in-app. No manual `ollama pull` on the server unless you prefer CLI.
+**Edge hardware** — **Pi client** reads GPIO/I2C, posts readings, drains a FIFO **command queue** (mix steps, pump pulses, relay toggles). **Pi Setup Wizard** (6 steps: HAT wiring → channel assign → network → config download). **Virtual Pi** (`/virtual-pi`): graphical 40-pin board, interactive wiring, config export, drift detection, **Notify Pi to reload**. **MQTT telemetry bridge** for microcontrollers on a local broker.
 
-💰 **Costs & Cycle Profitability** — Upload receipts (photos scanned for text), tag costs to crops. Export as CSV or GL ledger. Compare cycle-to-cycle costs/yield. See [Costs section](#costs-finance--receipts) in API docs.
+### Grow with crop intelligence
 
-🌾 **Natural Farming** — JADAM input batches (JMS, LAB, FPJ, FFJ, etc.), field application recipes with mixing ratios, batch tracking, farm notes. Starter inventory seeded from `master_seed.sql`.
+**Crop catalog** — ~52 profiles in Postgres with EC, DLI, photoperiod, and stage targets (seeded from `crop_library.yaml`). Plants bind to catalog keys; Guardian compares **target vs actual**.
 
-🔐 **Role-Based Permissions** — Owner (full), Manager (ops + finance), Operator (field + Guardian actions), Viewer (read-only). Confirm gate prevents unauthorized writes.
+**Crop cycles & analytics** — Track veg/flower/outdoor runs, advance stages, compare cycle profitability (fertigation + costs + yield CSV export).
 
-🌐 **Data Commons** (Optional) — Opt-in to send coarse, pseudonymous aggregates to [Insert Commons](https://www.insercommons.org/) for collective learning. Your farm data never leaves your server without explicit approval.
+**Help Library** — Browse field guides, **symptom catalog**, and semantic search without opening chat. Citation chips in Guardian answers deep-link to readable doc views. **Symptoms for this crop** pre-filters from Plants and zone pages ([operator tour §7m](docs/operator-tour.md#7m-help-knowledge-surfaces-phase-180--shipped)).
 
-| Feature | Offline? | Mobile? | Multi-user? | Automation? |
-|---------|----------|---------|-------------|-------------|
-| Sensors & alerts | ✅ (cached) | ✅ (PWA) | ✅ | ✅ (rules) |
-| Guardian chat | ❌ (needs an LLM running — can be fully local, see below) | ✅ (browser voice) | ✅ (read-only) | ✅ (propose→confirm) |
-| Guardian power (Rest / auto-rest) | ✅ (unload model; Ollama may stay running) | ✅ | ✅ (Operator+) | — |
-| Tasks | ✅ (queued) | ✅ (PWA) | ✅ | — |
-| Actuator control | ✅ (pending) | ✅ (PWA) | ✅ (RBAC) | ✅ (schedules) |
-| Costs | ❌ | ✅ | ✅ | — |
-| Crop cycles | ❌ | ✅ | ✅ | ✅ (stage auto-advance) |
+**Natural farming** — JADAM-style input batches (JMS, LAB, FPJ, FFJ, …), application recipes with dilution ratios, batch tracking, farm notes — starter inventory in demo seed.
 
-"Offline" above means the **PWA queue** (works with wifi down but the API reachable later) — a different question from **needing the internet**. gr33n is local-first: sensors, alerts, tasks, actuator control, and Guardian chat against an already-installed model all run on your LAN with zero internet, including fully air-gapped. The only things that need the public internet are pulling a *new* Guardian model, the optional Data Commons opt-in, and software updates. Full breakdown: [connectivity-requirements.md](docs/connectivity-requirements.md).
+### Ask Farm Guardian — and act with your OK
+
+Push-to-talk in the field (or type): *"Is my humidity high?" · "What's this leaf discoloration?" · "Create a task to check the dehumidifier."*
+
+Guardian layers three knowledge sources: **local Llama** (Ollama — you pick the model in-app), your farm's **RAG corpus** (ingested docs, field guides, platform playbooks), and a **live snapshot** (zones, cycles, unread alerts, sensor readings).
+
+**Read tools** — Zone/plant/alert lookup, lighting summaries, greenhouse climate, crop target lookup, fertigation state.
+
+**Write proposals** — Guardian suggests; you **Confirm**. Ack alerts, create tasks, start grow runs, adjust EC targets, pause schedules, pulse pumps, deploy shade — all audit-logged. **Refine** corrects title, zone, or due date in the same session ([Phases 183–187](docs/current-state.md#sit-in-arc--guardian-ux--knowledge--task-revise-phases-179187--shipped)). **Pending inbox** at `/chat?tab=pending` for proposals waiting on you.
+
+**Guardian power states** — On solar or metered sites: **Awaken now** / **Rest now**, optional **auto-rest** after idle (`GUARDIAN_AUTO_DORMANT_MINUTES`), admin `./scripts/guardian-power.sh sleep|wake` for full Ollama stop. Readiness UI with druid art in Settings.
+
+**Offline field mode** — Guided procedures, safety hard-stops, static checklists when Ollama is down; push-to-talk + optional voice readback for hands-free work ([operator tour §6d](docs/operator-tour.md#6d-first-field-install-with-guardian-offline-phase-37)).
+
+### Run the business side
+
+**Costs & receipts** — Log expenses/income, upload receipt photos, tag to crops. Export CSV or GL ledger; compare cycle-to-cycle profitability.
+
+**Tasks** — Farm-wide and zone-scoped work items; create offline, sync on reconnect.
+
+**Roles & audit** — Owner / Manager / Operator / Viewer per farm. Confirm gate on Guardian writes. Sensitive actions logged (`GET /farms/:id/audit-events`).
+
+**Insert Commons** (optional) — Opt-in coarse, pseudonymous aggregates to [Insert Commons](https://www.insercommons.org/) — your data never leaves without explicit approval.
+
+### Works where you actually grow
+
+**Offline-first PWA** — Install from browser; cached readings when wifi drops; task writes queue locally; Pi buffers commands; auto-sync on reconnect.
+
+**Modular domains** — Enable crops, natural farming, animals, aquaponics per farm via `gr33ncore.farm_active_modules` — use what you need.
+
+**No mandatory cloud** — Core operation, Guardian against local Ollama, and Pi control all run LAN-only. Internet only needed for pulling new models, optional Commons sync, and software updates. Full breakdown: [connectivity-requirements.md](docs/connectivity-requirements.md).
+
+| Capability | Offline? | Mobile? | Multi-user? | Automation? |
+|------------|----------|---------|-------------|-------------|
+| Today + zone cockpits | ✅ (cached) | ✅ (PWA + quick actions) | ✅ | — |
+| Sensors & alerts | ✅ (cached) | ✅ | ✅ | ✅ (rules) |
+| Schedules, lighting, fertigation | ✅ (Pi queue) | ✅ | ✅ (RBAC) | ✅ |
+| Guardian chat | ❌ (needs local LLM) | ✅ (voice) | ✅ | ✅ (propose→confirm) |
+| Tasks | ✅ (queued) | ✅ | ✅ | — |
+| Costs & receipts | ❌ | ✅ | ✅ | — |
+| Crop cycles & analytics | ❌ | ✅ | ✅ | ✅ (stage advance) |
 
 After `git pull`, restart the API (`make dev-auth-test` or `make run-auth-test`) so new routes register. DB: `make migrate` on existing installs. See [upgrade guide](docs/upgrade-guide.md).
 
@@ -89,11 +109,9 @@ More walkthroughs: [operator tour](docs/operator-tour.md).
 
 ## What Is gr33n?
 
-gr33n is a modular farm management system for homesteads, market gardens, and small commercial grows — whether you're on solar, a mesh network, or a rack in the barn.
+gr33n is a modular farm management system — PostgreSQL schemas, Go APIs, Vue dashboards, and Raspberry Pi edge clients — built so **your farm data stays with you**: inspectable, forkable, and runnable without a mandatory cloud account.
 
-Under the hood: PostgreSQL schemas, Go APIs, Vue dashboards, and Raspberry Pi edge clients.
-
-The through-line is practical: **your farm data should stay with you** — inspectable, forkable, and runnable without a mandatory cloud account.
+The through-line is practical: one system for **seeing** the farm (Today + zones), **running** it (automation + edge hardware), **growing** it (crop catalog + fertigation + lighting), and **understanding** it (Guardian + Help Library) — with every write gated by human confirmation.
 
 ---
 
