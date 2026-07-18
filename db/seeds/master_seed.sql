@@ -2105,8 +2105,8 @@ BEGIN
     JOIN pg_attribute a ON a.attrelid = t.oid AND a.attnum = d.refobjsubid
     WHERE s.relkind = 'S'
       AND n.nspname IN (
-        'gr33ncore', 'gr33ncrops', 'gr33nfertigation',
-        'gr33nnaturalfarming', 'gr33naquaponics', 'auth'
+        'gr33ncore', 'gr33ncrops', 'gr33nfertigation', 'gr33nnaturalfarming',
+        'gr33naquaponics', 'gr33nanimals', 'auth'
       )
   LOOP
     EXECUTE format('SELECT COALESCE(MAX(%I), 0) FROM %I.%I', r.col_name, r.schema_name, r.table_name)
