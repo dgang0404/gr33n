@@ -34,7 +34,7 @@ func SubmitErr(ctx context.Context, q db.Querier, farmID *int64, level commontyp
 	return q.InsertSystemLog(ctx, db.InsertSystemLogParams{
 		FarmID:          farmID,
 		UserID:          uid,
-		LogLevel:        level,
+		LogLevel:        commontypes.LogLevelEnum(strings.ToUpper(string(level))),
 		EventType:       nil,
 		Message:         message,
 		SourceComponent: &source,
