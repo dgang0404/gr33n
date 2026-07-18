@@ -95,7 +95,7 @@ After `git pull`, restart the API (`make dev-auth-test` or `make run-auth-test`)
 
 ### Screenshots
 
-Screenshots from the shipped demo farm (`make dev-stack-fresh`) — not mockups. Purple **AUTH TEST** banner appears only on local dev builds.
+Screenshots from the shipped demo farm (`make dev-stack-fresh`) with **`AUTH_MODE=auth_test`** — JWT and API-key enforcement match production; video and GIFs will follow once the live farm is on the home server.
 
 | **Today** — attention strip, farm pulse, zone map | **Zone cockpit** — water, light, climate in one place |
 |---------------------------------------------------|--------------------------------------------------------|
