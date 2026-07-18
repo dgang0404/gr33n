@@ -311,6 +311,9 @@ audit-openapi: ## Phase 20.95 WS6 — confirm openapi.yaml matches cmd/api/route
 audit-env: ## Phase 116 WS1 — confirm env vars are documented
 	@./scripts/env_reference_parity.sh
 
+check-ui-test-baseline: ## Phase 205 — fail only on UI test failures NOT already in ui/test-baseline-known-failures.json
+	@node ./scripts/check-ui-test-baseline.mjs
+
 # ── Database ───────────────────────────────────────────────────
 sqlc: ## Regenerate sqlc Go code from SQL queries
 	sqlc generate
