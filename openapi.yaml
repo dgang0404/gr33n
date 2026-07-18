@@ -5656,6 +5656,500 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/Error" }
 
+
+  # ── OpenAPI parity stubs ───────────────────────────────────
+
+  /commons/agronomy-symptoms:
+    get:
+      tags: [commons]
+      summary: GET /commons/agronomy-symptoms
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200": { description: OK }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /devices/by-uid/{device_uid}/config:
+    get:
+      tags: [devices]
+      summary: GET /devices/by-uid/{device_uid}/config
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: device_uid
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: OK }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /devices/by-uid/{device_uid}/config/version:
+    get:
+      tags: [devices]
+      summary: GET /devices/by-uid/{device_uid}/config/version
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: device_uid
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: OK }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /devices/{id}/commands/{cid}/cancel:
+    post:
+      tags: [devices]
+      summary: POST /devices/{id}/commands/{cid}/cancel
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      responses:
+        "201": { description: Created }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /farm-modules/catalog:
+    get:
+      tags: [farms]
+      summary: GET /farm-modules/catalog
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200": { description: OK }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /farms/{id}/crop-profiles/effective:
+    get:
+      tags: [farms]
+      summary: GET /farms/{id}/crop-profiles/effective
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      responses:
+        "200": { description: OK }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /farms/{id}/crop-profiles/{crop_key}/genetics/{variety_slug}:
+    get:
+      tags: [farms]
+      summary: GET /farms/{id}/crop-profiles/{crop_key}/genetics/{variety_slug}
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+        - name: crop_key
+          in: path
+          required: true
+          schema: { type: string }
+        - name: variety_slug
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: OK }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+    put:
+      tags: [farms]
+      summary: PUT /farms/{id}/crop-profiles/{crop_key}/genetics/{variety_slug}
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+        - name: crop_key
+          in: path
+          required: true
+          schema: { type: string }
+        - name: variety_slug
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: Updated }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+    delete:
+      tags: [farms]
+      summary: DELETE /farms/{id}/crop-profiles/{crop_key}/genetics/{variety_slug}
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+        - name: crop_key
+          in: path
+          required: true
+          schema: { type: string }
+        - name: variety_slug
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "204": { description: Deleted }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /farms/{id}/guardian-memory:
+    delete:
+      tags: [chat]
+      summary: DELETE /farms/{id}/guardian-memory
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      responses:
+        "204": { description: Deleted }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /farms/{id}/guardian-memory/export:
+    get:
+      tags: [chat]
+      summary: GET /farms/{id}/guardian-memory/export
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      responses:
+        "200": { description: OK }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /farms/{id}/guardian-memory/recent:
+    get:
+      tags: [chat]
+      summary: GET /farms/{id}/guardian-memory/recent
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      responses:
+        "200": { description: OK }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /farms/{id}/guardian-nudge:
+    get:
+      tags: [chat]
+      summary: GET /farms/{id}/guardian-nudge
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      responses:
+        "200": { description: OK }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /farms/{id}/guardian/reingest:
+    post:
+      tags: [chat]
+      summary: POST /farms/{id}/guardian/reingest
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      responses:
+        "201": { description: Created }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /farms/{id}/guardian/reingest/status:
+    get:
+      tags: [chat]
+      summary: GET /farms/{id}/guardian/reingest/status
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      responses:
+        "200": { description: OK }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /farms/{id}/modules:
+    get:
+      tags: [farms]
+      summary: GET /farms/{id}/modules
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      responses:
+        "200": { description: OK }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /farms/{id}/modules/{schema}:
+    patch:
+      tags: [farms]
+      summary: PATCH /farms/{id}/modules/{schema}
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+        - name: schema
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: Updated }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /farms/{id}/notification-templates:
+    get:
+      tags: [farms]
+      summary: GET /farms/{id}/notification-templates
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      responses:
+        "200": { description: OK }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+    post:
+      tags: [farms]
+      summary: POST /farms/{id}/notification-templates
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      responses:
+        "201": { description: Created }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /farms/{id}/rag/docs:
+    get:
+      tags: [farms]
+      summary: GET /farms/{id}/rag/docs
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      responses:
+        "200": { description: OK }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /farms/{id}/sensors/readings/latest:
+    get:
+      tags: [farms]
+      summary: GET /farms/{id}/sensors/readings/latest
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      responses:
+        "200": { description: OK }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /farms/{id}/settings:
+    patch:
+      tags: [farms]
+      summary: PATCH /farms/{id}/settings
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      responses:
+        "200": { description: Updated }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /farms/{id}/site:
+    patch:
+      tags: [farms]
+      summary: PATCH /farms/{id}/site
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      responses:
+        "200": { description: Updated }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /farms/{id}/site-weather:
+    get:
+      tags: [farms]
+      summary: GET /farms/{id}/site-weather
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      responses:
+        "200": { description: OK }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /farms/{id}/system-logs:
+    get:
+      tags: [farms]
+      summary: GET /farms/{id}/system-logs
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      responses:
+        "200": { description: OK }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /farms/{id}/task-consumptions:
+    get:
+      tags: [farms]
+      summary: GET /farms/{id}/task-consumptions
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      responses:
+        "200": { description: OK }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /farms/{id}/weather/manual:
+    post:
+      tags: [farms]
+      summary: POST /farms/{id}/weather/manual
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      responses:
+        "201": { description: Created }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /farms/{id}/weather/settings:
+    patch:
+      tags: [farms]
+      summary: PATCH /farms/{id}/weather/settings
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      responses:
+        "200": { description: Updated }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /fertigation/programs/{rid}/metadata:
+    patch:
+      tags: [fertigation]
+      summary: PATCH /fertigation/programs/{rid}/metadata
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ResourceID" }
+      responses:
+        "200": { description: Updated }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /guardian/dormant:
+    post:
+      tags: [chat]
+      summary: POST /guardian/dormant
+      security: [{ bearerAuth: [] }]
+      responses:
+        "201": { description: Created }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /guardian/warmup:
+    post:
+      tags: [chat]
+      summary: POST /guardian/warmup
+      security: [{ bearerAuth: [] }]
+      responses:
+        "201": { description: Created }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /notification-templates/{id}:
+    patch:
+      tags: [profiles]
+      summary: PATCH /notification-templates/{id}
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      responses:
+        "200": { description: Updated }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /sensors/{id}/calibration:
+    patch:
+      tags: [platform]
+      summary: PATCH /sensors/{id}/calibration
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      responses:
+        "200": { description: Updated }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /tasks/{id}/complete:
+    patch:
+      tags: [platform]
+      summary: PATCH /tasks/{id}/complete
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      responses:
+        "200": { description: Updated }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /v1/chat/feedback/export:
+    get:
+      tags: [chat]
+      summary: GET /v1/chat/feedback/export
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200": { description: OK }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /v1/chat/proposals/suggest-empty-zone:
+    post:
+      tags: [chat]
+      summary: POST /v1/chat/proposals/suggest-empty-zone
+      security: [{ bearerAuth: [] }]
+      responses:
+        "201": { description: Created }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /v1/chat/proposals/{id}/dismiss:
+    post:
+      tags: [chat]
+      summary: POST /v1/chat/proposals/{id}/dismiss
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      responses:
+        "201": { description: Created }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /v1/chat/sessions/{session_id}/close:
+    post:
+      tags: [chat]
+      summary: POST /v1/chat/sessions/{session_id}/close
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "201": { description: Created }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /v1/chat/sessions/{session_id}/turns/{turn_index}/debug:
+    get:
+      tags: [chat]
+      summary: GET /v1/chat/sessions/{session_id}/turns/{turn_index}/debug
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+        - name: turn_index
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200": { description: OK }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /v1/chat/sessions/{session_id}/turns/{turn_index}/feedback:
+    patch:
+      tags: [chat]
+      summary: PATCH /v1/chat/sessions/{session_id}/turns/{turn_index}/feedback
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+        - name: turn_index
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200": { description: Updated }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /v1/chat/stt:
+    post:
+      tags: [chat]
+      summary: POST /v1/chat/stt
+      security: [{ bearerAuth: [] }]
+      responses:
+        "201": { description: Created }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /v1/guardian/qa/latest:
+    get:
+      tags: [chat]
+      summary: GET /v1/guardian/qa/latest
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200": { description: OK }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
 components:
 
   securitySchemes:

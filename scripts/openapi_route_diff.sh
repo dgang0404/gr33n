@@ -50,21 +50,41 @@ if [ "$ROUTE_COUNT" -eq 0 ]; then
   exit 2
 fi
 
-# 2. Extract METHOD path pairs from openapi.yaml.
+# 2. Extract METHOD path pairs from openapi.yaml (regex — same model as
+#    cmd/api/openapi_parity_test.go; avoids requiring valid YAML 1.1 for
+#    every description scalar).
 python3 - "$OPENAPI_FILE" <<'PY' | sort -u > "$OPENAPI_TMP"
+import re
 import sys
-import yaml
 
-with open(sys.argv[1]) as f:
-    spec = yaml.safe_load(f)
-
-for path, ops in (spec.get("paths") or {}).items():
-    if not isinstance(ops, dict):
+spec = open(sys.argv[1]).read()
+m = re.search(r"^paths:\n(.*?)(?=^components:)", spec, re.M | re.S)
+if not m:
+    raise SystemExit("paths section not found")
+current = None
+for line in m.group(1).splitlines():
+    pm = re.match(r"^  (/[^\s#:]+):\s*$", line)
+    if pm:
+        current = pm.group(1)
         continue
-    for method in ("get", "post", "put", "patch", "delete"):
-        if method in ops:
-            print(f"{method.upper()} {path}")
+    mm = re.match(r"^    (get|post|put|patch|delete):\s*$", line)
+    if mm and current:
+        print(f"{mm.group(1).upper()} {current}")
 PY
+
+# Routes registered but intentionally absent from openapi.yaml (see
+# cmd/api/openapi_parity_test.go routesIntentionallyUndocumented).
+UNDOC_TMP=$(mktemp)
+trap 'rm -f "$ROUTES_TMP" "$OPENAPI_TMP" "$UNDOC_TMP"' EXIT
+cat > "$UNDOC_TMP" <<'EOF'
+GET /openapi
+GET /openapi/
+GET /openapi/spec.yaml
+GET /openapi/redoc.standalone.js
+EOF
+
+grep -v -F -f "$UNDOC_TMP" "$ROUTES_TMP" | sort -u > "${ROUTES_TMP}.filtered"
+mv "${ROUTES_TMP}.filtered" "$ROUTES_TMP"
 
 # 3. Diff.
 if ! diff -u "$OPENAPI_TMP" "$ROUTES_TMP" > /tmp/openapi_route_diff.out; then
