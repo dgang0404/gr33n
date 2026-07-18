@@ -95,15 +95,21 @@ After `git pull`, restart the API (`make dev-auth-test` or `make run-auth-test`)
 
 ### Screenshots
 
-| Dashboard (Today) | Farm Guardian + Confirm |
-|-------------------|-------------------------|
-| ![Today dashboard](docs/images/dashboard.png) | ![Guardian chat](docs/images/guardian-chat.png) |
+Screenshots from the shipped demo farm (`make dev-stack-fresh`) — not mockups. Purple **AUTH TEST** banner appears only on local dev builds.
 
-| Pi setup wizard | Model selector |
-|-----------------|----------------|
-| ![Pi wizard](docs/images/pi-wizard.png) | ![Model selector](docs/images/model-selector.png) |
+| **Today** — attention strip, farm pulse, zone map | **Zone cockpit** — water, light, climate in one place |
+|---------------------------------------------------|--------------------------------------------------------|
+| ![Today farm dashboard](docs/images/today.png) | ![Zone grow hub with Ask gr33n starters](docs/images/zone-cockpit.png) |
 
-More walkthroughs: [operator tour](docs/operator-tour.md).
+| **My zones** — rooms, beds, and outdoor areas | **Virtual Pi** — pin board + Farm Guardian |
+|-----------------------------------------------|--------------------------------------------|
+| ![Farm zones workspace](docs/images/zones.png) | ![Virtual Pi wiring with Guardian counsel](docs/images/virtual-pi.png) |
+
+| **Money** — grow economics and cycle summaries |
+|------------------------------------------------|
+| ![Grow economics workspace](docs/images/money-grows.png) |
+
+Full walkthrough: [operator tour](docs/operator-tour.md).
 
 ---
 
