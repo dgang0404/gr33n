@@ -50,6 +50,7 @@ describe('Phase 135 — GuardianSettingsCorpusCard', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
     vi.clearAllMocks()
+    localStorage.setItem('gr33n_token', 'test-token')
     useCapabilitiesStore().aiEnabled = true
     useFarmContextStore().farmId = 1
     useGuardianReadinessStore().loaded = true

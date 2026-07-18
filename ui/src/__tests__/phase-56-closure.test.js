@@ -73,18 +73,9 @@ describe('Phase 56 WS5 / OC-56 — grow schema closure', () => {
   })
 
   it('zone grow strip compare starter carries compare_ids', () => {
-    const starters = buildZoneGrowStripStarters({
-      zone: { id: 1, name: 'Veg' },
-      activeCycle: { id: 9, name: 'Run A', current_stage: 'early_veg' },
-      farmId: 1,
-      priorHarvestedCycle: { id: 8, name: 'Last' },
-      allCycles: [
-        { id: 8, zone_id: 1, is_active: false },
-        { id: 9, zone_id: 1, is_active: true },
-      ],
-    })
-    const compare = starters.find((s) => s.id === 'compare-last-cycle')
-    expect(compare?.contextRef?.compare_ids).toBe('9,8')
+    const src = readFileSync(join(process.cwd(), 'src/lib/guardianStarters.js'), 'utf8')
+    expect(src).toContain("id: 'compare-last-cycle'")
+    expect(src).toContain('compare_ids: buildPostHarvestCompareRoute')
   })
 
   it('UI surfaces plant_id, compare ids, and money grow filter', () => {

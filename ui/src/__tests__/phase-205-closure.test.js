@@ -15,16 +15,10 @@ describe('Phase 205 WS1 — UI test baseline safety net', () => {
     expect(existsSync(join(repoRoot, 'scripts/check-ui-test-baseline.mjs'))).toBe(true)
   })
 
-  it('baseline file is well-formed and only tracks failures, not passes', () => {
+  it('baseline file is well-formed (empty after Phase 205 debt paydown)', () => {
     const baseline = JSON.parse(readFileSync(join(process.cwd(), 'test-baseline-known-failures.json'), 'utf8'))
     expect(baseline.failures).toBeTypeOf('object')
-    const total = Object.values(baseline.failures).flat().length
-    expect(total).toBeGreaterThan(0)
-    for (const [file, tests] of Object.entries(baseline.failures)) {
-      expect(existsSync(join(process.cwd(), file))).toBe(true)
-      expect(Array.isArray(tests)).toBe(true)
-      expect(tests.length).toBeGreaterThan(0)
-    }
+    expect(Object.keys(baseline.failures)).toHaveLength(0)
   })
 
   it('make target and CONTRIBUTING.md wire the check in', () => {
@@ -35,9 +29,11 @@ describe('Phase 205 WS1 — UI test baseline safety net', () => {
     expect(contributing).toContain('phase_205_pre_existing_test_debt.plan.md')
   })
 
-  it('plan documents the root-cause triage', () => {
-    const plan = readFileSync(join(repoRoot, 'docs/plans/phase_205_pre_existing_test_debt.plan.md'), 'utf8')
-    expect(plan).toContain('attachProposals')
-    expect(plan).toContain('resetUnauthorizedGate')
+  it('test setup registers nav-hint directive globally', () => {
+    expect(existsSync(join(process.cwd(), 'src/test-setup.js'))).toBe(true)
+    const setup = readFileSync(join(process.cwd(), 'src/test-setup.js'), 'utf8')
+    expect(setup).toContain("'nav-hint'")
+    const vitest = readFileSync(join(process.cwd(), 'vitest.config.js'), 'utf8')
+    expect(vitest).toContain('test-setup.js')
   })
 })

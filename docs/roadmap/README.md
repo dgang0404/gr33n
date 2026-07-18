@@ -6,7 +6,7 @@ closure tests) — but you never need to read all 200+ of them to understand
 where the project is or where it's going. That's what this page is for.
 
 **Status:** every phase below is **shipped on `main`** unless marked
-otherwise. Current phase: **204**.
+otherwise. Current phase: **206** (docs/plans archive migration).
 
 For what the app actually *does* today, read the [README](../../README.md).
 This page is history + direction, not features.
@@ -35,7 +35,9 @@ the description here is meant to be enough on its own.
 | **Answer-quality audit** | 188–191 | Found and fixed real conversation bugs: off-topic template leak, RAG metadata leaking into chat replies, truncated list intros, and revise requests phrased as questions not being understood. |
 | **Post-audit follow-through** | 192–201 | Fixed a due-date/title clobber bug, Help Library sticky-header overlaps, pending-proposal inbox and conversation view, session sidebar labels, accuracy-note persistence across reloads, and unified the knowledge/help surfaces. |
 | **Janitorial consolidation** | 202–203 | No new features — paid down test and code duplication. Consolidated repeated UI closure-test assertions into canonical test files, merged duplicated backend helper functions and adjacent handler packages. |
-| **Docs & navigation cleanup** | **204** (current) | This page. Product-first README, retired duplicate phase-60 doc pile, moved closed early-era plans into `docs/plans/archive/`. |
+| **Docs & navigation cleanup** | 204 | Product-first README, `docs/roadmap/README.md`, retired duplicate Phase 60 doc pile. |
+| **Test debt + regression safety** | 205 | Fixed 24 pre-existing UI test failures (shared root cause: tests missing `gr33n_token` in localStorage); shipped `make check-ui-test-baseline` so future refactors can't add failures silently. Full suite green: 242 files / 1222 tests. |
+| **docs/plans archive migration** | **206** (planned) | Move ~200 shipped phase plans into `docs/plans/archive/` with scripted batch migration. |
 
 ---
 

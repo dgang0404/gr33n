@@ -30,6 +30,7 @@ This page is the **Phase 14** counterpart to [`phase-13-operator-documentation.m
 | **202** | Shipped | [`phase_202_closure_test_consolidation.plan.md`](plans/phase_202_closure_test_consolidation.plan.md) — UI closure-test consolidation |
 | **203** | Shipped | [`phase_203_handler_package_consolidation.plan.md`](plans/phase_203_handler_package_consolidation.plan.md) — backend helper/package consolidation |
 | **204** | Shipped | [`phase_204_docs_navigation_cleanup.plan.md`](plans/phase_204_docs_navigation_cleanup.plan.md) — README rewrite + [roadmap](roadmap/README.md) |
+| **205** | Shipped | [`phase_205_pre_existing_test_debt.plan.md`](plans/phase_205_pre_existing_test_debt.plan.md) — 24 UI test fixes + `make check-ui-test-baseline` |
 
 Full narrative history (all eras, plain language): **[`roadmap/README.md`](roadmap/README.md)**. Phases 163–201 (Today cockpit, weather, sit-in arc, answer-quality audit, post-audit follow-through) are summarized there; see individual `plans/phase_N_*.plan.md` for implementation detail.
 

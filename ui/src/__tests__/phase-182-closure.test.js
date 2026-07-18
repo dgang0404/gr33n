@@ -48,6 +48,7 @@ describe('Phase 182 — pending inbox scroll + sort', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
     vi.clearAllMocks()
+    localStorage.setItem('gr33n_token', 'test-token')
   })
 
   it('shows sticky count and scroll container when proposals exist', async () => {
@@ -121,6 +122,7 @@ describe('Phase 182 — refine hint', () => {
     })
 
     const ownerID = '00000000-0000-0000-0000-000000000001'
+    localStorage.setItem('gr33n_token', 'test-token')
     localStorage.setItem('gr33n_farm_id', '1')
     const { useCapabilitiesStore } = await import('../stores/capabilities')
     const { useFarmStore } = await import('../stores/farm')

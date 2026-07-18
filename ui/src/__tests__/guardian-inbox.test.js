@@ -31,6 +31,7 @@ describe('Phase 30 WS1 — guardian inbox', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
     vi.clearAllMocks()
+    localStorage.setItem('gr33n_token', 'test-token')
   })
 
   it('loads pending proposals for selected farm', async () => {

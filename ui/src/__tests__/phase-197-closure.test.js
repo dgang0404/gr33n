@@ -8,6 +8,7 @@ import { join } from 'node:path'
 import { setActivePinia, createPinia } from 'pinia'
 import { createRouter, createMemoryHistory } from 'vue-router'
 import { useFarmContextStore } from '../stores/farmContext'
+import { useCapabilitiesStore } from '../stores/capabilities'
 
 const repoRoot = join(process.cwd(), '..')
 
@@ -41,6 +42,14 @@ const router = createRouter({
 function stubPanelApis() {
   api.get.mockImplementation((url) => {
     if (url === '/capabilities') return Promise.resolve({ data: { ai_enabled: true } })
+    if (url === '/guardian/models') {
+      return Promise.resolve({
+        data: {
+          server_default: 'phi3:mini',
+          available_models: [{ name: 'phi3:mini', context_window: 131072, capabilities: ['completion'] }],
+        },
+      })
+    }
     if (url === '/v1/chat/sessions') return Promise.resolve({ data: { sessions: [evalSession] } })
     if (url === '/v1/chat/proposals') {
       return Promise.resolve({
@@ -87,7 +96,9 @@ describe('GuardianChatPanel — session pending labels (Phase 197)', () => {
     setActivePinia(createPinia())
     vi.clearAllMocks()
     stubPanelApis()
+    localStorage.setItem('gr33n_token', 'test-token')
     localStorage.setItem('gr33n_farm_id', '1')
+    useCapabilitiesStore().aiEnabled = true
   })
 
   it('shows pending summary label and chip in session sidebar', async () => {

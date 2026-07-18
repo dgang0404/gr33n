@@ -35,6 +35,6 @@ describe('Phase 143 — answer quality closure', () => {
     const score = readFileSync(join(repoRoot, 'internal/farmguardian/eval/score.go'), 'utf8')
     expect(leak).toContain('TrimInstructionLeak')
     expect(cite).toContain('SanitizeCitationURLs')
-    expect(score).toContain('smokeMorningWalkQualityNote')
+    expect(score).toContain('SmokeTopicDriftNote')
   })
 })
