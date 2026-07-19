@@ -56,7 +56,7 @@ dev: ## Run API + UI dev server in parallel (DATABASE_URL from .env unless `make
 		cd ui && npm run dev & \
 		wait
 
-dev-auth-test: ## API + UI with AUTH_MODE=auth_test — skips if healthy stack already on :8080/:5173
+dev-auth-test: ## API + UI with AUTH_MODE=auth_test — restarts when git stamp changes (see maybe-serve-api-ui.sh)
 	@./scripts/maybe-serve-api-ui.sh
 
 dev-auth-test-run: ## Internal: always start API + UI (no port check)
@@ -435,7 +435,7 @@ restart-local: ## After reboot: Compose db up + wait + db sanity report (no migr
 restart-local-serve: ## Same as restart-local then make dev-auth-test (Go compile may be slow cold)
 	@./scripts/restart-local.sh --serve
 
-laptop-up: ## Laptop dev one-liner: DB + local Ollama (if loopback) + API + UI — run from repo root
+laptop-up: ## Laptop dev one-liner: DB + Ollama + API + UI (restarts API/UI when git stamp changed)
 	@./scripts/restart-local.sh --serve
 
 db-sanity-report: ## Read-only SQL checks (duplicate zones/sensors, profile, extensions)

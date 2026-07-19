@@ -69,11 +69,13 @@ Then **Settings → Field memories (RAG corpus) → Re-ingest → Operational** 
 **Start the API** with the dev-tagged binary when `.env` has `AUTH_MODE=auth_test`:
 
 ```bash
-make run-auth-test   # not bare `go run ./cmd/api/` — that exits immediately
-make dev-auth-test   # API + UI together
+make laptop-up        # DB check + Ollama + API + UI; restarts API/UI after git pull
+make dev-auth-test    # API + UI only (same port/stamp logic)
 ```
 
-Restart the API after `git pull` so new routes and solar/weather handlers register.
+Do **not** use bare `go run ./cmd/api/` with `AUTH_MODE=auth_test` — it exits immediately without `-tags dev`.
+
+After `git pull`, run **`make laptop-up`** again; it compares `.gr33n/dev-serve-stamp` to `git describe --always --dirty` and restarts a healthy stack when the repo changed. Force: `GR33N_FORCE_DEV_RESTART=1 make laptop-up`.
 
 **Weather on Today:** set `WEATHER_PROVIDER=openmeteo` in `.env`, restart API, then **Settings → Farm site** (near the top of the page) → check **Use live weather forecast** and pick **°F** or **°C** for the forecast line.
 

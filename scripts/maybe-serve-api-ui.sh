@@ -1,23 +1,93 @@
 #!/usr/bin/env bash
 # Port-aware dev stack bring-up: start only what's missing, or leave a healthy stack alone.
-# Used by make dev-auth-test and restart-local.sh --serve.
+# Used by make dev-auth-test, make laptop-up (restart-local.sh --serve).
 #
-# Intentional: when :8080/health and :5173 already respond, this script does NOT
-# restart them — you will not pick up new API/UI code until you stop the old
-# process (Ctrl+C in the dev terminal, or kill the listener) and run again.
+# When :8080/health and :5173 already respond, compares .gr33n/dev-serve-stamp to
+# `git describe --always --dirty` and restarts both if the repo changed (git pull,
+# new commit, or dirty tree). Set GR33N_FORCE_DEV_RESTART=1 to restart anyway.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+STAMP_FILE="$ROOT/.gr33n/dev-serve-stamp"
 
 die() {
   echo "error: $*" >&2
   exit 1
 }
 
+dev_code_stamp() {
+  if command -v git >/dev/null 2>&1 && git -C "$ROOT" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+    git -C "$ROOT" describe --always --dirty --broken 2>/dev/null || echo "unknown"
+  else
+    echo "unknown"
+  fi
+}
+
+read_dev_stamp() {
+  if [[ -f "$STAMP_FILE" ]]; then
+    tr -d '[:space:]' < "$STAMP_FILE"
+  else
+    echo ""
+  fi
+}
+
+write_dev_stamp() {
+  mkdir -p "$ROOT/.gr33n"
+  dev_code_stamp > "$STAMP_FILE"
+}
+
+stamp_stale() {
+  local current stored
+  current=$(dev_code_stamp)
+  stored=$(read_dev_stamp)
+  [[ -z "$stored" || "$current" != "$stored" ]]
+}
+
+# Kill listeners on a TCP port (best-effort; ss shows the process holding the socket).
+kill_listener_on_port() {
+  local port=$1
+  local pid
+  if ! command -v ss >/dev/null 2>&1; then
+    return 0
+  fi
+  while read -r pid; do
+    [[ -z "$pid" || ! "$pid" =~ ^[0-9]+$ ]] && continue
+    echo "    stopping pid $pid (port :$port)"
+    kill "$pid" 2>/dev/null || true
+  done < <(ss -tlnp 2>/dev/null | grep -E ":${port}\\b" | sed -n 's/.*pid=\([0-9]*\).*/\1/p' | sort -u)
+  sleep 1
+}
+
+maybe_restart_for_new_code() {
+  local port=$1
+  local api_ok=$2
+  local ui_ok=$3
+  local force=${GR33N_FORCE_DEV_RESTART:-}
+
+  if [[ "$api_ok" -eq 0 && "$ui_ok" -eq 0 ]]; then
+    return 1
+  fi
+  if [[ "$force" != "1" ]] && ! stamp_stale; then
+    return 1
+  fi
+
+  local stored current
+  stored=$(read_dev_stamp)
+  current=$(dev_code_stamp)
+  if [[ "$force" == "1" ]]; then
+    echo "==> GR33N_FORCE_DEV_RESTART=1 — restarting dev API + UI"
+  else
+    echo "==> Code changed (${stored:-none} -> ${current}) — restarting dev API + UI"
+  fi
+  kill_listener_on_port "$port"
+  kill_listener_on_port 5173
+  return 0
+}
+
 # Avoid a second API/UI dev stack when ports are already serving gr33n.
 maybe_serve_api_ui() {
   set -a
-  # shellcheck disable=1091
+  # shellcheck disable=SC1091
   source "$ROOT/.env"
   set +a
 
@@ -31,23 +101,27 @@ maybe_serve_api_ui() {
     ui_ok=1
   fi
 
+  if maybe_restart_for_new_code "$port" "$api_ok" "$ui_ok"; then
+    api_ok=0
+    ui_ok=0
+  fi
+
   if [[ "$api_ok" -eq 1 && "$ui_ok" -eq 1 ]]; then
-    echo "==> API (:${port}) and UI (:5173) already running — leaving them up."
-    echo "    Open http://localhost:5173/  ·  stop with Ctrl+C in the terminal that started make dev-auth-test"
-    echo "    Note: won't pick up new API/UI code until you stop the old process and start again."
+    echo "==> API (:${port}) and UI (:5173) already running (code stamp: $(read_dev_stamp))."
+    echo "    Open http://localhost:5173/"
+    echo "    Force restart: GR33N_FORCE_DEV_RESTART=1 make laptop-up"
     return 0
   fi
 
   if [[ "$api_ok" -eq 1 && "$ui_ok" -eq 0 ]]; then
     echo "==> API (:${port}) already running — starting UI only (:5173)."
-    echo "    Note: existing API process is unchanged (restart it separately to pick up new Go code)."
     cd "$ROOT/ui"
     exec npm run dev
   fi
 
   if [[ "$api_ok" -eq 0 && "$ui_ok" -eq 1 ]]; then
     echo "==> UI (:5173) already running — starting API only (:${port}, AUTH_MODE=auth_test)."
-    echo "    Note: existing Vite process is unchanged (restart it separately to pick up new UI code)."
+    write_dev_stamp
     cd "$ROOT"
     exec make run-auth-test
   fi
@@ -61,6 +135,7 @@ maybe_serve_api_ui() {
     fi
   fi
 
+  write_dev_stamp
   cd "$ROOT"
   exec make dev-auth-test-run
 }
