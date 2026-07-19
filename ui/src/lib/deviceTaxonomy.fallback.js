@@ -59,6 +59,7 @@ const ACTUATOR_ROWS = [
   ['feeder_hopper', 'water', 'Feeder hopper', true, null],
   ['relay', 'water', 'Relay', true, null],
   ['air_pump', 'water', 'Air pump', true, null],
+  ['gate', 'water', 'Gate', true, null],
   ['light', 'light', 'Light', false, null],
   ['grow_light', 'light', 'Grow light', false, null],
   ['exhaust_fan', 'air', 'Exhaust fan', false, 'fan'],

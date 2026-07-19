@@ -2160,6 +2160,42 @@ WHERE NOT EXISTS (
     SELECT 1 FROM gr33naquaponics.loops l WHERE l.farm_id = 1 AND l.label = 'Tilapia loop' AND l.deleted_at IS NULL
 );
 
+-- Phase 183 — feeder/waterer/gate actuators for the animal zones, and
+-- pump/temp/water-quality sensors for the aquaponics loop, so the demo shows
+-- more than tracking-only animal groups. No device_id yet (not wired to a
+-- real Pi) — same "add hardware later" state as a fresh crop zone before
+-- Pi setup; the UI's wiring badge flags it as unwired either way.
+INSERT INTO gr33ncore.actuators (farm_id, zone_id, name, actuator_type, current_state_text, config)
+SELECT 1, z.id, v.name, v.actuator_type, 'offline', '{"simulation": true}'::jsonb
+FROM (VALUES
+    ('Chicken Coop',  'Coop Feeder Hopper',  'feeder_hopper'),
+    ('Chicken Coop',  'Coop Waterer Valve',  'water_valve'),
+    ('Chicken Coop',  'Coop Run Gate',       'gate'),
+    ('Sheep Pasture', 'Pasture Trough Valve','water_valve'),
+    ('Sheep Pasture', 'Pasture Gate',        'gate'),
+    ('Fish Tank',     'Tilapia Circulation Pump', 'pump'),
+    ('Fish Tank',     'Tilapia Air Pump',    'air_pump')
+) AS v(zone_name, name, actuator_type)
+JOIN gr33ncore.zones z ON z.farm_id = 1 AND z.name = v.zone_name AND z.deleted_at IS NULL
+WHERE NOT EXISTS (
+    SELECT 1 FROM gr33ncore.actuators a
+    WHERE a.farm_id = 1 AND a.zone_id = z.id AND a.name = v.name AND a.deleted_at IS NULL
+);
+
+INSERT INTO gr33ncore.sensors (farm_id, zone_id, name, sensor_type, unit_id, value_min_expected, value_max_expected, alert_threshold_low, alert_threshold_high)
+SELECT 1, z.id, v.name, v.sensor_type, u.id, v.vmin, v.vmax, v.alert_low, v.alert_high
+FROM (VALUES
+    ('Fish Tank', 'Fish Tank Water Temp',       'water_temp',        'celsius',           10, 35,   22,   28),
+    ('Fish Tank', 'Fish Tank Dissolved Oxygen', 'dissolved_oxygen',  'parts_per_million',  0, 15,    5,   12),
+    ('Fish Tank', 'Fish Tank Water Level',      'water_level',       'percent',            0, 100,  60,  100)
+) AS v(zone_name, name, sensor_type, unit_name, vmin, vmax, alert_low, alert_high)
+JOIN gr33ncore.zones z ON z.farm_id = 1 AND z.name = v.zone_name AND z.deleted_at IS NULL
+JOIN gr33ncore.units u ON u.name = v.unit_name
+WHERE NOT EXISTS (
+    SELECT 1 FROM gr33ncore.sensors s
+    WHERE s.farm_id = 1 AND s.zone_id = z.id AND s.name = v.name AND s.deleted_at IS NULL
+);
+
 -- Phase 179 — resync every serial/identity sequence to max(id) across the seeded
 -- schemas. This file inserts many rows with explicit ids (farm 1, its zones,
 -- sensors, etc.) so their sequences never advance via nextval(). Without this,

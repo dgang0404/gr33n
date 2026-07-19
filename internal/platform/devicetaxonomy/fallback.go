@@ -1,6 +1,7 @@
 package devicetaxonomy
 
-// embeddedEntries mirrors db/migrations/20260622_phase90_device_type_registry.sql seed.
+// embeddedEntries mirrors db/migrations/20260622_phase90_device_type_registry.sql
+// plus later additive registry migrations (e.g. phase183_gate_actuator_type.sql).
 var embeddedEntries = []Entry{
 	// sensors — water
 	{TypeKey: "soil_moisture", DeviceClass: "sensor", PlantNeed: "water", DisplayLabel: "Soil moisture", WiringSources: []string{"ads1115"}, SortOrder: 10},
@@ -39,6 +40,7 @@ var embeddedEntries = []Entry{
 	{TypeKey: "feeder_hopper", DeviceClass: "actuator", PlantNeed: "water", DisplayLabel: "Feeder hopper", SupportsPulse: true, SortOrder: 115},
 	{TypeKey: "relay", DeviceClass: "actuator", PlantNeed: "water", DisplayLabel: "Relay", SupportsPulse: true, SortOrder: 116},
 	{TypeKey: "air_pump", DeviceClass: "actuator", PlantNeed: "water", DisplayLabel: "Air pump", SupportsPulse: true, SortOrder: 117},
+	{TypeKey: "gate", DeviceClass: "actuator", PlantNeed: "water", DisplayLabel: "Gate", SupportsPulse: true, SortOrder: 118},
 	// actuators — light
 	{TypeKey: "light", DeviceClass: "actuator", PlantNeed: "light", DisplayLabel: "Light", SortOrder: 130},
 	{TypeKey: "grow_light", DeviceClass: "actuator", PlantNeed: "light", DisplayLabel: "Grow light", SortOrder: 131},

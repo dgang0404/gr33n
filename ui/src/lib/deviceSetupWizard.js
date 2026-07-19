@@ -13,6 +13,10 @@ export const DEVICE_ACTUATOR_TEMPLATES = [
   { id: 'grow_light', actuator_type: 'grow_light', label: 'Grow light', defaultName: 'Grow light' },
   { id: 'pump', actuator_type: 'pump', label: 'Irrigation pump', defaultName: 'Feed pump' },
   { id: 'exhaust_fan', actuator_type: 'exhaust_fan', label: 'Exhaust fan', defaultName: 'Exhaust fan' },
+  // Phase 183 — animal zones (coop, pasture) feed/water/access, not just crop irrigation.
+  { id: 'feeder_hopper', actuator_type: 'feeder_hopper', label: 'Feeder hopper', defaultName: 'Feeder hopper' },
+  { id: 'water_valve', actuator_type: 'water_valve', label: 'Waterer valve', defaultName: 'Waterer valve' },
+  { id: 'gate', actuator_type: 'gate', label: 'Gate', defaultName: 'Gate' },
 ]
 
 /** Short field checklist from pi-integration-guide §8.3 (in-app, not PDF-only). */
