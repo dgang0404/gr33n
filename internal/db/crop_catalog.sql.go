@@ -20,12 +20,46 @@ func (q *Queries) CountAgronomyFieldGuides(ctx context.Context) (int64, error) {
 	return count, err
 }
 
+const countBuiltinCropProfiles = `-- name: CountBuiltinCropProfiles :one
+SELECT COUNT(*)::bigint AS count FROM gr33ncrops.crop_profiles
+WHERE farm_id IS NULL AND is_builtin = TRUE
+`
+
+func (q *Queries) CountBuiltinCropProfiles(ctx context.Context) (int64, error) {
+	row := q.db.QueryRow(ctx, countBuiltinCropProfiles)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const countCropCatalogEntries = `-- name: CountCropCatalogEntries :one
 SELECT COUNT(*)::bigint AS count FROM gr33ncrops.crop_catalog_entries
 `
 
 func (q *Queries) CountCropCatalogEntries(ctx context.Context) (int64, error) {
 	row := q.db.QueryRow(ctx, countCropCatalogEntries)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const countSupportedCropCatalogEntries = `-- name: CountSupportedCropCatalogEntries :one
+SELECT COUNT(*)::bigint AS count FROM gr33ncrops.crop_catalog_entries WHERE supported = TRUE
+`
+
+func (q *Queries) CountSupportedCropCatalogEntries(ctx context.Context) (int64, error) {
+	row := q.db.QueryRow(ctx, countSupportedCropCatalogEntries)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const countUnsupportedCropCatalogEntries = `-- name: CountUnsupportedCropCatalogEntries :one
+SELECT COUNT(*)::bigint AS count FROM gr33ncrops.crop_catalog_entries WHERE supported = FALSE
+`
+
+func (q *Queries) CountUnsupportedCropCatalogEntries(ctx context.Context) (int64, error) {
+	row := q.db.QueryRow(ctx, countUnsupportedCropCatalogEntries)
 	var count int64
 	err := row.Scan(&count)
 	return count, err

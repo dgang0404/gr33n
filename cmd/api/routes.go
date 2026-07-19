@@ -231,9 +231,11 @@ func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationwo
 
 	// Commons — gr33n_inserts catalog, crop catalog, agronomy guides (read-only)
 	mux.Handle("GET /commons/catalog", jwt(http.HandlerFunc(commonsCatalog.List)))
+	mux.Handle("POST /commons/catalog", jwt(http.HandlerFunc(commonsCatalog.Publish)))
 	mux.Handle("GET /commons/catalog/{slug}", jwt(http.HandlerFunc(commonsCatalog.GetBySlug)))
 	mux.Handle("GET /farms/{id}/commons/catalog-imports", jwt(http.HandlerFunc(commonsCatalog.ListFarmImports)))
 	mux.Handle("POST /farms/{id}/commons/catalog-imports", jwt(http.HandlerFunc(commonsCatalog.Import)))
+	mux.Handle("POST /farms/{id}/commons/catalog-export/recipe-pack", jwt(http.HandlerFunc(commonsCatalog.ExportRecipePack)))
 	mux.Handle("GET /commons/crop-catalog", jwt(http.HandlerFunc(commonsCatalog.ListCropCatalog)))
 	mux.Handle("GET /commons/crop-catalog/{crop_key}", jwt(http.HandlerFunc(commonsCatalog.GetCropCatalogEntry)))
 	mux.Handle("GET /commons/agronomy-field-guides", jwt(http.HandlerFunc(commonsCatalog.ListFieldGuides)))

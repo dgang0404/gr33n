@@ -1,5 +1,5 @@
 <template>
-  <div class="p-6 max-w-2xl">
+  <div class="p-4 sm:p-6 max-w-5xl mx-auto w-full pb-24 md:pb-10">
     <h1 class="text-2xl font-bold text-green-400 mb-2">Settings</h1>
     <p class="text-sm text-zinc-500 mb-6">
       New to the layout?
@@ -354,8 +354,10 @@
       <p v-if="guardianMemoryError" class="mt-2 text-xs text-red-400">{{ guardianMemoryError }}</p>
     </section>
 
+    <!-- Farm bootstrap: create + apply starter (side-by-side on wide screens) -->
+    <div class="grid grid-cols-1 xl:grid-cols-2 gap-5 mb-5">
     <!-- Create farm (bootstrap template picker) -->
-    <section class="bg-zinc-800 border border-zinc-700 rounded-xl p-5 mb-5">
+    <section class="bg-zinc-800 border border-zinc-700 rounded-xl p-5 h-fit">
       <h2 class="text-white font-semibold mb-3">New farm</h2>
       <p class="text-zinc-500 text-xs mb-4">
         Create a farm you own. Choose <strong class="text-zinc-400">Start blank</strong> to continue in the
@@ -424,7 +426,7 @@
 
     <!-- Apply starter to existing farm (farm admin) -->
     <section v-if="farmContext.farmId"
-      class="bg-zinc-800 border border-zinc-700 rounded-xl p-5 mb-5">
+      class="bg-zinc-800 border border-zinc-700 rounded-xl p-5 h-fit">
       <h2 class="text-white font-semibold mb-3">Current farm — starter pack</h2>
       <p class="text-zinc-500 text-xs mb-4">
         Prefer the guided <strong class="text-zinc-400">farm setup wizard</strong> for template cards and a preview before applying.
@@ -472,6 +474,7 @@
       <p v-if="applyStarterError" class="text-red-400 text-xs mt-2">{{ applyStarterError }}</p>
       <p v-if="applyStarterMsg" class="text-green-400 text-xs mt-2">{{ applyStarterMsg }}</p>
     </section>
+    </div>
 
     <!-- Organizations (multi-farm tenancy) -->
     <section class="bg-zinc-800 border border-zinc-700 rounded-xl p-5 mb-5">
@@ -769,7 +772,8 @@
         </button>
         <span v-if="insertSyncMsg" class="text-zinc-500 text-xs">{{ insertSyncMsg }}</span>
       </div>
-      <div v-if="insertOptIn && canViewInsertCommons" class="mt-4">
+      <div v-if="insertOptIn && canViewInsertCommons" class="mt-4 grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div>
         <div class="flex items-center justify-between mb-2">
           <p class="text-zinc-500 text-xs uppercase tracking-wide">Pending &amp; recent bundles</p>
           <button
@@ -865,8 +869,8 @@
             </div>
           </li>
         </ul>
-      </div>
-      <div v-if="insertOptIn && canViewInsertCommons" class="mt-4">
+        </div>
+        <div>
         <div class="flex items-center justify-between mb-2">
           <p class="text-zinc-500 text-xs uppercase tracking-wide">Recent sync attempts</p>
           <button type="button" class="text-zinc-500 hover:text-white text-xs" @click="loadInsertHistory" :disabled="insertHistoryLoading">
@@ -887,6 +891,7 @@
             <div class="text-red-300 mt-1 break-words" v-if="e.error">{{ e.error }}</div>
           </li>
         </ul>
+        </div>
       </div>
     </section>
 

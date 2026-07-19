@@ -1331,6 +1331,8 @@ type Gr33ncoreCommonsCatalogEntry struct {
 	Tags               []string        `db:"tags" json:"tags"`
 	Published          bool            `db:"published" json:"published"`
 	SortOrder          int32           `db:"sort_order" json:"sort_order"`
+	PublishedByUserID  pgtype.UUID     `db:"published_by_user_id" json:"published_by_user_id"`
+	SourceFarmID       *int64          `db:"source_farm_id" json:"source_farm_id"`
 	CreatedAt          time.Time       `db:"created_at" json:"created_at"`
 	UpdatedAt          time.Time       `db:"updated_at" json:"updated_at"`
 }

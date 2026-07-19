@@ -37,6 +37,7 @@ type Querier interface {
 	CountAlertsByFarm(ctx context.Context, farmID int64) (int64, error)
 	CountAlertsByFarmCreatedAfter(ctx context.Context, arg CountAlertsByFarmCreatedAfterParams) (int64, error)
 	CountAutomationRunsByFarmExecutedAfter(ctx context.Context, arg CountAutomationRunsByFarmExecutedAfterParams) (int64, error)
+	CountBuiltinCropProfiles(ctx context.Context) (int64, error)
 	CountCostTransactionsByFarm(ctx context.Context, farmID int64) (int64, error)
 	CountCostTransactionsByFarmUpdatedAfter(ctx context.Context, arg CountCostTransactionsByFarmUpdatedAfterParams) (int64, error)
 	CountCropCatalogEntries(ctx context.Context) (int64, error)
@@ -48,8 +49,10 @@ type Querier interface {
 	CountPendingCommandsByFarm(ctx context.Context, farmID int64) ([]CountPendingCommandsByFarmRow, error)
 	CountRagChunksByFarm(ctx context.Context, farmID int64) (int64, error)
 	CountRagChunksByFarmSourceType(ctx context.Context, arg CountRagChunksByFarmSourceTypeParams) (int64, error)
+	CountSupportedCropCatalogEntries(ctx context.Context) (int64, error)
 	CountTasksByStatusForFarm(ctx context.Context, farmID int64) ([]CountTasksByStatusForFarmRow, error)
 	CountUnreadAlertsByFarm(ctx context.Context, farmID int64) (int64, error)
+	CountUnsupportedCropCatalogEntries(ctx context.Context) (int64, error)
 	// ============================================================
 	// Queries: gr33ncore.actuators + actuator_events
 	// ============================================================
@@ -239,6 +242,7 @@ type Querier interface {
 	GetBuiltinCropProfileByKey(ctx context.Context, cropKey string) (Gr33ncropsCropProfile, error)
 	GetBuiltinCropProfileIDByCropKey(ctx context.Context, cropKey string) (int64, error)
 	GetCatalogVersionBumpAlertForFarm(ctx context.Context, arg GetCatalogVersionBumpAlertForFarmParams) (int64, error)
+	GetCommonsCatalogEntryBySlug(ctx context.Context, slug string) (Gr33ncoreCommonsCatalogEntry, error)
 	GetConversationSessionMeta(ctx context.Context, arg GetConversationSessionMetaParams) (json.RawMessage, error)
 	GetCostCategoryTotalsByFarm(ctx context.Context, farmID int64) ([]GetCostCategoryTotalsByFarmRow, error)
 	GetCostCategoryTotalsByFarmForYear(ctx context.Context, arg GetCostCategoryTotalsByFarmForYearParams) ([]GetCostCategoryTotalsByFarmForYearRow, error)
@@ -387,6 +391,10 @@ type Querier interface {
 	GetZoneByID(ctx context.Context, id int64) (Gr33ncoreZone, error)
 	IncrementInputBatchQuantity(ctx context.Context, arg IncrementInputBatchQuantityParams) (IncrementInputBatchQuantityRow, error)
 	InsertActuatorEvent(ctx context.Context, arg InsertActuatorEventParams) (Gr33ncoreActuatorEvent, error)
+	// ============================================================
+	// Commons catalog (gr33n_inserts direction — browse / import audit)
+	// ============================================================
+	InsertCommonsCatalogEntry(ctx context.Context, arg InsertCommonsCatalogEntryParams) (Gr33ncoreCommonsCatalogEntry, error)
 	InsertCommonsReceiverDailyCounts(ctx context.Context, receivedAt time.Time) ([]InsertCommonsReceiverDailyCountsRow, error)
 	InsertCommonsReceiverStats(ctx context.Context) (InsertCommonsReceiverStatsRow, error)
 	// ============================================================
@@ -575,9 +583,6 @@ type Querier interface {
 	ListPlantsByFarm(ctx context.Context, farmID int64) ([]Gr33ncropsPlant, error)
 	ListProgramsByFarm(ctx context.Context, farmID int64) ([]Gr33nfertigationProgram, error)
 	ListProgramsByFarmUpdatedAfter(ctx context.Context, arg ListProgramsByFarmUpdatedAfterParams) ([]Gr33nfertigationProgram, error)
-	// ============================================================
-	// Commons catalog (gr33n_inserts direction — browse / import audit)
-	// ============================================================
 	ListPublishedCommonsCatalogEntries(ctx context.Context, arg ListPublishedCommonsCatalogEntriesParams) ([]ListPublishedCommonsCatalogEntriesRow, error)
 	ListPushTokensByUserID(ctx context.Context, userID uuid.UUID) ([]Gr33ncoreUserPushToken, error)
 	// Phase 180 WS5 — ordered chunks for a cited doc_path (citation doc view).
@@ -710,6 +715,7 @@ type Querier interface {
 	UpdateAuthUserPasswordHash(ctx context.Context, arg UpdateAuthUserPasswordHashParams) error
 	UpdateAutomationRule(ctx context.Context, arg UpdateAutomationRuleParams) (Gr33ncoreAutomationRule, error)
 	UpdateAutomationRuleActive(ctx context.Context, arg UpdateAutomationRuleActiveParams) (Gr33ncoreAutomationRule, error)
+	UpdateCommonsCatalogEntry(ctx context.Context, arg UpdateCommonsCatalogEntryParams) (Gr33ncoreCommonsCatalogEntry, error)
 	UpdateConversationSessionMeta(ctx context.Context, arg UpdateConversationSessionMetaParams) error
 	// Operator rename. Returns the row so the API can confirm ownership in one
 	// query — RowsAffected = 0 means "not found / not yours" → 404.

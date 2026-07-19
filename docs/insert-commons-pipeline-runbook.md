@@ -63,6 +63,8 @@ Environment variables for outbound POST: `INSERT_COMMONS_INGEST_URL`, optional `
 
 **Receiver correlation:** when the farm sync uses an idempotency key (`Idempotency-Key` header or `idempotency_key` in the sync body), the outbound POST to `INSERT_COMMONS_INGEST_URL` includes **`Gr33n-Idempotency-Key`** with the same value (max 128 chars). The in-repo pilot receiver stores it as `source_idempotency_key` and treats duplicates per `(farm_pseudonym, key)`; see [`insert-commons-receiver-playbook.md`](insert-commons-receiver-playbook.md).
 
+**Browser sync (Settings UI):** the dashboard sends `Idempotency-Key` on `POST .../sync`. CORS preflight must allow that header (`cmd/api/cors.go`); without it the browser blocks sync before the request reaches the API.
+
 ## Testing
 
 - Unit tests: `go test ./internal/insertcommonsschema/...`

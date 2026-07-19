@@ -379,7 +379,7 @@ Dedupe: at most one alert per batch per UTC day. The Inventory page shows a **`l
 
 Two related but distinct systems:
 
-- **Commons Catalog** (`gr33n_inserts`) — a public, browsable library of metadata packs (e.g. starter recipes, input definitions, schedule templates). The UI's **Catalog** view reads `GET /commons/catalog` and `GET /commons/catalog/{slug}`. Operators can **import** a catalog entry into their farm (`POST /farms/{id}/commons/catalog-imports`), and audit history is kept per farm.
+- **Commons Catalog** (`gr33n_inserts`) — browse and **import** starter packs (recipes, agronomy manifests, docs). Import **auto-applies** known pack kinds (Phase 207). Farm admins can **publish** recipe packs from **Help → Catalog → Publish from Farm** or `POST /commons/catalog`.
 - **Insert Commons** (`/farms/{id}/insert-commons/*`) — the opposite direction: the farm can opt-in to publish anonymized bundles of its own schema rows to the commons so other farms benefit. There is a full approve/reject/deliver/export workflow with a bundle audit trail, documented in [`insert-commons-pipeline-runbook.md`](insert-commons-pipeline-runbook.md).
 
 Day-to-day operators mostly use the Catalog to bootstrap a new farm. Insert Commons is an explicit, opt-in act by an owner/manager.

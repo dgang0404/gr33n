@@ -36,11 +36,40 @@ func TestCommonsCatalogBrowseAndImport(t *testing.T) {
 	if out["import"] == nil || out["catalog_entry"] == nil {
 		t.Fatalf("expected import and catalog_entry, got %#v", out)
 	}
+	apply, _ := out["apply"].(map[string]any)
+	if apply == nil || apply["status"] != "noop" {
+		t.Fatalf("expected documentation apply noop, got %#v", apply)
+	}
 	resp = authGet(t, tok, "/farms/1/commons/catalog-imports")
 	expectStatus(t, resp, 200)
 	imports := decodeSlice(t, resp)
 	if len(imports) < 1 {
 		t.Fatal("expected farm to list at least one catalog import")
+	}
+}
+
+func TestCommonsCatalogRecipePackAutoApply(t *testing.T) {
+	tok := smokeJWT(t)
+	resp := authPost(t, tok, "/farms/1/commons/catalog-imports", map[string]any{
+		"slug": "gr33n-recipe-pack-v7-lettuce-veg",
+		"note": "smoke auto-apply",
+	})
+	expectStatus(t, resp, 200)
+	out := decodeMap(t, resp)
+	apply, _ := out["apply"].(map[string]any)
+	if apply == nil {
+		t.Fatalf("expected apply block, got %#v", out)
+	}
+	if apply["status"] != "applied" {
+		t.Fatalf("expected applied status, got %#v", apply)
+	}
+	if apply["kind"] != "fertigation_recipe_pack" {
+		t.Fatalf("unexpected kind %v", apply["kind"])
+	}
+	created, _ := apply["programs_created"].(float64)
+	skipped, _ := apply["programs_skipped"].(float64)
+	if created+skipped < 1 {
+		t.Fatalf("expected at least one program created or skipped, got %#v", apply)
 	}
 }
 

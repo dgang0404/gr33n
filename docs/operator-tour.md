@@ -853,7 +853,7 @@ Plans: [`phase_173_today_large_farm_navigation.plan.md`](plans/archive/phase_173
 | **Guide** | `tab=library&section=guide` | In-app how-to: glossary, suggested click path, platform docs when cited |
 | **Knowledge** | `tab=library&section=knowledge` | **Semantic search** over this farm’s indexed chunks (tasks, runs, ingested docs) — plain language, not exact keywords. **Field guides** list below search. Citation chips open a **readable doc view** with highlighted section + **Ask Guardian** |
 | **Symptoms** | `tab=library&section=symptoms` | Crop symptom catalog — **dropdown** filters by crop and category; contextual **Symptoms for this crop** links from Plants/zones/alerts and Guardian deep links (`?crop_key=&category=`) still work |
-| **Catalog** | `tab=library&section=catalog` | **Commons import packs** (recipes, seed packs) — separate from search; brings starter content into the farm |
+| **Catalog** | `tab=library&section=catalog` | **Commons import packs** — browse, **Import to Farm** (auto-applies recipes), **Publish from Farm** (export your fertigation programs) |
 
 **Guardian citations** remain a shortcut: field-guide chips land on **Knowledge** doc view; symptom chips land on **Symptoms** with filters applied; platform docs land on **Guide** doc view. You can always browse the same material from Help without chat.
 

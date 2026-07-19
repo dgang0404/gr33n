@@ -1124,6 +1124,16 @@ export const useFarmStore = defineStore('farm', {
       return r.data
     },
 
+    async publishCatalogEntry(payload) {
+      const r = await api.post('/commons/catalog', payload)
+      return r.data
+    },
+
+    async exportFarmRecipePack(farmId, payload) {
+      const r = await api.post(`/farms/${farmId}/commons/catalog-export/recipe-pack`, payload)
+      return r.data
+    },
+
     async loadCropCycles(farmId) {
       const r = await api.get(`/farms/${farmId}/crop-cycles`)
       return Array.isArray(r.data) ? r.data : []

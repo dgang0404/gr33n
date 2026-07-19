@@ -394,6 +394,8 @@ CREATE TABLE IF NOT EXISTS gr33ncore.commons_catalog_entries (
     tags                 TEXT[]      NOT NULL DEFAULT ARRAY[]::TEXT[],
     published            BOOLEAN     NOT NULL DEFAULT FALSE,
     sort_order           INT         NOT NULL DEFAULT 0,
+    published_by_user_id UUID        REFERENCES gr33ncore.profiles(user_id) ON DELETE SET NULL,
+    source_farm_id       BIGINT      REFERENCES gr33ncore.farms(id) ON DELETE SET NULL,
     created_at           TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at           TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );

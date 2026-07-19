@@ -11,11 +11,43 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
 )
+
+const getCommonsCatalogEntryBySlug = `-- name: GetCommonsCatalogEntryBySlug :one
+SELECT id, slug, title, summary, body, contributor_display, contributor_uri, license_spdx, license_notes, tags, published, sort_order, published_by_user_id, source_farm_id, created_at, updated_at
+FROM gr33ncore.commons_catalog_entries
+WHERE slug = $1
+`
+
+func (q *Queries) GetCommonsCatalogEntryBySlug(ctx context.Context, slug string) (Gr33ncoreCommonsCatalogEntry, error) {
+	row := q.db.QueryRow(ctx, getCommonsCatalogEntryBySlug, slug)
+	var i Gr33ncoreCommonsCatalogEntry
+	err := row.Scan(
+		&i.ID,
+		&i.Slug,
+		&i.Title,
+		&i.Summary,
+		&i.Body,
+		&i.ContributorDisplay,
+		&i.ContributorUri,
+		&i.LicenseSpdx,
+		&i.LicenseNotes,
+		&i.Tags,
+		&i.Published,
+		&i.SortOrder,
+		&i.PublishedByUserID,
+		&i.SourceFarmID,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
 
 const getPublishedCommonsCatalogEntryBySlug = `-- name: GetPublishedCommonsCatalogEntryBySlug :one
 SELECT id, slug, title, summary, body, contributor_display, contributor_uri,
-       license_spdx, license_notes, tags, sort_order, created_at, updated_at
+       license_spdx, license_notes, tags, sort_order, created_at, updated_at,
+       published_by_user_id, source_farm_id
 FROM gr33ncore.commons_catalog_entries
 WHERE published = TRUE AND slug = $1
 `
@@ -34,6 +66,8 @@ type GetPublishedCommonsCatalogEntryBySlugRow struct {
 	SortOrder          int32           `db:"sort_order" json:"sort_order"`
 	CreatedAt          time.Time       `db:"created_at" json:"created_at"`
 	UpdatedAt          time.Time       `db:"updated_at" json:"updated_at"`
+	PublishedByUserID  pgtype.UUID     `db:"published_by_user_id" json:"published_by_user_id"`
+	SourceFarmID       *int64          `db:"source_farm_id" json:"source_farm_id"`
 }
 
 func (q *Queries) GetPublishedCommonsCatalogEntryBySlug(ctx context.Context, slug string) (GetPublishedCommonsCatalogEntryBySlugRow, error) {
@@ -51,6 +85,79 @@ func (q *Queries) GetPublishedCommonsCatalogEntryBySlug(ctx context.Context, slu
 		&i.LicenseNotes,
 		&i.Tags,
 		&i.SortOrder,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.PublishedByUserID,
+		&i.SourceFarmID,
+	)
+	return i, err
+}
+
+const insertCommonsCatalogEntry = `-- name: InsertCommonsCatalogEntry :one
+
+INSERT INTO gr33ncore.commons_catalog_entries (
+    slug, title, summary, body, contributor_display, contributor_uri,
+    license_spdx, license_notes, tags, published, sort_order,
+    published_by_user_id, source_farm_id
+) VALUES (
+    $1, $2, $3, $4, $5, $6,
+    $7, $8, $9, $10, $11,
+    $12, $13
+)
+RETURNING id, slug, title, summary, body, contributor_display, contributor_uri, license_spdx, license_notes, tags, published, sort_order, published_by_user_id, source_farm_id, created_at, updated_at
+`
+
+type InsertCommonsCatalogEntryParams struct {
+	Slug               string          `db:"slug" json:"slug"`
+	Title              string          `db:"title" json:"title"`
+	Summary            string          `db:"summary" json:"summary"`
+	Body               json.RawMessage `db:"body" json:"body"`
+	ContributorDisplay string          `db:"contributor_display" json:"contributor_display"`
+	ContributorUri     *string         `db:"contributor_uri" json:"contributor_uri"`
+	LicenseSpdx        string          `db:"license_spdx" json:"license_spdx"`
+	LicenseNotes       *string         `db:"license_notes" json:"license_notes"`
+	Tags               []string        `db:"tags" json:"tags"`
+	Published          bool            `db:"published" json:"published"`
+	SortOrder          int32           `db:"sort_order" json:"sort_order"`
+	PublishedByUserID  pgtype.UUID     `db:"published_by_user_id" json:"published_by_user_id"`
+	SourceFarmID       *int64          `db:"source_farm_id" json:"source_farm_id"`
+}
+
+// ============================================================
+// Commons catalog (gr33n_inserts direction — browse / import audit)
+// ============================================================
+func (q *Queries) InsertCommonsCatalogEntry(ctx context.Context, arg InsertCommonsCatalogEntryParams) (Gr33ncoreCommonsCatalogEntry, error) {
+	row := q.db.QueryRow(ctx, insertCommonsCatalogEntry,
+		arg.Slug,
+		arg.Title,
+		arg.Summary,
+		arg.Body,
+		arg.ContributorDisplay,
+		arg.ContributorUri,
+		arg.LicenseSpdx,
+		arg.LicenseNotes,
+		arg.Tags,
+		arg.Published,
+		arg.SortOrder,
+		arg.PublishedByUserID,
+		arg.SourceFarmID,
+	)
+	var i Gr33ncoreCommonsCatalogEntry
+	err := row.Scan(
+		&i.ID,
+		&i.Slug,
+		&i.Title,
+		&i.Summary,
+		&i.Body,
+		&i.ContributorDisplay,
+		&i.ContributorUri,
+		&i.LicenseSpdx,
+		&i.LicenseNotes,
+		&i.Tags,
+		&i.Published,
+		&i.SortOrder,
+		&i.PublishedByUserID,
+		&i.SourceFarmID,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -114,9 +221,9 @@ func (q *Queries) ListFarmCommonsCatalogImports(ctx context.Context, farmID int6
 }
 
 const listPublishedCommonsCatalogEntries = `-- name: ListPublishedCommonsCatalogEntries :many
-
 SELECT id, slug, title, summary, contributor_display, contributor_uri,
-       license_spdx, license_notes, tags, sort_order, created_at, updated_at
+       license_spdx, license_notes, tags, sort_order, created_at, updated_at,
+       published_by_user_id, source_farm_id
 FROM gr33ncore.commons_catalog_entries
 WHERE published = TRUE
   AND (
@@ -139,23 +246,22 @@ type ListPublishedCommonsCatalogEntriesParams struct {
 }
 
 type ListPublishedCommonsCatalogEntriesRow struct {
-	ID                 int64     `db:"id" json:"id"`
-	Slug               string    `db:"slug" json:"slug"`
-	Title              string    `db:"title" json:"title"`
-	Summary            string    `db:"summary" json:"summary"`
-	ContributorDisplay string    `db:"contributor_display" json:"contributor_display"`
-	ContributorUri     *string   `db:"contributor_uri" json:"contributor_uri"`
-	LicenseSpdx        string    `db:"license_spdx" json:"license_spdx"`
-	LicenseNotes       *string   `db:"license_notes" json:"license_notes"`
-	Tags               []string  `db:"tags" json:"tags"`
-	SortOrder          int32     `db:"sort_order" json:"sort_order"`
-	CreatedAt          time.Time `db:"created_at" json:"created_at"`
-	UpdatedAt          time.Time `db:"updated_at" json:"updated_at"`
+	ID                 int64       `db:"id" json:"id"`
+	Slug               string      `db:"slug" json:"slug"`
+	Title              string      `db:"title" json:"title"`
+	Summary            string      `db:"summary" json:"summary"`
+	ContributorDisplay string      `db:"contributor_display" json:"contributor_display"`
+	ContributorUri     *string     `db:"contributor_uri" json:"contributor_uri"`
+	LicenseSpdx        string      `db:"license_spdx" json:"license_spdx"`
+	LicenseNotes       *string     `db:"license_notes" json:"license_notes"`
+	Tags               []string    `db:"tags" json:"tags"`
+	SortOrder          int32       `db:"sort_order" json:"sort_order"`
+	CreatedAt          time.Time   `db:"created_at" json:"created_at"`
+	UpdatedAt          time.Time   `db:"updated_at" json:"updated_at"`
+	PublishedByUserID  pgtype.UUID `db:"published_by_user_id" json:"published_by_user_id"`
+	SourceFarmID       *int64      `db:"source_farm_id" json:"source_farm_id"`
 }
 
-// ============================================================
-// Commons catalog (gr33n_inserts direction — browse / import audit)
-// ============================================================
 func (q *Queries) ListPublishedCommonsCatalogEntries(ctx context.Context, arg ListPublishedCommonsCatalogEntriesParams) ([]ListPublishedCommonsCatalogEntriesRow, error) {
 	rows, err := q.db.Query(ctx, listPublishedCommonsCatalogEntries, arg.Column1, arg.Limit, arg.Offset)
 	if err != nil {
@@ -178,6 +284,8 @@ func (q *Queries) ListPublishedCommonsCatalogEntries(ctx context.Context, arg Li
 			&i.SortOrder,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.PublishedByUserID,
+			&i.SourceFarmID,
 		); err != nil {
 			return nil, err
 		}
@@ -187,6 +295,70 @@ func (q *Queries) ListPublishedCommonsCatalogEntries(ctx context.Context, arg Li
 		return nil, err
 	}
 	return items, nil
+}
+
+const updateCommonsCatalogEntry = `-- name: UpdateCommonsCatalogEntry :one
+UPDATE gr33ncore.commons_catalog_entries
+SET title = $2,
+    summary = $3,
+    body = $4,
+    contributor_display = $5,
+    contributor_uri = $6,
+    license_spdx = $7,
+    license_notes = $8,
+    tags = $9,
+    published = $10,
+    updated_at = NOW()
+WHERE slug = $1
+RETURNING id, slug, title, summary, body, contributor_display, contributor_uri, license_spdx, license_notes, tags, published, sort_order, published_by_user_id, source_farm_id, created_at, updated_at
+`
+
+type UpdateCommonsCatalogEntryParams struct {
+	Slug               string          `db:"slug" json:"slug"`
+	Title              string          `db:"title" json:"title"`
+	Summary            string          `db:"summary" json:"summary"`
+	Body               json.RawMessage `db:"body" json:"body"`
+	ContributorDisplay string          `db:"contributor_display" json:"contributor_display"`
+	ContributorUri     *string         `db:"contributor_uri" json:"contributor_uri"`
+	LicenseSpdx        string          `db:"license_spdx" json:"license_spdx"`
+	LicenseNotes       *string         `db:"license_notes" json:"license_notes"`
+	Tags               []string        `db:"tags" json:"tags"`
+	Published          bool            `db:"published" json:"published"`
+}
+
+func (q *Queries) UpdateCommonsCatalogEntry(ctx context.Context, arg UpdateCommonsCatalogEntryParams) (Gr33ncoreCommonsCatalogEntry, error) {
+	row := q.db.QueryRow(ctx, updateCommonsCatalogEntry,
+		arg.Slug,
+		arg.Title,
+		arg.Summary,
+		arg.Body,
+		arg.ContributorDisplay,
+		arg.ContributorUri,
+		arg.LicenseSpdx,
+		arg.LicenseNotes,
+		arg.Tags,
+		arg.Published,
+	)
+	var i Gr33ncoreCommonsCatalogEntry
+	err := row.Scan(
+		&i.ID,
+		&i.Slug,
+		&i.Title,
+		&i.Summary,
+		&i.Body,
+		&i.ContributorDisplay,
+		&i.ContributorUri,
+		&i.LicenseSpdx,
+		&i.LicenseNotes,
+		&i.Tags,
+		&i.Published,
+		&i.SortOrder,
+		&i.PublishedByUserID,
+		&i.SourceFarmID,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
 }
 
 const upsertFarmCommonsCatalogImport = `-- name: UpsertFarmCommonsCatalogImport :one

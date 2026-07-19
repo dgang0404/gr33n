@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-# Phase 31 WS5 / Phase 108 — promote a commons Recipe Pack to one or more farms via public API.
-# Records catalog import audit + creates fertigation programs (idempotent by name) + crop_key metadata.
+# Phase 31 WS5 / Phase 108 / Phase 207 — promote a commons Recipe Pack to one or more farms via public API.
+# Single-farm import auto-applies via POST /farms/{id}/commons/catalog-imports (UI: Help → Catalog).
+# This script remains for bulk multi-farm promotion.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"

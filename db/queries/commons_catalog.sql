@@ -2,9 +2,42 @@
 -- Commons catalog (gr33n_inserts direction — browse / import audit)
 -- ============================================================
 
+-- name: InsertCommonsCatalogEntry :one
+INSERT INTO gr33ncore.commons_catalog_entries (
+    slug, title, summary, body, contributor_display, contributor_uri,
+    license_spdx, license_notes, tags, published, sort_order,
+    published_by_user_id, source_farm_id
+) VALUES (
+    $1, $2, $3, $4, $5, $6,
+    $7, $8, $9, $10, $11,
+    $12, $13
+)
+RETURNING *;
+
+-- name: GetCommonsCatalogEntryBySlug :one
+SELECT *
+FROM gr33ncore.commons_catalog_entries
+WHERE slug = $1;
+
+-- name: UpdateCommonsCatalogEntry :one
+UPDATE gr33ncore.commons_catalog_entries
+SET title = $2,
+    summary = $3,
+    body = $4,
+    contributor_display = $5,
+    contributor_uri = $6,
+    license_spdx = $7,
+    license_notes = $8,
+    tags = $9,
+    published = $10,
+    updated_at = NOW()
+WHERE slug = $1
+RETURNING *;
+
 -- name: ListPublishedCommonsCatalogEntries :many
 SELECT id, slug, title, summary, contributor_display, contributor_uri,
-       license_spdx, license_notes, tags, sort_order, created_at, updated_at
+       license_spdx, license_notes, tags, sort_order, created_at, updated_at,
+       published_by_user_id, source_farm_id
 FROM gr33ncore.commons_catalog_entries
 WHERE published = TRUE
   AND (
@@ -21,7 +54,8 @@ LIMIT $2 OFFSET $3;
 
 -- name: GetPublishedCommonsCatalogEntryBySlug :one
 SELECT id, slug, title, summary, body, contributor_display, contributor_uri,
-       license_spdx, license_notes, tags, sort_order, created_at, updated_at
+       license_spdx, license_notes, tags, sort_order, created_at, updated_at,
+       published_by_user_id, source_farm_id
 FROM gr33ncore.commons_catalog_entries
 WHERE published = TRUE AND slug = $1;
 
