@@ -1065,6 +1065,8 @@ Matcher misses from sit-in feed Phase 46 — not a blocker for polish closure (O
 
 **Vitest:** `module-empty-shell.test.js`, `phase-45-ws5-module-shells.test.js`.
 
+**Phase 183 + 210 — animal/aquaponics zones actually use the schema, not just track it.** Click a flock's or fish tank's zone name from `/animals` / `/aquaponics` to land on that zone's cockpit: the **Plants** tab and "start a grow" chrome are hidden (there's no crop cycle to start), replaced by a flock/loop summary card and a hint pointing at the **Water** tab, where the real hardware lives —`feeder_hopper`, `water_valve`, and `gate` actuators for animal zones; pump/air-pump/water-quality sensors for aquaponics. From there, **Schedules** (`/comfort-targets?tab=schedules`) can run a timed feed/water pulse (`action_parameters.duration_seconds`, same mechanism as the manual "Run pulse" button), and **Automations** (`?tab=automations`) can gate a `control_actuator` action on `trigger_source=animal_lifecycle_event` + an `animal_event` condition — e.g. the flock's latest lifecycle event being `released_to_pasture` opens the run gate, `penned_for_night` closes it. Demo seed ships a working example on farm 1's Chicken Coop. See [`current-state.md` § Dedicated animal automation](current-state.md#dedicated-animal-automation-phase-210).
+
 ---
 
 ## 10b. Light accessibility (Phase 45 WS6 — shipped)

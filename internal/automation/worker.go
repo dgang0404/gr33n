@@ -536,6 +536,12 @@ func (w *Worker) executeAction(ctx context.Context, schedule db.Gr33ncoreSchedul
 		} else if command == "off" {
 			stateText = "offline"
 		}
+		// ponytail: simulation mode leaves the actuator "on" — a real device
+		// auto-reverts after duration_seconds (see acthandler.PendingCommandInput),
+		// but there's no Pi to poll for a virtual actuator, so a laptop demo of a
+		// timed feeder pulse won't visibly turn back off. Ceiling: harmless for a
+		// demo (worst case the Feeds tab shows "online" until the next tick), but
+		// upgrade path is a short-lived scheduled revert if that ever matters.
 		if w.simulation {
 			var numeric pgtype.Numeric
 			_ = numeric.Scan(0)
@@ -547,11 +553,15 @@ func (w *Worker) executeAction(ctx context.Context, schedule db.Gr33ncoreSchedul
 				log.Printf("failed to update actuator state: %v", err)
 			}
 		}
-		params, _ := json.Marshal(map[string]any{
+		paramsMap := map[string]any{
 			"command":         command,
 			"simulation_mode": w.simulation,
 			"schedule_name":   schedule.Name,
-		})
+		}
+		if d := actionDurationSeconds(action); d != nil {
+			paramsMap["duration_seconds"] = *d
+		}
+		params, _ := json.Marshal(paramsMap)
 		status := db.Gr33ncoreActuatorExecutionStatusEnumPendingConfirmationFromFeedback
 		if w.simulation {
 			status = db.Gr33ncoreActuatorExecutionStatusEnumExecutionCompletedSuccessOnDevice
@@ -578,10 +588,11 @@ func (w *Worker) executeAction(ctx context.Context, schedule db.Gr33ncoreSchedul
 			if lookupErr == nil && actuator.DeviceID != nil {
 				schedID := schedule.ID
 				pendingJSON, err := acthandler.BuildPendingCommandJSONFull(acthandler.PendingCommandInput{
-					ActuatorID: *action.TargetActuatorID,
-					Command:    command,
-					Source:     "schedule",
-					ScheduleID: &schedID,
+					ActuatorID:      *action.TargetActuatorID,
+					Command:         command,
+					Source:          "schedule",
+					ScheduleID:      &schedID,
+					DurationSeconds: actionDurationSeconds(action),
 				})
 				if err == nil {
 					_ = w.q.SetDevicePendingCommand(ctx, db.SetDevicePendingCommandParams{
@@ -680,3 +691,25 @@ func toInt64(v any) (int64, error) {
 }
 
 func ptr[T any](v T) *T { return &v }
+
+// actionDurationSeconds (Phase 210) reads an optional
+// action_parameters.duration_seconds off a control_actuator action, so a
+// single schedule/rule action can run a timed pulse (feeder hopper, water
+// valve) instead of needing a separate on/off pair. Absent, zero, or
+// unparseable parameters all return nil — same "just skip the extra
+// behaviour" contract as a missing field anywhere else in this file.
+func actionDurationSeconds(action db.Gr33ncoreExecutableAction) *int {
+	if len(action.ActionParameters) == 0 {
+		return nil
+	}
+	var probe struct {
+		DurationSeconds *int `json:"duration_seconds"`
+	}
+	if err := json.Unmarshal(action.ActionParameters, &probe); err != nil {
+		return nil
+	}
+	if probe.DurationSeconds == nil || *probe.DurationSeconds <= 0 {
+		return nil
+	}
+	return probe.DurationSeconds
+}

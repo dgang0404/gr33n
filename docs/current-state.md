@@ -1,6 +1,6 @@
 # gr33n — current state
 
-> **Generated:** 2026-07-16 · Regenerate after major phase ship · **Canonical history:** [`phase-14-operator-documentation.md`](phase-14-operator-documentation.md) · **Numbers hint:** `make docs-current-state-hint`
+> **Generated:** 2026-07-18 · Regenerate after major phase ship · **Canonical history:** [`phase-14-operator-documentation.md`](phase-14-operator-documentation.md) · **Numbers hint:** `make docs-current-state-hint`
 
 ---
 
@@ -17,8 +17,8 @@
 | Area | What works today |
 |------|------------------|
 | **Sensors & alerts** | Live dashboards, SSE stream, rules, unread alert inbox |
-| **Control** | Manual toggles, cron schedules, automation rules, Pi `device_commands` FIFO queue |
-| **Zones** | Zone cockpit — Water / Light / Climate tabs, plants, tasks, grow cycles |
+| **Control** | Manual toggles, cron schedules, automation rules, Pi `device_commands` FIFO queue, timed feed/water pulses, flock-lifecycle-event gate rules |
+| **Zones** | Zone cockpit — Water / Light / Climate tabs, plants, tasks, grow cycles; animal/aquaponics zones swap in flock + loop cards instead of plant-grow chrome |
 | **Guardian** | Farm Counsel (RAG + live data) vs Quick Chat; proposals → Confirm / **Refine** (title, zone, due date); **full citation deep links**; accuracy banners **persist on reload** |
 | **Help / knowledge** | **Library hub** (guide, semantic search, symptoms, catalog); contextual **Symptoms for this crop** links; field-guide browse + citation round-trip |
 | **Crops** | Postgres catalog (~52 crops), `crop_key` on plants, Guardian `lookup_crop_targets` |
@@ -209,6 +209,38 @@ Optional Tier 3 forecast on top of Phase 66 offline solar math:
 
 Plan: [`phase_178_online_weather_forecast.plan.md`](plans/archive/phase_178_online_weather_forecast.plan.md) · Operator tour [§7n](operator-tour.md#7n-online-weather-forecast-phase-178--shipped)
 
+## Dedicated animal automation (Phase 210)
+
+Animal zones (coop, pasture) and aquaponics loops get real automation, not just
+lifecycle tracking — reusing the existing schedule/rule engine rather than a
+parallel "animal automation" system:
+
+- **Scheduled feeding/watering** — a `control_actuator` action's
+  `action_parameters.duration_seconds` runs a timed pulse (feeder hopper,
+  water valve) from a cron schedule, the same way the manual **Run pulse**
+  button already does. No new schema; validated against
+  `PulseDurationAllowed` (gate excluded — a gate is a toggle, not a pulse).
+- **Gate rules tied to flock events** — a new `animal_lifecycle_event`
+  `trigger_source` + `animal_event` predicate type
+  (`{type: "animal_event", animal_group_id, event_type}`) lets a rule ask
+  "is this flock's *most recent* lifecycle event X?" — e.g.
+  `released_to_pasture` opens the gate, `penned_for_night` closes it. State-based
+  (not a time window), so it flips cleanly on the next opposing event with no
+  re-fire storm; the worker's existing 30s rule tick, cooldown, and
+  `control_actuator` dispatcher are unchanged.
+- **Demo seed** — farm 1's Chicken Coop ships a real example: two feed/water
+  schedules and the open/close gate rule pair, with the flock already
+  `released_to_pasture` so the Automation page has something to show on a
+  fresh clone.
+- **Zone UI** — animal/aquaponics zones already hide plant-grow chrome
+  (Phase 183); their zone card now also links straight to **Schedules** and
+  **Automations** for setting these up.
+
+Backend: `internal/automation/predicates.go` (`animal_event`), `worker.go` /
+`rules.go` (`duration_seconds` wiring), `internal/handler/automation/rules_handler.go`
+(write-time validation). Migrations: `20260718_phase210_animal_lifecycle_event_trigger.sql`,
+`20260718_phase210_gate_not_pulseable.sql`. Tests: `cmd/api/smoke_phase210_test.go`.
+
 ---
 
 ## UI workspaces & routes
@@ -248,7 +280,7 @@ Spec: [`openapi.yaml`](../openapi.yaml) · live Redoc when API is up at `/openap
 | `gr33nfertigation` | Programs, crop cycles, mixing |
 | `gr33ncrops` | Plants, crop catalog (DB source of truth) |
 | `gr33nnaturalfarming` | JADAM / natural farming batches |
-| `gr33nanimals`, `gr33naquaponics` | Opt-in domain stubs (`farm_active_modules`) |
+| `gr33nanimals`, `gr33naquaponics` | Opt-in modules (`farm_active_modules`) — animal groups + lifecycle timeline, aquaponics loops, feeder/waterer/gate actuators, flock-event automation (Phase 210) |
 
 Migrations: `db/migrations/` · overview: [`database-schema-overview.md`](database-schema-overview.md).
 
@@ -329,6 +361,6 @@ Accessibility: skip link, Guardian drawer focus trap, zone tab semantics — [`a
 
 ## Phase history
 
-- **Shipped arcs:** 40–67 farmer UX · 68–81 SPA · 82–110 crop intelligence · 111–122 Guardian/Pi · 129–153 Guardian QA · **154–161** infra/trust + citation + a11y + ec-ph trim · **164–177** visual Today farm cockpit + excellence arc · **178** online weather forecast · **179–187** Guardian UX polish, Help Library, multi-turn PR smoke, task revise chain
+- **Shipped arcs:** 40–67 farmer UX · 68–81 SPA · 82–110 crop intelligence · 111–122 Guardian/Pi · 129–153 Guardian QA · **154–161** infra/trust + citation + a11y + ec-ph trim · **164–177** visual Today farm cockpit + excellence arc · **178** online weather forecast · **179–187** Guardian UX polish, Help Library, multi-turn PR smoke, task revise chain · **192–200** pending inbox + UI polish · **210** dedicated animal automation (flock-event gate rules, timed feed/water pulses)
 - **Active / planned:** Insert Commons (opt-in); optional `make guardian-qa-change-requests-ui` live Pending-tab walkthrough (Phase 184 WS5, operator); full `smoke-ec-ph` re-run on CPU (operator)
 - **Archive:** [`plans/archive/`](plans/archive/) — closed plans (e.g. 88–92)

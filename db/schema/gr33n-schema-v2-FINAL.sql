@@ -210,7 +210,11 @@ CREATE TYPE gr33ncore.user_role_enum             AS ENUM ('user','farm_manager',
 CREATE TYPE gr33ncore.farm_member_role_enum      AS ENUM ('owner','manager','agronomist','worker','viewer','custom_role','operator','finance');
 CREATE TYPE gr33ncore.device_status_enum         AS ENUM ('online','offline','error_comms','error_hardware','maintenance_mode','initializing','unknown','decommissioned','pending_activation');
 CREATE TYPE gr33ncore.task_status_enum           AS ENUM ('todo','in_progress','on_hold','completed','cancelled','blocked_requires_input','pending_review');
-CREATE TYPE gr33ncore.automation_trigger_source_enum AS ENUM ('sensor_reading_threshold','specific_time_cron','actuator_state_changed','manual_api_trigger','task_status_updated','new_system_log_event','external_webhook_received');
+-- Phase 210: 'animal_lifecycle_event' lets a rule react to the most recent
+-- gr33nanimals.animal_lifecycle_events row for a flock (via the
+-- `animal_event` predicate type in conditions_jsonb) — e.g. "flock released
+-- to pasture" opens a gate actuator.
+CREATE TYPE gr33ncore.automation_trigger_source_enum AS ENUM ('sensor_reading_threshold','specific_time_cron','actuator_state_changed','manual_api_trigger','task_status_updated','new_system_log_event','external_webhook_received','animal_lifecycle_event');
 CREATE TYPE gr33ncore.executable_action_type_enum AS ENUM ('control_actuator','trigger_another_automation_rule','send_notification','create_task','log_custom_event','http_webhook_call','update_record_in_gr33n');
 CREATE TYPE gr33ncore.notification_priority_enum AS ENUM ('low','medium','high','critical');
 CREATE TYPE gr33ncore.notification_status_enum   AS ENUM ('pending','queued','sent','delivered','failed_to_send','read_by_user','acknowledged_by_user','archived_by_user','system_cleared');

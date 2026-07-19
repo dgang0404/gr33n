@@ -178,6 +178,13 @@
             <button type="button" class="text-gr33n-500 hover:underline" @click="goNeedTab(PLANT_NEEDS.water)">Water</button>
             tab. Log head-count changes on Animals.
           </p>
+          <p class="text-xs text-zinc-500">
+            Automate it: a
+            <router-link :to="{ path: '/comfort-targets', query: { tab: 'schedules' } }" class="text-gr33n-500 hover:underline">scheduled feeding pulse</router-link>
+            for the hopper/waterer, or a
+            <router-link :to="{ path: '/comfort-targets', query: { tab: 'automations' } }" class="text-gr33n-500 hover:underline">gate rule tied to a flock event</router-link>
+            (e.g. released_to_pasture opens it).
+          </p>
         </section>
 
         <section

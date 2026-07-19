@@ -41,6 +41,10 @@ type Predicate struct {
 
 	SensorType string `json:"sensor_type,omitempty"`
 	Scope      string `json:"scope,omitempty"`
+
+	// Type "animal_event" (Phase 210) fields.
+	AnimalGroupID int64  `json:"animal_group_id,omitempty"`
+	EventType     string `json:"event_type,omitempty"`
 }
 
 // FailedPredicate captures why a single predicate didn't pass so the
@@ -57,6 +61,11 @@ type FailedPredicate struct {
 	Expected   float64  `json:"expected,omitempty"`
 	Actual     *float64 `json:"actual,omitempty"`
 	Reason     string   `json:"reason"`
+
+	// animal_event fields.
+	AnimalGroupID   int64  `json:"animal_group_id,omitempty"`
+	ExpectedEvent   string `json:"expected_event,omitempty"`
+	ActualEventType string `json:"actual_event_type,omitempty"`
 }
 
 // Logic values for rule conditions_jsonb. Schedule preconditions behave
@@ -70,6 +79,13 @@ const (
 const (
 	PredicateTypeHard     = "hard"
 	PredicateTypeSetpoint = "setpoint"
+	// PredicateTypeAnimalEvent (Phase 210) checks whether the most recent
+	// gr33nanimals.animal_lifecycle_events row for a group matches an
+	// expected event_type — e.g. "flock's latest event is released_to_pasture"
+	// gates an "open the gate" rule. State-based (not a time window) so it
+	// naturally flips when the next opposing event lands, without re-firing
+	// every tick — the rule's own cooldown still applies to the actuator command.
+	PredicateTypeAnimalEvent = "animal_event"
 
 	SetpointScopeCurrentStage = "current_stage"
 	SetpointScopeZoneDefault  = "zone_default"
@@ -85,6 +101,9 @@ const (
 	// — not a failure. Mirrors Phase 20.6 plan wording verbatim.
 	SkipNoSetpointForScope = "no_setpoint_for_scope"
 	SkipNoScopeForSetpoint = "no_scope_for_setpoint"
+	// SkipNoAnimalEventYet fires when the group has no lifecycle events at
+	// all yet — normal for a brand new flock, not a failure.
+	SkipNoAnimalEventYet = "no_animal_event_yet"
 )
 
 // ScopeContext threads the rule's zone / farm down to the per-predicate
@@ -304,6 +323,41 @@ func evaluateSetpointPredicate(ctx context.Context, q *db.Queries, scope ScopeCo
 	return true, FailedPredicate{}
 }
 
+// evaluateAnimalEventPredicate (Phase 210) looks up the most recent
+// lifecycle event for the predicate's animal_group_id (scoped to the
+// rule's farm) and passes iff its event_type matches p.EventType exactly.
+// No group, no events yet, or a cross-farm group id all fail safe with a
+// descriptive Reason rather than panicking or matching by accident.
+func evaluateAnimalEventPredicate(ctx context.Context, q *db.Queries, scope ScopeContext, p Predicate) (passed bool, fp FailedPredicate) {
+	base := FailedPredicate{Type: PredicateTypeAnimalEvent, AnimalGroupID: p.AnimalGroupID, ExpectedEvent: p.EventType}
+	if p.AnimalGroupID <= 0 {
+		base.Reason = "animal_group_id_required"
+		return false, base
+	}
+	if p.EventType == "" {
+		base.Reason = "event_type_required"
+		return false, base
+	}
+	event, err := q.GetLatestLifecycleEventByGroup(ctx, db.GetLatestLifecycleEventByGroupParams{
+		AnimalGroupID: p.AnimalGroupID,
+		FarmID:        scope.FarmID,
+	})
+	if err != nil {
+		reason := "lifecycle_event_lookup_failed"
+		if errors.Is(err, pgx.ErrNoRows) {
+			reason = SkipNoAnimalEventYet
+		}
+		base.Reason = reason
+		return false, base
+	}
+	base.ActualEventType = event.EventType
+	if event.EventType != p.EventType {
+		base.Reason = "predicate_failed"
+		return false, base
+	}
+	return true, FailedPredicate{}
+}
+
 // EvaluatePredicates is the back-compat entry point used by schedule
 // preconditions, which have no zone context. Equivalent to
 // EvaluatePredicatesInScope with a zero ScopeContext; setpoint-typed
@@ -336,9 +390,12 @@ func EvaluatePredicatesInScope(ctx context.Context, q *db.Queries, logic string,
 	for _, p := range preds {
 		var ok bool
 		var fp FailedPredicate
-		if p.predicateType() == PredicateTypeSetpoint {
+		switch p.predicateType() {
+		case PredicateTypeSetpoint:
 			ok, fp = evaluateSetpointPredicate(ctx, q, scope, p)
-		} else {
+		case PredicateTypeAnimalEvent:
+			ok, fp = evaluateAnimalEventPredicate(ctx, q, scope, p)
+		default:
 			ok, fp = evaluatePredicate(ctx, q, p)
 		}
 		if ok {
@@ -346,7 +403,7 @@ func EvaluatePredicatesInScope(ctx context.Context, q *db.Queries, logic string,
 			continue
 		}
 		failed = append(failed, fp)
-		if skipMessage == "" && (fp.Reason == SkipNoSetpointForScope || fp.Reason == SkipNoScopeForSetpoint) {
+		if skipMessage == "" && (fp.Reason == SkipNoSetpointForScope || fp.Reason == SkipNoScopeForSetpoint || fp.Reason == SkipNoAnimalEventYet) {
 			skipMessage = fp.Reason
 		}
 	}

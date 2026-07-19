@@ -192,6 +192,44 @@ func (q *Queries) GetAnimalGroupByID(ctx context.Context, id int64) (Gr33nanimal
 	return i, err
 }
 
+const getLatestLifecycleEventByGroup = `-- name: GetLatestLifecycleEventByGroup :one
+SELECT e.id, e.farm_id, e.animal_group_id, e.event_type, e.event_time, e.delta_count, e.notes, e.recorded_by, e.related_task_id, e.meta, e.created_at FROM gr33nanimals.animal_lifecycle_events e
+JOIN gr33nanimals.animal_groups g ON g.id = e.animal_group_id
+WHERE e.animal_group_id = $1
+  AND g.farm_id = $2
+  AND g.deleted_at IS NULL
+ORDER BY e.event_time DESC, e.id DESC
+LIMIT 1
+`
+
+type GetLatestLifecycleEventByGroupParams struct {
+	AnimalGroupID int64 `db:"animal_group_id" json:"animal_group_id"`
+	FarmID        int64 `db:"farm_id" json:"farm_id"`
+}
+
+// Phase 210 — feeds the `animal_event` automation predicate: "the most
+// recent lifecycle event for this flock is type X". farm_id is included so
+// the predicate evaluator can reject a group that belongs to another farm
+// without a second round trip.
+func (q *Queries) GetLatestLifecycleEventByGroup(ctx context.Context, arg GetLatestLifecycleEventByGroupParams) (Gr33nanimalsAnimalLifecycleEvent, error) {
+	row := q.db.QueryRow(ctx, getLatestLifecycleEventByGroup, arg.AnimalGroupID, arg.FarmID)
+	var i Gr33nanimalsAnimalLifecycleEvent
+	err := row.Scan(
+		&i.ID,
+		&i.FarmID,
+		&i.AnimalGroupID,
+		&i.EventType,
+		&i.EventTime,
+		&i.DeltaCount,
+		&i.Notes,
+		&i.RecordedBy,
+		&i.RelatedTaskID,
+		&i.Meta,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
 const getLifecycleEventByID = `-- name: GetLifecycleEventByID :one
 SELECT id, farm_id, animal_group_id, event_type, event_time, delta_count, notes, recorded_by, related_task_id, meta, created_at FROM gr33nanimals.animal_lifecycle_events
 WHERE id = $1

@@ -138,6 +138,7 @@
           :sensors="sensors"
           :actuators="actuators"
           :zones="zones"
+          :animal-groups="animalGroups"
           :farm-id="farmContext.farmId"
           :saving="saving"
           :errorMessage="formError"
@@ -206,6 +207,7 @@ const runs = ref([])
 const sensors = ref([])
 const actuators = ref([])
 const zones = ref([])
+const animalGroups = ref([])
 const worker = ref({ running: false, simulation_mode: false })
 
 const ruleRuns = computed(() => runs.value.filter(r => r.rule_id != null))
@@ -239,6 +241,9 @@ function sensorName(id) {
 function actuatorName(id) {
   return actuators.value.find(a => a.id === id)?.name || `actuator #${id}`
 }
+function animalGroupLabel(id) {
+  return animalGroups.value.find(g => g.id === id)?.label || `group #${id}`
+}
 
 const OP_LABEL = { lt: '<', lte: '≤', eq: '=', gte: '≥', gt: '>', ne: '≠' }
 
@@ -251,12 +256,18 @@ function triggerSummary(rule) {
   const parts = []
   if (src === 'sensor_reading_threshold' && cfg.sensor_id) {
     parts.push(`on reading from ${sensorName(cfg.sensor_id)}`)
+  } else if (src === 'animal_lifecycle_event' && cfg.animal_group_id) {
+    parts.push(`on lifecycle event for ${animalGroupLabel(cfg.animal_group_id)}`)
   } else {
     parts.push(`trigger: ${src}`)
   }
   if (conds.length) {
     const joiner = rule.condition_logic === 'ANY' ? ' OR ' : ' AND '
-    const rendered = conds.map(p => `${sensorName(p.sensor_id)} ${OP_LABEL[p.op] || p.op} ${p.value}`).join(joiner)
+    const rendered = conds.map(p => (
+      p.type === 'animal_event'
+        ? `${animalGroupLabel(p.animal_group_id)}'s latest event = ${p.event_type}`
+        : `${sensorName(p.sensor_id)} ${OP_LABEL[p.op] || p.op} ${p.value}`
+    )).join(joiner)
     parts.push(`when ${rendered}`)
   }
   return parts.join(' · ')
@@ -380,10 +391,11 @@ async function refreshAll() {
     if (!store.zones.length || !store.sensors.length || !store.actuators.length) {
       await store.loadAll(fid)
     }
-    const [rs, rr, w] = await Promise.all([
+    const [rs, rr, w, groups] = await Promise.all([
       store.loadAutomationRules(fid),
       store.loadAutomationRuns(fid),
       api.get('/automation/worker/health'),
+      store.loadAnimalGroups(fid),
     ])
     rules.value = rs
     runs.value = rr
@@ -391,6 +403,7 @@ async function refreshAll() {
     sensors.value = Array.isArray(store.sensors) ? store.sensors : []
     actuators.value = Array.isArray(store.actuators) ? store.actuators : []
     zones.value = Array.isArray(store.zones) ? store.zones : []
+    animalGroups.value = Array.isArray(groups) ? groups : []
     const actionLists = await Promise.all(rs.map(r => store.loadRuleActions(r.id)))
     const next = {}
     rs.forEach((r, i) => { next[r.id] = actionLists[i] })

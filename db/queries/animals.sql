@@ -82,3 +82,16 @@ WHERE id = $1;
 SELECT COALESCE(SUM(delta_count)::bigint, 0)::bigint AS delta_total
 FROM gr33nanimals.animal_lifecycle_events
 WHERE animal_group_id = $1;
+
+-- name: GetLatestLifecycleEventByGroup :one
+-- Phase 210 — feeds the `animal_event` automation predicate: "the most
+-- recent lifecycle event for this flock is type X". farm_id is included so
+-- the predicate evaluator can reject a group that belongs to another farm
+-- without a second round trip.
+SELECT e.* FROM gr33nanimals.animal_lifecycle_events e
+JOIN gr33nanimals.animal_groups g ON g.id = e.animal_group_id
+WHERE e.animal_group_id = sqlc.arg(animal_group_id)
+  AND g.farm_id = sqlc.arg(farm_id)
+  AND g.deleted_at IS NULL
+ORDER BY e.event_time DESC, e.id DESC
+LIMIT 1;

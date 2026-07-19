@@ -67,9 +67,21 @@
             </option>
           </select>
         </div>
+        <div v-if="form.trigger_source === 'animal_lifecycle_event'">
+          <label class="text-xs text-zinc-400 block mb-1">Flock / group</label>
+          <select v-model.number="triggerAnimalGroupId"
+            class="w-full bg-zinc-900 border border-zinc-700 rounded px-2 py-1.5 text-sm text-white">
+            <option :value="0" disabled>Select animal group</option>
+            <option v-for="g in animalGroups" :key="g.id" :value="g.id">{{ g.label }}</option>
+          </select>
+        </div>
       </div>
       <p v-if="form.trigger_source === 'sensor_reading_threshold'" class="text-[11px] text-zinc-600">
         The trigger just wakes the evaluator. The conditions below decide whether the rule actually fires.
+      </p>
+      <p v-if="form.trigger_source === 'animal_lifecycle_event'" class="text-[11px] text-zinc-600">
+        Add an <span class="font-mono">animal_event</span> condition below for "this flock's latest
+        event is X" — e.g. released_to_pasture opens a gate, penned_for_night closes it.
       </p>
     </section>
 
@@ -105,13 +117,14 @@
         <div v-for="(p, idx) in form.conditions" :key="idx"
           class="bg-zinc-900 border border-zinc-800 rounded p-2 space-y-1">
           <div class="flex items-center gap-2 text-[11px] text-zinc-400">
-            <label class="flex items-center gap-1 cursor-pointer">
-              <input type="checkbox" :checked="p.type === 'setpoint'"
-                @change="toggleSetpoint(p, $event.target.checked)"
-                class="accent-green-600" />
-              Use setpoint from zone/cycle
-            </label>
-            <HelpTip position="right">
+            <label class="text-zinc-500">Type</label>
+            <select :value="p.type || 'hard'" @change="setPredicateType(p, $event.target.value)"
+              class="bg-zinc-900 border border-zinc-700 rounded px-1.5 py-1 text-xs text-white">
+              <option value="hard">sensor threshold</option>
+              <option value="setpoint">setpoint (zone/cycle)</option>
+              <option value="animal_event">animal lifecycle event</option>
+            </select>
+            <HelpTip v-if="p.type === 'setpoint'" position="right">
               When checked, the rule reads min/ideal/max from
               <code>gr33ncore.zone_setpoints</code> at every tick, using the
               trigger's zone + active crop cycle's <code>current_stage</code>.
@@ -120,12 +133,18 @@
               <code>no_setpoint_for_scope</code> — not a failure, just "nothing to
               compare against yet."
             </HelpTip>
+            <HelpTip v-else-if="p.type === 'animal_event'" position="right">
+              Passes iff the animal group's most recent lifecycle event
+              (<code>gr33nanimals.animal_lifecycle_events</code>) matches
+              <code>event_type</code> exactly. No lifecycle event yet skips with
+              <code>no_animal_event_yet</code> — not a failure.
+            </HelpTip>
             <div class="flex-1"></div>
             <button type="button" @click="removeCondition(idx)"
               class="text-[11px] text-red-400 hover:text-red-300 px-1">Remove</button>
           </div>
           <!-- Hard predicate fields -->
-          <div v-if="p.type !== 'setpoint'"
+          <div v-if="!p.type || p.type === 'hard'"
             class="grid grid-cols-[minmax(0,1fr)_80px_100px] gap-2 items-center">
             <select v-model.number="p.sensor_id"
               class="bg-zinc-900 border border-zinc-700 rounded px-2 py-1 text-xs text-white">
@@ -147,7 +166,7 @@
               class="bg-zinc-900 border border-zinc-700 rounded px-2 py-1 text-xs text-white" />
           </div>
           <!-- Setpoint predicate fields -->
-          <div v-else class="grid grid-cols-[minmax(0,1fr)_140px_140px] gap-2 items-center">
+          <div v-else-if="p.type === 'setpoint'" class="grid grid-cols-[minmax(0,1fr)_140px_140px] gap-2 items-center">
             <input v-model="p.sensor_type" type="text" list="sensor-type-list"
               placeholder="sensor_type (dew_point, vpd, …)"
               class="bg-zinc-900 border border-zinc-700 rounded px-2 py-1 text-xs text-white" />
@@ -166,6 +185,20 @@
               <option value="above_ideal">above_ideal</option>
               <option value="inside_range">inside_range</option>
             </select>
+          </div>
+          <!-- Animal-event predicate fields -->
+          <div v-else class="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-2 items-center">
+            <select v-model.number="p.animal_group_id"
+              class="bg-zinc-900 border border-zinc-700 rounded px-2 py-1 text-xs text-white">
+              <option :value="0" disabled>Select animal group</option>
+              <option v-for="g in animalGroups" :key="g.id" :value="g.id">{{ g.label }}</option>
+            </select>
+            <input v-model="p.event_type" type="text" list="animal-event-type-list"
+              placeholder="event_type (released_to_pasture, penned_for_night, …)"
+              class="bg-zinc-900 border border-zinc-700 rounded px-2 py-1 text-xs text-white" />
+            <datalist id="animal-event-type-list">
+              <option v-for="t in commonAnimalEventTypes" :key="t" :value="t" />
+            </datalist>
           </div>
         </div>
       </div>
@@ -233,6 +266,15 @@
               <input v-model="a.action_command"
                 class="w-full bg-zinc-950 border border-zinc-700 rounded px-2 py-1 text-xs text-white font-mono"
                 placeholder="on | off | set:50" />
+            </div>
+            <div v-if="actuatorSupportsPulse(a.target_actuator_id)" class="col-span-2 flex items-center gap-2">
+              <label class="text-[10px] text-zinc-500 shrink-0">Run for (seconds, optional)</label>
+              <input type="number" min="1" max="3600" v-model.number="a._params.duration_seconds"
+                class="w-24 bg-zinc-950 border border-zinc-700 rounded px-2 py-1 text-xs text-white"
+                placeholder="e.g. 5" />
+              <span class="text-[10px] text-zinc-600">
+                Timed feed/water pulse — device auto-reverts after this many seconds. Leave blank for a plain on/off.
+              </span>
             </div>
           </div>
 
@@ -346,6 +388,7 @@
 import { ref, watch, computed, onMounted } from 'vue'
 import HelpTip from './HelpTip.vue'
 import api from '../api'
+import { supportsPulseCommand } from '../lib/plantNeeds.js'
 
 const props = defineProps({
   rule: { type: Object, default: null },
@@ -353,6 +396,7 @@ const props = defineProps({
   sensors: { type: Array, default: () => [] },
   actuators: { type: Array, default: () => [] },
   zones: { type: Array, default: () => [] },
+  animalGroups: { type: Array, default: () => [] },
   farmId: { type: [Number, String], default: null },
   saving: { type: Boolean, default: false },
   errorMessage: { type: String, default: '' },
@@ -389,6 +433,15 @@ const triggerSources = [
   'task_status_updated',
   'new_system_log_event',
   'external_webhook_received',
+  'animal_lifecycle_event',
+]
+
+// Phase 210 — free-text examples for the animal_event predicate's event_type
+// field. gr33nanimals.animal_lifecycle_events.event_type has no DB enum
+// (vocabulary settles from real use), so this is a hint, not a whitelist.
+const commonAnimalEventTypes = [
+  'added', 'born', 'died', 'note',
+  'released_to_pasture', 'penned_for_night', 'moved_zone',
 ]
 
 let nextKey = 1
@@ -409,6 +462,16 @@ function emptyForm() {
 
 const form = ref(emptyForm())
 const triggerSensorId = ref(0)
+const triggerAnimalGroupId = ref(0)
+
+// Phase 210 — mirrors internal/handler/actuator.PulseDurationAllowed via the
+// UI's device taxonomy fallback (ui/src/lib/plantNeeds.js). Looking the
+// actuator up by id (rather than trusting a stale actuator_type on the
+// action row) keeps this correct if the target is switched mid-edit.
+function actuatorSupportsPulse(actuatorId) {
+  const act = props.actuators.find(a => a.id === actuatorId)
+  return act ? supportsPulseCommand(act.actuator_type) : false
+}
 
 function buildActionFormState(a) {
   const ap = a.action_parameters || {}
@@ -429,6 +492,7 @@ function buildActionFormState(a) {
       task_type: params.task_type ?? '',
       priority: params.priority ?? 1,
       due_in_days: params.due_in_days ?? null,
+      duration_seconds: params.duration_seconds ?? null,
     },
     _variables: params.variables && typeof params.variables === 'object'
       ? Object.entries(params.variables).map(([key, value]) => ({ key, value: String(value) }))
@@ -440,13 +504,13 @@ function hydrateFromProps() {
   if (!props.rule) {
     form.value = emptyForm()
     triggerSensorId.value = props.sensors[0]?.id || 0
+    triggerAnimalGroupId.value = props.animalGroups[0]?.id || 0
     return
   }
   const r = props.rule
   const conditions = r.conditions_jsonb && typeof r.conditions_jsonb === 'object' && Array.isArray(r.conditions_jsonb.predicates)
     ? r.conditions_jsonb.predicates.map(p => {
-        const type = p.type === 'setpoint' ? 'setpoint' : 'hard'
-        if (type === 'setpoint') {
+        if (p.type === 'setpoint') {
           return {
             type: 'setpoint',
             sensor_type: p.sensor_type || '',
@@ -454,6 +518,20 @@ function hydrateFromProps() {
             op: p.op || 'out_of_range',
             sensor_id: 0,
             value: 0,
+            animal_group_id: 0,
+            event_type: '',
+          }
+        }
+        if (p.type === 'animal_event') {
+          return {
+            type: 'animal_event',
+            animal_group_id: Number(p.animal_group_id) || 0,
+            event_type: p.event_type || '',
+            sensor_id: 0,
+            op: 'gte',
+            value: 0,
+            sensor_type: '',
+            scope: 'current_stage',
           }
         }
         return {
@@ -463,6 +541,8 @@ function hydrateFromProps() {
           value: Number(p.value) || 0,
           sensor_type: '',
           scope: 'current_stage',
+          animal_group_id: 0,
+          event_type: '',
         }
       })
     : []
@@ -470,6 +550,7 @@ function hydrateFromProps() {
     ? r.trigger_configuration
     : {}
   triggerSensorId.value = Number(trigCfg.sensor_id) || 0
+  triggerAnimalGroupId.value = Number(trigCfg.animal_group_id) || 0
   form.value = {
     name: r.name || '',
     description: r.description || '',
@@ -482,7 +563,7 @@ function hydrateFromProps() {
   }
 }
 
-watch(() => [props.rule, props.actions, props.sensors], hydrateFromProps, { immediate: true })
+watch(() => [props.rule, props.actions, props.sensors, props.animalGroups], hydrateFromProps, { immediate: true })
 
 function addCondition() {
   form.value.conditions.push({
@@ -492,31 +573,38 @@ function addCondition() {
     value: 0,
     sensor_type: '',
     scope: 'current_stage',
+    animal_group_id: 0,
+    event_type: '',
   })
 }
 function removeCondition(idx) { form.value.conditions.splice(idx, 1) }
 
-// Flip a predicate between "hard" (sensor_id/op/value) and "setpoint"
-// (sensor_type/scope/op). We reset fields on toggle so saving the form
-// doesn't leak stale values into the wire payload (the backend
-// validator rejects sensor_id + value on setpoint predicates).
-function toggleSetpoint(p, on) {
-  if (on) {
-    p.type = 'setpoint'
+// Switch a predicate between "hard" (sensor_id/op/value), "setpoint"
+// (sensor_type/scope/op), and "animal_event" (animal_group_id/event_type).
+// Resets the other variants' fields on switch so saving the form doesn't
+// leak stale values into the wire payload (the backend validator rejects
+// e.g. sensor_id + value on a setpoint or animal_event predicate).
+function setPredicateType(p, type) {
+  p.type = type
+  if (type === 'setpoint') {
     p.sensor_id = 0
     p.value = 0
-    if (!p.sensor_type) {
-      const firstSensor = props.sensors?.[0]
-      p.sensor_type = firstSensor?.sensor_type || ''
-    }
+    if (!p.sensor_type) p.sensor_type = props.sensors?.[0]?.sensor_type || ''
     p.scope = p.scope || 'current_stage'
     if (!['out_of_range', 'below_ideal', 'above_ideal', 'inside_range'].includes(p.op)) {
       p.op = 'out_of_range'
     }
+  } else if (type === 'animal_event') {
+    p.sensor_id = 0
+    p.value = 0
+    p.sensor_type = ''
+    if (!p.animal_group_id) p.animal_group_id = props.animalGroups?.[0]?.id || 0
   } else {
     p.type = 'hard'
     p.sensor_type = ''
     p.scope = 'current_stage'
+    p.animal_group_id = 0
+    p.event_type = ''
     if (!p.sensor_id) p.sensor_id = props.sensors?.[0]?.id || 0
     if (!['lt', 'lte', 'eq', 'gte', 'gt', 'ne'].includes(p.op)) p.op = 'gte'
   }
@@ -542,7 +630,7 @@ function addAction() {
     delay_before_execution_seconds: 0,
     _params: {
       title: '', description: '', zone_id: null,
-      task_type: '', priority: 1, due_in_days: null,
+      task_type: '', priority: 1, due_in_days: null, duration_seconds: null,
     },
     _variables: [],
   })
@@ -571,6 +659,10 @@ function addVariable(a) { a._variables.push({ key: '', value: '' }) }
 function removeVariable(a, i) { a._variables.splice(i, 1) }
 
 function buildActionParameters(a) {
+  if (a.action_type === 'control_actuator') {
+    const d = Number(a._params.duration_seconds)
+    return d > 0 ? { duration_seconds: d } : null
+  }
   if (a.action_type === 'create_task') {
     const p = a._params
     const out = {}
@@ -603,6 +695,15 @@ function submit() {
         emit('submit', { error: `Condition ${i + 1}: sensor_type is required for setpoint predicates.` })
         return
       }
+    } else if (p.type === 'animal_event') {
+      if (!p.animal_group_id) {
+        emit('submit', { error: `Condition ${i + 1}: pick an animal group.` })
+        return
+      }
+      if (!p.event_type?.trim()) {
+        emit('submit', { error: `Condition ${i + 1}: event_type is required for animal_event predicates.` })
+        return
+      }
     } else if (!p.sensor_id) {
       emit('submit', { error: `Condition ${i + 1}: pick a sensor.` })
       return
@@ -613,25 +714,39 @@ function submit() {
     description: form.value.description || null,
     is_active: !!form.value.is_active,
     trigger_source: form.value.trigger_source,
-    trigger_configuration: form.value.trigger_source === 'sensor_reading_threshold' && triggerSensorId.value
-      ? { sensor_id: Number(triggerSensorId.value) }
-      : {},
+    trigger_configuration: (() => {
+      if (form.value.trigger_source === 'sensor_reading_threshold' && triggerSensorId.value) {
+        return { sensor_id: Number(triggerSensorId.value) }
+      }
+      if (form.value.trigger_source === 'animal_lifecycle_event' && triggerAnimalGroupId.value) {
+        return { animal_group_id: Number(triggerAnimalGroupId.value) }
+      }
+      return {}
+    })(),
     condition_logic: form.value.condition_logic,
-    conditions: form.value.conditions.map(p => (
-      p.type === 'setpoint'
-        ? {
-            type: 'setpoint',
-            sensor_type: p.sensor_type.trim(),
-            scope: p.scope || 'current_stage',
-            op: p.op,
-          }
-        : {
-            type: 'hard',
-            sensor_id: Number(p.sensor_id),
-            op: p.op,
-            value: Number(p.value),
-          }
-    )),
+    conditions: form.value.conditions.map(p => {
+      if (p.type === 'setpoint') {
+        return {
+          type: 'setpoint',
+          sensor_type: p.sensor_type.trim(),
+          scope: p.scope || 'current_stage',
+          op: p.op,
+        }
+      }
+      if (p.type === 'animal_event') {
+        return {
+          type: 'animal_event',
+          animal_group_id: Number(p.animal_group_id),
+          event_type: p.event_type.trim(),
+        }
+      }
+      return {
+        type: 'hard',
+        sensor_id: Number(p.sensor_id),
+        op: p.op,
+        value: Number(p.value),
+      }
+    }),
     cooldown_period_seconds: Number(form.value.cooldown_period_seconds) || 0,
   }
   const actionPayloads = form.value.actions.map((a, idx) => {

@@ -441,6 +441,30 @@ Routes: `GET /animal-groups/{group_id}/lifecycle-events`,
 `POST /animal-groups/{group_id}/lifecycle-events`,
 `DELETE /lifecycle-events/{id}`.
 
+### 10.2b Dedicated animal automation (Phase 210)
+
+Animal/aquaponics zones aren't tracking-only — they use the same schedule
+and rule engine as every other zone, no parallel system:
+
+- **Scheduled feeding/watering** — a `control_actuator` schedule action's
+  `action_parameters.duration_seconds` runs the feeder hopper or water
+  valve for N seconds on a cron, same mechanism as the manual **Run pulse**
+  button. Rejected for non-pulseable types (e.g. `gate`, which is an
+  open/shut toggle, not a timed-run device).
+- **Gate rules tied to flock events** — `automation_rules.trigger_source =
+  'animal_lifecycle_event'` + an `animal_event` predicate
+  (`{type: "animal_event", animal_group_id, event_type}`) fires a
+  `control_actuator` action once the group's *most recent* lifecycle event
+  (§10.2) matches `event_type` — e.g. `released_to_pasture` opens the run
+  gate, `penned_for_night` closes it. State-based, not a time window: it
+  flips cleanly on the next opposing event, no re-fire storm, and the
+  worker's existing cooldown still applies to the actuator command.
+
+Set these up on **Automations** / **Schedules** (`/comfort-targets`,
+`tab=automations` / `tab=schedules`) — see `RuleForm.vue`'s "animal
+lifecycle event" trigger and "animal lifecycle event" condition type.
+Farm 1's demo seed ships a working coop-gate example.
+
 ### 10.3 Feed, bedding, vet supplies → costs
 
 Feed is just a `gr33nnaturalfarming.input_definitions` row with

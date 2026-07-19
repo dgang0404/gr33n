@@ -14,6 +14,7 @@ import (
 
 	db "gr33n-api/internal/db"
 	"gr33n-api/internal/farmauthz"
+	acthandler "gr33n-api/internal/handler/actuator"
 	"gr33n-api/internal/httputil"
 	"gr33n-api/internal/platform/commontypes"
 )
@@ -131,6 +132,7 @@ var validTriggerSources = map[string]struct{}{
 	"task_status_updated":       {},
 	"new_system_log_event":      {},
 	"external_webhook_received": {},
+	"animal_lifecycle_event":    {},
 }
 
 // Phase 20 ships dispatchers for these three action types. The others
@@ -166,6 +168,10 @@ type rulePredicate struct {
 
 	SensorType string `json:"sensor_type,omitempty"`
 	Scope      string `json:"scope,omitempty"`
+
+	// Type "animal_event" (Phase 210) fields.
+	AnimalGroupID int64  `json:"animal_group_id,omitempty"`
+	EventType     string `json:"event_type,omitempty"`
 }
 
 type ruleConditions struct {
@@ -236,8 +242,26 @@ func parseRuleConditions(ctx context.Context, q *db.Queries, farmID int64, logic
 			if p.SensorID != 0 || p.Value != 0 {
 				return "", nil, fmt.Errorf("conditions[%d]: sensor_id and value must be omitted when type='setpoint'", i)
 			}
+		case "animal_event":
+			// Phase 210 — "the flock's latest lifecycle event is X".
+			if p.AnimalGroupID <= 0 {
+				return "", nil, fmt.Errorf("conditions[%d]: animal_group_id must be > 0 for animal_event predicate", i)
+			}
+			if strings.TrimSpace(p.EventType) == "" {
+				return "", nil, fmt.Errorf("conditions[%d]: event_type required for animal_event predicate", i)
+			}
+			group, err := q.GetAnimalGroupByID(ctx, p.AnimalGroupID)
+			if err != nil {
+				if errors.Is(err, pgx.ErrNoRows) {
+					return "", nil, fmt.Errorf("conditions[%d]: animal group %d not found", i, p.AnimalGroupID)
+				}
+				return "", nil, fmt.Errorf("conditions[%d]: %w", i, err)
+			}
+			if group.FarmID != farmID {
+				return "", nil, fmt.Errorf("conditions[%d]: animal group %d does not belong to this farm", i, p.AnimalGroupID)
+			}
 		default:
-			return "", nil, fmt.Errorf("conditions[%d]: type must be 'hard' or 'setpoint'", i)
+			return "", nil, fmt.Errorf("conditions[%d]: type must be 'hard', 'setpoint', or 'animal_event'", i)
 		}
 	}
 	canon, err := json.Marshal(ruleConditions{Logic: logic, Predicates: preds})
@@ -253,7 +277,7 @@ func parseRuleConditions(ctx context.Context, q *db.Queries, farmID int64, logic
 // on the same farm so the worker can resolve it cheaply.
 func parseTriggerConfiguration(ctx context.Context, q *db.Queries, farmID int64, triggerSource string, raw json.RawMessage) ([]byte, error) {
 	if _, ok := validTriggerSources[triggerSource]; !ok {
-		return nil, fmt.Errorf("trigger_source must be one of sensor_reading_threshold|specific_time_cron|actuator_state_changed|manual_api_trigger|task_status_updated|new_system_log_event|external_webhook_received")
+		return nil, fmt.Errorf("trigger_source must be one of sensor_reading_threshold|specific_time_cron|actuator_state_changed|manual_api_trigger|task_status_updated|new_system_log_event|external_webhook_received|animal_lifecycle_event")
 	}
 	if len(raw) == 0 || string(raw) == "null" {
 		raw = json.RawMessage(`{}`)
@@ -280,6 +304,26 @@ func parseTriggerConfiguration(ctx context.Context, q *db.Queries, farmID int64,
 		}
 		if sensor.FarmID != farmID {
 			return nil, fmt.Errorf("trigger_configuration.sensor_id: sensor %d does not belong to this farm", sidInt)
+		}
+	}
+	if triggerSource == "animal_lifecycle_event" {
+		gid, ok := cfg["animal_group_id"]
+		if !ok {
+			return nil, fmt.Errorf("trigger_configuration.animal_group_id is required when trigger_source = animal_lifecycle_event")
+		}
+		gidInt, err := coerceInt64(gid)
+		if err != nil {
+			return nil, fmt.Errorf("trigger_configuration.animal_group_id must be an integer")
+		}
+		group, err := q.GetAnimalGroupByID(ctx, gidInt)
+		if err != nil {
+			if errors.Is(err, pgx.ErrNoRows) {
+				return nil, fmt.Errorf("trigger_configuration.animal_group_id: animal group %d not found", gidInt)
+			}
+			return nil, err
+		}
+		if group.FarmID != farmID {
+			return nil, fmt.Errorf("trigger_configuration.animal_group_id: animal group %d does not belong to this farm", gidInt)
 		}
 	}
 	canon, err := json.Marshal(cfg)
@@ -608,6 +652,21 @@ func validateActionShape(body *executableActionBody, farmID int64, q *db.Queries
 		}
 		if act.FarmID != farmID {
 			return nil, fmt.Errorf("target_actuator_id: actuator %d does not belong to this farm", *body.TargetActuatorID)
+		}
+		// Phase 210 — optional {"duration_seconds": N} lets a scheduled/rule
+		// control_actuator action run a timed pulse (e.g. "run the feeder
+		// hopper for 5s at 7am") the same way the manual "Run pulse" button
+		// does, instead of needing two actions (on, then off) with a delay.
+		if params != nil {
+			var probe struct {
+				DurationSeconds *int `json:"duration_seconds"`
+			}
+			if err := json.Unmarshal(params, &probe); err != nil {
+				return nil, fmt.Errorf("action_parameters must be a JSON object")
+			}
+			if err := acthandler.ValidatePulseDuration(string(act.ActuatorType), probe.DurationSeconds); err != nil {
+				return nil, err
+			}
 		}
 	case "create_task":
 		if params == nil {

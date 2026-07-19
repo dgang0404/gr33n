@@ -8170,6 +8170,7 @@ components:
         - task_status_updated
         - new_system_log_event
         - external_webhook_received
+        - animal_lifecycle_event
 
     ExecutableActionType:
       type: string
@@ -8231,8 +8232,9 @@ components:
           description: >
             Shape depends on `trigger_source`. For `sensor_reading_threshold`
             this is `{ sensor_id, op, value }`; for `specific_time_cron` it is
-            `{ cron_expression, timezone? }`. Empty `{}` is allowed for
-            trigger sources that don't require configuration.
+            `{ cron_expression, timezone? }`; for `animal_lifecycle_event` it
+            is `{ animal_group_id }` (must belong to this farm). Empty `{}`
+            is allowed for trigger sources that don't require configuration.
           additionalProperties: true
         condition_logic:
           type: string

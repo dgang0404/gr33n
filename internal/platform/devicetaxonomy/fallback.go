@@ -40,7 +40,9 @@ var embeddedEntries = []Entry{
 	{TypeKey: "feeder_hopper", DeviceClass: "actuator", PlantNeed: "water", DisplayLabel: "Feeder hopper", SupportsPulse: true, SortOrder: 115},
 	{TypeKey: "relay", DeviceClass: "actuator", PlantNeed: "water", DisplayLabel: "Relay", SupportsPulse: true, SortOrder: 116},
 	{TypeKey: "air_pump", DeviceClass: "actuator", PlantNeed: "water", DisplayLabel: "Air pump", SupportsPulse: true, SortOrder: 117},
-	{TypeKey: "gate", DeviceClass: "actuator", PlantNeed: "water", DisplayLabel: "Gate", SupportsPulse: true, SortOrder: 118},
+	// SupportsPulse: false — a gate is an open/shut toggle, not a timed-run
+	// device (see phase210_gate_not_pulseable.sql for the backend mismatch this fixes).
+	{TypeKey: "gate", DeviceClass: "actuator", PlantNeed: "water", DisplayLabel: "Gate", SupportsPulse: false, SortOrder: 118},
 	// actuators — light
 	{TypeKey: "light", DeviceClass: "actuator", PlantNeed: "light", DisplayLabel: "Light", SortOrder: 130},
 	{TypeKey: "grow_light", DeviceClass: "actuator", PlantNeed: "light", DisplayLabel: "Grow light", SortOrder: 131},

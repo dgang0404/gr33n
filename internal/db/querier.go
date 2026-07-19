@@ -307,6 +307,11 @@ type Querier interface {
 	// regardless of ack status. Used by the sensor threshold evaluator to enforce per-sensor
 	// cooldown windows.
 	GetLatestAlertCreatedAtForSource(ctx context.Context, arg GetLatestAlertCreatedAtForSourceParams) (time.Time, error)
+	// Phase 210 — feeds the `animal_event` automation predicate: "the most
+	// recent lifecycle event for this flock is type X". farm_id is included so
+	// the predicate evaluator can reject a group that belongs to another farm
+	// without a second round trip.
+	GetLatestLifecycleEventByGroup(ctx context.Context, arg GetLatestLifecycleEventByGroupParams) (Gr33nanimalsAnimalLifecycleEvent, error)
 	// Phase 34 — given any proposal in a chain, return the newest still-pending revision
 	// (its live successor), used to point a 410 at the confirmable draft.
 	GetLatestLiveInChain(ctx context.Context, proposalID uuid.UUID) (Gr33ncoreGuardianActionProposal, error)

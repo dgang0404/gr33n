@@ -401,12 +401,17 @@ func (w *Worker) dispatchRuleActuator(ctx context.Context, rule db.Gr33ncoreAuto
 		}
 	}
 
-	params, _ := json.Marshal(map[string]any{
+	durationSeconds := actionDurationSeconds(action)
+	paramsMap := map[string]any{
 		"command":         command,
 		"simulation_mode": w.simulation,
 		"rule_id":         rule.ID,
 		"rule_name":       rule.Name,
-	})
+	}
+	if durationSeconds != nil {
+		paramsMap["duration_seconds"] = *durationSeconds
+	}
+	params, _ := json.Marshal(paramsMap)
 
 	status := db.Gr33ncoreActuatorExecutionStatusEnumPendingConfirmationFromFeedback
 	if w.simulation {
@@ -434,10 +439,11 @@ func (w *Worker) dispatchRuleActuator(ctx context.Context, rule db.Gr33ncoreAuto
 		ruleID := rule.ID
 		aID := *action.TargetActuatorID
 		pendingJSON, err := acthandler.BuildPendingCommandJSONFull(acthandler.PendingCommandInput{
-			ActuatorID: *action.TargetActuatorID,
-			Command:    command,
-			Source:     "rule",
-			RuleID:     &ruleID,
+			ActuatorID:      *action.TargetActuatorID,
+			Command:         command,
+			Source:          "rule",
+			RuleID:          &ruleID,
+			DurationSeconds: durationSeconds,
 		})
 		if err != nil {
 			log.Printf("rule %d action %d: build pending command: %v", rule.ID, action.ID, err)

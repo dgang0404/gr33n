@@ -2235,6 +2235,74 @@ WHERE z.farm_id = 1 AND z.name = 'Grow Bed (Aquaponics)' AND z.deleted_at IS NUL
       WHERE a.farm_id = 1 AND a.zone_id = z.id AND a.name = 'Grow Bed LED' AND a.deleted_at IS NULL
   );
 
+-- Phase 210 — dedicated animal automation demo: a scheduled feeding pulse
+-- (reuses gr33ncore.schedules + executable_actions.action_parameters.duration_seconds,
+-- no new schema) and a pair of gate rules tied to flock lifecycle events
+-- (the new animal_lifecycle_event trigger + animal_event predicate). This is
+-- the concrete "flock released to pasture -> gate opens" demo, not just
+-- tracking-only animal groups.
+INSERT INTO gr33ncore.schedules (farm_id, name, description, schedule_type, cron_expression, timezone, is_active)
+SELECT 1, v.name, v.description, 'cron', v.cron_expression, 'America/New_York', true
+FROM (VALUES
+    ('Coop feeding (AM/PM)',   'Dispense the hopper for 8s at 7am and 5pm.', '0 7,17 * * *'),
+    ('Coop trough top-off',    'Run the waterer valve for 15s each morning.', '0 6 * * *')
+) AS v(name, description, cron_expression)
+WHERE NOT EXISTS (
+    SELECT 1 FROM gr33ncore.schedules s WHERE s.farm_id = 1 AND s.name = v.name
+);
+
+INSERT INTO gr33ncore.executable_actions (schedule_id, execution_order, action_type, target_actuator_id, action_command, action_parameters)
+SELECT s.id, 0, 'control_actuator', a.id, 'on', v.params::jsonb
+FROM (VALUES
+    ('Coop feeding (AM/PM)',  'Coop Feeder Hopper', '{"duration_seconds": 8}'),
+    ('Coop trough top-off',   'Coop Waterer Valve', '{"duration_seconds": 15}')
+) AS v(schedule_name, actuator_name, params)
+JOIN gr33ncore.schedules s ON s.farm_id = 1 AND s.name = v.schedule_name
+JOIN gr33ncore.actuators a ON a.farm_id = 1 AND a.name = v.actuator_name AND a.deleted_at IS NULL
+WHERE NOT EXISTS (
+    SELECT 1 FROM gr33ncore.executable_actions e WHERE e.schedule_id = s.id AND e.target_actuator_id = a.id
+);
+
+INSERT INTO gr33ncore.automation_rules (farm_id, name, description, trigger_source, trigger_configuration, condition_logic, conditions_jsonb)
+SELECT 1, v.name, v.description, 'animal_lifecycle_event'::gr33ncore.automation_trigger_source_enum,
+       jsonb_build_object('animal_group_id', g.id), 'ALL',
+       jsonb_build_object('logic', 'ALL', 'predicates', jsonb_build_array(
+           jsonb_build_object('type', 'animal_event', 'animal_group_id', g.id, 'event_type', v.event_type)
+       ))
+FROM gr33nanimals.animal_groups g
+JOIN (VALUES
+    ('Open coop gate — flock released to pasture', 'Opens the run gate once the flock''s latest lifecycle event is released_to_pasture.', 'released_to_pasture'),
+    ('Close coop gate — flock penned for night',    'Closes the run gate once the flock''s latest lifecycle event is penned_for_night.',    'penned_for_night')
+) AS v(name, description, event_type) ON true
+WHERE g.farm_id = 1 AND g.label = 'Laying flock' AND g.deleted_at IS NULL
+  AND NOT EXISTS (
+      SELECT 1 FROM gr33ncore.automation_rules r WHERE r.farm_id = 1 AND r.name = v.name
+  );
+
+INSERT INTO gr33ncore.executable_actions (rule_id, execution_order, action_type, target_actuator_id, action_command)
+SELECT r.id, 0, 'control_actuator', a.id, v.command
+FROM (VALUES
+    ('Open coop gate — flock released to pasture', 'open'),
+    ('Close coop gate — flock penned for night',    'close')
+) AS v(rule_name, command)
+JOIN gr33ncore.automation_rules r ON r.farm_id = 1 AND r.name = v.rule_name
+JOIN gr33ncore.actuators a ON a.farm_id = 1 AND a.name = 'Coop Run Gate' AND a.deleted_at IS NULL
+WHERE NOT EXISTS (
+    SELECT 1 FROM gr33ncore.executable_actions e WHERE e.rule_id = r.id AND e.target_actuator_id = a.id
+);
+
+-- Land the demo mid-story: flock is out in the pasture right now, so the
+-- Automation runs page and the gate's state have something to show instead
+-- of an untouched "added" event forever.
+INSERT INTO gr33nanimals.animal_lifecycle_events (farm_id, animal_group_id, event_type, notes)
+SELECT 1, g.id, 'released_to_pasture', 'Morning release — demo seed'
+FROM gr33nanimals.animal_groups g
+WHERE g.farm_id = 1 AND g.label = 'Laying flock' AND g.deleted_at IS NULL
+  AND NOT EXISTS (
+      SELECT 1 FROM gr33nanimals.animal_lifecycle_events e
+      WHERE e.animal_group_id = g.id AND e.event_type = 'released_to_pasture'
+  );
+
 -- Phase 179 — resync every serial/identity sequence to max(id) across the seeded
 -- schemas. This file inserts many rows with explicit ids (farm 1, its zones,
 -- sensors, etc.) so their sequences never advance via nextval(). Without this,

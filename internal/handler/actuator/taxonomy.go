@@ -37,6 +37,7 @@ var AllKnownActuatorTypes = map[string]struct{}{
 	"feeder_hopper": {},
 	"water_valve":   {},
 	"heat_lamp":     {},
+	"gate":          {},
 	// Aquaponics
 	"return_pump": {},
 	"air_pump":    {},
@@ -73,7 +74,7 @@ func ValidCommands(actuatorType string) []string {
 		"heat_lamp", "return_pump", "air_pump",
 		"light", "grow_light", "relay", "pump":
 		return []string{"on", "off"}
-	case "water_valve":
+	case "water_valve", "gate":
 		return []string{"open", "close", "on", "off"}
 	case "feeder_hopper":
 		return []string{"dispense", "on", "off"}

@@ -123,6 +123,7 @@ const (
 	Gr33ncoreAutomationTriggerSourceEnumTaskStatusUpdated       Gr33ncoreAutomationTriggerSourceEnum = "task_status_updated"
 	Gr33ncoreAutomationTriggerSourceEnumNewSystemLogEvent       Gr33ncoreAutomationTriggerSourceEnum = "new_system_log_event"
 	Gr33ncoreAutomationTriggerSourceEnumExternalWebhookReceived Gr33ncoreAutomationTriggerSourceEnum = "external_webhook_received"
+	Gr33ncoreAutomationTriggerSourceEnumAnimalLifecycleEvent    Gr33ncoreAutomationTriggerSourceEnum = "animal_lifecycle_event"
 )
 
 func (e *Gr33ncoreAutomationTriggerSourceEnum) Scan(src interface{}) error {
