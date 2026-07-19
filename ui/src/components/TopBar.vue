@@ -1,13 +1,5 @@
 <template>
   <header class="bg-gray-900 border-b border-gray-800">
-    <div v-if="auth.isDevMode"
-      class="bg-amber-900/50 border-b border-amber-700/50 px-6 py-1 text-center">
-      <span class="text-amber-300 text-xs font-medium">DEV MODE — auth is disabled, all routes open</span>
-    </div>
-    <div v-else-if="auth.isAuthTestMode"
-      class="bg-violet-950/60 border-b border-violet-600/40 px-6 py-1 text-center">
-      <span class="text-violet-200 text-xs font-medium">AUTH TEST — JWT and API key enforced like production (local dev binary only)</span>
-    </div>
     <div v-if="farmContext.farmSelectionNotice"
       class="bg-sky-950/60 border-b border-sky-700/40 px-6 py-1">
       <div class="flex items-center justify-between gap-3">

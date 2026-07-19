@@ -140,10 +140,19 @@ func TestPhase208AnimalGroupCRUDAndTimeline(t *testing.T) {
 
 func TestPhase208AquaponicsLoopCRUD(t *testing.T) {
 	tok := smokeJWT(t)
+	// Restore whatever farm 1 had before this test, rather than hardcoding
+	// false — the demo seed enables gr33naquaponics for farm 1 permanently,
+	// so blindly turning it off here would undo that for real dev usage.
+	wasEnabled := false
+	if testPool != nil {
+		_ = testPool.QueryRow(context.Background(), `
+			SELECT is_enabled FROM gr33ncore.farm_active_modules
+			WHERE farm_id = 1 AND module_schema_name = 'gr33naquaponics'`).Scan(&wasEnabled)
+	}
 	resp := authPatch(t, tok, "/farms/1/modules/gr33naquaponics", map[string]any{"is_enabled": true})
 	expectStatus(t, resp, http.StatusOK)
 	t.Cleanup(func() {
-		off := authPatch(t, tok, "/farms/1/modules/gr33naquaponics", map[string]any{"is_enabled": false})
+		off := authPatch(t, tok, "/farms/1/modules/gr33naquaponics", map[string]any{"is_enabled": wasEnabled})
 		off.Body.Close()
 	})
 

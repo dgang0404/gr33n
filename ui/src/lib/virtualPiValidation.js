@@ -74,7 +74,7 @@ export function computeVirtualPiValidation({
           ? 'Pi wiring hash matches platform'
           : drift === 'stale'
             ? 'Pi config hash stale — download or Notify Pi to reload'
-            : 'Pi drift unknown — OK for laptop dry run after download',
+            : 'Pi drift unknown — OK to test after download',
       ok: drift !== 'stale',
     },
   ]
@@ -99,7 +99,7 @@ export function computeVirtualPiValidation({
   if (drift === 'stale') {
     return {
       status: 'stale',
-      title: 'Stale Pi config — fix before dry run',
+      title: 'Stale Pi config — fix before testing',
       hint: 'Download config.yaml to the Pi or use Notify Pi to reload, then re-check drift.',
       checklist,
     }
@@ -116,8 +116,8 @@ export function computeVirtualPiValidation({
 
   return {
     status: 'ready_dry_run',
-    title: 'Ready for LED simulation dry run',
-    hint: 'Download config from Virtual Pi, merge into your Pi client config, then run the LED simulation demo.',
+    title: 'Ready to test',
+    hint: 'Download config from Virtual Pi, merge into your Pi client config, then run a safe test cycle before wiring real hardware.',
     checklist,
   }
 }

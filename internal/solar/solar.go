@@ -53,13 +53,18 @@ func SolarForDate(lat, lng float64, tz *time.Location, date time.Time) SolarDay 
 			(math.Cos(deg2rad(lat)) * math.Cos(deg2rad(dec))),
 	))
 
+	// solarNoonMin etc. are minutes past *UTC* midnight (the formula above has no
+	// timezone term, only longitude) — anchor to UTC midnight, not tz midnight, or
+	// the tz offset gets applied twice (e.g. sunrise lands ~4h late for a UTC-4 farm).
+	midnightUTC := time.Date(year, month, dom, 0, 0, 0, 0, time.UTC)
+
 	var out SolarDay
 	if hourAngle >= 0 && hourAngle < 180 {
 		sunriseMin := solarNoonMin - 4*hourAngle
 		sunsetMin := solarNoonMin + 4*hourAngle
-		out.Sunrise = time.Date(year, month, dom, 0, 0, 0, 0, tz).Add(time.Duration(sunriseMin) * time.Minute)
-		out.Sunset = time.Date(year, month, dom, 0, 0, 0, 0, tz).Add(time.Duration(sunsetMin) * time.Minute)
-		out.SolarNoon = time.Date(year, month, dom, 0, 0, 0, 0, tz).Add(time.Duration(solarNoonMin) * time.Minute)
+		out.Sunrise = midnightUTC.Add(time.Duration(sunriseMin) * time.Minute).In(tz)
+		out.Sunset = midnightUTC.Add(time.Duration(sunsetMin) * time.Minute).In(tz)
+		out.SolarNoon = midnightUTC.Add(time.Duration(solarNoonMin) * time.Minute).In(tz)
 		out.DaylengthHours = (sunsetMin - sunriseMin) / 60.0
 	}
 

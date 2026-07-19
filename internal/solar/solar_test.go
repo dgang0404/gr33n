@@ -28,6 +28,32 @@ func TestSolarForDate_PortlandSummer(t *testing.T) {
 	}
 }
 
+// Regression: sunrise/sunset must land in the correct LOCAL clock hour, not just
+// have the right ordering/duration. The bug this guards against anchored the
+// UTC-relative solar-noon minutes to tz-local midnight instead of UTC midnight,
+// which applied the tz offset twice (e.g. sunrise showed up ~4h late for a
+// UTC-4 farm — 10:22am instead of ~6:22am for Ohio in July).
+func TestSolarForDate_LocalClockHour(t *testing.T) {
+	tz, err := time.LoadLocation("America/New_York")
+	if err != nil {
+		t.Fatalf("tz: %v", err)
+	}
+	date := time.Date(2026, 7, 18, 12, 0, 0, 0, tz)
+	day := SolarForDate(40.8938, -81.4055, tz, date)
+
+	sunriseHour := day.Sunrise.In(tz).Hour()
+	sunsetHour := day.Sunset.In(tz).Hour()
+	if sunriseHour < 5 || sunriseHour > 7 {
+		t.Fatalf("sunrise hour = %d (%v), want ~6am EDT for Ohio in July", sunriseHour, day.Sunrise.In(tz))
+	}
+	if sunsetHour < 20 || sunsetHour > 22 {
+		t.Fatalf("sunset hour = %d (%v), want ~9pm EDT for Ohio in July", sunsetHour, day.Sunset.In(tz))
+	}
+	if day.Sunset.In(tz).Day() != day.Sunrise.In(tz).Day() {
+		t.Fatalf("sunset landed on a different day than sunrise: %v vs %v", day.Sunset.In(tz), day.Sunrise.In(tz))
+	}
+}
+
 func TestSolarForDate_PolarNight(t *testing.T) {
 	tz := time.UTC
 	date := time.Date(2026, 12, 21, 12, 0, 0, 0, tz)

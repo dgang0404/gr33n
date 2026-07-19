@@ -2083,6 +2083,60 @@ WHERE f.id = 1;
 DELETE FROM gr33ncrops.plants
 WHERE farm_id = 1 AND crop_key = 'cannabis' AND deleted_at IS NULL;
 
+-- Phase 181 — demo farm showcases every module, not just crops. Animals and
+-- aquaponics default OFF for new farms (farmmodules.SeedDefaults never runs
+-- for farm 1 — it's inserted directly above, not via POST /farms), so without
+-- this the Animals/Aquaponics nav items 404 on a fresh clone.
+INSERT INTO gr33ncore.farm_active_modules (farm_id, module_schema_name, is_enabled)
+VALUES
+    (1, 'gr33ncrops', true),
+    (1, 'gr33nnaturalfarming', true),
+    (1, 'gr33nanimals', true),
+    (1, 'gr33naquaponics', true)
+ON CONFLICT (farm_id, module_schema_name) DO UPDATE SET is_enabled = true;
+
+INSERT INTO gr33ncore.zones (farm_id, name, description, zone_type)
+SELECT 1, v.name, v.description, v.zone_type
+FROM (VALUES
+    ('Chicken Coop',            'Layer flock — coop + run, deep litter bedding.', 'outdoor'),
+    ('Sheep Pasture',           'Rotational grazing paddock for the small flock.', 'outdoor'),
+    ('Fish Tank',               'Tilapia grow-out tank feeding the aquaponics grow bed.', 'greenhouse'),
+    ('Grow Bed (Aquaponics)',   'Media bed grow bed fed by the fish tank loop.', 'greenhouse')
+) AS v(name, description, zone_type)
+WHERE NOT EXISTS (
+    SELECT 1 FROM gr33ncore.zones z
+    WHERE z.farm_id = 1 AND z.name = v.name AND z.deleted_at IS NULL
+);
+
+INSERT INTO gr33nanimals.animal_groups (farm_id, label, species, count, primary_zone_id)
+SELECT 1, v.label, v.species, v.count,
+       (SELECT id FROM gr33ncore.zones WHERE farm_id = 1 AND name = v.zone_name AND deleted_at IS NULL ORDER BY id LIMIT 1)
+FROM (VALUES
+    ('Laying flock',  'chicken', 12, 'Chicken Coop'),
+    ('Grazing flock', 'sheep',    6, 'Sheep Pasture')
+) AS v(label, species, count, zone_name)
+WHERE NOT EXISTS (
+    SELECT 1 FROM gr33nanimals.animal_groups g
+    WHERE g.farm_id = 1 AND g.label = v.label AND g.deleted_at IS NULL
+);
+
+INSERT INTO gr33nanimals.animal_lifecycle_events (farm_id, animal_group_id, event_type, delta_count, notes)
+SELECT 1, g.id, 'added', g.count, 'Initial flock — seeded demo data'
+FROM gr33nanimals.animal_groups g
+WHERE g.farm_id = 1 AND g.label IN ('Laying flock', 'Grazing flock')
+  AND NOT EXISTS (
+      SELECT 1 FROM gr33nanimals.animal_lifecycle_events e
+      WHERE e.animal_group_id = g.id AND e.event_type = 'added'
+  );
+
+INSERT INTO gr33naquaponics.loops (farm_id, label, fish_tank_zone_id, grow_bed_zone_id)
+SELECT 1, 'Tilapia loop',
+       (SELECT id FROM gr33ncore.zones WHERE farm_id = 1 AND name = 'Fish Tank' AND deleted_at IS NULL ORDER BY id LIMIT 1),
+       (SELECT id FROM gr33ncore.zones WHERE farm_id = 1 AND name = 'Grow Bed (Aquaponics)' AND deleted_at IS NULL ORDER BY id LIMIT 1)
+WHERE NOT EXISTS (
+    SELECT 1 FROM gr33naquaponics.loops l WHERE l.farm_id = 1 AND l.label = 'Tilapia loop' AND l.deleted_at IS NULL
+);
+
 -- Phase 179 — resync every serial/identity sequence to max(id) across the seeded
 -- schemas. This file inserts many rows with explicit ids (farm 1, its zones,
 -- sensors, etc.) so their sequences never advance via nextval(). Without this,

@@ -9,12 +9,12 @@
     </h2>
     <p class="text-xs text-zinc-500 mb-4 leading-relaxed">
       Wire on <router-link v-nav-hint="'/virtual-pi'" to="/virtual-pi" class="text-gr33n-500 hover:underline">Virtual Pi</router-link>,
-      dry-run on the LED simulation rig, then promote to live relays.
+      test safely on the bench, then promote to live relays.
     </p>
 
     <ol class="text-xs text-zinc-400 space-y-2 list-decimal list-inside mb-4">
       <li>Virtual Pi — download your device config</li>
-      <li>LED simulation rig — run the moisture demo loop</li>
+      <li>Bench test — run the moisture demo loop</li>
       <li>Confirm a live sensor appears on the dashboard</li>
     </ol>
 

@@ -27,13 +27,6 @@
           </button>
         </div>
 
-        <div v-if="auth.isDevMode" class="bg-amber-900/30 border border-amber-700/50 rounded-lg px-3 py-2">
-          <p class="text-amber-300 text-xs">Dev mode — auth is disabled. Any credentials will work.</p>
-        </div>
-        <div v-else-if="auth.isAuthTestMode" class="bg-violet-950/40 border border-violet-600/40 rounded-lg px-3 py-2">
-          <p class="text-violet-200 text-xs">Auth test mode — use real admin credentials; JWT and Pi routes behave like production.</p>
-        </div>
-
         <!-- Full name (register only) -->
         <div v-if="mode === 'register'" class="flex flex-col gap-1.5">
           <label class="text-zinc-400 text-xs font-medium uppercase tracking-wide">Full Name</label>
