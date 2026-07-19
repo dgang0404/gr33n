@@ -2083,6 +2083,29 @@ WHERE f.id = 1;
 DELETE FROM gr33ncrops.plants
 WHERE farm_id = 1 AND crop_key = 'cannabis' AND deleted_at IS NULL;
 
+-- Phase 182 guard — `go test` against a persistent (non-Docker-fresh) local DB
+-- runs the Go smoke suite against farm 1 too. Most smokes clean up after
+-- themselves, but a few raw-INSERT test rows without a soft-delete endpoint;
+-- their names all end in uniqueName()'s trailing `_<bigrandomint>` (or a
+-- known literal test prefix), which no real farm zone/flock/loop name would.
+-- crop_cycles.zone_id is FK RESTRICT, so drop those first or the zone DELETE
+-- below aborts the whole seed script.
+DELETE FROM gr33nfertigation.crop_cycles
+WHERE zone_id IN (
+    SELECT id FROM gr33ncore.zones
+    WHERE farm_id = 1 AND deleted_at IS NULL
+      AND (name ~ '_[0-9]{9,}$' OR name ~* '^ws[0-9]+_smoke')
+);
+DELETE FROM gr33ncore.zones
+WHERE farm_id = 1 AND deleted_at IS NULL
+  AND (name ~ '_[0-9]{9,}$' OR name ~* '^ws[0-9]+_smoke');
+DELETE FROM gr33nanimals.animal_groups
+WHERE farm_id = 1 AND deleted_at IS NULL
+  AND (label ~ '_[0-9]{9,}$' OR label ~* '^ws[0-9]+_smoke');
+DELETE FROM gr33naquaponics.loops
+WHERE farm_id = 1 AND deleted_at IS NULL
+  AND (label ~ '_[0-9]{9,}$' OR label ~* '^ws[0-9]+_smoke');
+
 -- Phase 181 — demo farm showcases every module, not just crops. Animals and
 -- aquaponics default OFF for new farms (farmmodules.SeedDefaults never runs
 -- for farm 1 — it's inserted directly above, not via POST /farms), so without

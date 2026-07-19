@@ -62,7 +62,13 @@
           </div>
           <div>
             <p class="text-zinc-500">Primary zone</p>
-            <p class="text-white truncate">{{ zoneName(g.primary_zone_id) || '—' }}</p>
+            <router-link
+              v-if="g.primary_zone_id"
+              v-nav-hint="`/zones/${g.primary_zone_id}`"
+              :to="`/zones/${g.primary_zone_id}`"
+              class="text-gr33n-500 hover:underline truncate block"
+            >{{ zoneName(g.primary_zone_id) || '—' }}</router-link>
+            <p v-else class="text-white truncate">—</p>
           </div>
         </div>
         <div class="flex items-center gap-3 border-t border-zinc-800 pt-2">
@@ -155,7 +161,22 @@
             <p class="text-zinc-500 text-xs">
               {{ detail.species || 'unspecified species' }} ·
               {{ detail.count ?? '—' }} head ·
-              {{ zoneName(detail.primary_zone_id) || 'no primary zone' }}
+              <router-link
+                v-if="detail.primary_zone_id"
+                v-nav-hint="`/zones/${detail.primary_zone_id}`"
+                :to="`/zones/${detail.primary_zone_id}`"
+                class="text-gr33n-500 hover:underline"
+              >{{ zoneName(detail.primary_zone_id) }}</router-link>
+              <span v-else>no primary zone</span>
+            </p>
+            <p v-if="detail.primary_zone_id" class="text-zinc-600 text-[11px] mt-1">
+              Feeders, waterers, and gates are wired as actuators on the zone —
+              <router-link
+                v-nav-hint="`/zones/${detail.primary_zone_id}`"
+                :to="`/zones/${detail.primary_zone_id}`"
+                class="text-gr33n-500 hover:underline"
+              >open {{ zoneName(detail.primary_zone_id) }}</router-link>
+              to wire hardware or set a watering schedule.
             </p>
             <p v-if="deltaTotal !== null" class="text-zinc-600 text-[11px] mt-1">
               Lifecycle delta sum: {{ deltaTotal }} ·

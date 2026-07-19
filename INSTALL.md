@@ -43,8 +43,9 @@ Typical flow when you want **Timescale + PostGIS + pgvector** without a native P
 1. From the repo root: **`sg docker -c 'docker compose up -d db'`** — Postgres is published on the host at **`127.0.0.1:5433`** (see `docker-compose.yml`).
 2. Copy **`.env.example` → `.env`**. Set **`DATABASE_URL=postgres://gr33n:gr33n@127.0.0.1:5433/gr33n?sslmode=disable`**, **`AUTH_MODE=auth_test`**, **`JWT_SECRET`**, **`PI_API_KEY`**, and optional **`ADMIN_BIND_USER_ID` / `ADMIN_BIND_EMAIL`** (env-admin JWT needs a real `user_id` for farm routes — defaults match `master_seed.sql`).
 3. **`./scripts/bootstrap-local.sh --seed`** — applies schema, migrations, and **`db/seeds/master_seed.sql`**.
-4. Env-admin password file (login **`admin`**): **`echo -n 'password' | go run scripts/gen-admin-hash.go > ~/.gr33n/admin.hash`**
-5. **`make dev-auth-test`** — API + UI with production-like auth.
+4. **`make dev-auth-test`** — API + UI with production-like auth.
+5. Log in on the UI's Login page with the seeded demo account: **`dev@gr33n.local` / `devpassword`** — owns **gr33n Demo Farm** (farm 1), so you see real crops/animals/aquaponics data immediately. No extra setup needed; skip step 6 unless you specifically want the separate env-admin path.
+6. *Optional* — env-admin password file (login **`admin`**, same underlying user via `ADMIN_BIND_USER_ID`): **`echo -n 'password' | go run scripts/gen-admin-hash.go > ~/.gr33n/admin.hash`**
 
 _operator narrative and troubleshooting:_ **`docs/local-operator-bootstrap.md`**. **Readable `.env` mirror:** [`docs/example-env.md`](docs/example-env.md).
 

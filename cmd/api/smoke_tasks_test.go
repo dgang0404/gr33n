@@ -130,6 +130,13 @@ func TestPhase2095AnimalAquaponicsScope(t *testing.T) {
 		RETURNING id`, zoneID).Scan(&agID); err != nil {
 		t.Fatalf("insert animal group: %v", err)
 	}
+	// Raw INSERT, not the API — no soft-delete endpoint exercises this row, so
+	// clean it up directly or every local `make test` run against a persistent
+	// DB leaves another ws4_smoke_flock in farm 1 (Phase 209.5 pollution).
+	t.Cleanup(func() {
+		_, _ = testPool.Exec(context.Background(),
+			`DELETE FROM gr33nanimals.animal_groups WHERE id = $1`, agID)
+	})
 	var (
 		count    *int32
 		pz       *int64
@@ -170,6 +177,10 @@ func TestPhase2095AnimalAquaponicsScope(t *testing.T) {
 		RETURNING id`, zoneID).Scan(&loopID); err != nil {
 		t.Fatalf("insert loop: %v", err)
 	}
+	t.Cleanup(func() {
+		_, _ = testPool.Exec(context.Background(),
+			`DELETE FROM gr33naquaponics.loops WHERE id = $1`, loopID)
+	})
 	var fishZone, growZone *int64
 	if err := testPool.QueryRow(ctx, `
 		SELECT fish_tank_zone_id, grow_bed_zone_id

@@ -49,13 +49,28 @@
         <div class="grid grid-cols-2 gap-3 text-xs mb-3">
           <div>
             <p class="text-zinc-500">Fish tank zone</p>
-            <p class="text-white truncate">{{ zoneName(loop.fish_tank_zone_id) || '—' }}</p>
+            <router-link
+              v-if="loop.fish_tank_zone_id"
+              v-nav-hint="`/zones/${loop.fish_tank_zone_id}`"
+              :to="`/zones/${loop.fish_tank_zone_id}`"
+              class="text-gr33n-500 hover:underline truncate block"
+            >{{ zoneName(loop.fish_tank_zone_id) || '—' }}</router-link>
+            <p v-else class="text-white truncate">—</p>
           </div>
           <div>
             <p class="text-zinc-500">Grow bed zone</p>
-            <p class="text-white truncate">{{ zoneName(loop.grow_bed_zone_id) || '—' }}</p>
+            <router-link
+              v-if="loop.grow_bed_zone_id"
+              v-nav-hint="`/zones/${loop.grow_bed_zone_id}`"
+              :to="`/zones/${loop.grow_bed_zone_id}`"
+              class="text-gr33n-500 hover:underline truncate block"
+            >{{ zoneName(loop.grow_bed_zone_id) || '—' }}</router-link>
+            <p v-else class="text-white truncate">—</p>
           </div>
         </div>
+        <p class="text-zinc-600 text-[11px] mb-3">
+          Pumps, dosers, and water-level sensors are wired as hardware on the fish tank / grow bed zones above — open a zone to add them.
+        </p>
         <div class="flex items-center gap-3 border-t border-zinc-800 pt-2">
           <button @click="openEdit(loop)" class="text-xs text-zinc-400 hover:text-zinc-200">Edit</button>
           <button @click="confirmDelete(loop)" class="text-xs text-red-500 hover:text-red-400 ml-auto">
