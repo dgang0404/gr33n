@@ -6,7 +6,7 @@
         <h1 class="text-xl font-semibold text-white mt-1">{{ zone?.name || 'Zone' }}</h1>
         <p class="text-zinc-500 text-sm">{{ zone?.description || 'No description' }}</p>
         <p class="text-zinc-600 text-xs mt-1">
-          What this zone needs: water & feeding, light, and air/climate — use the tabs below.
+          {{ zoneNeedsHint }}
         </p>
       </div>
       <div class="flex flex-col items-end gap-2">
@@ -31,7 +31,7 @@
 
       <div class="flex flex-wrap gap-1 border-b border-zinc-800" role="tablist" aria-label="Zone sections">
         <button
-          v-for="tab in zoneTabs"
+          v-for="tab in visibleZoneTabs"
           :key="tab.id"
           type="button"
           role="tab"
@@ -143,6 +143,7 @@
         <ZoneTodayStrip :chips="todaySnapshot.chips" />
 
         <ZoneCurrentGrowStrip
+          v-if="showPlantGrowUI"
           :zone-id="zoneId"
           :farm-id="farmId"
           :zone="zone"
@@ -151,8 +152,50 @@
           @harvest="openHarvestWizard"
         />
 
+        <section
+          v-if="isAnimalPrimaryZone"
+          class="bg-zinc-900 border border-zinc-800 rounded-xl p-4 space-y-3"
+          data-test="zone-animal-flock"
+        >
+          <h2 class="text-sm font-semibold text-white">🐾 Flock in this zone</h2>
+          <div
+            v-for="g in animalGroupsHere"
+            :key="g.id"
+            class="flex items-center justify-between gap-3 text-sm border border-zinc-800 rounded-lg px-3 py-2 bg-zinc-950"
+          >
+            <div>
+              <p class="text-white font-medium">{{ g.label }}</p>
+              <p class="text-zinc-500 text-xs capitalize">
+                {{ g.species || 'unspecified' }} · {{ g.count ?? '—' }} head
+              </p>
+            </div>
+            <router-link v-nav-hint="'/animals'" to="/animals" class="text-xs text-gr33n-500 hover:underline shrink-0">
+              Animals →
+            </router-link>
+          </div>
+          <p class="text-xs text-zinc-500">
+            Feeders, waterers, and gates are on the
+            <button type="button" class="text-gr33n-500 hover:underline" @click="goNeedTab(PLANT_NEEDS.water)">Water</button>
+            tab. Log head-count changes on Animals.
+          </p>
+        </section>
+
+        <section
+          v-else-if="isFishTankZone && aquaponicsLoopHere"
+          class="bg-zinc-900 border border-zinc-800 rounded-xl p-4 space-y-2"
+          data-test="zone-aquaponics-loop"
+        >
+          <h2 class="text-sm font-semibold text-white">🐟 {{ aquaponicsLoopHere.label }}</h2>
+          <p class="text-xs text-zinc-500">
+            Fish tank for this aquaponics loop — circulation pump, aeration, and water quality sensors on the
+            <button type="button" class="text-gr33n-500 hover:underline" @click="goNeedTab(PLANT_NEEDS.water)">Water</button>
+            tab.
+            <router-link v-nav-hint="'/aquaponics'" to="/aquaponics" class="text-gr33n-500 hover:underline ml-1">View loop →</router-link>
+          </p>
+        </section>
+
         <EmptyZoneGrowNudge
-          v-if="zone && !hasActiveCropCycle"
+          v-if="showPlantGrowUI && zone && !hasActiveCropCycle"
           :farm-id="farmId"
           :zone-id="zoneId"
           :zone-name="zone.name"
@@ -352,6 +395,12 @@ import { buildSetupStarters, buildZoneStarters } from '../lib/guardianStarters.j
 import { computeZoneTodaySnapshot, pickNextZoneSchedule } from '../lib/zoneGrowSummary.js'
 import { lastHarvestedCycleInZone, strainFromPlant } from '../lib/growHub.js'
 import { ZONE_HARDWARE_HASH } from '../lib/workspaceRoutes.js'
+import {
+  animalGroupsForZone,
+  aquaponicsLoopForZone,
+  isFishTankZone as zoneIsFishTank,
+  showPlantGrowUI as zoneShowsPlantGrowUI,
+} from '../lib/zoneDetailMode.js'
 
 const route = useRoute()
 const router = useRouter()
@@ -380,6 +429,8 @@ const rules = ref([])
 const lightingPrograms = ref([])
 const cropCycles = ref([])
 const plants = ref([])
+const animalGroups = ref([])
+const aquaponicsLoops = ref([])
 const waterQueueDepth = ref(0)
 const showStartGrowWizard = ref(false)
 const showHarvestWizard = ref(false)
@@ -396,6 +447,34 @@ const zoneTabs = [
   { id: PLANT_NEEDS.light, icon: NEED_META[PLANT_NEEDS.light].icon, label: NEED_META[PLANT_NEEDS.light].shortLabel },
   { id: PLANT_NEEDS.air, icon: NEED_META[PLANT_NEEDS.air].icon, label: NEED_META[PLANT_NEEDS.air].shortLabel },
 ]
+
+const animalGroupsHere = computed(() => animalGroupsForZone(animalGroups.value, zoneId.value))
+
+const aquaponicsLoopHere = computed(() => aquaponicsLoopForZone(aquaponicsLoops.value, zoneId.value))
+
+const isAnimalPrimaryZone = computed(() => animalGroupsHere.value.length > 0)
+
+const isFishTankZone = computed(() => zoneIsFishTank(aquaponicsLoops.value, zoneId.value))
+
+/** Crop "start a grow" UI only belongs on grow zones — not animal paddocks or fish tanks. */
+const showPlantGrowUI = computed(() =>
+  zoneShowsPlantGrowUI({ groups: animalGroups.value, loops: aquaponicsLoops.value, zoneId: zoneId.value }),
+)
+
+const visibleZoneTabs = computed(() => {
+  if (showPlantGrowUI.value) return zoneTabs
+  return zoneTabs.filter((t) => t.id !== 'plants')
+})
+
+const zoneNeedsHint = computed(() => {
+  if (isAnimalPrimaryZone.value) {
+    return 'Feed, water, access, and climate for animals in this zone — use the tabs below.'
+  }
+  if (isFishTankZone.value) {
+    return 'Pumps, aeration, and water quality for this aquaponics fish tank — use the tabs below.'
+  }
+  return 'What this zone needs: water & feeding, light, and air/climate — use the tabs below.'
+})
 
 const farmId = computed(() => farmContext.farmId)
 const zoneId = computed(() => Number(route.params.id))
@@ -507,6 +586,27 @@ const priorHarvestedCycleForZone = computed(() => {
 
 const zoneStarters = computed(() => {
   if (!zone.value) return []
+  if (isAnimalPrimaryZone.value) {
+    const flock = animalGroupsHere.value[0]?.label || 'the flock'
+    return [
+      {
+        id: 'animal-feed-water',
+        label: 'Feed & water schedule',
+        message: `What feed and water schedule fits ${flock} in ${zone.value.name}?`,
+        contextRef: buildZoneGuardianContextRef(guardianSnapshotCtx.value),
+      },
+    ]
+  }
+  if (isFishTankZone.value) {
+    return [
+      {
+        id: 'aquaponics-water-quality',
+        label: 'Water quality check',
+        message: `What dissolved oxygen and temperature targets should I hold for tilapia in ${zone.value.name}?`,
+        contextRef: buildZoneGuardianContextRef(guardianSnapshotCtx.value),
+      },
+    ]
+  }
   if (!hasActiveCropCycle.value) {
     return buildSetupStarters({
       surface: 'empty_zone_grow',
@@ -624,7 +724,7 @@ watch(
       })
       return
     }
-    if (typeof tab === 'string' && zoneTabs.some((t) => t.id === tab)) {
+    if (typeof tab === 'string' && visibleZoneTabs.value.some((t) => t.id === tab)) {
       activeTab.value = tab
     } else if (!tab) {
       activeTab.value = 'overview'
@@ -655,7 +755,7 @@ function goNeedTab(tabId) {
 watch(
   () => route.query.start_grow,
   (flag) => {
-    if (flag && zone.value) openStartGrowWizard()
+    if (flag && zone.value && showPlantGrowUI.value) openStartGrowWizard()
   },
   { immediate: true },
 )
@@ -664,15 +764,19 @@ onMounted(async () => {
   void loadDeviceTaxonomy(api)
   if (!store.zones.length && farmId.value) await store.loadAll(farmId.value)
   const fid = farmId.value
-  const [p, e, s, ec, res, cycles] = await Promise.all([
+  const [p, e, s, ec, res, cycles, groups, loops] = await Promise.all([
     store.loadFertigationPrograms(fid),
     store.loadFertigationEvents(fid),
     store.loadSchedules(fid),
     store.loadEcTargets(fid),
     store.loadReservoirs(fid),
     store.loadCropCycles(fid),
+    store.loadAnimalGroups(fid).catch(() => []),
+    store.loadAquaponicsLoops(fid).catch(() => []),
   ])
   cropCycles.value = cycles
+  animalGroups.value = groups
+  aquaponicsLoops.value = loops
   programs.value = p
   events.value = e
   schedules.value = s
