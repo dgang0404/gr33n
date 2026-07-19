@@ -55,6 +55,9 @@ if [[ "$INCLUDE_READINGS" -eq 1 ]]; then
     -f "$ROOT/scripts/sql/dev_reset_farm_readings.sql"
 fi
 
+echo "==> Purging smoke-test pollution (farm 1 + extra test farms)"
+psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f "$ROOT/scripts/sql/dev_purge_smoke_pollution.sql"
+
 echo "==> Re-applying master_seed.sql (idempotent)"
 psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f "$ROOT/db/seeds/master_seed.sql"
 

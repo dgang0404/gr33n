@@ -34,17 +34,7 @@ func SolarForDate(lat, lng float64, tz *time.Location, date time.Time) SolarDay 
 	sinDec := math.Sin(deg2rad(lambda)) * math.Sin(deg2rad(epsilon))
 	dec := rad2deg(math.Asin(sinDec))
 
-	eqTime := 4 * rad2deg(
-		math.Atan2(
-			math.Cos(deg2rad(lambda))*math.Sin(deg2rad(epsilon)),
-			math.Cos(deg2rad(epsilon))*math.Cos(deg2rad(lambda))-math.Sin(deg2rad(epsilon))*math.Sin(deg2rad(lambda)),
-		),
-	)
-	if eqTime > 20 {
-		eqTime = 20
-	} else if eqTime < -20 {
-		eqTime = -20
-	}
+	eqTime := equationOfTimeMinutes(n)
 
 	// Solar noon in minutes from local midnight (approx).
 	solarNoonMin := 720 - 4*lng - eqTime
@@ -101,6 +91,13 @@ func SupplementalDLIGap(cropTarget, naturalClearSkyDLI, cloudFactor float64) flo
 		return 0
 	}
 	return gap
+}
+
+// equationOfTimeMinutes — NOAA approximate equation of time (minutes).
+// Replaces the old atan2 shortcut, which drifted ~15–20 min vs almanac times.
+func equationOfTimeMinutes(n float64) float64 {
+	b := deg2rad(360.0 / 365.0 * (n - 81.0))
+	return 9.87*math.Sin(2*b) - 7.53*math.Cos(b) - 1.5*math.Sin(b)
 }
 
 func julianDay(year, month, day int) float64 {

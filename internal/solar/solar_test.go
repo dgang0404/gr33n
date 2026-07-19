@@ -46,6 +46,11 @@ func TestSolarForDate_LocalClockHour(t *testing.T) {
 	if sunriseHour < 5 || sunriseHour > 7 {
 		t.Fatalf("sunrise hour = %d (%v), want ~6am EDT for Ohio in July", sunriseHour, day.Sunrise.In(tz))
 	}
+	sunriseMin := day.Sunrise.In(tz).Hour()*60 + day.Sunrise.In(tz).Minute()
+	// Almanac for ~40.89°N 81.41°W mid-July is ~6:05–6:15 AM EDT; allow ±12 min.
+	if sunriseMin < 353 || sunriseMin > 387 {
+		t.Fatalf("sunrise = %v (%d min), want ~6:05–6:25 AM EDT", day.Sunrise.In(tz).Format("3:04 PM"), sunriseMin)
+	}
 	if sunsetHour < 20 || sunsetHour > 22 {
 		t.Fatalf("sunset hour = %d (%v), want ~9pm EDT for Ohio in July", sunsetHour, day.Sunset.In(tz))
 	}

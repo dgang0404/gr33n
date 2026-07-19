@@ -62,6 +62,13 @@ UPDATE gr33ncore.farms
 SET meta_data = COALESCE(meta_data, '{}'::jsonb) || '{"dev_seed_profile":"demo_showcase"}'::jsonb
 WHERE id = 1;
 
+-- Phase 211 — demo farm site coords (Canton/Akron OH) for offline sunrise/sunset.
+-- Fresh clones get correct solar math without visiting Settings first.
+UPDATE gr33ncore.farms
+SET location_gis = ST_SetSRID(ST_MakePoint(-81.4055, 40.8938), 4326),
+    meta_data = COALESCE(meta_data, '{}'::jsonb) || '{"latitude":40.8938,"longitude":-81.4055}'::jsonb
+WHERE id = 1;
+
 -- Phase 124 WS0 — dev hygiene: the Go integration test suite (`cmd/api` smoke
 -- tests) writes real plants/crop-cycles into farm 1 without cleanup when run
 -- against a local DATABASE_URL. Purge that leftover test debris every time
@@ -81,6 +88,36 @@ WHERE farm_id = 1
     OR variety_or_cultivar ~* '^(typo |smoke_|phase[0-9]+)'
     OR crop_key IS NULL
   );
+
+-- Phase 211 — smoke-suite pollution on a persistent local DB (143k+ automation_runs,
+-- 14k+ alerts, dozens of ws*/phase* rules). Purge early; idempotent INSERTs below
+-- restore the demo farm. Same SQL lives in scripts/sql/dev_purge_smoke_pollution.sql
+-- (dev-reset-farm.sh runs that file before re-applying this seed).
+DELETE FROM gr33ncore.automation_runs WHERE farm_id = 1;
+DELETE FROM gr33ncore.alerts_notifications WHERE farm_id = 1;
+DELETE FROM gr33ncore.executable_actions
+WHERE rule_id IN (
+    SELECT id FROM gr33ncore.automation_rules
+    WHERE farm_id = 1
+      AND (name ~ '_[0-9]{9,}$'
+           OR name ~* '^(rule_ws|ws[0-9]+_|smoke_|phase[0-9]+|rule_cooldown|rule_inactive|rule_all_any|GH —)')
+);
+DELETE FROM gr33ncore.automation_rules
+WHERE farm_id = 1
+  AND (name ~ '_[0-9]{9,}$'
+       OR name ~* '^(rule_ws|ws[0-9]+_|smoke_|phase[0-9]+|rule_cooldown|rule_inactive|rule_all_any|GH —)');
+DELETE FROM gr33ncore.executable_actions
+WHERE schedule_id IN (
+    SELECT id FROM gr33ncore.schedules
+    WHERE farm_id = 1 AND (name ~ '_[0-9]{9,}$' OR name ~* '^smoke_')
+);
+DELETE FROM gr33ncore.schedules
+WHERE farm_id = 1 AND (name ~ '_[0-9]{9,}$' OR name ~* '^smoke_');
+DELETE FROM gr33nanimals.animal_lifecycle_events
+WHERE animal_group_id IN (
+    SELECT id FROM gr33nanimals.animal_groups WHERE farm_id = 1 AND deleted_at IS NOT NULL
+);
+DELETE FROM gr33nanimals.animal_groups WHERE farm_id = 1 AND deleted_at IS NOT NULL;
 
 INSERT INTO gr33ncore.zones (farm_id, name, description, zone_type)
 SELECT 1, v.name, v.description, v.zone_type

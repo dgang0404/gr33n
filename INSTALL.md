@@ -47,6 +47,14 @@ Typical flow when you want **Timescale + PostGIS + pgvector** without a native P
 5. Log in on the UI's Login page with the seeded demo account: **`dev@gr33n.local` / `devpassword`** — owns **gr33n Demo Farm** (farm 1), so you see real crops/animals/aquaponics data immediately. No extra setup needed; skip step 6 unless you specifically want the separate env-admin path.
 6. *Optional* — env-admin password file (login **`admin`**, same underlying user via `ADMIN_BIND_USER_ID`): **`echo -n 'password' | go run scripts/gen-admin-hash.go > ~/.gr33n/admin.hash`**
 
+**After running `make test`** against a persistent local DB, smoke tests can leave thousands of alerts and automation runs on farm 1. Reset to clean demo data without wiping Docker volumes:
+
+```bash
+./scripts/dev-reset-farm.sh --farm-id 1 --profile demo_showcase
+```
+
+That purges smoke pollution, re-applies `master_seed.sql`, and restores the showcase profile. Restart the API afterward so sunrise/sunset picks up the latest solar math.
+
 _operator narrative and troubleshooting:_ **`docs/local-operator-bootstrap.md`**. **Readable `.env` mirror:** [`docs/example-env.md`](docs/example-env.md).
 
 ---
