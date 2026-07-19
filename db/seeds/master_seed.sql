@@ -2196,6 +2196,45 @@ WHERE NOT EXISTS (
     WHERE s.farm_id = 1 AND s.zone_id = z.id AND s.name = v.name AND s.deleted_at IS NULL
 );
 
+-- Live-ish readings for the fish tank sensors above (phase164_demo block runs earlier
+-- in this file, before these sensors exist — seed them here so aquaponics zones aren't
+-- all NO DATA on a fresh clone).
+DELETE FROM gr33ncore.sensor_readings sr
+USING gr33ncore.sensors s
+JOIN gr33ncore.zones z ON z.id = s.zone_id
+WHERE sr.sensor_id = s.id
+  AND s.farm_id = 1
+  AND z.name = 'Fish Tank'
+  AND s.deleted_at IS NULL
+  AND sr.meta_data @> '{"seed":"phase183_aquaponics_demo"}'::jsonb;
+
+INSERT INTO gr33ncore.sensor_readings (reading_time, sensor_id, value_raw, is_valid, meta_data)
+SELECT
+  NOW() - (gs.n * INTERVAL '20 minutes'),
+  s.id,
+  ROUND((v.base_val + CASE WHEN gs.n = 0 THEN 0 ELSE 0.05 * ((gs.n % 3) - 1) END)::numeric, 2),
+  TRUE,
+  '{"seed":"phase183_aquaponics_demo"}'::jsonb
+FROM gr33ncore.sensors s
+JOIN gr33ncore.zones z ON z.id = s.zone_id AND z.farm_id = 1 AND z.name = 'Fish Tank' AND z.deleted_at IS NULL
+JOIN (VALUES
+  ('Fish Tank Water Temp',       26.5),
+  ('Fish Tank Dissolved Oxygen',  7.2),
+  ('Fish Tank Water Level',      88.0)
+) AS v(sensor_name, base_val) ON v.sensor_name = s.name
+CROSS JOIN generate_series(0, 8) AS gs(n)
+WHERE s.farm_id = 1 AND s.deleted_at IS NULL;
+
+-- Grow bed needs a light on the Light tab (fish tank already has pumps on Water tab).
+INSERT INTO gr33ncore.actuators (farm_id, zone_id, name, actuator_type, current_state_text, config)
+SELECT 1, z.id, 'Grow Bed LED', 'grow_light', 'on', '{"simulation": true}'::jsonb
+FROM gr33ncore.zones z
+WHERE z.farm_id = 1 AND z.name = 'Grow Bed (Aquaponics)' AND z.deleted_at IS NULL
+  AND NOT EXISTS (
+      SELECT 1 FROM gr33ncore.actuators a
+      WHERE a.farm_id = 1 AND a.zone_id = z.id AND a.name = 'Grow Bed LED' AND a.deleted_at IS NULL
+  );
+
 -- Phase 179 — resync every serial/identity sequence to max(id) across the seeded
 -- schemas. This file inserts many rows with explicit ids (farm 1, its zones,
 -- sensors, etc.) so their sequences never advance via nextval(). Without this,
