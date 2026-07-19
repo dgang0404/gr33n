@@ -865,7 +865,7 @@ Plans: [`phase_173_today_large_farm_navigation.plan.md`](plans/archive/phase_173
 
 ### 7n. Online weather forecast (Phase 178 — shipped)
 
-**Shipped.** Optional Tier 3 on Today — sun times always work offline; when the API has `WEATHER_PROVIDER=openmeteo` (or a paid provider) and the farm **opts in** under **Settings → Farm site**, the Site Strip shows outdoor temp/cloud cover and a forecast badge (`● Forecast live`, `● Forecast cached (offline)`, `● Forecast off`). WAN loss degrades to cached-then-offline without breaking the sun dial.
+**Shipped.** Optional Tier 3 on Today — sun times always work offline; when the API has `WEATHER_PROVIDER=openmeteo` (or a paid provider) and the farm **opts in** under **Settings → Farm site** (scroll to **📍 Farm site** near the top — above Guardian cards), the Site Strip shows outdoor temp/cloud cover and a forecast badge (`● Forecast live`, `● Forecast cached (offline)`, `● Forecast off`). Choose **°F** or **°C** in the same section (`meta_data.temperature_unit`). WAN loss degrades to cached-then-offline without breaking the sun dial.
 
 **Env:** `WEATHER_PROVIDER`, `WEATHER_CACHE_MINUTES` — see [`environment-variables.md`](environment-variables.md). Plan: [`phase_178_online_weather_forecast.plan.md`](plans/archive/phase_178_online_weather_forecast.plan.md)
 

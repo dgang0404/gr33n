@@ -100,7 +100,7 @@ The API loads `.env` and `.env.local` automatically when started from the repo r
 | `WEATHER_CACHE_MINUTES` | `30` | Reuse cached API row before refetch |
 | `WEATHER_FETCH_TIMEOUT_SEC` | `8` | Outbound forecast HTTP timeout |
 
-Farm-level opt-in: Settings → Farm site → **Use live weather forecast** (`meta_data.weather_forecast_enabled`). Sun times (Tier 1) work without these vars.
+Farm-level opt-in: Settings → Farm site → **Use live weather forecast** (`meta_data.weather_forecast_enabled`). Same section: **Temperature display** °F / °C (`meta_data.temperature_unit`). Sun times (Tier 1) work without these vars.
 
 See [phase_178_online_weather_forecast.plan.md](plans/archive/phase_178_online_weather_forecast.plan.md).
 
@@ -114,7 +114,7 @@ See [phase_178_online_weather_forecast.plan.md](plans/archive/phase_178_online_w
 | `EMBEDDING_BASE_URL` | — | Embedding API base |
 | `EMBEDDING_MODEL` | — | Embedding model name |
 | `EMBEDDING_DIMENSION` | — | Vector dimension |
-| `EMBEDDING_TIMEOUT_SECONDS` | — | Embedding HTTP timeout |
+| `EMBEDDING_TIMEOUT_SECONDS` | `600` | Embedding HTTP timeout — raise (e.g. `900`) if Settings **Re-ingest** times out while the chat model is loaded |
 | `RAG_INGEST_UPDATED_AFTER` | — | Incremental ingest watermark (RFC3339) |
 | `RAG_SYNTHESIS_MAX_PER_MINUTE` | `30` | Global rate limit on `POST .../rag/answer` |
 | `RAG_SYNTHESIS_MAX_PER_MINUTE_PER_FARM` | `0` | Per-farm synthesis limit |

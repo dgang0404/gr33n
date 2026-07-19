@@ -16,7 +16,11 @@
         :class="mainClass"
       >
         <div :class="routeShellClass">
-          <RouterView />
+          <RouterView v-slot="{ Component }">
+            <KeepAlive :include="['Dashboard', 'FarmGuardianChat']">
+              <component :is="Component" />
+            </KeepAlive>
+          </RouterView>
         </div>
       </main>
     </div>

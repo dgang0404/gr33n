@@ -47,15 +47,37 @@ export function forecastStatusTone(status) {
 }
 
 /**
- * @param {object|null|undefined} onlineForecast
+ * @param {object|null|undefined} farm
+ * @returns {'celsius'|'fahrenheit'}
  */
-export function formatForecastCurrent(onlineForecast) {
+export function farmTemperatureUnit(farm) {
+  const unit = farm?.meta_data?.temperature_unit
+  return unit === 'fahrenheit' ? 'fahrenheit' : 'celsius'
+}
+
+/**
+ * @param {number|null|undefined} celsius
+ * @param {'celsius'|'fahrenheit'} [unit]
+ */
+export function formatTemperature(celsius, unit = 'celsius') {
+  if (celsius == null || !Number.isFinite(Number(celsius))) return null
+  const c = Number(celsius)
+  if (unit === 'fahrenheit') {
+    return `${Math.round(c * 9 / 5 + 32)}°F`
+  }
+  return `${Math.round(c)}°C`
+}
+
+/**
+ * @param {object|null|undefined} onlineForecast
+ * @param {'celsius'|'fahrenheit'} [unit]
+ */
+export function formatForecastCurrent(onlineForecast, unit = 'celsius') {
   const cur = onlineForecast?.current
   if (!cur) return null
   const parts = []
-  if (cur.temperature_celsius != null) {
-    parts.push(`${Math.round(cur.temperature_celsius)}°C`)
-  }
+  const temp = formatTemperature(cur.temperature_celsius, unit)
+  if (temp) parts.push(temp)
   if (cur.cloud_cover_percent != null) {
     parts.push(`${Math.round(cur.cloud_cover_percent)}% clouds`)
   }

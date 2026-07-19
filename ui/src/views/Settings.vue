@@ -226,6 +226,35 @@
           />
           Use live weather forecast
         </label>
+        <fieldset class="mt-3">
+          <legend class="text-[11px] text-zinc-500 uppercase tracking-wide mb-2">Temperature display</legend>
+          <div class="flex flex-wrap gap-4 text-sm text-zinc-300">
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input
+                v-model="temperatureUnit"
+                type="radio"
+                value="fahrenheit"
+                class="rounded-full bg-zinc-800 border-zinc-700"
+                data-test="settings-weather-temp-fahrenheit"
+                :disabled="forecastSaving"
+                @change="saveTemperatureUnit"
+              />
+              Fahrenheit (°F)
+            </label>
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input
+                v-model="temperatureUnit"
+                type="radio"
+                value="celsius"
+                class="rounded-full bg-zinc-800 border-zinc-700"
+                data-test="settings-weather-temp-celsius"
+                :disabled="forecastSaving"
+                @change="saveTemperatureUnit"
+              />
+              Celsius (°C)
+            </label>
+          </div>
+        </fieldset>
         <p v-if="!capabilities.weatherForecastAvailable" class="text-[10px] text-zinc-600 mt-2">
           Set <code class="text-zinc-400">WEATHER_PROVIDER=openmeteo</code> on the API server to enable (free, no API key).
         </p>
@@ -1174,6 +1203,7 @@ import api from '../api'
 import { parseFarmCoordinates, parseFarmElevationM, fetchSiteWeather } from '../lib/siteWeather.js'
 import {
   farmForecastOptedIn,
+  farmTemperatureUnit,
   forecastStatusLabel as forecastStatusLabelFn,
   forecastStatusTone as forecastStatusToneFn,
 } from '../lib/siteWeatherForecast.js'
@@ -1307,6 +1337,7 @@ async function saveFarmSite() {
 watch(() => farmContext.selectedFarm, syncSiteFormFromFarm, { immediate: true })
 
 const forecastOptIn = ref(false)
+const temperatureUnit = ref('celsius')
 const forecastSaving = ref(false)
 const forecastError = ref('')
 const forecastStatus = ref('disabled')
@@ -1316,6 +1347,7 @@ const forecastStatusTone = computed(() => forecastStatusToneFn(forecastStatus.va
 
 function syncForecastFromFarm() {
   forecastOptIn.value = farmForecastOptedIn(farmContext.selectedFarm)
+  temperatureUnit.value = farmTemperatureUnit(farmContext.selectedFarm)
 }
 
 async function refreshForecastStatus() {
@@ -1340,8 +1372,27 @@ async function saveForecastOptIn() {
   try {
     await farmContext.patchWeatherSettings(farmId, {
       weather_forecast_enabled: forecastOptIn.value,
+      temperature_unit: temperatureUnit.value,
     })
     await refreshForecastStatus()
+  } catch (e) {
+    forecastError.value = e?.response?.data?.error || e.message || 'Save failed'
+    syncForecastFromFarm()
+  } finally {
+    forecastSaving.value = false
+  }
+}
+
+async function saveTemperatureUnit() {
+  const farmId = farmContext.farmId
+  if (!farmId) return
+  forecastSaving.value = true
+  forecastError.value = ''
+  try {
+    await farmContext.patchWeatherSettings(farmId, {
+      weather_forecast_enabled: forecastOptIn.value,
+      temperature_unit: temperatureUnit.value,
+    })
   } catch (e) {
     forecastError.value = e?.response?.data?.error || e.message || 'Save failed'
     syncForecastFromFarm()
@@ -1807,16 +1858,6 @@ async function loadFarmAudit() {
   }
 }
 
-watch(
-  () => [farmContext.farmId, isFarmAdmin.value],
-  () => {
-    loadFarmAudit()
-    loadFarmModulesSettings()
-    if (isFarmAdmin.value) loadSystemLogs()
-  },
-  { flush: 'post', immediate: true },
-)
-
 const modulesLoading = ref(false)
 const moduleSaving = ref('')
 const moduleMessage = ref('')
@@ -1895,6 +1936,16 @@ async function loadSystemLogs() {
     systemLogsLoading.value = false
   }
 }
+
+watch(
+  () => [farmContext.farmId, isFarmAdmin.value],
+  () => {
+    loadFarmAudit()
+    loadFarmModulesSettings()
+    if (isFarmAdmin.value) loadSystemLogs()
+  },
+  { flush: 'post', immediate: true },
+)
 
 function logLevelClass(level) {
   const l = String(level || '').toLowerCase()

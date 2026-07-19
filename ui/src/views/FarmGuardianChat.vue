@@ -49,6 +49,8 @@
 </template>
 
 <script setup>
+defineOptions({ name: 'FarmGuardianChat' })
+
 import { computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import HelpTip from '../components/HelpTip.vue'

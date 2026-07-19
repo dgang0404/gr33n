@@ -73,6 +73,13 @@ SET meta_data = COALESCE(meta_data, '{}'::jsonb)
 WHERE id = sqlc.arg(id) AND deleted_at IS NULL
 RETURNING *;
 
+-- name: MergeFarmMetaData :one
+UPDATE gr33ncore.farms
+SET meta_data = COALESCE(meta_data, '{}'::jsonb) || sqlc.arg(patch)::jsonb,
+    updated_at = NOW()
+WHERE id = sqlc.arg(id) AND deleted_at IS NULL
+RETURNING *;
+
 -- name: UpdateFarmSiteCoords :one
 UPDATE gr33ncore.farms
 SET location_gis = ST_SetSRID(ST_MakePoint(sqlc.arg(longitude), sqlc.arg(latitude)), 4326),

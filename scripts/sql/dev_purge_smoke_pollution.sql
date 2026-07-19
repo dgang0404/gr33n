@@ -1,5 +1,5 @@
--- Dev hygiene — strip Go smoke-test pollution from farm 1 (and optional extra farms).
--- Safe to re-run. Does NOT touch auth users or Docker volumes.
+-- Dev hygiene — strip Go smoke-test pollution from farm 1 (+ smoke auth/orgs).
+-- Safe to re-run. Does NOT wipe Docker volumes. Keeps dev@gr33n.local + farm 1.
 --
 -- Run standalone:
 --   psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f scripts/sql/dev_purge_smoke_pollution.sql
@@ -48,6 +48,31 @@ WHERE animal_group_id IN (
 );
 DELETE FROM gr33nanimals.animal_groups
 WHERE farm_id = 1 AND deleted_at IS NOT NULL;
+
+-- Smoke orgs/users (Settings page bloat: org_bootstrap_default_*, phase117_org_*, Viewer Smoke).
+DELETE FROM gr33ncore.organizations
+WHERE name ~ '^(org_bootstrap_default_|phase117_org_)';
+
+DELETE FROM gr33ncore.farm_memberships
+WHERE user_id IN (
+    SELECT p.user_id FROM gr33ncore.profiles p
+    WHERE p.email LIKE '%@test.local'
+       OR p.full_name IN ('Viewer Smoke', 'Finance Smoke')
+);
+
+DELETE FROM gr33ncore.organization_memberships
+WHERE user_id IN (
+    SELECT p.user_id FROM gr33ncore.profiles p
+    WHERE p.email LIKE '%@test.local'
+       OR p.full_name IN ('Viewer Smoke', 'Finance Smoke')
+);
+
+DELETE FROM gr33ncore.profiles
+WHERE email LIKE '%@test.local'
+   OR full_name IN ('Viewer Smoke', 'Finance Smoke');
+
+DELETE FROM auth.users
+WHERE email LIKE '%@test.local';
 
 -- Extra test farms (id > 1) are harmless if you stay on farm 1; deleting them hits FK
 -- check constraints on executable_actions. Drop manually only when needed:

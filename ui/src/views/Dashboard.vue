@@ -343,7 +343,9 @@
 </template>
 
 <script setup>
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+defineOptions({ name: 'Dashboard' })
+
+import { computed, onActivated, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useFarmStore } from '../stores/farm'
 import { useFarmContextStore } from '../stores/farmContext'
 import SensorTile   from '../components/SensorTile.vue'
@@ -630,9 +632,16 @@ async function onSiteSaved() {
   }
 }
 
-async function refreshAll() {
+const lastRefreshAt = ref(0)
+const REFRESH_STALE_MS = 30_000
+
+async function refreshAll(force = false) {
   const fid = farmContext.farmId
   if (!fid) return
+
+  if (!force && lastRefreshAt.value && Date.now() - lastRefreshAt.value < REFRESH_STALE_MS) {
+    return
+  }
 
   const zonesCached = Number(store.farm?.id) === Number(fid) && store.zones.length > 0
   if (zonesCached) {
@@ -679,10 +688,17 @@ async function refreshAll() {
     .then((res) => { reservoirs.value = res })
     .catch(() => { reservoirs.value = [] })
   void store.loadLayoutBackground(fid)
+
+  lastRefreshAt.value = Date.now()
 }
 
 
-onMounted(() => refreshAll())
+onMounted(() => refreshAll(true))
+onActivated(() => {
+  if (!lastRefreshAt.value || Date.now() - lastRefreshAt.value >= REFRESH_STALE_MS) {
+    void refreshAll()
+  }
+})
 
 function syncDocumentTitle() {
   const name = store.farm?.name

@@ -657,6 +657,7 @@ type Querier interface {
 	MarkRegistrationInviteUsed(ctx context.Context, arg MarkRegistrationInviteUsedParams) error
 	MarkScheduleTriggered(ctx context.Context, arg MarkScheduleTriggeredParams) (Gr33ncoreSchedule, error)
 	MarkStaleDevicesOffline(ctx context.Context, dollar_1 int64) ([]MarkStaleDevicesOfflineRow, error)
+	MergeFarmMetaData(ctx context.Context, arg MergeFarmMetaDataParams) (Gr33ncoreFarm, error)
 	// Running SUM over surviving rows. Called by handler after INSERT/DELETE.
 	RecalcTaskTimeSpentMinutes(ctx context.Context, taskID int64) error
 	RejectInsertCommonsBundle(ctx context.Context, arg RejectInsertCommonsBundleParams) (Gr33ncoreInsertCommonsBundle, error)

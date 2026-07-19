@@ -145,6 +145,7 @@ import {
   forecastStatusLabel,
   forecastStatusTone,
   formatForecastCurrent,
+  farmTemperatureUnit,
 } from '../lib/siteWeatherForecast.js'
 import { formatSunTimes, sunDialProgress } from '../lib/farmCanvasLayout.js'
 import { classifySensorHardwareState } from '../lib/farmVisualStatus.js'
@@ -179,7 +180,9 @@ const siteError = ref('')
 const sunTimes = computed(() => formatSunTimes(props.siteWeather?.solar))
 const sunProgress = computed(() => sunDialProgress(props.siteWeather?.solar))
 const forecastStatus = computed(() => props.siteWeather?.online_forecast?.status || 'disabled')
-const forecastReading = computed(() => formatForecastCurrent(props.siteWeather?.online_forecast))
+const forecastReading = computed(() =>
+  formatForecastCurrent(props.siteWeather?.online_forecast, farmTemperatureUnit(farmContext.selectedFarm)),
+)
 const sunMarker = computed(() => {
   if (sunProgress.value == null) return null
   const p = sunProgress.value

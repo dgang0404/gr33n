@@ -119,6 +119,26 @@ WHERE animal_group_id IN (
 );
 DELETE FROM gr33nanimals.animal_groups WHERE farm_id = 1 AND deleted_at IS NOT NULL;
 
+-- Smoke orgs/users (Settings bloat after make test).
+DELETE FROM gr33ncore.organizations
+WHERE name ~ '^(org_bootstrap_default_|phase117_org_)';
+DELETE FROM gr33ncore.farm_memberships
+WHERE user_id IN (
+    SELECT p.user_id FROM gr33ncore.profiles p
+    WHERE p.email LIKE '%@test.local'
+       OR p.full_name IN ('Viewer Smoke', 'Finance Smoke')
+);
+DELETE FROM gr33ncore.organization_memberships
+WHERE user_id IN (
+    SELECT p.user_id FROM gr33ncore.profiles p
+    WHERE p.email LIKE '%@test.local'
+       OR p.full_name IN ('Viewer Smoke', 'Finance Smoke')
+);
+DELETE FROM gr33ncore.profiles
+WHERE email LIKE '%@test.local'
+   OR full_name IN ('Viewer Smoke', 'Finance Smoke');
+DELETE FROM auth.users WHERE email LIKE '%@test.local';
+
 INSERT INTO gr33ncore.zones (farm_id, name, description, zone_type)
 SELECT 1, v.name, v.description, v.zone_type
 FROM (VALUES

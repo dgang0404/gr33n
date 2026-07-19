@@ -106,18 +106,36 @@ func (h *Handler) PatchSettings(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var req struct {
-		WeatherForecastEnabled bool `json:"weather_forecast_enabled"`
+		WeatherForecastEnabled *bool   `json:"weather_forecast_enabled"`
+		TemperatureUnit        *string `json:"temperature_unit"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid request body")
 		return
 	}
+	if req.WeatherForecastEnabled == nil && req.TemperatureUnit == nil {
+		httputil.WriteError(w, http.StatusBadRequest, "weather_forecast_enabled or temperature_unit required")
+		return
+	}
+	patch := map[string]any{}
+	if req.WeatherForecastEnabled != nil {
+		patch["weather_forecast_enabled"] = *req.WeatherForecastEnabled
+	}
+	if req.TemperatureUnit != nil {
+		unit := strings.ToLower(strings.TrimSpace(*req.TemperatureUnit))
+		if unit != "celsius" && unit != "fahrenheit" {
+			httputil.WriteError(w, http.StatusBadRequest, "temperature_unit must be celsius or fahrenheit")
+			return
+		}
+		patch["temperature_unit"] = unit
+	}
+	patchJSON, _ := json.Marshal(patch)
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()
 
-	farm, err := h.q.UpdateFarmWeatherForecastOptIn(ctx, db.UpdateFarmWeatherForecastOptInParams{
-		ID:                      farmID,
-		WeatherForecastEnabled: req.WeatherForecastEnabled,
+	farm, err := h.q.MergeFarmMetaData(ctx, db.MergeFarmMetaDataParams{
+		ID:    farmID,
+		Patch: patchJSON,
 	})
 	if err != nil {
 		httputil.WriteError(w, http.StatusInternalServerError, "failed to update weather settings")

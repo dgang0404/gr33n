@@ -76,7 +76,13 @@
         <span :class="apiOk ? 'text-gr33n-400' : 'text-danger'" class="text-xs font-mono hidden sm:inline">
           {{ apiOk ? '● API online' : '● API offline' }}
         </span>
-        <span class="text-xs text-gray-500 hidden sm:inline">{{ now }}</span>
+        <time
+          class="text-xs text-gray-500 hidden sm:inline tabular-nums"
+          :datetime="nowIso"
+          :title="clockTitle"
+        >
+          {{ nowLabel }}
+        </time>
         <span v-if="auth.username" class="text-xs text-gray-500 hidden sm:inline">{{ auth.username }}</span>
       </div>
     </div>
@@ -127,7 +133,35 @@ function openGuardianDrawer() {
 }
 
 const apiOk = ref(true)
-const now   = ref('')
+const nowLabel = ref('')
+const nowIso = ref('')
+
+const farmTimezone = computed(() => {
+  const tz = farmContext.selectedFarm?.timezone?.trim()
+  return tz && tz !== 'UTC' ? tz : undefined
+})
+
+const clockTitle = computed(() =>
+  farmTimezone.value ? `Farm time (${farmTimezone.value})` : 'Local time',
+)
+
+function tickClock() {
+  const d = new Date()
+  nowIso.value = d.toISOString()
+  const tz = farmTimezone.value
+  const datePart = d.toLocaleDateString(undefined, {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+    timeZone: tz,
+  })
+  const timePart = d.toLocaleTimeString(undefined, {
+    hour: 'numeric',
+    minute: '2-digit',
+    timeZone: tz,
+  })
+  nowLabel.value = `${datePart} · ${timePart}`
+}
 const labels = {
   '/': 'Today',
   '/zones': 'Zones',
@@ -156,7 +190,7 @@ onMounted(async () => {
   if (!capabilities.loaded) await capabilities.fetch()
   if (auth.token && farmContext.farmId) proposalsStore.refreshPendingCount(farmContext.farmId)
   tick = setInterval(async () => {
-    now.value = new Date().toLocaleTimeString()
+    tickClock()
     try { await api.get('/health'); apiOk.value = true }
     catch { apiOk.value = false }
     if (auth.token && farmContext.farmId) {
@@ -170,7 +204,7 @@ onMounted(async () => {
       }
     }
   }, 5000)
-  now.value = new Date().toLocaleTimeString()
+  tickClock()
   if (auth.token && farmContext.farmId) {
     try { await farmStore.countUnreadAlerts(farmContext.farmId) } catch {}
   }

@@ -3,7 +3,9 @@ import {
   forecastStatusLabel,
   forecastStatusTone,
   formatForecastCurrent,
+  formatTemperature,
   farmForecastOptedIn,
+  farmTemperatureUnit,
 } from '../lib/siteWeatherForecast.js'
 
 describe('siteWeatherForecast', () => {
@@ -19,10 +21,20 @@ describe('siteWeatherForecast', () => {
   })
 
   it('formats current conditions', () => {
-    const line = formatForecastCurrent({
-      current: { temperature_celsius: 24.2, cloud_cover_percent: 35 },
-    })
-    expect(line).toBe('24°C · 35% clouds')
+    const wx = { current: { temperature_celsius: 24.2, cloud_cover_percent: 35 } }
+    expect(formatForecastCurrent(wx)).toBe('24°C · 35% clouds')
+    expect(formatForecastCurrent(wx, 'fahrenheit')).toBe('76°F · 35% clouds')
+  })
+
+  it('formats standalone temperature', () => {
+    expect(formatTemperature(0, 'celsius')).toBe('0°C')
+    expect(formatTemperature(0, 'fahrenheit')).toBe('32°F')
+    expect(formatTemperature(22.9, 'fahrenheit')).toBe('73°F')
+  })
+
+  it('reads farm temperature unit from meta_data', () => {
+    expect(farmTemperatureUnit({ meta_data: { temperature_unit: 'fahrenheit' } })).toBe('fahrenheit')
+    expect(farmTemperatureUnit({ meta_data: {} })).toBe('celsius')
   })
 
   it('reads farm forecast opt-in from meta_data', () => {

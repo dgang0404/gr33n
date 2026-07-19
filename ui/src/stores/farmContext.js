@@ -113,17 +113,21 @@ export const useFarmContextStore = defineStore('farmContext', {
       return farm
     },
 
-    /** Phase 178 — opt in/out of online weather forecast for this farm. */
-    async patchWeatherSettings(id, { weather_forecast_enabled }) {
-      const r = await api.patch(`/farms/${id}/weather/settings`, { weather_forecast_enabled })
+    /** Phase 178 — opt in/out of online weather forecast + temp display unit for this farm. */
+    async patchWeatherSettings(id, { weather_forecast_enabled, temperature_unit }) {
+      const body = {}
+      if (weather_forecast_enabled != null) body.weather_forecast_enabled = weather_forecast_enabled
+      if (temperature_unit != null) body.temperature_unit = temperature_unit
+      const r = await api.patch(`/farms/${id}/weather/settings`, body)
       const idx = this.farms.findIndex(f => f.id === id)
       if (idx >= 0) {
         const prev = this.farms[idx]
         const meta = {
           ...(prev.meta_data && typeof prev.meta_data === 'object' ? prev.meta_data : {}),
           ...(r.data?.meta_data && typeof r.data.meta_data === 'object' ? r.data.meta_data : {}),
-          weather_forecast_enabled,
         }
+        if (weather_forecast_enabled != null) meta.weather_forecast_enabled = weather_forecast_enabled
+        if (temperature_unit != null) meta.temperature_unit = temperature_unit
         this.farms[idx] = { ...prev, ...r.data, meta_data: meta }
       }
       return r.data

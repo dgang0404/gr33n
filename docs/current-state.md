@@ -203,6 +203,7 @@ Plan: [192](plans/archive/phase_192_guardian_due_date_title_clobber.plan.md) · 
 Optional Tier 3 forecast on top of Phase 66 offline solar math:
 
 - **API** — `WEATHER_PROVIDER=openmeteo` (free, no key); farm opt-in via `meta_data.weather_forecast_enabled` + **Settings → Farm site**
+- **Display** — `meta_data.temperature_unit` (`celsius` \| `fahrenheit`) on Today forecast line; PATCH accepts partial updates (unit change does not clear forecast opt-in)
 - **`GET /farms/{id}/site-weather`** — `online_forecast` block with status (`connected`, `cached`, `cached_stale`, `offline`, `disabled`, …)
 - **Today** — `FarmSiteStrip` forecast cell + `● Forecast live` / `cached (offline)` badge (sun dial unchanged when WAN drops)
 - **Guardian** — `site_weather` read tool cites tonight low + frost when forecast tier is present

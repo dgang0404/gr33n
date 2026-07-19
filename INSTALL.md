@@ -47,13 +47,35 @@ Typical flow when you want **Timescale + PostGIS + pgvector** without a native P
 5. Log in on the UI's Login page with the seeded demo account: **`dev@gr33n.local` / `devpassword`** — owns **gr33n Demo Farm** (farm 1), so you see real crops/animals/aquaponics data immediately. No extra setup needed; skip step 6 unless you specifically want the separate env-admin path.
 6. *Optional* — env-admin password file (login **`admin`**, same underlying user via `ADMIN_BIND_USER_ID`): **`echo -n 'password' | go run scripts/gen-admin-hash.go > ~/.gr33n/admin.hash`**
 
-**After running `make test`** against a persistent local DB, smoke tests can leave thousands of alerts and automation runs on farm 1. Reset to clean demo data without wiping Docker volumes:
+**After running `make test`** against a persistent local DB, smoke tests can leave thousands of alerts and automation runs on farm 1, plus hundreds of smoke orgs/users in Settings. Reset to clean demo data without wiping Docker volumes:
 
 ```bash
 ./scripts/dev-reset-farm.sh --farm-id 1 --profile demo_showcase
 ```
 
-That purges smoke pollution, re-applies `master_seed.sql`, and restores the showcase profile. Restart the API afterward so sunrise/sunset picks up the latest solar math.
+That purges smoke pollution (automation runs, alerts, smoke orgs/users), re-applies `master_seed.sql`, and restores the showcase profile.
+
+For a **full wipe** (empty RAG chunks, one farm, one user — best before UI demos):
+
+```bash
+make dev-stack-fresh
+./scripts/dev-reset-farm.sh --farm-id 1 --profile demo_showcase
+# optional embeddings (needs Ollama + EMBEDDING_API_KEY):
+./scripts/rag-ingest-demo.sh && ./scripts/rag-ingest-platform-docs.sh
+```
+
+Then **Settings → Field memories (RAG corpus) → Re-ingest → Operational** indexes live farm rows (field guides + platform docs are separate scripts or the Re-ingest buttons).
+
+**Start the API** with the dev-tagged binary when `.env` has `AUTH_MODE=auth_test`:
+
+```bash
+make run-auth-test   # not bare `go run ./cmd/api/` — that exits immediately
+make dev-auth-test   # API + UI together
+```
+
+Restart the API after `git pull` so new routes and solar/weather handlers register.
+
+**Weather on Today:** set `WEATHER_PROVIDER=openmeteo` in `.env`, restart API, then **Settings → Farm site** (near the top of the page) → check **Use live weather forecast** and pick **°F** or **°C** for the forecast line.
 
 _operator narrative and troubleshooting:_ **`docs/local-operator-bootstrap.md`**. **Readable `.env` mirror:** [`docs/example-env.md`](docs/example-env.md).
 
