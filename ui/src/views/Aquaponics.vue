@@ -52,24 +52,44 @@
             <router-link
               v-if="loop.fish_tank_zone_id"
               v-nav-hint="`/zones/${loop.fish_tank_zone_id}`"
-              :to="`/zones/${loop.fish_tank_zone_id}`"
+              :to="{ path: `/zones/${loop.fish_tank_zone_id}`, query: { tab: 'water' } }"
               class="text-gr33n-500 hover:underline truncate block"
             >{{ zoneName(loop.fish_tank_zone_id) || '—' }}</router-link>
             <p v-else class="text-white truncate">—</p>
+            <div v-if="zoneHardware(loop.fish_tank_zone_id).length" class="mt-1.5 flex flex-wrap gap-1">
+              <router-link
+                v-for="chip in zoneHardware(loop.fish_tank_zone_id)"
+                :key="`${loop.id}-ft-${chip.label}`"
+                :to="{ path: `/zones/${loop.fish_tank_zone_id}`, query: { tab: 'water' } }"
+                class="text-[10px] px-1.5 py-0.5 rounded-full bg-zinc-950 text-zinc-500 border border-zinc-800 hover:border-gr33n-700 hover:text-gr33n-400 capitalize"
+              >
+                {{ chip.icon }} {{ chip.label }} · {{ chip.state }}
+              </router-link>
+            </div>
           </div>
           <div>
             <p class="text-zinc-500">Grow bed zone</p>
             <router-link
               v-if="loop.grow_bed_zone_id"
               v-nav-hint="`/zones/${loop.grow_bed_zone_id}`"
-              :to="`/zones/${loop.grow_bed_zone_id}`"
+              :to="{ path: `/zones/${loop.grow_bed_zone_id}`, query: { tab: 'light' } }"
               class="text-gr33n-500 hover:underline truncate block"
             >{{ zoneName(loop.grow_bed_zone_id) || '—' }}</router-link>
             <p v-else class="text-white truncate">—</p>
+            <div v-if="zoneHardware(loop.grow_bed_zone_id).length" class="mt-1.5 flex flex-wrap gap-1">
+              <router-link
+                v-for="chip in zoneHardware(loop.grow_bed_zone_id)"
+                :key="`${loop.id}-gb-${chip.label}`"
+                :to="{ path: `/zones/${loop.grow_bed_zone_id}`, query: { tab: 'light' } }"
+                class="text-[10px] px-1.5 py-0.5 rounded-full bg-zinc-950 text-zinc-500 border border-zinc-800 hover:border-gr33n-700 hover:text-gr33n-400 capitalize"
+              >
+                {{ chip.icon }} {{ chip.label }} · {{ chip.state }}
+              </router-link>
+            </div>
           </div>
         </div>
         <p class="text-zinc-600 text-[11px] mb-3">
-          Pumps, dosers, and water-level sensors are wired as hardware on the fish tank / grow bed zones above — open a zone to add them.
+          Pumps, aeration, and water-quality sensors live on the fish tank zone; grow lights on the bed zone — click a chip or zone name to control them.
         </p>
         <div class="flex items-center gap-3 border-t border-zinc-800 pt-2">
           <button @click="openEdit(loop)" class="text-xs text-zinc-400 hover:text-zinc-200">Edit</button>
@@ -103,7 +123,7 @@
             class="w-full bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white"
           >
             <option :value="null">— none —</option>
-            <option v-for="z in zones" :key="z.id" :value="z.id">{{ z.display_name || z.internal_identifier }}</option>
+            <option v-for="z in zones" :key="z.id" :value="z.id">{{ z.name }}</option>
           </select>
         </div>
         <div>
@@ -113,7 +133,7 @@
             class="w-full bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white"
           >
             <option :value="null">— none —</option>
-            <option v-for="z in zones" :key="z.id" :value="z.id">{{ z.display_name || z.internal_identifier }}</option>
+            <option v-for="z in zones" :key="z.id" :value="z.id">{{ z.name }}</option>
           </select>
         </div>
         <label v-if="editing" class="flex items-center gap-2 text-xs text-zinc-400">
@@ -169,6 +189,7 @@ import { useFarmStore } from '../stores/farm'
 import { useFarmContextStore } from '../stores/farmContext'
 import HelpTip from '../components/HelpTip.vue'
 import ModuleEmptyShell from '../components/ModuleEmptyShell.vue'
+import { hardwareChipsForZone } from '../lib/actuatorControls.js'
 
 const store = useFarmStore()
 const farmContext = useFarmContextStore()
@@ -183,6 +204,7 @@ const deleteTarget = ref(null)
 const form = ref(emptyForm())
 
 const zones = computed(() => store.zones || [])
+const actuators = computed(() => store.actuators || [])
 
 function emptyForm() {
   return { label: '', fish_tank_zone_id: null, grow_bed_zone_id: null, active: true }
@@ -191,7 +213,12 @@ function emptyForm() {
 function zoneName(id) {
   if (!id) return ''
   const z = zones.value.find((x) => x.id === id)
-  return z ? (z.display_name || z.internal_identifier || `Zone ${z.id}`) : ''
+  return z?.name || (id ? `Zone ${id}` : '')
+}
+
+function zoneHardware(zoneId) {
+  if (!zoneId) return []
+  return hardwareChipsForZone(actuators.value, zoneId)
 }
 
 function openCreate() {
@@ -269,7 +296,7 @@ async function doDelete() {
 
 onMounted(async () => {
   const fid = farmContext.farmId
-  if (fid && !(store.zones && store.zones.length)) {
+  if (fid && (!store.zones?.length || !store.actuators?.length)) {
     await store.loadAll(fid)
   }
   await refresh()

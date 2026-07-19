@@ -155,7 +155,7 @@
           <div class="flex items-center justify-between gap-2">
             <div class="min-w-0">
               <p class="text-white text-sm font-medium truncate">{{ a.name }}</p>
-              <p class="text-zinc-500 text-xs capitalize">{{ a.actuator_type }}</p>
+              <p class="text-zinc-500 text-xs capitalize">{{ a.actuator_type }} · {{ a.current_state_text || 'offline' }}</p>
               <HardwareWiringBadge
                 :entity="a"
                 show-empty
@@ -163,7 +163,33 @@
                 class="mt-1"
               />
             </div>
+            <div v-if="isOpenCloseActuator(a.actuator_type)" class="flex gap-1 shrink-0">
+              <button
+                v-for="cmd in ['open', 'close']"
+                :key="cmd"
+                type="button"
+                class="px-3 py-1.5 rounded-lg text-xs font-medium capitalize disabled:opacity-40"
+                :class="cmd === 'open' ? 'bg-gr33n-700 hover:bg-gr33n-600 text-white' : 'bg-zinc-800 hover:bg-zinc-700 text-zinc-300'"
+                :disabled="commandBusy[a.id]"
+                :data-test="`actuator-${cmd}-${a.id}`"
+                @click="queueActuatorCommand(a, cmd)"
+              >
+                {{ cmd }}
+              </button>
+            </div>
+            <div v-else-if="isDispenseActuator(a.actuator_type)" class="shrink-0">
+              <button
+                type="button"
+                class="px-3 py-1.5 rounded-lg text-xs font-medium bg-gr33n-700 hover:bg-gr33n-600 text-white disabled:opacity-40"
+                :disabled="commandBusy[a.id]"
+                data-test="actuator-dispense"
+                @click="queueActuatorCommand(a, 'dispense')"
+              >
+                Dispense
+              </button>
+            </div>
             <button
+              v-else
               type="button"
               class="relative shrink-0 w-11 h-6 rounded-full transition-colors disabled:opacity-40"
               :class="a.current_state_text === 'online' ? 'bg-green-600' : 'bg-zinc-700'"
@@ -176,7 +202,8 @@
               />
             </button>
           </div>
-          <ActuatorPulseControl :actuator="a" />
+          <p v-if="commandFeedback[a.id]" class="text-[10px] text-green-400 mt-1">{{ commandFeedback[a.id] }}</p>
+          <ActuatorPulseControl v-if="!isOpenCloseActuator(a.actuator_type)" :actuator="a" />
           <button
             type="button"
             class="mt-2 text-[10px] text-zinc-500 hover:text-zinc-300"
@@ -216,6 +243,8 @@ import {
   sensorPlantNeed,
   actuatorPlantNeed,
 } from '../lib/plantNeeds.js'
+import { isDispenseActuator, isOpenCloseActuator } from '../lib/actuatorControls.js'
+import { useActuatorCommands } from '../composables/useActuatorCommands.js'
 import { useFarmStore } from '../stores/farm.js'
 import SensorTile from './SensorTile.vue'
 import ZoneNeedConnectionCard from './ZoneNeedConnectionCard.vue'
@@ -281,8 +310,11 @@ const emit = defineEmits([
 ])
 
 const store = useFarmStore()
+const { sendCommand } = useActuatorCommands()
 const sensorWiringOpen = reactive({})
 const actuatorWiringOpen = reactive({})
+const commandBusy = reactive({})
+const commandFeedback = reactive({})
 
 function toggleSensorWiring(id) {
   sensorWiringOpen[id] = !sensorWiringOpen[id]
@@ -290,6 +322,17 @@ function toggleSensorWiring(id) {
 
 function toggleActuatorWiring(id) {
   actuatorWiringOpen[id] = !actuatorWiringOpen[id]
+}
+
+async function queueActuatorCommand(actuator, command) {
+  commandBusy[actuator.id] = true
+  commandFeedback[actuator.id] = ''
+  try {
+    const ok = await sendCommand(actuator, command, `${props.zone?.name || 'Zone'}: ${command}`)
+    if (ok) commandFeedback[actuator.id] = `Queued ${command}`
+  } finally {
+    commandBusy[actuator.id] = false
+  }
 }
 
 function onHardwareUpdated() {

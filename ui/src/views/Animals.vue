@@ -65,11 +65,27 @@
             <router-link
               v-if="g.primary_zone_id"
               v-nav-hint="`/zones/${g.primary_zone_id}`"
-              :to="`/zones/${g.primary_zone_id}`"
+              :to="{ path: `/zones/${g.primary_zone_id}`, query: { tab: 'water' } }"
               class="text-gr33n-500 hover:underline truncate block"
             >{{ zoneName(g.primary_zone_id) || '—' }}</router-link>
             <p v-else class="text-white truncate">—</p>
           </div>
+        </div>
+        <div
+          v-if="groupHardware(g).length"
+          class="mb-3 flex flex-wrap gap-1.5"
+          data-test="animal-group-hardware"
+        >
+          <router-link
+            v-for="chip in groupHardware(g)"
+            :key="chip.label"
+            v-nav-hint="`/zones/${g.primary_zone_id}?tab=water`"
+            :to="{ path: `/zones/${g.primary_zone_id}`, query: { tab: 'water' } }"
+            class="text-[10px] px-2 py-0.5 rounded-full bg-zinc-950 text-zinc-400 border border-zinc-700 hover:border-gr33n-700 hover:text-gr33n-400 capitalize"
+            :title="`Open ${zoneName(g.primary_zone_id)} → Water tab`"
+          >
+            {{ chip.icon }} {{ chip.label }} · {{ chip.state }}
+          </router-link>
         </div>
         <div class="flex items-center gap-3 border-t border-zinc-800 pt-2">
           <button @click="openDetail(g)" class="text-xs text-green-400 hover:text-green-300">Timeline</button>
@@ -129,7 +145,7 @@
               class="w-full bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-green-600"
             >
               <option :value="null">— none —</option>
-              <option v-for="z in zones" :key="z.id" :value="z.id">{{ z.display_name || z.internal_identifier }}</option>
+              <option v-for="z in zones" :key="z.id" :value="z.id">{{ z.name }}</option>
             </select>
           </div>
         </div>
@@ -318,6 +334,7 @@ import { useFarmStore } from '../stores/farm'
 import { useFarmContextStore } from '../stores/farmContext'
 import HelpTip from '../components/HelpTip.vue'
 import ModuleEmptyShell from '../components/ModuleEmptyShell.vue'
+import { animalHardwareChips } from '../lib/actuatorControls.js'
 
 const store = useFarmStore()
 const farmContext = useFarmContextStore()
@@ -341,7 +358,12 @@ const deltaTotal = ref(null)
 const eventForm = ref(emptyEventForm())
 const eventError = ref('')
 
-const eventTypeChoices = ['added', 'born', 'died', 'sold', 'culled', 'health_event', 'weight_check', 'note']
+const eventTypeChoices = [
+  'added', 'born', 'died', 'sold', 'culled', 'health_event', 'weight_check',
+  'released_to_pasture', 'penned_for_night', 'moved_zone', 'note',
+]
+
+const actuators = computed(() => store.actuators || [])
 
 const visibleGroups = computed(() =>
   showArchived.value ? groups.value : groups.value.filter((g) => g.active),
@@ -360,7 +382,12 @@ function emptyEventForm() {
 function zoneName(id) {
   if (!id) return ''
   const z = zones.value.find((x) => x.id === id)
-  return z ? (z.display_name || z.internal_identifier || `Zone ${z.id}`) : ''
+  return z?.name || (id ? `Zone ${id}` : '')
+}
+
+function groupHardware(group) {
+  if (!group?.primary_zone_id) return []
+  return animalHardwareChips(actuators.value, group.primary_zone_id)
 }
 
 function openCreate() {
@@ -517,6 +544,10 @@ function eventBadgeClass(type) {
     case 'health_event':
     case 'weight_check':
       return 'bg-sky-900/30 text-sky-300 border border-sky-800'
+    case 'released_to_pasture':
+      return 'bg-lime-900/30 text-lime-300 border border-lime-800'
+    case 'penned_for_night':
+      return 'bg-indigo-900/30 text-indigo-300 border border-indigo-800'
     default:
       return 'bg-zinc-800 text-zinc-400 border border-zinc-700'
   }
@@ -532,7 +563,7 @@ function formatEventTime(ts) {
 
 onMounted(async () => {
   const fid = farmContext.farmId
-  if (fid && !(store.zones && store.zones.length)) {
+  if (fid && (!store.zones?.length || !store.actuators?.length)) {
     await store.loadAll(fid)
   }
   await refresh()
