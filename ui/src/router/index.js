@@ -23,6 +23,7 @@ import MoneyWorkspace from '../views/workspaces/MoneyWorkspace.vue'
 import ComfortWorkspace from '../views/workspaces/ComfortWorkspace.vue'
 import HardwareWorkspace from '../views/workspaces/HardwareWorkspace.vue'
 import FeedWaterWorkspace from '../views/workspaces/FeedWaterWorkspace.vue'
+import NaturalFarmingWorkspace from '../views/workspaces/NaturalFarmingWorkspace.vue'
 import Login from '../views/Login.vue'
 import Alerts from '../views/Alerts.vue'
 import { buildLegacyRedirectRoutes, buildSunsetWorkspaceRedirects, buildZoneOpsRedirectRoutes } from '../lib/workspaces.js'
@@ -49,6 +50,7 @@ const routes = [
     },
   },
   { path: '/money',        component: MoneyWorkspace, name: 'money' },
+  { path: '/natural-farming', component: NaturalFarmingWorkspace, name: 'natural-farming' },
   { path: '/sensors/:id', component: SensorDetail, name: 'sensor-detail' },
   { path: '/comfort-targets', component: ComfortWorkspace, name: 'comfort-targets' },
   { path: '/crop-profiles/:id', component: CropProfileDetail, name: 'crop-profile-detail' },

@@ -8,7 +8,7 @@ overview: >
 todos:
   - id: ws1-workspace-shell
     content: "WS1: /natural-farming workspace — tabs, route, router, workspaces.js + navGroups.js sidebar entry under Grow & operate"
-    status: pending
+    status: completed
   - id: ws2-switchover-wizard
     content: "WS2: Switchover tab — maps EC programs → canonical application recipes from recipe-canonical.yaml (208)"
     status: pending
@@ -35,7 +35,7 @@ isProject: false
 
 # Phase 209 — Natural farming studio (operator UI)
 
-**Status:** planned · **Depends on:** [208 process knowledge](phase_208_natural_farming_process_knowledge.plan.md) — **hard gate:** WS0 recipe audit + field guides must land first so UI never shows wrong JMS dilutions
+**Status:** WS1 shipped · **Depends on:** [208 process knowledge](phase_208_natural_farming_process_knowledge.plan.md) — **hard gate:** WS0 recipe audit + field guides must land first so UI never shows wrong JMS dilutions
 
 ## The one job
 

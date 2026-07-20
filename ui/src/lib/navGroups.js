@@ -48,6 +48,12 @@ export function buildNavGroups(opts = {}) {
           navTitle: 'My zones, farm-wide hardware, sensors, controls, and lighting',
         },
         {
+          to: '/natural-farming',
+          icon: '🌱',
+          label: 'Natural farming',
+          navTitle: 'Ferment inputs, make batches, recipes, and on-hand stock',
+        },
+        {
           to: '/comfort-targets',
           icon: '🎯',
           label: 'Comfort & automation',

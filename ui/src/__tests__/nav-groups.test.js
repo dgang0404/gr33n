@@ -7,6 +7,7 @@ describe('Phase 68 / 78 — workspace nav groups', () => {
   it('uses zone-first grow & operate labels', () => {
     const grow = groups.find((g) => g.label === 'Grow & operate')
     expect(grow.items.some((i) => i.label === 'My zones' && i.to === '/zones')).toBe(true)
+    expect(grow.items.some((i) => i.label === 'Natural farming' && i.to === '/natural-farming')).toBe(true)
     expect(grow.items.some((i) => i.to === '/feed-water')).toBe(false)
     expect(grow.items.some((i) => i.to === '/hardware')).toBe(false)
     expect(grow.items.some((i) => i.label === 'Money' && i.to === '/money')).toBe(true)

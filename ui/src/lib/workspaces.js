@@ -110,6 +110,19 @@ export const WORKSPACES = {
       '/fertigation': { tab: 'advanced' },
     },
   },
+  naturalfarming: {
+    label: 'Natural farming',
+    icon: '🌱',
+    route: '/natural-farming',
+    subtitle: 'Ferment inputs, recipes, and on-hand batches',
+    tabs: [
+      { id: 'start', label: 'Start here' },
+      { id: 'library', label: 'Recipe library' },
+      { id: 'batch', label: 'Make a batch' },
+      { id: 'recipes', label: 'Recipes & apply' },
+      { id: 'stock', label: 'On hand' },
+    ],
+  },
 }
 
 /** Hardware sub-views inside Zones → Hardware & devices tab. */
@@ -121,13 +134,14 @@ export const FLEET_SUB_TABS = [
 
 /** Cross-workspace jump targets (Phase 68 WS5, Phase 78 zone-first). */
 export const WORKSPACE_RELATIONS = {
-  '/zones': ['/feed-water', '/hardware', '/money', '/comfort-targets', '/operator-guide'],
+  '/zones': ['/feed-water', '/natural-farming', '/hardware', '/money', '/comfort-targets', '/operator-guide'],
   '/hardware': ['/zones', '/feed-water', '/operator-guide'],
-  '/feed-water': ['/zones', '/money', '/operator-guide'],
-  '/money': ['/zones', '/feed-water', '/operator-guide'],
-  '/comfort-targets': ['/zones', '/feed-water'],
-  '/operator-guide': ['/zones', '/money', '/feed-water'],
-  '/chat': ['/zones', '/feed-water', '/operator-guide'],
+  '/feed-water': ['/zones', '/natural-farming', '/money', '/operator-guide'],
+  '/natural-farming': ['/feed-water', '/money', '/zones', '/operator-guide'],
+  '/money': ['/zones', '/feed-water', '/natural-farming', '/operator-guide'],
+  '/comfort-targets': ['/zones', '/feed-water', '/natural-farming'],
+  '/operator-guide': ['/zones', '/money', '/feed-water', '/natural-farming'],
+  '/chat': ['/zones', '/feed-water', '/natural-farming', '/operator-guide'],
 }
 
 const LEGACY_ABSORB_INDEX = buildLegacyAbsorbIndex()
