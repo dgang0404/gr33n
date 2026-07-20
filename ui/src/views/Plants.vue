@@ -142,7 +142,8 @@
           <input
             v-model="form.variety_or_cultivar"
             type="text"
-            class="w-full bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-green-600"
+            placeholder="Optional strain name (e.g. Basmati) — pick the crop above first"
+            class="w-full bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white placeholder:text-zinc-600 focus:outline-none focus:ring-1 focus:ring-green-600"
           />
         </div>
         <div v-if="editing">

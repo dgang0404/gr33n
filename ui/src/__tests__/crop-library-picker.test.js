@@ -36,11 +36,12 @@ const samplePicker = {
 }
 
 describe('cropLibraryPicker', () => {
-  it('filters by alias and partial name', () => {
+  it('filters by prefix on name and aliases', () => {
     const groups = filterPickerGroups(samplePicker, 'toma')
     expect(groups).toHaveLength(1)
     expect(groups[0].items).toHaveLength(1)
     expect(groups[0].items[0].crop_key).toBe('tomato')
+    expect(filterPickerGroups(samplePicker, 'ato')).toHaveLength(0)
   })
 
   it('finds item by profile id', () => {
@@ -70,8 +71,9 @@ describe('cropLibraryPicker', () => {
     expect(line).toContain('DLI')
   })
 
-  it('matches search terms on item', () => {
+  it('matches search terms on item by prefix only', () => {
     expect(itemMatchesQuery(samplePicker.groups[0].items[0], 'toma')).toBe(true)
+    expect(itemMatchesQuery(samplePicker.groups[0].items[0], 'ato')).toBe(false)
     expect(itemMatchesQuery(samplePicker.groups[0].items[1], 'tomato')).toBe(false)
   })
 })

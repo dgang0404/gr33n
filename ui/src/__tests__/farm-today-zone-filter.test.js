@@ -69,6 +69,7 @@ describe('Phase 173 WS1 — farmTodayZoneFilter', () => {
 
   it('offers desktop list view only above threshold', () => {
     expect(shouldOfferDesktopListView(7)).toBe(false)
+    expect(shouldOfferDesktopListView(9)).toBe(true)
     expect(shouldOfferDesktopListView(24)).toBe(true)
   })
 

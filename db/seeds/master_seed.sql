@@ -182,9 +182,9 @@ VALUES
  'Foundation of JADAM. Diverse microbial community from forest floor leaf mold. '
  'Applied to soil and foliage to build beneficial populations and suppress pathogens.',
  'Leaf mold humus (forest floor), boiled potato water (cooled), sea salt (pinch)',
- 'Mix 1 cup leaf mold into 20L cooled potato water with a pinch of sea salt. '
- 'Cover loosely, ferment 3-7 days at 20-30C until bubbling subsides.',
- 'Use within 1 week once active. Cool, shaded, loosely covered.',
+ 'Boil potato, suspend in mesh bag in 10-20L water with leaf mold and pinch of salt. '
+ 'Ferment 24-72 h at 20-30C until peak foam; use within 6-12 h of peak activity.',
+ 'Use at peak foam — within 6-12 h of peak, not after a full week idle. Cool, shaded.',
  'Chlorinated water kills microbes — use filtered or rain water only.',
  'JADAM Organic Farming, Youngsang Cho, 2016'),
 
@@ -196,7 +196,7 @@ VALUES
  'Wait 5-7 days. Extract golden serum from bottom layer.',
  'Mix with equal part raw sugar to preserve. Refrigerated 6-12 months.',
  'Use golden layer only. Discard curds and white top.',
- 'JADAM Organic Farming, Youngsang Cho, 2016'),
+ 'KNF (Cho Han-kyu); often used with JADAM'),
 
 (1, 'FPJ (Fermented Plant Juice)', 'fermented_plant_juice',
  'Made from rapidly growing plant tips (comfrey, nettle, mugwort, bamboo). '
@@ -206,7 +206,7 @@ VALUES
  'Ferment 3-7 days. Strain and bottle.',
  'Refrigerate after straining. Keeps 6-12 months.',
  'Keep sugar ratio accurate. Do not use moldy material.',
- 'JADAM Organic Farming, Youngsang Cho, 2016'),
+ 'KNF (Cho Han-kyu); often used with JADAM'),
 
 (1, 'FFJ (Fermented Fruit Juice)', 'fermented_plant_juice',
  'Made from ripe or overripe sweet fruits. High in sugars, enzymes, and potassium. '
@@ -215,7 +215,7 @@ VALUES
  'Chop fruit, mix 1:1 with sugar. Ferment loosely covered 7 days. Strain.',
  'Refrigerate after straining. Use within 6 months.',
  'Use during flowering/fruiting only.',
- 'JADAM Organic Farming, Youngsang Cho, 2016'),
+ 'KNF (Cho Han-kyu); often used with JADAM'),
 
 (1, 'BRV (Brown Rice Vinegar)', 'fermented_plant_juice',
  'Fermented brown rice vinegar 4-8% acidity. Strengthens cell walls, '
@@ -234,13 +234,13 @@ VALUES
  'Ferment 7 more days. Strain. Combine extracts.',
  'Keeps 1-2 years sealed.',
  'Extremely potent — always dilute 1:1000 minimum. Avoid inhaling.',
- 'JADAM Organic Farming, Youngsang Cho, 2016'),
+ 'KNF (Cho Han-kyu); often used with JADAM'),
 
 (1, 'JHS (JADAM Herbal Solution)', 'oriental_herbal_nutrient',
  'Water-based extract of aromatic and pest-repellent herbs. Broader spectrum '
  'pest deterrent and foliar immune support. Mixed with JWA for natural pesticide sprays.',
- 'Wormwood, artemisia, garlic chives, hot pepper, neem leaves, non-chlorinated water',
- 'Simmer or cold-extract herbs in water 1-3 hours. Strain finely. Use fresh.',
+ 'Fresh herbs (wormwood, artemisia, garlic chives, hot pepper, neem) or Jerusalem artichoke, non-chlorinated water',
+ 'Boil 1 kg fresh plant in mesh bag in 4-5 L water 4-5 hours. Strain finely. Use fresh concentrate.',
  'Use within 2 weeks refrigerated. Strain very fine before loading sprayer.',
  'Do not apply on blooms — deters pollinators. Apply morning only.',
  'JADAM Organic Farming, Youngsang Cho, 2016'),
@@ -253,7 +253,7 @@ VALUES
  'Fizzing will occur. Leave 7 days uncovered. Strain.',
  'Store in open-top container (gases form). Use within 30 days.',
  'Container must be breathable. Roast shells well.',
- 'JADAM Organic Farming, Youngsang Cho, 2016'),
+ 'KNF (Cho Han-kyu); often used with JADAM'),
 
 (1, 'WCS (Water-Soluble Calcium Phosphate)', 'water_soluble_nutrient',
  'Phosphorus and calcium from charred animal bones in brown rice vinegar. '
@@ -262,7 +262,7 @@ VALUES
  'Char bones until white ash. Cool. Dissolve in BRV 1:10 for 7 days. Strain.',
  'Store in breathable container. Use within 30 days.',
  'Char bones fully to white — partial char gives inconsistent results.',
- 'JADAM Organic Farming, Youngsang Cho, 2016'),
+ 'KNF (Cho Han-kyu); often used with JADAM'),
 
 (1, 'JWA (JADAM Wetting Agent)', 'other_extract',
  'Homemade soap from plant oils and wood ash lye. Organic surfactant and '
@@ -273,19 +273,20 @@ VALUES
  'Lye is caustic — wear gloves when making. Do not apply in direct sun.',
  'JADAM Organic Farming, Youngsang Cho, 2016'),
 
-(1, 'JS (JADAM Sulfur)', 'other_extract',
- 'Sulfur solution for powdery mildew, rust, and spider mites. '
- 'Core JADAM disease control input. Broad-spectrum fungicide and miticide.',
- 'Wettable sulfur powder, water, JWA (as emulsifier)',
- 'Dissolve sulfur powder at 0.5% in warm water with JWA. Mix fresh each use.',
- 'Store dry sulfur powder sealed indefinitely. Mix fresh per application.',
- 'Do not apply above 32C — sulfur burn risk. Wear mask and gloves.',
+(1, 'JS (JADAM Sulfur concentrate)', 'other_extract',
+ 'Exothermic JADAM sulfur concentrate (~25% sulfur) for powdery mildew, rust, and mites. '
+ 'Not garden wettable sulfur — batch-made from sulfur, caustic soda, clay, and salt.',
+ 'Elemental sulfur, caustic soda (NaOH), red clay, phyllite powder, sea salt, water',
+ 'Combine per Cho exothermic batch method; yields ~25% sulfur concentrate. '
+ 'Dilute 0.5-2 L concentrate per 500 L spray water. Add JWA for coverage.',
+ 'Store concentrate sealed; label batch date. Mix spray same day.',
+ 'Caustic soda is hazardous — full PPE, ventilation. Do not apply above 32C.',
  'JADAM Organic Farming, Youngsang Cho, 2016'),
 
 (1, 'JLF General (Weed and Grass)', 'other_ferment',
  'JADAM Liquid Fertilizer from locally available weeds and grasses. '
  'Returns native minerals to soil. Free from farm waste. '
- 'Dilution 1:20 general, 1:30 seedlings. Much stronger than other JADAM inputs.',
+ 'Start 1:100 if unsure; experienced use 1:20. Seedlings 1:30. Much stronger than JMS.',
  'Fresh untreated weeds and grass clippings, leaf mold (handful), non-chlorinated water',
  'Fill container 2/3 with chopped weeds. Add leaf mold as microbial starter. '
  'Fill to top with water. Seal. Ferment 7-14 days. Stir every few days. '
@@ -305,14 +306,22 @@ VALUES
  'JADAM Organic Farming, Youngsang Cho, 2016'),
 
 (1, 'JLF Spring (Nettle and Comfrey)', 'other_ferment',
- 'High-nitrogen JLF from nitrogen-fixing plants. Best for spring vegetative '
- 'growth push. Nettle and comfrey mine deep minerals.',
+ 'High-nitrogen JLF from dynamic accumulator biomass (nettle, comfrey). '
+ 'Best for spring vegetative growth push. Mines deep minerals — not N-fixing crops.',
  'Fresh stinging nettle tops, comfrey leaves (or either alone), leaf mold, water',
  'Harvest tops wearing gloves. Fill container 2/3. Add leaf mold, fill with water. '
  'Ferment 7-10 days. Strain.',
  'Use within 2 weeks of straining.',
  'Wear gloves harvesting nettle. Very high N — do not over-apply to fruiting plants.',
  'JADAM Organic Farming, Youngsang Cho, 2016'),
+
+(1, 'FAA (Fish Amino Acid)', 'fermented_plant_juice',
+ 'KNF fish amino acid from fish scraps and brown sugar. High nitrogen and trace minerals.',
+ 'Fresh fish scraps (no salt), brown sugar (1:1 by weight)',
+ 'Layer fish and brown sugar 1:1. Ferment 3-6 months until bones dissolve. Strain.',
+ 'Refrigerate after straining. Keeps 6-12 months.',
+ 'Strong odor during ferment — ventilate. Dilute 1:1000 minimum for application.',
+ 'KNF (Cho Han-kyu); often used with JADAM'),
 
 (1, 'Compost Tea Actively Aerated', 'compost_tea_extract',
  'Brewed extract of finished compost, aerated 24-48h to multiply aerobic microbes. '
@@ -338,15 +347,15 @@ VALUES
 
 (1, 'JMS Soil Drench',
  'Base soil microbe inoculant. Foundation of all JADAM programs.',
- 'soil_drench', '1:500 (JMS:water)',
- 'Dilute 1:500. Apply 2-4L per sqm of root zone. Morning or evening.',
+ 'soil_drench', '1:10 (JMS:water)',
+ 'Dilute 1:10 (1 part JMS to 10 parts water). Apply 2-4L per sqm of root zone. Morning or evening.',
  'Every 2 weeks growing season. Monthly dormant.',
  ARRAY['All crops'], ARRAY['All stages']),
 
 (1, 'JLF General Soil Drench',
  'Primary fertility input. Main fertilizer not a supplement.',
  'soil_drench', '1:20 (JLF:water)',
- 'Strain JLF through cloth. Dilute 1:20. Apply 2-4L per sqm to root zone.',
+ 'Strain JLF through cloth. Start 1:100 if unsure; dilute 1:20 when tested. Apply 2-4L per sqm to root zone.',
  'Every 1-2 weeks active growth.',
  ARRAY['All crops'], ARRAY['All stages']),
 
@@ -359,8 +368,8 @@ VALUES
 
 (1, 'JLF and JMS Combined Drench',
  'Nutrients and microbes in one pass. Core weekly application.',
- 'soil_drench', 'JLF 1:20 + JMS 1:500 in same water',
- 'Fill tank. Add JLF 1:20, then JMS 1:500. Apply same day.',
+ 'soil_drench', 'JLF 1:20 + JMS 1:10 in same water',
+ 'Fill tank. Add JLF 1:20, then JMS 1:10. Apply same day.',
  'Weekly during peak growing season.',
  ARRAY['All crops'], ARRAY['All stages']),
 
@@ -380,8 +389,8 @@ VALUES
 
 (1, 'JMS Foliar Spray',
  'Establishes beneficial microbes on leaf surfaces. Suppresses airborne pathogens.',
- 'foliar_spray', '1:500 (JMS:water)',
- 'Dilute 1:500. Spray upper and lower leaf surfaces to runoff. Early morning.',
+ 'foliar_spray', '1:20 (JMS:water) + JWA',
+ 'Dilute 1:20. Add JWA for leaf coverage. Spray upper and lower leaf surfaces to runoff. Early morning.',
  'Every 1-2 weeks. More often during high humidity.',
  ARRAY['All crops'], ARRAY['Vegetative', 'Early flowering']),
 
@@ -417,9 +426,9 @@ VALUES
  ARRAY['All crops'], ARRAY['Any stage']),
 
 (1, 'JS Fungicide Spray',
- 'Controls powdery mildew, rust, and spider mites.',
- 'foliar_spray', '0.5% JS + JWA 1:500',
- 'Dissolve wettable sulfur at 0.5% in water with JWA. Mix fresh. '
+ 'Controls powdery mildew, rust, and spider mites using JADAM sulfur concentrate.',
+ 'foliar_spray', '0.5-2 L JS concentrate per 500 L water + JWA 1:500',
+ 'Dilute JS concentrate per Cho (0.5-2 L per 500 L). Add JWA. Mix fresh. '
  'Apply thorough coverage. Do NOT apply above 32C.',
  'At first sign of fungal disease. Repeat every 5-7 days.',
  ARRAY['All crops'], ARRAY['Any stage']),
@@ -484,14 +493,14 @@ BEGIN
     INSERT INTO gr33nnaturalfarming.recipe_input_components
         (application_recipe_id, input_definition_id, part_value, part_unit_id, notes)
     VALUES
-        (r_jms_s,  i_jms,   1.0,   u_frac, '1 part JMS to 500 parts water'),
+        (r_jms_s,  i_jms,   1.0,   u_frac, '1 part JMS to 10 parts water'),
         (r_jlf_s,  i_jlf_g, 1.0,   u_frac, '1 part JLF to 20 parts water'),
         (r_jlf_sd, i_jlf_g, 1.0,   u_frac, '1 part JLF to 30 parts water'),
         (r_combo,  i_jlf_g, 1.0,   u_frac, 'JLF at 1:20'),
-        (r_combo,  i_jms,   0.025, u_frac, 'JMS at 1:500 relative to 1:20 base'),
+        (r_combo,  i_jms,   2.0,   u_frac, 'JMS at 1:10 relative to 1:20 JLF base'),
         (r_lab,    i_lab,   1.0,   u_frac, '1 part LAB to 1000 parts water'),
         (r_ohn,    i_ohn,   1.0,   u_frac, '1 part OHN to 1000 — never exceed'),
-        (r_jms_f,  i_jms,   1.0,   u_frac, '1 part JMS to 500 parts water'),
+        (r_jms_f,  i_jms,   1.0,   u_frac, '1 part JMS to 20 parts water'),
         (r_fpj_f,  i_fpj,   1.0,   u_frac, '1 part FPJ to 500-1000 parts water'),
         (r_ffj_f,  i_ffj,   1.0,   u_frac, 'FFJ at 1:500'),
         (r_ffj_f,  i_wca,   0.5,   u_frac, 'WCA at 1:1000 relative'),
@@ -499,7 +508,7 @@ BEGIN
         (r_brv_f,  i_wca,   0.8,   u_frac, 'WCA at 1:1000 relative'),
         (r_jhs_f,  i_jhs,   1.0,   u_frac, 'JHS at 1:50'),
         (r_jhs_f,  i_jwa,   0.1,   u_frac, 'JWA at 1:500 surfactant'),
-        (r_js_f,   i_js,    1.0,   u_frac, '0.5% sulfur in water'),
+        (r_js_f,   i_js,    1.0,   u_frac, '0.5-2 L JS concentrate per 500 L water'),
         (r_js_f,   i_jwa,   0.1,   u_frac, 'JWA as emulsifier'),
         (r_jlf_f,  i_jlf_g, 1.0,   u_frac, 'JLF at 1:30 to 1:50'),
         (r_jlf_f,  i_jwa,   0.033, u_frac, 'JWA 1:1000 surfactant'),
@@ -1113,7 +1122,7 @@ FROM (VALUES
   ('Veg Room',        'Water Late Veg Daily',        'Check veg room EC levels',                  'Target 1.2–2.0 mS/cm for late veg. Adjust JLF drench ratio if drifting.', 'monitoring',    'todo',        2, CURRENT_DATE),
   ('Flower Room',     'Water Early Flower Daily',    'Apply FFJ + WCA foliar spray',              'FFJ 1:500 + WCA 1:1000. Morning spray before lights peak. Follow schedule.', 'jadam_apply',   'in_progress', 3, CURRENT_DATE),
   ('Flower Room',     'Water Early Flower Daily',    'Inspect flower room for powdery mildew',    'Check leaf undersides. Prep JS spray if found. Critical during bloom.', 'scouting',     'in_progress', 2, CURRENT_DATE),
-  ('Outdoor Garden',  'Water Outdoor Garden Daily',  'Apply JLF soil drench — outdoor beds',      '1:20 JLF dilution. 3L per sqm. Combine with JMS 1:500 in drench tank.', 'jadam_apply',   'todo',        1, CURRENT_DATE + 2),
+  ('Outdoor Garden',  'Water Outdoor Garden Daily',  'Apply JLF soil drench — outdoor beds',      '1:20 JLF dilution. 3L per sqm. Combine with JMS 1:10 in drench tank.', 'jadam_apply',   'todo',        1, CURRENT_DATE + 2),
   ('Veg Room',        NULL,                          'Calibrate pH sensor',                       'pH drifting — recalibrate with 6.86 and 4.01 buffer solution.', 'maintenance',  'on_hold',     2, CURRENT_DATE + 1),
   ('Flower Room',     NULL,                          'Harvest Flower Room A',                     'Week 9 short-day crop. Flush complete. Check bloom openness and stem length.', 'harvest',       'completed',   3, CURRENT_DATE - 2),
   ('Outdoor Garden',  NULL,                          'Turn compost pile',                         'Aerate pile. Check temp 55–65C. Moisture should clump not drip.', 'soil_prep',    'completed',   1, CURRENT_DATE - 5)
@@ -1518,7 +1527,7 @@ BEGIN
         IF i_jms IS NOT NULL THEN
             INSERT INTO gr33nfertigation.mixing_event_components
                 (mixing_event_id, input_definition_id, input_batch_id, volume_added_ml, dilution_ratio, notes)
-            VALUES (mix_veg, i_jms, b_jms, 600.000, '1:500 in tank',
+            VALUES (mix_veg, i_jms, b_jms, 30000.000, '1:10 in tank',
                     'Demo JMS contribution; adjust to recipe.');
         END IF;
     END IF;

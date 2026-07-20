@@ -1,4 +1,4 @@
-.PHONY: run run-receiver build build-receiver test seed sqlc migrate merge-legacy-plants ui dev dev-auth-test dev-auth-test-run e2e-browser ollama-smoke ollama-smoke-cpu ollama-smoke-help guardian-eval guardian-qa-smoke guardian-qa-smoke-ec-ph guardian-qa-smoke-unread-alerts guardian-qa-phase127 guardian-qa-regression guardian-qa-manual guardian-qa-smoke-strict guardian-qa-change-requests guardian-qa-change-requests-ui guardian-qa-change-requests-ui-task guardian-qa-change-requests-ui-quick guardian-laptop-tune rag-ingest-help rag-ingest-demo rag-ingest-platform-docs compose-db-up compose-db-status compose-logging-up compose-logging-down setup-compose-dev dev-stack dev-stack-fresh dev-stack-fresh-rag local-up restart-local restart-local-serve laptop-up db-sanity-report check-stack check-crop-library check-crop-catalog check-crop-catalog-parity check-catalog-seed-drift add-crop-check check-catalog-release check-ui-domain-parity clean lint bootstrap-local bootstrap-local-docker install-deps-debian install-pi-edge-deps first-clone first-clone-docker first-clone-install-deps audit-openapi audit-env edge-smoke-help edge-actuator-smoke-help recipe-pack-import-help agronomy-seed-pack-help guardian-bootstrap-farm import-agronomy-seed-pack apply-agronomy-overrides rag-ingest-farm-operational
+.PHONY: run run-receiver build build-receiver test seed sqlc migrate merge-legacy-plants ui dev dev-auth-test dev-auth-test-run e2e-browser ollama-smoke ollama-smoke-cpu ollama-smoke-help guardian-eval guardian-qa-smoke guardian-qa-smoke-all guardian-qa-smoke-all-help guardian-qa-smoke-ec-ph guardian-qa-smoke-unread-alerts guardian-qa-phase127 guardian-qa-regression guardian-qa-manual guardian-qa-smoke-strict guardian-qa-change-requests guardian-qa-change-requests-ui guardian-qa-change-requests-ui-task guardian-qa-change-requests-ui-quick guardian-laptop-tune rag-ingest-help rag-ingest-demo rag-ingest-platform-docs compose-db-up compose-db-status compose-logging-up compose-logging-down setup-compose-dev dev-stack dev-stack-fresh dev-stack-fresh-rag local-up restart-local restart-local-serve laptop-up db-sanity-report check-stack check-crop-library check-crop-catalog check-crop-catalog-parity check-catalog-seed-drift add-crop-check check-catalog-release check-ui-domain-parity clean lint bootstrap-local bootstrap-local-docker install-deps-debian install-pi-edge-deps first-clone first-clone-docker first-clone-install-deps audit-openapi audit-env edge-smoke-help edge-actuator-smoke-help recipe-pack-import-help agronomy-seed-pack-help guardian-bootstrap-farm import-agronomy-seed-pack apply-agronomy-overrides rag-ingest-farm-operational
 
 # dash (common default /bin/sh) can report "wait: No child processes" for dev / dev-auth-test;
 # bash handles background jobs + wait reliably.
@@ -272,6 +272,20 @@ guardian-qa-change-requests-ui-quick: ## Fast multi-turn UI prep: ack + schedule
 		$(GO) run ./cmd/guardian-eval/ -models $${MODEL:-phi3:mini} -farm-id $${FARM_ID:-1} \
 			-suite change-requests-ui-quick \
 			-report $${GUARDIAN_EVAL_REPORT:-data/guardian_model_eval.json}'
+
+guardian-qa-smoke-all-help: ## Print master smoke-all suite list and env knobs
+	@echo "make guardian-qa-smoke-all — runs (sequential, ~4 hr CPU phi3:mini):"
+	@echo "  1. guardian-qa-smoke              (4 Q&A prompts)"
+	@echo "  2. guardian-qa-phase127           (4 grounding prompts)"
+	@echo "  3. guardian-qa-change-requests-pending (4 write-intents → Pending tab)"
+	@echo "Optional: GUARDIAN_QA_UI=1 (+ change-requests-ui-quick ~50 min)"
+	@echo "Optional: GUARDIAN_QA_UI_FULL=1 (+ change-requests-ui ~2–3 hr)"
+	@echo "Optional: GUARDIAN_QA_FAIL_FAST=1 (stop on first suite failure)"
+	@echo "Log: GUARDIAN_QA_ALL_LOG=/tmp/guardian-qa-smoke-all.log"
+
+guardian-qa-smoke-all: ## Master smoke — smoke + phase127 + change-requests-pending (see guardian-qa-smoke-all-help)
+	@chmod +x scripts/guardian-qa-smoke-all.sh
+	@./scripts/guardian-qa-smoke-all.sh
 
 guardian-laptop-tune: ## Phase 129 — print or apply Guardian laptop .env recommendations (ARGS="--apply")
 	@chmod +x ./scripts/tune-guardian-laptop.sh

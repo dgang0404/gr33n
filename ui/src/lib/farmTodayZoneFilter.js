@@ -14,7 +14,8 @@ export const TODAY_ZONE_FILTERS = [
 
 const FILTER_BAR_THRESHOLD = 9
 const MOBILE_PAGE_SIZE = 8
-const DESKTOP_LIST_THRESHOLD = 13
+// Match filter bar: demo farms (~11 zones) still get Map/List toggle.
+const DESKTOP_LIST_THRESHOLD = FILTER_BAR_THRESHOLD
 
 function zoneTypeMatches(zone, filterId) {
   const t = String(zone?.zone_type || '').toLowerCase()
@@ -69,7 +70,7 @@ export function shouldPageZoneStack(zoneCount, pageSize = MOBILE_PAGE_SIZE) {
  * @param {number} zoneCount
  */
 export function shouldOfferDesktopListView(zoneCount) {
-  return Number(zoneCount || 0) > DESKTOP_LIST_THRESHOLD
+  return Number(zoneCount || 0) >= DESKTOP_LIST_THRESHOLD
 }
 
 /**

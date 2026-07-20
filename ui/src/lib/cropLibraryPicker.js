@@ -14,10 +14,10 @@ export function normalizeSearchQuery(q) {
 export function itemMatchesQuery(item, q) {
   if (!q) return true
   const terms = item.search_terms || []
-  if (terms.some((t) => t.includes(q))) return true
+  if (terms.some((t) => String(t).toLowerCase().startsWith(q))) return true
   return (
-    String(item.display_name || '').toLowerCase().includes(q) ||
-    String(item.crop_key || '').toLowerCase().includes(q)
+    String(item.display_name || '').toLowerCase().startsWith(q) ||
+    String(item.crop_key || '').toLowerCase().startsWith(q)
   )
 }
 

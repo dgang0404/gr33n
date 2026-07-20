@@ -52,9 +52,20 @@
     </div>
 
     <template v-else>
-      <p v-if="!loading && !selectOptions.length" class="text-zinc-500 text-xs">No crops with targets available.</p>
+      <input
+        v-if="!loading && picker?.groups?.length"
+        v-model="searchQuery"
+        type="search"
+        autocomplete="off"
+        placeholder="Type to filter crops (e.g. a → apple, av → avocado)"
+        class="w-full bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white placeholder:text-zinc-600"
+        data-test="crop-library-picker-search"
+      />
+      <p v-if="!loading && !selectOptions.length" class="text-zinc-500 text-xs">
+        {{ searchQuery.trim() ? 'No crops match your filter.' : 'No crops with targets available.' }}
+      </p>
       <div
-        v-else
+        v-else-if="selectOptions.length"
         class="max-h-56 overflow-y-auto rounded-lg border border-zinc-700 bg-zinc-950 divide-y divide-zinc-800"
         data-test="crop-library-picker-list"
       >
@@ -117,6 +128,7 @@
 import { computed, ref, watch } from 'vue'
 import { useFarmStore } from '../stores/farm.js'
 import {
+  filterPickerGroups,
   findPickerItemByProfileId,
   formatStageTargetLine,
   pickerItemHint,
@@ -138,6 +150,7 @@ const emit = defineEmits(['update:modelValue', 'select'])
 
 const store = useFarmStore()
 const picker = ref(null)
+const searchQuery = ref('')
 const loading = ref(false)
 const error = ref('')
 const targetLines = ref([])
@@ -145,7 +158,7 @@ const targetTruncated = ref(0)
 const profileLoading = ref(false)
 
 const selectGroups = computed(() => {
-  const groups = picker.value?.groups || []
+  const groups = filterPickerGroups(picker.value, searchQuery.value)
   return groups
     .map((g) => ({
       ...g,

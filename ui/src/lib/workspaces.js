@@ -326,10 +326,18 @@ function redirectToZoneOps(to, ops) {
   return { path: '/', query: {} }
 }
 
+/** Named legacy paths so `{ name: 'automation' }` resolves (Comfort workspace absorb). */
+const LEGACY_ROUTE_NAMES = {
+  '/automation': 'automation',
+  '/schedules': 'schedules',
+  '/setpoints': 'setpoints',
+}
+
 /** @returns {Array<{ path: string, redirect: (to: import('vue-router').RouteLocationNormalized) => object }>} */
 export function buildLegacyRedirectRoutes() {
   return Object.entries(LEGACY_ABSORB_INDEX).map(([legacyPath, hit]) => ({
     path: legacyPath,
+    ...(LEGACY_ROUTE_NAMES[legacyPath] ? { name: LEGACY_ROUTE_NAMES[legacyPath] } : {}),
     redirect: (to) => {
       const zoneId = parseZoneIdFromQuery(to.query)
 

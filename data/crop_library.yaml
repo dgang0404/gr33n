@@ -35,7 +35,9 @@ aliases:
   fungi: mushroom
   carrot: in_ground_root
   potato: in_ground_root
-  sweet_potato: in_ground_root
+  basmati: rice
+  jasmine_rice: rice
+  paddy: rice
 
 crops:
   # ── Existing Phase 64 profiles (stages seeded) ──────────────────────────
@@ -2605,6 +2607,76 @@ crops:
         dli_target: 35.0
         photoperiod_hrs: 14.0
         notes: Juvenile years — fruit 3–5+ in pots
+
+  - key: rice
+    display_name: Rice (aquaponics / shallow water)
+    category: grain
+    source: Warm shallow-water grain; aquaponics raft or paddy tray
+    substrate: aquaponics raft / shallow tray
+    watering_style: constant_feed
+    cousin_of: lettuce
+    aliases: [basmati, paddy]
+    stages:
+      - stage: seedling
+        ec_min: 0.40
+        ec_target: 0.55
+        ec_max: 0.70
+        ph_min: 5.5
+        ph_max: 6.5
+        vpd_min_kpa: 0.50
+        vpd_max_kpa: 0.80
+        temp_min_c: 22.0
+        temp_max_c: 30.0
+        rh_min_pct: 60
+        rh_max_pct: 85
+        dli_target: 18.0
+        photoperiod_hrs: 14.0
+        notes: Germination in warm shallow water; keep roots wet, not buried deep
+      - stage: early_veg
+        ec_min: 0.55
+        ec_target: 0.75
+        ec_max: 0.95
+        ph_min: 5.5
+        ph_max: 6.5
+        vpd_min_kpa: 0.60
+        vpd_max_kpa: 0.90
+        temp_min_c: 24.0
+        temp_max_c: 32.0
+        rh_min_pct: 55
+        rh_max_pct: 80
+        dli_target: 22.0
+        photoperiod_hrs: 14.0
+        notes: Tillering; low EC — fish waste often supplies N
+      - stage: late_veg
+        ec_min: 0.70
+        ec_target: 0.90
+        ec_max: 1.10
+        ph_min: 5.5
+        ph_max: 6.5
+        vpd_min_kpa: 0.70
+        vpd_max_kpa: 1.00
+        temp_min_c: 24.0
+        temp_max_c: 34.0
+        rh_min_pct: 50
+        rh_max_pct: 75
+        dli_target: 28.0
+        photoperiod_hrs: 14.0
+        notes: Panicle init — avoid cold nights below ~18 °C
+      - stage: harvest
+        ec_min: 0.50
+        ec_target: 0.65
+        ec_max: 0.80
+        ph_min: 5.5
+        ph_max: 6.5
+        vpd_min_kpa: 0.80
+        vpd_max_kpa: 1.10
+        temp_min_c: 22.0
+        temp_max_c: 32.0
+        rh_min_pct: 45
+        rh_max_pct: 70
+        dli_target: 30.0
+        photoperiod_hrs: 12.0
+        notes: Grain fill; taper EC; shallow dry-down before harvest
 
 # ── Unsupported — no structured EC/VPD targets; Guardian honest blocks (WS4e) ─
 # Not shown in the UI picker. Resolved via alias registry for chat only.

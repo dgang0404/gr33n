@@ -57,6 +57,7 @@ FROM (VALUES
     ('pear', 'Pear (nursery)', true, 'fruit_tree', 'Deciduous nursery pear; similar to apple bench culture', 'soilless_mix / large container', 'pulse_dryback', NULL, NULL, NULL, NULL, 4),
     ('plum', 'Plum (nursery / stone fruit)', true, 'fruit_tree', 'Stone fruit nursery; similar to peach', 'soilless_mix / large container', 'pulse_dryback', NULL, NULL, NULL, NULL, 4),
     ('mango', 'Mango (container nursery)', true, 'fruit_tree', 'Tropical greenhouse nursery; warm only', 'coarse soilless_mix', 'pulse_dryback', NULL, NULL, NULL, NULL, 4),
+    ('rice', 'Rice (aquaponics / shallow water)', true, 'grain', 'Warm shallow-water grain; aquaponics raft or paddy tray', 'aquaponics raft / shallow tray', 'constant_feed', NULL, NULL, NULL, NULL, 4),
     ('ramps', 'Ramps (wild leek)', false, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'Woodland spring ephemeral — not indoor fertigation; foraged crop, not bench automation', 4),
     ('mushroom', 'Mushroom / fungi', false, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'Different production domain — substrate bags and humidity rooms; use husbandry module, not fertigation profiles', 4),
     ('in_ground_root', 'In-ground root crops (carrot / potato)', false, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'Field and deep-soil crops — gr33n targets hydroponic and container; no bench EC curve for tubers or taproots', 4),
@@ -117,6 +118,7 @@ UPDATE gr33ncrops.crop_catalog_entries SET cousin_of = 'citrus' WHERE crop_key =
 UPDATE gr33ncrops.crop_catalog_entries SET cousin_of = 'apple' WHERE crop_key = 'pear';
 UPDATE gr33ncrops.crop_catalog_entries SET cousin_of = 'peach' WHERE crop_key = 'plum';
 UPDATE gr33ncrops.crop_catalog_entries SET cousin_of = 'citrus' WHERE crop_key = 'mango';
+UPDATE gr33ncrops.crop_catalog_entries SET cousin_of = 'lettuce' WHERE crop_key = 'rice';
 UPDATE gr33ncrops.crop_catalog_entries SET cousin_of = 'lettuce' WHERE crop_key = 'in_ground_root';
 
 INSERT INTO gr33ncrops.crop_catalog_aliases (alias, crop_key)
@@ -125,6 +127,7 @@ FROM (VALUES
     ('allium_tricoccum', 'ramps'),
     ('apple_tree', 'apple'),
     ('aubergine', 'eggplant'),
+    ('basmati', 'rice'),
     ('beefsteak_tomato', 'tomato'),
     ('carrot', 'in_ground_root'),
     ('cherry_tomato', 'tomato'),
@@ -135,6 +138,7 @@ FROM (VALUES
     ('fungi', 'mushroom'),
     ('grape_vine', 'grape'),
     ('grapevine', 'grape'),
+    ('jasmine_rice', 'rice'),
     ('lemon', 'citrus'),
     ('lime', 'citrus'),
     ('mandarin', 'citrus'),
@@ -144,6 +148,7 @@ FROM (VALUES
     ('nectarine', 'peach'),
     ('orange', 'citrus'),
     ('orchid', 'phalaenopsis'),
+    ('paddy', 'rice'),
     ('pak_choi', 'bok_choy'),
     ('pak_choy', 'bok_choy'),
     ('panax', 'ginseng'),
@@ -734,21 +739,26 @@ Fruit in containers typically **years 3–5**. Thin heavy sets on small trees to
 **Tropical warm-only** — cold roots stop growth fast. EC **≈1.0–1.6 mS/cm**; watch **anthracnose** when RH stays high on flush.
 
 Juvenile mangoes in pots may fruit **years 3–5+**. Never ship cold-stressed liners into warm zones without acclimation.$fg_crop_mango_nursery$, 4, TRUE, 55),
+    ('crop-rice-nutrition', 'Rice nutrition (aquaponics / shallow water)', 'rice', 'crop_nutrition', 'general', 'safe', $fg_crop_rice_nutrition$# Rice nutrition (aquaponics / shallow water)
+
+Rice in bench-scale aquaponics or shallow trays runs **low EC** (~0.5–1.0 mS/cm) with **warm roots** and **constant shallow water**. Fish waste often supplies nitrogen — watch for **iron chlorosis** if water is too alkaline.
+
+Assign the rice profile in Start grow or Plants so Guardian cites structured mS/cm targets. Use **Variety / cultivar** for the strain (Basmati, Jasmine, etc.) after picking Rice from the catalog.$fg_crop_rice_nutrition$, 4, TRUE, 56),
     ('crop-unsupported-woodland', 'Unsupported woodland crops (ramps, ginseng)', NULL, 'unsupported', 'general', 'safe', $fg_crop_unsupported_woodland$# Unsupported woodland crops (ramps, ginseng)
 
 **Ramps** (wild leek) and **ginseng** are woodland ephemerals or multi-year shade medicinals — not indoor fertigation crops. gr33n does not ship EC, VPD, or photoperiod targets for them.
 
-If an operator asks about bench automation, explain honestly: these are foraged or long-cycle outdoor/forest production. For general greenhouse questions, suggest a supported **leafy** or **herb** cousin only when they want a hydro starting point — never invent woodland feed schedules.$fg_crop_unsupported_woodland$, 4, TRUE, 56),
+If an operator asks about bench automation, explain honestly: these are foraged or long-cycle outdoor/forest production. For general greenhouse questions, suggest a supported **leafy** or **herb** cousin only when they want a hydro starting point — never invent woodland feed schedules.$fg_crop_unsupported_woodland$, 4, TRUE, 57),
     ('crop-unsupported-mushroom', 'Mushroom production (unsupported fertigation profile)', NULL, 'unsupported', 'general', 'safe', $fg_crop_unsupported_mushroom$# Mushroom production (unsupported fertigation profile)
 
 Mushrooms and other **fungi** use bag/substrate colonization and humidity rooms — a different domain from plant EC/VPD profiles. gr33n crop targets do not apply.
 
-Direct operators to husbandry / substrate workflows when available. Do not map shiitake or other fungi to cannabis or tomato nutrient curves.$fg_crop_unsupported_mushroom$, 4, TRUE, 57),
+Direct operators to husbandry / substrate workflows when available. Do not map shiitake or other fungi to cannabis or tomato nutrient curves.$fg_crop_unsupported_mushroom$, 4, TRUE, 58),
     ('crop-unsupported-field-roots', 'In-ground root crops (carrot, potato)', NULL, 'unsupported', 'general', 'safe', $fg_crop_unsupported_field_roots$# In-ground root crops (carrot, potato)
 
 **Carrots, potatoes, and sweet potatoes** are field or deep-container taproot/tuber crops. gr33n structured targets cover hydroponic and bench container production — not deep soil beds or field scale.
 
-If an operator wants indoor hydro only, suggest cloning from **lettuce** (fast leafy baseline) or **tomato** (fruiting hydro) and adjusting manually — do not state fake EC targets for tubers.$fg_crop_unsupported_field_roots$, 4, TRUE, 58)
+If an operator wants indoor hydro only, suggest cloning from **lettuce** (fast leafy baseline) or **tomato** (fruiting hydro) and adjusting manually — do not state fake EC targets for tubers.$fg_crop_unsupported_field_roots$, 4, TRUE, 59)
 ) AS v(slug, title, crop_key, guide_kind, domain, safety_tier, body_md, catalog_version, published, sort_order)
 ON CONFLICT (slug) DO UPDATE SET
     title = EXCLUDED.title,

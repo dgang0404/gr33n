@@ -24,6 +24,7 @@
 | `make guardian-qa-change-requests-ui-quick MODEL=phi3:mini FARM_ID=1` | Fast multi-turn UI demo (~50 min) | Ack + schedule single-turn scenarios (reliable CPU path) |
 | `make guardian-qa-regression MODEL=phi3:mini` | Pre-release (slow) | Same directory, regression suite |
 | `make guardian-qa-manual` | Human UI parity | Prints checklist from same fixtures |
+| **`make guardian-qa-smoke-all MODEL=phi3:mini FARM_ID=1`** | **Master laptop smoke** — runs smoke + phase127 + change-requests-pending sequentially (~4 hr CPU); optional `GUARDIAN_QA_UI=1` / `GUARDIAN_QA_UI_FULL=1` | One log: `GUARDIAN_QA_ALL_LOG` (default `/tmp/guardian-qa-smoke-all.log`); see `make guardian-qa-smoke-all-help` |
 
 Set `GUARDIAN_EVAL_TOKEN` (JWT from dev login) and optionally `GUARDIAN_EVAL_LOG=/tmp/gr33n-api.log` for log correlation.
 
