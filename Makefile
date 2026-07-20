@@ -49,21 +49,17 @@ run-auth-test: ## Local auth regression: AUTH_MODE=auth_test (requires JWT_SECRE
 run-receiver: ## Run optional Insert Commons ingest receiver (:8765; set INSERT_COMMONS_SHARED_SECRET or ALLOW_INSECURE)
 	$(if $(DB_URL),DATABASE_URL="$(DB_URL)") $(GO) run ./cmd/insert-commons-receiver/
 
-dev: ## Run API + UI dev server in parallel (DATABASE_URL from .env unless `make dev DB_URL=…`)
-	@echo "Starting API on :$(PORT) and UI on :5173"
-	@trap 'kill 0' INT; \
-		AUTH_MODE=dev $(if $(DB_URL),DATABASE_URL="$(DB_URL)") $(GO) run -tags dev ./cmd/api/ & \
-		cd ui && npm run dev & \
-		wait
+dev: ## Run API + UI with AUTH_MODE=dev — restarts when git stamp changes (see maybe-serve-api-ui.sh)
+	@GR33N_DEV_AUTH_MODE=dev ./scripts/maybe-serve-api-ui.sh
 
 dev-auth-test: ## API + UI with AUTH_MODE=auth_test — restarts when git stamp changes (see maybe-serve-api-ui.sh)
 	@./scripts/maybe-serve-api-ui.sh
 
-dev-auth-test-run: ## Internal: always start API + UI (no port check)
-	@echo "Starting API on :$(PORT) with AUTH_MODE=auth_test + UI on :5173"
+dev-auth-test-run: ## Internal: always start API + UI (AUTH_MODE from env, default auth_test)
+	@echo "Starting API on :$(PORT) with AUTH_MODE=$${AUTH_MODE:-auth_test} + UI on :5173"
 	@echo "Ensure JWT_SECRET and PI_API_KEY are set (copied from .env.example if needed)."
 	@trap 'kill 0' INT; \
-		AUTH_MODE=auth_test $(if $(DB_URL),DATABASE_URL="$(DB_URL)") $(GO) run -tags dev ./cmd/api/ & \
+		AUTH_MODE=$${AUTH_MODE:-auth_test} $(if $(DB_URL),DATABASE_URL="$(DB_URL)") $(GO) run -tags dev ./cmd/api/ & \
 		cd ui && npm run dev & \
 		wait
 

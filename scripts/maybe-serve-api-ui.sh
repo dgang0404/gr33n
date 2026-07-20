@@ -120,10 +120,11 @@ maybe_serve_api_ui() {
   fi
 
   if [[ "$api_ok" -eq 0 && "$ui_ok" -eq 1 ]]; then
-    echo "==> UI (:5173) already running — starting API only (:${port}, AUTH_MODE=auth_test)."
+    echo "==> UI (:5173) already running — starting API only (:${port}, AUTH_MODE=${GR33N_DEV_AUTH_MODE:-auth_test})."
     write_dev_stamp
     cd "$ROOT"
-    exec make run-auth-test
+    export AUTH_MODE="${GR33N_DEV_AUTH_MODE:-auth_test}"
+    exec make dev-auth-test-run
   fi
 
   if command -v ss >/dev/null 2>&1; then
@@ -137,6 +138,7 @@ maybe_serve_api_ui() {
 
   write_dev_stamp
   cd "$ROOT"
+  export AUTH_MODE="${GR33N_DEV_AUTH_MODE:-auth_test}"
   exec make dev-auth-test-run
 }
 

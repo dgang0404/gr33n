@@ -8,9 +8,18 @@ let cachedCanon = null
 /** @returns {Promise<Record<string, unknown>>} */
 export async function loadRecipeCanon({ force = false } = {}) {
   if (cachedCanon && !force) return cachedCanon
-  const { data } = await api.get('/v1/field-guides/recipe-canon')
-  cachedCanon = data ?? {}
-  return cachedCanon
+  try {
+    const { data } = await api.get('/v1/field-guides/recipe-canon')
+    cachedCanon = data ?? {}
+    return cachedCanon
+  } catch (err) {
+    if (err?.response?.status === 404) {
+      throw new Error(
+        'Recipe canon API not found — restart the API after git pull (make dev or GR33N_FORCE_DEV_RESTART=1 make laptop-up)',
+      )
+    }
+    throw err
+  }
 }
 
 /** Test-only reset. */
