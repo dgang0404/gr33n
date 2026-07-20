@@ -21,9 +21,10 @@ const wizard = readFileSync(
 const farmContext = readFileSync(join(process.cwd(), 'src/stores/farmContext.js'), 'utf8')
 
 describe('Phase 211 WS2 — switchover packs', () => {
-  it('switchover-packs.yaml defines Mericle veg and flower keys', () => {
+  it('switchover-packs.yaml defines Mericle veg, flower, and livestock keys', () => {
     expect(switchoverYaml).toContain('mericle_veg_to_jlf_v1')
     expect(switchoverYaml).toContain('mericle_flower_to_ffj_v1')
+    expect(switchoverYaml).toContain('livestock_comfrey_feed_v1')
     expect(switchoverYaml).toContain('Daily EC veg feed 1.6–1.8 mS/cm')
     expect(switchoverYaml).toContain('Flower boost A+B')
   })

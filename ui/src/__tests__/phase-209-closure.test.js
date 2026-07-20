@@ -55,8 +55,8 @@ describe('Phase 209 — closure', () => {
 
   it('recipe library and make-batch use 208 canon and field guides (not hardcoded dilutions)', () => {
     const inputsBlock = recipeCanon.slice(0, recipeCanon.indexOf('application_recipes:'))
-    expect(inputsBlock.match(/^  - seed_name:/gm)?.length).toBe(16)
-    expect(recipeCanon.match(/application_recipes:[\s\S]*?(?=^# Phase 211|^commercial_to_natural:)/m)?.[0].match(/^  - seed_name:/gm)?.length).toBe(14)
+    expect(inputsBlock.match(/^  - seed_name:/gm)?.length).toBe(18)
+    expect(recipeCanon.match(/application_recipes:[\s\S]*?(?=^# Phase 211|^commercial_to_natural:)/m)?.[0].match(/^  - seed_name:/gm)?.length).toBe(16)
     expect(library).toContain('loadRecipeCanon')
     expect(library).toContain('loadFieldGuideBody')
     expect(library).toContain('GuideStepCards')

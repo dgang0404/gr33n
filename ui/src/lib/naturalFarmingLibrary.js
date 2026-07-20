@@ -19,6 +19,18 @@ export const LIBRARY_PROGRAMS = [
   },
 ]
 
+/** Phase 211 WS3 — livestock feed templates (Animals module). */
+export const LIVESTOCK_FEED_TEMPLATES = [
+  {
+    id: 'livestock_comfrey_feed_v1',
+    title: 'Comfrey & sprouted grain supplements',
+    guide: 'natural-farming-livestock-plant-feed.md',
+    packKey: 'livestock_comfrey_feed_v1',
+    summary: 'animal_feed inputs with simple flock supplement examples — not ration math.',
+    moduleSchema: 'gr33nanimals',
+  },
+]
+
 /**
  * @param {string} tradition
  */

@@ -10,7 +10,7 @@
 
     <div class="flex gap-1 bg-zinc-800 rounded-lg p-1 w-fit" data-test="nf-library-subtabs">
       <button
-        v-for="t in LIBRARY_TABS"
+        v-for="t in visibleLibraryTabs"
         :key="t.id"
         type="button"
         class="px-3 py-1.5 text-sm rounded-md transition-colors font-medium"
@@ -63,6 +63,23 @@
             >
               <p class="text-sm text-zinc-100 leading-snug">{{ item.seed_name }}</p>
               <p class="text-[11px] text-green-400/80 font-mono mt-1 truncate">{{ item.dilution }}</p>
+            </button>
+          </template>
+
+          <template v-else-if="libraryTab === 'livestock'">
+            <button
+              v-for="tpl in LIVESTOCK_FEED_TEMPLATES"
+              :key="tpl.id"
+              type="button"
+              class="w-full text-left rounded-lg border px-3 py-2 transition-colors"
+              :class="selectedLivestockTemplate?.id === tpl.id
+                ? 'border-green-600 bg-green-950/30'
+                : 'border-zinc-800 bg-zinc-950/60 hover:border-zinc-600'"
+              :data-test="`nf-library-livestock-${tpl.id}`"
+              @click="selectLivestockTemplate(tpl)"
+            >
+              <p class="text-sm text-zinc-100">{{ tpl.title }}</p>
+              <p class="text-[11px] text-zinc-500 mt-1">{{ tpl.summary }}</p>
             </button>
           </template>
 
@@ -148,6 +165,42 @@
         </article>
 
         <article
+          v-else-if="libraryTab === 'livestock' && selectedLivestockTemplate"
+          class="rounded-xl border border-zinc-800 bg-zinc-900 p-4 space-y-4"
+          data-test="nf-library-livestock-detail"
+        >
+          <header class="space-y-1">
+            <h3 class="text-base font-semibold text-white">{{ selectedLivestockTemplate.title }}</h3>
+            <p class="text-xs text-zinc-500 font-mono">{{ selectedLivestockTemplate.packKey }}</p>
+            <p class="text-sm text-zinc-400">{{ selectedLivestockTemplate.summary }}</p>
+          </header>
+          <GuideStepCards v-if="stepCards.length" :cards="stepCards.slice(0, 4)" />
+          <div class="flex flex-wrap gap-2 pt-2 border-t border-zinc-800">
+            <button
+              type="button"
+              class="text-xs px-3 py-1.5 rounded-lg bg-green-800/60 border border-green-700 text-green-200 hover:bg-green-800 disabled:opacity-40"
+              :disabled="applyingLivestockPack || !farmId"
+              data-test="nf-library-apply-livestock-pack"
+              @click="applyLivestockTemplate"
+            >
+              {{ applyingLivestockPack ? 'Applying…' : 'Apply livestock feed pack' }}
+            </button>
+            <router-link
+              v-nav-hint="'/animals'"
+              to="/animals"
+              class="text-xs px-3 py-1.5 rounded-lg border border-zinc-700 text-zinc-300 hover:text-white"
+              data-test="nf-library-animals-link"
+            >
+              Open Animals
+            </router-link>
+            <LearnHowExpander :guide-file="selectedLivestockTemplate.guide" />
+          </div>
+          <p v-if="livestockPackMessage" class="text-sm" :class="livestockPackOk ? 'text-green-400' : 'text-red-400'">
+            {{ livestockPackMessage }}
+          </p>
+        </article>
+
+        <article
           v-else-if="libraryTab === 'programs' && selectedProgram"
           class="rounded-xl border border-zinc-800 bg-zinc-900 p-4 space-y-4"
           data-test="nf-library-program-detail"
@@ -190,11 +243,13 @@ import {
 import {
   LIBRARY_PROGRAMS,
   LIBRARY_TABS,
+  LIVESTOCK_FEED_TEMPLATES,
   formatApplicationType,
   libraryCardSlug,
   readyBatchesForComponents,
   traditionBadge,
 } from '../../lib/naturalFarmingLibrary.js'
+import { isModuleEnabled, MODULE_SCHEMA, moduleMapFromRows } from '../../lib/farmModules.js'
 import GuideStepCards from './GuideStepCards.vue'
 import LearnHowExpander from './LearnHowExpander.vue'
 
@@ -209,11 +264,24 @@ const libraryTab = ref('inputs')
 const selectedInput = ref(null)
 const selectedRecipe = ref(null)
 const selectedProgram = ref(null)
+const selectedLivestockTemplate = ref(null)
 const guideBody = ref('')
 const detailLoading = ref(false)
 const detailError = ref('')
 const farmInputs = ref([])
 const farmBatches = ref([])
+const applyingLivestockPack = ref(false)
+const livestockPackMessage = ref('')
+const livestockPackOk = ref(true)
+
+const farmModules = computed(() => moduleMapFromRows(store.farmModules))
+const showLivestockTemplates = computed(() =>
+  isModuleEnabled(farmModules.value, MODULE_SCHEMA.animals),
+)
+const visibleLibraryTabs = computed(() => {
+  if (!showLivestockTemplates.value) return LIBRARY_TABS
+  return [...LIBRARY_TABS, { id: 'livestock', label: 'Livestock' }]
+})
 
 const canonInputs = computed(() => /** @type {Array<Record<string, unknown>>} */ (canon.value?.inputs ?? []))
 const applicationRecipes = computed(
@@ -224,6 +292,7 @@ const tabCounts = computed(() => ({
   inputs: canonInputs.value.length,
   application: applicationRecipes.value.length,
   programs: LIBRARY_PROGRAMS.length,
+  livestock: showLivestockTemplates.value ? LIVESTOCK_FEED_TEMPLATES.length : 0,
 }))
 const linkedBatches = computed(() => {
   if (!selectedRecipe.value) return []
@@ -239,10 +308,12 @@ function selectLibraryTab(id) {
   selectedInput.value = null
   selectedRecipe.value = null
   selectedProgram.value = null
+  selectedLivestockTemplate.value = null
   guideBody.value = ''
   if (id === 'inputs' && canonInputs.value.length) selectInput(canonInputs.value[0])
   if (id === 'application' && applicationRecipes.value.length) selectRecipe(applicationRecipes.value[0])
   if (id === 'programs' && LIBRARY_PROGRAMS.length) selectProgram(LIBRARY_PROGRAMS[0])
+  if (id === 'livestock' && LIVESTOCK_FEED_TEMPLATES.length) selectLivestockTemplate(LIVESTOCK_FEED_TEMPLATES[0])
 }
 
 async function loadGuideForFile(guideFile) {
@@ -273,6 +344,29 @@ function selectProgram(prog) {
   loadGuideForFile(prog.guide)
 }
 
+function selectLivestockTemplate(tpl) {
+  selectedLivestockTemplate.value = tpl
+  loadGuideForFile(tpl.guide)
+}
+
+async function applyLivestockTemplate() {
+  const tpl = selectedLivestockTemplate.value
+  if (!tpl?.packKey || !farmId.value) return
+  applyingLivestockPack.value = true
+  livestockPackMessage.value = ''
+  try {
+    const data = await farmContext.applyNaturalFarmingPack(farmId.value, tpl.packKey)
+    livestockPackOk.value = ['applied', 'already_applied', 'noop'].includes(data?.status)
+    livestockPackMessage.value = data?.message || 'Livestock feed pack applied.'
+    await loadFarmInventory()
+  } catch (err) {
+    livestockPackOk.value = false
+    livestockPackMessage.value = err?.response?.data?.error || err?.message || 'Apply failed'
+  } finally {
+    applyingLivestockPack.value = false
+  }
+}
+
 async function loadFarmInventory() {
   if (!farmId.value) {
     farmInputs.value = []
@@ -286,6 +380,7 @@ async function loadFarmInventory() {
 onMounted(async () => {
   try {
     canon.value = await loadRecipeCanon()
+    if (farmId.value) await store.loadFarmModules(farmId.value)
     await loadFarmInventory()
     if (canonInputs.value.length) selectInput(canonInputs.value[0])
   } catch (err) {
@@ -295,5 +390,8 @@ onMounted(async () => {
   }
 })
 
-watch(farmId, loadFarmInventory)
+watch(farmId, async (id) => {
+  if (id) await store.loadFarmModules(id)
+  await loadFarmInventory()
+})
 </script>

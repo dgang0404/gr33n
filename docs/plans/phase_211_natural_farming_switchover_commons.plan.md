@@ -14,7 +14,7 @@ todos:
     status: completed
   - id: ws3-livestock-templates
     content: "WS3: Livestock feed templates — comfrey slurry, sprouted grain → animal_feed inputs (demo seed + pack)"
-    status: pending
+    status: completed
   - id: ws4-studio-import
     content: "WS4: Natural farming studio Start tab — 'Import a recipe pack' → Commons catalog flow"
     status: pending

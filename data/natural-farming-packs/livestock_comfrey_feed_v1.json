@@ -1,0 +1,65 @@
+{
+  "catalog_version": "gr33n.commons_catalog.v1",
+  "kind": "natural_farming_recipe_pack",
+  "pack_key": "livestock_comfrey_feed_v1",
+  "reference_source": "Operator practice; gr33n animal_feed category — not full ration math",
+  "readme_md": "# Livestock comfrey & sprout feed v1\n\nSimple **animal_feed** inputs — comfrey slurry and sprouted grain — with flock supplement examples. **Not** TMR balancing or veterinary formulation.\n\nApply via `POST /farms/{id}/naturalfarming/apply-pack` when Animals module is enabled.\n",
+  "input_definitions": [
+    {
+      "name": "Comfrey Slurry (Livestock Supplement)",
+      "category": "animal_feed",
+      "description": "Fresh comfrey leaves blended or soaked to slurry for flock supplement. Not sole ration.",
+      "typical_ingredients": "Fresh comfrey leaves, water",
+      "preparation_summary": "Harvest comfrey; chop; soak or blend with water; feed fresh within 24 h.",
+      "storage_guidelines": "Use same day — do not store slurry long; anaerobic spoilage risk.",
+      "safety_precautions": "Comfrey contains pyrrolizidine alkaloids — moderation for poultry; not majority of ration.",
+      "reference_source": "Operator practice; see natural-farming-livestock-plant-feed.md"
+    },
+    {
+      "name": "Sprouted Grain (Livestock Supplement)",
+      "category": "animal_feed",
+      "description": "Soaked and sprouted grain (barley, wheat, or similar) as a treat or supplement.",
+      "typical_ingredients": "Whole grain, water",
+      "preparation_summary": "Soak grain 8–12 h, drain, sprout 2–5 days with daily rinse until short tails appear.",
+      "storage_guidelines": "Refrigerate sprouts max 1–2 days; discard moldy trays.",
+      "safety_precautions": "Moldy sprouts — discard. Treat/supplement only with balanced forage or ration.",
+      "reference_source": "Operator practice; see natural-farming-livestock-plant-feed.md"
+    }
+  ],
+  "application_recipes": [
+    {
+      "name": "Comfrey Slurry Flock Supplement",
+      "description": "Daily comfrey slurry treat for chickens or goats — small supplement only.",
+      "target_application_type": "livestock_water_supplement",
+      "dilution_ratio": "Fresh slurry — operator volume by flock size",
+      "instructions": "Offer in shallow trough; remove uneaten slurry within a few hours.",
+      "frequency_guidelines": "2–3 times per week as treat — not primary ration.",
+      "primary_input_name": "Comfrey Slurry (Livestock Supplement)"
+    },
+    {
+      "name": "Sprouted Grain Treat Batch",
+      "description": "Short-tail sprouted grain offered as flock treat or supplement.",
+      "target_application_type": "livestock_water_supplement",
+      "dilution_ratio": "Whole sprouts — handful per bird or small bowl for goats",
+      "instructions": "Feed when white root tails appear; discard mold immediately.",
+      "frequency_guidelines": "Daily small treat during active sprouting cycle.",
+      "primary_input_name": "Sprouted Grain (Livestock Supplement)"
+    }
+  ],
+  "recipe_input_components": [
+    {
+      "recipe_name": "Comfrey Slurry Flock Supplement",
+      "input_name": "Comfrey Slurry (Livestock Supplement)",
+      "part_value": 1.0,
+      "part_unit_name": "decimal_fraction",
+      "notes": "Fresh slurry volume by flock size"
+    },
+    {
+      "recipe_name": "Sprouted Grain Treat Batch",
+      "input_name": "Sprouted Grain (Livestock Supplement)",
+      "part_value": 1.0,
+      "part_unit_name": "decimal_fraction",
+      "notes": "Whole sprouts — treat portion only"
+    }
+  ]
+}

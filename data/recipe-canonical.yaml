@@ -139,6 +139,22 @@ inputs:
     guide: natural-farming-compost-tea-aact.md
     reference_source: "Elaine Ingham, Soil Biology Primer"
 
+  - seed_name: "Comfrey Slurry (Livestock Supplement)"
+    process_type: animal_feed
+    tradition: extension
+    source_tier: extension_method
+    schema_category: animal_feed
+    guide: natural-farming-livestock-plant-feed.md
+    reference_source: "Operator practice; see natural-farming-livestock-plant-feed.md"
+
+  - seed_name: "Sprouted Grain (Livestock Supplement)"
+    process_type: animal_feed
+    tradition: extension
+    source_tier: extension_method
+    schema_category: animal_feed
+    guide: natural-farming-livestock-plant-feed.md
+    reference_source: "Operator practice; see natural-farming-livestock-plant-feed.md"
+
 application_recipes:
   - seed_name: "JMS Soil Drench"
     target_application_type: soil_drench
@@ -223,6 +239,18 @@ application_recipes:
     dilution: "1:500 (JWA:water)"
     components: ["JWA (JADAM Wetting Agent)"]
     guide: natural-farming-application-recipes.md
+
+  - seed_name: "Comfrey Slurry Flock Supplement"
+    target_application_type: livestock_water_supplement
+    dilution: "Fresh slurry — operator volume by flock size"
+    components: ["Comfrey Slurry (Livestock Supplement)"]
+    guide: natural-farming-livestock-plant-feed.md
+
+  - seed_name: "Sprouted Grain Treat Batch"
+    target_application_type: livestock_water_supplement
+    dilution: "Whole sprouts — handful per bird or small bowl for goats"
+    components: ["Sprouted Grain (Livestock Supplement)"]
+    guide: natural-farming-livestock-plant-feed.md
 
 # Phase 211 switchover — maps commercial EC programs to natural recipes
 commercial_to_natural:

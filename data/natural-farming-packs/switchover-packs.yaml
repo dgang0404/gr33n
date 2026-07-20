@@ -1,5 +1,5 @@
-# Phase 211 WS2 — Mericle-style switchover pack keys.
-# Payload rows are filtered from jadam_indoor_starter_recipes_v1.json (Phase 211 WS1).
+# Phase 211 WS2/WS3 — switchover + livestock feed pack keys.
+# Crop packs filter jadam_indoor_starter_recipes_v1.json; livestock uses its own JSON.
 version: 1
 source_pack: jadam_indoor_starter_recipes_v1
 
@@ -32,3 +32,12 @@ packs:
     next_steps:
       - Review flower-stage EC programs — FFJ+WCA foliar replaces A+B boost during early bloom.
       - Ferment FFJ and extract WCA before first flowering spray.
+
+  livestock_comfrey_feed_v1:
+    title: Livestock comfrey & sprout feed
+    source_pack: livestock_comfrey_feed_v1
+    module_schema: gr33nanimals
+    apply_full: true
+    next_steps:
+      - Record batches under Natural Farming → Stock; link feed tasks in Animals when ready.
+      - Comfrey and sprouts are supplements — not complete ration math.

@@ -27,7 +27,15 @@ const INPUT_NAMES = [
   'JLF Spring (Nettle and Comfrey)',
   'FAA (Fish Amino Acid)',
   'Compost Tea Actively Aerated',
+  'Comfrey Slurry (Livestock Supplement)',
+  'Sprouted Grain (Livestock Supplement)',
 ]
+
+/** Phase 211 WS3 — pack/migration seeded; not in master_seed.sql crop canon block. */
+const PACK_ONLY_INPUT_NAMES = new Set([
+  'Comfrey Slurry (Livestock Supplement)',
+  'Sprouted Grain (Livestock Supplement)',
+])
 
 const RECIPE_NAMES = [
   'JMS Soil Drench',
@@ -44,6 +52,8 @@ const RECIPE_NAMES = [
   'JS Fungicide Spray',
   'JLF Foliar Feed',
   'JWA Insecticide Spray',
+  'Comfrey Slurry Flock Supplement',
+  'Sprouted Grain Treat Batch',
 ]
 
 describe('Phase 208 WS3 — YAML catalogs', () => {
@@ -55,11 +65,13 @@ describe('Phase 208 WS3 — YAML catalogs', () => {
     expect(materialCatalog).toContain('materials:')
   })
 
-  it('lists all 16 seed inputs and 14 application recipes', () => {
+  it('lists all 18 seed inputs and 16 application recipes', () => {
     expect(recipeCanon.match(/seed_name:/g)?.length).toBe(INPUT_NAMES.length + RECIPE_NAMES.length)
     for (const name of INPUT_NAMES) {
       expect(recipeCanon).toContain(`seed_name: "${name}"`)
-      expect(masterSeed).toContain(`'${name}'`)
+      if (!PACK_ONLY_INPUT_NAMES.has(name)) {
+        expect(masterSeed).toContain(`'${name}'`)
+      }
     }
     for (const name of RECIPE_NAMES) {
       expect(recipeCanon).toContain(`seed_name: "${name}"`)

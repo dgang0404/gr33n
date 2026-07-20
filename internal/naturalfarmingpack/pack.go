@@ -17,36 +17,40 @@ import (
 )
 
 const (
-	SwitchoverPacksPath     = "data/natural-farming-packs/switchover-packs.yaml"
-	StarterRecipePackPath   = "data/natural-farming-packs/jadam_indoor_starter_recipes_v1.json"
+	SwitchoverPacksPath   = "data/natural-farming-packs/switchover-packs.yaml"
+	StarterRecipePackPath = "data/natural-farming-packs/jadam_indoor_starter_recipes_v1.json"
 )
 
 // SwitchoverPackSpec is one entry in switchover-packs.yaml.
 type SwitchoverPackSpec struct {
-	Title               string   `yaml:"title"`
-	CommercialPattern   string   `yaml:"commercial_pattern"`
-	InputNames          []string `yaml:"input_names"`
-	ApplicationRecipes  []string `yaml:"application_recipes"`
-	ProgramZoneHints    []string `yaml:"program_zone_hints"`
-	NextSteps           []string `yaml:"next_steps"`
+	Title              string   `yaml:"title"`
+	SourcePack         string   `yaml:"source_pack"`
+	ModuleSchema       string   `yaml:"module_schema"`
+	ApplyFull          bool     `yaml:"apply_full"`
+	CommercialPattern  string   `yaml:"commercial_pattern"`
+	InputNames         []string `yaml:"input_names"`
+	ApplicationRecipes []string `yaml:"application_recipes"`
+	ProgramZoneHints   []string `yaml:"program_zone_hints"`
+	NextSteps          []string `yaml:"next_steps"`
 }
 
-type switchoverCatalog struct {
-	Version    int                              `yaml:"version"`
-	SourcePack string                           `yaml:"source_pack"`
-	Packs      map[string]SwitchoverPackSpec    `yaml:"packs"`
+// SwitchoverCatalog is the parsed switchover-packs.yaml document.
+type SwitchoverCatalog struct {
+	DefaultSourcePack string
+	Packs             map[string]SwitchoverPackSpec
 }
 
 // ApplyResult wraps commons apply output with switchover metadata.
 type ApplyResult struct {
-	PackKey          string                    `json:"pack_key"`
-	Title            string                    `json:"title"`
-	CommercialPattern string                   `json:"commercial_pattern,omitempty"`
-	Status           string                    `json:"status"` // applied | already_applied | noop
-	Message          string                    `json:"message"`
-	Apply            catalogpack.ApplyResult   `json:"apply"`
-	ProgramHints     []ProgramHint             `json:"program_hints,omitempty"`
-	NextSteps        []string                  `json:"next_steps,omitempty"`
+	PackKey           string                  `json:"pack_key"`
+	Title             string                  `json:"title"`
+	CommercialPattern string                  `json:"commercial_pattern,omitempty"`
+	ModuleSchema      string                  `json:"module_schema,omitempty"`
+	Status            string                  `json:"status"` // applied | already_applied | noop
+	Message           string                  `json:"message"`
+	Apply             catalogpack.ApplyResult `json:"apply"`
+	ProgramHints      []ProgramHint           `json:"program_hints,omitempty"`
+	NextSteps         []string                `json:"next_steps,omitempty"`
 }
 
 // ProgramHint surfaces existing fertigation programs that may overlap the switchover.
@@ -57,8 +61,14 @@ type ProgramHint struct {
 	ZoneHint    string `json:"zone_hint,omitempty"`
 }
 
+type switchoverCatalogDoc struct {
+	Version    int                           `yaml:"version"`
+	SourcePack string                        `yaml:"source_pack"`
+	Packs      map[string]SwitchoverPackSpec `yaml:"packs"`
+}
+
 // LoadSwitchoverCatalog reads switchover-packs.yaml under repoRoot.
-func LoadSwitchoverCatalog(repoRoot string) (map[string]SwitchoverPackSpec, error) {
+func LoadSwitchoverCatalog(repoRoot string) (SwitchoverCatalog, error) {
 	root := strings.TrimSpace(repoRoot)
 	if root == "" {
 		root = "."
@@ -66,40 +76,62 @@ func LoadSwitchoverCatalog(repoRoot string) (map[string]SwitchoverPackSpec, erro
 	path := filepath.Join(root, SwitchoverPacksPath)
 	data, err := os.ReadFile(path)
 	if err != nil {
-		return nil, fmt.Errorf("read %s: %w", SwitchoverPacksPath, err)
+		return SwitchoverCatalog{}, fmt.Errorf("read %s: %w", SwitchoverPacksPath, err)
 	}
-	var doc switchoverCatalog
+	var doc switchoverCatalogDoc
 	if err := yaml.Unmarshal(data, &doc); err != nil {
-		return nil, fmt.Errorf("parse %s: %w", SwitchoverPacksPath, err)
+		return SwitchoverCatalog{}, fmt.Errorf("parse %s: %w", SwitchoverPacksPath, err)
 	}
 	if doc.Version < 1 {
-		return nil, fmt.Errorf("%s: version must be >= 1", SwitchoverPacksPath)
+		return SwitchoverCatalog{}, fmt.Errorf("%s: version must be >= 1", SwitchoverPacksPath)
 	}
 	if len(doc.Packs) == 0 {
-		return nil, fmt.Errorf("%s: no packs defined", SwitchoverPacksPath)
+		return SwitchoverCatalog{}, fmt.Errorf("%s: no packs defined", SwitchoverPacksPath)
 	}
-	return doc.Packs, nil
+	return SwitchoverCatalog{
+		DefaultSourcePack: strings.TrimSpace(doc.SourcePack),
+		Packs:             doc.Packs,
+	}, nil
 }
 
-// LoadStarterPackBody loads the full audited starter JSON pack.
-func LoadStarterPackBody(repoRoot string) (catalogpack.PackBody, error) {
+// LoadPackBody loads a natural_farming_recipe_pack JSON file by base name (without .json).
+func LoadPackBody(repoRoot, packName string) (catalogpack.PackBody, error) {
+	packName = strings.TrimSpace(packName)
+	if packName == "" {
+		return catalogpack.PackBody{}, fmt.Errorf("pack name is required")
+	}
 	root := strings.TrimSpace(repoRoot)
 	if root == "" {
 		root = "."
 	}
-	path := filepath.Join(root, StarterRecipePackPath)
+	path := filepath.Join(root, "data/natural-farming-packs", packName+".json")
 	raw, err := os.ReadFile(path)
 	if err != nil {
-		return catalogpack.PackBody{}, fmt.Errorf("read %s: %w", StarterRecipePackPath, err)
+		return catalogpack.PackBody{}, fmt.Errorf("read %s: %w", path, err)
 	}
 	body, err := catalogpack.ParsePackBody(raw)
 	if err != nil {
 		return catalogpack.PackBody{}, err
 	}
 	if body.Kind != catalogpack.KindNaturalFarmingRecipePack {
-		return catalogpack.PackBody{}, fmt.Errorf("%s: want kind %s", StarterRecipePackPath, catalogpack.KindNaturalFarmingRecipePack)
+		return catalogpack.PackBody{}, fmt.Errorf("%s: want kind %s", path, catalogpack.KindNaturalFarmingRecipePack)
 	}
 	return body, nil
+}
+
+// LoadStarterPackBody loads the full audited starter JSON pack.
+func LoadStarterPackBody(repoRoot string) (catalogpack.PackBody, error) {
+	return LoadPackBody(repoRoot, "jadam_indoor_starter_recipes_v1")
+}
+
+func effectiveSourcePack(spec SwitchoverPackSpec, defaultSource string) string {
+	if s := strings.TrimSpace(spec.SourcePack); s != "" {
+		return s
+	}
+	if s := strings.TrimSpace(defaultSource); s != "" {
+		return s
+	}
+	return "jadam_indoor_starter_recipes_v1"
 }
 
 // FilterStarterPack returns a subset pack body for one switchover key.
@@ -151,15 +183,22 @@ func ApplyPack(ctx context.Context, q db.Querier, repoRoot string, farmID int64,
 	if err != nil {
 		return ApplyResult{}, err
 	}
-	spec, ok := catalog[packKey]
+	spec, ok := catalog.Packs[packKey]
 	if !ok {
 		return ApplyResult{}, fmt.Errorf("unknown switchover pack %q", packKey)
 	}
-	starter, err := LoadStarterPackBody(repoRoot)
+	sourcePack := effectiveSourcePack(spec, catalog.DefaultSourcePack)
+	full, err := LoadPackBody(repoRoot, sourcePack)
 	if err != nil {
 		return ApplyResult{}, err
 	}
-	filtered := FilterStarterPack(starter, spec)
+
+	var filtered catalogpack.PackBody
+	if spec.ApplyFull || (len(spec.InputNames) == 0 && len(spec.ApplicationRecipes) == 0) {
+		filtered = full
+	} else {
+		filtered = FilterStarterPack(full, spec)
+	}
 	if err := catalogpack.ValidatePublishBody(filtered); err != nil {
 		return ApplyResult{}, fmt.Errorf("pack %q: %w", packKey, err)
 	}
@@ -173,6 +212,7 @@ func ApplyPack(ctx context.Context, q db.Querier, repoRoot string, farmID int64,
 			PackKey:           packKey,
 			Title:             spec.Title,
 			CommercialPattern: spec.CommercialPattern,
+			ModuleSchema:      spec.ModuleSchema,
 			Status:            "failed",
 			Message:           err.Error(),
 			Apply:             applyRes,
@@ -183,6 +223,7 @@ func ApplyPack(ctx context.Context, q db.Querier, repoRoot string, farmID int64,
 		PackKey:           packKey,
 		Title:             spec.Title,
 		CommercialPattern: spec.CommercialPattern,
+		ModuleSchema:      spec.ModuleSchema,
 		Apply:             applyRes,
 		NextSteps:         append([]string(nil), spec.NextSteps...),
 	}

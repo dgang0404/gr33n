@@ -66,6 +66,7 @@ export const FIRST_BATCH_SEED_NAMES = [
 export const SWITCHOVER_PACK_KEYS = {
   MERICLE_VEG_TO_JLF_V1: 'mericle_veg_to_jlf_v1',
   MERICLE_FLOWER_TO_FFJ_V1: 'mericle_flower_to_ffj_v1',
+  LIVESTOCK_COMFREY_FEED_V1: 'livestock_comfrey_feed_v1',
 }
 
 /**
@@ -137,6 +138,7 @@ export function resolveSwitchoverMapping(contextId, patternId, canon) {
       ],
       summaryGuide: 'natural-farming-livestock-plant-feed.md',
       bootstrapTemplate: bootstrapTemplateForContext(contextId),
+      switchoverPackKey: SWITCHOVER_PACK_KEYS.LIVESTOCK_COMFREY_FEED_V1,
     }
   }
 

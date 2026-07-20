@@ -43,10 +43,10 @@ describe('Phase 209 WS3b — recipe library', () => {
     expect(panel).toContain("tab: 'programs'")
   })
 
-  it('canon on disk has 16 inputs and 14 application recipes', () => {
-    expect(recipeCanon.match(/^  - seed_name:/gm)?.length).toBe(30)
+  it('canon on disk has 18 inputs and 16 application recipes', () => {
+    expect(recipeCanon.match(/^  - seed_name:/gm)?.length).toBe(34)
     const inputsBlock = recipeCanon.slice(0, recipeCanon.indexOf('application_recipes:'))
-    expect(inputsBlock.match(/^  - seed_name:/gm)?.length).toBe(16)
-    expect(recipeCanon.match(/application_recipes:[\s\S]*?(?=^# Phase 211|^commercial_to_natural:)/m)?.[0].match(/^  - seed_name:/gm)?.length).toBe(14)
+    expect(inputsBlock.match(/^  - seed_name:/gm)?.length).toBe(18)
+    expect(recipeCanon.match(/application_recipes:[\s\S]*?(?=^# Phase 211|^commercial_to_natural:)/m)?.[0].match(/^  - seed_name:/gm)?.length).toBe(16)
   })
 })
