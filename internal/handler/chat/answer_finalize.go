@@ -90,6 +90,7 @@ func finalizeGroundedAnswer(answer string, chunks []db.SearchRagNearestNeighbors
 }
 
 type answerHygiene struct {
+	substituteQuestion farmguardian.AnswerLeakTrim
 	leak            farmguardian.AnswerLeakTrim
 	meta            farmguardian.AnswerMetaTrim
 	cite            farmguardian.CitationURLSanitize
@@ -103,6 +104,15 @@ type answerHygiene struct {
 
 func sanitizeAssistantAnswer(answer, question string, grounded bool, effectiveContextWindow int) (string, answerHygiene) {
 	var h answerHygiene
+	answer, h.substituteQuestion = farmguardian.TrimSubstituteQuestionLeak(answer, question)
+	if h.substituteQuestion.Trimmed {
+		slog.Info("guardian: substitute_question_leak_cleared",
+			"chars_removed", h.substituteQuestion.CharsRemoved,
+		)
+		if strings.TrimSpace(answer) == "" {
+			return answer, h
+		}
+	}
 	answer, h.leak = farmguardian.TrimInstructionLeak(answer, question)
 	if h.leak.Trimmed {
 		slog.Info("guardian: answer_leak_trimmed",
@@ -213,6 +223,10 @@ func applyUncitedTailTrim(answer, question string, grounded bool, chunks []db.Se
 func applyAnswerHygieneDebug(dbg *farmguardian.TurnDebug, h answerHygiene) {
 	if dbg == nil {
 		return
+	}
+	if h.substituteQuestion.Trimmed {
+		dbg.LeakTrimmed = true
+		dbg.LeakCharsRemoved = h.substituteQuestion.CharsRemoved
 	}
 	if h.leak.Trimmed {
 		dbg.LeakTrimmed = true

@@ -1,6 +1,26 @@
 package eval
 
-import "testing"
+import (
+	"strings"
+	"testing"
+)
+
+func TestSmokeFixtures_morningWalkUsesMorningCheckEntry(t *testing.T) {
+	fixtures := SmokeFixtures()
+	var walk Question
+	for _, q := range fixtures {
+		if q.ID == "smoke-morning-walk" {
+			walk = q
+			break
+		}
+	}
+	if walk.ContextRef == nil || walk.ContextRef.GuardianMode != "morning_walkthrough" {
+		t.Fatal("smoke-morning-walk should use morning_walkthrough context_ref")
+	}
+	if !strings.Contains(walk.Prompt, "walk_farm") {
+		t.Fatal("smoke-morning-walk prompt should mention walk_farm")
+	}
+}
 
 func TestSmokeFixtures_count(t *testing.T) {
 	if len(SmokeFixtures()) != 4 {

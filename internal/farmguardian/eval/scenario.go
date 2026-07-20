@@ -84,6 +84,8 @@ func runOneScenario(ctx context.Context, api *APIClient, model string, sc Scenar
 		warmFn := func() {
 			if err := api.WarmupFarmCounsel(ctx, m, opts.WarmupTimeout); err != nil {
 				log.Printf("eval: warmup before grounded block: %v (continuing)", err)
+			} else {
+				log.Printf("eval: counsel model ready before grounded block")
 			}
 		}
 		if opts.WarmupAsync {

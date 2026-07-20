@@ -49,6 +49,9 @@ func smokeAnswerHygieneNote(prompt, answer string) string {
 	if AnswerLooksLikePromptLeak(answer, prompt) {
 		return "instruction template leak"
 	}
+	if AnswerIsSubstituteQuestionLeak(answer, prompt) {
+		return "substitute question leak"
+	}
 	if AnswerContainsMetaCorrection(answer) {
 		return "model self-correction / apology tail"
 	}

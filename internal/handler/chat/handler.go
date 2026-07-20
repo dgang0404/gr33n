@@ -504,6 +504,9 @@ func (h *Handler) PostV1(w http.ResponseWriter, r *http.Request) {
 		answer = finalizeGroundedAnswer(answer, chunks)
 	}
 	answer, hygiene := sanitizeAssistantAnswer(answer, question, grounded, effectiveWindow)
+	answer, retryUsage, hygiene := h.maybeRetrySubstituteQuestion(r.Context(), chatClient, messages, question, answer, hygiene, grounded, chunks, effectiveWindow)
+	usage.PromptTokens += retryUsage.PromptTokens
+	usage.CompletionTokens += retryUsage.CompletionTokens
 	answer = applyUncitedTailTrim(answer, question, grounded, chunks, &hygiene)
 
 	resp := postResponse{
@@ -662,6 +665,9 @@ func (h *Handler) streamResponse(
 		answer = finalizeGroundedAnswer(answer, chunks)
 	}
 	answer, hygiene := sanitizeAssistantAnswer(answer, question, grounded, debugIn.effectiveWindow)
+	answer, retryUsage, hygiene := h.maybeRetrySubstituteQuestion(r.Context(), chatClient, messages, question, answer, hygiene, grounded, chunks, debugIn.effectiveWindow)
+	usage.PromptTokens += retryUsage.PromptTokens
+	usage.CompletionTokens += retryUsage.CompletionTokens
 	answer = applyUncitedTailTrim(answer, question, grounded, chunks, &hygiene)
 	done := postResponse{
 		Answer:           answer,

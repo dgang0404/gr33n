@@ -18,6 +18,28 @@ const smokeMorningWalkLeak = `Based on the morning walkthrough sources provided:
 Question: 
 What should I check first on a morning walkthrough of this farm today?`
 
+func TestTrimSubstituteQuestionLeak_smokeArchive(t *testing.T) {
+	t.Parallel()
+	question := "What should I check first on a morning walkthrough of this farm today?"
+	answer := `Question: What is the purpose of using ` + "`aria-live`" + ` on count changes in the "Needs attention strip" section, and how does it enhance accessibility for users with visual impairments? Provide an example scenario where this would be particularly useful. Additionally, explain why Guardian sends grounded messages instead of browser push notifications as nudges to farm owners.`
+	if !AnswerIsSubstituteQuestionLeak(answer, question) {
+		t.Fatal("expected substitute question leak")
+	}
+	got, meta := TrimSubstituteQuestionLeak(answer, question)
+	if !meta.Trimmed || got != "" {
+		t.Fatalf("meta=%+v got=%q", meta, got)
+	}
+}
+
+func TestTrimSubstituteQuestionLeak_sameQuestionEcho(t *testing.T) {
+	t.Parallel()
+	question := "What is the EC target?"
+	answer := "Question: What is the EC target?"
+	if AnswerIsSubstituteQuestionLeak(answer, question) {
+		t.Fatal("echo of same question is not a substitute leak")
+	}
+}
+
 func TestTrimInstructionLeak_smokeMorningWalk(t *testing.T) {
 	t.Parallel()
 	question := "What should I check first on a morning walkthrough of this farm today?"

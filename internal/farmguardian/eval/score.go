@@ -18,6 +18,7 @@ type Question struct {
 	ExpectTool      string // optional log/tool evidence hint (Phase 131)
 	Grounded        bool
 	Model           string // optional per-fixture model override (Phase 131 smoke)
+	ContextRef      *farmguardian.ContextRef // optional UI entry point (Phase 60 morning check)
 }
 
 // Fixtures returns the Phase 122 eval question set (~20 prompts).
@@ -30,9 +31,10 @@ func Fixtures() []Question {
 		{
 			ID:         "farm-morning-walkthrough",
 			Category:   "farm_state",
-			Prompt:     "What should I check first on a morning walkthrough of this farm today?",
+			Prompt:     MorningWalkPrompt(),
 			Grounded:   true,
 			ExpectTool: "walk_farm",
+			ContextRef: MorningWalkContextRef(),
 		},
 		{ID: "farm-zones", Category: "farm_state", Prompt: "List my zone names and active crop cycles.", Grounded: true},
 		{ID: "farm-plants", Category: "farm_state", Prompt: "Which plants are registered on this farm?", Grounded: true},

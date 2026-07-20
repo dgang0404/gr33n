@@ -71,6 +71,43 @@ func RAGRetrieveLimit(query string, topK int) int {
 	return topK
 }
 
+// FilterRAGChunksForToolPlan applies agronomy filtering then walk_farm guardrails.
+// When walk_farm is planned, platform_doc chunks are excluded — snapshot + read tools carry the answer.
+func FilterRAGChunksForToolPlan(query string, plan ToolPlan, chunks []db.SearchRagNearestNeighborsFilteredRow, limit int) RAGFilterResult {
+	res := FilterRAGChunks(query, chunks, limit)
+	if !toolPlanIncludes(plan, "walk_farm") {
+		return res
+	}
+	filtered := make([]db.SearchRagNearestNeighborsFilteredRow, 0, len(res.Chunks))
+	dropped := 0
+	for _, c := range res.Chunks {
+		if c.SourceType == "platform_doc" {
+			dropped++
+			continue
+		}
+		filtered = append(filtered, c)
+	}
+	note := res.Note
+	if dropped > 0 {
+		suffix := fmt.Sprintf("walk_farm_filter: excluded %d platform_doc chunk(s)", dropped)
+		if note != "" {
+			note += "; " + suffix
+		} else {
+			note = suffix
+		}
+	}
+	return RAGFilterResult{Chunks: filtered, Note: note}
+}
+
+func toolPlanIncludes(plan ToolPlan, toolID string) bool {
+	for _, id := range plan.ToolIDs {
+		if id == toolID {
+			return true
+		}
+	}
+	return false
+}
+
 // FilterRAGChunks reorders and trims retrieved chunks for agronomy queries.
 func FilterRAGChunks(query string, chunks []db.SearchRagNearestNeighborsFilteredRow, limit int) RAGFilterResult {
 	if len(chunks) == 0 || !AgronomyQueryIntent(query) {

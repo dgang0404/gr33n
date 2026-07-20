@@ -17,6 +17,38 @@ type AnswerLeakTrim struct {
 	Marker       string `json:"leak_marker,omitempty"`
 }
 
+var substituteQuestionPrefixRE = regexp.MustCompile(`(?i)^question:\s*`)
+
+// AnswerIsSubstituteQuestionLeak reports when the model output a different exam-style Question instead of answering.
+func AnswerIsSubstituteQuestionLeak(answer, question string) bool {
+	answer = strings.TrimSpace(answer)
+	if answer == "" {
+		return false
+	}
+	rest := answer
+	if substituteQuestionPrefixRE.MatchString(answer) {
+		rest = strings.TrimSpace(substituteQuestionPrefixRE.ReplaceAllString(answer, ""))
+	} else if !strings.HasPrefix(strings.ToLower(answer), "question") {
+		return false
+	}
+	if len(rest) < 20 {
+		return false
+	}
+	return normalizeLeakText(rest) != normalizeLeakText(question)
+}
+
+// TrimSubstituteQuestionLeak clears answers that are entirely a different Question prompt.
+func TrimSubstituteQuestionLeak(answer, question string) (string, AnswerLeakTrim) {
+	if !AnswerIsSubstituteQuestionLeak(answer, question) {
+		return answer, AnswerLeakTrim{}
+	}
+	return "", AnswerLeakTrim{
+		Trimmed:      true,
+		CharsRemoved: len(strings.TrimSpace(answer)),
+		Marker:       "substitute_question",
+	}
+}
+
 // TrimInstructionLeak removes trailing prompt-template leaks (e.g. "## Your task", echoed Question:).
 func TrimInstructionLeak(answer, question string) (string, AnswerLeakTrim) {
 	orig := answer

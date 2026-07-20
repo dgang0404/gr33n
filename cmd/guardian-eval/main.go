@@ -86,7 +86,7 @@ func main() {
 	runOpts := eval.RunSuiteOptions{
 		WarmupGrounded: suite == "smoke" || suite == "phase127" || suite == "phase128" || suite == "p128" || suite == "change-requests" || suite == "change_requests" || suite == "proposals" || suite == "pr" || scenarioSuite,
 		WarmupTimeout:  eval.WarmupTimeoutFromEnv(),
-		WarmupAsync:    suite == "smoke" || suite == "phase127" || suite == "change-requests" || suite == "change_requests" || suite == "proposals" || suite == "pr" || scenarioSuite,
+		WarmupAsync:    false,
 		LogPath:        strings.TrimSpace(os.Getenv("GUARDIAN_EVAL_LOG")),
 		CheckPendingPerPrompt: *checkPendingProposals,
 		ConfirmPerPrompt:      *confirmProposals,

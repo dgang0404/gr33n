@@ -92,16 +92,27 @@ func (h *Handler) buildGroundedTurn(
 				return out, rerr
 			}
 		} else if len(chunks) > 0 {
+			filtered := farmguardian.FilterRAGChunksForToolPlan(question, out.toolPlan, chunks, promptBudget.RAGTopK)
+			chunks = filtered.Chunks
 			out.ragFilterNote = ragFilterNote
-			if farmguardian.ReadBlockHasCropTargets(out.readBlock) {
-				chunks = synthesis.StripNutrientNumbersFromChunks(chunks)
-				system += synthesis.StructuredTruthRAGBlock() + "\n\n"
+			if filtered.Note != "" {
+				if out.ragFilterNote != "" {
+					out.ragFilterNote += "; " + filtered.Note
+				} else {
+					out.ragFilterNote = filtered.Note
+				}
 			}
-			system += synthesis.GuardianRAGInstructions(chunks)
-			out.user = synthesis.BuildUserMessage(question, chunks)
-			out.chunks = chunks
-		} else {
-			system += synthesis.ZeroChunkGuardBlock()
+			if len(chunks) > 0 {
+				if farmguardian.ReadBlockHasCropTargets(out.readBlock) {
+					chunks = synthesis.StripNutrientNumbersFromChunks(chunks)
+					system += synthesis.StructuredTruthRAGBlock() + "\n\n"
+				}
+				system += synthesis.GuardianRAGInstructions(chunks)
+				out.user = synthesis.BuildUserMessage(question, chunks)
+				out.chunks = chunks
+			} else {
+				system += synthesis.ZeroChunkGuardBlock()
+			}
 		}
 	}
 	if farmguardian.IsLocalInferenceURL(strings.TrimSpace(os.Getenv("LLM_BASE_URL"))) ||

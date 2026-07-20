@@ -73,6 +73,9 @@ func (c *APIClient) RunQuestionInSession(ctx context.Context, model string, q Qu
 	if q.Grounded && c.FarmID > 0 {
 		body["farm_id"] = c.FarmID
 	}
+	if q.ContextRef != nil {
+		body["context_ref"] = q.ContextRef
+	}
 	if sessionID = strings.TrimSpace(sessionID); sessionID != "" {
 		body["session_id"] = sessionID
 	}
@@ -144,15 +147,10 @@ func RunSuite(ctx context.Context, api *APIClient, model string, fixtures []Ques
 			if strings.TrimSpace(q.Model) != "" {
 				warmModel = strings.TrimSpace(q.Model)
 			}
-			warmFn := func() {
-				if err := api.WarmupFarmCounsel(ctx, warmModel, opts.WarmupTimeout); err != nil {
-					log.Printf("eval: warmup before grounded block: %v (continuing)", err)
-				}
-			}
-			if opts.WarmupAsync {
-				go warmFn()
+			if err := api.WarmupFarmCounsel(ctx, warmModel, opts.WarmupTimeout); err != nil {
+				log.Printf("eval: warmup before grounded block: %v (continuing)", err)
 			} else {
-				warmFn()
+				log.Printf("eval: counsel model ready before grounded block")
 			}
 		}
 		m := model

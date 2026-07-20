@@ -2,6 +2,7 @@ package farmguardian
 
 import (
 	"encoding/json"
+	"strings"
 	"testing"
 
 	db "gr33n-api/internal/db"
@@ -29,6 +30,28 @@ func TestRAGRetrieveLimit_overfetchAgronomy(t *testing.T) {
 	}
 	if got := RAGRetrieveLimit("morning walkthrough", 4); got != 4 {
 		t.Fatalf("non-agronomy should stay 4, got %d", got)
+	}
+}
+
+func TestFilterRAGChunksForToolPlan_excludesPlatformDocOnWalkFarm(t *testing.T) {
+	t.Parallel()
+	chunks := []db.SearchRagNearestNeighborsFilteredRow{
+		{ID: 1, SourceType: "platform_doc", Metadata: metaDocPath("docs/operator-tour.md"), ContentText: "aria-live on Needs attention strip"},
+		{ID: 2, SourceType: "alert_notification", ContentText: "Humidity high — Flower Room"},
+		{ID: 3, SourceType: "field_guide", Metadata: metaDocPath("field-guides/crop-lettuce-nutrition.md"), ContentText: "Lettuce EC"},
+	}
+	plan := ToolPlan{ToolIDs: []string{"walk_farm", "summarize_device_health"}}
+	res := FilterRAGChunksForToolPlan("morning walkthrough", plan, chunks, 3)
+	if len(res.Chunks) != 2 {
+		t.Fatalf("want 2 chunks after platform_doc drop, got %d", len(res.Chunks))
+	}
+	for _, c := range res.Chunks {
+		if c.SourceType == "platform_doc" {
+			t.Fatalf("platform_doc should be excluded on walk_farm, got id=%d", c.ID)
+		}
+	}
+	if !strings.Contains(res.Note, "walk_farm_filter") {
+		t.Fatalf("expected walk_farm_filter note, got %q", res.Note)
 	}
 }
 

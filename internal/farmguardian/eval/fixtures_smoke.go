@@ -13,12 +13,13 @@ func SmokeFixtures() []Question {
 			Model:    "phi3:mini",
 		},
 		{
-			ID:       "smoke-morning-walk",
-			Category: "farm_state",
-			Prompt:   "What should I check first on a morning walkthrough of this farm today?",
-			Grounded: true,
-			Model:    "phi3:mini",
+			ID:         "smoke-morning-walk",
+			Category:   "farm_state",
+			Prompt:     MorningWalkPrompt(),
+			Grounded:   true,
+			Model:      "phi3:mini",
 			ExpectTool: "walk_farm",
+			ContextRef: MorningWalkContextRef(),
 		},
 		{
 			ID:       "smoke-unread-alerts",

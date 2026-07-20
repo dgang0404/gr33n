@@ -66,7 +66,7 @@ func manualPassHint(q Question) string {
 	case "smoke-cherry-forest":
 		return "Answer mentions cherry, goldenrod, or blackberry; no timeout"
 	case "smoke-morning-walk":
-		return "Answer references alerts, zones, or devices; API log may show tool_id=walk_farm"
+		return "Use Today → Morning check entry point; answer references alerts, zones, or devices; API log may show tool_id=walk_farm"
 	case "smoke-unread-alerts":
 		return "Answer summarizes seed/demo alerts; len > 40 chars"
 	case "smoke-ec-ph":
