@@ -57,7 +57,7 @@ func requireAPIKey(next http.Handler) http.Handler {
 func requireJWTOrPiEdge(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if isDevAuthBypass() {
-			ctx := authctx.WithFarmAuthzSkip(r.Context(), true)
+			ctx := devBypassContext(r)
 			next.ServeHTTP(w, r.WithContext(ctx))
 			return
 		}
@@ -90,68 +90,86 @@ func requireJWTOrPiEdge(next http.Handler) http.Handler {
 func requireJWT(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if isDevAuthBypass() {
-			ctx := authctx.WithFarmAuthzSkip(r.Context(), true)
+			ctx := devBypassContext(r)
 			next.ServeHTTP(w, r.WithContext(ctx))
 			return
 		}
 
-		var tokenStr string
-		header := r.Header.Get("Authorization")
-		if strings.HasPrefix(header, "Bearer ") {
-			tokenStr = strings.TrimPrefix(header, "Bearer ")
-		} else if q := r.URL.Query().Get("token"); q != "" {
-			if !jwtQueryTokenAllowed(r.URL.Path) {
-				if authDebug {
-					slog.Warn("auth_rejected", "reason", "query_token_not_allowed", "path", r.URL.Path)
-				}
-				httputil.WriteError(w, http.StatusUnauthorized, "Authorization: Bearer <token> required (query token not allowed on this route)")
-				return
-			}
-			tokenStr = q
-		} else {
+		tokenStr := bearerToken(r)
+		if tokenStr == "" {
 			if authDebug {
 				slog.Warn("auth_rejected", "reason", "missing_bearer_or_query_token", "path", r.URL.Path)
 			}
 			httputil.WriteError(w, http.StatusUnauthorized, "Authorization: Bearer <token> required")
 			return
 		}
-
-		token, err := jwt.Parse(tokenStr, func(t *jwt.Token) (any, error) {
-			if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
-				return nil, jwt.ErrSignatureInvalid
-			}
-			return jwtSecret, nil
-		}, jwt.WithExpirationRequired())
-
-		if err != nil || !token.Valid {
+		if q := r.URL.Query().Get("token"); q != "" && tokenStr == q && !jwtQueryTokenAllowed(r.URL.Path) {
 			if authDebug {
-				if err != nil {
-					slog.Warn("auth_rejected", "reason", "jwt_invalid", "path", r.URL.Path, "err", err.Error())
-				} else {
-					slog.Warn("auth_rejected", "reason", "jwt_invalid", "path", r.URL.Path)
-				}
+				slog.Warn("auth_rejected", "reason", "query_token_not_allowed", "path", r.URL.Path)
+			}
+			httputil.WriteError(w, http.StatusUnauthorized, "Authorization: Bearer <token> required (query token not allowed on this route)")
+			return
+		}
+
+		ctx, ok := contextWithJWTClaims(r.Context(), tokenStr)
+		if !ok {
+			if authDebug {
+				slog.Warn("auth_rejected", "reason", "jwt_invalid", "path", r.URL.Path)
 			}
 			httputil.WriteError(w, http.StatusUnauthorized, "invalid or expired token")
 			return
 		}
+		next.ServeHTTP(w, r.WithContext(ctx))
+	})
+}
 
-		ctx := context.WithValue(r.Context(), claimsKey, token.Claims)
-		if mc, ok := token.Claims.(jwt.MapClaims); ok {
-			if uidStr, exists := mc["user_id"]; exists {
-				if s, ok := uidStr.(string); ok {
-					if uid, err := uuid.Parse(s); err == nil {
-						ctx = authctx.WithUserID(ctx, uid)
-					}
-				}
-			}
-			if email, exists := mc["email"]; exists {
-				if s, ok := email.(string); ok {
-					ctx = authctx.WithEmail(ctx, s)
+func devBypassContext(r *http.Request) context.Context {
+	ctx := authctx.WithFarmAuthzSkip(r.Context(), true)
+	if tok := bearerToken(r); tok != "" {
+		if enriched, ok := contextWithJWTClaims(ctx, tok); ok {
+			return enriched
+		}
+	}
+	return ctx
+}
+
+func bearerToken(r *http.Request) string {
+	header := r.Header.Get("Authorization")
+	if strings.HasPrefix(header, "Bearer ") {
+		return strings.TrimPrefix(header, "Bearer ")
+	}
+	if q := r.URL.Query().Get("token"); q != "" {
+		return q
+	}
+	return ""
+}
+
+func contextWithJWTClaims(ctx context.Context, tokenStr string) (context.Context, bool) {
+	token, err := jwt.Parse(tokenStr, func(t *jwt.Token) (any, error) {
+		if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, jwt.ErrSignatureInvalid
+		}
+		return jwtSecret, nil
+	}, jwt.WithExpirationRequired())
+	if err != nil || !token.Valid {
+		return ctx, false
+	}
+	ctx = context.WithValue(ctx, claimsKey, token.Claims)
+	if mc, ok := token.Claims.(jwt.MapClaims); ok {
+		if uidStr, exists := mc["user_id"]; exists {
+			if s, ok := uidStr.(string); ok {
+				if uid, err := uuid.Parse(s); err == nil {
+					ctx = authctx.WithUserID(ctx, uid)
 				}
 			}
 		}
-		next.ServeHTTP(w, r.WithContext(ctx))
-	})
+		if email, exists := mc["email"]; exists {
+			if s, ok := email.(string); ok {
+				ctx = authctx.WithEmail(ctx, s)
+			}
+		}
+	}
+	return ctx, true
 }
 
 // IssueToken is called by the login handler to mint a signed JWT.
