@@ -46,6 +46,29 @@ export function parseNaturalFarmingPackBody(body) {
 }
 
 /**
+ * Human-readable import result for Commons recipe pack apply.
+ * @param {{ apply?: Record<string, unknown>, error?: string }} out
+ */
+export function formatCommonsImportMessage(out) {
+  if (out?.error) return String(out.error)
+  const apply = out?.apply
+  if (!apply) return 'Recipe pack imported.'
+  const status = String(apply.status ?? '')
+  const base = String(apply.message ?? 'Recipe pack imported.')
+  if (status === 'noop') {
+    const skippedIn = apply.inputs_skipped ?? 0
+    const skippedRec = apply.recipes_skipped ?? 0
+    return `${base} (${skippedIn} inputs, ${skippedRec} recipes already on farm — safe to click again.)`
+  }
+  const created = []
+  if (apply.inputs_created) created.push(`${apply.inputs_created} inputs`)
+  if (apply.recipes_created) created.push(`${apply.recipes_created} recipes`)
+  if (apply.components_upserted) created.push(`${apply.components_upserted} components`)
+  if (!created.length) return base
+  return `${base} Added ${created.join(', ')}.`
+}
+
+/**
  * @param {{ inputNames?: string[] } | null | undefined} preview
  */
 export function firstBatchQueryForPack(preview) {

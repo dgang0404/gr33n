@@ -112,6 +112,7 @@ import { useFarmContextStore } from '../../stores/farmContext.js'
 import {
   NF_COMMONS_TAG,
   firstBatchQueryForPack,
+  formatCommonsImportMessage,
   isNaturalFarmingCatalogEntry,
   parseNaturalFarmingPackBody,
 } from '../../lib/naturalFarmingCommonsImport.js'
@@ -178,7 +179,7 @@ async function doImport() {
       importMessage.value = out.error
     } else {
       importOk.value = true
-      importMessage.value = out.apply?.message || 'Recipe pack imported.'
+      importMessage.value = formatCommonsImportMessage(out)
       await store.loadAll(farmId.value)
     }
   } catch (err) {

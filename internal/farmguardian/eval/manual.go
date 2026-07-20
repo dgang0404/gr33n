@@ -54,6 +54,8 @@ func manualMakeTarget(suite string) string {
 	switch strings.ToLower(strings.TrimSpace(suite)) {
 	case "smoke":
 		return "smoke"
+	case "smoke-natural-farming", "smoke_natural_farming", "smoke-nf":
+		return "smoke-natural-farming"
 	case "phase127", "phase128", "p128":
 		return "phase127"
 	default:
@@ -71,8 +73,26 @@ func manualPassHint(q Question) string {
 		return "Answer summarizes seed/demo alerts; len > 40 chars"
 	case "smoke-ec-ph":
 		return "Citations present or answer mentions EC/pH targets"
-	case "smoke-cherry-jlf", "regression-cherry-goldenrod-jlf":
+	case "smoke-cherry-jlf", "regression-cherry-goldenrod-jlf", "smoke-nf-goldenrod":
 		return "Grounded JLF answer with dilution or catalog; extension-method goldenrod (not Cho recipe); API log may show tool_id=suggest_process_from_material"
+	case "smoke-nf-jlf-doc":
+		return "Cites natural-farming-jlf-general (or JLF guide) with 1:100 start dilution and prep notes"
+	case "smoke-nf-jms-dilution":
+		return "Soil drench 1:10 and foliar 1:20 for JMS"
+	case "smoke-nf-ready-batches":
+		return "Lists ready batches/inputs from farm inventory; API log may show summarize_natural_farming_inventory"
+	case "smoke-nf-jms-make":
+		return "JMS steps with potato/leaf mold and ferment timing from field guide"
+	case "smoke-nf-jlf-start":
+		return "Conservative JLF start dilution 1:100 before 1:20"
+	case "smoke-nf-combined-drench":
+		return "Combined JLF + JMS same-tank dilution guidance"
+	case "smoke-nf-ffj-flower":
+		return "FFJ for flowering / fruit stage vs JLF"
+	case "smoke-nf-wca-foliar":
+		return "WCA foliar dilution ~1:1000"
+	case "smoke-nf-lab":
+		return "LAB serum for soil conditioning / odor control"
 	case "farm-devices", "p128-devices":
 		return "Mentions snapshot device line or online/offline edge devices; no invented GPIO"
 	case "farm-fert-schedule", "p128-fert-manual":

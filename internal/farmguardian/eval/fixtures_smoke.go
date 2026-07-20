@@ -52,6 +52,8 @@ func FixturesForSuite(suite string) []Question {
 	switch strings.ToLower(strings.TrimSpace(suite)) {
 	case "smoke":
 		return SmokeFixtures()
+	case "smoke-natural-farming", "smoke_natural_farming", "smoke-nf":
+		return SmokeNaturalFarmingFixtures()
 	case "phase127", "phase128", "p128":
 		return Phase127Fixtures()
 	case "change-requests", "change_requests", "proposals", "pr":

@@ -116,7 +116,7 @@ func Score(in ScoreInput) ScoreResult {
 		if !res.Passed {
 			res.Notes = "expected forest-garden answer mentioning cherry/goldenrod/blackberry"
 		}
-	case in.Question.ID == "regression-cherry-goldenrod-jlf", in.Question.ID == "smoke-cherry-jlf":
+	case in.Question.ID == "regression-cherry-goldenrod-jlf", in.Question.ID == "smoke-cherry-jlf", in.Question.ID == "smoke-nf-goldenrod":
 		res.Passed, res.Notes = scoreRegressionCherryGoldenrodJLF(in)
 	case in.Question.ID == "smoke-morning-walk", in.Question.ID == "farm-morning-walkthrough":
 		res.Passed = len(a) > 40 && !looksLikeInvention(a)
@@ -165,6 +165,8 @@ func Score(in ScoreInput) ScoreResult {
 		if !res.Passed {
 			res.Notes = "expected fertigation-troubleshooting steps"
 		}
+	case strings.HasPrefix(in.Question.ID, "smoke-nf-"):
+		res.Passed, res.Notes = scoreSmokeNaturalFarming(in)
 	case in.Question.ExpectCitation:
 		res.Passed = in.CitationCount > 0 || citationRefPresent(in.Answer)
 		if !res.Passed {
@@ -198,6 +200,8 @@ func Score(in ScoreInput) ScoreResult {
 func shouldApplySmokeTopicDrift(q Question) bool {
 	switch q.ID {
 	case "smoke-morning-walk", "smoke-ec-ph", "smoke-cherry-forest", "smoke-unread-alerts", "smoke-cherry-jlf", "farm-morning-walkthrough",
+		"smoke-nf-jlf-doc", "smoke-nf-jms-dilution", "smoke-nf-ready-batches", "smoke-nf-jms-make", "smoke-nf-jlf-start",
+		"smoke-nf-combined-drench", "smoke-nf-ffj-flower", "smoke-nf-wca-foliar", "smoke-nf-goldenrod", "smoke-nf-lab",
 		"p128-fert-triage", "p128-demo-pi", "fg-fertigation-triage", "fg-demo-pi":
 		return true
 	default:
@@ -302,6 +306,82 @@ func choGoldenrodRecipeClaim(a string) bool {
 	}
 	return strings.Contains(a, "cho's goldenrod") || strings.Contains(a, "cho goldenrod recipe") ||
 		strings.Contains(a, "cho-named goldenrod")
+}
+
+func scoreSmokeNaturalFarming(in ScoreInput) (bool, string) {
+	a := strings.ToLower(strings.TrimSpace(in.Answer))
+	if len(a) < 40 {
+		return false, "expected grounded natural farming answer"
+	}
+	if looksLikeInvention(a) {
+		return false, "expected no invented farm data"
+	}
+	cited := in.CitationCount > 0 || citationRefPresent(in.Answer)
+	switch in.Question.ID {
+	case "smoke-nf-jlf-doc":
+		if !(strings.Contains(a, "jlf") || strings.Contains(a, "liquid fertilizer")) {
+			return false, "expected JLF framing"
+		}
+		if !(strings.Contains(a, "1:100") || strings.Contains(a, "1:20") || strings.Contains(a, "dilut")) {
+			return false, "expected dilution guidance from the guide"
+		}
+		if !cited {
+			return false, "expected field guide citation"
+		}
+	case "smoke-nf-jms-dilution":
+		if !strings.Contains(a, "jms") && !strings.Contains(a, "microbial") {
+			return false, "expected JMS"
+		}
+		if !(strings.Contains(a, "1:10") && strings.Contains(a, "1:20")) {
+			return false, "expected soil 1:10 and foliar 1:20"
+		}
+	case "smoke-nf-ready-batches":
+		if !(strings.Contains(a, "batch") || strings.Contains(a, "ferment") || strings.Contains(a, "input") || strings.Contains(a, "ready")) {
+			return false, "expected inventory / batch summary"
+		}
+	case "smoke-nf-jms-make":
+		if !(strings.Contains(a, "jms") || strings.Contains(a, "microbial")) {
+			return false, "expected JMS"
+		}
+		if !(strings.Contains(a, "potato") || strings.Contains(a, "leaf mold") || strings.Contains(a, "humus")) {
+			return false, "expected core JMS ingredients from guide"
+		}
+	case "smoke-nf-jlf-start":
+		if !(strings.Contains(a, "1:100") || (strings.Contains(a, "start") && strings.Contains(a, "1:20"))) {
+			return false, "expected conservative 1:100 start dilution"
+		}
+	case "smoke-nf-combined-drench":
+		if !(strings.Contains(a, "jlf") && strings.Contains(a, "jms")) {
+			return false, "expected combined JLF + JMS drench"
+		}
+		if !(strings.Contains(a, "1:10") || strings.Contains(a, "1:20") || strings.Contains(a, "same tank") || strings.Contains(a, "same water")) {
+			return false, "expected combined dilution or same-tank guidance"
+		}
+	case "smoke-nf-ffj-flower":
+		if !(strings.Contains(a, "ffj") || strings.Contains(a, "fruit")) {
+			return false, "expected FFJ / fruit framing"
+		}
+		if !(strings.Contains(a, "flower") || strings.Contains(a, "fruit") || strings.Contains(a, "bloom")) {
+			return false, "expected flowering use case"
+		}
+	case "smoke-nf-wca-foliar":
+		if !(strings.Contains(a, "wca") || strings.Contains(a, "calcium")) {
+			return false, "expected WCA"
+		}
+		if !(strings.Contains(a, "1:1000") || strings.Contains(a, "foliar")) {
+			return false, "expected WCA foliar dilution band"
+		}
+	case "smoke-nf-lab":
+		if !(strings.Contains(a, "lab") || strings.Contains(a, "lactic")) {
+			return false, "expected LAB"
+		}
+		if !(strings.Contains(a, "soil") || strings.Contains(a, "odor") || strings.Contains(a, "condition")) {
+			return false, "expected soil / conditioning use"
+		}
+	default:
+		return false, "unknown smoke-nf fixture"
+	}
+	return true, ""
 }
 
 func woodlandECInvention(a string) bool {

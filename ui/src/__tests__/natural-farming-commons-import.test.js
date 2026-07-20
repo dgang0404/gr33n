@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import {
   firstBatchQueryForPack,
+  formatCommonsImportMessage,
   parseNaturalFarmingPackBody,
 } from '../lib/naturalFarmingCommonsImport.js'
 
@@ -13,5 +14,18 @@ describe('naturalFarmingCommonsImport', () => {
     expect(
       firstBatchQueryForPack({ inputNames: ['Mystery Input'] }),
     ).toEqual({ tab: 'batch' })
+  })
+
+  it('explains noop re-import with skip counts', () => {
+    expect(
+      formatCommonsImportMessage({
+        apply: {
+          status: 'noop',
+          message: 'All pack inputs and recipes already exist on this farm.',
+          inputs_skipped: 16,
+          recipes_skipped: 14,
+        },
+      }),
+    ).toContain('already on farm')
   })
 })

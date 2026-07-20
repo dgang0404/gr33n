@@ -39,6 +39,7 @@ run_suite() {
 
 SUITES=(
   "guardian-qa-smoke|Q&A smoke (5 prompts, ~110 min CPU)"
+  "guardian-qa-smoke-natural-farming|Natural farming smoke (10 prompts, ~220 min CPU)"
   "guardian-qa-phase127|Phase 127 grounding (4 prompts, ~90 min CPU)"
   "guardian-qa-change-requests-pending|Change requests + Pending tab (4 write-intents, ~100 min CPU)"
 )

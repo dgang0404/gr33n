@@ -178,6 +178,14 @@ guardian-qa-smoke-cherry-jlf: ## Phase 211 WS5 — re-run smoke-cherry-jlf only 
 			-suite smoke -prompt-ids smoke-cherry-jlf \
 			-report $${GUARDIAN_EVAL_REPORT:-data/guardian_model_eval.json}'
 
+guardian-qa-smoke-natural-farming: ## Natural farming — 10 grounded prompts (field guides + inventory)
+	@bash -lc 'set -e; cd "$(CURDIR)"; \
+		if [ -f .env ]; then set -a && . ./.env && set +a; fi; \
+		source scripts/source-local-env.sh --refresh-eval-token; \
+		$(GO) run ./cmd/guardian-eval/ -models $${MODEL:-phi3:mini} -farm-id $${FARM_ID:-1} \
+			-suite smoke-natural-farming \
+			-report $${GUARDIAN_EVAL_REPORT:-data/guardian_model_eval.json}'
+
 guardian-qa-phase127: ## Phase 128 — 4-prompt Phase 127 grounding validation (devices, fert, Pi, triage)
 	@bash -lc 'set -e; cd "$(CURDIR)"; \
 		if [ -f .env ]; then set -a && . ./.env && set +a; fi; \
@@ -279,9 +287,10 @@ guardian-qa-change-requests-ui-quick: ## Fast multi-turn UI prep: ack + schedule
 
 guardian-qa-smoke-all-help: ## Print master smoke-all suite list and env knobs
 	@echo "make guardian-qa-smoke-all — runs (sequential, ~4 hr CPU phi3:mini):"
-	@echo "  1. guardian-qa-smoke              (4 Q&A prompts)"
-	@echo "  2. guardian-qa-phase127           (4 grounding prompts)"
-	@echo "  3. guardian-qa-change-requests-pending (4 write-intents → Pending tab)"
+	@echo "  1. guardian-qa-smoke              (5 Q&A prompts)"
+	@echo "  2. guardian-qa-smoke-natural-farming (10 natural farming prompts)"
+	@echo "  3. guardian-qa-phase127           (4 grounding prompts)"
+	@echo "  4. guardian-qa-change-requests-pending (4 write-intents → Pending tab)"
 	@echo "Optional: GUARDIAN_QA_UI=1 (+ change-requests-ui-quick ~50 min)"
 	@echo "Optional: GUARDIAN_QA_UI_FULL=1 (+ change-requests-ui ~2–3 hr)"
 	@echo "Optional: GUARDIAN_QA_FAIL_FAST=1 (stop on first suite failure)"
