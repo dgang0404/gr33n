@@ -49,7 +49,7 @@ func TestPlatformContextBlock_LiteMode(t *testing.T) {
 }
 
 func TestPlatformContextBlock_TruncatesLongToolList(t *testing.T) {
-	many := make([]string, 20)
+	many := make([]string, 25)
 	for i := range many {
 		many[i] = "tool_" + strings.Repeat("x", 2)
 	}

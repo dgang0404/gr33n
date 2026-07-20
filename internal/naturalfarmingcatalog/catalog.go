@@ -89,6 +89,74 @@ func MaterialByID(catalog map[string]any, id string) (map[string]any, bool) {
 	return nil, false
 }
 
+// MaterialsMatchingQuery returns catalog materials whose id or common_names appear in query.
+func MaterialsMatchingQuery(catalog map[string]any, query string) []map[string]any {
+	q := strings.ToLower(strings.TrimSpace(query))
+	if q == "" {
+		return nil
+	}
+	raw, ok := catalog["materials"]
+	if !ok {
+		return nil
+	}
+	items, ok := raw.([]any)
+	if !ok {
+		return nil
+	}
+	var out []map[string]any
+	for _, item := range items {
+		m, ok := item.(map[string]any)
+		if !ok {
+			continue
+		}
+		id, _ := m["id"].(string)
+		if id != "" && strings.Contains(q, strings.ToLower(id)) {
+			out = append(out, m)
+			continue
+		}
+		names, _ := m["common_names"].([]any)
+		for _, n := range names {
+			name, _ := n.(string)
+			name = strings.TrimSpace(name)
+			if name == "" {
+				continue
+			}
+			if strings.Contains(q, strings.ToLower(name)) {
+				out = append(out, m)
+				break
+			}
+		}
+	}
+	return out
+}
+
+// CanonInputByProcessType returns the first recipe-canonical input with process_type.
+func CanonInputByProcessType(canon map[string]any, processType string) (map[string]any, bool) {
+	processType = strings.TrimSpace(strings.ToLower(processType))
+	if processType == "" {
+		return nil, false
+	}
+	raw, ok := canon["inputs"]
+	if !ok {
+		return nil, false
+	}
+	items, ok := raw.([]any)
+	if !ok {
+		return nil, false
+	}
+	for _, item := range items {
+		inp, ok := item.(map[string]any)
+		if !ok {
+			continue
+		}
+		pt, _ := inp["process_type"].(string)
+		if strings.EqualFold(strings.TrimSpace(pt), processType) {
+			return inp, true
+		}
+	}
+	return nil, false
+}
+
 func yamlVersionAtLeast1(v any) bool {
 	switch n := v.(type) {
 	case int:

@@ -10,7 +10,7 @@ import (
 	"gr33n-api/internal/farmguardian/tools"
 )
 
-const maxPlatformToolList = 16
+const maxPlatformToolList = 20
 
 // PlatformContextBlock injects deployment facts so Guardian does not hallucinate
 // cloud SaaS, pricing, or autonomy (Phase 30 WS9). Appended to every /v1/chat

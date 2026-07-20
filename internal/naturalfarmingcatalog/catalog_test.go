@@ -29,6 +29,13 @@ func TestLoadMaterialCatalog(t *testing.T) {
 	if _, ok := MaterialByID(cat, "not-a-material"); ok {
 		t.Fatal("expected missing material")
 	}
+	matches := MaterialsMatchingQuery(cat, "Can I use Canadian goldenrod for JLF?")
+	if len(matches) != 1 {
+		t.Fatalf("goldenrod matches: %d", len(matches))
+	}
+	if matches[0]["id"] != "goldenrod" {
+		t.Fatalf("id: %v", matches[0]["id"])
+	}
 }
 
 func TestLoadRecipeCanon_JMSSoilDilution(t *testing.T) {
