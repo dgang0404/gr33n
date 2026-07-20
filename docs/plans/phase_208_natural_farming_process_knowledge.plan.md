@@ -22,7 +22,7 @@ todos:
     status: completed
   - id: ws5-read-api
     content: "WS5: GET /v1/field-guides/process-catalog + /recipes — static serve from YAML; no farm writes"
-    status: pending
+    status: completed
   - id: ws6-tests-docs
     content: "WS6: phase-208-closure.test.js — YAML shape, all canonical recipes present, JMS dilution audit test; no smoke changes"
     status: pending

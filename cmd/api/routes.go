@@ -211,6 +211,9 @@ func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationwo
 	mux.Handle("GET /v1/field-guides/procedures", jwt(http.HandlerFunc(fieldGuides.ListProcedures)))
 	mux.Handle("GET /v1/field-guides/procedures/{id}", jwt(http.HandlerFunc(fieldGuides.GetProcedure)))
 	mux.Handle("GET /v1/field-guides/procedures/{id}/print", jwt(http.HandlerFunc(fieldGuides.PrintProcedure)))
+	mux.Handle("GET /v1/field-guides/process-catalog/materials/{id}", jwt(http.HandlerFunc(fieldGuides.GetProcessMaterial)))
+	mux.Handle("GET /v1/field-guides/process-catalog", jwt(http.HandlerFunc(fieldGuides.GetProcessCatalog)))
+	mux.Handle("GET /v1/field-guides/recipe-canon", jwt(http.HandlerFunc(fieldGuides.GetRecipeCanon)))
 
 	// Units
 	mux.Handle("GET /units", jwt(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

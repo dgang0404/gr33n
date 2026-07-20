@@ -5252,6 +5252,56 @@ paths:
             text/markdown:
               schema: { type: string }
 
+  /v1/field-guides/process-catalog:
+    get:
+      tags: [chat]
+      summary: Natural farming material → process catalog (Phase 208 WS5)
+      description: Static JSON from data/process-material-catalog.yaml — no farm writes.
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          description: Material catalog
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+
+  /v1/field-guides/process-catalog/materials/{id}:
+    get:
+      tags: [chat]
+      summary: One natural farming material entry (Phase 208 WS5)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Material entry
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /v1/field-guides/recipe-canon:
+    get:
+      tags: [chat]
+      summary: Canonical natural farming inputs and application recipes (Phase 208 WS5)
+      description: Static JSON from data/recipe-canonical.yaml — post WS0 audit dilutions.
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          description: Recipe canon
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+
   /guardian/models:
     get:
       tags: [chat]
