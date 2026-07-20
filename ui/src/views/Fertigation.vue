@@ -259,7 +259,7 @@
             <p v-if="p.schedule_id"><span class="text-zinc-500">Schedule:</span> <router-link v-nav-hint="'/comfort-targets'" :to="comfortScheduleRoute" class="text-green-600 hover:text-green-400">{{ scheduleName(p.schedule_id) }}</router-link></p>
             <p v-if="p.application_recipe_id">
               <span class="text-zinc-500">Recipe:</span>
-              <router-link v-nav-hint="'/money'" :to="recipeInventoryRoute" class="text-green-600 hover:text-green-400">{{ recipeName(p.application_recipe_id) }}</router-link>
+              <router-link v-nav-hint="'/natural-farming'" :to="recipeLink(p.application_recipe_id)" class="text-green-600 hover:text-green-400">{{ recipeName(p.application_recipe_id) }}</router-link>
             </p>
           </div>
 
@@ -337,7 +337,7 @@
             class="px-3 py-1.5 bg-green-700 hover:bg-green-600 text-white text-xs rounded-lg">
             {{ showMixForm ? 'Cancel' : '+ Log Mix' }}
           </button>
-          <router-link v-nav-hint="'/money'" :to="inventoryRoute" class="text-xs text-green-600 hover:text-green-400">Inventory batches &rarr;</router-link>
+          <router-link v-nav-hint="'/natural-farming'" :to="inventoryRoute" class="text-xs text-green-600 hover:text-green-400">Inventory batches &rarr;</router-link>
         </div>
       </div>
 
@@ -412,7 +412,7 @@
             <ul v-else-if="mixingComponentsCache[m.id]?.length" class="text-xs text-zinc-400 space-y-1">
               <li v-for="c in mixingComponentsCache[m.id]" :key="c.id">
                 {{ inputName(c.input_definition_id) }}
-                <router-link v-if="c.input_batch_id" v-nav-hint="'/money'" :to="inventoryBatchesRoute" class="text-green-600 hover:text-green-400"> · batch #{{ c.input_batch_id }}</router-link>
+                <router-link v-if="c.input_batch_id" v-nav-hint="'/natural-farming'" :to="batchStockLink(c.input_batch_id)" class="text-green-600 hover:text-green-400"> · batch #{{ c.input_batch_id }}</router-link>
                 · {{ c.volume_added_ml }} mL
                 <span v-if="c.dilution_ratio" class="text-zinc-600"> ({{ c.dilution_ratio }})</span>
               </li>
@@ -618,12 +618,18 @@ import {
 import { cycleBatchLabel, formatStageLabel } from '../lib/growHub.js'
 import { loadDomainEnums, enumValues, getDomainEnums } from '../lib/domainEnums.js'
 import api from '../api/index.js'
-import { comfortTabRoute, moneyTabRoute } from '../lib/workspaceRoutes.js'
+import { comfortTabRoute, naturalFarmingTabRoute } from '../lib/workspaceRoutes.js'
 
 const comfortScheduleRoute = comfortTabRoute('schedules')
-const recipeInventoryRoute = moneyTabRoute('inventory', { inv: 'recipes' })
-const inventoryRoute = moneyTabRoute('inventory', { inv: 'batches' })
-const inventoryBatchesRoute = moneyTabRoute('inventory', { inv: 'batches' })
+const inventoryRoute = naturalFarmingTabRoute('stock')
+
+function recipeLink(recipeId) {
+  return naturalFarmingTabRoute('recipes', { recipe: recipeId })
+}
+
+function batchStockLink(batchId) {
+  return naturalFarmingTabRoute('stock', { batchId })
+}
 
 const route = useRoute()
 const router = useRouter()

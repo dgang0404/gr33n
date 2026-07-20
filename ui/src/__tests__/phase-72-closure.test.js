@@ -13,7 +13,6 @@ describe('Phase 72 — money closure', () => {
       '/operations/money': 'summary',
       '/costs': 'ledger',
       '/operations/supplies': 'supplies',
-      '/inventory': 'inventory',
     }
     for (const [legacy, tab] of Object.entries(paths)) {
       const entry = buildLegacyRedirectRoutes().find((r) => r.path === legacy)
@@ -32,6 +31,38 @@ describe('Phase 72 — money closure', () => {
       expect(result.path).toBe('/money')
       expect(result.query.tab).toBe(tab)
     }
+  })
+
+  it('/inventory redirects to natural-farming studio tabs', () => {
+    const entry = buildLegacyRedirectRoutes().find((r) => r.path === '/inventory')
+    expect(entry).toBeTruthy()
+    const recipes = entry.redirect({
+      path: '/inventory',
+      query: {},
+      hash: '',
+      fullPath: '/inventory',
+      matched: [],
+      meta: {},
+      name: undefined,
+      params: {},
+      redirectedFrom: undefined,
+    })
+    expect(recipes.path).toBe('/natural-farming')
+    expect(recipes.query.tab).toBe('recipes')
+
+    const stock = entry.redirect({
+      path: '/inventory',
+      query: { inv: 'batches' },
+      hash: '',
+      fullPath: '/inventory?inv=batches',
+      matched: [],
+      meta: {},
+      name: undefined,
+      params: {},
+      redirectedFrom: undefined,
+    })
+    expect(stock.path).toBe('/natural-farming')
+    expect(stock.query.tab).toBe('stock')
   })
 
   it('MoneyHub footer links to ledger tab not orphan /costs', () => {

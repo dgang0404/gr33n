@@ -116,7 +116,7 @@
       reason="no_data"
       :message="inputs.length ? 'No batches on hand — start one below or use the full editor.' : 'No supply batches yet — add inputs and batches in the full editor, or start from a demo farm.'"
       :action-label="inputs.length ? 'Create first batch' : 'Open full editor'"
-      :action-to="inputs.length ? null : { path: '/money', query: { tab: 'inventory', inv: 'batches' } }"
+      :action-to="inputs.length ? null : naturalFarmingTabRoute('batch')"
       @action="openNewBatch()"
     />
 
@@ -386,6 +386,7 @@ import {
   nextQuantityAfterRestock,
 } from '../lib/suppliesHub.js'
 import { refillTaskFromLowStock } from '../lib/taskTemplates.js'
+import { naturalFarmingTabRoute } from '../lib/workspaceRoutes.js'
 
 const route = useRoute()
 const router = useRouter()
@@ -447,13 +448,8 @@ const logMixLink = computed(() => {
   return { path: '/operations/feeding', query: q }
 })
 
-const recipesLink = computed(() => ({
-  path: '/money',
-  query: {
-    tab: 'inventory',
-    inv: 'recipes',
-    ...(zoneContextId.value ? { zone_id: String(zoneContextId.value) } : {}),
-  },
+const recipesLink = computed(() => naturalFarmingTabRoute('recipes', {
+  zoneId: zoneContextId.value ?? undefined,
 }))
 
 function zoneName(zoneId) {
@@ -490,7 +486,7 @@ function flashSuccess(msg) {
 }
 
 function openBatchEditor(batchId) {
-  router.push({ path: '/money', query: { tab: 'inventory', inv: 'batches', batch_id: String(batchId) } })
+  router.push(naturalFarmingTabRoute('stock', { batchId }))
 }
 
 function startRestock(row) {

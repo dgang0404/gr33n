@@ -26,7 +26,7 @@ export const NAV_RELATIONS = {
   '/lighting': ['/zones'],
   '/pi-setup': ['/hardware', '/zones', '/operator-guide'],
   '/costs': ['/money'],
-  '/inventory': ['/money'],
+  '/inventory': ['/natural-farming', '/money'],
 }
 
 /**

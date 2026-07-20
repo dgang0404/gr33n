@@ -62,6 +62,37 @@ export function moneyTabRoute(tab, { inv, zoneId } = {}) {
   return { path: '/money', query }
 }
 
+/**
+ * @param {string} tab start | library | batch | recipes | stock
+ * @param {{ recipe?: number|string, batchId?: number|string, process?: string, zoneId?: number|string }} [opts]
+ */
+export function naturalFarmingTabRoute(tab, { recipe, batchId, process, zoneId } = {}) {
+  /** @type {Record<string, string>} */
+  const query = { tab }
+  if (recipe != null && recipe !== '') query.recipe = String(recipe)
+  if (batchId != null && batchId !== '') query.batch_id = String(batchId)
+  if (process) query.process = process
+  if (zoneId != null && zoneId !== '') query.zone_id = String(zoneId)
+  return { path: '/natural-farming', query }
+}
+
+/**
+ * Phase 209 WS6 — legacy /inventory → natural-farming studio (definitions stay on Money).
+ * @param {import('vue-router').RouteLocationNormalized} to
+ */
+export function redirectLegacyInventory(to) {
+  const q = { ...to.query }
+  const inv = q.inv ?? q.tab
+  delete q.inv
+  if (inv === 'definitions') {
+    return { path: '/money', query: { ...q, tab: 'inventory', inv: 'definitions' } }
+  }
+  if (inv === 'batches' || q.batch_id) {
+    return { path: '/natural-farming', query: { ...q, tab: 'stock' } }
+  }
+  return { path: '/natural-farming', query: { ...q, tab: 'recipes' } }
+}
+
 export function zonesWorkspaceTabRoute(tab, { fleet } = {}) {
   /** @type {Record<string, string>} */
   const query = { tab }

@@ -220,7 +220,7 @@ import { useRoute } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useFarmStore } from '../../stores/farm.js'
 import { useFarmContextStore } from '../../stores/farmContext.js'
-import api from '../../api.js'
+import api from '../../api'
 import { enumValues, loadDomainEnums } from '../../lib/domainEnums.js'
 import { formatApplicationType } from '../../lib/naturalFarmingLibrary.js'
 import {

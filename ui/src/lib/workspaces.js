@@ -1,3 +1,5 @@
+import { redirectLegacyInventory } from './workspaceRoutes.js'
+
 /**
  * Phase 68 WS1 — workspace model (SPA shells with internal tabs).
  * @see docs/plans/archive/phase_68_workspace_shell_spa_nav.plan.md
@@ -34,14 +36,13 @@ export const WORKSPACES = {
       { id: 'summary', label: 'This month' },
       { id: 'ledger', label: 'Ledger' },
       { id: 'supplies', label: 'Supplies on hand' },
-      { id: 'inventory', label: 'Inventory & recipes' },
+      { id: 'inventory', label: 'Natural farming (advanced)' },
       { id: 'grows', label: 'Grows' },
     ],
     absorbs: {
       '/operations/money': { tab: 'summary' },
       '/costs': { tab: 'ledger' },
       '/operations/supplies': { tab: 'supplies' },
-      '/inventory': { tab: 'inventory' },
     },
   },
   help: {
@@ -122,6 +123,9 @@ export const WORKSPACES = {
       { id: 'recipes', label: 'Recipes & apply' },
       { id: 'stock', label: 'On hand' },
     ],
+    absorbs: {
+      '/inventory': { tab: 'recipes' },
+    },
   },
 }
 
@@ -353,6 +357,10 @@ export function buildLegacyRedirectRoutes() {
     path: legacyPath,
     ...(LEGACY_ROUTE_NAMES[legacyPath] ? { name: LEGACY_ROUTE_NAMES[legacyPath] } : {}),
     redirect: (to) => {
+      if (legacyPath === '/inventory') {
+        return redirectLegacyInventory(to)
+      }
+
       const zoneId = parseZoneIdFromQuery(to.query)
 
       if (hit.zoneTab && zoneId) {

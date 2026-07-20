@@ -63,9 +63,10 @@ describe('Phase 79 — tasks fix, concepts, inventory', () => {
     expect(COMFORT_WORKSPACE_CONCEPTS.length).toBeGreaterThanOrEqual(6)
   })
 
-  it('money workspace includes inventory and recipes tab', () => {
+  it('money workspace keeps advanced inventory tab; legacy /inventory goes to studio', () => {
     const tabs = WORKSPACES.money.tabs.map((t) => t.id)
     expect(tabs).toContain('inventory')
-    expect(WORKSPACES.money.absorbs['/inventory']).toEqual({ tab: 'inventory' })
+    expect(WORKSPACES.money.absorbs?.['/inventory']).toBeUndefined()
+    expect(WORKSPACES.naturalfarming.absorbs?.['/inventory']).toEqual({ tab: 'recipes' })
   })
 })

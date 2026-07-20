@@ -145,7 +145,7 @@ import {
   stockRows,
 } from '../../lib/naturalFarmingStock.js'
 import { moneyTabRoute } from '../../lib/workspaceRoutes.js'
-import api from '../../api.js'
+import api from '../../api'
 
 const route = useRoute()
 const store = useFarmStore()
