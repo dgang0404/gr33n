@@ -4,16 +4,7 @@
       <SwitchoverWizard v-if="activeTab === 'start'" />
       <RecipeLibraryPanel v-else-if="activeTab === 'library'" />
       <MakeBatchPanel v-else-if="activeTab === 'batch'" />
-      <section
-        v-else-if="activeTab === 'recipes'"
-        class="p-4 max-w-3xl"
-        data-test="nf-tab-recipes"
-      >
-        <h2 class="text-lg font-semibold mb-2">Recipes &amp; apply</h2>
-        <p class="text-muted">
-          Application recipes and fertigation program links — rehosts Inventory in WS4.
-        </p>
-      </section>
+      <RecipesApplyPanel v-else-if="activeTab === 'recipes'" />
       <section
         v-else-if="activeTab === 'stock'"
         class="p-4 max-w-3xl"
@@ -33,4 +24,5 @@ import WorkspaceShell from '../../components/WorkspaceShell.vue'
 import SwitchoverWizard from '../../components/naturalfarming/SwitchoverWizard.vue'
 import MakeBatchPanel from '../../components/naturalfarming/MakeBatchPanel.vue'
 import RecipeLibraryPanel from '../../components/naturalfarming/RecipeLibraryPanel.vue'
+import RecipesApplyPanel from '../../components/naturalfarming/RecipesApplyPanel.vue'
 </script>
