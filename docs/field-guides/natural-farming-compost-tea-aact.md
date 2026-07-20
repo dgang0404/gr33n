@@ -1,4 +1,5 @@
 ---
+domain: natural_farming
 title: Actively aerated compost tea (AACT)
 safety_tier: safe
 tradition: other

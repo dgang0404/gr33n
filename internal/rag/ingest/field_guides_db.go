@@ -40,17 +40,34 @@ func (w *Worker) IngestFieldGuidesFromDB(ctx context.Context, farmID int64) (int
 	}
 	total := 0
 	for _, g := range guides {
-		chunks := chunkMarkdown(strings.TrimSpace(g.BodyMd))
+		body, front := splitYAMLFrontmatter(strings.TrimSpace(g.BodyMd))
+		chunks := chunkMarkdown(strings.TrimSpace(body))
 		domain := ""
 		if g.Domain != nil {
 			domain = strings.TrimSpace(*g.Domain)
 		}
+		if domain == "" {
+			domain = strings.TrimSpace(front["domain"])
+		}
 		safety := strings.TrimSpace(g.SafetyTier)
+		if safety == "" {
+			safety = normalizeSafetyTier(front["safety_tier"])
+		}
 		if safety == "" {
 			safety = "safe"
 		}
+		tradition := strings.TrimSpace(front["tradition"])
 		relPath := g.Slug + ".md"
-		n, err := w.upsertFieldGuideFile(ctx, farmID, relPath, g.ID, chunks, domain, safety, cropKeyFromFieldGuideSlug(g.Slug), int(g.CatalogVersion))
+		if domain == "" || safety == "" || tradition == "" {
+			dDef, sDef := fieldGuideMetaDefaults(relPath, front)
+			if domain == "" {
+				domain = dDef
+			}
+			if safety == "" {
+				safety = sDef
+			}
+		}
+		n, err := w.upsertFieldGuideFile(ctx, farmID, relPath, g.ID, chunks, domain, safety, tradition, cropKeyFromFieldGuideSlug(g.Slug), int(g.CatalogVersion))
 		if err != nil {
 			return total, fmt.Errorf("%s: %w", g.Slug, err)
 		}

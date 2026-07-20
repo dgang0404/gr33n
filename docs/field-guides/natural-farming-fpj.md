@@ -1,4 +1,5 @@
 ---
+domain: natural_farming
 title: Fermented Plant Juice (FPJ) — KNF
 safety_tier: safe
 tradition: knf

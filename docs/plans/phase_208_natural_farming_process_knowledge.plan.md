@@ -19,7 +19,7 @@ todos:
     status: completed
   - id: ws4-rag-ingest
     content: "WS4: RAG ingest for new guides + catalog; manifest entries in field-guides/README.md"
-    status: pending
+    status: completed
   - id: ws5-read-api
     content: "WS5: GET /v1/field-guides/process-catalog + /recipes — static serve from YAML; no farm writes"
     status: pending

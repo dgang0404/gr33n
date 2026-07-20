@@ -1,4 +1,5 @@
 ---
+domain: natural_farming
 title: Natural farming application recipes (canon)
 safety_tier: safe
 tradition: jadam

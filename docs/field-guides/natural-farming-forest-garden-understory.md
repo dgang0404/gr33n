@@ -1,4 +1,5 @@
 ---
+domain: natural_farming
 title: Forest garden understory (cherry, blackberry, goldenrod)
 safety_tier: safe
 tradition: extension

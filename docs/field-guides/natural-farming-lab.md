@@ -1,4 +1,5 @@
 ---
+domain: natural_farming
 title: Lactic Acid Bacteria serum (LAB) — KNF
 safety_tier: safe
 tradition: knf

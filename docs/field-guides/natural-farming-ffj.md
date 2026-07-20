@@ -1,4 +1,5 @@
 ---
+domain: natural_farming
 title: Fermented Fruit Juice (FFJ) — KNF
 safety_tier: safe
 tradition: knf

@@ -1,4 +1,5 @@
 ---
+domain: natural_farming
 title: Indoor photoperiod JADAM programs (bootstrap)
 safety_tier: safe
 tradition: jadam

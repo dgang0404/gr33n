@@ -1,4 +1,5 @@
 ---
+domain: natural_farming
 title: JLF from weeds and grass (general)
 safety_tier: safe
 tradition: jadam

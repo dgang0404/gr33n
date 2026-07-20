@@ -68,6 +68,24 @@ include:
   - crop-unsupported-woodland.md
   - crop-unsupported-mushroom.md
   - crop-unsupported-field-roots.md
+  - natural-farming-jms.md
+  - natural-farming-jlf-general.md
+  - natural-farming-jlf-crop-specific.md
+  - natural-farming-jlf-spring-nettle-comfrey.md
+  - natural-farming-ffj.md
+  - natural-farming-fpj.md
+  - natural-farming-lab.md
+  - natural-farming-ohn.md
+  - natural-farming-wca-wcs.md
+  - natural-farming-jwa-js-jhs.md
+  - natural-farming-brv.md
+  - natural-farming-faa.md
+  - natural-farming-compost-tea-aact.md
+  - natural-farming-application-recipes.md
+  - natural-farming-indoor-photoperiod-program.md
+  - natural-farming-goldenrod-jlf.md
+  - natural-farming-forest-garden-understory.md
+  - natural-farming-livestock-plant-feed.md
 
 exclude_globs:
   - "procedures/**"

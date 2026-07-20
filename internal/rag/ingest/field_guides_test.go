@@ -19,12 +19,29 @@ func TestDryRunFieldGuides_FileManifest(t *testing.T) {
 }
 
 func TestFieldGuideMetadata(t *testing.T) {
-	meta := fieldGuideMetadata("crop-cannabis-nutrition.md", "general", "safe", "cannabis", 4)
+	meta := fieldGuideMetadata("crop-cannabis-nutrition.md", "general", "safe", "", "cannabis", 4)
 	if !strings.Contains(string(meta), `"crop_key":"cannabis"`) {
 		t.Fatalf("meta: %s", meta)
 	}
 	if !strings.Contains(string(meta), `"catalog_version":4`) {
 		t.Fatalf("meta: %s", meta)
+	}
+	nf := fieldGuideMetadata("natural-farming-jms.md", "natural_farming", "safe", "jadam", "", 5)
+	if !strings.Contains(string(nf), `"domain":"natural_farming"`) {
+		t.Fatalf("meta: %s", nf)
+	}
+	if !strings.Contains(string(nf), `"tradition":"jadam"`) {
+		t.Fatalf("meta: %s", nf)
+	}
+}
+
+func TestFieldGuideMetaDefaultsNaturalFarming(t *testing.T) {
+	domain, safety := fieldGuideMetaDefaults("natural-farming-jms.md", map[string]string{})
+	if domain != "natural_farming" {
+		t.Fatalf("domain=%q", domain)
+	}
+	if safety != "safe" {
+		t.Fatalf("safety=%q", safety)
 	}
 }
 

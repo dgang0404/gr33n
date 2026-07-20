@@ -19,8 +19,30 @@ The **chat model** (phi3:mini, tinyllama, llama3.1:8b, …) does not change *whe
 - **Demo farm map** — `demo-farm-pi-layout.md` (seed device names, relay channels — farm 1)
 - **Procedures** — `procedures/*.yaml` for step-by-step confirm flows
 - **Honest gaps** — `crop-unsupported-*.md` when gr33n does not ship targets (woodland, mushroom, etc.)
+- **Natural farming (Phase 208)** — `natural-farming-*.md` — JADAM/KNF inputs, application recipes, extension methods (goldenrod, forest garden). Front matter: `domain: natural_farming`, `tradition: jadam|knf|extension`, `source_tier`. Seeded in `gr33ncrops.agronomy_field_guides` via migration `20260720_phase208_ws4_natural_farming_field_guides.sql`; listed in [`docs/rag/field-guide-manifest.yaml`](../rag/field-guide-manifest.yaml) for legacy file ingest.
 
-Author for **reviewed, citeable facts** — not open-ended LLM guesses. After edits, re-ingest: `make rag-ingest-field-guides`.
+| Guide | Tradition |
+|-------|-----------|
+| `natural-farming-jms.md` | jadam |
+| `natural-farming-jlf-general.md` | jadam |
+| `natural-farming-jlf-crop-specific.md` | jadam |
+| `natural-farming-jlf-spring-nettle-comfrey.md` | jadam |
+| `natural-farming-ffj.md` | knf |
+| `natural-farming-fpj.md` | knf |
+| `natural-farming-lab.md` | knf |
+| `natural-farming-ohn.md` | knf |
+| `natural-farming-wca-wcs.md` | knf |
+| `natural-farming-jwa-js-jhs.md` | jadam |
+| `natural-farming-brv.md` | knf |
+| `natural-farming-faa.md` | knf |
+| `natural-farming-compost-tea-aact.md` | ingham |
+| `natural-farming-application-recipes.md` | jadam |
+| `natural-farming-indoor-photoperiod-program.md` | jadam |
+| `natural-farming-goldenrod-jlf.md` | extension |
+| `natural-farming-forest-garden-understory.md` | extension |
+| `natural-farming-livestock-plant-feed.md` | extension |
+
+Author for **reviewed, citeable facts** — not open-ended LLM guesses. After edits: `make migrate` then `make rag-ingest-field-guides`.
 
 ## Should we add more guides?
 

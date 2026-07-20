@@ -58,7 +58,7 @@ func (w *Worker) upsertSymptomGuideFile(ctx context.Context, farmID int64, relPa
 	if len(vecs) != len(texts) {
 		return 0, fmt.Errorf("embed count %d != chunk count %d", len(vecs), len(texts))
 	}
-	meta := fieldGuideMetadata(relPath, "agronomy", "safe", "", 0)
+	meta := fieldGuideMetadata(relPath, "agronomy", "safe", "", "", 0)
 	modelID := w.Embedder.ModelID()
 	n := 0
 	for i, text := range texts {

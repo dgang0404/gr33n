@@ -1,4 +1,5 @@
 ---
+domain: natural_farming
 title: JWA, JHS, and JS — wetting and pest inputs (JADAM)
 safety_tier: expert
 tradition: jadam

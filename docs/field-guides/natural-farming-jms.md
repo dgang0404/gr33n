@@ -1,4 +1,5 @@
 ---
+domain: natural_farming
 title: JADAM Microbial Solution (JMS)
 safety_tier: safe
 tradition: jadam

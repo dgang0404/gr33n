@@ -1,4 +1,5 @@
 ---
+domain: natural_farming
 title: Spring JLF — nettle and comfrey
 safety_tier: caution
 tradition: jadam

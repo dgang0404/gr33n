@@ -173,7 +173,8 @@ func (w *Worker) IngestFieldGuides(ctx context.Context, farmID int64, repoRoot, 
 		body, meta := splitYAMLFrontmatter(string(data))
 		chunks := chunkMarkdown(strings.TrimSpace(body))
 		domain, safety := fieldGuideMetaDefaults(f.RelPath, meta)
-		n, err := w.upsertFieldGuideFile(ctx, farmID, f.RelPath, f.SourceID, chunks, domain, safety, cropKeyFromFieldGuideSlug(f.RelPath), 0)
+		tradition := strings.TrimSpace(meta["tradition"])
+		n, err := w.upsertFieldGuideFile(ctx, farmID, f.RelPath, f.SourceID, chunks, domain, safety, tradition, cropKeyFromFieldGuideSlug(f.RelPath), 0)
 		if err != nil {
 			return total, fmt.Errorf("%s: %w", f.RelPath, err)
 		}
@@ -182,7 +183,7 @@ func (w *Worker) IngestFieldGuides(ctx context.Context, farmID int64, repoRoot, 
 	return total, nil
 }
 
-func (w *Worker) upsertFieldGuideFile(ctx context.Context, farmID int64, relPath string, sourceID int64, chunks []string, domain, safety, cropKey string, catalogVersion int) (int, error) {
+func (w *Worker) upsertFieldGuideFile(ctx context.Context, farmID int64, relPath string, sourceID int64, chunks []string, domain, safety, tradition, cropKey string, catalogVersion int) (int, error) {
 	if len(chunks) == 0 {
 		return 0, nil
 	}
@@ -204,7 +205,7 @@ func (w *Worker) upsertFieldGuideFile(ctx context.Context, farmID int64, relPath
 	if len(vecs) != len(texts) {
 		return 0, fmt.Errorf("embed count %d != chunk count %d", len(vecs), len(texts))
 	}
-	meta := fieldGuideMetadata(relPath, domain, safety, cropKey, catalogVersion)
+	meta := fieldGuideMetadata(relPath, domain, safety, tradition, cropKey, catalogVersion)
 	modelID := w.Embedder.ModelID()
 	n := 0
 	for i, text := range texts {
@@ -251,12 +252,15 @@ func FieldGuideDocument(relPath, chunk string, chunkIndex, chunkTotal int) strin
 	return b.String()
 }
 
-func fieldGuideMetadata(relPath, domain, safety, cropKey string, catalogVersion int) []byte {
+func fieldGuideMetadata(relPath, domain, safety, tradition, cropKey string, catalogVersion int) []byte {
 	m := map[string]any{
 		"module":      metadataModuleFieldGuide,
 		"doc_path":    "field-guides/" + relPath,
 		"domain":      domain,
 		"safety_tier": safety,
+	}
+	if tr := strings.TrimSpace(tradition); tr != "" {
+		m["tradition"] = tr
 	}
 	if ck := strings.TrimSpace(cropKey); ck != "" {
 		m["crop_key"] = ck
@@ -288,6 +292,8 @@ func fieldGuideMetaDefaults(relPath string, front map[string]string) (domain, sa
 	safety = normalizeSafetyTier(front["safety_tier"])
 	if domain == "" {
 		switch {
+		case strings.HasPrefix(relPath, "natural-farming-"):
+			domain = "natural_farming"
 		case strings.Contains(relPath, "electrical"):
 			domain = "electrical"
 		case strings.Contains(relPath, "irrigation"), strings.Contains(relPath, "plumb"):

@@ -1,4 +1,5 @@
 ---
+domain: natural_farming
 title: JLF from same-crop residue
 safety_tier: safe
 tradition: jadam

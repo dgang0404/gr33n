@@ -1,4 +1,5 @@
 ---
+domain: natural_farming
 title: Oriental Herbal Nutrient (OHN) — KNF
 safety_tier: caution
 tradition: knf

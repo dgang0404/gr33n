@@ -1,4 +1,5 @@
 ---
+domain: natural_farming
 title: Water-soluble calcium inputs (WCA and WCS) — KNF
 safety_tier: safe
 tradition: knf

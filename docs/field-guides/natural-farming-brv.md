@@ -1,4 +1,5 @@
 ---
+domain: natural_farming
 title: Brown rice vinegar (BRV) — purchased input
 safety_tier: safe
 tradition: other

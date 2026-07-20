@@ -1,4 +1,5 @@
 ---
+domain: natural_farming
 title: Fish amino acid (FAA) — KNF
 safety_tier: caution
 tradition: knf

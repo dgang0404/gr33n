@@ -1,4 +1,5 @@
 ---
+domain: natural_farming
 title: Goldenrod JLF (extension method)
 safety_tier: safe
 tradition: extension

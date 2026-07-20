@@ -1,4 +1,5 @@
 ---
+domain: natural_farming
 title: Livestock plant feed (simple inputs)
 safety_tier: safe
 tradition: extension
