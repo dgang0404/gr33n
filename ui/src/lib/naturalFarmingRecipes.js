@@ -3,6 +3,7 @@
  */
 import { enumLabel } from './domainEnums.js'
 import { filterProgramsForZone } from './zoneContext.js'
+import { feedWaterFertigationRoute } from './workspaceRoutes.js'
 
 export function emptyRecipeForm() {
   return {
@@ -23,10 +24,7 @@ export function emptyRecipeForm() {
  * @param {{ zoneId?: number|string|null, tab?: string }} [opts]
  */
 export function feedWaterProgramLink(recipeId, { zoneId = null, tab = 'programs' } = {}) {
-  const query = { tab }
-  if (recipeId != null && recipeId !== '') query.recipe = String(recipeId)
-  if (zoneId != null && zoneId !== '') query.zone_id = String(zoneId)
-  return { path: '/fertigation', query }
+  return feedWaterFertigationRoute(tab, { recipe: recipeId, zoneId })
 }
 
 /**

@@ -58,4 +58,18 @@ describe('Phase 68 / 78 WS1 — workspaces model', () => {
     expect(paths).toContain('/operations/supplies')
     expect(paths.length).toBeGreaterThanOrEqual(10)
   })
+
+  it('legacy /fertigation redirect preserves sub-tab as fert_tab', () => {
+    const redirects = buildLegacyRedirectRoutes()
+    const fert = redirects.find((r) => r.path === '/fertigation')
+    expect(fert).toBeTruthy()
+    const dest = fert.redirect({
+      path: '/fertigation',
+      query: { tab: 'programs', recipe: '10' },
+    })
+    expect(dest).toEqual({
+      path: '/feed-water',
+      query: { tab: 'advanced', fert_tab: 'programs', recipe: '10' },
+    })
+  })
 })

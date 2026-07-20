@@ -141,7 +141,7 @@
             <button type="button" @click="openRecipeComponents(rec)" class="text-xs text-zinc-400 hover:text-white">Components</button>
             <router-link
               v-nav-hint="'/fertigation'"
-              :to="{ path: '/fertigation', query: { tab: 'programs', recipe: rec.id } }"
+              :to="feedWaterFertigationRoute('programs', { recipe: rec.id })"
               class="text-xs text-green-500 hover:text-green-400"
             >Use in program</router-link>
             <button type="button" @click="startEditRecipe(rec)" class="text-xs text-zinc-400 hover:text-white">Edit</button>
@@ -269,7 +269,7 @@
               <td class="py-2.5 pr-4">
                 <router-link v-if="batchMixCount(b.id)"
                   v-nav-hint="'/fertigation'"
-                  :to="{ path: '/fertigation', query: { tab: 'mixing' } }"
+                  :to="feedWaterFertigationRoute('mixing')"
                   class="text-xs text-green-600 hover:text-green-400">
                   {{ batchMixCount(b.id) }} mix{{ batchMixCount(b.id) > 1 ? 'es' : '' }}
                 </router-link>
@@ -297,6 +297,7 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
+import { feedWaterFertigationRoute } from '../lib/workspaceRoutes.js'
 import { useFarmStore } from '../stores/farm'
 import { useFarmContextStore } from '../stores/farmContext'
 import api from '../api'

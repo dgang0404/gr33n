@@ -99,3 +99,42 @@ export function zonesWorkspaceTabRoute(tab, { fleet } = {}) {
   if (fleet) query.fleet = fleet
   return { path: '/zones', query }
 }
+
+/** Fertigation sub-tabs inside Feed & water → Advanced (workspace tab stays `advanced`). */
+export const FERTIGATION_SUB_TABS = [
+  'reservoirs',
+  'ec-targets',
+  'programs',
+  'mixing',
+  'crop-cycles',
+  'events',
+]
+
+function queryStringParam(query, key) {
+  const raw = query?.[key]
+  if (raw == null) return undefined
+  const s = Array.isArray(raw) ? raw[0] : raw
+  return typeof s === 'string' ? s : undefined
+}
+
+/** @param {Record<string, unknown>} [query] */
+export function resolveFertigationSubTab(query) {
+  const fromFert = queryStringParam(query, 'fert_tab')
+  if (fromFert && FERTIGATION_SUB_TABS.includes(fromFert)) return fromFert
+  const fromTab = queryStringParam(query, 'tab')
+  if (fromTab && FERTIGATION_SUB_TABS.includes(fromTab)) return fromTab
+  return undefined
+}
+
+/**
+ * @param {string} [fertTab]
+ * @param {{ recipe?: number|string, zoneId?: number|string, query?: Record<string, string> }} [opts]
+ */
+export function feedWaterFertigationRoute(fertTab = 'reservoirs', { recipe, zoneId, query: extra = {} } = {}) {
+  /** @type {Record<string, string>} */
+  const query = { ...extra, tab: 'advanced' }
+  if (fertTab) query.fert_tab = fertTab
+  if (recipe != null && recipe !== '') query.recipe = String(recipe)
+  if (zoneId != null && zoneId !== '') query.zone_id = String(zoneId)
+  return { path: '/feed-water', query }
+}

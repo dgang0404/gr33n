@@ -213,6 +213,7 @@ import {
   filterReservoirsForZone,
   filterEcTargetsForZone,
 } from '../lib/feedingAdminHub.js'
+import { feedWaterFertigationRoute } from '../lib/workspaceRoutes.js'
 
 const route = useRoute()
 const router = useRouter()
@@ -275,9 +276,7 @@ const dailyFeedingLink = computed(() => {
 const logMixLink = computed(() => technicalLink('mixing'))
 
 function technicalLink(tab) {
-  const q = { tab }
-  if (zoneContextId.value) q.zone_id = String(zoneContextId.value)
-  return { path: '/fertigation', query: q }
+  return feedWaterFertigationRoute(tab, { zoneId: zoneContextId.value ?? undefined })
 }
 
 function zoneName(zoneId) {
@@ -304,7 +303,7 @@ watch(
     if (route.name !== 'operations-feeding') return
     const tab = tabFromQuery(route.query)
     if (tab === null) {
-      router.replace({ path: '/fertigation', query: route.query }).catch(() => {})
+      router.replace(feedWaterFertigationRoute('mixing', { zoneId: route.query.zone_id })).catch(() => {})
       return
     }
     activeTab.value = tab

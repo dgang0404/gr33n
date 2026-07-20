@@ -20,7 +20,7 @@
       page-label="Fertigation"
       variant="fertigation"
       back-to-zone-tab="water"
-      :clear-route="{ name: 'fertigation', query: { tab: activeTab } }"
+      :clear-route="feedWaterFertigationRoute(activeTab)"
     />
 
     <!-- Tabs -->
@@ -618,7 +618,9 @@ import {
 import { cycleBatchLabel, formatStageLabel } from '../lib/growHub.js'
 import { loadDomainEnums, enumValues, getDomainEnums } from '../lib/domainEnums.js'
 import api from '../api/index.js'
-import { comfortTabRoute, naturalFarmingTabRoute } from '../lib/workspaceRoutes.js'
+import { comfortTabRoute, feedWaterFertigationRoute, naturalFarmingTabRoute, resolveFertigationSubTab } from '../lib/workspaceRoutes.js'
+
+const FEED_WATER_ROUTE = 'feed-water'
 
 const comfortScheduleRoute = comfortTabRoute('schedules')
 const inventoryRoute = naturalFarmingTabRoute('stock')
@@ -651,21 +653,11 @@ const tabs = [
   { id: 'events', label: 'Events' },
 ]
 
-/** Vue Router may expose duplicate keys as string | string[] */
-function tabQueryParam(query) {
-  const raw = query.tab
-  if (raw == null) return undefined
-  const s = Array.isArray(raw) ? raw[0] : raw
-  return typeof s === 'string' ? s : undefined
-}
 
 function selectTab(id) {
   activeTab.value = id
   router
-    .replace({
-      name: 'fertigation',
-      query: { ...route.query, tab: id },
-    })
+    .replace(feedWaterFertigationRoute(id, { recipe: route.query.recipe, zoneId: route.query.zone_id }))
     .catch((err) => {
       if (err?.name === 'NavigationDuplicated') return
       console.warn('[Fertigation] tab navigation failed', err)
@@ -675,8 +667,8 @@ function selectTab(id) {
 watch(
   () => [route.name, route.fullPath],
   () => {
-    if (route.name !== 'fertigation') return
-    const q = tabQueryParam(route.query)
+    if (route.name !== FEED_WATER_ROUTE) return
+    const q = resolveFertigationSubTab(route.query)
     if (q && tabs.some((t) => t.id === q)) {
       activeTab.value = q
     } else {

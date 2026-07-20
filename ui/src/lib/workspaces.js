@@ -375,6 +375,15 @@ export function buildLegacyRedirectRoutes() {
         return { path: `/zones/${zoneId}`, query: { ...query, tab: 'water' } }
       }
 
+      if (legacyPath === '/fertigation') {
+        const query = { ...to.query, tab: hit.tab }
+        const rawTab = to.query.tab
+        const sub = typeof rawTab === 'string' ? rawTab : Array.isArray(rawTab) ? rawTab[0] : ''
+        const fertSubTabs = new Set(['reservoirs', 'ec-targets', 'programs', 'mixing', 'crop-cycles', 'events'])
+        if (sub && fertSubTabs.has(sub)) query.fert_tab = sub
+        return { path: hit.route, query }
+      }
+
       const query = { ...to.query, tab: hit.tab }
       if (hit.fleet) query.fleet = hit.fleet
       if (hit.section) query.section = hit.section

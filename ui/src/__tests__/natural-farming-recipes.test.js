@@ -13,8 +13,8 @@ import {
 describe('naturalFarmingRecipes', () => {
   it('builds fertigation deep link with recipe and zone', () => {
     expect(feedWaterProgramLink(42, { zoneId: 3 })).toEqual({
-      path: '/fertigation',
-      query: { tab: 'programs', recipe: '42', zone_id: '3' },
+      path: '/feed-water',
+      query: { tab: 'advanced', fert_tab: 'programs', recipe: '42', zone_id: '3' },
     })
   })
 
