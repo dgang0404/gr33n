@@ -93,3 +93,22 @@ func TestLookupProcessCatalog_JMS(t *testing.T) {
 		t.Fatalf("expected guide path: %q", block)
 	}
 }
+
+func TestPlanReadTools_NaturalFarmingIntents(t *testing.T) {
+	snap := Snapshot{}
+	if plan := PlanReadTools("How do I make JMS?", nil, snap); !planContains(plan, "lookup_process_catalog") {
+		t.Fatalf("expected lookup_process_catalog in %v", plan.ToolIDs)
+	}
+	if plan := PlanReadTools("Can I ferment goldenrod into JLF?", nil, snap); !planContains(plan, "suggest_process_from_material") {
+		t.Fatalf("expected suggest_process_from_material in %v", plan.ToolIDs)
+	}
+	if plan := PlanReadTools("Can I ferment goldenrod into JLF?", nil, snap); planContains(plan, "lookup_process_catalog") {
+		t.Fatalf("material intent should not also plan lookup_process_catalog: %v", plan.ToolIDs)
+	}
+	if plan := PlanReadTools("What ferments do I have ready?", nil, snap); !planContains(plan, "summarize_natural_farming_inventory") {
+		t.Fatalf("expected summarize_natural_farming_inventory in %v", plan.ToolIDs)
+	}
+	if plan := PlanReadTools("What supplies are running low?", nil, snap); planContains(plan, "summarize_natural_farming_inventory") {
+		t.Fatalf("low stock should not plan NF inventory: %v", plan.ToolIDs)
+	}
+}

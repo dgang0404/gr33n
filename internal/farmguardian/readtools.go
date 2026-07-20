@@ -244,14 +244,14 @@ func EnrichPromptBlock(ctx context.Context, q db.Querier, farmID int64, question
 		}
 	}
 
-	if shouldRunSuggestProcessFromMaterialReadIntent(question) {
+	if !skipIfPlanned(ran, "suggest_process_from_material") && shouldRunSuggestProcessFromMaterialReadIntent(question) {
 		if block, err := renderSuggestProcessFromMaterial(ctx, q, farmID, question); err != nil {
 			slog.Warn("farm guardian read tool failed", "tool", "suggest_process_from_material", "farm_id", farmID, "err", err)
 		} else if block != "" {
 			blocks = append(blocks, block)
 			logReadToolUse(ctx, "suggest_process_from_material", farmID)
 		}
-	} else if shouldRunLookupProcessCatalogReadIntent(question) {
+	} else if !skipIfPlanned(ran, "lookup_process_catalog") && shouldRunLookupProcessCatalogReadIntent(question) {
 		if block, err := renderLookupProcessCatalog(question); err != nil {
 			slog.Warn("farm guardian read tool failed", "tool", "lookup_process_catalog", "farm_id", farmID, "err", err)
 		} else if block != "" {
@@ -260,7 +260,7 @@ func EnrichPromptBlock(ctx context.Context, q db.Querier, farmID int64, question
 		}
 	}
 
-	if shouldRunSummarizeNaturalFarmingInventoryReadIntent(question) {
+	if !skipIfPlanned(ran, "summarize_natural_farming_inventory") && shouldRunSummarizeNaturalFarmingInventoryReadIntent(question) {
 		if block, err := renderSummarizeNaturalFarmingInventory(ctx, q, farmID); err != nil {
 			slog.Warn("farm guardian read tool failed", "tool", "summarize_natural_farming_inventory", "farm_id", farmID, "err", err)
 		} else if block != "" {

@@ -11,7 +11,7 @@ todos:
     status: completed
   - id: ws2-read-router
     content: "WS2: PlanReadTools intent routing for ferment/recipe/JLF/JMS/goldenrod/material questions"
-    status: pending
+    status: completed
   - id: ws3-write-tools
     content: "WS3: Write tools — draft_input_definition, draft_application_recipe, draft_input_batch (proposal only)"
     status: pending
@@ -29,7 +29,7 @@ isProject: false
 
 # Phase 210 — Guardian natural farming integration
 
-**Status:** WS1 shipped · **Depends on:** [208 knowledge](phase_208_natural_farming_process_knowledge.plan.md) · **Soft depend:** [209 studio UI](phase_209_natural_farming_studio_ui.plan.md) (proposal deep-links)
+**Status:** WS2 shipped · **Depends on:** [208 knowledge](phase_208_natural_farming_process_knowledge.plan.md) · **Soft depend:** [209 studio UI](phase_209_natural_farming_studio_ui.plan.md) (proposal deep-links)
 
 ## The one job
 

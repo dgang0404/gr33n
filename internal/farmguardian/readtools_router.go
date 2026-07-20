@@ -43,6 +43,16 @@ func PlanReadTools(question string, ref *ContextRef, snap Snapshot) ToolPlan {
 		add("plant_context_bundle", "grow/plant intent or crop_cycle ref")
 	}
 
+	if shouldRunSuggestProcessFromMaterialReadIntent(question) {
+		add("suggest_process_from_material", "material/process intent")
+	} else if shouldRunLookupProcessCatalogReadIntent(question) {
+		add("lookup_process_catalog", "process catalog intent")
+	}
+
+	if shouldRunSummarizeNaturalFarmingInventoryReadIntent(question) {
+		add("summarize_natural_farming_inventory", "natural farming inventory intent")
+	}
+
 	slog.Info("farm guardian read tool plan",
 		"event", "guardian_tool_plan",
 		"tool_ids", plan.ToolIDs,

@@ -48,6 +48,24 @@ func renderPlannedReadTool(ctx context.Context, q db.Querier, farmID int64, ques
 			return "", false
 		}
 		return b, false
+	case "suggest_process_from_material":
+		b, err := renderSuggestProcessFromMaterial(ctx, q, farmID, question)
+		if err != nil {
+			return "", false
+		}
+		return b, false
+	case "lookup_process_catalog":
+		b, err := renderLookupProcessCatalog(question)
+		if err != nil {
+			return "", false
+		}
+		return b, false
+	case "summarize_natural_farming_inventory":
+		b, err := renderSummarizeNaturalFarmingInventory(ctx, q, farmID)
+		if err != nil {
+			return "", false
+		}
+		return b, false
 	default:
 		return "", true
 	}
