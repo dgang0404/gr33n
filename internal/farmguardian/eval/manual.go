@@ -71,6 +71,8 @@ func manualPassHint(q Question) string {
 		return "Answer summarizes seed/demo alerts; len > 40 chars"
 	case "smoke-ec-ph":
 		return "Citations present or answer mentions EC/pH targets"
+	case "regression-cherry-goldenrod-jlf":
+		return "Grounded JLF answer with dilution or catalog; extension-method goldenrod (not Cho recipe); API log may show tool_id=suggest_process_from_material"
 	case "farm-devices", "p128-devices":
 		return "Mentions snapshot device line or online/offline edge devices; no invented GPIO"
 	case "farm-fert-schedule", "p128-fert-manual":

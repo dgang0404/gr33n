@@ -21,9 +21,9 @@ type Question struct {
 	ContextRef      *farmguardian.ContextRef // optional UI entry point (Phase 60 morning check)
 }
 
-// Fixtures returns the Phase 122 eval question set (~20 prompts).
+// Fixtures returns the Phase 122 eval question set plus RegressionFixtures append.
 func Fixtures() []Question {
-	return []Question{
+	base := []Question{
 		{ID: "fg-apple-nursery", Category: "field_guide", Prompt: "What should I watch for in an apple nursery according to the field guides?", ExpectCitation: true, Grounded: true},
 		{ID: "fg-tomato-veg", Category: "field_guide", Prompt: "Summarize tomato vegetative stage care from our field guides.", ExpectCitation: true, Grounded: true},
 		{ID: "fg-citation-format", Category: "field_guide", Prompt: "What EC range does the platform recommend for hydro lettuce?", ExpectCitation: true, Grounded: true},
@@ -58,6 +58,7 @@ func Fixtures() []Question {
 		{ID: "fg-demo-pi", Category: "field_guide", Prompt: "Which relay channel is the veg grow light on the gr33n demo farm?", ExpectCitation: true, Grounded: true},
 		{ID: "fg-fertigation-triage", Category: "field_guide", Prompt: "Program is active but no dose ran — what should I check first per field guides?", ExpectCitation: true, Grounded: true},
 	}
+	return append(base, RegressionFixtures()...)
 }
 
 // ScoreInput is one model answer to score.
@@ -115,6 +116,8 @@ func Score(in ScoreInput) ScoreResult {
 		if !res.Passed {
 			res.Notes = "expected forest-garden answer mentioning cherry/goldenrod/blackberry"
 		}
+	case in.Question.ID == "regression-cherry-goldenrod-jlf":
+		res.Passed, res.Notes = scoreRegressionCherryGoldenrodJLF(in)
 	case in.Question.ID == "smoke-morning-walk", in.Question.ID == "farm-morning-walkthrough":
 		res.Passed = len(a) > 40 && !looksLikeInvention(a)
 		if !res.Passed && res.Notes == "" {
@@ -257,6 +260,64 @@ func looksLikeDecline(lowerAnswer string) bool {
 
 func looksLikeInvention(lowerAnswer string) bool {
 	return strings.Contains(lowerAnswer, "secret mars dome") || strings.Contains(lowerAnswer, "mars dome")
+}
+
+func scoreRegressionCherryGoldenrodJLF(in ScoreInput) (bool, string) {
+	a := strings.ToLower(strings.TrimSpace(in.Answer))
+	if len(a) < 60 {
+		return false, "expected grounded JLF answer with catalog detail"
+	}
+	hasJLF := strings.Contains(a, "jlf") ||
+		strings.Contains(a, "fermented plant juice") ||
+		strings.Contains(a, "jadam liquid fertilizer")
+	if !hasJLF {
+		return false, "expected JLF / fermented plant juice framing"
+	}
+	hasDilutionOrCatalog := strings.Contains(a, "1:100") || strings.Contains(a, "1:30") ||
+		strings.Contains(a, "1:20") ||
+		strings.Contains(a, "process catalog") || strings.Contains(a, "lookup_process") ||
+		strings.Contains(a, "field guide") || strings.Contains(a, "field-guides/") ||
+		strings.Contains(a, "suggest_process_from_material") ||
+		citationRefPresent(in.Answer) || in.CitationCount > 0
+	if !hasDilutionOrCatalog {
+		return false, "expected dilution band or process catalog / field guide citation"
+	}
+	if choGoldenrodRecipeClaim(a) {
+		return false, "expected extension-method framing, not Cho-named goldenrod recipe"
+	}
+	if woodlandECInvention(a) {
+		return false, "expected no invented EC mS/cm targets for woodland/forage context"
+	}
+	return true, ""
+}
+
+func choGoldenrodRecipeClaim(a string) bool {
+	for _, phrase := range []string{
+		"not a cho", "not cho-named", "not the cho", "isn't a cho", "is not a cho",
+		"no cho-named", "avoid cho-named",
+	} {
+		if strings.Contains(a, phrase) {
+			return false
+		}
+	}
+	return strings.Contains(a, "cho's goldenrod") || strings.Contains(a, "cho goldenrod recipe") ||
+		strings.Contains(a, "cho-named goldenrod")
+}
+
+func woodlandECInvention(a string) bool {
+	if !strings.Contains(a, "ms/cm") {
+		return false
+	}
+	for _, phrase := range []string{
+		"no ec", "without ec", "not ec", "skip ec", "instead of ec",
+		"don't use ec", "do not use ec", "avoid ec",
+	} {
+		if strings.Contains(a, phrase) {
+			return false
+		}
+	}
+	return strings.Contains(a, "target") || strings.Contains(a, "should be") ||
+		strings.Contains(a, "maintain") || strings.Contains(a, "set ec")
 }
 
 func smokeAnswerAllowsLogOverride(q Question, answer string) bool {
