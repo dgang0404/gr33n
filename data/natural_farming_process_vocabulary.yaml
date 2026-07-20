@@ -1,0 +1,252 @@
+# Phase 208 WS1 — process type vocabulary, material roles, tradition honesty labels.
+# Source of truth for field guides (WS2), YAML catalogs (WS3), Guardian read tools (210).
+# Recipe ratios live in master_seed.sql + recipe-canonical.yaml (WS3) — not here.
+version: 1
+
+# UI / guide front-matter labels (honest sourcing — see phase_208 plan WS1)
+traditions:
+  jadam:
+    label: JADAM
+    summary: Methods from Youngsang Cho, JADAM Organic Farming, 2016 — JMS, JLF, JWA, JS, JHS
+  knf:
+    label: KNF
+    summary: Korean Natural Farming (Cho Han-kyu) — sugar-based ferments often paired with JADAM
+  extension:
+    label: Extension
+    summary: Valid JADAM method applied to local material not named in Cho (label source_tier honestly)
+  other:
+    label: Other
+    summary: Third-party or purchased inputs — compost tea (Ingham), purchased BRV
+
+source_tiers:
+  cho_named:
+    label: Cho named
+    summary: Named preparation or ratio in Youngsang Cho, JADAM Organic Farming, 2016
+  knf_standard:
+    label: KNF standard
+    summary: Standard Korean Natural Farming practice (CTAHR leaflets / Cho Han-kyu)
+  extension_method:
+    label: Extension method
+    summary: Canonical JADAM/KNF method on local material — not a named Cho recipe
+  third_party:
+    label: Third party
+    summary: External authority (Ingham, purchased product) — not JADAM core
+
+# Process types — studio picker + Guardian catalog keys (WS3 processes[].type)
+process_types:
+  jms:
+    label: JMS
+    expand: JADAM Microbial Solution
+    tradition: jadam
+  jlf:
+    label: JLF
+    expand: JADAM Liquid Fertilizer
+    tradition: jadam
+  fpj:
+    label: FPJ
+    expand: Fermented Plant Juice
+    tradition: knf
+  ffj:
+    label: FFJ
+    expand: Fermented Fruit Juice
+    tradition: knf
+  lab:
+    label: LAB
+    expand: Lactic Acid Bacteria serum
+    tradition: knf
+  ohn:
+    label: OHN
+    expand: Oriental Herbal Nutrient
+    tradition: knf
+  faa:
+    label: FAA
+    expand: Fish Amino Acid
+    tradition: knf
+  jwa:
+    label: JWA
+    expand: JADAM Wetting Agent
+    tradition: jadam
+  js:
+    label: JS
+    expand: JADAM Sulfur concentrate
+    tradition: jadam
+  jhs:
+    label: JHS
+    expand: JADAM Herbal Solution
+    tradition: jadam
+  wca:
+    label: WCA
+    expand: Water-Soluble Calcium
+    tradition: knf
+  wcs:
+    label: WCS
+    expand: Water-Soluble Calcium Phosphate
+    tradition: knf
+  brv:
+    label: BRV
+    expand: Brown Rice Vinegar (purchased)
+    tradition: other
+  compost_tea_aact:
+    label: Compost tea (AACT)
+    expand: Actively aerated compost tea extract
+    tradition: other
+  animal_feed:
+    label: Animal feed
+    expand: Livestock plant feed or slurry (not full ration math)
+    tradition: extension
+
+# What farm biomass can become — material picker roles (WS3 process-material-catalog.yaml)
+material_roles:
+  fertigation:
+    label: Fertigation input
+    summary: Soil drench or reservoir mix (JLF, JMS, LAB, …)
+  foliar:
+    label: Foliar feed / spray
+    summary: Leaf application — often needs JWA for coverage
+  pest_control:
+    label: Pest / disease control
+    summary: JHS, JS, JWA, OHN at labeled dilutions only
+  soil_conditioner:
+    label: Soil conditioner
+    summary: Microbial or structural improvement (LAB, JMS, compost tea)
+  dye:
+    label: Dye / craft harvest
+    summary: Human use — biomass may also become JLF (extension; compatible harvest)
+  animal_feed:
+    label: Livestock feed
+    summary: Comfrey, sprouted grain, etc. — simple feed inputs only
+  purchased:
+    label: Purchased input
+    summary: Buy ready-made (BRV, molasses for tea)
+
+# Maps process_type → gr33nnaturalfarming.input_category_enum (schema unchanged)
+schema_category_map:
+  jms: microbial_inoculant
+  lab: microbial_inoculant
+  fpj: fermented_plant_juice
+  ffj: fermented_plant_juice
+  faa: fermented_plant_juice
+  brv: fermented_plant_juice
+  wca: water_soluble_nutrient
+  wcs: water_soluble_nutrient
+  ohn: oriental_herbal_nutrient
+  jhs: oriental_herbal_nutrient
+  jlf: other_ferment
+  jwa: other_extract
+  js: other_extract
+  compost_tea_aact: compost_tea_extract
+  animal_feed: animal_feed
+
+# Canonical seed input_definitions names (farm 1 master_seed.sql post-WS0 audit)
+seed_inputs:
+  - seed_name: "JMS (JADAM Microbial Solution)"
+    process_type: jms
+    tradition: jadam
+    source_tier: cho_named
+    schema_category: microbial_inoculant
+    material_roles: [fertigation, foliar, soil_conditioner]
+
+  - seed_name: "LAB (Lactic Acid Bacteria Serum)"
+    process_type: lab
+    tradition: knf
+    source_tier: knf_standard
+    schema_category: microbial_inoculant
+    material_roles: [soil_conditioner, fertigation]
+
+  - seed_name: "FPJ (Fermented Plant Juice)"
+    process_type: fpj
+    tradition: knf
+    source_tier: knf_standard
+    schema_category: fermented_plant_juice
+    material_roles: [foliar]
+
+  - seed_name: "FFJ (Fermented Fruit Juice)"
+    process_type: ffj
+    tradition: knf
+    source_tier: knf_standard
+    schema_category: fermented_plant_juice
+    material_roles: [foliar, fertigation]
+
+  - seed_name: "BRV (Brown Rice Vinegar)"
+    process_type: brv
+    tradition: other
+    source_tier: third_party
+    schema_category: fermented_plant_juice
+    material_roles: [purchased, foliar]
+
+  - seed_name: "OHN (Oriental Herbal Nutrient)"
+    process_type: ohn
+    tradition: knf
+    source_tier: knf_standard
+    schema_category: oriental_herbal_nutrient
+    material_roles: [fertigation, pest_control]
+
+  - seed_name: "JHS (JADAM Herbal Solution)"
+    process_type: jhs
+    tradition: jadam
+    source_tier: cho_named
+    schema_category: oriental_herbal_nutrient
+    material_roles: [pest_control, foliar]
+
+  - seed_name: "WCA (Water-Soluble Calcium)"
+    process_type: wca
+    tradition: knf
+    source_tier: knf_standard
+    schema_category: water_soluble_nutrient
+    material_roles: [foliar, fertigation]
+
+  - seed_name: "WCS (Water-Soluble Calcium Phosphate)"
+    process_type: wcs
+    tradition: knf
+    source_tier: knf_standard
+    schema_category: water_soluble_nutrient
+    material_roles: [foliar, fertigation]
+
+  - seed_name: "JWA (JADAM Wetting Agent)"
+    process_type: jwa
+    tradition: jadam
+    source_tier: cho_named
+    schema_category: other_extract
+    material_roles: [pest_control, foliar]
+
+  - seed_name: "JS (JADAM Sulfur concentrate)"
+    process_type: js
+    tradition: jadam
+    source_tier: cho_named
+    schema_category: other_extract
+    material_roles: [pest_control, foliar]
+
+  - seed_name: "JLF General (Weed and Grass)"
+    process_type: jlf
+    tradition: jadam
+    source_tier: cho_named
+    schema_category: other_ferment
+    material_roles: [fertigation, foliar]
+
+  - seed_name: "JLF Crop-Specific (Crop Residue)"
+    process_type: jlf
+    tradition: jadam
+    source_tier: cho_named
+    schema_category: other_ferment
+    material_roles: [fertigation]
+
+  - seed_name: "JLF Spring (Nettle and Comfrey)"
+    process_type: jlf
+    tradition: jadam
+    source_tier: cho_named
+    schema_category: other_ferment
+    material_roles: [fertigation, foliar]
+
+  - seed_name: "FAA (Fish Amino Acid)"
+    process_type: faa
+    tradition: knf
+    source_tier: knf_standard
+    schema_category: fermented_plant_juice
+    material_roles: [fertigation, foliar]
+
+  - seed_name: "Compost Tea Actively Aerated"
+    process_type: compost_tea_aact
+    tradition: other
+    source_tier: third_party
+    schema_category: compost_tea_extract
+    material_roles: [soil_conditioner, fertigation]

@@ -10,7 +10,7 @@ todos:
     status: completed
   - id: ws1-process-vocabulary
     content: "WS1: Process type vocabulary + material role enum; distinguish JADAM (JLF/JMS) vs KNF (FPJ/LAB) vs Ingham (compost tea)"
-    status: pending
+    status: completed
   - id: ws2-field-guides
     content: "WS2: Field guides — one per core input (14) + application how-to + goldenrod extension + forest-garden + livestock primer"
     status: pending
@@ -31,7 +31,7 @@ isProject: false
 
 # Phase 208 — Natural farming process & material knowledge
 
-**Status:** WS0 complete · **Depends on:** [207 roadmap](phase_207_natural_farming_studio.plan.md) · **Blocks:** 209 studio UI, 210 Guardian
+**Status:** WS0–WS1 complete · **Depends on:** [207 roadmap](phase_207_natural_farming_studio.plan.md) · **Blocks:** 209 studio UI, 210 Guardian
 
 ## The one job
 
@@ -214,7 +214,7 @@ Bootstrap [`jadam_indoor_photoperiod_v1`](../../db/migrations/20260703_phase124_
 | **Extension** | Valid JADAM *method* applied to local material not named in Cho (e.g. goldenrod JLF) |
 | **Other** | Compost tea (Ingham), purchased BRV |
 
-Schema enum mapping unchanged — see original WS1 table in git history.
+Schema enum mapping unchanged — see [`data/natural_farming_process_vocabulary.yaml`](../../data/natural_farming_process_vocabulary.yaml) `schema_category_map` and `seed_inputs`.
 
 ---
 
