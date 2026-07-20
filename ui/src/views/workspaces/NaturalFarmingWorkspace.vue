@@ -5,16 +5,7 @@
       <RecipeLibraryPanel v-else-if="activeTab === 'library'" />
       <MakeBatchPanel v-else-if="activeTab === 'batch'" />
       <RecipesApplyPanel v-else-if="activeTab === 'recipes'" />
-      <section
-        v-else-if="activeTab === 'stock'"
-        class="p-4 max-w-3xl"
-        data-test="nf-tab-stock"
-      >
-        <h2 class="text-lg font-semibold mb-2">On hand</h2>
-        <p class="text-muted">
-          Ready batches and low-stock cues — bridges SuppliesHub in WS5.
-        </p>
-      </section>
+      <OnHandPanel v-else-if="activeTab === 'stock'" />
     </template>
   </WorkspaceShell>
 </template>
@@ -25,4 +16,5 @@ import SwitchoverWizard from '../../components/naturalfarming/SwitchoverWizard.v
 import MakeBatchPanel from '../../components/naturalfarming/MakeBatchPanel.vue'
 import RecipeLibraryPanel from '../../components/naturalfarming/RecipeLibraryPanel.vue'
 import RecipesApplyPanel from '../../components/naturalfarming/RecipesApplyPanel.vue'
+import OnHandPanel from '../../components/naturalfarming/OnHandPanel.vue'
 </script>

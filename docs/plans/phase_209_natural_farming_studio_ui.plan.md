@@ -23,7 +23,7 @@ todos:
     status: completed
   - id: ws5-on-hand-bridge
     content: "WS5: On hand tab — embed or link SuppliesHub batch cards + Money unit costs; low-stock banner"
-    status: pending
+    status: completed
   - id: ws6-redirects-vocab
     content: "WS6: /inventory → /natural-farming?tab=...; farmer vocabulary on wizard; Fertigation deep-links updated"
     status: pending
@@ -35,7 +35,7 @@ isProject: false
 
 # Phase 209 — Natural farming studio (operator UI)
 
-**Status:** WS1–WS4 shipped · **Depends on:** [208 process knowledge](phase_208_natural_farming_process_knowledge.plan.md) — **hard gate:** WS0 recipe audit + field guides must land first so UI never shows wrong JMS dilutions
+**Status:** WS1–WS5 shipped · **Depends on:** [208 process knowledge](phase_208_natural_farming_process_knowledge.plan.md) — **hard gate:** WS0 recipe audit + field guides must land first so UI never shows wrong JMS dilutions
 
 ## The one job
 
