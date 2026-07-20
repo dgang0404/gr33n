@@ -67,15 +67,7 @@
         <p v-if="guideLoading" class="text-xs text-zinc-500">Loading field guide…</p>
         <p v-else-if="guideError" class="text-xs text-red-400">{{ guideError }}</p>
         <div v-else class="space-y-3">
-          <article
-            v-for="card in stepCards"
-            :key="card.key"
-            class="rounded-xl border border-zinc-800 bg-zinc-900/80 p-4"
-            :data-test="`nf-batch-card-${card.key}`"
-          >
-            <h4 class="text-xs uppercase tracking-wide text-zinc-500 mb-2">{{ card.title }}</h4>
-            <pre class="text-sm text-zinc-200 whitespace-pre-wrap font-sans leading-relaxed">{{ card.body }}</pre>
-          </article>
+          <GuideStepCards :cards="stepCards" />
           <p v-if="!stepCards.length" class="text-sm text-zinc-500">
             Guide sections not loaded — re-ingest field guides or open Help → Library.
           </p>
@@ -165,6 +157,7 @@ import {
   variantsForProcess,
 } from '../../lib/naturalFarmingBatchFlow.js'
 import LearnHowExpander from './LearnHowExpander.vue'
+import GuideStepCards from './GuideStepCards.vue'
 
 const route = useRoute()
 const store = useFarmStore()
