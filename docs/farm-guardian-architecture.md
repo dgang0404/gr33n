@@ -276,8 +276,28 @@ Before the LLM call on grounded turns, [`readtools.go`](../../internal/farmguard
 | `summarize_active_grows` | “What’s growing” / active cycles intent | `ListCropCyclesByFarm` filtered `is_active`, zone names |
 | `summarize_zone_lighting` | Light/photoperiod/18-6/12-12 intent + resolved zone (optional) | Active `lighting_programs`, ON/OFF hours, anchor times, linked schedule ids |
 | `summarize_zone_greenhouse_climate` | Shade/deploy/greenhouse/vent/fan intent + `zone_id` | `greenhouse_climate` profile, linked actuator states, active `GH —` rules, recent shade/fan events (48 h) |
+| `lookup_process_catalog` | JMS/JLF/FPJ process questions | Steps + dilution from Phase 208 `recipe-canonical.yaml` + field-guide excerpt |
+| `suggest_process_from_material` | Goldenrod, comfrey, ferment/biomass intent | Material catalog match + suggested process type + dilution band |
+| `summarize_natural_farming_inventory` | Ready ferments / batches on hand | Farm `input_batches` by status; defers low-stock detail to `summarize_farm_low_stock` |
 
 These are **not** proposal tools — no Confirm card. Alert **write** intents (`ack_alert`, `mark_alert_read`) and alert-list questions skip `summarize_zone` (Phase 33 WS1). Write tools remain in [§7.1](#71-operator-mental-model).
+
+### 7.0ai Natural farming (Phase 210 — shipped)
+
+**Shipped (WS1–WS6).** Guardian reads the Phase 208 process catalog and farm natural-farming inventory, then opens **Confirm-gated** draft proposals — never silent creates. Plan: [`plans/phase_210_natural_farming_guardian_integration.plan.md`](plans/phase_210_natural_farming_guardian_integration.plan.md).
+
+| Layer | Artifact |
+|-------|----------|
+| Read tools | `lookup_process_catalog`, `suggest_process_from_material`, `summarize_natural_farming_inventory` in `readtools_naturalfarming.go`; routed via `PlanReadTools` (`readtools_router.go`) |
+| Write tools | `draft_input_definition`, `draft_application_recipe`, `draft_input_batch` in `tools/naturalfarming_draft.go` — POST shapes for `/naturalfarming/*` |
+| Catalog | `data/process-material-catalog.yaml`, `data/recipe-canonical.yaml`; goldenrod = `extension_method` JLF (not Cho-named) |
+| LLM path | Phase 46 allowlist + schema in `proposals_llm_validate.go`; rejects hallucinated `farm_id`; `material_id` or explicit `name` for input drafts |
+| QA | **`regression-cherry-goldenrod-jlf`** in `RegressionFixtures()` only — **`smoke-cherry-forest` unchanged** |
+| UI deep link | Proposal results reference `/natural-farming?tab=recipes` or `?tab=stock` |
+
+**Guardian behavior:** `suggest_process_from_material` is read-only. Recipe/batch/input creates require operator **Confirm** on the change-request card. For woodland/forage goldenrod, prefer extension-method JLF framing with dilution bands (e.g. start `1:100`) — do not invent hydro EC mS/cm targets for that context.
+
+**OC-210** via `phase-210-closure.test.js` · **Go smoke:** `readtools_naturalfarming_test.go`, `naturalfarming_draft_test.go`, `fixtures_regression_test.go`.
 
 ### 7.0b Grow environment stack (Phase 35 lighting)
 
@@ -598,6 +618,7 @@ Plan: [`plans/archive/phase_46_guardian_llm_tool_proposals.plan.md`](plans/archi
 - **Hybrid C:** matchers first (`BuildRuleAssistedProposals`); on miss + write intent + Operate + flag, `TryBuildLLMProposalsFromAssistant` parses assistant JSON and inserts validated proposal (`confirm.go` → SSE `proposals[]`).
 - Same Confirm / frozen args / audit — `meta.llm_sourced` on proposal row; high-tier impact lines unchanged.
 - Setup pack and bootstrap **excluded** from LLM allowlist v1.
+- **Phase 210:** `draft_input_definition`, `draft_application_recipe`, `draft_input_batch` on allowlist with catalog-backed validation — see [§7.0ai](#70ai-natural-farming-phase-210--shipped).
 
 Operator: [operator-tour §6h](operator-tour.md#6h-when-guardian-opens-a-card-from-your-words-phase-46--shipped).
 

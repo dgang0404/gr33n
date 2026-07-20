@@ -23,13 +23,13 @@ todos:
     status: completed
   - id: ws6-tests-docs
     content: "WS6: readtools tests, tool execute tests, phase-210-closure; farm-guardian-architecture § natural farming tools"
-    status: pending
+    status: completed
 isProject: false
 ---
 
 # Phase 210 — Guardian natural farming integration
 
-**Status:** WS5 shipped · **Depends on:** [208 knowledge](phase_208_natural_farming_process_knowledge.plan.md) · **Soft depend:** [209 studio UI](phase_209_natural_farming_studio_ui.plan.md) (proposal deep-links)
+**Status:** Shipped (WS1–WS6) · **Depends on:** [208 knowledge](phase_208_natural_farming_process_knowledge.plan.md) · **Soft depend:** [209 studio UI](phase_209_natural_farming_studio_ui.plan.md) (proposal deep-links)
 
 ## The one job
 
@@ -144,12 +144,12 @@ Pass if answer:
 
 ## Acceptance criteria
 
-- [ ] `suggest_process_from_material("goldenrod")` returns JLF entry from 208 catalog
-- [ ] Grounded question produces recipe proposal with Confirm gate
-- [ ] `make guardian-qa-smoke` — **4/4 unchanged**
-- [ ] `make guardian-qa-regression` — new fixture passes on dev stack
-- [ ] No silent writes — all creates go through Pending
-- [ ] `phase-210-closure` tests green
+- [x] `suggest_process_from_material("goldenrod")` returns JLF entry from 208 catalog
+- [x] Grounded question produces recipe proposal with Confirm gate
+- [x] `make guardian-qa-smoke` — **4/4 unchanged**
+- [x] `make guardian-qa-regression` — new fixture passes on dev stack
+- [x] No silent writes — all creates go through Pending
+- [x] `phase-210-closure` tests green
 
 ## Out of scope
 
