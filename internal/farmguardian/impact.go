@@ -49,6 +49,26 @@ func impactSteps(toolID string, args map[string]any) []string {
 			line += " for zone " + z
 		}
 		return []string{line + " — ON/OFF schedules and actuator actions will be created"}
+	case "draft_input_definition":
+		name := argString(args, "name")
+		if name == "" {
+			name = argString(args, "material_id")
+		}
+		return []string{joinName("Create natural farming input definition", name) + " — review in Natural farming studio"}
+	case "draft_application_recipe":
+		line := joinName("Create application recipe", argString(args, "name"))
+		if d := argString(args, "dilution_ratio"); d != "" {
+			line += " at dilution " + d
+		}
+		if t := argString(args, "target_application_type"); t != "" {
+			line += " (" + strings.ReplaceAll(t, "_", " ") + ")"
+		}
+		if tier := argString(args, "source_tier"); tier == "extension_method" {
+			line += " — extension method (local biomass, not Cho-named)"
+		}
+		return []string{line + " — opens in Recipes tab after Confirm"}
+	case "draft_input_batch":
+		return []string{"Start input batch for input #" + argString(args, "input_definition_id") + " — track ferment in Natural farming studio"}
 	case "create_task_from_alert":
 		return createTaskFromAlertImpact(args)
 	case "create_task":

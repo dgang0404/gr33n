@@ -14,7 +14,7 @@ todos:
     status: completed
   - id: ws3-write-tools
     content: "WS3: Write tools — draft_input_definition, draft_application_recipe, draft_input_batch (proposal only)"
-    status: pending
+    status: completed
   - id: ws4-llm-allowlist
     content: "WS4: Phase 46 LLM proposal allowlist + JSON schema for new tools"
     status: pending
@@ -29,7 +29,7 @@ isProject: false
 
 # Phase 210 — Guardian natural farming integration
 
-**Status:** WS2 shipped · **Depends on:** [208 knowledge](phase_208_natural_farming_process_knowledge.plan.md) · **Soft depend:** [209 studio UI](phase_209_natural_farming_studio_ui.plan.md) (proposal deep-links)
+**Status:** WS3 shipped · **Depends on:** [208 knowledge](phase_208_natural_farming_process_knowledge.plan.md) · **Soft depend:** [209 studio UI](phase_209_natural_farming_studio_ui.plan.md) (proposal deep-links)
 
 ## The one job
 

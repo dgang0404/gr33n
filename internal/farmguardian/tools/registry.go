@@ -137,6 +137,24 @@ var registry = map[string]Tool{
 		RequiresOperate: true,
 		Execute:         execCreateLightingProgram,
 	},
+	"draft_input_definition": {
+		ID:              "draft_input_definition",
+		Description:     "Create a natural farming input definition (POST /farms/{id}/naturalfarming/inputs)",
+		RequiresOperate: true,
+		Execute:         execDraftInputDefinition,
+	},
+	"draft_application_recipe": {
+		ID:              "draft_application_recipe",
+		Description:     "Create a natural farming application recipe with dilution and target type (POST /naturalfarming/recipes)",
+		RequiresOperate: true,
+		Execute:         execDraftApplicationRecipe,
+	},
+	"draft_input_batch": {
+		ID:              "draft_input_batch",
+		Description:     "Create a natural farming input batch (POST /farms/{id}/naturalfarming/batches)",
+		RequiresOperate: true,
+		Execute:         execDraftInputBatch,
+	},
 	// Phase 36 WS7 — greenhouse climate read tool
 	"summarize_zone_greenhouse_climate": {
 		ID: "summarize_zone_greenhouse_climate",
