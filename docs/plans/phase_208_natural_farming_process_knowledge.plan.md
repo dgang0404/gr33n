@@ -13,7 +13,7 @@ todos:
     status: completed
   - id: ws2-field-guides
     content: "WS2: Field guides — one per core input (14) + application how-to + goldenrod extension + forest-garden + livestock primer"
-    status: pending
+    status: completed
   - id: ws3-yaml-catalog
     content: "WS3: process-material-catalog.yaml + recipe-canonical.yaml — material links, dilution bands, source_tier, links to seed row names"
     status: pending
@@ -31,7 +31,7 @@ isProject: false
 
 # Phase 208 — Natural farming process & material knowledge
 
-**Status:** WS0–WS1 complete · **Depends on:** [207 roadmap](phase_207_natural_farming_studio.plan.md) · **Blocks:** 209 studio UI, 210 Guardian
+**Status:** WS0–WS2 complete · **Depends on:** [207 roadmap](phase_207_natural_farming_studio.plan.md) · **Blocks:** 209 studio UI, 210 Guardian
 
 ## The one job
 
