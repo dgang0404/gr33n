@@ -8,7 +8,7 @@ overview: >
 todos:
   - id: ws1-recipe-packs
     content: "WS1: Commons recipe pack format — input_definitions + application_recipes JSON; import into gr33nnaturalfarming"
-    status: pending
+    status: completed
   - id: ws2-switchover-packs
     content: "WS2: Switchover pack keys — mericle_veg_to_jlf_v1, mericle_flower_to_ffj_v1 mapping tables in YAML + bootstrap helper"
     status: pending

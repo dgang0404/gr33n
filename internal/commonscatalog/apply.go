@@ -21,6 +21,8 @@ func ApplyPack(ctx context.Context, q db.Querier, farmID int64, raw json.RawMess
 	switch body.Kind {
 	case KindFertigationRecipePack:
 		return applyRecipePack(ctx, q, farmID, body)
+	case KindNaturalFarmingRecipePack:
+		return applyNaturalFarmingRecipePack(ctx, q, farmID, body)
 	case KindAgronomySeedPack:
 		return applyAgronomySeedPack(ctx, q, body)
 	case KindDocumentationPack:
