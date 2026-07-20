@@ -43,10 +43,10 @@ describe('Phase 209 WS1 — natural farming workspace', () => {
     expect(src).toContain('MakeBatchPanel')
     expect(src).toContain("activeTab === 'library'")
     expect(src).toContain('RecipeLibraryPanel')
-    for (const tab of ['recipes', 'stock']) {
-      expect(src).toContain(`activeTab === '${tab}'`)
-      expect(src).toContain(`data-test="nf-tab-${tab}"`)
-    }
+    expect(src).toContain("activeTab === 'recipes'")
+    expect(src).toContain('RecipesApplyPanel')
+    expect(src).toContain("activeTab === 'stock'")
+    expect(src).toContain('OnHandPanel')
   })
 
   it('sidebar lists Natural farming under Grow & operate', () => {

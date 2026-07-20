@@ -29,13 +29,13 @@ todos:
     status: completed
   - id: ws7-tests-docs
     content: "WS7: phase-209-closure.test.js, nav-groups.test.js, operator-tour § Natural farming studio"
-    status: pending
+    status: completed
 isProject: false
 ---
 
 # Phase 209 — Natural farming studio (operator UI)
 
-**Status:** WS1–WS6 shipped · **Depends on:** [208 process knowledge](phase_208_natural_farming_process_knowledge.plan.md) — **hard gate:** WS0 recipe audit + field guides must land first so UI never shows wrong JMS dilutions
+**Status:** **Shipped (WS1–WS7)** · **Depends on:** [208 process knowledge](phase_208_natural_farming_process_knowledge.plan.md) — **hard gate:** WS0 recipe audit + field guides must land first so UI never shows wrong JMS dilutions
 
 ## The one job
 
@@ -134,16 +134,16 @@ Update [`navGroups.js`](../../ui/src/lib/navGroups.js), [`workspaces.js`](../../
 
 ## Acceptance criteria
 
-- [ ] Sidebar shows **Natural farming** under Grow & operate
-- [ ] `/natural-farming` loads with five tabs; default `start`
-- [ ] Recipe library shows all 15 inputs + 14 application recipes with step-by-step content from guides
-- [ ] Make a batch shows field-guide step cards (not empty placeholders)
-- [ ] Switchover wizard renders EC→natural mapping from YAML
-- [ ] Make a batch creates input + batch via existing API
-- [ ] Recipes tab can link recipe to fertigation program (deep link at minimum)
-- [ ] `/inventory` redirects without 404
-- [ ] `nav-groups.test.js` + `phase-209-closure.test.js` green
-- [ ] No Guardian/smoke test file changes in this phase
+- [x] Sidebar shows **Natural farming** under Grow & operate
+- [x] `/natural-farming` loads with five tabs; default `start`
+- [x] Recipe library shows all 15 inputs + 14 application recipes with step-by-step content from guides
+- [x] Make a batch shows field-guide step cards (not empty placeholders)
+- [x] Switchover wizard renders EC→natural mapping from YAML
+- [x] Make a batch creates input + batch via existing API
+- [x] Recipes tab can link recipe to fertigation program (deep link at minimum)
+- [x] `/inventory` redirects without 404
+- [x] `nav-groups.test.js` + `phase-209-closure.test.js` green
+- [x] No Guardian/smoke test file changes in this phase
 
 ## Out of scope
 

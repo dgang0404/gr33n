@@ -633,7 +633,7 @@ Architecture: [`farm-guardian-architecture.md`](farm-guardian-architecture.md) �
 1. Open **Operations → Supplies**.
 2. **Low-stock banner** when batches are below threshold (same worker alerts as `inventory_low_stock`).
 3. **On-hand cards** — input name, quantity, low badge — not `input_batches` tab jargon.
-4. **Log a mix** → Feeding (details) mixing tab; **Full inventory editor** → `/inventory` for definitions, recipes, and batch forms.
+4. **Log a mix** → Feeding (details) mixing tab; **Natural farming studio** → `/natural-farming` (Start here, Make a batch, Recipes & apply, On hand). Legacy **`/inventory`** redirects there; **Money → Natural farming (advanced)** keeps the full CRUD editor.
 5. Optional `?zone_id=` — zone context banner when linked from zone Water.
 
 ### Feeding (details) (`/operations/feeding`)
@@ -715,9 +715,10 @@ Architecture: [`farm-guardian-architecture.md` §7.0r](farm-guardian-architectur
 | **Today** | `/` | Visual farm map — site strip, zone tiles (desktop) or stacked cards (mobile), quick actions sheet |
 | **Zones** | `/zones` | Rooms · Fleet (sensors, controls, lighting) · **Strains** (compare harvests) |
 | **Feed & Water** | `/feed-water` | Daily · Programs & tanks · Nutrients & mix · Advanced |
+| **Natural farming** | `/natural-farming` | Start here · Recipe library · Make a batch · Recipes & apply · On hand |
 | **Comfort & automation** | `/comfort-targets` | Comfort · What runs when · Automations · Raw setpoints |
 | **Hardware** | `/hardware` | GPIO board · Pi devices · Wiring guide |
-| **Money** | `/money` | This month · Ledger · Supplies & costs · **Grows** |
+| **Money** | `/money` | This month · Ledger · Supplies on hand · Natural farming (advanced) · Grows |
 | **Help** | `/operator-guide` | Guide · Pi + HAT setup · Knowledge · Symptoms · Catalog |
 | **More** | `/animals`, `/aquaponics`, `/settings` | Module-gated domains + account |
 
@@ -904,6 +905,24 @@ Plan: [`phase_187_guardian_relative_due_date_revise.plan.md`](plans/archive/phas
 **Shipped.** After Phase 192, `make guardian-qa-change-requests-ui-task` passes with API restarted (~90–120 min CPU): rev 4, `Refill calcium nitrate`, zone + due tomorrow. **Restart API first** (`go run` does not hot-reload). See [`ci-guardian-qa.md`](ci-guardian-qa.md) for failure signatures and timing.
 
 Plan: [`phase_198_guardian_task_dialogue_eval_rerun.plan.md`](plans/archive/phase_198_guardian_task_dialogue_eval_rerun.plan.md)
+
+### 7u. Natural farming studio (Phase 209 — shipped)
+
+**Shipped.** Dedicated sidebar workspace for fermenting inputs and applying them — no longer buried under **Money → Inventory**. Plan: [`phase_209_natural_farming_studio_ui.plan.md`](plans/phase_209_natural_farming_studio_ui.plan.md) · Process canon: [Phase 208](plans/phase_208_natural_farming_process_knowledge.plan.md).
+
+**Route:** `/natural-farming` · **Sidebar:** **Grow & operate → Natural farming**
+
+| Tab | Job |
+|-----|-----|
+| **Start here** | Switchover wizard — maps bottle-nutrient patterns to canonical JADAM/KNF recipes from seeded YAML |
+| **Recipe library** | Read-only browse of all 16 inputs + 14 application recipes with field-guide step cards |
+| **Make a batch** | Pick process → variant → follow guide → create input + batch on the farm |
+| **Recipes & apply** | Farm application recipes; link to **Feed & water → Programs** per zone |
+| **On hand** | Ready batches, low-stock banner, **Restock / edit costs → Money** |
+
+**Legacy paths:** `/inventory` → studio (**Recipes & apply** by default; `?inv=batches` → **On hand**). **Feed & water → Advanced** mixing log **Inventory batches →** opens **On hand**. Power users: **Money → Natural farming (advanced)** for definitions + full CRUD.
+
+**Vitest:** `phase-209-closure.test.js`, `nav-groups.test.js`, `phase-209-ws1` … `phase-209-ws6` tests.
 
 ---
 

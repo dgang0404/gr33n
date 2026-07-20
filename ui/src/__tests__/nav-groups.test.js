@@ -37,6 +37,15 @@ describe('Phase 68 / 78 — workspace nav groups', () => {
     expect(more.items.some((i) => i.to.includes('crop-cycles/compare'))).toBe(false)
   })
 
+  it('lists Natural farming between zones and comfort in Grow & operate', () => {
+    const grow = groups.find((g) => g.label === 'Grow & operate')
+    const idxZones = grow.items.findIndex((i) => i.to === '/zones')
+    const idxNf = grow.items.findIndex((i) => i.to === '/natural-farming')
+    const idxComfort = grow.items.findIndex((i) => i.to === '/comfort-targets')
+    expect(idxNf).toBeGreaterThan(idxZones)
+    expect(idxNf).toBeLessThan(idxComfort)
+  })
+
   it('uses farmer labels on mobile bottom nav with zones, targets, and money', () => {
     expect(mobileBottomNav.find((i) => i.to === '/')?.label).toBe('Today')
     expect(mobileBottomNav.find((i) => i.to === '/zones')?.label).toBe('Zones')
