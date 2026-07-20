@@ -6,7 +6,7 @@ INSERT INTO gr33ncrops.agronomy_field_guides (
 )
 SELECT v.slug, v.title, v.crop_key, v.guide_kind, v.domain, v.safety_tier, v.body_md, v.catalog_version, v.published, v.sort_order
 FROM (VALUES
-    ('natural-farming-application-recipes', 'Natural farming application recipes (canon)', NULL, 'natural_farming', 'natural_farming', 'safe', $nf_natural-farming-application-recipes$---
+    ('natural-farming-application-recipes', 'Natural farming application recipes (canon)', NULL, 'natural_farming', 'natural_farming', 'safe', $application_recipes$---
 domain: natural_farming
 title: Natural farming application recipes (canon)
 safety_tier: safe
@@ -80,8 +80,8 @@ JLF drenches: always **start 1:100** if unsure (see [JLF general](natural-farmin
 - Using pre-audit **1:500 JMS** — wrong (WS0 fixed)
 - OHN or FAA stronger than 1:1000
 - JS as 0.5% wettable sulfur — wrong input; use JADAM JS concentrate recipe
-$nf_natural-farming-application-recipes$, 5, TRUE, 100),
-    ('natural-farming-brv', 'Brown rice vinegar (BRV) — purchased input', NULL, 'natural_farming', 'natural_farming', 'safe', $nf_natural-farming-brv$---
+$application_recipes$, 5, TRUE, 100),
+    ('natural-farming-brv', 'Brown rice vinegar (BRV) — purchased input', NULL, 'natural_farming', 'natural_farming', 'safe', $brv$---
 domain: natural_farming
 title: Brown rice vinegar (BRV) — purchased input
 safety_tier: safe
@@ -140,8 +140,8 @@ Undiluted on foliage burns — always follow recipe dilution.
 
 - Pasteurized clear vinegar for WCA — weak extraction
 - Full-strength foliar — leaf burn
-$nf_natural-farming-brv$, 5, TRUE, 101),
-    ('natural-farming-compost-tea-aact', 'Actively aerated compost tea (AACT)', NULL, 'natural_farming', 'natural_farming', 'safe', $nf_natural-farming-compost-tea-aact$---
+$brv$, 5, TRUE, 101),
+    ('natural-farming-compost-tea-aact', 'Actively aerated compost tea (AACT)', NULL, 'natural_farming', 'natural_farming', 'safe', $compost_tea_aact$---
 domain: natural_farming
 title: Actively aerated compost tea (AACT)
 safety_tier: safe
@@ -207,8 +207,8 @@ Apply as soil drench or foliar using standard compost-tea dilution for your volu
 - Storing tea overnight — anaerobic crash
 - Turning off air early — pathogen bloom risk
 - Calling it JADAM JMS substitute — different tradition and timing
-$nf_natural-farming-compost-tea-aact$, 5, TRUE, 102),
-    ('natural-farming-faa', 'Fish amino acid (FAA) — KNF', NULL, 'natural_farming', 'natural_farming', 'caution', $nf_natural-farming-faa$---
+$compost_tea_aact$, 5, TRUE, 102),
+    ('natural-farming-faa', 'Fish amino acid (FAA) — KNF', NULL, 'natural_farming', 'natural_farming', 'caution', $faa$---
 domain: natural_farming
 title: Fish amino acid (FAA) — KNF
 safety_tier: caution
@@ -270,8 +270,8 @@ Soil or foliar at **≥1:1000** FAA:water (KNF standard — never stronger).
 - Short ferment — incomplete breakdown
 - Strong smell indoors without ventilation
 - Undiluted application — salt/ammonia burn
-$nf_natural-farming-faa$, 5, TRUE, 103),
-    ('natural-farming-ffj', 'Fermented Fruit Juice (FFJ) — KNF', NULL, 'natural_farming', 'natural_farming', 'safe', $nf_natural-farming-ffj$---
+$faa$, 5, TRUE, 103),
+    ('natural-farming-ffj', 'Fermented Fruit Juice (FFJ) — KNF', NULL, 'natural_farming', 'natural_farming', 'safe', $ffj$---
 domain: natural_farming
 title: Fermented Fruit Juice (FFJ) — KNF
 safety_tier: safe
@@ -336,8 +336,8 @@ Do not add water. Avoid moldy fruit.
 - Adding water to ferment — not KNF FFJ
 - Using in heavy veg — promotes wrong growth stage
 - Labeling as pure JADAM — honesty: KNF input
-$nf_natural-farming-ffj$, 5, TRUE, 104),
-    ('natural-farming-forest-garden-understory', 'Forest garden understory (cherry, blackberry, goldenrod)', NULL, 'natural_farming', 'natural_farming', 'safe', $nf_natural-farming-forest-garden-understory$---
+$ffj$, 5, TRUE, 104),
+    ('natural-farming-forest-garden-understory', 'Forest garden understory (cherry, blackberry, goldenrod)', NULL, 'natural_farming', 'natural_farming', 'safe', $forest_garden_understory$---
 domain: natural_farming
 title: Forest garden understory (cherry, blackberry, goldenrod)
 safety_tier: safe
@@ -400,8 +400,8 @@ Optional understory fertility: **JLF General Soil Drench** via goldenrod extensi
 - Inventing EC 1.8 veg feed for forest garden cherry
 - Telling operator they must eradicate goldenrod — operator may keep for dye + JLF biomass
 - Confusing nursery cherry production guide with backyard understory
-$nf_natural-farming-forest-garden-understory$, 5, TRUE, 105),
-    ('natural-farming-fpj', 'Fermented Plant Juice (FPJ) — KNF', NULL, 'natural_farming', 'natural_farming', 'safe', $nf_natural-farming-fpj$---
+$forest_garden_understory$, 5, TRUE, 105),
+    ('natural-farming-fpj', 'Fermented Plant Juice (FPJ) — KNF', NULL, 'natural_farming', 'natural_farming', 'safe', $fpj$---
 domain: natural_farming
 title: Fermented Plant Juice (FPJ) — KNF
 safety_tier: safe
@@ -463,8 +463,8 @@ Accurate 1:1 sugar ratio; no moldy material.
 
 - Continuing FPJ after flowers — wrong stage
 - Calling it JADAM core — it is KNF (sugar ferment)
-$nf_natural-farming-fpj$, 5, TRUE, 106),
-    ('natural-farming-goldenrod-jlf', 'Goldenrod JLF (extension method)', NULL, 'natural_farming', 'natural_farming', 'safe', $nf_natural-farming-goldenrod-jlf$---
+$fpj$, 5, TRUE, 106),
+    ('natural-farming-goldenrod-jlf', 'Goldenrod JLF (extension method)', NULL, 'natural_farming', 'natural_farming', 'safe', $goldenrod_jlf$---
 domain: natural_farming
 title: Goldenrod JLF (extension method)
 safety_tier: safe
@@ -530,8 +530,8 @@ Guardian must say: *"JLF from goldenrod using the standard JLF method"* — neve
 - Conflicting with dye harvest — plan biomass cuts so both uses fit operator intent
 
 See also [forest garden understory](natural-farming-forest-garden-understory.md).
-$nf_natural-farming-goldenrod-jlf$, 5, TRUE, 107),
-    ('natural-farming-indoor-photoperiod-program', 'Indoor photoperiod JADAM programs (bootstrap)', NULL, 'natural_farming', 'natural_farming', 'safe', $nf_natural-farming-indoor-photoperiod-program$---
+$goldenrod_jlf$, 5, TRUE, 107),
+    ('natural-farming-indoor-photoperiod-program', 'Indoor photoperiod JADAM programs (bootstrap)', NULL, 'natural_farming', 'natural_farming', 'safe', $indoor_photoperiod_program$---
 domain: natural_farming
 title: Indoor photoperiod JADAM programs (bootstrap)
 safety_tier: safe
@@ -594,8 +594,8 @@ Combined veg tank: JLF **1:20** + JMS **1:10**. Flower tank: FFJ 1:500 + WCA 1:1
 
 - Expecting EC 1.6–1.8 mS/cm Mericle targets without converting mindset — tune volume/cron, not bottle A/B
 - Legacy JMS 1:500 in mix notes — pre-audit; refresh to 1:10
-$nf_natural-farming-indoor-photoperiod-program$, 5, TRUE, 108),
-    ('natural-farming-jlf-crop-specific', 'JLF from same-crop residue', NULL, 'natural_farming', 'natural_farming', 'safe', $nf_natural-farming-jlf-crop-specific$---
+$indoor_photoperiod_program$, 5, TRUE, 108),
+    ('natural-farming-jlf-crop-specific', 'JLF from same-crop residue', NULL, 'natural_farming', 'natural_farming', 'safe', $jlf_crop_specific$---
 domain: natural_farming
 title: JLF from same-crop residue
 safety_tier: safe
@@ -660,8 +660,8 @@ Apply via **JLF General Soil Drench** dilution bands (start **1:100**, up to **1
 - Cross-crop residue — loses targeted benefit
 - Diseased trimmings — spreads pathogens
 - Over-applying on fruiting plants — too much N
-$nf_natural-farming-jlf-crop-specific$, 5, TRUE, 109),
-    ('natural-farming-jlf-general', 'JLF from weeds and grass (general)', NULL, 'natural_farming', 'natural_farming', 'safe', $nf_natural-farming-jlf-general$---
+$jlf_crop_specific$, 5, TRUE, 109),
+    ('natural-farming-jlf-general', 'JLF from weeds and grass (general)', NULL, 'natural_farming', 'natural_farming', 'safe', $jlf_general$---
 domain: natural_farming
 title: JLF from weeds and grass (general)
 safety_tier: safe
@@ -734,8 +734,8 @@ No herbicide-treated clippings. Non-chlorinated water only.
 - Starting at 1:20 on unknown soil — leaf burn or salt shock
 - Using diseased or sprayed weeds — pathogen carryover
 - Foliar without fine strain — clogged sprayer
-$nf_natural-farming-jlf-general$, 5, TRUE, 110),
-    ('natural-farming-jlf-spring-nettle-comfrey', 'Spring JLF — nettle and comfrey', NULL, 'natural_farming', 'natural_farming', 'caution', $nf_natural-farming-jlf-spring-nettle-comfrey$---
+$jlf_general$, 5, TRUE, 110),
+    ('natural-farming-jlf-spring-nettle-comfrey', 'Spring JLF — nettle and comfrey', NULL, 'natural_farming', 'natural_farming', 'caution', $jlf_spring_nettle_comfrey$---
 domain: natural_farming
 title: Spring JLF — nettle and comfrey
 safety_tier: caution
@@ -798,8 +798,8 @@ Gloves for nettle harvest. High N — do not over-apply to fruiting crops.
 
 - Calling nettle "nitrogen-fixing" — it is a dynamic accumulator
 - Strong dilution on fruit trees in bloom — vegetative push at wrong time
-$nf_natural-farming-jlf-spring-nettle-comfrey$, 5, TRUE, 111),
-    ('natural-farming-jms', 'JADAM Microbial Solution (JMS)', NULL, 'natural_farming', 'natural_farming', 'safe', $nf_natural-farming-jms$---
+$jlf_spring_nettle_comfrey$, 5, TRUE, 111),
+    ('natural-farming-jms', 'JADAM Microbial Solution (JMS)', NULL, 'natural_farming', 'natural_farming', 'safe', $jms$---
 domain: natural_farming
 title: JADAM Microbial Solution (JMS)
 safety_tier: safe
@@ -873,8 +873,8 @@ Chlorinated tap water kills microbes — rain, RO, or de-chlorinated water only.
 - Storing finished JMS a week+ after peak — weak or anaerobic
 - Using 1:500 dilution (old drift) — far too weak per Cho
 - Skipping JWA on foliar — poor leaf coverage
-$nf_natural-farming-jms$, 5, TRUE, 112),
-    ('natural-farming-jwa-js-jhs', 'JWA, JHS, and JS — wetting and pest inputs (JADAM)', NULL, 'natural_farming', 'natural_farming', 'expert', $nf_natural-farming-jwa-js-jhs$---
+$jms$, 5, TRUE, 112),
+    ('natural-farming-jwa-js-jhs', 'JWA, JHS, and JS — wetting and pest inputs (JADAM)', NULL, 'natural_farming', 'natural_farming', 'expert', $jwa_js_jhs$---
 domain: natural_farming
 title: JWA, JHS, and JS — wetting and pest inputs (JADAM)
 safety_tier: expert
@@ -951,8 +951,8 @@ JWA dry soap; JHS refrigerated short term; JS concentrate sealed labeled.
 - Wettable sulfur labeled JS — wrong input (pre-audit drift)
 - JHS cold steep 1–3 h — not Cho boil method
 - JS spray in hot midday sun — sulfur burn
-$nf_natural-farming-jwa-js-jhs$, 5, TRUE, 113),
-    ('natural-farming-lab', 'Lactic Acid Bacteria serum (LAB) — KNF', NULL, 'natural_farming', 'natural_farming', 'safe', $nf_natural-farming-lab$---
+$jwa_js_jhs$, 5, TRUE, 113),
+    ('natural-farming-lab', 'Lactic Acid Bacteria serum (LAB) — KNF', NULL, 'natural_farming', 'natural_farming', 'safe', $lab$---
 domain: natural_farming
 title: Lactic Acid Bacteria serum (LAB) — KNF
 safety_tier: safe
@@ -1015,8 +1015,8 @@ Use golden layer only.
 
 - Using curds or top milk layer — wrong fraction
 - Stronger than 1:1000 — unnecessary; KNF standard is dilute
-$nf_natural-farming-lab$, 5, TRUE, 114),
-    ('natural-farming-livestock-plant-feed', 'Livestock plant feed (simple inputs)', NULL, 'natural_farming', 'natural_farming', 'safe', $nf_natural-farming-livestock-plant-feed$---
+$lab$, 5, TRUE, 114),
+    ('natural-farming-livestock-plant-feed', 'Livestock plant feed (simple inputs)', NULL, 'natural_farming', 'natural_farming', 'safe', $livestock_plant_feed$---
 domain: natural_farming
 title: Livestock plant feed (simple inputs)
 safety_tier: safe
@@ -1082,8 +1082,8 @@ Record as **animal_feed** input batch in Natural farming inventory — not ferti
 - Confusing with JLF comfrey ferment for plants — different use path
 
 Cross-link [JLF spring nettle/comfrey](natural-farming-jlf-spring-nettle-comfrey.md) for **plant** fertility, not livestock ration.
-$nf_natural-farming-livestock-plant-feed$, 5, TRUE, 115),
-    ('natural-farming-ohn', 'Oriental Herbal Nutrient (OHN) — KNF', NULL, 'natural_farming', 'natural_farming', 'caution', $nf_natural-farming-ohn$---
+$livestock_plant_feed$, 5, TRUE, 115),
+    ('natural-farming-ohn', 'Oriental Herbal Nutrient (OHN) — KNF', NULL, 'natural_farming', 'natural_farming', 'caution', $ohn$---
 domain: natural_farming
 title: Oriental Herbal Nutrient (OHN) — KNF
 safety_tier: caution
@@ -1145,8 +1145,8 @@ Sealed **1–2 years**. Extremely concentrated.
 
 - Full-strength or 1:500 — burn and phytotoxicity
 - Treating as JADAM core — KNF sugar/alcohol extract
-$nf_natural-farming-ohn$, 5, TRUE, 116),
-    ('natural-farming-wca-wcs', 'Water-soluble calcium inputs (WCA and WCS) — KNF', NULL, 'natural_farming', 'natural_farming', 'safe', $nf_natural-farming-wca-wcs$---
+$ohn$, 5, TRUE, 116),
+    ('natural-farming-wca-wcs', 'Water-soluble calcium inputs (WCA and WCS) — KNF', NULL, 'natural_farming', 'natural_farming', 'safe', $wca_wcs$---
 domain: natural_farming
 title: Water-soluble calcium inputs (WCA and WCS) — KNF
 safety_tier: safe
@@ -1219,7 +1219,7 @@ Vinegar acid — eye protection. Roast shells/bones fully.
 - Sealed tight jar on WCA — gas buildup
 - Partially charred bones — inconsistent P and off flavors
 - Undiluted on leaves — burn
-$nf_natural-farming-wca-wcs$, 5, TRUE, 117)
+$wca_wcs$, 5, TRUE, 117)
 ) AS v(slug, title, crop_key, guide_kind, domain, safety_tier, body_md, catalog_version, published, sort_order)
 ON CONFLICT (slug) DO UPDATE SET
     title = EXCLUDED.title,

@@ -71,14 +71,18 @@ WHERE name IN (
 ) AND deleted_at IS NULL
   AND reference_source LIKE '%Youngsang Cho%';
 
-UPDATE gr33nnaturalfarming.input_definitions
+UPDATE gr33nnaturalfarming.input_definitions d
 SET name = 'JS (JADAM Sulfur concentrate)',
     description = 'Exothermic JADAM sulfur concentrate (~25% sulfur) for powdery mildew, rust, and mites. Not garden wettable sulfur.',
     typical_ingredients = 'Elemental sulfur, caustic soda (NaOH), red clay, phyllite powder, sea salt, water',
     preparation_summary = 'Combine per Cho exothermic batch method; yields ~25% sulfur concentrate. Dilute 0.5-2 L concentrate per 500 L spray water.',
     storage_guidelines = 'Store concentrate sealed; label batch date. Mix spray same day.',
     safety_precautions = 'Caustic soda is hazardous — full PPE, ventilation. Do not apply above 32C.'
-WHERE name = 'JS (JADAM Sulfur)' AND deleted_at IS NULL;
+WHERE d.name = 'JS (JADAM Sulfur)' AND d.deleted_at IS NULL
+  AND NOT EXISTS (
+      SELECT 1 FROM gr33nnaturalfarming.input_definitions x
+      WHERE x.farm_id = d.farm_id AND x.name = 'JS (JADAM Sulfur concentrate)' AND x.deleted_at IS NULL
+  );
 
 UPDATE gr33nnaturalfarming.input_definitions
 SET description = REPLACE(description, 'nitrogen-fixing plants', 'dynamic accumulator biomass (nettle, comfrey)')
