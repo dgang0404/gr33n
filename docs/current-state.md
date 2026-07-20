@@ -362,6 +362,6 @@ Accessibility: skip link, Guardian drawer focus trap, zone tab semantics — [`a
 
 ## Phase history
 
-- **Shipped arcs:** 40–67 farmer UX · 68–81 SPA · 82–110 crop intelligence · 111–122 Guardian/Pi · 129–153 Guardian QA · **154–161** infra/trust + citation + a11y + ec-ph trim · **164–177** visual Today farm cockpit + excellence arc · **178** online weather forecast · **179–187** Guardian UX polish, Help Library, multi-turn PR smoke, task revise chain · **192–200** pending inbox + UI polish · **210** dedicated animal automation (flock-event gate rules, timed feed/water pulses)
+- **Shipped arcs:** 40–67 farmer UX · 68–81 SPA · 82–110 crop intelligence · 111–122 Guardian/Pi · 129–153 Guardian QA · **154–161** infra/trust + citation + a11y + ec-ph trim · **164–177** visual Today farm cockpit + excellence arc · **178** online weather forecast · **179–187** Guardian UX polish, Help Library, multi-turn PR smoke, task revise chain · **192–200** pending inbox + UI polish · **207–211** natural farming studio (process catalog, `/natural-farming` workspace, Guardian NF tools, Commons/switchover packs) · **210** dedicated animal automation (flock-event gate rules, timed feed/water pulses)
 - **Active / planned:** Insert Commons (opt-in); optional `make guardian-qa-change-requests-ui` live Pending-tab walkthrough (Phase 184 WS5, operator); full `smoke-ec-ph` re-run on CPU (operator)
 - **Archive:** [`plans/archive/`](plans/archive/) — closed plans (e.g. 88–92)

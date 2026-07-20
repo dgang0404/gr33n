@@ -11,7 +11,7 @@ isProject: false
 
 # Natural farming studio — Phases 207–211
 
-**Status:** planned · **Depends on:** Phase 205–206 (test baseline + plans archive) · **No code in this thread**
+**Status:** **Shipped (207–211)** · **Depends on:** Phase 205–206 (test baseline + plans archive)
 
 ## North star
 
@@ -34,7 +34,7 @@ isProject: false
 | **Guardian writes** | `apply_bootstrap_template` only for JADAM starter pack | [`internal/farmguardian/tools/registry.go`](../internal/farmguardian/tools/registry.go) |
 | **Guardian reads** | Low stock, fertigation summary, plants list — **no** process/material catalog | [`internal/farmguardian/readtools.go`](../internal/farmguardian/readtools.go) |
 
-**Gap:** no bridge from "I grow goldenrod" / "I run a 1.8 EC veg program" to "here's a JLF batch + drench recipe for your cherry understory."
+**Gap (closed in 208–211):** bridge from on-farm biomass / commercial EC programs to JLF batches, studio workspace, Guardian counsel, and importable Commons packs — see child plan acceptance criteria.
 
 ## Locked phase order
 
@@ -46,7 +46,14 @@ isProject: false
 | **210** | [Guardian integration](phase_210_natural_farming_guardian_integration.plan.md) | Read tools, write proposals, **additive** regression fixture — smoke suite unchanged |
 | **211** | [Switchover & Commons packs](phase_211_natural_farming_switchover_commons.plan.md) | EC-program mapping packs, importable recipe packs, livestock feed use cases |
 
-**Execute 208 → 209 → 210 → 211** (207 is planning only). 208 lets Guardian *read* goldenrod→JLF before the studio ships. 209 gives operators the workspace. 210 connects chat to proposals. 211 closes the Mericle-style switchover story with importable packs.
+**Execute 208 → 209 → 210 → 211** (207 is planning only). **Shipped 2026-07.**
+
+| Phase | Status |
+|-------|--------|
+| 208 | shipped (WS0–WS6) — process catalog, field guides, RAG |
+| 209 | shipped (WS1–WS7) — `/natural-farming` studio |
+| 210 | shipped (WS1–WS6) — Guardian read/draft tools + regression fixture |
+| 211 | shipped (WS1–WS6) — Commons import, switchover packs, smoke step 5 |
 
 ## Sidebar placement (recommendation)
 
@@ -142,16 +149,20 @@ flowchart LR
 ## Verification (full arc)
 
 ```bash
-# Backend
-go test ./internal/handler/naturalfarming/... ./internal/farmguardian/...
-
-# UI closure (one per phase when shipped)
+# UI closure (one per phase + arc)
+npm --prefix ui test -- --run src/__tests__/phase-207-closure.test.js
 npm --prefix ui test -- --run src/__tests__/phase-208-closure.test.js
 npm --prefix ui test -- --run src/__tests__/phase-209-closure.test.js
+npm --prefix ui test -- --run src/__tests__/phase-210-closure.test.js
+npm --prefix ui test -- --run src/__tests__/phase-211-closure.test.js
 
-# Guardian — smoke unchanged; new regression only
-make guardian-qa-smoke          # must still pass 4/4 with old cherry criteria
-make guardian-qa-regression     # includes regression-cherry-goldenrod-jlf after 209
+# Backend
+go test ./internal/handler/naturalfarming/... ./internal/farmguardian/... ./internal/commonscatalog/...
+
+# Guardian smoke — steps 1–4 unchanged; step 5 smoke-cherry-jlf additive (211 WS5)
+make guardian-qa-smoke
+make guardian-qa-regression     # regression-cherry-goldenrod-jlf
+make guardian-qa-smoke-cherry-jlf  # isolated step 5
 ```
 
 ## Docs touchpoints (each phase)
@@ -169,7 +180,7 @@ make guardian-qa-regression     # includes regression-cherry-goldenrod-jlf after
 2. **208 WS0 first** — fix JMS dilution drift in seed before writing guides
 3. Recipe canon = [`master_seed.sql`](../../db/seeds/master_seed.sql) (15 inputs, 14 application recipes)
 4. Goldenrod = **extension** (JLF general method), not a Cho-named recipe
-5. **Do not touch** smoke fixtures until 211 optional promotion
+5. Smoke steps 1–4 unchanged; step 5 `smoke-cherry-jlf` shipped in 211 WS5
 6. Every guide needs: ingredients, steps, timeline, ready signs, dilution, safety, `reference_source`
 
 ## Handoff context (prior chat)

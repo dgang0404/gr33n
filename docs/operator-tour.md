@@ -906,23 +906,23 @@ Plan: [`phase_187_guardian_relative_due_date_revise.plan.md`](plans/archive/phas
 
 Plan: [`phase_198_guardian_task_dialogue_eval_rerun.plan.md`](plans/archive/phase_198_guardian_task_dialogue_eval_rerun.plan.md)
 
-### 7u. Natural farming studio (Phase 209 — shipped)
+### 7u. Natural farming studio (Phases 207–211 — shipped)
 
-**Shipped.** Dedicated sidebar workspace for fermenting inputs and applying them — no longer buried under **Money → Inventory**. Plan: [`phase_209_natural_farming_studio_ui.plan.md`](plans/phase_209_natural_farming_studio_ui.plan.md) · Process canon: [Phase 208](plans/phase_208_natural_farming_process_knowledge.plan.md).
+**Shipped.** Full arc from process catalog through studio UI, Guardian counsel, and importable recipe packs. Roadmap: [`phase_207_natural_farming_studio.plan.md`](plans/phase_207_natural_farming_studio.plan.md) · Studio: [209](plans/phase_209_natural_farming_studio_ui.plan.md) · Guardian: [210](plans/phase_210_natural_farming_guardian_integration.plan.md) · Commons packs: [211](plans/phase_211_natural_farming_switchover_commons.plan.md).
 
 **Route:** `/natural-farming` · **Sidebar:** **Grow & operate → Natural farming**
 
 | Tab | Job |
 |-----|-----|
-| **Start here** | Switchover wizard — maps bottle-nutrient patterns to canonical JADAM/KNF recipes from seeded YAML |
-| **Recipe library** | Read-only browse of all 16 inputs + 14 application recipes with field-guide step cards |
+| **Start here** | Switchover wizard + **Commons recipe pack import** (211); apply Mericle-style switchover packs |
+| **Recipe library** | Canonical inputs/recipes; **Livestock** tab when Animals module on (211) |
 | **Make a batch** | Pick process → variant → follow guide → create input + batch on the farm |
 | **Recipes & apply** | Farm application recipes; link to **Feed & water → Programs** per zone |
 | **On hand** | Ready batches, low-stock banner, **Restock / edit costs → Money** |
 
 **Legacy paths:** `/inventory` → studio (**Recipes & apply** by default; `?inv=batches` → **On hand**). **Feed & water → Advanced** mixing log **Inventory batches →** opens **On hand**. Power users: **Money → Natural farming (advanced)** for definitions + full CRUD.
 
-**Vitest:** `phase-209-closure.test.js`, `nav-groups.test.js`, `phase-209-ws1` … `phase-209-ws6` tests.
+**Vitest:** `phase-207-closure.test.js`, `phase-208-closure.test.js` … `phase-211-closure.test.js`.
 
 ---
 
