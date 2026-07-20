@@ -1,0 +1,166 @@
+# Phase 208 WS3 — farm biomass / material → process type links for Guardian + studio UI.
+# Ratios in recipe-canonical.yaml / master_seed.sql — not invented here.
+version: 1
+
+materials:
+  - id: goldenrod
+    common_names: ["Canadian goldenrod", "Solidago canadensis", "solidago"]
+    roles: [dye, fertigation]
+    source_tier: extension_method
+    base_method_guide: natural-farming-jlf-general.md
+    processes:
+      - type: jlf
+        season: spring
+        guide: natural-farming-goldenrod-jlf.md
+        target_crops: [cherry, apple, plum]
+        dilution_start: "1:100"
+        dilution_strong: "1:30"
+        notes: "JLF general method on Solidago biomass — not a Cho-named recipe; dye harvest compatible"
+
+  - id: nettle
+    common_names: ["stinging nettle", "Urtica dioica"]
+    roles: [fertigation, foliar]
+    source_tier: cho_named
+    base_method_guide: natural-farming-jlf-general.md
+    processes:
+      - type: jlf
+        season: spring
+        guide: natural-farming-jlf-spring-nettle-comfrey.md
+        dilution_start: "1:100"
+        dilution_strong: "1:20"
+        notes: "High-N dynamic accumulator — wear gloves harvesting"
+
+  - id: comfrey
+    common_names: ["comfrey", "Symphytum"]
+    roles: [fertigation, animal_feed]
+    source_tier: cho_named
+    base_method_guide: natural-farming-jlf-general.md
+    processes:
+      - type: jlf
+        season: spring
+        guide: natural-farming-jlf-spring-nettle-comfrey.md
+        dilution_start: "1:100"
+        dilution_strong: "1:20"
+      - type: animal_feed
+        guide: natural-farming-livestock-plant-feed.md
+        notes: "Slurry/supplement only — not full ration"
+
+  - id: local_weeds
+    common_names: ["farm weeds", "grass clippings", "un-treated biomass"]
+    roles: [fertigation]
+    source_tier: cho_named
+    base_method_guide: natural-farming-jlf-general.md
+    processes:
+      - type: jlf
+        guide: natural-farming-jlf-general.md
+        seed_input: "JLF General (Weed and Grass)"
+        dilution_start: "1:100"
+        dilution_strong: "1:20"
+        notes: "Default JADAM JLF — no herbicide-treated material"
+
+  - id: crop_residue
+    common_names: ["same-crop trimmings", "tomato vines", "corn stalks"]
+    roles: [fertigation]
+    source_tier: cho_named
+    processes:
+      - type: jlf
+        guide: natural-farming-jlf-crop-specific.md
+        seed_input: "JLF Crop-Specific (Crop Residue)"
+        dilution_start: "1:100"
+        dilution_strong: "1:20"
+        notes: "Healthy residue only — match crop to crop"
+
+  - id: growing_tips
+    common_names: ["comfrey tips", "nettle tips", "mugwort", "bamboo shoots"]
+    roles: [foliar]
+    source_tier: knf_standard
+    processes:
+      - type: fpj
+        guide: natural-farming-fpj.md
+        seed_input: "FPJ (Fermented Plant Juice)"
+        dilution_start: "1:1000"
+        dilution_strong: "1:500"
+        notes: "KNF sugar ferment — veg stage only"
+
+  - id: ripe_fruit
+    common_names: ["overripe fruit", "banana peels", "fallen orchard fruit"]
+    roles: [foliar, fertigation]
+    source_tier: knf_standard
+    processes:
+      - type: ffj
+        guide: natural-farming-ffj.md
+        seed_input: "FFJ (Fermented Fruit Juice)"
+        dilution_start: "1:1000"
+        dilution_strong: "1:500"
+        notes: "Fruit + brown sugar only — no water in ferment"
+
+  - id: fish_scraps
+    common_names: ["fish waste", "gutting scraps"]
+    roles: [fertigation, foliar]
+    source_tier: knf_standard
+    processes:
+      - type: faa
+        guide: natural-farming-faa.md
+        seed_input: "FAA (Fish Amino Acid)"
+        dilution_start: "1:1000"
+        dilution_strong: "1:1000"
+        notes: "Long ferment — ventilate; never stronger than 1:1000"
+
+  - id: eggshells
+    common_names: ["eggshells", "oyster shell"]
+    roles: [foliar, fertigation]
+    source_tier: knf_standard
+    processes:
+      - type: wca
+        guide: natural-farming-wca-wcs.md
+        seed_input: "WCA (Water-Soluble Calcium)"
+        notes: "Roast shells; extract in BRV 1:10; apply WCA at 1:1000 foliar"
+
+  - id: charred_bones
+    common_names: ["white-ashed bones", "bone char"]
+    roles: [foliar, fertigation]
+    source_tier: knf_standard
+    processes:
+      - type: wcs
+        guide: natural-farming-wca-wcs.md
+        seed_input: "WCS (Water-Soluble Calcium Phosphate)"
+        notes: "Char fully white before vinegar extract"
+
+  - id: leaf_mold
+    common_names: ["forest leaf mold", "forest floor humus"]
+    roles: [soil_conditioner, fertigation]
+    source_tier: cho_named
+    processes:
+      - type: jms
+        guide: natural-farming-jms.md
+        seed_input: "JMS (JADAM Microbial Solution)"
+        notes: "With potato water — peak foam 24-72 h"
+
+  - id: finished_compost
+    common_names: ["mature compost", "finished compost"]
+    roles: [soil_conditioner]
+    source_tier: third_party
+    processes:
+      - type: compost_tea_aact
+        guide: natural-farming-compost-tea-aact.md
+        seed_input: "Compost Tea Actively Aerated"
+        notes: "Ingham AACT — use within 4 h of brew finish"
+
+  - id: sprouted_grain
+    common_names: ["barley sprouts", "wheat sprouts", "fodder"]
+    roles: [animal_feed]
+    source_tier: extension_method
+    processes:
+      - type: animal_feed
+        guide: natural-farming-livestock-plant-feed.md
+        notes: "Simple supplement — not TMR balancing"
+
+  - id: blackberry
+    common_names: ["wild blackberry", "Rubus"]
+    roles: [fertigation]
+    source_tier: extension_method
+    base_method_guide: natural-farming-forest-garden-understory.md
+    processes:
+      - type: jlf
+        guide: natural-farming-forest-garden-understory.md
+        notes: "Understory management counsel — not a named Cho blackberry recipe"

@@ -1,0 +1,246 @@
+# Phase 208 WS3 — machine-readable mirror of master_seed.sql natural farming canon.
+# Dilutions post-WS0 audit. Guides in docs/field-guides/natural-farming-*.md
+version: 1
+
+inputs:
+  - seed_name: "JMS (JADAM Microbial Solution)"
+    process_type: jms
+    tradition: jadam
+    source_tier: cho_named
+    schema_category: microbial_inoculant
+    guide: natural-farming-jms.md
+    reference_source: "JADAM Organic Farming, Youngsang Cho, 2016"
+
+  - seed_name: "LAB (Lactic Acid Bacteria Serum)"
+    process_type: lab
+    tradition: knf
+    source_tier: knf_standard
+    schema_category: microbial_inoculant
+    guide: natural-farming-lab.md
+    reference_source: "KNF (Cho Han-kyu); often used with JADAM"
+
+  - seed_name: "FPJ (Fermented Plant Juice)"
+    process_type: fpj
+    tradition: knf
+    source_tier: knf_standard
+    schema_category: fermented_plant_juice
+    guide: natural-farming-fpj.md
+    reference_source: "KNF (Cho Han-kyu); often used with JADAM"
+
+  - seed_name: "FFJ (Fermented Fruit Juice)"
+    process_type: ffj
+    tradition: knf
+    source_tier: knf_standard
+    schema_category: fermented_plant_juice
+    guide: natural-farming-ffj.md
+    reference_source: "KNF (Cho Han-kyu); often used with JADAM"
+
+  - seed_name: "BRV (Brown Rice Vinegar)"
+    process_type: brv
+    tradition: other
+    source_tier: third_party
+    schema_category: fermented_plant_juice
+    guide: natural-farming-brv.md
+    reference_source: "JADAM Organic Farming, Youngsang Cho, 2016"
+
+  - seed_name: "OHN (Oriental Herbal Nutrient)"
+    process_type: ohn
+    tradition: knf
+    source_tier: knf_standard
+    schema_category: oriental_herbal_nutrient
+    guide: natural-farming-ohn.md
+    reference_source: "KNF (Cho Han-kyu); often used with JADAM"
+
+  - seed_name: "JHS (JADAM Herbal Solution)"
+    process_type: jhs
+    tradition: jadam
+    source_tier: cho_named
+    schema_category: oriental_herbal_nutrient
+    guide: natural-farming-jwa-js-jhs.md
+    reference_source: "JADAM Organic Farming, Youngsang Cho, 2016"
+
+  - seed_name: "WCA (Water-Soluble Calcium)"
+    process_type: wca
+    tradition: knf
+    source_tier: knf_standard
+    schema_category: water_soluble_nutrient
+    guide: natural-farming-wca-wcs.md
+    reference_source: "KNF (Cho Han-kyu); often used with JADAM"
+
+  - seed_name: "WCS (Water-Soluble Calcium Phosphate)"
+    process_type: wcs
+    tradition: knf
+    source_tier: knf_standard
+    schema_category: water_soluble_nutrient
+    guide: natural-farming-wca-wcs.md
+    reference_source: "KNF (Cho Han-kyu); often used with JADAM"
+
+  - seed_name: "JWA (JADAM Wetting Agent)"
+    process_type: jwa
+    tradition: jadam
+    source_tier: cho_named
+    schema_category: other_extract
+    guide: natural-farming-jwa-js-jhs.md
+    reference_source: "JADAM Organic Farming, Youngsang Cho, 2016"
+
+  - seed_name: "JS (JADAM Sulfur concentrate)"
+    process_type: js
+    tradition: jadam
+    source_tier: cho_named
+    schema_category: other_extract
+    guide: natural-farming-jwa-js-jhs.md
+    reference_source: "JADAM Organic Farming, Youngsang Cho, 2016"
+
+  - seed_name: "JLF General (Weed and Grass)"
+    process_type: jlf
+    tradition: jadam
+    source_tier: cho_named
+    schema_category: other_ferment
+    guide: natural-farming-jlf-general.md
+    reference_source: "JADAM Organic Farming, Youngsang Cho, 2016"
+    dilution_start: "1:100"
+    dilution_strong: "1:20"
+
+  - seed_name: "JLF Crop-Specific (Crop Residue)"
+    process_type: jlf
+    tradition: jadam
+    source_tier: cho_named
+    schema_category: other_ferment
+    guide: natural-farming-jlf-crop-specific.md
+    reference_source: "JADAM Organic Farming, Youngsang Cho, 2016"
+    dilution_start: "1:100"
+    dilution_strong: "1:20"
+
+  - seed_name: "JLF Spring (Nettle and Comfrey)"
+    process_type: jlf
+    tradition: jadam
+    source_tier: cho_named
+    schema_category: other_ferment
+    guide: natural-farming-jlf-spring-nettle-comfrey.md
+    reference_source: "JADAM Organic Farming, Youngsang Cho, 2016"
+    dilution_start: "1:100"
+    dilution_strong: "1:20"
+
+  - seed_name: "FAA (Fish Amino Acid)"
+    process_type: faa
+    tradition: knf
+    source_tier: knf_standard
+    schema_category: fermented_plant_juice
+    guide: natural-farming-faa.md
+    reference_source: "KNF (Cho Han-kyu); often used with JADAM"
+    dilution_start: "1:1000"
+    dilution_strong: "1:1000"
+
+  - seed_name: "Compost Tea Actively Aerated"
+    process_type: compost_tea_aact
+    tradition: other
+    source_tier: third_party
+    schema_category: compost_tea_extract
+    guide: natural-farming-compost-tea-aact.md
+    reference_source: "Elaine Ingham, Soil Biology Primer"
+
+application_recipes:
+  - seed_name: "JMS Soil Drench"
+    target_application_type: soil_drench
+    dilution: "1:10 (JMS:water)"
+    components: ["JMS (JADAM Microbial Solution)"]
+    guide: natural-farming-application-recipes.md
+
+  - seed_name: "JLF General Soil Drench"
+    target_application_type: soil_drench
+    dilution: "1:20 (JLF:water); start 1:100 if unsure"
+    components: ["JLF General (Weed and Grass)"]
+    guide: natural-farming-application-recipes.md
+
+  - seed_name: "JLF Seedling Drench"
+    target_application_type: soil_drench
+    dilution: "1:30 (JLF:water)"
+    components: ["JLF General (Weed and Grass)"]
+    guide: natural-farming-application-recipes.md
+
+  - seed_name: "JLF and JMS Combined Drench"
+    target_application_type: soil_drench
+    dilution: "JLF 1:20 + JMS 1:10 in same water"
+    components: ["JLF General (Weed and Grass)", "JMS (JADAM Microbial Solution)"]
+    guide: natural-farming-application-recipes.md
+
+  - seed_name: "LAB Soil Conditioner"
+    target_application_type: soil_drench
+    dilution: "1:1000 (LAB:water)"
+    components: ["LAB (Lactic Acid Bacteria Serum)"]
+    guide: natural-farming-application-recipes.md
+
+  - seed_name: "OHN Pest and Immunity Drench"
+    target_application_type: soil_drench
+    dilution: "1:1000 (OHN:water)"
+    components: ["OHN (Oriental Herbal Nutrient)"]
+    guide: natural-farming-application-recipes.md
+
+  - seed_name: "JMS Foliar Spray"
+    target_application_type: foliar_spray
+    dilution: "1:20 (JMS:water) + JWA"
+    components: ["JMS (JADAM Microbial Solution)", "JWA (JADAM Wetting Agent)"]
+    guide: natural-farming-application-recipes.md
+
+  - seed_name: "FPJ Vegetative Foliar"
+    target_application_type: foliar_spray
+    dilution: "1:500 to 1:1000 (FPJ:water) + JWA"
+    components: ["FPJ (Fermented Plant Juice)", "JWA (JADAM Wetting Agent)"]
+    guide: natural-farming-application-recipes.md
+
+  - seed_name: "FFJ and WCA Flowering Boost"
+    target_application_type: foliar_spray
+    dilution: "FFJ 1:500 + WCA 1:1000 + JWA"
+    components: ["FFJ (Fermented Fruit Juice)", "WCA (Water-Soluble Calcium)", "JWA (JADAM Wetting Agent)"]
+    guide: natural-farming-application-recipes.md
+
+  - seed_name: "BRV and WCA Cell Strengthener"
+    target_application_type: foliar_spray
+    dilution: "BRV 1:800 + WCA 1:1000"
+    components: ["BRV (Brown Rice Vinegar)", "WCA (Water-Soluble Calcium)"]
+    guide: natural-farming-application-recipes.md
+
+  - seed_name: "JHS and JWA Natural Pesticide"
+    target_application_type: foliar_spray
+    dilution: "JHS 1:50 + JWA 1:500"
+    components: ["JHS (JADAM Herbal Solution)", "JWA (JADAM Wetting Agent)"]
+    guide: natural-farming-application-recipes.md
+
+  - seed_name: "JS Fungicide Spray"
+    target_application_type: foliar_spray
+    dilution: "0.5-2 L JS concentrate per 500 L water + JWA 1:500"
+    components: ["JS (JADAM Sulfur concentrate)", "JWA (JADAM Wetting Agent)"]
+    guide: natural-farming-application-recipes.md
+
+  - seed_name: "JLF Foliar Feed"
+    target_application_type: foliar_spray
+    dilution: "1:30 to 1:50 (JLF:water) + JWA"
+    components: ["JLF General (Weed and Grass)", "JWA (JADAM Wetting Agent)"]
+    guide: natural-farming-application-recipes.md
+
+  - seed_name: "JWA Insecticide Spray"
+    target_application_type: foliar_spray
+    dilution: "1:500 (JWA:water)"
+    components: ["JWA (JADAM Wetting Agent)"]
+    guide: natural-farming-application-recipes.md
+
+# Phase 211 switchover — maps commercial EC programs to natural recipes
+commercial_to_natural:
+  - commercial: "Daily EC veg feed 1.6–1.8 mS/cm"
+    natural_equivalent:
+      - recipe: "JLF and JMS Combined Drench"
+        frequency: "Weekly peak season"
+      - recipe: "JMS Foliar Spray"
+        frequency: "Every 1–2 weeks"
+
+  - commercial: "Flower boost A+B"
+    natural_equivalent:
+      - recipe: "FFJ and WCA Flowering Boost"
+        frequency: "Weekly from first buds"
+
+  - commercial: "Seedling/cloner light feed"
+    natural_equivalent:
+      - recipe: "JLF Seedling Drench"
+        frequency: "Weekly through first 2 weeks post-transplant"
+      - recipe: "JMS Soil Drench"
+        frequency: "Every 2 weeks"
