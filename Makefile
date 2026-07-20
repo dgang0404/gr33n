@@ -1,4 +1,4 @@
-.PHONY: run run-receiver build build-receiver test seed sqlc migrate merge-legacy-plants ui dev dev-auth-test dev-auth-test-run e2e-browser ollama-smoke ollama-smoke-cpu ollama-smoke-help guardian-eval guardian-qa-smoke guardian-qa-smoke-all guardian-qa-smoke-all-help guardian-qa-smoke-ec-ph guardian-qa-smoke-unread-alerts guardian-qa-phase127 guardian-qa-regression guardian-qa-manual guardian-qa-smoke-strict guardian-qa-change-requests guardian-qa-change-requests-ui guardian-qa-change-requests-ui-task guardian-qa-change-requests-ui-quick guardian-laptop-tune rag-ingest-help rag-ingest-demo rag-ingest-platform-docs compose-db-up compose-db-status compose-logging-up compose-logging-down setup-compose-dev dev-stack dev-stack-fresh dev-stack-fresh-rag local-up restart-local restart-local-serve laptop-up db-sanity-report check-stack check-crop-library check-crop-catalog check-crop-catalog-parity check-catalog-seed-drift add-crop-check check-catalog-release check-ui-domain-parity clean lint bootstrap-local bootstrap-local-docker install-deps-debian install-pi-edge-deps first-clone first-clone-docker first-clone-install-deps audit-openapi audit-env edge-smoke-help edge-actuator-smoke-help recipe-pack-import-help agronomy-seed-pack-help guardian-bootstrap-farm import-agronomy-seed-pack apply-agronomy-overrides rag-ingest-farm-operational
+.PHONY: run run-receiver build build-receiver test seed sqlc migrate merge-legacy-plants ui dev dev-auth-test dev-auth-test-run e2e-browser ollama-smoke ollama-smoke-cpu ollama-smoke-help guardian-eval guardian-qa-smoke guardian-qa-smoke-all guardian-qa-smoke-all-help guardian-qa-smoke-ec-ph guardian-qa-smoke-unread-alerts guardian-qa-smoke-cherry-jlf guardian-qa-phase127 guardian-qa-regression guardian-qa-manual guardian-qa-smoke-strict guardian-qa-change-requests guardian-qa-change-requests-ui guardian-qa-change-requests-ui-task guardian-qa-change-requests-ui-quick guardian-laptop-tune rag-ingest-help rag-ingest-demo rag-ingest-platform-docs compose-db-up compose-db-status compose-logging-up compose-logging-down setup-compose-dev dev-stack dev-stack-fresh dev-stack-fresh-rag local-up restart-local restart-local-serve laptop-up db-sanity-report check-stack check-crop-library check-crop-catalog check-crop-catalog-parity check-catalog-seed-drift add-crop-check check-catalog-release check-ui-domain-parity clean lint bootstrap-local bootstrap-local-docker install-deps-debian install-pi-edge-deps first-clone first-clone-docker first-clone-install-deps audit-openapi audit-env edge-smoke-help edge-actuator-smoke-help recipe-pack-import-help agronomy-seed-pack-help guardian-bootstrap-farm import-agronomy-seed-pack apply-agronomy-overrides rag-ingest-farm-operational
 
 # dash (common default /bin/sh) can report "wait: No child processes" for dev / dev-auth-test;
 # bash handles background jobs + wait reliably.
@@ -150,7 +150,7 @@ guardian-eval: ## Phase 122 — run Guardian model quality eval (API + Ollama mu
 		-suite $${SUITE:-regression} \
 		-report $${GUARDIAN_EVAL_REPORT:-data/guardian_model_eval.json}
 
-guardian-qa-smoke: ## Phase 131 — 4-prompt smoke suite, sequential, full answers archived
+guardian-qa-smoke: ## Phase 131 + 211 WS5 — 5-prompt smoke suite, sequential, full answers archived
 	@bash -lc 'set -e; cd "$(CURDIR)"; \
 		if [ -f .env ]; then set -a && . ./.env && set +a; fi; \
 		source scripts/source-local-env.sh --refresh-eval-token; \
@@ -172,6 +172,14 @@ guardian-qa-smoke-unread-alerts: ## Phase 149 — re-run smoke-unread-alerts onl
 		source scripts/source-local-env.sh --refresh-eval-token; \
 		$(GO) run ./cmd/guardian-eval/ -models $${MODEL:-phi3:mini} -farm-id $${FARM_ID:-1} \
 			-suite smoke -prompt-ids smoke-unread-alerts \
+			-report $${GUARDIAN_EVAL_REPORT:-data/guardian_model_eval.json}'
+
+guardian-qa-smoke-cherry-jlf: ## Phase 211 WS5 — re-run smoke-cherry-jlf only (grounded JLF goldenrod)
+	@bash -lc 'set -e; cd "$(CURDIR)"; \
+		if [ -f .env ]; then set -a && . ./.env && set +a; fi; \
+		source scripts/source-local-env.sh --refresh-eval-token; \
+		$(GO) run ./cmd/guardian-eval/ -models $${MODEL:-phi3:mini} -farm-id $${FARM_ID:-1} \
+			-suite smoke -prompt-ids smoke-cherry-jlf \
 			-report $${GUARDIAN_EVAL_REPORT:-data/guardian_model_eval.json}'
 
 guardian-qa-phase127: ## Phase 128 — 4-prompt Phase 127 grounding validation (devices, fert, Pi, triage)

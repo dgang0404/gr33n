@@ -8,8 +8,8 @@ import (
 
 func TestManualChecklist_smokeFixtureCount(t *testing.T) {
 	fixtures := FixturesForSuite("smoke")
-	if len(fixtures) != 4 {
-		t.Fatalf("expected 4 smoke fixtures, got %d", len(fixtures))
+	if len(fixtures) != 5 {
+		t.Fatalf("expected 5 smoke fixtures, got %d", len(fixtures))
 	}
 	if fixtures[0].ID != "smoke-cherry-forest" {
 		t.Fatalf("first fixture: %s", fixtures[0].ID)
@@ -19,6 +19,9 @@ func TestManualChecklist_smokeFixtureCount(t *testing.T) {
 	}
 	if fixtures[1].ID != "smoke-morning-walk" || !fixtures[1].Grounded {
 		t.Fatalf("second fixture: %+v", fixtures[1])
+	}
+	if fixtures[4].ID != "smoke-cherry-jlf" || !fixtures[4].Grounded {
+		t.Fatalf("fifth fixture: %+v", fixtures[4])
 	}
 }
 

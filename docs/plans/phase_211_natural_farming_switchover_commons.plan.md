@@ -20,7 +20,7 @@ todos:
     status: completed
   - id: ws5-smoke-promotion
     content: "WS5 (optional): Promote cherry+JLF bar to smoke tier 2 OR add 5th smoke step — only after regression green 3+ runs"
-    status: pending
+    status: completed
   - id: ws6-tests-docs
     content: "WS6: Import smoke test, phase-211-closure, pattern-playbooks.md entry"
     status: completed
@@ -29,7 +29,7 @@ isProject: false
 
 # Phase 211 — Switchover packs & Commons recipe import
 
-**Status:** **Shipped (WS1–WS4, WS6)** · **Depends on:** [208–210](phase_207_natural_farming_studio.plan.md) · **Last slice** of natural farming arc · WS5 smoke promotion optional
+**Status:** **Shipped (WS1–WS6)** · **Depends on:** [208–210](phase_207_natural_farming_studio.plan.md) · **Last slice** of natural farming arc
 
 ## The one job
 
@@ -105,6 +105,8 @@ Natural farming **Start here** tab:
 | C | Never promote — regression only |
 
 Default recommendation: **Option A** — additive fifth step, zero change to existing four.
+
+**Shipped:** Step 5 `smoke-cherry-jlf` appended to `SmokeFixtures()`; reuses `scoreRegressionCherryGoldenrodJLF`; isolated re-run via `make guardian-qa-smoke-cherry-jlf`.
 
 ## Acceptance criteria
 

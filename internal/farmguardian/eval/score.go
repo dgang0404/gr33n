@@ -116,7 +116,7 @@ func Score(in ScoreInput) ScoreResult {
 		if !res.Passed {
 			res.Notes = "expected forest-garden answer mentioning cherry/goldenrod/blackberry"
 		}
-	case in.Question.ID == "regression-cherry-goldenrod-jlf":
+	case in.Question.ID == "regression-cherry-goldenrod-jlf", in.Question.ID == "smoke-cherry-jlf":
 		res.Passed, res.Notes = scoreRegressionCherryGoldenrodJLF(in)
 	case in.Question.ID == "smoke-morning-walk", in.Question.ID == "farm-morning-walkthrough":
 		res.Passed = len(a) > 40 && !looksLikeInvention(a)
@@ -197,7 +197,7 @@ func Score(in ScoreInput) ScoreResult {
 
 func shouldApplySmokeTopicDrift(q Question) bool {
 	switch q.ID {
-	case "smoke-morning-walk", "smoke-ec-ph", "smoke-cherry-forest", "smoke-unread-alerts", "farm-morning-walkthrough",
+	case "smoke-morning-walk", "smoke-ec-ph", "smoke-cherry-forest", "smoke-unread-alerts", "smoke-cherry-jlf", "farm-morning-walkthrough",
 		"p128-fert-triage", "p128-demo-pi", "fg-fertigation-triage", "fg-demo-pi":
 		return true
 	default:

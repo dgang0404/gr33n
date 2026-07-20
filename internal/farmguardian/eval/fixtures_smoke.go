@@ -2,7 +2,7 @@ package eval
 
 import "strings"
 
-// SmokeFixtures returns the Phase 131 four-step smoke suite (sequential, one at a time).
+// SmokeFixtures returns the Phase 131 smoke suite plus Phase 211 WS5 cherry+JLF step (sequential).
 func SmokeFixtures() []Question {
 	return []Question{
 		{
@@ -35,6 +35,14 @@ func SmokeFixtures() []Question {
 			ExpectCitation: true,
 			Grounded: true,
 			Model:    "phi3:mini",
+		},
+		{
+			ID:         "smoke-cherry-jlf",
+			Category:   "natural_farming",
+			Prompt:     CherryGoldenrodJLFPrompt(),
+			Grounded:   true,
+			Model:      "phi3:mini",
+			ExpectTool: "suggest_process_from_material",
 		},
 	}
 }

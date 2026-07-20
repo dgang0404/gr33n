@@ -1,6 +1,6 @@
 /**
  * Phase 211 — Switchover packs & Commons recipe import (closure).
- * Consolidates WS1–WS4 + WS6; WS5 smoke promotion is optional and gated.
+ * Consolidates WS1–WS6 acceptance criteria.
  */
 import { describe, it, expect } from 'vitest'
 import { existsSync, readFileSync } from 'node:fs'
@@ -48,19 +48,19 @@ const smokeEval = readFileSync(
 const scoreGo = readFileSync(join(repoRoot, 'internal/farmguardian/eval/score.go'), 'utf8')
 
 describe('Phase 211 — closure', () => {
-  it('plan marks WS1–WS4 and WS6 shipped; WS5 optional remains pending', () => {
-    expect(plan).toMatch(/Shipped \(WS1–WS4, WS6\)/)
+  it('plan marks WS1–WS6 shipped', () => {
+    expect(plan).toMatch(/Shipped \(WS1–WS6\)/)
     for (const id of [
       'ws1-recipe-packs',
       'ws2-switchover-packs',
       'ws3-livestock-templates',
       'ws4-studio-import',
+      'ws5-smoke-promotion',
       'ws6-tests-docs',
     ]) {
       expect(plan).toContain(`id: ${id}`)
       expect(plan).toMatch(new RegExp(`${id}[\\s\\S]*status: completed`))
     }
-    expect(plan).toMatch(/ws5-smoke-promotion[\s\S]*status: pending/)
   })
 
   it('Commons natural_farming_recipe_pack kind and starter JSON exist', () => {
@@ -111,10 +111,13 @@ describe('Phase 211 — closure', () => {
     expect(smoke).toContain('mericle_veg_to_jlf_v1')
   })
 
-  it('does not modify guardian smoke fixtures (steps 1–4 unchanged)', () => {
+  it('WS5 adds smoke-cherry-jlf as step 5; steps 1–4 and cherry-forest bar unchanged', () => {
+    expect(smokeEval).toContain('smoke-cherry-jlf')
     expect(smokeEval).toContain('smoke-cherry-forest')
     expect(smokeEval).toContain('Grounded: false')
     expect(scoreGo).toContain(`in.Question.ID == "smoke-cherry-forest"`)
-    expect(scoreGo).not.toContain('smoke-cherry-jlf')
+    expect(scoreGo).toContain('smoke-cherry-jlf')
+    expect(scoreGo).toContain('scoreRegressionCherryGoldenrodJLF')
+    expect(readFileSync(join(repoRoot, 'Makefile'), 'utf8')).toContain('guardian-qa-smoke-cherry-jlf')
   })
 })
