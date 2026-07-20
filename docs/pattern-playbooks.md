@@ -88,3 +88,30 @@
 ## JADAM indoor starter vs. these patterns
 
 You can apply **at most one** bootstrap template key per farm per key (tracked in `farm_bootstrap_applications`). The **JADAM** starter is the large fertigation + inventory pack; the four **20.5** patterns are smaller vertical slices (husbandry, climate, drying, aquaponics). Pick the template closest to your operation; you can always add zones and sensors manually later — templates are not exclusive “modes,” they are accelerators.
+
+---
+
+## Natural farming recipe packs (Phase 211 — shipped)
+
+**Best for:** Mericle-style switchover or adding vetted JADAM/KNF definitions without retyping from books — after you already have a farm (with or without `jadam_indoor_photoperiod_v1` bootstrap).
+
+**Two paths (same idempotent apply logic):**
+
+| Path | When to use | API |
+|------|-------------|-----|
+| **Commons catalog import** | Browse vetted packs in **Natural farming → Start** or Help → Catalog | `POST /farms/{id}/commons/catalog-imports` with slug e.g. `jadam-indoor-starter-recipes-v1` |
+| **Switchover pack apply** | Wizard maps your commercial EC pattern to a subset pack | `POST /farms/{id}/naturalfarming/apply-pack` with `pack_key` e.g. `mericle_veg_to_jlf_v1` |
+
+**Pack keys (switchover YAML: `data/natural-farming-packs/switchover-packs.yaml`):**
+
+| Pack key | Creates |
+|----------|---------|
+| `mericle_veg_to_jlf_v1` | JMS + veg JLF inputs, combined drench + JMS foliar recipes |
+| `mericle_flower_to_ffj_v1` | FFJ + WCA inputs, flowering foliar recipe |
+| `livestock_comfrey_feed_v1` | Comfrey slurry + sprouted grain `animal_feed` inputs (requires **Animals** module for library tab) |
+
+**Idempotency:** imports skip existing input/recipe rows by **name** on that farm; recipe components are upserted. Re-import or re-apply is safe — you get `already_applied` / skipped counts, not duplicates.
+
+**After import:** Natural farming → **Make batch** for JMS/JLF/FFJ; review **Recipes** and pause bottle EC programs in matching veg/flower zones when drenches are ready.
+
+**Related:** [Natural farming studio](operator-tour.md) (§7u), closure test `ui/src/__tests__/phase-211-closure.test.js`, smoke `cmd/api/smoke_phase211_test.go`.

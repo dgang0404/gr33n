@@ -23,13 +23,13 @@ todos:
     status: pending
   - id: ws6-tests-docs
     content: "WS6: Import smoke test, phase-211-closure, pattern-playbooks.md entry"
-    status: pending
+    status: completed
 isProject: false
 ---
 
 # Phase 211 — Switchover packs & Commons recipe import
 
-**Status:** planned · **Depends on:** [208–210](phase_207_natural_farming_studio.plan.md) · **Last slice** of natural farming arc
+**Status:** **Shipped (WS1–WS4, WS6)** · **Depends on:** [208–210](phase_207_natural_farming_studio.plan.md) · **Last slice** of natural farming arc · WS5 smoke promotion optional
 
 ## The one job
 
@@ -108,12 +108,12 @@ Default recommendation: **Option A** — additive fifth step, zero change to exi
 
 ## Acceptance criteria
 
-- [ ] At least one Commons recipe pack imports cleanly on demo farm
-- [ ] `mericle_veg_to_jlf_v1` creates definitions + recipes idempotently
-- [ ] Switchover wizard can apply pack end-to-end
-- [ ] Livestock template visible when Animals module on
-- [ ] Smoke steps 1–4 still pass with original criteria
-- [ ] `phase-211-closure` green
+- [x] At least one Commons recipe pack imports cleanly on demo farm
+- [x] `mericle_veg_to_jlf_v1` creates definitions + recipes idempotently
+- [x] Switchover wizard can apply pack end-to-end
+- [x] Livestock template visible when Animals module on
+- [x] Smoke steps 1–4 still pass with original criteria
+- [x] `phase-211-closure` green
 
 ## Out of scope
 
