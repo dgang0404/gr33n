@@ -14,7 +14,7 @@ todos:
     status: completed
   - id: ws3-make-batch
     content: "WS3: Make a batch tab — process type → ingredients → step cards from field guides (Ingredients/Steps/Timeline/Ready signs sections)"
-    status: pending
+    status: completed
   - id: ws3b-recipe-library
     content: "WS3b: In-workspace recipe library — browse all 14 application recipes + 15 inputs with read-only instructional panels from 208 guides"
     status: pending
@@ -35,7 +35,7 @@ isProject: false
 
 # Phase 209 — Natural farming studio (operator UI)
 
-**Status:** WS1–WS2 shipped · **Depends on:** [208 process knowledge](phase_208_natural_farming_process_knowledge.plan.md) — **hard gate:** WS0 recipe audit + field guides must land first so UI never shows wrong JMS dilutions
+**Status:** WS1–WS3 shipped · **Depends on:** [208 process knowledge](phase_208_natural_farming_process_knowledge.plan.md) — **hard gate:** WS0 recipe audit + field guides must land first so UI never shows wrong JMS dilutions
 
 ## The one job
 

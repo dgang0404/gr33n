@@ -12,16 +12,7 @@
           Browse canonical inputs and application recipes from Phase 208 field guides — ships in WS3b.
         </p>
       </section>
-      <section
-        v-else-if="activeTab === 'batch'"
-        class="p-4 max-w-3xl"
-        data-test="nf-tab-batch"
-      >
-        <h2 class="text-lg font-semibold mb-2">Make a batch</h2>
-        <p class="text-muted">
-          Ferment JMS, JLF, FPJ, and other inputs with step cards from field guides — ships in WS3.
-        </p>
-      </section>
+      <MakeBatchPanel v-else-if="activeTab === 'batch'" />
       <section
         v-else-if="activeTab === 'recipes'"
         class="p-4 max-w-3xl"
@@ -49,4 +40,5 @@
 <script setup>
 import WorkspaceShell from '../../components/WorkspaceShell.vue'
 import SwitchoverWizard from '../../components/naturalfarming/SwitchoverWizard.vue'
+import MakeBatchPanel from '../../components/naturalfarming/MakeBatchPanel.vue'
 </script>

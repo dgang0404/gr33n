@@ -39,7 +39,9 @@ describe('Phase 209 WS1 — natural farming workspace', () => {
     expect(src).toContain('workspace-id="naturalfarming"')
     expect(src).toContain("activeTab === 'start'")
     expect(src).toContain('SwitchoverWizard')
-    for (const tab of ['library', 'batch', 'recipes', 'stock']) {
+    expect(src).toContain("activeTab === 'batch'")
+    expect(src).toContain('MakeBatchPanel')
+    for (const tab of ['library', 'recipes', 'stock']) {
       expect(src).toContain(`activeTab === '${tab}'`)
       expect(src).toContain(`data-test="nf-tab-${tab}"`)
     }
