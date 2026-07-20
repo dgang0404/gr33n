@@ -17,7 +17,7 @@ todos:
     status: completed
   - id: ws4-studio-import
     content: "WS4: Natural farming studio Start tab — 'Import a recipe pack' → Commons catalog flow"
-    status: pending
+    status: completed
   - id: ws5-smoke-promotion
     content: "WS5 (optional): Promote cherry+JLF bar to smoke tier 2 OR add 5th smoke step — only after regression green 3+ runs"
     status: pending

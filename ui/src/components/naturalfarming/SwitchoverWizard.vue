@@ -1,5 +1,7 @@
 <template>
   <div class="space-y-6" data-test="nf-switchover-wizard">
+    <CommonsRecipePackImport />
+
     <div>
       <h2 class="text-lg font-semibold text-white">Switch from bottle nutrients</h2>
       <p class="text-sm text-zinc-500 mt-1 max-w-2xl">
@@ -249,6 +251,7 @@ import {
 } from '../../lib/naturalFarmingSwitchover.js'
 import { formatBootstrapApplyResult } from '../../lib/farmSetupWizard.js'
 import LearnHowExpander from './LearnHowExpander.vue'
+import CommonsRecipePackImport from './CommonsRecipePackImport.vue'
 
 const router = useRouter()
 const farmContext = useFarmContextStore()
