@@ -1,0 +1,34 @@
+# Phase 211 WS2 — Mericle-style switchover pack keys.
+# Payload rows are filtered from jadam_indoor_starter_recipes_v1.json (Phase 211 WS1).
+version: 1
+source_pack: jadam_indoor_starter_recipes_v1
+
+packs:
+  mericle_veg_to_jlf_v1:
+    title: Mericle veg → JLF switchover
+    commercial_pattern: "Daily EC veg feed 1.6–1.8 mS/cm"
+    input_names:
+      - "JMS (JADAM Microbial Solution)"
+      - "JLF General (Weed and Grass)"
+    application_recipes:
+      - "JLF and JMS Combined Drench"
+      - "JMS Foliar Spray"
+    program_zone_hints:
+      - Veg
+    next_steps:
+      - Review active EC programs in Veg zones — pause bottle feeds when JLF/JMS drenches are ready.
+      - Ferment JMS and JLF before running combined drenches.
+
+  mericle_flower_to_ffj_v1:
+    title: Mericle flower → FFJ switchover
+    commercial_pattern: "Flower boost A+B"
+    input_names:
+      - "FFJ (Fermented Fruit Juice)"
+      - "WCA (Water-Soluble Calcium)"
+    application_recipes:
+      - "FFJ and WCA Flowering Boost"
+    program_zone_hints:
+      - Flower
+    next_steps:
+      - Review flower-stage EC programs — FFJ+WCA foliar replaces A+B boost during early bloom.
+      - Ferment FFJ and extract WCA before first flowering spray.

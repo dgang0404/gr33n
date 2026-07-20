@@ -11,7 +11,7 @@ todos:
     status: completed
   - id: ws2-switchover-packs
     content: "WS2: Switchover pack keys — mericle_veg_to_jlf_v1, mericle_flower_to_ffj_v1 mapping tables in YAML + bootstrap helper"
-    status: pending
+    status: completed
   - id: ws3-livestock-templates
     content: "WS3: Livestock feed templates — comfrey slurry, sprouted grain → animal_feed inputs (demo seed + pack)"
     status: pending

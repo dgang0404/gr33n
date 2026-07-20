@@ -62,6 +62,29 @@ export const FIRST_BATCH_SEED_NAMES = [
   'JLF General (Weed and Grass)',
 ]
 
+/** Phase 211 WS2 — switchover pack keys from data/natural-farming-packs/switchover-packs.yaml */
+export const SWITCHOVER_PACK_KEYS = {
+  MERICLE_VEG_TO_JLF_V1: 'mericle_veg_to_jlf_v1',
+  MERICLE_FLOWER_TO_FFJ_V1: 'mericle_flower_to_ffj_v1',
+}
+
+/**
+ * Maps wizard commercial pattern → apply-pack key (null = no dedicated pack).
+ * @param {string} patternId
+ */
+export function switchoverPackKeyForPattern(patternId) {
+  const pattern = COMMERCIAL_PATTERNS.find((p) => p.id === patternId)
+  if (!pattern) return null
+  switch (pattern.commercialKey) {
+    case 'Daily EC veg feed 1.6–1.8 mS/cm':
+      return SWITCHOVER_PACK_KEYS.MERICLE_VEG_TO_JLF_V1
+    case 'Flower boost A+B':
+      return SWITCHOVER_PACK_KEYS.MERICLE_FLOWER_TO_FFJ_V1
+    default:
+      return null
+  }
+}
+
 /**
  * @param {string} guideFile e.g. natural-farming-jms.md
  */
@@ -137,6 +160,7 @@ export function resolveSwitchoverMapping(contextId, patternId, canon) {
     naturalEquivalent,
     summaryGuide: 'natural-farming-application-recipes.md',
     bootstrapTemplate: bootstrapTemplateForContext(contextId),
+    switchoverPackKey: switchoverPackKeyForPattern(patternId),
   }
 }
 

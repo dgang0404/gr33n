@@ -199,6 +199,15 @@
           </button>
           <button
             type="button"
+            class="px-4 py-2 text-sm font-medium rounded-lg border border-green-700/80 text-green-100 hover:bg-green-950/40 disabled:opacity-40"
+            :disabled="applyingPack || !farmId || !mapping.switchoverPackKey"
+            data-test="nf-cta-apply-switchover-pack"
+            @click="applySwitchoverPack"
+          >
+            {{ applyingPack ? 'Applying…' : 'Apply switchover pack' }}
+          </button>
+          <button
+            type="button"
             class="px-4 py-2 text-sm font-medium rounded-lg border border-amber-700/80 text-amber-100 hover:bg-amber-950/40 disabled:opacity-40"
             :disabled="applyingBootstrap || !farmId"
             data-test="nf-cta-apply-bootstrap"
@@ -207,6 +216,9 @@
             {{ applyingBootstrap ? 'Applying…' : 'Apply starter pack' }}
           </button>
         </div>
+        <p v-if="packMessage" class="text-sm" :class="packOk ? 'text-green-400' : 'text-red-400'">
+          {{ packMessage }}
+        </p>
         <p v-if="bootstrapMessage" class="text-sm" :class="bootstrapOk ? 'text-green-400' : 'text-red-400'">
           {{ bootstrapMessage }}
         </p>
@@ -260,6 +272,9 @@ const loadError = ref('')
 const applyingBootstrap = ref(false)
 const bootstrapMessage = ref('')
 const bootstrapOk = ref(true)
+const applyingPack = ref(false)
+const packMessage = ref('')
+const packOk = ref(true)
 
 const mapping = computed(() =>
   resolveSwitchoverMapping(contextId.value, patternId.value, canon.value ?? {}),
@@ -279,6 +294,32 @@ onMounted(async () => {
 
 function goMakeBatch(input) {
   router.push({ path: '/natural-farming', query: batchTabQueryForInput(input) })
+}
+
+async function applySwitchoverPack() {
+  const packKey = mapping.value.switchoverPackKey
+  if (!farmId.value) {
+    packOk.value = false
+    packMessage.value = 'Select a farm first (top bar).'
+    return
+  }
+  if (!packKey) {
+    packOk.value = false
+    packMessage.value = 'No switchover pack for this pattern — use starter bootstrap or import full catalog pack.'
+    return
+  }
+  applyingPack.value = true
+  packMessage.value = ''
+  try {
+    const data = await farmContext.applyNaturalFarmingPack(farmId.value, packKey)
+    packOk.value = data?.status === 'applied' || data?.status === 'already_applied' || data?.status === 'noop'
+    packMessage.value = data?.message || 'Switchover pack applied.'
+  } catch (err) {
+    packOk.value = false
+    packMessage.value = err?.response?.data?.error || err?.message || 'Apply failed'
+  } finally {
+    applyingPack.value = false
+  }
 }
 
 async function applyBootstrap() {

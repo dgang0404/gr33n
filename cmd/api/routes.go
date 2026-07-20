@@ -511,6 +511,7 @@ func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationwo
 	mux.Handle("GET /naturalfarming/recipes/{id}", jwt(http.HandlerFunc(nf.GetRecipe)))
 	mux.Handle("PUT /naturalfarming/recipes/{id}", jwt(http.HandlerFunc(nf.UpdateRecipe)))
 	mux.Handle("DELETE /naturalfarming/recipes/{id}", jwt(http.HandlerFunc(nf.DeleteRecipe)))
+	mux.Handle("POST /farms/{id}/naturalfarming/apply-pack", jwt(http.HandlerFunc(nf.ApplyPack)))
 
 	// Phase 35 — lighting programs (photoperiod domain)
 	mux.Handle("GET /lighting-programs/presets", jwt(http.HandlerFunc(lighting.ListPresets)))

@@ -78,6 +78,14 @@ export const useFarmContextStore = defineStore('farmContext', {
       return r.data
     },
 
+    /** Phase 211 WS2 — apply Mericle-style switchover pack (subset of starter recipes). */
+    async applyNaturalFarmingPack(farmId, packKey) {
+      const r = await api.post(`/farms/${farmId}/naturalfarming/apply-pack`, { pack_key: packKey })
+      const farmStore = useFarmStore()
+      await farmStore.loadAll(farmId)
+      return r.data
+    },
+
     async updateFarm(id, data) {
       const r = await api.put(`/farms/${id}`, data)
       const idx = this.farms.findIndex(f => f.id === id)
