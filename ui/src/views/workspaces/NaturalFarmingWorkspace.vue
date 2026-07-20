@@ -1,16 +1,7 @@
 <template>
   <WorkspaceShell workspace-id="naturalfarming">
     <template #default="{ activeTab }">
-      <section
-        v-if="activeTab === 'start'"
-        class="p-4 max-w-3xl"
-        data-test="nf-tab-start"
-      >
-        <h2 class="text-lg font-semibold mb-2">Start here</h2>
-        <p class="text-muted">
-          Switchover wizard for growers moving off bottle nutrients — ships in WS2.
-        </p>
-      </section>
+      <SwitchoverWizard v-if="activeTab === 'start'" />
       <section
         v-else-if="activeTab === 'library'"
         class="p-4 max-w-3xl"
@@ -57,4 +48,5 @@
 
 <script setup>
 import WorkspaceShell from '../../components/WorkspaceShell.vue'
+import SwitchoverWizard from '../../components/naturalfarming/SwitchoverWizard.vue'
 </script>

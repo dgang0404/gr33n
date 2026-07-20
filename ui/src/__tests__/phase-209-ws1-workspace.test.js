@@ -31,13 +31,15 @@ describe('Phase 209 WS1 — natural farming workspace', () => {
     expect(resolved.query.tab).toBe('library')
   })
 
-  it('NaturalFarmingWorkspace hosts placeholder panels per tab', () => {
+  it('NaturalFarmingWorkspace hosts switchover wizard on start tab', () => {
     const src = readFileSync(
       join(process.cwd(), 'src/views/workspaces/NaturalFarmingWorkspace.vue'),
       'utf8',
     )
     expect(src).toContain('workspace-id="naturalfarming"')
-    for (const tab of ['start', 'library', 'batch', 'recipes', 'stock']) {
+    expect(src).toContain("activeTab === 'start'")
+    expect(src).toContain('SwitchoverWizard')
+    for (const tab of ['library', 'batch', 'recipes', 'stock']) {
       expect(src).toContain(`activeTab === '${tab}'`)
       expect(src).toContain(`data-test="nf-tab-${tab}"`)
     }
