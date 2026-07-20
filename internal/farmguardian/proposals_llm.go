@@ -44,17 +44,20 @@ func ShouldAttemptLLMProposal(in LLMProposalAttemptInput) bool {
 
 // llmToolAllowlist is the Phase 46 §5 v1 narrow set. Read tools and bundle writes stay off.
 var llmToolAllowlist = map[string]bool{
-	"patch_fertigation_program": true,
-	"patch_schedule":            true,
-	"patch_rule":                  true,
-	"ack_alert":                   true,
-	"create_task":                 true,
-	"create_task_from_alert":      true,
-	"update_cycle_stage":          true,
+	"patch_fertigation_program":  true,
+	"patch_schedule":             true,
+	"patch_rule":                 true,
+	"ack_alert":                  true,
+	"create_task":                true,
+	"create_task_from_alert":     true,
+	"update_cycle_stage":         true,
+	"draft_input_definition":     true,
+	"draft_application_recipe":   true,
+	"draft_input_batch":          true,
 }
 
 var (
-	writeIntentVerb = regexp.MustCompile(`(?i)\b(set|change|update|adjust|pause|disable|enable|resume|stop|turn\s+off|turn\s+on|acknowledge|ack|create|patch|switch)\b`)
+	writeIntentVerb = regexp.MustCompile(`(?i)\b(set|change|update|adjust|pause|disable|enable|resume|stop|turn\s+off|turn\s+on|acknowledge|ack|create|draft|patch|switch)\b`)
 	readOnlyIntent  = regexp.MustCompile(`(?i)^\s*(why|what\s+is|what's|explain|how\s+does|how\s+do|tell\s+me\s+about|describe|summarize|list|show)\b`)
 	procedureIntent = regexp.MustCompile(`(?i)\bstart\s+procedure\b`)
 )
@@ -139,7 +142,7 @@ func ProposalRepairSystemAddendum(parseErr string) string {
 Your previous reply did not include a valid action proposal JSON block.
 Re-send ONLY a fenced JSON block with this exact shape (no extra prose):
 ` + "```json\n" + `{
-  "tool": "<one of: patch_fertigation_program, patch_schedule, patch_rule, ack_alert, create_task, create_task_from_alert, update_cycle_stage>",
+  "tool": "<one of: patch_fertigation_program, patch_schedule, patch_rule, ack_alert, create_task, create_task_from_alert, update_cycle_stage, draft_input_definition, draft_application_recipe, draft_input_batch>",
   "args": { },
   "summary": "one line for the operator",
   "confidence": "medium"

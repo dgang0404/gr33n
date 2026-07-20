@@ -64,6 +64,55 @@ func TestValidateLLMProposalSchema(t *testing.T) {
 			args:   map[string]any{"cycle_id": 6, "current_stage": "narnia"},
 			reason: "invalid current_stage",
 		},
+		{
+			tool: "draft_input_definition",
+			args: map[string]any{"material_id": "goldenrod"},
+		},
+		{
+			tool:   "draft_input_definition",
+			args:   map[string]any{},
+			reason: "name or material_id required",
+		},
+		{
+			tool:   "draft_input_definition",
+			args:   map[string]any{"name": "Custom JLF", "farm_id": 1},
+			reason: "farm_id is proposal scope — omit from args",
+		},
+		{
+			tool:   "draft_input_definition",
+			args:   map[string]any{"name": "Custom JLF"},
+			reason: "category required with name",
+		},
+		{
+			tool:   "draft_input_definition",
+			args:   map[string]any{"material_id": "not_real_weed"},
+			reason: "unknown material_id",
+		},
+		{
+			tool: "draft_application_recipe",
+			args: map[string]any{
+				"name":                    "Goldenrod JLF drench",
+				"target_application_type": "soil_drench",
+				"dilution_ratio":          "1:100",
+			},
+		},
+		{
+			tool: "draft_application_recipe",
+			args: map[string]any{
+				"name":                    "Goldenrod JLF drench",
+				"target_application_type": "soil_drench",
+			},
+			reason: "dilution_ratio required",
+		},
+		{
+			tool: "draft_input_batch",
+			args: map[string]any{"input_definition_id": 9},
+		},
+		{
+			tool:   "draft_input_batch",
+			args:   map[string]any{},
+			reason: "input_definition_id required",
+		},
 	}
 	for _, c := range cases {
 		got := validateLLMProposalSchema(c.tool, c.args)

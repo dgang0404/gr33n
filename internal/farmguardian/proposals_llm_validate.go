@@ -4,13 +4,17 @@ import (
 	"context"
 	"errors"
 	"math"
+	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/jackc/pgx/v5"
 
+	"gr33n-api/internal/croplibrary"
 	db "gr33n-api/internal/db"
 	"gr33n-api/internal/farmguardian/tools"
+	"gr33n-api/internal/naturalfarmingcatalog"
 )
 
 // llmGrowthStageAliases mirrors tools/cycles.go for WS2 stage validation.
@@ -157,6 +161,78 @@ func validateLLMProposalSchema(tool string, args map[string]any) string {
 			return "invalid current_stage"
 		}
 		return ""
+	case "draft_input_definition":
+		if reason := llmRejectFarmIDArg(args); reason != "" {
+			return reason
+		}
+		hasName := llmHasNonEmptyString(args, "name")
+		matID, err := llmOptionalString(args, "material_id")
+		if err != nil {
+			return err.Error()
+		}
+		if !hasName && matID == "" {
+			return "name or material_id required"
+		}
+		if matID != "" && !llmMaterialIDKnown(matID) {
+			return "unknown material_id"
+		}
+		if hasName && matID == "" {
+			cat, err := llmArgString(args, "category")
+			if err != nil {
+				return "category required with name"
+			}
+			if !isLLMNFInputCategory(cat) {
+				return "invalid category"
+			}
+		}
+		if raw, ok := args["category"]; ok && raw != nil {
+			cat, err := llmArgString(args, "category")
+			if err != nil {
+				return err.Error()
+			}
+			if !isLLMNFInputCategory(cat) {
+				return "invalid category"
+			}
+		}
+		return ""
+	case "draft_application_recipe":
+		if reason := llmRejectFarmIDArg(args); reason != "" {
+			return reason
+		}
+		if _, err := llmArgString(args, "name"); err != nil {
+			return "name required"
+		}
+		target, err := llmArgString(args, "target_application_type")
+		if err != nil {
+			return "target_application_type required"
+		}
+		if !isLLMNFApplicationTarget(target) {
+			return "invalid target_application_type"
+		}
+		if _, err := llmArgString(args, "dilution_ratio"); err != nil {
+			return "dilution_ratio required"
+		}
+		if _, err := llmOptionalInt64(args, "input_definition_id"); err != nil {
+			return err.Error()
+		}
+		return llmValidateRecipeComponentsSchema(args)
+	case "draft_input_batch":
+		if reason := llmRejectFarmIDArg(args); reason != "" {
+			return reason
+		}
+		if _, err := llmArgInt64(args, "input_definition_id"); err != nil {
+			return "input_definition_id required"
+		}
+		if raw, ok := args["status"]; ok && raw != nil {
+			st, err := llmArgString(args, "status")
+			if err != nil {
+				return err.Error()
+			}
+			if !isLLMNFBatchStatus(st) {
+				return "invalid status"
+			}
+		}
+		return ""
 	default:
 		return "unsupported tool schema"
 	}
@@ -239,8 +315,206 @@ func bindLLMProposalFarmIDs(ctx context.Context, q db.Querier, farmID int64, too
 		if row.FarmID != farmID {
 			return "crop_cycle_id not on farm"
 		}
+	case "draft_input_definition":
+		if reason := llmRejectFarmIDArg(args); reason != "" {
+			return reason
+		}
+	case "draft_application_recipe":
+		if reason := llmRejectFarmIDArg(args); reason != "" {
+			return reason
+		}
+		if id, err := llmOptionalInt64(args, "input_definition_id"); err != nil {
+			return err.Error()
+		} else if id != nil {
+			if reason := bindLLMInputDefinitionOnFarm(ctx, q, farmID, *id); reason != "" {
+				return reason
+			}
+		}
+		return bindLLMRecipeComponentsOnFarm(ctx, q, farmID, args)
+	case "draft_input_batch":
+		if reason := llmRejectFarmIDArg(args); reason != "" {
+			return reason
+		}
+		id, _ := llmArgInt64(args, "input_definition_id")
+		return bindLLMInputDefinitionOnFarm(ctx, q, farmID, id)
 	}
 	return ""
+}
+
+func bindLLMInputDefinitionOnFarm(ctx context.Context, q db.Querier, farmID, inputDefID int64) string {
+	row, err := q.GetInputDefinitionByID(ctx, inputDefID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return "input_definition_id not on farm"
+		}
+		return "input definition lookup failed"
+	}
+	if row.FarmID != farmID {
+		return "input_definition_id not on farm"
+	}
+	return ""
+}
+
+func bindLLMRecipeComponentsOnFarm(ctx context.Context, q db.Querier, farmID int64, args map[string]any) string {
+	raw, ok := args["components"]
+	if !ok || raw == nil {
+		return ""
+	}
+	items, ok := raw.([]any)
+	if !ok {
+		return "components must be an array"
+	}
+	for i, item := range items {
+		m, ok := item.(map[string]any)
+		if !ok {
+			return "components must be an array of objects"
+		}
+		id, err := llmArgInt64(m, "input_definition_id")
+		if err != nil {
+			return "components[" + strconv.Itoa(i) + "]: input_definition_id required"
+		}
+		if reason := bindLLMInputDefinitionOnFarm(ctx, q, farmID, id); reason != "" {
+			return "components[" + strconv.Itoa(i) + "]: " + reason
+		}
+	}
+	return ""
+}
+
+func llmValidateRecipeComponentsSchema(args map[string]any) string {
+	raw, ok := args["components"]
+	if !ok || raw == nil {
+		return ""
+	}
+	items, ok := raw.([]any)
+	if !ok {
+		return "components must be an array"
+	}
+	for i, item := range items {
+		m, ok := item.(map[string]any)
+		if !ok {
+			return "components must be an array of objects"
+		}
+		if _, err := llmArgInt64(m, "input_definition_id"); err != nil {
+			return "components[" + strconv.Itoa(i) + "]: input_definition_id required"
+		}
+		if err := llmRequireFloat64(m, "part_value"); err != nil {
+			return "components[" + strconv.Itoa(i) + "]: " + err.Error()
+		}
+	}
+	return ""
+}
+
+var (
+	llmNFCatalogOnce sync.Once
+	llmNFMaterialCat map[string]any
+	llmNFCatalogErr  error
+)
+
+func llmNFMaterialCatalog() (map[string]any, error) {
+	llmNFCatalogOnce.Do(func() {
+		root, err := croplibrary.FindRepoRoot()
+		if err != nil {
+			llmNFCatalogErr = err
+			return
+		}
+		llmNFMaterialCat, llmNFCatalogErr = naturalfarmingcatalog.LoadMaterialCatalog(root)
+	})
+	return llmNFMaterialCat, llmNFCatalogErr
+}
+
+func llmMaterialIDKnown(materialID string) bool {
+	materialID = strings.TrimSpace(materialID)
+	if materialID == "" {
+		return false
+	}
+	cat, err := llmNFMaterialCatalog()
+	if err != nil {
+		return false
+	}
+	_, ok := naturalfarmingcatalog.MaterialByID(cat, materialID)
+	return ok
+}
+
+func llmRejectFarmIDArg(args map[string]any) string {
+	if raw, ok := args["farm_id"]; ok && raw != nil {
+		return "farm_id is proposal scope — omit from args"
+	}
+	return ""
+}
+
+func llmHasNonEmptyString(args map[string]any, key string) bool {
+	raw, ok := args[key]
+	if !ok || raw == nil {
+		return false
+	}
+	s, ok := raw.(string)
+	return ok && strings.TrimSpace(s) != ""
+}
+
+func llmOptionalString(args map[string]any, key string) (string, error) {
+	raw, ok := args[key]
+	if !ok || raw == nil {
+		return "", nil
+	}
+	s, ok := raw.(string)
+	if !ok {
+		return "", errors.New(key + " must be string")
+	}
+	return strings.TrimSpace(s), nil
+}
+
+func isLLMNFInputCategory(cat string) bool {
+	switch db.Gr33nnaturalfarmingInputCategoryEnum(strings.TrimSpace(cat)) {
+	case db.Gr33nnaturalfarmingInputCategoryEnumMicrobialInoculant,
+		db.Gr33nnaturalfarmingInputCategoryEnumFermentedPlantJuice,
+		db.Gr33nnaturalfarmingInputCategoryEnumWaterSolubleNutrient,
+		db.Gr33nnaturalfarmingInputCategoryEnumOrientalHerbalNutrient,
+		db.Gr33nnaturalfarmingInputCategoryEnumFishAminoAcid,
+		db.Gr33nnaturalfarmingInputCategoryEnumInsectAttractantRepellent,
+		db.Gr33nnaturalfarmingInputCategoryEnumSoilConditioner,
+		db.Gr33nnaturalfarmingInputCategoryEnumCompostTeaExtract,
+		db.Gr33nnaturalfarmingInputCategoryEnumBiocharPreparation,
+		db.Gr33nnaturalfarmingInputCategoryEnumOtherFerment,
+		db.Gr33nnaturalfarmingInputCategoryEnumOtherExtract,
+		db.Gr33nnaturalfarmingInputCategoryEnumAnimalFeed,
+		db.Gr33nnaturalfarmingInputCategoryEnumBedding,
+		db.Gr33nnaturalfarmingInputCategoryEnumVeterinarySupply:
+		return true
+	default:
+		return false
+	}
+}
+
+func isLLMNFApplicationTarget(target string) bool {
+	switch db.Gr33nnaturalfarmingApplicationTargetEnum(strings.TrimSpace(target)) {
+	case db.Gr33nnaturalfarmingApplicationTargetEnumSoilDrench,
+		db.Gr33nnaturalfarmingApplicationTargetEnumFoliarSpray,
+		db.Gr33nnaturalfarmingApplicationTargetEnumSeedTreatment,
+		db.Gr33nnaturalfarmingApplicationTargetEnumCompostPileInoculant,
+		db.Gr33nnaturalfarmingApplicationTargetEnumLivestockWaterSupplement,
+		db.Gr33nnaturalfarmingApplicationTargetEnumOther:
+		return true
+	default:
+		return false
+	}
+}
+
+func isLLMNFBatchStatus(status string) bool {
+	switch db.Gr33nnaturalfarmingInputBatchStatusEnum(strings.TrimSpace(status)) {
+	case db.Gr33nnaturalfarmingInputBatchStatusEnumPlanning,
+		db.Gr33nnaturalfarmingInputBatchStatusEnumIngredientsGathered,
+		db.Gr33nnaturalfarmingInputBatchStatusEnumMixingInProgress,
+		db.Gr33nnaturalfarmingInputBatchStatusEnumFermentingBrewing,
+		db.Gr33nnaturalfarmingInputBatchStatusEnumMaturingAging,
+		db.Gr33nnaturalfarmingInputBatchStatusEnumReadyForUse,
+		db.Gr33nnaturalfarmingInputBatchStatusEnumPartiallyUsed,
+		db.Gr33nnaturalfarmingInputBatchStatusEnumFullyUsed,
+		db.Gr33nnaturalfarmingInputBatchStatusEnumExpiredDiscarded,
+		db.Gr33nnaturalfarmingInputBatchStatusEnumFailedProduction:
+		return true
+	default:
+		return false
+	}
 }
 
 func isKnownGrowthStage(stage string) bool {
@@ -341,6 +615,14 @@ func llmOptionalFloat64(args map[string]any, key string) error {
 	default:
 		return errors.New(key + " must be number")
 	}
+}
+
+func llmRequireFloat64(args map[string]any, key string) error {
+	raw, ok := args[key]
+	if !ok || raw == nil {
+		return errors.New(key + " required")
+	}
+	return llmOptionalFloat64(map[string]any{key: raw}, key)
 }
 
 func isISODate(s string) bool {

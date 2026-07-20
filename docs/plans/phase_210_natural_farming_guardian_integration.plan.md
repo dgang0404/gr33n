@@ -17,7 +17,7 @@ todos:
     status: completed
   - id: ws4-llm-allowlist
     content: "WS4: Phase 46 LLM proposal allowlist + JSON schema for new tools"
-    status: pending
+    status: completed
   - id: ws5-regression-fixture
     content: "WS5: regression-cherry-goldenrod-jlf in RegressionFixtures ONLY — new score branch, smoke untouched"
     status: pending
@@ -29,7 +29,7 @@ isProject: false
 
 # Phase 210 — Guardian natural farming integration
 
-**Status:** WS3 shipped · **Depends on:** [208 knowledge](phase_208_natural_farming_process_knowledge.plan.md) · **Soft depend:** [209 studio UI](phase_209_natural_farming_studio_ui.plan.md) (proposal deep-links)
+**Status:** WS4 shipped · **Depends on:** [208 knowledge](phase_208_natural_farming_process_knowledge.plan.md) · **Soft depend:** [209 studio UI](phase_209_natural_farming_studio_ui.plan.md) (proposal deep-links)
 
 ## The one job
 

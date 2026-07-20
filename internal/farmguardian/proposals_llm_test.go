@@ -61,6 +61,9 @@ func TestHasWriteIntent(t *testing.T) {
 	if HasWriteIntent("What is the feeding plan?") {
 		t.Fatal("expected read-only")
 	}
+	if !HasWriteIntent("Draft a goldenrod JLF recipe at 1:100") {
+		t.Fatal("expected draft write intent")
+	}
 }
 
 func TestIsLLMToolAllowed(t *testing.T) {
@@ -72,6 +75,11 @@ func TestIsLLMToolAllowed(t *testing.T) {
 	}
 	if IsLLMToolAllowed("enqueue_actuator_command") {
 		t.Fatal("actuator enqueue should be blocked")
+	}
+	for _, id := range []string{"draft_input_definition", "draft_application_recipe", "draft_input_batch"} {
+		if !IsLLMToolAllowed(id) {
+			t.Fatalf("%s should be allowed", id)
+		}
 	}
 }
 
