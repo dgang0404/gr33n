@@ -25,13 +25,13 @@ todos:
     status: completed
   - id: ws6-tests-docs
     content: "WS6: phase-208-closure.test.js — YAML shape, all canonical recipes present, JMS dilution audit test; no smoke changes"
-    status: pending
+    status: completed
 isProject: false
 ---
 
 # Phase 208 — Natural farming process & material knowledge
 
-**Status:** WS0–WS3 complete · **Depends on:** [207 roadmap](phase_207_natural_farming_studio.plan.md) · **Blocks:** 209 studio UI, 210 Guardian
+**Status:** shipped (WS0–WS6) · **Depends on:** [207 roadmap](phase_207_natural_farming_studio.plan.md) · **Blocks:** 209 studio UI, 210 Guardian
 
 ## The one job
 
@@ -391,14 +391,14 @@ GET /v1/field-guides/recipe-canon          # from recipe-canonical.yaml
 
 ## Acceptance criteria
 
-- [ ] WS0 audit complete; `recipe-audit-log.md` documents JMS fix
-- [ ] 18+ field guides with full step-by-step instructional sections
-- [ ] Zero invented ratios — every number traceable to seed (post-audit) or cited extension
-- [ ] Goldenrod labeled `extension_method`, not `cho_named`
-- [ ] FAA input added to seed + guide
-- [ ] YAML catalogs + read API return canonical data
-- [ ] RAG retrieves "how to make JMS" with correct 1:10 / 1:20 dilutions
-- [ ] Smoke suite unchanged
+- [x] WS0 audit complete; `recipe-audit-log.md` documents JMS fix
+- [x] 18+ field guides with full step-by-step instructional sections
+- [x] Zero invented ratios — every number traceable to seed (post-audit) or cited extension
+- [x] Goldenrod labeled `extension_method`, not `cho_named`
+- [x] FAA input added to seed + guide
+- [x] YAML catalogs + read API return canonical data
+- [x] RAG ingest path ships guides with `domain: natural_farming` + `tradition` metadata (re-ingest after migrate)
+- [x] Smoke suite unchanged
 
 ## Out of scope
 
