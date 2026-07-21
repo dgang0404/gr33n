@@ -214,7 +214,7 @@ guardian-qa-regression: ## Phase 131 — full regression fixture set (~24 prompt
 		-suite regression \
 		-report $${GUARDIAN_EVAL_REPORT:-data/guardian_model_eval.json}
 
-guardian-qa-manual: ## Phase 131/128 — print UI checklist (SUITE=smoke|phase127|regression)
+guardian-qa-manual: ## Phase 131/128 — print UI checklist (SUITE=smoke-all|smoke-full|phase127|regression)
 	@$(GO) run ./cmd/guardian-eval/ -manual -suite $${SUITE:-smoke}
 
 guardian-qa-smoke-strict: ## Smoke suite that exits non-zero on any fixture regression (vs. guardian-qa-smoke's always-0 artifact run)
@@ -305,8 +305,9 @@ guardian-qa-smoke-all-help: ## Print master smoke-all suite list and env knobs
 	@echo "  1. guardian-qa-smoke-full          (15 Q&A prompts = smoke + natural-farming manual checklist)"
 	@echo "  2. guardian-qa-phase127           (4 grounding prompts)"
 	@echo "  3. guardian-qa-change-requests-pending (4 write-intents → Pending tab)"
-	@echo "Subset targets: guardian-qa-smoke (5), guardian-qa-smoke-natural-farming (10)"
-	@echo "Manual UI checklist: make guardian-qa-manual SUITE=smoke-full"
+	@echo "Then: guardian-qa-manual SUITE=smoke-all (23-prompt UI checklist printed automatically)"
+	@echo "Subset targets: guardian-qa-smoke (5), guardian-qa-smoke-natural-farming (10), guardian-qa-smoke-full (15)"
+	@echo "Skip end checklist: GUARDIAN_QA_SKIP_MANUAL=1 make guardian-qa-smoke-all"
 	@echo "Optional: GUARDIAN_QA_UI=1 (+ change-requests-ui-quick ~50 min)"
 	@echo "Optional: GUARDIAN_QA_UI_FULL=1 (+ change-requests-ui ~2–3 hr)"
 	@echo "Optional: GUARDIAN_QA_FAIL_FAST=1 (stop on first suite failure)"

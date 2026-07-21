@@ -55,12 +55,24 @@ func SmokeFullFixtures() []Question {
 	return out
 }
 
+// SmokeAllFixtures is the default guardian-qa-smoke-all Q&A set (23 prompts).
+func SmokeAllFixtures() []Question {
+	out := make([]Question, 0,
+		len(SmokeFullFixtures())+len(Phase127Fixtures())+len(ChangeRequestFixtures()))
+	out = append(out, SmokeFullFixtures()...)
+	out = append(out, Phase127Fixtures()...)
+	out = append(out, ChangeRequestFixtures()...)
+	return out
+}
+
 func FixturesForSuite(suite string) []Question {
 	switch strings.ToLower(strings.TrimSpace(suite)) {
 	case "smoke":
 		return SmokeFixtures()
 	case "smoke-full", "smoke_full":
 		return SmokeFullFixtures()
+	case "smoke-all", "smoke_all":
+		return SmokeAllFixtures()
 	case "smoke-natural-farming", "smoke_natural_farming", "smoke-nf":
 		return SmokeNaturalFarmingFixtures()
 	case "phase127", "phase128", "p128":

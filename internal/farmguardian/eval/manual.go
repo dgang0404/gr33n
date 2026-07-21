@@ -56,6 +56,8 @@ func manualMakeTarget(suite string) string {
 		return "smoke"
 	case "smoke-full", "smoke_full":
 		return "smoke-full"
+	case "smoke-all", "smoke_all":
+		return "smoke-all"
 	case "smoke-natural-farming", "smoke_natural_farming", "smoke-nf":
 		return "smoke-natural-farming"
 	case "phase127", "phase128", "p128":

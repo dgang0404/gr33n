@@ -21,7 +21,7 @@ func main() {
 	farmID := flag.Int64("farm-id", 1, "demo farm id for grounded questions")
 	modelsFlag := flag.String("models", "all", "comma-separated model names or 'all'")
 	manualFlag := flag.Bool("manual", false, "print UI checklist for -suite and exit")
-	suiteFlag := flag.String("suite", envOr("GUARDIAN_EVAL_SUITE", "regression"), "smoke | smoke-full | smoke-natural-farming | phase127 | regression | all")
+	suiteFlag := flag.String("suite", envOr("GUARDIAN_EVAL_SUITE", "regression"), "smoke | smoke-all | smoke-full | smoke-natural-farming | phase127 | regression | all")
 	promptIDsFlag := flag.String("prompt-ids", envOr("GUARDIAN_EVAL_PROMPT_IDS", ""), "comma-separated fixture IDs to run (subset of suite)")
 	reportPath := flag.String("report", farmguardian.DefaultEvalReportPath(), "output JSON report path")
 	qaArchive := flag.String("qa-archive", "", "optional full QA run JSON path (default data/guardian_qa_runs/…)")

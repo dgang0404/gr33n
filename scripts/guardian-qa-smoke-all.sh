@@ -72,11 +72,29 @@ fi
 echo "Guardian QA smoke-all — MODEL=${MODEL} FARM_ID=${FARM_ID}"
 echo "Log: ${LOG}"
 echo "Archives: data/guardian_qa_runs/"
-echo "Suites: ${#SUITES[@]} (+ preflight)"
-echo "Note: make guardian-qa-manual SUITE=smoke-full prints the same 15 prompts for hand-testing in the UI."
+echo "Suites: ${#SUITES[@]} (+ preflight; manual checklist after)"
+echo "Skip manual: GUARDIAN_QA_SKIP_MANUAL=1"
 
 failures=0
 : >"${LOG}"
+
+print_manual_checklist() {
+  if [[ "${GUARDIAN_QA_SKIP_MANUAL:-}" == "1" ]]; then
+    echo "==> Manual checklist skipped (GUARDIAN_QA_SKIP_MANUAL=1)"
+    return 0
+  fi
+  echo ""
+  echo "================================================================"
+  echo "==> Manual UI checklist — same prompts for spot-check in browser"
+  echo "    make guardian-qa-manual SUITE=smoke-all"
+  echo "================================================================"
+  if make guardian-qa-manual SUITE=smoke-all 2>&1 | tee -a "${LOG}"; then
+    echo "==> Manual checklist: printed"
+    return 0
+  fi
+  echo "==> Manual checklist: FAILED" >&2
+  return 1
+}
 
 if ! preflight_guardian 2>&1 | tee -a "${LOG}"; then
   failures=$((failures + 1))
@@ -100,8 +118,12 @@ for entry in "${SUITES[@]}"; do
   fi
 done
 
+if ! print_manual_checklist; then
+  failures=$((failures + 1))
+fi
+
 echo ""
-echo "Guardian QA smoke-all finished — ${failures} failure(s) (preflight + ${#SUITES[@]} suites)"
+echo "Guardian QA smoke-all finished — ${failures} failure(s) (preflight + ${#SUITES[@]} suites + manual)"
 echo "Compare archives in data/guardian_qa_runs/"
 if [[ "${failures}" -gt 0 ]]; then
   exit 1

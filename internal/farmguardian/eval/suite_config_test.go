@@ -31,3 +31,15 @@ func TestFixturesForSuite_smokeFull(t *testing.T) {
 		t.Fatal("smoke-full suite size")
 	}
 }
+
+func TestSmokeAllFixtures_count(t *testing.T) {
+	if got := len(SmokeAllFixtures()); got != 23 {
+		t.Fatalf("expected 23 smoke-all fixtures, got %d", got)
+	}
+}
+
+func TestFixturesForSuite_smokeAll(t *testing.T) {
+	if len(FixturesForSuite("smoke-all")) != 23 {
+		t.Fatal("smoke-all suite size")
+	}
+}
