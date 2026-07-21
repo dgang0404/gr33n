@@ -572,14 +572,95 @@ Operator-facing constraints (PII, secrets, Insert Commons boundaries) are docume
 | **Animal group** | Row in `gr33nanimals.animal_groups` — one flock / herd / cohort. Carries `species`, `count`, optional `primary_zone_id`, and an `archived_reason` once retired. See §10.1. |
 | **Lifecycle event** | Row in `gr33nanimals.animal_lifecycle_events`. Signed `delta_count` audit entry for added / born / died / sold / moved / note events on an animal group. `recorded_by` is stamped from JWT. See §10.2. |
 | **Aquaponics loop** | Row in `gr33naquaponics.loops` pairing a `fish_tank_zone_id` with a `grow_bed_zone_id`. Managed under **Livestock → Aquaponics**; seeded by `small_aquaponics_v1`. See §10.4. |
-| **Commons Catalog** | Public library of importable metadata packs. |
-| **Insert Commons** | Opt-in farm → commons publishing pipeline. |
+| **Commons Catalog** | Server-wide library of importable **packs** (recipes, agronomy seeds, documentation signposts). Browse in **Help → Import → Browse Catalog**; applied per farm via **Import to Farm**. Does **not** move field guides, RAG chunks, or symptom rows — only structured pack bodies (see §11a). |
+| **Farm Imports** | Per-farm **audit list** of Commons Catalog packs already applied (`Help → Import → Farm Imports`). Not a separate knowledge store — it records *which* pack was imported and when. |
+| **Insert Commons** | Opt-in **outbound aggregate sync** from a farm to an external receiver (Settings → Insert Commons). Sends coarse, pseudonymous stats — not recipes, docs, or Guardian context. See §11a. |
+| **Field guide** | Curated markdown doc (install, crop care, natural-farming process). Stored in Postgres (`gr33ncrops.agronomy_field_guides`); listed under **Help → Search → Field guides**; embedded into RAG per farm via `make rag-ingest-field-guides`. |
+| **Platform doc** | Product how-to / architecture markdown shipped with the repo; ingested into RAG per farm via `make rag-ingest-platform-docs`. Guardian cites these in grounded answers; **Help → Guide** doc view when opened from a citation. |
+| **Operational memory** | RAG chunks built from **this farm's operational rows** (tasks, automation runs, mixing events, etc.) via operational ingest — searchable in **Help → Search**; counts in **Settings → Field memories**. |
+| **Symptom guide** | Structured crop symptom catalog (crop + category + description). **Help → Symptom guide** — lookup tables, not semantic RAG search. Separate from field guides. |
 | **Natural farming** | Generic English umbrella term used in module titles, API tags, and UI copy for farming that relies on on-site fermented extracts, microbial cultures, and soil amendments (FPJ, FAA, JMS, etc.). Intentionally unqualified — no national / regional / ethnic modifier — because the system doesn't privilege any single tradition. See [`terminology-guideline.md`](terminology-guideline.md). |
 | **JADAM** | Proper noun for a specific documented method and its starter cultures (JMS, JLF, FFJ, WCA, …). Used when referring to that method precisely — e.g. the `jadam_indoor_photoperiod_v1` bootstrap template or `reference_source = "JADAM Organic Farming"` seed metadata. Not interchangeable with *natural farming*, which is the broader category. See [`terminology-guideline.md`](terminology-guideline.md). |
 | **RAG (retrieval)** | **R**etrieval‑**a**ugmented context: embed farm text into vectors, search by meaning, optionally send ranked chunks to an LLM. UI: **Knowledge**; storage: `gr33ncore.rag_embedding_chunks`. |
 | **Embedding chunk** | One row of indexed text + vector for a farm (`source_type`, `source_id`, `chunk_index`, `content_text`, `embedding`). |
 | **pgvector** | PostgreSQL extension storing `vector` columns; cosine distance `<=>` ranks neighbors **within the same farm** in API queries. |
 | **Knowledge (UI)** | Dashboard screen under **Monitor → Knowledge** calling `/farms/{id}/rag/search` and optionally `/rag/answer`. |
+
+### Farm knowledge — how the pieces connect
+
+Operators often see several “knowledge” surfaces in **Help** and **Settings** and assume they all sync between farms or installs. They do not — each category has a different job and a different boundary.
+
+#### Four layers (simple mental model)
+
+| Layer | Job | Examples | Stored as |
+|-------|-----|----------|-----------|
+| **1 — Executable data** | Things you **operate on** day to day | Natural-farming inputs/recipes, fertigation programs, inventory, zones | Normal Postgres rows scoped to `farm_id` |
+| **2 — Readable corpus (RAG)** | Things Guardian **cites** and Help **searches by meaning** | Field guides, platform docs, your farm's task/run/mix history | `gr33ncore.rag_embedding_chunks` per `farm_id` |
+| **3 — Reference catalogs** | Structured **lookup**, not semantic search | Symptom guide entries by crop/category | Postgres catalog tables + Help UI |
+| **4 — Federation (cross-install)** | Optional **sharing outside this database** | Commons Catalog pack hand-off; Insert Commons aggregate POST | Catalog JSON rows; receiver HTTP ingest |
+
+**Farm Imports** (Help → Import → Farm Imports) is a **history of layer-1 pack applications**, not layer 2 or 3.
+
+#### If you want X, do Y
+
+| I want to… | Use… | Crosses to another gr33n install? |
+|------------|------|-----------------------------------|
+| Copy JMS / recipe definitions onto **this server**, another farm | **Help → Import → Browse Catalog → Import to Farm** | Same server only (another `farm_id`) |
+| Copy a recipe pack to a **different gr33n install** | **Publish from Farm** → export pack JSON → hand-import on the other install's catalog | **Manual** export/import — no live sync |
+| Let Guardian cite install / calibration / crop-care docs | Field guides + **`make rag-ingest-field-guides FARM_ID=…`** | No — each install ingests its own chunks per farm |
+| Search past tasks, runs, or mixing in plain language | Operational RAG — **Settings → Field memories → Re-Ingest Operational** | No |
+| Read product how-to when Guardian cites platform docs | Platform docs ingest — **`make rag-ingest-platform-docs FARM_ID=…`** | No |
+| Diagnose yellow leaves on a named crop | **Help → Symptom guide** (dropdown by crop/category) | No — comes from that install's seed/migrations |
+| Share anonymized cost/task/device rollups with a community hub | **Settings → Insert Commons** → preview / sync to a receiver URL | **Yes** — the only **live** cross-install pipe today |
+
+#### What crosses an install boundary?
+
+| Category | Moves between independent installs? | How |
+|----------|-------------------------------------|-----|
+| **Commons Catalog packs** (recipes, seed packs) | Yes, **manually** | Export JSON from install A → import catalog row on install B → **Import to Farm** |
+| **Insert Commons aggregates** | Yes, **live HTTP** | Each farm POSTs to the same external **receiver** (`INSERT_COMMONS_INGEST_URL`) |
+| **Field guides, platform docs, operational RAG, symptom guides** | **No** | Each install (and farm) builds or ingests its own copy; migrations + `rag-ingest-*` on that machine |
+| **Insert Commons v1 — operator reference** (documentation pack in catalog) | Metadata only | Signpost for humans/tools — **no executable SQL or RAG** in the pack body |
+
+See [Phase 212 plan](plans/phase_212_dual_farm_federation_test.plan.md) for the hands-on proof runbook (`docs/dual-farm-federation-test-runbook.md` — written during WS6).
+
+#### Insert Commons — what “outbound telemetry (coarse stats)” means
+
+**Insert Commons is not a knowledge import.** It does not send recipes, field guides, Guardian chat, symptom text, zone names, GPS, receipts, or operator notes. The farm API builds a fixed JSON document (`gr33n.insert_commons.v1`) from **aggregate SQL queries only** and optionally POSTs it to an operator-configured URL.
+
+**What is included (the “coarse stats”):**
+
+| Block | Fields | Meaning |
+|-------|--------|---------|
+| **`farm_pseudonym`** | Opaque string | HMAC of `farm_id` + server secret — receivers cannot recover farm name or id without the same key material |
+| **`farm_profile`** | `scale_tier`, `timezone_bucket`, `currency`, `operational_status` | Coarse farm descriptors — **not** raw IANA timezone or location text |
+| **`aggregates.costs.totals`** | `income`, `expenses`, `net` | Farm-wide money rollups from `cost_transactions` |
+| **`aggregates.costs.by_category`** | Array of `{category, currency, income, expense, net, tx_count}` | Per–chart-of-accounts category totals — **no line-item descriptions or receipt filenames** |
+| **`aggregates.tasks.by_status`** | Map status → count | e.g. how many tasks are `open` vs `done` — **not task titles or assignees** |
+| **`aggregates.devices.by_status`** | Map status → count | e.g. online vs offline device counts — **not hostnames or IPs** |
+| **`privacy`** | `includes_pii: false`, revocation hint | Declares the payload is aggregate-only; opt-out stops future sends |
+
+**What is explicitly excluded:** PII, raw `location_text`, sensor readings, alert bodies, chat transcripts, RAG chunks, recipe text, and any client-supplied JSON merged into the body. Validation rejects unknown top-level keys — see [`insert-commons-pipeline-runbook.md`](insert-commons-pipeline-runbook.md).
+
+**How it is used in gr33n today:**
+
+1. **Operator opts in** per farm — **Settings → Insert Commons** (or `PATCH /farms/{id}/insert-commons/opt-in`). Sharing is off by default.
+2. **Preview (read-only)** — **Preview ingest JSON** / `GET …/insert-commons/preview` builds the same payload sync would send; nothing is stored or POSTed.
+3. **Optional approval queue** — when `insert_commons_require_approval` is on, sync creates a **bundle** for owner/manager approve/reject before delivery.
+4. **Sync** — **Run sync** / `POST …/insert-commons/sync` rolls up DB aggregates, validates, then POSTs to `INSERT_COMMONS_INGEST_URL` (if set). If the URL is empty, status is `skipped_no_receiver` — normal on single-farm dev installs.
+5. **Receiver** — optional pilot service `cmd/insert-commons-receiver` stores accepted payloads and exposes `/v1/stats` (pseudonym counts, daily ingest totals — no league tables of farm identities). See [`insert-commons-receiver-playbook.md`](insert-commons-receiver-playbook.md).
+6. **Audit** — sync attempts, bundles, and opt-in changes appear in farm audit events and Settings history (**Export ingest JSON**, **Export package v1** for archives).
+
+**What Insert Commons is for:** federation-scale **benchmarking and pilot analytics** across many independent farms that choose to share — e.g. “median expense by category for small indoor farms in USD” — without exposing identifiable farm data. It is **not** how you copy recipes or teach Guardian on another install.
+
+**Commons Catalog vs Insert Commons (often confused):**
+
+| | **Commons Catalog** | **Insert Commons** |
+|--|---------------------|-------------------|
+| **Direction** | Inbound **to** a farm (import pack) | Outbound **from** a farm (send aggregates) |
+| **Content** | Recipe/input/program **definitions** | Numeric **rollups** only |
+| **UI** | Help → Import | Settings → Insert Commons |
+| **Cross-install** | Manual JSON hand-off | Live HTTP to receiver |
 
 ---
 

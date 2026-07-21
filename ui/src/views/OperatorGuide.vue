@@ -72,6 +72,7 @@
           <dd class="text-sm text-zinc-400 mt-1 leading-relaxed">{{ entry.body }}</dd>
         </div>
       </dl>
+      <HelpFarmKnowledgeGuide />
     </section>
 
     <section class="rounded-xl border border-zinc-800 bg-zinc-950/50 px-4 py-3 text-xs text-zinc-500 space-y-2">
@@ -86,6 +87,7 @@ import { onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import HelpTip from '../components/HelpTip.vue'
 import HelpKnowledgeSurfacesMap from '../components/HelpKnowledgeSurfacesMap.vue'
+import HelpFarmKnowledgeGuide from '../components/HelpFarmKnowledgeGuide.vue'
 import CitationDocView from '../components/CitationDocView.vue'
 
 defineProps({
