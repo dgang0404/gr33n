@@ -47,11 +47,20 @@ func SmokeFixtures() []Question {
 	}
 }
 
-// FixturesForSuite returns prompts for smoke, phase127, change-requests, regression (default), or all.
+// SmokeFullFixtures runs core smoke (5) then natural-farming smoke (10) in one sequential eval.
+func SmokeFullFixtures() []Question {
+	out := make([]Question, 0, len(SmokeFixtures())+len(SmokeNaturalFarmingFixtures()))
+	out = append(out, SmokeFixtures()...)
+	out = append(out, SmokeNaturalFarmingFixtures()...)
+	return out
+}
+
 func FixturesForSuite(suite string) []Question {
 	switch strings.ToLower(strings.TrimSpace(suite)) {
 	case "smoke":
 		return SmokeFixtures()
+	case "smoke-full", "smoke_full":
+		return SmokeFullFixtures()
 	case "smoke-natural-farming", "smoke_natural_farming", "smoke-nf":
 		return SmokeNaturalFarmingFixtures()
 	case "phase127", "phase128", "p128":

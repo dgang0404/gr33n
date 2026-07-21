@@ -81,17 +81,22 @@ func runOneScenario(ctx context.Context, api *APIClient, model string, sc Scenar
 	}
 	if sc.Grounded && opts.WarmupGrounded && groundedWarmed != nil && !*groundedWarmed {
 		*groundedWarmed = true
-		warmFn := func() {
-			if err := api.WarmupFarmCounsel(ctx, m, opts.WarmupTimeout); err != nil {
-				log.Printf("eval: warmup before grounded block: %v (continuing)", err)
-			} else {
-				log.Printf("eval: counsel model ready before grounded block")
-			}
+		warm := func() error {
+			return api.WarmupFarmCounsel(ctx, m, opts.WarmupTimeout)
 		}
+		var err error
 		if opts.WarmupAsync {
-			go warmFn()
+			go func() { _ = warm() }()
 		} else {
-			warmFn()
+			err = warm()
+		}
+		if err != nil {
+			if opts.RequireWarmup {
+				return scoreResultFromScenarioError(sc, model, fmt.Errorf("guardian warmup required: %w", err)), nil
+			}
+			log.Printf("eval: warmup before grounded block: %v (continuing)", err)
+		} else if !opts.WarmupAsync {
+			log.Printf("eval: counsel model ready before grounded block")
 		}
 	}
 

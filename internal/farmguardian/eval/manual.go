@@ -54,6 +54,8 @@ func manualMakeTarget(suite string) string {
 	switch strings.ToLower(strings.TrimSpace(suite)) {
 	case "smoke":
 		return "smoke"
+	case "smoke-full", "smoke_full":
+		return "smoke-full"
 	case "smoke-natural-farming", "smoke_natural_farming", "smoke-nf":
 		return "smoke-natural-farming"
 	case "phase127", "phase128", "p128":

@@ -148,6 +148,9 @@ func RunSuite(ctx context.Context, api *APIClient, model string, fixtures []Ques
 				warmModel = strings.TrimSpace(q.Model)
 			}
 			if err := api.WarmupFarmCounsel(ctx, warmModel, opts.WarmupTimeout); err != nil {
+				if opts.RequireWarmup {
+					return out, fmt.Errorf("guardian warmup required before grounded prompts: %w", err)
+				}
 				log.Printf("eval: warmup before grounded block: %v (continuing)", err)
 			} else {
 				log.Printf("eval: counsel model ready before grounded block")
@@ -216,8 +219,9 @@ func RunSuite(ctx context.Context, api *APIClient, model string, fixtures []Ques
 
 // RunSuiteOptions configures sequential eval runs.
 type RunSuiteOptions struct {
-	WarmupGrounded       bool
-	WarmupTimeout        time.Duration
+	WarmupGrounded        bool
+	RequireWarmup         bool
+	WarmupTimeout         time.Duration
 	WarmupAsync          bool
 	LogPath              string
 	CheckPendingPerPrompt bool

@@ -21,12 +21,13 @@ func main() {
 	farmID := flag.Int64("farm-id", 1, "demo farm id for grounded questions")
 	modelsFlag := flag.String("models", "all", "comma-separated model names or 'all'")
 	manualFlag := flag.Bool("manual", false, "print UI checklist for -suite and exit")
-	suiteFlag := flag.String("suite", envOr("GUARDIAN_EVAL_SUITE", "regression"), "smoke | phase127 | regression | all")
+	suiteFlag := flag.String("suite", envOr("GUARDIAN_EVAL_SUITE", "regression"), "smoke | smoke-full | smoke-natural-farming | phase127 | regression | all")
 	promptIDsFlag := flag.String("prompt-ids", envOr("GUARDIAN_EVAL_PROMPT_IDS", ""), "comma-separated fixture IDs to run (subset of suite)")
 	reportPath := flag.String("report", farmguardian.DefaultEvalReportPath(), "output JSON report path")
 	qaArchive := flag.String("qa-archive", "", "optional full QA run JSON path (default data/guardian_qa_runs/…)")
 	llmBase := flag.String("llama-url", os.Getenv("LLM_BASE_URL"), "Ollama OpenAI base (for model discovery when models=all)")
 	failOnRegression := flag.Bool("fail-on-regression", false, "exit non-zero if any fixture fails its heuristic, instead of always exiting 0")
+	preflightFlag := flag.Bool("preflight", false, "POST /guardian/warmup and poll until ready, then exit (no prompts)")
 	checkPendingProposals := flag.Bool("check-pending-proposals", false, "after each passed write-intent prompt, verify its proposal_id is in the pending queue (and skip the end-of-run batch check — proposals expire after 5m while prompts take 20+ min)")
 	confirmProposals := flag.Bool("confirm-proposals", false, "with -check-pending-proposals: confirm each passed proposal immediately after its prompt and verify DB side effects (requires -check-pending-proposals)")
 	leavePending := flag.Bool("leave-pending", false, "after each passed write-intent prompt, bump proposal TTL in DB so Pending tab stays populated for UI review (implies -check-pending-proposals; uses DATABASE_URL)")
@@ -46,6 +47,27 @@ func main() {
 	}
 
 	suite := strings.ToLower(strings.TrimSpace(*suiteFlag))
+	client := eval.NewAPIClient(*apiURL, *token, *farmID)
+
+	if *preflightFlag {
+		ctx, cancel := context.WithTimeout(context.Background(), eval.WarmupTimeoutFromEnv()+2*time.Minute)
+		defer cancel()
+		modelNames, err := resolveModels(ctx, *modelsFlag, *llmBase)
+		if err != nil {
+			log.Fatal(err)
+		}
+		if len(modelNames) == 0 {
+			log.Fatal("no chat-capable models for preflight")
+		}
+		model := modelNames[0]
+		log.Printf("preflight: warming farm_counsel model=%q farm_id=%d timeout=%s", model, *farmID, eval.WarmupTimeoutFromEnv())
+		if err := client.WarmupFarmCounsel(ctx, model, eval.WarmupTimeoutFromEnv()); err != nil {
+			log.Fatalf("guardian preflight failed: %v", err)
+		}
+		fmt.Printf("Guardian ready (farm_counsel, model=%s, farm_id=%d)\n", model, *farmID)
+		return
+	}
+
 	scenarioSuite := eval.IsScenarioSuite(suite)
 
 	var fixtures []eval.Question
@@ -81,11 +103,10 @@ func main() {
 		log.Fatal("no chat-capable models to evaluate")
 	}
 
-	client := eval.NewAPIClient(*apiURL, *token, *farmID)
-
 	runOpts := eval.RunSuiteOptions{
-		WarmupGrounded: suite == "smoke" || suite == "phase127" || suite == "phase128" || suite == "p128" || suite == "change-requests" || suite == "change_requests" || suite == "proposals" || suite == "pr" || scenarioSuite,
-		WarmupTimeout:  eval.WarmupTimeoutFromEnv(),
+		WarmupGrounded:        eval.SuiteNeedsWarmup(suite),
+		RequireWarmup:         eval.SuiteRequiresWarmup(suite),
+		WarmupTimeout:         eval.WarmupTimeoutFromEnv(),
 		WarmupAsync:    false,
 		LogPath:        strings.TrimSpace(os.Getenv("GUARDIAN_EVAL_LOG")),
 		CheckPendingPerPrompt: *checkPendingProposals,
