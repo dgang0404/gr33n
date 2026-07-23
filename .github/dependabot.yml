@@ -29,3 +29,11 @@ updates:
           - patch
     commit-message:
       prefix: deps(ui)
+    # Major Vue/Capacitor bumps need a dedicated upgrade phase — not auto-PR noise.
+    ignore:
+      - dependency-name: "vue-router"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "pinia"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@capacitor/*"
+        update-types: ["version-update:semver-major"]

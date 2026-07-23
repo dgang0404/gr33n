@@ -115,7 +115,10 @@ FROM (
          'Moldy sprouts — discard. Treat/supplement only.',
          'Operator practice; see natural-farming-livestock-plant-feed.md')
 ) AS x(name, cat, descr, ting, prep, store, safe, ref)
-WHERE NOT EXISTS (
+WHERE EXISTS (
+    SELECT 1 FROM gr33ncore.farms f WHERE f.id = 1 AND f.deleted_at IS NULL
+)
+AND NOT EXISTS (
     SELECT 1 FROM gr33nnaturalfarming.input_definitions d
     WHERE d.farm_id = 1 AND d.name = x.name AND d.deleted_at IS NULL
 );
