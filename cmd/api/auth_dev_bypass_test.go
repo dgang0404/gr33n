@@ -13,7 +13,9 @@ import (
 )
 
 func TestDevBypassContext_populatesUserIDFromBearer(t *testing.T) {
+	prev := authMode
 	authMode = "dev"
+	t.Cleanup(func() { authMode = prev })
 	jwtSecret = []byte("test-secret")
 	uid := uuid.MustParse("00000000-0000-0000-0000-000000000001")
 	tok, err := IssueToken("admin", time.Hour, map[string]any{
