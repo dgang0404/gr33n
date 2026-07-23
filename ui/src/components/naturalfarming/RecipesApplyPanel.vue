@@ -126,6 +126,11 @@
           </button>
         </div>
 
+        <p class="text-xs text-zinc-500">
+          Links this recipe to zones and Feed &amp; water programs — it does not run a mix or start a pump.
+          Use <strong class="text-zinc-400">Open Feed &amp; water</strong> to wire schedules; Pi mix plans dose concentrates into your reservoir.
+        </p>
+
         <label class="block text-xs text-zinc-500 max-w-xs">
           Zone
           <select v-model.number="applyZoneId" class="input-field mt-1 w-full" data-test="nf-apply-zone">

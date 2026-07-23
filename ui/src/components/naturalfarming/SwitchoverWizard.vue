@@ -81,7 +81,7 @@
             <p class="text-xs text-zinc-500 mt-1">{{ opt.hint }}</p>
           </button>
         </div>
-        <LearnHowExpander :guide-file="learnGuideForStep('pattern', contextId)" />
+        <LearnHowExpander :guide-file="learnGuideForStep('pattern', contextId, patternId)" />
         <div class="flex flex-wrap gap-2">
           <button type="button" class="px-4 py-2 text-sm text-zinc-400 hover:text-zinc-200" @click="step = 'context'">
             Back
@@ -116,7 +116,7 @@
             <p v-if="row.dilution" class="text-xs text-green-400/90 mt-1 font-mono">{{ row.dilution }}</p>
           </li>
         </ul>
-        <LearnHowExpander :guide-file="mapping.summaryGuide" />
+        <LearnHowExpander :guide-file="mapping.naturalEquivalent[0]?.guide || mapping.summaryGuide" />
         <div class="flex flex-wrap gap-2">
           <button type="button" class="px-4 py-2 text-sm text-zinc-400 hover:text-zinc-200" @click="step = 'pattern'">
             Back
@@ -136,30 +136,37 @@
       <section v-else-if="step === 'first-batch'" class="space-y-4" data-test="nf-switchover-step-first-batch">
         <h3 class="text-sm font-medium text-zinc-200">Pick your first batch</h3>
         <p class="text-xs text-zinc-500">
-          Bootstrap farms start with these two inputs — ferment them before you run combined drenches.
+          Ferment one concentrate first — you'll need it before combined drenches. Click a card to select, then continue.
         </p>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <article
+          <button
             v-for="input in firstBatches"
             :key="input.seed_name"
-            class="rounded-xl border border-zinc-800 bg-zinc-900/80 p-4"
+            type="button"
+            class="text-left rounded-xl border p-4 transition-colors"
+            :class="selectedFirstBatchSeed === input.seed_name
+              ? 'border-green-600 bg-green-950/30 ring-1 ring-green-900/40'
+              : 'border-zinc-800 bg-zinc-900/80 hover:border-zinc-600'"
             :data-test="`nf-first-batch-${input.process_type}`"
+            :aria-pressed="selectedFirstBatchSeed === input.seed_name"
+            @click="selectedFirstBatchSeed = input.seed_name"
           >
             <p class="text-sm font-medium text-white">{{ input.seed_name }}</p>
             <p class="text-xs text-zinc-500 mt-1 capitalize">{{ input.tradition }} · {{ input.process_type }}</p>
             <p v-if="input.dilution_start" class="text-xs text-zinc-400 mt-2">
               Apply from {{ input.dilution_start }}
             </p>
-          </article>
+          </button>
         </div>
-        <LearnHowExpander guide-file="natural-farming-jms.md" />
+        <LearnHowExpander :guide-file="learnGuideForInput(selectedFirstBatchInput)" />
         <div class="flex flex-wrap gap-2">
           <button type="button" class="px-4 py-2 text-sm text-zinc-400 hover:text-zinc-200" @click="step = 'mapping'">
             Back
           </button>
           <button
             type="button"
-            class="px-4 py-2 text-sm font-medium rounded-lg bg-green-700 hover:bg-green-600 text-white"
+            class="px-4 py-2 text-sm font-medium rounded-lg bg-green-700 hover:bg-green-600 text-white disabled:opacity-40"
+            :disabled="!selectedFirstBatchInput"
             data-test="nf-switchover-next"
             @click="step = 'actions'"
           >
@@ -172,43 +179,47 @@
       <section v-else class="space-y-4" data-test="nf-switchover-step-actions">
         <h3 class="text-sm font-medium text-zinc-200">Ready to start</h3>
         <p class="text-xs text-zinc-500 max-w-xl">
-          Ferment your first inputs, or apply the indoor photoperiod starter pack that wires zones, programs, and
-          audited application recipes on this farm.
+          {{ actionsStepIntro(contextId) }}
         </p>
         <div class="flex flex-col sm:flex-row flex-wrap gap-2">
           <button
+            v-if="selectedFirstBatchInput"
             type="button"
             class="px-4 py-2 text-sm font-medium rounded-lg bg-green-700 hover:bg-green-600 text-white"
             data-test="nf-cta-make-batch"
-            @click="goMakeBatch(firstBatches[0])"
+            @click="goMakeBatch(selectedFirstBatchInput)"
           >
-            Make JMS batch
+            Make {{ selectedFirstBatchShortName }} batch
           </button>
           <button
+            v-for="input in otherFirstBatches"
+            :key="input.seed_name"
             type="button"
             class="px-4 py-2 text-sm font-medium rounded-lg border border-zinc-600 text-zinc-200 hover:border-zinc-400"
-            data-test="nf-cta-make-jlf"
-            @click="goMakeBatch(firstBatches[1])"
+            :data-test="`nf-cta-make-${input.process_type}`"
+            @click="goMakeBatch(input)"
           >
-            Make JLF batch
+            Make {{ shortBatchName(input) }} batch
           </button>
           <button
             type="button"
             class="px-4 py-2 text-sm font-medium rounded-lg border border-green-700/80 text-green-100 hover:bg-green-950/40 disabled:opacity-40"
             :disabled="applyingPack || !farmId || !mapping.switchoverPackKey"
             data-test="nf-cta-apply-switchover-pack"
+            :title="mapping.switchoverPackKey ? 'Imports curated recipes and inputs onto this farm' : 'No pack for this bottle pattern'"
             @click="applySwitchoverPack"
           >
-            {{ applyingPack ? 'Applying…' : 'Apply switchover pack' }}
+            {{ applyingPack ? 'Applying…' : 'Apply switchover pack to farm' }}
           </button>
           <button
             type="button"
             class="px-4 py-2 text-sm font-medium rounded-lg border border-amber-700/80 text-amber-100 hover:bg-amber-950/40 disabled:opacity-40"
             :disabled="applyingBootstrap || !farmId"
             data-test="nf-cta-apply-bootstrap"
+            title="Seeds zones, programs, and application recipes on this farm — does not dose a mixing tank"
             @click="applyBootstrap"
           >
-            {{ applyingBootstrap ? 'Applying…' : 'Apply starter pack' }}
+            {{ applyingBootstrap ? 'Applying…' : bootstrapApplyButtonLabel(contextId) }}
           </button>
         </div>
         <p v-if="packMessage" class="text-sm" :class="packOk ? 'text-green-400' : 'text-red-400'">
@@ -238,7 +249,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useFarmContextStore } from '../../stores/farmContext.js'
@@ -250,7 +261,10 @@ import {
   batchTabQueryForInput,
   bootstrapTemplateForContext,
   firstBatchSuggestions,
+  learnGuideForInput,
   learnGuideForStep,
+  actionsStepIntro,
+  bootstrapApplyButtonLabel,
   resolveSwitchoverMapping,
 } from '../../lib/naturalFarmingSwitchover.js'
 import { formatBootstrapApplyResult } from '../../lib/farmSetupWizard.js'
@@ -282,12 +296,45 @@ const bootstrapOk = ref(true)
 const applyingPack = ref(false)
 const packMessage = ref('')
 const packOk = ref(true)
+const selectedFirstBatchSeed = ref('')
 
 const mapping = computed(() =>
   resolveSwitchoverMapping(contextId.value, patternId.value, canon.value ?? {}),
 )
 
 const firstBatches = computed(() => firstBatchSuggestions(canon.value ?? {}))
+
+const selectedFirstBatchInput = computed(() =>
+  firstBatches.value.find((b) => b.seed_name === selectedFirstBatchSeed.value) ?? null,
+)
+
+const otherFirstBatches = computed(() =>
+  firstBatches.value.filter((b) => b.seed_name !== selectedFirstBatchSeed.value),
+)
+
+const selectedFirstBatchShortName = computed(() => shortBatchName(selectedFirstBatchInput.value))
+
+watch(
+  () => step.value,
+  (s) => {
+    if (s === 'first-batch' && !selectedFirstBatchSeed.value && firstBatches.value[0]) {
+      selectedFirstBatchSeed.value = firstBatches.value[0].seed_name
+    }
+  },
+)
+
+watch(firstBatches, (list) => {
+  if (!selectedFirstBatchSeed.value && list[0]) {
+    selectedFirstBatchSeed.value = list[0].seed_name
+  }
+})
+
+function shortBatchName(input) {
+  const pt = String(input?.process_type ?? '').toUpperCase()
+  if (pt) return pt
+  const name = String(input?.seed_name ?? 'batch')
+  return name.split('(')[0].trim().split(/\s+/)[0] || 'batch'
+}
 
 onMounted(async () => {
   try {

@@ -10,6 +10,9 @@ import {
   resolveSwitchoverMapping,
   firstBatchSuggestions,
   fieldGuideDocPath,
+  learnGuideForPattern,
+  learnGuideForInput,
+  actionsStepIntro,
 } from '../lib/naturalFarmingSwitchover.js'
 
 const repoRoot = join(process.cwd(), '..')
@@ -105,5 +108,17 @@ describe('naturalFarmingSwitchover', () => {
 
   it('field guide learn paths use field-guides/ prefix', () => {
     expect(fieldGuideDocPath('natural-farming-jms.md')).toBe('field-guides/natural-farming-jms.md')
+  })
+
+  it('learn guides follow bottle pattern and first-batch input', () => {
+    expect(learnGuideForPattern('ab_two_part')).toBe('natural-farming-ffj.md')
+    expect(learnGuideForPattern('single_part_ec')).toBe('natural-farming-jlf-general.md')
+    expect(learnGuideForInput({ process_type: 'jms' })).toBe('natural-farming-jms.md')
+    expect(learnGuideForInput({ process_type: 'jlf' })).toBe('natural-farming-jlf-general.md')
+  })
+
+  it('actions step intro mentions Feed & water for soil contexts', () => {
+    expect(actionsStepIntro('indoor_soil')).toMatch(/Feed & water/)
+    expect(actionsStepIntro('indoor_soil')).toMatch(/does not pump/)
   })
 })

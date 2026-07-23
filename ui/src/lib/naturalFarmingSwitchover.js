@@ -173,10 +173,68 @@ export function resolveSwitchoverMapping(contextId, patternId, canon) {
 }
 
 /**
- * @param {string} stepId
+ * Field guide for a canon input row (first-batch step).
+ * @param {Record<string, unknown> | null | undefined} input
+ */
+export function learnGuideForInput(input) {
+  const pt = String(input?.process_type ?? '').toLowerCase()
+  if (pt === 'jlf') return 'natural-farming-jlf-general.md'
+  if (pt === 'jms') return 'natural-farming-jms.md'
+  if (pt === 'ffj') return 'natural-farming-ffj.md'
+  return 'natural-farming-application-recipes.md'
+}
+
+/**
+ * Field guide for commercial bottle pattern (wizard step 2).
+ * @param {string} patternId
+ */
+export function learnGuideForPattern(patternId) {
+  switch (patternId) {
+    case 'ab_two_part':
+      return 'natural-farming-ffj.md'
+    case 'organic_bottled':
+    case 'single_part_ec':
+      return 'natural-farming-jlf-general.md'
+    case 'dry_salts':
+      return 'natural-farming-jms.md'
+    default:
+      return 'natural-farming-application-recipes.md'
+  }
+}
+
+/**
+ * Step 5 intro — clarify DB bootstrap vs tank dosing.
  * @param {string} contextId
  */
-export function learnGuideForStep(stepId, contextId) {
+export function actionsStepIntro(contextId) {
+  if (contextId === 'livestock') {
+    return 'Ferment or import feed inputs, or apply the livestock starter pack — it wires animal groups and supplement recipes on this farm (not a physical dose).'
+  }
+  if (contextId === 'indoor_soil' || contextId === 'outdoor') {
+    return 'Ferment your first concentrates, or apply a starter pack that seeds zones, soil-drench programs, and audited recipes on this farm. Starter apply does not pump a tank — use Feed & water → Programs (and your Pi mix plan) for ml dosing into a reservoir.'
+  }
+  if (contextId === 'greenhouse') {
+    return 'Ferment concentrates or apply the greenhouse climate starter pack — zones, programs, and recipes on this farm. Dosing runs through Feed & water after batches are ready.'
+  }
+  return 'Ferment concentrates or apply the indoor photoperiod starter pack — zones, programs, and recipes on this farm. Dosing runs through Feed & water after batches are ready.'
+}
+
+/**
+ * @param {string} contextId
+ */
+export function bootstrapApplyButtonLabel(contextId) {
+  if (contextId === 'livestock') return 'Apply livestock starter to farm'
+  if (contextId === 'greenhouse') return 'Apply greenhouse starter to farm'
+  if (contextId === 'indoor_soil' || contextId === 'outdoor') return 'Apply JADAM starter to farm'
+  return 'Apply indoor photoperiod starter to farm'
+}
+
+/**
+ * @param {string} stepId
+ * @param {string} contextId
+ * @param {string} [patternId]
+ */
+export function learnGuideForStep(stepId, contextId, patternId = '') {
   switch (stepId) {
     case 'context':
       if (contextId === 'livestock') return 'natural-farming-livestock-plant-feed.md'
@@ -186,7 +244,7 @@ export function learnGuideForStep(stepId, contextId) {
       }
       return 'natural-farming-application-recipes.md'
     case 'pattern':
-      return 'natural-farming-application-recipes.md'
+      return patternId ? learnGuideForPattern(patternId) : 'natural-farming-application-recipes.md'
     case 'mapping':
       return 'natural-farming-application-recipes.md'
     case 'first-batch':
