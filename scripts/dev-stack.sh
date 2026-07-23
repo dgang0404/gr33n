@@ -91,6 +91,8 @@ fi
 if [[ "$RESET_VOL" -eq 1 ]]; then
   echo "==> Stopping stack and removing Compose volumes (DATA LOSS for this compose project)"
   compose down -v || true
+  rm -f "$ROOT/.gr33n/dev-serve-stamp"
+  echo "    Cleared .gr33n/dev-serve-stamp — next make laptop-up will restart API + UI"
 fi
 
 echo "==> Building / starting db service (first pgvector build can take several minutes)"

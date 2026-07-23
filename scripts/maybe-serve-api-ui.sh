@@ -109,7 +109,8 @@ maybe_serve_api_ui() {
   if [[ "$api_ok" -eq 1 && "$ui_ok" -eq 1 ]]; then
     echo "==> API (:${port}) and UI (:5173) already running (code stamp: $(read_dev_stamp))."
     echo "    Open http://localhost:5173/"
-    echo "    Force restart: GR33N_FORCE_DEV_RESTART=1 make laptop-up"
+    echo "    Clean DB slate: make laptop-up-fresh   (or: make dev-stack-fresh && make laptop-up)"
+    echo "    Force restart (same code): GR33N_FORCE_DEV_RESTART=1 make laptop-up"
     return 0
   fi
 
