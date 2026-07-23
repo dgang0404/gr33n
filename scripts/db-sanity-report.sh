@@ -27,7 +27,20 @@ fi
 command -v psql >/dev/null 2>&1 || die "psql not found"
 
 echo "==> DB sanity report ($(echo "$DATABASE_URL" | sed -E 's|//([^:]+):([^@]*)@|//\1:***@|'))"
-psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f "$SQL_FILE"
+# ponytail: 3× retry on psql exit 3 (ON_ERROR_STOP) — dev API/automation can lock sensors mid-report; upgrade: pause API before sanity
+_run_sanity_sql() {
+  psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f "$SQL_FILE"
+}
+attempt=1
+while ! _run_sanity_sql; do
+  rc=$?
+  if [[ "$rc" -ne 3 || "$attempt" -ge 3 ]]; then
+    exit "$rc"
+  fi
+  echo "warn: sanity SQL failed (exit $rc) — retry $((attempt + 1))/3 in 2s (stop API if this persists)" >&2
+  sleep 2
+  attempt=$((attempt + 1))
+done
 
 dup="$(psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -tAc "
 SELECT count(*) FROM (
