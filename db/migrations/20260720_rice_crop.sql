@@ -66,21 +66,23 @@ WHERE NOT EXISTS (
 );
 
 INSERT INTO gr33ncrops.agronomy_field_guides (
-    slug, title, crop_key, guide_type, audience, safety_tier, body_md, catalog_version, is_published, sort_order
+    slug, title, crop_key, guide_kind, domain, safety_tier, body_md, catalog_version, published, sort_order
 )
-SELECT v.slug, v.title, v.crop_key, v.guide_type, v.audience, v.safety_tier, v.body_md, v.catalog_version, v.is_published, v.sort_order
+SELECT v.slug, v.title, v.crop_key, v.guide_kind, v.domain, v.safety_tier, v.body_md, v.catalog_version, v.published, v.sort_order
 FROM (VALUES
     ('crop-rice-nutrition', 'Rice nutrition (aquaponics / shallow water)', 'rice', 'crop_nutrition', 'general', 'safe', $fg_crop_rice_nutrition$# Rice nutrition (aquaponics / shallow water)
 
 Rice in bench-scale aquaponics or shallow trays runs **low EC** (~0.5–1.0 mS/cm) with **warm roots** and **constant shallow water**. Fish waste often supplies nitrogen — watch for **iron chlorosis** if water is too alkaline.
 
 Assign the rice profile in Start grow or Plants so Guardian cites structured mS/cm targets. Use **Variety / cultivar** for the strain (Basmati, Jasmine, etc.) after picking Rice from the catalog.$fg_crop_rice_nutrition$, 4, TRUE, 56)
-) AS v(slug, title, crop_key, guide_type, audience, safety_tier, body_md, catalog_version, is_published, sort_order)
+) AS v(slug, title, crop_key, guide_kind, domain, safety_tier, body_md, catalog_version, published, sort_order)
 ON CONFLICT (slug) DO UPDATE SET
     title = EXCLUDED.title,
     crop_key = EXCLUDED.crop_key,
+    guide_kind = EXCLUDED.guide_kind,
+    domain = EXCLUDED.domain,
     body_md = EXCLUDED.body_md,
     catalog_version = EXCLUDED.catalog_version,
-    is_published = EXCLUDED.is_published,
+    published = EXCLUDED.published,
     sort_order = EXCLUDED.sort_order,
     updated_at = NOW();

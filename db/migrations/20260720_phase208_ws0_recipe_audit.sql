@@ -114,7 +114,7 @@ INSERT INTO gr33nnaturalfarming.input_definitions
     (farm_id, name, category, description, typical_ingredients, preparation_summary,
      storage_guidelines, safety_precautions, reference_source)
 SELECT DISTINCT d.farm_id,
-    'FAA (Fish Amino Acid)', 'fermented_plant_juice',
+    'FAA (Fish Amino Acid)', 'fish_amino_acid'::gr33nnaturalfarming.input_category_enum,
     'KNF fish amino acid from fish scraps and brown sugar. High nitrogen and trace minerals.',
     'Fresh fish scraps (no salt), brown sugar (1:1 by weight)',
     'Layer fish and brown sugar 1:1. Ferment 3-6 months until bones dissolve. Strain.',

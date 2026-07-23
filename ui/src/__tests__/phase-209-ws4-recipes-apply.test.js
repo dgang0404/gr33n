@@ -51,6 +51,6 @@ describe('Phase 209 WS4 — recipes & apply', () => {
   it('supports deep link ?recipe= on natural-farming tab', () => {
     expect(panel).toContain('route.query.recipe')
     expect(lib).toContain('feedWaterFertigationRoute')
-    expect(lib).toContain('query.recipe')
+    expect(lib).toContain('recipe: recipeId')
   })
 })

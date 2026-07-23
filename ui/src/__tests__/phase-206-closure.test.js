@@ -22,15 +22,27 @@ const HUBS_AT_TOP = [
   'phase_206_docs_plans_archive_migration.plan.md',
 ]
 
+/** Active feature plans still at repo root (natural-farming arc + federation test). */
+const ACTIVE_FEATURE_AT_TOP = [
+  'phase_207_natural_farming_studio.plan.md',
+  'phase_208_natural_farming_process_knowledge.plan.md',
+  'phase_209_natural_farming_studio_ui.plan.md',
+  'phase_210_natural_farming_guardian_integration.plan.md',
+  'phase_211_natural_farming_switchover_commons.plan.md',
+  'phase_212_dual_farm_federation_test.plan.md',
+]
+
+const ALLOWED_AT_TOP = [...HUBS_AT_TOP, ...ACTIVE_FEATURE_AT_TOP]
+
 describe('Phase 206 — docs/plans archive migration', () => {
   it('ships the inventory and migration scripts', () => {
     expect(existsSync(join(repoRoot, 'scripts/docs-plans-archive-inventory.mjs'))).toBe(true)
     expect(existsSync(join(repoRoot, 'scripts/migrate-plans-to-archive.mjs'))).toBe(true)
   })
 
-  it('keeps only hub + meta plans at docs/plans/ root', () => {
+  it('keeps only hub + active feature plans at docs/plans/ root', () => {
     const rootPlans = readdirSync(plansDir).filter((n) => n.endsWith('.plan.md')).sort()
-    expect(rootPlans).toEqual([...HUBS_AT_TOP].sort())
+    expect(rootPlans).toEqual([...ALLOWED_AT_TOP].sort())
   })
 
   it('moved shipped plans into docs/plans/archive/', () => {
