@@ -508,6 +508,28 @@ paths:
               schema:
                 type: array
                 items: { $ref: "#/components/schemas/CommonsCatalogListEntry" }
+    post:
+      tags: [commons]
+      summary: Publish a commons catalog pack
+      description: >
+        Creates or updates a published catalog entry (recipe pack, natural-farming pack, documentation).
+        Farm admins may set `source_farm_id` when exporting from a specific farm.
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CommonsCatalogPublishRequest" }
+      responses:
+        "201":
+          description: Published catalog entry
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CommonsCatalogEntryDetail" }
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "409":
+          description: Slug already exists
 
   /commons/catalog/{slug}:
     get:
@@ -527,6 +549,32 @@ paths:
               schema: { $ref: "#/components/schemas/CommonsCatalogEntryDetail" }
         "404":
           $ref: "#/components/responses/NotFound"
+
+  /farms/{id}/commons/catalog-export/recipe-pack:
+    post:
+      tags: [commons]
+      summary: Export farm fertigation programs as a recipe catalog pack (farm admin)
+      description: >
+        Builds a fertigation recipe pack from this farm's programs and publishes it to the commons catalog.
+        Imported programs are **inactive** until an operator enables them.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CommonsCatalogRecipeExportRequest" }
+      responses:
+        "201":
+          description: Published recipe pack
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CommonsCatalogRecipeExportResponse" }
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
 
   /farms/{id}/commons/catalog-imports:
     get:
@@ -1971,6 +2019,40 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/NaturalFarmingInputDefinition" }
+
+  /farms/{id}/naturalfarming/apply-pack:
+    post:
+      tags: [naturalfarming]
+      summary: Apply a switchover or natural-farming pack to this farm (farm admin)
+      description: >
+        Idempotent apply for keys such as `mericle_veg_to_jlf_v1` or commons-backed pack keys.
+        Creates input definitions, application recipes, and related rows when missing.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [pack_key]
+              properties:
+                pack_key:
+                  type: string
+                  example: mericle_veg_to_jlf_v1
+      responses:
+        "200":
+          description: Apply result with created/skipped counts
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
 
   /naturalfarming/inputs/{id}:
     put:
@@ -9987,6 +10069,46 @@ components:
         catalog_entry:
           type: object
           description: Snapshot of metadata + parsed body for tooling
+
+    CommonsCatalogPublishRequest:
+      type: object
+      required: [slug, title, body]
+      properties:
+        slug: { type: string }
+        title: { type: string }
+        summary: { type: string }
+        body: { type: object, description: Validated pack JSON (recipe pack, NF pack, etc.) }
+        contributor_display: { type: string }
+        contributor_uri: { type: string, nullable: true }
+        license_spdx: { type: string }
+        license_notes: { type: string, nullable: true }
+        tags:
+          type: array
+          items: { type: string }
+        published: { type: boolean, default: true }
+        source_farm_id: { type: integer, nullable: true }
+
+    CommonsCatalogRecipeExportRequest:
+      type: object
+      required: [slug, title]
+      properties:
+        slug: { type: string }
+        title: { type: string }
+        summary: { type: string }
+        readme_md: { type: string }
+        contributor_display: { type: string }
+        license_spdx: { type: string }
+        tags:
+          type: array
+          items: { type: string }
+        publish: { type: boolean, default: true }
+
+    CommonsCatalogRecipeExportResponse:
+      type: object
+      properties:
+        catalog_entry: { $ref: "#/components/schemas/CommonsCatalogEntryDetail" }
+        programs_exported: { type: integer }
+        message: { type: string }
 
     CropCatalogListResponse:
       type: object
