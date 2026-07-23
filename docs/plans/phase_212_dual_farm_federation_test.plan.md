@@ -29,6 +29,9 @@ todos:
   - id: ws6-runbook-and-glossary
     content: "WS6: Write docs/dual-farm-federation-test-runbook.md; glossary table shipped in workflow-guide.md §11a (operator-tour cross-link optional)"
     status: pending
+  - id: ws7-teardown-and-artifacts
+    content: "WS7: Commit runbook + replication scripts + test evidence to main; tear down Install B/receiver; restore Install A to single-install slate for user-auth and LED testing"
+    status: pending
 isProject: false
 ---
 
@@ -176,6 +179,61 @@ Acceptance: a short table of "present on A / absent on B until locally ingested"
 - [ ] Field guides / platform docs / operational RAG / symptom guides confirmed **not** to cross without local re-ingest
 - [ ] Runbook committed (glossary §11a already in workflow-guide)
 - [ ] Tier A/B/C incident log filled during execution (even if empty)
+- [ ] WS7: replication scripts + test evidence committed to **main only**; Install B removed from laptop; Install A restored to single-install slate
+
+## WS7 — Teardown, artifacts, and slate reset
+
+Phase 212 uses a **local-only** Install B clone (`~/gr33n-platform-b` or similar). That folder is **never pushed** — only what you need to **reproduce** the test goes into this repo on `main`.
+
+### What to commit to main (this repo)
+
+| Artifact | Where | Purpose |
+|----------|-------|---------|
+| Runbook + incident log | `docs/dual-farm-federation-test-runbook.md` | Exact WS1–WS5 commands, Tier A/B/C findings, restart points |
+| Setup / teardown scripts | `scripts/phase212-install-b-setup.sh`, `scripts/phase212-teardown.sh` | One-command bring-up and laptop cleanup without re-deriving ports/env |
+| Test evidence (sanitized) | `docs/evidence/phase212/` | `curl` outputs, `/v1/stats` JSON, pack export filename (not secrets), negative-control table — **no** `.env`, shared secrets, or JWTs |
+| Tier A bug fixes | normal commits on `main` | Fix before user-level auth testing and LED tests so the slate is trustworthy |
+
+Do **not** commit: Install B clone, `docker-compose.override.yml` from B, Farm B seed applied to a second git history, or receiver shared secrets.
+
+### Laptop cleanup (when WS1–WS6 acceptance is met or documented)
+
+Run in order — slow is fine; each step is reversible until you delete the clone.
+
+1. **Stop services**
+   - Install B: `cd ~/gr33n-platform-b && docker compose stop && docker compose down` (add `-v` only if you want B's Postgres volume gone).
+   - Receiver: stop `make run-receiver` / kill the `:8765` process.
+   - Install A: leave running unless you changed `.env` for Phase 212.
+
+2. **Restore Install A `.env`**
+   - Note what changed (`INSERT_COMMONS_INGEST_URL`, shared secret, any test-only flags).
+   - Either revert to pre-212 values or keep receiver URL if you still want Insert Commons on one farm — document the choice in the runbook **Post-test state**.
+
+3. **Optional: reset Install A demo data** (only if Phase 212 mutated Farm A in ways that confuse the next phase)
+   - `./scripts/dev-stack.sh --reset-volumes` + `./scripts/bootstrap-local.sh --docker --seed` — **destructive**; only if you need a pristine demo farm for multi-user auth testing.
+   - Lighter path: undo Org A assignment SQL only if it breaks your auth-test plan.
+
+4. **Remove Install B**
+   - `rm -rf ~/gr33n-platform-b` after evidence and scripts are committed to main.
+   - Frees disk and removes port-override confusion.
+
+5. **Install A Guardian / RAM**
+   - `./scripts/guardian-power.sh wake` or Settings → Rest now off when you need Guardian again.
+   - Reboot if RAM is still tight after two stacks ran.
+
+6. **Push main**
+   - Runbook, scripts, evidence, and any Tier A fixes — one clean `main` with green CI before **user-level authentication testing** and **LED / hardware** work.
+
+### Definition of "clean slate" for what comes next
+
+You are ready to leave Phase 212 when:
+
+- **One install** on the laptop (Install A only), known ports (`8080` / `5173` / `5433`).
+- **Tier A bugs from 212** fixed and on `main` (Tier B documented, Tier C backlog OK).
+- **Evidence + scripts on `main`** so you or another dev can re-run the federation test without the second clone still sitting on disk.
+- **CI green** on the commit you tag as "post-212 baseline."
+
+User-level auth testing and LED tests then start from that baseline — incremental refinement, not new federation surface area.
 
 ## Out of scope
 
