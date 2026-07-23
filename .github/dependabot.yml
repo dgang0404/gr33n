@@ -37,3 +37,7 @@ updates:
         update-types: ["version-update:semver-major"]
       - dependency-name: "@capacitor/*"
         update-types: ["version-update:semver-major"]
+      - dependency-name: "vite"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "tailwindcss"
+        update-types: ["version-update:semver-major"]
