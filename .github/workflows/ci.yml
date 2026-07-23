@@ -278,6 +278,7 @@ jobs:
       JWT_SECRET: ci-browser-e2e-jwt-secret-min-32-chars
       PI_API_KEY: ci-browser-e2e-pi-key
       AUTH_MODE: auth_test
+      AI_ENABLED: "false"
     steps:
       - uses: actions/checkout@v4
 
