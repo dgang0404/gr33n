@@ -79,6 +79,12 @@ describe('naturalFarmingSwitchover', () => {
     expect(combined?.dilution).not.toMatch(/1:500/)
   })
 
+  it('indoor soil beds use the same commercial→natural mapping as hydro', () => {
+    const hydro = resolveSwitchoverMapping('indoor', 'single_part_ec', canonFixture)
+    const soil = resolveSwitchoverMapping('indoor_soil', 'single_part_ec', canonFixture)
+    expect(soil.naturalEquivalent.map((r) => r.recipe)).toEqual(hydro.naturalEquivalent.map((r) => r.recipe))
+  })
+
   it('maps A+B flower to FFJ and WCA boost', () => {
     const mapping = resolveSwitchoverMapping('greenhouse', 'ab_two_part', canonFixture)
     expect(mapping.naturalEquivalent.some((r) => r.recipe === 'FFJ and WCA Flowering Boost')).toBe(true)

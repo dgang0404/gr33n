@@ -8,19 +8,24 @@ export const SWITCHOVER_STEPS = ['context', 'pattern', 'mapping', 'first-batch',
 
 export const CONTEXT_OPTIONS = [
   {
-    id: 'indoor',
-    label: 'Indoor hydro',
-    hint: 'Tent, rack, or indoor bay with bottle or dry salts today',
-  },
-  {
-    id: 'greenhouse',
-    label: 'Greenhouse',
-    hint: 'Glazed or poly house — still on commercial EC or organic bottles',
+    id: 'indoor_soil',
+    label: 'Indoor soil beds',
+    hint: 'Containers or raised beds indoors — bottle nutrients, dry salts, or organic liquids on soil',
   },
   {
     id: 'outdoor',
     label: 'Outdoor beds',
     hint: 'Garden beds, orchard edge, or field rows',
+  },
+  {
+    id: 'indoor',
+    label: 'Indoor hydro',
+    hint: 'Tent, rack, or recirculating reservoir — EC-tuned bottles or dry salts',
+  },
+  {
+    id: 'greenhouse',
+    label: 'Greenhouse',
+    hint: 'Glazed or poly house — commercial EC, soil, or organic bottles',
   },
   {
     id: 'livestock',
@@ -109,6 +114,7 @@ export function fieldGuideLearnRoute(guideFile) {
  */
 export function bootstrapTemplateForContext(contextId) {
   if (contextId === 'livestock') return BOOTSTRAP_TEMPLATE_KEYS.CHICKEN_COOP_V1
+  if (contextId === 'greenhouse') return BOOTSTRAP_TEMPLATE_KEYS.GREENHOUSE_CLIMATE_V1
   return BOOTSTRAP_TEMPLATE_KEYS.JADAM_INDOOR_PHOTOPERIOD_V1
 }
 
@@ -173,9 +179,12 @@ export function resolveSwitchoverMapping(contextId, patternId, canon) {
 export function learnGuideForStep(stepId, contextId) {
   switch (stepId) {
     case 'context':
-      return contextId === 'livestock'
-        ? 'natural-farming-livestock-plant-feed.md'
-        : 'natural-farming-indoor-photoperiod-program.md'
+      if (contextId === 'livestock') return 'natural-farming-livestock-plant-feed.md'
+      if (contextId === 'outdoor' || contextId === 'indoor_soil') return 'natural-farming-jlf-general.md'
+      if (contextId === 'indoor' || contextId === 'greenhouse') {
+        return 'natural-farming-indoor-photoperiod-program.md'
+      }
+      return 'natural-farming-application-recipes.md'
     case 'pattern':
       return 'natural-farming-application-recipes.md'
     case 'mapping':
@@ -183,6 +192,7 @@ export function learnGuideForStep(stepId, contextId) {
     case 'first-batch':
       return 'natural-farming-jms.md'
     case 'actions':
+      if (contextId === 'outdoor' || contextId === 'indoor_soil') return 'natural-farming-jlf-general.md'
       return 'natural-farming-indoor-photoperiod-program.md'
     default:
       return 'natural-farming-application-recipes.md'
