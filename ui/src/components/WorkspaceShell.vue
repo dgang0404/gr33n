@@ -142,7 +142,7 @@
 
     <div
       ref="contentEl"
-      class="workspace-shell__content flex-1 min-h-0 overflow-y-auto overscroll-y-contain pb-20 md:pb-6"
+      class="workspace-shell__content flex-1 min-h-0 overflow-y-auto overscroll-y-contain px-4 sm:px-6 pt-4 sm:pt-6 pb-20 md:pb-6"
     >
       <slot :active-tab="activeTab" />
     </div>

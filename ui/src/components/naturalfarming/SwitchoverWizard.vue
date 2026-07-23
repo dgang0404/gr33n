@@ -1,36 +1,22 @@
 <template>
   <div class="space-y-6" data-test="nf-switchover-wizard">
-    <CommonsRecipePackImport />
-
-    <div>
-      <h2 class="text-lg font-semibold text-white">Switch from bottle nutrients</h2>
-      <p class="text-sm text-zinc-500 mt-1 max-w-2xl">
-        Map what you already run (EC, A+B, salts) to audited natural farming recipes — dilutions come from
-        canonical seed data, not guesses.
-      </p>
-      <router-link
-        :to="{ path: '/natural-farming', query: { tab: 'library' } }"
-        class="inline-block text-xs text-green-400 hover:text-green-300 mt-2"
-        data-test="nf-switchover-library-link"
-      >
-        Browse full recipe library →
-      </router-link>
-    </div>
-
-    <div
-      class="flex flex-wrap gap-2 text-[10px] uppercase tracking-wide text-zinc-500"
+    <nav
+      class="flex flex-wrap gap-x-2 gap-y-1 text-xs uppercase tracking-wide text-zinc-500 border-b border-zinc-800/80 pb-3"
       aria-label="Switchover steps"
+      data-test="nf-switchover-step-rail"
     >
       <span
         v-for="(id, idx) in steps"
         :key="id"
-        :class="step === id ? 'text-green-400' : ''"
+        class="inline-flex items-center gap-1"
+        :class="step === id ? 'text-green-400 font-medium' : ''"
         :aria-current="step === id ? 'step' : undefined"
       >
-        {{ idx + 1 }} {{ stepLabels[id] }}
-        <span v-if="idx < steps.length - 1" aria-hidden="true"> · </span>
+        <span class="tabular-nums">{{ idx + 1 }}</span>
+        <span>{{ stepLabels[id] }}</span>
+        <span v-if="idx < steps.length - 1" class="text-zinc-700 px-1" aria-hidden="true">·</span>
       </span>
-    </div>
+    </nav>
 
     <p v-if="loadError" class="text-sm text-red-400">{{ loadError }}</p>
     <p v-else-if="loading" class="text-sm text-zinc-500">Loading canonical recipes…</p>
@@ -38,6 +24,13 @@
     <template v-else>
       <!-- Step 1 — context -->
       <section v-if="step === 'context'" class="space-y-4" data-test="nf-switchover-step-context">
+        <div>
+          <h2 class="text-lg font-semibold text-white">Switch from bottle nutrients</h2>
+          <p class="text-sm text-zinc-500 mt-1 max-w-2xl">
+            Map what you already run (EC, A+B, salts) to audited natural farming recipes — dilutions come from
+            canonical seed data, not guesses.
+          </p>
+        </div>
         <h3 class="text-sm font-medium text-zinc-200">What are you growing today?</h3>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <button
@@ -230,6 +223,17 @@
         </button>
       </section>
     </template>
+
+    <section v-if="!loading && !loadError" class="space-y-4 pt-4 border-t border-zinc-800/80">
+      <CommonsRecipePackImport />
+      <router-link
+        :to="{ path: '/natural-farming', query: { tab: 'library' } }"
+        class="inline-block text-xs text-green-400 hover:text-green-300"
+        data-test="nf-switchover-library-link"
+      >
+        Browse full recipe library →
+      </router-link>
+    </section>
   </div>
 </template>
 
@@ -259,11 +263,11 @@ const { farmId } = storeToRefs(farmContext)
 
 const steps = SWITCHOVER_STEPS
 const stepLabels = {
-  context: 'Where',
-  pattern: 'Commercial',
-  mapping: 'Natural map',
+  context: 'Where you grow',
+  pattern: 'Bottle program',
+  mapping: 'Natural match',
   'first-batch': 'First batch',
-  actions: 'Go',
+  actions: 'Apply',
 }
 
 const step = ref('context')
