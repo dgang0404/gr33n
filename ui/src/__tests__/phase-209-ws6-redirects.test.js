@@ -18,8 +18,8 @@ describe('Phase 209 WS6 — redirects & nav', () => {
     const entry = buildLegacyRedirectRoutes().find((r) => r.path === '/inventory')
     expect(entry).toBeTruthy()
     expect(redirectLegacyInventory({ query: {} }).path).toBe('/natural-farming')
-    expect(redirectLegacyInventory({ query: { inv: 'batches' } }).path).toBe('/natural-farming')
-    expect(redirectLegacyInventory({ query: { inv: 'definitions' } }).path).toBe('/natural-farming')
+    expect(redirectLegacyInventory({ query: { inv: 'batches' } }).path).toBe('/money')
+    expect(redirectLegacyInventory({ query: { inv: 'definitions' } }).path).toBe('/money')
   })
 
   it('Fertigation inventory links target Money supplies and apply recipes', () => {
@@ -49,6 +49,6 @@ describe('Phase 209 WS6 — redirects & nav', () => {
   it('money workspace has no advanced inventory tab', () => {
     const tab = WORKSPACES.money.tabs.find((t) => t.id === 'inventory')
     expect(tab).toBeUndefined()
-    expect(WORKSPACES.naturalfarming.tabs.some((t) => t.id === 'manage')).toBe(true)
+    expect(WORKSPACES.naturalfarming.tabs.some((t) => t.id === 'manage')).toBe(false)
   })
 })

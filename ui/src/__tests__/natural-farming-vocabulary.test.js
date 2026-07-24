@@ -17,13 +17,12 @@ describe('naturalFarmingVocabulary', () => {
     expect(operatorConcept('nf_field_guide')?.label).toBe('Field guide')
   })
 
-  it('workspace tabs use vocabulary labels (four tabs including manage)', () => {
+  it('workspace tabs use vocabulary labels (three operational tabs)', () => {
     const labels = WORKSPACES.naturalfarming.tabs.map((t) => t.label)
     expect(labels).toEqual([
       NF_WORKSPACE_TAB_LABELS.batch,
       NF_WORKSPACE_TAB_LABELS.library,
       NF_WORKSPACE_TAB_LABELS.recipes,
-      NF_WORKSPACE_TAB_LABELS.manage,
     ])
     expect(labels.join(' ')).not.toMatch(/Recipe library|Ready batches|On hand|Recipes & apply/)
   })

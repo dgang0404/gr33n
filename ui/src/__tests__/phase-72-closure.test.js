@@ -61,8 +61,8 @@ describe('Phase 72 — money closure', () => {
       params: {},
       redirectedFrom: undefined,
     })
-    expect(stock.path).toBe('/natural-farming')
-    expect(stock.query.tab).toBe('manage')
+    expect(stock.path).toBe('/money')
+    expect(stock.query.tab).toBe('supplies')
   })
 
   it('MoneyHub footer links to ledger tab not orphan /costs', () => {

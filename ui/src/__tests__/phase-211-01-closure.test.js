@@ -25,7 +25,7 @@ describe('Phase 211.01 — NF studio declutter', () => {
 
   it('operational tabs only; legacy start redirects to batch', () => {
     expect(WORKSPACES.naturalfarming.tabs.map((t) => t.id)).toEqual([
-      'batch', 'library', 'recipes', 'manage',
+      'batch', 'library', 'recipes',
     ])
     expect(resolveWorkspaceTab('naturalfarming', 'start')).toBe('batch')
     expect(workspace).not.toContain('SwitchoverWizard')

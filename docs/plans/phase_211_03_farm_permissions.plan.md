@@ -29,7 +29,7 @@ todos:
     status: completed
   - id: ws8-nf-tab-removal
     content: "WS8 (after WS1–WS6): Remove Inputs & batches tab; inline edit/delete on Supplies + Apply recipes + Make a batch"
-    status: pending
+    status: completed
   - id: ws9-tests-closure
     content: "WS9: farmauthz unit tests, smoke caps endpoint, UI closure — viewer 403 on delete, finance blocked on nf.delete"
     status: completed
@@ -38,7 +38,7 @@ isProject: false
 
 # Phase 211.03 — Farm permissions (API-first, granular caps)
 
-**Status:** WS1–WS7 + WS9 shipped · **WS8 pending** (remove Inputs & batches tab after inline delete paths) · **Depends on:** [211.01](phase_211_01_nf_studio_declutter.plan.md) · **Before:** [212 dual-install federation](phase_212_dual_farm_federation_test.plan.md)
+**Status:** Complete (WS1–WS9 shipped) · **Depends on:** [211.01](phase_211_01_nf_studio_declutter.plan.md) · **Before:** [212 dual-install federation](phase_212_dual_farm_federation_test.plan.md)
 
 ## The one job
 

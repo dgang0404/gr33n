@@ -35,9 +35,9 @@ describe('Phase 209 — closure', () => {
     expect(grow.items[idxNf].label).toBe('Natural farming')
   })
 
-  it('/natural-farming loads with four tabs; default batch', () => {
+  it('/natural-farming loads with three tabs; default batch', () => {
     expect(WORKSPACES.naturalfarming.tabs.map((t) => t.id)).toEqual([
-      'batch', 'library', 'recipes', 'manage',
+      'batch', 'library', 'recipes',
     ])
     expect(resolveWorkspaceTab('naturalfarming', undefined)).toBe('batch')
     expect(router.resolve({ path: '/natural-farming' }).name).toBe('natural-farming')
@@ -45,11 +45,11 @@ describe('Phase 209 — closure', () => {
       ['batch', 'MakeBatchPanel'],
       ['library', 'RecipeLibraryPanel'],
       ['recipes', 'RecipesApplyPanel'],
-      ['manage', 'FarmRowsPanel'],
     ]) {
       expect(workspace).toContain(`activeTab === '${tab}'`)
       expect(workspace).toContain(panel)
     }
+    expect(workspace).not.toContain('FarmRowsPanel')
     expect(workspace).not.toContain('OnHandPanel')
   })
 
@@ -93,13 +93,15 @@ describe('Phase 209 — closure', () => {
     const to = { query: {} }
     expect(entry.redirect(to).path).toBe('/natural-farming')
     expect(entry.redirect(to).query.tab).toBe('recipes')
-    expect(entry.redirect({ query: { inv: 'batches' } }).path).toBe('/natural-farming')
-    expect(entry.redirect({ query: { inv: 'batches' } }).query.tab).toBe('manage')
+    expect(entry.redirect({ query: { inv: 'batches' } }).path).toBe('/money')
+    expect(entry.redirect({ query: { inv: 'batches' } }).query.tab).toBe('supplies')
   })
 
-  it('Fertigation batch links resolve to Natural farming manage tab', () => {
+  it('Fertigation batch links resolve to Money supplies', () => {
     expect(fertigation).toContain('naturalFarmingManageRoute')
     expect(fertigation).toContain('batchStockLink')
+    expect(supplies).toContain('supplies-edit-batch')
+    expect(supplies).not.toContain('supplies-advanced-footer')
   })
 
   it('operator-tour documents Natural farming studio; plan marks phase shipped', () => {

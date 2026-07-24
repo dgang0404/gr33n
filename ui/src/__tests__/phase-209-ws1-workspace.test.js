@@ -11,7 +11,7 @@ import router from '../router/index.js'
 describe('Phase 209 WS1 — natural farming workspace', () => {
   it('declares three tabs; batch is default', () => {
     const tabs = WORKSPACES.naturalfarming.tabs.map((t) => t.id)
-    expect(tabs).toEqual(['batch', 'library', 'recipes', 'manage'])
+    expect(tabs).toEqual(['batch', 'library', 'recipes'])
     expect(resolveWorkspaceTab('naturalfarming', undefined)).toBe('batch')
     expect(resolveWorkspaceTab('naturalfarming', 'start')).toBe('batch')
     expect(resolveWorkspaceTab('naturalfarming', 'bogus')).toBe('batch')
@@ -45,7 +45,7 @@ describe('Phase 209 WS1 — natural farming workspace', () => {
     expect(src).toContain('RecipeLibraryPanel')
     expect(src).toContain("activeTab === 'recipes'")
     expect(src).toContain('RecipesApplyPanel')
-    expect(src).toContain('FarmRowsPanel')
+    expect(src).not.toContain('FarmRowsPanel')
   })
 
   it('sidebar lists Natural farming under Grow & operate', () => {

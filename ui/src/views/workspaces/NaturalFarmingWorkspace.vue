@@ -9,7 +9,6 @@
         <MakeBatchPanel v-if="activeTab === 'batch'" />
         <RecipeLibraryPanel v-else-if="activeTab === 'library'" />
         <RecipesApplyPanel v-else-if="activeTab === 'recipes'" />
-        <FarmRowsPanel v-else-if="activeTab === 'manage'" />
       </div>
     </template>
   </WorkspaceShell>
@@ -21,7 +20,6 @@ import OperatorConceptBanner from '../../components/OperatorConceptBanner.vue'
 import MakeBatchPanel from '../../components/naturalfarming/MakeBatchPanel.vue'
 import RecipeLibraryPanel from '../../components/naturalfarming/RecipeLibraryPanel.vue'
 import RecipesApplyPanel from '../../components/naturalfarming/RecipesApplyPanel.vue'
-import FarmRowsPanel from '../../components/naturalfarming/FarmRowsPanel.vue'
 import {
   NATURAL_FARMING_CONCEPT_RELATIONSHIPS,
   NATURAL_FARMING_WORKSPACE_CONCEPTS,

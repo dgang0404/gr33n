@@ -78,7 +78,9 @@ export function moneySuppliesRoute({ batchId, zoneId } = {}) {
  * @param {{ recipe?: number|string, batchId?: number|string, process?: string, zoneId?: number|string }} [opts]
  */
 export function naturalFarmingTabRoute(tab, { recipe, batchId, process, zoneId } = {}) {
-  if (tab === 'stock') return moneySuppliesRoute({ batchId, zoneId })
+  if (tab === 'stock' || tab === 'manage') {
+    return moneySuppliesRoute({ batchId, zoneId })
+  }
   /** @type {Record<string, string>} */
   const query = { tab }
   if (recipe != null && recipe !== '') query.recipe = String(recipe)
@@ -89,15 +91,32 @@ export function naturalFarmingTabRoute(tab, { recipe, batchId, process, zoneId }
 }
 
 /**
+ * Legacy manage-tab deep links → Money supplies (Phase 211.03 WS8).
  * @param {{ inv?: string, batchId?: number|string, zoneId?: number|string }} [opts]
  */
 export function naturalFarmingManageRoute({ inv, batchId, zoneId } = {}) {
-  /** @type {Record<string, string>} */
-  const query = { tab: 'manage' }
-  if (inv) query.inv = inv
-  if (batchId != null && batchId !== '') query.batch_id = String(batchId)
-  if (zoneId != null && zoneId !== '') query.zone_id = String(zoneId)
-  return { path: '/natural-farming', query }
+  if (inv === 'recipes') {
+    return naturalFarmingTabRoute('recipes', { zoneId })
+  }
+  return moneySuppliesRoute({ batchId, zoneId })
+}
+
+/**
+ * @param {import('vue-router').RouteLocationNormalized} to
+ */
+export function redirectNaturalFarmingManageTab(to) {
+  if (to.query.tab !== 'manage') return null
+  const q = { ...to.query }
+  delete q.tab
+  const inv = typeof q.inv === 'string' ? q.inv : Array.isArray(q.inv) ? q.inv[0] : undefined
+  delete q.inv
+  if (inv === 'recipes') {
+    return { path: '/natural-farming', query: { ...q, tab: 'recipes' } }
+  }
+  return moneySuppliesRoute({
+    batchId: q.batch_id,
+    zoneId: q.zone_id,
+  })
 }
 
 /**
@@ -113,8 +132,7 @@ export function redirectMoneyInventoryTab(to) {
   if (inv === 'recipes') {
     return { path: '/natural-farming', query: { ...q, tab: 'recipes' } }
   }
-  return naturalFarmingManageRoute({
-    inv: inv || 'definitions',
+  return moneySuppliesRoute({
     batchId: q.batch_id,
     zoneId: q.zone_id,
   })
@@ -140,10 +158,10 @@ export function redirectLegacyInventory(to) {
   const inv = q.inv ?? q.tab
   delete q.inv
   if (inv === 'definitions') {
-    return naturalFarmingManageRoute({ inv: 'definitions', zoneId: q.zone_id })
+    return moneySuppliesRoute({ zoneId: q.zone_id })
   }
   if (inv === 'batches' || q.batch_id) {
-    return naturalFarmingManageRoute({ inv: 'batches', batchId: q.batch_id, zoneId: q.zone_id })
+    return moneySuppliesRoute({ batchId: q.batch_id, zoneId: q.zone_id })
   }
   return { path: '/natural-farming', query: { ...q, tab: 'recipes' } }
 }

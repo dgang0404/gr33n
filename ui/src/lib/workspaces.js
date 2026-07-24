@@ -120,7 +120,6 @@ export const WORKSPACES = {
       { id: 'batch', label: NF_WORKSPACE_TAB_LABELS.batch, conceptId: 'input_batch' },
       { id: 'library', label: NF_WORKSPACE_TAB_LABELS.library, conceptId: 'nf_field_guide' },
       { id: 'recipes', label: NF_WORKSPACE_TAB_LABELS.recipes, conceptId: 'application_recipe' },
-      { id: 'manage', label: NF_WORKSPACE_TAB_LABELS.manage, conceptId: 'input_definition' },
     ],
     absorbs: {
       '/inventory': { tab: 'recipes' },

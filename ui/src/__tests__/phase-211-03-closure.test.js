@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
+import { WORKSPACES } from '../lib/workspaces.js'
 import { FARM_SCOPES, FARM_SCOPE_OPTIONS } from '../lib/farmScopes.js'
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..')
@@ -39,5 +40,17 @@ describe('Phase 211.03 farm permissions closure', () => {
   it('farm store loads me/caps endpoint', () => {
     const src = readFileSync(join(root, 'stores/farm.js'), 'utf8')
     expect(src).toContain('/me/caps')
+  })
+
+  it('WS8 removed manage tab and FarmRowsPanel; supplies has inline batch edit', () => {
+    const workspace = readFileSync(join(root, 'views/workspaces/NaturalFarmingWorkspace.vue'), 'utf8')
+    expect(workspace).not.toContain('FarmRowsPanel')
+    expect(WORKSPACES.naturalfarming.tabs.map((t) => t.id)).toEqual(['batch', 'library', 'recipes'])
+    const supplies = readFileSync(join(root, 'views/SuppliesHub.vue'), 'utf8')
+    expect(supplies).toContain('supplies-batch-edit-modal')
+    expect(supplies).toContain('supplies-delete-batch')
+    expect(supplies).not.toContain('supplies-advanced-footer')
+    const routes = readFileSync(join(root, 'lib/workspaceRoutes.js'), 'utf8')
+    expect(routes).toContain('redirectNaturalFarmingManageTab')
   })
 })

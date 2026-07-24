@@ -73,9 +73,9 @@ describe('Phase 79 — tasks fix, concepts, inventory', () => {
     expect(tabs.find((t) => t.id === 'recipes')?.conceptId).toBe('application_recipe')
   })
 
-  it('natural farming has manage tab; legacy /inventory goes to studio', () => {
+  it('natural farming has three tabs; legacy /inventory goes to studio or supplies', () => {
     const tabs = WORKSPACES.naturalfarming.tabs.map((t) => t.id)
-    expect(tabs).toContain('manage')
+    expect(tabs).toEqual(['batch', 'library', 'recipes'])
     expect(WORKSPACES.money.tabs.map((t) => t.id)).not.toContain('inventory')
     expect(WORKSPACES.naturalfarming.absorbs?.['/inventory']).toEqual({ tab: 'recipes' })
   })

@@ -27,7 +27,7 @@ import NaturalFarmingWorkspace from '../views/workspaces/NaturalFarmingWorkspace
 import Login from '../views/Login.vue'
 import Alerts from '../views/Alerts.vue'
 import { buildLegacyRedirectRoutes, buildSunsetWorkspaceRedirects, buildZoneOpsRedirectRoutes } from '../lib/workspaces.js'
-import { redirectNaturalFarmingStockTab, redirectMoneyInventoryTab } from '../lib/workspaceRoutes.js'
+import { redirectNaturalFarmingManageTab, redirectNaturalFarmingStockTab, redirectMoneyInventoryTab } from '../lib/workspaceRoutes.js'
 
 const routes = [
   { path: '/login',        component: Login,        name: 'login',        meta: { public: true } },
@@ -55,7 +55,7 @@ const routes = [
     path: '/natural-farming',
     component: NaturalFarmingWorkspace,
     name: 'natural-farming',
-    beforeEnter: (to) => redirectNaturalFarmingStockTab(to) || true,
+    beforeEnter: (to) => redirectNaturalFarmingManageTab(to) || redirectNaturalFarmingStockTab(to) || true,
   },
   { path: '/sensors/:id', component: SensorDetail, name: 'sensor-detail' },
   { path: '/comfort-targets', component: ComfortWorkspace, name: 'comfort-targets' },

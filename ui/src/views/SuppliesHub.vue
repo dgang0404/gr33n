@@ -120,9 +120,9 @@
     <EmptyStateHint
       v-else-if="!supplyRows.length"
       reason="no_data"
-      :message="inputs.length ? 'No batches on hand — start one below or use the full editor.' : 'No supply batches yet — add inputs and batches in the full editor, or start from a demo farm.'"
-      :action-label="inputs.length ? 'Create first batch' : 'Open full editor'"
-      :action-to="inputs.length ? null : naturalFarmingTabRoute('batch')"
+      :message="inputs.length ? 'No batches on hand — create one below or use Make a batch.' : 'No supply batches yet — add inputs in Make a batch, then create a batch here.'"
+      :action-label="inputs.length ? 'Create first batch' : 'Make a batch'"
+      :action-to="naturalFarmingTabRoute('batch')"
       @action="openNewBatch()"
     />
 
@@ -275,12 +275,22 @@
               Refill task
             </button>
             <button
+              v-if="canWriteBatches"
               type="button"
-              v-nav-hint="'/natural-farming'"
               class="text-xs text-zinc-500 hover:text-zinc-300"
-              @click="openBatchEditor(row.id)"
+              data-test="supplies-edit-batch"
+              @click="openBatchEditor(row)"
             >
-              Advanced editor →
+              Edit batch
+            </button>
+            <button
+              v-if="canDeleteBatches"
+              type="button"
+              class="text-xs text-red-500 hover:text-red-400"
+              data-test="supplies-delete-batch"
+              @click="confirmDeleteBatch(row)"
+            >
+              Delete
             </button>
           </div>
           <p
@@ -300,16 +310,57 @@
       </div>
     </div>
 
-    <footer class="pt-2 border-t border-zinc-800">
-      <router-link
-        v-nav-hint="'/natural-farming'"
-        :to="naturalFarmingManageRoute({ inv: 'definitions', zoneId: zoneContextId ?? undefined })"
-        class="text-xs text-zinc-400 hover:text-green-400"
-        data-test="supplies-advanced-footer"
+    <!-- Batch metadata editor -->
+    <div
+      v-if="showBatchEdit"
+      class="fixed inset-0 z-50 bg-black/70 p-4 flex items-center justify-center"
+      data-test="supplies-batch-edit-modal"
+      @click.self="closeBatchEditor"
+    >
+      <form
+        class="bg-zinc-900 border border-zinc-700 rounded-xl p-5 w-full max-w-lg space-y-3"
+        @submit.prevent="submitBatchEdit"
       >
-        Full row editor (inputs &amp; batches) → Natural farming
-      </router-link>
-    </footer>
+        <div class="flex items-center justify-between">
+          <h2 class="text-sm font-semibold text-white">Edit batch</h2>
+          <button type="button" class="text-xs text-zinc-500 hover:text-zinc-200" @click="closeBatchEditor">Close</button>
+        </div>
+        <div>
+          <label class="block text-xs text-zinc-500 mb-1">Batch label</label>
+          <input v-model="batchEditForm.batch_identifier" type="text" class="w-full bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white" />
+        </div>
+        <div>
+          <label class="block text-xs text-zinc-500 mb-1">Status</label>
+          <select v-model="batchEditForm.status" required class="w-full bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white">
+            <option v-for="s in batchStatuses" :key="s" :value="s">{{ formatBatchStatus(s) }}</option>
+          </select>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs text-zinc-500 mb-1">Qty on hand</label>
+            <input v-model.number="batchEditForm.current_quantity_remaining" type="number" step="0.1" min="0" class="w-full bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white" />
+          </div>
+          <div>
+            <label class="block text-xs text-zinc-500 mb-1">Low-stock at</label>
+            <input v-model.number="batchEditForm.low_stock_threshold" type="number" step="0.1" min="0" placeholder="Optional" class="w-full bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white" />
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs text-zinc-500 mb-1">Storage location</label>
+          <input v-model="batchEditForm.storage_location" type="text" class="w-full bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white" />
+        </div>
+        <div>
+          <label class="block text-xs text-zinc-500 mb-1">Notes</label>
+          <input v-model="batchEditForm.observations_notes" type="text" class="w-full bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white" />
+        </div>
+        <div class="flex justify-end gap-2 pt-2">
+          <button type="button" class="text-xs text-zinc-400" @click="closeBatchEditor">Cancel</button>
+          <button type="submit" class="text-xs px-3 py-1.5 rounded-lg bg-green-700 text-white disabled:opacity-50" :disabled="saving">
+            {{ saving ? 'Saving…' : 'Save' }}
+          </button>
+        </div>
+      </form>
+    </div>
 
     <!-- Quick new batch dialog -->
     <div
@@ -389,7 +440,7 @@
 
 <script setup>
 import { computed, onMounted, reactive, ref } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { useRoute } from 'vue-router'
 import { useFarmStore } from '../stores/farm.js'
 import { useFarmContextStore } from '../stores/farmContext.js'
 import { useFarmCaps } from '../composables/useFarmCaps.js'
@@ -406,7 +457,9 @@ import {
   nextQuantityAfterRestock,
 } from '../lib/suppliesHub.js'
 import { refillTaskFromLowStock } from '../lib/taskTemplates.js'
-import { feedWaterFertigationRoute, moneySuppliesRoute, naturalFarmingManageRoute, naturalFarmingTabRoute } from '../lib/workspaceRoutes.js'
+import { feedWaterFertigationRoute, moneySuppliesRoute, naturalFarmingTabRoute } from '../lib/workspaceRoutes.js'
+import api from '../api'
+import { enumValues, enumLabel, loadDomainEnums } from '../lib/domainEnums.js'
 import ConceptHelpTip from '../components/ConceptHelpTip.vue'
 import OperatorConceptBanner from '../components/OperatorConceptBanner.vue'
 import {
@@ -420,13 +473,27 @@ const nfConcepts = NATURAL_FARMING_WORKSPACE_CONCEPTS
 const nfRelationships = NATURAL_FARMING_CONCEPT_RELATIONSHIPS
 
 const route = useRoute()
-const router = useRouter()
 const store = useFarmStore()
 const farmContext = useFarmContextStore()
 const farmIdRef = computed(() => farmContext.farmId)
 const { has: hasScope } = useFarmCaps(farmIdRef)
 const canWriteBatches = computed(() => hasScope(FARM_SCOPES.nfBatchesWrite))
+const canDeleteBatches = computed(() => hasScope(FARM_SCOPES.nfBatchesDelete))
 const canEditUnitCost = computed(() => hasScope(FARM_SCOPES.moneyWrite))
+
+const domainEnums = ref(null)
+const batchStatuses = computed(() => enumValues(domainEnums.value, 'batch_statuses'))
+
+const showBatchEdit = ref(false)
+const batchEditId = ref(null)
+const batchEditForm = reactive({
+  batch_identifier: '',
+  status: 'ready_for_use',
+  current_quantity_remaining: null,
+  low_stock_threshold: null,
+  storage_location: '',
+  observations_notes: '',
+})
 
 const loading = ref(false)
 const saving = ref(false)
@@ -529,8 +596,65 @@ function flashSuccess(msg) {
   setTimeout(() => { actionSuccess.value = '' }, 4000)
 }
 
-function openBatchEditor(batchId) {
-  router.push(naturalFarmingManageRoute({ inv: 'batches', batchId }))
+function formatBatchStatus(status) {
+  return enumLabel('batch_statuses', status, domainEnums.value) || formatStatus(status)
+}
+
+function openBatchEditor(row) {
+  const batch = batches.value.find((b) => b.id === row.id)
+  if (!batch) return
+  batchEditId.value = batch.id
+  batchEditForm.batch_identifier = batch.batch_identifier || ''
+  batchEditForm.status = batch.status || 'ready_for_use'
+  batchEditForm.current_quantity_remaining = batch.current_quantity_remaining
+  batchEditForm.low_stock_threshold = batch.low_stock_threshold ?? null
+  batchEditForm.storage_location = batch.storage_location || ''
+  batchEditForm.observations_notes = batch.observations_notes || ''
+  showBatchEdit.value = true
+}
+
+function closeBatchEditor() {
+  showBatchEdit.value = false
+  batchEditId.value = null
+}
+
+async function submitBatchEdit() {
+  if (!batchEditId.value) return
+  saving.value = true
+  clearActionFeedback()
+  try {
+    await store.updateNfBatch(batchEditId.value, {
+      batch_identifier: batchEditForm.batch_identifier?.trim() || null,
+      status: batchEditForm.status,
+      current_quantity_remaining: batchEditForm.current_quantity_remaining,
+      low_stock_threshold: batchEditForm.low_stock_threshold,
+      storage_location: batchEditForm.storage_location?.trim() || null,
+      observations_notes: batchEditForm.observations_notes?.trim() || null,
+    })
+    batches.value = await store.loadNfBatches(farmContext.farmId)
+    closeBatchEditor()
+    flashSuccess('Batch updated.')
+  } catch (e) {
+    actionError.value = e.response?.data?.error || e.message || 'Could not update batch'
+  } finally {
+    saving.value = false
+  }
+}
+
+async function confirmDeleteBatch(row) {
+  const label = row.batchLabel || row.inputName || `#${row.id}`
+  if (!confirm(`Delete batch "${label}"?`)) return
+  saving.value = true
+  clearActionFeedback()
+  try {
+    await store.deleteNfBatch(row.id)
+    batches.value = await store.loadNfBatches(farmContext.farmId)
+    flashSuccess('Batch deleted.')
+  } catch (e) {
+    actionError.value = e.response?.data?.error || e.message || 'Could not delete batch'
+  } finally {
+    saving.value = false
+  }
 }
 
 function startRestock(row) {
@@ -727,13 +851,15 @@ async function refresh() {
   clearActionFeedback()
   try {
     if (!store.zones.length) await store.loadAll(fid)
-    const [i, b, r, a, p] = await Promise.all([
+    const [i, b, r, a, p, enums] = await Promise.all([
       store.loadNfInputs(fid),
       store.loadNfBatches(fid),
       store.loadRecipes(fid),
       store.loadAlerts(fid, { limit: 100 }),
       store.loadFertigationPrograms(fid),
+      loadDomainEnums(api),
     ])
+    domainEnums.value = enums
     inputs.value = i
     batches.value = b
     recipes.value = r

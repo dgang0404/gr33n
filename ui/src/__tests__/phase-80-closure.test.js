@@ -40,8 +40,8 @@ describe('Phase 80 — routing & zones tab labels', () => {
       hash: ZONE_HARDWARE_HASH,
     })
     expect(naturalFarmingManageRoute({ inv: 'batches', batchId: 12 })).toEqual({
-      path: '/natural-farming',
-      query: { tab: 'manage', inv: 'batches', batch_id: '12' },
+      path: '/money',
+      query: { tab: 'supplies', batch_id: '12' },
     })
   })
 
