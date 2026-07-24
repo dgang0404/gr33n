@@ -1,5 +1,5 @@
 <template>
-  <div class="space-y-6 max-w-4xl p-4" data-test="nf-recipes-apply">
+  <div class="space-y-6 max-w-4xl" data-test="nf-recipes-apply">
     <div>
       <h2 class="text-lg font-semibold text-white">Recipes &amp; apply</h2>
       <p class="text-sm text-zinc-500 mt-1">
@@ -52,64 +52,10 @@
         </button>
       </form>
 
-      <div class="grid gap-4 sm:grid-cols-2">
-        <div
-          v-for="rec in recipes"
-          :key="rec.id"
-          class="bg-zinc-800 border rounded-xl p-4 space-y-2 transition-colors"
-          :class="applyRecipe?.id === rec.id ? 'border-green-600 ring-1 ring-green-900/40' : 'border-zinc-700'"
-          :data-test="`nf-recipe-card-${rec.id}`"
-        >
-          <div class="flex items-start justify-between gap-2">
-            <h3 class="text-white font-semibold">{{ rec.name }}</h3>
-            <span class="text-xs px-2 py-0.5 rounded-full bg-zinc-700 text-zinc-300">
-              {{ formatApplicationType(rec.target_application_type) }}
-            </span>
-          </div>
-          <dl class="text-xs text-zinc-500 space-y-1">
-            <div>
-              <span class="text-zinc-600">Primary:</span>
-              {{ rec.input_definition_id ? inputName(rec.input_definition_id) : '—' }}
-            </div>
-            <div>
-              <span class="text-zinc-600">Dilution:</span>
-              {{ rec.dilution_ratio || '—' }}
-            </div>
-            <div>
-              <span class="text-zinc-600">Growth stages:</span>
-              {{ formatGrowthStages(rec.target_growth_stages, domainEnums) }}
-            </div>
-          </dl>
-          <p v-if="rec.description" class="text-zinc-400 text-sm line-clamp-2">{{ rec.description }}</p>
-          <div class="flex flex-wrap gap-2 pt-2">
-            <button type="button" class="text-xs text-green-500 hover:text-green-400" @click="openApply(rec)">
-              Apply
-            </button>
-            <button type="button" class="text-xs text-zinc-400 hover:text-white" @click="openRecipeComponents(rec)">
-              Components
-            </button>
-            <router-link
-              v-nav-hint="'/fertigation'"
-              :to="feedWaterProgramLink(rec.id)"
-              class="text-xs text-green-500 hover:text-green-400"
-              :data-test="`nf-recipe-feed-water-${rec.id}`"
-            >
-              Use in program
-            </router-link>
-            <button type="button" class="text-xs text-zinc-400 hover:text-white" @click="startEditRecipe(rec)">
-              Edit
-            </button>
-            <button type="button" class="text-xs text-red-500 hover:text-red-400" @click="deleteRecipe(rec)">
-              Delete
-            </button>
-          </div>
-        </div>
-      </div>
-      <p v-if="!recipes.length" class="text-zinc-500 text-sm">No recipes yet — create one or import bootstrap.</p>
-
       <section
         v-if="applyRecipe"
-        class="bg-zinc-900 border border-zinc-800 rounded-xl p-4 space-y-4"
+        ref="applyPanelEl"
+        class="bg-zinc-900 border border-green-800/60 rounded-xl p-4 space-y-4 scroll-mt-24"
         data-test="nf-recipe-apply-panel"
       >
         <div class="flex items-start justify-between gap-2">
@@ -121,7 +67,7 @@
               · stages: {{ formatGrowthStages(applyRecipe.target_growth_stages, domainEnums) }}
             </p>
           </div>
-          <button type="button" class="text-xs text-zinc-500 hover:text-zinc-300" @click="applyRecipe = null">
+          <button type="button" class="text-xs text-zinc-500 hover:text-zinc-300" @click="closeApply">
             Close
           </button>
         </div>
@@ -153,6 +99,13 @@
           </ul>
           <p v-else class="text-sm text-zinc-600">
             No programs linked yet{{ applyZoneId ? ' in this zone' : '' }}.
+            <router-link
+              v-nav-hint="'/fertigation'"
+              :to="feedWaterProgramLink(applyRecipe.id, { zoneId: applyZoneId })"
+              class="text-green-400 hover:text-green-300 ml-1"
+            >
+              Create or link in Feed &amp; water →
+            </router-link>
           </p>
         </div>
 
@@ -179,7 +132,8 @@
 
       <div
         v-if="componentRecipe"
-        class="bg-zinc-900 border border-zinc-800 rounded-xl p-4 space-y-3"
+        ref="componentsPanelEl"
+        class="bg-zinc-900 border border-zinc-800 rounded-xl p-4 space-y-3 scroll-mt-24"
         data-test="nf-recipe-components"
       >
         <div class="flex items-center justify-between">
@@ -215,12 +169,73 @@
           <li v-if="!recipeComponents.length" class="text-zinc-600">No extra components.</li>
         </ul>
       </div>
+
+      <div class="grid gap-4 sm:grid-cols-2">
+        <div
+          v-for="rec in recipes"
+          :key="rec.id"
+          class="bg-zinc-800 border rounded-xl p-4 space-y-2 transition-colors"
+          :class="applyRecipe?.id === rec.id ? 'border-green-600 ring-1 ring-green-900/40' : 'border-zinc-700'"
+          :data-test="`nf-recipe-card-${rec.id}`"
+        >
+          <div class="flex items-start justify-between gap-2">
+            <h3 class="text-white font-semibold">{{ rec.name }}</h3>
+            <span class="text-xs px-2 py-0.5 rounded-full bg-zinc-700 text-zinc-300">
+              {{ formatApplicationType(rec.target_application_type) }}
+            </span>
+          </div>
+          <dl class="text-xs text-zinc-500 space-y-1">
+            <div>
+              <span class="text-zinc-600">Primary:</span>
+              {{ rec.input_definition_id ? inputName(rec.input_definition_id) : '—' }}
+            </div>
+            <div>
+              <span class="text-zinc-600">Dilution:</span>
+              {{ rec.dilution_ratio || '—' }}
+            </div>
+            <div>
+              <span class="text-zinc-600">Growth stages:</span>
+              {{ formatGrowthStages(rec.target_growth_stages, domainEnums) }}
+            </div>
+          </dl>
+          <p v-if="rec.description" class="text-zinc-400 text-sm line-clamp-2">{{ rec.description }}</p>
+          <div class="flex flex-wrap gap-2 pt-2">
+            <button
+              type="button"
+              class="text-xs font-medium"
+              :class="applyRecipe?.id === rec.id ? 'text-green-300' : 'text-green-500 hover:text-green-400'"
+              :data-test="`nf-recipe-apply-${rec.id}`"
+              @click="openApply(rec)"
+            >
+              {{ applyRecipe?.id === rec.id ? 'Applying ▲' : 'Apply' }}
+            </button>
+            <button type="button" class="text-xs text-zinc-400 hover:text-white" @click="openRecipeComponents(rec)">
+              Components
+            </button>
+            <router-link
+              v-nav-hint="'/fertigation'"
+              :to="feedWaterProgramLink(rec.id)"
+              class="text-xs text-green-500 hover:text-green-400"
+              :data-test="`nf-recipe-feed-water-${rec.id}`"
+            >
+              Use in program
+            </router-link>
+            <button type="button" class="text-xs text-zinc-400 hover:text-white" @click="startEditRecipe(rec)">
+              Edit
+            </button>
+            <button type="button" class="text-xs text-red-500 hover:text-red-400" @click="deleteRecipe(rec)">
+              Delete
+            </button>
+          </div>
+        </div>
+      </div>
+      <p v-if="!recipes.length" class="text-zinc-500 text-sm">No recipes yet — create one or import bootstrap.</p>
     </template>
   </div>
 </template>
 
 <script setup>
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useFarmStore } from '../../stores/farm.js'
@@ -262,6 +277,8 @@ const compForm = ref({ input_definition_id: '', part_value: 1 })
 
 const applyRecipe = ref(null)
 const applyZoneId = ref(null)
+const applyPanelEl = ref(null)
+const componentsPanelEl = ref(null)
 
 const zones = computed(() => store.zones)
 const applicationTargets = computed(() => enumValues(domainEnums.value, 'application_targets'))
@@ -291,8 +308,26 @@ function inputName(id) {
   return found ? found.name : `#${id}`
 }
 
+function scrollPanelIntoView(el) {
+  nextTick(() => {
+    el?.scrollIntoView?.({ behavior: 'smooth', block: 'start' })
+  })
+}
+
+function closeApply() {
+  applyRecipe.value = null
+  applyZoneId.value = null
+}
+
 function openApply(rec) {
+  if (applyRecipe.value?.id === rec.id) {
+    closeApply()
+    return
+  }
+  componentRecipe.value = null
   applyRecipe.value = rec
+  applyZoneId.value = null
+  scrollPanelIntoView(applyPanelEl.value)
 }
 
 function applyRecipeFromRoute() {
@@ -303,6 +338,7 @@ function applyRecipeFromRoute() {
   if (hit) {
     applyRecipe.value = hit
     showRecipeForm.value = false
+    scrollPanelIntoView(applyPanelEl.value)
   }
 }
 
@@ -395,8 +431,10 @@ async function deleteRecipe(rec) {
 }
 
 async function openRecipeComponents(rec) {
+  closeApply()
   componentRecipe.value = rec
   recipeComponents.value = await store.loadRecipeComponents(rec.id)
+  scrollPanelIntoView(componentsPanelEl.value)
 }
 
 async function addComponent() {

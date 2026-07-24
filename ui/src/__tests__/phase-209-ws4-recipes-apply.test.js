@@ -38,6 +38,10 @@ describe('Phase 209 WS4 — recipes & apply', () => {
     expect(panel).toContain('feedWaterProgramLink')
     expect(panel).toContain('nf-apply-feed-water-link')
     expect(panel).toContain('Open Feed &amp; water → Programs')
+    const panelIdx = panel.indexOf('data-test="nf-recipe-apply-panel"')
+    const gridIdx = panel.indexOf('class="grid gap-4 sm:grid-cols-2"')
+    expect(panelIdx).toBeGreaterThan(0)
+    expect(gridIdx).toBeGreaterThan(panelIdx)
   })
 
   it('livestock recipes can link to Animals when module enabled', () => {
