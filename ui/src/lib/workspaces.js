@@ -69,10 +69,10 @@ export const WORKSPACES = {
     route: '/comfort-targets',
     subtitle: 'Comfort bands, what runs when, and automation toggles',
     tabs: [
-      { id: 'comfort', label: 'Comfort' },
-      { id: 'schedules', label: 'What runs when' },
-      { id: 'automations', label: 'Automations' },
-      { id: 'raw', label: 'Raw setpoints' },
+      { id: 'comfort', label: 'Comfort', conceptId: 'comfort_band' },
+      { id: 'schedules', label: 'What runs when', conceptId: 'schedule' },
+      { id: 'automations', label: 'Automations', conceptId: 'rule' },
+      { id: 'raw', label: 'Raw setpoints', conceptId: 'setpoint' },
     ],
     absorbs: {
       '/schedules': { tab: 'schedules' },
@@ -100,10 +100,10 @@ export const WORKSPACES = {
     route: '/feed-water',
     subtitle: 'Daily watering, programs, nutrients, and advanced fertigation',
     tabs: [
-      { id: 'daily', label: 'Daily' },
-      { id: 'programs', label: 'Programs & tanks' },
-      { id: 'nutrients', label: 'Nutrients & mix' },
-      { id: 'advanced', label: 'Advanced' },
+      { id: 'daily', label: 'Daily', conceptId: 'feeding_plan' },
+      { id: 'programs', label: 'Programs & tanks', conceptId: 'fertigation_program' },
+      { id: 'nutrients', label: 'Nutrients & mix', conceptId: 'mixing_event' },
+      { id: 'advanced', label: 'Advanced', conceptId: 'fertigation_console' },
     ],
     absorbs: {
       '/feeding': { tab: 'daily' },

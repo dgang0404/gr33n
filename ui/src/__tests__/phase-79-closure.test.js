@@ -73,6 +73,29 @@ describe('Phase 79 — tasks fix, concepts, inventory', () => {
     expect(tabs.find((t) => t.id === 'recipes')?.conceptId).toBe('application_recipe')
   })
 
+  it('comfort workspace tabs declare concept help ids', () => {
+    const tabs = WORKSPACES.comfort.tabs
+    expect(tabs.find((t) => t.id === 'comfort')?.conceptId).toBe('comfort_band')
+    expect(tabs.find((t) => t.id === 'schedules')?.conceptId).toBe('schedule')
+    expect(tabs.find((t) => t.id === 'automations')?.conceptId).toBe('rule')
+    expect(tabs.find((t) => t.id === 'raw')?.conceptId).toBe('setpoint')
+  })
+
+  it('feed & water workspace tabs declare concept help ids', () => {
+    const tabs = WORKSPACES.feedwater.tabs
+    expect(tabs.find((t) => t.id === 'daily')?.conceptId).toBe('feeding_plan')
+    expect(tabs.find((t) => t.id === 'programs')?.conceptId).toBe('fertigation_program')
+    expect(tabs.find((t) => t.id === 'nutrients')?.conceptId).toBe('mixing_event')
+    expect(tabs.find((t) => t.id === 'advanced')?.conceptId).toBe('fertigation_console')
+  })
+
+  it('feed & water operator concepts map to fertigation tables', () => {
+    expect(operatorConcept('feeding_plan')?.dbTable).toContain('programs')
+    expect(operatorConcept('fertigation_program')?.dbTable).toContain('programs')
+    expect(operatorConcept('reservoir')?.dbTable).toContain('reservoirs')
+    expect(operatorConcept('mixing_event')?.dbTable).toContain('mixing_events')
+  })
+
   it('natural farming has three tabs; legacy /inventory goes to studio or supplies', () => {
     const tabs = WORKSPACES.naturalfarming.tabs.map((t) => t.id)
     expect(tabs).toEqual(['batch', 'library', 'recipes'])

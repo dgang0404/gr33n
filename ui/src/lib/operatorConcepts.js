@@ -79,6 +79,36 @@ export const OPERATOR_CONCEPTS = {
     shortTip: 'Read-only reference for how to make inputs and apply them — not your farm inventory. Make a batch when you actually ferment.',
     detail: 'Canon from Phase 208: input prep, apply recipes, bootstrap programs. Your farm rows live under Make a batch, Apply recipes, and Ready batches.',
   },
+  feeding_plan: {
+    label: 'Daily feed snapshot',
+    dbTable: 'gr33nfertigation.programs (active per zone)',
+    shortTip: 'One card per zone — next feed time, last run OK/fail, reservoir ready. Change the plan on the zone Water tab or Programs & tanks.',
+    detail: 'Read-only rollup for the morning pass. Each card reflects the active program + schedule for that zone, not a separate table.',
+  },
+  fertigation_program: {
+    label: 'Feeding program',
+    dbTable: 'gr33nfertigation.programs',
+    shortTip: 'Volume, EC targets, reservoir, and schedule for a zone — what runs when a feed fires. Pair with a nutrient tank (reservoir).',
+    detail: 'Programs link zones, reservoirs, schedules, and optional apply recipes. Irrigation-only programs skip nutrients (plain water).',
+  },
+  reservoir: {
+    label: 'Nutrient tank',
+    dbTable: 'gr33nfertigation.reservoirs',
+    shortTip: 'Physical mix tank — capacity, current volume, EC/pH, ready/empty status. Programs draw from a reservoir when feeding.',
+    detail: 'Track tank fill level and readiness. Mixing events and fertigation runs reference the reservoir that supplied the feed.',
+  },
+  mixing_event: {
+    label: 'Mixing log',
+    dbTable: 'gr33nfertigation.mixing_events',
+    shortTip: 'Record what went into the tank — water volume, inputs/batches, final EC/pH. Natural farming batches link here when dosing.',
+    detail: 'Mixing is configuration history for the tank, not the feed applied to plants. Applied feeds appear as fertigation events.',
+  },
+  fertigation_console: {
+    label: 'Fertigation console',
+    dbTable: 'gr33nfertigation (programs, reservoirs, events…)',
+    shortTip: 'Full editor — EC targets, programs, mixing log, crop cycles, and every feed event. Same data as other tabs, table view.',
+    detail: 'Power-user surface absorbed from legacy /fertigation. Prefer Daily and Programs & tanks for day-to-day; use Advanced when debugging or bulk editing.',
+  },
 }
 
 /** Concepts shown on Comfort & automation workspace. */
@@ -109,6 +139,22 @@ export const NATURAL_FARMING_WORKSPACE_CONCEPTS = [
 export const NATURAL_FARMING_CONCEPT_RELATIONSHIPS = [
   'Input = what it is. Batch = what you made. Apply recipe = how you use it on plants.',
   'Field guide is read-only. Make a batch → Apply recipes links programs. Edit rows under Inputs & batches; costs under Money → Supplies.',
+]
+
+/** Concepts for Feed & water workspace tabs. */
+export const FEED_WATER_WORKSPACE_CONCEPTS = [
+  'feeding_plan',
+  'fertigation_program',
+  'reservoir',
+  'mixing_event',
+  'fertigation_console',
+  'application_recipe',
+  'schedule',
+]
+
+export const FEED_WATER_CONCEPT_RELATIONSHIPS = [
+  'Program = what to run. Reservoir = tank it draws from. Mixing log = what you put in the tank. Events = what reached the plants.',
+  'Apply recipes (Natural farming) wire into programs; Daily cards show the active plan per zone.',
 ]
 
 /**
