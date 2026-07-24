@@ -155,6 +155,13 @@ var registry = map[string]Tool{
 		RequiresOperate: true,
 		Execute:         execDraftInputBatch,
 	},
+	// Phase 211.02 WS6 — crop ops timeline read tool
+	"list_crop_cycle_ops": {
+		ID: "list_crop_cycle_ops",
+		Description: "Read-only: ordered crop ops timeline (stage, program_run, mix, apply, light) " +
+			"for a crop cycle. Args: crop_cycle_id (required), from/to optional (RFC3339 or YYYY-MM-DD).",
+		Execute: execListCropCycleOps,
+	},
 	// Phase 36 WS7 — greenhouse climate read tool
 	"summarize_zone_greenhouse_climate": {
 		ID: "summarize_zone_greenhouse_climate",

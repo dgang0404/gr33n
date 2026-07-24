@@ -22,16 +22,16 @@ todos:
     status: completed
   - id: ws5-crop-ops-report-api
     content: "WS5: GET crop-cycle ops timeline — feed, mix, light, stage events with formula at time"
-    status: pending
+    status: completed
   - id: ws6-guardian-read
     content: "WS6: Guardian read tool list_crop_cycle_ops + closure tests"
-    status: pending
+    status: completed
 isProject: false
 ---
 
 # Phase 211.02 — Recipe formula history & crop ops reporting
 
-**Status:** In progress (WS1–WS4 shipped) · **Depends on:** [211.01](phase_211_01_nf_studio_declutter.plan.md) · **212 deferred** until happy main (UI declutter + 211.03 permissions)
+**Status:** Complete (WS0–WS6 shipped) · **Depends on:** [211.01](phase_211_01_nf_studio_declutter.plan.md) · **212 deferred** until happy main (UI declutter + 211.03 permissions)
 
 ## The one job
 

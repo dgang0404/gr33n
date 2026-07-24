@@ -515,6 +515,8 @@ type Querier interface {
 	ListCropCatalogAliases(ctx context.Context) ([]Gr33ncropsCropCatalogAlias, error)
 	ListCropCatalogEntries(ctx context.Context) ([]Gr33ncropsCropCatalogEntry, error)
 	ListCropCycleStageEventsByCycle(ctx context.Context, cropCycleID int64) ([]Gr33nfertigationCropCycleStageEvent, error)
+	// Phase 211.02 WS5 — crop cycle ops timeline queries
+	ListCropCycleStageEventsInRange(ctx context.Context, arg ListCropCycleStageEventsInRangeParams) ([]Gr33nfertigationCropCycleStageEvent, error)
 	ListCropCyclesByFarm(ctx context.Context, farmID int64) ([]Gr33nfertigationCropCycle, error)
 	ListCropCyclesByFarmUpdatedAfter(ctx context.Context, arg ListCropCyclesByFarmUpdatedAfterParams) ([]Gr33nfertigationCropCycle, error)
 	ListCropProfileStages(ctx context.Context, cropProfileID int64) ([]Gr33ncropsCropProfileStage, error)
@@ -560,6 +562,7 @@ type Querier interface {
 	ListFarmsForUser(ctx context.Context, userID uuid.UUID) ([]Gr33ncoreFarm, error)
 	ListFertigationEventsByFarm(ctx context.Context, farmID int64) ([]Gr33nfertigationFertigationEvent, error)
 	ListFertigationEventsByFarmAndCropCycle(ctx context.Context, arg ListFertigationEventsByFarmAndCropCycleParams) ([]Gr33nfertigationFertigationEvent, error)
+	ListFertigationEventsForCropCycleInRange(ctx context.Context, arg ListFertigationEventsForCropCycleInRangeParams) ([]Gr33nfertigationFertigationEvent, error)
 	ListGuardianProposalsByUser(ctx context.Context, arg ListGuardianProposalsByUserParams) ([]Gr33ncoreGuardianActionProposal, error)
 	ListInputBatchesByFarm(ctx context.Context, farmID int64) ([]Gr33nnaturalfarmingInputBatch, error)
 	ListInputBatchesByFarmUpdatedAfter(ctx context.Context, arg ListInputBatchesByFarmUpdatedAfterParams) ([]Gr33nnaturalfarmingInputBatch, error)
@@ -569,6 +572,7 @@ type Querier interface {
 	ListInsertCommonsSyncEventsByFarm(ctx context.Context, arg ListInsertCommonsSyncEventsByFarmParams) ([]ListInsertCommonsSyncEventsByFarmRow, error)
 	ListLatestReadingsByFarm(ctx context.Context, farmID int64) ([]ListLatestReadingsByFarmRow, error)
 	ListLifecycleEventsByGroup(ctx context.Context, animalGroupID int64) ([]Gr33nanimalsAnimalLifecycleEvent, error)
+	ListLightingAutomationRunsForCropCycleInRange(ctx context.Context, arg ListLightingAutomationRunsForCropCycleInRangeParams) ([]ListLightingAutomationRunsForCropCycleInRangeRow, error)
 	// ============================================================
 	// Queries: gr33ncore.lighting_programs (Phase 35)
 	// ============================================================
@@ -579,12 +583,14 @@ type Querier interface {
 	ListLowStockBatchesByFarm(ctx context.Context, farmID int64) ([]ListLowStockBatchesByFarmRow, error)
 	ListMixingEventComponents(ctx context.Context, mixingEventID int64) ([]Gr33nfertigationMixingEventComponent, error)
 	ListMixingEventsByFarm(ctx context.Context, farmID int64) ([]Gr33nfertigationMixingEvent, error)
+	ListMixingEventsForZoneInRange(ctx context.Context, arg ListMixingEventsForZoneInRangeParams) ([]ListMixingEventsForZoneInRangeRow, error)
 	// ============================================================
 	// Queries: gr33ncore.notification_templates (Phase 115 WS2)
 	// ============================================================
 	ListNotificationTemplatesByFarm(ctx context.Context, farmID *int64) ([]Gr33ncoreNotificationTemplate, error)
 	ListOrganizationsForUser(ctx context.Context, userID uuid.UUID) ([]ListOrganizationsForUserRow, error)
 	ListPlantsByFarm(ctx context.Context, farmID int64) ([]Gr33ncropsPlant, error)
+	ListProgramAutomationRunsForZoneInRange(ctx context.Context, arg ListProgramAutomationRunsForZoneInRangeParams) ([]ListProgramAutomationRunsForZoneInRangeRow, error)
 	ListProgramsByFarm(ctx context.Context, farmID int64) ([]Gr33nfertigationProgram, error)
 	ListProgramsByFarmUpdatedAfter(ctx context.Context, arg ListProgramsByFarmUpdatedAfterParams) ([]Gr33nfertigationProgram, error)
 	ListPublishedCommonsCatalogEntries(ctx context.Context, arg ListPublishedCommonsCatalogEntriesParams) ([]ListPublishedCommonsCatalogEntriesRow, error)
