@@ -425,6 +425,7 @@ func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationwo
 	mux.Handle("GET /farms/{id}/crop-cycles/compare.csv", jwt(http.HandlerFunc(cropcycle.Compare)))
 	mux.Handle("GET /farms/{id}/crop-cycles/{cid}/ops-timeline", jwt(http.HandlerFunc(cropcycle.OpsTimeline)))
 	mux.Handle("GET /farms/{id}/crop-analytics", jwt(http.HandlerFunc(cropcycle.FarmAnalytics)))
+	mux.Handle("GET /farms/{id}/crop-analytics/recipe-outcomes", jwt(http.HandlerFunc(cropcycle.RecipeOutcomes)))
 
 	// Plants (crop tracking)
 	mux.Handle("GET /farms/{id}/plants", jwt(http.HandlerFunc(plants.List)))

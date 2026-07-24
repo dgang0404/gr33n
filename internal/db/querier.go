@@ -564,6 +564,8 @@ type Querier interface {
 	ListFertigationEventsByFarmAndCropCycle(ctx context.Context, arg ListFertigationEventsByFarmAndCropCycleParams) ([]Gr33nfertigationFertigationEvent, error)
 	ListFertigationEventsForCropCycleInRange(ctx context.Context, arg ListFertigationEventsForCropCycleInRangeParams) ([]Gr33nfertigationFertigationEvent, error)
 	ListGuardianProposalsByUser(ctx context.Context, arg ListGuardianProposalsByUserParams) ([]Gr33ncoreGuardianActionProposal, error)
+	// Phase 211.05 — recipe attribution for harvested crop cycles
+	ListHarvestedCyclesForRecipeOutcomes(ctx context.Context, arg ListHarvestedCyclesForRecipeOutcomesParams) ([]ListHarvestedCyclesForRecipeOutcomesRow, error)
 	ListInputBatchesByFarm(ctx context.Context, farmID int64) ([]Gr33nnaturalfarmingInputBatch, error)
 	ListInputBatchesByFarmUpdatedAfter(ctx context.Context, arg ListInputBatchesByFarmUpdatedAfterParams) ([]Gr33nnaturalfarmingInputBatch, error)
 	ListInputDefinitionsByFarm(ctx context.Context, farmID int64) ([]Gr33nnaturalfarmingInputDefinition, error)
@@ -609,6 +611,7 @@ type Querier interface {
 	// exists. Ordering is severity DESC then created_at DESC so critical
 	// + recent wins both axes; NULL severities sort last.
 	ListRecentUnreadAlertsByFarm(ctx context.Context, arg ListRecentUnreadAlertsByFarmParams) ([]ListRecentUnreadAlertsByFarmRow, error)
+	ListRecipeAttributionHitsForCycle(ctx context.Context, arg ListRecipeAttributionHitsForCycleParams) ([]ListRecipeAttributionHitsForCycleRow, error)
 	ListRecipeComponents(ctx context.Context, applicationRecipeID int64) ([]ListRecipeComponentsRow, error)
 	ListRecipeRevisions(ctx context.Context, applicationRecipeID int64) ([]Gr33nnaturalfarmingApplicationRecipeRevision, error)
 	ListRecipesByFarm(ctx context.Context, farmID int64) ([]Gr33nnaturalfarmingApplicationRecipe, error)

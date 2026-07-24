@@ -8,19 +8,19 @@ overview: >
 todos:
   - id: ws0-data-audit
     content: "WS0: Confirm join path — mixing_events/automation_runs.details.application_recipe_id+revision → crop_cycle (via zone+time window) → cost_transactions + yield_grams. No schema changes expected."
-    status: pending
+    status: completed
   - id: ws1-attribution-query
     content: "WS1: SQL — resolve the dominant application_recipe_id/revision_id used by a harvested cycle from its ops events; flag cycles that mixed multiple revisions"
-    status: pending
+    status: completed
   - id: ws2-outcomes-builder
     content: "WS2: Go package internal/cropcycle/recipeoutcomes — aggregate cycle_count, avg/median yield_grams, avg cost_per_gram, avg duration_days per (crop_key, application_recipe_id, revision_id); enforce min sample size before surfacing stats"
-    status: pending
+    status: completed
   - id: ws3-api
     content: "WS3: GET /farms/{id}/crop-analytics/recipe-outcomes?crop_key=&recipe_id= — gate cost fields behind money.costs.read (211.03 scopes)"
-    status: pending
+    status: completed
   - id: ws4-guardian-tool
     content: "WS4: Guardian read tool summarize_recipe_outcomes + grounding rule — always states N, never claims causation, never forecasts beyond 'last N cycles averaged X'"
-    status: pending
+    status: completed
   - id: ws5-ui-track-record
     content: "WS5: 'Track record' chip on Recipes & apply cards + Crop Cycle Summary ('vs recipe average'), scope-gated $ figures"
     status: pending
@@ -32,7 +32,7 @@ isProject: false
 
 # Phase 211.05 — Recipe & program outcome insights
 
-**Status:** Planned · **Depends on:** [211.02 recipe formula history](phase_211_02_recipe_formula_history.plan.md) (formula-at-time attribution), [211.03 farm permissions](phase_211_03_farm_permissions.plan.md) (`money.costs.read` gate) · **After:** [211.04 crop ops report UI](phase_211_04_crop_ops_report_ui.plan.md)
+**Status:** In progress (WS0–WS4 shipped) · **Depends on:** [211.02 recipe formula history](phase_211_02_recipe_formula_history.plan.md) (formula-at-time attribution), [211.03 farm permissions](phase_211_03_farm_permissions.plan.md) (`money.costs.read` gate) · **After:** [211.04 crop ops report UI](phase_211_04_crop_ops_report_ui.plan.md)
 
 ## The one job
 
@@ -142,6 +142,16 @@ New grounding rule (append to `internal/farmguardian/readtools_crop.go` alongsid
 - Go: extend `internal/farmguardian/answer_accuracy_test.go` (or sibling) to assert the tool never emits an unqualified number without "avg"/"N cycles" nearby.
 - Vitest: `phase-211-05-closure.test.js` — endpoint call shape, chip rendering, scope gating.
 - Docs: cross-link from `docs/farm-guardian-architecture.md` (new `§7.0x` or next free letter) and `docs/operator-tour.md` §7u natural farming section; mark this plan **Complete** when shipped.
+
+## Shipped (WS0–WS4)
+
+| WS | Deliverable |
+|----|-------------|
+| WS0 | Join path confirmed — no migration; attribution from `mixing_events.metadata` + `automation_runs.details` in cycle window |
+| WS1 | `db/queries/crop_recipe_attribution.sql` — harvested cycles + recipe attribution hits |
+| WS2 | `internal/cropcycle/recipeoutcomes` — dominant recipe at 60%, min sample 2, cost/yield aggregates |
+| WS3 | `GET /farms/{id}/crop-analytics/recipe-outcomes` — cost fields omitted without `money.costs.read` |
+| WS4 | `summarize_recipe_outcomes` read tool + `RecipeOutcomeGroundingRule` in platform context |
 
 ## Acceptance criteria
 
