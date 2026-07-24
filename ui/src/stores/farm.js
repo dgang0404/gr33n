@@ -1210,6 +1210,16 @@ export const useFarmStore = defineStore('farm', {
       return Array.isArray(r.data) ? r.data : []
     },
 
+    async loadRecipeRevisions(recipeId) {
+      const r = await api.get(`/naturalfarming/recipes/${recipeId}/revisions`)
+      return Array.isArray(r.data) ? r.data : []
+    },
+
+    async restoreRecipeRevision(recipeId, revisionId) {
+      const r = await api.post(`/naturalfarming/recipes/${recipeId}/revisions/${revisionId}/restore`)
+      return r.data
+    },
+
     async addRecipeComponent(recipeId, data) {
       await api.post(`/naturalfarming/recipes/${recipeId}/components`, data)
     },

@@ -16,11 +16,12 @@ import (
 )
 
 type Handler struct {
-	q *db.Queries
+	pool *pgxpool.Pool
+	q    *db.Queries
 }
 
 func NewHandler(pool *pgxpool.Pool) *Handler {
-	return &Handler{q: db.New(pool)}
+	return &Handler{pool: pool, q: db.New(pool)}
 }
 
 // GET /farms/{id}/naturalfarming/inputs

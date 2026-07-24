@@ -133,6 +133,49 @@
       </section>
 
       <div
+        v-if="historyRecipe"
+        ref="historyPanelEl"
+        class="bg-zinc-900 border border-zinc-800 rounded-xl p-4 space-y-3 scroll-mt-24"
+        data-test="nf-recipe-history"
+      >
+        <div class="flex items-center justify-between">
+          <h3 class="text-white font-medium">Formula history — {{ historyRecipe.name }}</h3>
+          <button type="button" class="text-xs text-zinc-500" @click="historyRecipe = null">Close</button>
+        </div>
+        <p class="text-xs text-zinc-500">
+          Immutable snapshots from edits and component changes. Restore copies a revision onto the live recipe as a new revision — history is never deleted.
+        </p>
+        <p v-if="historyLoading" class="text-sm text-zinc-500">Loading history…</p>
+        <ul v-else-if="recipeRevisions.length" class="space-y-2 text-sm">
+          <li
+            v-for="rev in recipeRevisions"
+            :key="rev.id"
+            class="flex flex-wrap items-center justify-between gap-2 border-b border-zinc-800 pb-2"
+            :data-test="`nf-recipe-revision-${rev.id}`"
+          >
+            <div>
+              <span class="text-zinc-200 font-medium">Rev {{ rev.revision_number }}</span>
+              <span class="text-zinc-500 text-xs ml-2">{{ formatRevisionWhen(rev.created_at) }}</span>
+              <p class="text-xs text-zinc-500 mt-0.5">
+                {{ revisionSummaryLine(rev) }}
+              </p>
+              <p v-if="rev.change_summary" class="text-[10px] text-zinc-600">{{ rev.change_summary }}</p>
+            </div>
+            <button
+              type="button"
+              class="text-xs px-2 py-1 rounded border border-zinc-700 text-zinc-300 hover:text-white hover:border-zinc-500 disabled:opacity-40"
+              :disabled="saving || rev.revision_number === latestRevisionNumber"
+              :data-test="`nf-recipe-restore-${rev.id}`"
+              @click="restoreRevision(rev)"
+            >
+              {{ rev.revision_number === latestRevisionNumber ? 'Current' : 'Restore' }}
+            </button>
+          </li>
+        </ul>
+        <p v-else class="text-sm text-zinc-600">No revisions yet.</p>
+      </div>
+
+      <div
         v-if="componentRecipe"
         ref="componentsPanelEl"
         class="bg-zinc-900 border border-zinc-800 rounded-xl p-4 space-y-3 scroll-mt-24"
@@ -214,6 +257,14 @@
             <button type="button" class="text-xs text-zinc-400 hover:text-white" @click="openRecipeComponents(rec)">
               Components
             </button>
+            <button
+              type="button"
+              class="text-xs text-zinc-400 hover:text-white"
+              :data-test="`nf-recipe-history-${rec.id}`"
+              @click="openRecipeHistory(rec)"
+            >
+              History
+            </button>
             <router-link
               v-nav-hint="'/fertigation'"
               :to="feedWaterProgramLink(rec.id)"
@@ -284,6 +335,11 @@ const componentRecipe = ref(null)
 const recipeComponents = ref([])
 const compForm = ref({ input_definition_id: '', part_value: 1 })
 
+const historyRecipe = ref(null)
+const recipeRevisions = ref([])
+const historyLoading = ref(false)
+const historyPanelEl = ref(null)
+
 const applyRecipe = ref(null)
 const applyZoneId = ref(null)
 const applyPanelEl = ref(null)
@@ -305,6 +361,31 @@ const showAnimalsLink = computed(() => {
   if (!isModuleEnabled(farmModules.value, MODULE_SCHEMA.animals)) return false
   return isLivestockRecipe(applyRecipe.value, inputMap.value)
 })
+
+const latestRevisionNumber = computed(() => {
+  if (!recipeRevisions.value.length) return 0
+  return Math.max(...recipeRevisions.value.map((r) => Number(r.revision_number) || 0))
+})
+
+function formatRevisionWhen(iso) {
+  if (!iso) return '—'
+  try {
+    return new Date(iso).toLocaleString()
+  } catch {
+    return String(iso)
+  }
+}
+
+function revisionSummaryLine(rev) {
+  try {
+    const snap = typeof rev.snapshot === 'string' ? JSON.parse(rev.snapshot) : rev.snapshot
+    const dilution = snap?.recipe?.dilution_ratio || '—'
+    const count = Array.isArray(snap?.components) ? snap.components.length : 0
+    return `${dilution} · ${count} component${count === 1 ? '' : 's'}`
+  } catch {
+    return '—'
+  }
+}
 
 function zoneLabel(zoneId) {
   if (!zoneId) return 'All zones'
@@ -441,9 +522,45 @@ async function deleteRecipe(rec) {
 
 async function openRecipeComponents(rec) {
   closeApply()
+  historyRecipe.value = null
   componentRecipe.value = rec
   recipeComponents.value = await store.loadRecipeComponents(rec.id)
   scrollPanelIntoView(componentsPanelEl.value)
+}
+
+async function openRecipeHistory(rec) {
+  closeApply()
+  componentRecipe.value = null
+  historyRecipe.value = rec
+  historyLoading.value = true
+  recipeRevisions.value = []
+  scrollPanelIntoView(historyPanelEl.value)
+  try {
+    recipeRevisions.value = await store.loadRecipeRevisions(rec.id)
+  } finally {
+    historyLoading.value = false
+  }
+}
+
+async function restoreRevision(rev) {
+  if (!historyRecipe.value || !confirm(`Restore revision ${rev.revision_number}? Live recipe will match that snapshot as a new revision.`)) {
+    return
+  }
+  saving.value = true
+  try {
+    const result = await store.restoreRecipeRevision(historyRecipe.value.id, rev.id)
+    if (result?.recipe) {
+      const idx = recipes.value.findIndex((r) => r.id === historyRecipe.value.id)
+      if (idx >= 0) recipes.value[idx] = result.recipe
+      historyRecipe.value = result.recipe
+    } else {
+      recipes.value = await store.loadRecipes(farmId.value)
+      historyRecipe.value = recipes.value.find((r) => r.id === historyRecipe.value.id) || historyRecipe.value
+    }
+    recipeRevisions.value = await store.loadRecipeRevisions(historyRecipe.value.id)
+  } finally {
+    saving.value = false
+  }
 }
 
 async function addComponent() {

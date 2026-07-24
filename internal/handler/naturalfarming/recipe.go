@@ -350,3 +350,57 @@ func (h *Handler) RemoveRecipeComponent(w http.ResponseWriter, r *http.Request) 
 	}
 	w.WriteHeader(http.StatusNoContent)
 }
+
+// RestoreRecipeRevision — POST /naturalfarming/recipes/{id}/revisions/{rid}/restore
+func (h *Handler) RestoreRecipeRevision(w http.ResponseWriter, r *http.Request) {
+	recipeID, err := httputil.PathValueInt64(r, "id")
+	if err != nil {
+		httputil.WriteError(w, http.StatusBadRequest, "invalid recipe id")
+		return
+	}
+	revisionID, err := httputil.PathValueInt64(r, "rid")
+	if err != nil {
+		httputil.WriteError(w, http.StatusBadRequest, "invalid revision id")
+		return
+	}
+	rec, err := h.q.GetRecipeByID(r.Context(), recipeID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			httputil.WriteError(w, http.StatusNotFound, "recipe not found")
+			return
+		}
+		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	if !farmauthz.RequireFarmOperate(w, r, h.q, rec.FarmID) {
+		return
+	}
+
+	tx, err := h.pool.Begin(r.Context())
+	if err != nil {
+		httputil.WriteError(w, http.StatusInternalServerError, "failed to begin transaction")
+		return
+	}
+	defer tx.Rollback(r.Context())
+
+	created, err := reciperevision.RestoreFromRevision(r.Context(), h.q.WithTx(tx), recipeID, revisionID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			httputil.WriteError(w, http.StatusNotFound, "revision not found")
+			return
+		}
+		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	if err := tx.Commit(r.Context()); err != nil {
+		httputil.WriteError(w, http.StatusInternalServerError, "failed to commit restore")
+		return
+	}
+
+	updated, err := h.q.GetRecipeByID(r.Context(), recipeID)
+	if err != nil {
+		httputil.WriteJSON(w, http.StatusOK, map[string]any{"revision": created})
+		return
+	}
+	httputil.WriteJSON(w, http.StatusOK, map[string]any{"recipe": updated, "revision": created})
+}

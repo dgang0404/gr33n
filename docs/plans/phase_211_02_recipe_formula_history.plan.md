@@ -19,7 +19,7 @@ todos:
     status: completed
   - id: ws4-restore-ui
     content: "WS4: Recipes & apply — view revision history, restore components from revision (not blind pack re-import)"
-    status: pending
+    status: completed
   - id: ws5-crop-ops-report-api
     content: "WS5: GET crop-cycle ops timeline — feed, mix, light, stage events with formula at time"
     status: pending
@@ -31,7 +31,7 @@ isProject: false
 
 # Phase 211.02 — Recipe formula history & crop ops reporting
 
-**Status:** In progress (WS1–WS3 shipped) · **Depends on:** [211.01](phase_211_01_nf_studio_declutter.plan.md) · **212 deferred** until happy main (UI declutter + 211.03 permissions)
+**Status:** In progress (WS1–WS4 shipped) · **Depends on:** [211.01](phase_211_01_nf_studio_declutter.plan.md) · **212 deferred** until happy main (UI declutter + 211.03 permissions)
 
 ## The one job
 

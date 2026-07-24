@@ -205,3 +205,51 @@ func TestRecipeRevisionHistory(t *testing.T) {
 	resp = authDelete(t, tok, fmt.Sprintf("/naturalfarming/recipes/%d", newID))
 	expectStatus(t, resp, http.StatusNoContent)
 }
+
+func TestRecipeRestoreRevision(t *testing.T) {
+	tok := smokeJWT(t)
+
+	name := uniqueName("smoke_restore")
+	resp := authPost(t, tok, "/farms/1/naturalfarming/recipes", map[string]any{
+		"name":                    name,
+		"target_application_type": "soil_drench",
+		"dilution_ratio":          "1:10",
+	})
+	expectStatus(t, resp, http.StatusCreated)
+	created := decodeMap(t, resp)
+	recipeID := int64(created["id"].(float64))
+
+	resp = authPut(t, tok, fmt.Sprintf("/naturalfarming/recipes/%d", recipeID), map[string]any{
+		"name":                    name,
+		"target_application_type": "soil_drench",
+		"dilution_ratio":          "1:20",
+	})
+	expectStatus(t, resp, http.StatusOK)
+
+	revsResp := authGet(t, tok, fmt.Sprintf("/naturalfarming/recipes/%d/revisions", recipeID))
+	expectStatus(t, revsResp, http.StatusOK)
+	revs := decodeSlice(t, revsResp)
+	if len(revs) < 2 {
+		t.Fatalf("expected at least 2 revisions, got %d", len(revs))
+	}
+	restoreFrom := revs[len(revs)-1].(map[string]any)
+	revID := int64(restoreFrom["id"].(float64))
+
+	resp = authPost(t, tok, fmt.Sprintf("/naturalfarming/recipes/%d/revisions/%d/restore", recipeID, revID), nil)
+	expectStatus(t, resp, http.StatusOK)
+	body := decodeMap(t, resp)
+	restored := body["recipe"].(map[string]any)
+	if restored["dilution_ratio"] != "1:10" {
+		t.Fatalf("expected dilution 1:10 after restore, got %v", restored["dilution_ratio"])
+	}
+	newRev, ok := body["revision"].(map[string]any)
+	if !ok {
+		t.Fatal("expected revision in restore response")
+	}
+	if int(newRev["revision_number"].(float64)) != 3 {
+		t.Fatalf("expected revision 3 after restore, got %v", newRev["revision_number"])
+	}
+
+	resp = authDelete(t, tok, fmt.Sprintf("/naturalfarming/recipes/%d", recipeID))
+	expectStatus(t, resp, http.StatusNoContent)
+}
