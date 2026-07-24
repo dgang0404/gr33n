@@ -155,6 +155,12 @@
             <Metric label="g per day"        :value="optFmt(summary.yield.grams_per_day)" />
             <Metric label="Cost per gram"    :value="optFmt(summary.yield.cost_per_gram, 'mixed currencies')" />
           </div>
+          <CycleRecipeTrackRecord
+            v-if="summary.cycle?.farm_id && summary.crop_key"
+            :farm-id="summary.cycle.farm_id"
+            :cycle-id="cycleId"
+            :crop-key="summary.crop_key"
+          />
         </section>
 
         <!-- Stages -->
@@ -200,6 +206,7 @@ import HelpTip from '../components/HelpTip.vue'
 import Metric from '../components/MetricChip.vue'
 import AskGuardianButton from '../components/AskGuardianButton.vue'
 import CropOpsTimeline from '../components/CropOpsTimeline.vue'
+import CycleRecipeTrackRecord from '../components/CycleRecipeTrackRecord.vue'
 import { downloadWithAuth } from '../lib/downloadAuth.js'
 
 const route = useRoute()

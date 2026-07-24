@@ -1183,6 +1183,17 @@ export const useFarmStore = defineStore('farm', {
     },
 
     // ids: array of cycle ids; the backend caps it at 5 server-side.
+    async loadRecipeOutcomes(farmId, { cropKey, recipeId } = {}) {
+      const qs = new URLSearchParams()
+      if (cropKey) qs.set('crop_key', cropKey)
+      if (recipeId) qs.set('recipe_id', String(recipeId))
+      const q = qs.toString()
+      const r = await api.get(
+        `/farms/${farmId}/crop-analytics/recipe-outcomes${q ? `?${q}` : ''}`,
+      )
+      return r.data
+    },
+
     async loadCropCycleCompare(farmId, ids) {
       if (!Array.isArray(ids) || !ids.length) {
         return { cycles: [] }

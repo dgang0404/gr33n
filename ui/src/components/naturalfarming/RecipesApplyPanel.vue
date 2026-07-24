@@ -244,6 +244,11 @@
             </div>
           </dl>
           <p v-if="rec.description" class="text-zinc-400 text-sm line-clamp-2">{{ rec.description }}</p>
+          <RecipeTrackRecordChip
+            :outcome="trackRecordForRecipe(rec.id)"
+            :show-costs="canViewCosts"
+            :data-test="`nf-recipe-track-record-${rec.id}`"
+          />
           <div class="flex flex-wrap gap-2 pt-2">
             <button
               type="button"
@@ -324,7 +329,9 @@ import {
 import { isModuleEnabled, MODULE_SCHEMA, moduleMapFromRows } from '../../lib/farmModules.js'
 import CommonsRecipePackImport from './CommonsRecipePackImport.vue'
 import ConceptHelpTip from '../ConceptHelpTip.vue'
+import RecipeTrackRecordChip from '../RecipeTrackRecordChip.vue'
 import { NF_VOCAB } from '../../lib/naturalFarmingVocabulary.js'
+import { bestOutcomeForRecipe } from '../../lib/recipeTrackRecord.js'
 
 const route = useRoute()
 const store = useFarmStore()
@@ -333,6 +340,9 @@ const { farmId } = storeToRefs(farmContext)
 const { has: hasScope } = useFarmCaps(farmId)
 const canWriteRecipes = computed(() => hasScope(FARM_SCOPES.nfRecipesWrite))
 const canDeleteRecipes = computed(() => hasScope(FARM_SCOPES.nfRecipesDelete))
+const canViewCosts = computed(() => hasScope(FARM_SCOPES.moneyRead))
+
+const recipeOutcomes = ref({ outcomes: [], insufficient_history: [] })
 
 const loading = ref(true)
 const loadError = ref('')
@@ -413,6 +423,15 @@ function inputName(id) {
   return found ? found.name : `#${id}`
 }
 
+function trackRecordForRecipe(recipeId) {
+  const stats = bestOutcomeForRecipe(recipeOutcomes.value.outcomes, recipeId)
+  if (stats) return stats
+  const pending = (recipeOutcomes.value.insufficient_history || []).find(
+    (o) => Number(o.application_recipe_id) === Number(recipeId),
+  )
+  return pending || null
+}
+
 function scrollPanelIntoView(el) {
   nextTick(() => {
     el?.scrollIntoView?.({ behavior: 'smooth', block: 'start' })
@@ -450,18 +469,20 @@ function applyRecipeFromRoute() {
 async function loadAll() {
   if (!farmId.value) return
   try {
-    const [i, r, p, cycles, enums] = await Promise.all([
+    const [i, r, p, cycles, enums, outcomes] = await Promise.all([
       store.loadNfInputs(farmId.value),
       store.loadRecipes(farmId.value),
       store.loadFertigationPrograms(farmId.value),
       store.loadCropCycles(farmId.value),
       loadDomainEnums(api),
+      store.loadRecipeOutcomes(farmId.value).catch(() => ({ outcomes: [], insufficient_history: [] })),
     ])
     inputs.value = i
     recipes.value = r
     programs.value = p
     cropCycles.value = cycles
     domainEnums.value = enums
+    recipeOutcomes.value = outcomes || { outcomes: [], insufficient_history: [] }
     applyRecipeFromRoute()
   } catch (e) {
     loadError.value = e?.message || 'Failed to load recipes'

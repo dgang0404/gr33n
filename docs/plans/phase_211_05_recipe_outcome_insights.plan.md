@@ -23,7 +23,7 @@ todos:
     status: completed
   - id: ws5-ui-track-record
     content: "WS5: 'Track record' chip on Recipes & apply cards + Crop Cycle Summary ('vs recipe average'), scope-gated $ figures"
-    status: pending
+    status: completed
   - id: ws6-closure
     content: "WS6: Go + Vitest closure tests, answer-accuracy regression (no fabricated numbers), operator-tour + farm-guardian-architecture.md cross-links"
     status: pending
