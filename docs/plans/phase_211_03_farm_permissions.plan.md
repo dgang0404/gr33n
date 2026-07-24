@@ -8,37 +8,37 @@ overview: >
 todos:
   - id: ws1-scope-catalog
     content: "WS1: Define scope catalog + role templates; document merge rules for farm_memberships.permissions JSONB"
-    status: pending
+    status: completed
   - id: ws2-caps-resolver
     content: "WS2: Extend farmauthz — ResolveFarmScopes / FarmCapsForUser merges role template + permissions overrides"
-    status: pending
+    status: completed
   - id: ws3-caps-api
     content: "WS3: GET /farms/{id}/me/caps — current user scopes for selected farm (UI affordances only)"
-    status: pending
+    status: completed
   - id: ws4-nf-handlers
     content: "WS4: Natural farming handlers — split RequireFarmOperate into nf.* scopes (read vs write vs delete vs pack.apply)"
-    status: pending
+    status: completed
   - id: ws5-cost-handlers
     content: "WS5: Money/cost paths — align RequireCostRead/Write with money.costs.* scopes; batch unit-cost PATCH"
-    status: pending
+    status: completed
   - id: ws6-ui-composable
     content: "WS6: useFarmCaps composable; replace duplicated OPERATE_ROLES sets; disable destructive buttons (fail closed on load error)"
-    status: pending
+    status: completed
   - id: ws7-settings-custom-role
     content: "WS7: Settings — custom_role scope picker for owner/manager (minimal JSON editor or checkbox grid)"
-    status: pending
+    status: completed
   - id: ws8-nf-tab-removal
     content: "WS8 (after WS1–WS6): Remove Inputs & batches tab; inline edit/delete on Supplies + Apply recipes + Make a batch"
     status: pending
   - id: ws9-tests-closure
     content: "WS9: farmauthz unit tests, smoke caps endpoint, UI closure — viewer 403 on delete, finance blocked on nf.delete"
-    status: pending
+    status: completed
 isProject: false
 ---
 
 # Phase 211.03 — Farm permissions (API-first, granular caps)
 
-**Status:** Planned · **Depends on:** [211.01 NF declutter](phase_211_01_nf_studio_declutter.plan.md) (shipped) · **Parallel-safe with:** [211.02 recipe revisions](phase_211_02_recipe_formula_history.plan.md) · **Before:** NF **Inputs & batches** tab removal (WS8 here) · **Before:** [212 dual-install federation](phase_212_dual_farm_federation_test.plan.md) (212 teardown note: restore single-install slate for auth testing)
+**Status:** WS1–WS7 + WS9 shipped · **WS8 pending** (remove Inputs & batches tab after inline delete paths) · **Depends on:** [211.01](phase_211_01_nf_studio_declutter.plan.md) · **Before:** [212 dual-install federation](phase_212_dual_farm_federation_test.plan.md)
 
 ## The one job
 

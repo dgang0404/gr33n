@@ -19,7 +19,7 @@ func (h *Handler) ApplyPack(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid farm id")
 		return
 	}
-	if !farmauthz.RequireFarmAdmin(w, r, h.q, farmID) {
+	if !farmauthz.RequireFarmScope(w, r, h.q, farmID, farmauthz.ScopeNFPackApply, "insufficient role to apply natural farming packs") {
 		return
 	}
 	var body struct {

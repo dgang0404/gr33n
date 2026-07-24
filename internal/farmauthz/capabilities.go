@@ -2,6 +2,7 @@ package farmauthz
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"net/http"
 
@@ -27,18 +28,11 @@ func fullCaps() FarmCaps {
 }
 
 func capsForRole(r commontypes.FarmMemberRoleEnum) FarmCaps {
-	switch r {
-	case commontypes.FarmMemberOwner, commontypes.FarmMemberManager:
-		return fullCaps()
-	case commontypes.FarmMemberFinance:
-		return FarmCaps{ViewCosts: true, EditCosts: true, Operate: false, Admin: false}
-	case commontypes.FarmMemberOperator, commontypes.FarmMemberWorker, commontypes.FarmMemberAgronomist:
-		return FarmCaps{ViewCosts: false, EditCosts: false, Operate: true, Admin: false}
-	case commontypes.FarmMemberViewer, commontypes.FarmMemberCustomRole:
-		return FarmCaps{ViewCosts: false, EditCosts: false, Operate: false, Admin: false}
-	default:
-		return FarmCaps{}
-	}
+	return scopesToLegacyCaps(roleTemplateScopes(r))
+}
+
+func capsForMembership(role commontypes.FarmMemberRoleEnum, permissions json.RawMessage) FarmCaps {
+	return scopesToLegacyCaps(mergeRoleScopes(role, parsePermissionOverrides(permissions)))
 }
 
 // RequireFarmCaps runs check on resolved caps; handles farm missing vs not a member.
@@ -74,7 +68,7 @@ func RequireFarmCaps(w http.ResponseWriter, r *http.Request, q db.Querier, farmI
 			httputil.WriteError(w, http.StatusInternalServerError, "failed to verify farm membership")
 			return false
 		}
-		caps = capsForRole(m.RoleInFarm)
+		caps = capsForMembership(m.RoleInFarm, m.Permissions)
 	}
 	if !check(caps) {
 		httputil.WriteError(w, http.StatusForbidden, denied)
@@ -84,23 +78,20 @@ func RequireFarmCaps(w http.ResponseWriter, r *http.Request, q db.Querier, farmI
 }
 
 func RequireCostRead(w http.ResponseWriter, r *http.Request, q db.Querier, farmID int64) bool {
-	return RequireFarmCaps(w, r, q, farmID, func(c FarmCaps) bool { return c.ViewCosts },
-		"insufficient role to view costs")
+	return RequireFarmScope(w, r, q, farmID, ScopeMoneyCostsRead, "insufficient role to view costs")
 }
 
 func RequireCostWrite(w http.ResponseWriter, r *http.Request, q db.Querier, farmID int64) bool {
-	return RequireFarmCaps(w, r, q, farmID, func(c FarmCaps) bool { return c.EditCosts },
-		"insufficient role to edit costs")
+	return RequireFarmScope(w, r, q, farmID, ScopeMoneyCostsWrite, "insufficient role to edit costs")
 }
 
+// RequireFarmOperate is deprecated in favor of RequireFarmScope(..., ScopeFarmOperate).
 func RequireFarmOperate(w http.ResponseWriter, r *http.Request, q db.Querier, farmID int64) bool {
-	return RequireFarmCaps(w, r, q, farmID, func(c FarmCaps) bool { return c.Operate },
-		"insufficient role to modify farm operations")
+	return RequireFarmScope(w, r, q, farmID, ScopeFarmOperate, "insufficient role to modify farm operations")
 }
 
 func RequireFarmAdmin(w http.ResponseWriter, r *http.Request, q db.Querier, farmID int64) bool {
-	return RequireFarmCaps(w, r, q, farmID, func(c FarmCaps) bool { return c.Admin },
-		"insufficient role for farm administration")
+	return RequireFarmScope(w, r, q, farmID, ScopeFarmAdmin, "insufficient role for farm administration")
 }
 
 // FarmCapsForUser resolves capabilities for a user on a farm without writing HTTP errors.
@@ -119,5 +110,5 @@ func FarmCapsForUser(ctx context.Context, q db.Querier, userID uuid.UUID, farmID
 	if err != nil {
 		return FarmCaps{}, err
 	}
-	return capsForRole(m.RoleInFarm), nil
+	return capsForMembership(m.RoleInFarm, m.Permissions), nil
 }

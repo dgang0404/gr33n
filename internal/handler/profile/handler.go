@@ -308,6 +308,60 @@ func (h *Handler) UpdateMemberRole(w http.ResponseWriter, r *http.Request) {
 	httputil.WriteJSON(w, http.StatusOK, m)
 }
 
+func (h *Handler) UpdateMemberPermissions(w http.ResponseWriter, r *http.Request) {
+	farmID, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	if err != nil {
+		httputil.WriteError(w, http.StatusBadRequest, "invalid farm id")
+		return
+	}
+	uid, err := uuid.Parse(r.PathValue("uid"))
+	if err != nil {
+		httputil.WriteError(w, http.StatusBadRequest, "invalid user id")
+		return
+	}
+	var body struct {
+		Permissions json.RawMessage `json:"permissions"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		httputil.WriteError(w, http.StatusBadRequest, "invalid body")
+		return
+	}
+	if len(body.Permissions) == 0 {
+		body.Permissions = []byte("{}")
+	}
+	if !json.Valid(body.Permissions) {
+		httputil.WriteError(w, http.StatusBadRequest, "permissions must be valid JSON")
+		return
+	}
+	q := db.New(h.pool)
+	if !farmauthz.RequireFarmAdmin(w, r, q, farmID) {
+		return
+	}
+	member, err := q.GetFarmMembership(r.Context(), db.GetFarmMembershipParams{FarmID: farmID, UserID: uid})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			httputil.WriteError(w, http.StatusNotFound, "member not found")
+			return
+		}
+		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	if member.RoleInFarm != commontypes.FarmMemberCustomRole {
+		httputil.WriteError(w, http.StatusBadRequest, "permissions override only applies to custom_role members")
+		return
+	}
+	m, err := q.UpdateFarmMemberPermissions(r.Context(), db.UpdateFarmMemberPermissionsParams{
+		FarmID:      farmID,
+		UserID:      uid,
+		Permissions: body.Permissions,
+	})
+	if err != nil {
+		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	httputil.WriteJSON(w, http.StatusOK, m)
+}
+
 func (h *Handler) RemoveMember(w http.ResponseWriter, r *http.Request) {
 	farmID, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil {

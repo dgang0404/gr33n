@@ -81,9 +81,6 @@ func (h *Handler) CreateInputDefinition(w http.ResponseWriter, r *http.Request) 
 		httputil.WriteError(w, http.StatusBadRequest, "invalid farm id")
 		return
 	}
-	if !farmauthz.RequireFarmOperate(w, r, h.q, farmID) {
-		return
-	}
 	var req struct {
 		Name               string   `json:"name"`
 		Category           string   `json:"category"`
@@ -99,6 +96,12 @@ func (h *Handler) CreateInputDefinition(w http.ResponseWriter, r *http.Request) 
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+	if !farmauthz.RequireFarmScope(w, r, h.q, farmID, farmauthz.ScopeNFInputsWrite, "insufficient role to edit inputs") {
+		return
+	}
+	if !requireUnitCostScope(w, r, h.q, farmID, req.UnitCost, req.UnitCostCurrency) {
 		return
 	}
 	unitCost, unitCostCurrency, err := parseUnitCost(req.UnitCost, req.UnitCostCurrency)
@@ -160,7 +163,10 @@ func (h *Handler) UpdateInputDefinition(w http.ResponseWriter, r *http.Request) 
 		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-	if !farmauthz.RequireFarmOperate(w, r, h.q, def.FarmID) {
+	if !farmauthz.RequireFarmScope(w, r, h.q, def.FarmID, farmauthz.ScopeNFInputsWrite, "insufficient role to edit inputs") {
+		return
+	}
+	if !requireUnitCostScope(w, r, h.q, def.FarmID, req.UnitCost, req.UnitCostCurrency) {
 		return
 	}
 	unitCost, unitCostCurrency, err := parseUnitCost(req.UnitCost, req.UnitCostCurrency)
@@ -216,6 +222,13 @@ func parseUnitCost(rawCost *float64, rawCurrency *string) (pgtype.Numeric, *stri
 	return num, currencyOut, nil
 }
 
+func requireUnitCostScope(w http.ResponseWriter, r *http.Request, q db.Querier, farmID int64, rawCost *float64, rawCurrency *string) bool {
+	if rawCost == nil && rawCurrency == nil {
+		return true
+	}
+	return farmauthz.RequireFarmScope(w, r, q, farmID, farmauthz.ScopeMoneyCostsWrite, "insufficient role to edit unit costs")
+}
+
 // DELETE /naturalfarming/inputs/{id}
 func (h *Handler) DeleteInputDefinition(w http.ResponseWriter, r *http.Request) {
 	id, err := resourceIDFromPath(r)
@@ -232,7 +245,7 @@ func (h *Handler) DeleteInputDefinition(w http.ResponseWriter, r *http.Request) 
 		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-	if !farmauthz.RequireFarmOperate(w, r, h.q, def.FarmID) {
+	if !farmauthz.RequireFarmScope(w, r, h.q, def.FarmID, farmauthz.ScopeNFInputsDelete, "insufficient role to delete inputs") {
 		return
 	}
 	if err := h.q.SoftDeleteInputDefinition(r.Context(), db.SoftDeleteInputDefinitionParams{
@@ -252,7 +265,7 @@ func (h *Handler) CreateInputBatch(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid farm id")
 		return
 	}
-	if !farmauthz.RequireFarmOperate(w, r, h.q, farmID) {
+	if !farmauthz.RequireFarmScope(w, r, h.q, farmID, farmauthz.ScopeNFBatchesWrite, "insufficient role to edit batches") {
 		return
 	}
 	var params db.CreateInputBatchParams
@@ -291,7 +304,7 @@ func (h *Handler) UpdateInputBatch(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-	if !farmauthz.RequireFarmOperate(w, r, h.q, b0.FarmID) {
+	if !farmauthz.RequireFarmScope(w, r, h.q, b0.FarmID, farmauthz.ScopeNFBatchesWrite, "insufficient role to edit batches") {
 		return
 	}
 	row, err := h.q.UpdateInputBatch(r.Context(), params)
@@ -318,7 +331,7 @@ func (h *Handler) DeleteInputBatch(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-	if !farmauthz.RequireFarmOperate(w, r, h.q, b0.FarmID) {
+	if !farmauthz.RequireFarmScope(w, r, h.q, b0.FarmID, farmauthz.ScopeNFBatchesDelete, "insufficient role to delete batches") {
 		return
 	}
 	if err := h.q.SoftDeleteInputBatch(r.Context(), db.SoftDeleteInputBatchParams{

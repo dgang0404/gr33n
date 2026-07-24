@@ -59,6 +59,12 @@ SET role_in_farm = $3
 WHERE farm_id = $1 AND user_id = $2
 RETURNING *;
 
+-- name: UpdateFarmMemberPermissions :one
+UPDATE gr33ncore.farm_memberships
+SET permissions = $3
+WHERE farm_id = $1 AND user_id = $2
+RETURNING *;
+
 -- name: RemoveFarmMember :exec
 DELETE FROM gr33ncore.farm_memberships
 WHERE farm_id = $1 AND user_id = $2;

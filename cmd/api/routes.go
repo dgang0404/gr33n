@@ -249,6 +249,7 @@ func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationwo
 	mux.Handle("GET /farm-modules/catalog", jwt(http.HandlerFunc(farm.ModuleCatalog)))
 
 	// Farms
+	mux.Handle("GET /farms/{id}/me/caps", jwt(http.HandlerFunc(farm.MeCaps)))
 	mux.Handle("GET /farms", jwt(http.HandlerFunc(farm.List)))
 	mux.Handle("POST /farms", jwt(http.HandlerFunc(farm.Create)))
 	mux.Handle("POST /farms/{id}/bootstrap-template", jwt(http.HandlerFunc(farm.ApplyFarmBootstrapTemplate)))
@@ -553,6 +554,7 @@ func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationwo
 	mux.Handle("GET /farms/{id}/members", jwt(http.HandlerFunc(prof.GetFarmMembers)))
 	mux.Handle("POST /farms/{id}/members", jwt(http.HandlerFunc(prof.AddFarmMember)))
 	mux.Handle("PATCH /farms/{id}/members/{uid}/role", jwt(http.HandlerFunc(prof.UpdateMemberRole)))
+	mux.Handle("PATCH /farms/{id}/members/{uid}/permissions", jwt(http.HandlerFunc(prof.UpdateMemberPermissions)))
 	mux.Handle("DELETE /farms/{id}/members/{uid}", jwt(http.HandlerFunc(prof.RemoveMember)))
 
 	// SSE — live sensor readings push

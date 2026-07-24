@@ -1470,6 +1470,16 @@ export const useFarmStore = defineStore('farm', {
       return Array.isArray(r.data) ? r.data : []
     },
 
+    async loadFarmCaps(farmId) {
+      const r = await api.get(`/farms/${farmId}/me/caps`)
+      return r.data || { role_in_farm: '', scopes: [] }
+    },
+
+    async updateFarmMemberPermissions(farmId, userId, permissions) {
+      const r = await api.patch(`/farms/${farmId}/members/${userId}/permissions`, { permissions })
+      return r.data
+    },
+
     async addFarmMember(farmId, data) {
       const r = await api.post(`/farms/${farmId}/members`, data)
       return r.data

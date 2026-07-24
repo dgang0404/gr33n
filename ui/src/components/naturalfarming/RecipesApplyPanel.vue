@@ -273,10 +273,20 @@
             >
               Use in program
             </router-link>
-            <button type="button" class="text-xs text-zinc-400 hover:text-white" @click="startEditRecipe(rec)">
+            <button
+              v-if="canWriteRecipes"
+              type="button"
+              class="text-xs text-zinc-400 hover:text-white"
+              @click="startEditRecipe(rec)"
+            >
               Edit
             </button>
-            <button type="button" class="text-xs text-red-500 hover:text-red-400" @click="deleteRecipe(rec)">
+            <button
+              v-if="canDeleteRecipes"
+              type="button"
+              class="text-xs text-red-500 hover:text-red-400"
+              @click="deleteRecipe(rec)"
+            >
               Delete
             </button>
           </div>
@@ -297,6 +307,8 @@ import { useRoute } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useFarmStore } from '../../stores/farm.js'
 import { useFarmContextStore } from '../../stores/farmContext.js'
+import { useFarmCaps } from '../../composables/useFarmCaps.js'
+import { FARM_SCOPES } from '../../lib/farmScopes.js'
 import api from '../../api'
 import { enumValues, loadDomainEnums } from '../../lib/domainEnums.js'
 import { formatApplicationType } from '../../lib/naturalFarmingLibrary.js'
@@ -318,6 +330,9 @@ const route = useRoute()
 const store = useFarmStore()
 const farmContext = useFarmContextStore()
 const { farmId } = storeToRefs(farmContext)
+const { has: hasScope } = useFarmCaps(farmId)
+const canWriteRecipes = computed(() => hasScope(FARM_SCOPES.nfRecipesWrite))
+const canDeleteRecipes = computed(() => hasScope(FARM_SCOPES.nfRecipesDelete))
 
 const loading = ref(true)
 const loadError = ref('')

@@ -743,6 +743,7 @@ type Querier interface {
 	UpdateFarmEnergyPrice(ctx context.Context, arg UpdateFarmEnergyPriceParams) (Gr33ncoreFarmEnergyPrice, error)
 	UpdateFarmGuardianModelPolicy(ctx context.Context, arg UpdateFarmGuardianModelPolicyParams) (Gr33ncoreFarm, error)
 	UpdateFarmGuardianPreferredModel(ctx context.Context, arg UpdateFarmGuardianPreferredModelParams) (Gr33ncoreFarm, error)
+	UpdateFarmMemberPermissions(ctx context.Context, arg UpdateFarmMemberPermissionsParams) (Gr33ncoreFarmMembership, error)
 	UpdateFarmMemberRole(ctx context.Context, arg UpdateFarmMemberRoleParams) (Gr33ncoreFarmMembership, error)
 	UpdateFarmSiteCoords(ctx context.Context, arg UpdateFarmSiteCoordsParams) (Gr33ncoreFarm, error)
 	UpdateFarmWeatherForecastOptIn(ctx context.Context, arg UpdateFarmWeatherForecastOptInParams) (Gr33ncoreFarm, error)

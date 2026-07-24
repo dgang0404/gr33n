@@ -17,6 +17,7 @@
       </div>
       <div class="flex flex-wrap gap-2 shrink-0">
         <button
+          v-if="canWriteBatches"
           type="button"
           class="px-3 py-1.5 text-xs font-medium rounded-lg bg-green-900/50 text-green-400 border border-green-800 hover:bg-green-900/70"
           data-test="supplies-new-batch"
@@ -173,6 +174,7 @@
               <dd v-if="unitCostEditId !== row.inputDefinitionId" class="text-zinc-300">
                 {{ row.unitCostLabel || 'Not set' }}
                 <button
+                  v-if="canEditUnitCost"
                   type="button"
                   class="ml-2 text-green-600 hover:text-green-400"
                   data-test="supplies-edit-unit-cost"
@@ -245,6 +247,7 @@
               {{ NF_VOCAB.applyRecipes }} →
             </router-link>
             <button
+              v-if="canWriteBatches"
               type="button"
               class="text-xs text-green-500 hover:text-green-400"
               data-test="supplies-restock-btn"
@@ -389,6 +392,8 @@ import { computed, onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useFarmStore } from '../stores/farm.js'
 import { useFarmContextStore } from '../stores/farmContext.js'
+import { useFarmCaps } from '../composables/useFarmCaps.js'
+import { FARM_SCOPES } from '../lib/farmScopes.js'
 import ZoneContextBanner from '../components/ZoneContextBanner.vue'
 import EmptyStateHint from '../components/EmptyStateHint.vue'
 import GuardianStarterChips from '../components/GuardianStarterChips.vue'
@@ -418,6 +423,10 @@ const route = useRoute()
 const router = useRouter()
 const store = useFarmStore()
 const farmContext = useFarmContextStore()
+const farmIdRef = computed(() => farmContext.farmId)
+const { has: hasScope } = useFarmCaps(farmIdRef)
+const canWriteBatches = computed(() => hasScope(FARM_SCOPES.nfBatchesWrite))
+const canEditUnitCost = computed(() => hasScope(FARM_SCOPES.moneyWrite))
 
 const loading = ref(false)
 const saving = ref(false)

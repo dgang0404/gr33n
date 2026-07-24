@@ -64,7 +64,7 @@ func (h *Handler) CreateRecipe(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid farm id")
 		return
 	}
-	if !farmauthz.RequireFarmOperate(w, r, h.q, farmID) {
+	if !farmauthz.RequireFarmScope(w, r, h.q, farmID, farmauthz.ScopeNFRecipesWrite, "insufficient role to edit recipes") {
 		return
 	}
 	var body struct {
@@ -143,7 +143,7 @@ func (h *Handler) UpdateRecipe(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-	if !farmauthz.RequireFarmOperate(w, r, h.q, rec.FarmID) {
+	if !farmauthz.RequireFarmScope(w, r, h.q, rec.FarmID, farmauthz.ScopeNFRecipesWrite, "insufficient role to edit recipes") {
 		return
 	}
 	row, err := h.q.UpdateRecipe(r.Context(), db.UpdateRecipeParams{
@@ -218,7 +218,7 @@ func (h *Handler) DeleteRecipe(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-	if !farmauthz.RequireFarmOperate(w, r, h.q, rec.FarmID) {
+	if !farmauthz.RequireFarmScope(w, r, h.q, rec.FarmID, farmauthz.ScopeNFRecipesDelete, "insufficient role to delete recipes") {
 		return
 	}
 	if err := h.q.SoftDeleteRecipe(r.Context(), id); err != nil {
@@ -288,7 +288,7 @@ func (h *Handler) AddRecipeComponent(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-	if !farmauthz.RequireFarmOperate(w, r, h.q, rec.FarmID) {
+	if !farmauthz.RequireFarmScope(w, r, h.q, rec.FarmID, farmauthz.ScopeNFRecipesWrite, "insufficient role to edit recipes") {
 		return
 	}
 	pv, err := httputil.NumericFromFloat64(body.PartValue)
@@ -334,7 +334,7 @@ func (h *Handler) RemoveRecipeComponent(w http.ResponseWriter, r *http.Request) 
 		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-	if !farmauthz.RequireFarmOperate(w, r, h.q, rec.FarmID) {
+	if !farmauthz.RequireFarmScope(w, r, h.q, rec.FarmID, farmauthz.ScopeNFRecipesWrite, "insufficient role to edit recipes") {
 		return
 	}
 	if err := h.q.RemoveRecipeComponent(r.Context(), db.RemoveRecipeComponentParams{
@@ -372,7 +372,7 @@ func (h *Handler) RestoreRecipeRevision(w http.ResponseWriter, r *http.Request) 
 		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-	if !farmauthz.RequireFarmOperate(w, r, h.q, rec.FarmID) {
+	if !farmauthz.RequireFarmScope(w, r, h.q, rec.FarmID, farmauthz.ScopeNFRecipesWrite, "insufficient role to edit recipes") {
 		return
 	}
 

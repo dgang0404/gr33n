@@ -225,6 +225,32 @@ func (q *Queries) RemoveFarmMember(ctx context.Context, arg RemoveFarmMemberPara
 	return err
 }
 
+const updateFarmMemberPermissions = `-- name: UpdateFarmMemberPermissions :one
+UPDATE gr33ncore.farm_memberships
+SET permissions = $3
+WHERE farm_id = $1 AND user_id = $2
+RETURNING farm_id, user_id, role_in_farm, permissions, joined_at
+`
+
+type UpdateFarmMemberPermissionsParams struct {
+	FarmID      int64           `db:"farm_id" json:"farm_id"`
+	UserID      uuid.UUID       `db:"user_id" json:"user_id"`
+	Permissions json.RawMessage `db:"permissions" json:"permissions"`
+}
+
+func (q *Queries) UpdateFarmMemberPermissions(ctx context.Context, arg UpdateFarmMemberPermissionsParams) (Gr33ncoreFarmMembership, error) {
+	row := q.db.QueryRow(ctx, updateFarmMemberPermissions, arg.FarmID, arg.UserID, arg.Permissions)
+	var i Gr33ncoreFarmMembership
+	err := row.Scan(
+		&i.FarmID,
+		&i.UserID,
+		&i.RoleInFarm,
+		&i.Permissions,
+		&i.JoinedAt,
+	)
+	return i, err
+}
+
 const updateFarmMemberRole = `-- name: UpdateFarmMemberRole :one
 UPDATE gr33ncore.farm_memberships
 SET role_in_farm = $3

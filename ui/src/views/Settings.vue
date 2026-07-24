@@ -627,7 +627,8 @@
       <div v-if="membersLoading" class="text-zinc-500 text-sm">Loading members...</div>
       <div v-else-if="members.length === 0" class="text-zinc-500 text-sm">No members yet.</div>
       <div v-else class="space-y-2 mb-4">
-        <div v-for="m in members" :key="m.user_id"
+        <div v-for="m in members" :key="m.user_id" class="space-y-2">
+        <div
           class="flex items-center justify-between bg-zinc-900 border border-zinc-700 rounded-lg px-4 py-2.5">
           <div class="flex items-center gap-3 min-w-0">
             <div class="w-8 h-8 rounded-full bg-zinc-700 flex items-center justify-center text-xs text-zinc-300 font-bold shrink-0">
@@ -646,12 +647,35 @@
               <option value="operator">Operator</option>
               <option value="finance">Finance</option>
               <option value="viewer">Viewer</option>
+              <option value="custom_role">Custom role</option>
             </select>
             <button @click="removeMember(m.user_id)"
               class="text-zinc-500 hover:text-red-400 text-xs transition-colors" title="Remove">
               ✕
             </button>
           </div>
+        </div>
+        <div
+          v-if="m.role_in_farm === 'custom_role' && isFarmAdmin"
+          class="bg-zinc-900/60 border border-zinc-800 rounded-lg px-4 py-2 ml-11"
+          data-test="member-custom-scopes"
+        >
+          <p class="text-[10px] text-zinc-500 mb-2">Custom scopes (API-enforced)</p>
+          <div class="flex flex-wrap gap-x-3 gap-y-1">
+            <label
+              v-for="opt in FARM_SCOPE_OPTIONS"
+              :key="opt.id"
+              class="text-[10px] text-zinc-400 inline-flex items-center gap-1"
+            >
+              <input
+                type="checkbox"
+                :checked="memberScopeSelected(m, opt.id)"
+                @change="toggleMemberScope(m, opt.id, $event.target.checked)"
+              />
+              {{ opt.label }}
+            </label>
+          </div>
+        </div>
         </div>
       </div>
 
@@ -663,6 +687,7 @@
           <option value="viewer">Viewer</option>
           <option value="operator">Operator</option>
           <option value="finance">Finance</option>
+          <option value="custom_role">Custom role</option>
           <option value="manager">Manager</option>
           <option value="owner">Owner</option>
         </select>
@@ -1229,6 +1254,7 @@ import SettingsEdgeValidationCard from '../components/SettingsEdgeValidationCard
 import FarmMapsCoordsPaste from '../components/FarmMapsCoordsPaste.vue'
 import { farmSetupRoute } from '../lib/farmSetupWizard.js'
 import { MODULE_SCHEMA } from '../lib/farmModules.js'
+import { FARM_SCOPE_OPTIONS } from '../lib/farmScopes.js'
 
 const router = useRouter()
 const auth   = useAuthStore()
@@ -2216,6 +2242,37 @@ async function inviteMember() {
 async function changeRole(userId, role) {
   try {
     await farmStore.updateFarmMemberRole(farmContext.farmId, userId, role)
+    await loadMembers()
+  } catch {}
+}
+
+function memberPermissions(m) {
+  const raw = m.permissions
+  if (!raw) return { scopes: [], deny: [] }
+  if (typeof raw === 'string') {
+    try {
+      return JSON.parse(raw)
+    } catch {
+      return { scopes: [], deny: [] }
+    }
+  }
+  return raw
+}
+
+function memberScopeSelected(m, scope) {
+  return (memberPermissions(m).scopes || []).includes(scope)
+}
+
+async function toggleMemberScope(m, scope, on) {
+  const p = memberPermissions(m)
+  const scopes = new Set(p.scopes || [])
+  if (on) scopes.add(scope)
+  else scopes.delete(scope)
+  try {
+    await farmStore.updateFarmMemberPermissions(farmContext.farmId, m.user_id, {
+      scopes: [...scopes],
+      deny: p.deny || [],
+    })
     await loadMembers()
   } catch {}
 }
