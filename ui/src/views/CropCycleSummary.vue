@@ -178,18 +178,28 @@
           </p>
         </section>
       </div>
+
+      <CropOpsTimeline
+        v-if="summary.cycle?.farm_id"
+        class="mt-5"
+        :farm-id="summary.cycle.farm_id"
+        :cycle-id="cycleId"
+        :default-from="summary.cycle.started_at"
+        :default-to="summary.cycle.harvested_at"
+      />
     </template>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, watch, nextTick } from 'vue'
 import { useRoute } from 'vue-router'
 import { useFarmStore } from '../stores/farm'
 import { buildPostHarvestCompareRoute, cycleBatchLabel, formatStageLabel } from '../lib/growHub.js'
 import HelpTip from '../components/HelpTip.vue'
 import Metric from '../components/MetricChip.vue'
 import AskGuardianButton from '../components/AskGuardianButton.vue'
+import CropOpsTimeline from '../components/CropOpsTimeline.vue'
 import { downloadWithAuth } from '../lib/downloadAuth.js'
 
 const route = useRoute()
@@ -272,6 +282,18 @@ async function load() {
   }
 }
 
-onMounted(load)
-watch(cycleId, load)
+async function scrollToOpsAnchor() {
+  if (route.hash !== '#crop-ops-timeline') return
+  await nextTick()
+  document.getElementById('crop-ops-timeline')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+}
+
+async function loadAndScroll() {
+  await load()
+  await scrollToOpsAnchor()
+}
+
+onMounted(loadAndScroll)
+watch(cycleId, loadAndScroll)
+watch(() => route.hash, scrollToOpsAnchor)
 </script>

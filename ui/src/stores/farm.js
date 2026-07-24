@@ -1171,6 +1171,17 @@ export const useFarmStore = defineStore('farm', {
       return r.data
     },
 
+    async loadCropCycleOpsTimeline(farmId, cycleId, { from, to } = {}) {
+      const qs = new URLSearchParams()
+      if (from) qs.set('from', from)
+      if (to) qs.set('to', to)
+      const q = qs.toString()
+      const r = await api.get(
+        `/farms/${farmId}/crop-cycles/${cycleId}/ops-timeline${q ? `?${q}` : ''}`,
+      )
+      return r.data
+    },
+
     // ids: array of cycle ids; the backend caps it at 5 server-side.
     async loadCropCycleCompare(farmId, ids) {
       if (!Array.isArray(ids) || !ids.length) {

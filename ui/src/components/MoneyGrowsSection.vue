@@ -54,6 +54,13 @@
               Summary →
             </router-link>
             <router-link
+              :to="`/crop-cycles/${c.id}/summary#crop-ops-timeline`"
+              class="text-xs text-zinc-500 hover:text-zinc-300"
+              data-test="money-grow-ops-log"
+            >
+              Ops log →
+            </router-link>
+            <router-link
               v-nav-hint="'/money'"
               :to="{ path: '/money', query: { tab: 'summary', cycle_id: c.id } }"
               class="text-xs text-zinc-500 hover:text-zinc-300"

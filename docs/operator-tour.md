@@ -488,7 +488,7 @@ Four new **read tools** (no Confirm): **`summarize_cycle_cost`**, **`summarize_f
 |---------|----------------|
 | **Start grow** | Plant picker links the cycle to your Plants catalog (`plant_id`) |
 | **Plants** | Each plant card lists grows tied to that catalog crop |
-| **Cycle summary** | Real stage timeline after stage changes; **Harvest economics** when income is tagged |
+| **Cycle summary** | Real stage timeline after stage changes; **Harvest economics** when income is tagged; **Ops log** — feed, mix, light, and stage events with formula-at-time |
 | **Compare** | Opens with this harvest + prior run pre-selected (`?ids=`) |
 | **Money** | **Income for this grow** filter from summary (`?cycle_id=`) |
 
@@ -791,7 +791,7 @@ Plan: [`plans/archive/phase_76_today_dashboard_nav_alignment.plan.md`](plans/arc
 | Area | Home |
 |------|------|
 | **Compare harvests** | **Zones → Strains** banner → `/farms/:id/crop-cycles/compare`; legacy `/analytics` redirects |
-| **Grow economics** | **Money → Grows** tab — cycle list + compare link |
+| **Grow economics** | **Money → Grows** tab — cycle list, **Ops log →** drill-down, compare link |
 | **Guardian** | **Drawer** (edge tab + TopBar) is primary; **Open full chat →** for sessions / pending inbox; `/chat` not in sidebar |
 | **Help** | **More → Help** (`/operator-guide`) — **What lives where** map + Guide · Pi + HAT setup · Knowledge · Symptoms · Catalog; `/farm-knowledge`, `/symptom-guide`, `/catalog` redirect ([§7m](#7m-help-knowledge-surfaces-phase-180--shipped)) |
 | **Farm site** | **Today** farm card (lat/long) + full detail in Settings |
