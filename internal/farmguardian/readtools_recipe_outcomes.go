@@ -140,3 +140,28 @@ func revisionLabel(rev *int64) string {
 	}
 	return fmt.Sprintf("#%d", *rev)
 }
+
+var recipeOutcomeStatNumberRE = regexp.MustCompile(`\d`)
+
+// RecipeOutcomeToolGroundingNote flags summarize_recipe_outcomes tool blocks that
+// cite a bare statistic without sample size or "avg" framing.
+func RecipeOutcomeToolGroundingNote(block string) string {
+	if !strings.Contains(block, "summarize_recipe_outcomes") {
+		return ""
+	}
+	for _, line := range strings.Split(block, "\n") {
+		line = strings.TrimSpace(line)
+		if line == "" || !recipeOutcomeStatNumberRE.MatchString(line) {
+			continue
+		}
+		lower := strings.ToLower(line)
+		if strings.Contains(lower, "insufficient history") ||
+			strings.Contains(lower, "harvested cycle") ||
+			strings.Contains(lower, "cycle(s)") ||
+			strings.Contains(lower, "avg ") {
+			continue
+		}
+		return "recipe_outcome_bare_number: " + line
+	}
+	return ""
+}

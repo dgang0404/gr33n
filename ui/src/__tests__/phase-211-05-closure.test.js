@@ -66,4 +66,10 @@ describe('Phase 211.05 recipe outcome insights closure', () => {
     const summary = readFileSync(join(root, 'views/CropCycleSummary.vue'), 'utf8')
     expect(summary).toContain('CycleRecipeTrackRecord')
   })
+
+  it('architecture doc cross-links recipe outcome insights', () => {
+    const doc = readFileSync(join(root, '../../docs/farm-guardian-architecture.md'), 'utf8')
+    expect(doc).toContain('summarize_recipe_outcomes')
+    expect(doc).toContain('7.0ah Recipe outcome insights')
+  })
 })

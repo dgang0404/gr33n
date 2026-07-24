@@ -55,7 +55,7 @@ func SmokeFullFixtures() []Question {
 	return out
 }
 
-// SmokeAllFixtures is the default guardian-qa-smoke-all Q&A set (23 prompts).
+// SmokeAllFixtures is the default guardian-qa-smoke-all Q&A set (24 prompts).
 func SmokeAllFixtures() []Question {
 	out := make([]Question, 0,
 		len(SmokeFullFixtures())+len(Phase127Fixtures())+len(ChangeRequestFixtures()))

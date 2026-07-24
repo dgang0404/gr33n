@@ -26,13 +26,13 @@ todos:
     status: completed
   - id: ws6-closure
     content: "WS6: Go + Vitest closure tests, answer-accuracy regression (no fabricated numbers), operator-tour + farm-guardian-architecture.md cross-links"
-    status: pending
+    status: completed
 isProject: false
 ---
 
 # Phase 211.05 — Recipe & program outcome insights
 
-**Status:** In progress (WS0–WS4 shipped) · **Depends on:** [211.02 recipe formula history](phase_211_02_recipe_formula_history.plan.md) (formula-at-time attribution), [211.03 farm permissions](phase_211_03_farm_permissions.plan.md) (`money.costs.read` gate) · **After:** [211.04 crop ops report UI](phase_211_04_crop_ops_report_ui.plan.md)
+**Status:** Complete (WS0–WS6 shipped) · **Depends on:** [211.02 recipe formula history](phase_211_02_recipe_formula_history.plan.md) (formula-at-time attribution), [211.03 farm permissions](phase_211_03_farm_permissions.plan.md) (`money.costs.read` gate) · **After:** [211.04 crop ops report UI](phase_211_04_crop_ops_report_ui.plan.md)
 
 ## The one job
 
@@ -143,7 +143,7 @@ New grounding rule (append to `internal/farmguardian/readtools_crop.go` alongsid
 - Vitest: `phase-211-05-closure.test.js` — endpoint call shape, chip rendering, scope gating.
 - Docs: cross-link from `docs/farm-guardian-architecture.md` (new `§7.0x` or next free letter) and `docs/operator-tour.md` §7u natural farming section; mark this plan **Complete** when shipped.
 
-## Shipped (WS0–WS4)
+## Shipped (WS0–WS6)
 
 | WS | Deliverable |
 |----|-------------|
@@ -152,14 +152,16 @@ New grounding rule (append to `internal/farmguardian/readtools_crop.go` alongsid
 | WS2 | `internal/cropcycle/recipeoutcomes` — dominant recipe at 60%, min sample 2, cost/yield aggregates |
 | WS3 | `GET /farms/{id}/crop-analytics/recipe-outcomes` — cost fields omitted without `money.costs.read` |
 | WS4 | `summarize_recipe_outcomes` read tool + `RecipeOutcomeGroundingRule` in platform context |
+| WS5 | `RecipeTrackRecordChip` on Recipes & apply; `CycleRecipeTrackRecord` on crop cycle summary — cost gated by `money.costs.read` |
+| WS6 | `outcomes_test.go`, `RecipeOutcomeToolGroundingNote`, `phase-211-05-closure.test.js`, docs §7.0ah + operator-tour §7u cross-links |
 
 ## Acceptance criteria
 
-- [ ] `summarize_recipe_outcomes` never appears in a transcript with a bare number lacking "avg" or a cycle count nearby (regression-tested).
-- [ ] Sample size < 2 never renders a stat as if it were a trend.
-- [ ] Cost figures absent (not zero) for callers without `money.costs.read`.
-- [ ] No new database migration required — pure read/aggregate over existing 211.02 attribution data.
-- [ ] UI track-record chip only renders for recipes with a clear (non-mixed) attribution across ≥ threshold cycles.
+- [x] `summarize_recipe_outcomes` never appears in a transcript with a bare number lacking "avg" or a cycle count nearby (regression-tested).
+- [x] Sample size < 2 never renders a stat as if it were a trend.
+- [x] Cost figures absent (not zero) for callers without `money.costs.read`.
+- [x] No new database migration required — pure read/aggregate over existing 211.02 attribution data.
+- [x] UI track-record chip only renders for recipes with a clear (non-mixed) attribution across ≥ threshold cycles.
 
 ## Related
 

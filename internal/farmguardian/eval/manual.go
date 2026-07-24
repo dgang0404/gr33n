@@ -97,6 +97,8 @@ func manualPassHint(q Question) string {
 		return "WCA foliar dilution ~1:1000"
 	case "smoke-nf-lab":
 		return "LAB serum for soil conditioning / odor control"
+	case "smoke-nf-recipe-outcomes":
+		return "Historical recipe avg yield/cost with cycle count (not a forecast); API log may show summarize_recipe_outcomes"
 	case "farm-devices", "p128-devices":
 		return "Mentions snapshot device line or online/offline edge devices; no invented GPIO"
 	case "farm-fert-schedule", "p128-fert-manual":

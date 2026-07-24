@@ -917,12 +917,14 @@ Plan: [`phase_198_guardian_task_dialogue_eval_rerun.plan.md`](plans/archive/phas
 | **Start here** | Switchover wizard + **Commons recipe pack import** (211); apply Mericle-style switchover packs |
 | **Recipe library** | Canonical inputs/recipes; **Livestock** tab when Animals module on (211) |
 | **Make a batch** | Pick process → variant → follow guide → create input + batch on the farm |
-| **Recipes & apply** | Farm application recipes; link to **Feed & water → Programs** per zone |
+| **Recipes & apply** | Farm application recipes; link to **Feed & water → Programs** per zone; **track record** chip (211.05) shows avg yield/cost from harvested cycles with clear recipe attribution |
 | **On hand** | Ready batches, low-stock banner, **Restock / edit costs → Money** |
+
+**Recipe track record (211.05):** On **Recipes & apply**, each recipe card can show `Used in N harvested cycles · avg Xg · $Y/g` when the farm has enough finished cycles with a single dominant recipe revision. On **Crop cycle summary**, a line below Yield compares this cycle's attributed recipe to the farm average — correlational only, not a forecast. Ask Guardian *"which recipe worked best?"* or *"based on history"* to get the same aggregates via `summarize_recipe_outcomes`. Architecture: [§7.0ah](farm-guardian-architecture.md#70ah-recipe-outcome-insights-phase-21105--shipped).
 
 **Legacy paths:** `/inventory` → studio (**Recipes & apply** by default; `?inv=batches` → **On hand**). **Feed & water → Advanced** mixing log **Inventory batches →** opens **On hand**. Power users: **Money → Natural farming (advanced)** for definitions + full CRUD.
 
-**Vitest:** `phase-207-closure.test.js`, `phase-208-closure.test.js` … `phase-211-closure.test.js`.
+**Vitest:** `phase-207-closure.test.js`, `phase-208-closure.test.js` … `phase-211-closure.test.js`, `phase-211-05-closure.test.js`.
 
 ---
 

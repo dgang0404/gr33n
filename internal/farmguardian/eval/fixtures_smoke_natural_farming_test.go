@@ -6,8 +6,8 @@ import (
 )
 
 func TestSmokeNaturalFarmingFixtures_count(t *testing.T) {
-	if got := len(SmokeNaturalFarmingFixtures()); got != 10 {
-		t.Fatalf("expected 10 natural farming smoke fixtures, got %d", got)
+	if got := len(SmokeNaturalFarmingFixtures()); got != 11 {
+		t.Fatalf("expected 11 natural farming smoke fixtures, got %d", got)
 	}
 }
 
@@ -27,9 +27,24 @@ func TestSmokeNaturalFarmingFixtures_jlfDocPrompt(t *testing.T) {
 }
 
 func TestFixturesForSuite_smokeNaturalFarming(t *testing.T) {
-	if len(FixturesForSuite("smoke-natural-farming")) != 10 {
+	if len(FixturesForSuite("smoke-natural-farming")) != 11 {
 		t.Fatal("smoke-natural-farming suite size")
 	}
+}
+
+func TestSmokeNaturalFarmingFixtures_recipeOutcomes(t *testing.T) {
+	for _, q := range SmokeNaturalFarmingFixtures() {
+		if q.ID == "smoke-nf-recipe-outcomes" {
+			if q.ExpectTool != "summarize_recipe_outcomes" {
+				t.Fatalf("ExpectTool=%q", q.ExpectTool)
+			}
+			if !strings.Contains(strings.ToLower(q.Prompt), "based on history") {
+				t.Fatalf("prompt=%q", q.Prompt)
+			}
+			return
+		}
+	}
+	t.Fatal("smoke-nf-recipe-outcomes missing")
 }
 
 func TestScore_smokeNFJlfDoc(t *testing.T) {
@@ -50,5 +65,22 @@ func TestScore_smokeNFJmsDilution(t *testing.T) {
 	})
 	if !res.Passed {
 		t.Fatalf("expected pass, got %+v", res)
+	}
+}
+
+func TestScore_smokeNFRecipeOutcomes(t *testing.T) {
+	res := Score(ScoreInput{
+		Question: Question{ID: "smoke-nf-recipe-outcomes", Category: "natural_farming"},
+		Answer:   "FFJ and WCA Flowering Boost on chrysanthemum: 2 harvested cycles — avg yield 396g, avg 0.22 USD/g. Correlational only.",
+	})
+	if !res.Passed {
+		t.Fatalf("expected pass, got %+v", res)
+	}
+	bad := Score(ScoreInput{
+		Question: Question{ID: "smoke-nf-recipe-outcomes", Category: "natural_farming"},
+		Answer:   "This recipe will produce 400g next run for sure.",
+	})
+	if bad.Passed {
+		t.Fatal("expected forecast claim to fail")
 	}
 }

@@ -34,6 +34,8 @@ func TestPlatformContextBlock_ContainsRequiredFacts(t *testing.T) {
 		"Symptom catalog",
 		"subscription",
 		"LAN/intranet",
+		"summarize_recipe_outcomes",
+		"Recipe outcome grounding",
 	} {
 		if !strings.Contains(block, want) {
 			t.Fatalf("platform block missing %q:\n%s", want, block)

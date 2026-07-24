@@ -77,5 +77,13 @@ func SmokeNaturalFarmingFixtures() []Question {
 			Grounded: true,
 			Model:    "phi3:mini",
 		},
+		{
+			ID:         "smoke-nf-recipe-outcomes",
+			Category:   "natural_farming",
+			Prompt:     "Which recipe worked best for chrysanthemum based on history — compare yield and cost per gram from our harvested cycles.",
+			Grounded:   true,
+			ExpectTool: "summarize_recipe_outcomes",
+			Model:      "phi3:mini",
+		},
 	}
 }

@@ -21,25 +21,25 @@ func TestSuiteRequiresWarmup_regressionFalse(t *testing.T) {
 }
 
 func TestSmokeFullFixtures_count(t *testing.T) {
-	if got := len(SmokeFullFixtures()); got != 15 {
-		t.Fatalf("expected 15 smoke-full fixtures, got %d", got)
+	if got := len(SmokeFullFixtures()); got != 16 {
+		t.Fatalf("expected 16 smoke-full fixtures, got %d", got)
 	}
 }
 
 func TestFixturesForSuite_smokeFull(t *testing.T) {
-	if len(FixturesForSuite("smoke-full")) != 15 {
+	if len(FixturesForSuite("smoke-full")) != 16 {
 		t.Fatal("smoke-full suite size")
 	}
 }
 
 func TestSmokeAllFixtures_count(t *testing.T) {
-	if got := len(SmokeAllFixtures()); got != 23 {
-		t.Fatalf("expected 23 smoke-all fixtures, got %d", got)
+	if got := len(SmokeAllFixtures()); got != 24 {
+		t.Fatalf("expected 24 smoke-all fixtures, got %d", got)
 	}
 }
 
 func TestFixturesForSuite_smokeAll(t *testing.T) {
-	if len(FixturesForSuite("smoke-all")) != 23 {
+	if len(FixturesForSuite("smoke-all")) != 24 {
 		t.Fatal("smoke-all suite size")
 	}
 }

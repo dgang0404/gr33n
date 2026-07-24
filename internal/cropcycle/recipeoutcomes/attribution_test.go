@@ -15,7 +15,7 @@ func TestAttributeCycle_dominantAtThreshold(t *testing.T) {
 	if total != 4 || mixed {
 		t.Fatalf("expected dominant recipe 10, got mixed=%v total=%d", mixed, total)
 	}
-	if key.RecipeID != 10 || key.RevisionID == nil || *key.RevisionID != 3 {
+	if key.RecipeID != 10 || key.RevisionID != 3 {
 		t.Fatalf("key = %+v", key)
 	}
 }

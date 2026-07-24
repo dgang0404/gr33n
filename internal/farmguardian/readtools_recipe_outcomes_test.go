@@ -50,6 +50,35 @@ func TestFormatRecipeOutcomeLine_includesAvgAndN(t *testing.T) {
 	}
 }
 
+func TestRecipeOutcomeToolGroundingNote_formattedLinePasses(t *testing.T) {
+	t.Parallel()
+	avgY := 182.0
+	minY := 140.0
+	maxY := 210.0
+	rev := int64(3)
+	row := recipeoutcomes.RecipeOutcome{
+		RecipeName:                  "JMS Foliar",
+		CropKey:                     "tomato",
+		CycleCount:                  4,
+		AvgYieldGrams:               &avgY,
+		MinYieldGrams:               &minY,
+		MaxYieldGrams:               &maxY,
+		ApplicationRecipeRevisionID: &rev,
+	}
+	block := "summarize_recipe_outcomes — Demo Farm\n" + formatRecipeOutcomeLine(row, false)
+	if note := RecipeOutcomeToolGroundingNote(block); note != "" {
+		t.Fatalf("unexpected note %q", note)
+	}
+}
+
+func TestRecipeOutcomeToolGroundingNote_bareNumberFails(t *testing.T) {
+	t.Parallel()
+	block := "summarize_recipe_outcomes — Demo Farm\nJMS Foliar (tomato): yield 182g last run"
+	if note := RecipeOutcomeToolGroundingNote(block); note == "" {
+		t.Fatal("expected recipe_outcome_bare_number note")
+	}
+}
+
 func TestReadToolIDsIncludesSummarizeRecipeOutcomes(t *testing.T) {
 	t.Parallel()
 	ids := ReadToolIDs()

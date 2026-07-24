@@ -2369,6 +2369,119 @@ WHERE g.farm_id = 1 AND g.label = 'Laying flock' AND g.deleted_at IS NULL
       WHERE e.animal_group_id = g.id AND e.event_type = 'released_to_pasture'
   );
 
+-- Phase 211.05 — recipe outcome history (Guardian summarize_recipe_outcomes + UI track record).
+-- Prior seed had harvested cycles and unlabeled mixing demos, but no
+-- metadata.application_recipe_id inside cycle windows — so outcomes always empty.
+-- Idempotent: marker notes [seed:recipe-outcome-*].
+INSERT INTO gr33nfertigation.crop_cycles
+    (farm_id, zone_id, plant_id, name, batch_label, current_stage, is_active,
+     started_at, harvested_at, yield_grams, cycle_notes)
+SELECT 1, z.id, p.id,
+       'Anastasia Green — Run 2 (harvested)', 'Anastasia Green', 'dry_cure', FALSE,
+       (CURRENT_DATE - 190)::date, (CURRENT_DATE - 120)::date, 380.0,
+       'Prior bloom run for recipe-outcome track record (FFJ+WCA). [seed:recipe-outcome-cycle]'
+FROM gr33ncore.zones z
+JOIN gr33ncrops.plants p ON p.farm_id = 1 AND p.crop_key = 'chrysanthemum'
+WHERE z.farm_id = 1 AND z.name = 'Flower Room' AND z.deleted_at IS NULL
+  AND NOT EXISTS (
+      SELECT 1 FROM gr33nfertigation.crop_cycles cc
+      WHERE cc.zone_id = z.id AND cc.name = 'Anastasia Green — Run 2 (harvested)'
+  );
+
+DO $$
+DECLARE
+    r_flower   BIGINT;
+    p_flower   BIGINT;
+    recipe_id  BIGINT;
+    rev_id     BIGINT;
+    mix_id     BIGINT;
+    c RECORD;
+    day_offset INT;
+BEGIN
+    SELECT id INTO r_flower FROM gr33nfertigation.reservoirs
+    WHERE farm_id = 1 AND name = 'Flower Nutrient Reservoir' AND deleted_at IS NULL LIMIT 1;
+    SELECT id INTO p_flower FROM gr33nfertigation.programs
+    WHERE farm_id = 1 AND name = 'Flower Daily FFJ+WCA Program' AND deleted_at IS NULL LIMIT 1;
+    SELECT id INTO recipe_id FROM gr33nnaturalfarming.application_recipes
+    WHERE farm_id = 1 AND name = 'FFJ and WCA Flowering Boost' AND deleted_at IS NULL LIMIT 1;
+    IF recipe_id IS NOT NULL THEN
+        SELECT id INTO rev_id FROM gr33nnaturalfarming.application_recipe_revisions
+        WHERE application_recipe_id = recipe_id
+        ORDER BY revision_number DESC, id DESC LIMIT 1;
+    END IF;
+
+    IF r_flower IS NULL OR recipe_id IS NULL OR rev_id IS NULL THEN
+        RAISE NOTICE '211.05 recipe-outcome seed skipped (reservoir/recipe/revision missing)';
+        RETURN;
+    END IF;
+
+    FOR c IN
+        SELECT cc.id, cc.started_at, cc.harvested_at, cc.yield_grams, cc.name
+        FROM gr33nfertigation.crop_cycles cc
+        JOIN gr33ncore.zones z ON z.id = cc.zone_id
+        JOIN gr33ncrops.plants p ON p.id = cc.plant_id
+        WHERE cc.farm_id = 1
+          AND z.name = 'Flower Room'
+          AND p.crop_key = 'chrysanthemum'
+          AND cc.is_active = FALSE
+          AND cc.harvested_at IS NOT NULL
+          AND cc.yield_grams IS NOT NULL
+          AND cc.name IN (
+              'Anastasia Green — Run 2 (harvested)',
+              'Anastasia Green — Run 3 (harvested)'
+          )
+    LOOP
+        FOR day_offset IN SELECT * FROM unnest(ARRAY[20, 45, 70]) AS d(day_offset) LOOP
+            IF NOT EXISTS (
+                SELECT 1 FROM gr33nfertigation.mixing_events me
+                WHERE me.reservoir_id = r_flower
+                  AND me.notes LIKE '%[seed:recipe-outcome-' || c.id::text || '-' || day_offset::text || ']%'
+            ) THEN
+                INSERT INTO gr33nfertigation.mixing_events (
+                    farm_id, reservoir_id, program_id, mixed_by_user_id, mixed_at,
+                    water_volume_liters, water_source, water_ec_mscm, water_ph,
+                    final_ec_mscm, final_ph, ec_target_met,
+                    notes, metadata
+                ) VALUES (
+                    1, r_flower, p_flower, '00000000-0000-0000-0000-000000000001'::uuid,
+                    (c.started_at + day_offset)::timestamptz + INTERVAL '7 hours',
+                    220.0, 'RO', 0.04, 6.45,
+                    1.78, 6.05, TRUE,
+                    'FFJ+WCA bloom mix for recipe-outcome history. [seed:recipe-outcome-' || c.id::text || '-' || day_offset::text || ']',
+                    jsonb_build_object(
+                        'application_recipe_id', recipe_id,
+                        'application_recipe_revision_id', rev_id,
+                        'formula_snapshot', jsonb_build_object(
+                            'recipe_name', 'FFJ and WCA Flowering Boost',
+                            'revision_id', rev_id,
+                            'seed', 'phase_211_05'
+                        )
+                    )
+                ) RETURNING id INTO mix_id;
+            END IF;
+        END LOOP;
+
+        IF NOT EXISTS (
+            SELECT 1 FROM gr33ncore.cost_transactions ct
+            WHERE ct.farm_id = 1
+              AND ct.crop_cycle_id = c.id
+              AND ct.description LIKE '%[seed:recipe-outcome-cost]%'
+        ) THEN
+            INSERT INTO gr33ncore.cost_transactions (
+                farm_id, transaction_date, category, subcategory, amount, currency,
+                description, is_income, crop_cycle_id, created_by_user_id
+            ) VALUES (
+                1, c.harvested_at,
+                'fertilizers_soil_amendments', 'natural_farming_inputs',
+                ROUND((c.yield_grams::numeric * 0.22)::numeric, 2),
+                'USD',
+                'FFJ+WCA inputs for ' || c.name || ' [seed:recipe-outcome-cost]',
+                FALSE, c.id, '00000000-0000-0000-0000-000000000001'::uuid
+            );
+        END IF;
+    END LOOP;
+END $$;
+
 -- Phase 179 — resync every serial/identity sequence to max(id) across the seeded
 -- schemas. This file inserts many rows with explicit ids (farm 1, its zones,
 -- sensors, etc.) so their sequences never advance via nextval(). Without this,

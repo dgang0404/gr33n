@@ -299,6 +299,22 @@ These are **not** proposal tools — no Confirm card. Alert **write** intents (`
 
 **OC-210** via `phase-210-closure.test.js` · **Go smoke:** `readtools_naturalfarming_test.go`, `naturalfarming_draft_test.go`, `fixtures_regression_test.go`.
 
+### 7.0ah Recipe outcome insights (Phase 211.05 — shipped)
+
+**Shipped (WS1–WS6).** Joins 211.02 formula-at-time attribution (`application_recipe_id` + revision on mixing/program runs) with per-cycle yield and cost to answer *"how did this recipe actually perform?"* — historical averages only, never forecasts. Plan: [`plans/phase_211_05_recipe_outcome_insights.plan.md`](plans/phase_211_05_recipe_outcome_insights.plan.md).
+
+| Layer | Artifact |
+|-------|----------|
+| Read tool | `summarize_recipe_outcomes` in `readtools_recipe_outcomes.go`; intent for track record / recipe comparison / yield-history questions |
+| Aggregation | `internal/cropcycle/recipeoutcomes` — dominant recipe at 60%, min sample **2** harvested cycles, mixed/unattributed cycles excluded from recipe-specific stats |
+| API | `GET /farms/{id}/crop-analytics/recipe-outcomes` — `avg_cost_per_gram` omitted without `money.costs.read` |
+| UI | **Recipes & apply** track-record chip; **Crop cycle summary** historical average line — see [operator-tour §7u](operator-tour.md#7u-natural-farming-studio-phases-207211--shipped) |
+| Grounding | `RecipeOutcomeGroundingRule` in platform context — always state N; say cycles *averaged* X; correlation ≠ causation |
+
+**Guardian behavior:** Below min sample, report insufficient history instead of dressing up a single cycle as a trend. Redirect *"predict my yield"* into last-N-cycle averages. Never claim a recipe *is better* or *will produce* X.
+
+**QA:** `outcomes_test.go`, `readtools_recipe_outcomes_test.go`, `phase-211-05-closure.test.js` · **API smoke:** `smoke_phase211_05_test.go` · **Guardian smoke:** `smoke-nf-recipe-outcomes` in `SmokeNaturalFarmingFixtures()` (included in `smoke-full` / `smoke-all`). Demo seed stamps FFJ+WCA mixes + costs on two harvested chrysanthemum cycles — re-apply `master_seed.sql` after 211.02 migrations.
+
 ### 7.0b Grow environment stack (Phase 35 lighting)
 
 Operators configure photoperiod through **`lighting_programs`** (UI: `/lighting`), not orphan schedule pairs:

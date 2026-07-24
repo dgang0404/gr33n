@@ -64,8 +64,15 @@ type attributedCycle struct {
 	currency  string
 }
 
+type buildQuerier interface {
+	ListHarvestedCyclesForRecipeOutcomes(ctx context.Context, arg db.ListHarvestedCyclesForRecipeOutcomesParams) ([]db.ListHarvestedCyclesForRecipeOutcomesRow, error)
+	ListRecipeAttributionHitsForCycle(ctx context.Context, arg db.ListRecipeAttributionHitsForCycleParams) ([]db.ListRecipeAttributionHitsForCycleRow, error)
+	GetCostTotalsByCropCycle(ctx context.Context, cropCycleID *int64) ([]db.GetCostTotalsByCropCycleRow, error)
+	GetRecipeByID(ctx context.Context, id int64) (db.Gr33nnaturalfarmingApplicationRecipe, error)
+}
+
 // Build aggregates harvested cycles with clear recipe attribution.
-func Build(ctx context.Context, q db.Querier, farmID int64, opt Options) (Result, error) {
+func Build(ctx context.Context, q buildQuerier, farmID int64, opt Options) (Result, error) {
 	out := Result{
 		FarmID:        farmID,
 		MinSampleSize: MinSampleSize,
@@ -115,7 +122,7 @@ func Build(ctx context.Context, q db.Querier, farmID int64, opt Options) (Result
 			cycleID:  row.ID,
 			cropKey:  derefString(row.CropKey),
 			recipeID: key.RecipeID,
-			revision: key.RevisionID,
+			revision: revisionPtr(key.RevisionID),
 			yieldG:   yieldG,
 			duration: dur,
 		}
@@ -231,7 +238,7 @@ func fillStats(ro *RecipeOutcome, cycles []attributedCycle, includeCosts bool) {
 	}
 }
 
-func costPerGramForCycle(ctx context.Context, q db.Querier, cycleID int64, yieldG float64) (float64, string, bool) {
+func costPerGramForCycle(ctx context.Context, q buildQuerier, cycleID int64, yieldG float64) (float64, string, bool) {
 	if yieldG <= 0 {
 		return 0, "", false
 	}
@@ -290,6 +297,13 @@ func durationDays(started, harvested pgtype.Date) int64 {
 		return 0
 	}
 	return days
+}
+
+func revisionPtr(rev int64) *int64 {
+	if rev == 0 {
+		return nil
+	}
+	return &rev
 }
 
 func groupKey(cropKey string, recipeID int64, revision *int64) string {

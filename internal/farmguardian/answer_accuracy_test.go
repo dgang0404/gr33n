@@ -199,6 +199,14 @@ func TestInventedAssumptionMathNote_liveUIRun152(t *testing.T) {
 	}
 }
 
+func TestRecipeOutcomeToolGroundingNote_insufficientHistoryPasses(t *testing.T) {
+	t.Parallel()
+	block := "summarize_recipe_outcomes — Demo\nJMS Foliar rev #3: only 1 harvested cycle — insufficient history for an average (need 2+)."
+	if note := RecipeOutcomeToolGroundingNote(block); note != "" {
+		t.Fatalf("unexpected note %q", note)
+	}
+}
+
 func TestInventedAssumptionMathNote_noNumberPasses(t *testing.T) {
 	t.Parallel()
 	answer := "Assuming the alert severity is accurate, escalate to the operator immediately."

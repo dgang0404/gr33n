@@ -5,13 +5,20 @@ const DominantThreshold = 0.6
 
 type attributionKey struct {
 	RecipeID   int64
-	RevisionID *int64
+	RevisionID int64 // 0 when unset
 }
 
 // Hit is one mixing or program-run row carrying recipe metadata.
 type Hit struct {
 	ApplicationRecipeID         int64
 	ApplicationRecipeRevisionID *int64
+}
+
+func revisionIDVal(rev *int64) int64 {
+	if rev == nil {
+		return 0
+	}
+	return *rev
 }
 
 // AttributeCycle picks the dominant recipe/revision from attribution hits.
@@ -24,7 +31,7 @@ func AttributeCycle(hits []Hit) (key attributionKey, mixed bool, total int) {
 		}
 		k := attributionKey{
 			RecipeID:   h.ApplicationRecipeID,
-			RevisionID: h.ApplicationRecipeRevisionID,
+			RevisionID: revisionIDVal(h.ApplicationRecipeRevisionID),
 		}
 		counts[k]++
 		total++

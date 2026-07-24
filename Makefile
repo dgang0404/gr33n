@@ -178,7 +178,7 @@ guardian-qa-smoke-cherry-jlf: ## Phase 211 WS5 — re-run smoke-cherry-jlf only 
 			-suite smoke -prompt-ids smoke-cherry-jlf \
 			-report $${GUARDIAN_EVAL_REPORT:-data/guardian_model_eval.json}'
 
-guardian-qa-smoke-natural-farming: ## Natural farming — 10 grounded prompts (field guides + inventory)
+guardian-qa-smoke-natural-farming: ## Natural farming — 11 grounded prompts (field guides + inventory + recipe outcomes)
 	@bash -lc 'set -e; cd "$(CURDIR)"; \
 		if [ -f .env ]; then set -a && . ./.env && set +a; fi; \
 		source scripts/source-local-env.sh --refresh-eval-token; \
@@ -186,7 +186,7 @@ guardian-qa-smoke-natural-farming: ## Natural farming — 10 grounded prompts (f
 			-suite smoke-natural-farming \
 			-report $${GUARDIAN_EVAL_REPORT:-data/guardian_model_eval.json}'
 
-guardian-qa-smoke-full: ## Core + NF smoke (15 prompts) — same as manual smoke + smoke-natural-farming checklists
+guardian-qa-smoke-full: ## Core + NF smoke (16 prompts) — same as manual smoke + smoke-natural-farming checklists
 	@bash -lc 'set -e; cd "$(CURDIR)"; \
 		if [ -f .env ]; then set -a && . ./.env && set +a; fi; \
 		source scripts/source-local-env.sh --refresh-eval-token; \
@@ -306,7 +306,7 @@ guardian-qa-smoke-all-help: ## Print master smoke-all suite list and env knobs
 	@echo "  2. guardian-qa-phase127           (4 grounding prompts)"
 	@echo "  3. guardian-qa-change-requests-pending (4 write-intents → Pending tab)"
 	@echo "Then: guardian-qa-manual SUITE=smoke-all (23-prompt UI checklist printed automatically)"
-	@echo "Subset targets: guardian-qa-smoke (5), guardian-qa-smoke-natural-farming (10), guardian-qa-smoke-full (15)"
+	@echo "Subset targets: guardian-qa-smoke (5), guardian-qa-smoke-natural-farming (11), guardian-qa-smoke-full (16)"
 	@echo "Skip end checklist: GUARDIAN_QA_SKIP_MANUAL=1 make guardian-qa-smoke-all"
 	@echo "Optional: GUARDIAN_QA_UI=1 (+ change-requests-ui-quick ~50 min)"
 	@echo "Optional: GUARDIAN_QA_UI_FULL=1 (+ change-requests-ui ~2–3 hr)"
