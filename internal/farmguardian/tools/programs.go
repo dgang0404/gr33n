@@ -11,6 +11,7 @@ import (
 
 	db "gr33n-api/internal/db"
 	"gr33n-api/internal/httputil"
+	"gr33n-api/internal/reciperevision"
 )
 
 func execCreateFertigationProgram(ctx context.Context, deps ExecutorDeps, args map[string]any) (any, error) {
@@ -156,17 +157,24 @@ func execPatchFertigationProgram(ctx context.Context, deps ExecutorDeps, args ma
 		}
 		totalVol = n
 	}
+	revisionID, err := reciperevision.PinProgramRecipeRevision(
+		ctx, deps.Q, prog.ApplicationRecipeID, recipeID, prog.ApplicationRecipeRevisionID, irrigationOnly,
+	)
+	if err != nil {
+		return nil, err
+	}
 	row, err := deps.Q.UpdateProgram(ctx, db.UpdateProgramParams{
-		ID:                  programID,
-		Name:                prog.Name,
-		Description:         prog.Description,
-		ReservoirID:         prog.ReservoirID,
-		TargetZoneID:        prog.TargetZoneID,
-		EcTargetID:          ecTarget,
-		TotalVolumeLiters:   totalVol,
-		IsActive:            isActive,
-		IrrigationOnly:      irrigationOnly,
-		ApplicationRecipeID: recipeID,
+		ID:                          programID,
+		Name:                        prog.Name,
+		Description:                 prog.Description,
+		ReservoirID:                 prog.ReservoirID,
+		TargetZoneID:                prog.TargetZoneID,
+		EcTargetID:                  ecTarget,
+		TotalVolumeLiters:           totalVol,
+		IsActive:                    isActive,
+		IrrigationOnly:              irrigationOnly,
+		ApplicationRecipeID:         recipeID,
+		ApplicationRecipeRevisionID: revisionID,
 	})
 	if err != nil {
 		return nil, err

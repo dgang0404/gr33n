@@ -17,11 +17,10 @@ describe('Phase 49 / 71 WS5 — nav-hint path resolution', () => {
     )
   })
 
-  it('returns null for empty or malformed values', () => {
-    expect(resolveHintPath(null)).toBe(null)
-    expect(resolveHintPath(undefined)).toBe(null)
-    expect(resolveHintPath({})).toBe(null)
-    expect(resolveHintPath(42)).toBe(null)
+  it('maps legacy operations paths to workspace sidebar routes', () => {
+    expect(resolveHintPath('/operations/supplies')).toBe('/money')
+    expect(resolveHintPath('/operations/feeding')).toBe('/feed-water')
+    expect(resolveHintPath('/natural-farming?tab=recipes')).toBe('/natural-farming')
   })
 })
 
@@ -50,7 +49,7 @@ describe('Phase 78 — sidebar hint targets base tabs only', () => {
   const sidebarRoutes = new Set(collectSidebarRoutes(buildNavGroups()))
 
   it('resolved hint paths are top-level sidebar routes when possible', () => {
-    for (const path of ['/zones', '/money', '/comfort-targets', '/sensors', '/plants']) {
+    for (const path of ['/zones', '/money', '/comfort-targets', '/feed-water', '/sensors', '/plants']) {
       const resolved = resolveHintPath(path)
       expect(resolved).toBeTruthy()
       expect(sidebarRoutes.has(resolved)).toBe(true)

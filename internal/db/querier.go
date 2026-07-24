@@ -132,6 +132,7 @@ type Querier interface {
 	// Queries: gr33nnaturalfarming.application_recipes & recipe_input_components
 	// ============================================================
 	CreateRecipe(ctx context.Context, arg CreateRecipeParams) (Gr33nnaturalfarmingApplicationRecipe, error)
+	CreateRecipeRevision(ctx context.Context, arg CreateRecipeRevisionParams) (Gr33nnaturalfarmingApplicationRecipeRevision, error)
 	CreateRegistrationInvite(ctx context.Context, arg CreateRegistrationInviteParams) (AuthRegistrationInvite, error)
 	CreateReservoir(ctx context.Context, arg CreateReservoirParams) (Gr33nfertigationReservoir, error)
 	CreateSchedule(ctx context.Context, arg CreateScheduleParams) (Gr33ncoreSchedule, error)
@@ -329,6 +330,8 @@ type Querier interface {
 	// the JOIN is cheap; the ORDER BY reading_time DESC LIMIT 1 uses the
 	// existing per-sensor reading_time index.
 	GetLatestReadingForZoneSensorType(ctx context.Context, arg GetLatestReadingForZoneSensorTypeParams) (Gr33ncoreSensorReading, error)
+	// Phase 211.02 — recipe revision history
+	GetLatestRecipeRevision(ctx context.Context, applicationRecipeID int64) (Gr33nnaturalfarmingApplicationRecipeRevision, error)
 	GetLatestWeatherForFarm(ctx context.Context, farmID int64) (Gr33ncoreWeatherDatum, error)
 	GetLifecycleEventByID(ctx context.Context, id int64) (Gr33nanimalsAnimalLifecycleEvent, error)
 	GetLightingProgramByID(ctx context.Context, id int64) (Gr33ncoreLightingProgram, error)
@@ -371,6 +374,7 @@ type Querier interface {
 	GetRecentChatBudgetWarningForUser(ctx context.Context, arg GetRecentChatBudgetWarningForUserParams) (int64, error)
 	GetRecentUnacknowledgedAlertForSource(ctx context.Context, arg GetRecentUnacknowledgedAlertForSourceParams) (int64, error)
 	GetRecipeByID(ctx context.Context, id int64) (Gr33nnaturalfarmingApplicationRecipe, error)
+	GetRecipeRevisionByID(ctx context.Context, id int64) (Gr33nnaturalfarmingApplicationRecipeRevision, error)
 	// ============================================================
 	// Queries: auth.registration_invites
 	// ============================================================
@@ -600,6 +604,7 @@ type Querier interface {
 	// + recent wins both axes; NULL severities sort last.
 	ListRecentUnreadAlertsByFarm(ctx context.Context, arg ListRecentUnreadAlertsByFarmParams) ([]ListRecentUnreadAlertsByFarmRow, error)
 	ListRecipeComponents(ctx context.Context, applicationRecipeID int64) ([]ListRecipeComponentsRow, error)
+	ListRecipeRevisions(ctx context.Context, applicationRecipeID int64) ([]Gr33nnaturalfarmingApplicationRecipeRevision, error)
 	ListRecipesByFarm(ctx context.Context, farmID int64) ([]Gr33nnaturalfarmingApplicationRecipe, error)
 	// ============================================================
 	// Queries: gr33nfertigation core resources

@@ -175,32 +175,20 @@
         </div>
       </section>
 
-      <!-- Step 5 — CTAs -->
+      <!-- Step 5 — seed farm (optional) -->
       <section v-else class="space-y-4" data-test="nf-switchover-step-actions">
-        <h3 class="text-sm font-medium text-zinc-200">Ready to start</h3>
+        <h3 class="text-sm font-medium text-zinc-200">Seed farm (optional)</h3>
         <p class="text-xs text-zinc-500 max-w-xl">
           {{ actionsStepIntro(contextId) }}
         </p>
         <div class="flex flex-col sm:flex-row flex-wrap gap-2">
-          <button
-            v-if="selectedFirstBatchInput"
-            type="button"
-            class="px-4 py-2 text-sm font-medium rounded-lg bg-green-700 hover:bg-green-600 text-white"
+          <router-link
+            :to="makeBatchRoute"
+            class="px-4 py-2 text-sm font-medium rounded-lg bg-green-700 hover:bg-green-600 text-white text-center"
             data-test="nf-cta-make-batch"
-            @click="goMakeBatch(selectedFirstBatchInput)"
           >
-            Make {{ selectedFirstBatchShortName }} batch
-          </button>
-          <button
-            v-for="input in otherFirstBatches"
-            :key="input.seed_name"
-            type="button"
-            class="px-4 py-2 text-sm font-medium rounded-lg border border-zinc-600 text-zinc-200 hover:border-zinc-400"
-            :data-test="`nf-cta-make-${input.process_type}`"
-            @click="goMakeBatch(input)"
-          >
-            Make {{ shortBatchName(input) }} batch
-          </button>
+            Ready to ferment? → Make a batch
+          </router-link>
           <button
             type="button"
             class="px-4 py-2 text-sm font-medium rounded-lg border border-green-700/80 text-green-100 hover:bg-green-950/40 disabled:opacity-40"
@@ -235,8 +223,7 @@
       </section>
     </template>
 
-    <section v-if="!loading && !loadError" class="space-y-4 pt-4 border-t border-zinc-800/80">
-      <CommonsRecipePackImport />
+    <div v-if="!loading && !loadError" class="pt-2 border-t border-zinc-800/80">
       <router-link
         :to="{ path: '/natural-farming', query: { tab: 'library' } }"
         class="inline-block text-xs text-green-400 hover:text-green-300"
@@ -244,13 +231,12 @@
       >
         Browse full recipe library →
       </router-link>
-    </section>
+    </div>
   </div>
 </template>
 
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue'
-import { useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useFarmContextStore } from '../../stores/farmContext.js'
 import { loadRecipeCanon } from '../../lib/naturalFarmingCanon.js'
@@ -269,9 +255,7 @@ import {
 } from '../../lib/naturalFarmingSwitchover.js'
 import { formatBootstrapApplyResult } from '../../lib/farmSetupWizard.js'
 import LearnHowExpander from './LearnHowExpander.vue'
-import CommonsRecipePackImport from './CommonsRecipePackImport.vue'
 
-const router = useRouter()
 const farmContext = useFarmContextStore()
 const { farmId } = storeToRefs(farmContext)
 
@@ -281,7 +265,7 @@ const stepLabels = {
   pattern: 'Bottle program',
   mapping: 'Natural match',
   'first-batch': 'First batch',
-  actions: 'Apply',
+  actions: 'Seed farm (optional)',
 }
 
 const step = ref('context')
@@ -308,11 +292,10 @@ const selectedFirstBatchInput = computed(() =>
   firstBatches.value.find((b) => b.seed_name === selectedFirstBatchSeed.value) ?? null,
 )
 
-const otherFirstBatches = computed(() =>
-  firstBatches.value.filter((b) => b.seed_name !== selectedFirstBatchSeed.value),
-)
-
-const selectedFirstBatchShortName = computed(() => shortBatchName(selectedFirstBatchInput.value))
+const makeBatchRoute = computed(() => ({
+  path: '/natural-farming',
+  query: batchTabQueryForInput(selectedFirstBatchInput.value ?? firstBatches.value[0]),
+}))
 
 watch(
   () => step.value,
@@ -329,13 +312,6 @@ watch(firstBatches, (list) => {
   }
 })
 
-function shortBatchName(input) {
-  const pt = String(input?.process_type ?? '').toUpperCase()
-  if (pt) return pt
-  const name = String(input?.seed_name ?? 'batch')
-  return name.split('(')[0].trim().split(/\s+/)[0] || 'batch'
-}
-
 onMounted(async () => {
   try {
     canon.value = await loadRecipeCanon()
@@ -345,10 +321,6 @@ onMounted(async () => {
     loading.value = false
   }
 })
-
-function goMakeBatch(input) {
-  router.push({ path: '/natural-farming', query: batchTabQueryForInput(input) })
-}
 
 async function applySwitchoverPack() {
   const packKey = mapping.value.switchoverPackKey

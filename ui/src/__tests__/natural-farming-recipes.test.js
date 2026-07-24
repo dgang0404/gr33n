@@ -4,10 +4,14 @@
 import { describe, it, expect } from 'vitest'
 import {
   feedWaterProgramLink,
+  findFarmRecipeByName,
   formatGrowthStages,
   isLivestockRecipe,
+  primaryRecipeForInput,
   programsForZone,
   programsUsingRecipe,
+  recipeApplyRouteForStockRow,
+  recipesForInput,
 } from '../lib/naturalFarmingRecipes.js'
 
 describe('naturalFarmingRecipes', () => {
@@ -39,5 +43,17 @@ describe('naturalFarmingRecipes', () => {
     expect(isLivestockRecipe({ target_application_type: 'livestock_water_supplement' }, {})).toBe(true)
     expect(isLivestockRecipe({ input_definition_id: 5 }, { 5: { category: 'animal_feed' } })).toBe(true)
     expect(isLivestockRecipe({ target_application_type: 'soil_drench' }, {})).toBe(false)
+  })
+
+  it('links stock rows to farm recipes by input or name', () => {
+    const recipes = [
+      { id: 10, name: 'BRV Foliar Spray', input_definition_id: 3 },
+      { id: 11, name: 'JMS Soil Drench', input_definition_id: 4 },
+    ]
+    expect(recipesForInput(3, recipes).map((r) => r.id)).toEqual([10])
+    expect(primaryRecipeForInput(3, recipes)?.id).toBe(10)
+    expect(findFarmRecipeByName('BRV Foliar Spray', recipes)?.id).toBe(10)
+    expect(recipeApplyRouteForStockRow({ inputDefinitionId: 3, inputName: 'BRV' }, recipes)).toBe(10)
+    expect(recipeApplyRouteForStockRow({ inputDefinitionId: 99, inputName: 'JMS Soil Drench' }, recipes)).toBe(11)
   })
 })

@@ -48,6 +48,59 @@ export function programsUsingRecipe(recipeId, programs) {
 }
 
 /**
+ * Farm recipes whose primary input matches a batch input definition.
+ * @param {number|string|null|undefined} inputDefinitionId
+ * @param {object[]} recipes
+ */
+export function recipesForInput(inputDefinitionId, recipes) {
+  const iid = Number(inputDefinitionId)
+  if (!Number.isFinite(iid)) return []
+  return (recipes || []).filter((r) => Number(r.input_definition_id) === iid)
+}
+
+/**
+ * Best single recipe to open from an on-hand batch row.
+ * @param {number|string|null|undefined} inputDefinitionId
+ * @param {object[]} recipes
+ */
+export function primaryRecipeForInput(inputDefinitionId, recipes) {
+  const matches = recipesForInput(inputDefinitionId, recipes)
+  if (matches.length === 1) return matches[0]
+  if (matches.length > 1) {
+    return [...matches].sort((a, b) => String(a.name || '').localeCompare(String(b.name || '')))[0]
+  }
+  return null
+}
+
+/**
+ * Match a farm recipe row to canon seed_name (exact, then prefix/contains).
+ * @param {string|null|undefined} canonName
+ * @param {object[]} recipes
+ */
+export function findFarmRecipeByName(canonName, recipes) {
+  const needle = String(canonName || '').trim().toLowerCase()
+  if (!needle) return null
+  const list = recipes || []
+  const exact = list.find((r) => String(r.name || '').trim().toLowerCase() === needle)
+  if (exact) return exact
+  return list.find((r) => {
+    const name = String(r.name || '').trim().toLowerCase()
+    return name.startsWith(needle) || needle.startsWith(name) || name.includes(needle)
+  }) ?? null
+}
+
+/**
+ * Deep link into Recipes & apply for a ready batch (input-linked, then name).
+ * @param {{ inputDefinitionId?: number|string|null, inputName?: string|null }} row
+ * @param {object[]} recipes
+ */
+export function recipeApplyRouteForStockRow(row, recipes) {
+  const byInput = primaryRecipeForInput(row?.inputDefinitionId, recipes)
+  const hit = byInput || findFarmRecipeByName(row?.inputName, recipes)
+  return hit?.id ?? null
+}
+
+/**
  * @param {string[]|null|undefined} stages
  * @param {object|null|undefined} domainEnums
  */

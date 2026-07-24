@@ -31,9 +31,10 @@ import { OPERATOR_CONCEPTS, OPERATOR_CONCEPT_RELATIONSHIPS } from '../lib/operat
 
 const props = defineProps({
   conceptIds: { type: Array, required: true },
+  relationships: { type: Array, default: () => OPERATOR_CONCEPT_RELATIONSHIPS },
   defaultOpen: { type: Boolean, default: false },
 })
 
 const concepts = computed(() => OPERATOR_CONCEPTS)
-const relationships = OPERATOR_CONCEPT_RELATIONSHIPS
+const relationships = computed(() => props.relationships)
 </script>

@@ -28,7 +28,7 @@ describe('Phase 78 — zone-first hardware & feed consolidation', () => {
 
   it('removes Feed & water and Hardware from sidebar grow group', () => {
     const grow = buildNavGroups().find((g) => g.label === 'Grow & operate')
-    expect(grow.items.some((i) => i.to === '/feed-water')).toBe(false)
+    expect(grow.items.some((i) => i.to === '/feed-water')).toBe(true)
     expect(grow.items.some((i) => i.to === '/hardware')).toBe(false)
     expect(grow.items.some((i) => i.to === '/zones')).toBe(true)
     expect(grow.items.some((i) => i.to === '/virtual-pi')).toBe(true)

@@ -38,15 +38,15 @@ ORDER BY updated_at ASC, id ASC;
 
 -- name: CreateProgram :one
 INSERT INTO gr33nfertigation.programs (
-    farm_id, name, description, application_recipe_id, reservoir_id,
+    farm_id, name, description, application_recipe_id, application_recipe_revision_id, reservoir_id,
     target_zone_id, schedule_id, ec_target_id, total_volume_liters,
     run_duration_seconds, ec_trigger_low, ph_trigger_low, ph_trigger_high,
     is_active, irrigation_only
 ) VALUES (
-    $1, $2, $3, $4, $5,
-    $6, $7, $8, $9,
-    $10, $11, $12, $13,
-    $14, $15
+    $1, $2, $3, $4, $5, $6,
+    $7, $8, $9, $10,
+    $11, $12, $13, $14,
+    $15, $16
 )
 RETURNING *;
 
@@ -142,6 +142,7 @@ SET name = $2, description = $3, reservoir_id = $4,
     target_zone_id = $5, ec_target_id = $6,
     total_volume_liters = $7, is_active = $8,
     irrigation_only = $9, application_recipe_id = $10,
+    application_recipe_revision_id = $11,
     updated_at = NOW()
 WHERE id = $1 AND deleted_at IS NULL
 RETURNING *;
@@ -175,8 +176,8 @@ INSERT INTO gr33nfertigation.mixing_events (
     farm_id, reservoir_id, program_id, mixed_by_user_id, mixed_at,
     water_volume_liters, water_source, water_ec_mscm, water_ph,
     final_ec_mscm, final_ph, final_temp_celsius,
-    ec_target_id, ec_target_met, notes, observations
-) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+    ec_target_id, ec_target_met, notes, observations, metadata
+) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
 RETURNING *;
 
 -- name: CreateMixingEventComponent :one

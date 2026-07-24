@@ -9,12 +9,13 @@ import { buildNavGroups } from '../lib/navGroups.js'
 import router from '../router/index.js'
 
 describe('Phase 209 WS1 — natural farming workspace', () => {
-  it('declares five tabs with start as default', () => {
+  it('declares three tabs; batch is default', () => {
     const tabs = WORKSPACES.naturalfarming.tabs.map((t) => t.id)
-    expect(tabs).toEqual(['start', 'library', 'batch', 'recipes', 'stock'])
-    expect(resolveWorkspaceTab('naturalfarming', undefined)).toBe('start')
-    expect(resolveWorkspaceTab('naturalfarming', 'bogus')).toBe('start')
-    expect(resolveWorkspaceTab('naturalfarming', 'batch')).toBe('batch')
+    expect(tabs).toEqual(['batch', 'library', 'recipes', 'manage'])
+    expect(resolveWorkspaceTab('naturalfarming', undefined)).toBe('batch')
+    expect(resolveWorkspaceTab('naturalfarming', 'start')).toBe('batch')
+    expect(resolveWorkspaceTab('naturalfarming', 'bogus')).toBe('batch')
+    expect(resolveWorkspaceTab('naturalfarming', 'recipes')).toBe('recipes')
   })
 
   it('registers /natural-farming route and workspace metadata', () => {
@@ -31,22 +32,20 @@ describe('Phase 209 WS1 — natural farming workspace', () => {
     expect(resolved.query.tab).toBe('library')
   })
 
-  it('NaturalFarmingWorkspace hosts switchover wizard on start tab', () => {
+  it('NaturalFarmingWorkspace hosts three operational panels', () => {
     const src = readFileSync(
       join(process.cwd(), 'src/views/workspaces/NaturalFarmingWorkspace.vue'),
       'utf8',
     )
     expect(src).toContain('workspace-id="naturalfarming"')
-    expect(src).toContain("activeTab === 'start'")
-    expect(src).toContain('SwitchoverWizard')
+    expect(src).not.toContain('SwitchoverWizard')
     expect(src).toContain("activeTab === 'batch'")
     expect(src).toContain('MakeBatchPanel')
     expect(src).toContain("activeTab === 'library'")
     expect(src).toContain('RecipeLibraryPanel')
     expect(src).toContain("activeTab === 'recipes'")
     expect(src).toContain('RecipesApplyPanel')
-    expect(src).toContain("activeTab === 'stock'")
-    expect(src).toContain('OnHandPanel')
+    expect(src).toContain('FarmRowsPanel')
   })
 
   it('sidebar lists Natural farming under Grow & operate', () => {

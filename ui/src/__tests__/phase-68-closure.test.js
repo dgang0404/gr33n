@@ -17,7 +17,7 @@ describe('Phase 68 WS6 / OC-68 — workspace shell closure', () => {
     expect(groups.map((g) => g.label)).toEqual(['Today', 'Grow & operate', 'More'])
     const grow = groups.find((g) => g.label === 'Grow & operate')
     expect(grow.items.some((i) => i.to === '/zones')).toBe(true)
-    expect(grow.items.some((i) => i.to === '/feed-water')).toBe(false)
+    expect(grow.items.some((i) => i.to === '/feed-water')).toBe(true)
     expect(grow.items.some((i) => i.to === '/comfort-targets' && i.label === 'Comfort & automation')).toBe(true)
     expect(grow.items.some((i) => i.to === '/hardware')).toBe(false)
     expect(grow.items.some((i) => i.to === '/money')).toBe(true)

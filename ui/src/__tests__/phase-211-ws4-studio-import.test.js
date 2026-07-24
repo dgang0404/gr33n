@@ -1,5 +1,5 @@
 /**
- * Phase 211 WS4 — Commons recipe pack import on Start tab.
+ * Phase 211 WS4 — Commons recipe pack import on Recipes & apply tab.
  */
 import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'node:fs'
@@ -16,8 +16,8 @@ const starterPack = readFileSync(
   join(repoRoot, 'data/natural-farming-packs/jadam_indoor_starter_recipes_v1.json'),
   'utf8',
 )
-const wizard = readFileSync(
-  join(process.cwd(), 'src/components/naturalfarming/SwitchoverWizard.vue'),
+const recipesApply = readFileSync(
+  join(process.cwd(), 'src/components/naturalfarming/RecipesApplyPanel.vue'),
   'utf8',
 )
 const commonsImport = readFileSync(
@@ -45,8 +45,8 @@ describe('Phase 211 WS4 — studio Commons import', () => {
     expect(firstBatchQueryForPack(preview)).toEqual({ tab: 'batch', process: 'jms' })
   })
 
-  it('Start tab mounts Commons import with browse, preview, and import CTA', () => {
-    expect(wizard).toContain('CommonsRecipePackImport')
+  it('Recipes tab mounts Commons import with browse, preview, and import CTA', () => {
+    expect(recipesApply).toContain('CommonsRecipePackImport')
     expect(commonsImport).toContain('data-test="nf-commons-import"')
     expect(commonsImport).toContain('importCatalogEntry')
     expect(commonsImport).toContain('nf-commons-import-btn')

@@ -7,6 +7,7 @@ package db
 
 import (
 	"context"
+	"encoding/json"
 
 	"github.com/jackc/pgx/v5/pgtype"
 )
@@ -100,6 +101,76 @@ func (q *Queries) CreateRecipe(ctx context.Context, arg CreateRecipeParams) (Gr3
 	return i, err
 }
 
+const createRecipeRevision = `-- name: CreateRecipeRevision :one
+WITH next AS (
+    SELECT COALESCE(MAX(revision_number), 0) + 1 AS n
+    FROM gr33nnaturalfarming.application_recipe_revisions
+    WHERE application_recipe_id = $1
+)
+INSERT INTO gr33nnaturalfarming.application_recipe_revisions (
+    application_recipe_id, revision_number, snapshot, change_summary, created_by_user_id
+)
+SELECT
+    $1,
+    next.n,
+    $2,
+    $3,
+    $4
+FROM next
+RETURNING id, application_recipe_id, revision_number, snapshot, change_summary, created_at, created_by_user_id
+`
+
+type CreateRecipeRevisionParams struct {
+	ApplicationRecipeID int64           `db:"application_recipe_id" json:"application_recipe_id"`
+	Snapshot            json.RawMessage `db:"snapshot" json:"snapshot"`
+	ChangeSummary       *string         `db:"change_summary" json:"change_summary"`
+	CreatedByUserID     pgtype.UUID     `db:"created_by_user_id" json:"created_by_user_id"`
+}
+
+func (q *Queries) CreateRecipeRevision(ctx context.Context, arg CreateRecipeRevisionParams) (Gr33nnaturalfarmingApplicationRecipeRevision, error) {
+	row := q.db.QueryRow(ctx, createRecipeRevision,
+		arg.ApplicationRecipeID,
+		arg.Snapshot,
+		arg.ChangeSummary,
+		arg.CreatedByUserID,
+	)
+	var i Gr33nnaturalfarmingApplicationRecipeRevision
+	err := row.Scan(
+		&i.ID,
+		&i.ApplicationRecipeID,
+		&i.RevisionNumber,
+		&i.Snapshot,
+		&i.ChangeSummary,
+		&i.CreatedAt,
+		&i.CreatedByUserID,
+	)
+	return i, err
+}
+
+const getLatestRecipeRevision = `-- name: GetLatestRecipeRevision :one
+
+SELECT id, application_recipe_id, revision_number, snapshot, change_summary, created_at, created_by_user_id FROM gr33nnaturalfarming.application_recipe_revisions
+WHERE application_recipe_id = $1
+ORDER BY revision_number DESC
+LIMIT 1
+`
+
+// Phase 211.02 — recipe revision history
+func (q *Queries) GetLatestRecipeRevision(ctx context.Context, applicationRecipeID int64) (Gr33nnaturalfarmingApplicationRecipeRevision, error) {
+	row := q.db.QueryRow(ctx, getLatestRecipeRevision, applicationRecipeID)
+	var i Gr33nnaturalfarmingApplicationRecipeRevision
+	err := row.Scan(
+		&i.ID,
+		&i.ApplicationRecipeID,
+		&i.RevisionNumber,
+		&i.Snapshot,
+		&i.ChangeSummary,
+		&i.CreatedAt,
+		&i.CreatedByUserID,
+	)
+	return i, err
+}
+
 const getRecipeByID = `-- name: GetRecipeByID :one
 SELECT id, farm_id, name, input_definition_id, description, target_application_type, dilution_ratio, components, instructions, frequency_guidelines, target_crop_categories, target_growth_stages, notes, created_at, updated_at, updated_by_user_id, deleted_at FROM gr33nnaturalfarming.application_recipes
 WHERE id = $1 AND deleted_at IS NULL
@@ -126,6 +197,26 @@ func (q *Queries) GetRecipeByID(ctx context.Context, id int64) (Gr33nnaturalfarm
 		&i.UpdatedAt,
 		&i.UpdatedByUserID,
 		&i.DeletedAt,
+	)
+	return i, err
+}
+
+const getRecipeRevisionByID = `-- name: GetRecipeRevisionByID :one
+SELECT id, application_recipe_id, revision_number, snapshot, change_summary, created_at, created_by_user_id FROM gr33nnaturalfarming.application_recipe_revisions
+WHERE id = $1
+`
+
+func (q *Queries) GetRecipeRevisionByID(ctx context.Context, id int64) (Gr33nnaturalfarmingApplicationRecipeRevision, error) {
+	row := q.db.QueryRow(ctx, getRecipeRevisionByID, id)
+	var i Gr33nnaturalfarmingApplicationRecipeRevision
+	err := row.Scan(
+		&i.ID,
+		&i.ApplicationRecipeID,
+		&i.RevisionNumber,
+		&i.Snapshot,
+		&i.ChangeSummary,
+		&i.CreatedAt,
+		&i.CreatedByUserID,
 	)
 	return i, err
 }
@@ -169,6 +260,40 @@ func (q *Queries) ListRecipeComponents(ctx context.Context, applicationRecipeID 
 			&i.PartUnitID,
 			&i.Notes,
 			&i.InputName,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listRecipeRevisions = `-- name: ListRecipeRevisions :many
+SELECT id, application_recipe_id, revision_number, snapshot, change_summary, created_at, created_by_user_id FROM gr33nnaturalfarming.application_recipe_revisions
+WHERE application_recipe_id = $1
+ORDER BY revision_number DESC
+`
+
+func (q *Queries) ListRecipeRevisions(ctx context.Context, applicationRecipeID int64) ([]Gr33nnaturalfarmingApplicationRecipeRevision, error) {
+	rows, err := q.db.Query(ctx, listRecipeRevisions, applicationRecipeID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Gr33nnaturalfarmingApplicationRecipeRevision{}
+	for rows.Next() {
+		var i Gr33nnaturalfarmingApplicationRecipeRevision
+		if err := rows.Scan(
+			&i.ID,
+			&i.ApplicationRecipeID,
+			&i.RevisionNumber,
+			&i.Snapshot,
+			&i.ChangeSummary,
+			&i.CreatedAt,
+			&i.CreatedByUserID,
 		); err != nil {
 			return nil, err
 		}

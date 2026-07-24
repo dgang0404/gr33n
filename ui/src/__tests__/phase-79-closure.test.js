@@ -60,13 +60,23 @@ describe('Phase 79 — tasks fix, concepts, inventory', () => {
     expect(operatorConcept('schedule')?.dbTable).toContain('schedules')
     expect(operatorConcept('comfort_band')?.dbTable).toContain('zone_setpoints')
     expect(operatorConcept('alert')?.dbTable).toContain('alerts')
+    expect(operatorConcept('input_definition')?.dbTable).toContain('input_definitions')
+    expect(operatorConcept('input_batch')?.dbTable).toContain('input_batches')
+    expect(operatorConcept('application_recipe')?.dbTable).toContain('application_recipes')
     expect(COMFORT_WORKSPACE_CONCEPTS.length).toBeGreaterThanOrEqual(6)
   })
 
-  it('money workspace keeps advanced inventory tab; legacy /inventory goes to studio', () => {
-    const tabs = WORKSPACES.money.tabs.map((t) => t.id)
-    expect(tabs).toContain('inventory')
-    expect(WORKSPACES.money.absorbs?.['/inventory']).toBeUndefined()
+  it('natural farming workspace tabs declare concept help ids', () => {
+    const tabs = WORKSPACES.naturalfarming.tabs
+    expect(tabs.find((t) => t.id === 'batch')?.conceptId).toBe('input_batch')
+    expect(tabs.find((t) => t.id === 'library')?.conceptId).toBe('nf_field_guide')
+    expect(tabs.find((t) => t.id === 'recipes')?.conceptId).toBe('application_recipe')
+  })
+
+  it('natural farming has manage tab; legacy /inventory goes to studio', () => {
+    const tabs = WORKSPACES.naturalfarming.tabs.map((t) => t.id)
+    expect(tabs).toContain('manage')
+    expect(WORKSPACES.money.tabs.map((t) => t.id)).not.toContain('inventory')
     expect(WORKSPACES.naturalfarming.absorbs?.['/inventory']).toEqual({ tab: 'recipes' })
   })
 })

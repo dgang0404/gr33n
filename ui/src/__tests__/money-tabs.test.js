@@ -8,9 +8,9 @@ import { WORKSPACES, resolveWorkspaceTab } from '../lib/workspaces.js'
 import router from '../router/index.js'
 
 describe('Phase 72 — money tabs', () => {
-  it('declares summary, ledger, supplies, inventory, and grows tabs', () => {
+  it('declares summary, ledger, supplies, and grows tabs', () => {
     const tabs = WORKSPACES.money.tabs.map((t) => t.id)
-    expect(tabs).toEqual(['summary', 'ledger', 'supplies', 'inventory', 'grows'])
+    expect(tabs).toEqual(['summary', 'ledger', 'supplies', 'grows'])
   })
 
   it('defaults to summary (This month)', () => {
@@ -18,16 +18,15 @@ describe('Phase 72 — money tabs', () => {
     expect(resolveWorkspaceTab('money', 'bogus')).toBe('summary')
   })
 
-  it('MoneyWorkspace hosts MoneyHub, Costs, SuppliesHub, and Inventory', () => {
+  it('MoneyWorkspace hosts MoneyHub, Costs, and SuppliesHub', () => {
     const src = readFileSync(join(process.cwd(), 'src/views/workspaces/MoneyWorkspace.vue'), 'utf8')
     expect(src).toContain("activeTab === 'summary'")
     expect(src).toContain("activeTab === 'ledger'")
     expect(src).toContain("activeTab === 'supplies'")
-    expect(src).toContain("activeTab === 'inventory'")
+    expect(src).not.toContain('Inventory')
     expect(src).toContain('MoneyHub')
     expect(src).toContain('Costs')
     expect(src).toContain('SuppliesHub')
-    expect(src).toContain('Inventory')
   })
 
   it('deep-links ?tab=ledger on /money', () => {

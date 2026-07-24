@@ -37,7 +37,14 @@
               : 'text-zinc-500 hover:text-zinc-200 hover:bg-zinc-900'"
             @click="selectTab(tab.id)"
           >
-            {{ tab.label }}
+            <span class="inline-flex items-center">
+              {{ tab.label }}
+              <ConceptHelpTip
+                v-if="tab.conceptId"
+                :concept-id="tab.conceptId"
+                position="top"
+              />
+            </span>
           </button>
         </div>
 
@@ -99,7 +106,14 @@
               : 'text-zinc-500 hover:text-zinc-200 hover:bg-zinc-900'"
             @click="selectTab(tab.id)"
           >
-            {{ tab.label }}
+            <span class="inline-flex items-center">
+              {{ tab.label }}
+              <ConceptHelpTip
+                v-if="tab.conceptId"
+                :concept-id="tab.conceptId"
+                position="top"
+              />
+            </span>
           </button>
         </div>
 
@@ -153,6 +167,7 @@
 import { computed, watch, ref, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { relatedWorkspaces, resolveWorkspaceTab, WORKSPACES } from '../lib/workspaces.js'
+import ConceptHelpTip from './ConceptHelpTip.vue'
 
 const props = defineProps({
   workspaceId: { type: String, required: true },
@@ -187,8 +202,10 @@ const jumpLinks = computed(() => {
   })
 })
 
+const JUMP_RAIL_WORKSPACE_IDS = new Set(['zones', 'hardware'])
+
 const showJumpRail = computed(() => {
-  if (props.workspaceId === 'help') return false
+  if (!JUMP_RAIL_WORKSPACE_IDS.has(props.workspaceId)) return false
   return jumpLinks.value.length > 0
 })
 

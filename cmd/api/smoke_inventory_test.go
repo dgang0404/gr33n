@@ -135,3 +135,73 @@ func TestRecipeFullCRUD(t *testing.T) {
 	resp = authDelete(t, tok, fmt.Sprintf("/naturalfarming/recipes/%d", recipeID))
 	expectStatus(t, resp, http.StatusNoContent)
 }
+
+func TestRecipeRevisionHistory(t *testing.T) {
+	tok := smokeJWT(t)
+
+	recipesResp := authGet(t, tok, "/farms/1/naturalfarming/recipes")
+	expectStatus(t, recipesResp, http.StatusOK)
+	recipes := decodeSlice(t, recipesResp)
+	if len(recipes) == 0 {
+		t.Fatal("expected seeded recipes")
+	}
+	recipeID := int64(recipes[0].(map[string]any)["id"].(float64))
+
+	revsResp := authGet(t, tok, fmt.Sprintf("/naturalfarming/recipes/%d/revisions", recipeID))
+	expectStatus(t, revsResp, http.StatusOK)
+	revs := decodeSlice(t, revsResp)
+	if len(revs) == 0 {
+		t.Fatal("expected bootstrap revision for seeded recipe")
+	}
+	first := revs[len(revs)-1].(map[string]any)
+	if int(first["revision_number"].(float64)) != 1 {
+		t.Fatalf("expected revision_number 1, got %v", first["revision_number"])
+	}
+
+	name := uniqueName("smoke_rev_recipe")
+	resp := authPost(t, tok, "/farms/1/naturalfarming/recipes", map[string]any{
+		"name":                    name,
+		"description":             "revision smoke",
+		"target_application_type": "soil_drench",
+		"dilution_ratio":          "1:10",
+	})
+	expectStatus(t, resp, http.StatusCreated)
+	created := decodeMap(t, resp)
+	newID := int64(created["id"].(float64))
+
+	revsResp = authGet(t, tok, fmt.Sprintf("/naturalfarming/recipes/%d/revisions", newID))
+	expectStatus(t, revsResp, http.StatusOK)
+	revs = decodeSlice(t, revsResp)
+	if len(revs) != 1 {
+		t.Fatalf("expected 1 revision after create, got %d", len(revs))
+	}
+
+	resp = authPut(t, tok, fmt.Sprintf("/naturalfarming/recipes/%d", newID), map[string]any{
+		"name":                    name,
+		"description":             "revision smoke updated",
+		"target_application_type": "soil_drench",
+		"dilution_ratio":          "1:20",
+	})
+	expectStatus(t, resp, http.StatusOK)
+
+	revsResp = authGet(t, tok, fmt.Sprintf("/naturalfarming/recipes/%d/revisions", newID))
+	expectStatus(t, revsResp, http.StatusOK)
+	revs = decodeSlice(t, revsResp)
+	if len(revs) != 2 {
+		t.Fatalf("expected 2 revisions after update, got %d", len(revs))
+	}
+	latest := revs[0].(map[string]any)
+	if latest["snapshot"] == nil {
+		t.Fatal("expected snapshot on latest revision")
+	}
+	oldest := revs[1].(map[string]any)
+	if oldest["snapshot"] == nil {
+		t.Fatal("expected snapshot on first revision")
+	}
+	if int(latest["revision_number"].(float64)) != 2 {
+		t.Fatalf("expected latest revision_number 2, got %v", latest["revision_number"])
+	}
+
+	resp = authDelete(t, tok, fmt.Sprintf("/naturalfarming/recipes/%d", newID))
+	expectStatus(t, resp, http.StatusNoContent)
+}

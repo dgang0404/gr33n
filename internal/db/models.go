@@ -2148,24 +2148,25 @@ type Gr33nfertigationFertigationEvent struct {
 }
 
 type Gr33nfertigationMixingEvent struct {
-	ID                int64          `db:"id" json:"id"`
-	FarmID            int64          `db:"farm_id" json:"farm_id"`
-	ReservoirID       int64          `db:"reservoir_id" json:"reservoir_id"`
-	ProgramID         *int64         `db:"program_id" json:"program_id"`
-	MixedByUserID     pgtype.UUID    `db:"mixed_by_user_id" json:"mixed_by_user_id"`
-	MixedAt           time.Time      `db:"mixed_at" json:"mixed_at"`
-	WaterVolumeLiters pgtype.Numeric `db:"water_volume_liters" json:"water_volume_liters"`
-	WaterSource       *string        `db:"water_source" json:"water_source"`
-	WaterEcMscm       pgtype.Numeric `db:"water_ec_mscm" json:"water_ec_mscm"`
-	WaterPh           pgtype.Numeric `db:"water_ph" json:"water_ph"`
-	FinalEcMscm       pgtype.Numeric `db:"final_ec_mscm" json:"final_ec_mscm"`
-	FinalPh           pgtype.Numeric `db:"final_ph" json:"final_ph"`
-	FinalTempCelsius  pgtype.Numeric `db:"final_temp_celsius" json:"final_temp_celsius"`
-	EcTargetID        *int64         `db:"ec_target_id" json:"ec_target_id"`
-	EcTargetMet       *bool          `db:"ec_target_met" json:"ec_target_met"`
-	Notes             *string        `db:"notes" json:"notes"`
-	Observations      *string        `db:"observations" json:"observations"`
-	CreatedAt         time.Time      `db:"created_at" json:"created_at"`
+	ID                int64           `db:"id" json:"id"`
+	FarmID            int64           `db:"farm_id" json:"farm_id"`
+	ReservoirID       int64           `db:"reservoir_id" json:"reservoir_id"`
+	ProgramID         *int64          `db:"program_id" json:"program_id"`
+	MixedByUserID     pgtype.UUID     `db:"mixed_by_user_id" json:"mixed_by_user_id"`
+	MixedAt           time.Time       `db:"mixed_at" json:"mixed_at"`
+	WaterVolumeLiters pgtype.Numeric  `db:"water_volume_liters" json:"water_volume_liters"`
+	WaterSource       *string         `db:"water_source" json:"water_source"`
+	WaterEcMscm       pgtype.Numeric  `db:"water_ec_mscm" json:"water_ec_mscm"`
+	WaterPh           pgtype.Numeric  `db:"water_ph" json:"water_ph"`
+	FinalEcMscm       pgtype.Numeric  `db:"final_ec_mscm" json:"final_ec_mscm"`
+	FinalPh           pgtype.Numeric  `db:"final_ph" json:"final_ph"`
+	FinalTempCelsius  pgtype.Numeric  `db:"final_temp_celsius" json:"final_temp_celsius"`
+	EcTargetID        *int64          `db:"ec_target_id" json:"ec_target_id"`
+	EcTargetMet       *bool           `db:"ec_target_met" json:"ec_target_met"`
+	Notes             *string         `db:"notes" json:"notes"`
+	Observations      *string         `db:"observations" json:"observations"`
+	Metadata          json.RawMessage `db:"metadata" json:"metadata"`
+	CreatedAt         time.Time       `db:"created_at" json:"created_at"`
 }
 
 type Gr33nfertigationMixingEventComponent struct {
@@ -2179,29 +2180,30 @@ type Gr33nfertigationMixingEventComponent struct {
 }
 
 type Gr33nfertigationProgram struct {
-	ID                  int64              `db:"id" json:"id"`
-	FarmID              int64              `db:"farm_id" json:"farm_id"`
-	Name                string             `db:"name" json:"name"`
-	Description         *string            `db:"description" json:"description"`
-	ApplicationRecipeID *int64             `db:"application_recipe_id" json:"application_recipe_id"`
-	ReservoirID         *int64             `db:"reservoir_id" json:"reservoir_id"`
-	TargetZoneID        *int64             `db:"target_zone_id" json:"target_zone_id"`
-	ScheduleID          *int64             `db:"schedule_id" json:"schedule_id"`
-	EcTargetID          *int64             `db:"ec_target_id" json:"ec_target_id"`
-	VolumeLitersPerSqm  pgtype.Numeric     `db:"volume_liters_per_sqm" json:"volume_liters_per_sqm"`
-	TotalVolumeLiters   pgtype.Numeric     `db:"total_volume_liters" json:"total_volume_liters"`
-	DilutionRatio       *string            `db:"dilution_ratio" json:"dilution_ratio"`
-	RunDurationSeconds  *int32             `db:"run_duration_seconds" json:"run_duration_seconds"`
-	EcTriggerLow        pgtype.Numeric     `db:"ec_trigger_low" json:"ec_trigger_low"`
-	PhTriggerLow        pgtype.Numeric     `db:"ph_trigger_low" json:"ph_trigger_low"`
-	PhTriggerHigh       pgtype.Numeric     `db:"ph_trigger_high" json:"ph_trigger_high"`
-	IsActive            bool               `db:"is_active" json:"is_active"`
-	Metadata            json.RawMessage    `db:"metadata" json:"metadata"`
-	LastTriggeredTime   pgtype.Timestamptz `db:"last_triggered_time" json:"last_triggered_time"`
-	IrrigationOnly      bool               `db:"irrigation_only" json:"irrigation_only"`
-	CreatedAt           time.Time          `db:"created_at" json:"created_at"`
-	UpdatedAt           time.Time          `db:"updated_at" json:"updated_at"`
-	DeletedAt           pgtype.Timestamptz `db:"deleted_at" json:"deleted_at"`
+	ID                          int64              `db:"id" json:"id"`
+	FarmID                      int64              `db:"farm_id" json:"farm_id"`
+	Name                        string             `db:"name" json:"name"`
+	Description                 *string            `db:"description" json:"description"`
+	ApplicationRecipeID         *int64             `db:"application_recipe_id" json:"application_recipe_id"`
+	ApplicationRecipeRevisionID *int64             `db:"application_recipe_revision_id" json:"application_recipe_revision_id"`
+	ReservoirID                 *int64             `db:"reservoir_id" json:"reservoir_id"`
+	TargetZoneID                *int64             `db:"target_zone_id" json:"target_zone_id"`
+	ScheduleID                  *int64             `db:"schedule_id" json:"schedule_id"`
+	EcTargetID                  *int64             `db:"ec_target_id" json:"ec_target_id"`
+	VolumeLitersPerSqm          pgtype.Numeric     `db:"volume_liters_per_sqm" json:"volume_liters_per_sqm"`
+	TotalVolumeLiters           pgtype.Numeric     `db:"total_volume_liters" json:"total_volume_liters"`
+	DilutionRatio               *string            `db:"dilution_ratio" json:"dilution_ratio"`
+	RunDurationSeconds          *int32             `db:"run_duration_seconds" json:"run_duration_seconds"`
+	EcTriggerLow                pgtype.Numeric     `db:"ec_trigger_low" json:"ec_trigger_low"`
+	PhTriggerLow                pgtype.Numeric     `db:"ph_trigger_low" json:"ph_trigger_low"`
+	PhTriggerHigh               pgtype.Numeric     `db:"ph_trigger_high" json:"ph_trigger_high"`
+	IsActive                    bool               `db:"is_active" json:"is_active"`
+	Metadata                    json.RawMessage    `db:"metadata" json:"metadata"`
+	LastTriggeredTime           pgtype.Timestamptz `db:"last_triggered_time" json:"last_triggered_time"`
+	IrrigationOnly              bool               `db:"irrigation_only" json:"irrigation_only"`
+	CreatedAt                   time.Time          `db:"created_at" json:"created_at"`
+	UpdatedAt                   time.Time          `db:"updated_at" json:"updated_at"`
+	DeletedAt                   pgtype.Timestamptz `db:"deleted_at" json:"deleted_at"`
 }
 
 type Gr33nfertigationReservoir struct {
@@ -2245,6 +2247,16 @@ type Gr33nnaturalfarmingApplicationRecipe struct {
 	UpdatedAt             time.Time                                `db:"updated_at" json:"updated_at"`
 	UpdatedByUserID       pgtype.UUID                              `db:"updated_by_user_id" json:"updated_by_user_id"`
 	DeletedAt             pgtype.Timestamptz                       `db:"deleted_at" json:"deleted_at"`
+}
+
+type Gr33nnaturalfarmingApplicationRecipeRevision struct {
+	ID                  int64           `db:"id" json:"id"`
+	ApplicationRecipeID int64           `db:"application_recipe_id" json:"application_recipe_id"`
+	RevisionNumber      int32           `db:"revision_number" json:"revision_number"`
+	Snapshot            json.RawMessage `db:"snapshot" json:"snapshot"`
+	ChangeSummary       *string         `db:"change_summary" json:"change_summary"`
+	CreatedAt           time.Time       `db:"created_at" json:"created_at"`
+	CreatedByUserID     pgtype.UUID     `db:"created_by_user_id" json:"created_by_user_id"`
 }
 
 type Gr33nnaturalfarmingInputBatch struct {

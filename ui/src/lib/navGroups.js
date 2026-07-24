@@ -54,6 +54,12 @@ export function buildNavGroups(opts = {}) {
           navTitle: 'Ferment inputs, make batches, recipes, and on-hand stock',
         },
         {
+          to: '/feed-water',
+          icon: '💧',
+          label: 'Feed & water',
+          navTitle: 'Daily watering, programs, nutrients, and advanced fertigation',
+        },
+        {
           to: '/comfort-targets',
           icon: '🎯',
           label: 'Comfort & automation',

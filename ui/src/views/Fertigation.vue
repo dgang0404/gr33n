@@ -618,19 +618,20 @@ import {
 import { cycleBatchLabel, formatStageLabel } from '../lib/growHub.js'
 import { loadDomainEnums, enumValues, getDomainEnums } from '../lib/domainEnums.js'
 import api from '../api/index.js'
-import { comfortTabRoute, feedWaterFertigationRoute, naturalFarmingTabRoute, resolveFertigationSubTab } from '../lib/workspaceRoutes.js'
+import { comfortTabRoute, feedWaterFertigationRoute, naturalFarmingManageRoute, resolveFertigationSubTab } from '../lib/workspaceRoutes.js'
+import { resolveWorkspaceTab } from '../lib/workspaces.js'
 
 const FEED_WATER_ROUTE = 'feed-water'
 
 const comfortScheduleRoute = comfortTabRoute('schedules')
-const inventoryRoute = naturalFarmingTabRoute('stock')
+const inventoryRoute = naturalFarmingManageRoute({ inv: 'batches' })
 
 function recipeLink(recipeId) {
   return naturalFarmingTabRoute('recipes', { recipe: recipeId })
 }
 
 function batchStockLink(batchId) {
-  return naturalFarmingTabRoute('stock', { batchId })
+  return naturalFarmingManageRoute({ inv: 'batches', batchId })
 }
 
 const route = useRoute()
@@ -668,6 +669,10 @@ watch(
   () => [route.name, route.fullPath],
   () => {
     if (route.name !== FEED_WATER_ROUTE) return
+    if (resolveWorkspaceTab('feedwater', route.query.tab) === 'nutrients') {
+      activeTab.value = 'mixing'
+      return
+    }
     const q = resolveFertigationSubTab(route.query)
     if (q && tabs.some((t) => t.id === q)) {
       activeTab.value = q

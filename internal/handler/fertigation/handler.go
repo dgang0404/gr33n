@@ -19,6 +19,7 @@ import (
 	"gr33n-api/internal/farmauthz"
 	"gr33n-api/internal/fertigation/programmeta"
 	"gr33n-api/internal/httputil"
+	"gr33n-api/internal/reciperevision"
 )
 
 type Handler struct {
@@ -171,17 +172,25 @@ func (h *Handler) UpdateProgram(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid total_volume_liters")
 		return
 	}
+	revisionID, err := reciperevision.PinProgramRecipeRevision(
+		r.Context(), h.q, prog.ApplicationRecipeID, recipeID, prog.ApplicationRecipeRevisionID, req.IrrigationOnly,
+	)
+	if err != nil {
+		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
 	row, err := h.q.UpdateProgram(r.Context(), db.UpdateProgramParams{
-		ID:                  id,
-		Name:                req.Name,
-		Description:         req.Description,
-		ReservoirID:         req.ReservoirID,
-		TargetZoneID:        req.TargetZoneID,
-		EcTargetID:          req.EcTargetID,
-		TotalVolumeLiters:   totalVol,
-		IsActive:            req.IsActive,
-		IrrigationOnly:      req.IrrigationOnly,
-		ApplicationRecipeID: recipeID,
+		ID:                          id,
+		Name:                        req.Name,
+		Description:                 req.Description,
+		ReservoirID:                 req.ReservoirID,
+		TargetZoneID:                req.TargetZoneID,
+		EcTargetID:                  req.EcTargetID,
+		TotalVolumeLiters:           totalVol,
+		IsActive:                    req.IsActive,
+		IrrigationOnly:              req.IrrigationOnly,
+		ApplicationRecipeID:         recipeID,
+		ApplicationRecipeRevisionID: revisionID,
 	})
 	if err != nil {
 		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
@@ -470,22 +479,31 @@ func (h *Handler) CreateProgram(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	revisionID, err := reciperevision.PinProgramRecipeRevision(
+		r.Context(), h.q, nil, recipeID, nil, req.IrrigationOnly,
+	)
+	if err != nil {
+		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
 	row, err := h.q.CreateProgram(r.Context(), db.CreateProgramParams{
-		FarmID:              farmID,
-		Name:                req.Name,
-		Description:         req.Description,
-		ApplicationRecipeID: recipeID,
-		ReservoirID:         req.ReservoirID,
-		TargetZoneID:        req.TargetZoneID,
-		ScheduleID:          req.ScheduleID,
-		EcTargetID:          req.EcTargetID,
-		TotalVolumeLiters:   totalVol,
-		RunDurationSeconds:  req.RunDurationSeconds,
-		EcTriggerLow:        ecLow,
-		PhTriggerLow:        phLow,
-		PhTriggerHigh:       phHigh,
-		IsActive:            req.IsActive,
-		IrrigationOnly:      req.IrrigationOnly,
+		FarmID:                      farmID,
+		Name:                        req.Name,
+		Description:                 req.Description,
+		ApplicationRecipeID:         recipeID,
+		ApplicationRecipeRevisionID: revisionID,
+		ReservoirID:                 req.ReservoirID,
+		TargetZoneID:                req.TargetZoneID,
+		ScheduleID:                  req.ScheduleID,
+		EcTargetID:                  req.EcTargetID,
+		TotalVolumeLiters:           totalVol,
+		RunDurationSeconds:          req.RunDurationSeconds,
+		EcTriggerLow:                ecLow,
+		PhTriggerLow:                phLow,
+		PhTriggerHigh:               phHigh,
+		IsActive:                    req.IsActive,
+		IrrigationOnly:              req.IrrigationOnly,
 	})
 	if err != nil {
 		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
@@ -846,6 +864,31 @@ func (h *Handler) CreateMixingEvent(w http.ResponseWriter, r *http.Request) {
 		finalTemp, _ = httputil.NumericFromFloat64(*req.FinalTempCelsius)
 	}
 
+	var mixMetadata json.RawMessage
+	if req.ProgramID != nil {
+		prog, pErr := h.q.GetFertigationProgramByID(r.Context(), *req.ProgramID)
+		if pErr != nil {
+			if errors.Is(pErr, pgx.ErrNoRows) {
+				httputil.WriteError(w, http.StatusBadRequest, "program not found")
+				return
+			}
+			httputil.WriteError(w, http.StatusInternalServerError, pErr.Error())
+			return
+		}
+		if prog.FarmID != farmID {
+			httputil.WriteError(w, http.StatusBadRequest, "program does not belong to this farm")
+			return
+		}
+		meta, mErr := reciperevision.MixingEventMetadata(r.Context(), h.q, prog)
+		if mErr != nil {
+			httputil.WriteError(w, http.StatusInternalServerError, mErr.Error())
+			return
+		}
+		mixMetadata = meta
+	} else {
+		mixMetadata = json.RawMessage(`{}`)
+	}
+
 	var mixedBy pgtype.UUID
 	if uid, ok := authctx.UserID(r.Context()); ok {
 		mixedBy = pgtype.UUID{Bytes: uid, Valid: true}
@@ -876,6 +919,7 @@ func (h *Handler) CreateMixingEvent(w http.ResponseWriter, r *http.Request) {
 		EcTargetMet:       req.EcTargetMet,
 		Notes:             req.Notes,
 		Observations:      req.Observations,
+		Metadata:          mixMetadata,
 	})
 	if err != nil {
 		httputil.WriteError(w, http.StatusInternalServerError, "failed to create mixing event")

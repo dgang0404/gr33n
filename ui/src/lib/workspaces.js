@@ -1,4 +1,5 @@
 import { redirectLegacyInventory } from './workspaceRoutes.js'
+import { NF_WORKSPACE_TAB_LABELS } from './naturalFarmingVocabulary.js'
 
 /**
  * Phase 68 WS1 — workspace model (SPA shells with internal tabs).
@@ -35,8 +36,7 @@ export const WORKSPACES = {
     tabs: [
       { id: 'summary', label: 'This month' },
       { id: 'ledger', label: 'Ledger' },
-      { id: 'supplies', label: 'Supplies on hand' },
-      { id: 'inventory', label: 'Natural farming (advanced)' },
+      { id: 'supplies', label: 'Supplies on hand', conceptId: 'input_batch' },
       { id: 'grows', label: 'Grows' },
     ],
     absorbs: {
@@ -115,13 +115,12 @@ export const WORKSPACES = {
     label: 'Natural farming',
     icon: '🌱',
     route: '/natural-farming',
-    subtitle: 'Ferment inputs, recipes, and on-hand batches',
+    subtitle: 'Make inputs, read the field guide, and wire apply recipes',
     tabs: [
-      { id: 'start', label: 'Start here' },
-      { id: 'library', label: 'Recipe library' },
-      { id: 'batch', label: 'Make a batch' },
-      { id: 'recipes', label: 'Recipes & apply' },
-      { id: 'stock', label: 'On hand' },
+      { id: 'batch', label: NF_WORKSPACE_TAB_LABELS.batch, conceptId: 'input_batch' },
+      { id: 'library', label: NF_WORKSPACE_TAB_LABELS.library, conceptId: 'nf_field_guide' },
+      { id: 'recipes', label: NF_WORKSPACE_TAB_LABELS.recipes, conceptId: 'application_recipe' },
+      { id: 'manage', label: NF_WORKSPACE_TAB_LABELS.manage, conceptId: 'input_definition' },
     ],
     absorbs: {
       '/inventory': { tab: 'recipes' },
@@ -220,6 +219,7 @@ export function workspaceFor(path) {
 export function canonicalSidebarPath(path) {
   if (!path) return null
   const normalized = path.split('?')[0]
+  if (normalized === '/hardware') return '/virtual-pi'
   return workspaceFor(normalized)?.route ?? normalized
 }
 
@@ -241,6 +241,13 @@ export function workspaceByRoute(routePath) {
     if (ws.route === normalized) return ws
   }
   return null
+}
+
+/** Legacy natural-farming tab ids (Phase 211.02). */
+const NATURAL_FARMING_TAB_ALIASES = {
+  start: 'batch',
+  guide: 'batch',
+  stock: 'batch',
 }
 
 /**
@@ -305,6 +312,9 @@ export function resolveWorkspaceTab(workspaceId, tabId) {
   }
   if (workspaceId === 'help' && tabId) {
     resolved = HELP_TAB_ALIASES[tabId] ?? tabId
+  }
+  if (workspaceId === 'naturalfarming' && tabId) {
+    resolved = NATURAL_FARMING_TAB_ALIASES[tabId] ?? tabId
   }
   if (resolved && tabs.some((t) => t.id === resolved)) return resolved
   return defaultTabFor(workspaceId)
@@ -384,6 +394,15 @@ export function buildLegacyRedirectRoutes() {
         return { path: hit.route, query }
       }
 
+      if (legacyPath === '/operations/feeding') {
+        const query = { ...to.query, tab: hit.tab }
+        const rawTab = to.query.tab
+        const sub = typeof rawTab === 'string' ? rawTab : Array.isArray(rawTab) ? rawTab[0] : ''
+        const adminSubTabs = new Set(['programs', 'reservoirs', 'ec-targets'])
+        if (sub && adminSubTabs.has(sub) && sub !== 'programs') query.admin_tab = sub
+        return { path: hit.route, query }
+      }
+
       const query = { ...to.query, tab: hit.tab }
       if (hit.fleet) query.fleet = hit.fleet
       if (hit.section) query.section = hit.section
@@ -398,6 +417,8 @@ export function buildLegacyRedirectRoutes() {
  */
 export function relatedWorkspaces(route) {
   if (!route) return []
-  const normalized = canonicalSidebarPath(route) ?? route.split('?')[0]
-  return WORKSPACE_RELATIONS[normalized] ?? []
+  const normalized = route.split('?')[0]
+  if (WORKSPACE_RELATIONS[normalized]) return WORKSPACE_RELATIONS[normalized]
+  const canonical = canonicalSidebarPath(normalized)
+  return WORKSPACE_RELATIONS[canonical] ?? []
 }

@@ -55,6 +55,30 @@ export const OPERATOR_CONCEPTS = {
     shortTip: 'Per-sensor alert limits on the sensor detail page — separate from zone comfort bands.',
     detail: 'Thresholds on a sensor fire alerts for that device. Zone comfort bands are farm/zone targets; both can exist without conflict if ranges align.',
   },
+  input_definition: {
+    label: 'Input',
+    dbTable: 'gr33nnaturalfarming.input_definitions',
+    shortTip: 'The type of ferment or supplement — what JMS or JLF is, how to prepare it, storage rules. Not a specific jar on the shelf.',
+    detail: 'One row per product type. Many batches can share the same input. Created in Make a batch or imported from the Commons pack.',
+  },
+  input_batch: {
+    label: 'Batch',
+    dbTable: 'gr33nnaturalfarming.input_batches',
+    shortTip: 'One production run of an input — start date, ferment status, liters left, batch code. What you actually made.',
+    detail: 'Status moves planning → fermenting → ready → partially used. Mixing and programs reference a specific batch when dosing.',
+  },
+  application_recipe: {
+    label: 'Apply recipe',
+    dbTable: 'gr33nnaturalfarming.application_recipes',
+    shortTip: 'How to use inputs on crops — dilution, foliar vs drench, which batches to mix. Links to Feed & water programs; does not start a pump alone.',
+    detail: 'Different from making JMS (that is a batch). Apply wires zone programs; the Advanced tab mixing log records what went into the tank.',
+  },
+  nf_field_guide: {
+    label: 'Field guide',
+    dbTable: 'recipe canon (read-only)',
+    shortTip: 'Read-only reference for how to make inputs and apply them — not your farm inventory. Make a batch when you actually ferment.',
+    detail: 'Canon from Phase 208: input prep, apply recipes, bootstrap programs. Your farm rows live under Make a batch, Apply recipes, and Ready batches.',
+  },
 }
 
 /** Concepts shown on Comfort & automation workspace. */
@@ -73,6 +97,18 @@ export const OPERATOR_CONCEPT_RELATIONSHIPS = [
   'Comfort bands set targets; rules can react when readings leave those bands.',
   'Schedules fire on a clock; rules decide what happens when they fire.',
   'Alerts notify you; tasks are work for you (or created by a rule) to follow up.',
+]
+
+/** Concepts for Natural farming workspace. */
+export const NATURAL_FARMING_WORKSPACE_CONCEPTS = [
+  'input_definition',
+  'input_batch',
+  'application_recipe',
+]
+
+export const NATURAL_FARMING_CONCEPT_RELATIONSHIPS = [
+  'Input = what it is. Batch = what you made. Apply recipe = how you use it on plants.',
+  'Field guide is read-only. Make a batch → Apply recipes links programs. Edit rows under Inputs & batches; costs under Money → Supplies.',
 ]
 
 /**

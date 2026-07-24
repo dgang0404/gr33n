@@ -10,9 +10,9 @@ import {
   ZONE_HARDWARE_HASH,
   ZONE_WATER_PLAN_HASH,
   comfortAdvancedSchedulesRoute,
+  naturalFarmingManageRoute,
   zoneHardwareRoute,
   zoneWaterPlanRoute,
-  moneyTabRoute,
 } from '../lib/workspaceRoutes.js'
 
 const uiSrc = join(process.cwd(), 'src')
@@ -39,9 +39,9 @@ describe('Phase 80 — routing & zones tab labels', () => {
       query: {},
       hash: ZONE_HARDWARE_HASH,
     })
-    expect(moneyTabRoute('inventory', { inv: 'recipes' })).toEqual({
-      path: '/money',
-      query: { tab: 'inventory', inv: 'recipes' },
+    expect(naturalFarmingManageRoute({ inv: 'batches', batchId: 12 })).toEqual({
+      path: '/natural-farming',
+      query: { tab: 'manage', inv: 'batches', batch_id: '12' },
     })
   })
 

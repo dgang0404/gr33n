@@ -19,6 +19,7 @@ import (
 	"gr33n-api/internal/fertigation/mixplan"
 	acthandler "gr33n-api/internal/handler/actuator"
 	"gr33n-api/internal/platform/commontypes"
+	"gr33n-api/internal/reciperevision"
 )
 
 // runProgramTick is the Phase 22 WS1 counterpart to runTick (schedules)
@@ -258,6 +259,7 @@ func (w *Worker) recordProgramRun(
 	details map[string]any,
 	now time.Time,
 ) {
+	reciperevision.MergeProgramFormulaDetails(ctx, w.q, p, details)
 	payload, _ := json.Marshal(details)
 	programID := p.ID
 	if _, err := w.q.CreateAutomationRun(ctx, db.CreateAutomationRunParams{

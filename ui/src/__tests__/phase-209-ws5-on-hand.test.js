@@ -1,5 +1,5 @@
 /**
- * Phase 209 WS5 — On hand tab wiring.
+ * Phase 209 WS5 — batch stock lives on Money → Supplies (Ready batches tab removed).
  */
 import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'node:fs'
@@ -9,37 +9,21 @@ const workspace = readFileSync(
   join(process.cwd(), 'src/views/workspaces/NaturalFarmingWorkspace.vue'),
   'utf8',
 )
-const panel = readFileSync(
-  join(process.cwd(), 'src/components/naturalfarming/OnHandPanel.vue'),
-  'utf8',
-)
+const supplies = readFileSync(join(process.cwd(), 'src/views/SuppliesHub.vue'), 'utf8')
 const lib = readFileSync(join(process.cwd(), 'src/lib/naturalFarmingStock.js'), 'utf8')
 
-describe('Phase 209 WS5 — on hand', () => {
-  it('stock tab mounts OnHandPanel', () => {
-    expect(workspace).toContain("activeTab === 'stock'")
-    expect(workspace).toContain('OnHandPanel')
+describe('Phase 209 WS5 — batch stock on Money supplies', () => {
+  it('natural farming workspace has no stock tab', () => {
+    expect(workspace).not.toContain("activeTab === 'stock'")
+    expect(workspace).not.toContain('OnHandPanel')
   })
 
-  it('panel shows ready batches and low-stock banner', () => {
-    expect(panel).toContain('data-test="nf-on-hand"')
-    expect(panel).toContain('stockRows')
-    expect(panel).toContain('lowStockFromReady')
-    expect(panel).toContain('nf-stock-low-stock-banner')
-    expect(panel).toContain('loadNfBatches')
-  })
-
-  it('bridges to Money for restock and unit costs', () => {
-    expect(panel).toContain('moneyTabRoute')
-    expect(panel).toContain('nf-stock-money-supplies')
-    expect(panel).toContain('Restock / edit costs → Money')
-    expect(panel).toContain("moneyTabRoute('supplies')")
-  })
-
-  it('links make batch and apply recipe tabs', () => {
-    expect(panel).toContain('nf-stock-make-batch')
-    expect(panel).toContain("tab: 'batch'")
-    expect(panel).toContain("tab: 'recipes'")
+  it('SuppliesHub shows batches, low-stock banner, and apply-recipe bridge', () => {
+    expect(supplies).toContain('buildSupplyRows')
+    expect(supplies).toContain('supplies-low-stock-banner')
+    expect(supplies).toContain('recipeApplyRouteForStockRow')
+    expect(supplies).toContain('supplies-apply-recipe')
+    expect(supplies).toContain('OperatorConceptBanner')
   })
 
   it('stock lib filters ready_for_use and partially_used', () => {

@@ -1,14 +1,17 @@
 <template>
-  <div class="space-y-6 max-w-4xl p-4" data-test="nf-recipe-library">
+  <div class="space-y-6 max-w-4xl" data-test="nf-recipe-library">
     <div>
-      <h2 class="text-lg font-semibold text-white">Recipe library</h2>
+      <h2 class="text-lg font-semibold text-white flex items-center gap-1">
+        {{ NF_VOCAB.fieldGuide }}
+        <ConceptHelpTip concept-id="nf_field_guide" position="bottom" />
+      </h2>
       <p class="text-sm text-zinc-500 mt-1">
-        Read-only canon from Phase 208 — inputs, application recipes, and bootstrap programs. Ratios come from
-        recipe canon and field guides, not hardcoded UI copy.
+        Read-only canon — how to make {{ NF_VOCAB.inputs.toLowerCase() }} and {{ NF_VOCAB.applyRecipes.toLowerCase() }}.
+        Not your farm inventory; use {{ NF_VOCAB.makeBatch }} when you ferment.
       </p>
     </div>
 
-    <div class="flex gap-1 bg-zinc-800 rounded-lg p-1 w-fit" data-test="nf-library-subtabs">
+    <div class="flex gap-1 bg-zinc-800 rounded-lg p-1 w-fit flex-wrap" data-test="nf-library-subtabs">
       <button
         v-for="t in visibleLibraryTabs"
         :key="t.id"
@@ -18,8 +21,11 @@
         :data-test="`nf-library-tab-${t.id}`"
         @click="selectLibraryTab(t.id)"
       >
-        {{ t.label }}
-        <span class="text-[10px] opacity-80 ml-1">({{ tabCounts[t.id] }})</span>
+        <span class="inline-flex items-center">
+          {{ t.label }}
+          <ConceptHelpTip v-if="t.conceptId" :concept-id="t.conceptId" position="bottom" />
+          <span class="text-[10px] opacity-80 ml-1">({{ tabCounts[t.id] }})</span>
+        </span>
       </button>
     </div>
 
@@ -161,7 +167,17 @@
           </div>
           <p v-else-if="farmId" class="text-xs text-zinc-500">No ready batches for these inputs yet.</p>
           <GuideStepCards v-if="stepCards.length" :cards="stepCards.slice(0, 3)" />
-          <LearnHowExpander v-if="selectedRecipe.guide" :guide-file="selectedRecipe.guide" />
+          <div class="flex flex-wrap gap-2 pt-2 border-t border-zinc-800">
+            <router-link
+              v-if="linkedFarmRecipe"
+              :to="naturalFarmingTabRoute('recipes', { recipe: linkedFarmRecipe.id })"
+              class="text-xs px-3 py-1.5 rounded-lg bg-green-800/50 text-green-300 border border-green-700 hover:bg-green-800/70"
+              data-test="nf-library-recipes-apply-link"
+            >
+              Recipes &amp; apply →
+            </router-link>
+            <LearnHowExpander v-if="selectedRecipe.guide" :guide-file="selectedRecipe.guide" />
+          </div>
         </article>
 
         <article
@@ -250,8 +266,12 @@ import {
   traditionBadge,
 } from '../../lib/naturalFarmingLibrary.js'
 import { isModuleEnabled, MODULE_SCHEMA, moduleMapFromRows } from '../../lib/farmModules.js'
+import { findFarmRecipeByName } from '../../lib/naturalFarmingRecipes.js'
+import { naturalFarmingTabRoute } from '../../lib/workspaceRoutes.js'
 import GuideStepCards from './GuideStepCards.vue'
 import LearnHowExpander from './LearnHowExpander.vue'
+import ConceptHelpTip from '../ConceptHelpTip.vue'
+import { NF_FIELD_GUIDE_TAB_LABELS, NF_VOCAB } from '../../lib/naturalFarmingVocabulary.js'
 
 const store = useFarmStore()
 const farmContext = useFarmContextStore()
@@ -270,6 +290,7 @@ const detailLoading = ref(false)
 const detailError = ref('')
 const farmInputs = ref([])
 const farmBatches = ref([])
+const farmRecipes = ref([])
 const applyingLivestockPack = ref(false)
 const livestockPackMessage = ref('')
 const livestockPackOk = ref(true)
@@ -280,7 +301,7 @@ const showLivestockTemplates = computed(() =>
 )
 const visibleLibraryTabs = computed(() => {
   if (!showLivestockTemplates.value) return LIBRARY_TABS
-  return [...LIBRARY_TABS, { id: 'livestock', label: 'Livestock' }]
+  return [...LIBRARY_TABS, { id: 'livestock', label: NF_FIELD_GUIDE_TAB_LABELS.livestock }]
 })
 
 const canonInputs = computed(() => /** @type {Array<Record<string, unknown>>} */ (canon.value?.inputs ?? []))
@@ -301,6 +322,10 @@ const linkedBatches = computed(() => {
     farmInputs.value,
     farmBatches.value,
   )
+})
+const linkedFarmRecipe = computed(() => {
+  if (!selectedRecipe.value) return null
+  return findFarmRecipeByName(selectedRecipe.value.seed_name, farmRecipes.value)
 })
 
 function selectLibraryTab(id) {
@@ -371,10 +396,17 @@ async function loadFarmInventory() {
   if (!farmId.value) {
     farmInputs.value = []
     farmBatches.value = []
+    farmRecipes.value = []
     return
   }
-  farmInputs.value = await store.loadNfInputs(farmId.value)
-  farmBatches.value = await store.loadNfBatches(farmId.value)
+  const [inputs, batches, recipes] = await Promise.all([
+    store.loadNfInputs(farmId.value),
+    store.loadNfBatches(farmId.value),
+    store.loadRecipes(farmId.value),
+  ])
+  farmInputs.value = inputs
+  farmBatches.value = batches
+  farmRecipes.value = recipes
 }
 
 onMounted(async () => {

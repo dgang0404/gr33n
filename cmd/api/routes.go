@@ -505,6 +505,7 @@ func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationwo
 	mux.Handle("DELETE /naturalfarming/batches/{id}", jwt(http.HandlerFunc(nf.DeleteInputBatch)))
 	mux.Handle("GET /farms/{id}/naturalfarming/recipes", jwt(http.HandlerFunc(nf.ListRecipes)))
 	mux.Handle("POST /farms/{id}/naturalfarming/recipes", jwt(http.HandlerFunc(nf.CreateRecipe)))
+	mux.Handle("GET /naturalfarming/recipes/{id}/revisions", jwt(http.HandlerFunc(nf.ListRecipeRevisions)))
 	mux.Handle("GET /naturalfarming/recipes/{id}/components", jwt(http.HandlerFunc(nf.ListRecipeComponents)))
 	mux.Handle("POST /naturalfarming/recipes/{id}/components", jwt(http.HandlerFunc(nf.AddRecipeComponent)))
 	mux.Handle("DELETE /naturalfarming/recipes/{id}/components/{iid}", jwt(http.HandlerFunc(nf.RemoveRecipeComponent)))

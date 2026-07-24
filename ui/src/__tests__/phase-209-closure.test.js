@@ -19,7 +19,7 @@ const switchover = readFileSync(join(uiSrc, 'components/naturalfarming/Switchove
 const makeBatch = readFileSync(join(uiSrc, 'components/naturalfarming/MakeBatchPanel.vue'), 'utf8')
 const library = readFileSync(join(uiSrc, 'components/naturalfarming/RecipeLibraryPanel.vue'), 'utf8')
 const recipesApply = readFileSync(join(uiSrc, 'components/naturalfarming/RecipesApplyPanel.vue'), 'utf8')
-const onHand = readFileSync(join(uiSrc, 'components/naturalfarming/OnHandPanel.vue'), 'utf8')
+const supplies = readFileSync(join(uiSrc, 'views/SuppliesHub.vue'), 'utf8')
 const fertigation = readFileSync(join(uiSrc, 'views/Fertigation.vue'), 'utf8')
 const tour = readFileSync(join(repoDocs, 'operator-tour.md'), 'utf8')
 const plan = readFileSync(join(repoDocs, 'plans/phase_209_natural_farming_studio_ui.plan.md'), 'utf8')
@@ -35,22 +35,22 @@ describe('Phase 209 — closure', () => {
     expect(grow.items[idxNf].label).toBe('Natural farming')
   })
 
-  it('/natural-farming loads with five tabs; default start', () => {
+  it('/natural-farming loads with four tabs; default batch', () => {
     expect(WORKSPACES.naturalfarming.tabs.map((t) => t.id)).toEqual([
-      'start', 'library', 'batch', 'recipes', 'stock',
+      'batch', 'library', 'recipes', 'manage',
     ])
-    expect(resolveWorkspaceTab('naturalfarming', undefined)).toBe('start')
+    expect(resolveWorkspaceTab('naturalfarming', undefined)).toBe('batch')
     expect(router.resolve({ path: '/natural-farming' }).name).toBe('natural-farming')
     for (const [tab, panel] of [
-      ['start', 'SwitchoverWizard'],
-      ['library', 'RecipeLibraryPanel'],
       ['batch', 'MakeBatchPanel'],
+      ['library', 'RecipeLibraryPanel'],
       ['recipes', 'RecipesApplyPanel'],
-      ['stock', 'OnHandPanel'],
+      ['manage', 'FarmRowsPanel'],
     ]) {
       expect(workspace).toContain(`activeTab === '${tab}'`)
       expect(workspace).toContain(panel)
     }
+    expect(workspace).not.toContain('OnHandPanel')
   })
 
   it('recipe library and make-batch use 208 canon and field guides (not hardcoded dilutions)', () => {
@@ -75,13 +75,13 @@ describe('Phase 209 — closure', () => {
     expect(recipeCanon).toContain('JLF and JMS Combined Drench')
   })
 
-  it('recipes tab links to fertigation programs; on-hand bridges supplies', () => {
+  it('recipes tab links to fertigation programs; supplies hub holds batch stock', () => {
     expect(recipesApply).toContain('feedWaterProgramLink')
     expect(recipesApply).toContain('nf-apply-feed-water-link')
     expect(recipesApply).toContain('createRecipe')
-    expect(onHand).toContain('stockRows')
-    expect(onHand).toContain('lowStockFromReady')
-    expect(onHand).toContain('moneyTabRoute')
+    expect(supplies).toContain('buildSupplyRows')
+    expect(supplies).toContain('recipeApplyRouteForStockRow')
+    expect(supplies).toContain('OperatorConceptBanner')
     expect(readFileSync(join(uiSrc, 'lib/naturalFarmingStock.js'), 'utf8')).toContain('ready_for_use')
   })
 
@@ -93,11 +93,12 @@ describe('Phase 209 — closure', () => {
     const to = { query: {} }
     expect(entry.redirect(to).path).toBe('/natural-farming')
     expect(entry.redirect(to).query.tab).toBe('recipes')
-    expect(entry.redirect({ query: { inv: 'batches' } }).query.tab).toBe('stock')
+    expect(entry.redirect({ query: { inv: 'batches' } }).path).toBe('/natural-farming')
+    expect(entry.redirect({ query: { inv: 'batches' } }).query.tab).toBe('manage')
   })
 
-  it('Fertigation batch links target natural-farming stock tab', () => {
-    expect(fertigation).toContain("naturalFarmingTabRoute('stock')")
+  it('Fertigation batch links resolve to Natural farming manage tab', () => {
+    expect(fertigation).toContain('naturalFarmingManageRoute')
     expect(fertigation).toContain('batchStockLink')
   })
 

@@ -62,7 +62,7 @@ describe('Phase 72 — money closure', () => {
       redirectedFrom: undefined,
     })
     expect(stock.path).toBe('/natural-farming')
-    expect(stock.query.tab).toBe('stock')
+    expect(stock.query.tab).toBe('manage')
   })
 
   it('MoneyHub footer links to ledger tab not orphan /costs', () => {
@@ -71,10 +71,10 @@ describe('Phase 72 — money closure', () => {
     expect(money).not.toContain('to="/costs"')
   })
 
-  it('SuppliesHub explains unit costs feed monthly spend', () => {
+  it('SuppliesHub explains batches and links to apply recipes', () => {
     const supplies = readFileSync(join(process.cwd(), 'src/views/SuppliesHub.vue'), 'utf8')
-    expect(supplies).toContain('Unit costs here feed into')
-    expect(supplies).toContain("tab: 'summary'")
+    expect(supplies).toContain('OperatorConceptBanner')
+    expect(supplies).toContain('supplies-apply-recipe')
   })
 
   it('registers /money workspace route', () => {

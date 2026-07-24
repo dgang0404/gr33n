@@ -81,8 +81,13 @@ describe('Phase 211 — closure', () => {
     expect(routesGo).toContain('POST /farms/{id}/naturalfarming/apply-pack')
   })
 
-  it('studio Start tab exposes Commons import and switchover apply CTAs', () => {
-    expect(wizard).toContain('CommonsRecipePackImport')
+  it('studio exposes Commons import on Recipes tab and switchover apply CTAs in wizard file', () => {
+    const recipesApply = readFileSync(
+      join(uiSrc, 'components/naturalfarming/RecipesApplyPanel.vue'),
+      'utf8',
+    )
+    expect(recipesApply).toContain('CommonsRecipePackImport')
+    expect(wizard).not.toContain('CommonsRecipePackImport')
     expect(wizard).toContain('nf-cta-apply-switchover-pack')
     expect(commonsImport).toContain('nf-commons-import')
     expect(readFileSync(join(uiSrc, 'lib/naturalFarmingCommonsImport.js'), 'utf8')).toContain(

@@ -23,6 +23,7 @@ describe('Phase 209 WS4 — recipes & apply', () => {
 
   it('panel rehosts recipe CRUD and component editor', () => {
     expect(panel).toContain('data-test="nf-recipes-apply"')
+    expect(panel).toContain('CommonsRecipePackImport')
     expect(panel).toContain('createRecipe')
     expect(panel).toContain('updateRecipe')
     expect(panel).toContain('loadRecipeComponents')

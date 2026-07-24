@@ -25,6 +25,15 @@ describe('Phase 53 WS2 — supplies stock closure', () => {
     expect(relatedTo('/operations/supplies')).toContain('/zones')
   })
 
+  it('SuppliesHub nav-hints point at destination workspaces not Money while on supplies', () => {
+    const vue = readFileSync(join(uiSrc, 'views/SuppliesHub.vue'), 'utf8')
+    expect(vue).toContain("v-nav-hint=\"'/feed-water'\"")
+    expect(vue).toContain("v-nav-hint=\"'/natural-farming'\"")
+    expect(vue).not.toContain("v-nav-hint=\"'/operations/supplies'\"")
+    expect(vue).not.toContain("v-nav-hint=\"'/operations/feeding'\"")
+    expect(vue).toContain('feedWaterFertigationRoute')
+  })
+
   it('phase-53 ws2 test file exists', () => {
     expect(existsSync(join(uiSrc, '__tests__/phase-53-ws2-supplies.test.js'))).toBe(true)
   })

@@ -1382,6 +1382,22 @@ CREATE INDEX IF NOT EXISTS idx_input_batches_farm
     ON gr33nnaturalfarming.input_batches(farm_id);
 CREATE INDEX IF NOT EXISTS idx_recipe_components_unit
     ON gr33nnaturalfarming.recipe_input_components(part_unit_id);
+
+-- Phase 211.02 — immutable recipe revision snapshots
+CREATE TABLE IF NOT EXISTS gr33nnaturalfarming.application_recipe_revisions (
+    id                      BIGSERIAL PRIMARY KEY,
+    application_recipe_id   BIGINT NOT NULL
+        REFERENCES gr33nnaturalfarming.application_recipes(id) ON DELETE CASCADE,
+    revision_number         INTEGER NOT NULL CHECK (revision_number > 0),
+    snapshot                JSONB NOT NULL,
+    change_summary          TEXT,
+    created_at              TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    created_by_user_id      UUID REFERENCES gr33ncore.profiles(user_id) ON DELETE SET NULL,
+    UNIQUE (application_recipe_id, revision_number)
+);
+CREATE INDEX IF NOT EXISTS idx_application_recipe_revisions_recipe
+    ON gr33nnaturalfarming.application_recipe_revisions (application_recipe_id, revision_number DESC);
+
 CREATE INDEX IF NOT EXISTS idx_input_definitions_farm
     ON gr33nnaturalfarming.input_definitions(farm_id) WHERE deleted_at IS NULL;
 
@@ -1519,6 +1535,7 @@ CREATE TABLE IF NOT EXISTS gr33nfertigation.programs (
     name                        TEXT NOT NULL,
     description                 TEXT,
     application_recipe_id       BIGINT REFERENCES gr33nnaturalfarming.application_recipes(id) ON DELETE SET NULL,
+    application_recipe_revision_id BIGINT REFERENCES gr33nnaturalfarming.application_recipe_revisions(id) ON DELETE SET NULL,
     reservoir_id                BIGINT REFERENCES gr33nfertigation.reservoirs(id) ON DELETE SET NULL,
     target_zone_id              BIGINT REFERENCES gr33ncore.zones(id) ON DELETE SET NULL,
     schedule_id                 BIGINT REFERENCES gr33ncore.schedules(id) ON DELETE SET NULL,
@@ -1603,6 +1620,7 @@ CREATE TABLE IF NOT EXISTS gr33nfertigation.mixing_events (
     ec_target_met           BOOLEAN,
     notes                   TEXT,
     observations            TEXT,
+    metadata                JSONB NOT NULL DEFAULT '{}'::jsonb,
     created_at              TIMESTAMPTZ DEFAULT NOW() NOT NULL
 );
 

@@ -11,6 +11,7 @@ import (
 	db "gr33n-api/internal/db"
 	"gr33n-api/internal/farmauthz"
 	"gr33n-api/internal/httputil"
+	"gr33n-api/internal/reciperevision"
 )
 
 // ListRecipes — GET /farms/{id}/naturalfarming/recipes
@@ -100,6 +101,10 @@ func (h *Handler) CreateRecipe(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
+	if _, err := reciperevision.Record(r.Context(), h.q, row.ID, "recipe created"); err != nil {
+		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
 	httputil.WriteJSON(w, http.StatusCreated, row)
 }
 
@@ -160,7 +165,41 @@ func (h *Handler) UpdateRecipe(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
+	if _, err := reciperevision.Record(r.Context(), h.q, row.ID, "recipe updated"); err != nil {
+		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
 	httputil.WriteJSON(w, http.StatusOK, row)
+}
+
+// ListRecipeRevisions — GET /naturalfarming/recipes/{id}/revisions
+func (h *Handler) ListRecipeRevisions(w http.ResponseWriter, r *http.Request) {
+	id, err := httputil.PathValueInt64(r, "id")
+	if err != nil {
+		httputil.WriteError(w, http.StatusBadRequest, "invalid recipe id")
+		return
+	}
+	rec, err := h.q.GetRecipeByID(r.Context(), id)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			httputil.WriteError(w, http.StatusNotFound, "recipe not found")
+			return
+		}
+		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	if !farmauthz.RequireFarmMember(w, r, h.q, rec.FarmID) {
+		return
+	}
+	rows, err := h.q.ListRecipeRevisions(r.Context(), id)
+	if err != nil {
+		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	if rows == nil {
+		rows = []db.Gr33nnaturalfarmingApplicationRecipeRevision{}
+	}
+	httputil.WriteJSON(w, http.StatusOK, rows)
 }
 
 // DeleteRecipe — DELETE /naturalfarming/recipes/{id}
@@ -267,6 +306,10 @@ func (h *Handler) AddRecipeComponent(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
+	if _, err := reciperevision.Record(r.Context(), h.q, recipeID, "component added or updated"); err != nil {
+		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
 	w.WriteHeader(http.StatusNoContent)
 }
 
@@ -298,6 +341,10 @@ func (h *Handler) RemoveRecipeComponent(w http.ResponseWriter, r *http.Request) 
 		ApplicationRecipeID: recipeID,
 		InputDefinitionID:   inputID,
 	}); err != nil {
+		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	if _, err := reciperevision.Record(r.Context(), h.q, recipeID, "component removed"); err != nil {
 		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
 		return
 	}

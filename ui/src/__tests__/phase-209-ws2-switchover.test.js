@@ -16,15 +16,14 @@ const wizard = readFileSync(
 )
 const canonLib = readFileSync(join(process.cwd(), 'src/lib/naturalFarmingCanon.js'), 'utf8')
 
-describe('Phase 209 WS2 — switchover wizard', () => {
-  it('Start tab mounts SwitchoverWizard', () => {
-    expect(workspace).toContain('SwitchoverWizard')
-    expect(workspace).toContain("activeTab === 'start'")
+describe('Phase 209 WS2 — switchover wizard component', () => {
+  it('switchover wizard component still exists for pack/bootstrap helpers', () => {
+    expect(wizard).toContain('loadRecipeCanon')
+    expect(wizard).toContain('nf-cta-apply-bootstrap')
   })
 
-  it('wizard loads recipe canon from read API', () => {
-    expect(canonLib).toContain('/v1/field-guides/recipe-canon')
-    expect(wizard).toContain('loadRecipeCanon')
+  it('workspace no longer mounts switchover wizard', () => {
+    expect(workspace).not.toContain('SwitchoverWizard')
   })
 
   it('wizard implements five steps and canonical mapping UI', () => {
@@ -40,6 +39,8 @@ describe('Phase 209 WS2 — switchover wizard', () => {
 
   it('CTAs link to batch tab and bootstrap apply', () => {
     expect(wizard).toContain('nf-cta-make-batch')
+    expect(wizard).toContain('Ready to ferment? → Make a batch')
+    expect(wizard).not.toContain('nf-cta-make-jms')
     expect(wizard).toContain('nf-cta-apply-bootstrap')
     expect(wizard).toContain('applyBootstrapTemplate')
     expect(wizard).toContain('bootstrapTemplateForContext')
@@ -56,7 +57,12 @@ describe('Phase 209 WS2 — switchover wizard', () => {
     expect(switchover).toContain('cited_doc')
   })
 
-  it('links to recipe library tab from start', () => {
+  it('step 5 is seed farm optional not Apply', () => {
+    expect(wizard).toContain('Seed farm (optional)')
+    expect(wizard).toContain("actions: 'Seed farm (optional)'")
+  })
+
+  it('links to recipe library tab from switchover guide', () => {
     expect(wizard).toContain('nf-switchover-library-link')
     expect(wizard).toContain("tab: 'library'")
   })

@@ -15,7 +15,7 @@ describe('Phase 49 WS4 / OC-49 — sidebar nav closure', () => {
   it('disambiguates feeding via zone tabs (Phase 78)', () => {
     const grow = groups.find((g) => g.label === 'Grow & operate')
     expect(grow.items.find((i) => i.to === '/zones')?.label).toBeTruthy()
-    expect(grow.items.some((i) => i.to === '/feed-water')).toBe(false)
+    expect(grow.items.some((i) => i.to === '/feed-water')).toBe(true)
     expect(groups.find((g) => g.label === 'Advanced')).toBeUndefined()
     expect(grow.items.some((i) => i.to === '/comfort-targets')).toBe(true)
   })

@@ -4,7 +4,6 @@
       <MoneyHub v-if="activeTab === 'summary'" />
       <Costs v-else-if="activeTab === 'ledger'" />
       <SuppliesHub v-else-if="activeTab === 'supplies'" />
-      <Inventory v-else-if="activeTab === 'inventory'" />
       <MoneyGrowsSection v-else-if="activeTab === 'grows'" />
     </template>
   </WorkspaceShell>
@@ -15,6 +14,5 @@ import WorkspaceShell from '../../components/WorkspaceShell.vue'
 import MoneyHub from '../MoneyHub.vue'
 import Costs from '../Costs.vue'
 import SuppliesHub from '../SuppliesHub.vue'
-import Inventory from '../Inventory.vue'
 import MoneyGrowsSection from '../../components/MoneyGrowsSection.vue'
 </script>

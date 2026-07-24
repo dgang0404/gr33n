@@ -1,52 +1,16 @@
 <template>
-  <div class="p-6 space-y-6">
-    <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
-      <div>
-        <h1 class="text-xl font-semibold text-white">Feeding (details)</h1>
-        <p class="text-zinc-500 text-sm mt-1 max-w-2xl">
-          Farm-wide feeding admin — programs, nutrient tanks, and strength targets. For daily “what runs next per zone”, use Feed &amp; water.
-        </p>
-      </div>
-      <button
-        type="button"
-        class="text-xs text-zinc-400 hover:text-zinc-200 shrink-0"
-        @click="refresh"
-      >
-        Refresh
-      </button>
-    </div>
-
-    <div class="flex flex-wrap gap-2">
-      <router-link
-        v-nav-hint="'/feeding'"
-        :to="dailyFeedingLink"
-        class="px-4 py-2 text-sm font-medium rounded-lg bg-blue-900/50 text-blue-400 border border-blue-800 hover:bg-blue-900/70 transition-colors"
-        data-test="feeding-admin-daily-link"
-      >
-        Feed &amp; water (daily)
-      </router-link>
-      <router-link
-        v-nav-hint="'/fertigation'"
-        :to="logMixLink"
-        class="px-4 py-2 text-sm font-medium rounded-lg bg-green-900/50 text-green-400 border border-green-800 hover:bg-green-900/70 transition-colors"
-        data-test="feeding-admin-log-mix"
-      >
-        Log a mix
-      </router-link>
-    </div>
-
+  <div class="space-y-4">
     <ZoneContextBanner
       v-if="zoneContextId"
       :zone-id="zoneContextId"
       :zone-name="zoneName(zoneContextId)"
-      page-label="Feeding (details)"
+      page-label="Programs &amp; tanks"
       back-to-zone-tab="water"
-      :clear-route="{ path: '/operations/feeding', query: { tab: activeTab } }"
+      :clear-route="{ path: '/feed-water', query: { tab: 'programs', admin_tab: activeTab } }"
     />
 
-    <GuardianStarterChips :starters="feedingAdminStarters" />
-
-    <div class="flex flex-wrap gap-1 bg-zinc-900 border border-zinc-800 rounded-lg p-1 w-fit">
+    <div class="flex flex-wrap items-center justify-between gap-2">
+      <div class="flex flex-wrap gap-1 bg-zinc-900 border border-zinc-800 rounded-lg p-1 w-fit">
       <button
         v-for="t in tabs"
         :key="t.id"
@@ -56,6 +20,14 @@
         @click="selectTab(t.id)"
       >
         {{ t.label }}
+      </button>
+      </div>
+      <button
+        type="button"
+        class="text-xs text-zinc-400 hover:text-zinc-200 shrink-0"
+        @click="refresh"
+      >
+        Refresh
       </button>
     </div>
 
@@ -203,9 +175,7 @@ import { useFarmStore } from '../stores/farm.js'
 import { useFarmContextStore } from '../stores/farmContext.js'
 import ZoneContextBanner from '../components/ZoneContextBanner.vue'
 import EmptyStateHint from '../components/EmptyStateHint.vue'
-import GuardianStarterChips from '../components/GuardianStarterChips.vue'
 import { parseZoneIdQuery, filterProgramsForZone } from '../lib/zoneContext.js'
-import { buildFeedingAdminStarters } from '../lib/guardianStarters.js'
 import {
   buildProgramAdminCards,
   buildReservoirAdminCards,
@@ -214,6 +184,7 @@ import {
   filterEcTargetsForZone,
 } from '../lib/feedingAdminHub.js'
 import { feedWaterFertigationRoute } from '../lib/workspaceRoutes.js'
+import { resolveWorkspaceTab } from '../lib/workspaces.js'
 
 const route = useRoute()
 const router = useRouter()
@@ -254,12 +225,6 @@ const programCards = computed(() =>
   buildProgramAdminCards(filteredPrograms.value, store.zones, schedules.value),
 )
 
-const feedingAdminStarters = computed(() => buildFeedingAdminStarters({
-  zones: store.zones,
-  zoneContextId: zoneContextId.value,
-  programs: programs.value,
-}))
-
 const reservoirCards = computed(() =>
   buildReservoirAdminCards(filteredReservoirs.value, store.zones),
 )
@@ -267,13 +232,6 @@ const reservoirCards = computed(() =>
 const ecTargetCards = computed(() =>
   buildEcTargetAdminCards(filteredEcTargets.value, store.zones),
 )
-
-const dailyFeedingLink = computed(() => {
-  const q = zoneContextId.value ? { zone_id: String(zoneContextId.value) } : {}
-  return { path: '/feeding', query: q }
-})
-
-const logMixLink = computed(() => technicalLink('mixing'))
 
 function technicalLink(tab) {
   return feedWaterFertigationRoute(tab, { zoneId: zoneContextId.value ?? undefined })
@@ -283,8 +241,8 @@ function zoneName(zoneId) {
   return store.zones.find((z) => z.id === zoneId)?.name || `Zone ${zoneId}`
 }
 
-function tabFromQuery(query) {
-  const raw = query.tab
+function adminTabFromQuery(query) {
+  const raw = query.admin_tab ?? query.tab
   const s = Array.isArray(raw) ? raw[0] : raw
   if (s === 'mixing') return null
   if (s && tabs.some((t) => t.id === s)) return s
@@ -293,15 +251,16 @@ function tabFromQuery(query) {
 
 function selectTab(id) {
   activeTab.value = id
-  const q = { ...route.query, tab: id }
-  router.replace({ path: '/operations/feeding', query: q }).catch(() => {})
+  if (route.path !== '/feed-water') return
+  const q = { ...route.query, tab: 'programs', admin_tab: id }
+  router.replace({ path: '/feed-water', query: q }).catch(() => {})
 }
 
 watch(
   () => route.fullPath,
   () => {
-    if (route.name !== 'operations-feeding') return
-    const tab = tabFromQuery(route.query)
+    if (route.path !== '/feed-water' || resolveWorkspaceTab('feedwater', route.query.tab) !== 'programs') return
+    const tab = adminTabFromQuery(route.query)
     if (tab === null) {
       router.replace(feedWaterFertigationRoute('mixing', { zoneId: route.query.zone_id })).catch(() => {})
       return

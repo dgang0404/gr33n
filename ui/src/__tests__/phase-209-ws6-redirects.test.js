@@ -11,20 +11,20 @@ import { relatedTo } from '../lib/navRelations.js'
 const fertigation = readFileSync(join(process.cwd(), 'src/views/Fertigation.vue'), 'utf8')
 
 describe('Phase 209 WS6 — redirects & nav', () => {
-  it('legacy /inventory maps to natural-farming recipes or stock', () => {
+  it('legacy /inventory maps to natural-farming recipes or Money supplies', () => {
     expect(WORKSPACES.naturalfarming.absorbs?.['/inventory']).toEqual({ tab: 'recipes' })
     expect(WORKSPACES.money.absorbs?.['/inventory']).toBeUndefined()
 
     const entry = buildLegacyRedirectRoutes().find((r) => r.path === '/inventory')
     expect(entry).toBeTruthy()
     expect(redirectLegacyInventory({ query: {} }).path).toBe('/natural-farming')
-    expect(redirectLegacyInventory({ query: { inv: 'batches' } }).query.tab).toBe('stock')
-    expect(redirectLegacyInventory({ query: { inv: 'definitions' } }).path).toBe('/money')
+    expect(redirectLegacyInventory({ query: { inv: 'batches' } }).path).toBe('/natural-farming')
+    expect(redirectLegacyInventory({ query: { inv: 'definitions' } }).path).toBe('/natural-farming')
   })
 
-  it('Fertigation inventory links target natural-farming stock and recipes', () => {
+  it('Fertigation inventory links target Money supplies and apply recipes', () => {
     expect(fertigation).toContain('naturalFarmingTabRoute')
-    expect(fertigation).toContain("naturalFarmingTabRoute('stock')")
+    expect(fertigation).toContain('naturalFarmingManageRoute')
     expect(fertigation).toContain('batchStockLink')
     expect(fertigation).toContain('recipeLink')
     expect(fertigation).toContain('Inventory batches')
@@ -41,13 +41,14 @@ describe('Phase 209 WS6 — redirects & nav', () => {
       query: { tab: 'recipes', recipe: '7' },
     })
     expect(naturalFarmingTabRoute('stock', { batchId: 12 })).toEqual({
-      path: '/natural-farming',
-      query: { tab: 'stock', batch_id: '12' },
+      path: '/money',
+      query: { tab: 'supplies', batch_id: '12' },
     })
   })
 
-  it('money inventory tab relabeled for power users', () => {
+  it('money workspace has no advanced inventory tab', () => {
     const tab = WORKSPACES.money.tabs.find((t) => t.id === 'inventory')
-    expect(tab?.label).toContain('Natural farming')
+    expect(tab).toBeUndefined()
+    expect(WORKSPACES.naturalfarming.tabs.some((t) => t.id === 'manage')).toBe(true)
   })
 })

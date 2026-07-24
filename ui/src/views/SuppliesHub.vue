@@ -1,13 +1,18 @@
 <template>
-  <div class="p-6 space-y-6">
+  <div class="space-y-4">
+    <OperatorConceptBanner
+      :concept-ids="nfConcepts"
+      :relationships="nfRelationships"
+    />
+
     <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
       <div>
-        <h1 class="text-xl font-semibold text-white">Supplies</h1>
+        <h2 class="text-lg font-semibold text-white flex items-center gap-1">
+          {{ NF_VOCAB.batches }} on hand
+          <ConceptHelpTip concept-id="input_batch" position="bottom" />
+        </h2>
         <p class="text-zinc-500 text-sm mt-1 max-w-2xl">
-          What you have on hand, what is running low, and where to log a mix. Unit costs here feed into
-          <router-link v-nav-hint="'/money'" :to="{ path: '/money', query: { tab: 'summary' } }" class="text-green-600 hover:text-green-400">This month</router-link>
-          and the
-          <router-link v-nav-hint="'/money'" :to="{ path: '/money', query: { tab: 'ledger' } }" class="text-green-600 hover:text-green-400">Ledger</router-link>.
+          Farm {{ NF_VOCAB.batches.toLowerCase() }} — quantities, costs, restock. Link to {{ NF_VOCAB.applyRecipes.toLowerCase() }} from each row.
         </p>
       </div>
       <div class="flex flex-wrap gap-2 shrink-0">
@@ -93,7 +98,7 @@
 
     <div class="flex flex-wrap gap-2">
       <router-link
-        v-nav-hint="'/operations/feeding'"
+        v-nav-hint="'/feed-water'"
         :to="logMixLink"
         class="px-4 py-2 text-sm font-medium rounded-lg bg-green-900/50 text-green-400 border border-green-800 hover:bg-green-900/70 transition-colors"
         data-test="supplies-log-mix"
@@ -101,7 +106,7 @@
         Log a mix
       </router-link>
       <router-link
-        v-nav-hint="'/operations/supplies'"
+        v-nav-hint="'/natural-farming'"
         :to="recipesLink"
         class="px-4 py-2 text-sm font-medium rounded-lg bg-zinc-800 text-zinc-300 border border-zinc-700 hover:bg-zinc-700 transition-colors"
       >
@@ -122,14 +127,17 @@
 
     <div v-else-if="supplyRows.length" class="space-y-3">
       <p class="text-xs text-zinc-500 uppercase tracking-widest">
-        On hand — {{ supplyRows.length }} batch{{ supplyRows.length === 1 ? '' : 'es' }}
+        {{ NF_VOCAB.batches }} — {{ supplyRows.length }} on hand
       </p>
       <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
         <div
           v-for="row in supplyRows"
           :key="row.id"
           class="bg-zinc-900 border rounded-xl p-4 transition-colors"
-          :class="row.lowStock ? 'border-amber-800/80' : 'border-zinc-800'"
+          :class="[
+            row.lowStock ? 'border-amber-800/80' : 'border-zinc-800',
+            highlightedBatchId === row.id ? 'ring-1 ring-green-700' : '',
+          ]"
           :data-test="`supply-row-${row.id}`"
         >
           <div class="flex items-start justify-between gap-2 mb-2">
@@ -149,7 +157,7 @@
 
           <dl class="grid grid-cols-2 gap-2 text-xs mb-3">
             <div>
-              <dt class="text-zinc-600">On hand</dt>
+              <dt class="text-zinc-600">Remaining</dt>
               <dd class="text-zinc-200 font-mono">{{ formatQty(row.remaining) }}</dd>
             </div>
             <div v-if="row.threshold != null">
@@ -213,7 +221,6 @@
               />
               <button
                 type="button"
-                v-nav-hint="'/operations/supplies'"
                 class="text-xs px-2 py-1 rounded bg-green-800 text-white disabled:opacity-50"
                 :disabled="saving || !restockQty"
                 data-test="supplies-restock-submit"
@@ -229,9 +236,16 @@
           </div>
 
           <div class="flex flex-wrap gap-2 pt-2 border-t border-zinc-800">
+            <router-link
+              v-nav-hint="'/natural-farming'"
+              :to="recipeApplyLink(row)"
+              class="text-xs text-green-500 hover:text-green-400"
+              data-test="supplies-apply-recipe"
+            >
+              {{ NF_VOCAB.applyRecipes }} →
+            </router-link>
             <button
               type="button"
-              v-nav-hint="'/operations/supplies'"
               class="text-xs text-green-500 hover:text-green-400"
               data-test="supplies-restock-btn"
               @click="startRestock(row)"
@@ -240,7 +254,7 @@
             </button>
             <router-link
               v-if="mixCount(row.id)"
-              v-nav-hint="'/operations/feeding'"
+              v-nav-hint="'/feed-water'"
               :to="logMixLink"
               class="text-xs text-green-500 hover:text-green-400"
             >
@@ -259,6 +273,7 @@
             </button>
             <button
               type="button"
+              v-nav-hint="'/natural-farming'"
               class="text-xs text-zinc-500 hover:text-zinc-300"
               @click="openBatchEditor(row.id)"
             >
@@ -284,12 +299,12 @@
 
     <footer class="pt-2 border-t border-zinc-800">
       <router-link
-        v-nav-hint="'/operations/supplies'"
-        :to="{ path: '/money', query: { tab: 'inventory', inv: 'definitions', ...(zoneContextId ? { zone_id: String(zoneContextId) } : {}) } }"
+        v-nav-hint="'/natural-farming'"
+        :to="naturalFarmingManageRoute({ inv: 'definitions', zoneId: zoneContextId ?? undefined })"
         class="text-xs text-zinc-400 hover:text-green-400"
         data-test="supplies-advanced-footer"
       >
-        Full inventory editor (definitions, recipes, batches) →
+        Full row editor (inputs &amp; batches) → Natural farming
       </router-link>
     </footer>
 
@@ -386,7 +401,18 @@ import {
   nextQuantityAfterRestock,
 } from '../lib/suppliesHub.js'
 import { refillTaskFromLowStock } from '../lib/taskTemplates.js'
-import { naturalFarmingTabRoute } from '../lib/workspaceRoutes.js'
+import { feedWaterFertigationRoute, moneySuppliesRoute, naturalFarmingManageRoute, naturalFarmingTabRoute } from '../lib/workspaceRoutes.js'
+import ConceptHelpTip from '../components/ConceptHelpTip.vue'
+import OperatorConceptBanner from '../components/OperatorConceptBanner.vue'
+import {
+  NATURAL_FARMING_CONCEPT_RELATIONSHIPS,
+  NATURAL_FARMING_WORKSPACE_CONCEPTS,
+} from '../lib/operatorConcepts.js'
+import { NF_VOCAB } from '../lib/naturalFarmingVocabulary.js'
+import { recipeApplyRouteForStockRow } from '../lib/naturalFarmingRecipes.js'
+
+const nfConcepts = NATURAL_FARMING_WORKSPACE_CONCEPTS
+const nfRelationships = NATURAL_FARMING_CONCEPT_RELATIONSHIPS
 
 const route = useRoute()
 const router = useRouter()
@@ -420,6 +446,12 @@ const refillTaskSaving = ref(null)
 
 const zoneContextId = computed(() => parseZoneIdQuery(route.query.zone_id))
 
+const highlightedBatchId = computed(() => {
+  const raw = route.query.batch_id
+  const id = Number(Array.isArray(raw) ? raw[0] : raw)
+  return Number.isFinite(id) ? id : null
+})
+
 const lowStockRows = computed(() => listLowStockBatches(batches.value, inputs.value))
 
 const supplyRows = computed(() => buildSupplyRows(batches.value, inputs.value))
@@ -442,11 +474,9 @@ const suppliesStarters = computed(() => buildSuppliesHubStarters({
   surface: zoneContextId.value ? 'supplies_hub_zone' : 'supplies_hub',
 }))
 
-const logMixLink = computed(() => {
-  const q = { tab: 'mixing' }
-  if (zoneContextId.value) q.zone_id = String(zoneContextId.value)
-  return { path: '/operations/feeding', query: q }
-})
+const logMixLink = computed(() =>
+  feedWaterFertigationRoute('mixing', { zoneId: zoneContextId.value ?? undefined }),
+)
 
 const recipesLink = computed(() => naturalFarmingTabRoute('recipes', {
   zoneId: zoneContextId.value ?? undefined,
@@ -474,6 +504,11 @@ function formatStatus(status) {
   return status ? String(status).replace(/_/g, ' ') : '—'
 }
 
+function recipeApplyLink(row) {
+  const recipeId = recipeApplyRouteForStockRow(row, recipes.value)
+  return naturalFarmingTabRoute('recipes', recipeId ? { recipe: recipeId } : {})
+}
+
 function clearActionFeedback() {
   actionError.value = ''
   actionSuccess.value = ''
@@ -486,7 +521,7 @@ function flashSuccess(msg) {
 }
 
 function openBatchEditor(batchId) {
-  router.push(naturalFarmingTabRoute('stock', { batchId }))
+  router.push(naturalFarmingManageRoute({ inv: 'batches', batchId }))
 }
 
 function startRestock(row) {

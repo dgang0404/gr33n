@@ -5,6 +5,7 @@ import {
   tabsFor,
   buildLegacyRedirectRoutes,
   canonicalSidebarPath,
+  relatedWorkspaces,
   resolveWorkspaceTab,
 } from '../lib/workspaces.js'
 
@@ -38,6 +39,11 @@ describe('Phase 68 / 78 WS1 — workspaces model', () => {
     expect(canonicalSidebarPath('/operations/money')).toBe('/money')
     expect(canonicalSidebarPath('/sensors')).toBe('/zones')
     expect(canonicalSidebarPath('/comfort-targets')).toBe('/comfort-targets')
+    expect(canonicalSidebarPath('/hardware')).toBe('/virtual-pi')
+  })
+
+  it('relatedWorkspaces keeps hardware jump links after sidebar hint alias', () => {
+    expect(relatedWorkspaces('/hardware')).toEqual(['/zones', '/feed-water', '/operator-guide'])
   })
 
   it('resolveWorkspaceTab maps legacy strains tab to plants', () => {

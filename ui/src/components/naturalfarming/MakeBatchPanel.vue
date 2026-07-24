@@ -1,10 +1,12 @@
 <template>
-  <div class="space-y-6 max-w-3xl p-4" data-test="nf-make-batch">
+  <div class="space-y-6 max-w-3xl" data-test="nf-make-batch">
     <div>
-      <h2 class="text-lg font-semibold text-white">Make a batch</h2>
+      <h2 class="text-lg font-semibold text-white flex items-center gap-1">
+        {{ NF_VOCAB.makeBatch }}
+        <ConceptHelpTip concept-id="input_batch" position="bottom" />
+      </h2>
       <p class="text-sm text-zinc-500 mt-1">
-        Pick a process, follow the field guide steps, then start a batch on this farm. Dilutions come from
-        canonical recipe data — not hardcoded here.
+        Pick an {{ NF_VOCAB.input.toLowerCase() }}, follow the field guide, then record a {{ NF_VOCAB.batch.toLowerCase() }} on this farm.
       </p>
     </div>
 
@@ -127,10 +129,10 @@
             {{ saving ? 'Saving…' : 'Create input & batch' }}
           </button>
           <router-link
-            :to="{ path: '/natural-farming', query: { tab: 'stock' } }"
+            :to="moneySuppliesRoute()"
             class="px-4 py-2 text-sm text-zinc-400 hover:text-zinc-200"
           >
-            View on hand →
+            View in Money →
           </router-link>
         </div>
       </section>
@@ -158,6 +160,9 @@ import {
 } from '../../lib/naturalFarmingBatchFlow.js'
 import LearnHowExpander from './LearnHowExpander.vue'
 import GuideStepCards from './GuideStepCards.vue'
+import ConceptHelpTip from '../ConceptHelpTip.vue'
+import { NF_VOCAB } from '../../lib/naturalFarmingVocabulary.js'
+import { moneySuppliesRoute } from '../../lib/workspaceRoutes.js'
 
 const route = useRoute()
 const store = useFarmStore()

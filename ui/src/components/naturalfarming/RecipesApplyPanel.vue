@@ -1,10 +1,12 @@
 <template>
   <div class="space-y-6 max-w-4xl" data-test="nf-recipes-apply">
     <div>
-      <h2 class="text-lg font-semibold text-white">Recipes &amp; apply</h2>
+      <h2 class="text-lg font-semibold text-white flex items-center gap-1">
+        {{ NF_VOCAB.applyRecipes }}
+        <ConceptHelpTip concept-id="application_recipe" position="bottom" />
+      </h2>
       <p class="text-sm text-zinc-500 mt-1">
-        Farm application recipes — create, edit, and link to fertigation programs per zone.
-        Dilution and stage tags come from your recipe rows (seeded from canon at bootstrap).
+        Your farm {{ NF_VOCAB.applyRecipes.toLowerCase() }} — create, edit, and link to Feed &amp; water programs per zone.
       </p>
     </div>
 
@@ -230,6 +232,10 @@
         </div>
       </div>
       <p v-if="!recipes.length" class="text-zinc-500 text-sm">No recipes yet — create one or import bootstrap.</p>
+
+      <section class="pt-6 border-t border-zinc-800/80">
+        <CommonsRecipePackImport />
+      </section>
     </template>
   </div>
 </template>
@@ -253,6 +259,9 @@ import {
   programsUsingRecipe,
 } from '../../lib/naturalFarmingRecipes.js'
 import { isModuleEnabled, MODULE_SCHEMA, moduleMapFromRows } from '../../lib/farmModules.js'
+import CommonsRecipePackImport from './CommonsRecipePackImport.vue'
+import ConceptHelpTip from '../ConceptHelpTip.vue'
+import { NF_VOCAB } from '../../lib/naturalFarmingVocabulary.js'
 
 const route = useRoute()
 const store = useFarmStore()

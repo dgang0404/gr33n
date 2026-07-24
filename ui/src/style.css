@@ -24,6 +24,13 @@ body,
   @apply bg-gray-900 border border-gray-800 rounded-xl p-4;
 }
 
+/* Shared form controls — zinc-800 avoids harsh white inputs on dark chrome. */
+@layer components {
+  .input-field {
+    @apply bg-zinc-800 border border-zinc-600 rounded-lg px-3 py-2 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:ring-1 focus:ring-green-600 focus:border-green-600;
+  }
+}
+
 .badge-ok      { @apply bg-green-600 text-white text-xs font-semibold px-2 py-0.5 rounded-full; }
 .badge-warn    { @apply bg-amber-500 text-gray-900 text-xs font-semibold px-2 py-0.5 rounded-full; }
 .badge-danger  { @apply bg-red-500 text-white text-xs font-semibold px-2 py-0.5 rounded-full; }
@@ -39,5 +46,11 @@ body,
   summary:focus-visible,
   [role='button']:focus-visible {
     @apply outline-none ring-2 ring-green-500/90 ring-offset-2 ring-offset-gray-950;
+  }
+
+  input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='file']):not([type='color']):not([type='hidden']):not([type='submit']):not([type='button']):not([type='reset']),
+  select,
+  textarea {
+    @apply bg-zinc-800 border border-zinc-600 text-zinc-100 placeholder-zinc-500 rounded-lg;
   }
 }

@@ -1,11 +1,12 @@
 /**
  * Phase 209 WS3b — recipe library helpers.
  */
+import { NF_FIELD_GUIDE_TAB_LABELS, NF_VOCAB } from './naturalFarmingVocabulary.js'
 
 export const LIBRARY_TABS = [
-  { id: 'inputs', label: 'Inputs' },
-  { id: 'application', label: 'Application' },
-  { id: 'programs', label: 'Programs' },
+  { id: 'inputs', label: NF_FIELD_GUIDE_TAB_LABELS.inputs, conceptId: 'input_definition' },
+  { id: 'application', label: NF_FIELD_GUIDE_TAB_LABELS.application, conceptId: 'application_recipe' },
+  { id: 'programs', label: NF_FIELD_GUIDE_TAB_LABELS.programs },
 ]
 
 /** Bootstrap program explainers (field guide backed). */

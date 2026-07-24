@@ -12,18 +12,21 @@ describe('redirectLegacyInventory', () => {
     })
   })
 
-  it('sends batches and batch_id to stock tab', () => {
-    expect(redirectLegacyInventory({ query: { inv: 'batches' } }).query.tab).toBe('stock')
-    expect(redirectLegacyInventory({ query: { batch_id: '9' } }).query).toMatchObject({
-      tab: 'stock',
-      batch_id: '9',
+  it('sends batches and batch_id to Natural farming manage tab', () => {
+    expect(redirectLegacyInventory({ query: { inv: 'batches' } })).toEqual({
+      path: '/natural-farming',
+      query: { tab: 'manage', inv: 'batches' },
+    })
+    expect(redirectLegacyInventory({ query: { batch_id: '9' } })).toEqual({
+      path: '/natural-farming',
+      query: { tab: 'manage', inv: 'batches', batch_id: '9' },
     })
   })
 
-  it('keeps input definitions on Money advanced tab', () => {
+  it('sends definitions to Natural farming manage tab', () => {
     expect(redirectLegacyInventory({ query: { inv: 'definitions' } })).toEqual({
-      path: '/money',
-      query: { tab: 'inventory', inv: 'definitions' },
+      path: '/natural-farming',
+      query: { tab: 'manage', inv: 'definitions' },
     })
   })
 })

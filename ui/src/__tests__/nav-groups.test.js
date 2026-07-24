@@ -8,7 +8,7 @@ describe('Phase 68 / 78 — workspace nav groups', () => {
     const grow = groups.find((g) => g.label === 'Grow & operate')
     expect(grow.items.some((i) => i.label === 'My zones' && i.to === '/zones')).toBe(true)
     expect(grow.items.some((i) => i.label === 'Natural farming' && i.to === '/natural-farming')).toBe(true)
-    expect(grow.items.some((i) => i.to === '/feed-water')).toBe(false)
+    expect(grow.items.some((i) => i.to === '/feed-water' && i.label === 'Feed & water')).toBe(true)
     expect(grow.items.some((i) => i.to === '/hardware')).toBe(false)
     expect(grow.items.some((i) => i.label === 'Money' && i.to === '/money')).toBe(true)
     expect(grow.items.some((i) => i.to === '/feeding')).toBe(false)
@@ -37,13 +37,15 @@ describe('Phase 68 / 78 — workspace nav groups', () => {
     expect(more.items.some((i) => i.to.includes('crop-cycles/compare'))).toBe(false)
   })
 
-  it('lists Natural farming between zones and comfort in Grow & operate', () => {
+  it('lists Natural farming and Feed & water between zones and comfort', () => {
     const grow = groups.find((g) => g.label === 'Grow & operate')
     const idxZones = grow.items.findIndex((i) => i.to === '/zones')
     const idxNf = grow.items.findIndex((i) => i.to === '/natural-farming')
+    const idxFeed = grow.items.findIndex((i) => i.to === '/feed-water')
     const idxComfort = grow.items.findIndex((i) => i.to === '/comfort-targets')
     expect(idxNf).toBeGreaterThan(idxZones)
-    expect(idxNf).toBeLessThan(idxComfort)
+    expect(idxFeed).toBeGreaterThan(idxNf)
+    expect(idxFeed).toBeLessThan(idxComfort)
   })
 
   it('uses farmer labels on mobile bottom nav with zones, targets, and money', () => {

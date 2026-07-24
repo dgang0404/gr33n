@@ -63,3 +63,38 @@ ON CONFLICT (application_recipe_id, input_definition_id) DO UPDATE SET
 -- name: RemoveRecipeComponent :exec
 DELETE FROM gr33nnaturalfarming.recipe_input_components
 WHERE application_recipe_id = $1 AND input_definition_id = $2;
+
+-- Phase 211.02 — recipe revision history
+
+-- name: GetLatestRecipeRevision :one
+SELECT * FROM gr33nnaturalfarming.application_recipe_revisions
+WHERE application_recipe_id = $1
+ORDER BY revision_number DESC
+LIMIT 1;
+
+-- name: ListRecipeRevisions :many
+SELECT * FROM gr33nnaturalfarming.application_recipe_revisions
+WHERE application_recipe_id = $1
+ORDER BY revision_number DESC;
+
+-- name: GetRecipeRevisionByID :one
+SELECT * FROM gr33nnaturalfarming.application_recipe_revisions
+WHERE id = $1;
+
+-- name: CreateRecipeRevision :one
+WITH next AS (
+    SELECT COALESCE(MAX(revision_number), 0) + 1 AS n
+    FROM gr33nnaturalfarming.application_recipe_revisions
+    WHERE application_recipe_id = sqlc.arg('application_recipe_id')
+)
+INSERT INTO gr33nnaturalfarming.application_recipe_revisions (
+    application_recipe_id, revision_number, snapshot, change_summary, created_by_user_id
+)
+SELECT
+    sqlc.arg('application_recipe_id'),
+    next.n,
+    sqlc.arg('snapshot'),
+    sqlc.arg('change_summary'),
+    sqlc.arg('created_by_user_id')
+FROM next
+RETURNING *;
