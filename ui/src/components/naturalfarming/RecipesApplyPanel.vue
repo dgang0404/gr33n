@@ -5,9 +5,6 @@
         {{ NF_VOCAB.applyRecipes }}
         <ConceptHelpTip concept-id="application_recipe" position="bottom" />
       </h2>
-      <p class="text-sm text-zinc-500 mt-1">
-        Your farm {{ NF_VOCAB.applyRecipes.toLowerCase() }} — create, edit, and link to Feed &amp; water programs per zone.
-      </p>
     </div>
 
     <p v-if="loading" class="text-sm text-zinc-500">Loading recipes…</p>

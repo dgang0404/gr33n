@@ -11,9 +11,6 @@
           {{ NF_VOCAB.batches }} on hand
           <ConceptHelpTip concept-id="input_batch" position="bottom" />
         </h2>
-        <p class="text-zinc-500 text-sm mt-1 max-w-2xl">
-          Farm {{ NF_VOCAB.batches.toLowerCase() }} — quantities, costs, restock. Link to {{ NF_VOCAB.applyRecipes.toLowerCase() }} from each row.
-        </p>
       </div>
       <div class="flex flex-wrap gap-2 shrink-0">
         <button

@@ -18,6 +18,12 @@ import {
 const uiSrc = join(process.cwd(), 'src')
 
 describe('Phase 80 — routing & zones tab labels', () => {
+  it('workspace tabs ship tab-specific descriptions for the shell header', () => {
+    const nfLibrary = WORKSPACES.naturalfarming.tabs.find((t) => t.id === 'library')
+    expect(nfLibrary?.description).toMatch(/canon/i)
+    expect(WORKSPACES.money.tabs.every((t) => t.description?.length > 20)).toBe(true)
+  })
+
   it('zones workspace uses farmer-friendly tab labels', () => {
     const tabs = WORKSPACES.zones.tabs
     expect(tabs.find((t) => t.id === 'rooms')?.label).toBe('My zones')

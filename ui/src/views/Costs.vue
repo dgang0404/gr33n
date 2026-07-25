@@ -2,10 +2,9 @@
   <div class="p-6 space-y-6">
     <div class="flex items-center justify-between gap-3">
       <div>
-        <h1 class="text-xl font-semibold text-white">Costs</h1>
         <p
           v-if="syncStatusText"
-          class="mt-1 text-[11px]"
+          class="text-[11px]"
           :class="syncStatusClass"
         >
           {{ syncStatusText }}

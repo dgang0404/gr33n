@@ -5,9 +5,6 @@
         {{ NF_VOCAB.makeBatch }}
         <ConceptHelpTip concept-id="input_batch" position="bottom" />
       </h2>
-      <p class="text-sm text-zinc-500 mt-1">
-        Pick an {{ NF_VOCAB.input.toLowerCase() }}, follow the field guide, then record a {{ NF_VOCAB.batch.toLowerCase() }} on this farm.
-      </p>
     </div>
 
     <p v-if="loadError" class="text-sm text-red-400">{{ loadError }}</p>

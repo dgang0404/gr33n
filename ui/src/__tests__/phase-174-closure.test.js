@@ -9,10 +9,10 @@ const repoRoot = join(process.cwd(), '..')
 const uiSrc = join(process.cwd(), 'src')
 
 describe('Phase 174 WS1 — Today naming', () => {
-  it('TopBar labels / as Today', () => {
-    const topBar = readFileSync(join(uiSrc, 'components/TopBar.vue'), 'utf8')
-    expect(topBar).toContain("'/'")
-    expect(topBar).toMatch(/'\/':\s*'Today'/)
+  it('pageTitle labels / as Today', () => {
+    const pageTitle = readFileSync(join(uiSrc, 'lib/pageTitle.js'), 'utf8')
+    expect(pageTitle).toContain("'/'")
+    expect(pageTitle).toMatch(/'\/':\s*'Today'/)
   })
 
   it('guardianRouteRef and starters use Today for dashboard surface', () => {

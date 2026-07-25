@@ -1,12 +1,6 @@
 <template>
   <div class="p-6 space-y-6">
-    <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
-      <div>
-        <h1 class="text-xl font-semibold text-white">Money</h1>
-        <p class="text-zinc-500 text-sm mt-1 max-w-2xl">
-          What you spent this month, save receipts, and review recent farm spending — without ledger jargon on the first screen.
-        </p>
-      </div>
+    <div class="flex flex-col sm:flex-row sm:items-start justify-end gap-3">
       <button
         type="button"
         class="text-xs text-zinc-400 hover:text-zinc-200 shrink-0"

@@ -13,10 +13,10 @@
       </div>
     </div>
     <div class="h-14 flex items-center justify-between px-4 sm:px-6">
-      <div class="flex items-center gap-3">
+      <div class="flex items-center gap-3 min-w-0">
         <!-- Mobile hamburger -->
         <button
-          class="md:hidden p-1.5 rounded-md text-gray-400 hover:text-white hover:bg-gray-800"
+          class="md:hidden p-1.5 rounded-md text-gray-400 hover:text-white hover:bg-gray-800 shrink-0"
           aria-label="Open navigation menu"
           @click="$emit('toggle-drawer')"
         >
@@ -27,9 +27,9 @@
             <line x1="3" y1="18" x2="21" y2="18"/>
           </svg>
         </button>
-        <h1 class="text-sm font-semibold text-gray-300">{{ title }}</h1>
+        <h1 class="text-sm font-semibold text-white truncate">{{ title }}</h1>
       </div>
-      <div class="flex items-center gap-4">
+      <div class="flex items-center gap-4 shrink-0">
         <button
           v-if="guardianAvailable"
           type="button"
@@ -101,6 +101,8 @@ import { useGuardianProposalsStore } from '../stores/guardianProposals'
 import { useGuardianReadinessStore } from '../stores/guardianReadiness'
 import api, { isUnauthorizedError } from '../api'
 
+import { pageTitleFromRoute } from '../lib/pageTitle.js'
+
 defineEmits(['toggle-drawer'])
 
 const route = useRoute()
@@ -162,28 +164,7 @@ function tickClock() {
   })
   nowLabel.value = `${datePart} · ${timePart}`
 }
-const labels = {
-  '/': 'Today',
-  '/zones': 'Zones',
-  '/sensors': 'Sensors',
-  '/actuators': 'Controls',
-  '/schedules': 'Schedules',
-  '/tasks': 'Tasks',
-  '/feeding': 'Feed & water',
-  '/fertigation': 'Fertigation',
-  '/inventory': 'Natural farming',
-  '/natural-farming': 'Natural farming',
-  '/alerts': 'Alerts',
-  '/plants': 'Plants',
-  '/catalog': 'Catalog',
-  '/costs': 'Costs',
-  '/settings': 'Settings',
-  '/chat': 'Farm Guardian',
-}
-const title = computed(() => {
-  if (route.path.startsWith('/zones/')) return 'Zone Details'
-  return labels[route.path] ?? 'gr33n'
-})
+const title = computed(() => pageTitleFromRoute(route))
 
 let tick
 onMounted(async () => {

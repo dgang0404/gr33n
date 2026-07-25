@@ -5,10 +5,6 @@
         {{ NF_VOCAB.fieldGuide }}
         <ConceptHelpTip concept-id="nf_field_guide" position="bottom" />
       </h2>
-      <p class="text-sm text-zinc-500 mt-1">
-        Read-only canon — how to make {{ NF_VOCAB.inputs.toLowerCase() }} and {{ NF_VOCAB.applyRecipes.toLowerCase() }}.
-        Not your farm inventory; use {{ NF_VOCAB.makeBatch }} when you ferment.
-      </p>
     </div>
 
     <div class="flex gap-1 bg-zinc-800 rounded-lg p-1 w-fit flex-wrap" data-test="nf-library-subtabs">

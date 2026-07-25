@@ -19,9 +19,9 @@
       <span class="inline-flex items-center gap-1"><span class="w-2 h-2 rounded-sm bg-red-950 border border-red-700" /> Conflict</span>
     </div>
 
-    <div class="rounded-xl border border-zinc-700 bg-zinc-950 p-3 max-w-md mx-auto">
-      <p class="text-[10px] uppercase tracking-wide text-zinc-600 text-center mb-2">40-pin header · USB ↓ · tap GPIO to wire</p>
-      <div class="grid grid-cols-2 gap-x-2 gap-y-1">
+    <div class="rounded-xl border border-zinc-700 bg-zinc-950 p-4 sm:p-5 w-full max-w-5xl xl:max-w-6xl mx-auto">
+      <p class="text-xs uppercase tracking-wide text-zinc-600 text-center mb-3">40-pin header · USB ↓ · tap GPIO to wire</p>
+      <div class="grid grid-cols-2 gap-x-3 sm:gap-x-4 gap-y-1.5">
         <template v-for="row in gridRows" :key="'row-' + row.row">
           <PinCell
             :pin="row.left"

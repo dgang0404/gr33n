@@ -4,6 +4,23 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Site-wide type +1 step: rem-based Tailwind sizes scale with root; px micro labels step below. */
+html {
+  font-size: 112.5%;
+}
+
+@layer utilities {
+  .text-\[9px\] {
+    font-size: 10px !important;
+  }
+  .text-\[10px\] {
+    font-size: 11px !important;
+  }
+  .text-\[11px\] {
+    font-size: 12px !important;
+  }
+}
+
 body {
   @apply bg-gray-950 text-gray-100 font-sans;
   padding-top: env(safe-area-inset-top, 0px);

@@ -1,7 +1,6 @@
 <template>
   <div class="p-6">
-    <div class="flex items-center justify-between mb-2">
-      <h1 class="text-xl font-semibold text-white">My zones</h1>
+    <div class="flex items-start justify-end gap-3 mb-6">
       <router-link
         v-if="farmContext.farmId"
         :to="zoneWizardLink"
@@ -18,10 +17,6 @@
         + Add zone
       </button>
     </div>
-    <p class="text-zinc-500 text-sm mb-6 max-w-2xl">
-      Open a zone to manage <strong class="text-zinc-400">water</strong>, <strong class="text-zinc-400">light</strong>,
-      and <strong class="text-zinc-400">climate</strong> in one place.
-    </p>
 
     <!-- Create / Edit modal -->
     <div v-if="showCreateForm || editZone" class="mb-6 bg-zinc-900 border border-zinc-800 rounded-xl p-4">

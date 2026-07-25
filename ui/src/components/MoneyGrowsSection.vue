@@ -1,12 +1,7 @@
 <template>
   <div class="p-6 space-y-6">
     <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
-      <div>
-        <h2 class="text-lg font-semibold text-white">Grow economics</h2>
-        <p class="text-zinc-500 text-sm mt-1 max-w-2xl">
-          Compare harvests side by side or open a grow summary for cost-per-gram context.
-        </p>
-      </div>
+      <h2 class="text-lg font-semibold text-white">Grow economics</h2>
       <router-link
         v-if="compareRoute"
         v-nav-hint="'/zones'"

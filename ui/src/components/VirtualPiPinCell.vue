@@ -2,7 +2,7 @@
   <component
     :is="clickable ? 'button' : 'div'"
     type="button"
-    class="rounded border px-1.5 py-1 min-h-[2.75rem] flex flex-col gap-0.5 text-left w-full"
+    class="rounded border px-2 py-1.5 min-h-[3rem] flex flex-col gap-0.5 text-left w-full"
     :class="cellClass"
     :data-test="pin ? `virtual-pi-pin-${pin.physical}` : 'virtual-pi-pin-empty'"
     :title="tooltip"
@@ -10,24 +10,24 @@
     @click="clickable ? $emit('pin-click', pin) : undefined"
   >
     <div class="flex items-center justify-between gap-1">
-      <span class="text-[9px] font-mono text-zinc-500">{{ pin?.physical ?? '—' }}</span>
-      <span v-if="pin?.bcm != null" class="text-[9px] font-mono text-zinc-600">BCM {{ pin.bcm }}</span>
+      <span class="text-[10px] font-mono text-zinc-500">{{ pin?.physical ?? '—' }}</span>
+      <span v-if="pin?.bcm != null" class="text-[10px] font-mono text-zinc-600">BCM {{ pin.bcm }}</span>
     </div>
-    <span class="text-[9px] text-zinc-400 truncate">{{ pin?.label || '—' }}</span>
+    <span class="text-[10px] text-zinc-400 truncate">{{ pin?.label || '—' }}</span>
     <template v-if="assignments.length">
       <router-link
         v-for="a in assignments.slice(0, 2)"
         :key="a.kind + '-' + a.id"
         v-nav-hint="'/zones'"
         :to="a.zoneId ? zoneHardwareRoute(a.zoneId) : '/zones'"
-        class="text-[9px] text-green-400 hover:text-green-300 truncate"
+        class="text-[10px] text-green-400 hover:text-green-300 truncate"
         @click.stop
       >
         {{ a.name }}
       </router-link>
-      <span v-if="assignments.length > 2" class="text-[9px] text-zinc-600">+{{ assignments.length - 2 }} more</span>
+      <span v-if="assignments.length > 2" class="text-[10px] text-zinc-600">+{{ assignments.length - 2 }} more</span>
     </template>
-    <span v-else-if="clickable && pin?.role === 'gpio'" class="text-[9px] text-zinc-600">tap to wire</span>
+    <span v-else-if="clickable && pin?.role === 'gpio'" class="text-[10px] text-zinc-600">tap to wire</span>
   </component>
 </template>
 

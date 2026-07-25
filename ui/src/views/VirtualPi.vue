@@ -1,14 +1,13 @@
 <template>
   <div
-    class="p-4 sm:p-6 max-w-3xl mx-auto space-y-6 pb-24 md:pb-10 virtual-pi-root"
+    class="p-4 sm:p-6 w-full space-y-6 pb-24 md:pb-10 virtual-pi-root"
     :class="{ 'virtual-pi-print-mode': printMode }"
     data-test="virtual-pi-view"
   >
     <header class="space-y-2 virtual-pi-screen-only">
-      <h1 class="text-xl font-bold text-white">Virtual Pi</h1>
-      <p class="text-sm text-zinc-400 leading-relaxed max-w-2xl">
-        See what's wired to each pin on your edge device — driven from the same wiring
-        you edit on zone pages. Tap GPIO pins to wire; download config.yaml for the Pi.
+      <p class="text-sm text-zinc-400 leading-relaxed max-w-5xl">
+        See what's wired to each pin on your edge device — the same assignments you edit on zone pages.
+        Tap GPIO pins to wire relays and sensors, then download config.yaml or notify the Pi to reload.
       </p>
     </header>
 

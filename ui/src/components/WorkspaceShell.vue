@@ -7,18 +7,14 @@
       data-test="workspace-shell-unified-chrome"
     >
       <div class="flex flex-wrap items-center gap-x-2 gap-y-2">
-        <h1 class="text-lg sm:text-xl font-semibold text-white flex items-center gap-2 shrink-0">
-          <span v-if="headerIcon" class="text-xl" aria-hidden="true">{{ headerIcon }}</span>
-          {{ headerTitle }}
-        </h1>
         <p
           v-if="headerSubtitle"
-          class="text-xs text-zinc-500 truncate max-w-[10rem] sm:max-w-xs md:max-w-md lg:max-w-xl"
+          class="text-xs sm:text-sm text-zinc-500 max-w-md sm:max-w-xl md:max-w-2xl lg:max-w-4xl leading-relaxed shrink-0"
         >
           {{ headerSubtitle }}
         </p>
 
-        <span class="hidden sm:block h-4 w-px bg-zinc-800 shrink-0" aria-hidden="true" />
+        <span v-if="headerSubtitle" class="hidden sm:block h-4 w-px bg-zinc-800 shrink-0" aria-hidden="true" />
 
         <div
           class="hidden sm:flex gap-1 overflow-x-auto shrink-0"
@@ -74,18 +70,13 @@
     </div>
 
     <template v-else>
-      <header class="px-4 sm:px-6 border-b border-zinc-800/80" :class="compact ? 'pt-3 pb-2' : 'pt-6 pb-4'">
+      <header
+        v-if="headerSubtitle"
+        class="px-4 sm:px-6 border-b border-zinc-800/80"
+        :class="compact ? 'pt-3 pb-2' : 'pt-4 pb-3'"
+      >
         <div class="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <h1
-              class="font-semibold text-white flex items-center gap-2"
-              :class="compact ? 'text-xl' : 'text-2xl'"
-            >
-              <span v-if="headerIcon" class="text-xl" aria-hidden="true">{{ headerIcon }}</span>
-              {{ headerTitle }}
-            </h1>
-            <p v-if="headerSubtitle" class="text-sm text-zinc-400 mt-1 max-w-2xl">{{ headerSubtitle }}</p>
-          </div>
+          <p class="text-sm text-zinc-400 max-w-5xl leading-relaxed">{{ headerSubtitle }}</p>
           <slot name="actions" />
         </div>
       </header>
@@ -186,11 +177,14 @@ const contentEl = ref(null)
 const ws = computed(() => WORKSPACES[props.workspaceId])
 const tabs = computed(() => ws.value?.tabs ?? [])
 const headerTitle = computed(() => props.title || ws.value?.label || '')
-const headerSubtitle = computed(() => props.subtitle || ws.value?.subtitle || '')
 const headerIcon = computed(() => props.icon || ws.value?.icon || '')
 
 const activeTab = computed(() =>
   resolveWorkspaceTab(props.workspaceId, typeof route.query.tab === 'string' ? route.query.tab : null),
+)
+const activeTabMeta = computed(() => tabs.value.find((t) => t.id === activeTab.value))
+const headerSubtitle = computed(() =>
+  props.subtitle || activeTabMeta.value?.description || ws.value?.subtitle || '',
 )
 
 const jumpLinks = computed(() => {

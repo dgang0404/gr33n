@@ -6,7 +6,7 @@ import { NF_WORKSPACE_TAB_LABELS } from './naturalFarmingVocabulary.js'
  * @see docs/plans/archive/phase_68_workspace_shell_spa_nav.plan.md
  */
 
-/** @typedef {{ id: string, label: string }} WorkspaceTab */
+/** @typedef {{ id: string, label: string, conceptId?: string, description?: string }} WorkspaceTab */
 /** @typedef {{ tab: string, fleet?: string, section?: string }} AbsorbTarget */
 
 /** @type {Record<string, { label: string, icon: string, route: string, subtitle: string, tabs: WorkspaceTab[], absorbs?: Record<string, AbsorbTarget> }>} */
@@ -15,11 +15,23 @@ export const WORKSPACES = {
     label: 'Zones',
     icon: '🗂️',
     route: '/zones',
-    subtitle: 'My zones, farm-wide hardware, and plants',
+    subtitle: 'Rooms, farm-wide hardware, and your plant catalog — organized by where you grow.',
     tabs: [
-      { id: 'rooms', label: 'My zones' },
-      { id: 'fleet', label: 'Hardware & devices' },
-      { id: 'plants', label: 'Plants' },
+      {
+        id: 'rooms',
+        label: 'My zones',
+        description: 'Open a zone to manage water, light, climate, and wiring in one place. Add zones as your layout grows.',
+      },
+      {
+        id: 'fleet',
+        label: 'Hardware & devices',
+        description: 'Sensors, controls, and lighting programs across every zone — grouped so you can spot gaps before they bite.',
+      },
+      {
+        id: 'plants',
+        label: 'Plants',
+        description: 'Catalog crop types and track active grows farm-wide. Start a batch in a zone or compare harvests later.',
+      },
     ],
     absorbs: {
       '/sensors': { tab: 'fleet', fleet: 'sensors' },
@@ -32,12 +44,29 @@ export const WORKSPACES = {
     label: 'Money',
     icon: '💰',
     route: '/money',
-    subtitle: 'Spend, ledger, supply costs, and grow economics',
+    subtitle: 'Track spending, receipts, supply costs, and what each grow actually earned.',
     tabs: [
-      { id: 'summary', label: 'This month' },
-      { id: 'ledger', label: 'Ledger' },
-      { id: 'supplies', label: 'Supplies on hand', conceptId: 'input_batch' },
-      { id: 'grows', label: 'Grows' },
+      {
+        id: 'summary',
+        label: 'This month',
+        description: 'What you spent and received this month — save receipts, tag grows, and spot trends without ledger jargon on the first screen.',
+      },
+      {
+        id: 'ledger',
+        label: 'Ledger',
+        description: 'Full cost ledger with categories, energy rates, and exports — for when you need every line item.',
+      },
+      {
+        id: 'supplies',
+        label: 'Supplies on hand',
+        conceptId: 'input_batch',
+        description: 'Inputs and batches on hand with quantities and restock costs. Link supplies to recipes and feeding programs.',
+      },
+      {
+        id: 'grows',
+        label: 'Grows',
+        description: 'Compare harvests and open grow summaries for cost-per-gram and yield context across rooms.',
+      },
     ],
     absorbs: {
       '/operations/money': { tab: 'summary' },
@@ -49,13 +78,33 @@ export const WORKSPACES = {
     label: 'Help',
     icon: '📖',
     route: '/operator-guide',
-    subtitle: 'How-to, search, symptoms, and import packs',
+    subtitle: 'Operator guides, Pi setup, farm search, symptoms, and Commons import packs.',
     tabs: [
-      { id: 'library', label: 'Library' },
-      { id: 'pi-setup', label: 'Pi + HAT setup' },
-      { id: 'knowledge', label: 'Search' },
-      { id: 'symptoms', label: 'Symptom guide' },
-      { id: 'catalog', label: 'Import' },
+      {
+        id: 'library',
+        label: 'Library',
+        description: 'Step-by-step operator guides — start here when you are learning a workflow end to end.',
+      },
+      {
+        id: 'pi-setup',
+        label: 'Pi + HAT setup',
+        description: 'Wire Sequent Microsystems HATs, register Pis, and validate edge config before you trust automation.',
+      },
+      {
+        id: 'knowledge',
+        label: 'Search',
+        description: 'Search farm knowledge, docs, and saved notes across everything you have imported.',
+      },
+      {
+        id: 'symptoms',
+        label: 'Symptom guide',
+        description: 'Look up crop symptoms and tie them back to zones, recipes, and Guardian suggestions.',
+      },
+      {
+        id: 'catalog',
+        label: 'Import',
+        description: 'Import Commons packs — crop catalogs, natural-farming recipes, and shared operator content.',
+      },
     ],
     absorbs: {
       '/farm-knowledge': { tab: 'knowledge' },
@@ -67,12 +116,32 @@ export const WORKSPACES = {
     label: 'Comfort & automation',
     icon: '🎯',
     route: '/comfort-targets',
-    subtitle: 'Comfort bands, what runs when, and automation toggles',
+    subtitle: 'Comfort bands per zone, schedules, automation rules, and raw setpoints when you need them.',
     tabs: [
-      { id: 'comfort', label: 'Comfort', conceptId: 'comfort_band' },
-      { id: 'schedules', label: 'What runs when', conceptId: 'schedule' },
-      { id: 'automations', label: 'Automations', conceptId: 'rule' },
-      { id: 'raw', label: 'Raw setpoints', conceptId: 'setpoint' },
+      {
+        id: 'comfort',
+        label: 'Comfort',
+        conceptId: 'comfort_band',
+        description: 'Set temperature and humidity bands per zone so automation knows when to heat, cool, or dehumidify.',
+      },
+      {
+        id: 'schedules',
+        label: 'What runs when',
+        conceptId: 'schedule',
+        description: 'Define what runs when — feeds, lights, and routines — without touching cron unless you want to.',
+      },
+      {
+        id: 'automations',
+        label: 'Automations',
+        conceptId: 'rule',
+        description: 'Toggle and tune automation rules that react to sensor readings and comfort targets.',
+      },
+      {
+        id: 'raw',
+        label: 'Raw setpoints',
+        conceptId: 'setpoint',
+        description: 'Direct setpoint values for power users — use when comfort bands and schedules are not enough.',
+      },
     ],
     absorbs: {
       '/schedules': { tab: 'schedules' },
@@ -84,11 +153,23 @@ export const WORKSPACES = {
     label: 'Hardware',
     icon: '🖥️',
     route: '/hardware',
-    subtitle: 'GPIO board, Pi devices, and wiring reference',
+    subtitle: 'GPIO board layout, registered Pi devices, and wiring reference for edge hardware.',
     tabs: [
-      { id: 'board', label: 'GPIO board' },
-      { id: 'devices', label: 'Pi devices' },
-      { id: 'reference', label: 'Wiring guide' },
+      {
+        id: 'board',
+        label: 'GPIO board',
+        description: 'Visual GPIO map for your HAT — see which pins are power, ground, assigned, or free to wire.',
+      },
+      {
+        id: 'devices',
+        label: 'Pi devices',
+        description: 'Edge devices registered on this farm — API keys, last seen, and links to zone wiring.',
+      },
+      {
+        id: 'reference',
+        label: 'Wiring guide',
+        description: 'Pi + HAT setup steps, DIP switches, and safe wiring practices before you energize relays.',
+      },
     ],
     absorbs: {
       '/pi-setup': { tab: 'reference' },
@@ -98,12 +179,32 @@ export const WORKSPACES = {
     label: 'Feed & water',
     icon: '💧',
     route: '/feed-water',
-    subtitle: 'Daily watering, programs, nutrients, and advanced fertigation',
+    subtitle: 'Daily watering, fertigation programs, nutrient mixing, and the full console when you need it.',
     tabs: [
-      { id: 'daily', label: 'Daily', conceptId: 'feeding_plan' },
-      { id: 'programs', label: 'Programs & tanks', conceptId: 'fertigation_program' },
-      { id: 'nutrients', label: 'Nutrients & mix', conceptId: 'mixing_event' },
-      { id: 'advanced', label: 'Advanced', conceptId: 'fertigation_console' },
+      {
+        id: 'daily',
+        label: 'Daily',
+        conceptId: 'feeding_plan',
+        description: 'One card per zone — next feed, last run, and plan status. Open a zone to edit water on the Water tab.',
+      },
+      {
+        id: 'programs',
+        label: 'Programs & tanks',
+        conceptId: 'fertigation_program',
+        description: 'Feeding programs, tank assignments, and schedules that drive automatic watering per zone.',
+      },
+      {
+        id: 'nutrients',
+        label: 'Nutrients & mix',
+        conceptId: 'mixing_event',
+        description: 'Mix nutrients, log EC/pH targets, and record what went into each reservoir batch.',
+      },
+      {
+        id: 'advanced',
+        label: 'Advanced',
+        conceptId: 'fertigation_console',
+        description: 'Full fertigation console — reservoirs, programs, crop cycles, and event history for power users.',
+      },
     ],
     absorbs: {
       '/feeding': { tab: 'daily' },
@@ -115,11 +216,26 @@ export const WORKSPACES = {
     label: 'Natural farming',
     icon: '🌱',
     route: '/natural-farming',
-    subtitle: 'Make inputs, read the field guide, and wire apply recipes',
+    subtitle: 'Ferment inputs, read the canon field guide, and wire apply recipes to your zones.',
     tabs: [
-      { id: 'batch', label: NF_WORKSPACE_TAB_LABELS.batch, conceptId: 'input_batch' },
-      { id: 'library', label: NF_WORKSPACE_TAB_LABELS.library, conceptId: 'nf_field_guide' },
-      { id: 'recipes', label: NF_WORKSPACE_TAB_LABELS.recipes, conceptId: 'application_recipe' },
+      {
+        id: 'batch',
+        label: NF_WORKSPACE_TAB_LABELS.batch,
+        conceptId: 'input_batch',
+        description: 'Pick an input type, follow the field guide steps, and record a batch on this farm with cost and prep tasks.',
+      },
+      {
+        id: 'library',
+        label: NF_WORKSPACE_TAB_LABELS.library,
+        conceptId: 'nf_field_guide',
+        description: 'Read-only canon — ingredients and prep for JADAM/KNF inputs, apply recipes, and livestock programs. Not your on-hand inventory.',
+      },
+      {
+        id: 'recipes',
+        label: NF_WORKSPACE_TAB_LABELS.recipes,
+        conceptId: 'application_recipe',
+        description: 'Your farm apply recipes — create, edit, and link them to Feed & water programs so Guardian and automation know what to run.',
+      },
     ],
     absorbs: {
       '/inventory': { tab: 'recipes' },
