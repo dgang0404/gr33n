@@ -22,8 +22,9 @@ describe('Phase 211.02 WS0 — NF workspace trim', () => {
     expect(plan).toContain('formula_snapshot')
   })
 
-  it('four operational tabs; no switchover wizard mount', () => {
-    expect(WORKSPACES.naturalfarming.tabs).toHaveLength(4)
+  it('three operational tabs; no switchover wizard mount', () => {
+    expect(WORKSPACES.naturalfarming.tabs).toHaveLength(3)
+    expect(WORKSPACES.naturalfarming.tabs.map((t) => t.id)).toEqual(['batch', 'library', 'recipes'])
     expect(workspace).toContain('MakeBatchPanel')
     expect(workspace).not.toContain('SwitchoverWizard')
     expect(resolveWorkspaceTab('naturalfarming', undefined)).toBe('batch')

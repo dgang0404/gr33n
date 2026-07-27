@@ -99,6 +99,8 @@ func manualPassHint(q Question) string {
 		return "LAB serum for soil conditioning / odor control"
 	case "smoke-nf-recipe-outcomes":
 		return "Historical recipe avg yield/cost with cycle count (not a forecast); API log may show summarize_recipe_outcomes"
+	case "smoke-nf-history-compare":
+		return "Recipe track record + harvested crop analytics both cited; cycle counts; no invented bridge math; log may show summarize_recipe_outcomes + summarize_farm_crops_by_key"
 	case "farm-devices", "p128-devices":
 		return "Mentions snapshot device line or online/offline edge devices; no invented GPIO"
 	case "farm-fert-schedule", "p128-fert-manual":

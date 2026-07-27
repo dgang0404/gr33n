@@ -115,7 +115,7 @@ func renderSummarizeRecipeOutcomes(ctx context.Context, q db.Querier, farmID int
 // recipeOutcomeToolFooter steers small models away from the common failure mode
 // (treating cycle names as recipes + "if we assume" invented math).
 const recipeOutcomeToolFooter = `
-Rules for your reply: quote only recipes and numbers from this block. Do not invent other recipes. Grow/cycle names are not recipes. Do not say "if we assume" or invent cost/yield math. Prefer "N harvested cycles averaged …".`
+Rules for your reply: quote only recipes and numbers from this block. Do not invent other recipes. Grow/cycle names are not recipes. Do not say "if we assume" or invent cost/yield math. Prefer "N harvested cycles averaged …". If summarize_farm_crops_by_key appears in this prompt, use its per-cycle harvest lines alongside these recipe averages — do not invent a bridge between them.`
 
 func formatRecipeOutcomeLine(row recipeoutcomes.RecipeOutcome, includeCosts bool) string {
 	name := strings.TrimSpace(row.RecipeName)

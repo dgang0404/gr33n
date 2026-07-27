@@ -17,7 +17,7 @@ describe('Phase 77 WS6 / OC-77 — post-arc polish closure', () => {
 
   it('sidebar stays compact without orphan More entries', () => {
     expect(groups.map((g) => g.label)).toEqual(['Today', 'Grow & operate', 'More'])
-    expect(routes.length).toBeLessThanOrEqual(11)
+    expect(routes.length).toBeLessThanOrEqual(12)
     expect(routes).toContain('/chat')
     expect(routes).not.toContain('/farm-knowledge')
     expect(routes).not.toContain('/catalog')

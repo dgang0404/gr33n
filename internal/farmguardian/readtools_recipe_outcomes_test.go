@@ -24,6 +24,14 @@ func TestShouldRunSummarizeRecipeOutcomesReadIntent(t *testing.T) {
 	}
 }
 
+func TestShouldRunSummarizeRecipeOutcomesReadIntent_historyCompare(t *testing.T) {
+	t.Parallel()
+	q := "Using only our farm data, compare chrysanthemum recipe outcome history (track record: avg yield and cost per gram by application recipe) with our last harvested chrysanthemum cycles in crop analytics."
+	if !shouldRunSummarizeRecipeOutcomesReadIntent(q, nil) {
+		t.Fatal("expected recipe outcomes intent for history-compare prompt")
+	}
+}
+
 func TestFormatRecipeOutcomeLine_includesAvgAndN(t *testing.T) {
 	t.Parallel()
 	avgY := 182.0

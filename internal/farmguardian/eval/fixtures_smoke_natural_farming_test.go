@@ -6,8 +6,8 @@ import (
 )
 
 func TestSmokeNaturalFarmingFixtures_count(t *testing.T) {
-	if got := len(SmokeNaturalFarmingFixtures()); got != 11 {
-		t.Fatalf("expected 11 natural farming smoke fixtures, got %d", got)
+	if got := len(SmokeNaturalFarmingFixtures()); got != 12 {
+		t.Fatalf("expected 12 natural farming smoke fixtures, got %d", got)
 	}
 }
 
@@ -27,7 +27,7 @@ func TestSmokeNaturalFarmingFixtures_jlfDocPrompt(t *testing.T) {
 }
 
 func TestFixturesForSuite_smokeNaturalFarming(t *testing.T) {
-	if len(FixturesForSuite("smoke-natural-farming")) != 11 {
+	if len(FixturesForSuite("smoke-natural-farming")) != 12 {
 		t.Fatal("smoke-natural-farming suite size")
 	}
 }
@@ -83,5 +83,22 @@ func TestScore_smokeNFRecipeOutcomes(t *testing.T) {
 	})
 	if bad.Passed {
 		t.Fatal("expected forecast claim to fail")
+	}
+}
+
+func TestScore_smokeNFHistoryCompare(t *testing.T) {
+	res := Score(ScoreInput{
+		Question: Question{ID: "smoke-nf-history-compare", Category: "natural_farming"},
+		Answer:   "Recipe track record: FFJ+WCA averaged 396g over 2 harvested cycles (~0.22 USD/g). Crop analytics shows 2 last chrysanthemum harvest runs with similar yields — correlational only.",
+	})
+	if !res.Passed {
+		t.Fatalf("expected pass, got %+v", res)
+	}
+	bad := Score(ScoreInput{
+		Question: Question{ID: "smoke-nf-history-compare", Category: "natural_farming"},
+		Answer:   "If we assume costs, recipe A beats the last run.",
+	})
+	if bad.Passed {
+		t.Fatal("expected invent-assume compare to fail via topic drift or accuracy")
 	}
 }

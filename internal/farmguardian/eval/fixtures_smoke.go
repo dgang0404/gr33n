@@ -48,7 +48,7 @@ func SmokeFixtures() []Question {
 	}
 }
 
-// SmokeFullFixtures runs core smoke (5) then natural-farming smoke (10) in one sequential eval.
+// SmokeFullFixtures runs core smoke (5) then natural-farming smoke (12) in one sequential eval.
 func SmokeFullFixtures() []Question {
 	out := make([]Question, 0, len(SmokeFixtures())+len(SmokeNaturalFarmingFixtures()))
 	out = append(out, SmokeFixtures()...)
@@ -56,7 +56,7 @@ func SmokeFullFixtures() []Question {
 	return out
 }
 
-// SmokeAllFixtures is the default guardian-qa-smoke-all Q&A set (24 prompts).
+// SmokeAllFixtures is the default guardian-qa-smoke-all Q&A set (25 prompts).
 func SmokeAllFixtures() []Question {
 	out := make([]Question, 0,
 		len(SmokeFullFixtures())+len(Phase127Fixtures())+len(ChangeRequestFixtures()))

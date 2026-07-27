@@ -12,6 +12,7 @@ import (
 const defaultWarmupTimeout = 5 * time.Minute
 const cpuLaptopWarmupTimeout = 90 * time.Second
 const evalTimeoutBuffer = 15 * time.Minute
+const defaultSuiteTimeoutHours = 12
 
 // WarmupTimeoutFromEnv returns how long eval waits on POST /guardian/warmup before continuing.
 // GUARDIAN_EVAL_WARMUP_TIMEOUT overrides; cpu-16gb profile defaults to 90s when unset.
@@ -35,6 +36,17 @@ func LeavePendingTTLFromEnv() time.Duration {
 		}
 	}
 	return 24 * time.Hour
+}
+
+// SuiteTimeoutFromEnv is the wall-clock budget for one guardian-eval process (all prompts in -suite).
+// GUARDIAN_EVAL_SUITE_TIMEOUT_HOURS overrides; default 12h (laptop NF batches need headroom vs old 4h cap).
+func SuiteTimeoutFromEnv() time.Duration {
+	if s := strings.TrimSpace(os.Getenv("GUARDIAN_EVAL_SUITE_TIMEOUT_HOURS")); s != "" {
+		if h, err := strconv.Atoi(s); err == nil && h > 0 {
+			return time.Duration(h) * time.Hour
+		}
+	}
+	return defaultSuiteTimeoutHours * time.Hour
 }
 
 // ClientTimeoutFromEnv is the HTTP client timeout for each eval chat POST.

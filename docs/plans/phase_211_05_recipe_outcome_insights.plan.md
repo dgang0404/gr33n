@@ -32,7 +32,7 @@ isProject: false
 
 # Phase 211.05 — Recipe & program outcome insights
 
-**Status:** Complete (WS0–WS6 shipped) · **Depends on:** [211.02 recipe formula history](phase_211_02_recipe_formula_history.plan.md) (formula-at-time attribution), [211.03 farm permissions](phase_211_03_farm_permissions.plan.md) (`money.costs.read` gate) · **After:** [211.04 crop ops report UI](phase_211_04_crop_ops_report_ui.plan.md)
+**Status:** Complete (WS0–WS6 shipped) · **Depends on:** [211.02 recipe formula history](phase_211_02_recipe_formula_history.plan.md) (formula-at-time attribution), [211.03 farm permissions](archive/phase_211_03_farm_permissions.plan.md) (`money.costs.read` gate) · **After:** [211.04 crop ops report UI](archive/phase_211_04_crop_ops_report_ui.plan.md)
 
 ## The one job
 
@@ -166,6 +166,6 @@ New grounding rule (append to `internal/farmguardian/readtools_crop.go` alongsid
 ## Related
 
 - [211.02 recipe formula history](phase_211_02_recipe_formula_history.plan.md) — source of `application_recipe_id`/`revision_id`/`formula_snapshot` attribution this phase joins against.
-- [211.03 farm permissions](phase_211_03_farm_permissions.plan.md) — `money.costs.read` scope gate for cost fields.
-- [211.04 crop ops report UI](phase_211_04_crop_ops_report_ui.plan.md) — per-cycle formula-at-time UI this phase rolls up across cycles.
+- [211.03 farm permissions](archive/phase_211_03_farm_permissions.plan.md) — `money.costs.read` scope gate for cost fields.
+- [211.04 crop ops report UI](archive/phase_211_04_crop_ops_report_ui.plan.md) — per-cycle formula-at-time UI this phase rolls up across cycles.
 - [212 dual-install federation](phase_212_dual_farm_federation_test.plan.md) — cross-farm benchmarking is explicitly deferred there, not here.

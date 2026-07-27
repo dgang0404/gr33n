@@ -1,6 +1,6 @@
 package eval
 
-// SmokeNaturalFarmingFixtures — Phase 211 follow-on: grounded natural-farming counsel (~10 prompts).
+// SmokeNaturalFarmingFixtures — Phase 211 follow-on: grounded natural-farming counsel (~12 prompts).
 // Requires farm context ON, field guides ingested, and demo natural-farming rows on the farm.
 func SmokeNaturalFarmingFixtures() []Question {
 	return []Question{
@@ -81,6 +81,14 @@ func SmokeNaturalFarmingFixtures() []Question {
 			ID:         "smoke-nf-recipe-outcomes",
 			Category:   "natural_farming",
 			Prompt:     "Using only our recipe outcome history for chrysanthemum, which application recipe shows the best average yield and cost per gram across harvested cycles? State cycle counts; do not invent other recipes or assume missing costs.",
+			Grounded:   true,
+			ExpectTool: "summarize_recipe_outcomes",
+			Model:      "phi3:mini",
+		},
+		{
+			ID:         "smoke-nf-history-compare",
+			Category:   "natural_farming",
+			Prompt:     "Using only our farm data, compare chrysanthemum recipe outcome history (track record: avg yield and cost per gram by application recipe) with our last harvested chrysanthemum cycles in crop analytics. State cycle counts for both views; do not forecast or invent math missing from the tool blocks.",
 			Grounded:   true,
 			ExpectTool: "summarize_recipe_outcomes",
 			Model:      "phi3:mini",

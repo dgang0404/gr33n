@@ -20,6 +20,20 @@ func TestWarmupTimeoutFromEnv_override(t *testing.T) {
 	}
 }
 
+func TestSuiteTimeoutFromEnv_default(t *testing.T) {
+	t.Setenv("GUARDIAN_EVAL_SUITE_TIMEOUT_HOURS", "")
+	if got := SuiteTimeoutFromEnv(); got != defaultSuiteTimeoutHours*time.Hour {
+		t.Fatalf("got %v want %v", got, defaultSuiteTimeoutHours*time.Hour)
+	}
+}
+
+func TestSuiteTimeoutFromEnv_override(t *testing.T) {
+	t.Setenv("GUARDIAN_EVAL_SUITE_TIMEOUT_HOURS", "6")
+	if got := SuiteTimeoutFromEnv(); got != 6*time.Hour {
+		t.Fatalf("got %v", got)
+	}
+}
+
 func TestClientTimeoutFromEnv_addsBuffer(t *testing.T) {
 	t.Setenv("GUARDIAN_EVAL_TIMEOUT_SECONDS", "")
 	t.Setenv("LLM_TIMEOUT_SECONDS", "1500")

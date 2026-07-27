@@ -24,7 +24,7 @@
 | `make guardian-qa-change-requests-ui-quick MODEL=phi3:mini FARM_ID=1` | Fast multi-turn UI demo (~50 min) | Ack + schedule single-turn scenarios (reliable CPU path) |
 | `make guardian-qa-regression MODEL=phi3:mini` | Pre-release (slow) | Same directory, regression suite |
 | `make guardian-qa-manual` | Human UI parity | Prints checklist from same fixtures |
-| **`make guardian-qa-smoke-all MODEL=phi3:mini FARM_ID=1`** | **Master laptop smoke** — runs smoke + phase127 + change-requests-pending sequentially (~4 hr CPU); optional `GUARDIAN_QA_UI=1` / `GUARDIAN_QA_UI_FULL=1` | One log: `GUARDIAN_QA_ALL_LOG` (default `/tmp/guardian-qa-smoke-all.log`); see `make guardian-qa-smoke-all-help` |
+| **`make guardian-qa-smoke-all MODEL=phi3:mini FARM_ID=1`** | **Master laptop smoke** — batched Q&A + phase127 + change-requests-pending (~6 hr CPU); optional `GUARDIAN_QA_UI=1` / `GUARDIAN_QA_UI_FULL=1` | One log: `GUARDIAN_QA_ALL_LOG`; end-of-run **pass/total rollup** from `data/guardian_qa_runs/`; see `make guardian-qa-smoke-all-help` |
 
 Set `GUARDIAN_EVAL_TOKEN` (JWT from dev login) and optionally `GUARDIAN_EVAL_LOG=/tmp/gr33n-api.log` for log correlation.
 
@@ -168,6 +168,31 @@ Phase 131 deferred full LLM-as-judge — **Phase 146 supersedes that for GPU pro
 
 ---
 
+## Master smoke-all (`make guardian-qa-smoke-all`)
+
+Self-contained laptop run: token refresh + **preflight before each batch** + archive rollup. No manual kill/re-warm between NF prompts.
+
+| Step | Make target | Prompts |
+|------|-------------|---------|
+| 1 | `guardian-qa-smoke` | 5 core |
+| 2 | `guardian-qa-smoke-nf-batch1` | NF 1–5 |
+| 3 | `guardian-qa-smoke-nf-batch2` | NF 6–12 (incl. `smoke-nf-history-compare`) |
+| 4 | `guardian-qa-phase127` | 4 |
+| 5 | `guardian-qa-change-requests-pending` | 4 write-intents |
+
+**Env knobs**
+
+| Variable | Default | Purpose |
+|----------|---------|---------|
+| `GUARDIAN_EVAL_SUITE_TIMEOUT_HOURS` | `12` | Per-batch eval wall clock (replaces old hard 4h cap in `guardian-eval`) |
+| `GUARDIAN_QA_KILL_STALE=1` | off | Best-effort `pkill` leftover `guardian-eval` before start (never `ollama serve`) |
+| `GUARDIAN_QA_FAIL_FAST=1` | off | Stop after first preflight/suite failure |
+| `GUARDIAN_QA_SKIP_MANUAL=1` | off | Skip printed UI checklist at end |
+
+Debug subsets: `guardian-qa-smoke-full` (17 Q&A in one eval), `guardian-qa-smoke-natural-farming` (12 NF). Harness vs counsel gaps: [learning/guardian-qa-harness-gaps.md](learning/guardian-qa-harness-gaps.md).
+
+---
+
 ## Troubleshooting
 
 | Symptom | Check |
@@ -178,6 +203,7 @@ Phase 131 deferred full LLM-as-judge — **Phase 146 supersedes that for GPU pro
 | 401 on eval | `make guardian-qa-smoke` refreshes token via `source-local-env.sh`; or run manually before eval |
 | 4th smoke prompt client timeout | Re-run `make guardian-qa-smoke-ec-ph` (Phase 147); raise `GUARDIAN_EVAL_TIMEOUT_SECONDS` or use eval client buffer (Phase 146 default +15m) |
 | Warmup blocks 5m | Set `GUARDIAN_EVAL_WARMUP_TIMEOUT=90` on CPU; smoke uses async warmup (Phase 146) |
+| NF prompts `context deadline exceeded` mid-suite | Use batched `make guardian-qa-smoke-all` (not one 17-prompt `smoke-full` blob); raise `GUARDIAN_EVAL_SUITE_TIMEOUT_HOURS` (default 12) |
 
 ---
 

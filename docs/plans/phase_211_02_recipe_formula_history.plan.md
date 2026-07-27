@@ -128,7 +128,7 @@ Returns ordered events:
 
 Enables: “how much was watered + what formula + what light window” for a date range.
 
-Phase 211.04 (optional follow-on): thin **Crop report** UI — see [phase_211_04_crop_ops_report_ui.plan.md](phase_211_04_crop_ops_report_ui.plan.md). 211.02 ships API + Guardian read only. Farm permissions: [211.03](phase_211_03_farm_permissions.plan.md).
+Phase 211.04 (optional follow-on): thin **Crop report** UI — see [phase_211_04_crop_ops_report_ui.plan.md](archive/phase_211_04_crop_ops_report_ui.plan.md). 211.02 ships API + Guardian read only. Farm permissions: [211.03](archive/phase_211_03_farm_permissions.plan.md).
 
 ### WS6 — Guardian
 

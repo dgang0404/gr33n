@@ -34,13 +34,13 @@ describe('Phase 43 WS7 / OC-43 — operations hub closure', () => {
     expect(buildMoneyHubStarters().length).toBeGreaterThanOrEqual(1)
   })
 
-  it('Grow & operate nav exposes workspace hubs (Phase 68)', () => {
+  it('Grow & operate nav exposes workspace hubs (Phase 68 / 70–71)', () => {
     const grow = buildNavGroups().find((g) => g.label === 'Grow & operate')
     expect(grow).toBeTruthy()
     const paths = grow.items.map((i) => i.to)
     expect(paths).toContain('/zones')
     expect(paths).toContain('/money')
-    expect(paths).not.toContain('/feed-water')
+    expect(paths).toContain('/feed-water')
     expect(paths).not.toContain('/hardware')
   })
 

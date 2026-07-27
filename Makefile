@@ -178,7 +178,7 @@ guardian-qa-smoke-cherry-jlf: ## Phase 211 WS5 — re-run smoke-cherry-jlf only 
 			-suite smoke -prompt-ids smoke-cherry-jlf \
 			-report $${GUARDIAN_EVAL_REPORT:-data/guardian_model_eval.json}'
 
-guardian-qa-smoke-natural-farming: ## Natural farming — 11 grounded prompts (field guides + inventory + recipe outcomes)
+guardian-qa-smoke-natural-farming: ## Natural farming — 12 grounded prompts (field guides + inventory + recipe/history compare)
 	@bash -lc 'set -e; cd "$(CURDIR)"; \
 		if [ -f .env ]; then set -a && . ./.env && set +a; fi; \
 		source scripts/source-local-env.sh --refresh-eval-token; \
@@ -186,7 +186,25 @@ guardian-qa-smoke-natural-farming: ## Natural farming — 11 grounded prompts (f
 			-suite smoke-natural-farming \
 			-report $${GUARDIAN_EVAL_REPORT:-data/guardian_model_eval.json}'
 
-guardian-qa-smoke-full: ## Core + NF smoke (16 prompts) — same as manual smoke + smoke-natural-farming checklists
+guardian-qa-smoke-nf-batch1: ## NF prompts 1–5 (smoke-all batch B; debug subset)
+	@bash -lc 'set -e; cd "$(CURDIR)"; \
+		if [ -f .env ]; then set -a && . ./.env && set +a; fi; \
+		source scripts/source-local-env.sh --refresh-eval-token; \
+		$(GO) run ./cmd/guardian-eval/ -models $${MODEL:-phi3:mini} -farm-id $${FARM_ID:-1} \
+			-suite smoke-natural-farming \
+			-prompt-ids smoke-nf-jlf-doc,smoke-nf-jms-dilution,smoke-nf-ready-batches,smoke-nf-jms-make,smoke-nf-jlf-start \
+			-report $${GUARDIAN_EVAL_REPORT:-data/guardian_model_eval.json}'
+
+guardian-qa-smoke-nf-batch2: ## NF prompts 6–12 incl. history-compare (smoke-all batch C)
+	@bash -lc 'set -e; cd "$(CURDIR)"; \
+		if [ -f .env ]; then set -a && . ./.env && set +a; fi; \
+		source scripts/source-local-env.sh --refresh-eval-token; \
+		$(GO) run ./cmd/guardian-eval/ -models $${MODEL:-phi3:mini} -farm-id $${FARM_ID:-1} \
+			-suite smoke-natural-farming \
+			-prompt-ids smoke-nf-combined-drench,smoke-nf-ffj-flower,smoke-nf-wca-foliar,smoke-nf-goldenrod,smoke-nf-lab,smoke-nf-recipe-outcomes,smoke-nf-history-compare \
+			-report $${GUARDIAN_EVAL_REPORT:-data/guardian_model_eval.json}'
+
+guardian-qa-smoke-full: ## Core + NF smoke (17 prompts) — same as manual smoke + smoke-natural-farming checklists
 	@bash -lc 'set -e; cd "$(CURDIR)"; \
 		if [ -f .env ]; then set -a && . ./.env && set +a; fi; \
 		source scripts/source-local-env.sh --refresh-eval-token; \
@@ -300,13 +318,16 @@ guardian-qa-change-requests-ui-quick: ## Fast multi-turn UI prep: ack + schedule
 			-report $${GUARDIAN_EVAL_REPORT:-data/guardian_model_eval.json}'
 
 guardian-qa-smoke-all-help: ## Print master smoke-all suite list and env knobs
-	@echo "make guardian-qa-smoke-all — runs (sequential, ~5 hr CPU phi3:mini):"
-	@echo "  0. guardian-qa-preflight          (API up + Guardian farm_counsel ready)"
-	@echo "  1. guardian-qa-smoke-full          (15 Q&A prompts = smoke + natural-farming manual checklist)"
-	@echo "  2. guardian-qa-phase127           (4 grounding prompts)"
-	@echo "  3. guardian-qa-change-requests-pending (4 write-intents → Pending tab)"
-	@echo "Then: guardian-qa-manual SUITE=smoke-all (23-prompt UI checklist printed automatically)"
-	@echo "Subset targets: guardian-qa-smoke (5), guardian-qa-smoke-natural-farming (11), guardian-qa-smoke-full (16)"
+	@echo "make guardian-qa-smoke-all — runs (sequential, ~6 hr CPU phi3:mini, batched):"
+	@echo "  0. preflight before each batch     (API up + Guardian farm_counsel ready)"
+	@echo "  1. guardian-qa-smoke               (5 core prompts)"
+	@echo "  2. guardian-qa-smoke-nf-batch1   (NF prompts 1–5)"
+	@echo "  3. guardian-qa-smoke-nf-batch2     (NF prompts 6–12 incl. history-compare)"
+	@echo "  4. guardian-qa-phase127            (4 grounding prompts)"
+	@echo "  5. guardian-qa-change-requests-pending (4 write-intents → Pending tab)"
+	@echo "End: archive pass/total rollup + guardian-qa-manual SUITE=smoke-all (25 prompts)"
+	@echo "Subset targets: guardian-qa-smoke (5), guardian-qa-smoke-natural-farming (12), guardian-qa-smoke-full (17)"
+	@echo "Env: GUARDIAN_EVAL_SUITE_TIMEOUT_HOURS=12 (default per batch), GUARDIAN_QA_KILL_STALE=1"
 	@echo "Skip end checklist: GUARDIAN_QA_SKIP_MANUAL=1 make guardian-qa-smoke-all"
 	@echo "Optional: GUARDIAN_QA_UI=1 (+ change-requests-ui-quick ~50 min)"
 	@echo "Optional: GUARDIAN_QA_UI_FULL=1 (+ change-requests-ui ~2–3 hr)"

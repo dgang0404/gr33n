@@ -74,6 +74,13 @@ func TestSplitMentions(t *testing.T) {
 	}
 }
 
+func TestShouldRunSummarizeFarmCropsByKeyReadIntent_historyCompare(t *testing.T) {
+	q := "Using only our farm data, compare chrysanthemum recipe outcome history (track record: avg yield and cost per gram by application recipe) with our last harvested chrysanthemum cycles in crop analytics."
+	if !shouldRunSummarizeFarmCropsByKeyReadIntent(q) {
+		t.Fatal("expected crop analytics intent for history-compare prompt")
+	}
+}
+
 func TestReadToolIDs_IncludesLookupCropTargets(t *testing.T) {
 	for _, id := range ReadToolIDs() {
 		if id == "lookup_crop_targets" {

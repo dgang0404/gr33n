@@ -92,8 +92,10 @@ func main() {
 		}
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 4*time.Hour)
+	suiteTimeout := eval.SuiteTimeoutFromEnv()
+	ctx, cancel := context.WithTimeout(context.Background(), suiteTimeout)
 	defer cancel()
+	log.Printf("eval suite wall-clock timeout: %s (GUARDIAN_EVAL_SUITE_TIMEOUT_HOURS)", suiteTimeout)
 
 	modelNames, err := resolveModels(ctx, *modelsFlag, *llmBase)
 	if err != nil {

@@ -202,7 +202,7 @@ func shouldApplySmokeTopicDrift(q Question) bool {
 	case "smoke-morning-walk", "smoke-ec-ph", "smoke-cherry-forest", "smoke-unread-alerts", "smoke-cherry-jlf", "farm-morning-walkthrough",
 		"smoke-nf-jlf-doc", "smoke-nf-jms-dilution", "smoke-nf-ready-batches", "smoke-nf-jms-make", "smoke-nf-jlf-start",
 		"smoke-nf-combined-drench", "smoke-nf-ffj-flower", "smoke-nf-wca-foliar", "smoke-nf-goldenrod", "smoke-nf-lab",
-		"smoke-nf-recipe-outcomes",
+		"smoke-nf-recipe-outcomes", "smoke-nf-history-compare",
 		"p128-fert-triage", "p128-demo-pi", "fg-fertigation-triage", "fg-demo-pi":
 		return true
 	default:
@@ -391,6 +391,22 @@ func scoreSmokeNaturalFarming(in ScoreInput) (bool, string) {
 		}
 		if !(strings.Contains(a, "ffj") || strings.Contains(a, "wca") || strings.Contains(a, "chrysanthemum") || strings.Contains(a, "recipe")) {
 			return false, "expected recipe / chrysanthemum outcome content"
+		}
+	case "smoke-nf-history-compare":
+		if strings.Contains(a, "will produce") || strings.Contains(a, "you will get") {
+			return false, "expected historical framing, not a forecast"
+		}
+		if !(strings.Contains(a, "avg") || strings.Contains(a, "average") || strings.Contains(a, "averaged")) {
+			return false, "expected avg / average from recipe outcome block"
+		}
+		if !(strings.Contains(a, "cycle") || strings.Contains(a, "harvested")) {
+			return false, "expected cycle counts from both payload families"
+		}
+		if !(strings.Contains(a, "ffj") || strings.Contains(a, "wca") || strings.Contains(a, "chrysanthemum") || strings.Contains(a, "recipe")) {
+			return false, "expected recipe / chrysanthemum content"
+		}
+		if !(strings.Contains(a, "harvest") || strings.Contains(a, "crop") || strings.Contains(a, "analytics") || strings.Contains(a, "run")) {
+			return false, "expected crop analytics / harvest cycle side of compare"
 		}
 	default:
 		return false, "unknown smoke-nf fixture"
