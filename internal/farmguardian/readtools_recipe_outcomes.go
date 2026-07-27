@@ -16,7 +16,9 @@ import (
 )
 
 // RecipeOutcomeGroundingRule is injected into every grounded chat system prompt.
-const RecipeOutcomeGroundingRule = `Recipe outcome grounding (Phase 211.05): summarize_recipe_outcomes numbers are historical averages over named past cycles, not predictions. Always state N (cycle count). Never say a recipe "is better" or "will produce X" — say cycles "averaged X". Below minimum sample size, say insufficient history instead of citing a single-cycle number as a trend. Correlation is not causation — stage timing, zone, and season differ between cycles.`
+// Wording is tuned for small CPU models (phi3:mini): they often treat grow/cycle
+// names as recipes and invent "if we assume" math when costs feel incomplete.
+const RecipeOutcomeGroundingRule = `Recipe outcome grounding (Phase 211.05): summarize_recipe_outcomes numbers are historical averages over named past cycles, not predictions. Always state N (cycle count). Never say a recipe "is better" or "will produce X" — say cycles "averaged X". Below minimum sample size, say insufficient history instead of citing a single-cycle number as a trend. Correlation is not causation — stage timing, zone, and season differ between cycles. Only name recipes that appear in the summarize_recipe_outcomes block — grow/cycle labels (e.g. a cultivar run name) are not recipes. Never invent a second recipe for comparison. Never say "assuming", "if we assume", or invent cost/yield math missing from the tool block — if a figure is absent, say the farm has no recorded value.`
 
 var summarizeRecipeOutcomesIntent = regexp.MustCompile(`(?i)\b(which recipe|recipe worked|switching recipes|recipe help|based on history|historical|track record|cost per gram|yield by recipe|did .{0,40} recipe|compare recipes|predict my yield|forecast yield|recipe outcome|recipe performance)\b`)
 
@@ -74,6 +76,7 @@ func renderSummarizeRecipeOutcomes(ctx context.Context, q db.Querier, farmID int
 			b.WriteString(fmt.Sprintf("\n%d cycle(s) had no recipe-tagged mix/program events in-window.", result.UnattributedCycleCount))
 		}
 		b.WriteString("\nCorrelational only — not a prediction.")
+		b.WriteString(recipeOutcomeToolFooter)
 		return b.String(), nil
 	}
 
@@ -105,8 +108,14 @@ func renderSummarizeRecipeOutcomes(ctx context.Context, q db.Querier, farmID int
 		b.WriteString(fmt.Sprintf("\n%d cycle(s) had no recipe-tagged mix/program events in-window.", result.UnattributedCycleCount))
 	}
 	b.WriteString("\nCorrelational only — stage timing, zone, and season differ between cycles; not a controlled comparison or forecast.")
+	b.WriteString(recipeOutcomeToolFooter)
 	return b.String(), nil
 }
+
+// recipeOutcomeToolFooter steers small models away from the common failure mode
+// (treating cycle names as recipes + "if we assume" invented math).
+const recipeOutcomeToolFooter = `
+Rules for your reply: quote only recipes and numbers from this block. Do not invent other recipes. Grow/cycle names are not recipes. Do not say "if we assume" or invent cost/yield math. Prefer "N harvested cycles averaged …".`
 
 func formatRecipeOutcomeLine(row recipeoutcomes.RecipeOutcome, includeCosts bool) string {
 	name := strings.TrimSpace(row.RecipeName)

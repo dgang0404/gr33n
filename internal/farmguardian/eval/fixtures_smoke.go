@@ -8,9 +8,10 @@ func SmokeFixtures() []Question {
 		{
 			ID:       "smoke-cherry-forest",
 			Category: "ungrounded",
+			// Ungrounded brainstorm — matches laptop Quick chat (tinyllama), not farm counsel.
 			Prompt: "I have a cherry tree with plants growing under it — I want this forest garden situation but I think the Canadian goldenrod is not good; I'll use it for dyes but maybe I need to get rid of it now. The blackberries would be nice if they could stay; they have thorns.",
 			Grounded: false,
-			Model:    "phi3:mini",
+			Model:    "tinyllama",
 		},
 		{
 			ID:         "smoke-morning-walk",

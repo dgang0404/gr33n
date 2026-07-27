@@ -79,6 +79,23 @@ func TestRecipeOutcomeToolGroundingNote_bareNumberFails(t *testing.T) {
 	}
 }
 
+func TestRecipeOutcomeGroundingRule_steersSmallModels(t *testing.T) {
+	t.Parallel()
+	for _, part := range []string{
+		"Only name recipes that appear",
+		"Never invent a second recipe",
+		"if we assume",
+		"averaged",
+	} {
+		if !strings.Contains(RecipeOutcomeGroundingRule, part) {
+			t.Fatalf("RecipeOutcomeGroundingRule missing %q", part)
+		}
+	}
+	if !strings.Contains(recipeOutcomeToolFooter, "Grow/cycle names are not recipes") {
+		t.Fatal("tool footer missing cycle-name warning")
+	}
+}
+
 func TestReadToolIDsIncludesSummarizeRecipeOutcomes(t *testing.T) {
 	t.Parallel()
 	ids := ReadToolIDs()

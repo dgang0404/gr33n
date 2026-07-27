@@ -315,6 +315,8 @@ These are **not** proposal tools — no Confirm card. Alert **write** intents (`
 
 **QA:** `outcomes_test.go`, `readtools_recipe_outcomes_test.go`, `phase-211-05-closure.test.js` · **API smoke:** `smoke_phase211_05_test.go` · **Guardian smoke:** `smoke-nf-recipe-outcomes` in `SmokeNaturalFarmingFixtures()` (included in `smoke-full` / `smoke-all`). Demo seed stamps FFJ+WCA mixes + costs on two harvested chrysanthemum cycles — re-apply `master_seed.sql` after 211.02 migrations.
 
+**Teaching notes (C# → Go):** [learning/guardian-pipeline-for-csharp-devs.md](learning/guardian-pipeline-for-csharp-devs.md) — attribution SQL, read-tool prompt assembly, track-record chip, smoke eval failure modes, laptop phi3/tinyllama strategy.
+
 ### 7.0b Grow environment stack (Phase 35 lighting)
 
 Operators configure photoperiod through **`lighting_programs`** (UI: `/lighting`), not orphan schedule pairs:

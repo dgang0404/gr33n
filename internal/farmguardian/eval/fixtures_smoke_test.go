@@ -39,6 +39,9 @@ func TestSmokeFixtures_cherryJLFIsFifthStep(t *testing.T) {
 	if fixtures[0].ID != "smoke-cherry-forest" {
 		t.Fatalf("step 1 must stay smoke-cherry-forest, got %q", fixtures[0].ID)
 	}
+	if fixtures[0].Model != "tinyllama" {
+		t.Fatalf("ungrounded smoke-cherry-forest should use tinyllama (laptop Quick), got %q", fixtures[0].Model)
+	}
 	last := fixtures[len(fixtures)-1]
 	if last.ID != "smoke-cherry-jlf" {
 		t.Fatalf("expected smoke-cherry-jlf as step 5, got %q", last.ID)

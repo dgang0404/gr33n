@@ -12,7 +12,7 @@
 
 | Target | When | Output |
 |--------|------|--------|
-| `make guardian-qa-smoke MODEL=phi3:mini FARM_ID=1` | After Guardian changes; optional nightly/weekly | `data/guardian_qa_runs/<timestamp>_smoke_phi3-mini.json` — always exits 0 (artifact only) |
+| `make guardian-qa-smoke MODEL=phi3:mini FARM_ID=1` | After Guardian changes; optional nightly/weekly | `data/guardian_qa_runs/<timestamp>_smoke_phi3-mini.json` — always exits 0 (artifact only). Note: fixture `smoke-cherry-forest` overrides to **tinyllama** (ungrounded Quick chat); other smoke steps stay phi3. Teaching notes: [learning/guardian-pipeline-for-csharp-devs.md](learning/guardian-pipeline-for-csharp-devs.md). |
 | `make guardian-qa-smoke-strict MODEL=phi3:mini FARM_ID=1` | When you want a real pass/fail instead of a report to read | Same archive, but **exits non-zero if any fixture fails its heuristic** |
 | **Opt-in PR check** `guardian-qa-pr` CI job | Self-hosted runner + Ollama; add `guardian-smoke` label to PR | Runs `make guardian-qa-smoke-strict` — **not mandatory** on every PR (standard label-gated pattern) |
 | `make guardian-qa-change-requests MODEL=phi3:mini FARM_ID=1` | After touching proposal/change-request code (Phase 153) | Fires the 4 write-intent prompts; **verifies each proposal_id in the pending queue immediately after its prompt** (proposals expire after 5m; prompts take 20+ min) |

@@ -38,7 +38,8 @@ func TestSmokeNaturalFarmingFixtures_recipeOutcomes(t *testing.T) {
 			if q.ExpectTool != "summarize_recipe_outcomes" {
 				t.Fatalf("ExpectTool=%q", q.ExpectTool)
 			}
-			if !strings.Contains(strings.ToLower(q.Prompt), "based on history") {
+			p := strings.ToLower(q.Prompt)
+			if !strings.Contains(p, "recipe outcome") || !strings.Contains(p, "harvested cycles") {
 				t.Fatalf("prompt=%q", q.Prompt)
 			}
 			return
