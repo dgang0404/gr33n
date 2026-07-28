@@ -1,0 +1,64 @@
+# Auto-merge Dependabot minor/patch PRs after CI goes green.
+# Majors are left open for human review (also ignored in dependabot.yml for known noisy packages).
+name: Dependabot auto-merge
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+concurrency:
+  group: dependabot-auto-merge-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  auto-merge:
+    if: github.actor == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Dependabot metadata
+        id: meta
+        uses: dependabot/fetch-metadata@v2.4.0
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Skip semver-major
+        if: steps.meta.outputs.update-type == 'version-update:semver-major'
+        run: |
+          echo "Major update (${{ steps.meta.outputs.dependency-names }}) — human review required."
+
+      - name: Wait for CI, then merge minor/patch
+        if: steps.meta.outputs.update-type != 'version-update:semver-major'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          set -euo pipefail
+          # gh pr checks: 0=all green, 1=failed, 8=pending
+          for i in $(seq 1 60); do
+            set +e
+            gh pr checks "$PR"
+            ec=$?
+            set -e
+            case "$ec" in
+              0)
+                gh pr merge "$PR" --merge --delete-branch
+                echo "Merged #$PR"
+                exit 0
+                ;;
+              1)
+                echo "CI failed on #$PR — not merging"
+                exit 1
+                ;;
+              *)
+                echo "checks pending (attempt $i/60); sleeping 30s"
+                sleep 30
+                ;;
+            esac
+          done
+          echo "Timed out waiting for CI on #$PR"
+          exit 1
