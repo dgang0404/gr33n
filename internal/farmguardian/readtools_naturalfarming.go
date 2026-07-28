@@ -20,8 +20,9 @@ import (
 const ReadToolsMaxNFInventoryLines = 12
 
 var (
-	lookupProcessCatalogIntent = regexp.MustCompile(`(?i)\b(what is|how do i make|how to make|steps for|tell me about)\b.*\b(jms|jlf|fpj|ffj|lab|ohn|faa|jwa|js|jhs|wca|wcs|brv|compost tea|aact|microbial solution|liquid fertilizer|fermented plant|fermented fruit|lactic acid)\b|\b(jms|jlf|fpj|ffj|lab|ohn|faa|jwa|js|jhs|wca|wcs|brv)\b.*\b(what is|how|make|steps|prepare)\b`)
-	suggestProcessMaterialIntent = regexp.MustCompile(`(?i)\b(goldenrod|comfrey|nettle|solidago|ferment|drench|foliar|plant juice|biomass)\b`)
+	lookupProcessCatalogIntent = regexp.MustCompile(`(?i)\b(what is|how do i make|how to make|steps for|tell me about)\b.*\b(jms|jlf|fpj|ffj|lab|ohn|faa|jwa|js|jhs|wca|wcs|brv|compost tea|aact|microbial solution|liquid fertilizer|fermented plant|fermented fruit|lactic acid)\b|\b(jms|jlf|fpj|ffj|lab|ohn|faa|jwa|js|jhs|wca|wcs|brv)\b.*\b(what is|how|make|steps|prepare|dilution|drench|foliar|soil|spray|ratio)\b`)
+	// Material biomass / plant names — not bare drench|foliar (those are application questions → lookup).
+	suggestProcessMaterialIntent = regexp.MustCompile(`(?i)\b(goldenrod|comfrey|nettle|solidago|plant juice|biomass)\b|\bferment\b.*\b(goldenrod|comfrey|nettle|weed|grass|plant)\b`)
 	summarizeNFInventoryIntent    = regexp.MustCompile(`(?i)(\b(what|which)\b.{0,40}\b(ferments?|batches?|inputs?)\b.{0,40}\b(have|ready|on hand|stock)\b|\b(ready batches?|batches ready|ferments on hand|natural farming inventory)\b|\b(jms|jlf|fpj|ffj|wca|faa|lab|ohn|jwa)\b.{0,30}\b(have|ready|stock|on hand)\b)`)
 )
 
@@ -69,13 +70,34 @@ func shouldRunLookupProcessCatalogReadIntent(question string) bool {
 	if lookupCropTargetsIntent.MatchString(q) && !processMentionedInQuestion(q) {
 		return false
 	}
-	return lookupProcessCatalogIntent.MatchString(q) || (processMentionedInQuestion(q) && strings.Contains(strings.ToLower(q), "how"))
+	lower := strings.ToLower(q)
+	if lookupProcessCatalogIntent.MatchString(q) {
+		return true
+	}
+	if processMentionedInQuestion(q) && (strings.Contains(lower, "how") || nfDilutionOrApplicationIntent(q)) {
+		return true
+	}
+	// Named guide / document questions (smoke-nf-jlf-doc).
+	if strings.Contains(lower, "jlf") &&
+		(strings.Contains(lower, "weed") || strings.Contains(lower, "grass") ||
+			strings.Contains(lower, "guide") || strings.Contains(lower, "document") ||
+			strings.Contains(lower, "cite") || strings.Contains(lower, "field guide")) {
+		return true
+	}
+	return false
 }
 
 func shouldRunSuggestProcessFromMaterialReadIntent(question string) bool {
 	q := strings.TrimSpace(question)
 	if q == "" {
 		return false
+	}
+	// Process + dilution/application with no biomass material → lookup_process_catalog.
+	if processMentionedInQuestion(q) && nfDilutionOrApplicationIntent(q) {
+		mat, _, _, err := defaultNFCatalogs()
+		if err != nil || len(naturalfarmingcatalog.MaterialsMatchingQuery(mat, q)) == 0 {
+			return false
+		}
 	}
 	if !suggestProcessMaterialIntent.MatchString(q) {
 		return false
@@ -88,6 +110,16 @@ func shouldRunSuggestProcessFromMaterialReadIntent(question string) bool {
 		return true
 	}
 	return suggestProcessMaterialIntent.MatchString(q)
+}
+
+func nfDilutionOrApplicationIntent(question string) bool {
+	lower := strings.ToLower(question)
+	for _, t := range []string{"dilution", "drench", "foliar", "soil", "spray", "ratio", "1:"} {
+		if strings.Contains(lower, t) {
+			return true
+		}
+	}
+	return false
 }
 
 func shouldRunSummarizeNaturalFarmingInventoryReadIntent(question string) bool {
@@ -175,12 +207,35 @@ func renderLookupProcessCatalog(question string) (string, error) {
 	if tier != "" {
 		b.WriteString("\nSource tier: " + tier)
 	}
+	if dStart, _ := inp["dilution_start"].(string); strings.TrimSpace(dStart) != "" {
+		b.WriteString("\nDilution start: " + strings.TrimSpace(dStart))
+		if dStrong, _ := inp["dilution_strong"].(string); strings.TrimSpace(dStrong) != "" && dStrong != dStart {
+			b.WriteString(" / stronger " + strings.TrimSpace(dStrong))
+		}
+	}
+	if recipes := naturalfarmingcatalog.CanonApplicationRecipesForProcess(canon, pt); len(recipes) > 0 {
+		b.WriteString("\nApplication dilutions (quote these ratios):")
+		for _, rec := range recipes {
+			name, _ := rec["seed_name"].(string)
+			dil, _ := rec["dilution"].(string)
+			appType, _ := rec["target_application_type"].(string)
+			line := "\n- " + strings.TrimSpace(name)
+			if appType != "" {
+				line += " (" + appType + ")"
+			}
+			if dil != "" {
+				line += ": " + dil
+			}
+			b.WriteString(line)
+		}
+	}
 	if guide != "" {
 		b.WriteString("\nField guide: field-guides/" + guide)
 		if excerpt := nfGuideExcerpt(root, guide); excerpt != "" {
-			b.WriteString("\nSteps (excerpt): " + excerpt)
+			b.WriteString("\nGuide excerpt: " + excerpt)
 		}
 	}
+	b.WriteString(nfProcessToolFooter)
 	return b.String(), nil
 }
 
@@ -250,6 +305,7 @@ func renderSuggestProcessFromMaterial(ctx context.Context, q db.Querier, farmID 
 			}
 		}
 	}
+	b.WriteString(nfProcessToolFooter)
 	return b.String(), nil
 }
 
@@ -373,19 +429,33 @@ func nfGuideExcerpt(repoRoot, guideFile string) string {
 			text = text[idx+3+idx2+3:]
 		}
 	}
-	start := strings.Index(text, "## Step-by-step preparation")
-	if start < 0 {
-		start = strings.Index(text, "## Step-by-step")
+	var parts []string
+	if dil := nfGuideSection(text, "## Dilution table"); dil != "" {
+		parts = append(parts, "Dilution: "+dil)
 	}
-	if start < 0 {
+	if prep := nfGuideSection(text, "## Step-by-step preparation"); prep != "" {
+		parts = append(parts, prep)
+	} else if prep := nfGuideSection(text, "## Step-by-step"); prep != "" {
+		parts = append(parts, prep)
+	}
+	if len(parts) == 0 {
 		return truncateRunes(strings.TrimSpace(text), 280)
 	}
-	chunk := text[start:]
+	return truncateRunes(strings.Join(parts, " | "), 420)
+}
+
+func nfGuideSection(text, heading string) string {
+	start := strings.Index(text, heading)
+	if start < 0 {
+		return ""
+	}
+	chunk := text[start+len(heading):]
 	if nl := strings.Index(chunk, "\n## "); nl > 0 {
 		chunk = chunk[:nl]
 	}
-	chunk = strings.ReplaceAll(chunk, "## Step-by-step preparation", "")
-	chunk = strings.ReplaceAll(chunk, "## Step-by-step", "")
-	chunk = strings.TrimSpace(chunk)
-	return truncateRunes(chunk, 320)
+	return strings.TrimSpace(chunk)
 }
+
+// nfProcessToolFooter steers small models to echo catalog dilutions instead of inventing process names.
+const nfProcessToolFooter = `
+Rules for your reply: quote dilution ratios and field-guide names from this block only. Do not invent process names, folk methods, or ratios missing here.`

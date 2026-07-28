@@ -421,10 +421,15 @@ func matchSummarizeZoneFertigationIntent(question string) bool {
 		"reservoir", "reservoir low", "needs top-up",
 		"ec trigger", "ph trigger", "ec target", "ph target",
 		"feeding schedule", "feed timing",
+		"no dose", "didn't dose", "did not dose", "dose —", "dose -",
+		"program active",
 	} {
 		if strings.Contains(lower, term) {
 			return true
 		}
+	}
+	if strings.Contains(lower, "dose") && strings.Contains(lower, "program") {
+		return true
 	}
 	if strings.Contains(lower, "program") &&
 		(strings.Contains(lower, "zone") || strings.Contains(lower, "room") || strings.Contains(lower, "garden")) {

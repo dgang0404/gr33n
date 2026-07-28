@@ -72,4 +72,16 @@ func TestLoadRecipeCanon_JMSSoilDilution(t *testing.T) {
 	if strings.Contains(dil, "1:500") {
 		t.Fatalf("unexpected 1:500 in dilution: %q", dil)
 	}
+	apps := CanonApplicationRecipesForProcess(cat, "jms")
+	if len(apps) < 2 {
+		t.Fatalf("jms application recipes: %d", len(apps))
+	}
+	joined := ""
+	for _, a := range apps {
+		d, _ := a["dilution"].(string)
+		joined += d + " "
+	}
+	if !strings.Contains(joined, "1:10") || !strings.Contains(joined, "1:20") {
+		t.Fatalf("expected 1:10 and 1:20 in %q", joined)
+	}
 }

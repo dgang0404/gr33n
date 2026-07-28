@@ -157,6 +157,39 @@ func CanonInputByProcessType(canon map[string]any, processType string) (map[stri
 	return nil, false
 }
 
+// CanonApplicationRecipesForProcess returns application_recipes whose components
+// mention the process type (e.g. jms → soil drench 1:10, foliar 1:20).
+func CanonApplicationRecipesForProcess(canon map[string]any, processType string) []map[string]any {
+	processType = strings.TrimSpace(strings.ToLower(processType))
+	if processType == "" {
+		return nil
+	}
+	raw, ok := canon["application_recipes"]
+	if !ok {
+		return nil
+	}
+	items, ok := raw.([]any)
+	if !ok {
+		return nil
+	}
+	var out []map[string]any
+	for _, item := range items {
+		rec, ok := item.(map[string]any)
+		if !ok {
+			continue
+		}
+		comps, _ := rec["components"].([]any)
+		for _, c := range comps {
+			name, _ := c.(string)
+			if strings.Contains(strings.ToLower(strings.TrimSpace(name)), processType) {
+				out = append(out, rec)
+				break
+			}
+		}
+	}
+	return out
+}
+
 func yamlVersionAtLeast1(v any) bool {
 	switch n := v.(type) {
 	case int:

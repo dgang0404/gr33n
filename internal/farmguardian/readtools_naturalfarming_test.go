@@ -33,11 +33,18 @@ func TestShouldRunLookupProcessCatalogReadIntent(t *testing.T) {
 		{"What is JLF?", true},
 		{"What EC should my tomato be?", false},
 		{"goldenrod JLF method", false},
+		{"For JMS, should I use a soil drench or foliar spray and at what dilution?", true},
+		{"Cite the field guide JLF from weeds and grass (general) — starting dilution?", true},
+		{"For JMS on this farm — what dilution do we use for a soil drench versus a foliar spray?", true},
+		{`I'm reading "JLF from weeds and grass (general)" from our indexed knowledge. What should I know from this doc for my farm right now?`, true},
 	}
 	for _, tc := range cases {
 		if got := shouldRunLookupProcessCatalogReadIntent(tc.q); got != tc.want {
 			t.Fatalf("q=%q got %v want %v", tc.q, got, tc.want)
 		}
+	}
+	if shouldRunSuggestProcessFromMaterialReadIntent("For JMS, should I use a soil drench or foliar spray and at what dilution?") {
+		t.Fatal("JMS dilution must not route to suggest_process_from_material")
 	}
 }
 
@@ -91,6 +98,26 @@ func TestLookupProcessCatalog_JMS(t *testing.T) {
 	}
 	if !strings.Contains(block, "natural-farming-jms.md") {
 		t.Fatalf("expected guide path: %q", block)
+	}
+	if !strings.Contains(block, "1:10") || !strings.Contains(block, "1:20") {
+		t.Fatalf("expected soil 1:10 and foliar 1:20 dilutions: %q", block)
+	}
+	if !strings.Contains(block, "quote dilution ratios") {
+		t.Fatalf("expected grounding footer: %q", block)
+	}
+}
+
+func TestLookupProcessCatalog_JMSDilutionPrompt(t *testing.T) {
+	q := "For JMS, should I use a soil drench or foliar spray and at what dilution?"
+	if !shouldRunLookupProcessCatalogReadIntent(q) {
+		t.Fatal("expected lookup intent")
+	}
+	block, err := LookupProcessCatalog(q)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(block, "1:10") || !strings.Contains(block, "1:20") {
+		t.Fatalf("dilutions missing: %q", block)
 	}
 }
 

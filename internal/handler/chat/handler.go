@@ -808,6 +808,7 @@ func (h *Handler) retrieveChunks(ctx context.Context, farmID int64, query string
 	}
 	filtered := farmguardian.FilterRAGChunks(query, rows, topK)
 	chunks := farmguardian.PrioritizeAlertChunks(filtered.Chunks)
+	chunks = farmguardian.SeedAlertChunksFromLiveUnread(ctx, h.q, farmID, query, chunks)
 	chunks = farmguardian.FilterChunksForAlertSummary(query, chunks)
 	return chunks, filtered.Note, nil
 }
