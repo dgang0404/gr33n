@@ -62,3 +62,23 @@ func looksLikeAlertSummaryAnswer(answer string) bool {
 		strings.Contains(lower, "photoperiod") ||
 		strings.Contains(lower, "unread")
 }
+
+// looksLikeWalkFarmCategoryAnswer detects multi-category morning walkthrough
+// answers (walk_farm). These mention humidity/alerts but are not pure alert
+// citation lists — MissingNumberedCitationsNote must not fail them.
+func looksLikeWalkFarmCategoryAnswer(answer string) bool {
+	lower := strings.ToLower(answer)
+	hits := 0
+	for _, k := range []string{
+		"unread alert",
+		"today's feed", "todays feed", "today’s feed",
+		"offline device",
+		"comfort band",
+		"low stock",
+	} {
+		if strings.Contains(lower, k) {
+			hits++
+		}
+	}
+	return hits >= 2
+}

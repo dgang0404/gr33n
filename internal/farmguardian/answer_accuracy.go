@@ -224,12 +224,17 @@ func ECPHUnitConfusionNote(answer string, cites []CitationSummary) string {
 
 // MissingNumberedCitationsNote flags alert-style numbered lists that omit all
 // [n] bracket markers (run #8: markdown links instead of [1]/[2]/[3]).
+// walk_farm morning walkthroughs list several categories (alerts, feeds, offline,
+// comfort, stock) — those are not alert citation lists, so skip them.
 func MissingNumberedCitationsNote(answer string) string {
 	if len(claimBracketRE.FindAllString(answer, -1)) > 0 {
 		return ""
 	}
 	items := numberedListItemRE.FindAllStringSubmatch(answer, -1)
 	if len(items) < 2 {
+		return ""
+	}
+	if looksLikeWalkFarmCategoryAnswer(answer) {
 		return ""
 	}
 	if !looksLikeAlertSummaryAnswer(answer) {

@@ -109,12 +109,13 @@ func main() {
 		WarmupGrounded:        eval.SuiteNeedsWarmup(suite),
 		RequireWarmup:         eval.SuiteRequiresWarmup(suite),
 		WarmupTimeout:         eval.WarmupTimeoutFromEnv(),
-		WarmupAsync:    false,
-		LogPath:        strings.TrimSpace(os.Getenv("GUARDIAN_EVAL_LOG")),
+		WarmupAsync:           false,
+		LogPath:               strings.TrimSpace(os.Getenv("GUARDIAN_EVAL_LOG")),
 		CheckPendingPerPrompt: *checkPendingProposals,
 		ConfirmPerPrompt:      *confirmProposals,
 		LeavePending:          *leavePending,
 		LeavePendingTTL:       eval.LeavePendingTTLFromEnv(),
+		PartialArchiveSuite:   suite,
 	}
 
 	rep := farmguardian.EvalReport{
@@ -147,6 +148,7 @@ func main() {
 			continue
 		}
 		log.Printf("evaluating model %q suite=%s (%d questions)…", model, suite, len(fixtures))
+		runOpts.PartialArchivePath = farmguardian.DefaultPartialQARunArchivePath(suite, model)
 		scores, runErr := eval.RunSuite(ctx, client, model, fixtures, runOpts)
 		if runErr != nil {
 			log.Printf("eval suite error: %v", runErr)

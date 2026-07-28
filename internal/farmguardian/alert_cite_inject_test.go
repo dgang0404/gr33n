@@ -70,3 +70,24 @@ func TestMissingNumberedCitationsNote_withRefsPasses(t *testing.T) {
 		t.Fatalf("note=%q", note)
 	}
 }
+
+// Jul 25 / Jul 27 smoke-morning-walk shape — multi-category walk_farm list with
+// humidity/alerts but no [n] markers. Must not trip missing_numbered_citations.
+const archivedMorningWalkNoCites = `Good morning! Let's start your daily grind at the Demo Farm:
+
+1. Unread Alerts (7): We have a few alerts that haven't been acknowledged yet, including high humidity in Flower Room and multiple devices going offline last night or this morning.
+
+2. Today's Feeds (AM/PM): The feed trough top-off has been completed, and coop feeder runs are scheduled around 7:00 AM as usual.
+
+3. Offline Devices: It looks like the Propagation Relay Controller hasn't sent its heartbeat since yesterday evening.
+
+4. Comfort Bands: The comfort levels in your zones are currently within acceptable ranges.
+
+5. Low Stock (gr33n Demo Farm): No batches are below their minimum threshold right now.`
+
+func TestMissingNumberedCitationsNote_walkFarmCategoriesSkipped(t *testing.T) {
+	t.Parallel()
+	if note := MissingNumberedCitationsNote(archivedMorningWalkNoCites); note != "" {
+		t.Fatalf("walk_farm answer should not flag missing_numbered_citations, got %q", note)
+	}
+}

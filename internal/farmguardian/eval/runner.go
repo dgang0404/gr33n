@@ -213,6 +213,16 @@ func RunSuite(ctx context.Context, api *APIClient, model string, fixtures []Ques
 			}
 		}
 		out = append(out, res)
+		if opts.PartialArchivePath != "" {
+			if err := farmguardian.SaveQARunArchive(
+				opts.PartialArchivePath,
+				opts.PartialArchiveSuite,
+				model,
+				ToEvalQuestionScores(out),
+			); err != nil {
+				log.Printf("eval: partial archive %q: %v", opts.PartialArchivePath, err)
+			}
+		}
 	}
 	return out, nil
 }
@@ -222,12 +232,16 @@ type RunSuiteOptions struct {
 	WarmupGrounded        bool
 	RequireWarmup         bool
 	WarmupTimeout         time.Duration
-	WarmupAsync          bool
-	LogPath              string
+	WarmupAsync           bool
+	LogPath               string
 	CheckPendingPerPrompt bool
-	ConfirmPerPrompt     bool
-	LeavePending         bool
-	LeavePendingTTL      time.Duration
+	ConfirmPerPrompt      bool
+	LeavePending          bool
+	LeavePendingTTL       time.Duration
+	// PartialArchivePath, when set, rewrites a progressive QA archive after each prompt
+	// so a killed mid-suite run still leaves gradeable results on disk.
+	PartialArchivePath  string
+	PartialArchiveSuite string
 }
 
 // RunModel executes regression fixtures for one model name.

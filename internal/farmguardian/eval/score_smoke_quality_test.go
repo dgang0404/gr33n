@@ -85,6 +85,31 @@ func TestScore_smokeMorningWalk_cleanPasses(t *testing.T) {
 	}
 }
 
+// Jul 25/27 archived walk_farm answer: multi-category list, humidity/alerts, no [n].
+// Must pass — missing_numbered_citations is for pure alert lists, not morning walkthroughs.
+func TestScore_smokeMorningWalk_archivedWalkFarmCategoriesPass(t *testing.T) {
+	t.Parallel()
+	answer := `Good morning! Let's start your daily grind at the Demo Farm:
+
+1. Unread Alerts (7): high humidity in Flower Room and multiple devices going offline.
+
+2. Today's Feeds (AM/PM): feed trough top-off completed; coop feeder at 7:00 AM.
+
+3. Offline Devices: Propagation Relay Controller missed heartbeat.
+
+4. Comfort Bands: zones within acceptable ranges; watch Flower Room humidity.
+
+5. Low Stock: no batches below minimum threshold.`
+	res := Score(ScoreInput{
+		Question:      Question{ID: "smoke-morning-walk", Category: "farm_state", Prompt: MorningWalkPrompt()},
+		Answer:        answer,
+		ProposalCount: 1,
+	})
+	if !res.Passed {
+		t.Fatalf("archived walk_farm categories should pass, notes=%q", res.Notes)
+	}
+}
+
 func TestScore_smokeECPH_archivedRun2FailsWithoutPH(t *testing.T) {
 	t.Parallel()
 	res := Score(ScoreInput{

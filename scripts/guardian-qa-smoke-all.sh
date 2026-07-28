@@ -19,6 +19,8 @@ API_URL="${GR33N_API_URL:-http://127.0.0.1:8080}"
 LOG="${GUARDIAN_QA_ALL_LOG:-/tmp/guardian-qa-smoke-all.log}"
 FAIL_FAST="${GUARDIAN_QA_FAIL_FAST:-0}"
 ARCHIVE_DIR="${GUARDIAN_QA_RUNS_DIR:-data/guardian_qa_runs}"
+# Durable copy survives /tmp wipe — grade mid-run kills from here.
+DURABLE_LOG="${ARCHIVE_DIR}/smoke-all-latest.log"
 
 if [[ -f .env ]]; then set -a && . ./.env && set +a; fi
 # shellcheck disable=SC1091
@@ -155,13 +157,20 @@ fi
 
 echo "Guardian QA smoke-all — MODEL=${MODEL} FARM_ID=${FARM_ID}"
 echo "Log: ${LOG}"
+echo "Durable log: ${DURABLE_LOG}"
 echo "Archives: ${ARCHIVE_DIR}/"
 echo "Suites: ${#SUITES[@]} (+ preflight before each; manual checklist after)"
 echo "Skip manual: GUARDIAN_QA_SKIP_MANUAL=1"
 echo "Suite timeout: GUARDIAN_EVAL_SUITE_TIMEOUT_HOURS=${GUARDIAN_EVAL_SUITE_TIMEOUT_HOURS:-12} (default 12h per batch)"
 
 failures=0
+mkdir -p "${ARCHIVE_DIR}"
 : >"${LOG}"
+: >"${DURABLE_LOG}"
+
+tee_log() {
+  tee -a "${LOG}" "${DURABLE_LOG}"
+}
 
 print_manual_checklist() {
   if [[ "${GUARDIAN_QA_SKIP_MANUAL:-}" == "1" ]]; then
@@ -173,7 +182,7 @@ print_manual_checklist() {
   echo "==> Manual UI checklist — same prompts for spot-check in browser"
   echo "    make guardian-qa-manual SUITE=smoke-all"
   echo "================================================================"
-  if make guardian-qa-manual SUITE=smoke-all 2>&1 | tee -a "${LOG}"; then
+  if make guardian-qa-manual SUITE=smoke-all 2>&1 | tee_log; then
     echo "==> Manual checklist: printed"
     return 0
   fi
@@ -181,19 +190,19 @@ print_manual_checklist() {
   return 1
 }
 
-kill_stale_eval 2>&1 | tee -a "${LOG}"
+kill_stale_eval 2>&1 | tee_log
 
 for entry in "${SUITES[@]}"; do
   target="${entry%%|*}"
   label="${entry#*|}"
-  if ! preflight_guardian 2>&1 | tee -a "${LOG}"; then
+  if ! preflight_guardian 2>&1 | tee_log; then
     failures=$((failures + 1))
     if [[ "${FAIL_FAST}" == "1" ]]; then
       echo "FAIL_FAST=1 — stopping after preflight failure" >&2
       break
     fi
   fi
-  if run_suite "${target}" "${label}" 2>&1 | tee -a "${LOG}"; then
+  if run_suite "${target}" "${label}" 2>&1 | tee_log; then
     :
   else
     failures=$((failures + 1))
@@ -204,7 +213,7 @@ for entry in "${SUITES[@]}"; do
   fi
 done
 
-print_archive_rollup 2>&1 | tee -a "${LOG}"
+print_archive_rollup 2>&1 | tee_log
 
 if ! print_manual_checklist; then
   failures=$((failures + 1))

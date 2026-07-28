@@ -192,6 +192,17 @@ func DefaultQARunArchivePath(suite, model string) string {
 	return filepath.Join(DefaultQARunsDir(), name)
 }
 
+// DefaultPartialQARunArchivePath is rewritten after each prompt during a suite run
+// so a killed mid-suite eval still leaves gradeable scores on disk.
+func DefaultPartialQARunArchivePath(suite, model string) string {
+	safe := strings.NewReplacer(":", "-", "/", "-").Replace(strings.TrimSpace(model))
+	if safe == "" {
+		safe = "model"
+	}
+	name := fmt.Sprintf("partial_%s_%s.json", strings.TrimSpace(suite), safe)
+	return filepath.Join(DefaultQARunsDir(), name)
+}
+
 // QARunSummary is the operator-facing snapshot of one archived QA run (Phase 140).
 type QARunSummary struct {
 	UpdatedAt  string `json:"updated_at"`
