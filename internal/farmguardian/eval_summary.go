@@ -52,9 +52,11 @@ type EvalQuestionScore struct {
 	QuestionAnswerRelevance float64 `json:"question_answer_relevance,omitempty"`
 	OpeningTailRelevance    float64 `json:"opening_tail_relevance,omitempty"`
 	LowRelevance            bool    `json:"low_relevance,omitempty"`
-	CritiquePass            *bool   `json:"critique_pass,omitempty"`
-	CritiqueReason          string  `json:"critique_reason,omitempty"`
-	AccuracyNote            string  `json:"accuracy_note,omitempty"`
+	// AnswerRelevant is proposal-pass vs prose quality for write intents (211.06).
+	AnswerRelevant *bool  `json:"answer_relevant,omitempty"`
+	CritiquePass   *bool  `json:"critique_pass,omitempty"`
+	CritiqueReason string `json:"critique_reason,omitempty"`
+	AccuracyNote   string `json:"accuracy_note,omitempty"`
 }
 
 var (

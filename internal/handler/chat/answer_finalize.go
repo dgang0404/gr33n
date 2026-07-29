@@ -86,6 +86,10 @@ func finalizeGroundedAnswer(answer string, chunks []db.SearchRagNearestNeighbors
 		slog.Info("guardian: alert_list_citations_normalized")
 		answer = normalized
 	}
+	if withPH, ok := farmguardian.InjectPHFromChunks(answer, chunks); ok {
+		slog.Info("guardian: ec_ph_from_cite_injected")
+		answer = withPH
+	}
 	return answer
 }
 

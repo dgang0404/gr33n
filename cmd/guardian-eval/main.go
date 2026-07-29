@@ -33,6 +33,11 @@ func main() {
 	leavePending := flag.Bool("leave-pending", false, "after each passed write-intent prompt, bump proposal TTL in DB so Pending tab stays populated for UI review (implies -check-pending-proposals; uses DATABASE_URL)")
 	flag.Parse()
 
+	// smoke-all sets GUARDIAN_QA_FAIL_ON_REGRESSION=1 so make "OK" matches fixture reality.
+	if !*failOnRegression && strings.TrimSpace(os.Getenv("GUARDIAN_QA_FAIL_ON_REGRESSION")) == "1" {
+		*failOnRegression = true
+	}
+
 	if *leavePending {
 		*checkPendingProposals = true
 	}

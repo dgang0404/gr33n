@@ -508,6 +508,13 @@ func (h *Handler) PostV1(w http.ResponseWriter, r *http.Request) {
 	usage.PromptTokens += retryUsage.PromptTokens
 	usage.CompletionTokens += retryUsage.CompletionTokens
 	answer = applyUncitedTailTrim(answer, question, grounded, chunks, &hygiene)
+	var inventUsage llm.Usage
+	answer, inventUsage, hygiene = h.maybeRetryInventStub(r.Context(), chatClient, messages, question, answer, hygiene, grounded, chunks, effectiveWindow)
+	usage.PromptTokens += inventUsage.PromptTokens
+	usage.CompletionTokens += inventUsage.CompletionTokens
+	if grounded {
+		answer = farmguardian.EnsureNFDilutionRatiosInAnswer(answer, question)
+	}
 
 	resp := postResponse{
 		Answer:           answer,
@@ -669,6 +676,13 @@ func (h *Handler) streamResponse(
 	usage.PromptTokens += retryUsage.PromptTokens
 	usage.CompletionTokens += retryUsage.CompletionTokens
 	answer = applyUncitedTailTrim(answer, question, grounded, chunks, &hygiene)
+	var inventUsage llm.Usage
+	answer, inventUsage, hygiene = h.maybeRetryInventStub(r.Context(), chatClient, messages, question, answer, hygiene, grounded, chunks, debugIn.effectiveWindow)
+	usage.PromptTokens += inventUsage.PromptTokens
+	usage.CompletionTokens += inventUsage.CompletionTokens
+	if grounded {
+		answer = farmguardian.EnsureNFDilutionRatiosInAnswer(answer, question)
+	}
 	done := postResponse{
 		Answer:           answer,
 		LLMModel:         chatClient.ModelLabel(),

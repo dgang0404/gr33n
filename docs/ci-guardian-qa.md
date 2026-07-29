@@ -12,7 +12,8 @@
 
 | Target | When | Output |
 |--------|------|--------|
-| `make guardian-qa-smoke MODEL=phi3:mini FARM_ID=1` | After Guardian changes; optional nightly/weekly | `data/guardian_qa_runs/<timestamp>_smoke_phi3-mini.json` — always exits 0 (artifact only). Note: fixture `smoke-cherry-forest` overrides to **tinyllama** (ungrounded Quick chat); other smoke steps stay phi3. Teaching notes: [learning/guardian-pipeline-for-csharp-devs.md](learning/guardian-pipeline-for-csharp-devs.md). |
+| `make guardian-qa-debug MODEL=phi3:mini FARM_ID=1` | **Default laptop loop** after counsel changes (Phase 211.06) | Core smoke (5) + NF batch1 (5) — not a full certification |
+| `make guardian-qa-smoke MODEL=phi3:mini FARM_ID=1` | After Guardian changes; optional nightly/weekly | `data/guardian_qa_runs/<timestamp>_smoke_phi3-mini.json` — always exits 0 (artifact only) unless `GUARDIAN_QA_FAIL_ON_REGRESSION=1`. Note: fixture `smoke-cherry-forest` overrides to **tinyllama** (ungrounded Quick chat); other smoke steps stay phi3. Teaching notes: [learning/guardian-pipeline-for-csharp-devs.md](learning/guardian-pipeline-for-csharp-devs.md). |
 | `make guardian-qa-smoke-strict MODEL=phi3:mini FARM_ID=1` | When you want a real pass/fail instead of a report to read | Same archive, but **exits non-zero if any fixture fails its heuristic** |
 | **Opt-in PR check** `guardian-qa-pr` CI job | Self-hosted runner + Ollama; add `guardian-smoke` label to PR | Runs `make guardian-qa-smoke-strict` — **not mandatory** on every PR (standard label-gated pattern) |
 | `make guardian-qa-change-requests MODEL=phi3:mini FARM_ID=1` | After touching proposal/change-request code (Phase 153) | Fires the 4 write-intent prompts; **verifies each proposal_id in the pending queue immediately after its prompt** (proposals expire after 5m; prompts take 20+ min) |
@@ -24,7 +25,7 @@
 | `make guardian-qa-change-requests-ui-quick MODEL=phi3:mini FARM_ID=1` | Fast multi-turn UI demo (~50 min) | Ack + schedule single-turn scenarios (reliable CPU path) |
 | `make guardian-qa-regression MODEL=phi3:mini` | Pre-release (slow) | Same directory, regression suite |
 | `make guardian-qa-manual` | Human UI parity | Prints checklist from same fixtures |
-| **`make guardian-qa-smoke-all MODEL=phi3:mini FARM_ID=1`** | **Master laptop smoke** — batched Q&A + phase127 + change-requests-pending (~6 hr CPU); optional `GUARDIAN_QA_UI=1` / `GUARDIAN_QA_UI_FULL=1` | One log: `GUARDIAN_QA_ALL_LOG`; end-of-run **pass/total rollup** from `data/guardian_qa_runs/`; see `make guardian-qa-smoke-all-help` |
+| **`make guardian-qa-smoke-all MODEL=phi3:mini FARM_ID=1`** | **Certification** (not the debug default) — batched Q&A + phase127 + change-requests-pending (~12 hr CPU); optional `GUARDIAN_QA_UI=1` / `GUARDIAN_QA_UI_FULL=1` | Fails on fixture fail/timeout by default (`GUARDIAN_QA_FAIL_ON_REGRESSION=1`); durable log `data/guardian_qa_runs/smoke-all-latest.log`; pass/total rollup; see `make guardian-qa-smoke-all-help` · [Phase 211.06](plans/phase_211_06_guardian_smoke_reliability.plan.md) |
 
 Set `GUARDIAN_EVAL_TOKEN` (JWT from dev login) and optionally `GUARDIAN_EVAL_LOG=/tmp/gr33n-api.log` for log correlation.
 

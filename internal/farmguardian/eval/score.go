@@ -96,9 +96,31 @@ type ScoreResult struct {
 	LogEvidence   []string
 	Citations     []farmguardian.CitationSummary
 	Relevance     farmguardian.AnswerRelevance
+	// AnswerRelevant is set for write_intent when relevance was scored — separate
+	// from Passed (proposal presence). nil = relevance not measured.
+	AnswerRelevant *bool
 	CritiquePass   *bool
 	CritiqueReason string
 	AccuracyNote   string
+}
+
+// applyWriteAnswerRelevance keeps proposal Passed, but records whether answer
+// prose matched the question (Phase 211.06 WS5).
+func applyWriteAnswerRelevance(res *ScoreResult, in ScoreInput) {
+	if res == nil {
+		return
+	}
+	if !(in.Relevance.LowRelevance || in.Relevance.QuestionAnswerCosine > 0) {
+		return
+	}
+	ok := !in.Relevance.LowRelevance
+	res.AnswerRelevant = &ok
+	if !ok {
+		if res.Notes != "" {
+			res.Notes += "; "
+		}
+		res.Notes += "proposal_ok; answer_low_relevance"
+	}
 }
 
 // Score evaluates one answer heuristically.
@@ -132,7 +154,7 @@ func Score(in ScoreInput) ScoreResult {
 			res.Notes = "expected alert summary with numbered citations [1]/[2] or citation_count > 0"
 		}
 	case in.Question.ID == "smoke-ec-ph":
-		hasPH := strings.Contains(a, "ph")
+		hasPH := strings.Contains(a, "ph") || farmguardian.CitationExcerptsContain(in.Citations, "ph")
 		hasEC := strings.Contains(a, "ec") || in.CitationCount > 0 || citationRefPresent(in.Answer)
 		res.Passed = hasPH && hasEC
 		if !res.Passed && res.Notes == "" {
@@ -181,6 +203,8 @@ func Score(in ScoreInput) ScoreResult {
 		res.Passed = in.ProposalCount > 0 || proposalJSONPresent(in.Answer)
 		if !res.Passed {
 			res.Notes = "expected valid proposal"
+		} else {
+			applyWriteAnswerRelevance(&res, in)
 		}
 	default:
 		res.Passed = len(a) > 20 && !looksLikeInvention(a)

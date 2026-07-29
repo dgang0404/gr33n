@@ -74,6 +74,8 @@ The API loads `.env` and `.env.local` automatically when started from the repo r
 | `GUARDIAN_AUTO_DORMANT_MINUTES` | `0` (off) | After N idle minutes with no chat/warmup, unload the warm chat model (Phase 163). Settings shows countdown when ready. |
 | `GUARDIAN_EVAL_TIMEOUT_SECONDS` | inherits grounded timeout | `cmd/guardian-eval` / `make guardian-qa-smoke` HTTP client timeout |
 | `GUARDIAN_EVAL_SUITE_TIMEOUT_HOURS` | `12` | Wall-clock budget for one `guardian-eval` process (all prompts in `-suite`). Laptop batched smoke-all relies on this instead of the old hard 4h cap. |
+| `GUARDIAN_EVAL_PROMPT_COOLDOWN_SECONDS` | unset (0) | Optional pause between eval prompts (Phase 211.06 laptop thermal) |
+| `GUARDIAN_QA_FAIL_ON_REGRESSION` | unset; smoke-all defaults `1` | When `1`, guardian-eval exits non-zero on fixture fail/timeout (same as `-fail-on-regression`) |
 | `GUARDIAN_RELEVANCE_MIN` | `0.35` | Embed cosine floor for `low_relevance` on turn debug (Phase 145) |
 | `GUARDIAN_RAG_MAX_CHUNKS_FIELD_GUIDE` | — | Max `field_guide` chunks kept after agronomy retrieval filter (Phase 145; e.g. `5` on cpu laptop) |
 | `GUARDIAN_GROUNDED_ANSWER_MAX_CHARS` | `2500` when effective ctx ≤ 4096 | Max assistant answer length after finalize trim (Phase 145) |

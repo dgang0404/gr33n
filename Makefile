@@ -1,4 +1,4 @@
-.PHONY: run run-receiver build build-receiver test seed sqlc migrate merge-legacy-plants ui dev dev-auth-test dev-auth-test-run e2e-browser ollama-smoke ollama-smoke-cpu ollama-smoke-help guardian-eval guardian-qa-smoke guardian-qa-smoke-all guardian-qa-smoke-all-help guardian-qa-smoke-ec-ph guardian-qa-smoke-unread-alerts guardian-qa-smoke-cherry-jlf guardian-qa-phase127 guardian-qa-regression guardian-qa-manual guardian-qa-smoke-strict guardian-qa-change-requests guardian-qa-change-requests-ui guardian-qa-change-requests-ui-task guardian-qa-change-requests-ui-quick guardian-laptop-tune rag-ingest-help rag-ingest-demo rag-ingest-platform-docs compose-db-up compose-db-status compose-logging-up compose-logging-down setup-compose-dev dev-stack dev-stack-fresh dev-stack-fresh-rag local-up restart-local restart-local-serve laptop-up laptop-up-fresh db-sanity-report check-stack check-crop-library check-crop-catalog check-crop-catalog-parity check-catalog-seed-drift add-crop-check check-catalog-release check-ui-domain-parity clean lint bootstrap-local bootstrap-local-docker install-deps-debian install-pi-edge-deps first-clone first-clone-docker first-clone-install-deps audit-openapi audit-env edge-smoke-help edge-actuator-smoke-help recipe-pack-import-help agronomy-seed-pack-help guardian-bootstrap-farm import-agronomy-seed-pack apply-agronomy-overrides rag-ingest-farm-operational
+.PHONY: run run-receiver build build-receiver test seed sqlc migrate merge-legacy-plants ui dev dev-auth-test dev-auth-test-run e2e-browser ollama-smoke ollama-smoke-cpu ollama-smoke-help guardian-eval guardian-qa-smoke guardian-qa-smoke-all guardian-qa-smoke-all-help guardian-qa-debug guardian-qa-smoke-ec-ph guardian-qa-smoke-unread-alerts guardian-qa-smoke-cherry-jlf guardian-qa-phase127 guardian-qa-regression guardian-qa-manual guardian-qa-smoke-strict guardian-qa-change-requests guardian-qa-change-requests-ui guardian-qa-change-requests-ui-task guardian-qa-change-requests-ui-quick guardian-laptop-tune rag-ingest-help rag-ingest-demo rag-ingest-platform-docs compose-db-up compose-db-status compose-logging-up compose-logging-down setup-compose-dev dev-stack dev-stack-fresh dev-stack-fresh-rag local-up restart-local restart-local-serve laptop-up laptop-up-fresh db-sanity-report check-stack check-crop-library check-crop-catalog check-crop-catalog-parity check-catalog-seed-drift add-crop-check check-catalog-release check-ui-domain-parity clean lint bootstrap-local bootstrap-local-docker install-deps-debian install-pi-edge-deps first-clone first-clone-docker first-clone-install-deps audit-openapi audit-env edge-smoke-help edge-actuator-smoke-help recipe-pack-import-help agronomy-seed-pack-help guardian-bootstrap-farm import-agronomy-seed-pack apply-agronomy-overrides rag-ingest-farm-operational
 
 # dash (common default /bin/sh) can report "wait: No child processes" for dev / dev-auth-test;
 # bash handles background jobs + wait reliably.
@@ -146,13 +146,19 @@ guardian-eval: ## Phase 122 — run Guardian model quality eval (API + Ollama mu
 		-suite $${SUITE:-regression} \
 		-report $${GUARDIAN_EVAL_REPORT:-data/guardian_model_eval.json}
 
-guardian-qa-smoke: ## Phase 131 + 211 WS5 — 5-prompt smoke suite, sequential, full answers archived
+guardian-qa-smoke: ## Debug loop core — 5-prompt smoke (report-only unless GUARDIAN_QA_FAIL_ON_REGRESSION=1)
 	@bash -lc 'set -e; cd "$(CURDIR)"; \
 		if [ -f .env ]; then set -a && . ./.env && set +a; fi; \
 		source scripts/source-local-env.sh --refresh-eval-token; \
 		$(GO) run ./cmd/guardian-eval/ -models $${MODEL:-phi3:mini} -farm-id $${FARM_ID:-1} \
 			-suite smoke \
 			-report $${GUARDIAN_EVAL_REPORT:-data/guardian_model_eval.json}'
+
+guardian-qa-debug: ## Phase 211.06 — laptop debug loop: core smoke + NF batch1 (not full certification)
+	@echo "==> guardian-qa-debug: core smoke then NF batch1 (use this after counsel changes)"
+	@$(MAKE) guardian-qa-smoke MODEL=$${MODEL:-phi3:mini} FARM_ID=$${FARM_ID:-1}
+	@$(MAKE) guardian-qa-smoke-nf-batch1 MODEL=$${MODEL:-phi3:mini} FARM_ID=$${FARM_ID:-1}
+	@echo "==> guardian-qa-debug done — for certification use make guardian-qa-smoke-all"
 
 guardian-qa-smoke-ec-ph: ## Phase 147 — re-run smoke-ec-ph only (post run #4 client timeout)
 	@bash -lc 'set -e; cd "$(CURDIR)"; \
@@ -318,23 +324,31 @@ guardian-qa-change-requests-ui-quick: ## Fast multi-turn UI prep: ack + schedule
 			-report $${GUARDIAN_EVAL_REPORT:-data/guardian_model_eval.json}'
 
 guardian-qa-smoke-all-help: ## Print master smoke-all suite list and env knobs
-	@echo "make guardian-qa-smoke-all — runs (sequential, ~6 hr CPU phi3:mini, batched):"
+	@echo "DEBUG vs CERTIFICATION (Phase 211.06):"
+	@echo "  make guardian-qa-debug     — core + NF batch1 (default laptop loop after counsel changes)"
+	@echo "  make guardian-qa-smoke     — core only (5 prompts, report-only)"
+	@echo "  make guardian-qa-smoke-all — full certification (~12 hr CPU); fails on fixture fail/timeout"
+	@echo ""
+	@echo "make guardian-qa-smoke-all — runs (sequential, ~12 hr CPU phi3:mini, batched):"
 	@echo "  0. preflight before each batch     (API up + Guardian farm_counsel ready)"
 	@echo "  1. guardian-qa-smoke               (5 core prompts)"
-	@echo "  2. guardian-qa-smoke-nf-batch1   (NF prompts 1–5)"
+	@echo "  2. guardian-qa-smoke-nf-batch1     (NF prompts 1–5)"
 	@echo "  3. guardian-qa-smoke-nf-batch2     (NF prompts 6–12 incl. history-compare)"
 	@echo "  4. guardian-qa-phase127            (4 grounding prompts)"
 	@echo "  5. guardian-qa-change-requests-pending (4 write-intents → Pending tab)"
 	@echo "End: archive pass/total rollup + guardian-qa-manual SUITE=smoke-all (25 prompts)"
-	@echo "Subset targets: guardian-qa-smoke (5), guardian-qa-smoke-natural-farming (12), guardian-qa-smoke-full (17)"
+	@echo "Subset targets: guardian-qa-smoke (5), guardian-qa-smoke-nf-batch1 (5), guardian-qa-smoke-natural-farming (12)"
 	@echo "Env: GUARDIAN_EVAL_SUITE_TIMEOUT_HOURS=12 (default per batch), GUARDIAN_QA_KILL_STALE=1"
+	@echo "     GUARDIAN_QA_FAIL_ON_REGRESSION=1 (default in smoke-all; set 0 for report-only)"
+	@echo "     GUARDIAN_EVAL_PROMPT_COOLDOWN_SECONDS=30  (optional pause between prompts)"
+	@echo "     GUARDIAN_EVAL_TIMEOUT_SECONDS=…           (per-prompt HTTP timeout)"
 	@echo "Skip end checklist: GUARDIAN_QA_SKIP_MANUAL=1 make guardian-qa-smoke-all"
 	@echo "Optional: GUARDIAN_QA_UI=1 (+ change-requests-ui-quick ~50 min)"
 	@echo "Optional: GUARDIAN_QA_UI_FULL=1 (+ change-requests-ui ~2–3 hr)"
 	@echo "Optional: GUARDIAN_QA_FAIL_FAST=1 (stop on first suite failure)"
-	@echo "Log: GUARDIAN_QA_ALL_LOG=/tmp/guardian-qa-smoke-all.log"
+	@echo "Log: GUARDIAN_QA_ALL_LOG=/tmp/guardian-qa-smoke-all.log + data/guardian_qa_runs/smoke-all-latest.log"
 
-guardian-qa-smoke-all: ## Master smoke — smoke + phase127 + change-requests-pending (see guardian-qa-smoke-all-help)
+guardian-qa-smoke-all: ## Certification smoke — fails on fixture regression (see guardian-qa-smoke-all-help)
 	@chmod +x scripts/guardian-qa-smoke-all.sh
 	@./scripts/guardian-qa-smoke-all.sh
 

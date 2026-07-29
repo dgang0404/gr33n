@@ -164,55 +164,55 @@ func RunSuite(ctx context.Context, api *APIClient, model string, fixtures []Ques
 		if err != nil {
 			log.Printf("eval: [%d/%d] %q failed: %v", i+1, len(fixtures), q.ID, err)
 			out = append(out, scoreResultFromError(q, m, err))
-			continue
-		}
-		res := Score(in)
-		enrichScoreResult(&res, in, m)
-		status := "pass"
-		if !res.Passed {
-			status = "fail"
-		}
-		log.Printf("eval: [%d/%d] %q %s in %.1fs (proposals=%d citations=%d)",
-			i+1, len(fixtures), q.ID, status, in.Latency.Seconds(), res.ProposalCount, res.CitationCount)
-		if q.ExpectProposal && res.Passed && len(res.ProposalIDs) > 0 {
-			if opts.CheckPendingPerPrompt {
-				if err := VerifyPendingProposalIDs(ctx, api, res.ProposalIDs); err != nil {
-					return out, fmt.Errorf("%s pending queue: %w", q.ID, err)
-				}
-				log.Printf("eval: [%d/%d] %q verified pending queue (%d proposal_id(s))",
-					i+1, len(fixtures), q.ID, len(res.ProposalIDs))
+		} else {
+			res := Score(in)
+			enrichScoreResult(&res, in, m)
+			status := "pass"
+			if !res.Passed {
+				status = "fail"
 			}
-			if opts.LeavePending {
-				ttl := opts.LeavePendingTTL
-				if ttl <= 0 {
-					ttl = LeavePendingTTLFromEnv()
+			log.Printf("eval: [%d/%d] %q %s in %.1fs (proposals=%d citations=%d)",
+				i+1, len(fixtures), q.ID, status, in.Latency.Seconds(), res.ProposalCount, res.CitationCount)
+			if q.ExpectProposal && res.Passed && len(res.ProposalIDs) > 0 {
+				if opts.CheckPendingPerPrompt {
+					if err := VerifyPendingProposalIDs(ctx, api, res.ProposalIDs); err != nil {
+						return out, fmt.Errorf("%s pending queue: %w", q.ID, err)
+					}
+					log.Printf("eval: [%d/%d] %q verified pending queue (%d proposal_id(s))",
+						i+1, len(fixtures), q.ID, len(res.ProposalIDs))
 				}
-				n, err := BumpProposalExpiry(ctx, res.ProposalIDs, ttl)
-				if err != nil {
-					return out, fmt.Errorf("%s bump pending TTL: %w", q.ID, err)
+				if opts.LeavePending {
+					ttl := opts.LeavePendingTTL
+					if ttl <= 0 {
+						ttl = LeavePendingTTLFromEnv()
+					}
+					n, err := BumpProposalExpiry(ctx, res.ProposalIDs, ttl)
+					if err != nil {
+						return out, fmt.Errorf("%s bump pending TTL: %w", q.ID, err)
+					}
+					log.Printf("eval: [%d/%d] %q left pending for UI (%d proposal(s), expires ~%s)",
+						i+1, len(fixtures), q.ID, n, time.Now().UTC().Add(ttl).Format(time.RFC3339))
 				}
-				log.Printf("eval: [%d/%d] %q left pending for UI (%d proposal(s), expires ~%s)",
-					i+1, len(fixtures), q.ID, n, time.Now().UTC().Add(ttl).Format(time.RFC3339))
-			}
-			if opts.ConfirmPerPrompt {
-				for _, pid := range res.ProposalIDs {
-					if err := ConfirmAndVerifyProposal(ctx, api, q.ID, pid); err != nil {
-						return out, err
+				if opts.ConfirmPerPrompt {
+					for _, pid := range res.ProposalIDs {
+						if err := ConfirmAndVerifyProposal(ctx, api, q.ID, pid); err != nil {
+							return out, err
+						}
 					}
 				}
 			}
-		}
-		if opts.LogPath != "" && q.ExpectTool != "" {
-			ev := ScrapeLogEvidence(opts.LogPath, q.ID, q.ExpectTool)
-			if len(ev) > 0 {
-				res.LogEvidence = ev
-				if (q.ID == "smoke-morning-walk" || q.ID == "p128-devices") && !res.Passed && smokeAnswerAllowsLogOverride(q, in.Answer) {
-					res.Passed = true
-					res.Notes = "log evidence: " + strings.Join(ev, "; ")
+			if opts.LogPath != "" && q.ExpectTool != "" {
+				ev := ScrapeLogEvidence(opts.LogPath, q.ID, q.ExpectTool)
+				if len(ev) > 0 {
+					res.LogEvidence = ev
+					if (q.ID == "smoke-morning-walk" || q.ID == "p128-devices") && !res.Passed && smokeAnswerAllowsLogOverride(q, in.Answer) {
+						res.Passed = true
+						res.Notes = "log evidence: " + strings.Join(ev, "; ")
+					}
 				}
 			}
+			out = append(out, res)
 		}
-		out = append(out, res)
 		if opts.PartialArchivePath != "" {
 			if err := farmguardian.SaveQARunArchive(
 				opts.PartialArchivePath,
@@ -221,6 +221,14 @@ func RunSuite(ctx context.Context, api *APIClient, model string, fixtures []Ques
 				ToEvalQuestionScores(out),
 			); err != nil {
 				log.Printf("eval: partial archive %q: %v", opts.PartialArchivePath, err)
+			}
+		}
+		if cool := PromptCooldownFromEnv(); cool > 0 && i+1 < len(fixtures) {
+			log.Printf("eval: prompt cool-down %s (GUARDIAN_EVAL_PROMPT_COOLDOWN_SECONDS)", cool)
+			select {
+			case <-ctx.Done():
+				return out, ctx.Err()
+			case <-time.After(cool):
 			}
 		}
 	}
@@ -314,6 +322,7 @@ func ToEvalQuestionScores(scores []ScoreResult) []farmguardian.EvalQuestionScore
 			QuestionAnswerRelevance: s.Relevance.QuestionAnswerCosine,
 			OpeningTailRelevance:    s.Relevance.OpeningTailCosine,
 			LowRelevance:            s.Relevance.LowRelevance,
+			AnswerRelevant:          s.AnswerRelevant,
 			CritiquePass:            s.CritiquePass,
 			CritiqueReason:          s.CritiqueReason,
 			AccuracyNote:            s.AccuracyNote,
