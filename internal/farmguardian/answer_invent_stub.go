@@ -1,4 +1,4 @@
-// Phase 211.06 WS3 — detect invent / roleplay / instruction-soup openings for one regenerate.
+// Phase 211.06 WS3 — detect invent / roleplay / instruction-soup for one regenerate.
 
 package farmguardian
 
@@ -6,8 +6,8 @@ import (
 	"strings"
 )
 
-// inventStubOpenings are case-insensitive prefixes / early markers that mean the
-// model collapsed into apology, roleplay, or prompt echo instead of answering.
+// inventStubOpenings are case-insensitive prefixes that mean the model collapsed
+// into apology, roleplay, or prompt echo instead of answering.
 var inventStubOpenings = []string{
 	"i apologize",
 	"i apologise",
@@ -25,10 +25,31 @@ var inventStubOpenings = []string{
 	"question:",
 	"here is a new question",
 	"here's a new question",
+	"it seems like there's a misunderstanding",
+	"it seems like there is a misunderstanding",
+	"it seems to be a grim",
 }
 
-// AnswerLooksLikeInventStub reports apology / roleplay / instruction-soup openings
-// that should trigger one regenerate before persist (Phase 211.06).
+// inventStubBodyMarkers catch collapse mid-answer (phi3 often apologizes after a
+// nonsense opener rather than at byte 0).
+var inventStubBodyMarkers = []string{
+	"i apologize",
+	"i apologise",
+	"misunderstanding in the instructions",
+	"provided document is an example",
+	"textbook section",
+	"write an extensive essay",
+	"write an essay",
+	"documentary filmography",
+	"vectorization_text",
+	"context vectorization",
+	"the above context",
+	"the above documentary",
+	"@japanese-specifically",
+}
+
+// AnswerLooksLikeInventStub reports apology / roleplay / instruction-soup that
+// should trigger one regenerate before persist (Phase 211.06).
 func AnswerLooksLikeInventStub(answer string) bool {
 	a := strings.TrimSpace(answer)
 	if a == "" {
@@ -36,11 +57,17 @@ func AnswerLooksLikeInventStub(answer string) bool {
 	}
 	lower := strings.ToLower(a)
 	head := lower
-	if len(head) > 240 {
-		head = head[:240]
+	if len(head) > 400 {
+		head = head[:400]
 	}
 	for _, p := range inventStubOpenings {
 		if strings.HasPrefix(lower, p) || strings.Contains(head, "\n"+p) {
+			return true
+		}
+	}
+	// Mid-body collapse in the opening window (not just line-start).
+	for _, m := range inventStubBodyMarkers {
+		if strings.Contains(head, m) {
 			return true
 		}
 	}

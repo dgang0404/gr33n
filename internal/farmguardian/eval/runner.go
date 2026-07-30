@@ -139,6 +139,7 @@ func proposalIDsFromResponse(props []farmguardian.ActionProposal) []string {
 func RunSuite(ctx context.Context, api *APIClient, model string, fixtures []Question, opts RunSuiteOptions) ([]ScoreResult, error) {
 	var out []ScoreResult
 	groundedWarmed := false
+	var lastLatency time.Duration
 	for i, q := range fixtures {
 		log.Printf("eval: [%d/%d] starting %q (grounded=%v)", i+1, len(fixtures), q.ID, q.Grounded)
 		if q.Grounded && opts.WarmupGrounded && !groundedWarmed {
@@ -161,10 +162,14 @@ func RunSuite(ctx context.Context, api *APIClient, model string, fixtures []Ques
 			m = strings.TrimSpace(q.Model)
 		}
 		in, err := api.RunQuestion(ctx, m, q)
+		lastLatency = 0
 		if err != nil {
 			log.Printf("eval: [%d/%d] %q failed: %v", i+1, len(fixtures), q.ID, err)
 			out = append(out, scoreResultFromError(q, m, err))
+			// Treat timeouts as "slow" for cool-down extension.
+			lastLatency = 25 * time.Minute
 		} else {
+			lastLatency = in.Latency
 			res := Score(in)
 			enrichScoreResult(&res, in, m)
 			status := "pass"
@@ -223,12 +228,15 @@ func RunSuite(ctx context.Context, api *APIClient, model string, fixtures []Ques
 				log.Printf("eval: partial archive %q: %v", opts.PartialArchivePath, err)
 			}
 		}
-		if cool := PromptCooldownFromEnv(); cool > 0 && i+1 < len(fixtures) {
-			log.Printf("eval: prompt cool-down %s (GUARDIAN_EVAL_PROMPT_COOLDOWN_SECONDS)", cool)
-			select {
-			case <-ctx.Done():
-				return out, ctx.Err()
-			case <-time.After(cool):
+		if i+1 < len(fixtures) {
+			cool := PromptCooldownAfterLatency(PromptCooldownFromEnv(), lastLatency)
+			if cool > 0 {
+				log.Printf("eval: prompt cool-down %s", cool)
+				select {
+				case <-ctx.Done():
+					return out, ctx.Err()
+				case <-time.After(cool):
+				}
 			}
 		}
 	}

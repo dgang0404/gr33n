@@ -11,6 +11,9 @@ func TestAnswerLooksLikeInventStub(t *testing.T) {
 		{"I apologize for misunderstanding your question about fertigation.", true},
 		{"You are a helpful farm assistant.\n## Your task\nAnswer:", true},
 		{"## Instruction\nWrite an essay\nDocument:\nfoo", true},
+		{"It seems like there's a misunderstanding in the instructions provided. The instruction to create an AI…", true},
+		{"It's a sunny, I apologize\n\nThe above documentary filmography of the original text", true},
+		{"It seems to be a grim future. The provided document is an example of the following textbook section", true},
 		{"", false},
 	}
 	for _, tc := range cases {

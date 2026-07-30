@@ -11,8 +11,9 @@ import (
 
 const defaultWarmupTimeout = 5 * time.Minute
 const cpuLaptopWarmupTimeout = 90 * time.Second
-const evalTimeoutBuffer = 15 * time.Minute
+const evalTimeoutBuffer = 30 * time.Minute // was 15m — late grounded turns need headroom on CPU
 const defaultSuiteTimeoutHours = 12
+const defaultLaptopPromptCooldown = 60 * time.Second
 
 // WarmupTimeoutFromEnv returns how long eval waits on POST /guardian/warmup before continuing.
 // GUARDIAN_EVAL_WARMUP_TIMEOUT overrides; cpu-16gb profile defaults to 90s when unset.
@@ -59,15 +60,32 @@ func ClientTimeoutFromEnv() time.Duration {
 	return llm.EvalTimeoutFromEnv() + evalTimeoutBuffer
 }
 
-// PromptCooldownFromEnv is an optional pause between eval prompts (laptop thermal).
-// GUARDIAN_EVAL_PROMPT_COOLDOWN_SECONDS; unset/0 = no pause.
-// ponytail: global sleep between prompts — ceiling is wall-clock; upgrade = per-model
-// adaptive cool-down after llm_timeout / high latency only.
+// PromptCooldownFromEnv is a pause between eval prompts (laptop thermal).
+// GUARDIAN_EVAL_PROMPT_COOLDOWN_SECONDS overrides; cpu-16gb / unset profile defaults to 60s.
+// Set to 0 to disable. ponytail: global sleep — upgrade = cool-down only after slow/timeout turns.
 func PromptCooldownFromEnv() time.Duration {
 	if s := strings.TrimSpace(os.Getenv("GUARDIAN_EVAL_PROMPT_COOLDOWN_SECONDS")); s != "" {
-		if n, err := strconv.Atoi(s); err == nil && n > 0 {
+		if n, err := strconv.Atoi(s); err == nil {
+			if n <= 0 {
+				return 0
+			}
 			return time.Duration(n) * time.Second
 		}
 	}
+	if profile := strings.TrimSpace(os.Getenv("GUARDIAN_TUNE_PROFILE")); profile == "" || profile == "cpu-16gb" {
+		return defaultLaptopPromptCooldown
+	}
 	return 0
+}
+
+// PromptCooldownAfterLatency returns cool-down, extended after a slow turn.
+func PromptCooldownAfterLatency(base, lastLatency time.Duration) time.Duration {
+	if lastLatency >= 20*time.Minute {
+		extra := 90 * time.Second
+		if base > extra {
+			return base
+		}
+		return extra
+	}
+	return base
 }
