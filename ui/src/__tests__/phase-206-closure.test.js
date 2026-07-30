@@ -33,6 +33,7 @@ const ACTIVE_FEATURE_AT_TOP = [
   'phase_211_02_recipe_formula_history.plan.md',
   'phase_211_05_recipe_outcome_insights.plan.md',
   'phase_211_06_guardian_smoke_reliability.plan.md',
+  'phase_211_07_guardian_pending_e2e.plan.md',
   'phase_212_dual_farm_federation_test.plan.md',
 ]
 

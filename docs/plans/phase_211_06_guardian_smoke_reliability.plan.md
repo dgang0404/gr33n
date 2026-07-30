@@ -29,7 +29,7 @@ isProject: false
 
 # Phase 211.06 — Guardian smoke reliability (laptop loop)
 
-**Status:** Shipped (WS1–WS6 code + docs) · **Depends on:** [211.05 recipe outcome insights](phase_211_05_recipe_outcome_insights.plan.md) shipped + Jul 29 full smoke-all baseline graded · **Before:** [212 dual-install federation](phase_212_dual_farm_federation_test.plan.md) (still gated on a trustworthy local QA loop)
+**Status:** Shipped (WS1–WS6 code + docs) · **Depends on:** [211.05 recipe outcome insights](phase_211_05_recipe_outcome_insights.plan.md) shipped + Jul 29 full smoke-all baseline graded · **After:** [211.07 Pending tab Playwright E2E](phase_211_07_guardian_pending_e2e.plan.md) · **Before:** [212 dual-install federation](phase_212_dual_farm_federation_test.plan.md) (still gated on a trustworthy local QA loop)
 
 **Operator follow-up:** `make guardian-qa-debug` on phi3 laptop — target core ≥4/5 and NF batch1 not all invent/timeout (vs Jul 29 baseline 7/25).
 
