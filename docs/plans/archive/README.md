@@ -17,7 +17,7 @@ Era hub docs and active janitorial plans only:
 - `product_backlog_operator_runtime.plan.md`
 - `pre_development_gaps_index.plan.md`
 - `phase_53_59_roadmap.plan.md`, `phase_68_73_spa_workspace_roadmap.plan.md`, `phase_84_100_master_roadmap.plan.md`, `phase_173_177_today_excellence_roadmap.plan.md`, `farmer_ux_roadmap_40_plus.plan.md`
-- Recent meta plans (205, 206) until they age out
+- Recent meta / active feature plans (205–213 NF + federation + CI keep green) until they age out
 
 ## Rules
 
