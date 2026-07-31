@@ -6,15 +6,29 @@ set -euo pipefail
 INSTALL_B_DIR="${INSTALL_B_DIR:-$HOME/gr33n-platform-b}"
 DELETE_CLONE="${DELETE_CLONE:-0}"
 
+kill_port() {
+  local port="$1"
+  local pids
+  pids=$(ss -ltnp 2>/dev/null | awk -v p=":$port" '$4 ~ p {print}' | grep -oP 'pid=\K[0-9]+' | sort -u || true)
+  if [[ -z "${pids:-}" ]]; then
+    return 0
+  fi
+  # shellcheck disable=SC2086
+  echo "    killing pid(s) on :$port → $pids"
+  # shellcheck disable=SC2086
+  kill $pids 2>/dev/null || true
+}
+
 echo "==> Stop Insert Commons receiver (:8765)"
 pkill -f 'cmd/insert-commons-receiver' 2>/dev/null || true
+pkill -f 'insert-commons-receiver' 2>/dev/null || true
+kill_port 8765
 
 echo "==> Stop Install B host API (:8081)"
-# Prefer matching B's DATABASE_URL port in the process list when possible.
 pkill -f 'gr33n-platform-b.*cmd/api' 2>/dev/null || true
-# Fallback: anything listening on 8081 owned by go run
-if ss -ltnp 2>/dev/null | grep -q ':8081'; then
-  echo "    (port 8081 still listening — kill the Install B go process manually if needed)"
+kill_port 8081
+if ss -ltn 2>/dev/null | grep -q ':8081'; then
+  echo "    WARN: :8081 still listening after kill — check manually"
 fi
 
 if [[ -d "$INSTALL_B_DIR" ]]; then

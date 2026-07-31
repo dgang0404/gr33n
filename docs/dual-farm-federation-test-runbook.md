@@ -138,5 +138,5 @@ Summary: RAG embeddings **336 on A / 0 on B**. Field guide / symptom **row count
 
 - Scripts committed: `scripts/phase212-install-b-setup.sh`, `phase212-install-b-serve.sh`, `phase212-teardown.sh`
 - Seeds: `db/seeds/farm_a_org_assign.sql`, `db/seeds/farm_b_seed.sql`
-- Install A may still have `INSERT_COMMONS_*` in `.env` and Farm A rename — keep or revert per next phase
-- Teardown: `./scripts/phase212-teardown.sh` then optionally `DELETE_CLONE=1 ./scripts/phase212-teardown.sh`
+- **WS7 done (2026-07-30):** Install B clone removed; receiver + `:8081` stopped; Install A `.env` Insert Commons knobs stripped; only Install A DB `:5433` + API `:8080` remain.
+- Farm 1 left named **Farm A** under **Organization A** (harmless for next phases; volume wipe + re-seed resets if you want the old demo name).

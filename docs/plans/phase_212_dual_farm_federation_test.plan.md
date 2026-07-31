@@ -179,7 +179,7 @@ Acceptance: a short table of "present on A / absent on B until locally ingested"
 - [x] Field guides / platform docs / operational RAG / symptom guides confirmed **not** to cross without local re-ingest
 - [x] Runbook committed (glossary §11a already in workflow-guide)
 - [x] Tier A/B/C incident log filled during execution (even if empty)
-- [ ] WS7: replication scripts + test evidence committed to **main only**; Install B removed from laptop; Install A restored to single-install slate (scripts+evidence ready; run teardown when you want the slate)
+- [x] WS7: replication scripts + test evidence committed to **main only**; Install B removed from laptop; Install A restored to single-install slate
 
 ## WS7 — Teardown, artifacts, and slate reset
 
