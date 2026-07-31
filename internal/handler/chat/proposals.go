@@ -228,6 +228,54 @@ func (h *Handler) PostSuggestEmptyZoneProposal(w http.ResponseWriter, r *http.Re
 	httputil.WriteJSON(w, http.StatusCreated, rowToProposalListItem(row))
 }
 
+type seedPendingBody struct {
+	FarmID int64  `json:"farm_id"`
+	Title  string `json:"title,omitempty"`
+}
+
+// PostSeedPendingProposal handles POST /v1/chat/proposals/seed-pending (Phase 211.07).
+// Dev/auth_test only — inserts a create_task proposal so browser E2E can Confirm/Dismiss
+// without a live LLM marathon.
+func (h *Handler) PostSeedPendingProposal(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		httputil.WriteError(w, http.StatusMethodNotAllowed, "method not allowed")
+		return
+	}
+	if !debugModeEnabled() {
+		httputil.WriteError(w, http.StatusNotFound, "not found")
+		return
+	}
+	if h.q == nil {
+		httputil.WriteError(w, http.StatusInternalServerError, "database unavailable")
+		return
+	}
+	userID, hasUser := authctx.UserID(r.Context())
+	if !hasUser {
+		httputil.WriteError(w, http.StatusUnauthorized, "authentication required")
+		return
+	}
+	var body seedPendingBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		httputil.WriteError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+	if body.FarmID <= 0 {
+		httputil.WriteError(w, http.StatusBadRequest, "farm_id required")
+		return
+	}
+	if !farmauthz.RequireFarmOperate(w, r, h.q, body.FarmID) {
+		return
+	}
+	ctx := r.Context()
+	_ = h.q.ExpireStaleGuardianProposals(ctx)
+	row, err := farmguardian.InsertSeedPendingTaskProposal(ctx, h.q, userID, body.FarmID, body.Title)
+	if err != nil {
+		httputil.WriteError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	httputil.WriteJSON(w, http.StatusCreated, rowToProposalListItem(row))
+}
+
 func pgUUIDString(u pgtype.UUID) string {
 	if !u.Valid {
 		return ""

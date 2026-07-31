@@ -3,6 +3,7 @@
     class="rounded-lg border px-3 py-2.5 text-sm space-y-2"
     :class="cardClass"
     data-test="guardian-proposal-card"
+    :data-proposal-id="local.proposal_id"
   >
     <template v-if="uiStatus === 'confirmed'">
       <p class="text-green-300 flex items-start gap-2" data-test="guardian-proposal-done">

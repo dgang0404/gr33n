@@ -8,28 +8,32 @@ overview: >
 todos:
   - id: ws0-gate
     content: "WS0: Gate on 211.06 debug exit (core ≥4/5, NF1 not all invent/timeout) + list Pending UI selectors / data-test hooks"
-    status: pending
+    status: completed
   - id: ws1-seed-path
     content: "WS1: Deterministic pending proposal seed for E2E — API leave-pending or fixture POST; no live phi3 marathon"
-    status: pending
+    status: completed
   - id: ws2-confirm-dismiss
     content: "WS2: Playwright specs — open /chat?tab=pending, Confirm one proposal, Dismiss another; assert queue + toast/side-effect"
-    status: pending
+    status: completed
   - id: ws3-guardian-pending-shell
     content: "WS3: Extend guardian-chat.spec — Pending tab visible, empty state, card chrome (still no live LLM required for shell)"
-    status: pending
+    status: completed
   - id: ws4-stagehand-spike
     content: "WS4: Optional spike — Stagehand on one flaky flow only; document keep/kill; do not make Stagehand the default suite"
-    status: pending
+    status: completed
   - id: ws5-closure
     content: "WS5: e2e README + make e2e-browser green locally; optional browser-e2e CI note; mark Complete"
-    status: pending
+    status: completed
 isProject: false
 ---
 
 # Phase 211.07 — Guardian Pending tab Playwright E2E + Stagehand spike
 
-**Status:** Planned · **Depends on:** [211.06 Guardian smoke reliability](phase_211_06_guardian_smoke_reliability.plan.md) closed (debug loop trustworthy) · **Before:** [212 dual-install federation](phase_212_dual_farm_federation_test.plan.md)
+**Status:** Complete · **Depends on:** [211.06 Guardian smoke reliability](phase_211_06_guardian_smoke_reliability.plan.md) closed (debug loop trustworthy) · **Before:** [212 dual-install federation](phase_212_dual_farm_federation_test.plan.md)
+
+**211.06 residual (accepted):** Jul 30 `guardian-qa-debug` core **4/5** (ec-ph pass; cherry-jlf timeout). NF batch1 marathon timeouts on CPU phi3 — not invent regressions; certify on GPU/split runs.
+
+**Shipped:** `POST /v1/chat/proposals/seed-pending` (dev/auth_test) + `e2e/guardian-pending.spec.js` Confirm/Dismiss + Pending shell; Stagehand deferred in `e2e/README.md`.
 
 ## The one job
 
@@ -109,11 +113,11 @@ Extend `guardian-chat.spec.js` (or sibling): Pending tab switch, empty-state cop
 
 ## Acceptance criteria
 
-- [ ] At least one Playwright journey Confirms a pending proposal from the UI  
-- [ ] At least one Playwright journey Dismisses a pending proposal from the UI  
-- [ ] Default e2e path does not require a live local LLM  
-- [ ] Stagehand either documented as spike-only with keep/kill, or explicitly deferred in README with reason  
-- [ ] Phase 206 allowlist includes this plan file  
+- [x] At least one Playwright journey Confirms a pending proposal from the UI  
+- [x] At least one Playwright journey Dismisses a pending proposal from the UI  
+- [x] Default e2e path does not require a live local LLM  
+- [x] Stagehand either documented as spike-only with keep/kill, or explicitly deferred in README with reason  
+- [x] Phase 206 allowlist includes this plan file  
 
 ## Suggested order
 

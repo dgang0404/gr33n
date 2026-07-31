@@ -71,6 +71,7 @@
     <div class="px-2 py-3 border-t border-gray-800 shrink-0">
       <label v-if="!collapsed" class="block text-[10px] uppercase tracking-wide text-gray-500 mb-1 px-1">Farm</label>
       <select
+        data-test="farm-select"
         :value="farmContext.farmId ?? ''"
         :disabled="!farmContext.farms.length"
         @change="onFarmSelect($event)"

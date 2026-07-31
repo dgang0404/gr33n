@@ -12,6 +12,9 @@ node_modules/
 ui/node_modules/
 ui/dist/
 dist/
+e2e/node_modules/
+e2e/test-results/
+e2e/playwright-report/
 
 # Local eval / QA artifacts (Phase 131)
 data/guardian_qa_runs/
