@@ -49,11 +49,13 @@ export const WORKSPACES = {
       {
         id: 'summary',
         label: 'This month',
+        conceptId: 'money_month',
         description: 'What you spent and received this month — save receipts, tag grows, and spot trends without ledger jargon on the first screen.',
       },
       {
         id: 'ledger',
         label: 'Ledger',
+        conceptId: 'money_ledger',
         description: 'Full cost ledger with categories, energy rates, and exports — for when you need every line item.',
       },
       {
@@ -65,6 +67,7 @@ export const WORKSPACES = {
       {
         id: 'grows',
         label: 'Grows',
+        conceptId: 'money_grows',
         description: 'Compare harvests and open grow summaries for cost-per-gram and yield context across rooms.',
       },
     ],

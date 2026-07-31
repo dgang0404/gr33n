@@ -6,6 +6,7 @@ import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import {
   alertsViewAllRoute,
+  feedWaterRoute,
   firstOpenTaskZoneId,
   newTaskRoute,
   tasksViewAllRoute,
@@ -23,6 +24,17 @@ const LEGACY_DASHBOARD_PATHS = [
 ]
 
 describe('Phase 76 — dashboard workspace links', () => {
+  it('feedWaterRoute opens the Feed & water workspace (not My zones)', () => {
+    expect(feedWaterRoute([{ id: 1 }], null, 'daily')).toEqual({
+      path: '/feed-water',
+      query: { tab: 'daily' },
+    })
+    expect(feedWaterRoute([], 3, 'nutrients')).toEqual({
+      path: '/feed-water',
+      query: { tab: 'nutrients', zone_id: '3' },
+    })
+  })
+
   it('zone ops routes include tab and ops query', () => {
     expect(zoneOpsRoute(5, 'alerts')).toEqual({
       path: '/zones/5',

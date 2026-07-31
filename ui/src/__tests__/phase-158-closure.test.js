@@ -4,7 +4,7 @@
 import { describe, it, expect } from 'vitest'
 import { readFileSync, existsSync } from 'node:fs'
 import { join } from 'node:path'
-import { citationLinkAriaLabel } from '../lib/guardianCitationLabels.js'
+import { citationDisplayRoute, citationLinkAriaLabel } from '../lib/guardianCitationLabels.js'
 
 const uiSrc = join(process.cwd(), 'src')
 const repoDocs = join(process.cwd(), '..', 'docs')
@@ -26,6 +26,15 @@ describe('Phase 158 — accessibility closure', () => {
     expect(label).toContain('Field guide')
     expect(label).toContain('#42')
     expect(label).toContain('Check pH daily')
+  })
+
+  it('citationDisplayRoute falls back to hub routes when server left route empty', () => {
+    expect(citationDisplayRoute({ source_type: 'alert_notification', source_id: 50 })).toBe('/alerts')
+    expect(citationDisplayRoute({ source_type: 'alert_notification', route: '/zones/2?tab=ops&ops=alerts' }))
+      .toBe('/zones/2?tab=ops&ops=alerts')
+    expect(citationDisplayRoute({ source_type: 'schedule', source_id: 10 })).toBe('/comfort-targets?tab=schedules')
+    expect(citationDisplayRoute({ source_type: 'input_batch', source_id: 5 })).toBe('/money?tab=supplies&batch_id=5')
+    expect(citationDisplayRoute({ source_type: 'crop_cycle', source_id: 2 })).toBe('/crop-cycles/2/summary')
   })
 
   it('Guardian drawer uses focus trap composable', () => {

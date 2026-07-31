@@ -30,6 +30,8 @@ describe('naturalFarmingVocabulary', () => {
   it('field guide sub-tabs name inputs and apply recipes', () => {
     expect(LIBRARY_TABS.map((t) => t.label)).toEqual(['Inputs', 'Apply recipes', 'Programs'])
     expect(LIBRARY_TABS.find((t) => t.id === 'inputs')?.conceptId).toBe('input_definition')
+    expect(LIBRARY_TABS.find((t) => t.id === 'programs')?.conceptId).toBe('nf_library_program')
+    expect(operatorConcept('nf_livestock_feed')?.label).toBe('Livestock feed')
   })
 
   it('HelpTip teleports to body so overflow chrome cannot clip tooltips', () => {

@@ -19,7 +19,10 @@
         :class="activeTab === t.id ? 'bg-zinc-800 text-white' : 'text-zinc-400 hover:text-zinc-200'"
         @click="selectTab(t.id)"
       >
-        {{ t.label }}
+        <span class="inline-flex items-center">
+          {{ t.label }}
+          <ConceptHelpTip v-if="t.conceptId" :concept-id="t.conceptId" position="bottom" />
+        </span>
       </button>
       </div>
       <button
@@ -175,6 +178,7 @@ import { useFarmStore } from '../stores/farm.js'
 import { useFarmContextStore } from '../stores/farmContext.js'
 import ZoneContextBanner from '../components/ZoneContextBanner.vue'
 import EmptyStateHint from '../components/EmptyStateHint.vue'
+import ConceptHelpTip from '../components/ConceptHelpTip.vue'
 import { parseZoneIdQuery, filterProgramsForZone } from '../lib/zoneContext.js'
 import {
   buildProgramAdminCards,
@@ -199,9 +203,9 @@ const ecTargets = ref([])
 const cropCycles = ref([])
 
 const tabs = [
-  { id: 'programs', label: 'Programs' },
-  { id: 'reservoirs', label: 'Nutrient tanks' },
-  { id: 'ec-targets', label: 'Strength targets' },
+  { id: 'programs', label: 'Programs', conceptId: 'fertigation_program' },
+  { id: 'reservoirs', label: 'Nutrient tanks', conceptId: 'reservoir' },
+  { id: 'ec-targets', label: 'Strength targets', conceptId: 'ec_target' },
 ]
 
 const activeTab = ref('programs')

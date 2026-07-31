@@ -6,11 +6,16 @@ const SOURCE_LABELS = {
   field_guide: 'Field guide',
   platform_doc: 'Platform doc',
   symptom_guide: 'Symptom guide',
-  task: 'Farm note',
-  crop_cycle: 'Farm note',
-  schedule: 'Farm note',
-  automation_rule: 'Farm note',
+  task: 'Task',
+  crop_cycle: 'Crop cycle',
+  schedule: 'Schedule',
+  automation_rule: 'Automation',
+  executable_action: 'Schedule action',
   alert_notification: 'Farm note',
+  input_batch: 'Batch',
+  input_definition: 'Input',
+  cost_transaction: 'Cost',
+  fertigation_program: 'Feeding program',
 }
 
 const CURATED_TYPES = new Set(['field_guide', 'platform_doc', 'symptom_guide'])
@@ -78,4 +83,46 @@ export function citationLinkAriaLabel(citation) {
   const excerpt = String(citation?.excerpt || '').replace(/\s+/g, ' ').trim().slice(0, 80)
   const excerptBit = excerpt ? ` — ${excerpt}` : ''
   return `Open ${source} #${id}${excerptBit}`
+}
+
+/**
+ * Prefer server-resolved route; hub fallbacks for citations finalized before
+ * a source type had a resolver (or when zone hops fail).
+ * @param {{ route?: string, source_type?: string, source_id?: number|string } | null | undefined} citation
+ * @returns {string | null}
+ */
+export function citationDisplayRoute(citation) {
+  const route = String(citation?.route || '').trim()
+  if (route) return route
+  const st = String(citation?.source_type || '').trim()
+  const id = citation?.source_id
+  switch (st) {
+    case 'alert_notification':
+      return '/alerts'
+    case 'cost_transaction':
+      return '/money?tab=ledger'
+    case 'input_batch':
+      return id != null && id !== '' ? `/money?tab=supplies&batch_id=${id}` : '/money?tab=supplies'
+    case 'input_definition':
+      return '/natural-farming?tab=batch'
+    case 'automation_rule':
+      return '/comfort-targets?tab=automations'
+    case 'executable_action':
+    case 'schedule':
+      return '/comfort-targets?tab=schedules'
+    case 'symptom_guide':
+      return '/operator-guide?tab=symptoms'
+    case 'field_guide':
+      return '/operator-guide?tab=knowledge'
+    case 'platform_doc':
+      return '/operator-guide?tab=library&section=guide'
+    case 'fertigation_program':
+      return '/feed-water?tab=programs'
+    case 'task':
+      return '/zones'
+    case 'crop_cycle':
+      return id != null && id !== '' ? `/crop-cycles/${id}/summary` : null
+    default:
+      return null
+  }
 }

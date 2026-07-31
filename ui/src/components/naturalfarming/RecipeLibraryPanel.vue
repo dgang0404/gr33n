@@ -297,7 +297,10 @@ const showLivestockTemplates = computed(() =>
 )
 const visibleLibraryTabs = computed(() => {
   if (!showLivestockTemplates.value) return LIBRARY_TABS
-  return [...LIBRARY_TABS, { id: 'livestock', label: NF_FIELD_GUIDE_TAB_LABELS.livestock }]
+  return [
+    ...LIBRARY_TABS,
+    { id: 'livestock', label: NF_FIELD_GUIDE_TAB_LABELS.livestock, conceptId: 'nf_livestock_feed' },
+  ]
 })
 
 const canonInputs = computed(() => /** @type {Array<Record<string, unknown>>} */ (canon.value?.inputs ?? []))

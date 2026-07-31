@@ -16,13 +16,21 @@ export function zoneOpsRoute(zoneId, ops = 'tasks') {
 }
 
 /**
- * @param {object[]} [zones]
+ * Feed & water workspace (glossary). Optional zone_id filters Daily / Programs.
+ * Do not send operators to My zones for hub links — that was the Phase 78 sunset path.
+ *
+ * @param {object[]} [zones] unused; kept so existing call sites `feedWaterRoute(zones)` keep working
  * @param {number|string|null} [zoneId]
+ * @param {string} [tab] daily | programs | nutrients | advanced
  */
-export function feedWaterRoute(zones = [], zoneId = null) {
-  const zid = zoneId ?? zones[0]?.id
-  if (zid) return { path: `/zones/${zid}`, query: { tab: 'water' } }
-  return { path: '/zones' }
+export function feedWaterRoute(zones = [], zoneId = null, tab = 'daily') {
+  void zones
+  /** @type {Record<string, string>} */
+  const query = { tab: tab || 'daily' }
+  if (zoneId != null && String(zoneId).trim() !== '') {
+    query.zone_id = String(zoneId)
+  }
+  return { path: '/feed-water', query }
 }
 
 /**

@@ -33,7 +33,12 @@
         :class="activeTab === t.id
           ? 'bg-zinc-800 text-white font-medium'
           : 'text-zinc-400 hover:text-zinc-200'"
-      >{{ t.label }}</button>
+      >
+        <span class="inline-flex items-center">
+          {{ t.label }}
+          <ConceptHelpTip v-if="t.conceptId" :concept-id="t.conceptId" position="bottom" />
+        </span>
+      </button>
     </div>
 
     <div v-if="loading" class="text-zinc-400 text-sm">Loading…</div>
@@ -609,6 +614,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useFarmStore } from '../stores/farm'
 import { useFarmContextStore } from '../stores/farmContext'
 import HelpTip from '../components/HelpTip.vue'
+import ConceptHelpTip from '../components/ConceptHelpTip.vue'
 import ZoneContextBanner from '../components/ZoneContextBanner.vue'
 import EmptyStateHint from '../components/EmptyStateHint.vue'
 import {
@@ -618,21 +624,15 @@ import {
 import { cycleBatchLabel, formatStageLabel } from '../lib/growHub.js'
 import { loadDomainEnums, enumValues, getDomainEnums } from '../lib/domainEnums.js'
 import api from '../api/index.js'
-import { comfortTabRoute, feedWaterFertigationRoute, naturalFarmingManageRoute, resolveFertigationSubTab } from '../lib/workspaceRoutes.js'
+import { comfortTabRoute, feedWaterFertigationRoute, naturalFarmingManageRoute, naturalFarmingTabRoute, resolveFertigationSubTab } from '../lib/workspaceRoutes.js'
 import { resolveWorkspaceTab } from '../lib/workspaces.js'
 
 const FEED_WATER_ROUTE = 'feed-water'
 
 const comfortScheduleRoute = comfortTabRoute('schedules')
 const inventoryRoute = naturalFarmingManageRoute({ inv: 'batches' })
-
-function recipeLink(recipeId) {
-  return naturalFarmingTabRoute('recipes', { recipe: recipeId })
-}
-
-function batchStockLink(batchId) {
-  return naturalFarmingManageRoute({ inv: 'batches', batchId })
-}
+const recipeLink = (recipeId) => naturalFarmingTabRoute('recipes', { recipe: recipeId })
+const batchStockLink = (batchId) => naturalFarmingManageRoute({ inv: 'batches', batchId })
 
 const route = useRoute()
 const router = useRouter()
@@ -646,12 +646,12 @@ const runNowMessage = reactive({})
 const activeTab = ref('reservoirs')
 
 const tabs = [
-  { id: 'reservoirs', label: 'Reservoirs' },
-  { id: 'ec-targets', label: 'EC Targets' },
-  { id: 'programs', label: 'Programs' },
-  { id: 'mixing', label: 'Mixing log' },
-  { id: 'crop-cycles', label: 'Crop Cycles' },
-  { id: 'events', label: 'Events' },
+  { id: 'reservoirs', label: 'Reservoirs', conceptId: 'reservoir' },
+  { id: 'ec-targets', label: 'EC Targets', conceptId: 'ec_target' },
+  { id: 'programs', label: 'Programs', conceptId: 'fertigation_program' },
+  { id: 'mixing', label: 'Mixing log', conceptId: 'mixing_event' },
+  { id: 'crop-cycles', label: 'Crop Cycles', conceptId: 'crop_cycle' },
+  { id: 'events', label: 'Events', conceptId: 'fertigation_event' },
 ]
 
 

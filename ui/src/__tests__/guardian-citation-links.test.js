@@ -87,12 +87,11 @@ describe('GuardianChatPanel citation deep links', () => {
     await flushPromises()
 
     const links = wrapper.findAll('[data-test="chat-citation-link"]')
-    expect(links).toHaveLength(1)
+    expect(links).toHaveLength(2)
     expect(links[0].attributes('href')).toBe('/crop-cycles/2/summary')
     expect(links[0].text()).toContain('[1]')
-
-    const items = wrapper.findAll('li')
-    const scheduleItem = items.find((li) => li.text().includes('[2]'))
-    expect(scheduleItem.find('[data-test="chat-citation-link"]').exists()).toBe(false)
+    // Hub fallback when server left route empty (pre-resolver turns).
+    expect(links[1].attributes('href')).toBe('/comfort-targets?tab=schedules')
+    expect(links[1].text()).toContain('[2]')
   })
 })

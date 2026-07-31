@@ -6,6 +6,10 @@
   >
     <h2 class="text-white font-semibold mb-3 flex items-center gap-2">
       <span>✨</span> Farm Guardian readiness
+      <HelpTip position="bottom">
+        Shows whether the local Ollama chat model is loaded and whether field/platform RAG chunks exist for this farm.
+        <strong class="text-zinc-200">Awaken</strong> preloads the model; <strong class="text-zinc-200">Rest</strong> unloads it to free RAM.
+      </HelpTip>
     </h2>
     <p class="text-xs text-zinc-500 mb-4 leading-relaxed">
       Awakening preloads the counsel model so morning checks and farm-grounded chat start without manual
@@ -131,8 +135,19 @@
       </p>
 
       <details v-if="isFarmAdmin && farmId" class="rounded border border-zinc-700 bg-zinc-900/50 px-3 py-2 text-xs">
-        <summary class="cursor-pointer text-zinc-300 select-none">Pull model (admin)</summary>
-        <p class="text-zinc-500 mt-2 mb-2">Downloads into Ollama — internet required; large models take many minutes.</p>
+        <summary class="cursor-pointer text-zinc-300 select-none inline-flex items-center gap-1">
+          Pull model (admin)
+          <HelpTip position="bottom">
+            Runs <code class="text-zinc-200">ollama pull</code> on <strong class="text-zinc-200">this machine</strong>.
+            Fine for small CPU models (<code class="text-zinc-200">phi3:mini</code>).
+            Large / MoE models (e.g. Kimi K2/K3 class) need a server or workstation with enough RAM/VRAM —
+            a laptop pull will hang, OOM, or take many hours. Prefer pulling on the host that will run Guardian, then point the API at that Ollama.
+          </HelpTip>
+        </summary>
+        <p class="text-zinc-500 mt-2 mb-2">
+          Downloads into local Ollama — internet required. Stick to small models on laptops;
+          big models belong on a dedicated inference host.
+        </p>
         <div class="flex flex-wrap gap-2">
           <input
             v-model="pullName"
@@ -170,6 +185,7 @@ import { useFarmContextStore } from '../stores/farmContext'
 import { useGuardianReadinessStore } from '../stores/guardianReadiness'
 import api from '../api'
 import GuardianStateArt from './GuardianStateArt.vue'
+import HelpTip from './HelpTip.vue'
 
 const props = defineProps({
   isFarmAdmin: { type: Boolean, default: false },

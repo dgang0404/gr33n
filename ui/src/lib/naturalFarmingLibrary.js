@@ -6,7 +6,7 @@ import { NF_FIELD_GUIDE_TAB_LABELS, NF_VOCAB } from './naturalFarmingVocabulary.
 export const LIBRARY_TABS = [
   { id: 'inputs', label: NF_FIELD_GUIDE_TAB_LABELS.inputs, conceptId: 'input_definition' },
   { id: 'application', label: NF_FIELD_GUIDE_TAB_LABELS.application, conceptId: 'application_recipe' },
-  { id: 'programs', label: NF_FIELD_GUIDE_TAB_LABELS.programs },
+  { id: 'programs', label: NF_FIELD_GUIDE_TAB_LABELS.programs, conceptId: 'nf_library_program' },
 ]
 
 /** Bootstrap program explainers (field guide backed). */

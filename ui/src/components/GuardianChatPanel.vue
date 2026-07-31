@@ -200,9 +200,9 @@
               :class="citationChipClass(c.source_type)"
             >
               <router-link
-                v-if="c.route"
-                :to="c.route"
-                v-nav-hint="c.route"
+                v-if="citationDisplayRoute(c)"
+                :to="citationDisplayRoute(c)"
+                v-nav-hint="citationDisplayRoute(c)"
                 class="hover:underline"
                 data-test="chat-citation-link"
                 :title="`Open ${citationSourceLabel(c.source_type)} #${c.source_id}`"
@@ -688,7 +688,7 @@ import { computeFirstRunChecklist, isFirstRunIncomplete } from '../lib/firstRunC
 import { buildMorningWalkthroughStarters, buildSetupStarters, buildOfflineProcedureStarters } from '../lib/guardianStarters.js'
 import { deriveFollowUps } from '../lib/guardianFollowUps.js'
 import { turnContextLabel, zeroChunkWarning } from '../lib/guardianChatHonesty.js'
-import { citationChipClass, citationSourceLabel, citationLinkAriaLabel, trimWarningMessage, accuracyNoteMessage } from '../lib/guardianCitationLabels.js'
+import { citationChipClass, citationSourceLabel, citationLinkAriaLabel, citationDisplayRoute, trimWarningMessage, accuracyNoteMessage } from '../lib/guardianCitationLabels.js'
 import { useFarmOperate } from '../composables/useFarmOperate'
 import { useFarmContextStore } from '../stores/farmContext'
 import { useFarmStore } from '../stores/farm'

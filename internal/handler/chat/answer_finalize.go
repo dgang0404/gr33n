@@ -48,7 +48,7 @@ func attachCitationRoutes(ctx context.Context, q *db.Queries, farmID int64, cite
 
 func enrichDocCitationRoute(route string, c synthesis.Citation) string {
 	st := strings.TrimSpace(c.SourceType)
-	if st != "field_guide" && st != "platform_doc" {
+	if st != "field_guide" && st != "platform_doc" && st != "symptom_guide" {
 		return route
 	}
 	if c.ChunkID <= 0 {

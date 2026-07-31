@@ -6,7 +6,10 @@
 
         <FeedingHub v-if="activeTab === 'daily'" />
         <FeedingAdminHub v-else-if="activeTab === 'programs'" />
-        <Fertigation v-else-if="activeTab === 'nutrients' || activeTab === 'advanced'" />
+        <Fertigation
+          v-else-if="activeTab === 'nutrients' || activeTab === 'advanced'"
+          :key="activeTab"
+        />
       </div>
     </template>
   </WorkspaceShell>

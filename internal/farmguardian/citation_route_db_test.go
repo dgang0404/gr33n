@@ -134,13 +134,13 @@ func TestResolveCitationRoute_task(t *testing.T) {
 	if !ok {
 		t.Fatal("expected route to resolve")
 	}
-	want := "/zones/" + strconv.FormatInt(zoneID, 10)
+	want := zonePath(zoneID, "ops", "tasks")
 	if route != want {
 		t.Fatalf("route = %q, want %q", route, want)
 	}
 }
 
-func TestResolveCitationRoute_taskWithoutZoneUnresolved(t *testing.T) {
+func TestResolveCitationRoute_taskWithoutZoneFallsBackToZonesHub(t *testing.T) {
 	pool := testPool(t)
 	defer pool.Close()
 	ctx := t.Context()
@@ -157,8 +157,9 @@ func TestResolveCitationRoute_taskWithoutZoneUnresolved(t *testing.T) {
 	}
 	defer pool.Exec(context.Background(), "DELETE FROM gr33ncore.tasks WHERE id = $1", task.ID)
 
-	if _, ok := ResolveCitationRoute(ctx, q, farmID, "task", task.ID); ok {
-		t.Fatal("expected no route for a task without a zone")
+	route, ok := ResolveCitationRoute(ctx, q, farmID, "task", task.ID)
+	if !ok || route != "/zones" {
+		t.Fatalf("task without zone route = %q,%v want /zones", route, ok)
 	}
 }
 
@@ -191,5 +192,22 @@ func TestResolveCitationRoute_lightingScheduleOrphan(t *testing.T) {
 	}
 	if route != "/zones/2?tab=light" {
 		t.Fatalf("lighting schedule route = %q, want /zones/2?tab=light", route)
+	}
+}
+
+func TestResolveCitationRoute_alertWithoutZoneFallsBackToInbox(t *testing.T) {
+	pool := testPool(t)
+	defer pool.Close()
+	ctx := t.Context()
+	q := db.New(pool)
+	const farmID = int64(1)
+
+	// Seeded alert #50: sensor_reading → sensor 61 with nil zone_id.
+	route, ok := ResolveCitationRoute(ctx, q, farmID, "alert_notification", 50)
+	if !ok {
+		t.Fatal("expected farm-inbox fallback route for alert with unzoned sensor")
+	}
+	if route != "/alerts" {
+		t.Fatalf("alert without zone route = %q, want /alerts", route)
 	}
 }

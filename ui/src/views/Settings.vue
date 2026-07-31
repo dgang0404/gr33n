@@ -553,7 +553,14 @@
       </div>
 
       <form v-if="adminOrgs.length" @submit.prevent="inviteOrgMember" class="border-t border-zinc-700 pt-4 mt-4 space-y-2">
-        <p class="text-zinc-400 text-xs uppercase tracking-wide">Add existing user to organization</p>
+        <p class="text-zinc-400 text-xs uppercase tracking-wide inline-flex items-center">
+          Add existing user to organization
+          <HelpTip position="bottom">
+            Org roles are not farm roles. <strong class="text-zinc-200">Member</strong> can belong to the org;
+            <strong class="text-zinc-200">Admin</strong> manages org settings, membership, and Organization audit.
+            After adding, invite them to a farm under Farm Members and pick a farm role (Owner, Operator, …).
+          </HelpTip>
+        </p>
         <div class="flex flex-wrap gap-2">
           <select v-model="orgInviteTargetId" required
             class="bg-zinc-900 border border-zinc-700 text-zinc-300 text-xs rounded-lg px-2 py-2">
@@ -561,7 +568,7 @@
           </select>
           <input v-model="orgInviteEmail" type="email" required placeholder="email@example.com"
             class="input-field flex-1 min-w-[180px] text-xs" />
-          <select v-model="orgInviteRole" class="bg-zinc-900 border border-zinc-700 text-zinc-300 text-xs rounded-lg px-2 py-2">
+          <select v-model="orgInviteRole" class="bg-zinc-900 border border-zinc-700 text-zinc-300 text-xs rounded-lg px-2 py-2" title="Organization role">
             <option value="member">Member</option>
             <option value="admin">Admin</option>
           </select>
@@ -575,9 +582,13 @@
       </form>
 
       <div v-if="adminOrgs.length" class="border-t border-zinc-700 pt-4 mt-4">
-        <h3 class="text-zinc-200 text-sm font-semibold mb-1">Organization audit</h3>
+        <h3 class="text-zinc-200 text-sm font-semibold mb-1 inline-flex items-center">
+          Organization audit
+          <ConceptHelpTip concept-id="org_audit" position="bottom" />
+        </h3>
         <p class="text-zinc-500 text-xs mb-3">
           Cross-farm and org-only events (settings, membership, exports). Requires org owner or admin.
+          Farm-day actions (feeds, alerts) live under Farm audit below — this log is for org governance.
         </p>
         <div class="flex flex-wrap gap-2 items-center mb-3">
           <select v-model="auditOrgId"
@@ -620,9 +631,15 @@
 
     <!-- Farm Members -->
     <section class="bg-zinc-800 border border-zinc-700 rounded-xl p-5 mb-5">
-      <h2 class="text-white font-semibold mb-4 flex items-center gap-2">
+      <h2 class="text-white font-semibold mb-1 flex items-center gap-2">
         <span>👥</span> Farm Members
+        <ConceptHelpTip concept-id="farm_role" position="bottom" />
       </h2>
+      <p class="text-zinc-500 text-xs mb-4">
+        Role dropdown sets what the API allows on this farm.
+        <strong class="text-zinc-400">Custom role</strong> unlocks scope checkboxes (money, NF, operate).
+        Presets: Owner/Manager = full admin; Operator = day-to-day; Finance = costs; Viewer = mostly read.
+      </p>
 
       <div v-if="membersLoading" class="text-zinc-500 text-sm">Loading members...</div>
       <div v-else-if="members.length === 0" class="text-zinc-500 text-sm">No members yet.</div>
@@ -641,7 +658,8 @@
           </div>
           <div class="flex items-center gap-2">
             <select :value="m.role_in_farm" @change="changeRole(m.user_id, $event.target.value)"
-              class="bg-zinc-800 border border-zinc-700 text-zinc-300 text-xs rounded px-2 py-1 focus:outline-none">
+              class="bg-zinc-800 border border-zinc-700 text-zinc-300 text-xs rounded px-2 py-1 focus:outline-none"
+              title="Farm role — controls API scopes on this farm">
               <option value="owner">Owner</option>
               <option value="manager">Manager</option>
               <option value="operator">Operator</option>
@@ -660,7 +678,13 @@
           class="bg-zinc-900/60 border border-zinc-800 rounded-lg px-4 py-2 ml-11"
           data-test="member-custom-scopes"
         >
-          <p class="text-[10px] text-zinc-500 mb-2">Custom scopes (API-enforced)</p>
+          <p class="text-[10px] text-zinc-500 mb-2 inline-flex items-center">
+            Custom scopes (API-enforced)
+            <HelpTip position="bottom">
+              These checkboxes are the real permissions for a Custom role — the API rejects actions outside checked scopes.
+              Preset roles (Owner, Operator, …) ignore this list and use their built-in scope map.
+            </HelpTip>
+          </p>
           <div class="flex flex-wrap gap-x-3 gap-y-1">
             <label
               v-for="opt in FARM_SCOPE_OPTIONS"
@@ -701,7 +725,10 @@
 
       <!-- Farm-scoped audit (owner/manager) -->
       <div v-if="farmContext.farmId && isFarmAdmin" class="border-t border-zinc-700 pt-4 mt-4">
-        <h3 class="text-zinc-200 text-sm font-semibold mb-1">Farm audit</h3>
+        <h3 class="text-zinc-200 text-sm font-semibold mb-1 inline-flex items-center">
+          Farm audit
+          <ConceptHelpTip concept-id="farm_audit" position="bottom" />
+        </h3>
         <p class="text-zinc-500 text-xs mb-3">
           Actions on this farm (membership, settings, exports, Insert Commons sync, etc.). Newest first.
         </p>
@@ -737,11 +764,23 @@
 
     <!-- Insert Commons (benchmark sharing) -->
     <section v-if="farmContext.farmId" class="bg-zinc-800 border border-zinc-700 rounded-xl p-5 mb-5">
-      <h2 class="text-white font-semibold mb-3">Insert Commons</h2>
-      <p class="text-zinc-400 text-sm mb-3">
-        Optional community benchmarks. The API only sends <span class="text-zinc-300">coarse aggregates</span> under a stable per-farm pseudonym
-        (not your farm name). If <code class="text-green-400">INSERT_COMMONS_INGEST_URL</code> is unset, the server records an attempt but does not call out.
-        You can revoke anytime by turning sharing off.
+      <h2 class="text-white font-semibold mb-2 inline-flex items-center gap-1">
+        Insert Commons
+        <ConceptHelpTip concept-id="insert_commons" position="bottom" />
+      </h2>
+      <p class="text-zinc-400 text-sm mb-2">
+        <strong class="text-zinc-300 font-medium">What it is:</strong> an optional industry/community benchmark feed.
+        This farm POSTs <span class="text-zinc-300">coarse aggregates</span> (counts, ranges — not recipes, GPS, or your farm name)
+        to a shared ingest service under a stable <span class="text-zinc-300">pseudonym</span>.
+      </p>
+      <p class="text-zinc-400 text-sm mb-2">
+        <strong class="text-zinc-300 font-medium">What it is for:</strong> compare how your farm sits against peer aggregates later
+        (yield bands, input intensity, etc.) without joining a SaaS that owns your data. You can turn sharing off anytime.
+      </p>
+      <p class="text-zinc-500 text-xs mb-3">
+        Server needs <code class="text-green-400">INSERT_COMMONS_INGEST_URL</code> + shared secret.
+        Unset URL → sync is recorded as <code class="text-zinc-400">skipped_no_receiver</code> and nothing leaves the box.
+        Phase 212 dual-farm drill proved live ingest (receiver HTTP 200, two distinct pseudonyms).
       </p>
       <p v-if="!canViewInsertCommons" class="text-amber-200/90 text-xs mb-3">
         Running sync, viewing history, and exporting bundles need <strong class="font-medium">owner</strong>, <strong class="font-medium">manager</strong>, or <strong class="font-medium">finance</strong> access on this farm.
@@ -897,7 +936,14 @@
         </div>
         <div>
         <div class="flex items-center justify-between mb-2">
-          <p class="text-zinc-500 text-xs uppercase tracking-wide">Recent sync attempts</p>
+          <p class="text-zinc-500 text-xs uppercase tracking-wide inline-flex items-center">
+            Recent sync attempts
+            <HelpTip position="top">
+              <strong class="text-zinc-200">delivered</strong> + http 200 = ingest URL accepted the payload (Phase 212 live path).
+              <strong class="text-zinc-200">skipped_no_receiver</strong> = no ingest URL configured on the API at that moment.
+              Other statuses are failures or still pending approval.
+            </HelpTip>
+          </p>
           <button type="button" class="text-zinc-500 hover:text-white text-xs" @click="loadInsertHistory" :disabled="insertHistoryLoading">
             {{ insertHistoryLoading ? 'Loading…' : 'Refresh' }}
           </button>
@@ -1255,6 +1301,8 @@ import FarmMapsCoordsPaste from '../components/FarmMapsCoordsPaste.vue'
 import { farmSetupRoute } from '../lib/farmSetupWizard.js'
 import { MODULE_SCHEMA } from '../lib/farmModules.js'
 import { FARM_SCOPE_OPTIONS } from '../lib/farmScopes.js'
+import HelpTip from '../components/HelpTip.vue'
+import ConceptHelpTip from '../components/ConceptHelpTip.vue'
 
 const router = useRouter()
 const auth   = useAuthStore()

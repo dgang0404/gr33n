@@ -160,11 +160,11 @@
             class="px-4 py-2 text-sm font-medium rounded-lg bg-green-900/50 text-green-400 border border-green-800 hover:bg-green-900/70 transition-colors">
             + New Task
           </router-link>
-          <router-link v-nav-hint="'/zones'" :to="feedWaterDailyLink"
+          <router-link v-nav-hint="'/feed-water'" :to="feedWaterDailyLink"
             class="px-4 py-2 text-sm font-medium rounded-lg bg-blue-900/50 text-blue-400 border border-blue-800 hover:bg-blue-900/70 transition-colors">
             Feed &amp; water
           </router-link>
-          <router-link v-nav-hint="'/zones'" :to="feedWaterNutrientsLink"
+          <router-link v-nav-hint="'/feed-water'" :to="feedWaterNutrientsLink"
             class="px-4 py-2 text-sm font-medium rounded-lg bg-zinc-800 text-zinc-400 border border-zinc-700 hover:bg-zinc-700 transition-colors">
             Log mix (advanced)
           </router-link>
@@ -283,7 +283,7 @@
       <section class="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
         <div class="flex items-center justify-between mb-3">
           <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-widest">Recent feeds</h3>
-          <router-link v-nav-hint="'/zones'" :to="feedWaterDailyLink" class="text-xs text-gr33n-500 hover:text-gr33n-400">Feed &amp; water →</router-link>
+          <router-link v-nav-hint="'/feed-water'" :to="feedWaterDailyLink" class="text-xs text-gr33n-500 hover:text-gr33n-400">Feed &amp; water →</router-link>
         </div>
         <div v-if="recentFertEvents.length" class="space-y-2">
           <div v-for="e in recentFertEvents" :key="e.id"
@@ -510,8 +510,8 @@ const detailsGuardianStarters = computed(() => mergeTodayDetailsGuardianStarters
   dashboardOpsStarters.value,
 ))
 
-const feedWaterDailyLink = computed(() => feedWaterRoute(store.zones))
-const feedWaterNutrientsLink = computed(() => feedWaterRoute(store.zones))
+const feedWaterDailyLink = computed(() => feedWaterRoute(store.zones, null, 'daily'))
+const feedWaterNutrientsLink = computed(() => feedWaterRoute(store.zones, null, 'nutrients'))
 const comfortAutomationsLink = computed(() => comfortRoute('automations'))
 const comfortSchedulesLink = computed(() => comfortRoute('schedules'))
 const newTaskLink = computed(() => newTaskRoute(store.tasks, store.zones))

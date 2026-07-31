@@ -79,6 +79,18 @@ export const OPERATOR_CONCEPTS = {
     shortTip: 'Read-only reference for how to make inputs and apply them — not your farm inventory. Make a batch when you actually ferment.',
     detail: 'Canon from Phase 208: input prep, apply recipes, bootstrap programs. Your farm rows live under Make a batch, Apply recipes, and Ready batches.',
   },
+  nf_library_program: {
+    label: 'Program (field guide)',
+    dbTable: 'bootstrap program templates',
+    shortTip: 'Canon grow programs — stage timing and which inputs to use when. Read-only guide; live watering lives under Feed & water → Programs.',
+    detail: 'Bootstrap templates (e.g. indoor photoperiod) describe a full run. Your farm’s fertigation.programs rows are separate and editable.',
+  },
+  nf_livestock_feed: {
+    label: 'Livestock feed',
+    dbTable: 'Animals module pack',
+    shortTip: 'animal_feed inputs and simple flock supplements from the canon — not ration math. Apply the pack to seed farm inputs.',
+    detail: 'Livestock templates sit beside crop inputs in the field guide. Applying a pack creates input definitions; batches and dosing still go through Make a batch / Feed & water.',
+  },
   feeding_plan: {
     label: 'Daily feed snapshot',
     dbTable: 'gr33nfertigation.programs (active per zone)',
@@ -108,6 +120,66 @@ export const OPERATOR_CONCEPTS = {
     dbTable: 'gr33nfertigation (programs, reservoirs, events…)',
     shortTip: 'Full editor — EC targets, programs, mixing log, crop cycles, and every feed event. Same data as other tabs, table view.',
     detail: 'Power-user surface absorbed from legacy /fertigation. Prefer Daily and Programs & tanks for day-to-day; use Advanced when debugging or bulk editing.',
+  },
+  ec_target: {
+    label: 'EC target',
+    dbTable: 'gr33nfertigation.ec_targets',
+    shortTip: 'Ideal nutrient strength (EC) and pH range per growth stage. Programs reference these when mixing.',
+    detail: 'One target per stage (or crop). Programs pick an EC target so the mix knows where to aim; actual readings live on reservoirs and feed events.',
+  },
+  crop_cycle: {
+    label: 'Crop cycle',
+    dbTable: 'gr33nfertigation.crop_cycles',
+    shortTip: 'One grow run in a zone — seed/clone through harvest. Link a feeding program and update stage as the plant progresses.',
+    detail: 'Cycles scope feeding history and stage-based targets. A zone can have many cycles over time; only one is usually active.',
+  },
+  fertigation_event: {
+    label: 'Feed event',
+    dbTable: 'gr33nfertigation.fertigation_events',
+    shortTip: 'One applied feed — volume, EC/pH before/after, zone and crop cycle. Created by programs or logged manually.',
+    detail: 'Events are what reached the plants. Mixing log is what went into the tank; Daily cards summarize the latest run status.',
+  },
+  money_month: {
+    label: 'This month',
+    dbTable: 'gr33ncore.cost_transactions (month rollup)',
+    shortTip: 'Quick spend/income snapshot for the current month — receipts and tags without opening every line.',
+    detail: 'Same transactions as the Ledger, filtered to “now.” Use Ledger for full history, exports, and add/edit forms.',
+  },
+  money_ledger: {
+    label: 'Ledger',
+    dbTable: 'gr33ncore.cost_transactions',
+    shortTip: 'Every cost and income line — categories, vendors, receipts, CSV export. Power view of farm money.',
+    detail: 'Ledger is the full journal. Supplies tracks NF stock value; Grows ties spend to crop cycles.',
+  },
+  money_grows: {
+    label: 'Grows (money)',
+    dbTable: 'gr33nfertigation.crop_cycles + cost links',
+    shortTip: 'Cost and yield per grow run — open a cycle summary for cost-per-gram style context.',
+    detail: 'Tag transactions to a crop cycle in the ledger to show up here. Not the Plants catalog — these are live farm cycles.',
+  },
+  org_audit: {
+    label: 'Organization audit',
+    dbTable: 'gr33ncore activity (org-scoped)',
+    shortTip: 'Who changed org membership, settings, or ran cross-farm exports — for org owners/admins, not day-to-day farm ops.',
+    detail: 'Org audit spans farms under the organization. Farm audit (under Members) is narrower: actions on the selected farm only.',
+  },
+  farm_role: {
+    label: 'Farm role',
+    dbTable: 'gr33ncore.farm_members.role_in_farm',
+    shortTip: 'Owner/Manager run the farm; Operator runs day-to-day; Finance sees money; Viewer is read-mostly. Custom role = pick scopes.',
+    detail: 'Preset roles map to API scopes. Custom role shows checkboxes (admin, operate, money, natural farming). Org Admin (org invite) is separate — org-wide, not a farm role.',
+  },
+  farm_audit: {
+    label: 'Farm audit',
+    dbTable: 'gr33ncore activity (farm-scoped)',
+    shortTip: 'Log of membership, settings, exports, and Insert Commons sync on this farm. Newest first.',
+    detail: 'Owner/manager only. Different from Organization audit, which covers org-level and cross-farm events.',
+  },
+  insert_commons: {
+    label: 'Insert Commons',
+    dbTable: 'insert-commons sync / bundles',
+    shortTip: 'Optional opt-in: send coarse anonymized farm aggregates to a community ingest URL — never your farm name.',
+    detail: 'Needs INSERT_COMMONS_INGEST_URL + shared secret on the server. Phase 212 proved dual-farm ingest (2 pseudonyms, HTTP 200). Off = no outbound call. Approval mode holds payloads until owner/manager approve.',
   },
 }
 
