@@ -34,7 +34,7 @@ describe('Phase 200 — accuracy_note round-trip', () => {
     expect(runner).toContain('AccuracyNote:  accuracyNoteFromChatResponse(parsed)')
 
     const summary = readFileSync(join(repoRoot, 'internal/farmguardian/eval_summary.go'), 'utf8')
-    expect(summary).toContain('AccuracyNote            string  `json:"accuracy_note,omitempty"`')
+    expect(summary).toMatch(/AccuracyNote\s+string\s+`json:"accuracy_note,omitempty"`/)
   })
 
   it('session reload normalizes accuracy_note for the UI banner', () => {

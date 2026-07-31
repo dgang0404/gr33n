@@ -24,7 +24,7 @@ describe('Phase 143 — answer quality closure', () => {
 
   it('architecture documents answer hygiene finalize path', () => {
     const arch = readFileSync(join(repoDocs, 'farm-guardian-architecture.md'), 'utf8')
-    expect(arch).toContain('### 8.8 Answer hygiene (Phase 143)')
+    expect(arch).toContain('### 8.8 Answer hygiene (Phase 143')
     expect(arch).toContain('TrimInstructionLeak')
     expect(arch).toContain('phase_143_guardian_answer_quality.plan.md')
   })

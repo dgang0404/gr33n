@@ -5,7 +5,8 @@ describe('Phase 133 — citation labels', () => {
   it('labels field_guide and platform_doc', () => {
     expect(citationSourceLabel('field_guide')).toBe('Field guide')
     expect(citationSourceLabel('platform_doc')).toBe('Platform doc')
-    expect(citationSourceLabel('task')).toBe('Farm note')
+    expect(citationSourceLabel('task')).toBe('Task')
+    expect(citationSourceLabel('alert_notification')).toBe('Farm note')
   })
 
   it('chip classes differ by type', () => {

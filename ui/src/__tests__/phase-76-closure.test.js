@@ -41,8 +41,8 @@ describe('Phase 76 WS6 / OC-76 — Today dashboard alignment', () => {
       query: { tab: 'ops', ops: 'tasks' },
     })
     expect(snap.chips.find((c) => c.id === 'feeding')?.to).toEqual({
-      path: '/zones/3',
-      query: { tab: 'water' },
+      path: '/feed-water',
+      query: { tab: 'daily' },
     })
     expect(snap.chips.find((c) => c.id === 'low-stock').to).toEqual({
       path: '/money',

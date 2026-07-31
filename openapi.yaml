@@ -6353,6 +6353,30 @@ paths:
         "201": { description: Created }
         "401": { $ref: "#/components/responses/Unauthorized" }
 
+  /v1/chat/proposals/seed-pending:
+    post:
+      tags: [chat]
+      summary: POST /v1/chat/proposals/seed-pending
+      description: |
+        Dev/auth_test only (404 otherwise). Inserts a frozen create_task proposal so
+        browser E2E can Confirm/Dismiss the Pending tab without a live LLM (Phase 211.07).
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [farm_id]
+              properties:
+                farm_id: { type: integer, format: int64 }
+                title: { type: string }
+      responses:
+        "201": { description: Created }
+        "400": { description: Bad request }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { description: Not available outside debug/auth_test builds }
+
   /v1/chat/proposals/{id}/dismiss:
     post:
       tags: [chat]

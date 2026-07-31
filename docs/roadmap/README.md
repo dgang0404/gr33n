@@ -6,8 +6,7 @@ closure tests) — but you never need to read all 200+ of them to understand
 where the project is or where it's going. That's what this page is for.
 
 **Status:** every phase below is **shipped on `main`** unless marked
-otherwise. **Active fire:** [**Phase 213 — CI keep green**](../plans/phase_213_ci_keep_green.plan.md)
-(fix Actions gates when code changes — before the next feature phase).
+otherwise. No active fire — next up is LED / blink-light validation or product backlog.
 
 For what the app actually *does* today, read the [README](../../README.md).
 This page is history + direction, not features.
@@ -40,18 +39,19 @@ the description here is meant to be enough on its own.
 | **Test debt + regression safety** | 205 | Fixed 24 pre-existing UI test failures (shared root cause: tests missing `gr33n_token` in localStorage); shipped `make check-ui-test-baseline` so future refactors can't add failures silently. Full suite green: 242 files / 1222 tests. |
 | **docs/plans archive migration** | 206 | Moved ~198 shipped phase plans into `docs/plans/archive/` via scripted migration; 7 era hubs + meta plans stay at `docs/plans/` root. |
 | **Natural farming + federation** | 207–212 | NF studio/process/UI/Guardian/switchover; dual-install Insert Commons drill (212). |
-| **CI keep green** | **213** 🔥 | Restores green GitHub Actions after a week of red `main`. Rule: when you change routes, OpenAPI, deep links, or plan files, update the matching CI gate in the same change. Plan: [`phase_213_ci_keep_green.plan.md`](../plans/phase_213_ci_keep_green.plan.md). |
+| **CI keep green** | 213 | Restored green GitHub Actions after a week of red `main`. Rule: when you change routes, OpenAPI, deep links, or plan files, update the matching CI gate in the same change. Plan: [`phase_213_ci_keep_green.plan.md`](../plans/phase_213_ci_keep_green.plan.md). |
 
 ---
 
 ## What's next
 
-1. **Now — [Phase 213 CI keep green](../plans/phase_213_ci_keep_green.plan.md)**  
-   OpenAPI `seed-pending` drift + stale `phase-76` Feed & water expectations (and any leftover Jul 29–30 closure failures).  
-   **Rule of thumb:** change code CI audits → fix the gate before more feature work.
+1. **LED / blink-light validation** on Farm A (seed already has lighting schedules).  
+   Runbook: [`docs/pi-light-simulation-runbook.md`](../pi-light-simulation-runbook.md).
 
-2. After 213 is green — LED / blink-light validation, auth hardening, or product backlog:  
+2. Auth hardening or product backlog:  
    [`docs/plans/product_backlog_operator_runtime.plan.md`](../plans/product_backlog_operator_runtime.plan.md).
+
+**Rule of thumb (from 213):** change code CI audits → fix the gate in the same change.
 
 ## Where the detail actually lives
 

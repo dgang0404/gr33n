@@ -2218,6 +2218,42 @@ paths:
       responses:
         "204": { description: Removed }
 
+  /naturalfarming/recipes/{id}/revisions:
+    get:
+      tags: [naturalfarming]
+      summary: List application recipe revisions
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      responses:
+        "200":
+          description: Revision rows
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { type: object }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /naturalfarming/recipes/{id}/revisions/{rid}/restore:
+    post:
+      tags: [naturalfarming]
+      summary: Restore an application recipe revision
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+        - name: rid
+          in: path
+          required: true
+          schema: { type: integer, format: int64 }
+      responses:
+        "200":
+          description: Restored recipe
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ApplicationRecipe" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
   /naturalfarming/recipes/{id}:
     get:
       tags: [naturalfarming]
@@ -3578,6 +3614,67 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Error" }
+
+  /farms/{id}/crop-analytics/recipe-outcomes:
+    get:
+      tags: [crop-cycle-analytics]
+      summary: Historical recipe outcome averages for harvested cycles
+      description: >
+        Aggregates yield/cost averages by application recipe (and optional crop_key /
+        recipe_id filters). Cost fields omitted when the caller lacks money/costs read scope.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+        - name: crop_key
+          in: query
+          required: false
+          schema: { type: string }
+        - name: recipe_id
+          in: query
+          required: false
+          schema: { type: integer, format: int64 }
+      responses:
+        "200":
+          description: Recipe outcome rollup
+          content:
+            application/json:
+              schema: { type: object }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "403":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+
+  /farms/{id}/crop-cycles/{cid}/ops-timeline:
+    get:
+      tags: [crop-cycle-analytics]
+      summary: Ops timeline for one crop cycle
+      description: >
+        Chronological fertigation / natural-farming / cost events for a crop cycle.
+        Optional `from` / `to` (RFC3339) clamp the window; defaults to the cycle span.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+        - name: cid
+          in: path
+          required: true
+          schema: { type: integer, format: int64 }
+        - name: from
+          in: query
+          required: false
+          schema: { type: string, format: date-time }
+        - name: to
+          in: query
+          required: false
+          schema: { type: string, format: date-time }
+      responses:
+        "200":
+          description: Timeline events
+          content:
+            application/json:
+              schema: { type: object }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "404": { $ref: "#/components/responses/NotFound" }
 
   # ── Crop profiles (Phase 64 / Phase 83 WS6) ────────────────
 
@@ -5243,6 +5340,59 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/FarmMembership" }
 
+  /farms/{id}/members/{uid}/permissions:
+    patch:
+      tags: [profiles]
+      summary: Update custom_role member permission overrides
+      description: >
+        Only applies to members with `role_in_farm=custom_role`. Farm admins only.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+        - name: uid
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [permissions]
+              properties:
+                permissions: { type: object }
+      responses:
+        "200":
+          description: Updated membership
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/FarmMembership" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /farms/{id}/me/caps:
+    get:
+      tags: [profiles]
+      summary: Current caller's effective caps for this farm
+      description: >
+        Role + permission overrides resolved into UI/API capability flags for the
+        authenticated member on farm `{id}`.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      responses:
+        "200":
+          description: Effective farm caps
+          content:
+            application/json:
+              schema: { type: object }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+
   /farms/{id}/members/{uid}:
     delete:
       tags: [profiles]
@@ -6202,6 +6352,30 @@ paths:
       responses:
         "201": { description: Created }
         "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /v1/chat/proposals/seed-pending:
+    post:
+      tags: [chat]
+      summary: POST /v1/chat/proposals/seed-pending
+      description: |
+        Dev/auth_test only (404 otherwise). Inserts a frozen create_task proposal so
+        browser E2E can Confirm/Dismiss the Pending tab without a live LLM (Phase 211.07).
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [farm_id]
+              properties:
+                farm_id: { type: integer, format: int64 }
+                title: { type: string }
+      responses:
+        "201": { description: Created }
+        "400": { description: Bad request }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { description: Not available outside debug/auth_test builds }
 
   /v1/chat/proposals/{id}/dismiss:
     post:
@@ -10069,6 +10243,46 @@ components:
         catalog_entry:
           type: object
           description: Snapshot of metadata + parsed body for tooling
+
+    CommonsCatalogPublishRequest:
+      type: object
+      required: [slug, title, body]
+      properties:
+        slug: { type: string }
+        title: { type: string }
+        summary: { type: string }
+        body: { type: object, description: Validated pack JSON (recipe pack, NF pack, etc.) }
+        contributor_display: { type: string }
+        contributor_uri: { type: string, nullable: true }
+        license_spdx: { type: string }
+        license_notes: { type: string, nullable: true }
+        tags:
+          type: array
+          items: { type: string }
+        published: { type: boolean, default: true }
+        source_farm_id: { type: integer, nullable: true }
+
+    CommonsCatalogRecipeExportRequest:
+      type: object
+      required: [slug, title]
+      properties:
+        slug: { type: string }
+        title: { type: string }
+        summary: { type: string }
+        readme_md: { type: string }
+        contributor_display: { type: string }
+        license_spdx: { type: string }
+        tags:
+          type: array
+          items: { type: string }
+        publish: { type: boolean, default: true }
+
+    CommonsCatalogRecipeExportResponse:
+      type: object
+      properties:
+        catalog_entry: { $ref: "#/components/schemas/CommonsCatalogEntryDetail" }
+        programs_exported: { type: integer }
+        message: { type: string }
 
     CropCatalogListResponse:
       type: object

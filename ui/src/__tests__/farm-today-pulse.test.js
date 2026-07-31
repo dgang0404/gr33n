@@ -28,7 +28,8 @@ describe('Phase 176 WS1 — farmTodayPulse', () => {
     expect(cell?.id).toBe('next_water')
     expect(cell?.value).toContain('Veg Room')
     expect(cell?.value).toMatch(/3 AM|Every day/)
-    expect(cell?.link?.path).toBe('/zones/1')
+    expect(cell?.link?.path).toBe('/feed-water')
+    expect(cell?.link?.query?.tab).toBe('daily')
   })
 
   it('resolveGrowingCell summarizes active runs and bloom count', () => {

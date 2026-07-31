@@ -35,12 +35,12 @@ describe('Phase 41 WS1 — farm morning snapshot', () => {
       query: { tab: 'ops', ops: 'tasks' },
     })
     expect(snap.chips.find((c) => c.id === 'feeding').to).toEqual({
-      path: '/zones/1',
-      query: { tab: 'water' },
+      path: '/feed-water',
+      query: { tab: 'daily' },
     })
     expect(snap.chips.find((c) => c.id === 'queue').to).toEqual({
-      path: '/zones/1',
-      query: { tab: 'water' },
+      path: '/feed-water',
+      query: { tab: 'daily' },
     })
   })
 
