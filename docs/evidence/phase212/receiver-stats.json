@@ -1,0 +1,1 @@
+{"distinct_pseudonyms":2,"ingests_by_utc_day":[{"day":"2026-07-31","ingest_count":2}],"newest_received_at":"2026-07-31T01:25:58.484396Z","oldest_received_at":"2026-07-31T01:25:58.26908Z","retention_days":90,"service":"gr33n-insert-commons-receiver","total_payloads":2}

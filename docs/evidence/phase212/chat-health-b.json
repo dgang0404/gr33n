@@ -1,0 +1,13 @@
+{
+    "ai_enabled": false,
+    "field_assistant": {
+        "field_mode": false,
+        "llm_reachable": false,
+        "embedding_configured": false,
+        "embedding_local_endpoint": false,
+        "embedding_reachable": false,
+        "split_inference_hosts": false,
+        "field_guide_chunk_count": 0,
+        "platform_doc_chunk_count": 0
+    }
+}

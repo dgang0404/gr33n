@@ -13,31 +13,31 @@ overview: >
 todos:
   - id: ws1-install-b-bringup
     content: "WS1: Clone repo into sibling folder as Install B; remap Docker Compose ports (DB/API/UI) so both stacks run concurrently without conflict"
-    status: pending
+    status: completed
   - id: ws2-orgs-and-seed
     content: "WS2: Assign Organization A to existing Farm A (Install A); write farm_b_seed.sql (Organization B + Farm B) for Install B"
-    status: pending
+    status: completed
   - id: ws3-insert-commons-receiver
     content: "WS3: Run cmd/insert-commons-receiver as the shared third-party service; point both installs' INSERT_COMMONS_INGEST_URL at it; opt-in + sync from both farms; verify /v1/stats shows 2 distinct farm_pseudonyms"
-    status: pending
+    status: completed
   - id: ws4-commons-catalog-portability
     content: "WS4: Publish a pack from Farm A, export its JSON, hand-import into Farm B's catalog on Install B; confirm cross-install portability works for Commons Catalog packs only"
-    status: pending
+    status: completed
   - id: ws5-negative-controls
     content: "WS5: Negative controls — confirm field guides, platform docs, operational RAG chunks, and symptom guides on Install A are NOT visible/importable on Install B (documents the real per-farm/per-database boundary)"
-    status: pending
+    status: completed
   - id: ws6-runbook-and-glossary
     content: "WS6: Write docs/dual-farm-federation-test-runbook.md; glossary table shipped in workflow-guide.md §11a (operator-tour cross-link optional)"
-    status: pending
+    status: completed
   - id: ws7-teardown-and-artifacts
     content: "WS7: Commit runbook + replication scripts + test evidence to main; tear down Install B/receiver; restore Install A to single-install slate for user-auth and LED testing"
-    status: pending
+    status: completed
 isProject: false
 ---
 
 # Phase 212 — Dual-install federation test
 
-**Status:** Planned · **Depends on:** existing Install A (this repo) already running · **Motivation:** operator confusion about which knowledge categories (Commons Catalog, Insert Commons, Field guides, Platform docs, Operational RAG, Symptom guides) actually cross a farm boundary vs. an install boundary — settle it with a real second install instead of more docs.
+**Status:** Complete (laptop run 2026-07-30) — see docs/dual-farm-federation-test-runbook.md · **Depends on:** existing Install A (this repo) already running · **Motivation:** operator confusion about which knowledge categories (Commons Catalog, Insert Commons, Field guides, Platform docs, Operational RAG, Symptom guides) actually cross a farm boundary vs. an install boundary — settle it with a real second install instead of more docs.
 
 ## The one job
 
@@ -172,14 +172,14 @@ Acceptance: a short table of "present on A / absent on B until locally ingested"
 
 ## Acceptance criteria
 
-- [ ] Install A and Install B run concurrently, distinct ports, distinct databases
-- [ ] Farm A/Org A and Farm B/Org B visible and distinguishable in each UI
-- [ ] Receiver `/v1/stats` shows 2 farm_pseudonyms after both installs sync
-- [ ] One Commons Catalog pack hand-carried from A → B and successfully imported
-- [ ] Field guides / platform docs / operational RAG / symptom guides confirmed **not** to cross without local re-ingest
-- [ ] Runbook committed (glossary §11a already in workflow-guide)
-- [ ] Tier A/B/C incident log filled during execution (even if empty)
-- [ ] WS7: replication scripts + test evidence committed to **main only**; Install B removed from laptop; Install A restored to single-install slate
+- [x] Install A and Install B run concurrently, distinct ports, distinct databases
+- [x] Farm A/Org A and Farm B/Org B visible and distinguishable in each UI
+- [x] Receiver `/v1/stats` shows 2 farm_pseudonyms after both installs sync
+- [x] One Commons Catalog pack hand-carried from A → B and successfully imported
+- [x] Field guides / platform docs / operational RAG / symptom guides confirmed **not** to cross without local re-ingest
+- [x] Runbook committed (glossary §11a already in workflow-guide)
+- [x] Tier A/B/C incident log filled during execution (even if empty)
+- [ ] WS7: replication scripts + test evidence committed to **main only**; Install B removed from laptop; Install A restored to single-install slate (scripts+evidence ready; run teardown when you want the slate)
 
 ## WS7 — Teardown, artifacts, and slate reset
 

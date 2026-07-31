@@ -1,0 +1,17 @@
+{
+  "rag_chunks": {
+    "A": 336,
+    "B": 0
+  },
+  "field_guides": {
+    "A": 77,
+    "B": 77,
+    "note": "migration/seed parity"
+  },
+  "symptoms": {
+    "A": 10,
+    "B": 10
+  },
+  "handcarry_pack_on_B_only": true,
+  "receiver_distinct_pseudonyms": 2
+}

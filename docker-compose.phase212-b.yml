@@ -1,0 +1,34 @@
+# Phase 212 Install B — DB-only stack on host port 5434.
+# Use from ~/gr33n-platform-b (or any clone) instead of the default compose file
+# so ports are not merged with Install A's 5433 mapping:
+#
+#   docker compose -f docker-compose.phase212-b.yml up -d
+#
+# Do not use alongside docker-compose.yml in the same `docker compose` invoke.
+services:
+  db:
+    build:
+      context: .
+      dockerfile: db/Dockerfile
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: gr33n
+      POSTGRES_PASSWORD: gr33n
+      POSTGRES_DB: gr33n
+    ports:
+      - "5434:5432"
+    volumes:
+      - pgdata_b:/home/postgres/pgdata/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U gr33n"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "5"
+
+volumes:
+  pgdata_b:

@@ -1,0 +1,47 @@
+{
+    "ai_enabled": true,
+    "awakening": {
+        "state": "sleeping",
+        "profile": "cpu_laptop",
+        "chat_model": "phi3:mini",
+        "chat_model_loaded": false,
+        "vision_model_loaded": false,
+        "embed_model": "rjmalagon/gte-qwen2-1.5b-instruct-embed-f16",
+        "embed_loaded": false,
+        "embed_blocks_chat": false,
+        "rag_corpus_ok": true,
+        "field_guide_chunks": 86,
+        "platform_doc_chunks": 67,
+        "corpus": {
+            "field_guide_chunks": 86,
+            "field_guide_last_ingested_at": "2026-07-28T18:03:17.73906Z",
+            "platform_doc_chunks": 67,
+            "platform_last_ingested_at": "2026-07-28T18:18:09.332727Z",
+            "operational_chunks": 173,
+            "operational_last_ingested_at": "2026-07-28T18:08:02.995107Z",
+            "field_guide_freshness": "aging",
+            "platform_freshness": "aging",
+            "operational_freshness": "aging",
+            "staleness": "operational_aging"
+        },
+        "messages": [
+            "Operational memories are aging \u2014 consider re-ingest from Settings."
+        ],
+        "warmup_in_progress": false
+    },
+    "chat_configured": true,
+    "field_assistant": {
+        "field_mode": true,
+        "llm_base_url": "http://127.0.0.1:11434/v1",
+        "llm_reachable": true,
+        "embedding_base_url": "http://127.0.0.1:11434/v1",
+        "embedding_configured": true,
+        "embedding_local_endpoint": true,
+        "embedding_reachable": true,
+        "split_inference_hosts": false,
+        "field_guide_chunk_count": 86,
+        "platform_doc_chunk_count": 67
+    },
+    "field_degrade_ready": true,
+    "procedures_available": true
+}
