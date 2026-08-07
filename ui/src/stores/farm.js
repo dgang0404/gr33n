@@ -61,9 +61,9 @@ export const useFarmStore = defineStore('farm', {
       return r.status ?? 'ok'
     },
     activeDevices:  (state) => state.devices.filter(d => d.status === 'online'),
-    devicesByZone:  (state) => (zoneId) => state.devices.filter(d => d.zone_id === zoneId),
-    sensorsByZone:  (state) => (zoneId) => state.sensors.filter(s => s.zone_id === zoneId),
-    actuatorsByZone: (state) => (zoneId) => state.actuators.filter(a => a.zone_id === zoneId),
+    devicesByZone:  (state) => (zoneId) => state.devices.filter(d => Number(d.zone_id) === Number(zoneId)),
+    sensorsByZone:  (state) => (zoneId) => state.sensors.filter(s => Number(s.zone_id) === Number(zoneId)),
+    actuatorsByZone: (state) => (zoneId) => state.actuators.filter(a => Number(a.zone_id) === Number(zoneId)),
     actuatorsByDevice: (state) => (deviceId) => state.actuators.filter(a => a.device_id === deviceId),
     taskQueuePendingCount: (state) => (farmId) => pendingCount(state.taskWriteQueue, farmId),
     zoneLayout: (state) => (zoneId) => {
@@ -933,8 +933,14 @@ export const useFarmStore = defineStore('farm', {
     },
 
     async getPlant(id) {
-      const r = await api.get(`/plants/${id}`)
-      return r.data
+      try {
+        const r = await api.get(`/plants/${id}`)
+        return r.data
+      } catch (e) {
+        // Soft-deleted / missing plants (smoke cycles) — don't spam the console.
+        if (e?.response?.status === 404) return null
+        throw e
+      }
     },
 
     async createPlant(farmId, data) {

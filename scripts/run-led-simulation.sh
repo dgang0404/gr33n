@@ -107,7 +107,7 @@ offline_flush_interval_seconds: 30
 
 simulation:
   enabled: true
-  poll_interval_seconds: 2
+  poll_interval_seconds: 0.25
 ${SIM_BACKEND}
 
   gpio_leds:
@@ -177,16 +177,14 @@ echo "Config: $CFG"
 if [[ "$DRIVER" != "neopixel" ]]; then
   cat <<'HINT'
 
-Breadboard wiring (power OFF; use CanaKit GPIO card):
-  Shared GND rail ← Pi physical pin 6 (GND)
-  Each LED:  Pi GPIO --[220Ω]-- LED(+) long -- LED(-) short -- GND rail
-  Pixel0 moisture  GPIO18 / pin 12   |  Pixel5 grow light GPIO16 / pin 36
-  Pixel1 EC        GPIO23 / pin 16   |  Pixel6 pump       GPIO20 / pin 38
-  Pixel2 air temp  GPIO24 / pin 18   |  Pixel7 activity   GPIO21 / pin 40
-  Pixel3 humidity  GPIO25 / pin 22   |  Heartbeat         GPIO17 / pin 11
-  Pixel4 pH        GPIO12 / pin 32   |  Fault (API down)  GPIO27 / pin 13
-  Meaning: solid ON ≈ OK/in-band or actuator idle-off dim (off);
-           blinking ≈ ALERT or actuator ON / command queued.
+Breadboard plug map (POWER OFF). a–e side only. Full doc:
+  docs/pi-light-simulation-runbook.md  →  "Starter-kit breadboard plug map"
+
+  Shared once: Pi pin 6 (GND) → blue (−) rail
+
+  RED    heartbeat  pin 11 → a13 | R b13–b11 | LED+ a11 | LED− a10 | b10→blue
+  YELLOW moisture   pin 12 → a20 | R b20–b18 | LED+ a18 | LED− a17 | b17→blue
+  BLUE   pump       pin 38 → a30 | R b30–b28 | LED+ a28 | LED− a27 | b27→blue
 
 HINT
 fi

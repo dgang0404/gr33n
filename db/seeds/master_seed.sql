@@ -666,7 +666,16 @@ SELECT
     'light',
     'relay_1',
     'offline',
-    '{"channel": 1, "simulation": true}'::jsonb
+    jsonb_build_object(
+        'channel', 1,
+        'simulation', true,
+        'wiring', jsonb_build_object(
+            'source', 'gpio_relay',
+            'gpio_pin', 16,
+            'device_id', d.id,
+            'notes', 'Veg Room Grow Light relay (BCM 16; 17 reserved for heartbeat LED on sim rig)'
+        )
+    )
 FROM gr33ncore.devices d
 WHERE d.farm_id = 1
   AND d.device_uid = 'demo-veg-relay-01'
@@ -893,7 +902,16 @@ SELECT
     'pump',
     'relay_2',
     'offline',
-    '{"channel": 2, "simulation": true}'::jsonb
+    jsonb_build_object(
+        'channel', 2,
+        'simulation', true,
+        'wiring', jsonb_build_object(
+            'source', 'gpio_relay',
+            'gpio_pin', 20,
+            'device_id', d.id,
+            'notes', 'Veg Room Irrigation Pump relay'
+        )
+    )
 FROM gr33ncore.devices d
 WHERE d.farm_id = 1
   AND d.device_uid = 'demo-veg-relay-01'

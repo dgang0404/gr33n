@@ -402,6 +402,27 @@ def resolve_actuator_for_command(actuators: dict, device_id: int, payload: Optio
     return None
 
 
+def should_drain_device(device: dict, owned_device_ids: set, my_uid: Optional[str]) -> bool:
+    """True if this Pi should drain the device's command queue.
+
+    Prefer numeric device ids from local actuators / config. Fall back to
+    device_uid when no ids are known. Never drain a peer Pi's queue.
+    """
+    did = device.get('id')
+    if did is None:
+        return False
+    try:
+        did = int(did)
+    except (TypeError, ValueError):
+        return False
+    uid = device.get('device_uid') or device.get('uid')
+    if owned_device_ids:
+        return did in owned_device_ids
+    if my_uid and uid:
+        return uid == my_uid
+    return False
+
+
 # --- OFFLINE QUEUE (SQLite) -------------------------------------------------
 class OfflineQueue:
     def __init__(self, db_path: str):
@@ -1029,10 +1050,10 @@ class ActuatorController:
         cmd = command.strip().lower()
         pulse_s = self._effective_pulse_seconds(duration_seconds)
         if pulse_s and cmd in self.ON_COMMANDS:
+            self.turn_on()
             def _run_pulse():
                 with self._pulse_lock:
                     try:
-                        self.turn_on()
                         time.sleep(pulse_s)
                     finally:
                         self.turn_off()
@@ -1109,10 +1130,11 @@ class SimulationActuatorController:
         cmd = command.strip().lower()
         pulse_s = self._effective_pulse_seconds(duration_seconds)
         if pulse_s and cmd in self.ON_COMMANDS:
+            # Turn on synchronously so LED kick() sees state=on immediately.
+            self.turn_on()
             def _run_pulse():
                 with self._pulse_lock:
                     try:
-                        self.turn_on()
                         time.sleep(pulse_s)
                     finally:
                         self.turn_off()
@@ -1404,6 +1426,9 @@ class Gr33nPiClient:
 
     def _mark_sim_activity(self) -> None:
         self._sim_activity_until = time.monotonic() + 0.2
+        light = getattr(self, '_light_sim', None)
+        if light is not None:
+            light.kick()
 
     def _mark_sim_actuator_pending(self, actuator_id: int) -> None:
         self._sim_actuator_pending[int(actuator_id)] = time.monotonic() + 30.0
@@ -1707,8 +1732,18 @@ class Gr33nPiClient:
                 continue
             with self._hw_lock:
                 actuators = dict(self._actuators)
+                # Only drain queues for devices this Pi owns. Polling every farm
+                # device steals peer-Pi commands (LED bench: Flower pulse failed
+                # on Veg Pi with "no actuator mapped").
+                owned_device_ids = {int(a.device_id) for a in actuators.values()}
+                cfg_did = self.cfg.get('device_id')
+                if cfg_did is not None:
+                    owned_device_ids.add(int(cfg_did))
+            my_uid = (self.cfg.get('device') or {}).get('uid') or self.cfg.get('device_uid')
             for device in self.api.get_devices():
-                did    = device.get('id')
+                if not should_drain_device(device, owned_device_ids, my_uid):
+                    continue
+                did = int(device['id'])
 
                 # ── Phase 39 WS1: try the FIFO queue first ───────────────────
                 processed = self._drain_queue(did, actuators)

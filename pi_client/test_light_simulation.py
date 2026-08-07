@@ -102,6 +102,12 @@ class TestLightSimulationDriver(unittest.TestCase):
         self.assertEqual(rgb_off_phase, (0, 0, 0))
         self.assertEqual(act.state, 'on')
 
+    def test_actuator_on_solid_for_discrete_leds(self):
+        # Blink off-phase would leave breadboard pump LED dark during a 2s pulse.
+        rgb = ls.rgb_for_actuator('pump', 'on', False, False, 0.3, 1.0, solid=True)
+        self.assertNotEqual(rgb, (0, 0, 0))
+        self.assertEqual(rgb, ls.ACTUATOR_TYPE_COLORS['pump'])
+
 
 class TestDiscreteLedBank(unittest.TestCase):
     def test_rgb_lit_threshold(self):

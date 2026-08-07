@@ -24,6 +24,23 @@ sys.path.insert(0, os.path.dirname(__file__))
 import gr33n_client as client
 
 
+class TestShouldDrainDevice(unittest.TestCase):
+    """Pi must not drain peer device queues (LED bench / multi-Pi farms)."""
+
+    def test_owned_numeric_id(self):
+        self.assertTrue(client.should_drain_device({'id': 1}, {1}, None))
+        self.assertFalse(client.should_drain_device({'id': 2}, {1}, None))
+
+    def test_uid_fallback_when_no_owned_ids(self):
+        self.assertTrue(client.should_drain_device(
+            {'id': 2, 'device_uid': 'demo-veg-relay-01'}, set(), 'demo-veg-relay-01'))
+        self.assertFalse(client.should_drain_device(
+            {'id': 2, 'device_uid': 'demo-flower-relay-01'}, set(), 'demo-veg-relay-01'))
+
+    def test_no_ownership_info_drains_nothing(self):
+        self.assertFalse(client.should_drain_device({'id': 1}, set(), None))
+
+
 class TestDeviceConfigDecode(unittest.TestCase):
     """gr33n_client._device_config_dict matches Go JSON encoding of []byte config."""
 

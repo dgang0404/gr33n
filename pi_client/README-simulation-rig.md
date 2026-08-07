@@ -14,20 +14,36 @@ changes when you go live.
 
 ## Parts list (rig v1)
 
+### Path A — starter kit breadboard (default, no NeoPixel)
+
 | Part | Qty | Notes |
 |------|-----|-------|
-| Raspberry Pi 4 (2GB+) or Pi 5 | 1 | Pi Zero 2 W works for LED-only; more headroom with 4/5 |
-| 5 V 3 A USB-C power supply | 1 | Official Pi supply recommended |
+| Raspberry Pi 4 (2GB+) or Pi 5 | 1 | Pi Zero 2 W works for LED-only |
+| 5 V USB-C power supply | 1 | Official Pi supply recommended |
 | microSD 16 GB+ | 1 | Raspberry Pi OS Lite 64-bit |
+| Breadboard | 1 | Half-size is enough |
+| Discrete LEDs (3 mm / 5 mm) | 3+ | **Red** heartbeat, **yellow** moisture, **blue** pump (add more for full bank) |
+| 220 Ω resistors | 1 per LED | Series with each LED |
+| Jumper wires | several | One signal + one ground return per LED, plus Pi GND→rail |
+
+**Complete hole-by-hole plug map** (pins, rows, why each color):  
+[`docs/pi-light-simulation-runbook.md` — Starter-kit breadboard plug map](../docs/pi-light-simulation-runbook.md#starter-kit-breadboard-plug-map)
+
+Config: `simulation.driver: gpio` (see `scripts/run-led-simulation.sh`).
+
+### Path B — NeoPixel strip (optional)
+
+| Part | Qty | Notes |
+|------|-----|-------|
 | WS2812B NeoPixel strip or 8-LED ring | 1 | 8 pixels for rig v1 |
 | 330 Ω resistor | 1 | NeoPixel data line (DIN) |
 | 1000 µF electrolytic capacitor | 1 | Across strip 5V/GND near first pixel (recommended) |
-| 5 V level shifter (74AHCT125 or similar) | 0–1 | Optional; use for long strips or noisy 5V rail |
-| Jumper wires | several | Pi GPIO 18 → DIN, GND common |
-| 3 mm LEDs + 220 Ω resistors | 2 | Heartbeat (GPIO 17) + fault (GPIO 27) — optional if strip-only |
-| Breadboard or Perma-Proto | 1 | Bench layout |
+| 5 V level shifter (74AHCT125 or similar) | 0–1 | Optional; long strips / noisy 5V rail |
+| 3 mm LEDs + 220 Ω | 2 | Heartbeat (GPIO 17) + fault (GPIO 27) — optional if strip-only |
 
-**Not required for simulation:** relay HAT, soil probes, pumps. Add those when
+Config: `GR33N_LED_DRIVER=neopixel` or `simulation.driver: neopixel`.
+
+**Not required for either path:** relay HAT, soil probes, pumps. Add those when
 swapping to production (below).
 
 ### Software on the Pi
@@ -45,7 +61,25 @@ pip install adafruit-circuitpython-neopixel
 
 ---
 
-## Wiring diagram (rig v1)
+## Wiring diagram
+
+### Path A — breadboard discrete LEDs (default)
+
+Bottom half only (`f`–`j`). Full hole list:
+[runbook plug map](../docs/pi-light-simulation-runbook.md#starter-kit-breadboard-plug-map).
+
+```
+Pi pin 6 (GND) → blue (−) rail
+Proven red (a–e side): pin11→a13 | R b13–b11 | LED+ a11 | LED− a10 | b10→blue
+
+RED    pin 11 → a13 | R b13–b11 | LED+ a11 | LED− a10 | b10→blue
+YELLOW pin 12 → a20 | R b20–b18 | LED+ a18 | LED− a17 | b17→blue
+BLUE   pin 38 → a30 | R b30–b28 | LED+ a28 | LED− a27 | b27→blue
+```
+
+**Power off / unplug before wiring.**
+
+### Path B — NeoPixel strip
 
 ```
                     Raspberry Pi

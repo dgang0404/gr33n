@@ -60,13 +60,17 @@ Command queue states come from `GET /devices/{id}/commands` (pending / completed
 
 Minimal parts for one complete **Veg Room** loop (moisture → alert → pump/light).
 
+**Starter kit (no NeoPixel):** use discrete breadboard LEDs with
+`simulation.driver: gpio`. Hole-by-hole plug map (red / yellow / blue + full bank):
+[`pi-light-simulation-runbook.md` — Starter-kit breadboard plug map](pi-light-simulation-runbook.md#starter-kit-breadboard-plug-map).
+
 | Part | Qty | Role |
 |------|-----|------|
 | Raspberry Pi 4/5 (or Pi Zero 2 W) | 1 | Runs `pi_client` in `simulation` driver mode |
-| WS2812B strip or ring | 8 pixels | Sensor + actuator indicators |
-| 330 Ω resistor | 1 | NeoPixel data line (if not on HAT) |
+| Discrete LEDs + 220 Ω (starter kit) **or** WS2812B strip | 3–8 / 8 px | Sensor + actuator indicators |
+| 330 Ω resistor | 1 | NeoPixel data line only (if not on HAT) |
 | 5 V level shifter (optional) | 1 | 3.3 V → 5 V data for long strips |
-| GPIO LED + 220 Ω | 2 | Heartbeat + fault (plain LEDs, not NeoPixel) |
+| GPIO LED + 220 Ω | 2+ | Heartbeat + fault; or entire discrete bank |
 
 ### Pin assignment (defaults for WS2 config)
 

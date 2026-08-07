@@ -88,13 +88,22 @@ def rgb_for_actuator(
     failed: bool,
     now: float,
     brightness: float,
+    *,
+    solid: bool = False,
 ) -> tuple:
+    """Map actuator state to RGB. solid=True for plain breadboard LEDs (no blink-off)."""
     if failed:
+        if solid:
+            return _scale(COLOR_FAULT, brightness)
         return _scale(COLOR_FAULT, brightness) if _blink_on(4.0, now, 0.5) else (0, 0, 0)
     if queued:
+        if solid:
+            return _scale(COLOR_QUEUED, brightness * 0.7)
         return _scale(COLOR_QUEUED, brightness * 0.7) if _blink_on(1.0, now, 0.4) else (0, 0, 0)
     if state == 'on':
         base = ACTUATOR_TYPE_COLORS.get((actuator_type or '').lower(), (200, 200, 200))
+        if solid:
+            return _scale(base, brightness)
         return _scale(base, brightness) if _blink_on(2.0, now) else (0, 0, 0)
     return _scale(COLOR_ACTUATOR_IDLE, brightness * 0.15)
 
@@ -304,15 +313,18 @@ class LightSimulationDriver:
         gpio = self.cfg.get('gpio_leds') or {}
         self._heartbeat = GpioIndicator(gpio.get('heartbeat_pin', 17))
         self._fault = GpioIndicator(gpio.get('fault_pin', 27))
-        self._poll_s = float(self.cfg.get('poll_interval_seconds', 2))
+        default_poll = 0.25 if isinstance(self._strip, DiscreteLedBank) else 2.0
+        self._poll_s = float(self.cfg.get('poll_interval_seconds', default_poll))
         self._sensor_maps = list(self.cfg.get('sensors') or [])
         self._actuator_maps = list(self.cfg.get('actuators') or [])
         self._activity_pixel = self.cfg.get('activity_pixel')
+        self._kick = threading.Event()
 
     def start(self):
         if self._thread and self._thread.is_alive():
             return
         self._stop.clear()
+        self._kick.clear()
         self._thread = threading.Thread(target=self._loop, name='light-simulation', daemon=True)
         self._thread.start()
         log.info(
@@ -322,8 +334,13 @@ class LightSimulationDriver:
             type(self._strip).__name__,
         )
 
+    def kick(self) -> None:
+        """Wake the refresh loop now (call after actuator pulse / queue drain)."""
+        self._kick.set()
+
     def stop(self):
         self._stop.set()
+        self._kick.set()
         if self._thread:
             self._thread.join(timeout=5)
         self._strip.close()
@@ -336,7 +353,11 @@ class LightSimulationDriver:
                 self._refresh(time.monotonic())
             except Exception as exc:
                 log.warning('light simulation refresh failed: %s', exc)
-            self._stop.wait(self._poll_s)
+            self._kick.clear()
+            # Wait for poll interval, or kick() from an actuator command.
+            self._kick.wait(self._poll_s)
+            if self._stop.is_set():
+                break
 
     def _refresh(self, now: float):
         neo = self.cfg.get('neopixel') or {}
@@ -377,7 +398,12 @@ class LightSimulationDriver:
             atype = entry.get('actuator_type') or (act.device_type if act else '')
             state = act.state if act else 'off'
             queued, failed = self._get_actuator_flags(aid)
-            rgb = rgb_for_actuator(atype, state, queued, failed, now, brightness)
+            # Plain LEDs: solid ON while running. NeoPixel blink + 2s poll was
+            # missing short Run pulse windows on the breadboard rig.
+            solid = isinstance(self._strip, DiscreteLedBank)
+            rgb = rgb_for_actuator(
+                atype, state, queued, failed, now, brightness, solid=solid,
+            )
             self._strip.set_pixel(pixel, rgb)
 
         activity_until = self._get_activity_until()
