@@ -1,7 +1,14 @@
-"""Phase 125 WS2 — NeoPixel/GPIO light driver for pre-plant simulation rig.
+"""Phase 125 WS2 — NeoPixel / discrete-GPIO light driver for pre-plant simulation.
 
-Maps sensor comfort bands and actuator states to LED colors per
-docs/pi-light-simulation-mapping.md. Off-Pi runs use an in-memory strip stub.
+Maps sensor comfort bands and actuator states to LEDs per
+docs/pi-light-simulation-mapping.md.
+
+Drivers:
+  neopixel — WS2812 strip (color + blink). Default when no discrete_leds map.
+  gpio     — one plain LED + resistor per logical pixel (blink/on/off only).
+             Use with a breadboard starter kit; no NeoPixel strip required.
+
+Off-Pi runs stub both backends (gpiozero / adafruit may be missing).
 """
 
 from __future__ import annotations
@@ -160,6 +167,118 @@ class GpioIndicator:
                 pass
 
 
+def _rgb_lit(rgb: tuple, threshold: int = 20) -> bool:
+    """True when color is bright enough to count as LED-on (idle dim stays off)."""
+    if not rgb:
+        return False
+    return max(int(c) for c in rgb) >= threshold
+
+
+def _parse_discrete_led_map(raw) -> dict:
+    """Accept {0: 18} or [{'pixel': 0, 'gpio_pin': 18}, ...]."""
+    out = {}
+    if not raw:
+        return out
+    if isinstance(raw, dict):
+        for k, v in raw.items():
+            try:
+                out[int(k)] = int(v)
+            except (TypeError, ValueError):
+                continue
+        return out
+    if isinstance(raw, list):
+        for row in raw:
+            if not isinstance(row, dict):
+                continue
+            try:
+                out[int(row['pixel'])] = int(row['gpio_pin'])
+            except (KeyError, TypeError, ValueError):
+                continue
+    return out
+
+
+class DiscreteLedBank:
+    """One GPIO LED per logical pixel — blink/on/off from the same RGB helpers.
+
+    Color is collapsed to lit/unlit (starter-kit plain LEDs). Alert/actuator
+    blink still works because rgb_for_* already returns (0,0,0) on off-phases.
+    """
+
+    def __init__(self, pixel_to_gpio: dict, on_threshold: int = 20):
+        self._map = {int(p): int(g) for p, g in (pixel_to_gpio or {}).items()}
+        self._threshold = int(on_threshold)
+        self._state: dict = {}
+        self._devs: dict = {}
+        self._stub = False
+        for pixel, pin in self._map.items():
+            try:
+                from gpiozero import OutputDevice
+                self._devs[pixel] = OutputDevice(pin)
+            except Exception as exc:
+                self._stub = True
+                self._devs[pixel] = None
+                log.info('Discrete LED stub pixel=%s GPIO %s: %s', pixel, pin, exc)
+        if self._map and not self._stub:
+            log.info(
+                'Discrete GPIO LEDs: %s',
+                ', '.join(f'pixel{p}->GPIO{g}' for p, g in sorted(self._map.items())),
+            )
+        elif self._map:
+            log.info(
+                'Discrete GPIO LED stub map: %s',
+                ', '.join(f'pixel{p}->GPIO{g}' for p, g in sorted(self._map.items())),
+            )
+
+    def set_pixel(self, index: int, rgb: tuple):
+        if index not in self._map:
+            return
+        on = _rgb_lit(rgb, self._threshold)
+        prev = self._state.get(index)
+        if prev is on:
+            return
+        self._state[index] = on
+        pin = self._map[index]
+        dev = self._devs.get(index)
+        if dev is not None:
+            if on:
+                dev.on()
+            else:
+                dev.off()
+        else:
+            log.info('LED pixel=%s GPIO %s → %s', index, pin, 'ON' if on else 'OFF')
+
+    def show(self):
+        return
+
+    def close(self):
+        for pixel, dev in self._devs.items():
+            if dev is None:
+                continue
+            try:
+                dev.off()
+                dev.close()
+            except Exception:
+                pass
+            self._devs[pixel] = None
+
+
+def _make_led_backend(cfg: dict):
+    """Pick NeoPixel strip or discrete GPIO bank from simulation.driver / discrete_leds."""
+    discrete = _parse_discrete_led_map(cfg.get('discrete_leds'))
+    driver = (cfg.get('driver') or '').strip().lower()
+    if driver in ('gpio', 'discrete', 'breadboard') or (not driver and discrete):
+        if not discrete:
+            log.warning('simulation.driver=%s but discrete_leds empty — no indicator LEDs', driver or 'gpio')
+        return DiscreteLedBank(discrete, on_threshold=int(cfg.get('discrete_on_threshold', 20)))
+    neo = cfg.get('neopixel') or {}
+    return NeoPixelStrip(
+        count=neo.get('count', 8),
+        pin=neo.get('pin', 18),
+        brightness=neo.get('brightness', 0.4),
+        pixel_order=neo.get('pixel_order', 'GRB'),
+    )
+
+
 class LightSimulationDriver:
     """Polls local sensor cache + actuator state and drives LEDs."""
 
@@ -181,13 +300,7 @@ class LightSimulationDriver:
         self._stop = threading.Event()
         self._thread: Optional[threading.Thread] = None
 
-        neo = self.cfg.get('neopixel') or {}
-        self._strip = NeoPixelStrip(
-            count=neo.get('count', 8),
-            pin=neo.get('pin', 18),
-            brightness=neo.get('brightness', 0.4),
-            pixel_order=neo.get('pixel_order', 'GRB'),
-        )
+        self._strip = _make_led_backend(self.cfg)
         gpio = self.cfg.get('gpio_leds') or {}
         self._heartbeat = GpioIndicator(gpio.get('heartbeat_pin', 17))
         self._fault = GpioIndicator(gpio.get('fault_pin', 27))
@@ -203,9 +316,10 @@ class LightSimulationDriver:
         self._thread = threading.Thread(target=self._loop, name='light-simulation', daemon=True)
         self._thread.start()
         log.info(
-            'Light simulation started — %d sensor LEDs, %d actuator LEDs',
+            'Light simulation started — %d sensor LEDs, %d actuator LEDs (%s)',
             len(self._sensor_maps),
             len(self._actuator_maps),
+            type(self._strip).__name__,
         )
 
     def stop(self):
@@ -227,6 +341,9 @@ class LightSimulationDriver:
     def _refresh(self, now: float):
         neo = self.cfg.get('neopixel') or {}
         brightness = float(neo.get('brightness', 0.4))
+        if isinstance(self._strip, DiscreteLedBank):
+            # Full brightness into rgb helpers so on/off thresholding is stable.
+            brightness = 1.0
 
         for entry in self._sensor_maps:
             pixel = int(entry.get('pixel', -1))

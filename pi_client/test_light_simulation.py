@@ -103,6 +103,71 @@ class TestLightSimulationDriver(unittest.TestCase):
         self.assertEqual(act.state, 'on')
 
 
+class TestDiscreteLedBank(unittest.TestCase):
+    def test_rgb_lit_threshold(self):
+        self.assertTrue(ls._rgb_lit((0, 180, 0)))
+        self.assertFalse(ls._rgb_lit((0, 0, 0)))
+        self.assertFalse(ls._rgb_lit((10, 10, 10)))  # idle dim stays off
+
+    def test_parse_map_dict_and_list(self):
+        self.assertEqual(ls._parse_discrete_led_map({0: 18, '5': 16}), {0: 18, 5: 16})
+        self.assertEqual(
+            ls._parse_discrete_led_map([{'pixel': 0, 'gpio_pin': 18}]),
+            {0: 18},
+        )
+
+    def test_gpio_driver_logs_on_transition(self):
+        cache = client.ReadingCache()
+        cache.put(7, 18.0, now=100.0)  # alert_low → blink; force on-phase
+        events = []
+
+        class CapturingBank(ls.DiscreteLedBank):
+            def __init__(self):
+                self._map = {0: 18}
+                self._threshold = 20
+                self._state = {}
+                self._devs = {0: None}
+                self._stub = True
+
+            def set_pixel(self, index, rgb):
+                on = ls._rgb_lit(rgb, self._threshold)
+                prev = self._state.get(index)
+                if prev is on:
+                    return
+                self._state[index] = on
+                events.append((index, on, rgb))
+
+        sim_cfg = {
+            'driver': 'gpio',
+            'discrete_leds': {0: 18},
+            'neopixel': {'brightness': 1.0},
+            'sensors': [{
+                'sensor_id': 7,
+                'pixel': 0,
+                'alert_threshold_low': 25,
+                'alert_threshold_high': 80,
+                'interval_seconds': 120,
+            }],
+            'actuators': [],
+        }
+        driver = ls.LightSimulationDriver(
+            simulation_cfg=sim_cfg,
+            reading_cache=cache,
+            get_actuators=lambda: {},
+            get_actuator_flags=lambda _aid: (False, False),
+            is_api_reachable=lambda: True,
+            get_activity_until=lambda: 0.0,
+        )
+        driver._strip = CapturingBank()
+        driver._heartbeat = ls.GpioIndicator(None)
+        driver._fault = ls.GpioIndicator(None)
+        # t=0 → blink on for alert_low
+        driver._refresh(0.0)
+        self.assertTrue(events)
+        self.assertEqual(events[0][0], 0)
+        self.assertTrue(events[0][1])
+
+
 class TestResolveConfigSimulation(unittest.TestCase):
     def test_simulation_block_preserved(self):
         boot = {
