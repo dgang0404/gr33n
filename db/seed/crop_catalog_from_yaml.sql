@@ -346,10 +346,18 @@ Both seed devices report **`simulation: true`** in config — suitable for lapto
 
 ## Actuators (platform records)
 
-| Actuator | Device | `hardware_identifier` | Type |
-|----------|--------|----------------------|------|
-| Veg Room Grow Light | Veg Relay Controller | `relay_1` (channel 1) | light |
-| Flower Room Irrigation Pump | Flower Relay Controller | `relay_1` (channel 1) | pump |
+| Actuator | Device | `hardware_identifier` | GPIO (BCM) | Type |
+|----------|--------|----------------------|------------|------|
+| Veg Room Grow Light | Veg Relay Controller | `relay_1` (channel 1) | **16** (phys 36) | light |
+| Veg Room Irrigation Pump | Veg Relay Controller | `relay_2` (channel 2) | **20** (phys 38) | pump |
+| Flower Room Irrigation Pump | Flower Relay Controller | `relay_2` (channel 2) | **27** (phys 13) | pump |
+
+### Reserved on Veg LED sim / dual-use bench
+
+| BCM | Physical | Role — do not assign platform relays here |
+|-----|----------|-------------------------------------------|
+| 17 | 11 | Heartbeat LED (`gpio_leds.heartbeat_pin`) |
+| 27 | 13 | Fault LED (`gpio_leds.fault_pin`) — Flower pump uses 27 on a **different** Pi |
 
 Low-voltage control wiring patterns: see `pi-wiring-basics.md` and `relay-and-actuator-wiring.md`.
 
