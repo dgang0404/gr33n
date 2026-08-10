@@ -202,8 +202,42 @@ func TestResolveCitationRoute_alertWithoutZoneFallsBackToInbox(t *testing.T) {
 	q := db.New(pool)
 	const farmID = int64(1)
 
-	// Seeded alert #50: sensor_reading → sensor 61 with nil zone_id.
-	route, ok := ResolveCitationRoute(ctx, q, farmID, "alert_notification", 50)
+	// Create a test sensor without zone_id (gate/test sensor pattern).
+	sensor, err := q.CreateSensor(ctx, db.CreateSensorParams{
+		FarmID:                 farmID,
+		ZoneID:                 nil, // Intentionally no zone
+		Name:                   "Phase 152 WS2 unzoned test sensor",
+		SensorType:             "temperature",
+		UnitID:                 4, // Celsius
+		AlertDurationSeconds:   300,
+		AlertCooldownSeconds:   600,
+		Config:                 []byte("{}"),
+		MetaData:               []byte("{}"),
+	})
+	if err != nil {
+		t.Fatalf("CreateSensor: %v", err)
+	}
+	defer pool.Exec(context.Background(), "DELETE FROM gr33ncore.sensors WHERE id = $1", sensor.ID)
+
+	// Create an alert that references the unzoned sensor.
+	sensorType := "sensor"
+	severity := db.Gr33ncoreNotificationPriorityEnumLow
+	subject := "Test alert for unzoned sensor"
+	message := "This is a test alert for a sensor with no zone."
+	alert, err := q.CreateAlert(ctx, db.CreateAlertParams{
+		FarmID:                    farmID,
+		TriggeringEventSourceType: &sensorType,
+		TriggeringEventSourceID:   &sensor.ID,
+		Severity:                  &severity,
+		SubjectRendered:           &subject,
+		MessageTextRendered:       &message,
+	})
+	if err != nil {
+		t.Fatalf("CreateAlert: %v", err)
+	}
+	defer pool.Exec(context.Background(), "DELETE FROM gr33ncore.alerts_notifications WHERE id = $1", alert.ID)
+
+	route, ok := ResolveCitationRoute(ctx, q, farmID, "alert_notification", alert.ID)
 	if !ok {
 		t.Fatal("expected farm-inbox fallback route for alert with unzoned sensor")
 	}
