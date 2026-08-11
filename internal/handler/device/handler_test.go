@@ -36,6 +36,14 @@ func (m *mockQuerier) ClearDevicePendingCommand(ctx context.Context, id int64) e
 	return m.clearPendingCmdFn(ctx, id)
 }
 
+func (m *mockQuerier) InsertDeviceIPEvent(ctx context.Context, arg db.InsertDeviceIPEventParams) error {
+	return nil
+}
+
+func (m *mockQuerier) UpdateDeviceIPAddress(ctx context.Context, arg db.UpdateDeviceIPAddressParams) error {
+	return nil
+}
+
 func TestUpdateStatus_WithLastConfigFetchAt_200(t *testing.T) {
 	var gotFetch *string
 	mq := &mockQuerier{

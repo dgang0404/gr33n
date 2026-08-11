@@ -3,7 +3,9 @@ package device
 import (
 	"context"
 	"encoding/json"
+	"net"
 	"net/http"
+	"net/netip"
 	"strings"
 	"time"
 
@@ -14,6 +16,60 @@ import (
 	"gr33n-api/internal/httputil"
 	commontypes "gr33n-api/internal/platform/commontypes"
 )
+
+// clientIP extracts the observed request IP, preferring a trusted reverse
+// proxy header over the raw connection address (Phase 214 enterprise
+// topology: API may sit behind a load balancer separate from the DB/site).
+func clientIP(r *http.Request) string {
+	if xff := strings.TrimSpace(r.Header.Get("X-Forwarded-For")); xff != "" {
+		if i := strings.Index(xff, ","); i >= 0 {
+			return strings.TrimSpace(xff[:i])
+		}
+		return xff
+	}
+	if xrip := strings.TrimSpace(r.Header.Get("X-Real-IP")); xrip != "" {
+		return xrip
+	}
+	host, _, err := net.SplitHostPort(r.RemoteAddr)
+	if err != nil {
+		return r.RemoteAddr
+	}
+	return host
+}
+
+// recordDeviceIPIfChanged compares the observed request IP against the
+// device's last known IP and, on a change, updates devices.ip_address and
+// appends a gr33ncore.device_ip_events row. Best-effort: logging failures
+// here must never fail the heartbeat itself.
+func (h *Handler) recordDeviceIPIfChanged(ctx context.Context, device db.Gr33ncoreDevice, r *http.Request) {
+	observed := clientIP(r)
+	if observed == "" {
+		return
+	}
+	newIP := net.ParseIP(observed)
+	if newIP == nil {
+		return
+	}
+	if device.IpAddress != nil {
+		if addr, ok := netip.AddrFromSlice(newIP); ok && addr.Unmap() == device.IpAddress.Unmap() {
+			return
+		}
+	}
+	_ = h.q.InsertDeviceIPEvent(ctx, db.InsertDeviceIPEventParams{
+		DeviceID: device.ID,
+		FarmID:   device.FarmID,
+		OldIp:    device.IpAddress,
+		NewIp:    newIP,
+	})
+	newAddr, ok := netip.AddrFromSlice(newIP)
+	if !ok {
+		return
+	}
+	_ = h.q.UpdateDeviceIPAddress(ctx, db.UpdateDeviceIPAddressParams{
+		ID:        device.ID,
+		IpAddress: &newAddr,
+	})
+}
 
 type Handler struct {
 	q db.Querier
@@ -168,6 +224,7 @@ func (h *Handler) UpdateStatus(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusInternalServerError, "failed to update device status")
 		return
 	}
+	h.recordDeviceIPIfChanged(ctx, device, r)
 	httputil.WriteJSON(w, http.StatusOK, device)
 }
 

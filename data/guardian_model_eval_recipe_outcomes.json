@@ -1,0 +1,28 @@
+{
+  "updated_at": "2026-07-27T17:48:24Z",
+  "models": {
+    "phi3:mini": {
+      "eval_status": "evaluated",
+      "evaluated_at": "2026-07-27T17:48:24Z",
+      "total_questions": 1,
+      "mean_latency_ms": 2067050,
+      "report_path": "data/guardian_model_eval_recipe_outcomes.json"
+    }
+  },
+  "details": {
+    "phi3:mini": [
+      {
+        "id": "smoke-nf-recipe-outcomes",
+        "category": "natural_farming",
+        "passed": true,
+        "latency_ms": 2067050,
+        "prompt": "Using only our recipe outcome history for chrysanthemum, which application recipe shows the best average yield and cost per gram across harvested cycles? State cycle counts; do not invent other recipes or assume missing costs.",
+        "answer": "Based on gr33n Demo Farm's summarize_recipe_outcomes data for chrysanthemum, FFJ (Flower Daily Flowering Boost) and WCA Program rev #2 shows the best average yield with N harvested cycles averaged at a total of 78 days. Across these cycles, we observed an avg yield of 396 grams per cycle for chrysanthemum flowers (with individual yields ranging from 380 to 412 grams). The average cost was calculated as $0.50 USD/gram based on the provided costs across these cycles, which is a significant figure considering our industry standards and past experiences with similar crops in comparable conditions.",
+        "grounded": true,
+        "model": "phi3:mini",
+        "question_answer_relevance": 0.7567430278164503,
+        "opening_tail_relevance": 0.6051627332915562
+      }
+    ]
+  }
+}

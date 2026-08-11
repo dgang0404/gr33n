@@ -95,6 +95,22 @@ WHERE farm_id = $1 AND deleted_at IS NULL
 GROUP BY status
 ORDER BY status ASC;
 
+-- name: UpdateDeviceIPAddress :exec
+UPDATE gr33ncore.devices
+SET ip_address = $2, updated_at = NOW()
+WHERE id = $1;
+
+-- name: InsertDeviceIPEvent :exec
+INSERT INTO gr33ncore.device_ip_events (device_id, farm_id, old_ip, new_ip)
+VALUES ($1, $2, $3, $4);
+
+-- Phase 214 — most recent IP changes for a device, newest first.
+-- name: ListDeviceIPEventsByDevice :many
+SELECT * FROM gr33ncore.device_ip_events
+WHERE device_id = $1
+ORDER BY observed_at DESC
+LIMIT $2;
+
 -- name: BumpDeviceConfigVersion :one
 UPDATE gr33ncore.devices
 SET config_version = config_version + 1,

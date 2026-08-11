@@ -8,6 +8,7 @@ package db
 import (
 	"context"
 	"encoding/json"
+	"net"
 	"net/netip"
 
 	"github.com/jackc/pgx/v5/pgtype"
@@ -216,6 +217,67 @@ func (q *Queries) GetDeviceByUID(ctx context.Context, deviceUid *string) (Gr33nc
 	return i, err
 }
 
+const insertDeviceIPEvent = `-- name: InsertDeviceIPEvent :exec
+INSERT INTO gr33ncore.device_ip_events (device_id, farm_id, old_ip, new_ip)
+VALUES ($1, $2, $3, $4)
+`
+
+type InsertDeviceIPEventParams struct {
+	DeviceID int64       `db:"device_id" json:"device_id"`
+	FarmID   int64       `db:"farm_id" json:"farm_id"`
+	OldIp    *netip.Addr `db:"old_ip" json:"old_ip"`
+	NewIp    net.IP      `db:"new_ip" json:"new_ip"`
+}
+
+func (q *Queries) InsertDeviceIPEvent(ctx context.Context, arg InsertDeviceIPEventParams) error {
+	_, err := q.db.Exec(ctx, insertDeviceIPEvent,
+		arg.DeviceID,
+		arg.FarmID,
+		arg.OldIp,
+		arg.NewIp,
+	)
+	return err
+}
+
+const listDeviceIPEventsByDevice = `-- name: ListDeviceIPEventsByDevice :many
+SELECT device_id, farm_id, old_ip, new_ip, observed_at FROM gr33ncore.device_ip_events
+WHERE device_id = $1
+ORDER BY observed_at DESC
+LIMIT $2
+`
+
+type ListDeviceIPEventsByDeviceParams struct {
+	DeviceID int64 `db:"device_id" json:"device_id"`
+	Limit    int32 `db:"limit" json:"limit"`
+}
+
+// Phase 214 — most recent IP changes for a device, newest first.
+func (q *Queries) ListDeviceIPEventsByDevice(ctx context.Context, arg ListDeviceIPEventsByDeviceParams) ([]Gr33ncoreDeviceIpEvent, error) {
+	rows, err := q.db.Query(ctx, listDeviceIPEventsByDevice, arg.DeviceID, arg.Limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Gr33ncoreDeviceIpEvent{}
+	for rows.Next() {
+		var i Gr33ncoreDeviceIpEvent
+		if err := rows.Scan(
+			&i.DeviceID,
+			&i.FarmID,
+			&i.OldIp,
+			&i.NewIp,
+			&i.ObservedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listDevicesByFarm = `-- name: ListDevicesByFarm :many
 SELECT id, farm_id, zone_id, name, device_uid, device_type, ip_address, firmware_version, status, last_heartbeat, api_key, config, meta_data, config_version, created_at, updated_at, updated_by_user_id, deleted_at FROM gr33ncore.devices
 WHERE farm_id = $1 AND deleted_at IS NULL
@@ -382,6 +444,22 @@ type SoftDeleteDeviceParams struct {
 
 func (q *Queries) SoftDeleteDevice(ctx context.Context, arg SoftDeleteDeviceParams) error {
 	_, err := q.db.Exec(ctx, softDeleteDevice, arg.ID, arg.UpdatedByUserID)
+	return err
+}
+
+const updateDeviceIPAddress = `-- name: UpdateDeviceIPAddress :exec
+UPDATE gr33ncore.devices
+SET ip_address = $2, updated_at = NOW()
+WHERE id = $1
+`
+
+type UpdateDeviceIPAddressParams struct {
+	ID        int64       `db:"id" json:"id"`
+	IpAddress *netip.Addr `db:"ip_address" json:"ip_address"`
+}
+
+func (q *Queries) UpdateDeviceIPAddress(ctx context.Context, arg UpdateDeviceIPAddressParams) error {
+	_, err := q.db.Exec(ctx, updateDeviceIPAddress, arg.ID, arg.IpAddress)
 	return err
 }
 

@@ -8,6 +8,7 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 	"fmt"
+	"net"
 	"net/netip"
 	"time"
 
@@ -1445,6 +1446,14 @@ type Gr33ncoreDeviceCommand struct {
 	StartedAt   pgtype.Timestamptz `db:"started_at" json:"started_at"`
 	CompletedAt pgtype.Timestamptz `db:"completed_at" json:"completed_at"`
 	Result      []byte             `db:"result" json:"result"`
+}
+
+type Gr33ncoreDeviceIpEvent struct {
+	DeviceID   int64       `db:"device_id" json:"device_id"`
+	FarmID     int64       `db:"farm_id" json:"farm_id"`
+	OldIp      *netip.Addr `db:"old_ip" json:"old_ip"`
+	NewIp      net.IP      `db:"new_ip" json:"new_ip"`
+	ObservedAt time.Time   `db:"observed_at" json:"observed_at"`
 }
 
 type Gr33ncoreExecutableAction struct {

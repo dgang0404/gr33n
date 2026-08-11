@@ -204,15 +204,15 @@ func TestResolveCitationRoute_alertWithoutZoneFallsBackToInbox(t *testing.T) {
 
 	// Create a test sensor without zone_id (gate/test sensor pattern).
 	sensor, err := q.CreateSensor(ctx, db.CreateSensorParams{
-		FarmID:                 farmID,
-		ZoneID:                 nil, // Intentionally no zone
-		Name:                   "Phase 152 WS2 unzoned test sensor",
-		SensorType:             "temperature",
-		UnitID:                 4, // Celsius
-		AlertDurationSeconds:   300,
-		AlertCooldownSeconds:   600,
-		Config:                 []byte("{}"),
-		MetaData:               []byte("{}"),
+		FarmID:               farmID,
+		ZoneID:               nil, // Intentionally no zone
+		Name:                 "Phase 152 WS2 unzoned test sensor",
+		SensorType:           "temperature",
+		UnitID:               4, // Celsius
+		AlertDurationSeconds: 300,
+		AlertCooldownSeconds: 600,
+		Config:               []byte("{}"),
+		MetaData:             []byte("{}"),
 	})
 	if err != nil {
 		t.Fatalf("CreateSensor: %v", err)

@@ -497,6 +497,20 @@ CREATE TRIGGER trg_devices_updated_at
     BEFORE UPDATE ON gr33ncore.devices
     FOR EACH ROW EXECUTE FUNCTION gr33ncore.set_updated_at();
 
+-- Phase 214 — append-only device IP change history (enterprise multi-device audit trail).
+CREATE TABLE IF NOT EXISTS gr33ncore.device_ip_events (
+    device_id    BIGINT NOT NULL REFERENCES gr33ncore.devices(id) ON DELETE CASCADE,
+    farm_id      BIGINT NOT NULL REFERENCES gr33ncore.farms(id) ON DELETE CASCADE,
+    old_ip       INET,
+    new_ip       INET NOT NULL,
+    observed_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    PRIMARY KEY (observed_at, device_id)
+);
+CREATE INDEX IF NOT EXISTS idx_device_ip_events_device
+    ON gr33ncore.device_ip_events (device_id, observed_at DESC);
+CREATE INDEX IF NOT EXISTS idx_device_ip_events_farm
+    ON gr33ncore.device_ip_events (farm_id, observed_at DESC);
+
 -- Phase 39 WS1 — FIFO per-device command queue.
 CREATE TABLE IF NOT EXISTS gr33ncore.device_commands (
     id              BIGSERIAL PRIMARY KEY,
@@ -1236,6 +1250,7 @@ SELECT create_hypertable('gr33ncore.actuator_events',  'event_time',   if_not_ex
 SELECT create_hypertable('gr33ncore.weather_data',     'recorded_at',  if_not_exists => TRUE, chunk_time_interval => INTERVAL '7 days');
 SELECT create_hypertable('gr33ncore.user_activity_log','activity_time',if_not_exists => TRUE, chunk_time_interval => INTERVAL '7 days');
 SELECT create_hypertable('gr33ncore.system_logs',      'log_time',     if_not_exists => TRUE, chunk_time_interval => INTERVAL '7 days');
+SELECT create_hypertable('gr33ncore.device_ip_events', 'observed_at',  if_not_exists => TRUE, chunk_time_interval => INTERVAL '30 days');
 
 -- ============================================================
 -- SCHEMA: gr33n_natural_farming

@@ -417,6 +417,7 @@ type Querier interface {
 	// Queries: gr33ncore.device_api_keys (Phase 57)
 	// ============================================================
 	InsertDeviceAPIKey(ctx context.Context, arg InsertDeviceAPIKeyParams) (Gr33ncoreDeviceApiKey, error)
+	InsertDeviceIPEvent(ctx context.Context, arg InsertDeviceIPEventParams) error
 	InsertGeneticsProfileLink(ctx context.Context, arg InsertGeneticsProfileLinkParams) (Gr33ncropsPlantGeneticsProfile, error)
 	// Phase 29 WS3 — Guardian action proposals (propose → confirm).
 	// Phase 34 — revise/supersede chain + operator-supplied facts in meta.
@@ -527,6 +528,8 @@ type Querier interface {
 	ListDeviceCommands(ctx context.Context, arg ListDeviceCommandsParams) ([]Gr33ncoreDeviceCommand, error)
 	// List all commands for a farm for dashboard / ops view.
 	ListDeviceCommandsByFarm(ctx context.Context, arg ListDeviceCommandsByFarmParams) ([]Gr33ncoreDeviceCommand, error)
+	// Phase 214 — most recent IP changes for a device, newest first.
+	ListDeviceIPEventsByDevice(ctx context.Context, arg ListDeviceIPEventsByDeviceParams) ([]Gr33ncoreDeviceIpEvent, error)
 	ListDevicesByFarm(ctx context.Context, farmID int64) ([]Gr33ncoreDevice, error)
 	ListDevicesByZone(ctx context.Context, zoneID *int64) ([]Gr33ncoreDevice, error)
 	ListEcTargetsByFarm(ctx context.Context, farmID int64) ([]Gr33nfertigationEcTarget, error)
@@ -738,6 +741,7 @@ type Querier interface {
 	UpdateCostTransaction(ctx context.Context, arg UpdateCostTransactionParams) (Gr33ncoreCostTransaction, error)
 	UpdateCropCycle(ctx context.Context, arg UpdateCropCycleParams) (Gr33nfertigationCropCycle, error)
 	UpdateCropCycleStage(ctx context.Context, arg UpdateCropCycleStageParams) (Gr33nfertigationCropCycle, error)
+	UpdateDeviceIPAddress(ctx context.Context, arg UpdateDeviceIPAddressParams) error
 	UpdateDeviceStatus(ctx context.Context, arg UpdateDeviceStatusParams) (Gr33ncoreDevice, error)
 	// Pi-key heartbeat: status + optional config fetch timestamp, firmware/client version, uptime.
 	UpdateDeviceStatusTelemetry(ctx context.Context, arg UpdateDeviceStatusTelemetryParams) (Gr33ncoreDevice, error)
