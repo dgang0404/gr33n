@@ -263,6 +263,11 @@ func TestMain(m *testing.M) {
 	piAPIKey = "smoke-test-pi-key"
 	authMode = "auth_test"
 	corsOrigin = "*"
+	// debugModeEnabled() (internal/handler/chat) reads the OS env directly,
+	// independent of the authMode package var above — must mirror it here or
+	// debug-only routes (e.g. seed-pending) 404 whenever the shell has no
+	// AUTH_MODE set, which is the default in CI.
+	os.Setenv("AUTH_MODE", authMode)
 
 	smokeFiles, err := os.MkdirTemp("", "gr33n-smoke-files")
 	if err != nil {
