@@ -13,13 +13,13 @@ todos:
     status: completed
   - id: ws2-ui-ip-badge
     content: "WS2: ActuatorCard.vue — read-only current-IP line + expandable short history toggle (mirrors DeviceApiKeyPanel's show/hide pattern), no edit field by design"
-    status: not-started
+    status: completed
   - id: ws3-runbook-tie-in
     content: "WS3: Note in docs (connectivity-requirements.md or a short runbook) — check device IP history in UI/API before reaching for psql when a device goes unreachable"
-    status: not-started
+    status: completed
   - id: ws4-verify-ci
     content: "WS4: go test ./internal/handler/device/... + make audit-openapi + relevant ui vitest green; push; confirm Actions green (Phase 213 rule: gate updated in same push)"
-    status: not-started
+    status: in-progress
 isProject: false
 ---
 
@@ -69,10 +69,10 @@ Current live example: the LED rig's Pi is unreachable right now (`ping 192.168.1
 
 ## Close when
 
-- [ ] `GET /devices/{id}/ip-history` live, documented in OpenAPI, audit-openapi green
-- [ ] ActuatorCard shows current IP + toggle-able short history, read-only
-- [ ] Runbook note added
-- [ ] `go` + `ui` Actions jobs green on the push that lands this
+- [x] `GET /devices/{id}/ip-history` live, documented in OpenAPI, audit-openapi green
+- [x] ActuatorCard shows current IP + toggle-able short history, read-only
+- [x] Runbook note added ([`operator-troubleshooting.md` §3b](../operator-troubleshooting.md#3b-device-went-dark--check-ip-history-before-psql-phase-214))
+- [ ] `go` + `ui` Actions jobs green on the push that lands this (local `ui` vitest run blocked by a pre-existing Node 20→22 local/CI mismatch — see repo memory; CI is source of truth)
 
 ## Related
 

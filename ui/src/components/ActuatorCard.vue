@@ -10,6 +10,9 @@
             <span v-if="deviceStatusLabel" class="ml-1" :class="deviceStatusClass">{{ deviceStatusLabel }}</span>
           </div>
           <div v-if="telemetryLine" class="text-[10px] text-zinc-500 mt-0.5">{{ telemetryLine }}</div>
+          <div v-if="device.ip_address" class="text-[10px] text-zinc-600 font-mono" data-test="device-current-ip">
+            {{ device.ip_address }}
+          </div>
           <span
             v-if="syncBadge"
             v-nav-hint="syncBadgeNavHint"
@@ -27,6 +30,15 @@
         </div>
       </div>
       <div class="flex items-center gap-2 shrink-0">
+        <button
+          v-if="device.ip_address"
+          type="button"
+          class="text-[10px] uppercase tracking-wide text-zinc-500 hover:text-zinc-300 px-2 py-1 rounded border border-zinc-800"
+          data-test="device-ip-history-toggle"
+          @click="showIpHistory = !showIpHistory"
+        >
+          {{ showIpHistory ? 'Hide IP history' : 'IP history' }}
+        </button>
         <button
           type="button"
           class="text-[10px] uppercase tracking-wide text-zinc-500 hover:text-zinc-300 px-2 py-1 rounded border border-zinc-800"
@@ -80,6 +92,7 @@
     <DeviceCommandQueue :device-id="device.id" />
 
     <DeviceApiKeyPanel v-if="showKeys" :device-id="device.id" />
+    <DeviceIPHistoryPanel v-if="showIpHistory" :device-id="device.id" />
   </div>
 </template>
 
@@ -89,6 +102,7 @@ import { useFarmStore } from '../stores/farm'
 import { configSyncBadge } from '../lib/deviceConfigSync'
 import { useActuatorCommands } from '../composables/useActuatorCommands'
 import DeviceApiKeyPanel from './DeviceApiKeyPanel.vue'
+import DeviceIPHistoryPanel from './DeviceIPHistoryPanel.vue'
 import DeviceCommandQueue from './DeviceCommandQueue.vue'
 import ActuatorPulseControl from './ActuatorPulseControl.vue'
 
@@ -96,6 +110,7 @@ const props = defineProps({ device: Object })
 const store = useFarmStore()
 const { busyId, feedback, sendCommand: queueCommand } = useActuatorCommands()
 const showKeys = ref(false)
+const showIpHistory = ref(false)
 const queueHint = ref({})
 
 const ICONS = { light: '💡', irrigation: '💧', fan: '🌀', pump: '⚙️', heater: '🔥' }

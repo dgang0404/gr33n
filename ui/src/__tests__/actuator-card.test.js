@@ -34,6 +34,7 @@ describe('Phase 117 — ActuatorCard sync badge', () => {
       global: {
         stubs: {
           DeviceApiKeyPanel: true,
+          DeviceIPHistoryPanel: true,
           DeviceCommandQueue: true,
           ActuatorPulseControl: true,
         },
@@ -58,11 +59,72 @@ describe('Phase 117 — ActuatorCard sync badge', () => {
       global: {
         stubs: {
           DeviceApiKeyPanel: true,
+          DeviceIPHistoryPanel: true,
           DeviceCommandQueue: true,
           ActuatorPulseControl: true,
         },
       },
     })
     expect(wrapper.find('[data-test="device-config-sync-badge"]').exists()).toBe(false)
+  })
+})
+
+describe('Phase 214 — ActuatorCard IP history', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia())
+    vi.useRealTimers()
+  })
+
+  it('shows current IP and toggle when device has an ip_address', async () => {
+    const wrapper = mount(ActuatorCard, {
+      props: {
+        device: {
+          id: 3,
+          name: 'Veg Room Pi',
+          device_type: 'raspberry_pi_edge',
+          zone_id: 1,
+          ip_address: '192.168.1.246',
+          status: 'online',
+        },
+      },
+      global: {
+        stubs: {
+          DeviceApiKeyPanel: true,
+          DeviceIPHistoryPanel: true,
+          DeviceCommandQueue: true,
+          ActuatorPulseControl: true,
+        },
+      },
+    })
+    expect(wrapper.find('[data-test="device-current-ip"]').text()).toBe('192.168.1.246')
+    const toggle = wrapper.find('[data-test="device-ip-history-toggle"]')
+    expect(toggle.exists()).toBe(true)
+    expect(wrapper.findComponent({ name: 'DeviceIPHistoryPanel' }).exists()).toBe(false)
+
+    await toggle.trigger('click')
+    expect(wrapper.find('[data-test="device-ip-history-toggle"]').text()).toBe('Hide IP history')
+  })
+
+  it('hides IP line and toggle when device has no ip_address', () => {
+    const wrapper = mount(ActuatorCard, {
+      props: {
+        device: {
+          id: 4,
+          name: 'Local YAML Pi',
+          device_type: 'fan',
+          zone_id: 1,
+        },
+      },
+      global: {
+        stubs: {
+          DeviceApiKeyPanel: true,
+          DeviceIPHistoryPanel: true,
+          DeviceCommandQueue: true,
+          ActuatorPulseControl: true,
+        },
+      },
+    })
+    expect(wrapper.find('[data-test="device-current-ip"]').exists()).toBe(false)
+    expect(wrapper.find('[data-test="device-ip-history-toggle"]').exists()).toBe(false)
   })
 })

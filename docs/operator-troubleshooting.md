@@ -36,6 +36,16 @@ The offline **task/cost write queue** lives in **`localStorage`** per browser pr
 
 ---
 
+## 3b. Device went dark — check IP history before `psql` (Phase 214)
+
+A Pi/edge device that was online yesterday and unreachable today is often just a DHCP address change, not a hardware failure. Before reaching for a database shell:
+
+1. Open the device's card (Dashboard / zone) and click **IP history** — shows current `ip_address` plus the last 20 observed changes (old → new, timestamp), pulled from `GET /devices/{id}/ip-history`.
+2. If the device is still calling in (any status besides fully powered-off), the next heartbeat auto-corrects `devices.ip_address` — no manual edit needed or possible by design.
+3. If there's no history and the device has never checked in since the network change, confirm the Pi's own `pi_client/config.yaml` `base_url` still points at a reachable API address — the platform can't detect an IP it never receives a request from.
+
+---
+
 ## 4. Reading API logs
 
 Every HTTP request emits one structured **`request`** line (`log/slog`) after the response completes:
