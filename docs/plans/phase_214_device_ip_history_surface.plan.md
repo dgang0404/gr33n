@@ -19,13 +19,13 @@ todos:
     status: completed
   - id: ws4-verify-ci
     content: "WS4: go test ./internal/handler/device/... + make audit-openapi + relevant ui vitest green; push; confirm Actions green (Phase 213 rule: gate updated in same push)"
-    status: in-progress
+    status: completed
 isProject: false
 ---
 
 # Phase 214 — Device IP history surface (API + UI)
 
-**Status:** in progress · **Depends on:** Phase 214 IP tracking backend (already shipped: `device_ip_events` table, `recordDeviceIPIfChanged`, sqlc queries)
+**Status:** shipped · **Depends on:** Phase 214 IP tracking backend (already shipped: `device_ip_events` table, `recordDeviceIPIfChanged`, sqlc queries)
 
 ## Why this exists
 
@@ -72,7 +72,7 @@ Current live example: the LED rig's Pi is unreachable right now (`ping 192.168.1
 - [x] `GET /devices/{id}/ip-history` live, documented in OpenAPI, audit-openapi green
 - [x] ActuatorCard shows current IP + toggle-able short history, read-only
 - [x] Runbook note added ([`operator-troubleshooting.md` §3b](../operator-troubleshooting.md#3b-device-went-dark--check-ip-history-before-psql-phase-214))
-- [ ] `go` + `ui` Actions jobs green on the push that lands this (local `ui` vitest run blocked by a pre-existing Node 20→22 local/CI mismatch — see repo memory; CI is source of truth)
+- [x] `go` + `ui` Actions jobs green (verified after push: Actions workflow for commits `9667eaf` + `17c16fd`)
 
 ## Related
 
