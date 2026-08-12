@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -14,11 +16,29 @@ import (
 	commontypes "gr33n-api/internal/platform/commontypes"
 )
 
+var errNotFound = errors.New("not found")
+
 type mockQuerier struct {
 	db.Querier
-	updateStatusFn      func(ctx context.Context, arg db.UpdateDeviceStatusParams) (db.Gr33ncoreDevice, error)
-	clearPendingCmdFn   func(ctx context.Context, id int64) error
-	listDevicesByFarmFn func(ctx context.Context, farmID int64) ([]db.Gr33ncoreDevice, error)
+	updateStatusFn       func(ctx context.Context, arg db.UpdateDeviceStatusParams) (db.Gr33ncoreDevice, error)
+	clearPendingCmdFn    func(ctx context.Context, id int64) error
+	listDevicesByFarmFn  func(ctx context.Context, farmID int64) ([]db.Gr33ncoreDevice, error)
+	getDeviceByIDFn      func(ctx context.Context, id int64) (db.Gr33ncoreDevice, error)
+	listDeviceIPEventsFn func(ctx context.Context, arg db.ListDeviceIPEventsByDeviceParams) ([]db.Gr33ncoreDeviceIpEvent, error)
+}
+
+func (m *mockQuerier) GetDeviceByID(ctx context.Context, id int64) (db.Gr33ncoreDevice, error) {
+	if m.getDeviceByIDFn != nil {
+		return m.getDeviceByIDFn(ctx, id)
+	}
+	return db.Gr33ncoreDevice{ID: id}, nil
+}
+
+func (m *mockQuerier) ListDeviceIPEventsByDevice(ctx context.Context, arg db.ListDeviceIPEventsByDeviceParams) ([]db.Gr33ncoreDeviceIpEvent, error) {
+	if m.listDeviceIPEventsFn != nil {
+		return m.listDeviceIPEventsFn(ctx, arg)
+	}
+	return []db.Gr33ncoreDeviceIpEvent{}, nil
 }
 
 func (m *mockQuerier) ListDevicesByFarm(ctx context.Context, farmID int64) ([]db.Gr33ncoreDevice, error) {
@@ -42,6 +62,88 @@ func (m *mockQuerier) InsertDeviceIPEvent(ctx context.Context, arg db.InsertDevi
 
 func (m *mockQuerier) UpdateDeviceIPAddress(ctx context.Context, arg db.UpdateDeviceIPAddressParams) error {
 	return nil
+}
+
+func TestIPHistory_ReturnsEvents_200(t *testing.T) {
+	now := time.Now().UTC()
+	mq := &mockQuerier{
+		getDeviceByIDFn: func(_ context.Context, id int64) (db.Gr33ncoreDevice, error) {
+			return db.Gr33ncoreDevice{ID: id, FarmID: 7}, nil
+		},
+		listDeviceIPEventsFn: func(_ context.Context, arg db.ListDeviceIPEventsByDeviceParams) ([]db.Gr33ncoreDeviceIpEvent, error) {
+			if arg.DeviceID != 1 {
+				t.Fatalf("expected device id 1, got %d", arg.DeviceID)
+			}
+			if arg.Limit != 20 {
+				t.Fatalf("expected default limit 20, got %d", arg.Limit)
+			}
+			return []db.Gr33ncoreDeviceIpEvent{
+				{DeviceID: 1, FarmID: 7, NewIp: net.ParseIP("192.168.1.101"), ObservedAt: now},
+			}, nil
+		},
+	}
+	h := NewHandlerWithQuerier(mq)
+
+	req := httptest.NewRequest(http.MethodGet, "/devices/1/ip-history", nil)
+	req = req.WithContext(authctx.WithFarmAuthzSkip(context.Background(), true))
+	rec := httptest.NewRecorder()
+
+	h.IPHistory(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d: %s", rec.Code, rec.Body.String())
+	}
+	var events []db.Gr33ncoreDeviceIpEvent
+	if err := json.Unmarshal(rec.Body.Bytes(), &events); err != nil {
+		t.Fatalf("failed to unmarshal response: %v", err)
+	}
+	if len(events) != 1 {
+		t.Fatalf("expected 1 event, got %d", len(events))
+	}
+}
+
+func TestIPHistory_LimitQueryParam_Respected(t *testing.T) {
+	mq := &mockQuerier{
+		getDeviceByIDFn: func(_ context.Context, id int64) (db.Gr33ncoreDevice, error) {
+			return db.Gr33ncoreDevice{ID: id, FarmID: 7}, nil
+		},
+		listDeviceIPEventsFn: func(_ context.Context, arg db.ListDeviceIPEventsByDeviceParams) ([]db.Gr33ncoreDeviceIpEvent, error) {
+			if arg.Limit != 5 {
+				t.Fatalf("expected limit 5, got %d", arg.Limit)
+			}
+			return []db.Gr33ncoreDeviceIpEvent{}, nil
+		},
+	}
+	h := NewHandlerWithQuerier(mq)
+
+	req := httptest.NewRequest(http.MethodGet, "/devices/1/ip-history?limit=5", nil)
+	req = req.WithContext(authctx.WithFarmAuthzSkip(context.Background(), true))
+	rec := httptest.NewRecorder()
+
+	h.IPHistory(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d: %s", rec.Code, rec.Body.String())
+	}
+}
+
+func TestIPHistory_DeviceNotFound_404(t *testing.T) {
+	mq := &mockQuerier{
+		getDeviceByIDFn: func(_ context.Context, id int64) (db.Gr33ncoreDevice, error) {
+			return db.Gr33ncoreDevice{}, errNotFound
+		},
+	}
+	h := NewHandlerWithQuerier(mq)
+
+	req := httptest.NewRequest(http.MethodGet, "/devices/999/ip-history", nil)
+	req = req.WithContext(authctx.WithFarmAuthzSkip(context.Background(), true))
+	rec := httptest.NewRecorder()
+
+	h.IPHistory(rec, req)
+
+	if rec.Code != http.StatusNotFound {
+		t.Fatalf("expected 404, got %d: %s", rec.Code, rec.Body.String())
+	}
 }
 
 func TestUpdateStatus_WithLastConfigFetchAt_200(t *testing.T) {

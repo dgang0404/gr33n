@@ -6,6 +6,7 @@ import (
 	"net"
 	"net/http"
 	"net/netip"
+	"strconv"
 	"strings"
 	"time"
 
@@ -123,6 +124,46 @@ func (h *Handler) Get(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	httputil.WriteJSON(w, http.StatusOK, device)
+}
+
+// GET /devices/{id}/ip-history
+// Phase 214 — read-only surface for gr33ncore.device_ip_events; same auth
+// gate as GET /devices/{id} since IP history is no more sensitive than the
+// device's current IP, which that endpoint already returns.
+func (h *Handler) IPHistory(w http.ResponseWriter, r *http.Request) {
+	id, err := httputil.PathID(r.URL.Path, 2)
+	if err != nil {
+		httputil.WriteError(w, http.StatusBadRequest, "invalid device id")
+		return
+	}
+	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+	defer cancel()
+
+	device, err := h.q.GetDeviceByID(ctx, id)
+	if err != nil {
+		httputil.WriteError(w, http.StatusNotFound, "device not found")
+		return
+	}
+	if !farmauthz.RequireFarmMember(w, r, h.q, device.FarmID) {
+		return
+	}
+
+	limit := int32(20)
+	if raw := strings.TrimSpace(r.URL.Query().Get("limit")); raw != "" {
+		if n, err := strconv.Atoi(raw); err == nil && n > 0 && n <= 100 {
+			limit = int32(n)
+		}
+	}
+
+	events, err := h.q.ListDeviceIPEventsByDevice(ctx, db.ListDeviceIPEventsByDeviceParams{
+		DeviceID: id,
+		Limit:    limit,
+	})
+	if err != nil {
+		httputil.WriteError(w, http.StatusInternalServerError, "failed to list device ip history")
+		return
+	}
+	httputil.WriteJSON(w, http.StatusOK, events)
 }
 
 // POST /farms/{id}/devices

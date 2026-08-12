@@ -11,11 +11,11 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"gr33n-api/internal/ai"
+	"gr33n-api/internal/authsecurity"
 	automationworker "gr33n-api/internal/automation"
 	db "gr33n-api/internal/db"
-	"gr33n-api/internal/authsecurity"
-	"gr33n-api/internal/filestorage"
 	"gr33n-api/internal/farmguardian"
+	"gr33n-api/internal/filestorage"
 	actuatorhandler "gr33n-api/internal/handler/actuator"
 	alerthandler "gr33n-api/internal/handler/alert"
 	animalhandler "gr33n-api/internal/handler/animal"
@@ -24,22 +24,23 @@ import (
 	authhandler "gr33n-api/internal/handler/auth"
 	automationhandler "gr33n-api/internal/handler/automation"
 	chathandler "gr33n-api/internal/handler/chat"
-	fieldguideshandler "gr33n-api/internal/handler/fieldguides"
 	commonscataloghandler "gr33n-api/internal/handler/commonscatalog"
 	costhandler "gr33n-api/internal/handler/cost"
 	cropcyclehandler "gr33n-api/internal/handler/cropcycle"
 	cropprofilehandler "gr33n-api/internal/handler/cropprofile"
-	guardianhandler "gr33n-api/internal/handler/guardian"
 	devicehandler "gr33n-api/internal/handler/device"
 	devicecmdhandler "gr33n-api/internal/handler/devicecmd"
 	farmhandler "gr33n-api/internal/handler/farm"
 	fertigationhandler "gr33n-api/internal/handler/fertigation"
-	notificationtemplatehandler "gr33n-api/internal/handler/notificationtemplate"
+	fieldguideshandler "gr33n-api/internal/handler/fieldguides"
 	fileattachhandler "gr33n-api/internal/handler/fileattach"
+	guardianhandler "gr33n-api/internal/handler/guardian"
+	lightinghandler "gr33n-api/internal/handler/lighting"
 	nfhandler "gr33n-api/internal/handler/naturalfarming"
+	notificationtemplatehandler "gr33n-api/internal/handler/notificationtemplate"
 	organizationhandler "gr33n-api/internal/handler/organization"
-	platformhandler "gr33n-api/internal/handler/platform"
 	planthandler "gr33n-api/internal/handler/plants"
+	platformhandler "gr33n-api/internal/handler/platform"
 	profilehandler "gr33n-api/internal/handler/profile"
 	raghandler "gr33n-api/internal/handler/rag"
 	sensorhandler "gr33n-api/internal/handler/sensor"
@@ -47,12 +48,11 @@ import (
 	ssehandler "gr33n-api/internal/handler/sse"
 	taskhandler "gr33n-api/internal/handler/task"
 	weatherhandler "gr33n-api/internal/handler/weather"
-	lightinghandler "gr33n-api/internal/handler/lighting"
 	zonehandler "gr33n-api/internal/handler/zone"
 	"gr33n-api/internal/httputil"
 	"gr33n-api/internal/openapiui"
-	wxsvc "gr33n-api/internal/weather"
 	"gr33n-api/internal/pushnotify"
+	wxsvc "gr33n-api/internal/weather"
 )
 
 func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationworker.Worker, pushDispatch *pushnotify.Dispatcher, adminUser string, adminHash []byte, hashFilePath string, fileStore filestorage.Store, fileCfg filestorage.Config, adminBindUserID uuid.UUID, adminBindEmail string, aiCfg ai.Config) {
@@ -334,6 +334,8 @@ func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationwo
 
 	// Devices
 	mux.Handle("GET /devices/{id}", jwt(http.HandlerFunc(device.Get)))
+	// Phase 214 — read-only IP change history (same auth gate as GET /devices/{id})
+	mux.Handle("GET /devices/{id}/ip-history", jwt(http.HandlerFunc(device.IPHistory)))
 	mux.Handle("GET /devices/{id}/pi-config", jwt(http.HandlerFunc(device.GetPiConfig)))
 	mux.Handle("POST /devices/{id}/push-config", jwt(http.HandlerFunc(device.PushConfig)))
 	mux.Handle("GET /devices/{id}/api-keys", jwt(http.HandlerFunc(device.ListAPIKeys)))

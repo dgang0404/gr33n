@@ -1425,6 +1425,32 @@ paths:
       responses:
         "204": { description: Deleted }
 
+  /devices/{id}/ip-history:
+    get:
+      tags: [devices]
+      summary: List a device's IP address change history (Phase 214)
+      description: |
+        Read-only audit trail from `gr33ncore.device_ip_events`, newest first.
+        Same auth gate as `GET /devices/{id}` — history is no more sensitive
+        than the device's current `ip_address`, which that endpoint already
+        returns. Populated automatically on heartbeat when the observed
+        request IP differs from the device's last known IP.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+        - name: limit
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+      responses:
+        "200":
+          description: IP change events, newest first
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/DeviceIpEvent" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
   /devices/{id}/pending-command:
     delete:
       tags: [devices]
@@ -8070,6 +8096,16 @@ components:
       enum: [online, offline, error_comms, error_hardware,
              maintenance_mode, initializing, unknown,
              decommissioned, pending_activation]
+
+    DeviceIpEvent:
+      type: object
+      description: Phase 214 — one row from gr33ncore.device_ip_events.
+      properties:
+        device_id: { type: integer }
+        farm_id: { type: integer }
+        old_ip: { type: string, nullable: true }
+        new_ip: { type: string }
+        observed_at: { type: string, format: date-time }
 
     Actuator:
       type: object
