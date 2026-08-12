@@ -41,8 +41,8 @@ The offline **task/cost write queue** lives in **`localStorage`** per browser pr
 A Pi/edge device that was online yesterday and unreachable today is often just a DHCP address change, not a hardware failure. Before reaching for a database shell:
 
 1. Open the device's card (Dashboard / zone) and click **IP history** — shows current `ip_address` plus the last 20 observed changes (old → new, timestamp), pulled from `GET /devices/{id}/ip-history`.
-2. If the device is still calling in (any status besides fully powered-off), the next heartbeat auto-corrects `devices.ip_address` — no manual edit needed or possible by design.
-3. If there's no history and the device has never checked in since the network change, confirm the Pi's own `pi_client/config.yaml` `base_url` still points at a reachable API address — the platform can't detect an IP it never receives a request from.
+2. If the device is still calling in (any status besides fully powered-off), the next heartbeat auto-corrects `devices.ip_address` — no manual edit needed or possible by design. A manual override exists (`PATCH /devices/{id}/ip-address`, Wiring page → Connectivity, Phase 215) for correcting the record immediately, but it does not itself reconnect the device — see below for why.
+3. If there's no history and the device has never checked in since the network change, confirm the Pi's own `pi_client/config.yaml` `base_url` still points at a reachable API address — the platform can't detect an IP it never receives a request from. This is almost always the real fix when a device stays dark: the platform never dials the Pi (commands/config are polled, not pushed), so the Pi's own hardcoded `base_url` going stale — usually because the *API server's* address changed, not the Pi's — is what actually breaks reconnection. See [home-network-ip-management-playbook.md](home-network-ip-management-playbook.md) for how to stop this from happening (DHCP reservations + hostnames instead of raw IPs).
 
 ---
 

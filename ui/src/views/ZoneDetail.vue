@@ -325,6 +325,7 @@
             :toggling="toggling"
             @toggle-actuator="toggleActuator"
             @hardware-updated="refreshHardware"
+            @go-need-tab="goNeedTab"
           />
         </div>
 

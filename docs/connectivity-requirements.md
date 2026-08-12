@@ -7,7 +7,9 @@ reach further out. This page is the single place that says, per feature,
 
 Related: [offline-or-intranet-deployment.md](offline-or-intranet-deployment.md)
 (how to lay out hosts for a no-WAN site), [environment-variables.md](environment-variables.md)
-(the variables referenced below). Guardian **129–139** shipped awakening, runtime, QA, and inference profiles — see the [next-level roadmap](plans/archive/phase_129_139_guardian_next_level_roadmap.plan.md).
+(the variables referenced below), [home-network-ip-management-playbook.md](home-network-ip-management-playbook.md)
+(DHCP reservations, hostnames instead of raw IPs, external uptime monitoring —
+for multi-box home lab setups). Guardian **129–139** shipped awakening, runtime, QA, and inference profiles — see the [next-level roadmap](plans/archive/phase_129_139_guardian_next_level_roadmap.plan.md).
 
 ## Three connection tiers
 

@@ -336,6 +336,8 @@ func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationwo
 	mux.Handle("GET /devices/{id}", jwt(http.HandlerFunc(device.Get)))
 	// Phase 214 — read-only IP change history (same auth gate as GET /devices/{id})
 	mux.Handle("GET /devices/{id}/ip-history", jwt(http.HandlerFunc(device.IPHistory)))
+	// Phase 215 — operator-initiated manual IP override (does not itself reconnect an unreachable Pi)
+	mux.Handle("PATCH /devices/{id}/ip-address", jwt(http.HandlerFunc(device.UpdateIPAddress)))
 	mux.Handle("GET /devices/{id}/pi-config", jwt(http.HandlerFunc(device.GetPiConfig)))
 	mux.Handle("POST /devices/{id}/push-config", jwt(http.HandlerFunc(device.PushConfig)))
 	mux.Handle("GET /devices/{id}/api-keys", jwt(http.HandlerFunc(device.ListAPIKeys)))

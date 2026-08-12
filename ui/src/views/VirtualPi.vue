@@ -34,12 +34,13 @@
     <template v-else>
       <div class="flex flex-wrap items-end gap-3 virtual-pi-screen-only">
         <div class="flex-1 min-w-[12rem]">
-          <label class="text-[10px] text-zinc-500 block mb-1" for="virtual-pi-device">Edge device</label>
+          <label class="text-[10px] text-zinc-500 block mb-1" for="virtual-pi-device" title="Choose which Raspberry Pi or edge device to configure">Edge device</label>
           <select
             id="virtual-pi-device"
             v-model.number="selectedDeviceId"
             class="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-zinc-200"
             data-test="virtual-pi-device-select"
+            title="Select the Raspberry Pi or edge device to view and manage GPIO wiring"
           >
             <option v-for="d in piDevices" :key="d.id" :value="d.id">
               {{ deviceLabel(d) }}
@@ -51,6 +52,7 @@
           class="text-xs border border-zinc-700 rounded-lg px-3 py-2 text-zinc-300 hover:border-green-600 hover:text-green-400"
           data-test="virtual-pi-download-config"
           :disabled="configDownloading || !selectedDeviceId"
+          title="Export the current wiring configuration (GPIO assignments) as config.yaml to use with your Pi"
           @click="downloadConfig"
         >
           {{ configDownloading ? 'Generating…' : 'Download config.yaml' }}
@@ -59,6 +61,7 @@
           type="button"
           class="text-xs border border-zinc-700 rounded-lg px-3 py-2 text-zinc-300 hover:border-green-600 hover:text-green-400"
           data-test="virtual-pi-print"
+          title="Print a labeled wiring reference sheet showing all GPIO pin assignments"
           @click="openPrintView"
         >
           Print wiring sheet
@@ -69,6 +72,7 @@
           class="text-xs border border-zinc-700 rounded-lg px-3 py-2 text-zinc-300 hover:border-amber-600 hover:text-amber-300"
           data-test="virtual-pi-push-config"
           :disabled="pushConfigLoading || !selectedDeviceId"
+          title="Tell this Pi to reload its wiring configuration on the next poll (typically within 30s). Does not affect IP reconnection, which happens automatically."
           @click="pushConfigToPi"
         >
           {{ pushConfigLoading ? 'Notifying…' : 'Notify Pi to reload' }}
@@ -77,6 +81,7 @@
           v-nav-hint="'/hardware'"
           :to="{ path: '/hardware', query: { tab: 'board' } }"
           class="text-xs text-zinc-500 hover:text-green-400 pb-2"
+          title="Switch to list view of all connected devices and their sensors/actuators"
         >
           List view →
         </router-link>
@@ -84,6 +89,7 @@
           v-nav-hint="'/pi-setup'"
           :to="{ name: 'pi-setup' }"
           class="text-xs text-zinc-500 hover:text-green-400 pb-2"
+          title="Help registering a new Raspberry Pi and getting it online"
         >
           Pi setup →
         </router-link>
@@ -93,6 +99,7 @@
         v-if="pushConfigMessage"
         class="rounded-lg border border-amber-800/50 bg-amber-950/20 px-3 py-2 text-xs text-amber-200 virtual-pi-screen-only"
         data-test="virtual-pi-push-ok"
+        title="Notification has been sent. The Pi will reload its wiring configuration on the next config poll (usually within 30 seconds)."
       >
         {{ pushConfigMessage }}
       </div>
@@ -102,14 +109,16 @@
         class="rounded-lg border px-3 py-3 text-xs space-y-2 virtual-pi-screen-only"
         :class="validationBannerClass(validation.status)"
         data-test="virtual-pi-validation-banner"
+        :title="`Status: ${validation.status} — ${validation.hint}`"
       >
-        <p class="font-semibold" data-test="virtual-pi-validation-title">{{ validation.title }}</p>
+        <p class="font-semibold" data-test="virtual-pi-validation-title" :title="validation.hint">{{ validation.title }}</p>
         <ul class="space-y-1">
           <li
             v-for="item in validation.checklist"
             :key="item.id"
             :class="item.ok ? 'text-green-300/90' : 'text-amber-200/80'"
             :data-test="`virtual-pi-validation-${item.id}`"
+            :title="item.id === 'wiring_assigned' ? 'At least one GPIO pin or relay channel must be wired' : item.id === 'config_ready' ? 'Configuration file is ready to export' : item.id === 'pi_connected' ? 'Pi is currently online and reachable' : ''"
           >
             {{ item.ok ? '✓' : '○' }} {{ item.label }}
           </li>
@@ -121,6 +130,7 @@
         v-if="wiringDrift === 'stale'"
         class="rounded-lg border border-amber-700/70 bg-amber-950/30 px-3 py-2 text-xs text-amber-200"
         data-test="virtual-pi-wiring-stale"
+        title="Pi's wiring is out of sync — click 'Notify Pi to reload' to update it"
       >
         {{ wiringDriftLabel(wiringDrift) }}
       </div>
@@ -128,9 +138,53 @@
         v-else-if="wiringDrift === 'synced'"
         class="rounded-lg border border-green-800/50 bg-green-950/20 px-3 py-2 text-xs text-green-300 virtual-pi-screen-only"
         data-test="virtual-pi-wiring-synced"
+        title="Pi's wiring configuration matches what you configured here"
       >
         {{ wiringDriftLabel(wiringDrift) }}
       </div>
+
+      <section
+        v-if="selectedDeviceId"
+        class="bg-zinc-900 border border-zinc-800 rounded-xl p-4 space-y-3 virtual-pi-screen-only"
+        data-test="virtual-pi-connectivity"
+      >
+        <div class="flex items-center justify-between gap-2 flex-wrap">
+          <h3 class="text-sm font-semibold text-white">Connectivity</h3>
+          <span class="text-[10px] text-zinc-500 font-mono" data-test="virtual-pi-current-ip">
+            Current IP: {{ selectedDevice?.ip_address || 'unknown' }}
+          </span>
+        </div>
+        <p class="text-[10px] text-zinc-500 leading-snug">
+          Editing this only corrects the platform's record — it does not dial the Pi. The Pi always
+          initiates contact (commands/config are polled, not pushed), so a live Pi's next heartbeat
+          auto-corrects this anyway. Use the override when a device won't be checking in soon and you
+          need the record to match a new DHCP reservation or replacement.
+        </p>
+        <div class="flex flex-wrap items-center gap-2">
+          <input
+            v-model="ipOverrideInput"
+            type="text"
+            placeholder="192.168.1.55"
+            class="bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-2 text-xs text-zinc-200 font-mono w-40"
+            data-test="virtual-pi-ip-override-input"
+            title="New IP address to record for this device"
+          />
+          <button
+            type="button"
+            class="text-xs border border-zinc-700 rounded-lg px-3 py-2 text-zinc-300 hover:border-amber-600 hover:text-amber-300 disabled:opacity-40"
+            data-test="virtual-pi-ip-override-save"
+            :disabled="ipOverrideSaving || !ipOverrideInput.trim()"
+            title="Manually set this device's recorded IP address"
+            @click="saveIPOverride"
+          >
+            {{ ipOverrideSaving ? 'Saving…' : 'Set IP' }}
+          </button>
+        </div>
+        <p v-if="ipOverrideMessage" class="text-[10px] text-green-400" data-test="virtual-pi-ip-override-ok">{{ ipOverrideMessage }}</p>
+        <p v-if="ipOverrideError" class="text-[10px] text-red-400" data-test="virtual-pi-ip-override-error">{{ ipOverrideError }}</p>
+
+        <DeviceIPHistoryPanel :key="selectedDeviceId" :device-id="selectedDeviceId" />
+      </section>
 
       <VirtualPiBoard
         v-if="selectedDeviceId"
@@ -152,6 +206,7 @@ import { useFarmStore } from '../stores/farm.js'
 import { useFarmContextStore } from '../stores/farmContext.js'
 import VirtualPiBoard from '../components/VirtualPiBoard.vue'
 import EmptyStateHint from '../components/EmptyStateHint.vue'
+import DeviceIPHistoryPanel from '../components/DeviceIPHistoryPanel.vue'
 import { devicesWithWiring } from '../lib/piPinMap.js'
 import { loadDeviceTaxonomy } from '../lib/deviceTaxonomy.js'
 import { wiringDriftStatus, wiringDriftLabel } from '../lib/piConfigDrift.js'
@@ -170,6 +225,10 @@ const pushConfigLoading = ref(false)
 const pushConfigMessage = ref('')
 const expectedConfigSha = ref('')
 const configDownloaded = ref(false)
+const ipOverrideInput = ref('')
+const ipOverrideSaving = ref(false)
+const ipOverrideMessage = ref('')
+const ipOverrideError = ref('')
 
 const printMode = computed(() => route.query.print === '1')
 const printDate = computed(() => new Date().toLocaleString())
@@ -302,8 +361,31 @@ watch(piDevices, (list) => {
 
 watch(selectedDeviceId, (id) => {
   configDownloaded.value = false
+  ipOverrideInput.value = ''
+  ipOverrideMessage.value = ''
+  ipOverrideError.value = ''
   fetchExpectedConfigSha(id)
 })
+
+async function saveIPOverride() {
+  if (!selectedDeviceId.value || !ipOverrideInput.value.trim()) return
+  ipOverrideSaving.value = true
+  ipOverrideMessage.value = ''
+  ipOverrideError.value = ''
+  try {
+    await api.patch(`/devices/${selectedDeviceId.value}/ip-address`, {
+      ip_address: ipOverrideInput.value.trim(),
+    })
+    ipOverrideMessage.value = 'IP address updated — see history below.'
+    ipOverrideInput.value = ''
+    const fid = farmContext.farmId
+    if (fid) await store.loadAll(fid)
+  } catch (e) {
+    ipOverrideError.value = e?.response?.data?.error || e?.message || 'Could not update IP address'
+  } finally {
+    ipOverrideSaving.value = false
+  }
+}
 
 watch(printMode, (isPrint) => {
   if (isPrint && typeof window !== 'undefined') {

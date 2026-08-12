@@ -75,6 +75,9 @@
       <h3 class="text-xs font-semibold text-zinc-400 uppercase tracking-wide mb-2">
         Controls ({{ actuators.length }})
       </h3>
+      <p class="text-zinc-600 text-[10px] mb-2">
+        Quick on/off here. Timed runs and wiring edits live on each control's need tab (Water/Light/Air) to avoid duplicate controls.
+      </p>
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
         <div
           v-for="a in actuators"
@@ -99,6 +102,7 @@
               class="relative shrink-0 w-11 h-6 rounded-full transition-colors disabled:opacity-40"
               :class="a.current_state_text === 'online' ? 'bg-green-600' : 'bg-zinc-700'"
               :disabled="toggling[a.id]"
+              :data-test="`zone-hardware-actuator-toggle-${a.id}`"
               @click="$emit('toggle-actuator', a)"
             >
               <span
@@ -107,22 +111,14 @@
               />
             </button>
           </div>
-          <ActuatorPulseControl :actuator="a" />
           <button
             type="button"
-            class="mt-2 text-[10px] text-zinc-500 hover:text-zinc-300"
-            :data-test="`zone-hardware-actuator-wiring-${a.id}`"
-            @click="toggleActuatorWiring(a.id)"
+            class="mt-2 text-[10px] text-green-600 hover:text-green-400"
+            :data-test="`zone-hardware-actuator-manage-${a.id}`"
+            @click="$emit('go-need-tab', actuatorPlantNeed(a.actuator_type))"
           >
-            {{ actuatorWiringOpen[a.id] ? '▾ Hide wiring' : '▸ Edit wiring' }}
+            Timed run &amp; wiring → {{ needLabel(actuatorPlantNeed(a.actuator_type)) }} tab
           </button>
-          <ActuatorWiringPanel
-            v-if="actuatorWiringOpen[a.id]"
-            :actuator="a"
-            :devices="store.devices"
-            class="mt-2"
-            @updated="$emit('hardware-updated')"
-          />
         </div>
       </div>
     </div>
@@ -141,8 +137,6 @@ import { useFarmStore } from '../stores/farm.js'
 import SensorTile from './SensorTile.vue'
 import HardwareWiringBadge from './HardwareWiringBadge.vue'
 import HardwareWiringPanel from './HardwareWiringPanel.vue'
-import ActuatorWiringPanel from './ActuatorWiringPanel.vue'
-import ActuatorPulseControl from './ActuatorPulseControl.vue'
 import EmptyStateHint from './EmptyStateHint.vue'
 
 const props = defineProps({
@@ -152,11 +146,10 @@ const props = defineProps({
   toggling: { type: Object, default: () => ({}) },
 })
 
-defineEmits(['toggle-actuator', 'hardware-updated'])
+defineEmits(['toggle-actuator', 'hardware-updated', 'go-need-tab'])
 
 const store = useFarmStore()
 const sensorWiringOpen = reactive({})
-const actuatorWiringOpen = reactive({})
 
 const zoneHintPath = computed(() => `/zones/${props.zoneId}`)
 
@@ -167,9 +160,5 @@ function needLabel(need) {
 
 function toggleSensorWiring(id) {
   sensorWiringOpen[id] = !sensorWiringOpen[id]
-}
-
-function toggleActuatorWiring(id) {
-  actuatorWiringOpen[id] = !actuatorWiringOpen[id]
 }
 </script>

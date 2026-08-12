@@ -1451,6 +1451,43 @@ paths:
                 items: { $ref: "#/components/schemas/DeviceIpEvent" }
         "404": { $ref: "#/components/responses/NotFound" }
 
+  /devices/{id}/ip-address:
+    patch:
+      tags: [devices]
+      summary: Manually set a device's IP address (Phase 215)
+      description: |
+        Operator override for `devices.ip_address`, e.g. after changing a DHCP
+        reservation or swapping hardware. Logs an entry to
+        `gr33ncore.device_ip_events` alongside heartbeat-driven changes.
+
+        This does **not** make an unreachable Pi reachable — the platform
+        never dials the device directly; the Pi always polls the API for
+        commands/config (`GET /devices/{id}/commands/next`, `GET
+        /devices/{id}/pi-config`), and a live Pi's next heartbeat
+        (`PATCH /devices/{id}/status`) auto-corrects this field anyway. Use
+        this when you need the record to reflect reality before or without a
+        heartbeat (e.g. a device that will not check in again soon).
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [ip_address]
+              properties:
+                ip_address: { type: string, example: "192.168.1.55" }
+      responses:
+        "200":
+          description: Updated device
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Device" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
   /devices/{id}/pending-command:
     delete:
       tags: [devices]

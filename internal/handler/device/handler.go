@@ -3,6 +3,7 @@ package device
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"net"
 	"net/http"
 	"net/netip"
@@ -10,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	db "gr33n-api/internal/db"
@@ -164,6 +166,85 @@ func (h *Handler) IPHistory(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	httputil.WriteJSON(w, http.StatusOK, events)
+}
+
+// PATCH /devices/{id}/ip-address
+// Phase 215 — manual IP override. The platform can't dial a Pi directly
+// (commands/config are pulled by the device — see devicecmd package), so
+// this does not by itself make an unreachable Pi reachable. It exists for
+// operators who've just changed a DHCP reservation or replaced hardware and
+// want the record corrected immediately rather than waiting for the next
+// heartbeat (which would auto-correct it anyway once the Pi calls back in).
+func (h *Handler) UpdateIPAddress(w http.ResponseWriter, r *http.Request) {
+	id, err := httputil.PathID(r.URL.Path, 2)
+	if err != nil {
+		httputil.WriteError(w, http.StatusBadRequest, "invalid device id")
+		return
+	}
+	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+	defer cancel()
+
+	device, err := h.q.GetDeviceByID(ctx, id)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			httputil.WriteError(w, http.StatusNotFound, "device not found")
+			return
+		}
+		httputil.WriteError(w, http.StatusInternalServerError, "failed to load device")
+		return
+	}
+	if !farmauthz.RequireFarmOperate(w, r, h.q, device.FarmID) {
+		return
+	}
+
+	var body struct {
+		IPAddress string `json:"ip_address"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		httputil.WriteError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+	raw := strings.TrimSpace(body.IPAddress)
+	if raw == "" {
+		httputil.WriteError(w, http.StatusBadRequest, "ip_address is required")
+		return
+	}
+	parsed := net.ParseIP(raw)
+	if parsed == nil {
+		httputil.WriteError(w, http.StatusBadRequest, "ip_address is not a valid IPv4/IPv6 address")
+		return
+	}
+	newAddr, ok := netip.AddrFromSlice(parsed)
+	if !ok {
+		httputil.WriteError(w, http.StatusBadRequest, "ip_address could not be parsed")
+		return
+	}
+	newAddr = newAddr.Unmap()
+	if device.IpAddress != nil && device.IpAddress.Unmap() == newAddr {
+		httputil.WriteError(w, http.StatusBadRequest, "ip_address matches the current value")
+		return
+	}
+
+	if err := h.q.UpdateDeviceIPAddress(ctx, db.UpdateDeviceIPAddressParams{
+		ID:        id,
+		IpAddress: &newAddr,
+	}); err != nil {
+		httputil.WriteError(w, http.StatusInternalServerError, "failed to update ip address")
+		return
+	}
+	_ = h.q.InsertDeviceIPEvent(ctx, db.InsertDeviceIPEventParams{
+		DeviceID: id,
+		FarmID:   device.FarmID,
+		OldIp:    device.IpAddress,
+		NewIp:    parsed,
+	})
+
+	updated, err := h.q.GetDeviceByID(ctx, id)
+	if err != nil {
+		httputil.WriteError(w, http.StatusInternalServerError, "failed to reload device")
+		return
+	}
+	httputil.WriteJSON(w, http.StatusOK, updated)
 }
 
 // POST /farms/{id}/devices
