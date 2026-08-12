@@ -23,7 +23,7 @@ make check-ui-test-baseline  # Phase 205 — fails only on failures NOT already 
 
 **Refactors and "janitorial" phases especially:** run the *full* UI suite (`npm --prefix ui test -- --run`), not just the new phase's own closure test, before marking a phase shipped. `make check-ui-test-baseline` is what actually enforces this — it fails if your change adds a failure that isn't already in the known-debt list, so collateral breakage in an unrelated component gets caught immediately instead of silently joining the pile. See `docs/plans/phase_205_pre_existing_test_debt.plan.md` for the debt this is paying down and why the baseline exists instead of just fixing everything up front.
 
-**CI keep green (Phase 213):** if you change `routes.go`, OpenAPI, workspace deep links, or add a root plan file, update the matching gate (`make audit-openapi`, Vitest closures, `phase-206-closure` allowlist) in the **same** change. Do not leave Actions red and move on — see [`docs/plans/phase_213_ci_keep_green.plan.md`](docs/plans/phase_213_ci_keep_green.plan.md) and the roadmap [`docs/roadmap/README.md`](docs/roadmap/README.md).
+**CI keep green (Phase 213):** if you change `routes.go`, OpenAPI, workspace deep links, or add a root plan file, update the matching gate (`make audit-openapi`, Vitest closures, `phase-206-closure` allowlist) in the **same** change. Do not leave Actions red and move on — see [`docs/plans/phase_213_ci_keep_green.plan.md`](docs/plans/phase_213_ci_keep_green.plan.md) and the roadmap [`docs/roadmap/README.md`](docs/roadmap/README.md). This includes the archive move below — a plan marked shipped but left at `docs/plans/` root fails `phase-206-closure`.
 
 3. **Migrations** — SQL under `db/migrations/`; never edit applied migration files in place. Regenerate sqlc with `make sqlc` when queries change.
 4. **OpenAPI** — every new `mux.Handle` in `cmd/api/routes.go` needs a matching path in `openapi.yaml` (or an entry in `routesIntentionallyUndocumented` with a comment). Sync embed copy: `cp openapi.yaml internal/openapiui/openapi.yaml` when the spec changes.
@@ -36,7 +36,7 @@ make check-ui-test-baseline  # Phase 205 — fails only on failures NOT already 
 |-------|--------|
 | Planned | `docs/plans/phase_NNN_*.plan.md` with `status: pending` todos |
 | In progress | Same file; todos updated in PRs |
-| Shipped | Plan header **Shipped** + todos completed; index in `docs/phase-14-operator-documentation.md` |
+| Shipped | Plan header **Shipped** + todos completed; **move the file to `docs/plans/archive/`** in the same push (see [`docs/plans/archive/README.md`](docs/plans/archive/README.md#rules)); index in `docs/phase-14-operator-documentation.md` |
 
 Phases are numbered sequentially (113 security, 114 Pi, 115 schema, 116 docs, …). Keep each PR focused on one phase or workstream when possible.
 
